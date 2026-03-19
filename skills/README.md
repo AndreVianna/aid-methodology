@@ -1,71 +1,53 @@
-# AID Skills
+# AID Skills — Human Reference
 
-Each skill is a self-contained `SKILL.md` file — a complete set of instructions for executing one phase of the AID pipeline. Load it as system context or an initial prompt for your AI agent of choice.
+Each skill represents one phase of the AID pipeline. These README files provide rich, human-readable documentation — rationale, examples, and detailed explanations.
+
+> **Looking for LLM-optimized versions?** See [`claude-code/skills/`](../claude-code/skills/) for Claude Code or [`codex/skills/`](../codex/skills/) for OpenAI Codex.
+
+---
 
 ## The 12 Skills
 
 ### Group 1: Problem Mapping
 
-| Skill | Phase | When to Use |
-|-------|-------|-------------|
-| [aid-discover](aid-discover/SKILL.md) | Phase 1: Discover | Analyzing an existing codebase to build the Knowledge Base |
-| [aid-interview](aid-interview/SKILL.md) | Phase 2: Interview | Gathering requirements from a human stakeholder |
+| Skill | Phase | Purpose |
+|-------|-------|---------|
+| [aid-discover](aid-discover/README.md) | 1. Discover | Analyze an existing codebase and produce a structured Knowledge Base |
+| [aid-interview](aid-interview/README.md) | 2. Interview | Gather requirements through adaptive, one-question-at-a-time conversation |
 
 ### Group 2: Planning
 
-| Skill | Phase | When to Use |
-|-------|-------|-------------|
-| [aid-specify](aid-specify/SKILL.md) | Phase 3: Specify | Transforming requirements into a grounded SPEC.md |
-| [aid-plan](aid-plan/SKILL.md) | Phase 4: Plan | Defining MVP scope, modules, and deliverables |
-| [aid-detail](aid-detail/SKILL.md) | Phase 5: Detail | Decomposing the plan into executable tasks |
+| Skill | Phase | Purpose |
+|-------|-------|---------|
+| [aid-specify](aid-specify/README.md) | 3. Specify | Transform requirements into a grounded SPEC.md anchored in the KB |
+| [aid-plan](aid-plan/README.md) | 4. Plan | Define MVP scope, modules, deliverables — strategy, not tactics |
+| [aid-detail](aid-detail/README.md) | 5. Detail | Decompose the plan into user stories, tasks, and execution waves |
 
 ### Group 3: Implementation
 
-| Skill | Phase | When to Use |
-|-------|-------|-------------|
-| [aid-implement](aid-implement/SKILL.md) | Phase 6: Implement | Executing a task with an AI coding agent |
-| [aid-review](aid-review/SKILL.md) | Phase 7: Review | Spec-anchored code review with grading |
-| [aid-test](aid-test/SKILL.md) | Phase 8: Test | Staging validation before deploy |
+| Skill | Phase | Purpose |
+|-------|-------|---------|
+| [aid-implement](aid-implement/README.md) | 6. Implement | Execute a task by spawning a coding agent with full KB context |
+| [aid-review](aid-review/README.md) | 7. Review | Spec-anchored code review with A+ to F grading and auto-fix |
+| [aid-test](aid-test/README.md) | 8. Test | Staging validation — E2E, integration, manual testing |
 
 ### Group 4: Production
 
-| Skill | Phase | When to Use |
-|-------|-------|-------------|
-| [aid-deploy](aid-deploy/SKILL.md) | Phase 9: Deploy | Packaging and shipping a completed delivery |
-| [aid-track](aid-track/SKILL.md) | Phase 10: Track | Monitoring production telemetry |
+| Skill | Phase | Purpose |
+|-------|-------|---------|
+| [aid-deploy](aid-deploy/README.md) | 9. Deploy | Final verification, PR creation, KB update, delivery summary |
+| [aid-track](aid-track/README.md) | 10. Track | Interpret production telemetry — not just collect, understand |
 
 ### Group 5: Maintenance
 
-| Skill | Phase | When to Use |
-|-------|-------|-------------|
-| [aid-triage](aid-triage/SKILL.md) | Phase 11: Triage | Classifying production findings and routing them |
-| [aid-correct](aid-correct/SKILL.md) | Phase 12: Correct | Root cause analysis and patch scope definition |
+| Skill | Phase | Purpose |
+|-------|-------|---------|
+| [aid-triage](aid-triage/README.md) | 11. Triage | Classify production findings and route them (BUG → Correct, CR → Discover) |
+| [aid-correct](aid-correct/README.md) | 12. Correct | Root cause analysis, patch scope definition, hand off to Implement |
 
 ---
 
-## How to Use a Skill
-
-Each `SKILL.md` contains:
-1. **Core Principle** — the mental model for this phase
-2. **When to Use** — when this skill applies (and when it doesn't)
-3. **Inputs** — what this phase requires
-4. **Process** — step-by-step instructions for the agent
-5. **Output** — what this phase produces
-6. **Feedback Loops** — what can trigger this phase from downstream
-
-**Basic usage pattern:**
-```
-Load SKILL.md as system prompt or initial context
-Provide the inputs described in the skill
-Run the process
-Review the outputs before advancing to the next phase
-```
-
-The human approves every phase transition. The pipeline never auto-advances.
-
----
-
-## Starting Point Decision
+## Starting Point
 
 ```
 Is there existing code?
@@ -73,15 +55,9 @@ Is there existing code?
   NO  → Start with aid-interview (Phase 2)
 ```
 
-**Brownfield path:** Discover → Interview → Specify → Plan → Detail → Implement → Review → Test → Deploy → Track → Triage
-
-**Greenfield path:** Interview → Specify → Plan → Detail → Implement → Review → Test → Deploy → Track → Triage
-
----
-
 ## Incremental Adoption
 
-You don't need all 12 phases from day one. Recommended ramp:
+You don't need all 12 phases from day one:
 
 1. **Start:** Detail + Implement (formalize task decomposition and agent execution)
 2. **Add:** Review (introduce grading and spec-anchored review)

@@ -28,13 +28,20 @@ AID contains SDD (Spec-Driven Development). SDD is the spec→code layer. AID is
 
 **New to AID?** Start with the [methodology document](methodology/aid-methodology.md) — it's the complete V3 spec, ~40 minutes to read.
 
-**Want to use the skills right now?**
-```
-skills/
-├── aid-discover/SKILL.md     ← Start here for brownfield projects
-├── aid-interview/SKILL.md    ← Start here for greenfield projects
-└── ...                      ← Each phase is a self-contained SKILL.md
-```
+**Want to use AID with your AI coding tool?**
+
+| Tool | Setup | Format |
+|------|-------|--------|
+| **Claude Code** | Copy `claude-code/` → `.claude/` | [Setup guide](claude-code/README.md) |
+| **OpenAI Codex CLI** | Copy `codex/` → `.agents/` | [Setup guide](codex/README.md) |
+| **Other agents** | Use `skills/` READMEs as reference | Load as system context |
+
+**Want to understand the skills and agents?**
+
+| Resource | Purpose |
+|----------|---------|
+| [`skills/`](skills/README.md) | Human-readable documentation for all 12 phases |
+| [`agents/`](agents/README.md) | Human-readable documentation for all 13 agent roles |
 
 **Want templates for your project artifacts?**
 ```
@@ -92,6 +99,37 @@ examples/
 
 ---
 
+## The 13 Agents
+
+Agents are **specialties**, not phases. One agent may handle multiple phases. They are divided into Core Agents (always present) and Specialist Agents (invoked ad-hoc when expertise is needed).
+
+### Core Agents
+
+| Agent | Specialty | Typical Phases | Model |
+|-------|-----------|----------------|-------|
+| **Orchestrator** | Pipeline coordination, routing, human gates | All | opus |
+| **Researcher** | Investigation, KB generation, analysis | Discover, Track | sonnet |
+| **Interviewer** | Adaptive dialogue, requirements gathering | Interview, Triage | opus |
+| **Architect** | Design: specs, plans, task decomposition | Specify, Plan, Detail | opus |
+| **Developer** | Code implementation (only agent that writes code) | Implement, Correct | sonnet/opus |
+| **Critic** | Quality evaluation, grading (A+ to F) | Review, Test | opus |
+| **Operator** | Deployment, PR creation, release management | Deploy | sonnet |
+
+### Specialist Agents
+
+| Agent | Specialty | Called By |
+|-------|-----------|-----------|
+| **UX Designer** | UI/UX, accessibility (WCAG), user flows | Architect, Critic |
+| **DevOps** | CI/CD, IaC, containerization, monitoring | Operator, Researcher |
+| **Tech Writer** | Documentation, API docs, changelogs | Operator, Architect |
+| **Security** | Threat modeling, OWASP, auth, dependency audit | Critic, Researcher |
+| **Data Engineer** | Schema, migrations, query optimization, ETL | Architect, Developer |
+| **Performance** | Profiling, load testing, caching, optimization | Critic, Researcher |
+
+See [`agents/README.md`](agents/README.md) for detailed documentation on each role.
+
+---
+
 ## AID vs. SDD
 
 Spec-Driven Development is a good idea. AID contains it and goes further.
@@ -129,35 +167,48 @@ Every loop produces a formal artifact (GAP.md, IMPEDIMENT.md, TRIAGE.md, or CORR
 
 ---
 
-## Built With
-
-AID is tool-agnostic. The methodology works with any AI coding agent:
-
-- **Claude Code** — `claude --print --permission-mode bypassPermissions`
-- **OpenAI Codex CLI** — `codex`
-- **Cursor** — Agent mode with spec context
-- **GitHub Copilot** — Agent mode
-- **Any agent** that can read files and write code
-
-The skills in this repo are written as AI-executable instructions (SKILL.md files). They're used by loading them as system context or initial prompts for your agent of choice.
-
----
-
 ## Repository Structure
 
 ```
 aid-methodology/
-├── README.md                     ← You are here
+├── README.md                          ← You are here
+├── CONTRIBUTING.md                    ← How to contribute
+├── LICENSE                            ← MIT
 ├── methodology/
-│   ├── aid-methodology.md        ← Complete V3 methodology document
-│   └── images/                   ← Pipeline, comparison, and feedback loop diagrams
-├── skills/                       ← 12 phase-specific SKILL.md files
-├── templates/                    ← Usable templates for every artifact
-├── examples/                     ← Anonymized real-world examples
+│   ├── aid-methodology.md             ← Complete V3 methodology document
+│   └── images/                        ← Pipeline, comparison, feedback loop diagrams
+├── skills/                            ← Human-readable phase documentation
+│   ├── README.md                      ← Overview of all 12 skills
+│   └── aid-{phase}/README.md          ← Rich docs per skill
+├── agents/                            ← Human-readable agent documentation
+│   ├── README.md                      ← Overview of all 13 agents
+│   └── {agent}/README.md             ← Rich docs per agent specialty
+├── claude-code/                       ← Claude Code native format
+│   ├── README.md                      ← Setup: copy to .claude/
+│   ├── skills/aid-{phase}/SKILL.md    ← LLM-optimized AgentSkills format
+│   └── agents/{agent}.md              ← Claude Code agent definitions
+├── codex/                             ← OpenAI Codex native format
+│   ├── README.md                      ← Setup: copy to .agents/
+│   ├── skills/aid-{phase}/SKILL.md    ← LLM-optimized AgentSkills format
+│   └── agents/{agent}.toml            ← Codex agent definitions (TOML)
+├── templates/                         ← Usable templates for every artifact
+├── examples/                          ← Anonymized real-world examples
 └── docs/
     ├── faq.md
     └── glossary.md
 ```
+
+---
+
+## Built With
+
+AID is tool-agnostic. The methodology works with any AI coding agent:
+
+- **Claude Code** — native format in `claude-code/`
+- **OpenAI Codex CLI** — native format in `codex/`
+- **Cursor** — use skills as system context
+- **GitHub Copilot** — agent mode with spec context
+- **Any agent** that can read files and write code
 
 ---
 
