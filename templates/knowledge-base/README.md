@@ -61,9 +61,9 @@ The KB root `README.md` tracks completeness across all documents:
 
 The Discovery phase assesses the project and generates what's relevant. Don't create documents for things that don't exist.
 
-## Revision Log
+## Revision History
 
-Every KB update should be logged in a `revision-log.md` file:
+Every KB update should be logged in the README.md revision history section:
 
 ```markdown
 # Revision Log

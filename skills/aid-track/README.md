@@ -71,7 +71,7 @@ For each finding, assess:
 
 ### Step 6: Produce Report
 
-Generate `TRACK-REPORT.md` using the [template](references/track-report-template.md).
+Generate `TRACK-REPORT.md` using the [template](../../templates/reports/track-report-template.md).
 
 For each finding:
 - Concrete evidence (not "something seems off" — show the numbers).
@@ -83,7 +83,7 @@ If nothing is found — that's the expected outcome. A clean report is a good re
 
 ## Output: TRACK-REPORT.md
 
-See [Track Report Template](references/track-report-template.md) for the full template.
+See [Track Report Template](../../templates/reports/track-report-template.md) for the full template.
 
 ## Severity Thresholds
 
@@ -121,7 +121,18 @@ When findings exceed severity thresholds, produce TRACK-REPORT.md and hand off t
 - [ ] Clean report stated explicitly if no issues found.
 - [ ] Recommendation given for each finding (triage or no action).
 
+## Why This Phase Exists
+
+Most methodologies end at deployment. AID doesn't — because production reveals truths that development can't anticipate. Track doesn't just collect metrics; it *interprets* them: correlating error spikes with recent deploys, clustering support tickets by feature, detecting slow performance degradation before it becomes a crisis.
+
+Track is what closes the loop between production reality and development assumptions, feeding findings into Triage for classification and routing.
+
+## Related Phases
+
+- **Previous:** [Deploy](../aid-deploy/) — Track begins after deployment
+- **Next:** [Triage](../aid-triage/) — classifies findings above severity thresholds
+
 ## See Also
 
-- [Track Report Template](references/track-report-template.md) — Full TRACK-REPORT.md template.
-- [AID Methodology](../../business/playbook-v2/aid-methodology.md) — The complete methodology.
+- [Track Report Template](../../templates/reports/track-report-template.md) — Full TRACK-REPORT.md template.
+- [AID Methodology](../../methodology/aid-methodology.md) — The complete methodology.

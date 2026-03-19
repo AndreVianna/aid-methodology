@@ -131,7 +131,7 @@ Check if implementation revealed anything that should update the KB:
 4. **Tech debt created or resolved** → update `knowledge/tech-debt.md`.
 5. **Data model changed** → update `knowledge/data-model.md`.
 
-Add entries to `knowledge/revision-log.md` for any KB changes.
+Add revision entries to `knowledge/README.md` for any KB changes.
 
 ### Step 5: Artifact Status Updates
 
@@ -155,7 +155,7 @@ Add entries to `knowledge/revision-log.md` for any KB changes.
 - Updated DELIVERY-{id}.md (status: Complete).
 - Updated TASK-{id}.md files (status: Complete).
 - Updated KB documents (if applicable).
-- Updated revision-log.md (if applicable).
+- Updated KB README.md revision history (if applicable).
 
 ## Post-Deploy
 
@@ -181,6 +181,18 @@ After the PR is merged:
 - [ ] Revision log entries added for all KB changes.
 - [ ] No open GAPs or IMPEDIMENTs blocking this delivery.
 
+## Why This Phase Exists
+
+Deploy is more than `git merge`. It's the moment where implementation becomes official: final verification with a clean build, structured PR with full traceability, KB updates reflecting what was learned during this delivery, and artifact status updates closing the loop on tasks and deliverables.
+
+The delivery summary and KB updates are especially important — they capture the delta between what was planned and what was actually built, keeping the KB current for the next cycle.
+
+## Related Phases
+
+- **Previous:** [Test](../aid-test/) — TEST-REPORT.md must have PASS verdict
+- **Next:** [Track](../aid-track/) — production monitoring begins
+- **Feedback to:** Any phase if final verification reveals issues
+
 ## See Also
 
-- [AID Methodology](../../business/playbook-v2/aid-methodology.md) — The complete methodology.
+- [AID Methodology](../../methodology/aid-methodology.md) — The complete methodology.

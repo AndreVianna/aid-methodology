@@ -55,7 +55,7 @@ Technical enablers (database setup, CI pipeline, auth infrastructure) are tasks,
 
 For each user story, generate executable tasks. A task is what an agent actually implements.
 
-Each task gets a `TASK-{id}.md` file. See [references/detail-template.md](references/detail-template.md) for the output format.
+Each task gets a `TASK-{id}.md` file. See [Detail Template](../../templates/delivery-plans/detail-template.md) for the output format.
 
 A well-sized task:
 - **Has a clear start and end.** "Implement IRecordingService" — not "work on recording."
@@ -210,7 +210,19 @@ If implementation or review reveals the detail was wrong (task too large, wrong 
 - [ ] Delivery breakdown has measurable success criteria.
 - [ ] Execution plan has clear wave ordering.
 
+## Why This Phase Exists
+
+AI coding agents need precise, bounded tasks — not vague feature requests. Detail transforms the strategic roadmap into task-level specs that an agent can implement in a single session: clear objective, files to touch, interface contracts, acceptance criteria.
+
+The precedence graph and wave plan also enable parallel execution: multiple coding agents working on independent tasks simultaneously, with merge order defined upfront.
+
+## Related Phases
+
+- **Previous:** [Plan](../aid-plan/) — provides the strategic roadmap
+- **Next:** [Implement](../aid-implement/) — executes TASK files
+- **Triggered by:** Feedback from Implement/Review when Detail needs revision
+
 ## See Also
 
-- [Detail Template](references/detail-template.md) — Full DETAIL.md template.
-- [AID Methodology](../../business/playbook-v2/aid-methodology.md) — The complete methodology.
+- [Detail Template](../../templates/delivery-plans/detail-template.md) — Full DETAIL.md template.
+- [AID Methodology](../../methodology/aid-methodology.md) — The complete methodology.

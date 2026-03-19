@@ -1,6 +1,11 @@
 ---
 name: aid-deploy
-description: Final verification, PR creation, delivery summary, and KB updates. The last development phase before production. Use when all tasks are complete, reviewed (A-+), and tested (PASS).
+description: >
+  Final verification, PR creation, delivery summary, and KB updates. The last
+  development phase before production. Use when all tasks are complete, reviewed
+  (A-+), and tested (PASS).
+metadata:
+  short-description: Final verification, PR creation, and deployment
 ---
 
 # Package & Ship
@@ -39,7 +44,7 @@ Check if implementation revealed KB updates needed:
 - New integrations → integration-map.md
 - Tech debt created/resolved → tech-debt.md
 - Data model changes → data-model.md
-Add entries to revision-log.md.
+Add revision entries to knowledge/README.md.
 
 ### 5. Artifact Status Updates
 - DELIVERY-{id}.md → Status: Complete, completion date, final test count

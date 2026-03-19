@@ -21,7 +21,7 @@ Understanding the structure is key to contributing in the right place:
 **Important:** When updating a skill or agent, update ALL locations:
 1. `skills/aid-{phase}/README.md` — human docs
 2. `claude-code/skills/aid-{phase}/SKILL.md` — LLM version
-3. `codex/skills/aid-{phase}/SKILL.md` — LLM version (same as claude-code)
+3. `codex/skills/aid-{phase}/SKILL.md` — LLM version (shared body, Codex-specific frontmatter)
 
 Same for agents: update the human README, Claude Code .md, and Codex .toml.
 

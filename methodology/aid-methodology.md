@@ -114,7 +114,6 @@ The Knowledge Base (`knowledge/`) is the gravitational center of the entire meth
 ```
 knowledge/
 ├── README.md              # Index with completeness status per document
-├── codebase-overview.md   # Project type, size, age, entry points, build system
 ├── architecture.md        # Patterns, layers, module boundaries, data flow
 ├── module-map.md          # Every module: purpose, dependencies, size, test coverage
 ├── technology-stack.md    # Languages, frameworks, versions, package managers, runtime
@@ -123,13 +122,11 @@ knowledge/
 ├── api-contracts.md       # External APIs consumed/exposed, auth models, rate limits
 ├── integration-map.md     # Message queues, caches, third-party services, webhooks
 ├── domain-glossary.md     # Business terms, domain language, entity definitions
-├── flow-diagrams.md       # Key user flows, data flows, deployment pipelines
 ├── test-landscape.md      # Test frameworks, coverage, test types, CI/CD pipeline
 ├── security-model.md      # Auth/authz, secrets management, compliance requirements
 ├── tech-debt.md           # Known debt items with file refs, risk ratings, remediation
 ├── infrastructure.md      # Hosting, networking, environments, deployment model
-├── open-questions.md      # Things that need human clarification
-└── revision-log.md        # Every KB update: date, source phase, what changed, why
+└── open-questions.md      # Things that need human clarification
 ```
 
 ### Completeness Is Tracked
@@ -141,7 +138,6 @@ The `README.md` at the root of the Knowledge Base tracks what exists and what's 
 
 | Document | Status | Last Updated | Source |
 |----------|--------|-------------|--------|
-| codebase-overview.md | ✅ Complete | Mar 16 | aid-discover |
 | architecture.md | ✅ Complete | Mar 16 | aid-discover |
 | coding-standards.md | ⚠️ Partial | Mar 16 | aid-discover (inferred) |
 | domain-glossary.md | ❌ Missing | — | Needs interview |
@@ -153,7 +149,7 @@ The `README.md` at the root of the Knowledge Base tracks what exists and what's 
 The Discovery phase assesses the project and generates what's relevant:
 
 - **Simple CLI tool?** Maybe 5 documents.
-- **Enterprise monorepo?** All 16.
+- **Enterprise monorepo?** All 13.
 - **Greenfield?** Only `technology-stack.md`, `coding-standards.md`, and `domain-glossary.md` — populated from the interview, not from code.
 
 ### The KB Outlives the Project
@@ -470,7 +466,7 @@ The interview is driven by a **knowledge model** — a structured map of what a 
 
 ## 4. Feedback Loops
 
-The pipeline is sequential by default. But real engineering isn't linear. Assumptions break. Gaps appear. Production reveals truths that development couldn't anticipate. AID defines eleven formal feedback loops — seven within development and four connecting production back to development.
+The pipeline is sequential by default. But real engineering isn't linear. Assumptions break. Gaps appear. Production reveals truths that development couldn't anticipate. AID defines eleven formal feedback loops — eight within development and three connecting production back to development.
 
 ### The Eleven Loops
 
@@ -1048,7 +1044,7 @@ Ship to Test | Rework (minor) | Rework (major) | Re-implement
 
 **What worked:** The two-level planning (Plan → Detail) meant strategic decisions were separated from tactical decomposition. The plan defined "what goes in MVP" while detail defined "how to build each piece."
 
-### RWP — Brownfield Enterprise Java
+### Case Study 1 — Brownfield Enterprise Java
 
 **Context:** 21GB enterprise Java codebase (Maven/Tycho, OSGi bundles). Client needed a developer to understand and extend the search engine.
 
@@ -1094,7 +1090,7 @@ Both AID and SDD:
 | Dimension | SDD | AID |
 |-----------|-----|-----|
 | **Starting point** | A spec | Understanding (Discovery) |
-| **Brownfield support** | Gap acknowledged | First-class Discovery phase with 16-document KB |
+| **Brownfield support** | Gap acknowledged | First-class Discovery phase with 13-document KB |
 | **Spec philosophy** | Spec is source of truth | Spec is hypothesis — revised by formal protocol |
 | **Requirements** | Assumed to exist | Gathered through adaptive interview |
 | **Planning depth** | Single spec | Two-level: Plan (strategy) → Detail (tactics) |

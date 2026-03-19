@@ -1,6 +1,11 @@
 ---
 name: aid-interview
-description: Adaptive requirements gathering through one-question-at-a-time conversation. Produces REQUIREMENTS.md. Use for new projects (full interview) or when a GAP.md specifies needs-interview (targeted interview).
+description: >
+  Adaptive requirements gathering through one-question-at-a-time conversation.
+  Produces REQUIREMENTS.md. Use for new projects (full interview) or when a
+  GAP.md specifies needs-interview (targeted interview).
+metadata:
+  short-description: Adaptive requirements gathering via stakeholder interview
 ---
 
 # Adaptive Requirements Gathering

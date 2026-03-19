@@ -46,6 +46,7 @@ AID contains SDD (Spec-Driven Development). SDD is the spec→code layer. AID is
 **Want templates for your project artifacts?**
 ```
 templates/
+├── requirements/            ← REQUIREMENTS.md template
 ├── knowledge-base/          ← 13 KB document templates
 ├── specs/                   ← SPEC.md template
 ├── delivery-plans/          ← PLAN.md, DETAIL.md, TASK templates
@@ -109,7 +110,7 @@ Agents are **specialties**, not phases. One agent may handle multiple phases. Th
 |-------|-----------|----------------|-------|
 | **Orchestrator** | Pipeline coordination, routing, human gates | All | opus |
 | **Researcher** | Investigation, KB generation, analysis | Discover, Track | sonnet |
-| **Interviewer** | Adaptive dialogue, requirements gathering | Interview, Triage | opus |
+| **Interviewer** | Adaptive dialogue, requirements gathering | Interview | opus |
 | **Architect** | Design: specs, plans, task decomposition | Specify, Plan, Detail | opus |
 | **Developer** | Code implementation (only agent that writes code) | Implement, Correct | sonnet/opus |
 | **Critic** | Quality evaluation, grading (A+ to F) | Review, Test | opus |
@@ -153,7 +154,7 @@ AID says: *understanding drives the spec, and the spec drives development, and p
 
 ## The Feedback Loops
 
-The pipeline is sequential by default. But real engineering isn't linear. AID defines eleven formal feedback loops — seven within development and four connecting production back to development.
+The pipeline is sequential by default. But real engineering isn't linear. AID defines eleven formal feedback loops — eight within development and three connecting production back to development.
 
 ![Feedback Loops](methodology/images/4-feedback-loops.png)
 

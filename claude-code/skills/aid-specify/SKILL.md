@@ -1,6 +1,12 @@
 ---
 name: aid-specify
-description: Transform REQUIREMENTS.md into a formal SPEC.md grounded in the Knowledge Base. Use when requirements are complete and need formalization, or when a GAP.md triggers spec revision.
+description: >
+  Transform REQUIREMENTS.md into a formal SPEC.md grounded in the Knowledge Base.
+  Use when requirements are complete and need formalization, or when a GAP.md
+  triggers spec revision.
+allowed-tools: Read, Glob, Grep, Write, Edit, Bash
+context: fork
+agent: architect
 ---
 
 # Generate Specification

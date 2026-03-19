@@ -40,7 +40,7 @@ If conflicts require more information:
 
 ### Step 3: Write SPEC.md
 
-Generate using the template in [references/spec-template.md](references/spec-template.md).
+Generate using the template in [Spec Template](../../templates/specs/spec-template.md).
 
 #### Vision
 
@@ -186,7 +186,19 @@ When triggered by a GAP.md from aid-plan, aid-detail, or aid-review:
 - [ ] Conflicts between requirements and architecture are documented.
 - [ ] Revision history is initialized.
 
+## Why This Phase Exists
+
+A spec that says "use repository pattern" is useless when the codebase uses CQRS. Grounded specs reference the actual architecture, actual conventions, and actual data model from the KB. This is what makes AID specs different from generic templates — they're anchored in the reality of the system being built.
+
+Specs are also hypotheses, not contracts. Implementation will reveal truths that specification couldn't anticipate. That's why SPEC.md has revision history — formal protocol for evolving the spec, not silent workarounds.
+
+## Related Phases
+
+- **Previous:** [Interview](../aid-interview/) — provides REQUIREMENTS.md
+- **Next:** [Plan](../aid-plan/) — uses SPEC.md to define the roadmap
+- **Triggered by:** GAP.md with `ambiguity` or `contradiction` from downstream phases
+
 ## See Also
 
-- [Spec Template](references/spec-template.md) — Full SPEC.md template.
-- [AID Methodology](../../business/playbook-v2/aid-methodology.md) — The complete methodology.
+- [Spec Template](../../templates/specs/spec-template.md) — Full SPEC.md template.
+- [AID Methodology](../../methodology/aid-methodology.md) — The complete methodology.

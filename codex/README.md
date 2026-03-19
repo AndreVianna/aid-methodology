@@ -40,7 +40,7 @@ This gives you:
 
 ## Skills
 
-12 phase skills, one per AID phase. See `skills/README.md` for the full list.
+12 phase skills, one per AID phase. See [`skills/README.md`](skills/README.md) for the full list.
 
 ## Usage
 
@@ -57,6 +57,6 @@ Agent TOML files define specialized roles with focused system prompts. Use them 
 
 ## Notes
 
-- Skills are identical to the claude-code versions (AgentSkills is a shared standard)
+- Skill bodies are shared with the claude-code versions; frontmatter uses Codex-specific fields (`metadata.short-description`) instead of Claude Code fields (`allowed-tools`, `context`, `agent`)
 - Human-readable documentation lives in the repo's `skills/` and `agents/` directories
 - Templates live in the repo's `templates/` directory — reference them from your project

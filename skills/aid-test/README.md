@@ -102,7 +102,7 @@ Document manual test results with the tester's observations.
 
 ### Step 6: Produce TEST-REPORT.md
 
-Generate the test report using the [template](references/test-report-template.md).
+Generate the test report using the [template](../../templates/reports/test-report-template.md).
 
 **Verdict determination:**
 - **PASS** — All automated tests pass. All user story acceptance criteria verified. No critical or high-severity issues.
@@ -111,7 +111,7 @@ Generate the test report using the [template](references/test-report-template.md
 
 ## Output: TEST-REPORT.md
 
-See [Test Report Template](references/test-report-template.md) for the full template.
+See [Test Report Template](../../templates/reports/test-report-template.md) for the full template.
 
 ## Feedback Loops
 
@@ -153,7 +153,19 @@ See [Test Report Template](references/test-report-template.md) for the full temp
 - [ ] TEST-REPORT.md produced with clear verdict.
 - [ ] Verdict is PASS before proceeding to aid-deploy.
 
+## Why This Phase Exists
+
+Review catches what code *looks like*. Test catches what code *does*. A function can pass review with clean code and correct patterns but still fail under load, break with edge-case data, or produce wrong results in staging.
+
+Test is the last gate before production. Its verdict (PASS/PASS WITH NOTES/FAIL) determines whether the delivery proceeds to Deploy or loops back for fixes.
+
+## Related Phases
+
+- **Previous:** [Review](../aid-review/) — code must pass review (A-+) first
+- **Next:** [Deploy](../aid-deploy/) — proceeds on PASS verdict
+- **Feedback to:** [Implement](../aid-implement/) for test failures, [Specify](../aid-specify/) for spec gaps found in staging
+
 ## See Also
 
-- [Test Report Template](references/test-report-template.md) — Full TEST-REPORT.md template.
-- [AID Methodology](../../business/playbook-v2/aid-methodology.md) — The complete methodology.
+- [Test Report Template](../../templates/reports/test-report-template.md) — Full TEST-REPORT.md template.
+- [AID Methodology](../../methodology/aid-methodology.md) — The complete methodology.

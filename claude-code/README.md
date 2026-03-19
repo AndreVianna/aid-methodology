@@ -40,7 +40,7 @@ This gives you:
 
 ## Skills
 
-12 phase skills, one per AID phase. See `skills/README.md` for the full list.
+12 phase skills, one per AID phase. See [`skills/README.md`](skills/README.md) for the full list.
 
 ## Usage
 

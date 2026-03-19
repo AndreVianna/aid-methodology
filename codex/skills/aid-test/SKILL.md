@@ -1,6 +1,11 @@
 ---
 name: aid-test
-description: Staging validation — E2E, integration, and manual testing. The gate between review and deploy. Use when code has passed review (grade A- or above) and needs staging validation.
+description: >
+  Staging validation — E2E, integration, and manual testing. The gate between
+  review and deploy. Use when code has passed review (grade A- or above) and
+  needs staging validation.
+metadata:
+  short-description: Staging validation and testing gate
 ---
 
 # Staging Validation & Testing

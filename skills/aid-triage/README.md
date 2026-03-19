@@ -79,7 +79,7 @@ Document the justification for closing. Reference evidence that shows the findin
 
 ### Step 5: Document
 
-Generate `TRIAGE.md` using the [template](references/triage-template.md). Every classification must include:
+Generate `TRIAGE.md` using the [template](../../templates/feedback-artifacts/TRIAGE.md). Every classification must include:
 - The finding (what was detected).
 - The classification (bug/CR/infra/no-action).
 - The evidence (why this classification, not another).
@@ -106,7 +106,7 @@ Track may assess severity differently than Triage. Track sees metrics; Triage ha
 
 ## Output: TRIAGE.md
 
-See [Triage Template](references/triage-template.md) for the full template.
+See [Triage Template](../../templates/feedback-artifacts/TRIAGE.md) for the full template.
 
 ## Triggers
 
@@ -126,7 +126,18 @@ When classification is Change Request, produce TRIAGE.md and route to `aid-disco
 - [ ] Routing decision is clear (next phase identified).
 - [ ] TRIAGE.md produced with all required fields.
 
+## Why This Phase Exists
+
+Not every production finding needs the same response. A bug (spec right, code wrong) takes the short path: Correct → Implement → Review → Test → Deploy — five phases. A change request (spec needs updating) takes the full cycle back through Discover. Infrastructure issues go to ops, outside AID entirely.
+
+Triage is the routing decision that prevents treating every issue the same way. Without it, teams either over-engineer bug fixes (treating them as CRs) or under-engineer change requests (treating them as quick bug fixes).
+
+## Related Phases
+
+- **Previous:** [Track](../aid-track/) — provides TRACK-REPORT.md with findings
+- **Routes to:** [Correct](../aid-correct/) for bugs, [Discover](../aid-discover/) for change requests
+
 ## See Also
 
-- [Triage Template](references/triage-template.md) — Full TRIAGE.md template.
-- [AID Methodology](../../business/playbook-v2/aid-methodology.md) — The complete methodology.
+- [Triage Template](../../templates/feedback-artifacts/TRIAGE.md) — Full TRIAGE.md template.
+- [AID Methodology](../../methodology/aid-methodology.md) — The complete methodology.

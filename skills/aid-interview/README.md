@@ -142,7 +142,7 @@ Each answer may:
 
 ## Output: REQUIREMENTS.md
 
-Generate using the template in [references/requirements-template.md](references/requirements-template.md).
+Generate using the template in [Requirements Template](../../templates/requirements/requirements-template.md).
 
 Key sections:
 - **Problem Statement** — in the stakeholder's words, not yours.
@@ -181,7 +181,19 @@ When triggered by a GAP.md with `needs-interview`:
 - [ ] Technical context is consistent with KB (if brownfield).
 - [ ] All `assumed` fields were confirmed or corrected during verification.
 
+## Why This Phase Exists
+
+Requirements don't exist until someone asks the right questions. Dumping a questionnaire on a stakeholder produces checkbox answers. Adaptive, one-question-at-a-time dialogue produces understanding — the kind that catches contradictions, surfaces unstated assumptions, and distinguishes "must have" from "nice to have."
+
+For brownfield projects, the KB pre-fills technical context, so the interview focuses on business intent rather than wasting time on questions the code already answers.
+
+## Related Phases
+
+- **Previous:** [Discover](../aid-discover/) — provides KB context that shortens the interview
+- **Next:** [Specify](../aid-specify/) — transforms REQUIREMENTS.md into a formal spec
+- **Triggered by:** GAP.md with `needs-interview` from any downstream phase
+
 ## See Also
 
-- [Requirements Template](references/requirements-template.md) — Full REQUIREMENTS.md template.
-- [AID Methodology](../../business/playbook-v2/aid-methodology.md) — The complete methodology.
+- [Requirements Template](../../templates/requirements/requirements-template.md) — Full REQUIREMENTS.md template.
+- [AID Methodology](../../methodology/aid-methodology.md) — The complete methodology.

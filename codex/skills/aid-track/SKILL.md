@@ -1,6 +1,11 @@
 ---
 name: aid-track
-description: Production telemetry interpretation. Monitors production by reading error logs, issue trackers, metrics, CI/CD, test results, and user feedback. Produces TRACK-REPORT.md. Use post-deployment, on schedule, or on-demand.
+description: >
+  Production telemetry interpretation. Monitors production by reading error logs,
+  issue trackers, metrics, CI/CD, test results, and user feedback. Produces
+  TRACK-REPORT.md. Use post-deployment, on schedule, or on-demand.
+metadata:
+  short-description: Production telemetry monitoring and interpretation
 ---
 
 # Runtime Telemetry & Observability

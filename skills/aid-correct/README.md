@@ -61,7 +61,7 @@ If the existing test suite has no coverage in the affected area (check `knowledg
 
 ### Step 5: Generate CORRECTION.md
 
-Produce the correction document using the [template](references/correction-template.md). This is the task spec for `aid-implement` — it must contain everything the implementing agent needs:
+Produce the correction document using the [template](../../templates/reports/correction-template.md). This is the task spec for `aid-implement` — it must contain everything the implementing agent needs:
 
 - Root cause (so the agent understands *why*, not just *what*).
 - Files to touch (so the agent knows the scope).
@@ -90,7 +90,7 @@ Five phases. The correction skips discover, interview, specify, plan, and detail
 
 ## Output: CORRECTION.md
 
-See [Correction Template](references/correction-template.md) for the full template.
+See [Correction Template](../../templates/reports/correction-template.md) for the full template.
 
 ## Triggers
 
@@ -116,7 +116,19 @@ After implementation: `aid-review` → `aid-test` → `aid-deploy`. Standard qua
 - [ ] CORRECTION.md produced with all required fields.
 - [ ] No scope creep — fix the bug, nothing else.
 
+## Why This Phase Exists
+
+Bug fixes need surgical precision, not broad re-specification. The Correct phase maps the root cause, assesses impact across module consumers, defines the minimal patch scope, and produces a CORRECTION.md that contains everything the implementing agent needs — nothing more.
+
+The short path (Correct → Implement → Review → Test → Deploy) skips five phases because the spec is already right; only the code is wrong. This is one of AID's key efficiency gains — routing bugs through the minimum necessary pipeline.
+
+## Related Phases
+
+- **Previous:** [Triage](../aid-triage/) — classifies finding as BUG
+- **Next:** [Implement](../aid-implement/) — executes the fix from CORRECTION.md
+- **Short path:** Correct → Implement → Review → Test → Deploy (5 phases)
+
 ## See Also
 
-- [Correction Template](references/correction-template.md) — Full CORRECTION.md template.
-- [AID Methodology](../../business/playbook-v2/aid-methodology.md) — The complete methodology.
+- [Correction Template](../../templates/reports/correction-template.md) — Full CORRECTION.md template.
+- [AID Methodology](../../methodology/aid-methodology.md) — The complete methodology.

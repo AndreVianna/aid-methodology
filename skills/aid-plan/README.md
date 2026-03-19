@@ -212,6 +212,18 @@ If the Detail phase can't decompose the plan into tasks because deliverables are
 - [ ] Risks are assessed with mitigations.
 - [ ] Spikes are identified for uncertain areas.
 
+## Why This Phase Exists
+
+Plan is strategy; Detail is tactics. Plan answers "what do we build and in what order?" so that Detail can answer "how do we build it?" Skipping Plan means jumping from spec to tasks with no intermediate reasoning about MVP scope, delivery boundaries, or risk.
+
+The plan also identifies spikes — time-boxed research for uncertain areas. Better to discover unknowns here than during implementation when the cost of discovery is much higher.
+
+## Related Phases
+
+- **Previous:** [Specify](../aid-specify/) — provides SPEC.md
+- **Next:** [Detail](../aid-detail/) — decomposes the plan into executable tasks
+- **Triggered by:** GAP.md from Detail when the plan is too vague
+
 ## See Also
 
-- [AID Methodology](../../business/playbook-v2/aid-methodology.md) — The complete methodology.
+- [AID Methodology](../../methodology/aid-methodology.md) — The complete methodology.

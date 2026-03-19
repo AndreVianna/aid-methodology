@@ -49,7 +49,7 @@ Terms and concepts used throughout the AID methodology.
 
 **CORRECTION.md:** Root cause analysis and patch scope for a triaged bug. Defines the minimal fix, test requirements, and affected areas.
 
-**Grade A:** Quality validation for agent-generated output. Five checks: source match (1%), traceability (2%), consistency, completeness, no-zeros.
+**Grading (A+ to F):** The review phase's quality scale. A+ (exemplary) through F (doesn't build). Evaluates spec compliance, architecture adherence, and convention conformance. Domain-specific quality checks (e.g., data accuracy thresholds) are defined per project in the SPEC.md.
 
 ---
 

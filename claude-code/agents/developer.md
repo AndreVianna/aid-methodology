@@ -2,7 +2,7 @@
 name: developer
 description: The only agent that modifies production code. Implements TASK files following specs and KB conventions, with mandatory build verification and formal IMPEDIMENT.md escalation.
 tools: Read, Glob, Grep, Write, Edit, Bash
-model: sonnet
+model: sonnet  # Use opus for complex implementations requiring deep architectural reasoning
 maxTurns: 30
 ---
 

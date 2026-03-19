@@ -157,7 +157,18 @@ If review identifies issues:
 - [ ] Task status updated.
 - [ ] Commit messages reference the TASK-{id}.
 
+## Why This Phase Exists
+
+Implementation is where the rubber meets the road. Coding agents work best with precise context: task spec + project spec + KB conventions. Without this structured handoff, agents improvise — and improvised code doesn't match the architecture, doesn't follow conventions, and creates tech debt faster than it delivers value.
+
+The mandatory build verification and formal impediment protocol ensure that implementation failures are caught early and reported honestly, rather than buried in silent workarounds.
+
+## Related Phases
+
+- **Previous:** [Detail](../aid-detail/) — provides TASK files
+- **Next:** [Review](../aid-review/) — evaluates implementation quality
+- **Also from:** [Correct](../aid-correct/) — provides CORRECTION.md for bug fixes
+
 ## See Also
 
-- [coding-agent skill](/usr/lib/node_modules/openclaw/skills/coding-agent/SKILL.md) — For spawning coding agents.
-- [AID Methodology](../../business/playbook-v2/aid-methodology.md) — The complete methodology.
+- [AID Methodology](../../methodology/aid-methodology.md) — The complete methodology.

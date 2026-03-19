@@ -1,6 +1,11 @@
 ---
 name: aid-review
-description: Spec-anchored code review with A+ to F grading. Tags issues by source (CODE/TASK/SPEC/KB/ARCHITECTURE). Auto-fixes P1/P2 CODE issues. Use when implementation is complete and needs quality gate.
+description: >
+  Spec-anchored code review with A+ to F grading. Tags issues by source
+  (CODE/TASK/SPEC/KB/ARCHITECTURE). Auto-fixes P1/P2 CODE issues. Use when
+  implementation is complete and needs quality gate.
+metadata:
+  short-description: Spec-anchored code review with grading
 ---
 
 # Spec-Anchored Code Review

@@ -197,7 +197,19 @@ For SPEC and ARCHITECTURE issues: pause the delivery pipeline and escalate to hu
 - [ ] Grade assigned based on criteria.
 - [ ] Recommendation given.
 
+## Why This Phase Exists
+
+Code review by a Critic agent provides an adversarial quality check that the Developer agent can't provide for its own work. The grading system (A+ to F) creates a clear quality gate: A- or above proceeds to testing, anything below goes back for rework.
+
+Tagging issues by source (CODE vs TASK vs SPEC vs KB vs ARCHITECTURE) is crucial — it determines where the fix belongs. A CODE issue is fixed by the Developer. A SPEC issue requires the Architect to revise the spec. An ARCHITECTURE issue may trigger a KB update.
+
+## Related Phases
+
+- **Previous:** [Implement](../aid-implement/) — provides code to review
+- **Next:** [Test](../aid-test/) — staging validation for grade A- or above
+- **Feedback to:** [Implement](../aid-implement/), [Specify](../aid-specify/), [Discover](../aid-discover/) via issue tags
+
 ## See Also
 
-- [Review Template](references/review-template.md) — Full REVIEW.md template.
-- [AID Methodology](../../business/playbook-v2/aid-methodology.md) — The complete methodology.
+- [Review Template](../../templates/reports/review-template.md) — Full REVIEW.md template.
+- [AID Methodology](../../methodology/aid-methodology.md) — The complete methodology.

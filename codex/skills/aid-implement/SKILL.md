@@ -1,6 +1,11 @@
 ---
 name: aid-implement
-description: Execute a planned task by spawning a coding agent with full KB context. Mandatory build verification. Use when a TASK-{id}.md is ready for implementation or a CORRECTION.md needs coding.
+description: >
+  Execute a planned task by spawning a coding agent with full KB context.
+  Mandatory build verification. Use when a TASK-{id}.md is ready for
+  implementation or a CORRECTION.md needs coding.
+metadata:
+  short-description: Task implementation with coding agent
 ---
 
 # Execute Task with Agent

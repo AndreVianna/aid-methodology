@@ -1,6 +1,11 @@
 ---
 name: aid-triage
-description: Classify production findings as BUG, Change Request, Infrastructure, or No Action. Routes bugs to aid-correct (short path), CRs to aid-discover (new cycle). Use when TRACK-REPORT.md has findings above severity thresholds.
+description: >
+  Classify production findings as BUG, Change Request, Infrastructure, or No Action.
+  Routes bugs to aid-correct (short path), CRs to aid-discover (new cycle). Use
+  when TRACK-REPORT.md has findings above severity thresholds.
+metadata:
+  short-description: Production finding classification and routing
 ---
 
 # Classification & Routing

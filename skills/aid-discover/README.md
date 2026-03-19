@@ -33,7 +33,7 @@ find . -type f | grep -E '\.(cs|java|py|ts|js|go|rs)$' | \
   sed 's/.*\.//' | sort | uniq -c | sort -rn
 ```
 
-Record in `knowledge/codebase-overview.md`: project type, approximate size, age (from git log), entry points, build system.
+Record in `knowledge/architecture.md`: project type, approximate size, age (from git log), entry points, build system.
 
 ### Step 2: Architecture Analysis
 
@@ -163,22 +163,18 @@ Create `knowledge/README.md` with completeness tracking:
 
 | Document | Status | Last Updated | Source |
 |----------|--------|-------------|--------|
-| codebase-overview.md | ✅ Complete | {date} | aid-discover |
 | architecture.md | ✅ Complete | {date} | aid-discover |
 | coding-standards.md | ⚠️ Partial | {date} | aid-discover (inferred) |
 | domain-glossary.md | ❌ Missing | — | Needs interview |
 ```
 
-Initialize `knowledge/revision-log.md` with the discovery entry.
-
 ## Output
 
-A `knowledge/` directory containing the relevant subset of these 16 documents:
+A `knowledge/` directory containing the relevant subset of these 13 documents (plus a README.md index):
 
 | Document | Always? | Description |
 |----------|---------|-------------|
 | README.md | Yes | Index with completeness status |
-| codebase-overview.md | Yes | Project type, size, entry points |
 | architecture.md | Yes | Patterns, layers, boundaries |
 | module-map.md | Yes (if >1 module) | Module inventory |
 | technology-stack.md | Yes | Full stack catalog |
@@ -187,13 +183,11 @@ A `knowledge/` directory containing the relevant subset of these 16 documents:
 | api-contracts.md | If APIs exist | External API surface |
 | integration-map.md | If integrations exist | Third-party services |
 | domain-glossary.md | Rarely from code | Business terms (usually from interview) |
-| flow-diagrams.md | For complex flows | Key data/user flows |
 | test-landscape.md | Yes | Test infrastructure |
 | security-model.md | If auth exists | Security architecture |
 | tech-debt.md | Yes | Known debt with risk ratings |
 | infrastructure.md | If infra is visible | Hosting, deployment |
 | open-questions.md | Yes | Gaps for interview |
-| revision-log.md | Yes | Change history |
 
 ## Targeted Discovery (Re-entry)
 
@@ -202,7 +196,7 @@ When triggered by a GAP.md or IMPEDIMENT.md from a downstream phase:
 1. Read the gap/impediment document to understand exactly what's missing.
 2. Focus analysis ONLY on the identified area.
 3. Update the specific KB document(s).
-4. Add an entry to `knowledge/revision-log.md`:
+4. Update `knowledge/README.md` with a revision note:
    ```
    | {date} | {source phase} | Updated {document} — {what changed and why} |
    ```
@@ -216,7 +210,7 @@ When triggered by a GAP.md or IMPEDIMENT.md from a downstream phase:
 - [ ] Inferred information is marked as inferred (e.g., "⚠️ Inferred from code — needs confirmation").
 - [ ] `open-questions.md` captures everything that requires human input.
 - [ ] `README.md` accurately reflects completeness status.
-- [ ] `revision-log.md` has the initial discovery entry.
+- [ ] `README.md` includes a revision history section with the initial discovery entry.
 
 ## Feedback Loops
 
@@ -225,9 +219,20 @@ This phase is the **target** of feedback loops from all downstream phases. It do
 When any downstream phase identifies a KB gap:
 - If the gap is in a specific document → update that document.
 - If the gap reveals a new area not yet covered → create the missing document.
-- Always update README.md and revision-log.md.
+- Always update README.md status and revision history.
+
+## Why This Phase Exists
+
+You can't write a useful spec for a system you don't understand. Most enterprise work is brownfield — an existing codebase with patterns, conventions, and tech debt that will shape every decision downstream. Discovery transforms "a repo we don't fully understand" into "a Knowledge Base that grounds every subsequent phase."
+
+Without Discovery, specs are generic and agents improvise. With Discovery, specs reference actual code patterns and agents follow real conventions.
+
+## Related Phases
+
+- **Next:** [Interview](../aid-interview/) — uses `open-questions.md` from the KB to focus requirements gathering
+- **Triggered by:** Any downstream phase via GAP.md with `discovery-needed`
 
 ## See Also
 
-- [KB Document Templates](references/kb-templates.md) — Full templates for each KB document.
-- [AID Methodology](../../business/playbook-v2/aid-methodology.md) — The complete methodology.
+- [KB Document Templates](../../templates/knowledge-base/README.md) — Full templates for each KB document.
+- [AID Methodology](../../methodology/aid-methodology.md) — The complete methodology.

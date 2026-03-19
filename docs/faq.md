@@ -44,7 +44,9 @@ Up to 13 markdown documents that capture the living understanding of a project: 
 Formal pathways for a downstream phase to revise upstream artifacts. When implementation reveals the spec was wrong, you don't silently work around it — you create an IMPEDIMENT.md that triggers a spec revision. There are 11 loops total. See the [methodology document](../methodology/aid-methodology.md#4-feedback-loops).
 
 ### What's the Grade A gate?
-A quality validation step used in agent-generated output. It checks source data match (1% tolerance), traceability (all numbers trace to known sources), consistency (cross-reference between outputs), completeness (required sections present), and no-zeros (no placeholder values). Failed outputs are regenerated, not patched.
+AID's review phase grades code on a scale from A+ (exemplary) to F (doesn't build). The grading evaluates specification compliance, architecture adherence, and convention conformance — not a fixed checklist.
+
+The specific "five checks" (source match, traceability, consistency, completeness, no-zeros) are a domain-specific example from the data pipeline case study, where agent-generated data outputs need those particular validations. Your project's quality gates will look different — define them in your SPEC.md and review criteria.
 
 ### How do I handle the "spec was wrong" problem?
 That's what feedback loops are for. When implementation discovers a spec error:

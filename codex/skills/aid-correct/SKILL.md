@@ -1,6 +1,11 @@
 ---
 name: aid-correct
-description: Bug mapping and patch planning. Root cause analysis, impact mapping, patch scope definition. Produces CORRECTION.md and hands off to aid-implement. Use when aid-triage classifies a finding as BUG.
+description: >
+  Bug mapping and patch planning. Root cause analysis, impact mapping, patch scope
+  definition. Produces CORRECTION.md and hands off to aid-implement. Use when
+  aid-triage classifies a finding as BUG.
+metadata:
+  short-description: Bug root cause analysis and patch planning
 ---
 
 # Bug Mapping & Patch Planning

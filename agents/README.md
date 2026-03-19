@@ -19,7 +19,7 @@ These agents form the backbone of every AID pipeline:
 |-------|-----------|----------------|-------|
 | [**Orchestrator**](orchestrator/) | Pipeline coordination, routing, human gates | All | opus |
 | [**Researcher**](researcher/) | Investigation, KB generation, analysis | Discover, Track, any | sonnet |
-| [**Interviewer**](interviewer/) | Adaptive dialogue, requirements gathering | Interview, Triage | opus |
+| [**Interviewer**](interviewer/) | Adaptive dialogue, requirements gathering | Interview | opus |
 | [**Architect**](architect/) | Design: specs, plans, task decomposition | Specify, Plan, Detail | opus |
 | [**Developer**](developer/) | Code implementation (only agent that writes code) | Implement, Correct | sonnet/opus |
 | [**Critic**](critic/) | Quality evaluation, grading (A+ to F) | Review, Test | opus |
