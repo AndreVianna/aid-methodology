@@ -5,20 +5,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # (args parsed above)
 
-FORCE=0
-TARGET=""
-
-for arg in "$@"; do
-  if [[ "$arg" == "--force" ]]; then
-    FORCE=1
-  else
-    TARGET="$arg"
-  fi
-done
-
-if [[ -z "$TARGET" ]]; then
-  echo "Usage: $0 [--force] <target-directory>" >&2
+if [[ $# -lt 1 ]]; then
+  echo "Usage: $0 <target-directory> [--force]" >&2
   exit 1
+fi
+
+TARGET="$1"
+FORCE=0
+if [[ "${2:-}" == "--force" ]]; then
+  FORCE=1
 fi
 
 if [[ ! -d "$TARGET" ]]; then
