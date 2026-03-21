@@ -1,12 +1,13 @@
 # AID Skills for Claude Code
 
-11 phase skills in AgentSkills format. Each `SKILL.md` contains YAML frontmatter with `name`, `description`, `allowed-tools`, `context`, and `agent` fields.
+11 phase skills + 1 quality gate in AgentSkills format. Each `SKILL.md` contains YAML frontmatter with `name`, `description`, `allowed-tools`, `context`, and `agent` fields.
 
 ## Skills
 
 | Skill | Phase | Agent | Description |
 |-------|-------|-------|-------------|
 | `aid-discover` | 1. Discover | Researcher | Brownfield codebase analysis → Knowledge Base |
+| `aid-discovery-review` | 1. Discover (gate) | Reviewer | Grade A gate — review and grade KB quality |
 | `aid-interview` | 2. Interview | Interviewer | Adaptive requirements gathering → REQUIREMENTS.md |
 | `aid-specify` | 3. Specify | Architect | Requirements → SPEC.md grounded in KB |
 | `aid-plan` | 4. Plan | Architect | SPEC.md → high-level roadmap (PLAN.md) |

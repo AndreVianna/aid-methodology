@@ -1,0 +1,59 @@
+---
+description: "Grade A gate for Discovery phase. Reviews all KB documents, grades each A+ to F, identifies gaps. Use after aid-discover completes."
+alwaysApply: false
+---
+
+# Discovery Review — Grade A Gate
+
+Review every Knowledge Base document produced by Discovery. Grade each one. Identify gaps and inaccuracies.
+
+## Trigger
+
+Run after Discovery completes (13 docs + README + INDEX + AGENTS.md + CLAUDE.md in place).
+
+## Process
+
+1. Read ALL documents in `knowledge/`, plus `AGENTS.md` and `CLAUDE.md`
+2. For each document, assess: completeness, accuracy (spot-check 3-5 claims against code), depth, usefulness
+3. Grade each: A+ (exceptional) through F (missing)
+4. Cross-reference claims against actual source code — minimum 10 total spot-checks
+5. Write `knowledge/DISCOVERY-REVIEW.md`
+
+## Grading Scale
+
+- **A+**: Exceptional — comprehensive, accurate, evidence-rich
+- **A**: Thorough — covers scope with solid evidence
+- **B+**: Good — minor gaps that don't block work
+- **B**: Adequate — basics covered, depth lacking
+- **B-**: Shallow — lists without explaining
+- **C+**: Significant gaps — missing important sections
+- **C**: Barely useful
+- **D**: Misleading
+- **F**: Missing
+
+## What to Check Per Document
+
+- **architecture.md**: folder structure, patterns with evidence, data flow, entry points
+- **technology-stack.md**: versions from actual config (not "TBD")
+- **module-map.md**: every module with purpose AND dependencies
+- **coding-standards.md**: conventions from actual code, not generic advice
+- **data-model.md**: entities with relationships, not just entity lists
+- **api-contracts.md**: actual URLs/paths, not just class names
+- **integration-map.md**: connection details, NOT same content as module-map
+- **domain-glossary.md**: project-specific terms
+- **test-landscape.md**: which modules have real tests vs placeholders
+- **security-model.md**: project-specific assessment, not generic OWASP
+- **tech-debt.md**: severity-categorized with file locations
+- **infrastructure.md**: CI/CD flow, deployment, monitoring details
+- **open-questions.md**: specific, answerable, comprehensive
+- **AGENTS.md/CLAUDE.md**: no placeholders, real working commands
+
+## Output
+
+Write `knowledge/DISCOVERY-REVIEW.md` with summary table, detailed reviews per document, cross-cutting concerns, and spot-check verification table.
+
+Recommend: Pass (A-+), Needs Improvement (B+), or Fail (any C or below).
+
+## Claude Code Equivalent
+
+For deeper review, reference `.claude/skills/aid-discovery-review/SKILL.md` which dispatches a dedicated `discovery-reviewer` subagent.
