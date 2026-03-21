@@ -1,11 +1,23 @@
 ---
-description: "Grade A gate for Discovery phase. Reviews all KB documents, grades each A+ to F, identifies gaps. Use after aid-discover completes."
+description: "Grade A gate for Discovery phase. Reviews all KB documents, grades each A+ to F, identifies gaps. Use after aid-discover completes. Idempotent — run multiple times to improve."
 alwaysApply: false
 ---
 
 # Discovery Review — Grade A Gate
 
 Review every Knowledge Base document produced by Discovery. Grade each one. Identify gaps and inaccuracies.
+
+## Arguments
+
+| Flag | Effect |
+|------|--------|
+| _(none)_ | Review all. Report only. |
+| `--grade X` | Set minimum grade (`[A-F][-+]?`). Highlights failures. |
+| `--fix` | Fix documents below threshold. **Requires `--grade`.** |
+
+Examples: `--grade A-` (report only), `--grade A- --fix` (report + fix), `--fix` alone → error.
+
+**Idempotent.** Run multiple times. Each run re-reads, re-grades, and (with `--fix`) improves.
 
 ## Trigger
 
@@ -14,10 +26,29 @@ Run after Discovery completes (13 docs + README + INDEX + AGENTS.md + CLAUDE.md 
 ## Process
 
 1. Read ALL documents in `knowledge/`, plus `AGENTS.md` and `CLAUDE.md`
-2. For each document, assess: completeness, accuracy (spot-check 3-5 claims against code), depth, usefulness
-3. Grade each: A+ (exceptional) through F (missing)
-4. Cross-reference claims against actual source code — minimum 10 total spot-checks
-5. Write `knowledge/DISCOVERY-REVIEW.md`
+2. If `DISCOVERY-REVIEW.md` exists, load previous grades for delta comparison
+3. For each document: assess completeness, accuracy (spot-check 3-5 claims against code), depth, usefulness
+4. Grade each: A+ through F
+5. Cross-reference claims against actual source code — minimum 10 total spot-checks
+6. Write `knowledge/DISCOVERY-REVIEW.md` with summary table, detailed reviews, spot-checks, review history
+
+## Reporting
+
+**Without `--grade`:** Report all grades. No pass/fail. Human decides.
+
+**With `--grade`:**
+- All at or above → "✅ KB passes quality gate at {threshold}."
+- Some below, none D/F → "⚠️ {N} documents below {threshold}."
+- Any D or F → "❌ Critical failures."
+
+## Auto-Fix (with --grade AND --fix)
+
+Grade order: `A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F`
+
+For each document below threshold: read issues, read source code, fix, re-grade.
+Update DISCOVERY-REVIEW.md with new grades + review history entry.
+
+Report: `✅ improved` / `⚠️ still below threshold — manual intervention needed`.
 
 ## Grading Scale
 
@@ -30,36 +61,6 @@ Run after Discovery completes (13 docs + README + INDEX + AGENTS.md + CLAUDE.md 
 - **C**: Barely useful
 - **D**: Misleading
 - **F**: Missing
-
-## What to Check Per Document
-
-- **architecture.md**: folder structure, patterns with evidence, data flow, entry points
-- **technology-stack.md**: versions from actual config (not "TBD")
-- **module-map.md**: every module with purpose AND dependencies
-- **coding-standards.md**: conventions from actual code, not generic advice
-- **data-model.md**: entities with relationships, not just entity lists
-- **api-contracts.md**: actual URLs/paths, not just class names
-- **integration-map.md**: connection details, NOT same content as module-map
-- **domain-glossary.md**: project-specific terms
-- **test-landscape.md**: which modules have real tests vs placeholders
-- **security-model.md**: project-specific assessment, not generic OWASP
-- **tech-debt.md**: severity-categorized with file locations
-- **infrastructure.md**: CI/CD flow, deployment, monitoring details
-- **open-questions.md**: specific, answerable, comprehensive
-- **AGENTS.md/CLAUDE.md**: no placeholders, real working commands
-
-## Output
-
-Write `knowledge/DISCOVERY-REVIEW.md` with summary table, detailed reviews per document, cross-cutting concerns, and spot-check verification table.
-
-Recommend: Pass (all meet minimum), Needs Improvement (some below), or Fail (any D or F).
-
-## Auto-Fix (with --grade argument)
-
-If `--grade X` provided (format: `[A-F][-+]?`, e.g. `--grade A-`):
-- Grade order: `A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F`
-- For each document below threshold: read issues, read source code, fix document, re-grade
-- Update DISCOVERY-REVIEW.md with original grades (struck through) + new grades
 
 ## Claude Code Equivalent
 

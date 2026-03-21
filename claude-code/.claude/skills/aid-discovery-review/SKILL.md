@@ -4,10 +4,11 @@ description: >
   Grade A gate for the Discovery phase. Reviews all Knowledge Base documents produced by
   aid-discover, grades each document (A+ to F), identifies gaps and inaccuracies, and
   produces a DISCOVERY-REVIEW.md report. Use after aid-discover completes to validate
-  KB quality before proceeding to the Interview phase.
+  KB quality before proceeding to the Interview phase. Idempotent — run multiple times
+  to iteratively improve KB quality.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 user-invocable: true
-argument-hint: "[--grade A-] minimum acceptable grade (format: [A-F][-+]?, default: review only)"
+argument-hint: "[--grade A-] minimum grade threshold  [--fix] auto-fix documents below threshold"
 ---
 
 # Discovery Review — Grade A Gate
@@ -17,19 +18,43 @@ inaccuracies, and shallow coverage. Produce a structured review report.
 
 **This is a quality gate.** The KB feeds every downstream phase. Bad KB = bad specs = bad code.
 
+## Arguments
+
+Two independent flags:
+
+| Flag | Effect |
+|------|--------|
+| _(none)_ | Review all documents. Grade everything. Report only. |
+| `--grade X` | Set minimum acceptable grade (format: `[A-F][-+]?`). Report highlights documents below threshold. |
+| `--fix` | Auto-fix documents below threshold. **Requires `--grade`.** |
+
+**Examples:**
+- `/aid-discovery-review` — full review, no fixes
+- `/aid-discovery-review --grade A-` — review with A- threshold, report what fails
+- `/aid-discovery-review --grade A- --fix` — review, then fix documents below A-
+- `/aid-discovery-review --fix` — ❌ Error: `--fix requires --grade`
+
+**Idempotent:** Run multiple times. Each run re-reads, re-grades, and (with `--fix`) improves.
+A document at C today might reach B after one fix run, then A- after a second.
+
 ## When to Use
 
 - After `/aid-discover` completes (all 13 documents + README + INDEX + AGENTS.md + CLAUDE.md)
 - When a human wants to validate Discovery output before proceeding
-- When re-running Discovery on updated code and need to verify improvements
+- Iteratively after manual edits to verify improvement
+- After re-running Discovery on updated code
 
 ## Inputs
 
 - `knowledge/` directory with 13 expected documents + README.md + INDEX.md
 - `AGENTS.md` and `CLAUDE.md` in project root (updated by Discovery)
 - The codebase itself (for cross-referencing claims)
+- `knowledge/DISCOVERY-REVIEW.md` if it exists (previous review — used for delta comparison)
 
 ## Pre-flight Check
+
+**Parse arguments first.** If `--fix` is present without `--grade`, print error and stop.
+If `--grade` value doesn't match `[A-F][-+]?`, print error and stop.
 
 Verify all expected files exist:
 
@@ -54,6 +79,9 @@ CLAUDE.md
 ```
 
 If any are missing, report them immediately and stop. Discovery must complete first.
+
+If `knowledge/DISCOVERY-REVIEW.md` exists from a previous run, note the previous grades
+for delta comparison in the new report.
 
 ## Review Process
 
@@ -88,7 +116,7 @@ Read `knowledge/DISCOVERY-REVIEW.md`. Verify it contains:
 - [ ] Grade for every document (13 KB docs + AGENTS.md + CLAUDE.md + INDEX.md + README.md)
 - [ ] Specific issues identified per document (not generic complaints)
 - [ ] Cross-reference evidence (verified at least some claims against actual code)
-- [ ] Overall grade and go/no-go recommendation
+- [ ] Overall grade and recommendation
 - [ ] Improvement suggestions per document graded below A
 
 Print: `[2/3] Verifying review completeness...`
@@ -97,55 +125,63 @@ If the review is missing any of the above, report the gaps.
 
 ---
 
-### Step 3: Report and Recommend
+### Step 3: Report
 
 Print: `[3/3] Review complete.`
 
 Present a summary table to the user:
 
 ```
-| Document              | Grade | Key Issues                              |
-|-----------------------|-------|-----------------------------------------|
-| architecture.md       | A     |                                         |
-| technology-stack.md   | B     | Missing framework versions              |
-| ...                   | ...   | ...                                     |
+| Document              | Grade | Previous | Key Issues                              |
+|-----------------------|-------|----------|-----------------------------------------|
+| architecture.md       | A     | —        |                                         |
+| technology-stack.md   | B     | C+       | Missing framework versions              |
+| ...                   | ...   | ...      | ...                                     |
 ```
 
-Then:
-- **If all documents meet the minimum grade**: "✅ KB passes quality gate. Ready for Interview phase."
-- **If some documents are below but none critical**: "⚠️ KB needs improvement. See DISCOVERY-REVIEW.md for details."
-- **If any document is graded D or F**: "❌ Critical failures found. Re-run targeted discovery before proceeding."
+The "Previous" column shows the grade from the last review if DISCOVERY-REVIEW.md existed
+before this run. Use "—" if no previous review or first run.
 
-If `--grade` argument was provided, proceed to Step 4 for any document below the threshold.
+**Without `--grade`:**
+- Report all grades. No pass/fail judgment. The human decides.
+
+**With `--grade`:**
+- Count documents below threshold.
+- **All at or above threshold**: "✅ KB passes quality gate at {threshold}. Ready for Interview phase."
+- **Some below, none D/F**: "⚠️ {N} documents below {threshold}. See DISCOVERY-REVIEW.md."
+- **Any D or F**: "❌ Critical failures found. Re-run targeted discovery before proceeding."
+
+**Without `--fix`:** Stop here.
+
+**With `--fix`:** Proceed to Step 4.
 
 ---
 
-### Step 4: Auto-Fix (only with --grade argument)
-
-**Parse the --grade argument.** Validate format: `[A-F][-+]?` (e.g., `A-`, `B+`, `B`, `C`).
-If invalid format, print error and stop.
+### Step 4: Auto-Fix (only with --grade AND --fix)
 
 **Grade ordering** (highest to lowest):
 `A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F`
 
-For each document graded **below** the specified threshold:
+For each document graded **below** the `--grade` threshold:
 
 1. Read the specific issues from DISCOVERY-REVIEW.md
 2. Read the relevant source code to gather missing information
-3. Edit the document to address the issues
+3. Edit the document to address the issues — be specific, add evidence (file paths, code references)
 4. Re-grade the document
 
 Print: `[Fix] Improving {document}... {old grade} → {new grade}`
 
-After all fixes, regenerate INDEX.md (summaries may have changed).
+After all fixes:
+- Regenerate INDEX.md if any document summaries changed
+- Update DISCOVERY-REVIEW.md:
+  - Original grades preserved (struck through) in a "Review History" section
+  - New grades in the main table
+  - Note: "Auto-fixed on {date} — minimum grade: {threshold}"
 
-Update DISCOVERY-REVIEW.md with:
-- Original grades preserved (struck through)
-- New grades after fixes
-- Note: "Auto-fixed on {date} — minimum grade: {threshold}"
-
-If any document still doesn't meet the threshold after auto-fix, report it:
-`⚠️ {document} improved from {old} to {new} but still below {threshold}. Manual intervention needed.`
+**Final report:**
+- For each improved document: `✅ {document}: {old} → {new}`
+- For documents still below threshold: `⚠️ {document}: {old} → {new} (still below {threshold}). Manual intervention needed.`
+- Overall: "Fixed {X}/{Y} documents. {Z} still need attention." or "All documents now meet {threshold}."
 
 ---
 
@@ -159,29 +195,31 @@ If any document still doesn't meet the threshold after auto-fix, report it:
 **Reviewed**: {date}
 **Reviewer**: discovery-reviewer (AID quality gate)
 **Overall Grade**: {grade}
+**Minimum Grade**: {threshold if --grade was set, otherwise "not set"}
 **Recommendation**: {Pass / Needs Improvement / Fail}
+**Run**: {N} (increment on each review)
 
 ## Summary
 
-| Document | Grade | Issues |
-|----------|-------|--------|
-| architecture.md | {grade} | {one-line summary or "—"} |
-| technology-stack.md | {grade} | {one-line summary or "—"} |
-| module-map.md | {grade} | {one-line summary or "—"} |
-| coding-standards.md | {grade} | {one-line summary or "—"} |
-| data-model.md | {grade} | {one-line summary or "—"} |
-| api-contracts.md | {grade} | {one-line summary or "—"} |
-| integration-map.md | {grade} | {one-line summary or "—"} |
-| domain-glossary.md | {grade} | {one-line summary or "—"} |
-| test-landscape.md | {grade} | {one-line summary or "—"} |
-| security-model.md | {grade} | {one-line summary or "—"} |
-| tech-debt.md | {grade} | {one-line summary or "—"} |
-| infrastructure.md | {grade} | {one-line summary or "—"} |
-| open-questions.md | {grade} | {one-line summary or "—"} |
-| INDEX.md | {grade} | {one-line summary or "—"} |
-| README.md | {grade} | {one-line summary or "—"} |
-| AGENTS.md | {grade} | {one-line summary or "—"} |
-| CLAUDE.md | {grade} | {one-line summary or "—"} |
+| Document | Grade | Previous | Status | Issues |
+|----------|-------|----------|--------|--------|
+| architecture.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
+| technology-stack.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
+| module-map.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
+| coding-standards.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
+| data-model.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
+| api-contracts.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
+| integration-map.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
+| domain-glossary.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
+| test-landscape.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
+| security-model.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
+| tech-debt.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
+| infrastructure.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
+| open-questions.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
+| INDEX.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
+| README.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
+| AGENTS.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
+| CLAUDE.md | {grade} | {prev or —} | {✅/⚠️/❌} | {one-line or "—"} |
 
 ## Detailed Reviews
 
@@ -213,9 +251,14 @@ If any document still doesn't meet the threshold after auto-fix, report it:
 | Claim | Document | Verified | Evidence |
 |-------|----------|----------|----------|
 | {specific claim from KB} | {doc} | ✅/❌ | {file path or reason} |
-| {specific claim from KB} | {doc} | ✅/❌ | {file path or reason} |
-| {specific claim from KB} | {doc} | ✅/❌ | {file path or reason} |
 {minimum 10 spot-checks across different documents}
+
+## Review History
+
+| Run | Date | Overall | Notes |
+|-----|------|---------|-------|
+| 1   | {date} | {grade} | Initial review |
+| 2   | {date} | {grade} | After auto-fix (threshold: A-) |
 ```
 
 ## Grading Criteria

@@ -3,8 +3,9 @@ name: aid-discovery-review
 description: >
   Grade A gate for the Discovery phase. Reviews all Knowledge Base documents produced by
   aid-discover, grades each document (A+ to F), identifies gaps and inaccuracies, and
-  produces a DISCOVERY-REVIEW.md report.
-argument-hint: "[--grade A-] minimum acceptable grade (format: [A-F][-+]?, default: review only)"
+  produces a DISCOVERY-REVIEW.md report. Idempotent — run multiple times to iteratively
+  improve KB quality.
+argument-hint: "[--grade A-] minimum grade threshold  [--fix] auto-fix documents below threshold"
 ---
 
 # Discovery Review — Grade A Gate
@@ -14,24 +15,39 @@ inaccuracies, and shallow coverage. Produce a structured review report.
 
 **This is a quality gate.** The KB feeds every downstream phase. Bad KB = bad specs = bad code.
 
-## When to Use
+## Arguments
 
-- After Discovery completes (all 13 documents + README + INDEX + AGENTS.md + CLAUDE.md)
-- When a human wants to validate Discovery output before proceeding
+| Flag | Effect |
+|------|--------|
+| _(none)_ | Review all documents. Grade everything. Report only. |
+| `--grade X` | Set minimum acceptable grade (format: `[A-F][-+]?`). Highlights failures. |
+| `--fix` | Auto-fix documents below threshold. **Requires `--grade`.** |
+
+**Examples:**
+- `/aid-discovery-review` — full review, no fixes
+- `/aid-discovery-review --grade A-` — review, report what's below A-
+- `/aid-discovery-review --grade A- --fix` — review, then fix documents below A-
+- `/aid-discovery-review --fix` — ❌ Error: `--fix requires --grade`
+
+**Idempotent:** Run multiple times. Each run re-reads, re-grades, and (with `--fix`) improves.
 
 ## Pre-flight Check
 
+Parse arguments first. `--fix` without `--grade` → error. `--grade` format must match `[A-F][-+]?`.
+
 Verify all expected files exist:
-- knowledge/ directory with 13 documents + README.md + INDEX.md
-- AGENTS.md and CLAUDE.md in project root
+- `knowledge/` directory with 13 documents + README.md + INDEX.md
+- `AGENTS.md` and `CLAUDE.md` in project root
 
 If any are missing, report and stop.
 
+If `knowledge/DISCOVERY-REVIEW.md` exists, load previous grades for delta comparison.
+
 ## Review Process
 
-### Step 1: Read All Documents
+### Step 1: Review All Documents
 
-Read every document in knowledge/, plus AGENTS.md and CLAUDE.md. For each document:
+Read every document in `knowledge/`, plus `AGENTS.md` and `CLAUDE.md`. For each document:
 
 1. **Completeness** — Does it cover what it should?
 2. **Accuracy** — Cross-reference 3-5 claims per doc against actual source code
@@ -50,12 +66,14 @@ Write `knowledge/DISCOVERY-REVIEW.md` with:
 
 **Reviewed**: {date}
 **Overall Grade**: {grade}
+**Minimum Grade**: {threshold or "not set"}
 **Recommendation**: {Pass / Needs Improvement / Fail}
+**Run**: {N}
 
 ## Summary
 
-| Document | Grade | Issues |
-|----------|-------|--------|
+| Document | Grade | Previous | Status | Issues |
+|----------|-------|----------|--------|--------|
 {one row per document}
 
 ## Detailed Reviews
@@ -80,34 +98,45 @@ Write `knowledge/DISCOVERY-REVIEW.md` with:
 | Claim | Document | Verified | Evidence |
 |-------|----------|----------|----------|
 {minimum 10 rows}
+
+## Review History
+
+| Run | Date | Overall | Notes |
+|-----|------|---------|-------|
+{one row per run}
 ```
 
 ### Step 3: Report
 
-Present summary table. Recommend:
-- **All documents meet minimum grade**: "✅ KB passes quality gate."
-- **Some below but none critical**: "⚠️ KB needs improvement."
-- **Any D or F**: "❌ Critical failures found."
+**Without `--grade`:** Report all grades. No pass/fail judgment. Human decides.
 
-### Auto-Fix (with --grade argument)
+**With `--grade`:**
+- All at or above threshold → "✅ KB passes quality gate at {threshold}."
+- Some below, none D/F → "⚠️ {N} documents below {threshold}."
+- Any D or F → "❌ Critical failures found."
 
-If `--grade` is provided (e.g. `--grade A-`), validate format: `[A-F][-+]?`.
+**Without `--fix`:** Stop here.
+**With `--fix`:** Proceed to Step 4.
+
+### Step 4: Auto-Fix (only with --grade AND --fix)
 
 Grade ordering: `A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F`
 
-For each document graded **below** the threshold:
+For each document below threshold:
 1. Read specific issues from DISCOVERY-REVIEW.md
-2. Read relevant source code to gather missing information
-3. Edit the document to address issues
-4. Re-grade the document
+2. Read relevant source code
+3. Edit document to address issues
+4. Re-grade
 
 Print: `[Fix] Improving {document}... {old grade} → {new grade}`
 
-After fixes, regenerate INDEX.md. Update DISCOVERY-REVIEW.md with original grades (struck through),
-new grades, and note: "Auto-fixed on {date} — minimum grade: {threshold}".
+After fixes: regenerate INDEX.md, update DISCOVERY-REVIEW.md with new grades
+and review history entry.
 
-If any document still doesn't meet threshold after fix:
-`⚠️ {document} improved from {old} to {new} but still below {threshold}. Manual intervention needed.`
+Final report:
+- `✅ {document}: {old} → {new}` for improved
+- `⚠️ {document}: {old} → {new} (still below {threshold})` for still failing
+- "Fixed {X}/{Y}. {Z} still need attention." or "All documents now meet {threshold}."
 
 ## Grading Scale
 
@@ -127,17 +156,17 @@ If any document still doesn't meet threshold after fix:
 
 ## Document Expectations
 
-- **architecture.md**: folder structure, patterns, module boundaries, data flow, entry points
-- **technology-stack.md**: languages/frameworks with versions from actual config files
-- **module-map.md**: every module with purpose and dependencies
-- **coding-standards.md**: naming, layout, DI, error handling from actual code
+- **architecture.md**: folder structure, patterns with evidence, data flow, entry points
+- **technology-stack.md**: versions from actual config (not "TBD")
+- **module-map.md**: every module with purpose AND dependencies
+- **coding-standards.md**: conventions from actual code, not generic advice
 - **data-model.md**: entities with relationships, not just lists
 - **api-contracts.md**: actual URLs/paths, not just class names
-- **integration-map.md**: external systems with connection details, NOT same as module-map
-- **domain-glossary.md**: project-specific terms, not generic programming vocabulary
-- **test-landscape.md**: per-module coverage, real vs placeholder tests
-- **security-model.md**: project-specific OWASP assessment, not generic checklist
-- **tech-debt.md**: categorized by severity with actionable locations
-- **infrastructure.md**: CI/CD details, deployment process, monitoring
-- **open-questions.md**: specific, answerable questions organized by area
-- **AGENTS.md/CLAUDE.md**: no remaining placeholders, real commands that work
+- **integration-map.md**: connection details, NOT same content as module-map
+- **domain-glossary.md**: project-specific terms
+- **test-landscape.md**: which modules have real tests vs placeholders
+- **security-model.md**: project-specific assessment, not generic OWASP
+- **tech-debt.md**: severity-categorized with file locations
+- **infrastructure.md**: CI/CD flow, deployment, monitoring details
+- **open-questions.md**: specific, answerable, comprehensive
+- **AGENTS.md/CLAUDE.md**: no placeholders, real working commands
