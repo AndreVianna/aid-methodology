@@ -13,7 +13,7 @@ A multi-brand e-commerce business with 3 brands, each with:
 
 ## AID Phases Applied
 
-This project demonstrates the **full lifecycle** including Track→Triage→Correct.
+This project demonstrates the **full lifecycle** including Track→Triage→Implement (bug fix path).
 
 ### Pipeline Architecture
 
@@ -49,7 +49,7 @@ Every agent report is validated before proceeding:
 
 Failed reports are regenerated (max 3 attempts). If still failing, the pipeline skips that brand's orchestration and flags it.
 
-### Track→Triage→Correct in Action
+### Track→Triage→Implement in Action
 
 **Issue discovered (Track):** Client reported revenue numbers "don't match what I see in Shopify."
 
@@ -58,7 +58,7 @@ Failed reports are regenerated (max 3 attempts). If still failing, the pipeline 
 2. **Wrong metric** — Pipeline pulled "Placed Order" (per-order) instead of "Ordered Product" (per-item, which matches client's dashboard).
 3. **Stale data** — Raw data files were cached from a previous run, not refreshed.
 
-**Correction applied:**
+**Fix applied (via Triage → Implement):**
 - All pull scripts updated to use `Australia/Sydney` timezone
 - Klaviyo metric changed to "Ordered Product" with brand-specific metric IDs
 - Raw data archived to `data/history/{date}/` for audit trail
@@ -74,5 +74,5 @@ Failed reports are regenerated (max 3 attempts). If still failing, the pipeline 
 
 1. **"Agents never calculate" is a critical rule.** All arithmetic happens in the preprocessor. Agents copy pre-computed numbers. This eliminated an entire class of errors.
 2. **Grade A validation catches LLM hallucination.** On one run, an agent wrote $8,524 instead of $44,018. Grade A caught it on source match; retry produced correct output.
-3. **Track→Triage→Correct works.** Without formal triage, the timezone bug would have been a "fix the pipeline" ticket. With triage, it became three specific corrections with clear artifacts.
+3. **Track→Triage→Implement works.** Without formal triage, the timezone bug would have been a "fix the pipeline" ticket. With triage, root cause analysis identified three specific issues with clear routing to implementation.
 4. **Attribution overlap is structural.** Klaviyo, Meta, and Google all claim credit for the same orders. Summing platform-attributed revenue = 250-290% of actual revenue. This is a presentation problem, not a data problem.

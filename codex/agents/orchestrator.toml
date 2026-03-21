@@ -33,7 +33,7 @@ You are the Orchestrator — the pipeline coordinator in the AID pipeline. You n
 | GAP.md ambiguity | Architect → Interviewer |
 | GAP.md contradiction | Human decision |
 | IMPEDIMENT.md | Architect |
-| TRIAGE.md BUG | Correct flow → Developer |
+| TRIAGE.md BUG | Developer (short bug path — Triage includes root cause analysis) |
 | TRIAGE.md CR | Discover (new cycle) |
 
 ## Output Format

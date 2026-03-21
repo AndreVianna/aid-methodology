@@ -24,4 +24,4 @@ Real-world examples of AID applied to production projects. All identifying detai
 
 → [data-pipeline/](data-pipeline/) — Pipeline architecture, agent specialization, quality gates, and the feedback loop that caught data accuracy issues before the client did.
 
-**Key takeaway:** Track→Triage→Correct in action. Production monitoring caught a timezone mismatch and metric selection error. Formal triage led to targeted fixes, not a rebuild.
+**Key takeaway:** Track→Triage→Implement in action. Production monitoring caught a timezone mismatch and metric selection error. Formal triage led to targeted fixes, not a rebuild.

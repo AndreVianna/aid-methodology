@@ -21,7 +21,7 @@ These agents form the backbone of every AID pipeline:
 | [**Researcher**](researcher/) | Investigation, KB generation, analysis | Discover, Track, any | sonnet |
 | [**Interviewer**](interviewer/) | Adaptive dialogue, requirements gathering | Interview | opus |
 | [**Architect**](architect/) | Design: specs, plans, task decomposition | Specify, Plan, Detail | opus |
-| [**Developer**](developer/) | Code implementation (only agent that writes code) | Implement, Correct | sonnet/opus |
+| [**Developer**](developer/) | Code implementation (only agent that writes code) | Implement | sonnet/opus |
 | [**Critic**](critic/) | Quality evaluation, grading (A+ to F) | Review, Test | opus |
 | [**Operator**](operator/) | Deployment, PR creation, release management | Deploy | sonnet |
 
@@ -38,8 +38,7 @@ Review      → Critic
 Test        → Critic
 Deploy      → Operator
 Track       → Researcher
-Triage      → Orchestrator (routes to Interviewer for human input)
-Correct     → Developer (guided by Architect's CORRECTION.md)
+Triage      → Orchestrator (performs root cause analysis for bugs, routes to Developer or Discover)
 ```
 
 The Orchestrator coordinates all of the above, managing transitions and routing feedback artifacts.

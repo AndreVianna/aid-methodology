@@ -95,7 +95,7 @@ The quality gate catches:
 
 ### Timezone Alignment
 
-All date boundaries use `Australia/Sydney` timezone to match the client's business day. UTC boundaries caused orders to appear on wrong calendar days — a bug discovered through Track→Triage→Correct.
+All date boundaries use `Australia/Sydney` timezone to match the client's business day. UTC boundaries caused orders to appear on wrong calendar days — a bug discovered through Track→Triage→Implement.
 
 ### Data Archival
 

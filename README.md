@@ -12,7 +12,7 @@
 
 Software development with AI is mostly talked about as a code-generation problem. Write a spec, let the agent implement it, review the output. Done. Except it's not done — not even close.
 
-AID (AI-Integrated Development) is a structured methodology that covers the **full lifecycle**: understanding an existing system, gathering requirements, writing grounded specifications, planning and detailing work, building with quality gates, shipping, and monitoring production. Twelve phases. Five groups. Eleven formal feedback loops that let any phase revise upstream artifacts when reality contradicts assumptions.
+AID (AI-Integrated Development) is a structured methodology that covers the **full lifecycle**: understanding an existing system, gathering requirements, writing grounded specifications, planning and detailing work, building with quality gates, shipping, and monitoring production. Eleven phases. Four groups. Eleven formal feedback loops that let any phase revise upstream artifacts when reality contradicts assumptions.
 
 The methodology rests on three convictions. First: you cannot write a useful spec for a system you don't understand — and 90% of enterprise work is brownfield. Second: specs are hypotheses, not contracts — implementation reveals truths that specification cannot anticipate, so you need formal revision protocols, not silent workarounds. Third: the Knowledge Base is the gravitational center — not the spec, not the code, but the accumulated, living understanding of the project that persists across phases, sprints, and team changes.
 
@@ -40,7 +40,7 @@ AID contains SDD (Spec-Driven Development). SDD is the spec→code layer. AID is
 
 | Resource | Purpose |
 |----------|---------|
-| [`skills/`](skills/README.md) | Human-readable documentation for all 12 phases |
+| [`skills/`](skills/README.md) | Human-readable documentation for all 11 phases |
 | [`agents/`](agents/README.md) | Human-readable documentation for all 13 agent roles |
 
 **Want templates for your project artifacts?**
@@ -51,7 +51,7 @@ templates/
 ├── specs/                   ← SPEC.md template
 ├── delivery-plans/          ← PLAN.md, DETAIL.md, TASK templates
 ├── feedback-artifacts/      ← GAP.md, IMPEDIMENT.md, TRIAGE.md
-└── reports/                 ← REVIEW, TEST-REPORT, TRACK-REPORT, CORRECTION
+└── reports/                 ← REVIEW, TEST-REPORT, TRACK-REPORT
 ```
 
 **Want to see it in action?**
@@ -64,39 +64,34 @@ examples/
 
 ---
 
-## The 12 Phases
+## The 11 Phases
 
-### Group 1: Problem Mapping
+### Group 1: Define
 | Phase | Skill | What It Does |
 |-------|-------|-------------|
 | 1. Discover | `aid-discover` | Analyzes an existing codebase; produces the Knowledge Base (13 documents) |
 | 2. Interview | `aid-interview` | Adaptive one-question-at-a-time requirements gathering; produces REQUIREMENTS.md |
+| 3. Specify | `aid-specify` | Transforms requirements into a grounded SPEC.md anchored in the KB |
 
-### Group 2: Planning
+### Group 2: Map
 | Phase | Skill | What It Does |
 |-------|-------|-------------|
-| 3. Specify | `aid-specify` | Transforms requirements into a grounded SPEC.md anchored in the KB |
 | 4. Plan | `aid-plan` | Defines MVP scope, modules, deliverables, test scenarios — strategy, not tactics |
 | 5. Detail | `aid-detail` | Decomposes the plan into user stories, executable tasks, and precedence order |
 
-### Group 3: Implementation
+### Group 3: Execute
 | Phase | Skill | What It Does |
 |-------|-------|-------------|
 | 6. Implement | `aid-implement` | Spawns a coding agent with full KB context; mandatory build verification |
 | 7. Review | `aid-review` | Spec-anchored code review with A+ to F grading; auto-fixes P1/P2 issues |
 | 8. Test | `aid-test` | Staging validation — E2E, integration, manual; the gate before deploy |
 
-### Group 4: Production
+### Group 4: Deliver
 | Phase | Skill | What It Does |
 |-------|-------|-------------|
 | 9. Deploy | `aid-deploy` | Final verification, PR creation, KB update, delivery summary |
 | 10. Track | `aid-track` | Interprets production telemetry — doesn't just collect, understands |
-
-### Group 5: Maintenance
-| Phase | Skill | What It Does |
-|-------|-------|-------------|
-| 11. Triage | `aid-triage` | Classifies findings as BUG, CR, Infrastructure, or No Action; routes accordingly |
-| 12. Correct | `aid-correct` | Root cause analysis, patch scope definition, hands off to Implement via CORRECTION.md |
+| 11. Triage | `aid-triage` | Classifies findings, performs root cause analysis for bugs, and routes (BUG → Implement, CR → Discover) |
 
 ---
 
@@ -112,7 +107,7 @@ Agents are **specialties**, not phases. One agent may handle multiple phases. Th
 | **Researcher** | Investigation, KB generation, analysis | Discover, Track | sonnet |
 | **Interviewer** | Adaptive dialogue, requirements gathering | Interview | opus |
 | **Architect** | Design: specs, plans, task decomposition | Specify, Plan, Detail | opus |
-| **Developer** | Code implementation (only agent that writes code) | Implement, Correct | sonnet/opus |
+| **Developer** | Code implementation (only agent that writes code) | Implement | sonnet/opus |
 | **Critic** | Quality evaluation, grading (A+ to F) | Review, Test | opus |
 | **Operator** | Deployment, PR creation, release management | Deploy | sonnet |
 
@@ -145,7 +140,7 @@ Spec-Driven Development is a good idea. AID contains it and goes further.
 | **Requirements** | Assumed to exist | Adaptive interview, one question at a time |
 | **Planning depth** | Single spec | Two-level: Plan (strategy) → Detail (tactics) |
 | **Feedback loops** | Linear: spec → code → done | 11 formal loops (8 dev + 3 post-production) |
-| **Post-delivery** | Not addressed | Track → Triage → Correct/Discover |
+| **Post-delivery** | Not addressed | Track → Triage → Implement (bugs) / Discover (CRs) |
 
 SDD says: *the spec drives development*.
 AID says: *understanding drives the spec, and the spec drives development, and production drives the next understanding.*
@@ -158,13 +153,13 @@ The pipeline is sequential by default. But real engineering isn't linear. AID de
 
 ![Feedback Loops](methodology/images/4-feedback-loops.png)
 
-Every loop produces a formal artifact (GAP.md, IMPEDIMENT.md, TRIAGE.md, or CORRECTION.md) with a revision trail. The spec evolves — but traceably. You can always answer "why did this change?" with evidence.
+Every loop produces a formal artifact (GAP.md, IMPEDIMENT.md, or TRIAGE.md) with a revision trail. The spec evolves — but traceably. You can always answer "why did this change?" with evidence.
 
 **Key loops:**
 - Any phase → Discovery (targeted KB update)
 - Implement → IMPEDIMENT.md (reality check, explicit escalation)
-- Track → Triage → Correct (short bug path: 5 phases)
-- Track → Triage → Discover (CR full cycle: 12 phases)
+- Track → Triage → Implement (short bug path: 5 phases)
+- Track → Triage → Discover (CR full cycle: 11 phases)
 
 ---
 
@@ -179,7 +174,7 @@ aid-methodology/
 │   ├── aid-methodology.md             ← Complete V3 methodology document
 │   └── images/                        ← Pipeline, comparison, feedback loop diagrams
 ├── skills/                            ← Human-readable phase documentation
-│   ├── README.md                      ← Overview of all 12 skills
+│   ├── README.md                      ← Overview of all 11 skills
 │   └── aid-{phase}/README.md          ← Rich docs per skill
 ├── agents/                            ← Human-readable agent documentation
 │   ├── README.md                      ← Overview of all 13 agents

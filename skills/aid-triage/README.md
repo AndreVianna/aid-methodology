@@ -31,11 +31,11 @@ Apply this decision tree:
 Does the code do what SPEC.md says it should?
 ├── NO → BUG
 │     The spec is right. The code is wrong.
-│     Route to aid-correct (short path).
+│     Route to aid-implement (short path).
 │
 ├── YES, but the spec doesn't cover this case → BUG (spec gap)
 │     The spec didn't specify edge case behavior.
-│     If the correct behavior is obvious → aid-correct.
+│     If the correct behavior is obvious → aid-implement.
 │     If the correct behavior needs requirements input → CR.
 │
 ├── YES, and the spec is now wrong → CHANGE REQUEST
@@ -65,8 +65,8 @@ Does the code do what SPEC.md says it should?
 
 Based on classification:
 
-**BUG → aid-correct (short path)**
-The bug enters the correction phase. Correct does root cause analysis and maps the patch. Then: Implement → Review → Test → Deploy. Five phases total. No re-specification, no re-planning.
+**BUG → aid-implement (short path)**
+Triage performs root cause analysis and documents it in TRIAGE.md. Then the bug routes directly to Implement → Review → Test → Deploy. Five phases total. No re-specification, no re-planning.
 
 **Change Request → aid-discover (new cycle)**
 The CR enters as a new project. If the system has an existing KB, discovery is targeted (update what changed). If it's a significant feature, it runs the full pipeline: Discover → Interview → Specify → Plan → Detail → Implement → Review → Test → Deploy.
@@ -77,7 +77,19 @@ Document the finding, recommended action, and escalate. Track this outside the A
 **No Action → close**
 Document the justification for closing. Reference evidence that shows the finding is benign.
 
-### Step 5: Document
+### Step 5: Root Cause Analysis (Bugs Only)
+
+For findings classified as BUG, Triage now performs root cause analysis before handing off to Implement:
+
+1. **Reproduce the path.** From the evidence, trace the execution path that leads to the bug. Which endpoint? Which module? Which function?
+2. **Identify the fault.** What specific code is wrong? Missing validation? Wrong assumption? Off-by-one? Race condition? Use `knowledge/module-map.md` and `knowledge/architecture.md` to navigate.
+3. **Understand why.** Why did this happen? Was the spec ambiguous? Was an edge case missed?
+4. **Define patch scope.** What files need to change? Keep it minimal — fix the bug, don't refactor the neighborhood.
+5. **Define test requirements.** Fix verification test (fails before, passes after), regression tests, and coverage gaps.
+
+The root cause should be one sentence: "The `PaymentService.Process()` method doesn't validate null `currency` field, which the spec says must default to USD."
+
+### Step 6: Document
 
 Generate `TRIAGE.md` using the [template](../../templates/feedback-artifacts/TRIAGE.md). Every classification must include:
 - The finding (what was detected).
@@ -85,6 +97,7 @@ Generate `TRIAGE.md` using the [template](../../templates/feedback-artifacts/TRI
 - The evidence (why this classification, not another).
 - The routing decision (where it goes next).
 - The severity assessment.
+- **For bugs:** Root cause analysis, patch scope, and test requirements.
 
 ## The Hard Calls
 
@@ -110,10 +123,10 @@ See [Triage Template](../../templates/feedback-artifacts/TRIAGE.md) for the full
 
 ## Triggers
 
-### → aid-correct (Loop 8)
-When classification is BUG, produce TRIAGE.md and hand off to `aid-correct` for root cause analysis and patch mapping.
+### → aid-implement (Short Bug Path)
+When classification is BUG, perform root cause analysis, produce TRIAGE.md (including root cause, patch scope, and test requirements), and hand off to `aid-implement` for the fix.
 
-### → aid-discover (Loop 9)
+### → aid-discover (New Cycle)
 When classification is Change Request, produce TRIAGE.md and route to `aid-discover` as a new project cycle. The CR becomes the input to discovery (or interview, for greenfield).
 
 ## Quality Checklist
@@ -128,14 +141,14 @@ When classification is Change Request, produce TRIAGE.md and route to `aid-disco
 
 ## Why This Phase Exists
 
-Not every production finding needs the same response. A bug (spec right, code wrong) takes the short path: Correct → Implement → Review → Test → Deploy — five phases. A change request (spec needs updating) takes the full cycle back through Discover. Infrastructure issues go to ops, outside AID entirely.
+Not every production finding needs the same response. A bug (spec right, code wrong) takes the short path: Triage → Implement → Review → Test → Deploy — five phases. Triage performs root cause analysis and documents it in TRIAGE.md, then routes directly to Implement. A change request (spec needs updating) takes the full cycle back through Discover. Infrastructure issues go to ops, outside AID entirely.
 
-Triage is the routing decision that prevents treating every issue the same way. Without it, teams either over-engineer bug fixes (treating them as CRs) or under-engineer change requests (treating them as quick bug fixes).
+Triage is the classification, root cause analysis, and routing decision that prevents treating every issue the same way. Without it, teams either over-engineer bug fixes (treating them as CRs) or under-engineer change requests (treating them as quick bug fixes).
 
 ## Related Phases
 
 - **Previous:** [Track](../aid-track/) — provides TRACK-REPORT.md with findings
-- **Routes to:** [Correct](../aid-correct/) for bugs, [Discover](../aid-discover/) for change requests
+- **Routes to:** [Implement](../aid-implement/) for bugs (short path), [Discover](../aid-discover/) for change requests
 
 ## See Also
 

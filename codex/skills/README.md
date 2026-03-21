@@ -1,6 +1,6 @@
 # AID Skills for Codex CLI
 
-12 phase skills in AgentSkills format. Each `SKILL.md` contains YAML frontmatter with `name`, `description`, and `metadata.short-description` fields.
+11 phase skills in AgentSkills format. Each `SKILL.md` contains YAML frontmatter with `name`, `description`, and `metadata.short-description` fields.
 
 ## Skills
 
@@ -16,8 +16,7 @@
 | `aid-test` | 8. Test | Staging validation — E2E, integration, manual |
 | `aid-deploy` | 9. Deploy | Final verification, PR, KB updates |
 | `aid-track` | 10. Track | Production telemetry interpretation |
-| `aid-triage` | 11. Triage | Classify findings → route to correct or discover |
-| `aid-correct` | 12. Correct | Root cause analysis → CORRECTION.md |
+| `aid-triage` | 11. Triage | Root cause analysis + classify findings → route to implement or discover |
 
 ## Usage
 

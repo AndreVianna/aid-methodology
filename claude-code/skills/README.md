@@ -1,6 +1,6 @@
 # AID Skills for Claude Code
 
-12 phase skills in AgentSkills format. Each `SKILL.md` contains YAML frontmatter with `name`, `description`, `allowed-tools`, `context`, and `agent` fields.
+11 phase skills in AgentSkills format. Each `SKILL.md` contains YAML frontmatter with `name`, `description`, `allowed-tools`, `context`, and `agent` fields.
 
 ## Skills
 
@@ -16,8 +16,7 @@
 | `aid-test` | 8. Test | Critic | Staging validation — E2E, integration, manual |
 | `aid-deploy` | 9. Deploy | Operator | Final verification, PR, KB updates |
 | `aid-track` | 10. Track | Researcher | Production telemetry interpretation |
-| `aid-triage` | 11. Triage | Orchestrator | Classify findings → route to correct or discover |
-| `aid-correct` | 12. Correct | Developer | Root cause analysis → CORRECTION.md |
+| `aid-triage` | 11. Triage | Orchestrator | Root cause analysis + classify findings → route to implement or discover |
 
 ## Usage
 

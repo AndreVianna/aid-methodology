@@ -10,7 +10,7 @@ cp -r path/to/aid-methodology/codex/.  .agents/
 ```
 
 This gives you:
-- `skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (12 skills)
+- `skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (11 skills)
 - `agents/{name}.toml` — Agent definitions in Codex TOML format (13 agents)
 
 ## Agents
@@ -40,7 +40,7 @@ This gives you:
 
 ## Skills
 
-12 phase skills, one per AID phase. See [`skills/README.md`](skills/README.md) for the full list.
+11 phase skills, one per AID phase. See [`skills/README.md`](skills/README.md) for the full list.
 
 ## Usage
 

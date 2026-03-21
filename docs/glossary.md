@@ -6,11 +6,11 @@ Terms and concepts used throughout the AID methodology.
 
 ## Core Concepts
 
-**AID (AI-Integrated Development):** A structured methodology for building and maintaining software with AI agents. 12 phases, 5 groups, 11 feedback loops. Human and AI co-execute every phase.
+**AID (AI-Integrated Development):** A structured methodology for building and maintaining software with AI agents. 11 phases, 4 groups, 11 feedback loops. Human and AI co-execute every phase.
 
 **Knowledge Base (KB):** Up to 13 markdown documents that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases.
 
-**Feedback Loop:** A formal pathway for a downstream phase to revise upstream artifacts. Produces an artifact (GAP.md, IMPEDIMENT.md, TRIAGE.md, or CORRECTION.md) with a revision trail.
+**Feedback Loop:** A formal pathway for a downstream phase to revise upstream artifacts. Produces an artifact (GAP.md, IMPEDIMENT.md, or TRIAGE.md) with a revision trail.
 
 **Phase Gate:** A human decision point between phases. The human reviews the phase output and approves advancement. "OK?" is the gate.
 
@@ -22,18 +22,17 @@ Terms and concepts used throughout the AID methodology.
 
 | Phase | Group | Produces |
 |-------|-------|----------|
-| **Discover** | Problem Mapping | Knowledge Base (13 documents) |
-| **Interview** | Problem Mapping | REQUIREMENTS.md |
-| **Specify** | Planning | SPEC.md |
-| **Plan** | Planning | PLAN.md (strategy: MVP, modules, deliverables) |
-| **Detail** | Planning | DETAIL.md (tactics: stories, tasks, precedence) |
-| **Implement** | Implementation | Code + tests |
-| **Review** | Implementation | REVIEW.md (grade A+ to F) |
-| **Test** | Implementation | TEST-REPORT.md |
-| **Deploy** | Production | Delivery summary, KB update, PR |
-| **Track** | Production | TRACK-REPORT.md |
-| **Triage** | Maintenance | TRIAGE.md (BUG / CR / Infrastructure / No Action) |
-| **Correct** | Maintenance | CORRECTION.md → routes to Implement |
+| **Discover** | Define | Knowledge Base (13 documents) |
+| **Interview** | Define | REQUIREMENTS.md |
+| **Specify** | Define | SPEC.md |
+| **Plan** | Map | PLAN.md (strategy: MVP, modules, deliverables) |
+| **Detail** | Map | DETAIL.md (tactics: stories, tasks, precedence) |
+| **Implement** | Execute | Code + tests |
+| **Review** | Execute | REVIEW.md (grade A+ to F) |
+| **Test** | Execute | TEST-REPORT.md |
+| **Deploy** | Deliver | Delivery summary, KB update, PR |
+| **Track** | Deliver | TRACK-REPORT.md |
+| **Triage** | Deliver | TRIAGE.md (BUG → Implement / CR → Discover / Infrastructure / No Action) |
 
 ---
 
@@ -45,9 +44,9 @@ Terms and concepts used throughout the AID methodology.
 
 **IMPEDIMENT.md:** Filed when implementation discovers the plan or spec is wrong. Contains: what was assumed, what's true, proposed revision, and impact assessment.
 
-**TRIAGE.md:** Filed when production monitoring identifies an issue. Classifies as BUG (short path → Correct), CR (full cycle → Discover), Infrastructure (ops team), or No Action (monitor only).
+**TRIAGE.md:** Filed when production monitoring identifies an issue. Classifies as BUG (short path → Implement), CR (full cycle → Discover), Infrastructure (ops team), or No Action (monitor only). For bugs, includes root cause analysis, patch scope, and test requirements.
 
-**CORRECTION.md:** Root cause analysis and patch scope for a triaged bug. Defines the minimal fix, test requirements, and affected areas.
+**CORRECTION.md (Deprecated):** Formerly produced by the Correct phase for root cause analysis. Root cause analysis is now part of Triage and documented directly in TRIAGE.md.
 
 **Grading (A+ to F):** The review phase's quality scale. A+ (exemplary) through F (doesn't build). Evaluates spec compliance, architecture adherence, and convention conformance. Domain-specific quality checks (e.g., data accuracy thresholds) are defined per project in the SPEC.md.
 
@@ -57,11 +56,10 @@ Terms and concepts used throughout the AID methodology.
 
 | Group | Phases | Focus |
 |-------|--------|-------|
-| **Problem Mapping** | Discover, Interview | Understanding the system and gathering requirements |
-| **Planning** | Specify, Plan, Detail | From requirements to executable task list |
-| **Implementation** | Implement, Review, Test | Build, verify, validate |
-| **Production** | Deploy, Track | Ship and monitor |
-| **Maintenance** | Triage, Correct | Classify issues and fix bugs |
+| **Define** | Discover, Interview, Specify | Define the problem before touching code |
+| **Map** | Plan, Detail | From requirements to executable task list |
+| **Execute** | Implement, Review, Test | Build, verify, validate |
+| **Deliver** | Deploy, Track, Triage | Ship, monitor, and route what breaks |
 
 ---
 

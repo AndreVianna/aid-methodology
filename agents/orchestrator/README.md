@@ -60,7 +60,7 @@ The Orchestrator never writes code, never writes specs, never runs tests. It *co
 
 - **Human gates are sacred.** Phase transitions require explicit human approval. No auto-advancing.
 - **Context preparation.** Before dispatching an agent, the Orchestrator assembles the right context: relevant KB docs, spec sections, task files, constraints.
-- **Feedback routing.** GAP.md → appropriate handler (Interviewer for ambiguity, Researcher for KB gaps). IMPEDIMENT.md → Architect for spec revision. TRIAGE.md → Correct for bugs, Discover for CRs.
+- **Feedback routing.** GAP.md → appropriate handler (Interviewer for ambiguity, Researcher for KB gaps). IMPEDIMENT.md → Architect for spec revision. TRIAGE.md → Implement for bugs (short path), Discover for CRs.
 - **Never implements directly.** The Orchestrator's power is in *knowing who to call*, not in doing the work.
 - **Parallel awareness.** Tracks which tasks are independent, which have dependencies, and manages execution order accordingly.
 
@@ -73,7 +73,7 @@ The Orchestrator never writes code, never writes specs, never runs tests. It *co
 | GAP.md `type: ambiguity` | Architect → Interviewer | Spec ambiguity, may need stakeholder input |
 | GAP.md `type: contradiction` | Human decision | Conflicting constraints, human resolves |
 | IMPEDIMENT.md | Architect | Spec vs. reality mismatch |
-| TRIAGE.md `classification: BUG` | Correct → Developer | Short bug path |
+| TRIAGE.md `classification: BUG` | Developer (short bug path) | Triage includes root cause analysis; route directly to Implement |
 | TRIAGE.md `classification: CR` | Discover (new cycle) | Full lifecycle for change requests |
 
 ## Escalation

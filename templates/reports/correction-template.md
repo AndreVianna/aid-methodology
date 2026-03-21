@@ -1,5 +1,7 @@
 # Correction — {Bug ID or Title}
 
+> **Deprecated:** The Correct phase has been merged into Triage. Root cause analysis, patch scope, and test requirements are now documented directly in TRIAGE.md. This template is retained for reference only.
+
 ## Source
 **Triage:** {reference to TRIAGE.md}
 **Bug:** {one-line summary of the bug}

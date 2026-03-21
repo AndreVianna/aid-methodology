@@ -35,7 +35,7 @@ These are produced when a phase discovers that upstream assumptions were wrong. 
 → [reports/review-template.md](reports/review-template.md) — Code review report with grading
 → [reports/test-report-template.md](reports/test-report-template.md) — Staging/E2E test validation report
 → [reports/track-report-template.md](reports/track-report-template.md) — Production monitoring report
-→ [reports/correction-template.md](reports/correction-template.md) — Bug fix scope and root cause analysis
+→ [reports/correction-template.md](reports/correction-template.md) — *(Deprecated)* Bug fix scope and root cause analysis — now included in TRIAGE.md
 
 ---
 

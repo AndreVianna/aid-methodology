@@ -8,17 +8,16 @@
 
 ## Executive Summary
 
-AID (AI-Integrated Development) is a structured methodology for building and maintaining software with AI agents. It defines twelve sequential phases organized into five groups — from problem mapping through production monitoring and maintenance — with formal feedback loops that allow any phase to revise upstream artifacts when reality contradicts assumptions.
+AID (AI-Integrated Development) is a structured methodology for building and maintaining software with AI agents. It defines eleven sequential phases organized into four groups — from problem mapping through production monitoring and issue routing — with formal feedback loops that allow any phase to revise upstream artifacts when reality contradicts assumptions.
 
 Each phase is **co-executed by human and AI**. The AI is the Iron Man suit — it amplifies the human's capabilities. The human is the pilot — setting direction, making decisions, approving advancement between phases. The human never leaves the cockpit. This is not "AI executes, human validates." It is "human and AI work together, human drives."
 
 The methodology covers the full lifecycle:
 
-- **Problem Mapping** (2 phases): Understand the system and gather requirements.
-- **Planning** (3 phases): Specify, plan the roadmap, detail the execution.
-- **Implementation** (3 phases): Build, review, and test.
-- **Production** (2 phases): Deploy and monitor.
-- **Maintenance** (2 phases): Classify issues and fix bugs.
+- **Define** (3 phases): Understand the system, gather requirements, and formalize the problem statement.
+- **Map** (2 phases): Plan the roadmap and detail the execution.
+- **Execute** (3 phases): Build, review, and test.
+- **Deliver** (3 phases): Deploy, monitor, and classify issues.
 
 Bugs take a short path back through implementation. Change requests start a new development cycle. Nothing falls on the floor.
 
@@ -36,7 +35,7 @@ This document defines the complete methodology: philosophy, phases, artifacts, f
 
 1. [Philosophy](#1-philosophy)
 2. [The Knowledge Base](#2-the-knowledge-base)
-3. [The Twelve Phases](#3-the-twelve-phases)
+3. [The Eleven Phases](#3-the-eleven-phases)
 4. [Feedback Loops](#4-feedback-loops)
 5. [Artifacts Reference](#5-artifacts-reference)
 6. [The Pipeline](#6-the-pipeline)
@@ -196,18 +195,18 @@ The Knowledge Base is institutional memory. It outlives any individual session, 
 
 ---
 
-## 3. The Twelve Phases
+## 3. The Eleven Phases
 
-AID organizes twelve phases into five groups. The pipeline is linear with feedback loops. Post-production phases monitor and route issues back into development through one of two paths:
+AID organizes eleven phases into four groups. The pipeline is linear with feedback loops. Post-production phases monitor and route issues back into development through one of two paths:
 
-- **Bug path (short):** Track → Triage → Correct → Implement → Review → Test → Deploy. Surgical. No re-specification, no re-planning. The correction maps the fix; the existing pipeline executes it.
+- **Bug path (short):** Track → Triage → Implement → Review → Test → Deploy. Surgical. No re-specification, no re-planning. Triage maps the root cause; the existing pipeline executes the fix.
 - **Change Request path (full cycle):** Track → Triage → Discover. The CR enters as a new project, running the complete pipeline from the beginning.
 
 ---
 
-### Group 1: Problem Mapping
+### Group 1: Define
 
-*Understand the system and gather requirements.*
+*Understand the system, gather requirements, and formalize the problem statement.*
 
 ---
 
@@ -262,14 +261,6 @@ The interview is driven by a **knowledge model** — a structured map of what a 
 
 **Feedback to Discovery:** If an answer reveals the KB is wrong or incomplete, the interview pauses, triggers targeted discovery, then resumes with corrected understanding.
 
----
-
-### Group 2: Planning
-
-*From requirements to execution-ready tasks.*
-
----
-
 #### Phase 3: Specify (`aid-specify`)
 
 **Purpose:** Transform requirements into a formal specification grounded in the Knowledge Base.
@@ -289,6 +280,14 @@ The interview is driven by a **knowledge model** — a structured map of what a 
 **Output:** `SPEC.md` — Vision, Constraints, Architecture, Domain Model, Non-Functional Requirements. Every architectural decision references the KB.
 
 **Feedback to Discovery:** If writing the spec exposes insufficient understanding, generate a `GAP.md` and trigger targeted discovery.
+
+---
+
+### Group 2: Map
+
+*Define the roadmap and decompose into executable tasks.*
+
+---
 
 #### Phase 4: Plan (`aid-plan`)
 
@@ -339,7 +338,7 @@ The interview is driven by a **knowledge model** — a structured map of what a 
 
 ---
 
-### Group 3: Implementation
+### Group 3: Execute
 
 *Build, review, and test the code.*
 
@@ -416,9 +415,9 @@ The interview is driven by a **knowledge model** — a structured map of what a 
 
 ---
 
-### Group 4: Production
+### Group 4: Deliver
 
-*Ship and monitor.*
+*Ship, monitor, and classify issues.*
 
 ---
 
@@ -461,46 +460,25 @@ The interview is driven by a **knowledge model** — a structured map of what a 
 
 **When to trigger:** On deployment, on schedule, on alert threshold, or on-demand.
 
----
-
-### Group 5: Maintenance
-
-*Classify issues and fix bugs.*
-
----
-
 #### Phase 11: Triage (`aid-triage`)
 
-**Purpose:** Classify what Track found. Route it to the right path.
+**Purpose:** Classify what Track found. For bugs: perform root cause analysis and map the fix. Route everything to the right path.
 
 **Input:** `TRACK-REPORT.md` + `knowledge/` + `SPEC.md`.
 
 **Classification:**
-- **BUG** — Code doesn't match spec. Route to aid-correct (short path).
+- **BUG** — Code doesn't match spec. Perform root cause analysis, then route to aid-implement (short path).
 - **Change Request** — Spec is wrong or incomplete. Route to aid-discover (new cycle).
 - **Infrastructure** — Not a code issue. Escalate to ops.
 - **No Action** — False positive, expected behavior, or below threshold.
 
 **The hard call:** Bug vs. CR. If the spec said "do X" and the code doesn't do X — bug. If users now need Y instead of X — CR, even if the code "works."
 
-**Output:** `TRIAGE.md` — classification, evidence, severity, routing decision.
+**For bugs:** Triage performs root cause analysis — trace from symptom to cause using the KB, assess impact, define minimal patch scope. The root cause analysis, patch scope, and test requirements are documented directly in TRIAGE.md. The short path skips Define, Map, and the rest of Execute because the spec is already correct.
 
-#### Phase 12: Correct (`aid-correct`)
+**The short path:** Triage → Implement → Review → Test → Deploy. Five phases, not eleven.
 
-**Purpose:** Map the fix for a bug. Root cause analysis, patch scope, handoff to implementation.
-
-**Input:** `TRIAGE.md` (classified as BUG) + `knowledge/` + `SPEC.md`.
-
-**Process:**
-1. **Root cause analysis** — Trace from symptom to cause using the KB.
-2. **Impact mapping** — What else does this affect? Check module consumers, test coverage.
-3. **Patch scope** — Define exactly what changes. Minimal surface area.
-4. **Regression check** — What existing tests should catch this?
-5. **Generate CORRECTION.md** — A surgical task spec for aid-implement.
-
-**The short path:** Correct → Implement → Review → Test → Deploy. Five phases, not twelve. The correction skips problem mapping, planning, and detail because the spec is already correct — the code just doesn't match it.
-
-**Output:** `CORRECTION.md` — root cause, files to touch, patch scope, test requirements.
+**Output:** `TRIAGE.md` — classification, evidence, severity, routing decision. For bugs: also includes root cause analysis, patch scope, and test requirements.
 
 ---
 
@@ -566,13 +544,13 @@ The pipeline is sequential by default. But real engineering isn't linear. Assump
 
 **Trigger:** Track identifies an anomaly above the severity threshold.
 
-**Protocol:** Track produces TRACK-REPORT.md → Triage classifies each finding → routes to Correct (bug) or Discover (CR).
+**Protocol:** Track produces TRACK-REPORT.md → Triage classifies each finding → routes to Implement (bug) or Discover (CR).
 
-#### Loop 10: Triage → Correct → Implement
+#### Loop 10: Triage → Implement
 
 **Trigger:** Triage classifies a finding as BUG.
 
-**Protocol:** Triage produces TRIAGE.md → Correct does root cause analysis → CORRECTION.md → Implement → Review → Test → Deploy. The short path.
+**Protocol:** Triage performs root cause analysis (documented in TRIAGE.md) → Implement → Review → Test → Deploy. The short path.
 
 #### Loop 11: Triage → Discover (New Cycle)
 
@@ -631,7 +609,7 @@ Every change to an upstream artifact is tracked at the bottom of the artifact:
 | `knowledge/` (KB) | Discover | All phases | Living — updated throughout project |
 | `knowledge/INDEX.md` | Discover | Implement, Review | Regenerated on every discovery run |
 | `REQUIREMENTS.md` | Interview | Specify | Frozen after verification (rev-tracked) |
-| `SPEC.md` | Specify | Plan, Detail, Implement, Review, Test, Triage, Correct | Living — rev-tracked |
+| `SPEC.md` | Specify | Plan, Detail, Implement, Review, Test, Triage | Living — rev-tracked |
 | `PLAN.md` | Plan | Detail | Living — rev-tracked |
 | `DETAIL.md` | Detail | Implement, Review | Updated at completion |
 | `TASK-{id}.md` | Detail | Implement, Review | Rev-tracked if amended |
@@ -640,8 +618,7 @@ Every change to an upstream artifact is tracked at the bottom of the artifact:
 | `GAP.md` | Specify, Plan, Detail, Review | Discovery, Specify | Closed when resolved |
 | `IMPEDIMENT.md` | Implement | Plan, Specify, Discovery | Closed when resolved |
 | `TRACK-REPORT.md` | Track | Triage | Per tracking cycle |
-| `TRIAGE.md` | Triage | Correct, Discover (new cycle) | Closed when routed |
-| `CORRECTION.md` | Correct | Implement | Closed when fix is deployed |
+| `TRIAGE.md` | Triage | Implement (bugs), Discover (CRs) | Closed when routed |
 
 ### REQUIREMENTS.md Template
 
@@ -924,13 +901,15 @@ Ship to Test | Rework (minor) | Rework (major) | Re-implement
 {Why this classification. Reference SPEC.md for expected behavior.}
 
 ## Routing
-- **BUG →** aid-correct (short path: correct → implement → review → test → deploy)
+- **BUG →** aid-implement (short path: implement → review → test → deploy)
 - **CR →** aid-discover (new cycle)
 - **Infrastructure →** ops escalation
 - **No Action →** closed with justification
 ```
 
-### CORRECTION.md Template
+### CORRECTION.md Template (Deprecated)
+
+> **Note:** The Correct phase has been merged into Triage. Root cause analysis, patch scope, and test requirements are now documented directly in TRIAGE.md. This template is retained for reference only.
 
 ```markdown
 # Correction — {Bug ID or Title}
@@ -1023,28 +1002,23 @@ Ship to Test | Rework (minor) | Rework (major) | Re-implement
    │            │      → TRACK-REPORT.md
    └────────────┤─────────┤
                 │         │
-   ┌─ MAINTENANCE ────────┤
-   │            │         ▼
-   │            │     aid-triage
-   │            │      → TRIAGE.md
-   │            │         │
-   │            │    ┌────┴─────┐
-   │            │    │          │
-   │            │ BUG ↓      CR ↓
-   │            │    │          │
-   │            │    ▼          └──→ aid-discover (new cycle)
-   │            │ aid-correct
-   │            │  → CORRECTION.md
-   │            │    │
-   │            └────┘ (back to aid-implement)
-   └────────────────────
+                │         ▼
+                │     aid-triage
+                │      → TRIAGE.md (includes root cause analysis for bugs)
+                │         │
+                │    ┌────┴─────┐
+                │    │          │
+                │ BUG ↓      CR ↓
+                │    │          │
+                └────┘          └──→ aid-discover (new cycle)
+   (back to aid-implement)
 
  ─── ANY PHASE ──→ aid-discover (targeted) ──→ knowledge/* ──→ resume
 ```
 
 ### The Two Post-Production Paths
 
-**Bug path (short):** Track → Triage → Correct → Implement → Review → Test → Deploy. Five phases to fix, not twelve. Correct maps the fix surgically — root cause, files to touch, tests to add — and hands it to Implement as a task. No re-specification, no re-planning.
+**Bug path (short):** Track → Triage → Implement → Review → Test → Deploy. Four phases to fix, not eleven. Triage maps the root cause — diagnosis, files to touch, tests to add — and hands it to Implement as a task. No re-specification, no re-planning.
 
 **Change Request path (full):** Track → Triage → Discover. The CR enters the development pipeline as a new project. It gets its own requirements, its own spec, its own plan. The full pipeline ensures that changes are understood before they're built.
 
@@ -1058,7 +1032,7 @@ Ship to Test | Rework (minor) | Rework (major) | Re-implement
 6. **Brownfield starts at Discover** with full KB populated from code.
 7. **Each phase produces persistent artifacts.** Each artifact has a revision history.
 8. **The KB outlives the project.** It's institutional memory for future work.
-9. **Bugs take the short path.** Correct → Implement → Review → Test → Deploy. No re-specification.
+9. **Bugs take the short path.** Implement → Review → Test → Deploy. No re-specification.
 10. **CRs take the full path.** Triage routes to Discover. New cycle, new spec, new plan.
 11. **Track runs continuously.** It monitors production on schedule or on deployment.
 12. **Detail feeds Implement.** Plan feeds Detail. Strategy flows down; tactics flow up when strategy is insufficient.
@@ -1141,7 +1115,7 @@ Both AID and SDD:
 | **Agent model** | One agent per spec | Multi-agent orchestration with specialists |
 | **Delivery model** | Spec → code → done | Spec → plan → detail → implement → review → test → deploy |
 | **Memory** | Stateless | Knowledge Base persists across sessions |
-| **Post-delivery** | Not addressed | Track → Triage → Correct/Discover |
+| **Post-delivery** | Not addressed | Track → Triage → Implement/Discover |
 | **Scope** | Code generation | Full lifecycle: discovery through production maintenance |
 | **Human role** | Spec writer, reviewer | Co-pilot across all phases |
 
@@ -1180,7 +1154,7 @@ SDD is not wrong. It's incomplete. AID is SDD + Discovery + Feedback Loops + Two
 
 ### Adopting Incrementally
 
-You don't need to use all twelve phases from day one:
+You don't need to use all eleven phases from day one:
 
 - **Start with Detail + Implement.** If you already have specs, just formalize your task decomposition and agent execution.
 - **Add Review.** Introduce the grading system and spec-anchored review.
@@ -1188,8 +1162,7 @@ You don't need to use all twelve phases from day one:
 - **Add Plan.** Separate strategy from tactics with two-level planning.
 - **Add Discover.** For the next brownfield project, run Discovery first.
 - **Add Interview.** For the next client project, use the adaptive interview.
-- **Add Track + Triage.** Once you're shipping, add production monitoring and issue classification.
-- **Add Correct.** Close the bug loop — root cause analysis feeding back to implementation.
+- **Add Track + Triage.** Once you're shipping, add production monitoring and issue classification. Triage closes the bug loop — root cause analysis routing directly back to implementation.
 - **Go full pipeline.** Once each phase is familiar, run them sequentially with feedback loops.
 
 ### Anti-Patterns

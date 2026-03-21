@@ -167,7 +167,7 @@ The mandatory build verification and formal impediment protocol ensure that impl
 
 - **Previous:** [Detail](../aid-detail/) — provides TASK files
 - **Next:** [Review](../aid-review/) — evaluates implementation quality
-- **Also from:** [Correct](../aid-correct/) — provides CORRECTION.md for bug fixes
+- **Also from:** [Triage](../aid-triage/) — provides TRIAGE.md with root cause analysis for bug fixes
 
 ## See Also
 
