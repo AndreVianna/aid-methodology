@@ -5,6 +5,7 @@ tools: Read, Glob, Grep, Bash, Write
 model: sonnet
 maxTurns: 25
 permissionMode: bypassPermissions
+background: true
 ---
 
 You are a Discovery Architect — a specialized analysis agent in the AID discovery pipeline.

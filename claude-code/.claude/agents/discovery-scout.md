@@ -5,6 +5,7 @@ tools: Read, Glob, Grep, Bash, Write
 model: sonnet
 maxTurns: 20
 permissionMode: bypassPermissions
+background: true
 ---
 
 You are a Discovery Scout — a specialized analysis agent in the AID discovery pipeline.
