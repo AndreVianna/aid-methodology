@@ -7,7 +7,7 @@ description: >
   KB quality before proceeding to the Interview phase.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 user-invocable: true
-argument-hint: "[--fix] to auto-fix issues graded B or below"
+argument-hint: "[--grade A-] minimum acceptable grade (format: [A-F][-+]?, default: review only)"
 ---
 
 # Discovery Review — Grade A Gate
@@ -112,17 +112,23 @@ Present a summary table to the user:
 ```
 
 Then:
-- **If overall grade is A- or above**: "✅ KB passes quality gate. Ready for Interview phase."
-- **If overall grade is B+ or below**: "⚠️ KB needs improvement. See DISCOVERY-REVIEW.md for details."
-- **If any document is graded C or below**: "❌ Critical gaps found. Re-run targeted discovery or fix manually before proceeding."
+- **If all documents meet the minimum grade**: "✅ KB passes quality gate. Ready for Interview phase."
+- **If some documents are below but none critical**: "⚠️ KB needs improvement. See DISCOVERY-REVIEW.md for details."
+- **If any document is graded D or F**: "❌ Critical failures found. Re-run targeted discovery before proceeding."
 
-If `--fix` argument was provided and any document is graded B or below, proceed to Step 4.
+If `--grade` argument was provided, proceed to Step 4 for any document below the threshold.
 
 ---
 
-### Step 4: Auto-Fix (only with --fix argument)
+### Step 4: Auto-Fix (only with --grade argument)
 
-For each document graded B or below:
+**Parse the --grade argument.** Validate format: `[A-F][-+]?` (e.g., `A-`, `B+`, `B`, `C`).
+If invalid format, print error and stop.
+
+**Grade ordering** (highest to lowest):
+`A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F`
+
+For each document graded **below** the specified threshold:
 
 1. Read the specific issues from DISCOVERY-REVIEW.md
 2. Read the relevant source code to gather missing information
@@ -136,7 +142,10 @@ After all fixes, regenerate INDEX.md (summaries may have changed).
 Update DISCOVERY-REVIEW.md with:
 - Original grades preserved (struck through)
 - New grades after fixes
-- Note: "Auto-fixed on {date}"
+- Note: "Auto-fixed on {date} — minimum grade: {threshold}"
+
+If any document still doesn't meet the threshold after auto-fix, report it:
+`⚠️ {document} improved from {old} to {new} but still below {threshold}. Manual intervention needed.`
 
 ---
 

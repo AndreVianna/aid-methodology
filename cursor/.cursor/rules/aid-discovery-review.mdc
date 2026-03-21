@@ -52,7 +52,14 @@ Run after Discovery completes (13 docs + README + INDEX + AGENTS.md + CLAUDE.md 
 
 Write `knowledge/DISCOVERY-REVIEW.md` with summary table, detailed reviews per document, cross-cutting concerns, and spot-check verification table.
 
-Recommend: Pass (A-+), Needs Improvement (B+), or Fail (any C or below).
+Recommend: Pass (all meet minimum), Needs Improvement (some below), or Fail (any D or F).
+
+## Auto-Fix (with --grade argument)
+
+If `--grade X` provided (format: `[A-F][-+]?`, e.g. `--grade A-`):
+- Grade order: `A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F`
+- For each document below threshold: read issues, read source code, fix document, re-grade
+- Update DISCOVERY-REVIEW.md with original grades (struck through) + new grades
 
 ## Claude Code Equivalent
 

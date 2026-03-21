@@ -4,6 +4,7 @@ description: >
   Grade A gate for the Discovery phase. Reviews all Knowledge Base documents produced by
   aid-discover, grades each document (A+ to F), identifies gaps and inaccuracies, and
   produces a DISCOVERY-REVIEW.md report.
+argument-hint: "[--grade A-] minimum acceptable grade (format: [A-F][-+]?, default: review only)"
 ---
 
 # Discovery Review — Grade A Gate
@@ -84,9 +85,29 @@ Write `knowledge/DISCOVERY-REVIEW.md` with:
 ### Step 3: Report
 
 Present summary table. Recommend:
-- **A- or above**: "✅ KB passes quality gate."
-- **B+ or below**: "⚠️ KB needs improvement."
-- **Any C or below**: "❌ Critical gaps found."
+- **All documents meet minimum grade**: "✅ KB passes quality gate."
+- **Some below but none critical**: "⚠️ KB needs improvement."
+- **Any D or F**: "❌ Critical failures found."
+
+### Auto-Fix (with --grade argument)
+
+If `--grade` is provided (e.g. `--grade A-`), validate format: `[A-F][-+]?`.
+
+Grade ordering: `A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F`
+
+For each document graded **below** the threshold:
+1. Read specific issues from DISCOVERY-REVIEW.md
+2. Read relevant source code to gather missing information
+3. Edit the document to address issues
+4. Re-grade the document
+
+Print: `[Fix] Improving {document}... {old grade} → {new grade}`
+
+After fixes, regenerate INDEX.md. Update DISCOVERY-REVIEW.md with original grades (struck through),
+new grades, and note: "Auto-fixed on {date} — minimum grade: {threshold}".
+
+If any document still doesn't meet threshold after fix:
+`⚠️ {document} improved from {old} to {new} but still below {threshold}. Manual intervention needed.`
 
 ## Grading Scale
 
