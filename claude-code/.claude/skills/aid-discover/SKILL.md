@@ -83,6 +83,20 @@ Regenerate INDEX.md on every discovery run (full or targeted).
 
 `knowledge/` directory with up to 13 documents plus README.md index and INDEX.md context map: architecture, module-map, technology-stack, coding-standards, data-model, api-contracts, integration-map, domain-glossary, test-landscape, security-model, tech-debt, infrastructure, open-questions.
 
+### 13. Update Project Config Files
+
+Scan the project root for `AGENTS.md` and `CLAUDE.md`. Replace any `<!-- AID:DISCOVER ... -->` placeholders with real data from the analysis:
+
+- **Project Overview** — project name, purpose, tech stack, target platform
+- **Build & Test** — actual build, test, and lint commands (from build scripts, CI config, package manager)
+- **Code Conventions** — key naming patterns, formatting rules, idioms found in code
+- **Architecture** — high-level summary (layers, modules, entry points)
+- **Project description** (CLAUDE.md) — project name and one-line description
+
+Keep the `<!-- AID:DISCOVER ... -->` comment above each section so future re-discoveries can update them.
+Replace only the `(pending discovery)` placeholder lines with real content.
+If a field cannot be determined, leave it as `(not found — check open-questions.md)`.
+
 ## Quality Checklist
 
 - [ ] No overlap between KB documents
@@ -91,3 +105,4 @@ Regenerate INDEX.md on every discovery run (full or targeted).
 - [ ] open-questions.md captures everything needing human input
 - [ ] README.md reflects completeness status
 - [ ] INDEX.md generated with 2-3 line summaries of every KB document
+- [ ] AGENTS.md and CLAUDE.md placeholders filled with discovered data
