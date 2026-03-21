@@ -4,7 +4,7 @@ description: Analyzes codebase structure, architectural patterns, and technology
 tools: Read, Glob, Grep, Bash, Write
 model: sonnet
 maxTurns: 25
-permissionMode: acceptEdits
+permissionMode: bypassPermissions
 background: true
 ---
 

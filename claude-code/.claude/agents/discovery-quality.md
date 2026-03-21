@@ -4,7 +4,7 @@ description: Assesses test coverage and frameworks, evaluates security patterns,
 tools: Read, Glob, Grep, Bash, Write
 model: sonnet
 maxTurns: 25
-permissionMode: acceptEdits
+permissionMode: bypassPermissions
 background: true
 ---
 
