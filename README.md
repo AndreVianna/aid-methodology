@@ -32,8 +32,9 @@ AID contains SDD (Spec-Driven Development). SDD is the spec→code layer. AID is
 
 | Tool | Setup | Format |
 |------|-------|--------|
-| **Claude Code** | Copy `claude-code/` → `.claude/` | [Setup guide](claude-code/README.md) |
-| **OpenAI Codex CLI** | Copy `codex/` → `.agents/` | [Setup guide](codex/README.md) |
+| **Claude Code** | Run `setup.sh` or copy `claude-code/.claude/` → `.claude/` | [Setup guide](claude-code/README.md) |
+| **OpenAI Codex CLI** | Run `setup.sh` or copy `codex/.codex/` → `.codex/` | [Setup guide](codex/README.md) |
+| **Cursor** | Run `setup.sh` or copy `cursor/.cursor/` → `.cursor/` | [Setup guide](cursor/README.md) |
 | **Other agents** | Use `skills/` READMEs as reference | Load as system context |
 
 **Want to understand the skills and agents?**
@@ -179,14 +180,24 @@ aid-methodology/
 ├── agents/                            ← Human-readable agent documentation
 │   ├── README.md                      ← Overview of all 13 agents
 │   └── {agent}/README.md             ← Rich docs per agent specialty
-├── claude-code/                       ← Claude Code native format
-│   ├── README.md                      ← Setup: copy to .claude/
-│   ├── skills/aid-{phase}/SKILL.md    ← LLM-optimized AgentSkills format
-│   └── agents/{agent}.md              ← Claude Code agent definitions
-├── codex/                             ← OpenAI Codex native format
-│   ├── README.md                      ← Setup: copy to .agents/
-│   ├── skills/aid-{phase}/SKILL.md    ← LLM-optimized AgentSkills format
-│   └── agents/{agent}.toml            ← Codex agent definitions (TOML)
+├── claude-code/                            ← Claude Code native format
+│   ├── README.md                           ← Setup guide
+│   ├── AGENTS.md                           ← Template: project context for agents
+│   ├── CLAUDE.md                           ← Template: Claude Code configuration
+│   └── .claude/
+│       ├── skills/aid-{phase}/SKILL.md     ← LLM-optimized AgentSkills format
+│       └── agents/{agent}.md               ← Claude Code agent definitions
+├── codex/                                  ← OpenAI Codex native format
+│   ├── README.md                           ← Setup guide
+│   ├── AGENTS.md                           ← Template: project context for agents
+│   └── .codex/
+│       ├── skills/aid-{phase}/SKILL.md     ← LLM-optimized AgentSkills format
+│       └── agents/{agent}.toml             ← Codex agent definitions (TOML)
+├── cursor/                                 ← Cursor native format
+│   ├── README.md                           ← Setup guide
+│   ├── AGENTS.md                           ← Template: project context for agents
+│   └── .cursor/
+│       └── rules/                          ← Cursor MDC rules
 ├── templates/                         ← Usable templates for every artifact
 ├── examples/                          ← Anonymized real-world examples
 └── docs/
@@ -200,9 +211,9 @@ aid-methodology/
 
 AID is tool-agnostic. The methodology works with any AI coding agent:
 
-- **Claude Code** — native format in `claude-code/`
-- **OpenAI Codex CLI** — native format in `codex/`
-- **Cursor** — use skills as system context
+- **Claude Code** — native format in `claude-code/.claude/`
+- **OpenAI Codex CLI** — native format in `codex/.codex/`
+- **Cursor** — native format in `cursor/.cursor/`
 - **GitHub Copilot** — agent mode with spec context
 - **Any agent** that can read files and write code
 

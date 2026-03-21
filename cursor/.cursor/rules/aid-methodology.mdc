@@ -1,0 +1,14 @@
+---
+description: "AID methodology workflow and Knowledge Base integration"
+alwaysApply: true
+---
+This project uses the AI-Integrated Development (AID) methodology.
+## Knowledge Base
+- Read knowledge/INDEX.md for a map of all project documentation
+- Always consult relevant KB documents before making changes
+- The KB is the single source of truth for architecture, conventions, and patterns
+## Workflow
+- Every change should be traceable to a task or requirement
+- Follow the current phase (Discover, Interview, Specify, Plan, Detail, Implement, Review, Test, Deploy, Track, Triage)
+- Produce verifiable artifacts at each phase
+- Quality gates must pass before proceeding

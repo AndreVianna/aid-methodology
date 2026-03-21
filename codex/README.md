@@ -1,17 +1,22 @@
 # AID for OpenAI Codex CLI
 
-Copy this folder's contents into your project's `.agents/` directory to use AID with Codex CLI.
+Use the `setup.sh` (or `setup.ps1` on Windows) script at the repo root to install AID into your project, or copy manually:
 
 ## Setup
 
 ```bash
-# From your project root
-cp -r path/to/aid-methodology/codex/.  .agents/
+# Automated (recommended)
+path/to/aid-methodology/setup.sh /path/to/your/project
+
+# Manual
+cp -r path/to/aid-methodology/codex/.codex  .codex/
+cp path/to/aid-methodology/codex/AGENTS.md  AGENTS.md
 ```
 
 This gives you:
-- `skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (11 skills)
-- `agents/{name}.toml` — Agent definitions in Codex TOML format (13 agents)
+- `.codex/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (11 skills)
+- `.codex/agents/{name}.toml` — Agent definitions in Codex TOML format (13 agents)
+- `AGENTS.md` — Project context for AI agents (edit with your project details)
 
 ## Agents
 
@@ -19,28 +24,28 @@ This gives you:
 
 | Agent | File | Model | Specialty |
 |-------|------|-------|-----------|
-| Orchestrator | `agents/orchestrator.toml` | o3 | Pipeline coordination, routing, human gates |
-| Researcher | `agents/researcher.toml` | o4-mini | Investigation, KB generation, analysis |
-| Interviewer | `agents/interviewer.toml` | o3 | Adaptive dialogue, requirements gathering |
-| Architect | `agents/architect.toml` | o3 | Design: specs, plans, task decomposition |
-| Developer | `agents/developer.toml` | o4-mini | Code implementation (only code writer) |
-| Critic | `agents/critic.toml` | o3 | Quality evaluation, grading (A+ to F) |
-| Operator | `agents/operator.toml` | o4-mini | Deployment, PR creation, releases |
+| Orchestrator | `.codex/agents/orchestrator.toml` | o3 | Pipeline coordination, routing, human gates |
+| Researcher | `.codex/agents/researcher.toml` | o4-mini | Investigation, KB generation, analysis |
+| Interviewer | `.codex/agents/interviewer.toml` | o3 | Adaptive dialogue, requirements gathering |
+| Architect | `.codex/agents/architect.toml` | o3 | Design: specs, plans, task decomposition |
+| Developer | `.codex/agents/developer.toml` | o4-mini | Code implementation (only code writer) |
+| Critic | `.codex/agents/critic.toml` | o3 | Quality evaluation, grading (A+ to F) |
+| Operator | `.codex/agents/operator.toml` | o4-mini | Deployment, PR creation, releases |
 
 ### Specialist Agents (invoked ad-hoc)
 
 | Agent | File | Model | Specialty |
 |-------|------|-------|-----------|
-| UX Designer | `agents/ux-designer.toml` | o4-mini | UI/UX, accessibility, user flows |
-| DevOps | `agents/devops.toml` | o4-mini | CI/CD, IaC, containerization |
-| Tech Writer | `agents/tech-writer.toml` | o4-mini | Documentation, API docs, changelogs |
-| Security | `agents/security.toml` | o3 | Threat modeling, OWASP, auth patterns |
-| Data Engineer | `agents/data-engineer.toml` | o4-mini | Schema, migrations, query optimization |
-| Performance | `agents/performance.toml` | o4-mini | Profiling, load testing, caching |
+| UX Designer | `.codex/agents/ux-designer.toml` | o4-mini | UI/UX, accessibility, user flows |
+| DevOps | `.codex/agents/devops.toml` | o4-mini | CI/CD, IaC, containerization |
+| Tech Writer | `.codex/agents/tech-writer.toml` | o4-mini | Documentation, API docs, changelogs |
+| Security | `.codex/agents/security.toml` | o3 | Threat modeling, OWASP, auth patterns |
+| Data Engineer | `.codex/agents/data-engineer.toml` | o4-mini | Schema, migrations, query optimization |
+| Performance | `.codex/agents/performance.toml` | o4-mini | Profiling, load testing, caching |
 
 ## Skills
 
-11 phase skills, one per AID phase. See [`skills/README.md`](skills/README.md) for the full list.
+11 phase skills, one per AID phase. See [`.codex/skills/README.md`](.codex/skills/README.md) for the full list.
 
 ## Usage
 
@@ -52,8 +57,8 @@ Agent TOML files define specialized roles with focused system prompts. Use them 
 
 ## File Format
 
-- **Skills:** Markdown with YAML frontmatter (`name`, `description` required) — same standard as Claude Code
-- **Agents:** TOML with `name`, `description`, `developer_instructions`, and `model` fields
+- **Skills:** Markdown with YAML frontmatter (`name`, `description` required) — lives in `.codex/skills/`
+- **Agents:** TOML with `name`, `description`, `developer_instructions`, and `model` fields — lives in `.codex/agents/`
 
 ## Notes
 
