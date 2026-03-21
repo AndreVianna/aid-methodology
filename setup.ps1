@@ -109,11 +109,14 @@ Write-Host ""
 Write-Host "Installing selected tools..."
 Write-Host ""
 
+# AGENTS.md is shared across all tools — copy once
+Write-Host "--- AGENTS.md ---"
+Copy-Item-Safe -Src (Join-Path $ScriptDir "claude-code\AGENTS.md") -Dst (Join-Path $Target "AGENTS.md")
+
 # Claude Code
 if ($selected[1]) {
     Write-Host "--- Claude Code ---"
     Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "claude-code\.claude") -DstDir (Join-Path $Target ".claude")
-    Copy-Item-Safe -Src (Join-Path $ScriptDir "claude-code\AGENTS.md") -Dst (Join-Path $Target "AGENTS.md")
     Copy-Item-Safe -Src (Join-Path $ScriptDir "claude-code\CLAUDE.md") -Dst (Join-Path $Target "CLAUDE.md")
 }
 
@@ -121,14 +124,12 @@ if ($selected[1]) {
 if ($selected[2]) {
     Write-Host "--- Codex ---"
     Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "codex\.codex") -DstDir (Join-Path $Target ".codex")
-    Copy-Item-Safe -Src (Join-Path $ScriptDir "codex\AGENTS.md") -Dst (Join-Path $Target "AGENTS.md")
 }
 
 # Cursor
 if ($selected[3]) {
     Write-Host "--- Cursor ---"
     Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "cursor\.cursor") -DstDir (Join-Path $Target ".cursor")
-    Copy-Item-Safe -Src (Join-Path $ScriptDir "cursor\AGENTS.md") -Dst (Join-Path $Target "AGENTS.md")
 }
 
 Write-Host ""
