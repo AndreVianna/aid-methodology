@@ -2,8 +2,7 @@
 name: discovery-quality
 description: Assesses test coverage and frameworks, evaluates security patterns, and audits tech debt. Produces test-landscape.md, security-model.md, and tech-debt.md for the Knowledge Base.
 tools: Read, Glob, Grep, Terminal, Write
-model: sonnet
-maxTurns: 25
+model: opus
 permissionMode: bypassPermissions
 background: true
 ---

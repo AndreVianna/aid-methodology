@@ -2,8 +2,7 @@
 name: discovery-integrator
 description: Maps APIs consumed and exposed, external integrations, and builds a domain glossary from code terminology. Produces api-contracts.md, integration-map.md, and domain-glossary.md for the Knowledge Base.
 tools: Read, Glob, Grep, Terminal, Write
-model: sonnet
-maxTurns: 25
+model: opus
 permissionMode: bypassPermissions
 background: true
 ---

@@ -2,8 +2,7 @@
 name: discovery-analyst
 description: Maps modules, mines coding conventions from actual code, and extracts data models. Produces module-map.md, coding-standards.md, and data-model.md for the Knowledge Base.
 tools: Read, Glob, Grep, Bash, Write
-model: sonnet
-maxTurns: 25
+model: opus
 permissionMode: bypassPermissions
 background: true
 ---

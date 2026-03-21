@@ -4,8 +4,7 @@ description: >
   Reviews and grades Knowledge Base documents produced by Discovery.
   Cross-references claims against actual source code. Produces DISCOVERY-GRADE.md.
 tools: Read, Glob, Grep, Bash, Write
-model: sonnet
-maxTurns: 40
+model: opus
 permissionMode: bypassPermissions
 background: true
 ---

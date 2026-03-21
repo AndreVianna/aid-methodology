@@ -2,8 +2,7 @@
 name: discovery-architect
 description: Analyzes codebase structure, architectural patterns, and technology stack. Produces architecture.md and technology-stack.md for the Knowledge Base.
 tools: Read, Glob, Grep, Terminal, Write
-model: sonnet
-maxTurns: 25
+model: opus
 permissionMode: bypassPermissions
 background: true
 ---

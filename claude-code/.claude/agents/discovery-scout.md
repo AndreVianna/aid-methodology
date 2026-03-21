@@ -2,8 +2,7 @@
 name: discovery-scout
 description: Maps deployment infrastructure, CI/CD pipelines, and identifies gaps that cannot be determined from code alone. Produces infrastructure.md and open-questions.md for the Knowledge Base.
 tools: Read, Glob, Grep, Bash, Write
-model: sonnet
-maxTurns: 20
+model: opus
 permissionMode: bypassPermissions
 background: true
 ---
