@@ -101,7 +101,7 @@ copy_file() {
       cp -r "$src" "$dst"
       echo "  Updated: $dst"
     else
-      read -rp "Overwrite '$dst'? (files differ) [y/N] " yn
+      read -rp "Overwrite '$dst'? (files differ) [y/N] " yn </dev/tty
       case "$yn" in
         [yY]*) cp -r "$src" "$dst"; echo "  Updated: $dst" ;;
         *) echo "  Skipped: $dst" ;;
