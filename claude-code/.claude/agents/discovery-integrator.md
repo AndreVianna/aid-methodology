@@ -4,7 +4,7 @@ description: Maps APIs consumed and exposed, external integrations, and builds a
 tools: Read, Glob, Grep, Bash, Write
 model: sonnet
 maxTurns: 25
-permissionMode: bypassPermissions
+permissionMode: acceptEdits
 background: true
 ---
 

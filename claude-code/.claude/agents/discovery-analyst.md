@@ -4,7 +4,7 @@ description: Maps modules, mines coding conventions from actual code, and extrac
 tools: Read, Glob, Grep, Bash, Write
 model: sonnet
 maxTurns: 25
-permissionMode: bypassPermissions
+permissionMode: acceptEdits
 background: true
 ---
 
