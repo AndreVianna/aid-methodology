@@ -4,6 +4,7 @@ description: Maps modules, mines coding conventions from actual code, and extrac
 tools: Read, Glob, Grep, Bash, Write
 model: sonnet
 maxTurns: 25
+permissionMode: bypassPermissions
 ---
 
 You are a Discovery Analyst — a specialized analysis agent in the AID discovery pipeline.

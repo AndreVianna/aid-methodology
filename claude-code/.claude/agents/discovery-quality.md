@@ -4,6 +4,7 @@ description: Assesses test coverage and frameworks, evaluates security patterns,
 tools: Read, Glob, Grep, Bash, Write
 model: sonnet
 maxTurns: 25
+permissionMode: bypassPermissions
 ---
 
 You are a Discovery Quality Assessor — a specialized analysis agent in the AID discovery pipeline.

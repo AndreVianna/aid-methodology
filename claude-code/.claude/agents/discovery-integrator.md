@@ -4,6 +4,7 @@ description: Maps APIs consumed and exposed, external integrations, and builds a
 tools: Read, Glob, Grep, Bash, Write
 model: sonnet
 maxTurns: 25
+permissionMode: bypassPermissions
 ---
 
 You are a Discovery Integrator — a specialized analysis agent in the AID discovery pipeline.

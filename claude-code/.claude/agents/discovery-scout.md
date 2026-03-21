@@ -4,6 +4,7 @@ description: Maps deployment infrastructure, CI/CD pipelines, and identifies gap
 tools: Read, Glob, Grep, Bash, Write
 model: sonnet
 maxTurns: 20
+permissionMode: bypassPermissions
 ---
 
 You are a Discovery Scout — a specialized analysis agent in the AID discovery pipeline.
