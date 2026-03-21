@@ -19,6 +19,23 @@
 - See knowledge/architecture.md for system overview
 - See knowledge/module-map.md for component relationships
 
+## Knowledge Base
+
+After running Discovery, the Knowledge Base lives at knowledge/INDEX.md.
+Read INDEX.md first for a map of all available documentation.
+
+## Skills & Agents
+
+AID methodology rules are installed in .cursor/rules/.
+Specialist agents are available in .cursor/agents/ (Task tool is experimental — Mar 2026).
+
+## Permissions
+
+- Read any file in the project
+- Write only within the project directory
+- Run build and test commands
+- Do NOT modify files outside the project root
+
 ## AI-Integrated Development
 
 This project uses the [AID methodology](https://github.com/AndreVianna/aid-methodology).

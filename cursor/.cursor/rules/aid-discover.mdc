@@ -8,9 +8,11 @@ alwaysApply: false
 Analyze an existing codebase and produce a structured `knowledge/` directory.
 Includes a built-in quality gate that reviews, grades, and fixes KB documents.
 
-> **Note:** Cursor does not support subagents. All document generation is handled directly
-> in this session, one area at a time. The skill is organized around 5 discovery areas
-> matching the AID discovery pipeline used in Claude Code. Checkpoint/resume logic
+> **Note:** Cursor has experimental subagent support via `.cursor/agents/` + the Task tool.
+> When available, each discovery area is dispatched as a named subagent (discovery-architect,
+> discovery-analyst, discovery-integrator, discovery-quality, discovery-scout, discovery-reviewer).
+> When subagents are unavailable, the skill falls back to sequential execution: all document
+> generation is handled directly in this session, one area at a time. Checkpoint/resume logic
 > skips existing files so the skill is safe to re-run after interruption.
 
 **State machine — each run does ONE step and exits.**
@@ -100,7 +102,7 @@ Print: `[5/5] Mapping infrastructure and identifying gaps...`
 ### Finalize Generation
 - Generate `knowledge/README.md` (completeness table + revision history)
 - Generate `knowledge/INDEX.md` (2-3 line summary per document)
-- Update `AGENTS.md` and `CLAUDE.md` placeholders with discovered data
+- Update `AGENTS.md` placeholders with discovered data (Cursor does not use CLAUDE.md — all project context goes into AGENTS.md)
 
 Print: `Generation complete — run again to review.`
 
@@ -110,28 +112,32 @@ Print: `Generation complete — run again to review.`
 
 All 13 KB documents exist. Grade them.
 
-For each document assess:
-1. **Completeness** — Does it cover what it should?
-2. **Accuracy** — Cross-reference 3-5 claims per doc against actual source code
-3. **Depth** — Lists vs explains patterns and relationships
-4. **Usefulness** — Would an agent building a feature find this helpful?
-5. **Grade** — A+ through F
+Be AGGRESSIVE — a lenient review is worse than useless because it lets bad docs through the quality gate.
 
-**Minimum 15 total spot-checks** (verify claims against actual code). At least 5 must be version verifications.
+For each document assess:
+1. **Completeness** — Does it cover what it should? Are there obvious gaps?
+2. **Accuracy (MOST IMPORTANT)** — Do NOT trust what the document says. Verify claims against actual source files. Check version numbers against pom.xml, package.json, MANIFEST.MF, lib/*.jar filenames, lockfiles. Check file paths exist. Check if a "class" is actually an interface. Any factual error is [CRITICAL]. Any "TBD" when the data is extractable is [HIGH].
+3. **Depth** — Is it surface-level listing or does it show understanding of patterns and relationships?
+4. **Usefulness** — Would an agent working on this codebase find this document helpful?
+5. **Evidence** — Are claims grounded in code (file paths, class names) or generic?
+6. **Grade** — A+ through F
+
+**Minimum 15 spot-checks** (verify claims against actual code). At least 5 must be version verifications.
 All issues MUST have severity: [CRITICAL], [HIGH], [MEDIUM], or [MINOR].
 
-**Grade caps (absolute):**
+**Grade caps (absolute — no exceptions):**
 Multiple [CRITICAL] → max D. One [CRITICAL] → max D+.
 Multiple [HIGH] → max C. One [HIGH] → max C+.
 Multiple [MEDIUM] → max B. One [MEDIUM] → max B+.
 Multiple [MINOR] → max A-. One [MINOR] → max A. Only zero issues = A+.
 
-**Do NOT trust what the document says.** Verify against actual source files.
+Also review AGENTS.md — are the discovered values accurate and useful?
+Check for error propagation: if one doc has a wrong version, check if other docs repeat it.
 
 Write `knowledge/DISCOVERY-GRADE.md` using the template format (see `templates/reports/discovery-grade-template.md`).
 Set Minimum Grade from `--grade` argument or default `A`. Add first Review History entry.
 
-Print: `Review complete. Grade: {overall}. Minimum: {min}.`
+Print: `Review complete. Grade: {overall}. Minimum: {min}. Run again to {fix issues|proceed}.`
 
 ---
 
@@ -144,18 +150,25 @@ DISCOVERY-GRADE.md exists but overall grade < minimum.
    - Read issues from DISCOVERY-GRADE.md
    - Read source code, fix the KB doc with evidence
    - **REMOVE fixed issue lines** from Issues Found section
-3. **Verify 5 meta-documents** (in order): open-questions.md → INDEX.md → README.md → CLAUDE.md → AGENTS.md.
-   Fixes to primary docs can invalidate these. Update any that are stale.
-4. **MANDATORY Re-Review:** After ALL fixes, re-review every document from scratch.
-   Do NOT self-evaluate — re-run the full review process, re-verify claims against source.
+   - Re-grade the document
+
+3. **Verify 5 meta-documents (MANDATORY after every fix pass)** in this order:
+   - **open-questions.md** — Do any fixed issues resolve open questions? Remove answered ones. Did fixes reveal new unknowns? Add them.
+   - **INDEX.md** — Do summaries still match the updated document content? Update any stale summaries.
+   - **README.md** — Does the completeness table still reflect reality? Update statuses.
+   - **AGENTS.md** — Did fixes change build commands, architecture, conventions, or gotchas? Update if stale.
+
+4. **MANDATORY Re-Review — Do NOT Self-Evaluate:** After ALL fixes, re-run the full review process.
+   The agent that wrote the fix CANNOT evaluate its own work. Re-verify all claims against source.
    Apply the same grade caps. Overwrite DISCOVERY-GRADE.md with fresh assessment.
-   Preserve Review History entries.
-4. Update Documents table, Last Run, Review History, Recommendation
+   Preserve Review History entries. Ensure new entry reflects this was a Fix + Re-review cycle.
+
+5. Update Documents table, Last Run, Review History, Recommendation
 
 **IMPORTANT:** DISCOVERY-GRADE.md always reflects CURRENT state after re-review.
 History is tracked in the Review History table.
 
-Print: `Fix complete. Grade: {old} → {new}.`
+Print: `Fix complete. Grade: {old} → {new}. Run again to {fix remaining issues|proceed}.`
 
 ---
 
@@ -189,7 +202,7 @@ When a GAP.md or IMPEDIMENT.md triggers re-discovery:
 - [ ] Inferred info marked with ⚠️
 - [ ] open-questions.md captures everything needing human input
 - [ ] All issues in DISCOVERY-GRADE.md have severity: [CRITICAL], [HIGH], [MEDIUM], or [MINOR]
-- [ ] Minimum 10 spot-checks in DISCOVERY-GRADE.md
+- [ ] Minimum 15 spot-checks in DISCOVERY-GRADE.md (at least 5 must be version verifications)
 
 ## Grading Criteria
 
@@ -222,4 +235,4 @@ When a GAP.md or IMPEDIMENT.md triggers re-discovery:
 - **tech-debt.md**: severity-categorized with file locations
 - **infrastructure.md**: CI/CD flow, deployment, monitoring details
 - **open-questions.md**: specific, answerable, comprehensive
-- **AGENTS.md/CLAUDE.md**: no placeholders, real working commands
+- **AGENTS.md**: no placeholders, real working commands, conventions, gotchas

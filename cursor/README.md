@@ -71,6 +71,45 @@ Discovery → Interview → Specify → Plan → Detail → Implement → Review
 4. Cursor will automatically apply the always-on rules on every edit.
 5. Invoke phase rules as needed throughout the development lifecycle.
 
+## Agents
+
+Cursor agents live in `.cursor/agents/` and are dispatched via the **Task tool** (experimental as of March 2026). If the Task tool is unavailable, run `/aid-discover` — it handles discovery sequentially without subagents.
+
+### Discovery Agents (6)
+
+These six agents are dispatched in parallel by the `aid-discover` orchestration to produce the Knowledge Base documents.
+
+| Agent | File | Produces |
+|-------|------|---------|
+| `discovery-analyst` | `discovery-analyst.md` | `module-map.md`, `coding-standards.md`, `data-model.md` |
+| `discovery-architect` | `discovery-architect.md` | `architecture.md`, `technology-stack.md` |
+| `discovery-integrator` | `discovery-integrator.md` | `api-contracts.md`, `integration-map.md`, `domain-glossary.md` |
+| `discovery-quality` | `discovery-quality.md` | `test-landscape.md`, `security-model.md`, `tech-debt.md` |
+| `discovery-scout` | `discovery-scout.md` | `infrastructure.md`, `open-questions.md` |
+| `discovery-reviewer` | `discovery-reviewer.md` | `DISCOVERY-GRADE.md` (cross-references KB against source) |
+
+### Role-Based Agents (13)
+
+Core pipeline agents that handle specific responsibilities across all AID phases.
+
+| Agent | File | Role |
+|-------|------|------|
+| `orchestrator` | `orchestrator.md` | Coordinates AID pipeline, routes work, manages phase transitions with human gates |
+| `architect` | `architect.md` | Transforms requirements and KB into SPEC.md, PLAN.md, DETAIL.md, and TASK files |
+| `developer` | `developer.md` | Only agent that modifies production code; implements TASK files with build verification |
+| `critic` | `critic.md` | Adversarial code quality evaluator, A+ to F grading; finds issues, never fixes them |
+| `researcher` | `researcher.md` | Investigates and synthesizes information into KB documents and analysis reports |
+| `operator` | `operator.md` | Executes deployment, PR creation, release management, and KB updates |
+| `interviewer` | `interviewer.md` | One-question-at-a-time requirements dialogue with stakeholders → `REQUIREMENTS.md` |
+| `data-engineer` | `data-engineer.md` | Specialist: schema design, migrations, query optimization, ETL patterns |
+| `devops` | `devops.md` | Specialist: CI/CD, infrastructure-as-code, containerization, monitoring |
+| `performance` | `performance.md` | Specialist: profiling, load testing, bottleneck analysis, caching strategies |
+| `security` | `security.md` | Specialist: threat modeling, OWASP, auth patterns, secrets management |
+| `tech-writer` | `tech-writer.md` | Specialist: end-user docs, API docs, changelogs, README quality |
+| `ux-designer` | `ux-designer.md` | Specialist: UI/UX patterns, accessibility (WCAG), user flows, wireframes |
+
+> **Note:** Cursor sub-agent dispatch via Task tool is experimental (Mar 2026). Discovery agents run with `permissionMode: bypassPermissions` and `background: true`.
+
 ## Notes
 
 - Cursor uses `.mdc` files in `.cursor/rules/` — these are Markdown with YAML frontmatter
