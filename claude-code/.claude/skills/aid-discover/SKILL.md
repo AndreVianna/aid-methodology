@@ -2,7 +2,7 @@
 name: aid-discover
 description: >
   Brownfield codebase discovery with built-in quality gate. Generates KB, reviews it,
-  and fixes issues — one step per run. State-machine: GENERATE → REVIEW → FIX → DONE.
+  collects user input, and fixes issues — one step per run. State-machine: GENERATE → REVIEW → Q&A → FIX → DONE.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "[--grade A] minimum acceptable grade (default: A)  [--reset] clear KB and restart"
 ---
@@ -49,10 +49,11 @@ what happened earlier. ALWAYS read the actual files on disk right now.
 Read the filesystem to determine which mode to enter:
 
 ```
-State 1: Missing KB docs           → GENERATE mode
-State 2: All docs, no GRADE file   → REVIEW mode
-State 3: GRADE file, grade < min   → FIX mode
-State 4: GRADE file, grade >= min  → DONE
+State 1: Missing KB docs                              → GENERATE mode
+State 2: All docs, no GRADE file                       → REVIEW mode
+State 3: GRADE file, grade < min, has Pending Q&A      → Q&A mode
+State 4: GRADE file, grade < min, no Pending Q&A       → FIX mode
+State 5: GRADE file, grade >= min                      → DONE
 ```
 
 **Detection logic:**
@@ -61,7 +62,7 @@ State 4: GRADE file, grade >= min  → DONE
    ```
    architecture.md, technology-stack.md, module-map.md, coding-standards.md, data-model.md,
    api-contracts.md, integration-map.md, domain-glossary.md, test-landscape.md,
-   security-model.md, tech-debt.md, infrastructure.md, open-questions.md
+   security-model.md, tech-debt.md, infrastructure.md, additional-info.md
    ```
 2. If any are missing → **GENERATE**
 3. If all 13 exist but `knowledge/DISCOVERY-GRADE.md` does not exist → **REVIEW**
@@ -69,13 +70,16 @@ State 4: GRADE file, grade >= min  → DONE
    - Read the current overall grade and minimum grade
    - If `--grade` was provided, update the minimum grade in the file
    - Compare current grade against minimum (use grade ordering below)
-   - If current grade < minimum → **FIX**
    - If current grade >= minimum → **DONE**
+   - If current grade < minimum:
+     - Read `knowledge/additional-info.md` for entries with `**Status:** Pending`
+     - If Pending entries exist → **Q&A**
+     - If no Pending entries → **FIX**
 
 **Grade ordering** (highest to lowest):
 `A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F`
 
-Print the detected state: `[State: {GENERATE|REVIEW|FIX|DONE}]`
+Print the detected state: `[State: {GENERATE|REVIEW|Q&A|FIX|DONE}]`
 
 ---
 
@@ -155,16 +159,19 @@ Prompt:
 
 #### [5/5] Infrastructure and Gap Analysis (discovery-scout)
 
-Target files: `infrastructure.md`, `open-questions.md`
+Target files: `infrastructure.md`, `additional-info.md`
 
 Print: `[5/5] Dispatching infrastructure and gap analysis...`
 
 Prompt:
-> Analyze this codebase and produce knowledge/infrastructure.md and knowledge/open-questions.md.
+> Analyze this codebase and produce knowledge/infrastructure.md and knowledge/additional-info.md.
 > Map CI/CD pipelines, Docker/container config, IaC (Terraform, Pulumi, CDK), environments,
-> and monitoring. For open-questions.md: capture EVERYTHING that cannot be determined from code
-> alone — every uncertainty, assumption, and gap needing human input. Be comprehensive.
-> Write only to the knowledge/ directory.
+> and monitoring. For additional-info.md: capture EVERYTHING that cannot be determined from code
+> alone — every uncertainty, assumption, and gap needing human input. Use the structured Q&A
+> format: each question gets a unique ID (Q{N}), category tag (e.g., Architecture, Security,
+> Data), impact level (High/Medium/Low), Status: Pending, context explaining why it matters,
+> and a Suggested answer when inferrable from code patterns. Order by impact (High first).
+> Be comprehensive. Write only to the knowledge/ directory.
 
 ---
 
@@ -190,7 +197,7 @@ If you see "N local agents still running" in the status bar, you are NOT done. W
 ```bash
 for f in architecture.md technology-stack.md module-map.md coding-standards.md \
   data-model.md api-contracts.md integration-map.md domain-glossary.md \
-  test-landscape.md security-model.md tech-debt.md infrastructure.md open-questions.md; do
+  test-landscape.md security-model.md tech-debt.md infrastructure.md additional-info.md; do
   [ -f "knowledge/$f" ] && echo "✅ $f" || echo "❌ $f MISSING"
 done
 ```
@@ -205,7 +212,7 @@ Wait for that agent to complete. Verify again. Repeat until all 13 exist.
 | discovery-analyst | module-map.md, coding-standards.md, data-model.md |
 | discovery-integrator | api-contracts.md, integration-map.md, domain-glossary.md |
 | discovery-quality | test-landscape.md, security-model.md, tech-debt.md |
-| discovery-scout | infrastructure.md, open-questions.md |
+| discovery-scout | infrastructure.md, additional-info.md |
 
 When re-dispatching, target ONLY the missing file(s):
 > Analyze this codebase and produce ONLY knowledge/{missing-file}.md. [original prompt for that area]. Write only to the knowledge/ directory.
@@ -237,7 +244,7 @@ reading across all previously produced KB documents.
 | security-model.md | ✅ Complete | |
 | tech-debt.md | ✅ Complete | |
 | infrastructure.md | ✅ Complete | |
-| open-questions.md | ✅ Complete | |
+| additional-info.md | ✅ Complete | |
 
 ## Revision History
 
@@ -267,7 +274,7 @@ If your task touches an area covered here, read the relevant document first.
 | security-model.md | {2-3 line summary of security posture} |
 | tech-debt.md | {2-3 line summary of debt and risk} |
 | infrastructure.md | {2-3 line summary of infrastructure} |
-| open-questions.md | {2-3 line summary of gaps needing human input} |
+| additional-info.md | {2-3 line summary of pending Q&A items needing human input} |
 ```
 
 Regenerate INDEX.md on every discovery run (full or targeted).
@@ -287,7 +294,7 @@ placeholders with real data from the analysis:
 
 Keep the `<!-- AID:DISCOVER ... -->` comment above each section so future re-discoveries can update them.
 Replace only the `(pending discovery)` placeholder lines with real content.
-If a field cannot be determined, leave it as `(not found — check open-questions.md)`.
+If a field cannot be determined, leave it as `(not found — check additional-info.md)`.
 
 ---
 
@@ -361,7 +368,7 @@ Prompt to pass to the subagent:
 >    derived from the 13 primary documents.
 >    - Do their summaries and values accurately reflect the current primary doc content?
 >    - Is placeholder text or template markers still present?
->    - Are answered questions still listed as open in open-questions.md?
+>    - Are questions marked Pending in additional-info.md actually still unanswerable from code?
 >
 > Grade each document: A+ (exceptional), A (thorough), B+ (good with minor gaps), B (adequate),
 > B- (shallow), C+ (significant gaps), C (barely useful), D (misleading or wrong), F (missing/empty).
@@ -375,6 +382,12 @@ Prompt to pass to the subagent:
 > All issues MUST have severity: [CRITICAL], [HIGH], [MEDIUM], or [MINOR].
 >
 > **Minimum 15 spot-checks** (verify claims against actual code). At least 5 must be version verifications.
+>
+> **After grading, add questions to additional-info.md** for any information gaps found during
+> review that cannot be resolved from code. These become Q&A items for the user. Use the next
+> sequential Q{N} ID, categorize by area, and assign impact levels (High/Medium/Low). Only add
+> questions for things genuinely needing human input — if you can grep the answer, fix it in the
+> review instead.
 >
 > Write the full review to knowledge/DISCOVERY-GRADE.md using the DISCOVERY-GRADE.md template format.
 
@@ -401,7 +414,77 @@ Print: `[Review 2/2] Review complete. Grade: {overall}. Minimum: {min}. Run /aid
 
 **Grade comparison:**
 - If overall grade >= minimum → Next run will enter DONE mode
-- If overall grade < minimum → Next run will enter FIX mode
+- If overall grade < minimum and Pending Q&A exists → Next run will enter Q&A mode
+- If overall grade < minimum and no Pending Q&A → Next run will enter FIX mode
+
+---
+
+## Mode: Q&A
+
+DISCOVERY-GRADE.md exists, the grade is below minimum, and `knowledge/additional-info.md`
+contains entries with `**Status:** Pending`.
+
+The Q&A mode presents questions to the user **one at a time**, collects answers, and updates
+the additional-info.md document.
+
+### Step 1: Load and Filter Questions
+
+Read `knowledge/additional-info.md`. Collect all entries with `**Status:** Pending`.
+
+**Before presenting each question, apply the filter:**
+
+1. **Check KB** — Is the answer already in another KB document? → Change status to `Answered`,
+   fill in the answer from the KB, set `Applied to` field. Skip to next question.
+2. **Check additional-info.md** — Was this already asked and answered in a previous cycle?
+   → Skip (should not happen if statuses are tracked correctly, but guard against duplicates).
+3. **Inferrable from context?** — Can the answer be reasonably deduced from code patterns?
+   → Keep the question but ensure it has a `**Suggested:**` answer. The user confirms or corrects.
+
+After filtering, sort remaining Pending questions by impact: **High → Medium → Low**.
+
+Print: `[Q&A] {N} questions for user input. Asking one at a time...`
+
+If zero questions remain after filtering, print: `[Q&A] All questions resolved from KB. Proceeding to Fix.`
+and skip to the end of Q&A mode.
+
+### Step 2: Ask One Question at a Time
+
+For each Pending question, present it to the user in this format:
+
+```
+Q{N}: [{Category}: {Impact}] {question text}
+
+Context: {context from the additional-info entry}
+
+Suggested: {suggested answer, if present}
+
+[1] Skip / Not applicable
+[2] Accept suggestion (only shown if Suggested exists)
+[3] Your answer: ___
+```
+
+**Wait for the user's response before asking the next question.**
+
+### Step 3: Record the Answer
+
+Based on the user's response, update the entry in `knowledge/additional-info.md`:
+
+- **User chose [1] (Skip):** Set `**Status:** Skipped`
+- **User chose [2] (Accept suggestion):** Set `**Status:** Answered`, copy the suggested text to `**Answer:**`
+- **User typed an answer [3]:** Set `**Status:** Answered`, record their text in `**Answer:**`
+
+**Important:** Write the update to the file immediately after each answer. Do not batch.
+
+### Step 4: Continue or Exit
+
+After recording, move to the next Pending question. Repeat Steps 2-3.
+
+When all Pending questions have been addressed (answered or skipped):
+
+Print: `[Q&A] Complete. {answered} answered, {skipped} skipped. Run /aid-discover again to fix.`
+
+The next run will detect no Pending Q&A and enter FIX mode. The FIX will use the answers
+from additional-info.md to improve the KB documents.
 
 ---
 
@@ -423,16 +506,22 @@ Print: `[Fix] {N} documents below {minimum}. Fixing...`
 For each document below the minimum grade, in priority order:
 
 1. Read the specific issues from the Issues Found section of DISCOVERY-GRADE.md
-2. Read the relevant source code to gather missing information
-3. Edit the KB document to address the issues — be specific, add evidence (file paths, code references)
-4. **REMOVE the fixed issue lines** from the Issues Found section of DISCOVERY-GRADE.md
-5. Re-grade the document
+2. Read `knowledge/additional-info.md` for Answered entries that apply to this document
+3. Read the relevant source code to gather missing information
+4. Edit the KB document to address the issues — combining review findings WITH user answers from additional-info.md. A review finding ("auth section is shallow") + a user answer ("OAuth2 with Azure AD") together produce a precise, evidence-backed fix.
+5. **REMOVE the fixed issue lines** from the Issues Found section of DISCOVERY-GRADE.md
+6. For each Answered entry from additional-info.md that was incorporated, update its `**Applied to:**` field with the target document name and cycle number
+7. Re-grade the document
 
 Print: `[Fix] Improving {document}... {old grade} → {new grade}`
 
 **IMPORTANT:** When an issue is fixed, its line MUST be removed from the Issues Found section.
 DISCOVERY-GRADE.md always reflects the CURRENT state, not history. History is tracked in the
 Review History table.
+
+**IMPORTANT:** Answered entries in additional-info.md are fix items too. Treat them with the
+same priority as review findings. Cross-reference findings and answers — they often complement
+each other (the finding says WHERE something is weak, the answer says WHAT to put there).
 
 ---
 
@@ -441,7 +530,7 @@ Review History table.
 Fixes to primary KB documents can invalidate derived/meta documents. After ALL primary fixes,
 verify and update the following 5 meta-documents **in this order:**
 
-1. **open-questions.md** — Do any fixed issues resolve open questions? Remove answered ones. Did fixes reveal new unknowns? Add them.
+1. **additional-info.md** — Do any fixed issues resolve pending questions? Update their status. Did fixes reveal new unknowns? Add them as new Q&A entries with the next sequential ID.
 2. **INDEX.md** — Do summaries still match the updated document content? Update any stale summaries.
 3. **README.md** — Does the completeness table (status/gaps) still reflect reality? Update statuses.
 4. **CLAUDE.md** — Did fixes change conventions, gotchas, or architecture summaries? Update if stale.
@@ -487,9 +576,9 @@ Read the new DISCOVERY-GRADE.md produced by the reviewer.
 
 Print: `[Fix 3/3] Complete. Grade: {old} → {new}. Run /aid-discover again to {fix remaining issues|proceed}.`
 
-**If the grade is still below minimum:** The next run will enter FIX mode again. This is expected — some fixes may introduce new issues or the reviewer may catch things the fixer missed. The cycle continues until the grade meets the minimum.
+**If the grade is still below minimum:** The next run will check for Pending Q&A entries first (→ Q&A mode) or proceed to FIX mode if none. This is expected — some fixes may introduce new issues or the reviewer may catch things the fixer missed. The cycle continues until the grade meets the minimum.
 
-**If documents still have issues after fixing:** The next run will re-enter FIX mode to continue.
+**If documents still have issues after fixing:** The next run will re-enter the appropriate mode (Q&A if new Pending questions, FIX otherwise) to continue.
 
 ---
 
@@ -513,7 +602,7 @@ When a GAP.md or IMPEDIMENT.md triggers re-discovery of a specific area:
    - `module-map.md`, `coding-standards.md`, `data-model.md` → dispatch discovery-analyst
    - `api-contracts.md`, `integration-map.md`, `domain-glossary.md` → dispatch discovery-integrator
    - `test-landscape.md`, `security-model.md`, `tech-debt.md` → dispatch discovery-quality
-   - `infrastructure.md`, `open-questions.md` → dispatch discovery-scout
+   - `infrastructure.md`, `additional-info.md` → dispatch discovery-scout
 3. Dispatch ONLY the relevant subagent for the area that needs updating
 4. Regenerate README.md and INDEX.md (orchestrator does this directly)
 5. Update `knowledge/README.md` revision history with the targeted update
@@ -527,7 +616,7 @@ When a GAP.md or IMPEDIMENT.md triggers re-discovery of a specific area:
 - [ ] No overlap between KB documents
 - [ ] Claims grounded in code evidence (file paths, line numbers)
 - [ ] Inferred info marked with ⚠️
-- [ ] open-questions.md captures everything needing human input
+- [ ] additional-info.md captures everything needing human input in structured Q&A format
 - [ ] README.md reflects completeness status and revision history
 - [ ] INDEX.md generated with 2-3 line summaries of every KB document
 - [ ] AGENTS.md and CLAUDE.md placeholders filled with discovered data
@@ -618,10 +707,14 @@ Must have: CI/CD pipeline details, container config, deployment process, artifac
 source control, release process, runtime config, monitoring, environments.
 **Red flags**: Lists tools without explaining how they're configured or connected.
 
-### open-questions.md
-Must have: questions organized by area, each specific and answerable. Should capture
-EVERYTHING that code analysis alone cannot determine.
-**Red flags**: Too few questions. Generic questions that could apply to any project.
+### additional-info.md
+Must have: structured Q&A entries with unique IDs (Q{N}), category tags, impact levels
+(High/Medium/Low), status (Pending/Answered/Skipped), context explaining why each question
+matters, and suggested answers when inferrable from code. Questions ordered by impact.
+Should capture EVERYTHING that code analysis alone cannot determine.
+**Red flags**: Too few questions. Generic questions that could apply to any project. Missing
+impact classification. Missing context. Questions answerable from code still marked Pending.
+Answered entries missing Applied to field.
 
 ### INDEX.md
 Must have: accurate 2-3 line summary per document. Summaries must reflect actual content.

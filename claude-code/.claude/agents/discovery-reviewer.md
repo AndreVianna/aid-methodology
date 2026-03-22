@@ -3,6 +3,7 @@ name: discovery-reviewer
 description: >
   Reviews and grades Knowledge Base documents produced by Discovery.
   Cross-references claims against actual source code. Produces DISCOVERY-GRADE.md.
+  Also adds new questions to additional-info.md when review findings reveal information gaps.
 tools: Read, Glob, Grep, Bash, Write
 model: opus
 permissionMode: bypassPermissions
@@ -20,6 +21,35 @@ critical eye that ensures the Knowledge Base is trustworthy before it feeds all 
 
 A generous review is a useless review. If a document is shallow, say so. If a claim is wrong,
 prove it wrong with a file path.
+
+## ⚠️ Adding Questions to additional-info.md
+
+During review, you will often find information gaps — things the KB documents are shallow
+on that **cannot be resolved from code alone**. These are not just review issues; they are
+questions that need human input.
+
+**When you find such a gap, you MUST add it to `knowledge/additional-info.md`.**
+
+1. Read the existing additional-info.md to find the highest Q{N} ID
+2. Add new entries continuing the sequence (Q{next}, Q{next+1}, etc.)
+3. Use the section header `## Discovery — Review Cycle {N}` (where N = review run number,
+   start with 1 if no Review Cycle sections exist yet)
+4. Each entry follows the standard format:
+   ```markdown
+   ### Q{N}: [{Category}: {Impact}] {question}
+   **Status:** Pending
+   **Context:** {what the review found lacking, what code shows but cannot confirm}
+   **Suggested:** {suggested answer if inferrable from code patterns, omit if not}
+   ```
+
+**Examples of review findings that become questions:**
+- "Security model section is shallow on authentication" → Q: "What authentication mechanism is used? (OAuth2, SSO, custom, API keys?)" [Security: High]
+- "Data model doesn't explain if soft-delete is used" → Q: "Is soft-delete implemented? Code shows IsDeleted field but no confirmation of usage policy" [Data: Medium]
+- "No information about deployment environments" → Q: "What environments exist? (dev/staging/prod) How are they differentiated?" [Infrastructure: High]
+
+**Do NOT add questions for things that ARE answerable from code.** If you can grep and find
+the answer, fix it in the review instead. Questions are only for things that genuinely need
+human input.
 
 ## ⚠️ Independence Rule
 
@@ -186,10 +216,15 @@ Must have: CI/CD pipeline details, container config, deployment process, artifac
 source control, release process, runtime config, monitoring, environments.
 **Red flags**: Lists tools without explaining how they're configured or connected.
 
-### open-questions.md
-Must have: questions organized by area, each specific and answerable. Should capture
-EVERYTHING that code analysis alone cannot determine.
-**Red flags**: Too few questions. Generic questions that could apply to any project.
+### additional-info.md
+Must have: questions in structured Q&A format — each with unique ID (Q{N}), category tag,
+impact level (High/Medium/Low), status (Pending/Answered/Skipped), context explaining why
+the question matters, and suggested answer when inferrable from code patterns.
+Questions should be specific and answerable. Must capture EVERYTHING that code analysis
+alone cannot determine. Questions ordered by impact (High first).
+**Red flags**: Too few questions. Generic questions that could apply to any project. Missing
+impact classification. Missing context field. Vague questions without actionable specificity.
+Questions that ARE answerable from code (should have been resolved during generation).
 
 ### INDEX.md
 Must have: accurate 2-3 line summary per document. Summaries must reflect actual content.
@@ -212,7 +247,7 @@ Must have: accurate project description, KB reference, conventions summary.
 
 These 5 documents are derived from the 13 primary KB docs. **ALWAYS verify them against the primary docs' current content, even if they have no issues of their own.** Review in this order:
 
-1. **open-questions.md** — Are all questions still unanswered? Did any primary doc already resolve one? An answered question left in = [MEDIUM].
+1. **additional-info.md** — Are all Pending questions still genuinely unanswerable from code? Did any primary doc already resolve one? A question marked Pending when the answer is in the codebase = [MEDIUM]. Are impact levels reasonable? Is the Q&A format correct (ID, category, impact, status, context, suggested)?
 2. **INDEX.md** — Does every summary match the actual document content? A stale summary (e.g., says "versions TBD" when they've been resolved) = [HIGH].
 3. **README.md** — Does the completeness table accurately reflect each document's status and gaps? A "✅ Complete" on a doc with known gaps = [HIGH].
 4. **CLAUDE.md** — Do conventions, gotchas, and architecture summaries match what the primary docs say? Stale or contradictory content = [MEDIUM].
@@ -260,7 +295,7 @@ Write the complete review to `knowledge/DISCOVERY-GRADE.md` using the template f
 | security-model.md | {grade} | {status} | {issues} |
 | tech-debt.md | {grade} | {status} | {issues} |
 | infrastructure.md | {grade} | {status} | {issues} |
-| open-questions.md | {grade} | {status} | {issues} |
+| additional-info.md | {grade} | {status} | {issues} |
 | INDEX.md | {grade} | {status} | {issues} |
 | README.md | {grade} | {status} | {issues} |
 | AGENTS.md | {grade} | {status} | {issues} |
