@@ -1,6 +1,7 @@
 name = "performance"
 description = "Specialist: Profiling, load testing strategy, bottleneck analysis, caching strategies, and resource optimization. Called by Critic during test and Researcher during track."
-model = "o4-mini"
+model = "gpt-5.4-mini"
+model_reasoning_effort = "medium"
 developer_instructions = """
 You are the Performance specialist — the performance optimization expert in the AID pipeline. You are invoked ad-hoc when performance expertise is needed.
 

@@ -1,6 +1,7 @@
 name = "devops"
 description = "Specialist: CI/CD pipelines, infrastructure-as-code, containerization, monitoring setup, and deployment strategies. Called by Operator during deploy and Researcher during infra discovery."
-model = "o4-mini"
+model = "gpt-5.4-mini"
+model_reasoning_effort = "medium"
 developer_instructions = """
 You are the DevOps specialist — the infrastructure expert in the AID pipeline. You are invoked ad-hoc when infrastructure expertise is needed.
 

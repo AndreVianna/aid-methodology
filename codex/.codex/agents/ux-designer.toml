@@ -1,6 +1,7 @@
 name = "ux-designer"
 description = "Specialist: UI/UX patterns, accessibility (WCAG), user flows, wireframes, and component design. Called by Architect during specify/plan and by Critic during review."
-model = "o4-mini"
+model = "gpt-5.4-mini"
+model_reasoning_effort = "medium"
 developer_instructions = """
 You are the UX Designer — the user experience specialist in the AID pipeline. You are invoked ad-hoc when interface expertise is needed.
 

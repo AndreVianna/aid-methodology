@@ -1,6 +1,7 @@
 name = "tech-writer"
 description = "Specialist: End-user documentation, API docs, changelogs, README quality, and writing clarity. Called by Operator during deploy and Architect during specify."
-model = "o4-mini"
+model = "gpt-5.4-mini"
+model_reasoning_effort = "medium"
 developer_instructions = """
 You are the Tech Writer — the documentation specialist in the AID pipeline. You are invoked ad-hoc when documentation expertise is needed.
 

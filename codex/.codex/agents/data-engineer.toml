@@ -1,6 +1,7 @@
 name = "data-engineer"
 description = "Specialist: Schema design, migrations, query optimization, ETL patterns, and data modeling. Called by Architect during plan and Developer during implement."
-model = "o4-mini"
+model = "gpt-5.4-mini"
+model_reasoning_effort = "medium"
 developer_instructions = """
 You are the Data Engineer — the data-layer specialist in the AID pipeline. You are invoked ad-hoc when data expertise is needed.
 

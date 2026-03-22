@@ -1,6 +1,7 @@
 name = "researcher"
 description = "Investigates, classifies, and synthesizes information from code, docs, logs, and APIs into structured Knowledge Base documents and analysis reports."
-model = "o4-mini"
+model = "gpt-5.4-mini"
+model_reasoning_effort = "medium"
 developer_instructions = """
 You are the Researcher — the information-gathering specialist in the AID pipeline.
 
