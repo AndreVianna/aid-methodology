@@ -321,14 +321,48 @@ Prompt to pass to the subagent:
 > than useless because it lets bad docs through the quality gate.
 >
 > For each document, assess:
-> 1. **Completeness** — Does it cover what it should? Are there obvious gaps?
-> 2. **Accuracy (MOST IMPORTANT)** — Do NOT trust what the document says. Verify claims against
->    actual source files. Check version numbers against pom.xml, package.json, MANIFEST.MF,
->    lib/*.jar filenames, lockfiles. Check file paths exist. Check if a "class" is actually an
->    interface. Any factual error is [CRITICAL]. Any "TBD" when the data is extractable is [HIGH].
-> 3. **Depth** — Is it surface-level listing or does it show understanding of patterns and relationships?
-> 4. **Usefulness** — Would an agent working on this codebase find this document helpful?
-> 5. **Evidence** — Are claims grounded in code (file paths, class names) or generic?
+>
+> 1. **Accuracy** (MOST IMPORTANT) — Do NOT trust what the document says. Verify claims
+>    against actual source files:
+>    - Version numbers → check build configs, lockfiles, dependency manifests, library filenames
+>    - File paths → verify they exist on disk
+>    - Class/interface/abstract claims → read the actual declaration
+>    - Configuration values → check actual config files
+>    - Absolute statements ("always", "all modules", "never") → verify scope is correct
+>    - Every claim should be traceable to a primary source. If it's not, flag it.
+>    - Any factual error is [CRITICAL]. Any value marked "TBD" or "unknown" when
+>      extractable from the codebase is [HIGH].
+>
+> 2. **Completeness** — Does the document cover everything its title promises?
+>    - Compare against what a developer working on this codebase would need.
+>    - Are edge cases and failure modes documented where relevant?
+>    - If a problem is identified (e.g., tech debt), is a next step or mitigation noted?
+>    - Are all terms and abbreviations defined or referenced in the glossary?
+>
+> 3. **Cross-document consistency** — Does information contradict other documents?
+>    - If a wrong claim propagates across multiple docs, flag each propagation separately.
+>    - Do summaries in INDEX.md match what the primary documents actually say?
+>    - Is the same concept called the same name everywhere? (not "bundle" in one doc
+>      and "module" in another for the same thing)
+>
+> 4. **Depth vs. signal** — Quality of information, not quantity.
+>    - Does it explain patterns, relationships, and WHY — or just list names?
+>    - Is information duplicated from other documents without adding new value?
+>    - Is the signal-to-noise ratio high? Could sections be removed without losing
+>      anything an agent would need?
+>
+> 5. **Usefulness** — Imagine you're an agent asked to add a feature, fix a bug, or
+>    understand a module in this codebase.
+>    - Would this document let you act correctly without re-discovering?
+>    - Can you find the specific information you need quickly from the structure?
+>    - Are the claims grounded in specific locations (file paths, class names) or
+>      generic statements that could apply to any project?
+>
+> 6. **Meta-document integrity** — INDEX.md, README.md, and AGENTS.md are derived from
+>    the 13 primary documents.
+>    - Do their summaries and values accurately reflect the current primary doc content?
+>    - Is placeholder text or template markers still present?
+>    - Are answered questions still listed as open in open-questions.md?
 >
 > Grade each document: A+ (exceptional), A (thorough), B+ (good with minor gaps), B (adequate),
 > B- (shallow), C+ (significant gaps), C (barely useful), D (misleading or wrong), F (missing/empty).
@@ -342,9 +376,6 @@ Prompt to pass to the subagent:
 > All issues MUST have severity: [CRITICAL], [HIGH], [MEDIUM], or [MINOR].
 >
 > **Minimum 15 spot-checks** (verify claims against actual code). At least 5 must be version verifications.
->
-> Also review AGENTS.md — are the discovered values accurate and useful?
-> Check for error propagation: if one doc has a wrong version, check if other docs repeat it.
 >
 > Write the full review to knowledge/DISCOVERY-GRADE.md using the DISCOVERY-GRADE.md template format.
 
