@@ -2,7 +2,7 @@
 name: aid-discover
 description: >
   Brownfield codebase discovery with built-in quality gate. Generates KB, reviews it,
-  collects user input, and fixes issues — one step per run. State-machine: GENERATE → REVIEW → Q&A → FIX → DONE.
+  collects user input, fixes issues, and gets user approval — one step per run. State-machine: GENERATE → REVIEW → Q&A → FIX → APPROVAL → DONE.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "[--grade A] minimum acceptable grade (default: A)  [--reset] clear KB and restart"
 ---
@@ -53,7 +53,8 @@ State 1: Missing KB docs                              → GENERATE mode
 State 2: All docs, no GRADE file                       → REVIEW mode
 State 3: GRADE file, grade < min, has Pending Q&A      → Q&A mode
 State 4: GRADE file, grade < min, no Pending Q&A       → FIX mode
-State 5: GRADE file, grade >= min                      → DONE
+State 5: GRADE file, grade >= min, not user-approved    → APPROVAL mode
+State 6: GRADE file, grade >= min, user-approved        → DONE
 ```
 
 **Detection logic:**
@@ -70,16 +71,19 @@ State 5: GRADE file, grade >= min                      → DONE
    - Read the current overall grade and minimum grade
    - If `--grade` was provided, update the minimum grade in the file
    - Compare current grade against minimum (use grade ordering below)
-   - If current grade >= minimum → **DONE**
    - If current grade < minimum:
      - Read `knowledge/additional-info.md` for entries with `**Status:** Pending`
      - If Pending entries exist → **Q&A**
      - If no Pending entries → **FIX**
+   - If current grade >= minimum:
+     - Check DISCOVERY-GRADE.md for `**User Approved:** yes`
+     - If approved → **DONE**
+     - If not approved → **APPROVAL**
 
 **Grade ordering** (highest to lowest):
 `A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F`
 
-Print the detected state: `[State: {GENERATE|REVIEW|Q&A|FIX|DONE}]`
+Print the detected state: `[State: {GENERATE|REVIEW|Q&A|FIX|APPROVAL|DONE}]`
 
 ---
 
@@ -413,7 +417,7 @@ Add the first Review History entry.
 Print: `[Review 2/2] Review complete. Grade: {overall}. Minimum: {min}. Run /aid-discover again to {fix issues|proceed}.`
 
 **Grade comparison:**
-- If overall grade >= minimum → Next run will enter DONE mode
+- If overall grade >= minimum → Next run will enter APPROVAL mode (user sign-off)
 - If overall grade < minimum and Pending Q&A exists → Next run will enter Q&A mode
 - If overall grade < minimum and no Pending Q&A → Next run will enter FIX mode
 
@@ -578,15 +582,63 @@ Print: `[Fix 3/3] Complete. Grade: {old} → {new}. Run /aid-discover again to {
 
 **If the grade is still below minimum:** The next run will check for Pending Q&A entries first (→ Q&A mode) or proceed to FIX mode if none. This is expected — some fixes may introduce new issues or the reviewer may catch things the fixer missed. The cycle continues until the grade meets the minimum.
 
+**If the grade meets the minimum:** The next run will enter APPROVAL mode for user sign-off.
+
 **If documents still have issues after fixing:** The next run will re-enter the appropriate mode (Q&A if new Pending questions, FIX otherwise) to continue.
+
+---
+
+## Mode: APPROVAL
+
+DISCOVERY-GRADE.md exists, the grade meets or exceeds the minimum, but the user has not
+yet approved the KB.
+
+### Step 1: Present Summary
+
+Print a brief summary of the KB state:
+- Overall grade and minimum
+- Total Q&A items (answered/skipped/pending)
+- Number of fix cycles completed
+- Any remaining [MINOR] issues from the grade file
+
+### Step 2: Ask for User Approval
+
+```
+The Knowledge Base has reached the minimum grade of {minimum} (current: {grade}).
+
+Please review the documentation in knowledge/ and let us know if there is anything
+else we should consider.
+
+[1] Approved — KB is ready for the next phase
+[2] Additional consideration: ___
+```
+
+**Wait for the user's response.**
+
+### Step 3: Process Response
+
+- **User chose [1] (Approved):**
+  - Add `**User Approved:** yes` to the top of DISCOVERY-GRADE.md (after the Minimum Grade line)
+  - Add a Review History entry: `| {N} | {date} | {grade} | User Approval | User approved KB for next phase |`
+  - Print: `✅ Discovery complete. Grade: {grade}. KB approved and ready for the Interview phase.`
+
+- **User provided additional consideration [2]:**
+  - Add the consideration as a new entry in `knowledge/additional-info.md` with:
+    - Next sequential Q{N} ID
+    - `[User Feedback: High]` category and impact
+    - `**Status:** Pending`
+    - The user's text as the context
+  - Print: `[Approval] Consideration recorded as Q{N}. Run /aid-discover again to address it.`
+  - The next run will detect Pending Q&A and re-enter the cycle (Q&A or FIX depending on
+    whether it needs user input or can be resolved from code).
 
 ---
 
 ## Mode: DONE
 
-DISCOVERY-GRADE.md exists and the overall grade meets or exceeds the minimum.
+DISCOVERY-GRADE.md exists, the grade meets or exceeds the minimum, and the user has approved.
 
-Print: `✅ Discovery complete. Grade: {grade}. Minimum: {minimum}. KB is ready for the Interview phase.`
+Print: `✅ Discovery complete. Grade: {grade}. Minimum: {minimum}. KB approved and ready for the Interview phase.`
 
 No action needed. The user can proceed to `/aid-interview`.
 
