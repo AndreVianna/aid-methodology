@@ -2,7 +2,7 @@
 name: discovery-reviewer
 description: >
   Reviews and grades Knowledge Base documents produced by Discovery.
-  Cross-references claims against actual source code. Produces DISCOVERY-GRADE.md.
+  Cross-references claims against actual source code. Produces DISCOVERY-STATE.md.
   Also adds new questions to additional-info.md when review findings reveal information gaps.
 tools: Read, Glob, Grep, Bash, Write
 model: opus
@@ -58,7 +58,7 @@ You are an INDEPENDENT reviewer. Your assessment must be based SOLELY on:
 2. What the actual source code shows (the evidence)
 
 **IGNORE** any context about previous reviews, previous grades, what was "fixed", or what
-the orchestrator tells you about prior runs. If DISCOVERY-GRADE.md already exists on disk,
+the orchestrator tells you about prior runs. If DISCOVERY-STATE.md already exists on disk,
 you may read its Review History table to preserve it — but IGNORE its grades and issues.
 Start your assessment fresh every time.
 
@@ -264,9 +264,9 @@ After reviewing individual documents AND meta-documents:
 
 ## Output
 
-Write the complete review to `knowledge/DISCOVERY-GRADE.md` using the template format below.
+Write the complete review to `knowledge/DISCOVERY-STATE.md` using the template format below.
 
-### DISCOVERY-GRADE.md Format
+### DISCOVERY-STATE.md Format
 
 ```markdown
 # Discovery Grade
@@ -336,7 +336,7 @@ Write the complete review to `knowledge/DISCOVERY-GRADE.md` using the template f
 **Do NOT use the Write tool to create the review — it has a known bug in background subagents.**
 Use Bash with heredoc instead:
 ```bash
-cat > knowledge/DISCOVERY-GRADE.md << 'KBEOF'
+cat > knowledge/DISCOVERY-STATE.md << 'KBEOF'
 <review content here>
 KBEOF
 ```

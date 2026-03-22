@@ -31,12 +31,12 @@ Plan Mode restricts all operations to read-only — subagents will NOT be able t
 
 | Argument | Effect |
 |----------|--------|
-| `--grade X` | Set minimum acceptable grade. Format: `[A-F][-+]?` (e.g., A, A-, B+). Default: `A`. Persists in DISCOVERY-GRADE.md — user doesn't need to repeat it. |
+| `--grade X` | Set minimum acceptable grade. Format: `[A-F][-+]?` (e.g., A, A-, B+). Default: `A`. Persists in DISCOVERY-STATE.md — user doesn't need to repeat it. |
 | `--reset` | Clear entire `knowledge/` directory and restart from scratch. |
 
 **Grade persistence:**
-- When DISCOVERY-GRADE.md doesn't exist yet: the `--grade` value is saved into the file as "Minimum Grade"
-- When DISCOVERY-GRADE.md already exists: if `--grade` is provided, it UPDATES the minimum in the file. If not provided, the minimum is READ from the file.
+- When DISCOVERY-STATE.md doesn't exist yet: the `--grade` value is saved into the file as "Minimum Grade"
+- When DISCOVERY-STATE.md already exists: if `--grade` is provided, it UPDATES the minimum in the file. If not provided, the minimum is READ from the file.
 
 ---
 
@@ -66,8 +66,8 @@ State 6: GRADE file, grade >= min, user-approved        → DONE
    security-model.md, tech-debt.md, infrastructure.md, additional-info.md
    ```
 2. If any are missing → **GENERATE**
-3. If all 13 exist but `knowledge/DISCOVERY-GRADE.md` does not exist → **REVIEW**
-4. If `knowledge/DISCOVERY-GRADE.md` exists:
+3. If all 13 exist but `knowledge/DISCOVERY-STATE.md` does not exist → **REVIEW**
+4. If `knowledge/DISCOVERY-STATE.md` exists:
    - Read the current overall grade and minimum grade
    - If `--grade` was provided, update the minimum grade in the file
    - Compare current grade against minimum (use grade ordering below)
@@ -76,7 +76,7 @@ State 6: GRADE file, grade >= min, user-approved        → DONE
      - If Pending entries exist → **Q&A**
      - If no Pending entries → **FIX**
    - If current grade >= minimum:
-     - Check DISCOVERY-GRADE.md for `**User Approved:** yes`
+     - Check DISCOVERY-STATE.md for `**User Approved:** yes`
      - If approved → **DONE**
      - If not approved → **APPROVAL**
 
@@ -393,15 +393,15 @@ Prompt to pass to the subagent:
 > questions for things genuinely needing human input — if you can grep the answer, fix it in the
 > review instead.
 >
-> Write the full review to knowledge/DISCOVERY-GRADE.md using the DISCOVERY-GRADE.md template format.
+> Write the full review to knowledge/DISCOVERY-STATE.md using the DISCOVERY-STATE.md template format.
 
 Wait for completion.
 
 ---
 
-### Step 2: Post-Process DISCOVERY-GRADE.md
+### Step 2: Post-Process DISCOVERY-STATE.md
 
-Read `knowledge/DISCOVERY-GRADE.md`. Verify it contains:
+Read `knowledge/DISCOVERY-STATE.md`. Verify it contains:
 - [ ] Grade for every document (13 KB docs + AGENTS.md + CLAUDE.md + INDEX.md + README.md)
 - [ ] Specific issues with severity levels ([CRITICAL], [HIGH], [MEDIUM], [MINOR])
 - [ ] Verification spot-checks (minimum 10)
@@ -425,7 +425,7 @@ Print: `[Review 2/2] Review complete. Grade: {overall}. Minimum: {min}. Run /aid
 
 ## Mode: Q&A
 
-DISCOVERY-GRADE.md exists, the grade is below minimum, and `knowledge/additional-info.md`
+DISCOVERY-STATE.md exists, the grade is below minimum, and `knowledge/additional-info.md`
 contains entries with `**Status:** Pending`.
 
 The Q&A mode presents questions to the user **one at a time**, collects answers, and updates
@@ -494,11 +494,11 @@ from additional-info.md to improve the KB documents.
 
 ## Mode: FIX
 
-DISCOVERY-GRADE.md exists but the overall grade is below the minimum.
+DISCOVERY-STATE.md exists but the overall grade is below the minimum.
 
 ### Step 1: Identify Documents Below Threshold
 
-Read DISCOVERY-GRADE.md. List all documents graded below the minimum grade.
+Read DISCOVERY-STATE.md. List all documents graded below the minimum grade.
 Prioritize: [CRITICAL] issues first, then [HIGH], then [MEDIUM].
 
 Print: `[Fix] {N} documents below {minimum}. Fixing...`
@@ -509,18 +509,18 @@ Print: `[Fix] {N} documents below {minimum}. Fixing...`
 
 For each document below the minimum grade, in priority order:
 
-1. Read the specific issues from the Issues Found section of DISCOVERY-GRADE.md
+1. Read the specific issues from the Issues Found section of DISCOVERY-STATE.md
 2. Read `knowledge/additional-info.md` for Answered entries that apply to this document
 3. Read the relevant source code to gather missing information
 4. Edit the KB document to address the issues — combining review findings WITH user answers from additional-info.md. A review finding ("auth section is shallow") + a user answer ("OAuth2 with Azure AD") together produce a precise, evidence-backed fix.
-5. **REMOVE the fixed issue lines** from the Issues Found section of DISCOVERY-GRADE.md
+5. **REMOVE the fixed issue lines** from the Issues Found section of DISCOVERY-STATE.md
 6. For each Answered entry from additional-info.md that was incorporated, update its `**Applied to:**` field with the target document name and cycle number
 7. Re-grade the document
 
 Print: `[Fix] Improving {document}... {old grade} → {new grade}`
 
 **IMPORTANT:** When an issue is fixed, its line MUST be removed from the Issues Found section.
-DISCOVERY-GRADE.md always reflects the CURRENT state, not history. History is tracked in the
+DISCOVERY-STATE.md always reflects the CURRENT state, not history. History is tracked in the
 Review History table.
 
 **IMPORTANT:** Answered entries in additional-info.md are fix items too. Treat them with the
@@ -555,7 +555,7 @@ The agent that wrote the fix CANNOT evaluate its own work. This is a hard rule.
 Print: `[Fix 2/3] Re-reviewing after fixes...`
 
 Dispatch **discovery-reviewer** with the prompt from REVIEW mode Step 1.
-The reviewer will overwrite DISCOVERY-GRADE.md with a fresh assessment.
+The reviewer will overwrite DISCOVERY-STATE.md with a fresh assessment.
 
 **⚠️ CONTAMINATION PREVENTION:**
 - Do NOT include previous review results in the prompt to the reviewer.
@@ -572,7 +572,7 @@ Wait for completion.
 
 ### Step 4: Post-Fix Update
 
-Read the new DISCOVERY-GRADE.md produced by the reviewer.
+Read the new DISCOVERY-STATE.md produced by the reviewer.
 
 1. Verify the Review History was preserved (reviewer should append, not replace)
 2. If Review History is missing entries from before the re-review, add them back
@@ -590,7 +590,7 @@ Print: `[Fix 3/3] Complete. Grade: {old} → {new}. Run /aid-discover again to {
 
 ## Mode: APPROVAL
 
-DISCOVERY-GRADE.md exists, the grade meets or exceeds the minimum, but the user has not
+DISCOVERY-STATE.md exists, the grade meets or exceeds the minimum, but the user has not
 yet approved the KB.
 
 ### Step 1: Present Summary
@@ -618,7 +618,7 @@ else we should consider.
 ### Step 3: Process Response
 
 - **User chose [1] (Approved):**
-  - Add `**User Approved:** yes` to the top of DISCOVERY-GRADE.md (after the Minimum Grade line)
+  - Add `**User Approved:** yes` to the top of DISCOVERY-STATE.md (after the Minimum Grade line)
   - Add a Review History entry: `| {N} | {date} | {grade} | User Approval | User approved KB for next phase |`
   - Print: `✅ Discovery complete. Grade: {grade}. KB approved and ready for the Interview phase.`
 
@@ -636,7 +636,7 @@ else we should consider.
 
 ## Mode: DONE
 
-DISCOVERY-GRADE.md exists, the grade meets or exceeds the minimum, and the user has approved.
+DISCOVERY-STATE.md exists, the grade meets or exceeds the minimum, and the user has approved.
 
 Print: `✅ Discovery complete. Grade: {grade}. Minimum: {minimum}. KB approved and ready for the Interview phase.`
 
@@ -658,7 +658,7 @@ When a GAP.md or IMPEDIMENT.md triggers re-discovery of a specific area:
 3. Dispatch ONLY the relevant subagent for the area that needs updating
 4. Regenerate README.md and INDEX.md (orchestrator does this directly)
 5. Update `knowledge/README.md` revision history with the targeted update
-6. Delete `knowledge/DISCOVERY-GRADE.md` so the next run re-reviews
+6. Delete `knowledge/DISCOVERY-STATE.md` so the next run re-reviews
 7. Report completion to the calling phase
 
 ---
@@ -672,8 +672,8 @@ When a GAP.md or IMPEDIMENT.md triggers re-discovery of a specific area:
 - [ ] README.md reflects completeness status and revision history
 - [ ] INDEX.md generated with 2-3 line summaries of every KB document
 - [ ] AGENTS.md and CLAUDE.md placeholders filled with discovered data
-- [ ] All issues in DISCOVERY-GRADE.md have severity: [CRITICAL], [HIGH], or [MEDIUM]
-- [ ] Minimum 10 spot-checks in DISCOVERY-GRADE.md
+- [ ] All issues in DISCOVERY-STATE.md have severity: [CRITICAL], [HIGH], or [MEDIUM]
+- [ ] Minimum 10 spot-checks in DISCOVERY-STATE.md
 
 ---
 
