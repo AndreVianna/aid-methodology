@@ -77,8 +77,8 @@ Dispatched in parallel by `aid-discover` to produce Knowledge Base documents.
 | `discovery-analyst` | `module-map.md`, `coding-standards.md`, `data-model.md` |
 | `discovery-integrator` | `api-contracts.md`, `integration-map.md`, `domain-glossary.md` |
 | `discovery-quality` | `test-landscape.md`, `security-model.md`, `tech-debt.md` |
-| `discovery-scout` | `infrastructure.md`, `open-questions.md` |
-| `discovery-reviewer` | `DISCOVERY-GRADE.md` (cross-references KB against source) |
+| `discovery-scout` | `infrastructure.md`, `additional-info.md` |
+| `discovery-reviewer` | `DISCOVERY-STATE.md` (cross-references KB against source, tracks grade + approval) |
 
 ### Role-Based Agents (13)
 

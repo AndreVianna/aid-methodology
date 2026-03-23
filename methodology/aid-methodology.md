@@ -125,7 +125,7 @@ knowledge/
 ├── security-model.md      # Auth/authz, secrets management, compliance requirements
 ├── tech-debt.md           # Known debt items with file refs, risk ratings, remediation
 ├── infrastructure.md      # Hosting, networking, environments, deployment model
-└── open-questions.md      # Things that need human clarification
+└── additional-info.md     # Structured Q&A: gaps, assumptions, and clarifications
 ```
 
 ### Completeness Is Tracked
@@ -243,21 +243,30 @@ AID organizes eleven phases into four groups. The pipeline is linear with feedba
 
 **Process:**
 
-The interview is driven by a **knowledge model** — a structured map of what a complete REQUIREMENTS.md needs, with each field tracked as `known`, `unknown`, or `assumed`.
+Two modes depending on whether REQUIREMENTS.md already exists:
 
-**Question selection:**
-1. Scan knowledge model for `unknown` fields.
-2. Prioritize by dependency: fields that unblock other fields go first.
-3. Batch efficiency: confirm `assumed` fields alongside new questions when natural.
-4. Open questions early ("Tell me about your users") → specific later ("Do you need HIPAA compliance?").
-5. Never ask what the KB already answered — mark as `known (from discovery)`, but flag critical items for confirmation.
+**First run (no REQUIREMENTS.md):** Conversational interview, one question at a time. Starts with "What are we building? Tell me the goal and what success looks like." Each answer updates REQUIREMENTS.md immediately — no batching. When KB exists (brownfield), questions come with suggested answers and source citations: `[From: knowledge/{source}.md]` with options to accept, skip, or provide a custom answer. Nothing is silently inferred — every KB-sourced answer needs user confirmation. Interview concludes with an approval gate.
+
+**Subsequent runs (REQUIREMENTS.md exists):** Cross-references requirements against the full KB and codebase. Checks for contradictions, gaps, missing evidence, and staleness. Assigns a grade based on the number of questions found:
+
+| Grade | Questions | Meaning |
+|-------|-----------|---------|
+| A | 0 | Consistent with KB, no questions |
+| B | 1–3 | Small gaps or refinements |
+| C | 4–7 | Significant gaps or contradictions |
+| D | 8+ | Serious consistency problems |
+
+The grade is a snapshot at run start — it does NOT change after answering questions within the same run. The user runs again to get the updated grade.
+
+**REQUIREMENTS.md sections:** Objective, Problem Statement, Users & Stakeholders, Scope (In/Out), Functional Requirements, Non-Functional Requirements, Constraints, Assumptions & Dependencies, Acceptance Criteria, Priority. A Change Log at the top tracks every modification.
 
 **Key behaviors:**
 - One question at a time. Humans think better with focused prompts.
 - Each answer shapes the next question. Adaptive, not scripted.
-- Brownfield interviews are shorter (KB pre-fills technical fields). Greenfield are longer.
+- Brownfield interviews are shorter (KB pre-fills technical context). Greenfield are longer.
+- KB findings are never silently inferred — always presented as suggested answers for user confirmation.
 
-**Output:** `REQUIREMENTS.md` — structured requirements with Problem Statement, Users, Features (priority-ordered), Technical Context, Constraints, Assumptions, and Out of Scope.
+**Output:** `knowledge/REQUIREMENTS.md` — structured requirements with Change Log, 10 sections covering scope, features, constraints, and acceptance criteria.
 
 **Feedback to Discovery:** If an answer reveals the KB is wrong or incomplete, the interview pauses, triggers targeted discovery, then resumes with corrected understanding.
 

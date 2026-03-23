@@ -1,98 +1,95 @@
 # REQUIREMENTS.md Template
 
+This template defines the structure for `knowledge/REQUIREMENTS.md` — a first-class methodology artifact produced by [aid-interview](../../skills/aid-interview/).
+
+## Usage
+
+- **First run:** aid-interview walks through each section with the stakeholder and fills them in.
+- **Subsequent runs:** aid-interview cross-references this file against the Knowledge Base, grades consistency, and asks targeted questions.
+
+## Conventions
+
+- **Change Log is mandatory.** Every modification — initial creation, cross-reference updates, targeted re-interviews — gets an entry.
+- **Sections can be marked N/A** if not applicable to the project.
+- **`*(pending)*`** marks sections not yet addressed during the interview.
+- **Cross-reference runs** add Change Log entries with source `/aid-interview (cross-reference)`.
+- **File is uppercase** (`REQUIREMENTS.md`) — it's a first-class artifact in `knowledge/`.
+
+---
+
+## Template
+
 ```markdown
-# {Project Name} — Requirements
+# Requirements
 
-**Date:** {date}
-**Interviewer:** {who conducted the interview}
-**Stakeholder:** {who was interviewed}
+## Change Log
 
-## Client
-- **Name:** {company or individual}
-- **Domain:** {industry / business type}
-- **Contact:** {primary contact and channel}
+| Date | Change | Source |
+|------|--------|--------|
+| {date} | Initial interview started | /aid-interview |
 
-## Problem Statement
+## 1. Objective
 
-{In the stakeholder's words, not technical language. This should read like they wrote it.}
+{What are we building and why? In the stakeholder's words.}
 
-## Users
+## 2. Problem Statement
+
+{What problem does this solve? What's the current pain?}
+
+## 3. Users & Stakeholders
+
+{Who uses this? Who cares about the outcome?}
 
 | Role | Description | Primary Needs |
 |------|-------------|---------------|
-| {role name} | {who they are, what they do} | {what they need from this system} |
+| {role} | {who} | {needs} |
 
-## Features (Priority Ordered)
+## 4. Scope
 
-| # | Feature | Priority | Description | Notes |
-|---|---------|----------|-------------|-------|
-| 1 | {feature name} | Must | {what it does} | {constraints, details} |
-| 2 | {feature name} | Must | {what it does} | |
-| 3 | {feature name} | Should | {what it does} | |
-| 4 | {feature name} | Could | {what it does} | {nice to have} |
+### In Scope
 
-**Priority key:**
-- **Must** — The system is not viable without this.
-- **Should** — Important but the system works without it.
-- **Could** — Nice to have. Build if time permits.
+{What's included in this project.}
 
-## Technical Context
+### Out of Scope
 
-### Existing Systems
-{What they already have. Current tools, platforms, databases.}
+{What's explicitly excluded. Prevents scope creep.}
 
-### Integrations
-| System | Type | Direction | Notes |
-|--------|------|-----------|-------|
-| {name} | {API/DB/Queue/File} | {In/Out/Both} | {auth, rate limits, etc.} |
+## 5. Functional Requirements
 
-### Platform
-- **Target:** {web, desktop, mobile, API, CLI}
-- **OS:** {if relevant}
-- **Browser:** {if web}
+{What the system must do. Specific enough to implement.}
 
-### Data
-- **Volume:** {approximate data size/throughput}
-- **Sensitivity:** {public, internal, PII, regulated}
-- **Existing data:** {migration needed? from where?}
+## 6. Non-Functional Requirements
 
-## Constraints
+{Performance, security, reliability, scalability targets. Measurable where possible.}
 
-### Timeline
-{Hard deadline? Preferred pace? Phased delivery acceptable?}
+## 7. Constraints
 
-### Budget
-{Fixed price, hourly, range. What's the expected investment?}
+{Timeline, budget, team, compliance, technical limitations.}
 
-### Team
-{Who's available on the client side? Technical skills?}
+## 8. Assumptions & Dependencies
 
-### Compliance
-{HIPAA, GDPR, SOC2, PCI, industry-specific regulations.}
+{What we're assuming to be true. External dependencies.}
 
-## Assumptions
+## 9. Acceptance Criteria
 
-{Things we assumed during the interview that need explicit verification.
-Each assumption should be stated clearly so the stakeholder can confirm or deny.}
+{How do we know it's done? Testable conditions for key features.}
 
-- {Assumption 1 — stated because of {reason}}
-- {Assumption 2 — inferred from {answer}}
+## 10. Priority
 
-## Out of Scope
-
-{Explicitly excluded from this project. Prevents scope creep.
-Be specific — "mobile app" not "anything else."}
-
-- {Item 1}
-- {Item 2}
-
-## Interview Notes
-
-{Optional. Raw notes, quotes, context that doesn't fit above but may be useful later.}
-
-## Revision History
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | {date} | aid-interview | Initial requirements from stakeholder interview |
+{Feature/requirement priority ordering. Must/Should/Could or numbered.}
 ```
+
+---
+
+## Notes
+
+- Sections not yet discussed during the interview should contain `*(pending)*` as a placeholder.
+- The Change Log tracks the full history of the document. Example entries after cross-reference:
+
+  ```
+  | 2026-03-15 | Updated NFRs: added latency target from load-test results | /aid-interview (cross-reference) |
+  | 2026-03-20 | Revised scope: moved mobile app to Out of Scope per stakeholder | /aid-interview |
+  ```
+
+- The stakeholder's own language is preferred in Objective and Problem Statement. Don't rewrite their words into technical jargon.
+- Acceptance Criteria should be testable — "the system is fast" is not a criterion; "API response < 200ms p95" is.

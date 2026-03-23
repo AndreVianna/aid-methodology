@@ -1,8 +1,9 @@
-# Discovery Grade
+# Discovery State
 
 ## Settings
 - **Minimum Grade:** {grade, default A}
 - **Last Run:** {ISO timestamp}
+- **User Approved:** {yes / no}
 
 ## Current Grade: {overall grade}
 
@@ -24,7 +25,7 @@
 | security-model.md | {grade} | {status} | {issues} |
 | tech-debt.md | {grade} | {status} | {issues} |
 | infrastructure.md | {grade} | {status} | {issues} |
-| open-questions.md | {grade} | {status} | {issues} |
+| additional-info.md | {grade} | {status} | {issues} |
 | INDEX.md | {grade} | {status} | {issues} |
 | README.md | {grade} | {status} | {issues} |
 | AGENTS.md | {grade} | {status} | {issues} |
@@ -61,6 +62,6 @@ Multiple [MINOR] → max A-. One [MINOR] → max A. Only zero issues = A+.
 
 ## Review History
 
-| Run | Date | Grade | Action | Issues Fixed |
-|-----|------|-------|--------|-------------|
-| 1 | {date} | {grade} | {Review/Fix} | {— or count} |
+| Run | Date | Grade | Action | Issues Fixed | Q&A Pending |
+|-----|------|-------|--------|-------------|-------------|
+| 1 | {date} | {grade} | {Review/Fix/Q&A/Approval} | {— or count} | {count or —} |

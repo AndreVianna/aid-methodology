@@ -19,7 +19,7 @@ The Knowledge Base (`knowledge/`) is the gravitational center of every AID proje
 | [security-model.md](security-model.md) | Auth/authz, secrets, compliance | aid-interview + aid-discover |
 | [tech-debt.md](tech-debt.md) | Known debt items with file refs and risk ratings | aid-discover |
 | [infrastructure.md](infrastructure.md) | Hosting, networking, environments, deployment | aid-discover + aid-interview |
-| [open-questions.md](open-questions.md) | What code alone can't tell us | aid-discover |
+| [additional-info.md](additional-info.md) | Structured Q&A — gaps, assumptions, clarifications with impact tracking | aid-discover |
 
 ## Top-Level README Template
 
@@ -48,14 +48,14 @@ The KB root `README.md` tracks completeness across all documents:
 | security-model.md | ❌ Missing | — | Needs interview |
 | tech-debt.md | ✅ Complete | {date} | aid-discover |
 | infrastructure.md | ❌ Missing | — | Needs interview |
-| open-questions.md | ✅ Complete | {date} | aid-discover |
+| additional-info.md | ✅ Complete | {date} | aid-discover |
 
 **Status key:** ✅ Complete | ⚠️ Partial | ❌ Missing
 ```
 
 ## Not Every Document Is Required
 
-- **Simple CLI tool:** 4-5 documents (architecture, tech-stack, coding-standards, open-questions)
+- **Simple CLI tool:** 4-5 documents (architecture, tech-stack, coding-standards, additional-info)
 - **Greenfield project:** Start with technology-stack, coding-standards, domain-glossary — populated from interview
 - **Enterprise monorepo:** All 13 documents, possibly more
 - **Data pipeline:** Focus on data-model, integration-map, api-contracts, domain-glossary
@@ -74,4 +74,8 @@ Every KB update should be logged in the README.md revision history section:
 | {date} | aid-discover | All | Initial Knowledge Base creation |
 | {date} | aid-plan (GAP-001) | module-map.md | Added 8 missing service consumers |
 | {date} | aid-implement (IMP-003) | architecture.md | Corrected async model for RecordingService |
+```
+ected async model for RecordingService |
+```
+ected async model for RecordingService |
 ```

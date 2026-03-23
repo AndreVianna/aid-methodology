@@ -32,7 +32,7 @@ The AI agent systematically explored the repository structure, build system, and
 | api-contracts.md | ⚠️ Partial | REST endpoints found, no formal contract docs |
 | integration-map.md | ✅ Complete | Federated search fan-out to remote nodes |
 | domain-glossary.md | ⚠️ Partial | Domain terms extracted from code |
-| open-questions.md | ✅ Complete | 8 questions requiring human input |
+| additional-info.md | ✅ Complete | 8 questions requiring human input |
 
 ### 2. Interview (aid-interview)
 
@@ -56,5 +56,5 @@ With the KB in place, PR review comments were addressed in a single session:
 ## Lessons Learned
 
 1. **Discovery pays for itself immediately.** The KB made every subsequent task faster — PR reviews referenced architecture.md, implementation followed coding-standards.md.
-2. **Open questions are valuable artifacts.** The 8 questions in open-questions.md surfaced assumptions that would have become bugs.
+2. **Open questions are valuable artifacts.** The 8 questions in additional-info.md surfaced assumptions that would have become bugs.
 3. **Partial KB documents are fine.** Not every document needs to be complete. Mark gaps, fill them as you go.
