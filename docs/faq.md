@@ -19,6 +19,9 @@ No. Use what applies:
 
 The phases are a menu, not a checklist. But know what you're skipping and why.
 
+### How do I start a new project?
+Run `/aid-init` first — regardless of whether it's greenfield or brownfield. Init scaffolds the Knowledge Base structure (14 empty templates), creates `AGENTS.md` and `CLAUDE.md` placeholders, and records project metadata. Once init is done, proceed to `/aid-discover` (existing codebase) or `/aid-interview` (new project).
+
 ## Adoption
 
 ### What AI tools does AID work with?
@@ -38,7 +41,7 @@ Start with one delivery. Use the templates. See if the structure helps. Most tea
 ## Technical
 
 ### What's the Knowledge Base?
-Up to 13 markdown documents that capture the living understanding of a project: architecture, module map, technology stack, data model, API contracts, integration map, domain glossary, coding standards, test landscape, security model, tech debt, infrastructure, and open questions. See [templates/knowledge-base/](../templates/knowledge-base/).
+Up to 14 markdown documents that capture the living understanding of a project: architecture, module map, technology stack, data model, API contracts, integration map, domain glossary, coding standards, test landscape, security model, tech debt, infrastructure, project structure, and open questions. See [templates/knowledge-base/](../templates/knowledge-base/).
 
 ### What are feedback loops?
 Formal pathways for a downstream phase to revise upstream artifacts. When implementation reveals the spec was wrong, you don't silently work around it — you create an IMPEDIMENT.md that triggers a spec revision. There are 11 loops total. See the [methodology document](../methodology/aid-methodology.md#4-feedback-loops).

@@ -52,11 +52,25 @@ The script shows a menu — select the tools you use (Claude Code, Codex, Cursor
 
 **Re-running is safe:** identical files are skipped, changed files prompt before overwriting. Use `--force` to overwrite everything without prompts.
 
-### 2. Run Discovery
+### 2. Run Init
 
-After setup, open your AI coding tool in the project directory and run the Discovery phase. It will analyze the codebase, generate the Knowledge Base (`knowledge/`), and fill in the `AGENTS.md` / `CLAUDE.md` placeholders automatically.
+Open your AI coding tool in the project directory and run `/aid-init` to scaffold the Knowledge Base structure before Discovery.
 
-### 3. Start building
+```
+/aid-init
+```
+
+Init asks whether your project is greenfield or brownfield, collects metadata, and creates the `knowledge/` directory with 14 empty KB document templates, plus `AGENTS.md` and `CLAUDE.md` placeholders.
+
+### 3. Run Discovery or Interview
+
+**Brownfield (existing codebase):** Run `/aid-discover` — it will analyze the codebase and fill in the scaffolded Knowledge Base automatically.
+
+**Greenfield (new project):** Run `/aid-interview` to start requirements gathering.
+
+> **Note:** `/aid-init` must run before `/aid-discover` or `/aid-interview`. Discovery expects the KB directory to already exist.
+
+### 4. Start building
 
 You now have a Knowledge Base, configured skills, and agents ready to go. Every phase from Interview to Triage is available as a skill your AI tool can execute.
 
@@ -75,14 +89,14 @@ You now have a Knowledge Base, configured skills, and agents ready to go. Every 
 
 | Resource | Purpose |
 |----------|---------|
-| [`skills/`](skills/README.md) | Human-readable documentation for all 11 phases |
+| [`skills/`](skills/README.md) | Human-readable documentation for all 12 skills (1 setup + 11 phases) |
 | [`agents/`](agents/README.md) | Human-readable documentation for all 13 agent roles |
 
 **Want templates for your project artifacts?**
 ```
 templates/
 ├── requirements/            ← REQUIREMENTS.md template
-├── knowledge-base/          ← 13 KB document templates
+├── knowledge-base/          ← 14 KB document templates
 ├── specs/                   ← SPEC.md template
 ├── delivery-plans/          ← PLAN.md, DETAIL.md, TASK templates
 ├── feedback-artifacts/      ← GAP.md, IMPEDIMENT.md, TRIAGE.md
@@ -104,7 +118,7 @@ examples/
 ### Group 1: Define
 | Phase | Skill | What It Does |
 |-------|-------|-------------|
-| 1. Discover | `aid-discover` | Analyzes an existing codebase; produces the Knowledge Base (13 documents) |
+| 1. Discover | `aid-discover` | Analyzes an existing codebase; produces the Knowledge Base (14 documents) |
 | 2. Interview | `aid-interview` | Adaptive one-question-at-a-time requirements gathering; produces REQUIREMENTS.md |
 | 3. Specify | `aid-specify` | Transforms requirements into a grounded SPEC.md anchored in the KB |
 
@@ -209,8 +223,8 @@ aid-methodology/
 │   ├── aid-methodology.md             ← Complete V3 methodology document
 │   └── images/                        ← Pipeline, comparison, feedback loop diagrams
 ├── skills/                            ← Human-readable phase documentation
-│   ├── README.md                      ← Overview of all 11 skills
-│   └── aid-{phase}/README.md          ← Rich docs per skill
+│   ├── README.md                      ← Overview of all 12 skills (aid-init + 11 phases)
+│   └── aid-{skill}/README.md          ← Rich docs per skill
 ├── agents/                            ← Human-readable agent documentation
 │   ├── README.md                      ← Overview of all 13 agents
 │   └── {agent}/README.md             ← Rich docs per agent specialty

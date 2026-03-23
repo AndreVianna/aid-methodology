@@ -15,7 +15,7 @@ cp path/to/aid-methodology/cursor/AGENTS.md   AGENTS.md
 
 This gives you:
 - `.cursor/rules/` — Always-on rules (methodology workflow, code review standards)
-- `.cursor/skills/` — 11 phase skills (invoked on demand by the agent)
+- `.cursor/skills/` — 12 phase skills (invoked on demand by the agent)
 - `.cursor/agents/` — 19 specialist agents (dispatched via Task tool when available)
 - `AGENTS.md` — Project context for AI agents (edit with your project details)
 
@@ -43,7 +43,8 @@ Skills are the full AID phase instructions. Cursor loads them based on relevance
 
 | Skill | Phase | Description |
 |-------|-------|-------------|
-| `aid-discover` | Discovery | Brownfield codebase discovery with quality gate (GENERATE → REVIEW → FIX → DONE) |
+| `aid-init` | Init | Initialize AID project — scaffold knowledge/ (14 KB templates), set up AGENTS.md |
+| `aid-discover` | Discovery | Brownfield project discovery with quality gate (GENERATE → REVIEW → FIX → DONE) |
 | `aid-interview` | Interview | Adaptive requirements gathering → `REQUIREMENTS.md` |
 | `aid-specify` | Specify | Requirements → formal `SPEC.md` grounded in KB |
 | `aid-plan` | Plan | High-level roadmap → `PLAN.md` (MVP, modules, deliverables) |
@@ -76,8 +77,8 @@ Dispatched in parallel by `aid-discover` to produce Knowledge Base documents.
 | `discovery-architect` | `architecture.md`, `technology-stack.md` |
 | `discovery-analyst` | `module-map.md`, `coding-standards.md`, `data-model.md` |
 | `discovery-integrator` | `api-contracts.md`, `integration-map.md`, `domain-glossary.md` |
-| `discovery-quality` | `test-landscape.md`, `security-model.md`, `tech-debt.md` |
-| `discovery-scout` | `infrastructure.md`, `additional-info.md` |
+| `discovery-quality` | `test-landscape.md`, `security-model.md`, `tech-debt.md`, `infrastructure.md` |
+| `discovery-scout` | `project-structure.md`, `external-sources.md` (pre-scan, runs first) |
 | `discovery-reviewer` | `DISCOVERY-STATE.md` (cross-references KB against source, tracks grade + approval) |
 
 ### Role-Based Agents (13)

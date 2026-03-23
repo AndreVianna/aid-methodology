@@ -8,7 +8,7 @@ Terms and concepts used throughout the AID methodology.
 
 **AID (AI-Integrated Development):** A structured methodology for building and maintaining software with AI agents. 11 phases, 4 groups, 11 feedback loops. Human and AI co-execute every phase.
 
-**Knowledge Base (KB):** Up to 13 markdown documents that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases.
+**Knowledge Base (KB):** Up to 14 markdown documents that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases.
 
 **Feedback Loop:** A formal pathway for a downstream phase to revise upstream artifacts. Produces an artifact (GAP.md, IMPEDIMENT.md, or TRIAGE.md) with a revision trail.
 
@@ -18,11 +18,17 @@ Terms and concepts used throughout the AID methodology.
 
 ---
 
+## Setup
+
+**aid-init:** Bootstrapping step that runs before the pipeline begins. Asks greenfield or brownfield, collects project metadata, and scaffolds the `knowledge/` directory with 14 empty KB document templates. Also creates `AGENTS.md`, `CLAUDE.md`, `DISCOVERY-STATE.md`, `README.md`, and `INDEX.md` placeholders. Not a methodology phase — it prepares the project so Discovery (or Interview) can begin cleanly.
+
+---
+
 ## Phases
 
 | Phase | Group | Produces |
 |-------|-------|----------|
-| **Discover** | Define | Knowledge Base (13 documents) |
+| **Discover** | Define | Knowledge Base (14 documents) |
 | **Interview** | Define | REQUIREMENTS.md |
 | **Specify** | Define | SPEC.md |
 | **Plan** | Map | PLAN.md (strategy: MVP, modules, deliverables) |
@@ -69,6 +75,6 @@ Terms and concepts used throughout the AID methodology.
 
 **Brownfield:** An existing codebase with history, technical debt, and undocumented knowledge. AID's Discovery phase is specifically designed for brownfield systems.
 
-**Greenfield:** A new project with no existing code. In AID, greenfield projects skip Discovery and start at Interview.
+**Greenfield:** A new project with no existing code. In AID, greenfield projects run Init first, then skip Discovery and start at Interview.
 
 **Determinism Test:** Can you write a complete set of rules to validate the outcome? If yes, automate fully. If no, keep a human in the loop. Used to decide automation depth per phase.

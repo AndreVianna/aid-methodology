@@ -6,7 +6,15 @@ Each skill represents one phase of the AID pipeline. These README files provide 
 
 ---
 
-## The 11 Skills
+## The 12 Skills
+
+### Setup (run once, before the pipeline)
+
+| Skill | Phase | Purpose |
+|-------|-------|---------|
+| [aid-init](aid-init/README.md) | 0. Init | Initialize a project: collect metadata, scaffold KB structure, create AGENTS.md and CLAUDE.md placeholders |
+
+> Run `/aid-init` before Discovery (brownfield) or Interview (greenfield). It creates the `knowledge/` directory with 14 empty KB templates and all required placeholders. This is bootstrapping — not a methodology phase.
 
 ### Group 1: Define
 
@@ -44,9 +52,12 @@ Each skill represents one phase of the AID pipeline. These README files provide 
 ## Starting Point
 
 ```
-Is there existing code?
-  YES → Start with aid-discover (Phase 1)
-  NO  → Start with aid-interview (Phase 2)
+Every project:
+  Run aid-init first (scaffolds KB, creates placeholders)
+    ↓
+  Is there existing code?
+    YES → aid-discover (Phase 1)
+    NO  → aid-interview (Phase 2)
 ```
 
 ## Incremental Adoption

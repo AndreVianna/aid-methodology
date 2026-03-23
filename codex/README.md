@@ -15,7 +15,7 @@ cp path/to/aid-methodology/codex/AGENTS.md  AGENTS.md
 ```
 
 This gives you:
-- `.agents/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (11 skills)
+- `.agents/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (12 skills)
 - `.codex/agents/{name}.toml` — Agent definitions in Codex TOML format (19 agents)
 - `AGENTS.md` — Project context for AI agents (edit with your project details)
 
@@ -57,7 +57,7 @@ This gives you:
 
 ## Skills
 
-11 phase skills, one per AID phase. See [`.agents/skills/README.md`](.agents/skills/README.md) for the full list.
+12 phase skills (Phase 0 Init through Phase 11 Triage). See [`.agents/skills/README.md`](.agents/skills/README.md) for the full list.
 Skills live in `.agents/skills/` — Codex reads skills from this directory.
 
 ## Usage
@@ -68,7 +68,7 @@ Skills are loaded as context when matched by description. Each SKILL.md contains
 ### Agents
 Agent TOML files define specialized roles with focused system prompts. Use them to delegate specific phases of the AID pipeline.
 
-The `aid-discover` skill dispatches 5 discovery agents in parallel for fast KB generation, then uses the discovery-reviewer agent for quality gating.
+The `aid-init` skill scaffolds the Knowledge Base (14 documents) and sets up AGENTS.md before discovery begins. The `aid-discover` skill dispatches 5 discovery agents for KB generation, then uses the discovery-reviewer agent for quality gating.
 
 ## File Format
 
