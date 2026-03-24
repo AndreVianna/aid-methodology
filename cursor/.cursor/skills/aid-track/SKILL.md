@@ -4,7 +4,7 @@ description: >
   Production telemetry interpretation. Monitors production by reading error logs,
   issue trackers, metrics, CI/CD, test results, and user feedback. Produces
   TRACK-REPORT.md. Use post-deployment, on schedule, or on-demand.
-allowed-tools: Read, Glob, Grep, Terminal
+allowed-tools: Read, Glob, Grep, Bash
 context: fork
 agent: researcher
 ---

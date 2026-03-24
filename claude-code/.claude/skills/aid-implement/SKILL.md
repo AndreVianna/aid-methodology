@@ -19,18 +19,18 @@ Agents don't improvise. They receive task spec + project spec + KB context. When
 
 ## Inputs
 
-- `TASK-{id}.md` — primary prompt
-- `SPEC.md` — architectural constraints
+- `aid-workspace/{task}/tasks/TASK-{id}.md` — primary prompt (contains Source with feature reference)
+- Feature SPEC: `aid-workspace/{task}/features/{feature}/SPEC.md` — architectural constraints (read the feature(s) referenced in TASK source)
 - `aid-workspace/knowledge/INDEX.md` — always included. The agent's map of the full KB for on-demand self-service.
 - `aid-workspace/knowledge/`: Always coding-standards.md + architecture.md. Add data-model.md (DB work), api-contracts.md (API work), integration-map.md (integrations), test-landscape.md (test-heavy).
 
 ## Process
 
 ### 1. Prepare Context
-Assemble: TASK content + relevant SPEC sections + KB INDEX.md + 2-4 most relevant KB docs. The INDEX lets the agent read additional KB documents on demand.
+Assemble: TASK content + relevant feature SPEC sections + KB INDEX.md + 2-4 most relevant KB docs. The INDEX lets the agent read additional KB documents on demand. Read the feature SPEC(s) referenced in the TASK's Source section.
 
 ### 2. Spawn Agent
-Agent prompt includes: task spec, project spec sections, coding standards, architecture context, and rules:
+Agent prompt includes: task spec, feature SPEC sections, coding standards, architecture context, and rules:
 - Follow coding standards exactly
 - Match interface contracts
 - Write tests as specified
@@ -68,7 +68,7 @@ Do NOT parallelize when: shared DB migrations, same interfaces modified, output/
 
 ## Quality Checklist
 
-- [ ] Agent received TASK + SPEC + INDEX.md + relevant KB docs
+- [ ] Agent received TASK + feature SPEC(s) + INDEX.md + relevant KB docs
 - [ ] Build passes (zero errors, zero warnings)
 - [ ] All tests pass (new and existing)
 - [ ] Files changed match expected scope

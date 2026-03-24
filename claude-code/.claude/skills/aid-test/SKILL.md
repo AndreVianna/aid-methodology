@@ -20,9 +20,9 @@ Review catches what code looks like. Test catches what code does. Both gates are
 ## Inputs
 
 - Feature branch (reviewed, grade A- or above)
-- `DELIVERY-{id}.md` — scope and success criteria
-- `DETAIL.md` — user stories and acceptance criteria
-- `SPEC.md` — expected behavior and NFRs
+- `aid-workspace/{task}/DETAIL.md` — user stories, delivery breakdown, and acceptance criteria
+- `aid-workspace/{task}/PLAN.md` — deliverables and test scenarios
+- Feature SPECs: `aid-workspace/{task}/features/*/SPEC.md` — expected behavior and NFRs
 - `aid-workspace/knowledge/`: test-landscape.md, infrastructure.md
 
 ## Prerequisites
@@ -46,7 +46,7 @@ Full battery in staging: unit (regression), integration, E2E. Record per categor
 Per acceptance criterion from delivery's user stories: verify in staging. Mark passed/failed. Document method (automated or manual).
 
 ### 4. Non-Functional Validation
-Performance (latency under load), concurrency, data integrity, error handling, edge cases — against SPEC.md targets.
+Performance (latency under load), concurrency, data integrity, error handling, edge cases — against feature SPEC targets.
 
 ### 5. Manual Testing (if applicable)
 Visual/UI review, workflow coherence, accessibility, cross-platform. Document observations.

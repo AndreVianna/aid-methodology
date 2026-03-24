@@ -4,8 +4,9 @@ description: >
   Spec-anchored code review with A+ to F grading. Tags issues by source
   (CODE/TASK/SPEC/KB/ARCHITECTURE). Auto-fixes P1/P2 CODE issues. Use when
   implementation is complete and needs quality gate.
-metadata:
-  short-description: Spec-anchored code review with grading
+allowed-tools: Read, Glob, Grep, Bash
+context: fork
+agent: critic
 ---
 
 # Spec-Anchored Code Review
@@ -15,8 +16,8 @@ Review implementation against task spec, project spec, and KB standards. Grade. 
 ## Inputs
 
 - Git diff (against base branch)
-- `TASK-{id}.md` — acceptance criteria
-- `SPEC.md` — architectural constraints
+- `aid-workspace/{task}/tasks/TASK-{id}.md` — acceptance criteria (contains Source with feature reference)
+- Feature SPEC: `aid-workspace/{task}/features/{feature}/SPEC.md` — architectural constraints (read the feature(s) referenced in TASK source)
 - `aid-workspace/knowledge/`: coding-standards.md, architecture.md, test-landscape.md
 
 ## Process

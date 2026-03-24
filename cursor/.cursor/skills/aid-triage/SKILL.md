@@ -5,7 +5,7 @@ description: >
   For bugs: perform root cause analysis and map the patch. Routes bugs to aid-implement
   (short path), CRs to aid-discover (new cycle). Use when TRACK-REPORT.md has findings
   above severity thresholds.
-allowed-tools: Read, Glob, Grep, Terminal
+allowed-tools: Read, Glob, Grep, Bash
 context: fork
 agent: orchestrator
 ---
@@ -17,9 +17,9 @@ Classify findings, map the fix for bugs, and route everything. The classificatio
 ## Inputs
 
 - `TRACK-REPORT.md` — findings from production
-- `SPEC.md` — expected behavior
+- Feature SPECs: `aid-workspace/{task}/features/*/SPEC.md` — expected behavior
 - `aid-workspace/knowledge/` — system context
-- `TASK-{id}.md` files — acceptance criteria for affected features
+- `aid-workspace/{task}/tasks/TASK-{id}.md` files — acceptance criteria for affected features
 
 ## Process
 
@@ -29,7 +29,7 @@ Per finding above threshold: observed symptoms, supporting evidence, impact.
 ### 2. Classify
 
 ```
-Does code do what SPEC.md says?
+Does code do what the feature SPEC says?
 ├── NO → BUG (spec right, code wrong) → root cause analysis → aid-implement
 ├── YES, spec doesn't cover this case →
 │     Obvious fix? → BUG (spec gap) → root cause analysis → aid-implement
@@ -83,7 +83,7 @@ The distinction hinges on the spec:
 ## Quality Checklist
 
 - [ ] Every finding above threshold classified
-- [ ] Classification references SPEC.md
+- [ ] Classification references feature SPEC
 - [ ] Evidence supports classification
 - [ ] Bug vs CR distinction explicit and justified
 - [ ] Severity with expected response time
