@@ -5,8 +5,8 @@ description: >
   The agent acts as a tech lead — reads KB, Requirements, and codebase, proposes
   technical solutions, and builds the spec collaboratively with the developer.
   Writes to SPEC.md in the feature folder.
-allowed-tools: Read, Glob, Grep, Terminal, Write, Edit
-argument-hint: "task-001/feature-001 (required)  [--reset] clear technical spec for this feature"
+allowed-tools: Read, Glob, Grep, Bash, Write, Edit
+argument-hint: "work-001/feature-001 (required)  [--reset] clear technical spec for this feature"
 ---
 
 # Technical Specification — Conversational Refinement
@@ -25,7 +25,7 @@ in the existing architecture. The developer validates, redirects, or deepens the
 ```
 aid-workspace/
   knowledge/               ← shared KB
-  task-001-name/
+  work-001-name/
     REQUIREMENTS.md
     features/
       feature-001-name/
@@ -42,26 +42,26 @@ aid-workspace/
 If no feature path was provided, list available features across all tasks:
 
 ```
-Usage: /aid-specify task-001/feature-001
+Usage: /aid-specify work-001/feature-001
 
 Available features:
-  task-001-user-auth/feature-001-login        [No STATE — not started]
-  task-001-user-auth/feature-002-password      [In Discussion — 2/5 sections]
-  task-002-reporting/feature-001-dashboard     [Ready ✅]
+  work-001-user-auth/feature-001-login        [No STATE — not started]
+  work-001-user-auth/feature-002-password      [In Discussion — 2/5 sections]
+  work-002-reporting/feature-001-dashboard     [Ready ✅]
 ```
 
-Scan all `aid-workspace/task-*/features/feature-*/` directories.
+Scan all `aid-workspace/work-*/features/feature-*/` directories.
 For each, check if STATE.md exists and show status. Exit.
 
-**Shortcut:** If only one task exists, accept bare `feature-001` and resolve automatically.
+**Shortcut:** If only one work exists, accept bare `feature-001` and resolve automatically.
 
 ### Check 2: Feature Exists
 
 Resolve the feature path using **prefix matching** (glob):
-- `feature-001` → match `aid-workspace/{task}/features/feature-001-*/SPEC.md`
-- `task-001/feature-002` → match `aid-workspace/task-001-*/features/feature-002-*/SPEC.md`
+- `feature-001` → match `aid-workspace/{work}/features/feature-001-*/SPEC.md`
+- `work-001/feature-002` → match `aid-workspace/work-001-*/features/feature-002-*/SPEC.md`
 
-The user provides the numeric prefix (`feature-001`, `task-001/feature-002`); the agent
+The user provides the numeric prefix (`feature-001`, `work-001/feature-002`); the agent
 resolves it against the actual folder name which includes the kebab-case suffix.
 
 **If zero matches:** 
@@ -86,8 +86,8 @@ Exit.
 
 | Argument | Effect |
 |----------|--------|
-| `task-NNN/feature-NNN` | **Required.** Path to the feature to specify. |
-| `feature-NNN` | Shortcut when only one task exists. |
+| `work-NNN/feature-NNN` | **Required.** Path to the feature to specify. |
+| `feature-NNN` | Shortcut when only one work exists. |
 | `--reset` | Clear the `## Technical Specification` section from SPEC.md and delete STATE.md. Restart from scratch. |
 
 ---
@@ -96,7 +96,7 @@ Exit.
 
 ⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**
 
-All paths relative to `aid-workspace/{task}/features/{feature}/`.
+All paths relative to `aid-workspace/{work}/features/{feature}/`.
 
 ```plaintext
 State 1: No STATE.md                                       → INITIALIZE
@@ -106,7 +106,7 @@ State 4: STATE.md exists, Status: Blocked (loopback pending)→ BLOCKED
 State 5: STATE.md exists, Status: Ready                     → DONE
 ```
 
-Print: `[{task}/{feature}: {STATE}]`
+Print: `[{work}/{feature}: {STATE}]`
 
 ---
 
@@ -119,7 +119,7 @@ No STATE.md exists. First run for this feature.
 Read ALL of these before making any proposal:
 
 1. **SPEC.md** — the feature's requirements side (description, user stories, acceptance criteria)
-2. **`aid-workspace/{task}/REQUIREMENTS.md`** — full requirements for cross-reference
+2. **`aid-workspace/{work}/REQUIREMENTS.md`** — full requirements for cross-reference
 3. **`aid-workspace/knowledge/INDEX.md`** — then read specific KB documents relevant to
    this feature:
    - Always read: `architecture.md`, `technology-stack.md`, `coding-standards.md`,
@@ -323,7 +323,7 @@ The discussion may reveal problems that go beyond this feature's specification.
   - **Category:** {area}
   - **Impact:** High
   - **Status:** Pending
-  - **Context:** During {task}/{feature} specification, developer noted {what}
+  - **Context:** During {work}/{feature} specification, developer noted {what}
   - **Suggested:** {suggestion or "—"}
   - **Question:** {what needs investigation}
   ```
@@ -335,13 +335,13 @@ The discussion may reveal problems that go beyond this feature's specification.
 **If the fix is simple:** Fix REQUIREMENTS.md and SPEC.md directly, add Change Log entries.
 
 **If the fix requires re-interview:**
-- Add a Q&A entry to `aid-workspace/{task}/INTERVIEW-STATE.md`:
+- Add a Q&A entry to `aid-workspace/{work}/INTERVIEW-STATE.md`:
   ```markdown
   ### IQ{N}: [{Category}: {Impact}]
 
   **Question:** {question for the stakeholder}
-  **Context:** During {task}/{feature} specification, developer noted {what}
-  **Source:** /aid-specify {task}/{feature}
+  **Context:** During {work}/{feature} specification, developer noted {what}
+  **Source:** /aid-specify {work}/{feature}
   **Suggested:** {suggestion or "—"}
   **Status:** Pending
   ```
@@ -356,7 +356,7 @@ The discussion may reveal problems that go beyond this feature's specification.
 
 ### Feature Needs to Be Split
 
-1. Create new feature folder(s) in `aid-workspace/{task}/features/`
+1. Create new feature folder(s) in `aid-workspace/{work}/features/`
 2. Create SPEC.md for each new feature using the template
 3. Redistribute content from the original SPEC.md
 4. Add Change Log entries to ALL affected files
@@ -399,11 +399,11 @@ STATE.md has `**Status:** Blocked` and Loopbacks with `Pending` status.
 STATE.md has `**Status:** Ready`.
 
 ```
-✅ {task}/{feature} specification is complete.
+✅ {work}/{feature} specification is complete.
 
 Sections specified: {list}
 
-Ready for /aid-plan. Run /aid-specify {task}/{next-feature} for the next feature.
+Ready for /aid-plan. Run /aid-specify {work}/{next-feature} for the next feature.
 ```
 
 ---

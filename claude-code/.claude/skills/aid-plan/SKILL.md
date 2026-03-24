@@ -22,7 +22,7 @@ Plan is strategy. Detail is tactics. Plan answers "what do we build and in what 
 ```
 aid-workspace/
   knowledge/                ← shared KB (read)
-  task-NNN-{name}/          ← the task being planned
+  work-NNN-{name}/          ← the work being planned
     REQUIREMENTS.md         ← stakeholder requirements (read)
     PLAN.md                 ← OUTPUT: this is what we produce
     features/
@@ -35,21 +35,21 @@ aid-workspace/
 
 | Argument | Effect |
 |----------|--------|
-| `task-NNN` | Plan a specific task. Required if multiple tasks exist. |
-| *(no arg)* | Auto-selects if only one task exists. |
+| `work-NNN` | Plan a specific work. Required if multiple works exist. |
+| *(no arg)* | Auto-selects if only one work exists. |
 
 ## Pre-flight
 
-### Check 1: Locate Task
+### Check 1: Locate Work
 
-1. If arg provided → use that task directory
-2. If single task exists → auto-select
-3. If multiple tasks → list them, ask user to choose
-4. If no tasks → **STOP.** "No tasks found. Run `/aid-interview` first."
+1. If arg provided → use that work directory
+2. If single work exists → auto-select
+3. If multiple works → list them, ask user to choose
+4. If no works → **STOP.** "No works found. Run `/aid-interview` first."
 
 ### Check 2: Verify Feature SPECs
 
-1. Scan `aid-workspace/{task}/features/*/SPEC.md`
+1. Scan `aid-workspace/{work}/features/*/SPEC.md`
 2. For each, check the corresponding `STATE.md` — status should be `Done`
 3. If **no features exist** → **STOP.** "No features found. Run `/aid-interview` to decompose requirements into features, then `/aid-specify` to write SPECs."
 4. If **some features not Done** → warn:
@@ -69,8 +69,8 @@ aid-workspace/
 
 ## Inputs
 
-- **Feature SPECs:** All `aid-workspace/{task}/features/*/SPEC.md` files (with Done status)
-- **Requirements:** `aid-workspace/{task}/REQUIREMENTS.md`
+- **Feature SPECs:** All `aid-workspace/{work}/features/*/SPEC.md` files (with Done status)
+- **Requirements:** `aid-workspace/{work}/REQUIREMENTS.md`
 - **KB (selective):** `aid-workspace/knowledge/` — architecture.md, module-map.md, tech-debt.md, test-landscape.md, infrastructure.md
 
 ## Process
@@ -125,12 +125,12 @@ Time-boxed research tasks for uncertain areas. Generate when:
 
 - **→ Discovery:** KB incomplete for planning → write Q&A entry to `aid-workspace/knowledge/DISCOVERY-STATE.md`
 - **→ Specify:** SPEC ambiguous or contradictory → write Q&A entry to feature's `STATE.md`
-- **→ Interview:** Requirements unclear for planning → write Q&A entry to task's `INTERVIEW-STATE.md`
+- **→ Interview:** Requirements unclear for planning → write Q&A entry to work's `INTERVIEW-STATE.md`
 - **← Detail:** Plan too vague → receive feedback, revise
 
 ## Output
 
-`aid-workspace/{task}/PLAN.md` with:
+`aid-workspace/{work}/PLAN.md` with:
 
 ```markdown
 # Plan — {Task Name}
@@ -180,4 +180,4 @@ Time-boxed research tasks for uncertain areas. Generate when:
 - [ ] Test scenarios defined per deliverable, referencing SPEC acceptance criteria
 - [ ] Risks assessed with mitigations and sources
 - [ ] Spikes identified for uncertain areas (from SPEC spike flags + KB gaps)
-- [ ] PLAN.md lives inside the task directory, not project root
+- [ ] PLAN.md lives inside the work directory, not project root

@@ -18,7 +18,7 @@ Decompose PLAN.md into user stories, tasks, precedence graph, and execution wave
 ```
 aid-workspace/
   knowledge/                ← shared KB (read)
-  task-NNN-{name}/          ← the task being detailed
+  work-NNN-{name}/          ← the work being detailed
     REQUIREMENTS.md         ← stakeholder requirements (read)
     PLAN.md                 ← roadmap (read — must exist)
     DETAIL.md               ← OUTPUT: user stories, waves, precedence
@@ -35,21 +35,21 @@ aid-workspace/
 
 | Argument | Effect |
 |----------|--------|
-| `task-NNN` | Detail a specific task. Required if multiple tasks exist. |
-| *(no arg)* | Auto-selects if only one task exists. |
+| `work-NNN` | Detail a specific work. Required if multiple works exist. |
+| *(no arg)* | Auto-selects if only one work exists. |
 
 ## Pre-flight
 
-### Check 1: Locate Task
+### Check 1: Locate Work
 
-1. If arg provided → use that task directory
-2. If single task exists → auto-select
-3. If multiple tasks → list them, ask user to choose
-4. If no tasks → **STOP.** "No tasks found. Run `/aid-interview` first."
+1. If arg provided → use that work directory
+2. If single work exists → auto-select
+3. If multiple works → list them, ask user to choose
+4. If no works → **STOP.** "No works found. Run `/aid-interview` first."
 
 ### Check 2: Verify PLAN.md Exists
 
-1. Check for `aid-workspace/{task}/PLAN.md`
+1. Check for `aid-workspace/{work}/PLAN.md`
 2. If missing → **STOP.** "No PLAN.md found. Run `/aid-plan` first."
 
 ### Check 3: Verify Not in Plan Mode
@@ -59,8 +59,8 @@ aid-workspace/
 
 ## Inputs
 
-- **Plan:** `aid-workspace/{task}/PLAN.md` — modules, deliverables, test scenarios
-- **Feature SPECs:** All `aid-workspace/{task}/features/*/SPEC.md` — constraints, feature specs
+- **Plan:** `aid-workspace/{work}/PLAN.md` — modules, deliverables, test scenarios
+- **Feature SPECs:** All `aid-workspace/{work}/features/*/SPEC.md` — constraints, feature specs
 - **KB (selective):** `aid-workspace/knowledge/` — architecture.md, module-map.md, tech-debt.md, test-landscape.md, coding-standards.md
 
 ## Process
@@ -80,13 +80,13 @@ Each user story must trace back to a PLAN deliverable AND a feature SPEC.
 
 ### 2. Task Decomposition
 
-Per user story, generate `aid-workspace/{task}/tasks/TASK-{id}.md` files:
+Per user story, generate `aid-workspace/{work}/tasks/TASK-{id}.md` files:
 
 ```markdown
 # TASK-{id}: {Title}
 
 ## Objective
-{What this task accomplishes}
+{What this work accomplishes}
 
 ## Source
 - User Story: US-{x}
@@ -94,7 +94,7 @@ Per user story, generate `aid-workspace/{task}/tasks/TASK-{id}.md` files:
 - Deliverable: D-{z}
 
 ## Interface Contracts
-{APIs, events, data contracts this task must respect}
+{APIs, events, data contracts this work must respect}
 
 ## Architecture Notes
 {Where this fits in the system — reference KB docs}
@@ -179,8 +179,8 @@ Time-boxed research for uncertain tasks. Output is knowledge (KB update), not co
 
 ## Output
 
-- `aid-workspace/{task}/DETAIL.md` — user stories, task list, precedence graph, delivery breakdown, wave plan
-- `aid-workspace/{task}/tasks/TASK-{id}.md` files — one per executable task
+- `aid-workspace/{work}/DETAIL.md` — user stories, task list, precedence graph, delivery breakdown, wave plan
+- `aid-workspace/{work}/tasks/TASK-{id}.md` files — one per executable task
 
 ## Quality Checklist
 
@@ -193,4 +193,4 @@ Time-boxed research for uncertain tasks. Output is knowledge (KB update), not co
 - [ ] Parallel execution opportunities identified (waves)
 - [ ] Spikes identified for uncertain areas
 - [ ] Delivery breakdown has measurable success criteria
-- [ ] All output files live inside the task directory
+- [ ] All output files live inside the work directory

@@ -27,7 +27,7 @@ workspace, and determines the workflow path. Run this once before any other AID 
       (...14 KB docs, INDEX.md, README.md)
 ```
 
-Tasks and features are created later by `/aid-interview`.
+Works and features are created later by `/aid-interview`.
 
 ---
 
@@ -314,7 +314,7 @@ Check if `AGENTS.md` exists in the project root.
 
 ## AID Workspace
 
-The `aid-workspace/` directory contains the Knowledge Base and task artifacts.
+The `aid-workspace/` directory contains the Knowledge Base and work artifacts.
 Read `aid-workspace/knowledge/INDEX.md` to find what you need.
 ```
 
@@ -339,7 +339,7 @@ Check if `CLAUDE.md` exists in the project root.
 ## AID Workspace
 
 Read `aid-workspace/knowledge/INDEX.md` before making assumptions about this project.
-The `aid-workspace/` directory contains the Knowledge Base and task artifacts.
+The `aid-workspace/` directory contains the Knowledge Base and work artifacts.
 ```
 
 - **If it already exists:** Do NOT overwrite. Check for `<!-- AID:DISCOVER -->` markers.

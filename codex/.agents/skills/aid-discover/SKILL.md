@@ -5,7 +5,7 @@ description: >
   the KB. Analyzes all repository content (code, configuration, and documentation) to populate
   KB documents. Reviews, collects user input, fixes issues, and gets user approval — one step
   per run. State-machine: GENERATE → REVIEW → Q&A → FIX → APPROVAL → DONE.
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit
+allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "[--grade A] minimum acceptable grade (default: A)  [--reset] clear KB and restart"
 ---
 
@@ -28,6 +28,7 @@ Check if `aid-workspace/knowledge/DISCOVERY-STATE.md` exists. If it doesn't:
 Exit. Do not proceed.
 
 If it exists but has `**Grade:** Not Started`, that's expected — init ran, discovery hasn't.
+
 
 ## Arguments
 
@@ -150,8 +151,6 @@ that every subsequent agent will use as reference:
 
 Print: `[1/5] Pre-scan: mapping project structure and external sources...`
 
-Dispatch **discovery-scout** subagent using the codex subagent syntax.
-
 Prompt:
 > Analyze this project's repository structure and any external documentation to produce TWO
 > foundation documents:
@@ -187,8 +186,8 @@ If either is missing, re-dispatch the scout targeting only the missing file.
 
 ### Steps 2-5: Dispatch 4 Subagents in Parallel
 
-**Only after Step 1 is complete**, dispatch the 4 remaining agents in parallel
-using the codex subagent syntax.
+**Only after Step 1 is complete**, dispatch the 4 remaining agents in parallel.
+Each agent has `background: true` so they run in parallel.
 
 **⚠️ CRITICAL: Do NOT check files or take any action until ALL 4 agents have reported completion.**
 **⚠️ An agent reporting "completed" does NOT mean all its files were written — verify after ALL finish.**
@@ -330,6 +329,8 @@ Agent "[name]" completed. [N/4] done.
 
 **Only proceed to file verification when ALL dispatched agents have reported completion.**
 
+If you see "N local agents still running" in the status bar, you are NOT done. Wait.
+
 ---
 
 ### Verify All 14 Files
@@ -426,42 +427,40 @@ Regenerate INDEX.md on every discovery run (full or targeted).
 
 ---
 
-### Step 6b: Create DISCOVERY-STATE.md with Q&A
+### Step 6b: Update DISCOVERY-STATE.md with Q&A
 
-After README.md and INDEX.md are generated, create `aid-workspace/knowledge/DISCOVERY-STATE.md` with all
-Q&A questions collected from the subagents.
+After README.md and INDEX.md are generated, **update** the existing
+`aid-workspace/knowledge/DISCOVERY-STATE.md` with Q&A questions collected from the subagents.
+
+**⚠️ Do NOT recreate this file from the template.** It was created by `/aid-init` with
+Minimum Grade, Project Type, and External Documentation from the user. Overwriting it
+would lose that metadata.
 
 1. Read `aid-workspace/knowledge/.scout-questions.tmp` (written by discovery-scout)
 2. Read ALL other KB documents and extract any questions, uncertainties, or TODOs they flagged
-3. Consolidate all questions into the DISCOVERY-STATE.md Q&A section with sequential IDs (Q1, Q2, ...)
+3. Consolidate all questions into the DISCOVERY-STATE.md `## Q&A` section with sequential IDs (Q1, Q2, ...)
 4. Delete `aid-workspace/knowledge/.scout-questions.tmp`
 
-```markdown
-# Discovery State
+**Update the existing DISCOVERY-STATE.md:**
 
-**Grade:** Pending
-**Minimum Grade:** {from --grade arg, default A}
-**User Approved:** no
+- Set `**Grade:**` to `Pending` (was `Not Started`)
+- **Preserve** `**Minimum Grade:**`, `**Project Type:**`, `**User Approved:**`, and
+  `## External Documentation` — these come from init and must not be changed
+- If `--grade` was provided, update `**Minimum Grade:**` to the new value
+- Replace `## Q&A` section content with consolidated questions from scouts and KB docs.
+  Each question follows this format:
 
-## Issues
+  ```markdown
+  ### Q1
+  - **Category:** {e.g., Architecture}
+  - **Impact:** {High|Medium|Low}
+  - **Status:** Pending
+  - **Context:** {why this question matters}
+  - **Suggested:** {answer if inferrable from repository, or "—"}
+  - **Question:** {the actual question}
+  ```
 
-(None yet — populated by reviewer in REVIEW mode)
-
-## Q&A
-
-### Q1
-- **Category:** {e.g., Architecture}
-- **Impact:** {High|Medium|Low}
-- **Status:** Pending
-- **Context:** {why this question matters}
-- **Suggested:** {answer if inferrable from repository, or "—"}
-- **Question:** {the actual question}
-
-### Q2
-...
-```
-
-Print: `[DISCOVERY-STATE] Created with {N} Q&A questions. Grade: Pending.`
+Print: `[DISCOVERY-STATE] Updated with {N} Q&A questions. Grade: Pending.`
 
 ---
 
@@ -474,6 +473,8 @@ placeholders with real data from the analysis:
 - **Build & Test** — actual build, test, and lint commands (from build scripts, CI config, package manager)
 - **Code Conventions** — key naming patterns, formatting rules, idioms found in code
 - **Architecture** — high-level summary (layers, modules, entry points)
+
+**Note:** Codex does not use CLAUDE.md. All project configuration goes in AGENTS.md only.
 
 Keep the `<!-- AID:DISCOVER ... -->` comment above each section so future re-discoveries can update them.
 Replace only the `(pending discovery)` placeholder lines with real content.
@@ -497,7 +498,7 @@ All 14 KB documents exist. Grade them.
 
 ### Step 1: Dispatch the Reviewer
 
-Dispatch **discovery-reviewer** subagent using the codex subagent syntax.
+Dispatch **discovery-reviewer** subagent.
 
 Print: `[Review 1/2] Reviewing Knowledge Base quality...`
 
@@ -547,7 +548,7 @@ Prompt to pass to the subagent:
 >    - Are the claims grounded in specific locations (file paths, class names) or
 >      generic statements that could apply to any project?
 >
-> 6. **Meta-document integrity** — INDEX.md, README.md, AGENTS.md are
+> 6. **Meta-document integrity** — INDEX.md, README.md, and AGENTS.md are
 >    derived from the 14 primary documents.
 >    - Do their summaries and values accurately reflect the current primary doc content?
 >    - Is placeholder text or template markers still present?
@@ -718,9 +719,9 @@ verify and update the following 5 meta-documents **in this order:**
 1. **DISCOVERY-STATE.md Q&A** — Do any fixed issues resolve pending questions? Update their status. Did fixes reveal new unknowns? Add them as new Q&A entries with the next sequential ID.
 2. **INDEX.md** — Do summaries still match the updated document content? Update any stale summaries.
 3. **README.md** — Does the completeness table (status/gaps) still reflect reality? Update statuses.
-4. **AGENTS.md** — Did fixes change build commands, architecture, conventions, or gotchas? Update if stale.
+4. **AGENTS.md** — Did fixes change build commands, architecture, or conventions summaries? Update if stale.
 
-Print: `[Fix] Verifying 4 meta-documents...`
+Print: `[Fix] Verifying 5 meta-documents...`
 
 For each meta-doc, read it, compare against the fixes just made, and update if needed.
 If no update is needed, skip silently. If updated, print: `[Fix] Updated {document}`
@@ -742,6 +743,9 @@ The reviewer will overwrite DISCOVERY-STATE.md with a fresh assessment.
 - Do NOT tell the reviewer what was fixed or what the previous grade was.
 - Do NOT say "re-review" or "verify the fixes" — the reviewer must approach
   the KB as if seeing it for the first time.
+- The reviewer's `background: true` gives it an isolated context window — but
+  only if you don't inject prior results into its prompt.
+- If the reviewer asks about previous grades, respond: "Evaluate fresh. No prior context."
 
 Wait for completion.
 
@@ -966,4 +970,4 @@ Must have: accurate project overview, real build/test commands, conventions from
 architecture summary. No remaining `(pending discovery)` placeholders.
 **Red flags**: Placeholder text still present. Commands that wouldn't actually work.
 
-**Note:** Codex uses `AGENTS.md` as its single project context file. There is no separate `CLAUDE.md`.
+

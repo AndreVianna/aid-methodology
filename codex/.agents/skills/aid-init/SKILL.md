@@ -12,7 +12,9 @@ argument-hint: "[--reset] clear existing aid-workspace/ and re-initialize"
 # AID Project Initialization
 
 Set up a project for the AID methodology. Collects essential metadata, scaffolds the
-Knowledge Base, and determines the workflow path. Run this once before any other AID phase.
+workspace, and determines the workflow path. Run this once before any other AID phase.
+
+**This is a conversational skill — it asks questions and waits for answers.**
 
 **Workspace structure:**
 ```
@@ -24,20 +26,19 @@ Knowledge Base, and determines the workflow path. Run this once before any other
       (...14 KB docs, INDEX.md, README.md)
 ```
 
-Tasks and features are created later by `/aid-interview`.
-
-**This is a conversational skill — it asks questions and waits for answers.**
+Works and features are created later by `/aid-interview`.
 
 ---
 
 ## Pre-flight Checks
 
-### Check 1: Existing Knowledge Base
 
-1. Check if `aid-workspace/knowledge/` already exists with content:
-   - If `aid-workspace/knowledge/` exists AND contains non-empty `.md` files AND `--reset` was NOT passed:
+### Check 1: Existing Workspace
+
+1. Check if `aid-workspace/` already exists with content:
+   - If `aid-workspace/` exists AND contains non-empty `.md` files AND `--reset` was NOT passed:
      ```
-     ⚠️ This project already has a Knowledge Base with content.
+     ⚠️ This project already has an AID workspace with content.
      Re-running init will overwrite the KB templates (but not filled content).
      
      [1] Continue — re-initialize (keeps filled documents, resets empty ones)
@@ -267,10 +268,11 @@ If your task touches an area covered here, read the relevant document first.
 ### aid-workspace/knowledge/DISCOVERY-STATE.md
 
 Copy the template from `../templates/discovery-state.md` to
-`aid-workspace/knowledge/DISCOVERY-STATE.md`. Fill in:
+`aid-workspace/knowledge/DISCOVERY-STATE.md`. Fill in the placeholders:
+
 - `{minimum}` → grade from Q5
 - `{Brownfield / Greenfield}` → from Q1
-- `{External Documentation}` → paths from Q4, or "None provided"
+- `{List of paths from init Q4, or "None provided"}` → from Q4
 
 ---
 
@@ -280,7 +282,7 @@ Copy the template from `../templates/discovery-state.md` to
 
 Check if `AGENTS.md` exists in the project root.
 
-- **If it doesn't exist:** Create it with the AID template (placeholders for discovery to fill):
+- **If it doesn't exist:** Create it with the AID template:
 
 ```markdown
 # {Project Name}
@@ -305,18 +307,18 @@ Check if `AGENTS.md` exists in the project root.
 (pending discovery)
 <!-- /AID:DISCOVER -->
 
-## Knowledge Base
+## AID Workspace
 
-The `aid-workspace/knowledge/` directory contains {14} documents covering architecture, conventions,
-data models, integrations, and more. Read `aid-workspace/knowledge/INDEX.md` to find what you need.
+The `aid-workspace/` directory contains the Knowledge Base and work artifacts.
+Read `aid-workspace/knowledge/INDEX.md` to find what you need.
 ```
 
 - **If it already exists:** Do NOT overwrite. Check for `<!-- AID:DISCOVER -->` placeholders.
-  If none exist, append a "Knowledge Base" section at the end pointing to `aid-workspace/knowledge/INDEX.md`.
-  Print: `[Init] AGENTS.md exists — appended KB reference.`
+  If none exist, append an "AID Workspace" section at the end pointing to
+  `aid-workspace/knowledge/INDEX.md`.
+  Print: `[Init] AGENTS.md exists — appended workspace reference.`
 
-**Note:** Codex uses `AGENTS.md` as its primary project context file. There is no separate `CLAUDE.md`.
-The `AGENTS.md` template above already includes project overview, conventions, architecture, and KB reference — all the context Codex needs.
+**Note:** Codex does not use CLAUDE.md. All project configuration goes in AGENTS.md only.
 
 ---
 
@@ -333,8 +335,8 @@ Print a summary of everything created:
   External:    {N paths / None}
 
   Created:
-    aid-workspace/knowledge/              (14 KB documents + README + INDEX + DISCOVERY-STATE)
-    AGENTS.md               {created / updated / unchanged}
+    knowledge/    (14 KB documents + README + INDEX + DISCOVERY-STATE)
+    AGENTS.md                   {created / updated / unchanged}
 
   Next step:
     {Brownfield: "Run /aid-discover to analyze the codebase and populate the Knowledge Base."}
@@ -348,17 +350,17 @@ Print a summary of everything created:
 - **Running init twice on the same project** does not overwrite documents that have real
   content (Status ≠ "Pending"). Only resets documents still at "Pending" status.
 - **AGENTS.md** is never overwritten if it exists — only appended to.
-- **aid-workspace/knowledge/DISCOVERY-STATE.md** is recreated (it's metadata, not content).
+- **DISCOVERY-STATE.md** is recreated (it's metadata, not content).
 - **`--reset`** is the nuclear option — deletes everything and starts fresh.
 
 ---
 
 ## Quality Checklist
 
-- [ ] All 14 KB templates created in aid-workspace/knowledge/
+- [ ] `aid-workspace/knowledge/` created with all 14 KB templates
 - [ ] README.md has correct project type, name, and completeness table
 - [ ] INDEX.md has all 14 documents listed
 - [ ] DISCOVERY-STATE.md has correct minimum grade and project type
 - [ ] External paths (if any) verified accessible and recorded
-- [ ] AGENTS.md has KB reference (created or appended)
-- [ ] No files outside aid-workspace/knowledge/ and AGENTS.md were modified
+- [ ] AGENTS.md has workspace reference (created or appended)
+- [ ] No files outside aid-workspace/ and AGENTS.md were modified

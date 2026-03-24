@@ -5,7 +5,7 @@ description: >
   the KB. Analyzes all repository content (code, configuration, and documentation) to populate
   KB documents. Reviews, collects user input, fixes issues, and gets user approval — one step
   per run. State-machine: GENERATE → REVIEW → Q&A → FIX → APPROVAL → DONE.
-allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Task
+allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "[--grade A] minimum acceptable grade (default: A)  [--reset] clear KB and restart"
 ---
 

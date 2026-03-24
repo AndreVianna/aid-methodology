@@ -5,7 +5,7 @@ description: >
   external documentation paths, and scaffolds the aid-workspace/ directory structure.
   Sets up AGENTS.md and .cursor/rules/aid-project.mdc with placeholders. Run once at project start — before
   aid-discover (brownfield) or aid-interview (greenfield).
-allowed-tools: Read, Glob, Grep, Terminal, Write, Edit
+allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 argument-hint: "[--reset] clear existing aid-workspace/ and re-initialize"
 ---
 
@@ -27,7 +27,7 @@ workspace, and determines the workflow path. Run this once before any other AID 
       (...14 KB docs, INDEX.md, README.md)
 ```
 
-Tasks and features are created later by `/aid-interview`.
+Works and features are created later by `/aid-interview`.
 
 ---
 
@@ -314,7 +314,7 @@ Check if `AGENTS.md` exists in the project root.
 
 ## AID Workspace
 
-The `aid-workspace/` directory contains the Knowledge Base and task artifacts.
+The `aid-workspace/` directory contains the Knowledge Base and work artifacts.
 Read `aid-workspace/knowledge/INDEX.md` to find what you need.
 ```
 
@@ -325,15 +325,13 @@ Read `aid-workspace/knowledge/INDEX.md` to find what you need.
 
 ### .cursor/rules/aid-project.mdc
 
-Check if `.cursor/rules/aid-project.mdc` exists.
+Check if `.cursor/rules/aid-project.mdc` exists in the project root.
 
 - **If it doesn't exist:** Create it:
 
 ```markdown
----
-description: "{Project Name} — AID project context"
-alwaysApply: true
----
+# {Project Name}
+
 <!-- AID:DISCOVER project-description -->
 {One-line description from Q3}
 <!-- /AID:DISCOVER -->
@@ -341,11 +339,11 @@ alwaysApply: true
 ## AID Workspace
 
 Read `aid-workspace/knowledge/INDEX.md` before making assumptions about this project.
-The `aid-workspace/` directory contains the Knowledge Base and task artifacts.
+The `aid-workspace/` directory contains the Knowledge Base and work artifacts.
 ```
 
 - **If it already exists:** Do NOT overwrite. Check for `<!-- AID:DISCOVER -->` markers.
-  If none, leave it alone. Print: `[Init] aid-project.mdc exists — no changes needed.`
+  If none, leave it alone. Print: `[Init] .cursor/rules/aid-project.mdc exists — no changes needed.`
 
 ---
 
@@ -364,7 +362,7 @@ Print a summary of everything created:
   Created:
     knowledge/    (14 KB documents + README + INDEX + DISCOVERY-STATE)
     AGENTS.md                   {created / updated / unchanged}
-    .cursor/rules/aid-project.mdc  {created / updated / unchanged}
+    .cursor/rules/aid-project.mdc                   {created / updated / unchanged}
 
   Next step:
     {Brownfield: "Run /aid-discover to analyze the codebase and populate the Knowledge Base."}
@@ -377,7 +375,7 @@ Print a summary of everything created:
 
 - **Running init twice on the same project** does not overwrite documents that have real
   content (Status ≠ "Pending"). Only resets documents still at "Pending" status.
-- **AGENTS.md and aid-project.mdc** are never overwritten if they exist — only appended to.
+- **AGENTS.md and .cursor/rules/aid-project.mdc** are never overwritten if they exist — only appended to.
 - **DISCOVERY-STATE.md** is recreated (it's metadata, not content).
 - **`--reset`** is the nuclear option — deletes everything and starts fresh.
 

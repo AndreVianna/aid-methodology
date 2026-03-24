@@ -6,7 +6,7 @@ description: >
   KB, grade, and ask targeted questions to resolve gaps and contradictions.
   Final step decomposes functional requirements into discrete feature files.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
-argument-hint: "[task-001] resume task  [--reset task-001] clear and restart  [--features task-001] re-run feature decomposition"
+argument-hint: "[work-001] resume work  [--reset work-001] clear and restart  [--features work-001] re-run feature decomposition"
 ---
 
 # Adaptive Requirements Gathering
@@ -19,7 +19,7 @@ immediately.
 ```
 aid-workspace/
   knowledge/           ← shared KB (populated by /aid-discover)
-  task-001-name/       ← one task = one interview cycle
+  work-001-name/       ← one work = one interview cycle
     INTERVIEW-STATE.md ← process (section status, Q&A, grade, review history)
     REQUIREMENTS.md    ← product (clean document, only project information)
     features/          ← product (one folder per feature, created after approval)
@@ -44,51 +44,52 @@ Check if `aid-workspace/` directory exists. If it doesn't:
 ```
 Exit. Do not proceed.
 
+
 ## Arguments
 
 | Argument | Effect |
 |----------|--------|
-| `task-NNN` | Work on the specified task. |
-| `--reset task-NNN` | Delete the task folder and restart from scratch. |
-| `--features task-NNN` | Re-run feature decomposition for this task even if features exist. |
+| `work-NNN` | Work on the specified work item. |
+| `--reset work-NNN` | Delete the work folder and restart from scratch. |
+| `--features work-NNN` | Re-run feature decomposition for this work even if features exist. |
 | *(no argument)* | Task routing (see below). |
 
 ---
 
 ## Task Routing
 
-When no task ID is provided:
+When no work ID is provided:
 
 ### No tasks exist
 
-If `aid-workspace/` has no `task-*` directories:
+If `aid-workspace/` has no `work-*` directories:
 
-1. Ask for a short name for this task:
+1. Ask for a short name for this work:
    ```
-   What's a short name for this task? (e.g., "user-auth", "reporting", "api-v2")
+   What's a short name for this work? (e.g., "user-auth", "reporting", "api-v2")
    ```
-2. Create `aid-workspace/task-001-{name}/`
-3. Proceed to State Detection with this task.
+2. Create `aid-workspace/work-001-{name}/`
+3. Proceed to State Detection with this work.
 
 ### Tasks exist
 
-If `aid-workspace/` has one or more `task-*` directories:
+If `aid-workspace/` has one or more `work-*` directories:
 
 ```
-Existing tasks:
-  task-001-user-auth   [Status: Approved, 3 features]
-  task-002-reporting   [Status: In Progress, §5 Partial]
+Existing works:
+  work-001-user-auth   [Status: Approved, 3 features]
+  work-002-reporting   [Status: In Progress, §5 Partial]
 
-[1] Continue task-001-user-auth
-[2] Continue task-002-reporting
-[3] Create new task
+[1] Continue work-001-user-auth
+[2] Continue work-002-reporting
+[3] Create new work
 ```
 
 Wait for response:
-- **Continue existing:** proceed to State Detection for that task
-- **Create new:** ask for name, create `task-{N+1}-{name}/`, proceed
+- **Continue existing:** proceed to State Detection for that work
+- **Create new:** ask for name, create `work-{N+1}-{name}/`, proceed
 
-**Shortcut:** If only one task exists and it's not yet Approved, go directly to it
+**Shortcut:** If only one work exists and it's not yet Approved, go directly to it
 without asking.
 
 ---
@@ -98,7 +99,7 @@ without asking.
 ⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**
 Do NOT rely on memory from previous runs. ALWAYS read the actual files on disk.
 
-All paths below are relative to `aid-workspace/{task}/`.
+All paths below are relative to `aid-workspace/{work}/`.
 
 ```plaintext
 State 1: No INTERVIEW-STATE.md                                    → FIRST RUN
@@ -111,8 +112,8 @@ State 6: INTERVIEW-STATE Status: Approved, feature folders exist   → CROSS-REF
 
 **Detection logic:**
 
-1. If `--reset` → delete the task folder → recreate → proceed as State 1
-2. Check for `INTERVIEW-STATE.md` in the task folder
+1. If `--reset` → delete the work folder → recreate → proceed as State 1
+2. Check for `INTERVIEW-STATE.md` in the work folder
 3. If missing → **State 1: FIRST RUN**
 4. If exists:
    a. Check `## Pending Q&A` section for entries with `**Status:** Pending`
@@ -128,13 +129,13 @@ State 6: INTERVIEW-STATE Status: Approved, feature folders exist   → CROSS-REF
       - If no feature folders → **State 5: FEATURE DECOMPOSITION**
       - If feature folders exist → **State 6: CROSS-REFERENCE**
 
-Print the detected state: `[{task}: {FIRST RUN|Q&A|CONTINUE|COMPLETION|FEATURES|CROSS-REFERENCE}]`
+Print the detected state: `[{work}: {FIRST RUN|Q&A|CONTINUE|COMPLETION|FEATURES|CROSS-REFERENCE}]`
 
 ---
 
 ## State 1: FIRST RUN
 
-This happens only when INTERVIEW-STATE.md does not exist in the task folder.
+This happens only when INTERVIEW-STATE.md does not exist in the work folder.
 
 ### 1a. Read KB (if it exists)
 
@@ -146,12 +147,12 @@ If no KB exists, that's fine — this is a greenfield project.
 ### 1b. Create INTERVIEW-STATE.md
 
 Copy the template from `../templates/interview-state.md` to
-`aid-workspace/{task}/INTERVIEW-STATE.md`.
+`aid-workspace/{work}/INTERVIEW-STATE.md`.
 
 ### 1c. Create REQUIREMENTS.md scaffold
 
 Copy the template from `../templates/requirements.md` to
-`aid-workspace/{task}/REQUIREMENTS.md`.
+`aid-workspace/{work}/REQUIREMENTS.md`.
 Add the first Change Log entry: `| {today} | Initial interview started | /aid-interview |`
 
 **Note:** Sections are empty — no placeholder markers. The INTERVIEW-STATE.md tracks
@@ -374,7 +375,7 @@ Requirements are approved. Decompose Functional Requirements into discrete featu
 
 ### Step 1: Analyze
 
-Read REQUIREMENTS.md (in the task folder), focusing on:
+Read REQUIREMENTS.md (in the work folder), focusing on:
 - §5 Functional Requirements — primary source for features
 - §4 Scope — boundaries (in scope / out of scope)
 - §9 Acceptance Criteria — distribute to features
@@ -416,7 +417,7 @@ Does this decomposition look right?
 
 ### Step 4: Create Feature Folders
 
-Create `features/` directory inside the task folder if it doesn't exist.
+Create `features/` directory inside the work folder if it doesn't exist.
 
 For each approved feature, create `features/feature-{NNN}-{name}/SPEC.md` using the
 template from `../templates/feature.md`. Fill in:
@@ -434,18 +435,18 @@ template from `../templates/feature.md`. Fill in:
 
 1. Add Review History entry in INTERVIEW-STATE.md:
    `| {N} | {today} | — | Feature Decomposition | {N} features created |`
-2. Update `aid-workspace/knowledge/INDEX.md` if it exists — add task/features reference
-3. Update `aid-workspace/knowledge/README.md` if it exists — add task to revision history
+2. Update `aid-workspace/knowledge/INDEX.md` if it exists — add work/features reference
+3. Update `aid-workspace/knowledge/README.md` if it exists — add work to revision history
 
 Print:
 ```
-✅ Feature decomposition complete. {N} features created in {task}/features/:
+✅ Feature decomposition complete. {N} features created in {work}/features/:
 
 {list each: feature-001-name/, feature-002-name/, ...}
 
 Next steps:
 - Review the feature SPEC.md files if desired
-- Run /aid-specify {task}/feature-001 to begin technical specification
+- Run /aid-specify {work}/feature-001 to begin technical specification
 ```
 
 ---
@@ -456,11 +457,11 @@ Requirements approved and features created. Validate against KB and codebase.
 
 ### 6a. Load Context
 
-1. Read REQUIREMENTS.md (in the task folder)
+1. Read REQUIREMENTS.md (in the work folder)
 2. Read INTERVIEW-STATE.md
 3. Read `aid-workspace/knowledge/INDEX.md` (if exists)
 4. Read ALL KB documents listed in INDEX.md
-5. Read all SPEC.md files in the task's `features/` subdirectories
+5. Read all SPEC.md files in the work's `features/` subdirectories
 
 ### 6b. Cross-Reference
 
@@ -540,9 +541,9 @@ After all questions answered:
 
 When a downstream phase (e.g., `/aid-specify`) needs clarification on requirements:
 
-1. The calling phase writes Q&A entries directly to the task's INTERVIEW-STATE.md
+1. The calling phase writes Q&A entries directly to the work's INTERVIEW-STATE.md
    in the `## Pending Q&A` section
-2. Next `/aid-interview {task}` run detects Pending Q&A → enters State 2 (Q&A mode)
+2. Next `/aid-interview {work}` run detects Pending Q&A → enters State 2 (Q&A mode)
 3. Questions are presented to the user one at a time
 4. Answers are recorded in INTERVIEW-STATE.md and REQUIREMENTS.md
 5. Feature SPEC.md files are updated if the answer affects a specific feature
@@ -554,7 +555,7 @@ When a downstream phase (e.g., `/aid-specify`) needs clarification on requiremen
 
 **Question:** {question text}
 **Context:** {why this matters — what the downstream phase found}
-**Source:** {calling phase, e.g., /aid-specify task-001/feature-001}
+**Source:** {calling phase, e.g., /aid-specify work-001/feature-001}
 **Suggested:** {answer if inferrable, or "—"}
 **Status:** Pending
 ```
