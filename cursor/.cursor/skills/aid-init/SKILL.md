@@ -3,7 +3,7 @@ name: aid-init
 description: >
   Initialize an AID project. Asks greenfield or brownfield, collects project metadata,
   external documentation paths, and scaffolds the aid-workspace/ directory structure.
-  Sets up AGENTS.md and CLAUDE.md with placeholders. Run once at project start — before
+  Sets up AGENTS.md and .cursor/rules/aid-project.mdc with placeholders. Run once at project start — before
   aid-discover (brownfield) or aid-interview (greenfield).
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit
 argument-hint: "[--reset] clear existing aid-workspace/ and re-initialize"
@@ -20,7 +20,7 @@ workspace, and determines the workflow path. Run this once before any other AID 
 ```
 {ProjectFolder}/
   AGENTS.md
-  CLAUDE.md
+  .cursor/rules/aid-project.mdc
   aid-workspace/
     knowledge/
       DISCOVERY-STATE.md
@@ -323,15 +323,17 @@ Read `aid-workspace/knowledge/INDEX.md` to find what you need.
   `aid-workspace/knowledge/INDEX.md`.
   Print: `[Init] AGENTS.md exists — appended workspace reference.`
 
-### CLAUDE.md
+### .cursor/rules/aid-project.mdc
 
-Check if `CLAUDE.md` exists in the project root.
+Check if `.cursor/rules/aid-project.mdc` exists.
 
 - **If it doesn't exist:** Create it:
 
 ```markdown
-# {Project Name}
-
+---
+description: "{Project Name} — AID project context"
+alwaysApply: true
+---
 <!-- AID:DISCOVER project-description -->
 {One-line description from Q3}
 <!-- /AID:DISCOVER -->
@@ -343,7 +345,7 @@ The `aid-workspace/` directory contains the Knowledge Base and task artifacts.
 ```
 
 - **If it already exists:** Do NOT overwrite. Check for `<!-- AID:DISCOVER -->` markers.
-  If none, leave it alone. Print: `[Init] CLAUDE.md exists — no changes needed.`
+  If none, leave it alone. Print: `[Init] aid-project.mdc exists — no changes needed.`
 
 ---
 
@@ -362,7 +364,7 @@ Print a summary of everything created:
   Created:
     aid-workspace/knowledge/    (14 KB documents + README + INDEX + DISCOVERY-STATE)
     AGENTS.md                   {created / updated / unchanged}
-    CLAUDE.md                   {created / updated / unchanged}
+    .cursor/rules/aid-project.mdc  {created / updated / unchanged}
 
   Next step:
     {Brownfield: "Run /aid-discover to analyze the codebase and populate the Knowledge Base."}
@@ -375,7 +377,7 @@ Print a summary of everything created:
 
 - **Running init twice on the same project** does not overwrite documents that have real
   content (Status ≠ "Pending"). Only resets documents still at "Pending" status.
-- **AGENTS.md and CLAUDE.md** are never overwritten if they exist — only appended to.
+- **AGENTS.md and aid-project.mdc** are never overwritten if they exist — only appended to.
 - **DISCOVERY-STATE.md** is recreated (it's metadata, not content).
 - **`--reset`** is the nuclear option — deletes everything and starts fresh.
 
@@ -389,5 +391,5 @@ Print a summary of everything created:
 - [ ] DISCOVERY-STATE.md has correct minimum grade and project type
 - [ ] External paths (if any) verified accessible and recorded
 - [ ] AGENTS.md has workspace reference (created or appended)
-- [ ] CLAUDE.md exists with project description
-- [ ] No files outside aid-workspace/, AGENTS.md, CLAUDE.md were modified
+- [ ] .cursor/rules/aid-project.mdc exists with project description
+- [ ] No files outside aid-workspace/, AGENTS.md, .cursor/rules/aid-project.mdc were modified

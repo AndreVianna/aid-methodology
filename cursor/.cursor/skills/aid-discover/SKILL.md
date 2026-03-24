@@ -477,14 +477,14 @@ Print: `[DISCOVERY-STATE] Updated with {N} Q&A questions. Grade: Pending.`
 
 ### Step 7: Update Project Config Files
 
-Scan the project root for `AGENTS.md` and `CLAUDE.md`. Replace any `<!-- AID:DISCOVER ... -->`
+Scan the project root for `AGENTS.md` and `.cursor/rules/aid-project.mdc`. Replace any `<!-- AID:DISCOVER ... -->`
 placeholders with real data from the analysis:
 
 - **Project Overview** — project name, purpose, tech stack, target platform
 - **Build & Test** — actual build, test, and lint commands (from build scripts, CI config, package manager)
 - **Code Conventions** — key naming patterns, formatting rules, idioms found in code
 - **Architecture** — high-level summary (layers, modules, entry points)
-- **Project description** (CLAUDE.md) — project name and one-line description
+- **Project description** (.cursor/rules/aid-project.mdc) — project name and one-line description
 
 Keep the `<!-- AID:DISCOVER ... -->` comment above each section so future re-discoveries can update them.
 Replace only the `(pending discovery)` placeholder lines with real content.
@@ -558,7 +558,7 @@ Prompt to pass to the subagent:
 >    - Are the claims grounded in specific locations (file paths, class names) or
 >      generic statements that could apply to any project?
 >
-> 6. **Meta-document integrity** — INDEX.md, README.md, AGENTS.md, and CLAUDE.md are
+> 6. **Meta-document integrity** — INDEX.md, README.md, AGENTS.md, and .cursor/rules/aid-project.mdc are
 >    derived from the 14 primary documents.
 >    - Do their summaries and values accurately reflect the current primary doc content?
 >    - Is placeholder text or template markers still present?
@@ -594,7 +594,7 @@ Wait for completion.
 ### Step 2: Post-Process DISCOVERY-STATE.md
 
 Read `aid-workspace/knowledge/DISCOVERY-STATE.md`. Verify it contains:
-- [ ] Grade for every document (14 KB docs + AGENTS.md + CLAUDE.md + INDEX.md + README.md)
+- [ ] Grade for every document (14 KB docs + AGENTS.md + .cursor/rules/aid-project.mdc + INDEX.md + README.md)
 - [ ] Specific issues with severity levels ([CRITICAL], [HIGH], [MEDIUM], [MINOR])
 - [ ] Verification spot-checks (minimum 10)
 - [ ] Overall grade and recommendation
@@ -729,7 +729,7 @@ verify and update the following 5 meta-documents **in this order:**
 1. **DISCOVERY-STATE.md Q&A** — Do any fixed issues resolve pending questions? Update their status. Did fixes reveal new unknowns? Add them as new Q&A entries with the next sequential ID.
 2. **INDEX.md** — Do summaries still match the updated document content? Update any stale summaries.
 3. **README.md** — Does the completeness table (status/gaps) still reflect reality? Update statuses.
-4. **CLAUDE.md** — Did fixes change conventions, gotchas, or architecture summaries? Update if stale.
+4. **.cursor/rules/aid-project.mdc** — Did fixes change conventions, gotchas, or architecture summaries? Update if stale.
 5. **AGENTS.md** — Did fixes change build commands, architecture, or conventions summaries? Update if stale.
 
 Print: `[Fix] Verifying 5 meta-documents...`
@@ -864,7 +864,7 @@ When a GAP.md or IMPEDIMENT.md triggers re-discovery of a specific area:
 - [ ] external-sources.md documents all external sources (or states none were provided)
 - [ ] README.md reflects completeness status and revision history
 - [ ] INDEX.md generated with 2-3 line summaries of every KB document
-- [ ] AGENTS.md and CLAUDE.md placeholders filled with discovered data
+- [ ] AGENTS.md and .cursor/rules/aid-project.mdc placeholders filled with discovered data
 - [ ] All issues in DISCOVERY-STATE.md have severity: [CRITICAL], [HIGH], or [MEDIUM]
 - [ ] Minimum 10 spot-checks in DISCOVERY-STATE.md
 
@@ -981,6 +981,6 @@ Must have: accurate project overview, real build/test commands, conventions from
 architecture summary. No remaining `(pending discovery)` placeholders.
 **Red flags**: Placeholder text still present. Commands that wouldn't actually work.
 
-### CLAUDE.md
+### .cursor/rules/aid-project.mdc
 Must have: accurate project description, KB reference, conventions summary.
 **Red flags**: Placeholder text still present. Missing key gotchas for agents.

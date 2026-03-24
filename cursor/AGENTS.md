@@ -12,16 +12,16 @@
 
 ## Code Conventions
 <!-- AID:DISCOVER — Replace with naming patterns, formatting rules, and idioms found in the codebase -->
-- See knowledge/coding-standards.md for project-specific conventions
+- See aid-workspace/knowledge/coding-standards.md for project-specific conventions
 
 ## Architecture
 <!-- AID:DISCOVER — Replace with high-level architecture summary (layers, modules, entry points) -->
-- See knowledge/architecture.md for system overview
-- See knowledge/module-map.md for component relationships
+- See aid-workspace/knowledge/architecture.md for system overview
+- See aid-workspace/knowledge/module-map.md for component relationships
 
 ## Knowledge Base
 
-After running Discovery, the Knowledge Base lives at knowledge/INDEX.md.
+After running Discovery, the Knowledge Base lives at aid-workspace/knowledge/INDEX.md.
 Read INDEX.md first for a map of all available documentation.
 
 ## Skills & Agents
