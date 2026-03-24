@@ -9,7 +9,7 @@ context: fork
 agent: developer
 ---
 
-# Execute Task with Agent
+# Execute Task with Task
 
 Read TASK spec, load context, spawn coding agent, verify output.
 
@@ -29,7 +29,7 @@ Agents don't improvise. They receive task spec + project spec + KB context. When
 ### 1. Prepare Context
 Assemble: TASK content + relevant SPEC sections + KB INDEX.md + 2-4 most relevant KB docs. The INDEX lets the agent read additional KB documents on demand.
 
-### 2. Spawn Agent
+### 2. Spawn Task
 Agent prompt includes: task spec, project spec sections, coding standards, architecture context, and rules:
 - Follow coding standards exactly
 - Match interface contracts

@@ -5,33 +5,23 @@ description: >
   the KB. Analyzes all repository content (code, configuration, and documentation) to populate
   KB documents. Reviews, collects user input, fixes issues, and gets user approval — one step
   per run. State-machine: GENERATE → REVIEW → Q&A → FIX → APPROVAL → DONE.
-allowed-tools: Read, Grep, Terminal, Write, Edit, Task
+allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Task
 argument-hint: "[--grade A] minimum acceptable grade (default: A)  [--reset] clear KB and restart"
 ---
 
 # Brownfield Project Discovery
 
 Analyze an existing project repository — all code, configuration, and documentation — and
-produce a structured `knowledge/` directory. If the Task tool is available, orchestrate 5
-specialized discovery agents in parallel. Otherwise, generate all documents sequentially in
-the main context. Includes a built-in quality gate that reviews, grades, and fixes KB documents.
+produce a structured `aid-workspace/knowledge/` directory by orchestrating 5 specialized discovery subagents.
+Includes a built-in quality gate that reviews, grades, and fixes KB documents.
 
 **State machine — each `/aid-discover` run does ONE step and exits.**
-
-## ⚠️ Subagent Support Note
-
-Cursor supports agents via `.cursor/agents/` and the `Task` tool, but sub-agent dispatch is
-experimental (Task tool may not be available in all builds as of Mar 2026).
-
-**If Task tool IS available:** Dispatch the 5 discovery agents in parallel (Steps 1-5 below).
-**If Task tool is NOT available:** Generate all 14 documents sequentially in the main context,
-following the same prompts described in Steps 1-5 but executing them yourself directly.
 
 ## ⚠️ Pre-flight Checks
 
 ### Check 1: Verify Init Has Run
 
-Check if `knowledge/DISCOVERY-STATE.md` exists. If it doesn't:
+Check if `aid-workspace/knowledge/DISCOVERY-STATE.md` exists. If it doesn't:
 ```
 ⚠️ Knowledge Base not initialized. Run /aid-init first to set up the project.
 ```
@@ -45,8 +35,9 @@ If it exists but has `**Grade:** Not Started`, that's expected — init ran, dis
 
 Plan Mode restricts all operations to read-only — subagents will NOT be able to write KB files.
 
+**How to check:** Look at the permission indicator in your Claude Code interface (bottom of screen).
 - ✅ `Default` or `Auto-accept edits` → Proceed with discovery.
-- ❌ `Plan mode` → **STOP.** Tell the user to switch out of Plan Mode, then re-run `/aid-discover`.
+- ❌ `Plan mode` → **STOP.** Tell the user: "Discovery needs to write files. Please press `Shift+Tab` to switch out of Plan Mode, then re-run `/aid-discover`."
 
 **Do NOT proceed with discovery while in Plan Mode.** The subagents will analyze the repository but silently fail to write any files.
 
@@ -55,7 +46,7 @@ Plan Mode restricts all operations to read-only — subagents will NOT be able t
 | Argument | Effect |
 |----------|--------|
 | `--grade X` | Set minimum acceptable grade. Format: `[A-F][-+]?` (e.g., A, A-, B+). Default: `A`. Persists in DISCOVERY-STATE.md — user doesn't need to repeat it. |
-| `--reset` | Clear entire `knowledge/` directory and restart from scratch. |
+| `--reset` | Clear entire `aid-workspace/knowledge/` directory and restart from scratch. |
 
 **Grade persistence:**
 - When DISCOVERY-STATE.md doesn't exist yet: the `--grade` value is saved into the file as "Minimum Grade"
@@ -82,7 +73,7 @@ State 6: GRADE file, grade >= min, user-approved        → DONE
 
 **Detection logic:**
 
-1. Check `knowledge/` for the 14 expected documents:
+1. Check `aid-workspace/knowledge/` for the 14 expected documents:
    ```
    project-structure.md, external-sources.md,
    architecture.md, technology-stack.md, module-map.md, coding-standards.md, data-model.md,
@@ -92,10 +83,10 @@ State 6: GRADE file, grade >= min, user-approved        → DONE
 2. A document is "populated" only if it contains real content — NOT just the init template
    (files containing only `❌ Pending` are treated as missing). If any are missing or
    unpopulated → **GENERATE**
-3. If all 14 are populated and `knowledge/DISCOVERY-STATE.md` has `**Grade:** Pending` or
+3. If all 14 are populated and `aid-workspace/knowledge/DISCOVERY-STATE.md` has `**Grade:** Pending` or
    `**Grade:** Not Started` → **REVIEW**
-4. If all 14 are populated but `knowledge/DISCOVERY-STATE.md` does not exist → **REVIEW** (legacy)
-5. If `knowledge/DISCOVERY-STATE.md` exists with a grade other than Pending:
+4. If all 14 are populated but `aid-workspace/knowledge/DISCOVERY-STATE.md` does not exist → **REVIEW** (legacy)
+5. If `aid-workspace/knowledge/DISCOVERY-STATE.md` exists with a grade other than Pending:
    - Read the current overall grade and minimum grade
    - If `--grade` was provided, update the minimum grade in the file
    - Compare current grade against minimum (use grade ordering below)
@@ -119,13 +110,9 @@ Print the detected state: `[State: {GENERATE|REVIEW|Q&A|FIX|APPROVAL|DONE}]`
 
 Generate KB documents that are missing or still at "Pending" status.
 
-**Agent dispatch:** Steps 1-5 reference discovery agents (e.g., discovery-architect).
-If the Task tool is available, dispatch them via `Task(agent="discovery-scout", prompt="...")`.
-If the Task tool is NOT available, execute each step's prompt yourself directly in the main context.
-
 ### Step 0: Check Existing KB
 
-Scan `knowledge/` for existing files. A document counts as "exists" only if:
+Scan `aid-workspace/knowledge/` for existing files. A document counts as "exists" only if:
 - The file is present on disk, AND
 - It contains real content (not just the init template with "Pending Discovery" or "Pending")
 
@@ -141,7 +128,7 @@ and skip directly to Step 6 (README.md and INDEX.md regeneration).
 
 ### Step 0b: Read External Documentation Paths
 
-Read `knowledge/DISCOVERY-STATE.md` section `## External Documentation` for paths registered
+Read `aid-workspace/knowledge/DISCOVERY-STATE.md` section `## External Documentation` for paths registered
 by `aid-init`. If paths are listed, verify they are still accessible:
 
 ```bash
@@ -175,19 +162,17 @@ that every subsequent agent will use as reference:
 
 Print: `[1/5] Pre-scan: mapping project structure and external sources...`
 
-Dispatch **discovery-scout** via Task tool (or execute directly if Task tool unavailable).
-
 Prompt:
 > Analyze this project's repository structure and any external documentation to produce TWO
 > foundation documents:
 >
-> **knowledge/project-structure.md:**
+> **aid-workspace/knowledge/project-structure.md:**
 > Map the repository structure — directory tree (top 3-4 levels), key files and their purpose,
 > detected languages and frameworks, build system files, entry points, test directories,
 > configuration files, and documentation files. This is an inventory, not deep analysis.
 > Include file counts per major directory and note any unusual structure.
 >
-> **knowledge/external-sources.md:**
+> **aid-workspace/knowledge/external-sources.md:**
 > {If external docs were provided: "The user provided additional documentation outside the repository: {paths}. Read ALL of these thoroughly. For each source, document: path, type (file/directory), content inventory (list every significant document with topic and key findings), and discrepancies between documentation and code. This is critical — other agents will use this document to find information that is NOT in the code."}
 > {If NO external docs: "No external documentation was provided. Write: 'No external documentation was provided during discovery. All knowledge was derived from repository content only. If external documentation becomes available, re-run discovery or add paths during Q&A.'"}
 >
@@ -197,36 +182,35 @@ Prompt:
 > Security, Data), impact level (High/Medium/Low), Status: Pending, context explaining why it
 > matters, and a Suggested answer when inferrable from repository content. Order by impact
 > (High first). Be comprehensive. Write these questions to a TEMPORARY file:
-> `knowledge/.scout-questions.tmp`
+> `aid-workspace/knowledge/.scout-questions.tmp`
 >
-> Write only to the knowledge/ directory.
+> Write only to the aid-workspace/knowledge/ directory.
 
 **Wait for the scout to complete.** Verify both files exist:
 ```bash
-[ -f "knowledge/project-structure.md" ] && echo "✅ project-structure.md" || echo "❌ MISSING"
-[ -f "knowledge/external-sources.md" ] && echo "✅ external-sources.md" || echo "❌ MISSING"
+[ -f "aid-workspace/knowledge/project-structure.md" ] && echo "✅ project-structure.md" || echo "❌ MISSING"
+[ -f "aid-workspace/knowledge/external-sources.md" ] && echo "✅ external-sources.md" || echo "❌ MISSING"
 ```
 If either is missing, re-dispatch the scout targeting only the missing file.
 
 ---
 
-### Steps 2-5: Dispatch 4 Subagents
+### Steps 2-5: Dispatch 4 Subagents in Parallel
 
-**Only after Step 1 is complete**, dispatch the 4 remaining agents.
-If the Task tool supports parallel dispatch, send all at once.
-If it only supports sequential, dispatch one at a time but still verify ALL files at the end.
+**Only after Step 1 is complete**, dispatch the 4 remaining agents in parallel.
+Each agent has `background: true` so they run in parallel.
 
-**⚠️ CRITICAL: Do NOT check files or take any action until ALL 4 agents have completed.**
-**⚠️ An agent completing does NOT mean all its files were written — verify after ALL finish.**
+**⚠️ CRITICAL: Do NOT check files or take any action until ALL 4 agents have reported completion.**
+**⚠️ An agent reporting "completed" does NOT mean all its files were written — verify after ALL finish.**
 
 Only dispatch agents whose target files are missing. Skip agents whose files all exist.
 
 **Every agent receives the foundation reference:**
-All 4 agent prompts include this block at the end (before "Write only to the knowledge/ directory"):
+All 4 agent prompts include this block at the end (before "Write only to the aid-workspace/knowledge/ directory"):
 ```
 REFERENCE DOCUMENTS (read these FIRST before analyzing):
-- knowledge/project-structure.md — repository structure map
-- knowledge/external-sources.md — external documentation inventory and findings
+- aid-workspace/knowledge/project-structure.md — repository structure map
+- aid-workspace/knowledge/external-sources.md — external documentation inventory and findings
 Use these to orient your analysis. External sources may contain information directly relevant
 to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
 and note any discrepancies.
@@ -240,8 +224,8 @@ Print: `[2/5] Dispatching architecture analysis...`
 
 Prompt:
 > Read the reference documents first, then analyze this project's repository — all code,
-> configuration, and documentation — and produce knowledge/architecture.md and
-> knowledge/technology-stack.md.
+> configuration, and documentation — and produce aid-workspace/knowledge/architecture.md and
+> aid-workspace/knowledge/technology-stack.md.
 > Cover: project type, folder structure, architectural patterns, module boundaries, data flow,
 > DI registration, entry points, tech stack (languages, frameworks, versions, package managers,
 > runtime, build tools, dev tooling).
@@ -251,13 +235,13 @@ Prompt:
 > often contains architecture decisions and design rationale absent from the code.
 >
 > REFERENCE DOCUMENTS (read these FIRST before analyzing):
-> - knowledge/project-structure.md — repository structure map
-> - knowledge/external-sources.md — external documentation inventory and findings
+> - aid-workspace/knowledge/project-structure.md — repository structure map
+> - aid-workspace/knowledge/external-sources.md — external documentation inventory and findings
 > Use these to orient your analysis. External sources may contain information directly relevant
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
 > and note any discrepancies.
 >
-> Write only to the knowledge/ directory.
+> Write only to the aid-workspace/knowledge/ directory.
 
 #### [3/5] Module and Convention Analysis (discovery-analyst)
 
@@ -267,8 +251,8 @@ Print: `[3/5] Dispatching module and convention analysis...`
 
 Prompt:
 > Read the reference documents first, then analyze this project's repository — all code,
-> configuration, and documentation — and produce knowledge/module-map.md,
-> knowledge/coding-standards.md, and knowledge/data-model.md.
+> configuration, and documentation — and produce aid-workspace/knowledge/module-map.md,
+> aid-workspace/knowledge/coding-standards.md, and aid-workspace/knowledge/data-model.md.
 > Map every module (purpose, size, dependencies, test coverage).
 > Mine coding conventions from actual code — naming, error handling, logging, config, file
 > organization. Extract data models: schemas, relationships, migrations, indexes, validation.
@@ -278,13 +262,13 @@ Prompt:
 > model definitions absent from the code.
 >
 > REFERENCE DOCUMENTS (read these FIRST before analyzing):
-> - knowledge/project-structure.md — repository structure map
-> - knowledge/external-sources.md — external documentation inventory and findings
+> - aid-workspace/knowledge/project-structure.md — repository structure map
+> - aid-workspace/knowledge/external-sources.md — external documentation inventory and findings
 > Use these to orient your analysis. External sources may contain information directly relevant
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
 > and note any discrepancies.
 >
-> Write only to the knowledge/ directory.
+> Write only to the aid-workspace/knowledge/ directory.
 
 #### [4/5] Integration Mapping (discovery-integrator)
 
@@ -294,8 +278,8 @@ Print: `[4/5] Dispatching integration mapping...`
 
 Prompt:
 > Read the reference documents first, then analyze this project's repository — all code,
-> configuration, and documentation — and produce knowledge/api-contracts.md,
-> knowledge/integration-map.md, and knowledge/domain-glossary.md.
+> configuration, and documentation — and produce aid-workspace/knowledge/api-contracts.md,
+> aid-workspace/knowledge/integration-map.md, and aid-workspace/knowledge/domain-glossary.md.
 > Map APIs exposed and consumed, message queues, caches, webhooks, and third-party services.
 > Build a domain glossary from class names, method names, constants, comments, and documentation
 > that encode business concepts.
@@ -305,13 +289,13 @@ Prompt:
 > and domain definitions absent from the code.
 >
 > REFERENCE DOCUMENTS (read these FIRST before analyzing):
-> - knowledge/project-structure.md — repository structure map
-> - knowledge/external-sources.md — external documentation inventory and findings
+> - aid-workspace/knowledge/project-structure.md — repository structure map
+> - aid-workspace/knowledge/external-sources.md — external documentation inventory and findings
 > Use these to orient your analysis. External sources may contain information directly relevant
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
 > and note any discrepancies.
 >
-> Write only to the knowledge/ directory.
+> Write only to the aid-workspace/knowledge/ directory.
 
 #### [5/5] Quality and Infrastructure Assessment (discovery-quality)
 
@@ -321,8 +305,8 @@ Print: `[5/5] Dispatching quality and infrastructure assessment...`
 
 Prompt:
 > Read the reference documents first, then analyze this project's repository — all code,
-> configuration, and documentation — and produce knowledge/test-landscape.md,
-> knowledge/security-model.md, knowledge/tech-debt.md, and knowledge/infrastructure.md.
+> configuration, and documentation — and produce aid-workspace/knowledge/test-landscape.md,
+> aid-workspace/knowledge/security-model.md, aid-workspace/knowledge/tech-debt.md, and aid-workspace/knowledge/infrastructure.md.
 > Assess test frameworks, test types, coverage, CI/CD integration.
 > Evaluate security: auth, authorization, secrets management, OWASP concerns. Audit tech debt:
 > large files, TODO/FIXME density, missing tests, outdated packages, dead code. Classify all
@@ -335,13 +319,13 @@ Prompt:
 > compliance requirements, deployment guides, and test strategies absent from the code.
 >
 > REFERENCE DOCUMENTS (read these FIRST before analyzing):
-> - knowledge/project-structure.md — repository structure map
-> - knowledge/external-sources.md — external documentation inventory and findings
+> - aid-workspace/knowledge/project-structure.md — repository structure map
+> - aid-workspace/knowledge/external-sources.md — external documentation inventory and findings
 > Use these to orient your analysis. External sources may contain information directly relevant
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
 > and note any discrepancies.
 >
-> Write only to the knowledge/ directory.
+> Write only to the aid-workspace/knowledge/ directory.
 
 ---
 
@@ -354,7 +338,9 @@ Track agent completions. Print each one as it arrives:
 Agent "[name]" completed. [N/4] done.
 ```
 
-**Only proceed to file verification when ALL dispatched agents have completed.**
+**Only proceed to file verification when ALL dispatched agents have reported completion.**
+
+If you see "N local agents still running" in the status bar, you are NOT done. Wait.
 
 ---
 
@@ -367,7 +353,7 @@ for f in project-structure.md external-sources.md \
   architecture.md technology-stack.md module-map.md coding-standards.md \
   data-model.md api-contracts.md integration-map.md domain-glossary.md \
   test-landscape.md security-model.md tech-debt.md infrastructure.md; do
-  [ -f "knowledge/$f" ] && echo "✅ $f" || echo "❌ $f MISSING"
+  [ -f "aid-workspace/knowledge/$f" ] && echo "✅ $f" || echo "❌ $f MISSING"
 done
 ```
 
@@ -384,7 +370,7 @@ Wait for that agent to complete. Verify again. Repeat until all 14 exist.
 | discovery-quality | test-landscape.md, security-model.md, tech-debt.md, infrastructure.md |
 
 When re-dispatching, target ONLY the missing file(s):
-> Analyze this project's repository and produce ONLY knowledge/{missing-file}.md. [original prompt for that area]. Write only to the knowledge/ directory.
+> Analyze this project's repository and produce ONLY knowledge/{missing-file}.md. [original prompt for that area]. Write only to the aid-workspace/knowledge/ directory.
 
 ---
 
@@ -393,7 +379,7 @@ When re-dispatching, target ONLY the missing file(s):
 The orchestrator (you) generates these two documents directly — they are small and require
 reading across all previously produced KB documents.
 
-**knowledge/README.md** — completeness tracking table and revision history:
+**aid-workspace/knowledge/README.md** — completeness tracking table and revision history:
 ```markdown
 # Knowledge Base
 
@@ -423,7 +409,7 @@ reading across all previously produced KB documents.
 | {date} | All (initial discovery) | |
 ```
 
-**knowledge/INDEX.md** — 2-3 line summary of every KB document for agent self-service:
+**aid-workspace/knowledge/INDEX.md** — 2-3 line summary of every KB document for agent self-service:
 ```markdown
 # Knowledge Base Index — {Project Name}
 
@@ -452,55 +438,53 @@ Regenerate INDEX.md on every discovery run (full or targeted).
 
 ---
 
-### Step 6b: Create DISCOVERY-STATE.md with Q&A
+### Step 6b: Update DISCOVERY-STATE.md with Q&A
 
-After README.md and INDEX.md are generated, create `knowledge/DISCOVERY-STATE.md` with all
-Q&A questions collected from the subagents.
+After README.md and INDEX.md are generated, **update** the existing
+`aid-workspace/knowledge/DISCOVERY-STATE.md` with Q&A questions collected from the subagents.
 
-1. Read `knowledge/.scout-questions.tmp` (written by discovery-scout)
+**⚠️ Do NOT recreate this file from the template.** It was created by `/aid-init` with
+Minimum Grade, Project Type, and External Documentation from the user. Overwriting it
+would lose that metadata.
+
+1. Read `aid-workspace/knowledge/.scout-questions.tmp` (written by discovery-scout)
 2. Read ALL other KB documents and extract any questions, uncertainties, or TODOs they flagged
-3. Consolidate all questions into the DISCOVERY-STATE.md Q&A section with sequential IDs (Q1, Q2, ...)
-4. Delete `knowledge/.scout-questions.tmp`
+3. Consolidate all questions into the DISCOVERY-STATE.md `## Q&A` section with sequential IDs (Q1, Q2, ...)
+4. Delete `aid-workspace/knowledge/.scout-questions.tmp`
 
-```markdown
-# Discovery State
+**Update the existing DISCOVERY-STATE.md:**
 
-**Grade:** Pending
-**Minimum Grade:** {from --grade arg, default A}
-**User Approved:** no
+- Set `**Grade:**` to `Pending` (was `Not Started`)
+- **Preserve** `**Minimum Grade:**`, `**Project Type:**`, `**User Approved:**`, and
+  `## External Documentation` — these come from init and must not be changed
+- If `--grade` was provided, update `**Minimum Grade:**` to the new value
+- Replace `## Q&A` section content with consolidated questions from scouts and KB docs.
+  Each question follows this format:
 
-## Issues
+  ```markdown
+  ### Q1
+  - **Category:** {e.g., Architecture}
+  - **Impact:** {High|Medium|Low}
+  - **Status:** Pending
+  - **Context:** {why this question matters}
+  - **Suggested:** {answer if inferrable from repository, or "—"}
+  - **Question:** {the actual question}
+  ```
 
-(None yet — populated by reviewer in REVIEW mode)
-
-## Q&A
-
-### Q1
-- **Category:** {e.g., Architecture}
-- **Impact:** {High|Medium|Low}
-- **Status:** Pending
-- **Context:** {why this question matters}
-- **Suggested:** {answer if inferrable from repository, or "—"}
-- **Question:** {the actual question}
-
-### Q2
-...
-```
-
-Print: `[DISCOVERY-STATE] Created with {N} Q&A questions. Grade: Pending.`
+Print: `[DISCOVERY-STATE] Updated with {N} Q&A questions. Grade: Pending.`
 
 ---
 
 ### Step 7: Update Project Config Files
 
-Scan the project root for `AGENTS.md`. Replace any `<!-- AID:DISCOVER ... -->`
+Scan the project root for `AGENTS.md` and `CLAUDE.md`. Replace any `<!-- AID:DISCOVER ... -->`
 placeholders with real data from the analysis:
 
 - **Project Overview** — project name, purpose, tech stack, target platform
 - **Build & Test** — actual build, test, and lint commands (from build scripts, CI config, package manager)
 - **Code Conventions** — key naming patterns, formatting rules, idioms found in code
 - **Architecture** — high-level summary (layers, modules, entry points)
-- **Project description** — project name and one-line description
+- **Project description** (CLAUDE.md) — project name and one-line description
 
 Keep the `<!-- AID:DISCOVER ... -->` comment above each section so future re-discoveries can update them.
 Replace only the `(pending discovery)` placeholder lines with real content.
@@ -533,7 +517,7 @@ which agents ran, what was easy or hard, or any prior state. The reviewer must
 evaluate the KB purely on what's on disk — as if a stranger wrote it.
 
 Prompt to pass to the subagent:
-> Review every document in knowledge/ for quality. Be AGGRESSIVE — a lenient review is worse
+> Review every document in aid-workspace/knowledge/ for quality. Be AGGRESSIVE — a lenient review is worse
 > than useless because it lets bad docs through the quality gate.
 >
 > For each document, assess:
@@ -574,8 +558,8 @@ Prompt to pass to the subagent:
 >    - Are the claims grounded in specific locations (file paths, class names) or
 >      generic statements that could apply to any project?
 >
-> 6. **Meta-document integrity** — INDEX.md, README.md, and AGENTS.md are derived from
->    the 14 primary documents.
+> 6. **Meta-document integrity** — INDEX.md, README.md, AGENTS.md, and CLAUDE.md are
+>    derived from the 14 primary documents.
 >    - Do their summaries and values accurately reflect the current primary doc content?
 >    - Is placeholder text or template markers still present?
 >    - Are questions marked Pending in the Q&A section of DISCOVERY-STATE.md actually still unanswerable from the repository?
@@ -599,7 +583,7 @@ Prompt to pass to the subagent:
 > categorize by area, and assign impact levels (High/Medium/Low). Only add questions for things
 > genuinely needing human input — if you can grep the answer, fix it in the review instead.
 >
-> Write the review results (grades, issues, spot-checks) to knowledge/DISCOVERY-STATE.md,
+> Write the review results (grades, issues, spot-checks) to aid-workspace/knowledge/DISCOVERY-STATE.md,
 > preserving the existing `## Q&A` section and adding to it. Update `**Grade:**` from `Pending`
 > to the actual grade.
 
@@ -609,8 +593,8 @@ Wait for completion.
 
 ### Step 2: Post-Process DISCOVERY-STATE.md
 
-Read `knowledge/DISCOVERY-STATE.md`. Verify it contains:
-- [ ] Grade for every document (14 KB docs + AGENTS.md + INDEX.md + README.md)
+Read `aid-workspace/knowledge/DISCOVERY-STATE.md`. Verify it contains:
+- [ ] Grade for every document (14 KB docs + AGENTS.md + CLAUDE.md + INDEX.md + README.md)
 - [ ] Specific issues with severity levels ([CRITICAL], [HIGH], [MEDIUM], [MINOR])
 - [ ] Verification spot-checks (minimum 10)
 - [ ] Overall grade and recommendation
@@ -641,7 +625,7 @@ DISCOVERY-STATE.md directly.
 
 ### Step 1: Load and Filter Questions
 
-Read the `## Q&A` section of `knowledge/DISCOVERY-STATE.md`. Collect all entries with `**Status:** Pending`.
+Read the `## Q&A` section of `aid-workspace/knowledge/DISCOVERY-STATE.md`. Collect all entries with `**Status:** Pending`.
 
 **Before presenting each question, apply the filter:**
 
@@ -679,7 +663,7 @@ Suggested: {suggested answer, if present}
 
 ### Step 3: Record the Answer
 
-Based on the user's response, update the Q&A entry in `knowledge/DISCOVERY-STATE.md`:
+Based on the user's response, update the Q&A entry in `aid-workspace/knowledge/DISCOVERY-STATE.md`:
 
 - **User chose [1] (Skip):** Set `**Status:** Skipped`
 - **User chose [2] (Accept suggestion):** Set `**Status:** Answered`, copy the suggested text to `**Answer:**`
@@ -757,11 +741,7 @@ If no update is needed, skip silently. If updated, print: `[Fix] Updated {docume
 
 ### Step 3: Re-Review (MANDATORY — Do NOT Self-Evaluate)
 
-**After fixing all documents, you MUST re-run the full review process.**
-If Task tool is available, dispatch the `discovery-reviewer` agent again.
-If Task tool is NOT available, perform the review yourself — but it MUST be a **separate pass**.
-Do NOT grade your own fixes in the same turn as writing them. Write all fixes first, then start
-a fresh review pass treating the documents as if you're seeing them for the first time.
+**After fixing all documents, you MUST dispatch the `discovery-reviewer` subagent again.**
 The agent that wrote the fix CANNOT evaluate its own work. This is a hard rule.
 
 Print: `[Fix 2/3] Re-reviewing after fixes...`
@@ -774,8 +754,9 @@ The reviewer will overwrite DISCOVERY-STATE.md with a fresh assessment.
 - Do NOT tell the reviewer what was fixed or what the previous grade was.
 - Do NOT say "re-review" or "verify the fixes" — the reviewer must approach
   the KB as if seeing it for the first time.
-- If reviewing yourself (no Task tool), mentally reset: treat every document as
-  if written by a stranger. Check every claim from scratch.
+- The reviewer's `background: true` gives it an isolated context window — but
+  only if you don't inject prior results into its prompt.
+- If the reviewer asks about previous grades, respond: "Evaluate fresh. No prior context."
 
 Wait for completion.
 
@@ -817,7 +798,7 @@ Print a brief summary of the KB state:
 ```
 The Knowledge Base has reached the minimum grade of {minimum} (current: {grade}).
 
-Please review the documentation in knowledge/ and let us know if there is anything
+Please review the documentation in aid-workspace/knowledge/ and let us know if there is anything
 else we should consider.
 
 [1] Approved — KB is ready for the next phase
@@ -834,7 +815,7 @@ else we should consider.
   - Print: `✅ Discovery complete. Grade: {grade}. KB approved and ready for the Interview phase.`
 
 - **User provided additional consideration [2]:**
-  - Add the consideration as a new Q&A entry in the `## Q&A` section of `knowledge/DISCOVERY-STATE.md` with:
+  - Add the consideration as a new Q&A entry in the `## Q&A` section of `aid-workspace/knowledge/DISCOVERY-STATE.md` with:
     - Next sequential Q{N} ID
     - `[User Feedback: High]` category and impact
     - `**Status:** Pending`
@@ -868,8 +849,8 @@ When a GAP.md or IMPEDIMENT.md triggers re-discovery of a specific area:
    - `test-landscape.md`, `security-model.md`, `tech-debt.md`, `infrastructure.md` → dispatch discovery-quality
 3. Dispatch ONLY the relevant subagent for the area that needs updating
 4. Regenerate README.md and INDEX.md (orchestrator does this directly)
-5. Update `knowledge/README.md` revision history with the targeted update
-6. Delete `knowledge/DISCOVERY-STATE.md` so the next run re-reviews
+5. Update `aid-workspace/knowledge/README.md` revision history with the targeted update
+6. Delete `aid-workspace/knowledge/DISCOVERY-STATE.md` so the next run re-reviews
 7. Report completion to the calling phase
 
 ---
@@ -883,7 +864,7 @@ When a GAP.md or IMPEDIMENT.md triggers re-discovery of a specific area:
 - [ ] external-sources.md documents all external sources (or states none were provided)
 - [ ] README.md reflects completeness status and revision history
 - [ ] INDEX.md generated with 2-3 line summaries of every KB document
-- [ ] AGENTS.md placeholders filled with discovered data
+- [ ] AGENTS.md and CLAUDE.md placeholders filled with discovered data
 - [ ] All issues in DISCOVERY-STATE.md have severity: [CRITICAL], [HIGH], or [MEDIUM]
 - [ ] Minimum 10 spot-checks in DISCOVERY-STATE.md
 
@@ -999,3 +980,7 @@ Must have: completeness table, revision history.
 Must have: accurate project overview, real build/test commands, conventions from code,
 architecture summary. No remaining `(pending discovery)` placeholders.
 **Red flags**: Placeholder text still present. Commands that wouldn't actually work.
+
+### CLAUDE.md
+Must have: accurate project description, KB reference, conventions summary.
+**Red flags**: Placeholder text still present. Missing key gotchas for agents.

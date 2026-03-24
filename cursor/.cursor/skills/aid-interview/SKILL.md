@@ -4,112 +4,167 @@ description: >
   Adaptive requirements gathering through conversational interview. First run
   builds REQUIREMENTS.md incrementally. Subsequent runs cross-reference against
   KB, grade, and ask targeted questions to resolve gaps and contradictions.
-allowed-tools: Read, Grep, Terminal, Write, Edit, Task
-argument-hint: "[--reset] clear REQUIREMENTS.md and restart"
+  Final step decomposes functional requirements into discrete feature files.
+allowed-tools: Read, Glob, Grep, Terminal, Write, Edit
+argument-hint: "[task-001] resume task  [--reset task-001] clear and restart  [--features task-001] re-run feature decomposition"
 ---
 
 # Adaptive Requirements Gathering
 
 Gather requirements from a human stakeholder through adaptive, one-question-at-a-time
-conversation. Builds `knowledge/REQUIREMENTS.md` incrementally — each answer updates the
-document immediately.
+conversation. Builds REQUIREMENTS.md incrementally — each answer updates the document
+immediately.
+
+**Workspace structure:**
+```
+aid-workspace/
+  knowledge/           ← shared KB (populated by /aid-discover)
+  task-001-name/       ← one task = one interview cycle
+    INTERVIEW-STATE.md ← process (section status, Q&A, grade, review history)
+    REQUIREMENTS.md    ← product (clean document, only project information)
+    features/          ← product (one folder per feature, created after approval)
+      feature-001-name/
+        SPEC.md        ← product (technical specification, added by /aid-specify)
+        STATE.md       ← process (specification state)
+```
 
 **First run:** Conversational interview from scratch.
-**Subsequent runs:** Cross-reference REQUIREMENTS.md against KB, grade, ask targeted
-questions to resolve gaps/contradictions. User decides when to stop re-running.
+**Subsequent runs (before approval):** Resume interview for incomplete sections.
+**After approval:** Feature decomposition from functional requirements.
+**After features created:** Cross-reference REQUIREMENTS.md against KB, grade, ask questions.
+**Loopback:** Process Q&A injected by downstream phases (e.g., `/aid-specify`).
 
-## ⚠️ Pre-flight Check
+## ⚠️ Pre-flight Checks
 
-**Before starting, verify the agent mode allows file writes.**
+### Check 1: Verify Workspace Exists
 
-If the current mode restricts operations to read-only, the interview cannot update REQUIREMENTS.md.
+Check if `aid-workspace/` directory exists. If it doesn't:
+```
+⚠️ AID workspace not found. Run /aid-init first to set up the project.
+```
+Exit. Do not proceed.
 
-- ✅ Agent mode allows edits → Proceed.
-- ❌ Read-only / planning mode → **STOP.** Tell the user: "Interview needs to write files. Please switch to a mode that allows edits, then re-run `/aid-interview`."
+### Check 2: Verify Not in Plan Mode
+
+- ✅ `Default` or `Auto-accept edits` → Proceed.
+- ❌ `Plan mode` → **STOP.** Tell the user to switch out of Plan Mode.
 
 ## Arguments
 
 | Argument | Effect |
 |----------|--------|
-| `--reset` | Delete `knowledge/REQUIREMENTS.md` and restart the interview from scratch. |
+| `task-NNN` | Work on the specified task. |
+| `--reset task-NNN` | Delete the task folder and restart from scratch. |
+| `--features task-NNN` | Re-run feature decomposition for this task even if features exist. |
+| *(no argument)* | Task routing (see below). |
 
 ---
 
-## Entry Point
+## Task Routing
+
+When no task ID is provided:
+
+### No tasks exist
+
+If `aid-workspace/` has no `task-*` directories:
+
+1. Ask for a short name for this task:
+   ```
+   What's a short name for this task? (e.g., "user-auth", "reporting", "api-v2")
+   ```
+2. Create `aid-workspace/task-001-{name}/`
+3. Proceed to State Detection with this task.
+
+### Tasks exist
+
+If `aid-workspace/` has one or more `task-*` directories:
+
+```
+Existing tasks:
+  task-001-user-auth   [Status: Approved, 3 features]
+  task-002-reporting   [Status: In Progress, §5 Partial]
+
+[1] Continue task-001-user-auth
+[2] Continue task-002-reporting
+[3] Create new task
+```
+
+Wait for response:
+- **Continue existing:** proceed to State Detection for that task
+- **Create new:** ask for name, create `task-{N+1}-{name}/`, proceed
+
+**Shortcut:** If only one task exists and it's not yet Approved, go directly to it
+without asking.
+
+---
+
+## State Detection
 
 ⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**
 Do NOT rely on memory from previous runs. ALWAYS read the actual files on disk.
 
-### Detection Logic
+All paths below are relative to `aid-workspace/{task}/`.
 
-1. If `--reset` → delete `knowledge/REQUIREMENTS.md` and start fresh → **Step 1**
-2. If `knowledge/REQUIREMENTS.md` does NOT exist → **Step 1** (First Run)
-3. If `knowledge/REQUIREMENTS.md` exists → **Step 2** (Cross-Reference & Refine)
+```plaintext
+State 1: No INTERVIEW-STATE.md                                    → FIRST RUN
+State 2: INTERVIEW-STATE has Pending Q&A entries                   → Q&A mode
+State 3: INTERVIEW-STATE Status: In Progress, sections incomplete  → CONTINUE INTERVIEW
+State 4: INTERVIEW-STATE Status: In Progress, all sections done    → COMPLETION & APPROVAL
+State 5: INTERVIEW-STATE Status: Approved, no feature folders      → FEATURE DECOMPOSITION
+State 6: INTERVIEW-STATE Status: Approved, feature folders exist   → CROSS-REFERENCE
+```
+
+**Detection logic:**
+
+1. If `--reset` → delete the task folder → recreate → proceed as State 1
+2. Check for `INTERVIEW-STATE.md` in the task folder
+3. If missing → **State 1: FIRST RUN**
+4. If exists:
+   a. Check `## Pending Q&A` section for entries with `**Status:** Pending`
+   b. If Pending entries exist → **State 2: Q&A**
+   c. Read `**Status:**` field at top of file
+   d. If Status is `In Progress`:
+      - Read Section Status table
+      - If any section is `Pending` or `Partial` → **State 3: CONTINUE INTERVIEW**
+      - If all sections are `Complete` or `N/A` → **State 4: COMPLETION & APPROVAL**
+   e. If Status is `Approved`:
+      - If `--features` flag provided → **State 5: FEATURE DECOMPOSITION**
+      - Check if `features/` directory exists and contains `feature-*` subdirectories
+      - If no feature folders → **State 5: FEATURE DECOMPOSITION**
+      - If feature folders exist → **State 6: CROSS-REFERENCE**
+
+Print the detected state: `[{task}: {FIRST RUN|Q&A|CONTINUE|COMPLETION|FEATURES|CROSS-REFERENCE}]`
 
 ---
 
-## Step 1: First Run — Conversational Interview
+## State 1: FIRST RUN
 
-This happens only when REQUIREMENTS.md does not exist.
+This happens only when INTERVIEW-STATE.md does not exist in the task folder.
 
 ### 1a. Read KB (if it exists)
 
-Check for `knowledge/INDEX.md`. If it exists, read it to understand what's already known
-about the project. This context prevents asking questions the KB already answers.
+Check for `aid-workspace/knowledge/INDEX.md`. If it exists, read it to understand what's
+already known about the project. This context prevents asking questions the KB already answers.
 
 If no KB exists, that's fine — this is a greenfield project.
 
-### 1b. Create the REQUIREMENTS.md scaffold
+### 1b. Create INTERVIEW-STATE.md
 
-Create `knowledge/REQUIREMENTS.md` with the following template:
+Copy the template from `../templates/interview-state.md` to
+`aid-workspace/{task}/INTERVIEW-STATE.md`.
 
-```markdown
-# Requirements
+### 1c. Create REQUIREMENTS.md scaffold
 
-## Change Log
+Copy the template from `../templates/requirements.md` to
+`aid-workspace/{task}/REQUIREMENTS.md`.
+Add the first Change Log entry: `| {today} | Initial interview started | /aid-interview |`
 
-| Date | Change | Source |
-|------|--------|--------|
-| {today} | Initial interview started | /aid-interview |
+**Note:** Sections are empty — no placeholder markers. The INTERVIEW-STATE.md tracks
+which sections have been filled.
 
-## 1. Objective
-*(pending)*
+### 1d. Ask the opening question
 
-## 2. Problem Statement
-*(pending)*
-
-## 3. Users & Stakeholders
-*(pending)*
-
-## 4. Scope
-### In Scope
-*(pending)*
-
-### Out of Scope
-*(pending)*
-
-## 5. Functional Requirements
-*(pending)*
-
-## 6. Non-Functional Requirements
-*(pending)*
-
-## 7. Constraints
-*(pending)*
-
-## 8. Assumptions & Dependencies
-*(pending)*
-
-## 9. Acceptance Criteria
-*(pending)*
-
-## 10. Priority
-*(pending)*
-```
-
-### 1c. Ask the opening question
-
-**The first question is always the same, regardless of brownfield or greenfield:**
+**The first question is always the same:**
 
 ```
 What are we building? Tell me the goal and what success looks like.
@@ -117,33 +172,41 @@ What are we building? Tell me the goal and what success looks like.
 
 Wait for the user's response.
 
-### 1d. Record the answer
+### 1e. Record and continue
 
-Update `knowledge/REQUIREMENTS.md` — fill in **Section 1 (Objective)** with the user's
-response, in their own words. Remove the `*(pending)*` marker.
+After each answer:
 
-If the answer also touches other sections (e.g., the user mentions specific users or
-constraints unprompted), fill those sections too.
+1. Update the relevant section(s) in REQUIREMENTS.md
+2. Update the Section Status table in INTERVIEW-STATE.md:
+   - `Pending` → `Partial` (some content) or `Complete` (fully addressed)
+   - Update `Last Updated` column with today's date
+3. If the answer touches multiple sections, update all of them
+4. Follow the **Interview Loop** below to decide what to ask next
 
-### 1e. Continue the interview loop
+**Write immediately after each answer. Do not batch.**
 
-After recording the first answer, continue asking questions one at a time:
+---
 
-#### Assess the current state
+## Interview Loop
 
-For each section, classify it as:
+This loop runs during State 1 (First Run) and State 3 (Continue Interview).
+
+### Assess current state
+
+Read INTERVIEW-STATE.md Section Status table. For each section:
 - **Complete** — has substantive content, confirmed by user
 - **Partial** — has some content but gaps remain
-- **Pending** — still shows `*(pending)*` or is empty
+- **Pending** — empty
+- **N/A** — not applicable to this project
 
-#### Decide what to ask next
+### Decide what to ask next
 
 **Priority order:**
 
 1. **Infer from KB** — If a Pending/Partial section can be answered from KB documents,
    **do NOT fill it silently.** Ask with a suggested answer and source reference:
    ```
-   [From: knowledge/{source-document}.md]
+   [From: aid-workspace/knowledge/{source-document}.md]
 
    {Your question about this section}
 
@@ -155,119 +218,290 @@ For each section, classify it as:
    ```
    Only update REQUIREMENTS.md after the user responds.
 
-2. **Ask about the most critical gap** — Among remaining Pending/Partial sections,
-   pick the one that:
+2. **Most critical gap** — Among remaining Pending/Partial sections, pick the one that:
    - Depends on the least other information (can be answered now)
    - Unblocks the most other sections
    - Is most relevant given what the user has already said
 
-3. **Deepen a Partial section** — If no sections are fully Pending but some are Partial,
+3. **Deepen Partial sections** — If no sections are fully Pending but some are Partial,
    ask a follow-up to complete them.
 
-4. **All sections addressed** → Proceed to **Step 3** (Completion).
+4. **All sections addressed** → State 4 (Completion & Approval).
 
-#### Ask ONE question per turn
+### Rules
 
-```
-Got it — so the core problem is [summary of what you know so far].
-
-[Your question about the next gap]
-```
-
-**Rules:**
-- ONE question per turn. Never batch.
+- **ONE question per turn.** Never batch.
 - Use the user's language, not jargon they haven't used.
 - If the user gave direction ("focus on security"), pivot to that area.
-- If an answer contradicts the KB, flag it: "The codebase shows X, but you're saying Y — which should we go with?"
+- If an answer contradicts the KB, flag it:
+  "The codebase shows X, but you're saying Y — which should we go with?"
 - Short context before the question (1-2 sentences max). Don't recite everything back.
+- If a section is genuinely N/A for this project, mark it `N/A` in INTERVIEW-STATE.md
+  and move on.
 
-#### Update REQUIREMENTS.md after each answer
+### Update after each answer
 
-1. Update the relevant section(s)
-2. Remove `*(pending)*` markers from sections that now have content
-3. If the answer touches multiple sections, update all of them
-
-**Write immediately.** Do not batch updates.
-
-#### Update meta-documents
-
-After updating REQUIREMENTS.md, check if these need updating:
-- `knowledge/INDEX.md` — add or update the REQUIREMENTS.md entry
-- `knowledge/README.md` — add REQUIREMENTS.md to completeness table if not present
-
-Only update if the file exists and needs changes. Don't create files that don't exist yet.
-
-#### Loop
-
-Keep going until the user stops responding or all sections are addressed. The "one at a
-time" rule means one question per turn in the conversation, not one question per invocation.
-
-When all sections are Complete or N/A → proceed to **Step 3** (Completion).
+1. Update the relevant section(s) in REQUIREMENTS.md
+2. Update Section Status in INTERVIEW-STATE.md
+3. If the change is significant, add a Change Log entry in REQUIREMENTS.md
+4. If applicable, update `aid-workspace/knowledge/INDEX.md` and
+   `aid-workspace/knowledge/README.md`
 
 ---
 
-## Step 2: Cross-Reference & Refine
+## State 2: Q&A Mode
 
-This runs when REQUIREMENTS.md already exists (second or subsequent `/aid-interview` run).
-It validates the requirements against the full KB and codebase.
+INTERVIEW-STATE.md has entries in `## Pending Q&A` with `**Status:** Pending`.
 
-### 2a. Load context
+These may come from:
+- Cross-reference analysis (State 6)
+- Loopback from downstream phases (e.g., `/aid-specify` injected a question)
+- Review findings
 
-1. Read `knowledge/REQUIREMENTS.md`
-2. Read `knowledge/INDEX.md` (if it exists)
-3. Read ALL KB documents listed in INDEX.md
+### Step 1: Load and Filter
 
-### 2b. Cross-reference
+Read `## Pending Q&A` section. Collect all entries with `**Status:** Pending`.
 
-For each section of REQUIREMENTS.md, check against the KB:
+**Before presenting each question, filter:**
 
-1. **Contradictions** — Does the requirement conflict with what the KB shows?
-   - Example: Requirement says "no message queue" but KB shows RabbitMQ plugins exist
-   - Example: Requirement says "Java 17" but KB shows modules compiled with Java 11
+1. **Already answered in REQUIREMENTS.md?** → Set status to `Answered`, fill answer,
+   cite the section. Skip to next.
+2. **Answered in KB?** → Set status to `Answered`, fill answer, cite KB document. Skip.
+3. **Inferrable from context?** → Keep but ensure `**Suggested:**` answer exists.
 
-2. **Gaps** — Is there information in the KB that the requirements should address but don't?
-   - Example: KB shows security concerns but requirements have no security section
-   - Example: KB shows complex data model but requirements don't mention migration
+After filtering, sort remaining Pending by impact: **High → Medium → Low**.
 
-3. **Missing evidence** — Does the requirement make claims that can't be verified in KB?
-   - Use `Grep` to search the actual codebase for evidence
-   - Example: Requirement says "3 search endpoints" — verify in codebase how many actually exist
+If zero remain: `[Q&A] All questions resolved from existing material.` and exit.
 
-4. **Staleness** — Has the KB been updated since the last interview that changes anything?
-   - Check Change Log dates vs KB document dates
+Print: `[Q&A] {N} questions for user input.`
 
-### 2c. Grade
+### Step 2: Ask One at a Time
 
-Assign a grade based on the **number of questions** generated by the cross-reference:
-
-| Grade | Questions | Meaning |
-|-------|-----------|---------|
-| **A** | 0 | Requirements are consistent with KB. No additional questions. |
-| **B** | 1–3 | Small gaps or refinements needed. |
-| **C** | 4–7 | Significant gaps or contradictions to resolve. |
-| **D** | 8+ | Serious consistency problems. |
-
-**The grade reflects the state of the document at the START of the run.** Do NOT re-grade
-after answering questions. The user runs `/aid-interview` again to get the new grade.
-
-### 2d. Present findings
-
-Show the grade and findings to the user:
+For each Pending question:
 
 ```
-[Cross-Reference Review — Grade: {grade}]
+IQ{N}: [{Category}: {Impact}] {question text}
 
-I cross-referenced REQUIREMENTS.md against the full Knowledge Base ({N} documents)
-and the codebase.
+Context: {why this matters}
+Source: {who injected this — /aid-specify feature-001, cross-reference, etc.}
 
-**Contradictions found:** {count}
-{list each with: requirement section, KB source, what conflicts}
+Suggested: {suggestion if present}
 
-**Gaps found:** {count}
-{list each with: what's missing, where in KB it was found}
+[1] Skip / Not applicable
+[2] Accept suggestion (only if Suggested exists)
+[3] Your answer: ___
+```
 
+**Wait for the user's response before asking the next.**
+
+### Step 3: Record
+
+Based on the user's response, update the entry in INTERVIEW-STATE.md:
+
+- **[1] Skip:** Set `**Status:** Skipped`
+- **[2] Accept suggestion:** Set `**Status:** Answered`, copy suggestion to `**Answer:**`
+- **[3] Answer:** Set `**Status:** Answered`, record text in `**Answer:**`
+
+**Write immediately.** Also update REQUIREMENTS.md with the answer content where relevant.
+
+If the answer affects a feature that already exists, update that feature's SPEC.md too
+and add a Change Log entry.
+
+### Step 4: Continue Until Done
+
+When all questions addressed:
+`[Q&A] Complete. {answered} answered, {skipped} skipped.`
+
+---
+
+## State 3: CONTINUE INTERVIEW
+
+Resume the conversational interview. Same logic as State 1 — assess sections, ask next
+question, update files. The Interview Loop section above applies.
+
+Read INTERVIEW-STATE.md section status table to know where to continue.
+Read REQUIREMENTS.md to know what's already captured.
+
+---
+
+## State 4: COMPLETION & APPROVAL
+
+All sections are `Complete` or `N/A` in INTERVIEW-STATE.md.
+
+### Step 1: Quality Check
+
+Before presenting for approval, verify:
+- [ ] All "Must" requirements in §5 have acceptance criteria in §9
+- [ ] No contradictions between sections
+- [ ] Scope (§4) is consistent with Functional Requirements (§5)
+- [ ] Constraints (§7) don't conflict with requirements
+
+If issues found, ask the user to clarify instead of approving.
+
+### Step 2: Present Summary
+
+```
+I believe I have enough information. Here's a summary:
+
+**Objective:** [1-2 sentences from §1]
+**Problem:** [1-2 sentences from §2]
+**Key features:** [bullet list of must-haves from §5]
+**Main constraints:** [bullet list from §7]
+**Target users:** [list from §3]
+
+Is there anything else we should consider, or are the requirements ready?
+
+[1] Approved — requirements are ready
+[2] Additional consideration: ___
+```
+
+### Step 3: Process Response
+
+- **[1] Approved:**
+  - Set `**Status:** Approved` in INTERVIEW-STATE.md
+  - Add Change Log entry in REQUIREMENTS.md: `| {today} | Interview complete — approved | /aid-interview |`
+  - Add Review History entry in INTERVIEW-STATE.md
+  - Update `aid-workspace/knowledge/INDEX.md` and `aid-workspace/knowledge/README.md`
+    if they exist
+  - Print: `✅ Requirements approved. Proceeding to feature decomposition...`
+  - **Immediately proceed to State 5 (Feature Decomposition) in the same run.**
+
+- **[2] Additional consideration:**
+  - Incorporate into relevant section(s) of REQUIREMENTS.md
+  - Update INTERVIEW-STATE.md section statuses if needed
+  - Return to Interview Loop for any new gaps
+
+---
+
+## State 5: FEATURE DECOMPOSITION
+
+Requirements are approved. Decompose Functional Requirements into discrete features.
+
+### Step 1: Analyze
+
+Read REQUIREMENTS.md (in the task folder), focusing on:
+- §5 Functional Requirements — primary source for features
+- §4 Scope — boundaries (in scope / out of scope)
+- §9 Acceptance Criteria — distribute to features
+- §10 Priority — feature priority
+
+If KB exists, also read `aid-workspace/knowledge/INDEX.md` and relevant KB documents
+to understand existing features/modules that may influence decomposition.
+
+### Step 2: Propose Feature List
+
+```
+Based on the functional requirements, I've identified {N} features:
+
+| # | Folder Name | Description | Source | Priority |
+|---|-------------|-------------|--------|----------|
+| 1 | feature-001-{name} | {one-line description} | §5.x, §7.x | Must |
+| 2 | feature-002-{name} | {one-line description} | §5.x | Must |
+| 3 | feature-003-{name} | {one-line description} | §5.x | Should |
+| ... | ... | ... | ... | ... |
+
+Does this decomposition look right?
+
+[1] Approve as-is
+[2] Adjust — tell me what to change (add, remove, merge, split, rename)
+```
+
+**Feature decomposition rules:**
+- Each feature should be independently implementable
+- Feature names use kebab-case (for folder names)
+- Every functional requirement from §5 must map to at least one feature
+- Features that are too large to implement in one sprint should be split
+- Related requirements that form a single user journey should be one feature
+- Priority comes from §10 or context in REQUIREMENTS.md
+
+### Step 3: Process Response
+
+- **[1] Approve:** Create feature folders (Step 4)
+- **[2] Adjust:** Modify the list per user feedback. Present again. Repeat until approved.
+
+### Step 4: Create Feature Folders
+
+Create `features/` directory inside the task folder if it doesn't exist.
+
+For each approved feature, create `features/feature-{NNN}-{name}/SPEC.md` using the
+template from `../templates/feature.md`. Fill in:
+
+- **Title:** feature name (human-readable)
+- **Change Log:** `| {today} | Feature identified from REQUIREMENTS.md {source sections} | /aid-interview |`
+- **Source:** relevant REQUIREMENTS.md section references
+- **Description:** synthesized from §5 in stakeholder language
+- **User Stories:** extracted or synthesized from REQUIREMENTS.md, using user types from §3
+- **Priority:** from §10 or context (Must / Should / Could)
+- **Acceptance Criteria:** from §9 mapped to this feature, or synthesized from §5
+- **Technical Specification:** leave as template placeholder (added by /aid-specify)
+
+### Step 5: Update Meta-Documents
+
+1. Add Review History entry in INTERVIEW-STATE.md:
+   `| {N} | {today} | — | Feature Decomposition | {N} features created |`
+2. Update `aid-workspace/knowledge/INDEX.md` if it exists — add task/features reference
+3. Update `aid-workspace/knowledge/README.md` if it exists — add task to revision history
+
+Print:
+```
+✅ Feature decomposition complete. {N} features created in {task}/features/:
+
+{list each: feature-001-name/, feature-002-name/, ...}
+
+Next steps:
+- Review the feature SPEC.md files if desired
+- Run /aid-specify {task}/feature-001 to begin technical specification
+```
+
+---
+
+## State 6: CROSS-REFERENCE & REFINE
+
+Requirements approved and features created. Validate against KB and codebase.
+
+### 6a. Load Context
+
+1. Read REQUIREMENTS.md (in the task folder)
+2. Read INTERVIEW-STATE.md
+3. Read `aid-workspace/knowledge/INDEX.md` (if exists)
+4. Read ALL KB documents listed in INDEX.md
+5. Read all SPEC.md files in the task's `features/` subdirectories
+
+### 6b. Cross-Reference
+
+For each section of REQUIREMENTS.md, check against KB:
+
+1. **Contradictions** — Requirement conflicts with KB evidence
+2. **Gaps** — KB reveals things requirements should address but don't
+3. **Missing evidence** — Requirements make claims that can't be verified
+   (use `Grep` and `Glob` to search the actual codebase)
+4. **Staleness** — KB updated since interview, affecting requirements
+5. **Feature alignment** — Do feature SPEC.md files still match REQUIREMENTS.md?
+
+### 6c. Grade
+
+| Grade | Issues | Meaning |
+|-------|--------|---------|
+| **A** | 0 | Consistent with KB. No questions. |
+| **B** | 1–3 | Small gaps or refinements needed. |
+| **C** | 4–7 | Significant gaps or contradictions. |
+| **D** | 8+ | Serious consistency problems. |
+
+**Update `**Grade:**` in INTERVIEW-STATE.md.**
+
+### 6d. Present Findings
+
+```
+[Cross-Reference — Grade: {grade}]
+
+Checked REQUIREMENTS.md against {N} KB documents and {M} features.
+
+**Contradictions:** {count}
+**Gaps:** {count}
 **Unverified claims:** {count}
-{list each with: the claim, what was searched, what was found}
+**Feature alignment issues:** {count}
+
+{details for each}
 
 {If grade is A:}
 No issues found. Requirements are consistent with the Knowledge Base.
@@ -276,138 +510,81 @@ No issues found. Requirements are consistent with the Knowledge Base.
 I have {N} questions to resolve these. Let's go through them one at a time.
 ```
 
-### 2e. Ask targeted questions
+### 6e. Create Q&A Entries and Ask
 
-For each finding (contradiction, gap, or unverified claim), ask ONE question at a time:
+For each finding, add a Q&A entry in INTERVIEW-STATE.md `## Pending Q&A`:
 
+```markdown
+### IQ{N}: [{Category}: {Impact}]
+
+**Question:** {text}
+**Context:** {why this matters, what evidence was found}
+**Source:** /aid-interview (cross-reference)
+**Suggested:** {answer if inferrable from KB/code, or "—"}
+**Status:** Pending
 ```
-[{Finding type}: {brief description}]
-[From: knowledge/{source-document}.md]
 
-{Explanation of what was found}
-
-{Your question to resolve it}
-
-[1] {Suggested resolution based on evidence}
-[2] Not applicable / Skip
-[3] Your answer: ___
-```
+Then present them one at a time using State 2 (Q&A mode) logic.
 
 After each answer:
-1. Update the relevant section in REQUIREMENTS.md
-2. Add entry to the Change Log: `| {today} | {what changed} | /aid-interview (cross-reference) |`
+1. Update REQUIREMENTS.md
+2. Update affected feature SPEC.md if the answer changes a feature
+3. Add Change Log entries where content changed
 
-### 2f. Wrap up
+### 6f. Wrap Up
 
-After all questions from this run are answered:
+After all questions answered:
 
-1. Update REQUIREMENTS.md with answers (already done per 2e)
-2. Update INDEX.md with a **content summary only** — do NOT include the grade in INDEX.md
-3. Print:
-```
-✅ Cross-reference complete. {N} questions resolved.
-Run /aid-interview again to verify, or proceed with /aid-specify.
-```
-
-**Do NOT re-grade.** The grade was assigned at the start of this run (Step 2c) and reflects
-the document's state BEFORE the questions were answered. The next run will produce the real
-updated grade.
+1. Add Review History entry in INTERVIEW-STATE.md
+2. Add Change Log entry in REQUIREMENTS.md
+3. Print: `✅ Cross-reference complete. Run /aid-interview again to verify.`
 
 ---
 
-## Step 3: Completion (First Run Only)
+## Targeted Interview (Loopback Re-entry)
 
-When all sections are Complete or N/A during the first interview:
+When a downstream phase (e.g., `/aid-specify`) needs clarification on requirements:
 
-### 3a. Present summary
+1. The calling phase writes Q&A entries directly to the task's INTERVIEW-STATE.md
+   in the `## Pending Q&A` section
+2. Next `/aid-interview {task}` run detects Pending Q&A → enters State 2 (Q&A mode)
+3. Questions are presented to the user one at a time
+4. Answers are recorded in INTERVIEW-STATE.md and REQUIREMENTS.md
+5. Feature SPEC.md files are updated if the answer affects a specific feature
 
+**Q&A entry format for downstream phases to write:**
+
+```markdown
+### IQ{N}: [{Category}: {Impact}]
+
+**Question:** {question text}
+**Context:** {why this matters — what the downstream phase found}
+**Source:** {calling phase, e.g., /aid-specify task-001/feature-001}
+**Suggested:** {answer if inferrable, or "—"}
+**Status:** Pending
 ```
-I believe I have enough information. Here's a summary:
-
-**Objective:** [1-2 sentences]
-**Key features:** [bullet list of must-haves]
-**Main constraints:** [bullet list]
-**Target users:** [list]
-
-Is there anything else we should consider, or are the requirements ready?
-
-[1] Approved — requirements are ready
-[2] Additional consideration: ___
-```
-
-### 3b. Process response
-
-- **User chose [1] (Approved):**
-  - Add entry to Change Log: `| {today} | Interview complete — approved | /aid-interview |`
-  - Update INDEX.md and README.md to reflect completion
-  - Update .cursorrules if they have requirement placeholders
-  - Print: `✅ Interview complete. Run /aid-interview again to cross-reference against KB, or proceed with /aid-specify.`
-
-- **User provided additional consideration [2]:**
-  - Incorporate the feedback into the relevant section(s)
-  - Add entry to Change Log
-  - Return to Step 1e to address any new gaps
-
----
-
-## Targeted Interview (Re-entry)
-
-When a GAP.md or downstream phase triggers re-interview for a specific area:
-
-1. Read the GAP.md to understand what's missing
-2. Read current `knowledge/REQUIREMENTS.md`
-3. Ask targeted questions ONLY about the gap
-4. Update REQUIREMENTS.md with new information
-5. Add entry to Change Log: `| {today} | {what changed} | GAP.md re-entry |`
-6. Update INDEX.md and README.md
-7. Report completion to the calling phase
 
 ---
 
 ## Brownfield vs Greenfield
 
-**The skill handles both automatically.** The difference:
+The skill handles both automatically:
 
-- **Brownfield (KB exists):** Many technical sections can be answered from KB documents.
-  The interview focuses on "what do you want to change/add?" Questions come with suggested
-  answers and source references. Cross-reference (Step 2) is thorough — full KB available.
-
-- **Greenfield (no KB):** Everything comes from the user. The interview is longer.
-  Cross-reference (Step 2) has limited KB to check against — may be mostly A by default.
-
-The interviewer doesn't need to know which mode it's in — the presence or absence of KB
-documents naturally drives the behavior.
+- **Brownfield (KB exists):** Many sections can be pre-filled from KB. Questions come
+  with suggestions and source references. Cross-reference is thorough.
+- **Greenfield (no KB):** Everything comes from the user. Interview is longer.
+  Cross-reference has limited material — may be grade A by default.
 
 ---
 
 ## Question Design Principles
 
 1. **Start wide, narrow down.** Objective → Scope → Details → Constraints.
-2. **Follow the energy.** If the user is excited about feature X, explore it before
-   moving to boring infrastructure questions.
-3. **Don't interrogate.** This is a conversation, not a deposition. Acknowledge what
-   they said before asking the next thing.
-4. **Respect "I don't know."** If the user doesn't know something, mark it as an
-   assumption and move on. Don't pressure.
-5. **Respect "not applicable."** Some sections genuinely don't apply to every project.
-   Mark them as N/A and move on.
-6. **Capture the WHY.** "We need real-time updates" is a feature. "Because traders lose
-   money on stale data" is a requirement. Push for the why.
-7. **Use concrete examples.** "Can you walk me through what a user would do when...?"
-   produces better requirements than "What are the functional requirements?"
-
----
-
-## Quality Checklist
-
-- [ ] Every section is Complete, N/A, or explicitly deferred — nothing silently inferred
-- [ ] Problem Statement uses the stakeholder's own words
-- [ ] Functional requirements are specific enough to implement
-- [ ] Non-functional requirements have measurable criteria where possible
-- [ ] Assumptions are explicit — nothing is silently assumed
-- [ ] Out of Scope is defined — prevents scope creep
-- [ ] Acceptance criteria exist for priority features
-- [ ] Technical context is consistent with KB (if brownfield)
-- [ ] Change Log has entry for every modification
-- [ ] REQUIREMENTS.md is indexed in INDEX.md and tracked in README.md
-- [ ] No `*(pending)*` markers remain in approved document
+2. **Follow the energy.** User excited about feature X? Explore it first.
+3. **Don't interrogate.** Acknowledge what they said before asking the next thing.
+4. **Respect "I don't know."** Mark as assumption, move on.
+5. **Respect "not applicable."** Mark N/A, move on.
+6. **Capture the WHY.** "Real-time updates" is a feature. "Traders lose money on
+   stale data" is a requirement. Push for the why.
+7. **Use concrete examples.** "Walk me through what a user would do when..." produces
+   better requirements than "What are the functional requirements?"
