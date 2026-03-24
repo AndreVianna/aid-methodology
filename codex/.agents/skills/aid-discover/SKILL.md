@@ -29,17 +29,6 @@ Exit. Do not proceed.
 
 If it exists but has `**Grade:** Not Started`, that's expected — init ran, discovery hasn't.
 
-### Check 2: Verify Not in Plan Mode
-
-**Before starting discovery, verify you are NOT in Plan Mode.**
-
-Plan Mode restricts all operations to read-only — subagents will NOT be able to write KB files.
-
-- ✅ `Default` or `Auto-accept edits` → Proceed with discovery.
-- ❌ `Plan mode` → **STOP.** Tell the user to switch out of Plan Mode, then re-run `/aid-discover`.
-
-**Do NOT proceed with discovery while in Plan Mode.** The subagents will analyze the repository but silently fail to write any files.
-
 ## Arguments
 
 | Argument | Effect |

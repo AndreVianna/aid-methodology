@@ -2,11 +2,11 @@
 name: aid-init
 description: >
   Initialize an AID project. Asks greenfield or brownfield, collects project metadata,
-  external documentation paths, and scaffolds the aid-workspace/knowledge/ directory with empty templates.
+  external documentation paths, and scaffolds the aid-workspace/ directory structure.
   Sets up AGENTS.md with placeholders. Run once at project start — before
   aid-discover (brownfield) or aid-interview (greenfield).
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
-argument-hint: "[--reset] clear existing aid-workspace/knowledge/ and re-initialize"
+argument-hint: "[--reset] clear existing aid-workspace/ and re-initialize"
 ---
 
 # AID Project Initialization
@@ -14,18 +14,23 @@ argument-hint: "[--reset] clear existing aid-workspace/knowledge/ and re-initial
 Set up a project for the AID methodology. Collects essential metadata, scaffolds the
 Knowledge Base, and determines the workflow path. Run this once before any other AID phase.
 
+**Workspace structure:**
+```
+{ProjectFolder}/
+  AGENTS.md
+  aid-workspace/
+    knowledge/
+      DISCOVERY-STATE.md
+      (...14 KB docs, INDEX.md, README.md)
+```
+
+Tasks and features are created later by `/aid-interview`.
+
 **This is a conversational skill — it asks questions and waits for answers.**
 
 ---
 
 ## Pre-flight Checks
-
-### Check 0: Verify Not in Plan Mode
-
-**Before starting init, verify you are NOT in Plan Mode.**
-
-- ✅ `Default` or `Auto-accept edits` → Proceed
-- ❌ `Plan mode` → STOP. Tell user to switch. Init creates files — Plan mode will block all writes.
 
 ### Check 1: Existing Knowledge Base
 
@@ -41,14 +46,11 @@ Knowledge Base, and determines the workflow path. Run this once before any other
      Wait for response. If [2], exit.
    - If `--reset` was passed: warn and confirm:
      ```
-     ⚠️ --reset will DELETE all aid-workspace/knowledge/ contents and start fresh.
+     ⚠️ --reset will DELETE all aid-workspace/ contents and start fresh.
+     This includes aid-workspace/knowledge/, all tasks, and all features.
      This is irreversible. Continue? [y/N]
      ```
-     If confirmed, delete `aid-workspace/knowledge/` contents.
-
-2. Verify not in Plan Mode (same check as aid-discover):
-   - ✅ `Default` or `Auto-accept edits` → Proceed
-   - ❌ `Plan mode` → STOP. Tell user to switch.
+     If confirmed, delete `aid-workspace/` contents.
 
 ---
 
@@ -264,26 +266,11 @@ If your task touches an area covered here, read the relevant document first.
 
 ### aid-workspace/knowledge/DISCOVERY-STATE.md
 
-```markdown
-# Discovery State
-
-**Grade:** Not Started
-**Minimum Grade:** {grade from Q5}
-**Project Type:** {Brownfield / Greenfield}
-**User Approved:** no
-
-## External Documentation
-
-{List of paths from Q4, or "None provided"}
-
-## Issues
-
-(Populated by reviewer after discovery)
-
-## Q&A
-
-(Populated during discovery and review)
-```
+Copy the template from `../templates/discovery-state.md` to
+`aid-workspace/knowledge/DISCOVERY-STATE.md`. Fill in:
+- `{minimum}` → grade from Q5
+- `{Brownfield / Greenfield}` → from Q1
+- `{External Documentation}` → paths from Q4, or "None provided"
 
 ---
 
