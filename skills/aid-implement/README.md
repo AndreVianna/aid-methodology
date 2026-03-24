@@ -11,7 +11,7 @@ Read a TASK spec, load relevant context from SPEC.md and the Knowledge Base, spa
 
 - `TASK-{id}.md` — the primary prompt. What to build.
 - `SPEC.md` — the project specification. Architectural constraints.
-- `knowledge/` documents (context-dependent):
+- `aid-workspace/knowledge/` documents (context-dependent):
   - Always: `coding-standards.md`, `architecture.md`.
   - If DB work: `data-model.md`.
   - If API work: `api-contracts.md`.
@@ -41,10 +41,10 @@ Use the coding-agent skill to spawn an implementation agent. The agent prompt sh
 {Relevant sections of SPEC.md}
 
 ## Coding Standards
-{From knowledge/coding-standards.md}
+{From aid-workspace/knowledge/coding-standards.md}
 
 ## Architecture Context
-{From knowledge/architecture.md — relevant sections}
+{From aid-workspace/knowledge/architecture.md — relevant sections}
 
 ## Additional Context
 {Other KB documents as needed}

@@ -17,7 +17,7 @@ Final verification, PR, delivery summary, documentation updates.
 - Feature branch with completed, reviewed, tested tasks
 - `DELIVERY-{id}.md` — scope and success criteria
 - REVIEW.md files, TEST-REPORT.md
-- `SPEC.md` + `knowledge/`
+- `SPEC.md` + `aid-workspace/knowledge/`
 
 ## Prerequisites
 
@@ -44,13 +44,13 @@ Check if implementation revealed KB updates needed:
 - New integrations → integration-map.md
 - Tech debt created/resolved → tech-debt.md
 - Data model changes → data-model.md
-Add revision entries to knowledge/README.md.
+Add revision entries to aid-workspace/knowledge/README.md.
 
 ### 5. Artifact Status Updates
 - DELIVERY-{id}.md → Status: Complete, completion date, final test count
 - TASK-{id}.md files → Status: Complete
 - SPEC.md revision history (if revisions occurred)
-- knowledge/README.md (if KB docs updated)
+- aid-workspace/knowledge/README.md (if KB docs updated)
 
 ## Post-Deploy
 

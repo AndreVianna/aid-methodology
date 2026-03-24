@@ -3,7 +3,7 @@
 > **Version:** 1.0
 > **Date:** {date}
 > **Source:** aid-specify (Phase 3)
-> **Input:** REQUIREMENTS.md v{n} + knowledge/ (KB)
+> **Input:** REQUIREMENTS.md v{n} + aid-workspace/knowledge/ (KB)
 
 > **Note:** This spec is grounded in the Knowledge Base. Every architectural decision references existing code patterns — it doesn't invent new ones. Agents implementing from this spec should read the referenced KB documents before writing a single line of code.
 
@@ -49,7 +49,7 @@
 > How this fits into the existing system. Not what architecture should be used in general — what architecture IS used here, and how this feature extends it.
 
 **Pattern:**
-{Reference KB architecture.md — "Following the {pattern} established in `knowledge/architecture.md`, this feature..."}
+{Reference KB architecture.md — "Following the {pattern} established in `aid-workspace/knowledge/architecture.md`, this feature..."}
 
 **New components:**
 {What new modules, services, or classes this feature adds. Be specific about where they live in the existing layer structure.}

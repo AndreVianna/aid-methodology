@@ -14,12 +14,12 @@ Transform REQUIREMENTS.md into SPEC.md grounded in the Knowledge Base.
 
 ## Core Principle
 
-Specs are grounded, not generic. Don't say "use repository pattern" — say "register in `ServiceCollectionExtensions.cs` following the pattern in `knowledge/coding-standards.md` §3.2."
+Specs are grounded, not generic. Don't say "use repository pattern" — say "register in `ServiceCollectionExtensions.cs` following the pattern in `aid-workspace/knowledge/coding-standards.md` §3.2."
 
 ## Inputs
 
 - `REQUIREMENTS.md`
-- `knowledge/`: architecture.md, technology-stack.md, coding-standards.md, data-model.md, integration-map.md
+- `aid-workspace/knowledge/`: architecture.md, technology-stack.md, coding-standards.md, data-model.md, integration-map.md
 
 ## Process
 

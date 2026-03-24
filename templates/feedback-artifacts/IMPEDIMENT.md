@@ -59,7 +59,7 @@
 
 > If the Knowledge Base is wrong or incomplete, specify what needs updating.
 
-**Document:** `knowledge/{document}.md`
+**Document:** `aid-workspace/knowledge/{document}.md`
 **Section:** {section}
 **Current content:** {what it says now}
 **Correct content:** {what it should say}
@@ -105,7 +105,7 @@
 **Decision:** {option chosen and by whom}
 **Action taken:** {what was done}
 **Artifacts updated:**
-- `knowledge/{document}.md` rev {n} — {what changed}
+- `aid-workspace/knowledge/{document}.md` rev {n} — {what changed}
 - `SPEC.md` rev {n} — {what changed, if applicable}
 - `TASK-{id}.md` rev {n} — {what changed, if applicable}
 

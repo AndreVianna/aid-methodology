@@ -370,7 +370,7 @@ Wait for that agent to complete. Verify again. Repeat until all 14 exist.
 | discovery-quality | test-landscape.md, security-model.md, tech-debt.md, infrastructure.md |
 
 When re-dispatching, target ONLY the missing file(s):
-> Analyze this project's repository and produce ONLY knowledge/{missing-file}.md. [original prompt for that area]. Write only to the aid-workspace/knowledge/ directory.
+> Analyze this project's repository and produce ONLY aid-workspace/knowledge/{missing-file}.md. [original prompt for that area]. Write only to the aid-workspace/knowledge/ directory.
 
 ---
 

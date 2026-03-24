@@ -24,7 +24,7 @@ in the existing architecture. The developer validates, redirects, or deepens the
 **Workspace structure:**
 ```
 aid-workspace/
-  knowledge/               ← shared KB
+  aid-workspace/knowledge/               ← shared KB
   task-001-name/
     REQUIREMENTS.md
     features/

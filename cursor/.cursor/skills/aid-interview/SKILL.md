@@ -18,7 +18,7 @@ immediately.
 **Workspace structure:**
 ```
 aid-workspace/
-  knowledge/           ← shared KB (populated by /aid-discover)
+  aid-workspace/knowledge/           ← shared KB (populated by /aid-discover)
   task-001-name/       ← one task = one interview cycle
     INTERVIEW-STATE.md ← process (section status, Q&A, grade, review history)
     REQUIREMENTS.md    ← product (clean document, only project information)

@@ -3,7 +3,7 @@
 > **Version:** 1.0
 > **Date:** {date}
 > **Source:** aid-detail (Phase 5)
-> **Inputs:** PLAN.md + SPEC.md + knowledge/
+> **Inputs:** PLAN.md + SPEC.md + aid-workspace/knowledge/
 
 ---
 

@@ -12,9 +12,9 @@ Review implementation quality against the task specification, project spec, and 
 - Git diff of the implementation (against base branch).
 - `TASK-{id}.md` — the acceptance criteria.
 - `SPEC.md` — the architectural constraints.
-- `knowledge/coding-standards.md` — the coding conventions.
-- `knowledge/architecture.md` — the architectural patterns.
-- `knowledge/test-landscape.md` — the testing expectations.
+- `aid-workspace/knowledge/coding-standards.md` — the coding conventions.
+- `aid-workspace/knowledge/architecture.md` — the architectural patterns.
+- `aid-workspace/knowledge/test-landscape.md` — the testing expectations.
 
 ## Process
 
@@ -69,7 +69,7 @@ Review against SPEC.md and KB architecture:
 
 ### Step 4: Convention Compliance
 
-Review against `knowledge/coding-standards.md`:
+Review against `aid-workspace/knowledge/coding-standards.md`:
 
 - Naming conventions (PascalCase, camelCase, etc.).
 - Error handling patterns.

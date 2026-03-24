@@ -17,7 +17,7 @@ Review implementation against task spec, project spec, and KB standards. Grade. 
 - Git diff (against base branch)
 - `TASK-{id}.md` — acceptance criteria
 - `SPEC.md` — architectural constraints
-- `knowledge/`: coding-standards.md, architecture.md, test-landscape.md
+- `aid-workspace/knowledge/`: coding-standards.md, architecture.md, test-landscape.md
 
 ## Process
 

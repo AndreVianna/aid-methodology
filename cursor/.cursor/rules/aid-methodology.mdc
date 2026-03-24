@@ -12,7 +12,7 @@ This project uses the AI-Integrated Development (AID) methodology.
 ## Workspace Structure
 ```
 aid-workspace/
-  knowledge/           ← shared KB (14 docs + README + INDEX + DISCOVERY-STATE)
+  aid-workspace/knowledge/           ← shared KB (14 docs + README + INDEX + DISCOVERY-STATE)
   task-NNN-{name}/     ← per-task work (created by /aid-interview)
     INTERVIEW-STATE.md
     REQUIREMENTS.md

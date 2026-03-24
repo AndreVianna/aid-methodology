@@ -1,6 +1,6 @@
 # Adaptive Requirements Gathering
 
-Gather and validate requirements through adaptive conversation with a human stakeholder. Produces a structured REQUIREMENTS.md in `knowledge/`.
+Gather and validate requirements through adaptive conversation with a human stakeholder. Produces a structured REQUIREMENTS.md in `aid-workspace/knowledge/`.
 
 ## Core Principle
 
@@ -26,20 +26,20 @@ Produce a grade and targeted questions. Update REQUIREMENTS.md with answers.
 
 ## When to Use
 
-- **Initial interview:** New project. No REQUIREMENTS.md exists in `knowledge/`.
+- **Initial interview:** New project. No REQUIREMENTS.md exists in `aid-workspace/knowledge/`.
 - **Cross-reference:** REQUIREMENTS.md exists. Run again to validate against current KB.
 - **Targeted interview:** A GAP.md from aid-plan, aid-detail, or aid-specify identifies a `needs-interview` requirement gap. Ask only about the specific gap.
 
 ## Inputs
 
-- `knowledge/` directory (if brownfield — pre-fills technical fields and informs questions).
+- `aid-workspace/knowledge/` directory (if brownfield — pre-fills technical fields and informs questions).
 - Project description or brief (if greenfield).
 - For targeted interview: the GAP.md that triggered re-entry.
-- For cross-reference: existing `knowledge/REQUIREMENTS.md` + full KB.
+- For cross-reference: existing `aid-workspace/knowledge/REQUIREMENTS.md` + full KB.
 
 ## REQUIREMENTS.md Structure
 
-The output is a first-class methodology artifact saved as `knowledge/REQUIREMENTS.md` (uppercase). It contains 10 sections plus a mandatory Change Log:
+The output is a first-class methodology artifact saved as `aid-workspace/knowledge/REQUIREMENTS.md` (uppercase). It contains 10 sections plus a mandatory Change Log:
 
 ### Change Log
 Every modification to REQUIREMENTS.md gets an entry — initial creation, cross-reference updates, targeted re-interviews. Tracked with Date, Change, and Source columns.
@@ -103,7 +103,7 @@ When the Knowledge Base already has an answer to a question, **still ask it** �
 
 ```
 Our codebase analysis found you're using PostgreSQL 16 with 3 REST API integrations.
-[From: knowledge/technology-stack.md]
+[From: aid-workspace/knowledge/technology-stack.md]
 
 [1] Accept  [2] Skip  [3] Custom answer
 ```
@@ -138,7 +138,7 @@ On each cross-reference run, grade the REQUIREMENTS.md at the start:
 
 ### Cross-Reference Process
 
-1. Read all `knowledge/` documents and scan the codebase.
+1. Read all `aid-workspace/knowledge/` documents and scan the codebase.
 2. Compare each REQUIREMENTS.md section against KB evidence.
 3. Identify contradictions, gaps, missing evidence, and staleness.
 4. Present the grade and list all questions.

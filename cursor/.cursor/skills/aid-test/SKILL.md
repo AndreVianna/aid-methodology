@@ -23,7 +23,7 @@ Review catches what code looks like. Test catches what code does. Both gates are
 - `DELIVERY-{id}.md` — scope and success criteria
 - `DETAIL.md` — user stories and acceptance criteria
 - `SPEC.md` — expected behavior and NFRs
-- `knowledge/`: test-landscape.md, infrastructure.md
+- `aid-workspace/knowledge/`: test-landscape.md, infrastructure.md
 
 ## Prerequisites
 

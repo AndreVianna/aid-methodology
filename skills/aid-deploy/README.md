@@ -13,7 +13,7 @@ Final verification, PR creation, delivery summary, and documentation updates. Th
 - `DELIVERY-{id}.md` — delivery scope and success criteria.
 - `REVIEW.md` files — review results for each task.
 - `TEST-REPORT.md` — test results from staging validation.
-- `SPEC.md` + `knowledge/` — for documentation updates.
+- `SPEC.md` + `aid-workspace/knowledge/` — for documentation updates.
 
 ## Prerequisites
 
@@ -125,13 +125,13 @@ Create a Pull Request with a structured description:
 
 Check if implementation revealed anything that should update the KB:
 
-1. **New conventions discovered** → update `knowledge/coding-standards.md`.
-2. **Architecture changed** → update `knowledge/architecture.md`.
-3. **New integrations added** → update `knowledge/integration-map.md`.
-4. **Tech debt created or resolved** → update `knowledge/tech-debt.md`.
-5. **Data model changed** → update `knowledge/data-model.md`.
+1. **New conventions discovered** → update `aid-workspace/knowledge/coding-standards.md`.
+2. **Architecture changed** → update `aid-workspace/knowledge/architecture.md`.
+3. **New integrations added** → update `aid-workspace/knowledge/integration-map.md`.
+4. **Tech debt created or resolved** → update `aid-workspace/knowledge/tech-debt.md`.
+5. **Data model changed** → update `aid-workspace/knowledge/data-model.md`.
 
-Add revision entries to `knowledge/README.md` for any KB changes.
+Add revision entries to `aid-workspace/knowledge/README.md` for any KB changes.
 
 ### Step 5: Artifact Status Updates
 
@@ -146,7 +146,7 @@ Add revision entries to `knowledge/README.md` for any KB changes.
 
 3. Update `SPEC.md` revision history if any revisions occurred during this delivery.
 
-4. Update `knowledge/README.md` if any KB documents were updated.
+4. Update `aid-workspace/knowledge/README.md` if any KB documents were updated.
 
 ## Output
 

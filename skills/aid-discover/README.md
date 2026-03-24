@@ -1,7 +1,7 @@
 
 # Brownfield Codebase Discovery
 
-Analyze an existing codebase and produce a structured Knowledge Base (`knowledge/` directory) that becomes the gravitational center of the project.
+Analyze an existing codebase and produce a structured Knowledge Base (`aid-workspace/knowledge/` directory) that becomes the gravitational center of the project.
 
 ## When to Use
 
@@ -33,7 +33,7 @@ find . -type f | grep -E '\.(cs|java|py|ts|js|go|rs)$' | \
   sed 's/.*\.//' | sort | uniq -c | sort -rn
 ```
 
-Record in `knowledge/architecture.md`: project type, approximate size, age (from git log), entry points, build system.
+Record in `aid-workspace/knowledge/architecture.md`: project type, approximate size, age (from git log), entry points, build system.
 
 ### Step 2: Architecture Analysis
 
@@ -44,7 +44,7 @@ Identify patterns, layers, and boundaries.
 - Trace data flow: entry point → processing → storage → output.
 - Identify the dependency injection/service registration pattern.
 
-Record in `knowledge/architecture.md`.
+Record in `aid-workspace/knowledge/architecture.md`.
 
 ### Step 3: Stack Inventory
 
@@ -61,7 +61,7 @@ cat pom.xml | grep -A1 '<dependency>' 2>/dev/null
 cat requirements.txt pyproject.toml 2>/dev/null
 ```
 
-Record in `knowledge/technology-stack.md`: languages, frameworks, versions, package managers, runtime.
+Record in `aid-workspace/knowledge/technology-stack.md`: languages, frameworks, versions, package managers, runtime.
 
 ### Step 4: Convention Mining
 
@@ -73,7 +73,7 @@ Infer coding standards from the code itself (not from documentation that may be 
 - Configuration management (env vars, config files, secrets).
 - File organization conventions.
 
-Record in `knowledge/coding-standards.md`. Mark as "inferred from code" — these need human confirmation.
+Record in `aid-workspace/knowledge/coding-standards.md`. Mark as "inferred from code" — these need human confirmation.
 
 ### Step 5: Module Mapping
 
@@ -83,7 +83,7 @@ For every significant module/package:
 |--------|---------|-------------|-------------|---------------|
 | ... | ... | ... | ... files | Tested/Untested |
 
-Record in `knowledge/module-map.md`.
+Record in `aid-workspace/knowledge/module-map.md`.
 
 ### Step 6: Data Model Extraction
 
@@ -100,7 +100,7 @@ find . -name "*.sql" | head -20
 find . -name "schema.*" -o -name "*.prisma" -o -name "*.graphql" | head -10
 ```
 
-Record in `knowledge/data-model.md`.
+Record in `aid-workspace/knowledge/data-model.md`.
 
 ### Step 7: Integration Surface
 
@@ -112,7 +112,7 @@ Map all external touchpoints:
 - Caches (Redis, Memcached, in-memory).
 - Third-party services (auth providers, payment, email).
 
-Record in `knowledge/api-contracts.md` and `knowledge/integration-map.md`.
+Record in `aid-workspace/knowledge/api-contracts.md` and `aid-workspace/knowledge/integration-map.md`.
 
 ### Step 8: Test Landscape
 
@@ -121,7 +121,7 @@ Record in `knowledge/api-contracts.md` and `knowledge/integration-map.md`.
 - Coverage metrics (if CI reports exist).
 - CI/CD pipeline description.
 
-Record in `knowledge/test-landscape.md`.
+Record in `aid-workspace/knowledge/test-landscape.md`.
 
 ### Step 9: Tech Debt Audit
 
@@ -141,11 +141,11 @@ find . -name "*.cs" -o -name "*.java" -o -name "*.ts" | \
 rg "TODO|HACK|FIXME|XXX" --count-matches 2>/dev/null | sort -t: -k2 -rn | head -20
 ```
 
-Record in `knowledge/tech-debt.md` with risk ratings (High/Medium/Low).
+Record in `aid-workspace/knowledge/tech-debt.md` with risk ratings (High/Medium/Low).
 
 ### Step 10: Additional Information
 
-Produce `knowledge/additional-info.md` with structured Q&A entries for everything that code analysis alone couldn't determine. Each entry includes:
+Produce `aid-workspace/knowledge/additional-info.md` with structured Q&A entries for everything that code analysis alone couldn't determine. Each entry includes:
 
 - **ID:** Q{N} (sequential)
 - **Question:** What needs to be clarified
@@ -160,7 +160,7 @@ This covers business rules not explicit in code, deployment procedures not captu
 
 ### Step 11: KB Index
 
-Create `knowledge/README.md` with completeness tracking:
+Create `aid-workspace/knowledge/README.md` with completeness tracking:
 
 ```markdown
 # Knowledge Base — {Project Name}
@@ -174,7 +174,7 @@ Create `knowledge/README.md` with completeness tracking:
 
 ## Output
 
-A `knowledge/` directory containing the relevant subset of these 13 documents (plus a README.md index):
+A `aid-workspace/knowledge/` directory containing the relevant subset of these 13 documents (plus a README.md index):
 
 | Document | Always? | Description |
 |----------|---------|-------------|
@@ -200,11 +200,11 @@ When triggered by a GAP.md or IMPEDIMENT.md from a downstream phase:
 1. Read the gap/impediment document to understand exactly what's missing.
 2. Focus analysis ONLY on the identified area.
 3. Update the specific KB document(s).
-4. Update `knowledge/README.md` with a revision note:
+4. Update `aid-workspace/knowledge/README.md` with a revision note:
    ```
    | {date} | {source phase} | Updated {document} — {what changed and why} |
    ```
-5. Update `knowledge/README.md` status for affected documents.
+5. Update `aid-workspace/knowledge/README.md` status for affected documents.
 6. Report completion to the calling phase so it can resume.
 
 ## Quality Checklist

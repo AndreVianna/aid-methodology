@@ -1,6 +1,6 @@
 # Knowledge Base Templates
 
-The Knowledge Base (`knowledge/`) is the gravitational center of every AID project. Every phase reads from it. Any phase can trigger updates to it. It outlives the project.
+The Knowledge Base (`aid-workspace/knowledge/`) is the gravitational center of every AID project. Every phase reads from it. Any phase can trigger updates to it. It outlives the project.
 
 ## Documents
 

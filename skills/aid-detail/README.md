@@ -11,7 +11,7 @@ Take the high-level plan (PLAN.md) and decompose it into sprint-ready user stori
 
 - `PLAN.md` — the high-level roadmap. Modules, MVPs, deliverables, test scenarios.
 - `SPEC.md` — the specification. Architectural constraints, feature specs.
-- `knowledge/` directory — for complexity estimation and dependency analysis. Read at minimum:
+- `aid-workspace/knowledge/` directory — for complexity estimation and dependency analysis. Read at minimum:
   - `architecture.md` — to understand module boundaries.
   - `module-map.md` — to identify affected modules and test coverage.
   - `tech-debt.md` — to anticipate complications.

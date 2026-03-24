@@ -106,12 +106,12 @@ The Director never writes code. The Specialist never makes architectural decisio
 
 ## 2. The Knowledge Base
 
-The Knowledge Base (`knowledge/`) is the gravitational center of the entire methodology. Every phase reads from it. Any phase can trigger updates to it.
+The Knowledge Base (`aid-workspace/knowledge/`) is the gravitational center of the entire methodology. Every phase reads from it. Any phase can trigger updates to it.
 
 ### Structure
 
 ```
-knowledge/
+aid-workspace/knowledge/
 ├── README.md              # Index with completeness status per document
 ├── architecture.md        # Patterns, layers, module boundaries, data flow
 ├── module-map.md          # Every module: purpose, dependencies, size, test coverage
@@ -159,7 +159,7 @@ A common failure mode: an agent receives a task spec and the project spec, imple
 
 **AID solves this with the KB Index — a lightweight map of the entire Knowledge Base.**
 
-The Discovery phase generates `knowledge/INDEX.md` as its final step. This file contains a 2-3 line summary of each KB document — what it covers, when to consult it. It costs almost nothing to include in an agent's context, but it gives the agent the ability to self-serve.
+The Discovery phase generates `aid-workspace/knowledge/INDEX.md` as its final step. This file contains a 2-3 line summary of each KB document — what it covers, when to consult it. It costs almost nothing to include in an agent's context, but it gives the agent the ability to self-serve.
 
 ```markdown
 # Knowledge Base Index — {Project Name}
@@ -180,7 +180,7 @@ If your task touches an area covered here, read the relevant document first.
 
 1. **Every task receives INDEX.md.** Always. It's the map. Cost: ~200-500 tokens. Value: the agent knows where to look.
 2. **The orchestrator selects 2-4 relevant KB docs** based on the task's domain (data work → data-model.md, API work → api-contracts.md).
-3. **The task template includes a search instruction:** "If you need context not provided, consult `knowledge/INDEX.md` and read the relevant document before making assumptions."
+3. **The task template includes a search instruction:** "If you need context not provided, consult `aid-workspace/knowledge/INDEX.md` and read the relevant document before making assumptions."
 4. **Review validates context usage.** One review criterion: did the agent use available KB context, or did it guess?
 
 This is RAG by convention — not embeddings and vector databases, but predictable file structure and an index that agents can navigate. The agent has filesystem access. It can read on demand. It just needs to know the menu.
@@ -227,9 +227,9 @@ AID organizes eleven phases into four groups. The pipeline is linear with feedba
 8. **Test landscape** — Frameworks, coverage metrics, test types, CI/CD pipeline.
 9. **Tech debt audit** — Large files, circular dependencies, missing tests, outdated packages.
 10. **Gap identification** — What we couldn't determine from code alone → feeds into Interview.
-11. **Context Index generation** — Generate `knowledge/INDEX.md` with a 2-3 line summary of every KB document produced. This lightweight index is included in every task context so agents know what's available and can self-serve additional context on demand. See [Context Feeding Strategy](#context-feeding-strategy).
+11. **Context Index generation** — Generate `aid-workspace/knowledge/INDEX.md` with a 2-3 line summary of every KB document produced. This lightweight index is included in every task context so agents know what's available and can self-serve additional context on demand. See [Context Feeding Strategy](#context-feeding-strategy).
 
-**Output:** `knowledge/` directory — the project's Knowledge Base, including INDEX.md.
+**Output:** `aid-workspace/knowledge/` directory — the project's Knowledge Base, including INDEX.md.
 
 **When to skip:** Pure greenfield projects with no existing code. Interview populates a minimal KB instead.
 
@@ -245,7 +245,7 @@ AID organizes eleven phases into four groups. The pipeline is linear with feedba
 
 Two modes depending on whether REQUIREMENTS.md already exists:
 
-**First run (no REQUIREMENTS.md):** Conversational interview, one question at a time. Starts with "What are we building? Tell me the goal and what success looks like." Each answer updates REQUIREMENTS.md immediately — no batching. When KB exists (brownfield), questions come with suggested answers and source citations: `[From: knowledge/{source}.md]` with options to accept, skip, or provide a custom answer. Nothing is silently inferred — every KB-sourced answer needs user confirmation. Interview concludes with an approval gate.
+**First run (no REQUIREMENTS.md):** Conversational interview, one question at a time. Starts with "What are we building? Tell me the goal and what success looks like." Each answer updates REQUIREMENTS.md immediately — no batching. When KB exists (brownfield), questions come with suggested answers and source citations: `[From: aid-workspace/knowledge/{source}.md]` with options to accept, skip, or provide a custom answer. Nothing is silently inferred — every KB-sourced answer needs user confirmation. Interview concludes with an approval gate.
 
 **Subsequent runs (REQUIREMENTS.md exists):** Cross-references requirements against the full KB and codebase. Checks for contradictions, gaps, missing evidence, and staleness. Assigns a grade based on the number of questions found:
 
@@ -266,7 +266,7 @@ The grade is a snapshot at run start — it does NOT change after answering ques
 - Brownfield interviews are shorter (KB pre-fills technical context). Greenfield are longer.
 - KB findings are never silently inferred — always presented as suggested answers for user confirmation.
 
-**Output:** `knowledge/REQUIREMENTS.md` — structured requirements with Change Log, 10 sections covering scope, features, constraints, and acceptance criteria.
+**Output:** `aid-workspace/knowledge/REQUIREMENTS.md` — structured requirements with Change Log, 10 sections covering scope, features, constraints, and acceptance criteria.
 
 **Feedback to Discovery:** If an answer reveals the KB is wrong or incomplete, the interview pauses, triggers targeted discovery, then resumes with corrected understanding.
 
@@ -274,17 +274,17 @@ The grade is a snapshot at run start — it does NOT change after answering ques
 
 **Purpose:** Transform requirements into a formal specification grounded in the Knowledge Base.
 
-**Input:** `REQUIREMENTS.md` + `knowledge/` directory.
+**Input:** `REQUIREMENTS.md` + `aid-workspace/knowledge/` directory.
 
 **Process:**
 1. Read REQUIREMENTS.md for what to build.
 2. Read KB for how the system currently works.
 3. Generate SPEC.md that specifies new behavior *in the context of existing behavior*.
-4. Reference specific KB documents: "Following the repository pattern established in `knowledge/architecture.md`" rather than generic "use repository pattern."
+4. Reference specific KB documents: "Following the repository pattern established in `aid-workspace/knowledge/architecture.md`" rather than generic "use repository pattern."
 5. Identify conflicts between requirements and existing architecture. Document explicitly.
 6. Define non-functional requirements grounded in current system capabilities.
 
-**What makes this different from generic spec generation:** The spec is grounded. It doesn't say "use dependency injection" — it says "register in `ServiceCollectionExtensions.cs` following the pattern in `knowledge/coding-standards.md` §3.2."
+**What makes this different from generic spec generation:** The spec is grounded. It doesn't say "use dependency injection" — it says "register in `ServiceCollectionExtensions.cs` following the pattern in `aid-workspace/knowledge/coding-standards.md` §3.2."
 
 **Output:** `SPEC.md` — Vision, Constraints, Architecture, Domain Model, Non-Functional Requirements. Every architectural decision references the KB.
 
@@ -302,7 +302,7 @@ The grade is a snapshot at run start — it does NOT change after answering ques
 
 **Purpose:** Define the high-level roadmap — MVP scope, modules, deliverables, test scenarios.
 
-**Input:** `SPEC.md` + `knowledge/` directory.
+**Input:** `SPEC.md` + `aid-workspace/knowledge/` directory.
 
 **Process:**
 1. Define the MVP — smallest shippable set of features that delivers value.
@@ -324,7 +324,7 @@ The grade is a snapshot at run start — it does NOT change after answering ques
 
 **Purpose:** Decompose the plan into sprint-ready user stories, executable tasks, and execution order.
 
-**Input:** `PLAN.md` + `SPEC.md` + `knowledge/` directory.
+**Input:** `PLAN.md` + `SPEC.md` + `aid-workspace/knowledge/` directory.
 
 **Process:**
 1. **User story decomposition** — For each deliverable, generate user stories with acceptance criteria.
@@ -357,7 +357,7 @@ The grade is a snapshot at run start — it does NOT change after answering ques
 
 **Purpose:** Execute a task using an AI coding agent, with full context from the Knowledge Base.
 
-**Input:** `TASK-{id}.md` + `SPEC.md` + `knowledge/INDEX.md` + relevant KB documents.
+**Input:** `TASK-{id}.md` + `SPEC.md` + `aid-workspace/knowledge/INDEX.md` + relevant KB documents.
 
 **Process:**
 1. Load task spec as the primary prompt.
@@ -376,7 +376,7 @@ The grade is a snapshot at run start — it does NOT change after answering ques
 
 **Purpose:** Static code review — verify implementation quality against task spec, project spec, and KB standards.
 
-**Input:** Git diff + `TASK-{id}.md` + `SPEC.md` + `knowledge/coding-standards.md`.
+**Input:** Git diff + `TASK-{id}.md` + `SPEC.md` + `aid-workspace/knowledge/coding-standards.md`.
 
 **Process:**
 1. Check against TASK acceptance criteria.
@@ -461,7 +461,7 @@ The grade is a snapshot at run start — it does NOT change after answering ques
 3. **Trend analysis** — Spot patterns over time.
 4. **Correlation** — Connect signals across sources.
 5. **Impact assessment** — Evaluate severity.
-6. **KB context** — Cross-reference against knowledge/ to distinguish expected behavior from anomalies.
+6. **KB context** — Cross-reference against aid-workspace/knowledge/ to distinguish expected behavior from anomalies.
 
 **Key distinction:** Track *interprets*, it doesn't just collect. A dashboard shows you a spike. Track tells you "error rate increased 340% after deploy #47, concentrated in the payment module, affecting ~2,000 users, correlating with the async refactor."
 
@@ -473,7 +473,7 @@ The grade is a snapshot at run start — it does NOT change after answering ques
 
 **Purpose:** Classify what Track found. For bugs: perform root cause analysis and map the fix. Route everything to the right path.
 
-**Input:** `TRACK-REPORT.md` + `knowledge/` + `SPEC.md`.
+**Input:** `TRACK-REPORT.md` + `aid-workspace/knowledge/` + `SPEC.md`.
 
 **Classification:**
 - **BUG** — Code doesn't match spec. Perform root cause analysis, then route to aid-implement (short path).
@@ -615,8 +615,8 @@ Every change to an upstream artifact is tracked at the bottom of the artifact:
 
 | Artifact | Produced By | Consumed By | Lifecycle |
 |----------|------------|-------------|-----------|
-| `knowledge/` (KB) | Discover | All phases | Living — updated throughout project |
-| `knowledge/INDEX.md` | Discover | Implement, Review | Regenerated on every discovery run |
+| `aid-workspace/knowledge/` (KB) | Discover | All phases | Living — updated throughout project |
+| `aid-workspace/knowledge/INDEX.md` | Discover | Implement, Review | Regenerated on every discovery run |
 | `REQUIREMENTS.md` | Interview | Specify | Frozen after verification (rev-tracked) |
 | `SPEC.md` | Specify | Plan, Detail, Implement, Review, Test, Triage | Living — rev-tracked |
 | `PLAN.md` | Plan | Detail | Living — rev-tracked |
@@ -951,7 +951,7 @@ Ship to Test | Rework (minor) | Rework (major) | Re-implement
 
 ```
                  ┌─────────────────────────────────────────────────┐
-                 │           KNOWLEDGE BASE (knowledge/)           │
+                 │           KNOWLEDGE BASE (aid-workspace/knowledge/)           │
                  │    The gravitational center of the project.     │
                  │    Every phase reads from it.                   │
                  │    Any phase can trigger updates to it.         │
@@ -962,7 +962,7 @@ Ship to Test | Rework (minor) | Rework (major) | Re-implement
              ▼              │              │
    ┌─ PROBLEM MAPPING ─────┤              │
    │     aid-discover ───────┤              │
-   │      → knowledge/*     │              │
+   │      → aid-workspace/knowledge/*     │              │
    │          │              │              │
    │          ├──────────────┼──────────────┘
    │                        │
@@ -1022,7 +1022,7 @@ Ship to Test | Rework (minor) | Rework (major) | Re-implement
                 └────┘          └──→ aid-discover (new cycle)
    (back to aid-implement)
 
- ─── ANY PHASE ──→ aid-discover (targeted) ──→ knowledge/* ──→ resume
+ ─── ANY PHASE ──→ aid-discover (targeted) ──→ aid-workspace/knowledge/* ──→ resume
 ```
 
 ### The Two Post-Production Paths

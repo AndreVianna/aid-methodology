@@ -14,7 +14,7 @@ Each skill represents one phase of the AID pipeline. These README files provide 
 |-------|-------|---------|
 | [aid-init](aid-init/README.md) | 0. Init | Initialize a project: collect metadata, scaffold KB structure, create AGENTS.md and CLAUDE.md placeholders |
 
-> Run `/aid-init` before Discovery (brownfield) or Interview (greenfield). It creates the `knowledge/` directory with 14 empty KB templates and all required placeholders. This is bootstrapping — not a methodology phase.
+> Run `/aid-init` before Discovery (brownfield) or Interview (greenfield). It creates the `aid-workspace/knowledge/` directory with 14 empty KB templates and all required placeholders. This is bootstrapping — not a methodology phase.
 
 ### Group 1: Define
 

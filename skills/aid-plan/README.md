@@ -10,7 +10,7 @@ Take SPEC.md and produce a strategic roadmap: MVP definition, module identificat
 ## Inputs
 
 - `SPEC.md` — what to build.
-- `knowledge/` directory — for scoping and risk assessment. Read at minimum:
+- `aid-workspace/knowledge/` directory — for scoping and risk assessment. Read at minimum:
   - `architecture.md` — to understand module boundaries.
   - `module-map.md` — to identify affected modules.
   - `tech-debt.md` — to anticipate complications.
@@ -50,7 +50,7 @@ Map the features to system modules — logical groupings of functionality:
 
 ### Module: Recording Engine
 **Features:** A, B
-**Existing code:** knowledge/module-map.md → RecordingService, AudioCapture
+**Existing code:** aid-workspace/knowledge/module-map.md → RecordingService, AudioCapture
 **New code:** TranscriptionService, ExportManager
 **Risk:** Medium — touches existing audio pipeline
 

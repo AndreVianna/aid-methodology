@@ -60,7 +60,8 @@ Open your AI coding tool in the project directory and run `/aid-init` to scaffol
 /aid-init
 ```
 
-Init asks whether your project is greenfield or brownfield, collects metadata, and creates the `knowledge/` directory with 14 empty KB document templates, plus `AGENTS.md` and `CLAUDE.md` placeholders.
+Init asks whether your project is greenfield or brownfield, collects metadata, and creates the 
+`aid-workspace/` directory to host the methodology file, then it creates the `aid-workspace/knowledge/` directory with 14 empty KB document templates, plus `AGENTS.md` and `CLAUDE.md` placeholders.
 
 ### 3. Run Discovery or Interview
 

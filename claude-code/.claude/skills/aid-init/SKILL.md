@@ -22,7 +22,7 @@ workspace, and determines the workflow path. Run this once before any other AID 
   AGENTS.md
   CLAUDE.md
   aid-workspace/
-    knowledge/
+    aid-workspace/knowledge/
       DISCOVERY-STATE.md
       (...14 KB docs, INDEX.md, README.md)
 ```
@@ -53,7 +53,7 @@ Tasks and features are created later by `/aid-interview`.
    - If `--reset` was passed: warn and confirm:
      ```
      ⚠️ --reset will DELETE all aid-workspace/ contents and start fresh.
-     This includes knowledge/, all tasks, and all features.
+     This includes aid-workspace/knowledge/, all tasks, and all features.
      This is irreversible. Continue? [y/N]
      ```
      If confirmed, delete `aid-workspace/` contents.

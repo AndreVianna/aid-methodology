@@ -26,7 +26,7 @@ Always-on contextual rules loaded into every conversation or on file match.
 ### `aid-methodology.mdc` (always applied)
 
 Tells Cursor to:
-- Read `knowledge/INDEX.md` before making changes
+- Read `aid-workspace/knowledge/INDEX.md` before making changes
 - Treat the Knowledge Base as the single source of truth
 - Follow AID phases and produce artifacts at each gate
 
@@ -34,7 +34,7 @@ Tells Cursor to:
 
 When Cursor reviews code it will:
 - Check against task acceptance criteria
-- Verify against `knowledge/coding-standards.md` and `knowledge/architecture.md`
+- Verify against `aid-workspace/knowledge/coding-standards.md` and `aid-workspace/knowledge/architecture.md`
 - Grade A+ to F and tag issues by category
 
 ## Skills (`.cursor/skills/`)
@@ -43,7 +43,7 @@ Skills are the full AID phase instructions. Cursor loads them based on relevance
 
 | Skill | Phase | Description |
 |-------|-------|-------------|
-| `aid-init` | Init | Initialize AID project — scaffold knowledge/ (14 KB templates), set up AGENTS.md |
+| `aid-init` | Init | Initialize AID project — scaffold aid-workspace/knowledge/ (14 KB templates), set up AGENTS.md |
 | `aid-discover` | Discovery | Brownfield project discovery with quality gate (GENERATE → REVIEW → FIX → DONE) |
 | `aid-interview` | Interview | Adaptive requirements gathering → `REQUIREMENTS.md` |
 | `aid-specify` | Specify | Requirements → formal `SPEC.md` grounded in KB |

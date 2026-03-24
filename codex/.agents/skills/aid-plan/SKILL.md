@@ -19,7 +19,7 @@ Plan is strategy. Detail is tactics. Plan answers "what do we build and in what 
 ## Inputs
 
 - `SPEC.md`
-- `knowledge/`: architecture.md, module-map.md, tech-debt.md, test-landscape.md
+- `aid-workspace/knowledge/`: architecture.md, module-map.md, tech-debt.md, test-landscape.md
 
 ## Process
 

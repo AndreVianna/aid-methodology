@@ -21,8 +21,8 @@ Agents don't improvise. They receive task spec + project spec + KB context. When
 
 - `TASK-{id}.md` — primary prompt
 - `SPEC.md` — architectural constraints
-- `knowledge/INDEX.md` — always included. The agent's map of the full KB for on-demand self-service.
-- `knowledge/`: Always coding-standards.md + architecture.md. Add data-model.md (DB work), api-contracts.md (API work), integration-map.md (integrations), test-landscape.md (test-heavy).
+- `aid-workspace/knowledge/INDEX.md` — always included. The agent's map of the full KB for on-demand self-service.
+- `aid-workspace/knowledge/`: Always coding-standards.md + architecture.md. Add data-model.md (DB work), api-contracts.md (API work), integration-map.md (integrations), test-landscape.md (test-heavy).
 
 ## Process
 

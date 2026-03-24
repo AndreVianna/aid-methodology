@@ -17,7 +17,7 @@ Decompose PLAN.md into user stories, tasks, precedence graph, and execution wave
 
 - `PLAN.md` — modules, deliverables, test scenarios
 - `SPEC.md` — constraints, feature specs
-- `knowledge/`: architecture.md, module-map.md, tech-debt.md, test-landscape.md, coding-standards.md
+- `aid-workspace/knowledge/`: architecture.md, module-map.md, tech-debt.md, test-landscape.md, coding-standards.md
 
 ## Process
 

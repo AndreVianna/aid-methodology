@@ -11,7 +11,7 @@ argument-hint: "[--reset] clear REQUIREMENTS.md and restart"
 # Adaptive Requirements Gathering
 
 Gather requirements from a human stakeholder through adaptive, one-question-at-a-time
-conversation. Builds `knowledge/REQUIREMENTS.md` incrementally — each answer updates the
+conversation. Builds `aid-workspace/knowledge/REQUIREMENTS.md` incrementally — each answer updates the
 document immediately.
 
 **First run:** Conversational interview from scratch.
@@ -22,7 +22,7 @@ questions to resolve gaps/contradictions. User decides when to stop re-running.
 
 | Argument | Effect |
 |----------|--------|
-| `--reset` | Delete `knowledge/REQUIREMENTS.md` and restart the interview from scratch. |
+| `--reset` | Delete `aid-workspace/knowledge/REQUIREMENTS.md` and restart the interview from scratch. |
 
 ---
 
@@ -33,9 +33,9 @@ Do NOT rely on memory from previous runs. ALWAYS read the actual files on disk.
 
 ### Detection Logic
 
-1. If `--reset` → delete `knowledge/REQUIREMENTS.md` and start fresh → **Step 1**
-2. If `knowledge/REQUIREMENTS.md` does NOT exist → **Step 1** (First Run)
-3. If `knowledge/REQUIREMENTS.md` exists → **Step 2** (Cross-Reference & Refine)
+1. If `--reset` → delete `aid-workspace/knowledge/REQUIREMENTS.md` and start fresh → **Step 1**
+2. If `aid-workspace/knowledge/REQUIREMENTS.md` does NOT exist → **Step 1** (First Run)
+3. If `aid-workspace/knowledge/REQUIREMENTS.md` exists → **Step 2** (Cross-Reference & Refine)
 
 ---
 
@@ -45,14 +45,14 @@ This happens only when REQUIREMENTS.md does not exist.
 
 ### 1a. Read KB (if it exists)
 
-Check for `knowledge/INDEX.md`. If it exists, read it to understand what's already known
+Check for `aid-workspace/knowledge/INDEX.md`. If it exists, read it to understand what's already known
 about the project. This context prevents asking questions the KB already answers.
 
 If no KB exists, that's fine — this is a greenfield project.
 
 ### 1b. Create the REQUIREMENTS.md scaffold
 
-Create `knowledge/REQUIREMENTS.md` with the following template:
+Create `aid-workspace/knowledge/REQUIREMENTS.md` with the following template:
 
 ```markdown
 # Requirements
@@ -110,7 +110,7 @@ Wait for the user's response.
 
 ### 1d. Record the answer
 
-Update `knowledge/REQUIREMENTS.md` — fill in **Section 1 (Objective)** with the user's
+Update `aid-workspace/knowledge/REQUIREMENTS.md` — fill in **Section 1 (Objective)** with the user's
 response, in their own words. Remove the `*(pending)*` marker.
 
 If the answer also touches other sections (e.g., the user mentions specific users or
@@ -134,7 +134,7 @@ For each section, classify it as:
 1. **Infer from KB** — If a Pending/Partial section can be answered from KB documents,
    **do NOT fill it silently.** Ask with a suggested answer and source reference:
    ```
-   [From: knowledge/{source-document}.md]
+   [From: aid-workspace/knowledge/{source-document}.md]
 
    {Your question about this section}
 
@@ -183,8 +183,8 @@ Got it — so the core problem is [summary of what you know so far].
 #### Update meta-documents
 
 After updating REQUIREMENTS.md, check if these need updating:
-- `knowledge/INDEX.md` — add or update the REQUIREMENTS.md entry
-- `knowledge/README.md` — add REQUIREMENTS.md to completeness table if not present
+- `aid-workspace/knowledge/INDEX.md` — add or update the REQUIREMENTS.md entry
+- `aid-workspace/knowledge/README.md` — add REQUIREMENTS.md to completeness table if not present
 
 Only update if the file exists and needs changes. Don't create files that don't exist yet.
 
@@ -204,8 +204,8 @@ It validates the requirements against the full KB and codebase.
 
 ### 2a. Load context
 
-1. Read `knowledge/REQUIREMENTS.md`
-2. Read `knowledge/INDEX.md` (if it exists)
+1. Read `aid-workspace/knowledge/REQUIREMENTS.md`
+2. Read `aid-workspace/knowledge/INDEX.md` (if it exists)
 3. Read ALL KB documents listed in INDEX.md
 
 ### 2b. Cross-reference
@@ -273,7 +273,7 @@ For each finding (contradiction, gap, or unverified claim), ask ONE question at 
 
 ```
 [{Finding type}: {brief description}]
-[From: knowledge/{source-document}.md]
+[From: aid-workspace/knowledge/{source-document}.md]
 
 {Explanation of what was found}
 
@@ -346,7 +346,7 @@ Is there anything else we should consider, or are the requirements ready?
 When a GAP.md or downstream phase triggers re-interview for a specific area:
 
 1. Read the GAP.md to understand what's missing
-2. Read current `knowledge/REQUIREMENTS.md`
+2. Read current `aid-workspace/knowledge/REQUIREMENTS.md`
 3. Ask targeted questions ONLY about the gap
 4. Update REQUIREMENTS.md with new information
 5. Add entry to Change Log: `| {today} | {what changed} | GAP.md re-entry |`

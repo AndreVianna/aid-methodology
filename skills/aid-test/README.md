@@ -13,8 +13,8 @@ Deploy to staging, run E2E and integration tests, support manual testing, produc
 - `DELIVERY-{id}.md` — delivery scope and success criteria.
 - `DETAIL.md` — user stories and acceptance criteria.
 - `SPEC.md` — expected behavior and non-functional requirements.
-- `knowledge/test-landscape.md` — test infrastructure and conventions.
-- `knowledge/infrastructure.md` — staging environment details.
+- `aid-workspace/knowledge/test-landscape.md` — test infrastructure and conventions.
+- `aid-workspace/knowledge/infrastructure.md` — staging environment details.
 
 ## Prerequisites
 

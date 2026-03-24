@@ -5,12 +5,12 @@ Transform REQUIREMENTS.md into a formal SPEC.md grounded in the Knowledge Base. 
 
 ## Core Principle
 
-**Specs are grounded, not generic.** Don't say "use repository pattern" — say "register in `ServiceCollectionExtensions.cs` following the pattern in `knowledge/coding-standards.md` §3.2." Don't say "add a database table" — say "extend the existing schema using EF Core migrations, following the naming convention in `knowledge/data-model.md`."
+**Specs are grounded, not generic.** Don't say "use repository pattern" — say "register in `ServiceCollectionExtensions.cs` following the pattern in `aid-workspace/knowledge/coding-standards.md` §3.2." Don't say "add a database table" — say "extend the existing schema using EF Core migrations, following the naming convention in `aid-workspace/knowledge/data-model.md`."
 
 ## Inputs
 
 - `REQUIREMENTS.md` — what to build.
-- `knowledge/` directory — how the system currently works. Read at minimum:
+- `aid-workspace/knowledge/` directory — how the system currently works. Read at minimum:
   - `architecture.md` — to align with existing patterns.
   - `technology-stack.md` — to specify within the actual stack.
   - `coding-standards.md` — to mandate existing conventions.
@@ -75,7 +75,7 @@ For greenfield: define the architecture from scratch, referencing coding-standar
 
 #### Domain Model
 
-Key entities and relationships. Reference `knowledge/domain-glossary.md` for term definitions. Introduce new entities with clear definitions.
+Key entities and relationships. Reference `aid-workspace/knowledge/domain-glossary.md` for term definitions. Introduce new entities with clear definitions.
 
 #### Feature Specifications
 
@@ -167,7 +167,7 @@ When triggered by a GAP.md from aid-plan, aid-detail, or aid-review:
 
 **Trigger:** Writing the spec exposes insufficient understanding of a subsystem.
 
-**Example:** Specifying a feature that touches the auth module, but `knowledge/security-model.md` is marked Partial.
+**Example:** Specifying a feature that touches the auth module, but `aid-workspace/knowledge/security-model.md` is marked Partial.
 
 **Protocol:** Pause → GAP.md with `discovery-needed` → trigger aid-discover → KB updated → resume specification.
 

@@ -11,7 +11,7 @@ When Track detects something, Triage decides what it is and where it goes. This 
 
 - `TRACK-REPORT.md` — findings from production monitoring.
 - `SPEC.md` — the specification of expected behavior.
-- `knowledge/` directory — system context for analysis.
+- `aid-workspace/knowledge/` directory — system context for analysis.
 - `TASK-{id}.md` files — acceptance criteria for relevant features.
 
 ## Process
@@ -82,7 +82,7 @@ Document the justification for closing. Reference evidence that shows the findin
 For findings classified as BUG, Triage now performs root cause analysis before handing off to Implement:
 
 1. **Reproduce the path.** From the evidence, trace the execution path that leads to the bug. Which endpoint? Which module? Which function?
-2. **Identify the fault.** What specific code is wrong? Missing validation? Wrong assumption? Off-by-one? Race condition? Use `knowledge/module-map.md` and `knowledge/architecture.md` to navigate.
+2. **Identify the fault.** What specific code is wrong? Missing validation? Wrong assumption? Off-by-one? Race condition? Use `aid-workspace/knowledge/module-map.md` and `aid-workspace/knowledge/architecture.md` to navigate.
 3. **Understand why.** Why did this happen? Was the spec ambiguous? Was an edge case missed?
 4. **Define patch scope.** What files need to change? Keep it minimal — fix the bug, don't refactor the neighborhood.
 5. **Define test requirements.** Fix verification test (fails before, passes after), regression tests, and coverage gaps.

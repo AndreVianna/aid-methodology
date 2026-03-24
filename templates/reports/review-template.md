@@ -48,7 +48,7 @@
 - **CODE:** Pure code quality — readability, duplication, dead code
 - **TASK:** Doesn't meet acceptance criteria from TASK-{id}.md
 - **SPEC:** Violates an architectural constraint from SPEC.md
-- **KB:** Deviates from coding standards in knowledge/coding-standards.md
+- **KB:** Deviates from coding standards in aid-workspace/knowledge/coding-standards.md
 - **ARCH:** Architectural violation (layer boundary, dependency direction, pattern misuse)
 
 ---
@@ -87,7 +87,7 @@
 ```
 
 **References:**
-- {SPEC.md §n / knowledge/coding-standards.md §n / TASK-{id}.md AC-n}
+- {SPEC.md §n / aid-workspace/knowledge/coding-standards.md §n / TASK-{id}.md AC-n}
 
 ---
 
