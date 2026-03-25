@@ -35,7 +35,7 @@ Every section follows the same cycle:
 
 **Workspace:**
 ```
-aid-workspace/
+.aid/
   knowledge/               ← shared KB
   work-NNN-{name}/
     REQUIREMENTS.md
@@ -62,7 +62,7 @@ Available features:
   work-002-reporting/feature-001-dashboard     [Ready ✅]
 ```
 
-Scan all `aid-workspace/work-*/features/feature-*/` directories.
+Scan all `.aid/work-*/features/feature-*/` directories.
 For each, check if STATE.md exists and show status. Exit.
 
 **Shortcut:** If only one work exists, accept bare `feature-001` and resolve automatically.
@@ -70,8 +70,8 @@ For each, check if STATE.md exists and show status. Exit.
 ### Check 2: Feature Exists
 
 Resolve the feature path using **prefix matching** (glob):
-- `feature-001` → match `aid-workspace/{work}/features/feature-001-*/SPEC.md`
-- `work-001/feature-002` → match `aid-workspace/work-001-*/features/feature-002-*/SPEC.md`
+- `feature-001` → match `.aid/{work}/features/feature-001-*/SPEC.md`
+- `work-001/feature-002` → match `.aid/work-001-*/features/feature-002-*/SPEC.md`
 
 **If zero matches:** Exit with instruction to run `/aid-interview` first.
 **If multiple matches:** List them, ask user to be more specific. Exit.
@@ -91,7 +91,7 @@ Resolve the feature path using **prefix matching** (glob):
 
 ## State Detection
 
-All paths relative to `aid-workspace/{work}/features/{feature}/`.
+All paths relative to `.aid/{work}/features/{feature}/`.
 
 ```
 State 1: No STATE.md                                        → INITIALIZE
@@ -332,14 +332,14 @@ When all resolved, set status back to Ready.
 
 **Simple fix:** Fix the KB document directly, note in STATE.md Change Log.
 
-**Needs re-discovery:** Add Q&A entry to `aid-workspace/knowledge/DISCOVERY-STATE.md`,
+**Needs re-discovery:** Add Q&A entry to `.aid/knowledge/DISCOVERY-STATE.md`,
 add Loopback entry to STATE.md, continue with non-blocked sections.
 
 ### Requirements are Wrong or Incomplete
 
 **Simple fix:** Fix REQUIREMENTS.md and SPEC.md directly, add Change Log entries.
 
-**Needs re-interview:** Add Q&A entry to `aid-workspace/{work}/INTERVIEW-STATE.md`,
+**Needs re-interview:** Add Q&A entry to `.aid/{work}/INTERVIEW-STATE.md`,
 add Loopback entry to STATE.md.
 
 ### Spike Needed (State 3)

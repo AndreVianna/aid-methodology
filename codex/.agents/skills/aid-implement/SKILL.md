@@ -19,10 +19,10 @@ Agents don't improvise. They receive task spec + project spec + KB context. When
 
 ## Inputs
 
-- `aid-workspace/{work}/tasks/task-{id}.md` — primary prompt (contains Source with feature reference)
-- Feature SPEC: `aid-workspace/{work}/features/{feature}/SPEC.md` — architectural constraints (read the feature(s) referenced in TASK source)
-- `aid-workspace/knowledge/INDEX.md` — always included. The agent's map of the full KB for on-demand self-service.
-- `aid-workspace/knowledge/`: Always coding-standards.md + architecture.md. Add data-model.md (DB work), api-contracts.md (API work), integration-map.md (integrations), test-landscape.md (test-heavy).
+- `.aid/{work}/tasks/task-{id}.md` — primary prompt (contains Source with feature reference)
+- Feature SPEC: `.aid/{work}/features/{feature}/SPEC.md` — architectural constraints (read the feature(s) referenced in TASK source)
+- `.aid/knowledge/INDEX.md` — always included. The agent's map of the full KB for on-demand self-service.
+- `.aid/knowledge/`: Always coding-standards.md + architecture.md. Add data-model.md (DB work), api-contracts.md (API work), integration-map.md (integrations), test-landscape.md (test-heavy).
 
 ## Process
 

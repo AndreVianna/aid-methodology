@@ -20,10 +20,10 @@ Review catches what code looks like. Test catches what code does. Both gates are
 ## Inputs
 
 - Feature branch (reviewed, grade A- or above)
-- `aid-workspace/{work}/DETAIL.md` — user stories, delivery breakdown, and acceptance criteria
-- `aid-workspace/{work}/PLAN.md` — deliverables and test scenarios
-- Feature SPECs: `aid-workspace/{work}/features/*/SPEC.md` — expected behavior and NFRs
-- `aid-workspace/knowledge/`: test-landscape.md, infrastructure.md
+- `.aid/{work}/DETAIL.md` — user stories, delivery breakdown, and acceptance criteria
+- `.aid/{work}/PLAN.md` — deliverables and test scenarios
+- Feature SPECs: `.aid/{work}/features/*/SPEC.md` — expected behavior and NFRs
+- `.aid/knowledge/`: test-landscape.md, infrastructure.md
 
 ## Prerequisites
 

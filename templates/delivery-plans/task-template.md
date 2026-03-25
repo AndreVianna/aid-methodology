@@ -12,20 +12,20 @@
 
 {What this task accomplishes in 1-2 sentences. Be specific — this is what the agent reads first and uses to calibrate everything that follows.}
 
-**Example:** "Implement the `IOrderRepository` interface with PostgreSQL-backed CRUD operations using Entity Framework Core, following the repository pattern established in `aid-workspace/knowledge/architecture.md`."
+**Example:** "Implement the `IOrderRepository` interface with PostgreSQL-backed CRUD operations using Entity Framework Core, following the repository pattern established in `.aid/knowledge/architecture.md`."
 
 ---
 
 ## Context
 
 > Critical context the agent needs before starting. Don't assume the agent has read everything — tell it what matters.
-> **Always include `aid-workspace/knowledge/INDEX.md`** — the agent's map of the full Knowledge Base. If you need context not listed below, consult the INDEX and read the relevant document before making assumptions.
+> **Always include `.aid/knowledge/INDEX.md`** — the agent's map of the full Knowledge Base. If you need context not listed below, consult the INDEX and read the relevant document before making assumptions.
 
 **Architecture reference:** {KB architecture.md section this task extends}
 **Coding standards:** {KB coding-standards.md section most relevant}
 **Data model:** {KB data-model.md tables this task touches}
 **Related existing code:** {path/to/similar/existing/code — "follow this pattern"}
-**KB Index:** `aid-workspace/knowledge/INDEX.md` — consult for additional context on demand
+**KB Index:** `.aid/knowledge/INDEX.md` — consult for additional context on demand
 
 ---
 

@@ -30,7 +30,7 @@ Each deliverable follows the same cycle:
 ## Workspace
 
 ```
-aid-workspace/
+.aid/
   knowledge/                ← shared KB (read)
   work-NNN-{name}/
     PLAN.md                 ← roadmap with deliverables (read — must exist)
@@ -62,7 +62,7 @@ aid-workspace/
 
 ### Check 2: Verify PLAN.md Exists
 
-1. Check for `aid-workspace/{work}/PLAN.md`
+1. Check for `.aid/{work}/PLAN.md`
 2. If missing → **STOP.** "No PLAN.md found. Run `/aid-plan` first."
 
 ### Check 3: Verify Not in Plan Mode
@@ -152,7 +152,7 @@ Respond to each concern, re-present affected tasks. Loop until approved.
 ### Step 3: Write and Review
 
 Once approved:
-1. Write task files to `aid-workspace/{work}/tasks/`
+1. Write task files to `.aid/{work}/tasks/`
 2. **Review immediately:** Do the tasks hold up?
    - Does each task have what it needs from the previous?
    - Any gap where something is used before it's created?
@@ -225,7 +225,7 @@ Update task files, create new ones, delete orphans, renumber if needed.
 
 - **→ Plan:** Plan too vague to decompose → return to `/aid-plan`
 - **→ Specify:** SPEC missing detail for scope → write Q&A to feature's `STATE.md`
-- **→ Discovery:** KB gap → write Q&A to `aid-workspace/knowledge/DISCOVERY-STATE.md`
+- **→ Discovery:** KB gap → write Q&A to `.aid/knowledge/DISCOVERY-STATE.md`
 
 ## Quality Checklist
 
@@ -237,4 +237,4 @@ Update task files, create new ones, delete orphans, renumber if needed.
 - [ ] Each task is small enough for one agent session
 - [ ] "All existing tests still pass" is in every task's criteria
 - [ ] Each deliverable's tasks were reviewed after writing (step 4)
-- [ ] All task files in `aid-workspace/{work}/tasks/`
+- [ ] All task files in `.aid/{work}/tasks/`

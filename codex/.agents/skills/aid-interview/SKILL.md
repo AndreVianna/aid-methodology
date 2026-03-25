@@ -17,7 +17,7 @@ immediately.
 
 **Workspace structure:**
 ```
-aid-workspace/
+.aid/
   knowledge/           ← shared KB (populated by /aid-discover)
   work-001-name/       ← one work = one interview cycle
     INTERVIEW-STATE.md ← process (section status, Q&A, grade, review history)
@@ -38,7 +38,7 @@ aid-workspace/
 
 ### Check 1: Verify Workspace Exists
 
-Check if `aid-workspace/` directory exists. If it doesn't:
+Check if `.aid/` directory exists. If it doesn't:
 ```
 ⚠️ AID workspace not found. Run /aid-init first to set up the project.
 ```
@@ -62,18 +62,18 @@ When no work ID is provided:
 
 ### No tasks exist
 
-If `aid-workspace/` has no `work-*` directories:
+If `.aid/` has no `work-*` directories:
 
 1. Ask for a short name for this work:
    ```
    What's a short name for this work? (e.g., "user-auth", "reporting", "api-v2")
    ```
-2. Create `aid-workspace/work-001-{name}/`
+2. Create `.aid/work-001-{name}/`
 3. Proceed to State Detection with this work.
 
 ### Tasks exist
 
-If `aid-workspace/` has one or more `work-*` directories:
+If `.aid/` has one or more `work-*` directories:
 
 ```
 Existing works:
@@ -99,7 +99,7 @@ without asking.
 ⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**
 Do NOT rely on memory from previous runs. ALWAYS read the actual files on disk.
 
-All paths below are relative to `aid-workspace/{work}/`.
+All paths below are relative to `.aid/{work}/`.
 
 ```plaintext
 State 1: No INTERVIEW-STATE.md                                    → FIRST RUN
@@ -139,7 +139,7 @@ This happens only when INTERVIEW-STATE.md does not exist in the work folder.
 
 ### 1a. Read KB (if it exists)
 
-Check for `aid-workspace/knowledge/INDEX.md`. If it exists, read it to understand what's
+Check for `.aid/knowledge/INDEX.md`. If it exists, read it to understand what's
 already known about the project. This context prevents asking questions the KB already answers.
 
 If no KB exists, that's fine — this is a greenfield project.
@@ -147,12 +147,12 @@ If no KB exists, that's fine — this is a greenfield project.
 ### 1b. Create INTERVIEW-STATE.md
 
 Copy the template from `../templates/interview-state.md` to
-`aid-workspace/{work}/INTERVIEW-STATE.md`.
+`.aid/{work}/INTERVIEW-STATE.md`.
 
 ### 1c. Create REQUIREMENTS.md scaffold
 
 Copy the template from `../templates/requirements.md` to
-`aid-workspace/{work}/REQUIREMENTS.md`.
+`.aid/{work}/REQUIREMENTS.md`.
 Add the first Change Log entry: `| {today} | Initial interview started | /aid-interview |`
 
 **Note:** Sections are empty — no placeholder markers. The INTERVIEW-STATE.md tracks
@@ -202,7 +202,7 @@ Read INTERVIEW-STATE.md Section Status table. For each section:
 1. **Infer from KB** — If a Pending/Partial section can be answered from KB documents,
    **do NOT fill it silently.** Ask with a suggested answer and source reference:
    ```
-   [From: aid-workspace/knowledge/{source-document}.md]
+   [From: .aid/knowledge/{source-document}.md]
 
    {Your question about this section}
 
@@ -240,8 +240,8 @@ Read INTERVIEW-STATE.md Section Status table. For each section:
 1. Update the relevant section(s) in REQUIREMENTS.md
 2. Update Section Status in INTERVIEW-STATE.md
 3. If the change is significant, add a Change Log entry in REQUIREMENTS.md
-4. If applicable, update `aid-workspace/knowledge/INDEX.md` and
-   `aid-workspace/knowledge/README.md`
+4. If applicable, update `.aid/knowledge/INDEX.md` and
+   `.aid/knowledge/README.md`
 
 ---
 
@@ -357,7 +357,7 @@ Is there anything else we should consider, or are the requirements ready?
   - Set `**Status:** Approved` in INTERVIEW-STATE.md
   - Add Change Log entry in REQUIREMENTS.md: `| {today} | Interview complete — approved | /aid-interview |`
   - Add Review History entry in INTERVIEW-STATE.md
-  - Update `aid-workspace/knowledge/INDEX.md` and `aid-workspace/knowledge/README.md`
+  - Update `.aid/knowledge/INDEX.md` and `.aid/knowledge/README.md`
     if they exist
   - Print: `✅ Requirements approved. Proceeding to feature decomposition...`
   - **Immediately proceed to State 5 (Feature Decomposition) in the same run.**
@@ -381,7 +381,7 @@ Read REQUIREMENTS.md (in the work folder), focusing on:
 - §9 Acceptance Criteria — distribute to features
 - §10 Priority — feature priority
 
-If KB exists, also read `aid-workspace/knowledge/INDEX.md` and relevant KB documents
+If KB exists, also read `.aid/knowledge/INDEX.md` and relevant KB documents
 to understand existing features/modules that may influence decomposition.
 
 ### Step 2: Propose Feature List
@@ -435,8 +435,8 @@ template from `../templates/feature.md`. Fill in:
 
 1. Add Review History entry in INTERVIEW-STATE.md:
    `| {N} | {today} | — | Feature Decomposition | {N} features created |`
-2. Update `aid-workspace/knowledge/INDEX.md` if it exists — add work/features reference
-3. Update `aid-workspace/knowledge/README.md` if it exists — add work to revision history
+2. Update `.aid/knowledge/INDEX.md` if it exists — add work/features reference
+3. Update `.aid/knowledge/README.md` if it exists — add work to revision history
 
 Print:
 ```
@@ -459,7 +459,7 @@ Requirements approved and features created. Validate against KB and codebase.
 
 1. Read REQUIREMENTS.md (in the work folder)
 2. Read INTERVIEW-STATE.md
-3. Read `aid-workspace/knowledge/INDEX.md` (if exists)
+3. Read `.aid/knowledge/INDEX.md` (if exists)
 4. Read ALL KB documents listed in INDEX.md
 5. Read all SPEC.md files in the work's `features/` subdirectories
 

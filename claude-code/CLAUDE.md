@@ -6,7 +6,7 @@
 
 ## Knowledge Base
 
-After running Discovery, the Knowledge Base lives at aid-workspace/knowledge/INDEX.md.
+After running Discovery, the Knowledge Base lives at .aid/knowledge/INDEX.md.
 Read INDEX.md first for a map of all available documentation.
 
 ## Skills
@@ -27,4 +27,4 @@ Specialist agents are available in .claude/agents/.
 
 ## Conventions
 <!-- AID:DISCOVER — Replace with key conventions summary (naming, patterns, structure) -->
-- See aid-workspace/knowledge/coding-standards.md for project-specific conventions
+- See .aid/knowledge/coding-standards.md for project-specific conventions

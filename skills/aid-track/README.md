@@ -16,7 +16,7 @@ Any combination of:
 - Performance monitoring (APM tools, custom metrics).
 - Test results (unit, E2E, integration — especially trends).
 - User feedback (support tickets, forum posts, app store reviews).
-- `aid-workspace/knowledge/` directory — to distinguish expected behavior from anomalies.
+- `.aid/knowledge/` directory — to distinguish expected behavior from anomalies.
 
 ## Process
 
@@ -40,7 +40,7 @@ Compare current state to baseline. Flag deviations:
 - **Test instability:** New flaky tests, coverage gaps in changed areas.
 - **Behavioral anomalies:** Unexpected API responses, data inconsistencies.
 
-Not everything abnormal is a problem. Use the KB (`aid-workspace/knowledge/infrastructure.md`, `aid-workspace/knowledge/test-landscape.md`) to filter out known conditions, planned maintenance, or expected seasonal variation.
+Not everything abnormal is a problem. Use the KB (`.aid/knowledge/infrastructure.md`, `.aid/knowledge/test-landscape.md`) to filter out known conditions, planned maintenance, or expected seasonal variation.
 
 ### Step 3: Trend Analysis
 

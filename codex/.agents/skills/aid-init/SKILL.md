@@ -2,11 +2,11 @@
 name: aid-init
 description: >
   Initialize an AID project. Asks greenfield or brownfield, collects project metadata,
-  external documentation paths, and scaffolds the aid-workspace/ directory structure.
+  external documentation paths, and scaffolds the .aid/ directory structure.
   Sets up AGENTS.md with placeholders. Run once at project start — before
   aid-discover (brownfield) or aid-interview (greenfield).
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
-argument-hint: "[--reset] clear existing aid-workspace/ and re-initialize"
+argument-hint: "[--reset] clear existing .aid/ and re-initialize"
 ---
 
 # AID Project Initialization
@@ -20,7 +20,7 @@ workspace, and determines the workflow path. Run this once before any other AID 
 ```
 {ProjectFolder}/
   AGENTS.md
-  aid-workspace/
+  .aid/
     knowledge/
       DISCOVERY-STATE.md
       (...14 KB docs, INDEX.md, README.md)
@@ -35,8 +35,8 @@ Works and features are created later by `/aid-interview`.
 
 ### Check 1: Existing Workspace
 
-1. Check if `aid-workspace/` already exists with content:
-   - If `aid-workspace/` exists AND contains non-empty `.md` files AND `--reset` was NOT passed:
+1. Check if `.aid/` already exists with content:
+   - If `.aid/` exists AND contains non-empty `.md` files AND `--reset` was NOT passed:
      ```
      ⚠️ This project already has an AID workspace with content.
      Re-running init will overwrite the KB templates (but not filled content).
@@ -47,11 +47,11 @@ Works and features are created later by `/aid-interview`.
      Wait for response. If [2], exit.
    - If `--reset` was passed: warn and confirm:
      ```
-     ⚠️ --reset will DELETE all aid-workspace/ contents and start fresh.
-     This includes aid-workspace/knowledge/, all tasks, and all features.
+     ⚠️ --reset will DELETE all .aid/ contents and start fresh.
+     This includes .aid/knowledge/, all tasks, and all features.
      This is irreversible. Continue? [y/N]
      ```
-     If confirmed, delete `aid-workspace/` contents.
+     If confirmed, delete `.aid/` contents.
 
 ---
 
@@ -119,7 +119,7 @@ Parse and validate the grade. Store it.
 
 ## Step 2: Scaffold Knowledge Base
 
-Create `aid-workspace/knowledge/` directory and all 14 KB document templates.
+Create `.aid/knowledge/` directory and all 14 KB document templates.
 
 ### For Brownfield Projects
 
@@ -197,7 +197,7 @@ for a new project), and that's expected. The reviewer in later phases understand
 
 ## Step 3: Create Meta-Documents
 
-### aid-workspace/knowledge/README.md
+### .aid/knowledge/README.md
 
 ```markdown
 # Knowledge Base — {Project Name}
@@ -239,7 +239,7 @@ for a new project), and that's expected. The reviewer in later phases understand
 | {date} | aid-init | Initialized ({brownfield/greenfield}) |
 ```
 
-### aid-workspace/knowledge/INDEX.md
+### .aid/knowledge/INDEX.md
 
 ```markdown
 # Knowledge Base Index — {Project Name}
@@ -265,10 +265,10 @@ If your task touches an area covered here, read the relevant document first.
 | infrastructure.md | Pending discovery |
 ```
 
-### aid-workspace/knowledge/DISCOVERY-STATE.md
+### .aid/knowledge/DISCOVERY-STATE.md
 
 Copy the template from `../templates/discovery-state.md` to
-`aid-workspace/knowledge/DISCOVERY-STATE.md`. Fill in the placeholders:
+`.aid/knowledge/DISCOVERY-STATE.md`. Fill in the placeholders:
 
 - `{minimum}` → grade from Q5
 - `{Brownfield / Greenfield}` → from Q1
@@ -309,16 +309,25 @@ Check if `AGENTS.md` exists in the project root.
 
 ## AID Workspace
 
-The `aid-workspace/` directory contains the Knowledge Base and work artifacts.
-Read `aid-workspace/knowledge/INDEX.md` to find what you need.
+The `.aid/` directory contains the Knowledge Base and work artifacts.
+Read `.aid/knowledge/INDEX.md` to find what you need.
 ```
 
 - **If it already exists:** Do NOT overwrite. Check for `<!-- AID:DISCOVER -->` placeholders.
   If none exist, append an "AID Workspace" section at the end pointing to
-  `aid-workspace/knowledge/INDEX.md`.
+  `.aid/knowledge/INDEX.md`.
   Print: `[Init] AGENTS.md exists — appended workspace reference.`
 
 **Note:** Codex does not use CLAUDE.md. All project configuration goes in AGENTS.md only.
+
+### .gitignore
+
+Check if `.gitignore` exists in the project root.
+
+- **If it doesn't exist:** Create it with `.aid/` as the only entry.
+- **If it already exists:** Check if `.aid/` is already listed.
+  If not, append `.aid/` on a new line at the end of the file.
+  Print: `[Init] .gitignore updated — added .aid/ entry.`
 
 ---
 
@@ -337,6 +346,7 @@ Print a summary of everything created:
   Created:
     knowledge/    (14 KB documents + README + INDEX + DISCOVERY-STATE)
     AGENTS.md                   {created / updated / unchanged}
+    .gitignore                  {created / updated / unchanged}
 
   Next step:
     {Brownfield: "Run /aid-discover to analyze the codebase and populate the Knowledge Base."}
@@ -357,10 +367,11 @@ Print a summary of everything created:
 
 ## Quality Checklist
 
-- [ ] `aid-workspace/knowledge/` created with all 14 KB templates
+- [ ] `.aid/knowledge/` created with all 14 KB templates
 - [ ] README.md has correct project type, name, and completeness table
 - [ ] INDEX.md has all 14 documents listed
 - [ ] DISCOVERY-STATE.md has correct minimum grade and project type
 - [ ] External paths (if any) verified accessible and recorded
 - [ ] AGENTS.md has workspace reference (created or appended)
-- [ ] No files outside aid-workspace/ and AGENTS.md were modified
+- [ ] .gitignore has `.aid/` entry
+- [ ] No files outside .aid/, AGENTS.md, .gitignore were modified

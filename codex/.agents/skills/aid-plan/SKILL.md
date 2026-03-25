@@ -38,7 +38,7 @@ Each deliverable follows the same cycle:
 ## Workspace
 
 ```
-aid-workspace/
+.aid/
   knowledge/                ← shared KB (read)
   work-NNN-{name}/
     REQUIREMENTS.md         ← read
@@ -68,7 +68,7 @@ aid-workspace/
 
 ### Check 2: Verify Feature SPECs
 
-1. Scan `aid-workspace/{work}/features/*/SPEC.md`
+1. Scan `.aid/{work}/features/*/SPEC.md`
 2. Check each `STATE.md` — should be `Ready`
 3. No features → **STOP.** "Run `/aid-interview` then `/aid-specify`."
 4. Some not Ready → warn, offer to plan with completed only or wait
@@ -221,13 +221,13 @@ For B/C: re-enter the loop (Propose → Discuss → Write → Review) for affect
 
 ## Feedback Loops
 
-- **→ Discovery:** KB insufficient → Q&A to `aid-workspace/knowledge/DISCOVERY-STATE.md`
+- **→ Discovery:** KB insufficient → Q&A to `.aid/knowledge/DISCOVERY-STATE.md`
 - **→ Specify:** SPEC ambiguous → Q&A to feature's `STATE.md`
 - **→ Interview:** Priority unclear → Q&A to work's `INTERVIEW-STATE.md`
 
 ## Output
 
-`aid-workspace/{work}/PLAN.md`:
+`.aid/{work}/PLAN.md`:
 
 ```markdown
 # Plan — {Work Name}

@@ -7,7 +7,7 @@ You are the Developer agent. You write code based on specifications.
 
 ## Before Writing Code
 1. Read the feature's SPEC.md for technical specification
-2. Read relevant KB docs (aid-workspace/knowledge/architecture.md, coding-standards.md, etc.)
+2. Read relevant KB docs (.aid/knowledge/architecture.md, coding-standards.md, etc.)
 3. Follow the project's existing patterns and conventions
 
 ## After Writing Code

@@ -23,7 +23,7 @@ Typically invoked by the **Orchestrator** at the start of a project (Discovery) 
 
 ## What It Produces
 
-- **Knowledge Base documents** (`aid-workspace/knowledge/`) — architecture, conventions, data models, integrations, tech debt, and 8 more
+- **Knowledge Base documents** (`.aid/knowledge/`) — architecture, conventions, data models, integrations, tech debt, and 8 more
 - **Analysis reports** — structured findings with evidence and citations
 - **Dependency maps** — what depends on what, and why
 - **Convention catalogs** — how the existing codebase does things (not how it *should*)
@@ -52,7 +52,7 @@ The Researcher is read-heavy by design. It should never modify production code. 
 
 - *"We inherited a Java monorepo. What's in here?"* → Researcher runs full Discovery, produces KB
 - *"Deployment is failing. What changed in the last 3 commits?"* → Researcher investigates and reports
-- *"The Review found a pattern we don't understand in the auth module."* → Researcher does targeted analysis, updates `aid-workspace/knowledge/authentication.md`
+- *"The Review found a pattern we don't understand in the auth module."* → Researcher does targeted analysis, updates `.aid/knowledge/authentication.md`
 - *"Production latency spiked. What do the logs show?"* → Researcher analyzes telemetry in Track phase
 
 ## Escalation

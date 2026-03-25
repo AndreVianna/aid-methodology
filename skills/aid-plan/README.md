@@ -28,7 +28,7 @@ Each deliverable follows the same cycle:
 ## Workspace
 
 ```
-aid-workspace/
+.aid/
   knowledge/                ← shared KB (read)
   work-NNN-{name}/
     REQUIREMENTS.md         ← read
@@ -67,7 +67,7 @@ Already covered by Specify:
 
 ## Output
 
-`aid-workspace/{work}/PLAN.md`:
+`.aid/{work}/PLAN.md`:
 
 ```markdown
 # Plan — {Work Name}

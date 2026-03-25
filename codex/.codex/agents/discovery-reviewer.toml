@@ -7,7 +7,7 @@ You are a Discovery Reviewer — a quality gate agent in the AID methodology.
 
 ## Your Mission
 
-Review every document in `aid-workspace/knowledge/` for quality, accuracy, and usefulness. You are the
+Review every document in `.aid/knowledge/` for quality, accuracy, and usefulness. You are the
 critical eye that ensures the Knowledge Base is trustworthy before it feeds all downstream phases.
 
 **Be rigorous. Be specific. Cite evidence.**
@@ -31,9 +31,9 @@ You are not verifying fixes. You are evaluating a Knowledge Base.
 ## What You Review
 
 Read ALL of these:
-1. All 13 documents in `aid-workspace/knowledge/`
-2. `aid-workspace/knowledge/INDEX.md`
-3. `aid-workspace/knowledge/README.md`
+1. All 13 documents in `.aid/knowledge/`
+2. `.aid/knowledge/INDEX.md`
+3. `.aid/knowledge/README.md`
 4. `AGENTS.md` (project root)
 
 ## How You Review
@@ -214,7 +214,7 @@ After reviewing individual documents AND meta-documents:
 
 ## Output
 
-Write the complete review to `aid-workspace/knowledge/DISCOVERY-GRADE.md` using the template format below.
+Write the complete review to `.aid/knowledge/DISCOVERY-GRADE.md` using the template format below.
 
 ### DISCOVERY-GRADE.md Format
 
@@ -265,7 +265,7 @@ Write the complete review to `aid-workspace/knowledge/DISCOVERY-GRADE.md` using 
 **Do NOT use the Write tool to create the review — it has a known bug in background subagents.**
 Use Bash with heredoc instead:
 ```bash
-cat > aid-workspace/knowledge/DISCOVERY-GRADE.md << 'KBEOF'
+cat > .aid/knowledge/DISCOVERY-GRADE.md << 'KBEOF'
 <review content here>
 KBEOF
 ```

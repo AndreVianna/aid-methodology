@@ -12,16 +12,16 @@
 
 ## Code Conventions
 <!-- AID:DISCOVER — Replace with naming patterns, formatting rules, and idioms found in the codebase -->
-- See aid-workspace/knowledge/coding-standards.md for project-specific conventions
+- See .aid/knowledge/coding-standards.md for project-specific conventions
 
 ## Architecture
 <!-- AID:DISCOVER — Replace with high-level architecture summary (layers, modules, entry points) -->
-- See aid-workspace/knowledge/architecture.md for system overview
-- See aid-workspace/knowledge/module-map.md for component relationships
+- See .aid/knowledge/architecture.md for system overview
+- See .aid/knowledge/module-map.md for component relationships
 
 ## Knowledge Base
 
-After running Discovery, the Knowledge Base lives at aid-workspace/knowledge/INDEX.md.
+After running Discovery, the Knowledge Base lives at .aid/knowledge/INDEX.md.
 Read INDEX.md first for a map of all available documentation.
 
 ## Skills & Agents
@@ -40,6 +40,6 @@ Specialist agents are available in .cursor/agents/ (Task tool is experimental �
 
 This project uses the [AID methodology](https://github.com/AndreVianna/aid-methodology).
 
-- Knowledge Base: aid-workspace/knowledge/INDEX.md (generated during Discovery phase)
+- Knowledge Base: .aid/knowledge/INDEX.md (generated during Discovery phase)
 - Methodology: 11 phases across 4 stages (Define, Map, Execute, Deliver)
 - Every phase produces verifiable artifacts with quality gates

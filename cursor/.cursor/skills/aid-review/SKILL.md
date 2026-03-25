@@ -16,9 +16,9 @@ Review implementation against task spec, project spec, and KB standards. Grade. 
 ## Inputs
 
 - Git diff (against base branch)
-- `aid-workspace/{work}/tasks/task-{id}.md` — acceptance criteria (contains Source with feature reference)
-- Feature SPEC: `aid-workspace/{work}/features/{feature}/SPEC.md` — architectural constraints (read the feature(s) referenced in TASK source)
-- `aid-workspace/knowledge/`: coding-standards.md, architecture.md, test-landscape.md
+- `.aid/{work}/tasks/task-{id}.md` — acceptance criteria (contains Source with feature reference)
+- Feature SPEC: `.aid/{work}/features/{feature}/SPEC.md` — architectural constraints (read the feature(s) referenced in TASK source)
+- `.aid/knowledge/`: coding-standards.md, architecture.md, test-landscape.md
 
 ## Process
 

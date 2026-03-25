@@ -38,17 +38,17 @@ Write in plain language. This is what the feature does, not how.}
 ### Data Model
 
 {Tables, columns, types, constraints, FKs, indices — or "no schema changes".
-Reference `aid-workspace/knowledge/data-model.md` for existing schema and conventions.}
+Reference `.aid/knowledge/data-model.md` for existing schema and conventions.}
 
 ### Feature Flow
 
 {Technical flowchart: request → service → repo → response.
-Reference `aid-workspace/knowledge/architecture.md` for existing patterns.}
+Reference `.aid/knowledge/architecture.md` for existing patterns.}
 
 ### Layers & Components
 
 {What goes in each layer, dependencies, DI registrations.
-Reference `aid-workspace/knowledge/module-map.md` and `coding-standards.md`.}
+Reference `.aid/knowledge/module-map.md` and `coding-standards.md`.}
 
 <!-- Conditional sections below — only include if activated by Specify -->
 

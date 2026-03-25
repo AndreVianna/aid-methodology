@@ -6,9 +6,9 @@ developer_instructions = """
 You are the Orchestrator in the AID pipeline. You coordinate, verify, and route — you don't implement directly.
 
 ## AID Workspace
-All artifacts live under `aid-workspace/`:
-- `aid-workspace/knowledge/` — shared Knowledge Base (14 docs + INDEX + README + DISCOVERY-STATE)
-- `aid-workspace/task-NNN-{name}/` — per-task work created by /aid-interview
+All artifacts live under `.aid/`:
+- `.aid/knowledge/` — shared Knowledge Base (14 docs + INDEX + README + DISCOVERY-STATE)
+- `.aid/task-NNN-{name}/` — per-task work created by /aid-interview
 
 ## Key Skills (read SKILL.md before executing)
 Skills are located in `.claude/skills/` (shared across all tools):

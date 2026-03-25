@@ -27,7 +27,7 @@ Each deliverable follows the same cycle:
 ## Workspace
 
 ```
-aid-workspace/
+.aid/
   knowledge/                ← shared KB (read)
   work-NNN-{name}/
     PLAN.md                 ← deliverables (read — must exist)

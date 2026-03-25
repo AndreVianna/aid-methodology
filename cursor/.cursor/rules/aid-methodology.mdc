@@ -5,14 +5,14 @@ alwaysApply: true
 This project uses the AI-Integrated Development (AID) methodology.
 
 ## Knowledge Base
-- Read `aid-workspace/knowledge/INDEX.md` for a map of all project documentation
+- Read `.aid/knowledge/INDEX.md` for a map of all project documentation
 - Always consult relevant KB documents before making changes
 - The KB is the single source of truth for architecture, conventions, and patterns
 
 ## Workspace Structure
 ```
-aid-workspace/
-  aid-workspace/knowledge/           ← shared KB (14 docs + README + INDEX + DISCOVERY-STATE)
+.aid/
+  .aid/knowledge/           ← shared KB (14 docs + README + INDEX + DISCOVERY-STATE)
   task-NNN-{name}/     ← per-task work (created by /aid-interview)
     INTERVIEW-STATE.md
     REQUIREMENTS.md

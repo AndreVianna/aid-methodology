@@ -106,12 +106,12 @@ The Director never writes code. The Specialist never makes architectural decisio
 
 ## 2. The Knowledge Base
 
-The Knowledge Base (`aid-workspace/knowledge/`) is the gravitational center of the entire methodology. Every phase reads from it. Any phase can trigger updates to it.
+The Knowledge Base (`.aid/knowledge/`) is the gravitational center of the entire methodology. Every phase reads from it. Any phase can trigger updates to it.
 
 ### Structure
 
 ```
-aid-workspace/knowledge/
+.aid/knowledge/
 ├── README.md              # Index with completeness status per document
 ├── architecture.md        # Patterns, layers, module boundaries, data flow
 ├── module-map.md          # Every module: purpose, dependencies, size, test coverage
@@ -159,7 +159,7 @@ A common failure mode: an agent receives a task spec and the project spec, imple
 
 **AID solves this with the KB Index — a lightweight map of the entire Knowledge Base.**
 
-The Discovery phase generates `aid-workspace/knowledge/INDEX.md` as its final step. This file contains a 2-3 line summary of each KB document — what it covers, when to consult it. It costs almost nothing to include in an agent's context, but it gives the agent the ability to self-serve.
+The Discovery phase generates `.aid/knowledge/INDEX.md` as its final step. This file contains a 2-3 line summary of each KB document — what it covers, when to consult it. It costs almost nothing to include in an agent's context, but it gives the agent the ability to self-serve.
 
 ```markdown
 # Knowledge Base Index — {Project Name}
@@ -180,7 +180,7 @@ If your task touches an area covered here, read the relevant document first.
 
 1. **Every task receives INDEX.md.** Always. It's the map. Cost: ~200-500 tokens. Value: the agent knows where to look.
 2. **The orchestrator selects 2-4 relevant KB docs** based on the task's domain (data work → data-model.md, API work → api-contracts.md).
-3. **The task template includes a search instruction:** "If you need context not provided, consult `aid-workspace/knowledge/INDEX.md` and read the relevant document before making assumptions."
+3. **The task template includes a search instruction:** "If you need context not provided, consult `.aid/knowledge/INDEX.md` and read the relevant document before making assumptions."
 4. **Review validates context usage.** One review criterion: did the agent use available KB context, or did it guess?
 
 This is RAG by convention — not embeddings and vector databases, but predictable file structure and an index that agents can navigate. The agent has filesystem access. It can read on demand. It just needs to know the menu.
@@ -227,9 +227,9 @@ AID organizes eleven phases into four groups. The pipeline is linear with feedba
 8. **Test landscape** — Frameworks, coverage metrics, test types, CI/CD pipeline.
 9. **Tech debt audit** — Large files, circular dependencies, missing tests, outdated packages.
 10. **Gap identification** — What we couldn't determine from code alone → feeds into Interview.
-11. **Context Index generation** — Generate `aid-workspace/knowledge/INDEX.md` with a 2-3 line summary of every KB document produced. This lightweight index is included in every task context so agents know what's available and can self-serve additional context on demand. See [Context Feeding Strategy](#context-feeding-strategy).
+11. **Context Index generation** — Generate `.aid/knowledge/INDEX.md` with a 2-3 line summary of every KB document produced. This lightweight index is included in every task context so agents know what's available and can self-serve additional context on demand. See [Context Feeding Strategy](#context-feeding-strategy).
 
-**Output:** `aid-workspace/knowledge/` directory — the project's Knowledge Base, including INDEX.md.
+**Output:** `.aid/knowledge/` directory — the project's Knowledge Base, including INDEX.md.
 
 **When to skip:** Pure greenfield projects with no existing code. Interview populates a minimal KB instead.
 
@@ -241,10 +241,10 @@ AID organizes eleven phases into four groups. The pipeline is linear with feedba
 
 **Input:** KB (if brownfield) or project description (if greenfield). A human to interview.
 
-**Workspace:** Each interview creates a *work* — a self-contained unit of scope inside `aid-workspace/`:
+**Workspace:** Each interview creates a *work* — a self-contained unit of scope inside `.aid/`:
 
 ```
-aid-workspace/
+.aid/
   knowledge/                    ← shared KB (from Discovery)
   work-001-user-auth/           ← one work per interview
     INTERVIEW-STATE.md          ← process tracking (section status, Q&A, grade)
@@ -262,7 +262,7 @@ Multiple works can coexist — a client requests auth now, reporting later. Each
 
 The interview has six states, advancing one per run:
 
-**States 1–4: Conversational interview.** One question at a time. Starts broad (Objective, Problem Statement) and gets specific (Constraints, Acceptance Criteria). When KB exists (brownfield), questions come with suggested answers and source citations: `[From: aid-workspace/knowledge/{source}.md]` with options to accept, skip, or provide a custom answer. Nothing is silently inferred. Concludes with an approval gate.
+**States 1–4: Conversational interview.** One question at a time. Starts broad (Objective, Problem Statement) and gets specific (Constraints, Acceptance Criteria). When KB exists (brownfield), questions come with suggested answers and source citations: `[From: .aid/knowledge/{source}.md]` with options to accept, skip, or provide a custom answer. Nothing is silently inferred. Concludes with an approval gate.
 
 **State 5: Feature Decomposition.** After REQUIREMENTS.md is approved, the agent proposes a feature breakdown from §5 Functional Requirements. Each approved feature gets its own folder with a SPEC.md containing the requirements side (description, user stories, priority, acceptance criteria). The technical specification section is left empty — that's Specify's job.
 
@@ -284,7 +284,7 @@ The interview has six states, advancing one per run:
 - KB findings are never silently inferred — always presented as suggested answers for user confirmation.
 - Downstream phases (Specify, Plan) can inject Q&A entries into INTERVIEW-STATE.md for the next cross-reference run.
 
-**Output:** `aid-workspace/{work}/REQUIREMENTS.md` + `aid-workspace/{work}/features/feature-NNN-{name}/SPEC.md` (requirements side only).
+**Output:** `.aid/{work}/REQUIREMENTS.md` + `.aid/{work}/features/feature-NNN-{name}/SPEC.md` (requirements side only).
 
 **Feedback to Discovery:** If an answer reveals the KB is wrong or incomplete, the interview pauses, triggers targeted discovery, then resumes with corrected understanding.
 
@@ -292,7 +292,7 @@ The interview has six states, advancing one per run:
 
 **Purpose:** Technical refinement of a single feature through conversational collaboration with the developer. The agent acts as a tech lead — proposes concrete solutions grounded in the KB and codebase, discusses trade-offs, and writes the technical specification into the feature's SPEC.md.
 
-**Input:** A feature's SPEC.md (requirements side, from Interview) + `aid-workspace/knowledge/` directory + codebase.
+**Input:** A feature's SPEC.md (requirements side, from Interview) + `.aid/knowledge/` directory + codebase.
 
 **What this is:** Agile refinement for AI-augmented teams. Interview captured *what* the stakeholder wants. Specify determines *how* to build it — one feature at a time, through discussion with the developer.
 
@@ -309,7 +309,7 @@ The interview has six states, advancing one per run:
 
 **Process:** One feature per run. Determines applicable sections: 3 core (Data Model, Feature Flow, Layers & Components) always present, plus up to 20 conditional sections activated by context (API Contracts, UI Specs, Events, Security, Migration, etc.). Then runs the loop for each section in order.
 
-**Output:** `## Technical Specification` section added to `aid-workspace/{work}/features/feature-NNN/SPEC.md` — Data Model, Feature Flow, Layers & Components, plus activated conditional sections. Each feature's SPEC.md now contains both the requirements (from Interview) and the technical specification.
+**Output:** `## Technical Specification` section added to `.aid/{work}/features/feature-NNN/SPEC.md` — Data Model, Feature Flow, Layers & Components, plus activated conditional sections. Each feature's SPEC.md now contains both the requirements (from Interview) and the technical specification.
 
 **Feedback loops:**
 - KB wrong or incomplete → fix directly or write Q&A to DISCOVERY-STATE.md for targeted re-discovery.
@@ -342,7 +342,7 @@ The interview has six states, advancing one per run:
 
 **What Plan does NOT do** (already covered by Specify): module mapping, test scenarios, per-feature risks and trade-offs, spikes, technical details. Plan only adds the *sequencing* dimension.
 
-**Output:** `aid-workspace/{work}/PLAN.md` — ordered deliverables (each a shippable MVP), optional cross-cutting risks, optional deferred features list.
+**Output:** `.aid/{work}/PLAN.md` — ordered deliverables (each a shippable MVP), optional cross-cutting risks, optional deferred features list.
 
 **Feedback loops:**
 - KB insufficient for dependency analysis → Q&A to DISCOVERY-STATE.md.
@@ -353,7 +353,7 @@ The interview has six states, advancing one per run:
 
 **Purpose:** Break each deliverable into small, sequential, testable tasks. Each task = one agent session = one PR = one human review. The ultimate breakdown.
 
-**Input:** `aid-workspace/{work}/PLAN.md` + feature SPECs + KB (architecture, module-map, coding-standards).
+**Input:** `.aid/{work}/PLAN.md` + feature SPECs + KB (architecture, module-map, coding-standards).
 
 **The universal loop:** Each deliverable follows the same cycle:
 
@@ -368,7 +368,7 @@ The interview has six states, advancing one per run:
 
 **Task format:** Four sections — ID/title, source (feature + deliverable), scope (boundary), acceptance criteria (concrete, testable). Nothing else.
 
-**Output:** `aid-workspace/{work}/tasks/task-{id}.md` files — sequential tasks numbered globally across all deliverables.
+**Output:** `.aid/{work}/tasks/task-{id}.md` files — sequential tasks numbered globally across all deliverables.
 
 **Feedback loops:**
 - Plan too vague to decompose → return to `/aid-plan`.
@@ -387,7 +387,7 @@ The interview has six states, advancing one per run:
 
 **Purpose:** Execute a task using an AI coding agent, with full context from the Knowledge Base.
 
-**Input:** `task-{id}.md` + per-feature `SPEC.md` (referenced by the task's Source field) + `aid-workspace/knowledge/INDEX.md` + relevant KB documents.
+**Input:** `task-{id}.md` + per-feature `SPEC.md` (referenced by the task's Source field) + `.aid/knowledge/INDEX.md` + relevant KB documents.
 
 **Process:**
 1. Load task spec as the primary prompt.
@@ -406,7 +406,7 @@ The interview has six states, advancing one per run:
 
 **Purpose:** Static code review — verify implementation quality against task spec, project spec, and KB standards.
 
-**Input:** Git diff + `task-{id}.md` + per-feature `SPEC.md` (referenced by the task's Source field) + `aid-workspace/knowledge/coding-standards.md`.
+**Input:** Git diff + `task-{id}.md` + per-feature `SPEC.md` (referenced by the task's Source field) + `.aid/knowledge/coding-standards.md`.
 
 **Process:**
 1. Check against TASK acceptance criteria.
@@ -491,7 +491,7 @@ The interview has six states, advancing one per run:
 3. **Trend analysis** — Spot patterns over time.
 4. **Correlation** — Connect signals across sources.
 5. **Impact assessment** — Evaluate severity.
-6. **KB context** — Cross-reference against aid-workspace/knowledge/ to distinguish expected behavior from anomalies.
+6. **KB context** — Cross-reference against .aid/knowledge/ to distinguish expected behavior from anomalies.
 
 **Key distinction:** Track *interprets*, it doesn't just collect. A dashboard shows you a spike. Track tells you "error rate increased 340% after deploy #47, concentrated in the payment module, affecting ~2,000 users, correlating with the async refactor."
 
@@ -503,7 +503,7 @@ The interview has six states, advancing one per run:
 
 **Purpose:** Classify what Track found. For bugs: perform root cause analysis and map the fix. Route everything to the right path.
 
-**Input:** `TRACK-REPORT.md` + `aid-workspace/knowledge/` + per-feature SPECs.
+**Input:** `TRACK-REPORT.md` + `.aid/knowledge/` + per-feature SPECs.
 
 **Classification:**
 - **BUG** — Code doesn't match spec. Perform root cause analysis, then route to aid-implement (short path).
@@ -645,15 +645,15 @@ Every change to an upstream artifact is tracked at the bottom of the artifact:
 
 | Artifact | Location | Produced By | Consumed By | Lifecycle |
 |----------|----------|------------|-------------|-----------|
-| Knowledge Base (14 docs) | `aid-workspace/knowledge/` | Discover | All phases | Living — updated throughout project |
-| INDEX.md | `aid-workspace/knowledge/` | Discover | All phases | Regenerated on every discovery run |
-| REQUIREMENTS.md | `aid-workspace/{work}/` | Interview | Specify, Plan | Frozen after approval (rev-tracked) |
-| INTERVIEW-STATE.md | `aid-workspace/{work}/` | Interview | Interview (resume) | Process tracking |
-| Feature SPEC.md | `aid-workspace/{work}/features/{feature}/` | Interview + Specify | Plan, Detail, Implement, Review | Living — Interview writes requirements side, Specify adds technical spec |
-| Feature STATE.md | `aid-workspace/{work}/features/{feature}/` | Specify | Specify (resume) | Process tracking |
-| PLAN.md | `aid-workspace/{work}/` | Plan | Detail | Living — rev-tracked |
-| DETAIL.md | `aid-workspace/{work}/` | Detail | Implement, Review | Updated at completion |
-| task-{id}.md | `aid-workspace/{work}/tasks/` | Detail | Implement, Review | Rev-tracked if amended |
+| Knowledge Base (14 docs) | `.aid/knowledge/` | Discover | All phases | Living — updated throughout project |
+| INDEX.md | `.aid/knowledge/` | Discover | All phases | Regenerated on every discovery run |
+| REQUIREMENTS.md | `.aid/{work}/` | Interview | Specify, Plan | Frozen after approval (rev-tracked) |
+| INTERVIEW-STATE.md | `.aid/{work}/` | Interview | Interview (resume) | Process tracking |
+| Feature SPEC.md | `.aid/{work}/features/{feature}/` | Interview + Specify | Plan, Detail, Implement, Review | Living — Interview writes requirements side, Specify adds technical spec |
+| Feature STATE.md | `.aid/{work}/features/{feature}/` | Specify | Specify (resume) | Process tracking |
+| PLAN.md | `.aid/{work}/` | Plan | Detail | Living — rev-tracked |
+| DETAIL.md | `.aid/{work}/` | Detail | Implement, Review | Updated at completion |
+| task-{id}.md | `.aid/{work}/tasks/` | Detail | Implement, Review | Rev-tracked if amended |
 | REVIEW.md | project root | Review | Implement (rework), Test | Per review cycle |
 | TEST-REPORT.md | project root | Test | Deploy, Implement (if failures) | Per test cycle |
 | GAP.md | project root | Any phase | Discovery, Specify | Closed when resolved |
@@ -972,7 +972,7 @@ Ship to Test | Rework (minor) | Rework (major) | Re-implement
 
 ```
                  ┌─────────────────────────────────────────────────┐
-                 │           KNOWLEDGE BASE (aid-workspace/knowledge/)           │
+                 │           KNOWLEDGE BASE (.aid/knowledge/)           │
                  │    The gravitational center of the project.     │
                  │    Every phase reads from it.                   │
                  │    Any phase can trigger updates to it.         │
@@ -983,7 +983,7 @@ Ship to Test | Rework (minor) | Rework (major) | Re-implement
              ▼              │              │
    ┌─ PROBLEM MAPPING ─────┤              │
    │     aid-discover ───────┤              │
-   │      → aid-workspace/knowledge/*     │              │
+   │      → .aid/knowledge/*     │              │
    │          │              │              │
    │          ├──────────────┼──────────────┘
    │                        │
@@ -1043,7 +1043,7 @@ Ship to Test | Rework (minor) | Rework (major) | Re-implement
                 └────┘          └──→ aid-discover (new cycle)
    (back to aid-implement)
 
- ─── ANY PHASE ──→ aid-discover (targeted) ──→ aid-workspace/knowledge/* ──→ resume
+ ─── ANY PHASE ──→ aid-discover (targeted) ──→ .aid/knowledge/* ──→ resume
 ```
 
 ### The Two Post-Production Paths

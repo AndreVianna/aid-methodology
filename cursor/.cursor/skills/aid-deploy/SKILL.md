@@ -16,11 +16,11 @@ Final verification, PR, delivery summary, documentation updates.
 ## Inputs
 
 - Feature branch with completed, reviewed, tested tasks
-- `aid-workspace/{work}/DETAIL.md` — scope, user stories, delivery breakdown
-- `aid-workspace/{work}/PLAN.md` — deliverables and success criteria
+- `.aid/{work}/DETAIL.md` — scope, user stories, delivery breakdown
+- `.aid/{work}/PLAN.md` — deliverables and success criteria
 - REVIEW.md files, TEST-REPORT.md
-- Feature SPECs: `aid-workspace/{work}/features/*/SPEC.md`
-- `aid-workspace/knowledge/`
+- Feature SPECs: `.aid/{work}/features/*/SPEC.md`
+- `.aid/knowledge/`
 
 ## Prerequisites
 
@@ -47,13 +47,13 @@ Check if implementation revealed KB updates needed:
 - New integrations → integration-map.md
 - Tech debt created/resolved → tech-debt.md
 - Data model changes → data-model.md
-Add revision entries to aid-workspace/knowledge/README.md.
+Add revision entries to .aid/knowledge/README.md.
 
 ### 5. Artifact Status Updates
 - DETAIL.md delivery entries → Status: Complete, completion date, final test count
-- `aid-workspace/{work}/tasks/task-{id}.md` files → Status: Complete
+- `.aid/{work}/tasks/task-{id}.md` files → Status: Complete
 - Feature SPEC change logs (if revisions occurred)
-- aid-workspace/knowledge/README.md (if KB docs updated)
+- .aid/knowledge/README.md (if KB docs updated)
 
 ## Post-Deploy
 

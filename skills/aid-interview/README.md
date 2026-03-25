@@ -11,7 +11,7 @@ Gather and validate requirements through adaptive conversation with a human stak
 Each interview creates a *work* — a self-contained unit of scope:
 
 ```
-aid-workspace/
+.aid/
   knowledge/                    ← shared KB (from Discovery)
   work-NNN-{name}/              ← one work per interview
     INTERVIEW-STATE.md          ← process (section status, Q&A, grade, review history)
@@ -32,7 +32,7 @@ Multiple works can coexist — a client requests auth now, reporting later. Each
 
 ## Inputs
 
-- `aid-workspace/knowledge/` directory (if brownfield — pre-fills technical fields and informs questions).
+- `.aid/knowledge/` directory (if brownfield — pre-fills technical fields and informs questions).
 - Project description or brief (if greenfield).
 - For targeted interview: Q&A entries in INTERVIEW-STATE.md from downstream phases.
 - For cross-reference: existing REQUIREMENTS.md + full KB.
@@ -78,7 +78,7 @@ Walk through the 10 sections organically — start broad (Objective, Problem Sta
 **KB-Informed Questions:** When the KB already has an answer, present it with source for confirmation:
 ```
 Our codebase analysis found you're using PostgreSQL 16 with 3 REST API integrations.
-[From: aid-workspace/knowledge/technology-stack.md]
+[From: .aid/knowledge/technology-stack.md]
 
 [1] Accept  [2] Skip  [3] Custom answer
 ```
@@ -152,9 +152,9 @@ Downstream phases (Specify, Plan, Detail) can inject Q&A entries into INTERVIEW-
 
 ## Output
 
-- `aid-workspace/{work}/REQUIREMENTS.md` — structured requirements with Change Log, 10 sections.
-- `aid-workspace/{work}/INTERVIEW-STATE.md` — process tracking (section status, Q&A, grade, review history).
-- `aid-workspace/{work}/features/feature-NNN-{name}/SPEC.md` — per-feature requirements side (description, user stories, priority, acceptance criteria).
+- `.aid/{work}/REQUIREMENTS.md` — structured requirements with Change Log, 10 sections.
+- `.aid/{work}/INTERVIEW-STATE.md` — process tracking (section status, Q&A, grade, review history).
+- `.aid/{work}/features/feature-NNN-{name}/SPEC.md` — per-feature requirements side (description, user stories, priority, acceptance criteria).
 
 ## Feedback Loops
 

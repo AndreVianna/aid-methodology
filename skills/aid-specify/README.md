@@ -28,7 +28,7 @@ Each technical section follows the same cycle:
 ## Workspace
 
 ```
-aid-workspace/
+.aid/
   knowledge/               ← shared KB
   work-NNN-{name}/
     REQUIREMENTS.md

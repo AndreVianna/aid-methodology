@@ -1,6 +1,6 @@
 # REQUIREMENTS.md Template
 
-This template defines the structure for `aid-workspace/knowledge/REQUIREMENTS.md` — a first-class methodology artifact produced by [aid-interview](../../skills/aid-interview/).
+This template defines the structure for `.aid/knowledge/REQUIREMENTS.md` — a first-class methodology artifact produced by [aid-interview](../../skills/aid-interview/).
 
 ## Usage
 
@@ -13,7 +13,7 @@ This template defines the structure for `aid-workspace/knowledge/REQUIREMENTS.md
 - **Sections can be marked N/A** if not applicable to the project.
 - **`*(pending)*`** marks sections not yet addressed during the interview.
 - **Cross-reference runs** add Change Log entries with source `/aid-interview (cross-reference)`.
-- **File is uppercase** (`REQUIREMENTS.md`) — it's a first-class artifact in `aid-workspace/knowledge/`.
+- **File is uppercase** (`REQUIREMENTS.md`) — it's a first-class artifact in `.aid/knowledge/`.
 
 ---
 
