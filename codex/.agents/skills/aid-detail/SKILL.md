@@ -96,7 +96,7 @@ Each task gets a file: `aid-workspace/{work}/tasks/task-{id}.md`
 
 **Source:** feature-NNN-{name} → delivery-{x}
 
-**Files:**
+**Scope:**
 - `path/to/File.java` (create)
 - `path/to/OtherFile.java` (modify)
 - `test/path/to/FileTest.java` (create)
@@ -153,7 +153,7 @@ ordered by execution sequence.
 ## Feedback Loops
 
 - **→ Plan:** Plan too vague to decompose → return to `/aid-plan`
-- **→ Specify:** SPEC missing detail needed for file list → write Q&A to feature's `STATE.md`
+- **→ Specify:** SPEC missing detail needed for scope → write Q&A to feature's `STATE.md`
 - **→ Discovery:** KB gap → write Q&A to `aid-workspace/knowledge/DISCOVERY-STATE.md`
 
 ## Re-run = Review
@@ -192,8 +192,8 @@ Update affected task files. Renumber if sequence changed.
 - [ ] Every deliverable in PLAN.md has corresponding tasks
 - [ ] Every task traces to a feature SPEC and deliverable
 - [ ] Every task has concrete, testable acceptance criteria
-- [ ] Every task has an explicit file list (scope boundary)
+- [ ] Every task has an explicit scope boundary
 - [ ] Tasks are sequential — each builds on the previous
-- [ ] No task touches more than ~5 files (split if larger)
+- [ ] Each task is small enough for one agent session (split if not)
 - [ ] "All existing tests still pass" is in every task's criteria
 - [ ] All task files live inside `aid-workspace/{work}/tasks/`

@@ -12,7 +12,7 @@ Detail makes **no new decisions**. Everything in the tasks is already defined in
 1. Reads PLAN.md to understand deliverable ordering
 2. Reads feature SPECs to understand the technical scope
 3. Breaks each deliverable into sequential tasks
-4. Each task has: title, source, file list (scope boundary), acceptance criteria
+4. Each task has: title, source, scope boundary, acceptance criteria
 5. User reviews the task list, can split/merge/reorder
 6. Task files are written to `aid-workspace/{work}/tasks/`
 
@@ -32,7 +32,7 @@ Detail makes **no new decisions**. Everything in the tasks is already defined in
 
 **Source:** feature-NNN-{name} → delivery-{x}
 
-**Files:**
+**Scope:**
 - `path/to/File.java` (create)
 - `path/to/OtherFile.java` (modify)
 - `test/path/to/FileTest.java` (create)
@@ -65,7 +65,7 @@ Running `/aid-detail` on a work that already has tasks triggers review mode:
 | Direction | Trigger |
 |-----------|---------|
 | → Plan | Plan too vague to decompose |
-| → Specify | SPEC missing detail needed for file list |
+| → Specify | SPEC missing detail needed for scope |
 | → Discovery | KB gap found during decomposition |
 
 ## Usage
