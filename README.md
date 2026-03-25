@@ -127,7 +127,7 @@ examples/
 | Phase | Skill | What It Does |
 |-------|-------|-------------|
 | 4. Plan | `aid-plan` | Sequences features into deliverables — each one a functional MVP that builds on the previous |
-| 5. Detail | `aid-detail` | Decomposes the plan into user stories, executable tasks, and precedence order |
+| 5. Detail | `aid-detail` | Breaks deliverables into small, sequential, testable tasks — each one a PR |
 
 ### Group 3: Execute
 | Phase | Skill | What It Does |

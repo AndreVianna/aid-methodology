@@ -1,31 +1,69 @@
-# Detail — The Ultimate Breakdown
+# aid-detail
 
-Break each deliverable from PLAN.md into small, sequential, testable tasks.
-Each task = one agent session = one PR = one human review.
+Break deliverables into small, sequential, testable tasks — each one a PR.
+The ultimate breakdown.
 
-## Core Principle
+## The Universal Loop
 
-Detail makes **no new decisions**. Everything in the tasks is already defined in PLAN.md and the feature SPECs. Detail just slices the work into PR-sized pieces.
+Each deliverable follows the same cycle:
 
-## What It Does
+```
+1. PROPOSE  → agent proposes task breakdown for a deliverable
+2. DISCUSS  → developer and agent refine (size, scope, sequence, criteria)
+3. WRITE    → save agreed tasks to files
+4. REVIEW   → grade against SPEC/PLAN — pass? next deliverable. fail? back to 1.
+```
 
-1. Reads PLAN.md to understand deliverable ordering
-2. Reads feature SPECs to understand the technical scope
-3. Breaks each deliverable into sequential tasks
-4. Each task has: title, source, scope boundary, acceptance criteria
-5. User reviews the task list, can split/merge/reorder
-6. Task files are written to `aid-workspace/{work}/tasks/`
+**Re-run = enter at step 4 with existing tasks.**
+
+## Usage
+
+```
+/aid-detail work-001
+/aid-detail                   # auto-selects when single work
+/aid-detail work-001 --reset
+```
+
+## Workspace
+
+```
+aid-workspace/
+  knowledge/                ← shared KB (read)
+  work-NNN-{name}/
+    PLAN.md                 ← deliverables (read — must exist)
+    features/
+      feature-NNN-{name}/
+        SPEC.md             ← per-feature tech spec (read)
+    tasks/                  ← OUTPUT
+      task-001.md
+      task-002.md
+```
+
+## How It Works
+
+### First Run
+
+1. **Propose tasks** for the first deliverable — sequential, each small enough for one agent session
+2. **Discuss** — size, scope, sequence, acceptance criteria. Split, merge, reorder until right.
+3. **Write and review** — save task files, verify sequence holds, scope aligned with SPECs, criteria testable. Grade A/B/C.
+4. **Next deliverable** — same loop. Task numbers are global across deliverables.
+5. **Summary**
+
+### Re-run (Review)
+
+When `tasks/` has files, re-run enters the loop at step 4:
+- Checks for PLAN changes, SPEC changes, orphan tasks, missing tasks, broken sequence
+- Grades A–D overall
+- Re-enters the loop for affected deliverables
 
 ## The Rules
 
-| Rule | Why |
-|------|-----|
-| **Always small** | Every task fits one agent session |
-| **Sequential** | Within a deliverable, tasks execute in order |
-| **Each task = one PR** | Human reviews and merges before next starts |
-| **No new decisions** | Detail slices what exists, doesn't invent |
+1. **Always small.** Every task fits one agent session.
+2. **Sequential within a deliverable.** Each builds on the previous.
+3. **Each task = one PR.** Human reviews and merges before next.
+4. **No new decisions.** Everything is in PLAN + SPECs. Detail just slices.
 
-## Task File Format
+## Task Format
 
 ```markdown
 # task-{id}: {Title}
@@ -35,43 +73,16 @@ Detail makes **no new decisions**. Everything in the tasks is already defined in
 **Scope:**
 - `path/to/File.java` (create)
 - `path/to/OtherFile.java` (modify)
-- `test/path/to/FileTest.java` (create)
 
 **Acceptance Criteria:**
 - [ ] Criterion 1 — concrete, testable
-- [ ] Criterion 2 — concrete, testable
 - [ ] All existing tests still pass
 ```
 
 Four sections. Nothing else.
 
-## How to Slice
-
-Start from the bottom and build up:
-1. Foundation — schema, models, core types
-2. Services — business logic, handlers, middleware
-3. Integration — controllers, endpoints, UI
-4. Validation — E2E tests, smoke tests
-
-## Re-run = Review
-
-Running `/aid-detail` on a work that already has tasks triggers review mode:
-- Compares existing tasks against current PLAN.md and SPECs
-- Grades A (current) through D (major restructuring needed)
-- Updates affected tasks, renumbers if sequence changed
-
 ## Feedback Loops
 
-| Direction | Trigger |
-|-----------|---------|
-| → Plan | Plan too vague to decompose |
-| → Specify | SPEC missing detail needed for scope |
-| → Discovery | KB gap found during decomposition |
-
-## Usage
-
-```
-/aid-detail work-001        # Detail a specific work
-/aid-detail                  # Auto-select if single work
-/aid-detail work-001 --reset # Clear all tasks, regenerate
-```
+- **→ Plan:** Too vague to decompose → return to `/aid-plan`
+- **→ Specify:** SPEC missing detail → Q&A to feature's STATE.md
+- **→ Discovery:** KB gap → Q&A to DISCOVERY-STATE.md

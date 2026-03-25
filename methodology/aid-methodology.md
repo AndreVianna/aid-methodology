@@ -296,18 +296,20 @@ The interview has six states, advancing one per run:
 
 **What this is:** Agile refinement for AI-augmented teams. Interview captured *what* the stakeholder wants. Specify determines *how* to build it — one feature at a time, through discussion with the developer.
 
-**Process:**
+**The universal loop:** Each technical section follows the same cycle that drives all design phases:
 
-One feature per run. The agent:
-1. Reads the feature's SPEC.md (requirements side), REQUIREMENTS.md, relevant KB docs, and explores the codebase.
-2. Determines applicable technical sections: 3 core (Data Model, Feature Flow, Layers & Components) always present, plus up to 20 conditional sections activated by context (API Contracts, UI Specs, Events, Security, Migration, etc.).
-3. For each section: proposes a concrete solution referencing specific files, classes, patterns, and conventions from the codebase. The developer discusses, adjusts, or redirects. When agreed, the section is written to SPEC.md.
+1. **Propose** — the agent proposes a concrete solution referencing specific files, classes, patterns, and conventions from the codebase.
+2. **Discuss** — the developer validates, adjusts, or redirects. The agent pushes back on contradictions, presents trade-offs, adapts.
+3. **Write** — the agreed section is written to SPEC.md.
+4. **Review** — the agent verifies what was written against KB reality and other completed sections. Pass → next section. Fail → back to Propose with findings.
+
+**Re-run = enter at step 4 with existing content.** Running `/aid-specify` on a completed feature reviews all sections against current reality (KB, codebase, requirements). Grades A–D. The same loop handles both creation and maintenance.
 
 **What makes this different from generic spec generation:** The agent doesn't ask "what technology do you want to use?" — it proposes based on what the KB and codebase already show. "I see you use Spring Boot with JPMS modules. Here's how this feature fits into the existing module structure." The developer validates, not dictates.
 
-**Output:** `## Technical Specification` section added to `aid-workspace/{work}/features/feature-NNN/SPEC.md` — Data Model, Feature Flow, Layers & Components, plus activated conditional sections. Each feature's SPEC.md now contains both the requirements (from Interview) and the technical specification.
+**Process:** One feature per run. Determines applicable sections: 3 core (Data Model, Feature Flow, Layers & Components) always present, plus up to 20 conditional sections activated by context (API Contracts, UI Specs, Events, Security, Migration, etc.). Then runs the loop for each section in order.
 
-**Re-run = Review:** Running `/aid-specify` on a feature with Status: Ready triggers a review against current reality (KB, codebase, requirements). Grades A–D. Minor drift gets fixed inline; significant drift re-enters the Discussion Loop for affected sections; major drift recommends `--reset`. Same self-validation pattern as Discovery and Interview.
+**Output:** `## Technical Specification` section added to `aid-workspace/{work}/features/feature-NNN/SPEC.md` — Data Model, Feature Flow, Layers & Components, plus activated conditional sections. Each feature's SPEC.md now contains both the requirements (from Interview) and the technical specification.
 
 **Feedback loops:**
 - KB wrong or incomplete → fix directly or write Q&A to DISCOVERY-STATE.md for targeted re-discovery.
@@ -329,12 +331,16 @@ One feature per run. The agent:
 
 **Input:** Feature SPECs (all with `Ready` status from Specify) + REQUIREMENTS.md + KB (architecture, module-map, tech-debt).
 
-**Process:**
-1. Map dependencies between features — what each needs and enables.
-2. Group features into deliverables. Each deliverable must be functional on its own, testable independently, and buildable in dependency order.
-3. Identify cross-cutting risks (optional) — risks that span features and couldn't be seen during Specify (e.g., multiple features touching the same fragile module, sequencing risks).
+**The universal loop:** Each deliverable follows the same cycle:
 
-**What Plan does NOT do** (already covered by Specify): module mapping, test scenarios, per-feature risks and trade-offs, spikes, technical details. Specify handles all of this per feature. Plan only adds the *sequencing* dimension.
+1. **Propose** — the agent maps dependencies and proposes a deliverable grouping.
+2. **Discuss** — the developer negotiates: move features, reorder, split, merge, defer, change priority. The agent checks dependencies on every adjustment.
+3. **Write** — the agreed deliverable is saved to PLAN.md.
+4. **Review** — the agent verifies the deliverable is standalone-functional with satisfied dependencies. Pass → next deliverable. Fail → back to Propose with findings.
+
+**Re-run = enter at step 4 with existing PLAN.md.** Reviews each deliverable against current SPECs and KB. Grades A–D.
+
+**What Plan does NOT do** (already covered by Specify): module mapping, test scenarios, per-feature risks and trade-offs, spikes, technical details. Plan only adds the *sequencing* dimension.
 
 **Output:** `aid-workspace/{work}/PLAN.md` — ordered deliverables (each a shippable MVP), optional cross-cutting risks, optional deferred features list.
 
@@ -345,28 +351,29 @@ One feature per run. The agent:
 
 #### Phase 5: Detail (`aid-detail`)
 
-**Purpose:** Decompose the plan into sprint-ready user stories, executable tasks, and execution order.
+**Purpose:** Break each deliverable into small, sequential, testable tasks. Each task = one agent session = one PR = one human review. The ultimate breakdown.
 
-**Input:** `aid-workspace/{work}/PLAN.md` + feature SPECs + `aid-workspace/knowledge/` directory.
+**Input:** `aid-workspace/{work}/PLAN.md` + feature SPECs + KB (architecture, module-map, coding-standards).
 
-**Process:**
-1. **User story decomposition** — For each deliverable in PLAN.md, generate user stories with acceptance criteria. Each traces back to a PLAN deliverable AND a feature SPEC.
-2. **Task decomposition** — For each story, generate executable `task-{id}.md` files sized for a single agent session (<10 files, <500 lines new code).
-3. **Precedence analysis** — Map dependencies between tasks. Identify parallel execution opportunities.
-4. **Complexity estimation** — S/M/L/XL based on KB data (files touched, test coverage, tech debt).
-5. **Delivery breakdown** — Group tasks into delivery increments aligned with PLAN deliverables.
-6. **Execution plan** — Organize tasks into waves for parallel execution.
+**The universal loop:** Each deliverable follows the same cycle:
 
-**Detail is tactics, not strategy.** It turns the delivery roadmap into a work breakdown structure that agents can execute.
+1. **Propose** — the agent proposes a sequential task breakdown for a deliverable.
+2. **Discuss** — the developer and agent refine: size, scope, sequence, acceptance criteria. Split, merge, reorder until right.
+3. **Write** — the agreed task files are saved.
+4. **Review** — the agent verifies: sequence holds, no gaps, scope aligned with SPECs, criteria testable. Pass → next deliverable. Fail → back to Propose with findings.
 
-**Output:**
-- `aid-workspace/{work}/DETAIL.md` — User stories, task list, precedence graph, delivery breakdown, execution waves.
-- `aid-workspace/{work}/tasks/task-{id}.md` files — One per task with objective, source tracing (user story + feature + deliverable), interface contracts, acceptance criteria, test requirements.
+**Re-run = enter at step 4 with existing tasks.** Reviews tasks against current PLAN.md and SPECs. Grades A–D.
+
+**Detail is pure breakdown.** No new decisions — everything is already in PLAN + SPECs. Detail just slices deliverables into tasks small enough for an agent to execute in one session.
+
+**Task format:** Four sections — ID/title, source (feature + deliverable), scope (boundary), acceptance criteria (concrete, testable). Nothing else.
+
+**Output:** `aid-workspace/{work}/tasks/task-{id}.md` files — sequential tasks numbered globally across all deliverables.
 
 **Feedback loops:**
-- Plan too vague for detailing → return to aid-plan for revision.
-- KB gaps → Q&A to DISCOVERY-STATE.md.
-- SPEC ambiguous → Q&A to feature's STATE.md.
+- Plan too vague to decompose → return to `/aid-plan`.
+- SPEC missing detail for scope → Q&A to feature's STATE.md.
+- KB gap → Q&A to DISCOVERY-STATE.md.
 
 ---
 
