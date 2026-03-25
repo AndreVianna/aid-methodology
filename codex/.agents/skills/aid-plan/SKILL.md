@@ -120,7 +120,9 @@ These are risks that Specify couldn't see because they span features:
 
 **Only include this section if cross-cutting risks actually exist.** Don't manufacture risks.
 
-### 4. Present to User
+### 4. Present & Negotiate
+
+Present the proposed sequence clearly:
 
 ```
 Here's the delivery sequence for {work}:
@@ -144,13 +146,35 @@ Here's the delivery sequence for {work}:
 **Cross-Cutting Risks:**
 - {risk}: {impact} — {mitigation}
 
-Does this sequence make sense?
-
+Does this sequence make sense? You can:
 [1] Approve
-[2] Adjust — tell me what to change
+[2] Adjust — tell me what to change (move features, reorder, split, merge, defer)
 ```
 
-Wait for response. If [2], adjust and present again.
+### 5. Adjustment Loop
+
+If user chooses [2] or describes a change in natural language, enter the adjustment loop.
+
+**Supported adjustments:**
+- **Move feature** — "move feature-004 from D-3 to D-2"
+- **Reorder deliverables** — "swap D-2 and D-3" or "I want SSO before self-service"
+- **Split deliverable** — "D-1 is too big, split login and roles"
+- **Merge deliverables** — "combine D-2 and D-3 into one"
+- **Defer feature** — "push feature-005 out of scope for now"
+- **Change priority** — "OAuth is actually a Must, not a Should"
+
+**For every adjustment:**
+1. **Check dependencies** — does the change break the dependency graph?
+   - If yes → warn the user: "Moving feature-004 to D-1 would break a dependency: it needs the auth middleware from feature-001 which is also in D-1. That's fine (same deliverable), but feature-004 needs feature-002's API which is in D-2. Options: (a) move feature-002 to D-1 as well, (b) keep feature-004 in D-3."
+   - If no → apply the change
+2. **Re-present the updated sequence** — show the full plan again, not just the diff
+3. **Ask again** — approve or adjust?
+
+**Loop until approved.** No limit on iterations — the user drives the sequence.
+
+**Natural language:** Users won't always say "move feature-004 from D-3 to D-2." They'll say
+"I want OAuth before password reset" or "clients are asking for SSO first." Interpret intent,
+map it to deliverable changes, confirm understanding before applying.
 
 ## Feedback Loops
 
