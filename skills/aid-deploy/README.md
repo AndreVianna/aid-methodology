@@ -66,9 +66,9 @@ Generate a summary of what this delivery contains:
 ## Tasks Completed
 | Task | Description | Complexity | Review Grade |
 |------|-------------|-----------|-------------|
-| TASK-F1 | Data model for recordings | S | A |
-| TASK-F2 | Repository layer | M | A- |
-| TASK-F3 | API endpoints | L | A |
+| task-F1 | Data model for recordings | S | A |
+| task-F2 | Repository layer | M | A- |
+| task-F3 | API endpoints | L | A |
 
 ## Changes
 - Files changed: {count}
@@ -102,9 +102,9 @@ Create a Pull Request with a structured description:
 {Delivery scope — what this PR adds}
 
 ### Tasks
-- [x] TASK-F1: {name} (Grade: A)
-- [x] TASK-F2: {name} (Grade: A-)
-- [x] TASK-F3: {name} (Grade: A)
+- [x] task-F1: {name} (Grade: A)
+- [x] task-F2: {name} (Grade: A-)
+- [x] task-F3: {name} (Grade: A)
 
 ### Verification
 - Build: ✅ zero errors, zero warnings
@@ -141,7 +141,7 @@ Add revision entries to `aid-workspace/knowledge/README.md` for any KB changes.
    - Final test count
    - Any deferred issues
 
-2. Update each `TASK-{id}.md`:
+2. Update each `task-{id}.md`:
    - Status: Complete
 
 3. Update `SPEC.md` revision history if any revisions occurred during this delivery.
@@ -153,7 +153,7 @@ Add revision entries to `aid-workspace/knowledge/README.md` for any KB changes.
 - Pull Request ready for merge.
 - Delivery summary document.
 - Updated DELIVERY-{id}.md (status: Complete).
-- Updated TASK-{id}.md files (status: Complete).
+- Updated task-{id}.md files (status: Complete).
 - Updated KB documents (if applicable).
 - Updated KB README.md revision history (if applicable).
 

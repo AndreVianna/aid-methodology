@@ -1,4 +1,4 @@
-# TASK-{id}: {Name}
+# task-{id}: {Name}
 
 > **Delivery:** DELIVERY-{id}
 > **User Story:** US-{id}

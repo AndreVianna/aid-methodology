@@ -12,7 +12,7 @@ When Track detects something, Triage decides what it is and where it goes. This 
 - `TRACK-REPORT.md` — findings from production monitoring.
 - `SPEC.md` — the specification of expected behavior.
 - `aid-workspace/knowledge/` directory — system context for analysis.
-- `TASK-{id}.md` files — acceptance criteria for relevant features.
+- `task-{id}.md` files — acceptance criteria for relevant features.
 
 ## Process
 

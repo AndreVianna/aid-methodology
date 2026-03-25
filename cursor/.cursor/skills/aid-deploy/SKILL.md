@@ -51,7 +51,7 @@ Add revision entries to aid-workspace/knowledge/README.md.
 
 ### 5. Artifact Status Updates
 - DETAIL.md delivery entries → Status: Complete, completion date, final test count
-- `aid-workspace/{work}/tasks/TASK-{id}.md` files → Status: Complete
+- `aid-workspace/{work}/tasks/task-{id}.md` files → Status: Complete
 - Feature SPEC change logs (if revisions occurred)
 - aid-workspace/knowledge/README.md (if KB docs updated)
 

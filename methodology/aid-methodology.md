@@ -351,7 +351,7 @@ One feature per run. The agent:
 
 **Process:**
 1. **User story decomposition** — For each deliverable in PLAN.md, generate user stories with acceptance criteria. Each traces back to a PLAN deliverable AND a feature SPEC.
-2. **Task decomposition** — For each story, generate executable `TASK-{id}.md` files sized for a single agent session (<10 files, <500 lines new code).
+2. **Task decomposition** — For each story, generate executable `task-{id}.md` files sized for a single agent session (<10 files, <500 lines new code).
 3. **Precedence analysis** — Map dependencies between tasks. Identify parallel execution opportunities.
 4. **Complexity estimation** — S/M/L/XL based on KB data (files touched, test coverage, tech debt).
 5. **Delivery breakdown** — Group tasks into delivery increments aligned with PLAN deliverables.
@@ -361,7 +361,7 @@ One feature per run. The agent:
 
 **Output:**
 - `aid-workspace/{work}/DETAIL.md` — User stories, task list, precedence graph, delivery breakdown, execution waves.
-- `aid-workspace/{work}/tasks/TASK-{id}.md` files — One per task with objective, source tracing (user story + feature + deliverable), interface contracts, acceptance criteria, test requirements.
+- `aid-workspace/{work}/tasks/task-{id}.md` files — One per task with objective, source tracing (user story + feature + deliverable), interface contracts, acceptance criteria, test requirements.
 
 **Feedback loops:**
 - Plan too vague for detailing → return to aid-plan for revision.
@@ -380,7 +380,7 @@ One feature per run. The agent:
 
 **Purpose:** Execute a task using an AI coding agent, with full context from the Knowledge Base.
 
-**Input:** `TASK-{id}.md` + per-feature `SPEC.md` (referenced by the task's Source field) + `aid-workspace/knowledge/INDEX.md` + relevant KB documents.
+**Input:** `task-{id}.md` + per-feature `SPEC.md` (referenced by the task's Source field) + `aid-workspace/knowledge/INDEX.md` + relevant KB documents.
 
 **Process:**
 1. Load task spec as the primary prompt.
@@ -399,7 +399,7 @@ One feature per run. The agent:
 
 **Purpose:** Static code review — verify implementation quality against task spec, project spec, and KB standards.
 
-**Input:** Git diff + `TASK-{id}.md` + per-feature `SPEC.md` (referenced by the task's Source field) + `aid-workspace/knowledge/coding-standards.md`.
+**Input:** Git diff + `task-{id}.md` + per-feature `SPEC.md` (referenced by the task's Source field) + `aid-workspace/knowledge/coding-standards.md`.
 
 **Process:**
 1. Check against TASK acceptance criteria.
@@ -622,7 +622,7 @@ Every change to an upstream artifact is tracked at the bottom of the artifact:
 
 ```markdown
 # IMPEDIMENT: IMP-003
-**Source:** aid-implement, TASK-F3a
+**Source:** aid-implement, task-F3a
 **Type:** wrong-assumption | missing-dependency | architecture-conflict | kb-gap
 **Description:** RecordingService is synchronous, not async as KB states.
 **KB Impact:** architecture.md needs revision
@@ -646,7 +646,7 @@ Every change to an upstream artifact is tracked at the bottom of the artifact:
 | Feature STATE.md | `aid-workspace/{work}/features/{feature}/` | Specify | Specify (resume) | Process tracking |
 | PLAN.md | `aid-workspace/{work}/` | Plan | Detail | Living — rev-tracked |
 | DETAIL.md | `aid-workspace/{work}/` | Detail | Implement, Review | Updated at completion |
-| TASK-{id}.md | `aid-workspace/{work}/tasks/` | Detail | Implement, Review | Rev-tracked if amended |
+| task-{id}.md | `aid-workspace/{work}/tasks/` | Detail | Implement, Review | Rev-tracked if amended |
 | REVIEW.md | project root | Review | Implement (rework), Test | Per review cycle |
 | TEST-REPORT.md | project root | Test | Deploy, Implement (if failures) | Per test cycle |
 | GAP.md | project root | Any phase | Discovery, Specify | Closed when resolved |
@@ -767,14 +767,14 @@ Each feature gets its own SPEC.md. Interview writes the top half (requirements s
 **Source:** PLAN.md deliverable D-{id}, feature SPEC feature-{NNN}-{name}
 
 ## Task List
-### TASK-{id}: {Name}
+### task-{id}: {Name}
 **User Story:** US-{id} | **Complexity:** S/M/L/XL
 **Objective:** {1-2 sentences}
 **Interface Contracts:** {public API}
 **Acceptance Criteria:** {testable}
 **Test Requirements:** {unit + E2E}
 **Files to Touch:** {guidance}
-**Depends On / Blocks:** {TASK-ids}
+**Depends On / Blocks:** {task-ids}
 
 ## Precedence Graph
 {Text or mermaid diagram}
@@ -793,10 +793,10 @@ Each feature gets its own SPEC.md. Interview writes the top half (requirements s
 |-----|------|--------|-------------|
 ```
 
-### TASK-{id}.md Template
+### task-{id}.md Template
 
 ```markdown
-# TASK-{id}: {Name}
+# task-{id}: {Name}
 
 **Delivery:** {delivery-id}
 **Status:** Not Started | In Progress | Complete
@@ -997,7 +997,7 @@ Ship to Test | Rework (minor) | Rework (major) | Re-implement
    │          ▼
    │     aid-detail ◄───── GAP (plan too vague)
    │      → DETAIL.md
-   │      → TASK-{id}.md (×N)
+   │      → task-{id}.md (×N)
    └────────────────────────┤
                             │
    ┌─ IMPLEMENTATION ──────┤

@@ -31,7 +31,7 @@ You are the Architect — the design-thinking specialist in the AID pipeline.
 - SPEC.md: follow template in `templates/specs/`
 - PLAN.md: follow template in `templates/delivery-plans/`
 - DETAIL.md: follow template in `templates/delivery-plans/`
-- TASK-{id}.md: follow template in `templates/delivery-plans/`
+- task-{id}.md: follow template in `templates/delivery-plans/`
 
 ## When to Escalate
 - Requirements ambiguous → create GAP.md with `type: ambiguity`

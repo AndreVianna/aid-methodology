@@ -28,7 +28,7 @@ Detail makes **no new decisions**. Everything in the tasks is already defined in
 ## Task File Format
 
 ```markdown
-# TASK-{id}: {Title}
+# task-{id}: {Title}
 
 **Source:** feature-NNN-{name} → delivery-{x}
 

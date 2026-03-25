@@ -2,7 +2,7 @@
 name: aid-implement
 description: >
   Execute a planned task by spawning a coding agent with full KB context.
-  Mandatory build verification. Use when a TASK-{id}.md is ready for
+  Mandatory build verification. Use when a task-{id}.md is ready for
   implementation or a CORRECTION.md needs coding.
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
 context: fork
@@ -19,7 +19,7 @@ Agents don't improvise. They receive task spec + project spec + KB context. When
 
 ## Inputs
 
-- `aid-workspace/{work}/tasks/TASK-{id}.md` — primary prompt (contains Source with feature reference)
+- `aid-workspace/{work}/tasks/task-{id}.md` — primary prompt (contains Source with feature reference)
 - Feature SPEC: `aid-workspace/{work}/features/{feature}/SPEC.md` — architectural constraints (read the feature(s) referenced in TASK source)
 - `aid-workspace/knowledge/INDEX.md` — always included. The agent's map of the full KB for on-demand self-service.
 - `aid-workspace/knowledge/`: Always coding-standards.md + architecture.md. Add data-model.md (DB work), api-contracts.md (API work), integration-map.md (integrations), test-landscape.md (test-heavy).
@@ -73,4 +73,4 @@ Do NOT parallelize when: shared DB migrations, same interfaces modified, output/
 - [ ] All tests pass (new and existing)
 - [ ] Files changed match expected scope
 - [ ] No silent workarounds — impediments documented
-- [ ] Commit messages reference TASK-{id}
+- [ ] Commit messages reference task-{id}

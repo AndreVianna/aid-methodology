@@ -48,7 +48,7 @@ Skills are the full AID phase instructions. Cursor loads them based on relevance
 | `aid-interview` | Interview | Adaptive requirements gathering → `REQUIREMENTS.md` |
 | `aid-specify` | Specify | Requirements → formal `SPEC.md` grounded in KB |
 | `aid-plan` | Plan | High-level roadmap → `PLAN.md` (MVP, modules, deliverables) |
-| `aid-detail` | Detail | Decompose plan → user stories, `TASK-{id}.md` files, execution waves |
+| `aid-detail` | Detail | Decompose plan → user stories, `task-{id}.md` files, execution waves |
 | `aid-implement` | Implement | Execute tasks with KB context, mandatory build verification |
 | `aid-review` | Review | Spec-anchored code review, A+ to F grading, auto-fix P1/P2 |
 | `aid-test` | Test | Staging validation — E2E, integration, manual testing |

@@ -49,7 +49,7 @@ The Critic never fixes code. If it finds P1/P2 issues, it reports them and the D
 
 ## Examples
 
-- *"Developer completed TASK-003. Review the implementation."* → Critic produces REVIEW.md with grade
+- *"Developer completed task-003. Review the implementation."* → Critic produces REVIEW.md with grade
 - *"Run the full E2E test suite in staging."* → Critic executes tests, produces TEST-REPORT.md
 - *"Is this code ready to ship?"* → Critic evaluates against all criteria, gives a definitive grade
 

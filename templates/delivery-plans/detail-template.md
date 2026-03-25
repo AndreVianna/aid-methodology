@@ -30,7 +30,7 @@
 
 > Each task is a single coding agent session — scoped to be completable in one run without overwhelming context.
 
-### TASK-{id}: {Name}
+### task-{id}: {Name}
 
 **User Story:** US-{id} | **Delivery:** DELIVERY-{id} | **Complexity:** S | M | L | XL
 
@@ -59,8 +59,8 @@
 - Create: `{path/to/new/file}`
 - Modify: `{path/to/existing/file}` — {what changes}
 
-**Depends On:** TASK-{id} | None
-**Blocks:** TASK-{id} | None
+**Depends On:** task-{id} | None
+**Blocks:** task-{id} | None
 
 ---
 
@@ -70,20 +70,20 @@
 
 ```mermaid
 graph LR
-    T1[TASK-001] --> T3[TASK-003]
-    T2[TASK-002] --> T3
-    T3 --> T4[TASK-004]
-    T3 --> T5[TASK-005]
-    T4 --> T6[TASK-006]
+    T1[task-001] --> T3[task-003]
+    T2[task-002] --> T3
+    T3 --> T4[task-004]
+    T3 --> T5[task-005]
+    T4 --> T6[task-006]
     T5 --> T6
 ```
 
 > Or in text form:
 ```
-TASK-001 → TASK-003
-TASK-002 → TASK-003
-TASK-003 → TASK-004, TASK-005
-TASK-004, TASK-005 → TASK-006
+task-001 → task-003
+task-002 → task-003
+task-003 → task-004, task-005
+task-004, task-005 → task-006
 ```
 
 ---
@@ -93,7 +93,7 @@ TASK-004, TASK-005 → TASK-006
 ### DELIVERY-{id}: {Name}
 
 **User Stories:** US-{id}, US-{id}
-**Tasks:** TASK-{id}, TASK-{id}
+**Tasks:** task-{id}, task-{id}
 
 **Success Criteria:**
 - {measurable criteria that define "done" for this delivery}
@@ -107,15 +107,15 @@ TASK-004, TASK-005 → TASK-006
 > Groups tasks into waves. Tasks in the same wave can execute in parallel (independent of each other).
 
 ### Wave 1 (parallel — no dependencies)
-- TASK-{id}: {name}
-- TASK-{id}: {name}
+- task-{id}: {name}
+- task-{id}: {name}
 
 ### Wave 2 (after Wave 1 completes)
-- TASK-{id}: {name} (depends on TASK-{id})
-- TASK-{id}: {name} (depends on TASK-{id})
+- task-{id}: {name} (depends on task-{id})
+- task-{id}: {name} (depends on task-{id})
 
 ### Wave 3 (sequential — depends on Wave 2)
-- TASK-{id}: {name} (integrates Wave 2 outputs)
+- task-{id}: {name} (integrates Wave 2 outputs)
 
 ---
 

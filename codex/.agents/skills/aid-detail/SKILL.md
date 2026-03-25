@@ -25,8 +25,8 @@ aid-workspace/
       feature-NNN-{name}/
         SPEC.md             ← per-feature tech spec (read)
     tasks/                  ← OUTPUT: sequential task files
-      TASK-001.md
-      TASK-002.md
+      task-001.md
+      task-002.md
       ...
 ```
 
@@ -87,12 +87,12 @@ For each deliverable, break the work into sequential tasks.
 - Then integration points (controllers, endpoints, UI)
 - End with integration/validation (E2E tests, smoke tests)
 
-Each task gets a file: `aid-workspace/{work}/tasks/TASK-{id}.md`
+Each task gets a file: `aid-workspace/{work}/tasks/task-{id}.md`
 
 ### Task File Format
 
 ```markdown
-# TASK-{id}: {Title}
+# task-{id}: {Title}
 
 **Source:** feature-NNN-{name} → delivery-{x}
 
@@ -123,13 +123,13 @@ Walk through the task list in order:
 Here's the task breakdown for {work}:
 
 **delivery-001: {Deliverable Name}**
-  1. TASK-001: {title} — {n} files
-  2. TASK-002: {title} — {n} files
-  3. TASK-003: {title} — {n} files
+  1. task-001: {title} — {n} files
+  2. task-002: {title} — {n} files
+  3. task-003: {title} — {n} files
 
 **delivery-002: {Deliverable Name}**
-  4. TASK-004: {title} — {n} files
-  5. TASK-005: {title} — {n} files
+  4. task-004: {title} — {n} files
+  5. task-005: {title} — {n} files
 
 [1] Approve
 [2] Adjust — tell me what to split, merge, or reorder
@@ -138,16 +138,16 @@ Here's the task breakdown for {work}:
 ### 5. Adjustment Loop
 
 If user chooses [2]:
-- **Split** — "TASK-003 is too big, break it into schema + service"
-- **Merge** — "TASK-004 and TASK-005 are too small, combine them"
+- **Split** — "task-003 is too big, break it into schema + service"
+- **Merge** — "task-004 and task-005 are too small, combine them"
 - **Reorder** — "move the test task before the integration task"
 
 Apply changes, renumber, re-present. Loop until approved.
 
 ### 6. Write Files
 
-Create all `TASK-{id}.md` files in `aid-workspace/{work}/tasks/`.
-Task numbering is global across all deliverables (TASK-001 through TASK-N),
+Create all `task-{id}.md` files in `aid-workspace/{work}/tasks/`.
+Task numbering is global across all deliverables (task-001 through task-N),
 ordered by execution sequence.
 
 ## Feedback Loops
@@ -163,7 +163,7 @@ instead of generating from scratch.
 
 ### Step 1: Load Current State
 
-Re-read PLAN.md, all feature SPECs, and all existing TASK files.
+Re-read PLAN.md, all feature SPECs, and all existing task files.
 
 ### Step 2: Check for Changes
 
@@ -185,7 +185,7 @@ Re-read PLAN.md, all feature SPECs, and all existing TASK files.
 ### Step 4: Present and Apply
 
 Present findings with specific changes needed. Apply after user approval.
-Update affected TASK files. Renumber if sequence changed.
+Update affected task files. Renumber if sequence changed.
 
 ## Quality Checklist
 

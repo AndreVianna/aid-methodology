@@ -48,7 +48,7 @@ The Developer is the execution engine. It doesn't decide *what* to build (Archit
 
 ## Examples
 
-- *"Implement TASK-003: Add pagination to the user list API."* → Developer reads the task, implements, runs build
+- *"Implement task-003: Add pagination to the user list API."* → Developer reads the task, implements, runs build
 - *"The task says to use the UserRepository but it doesn't exist."* → Developer creates IMPEDIMENT.md
 - *"TRIAGE.md says the date parsing bug is in `utils/parse.ts` line 47."* → Developer fixes the specific bug
 - *"Implement three independent tasks in parallel."* → Orchestrator spawns three Developer instances

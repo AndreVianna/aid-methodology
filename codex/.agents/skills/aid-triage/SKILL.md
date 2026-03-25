@@ -19,7 +19,7 @@ Classify findings, map the fix for bugs, and route everything. The classificatio
 - `TRACK-REPORT.md` — findings from production
 - Feature SPECs: `aid-workspace/{work}/features/*/SPEC.md` — expected behavior
 - `aid-workspace/knowledge/` — system context
-- `aid-workspace/{work}/tasks/TASK-{id}.md` files — acceptance criteria for affected features
+- `aid-workspace/{work}/tasks/task-{id}.md` files — acceptance criteria for affected features
 
 ## Process
 

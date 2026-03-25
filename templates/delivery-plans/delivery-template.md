@@ -19,8 +19,8 @@
 - US-{id}: {title}
 
 **Tasks included:**
-- TASK-{id}: {title}
-- TASK-{id}: {title}
+- task-{id}: {title}
+- task-{id}: {title}
 
 **Out of scope (deferred to DELIVERY-{n+1}):**
 - {feature or story deferred with reason}

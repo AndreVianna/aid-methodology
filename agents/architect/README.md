@@ -25,7 +25,7 @@ Typically invoked by the **Orchestrator** after the Interview phase completes. M
 - **SPEC.md** — formal specification grounded in KB reality, not generic templates
 - **PLAN.md** — strategic roadmap: MVP scope, modules, delivery order, test scenarios
 - **DETAIL.md** — tactical breakdown: user stories, task list, precedence graph, delivery groupings
-- **TASK-{id}.md** — individual task files with acceptance criteria, relevant KB references, and constraints
+- **task-{id}.md** — individual task files with acceptance criteria, relevant KB references, and constraints
 
 ## How It Differs from Similar Agents
 

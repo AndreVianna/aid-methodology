@@ -9,7 +9,7 @@ Read a TASK spec, load relevant context from SPEC.md and the Knowledge Base, spa
 
 ## Inputs
 
-- `TASK-{id}.md` — the primary prompt. What to build.
+- `task-{id}.md` — the primary prompt. What to build.
 - `SPEC.md` — the project specification. Architectural constraints.
 - `aid-workspace/knowledge/` documents (context-dependent):
   - Always: `coding-standards.md`, `architecture.md`.
@@ -24,7 +24,7 @@ Read a TASK spec, load relevant context from SPEC.md and the Knowledge Base, spa
 
 Assemble the agent's context:
 
-1. **Primary prompt:** The full TASK-{id}.md content.
+1. **Primary prompt:** The full task-{id}.md content.
 2. **System context:** SPEC.md (constraints, architecture, non-functional requirements).
 3. **KB context:** Relevant documents based on task type. Don't load all 16 — select the 2-4 most relevant.
 4. **Workspace:** The codebase directory where the agent will work.
@@ -35,7 +35,7 @@ Use the coding-agent skill to spawn an implementation agent. The agent prompt sh
 
 ```
 ## Task
-{Full TASK-{id}.md content}
+{Full task-{id}.md content}
 
 ## Project Specification
 {Relevant sections of SPEC.md}
@@ -78,7 +78,7 @@ If the agent reports that assumptions don't hold:
 1. Agent generates `IMPEDIMENT.md`:
    ```markdown
    # IMPEDIMENT: IMP-{id}
-   **Source:** aid-implement, TASK-{task-id}
+   **Source:** aid-implement, task-{task-id}
    **Type:** wrong-assumption | missing-dependency | architecture-conflict | kb-gap
    **Description:** {What's wrong}
    **KB Impact:** {Which KB document needs revision, if any}
@@ -87,7 +87,7 @@ If the agent reports that assumptions don't hold:
      B) {Option with effort, risk, trade-offs}
      C) {Option with effort, risk, trade-offs}
    **Recommendation:** {Which option and why}
-   **Blocking:** TASK-{task-id}
+   **Blocking:** task-{task-id}
    ```
 2. If `kb-gap` → trigger targeted aid-discover, update KB.
 3. If resolvable within task scope → resolve, document in commit message.
@@ -107,7 +107,7 @@ When the plan (aid-plan) identifies independent tasks, execute them in parallel:
 
 ### Parallel Protocol
 
-1. Create a feature branch per task: `feature/TASK-{id}`.
+1. Create a feature branch per task: `feature/task-{id}`.
 2. Spawn one agent per task with `streamTo: "parent"`.
 3. **Yield and wait.** Do not start other work in the same turn.
 4. As each agent completes, verify its output independently.
@@ -155,7 +155,7 @@ If review identifies issues:
 - [ ] Files changed match expected scope.
 - [ ] No silent workarounds — impediments are documented.
 - [ ] Task status updated.
-- [ ] Commit messages reference the TASK-{id}.
+- [ ] Commit messages reference the task-{id}.
 
 ## Why This Phase Exists
 
@@ -165,7 +165,7 @@ The mandatory build verification and formal impediment protocol ensure that impl
 
 ## Related Phases
 
-- **Previous:** [Detail](../aid-detail/) — provides TASK files
+- **Previous:** [Detail](../aid-detail/) — provides task files
 - **Next:** [Review](../aid-review/) — evaluates implementation quality
 - **Also from:** [Triage](../aid-triage/) — provides TRIAGE.md with root cause analysis for bug fixes
 

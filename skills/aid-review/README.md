@@ -10,7 +10,7 @@ Review implementation quality against the task specification, project spec, and 
 ## Inputs
 
 - Git diff of the implementation (against base branch).
-- `TASK-{id}.md` — the acceptance criteria.
+- `task-{id}.md` — the acceptance criteria.
 - `SPEC.md` — the architectural constraints.
 - `aid-workspace/knowledge/coding-standards.md` — the coding conventions.
 - `aid-workspace/knowledge/architecture.md` — the architectural patterns.
@@ -42,7 +42,7 @@ If automated checks fail, the review stops. Fix the build/tests first.
 
 ### Step 2: Specification Compliance
 
-Review the diff against the TASK-{id}.md:
+Review the diff against the task-{id}.md:
 
 **For each acceptance criterion:**
 - Is it implemented? (Check the code change)
@@ -147,7 +147,7 @@ Based on the grade:
 ## Output: REVIEW.md
 
 ```markdown
-# Review — TASK-{id}: {Name}
+# Review — task-{id}: {Name}
 
 ## Automated Checks
 - [x] Build: zero errors, zero warnings
