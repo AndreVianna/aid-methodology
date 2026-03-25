@@ -1,35 +1,33 @@
 ---
 name: aid-detail
 description: >
-  Decompose PLAN.md into sprint-ready user stories, executable tasks, precedence
-  ordering, and delivery breakdown. Tactics, not strategy. Use when PLAN.md is
-  complete and you need executable work items.
+  Break deliverables into small, sequential, testable tasks — each one a PR.
+  The ultimate breakdown. Use when PLAN.md is complete and you need executable tasks.
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
 context: fork
 agent: architect
-argument-hint: "work-001 (required if multiple works)  [--reset] clear DETAIL.md and tasks/"
+argument-hint: "work-001 (required if multiple works)  [--reset] clear tasks/"
 ---
 
-# Detail the Execution Plan
+# Detail — The Ultimate Breakdown
 
-Decompose PLAN.md into user stories, tasks, precedence graph, and execution waves.
+Break each deliverable from PLAN.md into small, sequential, testable tasks.
+Each task = one agent session = one PR = one human review.
 
 ## Workspace
 
 ```
 aid-workspace/
   knowledge/                ← shared KB (read)
-  work-NNN-{name}/          ← the work being detailed
-    REQUIREMENTS.md         ← stakeholder requirements (read)
-    PLAN.md                 ← roadmap (read — must exist)
-    DETAIL.md               ← OUTPUT: user stories, waves, precedence
-    tasks/                  ← OUTPUT: individual task files
-      TASK-001.md
-      TASK-002.md
-      ...
+  work-NNN-{name}/
+    PLAN.md                 ← roadmap with deliverables (read — must exist)
     features/
       feature-NNN-{name}/
         SPEC.md             ← per-feature tech spec (read)
+    tasks/                  ← OUTPUT: sequential task files
+      TASK-001.md
+      TASK-002.md
+      ...
 ```
 
 ## Arguments
@@ -38,6 +36,7 @@ aid-workspace/
 |----------|--------|
 | `work-NNN` | Detail a specific work. Required if multiple works exist. |
 | *(no arg)* | Auto-selects if only one work exists. |
+| `--reset` | Delete all files in `tasks/` and regenerate from scratch. |
 
 ## Pre-flight
 
@@ -56,171 +55,145 @@ aid-workspace/
 
 ## Inputs
 
-- **Plan:** `aid-workspace/{work}/PLAN.md` — modules, deliverables, test scenarios
-- **Feature SPECs:** All `aid-workspace/{work}/features/*/SPEC.md` — constraints, feature specs
-- **KB (selective):** `aid-workspace/knowledge/` — architecture.md, module-map.md, tech-debt.md, test-landscape.md, coding-standards.md
+Read these before generating tasks:
+
+- **PLAN.md** — deliverables, ordering, dependencies
+- **Feature SPECs** — all `features/*/SPEC.md` within the work
+- **KB (selective)** — `aid-workspace/knowledge/architecture.md`, `module-map.md`, `coding-standards.md`
+
+## The Rules
+
+1. **Always small.** Every task fits one agent session. If it wouldn't, split it.
+2. **Sequential within a deliverable.** Tasks execute in order — each builds on the previous.
+3. **Each task = one PR.** A human reviews and merges before the next task starts.
+4. **No new decisions.** Everything in the task is already defined in PLAN + SPECs. Detail just slices.
 
 ## Process
 
-### 1. User Story Decomposition
+### 1. Read Plan and SPECs
 
-Per deliverable (from PLAN.md), generate user stories:
+For each deliverable in PLAN.md:
+- Identify which features it includes
+- Read each feature's SPEC.md (Data Model, Feature Flow, Layers & Components, etc.)
+- Understand the technical scope
 
-```markdown
-### US-{id}: {Title}
-**As a** {role} **I want** {capability} **So that** {benefit}
-**Acceptance Criteria:** testable, concrete
-**Source:** PLAN deliverable D-{x} + feature SPEC F-{y}
-```
+### 2. Decompose into Tasks
 
-Each user story must trace back to a PLAN deliverable AND a feature SPEC.
+For each deliverable, break the work into sequential tasks.
 
-### 2. Task Decomposition
+**How to slice:**
+- Start with foundation (schema, models, core types)
+- Then build upward (services, handlers, middleware)
+- Then integration points (controllers, endpoints, UI)
+- End with integration/validation (E2E tests, smoke tests)
 
-Per user story, generate `aid-workspace/{work}/tasks/TASK-{id}.md` files:
+Each task gets a file: `aid-workspace/{work}/tasks/TASK-{id}.md`
+
+### Task File Format
 
 ```markdown
 # TASK-{id}: {Title}
 
-## Objective
-{What this work accomplishes}
+**Source:** feature-NNN-{name} → D-{x}
 
-## Source
-- User Story: US-{x}
-- Feature: F-{y}
-- Deliverable: D-{z}
+**Files:**
+- `path/to/File.java` (create)
+- `path/to/OtherFile.java` (modify)
+- `test/path/to/FileTest.java` (create)
 
-## Interface Contracts
-{APIs, events, data contracts this work must respect}
-
-## Architecture Notes
-{Where this fits in the system — reference KB docs}
-
-## Files to Touch
-{List of files to create/modify with brief description of changes}
-
-## Acceptance Criteria
-{Concrete, testable — derived from user story + SPEC}
-
-## Test Requirements
-{What tests to write — reference test-landscape.md for patterns}
-
-## Complexity
-{S/M/L/XL with justification}
-
-## Dependencies
-- Depends on: TASK-{x} (reason)
-- Blocks: TASK-{y}
+**Acceptance Criteria:**
+- [ ] Criterion 1 — concrete, testable
+- [ ] Criterion 2 — concrete, testable
+- [ ] Criterion 3 — concrete, testable
+- [ ] All existing tests still pass
 ```
 
-**Well-sized tasks:** Clear start/end, verifiable, fits one agent session (<10 files, <500 lines new code), defined interfaces.
+That's it. Four sections. Nothing else.
 
-### 3. Precedence Analysis
+### 3. Verify Sequence
 
-Map dependencies between tasks:
-- For each: depends-on, blocks, parallel candidates
-- Produce precedence graph (mermaid or text)
-- Verify DAG (no cycles)
+Walk through the task list in order:
+- Does each task have what it needs from the previous one?
+- Is there a gap where something is used before it's created?
+- Could any task be split further? (If >5 files, probably yes.)
 
-### 4. Complexity Estimation
+### 4. Present to User
 
-| Size | Scope | Example |
-|------|-------|---------|
-| S | Single file, isolated change | Add a field, fix a bug |
-| M | 2-5 files, one module | New endpoint, new component |
-| L | 5-10 files, may cross modules | New feature flow, migration |
-| XL | 10+ files, multiple modules | New subsystem, major refactor |
+```
+Here's the task breakdown for {work}:
 
-Adjust using KB: tech-debt flags → bump up, zero coverage → add test effort, coding-standards complexity → adjust.
+**D-1: {Deliverable Name}**
+  1. TASK-001: {title} — {n} files
+  2. TASK-002: {title} — {n} files
+  3. TASK-003: {title} — {n} files
 
-### 5. Delivery Breakdown
+**D-2: {Deliverable Name}**
+  4. TASK-004: {title} — {n} files
+  5. TASK-005: {title} — {n} files
 
-Group tasks into delivery increments aligned with PLAN deliverables:
-- User stories covered
-- Tasks included
-- Estimated effort (sum of complexity)
-- Success criteria (from PLAN test scenarios)
-- Dependencies on other increments
-
-### 6. Execution Plan (Waves)
-
-Organize into waves for parallel execution. Tasks in same wave have no shared dependencies.
-
-```markdown
-## Wave 1: Foundation
-- TASK-001 (S) — Database schema
-- TASK-002 (M) — Core domain models
-  → Can run in parallel
-
-## Wave 2: Core Features
-- TASK-003 (L) — API endpoints [depends: TASK-001, TASK-002]
-- TASK-004 (M) — Event handlers [depends: TASK-002]
-  → Can run in parallel
-
-## Wave 3: Integration
-- TASK-005 (M) — End-to-end flow [depends: TASK-003, TASK-004]
+[1] Approve
+[2] Adjust — tell me what to split, merge, or reorder
 ```
 
-### 7. Identify Spikes
+### 5. Adjustment Loop
 
-Time-boxed research for uncertain tasks. Output is knowledge (KB update), not code.
-- Reference PLAN.md spikes section
-- Add new spikes discovered during detail decomposition
+If user chooses [2]:
+- **Split** — "TASK-003 is too big, break it into schema + service"
+- **Merge** — "TASK-004 and TASK-005 are too small, combine them"
+- **Reorder** — "move the test task before the integration task"
+
+Apply changes, renumber, re-present. Loop until approved.
+
+### 6. Write Files
+
+Create all `TASK-{id}.md` files in `aid-workspace/{work}/tasks/`.
+Task numbering is global across all deliverables (TASK-001 through TASK-N),
+ordered by execution sequence.
 
 ## Feedback Loops
 
-- **→ Plan:** Plan too vague for detailing → document gap, return to `/aid-plan`
-- **→ Discovery:** KB gap → write Q&A entry to `aid-workspace/knowledge/DISCOVERY-STATE.md`
-- **→ Specify:** SPEC ambiguous → write Q&A entry to feature's `STATE.md`
-- **← Implement/Review:** Detail wrong → receive feedback, revise
-
-## Output
-
-- `aid-workspace/{work}/DETAIL.md` — user stories, task list, precedence graph, delivery breakdown, wave plan
-- `aid-workspace/{work}/tasks/TASK-{id}.md` files — one per executable task
+- **→ Plan:** Plan too vague to decompose → return to `/aid-plan`
+- **→ Specify:** SPEC missing detail needed for file list → write Q&A to feature's `STATE.md`
+- **→ Discovery:** KB gap → write Q&A to `aid-workspace/knowledge/DISCOVERY-STATE.md`
 
 ## Re-run = Review
 
-If DETAIL.md and `tasks/` already exist when `/aid-detail` is run, the agent reviews
-them instead of starting from scratch.
+If `tasks/` already has files when `/aid-detail` is run, the agent reviews
+instead of generating from scratch.
 
 ### Step 1: Load Current State
 
-Re-read PLAN.md, all feature SPECs, DETAIL.md, and all TASK files.
+Re-read PLAN.md, all feature SPECs, and all existing TASK files.
 
 ### Step 2: Check for Changes
 
-Compare against what DETAIL.md was based on:
-1. **PLAN.md changed** — deliverables added, removed, or resequenced
-2. **SPECs changed** — feature SPEC.md content updated (check Change Log dates)
-3. **Task gaps** — user stories with no corresponding tasks
-4. **Orphan tasks** — tasks referencing deliverables/features that no longer exist
-5. **Dependency shifts** — task dependencies invalidated by SPEC or PLAN changes
-6. **Complexity drift** — KB changes that affect complexity estimates (new tech-debt, changed architecture)
+1. **PLAN.md changed** — deliverables added, removed, or resequenced?
+2. **SPECs changed** — feature content updated? (check Change Log dates)
+3. **Orphan tasks** — tasks referencing deliverables/features that no longer exist?
+4. **Missing tasks** — new deliverables or features with no corresponding tasks?
+5. **Sequence invalid** — does the task order still make sense given changes?
 
 ### Step 3: Grade
 
 | Grade | Meaning | Action |
 |-------|---------|--------|
-| **A** | Detail is current. No changes detected. | Print summary, no changes needed. |
-| **B** | Minor changes. 1–3 tasks need update, no structural impact. | Present changes, fix inline. |
-| **C** | Significant changes. Waves need restructuring, new tasks needed. | Present findings, regenerate affected waves. |
-| **D** | Major changes. PLAN restructured, most tasks orphaned. | Recommend `--reset` and re-detail. |
+| **A** | Tasks are current. No changes detected. | Print summary, done. |
+| **B** | Minor changes. 1–3 tasks need update. | Present changes, fix inline. |
+| **C** | Significant changes. Tasks need reordering or new tasks needed. | Present findings, regenerate affected section. |
+| **D** | Major changes. Plan restructured, most tasks orphaned. | Recommend `--reset`. |
 
 ### Step 4: Present and Apply
 
-Same pattern as Plan review — present findings, offer fix/regenerate/skip options.
-Update DETAIL.md and affected TASK files. Add Change Log entries.
+Present findings with specific changes needed. Apply after user approval.
+Update affected TASK files. Renumber if sequence changed.
 
 ## Quality Checklist
 
-- [ ] Every PLAN deliverable has user stories
-- [ ] Every user story has executable tasks
-- [ ] Every TASK has concrete acceptance criteria
-- [ ] Every TASK traces back to a feature SPEC
-- [ ] Dependencies form valid DAG (no cycles)
-- [ ] Complexity estimates reference KB data
-- [ ] Parallel execution opportunities identified (waves)
-- [ ] Spikes identified for uncertain areas
-- [ ] Delivery breakdown has measurable success criteria
-- [ ] All output files live inside the work directory
+- [ ] Every deliverable in PLAN.md has corresponding tasks
+- [ ] Every task traces to a feature SPEC and deliverable
+- [ ] Every task has concrete, testable acceptance criteria
+- [ ] Every task has an explicit file list (scope boundary)
+- [ ] Tasks are sequential — each builds on the previous
+- [ ] No task touches more than ~5 files (split if larger)
+- [ ] "All existing tests still pass" is in every task's criteria
+- [ ] All task files live inside `aid-workspace/{work}/tasks/`
