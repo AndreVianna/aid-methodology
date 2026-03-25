@@ -61,7 +61,7 @@ Open your AI coding tool in the project directory and run `/aid-init` to scaffol
 ```
 
 Init asks whether your project is greenfield or brownfield, collects metadata, and creates the
-`.aid/` directory with `.aid/knowledge/` containing 14 empty KB document templates, plus editor-specific config file placeholders (`CLAUDE.md` for Claude Code, `AGENTS.md` for Codex/Cursor). Subsequent phases create work directories (`.aid/work-NNN-{name}/`) with requirements, features, plans, and tasks.
+`.aid/` directory with `.aid/knowledge/` containing 15 empty KB document templates, plus editor-specific config file placeholders (`CLAUDE.md` for Claude Code, `AGENTS.md` for Codex/Cursor). Subsequent phases create work directories (`.aid/work-NNN-{name}/`) with requirements, features, plans, and tasks.
 
 ### 3. Run Discovery or Interview
 
@@ -97,7 +97,7 @@ You now have a Knowledge Base, configured skills, and agents ready to go. Every 
 ```
 templates/
 ├── requirements/            ← REQUIREMENTS.md template
-├── knowledge-base/          ← 14 KB document templates
+├── knowledge-base/          ← 15 KB document templates
 ├── specs/                   ← Per-feature SPEC.md template (requirements + tech spec)
 ├── delivery-plans/          ← DELIVERY, DETAIL.md, TASK templates
 ├── feedback-artifacts/      ← GAP.md, IMPEDIMENT.md, TRIAGE.md
@@ -119,7 +119,7 @@ examples/
 ### Group 1: Define
 | Phase | Skill | What It Does |
 |-------|-------|-------------|
-| 1. Discover | `aid-discover` | Analyzes an existing codebase; produces the Knowledge Base (14 documents) |
+| 1. Discover | `aid-discover` | Analyzes an existing codebase; produces the Knowledge Base (15 documents) |
 | 2. Interview | `aid-interview` | Adaptive requirements gathering + feature decomposition; produces REQUIREMENTS.md and per-feature SPEC.md stubs |
 | 3. Specify | `aid-specify` | Technical refinement per feature — tech lead proposes solutions, developer discusses; writes technical spec into each feature's SPEC.md |
 

@@ -68,7 +68,7 @@ Skills are loaded as context when matched by description. Each SKILL.md contains
 ### Agents
 Agent TOML files define specialized roles with focused system prompts. Use them to delegate specific phases of the AID pipeline.
 
-The `aid-init` skill scaffolds the Knowledge Base (14 documents) and sets up AGENTS.md before discovery begins. The `aid-discover` skill dispatches 5 discovery agents for KB generation, then uses the discovery-reviewer agent for quality gating.
+The `aid-init` skill scaffolds the Knowledge Base (15 documents) and sets up AGENTS.md before discovery begins. The `aid-discover` skill dispatches 5 discovery agents for KB generation, then uses the discovery-reviewer agent for quality gating.
 
 ## File Format
 

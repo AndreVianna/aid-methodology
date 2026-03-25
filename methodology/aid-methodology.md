@@ -645,7 +645,7 @@ Every change to an upstream artifact is tracked at the bottom of the artifact:
 
 | Artifact | Location | Produced By | Consumed By | Lifecycle |
 |----------|----------|------------|-------------|-----------|
-| Knowledge Base (14 docs) | `.aid/knowledge/` | Discover | All phases | Living — updated throughout project |
+| Knowledge Base (15 docs) | `.aid/knowledge/` | Discover | All phases | Living — updated throughout project |
 | INDEX.md | `.aid/knowledge/` | Discover | All phases | Regenerated on every discovery run |
 | REQUIREMENTS.md | `.aid/{work}/` | Interview | Specify, Plan | Frozen after approval (rev-tracked) |
 | INTERVIEW-STATE.md | `.aid/{work}/` | Interview | Interview (resume) | Process tracking |

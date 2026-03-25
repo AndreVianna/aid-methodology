@@ -6,7 +6,7 @@
 
 | Skill | Phase | Description |
 |-------|-------|-------------|
-| `aid-init` | 0. Init | Initialize AID project — scaffold .aid/knowledge/ with 14 KB templates, set up AGENTS.md |
+| `aid-init` | 0. Init | Initialize AID project — scaffold .aid/knowledge/ with 15 KB templates, set up AGENTS.md |
 | `aid-discover` | 1. Discover | Brownfield project discovery → populate Knowledge Base (14 documents) |
 | `aid-interview` | 2. Interview | Adaptive requirements gathering → REQUIREMENTS.md |
 | `aid-specify` | 3. Specify | Requirements → SPEC.md grounded in KB |

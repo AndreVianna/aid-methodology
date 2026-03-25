@@ -43,7 +43,7 @@ Skills are the full AID phase instructions. Cursor loads them based on relevance
 
 | Skill | Phase | Description |
 |-------|-------|-------------|
-| `aid-init` | Init | Initialize AID project — scaffold .aid/knowledge/ (14 KB templates), set up AGENTS.md |
+| `aid-init` | Init | Initialize AID project — scaffold .aid/knowledge/ (15 KB templates), set up AGENTS.md |
 | `aid-discover` | Discovery | Brownfield project discovery with quality gate (GENERATE → REVIEW → FIX → DONE) |
 | `aid-interview` | Interview | Adaptive requirements gathering → `REQUIREMENTS.md` |
 | `aid-specify` | Specify | Requirements → formal `SPEC.md` grounded in KB |
