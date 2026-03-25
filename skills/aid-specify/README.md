@@ -180,6 +180,29 @@ Requirements are wrong, incomplete, or contradictory. Write Q&A to `INTERVIEW-ST
 
 Downstream phases find the SPEC ambiguous or incomplete. They write Q&A to this feature's `STATE.md`. Next Specify run picks up the questions.
 
+## Re-run = Review
+
+Running `/aid-specify` on a feature that already has Status: Ready triggers a **review** instead of starting over.
+
+The agent re-reads the current KB, codebase, and requirements, then compares against the existing technical specification. This catches:
+
+- **KB drift** — KB documents updated by re-discovery since the spec was written
+- **Requirements drift** — REQUIREMENTS.md changed since the spec was written
+- **Codebase drift** — code changed by another feature's implementation
+- **Missing sections** — new conditional sections that should now be activated
+- **Stale sections** — sections that contradict what now exists
+
+**Grading:**
+
+| Grade | Meaning | Action |
+|-------|---------|--------|
+| A | Spec is current | No changes needed |
+| B | Minor drift (1–3 updates) | Fix inline |
+| C | Significant drift (4+ updates or section rewrite) | Re-enter Discussion Loop for affected sections |
+| D | Major drift (core assumptions invalidated) | Recommend `--reset` and re-specify |
+
+This is the same pattern as Discovery (re-run → grade → fix) and Interview (re-run → cross-reference → grade). **Every content phase can validate itself.**
+
 ## Quality Checklist
 
 - [ ] All activated sections have content under `## Technical Specification`.

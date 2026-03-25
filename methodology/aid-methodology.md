@@ -307,6 +307,8 @@ One feature per run. The agent:
 
 **Output:** `## Technical Specification` section added to `aid-workspace/{work}/features/feature-NNN/SPEC.md` — Data Model, Feature Flow, Layers & Components, plus activated conditional sections. Each feature's SPEC.md now contains both the requirements (from Interview) and the technical specification.
 
+**Re-run = Review:** Running `/aid-specify` on a feature with Status: Ready triggers a review against current reality (KB, codebase, requirements). Grades A–D. Minor drift gets fixed inline; significant drift re-enters the Discussion Loop for affected sections; major drift recommends `--reset`. Same self-validation pattern as Discovery and Interview.
+
 **Feedback loops:**
 - KB wrong or incomplete → fix directly or write Q&A to DISCOVERY-STATE.md for targeted re-discovery.
 - Requirements wrong or incomplete → fix directly or write Q&A to INTERVIEW-STATE.md for targeted re-interview.
