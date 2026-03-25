@@ -36,7 +36,7 @@ aid-workspace/
 |----------|--------|
 | `work-NNN` | Detail a specific work. Required if multiple works exist. |
 | *(no arg)* | Auto-selects if only one work exists. |
-| `--reset` | Delete all files in `tasks/` and regenerate from scratch. |
+| `--reset` | Delete all files in `tasks/` and start fresh. |
 
 ## Pre-flight
 
@@ -57,9 +57,14 @@ aid-workspace/
 - ✅ `Default` or `Auto-accept edits` → Proceed.
 - ❌ `Plan mode` → **STOP.** Tell user to switch out of Plan Mode.
 
+### Check 4: Detect State
+
+- If `tasks/` is empty or doesn't exist → **FIRST RUN** (Step 1)
+- If `tasks/` has files → **REVIEW** (Step 5)
+
 ## Inputs
 
-Read these before generating tasks:
+Read before starting:
 
 - **PLAN.md** — deliverables, ordering, dependencies
 - **Feature SPECs** — all `features/*/SPEC.md` within the work
@@ -67,33 +72,12 @@ Read these before generating tasks:
 
 ## The Rules
 
-1. **Always small.** Every task fits one agent session. If it wouldn't, split it.
+1. **Always small.** Every task fits one agent session. If it doesn't, split it.
 2. **Sequential within a deliverable.** Tasks execute in order — each builds on the previous.
 3. **Each task = one PR.** A human reviews and merges before the next task starts.
 4. **No new decisions.** Everything in the task is already defined in PLAN + SPECs. Detail just slices.
 
-## Process
-
-### 1. Read Plan and SPECs
-
-For each deliverable in PLAN.md:
-- Identify which features it includes
-- Read each feature's SPEC.md (Data Model, Feature Flow, Layers & Components, etc.)
-- Understand the technical scope
-
-### 2. Decompose into Tasks
-
-For each deliverable, break the work into sequential tasks.
-
-**How to slice:**
-- Start with foundation (schema, models, core types)
-- Then build upward (services, handlers, middleware)
-- Then integration points (controllers, endpoints, UI)
-- End with integration/validation (E2E tests, smoke tests)
-
-Each task gets a file: `aid-workspace/{work}/tasks/task-{id}.md`
-
-### Task File Format
+## Task File Format
 
 ```markdown
 # task-{id}: {Title}
@@ -108,51 +92,130 @@ Each task gets a file: `aid-workspace/{work}/tasks/task-{id}.md`
 **Acceptance Criteria:**
 - [ ] Criterion 1 — concrete, testable
 - [ ] Criterion 2 — concrete, testable
-- [ ] Criterion 3 — concrete, testable
 - [ ] All existing tests still pass
 ```
 
-That's it. Four sections. Nothing else.
+Four sections. Nothing else.
 
-### 3. Verify Sequence
+---
 
-Walk through the task list in order:
-- Does each task have what it needs from the previous one?
-- Is there a gap where something is used before it's created?
-- Could any task be split further? (If >5 files, probably yes.)
+## FIRST RUN — Steps 1–4
 
-### 4. Present to User
+### Step 1: Propose Tasks for First Deliverable
+
+Read the first deliverable from PLAN.md. Identify its features and read their SPECs.
+Propose a sequential task breakdown:
 
 ```
-Here's the task breakdown for {work}:
+**delivery-001: {Name}**
 
-**delivery-001: {Deliverable Name}**
-  1. task-001: {title} — {n} files
-  2. task-002: {title} — {n} files
-  3. task-003: {title} — {n} files
+I'm proposing {n} tasks:
 
-**delivery-002: {Deliverable Name}**
-  4. task-004: {title} — {n} files
-  5. task-005: {title} — {n} files
+1. **task-001: {title}**
+   Scope: {brief scope description}
+   Criteria: {brief criteria summary}
 
-[1] Approve
-[2] Adjust — tell me what to split, merge, or reorder
+2. **task-002: {title}**
+   Scope: {brief scope description}
+   Criteria: {brief criteria summary}
+
+3. ...
+
+What do you think? We can discuss:
+- **Size** — is any task too big or too small?
+- **Scope** — should something move between tasks?
+- **Sequence** — is the order right?
+- **Criteria** — are the acceptance criteria concrete enough?
 ```
 
-### 5. Adjustment Loop
+### Step 2: Discussion Loop
 
-If user chooses [2]:
-- **Split** — "task-003 is too big, break it into schema + service"
-- **Merge** — "task-004 and task-005 are too small, combine them"
-- **Reorder** — "move the test task before the integration task"
+The user discusses. They might say:
+- "task-002 is too big, split the migration from the model"
+- "merge 003 and 004, they're tiny"
+- "the criteria for task-001 should include index creation"
+- "swap 002 and 003 — we need the service before the migration"
+- "looks good" / "approve"
 
-Apply changes, renumber, re-present. Loop until approved.
+Respond to each concern:
+- **Split** → break the task, re-present the affected tasks
+- **Merge** → combine, re-present
+- **Reorder** → move, explain dependency impact if any
+- **Criteria change** → update, re-present the task
+- **Scope change** → adjust, re-present
 
-### 6. Write Files
+Keep discussing until the user approves the deliverable's tasks.
 
-Create all `task-{id}.md` files in `aid-workspace/{work}/tasks/`.
-Task numbering is global across all deliverables (task-001 through task-N),
-ordered by execution sequence.
+### Step 3: Write and Continue
+
+Once approved for a deliverable:
+1. Write the task files to `aid-workspace/{work}/tasks/`
+2. Move to the next deliverable → back to Step 1
+
+Task numbering is global (task-001 through task-N across all deliverables).
+
+### Step 4: Final Summary
+
+After all deliverables are detailed:
+
+```
+All tasks written:
+
+delivery-001: {Name} → tasks 001–004
+delivery-002: {Name} → tasks 005–008
+delivery-003: {Name} → tasks 009–011
+
+Total: {n} tasks in {m} deliverables.
+```
+
+---
+
+## REVIEW — Steps 5–7
+
+When `tasks/` already has files, the agent reviews instead of starting from scratch.
+
+### Step 5: Compare and Grade
+
+Re-read PLAN.md, all feature SPECs, and all existing task files. Check:
+
+1. **PLAN.md changed** — deliverables added, removed, or resequenced?
+2. **SPECs changed** — feature content updated?
+3. **Orphan tasks** — tasks referencing deliverables/features that no longer exist?
+4. **Missing tasks** — new deliverables or features with no corresponding tasks?
+5. **Sequence broken** — does the task order still hold given changes?
+
+Grade:
+
+| Grade | Meaning |
+|-------|---------|
+| **A** | Tasks are current. Nothing to change. |
+| **B** | Minor drift. 1–3 tasks need updating. |
+| **C** | Significant changes. New tasks needed or reordering required. |
+| **D** | Major restructuring. Recommend `--reset`. |
+
+### Step 6: Present Findings
+
+```
+Review of {work} tasks: Grade **{X}**
+
+**What changed:**
+- {finding 1}
+- {finding 2}
+
+**Proposed updates:**
+- task-003: update scope (SPEC added new field)
+- task-007: remove (delivery-003 was dropped)
+- NEW task-008: {title} (new delivery-003 feature)
+
+Let's discuss.
+```
+
+### Step 7: Discussion Loop
+
+Same as Step 2 — discuss size, scope, sequence, criteria until the user approves.
+Apply changes: update affected task files, create new ones, delete orphans, renumber if needed.
+
+---
 
 ## Feedback Loops
 
@@ -160,44 +223,13 @@ ordered by execution sequence.
 - **→ Specify:** SPEC missing detail needed for scope → write Q&A to feature's `STATE.md`
 - **→ Discovery:** KB gap → write Q&A to `aid-workspace/knowledge/DISCOVERY-STATE.md`
 
-## Re-run = Review
-
-If `tasks/` already has files when `/aid-detail` is run, the agent reviews
-instead of generating from scratch.
-
-### Step 1: Load Current State
-
-Re-read PLAN.md, all feature SPECs, and all existing task files.
-
-### Step 2: Check for Changes
-
-1. **PLAN.md changed** — deliverables added, removed, or resequenced?
-2. **SPECs changed** — feature content updated? (check Change Log dates)
-3. **Orphan tasks** — tasks referencing deliverables/features that no longer exist?
-4. **Missing tasks** — new deliverables or features with no corresponding tasks?
-5. **Sequence invalid** — does the task order still make sense given changes?
-
-### Step 3: Grade
-
-| Grade | Meaning | Action |
-|-------|---------|--------|
-| **A** | Tasks are current. No changes detected. | Print summary, done. |
-| **B** | Minor changes. 1–3 tasks need update. | Present changes, fix inline. |
-| **C** | Significant changes. Tasks need reordering or new tasks needed. | Present findings, regenerate affected section. |
-| **D** | Major changes. Plan restructured, most tasks orphaned. | Recommend `--reset`. |
-
-### Step 4: Present and Apply
-
-Present findings with specific changes needed. Apply after user approval.
-Update affected task files. Renumber if sequence changed.
-
 ## Quality Checklist
 
 - [ ] Every deliverable in PLAN.md has corresponding tasks
 - [ ] Every task traces to a feature SPEC and deliverable
 - [ ] Every task has concrete, testable acceptance criteria
 - [ ] Every task has an explicit scope boundary
-- [ ] Tasks are sequential — each builds on the previous
-- [ ] Each task is small enough for one agent session (split if not)
+- [ ] Tasks are sequential within each deliverable
+- [ ] Each task is small enough for one agent session
 - [ ] "All existing tests still pass" is in every task's criteria
 - [ ] All task files live inside `aid-workspace/{work}/tasks/`
