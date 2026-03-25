@@ -1,228 +1,165 @@
+# Delivery Roadmap
 
-# High-Level Roadmap
-
-Take SPEC.md and produce a strategic roadmap: MVP definition, module identification, deliverable scoping, test scenario definition, and risk assessment. Plan answers "what do we build and in what order?" Detail (aid-detail) answers "how do we build it?"
+Sequence features into deliverables — each one a functional MVP that builds on the previous.
 
 ## Core Principle
 
-**Plan is strategy. Detail is tactics.** Plan identifies what the MVP is, what modules exist, what deliverables make sense, and what test scenarios prove the system works. It does NOT decompose features into individual tasks or define execution waves — that's aid-detail's job. A good plan gives the Detail phase enough structure to work with, but doesn't micromanage.
+**Plan answers ONE question: "In what order do we deliver, and does each delivery stand on its own?"**
+
+Each deliverable is a shippable increment that works without the next one. Features within a deliverable ship together. Deliverables are ordered by dependency, then priority.
+
+## What Plan Does NOT Do
+
+These are already covered by Specify (per feature):
+
+| Concern | Where it lives |
+|---------|---------------|
+| Module mapping | Layers & Components in each feature's SPEC.md |
+| Test scenarios | Acceptance Criteria / BDD in each feature's SPEC.md |
+| Per-feature risks | Trade-offs and spikes captured during Specify |
+| Technical details | All in SPEC.md |
+| Spike identification | Specify's spike handling (State 3) |
+
+Plan only adds the **sequencing** dimension — how features relate to each other in delivery order, and cross-cutting risks that span features.
+
+## Workspace
+
+```
+aid-workspace/
+  knowledge/                ← shared KB (read)
+  work-NNN-{name}/
+    REQUIREMENTS.md         ← read (scope, priorities)
+    PLAN.md                 ← OUTPUT
+    features/
+      feature-NNN-{name}/
+        SPEC.md             ← read (requirements + tech spec)
+        STATE.md            ← read (check Ready status)
+```
+
+## When to Use
+
+- **Primary:** After all features in a work have been specified (STATE.md status: Ready).
+- **Re-entry:** When Detail can't decompose deliverables because sequencing is unclear or wrong.
 
 ## Inputs
 
-- `SPEC.md` — what to build.
-- `aid-workspace/knowledge/` directory — for scoping and risk assessment. Read at minimum:
-  - `architecture.md` — to understand module boundaries.
-  - `module-map.md` — to identify affected modules.
-  - `tech-debt.md` — to anticipate complications.
-  - `test-landscape.md` — to define test scenarios.
+- **Feature SPECs** — all `aid-workspace/{work}/features/*/SPEC.md` with Ready status.
+- **REQUIREMENTS.md** — scope boundaries, constraints, overall priority (§10).
+- **KB (selective):** architecture.md, module-map.md, tech-debt.md — for understanding cross-feature dependencies and fragile areas.
 
 ## Process
 
-### Step 1: Define the MVP
+### 1. Map Dependencies
 
-Identify the minimum viable product — the smallest set of features that delivers value:
+For each feature:
+- **What it needs** — does it depend on another feature's output? (data model, API, service)
+- **What it enables** — which features depend on this one?
+- **What it touches** — which modules/areas of the codebase (from SPEC Layers & Components)
 
-- Which features from SPEC.md are Must-have for first release?
-- What's the smallest shippable unit that proves the concept?
-- What can be deferred without blocking the core value proposition?
+Build a dependency graph. Features with no shared dependencies can be in any order.
 
-```markdown
-## MVP Definition
+### 2. Group into Deliverables
 
-**Core value:** {One sentence — what the MVP proves}
+Each deliverable MUST be:
+- **Functional on its own** — a user can use it without the next deliverable.
+- **Testable independently** — acceptance criteria from included SPECs can all be verified.
+- **Buildable in order** — dependencies satisfied by earlier deliverables.
 
-**Included features:**
-- Feature A (Must) — {why it's essential}
-- Feature B (Must) — {why it's essential}
-- Feature C (Should) — {included because it unblocks A}
+Grouping heuristics:
+- Must-have features first, then Should, then Could.
+- Foundation features (auth, data model setup) in D-1.
+- Features with shared dependencies go together.
+- Small independent features can be bundled.
+- Large independently-valuable features can be a deliverable alone.
 
-**Deferred to v2:**
-- Feature D (Should) — {why it can wait}
-- Feature E (Could) — {nice-to-have, not blocking}
-```
+### 3. Cross-Cutting Risks (Optional)
 
-### Step 2: Identify Modules
+Risks that Specify couldn't see because they span features:
+- Multiple features touching the same fragile module (from tech-debt.md).
+- Sequencing risks — if D-1 slips, D-2 through D-N all slip.
+- Integration risks — features that work alone but might conflict when combined.
 
-Map the features to system modules — logical groupings of functionality:
+**Only include if cross-cutting risks actually exist.** Don't manufacture risks.
 
-```markdown
-## Module Map
+### 4. Present and Approve
 
-### Module: Recording Engine
-**Features:** A, B
-**Existing code:** aid-workspace/knowledge/module-map.md → RecordingService, AudioCapture
-**New code:** TranscriptionService, ExportManager
-**Risk:** Medium — touches existing audio pipeline
-
-### Module: User Interface
-**Features:** C, F
-**Existing code:** Views/, ViewModels/
-**New code:** New views for transcription, export dialogs
-**Risk:** Low — follows established MVVM patterns
-```
-
-For each module:
-- What features does it contain?
-- Does it touch existing code or is it entirely new?
-- What's the risk level (based on tech debt, test coverage, complexity)?
-
-### Step 3: Scope Deliverables
-
-Group modules into deliverables — shippable increments:
-
-**Good deliverable boundaries:**
-- Features that touch different modules with no shared state.
-- Features with a natural progression (core before extensions).
-- Features that can be tested independently.
-
-**Bad deliverable boundaries:**
-- Splitting a feature across deliverables when both halves are needed.
-- Grouping unrelated features just to fill a sprint.
-
-```markdown
-## Deliverables
-
-### Deliverable 1: Core Recording
-**Modules:** Recording Engine (core)
-**Features:** A, B
-**Depends on:** Nothing (first deliverable)
-**Validates:** Audio capture pipeline works end-to-end
-
-### Deliverable 2: Transcription
-**Modules:** Recording Engine (transcription), UI (transcription views)
-**Features:** C, D
-**Depends on:** Deliverable 1
-**Validates:** Whisper integration, transcription accuracy
-
-### Deliverable 3: Export & Polish
-**Modules:** UI (export), Recording Engine (export)
-**Features:** E, F
-**Depends on:** Deliverable 1
-**Validates:** Multi-format export, UI completeness
-```
-
-### Step 4: Define Test Scenarios
-
-For each deliverable, define the high-level test scenarios that prove it works:
-
-```markdown
-## Test Scenarios
-
-### Deliverable 1: Core Recording
-- **TS-01:** Record 5-second audio → file saved → playback matches input
-- **TS-02:** Record > 60 minutes → auto-save triggers, no data loss
-- **TS-03:** Cancel mid-recording → no orphaned files
-- **TS-04:** Concurrent recording attempt → clear error, no crash
-
-### Deliverable 2: Transcription
-- **TS-05:** Transcribe 30-second clear speech → accuracy > 90%
-- **TS-06:** Transcribe empty audio → graceful handling, no crash
-```
-
-Test scenarios are NOT test specs. They describe what to prove, not how to test it. The Detail phase turns these into task-level test requirements.
-
-### Step 5: Risk Assessment
-
-Identify risks that could derail the plan:
-
-```markdown
-## Risks
-
-| Risk | Impact | Likelihood | Mitigation |
-|------|--------|-----------|------------|
-| Whisper API latency > 5s | High | Medium | Spike: benchmark in Step 1 |
-| Audio library incompatible with Linux | High | Low | Test early in Deliverable 1 |
-| Tech debt in RecordingService | Medium | High | Budget extra time in Deliverable 1 |
-```
-
-### Step 6: Identify Spikes
-
-A spike is a time-boxed research task needed before planning can be finalized:
-
-**Generate a spike when:**
-- A deliverable requires technology the team hasn't used.
-- A risk needs investigation before committing to a plan.
-- The KB has an open question that blocks deliverable scoping.
-
-Spikes are documented in PLAN.md and executed before the Detail phase.
+Present the delivery sequence to the user. Wait for approval or adjustments before writing PLAN.md.
 
 ## Output
 
-`PLAN.md` — the high-level roadmap containing:
-- MVP definition.
-- Module map.
-- Deliverables with ordering and dependencies.
-- Test scenarios per deliverable.
-- Risk assessment.
-- Spikes (if any).
+`aid-workspace/{work}/PLAN.md`:
+
+```markdown
+# Plan — {Work Name}
+
+## Deliverables
+
+### D-1: {Name}
+- **What it delivers:** {user-facing value — one sentence}
+- **Features:** feature-001-{name}, feature-003-{name}
+- **Depends on:** — (foundation)
+- **Priority:** Must
+
+### D-2: {Name}
+- **What it delivers:** {user-facing value}
+- **Features:** feature-002-{name}
+- **Depends on:** D-1
+- **Priority:** Must
+
+## Cross-Cutting Risks
+
+| # | Risk | Impact | Mitigation |
+|---|------|--------|------------|
+
+*(Omit if no cross-cutting risks exist.)*
+
+## Deferred
+
+| Feature | Reason | Revisit When |
+|---------|--------|--------------|
+
+*(Omit if all features are included.)*
+```
 
 ## Feedback Loops
 
-### → Discovery (Loop 3)
+### → Discovery
 
-**Trigger:** Planning reveals the KB is incomplete.
+KB insufficient for dependency analysis → write Q&A entry to `DISCOVERY-STATE.md`.
 
-**Protocol:**
-1. Generate GAP.md:
-   ```markdown
-   # GAP: GAP-{id}
-   **Source:** aid-plan, Deliverable {id}
-   **Type:** discovery-needed
-   **Description:** {What's missing from the KB}
-   **KB Gap:** {Which document(s) need updating}
-   **Blocking:** {Which deliverables can't be scoped}
-   **Resolution:** discovery
-   ```
-2. Trigger targeted aid-discover.
-3. KB updated → resume planning with corrected data.
+### → Specify
 
-### → Specify (Loop 4)
+SPEC ambiguous about what a feature needs or enables → write Q&A entry to feature's `STATE.md`.
 
-**Trigger:** The spec is ambiguous or contradictory.
+### → Interview
 
-**Protocol:**
-1. Generate GAP.md:
-   ```markdown
-   # GAP: GAP-{id}
-   **Source:** aid-plan, Deliverable {id}
-   **Type:** ambiguity | contradiction
-   **Description:** {What's unclear in the spec}
-   **Blocking:** {Which deliverables can't be scoped}
-   **Resolution:** needs-interview | spec-revision
-   ```
-2. If `needs-interview` → trigger targeted aid-interview.
-3. If `spec-revision` → trigger aid-specify revision.
-4. Updated spec → resume planning.
+Requirements priority unclear → write Q&A entry to work's `INTERVIEW-STATE.md`.
 
-### ← Detail (plan too vague)
+### ← Detail
 
-If the Detail phase can't decompose the plan into tasks because deliverables are too broad or modules are unclear:
-
-1. Receive feedback from aid-detail identifying the gap.
-2. Revise the specific section of PLAN.md.
-3. Detail resumes with corrected plan.
+Plan too vague for task decomposition → receive feedback, revise specific deliverables.
 
 ## Quality Checklist
 
-- [ ] MVP is clearly defined with justification.
-- [ ] Every feature in SPEC.md is assigned to a deliverable (or explicitly deferred).
-- [ ] Module boundaries are clear and match KB architecture.
-- [ ] Deliverables have meaningful dependencies (not arbitrary grouping).
-- [ ] Test scenarios are defined for every deliverable.
-- [ ] Risks are assessed with mitigations.
-- [ ] Spikes are identified for uncertain areas.
+- [ ] Every Ready feature assigned to a deliverable or explicitly deferred.
+- [ ] Each deliverable works as a standalone MVP.
+- [ ] Dependencies between deliverables flow one direction (no cycles).
+- [ ] Deliverable order follows Must → Should → Could priority.
+- [ ] Cross-cutting risks only included if they actually exist.
+- [ ] User approved the sequence.
+- [ ] PLAN.md lives inside the work directory.
 
 ## Why This Phase Exists
 
-Plan is strategy; Detail is tactics. Plan answers "what do we build and in what order?" so that Detail can answer "how do we build it?" Skipping Plan means jumping from spec to tasks with no intermediate reasoning about MVP scope, delivery boundaries, or risk.
+Features specified in isolation don't tell you what to build first. Plan adds the one thing Specify can't: delivery order. Which features form the foundation? Which can ship independently? Which must wait?
 
-The plan also identifies spikes — time-boxed research for uncertain areas. Better to discover unknowns here than during implementation when the cost of discovery is much higher.
+Without Plan, you'd go straight from specs to task decomposition with no intermediate reasoning about what "done" looks like at each stage. Each deliverable is a checkpoint — a working system the user can touch, not just a batch of completed tasks.
 
 ## Related Phases
 
-- **Previous:** [Specify](../aid-specify/) — provides SPEC.md
-- **Next:** [Detail](../aid-detail/) — decomposes the plan into executable tasks
-- **Triggered by:** GAP.md from Detail when the plan is too vague
+- **Previous:** [Specify](../aid-specify/) — provides per-feature technical specs
+- **Next:** [Detail](../aid-detail/) — decomposes deliverables into executable tasks
+- **Triggered by:** Feedback from Detail when deliverable boundaries are unclear
 
 ## See Also
 

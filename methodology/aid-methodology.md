@@ -237,17 +237,36 @@ AID organizes eleven phases into four groups. The pipeline is linear with feedba
 
 #### Phase 2: Interview (`aid-interview`)
 
-**Purpose:** Gather requirements from the human stakeholder. Produce REQUIREMENTS.md.
+**Purpose:** Gather requirements and decompose them into features. Produce REQUIREMENTS.md and per-feature SPEC.md stubs.
 
 **Input:** KB (if brownfield) or project description (if greenfield). A human to interview.
 
+**Workspace:** Each interview creates a *work* — a self-contained unit of scope inside `aid-workspace/`:
+
+```
+aid-workspace/
+  knowledge/                    ← shared KB (from Discovery)
+  work-001-user-auth/           ← one work per interview
+    INTERVIEW-STATE.md          ← process tracking (section status, Q&A, grade)
+    REQUIREMENTS.md             ← product (stakeholder requirements)
+    features/
+      feature-001-login/
+        SPEC.md                 ← requirements side (from Interview) + tech spec (from Specify)
+      feature-002-password/
+        SPEC.md
+```
+
+Multiple works can coexist — a client requests auth now, reporting later. Each work has its own requirements and features, sharing the same KB.
+
 **Process:**
 
-Two modes depending on whether REQUIREMENTS.md already exists:
+The interview has six states, advancing one per run:
 
-**First run (no REQUIREMENTS.md):** Conversational interview, one question at a time. Starts with "What are we building? Tell me the goal and what success looks like." Each answer updates REQUIREMENTS.md immediately — no batching. When KB exists (brownfield), questions come with suggested answers and source citations: `[From: aid-workspace/knowledge/{source}.md]` with options to accept, skip, or provide a custom answer. Nothing is silently inferred — every KB-sourced answer needs user confirmation. Interview concludes with an approval gate.
+**States 1–4: Conversational interview.** One question at a time. Starts broad (Objective, Problem Statement) and gets specific (Constraints, Acceptance Criteria). When KB exists (brownfield), questions come with suggested answers and source citations: `[From: aid-workspace/knowledge/{source}.md]` with options to accept, skip, or provide a custom answer. Nothing is silently inferred. Concludes with an approval gate.
 
-**Subsequent runs (REQUIREMENTS.md exists):** Cross-references requirements against the full KB and codebase. Checks for contradictions, gaps, missing evidence, and staleness. Assigns a grade based on the number of questions found:
+**State 5: Feature Decomposition.** After REQUIREMENTS.md is approved, the agent proposes a feature breakdown from §5 Functional Requirements. Each approved feature gets its own folder with a SPEC.md containing the requirements side (description, user stories, priority, acceptance criteria). The technical specification section is left empty — that's Specify's job.
+
+**State 6: Cross-Reference.** Validates REQUIREMENTS.md against the full KB. Checks for contradictions, gaps, missing evidence, and staleness. Assigns a grade (A–D) based on findings. Grade is a snapshot — doesn't change within the same run.
 
 | Grade | Questions | Meaning |
 |-------|-----------|---------|
@@ -256,8 +275,6 @@ Two modes depending on whether REQUIREMENTS.md already exists:
 | C | 4–7 | Significant gaps or contradictions |
 | D | 8+ | Serious consistency problems |
 
-The grade is a snapshot at run start — it does NOT change after answering questions within the same run. The user runs again to get the updated grade.
-
 **REQUIREMENTS.md sections:** Objective, Problem Statement, Users & Stakeholders, Scope (In/Out), Functional Requirements, Non-Functional Requirements, Constraints, Assumptions & Dependencies, Acceptance Criteria, Priority. A Change Log at the top tracks every modification.
 
 **Key behaviors:**
@@ -265,30 +282,36 @@ The grade is a snapshot at run start — it does NOT change after answering ques
 - Each answer shapes the next question. Adaptive, not scripted.
 - Brownfield interviews are shorter (KB pre-fills technical context). Greenfield are longer.
 - KB findings are never silently inferred — always presented as suggested answers for user confirmation.
+- Downstream phases (Specify, Plan) can inject Q&A entries into INTERVIEW-STATE.md for the next cross-reference run.
 
-**Output:** `aid-workspace/knowledge/REQUIREMENTS.md` — structured requirements with Change Log, 10 sections covering scope, features, constraints, and acceptance criteria.
+**Output:** `aid-workspace/{work}/REQUIREMENTS.md` + `aid-workspace/{work}/features/feature-NNN-{name}/SPEC.md` (requirements side only).
 
 **Feedback to Discovery:** If an answer reveals the KB is wrong or incomplete, the interview pauses, triggers targeted discovery, then resumes with corrected understanding.
 
 #### Phase 3: Specify (`aid-specify`)
 
-**Purpose:** Transform requirements into a formal specification grounded in the Knowledge Base.
+**Purpose:** Technical refinement of a single feature through conversational collaboration with the developer. The agent acts as a tech lead — proposes concrete solutions grounded in the KB and codebase, discusses trade-offs, and writes the technical specification into the feature's SPEC.md.
 
-**Input:** `REQUIREMENTS.md` + `aid-workspace/knowledge/` directory.
+**Input:** A feature's SPEC.md (requirements side, from Interview) + `aid-workspace/knowledge/` directory + codebase.
+
+**What this is:** Agile refinement for AI-augmented teams. Interview captured *what* the stakeholder wants. Specify determines *how* to build it — one feature at a time, through discussion with the developer.
 
 **Process:**
-1. Read REQUIREMENTS.md for what to build.
-2. Read KB for how the system currently works.
-3. Generate SPEC.md that specifies new behavior *in the context of existing behavior*.
-4. Reference specific KB documents: "Following the repository pattern established in `aid-workspace/knowledge/architecture.md`" rather than generic "use repository pattern."
-5. Identify conflicts between requirements and existing architecture. Document explicitly.
-6. Define non-functional requirements grounded in current system capabilities.
 
-**What makes this different from generic spec generation:** The spec is grounded. It doesn't say "use dependency injection" — it says "register in `ServiceCollectionExtensions.cs` following the pattern in `aid-workspace/knowledge/coding-standards.md` §3.2."
+One feature per run. The agent:
+1. Reads the feature's SPEC.md (requirements side), REQUIREMENTS.md, relevant KB docs, and explores the codebase.
+2. Determines applicable technical sections: 3 core (Data Model, Feature Flow, Layers & Components) always present, plus up to 20 conditional sections activated by context (API Contracts, UI Specs, Events, Security, Migration, etc.).
+3. For each section: proposes a concrete solution referencing specific files, classes, patterns, and conventions from the codebase. The developer discusses, adjusts, or redirects. When agreed, the section is written to SPEC.md.
 
-**Output:** `SPEC.md` — Vision, Constraints, Architecture, Domain Model, Non-Functional Requirements. Every architectural decision references the KB.
+**What makes this different from generic spec generation:** The agent doesn't ask "what technology do you want to use?" — it proposes based on what the KB and codebase already show. "I see you use Spring Boot with JPMS modules. Here's how this feature fits into the existing module structure." The developer validates, not dictates.
 
-**Feedback to Discovery:** If writing the spec exposes insufficient understanding, generate a `GAP.md` and trigger targeted discovery.
+**Output:** `## Technical Specification` section added to `aid-workspace/{work}/features/feature-NNN/SPEC.md` — Data Model, Feature Flow, Layers & Components, plus activated conditional sections. Each feature's SPEC.md now contains both the requirements (from Interview) and the technical specification.
+
+**Feedback loops:**
+- KB wrong or incomplete → fix directly or write Q&A to DISCOVERY-STATE.md for targeted re-discovery.
+- Requirements wrong or incomplete → fix directly or write Q&A to INTERVIEW-STATE.md for targeted re-interview.
+- Spike needed → pause feature, record what needs investigation.
+- Feature needs to be split or merged → create/merge feature folders, redistribute content.
 
 ---
 
@@ -300,50 +323,48 @@ The grade is a snapshot at run start — it does NOT change after answering ques
 
 #### Phase 4: Plan (`aid-plan`)
 
-**Purpose:** Define the high-level roadmap — MVP scope, modules, deliverables, test scenarios.
+**Purpose:** Sequence features into deliverables — each one a functional MVP that builds on the previous. Plan answers ONE question: *"In what order do we deliver, and does each delivery stand on its own?"*
 
-**Input:** `SPEC.md` + `aid-workspace/knowledge/` directory.
+**Input:** Feature SPECs (all with `Ready` status from Specify) + REQUIREMENTS.md + KB (architecture, module-map, tech-debt).
 
 **Process:**
-1. Define the MVP — smallest shippable set of features that delivers value.
-2. Identify modules — logical groupings of functionality mapped to the codebase.
-3. Scope deliverables — shippable increments with natural boundaries.
-4. Define test scenarios — high-level scenarios that prove each deliverable works.
-5. Assess risks — what could derail the plan, and mitigations.
-6. Identify spikes — unknowns that need research before detailing.
+1. Map dependencies between features — what each needs and enables.
+2. Group features into deliverables. Each deliverable must be functional on its own, testable independently, and buildable in dependency order.
+3. Identify cross-cutting risks (optional) — risks that span features and couldn't be seen during Specify (e.g., multiple features touching the same fragile module, sequencing risks).
 
-**Plan is strategy, not tactics.** It answers "what do we build and in what order?" — not "how do we build each piece." The Detail phase handles decomposition into tasks.
+**What Plan does NOT do** (already covered by Specify): module mapping, test scenarios, per-feature risks and trade-offs, spikes, technical details. Specify handles all of this per feature. Plan only adds the *sequencing* dimension.
 
-**Output:** `PLAN.md` — MVP definition, module map, deliverables with ordering and dependencies, test scenarios, risk assessment.
+**Output:** `aid-workspace/{work}/PLAN.md` — ordered deliverables (each a shippable MVP), optional cross-cutting risks, optional deferred features list.
 
 **Feedback loops:**
-- If planning reveals KB gaps → `GAP.md` with `discovery-needed`, trigger targeted discovery.
-- If the spec is ambiguous → `GAP.md` with `ambiguity`, trigger spec revision or targeted interview.
+- KB insufficient for dependency analysis → Q&A to DISCOVERY-STATE.md.
+- SPEC ambiguous about what a feature needs/enables → Q&A to feature's STATE.md.
+- Requirements priority unclear → Q&A to INTERVIEW-STATE.md.
 
 #### Phase 5: Detail (`aid-detail`)
 
 **Purpose:** Decompose the plan into sprint-ready user stories, executable tasks, and execution order.
 
-**Input:** `PLAN.md` + `SPEC.md` + `aid-workspace/knowledge/` directory.
+**Input:** `aid-workspace/{work}/PLAN.md` + feature SPECs + `aid-workspace/knowledge/` directory.
 
 **Process:**
-1. **User story decomposition** — For each deliverable, generate user stories with acceptance criteria.
-2. **Task decomposition** — For each story, generate executable tasks sized for a single agent session.
+1. **User story decomposition** — For each deliverable in PLAN.md, generate user stories with acceptance criteria. Each traces back to a PLAN deliverable AND a feature SPEC.
+2. **Task decomposition** — For each story, generate executable `TASK-{id}.md` files sized for a single agent session (<10 files, <500 lines new code).
 3. **Precedence analysis** — Map dependencies between tasks. Identify parallel execution opportunities.
 4. **Complexity estimation** — S/M/L/XL based on KB data (files touched, test coverage, tech debt).
-5. **Delivery breakdown** — Group tasks into delivery increments with success criteria.
+5. **Delivery breakdown** — Group tasks into delivery increments aligned with PLAN deliverables.
 6. **Execution plan** — Organize tasks into waves for parallel execution.
 
-**Detail is tactics, not strategy.** It turns the roadmap into a work breakdown structure that agents can execute.
+**Detail is tactics, not strategy.** It turns the delivery roadmap into a work breakdown structure that agents can execute.
 
 **Output:**
-- `DETAIL.md` — User stories, task list, precedence graph, delivery breakdown, execution waves.
-- `TASK-{id}.md` files — One per task with objective, interface contracts, acceptance criteria, test requirements.
+- `aid-workspace/{work}/DETAIL.md` — User stories, task list, precedence graph, delivery breakdown, execution waves.
+- `aid-workspace/{work}/tasks/TASK-{id}.md` files — One per task with objective, source tracing (user story + feature + deliverable), interface contracts, acceptance criteria, test requirements.
 
 **Feedback loops:**
-- If the plan is too vague → return to aid-plan for revision.
-- If KB gaps are found → trigger targeted discovery.
-- If spec is ambiguous → trigger spec revision.
+- Plan too vague for detailing → return to aid-plan for revision.
+- KB gaps → Q&A to DISCOVERY-STATE.md.
+- SPEC ambiguous → Q&A to feature's STATE.md.
 
 ---
 
@@ -357,11 +378,11 @@ The grade is a snapshot at run start — it does NOT change after answering ques
 
 **Purpose:** Execute a task using an AI coding agent, with full context from the Knowledge Base.
 
-**Input:** `TASK-{id}.md` + `SPEC.md` + `aid-workspace/knowledge/INDEX.md` + relevant KB documents.
+**Input:** `TASK-{id}.md` + per-feature `SPEC.md` (referenced by the task's Source field) + `aid-workspace/knowledge/INDEX.md` + relevant KB documents.
 
 **Process:**
 1. Load task spec as the primary prompt.
-2. Load SPEC.md + KB INDEX.md + coding standards + architecture as context.
+2. Load the feature's SPEC.md + KB INDEX.md + coding standards + architecture as context.
 3. Spawn coding agent with this context. The agent can read additional KB documents on demand using the INDEX as a map.
 4. Agent implements the task, creating/modifying files and adding tests.
 5. **Build verification is mandatory.** "Done" means green build, not "I wrote some code."
@@ -376,11 +397,11 @@ The grade is a snapshot at run start — it does NOT change after answering ques
 
 **Purpose:** Static code review — verify implementation quality against task spec, project spec, and KB standards.
 
-**Input:** Git diff + `TASK-{id}.md` + `SPEC.md` + `aid-workspace/knowledge/coding-standards.md`.
+**Input:** Git diff + `TASK-{id}.md` + per-feature `SPEC.md` (referenced by the task's Source field) + `aid-workspace/knowledge/coding-standards.md`.
 
 **Process:**
 1. Check against TASK acceptance criteria.
-2. Check against SPEC architectural constraints.
+2. Check against feature SPEC architectural constraints.
 3. Check against KB coding standards.
 4. **Check context usage** — did the agent consult relevant KB documents, or did it guess? Violations traceable to ignored KB context are tagged KB, not CODE.
 5. Run automated checks: build, tests, lint.
@@ -400,7 +421,7 @@ The grade is a snapshot at run start — it does NOT change after answering ques
 
 **Purpose:** Dynamic validation in staging — E2E tests, integration tests, manual testing.
 
-**Input:** Reviewed code (grade A- or above) + `DELIVERY-{id}.md` + `SPEC.md`.
+**Input:** Reviewed code (grade A- or above) + `DELIVERY-{id}.md` + per-feature SPECs.
 
 **Process:**
 1. Deploy to staging environment.
@@ -473,7 +494,7 @@ The grade is a snapshot at run start — it does NOT change after answering ques
 
 **Purpose:** Classify what Track found. For bugs: perform root cause analysis and map the fix. Route everything to the right path.
 
-**Input:** `TRACK-REPORT.md` + `aid-workspace/knowledge/` + `SPEC.md`.
+**Input:** `TRACK-REPORT.md` + `aid-workspace/knowledge/` + per-feature SPECs.
 
 **Classification:**
 - **BUG** — Code doesn't match spec. Perform root cause analysis, then route to aid-implement (short path).
@@ -613,121 +634,112 @@ Every change to an upstream artifact is tracked at the bottom of the artifact:
 
 ### Core Artifacts
 
-| Artifact | Produced By | Consumed By | Lifecycle |
-|----------|------------|-------------|-----------|
-| `aid-workspace/knowledge/` (KB) | Discover | All phases | Living — updated throughout project |
-| `aid-workspace/knowledge/INDEX.md` | Discover | Implement, Review | Regenerated on every discovery run |
-| `REQUIREMENTS.md` | Interview | Specify | Frozen after verification (rev-tracked) |
-| `SPEC.md` | Specify | Plan, Detail, Implement, Review, Test, Triage | Living — rev-tracked |
-| `PLAN.md` | Plan | Detail | Living — rev-tracked |
-| `DETAIL.md` | Detail | Implement, Review | Updated at completion |
-| `TASK-{id}.md` | Detail | Implement, Review | Rev-tracked if amended |
-| `REVIEW.md` | Review | Implement (rework), Test | Per review cycle |
-| `TEST-REPORT.md` | Test | Deploy, Implement (if failures) | Per test cycle |
-| `GAP.md` | Specify, Plan, Detail, Review | Discovery, Specify | Closed when resolved |
-| `IMPEDIMENT.md` | Implement | Plan, Specify, Discovery | Closed when resolved |
-| `TRACK-REPORT.md` | Track | Triage | Per tracking cycle |
-| `TRIAGE.md` | Triage | Implement (bugs), Discover (CRs) | Closed when routed |
+| Artifact | Location | Produced By | Consumed By | Lifecycle |
+|----------|----------|------------|-------------|-----------|
+| Knowledge Base (14 docs) | `aid-workspace/knowledge/` | Discover | All phases | Living — updated throughout project |
+| INDEX.md | `aid-workspace/knowledge/` | Discover | All phases | Regenerated on every discovery run |
+| REQUIREMENTS.md | `aid-workspace/{work}/` | Interview | Specify, Plan | Frozen after approval (rev-tracked) |
+| INTERVIEW-STATE.md | `aid-workspace/{work}/` | Interview | Interview (resume) | Process tracking |
+| Feature SPEC.md | `aid-workspace/{work}/features/{feature}/` | Interview + Specify | Plan, Detail, Implement, Review | Living — Interview writes requirements side, Specify adds technical spec |
+| Feature STATE.md | `aid-workspace/{work}/features/{feature}/` | Specify | Specify (resume) | Process tracking |
+| PLAN.md | `aid-workspace/{work}/` | Plan | Detail | Living — rev-tracked |
+| DETAIL.md | `aid-workspace/{work}/` | Detail | Implement, Review | Updated at completion |
+| TASK-{id}.md | `aid-workspace/{work}/tasks/` | Detail | Implement, Review | Rev-tracked if amended |
+| REVIEW.md | project root | Review | Implement (rework), Test | Per review cycle |
+| TEST-REPORT.md | project root | Test | Deploy, Implement (if failures) | Per test cycle |
+| GAP.md | project root | Any phase | Discovery, Specify | Closed when resolved |
+| IMPEDIMENT.md | project root | Implement | Plan, Specify, Discovery | Closed when resolved |
+| TRACK-REPORT.md | project root | Track | Triage | Per tracking cycle |
+| TRIAGE.md | project root | Triage | Implement (bugs), Discover (CRs) | Closed when routed |
 
 ### REQUIREMENTS.md Template
 
 ```markdown
-# {Project Name} — Requirements
+# Requirements
 
-## Client
-- Name: {who}
-- Domain: {industry/business type}
+## Change Log
+| Date | Change | Source |
+|------|--------|--------|
 
-## Problem Statement
-{In their words, not ours}
-
-## Users
-| Role | Description | Primary Needs |
-|------|-------------|---------------|
-| ... | ... | ... |
-
-## Features (Priority Ordered)
-| # | Feature | Priority | Notes |
-|---|---------|----------|-------|
-| 1 | ... | Must | ... |
-| 2 | ... | Should | ... |
-
-## Technical Context
-- Existing systems: {what they have}
-- Integrations: {what connects}
-- Platform: {where this runs}
-- Data: {volume, sensitivity}
-
-## Constraints
-- Timeline: {deadline or pace}
-- Budget: {range or fixed}
-- Team: {who's available}
-- Compliance: {if any}
-
-## Assumptions
-{Stated explicitly — must be verified}
-
-## Out of Scope
-{Prevents scope creep}
+## 1. Objective
+## 2. Problem Statement
+## 3. Users & Stakeholders
+## 4. Scope
+### In Scope
+### Out of Scope
+## 5. Functional Requirements
+## 6. Non-Functional Requirements
+## 7. Constraints
+## 8. Assumptions & Dependencies
+## 9. Acceptance Criteria
+## 10. Priority
 ```
 
-### SPEC.md Template
+### Feature SPEC.md Template
+
+Each feature gets its own SPEC.md. Interview writes the top half (requirements side). Specify adds the bottom half (technical specification).
 
 ```markdown
-# {Project Name} — Specification
+# {Feature Title}
 
-## Vision
-One paragraph. What this is and why it exists.
+## Change Log
+| Date | Change | Source |
+|------|--------|--------|
 
-## Constraints
-- Stack: {from KB technology-stack.md}
-- Platform: {target environments}
-- Performance: {measurable targets}
-- Security: {auth model, compliance}
+## Source
+- REQUIREMENTS.md §5.{n}
 
-## Architecture
-- Pattern: {from KB architecture.md — extend, don't reinvent}
-- Data: {from KB data-model.md — extend existing schema}
-- External: {from KB integration-map.md — new integrations}
+## Description
+{Stakeholder perspective — what the feature does, not how.}
 
-## Domain Model
-Key entities and relationships. Reference KB domain-glossary.md.
+## User Stories
+- As a {user}, I want to {action} so that {benefit}
 
-## Feature Specifications
-For each feature: behavior, interfaces, edge cases, error handling.
+## Priority
+{Must / Should / Could}
 
-## Non-Functional Requirements
-Accessibility, i18n, monitoring, logging. Grounded in KB infrastructure.md.
+## Acceptance Criteria
+- [ ] Given {precondition}, when {action}, then {expected result}
 
-## Revision History
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
+---
+
+## Technical Specification
+{Added by /aid-specify — sections determined by KB, codebase, and developer discussion.}
+
+### Data Model
+### Feature Flow
+### Layers & Components
+{Plus conditional sections as activated}
 ```
 
 ### PLAN.md Template
 
 ```markdown
-# {Project Name} — Roadmap
-
-## MVP Definition
-**Core value:** {one sentence}
-**Included features:** {list with justification}
-**Deferred:** {list with reason}
-
-## Module Map
-| Module | Features | Existing Code | New Code | Risk |
-|--------|----------|---------------|----------|------|
+# Plan — {Work Name}
 
 ## Deliverables
-### Deliverable 1: {Name}
-**Modules:** {list}
-**Features:** {list}
-**Depends on:** {list or "None"}
-**Validates:** {what this proves}
 
-## Test Scenarios
-### Deliverable 1
-- TS-01: {scenario description}
+### D-1: {Name}
+- **What it delivers:** {user-facing value}
+- **Features:** feature-001-{name}, feature-003-{name}
+- **Depends on:** — (foundation)
+- **Priority:** Must
+
+### D-2: {Name}
+- **What it delivers:** {user-facing value}
+- **Features:** feature-002-{name}
+- **Depends on:** D-1
+- **Priority:** Must
+
+## Cross-Cutting Risks
+| # | Risk | Impact | Mitigation |
+|---|------|--------|------------|
+*(Omit if no cross-cutting risks exist.)*
+
+## Deferred
+| Feature | Reason | Revisit When |
+|---------|--------|--------------|
+*(Omit if all features included.)*
 
 ## Risks
 | Risk | Impact | Likelihood | Mitigation |
@@ -750,7 +762,7 @@ Accessibility, i18n, monitoring, logging. Grounded in KB infrastructure.md.
 ### US-{id}: {Title}
 **As a** {role} **I want** {capability} **So that** {benefit}
 **Acceptance Criteria:** {testable criteria}
-**Source:** PLAN.md deliverable {id}, SPEC.md feature {ref}
+**Source:** PLAN.md deliverable D-{id}, feature SPEC feature-{NNN}-{name}
 
 ## Task List
 ### TASK-{id}: {Name}
@@ -907,7 +919,7 @@ Ship to Test | Rework (minor) | Rework (major) | Re-implement
 {Concrete data supporting classification}
 
 ## Reasoning
-{Why this classification. Reference SPEC.md for expected behavior.}
+{Why this classification. Reference feature SPEC for expected behavior.}
 
 ## Routing
 - **BUG →** aid-implement (short path: implement → review → test → deploy)
@@ -974,7 +986,7 @@ Ship to Test | Rework (minor) | Rework (major) | Re-implement
    ┌─ PLANNING ─────────────┤
    │                        ▼
    │     aid-specify ◄──── GAP (ambiguity/contradiction)
-   │      → SPEC.md
+   │      → feature SPECs
    │          │
    │          ▼
    │     aid-plan ◄─────── GAP (KB gap)

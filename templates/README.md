@@ -12,9 +12,9 @@ The Knowledge Base is AID's gravitational center — 13 documents that capture t
 
 → [requirements/requirements-template.md](requirements/requirements-template.md) — Structured requirements document produced by adaptive interview.
 
-## Specifications (Specify Phase)
+## Feature Specifications (Interview + Specify Phases)
 
-→ [specs/spec-template.md](specs/spec-template.md) — SPEC.md grounded in the Knowledge Base with traceability to requirements.
+→ [specs/spec-template.md](specs/spec-template.md) — Per-feature SPEC.md: requirements side (from Interview) + technical specification (from Specify).
 
 ## Delivery Plans (Plan + Detail Phases)
 

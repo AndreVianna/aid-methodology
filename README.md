@@ -60,8 +60,8 @@ Open your AI coding tool in the project directory and run `/aid-init` to scaffol
 /aid-init
 ```
 
-Init asks whether your project is greenfield or brownfield, collects metadata, and creates the 
-`aid-workspace/` directory to host the methodology file, then it creates the `aid-workspace/knowledge/` directory with 14 empty KB document templates, plus `AGENTS.md` and `CLAUDE.md` placeholders.
+Init asks whether your project is greenfield or brownfield, collects metadata, and creates the
+`aid-workspace/` directory with `aid-workspace/knowledge/` containing 14 empty KB document templates, plus `AGENTS.md` and `CLAUDE.md` placeholders. Subsequent phases create work directories (`aid-workspace/work-NNN-{name}/`) with requirements, features, plans, and tasks.
 
 ### 3. Run Discovery or Interview
 
@@ -98,8 +98,8 @@ You now have a Knowledge Base, configured skills, and agents ready to go. Every 
 templates/
 ├── requirements/            ← REQUIREMENTS.md template
 ├── knowledge-base/          ← 14 KB document templates
-├── specs/                   ← SPEC.md template
-├── delivery-plans/          ← PLAN.md, DETAIL.md, TASK templates
+├── specs/                   ← Per-feature SPEC.md template (requirements + tech spec)
+├── delivery-plans/          ← DELIVERY, DETAIL.md, TASK templates
 ├── feedback-artifacts/      ← GAP.md, IMPEDIMENT.md, TRIAGE.md
 └── reports/                 ← REVIEW, TEST-REPORT, TRACK-REPORT
 ```
@@ -120,13 +120,13 @@ examples/
 | Phase | Skill | What It Does |
 |-------|-------|-------------|
 | 1. Discover | `aid-discover` | Analyzes an existing codebase; produces the Knowledge Base (14 documents) |
-| 2. Interview | `aid-interview` | Adaptive one-question-at-a-time requirements gathering; produces REQUIREMENTS.md |
-| 3. Specify | `aid-specify` | Transforms requirements into a grounded SPEC.md anchored in the KB |
+| 2. Interview | `aid-interview` | Adaptive requirements gathering + feature decomposition; produces REQUIREMENTS.md and per-feature SPEC.md stubs |
+| 3. Specify | `aid-specify` | Technical refinement per feature — tech lead proposes solutions, developer discusses; writes technical spec into each feature's SPEC.md |
 
 ### Group 2: Map
 | Phase | Skill | What It Does |
 |-------|-------|-------------|
-| 4. Plan | `aid-plan` | Defines MVP scope, modules, deliverables, test scenarios — strategy, not tactics |
+| 4. Plan | `aid-plan` | Sequences features into deliverables — each one a functional MVP that builds on the previous |
 | 5. Detail | `aid-detail` | Decomposes the plan into user stories, executable tasks, and precedence order |
 
 ### Group 3: Execute

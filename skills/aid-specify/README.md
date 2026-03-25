@@ -1,204 +1,200 @@
+# Technical Specification — Conversational Refinement
 
-# Generate Specification
-
-Transform REQUIREMENTS.md into a formal SPEC.md grounded in the Knowledge Base. The spec describes what to build in the context of what already exists.
+Specify the technical implementation of a single feature through conversational collaboration with the developer. The agent acts as a tech lead — reads KB, Requirements, codebase, and proposes concrete solutions. The developer validates, redirects, or deepens the discussion.
 
 ## Core Principle
 
-**Specs are grounded, not generic.** Don't say "use repository pattern" — say "register in `ServiceCollectionExtensions.cs` following the pattern in `aid-workspace/knowledge/coding-standards.md` §3.2." Don't say "add a database table" — say "extend the existing schema using EF Core migrations, following the naming convention in `aid-workspace/knowledge/data-model.md`."
+**Specify is Agile refinement for AI-augmented teams.** Interview captured *what* the stakeholder wants. Specify determines *how* to build it — one feature at a time, through discussion with the developer.
+
+The agent doesn't ask generic questions ("what technology do you want to use?"). It proposes based on what the KB and codebase already show: "I see you use Spring Boot with JPMS modules. Here's how this feature fits into the existing module structure." The developer validates, not dictates.
+
+## What Changed from V2
+
+In V2, Specify generated a standalone `SPEC.md` from `REQUIREMENTS.md` — Vision, Constraints, Architecture, Domain Model, NFRs. A monolithic document produced in one pass.
+
+In V3, the spec is per-feature and conversational:
+- Each feature has its own `SPEC.md` (created by Interview with requirements side, enriched by Specify with technical side).
+- The agent proposes one section at a time, discusses with the developer, then writes.
+- Vision, Constraints, and NFRs stay in REQUIREMENTS.md where they belong.
+- Module mapping, test scenarios, and per-feature risks are covered here — Plan doesn't duplicate them.
+
+## Workspace
+
+```
+aid-workspace/
+  knowledge/                    ← shared KB (read)
+  work-NNN-{name}/
+    REQUIREMENTS.md             ← stakeholder requirements (read)
+    features/
+      feature-NNN-{name}/
+        SPEC.md                 ← requirements (from Interview) + technical spec (Specify writes here)
+        STATE.md                ← process state (section status, Q&A, loopbacks)
+```
+
+## When to Use
+
+- **Primary:** After Interview has decomposed requirements into features. Run once per feature.
+- **Re-entry:** When a downstream phase (Plan, Detail, Implement) writes a Q&A entry to a feature's STATE.md because the SPEC is ambiguous or incomplete.
 
 ## Inputs
 
-- `REQUIREMENTS.md` — what to build.
-- `aid-workspace/knowledge/` directory — how the system currently works. Read at minimum:
-  - `architecture.md` — to align with existing patterns.
-  - `technology-stack.md` — to specify within the actual stack.
-  - `coding-standards.md` — to mandate existing conventions.
-  - `data-model.md` — to extend the existing schema.
-  - `integration-map.md` — to understand current integrations.
+- **SPEC.md** — the feature's requirements side (description, user stories, acceptance criteria).
+- **REQUIREMENTS.md** — full requirements context for cross-reference.
+- **Knowledge Base** — always read: architecture.md, technology-stack.md, coding-standards.md, module-map.md, data-model.md. Conditionally: api-contracts.md, integration-map.md, security-model.md, domain-glossary.md, test-landscape.md, infrastructure.md.
+- **Codebase** — explored via grep/glob to ground proposals in actual code.
+
+## Technical Sections
+
+### Core (always present)
+
+| Section | Content |
+|---------|---------|
+| **Data Model** | Tables, columns, types, constraints, FKs, indices — or "no schema changes" |
+| **Feature Flow** | Technical flowchart: request → service → repo → response |
+| **Layers & Components** | What goes in each layer, dependencies, DI registrations |
+
+### Conditional (activated by context)
+
+Each has an auto-activation rule (obvious from KB/codebase — just include) and a default question (not obvious — ask the developer):
+
+| Section | Auto-activate when... |
+|---------|----------------------|
+| API Contracts | KB or requirements mention endpoints/API |
+| UI Specs | Requirements mention screens/UI |
+| Events & Messaging | KB has queues/events or requirements mention async |
+| DDD Analysis | KB indicates DDD/bounded contexts |
+| BDD Scenarios | Requirements indicate BDD/Gherkin |
+| CQRS Specs | KB shows CQRS pattern |
+| State Machines | Requirements describe stateful workflows |
+| Security Specs | Requirements mention auth/roles/permissions |
+| Migration Plan | Brownfield + schema changes in Data Model |
+| Cache Strategy | Requirements mention performance/caching |
+| External Integrations | Requirements mention 3rd party services |
+| Batch/Jobs | Requirements mention scheduled processing |
+| Mobile Specs | Requirements target mobile platforms |
+| Search/Indexing | Requirements mention search/complex filtering |
+| AI Enhancements | Requirements mention AI/ML/LLM |
+| Telemetry & Tracking | Not obvious from context |
+| Recovery Management | Not obvious from context |
+| Cloud Support | Requirements mention deploy/cloud |
+| Hardware Requirements | Not obvious from context |
+
+The agent auto-activates what's obvious and asks about the rest — all ambiguous questions at once, not one-by-one.
 
 ## Process
 
-### Step 1: Read and Internalize
+### The Discussion Loop
 
-1. Read REQUIREMENTS.md completely. Understand the problem, users, features, and constraints.
-2. Read relevant KB documents. Map each requirement to existing system components.
-3. Identify where new functionality touches existing code vs. where it's entirely new.
+For each activated section:
 
-### Step 2: Resolve Conflicts
+1. **Propose** — The agent proposes a concrete solution referencing specific files, classes, patterns, and conventions from the codebase. Not generic — grounded.
+2. **Discuss** — Free-form conversation. The developer may agree, adjust, redirect, ask questions, or raise concerns. The agent presents trade-offs and options.
+3. **Write** — When agreed, the section is written to SPEC.md under `## Technical Specification`. STATE.md is updated.
+4. **Next** — Move to the next pending section, or finish if all complete.
 
-Check for conflicts between requirements and existing architecture:
+### Proposal Quality
 
-- Does a requirement contradict an architectural pattern? Document the conflict.
-- Does a requirement assume a capability the system doesn't have? Note the gap.
-- Do two requirements contradict each other? Flag for stakeholder decision.
+Good proposals:
+- Reference specific files, classes, and patterns from the codebase.
+- Follow conventions from `coding-standards.md`.
+- Fit into the architecture from `architecture.md`.
+- Use domain terms from `domain-glossary.md`.
+- Call out explicitly when something existing needs to change.
 
-If conflicts require more information:
-- **KB gap** → generate GAP.md with `discovery-needed`, trigger aid-discover.
-- **Requirements gap** → generate GAP.md with `needs-interview`, trigger aid-interview.
-- **Architectural tension** → document in the spec as a decision point.
+Bad proposals:
+- "Use repository pattern" — which repository? Where? Following what convention?
+- Generic solutions that could apply to any project.
+- Walls of specification without discussion.
 
-### Step 3: Write SPEC.md
+## Handling Outcomes
 
-Generate using the template in [Spec Template](../../templates/specs/spec-template.md).
+During discussion, the agent may discover problems beyond this feature:
 
-#### Vision
+| Situation | Action |
+|-----------|--------|
+| **KB is wrong (simple fix)** | Fix the KB document directly, note in STATE.md Change Log |
+| **KB needs re-discovery** | Write Q&A entry to DISCOVERY-STATE.md, continue with unblocked sections |
+| **Requirements are wrong (simple fix)** | Fix REQUIREMENTS.md and SPEC.md directly, add Change Log entries |
+| **Requirements need re-interview** | Write Q&A entry to INTERVIEW-STATE.md |
+| **Spike needed** | Record what/why/scope in STATE.md, pause feature |
+| **Feature needs splitting** | Create new feature folders, redistribute content |
+| **Feature needs merging** | Merge into target, delete current |
 
-One paragraph. What this is, why it exists, what problem it solves. Derived from REQUIREMENTS.md Problem Statement.
+## Greenfield KB Seeding
 
-#### Constraints
-
-Drawn from KB + requirements:
-
-```markdown
-## Constraints
-- Stack: .NET 10, Avalonia 11, EF Core 10 (from KB technology-stack.md)
-- Platform: Windows, Linux (from REQUIREMENTS.md)
-- Performance: < 200ms UI response (from REQUIREMENTS.md)
-- Security: Local-only, no auth required (from REQUIREMENTS.md)
-```
-
-Every constraint references its source.
-
-#### Architecture
-
-Extend the existing architecture, don't reinvent it:
-
-```markdown
-## Architecture
-- Pattern: MVVM with ReactiveUI (extending existing pattern per KB architecture.md)
-- Data: SQLite via EF Core (extending existing schema per KB data-model.md)
-- External: Whisper API for transcription (new integration)
-```
-
-For greenfield: define the architecture from scratch, referencing coding-standards.md for conventions.
-
-#### Domain Model
-
-Key entities and relationships. Reference `aid-workspace/knowledge/domain-glossary.md` for term definitions. Introduce new entities with clear definitions.
-
-#### Feature Specifications
-
-For each feature from REQUIREMENTS.md (priority-ordered):
-
-```markdown
-### Feature: {Name}
-**Priority:** Must | Should | Could
-**Requirement:** REQ-{n} from REQUIREMENTS.md
-
-**Behavior:**
-- {What the feature does, step by step}
-- {User-visible behavior}
-- {System behavior}
-
-**Interfaces:**
-- {Public APIs, UI components, data contracts}
-
-**Edge Cases:**
-- {What happens when X}
-- {What happens when Y}
-
-**Error Handling:**
-- {How errors are surfaced to the user}
-- {How errors are logged}
-
-**Dependencies:**
-- {Other features this depends on}
-- {Existing system components affected}
-```
-
-#### Non-Functional Requirements
-
-Grounded in KB:
-
-```markdown
-## Non-Functional Requirements
-
-### Testing
-- Follow existing test patterns (KB test-landscape.md): xUnit for unit, Playwright for E2E.
-- Minimum coverage: unit tests for all new public methods.
-
-### Logging
-- Use Serilog structured logging (KB coding-standards.md §4).
-
-### Accessibility
-- {From requirements}
-
-### Performance
-- {From requirements, validated against KB infrastructure.md}
-```
-
-### Step 4: Cross-Reference Check
-
-Before finalizing:
-
-- [ ] Every requirement from REQUIREMENTS.md is addressed in the spec.
-- [ ] Every architectural decision references the KB.
-- [ ] No spec section contradicts KB documents.
-- [ ] Feature dependencies form a valid DAG (no circular dependencies).
-- [ ] Non-functional requirements are measurable.
-
-### Step 5: Initialize Revision History
-
-```markdown
-## Revision History
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | {date} | aid-specify | Initial specification |
-```
+For greenfield projects where KB documents are empty: technical decisions made during specification are written back to the KB. Data Model decisions → update `data-model.md`. Architecture choices → update `architecture.md`. This is how greenfield projects build their KB incrementally through specification.
 
 ## Output
 
-`SPEC.md` — formal specification with Vision, Constraints, Architecture, Domain Model, Feature Specifications, Non-Functional Requirements, and Revision History.
+`## Technical Specification` section added to `aid-workspace/{work}/features/feature-NNN/SPEC.md`:
 
-## Spec Revision (Re-entry)
+```markdown
+---
+## Technical Specification
 
-When triggered by a GAP.md from aid-plan, aid-detail, or aid-review:
+### Data Model
+{Tables, columns, constraints, indices}
 
-1. Read the GAP.md to understand the ambiguity or contradiction.
-2. If `needs-interview` → trigger targeted aid-interview first, get the answer.
-3. Revise the specific section of SPEC.md.
-4. Add revision history entry referencing the GAP.
-5. Report completion to the calling phase.
+### Feature Flow
+{Request → service → repo → response}
+
+### Layers & Components
+{Layer assignments, dependencies, DI registrations}
+
+### {Conditional sections as activated}
+...
+
+### Change Log
+| Date | Change | Source |
+|------|--------|--------|
+```
+
+The SPEC.md now contains both requirements (from Interview) and technical specification — a complete feature definition.
+
+## Conversation Style
+
+The agent is a **technical collaborator**, not an interviewer or a generator.
+
+**The rhythm:**
+```
+Agent: [reads context] "I think this fits like {proposal}. Based on {KB evidence}."
+Dev:   "Actually, we should do X because Y."
+Agent: "Good point. That means we also need to change Z. Here's the updated approach..."
+Dev:   "Yeah, that works."
+Agent: [writes section] [moves to next]
+```
+
+The agent pushes back when the developer proposes something that contradicts KB patterns. It admits when it doesn't know. It asks follow-up questions when the developer's answer opens new technical questions.
 
 ## Feedback Loops
 
-### → Discovery (Loop 2)
+### → Discovery
 
-**Trigger:** Writing the spec exposes insufficient understanding of a subsystem.
+KB is wrong or incomplete for this feature's domain. Write Q&A to `DISCOVERY-STATE.md` with context from the discussion.
 
-**Example:** Specifying a feature that touches the auth module, but `aid-workspace/knowledge/security-model.md` is marked Partial.
+### → Interview
 
-**Protocol:** Pause → GAP.md with `discovery-needed` → trigger aid-discover → KB updated → resume specification.
+Requirements are wrong, incomplete, or contradictory. Write Q&A to `INTERVIEW-STATE.md` with the specific gap.
 
-### ← Plan / Review (Loops 4, 6)
+### ← Plan / Detail / Implement
 
-**Trigger:** Planning reveals the spec is ambiguous, or review finds a fundamental spec issue.
-
-**Protocol:** Receive GAP.md → understand the issue → revise SPEC.md → update revision history → report completion.
+Downstream phases find the SPEC ambiguous or incomplete. They write Q&A to this feature's `STATE.md`. Next Specify run picks up the questions.
 
 ## Quality Checklist
 
-- [ ] Every feature spec has Behavior, Interfaces, Edge Cases, Error Handling, Dependencies.
-- [ ] Architectural decisions reference KB documents, not generic patterns.
-- [ ] Constraints are sourced (KB or REQUIREMENTS.md).
-- [ ] No requirement from REQUIREMENTS.md is missing from the spec.
-- [ ] Conflicts between requirements and architecture are documented.
-- [ ] Revision history is initialized.
-
-## Why This Phase Exists
-
-A spec that says "use repository pattern" is useless when the codebase uses CQRS. Grounded specs reference the actual architecture, actual conventions, and actual data model from the KB. This is what makes AID specs different from generic templates — they're anchored in the reality of the system being built.
-
-Specs are also hypotheses, not contracts. Implementation will reveal truths that specification couldn't anticipate. That's why SPEC.md has revision history — formal protocol for evolving the spec, not silent workarounds.
+- [ ] All activated sections have content under `## Technical Specification`.
+- [ ] No placeholder text remaining.
+- [ ] Technical sections reference KB documents and codebase locations.
+- [ ] Change Log has entries for each section written.
+- [ ] Proposals were discussed, not just generated.
+- [ ] KB seeded for greenfield projects where decisions were made.
 
 ## Related Phases
 
-- **Previous:** [Interview](../aid-interview/) — provides REQUIREMENTS.md
-- **Next:** [Plan](../aid-plan/) — uses SPEC.md to define the roadmap
-- **Triggered by:** GAP.md with `ambiguity` or `contradiction` from downstream phases
+- **Previous:** [Interview](../aid-interview/) — provides REQUIREMENTS.md and feature SPEC.md stubs
+- **Next:** [Plan](../aid-plan/) — sequences specified features into deliverables
+- **Triggered by:** Q&A entries from Plan, Detail, or Implement
 
 ## See Also
 
-- [Spec Template](../../templates/specs/spec-template.md) — Full SPEC.md template.
 - [AID Methodology](../../methodology/aid-methodology.md) — The complete methodology.

@@ -21,14 +21,14 @@ Each skill represents one phase of the AID pipeline. These README files provide 
 | Skill | Phase | Purpose |
 |-------|-------|---------|
 | [aid-discover](aid-discover/README.md) | 1. Discover | Analyze an existing codebase and produce a structured Knowledge Base |
-| [aid-interview](aid-interview/README.md) | 2. Interview | Gather requirements through adaptive, one-question-at-a-time conversation |
-| [aid-specify](aid-specify/README.md) | 3. Specify | Transform requirements into a grounded SPEC.md anchored in the KB |
+| [aid-interview](aid-interview/README.md) | 2. Interview | Gather requirements and decompose into features through adaptive conversation |
+| [aid-specify](aid-specify/README.md) | 3. Specify | Technical refinement per feature — tech lead proposes, developer discusses |
 
 ### Group 2: Map
 
 | Skill | Phase | Purpose |
 |-------|-------|---------|
-| [aid-plan](aid-plan/README.md) | 4. Plan | Define MVP scope, modules, deliverables — strategy, not tactics |
+| [aid-plan](aid-plan/README.md) | 4. Plan | Sequence features into deliverables — each one a functional MVP |
 | [aid-detail](aid-detail/README.md) | 5. Detail | Decompose the plan into user stories, tasks, and execution waves |
 
 ### Group 3: Execute

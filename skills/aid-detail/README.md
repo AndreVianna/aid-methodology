@@ -1,22 +1,38 @@
-
 # Detail the Execution Plan
 
-Take the high-level plan (PLAN.md) and decompose it into sprint-ready user stories, executable tasks, precedence ordering, and delivery breakdown. This is where strategy becomes tactics.
+Take the delivery roadmap (PLAN.md) and decompose it into sprint-ready user stories, executable tasks, precedence ordering, and delivery breakdown. This is where strategy becomes tactics.
 
 ## Core Principle
 
-**Plan defines WHAT to build and in what order. Detail defines HOW to build it and WHO does what.** Plan is the roadmap — modules, MVPs, deliverables, test scenarios. Detail is the work breakdown — user stories, tasks with acceptance criteria, dependency ordering, parallel execution opportunities. A plan without detail is a wishlist. Detail without a plan is busywork.
+**Plan defines WHAT to deliver and in what order. Detail defines HOW to build it and WHO does what.** Plan sequences features into deliverables. Detail decomposes deliverables into user stories and tasks that agents can execute. A plan without detail is a wishlist. Detail without a plan is busywork.
+
+## Workspace
+
+```
+aid-workspace/
+  knowledge/                ← shared KB (read)
+  work-NNN-{name}/
+    REQUIREMENTS.md         ← read
+    PLAN.md                 ← read (deliverable sequence — must exist)
+    DETAIL.md               ← OUTPUT: user stories, waves, precedence
+    tasks/                  ← OUTPUT: individual task files
+      TASK-001.md
+      TASK-002.md
+    features/
+      feature-NNN-{name}/
+        SPEC.md             ← read (requirements + tech spec)
+```
+
+## When to Use
+
+- **Primary:** After Plan has sequenced features into deliverables.
+- **Re-entry:** When Implement or Review reveals the detail was wrong (task too large, wrong dependencies, missing task).
 
 ## Inputs
 
-- `PLAN.md` — the high-level roadmap. Modules, MVPs, deliverables, test scenarios.
-- `SPEC.md` — the specification. Architectural constraints, feature specs.
-- `aid-workspace/knowledge/` directory — for complexity estimation and dependency analysis. Read at minimum:
-  - `architecture.md` — to understand module boundaries.
-  - `module-map.md` — to identify affected modules and test coverage.
-  - `tech-debt.md` — to anticipate complications.
-  - `test-landscape.md` — to plan test requirements.
-  - `coding-standards.md` — to specify implementation conventions.
+- **PLAN.md** — deliverable sequence with features per deliverable.
+- **Feature SPECs** — all `aid-workspace/{work}/features/*/SPEC.md` — requirements + technical specification.
+- **KB (selective):** architecture.md, module-map.md, tech-debt.md, test-landscape.md, coding-standards.md.
 
 ## Process
 
@@ -32,197 +48,150 @@ For each deliverable in PLAN.md, generate user stories:
 
 **Acceptance Criteria:**
 - [ ] {Concrete, testable criterion}
-- [ ] {Another criterion}
 - [ ] {Edge case handling}
 
-**Source:** PLAN.md deliverable {id}, SPEC.md feature {ref}
+**Source:** PLAN deliverable D-{x}, feature SPEC F-{y}
 ```
+
+Each user story must trace back to a PLAN deliverable AND a feature SPEC.
 
 **Good user stories:**
 - Map to a single user-visible behavior.
 - Have testable acceptance criteria.
-- Can be demonstrated to a stakeholder.
 - Are small enough for one delivery increment.
 
-**Bad user stories:**
-- "Implement the data layer" — not user-visible.
-- "The app works" — not testable.
-- "Support all file formats" — unbounded scope.
-
-Technical enablers (database setup, CI pipeline, auth infrastructure) are tasks, not user stories. They support stories but aren't stories themselves.
+Technical enablers (database setup, CI pipeline, auth infrastructure) are tasks, not user stories.
 
 ### Step 2: Task Decomposition
 
-For each user story, generate executable tasks. A task is what an agent actually implements.
+For each user story, generate executable `TASK-{id}.md` files:
 
-Each task gets a `TASK-{id}.md` file. See [Detail Template](../../templates/delivery-plans/detail-template.md) for the output format.
+```markdown
+# TASK-{id}: {Title}
 
-A well-sized task:
-- **Has a clear start and end.** "Implement IRecordingService" — not "work on recording."
-- **Can be verified.** Acceptance criteria are testable.
-- **Fits in one agent session.** If it touches >10 files or >500 lines of new code, split it.
-- **Has defined interfaces.** The task spec includes the public API the implementation must provide.
+## Objective
+{What this task accomplishes}
+
+## Source
+- User Story: US-{x}
+- Feature: feature-NNN-{name}
+- Deliverable: D-{z}
+
+## Interface Contracts
+{APIs, events, data contracts this task must respect}
+
+## Architecture Notes
+{Where this fits — reference KB docs and feature SPEC}
+
+## Files to Touch
+{Files to create/modify with brief description}
+
+## Acceptance Criteria
+{Concrete, testable — from user story + feature SPEC}
+
+## Test Requirements
+{What tests to write — reference test-landscape.md}
+
+## Complexity
+{S/M/L/XL with justification}
+
+## Dependencies
+- Depends on: TASK-{x} (reason)
+- Blocks: TASK-{y}
+```
+
+**Well-sized tasks:** Clear start/end, verifiable, fits one agent session (<10 files, <500 lines new code), defined interfaces.
 
 ### Step 3: Precedence Analysis
 
-Map dependencies between tasks and user stories:
-
-```markdown
-## Precedence Graph
-
-US-01 → TASK-F1 (data model) → TASK-F2 (repository) → TASK-F4 (API)
-                                                      ↗
-US-02 → TASK-F3 (auth middleware) ────────────────────
-
-US-03 → TASK-F5 (UI components) ── independent ── parallel with Wave 1
-```
-
-For each task, identify:
-- **Depends on:** Tasks that must complete before this one starts.
-- **Blocks:** Tasks that wait on this one.
-- **Parallel candidates:** Tasks with no shared dependencies.
-
-Record dependencies in each TASK-{id}.md and summarize in DETAIL.md.
+Map dependencies between tasks:
+- For each: depends-on, blocks, parallel candidates.
+- Produce precedence graph (mermaid or text).
+- Verify DAG (no cycles).
 
 ### Step 4: Complexity Estimation
 
-Estimate each task using KB data:
+| Size | Scope | Example |
+|------|-------|---------|
+| **S** | Single file, isolated change | Add a field, fix a bug |
+| **M** | 2–5 files, one module | New endpoint, new component |
+| **L** | 5–10 files, may cross modules | New feature flow, migration |
+| **XL** | 10+ files, multiple modules | New subsystem, major refactor |
 
-| Size | Criteria | Typical Scope |
-|------|----------|---------------|
-| **S** | Single file change, clear pattern to follow | Bug fix, config change, simple addition |
-| **M** | 2-5 files, one module, established patterns | New feature within existing architecture |
-| **L** | 5-10 files, may cross modules, new patterns needed | Feature requiring new abstractions |
-| **XL** | 10+ files, multiple modules, significant new architecture | New subsystem, major refactor |
-
-Adjust based on KB:
-- `tech-debt.md` flags in the target area → bump complexity up.
-- `test-landscape.md` shows zero coverage → add test-writing effort.
-- `coding-standards.md` is marked Partial for the target area → agent may struggle with conventions.
+Adjust using KB: tech-debt flags → bump up, zero coverage → add test effort.
 
 ### Step 5: Delivery Breakdown
 
-Group tasks into delivery increments — shippable units of work:
+Group tasks into delivery increments aligned with PLAN deliverables:
+- User stories covered
+- Tasks included
+- Estimated effort (sum of complexity)
+- Success criteria (from feature SPEC acceptance criteria)
+- Dependencies on other increments
+
+### Step 6: Execution Plan (Waves)
+
+Organize into waves for parallel execution. Tasks in the same wave have no shared dependencies:
 
 ```markdown
-## Delivery Breakdown
+## Wave 1: Foundation
+- TASK-001 (S) — Database schema
+- TASK-002 (M) — Core domain models
+  → Can run in parallel
 
-### DELIVERY-01: Core Recording
-**User Stories:** US-01, US-02
-**Tasks:** TASK-F1, TASK-F2, TASK-F3, TASK-F4
-**Estimated Effort:** 3 waves (see execution plan)
-**Success Criteria:**
-- [ ] All acceptance criteria from US-01 and US-02 pass
-- [ ] Build green, tests green
-- [ ] Review grade A- or above
-
-### DELIVERY-02: Transcription
-**User Stories:** US-03, US-04
-**Tasks:** TASK-F5, TASK-F6, TASK-F7
-**Depends on:** DELIVERY-01
+## Wave 2: Core Features
+- TASK-003 (L) — API endpoints [depends: TASK-001, TASK-002]
+- TASK-004 (M) — Event handlers [depends: TASK-002]
+  → Can run in parallel
 ```
-
-### Step 6: Execution Plan
-
-Based on the precedence graph, organize tasks into waves for parallel execution:
-
-```markdown
-## Execution Plan
-
-### DELIVERY-01
-
-#### Wave 1 (parallel)
-- TASK-F1: Data model (S) — no dependencies
-- TASK-F5: UI scaffolding (M) — no dependencies
-
-#### Wave 2 (parallel, after Wave 1)
-- TASK-F2: Repository layer (M) — depends on F1
-- TASK-F3: Auth middleware (M) — independent of F1
-
-#### Wave 3 (sequential)
-- TASK-F4: API endpoints (L) — depends on F2, F3
-```
-
-### Step 7: Identify Spikes
-
-A spike is a time-boxed research task needed before implementation.
-
-**Generate a spike when:**
-- A feature requires technology the team hasn't used before.
-- The KB has an open question that blocks task definition.
-- The complexity estimate is uncertain (could be M or XL — need to investigate).
-
-Spikes are separate TASK files with `**Type:** Spike` in the header. Their output is knowledge (update KB), not code.
-
-## Output
-
-- `DETAIL.md` — the complete execution plan with user stories, task list, precedence graph, delivery breakdown, and wave plan.
-- `TASK-{id}.md` files — one per task. Contains: objective, interface contracts, architecture notes, acceptance criteria, test requirements, files to touch.
-- Precedence graph (text or mermaid) showing execution order and parallelism.
 
 ## Feedback Loops
 
-### → Plan (Detail reveals plan is too vague)
+### → Plan
 
-**Trigger:** The plan doesn't provide enough structure to decompose into tasks. Module boundaries are unclear, deliverables are too large, or test scenarios don't map to features.
+Plan too vague for detailing → document what's missing, return to `/aid-plan` for revision.
 
-**Protocol:**
-1. Document what's missing: "PLAN.md defines 'search module' but doesn't specify which search features go in MVP vs. v2."
-2. Return to aid-plan for revision with the specific gap identified.
-3. Revised PLAN.md → resume detailing.
+### → Discovery
 
-### → Discovery (KB gaps)
+KB gap → write Q&A entry to `aid-workspace/knowledge/DISCOVERY-STATE.md`.
 
-**Trigger:** Detailing reveals the KB is incomplete.
+### → Specify
 
-**Protocol:**
-1. Generate GAP.md with `discovery-needed`.
-2. Trigger targeted aid-discover.
-3. KB updated → resume detailing with corrected data.
+SPEC ambiguous → write Q&A entry to feature's `STATE.md`.
 
-### → Specify (Spec ambiguity)
+### ← Implement / Review
 
-**Trigger:** The spec is ambiguous and can't be decomposed into tasks.
+Detail was wrong (task too large, missing dependencies, missing task) → receive feedback, revise affected tasks and waves.
 
-**Protocol:**
-1. Generate GAP.md with `ambiguity`.
-2. Trigger aid-specify revision (possibly with targeted interview).
-3. Updated spec → resume detailing.
+## Output
 
-### ← Implement / Review (Loops from downstream)
-
-If implementation or review reveals the detail was wrong (task too large, wrong dependencies, missing task):
-
-1. Receive IMPEDIMENT.md or review feedback.
-2. Re-assess affected tasks.
-3. Split, reorder, or add tasks as needed.
-4. Update DETAIL.md execution plan.
+- `aid-workspace/{work}/DETAIL.md` — user stories, task list, precedence graph, delivery breakdown, wave plan.
+- `aid-workspace/{work}/tasks/TASK-{id}.md` files — one per executable task.
 
 ## Quality Checklist
 
-- [ ] Every deliverable in PLAN.md has user stories.
+- [ ] Every PLAN deliverable has user stories.
 - [ ] Every user story has executable tasks.
 - [ ] Every TASK has concrete acceptance criteria.
-- [ ] Dependencies form a valid DAG (no cycles).
+- [ ] Every TASK traces back to a feature SPEC.
+- [ ] Dependencies form valid DAG (no cycles).
 - [ ] Complexity estimates reference KB data.
-- [ ] Parallel execution opportunities are identified.
-- [ ] Spikes are identified for uncertain areas.
+- [ ] Parallel execution opportunities identified (waves).
 - [ ] Delivery breakdown has measurable success criteria.
-- [ ] Execution plan has clear wave ordering.
+- [ ] All output files live inside the work directory.
 
 ## Why This Phase Exists
 
-AI coding agents need precise, bounded tasks — not vague feature requests. Detail transforms the strategic roadmap into task-level specs that an agent can implement in a single session: clear objective, files to touch, interface contracts, acceptance criteria.
+AI coding agents need precise, bounded tasks — not vague feature requests. Detail transforms the delivery roadmap into task-level specs that an agent can implement in a single session: clear objective, files to touch, interface contracts, acceptance criteria.
 
-The precedence graph and wave plan also enable parallel execution: multiple coding agents working on independent tasks simultaneously, with merge order defined upfront.
+The precedence graph and wave plan enable parallel execution: multiple coding agents working on independent tasks simultaneously, with merge order defined upfront.
 
 ## Related Phases
 
-- **Previous:** [Plan](../aid-plan/) — provides the strategic roadmap
+- **Previous:** [Plan](../aid-plan/) — provides the delivery roadmap
 - **Next:** [Implement](../aid-implement/) — executes TASK files
 - **Triggered by:** Feedback from Implement/Review when Detail needs revision
 
 ## See Also
 
-- [Detail Template](../../templates/delivery-plans/detail-template.md) — Full DETAIL.md template.
 - [AID Methodology](../../methodology/aid-methodology.md) — The complete methodology.
