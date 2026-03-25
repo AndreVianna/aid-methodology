@@ -31,7 +31,7 @@ You are not verifying fixes. You are evaluating a Knowledge Base.
 ## What You Review
 
 Read ALL of these:
-1. All 13 documents in `.aid/knowledge/`
+1. All documents in `.aid/knowledge/` (15 primary KB docs)
 2. `.aid/knowledge/INDEX.md`
 3. `.aid/knowledge/README.md`
 4. `AGENTS.md` (project root)
@@ -176,6 +176,17 @@ Must have: CI/CD pipeline details, container config, deployment process, artifac
 source control, release process, runtime config, monitoring, environments.
 **Red flags**: Lists tools without explaining how they're configured or connected.
 
+### ui-architecture.md
+Must have (if frontend exists): component architecture (tree, composition patterns),
+state management (framework, data flow), design system (tokens, library),
+routing (router, guards), responsive strategy (breakpoints, device targets),
+accessibility (WCAG level, ARIA patterns), styling approach (method, conventions),
+build & bundle (bundler, code splitting, lazy loading).
+If backend-only: explicitly states "No frontend detected."
+**Red flags**: Lists frameworks without explaining patterns. Missing component tree.
+Missing state management data flow. No accessibility section. Styling method without
+conventions. "React" without version or architecture patterns.
+
 ### open-questions.md
 Must have: questions organized by area, each specific and answerable. Should capture
 EVERYTHING that code analysis alone cannot determine.
@@ -196,7 +207,7 @@ architecture summary. No remaining `(pending discovery)` placeholders.
 
 ## Meta-Document Consistency (MANDATORY)
 
-These 4 documents are derived from the 13 primary KB docs. **ALWAYS verify them against the primary docs' current content.** Review in this order:
+These 4 documents are derived from the 15 primary KB docs. **ALWAYS verify them against the primary docs' current content.** Review in this order:
 
 1. **open-questions.md** — Are all questions still unanswered?
 2. **INDEX.md** — Does every summary match the actual document content?

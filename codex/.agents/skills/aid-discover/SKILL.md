@@ -62,19 +62,20 @@ State 6: GRADE file, grade >= min, user-approved        → DONE
 
 **Detection logic:**
 
-1. Check `.aid/knowledge/` for the 14 expected documents:
+1. Check `.aid/knowledge/` for the 15 expected documents:
    ```
    project-structure.md, external-sources.md,
    architecture.md, technology-stack.md, module-map.md, coding-standards.md, data-model.md,
    api-contracts.md, integration-map.md, domain-glossary.md, test-landscape.md,
-   security-model.md, tech-debt.md, infrastructure.md
+   security-model.md, tech-debt.md, infrastructure.md,
+   ui-architecture.md
    ```
 2. A document is "populated" only if it contains real content — NOT just the init template
    (files containing only `❌ Pending` are treated as missing). If any are missing or
    unpopulated → **GENERATE**
-3. If all 14 are populated and `.aid/knowledge/DISCOVERY-STATE.md` has `**Grade:** Pending` or
+3. If all 15 are populated and `.aid/knowledge/DISCOVERY-STATE.md` has `**Grade:** Pending` or
    `**Grade:** Not Started` → **REVIEW**
-4. If all 14 are populated but `.aid/knowledge/DISCOVERY-STATE.md` does not exist → **REVIEW** (legacy)
+4. If all 15 are populated but `.aid/knowledge/DISCOVERY-STATE.md` does not exist → **REVIEW** (legacy)
 5. If `.aid/knowledge/DISCOVERY-STATE.md` exists with a grade other than Pending:
    - Read the current overall grade and minimum grade
    - If `--grade` was provided, update the minimum grade in the file
@@ -108,9 +109,9 @@ Scan `.aid/knowledge/` for existing files. A document counts as "exists" only if
 A file with only the init template header (containing `❌ Pending`) is treated as MISSING
 and will be regenerated.
 
-Print: `[0/14] Checking existing KB...`
+Print: `[0/15] Checking existing KB...`
 
-If ALL 14 documents have real content and no `--reset` was requested, report KB is complete
+If ALL 15 documents have real content and no `--reset` was requested, report KB is complete
 and skip directly to Step 6 (README.md and INDEX.md regeneration).
 
 ---
@@ -207,17 +208,25 @@ and note any discrepancies.
 
 #### [2/5] Architecture Analysis (discovery-architect)
 
-Target files: `architecture.md`, `technology-stack.md`
+Target files: `architecture.md`, `technology-stack.md`, `ui-architecture.md`
 
 Print: `[2/5] Dispatching architecture analysis...`
 
 Prompt:
 > Read the reference documents first, then analyze this project's repository — all code,
-> configuration, and documentation — and produce .aid/knowledge/architecture.md and
-> .aid/knowledge/technology-stack.md.
+> configuration, and documentation — and produce .aid/knowledge/architecture.md,
+> .aid/knowledge/technology-stack.md, and .aid/knowledge/ui-architecture.md.
 > Cover: project type, folder structure, architectural patterns, module boundaries, data flow,
 > DI registration, entry points, tech stack (languages, frameworks, versions, package managers,
 > runtime, build tools, dev tooling).
+> For ui-architecture.md: component architecture (tree, composition, shared vs page),
+> state management (framework, patterns, server state sync), design system (tokens, palette,
+> typography, existing library), routing & navigation (router, guards, deep linking),
+> responsive & adaptive strategy (breakpoints, mobile-first), accessibility approach
+> (WCAG level, aria patterns, keyboard nav), styling approach (CSS modules, Tailwind,
+> styled-components, theming), and build & bundle config (bundler, code splitting, lazy loading).
+> If the project has no frontend, write "No frontend detected — this project is backend-only"
+> in ui-architecture.md.
 > When repository documentation describes intended architecture and code shows different
 > implementation, note the discrepancy — documentation reveals intent, code reveals reality.
 > Both are valuable. Pay special attention to external-sources.md — external documentation
@@ -333,7 +342,7 @@ If you see "N local agents still running" in the status bar, you are NOT done. W
 
 ---
 
-### Verify All 14 Files
+### Verify All 15 Files
 
 **Only after ALL agents have completed**, check which files exist:
 
@@ -341,22 +350,24 @@ If you see "N local agents still running" in the status bar, you are NOT done. W
 for f in project-structure.md external-sources.md \
   architecture.md technology-stack.md module-map.md coding-standards.md \
   data-model.md api-contracts.md integration-map.md domain-glossary.md \
-  test-landscape.md security-model.md tech-debt.md infrastructure.md; do
+  test-landscape.md security-model.md tech-debt.md infrastructure.md \
+  ui-architecture.md; do
   [ -f ".aid/knowledge/$f" ] && echo "✅ $f" || echo "❌ $f MISSING"
 done
 ```
 
 **If any files are missing:** Re-dispatch ONLY the specific agent responsible for the missing files.
-Wait for that agent to complete. Verify again. Repeat until all 14 exist.
+Wait for that agent to complete. Verify again. Repeat until all 15 exist.
 
 **Agent-to-file mapping for re-dispatch:**
 | Agent | Files |
 |-------|-------|
 | discovery-scout | project-structure.md, external-sources.md |
-| discovery-architect | architecture.md, technology-stack.md |
+| discovery-architect | architecture.md, technology-stack.md, ui-architecture.md |
 | discovery-analyst | module-map.md, coding-standards.md, data-model.md |
 | discovery-integrator | api-contracts.md, integration-map.md, domain-glossary.md |
-| discovery-quality | test-landscape.md, security-model.md, tech-debt.md, infrastructure.md |
+| discovery-quality | test-landscape.md, security-model.md, tech-debt.md, infrastructure.md,
+   ui-architecture.md |
 
 When re-dispatching, target ONLY the missing file(s):
 > Analyze this project's repository and produce ONLY .aid/knowledge/{missing-file}.md. [original prompt for that area]. Write only to the .aid/knowledge/ directory.
@@ -390,6 +401,7 @@ reading across all previously produced KB documents.
 | security-model.md | ✅ Complete | |
 | tech-debt.md | ✅ Complete | |
 | infrastructure.md | ✅ Complete | |
+| ui-architecture.md | ✅ Complete | |
 
 ## Revision History
 
@@ -421,6 +433,7 @@ If your task touches an area covered here, read the relevant document first.
 | security-model.md | {2-3 line summary of security posture} |
 | tech-debt.md | {2-3 line summary of debt and risk} |
 | infrastructure.md | {2-3 line summary of infrastructure} |
+| ui-architecture.md | {2-3 line summary of UI architecture, or "backend-only — no frontend"} |
 ```
 
 Regenerate INDEX.md on every discovery run (full or targeted).
@@ -484,9 +497,9 @@ If a field cannot be determined, leave it as `(not found — see DISCOVERY-STATE
 
 ### Step 8: Final Verification
 
-List all 14 expected KB documents. Check each exists. Report any missing.
+List all 15 expected KB documents. Check each exists. Report any missing.
 
-Print: `[14/14] Generation complete — Knowledge Base ready. Run /aid-discover again to review.`
+Print: `[15/15] Generation complete — Knowledge Base ready. Run /aid-discover again to review.`
 
 If any documents are missing, report them and offer to re-dispatch the responsible subagent.
 
@@ -494,7 +507,7 @@ If any documents are missing, report them and offer to re-dispatch the responsib
 
 ## Mode: REVIEW
 
-All 14 KB documents exist. Grade them.
+All 15 KB documents exist. Grade them.
 
 ### Step 1: Dispatch the Reviewer
 
@@ -549,7 +562,7 @@ Prompt to pass to the subagent:
 >      generic statements that could apply to any project?
 >
 > 6. **Meta-document integrity** — INDEX.md, README.md, and AGENTS.md are
->    derived from the 14 primary documents.
+>    derived from the 15 primary documents.
 >    - Do their summaries and values accurately reflect the current primary doc content?
 >    - Is placeholder text or template markers still present?
 >    - Are questions marked Pending in the Q&A section of DISCOVERY-STATE.md actually still unanswerable from the repository?
@@ -584,7 +597,7 @@ Wait for completion.
 ### Step 2: Post-Process DISCOVERY-STATE.md
 
 Read `.aid/knowledge/DISCOVERY-STATE.md`. Verify it contains:
-- [ ] Grade for every document (14 KB docs + AGENTS.md + INDEX.md + README.md)
+- [ ] Grade for every document (15 KB docs + AGENTS.md + INDEX.md + README.md)
 - [ ] Specific issues with severity levels ([CRITICAL], [HIGH], [MEDIUM], [MINOR])
 - [ ] Verification spot-checks (minimum 10)
 - [ ] Overall grade and recommendation
@@ -948,6 +961,16 @@ and notes. Observations about overall health.
 Must have: CI/CD pipeline details, container config, deployment process, artifact repos,
 source control, release process, runtime config, monitoring, environments.
 **Red flags**: Lists tools without explaining how they're configured or connected.
+
+### ui-architecture.md
+Must have (if frontend exists): component architecture (tree, composition patterns),
+state management (framework, data flow), design system (tokens, library),
+routing (router, guards), responsive strategy (breakpoints, device targets),
+accessibility (WCAG level, ARIA patterns), styling approach (method, conventions),
+build & bundle (bundler, code splitting, lazy loading).
+If backend-only: explicitly states "No frontend detected."
+**Red flags**: Lists frameworks without explaining patterns. Missing component tree.
+Missing state management data flow. No accessibility section.
 
 ### external-sources.md
 Must have: list of all external documentation sources provided by the user (if any), with
