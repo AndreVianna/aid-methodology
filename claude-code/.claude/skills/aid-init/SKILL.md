@@ -23,7 +23,7 @@ workspace, and determines the workflow path. Run this once before any other AID 
   .aid/
     knowledge/
       DISCOVERY-STATE.md
-      (...14 KB docs, INDEX.md, README.md)
+      (...15 KB docs, INDEX.md, README.md)
 ```
 
 Works and features are created later by `/aid-interview`.
@@ -123,7 +123,7 @@ Parse and validate the grade. Store it.
 
 ## Step 2: Scaffold Knowledge Base
 
-Create `.aid/knowledge/` directory and all 14 KB document templates.
+Create `.aid/knowledge/` directory and all 15 KB document templates.
 
 ### For Brownfield Projects
 
@@ -139,7 +139,7 @@ Create each file with a header indicating it's pending discovery:
 *This document will be populated by `/aid-discover`.*
 ```
 
-The 14 documents:
+The 15 documents:
 
 | File | Title |
 |------|-------|
@@ -157,6 +157,7 @@ The 14 documents:
 | `security-model.md` | Security Model |
 | `tech-debt.md` | Tech Debt |
 | `infrastructure.md` | Infrastructure |
+| `ui-architecture.md` | UI Architecture |
 
 **Special case — external-sources.md:** If the user provided external paths in Q4, write
 them into the file immediately:
@@ -194,7 +195,7 @@ Create each file with a header indicating it will be filled during interview/spe
 *This document will be populated as requirements are gathered and specifications are written.*
 ```
 
-**Greenfield documents are the same 14 files.** Some will remain sparse (e.g., tech-debt.md
+**Greenfield documents are the same 15 files.** Some will remain sparse (e.g., tech-debt.md
 for a new project), and that's expected. The reviewer in later phases understands this.
 
 ---
@@ -348,7 +349,7 @@ Print a summary of everything created:
   External:    {N paths / None}
 
   Created:
-    knowledge/    (14 KB documents + README + INDEX + DISCOVERY-STATE)
+    knowledge/    (15 KB documents + README + INDEX + DISCOVERY-STATE)
     CLAUDE.md                   {created / updated / unchanged}
     .gitignore                  {created / updated / unchanged}
 
@@ -371,9 +372,9 @@ Print a summary of everything created:
 
 ## Quality Checklist
 
-- [ ] `.aid/knowledge/` created with all 14 KB templates
+- [ ] `.aid/knowledge/` created with all 15 KB templates
 - [ ] README.md has correct project type, name, and completeness table
-- [ ] INDEX.md has all 14 documents listed
+- [ ] INDEX.md has all 15 documents listed
 - [ ] DISCOVERY-STATE.md has correct minimum grade and project type
 - [ ] External paths (if any) verified accessible and recorded
 - [ ] CLAUDE.md has workspace reference and AID placeholders (created or appended)
