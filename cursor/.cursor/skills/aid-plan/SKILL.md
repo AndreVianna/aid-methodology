@@ -146,12 +146,30 @@ For every adjustment:
 
 ### Step 4: Write and Review
 
-When agreed:
-1. Write the deliverable to PLAN.md
-2. **Review immediately:** Does it hold up?
-   - All included features' dependencies satisfied by prior deliverables?
-   - Actually standalone-functional?
-   - Consistent with KB architecture?
+When the developer agrees on a deliverable, **IMMEDIATELY write it to the file.**
+
+**First deliverable:** Create `.aid/{work}/PLAN.md` with the header and first deliverable:
+```markdown
+# Plan — {Work Name}
+
+## Deliverables
+
+### delivery-001: {Name}
+- **What it delivers:** {user-facing value}
+- **Features:** feature-001-{name}, feature-003-{name}
+- **Depends on:** —
+- **Priority:** Must
+```
+
+**Subsequent deliverables:** Append to the existing PLAN.md.
+
+⚠️ **DO NOT continue to the next deliverable without writing this one first.**
+⚠️ **DO NOT accumulate multiple deliverables "in your head" — write each one immediately.**
+
+After writing, **review immediately:** Does it hold up?
+- All included features' dependencies satisfied by prior deliverables?
+- Actually standalone-functional?
+- Consistent with KB architecture?
 
 | Grade | Action |
 |-------|--------|
@@ -160,8 +178,8 @@ When agreed:
 | **C** | Problem found — back to Propose with findings. |
 
 ```
-✅ delivery-001 written and verified — dependencies satisfied, standalone-functional.
-Moving to delivery-002.
+✅ delivery-001 written to PLAN.md and verified — dependencies satisfied,
+standalone-functional. Moving to delivery-002.
 ```
 
 ### Step 5: Next Deliverable
@@ -180,6 +198,13 @@ After all deliverables are written, check for risks that span features:
 
 ### Step 7: Final Summary
 
+**Before printing the summary, verify PLAN.md is complete:**
+1. Read `.aid/{work}/PLAN.md` from disk
+2. Confirm every agreed deliverable is written
+3. If any deliverable is missing → write it NOW
+4. If Cross-Cutting Risks or Deferred sections apply → append them NOW
+
+Then print:
 ```
 Plan complete for {work}:
 
@@ -192,6 +217,8 @@ Deferred: feature-006 (Could-have, revisit after delivery-003 feedback)
 
 {If cross-cutting risks:}
 Cross-cutting risks: {count} identified (see PLAN.md)
+
+PLAN.md written to: .aid/{work}/PLAN.md ✅
 ```
 
 ---
