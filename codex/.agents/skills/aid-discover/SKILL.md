@@ -90,7 +90,7 @@ State 6: GRADE file, grade >= min, user-approved        → DONE
      - If not approved → **APPROVAL**
 
 **Grade ordering** (highest to lowest):
-`A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F`
+`A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, E+, E, E-, F`
 
 Print the detected state: `[State: {GENERATE|REVIEW|Q&A|FIX|APPROVAL|DONE}]`
 
@@ -567,16 +567,10 @@ Prompt to pass to the subagent:
 >    - Is placeholder text or template markers still present?
 >    - Are questions marked Pending in the Q&A section of DISCOVERY-STATE.md actually still unanswerable from the repository?
 >
-> Grade each document: A+ (exceptional), A (thorough), B+ (good with minor gaps), B (adequate),
-> B- (shallow), C+ (significant gaps), C (barely useful), D (misleading or wrong), F (missing/empty).
->
-> **Grade caps (absolute — no exceptions):**
-> Multiple [CRITICAL] → max D. One [CRITICAL] → max D+.
-> Multiple [HIGH] → max C. One [HIGH] → max C+.
-> Multiple [MEDIUM] → max B. One [MEDIUM] → max B+.
-> Multiple [MINOR] → max A-. One [MINOR] → max A. Only zero issues = A+.
->
-> All issues MUST have severity: [CRITICAL], [HIGH], [MEDIUM], or [MINOR].
+> **Grading:** Use the universal rubric (read `../templates/grading-rubric.md`).
+> Classify every issue as [MINOR], [LOW], [MEDIUM], [HIGH], or [CRITICAL].
+> Grade is CALCULATED from worst issue severity + quantity. Worst issue dominates.
+> A+ = zero issues. F = missing/empty/non-functional.
 >
 > **Minimum 15 spot-checks** (verify claims against actual code). At least 5 must be version verifications.
 >

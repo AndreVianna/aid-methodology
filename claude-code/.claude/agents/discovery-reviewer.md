@@ -123,17 +123,17 @@ A generous review is worse than useless — it lets bad docs through the quality
 
 **Automatic grade caps (hard rules — apply AFTER counting all issues per document):**
 
-| Condition | Maximum Grade |
-|-----------|--------------|
-| Multiple [CRITICAL] issues | D |
-| One [CRITICAL] issue | D+ |
-| Multiple [HIGH] issues | C |
-| One [HIGH] issue | C+ |
-| Multiple [MEDIUM] issues | B |
-| One [MEDIUM] issue | B+ |
-| Multiple [MINOR] issues | A- |
-| One [MINOR] issue | A |
-| No issues | A+ |
+**Grading:** Use the universal rubric. Grade is CALCULATED from worst issue severity
++ quantity. The worst issue dominates. See grade table below.
+
+### 5b. Issue Severities
+
+**Every issue MUST have one of these severity levels:**
+- **[CRITICAL]** — Wrong information, missing critical sections, would cause bad decisions
+- **[HIGH]** — Significant gaps, shallow coverage of important areas, missing evidence
+- **[MEDIUM]** — Missing depth in an important area, incomplete but not wrong
+- **[LOW]** — Minor convention deviation, could be better but not incorrect
+- **[MINOR]** — Cosmetic, formatting, stylistic, nice-to-have improvements
 
 **Severity classification rules:**
 - Factual error (wrong version, wrong class type, wrong path) → [CRITICAL]
@@ -142,17 +142,32 @@ A generous review is worse than useless — it lets bad docs through the quality
 - Content that largely duplicates another document → [HIGH]
 - Placeholder/template text left in → [HIGH]
 - Missing depth in an important area → [MEDIUM]
+- Slightly incomplete but fundamentally correct → [LOW]
 - Could be more detailed or better organized → [MINOR]
 - Cosmetic, formatting, or stylistic issues → [MINOR]
 
-**The cap is absolute.** A document with one [MEDIUM] issue CANNOT receive higher than B+, regardless of how excellent everything else is. Quality gates exist to catch problems, not to reward effort.
+### 5c. Grade Calculation
 
-### 6. Issue Severity
-**Every issue MUST have a severity level:**
-- **[CRITICAL]** — Wrong information, missing critical sections, would cause bad decisions
-- **[HIGH]** — Significant gaps, shallow coverage of important areas, missing evidence
-- **[MEDIUM]** — Missing depth in an important area, incomplete but not wrong
-- **[MINOR]** — Cosmetic, stylistic, could be better organized, nice-to-have improvements
+| Grade | Worst Issue | Quantity |
+|-------|-------------|----------|
+| A+ | None | Zero issues |
+| A | Minor | 1–5 |
+| A- | Minor | > 5 |
+| B+ | Low | 1 |
+| B | Low | 2–5 |
+| B- | Low | > 5 |
+| C+ | Medium | 1 |
+| C | Medium | 2–5 |
+| C- | Medium | > 5 |
+| D+ | High | 1 |
+| D | High | 2–5 |
+| D- | High | > 5 |
+| E+ | Critical | 1 |
+| E | Critical | 2–5 |
+| E- | Critical | > 5 |
+| F | Non-functional | Missing/empty/produces no usable output |
+
+**The worst issue dominates.** 3 minors + 1 medium = C+ (not A).
 
 ## Document Expectations
 

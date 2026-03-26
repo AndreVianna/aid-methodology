@@ -73,8 +73,6 @@ Each deliverable follows the same cycle:
 3. No features → **STOP.** "Run `/aid-interview` then `/aid-specify`."
 4. Some not Ready → warn, offer to plan with completed only or wait
 
-- ✅ `Default` or `Auto-accept edits` → Proceed.
-- ❌ `Plan mode` → **STOP.**
 
 ### Check 4: Detect State
 
@@ -170,11 +168,13 @@ After writing, **review immediately:** Does it hold up?
 - Actually standalone-functional?
 - Consistent with KB architecture?
 
-| Grade | Action |
-|-------|--------|
-| **A** | Solid. Move to next deliverable. |
-| **B** | Minor issue — flag, quick fix, continue. |
-| **C** | Problem found — back to Propose with findings. |
+Use the universal rubric (`../templates/grading-rubric.md`). Classify each issue
+by severity. The grade is calculated — worst issue dominates.
+
+| Condition | Action |
+|-----------|--------|
+| Grade ≥ minimum (from DISCOVERY-STATE.md) | Move to next deliverable. |
+| Grade < minimum, fixable | Back to Propose with findings. |
 
 ```
 ✅ delivery-001 written to PLAN.md and verified — dependencies satisfied,
@@ -244,14 +244,18 @@ For each deliverable in PLAN.md, run step 4:
 
 ### Grade Overall
 
-| Grade | Meaning | Action |
-|-------|---------|--------|
-| **A** | Plan current. No drift. | Print summary, done. |
-| **B** | Minor drift. 1–2 features shifted. | List findings, fix inline. |
-| **C** | Significant changes. Restructuring needed. | Present findings, re-enter loop for affected deliverables. |
-| **D** | Major changes. Sequence invalidated. | Recommend `--reset`. |
+Use the universal rubric (`../templates/grading-rubric.md`). Classify each issue
+by severity. The grade is calculated — worst issue dominates.
 
-For B/C: re-enter the loop (Propose → Discuss → Write → Review) for affected deliverables.
+Compare to minimum grade from DISCOVERY-STATE.md.
+
+| Condition | Action |
+|-----------|--------|
+| Grade ≥ minimum | Print summary, done. |
+| Grade < minimum, deliverables fixable | List findings, re-enter loop for affected deliverables. |
+| Grade < minimum, sequence invalidated | Recommend `--reset`. |
+
+For grades below minimum: re-enter the loop for affected deliverables.
 
 ---
 

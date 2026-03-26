@@ -172,11 +172,13 @@ Once approved:
    - Scope aligned with what the SPECs actually say?
    - Criteria concrete enough to verify?
 
-| Grade | Action |
-|-------|--------|
-| **A** | Solid. Move to next deliverable. |
-| **B** | Minor issue — flag, quick fix, continue. |
-| **C** | Problem found — back to Propose with findings. |
+Use the universal rubric (`../templates/grading-rubric.md`). Classify each issue
+by severity. The grade is calculated — worst issue dominates.
+
+| Condition | Action |
+|-----------|--------|
+| Grade ≥ minimum (from DISCOVERY-STATE.md) | Move to next deliverable. |
+| Grade < minimum, fixable | Back to Propose with findings. |
 
 ```
 ✅ delivery-001 tasks written and verified — sequence holds, criteria testable.
@@ -222,14 +224,18 @@ For each deliverable, check its corresponding tasks:
 
 ### Grade Overall
 
-| Grade | Meaning | Action |
-|-------|---------|--------|
-| **A** | Tasks current. No changes detected. | Print summary, done. |
-| **B** | Minor drift. 1–3 tasks need updating. | Present findings, fix inline. |
-| **C** | Significant changes. New tasks or reordering needed. | Present findings, re-enter loop for affected deliverables. |
-| **D** | Major restructuring. Most tasks orphaned. | Recommend `--reset`. |
+Use the universal rubric (`../templates/grading-rubric.md`). Classify each issue
+by severity. The grade is calculated — worst issue dominates.
 
-For B/C: re-enter the loop (Propose → Discuss → Write → Review) for affected deliverables.
+Compare to minimum grade from DISCOVERY-STATE.md.
+
+| Condition | Action |
+|-----------|--------|
+| Grade ≥ minimum | Print summary, done. |
+| Grade < minimum, tasks fixable | List findings, re-enter loop for affected deliverables. |
+| Grade < minimum, most tasks orphaned | Recommend `--reset`. |
+
+For grades below minimum: re-enter the loop for affected deliverables.
 Update task files, create new ones, delete orphans, renumber if needed.
 
 ---

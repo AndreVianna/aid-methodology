@@ -285,17 +285,19 @@ Immediately after writing, verify what was written:
 - Does it reference real codebase artifacts (not hallucinated paths/classes)?
 - Is it concrete enough for implementation (no vague "appropriate pattern" language)?
 
-**Grade the section:**
+**Grade the section** using the universal rubric (`../templates/grading-rubric.md`).
+Classify each issue by severity (Minor/Low/Medium/High/Critical). The grade is
+calculated — worst issue dominates. Compare to minimum grade from DISCOVERY-STATE.md.
 
-| Grade | Meaning | Action |
-|-------|---------|--------|
-| **A** | Solid. Consistent with everything. | Mark `Complete` in STATE.md. Next section. |
-| **B** | Minor gap. One small clarification needed. | Flag to developer, quick fix, mark Complete. |
-| **C** | Issue found. Contradicts another section or KB. | Back to Propose with findings. |
+| Condition | Action |
+|-----------|--------|
+| Grade ≥ minimum | Mark `Complete` in STATE.md. Next section. |
+| Grade < minimum, fixable | Back to Propose with findings. |
+| Grade < minimum, systemic | Loopback (KB/Requirements issue). |
 
 ```
-✅ Data Model section written and verified — consistent with architecture.md
-   and coding-standards.md. Moving to Feature Flow.
+✅ Data Model section — 2 minor issues (cosmetic naming) → Grade: A.
+   Meets minimum B+. Moving to Feature Flow.
 ```
 
 or:
@@ -336,23 +338,26 @@ For each section in SPEC.md, run step 4 of the loop against current state:
 
 ### Grade Overall
 
-| Grade | Meaning | Action |
-|-------|---------|--------|
-| **A** | Current. No drift. | Print summary, done. |
-| **B** | Minor drift. 1–3 small updates. | List findings, fix inline. |
-| **C** | Significant drift. Sections need rewrite. | List findings, re-enter loop for affected sections. |
-| **D** | Major drift. Core assumptions invalidated. | Recommend `--reset`. |
+Use the universal rubric (`../templates/grading-rubric.md`). Classify each issue
+by severity. The grade is calculated — worst issue dominates.
+
+Compare to minimum grade from DISCOVERY-STATE.md.
+
+| Condition | Action |
+|-----------|--------|
+| Grade ≥ minimum | Print summary, done. |
+| Grade < minimum, fixable sections | List findings, re-enter loop for affected sections. |
+| Grade < minimum, core assumptions wrong | Recommend `--reset`. |
 
 ```
 Reviewing {work}/{feature} against current KB and codebase...
 
-**Grade: {grade}**
-
-{findings and options}
+Issues found: 1 Low (stale DB column ref), 3 Minor (naming) → **Grade: B+**
+Minimum: B+. ✅ Meets minimum.
 ```
 
-For B/C: re-enter the loop (Propose → Discuss → Write → Review) for affected sections.
-When all resolved, set status back to Ready.
+For grades below minimum: re-enter the loop (Propose → Discuss → Write → Review)
+for affected sections. When all resolved, set status back to Ready.
 
 ---
 

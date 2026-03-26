@@ -1,8 +1,8 @@
 ---
 name: aid-implement
 description: >
-  Implement a task with built-in code review. Follows the universal loop:
-  code → review (spawn reviewer) → fix → re-review → done when A-.
+  Implement a task with built-in code review. State machine:
+  IMPLEMENT → REVIEW → FIX → back to REVIEW → DONE when grade ≥ minimum.
   Creates a branch per delivery for isolation. Use when a task is ready.
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
 context: fork
@@ -14,21 +14,27 @@ argument-hint: "task-001 (required)  [work-001 if multiple works]"
 
 Code it. Review it. Fix it. Ship it.
 
-## Universal Loop
-
-Same DNA as every other AID design skill:
+## State Machine
 
 ```
-Code → Review → Fix → Re-review → Done (when grade ≥ A-)
+IMPLEMENT → REVIEW → [grade ≥ min?] → DONE
+                  ↘ [grade < min] → FIX → back to REVIEW
 ```
 
-Review is NOT a separate step. It's built into implement.
+Review is a separate step with its own agent (clean context).
+Fix is a separate step. Reviewer NEVER fixes — only grades and lists issues.
+
+## Grading
+
+Read `../templates/grading-rubric.md` for the universal grading scale.
+Read minimum grade from `.aid/knowledge/DISCOVERY-STATE.md` field `**Minimum Grade:**`.
 
 ## Workspace
 
 ```
 .aid/
-  knowledge/                ← shared KB (read)
+  knowledge/                ← shared KB (via INDEX.md)
+    DISCOVERY-STATE.md      ← minimum grade
   work-NNN-{name}/
     PLAN.md                 ← delivery context
     known-issues.md         ← issues to watch for
@@ -64,12 +70,17 @@ Read `task-NNN.md`. It has 4 sections:
 - **Scope** — files/endpoints/migrations/config to create or modify
 - **Acceptance Criteria** — concrete, testable conditions
 
-### Check 3: Verify Not in Plan Mode
+### Check 3: Read Minimum Grade
+
+Read `.aid/knowledge/DISCOVERY-STATE.md` → extract `**Minimum Grade:**` value.
+This is the exit criterion for the review loop.
+
+### Check 4: Verify Not in Plan Mode
 
 - ✅ `Default` or `Auto-accept edits` → Proceed.
 - ❌ `Plan mode` → **STOP.**
 
-### Check 4: Branch Isolation
+### Check 5: Branch Isolation
 
 **One branch per delivery. All tasks in a delivery share the same branch.**
 
@@ -90,33 +101,25 @@ Read `task-NNN.md`. It has 4 sections:
 ⚠️ **Before creating a new branch:** verify working tree is clean.
 If dirty → **STOP.** Ask user to commit or stash first.
 
-### Check 5: Determine State
+### Check 6: Determine State
 
 | Condition | State |
 |-----------|-------|
-| No changes for this task yet | **IMPLEMENT** |
-| CORRECTION.md exists for this task | **FIX** |
-| Changes exist, no CORRECTION.md | **REVIEW** (re-run mode) |
+| No changes for this task yet | **IMPLEMENT** (Step 1) |
+| CORRECTION-task-NNN.md exists | **FIX** (Step 3) |
+| Changes exist, no CORRECTION | **REVIEW** (Step 2 — re-run) |
 
 ---
 
 ## Inputs
 
-**Always load:**
+**KB via INDEX.md** — Read `.aid/knowledge/INDEX.md`. Use summaries to decide which
+KB docs are relevant to this task, then load them. At minimum you'll almost always
+need coding-standards and architecture, but let the INDEX guide you — don't guess.
+
+**Always load (not KB):**
 - `.aid/{work}/tasks/task-NNN.md` — primary prompt
 - Feature SPEC: `.aid/{work}/features/{feature}/SPEC.md` — Technical Specification
-  sections from the task's Source feature
-- `.aid/knowledge/INDEX.md` — KB index for self-service lookup
-- `.aid/knowledge/coding-standards.md` — mandatory
-- `.aid/knowledge/architecture.md` — mandatory
-
-**Load from INDEX.md based on task scope** (read INDEX, pull what's relevant):
-- `technology-stack.md` — build commands, lint commands, dev tooling
-- `test-landscape.md` — test commands, test patterns, coverage
-- `data-model.md` — DB migrations, schema changes
-- `api-contracts.md` — API endpoints
-- `integration-map.md` — external service calls
-- `ui-architecture.md` — frontend components
 
 **Load if exists:**
 - `.aid/{work}/known-issues.md` — issues in code the task touches
@@ -125,22 +128,21 @@ If dirty → **STOP.** Ask user to commit or stash first.
 
 ## Step 1: IMPLEMENT (Code)
 
-Spawn a coding agent with assembled context:
+Dispatch a coding agent with assembled context.
 
 **Agent receives:**
 1. Task content (full task-NNN.md)
 2. Feature SPEC Technical Specification sections
-3. Coding standards + architecture (always)
-4. INDEX.md — use it to find and load KB docs relevant to the task scope
-5. known-issues.md if relevant
+3. KB docs loaded via INDEX.md
+4. known-issues.md if relevant
 
 **Agent rules:**
 ```
 RULES:
 - YAGNI — implement exactly what the task specifies. Nothing more.
   No "while I'm here" extras, no speculative abstractions, no future-proofing.
-- Follow coding-standards.md exactly (naming, patterns, error handling)
-- Write clean code regardless of what coding-standards.md covers:
+- Follow coding-standards from KB exactly (naming, patterns, error handling)
+- Write clean code regardless of what coding-standards covers:
   · Meaningful names (variables, methods, classes) — self-documenting
   · Small methods — single responsibility, one level of abstraction
   · No deep nesting — extract early returns, guard clauses
@@ -150,141 +152,108 @@ RULES:
   · No magic numbers or strings — use named constants
 - Match interface contracts from feature SPEC
 - Write unit tests for all new code AND update existing tests affected by changes
-- Before reporting done, verify ALL THREE gates pass using the **exact commands
-  from the KB** (look them up via INDEX.md — do NOT guess):
-  1. **Build** — find and run the project's build command
-  2. **Lint** — find and run the project's lint command
-  3. **Unit tests** — find and run the project's test command
+- Before reporting done, verify gates pass using the commands from KB
+  (look up via INDEX.md — technology-stack.md § Commands):
+  1. **Build** — ALWAYS. Find and run the project's build command.
+  2. **Lint** — IF CONFIGURED. Find and run the project's lint command.
+  3. **Unit tests** — IF CONFIGURED. Find and run the project's test command.
+  If lint or test commands are not in KB, skip that gate.
 - If you find a contradiction between SPEC and codebase → STOP and report
   as IMPEDIMENT. Do NOT silently work around it.
 - Commit messages: "task-NNN: {description}"
 ```
 
-**When agent reports done:** verify build + lint + ALL unit tests pass.
-If any fail, send agent back to fix. Only proceed to Review when all
-three gates are green.
+**When agent reports done:** verify build passes (and lint + tests if configured).
+If any configured gate fails, send agent back to fix before proceeding to Review.
 
 ---
 
 ## Step 2: REVIEW (Grade)
 
-Spawn a **separate reviewer agent** (clean context, no implementation knowledge):
+Dispatch a **separate reviewer agent** with clean context (no implementation knowledge).
 
 **Reviewer receives:**
-- Git diff (all changes on the delivery branch for this task)
+- VCS diff (all changes on the delivery branch for this task)
 - task-NNN.md — acceptance criteria and scope
 - Feature SPEC — expected behavior
-- coding-standards.md — convention reference
-- architecture.md — pattern reference
-- INDEX.md — for looking up additional KB docs as needed
+- KB docs via INDEX.md (typically coding-standards, architecture, test-landscape)
+- Grading rubric (`../templates/grading-rubric.md`)
+
+**Reviewer classifies every issue with a severity:**
+
+| Severity | Meaning |
+|----------|---------|
+| **Minor** | Cosmetic, style, trivial. Does not affect functionality. |
+| **Low** | Convention deviation, could be better but works correctly. |
+| **Medium** | Incorrect behavior (non-critical), missing edge case, incomplete coverage. |
+| **High** | Blocks functionality, security risk, data integrity concern. |
+| **Critical** | System failure, data loss, security breach, fundamentally wrong approach. |
+
+**Reviewer also tags the source:**
+
+| Source | Meaning | Resolution |
+|--------|---------|------------|
+| CODE | Implementation bug or style | Fix this cycle (Step 3) |
+| TASK | Task spec wrong or incomplete | Loopback → update task |
+| SPEC | Feature SPEC wrong or missing | Loopback → `/aid-specify` |
+| KB | Convention not documented | Loopback → `/aid-discover` |
 
 **Reviewer checks:**
 
 1. **Specification Compliance** — every acceptance criterion met?
 2. **Architecture Compliance** — patterns, module boundaries, dependency direction?
 3. **Convention Compliance** — naming, error handling, logging, file organization?
-4. **Code Quality** — clean code independent of project conventions?
-   Small methods? Meaningful names? Single responsibility? No god classes,
-   no deep nesting, no magic numbers? YAGNI — no over-engineering?
+4. **Code Quality** — clean code? Small methods? Meaningful names? No deep nesting,
+   no magic numbers? YAGNI — no over-engineering?
 5. **Test Coverage** — unit tests for new code? Existing tests updated?
-   Edge cases covered? Tests actually test behavior, not implementation details?
-6. **Build Health** — find and run the project's build, lint, and test commands
-   (look up via INDEX.md if not already loaded). Build clean? Lint clean? All tests green?
+   Edge cases covered? Tests test behavior, not implementation details?
+6. **Build Health** — build clean? Lint clean (if configured)? All tests green (if configured)?
 
-**Issue Classification:**
+**Grade is CALCULATED, not judged.** Count issues at each severity level,
+apply the rubric. The worst issue dominates.
 
-Every issue gets a **source** and **severity**:
+**⚠️ The reviewer NEVER fixes code.** It only grades and lists issues.
+Fix is a separate step.
 
-| Source | Meaning | Resolution |
-|--------|---------|------------|
-| CODE | Implementation bug or style | Fix this cycle |
-| TASK | Task spec wrong or incomplete | Update task → re-implement |
-| SPEC | Feature SPEC wrong or missing | Loopback → `/aid-specify` |
-| KB | Convention not documented | Loopback → `/aid-discover` |
-
-| Severity | Meaning |
-|----------|---------|
-| P1 | Blocks functionality or security risk |
-| P2 | Incorrect behavior, non-critical |
-| P3 | Style, minor convention deviation |
-| P4 | Suggestion for improvement |
-
-**Grading:**
-
-| Grade | Meaning |
-|-------|---------|
-| A+ | Exemplary — beyond requirements |
-| A  | Clean — minor P3-P4 only |
-| A- | Ship-ready — few P3, all criteria met |
-| B+ | Close — 1-2 P2 CODE issues |
-| B  | Multiple P2 fixes needed |
-| C  | Major rework — missing criteria or wrong approach |
-| D  | Doesn't meet requirements |
-| F  | Doesn't build or test |
-
-**Auto-fix:** Reviewer fixes P1/P2 CODE issues directly. Verify build+tests
-still green after each fix. Document what was changed.
+**Output:** `REVIEW-task-NNN.md` with issue list, severities, sources, and calculated grade.
 
 ---
 
-## Step 3: Evaluate Grade
+## Step 3: Evaluate and Route
 
-| Grade | Action |
-|-------|--------|
-| **≥ A-** | ✅ **DONE.** Task complete. Move to next task. |
-| **B+ to B** | → Step 4 (FIX) with CORRECTION.md |
-| **C to F** | → Step 4 (FIX) with CORRECTION.md. If D or F, ask user first. |
+Read the grade from REVIEW-task-NNN.md. Compare to minimum grade from DISCOVERY-STATE.md.
 
-### Non-CODE Issues
+| Condition | Action |
+|-----------|--------|
+| **Grade ≥ minimum** | ✅ **DONE.** Delete REVIEW file. Task complete. |
+| **Grade < minimum, CODE issues only** | → Step 4 (FIX) |
+| **Grade < minimum, has TASK issues** | Present to user → update task → re-implement (Step 1) |
+| **Grade < minimum, has SPEC issues** | Write Q&A to feature STATE.md → suggest `/aid-specify` |
+| **Grade < minimum, has KB issues** | Write Q&A to DISCOVERY-STATE.md → suggest `/aid-discover` |
 
-If reviewer found TASK/SPEC/KB issues:
-- **TASK issues** → present to user → update task → re-implement
-- **SPEC issues** → write Q&A to feature's STATE.md → suggest `/aid-specify`
-- **KB issues** → write Q&A to DISCOVERY-STATE.md → suggest `/aid-discover`
-
-These are loopbacks. Don't fix them at the code level.
+Non-CODE issues are loopbacks. Don't fix them at the code level.
 
 ---
 
 ## Step 4: FIX
 
-When grade < A-, reviewer produces `.aid/{work}/CORRECTION-task-NNN.md`:
+Rename `REVIEW-task-NNN.md` → `CORRECTION-task-NNN.md`.
 
-```markdown
-# Correction — task-NNN
+Dispatch coding agent with:
+- CORRECTION-task-NNN.md — issues to fix (CODE-sourced only)
+- Original task context
 
-## Issues
+**Agent fixes CODE issues only.** Verifies gates still pass after fixes.
 
-| # | Severity | Source | Description | File:Line |
-|---|----------|--------|-------------|-----------|
-| 1 | P2 | CODE | {description} | src/auth.ts:42 |
+When done:
+1. Delete CORRECTION-task-NNN.md
+2. → **Back to Step 2 (REVIEW)** — fresh reviewer, clean context
 
-## Auto-Fixed (already applied by reviewer)
+**Loop continues until grade ≥ minimum grade.**
 
-| # | Description | Fix Applied |
-|---|-------------|-------------|
-| 1 | {description} | {what was changed} |
-
-## Remaining (needs developer)
-
-| # | Severity | Description | File:Line |
-|---|----------|-------------|-----------|
-| 2 | P2 | {description} | src/user.ts:15 |
-
-## Grade: {grade}
-```
-
-**Fix process:**
-1. Spawn coding agent with CORRECTION.md + original task context
-2. Agent fixes remaining issues
-3. Verify build + tests green
-4. Delete CORRECTION.md
-5. → **Back to Step 2 (REVIEW)** — fresh reviewer, clean context
-
-**Loop continues until grade ≥ A-.**
-
-⚠️ **Circuit breaker:** If 3 review cycles pass without reaching A-,
-**STOP.** Present the pattern to the user — something systemic is wrong.
+⚠️ **Circuit breaker:** If the grade has not improved after 3 consecutive
+review cycles (same grade or worse), **STOP.** Present the pattern to the user —
+something systemic is wrong that retry won't fix.
 
 ---
 
@@ -337,24 +306,23 @@ Branch is merged only after `/aid-test` passes.
 
 - Code changes on `aid/delivery-NNN` branch
 - Unit tests for all new code
-- Build: green. Tests: green.
-- Grade ≥ A- from reviewer
+- Build: green. Lint + tests: green (if configured).
+- Grade ≥ minimum grade (from DISCOVERY-STATE.md)
 - Commit messages reference task-NNN
 - IMPEDIMENT-task-NNN.md if blocked
 
 ## Quality Checklist
 
 - [ ] On correct delivery branch (`aid/delivery-NNN`)
-- [ ] Agent received task + feature SPEC + INDEX.md + relevant KB docs
+- [ ] KB docs loaded via INDEX.md (not hardcoded)
 - [ ] YAGNI — no code beyond what the task specifies
 - [ ] Clean code — small methods, meaningful names, no deep nesting, no magic numbers
-- [ ] Build passes (zero errors, zero warnings)
-- [ ] Lint passes (zero violations)
-- [ ] All unit tests pass (new and existing)
-- [ ] Unit tests written for new code AND existing tests updated where affected
+- [ ] Build passes (zero errors)
+- [ ] Lint passes (if configured)
+- [ ] All unit tests pass (if configured) — new and existing
 - [ ] Files changed match task Scope
-- [ ] Reviewer graded ≥ A- (separate agent, clean context)
+- [ ] Reviewer graded ≥ minimum grade (separate agent, clean context, deterministic rubric)
+- [ ] Reviewer did NOT fix code — only graded and listed issues
 - [ ] No silent workarounds — impediments documented
 - [ ] Commit messages reference task-NNN
-- [ ] Coding standards followed
-- [ ] CORRECTION.md deleted after fixes applied
+- [ ] REVIEW/CORRECTION files cleaned up after completion

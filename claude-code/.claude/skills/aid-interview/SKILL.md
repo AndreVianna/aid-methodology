@@ -501,12 +501,10 @@ For each section of REQUIREMENTS.md, check against KB:
 
 ### 6c. Grade
 
-| Grade | Issues | Meaning |
-|-------|--------|---------|
-| **A** | 0 | Consistent with KB. No questions. |
-| **B** | 1–3 | Small gaps or refinements needed. |
-| **C** | 4–7 | Significant gaps or contradictions. |
-| **D** | 8+ | Serious consistency problems. |
+Use the universal rubric (`../templates/grading-rubric.md`). Classify each finding
+by severity (Minor/Low/Medium/High/Critical). Grade is calculated — worst issue dominates.
+
+Compare to minimum grade from `.aid/knowledge/DISCOVERY-STATE.md`.
 
 **Update `**Grade:**` in INTERVIEW-STATE.md.**
 
@@ -524,10 +522,10 @@ Checked REQUIREMENTS.md against {N} KB documents and {M} features.
 
 {details for each}
 
-{If grade is A:}
-No issues found. Requirements are consistent with the Knowledge Base.
+{If grade ≥ minimum:}
+No blocking issues found. Requirements are consistent with the Knowledge Base.
 
-{If grade is B, C, or D:}
+{If grade < minimum:}
 I have {N} questions to resolve these. Let's go through them one at a time.
 ```
 
