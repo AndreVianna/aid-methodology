@@ -75,11 +75,16 @@ Read `task-NNN.md`. It has 4 sections:
 
 1. Extract `delivery-NNN` from the task's Source field
 2. Branch name: `aid/delivery-NNN` (e.g., `aid/delivery-001`)
+3. **Look up the project's VCS** from `infrastructure.md § Source Control` (via INDEX.md)
+   to determine the correct branch/commit commands. Examples:
+   - Git: `git checkout -b aid/delivery-NNN` / `git checkout aid/delivery-NNN`
+   - SVN: `svn copy` to create branch, `svn switch` to switch
+   - Use whatever the project's VCS provides — do NOT assume Git.
 
 | Situation | Action |
 |-----------|--------|
-| Branch doesn't exist | `git checkout -b aid/delivery-NNN` from current HEAD |
-| Branch exists, not checked out | `git checkout aid/delivery-NNN` |
+| Branch doesn't exist | Create it from current HEAD using VCS branch command |
+| Branch exists, not checked out | Switch to it using VCS checkout/switch command |
 | Branch exists, already checked out | Continue |
 
 ⚠️ **Before creating a new branch:** verify working tree is clean.
@@ -313,13 +318,13 @@ After resolving: delete IMPEDIMENT file, retry from Step 1.
 ## Delivery Lifecycle
 
 ```
-git checkout -b aid/delivery-001          ← first task creates the branch
+create branch aid/delivery-001            ← first task creates the branch (VCS-specific command)
   → /aid-implement task-001               ← code → review → fix → ✅
   → /aid-implement task-002               ← code → review → fix → ✅
   → /aid-implement task-003               ← code → review → fix → ✅
   → /aid-test delivery-001                ← E2E + integration in staging
-  → PR / merge to main                    ← or however the project merges
-git checkout -b aid/delivery-002
+  → merge to main                         ← or however the project merges
+create branch aid/delivery-002
   → ...
 ```
 

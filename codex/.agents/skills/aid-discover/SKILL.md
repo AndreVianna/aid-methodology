@@ -966,9 +966,11 @@ and notes. Observations about overall health.
 **Red flags**: Missing severity classification. No actionable locations.
 
 ### infrastructure.md
-Must have: CI/CD pipeline details, container config, deployment process, artifact repos,
-source control, release process, runtime config, monitoring, environments.
-**Red flags**: Lists tools without explaining how they're configured or connected.
+Must have: Source Control section (VCS type, hosting, branch/commit commands), CI/CD pipeline
+details, container config, deployment process, artifact repos, release process, runtime config,
+monitoring, environments.
+**Red flags**: Lists tools without explaining how they're configured or connected. Missing Source Control
+section or assuming Git without verifying.
 
 ### ui-architecture.md
 Must have (if frontend exists): component architecture (tree, composition patterns),

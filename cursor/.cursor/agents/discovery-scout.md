@@ -37,6 +37,13 @@ You are a Discovery Scout — a specialized analysis agent in the AID discovery 
 ```markdown
 # Infrastructure
 
+## Source Control
+{VCS: Git / SVN / Mercurial / etc.}
+{hosting: GitHub / GitLab / Bitbucket / Azure DevOps / self-hosted / etc.}
+{branching strategy if detectable: trunk-based / GitFlow / feature branches / etc.}
+{branch commands: e.g., git checkout -b / git switch -c / svn copy}
+{commit commands: e.g., git commit / svn commit}
+
 ## CI/CD
 {pipeline tool: GitHub Actions / GitLab CI / Jenkins / etc.}
 {pipeline files: location}
