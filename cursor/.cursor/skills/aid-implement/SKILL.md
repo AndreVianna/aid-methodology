@@ -17,8 +17,8 @@ Code it. Review it. Fix it. Ship it.
 ## State Machine
 
 ```
-IMPLEMENT → REVIEW → [grade ≥ min?] → DONE
-                  ↘ [grade < min] → FIX → back to REVIEW
+IMPLEMENT → REVIEW → [present all issues] → FIX (CODE) → back to REVIEW
+                                          → DONE when grade ≥ minimum
 ```
 
 Review is a separate step with its own agent (clean context).
@@ -40,6 +40,7 @@ Read minimum grade from `.aid/knowledge/DISCOVERY-STATE.md` field `**Minimum Gra
     known-issues.md         ← issues to watch for
     tasks/
       task-NNN.md           ← PRIMARY INPUT
+      task-NNN-STATE.md     ← implementation state (created here)
     features/
       feature-NNN-{name}/
         SPEC.md             ← architectural constraints
@@ -103,11 +104,26 @@ If dirty → **STOP.** Ask user to commit or stash first.
 
 ### Check 6: Determine State
 
+Read `task-NNN-STATE.md` if it exists.
+
 | Condition | State |
 |-----------|-------|
-| No changes for this task yet | **IMPLEMENT** (Step 1) |
-| CORRECTION-task-NNN.md exists | **FIX** (Step 3) |
-| Changes exist, no CORRECTION | **REVIEW** (Step 2 — re-run) |
+| No STATE file exists | **IMPLEMENT** (Step 1) |
+| Status: `In Progress`, no issues pending | **IMPLEMENT** (Step 1 — resume) |
+| Status: `In Review`, issues listed | **FIX** (Step 2) |
+| Status: `Done` | **RE-RUN** (see Re-run below) |
+
+---
+
+## Re-run (Status: Done)
+
+When the task is already `Done` and the user runs `/aid-implement task-NNN` again:
+
+1. Ask: _"This task is marked Done. Do you want to reopen it for review? Is there something specific you want to re-examine?"_
+2. If user confirms → set Status to `In Review` in STATE.md, proceed to Step 2 (REVIEW)
+3. If user has a specific concern → record it as context for the reviewer
+
+This pattern is consistent across all AID phases.
 
 ---
 
@@ -127,6 +143,9 @@ need coding-standards and architecture, but let the INDEX guide you — don't gu
 ---
 
 ## Step 1: IMPLEMENT (Code)
+
+Create `task-NNN-STATE.md` from template (`../templates/implementation-state.md`).
+Set Status to `In Progress`.
 
 Dispatch a coding agent with assembled context.
 
@@ -166,6 +185,8 @@ RULES:
 **When agent reports done:** verify build passes (and lint + tests if configured).
 If any configured gate fails, send agent back to fix before proceeding to Review.
 
+When implementation passes gates → update STATE.md Status to `In Review` → proceed to Step 2.
+
 ---
 
 ## Step 2: REVIEW (Grade)
@@ -179,7 +200,7 @@ Dispatch a **separate reviewer agent** with clean context (no implementation kno
 - KB docs via INDEX.md (typically coding-standards, architecture, test-landscape)
 - Grading rubric (`../templates/grading-rubric.md`)
 
-**Reviewer classifies every issue with a severity:**
+**Reviewer classifies every issue with a severity and a source:**
 
 | Severity | Meaning |
 |----------|---------|
@@ -189,14 +210,12 @@ Dispatch a **separate reviewer agent** with clean context (no implementation kno
 | **High** | Blocks functionality, security risk, data integrity concern. |
 | **Critical** | System failure, data loss, security breach, fundamentally wrong approach. |
 
-**Reviewer also tags the source:**
-
-| Source | Meaning | Resolution |
-|--------|---------|------------|
-| CODE | Implementation bug or style | Fix this cycle (Step 3) |
-| TASK | Task spec wrong or incomplete | Loopback → update task |
-| SPEC | Feature SPEC wrong or missing | Loopback → `/aid-specify` |
-| KB | Convention not documented | Loopback → `/aid-discover` |
+| Source | Meaning |
+|--------|---------|
+| **CODE** | Implementation bug or style issue |
+| **TASK** | Task spec is wrong or incomplete |
+| **SPEC** | Feature SPEC is wrong or missing |
+| **KB** | Convention not documented |
 
 **Reviewer checks:**
 
@@ -215,38 +234,84 @@ apply the rubric. The worst issue dominates.
 **⚠️ The reviewer NEVER fixes code.** It only grades and lists issues.
 Fix is a separate step.
 
-**Output:** `REVIEW-task-NNN.md` with issue list, severities, sources, and calculated grade.
+**Output:** Update `task-NNN-STATE.md`:
+- Set Cycle number (increment from previous)
+- Set Grade
+- Write all issues under `### Issues` with severity, source, and description
+- Append cycle summary to `## Review History`
+
+### Issue Format in STATE.md
+
+```markdown
+### Issues
+
+| # | Severity | Source | Description | Status |
+|---|----------|--------|-------------|--------|
+| 1 | Medium | CODE | Missing null check in UserService.getById() | Pending |
+| 2 | Low | TASK | Acceptance criteria doesn't cover admin role | Pending |
+| 3 | Minor | CODE | Inconsistent spacing in imports | Pending |
+```
 
 ---
 
-## Step 3: Evaluate and Route
+## Step 3: Present and Route
 
-Read the grade from REVIEW-task-NNN.md. Compare to minimum grade from DISCOVERY-STATE.md.
+**Present ALL issues to the user** regardless of source. The user sees the full picture.
+
+```
+[Review — Cycle {N} — Grade: {grade} — Minimum: {min}]
+
+Issues found:
+
+| # | Severity | Source | Description |
+|---|----------|--------|-------------|
+| 1 | Medium | CODE | Missing null check in UserService.getById() |
+| 2 | Low | TASK | Acceptance criteria doesn't cover admin role |
+| 3 | Minor | CODE | Inconsistent spacing in imports |
+
+{If grade ≥ minimum:}
+✅ Grade meets minimum. Marking as Done.
+
+{If grade < minimum:}
+Grade below minimum. Next steps:
+- CODE issues (#1, #3): I'll fix these automatically.
+- TASK issues (#2): This needs a task update. {explain what's wrong}
+- SPEC issues: Would require re-running /aid-specify.
+- KB issues: Would require re-running /aid-discover.
+
+Proceed with auto-fix of CODE issues?
+```
+
+**Routing logic:**
 
 | Condition | Action |
 |-----------|--------|
-| **Grade ≥ minimum** | ✅ **DONE.** Delete REVIEW file. Task complete. |
-| **Grade < minimum, CODE issues only** | → Step 4 (FIX) |
-| **Grade < minimum, has TASK issues** | Present to user → update task → re-implement (Step 1) |
-| **Grade < minimum, has SPEC issues** | Write Q&A to feature STATE.md → suggest `/aid-specify` |
-| **Grade < minimum, has KB issues** | Write Q&A to DISCOVERY-STATE.md → suggest `/aid-discover` |
+| **Grade ≥ minimum** | Mark all issues as `Accepted`. Set Status to `Done`. ✅ |
+| **Grade < minimum** | Auto-fix CODE issues (Step 4). Present non-CODE issues for user decision. |
 
-Non-CODE issues are loopbacks. Don't fix them at the code level.
+**Non-CODE issues (TASK, SPEC, KB):**
+- **TASK** → Present to user with suggestion. User updates the task file, then re-run.
+- **SPEC** → Write Q&A entry to feature STATE.md → suggest `/aid-specify`
+- **KB** → Write Q&A entry to DISCOVERY-STATE.md → suggest `/aid-discover`
+
+Mark non-CODE issues as `Loopback` in STATE.md with the target phase.
+
+**If ONLY non-CODE issues remain** (all CODE issues fixed, grade still < minimum because
+of TASK/SPEC/KB issues): **STOP.** The code is as good as it can be — the problem is upstream.
+Present what needs to change and where.
 
 ---
 
 ## Step 4: FIX
 
-Rename `REVIEW-task-NNN.md` → `CORRECTION-task-NNN.md`.
-
 Dispatch coding agent with:
-- CORRECTION-task-NNN.md — issues to fix (CODE-sourced only)
+- Issues from STATE.md where Source = CODE and Status = Pending
 - Original task context
 
 **Agent fixes CODE issues only.** Verifies gates still pass after fixes.
 
 When done:
-1. Delete CORRECTION-task-NNN.md
+1. Mark fixed issues as `Fixed` in STATE.md
 2. → **Back to Step 2 (REVIEW)** — fresh reviewer, clean context
 
 **Loop continues until grade ≥ minimum grade.**
@@ -309,6 +374,7 @@ Branch is merged only after `/aid-test` passes.
 - Build: green. Lint + tests: green (if configured).
 - Grade ≥ minimum grade (from DISCOVERY-STATE.md)
 - Commit messages reference task-NNN
+- `task-NNN-STATE.md` with full review history
 - IMPEDIMENT-task-NNN.md if blocked
 
 ## Quality Checklist
@@ -321,8 +387,10 @@ Branch is merged only after `/aid-test` passes.
 - [ ] Lint passes (if configured)
 - [ ] All unit tests pass (if configured) — new and existing
 - [ ] Files changed match task Scope
-- [ ] Reviewer graded ≥ minimum grade (separate agent, clean context, deterministic rubric)
+- [ ] Reviewer graded using deterministic rubric (separate agent, clean context)
 - [ ] Reviewer did NOT fix code — only graded and listed issues
+- [ ] ALL issues presented to user (not just CODE)
+- [ ] Non-CODE issues marked as Loopback with target phase
 - [ ] No silent workarounds — impediments documented
 - [ ] Commit messages reference task-NNN
-- [ ] REVIEW/CORRECTION files cleaned up after completion
+- [ ] STATE.md has full review history

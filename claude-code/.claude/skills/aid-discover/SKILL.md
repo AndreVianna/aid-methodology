@@ -836,9 +836,12 @@ else we should consider.
 
 DISCOVERY-STATE.md exists, the grade meets or exceeds the minimum, and the user has approved.
 
-Print: `✅ Discovery complete. Grade: {grade}. Minimum: {minimum}. KB approved and ready for the Interview phase.`
+**Ask first:** _"Discovery is complete and approved (Grade: {grade}). Do you want to reopen it for review?
+Is there something specific you want to re-examine?"_
 
-No action needed. The user can proceed to `/aid-interview`.
+If user confirms → set state to REVIEW, proceed to State 2.
+If user has a specific concern → record it as context for the reviewer.
+If user says no → print: `✅ Discovery complete. Grade: {grade}. Minimum: {minimum}. KB approved and ready for the Interview phase.`
 
 ---
 

@@ -316,7 +316,15 @@ in coding-standards.md §3.2 (composite indices discouraged). Let me re-propose.
 
 ## State 5: REVIEW (re-run on completed feature)
 
-The spec was completed previously. Re-run enters **the same loop at step 4** —
+The spec was completed previously (`Ready` status).
+
+**Ask first:** _"This feature spec is marked Ready. Do you want to reopen it for review?
+Is there something specific you want to re-examine?"_
+
+If user confirms → set Status to `In Progress`, continue below.
+If user has a specific concern → record it as context for the review.
+
+Re-run enters **the same loop at step 4** —
 reviewing all sections against current reality.
 
 ### Load Current Context

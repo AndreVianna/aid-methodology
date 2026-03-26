@@ -474,7 +474,16 @@ Next steps:
 
 ## State 6: CROSS-REFERENCE & REFINE
 
-Requirements approved and features created. Validate against KB and codebase.
+Requirements approved and features created.
+
+**Ask first:** _"Requirements are approved and features are defined. Do you want to run
+a cross-reference validation against the KB? Is there something specific to re-examine?"_
+
+If user confirms → continue below.
+If user has a specific concern → record it as context for the validation.
+If user says no → print status summary and stop.
+
+Validate against KB and codebase.
 
 ### 6a. Load Context
 

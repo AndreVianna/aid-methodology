@@ -201,7 +201,15 @@ Total: {n} tasks in {m} deliverables.
 
 ## REVIEW (re-run on existing tasks)
 
-`tasks/` has files. Enter **the same loop at step 4** — review tasks against
+`tasks/` has files and were previously completed.
+
+**Ask first:** _"Tasks for this work are already complete. Do you want to reopen for review?
+Is there something specific you want to re-examine?"_
+
+If user confirms → continue below.
+If user has a specific concern → record it as context for the review.
+
+Enter **the same loop at step 4** — review tasks against
 current PLAN.md and SPECs.
 
 ### Load Current State

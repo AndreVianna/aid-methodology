@@ -228,7 +228,15 @@ PLAN.md written to: .aid/{work}/PLAN.md ✅
 
 ## REVIEW (re-run on existing PLAN.md)
 
-PLAN.md exists. Enter **the same loop at step 4** — review each deliverable
+PLAN.md exists and was previously completed.
+
+**Ask first:** _"This plan is already complete. Do you want to reopen it for review?
+Is there something specific you want to re-examine?"_
+
+If user confirms → continue below.
+If user has a specific concern → record it as context for the review.
+
+Enter **the same loop at step 4** — review each deliverable
 against current reality.
 
 ### Load Current State
