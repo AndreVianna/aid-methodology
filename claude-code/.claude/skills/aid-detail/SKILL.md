@@ -1,7 +1,7 @@
 ---
 name: aid-detail
 description: >
-  Break deliverables into small, sequential, typed tasks — each one a PR.
+  Break deliverables into small, sequential, typed tasks — each one a reviewable unit.
   The ultimate breakdown. Detects task types (RESEARCH, DESIGN, IMPLEMENT, TEST,
   DOCUMENT, MIGRATE, REFACTOR, CONFIGURE) from SPEC signals. One type per task.
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
@@ -13,7 +13,7 @@ argument-hint: "work-001 (required if multiple works)  [--reset] clear tasks/"
 # Detail — The Ultimate Breakdown
 
 Break each deliverable from PLAN.md into small, sequential, testable tasks.
-Each task = one agent session = one PR = one human review.
+Each task = one agent session = one reviewable unit = one human review.
 
 ## The Loop
 
@@ -87,7 +87,7 @@ Each deliverable follows the same cycle:
 
 1. **Always small.** Every task fits one agent session. If it doesn't, split it.
 2. **Sequential within a deliverable.** Each builds on the previous.
-3. **Each task = one PR.** Human reviews and merges before next task starts.
+3. **Each task = one reviewable unit.** Human reviews and approves before next task starts.
 4. **No new decisions.** Everything is already in PLAN + SPECs. Detail just slices.
 
 ## Task Types
@@ -319,6 +319,14 @@ Update task files, create new ones, delete orphans, renumber if needed.
 - **→ Plan:** Plan too vague to decompose → return to `/aid-plan`
 - **→ Specify:** SPEC missing detail for scope → write Q&A to feature's `STATE.md`
 - **→ Discovery:** KB gap → write Q&A to `.aid/knowledge/DISCOVERY-STATE.md`
+
+## Project Management Sync (conditional)
+
+If `infrastructure.md § Project Management` defines a tool:
+- When tasks are approved → create Tickets/Work Items in the PM tool
+- Link each ticket to the corresponding Sprint (delivery) and Epic (work)
+
+If no PM tool → skip.
 
 ## Quality Checklist
 

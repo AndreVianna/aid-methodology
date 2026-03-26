@@ -211,7 +211,16 @@ For each KB update needed:
 - DEPLOYMENT-STATE.md → Status: Done, Active Package: —
 - DEPLOYMENT-STATE.md History → add entry with package name, date, delivery count
 
-### Step 8: Summary
+### Step 8: Project Management Sync (conditional)
+
+If `infrastructure.md § Project Management` defines a tool:
+- Create a Release in the PM tool corresponding to this package
+- Update tickets for shipped tasks → mark as Done/Closed
+- Link the release to the corresponding Epic (work)
+
+If no PM tool → skip this step.
+
+### Step 9: Summary
 
 Print what was done:
 ```

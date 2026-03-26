@@ -484,6 +484,15 @@ RESEARCH and DOCUMENT tasks that produce only `.aid/` artifacts may skip branchi
 - `task-NNN-STATE.md` with full review history
 - IMPEDIMENT-task-NNN.md if blocked
 
+## Project Management Sync (conditional)
+
+If `infrastructure.md § Project Management` defines a tool:
+- When starting a task → update corresponding ticket to In Progress
+- When task passes review → update ticket to Done
+- If loopback needed → add comment to ticket with context
+
+If no PM tool → skip.
+
 ## Quality Checklist
 
 - [ ] Task Type read correctly from task file

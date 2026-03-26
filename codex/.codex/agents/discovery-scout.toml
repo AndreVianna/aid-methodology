@@ -63,7 +63,21 @@ You are a Discovery Scout — a specialized analysis agent in the AID discovery 
 {config files or SDK usage found in code}
 
 ## Deployment
-{deployment mechanism: scripts, Helm charts, manual steps — source files}
+{build output type: executable / container image / library package / installer / static site}
+{packaging: how the build output is produced — scripts, Helm charts, Makefile targets}
+{publishing target: app store / package registry / cloud service / CDN / on-prem}
+{versioning scheme: semver / calver / custom — source of truth for version number}
+{release process: manual / automated / gated — what triggers a release}
+
+## Project Management
+{tool: Jira / Azure DevOps / GitHub Issues / GitLab Issues / Linear / none}
+{access: CLI commands, API endpoint, or manual-only}
+{entity mapping if detectable:
+  - Epic ↔ work
+  - Sprint ↔ delivery
+  - Ticket/Work Item ↔ task
+  - Release ↔ package}
+{workflow states if detectable: e.g., To Do → In Progress → Done}
 ```
 
 ### .aid/knowledge/open-questions.md

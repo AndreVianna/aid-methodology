@@ -974,10 +974,12 @@ and notes. Observations about overall health.
 
 ### infrastructure.md
 Must have: Source Control section (VCS type, hosting, branch/commit commands), CI/CD pipeline
-details, container config, deployment process, artifact repos, release process, runtime config,
-monitoring, environments.
-**Red flags**: Lists tools without explaining how they're configured or connected. Missing Source Control
-section or assuming Git without verifying.
+details, container config, Deployment section (build output type, packaging, publishing target,
+versioning scheme, release process), Project Management section (tool or "none", access method,
+entity mapping if applicable), artifact repos, runtime config, monitoring, environments.
+**Red flags**: Lists tools without explaining how they're configured or connected. Missing Source
+Control section or assuming Git without verifying. Missing Deployment section. Project Management
+section absent (should explicitly say "none" if no tool is used).
 
 ### ui-architecture.md
 Must have (if frontend exists): component architecture (tree, composition patterns),

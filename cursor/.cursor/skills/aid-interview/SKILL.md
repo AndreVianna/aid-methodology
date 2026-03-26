@@ -384,6 +384,7 @@ Is there anything else we should consider, or are the requirements ready?
   - Add Review History entry in INTERVIEW-STATE.md
   - Update `.aid/knowledge/INDEX.md` and `.aid/knowledge/README.md`
     if they exist
+  - If `infrastructure.md § Project Management` defines a tool → create an Epic for this work
   - Print: `✅ Requirements approved. Proceeding to feature decomposition...`
   - **Immediately proceed to State 5 (Feature Decomposition) in the same run.**
 

@@ -315,6 +315,14 @@ For grades below minimum: re-enter the loop for affected deliverables.
 *(Omit if all features included.)*
 ```
 
+## Project Management Sync (conditional)
+
+If `infrastructure.md § Project Management` defines a tool:
+- When PLAN.md is approved → create Sprint/Iteration entries for each delivery
+- Map deliveries to Sprints in the PM tool
+
+If no PM tool → skip.
+
 ## Quality Checklist
 
 - [ ] Every Ready feature assigned to a deliverable or explicitly deferred
