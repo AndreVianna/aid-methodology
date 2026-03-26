@@ -921,7 +921,11 @@ module boundaries, data flow (entry→processing→persistence), DI registration
 ### technology-stack.md
 Must have: languages with versions, frameworks with versions (from actual config files),
 databases, package managers, build tools, runtime, dev tooling.
+Must have: **Build Commands** section with exact build command(s), **Lint Commands** section
+with exact lint command(s). These are critical for aid-implement — agents need runnable
+commands, not just tool names.
 **Red flags**: "⚠️ Version TBD" on things extractable from pom.xml/package.json/manifests.
+Missing or vague Build/Lint Commands (e.g., just "Maven" without `mvn clean package`).
 
 ### module-map.md
 Must have: every module listed with purpose, key classes, dependencies between modules.
@@ -955,7 +959,11 @@ product names with explanations.
 ### test-landscape.md
 Must have: frameworks, test types, coverage metrics/goals, CI integration, which modules
 have real tests vs placeholders, test gaps with severity.
-**Red flags**: Too short. Missing per-module coverage assessment.
+Must have: **Test Commands** section with exact commands to run all unit tests, per-module
+tests, and coverage reports. These are critical for aid-implement — agents need runnable
+commands, not just framework names.
+**Red flags**: Too short. Missing per-module coverage assessment. Missing or vague Test
+Commands (e.g., just "JUnit" without `mvn test`).
 
 ### security-model.md
 Must have: auth mechanisms, authorization model, secrets management, transport security,

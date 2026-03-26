@@ -104,12 +104,13 @@ If dirty → **STOP.** Ask user to commit or stash first.
 - `.aid/knowledge/INDEX.md` — agent's KB map for self-service
 - `.aid/knowledge/coding-standards.md` — mandatory
 - `.aid/knowledge/architecture.md` — mandatory
+- `.aid/knowledge/technology-stack.md` — mandatory (build + lint commands)
+- `.aid/knowledge/test-landscape.md` — mandatory (test commands + patterns)
 
 **Load if task scope touches:**
 - `data-model.md` — DB migrations, schema changes
 - `api-contracts.md` — API endpoints
 - `integration-map.md` — external service calls
-- `test-landscape.md` — testing patterns
 - `ui-architecture.md` — frontend components
 
 **Load if exists:**
@@ -145,10 +146,11 @@ RULES:
   · No magic numbers or strings — use named constants
 - Match interface contracts from feature SPEC
 - Write unit tests for all new code AND update existing tests affected by changes
-- Before reporting done, verify ALL THREE pass:
-  1. Build (zero errors, zero warnings)
-  2. Linting (zero violations)
-  3. All unit tests (new and existing)
+- Before reporting done, verify ALL THREE gates pass using the **exact commands
+  from the KB** (do NOT guess — look them up):
+  1. **Build** — run the build command from `technology-stack.md` § Build Commands
+  2. **Lint** — run the lint command from `technology-stack.md` § Lint Commands
+  3. **Unit tests** — run the test command from `test-landscape.md` § Test Commands
 - If you find a contradiction between SPEC and codebase → STOP and report
   as IMPEDIMENT. Do NOT silently work around it.
 - Commit messages: "task-NNN: {description}"
@@ -170,7 +172,8 @@ Spawn a **separate reviewer agent** (clean context, no implementation knowledge)
 - Feature SPEC — expected behavior
 - coding-standards.md — convention reference
 - architecture.md — pattern reference
-- test-landscape.md — test convention reference
+- technology-stack.md — build + lint commands
+- test-landscape.md — test commands + patterns
 
 **Reviewer checks:**
 
@@ -182,7 +185,9 @@ Spawn a **separate reviewer agent** (clean context, no implementation knowledge)
    no deep nesting, no magic numbers? YAGNI — no over-engineering?
 5. **Test Coverage** — unit tests for new code? Existing tests updated?
    Edge cases covered? Tests actually test behavior, not implementation details?
-6. **Build Health** — build clean? Lint clean? All tests green?
+6. **Build Health** — run the exact commands from KB docs (`technology-stack.md`
+   § Build Commands, § Lint Commands; `test-landscape.md` § Test Commands).
+   Build clean? Lint clean? All tests green?
 
 **Issue Classification:**
 

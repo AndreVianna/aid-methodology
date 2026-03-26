@@ -43,8 +43,20 @@ You are a Discovery Quality Assessor — a specialized analysis agent in the AID
 ## Coverage
 {coverage tool, config, last known coverage % if in config/CI, source}
 
+## Test Commands
+```bash
+# Run all unit tests
+{exact command — e.g., mvn test, npm test, dotnet test, pytest}
+
+# Run unit tests for a specific module/package
+{exact command — e.g., mvn test -pl module-name, npm test -- --testPathPattern=module}
+
+# Run tests with coverage report
+{exact command — e.g., mvn test jacoco:report, npm run test:coverage, dotnet test --collect:"XPlat Code Coverage"}
+```
+
 ## CI/CD Integration
-{how tests run in CI, pipeline file location, test commands}
+{how tests run in CI, pipeline file location}
 
 ## Testing Patterns
 {mocking approach, test data setup, fixture patterns — with examples}

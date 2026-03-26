@@ -76,10 +76,28 @@ You are a Discovery Architect — a specialized analysis agent in the AID discov
 {runtime: version — how detected}
 
 ## Build System
-{build tool, config file location, key scripts}
+{build tool, config file location}
+
+### Build Commands
+```bash
+# Full build (compile + package)
+{exact command — e.g., mvn clean package -DskipTests, npm run build, dotnet build}
+
+# Build with warnings-as-errors (if supported)
+{exact command — e.g., mvn clean compile -Werror, npm run build -- --noEmit}
+```
+
+### Lint Commands
+```bash
+# Run linter
+{exact command — e.g., mvn checkstyle:check, npm run lint, dotnet format --verify-no-changes}
+
+# Run linter with auto-fix (if supported)
+{exact command — e.g., npm run lint -- --fix, dotnet format}
+```
 
 ## Development Tools
-{linters, formatters, type checkers — config file locations}
+{linters, formatters, type checkers — name, version, config file location}
 ```
 
 ### .aid/knowledge/ui-architecture.md
