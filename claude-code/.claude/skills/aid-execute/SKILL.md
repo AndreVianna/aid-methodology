@@ -79,12 +79,19 @@ Read minimum grade from `.aid/knowledge/DISCOVERY-STATE.md` field `**Minimum Gra
 
 ### Check 2: Read Task
 
-Read `task-NNN.md`. It has 5 sections:
+Read `task-NNN.md`. It has 6 sections:
 - **Title** — what this task does
 - **Type** — RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 - **Source** — `feature-NNN-{name} → delivery-NNN` (which feature and deliverable)
+- **Depends on** — which tasks must be complete before this one (or `—` for none)
 - **Scope** — what to produce or modify (files, tests, docs, configs — depends on type)
 - **Acceptance Criteria** — concrete, testable conditions
+
+### Check 2b: Verify Dependencies Met
+
+Read the Execution Graph from PLAN.md for this task's delivery.
+Check that all tasks listed in `Depends on:` have Status `Done` in their STATE files.
+If any dependency is not Done → **STOP.** List which dependencies are pending.
 
 ### Check 3: Read Minimum Grade
 
@@ -149,6 +156,7 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 **Always load (not KB):**
 - `.aid/{work}/tasks/task-NNN.md` — primary prompt
 - Feature SPEC: `.aid/{work}/features/{feature}/SPEC.md` — Technical Specification
+- `.aid/{work}/PLAN.md` — delivery context and **Execution Graph** (dependencies and parallelism)
 
 **Load if exists:**
 - `.aid/{work}/known-issues.md` — issues in code the task touches
@@ -460,13 +468,16 @@ After resolving: delete IMPEDIMENT file, retry from Step 1.
 
 ## Delivery Lifecycle
 
+Execution follows the **Execution Graph** in PLAN.md. Tasks run in dependency order.
+Independent tasks (listed in the "Can Be Done In Parallel" table) can run concurrently.
+
 ```
 create branch aid/delivery-001
   → /aid-execute task-001 [RESEARCH]      ← investigate → review → ✅
   → /aid-execute task-002 [DESIGN]        ← mockup → review → ✅
-  → /aid-execute task-003 [IMPLEMENT]     ← code → review → fix → ✅
-  → /aid-execute task-004 [IMPLEMENT]     ← code → review → fix → ✅
-  → /aid-execute task-005 [TEST]          ← E2E → review → ✅
+  → /aid-execute task-003 [IMPLEMENT]  ┐
+  → /aid-execute task-004 [IMPLEMENT]  ┘  ← parallel (both depend on task-002)
+  → /aid-execute task-005 [TEST]          ← waits for task-003 + task-004
   → /aid-execute task-006 [DOCUMENT]      ← ADR → review → ✅
   → merge to main
 ```

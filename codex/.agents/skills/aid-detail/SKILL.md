@@ -1,9 +1,10 @@
 ---
 name: aid-detail
 description: >
-  Break deliverables into small, sequential, typed tasks — each one a reviewable unit.
+  Break deliverables into small, dependency-driven, typed tasks — each one a reviewable unit.
   The ultimate breakdown. Detects task types (RESEARCH, DESIGN, IMPLEMENT, TEST,
   DOCUMENT, MIGRATE, REFACTOR, CONFIGURE) from SPEC signals. One type per task.
+  Builds execution graph per delivery with explicit dependencies and parallelism.
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
 context: fork
 agent: architect
@@ -82,7 +83,7 @@ Each deliverable follows the same cycle:
 ## The Rules
 
 1. **Always small.** Every task fits one agent session. If it doesn't, split it.
-2. **Sequential within a deliverable.** Each builds on the previous.
+2. **Dependency-driven.** Tasks declare what they depend on. Independent tasks can run in parallel.
 3. **Each task = one reviewable unit.** Human reviews and approves before next task starts.
 4. **No new decisions.** Everything is already in PLAN + SPECs. Detail just slices.
 
@@ -142,6 +143,8 @@ Not rigid. Not all types appear in every delivery. The user adjusts during discu
 
 **Source:** feature-NNN-{name} → delivery-{x}
 
+**Depends on:** task-{id} [, task-{id}] | — (none)
+
 **Scope:**
 - {what to produce or modify — depends on type}
 
@@ -150,7 +153,7 @@ Not rigid. Not all types appear in every delivery. The user adjusts during discu
 - [ ] Criterion 2 — concrete, testable
 ```
 
-Five sections. Nothing else.
+Six sections. Nothing else.
 
 **Quality gate cascade:** Every task inherits:
 1. **Project baseline** from REQUIREMENTS.md §6 (unit test minimum, linting standard)
@@ -205,7 +208,7 @@ What do you think? We can discuss:
 - **Type** — should any task be a different type? Am I mixing types?
 - **Size** — is any task too big or too small?
 - **Scope** — should something move between tasks?
-- **Sequence** — is the order right?
+- **Dependencies** — are the dependencies right? Can anything run in parallel?
 - **Criteria** — are the acceptance criteria concrete enough?
 ```
 
@@ -252,7 +255,39 @@ Moving to delivery-002.
 Move to next deliverable → same loop (steps 1–3). Task numbering is global
 across all deliverables (task-001 through task-N).
 
-### Step 5: Final Summary
+### Step 5: Build Execution Graph
+
+After ALL deliverables are detailed, build the execution graph for each delivery.
+Write it as a new section in PLAN.md under the corresponding delivery.
+
+For each delivery, produce TWO tables:
+
+```markdown
+#### Execution Graph
+
+| Task | Depends On |
+|------|-----------|
+| task-001 | — |
+| task-002 | task-001 |
+| task-003 | task-002 |
+| task-004 | task-002 |
+| task-005 | task-003, task-004 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-003, task-004 |
+```
+
+**Dependency rules:**
+- Every task except the first MUST have at least one dependency
+- Dependencies are determined by what each task needs from previous tasks
+  (output files, schema changes, service availability, etc.)
+- If two tasks share the same dependencies but don't depend on each other → parallel
+- The parallel table lists groups of tasks that can safely run concurrently
+
+**This graph is what `/aid-execute` reads to determine task ordering and parallelism.**
+
+### Step 6: Final Summary
 
 ```
 All tasks written:
@@ -261,6 +296,7 @@ delivery-001: {Name} → tasks 001–004
 delivery-002: {Name} → tasks 005–008
 
 Total: {n} tasks in {m} deliverables.
+Execution graphs written to PLAN.md.
 ```
 
 ---
@@ -331,7 +367,9 @@ If no PM tool → skip.
 - [ ] Every task traces to a feature SPEC and deliverable
 - [ ] Every task has concrete, testable acceptance criteria
 - [ ] Every task has an explicit scope boundary
-- [ ] Tasks are sequential within each deliverable
+- [ ] Every task declares its dependencies (or `—` for none)
+- [ ] Execution graph written to PLAN.md for each delivery
+- [ ] Parallel groups are truly independent (no shared state)
 - [ ] Each task is small enough for one agent session
 - [ ] Type-specific default criteria included where applicable
 - [ ] RESEARCH/DESIGN tasks come before their dependent IMPLEMENT tasks
