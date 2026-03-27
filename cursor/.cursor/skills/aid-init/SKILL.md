@@ -99,7 +99,7 @@ If a description is found, suggest it:
 One-line description of what this project does:
 (suggestion: "{description found in manifest}")
 
-[Enter] to accept, or type your own:
+[y] to accept, or type your own:
 ```
 
 If nothing is found, ask plainly:
@@ -113,7 +113,7 @@ One-line description of what this project does:
 Do you have documentation outside this repository that should be considered?
 (architecture docs, wiki exports, design documents, Confluence pages, etc.)
 
-Provide file or directory paths separated by commas, or press Enter to skip.
+Provide file or directory paths separated by commas, or type [n] to skip.
 ```
 
 If paths are provided:
@@ -130,9 +130,9 @@ If paths are provided:
 
 ```
 What minimum quality grade should the Knowledge Base meet before proceeding?
-(A+ through F, default: A)
+(A+ through F)
 
-[Enter] for default (A)
+[A] to accept the default, or type a different grade:
 ```
 
 Parse and validate the grade. Store it.
