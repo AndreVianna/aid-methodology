@@ -3,7 +3,7 @@ name: aid-init
 description: >
   Initialize an AID project. Asks greenfield or brownfield, collects project metadata,
   external documentation paths, and scaffolds the .aid/ directory structure.
-  Sets up AGENTS.md and .cursor/rules/aid-project.mdc with placeholders. Run once at project start — before
+  Sets up CLAUDE.md with placeholders. Run once at project start — before
   aid-discover (brownfield) or aid-interview (greenfield).
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 argument-hint: "[--reset] clear existing .aid/ and re-initialize"
@@ -19,8 +19,7 @@ workspace, and determines the workflow path. Run this once before any other AID 
 **Workspace structure:**
 ```
 {ProjectFolder}/
-  AGENTS.md
-  .cursor/rules/aid-project.mdc
+  CLAUDE.md
   .aid/
     knowledge/
       DISCOVERY-STATE.md
@@ -86,6 +85,24 @@ or similar manifest, suggest the name found there. The user confirms or override
 
 ### Q3: Brief Description
 
+Before asking, scan for a description in common manifest files:
+- `pom.xml` → `<description>` tag
+- `*.csproj` → `<Description>` tag
+- `package.json` → `"description"` field
+- `Cargo.toml` → `description` field under `[package]`
+- `pyproject.toml` → `description` field
+- `*.gradle` or `build.gradle.kts` → `description` property
+- `README.md` → first non-heading paragraph (fallback)
+
+If a description is found, suggest it:
+```
+One-line description of what this project does:
+(suggestion: "{description found in manifest}")
+
+[Enter] to accept, or type your own:
+```
+
+If nothing is found, ask plainly:
 ```
 One-line description of what this project does:
 ```
@@ -282,16 +299,18 @@ Copy the template from `../templates/discovery-state.md` to
 
 ---
 
-## Step 4: Set Up Project Config Files
+## Step 4: Set Up CLAUDE.md
 
-### AGENTS.md
-
-Check if `AGENTS.md` exists in the project root.
+Check if `CLAUDE.md` exists in the project root.
 
 - **If it doesn't exist:** Create it with the AID template:
 
 ```markdown
 # {Project Name}
+
+<!-- AID:DISCOVER project-description -->
+{One-line description from Q3}
+<!-- /AID:DISCOVER -->
 
 ## Project Overview
 <!-- AID:DISCOVER project-overview -->
@@ -322,29 +341,7 @@ Read `.aid/knowledge/INDEX.md` to find what you need.
 - **If it already exists:** Do NOT overwrite. Check for `<!-- AID:DISCOVER -->` placeholders.
   If none exist, append an "AID Workspace" section at the end pointing to
   `.aid/knowledge/INDEX.md`.
-  Print: `[Init] AGENTS.md exists — appended workspace reference.`
-
-### .cursor/rules/aid-project.mdc
-
-Check if `.cursor/rules/aid-project.mdc` exists in the project root.
-
-- **If it doesn't exist:** Create it:
-
-```markdown
-# {Project Name}
-
-<!-- AID:DISCOVER project-description -->
-{One-line description from Q3}
-<!-- /AID:DISCOVER -->
-
-## AID Workspace
-
-Read `.aid/knowledge/INDEX.md` before making assumptions about this project.
-The `.aid/` directory contains the Knowledge Base and work artifacts.
-```
-
-- **If it already exists:** Do NOT overwrite. Check for `<!-- AID:DISCOVER -->` markers.
-  If none, leave it alone. Print: `[Init] .cursor/rules/aid-project.mdc exists — no changes needed.`
+  Print: `[Init] CLAUDE.md exists — appended workspace reference.`
 
 ### .gitignore
 
@@ -371,8 +368,7 @@ Print a summary of everything created:
 
   Created:
     knowledge/    (15 KB documents + README + INDEX + DISCOVERY-STATE)
-    AGENTS.md                   {created / updated / unchanged}
-    .cursor/rules/aid-project.mdc                   {created / updated / unchanged}
+    CLAUDE.md                   {created / updated / unchanged}
     .gitignore                  {created / updated / unchanged}
 
   Next step:
@@ -386,7 +382,7 @@ Print a summary of everything created:
 
 - **Running init twice on the same project** does not overwrite documents that have real
   content (Status ≠ "Pending"). Only resets documents still at "Pending" status.
-- **AGENTS.md and .cursor/rules/aid-project.mdc** are never overwritten if they exist — only appended to.
+- **CLAUDE.md** is never overwritten if it exists — only appended to.
 - **DISCOVERY-STATE.md** is recreated (it's metadata, not content).
 - **`--reset`** is the nuclear option — deletes everything and starts fresh.
 
@@ -399,7 +395,6 @@ Print a summary of everything created:
 - [ ] INDEX.md has all 15 documents listed
 - [ ] DISCOVERY-STATE.md has correct minimum grade and project type
 - [ ] External paths (if any) verified accessible and recorded
-- [ ] AGENTS.md has workspace reference (created or appended)
-- [ ] .cursor/rules/aid-project.mdc exists with project description
+- [ ] CLAUDE.md has workspace reference and AID placeholders (created or appended)
 - [ ] .gitignore has `.aid/` entry
-- [ ] No files outside .aid/, AGENTS.md, .cursor/rules/aid-project.mdc, .gitignore were modified
+- [ ] No files outside .aid/, CLAUDE.md, .gitignore were modified

@@ -85,6 +85,24 @@ or similar manifest, suggest the name found there. The user confirms or override
 
 ### Q3: Brief Description
 
+Before asking, scan for a description in common manifest files:
+- `pom.xml` → `<description>` tag
+- `*.csproj` → `<Description>` tag
+- `package.json` → `"description"` field
+- `Cargo.toml` → `description` field under `[package]`
+- `pyproject.toml` → `description` field
+- `*.gradle` or `build.gradle.kts` → `description` property
+- `README.md` → first non-heading paragraph (fallback)
+
+If a description is found, suggest it:
+```
+One-line description of what this project does:
+(suggestion: "{description found in manifest}")
+
+[Enter] to accept, or type your own:
+```
+
+If nothing is found, ask plainly:
 ```
 One-line description of what this project does:
 ```
