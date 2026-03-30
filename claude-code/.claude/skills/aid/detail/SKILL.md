@@ -1,5 +1,5 @@
 ---
-name: aid-detail
+name: detail
 description: >
   Break deliverables into small, dependency-driven, typed tasks — each one a reviewable unit.
   The ultimate breakdown. Detects task types (RESEARCH, DESIGN, IMPLEMENT, TEST,

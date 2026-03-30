@@ -1,5 +1,5 @@
 ---
-name: aid-interview
+name: interview
 description: >
   Adaptive requirements gathering through conversational interview. First run
   builds REQUIREMENTS.md incrementally. Subsequent runs cross-reference against
@@ -201,55 +201,12 @@ Read INTERVIEW-STATE.md Section Status table. For each section:
 
 ### Decide what to ask next
 
-**Priority order:**
+Read `references/interview-strategies.md` for question priority logic, KB inference,
+quality gates, and UI-aware probing.
 
-1. **Infer from KB** — If a Pending/Partial section can be answered from KB documents,
-   **do NOT fill it silently.** When `feature-inventory.md` has content, use it to
-   understand what already exists and probe for interactions/dependencies with the new work.
-   Ask with a suggested answer and source reference:
-   ```
-   [From: .aid/knowledge/{source-document}.md]
-
-   {Your question about this section}
-
-   Based on the codebase analysis: {inferred content}
-
-   [1] Accept this
-   [2] Not applicable
-   [3] Your answer: ___
-   ```
-   Only update REQUIREMENTS.md after the user responds.
-
-   **Quality gates inference:** When working on §6 Non-Functional Requirements, proactively
-   ask about these project-level baselines (if not already covered):
-   - **Unit test minimum** — coverage target for new code? (e.g., "all public methods",
-     "80% line coverage", "critical paths only")
-   - **Linting standard** — which linter and ruleset? (e.g., "ESLint + Airbnb", "Checkstyle
-     with Sun conventions", "default analyzer warnings-as-errors")
-   - **Build policy** — zero warnings required? Specific compiler flags?
-
-   These become the project baseline. `/aid:specify` may add feature-specific requirements
-   on top, and `/aid:detail` concretizes them per task.
-
-   **UI-aware inference:** If `.aid/knowledge/ui-architecture.md` exists and has real content
-   (not "backend-only"), proactively ask about these topics when working on §6 Non-Functional
-   Requirements (if not already covered):
-   - Target devices and browsers (desktop, tablet, mobile — which combinations?)
-   - Accessibility requirements (WCAG level? Keyboard navigation? Screen reader support?)
-   - Internationalization/localization needs (languages? RTL? Date/number formats?)
-   - Responsive behavior expectations (mobile-first? Specific breakpoints?)
-   - Design specs or Figma references (existing design system? Brand guidelines?)
-   - Offline behavior expectations (PWA? Service workers? Graceful degradation?)
-
-2. **Most critical gap** — Among remaining Pending/Partial sections, pick the one that:
-   - Depends on the least other information (can be answered now)
-   - Unblocks the most other sections
-   - Is most relevant given what the user has already said
-
-3. **Deepen Partial sections** — If no sections are fully Pending but some are Partial,
-   ask a follow-up to complete them.
-
-4. **All sections addressed** → State 4 (Completion & Approval).
+In summary: (1) Infer from KB first — suggest answers with source references, don't fill
+silently. (2) Pick the most critical gap. (3) Deepen Partial sections. (4) When all
+sections addressed → State 4.
 
 ### Rules
 
@@ -399,176 +356,21 @@ Is there anything else we should consider, or are the requirements ready?
 
 ## State 5: FEATURE DECOMPOSITION
 
-Requirements are approved. Decompose Functional Requirements into discrete features.
+Requirements are approved. Decompose Functional Requirements (§5) into discrete,
+independently implementable features with SPEC.md files.
 
-### Step 1: Analyze
-
-Read REQUIREMENTS.md (in the work folder), focusing on:
-- §5 Functional Requirements — primary source for features
-- §4 Scope — boundaries (in scope / out of scope)
-- §9 Acceptance Criteria — distribute to features
-- §10 Priority — feature priority
-
-If KB exists, also read `.aid/knowledge/INDEX.md` and relevant KB documents
-to understand existing features/modules that may influence decomposition.
-
-### Step 2: Propose Feature List
-
-```
-Based on the functional requirements, I've identified {N} features:
-
-| # | Folder Name | Description | Source | Priority |
-|---|-------------|-------------|--------|----------|
-| 1 | feature-001-{name} | {one-line description} | §5.x, §7.x | Must |
-| 2 | feature-002-{name} | {one-line description} | §5.x | Must |
-| 3 | feature-003-{name} | {one-line description} | §5.x | Should |
-| ... | ... | ... | ... | ... |
-
-Does this decomposition look right?
-
-[1] Approve as-is
-[2] Adjust — tell me what to change (add, remove, merge, split, rename)
-```
-
-**Feature decomposition rules:**
-- Each feature should be independently implementable
-- Feature names use kebab-case (for folder names)
-- Every functional requirement from §5 must map to at least one feature
-- Features that are too large to implement in one sprint should be split
-- Related requirements that form a single user journey should be one feature
-- Priority comes from §10 or context in REQUIREMENTS.md
-
-### Step 3: Process Response
-
-- **[1] Approve:** Create feature folders (Step 4)
-- **[2] Adjust:** Modify the list per user feedback. Present again. Repeat until approved.
-
-### Step 4: Create Feature Folders
-
-Create `features/` directory inside the work folder if it doesn't exist.
-
-For each approved feature, create `features/feature-{NNN}-{name}/SPEC.md` using the
-template from `../../../templates/feature.md`. Fill in:
-
-- **Title:** feature name (human-readable)
-- **Change Log:** `| {today} | Feature identified from REQUIREMENTS.md {source sections} | /aid:interview |`
-- **Source:** relevant REQUIREMENTS.md section references
-- **Description:** synthesized from §5 in stakeholder language
-- **User Stories:** extracted or synthesized from REQUIREMENTS.md, using user types from §3
-- **Priority:** from §10 or context (Must / Should / Could)
-- **Acceptance Criteria:** from §9 mapped to this feature, or synthesized from §5
-- **Technical Specification:** leave as template placeholder (added by /aid:specify)
-
-### Step 5: Update Meta-Documents
-
-1. Add Review History entry in INTERVIEW-STATE.md:
-   `| {N} | {today} | — | Feature Decomposition | {N} features created |`
-2. Update `.aid/knowledge/INDEX.md` if it exists — add work/features reference
-3. Update `.aid/knowledge/README.md` if it exists — add work to revision history
-
-Print:
-```
-✅ Feature decomposition complete. {N} features created in {work}/features/:
-
-{list each: feature-001-name/, feature-002-name/, ...}
-
-Next steps:
-- Review the feature SPEC.md files if desired
-- Run /aid:specify {work}/feature-001 to begin technical specification
-```
+Read `references/feature-decomposition.md` for the full decomposition process
+(analyze, propose, create folders, update meta-documents).
 
 ---
 
 ## State 6: CROSS-REFERENCE & REFINE
 
-Requirements approved and features created.
+Requirements approved and features created. Validates REQUIREMENTS.md against KB
+documents and codebase, grades findings, and creates Q&A entries for issues.
 
-**Ask first:** _"Requirements are approved and features are defined. Do you want to run
-a cross-reference validation against the KB? Is there something specific to re-examine?"_
-
-If user confirms → continue below.
-If user has a specific concern → record it as context for the validation.
-If user says no → print status summary and stop.
-
-Validate against KB and codebase.
-
-### 6a. Load Context
-
-1. Read REQUIREMENTS.md (in the work folder)
-2. Read INTERVIEW-STATE.md
-3. Read `.aid/knowledge/INDEX.md` (if exists)
-4. Read ALL KB documents listed in INDEX.md
-5. Read all SPEC.md files in the work's `features/` subdirectories
-
-### 6b. Cross-Reference
-
-For each section of REQUIREMENTS.md, check against KB:
-
-1. **Contradictions** — Requirement conflicts with KB evidence
-2. **Gaps** — KB reveals things requirements should address but don't
-3. **Missing evidence** — Requirements make claims that can't be verified
-   (use `Grep` and `Glob` to search the actual codebase)
-4. **Staleness** — KB updated since interview, affecting requirements
-5. **Feature alignment** — Do feature SPEC.md files still match REQUIREMENTS.md?
-
-### 6c. Grade
-
-Use the universal rubric (`../../../templates/grading-rubric.md`). Classify each finding
-by severity (Minor/Low/Medium/High/Critical). Grade is calculated — worst issue dominates.
-
-Compare to minimum grade from `.aid/knowledge/DISCOVERY-STATE.md`.
-
-**Update `**Grade:**` in INTERVIEW-STATE.md.**
-
-### 6d. Present Findings
-
-```
-[Cross-Reference — Grade: {grade}]
-
-Checked REQUIREMENTS.md against {N} KB documents and {M} features.
-
-**Contradictions:** {count}
-**Gaps:** {count}
-**Unverified claims:** {count}
-**Feature alignment issues:** {count}
-
-{details for each}
-
-{If grade ≥ minimum:}
-No blocking issues found. Requirements are consistent with the Knowledge Base.
-
-{If grade < minimum:}
-I have {N} questions to resolve these. Let's go through them one at a time.
-```
-
-### 6e. Create Q&A Entries and Ask
-
-For each finding, add a Q&A entry in INTERVIEW-STATE.md `## Pending Q&A`:
-
-```markdown
-### IQ{N}: [{Category}: {Impact}]
-
-**Question:** {text}
-**Context:** {why this matters, what evidence was found}
-**Source:** /aid:interview (cross-reference)
-**Suggested:** {answer if inferrable from KB/code, or "—"}
-**Status:** Pending
-```
-
-Then present them one at a time using State 2 (Q&A mode) logic.
-
-After each answer:
-1. Update REQUIREMENTS.md
-2. Update affected feature SPEC.md if the answer changes a feature
-3. Add Change Log entries where content changed
-
-### 6f. Wrap Up
-
-After all questions answered:
-
-1. Add Review History entry in INTERVIEW-STATE.md
-2. Add Change Log entry in REQUIREMENTS.md
-3. Print: `✅ Cross-reference complete. Run /aid:interview again to verify.`
+Read `references/cross-reference.md` for the full cross-reference validation process
+(load context, cross-reference, grade, present findings, create Q&A, wrap up).
 
 ---
 
@@ -595,27 +397,4 @@ When a downstream phase (e.g., `/aid:specify`) needs clarification on requiremen
 **Status:** Pending
 ```
 
----
 
-## Brownfield vs Greenfield
-
-The skill handles both automatically:
-
-- **Brownfield (KB exists):** Many sections can be pre-filled from KB. Questions come
-  with suggestions and source references. Cross-reference is thorough.
-- **Greenfield (no KB):** Everything comes from the user. Interview is longer.
-  Cross-reference has limited material — may be grade A by default.
-
----
-
-## Question Design Principles
-
-1. **Start wide, narrow down.** Objective → Scope → Details → Constraints.
-2. **Follow the energy.** User excited about feature X? Explore it first.
-3. **Don't interrogate.** Acknowledge what they said before asking the next thing.
-4. **Respect "I don't know."** Mark as assumption, move on.
-5. **Respect "not applicable."** Mark N/A, move on.
-6. **Capture the WHY.** "Real-time updates" is a feature. "Traders lose money on
-   stale data" is a requirement. Push for the why.
-7. **Use concrete examples.** "Walk me through what a user would do when..." produces
-   better requirements than "What are the functional requirements?"

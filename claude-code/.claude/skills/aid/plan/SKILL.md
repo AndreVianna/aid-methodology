@@ -1,5 +1,5 @@
 ---
-name: aid-plan
+name: plan
 description: >
   Sequence feature SPECs into deliverables — each one a functional MVP that builds
   on the previous. Strategy, not tactics. Use when feature SPECs are complete and
