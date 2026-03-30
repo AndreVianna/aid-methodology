@@ -39,7 +39,7 @@ Required: work ID. If only one work exists, auto-select it.
 
 1. Verify `.aid/` workspace exists.
 2. Resolve work directory (same routing as other skills).
-3. Read or create `DEPLOYMENT-STATE.md` from template (`../../../templates/deployment-state.md`).
+3. Read or create `DEPLOYMENT-STATE.md` from template (`../../templates/deployment-state.md`).
 4. Read `PLAN.md` — identify deliveries and their statuses.
 5. Scan task files in `.aid/{work}/tasks/` — check statuses and grades.
 6. If DEPLOYMENT-STATE.md shows an active package → resume from that step (see State Detection).
@@ -113,7 +113,7 @@ Ask for:
 - Version/tag name (suggest based on versioning scheme from KB)
 - Package name slug (for the filename: `package-NNN-{slug}.md`)
 
-Create the package file from template (`../../../templates/package.md`):
+Create the package file from template (`../../templates/package.md`):
 - Fill in: deliveries, deployment type/target from KB, environment from KB
 - Determine package number (next sequential after existing packages)
 - Save to `.aid/{work}/packages/package-NNN-{slug}.md`

@@ -293,7 +293,7 @@ If your task touches an area covered here, read the relevant document first.
 
 ### .aid/knowledge/DISCOVERY-STATE.md
 
-Copy the template from `../../../templates/discovery-state.md` to
+Copy the template from `../../templates/discovery-state.md` to
 `.aid/knowledge/DISCOVERY-STATE.md`. Fill in the placeholders:
 
 - `{minimum}` → grade from Q5

@@ -130,7 +130,7 @@ Read ALL before making any proposal:
 5. **Known Issues** — Read `.aid/{work}/known-issues.md` if it exists. Check `tech-debt.md` in KB.
 
 **During codebase exploration, register known issues** in `.aid/{work}/known-issues.md`
-(create from `../../../templates/known-issues.md` if missing). Only register issues in code
+(create from `../../templates/known-issues.md` if missing). Only register issues in code
 that this feature touches. See [Known Issues Scope](#known-issues-scope) for criteria.
 
 ### Step 2: Determine Applicable Sections
@@ -188,7 +188,7 @@ Each has two paths: **Auto-activate** (obvious from context) or **Ask** (use def
 
 ### Step 3: Create STATE.md
 
-Create from template (`../../../templates/feature-state.md`):
+Create from template (`../../templates/feature-state.md`):
 - **Started:** today's date
 - **Sections table:** each activated section, Status `Pending`, source (`core`/`auto`/`user-confirmed`)
 - **Change Log:** initial entry
@@ -287,7 +287,7 @@ Immediately after writing, verify what was written:
 - Does it reference real codebase artifacts (not hallucinated paths/classes)?
 - Is it concrete enough for implementation (no vague "appropriate pattern" language)?
 
-**Grade the section** using the universal rubric (`../../../templates/grading-rubric.md`).
+**Grade the section** using the universal rubric (`../../templates/grading-rubric.md`).
 Classify each issue by severity (Minor/Low/Medium/High/Critical). The grade is
 calculated — worst issue dominates. Compare to minimum grade from DISCOVERY-STATE.md.
 
@@ -348,7 +348,7 @@ For each section in SPEC.md, run step 4 of the loop against current state:
 
 ### Grade Overall
 
-Use the universal rubric (`../../../templates/grading-rubric.md`). Classify each issue
+Use the universal rubric (`../../templates/grading-rubric.md`). Classify each issue
 by severity. The grade is calculated — worst issue dominates.
 
 Compare to minimum grade from DISCOVERY-STATE.md.

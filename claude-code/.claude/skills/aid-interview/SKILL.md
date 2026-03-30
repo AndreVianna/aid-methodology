@@ -150,12 +150,12 @@ If no KB exists, that's fine — this is a greenfield project.
 
 ### 1b. Create INTERVIEW-STATE.md
 
-Copy the template from `../../../templates/interview-state.md` to
+Copy the template from `../../templates/interview-state.md` to
 `.aid/{work}/INTERVIEW-STATE.md`.
 
 ### 1c. Create REQUIREMENTS.md scaffold
 
-Copy the template from `../../../templates/requirements.md` to
+Copy the template from `../../templates/requirements.md` to
 `.aid/{work}/REQUIREMENTS.md`.
 Add the first Change Log entry: `| {today} | Initial interview started | /aid-interview |`
 

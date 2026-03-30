@@ -151,7 +151,7 @@ The orchestrator generates these directly — they require reading across all KB
 **.aid/knowledge/INDEX.md** — 2-3 line summary of every KB document for agent self-service.
 Regenerate on every discovery run.
 
-**.aid/knowledge/feature-inventory.md** — copy template from `../../../templates/feature-inventory.md`.
+**.aid/knowledge/feature-inventory.md** — copy template from `../../templates/feature-inventory.md`.
 Populated during Q&A → FIX cycle, but must exist for state machine.
 
 ### Step 6b: Update DISCOVERY-STATE.md with Q&A

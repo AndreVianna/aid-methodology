@@ -172,7 +172,7 @@ After writing, **review immediately:** Does it hold up?
 - Actually standalone-functional?
 - Consistent with KB architecture?
 
-Use the universal rubric (`../../../templates/grading-rubric.md`). Classify each issue
+Use the universal rubric (`../../templates/grading-rubric.md`). Classify each issue
 by severity. The grade is calculated — worst issue dominates.
 
 | Condition | Action |
@@ -256,7 +256,7 @@ For each deliverable in PLAN.md, run step 4:
 
 ### Grade Overall
 
-Use the universal rubric (`../../../templates/grading-rubric.md`). Classify each issue
+Use the universal rubric (`../../templates/grading-rubric.md`). Classify each issue
 by severity. The grade is calculated — worst issue dominates.
 
 Compare to minimum grade from DISCOVERY-STATE.md.
