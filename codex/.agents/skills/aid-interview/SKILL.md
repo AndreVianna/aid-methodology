@@ -107,7 +107,10 @@ State 2: INTERVIEW-STATE has Pending Q&A entries                   → Q&A mode
 State 3: INTERVIEW-STATE Status: In Progress, sections incomplete  → CONTINUE INTERVIEW
 State 4: INTERVIEW-STATE Status: In Progress, all sections done    → COMPLETION & APPROVAL
 State 5: INTERVIEW-STATE Status: Approved, no feature folders      → FEATURE DECOMPOSITION
-State 6: INTERVIEW-STATE Status: Approved, feature folders exist   → CROSS-REFERENCE
+State 6: INTERVIEW-STATE Status: Approved, feature folders exist,
+         cross-reference not yet done                              → CROSS-REFERENCE
+State 7: INTERVIEW-STATE Status: Approved, features + cross-ref
+         already complete                                          → DONE
 ```
 
 **Detection logic:**
@@ -127,9 +130,13 @@ State 6: INTERVIEW-STATE Status: Approved, feature folders exist   → CROSS-REF
       - If `--features` flag provided → **State 5: FEATURE DECOMPOSITION**
       - Check if `features/` directory exists and contains `feature-*` subdirectories
       - If no feature folders → **State 5: FEATURE DECOMPOSITION**
-      - If feature folders exist → **State 6: CROSS-REFERENCE**
+      - If feature folders exist:
+        - Check INTERVIEW-STATE.md `## Cross-Reference` section for `**Status:** Complete`
+          (or check if cross-reference entries exist from a prior run)
+        - If cross-reference not yet done → **State 6: CROSS-REFERENCE**
+        - If cross-reference already complete → **State 7: DONE**
 
-Print the detected state: `[{work}: {FIRST RUN|Q&A|CONTINUE|COMPLETION|FEATURES|CROSS-REFERENCE}]`
+Print the detected state: `[{work}: {FIRST RUN|Q&A|CONTINUE|COMPLETION|FEATURES|CROSS-REFERENCE|DONE}]`
 
 ---
 
@@ -587,6 +594,36 @@ After all questions answered:
 1. Add Review History entry in INTERVIEW-STATE.md
 2. Add Change Log entry in REQUIREMENTS.md
 3. Print: `✅ Cross-reference complete. Run /aid-interview again to verify.`
+
+---
+
+## State 7: DONE
+
+Interview is complete, approved, features decomposed, and cross-references validated.
+
+Print:
+
+```
+Interview for {work} is complete and approved.
+
+[1] Add more information — reopen for additional input
+[2] Re-run cross-reference validation
+[3] Done — nothing to add
+```
+
+- **[1] Add more information:**
+  - Ask: _"What would you like to add or change?"_
+  - Record the user's input into the relevant REQUIREMENTS.md section
+  - Update INTERVIEW-STATE.md section statuses if needed
+  - Update affected feature SPEC.md files if the change impacts a feature
+  - Update KB documents if the new info is KB-relevant
+  - Print: `✅ Updated. Run /aid-interview {work} again to re-validate.`
+
+- **[2] Re-run cross-reference:**
+  - Proceed to State 6 (CROSS-REFERENCE) for a fresh validation pass
+
+- **[3] Done:**
+  - Print: `✅ Interview complete. Requirements approved. Ready for /aid-specify.`
 
 ---
 
