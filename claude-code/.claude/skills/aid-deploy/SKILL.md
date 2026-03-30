@@ -1,5 +1,5 @@
 ---
-name: deploy
+name: aid-deploy
 description: >
   Package completed deliveries into a release. Selects eligible deliveries,
   verifies the combined build, packages according to project infrastructure,

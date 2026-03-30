@@ -1,5 +1,5 @@
 ---
-name: discover
+name: aid-discover
 description: >
   Brownfield project discovery with built-in quality gate. Run `/aid-init` first to scaffold
   the KB. Analyzes all repository content (code, configuration, and documentation) to populate

@@ -1,5 +1,5 @@
 ---
-name: interview
+name: aid-interview
 description: >
   Adaptive requirements gathering through conversational interview. First run
   builds REQUIREMENTS.md incrementally. Subsequent runs cross-reference against

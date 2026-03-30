@@ -1,5 +1,5 @@
 ---
-name: execute
+name: aid-execute
 description: >
   Execute a task based on its type: RESEARCH, DESIGN, IMPLEMENT, TEST,
   DOCUMENT, MIGRATE, REFACTOR, or CONFIGURE. Built-in review loop per type.

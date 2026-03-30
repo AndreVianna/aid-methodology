@@ -1,5 +1,5 @@
 ---
-name: init
+name: aid-init
 description: >
   Initialize an AID project. Asks greenfield or brownfield, collects project metadata,
   external documentation paths, and scaffolds the .aid/ directory structure.

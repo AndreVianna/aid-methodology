@@ -1,5 +1,5 @@
 ---
-name: specify
+name: aid-specify
 description: >
   Technical specification through conversational refinement, one feature at a time.
   The agent acts as a tech lead — reads KB, Requirements, and codebase, proposes

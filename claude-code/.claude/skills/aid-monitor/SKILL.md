@@ -1,5 +1,5 @@
 ---
-name: monitor
+name: aid-monitor
 description: >
   Observe production, classify findings, and route actions. Combines telemetry
   interpretation with triage — detect anomalies, perform root cause analysis
