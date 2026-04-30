@@ -1,6 +1,6 @@
 # AID Skills for Codex CLI
 
-10 phase skills in AgentSkills format. Each `SKILL.md` contains YAML frontmatter with `name`, `description`, and `metadata.short-description` fields.
+11 skills in AgentSkills format (10 pipeline + 1 optional). Each `SKILL.md` contains YAML frontmatter with `name`, `description`, and `metadata.short-description` fields.
 
 ## Skills
 
@@ -16,6 +16,12 @@
 | `aid-execute` | 8. Test | Staging validation — E2E, integration, manual |
 | `aid-deploy` | 9. Deploy | Final verification, PR, KB updates |
 | `aid-monitor` | 8. Monitor | Orchestrator | Observe, classify, route production findings |
+
+### Optional
+
+| Skill | When | Description |
+|-------|------|-------------|
+| `aid-summarize` | After `/aid-discover` reaches DONE | Generate single-file `knowledge-summary.html` from `.aid/knowledge/` — offline-capable, light/dark theme, accessibility-first (WCAG AA), Mermaid diagrams. Idempotent. |
 
 ## Usage
 

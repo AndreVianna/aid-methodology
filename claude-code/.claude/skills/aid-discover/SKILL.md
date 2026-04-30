@@ -365,6 +365,16 @@ Print: _"Discovery is complete and approved (Grade: {grade}). Do you want to reo
 - User has specific concern → record as context for reviewer
 - User says no → `✅ Discovery complete. Grade: {grade}. Minimum: {minimum}. KB approved and ready for the Interview phase.`
 
+After printing the success message, also suggest the optional visual summary:
+
+```
+💡 Optional: run /aid-summarize to generate a visual HTML summary of the
+   Knowledge Base — a single offline file with diagrams, light/dark theme,
+   click-to-expand lightbox, and breadcrumb scrollspy. Idempotent: re-running
+   it later on an unchanged KB is a no-op; it auto-detects when discovery has
+   added new entries to ## Review History and regenerates accordingly.
+```
+
 ---
 
 ## Targeted Discovery (Re-entry)

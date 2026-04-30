@@ -15,7 +15,7 @@ cp path/to/aid-methodology/cursor/AGENTS.md   AGENTS.md
 
 This gives you:
 - `.cursor/rules/` — Always-on rules (methodology workflow, code review standards)
-- `.cursor/skills/` — 10 phase skills (invoked on demand by the agent)
+- `.cursor/skills/` — 11 skills (10 pipeline phases + 1 optional `aid-summarize`)
 - `.cursor/agents/` — 19 specialist agents (dispatched via Task tool when available)
 - `AGENTS.md` — Project context for AI agents (edit with your project details)
 
@@ -52,6 +52,7 @@ Skills are the full AID phase instructions. Cursor loads them based on relevance
 | `aid-deploy` | Deploy | Final verification, PR creation, delivery summary, KB updates |
 | `aid-monitor` | Track | Production telemetry interpretation → `MONITOR-STATE.md` |
 | `aid-monitor` | Triage | Classify findings (BUG/CR/Infra), root cause analysis, routing |
+| `aid-summarize` | Optional (post-discovery) | Generate single-file `knowledge-summary.html` from KB — offline, themed, accessibility-first (WCAG AA), Mermaid diagrams |
 
 ### Phase Flow
 

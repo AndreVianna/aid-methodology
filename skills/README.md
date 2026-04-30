@@ -6,7 +6,7 @@ Each skill represents one phase of the AID pipeline. These README files provide 
 
 ---
 
-## The 12 Skills
+## The Skills
 
 ### Setup (run once, before the pipeline)
 
@@ -43,6 +43,12 @@ Each skill represents one phase of the AID pipeline. These README files provide 
 |-------|-------|---------|
 | [aid-deploy](aid-deploy/README.md) | 7. Deploy | Final verification, PR creation, KB update, delivery summary |
 | [aid-monitor](aid-monitor/README.md) | 8. Monitor | Observe production, classify findings (BUG/CR/Infra/No Action), route actions |
+
+### Optional (runs after Discovery)
+
+| Skill | When | Purpose |
+|-------|------|---------|
+| `aid-summarize` | After `/aid-discover` reaches DONE and the KB is approved | Generate a single-file `knowledge-summary.html` from `.aid/knowledge/` — offline, light/dark theme, accessibility-first (WCAG AA), Mermaid diagrams. Idempotent: re-running on an unchanged KB is a no-op. |
 
 ---
 

@@ -357,6 +357,41 @@ Check if `.gitignore` exists in the project root.
 
 ---
 
+## Step 4b: Install Skill Templates
+
+Some skills need template assets installed in the project at runtime (not just
+scaffolded once). Currently:
+
+### `knowledge-summary/` for `/aid-summarize`
+
+If the source tree exists at `../../templates/knowledge-summary/` (relative to this
+skill — i.e., `.claude/templates/knowledge-summary/`), copy the entire tree into the
+project at `.aid/templates/knowledge-summary/`:
+
+```bash
+SRC="$(dirname "$0")/../../templates/knowledge-summary"
+DST=".aid/templates/knowledge-summary"
+if [ -d "$SRC" ]; then
+    mkdir -p "$DST"
+    cp -R "$SRC/." "$DST/"
+    chmod +x "$DST"/scripts/*.sh 2>/dev/null || true
+    echo "[Init] Installed knowledge-summary templates → $DST"
+else
+    echo "[Init] knowledge-summary templates not found at $SRC — skipping."
+    echo "       /aid-summarize will not be available until you install them."
+fi
+```
+
+The `knowledge-summary/` tree contains the CSS, JS, HTML skeleton, design tokens,
+mermaid examples, accessibility checklist, grading rubric, profile section
+templates, and validation scripts that `/aid-summarize` uses to build the visual
+HTML summary. The skill is the orchestrator; these templates are the assets.
+
+If a project doesn't intend to use `/aid-summarize`, this step is harmless — the
+templates just sit unused.
+
+---
+
 ## Step 5: Summary and Next Steps
 
 Print a summary of everything created:

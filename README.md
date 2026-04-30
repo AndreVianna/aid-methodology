@@ -90,7 +90,7 @@ You now have a Knowledge Base, configured skills, and agents ready to go. Every 
 
 | Resource | Purpose |
 |----------|---------|
-| [`skills/`](skills/README.md) | Human-readable documentation for all 10 skills (1 setup + 8 phases) |
+| [`skills/`](skills/README.md) | Human-readable documentation for all 11 skills (1 setup + 8 phases + 1 optional `aid-summarize`) |
 | [`agents/`](agents/README.md) | Human-readable documentation for all 13 agent roles |
 
 **Want templates for your project artifacts?**
@@ -139,6 +139,11 @@ examples/
 |-------|-------|-------------|
 | 7. Deploy | `aid-deploy` | Final verification, PR creation, KB update, delivery summary |
 | 8. Monitor | `aid-monitor` | Observe production, classify findings, route actions (BUG → Execute, CR → Discover) |
+
+### Optional
+| When | Skill | What It Does |
+|------|-------|-------------|
+| Post-discovery | `aid-summarize` | Generate a single-file `knowledge-summary.html` from `.aid/knowledge/` — offline, light/dark theme, accessibility-first (WCAG AA), Mermaid diagrams. Idempotent. |
 
 ---
 
@@ -221,7 +226,7 @@ aid-methodology/
 │   ├── aid-methodology.md             ← Complete V3 methodology document
 │   └── images/                        ← Pipeline, comparison, feedback loop diagrams
 ├── skills/                            ← Human-readable phase documentation
-│   ├── README.md                      ← Overview of all 10 skills (aid-init + 8 phases)
+│   ├── README.md                      ← Overview of all 11 skills (aid-init + 8 phases + optional aid-summarize)
 │   └── aid-{skill}/README.md          ← Rich docs per skill
 ├── agents/                            ← Human-readable agent documentation
 │   ├── README.md                      ← Overview of all 13 agents
