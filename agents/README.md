@@ -148,8 +148,6 @@ Examples:
 - `aid-interview` runs as `interviewer` for States 1–4, then explicitly switches to `architect` for State 5 (Feature Decomposition) and `reviewer` for State 6 (Cross-Reference).
 - `aid-detail`, `aid-plan`, `aid-specify` run their default agent for proposal phases, then explicitly dispatch `reviewer` for the REVIEW step.
 
-The pattern is validated by `templates/scripts/lint-skill-agents.sh` — it walks all SKILL.md files and checks that every backtick-quoted agent reference in Agents Involved / Agent Selection sections corresponds to a real agent file.
-
 ### Mechanical Work at the Cheap Tier
 
 Foundation extraction, file enumeration, and template-filling do not require Opus reasoning. The `simple-*` Utility tier exists so Core/Specialist agents can offload these chunks at Haiku price while keeping synthesis at their own tier.
