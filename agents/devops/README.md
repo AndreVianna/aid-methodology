@@ -42,7 +42,7 @@ This agent is not part of the standard pipeline flow. It is called on demand whe
 
 ## Model
 
-**Opus** — all agents use Opus for consistent deep reasoning across the pipeline.
+**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — CI/CD, IaC, and containerization are largely template/pattern application. The patterns are well-known and configurations are verifiable by running the pipeline. Sonnet captures this without overpaying for reasoning that gets discarded by `terraform validate`.
 
 ## Examples
 

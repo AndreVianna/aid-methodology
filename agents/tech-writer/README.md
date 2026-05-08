@@ -41,7 +41,7 @@ This agent is not part of the standard pipeline flow. It is called on demand whe
 
 ## Model
 
-**Opus** — all agents use Opus for consistent deep reasoning across the pipeline.
+**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — long-form prose against structured templates (changelogs, READMEs, API docs) is exactly Sonnet's wheelhouse. Composing prose that captures *why* benefits from Sonnet's writing strength; foundational design decisions happened upstream.
 
 ## Examples
 

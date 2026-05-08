@@ -46,7 +46,7 @@ The Orchestrator never writes code, never writes specs, never runs tests. It *co
 
 ## Model
 
-**Opus** — strategic decisions. The Orchestrator makes routing decisions that affect the entire pipeline. Wrong routing means wasted work or missed quality issues.
+**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — most routing follows the deterministic feedback table. The genuinely strategic calls (specialist dispatch, parallel scheduling, resolving conflicting feedback) are context-bound rather than open-ended; Sonnet handles them with the routing table as anchor. When ambiguous escalations arise, the Orchestrator can request Opus consultation explicitly.
 
 ## Examples
 

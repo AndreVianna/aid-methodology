@@ -54,7 +54,8 @@ and passes it as the prompt to each subagent.
 > often contains architecture decisions and design rationale absent from the code.
 >
 > REFERENCE DOCUMENTS (read these FIRST before analyzing):
-> - .aid/knowledge/project-structure.md — repository structure map
+> - .aid/knowledge/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+> - .aid/knowledge/project-structure.md — repository structure map (architectural narrative)
 > - .aid/knowledge/external-sources.md — external documentation inventory and findings
 > Use these to orient your analysis. External sources may contain information directly relevant
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
@@ -78,7 +79,8 @@ and passes it as the prompt to each subagent.
 > model definitions absent from the code.
 >
 > REFERENCE DOCUMENTS (read these FIRST before analyzing):
-> - .aid/knowledge/project-structure.md — repository structure map
+> - .aid/knowledge/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+> - .aid/knowledge/project-structure.md — repository structure map (architectural narrative)
 > - .aid/knowledge/external-sources.md — external documentation inventory and findings
 > Use these to orient your analysis. External sources may contain information directly relevant
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
@@ -102,7 +104,8 @@ and passes it as the prompt to each subagent.
 > and domain definitions absent from the code.
 >
 > REFERENCE DOCUMENTS (read these FIRST before analyzing):
-> - .aid/knowledge/project-structure.md — repository structure map
+> - .aid/knowledge/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+> - .aid/knowledge/project-structure.md — repository structure map (architectural narrative)
 > - .aid/knowledge/external-sources.md — external documentation inventory and findings
 > Use these to orient your analysis. External sources may contain information directly relevant
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
@@ -129,7 +132,8 @@ and passes it as the prompt to each subagent.
 > compliance requirements, deployment guides, and test strategies absent from the code.
 >
 > REFERENCE DOCUMENTS (read these FIRST before analyzing):
-> - .aid/knowledge/project-structure.md — repository structure map
+> - .aid/knowledge/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+> - .aid/knowledge/project-structure.md — repository structure map (architectural narrative)
 > - .aid/knowledge/external-sources.md — external documentation inventory and findings
 > Use these to orient your analysis. External sources may contain information directly relevant
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality

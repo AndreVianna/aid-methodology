@@ -31,10 +31,10 @@ Typically invoked by the **Orchestrator** when tasks are ready for implementatio
 |-------|---------------|
 | **Architect** | Architect designs *what* to build. Developer *builds* it. |
 | **Researcher** | Researcher reads code to understand it. Developer reads code to *change* it. |
-| **Critic** | Critic evaluates code after it's written. Developer writes it. |
+| **Reviewer** | Reviewer evaluates code after it's written. Developer writes it. |
 | **Operator** | Operator ships code. Developer writes code. |
 
-The Developer is the execution engine. It doesn't decide *what* to build (Architect) or *whether* it's good (Critic) — it builds.
+The Developer is the execution engine. It doesn't decide *what* to build (Architect) or *whether* it's good (Reviewer) — it builds.
 
 ## Tools
 
@@ -44,7 +44,7 @@ The Developer is the execution engine. It doesn't decide *what* to build (Archit
 
 ## Model
 
-**Opus** — all agents use Opus for consistent deep reasoning across the pipeline.
+**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — implementation with TASK + SPEC + KB as inputs is structured production work, not open-ended design. The Reviewer at Opus catches the hard cases. For genuinely complex tasks (REFACTOR over a tangled module, MIGRATE with edge cases), the calling skill (aid-execute) can override the model per task type.
 
 ## Examples
 

@@ -33,9 +33,9 @@ Typically invoked by the **Orchestrator** after the Interview phase completes. M
 |-------|---------------|
 | **Researcher** | Researcher discovers *what exists*. Architect decides *what to build*. |
 | **Developer** | Developer *implements* the design. Architect *creates* the design. |
-| **Critic** | Critic evaluates *after the fact*. Architect designs *before the fact*. |
+| **Reviewer** | Reviewer evaluates *after the fact*. Architect designs *before the fact*. |
 
-The Architect's output is the contract that the Developer follows and the Critic reviews against. Bad architecture means bad everything downstream.
+The Architect's output is the contract that the Developer follows and the Reviewer reviews against. Bad architecture means bad everything downstream.
 
 ## Tools
 
@@ -45,7 +45,7 @@ The Architect's output is the contract that the Developer follows and the Critic
 
 ## Model
 
-**Opus** — complex reasoning. The Architect makes decisions that cascade through the entire project. Trade-off analysis, pattern selection, and scope management require deep thinking.
+**Opus** (Anthropic) / **gpt-5.5** high reasoning (OpenAI Codex) — complex reasoning. The Architect makes decisions that cascade through the entire project. Trade-off analysis, pattern selection, and scope management require deep thinking that downstream phases cannot easily correct.
 
 ## Examples
 

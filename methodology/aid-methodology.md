@@ -811,6 +811,8 @@ Gotchas, decisions, context the agent needs.
 
 ### REVIEW.md Template
 
+The Reviewer agent produces a structured issue list. Each issue is tagged by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`) and source (`[CODE]` / `[TASK]` / `[SPEC]` / `[KB]` / `[ARCHITECTURE]`). The Reviewer **does not assign a letter grade**. The grade is computed deterministically by `templates/scripts/grade.sh` from the bracketed severity tags — worst severity dominates, count within that tier determines the modifier (`+` / none / `-`). See `templates/grading-rubric.md` for the full table.
+
 ```markdown
 # Review — {Task or Delivery ID}
 
@@ -825,13 +827,15 @@ Gotchas, decisions, context the agent needs.
 - [ ] Matches KB coding standards
 
 ## Issues Found
-| # | Severity | Tag | Description | Line | Fix |
-|---|----------|-----|-------------|------|-----|
+| # | Severity | Source | Description | File | Line |
+|---|----------|--------|-------------|------|------|
+| 1 | [CRITICAL] | [CODE] | ... | ... | ... |
+| 2 | [MEDIUM] | [TASK] | ... | ... | ... |
 
-## Grade: {A+ through F}
+## Grade: {computed by grade.sh}
 
 ## Recommendation
-Ship to Test | Rework (minor) | Rework (major) | Re-implement
+Ship to Test | Auto-fix CODE issues | Loopback to upstream
 ```
 
 ### MONITOR-STATE.md Template

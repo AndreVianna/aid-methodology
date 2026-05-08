@@ -14,6 +14,15 @@ agent: orchestrator
 
 Monitor production. Detect what's wrong. Route it to where it gets fixed.
 
+## Agents Involved
+
+- **Default executor:** `orchestrator` (routes findings; never implements directly).
+- **Telemetry interpretation:** `researcher` (reads logs/metrics, classifies anomalies).
+- **Routing targets:**
+  - BUG classification → re-enters at `aid-execute` with a new task for `developer`.
+  - Change Request → re-enters at `aid-discover` (full lifecycle).
+  - Infrastructure → escalated to ops (outside AID scope).
+
 ## Argument-Hint
 
 ```

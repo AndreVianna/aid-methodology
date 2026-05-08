@@ -13,7 +13,7 @@ The UX Designer reviews designs, proposes user flows, evaluates accessibility co
 | Called By | Context |
 |-----------|---------|
 | **Architect** | During Specify/Plan — when designing user-facing features |
-| **Critic** | During Review — when evaluating UI implementation quality |
+| **Reviewer** | During Review — when evaluating UI implementation quality |
 | **Orchestrator** | When any phase needs UX expertise |
 
 This agent is not part of the standard pipeline flow. It is called on demand when the work involves user interfaces.
@@ -30,7 +30,7 @@ This agent is not part of the standard pipeline flow. It is called on demand whe
 | Agent | Key Difference |
 |-------|---------------|
 | **Architect** | Architect designs *systems*. UX Designer designs *interactions*. |
-| **Critic** | Critic evaluates code quality. UX Designer evaluates *usability* quality. |
+| **Reviewer** | Reviewer evaluates code quality. UX Designer evaluates *usability* quality. |
 | **Tech Writer** | Tech Writer documents for *readers*. UX Designer designs for *users*. |
 
 ## Tools
@@ -40,7 +40,7 @@ This agent is not part of the standard pipeline flow. It is called on demand whe
 
 ## Model
 
-**Opus** — all agents use Opus for consistent deep reasoning across the pipeline.
+**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — UX recommendations and accessibility audits are knowledge-heavy synthesis against established standards (WCAG 2.1, design system patterns, platform HIG). Sonnet handles structured pattern application; Opus would add little for typical UX critique.
 
 ## Examples
 

@@ -13,6 +13,10 @@ and type-specific review checklists for the reviewer agent.
 | **High** | Blocks functionality, security risk, data integrity concern. |
 | **Critical** | System failure, data loss, security breach, fundamentally wrong. |
 
+### Tagging Convention
+
+Tag every issue with the BRACKETED ALL-CAPS form: `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`. The grading script counts these tags exactly — sentence-case names like "Minor: foo" produce zero counts (silent A+). The script ignores tags inside fenced code blocks and inline backticks.
+
 ## Issue Source
 
 | Source | Meaning |

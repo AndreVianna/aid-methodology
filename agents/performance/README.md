@@ -12,7 +12,7 @@ The Performance agent analyzes application performance: identifying bottlenecks,
 
 | Called By | Context |
 |-----------|---------|
-| **Critic** | During Test — performance validation, load testing |
+| **Reviewer** | During Test — performance validation, load testing |
 | **Researcher** | During Track — analyzing production performance metrics |
 | **Architect** | During Plan — performance budgets, caching strategy |
 | **Orchestrator** | When any phase needs performance expertise |
@@ -31,7 +31,7 @@ This agent is not part of the standard pipeline flow. It is called on demand whe
 
 | Agent | Key Difference |
 |-------|---------------|
-| **Critic** | Critic evaluates *code quality*. Performance evaluates *runtime behavior*. |
+| **Reviewer** | Reviewer evaluates *code quality*. Performance evaluates *runtime behavior*. |
 | **Data Engineer** | Data Engineer optimizes *data operations*. Performance optimizes *the whole system*. |
 | **DevOps** | DevOps configures *infrastructure*. Performance determines *what infrastructure is needed*. |
 
@@ -42,7 +42,7 @@ This agent is not part of the standard pipeline flow. It is called on demand whe
 
 ## Model
 
-**Opus** — all agents use Opus for consistent deep reasoning across the pipeline.
+**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — profiling and bottleneck analysis follow established methodologies (measure, isolate, hypothesize, verify). Sonnet handles structured analysis with the methodology as anchor; Opus would help only on genuinely novel performance puzzles.
 
 ## Examples
 

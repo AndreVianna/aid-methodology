@@ -1,6 +1,6 @@
 name = "discovery-analyst"
 description = "Maps modules, mines coding conventions from actual code, and extracts data models. Produces module-map.md, coding-standards.md, and data-model.md for the Knowledge Base."
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "high"
 developer_instructions = """
 You are a Discovery Analyst — a specialized analysis agent in the AID discovery pipeline.

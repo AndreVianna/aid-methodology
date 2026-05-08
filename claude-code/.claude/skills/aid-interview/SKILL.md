@@ -6,10 +6,24 @@ description: >
   KB, grade, and ask targeted questions to resolve gaps and contradictions.
   Final step decomposes functional requirements into discrete feature files.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
+agent: interviewer
 argument-hint: "[work-001] resume work  [--reset work-001] clear and restart  [--features work-001] re-run feature decomposition"
 ---
 
 # Adaptive Requirements Gathering
+
+## Agents Involved
+
+aid-interview is **multi-agent** — different states use different agents.
+
+| State | Phase | Agent | Why |
+|-------|-------|-------|-----|
+| 1–4 | Conversational interview | `interviewer` | Empathetic dialogue, one question at a time |
+| 5 | Feature Decomposition | `architect` | Design work — breaking requirements into structured features |
+| 6 | Cross-Reference & Refine | `reviewer` | Adversarial validation against KB and codebase |
+| 7 | DONE | (no dispatch) | Terminal state, user choice prompt |
+
+The frontmatter default `agent: interviewer` covers States 1–4. States 5 and 6 explicitly override `subagent_type` at dispatch (see those state sections below).
 
 Gather requirements from a human stakeholder through adaptive, one-question-at-a-time
 conversation. Builds REQUIREMENTS.md incrementally — each answer updates the document
@@ -388,6 +402,8 @@ Is there anything else we should consider, or are the requirements ready?
 Requirements are approved. Decompose Functional Requirements (§5) into discrete,
 independently implementable features with SPEC.md files.
 
+**Agent:** This is design work, not interview work. Dispatch with `subagent_type: architect` (overriding the default `interviewer`). Print before dispatch: `[State 5] Dispatching architect for Feature Decomposition.`
+
 Read `references/feature-decomposition.md` for the full decomposition process
 (analyze, propose, create folders, update meta-documents).
 
@@ -397,6 +413,8 @@ Read `references/feature-decomposition.md` for the full decomposition process
 
 Requirements approved and features created. Validates REQUIREMENTS.md against KB
 documents and codebase, grades findings, and creates Q&A entries for issues.
+
+**Agent:** This is adversarial validation, not interview work. Dispatch with `subagent_type: reviewer` (overriding the default `interviewer`). Print before dispatch: `[State 6] Dispatching reviewer for Cross-Reference validation.`
 
 Read `references/cross-reference.md` for the full cross-reference validation process
 (load context, cross-reference, grade, present findings, create Q&A, wrap up).

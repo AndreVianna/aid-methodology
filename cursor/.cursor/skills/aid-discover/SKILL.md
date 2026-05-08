@@ -146,6 +146,26 @@ external documentation.
 
 ---
 
+### Step 0c: Build Project Index (Pre-pass)
+
+Run the lightweight file-index pre-pass before dispatching sub-agents. This produces a structured inventory consumed by all 5 sub-agents, eliminating duplicated `find`/`wc` work across parallel agents.
+
+> **Working directory assumption:** All bash commands in this skill (Step 0c, Step 1, etc.) assume the current working directory is the project root (the directory containing `.aid/`). Relative paths like `../../templates/scripts/...` resolve from that root. Verify with `pwd` if unsure.
+
+```bash
+bash ../../templates/scripts/build-project-index.sh \
+  --root . \
+  --output .aid/knowledge/project-index.md
+```
+
+Print: `[0c] Building project index...` then on completion `[0c] Project index ready (N files, M lines)`.
+
+This is a deterministic shell script — no LLM dispatch. It runs fast (typically under 30 seconds even on large repos). The resulting `project-index.md` is markdown so humans can scan it.
+
+If the index fails (e.g., empty repo, permission errors): log a warning and continue. Sub-agents will fall back to direct enumeration.
+
+---
+
 ### Step 1: Pre-scan (discovery-scout) — ALWAYS runs first, ALONE
 
 The discovery-scout runs **before** all other agents. It produces two foundation documents
@@ -212,7 +232,8 @@ Only dispatch agents whose target files are missing. Skip agents whose files all
 All 4 agent prompts include this block at the end (before "Write only to the .aid/knowledge/ directory"):
 ```
 REFERENCE DOCUMENTS (read these FIRST before analyzing):
-- .aid/knowledge/project-structure.md — repository structure map
+- .aid/knowledge/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+- .aid/knowledge/project-structure.md — repository structure map (architectural narrative)
 - .aid/knowledge/external-sources.md — external documentation inventory and findings
 Use these to orient your analysis. External sources may contain information directly relevant
 to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
@@ -246,7 +267,8 @@ Prompt:
 > often contains architecture decisions and design rationale absent from the code.
 >
 > REFERENCE DOCUMENTS (read these FIRST before analyzing):
-> - .aid/knowledge/project-structure.md — repository structure map
+> - .aid/knowledge/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+> - .aid/knowledge/project-structure.md — repository structure map (architectural narrative)
 > - .aid/knowledge/external-sources.md — external documentation inventory and findings
 > Use these to orient your analysis. External sources may contain information directly relevant
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
@@ -273,7 +295,8 @@ Prompt:
 > model definitions absent from the code.
 >
 > REFERENCE DOCUMENTS (read these FIRST before analyzing):
-> - .aid/knowledge/project-structure.md — repository structure map
+> - .aid/knowledge/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+> - .aid/knowledge/project-structure.md — repository structure map (architectural narrative)
 > - .aid/knowledge/external-sources.md — external documentation inventory and findings
 > Use these to orient your analysis. External sources may contain information directly relevant
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
@@ -300,7 +323,8 @@ Prompt:
 > and domain definitions absent from the code.
 >
 > REFERENCE DOCUMENTS (read these FIRST before analyzing):
-> - .aid/knowledge/project-structure.md — repository structure map
+> - .aid/knowledge/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+> - .aid/knowledge/project-structure.md — repository structure map (architectural narrative)
 > - .aid/knowledge/external-sources.md — external documentation inventory and findings
 > Use these to orient your analysis. External sources may contain information directly relevant
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
@@ -330,7 +354,8 @@ Prompt:
 > compliance requirements, deployment guides, and test strategies absent from the code.
 >
 > REFERENCE DOCUMENTS (read these FIRST before analyzing):
-> - .aid/knowledge/project-structure.md — repository structure map
+> - .aid/knowledge/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+> - .aid/knowledge/project-structure.md — repository structure map (architectural narrative)
 > - .aid/knowledge/external-sources.md — external documentation inventory and findings
 > Use these to orient your analysis. External sources may contain information directly relevant
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality

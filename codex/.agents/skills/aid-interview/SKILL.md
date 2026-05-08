@@ -6,10 +6,24 @@ description: >
   KB, grade, and ask targeted questions to resolve gaps and contradictions.
   Final step decomposes functional requirements into discrete feature files.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
+agent: interviewer
 argument-hint: "[work-001] resume work  [--reset work-001] clear and restart  [--features work-001] re-run feature decomposition"
 ---
 
 # Adaptive Requirements Gathering
+
+## Agents Involved
+
+aid-interview is **multi-agent** — different states use different agents.
+
+| State | Phase | Agent | Why |
+|-------|-------|-------|-----|
+| 1–4 | Conversational interview | `interviewer` | Empathetic dialogue, one question at a time |
+| 5 | Feature Decomposition | `architect` | Design work — breaking requirements into structured features |
+| 6 | Cross-Reference & Refine | `reviewer` | Adversarial validation against KB and codebase |
+| 7 | DONE | (no dispatch) | Terminal state, user choice prompt |
+
+The frontmatter default `agent: interviewer` covers States 1–4. States 5 and 6 explicitly override `subagent_type` at dispatch (see those state sections below).
 
 Gather requirements from a human stakeholder through adaptive, one-question-at-a-time
 conversation. Builds REQUIREMENTS.md incrementally — each answer updates the document
@@ -426,6 +440,8 @@ Is there anything else we should consider, or are the requirements ready?
 
 Requirements are approved. Decompose Functional Requirements into discrete features.
 
+**Agent:** This is design work, not interview work. Dispatch with `subagent_type: architect` (overriding the default `interviewer`). Print before dispatch: `[State 5] Dispatching architect for Feature Decomposition.`
+
 ### Step 1: Analyze
 
 Read REQUIREMENTS.md (in the work folder), focusing on:
@@ -507,6 +523,8 @@ Next steps:
 ## State 6: CROSS-REFERENCE & REFINE
 
 Requirements approved and features created.
+
+**Agent:** This is adversarial validation, not interview work. Dispatch with `subagent_type: reviewer` (overriding the default `interviewer`). Print before dispatch: `[State 6] Dispatching reviewer for Cross-Reference validation.`
 
 **Ask first:** _"Requirements are approved and features are defined. Do you want to run
 a cross-reference validation against the KB? Is there something specific to re-examine?"_

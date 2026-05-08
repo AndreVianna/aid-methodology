@@ -38,10 +38,36 @@ Fix is a separate step. Reviewer NEVER fixes — only grades and lists issues.
 | **REFACTOR** | Restructure code without changing behavior | Behavior preserved, tests still pass, measurable improvement |
 | **CONFIGURE** | Config files, environment setup, CI/CD, infra-as-code | Correctness, security, idempotency, documentation |
 
+## Agent Selection
+
+Each task type dispatches a specific executor agent. The reviewer is always the same role (`reviewer`), separate from the executor for clean context. Specialist consults are dispatched in addition to the reviewer when the task type warrants it.
+
+| Task Type | Executor | Reviewer | Specialist consult |
+|-----------|----------|----------|---------------------|
+| RESEARCH | `researcher` | `reviewer` | — |
+| DESIGN | `ux-designer` | `reviewer` | — |
+| IMPLEMENT | `developer` | `reviewer` | `security` if task touches auth/PII; `performance` if hot path |
+| TEST | `developer` | `reviewer` | `performance` for load/integration tests |
+| DOCUMENT | `tech-writer` | `reviewer` | — |
+| MIGRATE | `data-engineer` | `reviewer` | `data-engineer` review (different instance than executor) |
+| REFACTOR | `developer` | `reviewer` | — |
+| CONFIGURE | `devops` | `reviewer` | `security` if config touches secrets/auth |
+
+**Reviewer ≠ executor invariant.** Even when a task type uses the same agent role for both execution and consult-review (MIGRATE), they run as separate dispatches with clean context. The reviewer never sees the executor's working notes.
+
+**Model override per task type.** Each executor has a default tier from its agent definition (Developer is Sonnet, etc.). For genuinely complex work — REFACTOR over a tangled module, MIGRATE with edge cases, IMPLEMENT touching critical security paths — the orchestrator may dispatch with an explicit higher-tier model in the Task tool's `model` parameter. This is a runtime decision per dispatch, not a skill configuration.
+
+**Mechanical sub-tasks.** Executors may delegate mechanical work (extraction, file enumeration, template filling) to `simple-extractor`, `simple-glob`, `simple-formatter` — Haiku-tier utility sub-agents. See `agents/simple-*/README.md` for the caller contract.
+
 ## Grading
 
-Read `../../templates/grading-rubric.md` for the universal grading scale.
-Read minimum grade from `.aid/knowledge/DISCOVERY-STATE.md` field `**Minimum Grade:**`.
+The grade is **computed deterministically**, not judged. The reviewer outputs a structured issue list with `[CRITICAL]`/`[HIGH]`/`[MEDIUM]`/`[LOW]`/`[MINOR]` severity tags. The grade follows from the rubric.
+
+- Rubric: `../../templates/grading-rubric.md`
+- Script: `../../templates/scripts/grade.sh REVIEW.md` (or pipe via `cat REVIEW.md | grade.sh`)
+- Minimum grade: read from `.aid/knowledge/DISCOVERY-STATE.md` field `**Minimum Grade:**`
+
+Run the script after the reviewer completes. The script prints the grade. Compare against minimum grade to decide DONE vs FIX.
 
 ## Workspace
 
@@ -168,8 +194,15 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 Create `task-NNN-STATE.md` from template (`../../templates/implementation-state.md`).
 Set Status to `In Progress`.
 
-Dispatch a coding/working agent with assembled context.
-The agent's behavior depends on the task Type.
+**Pick the executor by task Type from the Agent Selection table above** (RESEARCH → `researcher`, DESIGN → `ux-designer`, IMPLEMENT/TEST/REFACTOR → `developer`, DOCUMENT → `tech-writer`, MIGRATE → `data-engineer`, CONFIGURE → `devops`).
+
+Dispatch with the Task tool, setting `subagent_type` explicitly to the chosen executor — this overrides the skill's default `agent: developer` from frontmatter. Example: a DESIGN task dispatches with `subagent_type: ux-designer`; an IMPLEMENT task uses `subagent_type: developer` (matches the default).
+
+**Before dispatching, print:** `[Step 1] Dispatching {executor} for {Type} task → subagent_type={executor}` (substituting actual values).
+
+Also append a row to `task-NNN-STATE.md` `## Dispatches`: `| 1 | {executor} | EXECUTE Type={Type} | {cycle} |`.
+
+Then load the type-specific RULES below and pass them to the executor.
 
 ### Type-Specific Execution
 
@@ -280,7 +313,11 @@ When execution passes → update STATE.md Status to `In Review` → proceed to S
 
 ## Step 2: REVIEW (Grade)
 
-Dispatch a **separate reviewer agent** with clean context (no execution knowledge).
+Dispatch the `reviewer` agent (Task tool with `subagent_type: reviewer`). Clean context — the reviewer must NOT see the executor's working notes.
+
+**Before dispatching, print:** `[Step 2] Dispatching reviewer for review → subagent_type=reviewer`.
+
+Also append a row to `task-NNN-STATE.md` `## Dispatches`: `| 2 | reviewer | REVIEW | {cycle} |`.
 
 **Reviewer receives:**
 - All changes/artifacts produced by the task
@@ -298,6 +335,10 @@ Dispatch a **separate reviewer agent** with clean context (no execution knowledg
 | **Medium** | Incorrect behavior, missing edge case, incomplete coverage. |
 | **High** | Blocks functionality, security risk, data integrity concern. |
 | **Critical** | System failure, data loss, security breach, fundamentally wrong. |
+
+### Tagging Convention
+
+Tag every issue with the BRACKETED ALL-CAPS form: `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`. The grading script counts these tags exactly — sentence-case names like "Minor: foo" produce zero counts (silent A+). The script ignores tags inside fenced code blocks and inline backticks.
 
 | Source | Meaning |
 |--------|---------|

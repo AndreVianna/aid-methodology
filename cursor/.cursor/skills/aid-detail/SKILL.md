@@ -16,6 +16,12 @@ argument-hint: "work-001 (required if multiple works)  [--reset] clear tasks/"
 Break each deliverable from PLAN.md into small, sequential, testable tasks.
 Each task = one agent session = one reviewable unit = one human review.
 
+## Agents Involved
+
+- **Default executor:** `architect` (proposes and refines task breakdown grounded in PLAN/SPEC).
+- **Reviewer:** `reviewer` (grades the task list against SPEC/PLAN coherence — runs in clean context).
+- **Specialist consults (optional):** `ux-designer` for DESIGN-typed tasks, `data-engineer` for MIGRATE-typed tasks, `security` for tasks touching auth/PII.
+
 ## The Loop
 
 Each deliverable follows the same cycle:
@@ -240,6 +246,8 @@ Once approved:
    - Any gap where something is used before it's created?
    - Scope aligned with what the SPECs actually say?
    - Criteria concrete enough to verify?
+
+**Agent:** Dispatch with `subagent_type: reviewer` (overriding the default `architect`). The reviewer must run with clean context — it grades against KB/codebase reality without seeing the architect's working notes. Print before dispatch: `[Review] Dispatching reviewer for task list validation.`
 
 Use the universal rubric (`../../templates/grading-rubric.md`). Classify each issue
 by severity. The grade is calculated — worst issue dominates.

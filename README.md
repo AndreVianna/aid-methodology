@@ -160,19 +160,19 @@ Agents are **specialties**, not phases. One agent may handle multiple phases. Th
 | **Interviewer** | Adaptive dialogue, requirements gathering | Interview | opus |
 | **Architect** | Design: specs, plans, task decomposition | Specify, Plan, Detail | opus |
 | **Developer** | Task execution across all types (code, tests, research, docs) | Execute | opus |
-| **Critic** | Quality evaluation, grading (A+ to F) | Execute (review step) | opus |
+| **Reviewer** | Quality evaluation, grading (A+ to F) | Execute (review step) | opus |
 | **Operator** | Deployment, PR creation, release management | Deploy | opus |
 
 ### Specialist Agents
 
 | Agent | Specialty | Called By |
 |-------|-----------|-----------|
-| **UX Designer** | UI/UX, accessibility (WCAG), user flows | Architect, Critic |
+| **UX Designer** | UI/UX, accessibility (WCAG), user flows | Architect, Reviewer |
 | **DevOps** | CI/CD, IaC, containerization, monitoring | Operator, Researcher |
 | **Tech Writer** | Documentation, API docs, changelogs | Operator, Architect |
-| **Security** | Threat modeling, OWASP, auth, dependency audit | Critic, Researcher |
+| **Security** | Threat modeling, OWASP, auth, dependency audit | Reviewer, Researcher |
 | **Data Engineer** | Schema, migrations, query optimization, ETL | Architect, Developer |
-| **Performance** | Profiling, load testing, caching, optimization | Critic, Researcher |
+| **Performance** | Profiling, load testing, caching, optimization | Reviewer, Researcher |
 
 See [`agents/README.md`](agents/README.md) for detailed documentation on each role.
 
