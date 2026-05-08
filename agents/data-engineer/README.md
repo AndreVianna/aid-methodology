@@ -14,7 +14,7 @@ The Data Engineer designs database schemas, writes and reviews migrations, optim
 |-----------|---------|
 | **Architect** | During Plan — data model design, schema decisions |
 | **Developer** | During Implement — migration creation, query optimization |
-| **Critic** | During Review — evaluating data access patterns |
+| **Reviewer** | During Review — evaluating data access patterns |
 | **Orchestrator** | When any phase needs data expertise |
 
 This agent is not part of the standard pipeline flow. It is called on demand when data-layer expertise is needed.
@@ -43,7 +43,7 @@ This agent is not part of the standard pipeline flow. It is called on demand whe
 
 ## Model
 
-**Opus** — all agents use Opus for consistent deep reasoning across the pipeline.
+**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — schema design, migrations, and query optimization are pattern-driven for typical work. For genuinely novel data models or tricky migration sequencing, the calling skill can request Opus override (similar to Developer's REFACTOR/MIGRATE escalation path).
 
 ## Examples
 

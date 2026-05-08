@@ -12,7 +12,7 @@ The Security agent evaluates code and architecture for security vulnerabilities,
 
 | Called By | Context |
 |-----------|---------|
-| **Critic** | During Review — security-focused code review |
+| **Reviewer** | During Review — security-focused code review |
 | **Researcher** | During Discover — security posture assessment of existing codebase |
 | **Architect** | During Specify — threat modeling for new features |
 | **Orchestrator** | When any phase needs security expertise |
@@ -31,7 +31,7 @@ This agent is not part of the standard pipeline flow. It is called on demand whe
 
 | Agent | Key Difference |
 |-------|---------------|
-| **Critic** | Critic evaluates *general code quality*. Security evaluates *attack surface*. |
+| **Reviewer** | Reviewer evaluates *general code quality*. Security evaluates *attack surface*. |
 | **Researcher** | Researcher documents *what exists*. Security finds *what's exploitable*. |
 | **DevOps** | DevOps configures infrastructure. Security audits it for vulnerabilities. |
 
@@ -42,7 +42,7 @@ This agent is not part of the standard pipeline flow. It is called on demand whe
 
 ## Model
 
-**Opus** — security requires deep analysis. Missing a vulnerability is worse than missing a code style issue. The Security agent needs to think about edge cases, attack chains, and subtle logic flaws.
+**Opus** (Anthropic) / **gpt-5.5** high reasoning (OpenAI Codex) — security requires deep analysis. Missing a vulnerability is worse than missing a code style issue. The Security agent needs to think about edge cases, attack chains, and subtle logic flaws. Cost asymmetry strongly favors the higher tier — false negatives in review are far more expensive than the model spend.
 
 ## Examples
 

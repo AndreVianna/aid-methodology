@@ -17,6 +17,14 @@
 
 _No issues yet._
 
+## Dispatches
+
+> Append one row per agent dispatch. Audit trail for which agent ran when.
+
+| Step | Agent | Reason | Cycle |
+|------|-------|--------|-------|
+| _none yet_ | | | |
+
 ## Review History
 
 _No reviews yet._

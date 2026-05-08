@@ -6,6 +6,7 @@ description: >
   technical solutions, and builds the spec collaboratively with the developer.
   Writes to SPEC.md in the feature folder.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
+agent: architect
 argument-hint: "work-001/feature-001 (required)  [--reset] clear technical spec for this feature"
 ---
 
@@ -279,6 +280,8 @@ When agreed:
    update that KB doc + INDEX.md + README.md. Log which KB docs were seeded.
 
 ### 4. Review
+
+**Agent:** Dispatch with `subagent_type: reviewer` (overriding the default `architect`). The reviewer must run with clean context — it grades against KB/codebase reality without seeing the architect's working notes. Print before dispatch: `[Review] Dispatching reviewer for SPEC validation.`
 
 Immediately after writing, verify what was written:
 

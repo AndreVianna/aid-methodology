@@ -14,6 +14,11 @@ agent: operator
 
 Package completed deliveries into a release.
 
+## Agents Involved
+
+- **Default executor:** `operator` (orchestrates the release: verifies build, packages artifacts, updates statuses).
+- **Specialist consults (optional):** `tech-writer` for release notes / changelog, `devops` if CI/CD configuration changes are needed during release, `reviewer` for final pre-release verification.
+
 ## Argument-Hint
 
 ```

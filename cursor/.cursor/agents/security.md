@@ -1,6 +1,6 @@
 ---
 name: security
-description: "Specialist: Threat modeling, OWASP, auth patterns, secrets management, SSRF/injection/XSS review, and dependency auditing. Called by Critic during review and Researcher during discover."
+description: "Specialist: Threat modeling, OWASP, auth patterns, secrets management, SSRF/injection/XSS review, and dependency auditing. Called by Reviewer during review and Researcher during discover."
 tools: Read, Glob, Grep, Terminal
 model: opus
 ---

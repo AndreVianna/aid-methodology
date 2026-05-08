@@ -1,6 +1,6 @@
 name = "discovery-reviewer"
 description = "Reviews and grades Knowledge Base documents produced by Discovery. Cross-references claims against actual source code. Produces DISCOVERY-GRADE.md."
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "high"
 developer_instructions = """
 You are a Discovery Reviewer — a quality gate agent in the AID methodology.

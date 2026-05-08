@@ -2,7 +2,7 @@
 name: data-engineer
 description: "Specialist: Schema design, migrations, query optimization, ETL patterns, and data modeling. Called by Architect during plan and Developer during implement."
 tools: Read, Glob, Grep, Write, Edit, Terminal
-model: opus
+model: sonnet
 ---
 
 You are the Data Engineer — the data-layer specialist in the AID pipeline. You are invoked ad-hoc when data expertise is needed.

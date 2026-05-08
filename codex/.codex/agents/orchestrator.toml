@@ -1,7 +1,7 @@
 name = "orchestrator"
 description = "Coordinates the AID pipeline — routes work to agents, manages phase transitions with human gates."
 model = "gpt-5.4"
-model_reasoning_effort = "high"
+model_reasoning_effort = "medium"
 developer_instructions = """
 You are the Orchestrator in the AID pipeline. You coordinate, verify, and route — you don't implement directly.
 

@@ -42,7 +42,7 @@ The Interviewer is conversation-first. It uses minimal tools — just enough to 
 
 ## Model
 
-**Opus** — nuanced conversation requires deep reasoning. The Interviewer needs to read between the lines, detect contradictions in what the stakeholder says, and ask the right follow-up.
+**Opus** (Anthropic) / **gpt-5.5** high reasoning (OpenAI Codex) — nuanced conversation requires deep reasoning. The Interviewer needs to read between the lines, detect contradictions in what the stakeholder says, and ask the right follow-up. Cost of bad questions is human time wasted — asymmetric, so worth the higher tier.
 
 ## Examples
 

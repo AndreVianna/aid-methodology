@@ -163,6 +163,8 @@ When the developer agrees on a deliverable, **IMMEDIATELY write it to the file.*
 ⚠️ **DO NOT continue to the next deliverable without writing this one first.**
 ⚠️ **DO NOT accumulate multiple deliverables "in your head" — write each one immediately.**
 
+**Agent:** Dispatch with `subagent_type: reviewer` (overriding the default `architect`). The reviewer must run with clean context — it grades against KB/codebase reality without seeing the architect's working notes. Print before dispatch: `[Review] Dispatching reviewer for PLAN validation.`
+
 After writing, **review immediately:** Does it hold up?
 - All included features' dependencies satisfied by prior deliverables?
 - Actually standalone-functional?

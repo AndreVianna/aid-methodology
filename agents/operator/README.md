@@ -16,7 +16,7 @@ The Operator handles the final mile: running verification suites, creating pull 
 | **Notifications** | Communicating delivery status to stakeholders |
 | **Release management** | Tagging, versioning, changelog generation |
 
-Typically invoked by the **Orchestrator** after code passes the Critic's quality gate (Review → Test → Deploy). The Operator is the last agent before code reaches production.
+Typically invoked by the **Orchestrator** after code passes the Reviewer's quality gate (Review → Test → Deploy). The Operator is the last agent before code reaches production.
 
 ## What It Produces
 
@@ -30,7 +30,7 @@ Typically invoked by the **Orchestrator** after code passes the Critic's quality
 | Agent | Key Difference |
 |-------|---------------|
 | **Developer** | Developer writes code. Operator ships it. |
-| **Critic** | Critic evaluates quality. Operator executes deployment. |
+| **Reviewer** | Reviewer evaluates quality. Operator executes deployment. |
 | **DevOps (specialist)** | DevOps configures infrastructure. Operator uses it to ship. |
 
 The Operator doesn't build infrastructure or debug pipelines — it *uses* them. If the CI/CD pipeline is broken, the Operator calls the DevOps specialist.
@@ -43,7 +43,7 @@ The Operator doesn't build infrastructure or debug pipelines — it *uses* them.
 
 ## Model
 
-**Opus** — all agents use Opus for consistent deep reasoning across the pipeline.
+**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — verification, PR creation, KB amendments, and delivery summaries are composition with cross-references — not open-ended judgment. The work that reaches the Operator has already passed the Reviewer's grade; Sonnet handles the structured composition reliably without the Opus tax.
 
 ## Examples
 

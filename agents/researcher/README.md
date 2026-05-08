@@ -19,7 +19,7 @@ Think of it as the project's investigative journalist: relentless about facts, c
 | **Any phase** | Targeted KB updates when a gap is identified (via GAP.md) |
 | **Ad-hoc** | Investigating a specific subsystem, library, API, or integration point |
 
-Typically invoked by the **Orchestrator** at the start of a project (Discovery) or when any phase identifies a knowledge gap. The **Critic** may also request research when reviewing code that touches unfamiliar subsystems.
+Typically invoked by the **Orchestrator** at the start of a project (Discovery) or when any phase identifies a knowledge gap. The **Reviewer** may also request research when reviewing code that touches unfamiliar subsystems.
 
 ## What It Produces
 
@@ -33,7 +33,7 @@ Typically invoked by the **Orchestrator** at the start of a project (Discovery) 
 | Agent | Key Difference |
 |-------|---------------|
 | **Architect** | Architect *designs* based on understanding. Researcher *creates* the understanding. |
-| **Critic** | Critic *judges* quality. Researcher *documents* reality without judgment. |
+| **Reviewer** | Reviewer *judges* quality. Researcher *documents* reality without judgment. |
 | **Developer** | Developer *modifies* code. Researcher only *reads* it. |
 
 The Researcher is read-heavy by design. It should never modify production code. It writes only to KB documents and analysis artifacts.
@@ -46,7 +46,7 @@ The Researcher is read-heavy by design. It should never modify production code. 
 
 ## Model
 
-**Opus** — all agents use Opus for consistent deep reasoning across the pipeline.
+**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — investigation and KB synthesis is structured production work with KB templates as scaffolding. The full Discovery phase runs through the discovery-* sub-agents at Opus; the Researcher's standalone work (targeted KB updates, Track-phase telemetry) is well-served by Sonnet without losing depth.
 
 ## Examples
 

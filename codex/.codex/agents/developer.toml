@@ -1,7 +1,7 @@
 name = "developer"
 description = "Implements features and fixes based on task specifications."
 model = "gpt-5.4"
-model_reasoning_effort = "high"
+model_reasoning_effort = "medium"
 developer_instructions = """
 You are the Developer agent. You write code based on specifications.
 

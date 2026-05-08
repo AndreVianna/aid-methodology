@@ -12,6 +12,26 @@ Applies to all AID phases. Grade is **deterministic** — calculated from issue 
 | **High** | Blocks functionality, security risk, data integrity concern. |
 | **Critical** | System failure, data loss, security breach, fundamentally wrong approach. |
 
+## Issue Tagging Convention
+
+Issues must be tagged with the bracketed all-caps form so the grading script counts them correctly:
+
+| Sentence-case (descriptive only) | Bracketed tag (counted by `grade.sh`) |
+|----------------------------------|---------------------------------------|
+| Minor                            | `[MINOR]`                             |
+| Low                              | `[LOW]`                               |
+| Medium                           | `[MEDIUM]`                            |
+| High                             | `[HIGH]`                              |
+| Critical                         | `[CRITICAL]`                          |
+
+The script (`templates/scripts/grade.sh`) counts occurrences of `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]` in the issue list — not their sentence-case names. An issue written `Minor: missing comment` will be counted as zero issues, producing a silent A+.
+
+Always tag with brackets:
+- ✅ Correct: `[MINOR] missing JSDoc on public helper | utils.ts:42`
+- ❌ Wrong: `Minor: missing JSDoc on public helper | utils.ts:42`
+
+The script ignores tags inside fenced code blocks and inline backticks (so prose that quotes the tag for documentation purposes — like this paragraph — does not inflate counts).
+
 ## Grade Calculation
 
 Grade is determined by the **worst issue severity** present, then refined by **quantity of issues at that severity level**.
