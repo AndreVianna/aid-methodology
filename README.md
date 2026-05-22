@@ -6,6 +6,18 @@ Most AI-coding workflows treat development as a code-generation problem: write a
 
 It ships as an install bundle for three AI coding tools (Claude Code, OpenAI Codex CLI, Cursor): a **10-skill pipeline**, **22 specialized agents**, formal feedback loops, and a **Knowledge Base** that every phase reads and any phase can revise.
 
+## Contents
+
+- [What is AID?](#what-is-aid)
+- [Why AID? — the failure modes it removes](#why-aid--the-failure-modes-it-removes)
+- [The Pipeline](#the-pipeline)
+- [The Knowledge Base](#the-knowledge-base--the-gravitational-center)
+- [The Agent Model](#the-agent-model--three-tiers)
+- [Feedback Loops](#feedback-loops)
+- [AID vs. SDD](#aid-vs-sdd)
+- [Using AID in your own project](#using-aid-in-your-own-project)
+- [Repository structure](#repository-structure)
+
 ---
 
 ## What is AID?
