@@ -21,8 +21,6 @@
 - [ ] `missing-dependency` — A required dependency doesn't exist or isn't available
 - [ ] `architecture-conflict` — The task as specified would violate the existing architecture
 - [ ] `kb-gap` — The Knowledge Base has incorrect or missing information that the agent relied on
-- [ ] `spec-gap` — The specification doesn't cover a case the agent encountered
-- [ ] `scope-creep` — Implementing this task requires touching things outside the defined scope
 
 ---
 
