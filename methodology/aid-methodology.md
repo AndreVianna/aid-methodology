@@ -216,7 +216,7 @@ This is **RAG by convention** — not embeddings and vector databases, but predi
 
 The agent pays a few hundred tokens to know where everything is, then spends its context budget only on the one document and the specific lines a task genuinely needs.
 
-**Why not a vector database?** Because the KB is small enough (16 standard documents, typically 2–20KB each) that convention beats infrastructure. The bottleneck isn't retrieval speed — it's knowing what exists. The INDEX solves that.
+**Why not a vector database?** Because the KB is small enough (16 standard documents, each a short markdown file) that convention beats infrastructure. The bottleneck isn't retrieval speed — it's knowing what exists. The INDEX solves that.
 
 **When does the INDEX update?** `aid-init` seeds it at setup; thereafter it is regenerated every time Discovery runs (full or targeted), and `aid-interview` updates it where applicable as requirements evolve. It is always rebuilt from the current state of the KB — never manually maintained.
 
@@ -315,13 +315,13 @@ Multiple works can coexist — a client requests auth now, reporting later. Each
 
 The interview runs as a seven-state machine, advancing one state per run (State 7 is the terminal Done state):
 
-**States 1–4: The conversational interview.** One question at a time — starting broad (Objective, Problem Statement) and getting specific (Constraints, Acceptance Criteria). State 1 opens the interview and State 3 continues it; **State 2** is a re-entry mode that folds in questions injected by downstream phases; **State 4** is the completion-and-approval gate that finalizes REQUIREMENTS.md. When KB exists (brownfield), questions come with suggested answers and source citations: `[From: .aid/knowledge/{source}.md]` with options to accept, skip, or provide a custom answer. Nothing is silently inferred.
+**States 1–4: The conversational interview.** One question at a time — starting broad (Objective, Problem Statement) and getting specific (Constraints, Acceptance Criteria). State 1 opens the interview and State 3 continues it; **State 2** is a Q&A mode that resolves pending questions — raised by a downstream-phase loopback, a cross-reference pass, or review findings; **State 4** is the completion-and-approval gate that finalizes REQUIREMENTS.md. When KB exists (brownfield), questions come with suggested answers and source citations: `[From: .aid/knowledge/{source}.md]` with options to accept, skip, or provide a custom answer. Nothing is silently inferred.
 
 **State 5: Feature Decomposition.** After REQUIREMENTS.md is approved, the agent proposes a feature breakdown from §5 Functional Requirements. Each approved feature gets its own folder with a SPEC.md containing the requirements side (description, user stories, priority, acceptance criteria). The technical specification section is left empty — that's Specify's job.
 
 **State 6: Cross-Reference.** Validates REQUIREMENTS.md against the full KB. Checks for contradictions, gaps, missing evidence, and staleness, then grades the findings with AID's universal rubric. Grade is a snapshot — doesn't change within the same run.
 
-**One grading rubric across the pipeline.** Every development phase that grades — Discover, Interview, Specify, Plan, Detail, Execute — works the same way: the reviewer classifies each issue it finds by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`), and the letter grade is then **computed deterministically** — the worst severity present dominates, the count within that tier sets the modifier (A+ … F). The reviewer never hand-picks a grade. Each phase loops until its grade meets the project's minimum (set at `aid-init`). See §5 and `templates/grading-rubric.md`. The one exception is the optional `aid-summarize` skill — not a pipeline phase — which validates its generated HTML against a separate, purpose-built rubric: an automated quality score plus a human visual-review score, rather than the severity rubric described here.
+**One grading rubric across the pipeline.** Every development phase that grades — Discover, Interview, Specify, Plan, Detail, Execute — works the same way: the reviewer classifies each issue it finds by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`), and the letter grade is then **computed deterministically** — the worst severity present dominates, and the count within that tier sets the modifier. The reviewer never hand-picks a grade. Each phase loops until its grade meets the project's minimum (set at `aid-init`). See §5 and `templates/grading-rubric.md`. The one exception is the optional `aid-summarize` skill — not a pipeline phase — which validates its generated HTML against a separate, purpose-built rubric: an automated quality score plus a human visual-review score, rather than the severity rubric described here.
 
 **State 7: Done.** REQUIREMENTS.md is approved and each per-feature SPEC.md exists with its requirements side filled in — the work is ready for Specify. Re-running `/aid-interview` from Done re-enters at State 6 (Cross-Reference) to re-validate against a changed KB.
 
@@ -709,7 +709,7 @@ wrong-assumption | missing-dependency | architecture-conflict | kb-gap
 | PLAN.md | `.aid/{work}/` | Plan | Detail, Deploy | Living — rev-tracked; Detail appends the execution graph |
 | task-NNN.md | `.aid/{work}/tasks/` | Detail | Execute | Rev-tracked if amended |
 | task-NNN-STATE.md | `.aid/{work}/tasks/` | Execute | Execute (resume), Deploy | Per-task execution, review history, and grade |
-| GAP.md | `.aid/{work}/` | Interview, Specify, Plan, Detail | Discovery, Specify, Interview | Closed when resolved |
+| GAP.md | `.aid/{work}/` | Interview, Specify, Plan, Detail | Discovery, Interview, Specify, Plan | Closed when resolved |
 | IMPEDIMENT-task-NNN.md | `.aid/{work}/` | Execute | Specify, Detail, Discovery | Closed when resolved |
 | package-NNN-{slug}.md | `.aid/{work}/packages/` | Deploy | Monitor, stakeholders | One per shipped release package |
 | DEPLOYMENT-STATE.md | `.aid/{work}/` | Deploy | Deploy (resume) | Living — operation status + history |
@@ -1017,7 +1017,7 @@ Both AID and SDD:
 | **Planning depth** | Single spec | Two-level: Plan (strategy) → Detail (tactics) |
 | **Feedback loops** | Rebuild spec from scratch | Eleven formal loops (8 development + 2 post-production + 1 cross-cutting) |
 | **Testing** | Not addressed as separate phase | TEST is a first-class task type inside Execute; Deploy runs a full final-verification gate |
-| **Quality gates** | Generic conformance tests | One universal severity rubric (deterministic A+–F) plus project-defined quality checks |
+| **Quality gates** | Generic conformance tests | One universal severity rubric (deterministic — computed, not judged) plus project-defined quality checks |
 | **Agent model** | One agent per spec | Multi-agent orchestration with specialists |
 | **Delivery model** | Spec → code → done | Discover → specify → plan → detail → execute → deploy → monitor |
 | **Memory** | Stateless | Knowledge Base persists across sessions |
