@@ -24,7 +24,7 @@ Bugs take a short path back through Execute. Change requests start a new develop
 
 The methodology is built on three convictions:
 
-1. **Understanding precedes specification.** You cannot write a useful spec for a system you don't understand. Brownfield projects (90% of enterprise work) require structured discovery before anything else.
+1. **Understanding precedes specification.** You cannot write a useful spec for a system you don't understand. Brownfield projects — the overwhelming majority of enterprise work — require structured discovery before anything else.
 2. **Specs are hypotheses, not contracts.** Implementation reveals truths that specification cannot anticipate. A methodology without formal revision protocols is a methodology that produces silent workarounds and hidden debt.
 3. **The Knowledge Base is the gravitational center.** Not the spec. Not the code. The accumulated understanding of the project — architecture, conventions, domain language, tech debt — persists across phases, sprints, and team changes.
 
@@ -216,7 +216,7 @@ This is **RAG by convention** — not embeddings and vector databases, but predi
 
 The agent pays a few hundred tokens to know where everything is, then spends its context budget only on the one document and the specific lines a task genuinely needs.
 
-**Why not a vector database?** Because the KB is small enough (16 documents, typically 2–20KB each) that convention beats infrastructure. The bottleneck isn't retrieval speed — it's knowing what exists. The INDEX solves that.
+**Why not a vector database?** Because the KB is small enough (16 standard documents, typically 2–20KB each) that convention beats infrastructure. The bottleneck isn't retrieval speed — it's knowing what exists. The INDEX solves that.
 
 **When does the INDEX update?** `aid-init` seeds it at setup; thereafter it is regenerated every time Discovery runs (full or targeted), and `aid-interview` updates it where applicable as requirements evolve. It is always rebuilt from the current state of the KB — never manually maintained.
 
@@ -332,11 +332,11 @@ The interview runs as a seven-state machine, advancing one state per run (State 
 - Each answer shapes the next question. Adaptive, not scripted.
 - Brownfield interviews are shorter (KB pre-fills technical context). Greenfield are longer.
 - KB findings are never silently inferred — always presented as suggested answers for user confirmation.
-- Downstream phases (Specify, Plan) can inject Q&A entries into INTERVIEW-STATE.md for the next cross-reference run.
+- Downstream phases can route a requirements question back into the interview's cross-reference step.
 
 **Output:** `.aid/{work}/REQUIREMENTS.md` + `.aid/{work}/features/feature-NNN-{name}/SPEC.md` (requirements side only).
 
-**Feedback to Discovery:** If an answer reveals the KB is wrong or incomplete, the interview records a Q&A entry in `DISCOVERY-STATE.md`, triggers targeted discovery, then resumes with corrected understanding.
+**Feedback to Discovery:** If an answer reveals the KB is wrong or incomplete, the interview triggers targeted discovery (Loop 1, §4), then resumes with corrected understanding.
 
 #### Phase 3: Specify (`aid-specify`)
 
@@ -362,9 +362,9 @@ The interview runs as a seven-state machine, advancing one state per run (State 
 **Output:** `## Technical Specification` section added to `.aid/{work}/features/feature-NNN/SPEC.md` — Data Model, Feature Flow, Layers & Components, plus activated conditional sections. Each feature's SPEC.md now contains both the requirements (from Interview) and the technical specification.
 
 **Feedback loops:**
-- KB wrong or incomplete → fix directly or write Q&A to DISCOVERY-STATE.md for targeted re-discovery.
-- Requirements wrong or incomplete → fix directly or write Q&A to INTERVIEW-STATE.md for targeted re-interview.
-- Spike needed → pause feature, record what needs investigation.
+- KB wrong or incomplete → fix directly if trivial, otherwise trigger targeted re-discovery.
+- Requirements wrong or incomplete → fix directly if trivial, otherwise trigger a targeted re-interview.
+- Spike needed → pause the feature, record what needs investigation.
 - Feature needs to be split or merged → create/merge feature folders, redistribute content.
 
 ---
@@ -395,9 +395,9 @@ The interview runs as a seven-state machine, advancing one state per run (State 
 **Output:** `.aid/{work}/PLAN.md` — ordered deliverables (each a shippable MVP), optional cross-cutting risks, optional deferred features list.
 
 **Feedback loops:**
-- KB insufficient for dependency analysis → Q&A to DISCOVERY-STATE.md.
-- SPEC ambiguous about what a feature needs/enables → Q&A to feature's STATE.md.
-- Requirements priority unclear → Q&A to INTERVIEW-STATE.md.
+- KB insufficient for dependency analysis → trigger targeted re-discovery.
+- SPEC ambiguous about what a feature needs or enables → trigger spec revision.
+- Requirements priority unclear → trigger a targeted re-interview.
 
 #### Phase 5: Detail (`aid-detail`)
 
@@ -421,9 +421,9 @@ The interview runs as a seven-state machine, advancing one state per run (State 
 **Output:** `.aid/{work}/tasks/task-NNN.md` files — sequential tasks numbered globally across all deliverables — plus an execution graph (dependency and parallel-wave tables) appended to `PLAN.md`.
 
 **Feedback loops:**
-- Plan too vague to decompose → return to `/aid-plan`.
-- SPEC missing detail for scope → Q&A to feature's STATE.md.
-- KB gap → Q&A to DISCOVERY-STATE.md.
+- Plan too vague to decompose → return to Plan.
+- SPEC missing detail for scope → trigger spec revision.
+- KB gap → trigger targeted re-discovery.
 
 ---
 
@@ -559,7 +559,7 @@ flowchart TB
 
 ### The Eleven Loops
 
-These are AID's principal, named feedback loops. Each phase's entry in §3 also lists that phase's full set of feedback targets — any phase may write a Q&A entry to an earlier phase's STATE file when it finds that phase's artifact deficient.
+These are AID's principal, named feedback loops. Each phase's entry in §3 also lists that phase's full set of feedback targets.
 
 #### Development Loops (1–8)
 
@@ -567,31 +567,31 @@ These are AID's principal, named feedback loops. Each phase's entry in §3 also 
 
 **Trigger:** During the interview, a human's answer reveals the KB is wrong or incomplete.
 
-**Protocol:** A Q&A entry is written to `DISCOVERY-STATE.md` → targeted discovery on the specific area → KB updated → interview resumes with corrected understanding.
+**Protocol:** A `GAP.md` (type `discovery-needed`) is generated → targeted discovery on the specific area → KB updated → interview resumes with corrected understanding.
 
 #### Loop 2: Specify → Discovery
 
 **Trigger:** Writing the spec exposes insufficient understanding of a subsystem.
 
-**Protocol:** Specify pauses → a Q&A entry is written to `DISCOVERY-STATE.md` → targeted discovery → KB updated → specify resumes.
+**Protocol:** Specify pauses → a `GAP.md` (type `discovery-needed`) is generated → targeted discovery → KB updated → specify resumes.
 
 #### Loop 3: Plan → Discovery
 
 **Trigger:** Planning reveals that the codebase is more complex than the KB captured.
 
-**Protocol:** Plan writes a Q&A entry to `DISCOVERY-STATE.md` → targeted discovery → KB updated → planning resumes.
+**Protocol:** A `GAP.md` (type `discovery-needed`) is generated → targeted discovery → KB updated → planning resumes.
 
 #### Loop 4: Plan → Specify
 
 **Trigger:** The KB is complete, but the SPEC is ambiguous or contradictory.
 
-**Protocol:** Plan writes a Q&A entry to the feature's `STATE.md` → spec revision (possibly with a targeted interview) → planning resumes.
+**Protocol:** A `GAP.md` (type `ambiguity` or `contradiction`) is generated → spec revision (possibly with a targeted interview) → planning resumes.
 
 #### Loop 5: Detail → Plan
 
 **Trigger:** The plan is too vague to decompose into tasks. Deliverables are too broad, module boundaries unclear, or test scenarios don't map to features.
 
-**Protocol:** Detail documents the gap → Plan revises the specific section → Detail resumes.
+**Protocol:** A `GAP.md` (type `plan-too-vague`) is generated → Plan revises the affected deliverable → Detail resumes.
 
 #### Loop 6: Execute → Discovery / Specify / Detail
 
@@ -603,7 +603,7 @@ These are AID's principal, named feedback loops. Each phase's entry in §3 also 
 
 **Trigger:** The reviewer step inside Execute finds issues that trace to the task, the spec, or the KB — not just code quality.
 
-**Protocol:** Issues are tagged by source (CODE / TASK / SPEC / KB). CODE issues are auto-fixed inside the Execute loop. A TASK issue routes to a task update; a SPEC issue writes a Q&A entry to the feature's `STATE.md` (→ Specify); a KB issue writes a Q&A entry to `DISCOVERY-STATE.md` (→ Discovery).
+**Protocol:** Issues are tagged by source (CODE / TASK / SPEC / KB). CODE issues are auto-fixed inside the Execute loop, with the user's approval. A TASK issue routes to a task update; SPEC and KB issues escalate to Specify and Discovery respectively.
 
 #### Loop 8: Deploy → Execute
 
@@ -643,24 +643,26 @@ Every change to an upstream artifact is tracked inside the artifact itself — a
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | Mar 1 | aid-specify | Initial spec |
-| 1.1 | Mar 5 | Q&A IQ-004 (aid-plan) | Added latency requirements |
+| 1.1 | Mar 5 | GAP-001 (aid-plan) | Added latency requirements |
 | 1.2 | Mar 8 | IMPEDIMENT task-F3a (aid-execute) | Changed sync model |
 ```
 
 ### Feedback Loop Artifacts
 
-Most feedback loops record the gap as a **Q&A entry appended to the relevant phase's STATE file** — `DISCOVERY-STATE.md` for a KB gap, the work's `INTERVIEW-STATE.md` for a requirements gap, a feature's `STATE.md` for a spec gap. The next run of that phase detects the pending entry and resolves it:
+The development loops carry two artifacts.
+
+**`GAP.md`** — generated by a design phase (Interview, Specify, Plan, Detail) when the KB or an upstream artifact is deficient. The orchestrator routes it to the owning phase by its `type`:
 
 ```markdown
-### IQ{N}: [{Category}: {Impact}]
-**Question:** {what needs to be resolved}
-**Context:** {why — what the calling phase found}
-**Source:** {calling phase, e.g. /aid-plan work-001}
-**Suggested:** {answer if inferrable, or —}
-**Status:** Pending
+# GAP: GAP-{id}
+**Source:** {phase, e.g. aid-plan, delivery-002}
+**Type:** discovery-needed | ambiguity | contradiction | plan-too-vague
+**Description:** {what is missing, wrong, or ambiguous}
+**Blocking:** {what this gap prevents}
+**Resolution:** discovery | needs-human | needs-spike | spec-revision
 ```
 
-The one feedback loop with its own dedicated file is **`IMPEDIMENT-task-NNN.md`** — written by Execute to `.aid/{work}/` when a task hits a contradiction it cannot resolve within scope:
+**`IMPEDIMENT-task-NNN.md`** — written by Execute to `.aid/{work}/` when a task hits a contradiction it cannot resolve within scope:
 
 ```markdown
 # Impediment — task-NNN
@@ -681,14 +683,16 @@ The one feedback loop with its own dedicated file is **`IMPEDIMENT-task-NNN.md`*
 | Knowledge Base (16 docs) | `.aid/knowledge/` | Discover | All phases | Living — updated throughout project |
 | INDEX.md | `.aid/knowledge/` | Init, Discover, Interview | All phases | Seeded at init; regenerated by Discovery; maintained by Interview |
 | DISCOVERY-STATE.md | `.aid/knowledge/` | Init, Discover | Discover (resume), all phases | Living — grade and review history; any phase appends Q&A entries |
+| project-index.md | `.aid/knowledge/` | Discover (pre-pass) | Discovery sub-agents | Regenerated each discovery run |
 | REQUIREMENTS.md | `.aid/{work}/` | Interview | Specify, Plan | Frozen after approval (rev-tracked) |
 | INTERVIEW-STATE.md | `.aid/{work}/` | Interview | Interview (resume) | Process tracking |
 | Feature SPEC.md | `.aid/{work}/features/{feature}/` | Interview + Specify | Plan, Detail, Execute | Living — Interview writes requirements side, Specify adds technical spec |
 | Feature STATE.md | `.aid/{work}/features/{feature}/` | Specify | Specify (resume) | Process tracking |
-| known-issues.md | `.aid/{work}/` | Specify (Monitor updates) | Plan, Execute, Deploy, Monitor | Living — issues to watch and resolve |
+| known-issues.md | `.aid/{work}/` | Specify (Monitor updates) | Plan, Execute, Deploy, Monitor | Living — created when the first issue is registered |
 | PLAN.md | `.aid/{work}/` | Plan | Detail, Deploy | Living — rev-tracked; Detail appends the execution graph |
 | task-NNN.md | `.aid/{work}/tasks/` | Detail | Execute | Rev-tracked if amended |
 | task-NNN-STATE.md | `.aid/{work}/tasks/` | Execute | Execute (resume), Deploy | Per-task execution, review history, and grade |
+| GAP.md | `.aid/{work}/` | Interview, Specify, Plan, Detail | Discovery, Specify, Interview | Closed when resolved |
 | IMPEDIMENT-task-NNN.md | `.aid/{work}/` | Execute | Specify, Detail, Discovery | Closed when resolved |
 | package-NNN-{slug}.md | `.aid/{work}/packages/` | Deploy | Monitor, stakeholders | One per shipped release package |
 | DEPLOYMENT-STATE.md | `.aid/{work}/` | Deploy | Deploy (resume) | Living — operation status + history |
