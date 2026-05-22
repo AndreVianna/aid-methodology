@@ -263,7 +263,7 @@ Generation opens with a fast, deterministic pre-pass that writes `.aid/knowledge
 8. **Test landscape** — Frameworks, coverage metrics, test types, CI/CD pipeline.
 9. **Tech debt audit** — Large files, circular dependencies, missing tests, outdated packages.
 10. **Gap identification** — What we couldn't determine from code alone → feeds into Interview.
-11. **INDEX generation** — Generate `.aid/knowledge/INDEX.md` with a 2-3 line summary of every KB document produced. This lightweight index is included in every task context so agents know what's available and can self-serve additional context on demand. See [Context Feeding Strategy](#context-feeding-strategy).
+11. **INDEX generation** — The orchestrator assembles `.aid/knowledge/INDEX.md` with a 2-3 line summary of every KB document produced. This lightweight index is included in every task context so agents know what's available and can self-serve additional context on demand. See [Context Feeding Strategy](#context-feeding-strategy).
 
 **Output:** `.aid/knowledge/` — the project's Knowledge Base: all 16 standard documents, the generated `project-index.md` pre-pass, the `INDEX.md` and `README.md` meta-documents, and the grade and Q&A recorded into `DISCOVERY-STATE.md`. `feature-inventory.md` is scaffolded during the run and completed later, in the Q&A → fix cycle.
 
