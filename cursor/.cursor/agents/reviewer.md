@@ -54,7 +54,7 @@ Example:
 REVIEW.md and TEST-REPORT.md follow templates in `templates/reports/`.
 
 ## When to Escalate
-- SPEC itself is defective → create GAP.md with `type: spec-defect`
-- KB conventions contradictory → create GAP.md with `type: discovery-needed`
+- SPEC itself is defective → write a Q&A entry to the feature's `STATE.md`
+- KB conventions contradictory → write a Q&A entry to `.aid/knowledge/DISCOVERY-STATE.md`
 - Cannot run tests (env issues) → report to Orchestrator
 - Need specialist input → request Security, Performance, or UX Designer via Orchestrator

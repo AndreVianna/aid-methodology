@@ -23,7 +23,7 @@ Before starting deployment:
 - [ ] All tasks passed review with grade A- or above.
 - [ ] Testing phase (aid-execute) passed — TEST-REPORT.md is green.
 - [ ] No open IMPEDIMENT.md files blocking this delivery.
-- [ ] No open GAP.md files blocking this delivery.
+- [ ] No unresolved feedback Q&A entries blocking this delivery.
 
 If any prerequisite fails, do not proceed. Resolve the blocking issue first.
 
@@ -80,7 +80,7 @@ Generate a summary of what this delivery contains:
 ## Spec Revisions During Delivery
 | Rev | Source | Description |
 |-----|--------|-------------|
-| 1.1 | GAP-001 | Added latency requirements |
+| 1.1 | Q&A (aid-interview) | Added latency requirements |
 
 ## KB Updates During Delivery
 | Document | Change | Source |
@@ -179,7 +179,7 @@ After the PR is merged:
 - [ ] DELIVERY and TASK statuses updated.
 - [ ] KB updated with any new discoveries.
 - [ ] Revision log entries added for all KB changes.
-- [ ] No open GAPs or IMPEDIMENTs blocking this delivery.
+- [ ] No unresolved feedback Q&A entries or IMPEDIMENTs blocking this delivery.
 
 ## Why This Phase Exists
 

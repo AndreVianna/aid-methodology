@@ -18,7 +18,7 @@ The Architect doesn't write code and doesn't evaluate code. It *designs* — cho
 | **Plan** | Defines MVP scope, modules, deliverables, test scenarios → PLAN.md |
 | **Detail** | Decomposes plan into user stories, tasks, precedence order → DETAIL.md + TASK files |
 
-Typically invoked by the **Orchestrator** after the Interview phase completes. May be re-invoked when GAP.md artifacts trigger re-specification or re-planning.
+Typically invoked by the **Orchestrator** after the Interview phase completes. May be re-invoked when Q&A entries in a STATE file trigger re-specification or re-planning.
 
 ## What It Produces
 
@@ -63,6 +63,6 @@ The Architect's output is the contract that the Developer follows and the Review
 
 ## Escalation
 
-- **Requirements ambiguous** → creates GAP.md with `type: ambiguity`, routes to Interviewer
-- **KB insufficient** → creates GAP.md with `type: discovery-needed`, routes to Researcher
-- **Contradictory constraints** → creates GAP.md with `type: contradiction`, flags for human decision
+- **Requirements ambiguous** → writes a Q&A entry to the work's `INTERVIEW-STATE.md`, routes to Interviewer
+- **KB insufficient** → writes a Q&A entry to `.aid/knowledge/DISCOVERY-STATE.md`, routes to Researcher
+- **Contradictory constraints** → writes a Q&A entry to the relevant STATE file and flags it for human decision

@@ -905,9 +905,9 @@ After printing the success message, also suggest the optional visual summary:
 
 ## Targeted Discovery (Re-entry)
 
-When a GAP.md or IMPEDIMENT.md triggers re-discovery of a specific area:
+When a Q&A entry in DISCOVERY-STATE.md or an IMPEDIMENT.md triggers re-discovery of a specific area:
 
-1. Read the GAP/IMPEDIMENT to understand exactly what's missing
+1. Read the Q&A entry in DISCOVERY-STATE.md (or the IMPEDIMENT) to understand exactly what's missing
 2. Identify which subagent owns the missing documents:
    - `project-structure.md`, `external-sources.md` → dispatch discovery-scout
    - `architecture.md`, `technology-stack.md` → dispatch discovery-architect

@@ -33,7 +33,7 @@ Load the relevant SKILL.md as system context or initial prompt for your AI agent
 - Reviewing a PR? Review is built into `aid-execute` — run `/aid-execute task-NNN` and it will code, review, and fix.
 
 ### Can I use AID with a team, not just solo?
-Yes. The Knowledge Base and formal artifacts (SPEC.md, GAP.md, IMPEDIMENT.md) are designed for team collaboration. Multiple people can work on different phases simultaneously. The artifacts are the coordination mechanism.
+Yes. The Knowledge Base and formal artifacts (SPEC.md, the STATE files, IMPEDIMENT files) are designed for team collaboration. Multiple people can work on different phases simultaneously. The artifacts are the coordination mechanism.
 
 ### How long does adoption take?
 Start with one delivery. Use the templates. See if the structure helps. Most teams report that Discovery alone (building the KB) pays for itself within the first week — every subsequent task is faster because the context is documented.

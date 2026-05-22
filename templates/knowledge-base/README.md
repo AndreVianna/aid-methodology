@@ -72,7 +72,7 @@ Every KB update should be logged in the README.md revision history section:
 | Date | Source Phase | Document | Change Description |
 |------|------------|----------|-------------------|
 | {date} | aid-discover | All | Initial Knowledge Base creation |
-| {date} | aid-plan (GAP-001) | module-map.md | Added 8 missing service consumers |
+| {date} | aid-plan (Q&A) | module-map.md | Added 8 missing service consumers |
 | {date} | aid-execute (IMP-003) | architecture.md | Corrected async model for RecordingService |
 ```
 ected async model for RecordingService |

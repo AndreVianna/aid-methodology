@@ -97,7 +97,7 @@ cat REVIEW.md | templates/scripts/grade.sh
 
 ## Escalation
 
-- **SPEC itself has issues** → creates GAP.md with `type: spec-defect`, routes to Architect
-- **KB conventions are contradictory** → creates GAP.md with `type: discovery-needed`
+- **SPEC itself has issues** → writes a Q&A entry to the feature's `STATE.md`, routes to Architect
+- **KB conventions are contradictory** → writes a Q&A entry to `.aid/knowledge/DISCOVERY-STATE.md`
 - **Cannot run tests** (environment issues) → reports to Orchestrator
 - **Needs specialist input** → requests Security, Performance, or UX Designer agent

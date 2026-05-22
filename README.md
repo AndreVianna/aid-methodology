@@ -46,7 +46,7 @@ Hand a capable coding agent a vague task and a large repository, and you get pre
 |---|---|---|
 | **Knowledge gaps** | The agent doesn't understand the existing system and invents how it works. | **Discovery builds the Knowledge Base first.** A fixed-shape, evidence-backed picture of the codebase exists *before* any spec is written. |
 | **Hallucination** | The agent states things about the code that aren't true. | **Every KB claim carries a `path:line` citation.** Facts are anchored to source; agents navigate to exact lines instead of guessing. |
-| **Drift** | The implementation quietly diverges from intent; the spec rots. | **Spec-as-hypothesis + 11 formal feedback loops.** When reality contradicts an artifact, the agent files a GAP or IMPEDIMENT and the upstream artifact is revised with a traceable revision history. Silent workarounds are forbidden. |
+| **Drift** | The implementation quietly diverges from intent; the spec rots. | **Spec-as-hypothesis + 11 formal feedback loops.** When reality contradicts an artifact, the agent records a Q&A entry in a STATE file (or files an IMPEDIMENT) and the upstream artifact is revised with a traceable revision history. Silent workarounds are forbidden. |
 | **Overengineering** | The agent adds abstractions, options, and scope nobody asked for. | **Typed, PR-sized tasks with explicit acceptance criteria.** Detail decomposes work into small bounded tasks; the Reviewer grades against the spec, not vibes. |
 | **Oversights** | Bugs, missed edge cases, and untested paths slip through. | **Separate adversarial review.** The agent that writes never grades its own work — a higher-tier reviewer with clean context evaluates every task against a rubric, looping until grade ≥ minimum. |
 | **Context exhaustion** | Loading the whole repo into the context window — slow, expensive, lossy. | **A 3-tier context economy.** An always-loaded index → one KB document on demand → an exact `path:line`. The agent pays only for what a task needs. |
@@ -242,7 +242,7 @@ Grading is **deterministic**: the Reviewer never assigns a letter grade — it p
 
 The pipeline is sequential by default, but real engineering isn't linear. AID defines **eleven formal feedback loops** — eight within development, two connecting production back to development, and one cross-cutting re-entry available from any phase — so any phase can revise an upstream artifact when reality contradicts an assumption.
 
-Every loop produces a formal artifact (`GAP.md`, `IMPEDIMENT.md`, or a Monitor finding) with a revision trail. The spec evolves — but **traceably**. You can always answer "why did this change?" with evidence.
+Every loop produces a formal record (a Q&A entry in a STATE file, an `IMPEDIMENT` file, or a Monitor finding) with a revision trail. The spec evolves — but **traceably**. You can always answer "why did this change?" with evidence.
 
 Key loops:
 

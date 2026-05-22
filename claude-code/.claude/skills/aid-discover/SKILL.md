@@ -400,9 +400,9 @@ After printing the success message, also suggest the optional visual summary:
 
 ## Targeted Discovery (Re-entry)
 
-When a GAP.md or IMPEDIMENT.md triggers re-discovery:
+When a Q&A entry in DISCOVERY-STATE.md or an IMPEDIMENT triggers re-discovery:
 
-1. Read the GAP/IMPEDIMENT to understand what's missing
+1. Read the Q&A entry in DISCOVERY-STATE.md or the IMPEDIMENT to understand what's missing
 2. Identify which subagent owns the documents (see `scripts/verify-kb.sh` comments for mapping)
 3. Dispatch ONLY the relevant subagent
 4. Regenerate README.md and INDEX.md

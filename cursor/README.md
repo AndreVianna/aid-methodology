@@ -94,7 +94,7 @@ Notable mechanisms:
 ```
 Discovery → Interview → Specify → Plan → Detail → Implement → Review → Test → Deploy → Track → Triage
     ↑                                                                                          │
-    └──────────────────────── feedback loops (GAP.md, IMPEDIMENT.md) ──────────────────────────┘
+    └──────────────────────── feedback loops (Q&A entries, IMPEDIMENT.md) ──────────────────────────┘
 ```
 
 ## Rules (`.cursor/rules/`)

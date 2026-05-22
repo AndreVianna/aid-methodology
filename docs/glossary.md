@@ -10,7 +10,7 @@ Terms and concepts used throughout the AID methodology.
 
 **Knowledge Base (KB):** 16 standard markdown documents (plus 3 meta-documents) that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases.
 
-**Feedback Loop:** A formal pathway for a downstream phase to revise upstream artifacts. Produces an artifact (GAP.md, IMPEDIMENT.md, or MONITOR-STATE.md) with a revision trail.
+**Feedback Loop:** A formal pathway for a downstream phase to revise upstream artifacts. Produces a formal record (a Q&A entry in a STATE file, an IMPEDIMENT file, or a MONITOR-STATE finding) with a revision trail.
 
 **Phase Gate:** A human decision point between phases. The human reviews the phase output and approves advancement. "OK?" is the gate.
 
@@ -43,7 +43,7 @@ Terms and concepts used throughout the AID methodology.
 
 **SPEC.md:** Formal specification grounded in the Knowledge Base. Treated as a hypothesis — refined by evidence from implementation.
 
-**GAP.md:** Filed when any phase discovers the Knowledge Base is incomplete. Triggers targeted discovery (not a full restart).
+**Q&A entry:** Appended to a STATE file (`DISCOVERY-STATE.md`, `INTERVIEW-STATE.md`, or a feature's `STATE.md`) when a phase finds the Knowledge Base or an upstream artifact deficient. The owning phase resolves it on its next run — targeted, not a full restart.
 
 **IMPEDIMENT.md:** Filed when implementation discovers the plan or spec is wrong. Contains: what was assumed, what's true, proposed revision, and impact assessment.
 

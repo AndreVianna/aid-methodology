@@ -26,7 +26,6 @@ The Knowledge Base is AID's gravitational center — 13 documents that capture t
 
 These are produced when a phase discovers that upstream assumptions were wrong. They're the formal mechanism that prevents silent workarounds.
 
-→ [feedback-artifacts/GAP.md](feedback-artifacts/GAP.md) — Knowledge Base gap discovered during any phase
 → [feedback-artifacts/IMPEDIMENT.md](feedback-artifacts/IMPEDIMENT.md) — Implementation blocker requiring plan/spec revision
 → [feedback-artifacts/MONITOR-STATE.md](feedback-artifacts/MONITOR-STATE.md) — Production finding classification and routing
 

@@ -32,7 +32,7 @@ Skills are loaded as context when matched by description. Cursor uses the `Task`
 ```
 Init → Discover → Interview → Specify → Plan → Detail → Implement → Review → Test → Deploy
   ↑                                                                                    │
-  └──────────────────────── feedback loops (GAP.md, IMPEDIMENT.md, MONITOR-STATE.md) ──┘
+  └──────────────────────── feedback loops (Q&A entries, IMPEDIMENT.md, MONITOR-STATE.md) ──┘
 ```
 
 See the repo's [`skills/`](../../skills/README.md) directory for human-readable documentation with rationale and examples.

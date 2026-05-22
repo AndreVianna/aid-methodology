@@ -6,12 +6,12 @@ Analyze an existing codebase and produce a structured Knowledge Base (`.aid/know
 ## When to Use
 
 - **Full discovery:** New brownfield project. No KB exists yet.
-- **Targeted discovery:** A downstream phase (aid-interview, aid-specify, aid-plan, aid-detail, aid-execute, aid-execute (built-in review), aid-execute) generated a GAP.md with `discovery-needed`. Only analyze the specific area identified in the gap.
+- **Targeted discovery:** A downstream phase (aid-interview, aid-specify, aid-plan, aid-detail, aid-execute, aid-execute (built-in review), aid-execute) wrote a Q&A entry to `.aid/knowledge/DISCOVERY-STATE.md` signalling a KB gap. Only analyze the specific area identified in that entry.
 
 ## Inputs
 
 - Access to the codebase (local path, git repo URL, or archive).
-- For targeted discovery: the GAP.md or IMPEDIMENT.md that triggered re-entry.
+- For targeted discovery: the Q&A entry in `DISCOVERY-STATE.md` or the IMPEDIMENT.md that triggered re-entry.
 
 ## Process
 
@@ -197,9 +197,9 @@ A `.aid/knowledge/` directory containing the relevant subset of these 16 documen
 
 ## Targeted Discovery (Re-entry)
 
-When triggered by a GAP.md or IMPEDIMENT.md from a downstream phase:
+When triggered by a Q&A entry in `DISCOVERY-STATE.md` or an IMPEDIMENT.md from a downstream phase:
 
-1. Read the gap/impediment document to understand exactly what's missing.
+1. Read the Q&A entry or impediment to understand exactly what's missing.
 2. Focus analysis ONLY on the identified area.
 3. Update the specific KB document(s).
 4. Update `.aid/knowledge/README.md` with a revision note:
@@ -236,7 +236,7 @@ Without Discovery, specs are generic and agents improvise. With Discovery, specs
 ## Related Phases
 
 - **Next:** [Interview](../aid-interview/) — uses `additional-info.md` from the KB to focus requirements gathering
-- **Triggered by:** Any downstream phase via GAP.md with `discovery-needed`
+- **Triggered by:** Any downstream phase via a Q&A entry in `DISCOVERY-STATE.md`
 
 ## See Also
 

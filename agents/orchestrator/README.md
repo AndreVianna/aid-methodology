@@ -6,7 +6,7 @@ The Orchestrator coordinates the entire AID pipeline. It knows who to call, when
 
 ## What It Does
 
-The Orchestrator is the pipeline controller. It reads the current project state, determines which phase comes next, selects the appropriate agent, prepares their context (KB, specs, task files), and dispatches the work. When an agent produces a feedback artifact (GAP.md, IMPEDIMENT.md), the Orchestrator routes it to the right handler.
+The Orchestrator is the pipeline controller. It reads the current project state, determines which phase comes next, selects the appropriate agent, prepares their context (KB, specs, task files), and dispatches the work. When an agent produces a feedback signal (a Q&A entry in a STATE file, or IMPEDIMENT.md), the Orchestrator routes it to the right handler.
 
 Critically, the Orchestrator enforces **human gates** — phase transitions require explicit human approval. The AI is the Iron Man suit; the human never leaves the cockpit.
 
@@ -16,7 +16,7 @@ Critically, the Orchestrator enforces **human gates** — phase transitions requ
 |---------|---------|
 | **Pipeline start** | Determines the first phase (Discovery for brownfield, Interview for greenfield) |
 | **Phase transitions** | Routes output from one phase to the next, with human approval |
-| **Feedback routing** | Handles GAP.md, IMPEDIMENT.md, MONITOR-STATE.md routing |
+| **Feedback routing** | Handles Q&A entries in STATE files, IMPEDIMENT.md, MONITOR-STATE.md routing |
 | **Specialist dispatch** | Decides when UX, Security, DevOps, etc. are needed |
 | **Parallel coordination** | Manages multi-agent execution for independent tasks |
 
@@ -26,7 +26,7 @@ The Orchestrator is always present. It is the first agent invoked and the last t
 
 - **Phase transition decisions** — which phase is next, with justification
 - **Agent dispatch instructions** — which agent, what context, what success criteria
-- **Routing decisions** — where feedback artifacts go (GAP → Interviewer/Researcher, IMPEDIMENT → Architect)
+- **Routing decisions** — where feedback signals go (Q&A entry in INTERVIEW-STATE → Interviewer, Q&A entry in DISCOVERY-STATE → Researcher, IMPEDIMENT → Architect)
 - **Status reports** — pipeline state for human oversight
 
 ## How It Differs from Similar Agents
@@ -60,18 +60,17 @@ The Orchestrator never writes code, never writes specs, never runs tests. It *co
 
 - **Human gates are sacred.** Phase transitions require explicit human approval. No auto-advancing.
 - **Context preparation.** Before dispatching an agent, the Orchestrator assembles the right context: relevant KB docs, spec sections, task files, constraints.
-- **Feedback routing.** GAP.md → appropriate handler (Interviewer for ambiguity, Researcher for KB gaps). IMPEDIMENT.md → Architect for spec revision. MONITOR-STATE.md → Implement for bugs (short path), Discover for CRs.
+- **Feedback routing.** Q&A entry in INTERVIEW-STATE.md → Interviewer (requirements ambiguity). Q&A entry in DISCOVERY-STATE.md → Researcher (KB gaps). Q&A entry in feature STATE.md → Architect (spec defects). IMPEDIMENT.md → Architect for spec revision. MONITOR-STATE.md → Implement for bugs (short path), Discover for CRs.
 - **Never implements directly.** The Orchestrator's power is in *knowing who to call*, not in doing the work.
 - **Parallel awareness.** Tracks which tasks are independent, which have dependencies, and manages execution order accordingly.
 
 ## Feedback Routing Table
 
-| Artifact | Routes To | Reason |
-|----------|-----------|--------|
-| GAP.md `type: needs-interview` | Interviewer | Requirements clarification needed |
-| GAP.md `type: discovery-needed` | Researcher | KB gap, targeted investigation |
-| GAP.md `type: ambiguity` | Architect → Interviewer | Spec ambiguity, may need stakeholder input |
-| GAP.md `type: contradiction` | Human decision | Conflicting constraints, human resolves |
+| Feedback signal | Routes To | Reason |
+|-----------------|-----------|--------|
+| Q&A entry in `INTERVIEW-STATE.md` | Interviewer | Requirements clarification needed |
+| Q&A entry in `DISCOVERY-STATE.md` | Researcher | KB gap, targeted investigation |
+| Q&A entry in a feature's `STATE.md` | Architect | Spec defect or ambiguity |
 | IMPEDIMENT.md | Architect | Spec vs. reality mismatch |
 | MONITOR-STATE.md `classification: BUG` | Developer (short bug path) | Monitor includes root cause analysis; route directly to Implement |
 | MONITOR-STATE.md `classification: CR` | Discover (new cycle) | Full lifecycle for change requests |

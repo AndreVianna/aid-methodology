@@ -16,7 +16,7 @@ Think of it as the project's investigative journalist: relentless about facts, c
 |-------|---------|
 | **Discover** | Full brownfield codebase analysis → produces the 13-document Knowledge Base |
 | **Track** | Interprets production telemetry, error patterns, performance metrics |
-| **Any phase** | Targeted KB updates when a gap is identified (via GAP.md) |
+| **Any phase** | Targeted KB updates when a gap is identified via a Q&A entry in `DISCOVERY-STATE.md` |
 | **Ad-hoc** | Investigating a specific subsystem, library, API, or integration point |
 
 Typically invoked by the **Orchestrator** at the start of a project (Discovery) or when any phase identifies a knowledge gap. The **Reviewer** may also request research when reviewing code that touches unfamiliar subsystems.
@@ -59,5 +59,5 @@ The Researcher is read-heavy by design. It should never modify production code. 
 
 When the Researcher encounters something it cannot resolve through investigation alone:
 - **Missing access** → reports to Orchestrator
-- **Ambiguous requirements** → creates GAP.md with `type: needs-interview`
+- **Ambiguous requirements** → writes a Q&A entry to the work's `INTERVIEW-STATE.md`
 - **Contradictory evidence** → documents both sides, flags for human decision
