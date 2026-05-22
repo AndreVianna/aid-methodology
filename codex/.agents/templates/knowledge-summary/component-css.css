@@ -361,6 +361,21 @@ table.tbl {
 }
 .mermaid-box .mermaid { display: inline-block; max-width: 100%; }
 .mermaid-box .mermaid svg { max-width: 100%; height: auto; }
+/* Mermaid node label legibility.
+   IMPORTANT: these rules are intentionally NOT scoped to `.mermaid`. The
+   lightbox clones the diagram SVG into `#lb-inner`, which lives OUTSIDE any
+   `.mermaid` container — a `.mermaid`-scoped rule would fix the inline diagram
+   but not the expanded one. `.nodeLabel` / `.edgeLabel` are Mermaid-specific
+   classes, so targeting them unscoped is safe and covers both views. */
+.nodeLabel,
+.nodeLabel * { font-weight: 700 !important; }
+/* CRITICAL: Mermaid renders label text inside real HTML <p> elements (inside a
+   foreignObject). Those <p> tags would otherwise inherit the PAGE's muted <p>
+   color (--text-muted, a silver-grey) instead of the classDef color set on
+   .nodeLabel — destroying contrast on every colored node. Force all label
+   descendants to inherit their .nodeLabel / .edgeLabel parent's color. */
+.nodeLabel *,
+.edgeLabel * { color: inherit !important; }
 
 /* ---------- Lightbox ---------- */
 .lightbox {

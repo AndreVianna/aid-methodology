@@ -1,3 +1,11 @@
+---
+profile: auto-detect
+target_diagrams: 0
+# auto-detect is the scoring-rules document for profile selection; it does not
+# define a section structure and therefore drives no diagram requirement itself.
+# The target_diagrams value is set on each concrete profile template.
+---
+
 # Profile Auto-Detection Rules
 
 Used by the PROFILE state to pick a section template based on KB content.

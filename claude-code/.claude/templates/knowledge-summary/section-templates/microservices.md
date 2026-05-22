@@ -1,3 +1,9 @@
+---
+profile: microservices
+target_diagrams: 6
+notes: "Microservices — service mesh, inter-service contracts, and saga orchestration are central."
+---
+
 # Section Template — `microservices` Profile
 
 For repositories with 6+ independently-deployed services. Service mesh,

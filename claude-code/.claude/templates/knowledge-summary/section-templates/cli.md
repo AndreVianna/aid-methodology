@@ -1,3 +1,9 @@
+---
+profile: cli
+target_diagrams: 4
+notes: "CLI tools — subcommand catalog replaces API surface."
+---
+
 # Section Template — `cli` Profile
 
 For command-line tools (e.g., `gh`, `terraform`, `aws-cli`-style). Subcommand

@@ -3,10 +3,11 @@ name: aid-summarize
 description: >
   Generate a single-file knowledge-summary.html from .aid/knowledge/. Inlines Mermaid
   for offline diagrams, light/dark theme, click-to-expand lightbox, accessibility-first
-  (WCAG AA). Includes a built-in quality gate that validates every Mermaid diagram
-  parses and renders before granting any grade. Idempotent: re-running on an unchanged
-  KB does nothing. State-machine: PREFLIGHT → STALE-CHECK → PROFILE → GENERATE →
-  VALIDATE → FIX → APPROVAL → WRITEBACK → DONE.
+  (WCAG AA). Two-grade quality gate (Machine + Human): script-verifiable checks score
+  the Machine Grade; an interactive checklist scores the Human Grade (K1 KB-completeness,
+  K2 fact-grounding, V1 mandatory human visual gate). APPROVAL requires BOTH grades >= minimum. Idempotent: re-running
+  on an unchanged KB does nothing. State-machine: PREFLIGHT → STALE-CHECK → PROFILE →
+  GENERATE → VALIDATE → MANUAL-CHECKLIST → FIX → APPROVAL → WRITEBACK → DONE.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 argument-hint: "[--grade X] override minimum  [--profile auto|web-app|library|cli|microservices|data-pipeline]  [--theme default|brand-X]  [--cdn-mermaid]  [--reset]"
 ---
@@ -57,11 +58,13 @@ section templates, and validation scripts — live in:
     ├── fetch-mermaid.sh
     ├── concatenate.sh           # Unix
     ├── concatenate.ps1          # Windows PowerShell
-    ├── validate-diagrams.mjs    # Mermaid parse + (optional) render via mmdc
+    ├── validate-diagrams.mjs    # D1 parse + D2 render (jsdom, mmdc fallback)
     ├── validate-links.sh
-    ├── validate-html.sh
+    ├── validate-html.sh         # H1 cascade + A1/A2/A3/A4/A5 checks
     ├── contrast-check.mjs       # WCAG ratios for both themes
-    ├── grade.sh                 # Orchestrator: runs all checks, emits grade
+    ├── manual-checklist.sh      # Scores the Human Grade (K1, K2)
+    ├── spot-check-facts.sh      # Extracts HTML claims, greps source KB (aids K2)
+    ├── grade.sh                 # Orchestrator: two-grade report (Machine + Human)
     └── writeback-discovery-state.sh
 ```
 
@@ -129,11 +132,20 @@ proceed; do NOT create any state files.
    - SUMMARY-STATE.md present → reuse stored profile; go straight to GENERATE.
 
 5. After GENERATE → VALIDATE.
-6. After VALIDATE: grade < minimum → FIX (loops back to VALIDATE); else → APPROVAL.
-7. After APPROVAL: yes → WRITEBACK → DONE; no → exit; changes-needed → FIX.
+6. After VALIDATE (script checks → Machine Grade):
+   Machine < minimum → FIX; else → MANUAL-CHECKLIST.
+7. After MANUAL-CHECKLIST (interactive K1/K2/V1 → Human Grade):
+   Human < minimum → FIX; else (both grades >= minimum) → APPROVAL.
+8. After APPROVAL: yes → WRITEBACK → DONE; no → exit; changes-needed → FIX.
 ```
 
 Print the chosen mode at the start of each run: `[State: GENERATE]`, etc.
+
+**Two-grade model:** the rubric splits into machine-verifiable checks (AUTO_POOL —
+D1/D2/L1/L2/H1/A1/A2/A3/A4/A5/C1/C2/S2 = 73 pts) and human-judgment checks
+(MANUAL_POOL — K1/K2/V1 = 30 pts; V1 is a mandatory gate). The script NEVER auto-passes MANUAL_POOL — the
+user must run `manual-checklist.sh`. Overall Grade = `min(Machine_letter,
+Human_letter)`; A+ requires both. See `grading-rubric.md`.
 
 ---
 
@@ -250,7 +262,9 @@ Initial fields per the schema below, then transition to VALIDATE.
 **Theme:** default
 **Minimum Grade:** {grade}
 **Minimum Grade Source:** {DISCOVERY-STATE.md | --grade flag | default}
-**Current Grade:** Pending
+**Machine Grade:** Pending
+**Human Grade:** Pending (run manual-checklist.sh before APPROVAL)
+**Overall Grade:** Pending (= min of Machine and Human letter grades)
 **User Approved:** no
 **Last Run:** {iso8601}
 **Trigger Reason:** {initial | stale-after-review-N | --reset | re-approval-only}
@@ -268,58 +282,103 @@ Initial fields per the schema below, then transition to VALIDATE.
 ## Mode: VALIDATE
 
 Run `.aid/templates/knowledge-summary/scripts/grade.sh .aid/knowledge/knowledge-summary.html`.
-It orchestrates:
+It runs the AUTO_POOL (machine-verifiable) checks only:
 
-1. **`scripts/validate-diagrams.mjs`** — extracts every `<pre class="mermaid">` block
-   and validates each via Mermaid. **Any failure = automatic F per the rubric.**
-2. **`scripts/validate-links.sh`** — anchor + relative md link integrity.
-3. **`scripts/validate-html.sh`** — structural / accessibility checks.
-4. **`scripts/contrast-check.mjs`** — WCAG ratios for both themes.
+1. **`scripts/validate-diagrams.mjs`** — D1 parse (`mermaid.parse()`; any failure =
+   automatic F) + D2 render (jsdom or mmdc renders each block, asserts non-trivial
+   SVG; `jsdom-fallback` noted if jsdom absent).
+2. **`scripts/validate-links.sh`** — L1/L2 anchor + relative-md link integrity.
+3. **`scripts/validate-html.sh`** — H1 (tidy → html-validate → regex cascade) +
+   A1/A2/A4/A5; **A3 focus trap auto-detected** by grepping the inlined `lightbox.js`
+   for `trapFocusOnTab`, `lastFocused.focus()`, `key === 'Escape'`.
+4. **`scripts/contrast-check.mjs`** — C1/C2 WCAG ratios for both themes.
 
-Compares against the rubric in `.aid/templates/knowledge-summary/grading-rubric.md`.
-Prints a per-check pass/fail table and the aggregate grade.
+It computes the **Machine Grade** from the AUTO_POOL + per-profile diagram-count
+enforcement (reads `target_diagrams: N` from the active profile template; caps at
+C+ if the HTML has fewer blocks). It does NOT compute a final Overall Grade — that
+needs the Human Grade too.
 
-Persist `**Current Grade:** {grade}` and the per-check table in SUMMARY-STATE.md
-under `## Findings (last validation)`.
+Persist the Machine Grade + per-check table to SUMMARY-STATE.md under
+`## Findings (last validation — Machine)`.
 
-If grade ≥ minimum → APPROVAL. Otherwise → FIX.
+If Machine Grade ≥ minimum → MANUAL-CHECKLIST. Otherwise → FIX.
+
+---
+
+## Mode: MANUAL-CHECKLIST
+
+The MANUAL_POOL (K1 KB-completeness, K2 fact-grounding, V1 human visual gate)
+needs human judgment. **Agent-driven elicitation — not an interactive shell
+prompt** (the skill runs in a host AI tool's chat; the agent gathers answers,
+then writes the result file).
+
+1. Run `scripts/spot-check-facts.sh` — writes `.aid/knowledge/.spot-check-facts.txt`
+   (HTML claims grep-matched against source KB). Show the user any `MISS` lines.
+2. Ask the user (the user must have opened the HTML in a browser first):
+   - **K1 (10 pts):** does the HTML represent every populated KB doc? → Full(10) / Partial(5) / No(0).
+   - **K2 (15 pts):** using the spot-check report, are the HTML's facts accurate? → Full(15) / Partial(8) / No(0).
+   - **V1 — human visual gate (5 pts, MANDATORY):** opened in a real browser, confirm ALL of: every diagram renders (no error blocks); diagram + node text legible in BOTH light AND dark themes (incl. the EXPANDED lightbox view); theme toggle works; lightbox opens / Esc closes / Tab cycles. → Pass(5) / Fail(0). A V1 Fail forces Human Grade = F and blocks APPROVAL — no automated check covers diagram-internal legibility.
+   - Free-text: anything else off (framing, depth, tone, missing content)?
+3. Pass the answers to `manual-checklist.sh --k1 <y|p|n> --k2 <y|p|n> --v1 <y|n> --notes ".." --html <file>` (non-interactive mode; the script computes scores and writes `.aid/knowledge/.manual-checklist.json`). A contributor in a raw terminal can instead run `manual-checklist.sh --interactive`.
+4. Re-run `grade.sh` — it reads `.manual-checklist.json`, computes the Human Grade
+   (K1+K2+V1, 30 pts), and the Overall Grade = `min(Machine, Human)`. Persist all
+   three to SUMMARY-STATE.md.
+
+If Overall Grade ≥ minimum → APPROVAL. If V1 failed → mandatory: Human Grade is F;
+go to FIX. Otherwise (Overall < minimum) → FIX.
 
 ---
 
 ## Mode: FIX
 
-Read `## Findings` in SUMMARY-STATE.md. For each failed check, look up the fix in
-the relevant template:
+FIX routes failures by kind — do not treat them the same.
 
-- **D1 / D2 (diagrams)** — open the HTML, locate the failing block, identify the
-  syntax error from the validator output, apply the fix per the "Common failure
-  patterns" table in `.aid/templates/knowledge-summary/mermaid-examples.md`.
+### Machine-pool failures — fix directly (objective; one correct fix)
+
+For each failed AUTO_POOL check in `## Findings`:
+
+- **D1 / D2 (diagrams)** — locate the failing block, apply the fix per the "Common
+  failure patterns" table in `.aid/templates/knowledge-summary/mermaid-examples.md`.
 - **L1 (anchor links)** — fix the `href` or add the missing `id`.
 - **L2 (md links)** — correct the relative path.
 - **H1 (HTML validity)** — fix the reported markup error.
-- **A1–A5 (accessibility)** — see `.aid/templates/knowledge-summary/accessibility-checklist.md`
-  for landmark / ARIA / focus handling requirements.
-- **C1 / C2 (contrast)** — adjust the offending color in the inlined CSS to meet
-  ratio per `.aid/templates/knowledge-summary/design-tokens.md`.
+- **A1–A5 (accessibility)** — see `.aid/templates/knowledge-summary/accessibility-checklist.md`.
+- **C1 / C2 (contrast)** — adjust the offending color per `design-tokens.md`.
 
-Edit ONLY the failing parts; leave everything else untouched. Return to VALIDATE.
+Edit ONLY the failing parts. Return to VALIDATE.
+
+### Human-pool / subjective failures — expose → propose → ask (NEVER fix silently)
+
+When a MANUAL_POOL item failed (K1/K2 partial-or-no) or the user left a free-text
+complaint, there is no single objective fix — the user's judgment is the input. For
+each such issue: **(1) expose** — restate it precisely, quoting the user's note and
+naming the HTML section(s) involved; **(2) propose** — offer a concrete fix; **(3)
+ask** — use the host's question mechanism for the user to approve the fix, give their
+own, or accept it as won't-fix. Apply only what the user confirms. Then return to
+VALIDATE → MANUAL-CHECKLIST for re-scoring.
 
 ---
 
 ## Mode: APPROVAL
 
+**Pre-condition:** both Machine Grade and Human Grade must be computed and ≥ minimum.
+If Human Grade is `Pending`, refuse APPROVAL — print: `❌ Cannot approve: Human Grade
+not yet scored. Run /aid-summarize again to enter MANUAL-CHECKLIST.`
+
 Print summary in the standard format:
 
 ```
-✅ knowledge-summary.html generated
-   Path:         .aid/knowledge/knowledge-summary.html
-   Size:         {MB}
-   Profile:      {profile} ({source})
-   Grade:        {grade} (target: {min})
-   Diagrams:     {N}/{N} valid
-   Theme:        light + dark, both pass WCAG AA
-   Mermaid:      {version}
-   Trigger:      {reason}
+✅ knowledge-summary.html ready for approval
+   Path:           .aid/knowledge/knowledge-summary.html
+   Size:           {MB}
+   Profile:        {profile} (target_diagrams: {N})
+   Machine Grade:  {grade} ({score}/73) — script-verified AUTO_POOL
+   Human Grade:    {grade} ({score}/30) — manual-checklist MANUAL_POOL (K1+K2+V1)
+   Overall Grade:  {min of above} (target: {min})
+   Diagrams:       {N}/{target} valid (D1 + D2 both passed)
+   Theme:          light + dark, both pass WCAG AA
+   Mermaid:        {version}
+   Trigger:        {reason}
 
 Preview:  python -m http.server 8000   # then open
           http://localhost:8000/.aid/knowledge/knowledge-summary.html
@@ -393,8 +452,11 @@ Mermaid silently accepts invalid input and renders a red error block. **Every bl
 must be validated before declaring DONE.** Failure = automatic F.
 
 The validator script (`.aid/templates/knowledge-summary/scripts/validate-diagrams.mjs`)
-is required infrastructure. Without it, this skill cannot grade. If Node.js is
-unavailable on the host:
+is required infrastructure. It runs D1 (parse) always; D2 (render) uses `jsdom` —
+or falls back to `mmdc` — to render each diagram and assert a non-trivial SVG. If
+neither `jsdom` nor `mmdc` is installed, D2 falls back to parse-only and the grade
+output flags `D2: jsdom-fallback` (reduced rigor). Without Node.js entirely, this
+skill cannot grade. If Node.js is unavailable on the host:
 ```
 ❌ Cannot run /aid-summarize.
    Node.js is required for Mermaid diagram validation.

@@ -14,7 +14,7 @@ before declaring DONE.
 ```mermaid
 flowchart TB
     classDef primary fill:#0B1F3A,stroke:#00A3A1,color:#fff;
-    classDef accent  fill:#00A3A1,stroke:#00A3A1,color:#fff;
+    classDef accent  fill:#0E4D4A,stroke:#00A3A1,color:#fff;
 
     A["Layer A<br/>description"]:::primary
     B["Layer B"]:::accent
@@ -49,7 +49,7 @@ Use for request flows, data flows, integration hubs.
 ```mermaid
 graph TD
     classDef base fill:#DBEAFE,stroke:#1D4ED8,color:#1D4ED8;
-    classDef core fill:#00A3A1,stroke:#00A3A1,color:#fff;
+    classDef core fill:#0E4D4A,stroke:#00A3A1,color:#fff;
 
     foundation["foundation<br/>no deps"]:::base
     core["core<br/>319 files · 60 tests"]:::core
@@ -161,11 +161,16 @@ When `validate-diagrams.mjs` reports a parse error, look up the symptom here.
 1. **No `<word>` HTML-tag-like tokens.** Only `<b>` and `<br/>` are safe.
 2. **Spaces around dotted-arrow labels:** `-. text .->`, not `-.text.->`.
 3. **Each edge has explicit source:** prefer `A --> B` and `B --> C` on separate lines
-   over `A\n  --> B\n  --> C`.
-4. **erDiagram cardinality always paired with quoted label:** `Asset ||--o{ Material : "contains"`.
-5. **Use `classDef` consistently:** define classes at the top of each diagram, apply
+   over a continuation form with no source on the second line.
+4. **Line breaks in labels are `<br/>` — NEVER a literal `\n`.** Mermaid does not
+   interpret `\n` as a newline in ANY diagram type (flowchart, `stateDiagram-v2`,
+   etc.) — it renders the two characters literally. This applies to `stateDiagram`
+   state descriptions too: `State: Title<br/>(detail)`. `validate-diagrams.mjs`
+   fails D1 on any literal `\n` inside a diagram.
+5. **erDiagram cardinality always paired with quoted label:** `Asset ||--o{ Material : "contains"`.
+6. **Use `classDef` consistently:** define classes at the top of each diagram, apply
    to nodes via `Node:::classname`.
-6. **Quoted labels** any time the label contains spaces, slashes, parens, dots, or
+7. **Quoted labels** any time the label contains spaces, slashes, parens, dots, or
    special characters: `Node["text with (parens)"]`.
 
 ## Color class mapping (matches the design tokens)
@@ -174,7 +179,7 @@ Use these standard `classDef` declarations across diagrams for a coherent palett
 
 ```
 classDef primary  fill:#0B1F3A,stroke:#00A3A1,color:#fff,stroke-width:2px;
-classDef accent   fill:#00A3A1,stroke:#00A3A1,color:#fff,stroke-width:2px;
+classDef accent   fill:#0E4D4A,stroke:#00A3A1,color:#fff,stroke-width:2px;
 classDef entry    fill:#DBEAFE,stroke:#1D4ED8,color:#1D4ED8;
 classDef service  fill:#E8F5E9,stroke:#2E7D32,color:#2E7D32;
 classDef store    fill:#F4EBFF,stroke:#6941C6,color:#6941C6;
