@@ -99,7 +99,7 @@ Hand a capable coding agent a vague task and a large repository, and you get pre
 |--------------|--------------------|--------------------|
 | **Knowledge gaps** | The agent doesn't understand the existing system and invents how it works. | Discovery builds the Knowledge Base *before* any spec is written. Understanding precedes specification. |
 | **Hallucination** | The agent states things about the code that aren't true. | Every KB claim carries an inline `path:line` citation — facts are anchored to source, not guessed. |
-| **Drift** | The implementation quietly diverges from intent; the spec rots. | Spec-as-hypothesis plus formal feedback loops — upstream artifacts are revised with a traceable history, never silently worked around. |
+| **Drift** | The implementation quietly diverges from intent; the spec rots. | Spec-as-hypothesis plus eleven formal feedback loops — upstream artifacts are revised with a traceable history, never silently worked around. |
 | **Overengineering** | The agent adds abstractions, options, and scope nobody asked for. | Typed, PR-sized tasks with explicit acceptance criteria; the reviewer grades against the spec, not against taste. |
 | **Oversights** | Bugs, missed edge cases, and untested paths slip through. | A separate adversarial reviewer — the agent that writes never grades its own work — loops until the grade clears the bar. |
 | **Context exhaustion** | Loading the whole repository into the context window — slow, costly, lossy. | A 3-tier context economy (see §2): an always-loaded index, then one KB document on demand, then an exact `path:line`. |
@@ -251,7 +251,7 @@ AID organizes eight development phases into five groups. The pipeline is linear 
 
 Discover runs as a state machine — one invocation per step: **generate** the Knowledge Base, **review** it, resolve **open questions** with the human, **fix**, then **approve**.
 
-Generation opens with a fast, deterministic pre-pass that writes `.aid/knowledge/project-index.md` — a shared file inventory the sub-agents read instead of re-scanning the repository. Discover then dispatches **five sub-agents** — a structure scout first, then four more in parallel — that together generate the Knowledge Base; a separate **reviewer** grades it in the review step. The generators' work covers:
+Generation opens with a fast, deterministic pre-pass that writes `.aid/knowledge/project-index.md` — a shared file inventory the sub-agents read instead of re-scanning the repository. Discover then dispatches **five sub-agents** — a structure scout first, then four more in parallel — that together generate the Knowledge Base; a separate **reviewer** grades it in the review step. Across the run, discovery covers:
 
 1. **Structure scan** — Detect project type, map folder layout, list modules/packages.
 2. **Architecture analysis** — Identify patterns, layers, boundaries, data flow.
@@ -265,7 +265,7 @@ Generation opens with a fast, deterministic pre-pass that writes `.aid/knowledge
 10. **Gap identification** — What we couldn't determine from code alone → feeds into Interview.
 11. **INDEX generation** — Generate `.aid/knowledge/INDEX.md` with a 2-3 line summary of every KB document produced. This lightweight index is included in every task context so agents know what's available and can self-serve additional context on demand. See [Context Feeding Strategy](#context-feeding-strategy).
 
-**Output:** `.aid/knowledge/` — the project's Knowledge Base: all 16 standard documents plus the meta-documents (`INDEX.md`, `README.md`, and the Q&A in `DISCOVERY-STATE.md`). `feature-inventory.md` is scaffolded during the run and completed later, in the Q&A → fix cycle.
+**Output:** `.aid/knowledge/` — the project's Knowledge Base: all 16 standard documents, the generated `project-index.md` pre-pass, and the meta-documents (`INDEX.md`, `README.md`, and the Q&A in `DISCOVERY-STATE.md`). `feature-inventory.md` is scaffolded during the run and completed later, in the Q&A → fix cycle.
 
 **When to skip:** Pure greenfield projects with no existing code. Interview and Specify populate a minimal KB instead.
 
@@ -336,7 +336,7 @@ The interview runs as a seven-state machine, advancing one state per run (State 
 
 **Output:** `.aid/{work}/REQUIREMENTS.md` + `.aid/{work}/features/feature-NNN-{name}/SPEC.md` (requirements side only).
 
-**Feedback to Discovery:** If an answer reveals the KB is wrong or incomplete, the interview pauses, triggers targeted discovery, then resumes with corrected understanding.
+**Feedback to Discovery:** If an answer reveals the KB is wrong or incomplete, the interview records a Q&A entry in `DISCOVERY-STATE.md`, triggers targeted discovery, then resumes with corrected understanding.
 
 #### Phase 3: Specify (`aid-specify`)
 
@@ -455,9 +455,9 @@ determines what the agent does and how the reviewer evaluates it.
 2. Execute according to type-specific rules (code, tests, research, design, etc.).
 3. Verify relevant gates pass (build, lint, tests — as applicable to the type).
 4. Dispatch separate reviewer agent (clean context) with type-specific review criteria.
-5. Grade using deterministic rubric. Present all issues to user.
-6. With the user's approval, auto-fix CODE issues; route TASK/SPEC/KB issues as loopbacks.
-7. Loop until grade ≥ minimum. Circuit breaker if the grade has not improved (same or worse) after 3 consecutive cycles.
+5. Grade with the deterministic rubric and present all issues to the user.
+6. If the grade meets the minimum, mark the task Done. Otherwise: with the user's approval, auto-fix CODE issues, and route TASK/SPEC/KB issues as loopbacks.
+7. Loop until the grade meets the minimum. Circuit breaker if the grade has not improved (same or worse) after 3 consecutive cycles.
 
 **Branch isolation:** One branch per delivery (`aid/delivery-NNN`). All tasks in a
 delivery share the branch. RESEARCH and DOCUMENT tasks that produce only `.aid/`
@@ -504,7 +504,7 @@ an `IMPEDIMENT-task-NNN.md` rather than silently working around the problem.
 
 **Process:**
 1. **Observe** — Pull from configured sources. Detect anomalies vs. baseline. Correlate signals across sources ("error spike started 23 min after deploy of package-007-auth").
-2. **Classify** — For each finding: BUG (spec right, code wrong), CR (spec needs change), INFRASTRUCTURE (ops), or NO ACTION (false positive).
+2. **Classify** — For each finding: BUG (spec right, code wrong), Change Request (spec needs change), Infrastructure (ops), or No Action (false positive).
 3. **Analyze** — Root cause analysis for bugs: trace → fault → scope → test requirements.
 4. **Propose** — Present findings with routing recommendations to the user.
 5. **Act** — Create tasks for bugs (→ aid-execute), Q&A entries for CRs (→ aid-discover), escalate infra.
@@ -555,7 +555,7 @@ flowchart TB
     Any["Any phase"]:::kb -. "L11 · targeted re-discovery" .-> D
 ```
 
-*Each dotted arrow is drawn to a single representative target for legibility; the loop descriptions below give each loop's full set of targets — Loops 6 and 7, in particular, route to more than one phase.*
+*Each dotted arrow is drawn to a single representative target for legibility; several loops route to more than one phase — the loop descriptions below give each loop's full set of targets.*
 
 ### The Eleven Loops
 
@@ -567,7 +567,7 @@ These are AID's principal, named feedback loops. Each phase's entry in §3 also 
 
 **Trigger:** During the interview, a human's answer reveals the KB is wrong or incomplete.
 
-**Protocol:** Interview pauses → targeted discovery on the specific area → KB updated → interview resumes with corrected understanding.
+**Protocol:** A Q&A entry is written to `DISCOVERY-STATE.md` → targeted discovery on the specific area → KB updated → interview resumes with corrected understanding.
 
 #### Loop 2: Specify → Discovery
 
@@ -635,7 +635,7 @@ These are AID's principal, named feedback loops. Each phase's entry in §3 also 
 
 ### The Revision Trail
 
-Every change to an upstream artifact is tracked at the bottom of the artifact:
+Every change to an upstream artifact is tracked inside the artifact itself — a `## Revision History` table (or, for REQUIREMENTS.md and feature SPEC.md, a `## Change Log` at the top):
 
 ```markdown
 ## Revision History
