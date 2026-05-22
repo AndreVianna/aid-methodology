@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-AID (AI-Integrated Development) is a structured methodology for building and maintaining software with AI agents. It defines eight development phases organized into five groups — from problem mapping through production monitoring and issue routing — with formal feedback loops that allow any phase to revise upstream artifacts when reality contradicts assumptions.
+AID (AI-Integrated Development) is a structured methodology for building and maintaining software with AI agents. It defines eight development phases — plus a one-time setup step and an optional summary skill — organized into five groups, from problem mapping through production monitoring and issue routing, with formal feedback loops that allow any phase to revise upstream artifacts when reality contradicts assumptions.
 
 Each phase is **co-executed by human and AI**. The AI is the Iron Man suit — it amplifies the human's capabilities. The human is the pilot — setting direction, making decisions, approving advancement between phases. The human never leaves the cockpit. This is not "AI executes, human validates." It is "human and AI work together, human drives."
 
@@ -102,7 +102,7 @@ Hand a capable coding agent a vague task and a large repository, and you get pre
 | **Drift** | The implementation quietly diverges from intent; the spec rots. | Spec-as-hypothesis plus formal feedback loops — upstream artifacts are revised with a traceable history, never silently worked around. |
 | **Overengineering** | The agent adds abstractions, options, and scope nobody asked for. | Typed, PR-sized tasks with explicit acceptance criteria; the reviewer grades against the spec, not against taste. |
 | **Oversights** | Bugs, missed edge cases, and untested paths slip through. | A separate adversarial reviewer — the agent that writes never grades its own work — loops until the grade clears the bar. |
-| **Context exhaustion** | Loading the whole repository into the context window — slow, costly, lossy. | A 3-tier context economy: an always-loaded index, one KB document on demand, then an exact `path:line`. |
+| **Context exhaustion** | Loading the whole repository into the context window — slow, costly, lossy. | A 3-tier context economy (see §2): an always-loaded index, then one KB document on demand, then an exact `path:line`. |
 
 The rest of this document is how each mechanism works.
 
@@ -116,7 +116,7 @@ AID defines three roles:
 | **Orchestrator** | An AI agent (or human). Manages the pipeline: spawns agents, routes feedback loops, enforces quality gates, maintains the Knowledge Base. |
 | **Specialist** | An AI coding agent (Claude Code, Codex, or similar). Executes tasks within defined scope. Reports impediments rather than working around them. |
 
-The Director never writes code. The Specialist never makes architectural decisions. The Orchestrator bridges both.
+The Director never writes code. The Specialist never makes architectural decisions. The Orchestrator bridges both. In the Iron Man terms from earlier in this section: the Director is the pilot; the Orchestrator and Specialists together are the suit.
 
 ---
 
@@ -140,7 +140,7 @@ The Knowledge Base (`.aid/knowledge/`) is the gravitational center of the entire
 ├── module-map.md          # Every module: purpose, dependencies, size, test coverage
 ├── coding-standards.md    # Naming conventions, formatting, error handling patterns
 ├── data-model.md          # Database schema, entities, relationships, migrations
-├── api-contracts.md       # APIs consumed/exposed (or host-tool frontmatter schemas)
+├── api-contracts.md       # APIs consumed and exposed: auth models, rate limits
 ├── integration-map.md     # Message queues, caches, third-party services, webhooks
 ├── domain-glossary.md     # Business terms, domain language, entity definitions
 ├── test-landscape.md      # Test frameworks, coverage, test types, CI/CD pipeline
@@ -184,7 +184,7 @@ A common failure mode: an agent receives a task spec and the project spec, imple
 
 **AID solves this with the KB Index — a lightweight map of the entire Knowledge Base.**
 
-`aid-init` creates `.aid/knowledge/INDEX.md` at setup with placeholder rows; Discovery regenerates it with real content as its final step (and on the greenfield path, which skips Discovery, `aid-interview` maintains it). This file contains a 2-3 line summary of each KB document — what it covers, when to consult it. It costs almost nothing to include in an agent's context, but it gives the agent the ability to self-serve.
+`aid-init` creates `.aid/knowledge/INDEX.md` at setup with placeholder rows; Discovery regenerates it with real content as its final step (and on the greenfield path, which skips Discovery, `aid-interview` updates it where applicable). This file contains a 2-3 line summary of each KB document — what it covers, when to consult it. It costs almost nothing to include in an agent's context, but it gives the agent the ability to self-serve.
 
 ```markdown
 # Knowledge Base Index — {Project Name}
@@ -218,7 +218,7 @@ The agent pays a few hundred tokens to know where everything is, then spends its
 
 **Why not a vector database?** Because the KB is small enough (16 documents, typically 2–20KB each) that convention beats infrastructure. The bottleneck isn't retrieval speed — it's knowing what exists. The INDEX solves that.
 
-**When does the INDEX update?** `aid-init` seeds it at setup; thereafter it is regenerated every time Discovery runs (full or targeted), and `aid-interview` updates it on the greenfield path. It is always rebuilt from the current state of the KB — never manually maintained.
+**When does the INDEX update?** `aid-init` seeds it at setup; thereafter it is regenerated every time Discovery runs (full or targeted), and `aid-interview` updates it where applicable as requirements evolve. It is always rebuilt from the current state of the KB — never manually maintained.
 
 ### The KB Outlives the Project
 
@@ -231,13 +231,13 @@ The Knowledge Base is institutional memory. It outlives any individual session, 
 AID organizes eight development phases into five groups. The pipeline is linear with feedback loops. The Monitor phase observes production and routes issues back into development through one of two paths:
 
 - **Bug path (short):** Monitor → Execute → Deploy. Surgical. Monitor identifies the bug, performs root cause analysis, creates a task, and routes to Execute. No re-specification, no re-planning.
-- **Change Request path (full cycle):** Monitor → Discover. A substantial CR re-enters the pipeline as a new work, running the complete cycle from the beginning.
+- **Change Request path (full cycle):** Monitor → Discover. The CR routes back to Discovery as a Q&A entry; a large-enough CR spins up a new work and runs the complete cycle from the beginning.
 
 ---
 
 ### Group 1: Prepare
 
-*Set up the workspace and build an understanding of the existing system. This group also holds two non-phase skills: `aid-init` (bootstrap — run once, before the pipeline) and the optional `aid-summarize` (an HTML viewer of the Knowledge Base).*
+*Set up the workspace and build an understanding of the existing system. This group also holds two non-phase skills, `aid-init` and `aid-summarize` — see Prepare-Group Skills below.*
 
 ---
 
@@ -249,7 +249,9 @@ AID organizes eight development phases into five groups. The pipeline is linear 
 
 **Process:**
 
-A fast, deterministic pre-pass first writes `.aid/knowledge/project-index.md` — a shared file inventory the discovery sub-agents read instead of re-scanning the repository. Then:
+Discover runs as a state machine — one invocation per step: **generate** the Knowledge Base, **review** it, resolve **open questions** with the human, **fix**, then **approve**.
+
+Generation opens with a fast, deterministic pre-pass that writes `.aid/knowledge/project-index.md` — a shared file inventory the sub-agents read instead of re-scanning the repository. Discover then dispatches **five sub-agents** — a structure scout first, then four more in parallel — that together generate the Knowledge Base; a separate **reviewer** grades it in the review step. The generators' work covers:
 
 1. **Structure scan** — Detect project type, map folder layout, list modules/packages.
 2. **Architecture analysis** — Identify patterns, layers, boundaries, data flow.
@@ -261,13 +263,13 @@ A fast, deterministic pre-pass first writes `.aid/knowledge/project-index.md` �
 8. **Test landscape** — Frameworks, coverage metrics, test types, CI/CD pipeline.
 9. **Tech debt audit** — Large files, circular dependencies, missing tests, outdated packages.
 10. **Gap identification** — What we couldn't determine from code alone → feeds into Interview.
-11. **Context Index generation** — Generate `.aid/knowledge/INDEX.md` with a 2-3 line summary of every KB document produced. This lightweight index is included in every task context so agents know what's available and can self-serve additional context on demand. See [Context Feeding Strategy](#context-feeding-strategy).
+11. **INDEX generation** — Generate `.aid/knowledge/INDEX.md` with a 2-3 line summary of every KB document produced. This lightweight index is included in every task context so agents know what's available and can self-serve additional context on demand. See [Context Feeding Strategy](#context-feeding-strategy).
 
-**Output:** `.aid/knowledge/` — the project's Knowledge Base: all 16 standard documents. Fifteen are populated directly by the discovery scan; `feature-inventory.md` is scaffolded during the run and populated later, in the Q&A → fix cycle. The run also writes the three meta-documents — `INDEX.md`, `README.md`, and the Q&A in `DISCOVERY-STATE.md`.
+**Output:** `.aid/knowledge/` — the project's Knowledge Base: all 16 standard documents plus the meta-documents (`INDEX.md`, `README.md`, and the Q&A in `DISCOVERY-STATE.md`). `feature-inventory.md` is scaffolded during the run and completed later, in the Q&A → fix cycle.
 
 **When to skip:** Pure greenfield projects with no existing code. Interview and Specify populate a minimal KB instead.
 
-**When to re-enter:** Any downstream phase discovers the KB is wrong or incomplete. Re-entry is always *targeted* — fill the specific gap, not redo full discovery.
+**When to re-enter:** Any downstream phase discovers the KB is wrong or incomplete — the cross-cutting feedback Loop 11 (§4). Re-entry is always *targeted* — fill the specific gap, not redo full discovery.
 
 #### Prepare-Group Skills: `aid-init` and `aid-summarize`
 
@@ -286,7 +288,7 @@ Two skills sit in the Prepare group but are **not numbered phases**:
 
 #### Phase 2: Interview (`aid-interview`)
 
-**Purpose:** Gather requirements and decompose them into features. Produce REQUIREMENTS.md and per-feature SPEC.md stubs.
+**Purpose:** Gather requirements and decompose them into features. Produce REQUIREMENTS.md and, for each feature, a SPEC.md with its requirements side filled in.
 
 **Input:** KB (if brownfield) or project description (if greenfield). A human to interview.
 
@@ -302,7 +304,7 @@ Two skills sit in the Prepare group but are **not numbered phases**:
       feature-001-login/
         SPEC.md                 ← requirements side (from Interview) + tech spec (from Specify)
         STATE.md                ← per-feature process tracking (from Specify)
-      feature-002-password/
+      feature-002-password-reset/
         SPEC.md
         STATE.md
 ```
@@ -319,9 +321,9 @@ The interview runs as a seven-state machine, advancing one state per run (State 
 
 **State 6: Cross-Reference.** Validates REQUIREMENTS.md against the full KB. Checks for contradictions, gaps, missing evidence, and staleness, then grades the findings with AID's universal rubric. Grade is a snapshot — doesn't change within the same run.
 
-**One grading rubric, everywhere.** Every phase that grades — Discover, Interview, Specify, Plan, Detail, Execute — works the same way: the reviewer classifies each issue it finds by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`), and the letter grade is then **computed deterministically** — the worst severity present dominates, the count within that tier sets the modifier (A+ … F). The reviewer never hand-picks a grade. Each phase loops until its grade meets the project's minimum (set at `aid-init`). See §5 and `templates/grading-rubric.md`.
+**One grading rubric across the pipeline.** Every development phase that grades — Discover, Interview, Specify, Plan, Detail, Execute — works the same way: the reviewer classifies each issue it finds by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`), and the letter grade is then **computed deterministically** — the worst severity present dominates, the count within that tier sets the modifier (A+ … F). The reviewer never hand-picks a grade. Each phase loops until its grade meets the project's minimum (set at `aid-init`). See §5 and `templates/grading-rubric.md`. The one exception is the optional `aid-summarize` skill — not a pipeline phase — which validates its generated HTML against a separate, purpose-built rubric: an automated quality score plus a human visual-review score, rather than the severity rubric described here.
 
-**State 7: Done.** REQUIREMENTS.md is approved and the per-feature SPEC.md stubs exist — the work is ready for Specify. Re-running `/aid-interview` from Done re-enters at State 6 (Cross-Reference) to re-validate against a changed KB.
+**State 7: Done.** REQUIREMENTS.md is approved and each per-feature SPEC.md exists with its requirements side filled in — the work is ready for Specify. Re-running `/aid-interview` from Done re-enters at State 6 (Cross-Reference) to re-validate against a changed KB.
 
 **REQUIREMENTS.md sections:** Objective, Problem Statement, Users & Stakeholders, Scope, Functional Requirements, Non-Functional Requirements, Constraints, Assumptions & Dependencies, Acceptance Criteria, Priority. A Change Log at the top tracks every modification.
 
@@ -340,7 +342,7 @@ The interview runs as a seven-state machine, advancing one state per run (State 
 
 **Purpose:** Technical refinement of a single feature through conversational collaboration with the developer. The agent acts as a tech lead — proposes concrete solutions grounded in the KB and codebase, discusses trade-offs, and writes the technical specification into the feature's SPEC.md.
 
-**Input:** A feature's SPEC.md (requirements side, from Interview) + `.aid/knowledge/` directory + codebase.
+**Input:** A feature's SPEC.md (requirements side, from Interview) + REQUIREMENTS.md + `.aid/knowledge/` + the codebase.
 
 **What this is:** Agile refinement for AI-augmented teams. Interview captured *what* the stakeholder wants. Specify determines *how* to build it — one feature at a time, through discussion with the developer.
 
@@ -414,7 +416,7 @@ The interview runs as a seven-state machine, advancing one state per run (State 
 
 **Detail is pure breakdown.** No new decisions — everything is already in PLAN + SPECs. Detail just slices deliverables into tasks small enough for an agent to execute in one session.
 
-**Task format:** Six sections — Title, Type, Source, Depends on, Scope, Acceptance Criteria. Nothing else. The Type drives both how the executor works and how the reviewer evaluates the task.
+**Task format:** Six sections — Title, Type, Source, Depends on, Scope, Acceptance Criteria. Nothing else. The Type drives both how the executor works and how the reviewer evaluates the task. Every task after the first carries at least one `Depends on` entry; only a delivery's first task uses `— (none)`.
 
 **Output:** `.aid/{work}/tasks/task-NNN.md` files — sequential tasks numbered globally across all deliverables — plus an execution graph (dependency and parallel-wave tables) appended to `PLAN.md`.
 
@@ -446,7 +448,7 @@ determines what the agent does and how the reviewer evaluates it.
 - **REFACTOR** — restructure code without changing behavior
 - **CONFIGURE** — config files, CI/CD, environment setup
 
-**Input:** `task-NNN.md` (with Type field) + `PLAN.md` (delivery context + execution graph) + per-feature `SPEC.md` + `.aid/knowledge/INDEX.md`.
+**Input:** `task-NNN.md` (with Type field) + `PLAN.md` (delivery context + execution graph) + the per-feature `SPEC.md` + `known-issues.md` (if present) + `.aid/knowledge/INDEX.md`.
 
 **Process (universal loop, all types):**
 1. Read task type and load relevant KB docs via INDEX.md.
@@ -455,7 +457,7 @@ determines what the agent does and how the reviewer evaluates it.
 4. Dispatch separate reviewer agent (clean context) with type-specific review criteria.
 5. Grade using deterministic rubric. Present all issues to user.
 6. With the user's approval, auto-fix CODE issues; route TASK/SPEC/KB issues as loopbacks.
-7. Loop until grade ≥ minimum. Circuit breaker if the grade has not improved across 3 consecutive cycles.
+7. Loop until grade ≥ minimum. Circuit breaker if the grade has not improved (same or worse) after 3 consecutive cycles.
 
 **Branch isolation:** One branch per delivery (`aid/delivery-NNN`). All tasks in a
 delivery share the branch. RESEARCH and DOCUMENT tasks that produce only `.aid/`
@@ -464,7 +466,7 @@ artifacts may skip branching.
 **Impediment protocol:** When the agent discovers assumptions don't hold, it generates
 an `IMPEDIMENT-task-NNN.md` rather than silently working around the problem.
 
-**Output:** Artifacts appropriate to the task type. Grade ≥ minimum. Review history in STATE.md.
+**Output:** Artifacts appropriate to the task type. Grade ≥ minimum. Full review history in `task-NNN-STATE.md`.
 
 ---
 
@@ -485,14 +487,14 @@ an `IMPEDIMENT-task-NNN.md` rather than silently working around the problem.
 2. **Final verification:** Full build + complete test suite + lint/format check. Zero failures, zero warnings.
 3. **Package record:** Write `package-NNN-{slug}.md` — deliveries included, verification results, environment, and release notes.
 4. **PR creation:** Structured description referencing the package, its deliveries, and test results.
-5. **Documentation updates:** Ensure the KB reflects any discoveries from implementation.
+5. **Documentation routing:** Route any KB-affecting discoveries to Discovery as `DISCOVERY-STATE.md` Q&A entries — Deploy never edits KB documents directly.
 6. **Artifact status update:** Mark the package's deliveries and their tasks `Shipped`.
 
 **Output:**
 - `package-NNN-{slug}.md` — the release package record, one per shipped package.
 - `DEPLOYMENT-STATE.md` — updated to Done with a History entry.
 - Pull Request ready for merge.
-- KB updated with any new discoveries; `PLAN.md` deliveries marked shipped.
+- KB-affecting discoveries routed to Discovery via `DISCOVERY-STATE.md` Q&A; `PLAN.md` deliveries marked shipped.
 
 #### Phase 8: Monitor (`aid-monitor`)
 
@@ -515,7 +517,7 @@ an `IMPEDIMENT-task-NNN.md` rather than silently working around the problem.
 
 **When to trigger:** On deployment, on schedule, on alert threshold, or on-demand.
 
-**Output:** `MONITOR-STATE.md` — observation log, active findings with classification/evidence/severity/routing, resolved findings.
+**Output:** `MONITOR-STATE.md` — a last-run log (observation window and finding count), active findings (each with classification, severity, evidence, and routing), and resolved findings.
 
 ---
 
@@ -545,7 +547,7 @@ flowchart TB
     P -. "L4" .-> S
     Dt -. "L5" .-> P
     E -. "L6 · impediment" .-> D
-    E -. "L7 · review" .-> P
+    E -. "L7 · review" .-> S
     Dp -. "L8 · verification" .-> E
     M -. "L9 · bug" .-> E
     M -. "L10 · change request" .-> D
@@ -553,9 +555,11 @@ flowchart TB
     Any["Any phase"]:::kb -. "L11 · targeted re-discovery" .-> D
 ```
 
-*Each dotted arrow is drawn to a single representative target for legibility; the loop descriptions below give each loop's full set of targets. Several loops route back to Discovery, and Loops 6 and 7 may also escalate to Plan or Specify.*
+*Each dotted arrow is drawn to a single representative target for legibility; the loop descriptions below give each loop's full set of targets — Loops 6 and 7, in particular, route to more than one phase.*
 
 ### The Eleven Loops
+
+These are AID's principal, named feedback loops. Each phase's entry in §3 also lists that phase's full set of feedback targets — any phase may write a Q&A entry to an earlier phase's STATE file when it finds that phase's artifact deficient.
 
 #### Development Loops (1–8)
 
@@ -569,19 +573,19 @@ flowchart TB
 
 **Trigger:** Writing the spec exposes insufficient understanding of a subsystem.
 
-**Protocol:** Specify pauses → `GAP.md` generated with type `discovery-needed` → targeted discovery → KB updated → specify resumes.
+**Protocol:** Specify pauses → a Q&A entry is written to `DISCOVERY-STATE.md` → targeted discovery → KB updated → specify resumes.
 
 #### Loop 3: Plan → Discovery
 
 **Trigger:** Planning reveals that the codebase is more complex than the KB captured.
 
-**Protocol:** `GAP.md` generated → targeted discovery → KB updated → planning resumes.
+**Protocol:** Plan writes a Q&A entry to `DISCOVERY-STATE.md` → targeted discovery → KB updated → planning resumes.
 
 #### Loop 4: Plan → Specify
 
 **Trigger:** The KB is complete, but the SPEC is ambiguous or contradictory.
 
-**Protocol:** `GAP.md` with type `ambiguity` or `contradiction` → spec revision (possibly with targeted interview) → planning resumes.
+**Protocol:** Plan writes a Q&A entry to the feature's `STATE.md` → spec revision (possibly with a targeted interview) → planning resumes.
 
 #### Loop 5: Detail → Plan
 
@@ -589,17 +593,17 @@ flowchart TB
 
 **Protocol:** Detail documents the gap → Plan revises the specific section → Detail resumes.
 
-#### Loop 6: Execute → Discovery / Plan / Specify
+#### Loop 6: Execute → Discovery / Specify / Detail
 
-**Trigger:** While executing a task, the agent discovers that assumptions don't hold in the actual codebase.
+**Trigger:** While executing a task, the agent discovers that an assumption doesn't hold in the actual codebase.
 
-**Protocol:** `IMPEDIMENT-task-NNN.md` generated → if a KB gap, update the KB → if resolvable within scope, resolve and document → if it requires a plan or spec change, pause and escalate.
+**Protocol:** `IMPEDIMENT-task-NNN.md` is written, then routed by type — `kb-gap` → targeted discovery; `architecture-conflict` → Specify; `missing-dependency` → Detail; `wrong-assumption` → update the task or SPEC. The agent never silently works around the problem.
 
 #### Loop 7: Execute Review → Any Upstream Phase
 
-**Trigger:** The reviewer step inside Execute finds issues that trace to KB, spec, or plan problems — not just code quality.
+**Trigger:** The reviewer step inside Execute finds issues that trace to the task, the spec, or the KB — not just code quality.
 
-**Protocol:** Issues are tagged by source (CODE / TASK / SPEC / KB / ARCHITECTURE). CODE issues are fixed inside the Execute loop. Everything else pauses the pipeline and escalates to the owning phase.
+**Protocol:** Issues are tagged by source (CODE / TASK / SPEC / KB). CODE issues are auto-fixed inside the Execute loop. A TASK issue routes to a task update; a SPEC issue writes a Q&A entry to the feature's `STATE.md` (→ Specify); a KB issue writes a Q&A entry to `DISCOVERY-STATE.md` (→ Discovery).
 
 #### Loop 8: Deploy → Execute
 
@@ -639,33 +643,30 @@ Every change to an upstream artifact is tracked at the bottom of the artifact:
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | Mar 1 | aid-specify | Initial spec |
-| 1.1 | Mar 5 | GAP-001 (aid-plan) | Added latency requirements |
+| 1.1 | Mar 5 | Q&A IQ-004 (aid-plan) | Added latency requirements |
 | 1.2 | Mar 8 | IMPEDIMENT task-F3a (aid-execute) | Changed sync model |
 ```
 
 ### Feedback Loop Artifacts
 
-**GAP.md** — Generated by Specify, Plan, Detail, or the Execute review step when upstream artifacts are deficient.
+Most feedback loops record the gap as a **Q&A entry appended to the relevant phase's STATE file** — `DISCOVERY-STATE.md` for a KB gap, the work's `INTERVIEW-STATE.md` for a requirements gap, a feature's `STATE.md` for a spec gap. The next run of that phase detects the pending entry and resolves it:
 
 ```markdown
-# GAP: GAP-001
-**Source:** aid-plan, Deliverable 2
-**Type:** discovery-needed | ambiguity | contradiction | plan-too-vague
-**Description:** Module map shows 3 consumers of SearchService, but grep reveals 11.
-**KB Gap:** module-map.md (incomplete)
-**Blocking:** Deliverable 2 scoping
-**Resolution:** discovery | needs-human | needs-spike | spec-revision
+### IQ{N}: [{Category}: {Impact}]
+**Question:** {what needs to be resolved}
+**Context:** {why — what the calling phase found}
+**Source:** {calling phase, e.g. /aid-plan work-001}
+**Suggested:** {answer if inferrable, or —}
+**Status:** Pending
 ```
 
-**IMPEDIMENT-task-NNN.md** — Generated by Execute (written to `.aid/{work}/`) when reality contradicts assumptions.
+The one feedback loop with its own dedicated file is **`IMPEDIMENT-task-NNN.md`** — written by Execute to `.aid/{work}/` when a task hits a contradiction it cannot resolve within scope:
 
 ```markdown
-# Impediment — task-F3a
-**Source:** aid-execute, task-F3a
+# Impediment — task-NNN
 **Type:** wrong-assumption | missing-dependency | architecture-conflict | kb-gap
-**Description:** RecordingService is synchronous, not async as KB states.
-**KB Impact:** architecture.md needs revision
-**Options:** [A, B, C with effort and risk estimates]
+**Description:** RecordingService is synchronous, not async as the KB states.
+**Options:** [A, B, C — each with effort and risk]
 **Recommendation:** [which option and why]
 ```
 
@@ -678,18 +679,17 @@ Every change to an upstream artifact is tracked at the bottom of the artifact:
 | Artifact | Location | Produced By | Consumed By | Lifecycle |
 |----------|----------|------------|-------------|-----------|
 | Knowledge Base (16 docs) | `.aid/knowledge/` | Discover | All phases | Living — updated throughout project |
-| INDEX.md | `.aid/knowledge/` | Init, Discover, Interview | All phases | Seeded at init; regenerated by Discovery; maintained by Interview (greenfield) |
-| DISCOVERY-STATE.md | `.aid/knowledge/` | Init, Discover | Discover (resume), all phases | Living — grade, Q&A, review history |
+| INDEX.md | `.aid/knowledge/` | Init, Discover, Interview | All phases | Seeded at init; regenerated by Discovery; maintained by Interview |
+| DISCOVERY-STATE.md | `.aid/knowledge/` | Init, Discover | Discover (resume), all phases | Living — grade and review history; any phase appends Q&A entries |
 | REQUIREMENTS.md | `.aid/{work}/` | Interview | Specify, Plan | Frozen after approval (rev-tracked) |
 | INTERVIEW-STATE.md | `.aid/{work}/` | Interview | Interview (resume) | Process tracking |
 | Feature SPEC.md | `.aid/{work}/features/{feature}/` | Interview + Specify | Plan, Detail, Execute | Living — Interview writes requirements side, Specify adds technical spec |
 | Feature STATE.md | `.aid/{work}/features/{feature}/` | Specify | Specify (resume) | Process tracking |
-| known-issues.md | `.aid/{work}/` | Specify, Monitor | Plan, Execute, Deploy, Monitor | Living — issues to watch and resolve |
+| known-issues.md | `.aid/{work}/` | Specify (Monitor updates) | Plan, Execute, Deploy, Monitor | Living — issues to watch and resolve |
 | PLAN.md | `.aid/{work}/` | Plan | Detail, Deploy | Living — rev-tracked; Detail appends the execution graph |
 | task-NNN.md | `.aid/{work}/tasks/` | Detail | Execute | Rev-tracked if amended |
 | task-NNN-STATE.md | `.aid/{work}/tasks/` | Execute | Execute (resume), Deploy | Per-task execution, review history, and grade |
-| GAP.md | `.aid/{work}/` | Any phase | Discovery, Specify | Closed when resolved |
-| IMPEDIMENT-task-NNN.md | `.aid/{work}/` | Execute | Plan, Specify, Discovery | Closed when resolved |
+| IMPEDIMENT-task-NNN.md | `.aid/{work}/` | Execute | Specify, Detail, Discovery | Closed when resolved |
 | package-NNN-{slug}.md | `.aid/{work}/packages/` | Deploy | Monitor, stakeholders | One per shipped release package |
 | DEPLOYMENT-STATE.md | `.aid/{work}/` | Deploy | Deploy (resume) | Living — operation status + history |
 | MONITOR-STATE.md | `.aid/{work}/` | Monitor | Execute (bugs), Discover (CRs) | Living — observation log across runs |
@@ -802,7 +802,7 @@ Detail produces one `task-NNN.md` per task and appends the execution graph (wave
 
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 
-**Source:** feature-NNN-{name} → delivery-{x}
+**Source:** feature-NNN-{name} → delivery-NNN
 
 **Depends on:** task-NNN [, task-NNN] | — (none)
 
@@ -814,54 +814,49 @@ Detail produces one `task-NNN.md` per task and appends the execution graph (wave
 - [ ] Criterion 2 — concrete, testable
 ```
 
-Six sections — Title, Type, Source, Depends on, Scope, Acceptance Criteria. Nothing else. The Type drives both how the executor works and how the reviewer evaluates the task.
+Six elements — a `# task-NNN` title line and five fields (Type, Source, Depends on, Scope, Acceptance Criteria). Nothing else. The Type drives both how the executor works and how the reviewer evaluates the task.
 
 ### Review Record Format
 
-Inside Execute, the reviewer produces a structured issue list. Each issue is tagged by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`) and source (`[CODE]` / `[TASK]` / `[SPEC]` / `[KB]` / `[ARCHITECTURE]`). The reviewer **does not assign a letter grade** — the grade is computed deterministically by `templates/scripts/grade.sh` from the bracketed severity tags (worst severity dominates; count within that tier sets the `+` / none / `-` modifier). See `templates/grading-rubric.md` for the full table.
+Inside Execute, the reviewer produces a structured issue list. Each issue is tagged by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`) and source (`[CODE]` / `[TASK]` / `[SPEC]` / `[KB]`). The reviewer **does not assign a letter grade** — the grade is computed deterministically by `templates/scripts/grade.sh` from the bracketed severity tags (worst severity dominates; count within that tier sets the `+` / none / `-` modifier). See `templates/grading-rubric.md` for the full table.
 
-Each review cycle appends a section to the task's `task-NNN-STATE.md` — there is no standalone review document:
+There is no standalone review document. The reviewer records each cycle in the task's `task-NNN-STATE.md`:
 
 ```markdown
-## Review — cycle {n}
+## Current Review
 
-### Automated Checks
-- [ ] Build: zero errors, zero warnings
-- [ ] Tests: all pass (unit + E2E)
-- [ ] Lint/Format: clean
+**Cycle:** {n}
+**Grade:** {computed by grade.sh}
 
-### Issues Found
-| # | Severity | Source | Description | File | Line |
-|---|----------|--------|-------------|------|------|
-| 1 | [CRITICAL] | [CODE] | ... | ... | ... |
-| 2 | [MEDIUM] | [TASK] | ... | ... | ... |
+### Issues
 
-### Outcome
-Grade (from grade.sh): {grade} — Recommendation: ship · auto-fix CODE issues · loop back upstream
+| # | Severity | Source | Description |
+|---|----------|--------|-------------|
+| 1 | [CRITICAL] | [CODE] | ... |
+| 2 | [MEDIUM] | [TASK] | ... |
+
+## Review History
+
+| Cycle | Grade | Issues | Date |
+|-------|-------|--------|------|
 ```
 
 ### MONITOR-STATE.md Template
 
 ```markdown
-# Monitor State — {Work or Deployment ID}
+# Monitor State
 
-## Sources Checked
-| Source | Type | Period |
-|--------|------|--------|
+## Last Run
+**Date:** {date} | **Window:** {start} → {end} | **Findings:** {count}
 
 ## Active Findings
 ### Finding {id}: {Title}
 **Classification:** BUG | Change Request | Infrastructure | No Action
 **Severity:** Critical | High | Medium | Low
-**Evidence:** {concrete data}
-**Impact:** {users affected, functionality impaired}
+**Evidence:** {concrete data — error counts, latency, ticket clusters}
 **Correlation:** {related events — e.g., "error spike 23 min after the package-007-auth deploy"}
-**Reasoning:** {why this classification — reference the feature SPEC for expected behavior}
-**Routing:**
-- BUG → aid-execute (short path: new task → Execute → Deploy)
-- Change Request → aid-discover (new cycle)
-- Infrastructure → ops escalation
-- No Action → closed with justification
+**Root cause:** {for bugs — trace from symptom to the specific fault}
+**Routing:** BUG → aid-execute · Change Request → aid-discover · Infrastructure → ops escalation · No Action → closed with justification
 
 ## Resolved Findings
 | Finding | Classification | Resolution | Date |
@@ -913,14 +908,14 @@ The forward path is the default; the eleven feedback loops (see §4) are the esc
 
 **Bug path (short):** Monitor → Execute → Deploy. Monitor maps the root cause — diagnosis, files to touch, tests to add — and hands it to Execute as a task. No re-specification, no re-planning.
 
-**Change Request path (full):** Monitor → Discover. A substantial CR re-enters the development pipeline as a new work — its own requirements, its own spec, its own plan. The full pipeline ensures that changes are understood before they're built.
+**Change Request path (full):** Monitor → Discover. The CR routes back to Discovery as a Q&A entry; when its scope is large enough it spins up a new work — its own requirements, its own spec, its own plan. The full pipeline ensures that changes are understood before they're built.
 
 ### Flow Rules
 
 1. **Linear by default.** Discover → Interview → Specify → Plan → Detail → Execute → Deploy → Monitor.
 2. **Human approves each phase transition.** The pipeline never auto-advances.
 3. **Feedback to KB.** Any phase can trigger targeted discovery. The KB is always the return target.
-4. **Feedback to Spec.** Plan and Execute can trigger spec revision.
+4. **Feedback to Spec.** Plan, Detail, and Execute can trigger spec revision.
 5. **Greenfield starts at Interview** with minimal KB populated from answers.
 6. **Brownfield starts at Discover** with full KB populated from code.
 7. **Each phase produces persistent artifacts.** Each artifact has a revision history.
@@ -1001,7 +996,7 @@ Both AID and SDD:
 | **Planning depth** | Single spec | Two-level: Plan (strategy) → Detail (tactics) |
 | **Feedback loops** | Rebuild spec from scratch | Eleven formal loops (8 development + 2 post-production + 1 cross-cutting) |
 | **Testing** | Not addressed as separate phase | TEST is a first-class task type inside Execute; Deploy runs a full final-verification gate |
-| **Quality gates** | Generic conformance tests | Domain-specific grading (Grade A system) |
+| **Quality gates** | Generic conformance tests | One universal severity rubric (deterministic A+–F) plus project-defined quality checks |
 | **Agent model** | One agent per spec | Multi-agent orchestration with specialists |
 | **Delivery model** | Spec → code → done | Discover → specify → plan → detail → execute → deploy → monitor |
 | **Memory** | Stateless | Knowledge Base persists across sessions |
