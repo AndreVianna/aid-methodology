@@ -265,7 +265,7 @@ Generation opens with a fast, deterministic pre-pass that writes `.aid/knowledge
 10. **Gap identification** — What we couldn't determine from code alone → feeds into Interview.
 11. **INDEX generation** — Generate `.aid/knowledge/INDEX.md` with a 2-3 line summary of every KB document produced. This lightweight index is included in every task context so agents know what's available and can self-serve additional context on demand. See [Context Feeding Strategy](#context-feeding-strategy).
 
-**Output:** `.aid/knowledge/` — the project's Knowledge Base: all 16 standard documents, the generated `project-index.md` pre-pass, and the meta-documents (`INDEX.md`, `README.md`, and the Q&A in `DISCOVERY-STATE.md`). `feature-inventory.md` is scaffolded during the run and completed later, in the Q&A → fix cycle.
+**Output:** `.aid/knowledge/` — the project's Knowledge Base: all 16 standard documents, the generated `project-index.md` pre-pass, the `INDEX.md` and `README.md` meta-documents, and the grade and Q&A recorded into `DISCOVERY-STATE.md`. `feature-inventory.md` is scaffolded during the run and completed later, in the Q&A → fix cycle.
 
 **When to skip:** Pure greenfield projects with no existing code. Interview and Specify populate a minimal KB instead.
 
@@ -416,7 +416,7 @@ The interview runs as a seven-state machine, advancing one state per run (State 
 
 **Detail is pure breakdown.** No new decisions — everything is already in PLAN + SPECs. Detail just slices deliverables into tasks small enough for an agent to execute in one session.
 
-**Task format:** Six sections — Title, Type, Source, Depends on, Scope, Acceptance Criteria. Nothing else. The Type drives both how the executor works and how the reviewer evaluates the task. Every task declares at least one `Depends on` entry, except the first task in a delivery, which uses `— (none)`.
+**Task format:** Six sections — Title, Type, Source, Depends on, Scope, Acceptance Criteria. Nothing else. The Type drives both how the executor works and how the reviewer evaluates the task. Every task except the first declares at least one `Depends on` entry; the first uses `— (none)`.
 
 **Output:** `.aid/{work}/tasks/task-NNN.md` files — sequential tasks numbered globally across all deliverables — plus an execution graph (dependency and parallel-wave tables) appended to `PLAN.md`.
 
@@ -486,14 +486,14 @@ an `IMPEDIMENT-task-NNN.md` rather than silently working around the problem.
 1. **Package selection:** Choose which completed deliveries go into this release package.
 2. **Final verification:** Full build + complete test suite + lint/format check. Zero failures, zero warnings.
 3. **Package record:** Write `package-NNN-{slug}.md` — deliveries included, verification results, environment, and release notes.
-4. **PR creation:** Structured description referencing the package, its deliveries, and test results.
+4. **Packaging:** Produce the release artifact prescribed by `infrastructure.md` § Deployment — a pull request, a container image, a published package, an installer, or a static-site deploy.
 5. **Documentation routing:** Route any KB-affecting discoveries to Discovery as `DISCOVERY-STATE.md` Q&A entries — Deploy never edits KB documents directly.
 6. **Artifact status update:** Mark the package's deliveries and their tasks `Shipped`.
 
 **Output:**
 - `package-NNN-{slug}.md` — the release package record, one per shipped package.
 - `DEPLOYMENT-STATE.md` — updated to Done with a History entry.
-- Pull Request ready for merge.
+- The release artifact prescribed by the project's infrastructure — a pull request, container image, published package, installer, or static-site deploy.
 - KB-affecting discoveries routed to Discovery via `DISCOVERY-STATE.md` Q&A; `PLAN.md` deliveries marked shipped.
 
 #### Phase 8: Monitor (`aid-monitor`)
