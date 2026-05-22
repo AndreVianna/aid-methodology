@@ -137,6 +137,23 @@ What minimum quality grade should the Knowledge Base meet before proceeding?
 
 Parse and validate the grade. Store it.
 
+### Q6: Commit the AID Workspace?
+
+The `.aid/` directory holds the Knowledge Base and all AID work artifacts. Ask
+the user whether Git should track it. Phrase the question exactly like this:
+
+```
+Should the AID workspace — the `.aid/` folder, which holds the Knowledge Base
+and all AID work artifacts — be committed to this project's Git repository?
+
+[1] Yes, commit it — Git tracks `.aid/`. The Knowledge Base is versioned
+    alongside the code and shared with everyone who clones the repository.
+[2] No, keep it local — AID adds `.aid/` to `.gitignore`, so the workspace
+    stays on your machine and is never committed or pushed.
+```
+
+Store the answer. It controls the `.gitignore` step in Step 4.
+
 ---
 
 ## Step 2: Scaffold Knowledge Base
@@ -348,12 +365,17 @@ Read `.aid/knowledge/INDEX.md` to find what you need.
 
 ### .gitignore
 
-Check if `.gitignore` exists in the project root.
+What happens here depends on the user's answer to **Q6**:
 
-- **If it doesn't exist:** Create it with `.aid/` as the only entry.
-- **If it already exists:** Check if `.aid/` is already listed.
-  If not, append `.aid/` on a new line at the end of the file.
-  Print: `[Init] .gitignore updated — added .aid/ entry.`
+- **If the user chose [1] — commit `.aid/`:** Do NOT add a `.aid/` entry.
+  Leave any existing `.gitignore` untouched, and do not create one.
+  Print: `[Init] .aid/ will be tracked by Git (your Q6 choice).`
+
+- **If the user chose [2] — keep `.aid/` local:**
+  - If `.gitignore` doesn't exist: create it with `.aid/` as the only entry.
+  - If it already exists: check whether `.aid/` is already listed; if not,
+    append `.aid/` on a new line at the end of the file.
+  - Print: `[Init] .gitignore updated — added .aid/ entry (workspace stays local).`
 
 ---
 
@@ -407,7 +429,8 @@ Print a summary of everything created:
   Created:
     knowledge/    (16 KB documents + README + INDEX + DISCOVERY-STATE)
     CLAUDE.md                   {created / updated / unchanged}
-    .gitignore                  {created / updated / unchanged}
+
+  AID workspace (.aid/):        {tracked by Git | local only — added to .gitignore}
 
   Next step:
     {Brownfield: "Run /aid-discover to analyze the codebase and populate the Knowledge Base."}
@@ -434,5 +457,5 @@ Print a summary of everything created:
 - [ ] DISCOVERY-STATE.md has correct minimum grade and project type
 - [ ] External paths (if any) verified accessible and recorded
 - [ ] CLAUDE.md has workspace reference and AID placeholders (created or appended)
-- [ ] .gitignore has `.aid/` entry
+- [ ] `.gitignore` matches the Q6 choice (`.aid/` entry present only if the user chose [2], local-only)
 - [ ] No files outside .aid/, CLAUDE.md, .gitignore were modified

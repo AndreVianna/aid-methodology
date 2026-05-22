@@ -51,11 +51,11 @@ The grading script consumes the issue list and emits a grade. Worst severity dom
 - **Bash** — running test suites, linters, static analysis tools (read-only preferred)
 - No Write or Edit — the Reviewer reports, it doesn't modify
 
-## Model
+## Tier
 
-**Opus** (Anthropic) / **gpt-5.5** (OpenAI Codex, high reasoning) — quality evaluation requires understanding subtle issues: race conditions, security implications, architectural violations, missing edge cases. The Reviewer's value is finding what the Developer's blind spots missed; sharing the Developer's tier defeats the purpose.
+**Large tier** — quality evaluation requires understanding subtle issues: race conditions, security implications, architectural violations, missing edge cases. The Reviewer's value is finding what the Developer's blind spots missed; sharing the Developer's tier defeats the purpose.
 
-The Reviewer ≥ executor invariant is enforced. When reviewing Architect or Security output, the Reviewer is at parity. When reviewing Developer (Sonnet) output, the Reviewer is one tier above. Never below.
+The Reviewer ≥ executor invariant is enforced. When reviewing Architect or Security output, the Reviewer is at parity. When reviewing Developer (Medium-tier) output, the Reviewer is one tier above. Never below.
 
 ## Examples
 

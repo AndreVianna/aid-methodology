@@ -1,3 +1,9 @@
+---
+profile: web-app
+target_diagrams: 8
+notes: "Full-stack web application — most comprehensive layout with 13 sections and 8 diagrams."
+---
+
 # Section Template — `web-app` Profile
 
 For backend + frontend monoliths (like MAM Modules). Most comprehensive layout

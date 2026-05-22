@@ -41,9 +41,9 @@ The Operator doesn't build infrastructure or debug pipelines — it *uses* them.
 - **Bash** — running builds, tests, git operations, deployment commands
 - **Write** — delivery summaries, KB updates (never production code)
 
-## Model
+## Tier
 
-**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — verification, PR creation, KB amendments, and delivery summaries are composition with cross-references — not open-ended judgment. The work that reaches the Operator has already passed the Reviewer's grade; Sonnet handles the structured composition reliably without the Opus tax.
+**Medium tier** — verification, PR creation, KB amendments, and delivery summaries are composition with cross-references — not open-ended judgment. The work that reaches the Operator has already passed the Reviewer's grade; the Medium tier handles the structured composition reliably without the Large-tier tax.
 
 ## Examples
 

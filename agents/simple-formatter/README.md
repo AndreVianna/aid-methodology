@@ -46,9 +46,9 @@ Filled-in markdown matching the template structure exactly. No additions, no com
 
 No Bash, no Glob, no Grep — Formatter does not search.
 
-## Model
+## Tier
 
-**Haiku** (Anthropic) / **gpt-5.4-mini** (OpenAI Codex) — fill-in-the-blank composition is small-model territory. Larger models add no value here and the cost compounds because formatting runs at the tail of every analysis-producing agent.
+**Small tier** — fill-in-the-blank composition is small-model territory. Larger models add no value here and the cost compounds because formatting runs at the tail of every analysis-producing agent.
 
 ## Caller Contract
 

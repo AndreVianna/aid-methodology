@@ -40,9 +40,9 @@ This agent is not part of the standard pipeline flow. It is called on demand whe
 - **Write, Edit** — creating and modifying infrastructure files
 - **Bash** — full access for infrastructure commands, validation, testing
 
-## Model
+## Tier
 
-**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — CI/CD, IaC, and containerization are largely template/pattern application. The patterns are well-known and configurations are verifiable by running the pipeline. Sonnet captures this without overpaying for reasoning that gets discarded by `terraform validate`.
+**Medium tier** — CI/CD, IaC, and containerization are largely template/pattern application. The patterns are well-known and configurations are verifiable by running the pipeline. The Medium tier captures this without overpaying for reasoning that gets discarded by `terraform validate`.
 
 ## Examples
 

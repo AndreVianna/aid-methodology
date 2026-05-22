@@ -39,9 +39,9 @@ This agent is not part of the standard pipeline flow. It is called on demand whe
 - **Read, Glob, Grep** — reviewing existing code and documentation
 - **Write, Edit** — creating and improving documentation files
 
-## Model
+## Tier
 
-**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — long-form prose against structured templates (changelogs, READMEs, API docs) is exactly Sonnet's wheelhouse. Composing prose that captures *why* benefits from Sonnet's writing strength; foundational design decisions happened upstream.
+**Medium tier** — long-form prose against structured templates (changelogs, READMEs, API docs) is exactly the Medium tier's wheelhouse. Composing prose that captures *why* benefits from the Medium tier's writing strength; foundational design decisions happened upstream.
 
 ## Examples
 

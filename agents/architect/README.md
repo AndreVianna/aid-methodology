@@ -43,9 +43,9 @@ The Architect's output is the contract that the Developer follows and the Review
 - **Write, Edit** — for producing specs, plans, and task files
 - **Bash** — for exploring project structure, running analysis commands
 
-## Model
+## Tier
 
-**Opus** (Anthropic) / **gpt-5.5** high reasoning (OpenAI Codex) — complex reasoning. The Architect makes decisions that cascade through the entire project. Trade-off analysis, pattern selection, and scope management require deep thinking that downstream phases cannot easily correct.
+**Large tier** — complex reasoning. The Architect makes decisions that cascade through the entire project. Trade-off analysis, pattern selection, and scope management require deep thinking that downstream phases cannot easily correct.
 
 ## Examples
 

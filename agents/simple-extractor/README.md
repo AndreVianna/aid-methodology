@@ -50,9 +50,9 @@ Markdown table or list. Every row cites the source file and line number. Example
 - **Read, Glob, Grep** — primary
 - **Bash** — read-only commands: `find`, `wc`, `head`, `tail`
 
-## Model
+## Tier
 
-**Haiku** (Anthropic) / **gpt-5.4-mini** (OpenAI Codex) — the work is mechanical pattern extraction with a fixed output schema. Schema-driven extraction is exactly Haiku's strength; spending Opus on this is waste.
+**Small tier** — the work is mechanical pattern extraction with a fixed output schema. Schema-driven extraction is exactly the Small tier's strength; spending the Large tier on this is waste.
 
 ## Caller Contract
 

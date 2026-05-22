@@ -139,7 +139,7 @@ REFERENCE DOCUMENTS (read these FIRST before analyzing):
 - .aid/knowledge/external-sources.md — external documentation inventory and findings
 ```
 
-**Sub-agents may delegate mechanical work** to the Haiku-tier utility agents (`simple-extractor`, `simple-glob`, `simple-formatter`) for high-volume extraction or templating. The synthesis stays at the sub-agent's tier; only the grunt work delegates. See `agents/simple-*/README.md` for the caller contract.
+**Sub-agents may delegate mechanical work** to the Small-tier utility agents (`simple-extractor`, `simple-glob`, `simple-formatter`) for high-volume extraction or templating. The synthesis stays at the sub-agent's tier; only the grunt work delegates. See `agents/simple-*/README.md` for the caller contract.
 
 | Step | Agent | Target Files | Prompt Section |
 |------|-------|-------------|----------------|

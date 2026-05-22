@@ -82,7 +82,7 @@ Skills are loaded automatically when matched by description. Each SKILL.md conta
 Agent files define specialized roles with constrained tool access and focused system prompts. Skills with multiple agent options use an `agents:` block in frontmatter and a selector table in the body.
 
 ### Utility Sub-Agents
-The `simple-*` agents are not invoked at the skill layer. Core/Specialist agents call them internally to offload mechanical work (extraction, formatting, file enumeration) to the Haiku tier. The caller validates the output.
+The `simple-*` agents are not invoked at the skill layer. Core/Specialist agents call them internally to offload mechanical work (extraction, formatting, file enumeration) to the Small tier. The caller validates the output.
 
 ## File Format
 

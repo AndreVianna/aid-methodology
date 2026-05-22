@@ -41,9 +41,9 @@ This agent is not part of the standard pipeline flow. It is called on demand whe
 - **Write, Edit** — creating migration files, schema documentation
 - **Bash** — running database tools, EXPLAIN queries, migration validation
 
-## Model
+## Tier
 
-**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — schema design, migrations, and query optimization are pattern-driven for typical work. For genuinely novel data models or tricky migration sequencing, the calling skill can request Opus override (similar to Developer's REFACTOR/MIGRATE escalation path).
+**Medium tier** — schema design, migrations, and query optimization are pattern-driven for typical work. For genuinely novel data models or tricky migration sequencing, the calling skill can request a Large-tier override (similar to Developer's REFACTOR/MIGRATE escalation path).
 
 ## Examples
 

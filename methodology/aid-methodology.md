@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-AID (AI-Integrated Development) is a structured methodology for building and maintaining software with AI agents. It defines nine sequential phases organized into four groups — from problem mapping through production monitoring and issue routing — with formal feedback loops that allow any phase to revise upstream artifacts when reality contradicts assumptions.
+AID (AI-Integrated Development) is a structured methodology for building and maintaining software with AI agents. It defines eight development phases organized into five groups — from problem mapping through production monitoring and issue routing — with formal feedback loops that allow any phase to revise upstream artifacts when reality contradicts assumptions.
 
 Each phase is **co-executed by human and AI**. The AI is the Iron Man suit — it amplifies the human's capabilities. The human is the pilot — setting direction, making decisions, approving advancement between phases. The human never leaves the cockpit. This is not "AI executes, human validates." It is "human and AI work together, human drives."
 
@@ -35,7 +35,7 @@ This document defines the complete methodology: philosophy, phases, artifacts, f
 
 1. [Philosophy](#1-philosophy)
 2. [The Knowledge Base](#2-the-knowledge-base)
-3. [The Nine Phases](#3-the-eleven-phases)
+3. [The Phases](#3-the-phases)
 4. [Feedback Loops](#4-feedback-loops)
 5. [Artifacts Reference](#5-artifacts-reference)
 6. [The Pipeline](#6-the-pipeline)
@@ -196,18 +196,18 @@ The Knowledge Base is institutional memory. It outlives any individual session, 
 
 ---
 
-## 3. The Nine Phases
+## 3. The Phases
 
-AID organizes nine phases into four groups. The pipeline is linear with feedback loops. The Monitor phase observes production and routes issues back into development through one of two paths:
+AID organizes eight development phases into five groups. The pipeline is linear with feedback loops. The Monitor phase observes production and routes issues back into development through one of two paths:
 
 - **Bug path (short):** Monitor → Execute → Deploy. Surgical. Monitor identifies the bug, performs root cause analysis, creates a task, and routes to Execute. No re-specification, no re-planning.
 - **Change Request path (full cycle):** Monitor → Discover. The CR enters as a new project, running the complete pipeline from the beginning.
 
 ---
 
-### Group 1: Define
+### Group 1: Prepare
 
-*Understand the system, gather requirements, and formalize the problem statement.*
+*Set up the workspace and build an understanding of the existing system. This group also holds two non-phase skills: `aid-init` (bootstrap — run once, before the pipeline) and the optional `aid-summarize` (an HTML viewer of the Knowledge Base).*
 
 ---
 
@@ -235,6 +235,14 @@ AID organizes nine phases into four groups. The pipeline is linear with feedback
 **When to skip:** Pure greenfield projects with no existing code. Interview populates a minimal KB instead.
 
 **When to re-enter:** Any downstream phase discovers the KB is wrong or incomplete. Re-entry is always *targeted* — fill the specific gap, not redo full discovery.
+
+---
+
+### Group 2: Define
+
+*Gather requirements and formalize the problem statement.*
+
+---
 
 #### Phase 2: Interview (`aid-interview`)
 
@@ -320,7 +328,7 @@ The interview has six states, advancing one per run:
 
 ---
 
-### Group 2: Map
+### Group 3: Map
 
 *Define the roadmap and decompose into executable tasks.*
 
@@ -378,7 +386,7 @@ The interview has six states, advancing one per run:
 
 ---
 
-### Group 3: Execute
+### Group 4: Execute
 
 *Build, review, and test the code.*
 
@@ -421,7 +429,7 @@ artifacts may skip branching.
 
 ---
 
-### Group 4: Deliver
+### Group 5: Deliver
 
 *Ship, monitor, and classify issues.*
 

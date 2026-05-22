@@ -1,3 +1,9 @@
+---
+profile: data-pipeline
+target_diagrams: 5
+notes: "ETL and streaming pipelines — stage transforms, lineage, and sources/sinks are central."
+---
+
 # Section Template — `data-pipeline` Profile
 
 For ETL / streaming / data-pipeline projects. Stage transforms, lineage, and

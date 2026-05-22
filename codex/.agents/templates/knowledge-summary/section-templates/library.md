@@ -1,3 +1,9 @@
+---
+profile: library
+target_diagrams: 5
+notes: "Libraries and SDKs — type hierarchy and consumer registry replace UI and request-flow diagrams."
+---
+
 # Section Template — `library` Profile
 
 For libraries / SDKs that export an API but don't have a UI runtime.

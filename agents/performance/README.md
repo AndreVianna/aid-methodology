@@ -40,9 +40,9 @@ This agent is not part of the standard pipeline flow. It is called on demand whe
 - **Read, Glob, Grep** — reviewing code for performance anti-patterns
 - **Bash** — running profilers, benchmarks, load tests, analyzing metrics
 
-## Model
+## Tier
 
-**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — profiling and bottleneck analysis follow established methodologies (measure, isolate, hypothesize, verify). Sonnet handles structured analysis with the methodology as anchor; Opus would help only on genuinely novel performance puzzles.
+**Medium tier** — profiling and bottleneck analysis follow established methodologies (measure, isolate, hypothesize, verify). The Medium tier handles structured analysis with the methodology as anchor; the Large tier would help only on genuinely novel performance puzzles.
 
 ## Examples
 

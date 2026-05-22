@@ -42,9 +42,9 @@ The Developer is the execution engine. It doesn't decide *what* to build (Archit
 - **Write, Edit** — modifying source code
 - **Bash** — full access: build, test, run, install dependencies, anything needed
 
-## Model
+## Tier
 
-**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — implementation with TASK + SPEC + KB as inputs is structured production work, not open-ended design. The Reviewer at Opus catches the hard cases. For genuinely complex tasks (REFACTOR over a tangled module, MIGRATE with edge cases), the calling skill (aid-execute) can override the model per task type.
+**Medium tier** — implementation with TASK + SPEC + KB as inputs is structured production work, not open-ended design. The Reviewer at the Large tier catches the hard cases. For genuinely complex tasks (REFACTOR over a tangled module, MIGRATE with edge cases), the calling skill (aid-execute) can override the model per task type.
 
 ## Examples
 
