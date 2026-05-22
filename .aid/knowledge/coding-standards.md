@@ -224,7 +224,7 @@ Templates use **single curly braces** for placeholders: `{Project Name}`, `{date
 - `templates/knowledge-base/module-map.md:15` (`| {module-name} | {what it does in one sentence} | ...`)
 - `templates/knowledge-base/data-model.md:14` (`| **Type** | {PostgreSQL / MySQL / SQLite / SQL Server / MongoDB / DynamoDB / other} |`)
 - `templates/reports/discovery-state-template.md:5` (`- **Minimum Grade:** {grade, default A}`)
-- `templates/delivery-plans/task-template.md:1` (`# task-{id}: {Name}`)
+- `templates/delivery-plans/task-template.md:1` (`# task-NNN: {Name}`)
 - `claude-code/.claude/templates/discovery-state.md:5` (`**Minimum Grade:** {minimum}`)
 
 **Convention:**
@@ -346,7 +346,7 @@ Inferred from a sample of ~20 files across this repo:
 | Skill slugs | `aid-{phase}` kebab-case | `aid-discover`, `aid-interview` | every `skills/aid-*/` |
 | Agent slugs | kebab-case | `discovery-reviewer`, `simple-extractor` | `claude-code/.claude/agents/*.md` |
 | KB documents | kebab-case `.md` | `module-map.md`, `coding-standards.md`, `data-model.md`, `tech-debt.md` | `templates/knowledge-base/*.md` |
-| State files | `SCREAMING-KEBAB-CASE.md` | `DISCOVERY-STATE.md`, `INTERVIEW-STATE.md`, `IMPLEMENTATION-STATE.md`, `MONITOR-STATE.md`, `FEATURE-STATE.md` | `claude-code/.claude/templates/interview-state.md:1` (`# INTERVIEW-STATE.md`), `aid-discover/SKILL.md` (extensively) |
+| State files | `SCREAMING-KEBAB-CASE.md` | `DISCOVERY-STATE.md`, `INTERVIEW-STATE.md`, `MONITOR-STATE.md`, `FEATURE-STATE.md` | `claude-code/.claude/templates/interview-state.md:1` (`# INTERVIEW-STATE.md`), `aid-discover/SKILL.md` (extensively) |
 | First-class methodology artifacts | UPPERCASE.md | `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `DETAIL.md`, `DELIVERY.md`, `CLAUDE.md`, `AGENTS.md`, `README.md`, `LICENSE`, `CONTRIBUTING.md` | `templates/requirements/requirements-template.md:16` ("File is uppercase (`REQUIREMENTS.md`) — it's a first-class artifact") |
 | Feedback artifacts | UPPERCASE-prefix + numeric ID | `GAP-{id}.md`, `IMPEDIMENT-{id}.md`, `KI-{n}` (known issue) | `templates/feedback-artifacts/GAP.md:1`, `templates/feedback-artifacts/IMPEDIMENT.md:1` |
 | Per-tool layout root | tool-name slug + dotted-hidden | `claude-code/.claude/`, `codex/.codex/`, `cursor/.cursor/` | `project-structure.md:64-66` |

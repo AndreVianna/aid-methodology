@@ -179,8 +179,8 @@ FIG6 = """flowchart LR
     REQ["REQUIREMENTS.md<br/>(per project)"]:::proc
     SPEC["per-feature SPEC.md"]:::proc
     PLAN["PLAN.md<br/>(ordered deliveries)"]:::proc
-    DET["DETAIL.md +<br/>task-{id}.md (8 types)"]:::proc
-    IMPL["IMPLEMENTATION-STATE.md<br/>(per task)"]:::proc
+    DET["DETAIL.md +<br/>task-NNN.md (8 types)"]:::proc
+    IMPL["task-NNN-STATE.md<br/>(per task)"]:::proc
     DEPL["package-NNN.md +<br/>DEPLOYMENT-STATE.md"]:::out
     MON["MONITOR-STATE.md +<br/>track-report-*.md"]:::out
 
@@ -310,7 +310,7 @@ s2 = section(2, "the-pipeline", "The AID Pipeline", f'''<p>The pipeline of <stro
     <tr><td>3</td><td>Specify</td><td><code>/aid-specify</code></td><td>Architect (Opus)</td><td>per-feature SPEC.md (Technical Specification)</td></tr>
     <tr><td rowspan="2"><strong>2 · Map</strong></td><td>4</td><td>Plan</td><td><code>/aid-plan</code></td><td>Architect (Opus)</td><td>PLAN.md (sequenced deliveries)</td></tr>
     <tr><td>5</td><td>Detail</td><td><code>/aid-detail</code></td><td>Architect (Opus)</td><td>DETAIL.md + typed task-{{id}}.md (8 types)</td></tr>
-    <tr><td><strong>3 · Execute</strong></td><td>6</td><td>Execute</td><td><code>/aid-execute</code></td><td>Developer (Sonnet) + per-type Specialist</td><td>IMPLEMENTATION-STATE.md, code changes</td></tr>
+    <tr><td><strong>3 · Execute</strong></td><td>6</td><td>Execute</td><td><code>/aid-execute</code></td><td>Developer (Sonnet) + per-type Specialist</td><td>task-NNN-STATE.md, code changes</td></tr>
     <tr><td rowspan="2"><strong>4 · Deliver</strong></td><td>7</td><td>Deploy</td><td><code>/aid-deploy</code></td><td>Operator (Sonnet)</td><td>package-NNN.md, DEPLOYMENT-STATE.md</td></tr>
     <tr><td>8</td><td>Monitor</td><td><code>/aid-monitor</code></td><td>Orchestrator (Sonnet)</td><td>MONITOR-STATE.md (template pending — Q8/H7)</td></tr>
     <tr><td>—</td><td>—</td><td>Summarize (optional)</td><td><code>/aid-summarize</code></td><td>(orchestrator)</td><td><code>knowledge-summary.html</code> (this file)</td></tr>
@@ -386,7 +386,7 @@ s5 = section(5, "phase-deep-dive", "Phase Deep-Dive — Discover (the Most Compl
 
 s6 = section(6, "artifact-dataflow", "Artifact Dataflow Across the Pipeline", f'''<p>The "data" AID moves through the pipeline is a sequence of structured markdown files. Each phase produces specific artifacts that downstream phases consume. The Knowledge Base sits behind all of them — updated continuously, referenced everywhere.</p>
 
-{figure(8, "Artifact dataflow", FIG6, "Forward path (green = output, teal = produced-and-consumed): KB → REQUIREMENTS → SPEC → PLAN → DETAIL + tasks → IMPLEMENTATION-STATE → DEPLOYMENT artifacts → MONITOR artifacts. Feedback (yellow): GAP / IMPEDIMENT / KNOWN-ISSUES are produced when reality contradicts a downstream artifact's premise; they feed back into the KB to update the gravitational center. Monitor's BUG / Change-Request paths feed directly back to KB.")}
+{figure(8, "Artifact dataflow", FIG6, "Forward path (green = output, teal = produced-and-consumed): KB → REQUIREMENTS → SPEC → PLAN → DETAIL + tasks → task-NNN-STATE → DEPLOYMENT artifacts → MONITOR artifacts. Feedback (yellow): GAP / IMPEDIMENT / KNOWN-ISSUES are produced when reality contradicts a downstream artifact's premise; they feed back into the KB to update the gravitational center. Monitor's BUG / Change-Request paths feed directly back to KB.")}
 
 <h3>The 15 artifact sections (per <a href="./data-model.md">data-model.md</a>)</h3>
 <ol>
@@ -396,8 +396,8 @@ s6 = section(6, "artifact-dataflow", "Artifact Dataflow Across the Pipeline", f'
   <li><strong>SPEC.md</strong> (per feature) — requirements + technical spec</li>
   <li><strong>PLAN.md</strong> — ordered deliveries</li>
   <li><strong>DETAIL.md</strong> — typed task decomposition</li>
-  <li><strong>task-{id}.md</strong> — one per task, 8 types (RESEARCH / DESIGN / IMPLEMENT / TEST / DOCUMENT / MIGRATE / REFACTOR / CONFIGURE)</li>
-  <li><strong>IMPLEMENTATION-STATE.md</strong> — per-task execution log</li>
+  <li><strong>task-NNN.md</strong> — one per task, 8 types (RESEARCH / DESIGN / IMPLEMENT / TEST / DOCUMENT / MIGRATE / REFACTOR / CONFIGURE)</li>
+  <li><strong>task-NNN-STATE.md</strong> — per-task execution log</li>
   <li><strong>GAP-{id}.md</strong> — feedback when KB has a gap</li>
   <li><strong>IMPEDIMENT-{id}.md</strong> — feedback when reality contradicts spec (silent workarounds forbidden)</li>
   <li><strong>known-issues.md</strong> — per-work issue tracking</li>

@@ -28,8 +28,8 @@ Each row is one artifact "type". Producer/consumer mappings are extracted from s
 | 10 | `SPEC.md` (one per feature) | per-feature folder | structured markdown | `aid-specify` | `aid-plan`, `aid-execute` | `templates/specs/spec-template.md` |
 | 11 | `PLAN.md` | per-work | structured markdown | `aid-plan` | `aid-detail` | `templates/delivery-plans/delivery-template.md` |
 | 12 | `DETAIL.md` | per-work | structured markdown | `aid-detail` | `aid-execute` | `templates/delivery-plans/detail-template.md` |
-| 13 | `task-{id}.md` (one per task) | per-work | structured markdown | `aid-detail` | `aid-execute` | `templates/delivery-plans/task-template.md` |
-| 14 | `IMPLEMENTATION-STATE.md` (one per task) | per-task | structured markdown | `aid-execute` | `aid-execute` review loop | `templates/implementation-state.md` + `{install-tree}/templates/implementation-state.md` |
+| 13 | `task-NNN.md` (one per task) | per-work | structured markdown | `aid-detail` | `aid-execute` | `templates/delivery-plans/task-template.md` |
+| 14 | `task-NNN-STATE.md` (one per task) | per-task | structured markdown | `aid-execute` | `aid-execute` review loop | `templates/implementation-state.md` + `{install-tree}/templates/implementation-state.md` |
 | 15 | `DELIVERY-{id}.md` | per-work | structured markdown | `aid-plan` / `aid-deploy` | `aid-deploy` | implied by `templates/delivery-plans/delivery-template.md` |
 | 16 | `package-{NNN}.md` | per-package | structured markdown | `aid-deploy` | `aid-deploy` | `{install-tree}/templates/package.md` |
 | 17 | `DEPLOYMENT-STATE.md` | per-work | structured markdown | `aid-deploy` | `aid-deploy` (resume) | `{install-tree}/templates/deployment-state.md` |
@@ -169,7 +169,7 @@ Verified at `templates/delivery-plans/detail-template.md:1-159`.
 | `# {Project Name} — Execution Detail` | yes | H1 |
 | Metadata block (`> **Version:** 1.0`, `> **Date:**`, `> **Source:** aid-detail (Phase 5)`, `> **Inputs:**`) | yes | Block-quote format, not metadata header |
 | `## User Stories` with `### US-{id}: {Title}` entries | yes | Each US has `**As a**`, `**I want**`, `**So that**`, `**Acceptance Criteria:**` checklist, `**Source:**` traceability, `**Size estimate:**` (S/M/L/XL) |
-| `## Task List` with `### task-{id}: {Name}` entries | yes | Per `detail-template.md:33-65` schema |
+| `## Task List` with `### task-NNN: {Name}` entries | yes | Per `detail-template.md:33-65` schema |
 | `## Precedence Graph` | yes | Mermaid `graph LR` or text-form arrows |
 | `## Delivery Breakdown` with `### DELIVERY-{id}: {Name}` entries | yes | Each lists User Stories, Tasks, Success Criteria, Depends on |
 | `## Execution Plan` (Wave 1, Wave 2, ...) | yes | Parallel-execution grouping |
@@ -180,13 +180,13 @@ Verified at `templates/delivery-plans/detail-template.md:1-159`.
 | `### Dev Environment Requirements` | yes | — |
 | `## Revision History` | yes | Standard rev table |
 
-### 2.7 task-{id}.md
+### 2.7 task-NNN.md
 
 Verified at `templates/delivery-plans/task-template.md:1-143`. Required fields per task:
 
 | Field | Type | Required | Notes |
 |-------|------|----------|-------|
-| `# task-{id}: {Name}` | H1 | yes | — |
+| `# task-NNN: {Name}` | H1 | yes | — |
 | `> **Delivery:**` | reference | yes | — |
 | `> **User Story:**` | reference | yes | — |
 | `> **Status:**` | enum (`Not Started` / `In Progress` / `In Review` / `Complete`) | yes | — |
@@ -204,13 +204,13 @@ Verified at `templates/delivery-plans/task-template.md:1-143`. Required fields p
 
 **Task type taxonomy** (verified at `templates/implementation-state.md:5`): enum of `RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE`. One type per task. The type drives execution rules — `claude-code/.claude/skills/aid-execute/references/task-type-rules.md` (104 lines) details per-type protocols.
 
-### 2.8 IMPLEMENTATION-STATE.md
+### 2.8 task-NNN-STATE.md
 
 Verified at `templates/implementation-state.md:1-30`.
 
 | Field | Type | Required | Notes |
 |-------|------|----------|-------|
-| `# Implementation State — {task-NNN}` | H1 | yes | Filename echoes task ID |
+| `# Task State — task-NNN` | H1 | yes | Filename echoes task ID |
 | `**Status:**` | enum (default `Pending`) | yes | — |
 | `**Task:**` | task ID | yes | — |
 | `**Type:**` | task-type enum | yes | One of the 8 types above |
@@ -363,7 +363,7 @@ graph LR
     DET --> TK[task-id.md per task]
 
     TK --> EXE[aid-execute]
-    EXE --> IST[IMPLEMENTATION-STATE.md per task]
+    EXE --> IST[task-NNN-STATE.md per task]
     EXE --> IMP[IMPEDIMENT-id.md when blocked]
 
     EXE --> DEP[aid-deploy]
@@ -392,8 +392,8 @@ graph LR
 | `aid-interview` → `feature.md` | 1:N | One per identified feature |
 | `aid-specify` → `SPEC.md` | 1:1 per feature | Same file mutated to add Technical Specification |
 | `aid-plan` → `PLAN.md` | 1:1 per work | — |
-| `aid-detail` → `task-{id}.md` | 1:N | One per task |
-| `aid-execute` → `IMPLEMENTATION-STATE.md` | 1:1 per task | — |
+| `aid-detail` → `task-NNN.md` | 1:N | One per task |
+| `aid-execute` → `task-NNN-STATE.md` | 1:1 per task | — |
 | `aid-deploy` → `package-{NNN}.md` | 1:1 per package | — |
 | `aid-deploy` → `DEPLOYMENT-STATE.md` | 1:1 per work | Mutated across deploys |
 | Any phase → `GAP-{id}.md` | 1:N | One per gap |
@@ -411,11 +411,11 @@ Per `templates/requirements/requirements-template.md:16` and `aid-discover/SKILL
 - `DISCOVERY-STATE.md`
 - `INTERVIEW-STATE.md`
 - `FEATURE-STATE.md`
-- `IMPLEMENTATION-STATE.md`
+- `task-NNN-STATE.md`
 - `DEPLOYMENT-STATE.md`
 - `MONITOR-STATE.md`
 
-All other artifacts (the 16 KB docs, `INDEX.md`, `README.md`, `feature-inventory.md`, `task-{id}.md`, `package-{NNN}.md`) are **second-class** — kebab-case or sub-numbered, living under per-work folders or as nested supporting documents.
+All other artifacts (the 16 KB docs, `INDEX.md`, `README.md`, `feature-inventory.md`, `task-NNN.md`, `package-{NNN}.md`) are **second-class** — kebab-case or sub-numbered, living under per-work folders or as nested supporting documents.
 
 ---
 
@@ -456,17 +456,17 @@ Phase 4  Plan
 Phase 5  Detail
          PLAN.md + SPEC.md + .aid/knowledge/ --> aid-detail
                                              --> DETAIL.md (user stories, task list, precedence, integration contract)
-                                             --> task-{id}.md (one per task)
+                                             --> task-NNN.md (one per task)
 
 Phase 6  Execute (per task)
-         task-{id}.md + .aid/knowledge/ --> aid-execute (reviewer loop)
+         task-NNN.md + .aid/knowledge/ --> aid-execute (reviewer loop)
                                          --> code modifications (in target project, not in .aid/)
-                                         --> IMPLEMENTATION-STATE.md (per task)
+                                         --> task-NNN-STATE.md (per task)
                                          --> review report
                                          --> IMPEDIMENT-{id}.md (when blocked) → loops back to aid-specify
 
 Phase 7  Deploy
-         all completed IMPLEMENTATION-STATE.md + .aid/knowledge/infrastructure.md --> aid-deploy
+         all completed task-NNN-STATE.md + .aid/knowledge/infrastructure.md --> aid-deploy
                                                                                   --> package-{NNN}.md
                                                                                   --> DEPLOYMENT-STATE.md
                                                                                   --> release notes
@@ -501,7 +501,7 @@ There is no central validation layer for these artifacts. The validation that ex
 
 - No schema validator for SKILL.md / agent frontmatter.
 - No schema validator for any artifact template — a SPEC.md missing required sections will not be flagged automatically.
-- No referential integrity check (e.g., does every `task-{id}.md`'s `User Story:` field point to a real US entry in DETAIL.md?).
+- No referential integrity check (e.g., does every `task-NNN.md`'s `User Story:` field point to a real US entry in DETAIL.md?).
 - No producer-consumer parity check (e.g., does the version of REQUIREMENTS.md that aid-specify reads match the version aid-interview last wrote?).
 
 ---

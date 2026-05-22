@@ -413,7 +413,7 @@ Per `methodology/aid-methodology.md:589-606` (Artifacts Reference table) and the
 | Feature `SPEC.md` | `templates/specs/spec-template.md` (75 lines) | Interview (req side) + Specify (tech side) |
 | `PLAN.md` | `templates/delivery-plans/delivery-template.md` (83 lines) | Plan |
 | `DETAIL.md` | `templates/delivery-plans/detail-template.md` (158 lines) | Detail |
-| `task-{id}.md` | `templates/delivery-plans/task-template.md` (142 lines) | Detail |
+| `task-NNN.md` | `templates/delivery-plans/task-template.md` (142 lines) | Detail |
 | `REVIEW.md` | `templates/reports/review-template.md` (125 lines) | Reviewer agent (inside Execute) |
 | `TEST-REPORT.md` | `templates/reports/test-report-template.md` (103 lines) | Reviewer agent (inside Execute, TEST tasks) |
 | `GAP.md` | `templates/feedback-artifacts/GAP.md` (88 lines) | Specify / Plan / Detail / Review |

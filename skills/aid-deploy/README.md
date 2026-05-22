@@ -141,7 +141,7 @@ Add revision entries to `.aid/knowledge/README.md` for any KB changes.
    - Final test count
    - Any deferred issues
 
-2. Update each `task-{id}.md`:
+2. Update each `task-NNN.md`:
    - Status: Complete
 
 3. Update `SPEC.md` revision history if any revisions occurred during this delivery.
@@ -153,7 +153,7 @@ Add revision entries to `.aid/knowledge/README.md` for any KB changes.
 - Pull Request ready for merge.
 - Delivery summary document.
 - Updated DELIVERY-{id}.md (status: Complete).
-- Updated task-{id}.md files (status: Complete).
+- Updated task-NNN.md files (status: Complete).
 - Updated KB documents (if applicable).
 - Updated KB README.md revision history (if applicable).
 

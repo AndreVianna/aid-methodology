@@ -62,11 +62,9 @@ Every project:
 
 You don't need all 8 phases from day one:
 
-1. **Start:** Detail + Execute (formalize task decomposition and agent execution)
-2. **Add:** Review (introduce grading and spec-anchored review)
-3. **Add:** Test (staging validation gate)
-4. **Add:** Plan (separate strategy from tactics)
-5. **Add:** Discover (for next brownfield project)
-6. **Add:** Interview (for next client engagement)
-7. **Add:** Track + Triage (once shipping regularly — Triage includes root cause analysis for bugs)
-8. **Full pipeline:** All 8 phases with feedback loops
+1. **Start:** Detail + Execute — formalize task decomposition and reviewed execution (Execute codes, reviews, and grades in one loop).
+2. **Add:** Plan — separate delivery strategy from tactical decomposition.
+3. **Add:** Discover — for the next brownfield project, build the Knowledge Base first.
+4. **Add:** Interview + Specify — for the next client engagement, gather requirements, then refine each feature technically.
+5. **Add:** Deploy + Monitor — once shipping regularly, formalize delivery and production monitoring.
+6. **Full pipeline:** All 8 phases with feedback loops.

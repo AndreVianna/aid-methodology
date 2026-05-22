@@ -63,7 +63,7 @@ Read `DEPLOYMENT-STATE.md`:
 - `.aid/{work}/PLAN.md` — deliveries, sequencing, success criteria
 - `.aid/{work}/tasks/task-*.md` — task statuses and scope
 - `.aid/{work}/features/*/SPEC.md` — what was specified
-- `IMPLEMENTATION-STATE.md` files — review grades per task
+- `task-NNN-STATE.md` files — review grades per task
 - `known-issues.md` — if exists, check for Critical/High blockers
 - **KB via INDEX.md** — Read `.aid/knowledge/INDEX.md`, pull:
   - `infrastructure.md` § Deployment — how to package, where to publish
@@ -213,7 +213,7 @@ For each KB update needed:
 - Package file → Status: Shipped, add date
 - Each included delivery in PLAN.md → add `Shipped in: package-NNN` and date
 - Each task in included deliveries → Status: Shipped
-- IMPLEMENTATION-STATE.md files for included tasks → Status: Shipped
+- task-NNN-STATE.md files for included tasks → Status: Shipped
 - DEPLOYMENT-STATE.md → Status: Done, Active Package: —
 - DEPLOYMENT-STATE.md History → add entry with package name, date, delivery count
 

@@ -46,7 +46,7 @@ Runtime deps on the user's machine (per tool selected): Claude Code / Codex CLI 
 <!-- AID-DISCOVER code-conventions -->
 Pulled from actual files — not from a style guide (there isn't one). See `.aid/knowledge/coding-standards.md` for the full inventory.
 
-- **Filenames:** kebab-case for skill / agent slugs (`aid-discover`, never `aid_discover`); `SCREAMING-KEBAB-CASE.md` for state files (`DISCOVERY-STATE.md`, `IMPLEMENTATION-STATE.md`); UPPERCASE.md for top-level methodology artifacts (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `DETAIL.md`, `CLAUDE.md`, `AGENTS.md`).
+- **Filenames:** kebab-case for skill / agent slugs (`aid-discover`, never `aid_discover`); `SCREAMING-KEBAB-CASE.md` for state files (`DISCOVERY-STATE.md`, `MONITOR-STATE.md`); UPPERCASE.md for top-level methodology artifacts (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `DETAIL.md`, `CLAUDE.md`, `AGENTS.md`).
 - **Per-tool tree paths:** `claude-code/.claude/{agents,skills,templates}/`, `codex/.codex/agents/` + `codex/.agents/{skills,templates}/`, `cursor/.cursor/{agents,rules,skills,templates}/`.
 - **SKILL.md frontmatter** (all three trees): `name`, `description` (YAML folded `>`), `allowed-tools` (comma-separated string, not YAML list), optional `argument-hint`. Claude Code may add `context: fork` and `agent: <name>`; Codex / Cursor omit them.
 - **Agent frontmatter:**

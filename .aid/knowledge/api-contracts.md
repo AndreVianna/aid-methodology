@@ -291,13 +291,13 @@ Source-of-truth template: `claude-code/.claude/templates/discovery-state.md` (23
 
 **Discovery-reviewer-extended schema** for the same file adds `## Documents` (18-row grade table), `## Issues Found` (per-document grouped lists with bracketed severity), `## Verification Spot-Checks`, `## Cross-Cutting Concerns` — see `claude-code/.claude/agents/discovery-reviewer.md:309-369`. ⚠️ **Two templates for the same file**: the install-payload template (23 lines) is a skeleton; the reviewer agent's prompt embeds a richer 60-line template. Production behavior writes the richer shape. [Q53]
 
-### `IMPLEMENTATION-STATE.md` Schema
+### `task-NNN-STATE.md` Schema
 
-Source-of-truth: `claude-code/.claude/templates/implementation-state.md` (30 lines). Per-instance at `.aid/{work}/tasks/task-{NNN}/IMPLEMENTATION-STATE.md`. Produced/maintained by aid-execute.
+Source-of-truth: `claude-code/.claude/templates/implementation-state.md` (30 lines). Per-instance at `.aid/{work}/tasks/task-NNN-STATE.md`. Produced/maintained by aid-execute.
 
 | Field / Section | Required | Type | Allowed values | Evidence |
 |-----------------|----------|------|----------------|----------|
-| `# Implementation State — {task-NNN}` | yes | title | task ID | `implementation-state.md:1` |
+| `# Task State — task-NNN` | yes | title | task ID | `implementation-state.md:1` |
 | `**Status:**` | yes | enum | `Pending` ∨ `In Progress` ∨ `Complete` (inferred) | `implementation-state.md:3` |
 | `**Task:**` | yes | scalar | task-NNN | `implementation-state.md:4` |
 | `**Type:**` | yes | enum | `RESEARCH \| DESIGN \| IMPLEMENT \| TEST \| DOCUMENT \| MIGRATE \| REFACTOR \| CONFIGURE` (8 types) | `implementation-state.md:5` |
@@ -355,13 +355,13 @@ Source-of-truth: `templates/delivery-plans/task-template.md` (142 lines). Per-in
 
 | Section | Required | Type | Allowed values | Evidence |
 |---------|----------|------|----------------|----------|
-| `# task-{id}: {Name}` | yes | title | — | `task-template.md:1` |
+| `# task-NNN: {Name}` | yes | title | — | `task-template.md:1` |
 | `**Delivery:**` | yes | scalar | DELIVERY-{id} | `task-template.md:3` |
 | `**User Story:**` | yes | scalar | US-{id} | `task-template.md:4` |
 | `**Status:**` | yes | enum | `Not Started` ∨ `In Progress` ∨ `In Review` ∨ `Complete` | `task-template.md:5` |
 | `**Complexity:**` | yes | enum | `S \| M \| L \| XL` | `task-template.md:6` |
 | `**Assigned to:**` | yes | scalar | agent instance or human | `task-template.md:7` |
-| `**Type:**` (in IMPLEMENTATION-STATE.md alongside the task) | yes | enum | `RESEARCH` ∨ `DESIGN` ∨ `IMPLEMENT` ∨ `TEST` ∨ `DOCUMENT` ∨ `MIGRATE` ∨ `REFACTOR` ∨ `CONFIGURE` (8 types) | `aid-execute/SKILL.md:30-39`; `implementation-state.md:5` |
+| `**Type:**` (in task-NNN-STATE.md alongside the task) | yes | enum | `RESEARCH` ∨ `DESIGN` ∨ `IMPLEMENT` ∨ `TEST` ∨ `DOCUMENT` ∨ `MIGRATE` ∨ `REFACTOR` ∨ `CONFIGURE` (8 types) | `aid-execute/SKILL.md:30-39`; `implementation-state.md:5` |
 | `## Objective` | yes | prose | — | `task-template.md:11-15` |
 | `## Context` | yes | structured (references + KB Index pointer) | — | `task-template.md:19-29` |
 | `## Interface Contracts` | yes | code blocks | language-agnostic | `task-template.md:33-55` |

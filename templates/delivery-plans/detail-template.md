@@ -30,7 +30,7 @@
 
 > Each task is a single coding agent session — scoped to be completable in one run without overwhelming context.
 
-### task-{id}: {Name}
+### task-NNN: {Name}
 
 **User Story:** US-{id} | **Delivery:** DELIVERY-{id} | **Complexity:** S | M | L | XL
 
@@ -59,8 +59,8 @@
 - Create: `{path/to/new/file}`
 - Modify: `{path/to/existing/file}` — {what changes}
 
-**Depends On:** task-{id} | None
-**Blocks:** task-{id} | None
+**Depends On:** task-NNN | None
+**Blocks:** task-NNN | None
 
 ---
 
@@ -93,7 +93,7 @@ task-004, task-005 → task-006
 ### DELIVERY-{id}: {Name}
 
 **User Stories:** US-{id}, US-{id}
-**Tasks:** task-{id}, task-{id}
+**Tasks:** task-NNN, task-NNN
 
 **Success Criteria:**
 - {measurable criteria that define "done" for this delivery}
@@ -107,15 +107,15 @@ task-004, task-005 → task-006
 > Groups tasks into waves. Tasks in the same wave can execute in parallel (independent of each other).
 
 ### Wave 1 (parallel — no dependencies)
-- task-{id}: {name}
-- task-{id}: {name}
+- task-NNN: {name}
+- task-NNN: {name}
 
 ### Wave 2 (after Wave 1 completes)
-- task-{id}: {name} (depends on task-{id})
-- task-{id}: {name} (depends on task-{id})
+- task-NNN: {name} (depends on task-NNN)
+- task-NNN: {name} (depends on task-NNN)
 
 ### Wave 3 (sequential — depends on Wave 2)
-- task-{id}: {name} (integrates Wave 2 outputs)
+- task-NNN: {name} (integrates Wave 2 outputs)
 
 ---
 

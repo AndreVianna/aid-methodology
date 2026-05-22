@@ -79,7 +79,7 @@ A bash pre-pass (`templates/scripts/build-project-index.sh`) runs before the 5 s
 | `aid-interview` | Interview | Adaptive requirements gathering → `REQUIREMENTS.md` |
 | `aid-specify` | Specify | Requirements → formal `SPEC.md` grounded in KB |
 | `aid-plan` | Plan | High-level roadmap → `PLAN.md` (MVP, modules, deliverables) |
-| `aid-detail` | Detail | Decompose plan → user stories, `task-{id}.md` files, execution waves |
+| `aid-detail` | Detail | Decompose plan → user stories, `task-NNN.md` files, execution waves |
 | `aid-execute` | Implement | Type-aware execution with built-in review loop; agent picked by task type |
 | `aid-deploy` | Deploy | Final verification, PR creation, delivery summary, KB updates |
 | `aid-monitor` | Track | Production telemetry interpretation → `MONITOR-STATE.md` |

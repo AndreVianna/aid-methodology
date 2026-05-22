@@ -1,4 +1,4 @@
-# Implementation State — {task-NNN}
+# Task State — task-NNN
 
 **Status:** Pending
 **Task:** {task-NNN}

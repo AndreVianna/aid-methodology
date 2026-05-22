@@ -265,7 +265,7 @@ Spec-Driven Development is a good idea. AID contains it and goes further.
 | **Requirements** | Assumed to exist | Adaptive interview, one question at a time |
 | **Planning depth** | A single spec | Two levels: Plan (strategy) → Detail (tactics) |
 | **Quality** | Review the output | Separate adversarial reviewer + deterministic grading loop |
-| **Feedback loops** | Linear: spec → code → done | 11 formal loops (8 development + 3 post-production) |
+| **Feedback loops** | Linear: spec → code → done | 11 formal loops (8 development + 2 post-production + 1 cross-cutting) |
 | **Post-delivery** | Not addressed | Monitor classifies findings and routes them back |
 
 > SDD says: *the spec drives development.*
@@ -341,7 +341,7 @@ You don't need the whole pipeline on day one. Common entry points:
 
 ```
 aid-methodology/
-├── methodology/aid-methodology.md   ← the complete V3 methodology spec (~40 min read)
+├── methodology/aid-methodology.md   ← the complete methodology spec (~40 min read)
 ├── skills/                          ← human-readable docs for all 10 skills
 ├── agents/                          ← human-readable docs for all agent roles
 ├── templates/                       ← usable templates for every artifact

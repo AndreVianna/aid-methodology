@@ -66,7 +66,7 @@ When `tasks/` has files, re-run enters the loop at step 4:
 ## Task Format
 
 ```markdown
-# task-{id}: {Title}
+# task-NNN: {Title}
 
 **Source:** feature-NNN-{name} → delivery-{x}
 

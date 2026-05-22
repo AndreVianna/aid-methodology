@@ -143,13 +143,13 @@ Not rigid. Not all types appear in every delivery. The user adjusts during discu
 ## Task File Format
 
 ```markdown
-# task-{id}: {Title}
+# task-NNN: {Title}
 
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 
 **Source:** feature-NNN-{name} → delivery-{x}
 
-**Depends on:** task-{id} [, task-{id}] | — (none)
+**Depends on:** task-NNN [, task-NNN] | — (none)
 
 **Scope:**
 - {what to produce or modify — depends on type}

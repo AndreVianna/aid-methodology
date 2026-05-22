@@ -53,7 +53,7 @@
 {What happens if we proceed anyway — what assumptions would be wrong, what risks, what could break.}
 
 **Blocks:**
-- {task-{id} / Deliverable {n} / Phase {n} advancement}
+- {task-NNN / Deliverable {n} / Phase {n} advancement}
 
 ---
 
