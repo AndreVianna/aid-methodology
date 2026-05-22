@@ -2,7 +2,7 @@
 
 **A Complete Methodology for AI-Integrated Software Development**
 
-*Version 3.0 — March 2026*
+*Version 3.1 — May 2026*
 
 ---
 
@@ -12,14 +12,15 @@ AID (AI-Integrated Development) is a structured methodology for building and mai
 
 Each phase is **co-executed by human and AI**. The AI is the Iron Man suit — it amplifies the human's capabilities. The human is the pilot — setting direction, making decisions, approving advancement between phases. The human never leaves the cockpit. This is not "AI executes, human validates." It is "human and AI work together, human drives."
 
-The methodology covers the full lifecycle:
+The methodology covers the full lifecycle in five groups:
 
-- **Define** (3 phases): Understand the system, gather requirements, and formalize the problem statement.
-- **Map** (2 phases): Plan the roadmap and detail the execution.
-- **Execute** (3 phases): Build, review, and test.
-- **Deliver** (3 phases): Deploy, monitor, and classify issues.
+- **Prepare** (1 phase): Set up the workspace and build an understanding of the existing system.
+- **Define** (2 phases): Gather requirements and formalize the problem statement.
+- **Map** (2 phases): Plan the roadmap and decompose it into executable tasks.
+- **Execute** (1 phase): Build, review, and test — one typed-task phase with a built-in review loop.
+- **Deliver** (2 phases): Ship to production, then monitor and route what breaks.
 
-Bugs take a short path back through implementation. Change requests start a new development cycle. Nothing falls on the floor.
+Bugs take a short path back through Execute. Change requests start a new development cycle. Nothing falls on the floor.
 
 The methodology is built on three convictions:
 
@@ -90,6 +91,21 @@ A spec written before implementation is a hypothesis. A spec revised after imple
 
 The pipeline is sequential by default, but any phase can trigger upstream revision through structured protocols. Discovery can be re-entered from any phase. Specs can be revised during planning. Tasks can be amended during implementation. The revision trail provides audit transparency while keeping the project moving.
 
+### What AID Removes
+
+Hand a capable coding agent a vague task and a large repository, and you get predictable failure modes. AID is built to remove each one **structurally** — through process, not prompt-tuning.
+
+| Failure mode | What it looks like | How AID removes it |
+|--------------|--------------------|--------------------|
+| **Knowledge gaps** | The agent doesn't understand the existing system and invents how it works. | Discovery builds the Knowledge Base *before* any spec is written. Understanding precedes specification. |
+| **Hallucination** | The agent states things about the code that aren't true. | Every KB claim carries an inline `path:line` citation — facts are anchored to source, not guessed. |
+| **Drift** | The implementation quietly diverges from intent; the spec rots. | Spec-as-hypothesis plus formal feedback loops — upstream artifacts are revised with a traceable history, never silently worked around. |
+| **Overengineering** | The agent adds abstractions, options, and scope nobody asked for. | Typed, PR-sized tasks with explicit acceptance criteria; the reviewer grades against the spec, not against taste. |
+| **Oversights** | Bugs, missed edge cases, and untested paths slip through. | A separate adversarial reviewer — the agent that writes never grades its own work — loops until the grade clears the bar. |
+| **Context exhaustion** | Loading the whole repository into the context window — slow, costly, lossy. | A 3-tier context economy: an always-loaded index, one KB document on demand, then an exact `path:line`. |
+
+The rest of this document is how each mechanism works.
+
 ### Roles
 
 AID defines three roles:
@@ -112,21 +128,26 @@ The Knowledge Base (`.aid/knowledge/`) is the gravitational center of the entire
 
 ```
 .aid/knowledge/
-├── README.md              # Index with completeness status per document
+├── INDEX.md               # Meta: 2-3 line summary of every KB document (the navigation map)
+├── README.md              # Meta: completeness status per document
+├── DISCOVERY-STATE.md     # Meta: discovery grade, open questions, review history
+│
+├── project-structure.md   # Repository layout and file inventory
+├── external-sources.md    # Vendor docs and references registered for discovery
 ├── architecture.md        # Patterns, layers, module boundaries, data flow
+├── technology-stack.md    # Languages, frameworks, versions, build tools, runtime
 ├── module-map.md          # Every module: purpose, dependencies, size, test coverage
-├── technology-stack.md    # Languages, frameworks, versions, package managers, runtime
 ├── coding-standards.md    # Naming conventions, formatting, error handling patterns
 ├── data-model.md          # Database schema, entities, relationships, migrations
-├── api-contracts.md       # External APIs consumed/exposed, auth models, rate limits
+├── api-contracts.md       # APIs consumed/exposed (or host-tool frontmatter schemas)
 ├── integration-map.md     # Message queues, caches, third-party services, webhooks
 ├── domain-glossary.md     # Business terms, domain language, entity definitions
 ├── test-landscape.md      # Test frameworks, coverage, test types, CI/CD pipeline
 ├── security-model.md      # Auth/authz, secrets management, compliance requirements
 ├── tech-debt.md           # Known debt items with file refs, risk ratings, remediation
 ├── infrastructure.md      # Hosting, networking, environments, deployment model
-├── feature-inventory.md   # User-provided feature list enriched with module/endpoint/data mapping
-└── additional-info.md     # Structured Q&A: gaps, assumptions, and clarifications
+├── ui-architecture.md     # Front-end / UI architecture (sparse for non-UI projects)
+└── feature-inventory.md   # Canonical feature list, mapped to modules/endpoints/data
 ```
 
 ### Completeness Is Tracked
@@ -146,11 +167,13 @@ The `README.md` at the root of the Knowledge Base tracks what exists and what's 
 
 ### Not Every Document Is Required
 
-The Discovery phase assesses the project and generates what's relevant:
+The Knowledge Base has a fixed shape — **16 standard documents** plus 3 meta-documents — but not every standard document carries deep content on every project:
 
-- **Simple CLI tool?** Maybe 5 documents.
-- **Enterprise monorepo?** All 13.
-- **Greenfield?** Only `technology-stack.md`, `coding-standards.md`, and `domain-glossary.md` — populated from the interview, not from code.
+- **Simple CLI tool?** A handful of documents carry real depth; the rest stay thin.
+- **Enterprise monorepo?** All 16 fill out.
+- **Greenfield?** `technology-stack.md`, `coding-standards.md`, and `domain-glossary.md` are populated from the interview, not from code; the rest grow as the codebase does.
+
+The shape is fixed even when a document is sparse, so downstream skills always know exactly where to look.
 
 ### Context Feeding Strategy
 
@@ -184,9 +207,15 @@ If your task touches an area covered here, read the relevant document first.
 3. **The task template includes a search instruction:** "If you need context not provided, consult `.aid/knowledge/INDEX.md` and read the relevant document before making assumptions."
 4. **Review validates context usage.** One review criterion: did the agent use available KB context, or did it guess?
 
-This is RAG by convention — not embeddings and vector databases, but predictable file structure and an index that agents can navigate. The agent has filesystem access. It can read on demand. It just needs to know the menu.
+This is **RAG by convention** — not embeddings and vector databases, but predictable file structure and an index that agents navigate. Retrieval happens in three tiers, cheapest first:
 
-**Why not a vector database?** Because the KB is small enough (13 documents, typically 2-20KB each) that convention beats infrastructure. The agent can read any document in milliseconds. The bottleneck isn't retrieval speed — it's knowing what exists. The INDEX solves that.
+1. **Tier 1 — `INDEX.md`, always loaded.** Every task prompt carries the index (~200–500 tokens total). The agent always knows *what knowledge exists and which file holds it*, at negligible context cost.
+2. **Tier 2 — one KB document, on demand.** From an INDEX entry the agent reads the single document a task needs. The fixed-shape directory makes this deterministic — `data-model.md` always holds schemas, `tech-debt.md` always holds debt — so the agent navigates by convention, never by search.
+3. **Tier 3 — an exact repository location, via citation.** Every factual claim in a KB document carries an inline `path:line` citation. From a KB doc the agent jumps straight to the precise file and line — never globbing, never bulk-loading unrelated source.
+
+The agent pays a few hundred tokens to know where everything is, then spends its context budget only on the one document and the specific lines a task genuinely needs.
+
+**Why not a vector database?** Because the KB is small enough (16 documents, typically 2–20KB each) that convention beats infrastructure. The bottleneck isn't retrieval speed — it's knowing what exists. The INDEX solves that.
 
 **When does the INDEX update?** Every time Discovery runs — either full or targeted. The INDEX is regenerated from the current state of the KB. It's never manually maintained.
 
@@ -481,11 +510,41 @@ artifacts may skip branching.
 
 ## 4. Feedback Loops
 
-The pipeline is sequential by default. But real engineering isn't linear. Assumptions break. Gaps appear. Production reveals truths that development couldn't anticipate. AID defines formal feedback loops — eight within development and three connecting production back to development.
+The pipeline is sequential by default. But real engineering isn't linear. Assumptions break. Gaps appear. Production reveals truths that development couldn't anticipate. AID defines **eleven formal feedback loops** — eight within development, two connecting production back to development, and one cross-cutting re-entry available from any phase.
+
+```mermaid
+flowchart TB
+    classDef phase fill:#0F766E,stroke:#0F766E,color:#ffffff
+    classDef kb fill:#1E3A8A,stroke:#1E3A8A,color:#ffffff
+
+    D["1 · Discover"]:::phase
+    I["2 · Interview"]:::phase
+    S["3 · Specify"]:::phase
+    P["4 · Plan"]:::phase
+    Dt["5 · Detail"]:::phase
+    E["6 · Execute"]:::phase
+    Dp["7 · Deploy"]:::phase
+    M["8 · Monitor"]:::phase
+
+    D --> I --> S --> P --> Dt --> E --> Dp --> M
+
+    I -. "L1" .-> D
+    S -. "L2" .-> D
+    P -. "L3" .-> D
+    P -. "L4" .-> S
+    Dt -. "L5" .-> P
+    E -. "L6 · impediment" .-> S
+    E -. "L7 · review" .-> P
+    Dp -. "L8 · verification" .-> E
+    M -. "L9 · bug" .-> E
+    M -. "L10 · change request" .-> D
+
+    Any["Any phase"]:::kb -. "L11 · targeted re-discovery" .-> D
+```
 
 ### The Eleven Loops
 
-#### Development Loops (1-8)
+#### Development Loops (1–8)
 
 #### Loop 1: Interview → Discovery
 
@@ -517,25 +576,25 @@ The pipeline is sequential by default. But real engineering isn't linear. Assump
 
 **Protocol:** Detail documents the gap → Plan revises the specific section → Detail resumes.
 
-#### Loop 6: Implement → Discovery / Plan / Spec
+#### Loop 6: Execute → Discovery / Plan / Specify
 
-**Trigger:** The agent discovers that assumptions don't hold in the actual codebase.
+**Trigger:** While executing a task, the agent discovers that assumptions don't hold in the actual codebase.
 
-**Protocol:** `IMPEDIMENT.md` generated → if KB gap, update KB → if resolvable within scope, resolve and document → if requires plan/spec change, pause and escalate.
+**Protocol:** `IMPEDIMENT.md` generated → if a KB gap, update the KB → if resolvable within scope, resolve and document → if it requires a plan or spec change, pause and escalate.
 
-#### Loop 7: Review → Any Upstream Phase
+#### Loop 7: Execute Review → Any Upstream Phase
 
-**Trigger:** Review finds issues that trace to KB, spec, or plan problems — not just code quality.
+**Trigger:** The reviewer step inside Execute finds issues that trace to KB, spec, or plan problems — not just code quality.
 
-**Protocol:** Issues tagged by source (CODE/TASK/SPEC/KB/ARCHITECTURE). CODE issues are fixed in-cycle. Everything else pauses the pipeline and escalates.
+**Protocol:** Issues are tagged by source (CODE / TASK / SPEC / KB / ARCHITECTURE). CODE issues are fixed inside the Execute loop. Everything else pauses the pipeline and escalates to the owning phase.
 
-#### Loop 8: Test → Implement
+#### Loop 8: Deploy → Execute
 
-**Trigger:** Tests fail due to implementation bugs discovered in staging.
+**Trigger:** Deploy's final verification — a full build plus the complete test suite — fails before the delivery ships.
 
-**Protocol:** Failures documented in TEST-REPORT.md → route back to `/aid-execute` for fix → `/aid-execute` (re-run).
+**Protocol:** Failures are documented → routed back to `/aid-execute` for the fix → Deploy's verification re-runs.
 
-#### Post-Production Loops (9-11)
+#### Post-Production Loops (9–10)
 
 #### Loop 9: Monitor → Execute (Bug Path)
 
@@ -548,6 +607,14 @@ The pipeline is sequential by default. But real engineering isn't linear. Assump
 **Trigger:** Monitor classifies a finding as Change Request.
 
 **Protocol:** Monitor writes Q&A entry to DISCOVERY-STATE.md → new cycle starts at aid-discover (or aid-interview for greenfield) → full pipeline.
+
+#### Cross-Cutting Loop (11)
+
+#### Loop 11: Any Phase → Discovery (Targeted Re-Discovery)
+
+**Trigger:** Any phase finds the Knowledge Base wrong, incomplete, or stale for the work at hand.
+
+**Protocol:** A targeted discovery run updates the specific KB document(s) — never a full re-discovery — and the calling phase resumes with corrected understanding. The KB is always the return target; this is the loop that makes the Knowledge Base the gravitational center in practice, not just in principle.
 
 ### The Revision Trail
 
@@ -565,7 +632,7 @@ Every change to an upstream artifact is tracked at the bottom of the artifact:
 
 ### Feedback Loop Artifacts
 
-**GAP.md** — Generated by Specify, Plan, Detail, or Review when upstream artifacts are deficient.
+**GAP.md** — Generated by Specify, Plan, Detail, or the Execute review step when upstream artifacts are deficient.
 
 ```markdown
 # GAP: GAP-001
@@ -577,7 +644,7 @@ Every change to an upstream artifact is tracked at the bottom of the artifact:
 **Resolution:** discovery | needs-human | needs-spike
 ```
 
-**IMPEDIMENT.md** — Generated by Implement when reality contradicts assumptions.
+**IMPEDIMENT.md** — Generated by Execute when reality contradicts assumptions.
 
 ```markdown
 # IMPEDIMENT: IMP-003
@@ -599,18 +666,19 @@ Every change to an upstream artifact is tracked at the bottom of the artifact:
 |----------|----------|------------|-------------|-----------|
 | Knowledge Base (16 docs) | `.aid/knowledge/` | Discover | All phases | Living — updated throughout project |
 | INDEX.md | `.aid/knowledge/` | Discover | All phases | Regenerated on every discovery run |
+| DISCOVERY-STATE.md | `.aid/knowledge/` | Discover | Discover (resume), all phases | Living — grade, Q&A, review history |
 | REQUIREMENTS.md | `.aid/{work}/` | Interview | Specify, Plan | Frozen after approval (rev-tracked) |
 | INTERVIEW-STATE.md | `.aid/{work}/` | Interview | Interview (resume) | Process tracking |
-| Feature SPEC.md | `.aid/{work}/features/{feature}/` | Interview + Specify | Plan, Detail, Implement, Review | Living — Interview writes requirements side, Specify adds technical spec |
+| Feature SPEC.md | `.aid/{work}/features/{feature}/` | Interview + Specify | Plan, Detail, Execute | Living — Interview writes requirements side, Specify adds technical spec |
 | Feature STATE.md | `.aid/{work}/features/{feature}/` | Specify | Specify (resume) | Process tracking |
 | PLAN.md | `.aid/{work}/` | Plan | Detail | Living — rev-tracked |
-| DETAIL.md | `.aid/{work}/` | Detail | Implement, Review | Updated at completion |
-| task-{id}.md | `.aid/{work}/tasks/` | Detail | Implement, Review | Rev-tracked if amended |
-| REVIEW.md | project root | Review | Implement (rework), Test | Per review cycle |
-| TEST-REPORT.md | project root | Test | Deploy, Implement (if failures) | Per test cycle |
+| DETAIL.md | `.aid/{work}/` | Detail | Execute | Updated at completion |
+| task-{id}.md | `.aid/{work}/tasks/` | Detail | Execute | Rev-tracked if amended |
+| REVIEW.md | `.aid/{work}/` | Execute (review step) | Execute (rework) | Per review cycle |
+| TEST-REPORT.md | `.aid/{work}/` | Execute (TEST tasks) | Deploy, Execute (if failures) | Per test cycle |
 | GAP.md | project root | Any phase | Discovery, Specify | Closed when resolved |
-| IMPEDIMENT.md | project root | Implement | Plan, Specify, Discovery | Closed when resolved |
-| MONITOR-STATE.md | .aid/{work}/ | Monitor | Execute (bugs), Discover (CRs) | Per monitor run |
+| IMPEDIMENT.md | project root | Execute | Plan, Specify, Discovery | Closed when resolved |
+| MONITOR-STATE.md | `.aid/{work}/` | Monitor | Execute (bugs), Discover (CRs) | Per monitor run |
 
 ### REQUIREMENTS.md Template
 
@@ -849,74 +917,29 @@ Ship to Test | Auto-fix CODE issues | Loopback to upstream
 ### MONITOR-STATE.md Template
 
 ```markdown
-# Monitor Report — {Date or Deployment ID}
+# Monitor State — {Work or Deployment ID}
 
 ## Sources Checked
 | Source | Type | Period |
 |--------|------|--------|
 
-## Findings
-### Finding 1: {Title}
+## Active Findings
+### Finding {id}: {Title}
+**Classification:** BUG | Change Request | Infrastructure | No Action
 **Severity:** Critical | High | Medium | Low
-**Source:** {where detected}
 **Evidence:** {concrete data}
 **Impact:** {users affected, functionality impaired}
-**Correlation:** {related events}
+**Correlation:** {related events — e.g., "error spike 23 min after the package-002 deploy"}
+**Reasoning:** {why this classification — reference the feature SPEC for expected behavior}
+**Routing:**
+- BUG → aid-execute (short path: new task → Execute → Deploy)
+- Change Request → aid-discover (new cycle)
+- Infrastructure → ops escalation
+- No Action → closed with justification
 
-## Recommendation
-{Trigger triage or no action}
-```
-
-### MONITOR-STATE.md Template
-
-```markdown
-# Monitor Finding — {Finding ID or Title}
-
-## Source
-**Monitor Run:} | **Finding:** {summary}
-
-## Classification
-**Type:** BUG | Change Request | Infrastructure | No Action
-**Severity:** Critical | High | Medium | Low
-
-## Evidence
-{Concrete data supporting classification}
-
-## Reasoning
-{Why this classification. Reference feature SPEC for expected behavior.}
-
-## Routing
-- **BUG →** aid-execute (short path: implement → review → test → deploy)
-- **CR →** aid-discover (new cycle)
-- **Infrastructure →** ops escalation
-- **No Action →** closed with justification
-```
-
-### CORRECTION.md Template (Deprecated)
-
-> **Note:** The Correct phase has been merged into Monitor. Root cause analysis, patch scope, and test requirements are now documented directly in MONITOR-STATE.md. This template is retained for reference only.
-
-```markdown
-# Correction — {Bug ID or Title}
-
-## Root Cause
-{What went wrong and why. Trace from symptom to cause.}
-
-## Impact
-**Affected modules:** {from KB} | **Existing coverage:** {what should have caught this}
-
-## Patch Scope
-| File | Change | Reason |
-|------|--------|--------|
-
-## Test Requirements
-- Fix verification: {test that proves the bug is fixed}
-- Regression: {tests to prevent recurrence}
-- Coverage gap: {tests that should have existed}
-
-## Acceptance Criteria
-- [ ] {testable criterion}
-- [ ] {regression test added}
+## Resolved Findings
+| Finding | Classification | Resolution | Date |
+|---------|----------------|------------|------|
 ```
 
 ---
@@ -925,85 +948,44 @@ Ship to Test | Auto-fix CODE issues | Loopback to upstream
 
 ### Visual Overview
 
-```
-                 ┌─────────────────────────────────────────────────┐
-                 │           KNOWLEDGE BASE (.aid/knowledge/)           │
-                 │    The gravitational center of the project.     │
-                 │    Every phase reads from it.                   │
-                 │    Any phase can trigger updates to it.         │
-                 └──────────┬──────────────────────────────────────┘
-                            │
-         BROWNFIELD         │         GREENFIELD
-             │              │              │
-             ▼              │              │
-   ┌─ PROBLEM MAPPING ─────┤              │
-   │     aid-discover ───────┤              │
-   │      → .aid/knowledge/*     │              │
-   │          │              │              │
-   │          ├──────────────┼──────────────┘
-   │                        │
-   │                        ▼
-   │     aid-interview ◄─── GAP (needs-interview)
-   │      → REQUIREMENTS.md
-   └────────────────────────┤
-                            │
-   ┌─ PLANNING ─────────────┤
-   │                        ▼
-   │     aid-specify ◄──── GAP (ambiguity/contradiction)
-   │      → feature SPECs
-   │          │
-   │          ▼
-   │     aid-plan ◄─────── GAP (KB gap)
-   │      → PLAN.md
-   │          │
-   │          ▼
-   │     aid-detail ◄───── GAP (plan too vague)
-   │      → DETAIL.md
-   │      → task-{id}.md (×N)
-   └────────────────────────┤
-                            │
-   ┌─ IMPLEMENTATION ──────┤
-   │            ┌───────────┤
-   │            │           ▼
-   │            │     aid-execute ◄── IMPEDIMENT
-   │            │      → code + tests
-   │            │           │
-   │            │           ▼
-   │            │     built-in review ◄── issue (KB/SPEC/ARCH)
-   │            │      → REVIEW.md
-   │            │           │
-   │            │           ▼
-   │            │     aid-execute ◄─────── test failure → fix
-   │            │      → TEST-REPORT.md
-   └────────────┤──────────┤
-                │          │
-   ┌─ PRODUCTION ──────────┤
-   │            │          ▼
-   │            │     aid-deploy
-   │            │      → PR + summary
-   │            │          │
-   │            │          ▼
-   │            │     aid-monitor ◄────── deployment / schedule / alert
-   │            │      → MONITOR-STATE.md
-   └────────────┤─────────┤
-                │         │
-                │         ▼
-                │     aid-monitor
-                │      → MONITOR-STATE.md (includes root cause analysis for bugs)
-                │         │
-                │    ┌────┴─────┐
-                │    │          │
-                │ BUG ↓      CR ↓
-                │    │          │
-                └────┘          └──→ aid-discover (new cycle)
-   (back to aid-execute)
+```mermaid
+flowchart TB
+    classDef prep fill:#1E3A8A,stroke:#1E3A8A,color:#ffffff
+    classDef def fill:#6D28D9,stroke:#6D28D9,color:#ffffff
+    classDef map fill:#0F766E,stroke:#0F766E,color:#ffffff
+    classDef exe fill:#166534,stroke:#166534,color:#ffffff
+    classDef del fill:#C2410C,stroke:#C2410C,color:#ffffff
+    classDef aux fill:#E5E7EB,stroke:#9CA3AF,color:#1F2937,stroke-dasharray:4 3
 
- ─── ANY PHASE ──→ aid-discover (targeted) ──→ .aid/knowledge/* ──→ resume
+    subgraph G1[" 1 · Prepare "]
+        Init["aid-init<br/>setup · once per project"]:::aux
+        Disc["1 · aid-discover<br/>brownfield"]:::prep
+        Sum["aid-summarize<br/>optional"]:::aux
+    end
+    subgraph G2[" 2 · Define "]
+        Intv["2 · aid-interview"]:::def
+        Spec["3 · aid-specify"]:::def
+    end
+    subgraph G3[" 3 · Map "]
+        Plan["4 · aid-plan"]:::map
+        Det["5 · aid-detail"]:::map
+    end
+    subgraph G4[" 4 · Execute "]
+        Exe["6 · aid-execute<br/>8 task types"]:::exe
+    end
+    subgraph G5[" 5 · Deliver "]
+        Dep["7 · aid-deploy"]:::del
+        Mon["8 · aid-monitor"]:::del
+    end
+
+    Init --> Disc --> Intv --> Spec --> Plan --> Det --> Exe --> Dep --> Mon
 ```
+
+The forward path is the default; the eleven feedback loops (see §4) are the escape hatches. Brownfield projects enter at Discover; greenfield projects skip Discover and enter at Interview. `aid-init` runs once before the pipeline, and `aid-summarize` is an optional read-only viewer of the Knowledge Base.
 
 ### The Two Post-Production Paths
 
-**Bug path (short):** Monitor → Execute → Deploy. Three phases to fix. Monitor maps the root cause — diagnosis, files to touch, tests to add — and hands it to Implement as a task. No re-specification, no re-planning.
+**Bug path (short):** Monitor → Execute → Deploy. Monitor maps the root cause — diagnosis, files to touch, tests to add — and hands it to Execute as a task. No re-specification, no re-planning.
 
 **Change Request path (full):** Monitor → Discover. The CR enters the development pipeline as a new project. It gets its own requirements, its own spec, its own plan. The full pipeline ensures that changes are understood before they're built.
 
@@ -1012,15 +994,15 @@ Ship to Test | Auto-fix CODE issues | Loopback to upstream
 1. **Linear by default.** Discover → Interview → Specify → Plan → Detail → Execute → Deploy → Monitor.
 2. **Human approves each phase transition.** The pipeline never auto-advances.
 3. **Feedback to KB.** Any phase can trigger targeted discovery. The KB is always the return target.
-4. **Feedback to Spec.** Plan, Detail, Implement, Review, and Test can trigger spec revision.
+4. **Feedback to Spec.** Plan, Detail, and Execute can trigger spec revision.
 5. **Greenfield starts at Interview** with minimal KB populated from answers.
 6. **Brownfield starts at Discover** with full KB populated from code.
 7. **Each phase produces persistent artifacts.** Each artifact has a revision history.
 8. **The KB outlives the project.** It's institutional memory for future work.
-9. **Bugs take the short path.** Implement → Review → Test → Deploy. No re-specification.
+9. **Bugs take the short path.** Monitor → Execute → Deploy. No re-specification.
 10. **CRs take the full path.** Monitor routes to Discover. New cycle, new spec, new plan.
-11. **Track runs continuously.** It monitors production on schedule or on deployment.
-12. **Detail feeds Implement.** Plan feeds Detail. Strategy flows down; tactics flow up when strategy is insufficient.
+11. **Monitor runs on demand.** It observes production on deployment, on schedule, or on alert.
+12. **Detail feeds Execute.** Plan feeds Detail. Strategy flows down; tactics flow up when strategy is insufficient.
 
 ---
 
@@ -1034,12 +1016,10 @@ Ship to Test | Auto-fix CODE issues | Loopback to upstream
 
 - **Discovery:** Skipped (greenfield). Minimal KB populated during interview.
 - **Interview:** Full requirements gathering. User personas, feature priority, platform constraints.
-- **Specify:** PRD.md as initial spec. Detailed architecture decisions: MVVM pattern, SQLite storage, Whisper integration.
+- **Specify:** Detailed architecture decisions per feature: MVVM pattern, SQLite storage, Whisper integration.
 - **Plan:** High-level roadmap: MVP (core recording), v2 (transcription), v3 (export). Module identification, test scenarios.
 - **Detail:** Decomposed into deliveries (2a: core recording, 2b: transcription, 2c: file management, 2d: import/export). Each with task specs including C# interface contracts.
-- **Implement:** Agent-per-task execution. Parallel implementation of independent features.
-- **Review:** 1,184 tests (unit + E2E). Code review with grading system.
-- **Test:** Staging validation of each delivery increment.
+- **Execute:** Agent-per-task execution with the built-in review loop — parallel work on independent features, 1,184 tests (unit + E2E) graded against the rubric.
 - **Deploy:** Incremental deliveries. Each delivery merged independently.
 
 **What worked:** The two-level planning (Plan → Detail) meant strategic decisions were separated from tactical decomposition. The plan defined "what goes in MVP" while detail defined "how to build each piece."
@@ -1064,9 +1044,8 @@ Ship to Test | Auto-fix CODE issues | Loopback to upstream
 
 - **Interview:** One question at a time. "What are your brands?" → "What platforms?" → "What does a good report look like?" → "What data don't you agree with?" That last question discovered a timezone bug.
 - **Specify:** Pipeline spec with data flow, agent roles, grading criteria.
-- **Implement:** Multi-agent orchestration: 4 specialist agents + orchestrator + executive summary generator.
-- **Test:** Domain-specific quality gate (Grade A) checking: source match (1% tolerance), traceability, cross-agent consistency.
-- **Track:** Monitors quality gate results across brands. When a report fails, Triage determines if it's a data processing bug (short path) or a source format change (full cycle).
+- **Execute:** Multi-agent orchestration — 4 specialist agents + orchestrator + executive-summary generator — validated against a domain-specific quality gate (Grade A): source match (1% tolerance), traceability, cross-agent consistency.
+- **Monitor:** Watches quality-gate results across brands. When a report fails, Monitor classifies it — a data-processing bug (short path) or a source-format change (full cycle).
 
 ---
 
@@ -1090,15 +1069,15 @@ Both AID and SDD:
 | Dimension | SDD | AID |
 |-----------|-----|-----|
 | **Starting point** | A spec | Understanding (Discovery) |
-| **Brownfield support** | Gap acknowledged | First-class Discovery phase with 13-document KB |
+| **Brownfield support** | Gap acknowledged | First-class Discovery phase with a 16-document KB |
 | **Spec philosophy** | Spec is source of truth | Spec is hypothesis — revised by formal protocol |
 | **Requirements** | Assumed to exist | Gathered through adaptive interview |
 | **Planning depth** | Single spec | Two-level: Plan (strategy) → Detail (tactics) |
-| **Feedback loops** | Rebuild spec from scratch | Eleven formal loops (8 dev + 3 post-production) |
+| **Feedback loops** | Rebuild spec from scratch | Eleven formal loops (8 development + 2 post-production + 1 cross-cutting) |
 | **Testing** | Not addressed as separate phase | Dedicated staging/E2E phase between review and deploy |
 | **Quality gates** | Generic conformance tests | Domain-specific grading (Grade A system) |
 | **Agent model** | One agent per spec | Multi-agent orchestration with specialists |
-| **Delivery model** | Spec → code → done | Spec → plan → detail → implement → review → test → deploy |
+| **Delivery model** | Spec → code → done | Discover → specify → plan → detail → execute → deploy → monitor |
 | **Memory** | Stateless | Knowledge Base persists across sessions |
 | **Post-delivery** | Not addressed | Monitor → Execute (bugs) / Discover (CRs) |
 | **Scope** | Code generation | Full lifecycle: discovery through production maintenance |
@@ -1118,36 +1097,32 @@ SDD is not wrong. It's incomplete. AID is SDD + Discovery + Feedback Loops + Two
 
 ### Starting with an Existing Project (Brownfield)
 
-1. Run `aid-discover` on the codebase. This produces your Knowledge Base.
+1. Run `/aid-init`, then `/aid-discover` on the codebase. This produces your Knowledge Base.
 2. Review the KB. Fill gaps with human knowledge.
-3. For the next feature request, run `aid-interview` with the stakeholder.
-4. Run `aid-specify` with REQUIREMENTS.md + KB as input.
-5. Run `aid-plan` to define the roadmap.
-6. Run `aid-detail` to decompose into tasks.
-7. Run `aid-execute` for each task.
-8. Review is built into `aid-execute` (code → review → fix → done).
-9. Run `aid-execute` to validate in staging.
-10. Run `aid-deploy` to package and ship.
+3. For the next feature request, run `/aid-interview` with the stakeholder.
+4. Run `/aid-specify` to add a technical spec to each feature.
+5. Run `/aid-plan` to sequence features into deliveries.
+6. Run `/aid-detail` to decompose deliveries into typed tasks.
+7. Run `/aid-execute` for each task — it codes, reviews, and grades in one loop until the grade clears the bar.
+8. Run `/aid-deploy` to verify, package, and ship the delivery; then `/aid-monitor` once it is in production.
 
 ### Starting a New Project (Greenfield)
 
-1. Run `aid-interview` with the stakeholder. This is your starting point.
+1. Run `/aid-init`, then `/aid-interview` with the stakeholder. This is your starting point.
 2. A minimal KB is populated from interview answers.
-3. Run `aid-specify` with REQUIREMENTS.md + minimal KB.
-4. Continue with Plan → Detail → Implement → Review → Test → Deploy.
+3. Run `/aid-specify` to add a technical spec to each feature.
+4. Continue with Plan → Detail → Execute → Deploy → Monitor.
 5. The KB grows organically as the codebase develops.
 
 ### Adopting Incrementally
 
 You don't need to use all eight phases from day one:
 
-- **Start with Detail + Implement.** If you already have specs, just formalize your task decomposition and agent execution.
-- **Add Review.** Introduce the grading system and spec-anchored review.
-- **Add Test.** Add staging validation between review and deploy.
-- **Add Plan.** Separate strategy from tactics with two-level planning.
-- **Add Discover.** For the next brownfield project, run Discovery first.
-- **Add Interview.** For the next client project, use the adaptive interview.
-- **Add Track + Triage.** Once you're shipping, add production monitoring and issue classification. Triage closes the bug loop — root cause analysis routing directly back to implementation.
+- **Start with Detail + Execute.** If you already have specs, formalize your task decomposition and reviewed execution — Execute codes, reviews, and grades in one loop.
+- **Add Plan.** Separate delivery strategy from tactical decomposition with two-level planning.
+- **Add Discover.** For the next brownfield project, build the Knowledge Base first.
+- **Add Interview + Specify.** For the next client engagement, gather requirements through the adaptive interview, then refine each feature technically.
+- **Add Deploy + Monitor.** Once you're shipping regularly, formalize delivery and production monitoring.
 - **Go full pipeline.** Once each phase is familiar, run them sequentially with feedback loops.
 
 ### Anti-Patterns
@@ -1163,5 +1138,5 @@ You don't need to use all eight phases from day one:
 
 ---
 
-*AID V3 — March 2026*
+*AID V3.1 — May 2026*
 *Built from practice, not theory. Every phase, every template, every feedback loop was born from real projects.*

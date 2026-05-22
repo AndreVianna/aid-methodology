@@ -240,7 +240,7 @@ Grading is **deterministic**: the Reviewer never assigns a letter grade — it p
 
 ## Feedback Loops
 
-The pipeline is sequential by default, but real engineering isn't linear. AID defines **eleven formal feedback loops** — eight within development, three connecting production back to development — so any phase can revise an upstream artifact when reality contradicts an assumption.
+The pipeline is sequential by default, but real engineering isn't linear. AID defines **eleven formal feedback loops** — eight within development, two connecting production back to development, and one cross-cutting re-entry available from any phase — so any phase can revise an upstream artifact when reality contradicts an assumption.
 
 Every loop produces a formal artifact (`GAP.md`, `IMPEDIMENT.md`, or a Monitor finding) with a revision trail. The spec evolves — but **traceably**. You can always answer "why did this change?" with evidence.
 
