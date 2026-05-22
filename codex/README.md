@@ -26,13 +26,13 @@ For Codex, the AID model tier matrix maps to OpenAI models as:
 
 | Tier | Model | Reasoning Effort | When |
 |------|-------|------------------|------|
-| Opus | `gpt-5.5` | `high` | Foundational/adversarial/judgment-heavy work |
-| Sonnet | `gpt-5.4` | `medium` | Production work with structured inputs |
-| Haiku | `gpt-5.4-mini` | `low` | Mechanical sub-tasks (extraction, formatting, enumeration) |
+| Large | `gpt-5.5` | `high` | Foundational/adversarial/judgment-heavy work |
+| Medium | `gpt-5.4` | `medium` | Production work with structured inputs |
+| Small | `gpt-5.4-mini` | `low` | Mechanical sub-tasks (extraction, formatting, enumeration) |
 
 The Reviewer ≥ Executor invariant is enforced: the agent that grades is never below the agent it grades.
 
-> **Migration note (May 2026):** Prior versions of this directory had inconsistent tier assignments — 7 of the 9 Sonnet-tier agents (researcher, operator, ux-designer, devops, tech-writer, data-engineer, performance) were set to `gpt-5.4-mini` with `medium` reasoning, which doesn't correspond to any documented tier. They have been corrected to `gpt-5.4` `medium` (Sonnet). If you previously customized these files in your project install, your overrides may need re-applying.
+> **Migration note (May 2026):** Prior versions of this directory had inconsistent tier assignments — 7 of the 9 Medium-tier agents (researcher, operator, ux-designer, devops, tech-writer, data-engineer, performance) were set to `gpt-5.4-mini` with `medium` reasoning, which doesn't correspond to any documented tier. They have been corrected to `gpt-5.4` `medium` (Medium tier). If you previously customized these files in your project install, your overrides may need re-applying.
 
 ## Agents
 
@@ -61,7 +61,7 @@ The Reviewer ≥ Executor invariant is enforced: the agent that grades is never 
 
 ### Discovery Sub-Agents (used by aid-discover skill)
 
-All Discovery sub-agents run at the Opus tier — Discovery is foundational and runs once per project, so the cost case for cheaper tiers doesn't hold.
+All Discovery sub-agents run at the Large tier — Discovery is foundational and runs once per project, so the cost case for cheaper tiers doesn't hold.
 
 | Agent | File | Model | Reasoning | Specialty |
 |-------|------|-------|-----------|-----------|
@@ -74,7 +74,7 @@ All Discovery sub-agents run at the Opus tier — Discovery is foundational and 
 
 ### Utility Sub-Agents (called by Core/Specialist agents)
 
-These Haiku-tier sub-agents are dispatched *by* full agents for mechanical sub-tasks. Never invoked at the skill layer.
+These Small-tier sub-agents are dispatched *by* full agents for mechanical sub-tasks. Never invoked at the skill layer.
 
 | Agent | File | Model | Reasoning | Purpose |
 |-------|------|-------|-----------|---------|

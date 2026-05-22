@@ -57,9 +57,9 @@ Markdown table:
 
 No Read, no Grep — Glob never opens file contents.
 
-## Model
+## Tier
 
-**Haiku** (Anthropic) / **gpt-5.4-mini** (OpenAI Codex) — file enumeration with metadata is mechanical. The model exists only to interpret the request, dispatch the right glob/find command, and shape the output table. Larger models add no value.
+**Small tier** — file enumeration with metadata is mechanical. The model exists only to interpret the request, dispatch the right glob/find command, and shape the output table. Larger models add no value.
 
 ## Caller Contract
 

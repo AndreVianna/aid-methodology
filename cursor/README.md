@@ -47,7 +47,7 @@ This gives you:
 
 ### Discovery Sub-Agents (dispatched by aid-discover)
 
-All Discovery sub-agents run at the Opus tier — Discovery is foundational and runs once per project, so the cost case for cheaper tiers doesn't hold.
+All Discovery sub-agents run at the Large tier — Discovery is foundational and runs once per project, so the cost case for cheaper tiers doesn't hold.
 
 | Agent | File | Model | Outputs |
 |-------|------|-------|---------|
@@ -128,7 +128,7 @@ Skills are loaded automatically when matched by description. Each SKILL.md conta
 Agent files define specialized roles with constrained tool access and focused system prompts. Dispatched via the Task tool (experimental as of March 2026); falls back to sequential execution if Task tool is unavailable.
 
 ### Utility Sub-Agents
-The `simple-*` agents are not invoked at the skill layer. Core/Specialist agents call them internally to offload mechanical work (extraction, formatting, file enumeration) to the Haiku tier. The caller validates the output.
+The `simple-*` agents are not invoked at the skill layer. Core/Specialist agents call them internally to offload mechanical work (extraction, formatting, file enumeration) to the Small tier. The caller validates the output.
 
 ## File Format
 

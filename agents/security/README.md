@@ -40,9 +40,9 @@ This agent is not part of the standard pipeline flow. It is called on demand whe
 - **Read, Glob, Grep** — reviewing code for vulnerability patterns
 - **Bash** — running security scanning tools (npm audit, snyk, trivy, semgrep, etc.)
 
-## Model
+## Tier
 
-**Opus** (Anthropic) / **gpt-5.5** high reasoning (OpenAI Codex) — security requires deep analysis. Missing a vulnerability is worse than missing a code style issue. The Security agent needs to think about edge cases, attack chains, and subtle logic flaws. Cost asymmetry strongly favors the higher tier — false negatives in review are far more expensive than the model spend.
+**Large tier** — security requires deep analysis. Missing a vulnerability is worse than missing a code style issue. The Security agent needs to think about edge cases, attack chains, and subtle logic flaws. Cost asymmetry strongly favors the higher tier — false negatives in review are far more expensive than the model spend.
 
 ## Examples
 

@@ -44,9 +44,9 @@ The Researcher is read-heavy by design. It should never modify production code. 
 - **Bash** — read-heavy commands: `find`, `tree`, `wc`, `rg`, `cat`, `head`, `tail`
 - **Write** — only for KB documents and reports (never production code)
 
-## Model
+## Tier
 
-**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — investigation and KB synthesis is structured production work with KB templates as scaffolding. The full Discovery phase runs through the discovery-* sub-agents at Opus; the Researcher's standalone work (targeted KB updates, Track-phase telemetry) is well-served by Sonnet without losing depth.
+**Medium tier** — investigation and KB synthesis is structured production work with KB templates as scaffolding. The full Discovery phase runs through the discovery-* sub-agents at the Large tier; the Researcher's standalone work (targeted KB updates, Track-phase telemetry) is well-served by the Medium tier without losing depth.
 
 ## Examples
 

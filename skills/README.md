@@ -8,47 +8,42 @@ Each skill represents one phase of the AID pipeline. These README files provide 
 
 ## The Skills
 
-### Setup (run once, before the pipeline)
+### Group 1: Prepare
 
 | Skill | Phase | Purpose |
 |-------|-------|---------|
 | [aid-init](aid-init/README.md) | 0. Init | Initialize a project: collect metadata, scaffold KB structure, create AGENTS.md and CLAUDE.md placeholders |
+| [aid-discover](aid-discover/README.md) | 1. Discover | Analyze an existing codebase and produce a structured Knowledge Base |
+| `aid-summarize` | — Summarize | *Optional.* Generate a single-file `knowledge-summary.html` from `.aid/knowledge/` — offline, light/dark theme, accessibility-first (WCAG AA), Mermaid diagrams. Idempotent: re-running on an unchanged KB is a no-op. |
 
-> Run `/aid-init` before Discovery (brownfield) or Interview (greenfield). It creates the `.aid/knowledge/` directory with 16 empty KB templates and all required placeholders. This is bootstrapping — not a methodology phase.
+> `aid-init` is run once, before the pipeline — bootstrapping, not a methodology phase. `aid-summarize` is optional and runs after `/aid-discover` reaches DONE and the KB is approved.
 
-### Group 1: Define
+### Group 2: Define
 
 | Skill | Phase | Purpose |
 |-------|-------|---------|
-| [aid-discover](aid-discover/README.md) | 1. Discover | Analyze an existing codebase and produce a structured Knowledge Base |
 | [aid-interview](aid-interview/README.md) | 2. Interview | Gather requirements and decompose into features through adaptive conversation |
 | [aid-specify](aid-specify/README.md) | 3. Specify | Technical refinement per feature — tech lead proposes, developer discusses |
 
-### Group 2: Map
+### Group 3: Map
 
 | Skill | Phase | Purpose |
 |-------|-------|---------|
 | [aid-plan](aid-plan/README.md) | 4. Plan | Sequence features into deliverables — each one a functional MVP |
 | [aid-detail](aid-detail/README.md) | 5. Detail | Decompose deliverables into small, sequential, typed tasks |
 
-### Group 3: Execute
+### Group 4: Execute
 
 | Skill | Phase | Purpose |
 |-------|-------|---------|
 | [aid-execute](aid-execute/README.md) | 6. Execute | Type-aware task execution (RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE) with built-in review |
 
-### Group 4: Deliver
+### Group 5: Deliver
 
 | Skill | Phase | Purpose |
 |-------|-------|---------|
 | [aid-deploy](aid-deploy/README.md) | 7. Deploy | Final verification, PR creation, KB update, delivery summary |
 | [aid-monitor](aid-monitor/README.md) | 8. Monitor | Observe production, classify findings (BUG/CR/Infra/No Action), route actions |
-
-### Optional (runs after Discovery)
-
-| Skill | When | Purpose |
-|-------|------|---------|
-| `aid-summarize` | After `/aid-discover` reaches DONE and the KB is approved | Generate a single-file `knowledge-summary.html` from `.aid/knowledge/` — offline, light/dark theme, accessibility-first (WCAG AA), Mermaid diagrams. Idempotent: re-running on an unchanged KB is a no-op. |
 
 ---
 

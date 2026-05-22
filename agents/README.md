@@ -4,19 +4,29 @@ Agents in AID are **specialties**, not phases. Each agent has a focused area of 
 
 ## Core, Specialist, and Utility
 
-AID agents are divided into three categories:
+AID agents are divided into three categories by **role**:
 
 - **Core Agents** (7) — always present in the pipeline. Every project uses them.
 - **Specialist Agents** (6) — invoked ad-hoc when their expertise is needed. Not every project uses every specialist.
-- **Utility Agents** (3) — Haiku-tier sub-agents called *by* Core/Specialist agents for mechanical sub-tasks (extraction, formatting, file enumeration). Never invoked at the skill layer.
+- **Utility Agents** (3) — Small-tier sub-agents called *by* Core/Specialist agents for mechanical sub-tasks (extraction, formatting, file enumeration). Never invoked at the skill layer.
 
-Models map per tier across editor variants:
+## Model Tiers
 
-| Tier | Anthropic | OpenAI Codex |
-|------|-----------|---------------|
-| Opus | `opus` | `gpt-5.5` (high reasoning) |
-| Sonnet | `sonnet` | `gpt-5.4` (medium reasoning) |
-| Haiku | `haiku` | `gpt-5.4-mini` (low reasoning) |
+Independently of role, every agent runs at one of three **model tiers**, chosen by the cost/precision trade-off the work justifies:
+
+| Tier | Cost & speed | Precision | Best for |
+|------|--------------|-----------|----------|
+| **Small** | cheapest, fastest | lower — more prone to mistakes | small, well-defined, mechanical tasks |
+| **Medium** | moderate price, moderate speed | good — fewer mistakes | substantial work that needs reasoning within a known shape |
+| **Large** | most expensive, slowest | highest — fewest mistakes | hard, open-ended analysis that demands deep reasoning |
+
+The tiers are **provider-agnostic** — each is an abstract capability level, not a model. Current model examples per provider:
+
+| Tier | Anthropic | OpenAI |
+|------|-----------|--------|
+| **Large** | Claude Opus | GPT-5.5 (high reasoning) |
+| **Medium** | Claude Sonnet | GPT-5.4 (medium reasoning) |
+| **Small** | Claude Haiku | GPT-5.4-mini (low reasoning) |
 
 The Reviewer ≥ Executor invariant is enforced: the agent that writes is never the agent that grades, and the grader's tier is never below the writer's.
 
@@ -28,18 +38,18 @@ These agents form the backbone of every AID pipeline:
 
 | Agent | Specialty | Typical Phases | Tier |
 |-------|-----------|----------------|------|
-| [**Orchestrator**](orchestrator/) | Pipeline coordination, routing, human gates | All | Sonnet |
-| [**Researcher**](researcher/) | Investigation, KB generation, analysis | Discover, Track, any | Sonnet |
-| [**Interviewer**](interviewer/) | Adaptive dialogue, requirements gathering | Interview | Opus |
-| [**Architect**](architect/) | Design: specs, plans, task decomposition | Specify, Plan, Detail | Opus |
-| [**Developer**](developer/) | Code implementation (only agent that writes code) | Implement | Sonnet |
-| [**Reviewer**](reviewer/) | Adversarial issue-finding; grade computed by script | Review, Test | Opus |
-| [**Operator**](operator/) | Deployment, PR creation, release management | Deploy | Sonnet |
+| [**Orchestrator**](orchestrator/) | Pipeline coordination, routing, human gates | All | Medium |
+| [**Researcher**](researcher/) | Investigation, KB generation, analysis | Discover, Track, any | Medium |
+| [**Interviewer**](interviewer/) | Adaptive dialogue, requirements gathering | Interview | Large |
+| [**Architect**](architect/) | Design: specs, plans, task decomposition | Specify, Plan, Detail | Large |
+| [**Developer**](developer/) | Code implementation (only agent that writes code) | Implement | Medium |
+| [**Reviewer**](reviewer/) | Adversarial issue-finding; grade computed by script | Review, Test | Large |
+| [**Operator**](operator/) | Deployment, PR creation, release management | Deploy | Medium |
 
 ### How Core Agents Map to Phases
 
 ```
-Discover    → Researcher (with discovery-* sub-agents at Opus)
+Discover    → Researcher (with discovery-* sub-agents at the Large tier)
 Interview   → Interviewer
 Specify     → Architect
 Plan        → Architect
@@ -62,12 +72,12 @@ These agents are invoked on demand when specific expertise is needed:
 
 | Agent | Specialty | Called By | Tier |
 |-------|-----------|-----------|------|
-| [**UX Designer**](ux-designer/) | UI/UX, accessibility (WCAG), user flows | Architect, Reviewer | Sonnet |
-| [**DevOps**](devops/) | CI/CD, IaC, containerization, monitoring | Operator, Researcher | Sonnet |
-| [**Tech Writer**](tech-writer/) | Documentation, API docs, changelogs | Operator, Architect | Sonnet |
-| [**Security**](security/) | Threat modeling, OWASP, auth, dependency audit | Reviewer, Researcher | Opus |
-| [**Data Engineer**](data-engineer/) | Schema, migrations, queries, ETL | Architect, Developer | Sonnet |
-| [**Performance**](performance/) | Profiling, load testing, caching, optimization | Reviewer, Researcher | Sonnet |
+| [**UX Designer**](ux-designer/) | UI/UX, accessibility (WCAG), user flows | Architect, Reviewer | Medium |
+| [**DevOps**](devops/) | CI/CD, IaC, containerization, monitoring | Operator, Researcher | Medium |
+| [**Tech Writer**](tech-writer/) | Documentation, API docs, changelogs | Operator, Architect | Medium |
+| [**Security**](security/) | Threat modeling, OWASP, auth, dependency audit | Reviewer, Researcher | Large |
+| [**Data Engineer**](data-engineer/) | Schema, migrations, queries, ETL | Architect, Developer | Medium |
+| [**Performance**](performance/) | Profiling, load testing, caching, optimization | Reviewer, Researcher | Medium |
 
 ### When to Call a Specialist
 
@@ -84,13 +94,13 @@ The Orchestrator (or any Core agent) invokes a specialist when:
 
 ## Utility Agents
 
-These Haiku-tier sub-agents are dispatched *by* Core/Specialist agents for mechanical sub-tasks. They are never exposed at the skill layer — they exist to keep mechanical work cheap.
+These Small-tier sub-agents are dispatched *by* Core/Specialist agents for mechanical sub-tasks. They are never exposed at the skill layer — they exist to keep mechanical work cheap.
 
 | Agent | Purpose | Used By | Tier |
 |-------|---------|---------|------|
-| [**simple-extractor**](simple-extractor/) | Extract structured items from files (annotations, imports, endpoints) per a fixed schema | Researcher, discovery-*, others | Haiku |
-| [**simple-formatter**](simple-formatter/) | Fill markdown templates with structured input | discovery-*, Operator, Tech Writer | Haiku |
-| [**simple-glob**](simple-glob/) | Enumerate files matching glob patterns with metadata (path, size, mtime) | Researcher, Operator, others | Haiku |
+| [**simple-extractor**](simple-extractor/) | Extract structured items from files (annotations, imports, endpoints) per a fixed schema | Researcher, discovery-*, others | Small |
+| [**simple-formatter**](simple-formatter/) | Fill markdown templates with structured input | discovery-*, Operator, Tech Writer | Small |
+| [**simple-glob**](simple-glob/) | Enumerate files matching glob patterns with metadata (path, size, mtime) | Researcher, Operator, others | Small |
 
 Caller contract: full agents validate the simple-* output (sample-check, count sanity, schema match) before consuming it.
 
@@ -102,14 +112,14 @@ The Discovery phase dispatches 5 specialized sub-agents in parallel. They are de
 
 | Sub-agent | Outputs | Tier |
 |-----------|---------|------|
-| `discovery-architect` | architecture.md, technology-stack.md, ui-architecture.md | Opus |
-| `discovery-analyst` | module-map.md, coding-standards.md, data-model.md | Opus |
-| `discovery-integrator` | api-contracts.md, integration-map.md, domain-glossary.md | Opus |
-| `discovery-quality` | test-landscape.md, security-model.md, tech-debt.md | Opus |
-| `discovery-scout` | infrastructure.md, additional-info.md | Opus |
-| `discovery-reviewer` | DISCOVERY-STATE.md (grades all KB docs) | Opus |
+| `discovery-architect` | architecture.md, technology-stack.md, ui-architecture.md | Large |
+| `discovery-analyst` | module-map.md, coding-standards.md, data-model.md | Large |
+| `discovery-integrator` | api-contracts.md, integration-map.md, domain-glossary.md | Large |
+| `discovery-quality` | test-landscape.md, security-model.md, tech-debt.md | Large |
+| `discovery-scout` | infrastructure.md, additional-info.md | Large |
+| `discovery-reviewer` | DISCOVERY-STATE.md (grades all KB docs) | Large |
 
-Discovery sub-agents may delegate mechanical work to `simple-*` utilities. They run in parallel after a fast Haiku-tier shell pre-pass (`templates/scripts/build-project-index.sh`) that emits a shared file inventory.
+Discovery sub-agents may delegate mechanical work to `simple-*` utilities. They run in parallel after a fast Small-tier shell pre-pass (`templates/scripts/build-project-index.sh`) that emits a shared file inventory.
 
 ---
 
@@ -148,9 +158,9 @@ Examples:
 - `aid-interview` runs as `interviewer` for States 1–4, then explicitly switches to `architect` for State 5 (Feature Decomposition) and `reviewer` for State 6 (Cross-Reference).
 - `aid-detail`, `aid-plan`, `aid-specify` run their default agent for proposal phases, then explicitly dispatch `reviewer` for the REVIEW step.
 
-### Mechanical Work at the Cheap Tier
+### Mechanical Work at the Small Tier
 
-Foundation extraction, file enumeration, and template-filling do not require Opus reasoning. The `simple-*` Utility tier exists so Core/Specialist agents can offload these chunks at Haiku price while keeping synthesis at their own tier.
+Foundation extraction, file enumeration, and template-filling do not require Large-tier reasoning. The `simple-*` Utility agents exist so Core/Specialist agents can offload these chunks at Small-tier price while keeping synthesis at their own tier.
 
 ---
 

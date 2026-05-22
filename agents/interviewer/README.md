@@ -40,9 +40,9 @@ The Interviewer is conversation-first. It uses minimal tools — just enough to 
 - **Read, Glob, Grep** — minimal, for checking existing KB and requirements context
 - No Write, Edit, or Bash — the Interviewer's output is conversational; REQUIREMENTS.md is assembled from the dialogue
 
-## Model
+## Tier
 
-**Opus** (Anthropic) / **gpt-5.5** high reasoning (OpenAI Codex) — nuanced conversation requires deep reasoning. The Interviewer needs to read between the lines, detect contradictions in what the stakeholder says, and ask the right follow-up. Cost of bad questions is human time wasted — asymmetric, so worth the higher tier.
+**Large tier** — nuanced conversation requires deep reasoning. The Interviewer needs to read between the lines, detect contradictions in what the stakeholder says, and ask the right follow-up. Cost of bad questions is human time wasted — asymmetric, so worth the higher tier.
 
 ## Examples
 

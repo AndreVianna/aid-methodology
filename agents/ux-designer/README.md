@@ -38,9 +38,9 @@ This agent is not part of the standard pipeline flow. It is called on demand whe
 - **Read, Glob, Grep** — reviewing existing UI code and patterns
 - **Bash** — running accessibility audit tools, inspecting component libraries
 
-## Model
+## Tier
 
-**Sonnet** (Anthropic) / **gpt-5.4** medium reasoning (OpenAI Codex) — UX recommendations and accessibility audits are knowledge-heavy synthesis against established standards (WCAG 2.1, design system patterns, platform HIG). Sonnet handles structured pattern application; Opus would add little for typical UX critique.
+**Medium tier** — UX recommendations and accessibility audits are knowledge-heavy synthesis against established standards (WCAG 2.1, design system patterns, platform HIG). The Medium tier handles structured pattern application; the Large tier would add little for typical UX critique.
 
 ## Examples
 
