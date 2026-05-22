@@ -32,7 +32,7 @@ Terms and concepts used throughout the AID methodology.
 | **Interview** | Define | REQUIREMENTS.md + per-feature SPEC.md stubs |
 | **Specify** | Define | SPEC.md technical specification |
 | **Plan** | Map | PLAN.md (sequenced deliveries) |
-| **Detail** | Map | DETAIL.md + typed task files |
+| **Detail** | Map | Typed task files + execution graph in PLAN.md |
 | **Execute** | Execute | Reviewed, graded code (8 task types, built-in review loop) |
 | **Deploy** | Deliver | Shipped delivery, PR, KB update |
 | **Monitor** | Deliver | MONITOR-STATE.md (BUG → Execute / CR → Discover / Infrastructure / No Action) |

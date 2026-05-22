@@ -29,8 +29,8 @@ Typically invoked by the **Orchestrator** after the Developer completes a task. 
 
 ## What It Produces
 
-- **REVIEW.md** — structured issue list with source/severity tags, evidence, and recommendations
-- **TEST-REPORT.md** — test execution results with pass/fail summary and failure analysis
+- **Structured issue list** recorded in the task's task-NNN-STATE.md — source/severity tags, evidence, and recommendations
+- **Test results** — test execution pass/fail summary and failure analysis, also recorded in task-NNN-STATE.md
 - Issue tags: `[CODE]`, `[TASK]`, `[SPEC]`, `[KB]`, `[ARCHITECTURE]`
 - Severity levels: `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`
 
@@ -59,9 +59,9 @@ The Reviewer ≥ executor invariant is enforced. When reviewing Architect or Sec
 
 ## Examples
 
-- *"Developer completed task-003. Review the implementation."* → Reviewer produces REVIEW.md with structured issue list; grading script computes the grade
-- *"Run the full E2E test suite in staging."* → Reviewer executes tests, produces TEST-REPORT.md
-- *"Is this code ready to ship?"* → Reviewer evaluates against all criteria, produces evidence-tagged findings; the grade follows from the rubric
+- *"Developer completed task-003. Review the implementation."* → Reviewer produces a structured issue list in task-003-STATE.md; grading script computes the grade
+- *"Run the full E2E test suite in staging."* → Reviewer executes tests, records results in task-NNN-STATE.md
+- *"Is this code ready to ship?"* → Reviewer evaluates against all criteria, produces evidence-tagged findings in task-NNN-STATE.md; the grade follows from the rubric
 
 ## Key Behaviors
 
@@ -90,9 +90,9 @@ The full rubric lives in [`templates/grading-rubric.md`](../../templates/grading
 Run it after producing the issue list:
 
 ```bash
-templates/scripts/grade.sh REVIEW.md
+templates/scripts/grade.sh task-NNN-STATE.md
 # or
-cat REVIEW.md | templates/scripts/grade.sh
+cat task-NNN-STATE.md | templates/scripts/grade.sh
 ```
 
 ## Escalation

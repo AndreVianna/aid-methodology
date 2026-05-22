@@ -143,20 +143,9 @@ rg "TODO|HACK|FIXME|XXX" --count-matches 2>/dev/null | sort -t: -k2 -rn | head -
 
 Record in `.aid/knowledge/tech-debt.md` with risk ratings (High/Medium/Low).
 
-### Step 10: Additional Information
+### Step 10: Open Questions
 
-Produce `.aid/knowledge/additional-info.md` with structured Q&A entries for everything that code analysis alone couldn't determine. Each entry includes:
-
-- **ID:** Q{N} (sequential)
-- **Question:** What needs to be clarified
-- **Category:** Architecture / Infrastructure / Security / Data / Business / Integration / Process / UI-UX / Performance / Testing
-- **Impact:** High / Medium / Low
-- **Status:** Pending / Answered / Skipped
-- **Context:** Evidence from code that raised the question
-- **Suggested Answer:** (optional) Best guess from code analysis
-- **Actual Answer:** (filled when answered)
-
-This covers business rules not explicit in code, deployment procedures not captured in scripts, data flows requiring human explanation, security model details, and any assumptions made during discovery. These feed directly into aid-interview.
+Record in `DISCOVERY-STATE.md`'s Q&A section everything that code analysis alone could not determine. Each entry includes an ID (Q{N}), question, category, impact (High / Medium / Low), status (Pending / Answered / Skipped), code evidence, and optional suggested answer. This covers business rules not explicit in code, deployment procedures not captured in scripts, and data flows requiring human explanation. These feed directly into aid-interview.
 
 ### Step 11: KB Index
 
@@ -174,14 +163,16 @@ Create `.aid/knowledge/README.md` with completeness tracking:
 
 ## Output
 
-A `.aid/knowledge/` directory containing the relevant subset of these 16 documents (plus a README.md index):
+A `.aid/knowledge/` directory containing the relevant subset of these 16 documents (plus a README.md index and DISCOVERY-STATE.md):
 
 | Document | Always? | Description |
 |----------|---------|-------------|
 | README.md | Yes | Index with completeness status |
+| project-structure.md | Yes | Top-level folder layout, entry points, key config files |
+| external-sources.md | If external docs ingested | External documentation ingested into the KB |
 | architecture.md | Yes | Patterns, layers, boundaries |
-| module-map.md | Yes (if >1 module) | Module inventory |
 | technology-stack.md | Yes | Full stack catalog |
+| module-map.md | Yes (if >1 module) | Module inventory |
 | coding-standards.md | Yes | Inferred conventions |
 | data-model.md | If DB exists | Schema and relationships |
 | api-contracts.md | If APIs exist | External API surface |
@@ -193,7 +184,6 @@ A `.aid/knowledge/` directory containing the relevant subset of these 16 documen
 | infrastructure.md | If infra is visible | Hosting, deployment |
 | ui-architecture.md | If frontend exists | Component tree, state management, design system, routing, a11y, styling |
 | feature-inventory.md | After Q&A | User-provided feature list enriched with module, endpoint, and data entity mapping |
-| additional-info.md | Yes | Structured Q&A — gaps, assumptions, clarifications with impact tracking |
 
 ## Targeted Discovery (Re-entry)
 
@@ -214,7 +204,7 @@ When triggered by a Q&A entry in `DISCOVERY-STATE.md` or an IMPEDIMENT.md from a
 - [ ] Every KB document has a clear scope — no overlap between documents.
 - [ ] Claims are grounded in code evidence (file paths, line numbers, grep results).
 - [ ] Inferred information is marked as inferred (e.g., "⚠️ Inferred from code — needs confirmation").
-- [ ] `additional-info.md` captures everything that requires human input with structured Q&A entries.
+- [ ] `DISCOVERY-STATE.md` Q&A section captures everything that requires human input with structured entries.
 - [ ] `README.md` accurately reflects completeness status.
 - [ ] `README.md` includes a revision history section with the initial discovery entry.
 
@@ -235,7 +225,7 @@ Without Discovery, specs are generic and agents improvise. With Discovery, specs
 
 ## Related Phases
 
-- **Next:** [Interview](../aid-interview/) — uses `additional-info.md` from the KB to focus requirements gathering
+- **Next:** [Interview](../aid-interview/) — uses open questions from `DISCOVERY-STATE.md` to focus requirements gathering
 - **Triggered by:** Any downstream phase via a Q&A entry in `DISCOVERY-STATE.md`
 
 ## See Also

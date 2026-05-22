@@ -64,7 +64,7 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
 The grade is **computed deterministically**, not judged. The reviewer outputs a structured issue list with `[CRITICAL]`/`[HIGH]`/`[MEDIUM]`/`[LOW]`/`[MINOR]` severity tags. The grade follows from the rubric.
 
 - Rubric: `../../templates/grading-rubric.md`
-- Script: `../../templates/scripts/grade.sh REVIEW.md` (or pipe via `cat REVIEW.md | grade.sh`)
+- Script: `../../templates/scripts/grade.sh` — run it on the reviewer's issue list (recorded in `task-NNN-STATE.md`).
 - Minimum grade: read from `.aid/knowledge/DISCOVERY-STATE.md` field `**Minimum Grade:**`
 
 Run the script after the reviewer completes. The script prints the grade. Compare against minimum grade to decide DONE vs FIX.

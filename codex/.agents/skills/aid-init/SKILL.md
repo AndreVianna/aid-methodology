@@ -246,6 +246,7 @@ for a new project), and that's expected. The reviewer in later phases understand
 | security-model.md | ❌ Pending | aid-discover |
 | tech-debt.md | ❌ Pending | aid-discover |
 | infrastructure.md | ❌ Pending | aid-discover |
+| ui-architecture.md | ❌ Pending | aid-discover |
 | feature-inventory.md | ❌ Pending | aid-discover |
 
 ## Revision History
@@ -279,6 +280,7 @@ If your task touches an area covered here, read the relevant document first.
 | security-model.md | Pending discovery |
 | tech-debt.md | Pending discovery |
 | infrastructure.md | Pending discovery |
+| ui-architecture.md | Pending discovery |
 | feature-inventory.md | Pending discovery |
 ```
 

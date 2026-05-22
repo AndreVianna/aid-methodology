@@ -116,7 +116,7 @@ The Discovery phase dispatches 5 specialized sub-agents in parallel. They are de
 | `discovery-analyst` | module-map.md, coding-standards.md, data-model.md | Large |
 | `discovery-integrator` | api-contracts.md, integration-map.md, domain-glossary.md | Large |
 | `discovery-quality` | test-landscape.md, security-model.md, tech-debt.md | Large |
-| `discovery-scout` | infrastructure.md, additional-info.md | Large |
+| `discovery-scout` | infrastructure.md, project-structure.md | Large |
 | `discovery-reviewer` | DISCOVERY-STATE.md (grades all KB docs) | Large |
 
 Discovery sub-agents may delegate mechanical work to `simple-*` utilities. They run in parallel after a fast Small-tier shell pre-pass (`templates/scripts/build-project-index.sh`) that emits a shared file inventory.

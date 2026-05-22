@@ -4,7 +4,7 @@ Reusable document templates for every artifact produced during the AID lifecycle
 
 ## Knowledge Base (Discovery Phase)
 
-The Knowledge Base is AID's gravitational center — 13 documents that capture the living understanding of a project.
+The Knowledge Base is AID's gravitational center — 16 documents that capture the living understanding of a project.
 
 → [knowledge-base/](knowledge-base/) — One template per KB document, with guidance and examples.
 
@@ -16,25 +16,19 @@ The Knowledge Base is AID's gravitational center — 13 documents that capture t
 
 → [specs/spec-template.md](specs/spec-template.md) — Per-feature SPEC.md: requirements side (from Interview) + technical specification (from Specify).
 
-## Delivery Plans (Plan + Detail Phases)
+## Tasks (Detail Phase)
 
-→ [delivery-plans/delivery-template.md](delivery-plans/delivery-template.md) — High-level delivery plan (strategy)
-→ [delivery-plans/detail-template.md](delivery-plans/detail-template.md) — Detailed execution plan (tactics)
-→ [delivery-plans/task-template.md](delivery-plans/task-template.md) — Individual task specification
+→ [delivery-plans/task-template.md](delivery-plans/task-template.md) — Individual task specification produced by Detail. The PLAN.md roadmap format is defined inline by `aid-plan`.
 
 ## Feedback Artifacts
 
 These are produced when a phase discovers that upstream assumptions were wrong. They're the formal mechanism that prevents silent workarounds.
 
 → [feedback-artifacts/IMPEDIMENT.md](feedback-artifacts/IMPEDIMENT.md) — Implementation blocker requiring plan/spec revision
-→ [feedback-artifacts/MONITOR-STATE.md](feedback-artifacts/MONITOR-STATE.md) — Production finding classification and routing
 
 ## Reports
 
-→ [reports/review-template.md](reports/review-template.md) — Code review report with grading
-→ [reports/test-report-template.md](reports/test-report-template.md) — Staging/E2E test validation report
-→ [reports/track-report-template.md](reports/track-report-template.md) — Production monitoring report
-→ [reports/correction-template.md](reports/correction-template.md) — *(Deprecated)* Bug fix scope and root cause analysis — now included in MONITOR-STATE.md
+→ [reports/discovery-state-template.md](reports/discovery-state-template.md) — Discovery grade, issues, and Q&A state
 
 ---
 

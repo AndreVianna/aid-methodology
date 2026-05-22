@@ -7,9 +7,9 @@
 # determines modifier), and prints the resulting grade.
 #
 # Usage:
-#   grade.sh REVIEW.md
-#   cat REVIEW.md | grade.sh
-#   grade.sh --explain REVIEW.md           # also prints count breakdown
+#   grade.sh <issue-list>
+#   cat <issue-list> | grade.sh
+#   grade.sh --explain <issue-list>        # also prints count breakdown
 #   grade.sh --non-functional              # forces F (build/run failed)
 #
 # Exit codes:

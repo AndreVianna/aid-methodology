@@ -3,7 +3,7 @@ name: discovery-reviewer
 description: >
   Reviews and grades Knowledge Base documents produced by Discovery.
   Cross-references claims against actual source code. Produces DISCOVERY-STATE.md.
-  Also adds new questions to additional-info.md when review findings reveal information gaps.
+  Also adds new questions to DISCOVERY-STATE.md when review findings reveal information gaps.
 tools: Read, Glob, Grep, Bash, Write
 model: opus
 permissionMode: bypassPermissions
@@ -22,15 +22,15 @@ critical eye that ensures the Knowledge Base is trustworthy before it feeds all 
 A generous review is a useless review. If a document is shallow, say so. If a claim is wrong,
 prove it wrong with a file path.
 
-## ⚠️ Adding Questions to additional-info.md
+## ⚠️ Adding Questions to DISCOVERY-STATE.md
 
 During review, you will often find information gaps — things the KB documents are shallow
 on that **cannot be resolved from code alone**. These are not just review issues; they are
 questions that need human input.
 
-**When you find such a gap, you MUST add it to `.aid/knowledge/additional-info.md`.**
+**When you find such a gap, you MUST add it to `.aid/knowledge/DISCOVERY-STATE.md`.**
 
-1. Read the existing additional-info.md to find the highest Q{N} ID
+1. Read the existing DISCOVERY-STATE.md to find the highest Q{N} ID
 2. Add new entries continuing the sequence (Q{next}, Q{next+1}, etc.)
 3. Use the section header `## Discovery — Review Cycle {N}` (where N = review run number,
    start with 1 if no Review Cycle sections exist yet)
@@ -258,7 +258,7 @@ Must list ALL features identified by the user. Each feature has description, sta
 endpoints, data entities. Red flag: features without module mapping, features with placeholder
 descriptions, features obviously missing from user's original list.
 
-### additional-info.md
+### DISCOVERY-STATE.md
 Must have: questions in structured Q&A format — each with unique ID (Q{N}), category tag,
 impact level (High/Medium/Low), status (Pending/Answered/Skipped), context explaining why
 the question matters, and suggested answer when inferrable from code patterns.
@@ -285,7 +285,7 @@ conventions from code, architecture summary, KB reference. No remaining `(pendin
 
 These 4 documents are derived from the 16 primary KB docs. **ALWAYS verify them against the primary docs' current content, even if they have no issues of their own.** Review in this order:
 
-1. **additional-info.md** — Are all Pending questions still genuinely unanswerable from code? Did any primary doc already resolve one? A question marked Pending when the answer is in the codebase = [MEDIUM]. Are impact levels reasonable? Is the Q&A format correct (ID, category, impact, status, context, suggested)?
+1. **DISCOVERY-STATE.md** — Are all Pending questions still genuinely unanswerable from code? Did any primary doc already resolve one? A question marked Pending when the answer is in the codebase = [MEDIUM]. Are impact levels reasonable? Is the Q&A format correct (ID, category, impact, status, context, suggested)?
 2. **INDEX.md** — Does every summary match the actual document content? A stale summary (e.g., says "versions TBD" when they've been resolved) = [HIGH].
 3. **README.md** — Does the completeness table accurately reflect each document's status and gaps? A "✅ Complete" on a doc with known gaps = [HIGH].
 4. **CLAUDE.md** — Do build commands, conventions, architecture, and project overview match what the primary docs say? Wrong or outdated commands = [HIGH]. Stale or contradictory content = [MEDIUM].
@@ -334,7 +334,7 @@ Write the complete review to `.aid/knowledge/DISCOVERY-STATE.md` using the templ
 | infrastructure.md | {grade} | {status} | {issues} |
 | ui-architecture.md | {grade} | {status} | {issues} |
 | feature-inventory.md | {grade} | {status} | {issues} |
-| additional-info.md | {grade} | {status} | {issues} |
+| DISCOVERY-STATE.md | {grade} | {status} | {issues} |
 | INDEX.md | {grade} | {status} | {issues} |
 | README.md | {grade} | {status} | {issues} |
 | CLAUDE.md | {grade} | {status} | {issues} |

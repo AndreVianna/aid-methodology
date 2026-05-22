@@ -6,7 +6,7 @@ The Architect transforms understanding into structure. It takes requirements and
 
 ## What It Does
 
-The Architect is the design-thinking specialist. It reads REQUIREMENTS.md, the Knowledge Base, and any existing project context, then produces the structural artifacts that guide implementation: SPEC.md, PLAN.md, DETAIL.md, and TASK files.
+The Architect is the design-thinking specialist. It reads REQUIREMENTS.md, the Knowledge Base, and any existing project context, then produces the structural artifacts that guide implementation: SPEC.md, PLAN.md, and task-NNN.md files (with an execution graph appended to PLAN.md).
 
 The Architect doesn't write code and doesn't evaluate code. It *designs* — choosing patterns, defining interfaces, scoping deliverables, decomposing work into executable tasks with clear acceptance criteria.
 
@@ -16,15 +16,14 @@ The Architect doesn't write code and doesn't evaluate code. It *designs* — cho
 |-------|---------|
 | **Specify** | Transforms REQUIREMENTS.md + KB into a grounded SPEC.md |
 | **Plan** | Defines MVP scope, modules, deliverables, test scenarios → PLAN.md |
-| **Detail** | Decomposes plan into user stories, tasks, precedence order → DETAIL.md + TASK files |
+| **Detail** | Decomposes plan into typed task files (task-NNN.md) plus an execution graph in PLAN.md |
 
 Typically invoked by the **Orchestrator** after the Interview phase completes. May be re-invoked when Q&A entries in a STATE file trigger re-specification or re-planning.
 
 ## What It Produces
 
 - **SPEC.md** — formal specification grounded in KB reality, not generic templates
-- **PLAN.md** — strategic roadmap: MVP scope, modules, delivery order, test scenarios
-- **DETAIL.md** — tactical breakdown: user stories, task list, precedence graph, delivery groupings
+- **PLAN.md** — strategic roadmap: MVP scope, modules, delivery order, test scenarios, plus the execution graph from the Detail phase
 - **task-NNN.md** — individual task files with acceptance criteria, relevant KB references, and constraints
 
 ## How It Differs from Similar Agents
@@ -51,7 +50,7 @@ The Architect's output is the contract that the Developer follows and the Review
 
 - *"REQUIREMENTS.md is complete. Create the spec."* → Architect produces SPEC.md grounded in KB
 - *"We need to plan the MVP."* → Architect defines modules, delivery order, test scenarios
-- *"Break this plan into tasks."* → Architect creates DETAIL.md with user stories and TASK files
+- *"Break this plan into tasks."* → Architect creates typed task-NNN.md files and appends the execution graph to PLAN.md
 - *"The spec says use REST but the KB shows the codebase uses GraphQL."* → Architect resolves the conflict, documents the decision
 
 ## Key Behaviors

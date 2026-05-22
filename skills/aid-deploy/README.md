@@ -10,9 +10,8 @@ Final verification, PR creation, delivery summary, and documentation updates. Th
 ## Inputs
 
 - Feature branch with all completed, reviewed, and tested tasks.
-- `DELIVERY-{id}.md` — delivery scope and success criteria.
-- `REVIEW.md` files — review results for each task.
-- `TEST-REPORT.md` — test results from staging validation.
+- `PLAN.md` — delivery scope (delivery-NNN entries) and success criteria.
+- `task-NNN-STATE.md` files — per-task review and test outcomes.
 - `SPEC.md` + `.aid/knowledge/` — for documentation updates.
 
 ## Prerequisites
@@ -20,8 +19,8 @@ Final verification, PR creation, delivery summary, and documentation updates. Th
 Before starting deployment:
 
 - [ ] All tasks in the delivery are status "Complete."
-- [ ] All tasks passed review with grade A- or above.
-- [ ] Testing phase (aid-execute) passed — TEST-REPORT.md is green.
+- [ ] All tasks passed review with grade A- or above (see task-NNN-STATE.md).
+- [ ] All TEST task outcomes in task-NNN-STATE.md are green.
 - [ ] No open IMPEDIMENT.md files blocking this delivery.
 - [ ] No unresolved feedback Q&A entries blocking this delivery.
 
@@ -110,15 +109,15 @@ Create a Pull Request with a structured description:
 - Build: ✅ zero errors, zero warnings
 - Tests: ✅ {count} pass ({new} new)
 - Lint: ✅ clean
-- Staging: ✅ TEST-REPORT.md passed
+- Staging: ✅ TEST task outcomes in task-NNN-STATE.md passed
 
 ### Review Notes
 {Any notable decisions, trade-offs, or deferred issues}
 
 ### References
-- DELIVERY-{id}.md
+- PLAN.md (delivery-{id} entry)
 - SPEC.md rev {version}
-- TEST-REPORT.md
+- task-NNN-STATE.md files
 ```
 
 ### Step 4: Documentation Updates
@@ -135,13 +134,13 @@ Add revision entries to `.aid/knowledge/README.md` for any KB changes.
 
 ### Step 5: Artifact Status Updates
 
-1. Update `DELIVERY-{id}.md`:
+1. Update the delivery-NNN entry in `PLAN.md`:
    - Status: Complete
    - Completion date
    - Final test count
    - Any deferred issues
 
-2. Update each `task-NNN.md`:
+2. Update each `task-NNN-STATE.md`:
    - Status: Complete
 
 3. Update `SPEC.md` revision history if any revisions occurred during this delivery.
@@ -152,8 +151,8 @@ Add revision entries to `.aid/knowledge/README.md` for any KB changes.
 
 - Pull Request ready for merge.
 - Delivery summary document.
-- Updated DELIVERY-{id}.md (status: Complete).
-- Updated task-NNN.md files (status: Complete).
+- Updated delivery-NNN entry in PLAN.md (status: Complete).
+- Updated task-NNN-STATE.md files (status: Complete).
 - Updated KB documents (if applicable).
 - Updated KB README.md revision history (if applicable).
 
@@ -170,13 +169,13 @@ After the PR is merged:
 ## Quality Checklist
 
 - [ ] All tasks complete and reviewed (A- or above).
-- [ ] Testing phase passed (TEST-REPORT.md green).
+- [ ] All TEST task outcomes in task-NNN-STATE.md are green.
 - [ ] Full build passes (not incremental).
 - [ ] Full test suite passes (not just new tests).
 - [ ] Lint/format clean.
 - [ ] PR created with structured description.
 - [ ] Delivery summary generated.
-- [ ] DELIVERY and TASK statuses updated.
+- [ ] Delivery-NNN entry in PLAN.md and task-NNN-STATE.md files updated to Complete.
 - [ ] KB updated with any new discoveries.
 - [ ] Revision log entries added for all KB changes.
 - [ ] No unresolved feedback Q&A entries or IMPEDIMENTs blocking this delivery.
@@ -189,8 +188,8 @@ The delivery summary and KB updates are especially important — they capture th
 
 ## Related Phases
 
-- **Previous:** [Test](../aid-execute/) — TEST-REPORT.md must have PASS verdict
-- **Next:** [Track](../aid-monitor/) — production monitoring begins
+- **Previous:** [Execute](../aid-execute/) — all tasks must be complete and reviewed
+- **Next:** [Monitor](../aid-monitor/) — production monitoring begins
 - **Feedback to:** Any phase if final verification reveals issues
 
 ## See Also

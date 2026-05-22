@@ -9,9 +9,11 @@ If your task touches an area covered here, **read the relevant document first**.
 
 | Document | Summary |
 |----------|---------|
+| project-structure.md | {2-3 line summary: top-level folder layout, entry points, key config files} |
+| external-sources.md | {2-3 line summary: external docs ingested, coverage, freshness} |
 | architecture.md | {2-3 line summary: patterns used, layer structure, key boundaries, data flow direction} |
-| module-map.md | {2-3 line summary: number of modules, grouping logic, dependency highlights} |
 | technology-stack.md | {2-3 line summary: primary language/framework, versions, build system, runtime} |
+| module-map.md | {2-3 line summary: number of modules, grouping logic, dependency highlights} |
 | coding-standards.md | {2-3 line summary: naming conventions, error handling pattern, key style rules} |
 | data-model.md | {2-3 line summary: DB engine, entity count, migration tool, key relationships} |
 | api-contracts.md | {2-3 line summary: APIs consumed/exposed, auth model, rate limits} |
@@ -21,8 +23,8 @@ If your task touches an area covered here, **read the relevant document first**.
 | security-model.md | {2-3 line summary: auth/authz approach, secrets management, compliance} |
 | tech-debt.md | {2-3 line summary: number of items, highest-risk areas, remediation status} |
 | infrastructure.md | {2-3 line summary: hosting, environments, deployment model} |
+| ui-architecture.md | {2-3 line summary: UI framework, component hierarchy, state management approach} |
 | feature-inventory.md | {2-3 line summary: number of features, coverage status, or "Pending — awaiting user input via Q&A"} |
-| additional-info.md | {2-3 line summary: number of Q&A entries, key areas needing clarification, pending vs answered} |
 
 > **Note:** Not every document exists for every project. Remove rows for documents not generated.
 > Summaries should be specific to the project, not generic descriptions of what the document *could* contain.
