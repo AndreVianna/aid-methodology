@@ -102,7 +102,7 @@ Hand a capable coding agent a vague task and a large repository, and you get pre
 | **Drift** | The implementation quietly diverges from intent; the spec rots. | Spec-as-hypothesis plus eleven formal feedback loops — upstream artifacts are revised with a traceable history, never silently worked around. |
 | **Overengineering** | The agent adds abstractions, options, and scope nobody asked for. | Typed, PR-sized tasks with explicit acceptance criteria; the reviewer grades against the spec, not against taste. |
 | **Oversights** | Bugs, missed edge cases, and untested paths slip through. | A separate adversarial reviewer — the agent that writes never grades its own work — loops until the grade clears the bar. |
-| **Context exhaustion** | Loading the whole repository into the context window — slow, costly, lossy. | A 3-tier context economy (see §2): an always-loaded index, then one KB document on demand, then an exact `path:line`. |
+| **Context exhaustion** | Loading the whole repository into the context window — slow, costly, lossy. | A 3-tier context economy (see §2, *Context Feeding Strategy*): an always-loaded index, then one KB document on demand, then an exact `path:line`. |
 
 The rest of this document is how each mechanism works.
 
@@ -416,7 +416,7 @@ The interview runs as a seven-state machine, advancing one state per run (State 
 
 **Detail is pure breakdown.** No new decisions — everything is already in PLAN + SPECs. Detail just slices deliverables into tasks small enough for an agent to execute in one session.
 
-**Task format:** Six sections — Title, Type, Source, Depends on, Scope, Acceptance Criteria. Nothing else. The Type drives both how the executor works and how the reviewer evaluates the task. Every task after the first carries at least one `Depends on` entry; only a delivery's first task uses `— (none)`.
+**Task format:** Six sections — Title, Type, Source, Depends on, Scope, Acceptance Criteria. Nothing else. The Type drives both how the executor works and how the reviewer evaluates the task. Every task declares at least one `Depends on` entry, except the first task in a delivery, which uses `— (none)`.
 
 **Output:** `.aid/{work}/tasks/task-NNN.md` files — sequential tasks numbered globally across all deliverables — plus an execution graph (dependency and parallel-wave tables) appended to `PLAN.md`.
 
