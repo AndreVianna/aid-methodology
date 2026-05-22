@@ -130,7 +130,7 @@ The Knowledge Base (`.aid/knowledge/`) is the gravitational center of the entire
 .aid/knowledge/
 ├── INDEX.md               # Meta: 2-3 line summary of every KB document (the navigation map)
 ├── README.md              # Meta: completeness status per document
-├── DISCOVERY-STATE.md     # Meta: discovery grade, open questions, review history
+├── DISCOVERY-STATE.md     # Meta: discovery grade, Q&A entries, review history
 ├── project-index.md       # Generated: a file-inventory pre-pass for the discovery sub-agents
 │
 ├── project-structure.md   # Repository layout and file inventory
@@ -251,7 +251,7 @@ AID organizes eight development phases into five groups. The pipeline is linear 
 
 Discover runs as a state machine — one invocation per step: **generate** the Knowledge Base, **review** it, resolve **open questions** with the human, **fix**, then **approve**.
 
-Generation opens with a fast, deterministic pre-pass that writes `.aid/knowledge/project-index.md` — a shared file inventory the sub-agents read instead of re-scanning the repository. Discover then dispatches **five sub-agents** — a structure scout first, then four more in parallel — that together generate the Knowledge Base; a separate **reviewer** grades it in the review step. Across the run, discovery covers:
+Generation opens with a fast, deterministic pre-pass that writes `.aid/knowledge/project-index.md` — a shared file inventory the sub-agents read instead of re-scanning the repository. Discover then dispatches its discovery sub-agents — a structure scout first, then four more in parallel that generate the rest of the Knowledge Base, and a reviewer that grades the result in the review step. Across the run, discovery covers:
 
 1. **Structure scan** — Detect project type, map folder layout, list modules/packages.
 2. **Architecture analysis** — Identify patterns, layers, boundaries, data flow.
@@ -321,9 +321,9 @@ The interview runs as a seven-state machine, advancing one state per run (State 
 
 **State 6: Cross-Reference.** Validates REQUIREMENTS.md against the full KB. Checks for contradictions, gaps, missing evidence, and staleness, then grades the findings with AID's universal rubric. Grade is a snapshot — doesn't change within the same run.
 
-**One grading rubric across the pipeline.** Every development phase that grades — Discover, Interview, Specify, Plan, Detail, Execute — works the same way: the reviewer classifies each issue it finds by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`), and the letter grade is then **computed deterministically** — the worst severity present dominates, and the count within that tier sets the modifier. The reviewer never hand-picks a grade. Each phase loops until its grade meets the project's minimum (set at `aid-init`). See §5 and `templates/grading-rubric.md`. The one exception is the optional `aid-summarize` skill — not a pipeline phase — which validates its generated HTML against a separate, purpose-built rubric: an automated quality score plus a human visual-review score, rather than the severity rubric described here.
+**One grading rubric across the pipeline.** Every development phase that grades — Discover, Interview, Specify, Plan, Detail, Execute — works the same way: the reviewer classifies each issue it finds by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`), and the letter grade is then **computed deterministically** — the worst severity present dominates, and the count within that tier sets the modifier — a scale that runs A+ down to F, with an E band for critical-severity issues. The reviewer never hand-picks a grade. Each phase loops until its grade meets the project's minimum (set at `aid-init`). See §5 and `templates/grading-rubric.md`. The one exception is the optional `aid-summarize` skill — not a pipeline phase — which validates its generated HTML against a separate, purpose-built rubric: an automated quality score plus a human visual-review score, rather than the severity rubric described here.
 
-**State 7: Done.** REQUIREMENTS.md is approved and each per-feature SPEC.md exists with its requirements side filled in — the work is ready for Specify. Re-running `/aid-interview` from Done re-enters at State 6 (Cross-Reference) to re-validate against a changed KB.
+**State 7: Done.** REQUIREMENTS.md is approved and each per-feature SPEC.md exists with its requirements side filled in — the work is ready for Specify. Re-running `/aid-interview` from Done offers a choice — add more information, re-run the cross-reference validation (State 6), or exit.
 
 **REQUIREMENTS.md sections:** Objective, Problem Statement, Users & Stakeholders, Scope, Functional Requirements, Non-Functional Requirements, Constraints, Assumptions & Dependencies, Acceptance Criteria, Priority. A Change Log at the top tracks every modification.
 
@@ -824,7 +824,7 @@ Detail produces one `task-NNN.md` per task and appends the execution graph (wave
 - [ ] Criterion 2 — concrete, testable
 ```
 
-Six elements — a `# task-NNN` title line and five fields (Type, Source, Depends on, Scope, Acceptance Criteria). Nothing else. The Type drives both how the executor works and how the reviewer evaluates the task.
+Six sections — Title, Type, Source, Depends on, Scope, Acceptance Criteria. Nothing else. The Type drives both how the executor works and how the reviewer evaluates the task.
 
 ### Review Record Format
 
