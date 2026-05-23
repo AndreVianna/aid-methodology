@@ -1,9 +1,87 @@
 # Discovery State
 
-**Grade:** A+
+> **Status:** Approved
+> **Minimum Grade:** A+
+> **Current Grade:** A+
+> **User Approved:** yes (2026-05-21)
+> **Last KB Review:** 2026-05-21 (cycle 10, final independent review)
+> **Last Summary:** 2026-05-21
+> **Project Type:** Brownfield
+
+This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary. Consolidates what used to be `DISCOVERY-STATE.md` + `SUMMARY-STATE.md` per FR2 (work-003-traceability).
+
+## KB Documents Status
+
+| Document | Status | Lines | Source | Notes |
+|----------|--------|-------|--------|-------|
+| project-structure.md | ✅ Populated | 263 | aid-discover (scout) | Top-level layout, key files, the per-tool triplication pattern (claude-code / codex / cursor), skills + agents inventories, anomalies. |
+| external-sources.md | ✅ Populated (URLs registered, web fetch deferred) | 145 | aid-init + scout | 8 vendor doc URLs + a per-vendor cross-reference mapping each external source to local repo directories. |
+| architecture.md | ✅ Populated | 587 | aid-discover (architect) | Two-level architecture (10-SKILL pipeline per user-confirmed Q16: 1 setup [Init] + 8 dev + 1 optional [Summarize]; + repo structure with 3 triplicated install trees), 8 patterns (skills as state machines, sub-agent dispatch, reference decomposition, KB as gravitational center, spec-as-hypothesis, deterministic grading, triplicated payloads, 3-tier agent model), doc-vs-code parity spot-checks. |
+| technology-stack.md | ✅ Populated | 352 | aid-discover (architect) | Multi-language tooling repo (Markdown / Shell / PowerShell / JS / CSS / HTML / TOML / JSON); no package manager, no build system, no CI workflows. |
+| ui-architecture.md | ✅ Populated | 319 | aid-discover (architect) | The `aid-summarize` HTML viewer — single-file offline HTML, light/dark theme via CSS variables, inline Mermaid, lightbox, breadcrumb scrollspy, profile-driven section templates. |
+| module-map.md | ✅ Populated | 425 | aid-discover (analyst) | 14 modules (methodology spec, skills × 4 trees, agents × 4 trees, templates × 4 trees, knowledge-summary bundle, installers, examples, reference docs); triplication relationships + Mermaid dependency graph. Notes that the 6 discovery sub-agent READMEs are pending authoring per Q18. |
+| coding-standards.md | ✅ Populated | 407 | aid-discover (analyst) | 10 convention areas (SKILL.md frontmatter, agent frontmatter per tool, Cursor `.mdc`, KB headers, template placeholders, shell idioms, markdown, filenames, triplicate-updates rule) + "Conventions NOT enforced" gap list. |
+| data-model.md | ✅ Populated | 527 | aid-discover (analyst) | 15 pipeline-artifact sections (§2.1–§2.15 — some grouping related files like DEPLOYMENT-STATE + package, MONITOR-STATE + track-report). Per-artifact schemas, cardinality matrix, Mermaid dataflow across the methodology phases. |
+| api-contracts.md | ✅ Populated | 458 | aid-discover (integrator) | No HTTP/RPC/queue surface. 14 schema contracts: host-tool frontmatter (Claude Code agent / SKILL.md / CLAUDE.md / settings.json; Codex TOML agent / SKILL.md / AGENTS.md; Cursor `.mdc` / agent / SKILL.md / AGENTS.md) + internal AID artifact schemas + breaking-change risk. |
+| integration-map.md | ✅ Populated | 267 | aid-discover (integrator) | 12 integration sections: 6 host AI tools (Claude Code + Codex + Cursor live; Copilot + Antigravity future; Claude Agent SDK separate), MCP + Hooks ecosystems (both unused — registered for future), 4 local runtimes (Node, mmdc, Bash/PS, Git). Mermaid topology + per-skill API consumption matrix. |
+| domain-glossary.md | ✅ Populated | 175 | aid-discover (integrator) | **150 terms** (markdown table rows; verified via `grep -c "^| \*\*"` post-cycle-3 — earlier 146 figure was pre-FIX-pass before 4 new entries were added for Knowledge Base Meta-Document, Knowledge Base Extension, Project Index, and Haiku tier per Q102 + Q36 resolutions). Covers lifecycle, phases, stages, artifacts, roles, quality, task types, tooling, triplication, knowledge-summary state machine. Alphabetical with `[[wikilink]]` cross-refs. |
+| test-landscape.md | ✅ Populated | 186 | aid-discover (quality) | Zero traditional tests; the only "tests" are user-runtime validation scripts (`aid-summarize` validate-html/links/diagrams/contrast). 6 documented gaps (3 HIGH: no CI, no triplication-drift checker, no smoke test). |
+| security-model.md | ✅ Populated | 305 | aid-discover (quality) | 21 severity-tagged findings: 1 HIGH (all 6 discovery sub-agents share bypassPermissions+background — corrected from "only discovery-reviewer"), 4 MEDIUM (hardcoded Maven path in Codex `developer.toml`; discovery-reviewer KB-append authority; no supply-chain verification; prompt-injection via fetched URLs), 4 LOW, 12 INFO. 0 CRITICAL. |
+| tech-debt.md | ✅ Populated | 423 | aid-discover (quality) | **20 items: 7 HIGH** (H1 triplication drift; H2 no CI/manifest/version; H3 no drift checker; H4 ~17,600 lines of 4-way duplication = 36% of repo; H5 CONTRIBUTING omits Cursor; H6 Codex installer .agents/ omission CONFIRMED; H7 Monitor templates missing CONFIRMED), **6 MEDIUM** (incl. new M6 Cursor Terminal/Bash internal inconsistency); 7 LOW. Plus 29-row Resolution Roadmap (R1–R29) mapping every Q-ID to actionable items. Notable: all 22 agents tier-consistent across the 3 install trees (May 2026 migration applied). |
+| infrastructure.md | ✅ Populated | 229 | aid-discover (quality) | No deployed infra. Distribution = git clone only; install via `setup.sh` / `setup.ps1`. ❌ Both installers **CONFIRMED to omit** copying `profiles/codex/.agents/` (per DISCOVERY-STATE Q70 + tech-debt H6 — verified via static analysis, patch trivial). |
+| feature-inventory.md | ✅ Populated | 62 | aid-discover (orchestrator) | 18 features from user-confirmed Q-FEATURES — **12 ✅ Shipped, 6 ⚠️ Partial** (cross-linked to blocking Q-IDs). |
+| host-tools-matrix.md ⭐ | ✅ Populated (extension) | 144 | aid-discover (orchestrator) | **KB extension** — per-host-tool feature parity matrix. Outside the standard 16-doc state machine; downstream skills don't read it but reviewers + maintainers do. Consolidates per-tool content scattered across integration-map / tech-debt / coding-standards / external-sources. |
+
+## Knowledge Summary Status
+
+**Profile:** cli (pipeline-focused)
+**Profile Source:** user-specified (via AskUserQuestion)
+**Profile Confidence:** low (auto-detect tied; user picked cli, then directed a pipeline-first rebuild)
+**Theme:** default
 **Minimum Grade:** A+
-**Project Type:** Brownfield
+**Minimum Grade Source:** DISCOVERY-STATE.md
+**Machine Grade:** A+ (73/73 — all AUTO_POOL checks pass; D2 verified via mmdc render)
+**Human Grade:** A+ (30/30 — K1 10/10, K2 15/15, V1 visual gate 5/5)
+**Overall Grade:** A+ (= min of Machine A+, Human A+)
 **User Approved:** yes (2026-05-21)
+**Last Run:** 2026-05-21
+**Trigger Reason:** initial
+**Output:** .aid/knowledge/knowledge-summary.html
+**Output Size:** ~3.39 MB (5,058 lines)
+**Diagrams:** 9 (Fig 1 pipeline · Fig 2 KB taxonomy · Fig 3 RAG context economy · Fig 4 agent tiers · Fig 5 skill→agent dispatch · Fig 6 Discover state machine · Fig 7 Discover phase IO · Fig 8 artifact dataflow · Fig 9 triplicated install bundles) — numbered 1-9 in document order
+**Mermaid Version:** 11.15.0
+**Mermaid Cached:** .aid/knowledge/.cache/mermaid.min.js (sha256: 70137e77bb273bb2ef972b86e8b0400cca8be53cb25bfc45911a186dc98665de)
+**Last Reviewed KB Date:** 2026-05-21
+**Last Summary Date:** 2026-05-21
+**Writeback Status:** ok
+
+## Findings (final — two-grade model)
+
+### Machine Grade — AUTO_POOL 73/73 → A+
+D1 20/20 · D2 10/10 (mmdc render) · L1 5/5 · L2 5/5 · H1 5/5 (html-validate) · A1 5/5 · A2 3/3 · A3 5/5 (auto-detected) · A4 2/2 · A5 3/3 · C1 4/4 · C2 4/4 · S2 2/2.
+
+### Human Grade — MANUAL_POOL 30/30 → A+
+K1 KB completeness 10/10 (Full) · K2 facts grounded 15/15 (Full) · V1 human visual gate 5/5 (Pass — user-confirmed A+ after multi-round visual inspection).
+
+### Diagram count
+9 / 4 (cli profile `target_diagrams`) — above the per-profile floor.
+
+## Visual inspection (V1 gate) — issues found and resolved
+
+1. **Dark-mode diagram contrast** — teal node text was unreadable. Three root causes fixed: (a) teal fill too light for white text → dark teal `#0E4D4A`; (b) Mermaid label `<p>` inheriting the page's muted color → `.nodeLabel * { color: inherit }`; (c) that CSS scoped to `.mermaid` so the lightbox clone reverted → unscoped the selector. Final: white-on-dark-teal 9.6:1, all 22 node classes pass WCAG AA in both themes + the expanded lightbox.
+2. **FIG6 (Discover state machine)** — literal `\n` rendered as text (stateDiagram-v2 needs `<br/>`). Fixed; an automated D1 guard for literal `\n` was added to `validate-diagrams.mjs`; repo-wide audit found no other occurrence.
+3. **FIG1 (pipeline)** — added the 4-group structure (Define / Map / Execute / Deliver) from the methodology README + `architecture.md`; then simplified to forward-flow-only (removed feedback-loop and KB clutter); Init + Summarize moved into the Define group (provisional).
+4. **NEW Figure 3 — RAG / 3-tier context economy** — the KB's progressive-disclosure design was a partial KB gap; closed by expanding `architecture.md` Pattern 4, then represented as a new diagram. Tracked: DISCOVERY-STATE Q180.
+5. **Figure renumbering** — figures were numbered by build-constant index, not document order; renumbered 1-9 in reading order.
+
+## Manual Notes
+
+Visual inspection ran over multiple rounds; user confirmed satisfaction with grade A+. The `/aid-summarize` grading system itself was overhauled this session (two-grade Machine/Human model; mandatory V1 visual gate; per-profile `target_diagrams`; real jsdom/mmdc D2 render check; A3 auto-detection; literal-`\n` D1 guard; H1 tidy/html-validate cascade). See DISCOVERY-STATE Q180 and tech-debt H8.
+
+
+---
+
+> **Audit trail follows.** The sections below preserve the full Discovery-area history as it accumulated across 10 review cycles, /aid-summarize gap-finding passes, and /aid-interview cross-reference staleness findings. Section names retain their original form for traceability with prior commits.
 
 ## External Documentation
 
