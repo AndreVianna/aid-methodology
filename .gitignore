@@ -38,3 +38,6 @@ desktop.ini
 
 # Generated knowledge-summary cache
 .aid/knowledge/.cache/
+
+# Claude Code files
+.claude/worktrees/
