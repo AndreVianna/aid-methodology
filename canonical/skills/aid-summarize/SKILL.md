@@ -435,10 +435,10 @@ On changes-needed: capture the user's notes in `.aid/knowledge/STATE.md` `## Kno
 
 ## Mode: WRITEBACK
 
-▶ writeback-discovery-state.sh starting (~5 s)
-Run `.aid/templates/knowledge-summary/scripts/writeback-discovery-state.sh`. It atomically:
+▶ writeback-state.sh starting (~5 s)
+Run `.aid/templates/knowledge-summary/scripts/writeback-state.sh`. It atomically:
 
-1. Acquires `.aid/knowledge/.discovery-state.lock` (file rename sentinel, 5s timeout).
+1. Acquires `.aid/knowledge/.state.lock` (file rename sentinel, 5s timeout).
 2. Reads `.aid/knowledge/STATE.md`.
 3. Locates `## Review History`. If `## Summarization History` does not exist, inserts
    it immediately after the Review History table.

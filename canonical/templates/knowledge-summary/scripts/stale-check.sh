@@ -7,12 +7,17 @@
 #   CURRENT_UNAPPROVED       — up-to-date but pending approval
 #   FIRST_RUN                — never been run
 # Exit 0 always (the "decision" is informational, not a failure).
+#
+# FR2: reads from the consolidated .aid/knowledge/STATE.md.
+#   - KB review date  → `## Review History` (Discovery area history)
+#   - Summary date    → `## Summarization History`
+#   - Approval flag   → `## Knowledge Summary Status` block, **User Approved:** line
+# Both old separate files (DISCOVERY-STATE.md, SUMMARY-STATE.md) are retired.
 
 set -u
 
 KB_DIR=".aid/knowledge"
-DISCOVERY_STATE="$KB_DIR/DISCOVERY-STATE.md"
-SUMMARY_STATE="$KB_DIR/SUMMARY-STATE.md"
+STATE="$KB_DIR/STATE.md"
 HTML_FILE="$KB_DIR/knowledge-summary.html"
 
 if [ ! -f "$HTML_FILE" ]; then
@@ -21,8 +26,8 @@ if [ ! -f "$HTML_FILE" ]; then
     exit 0
 fi
 
-if [ ! -f "$DISCOVERY_STATE" ]; then
-    echo "❌ DISCOVERY-STATE.md missing — cannot determine staleness." >&2
+if [ ! -f "$STATE" ]; then
+    echo "❌ $STATE missing — cannot determine staleness." >&2
     exit 1
 fi
 
@@ -38,11 +43,11 @@ LAST_KB_DATE=$(awk '
         if (date != "" && date != "Date") last=date
     }
     END { print last }
-' "$DISCOVERY_STATE")
+' "$STATE")
 
 # Last summary date: latest entry in ## Summarization History (may not exist)
 LAST_SUMMARY_DATE=""
-if grep -q '^## Summarization History' "$DISCOVERY_STATE"; then
+if grep -q '^## Summarization History' "$STATE"; then
     LAST_SUMMARY_DATE=$(awk '
         /^## Summarization History/ {in_section=1; next}
         in_section && /^## / {in_section=0}
@@ -52,11 +57,11 @@ if grep -q '^## Summarization History' "$DISCOVERY_STATE"; then
             if (date != "" && date != "Date") last=date
         }
         END { print last }
-    ' "$DISCOVERY_STATE")
+    ' "$STATE")
 fi
 
 if [ -z "$LAST_KB_DATE" ]; then
-    echo "⚠️  No Review History entries found in DISCOVERY-STATE.md." >&2
+    echo "⚠️  No Review History entries found in $STATE." >&2
     echo "STALE"
     exit 0
 fi
@@ -78,8 +83,17 @@ if [[ "$LAST_KB_DATE" > "$LAST_SUMMARY_DATE" ]]; then
 fi
 
 # HTML up-to-date. Now check approval.
+# Knowledge Summary Status block lives at the top of STATE.md (section heading
+# "## Knowledge Summary Status"). It has its own **User Approved:** line.
+# We scope the grep to that section so we don't get false positives from the
+# KB Documents Status block's **User Approved:** line.
 APPROVED=no
-if [ -f "$SUMMARY_STATE" ] && grep -q '^\*\*User Approved:\*\* yes' "$SUMMARY_STATE"; then
+SUMMARY_APPROVAL=$(awk '
+    /^## Knowledge Summary Status/ {in_section=1; next}
+    in_section && /^## / {in_section=0}
+    in_section && /^\*\*User Approved:\*\*/ {print; exit}
+' "$STATE")
+if echo "$SUMMARY_APPROVAL" | grep -q '^\*\*User Approved:\*\* yes'; then
     APPROVED=yes
 fi
 
