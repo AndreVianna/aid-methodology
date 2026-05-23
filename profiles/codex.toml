@@ -1,0 +1,78 @@
+# Profile: Codex CLI (OpenAI Codex CLI)
+# Encodes the Codex CLI host tool's install conventions.
+# Consumed by the render scripts (tasks 019-021) to emit the codex/ tree.
+#
+# NOTE: Codex has a split layout unique among the three tools:
+#   - Agent TOML files go under codex/.codex/agents/
+#   - Skills and templates go under codex/.agents/{skills,templates}/
+# The renderer must handle both roots when emitting Codex output.
+
+[layout]
+# Two-root layout: agents under agents_root, everything else under assets_root.
+agents_root   = "codex/.codex"
+assets_root   = "codex/.agents"
+agents_dir    = "agents"
+skills_dir    = "skills"
+templates_dir = "templates"
+# project_context_file is installed at the repo root, not inside any output root
+project_context_file = "AGENTS.md"
+
+[agent]
+# Agent files are TOML (unique to Codex among the three tools)
+format = "toml"
+
+[agent.frontmatter]
+# Required TOML fields (all Codex agents must have these)
+required = ["name", "description", "model", "model_reasoning_effort", "developer_instructions"]
+# Optional fields
+optional = []
+# No tool list in Codex agent files — tools are declared inline in developer_instructions prose
+
+[skill]
+# Skills externalize references into references/ subdirectories (Decision F).
+# Eliminates the 1,078-line bloat from the previous inlining approach.
+decomposition = "references"
+
+[skill.frontmatter]
+# Required fields (same shape as Claude Code, minus Claude-specific fields)
+required = ["name", "description", "allowed-tools"]
+# Optional fields
+optional = ["argument-hint"]
+# Codex omits context: and agent: (no equivalent harness hints in Codex CLI)
+
+[model_tiers]
+# Post-May 2026 migration (codex/README.md:35)
+[model_tiers.large]
+model            = "gpt-5.5"
+reasoning_effort = "high"
+
+[model_tiers.medium]
+model            = "gpt-5.4"
+reasoning_effort = "medium"
+
+[model_tiers.small]
+model            = "gpt-5.4-mini"
+reasoning_effort = "low"
+
+[tool_names]
+# Codex uses the same tool names as Claude Code — identity map.
+# (Bash stays Bash, Read stays Read, etc.)
+
+[filename_map]
+# Per-tool filename substitutions for canonical placeholders.
+# Standardized to canonical names per R12 / Q30 (eliminates DISCOVERY-GRADE.md divergence).
+project_context_file  = "AGENTS.md"
+reviewer_output_file  = "DISCOVERY-STATE.md"   # was DISCOVERY-GRADE.md pre-R12; now standardized
+open_questions_file   = "additional-info.md"   # was open-questions.md pre-R12; now standardized
+
+[extras]
+# No extra files in codex/.codex/ beyond the agents/ directory.
+# (codex/.codex/ contains only the agents/ subdirectory — verified by inspecting the install tree.)
+
+[capabilities]
+# Values based on host-tools-matrix.md and external-sources.md Rows 3-4.
+# TODO: confirm hooks and stop_hook_autocontinue against Codex CLI vendor docs.
+hooks                  = false  # TODO: confirm — Codex CLI hooks support not confirmed
+skill_chaining         = true   # Codex supports skill invocation
+background_execution   = false  # Codex agents do not run as background processes
+stop_hook_autocontinue = false  # TODO: confirm — not confirmed for Codex CLI
