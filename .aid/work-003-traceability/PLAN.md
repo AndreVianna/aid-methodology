@@ -4,6 +4,7 @@
 
 | Date | Change | Source |
 |------|--------|--------|
+| 2026-05-23 | **/aid-detail decomposed delivery-001 into 13 task files** under `tasks/`. Changes vs initial plan: (a) task-011 type changed from IMPLEMENT to **DOCUMENT** (rough-time-hints is a reference asset, not behavior — cleaner type semantics). (b) task-007 **split** into task-007a (AC1+AC2+AC3 + state-refs — joins the parallel wave) and task-007b (AC4 EXECUTE-WAVE drill-down only — depends on 007a) to enable intermediary verification of the base before the drill-down. (c) Task numbering kept from PLAN per user guidance 'graph rules; numbering is just an ID'. Critical path now 4 nodes: task-011 → task-007a → task-007b → task-012. | /aid-detail |
 | 2026-05-23 | Initial plan — single delivery (delivery-001) bundling feature-001 (heartbeat) implementation across all 10 SKILLs with feature-002's deferred SKILL-body state-ref updates. 12 tasks total: 10 per-skill IMPLEMENT (each bundling heartbeat invocations + state-ref updates) + 1 rough-time-hints table + 1 end-to-end verification. AC4 sub-unit drill-down included on task-007 (aid-execute) with serial-task fallback per SPEC's two-phase rollout note. Coupling notes: each SKILL.md edited once in this delivery; work-001/feature-002 (thin-router) later restructures the same files (heartbeat content is additive and survives the refactor); work-001/feature-009 (parallel) later upgrades AC4 fidelity from serial-fallback to concurrent-wave display. | /aid-plan |
 
 ## Sequencing context (cross-work)
@@ -60,14 +61,15 @@ State-ref updates from feature-002: each SKILL body that today references `INTER
 | 004 | Update `canonical/skills/aid-specify/SKILL.md` | IMPLEMENT | AC1+AC2+AC3 + state-ref updates (Work STATE `## Features Status` + Q&A sections) | No (per-section iteration deferred to v2) | Yes |
 | 005 | Update `canonical/skills/aid-plan/SKILL.md` | IMPLEMENT | AC1+AC2+AC3 + state-ref updates (Work STATE `## Plan / Deliveries`) | No | Yes |
 | 006 | Update `canonical/skills/aid-detail/SKILL.md` | IMPLEMENT | AC1+AC2+AC3 + state-ref updates (Work STATE `## Tasks Status` table init) | No | Yes |
-| 007 | Update `canonical/skills/aid-execute/SKILL.md` | IMPLEMENT | AC1+AC2+AC3 + **AC4 for `EXECUTE-WAVE` state** (sub-unit drill-down over wave tasks, serial-fallback pre-feature-009) + state-ref updates (Work STATE `## Tasks Status` row updates) | **Yes (EXECUTE-WAVE)** — serial-fallback until work-001/feature-009 ships | Yes |
+| 007a | Update `canonical/skills/aid-execute/SKILL.md` — base | IMPLEMENT | AC1+AC2+AC3 + state-ref updates (Work STATE `## Tasks Status` row updates). **NO AC4** — deferred to 007b for intermediary verification of the base. | No (joins parallel wave) | Yes |
+| 007b | Update `canonical/skills/aid-execute/SKILL.md` — AC4 drill-down | IMPLEMENT | **AC4 for `EXECUTE-WAVE` state** only — sub-unit drill-down over wave tasks, serial-fallback pre-feature-009. Depends on 007a's base. | **Yes (EXECUTE-WAVE)** — serial-fallback until work-001/feature-009 ships | No (depends on 007a) |
 | 008 | Update `canonical/skills/aid-deploy/SKILL.md` | IMPLEMENT | AC1+AC2+AC3 + state-ref updates (Work STATE `## Deploy Status`) | No | Yes |
 | 009 | Update `canonical/skills/aid-monitor/SKILL.md` | IMPLEMENT | AC1+AC2+AC3 + state-ref note (Monitor STATE deferred — comment in body pointing at the area-STATE rule; no actual STATE file references since Monitor area is not mature) | No | Yes |
 | 010 | Update `canonical/skills/aid-summarize/SKILL.md` | IMPLEMENT | AC1+AC2+AC3 + state-ref updates (Discovery STATE `## Knowledge Summary Status` + `## Summarization History`) | No | Yes |
-| 011 | Ship rough-time-hints table (canonical asset) | IMPLEMENT | Static per-operation-class table (e.g., `discovery-architect: ~3-5 min`, `reviewer: ~1-2 min`, `validate-links: ~30s`) lives in a canonical file (location: `canonical/skills/rough-time-hints.md` or inline in `feature-001` references); cited by every AC2 bracket-pair. Used by tasks 001-010 — they consume it. | No | Sequential before 001-010 (provides input) |
+| 011 | Ship rough-time-hints table (canonical asset) | **DOCUMENT** | Static per-operation-class table at `canonical/skills/rough-time-hints.md` (e.g., `discovery-architect: ~3-5 min`, `reviewer: ~1-2 min`, `validate-links: ~30s`); cited by every AC2 bracket-pair. Pure reference asset — type changed to DOCUMENT during /aid-detail per cleaner type semantics. Used by tasks 001-010. | No | Sequential before 001-010 (provides input) |
 | 012 | End-to-end verification + dogfood smoke | TEST | Run `python run_generator.py` (clean); `/aid-generate` produces install trees with heartbeat-bearing SKILLs; setup.sh smoke test installs cleanly; spot-check 3 SKILLs (aid-discover, aid-execute, aid-summarize) render heartbeat output correctly when invoked on a small toy scenario. VERIFY-4a PASS. | No | Sequential after 001-010 |
 
-**Total: 12 tasks.** Tasks 001-010 parallel-eligible after task-011 provides the rough-time-hints table.
+**Total: 13 tasks** (12 → 13 after /aid-detail split task-007 into 007a + 007b). Tasks 001-006, 007a, 008-010 all parallel-eligible after task-011 provides the rough-time-hints table; task-007b depends on 007a.
 
 ## Cross-cutting risks
 
@@ -82,34 +84,40 @@ State-ref updates from feature-002: each SKILL body that today references `INTER
 ## Execution Graph — `delivery-001`
 
 ```
-                  ┌──── task-001 (aid-init) ──────────┐
-                  ├──── task-002 (aid-discover) ──────┤
-                  ├──── task-003 (aid-interview) ─────┤
-                  ├──── task-004 (aid-specify) ───────┤
-                  ├──── task-005 (aid-plan) ──────────┤
-task-011 ────────►├──── task-006 (aid-detail) ────────┼──► task-012 (verify)
-(rough-time       ├──── task-007 (aid-execute) ──────┤
- table)           ├──── task-008 (aid-deploy) ───────┤
-                  ├──── task-009 (aid-monitor) ──────┤
-                  └──── task-010 (aid-summarize) ────┘
+                  ┌──── task-001 (aid-init) ───────────────┐
+                  ├──── task-002 (aid-discover, AC4) ──────┤
+                  ├──── task-003 (aid-interview) ──────────┤
+                  ├──── task-004 (aid-specify) ────────────┤
+                  ├──── task-005 (aid-plan) ───────────────┤
+task-011 ────────►├──── task-006 (aid-detail) ─────────────┼──┐
+(rough-time       ├──── task-007a (aid-execute, base) ────►┤  │
+ hints, DOC)      ├──── task-008 (aid-deploy) ─────────────┤  │
+                  ├──── task-009 (aid-monitor) ────────────┤  │
+                  └──── task-010 (aid-summarize) ──────────┘  │
+                              │                                 │
+                              └──► task-007b (aid-execute, AC4) ┘
+                                          │
+                                          ▼
+                                    task-012 (verify)
 ```
 
-| Task | Depends On | Can Run In Parallel With | Critical Path? |
-|------|-----------|--------------------------|----------------|
-| task-011 | — (none — provides rough-time-hints table for tasks 001-010) | — | Yes (first node) |
-| task-001 | task-011 | task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010 | No |
-| task-002 | task-011 | (same row as task-001) | No |
-| task-003 | task-011 | (same) | No |
-| task-004 | task-011 | (same) | No |
-| task-005 | task-011 | (same) | No |
-| task-006 | task-011 | (same) | No |
-| task-007 | task-011 | (same) | Yes (highest scope task in the wave: AC1-AC4 + state-ref + EXECUTE-WAVE serial-fallback; likely the slowest single task) |
-| task-008 | task-011 | (same) | No |
-| task-009 | task-011 | (same) | No |
-| task-010 | task-011 | (same) | No |
-| task-012 | task-001 .. task-010 (all 10) | — | Yes (last node) |
+| Task | Type | Depends On | Can Run In Parallel With | Critical Path? |
+|------|------|-----------|--------------------------|----------------|
+| task-011 | DOCUMENT | — | — | Yes (first node) |
+| task-001 | IMPLEMENT | task-011 | 002, 003, 004, 005, 006, 007a, 008, 009, 010 | No |
+| task-002 | IMPLEMENT | task-011 | (same wave; +AC4 for GENERATE) | No |
+| task-003 | IMPLEMENT | task-011 | (same wave) | No |
+| task-004 | IMPLEMENT | task-011 | (same wave) | No |
+| task-005 | IMPLEMENT | task-011 | (same wave) | No |
+| task-006 | IMPLEMENT | task-011 | (same wave) | No |
+| task-007a | IMPLEMENT | task-011 | (same wave; base AC1+2+3 + state-refs) | Yes (gates task-007b) |
+| task-007b | IMPLEMENT | task-007a | — (sequential after 007a) | Yes (gates task-012; AC4 EXECUTE-WAVE drill-down only) |
+| task-008 | IMPLEMENT | task-011 | (same wave as 001-007a) | No |
+| task-009 | IMPLEMENT | task-011 | (same wave) | No |
+| task-010 | IMPLEMENT | task-011 | (same wave) | No |
+| task-012 | TEST | 001, 002, 003, 004, 005, 006, 007a, 007b, 008, 009, 010 (all 11) | — | Yes (last node) |
 
-**Critical path:** `task-011 → task-007 → task-012` (3 nodes; task-007 is the bottleneck of the wave since it has the most ACs to implement, including AC4).
+**Critical path:** `task-011 → task-007a → task-007b → task-012` (**4 nodes**; gained 1 over the original 3-node path due to the 007a/007b split that enables intermediary verification of the base before adding AC4).
 
 ## Open Questions
 
