@@ -204,7 +204,7 @@ class EmissionManifest:
 
         manifest = EmissionManifest(profile_name="claude-code")
         # ... renderers call manifest.add() via write_output_file() ...
-        manifest.write("claude-code/emission-manifest.jsonl")
+        manifest.write("profiles/claude-code/emission-manifest.jsonl")
 
     The written JSONL file:
     - Opens with the version sentinel ``{"_manifest_version": 1}``.

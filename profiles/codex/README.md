@@ -9,8 +9,8 @@ Use the `setup.sh` (or `setup.ps1` on Windows) script at the repo root to instal
 path/to/aid-methodology/setup.sh /path/to/your/project
 
 # Manual
-cp -r path/to/aid-methodology/codex/.codex  .codex/
-cp -r path/to/aid-methodology/codex/.agents .agents/
+cp -r path/to/aid-methodology/profiles/codex/.codex  .codex/
+cp -r path/to/aid-methodology/profiles/codex/.agents .agents/
 cp path/to/aid-methodology/codex/AGENTS.md  AGENTS.md
 ```
 

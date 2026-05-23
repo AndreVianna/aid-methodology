@@ -21,7 +21,7 @@ One manifest per profile, placed at the **deepest common parent** of the profile
 | `profiles/codex.toml` | `codex/emission-manifest.jsonl` |
 | `profiles/cursor.toml` | `cursor/emission-manifest.jsonl` |
 
-For Codex (split layout: `codex/.codex/` + `codex/.agents/`), the single manifest at
+For Codex (split layout: `profiles/codex/.codex/` + `profiles/codex/.agents/`), the single manifest at
 `codex/emission-manifest.jsonl` covers both output roots. Record paths in the manifest
 are relative to that common parent (`codex/`) so the safety boundary covers both roots from
 one manifest. (Resolves OQ2 — one manifest per profile.)

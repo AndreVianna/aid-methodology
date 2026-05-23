@@ -78,7 +78,7 @@
 {"dst": ".agents/templates/requirements/requirements-template.md", "profile": "codex", "sha256": "1a1ae36c8342e45c94edcf87b9b2263ff706e2e8866193e31fd07b4004343ce1", "src": "canonical/templates/requirements/requirements-template.md"}
 {"dst": ".agents/templates/scripts/build-project-index.sh", "profile": "codex", "sha256": "3bd1c60e8275c2a2043a7e4a3fd6975fb011cb87141585de441716782e15ce0f", "src": "canonical/templates/scripts/build-project-index.sh"}
 {"dst": ".agents/templates/scripts/grade.sh", "profile": "codex", "sha256": "6155b1f2fae1ff85c1b6c083deb830305c231cd0f9ce9cbe983b3b3001edf3a3", "src": "canonical/templates/scripts/grade.sh"}
-{"dst": ".agents/templates/scripts/verify-kb-claims.sh", "profile": "codex", "sha256": "dab4545b25bde79b7ec777af9ceb64b864722e30701e04ffc855095fc48d1596", "src": "canonical/templates/scripts/verify-kb-claims.sh"}
+{"dst": ".agents/templates/scripts/verify-kb-claims.sh", "profile": "codex", "sha256": "301689304f92343bdc3d6923b83a4e405f73a81cff3942d58870c70b5d5655d8", "src": "canonical/templates/scripts/verify-kb-claims.sh"}
 {"dst": ".agents/templates/specs/spec-template.md", "profile": "codex", "sha256": "5e8e8653b6e30baafc411c75a03b381076c40fe2807f3767d680d7ffdee050ee", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".codex/agents/architect.toml", "profile": "codex", "sha256": "fda52c842e0b418e4861ad5bd2aa346581fe6e8af1919a237e127947e2b44cd0", "src": "canonical/agents/architect/AGENT.md"}
 {"dst": ".codex/agents/data-engineer.toml", "profile": "codex", "sha256": "4fe5d37e65e206eb8ba6bacafab9b79cd1de7f29928e951dc4216ac41509efd0", "src": "canonical/agents/data-engineer/AGENT.md"}

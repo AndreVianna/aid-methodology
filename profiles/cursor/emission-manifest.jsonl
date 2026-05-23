@@ -102,5 +102,5 @@
 {"dst": ".cursor/templates/requirements/requirements-template.md", "profile": "cursor", "sha256": "1a1ae36c8342e45c94edcf87b9b2263ff706e2e8866193e31fd07b4004343ce1", "src": "canonical/templates/requirements/requirements-template.md"}
 {"dst": ".cursor/templates/scripts/build-project-index.sh", "profile": "cursor", "sha256": "3bd1c60e8275c2a2043a7e4a3fd6975fb011cb87141585de441716782e15ce0f", "src": "canonical/templates/scripts/build-project-index.sh"}
 {"dst": ".cursor/templates/scripts/grade.sh", "profile": "cursor", "sha256": "6155b1f2fae1ff85c1b6c083deb830305c231cd0f9ce9cbe983b3b3001edf3a3", "src": "canonical/templates/scripts/grade.sh"}
-{"dst": ".cursor/templates/scripts/verify-kb-claims.sh", "profile": "cursor", "sha256": "dab4545b25bde79b7ec777af9ceb64b864722e30701e04ffc855095fc48d1596", "src": "canonical/templates/scripts/verify-kb-claims.sh"}
+{"dst": ".cursor/templates/scripts/verify-kb-claims.sh", "profile": "cursor", "sha256": "301689304f92343bdc3d6923b83a4e405f73a81cff3942d58870c70b5d5655d8", "src": "canonical/templates/scripts/verify-kb-claims.sh"}
 {"dst": ".cursor/templates/specs/spec-template.md", "profile": "cursor", "sha256": "5e8e8653b6e30baafc411c75a03b381076c40fe2807f3767d680d7ffdee050ee", "src": "canonical/templates/specs/spec-template.md"}

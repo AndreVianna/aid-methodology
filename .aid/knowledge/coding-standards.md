@@ -12,7 +12,7 @@
 
 ### 1.1 Frontmatter — required fields
 
-The `SKILL.md` frontmatter is YAML, delimited by `---` lines. Verified directly against `claude-code/.claude/skills/aid-discover/SKILL.md:1-10`, `claude-code/.claude/skills/aid-init/SKILL.md:1-10`, `codex/.agents/skills/aid-discover/SKILL.md:1-10`, and `cursor/.cursor/skills/aid-discover/SKILL.md:1-10`. All four use **the same shape**, regardless of host tool:
+The `SKILL.md` frontmatter is YAML, delimited by `---` lines. Verified directly against `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:1-10`, `profiles/claude-code/.claude/skills/aid-init/SKILL.md:1-10`, `profiles/codex/.agents/skills/aid-discover/SKILL.md:1-10`, and `profiles/cursor/.cursor/skills/aid-discover/SKILL.md:1-10`. All four use **the same shape**, regardless of host tool:
 
 | Field | Required | Type | Example |
 |-------|----------|------|---------|
@@ -27,7 +27,7 @@ The `SKILL.md` frontmatter is YAML, delimited by `---` lines. Verified directly 
 
 ### 1.2 Body structure
 
-A canonical SKILL.md body follows this section order (verified against `claude-code/.claude/skills/aid-discover/SKILL.md`):
+A canonical SKILL.md body follows this section order (verified against `profiles/claude-code/.claude/skills/aid-discover/SKILL.md`):
 
 1. `# {Title}` — H1, sentence-case, descriptive (e.g., `# Brownfield Project Discovery`).
 2. Opening paragraph — what the skill does, one paragraph, no lists.
@@ -46,9 +46,9 @@ Example: `aid-discover/SKILL.md` lines 20, 40, 82, 219, 254, 296, 352, 381, 415,
 - `references/*.md` — long-form prompts and explanations that the SKILL.md body refers to by filename.
 - `scripts/*.sh` — runnable shell scripts invoked from the SKILL.md.
 
-Example (`claude-code/.claude/skills/aid-discover/`): SKILL.md (453 lines) + `references/agent-prompts.md` (142) + `references/document-expectations.md` (121) + `references/reviewer-prompt.md` (75) + `scripts/check-preflight.sh` (45) + `scripts/verify-kb.sh` (60) = 6 files, 896 lines total. The SKILL.md body uses phrases like "Read `references/agent-prompts.md` section `## Scout`" (line 126).
+Example (`profiles/claude-code/.claude/skills/aid-discover/`): SKILL.md (453 lines) + `references/agent-prompts.md` (142) + `references/document-expectations.md` (121) + `references/reviewer-prompt.md` (75) + `scripts/check-preflight.sh` (45) + `scripts/verify-kb.sh` (60) = 6 files, 896 lines total. The SKILL.md body uses phrases like "Read `references/agent-prompts.md` section `## Scout`" (line 126).
 
-**Codex / Cursor:** the same content is **inlined into a single, longer SKILL.md**. `codex/.agents/skills/aid-discover/SKILL.md` is 1,078 lines; `cursor/.cursor/skills/aid-discover/SKILL.md` is 1,090 lines. This is why the file is 2.4x larger in those trees. (One exception in both Codex and Cursor: `aid-interview/references/kb-hydration.md` 106 lines — a single `references/` survivor.)
+**Codex / Cursor:** the same content is **inlined into a single, longer SKILL.md**. `profiles/codex/.agents/skills/aid-discover/SKILL.md` is 1,078 lines; `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` is 1,090 lines. This is why the file is 2.4x larger in those trees. (One exception in both Codex and Cursor: `aid-interview/references/kb-hydration.md` 106 lines — a single `references/` survivor.)
 
 ### 1.4 State-machine notation
 
@@ -74,15 +74,15 @@ Pattern: `[step/total]` for counted phases, `[State: NAME]` for state transition
 
 ### 2.1 Claude Code agent format
 
-**File path:** `claude-code/.claude/agents/{name}.md` (kebab-case slug = `name` frontmatter value).
+**File path:** `profiles/claude-code/.claude/agents/{name}.md` (kebab-case slug = `name` frontmatter value).
 **Frontmatter:** YAML between `---` lines. Required fields verified directly:
 
 | Field | Required | Type | Source |
 |-------|----------|------|--------|
-| `name` | yes | string (kebab-case) | `claude-code/.claude/agents/architect.md:2` |
+| `name` | yes | string (kebab-case) | `profiles/claude-code/.claude/agents/architect.md:2` |
 | `description` | yes | string OR YAML folded block | `architect.md:3` (single line), `discovery-reviewer.md:3-6` (folded block) |
 | `tools` | yes | comma-separated list (NOT YAML array) | `architect.md:4` (`Read, Glob, Grep, Write, Edit, Bash`), `discovery-analyst.md:4` (`Read, Glob, Grep, Bash, Write`) |
-| `model` | yes | one of `opus`/`sonnet`/`haiku` | `architect.md:5` (`opus`), `claude-code/.claude/agents/orchestrator.md` (Sonnet per project-structure.md) |
+| `model` | yes | one of `opus`/`sonnet`/`haiku` | `architect.md:5` (`opus`), `profiles/claude-code/.claude/agents/orchestrator.md` (Sonnet per project-structure.md) |
 | `permissionMode` | optional | string, observed value `bypassPermissions` | `discovery-reviewer.md:9`, `discovery-analyst.md:6` |
 | `background` | optional | boolean | `discovery-reviewer.md:10` (`true`), `discovery-analyst.md:7` (`true`) |
 
@@ -102,11 +102,11 @@ Larger / discovery-tier agents add:
 
 ### 2.2 Codex agent format
 
-**File path:** `codex/.codex/agents/{name}.toml`. TOML at the top, then the prose body lives inside a `developer_instructions = """..."""` multi-line string.
+**File path:** `profiles/codex/.codex/agents/{name}.toml`. TOML at the top, then the prose body lives inside a `developer_instructions = """..."""` multi-line string.
 
 | Field | Required | Type | Source |
 |-------|----------|------|--------|
-| `name` | yes | string | `codex/.codex/agents/architect.toml:1` (`name = "architect"`) |
+| `name` | yes | string | `profiles/codex/.codex/agents/architect.toml:1` (`name = "architect"`) |
 | `description` | yes | string (single line) | `architect.toml:2` |
 | `model` | yes | string (Codex model name) | `architect.toml:3` (`model = "gpt-5.5"`) |
 | `model_reasoning_effort` | yes | one of `low` / `medium` / `high` | `architect.toml:4` (`high`), `simple-extractor.toml:4` (`low`) |
@@ -117,18 +117,18 @@ Larger / discovery-tier agents add:
 | Tier | Model | Reasoning effort | Verified |
 |------|-------|-------------------|----------|
 | Opus | `gpt-5.5` | `high` | `architect.toml:3-4`, `discovery-reviewer.toml:3-4`, `discovery-analyst.toml`, `discovery-architect.toml`, `discovery-quality.toml`, `discovery-scout.toml`, `discovery-integrator.toml` |
-| Sonnet | `gpt-5.4` | `medium` | ✅ VERIFIED post-Q36 via direct grep across all 9 Sonnet-tier `codex/.codex/agents/*.toml` files (orchestrator, developer, operator, researcher, devops, data-engineer, performance, tech-writer, ux-designer) — all match. |
+| Sonnet | `gpt-5.4` | `medium` | ✅ VERIFIED post-Q36 via direct grep across all 9 Sonnet-tier `profiles/codex/.codex/agents/*.toml` files (orchestrator, developer, operator, researcher, devops, data-engineer, performance, tech-writer, ux-designer) — all match. |
 | Haiku | `gpt-5.4-mini` | `low` | `simple-extractor.toml:3-4` |
 
-✅ The Sonnet tier mapping is VERIFIED post-Q36 (cycle 1) by direct grep over all 9 Sonnet-tier Codex `*.toml` files. The May 2026 tier-rename migration documented in `codex/README.md:35` was confirmed clean across all 22 agents × 3 install trees per `tech-debt.md L6`.
+✅ The Sonnet tier mapping is VERIFIED post-Q36 (cycle 1) by direct grep over all 9 Sonnet-tier Codex `*.toml` files. The May 2026 tier-rename migration documented in `profiles/codex/README.md:35` was confirmed clean across all 22 agents × 3 install trees per `tech-debt.md L6`.
 
-**Body inside `developer_instructions`:** same H2 section order as Claude Code (`## What You Do`, `## What You Don't Do`, `## Key Constraints`, `## Output Format`, `## When to Escalate`), verified at `codex/.codex/agents/architect.toml:7-38`. **Note:** the Codex body uses **markdown headers inside a triple-quoted TOML string** — the markdown rendering depends on Codex CLI's interpretation, which is not directly verifiable from local files.
+**Body inside `developer_instructions`:** same H2 section order as Claude Code (`## What You Do`, `## What You Don't Do`, `## Key Constraints`, `## Output Format`, `## When to Escalate`), verified at `profiles/codex/.codex/agents/architect.toml:7-38`. **Note:** the Codex body uses **markdown headers inside a triple-quoted TOML string** — the markdown rendering depends on Codex CLI's interpretation, which is not directly verifiable from local files.
 
 ### 2.3 Cursor agent format
 
-**File path:** `cursor/.cursor/agents/{name}.md`. Per `project-structure.md:66` and `project-index.md`, line counts are essentially identical to Claude Code (e.g., both `architect.md` files are 40 lines; both `discovery-reviewer.md` files are 381 lines). **Same YAML frontmatter shape as Claude Code, same body structure.**
+**File path:** `profiles/cursor/.cursor/agents/{name}.md`. Per `project-structure.md:66` and `project-index.md`, line counts are essentially identical to Claude Code (e.g., both `architect.md` files are 40 lines; both `discovery-reviewer.md` files are 381 lines). **Same YAML frontmatter shape as Claude Code, same body structure.**
 
-✅ VERIFIED post-cycle-7: direct read of `cursor/.cursor/agents/architect.md:1-7` confirms YAML frontmatter with `name`, `description`, `tools`, `model` — same shape as Claude Code (with the documented `tools: ... Terminal` vs `Bash` divergence per Q52 / M6). Line-count parity per `project-index.md` also holds.
+✅ VERIFIED post-cycle-7: direct read of `profiles/cursor/.cursor/agents/architect.md:1-7` confirms YAML frontmatter with `name`, `description`, `tools`, `model` — same shape as Claude Code (with the documented `tools: ... Terminal` vs `Bash` divergence per Q52 / M6). Line-count parity per `project-index.md` also holds.
 
 ### 2.4 Drift between trees — same agent, different filename references
 
@@ -136,7 +136,7 @@ Larger / discovery-tier agents add:
 
 | Convention element | Claude Code | Codex | Cursor |
 |-------------------|-------------|-------|--------|
-| Project-context filename | `CLAUDE.md` (`claude-code/.claude/agents/discovery-reviewer.md:74`) | `AGENTS.md` (`codex/.codex/agents/discovery-reviewer.toml:37`) | `AGENTS.md` (verified: `cursor/AGENTS.md` exists at repo root, 45 lines) |
+| Project-context filename | `CLAUDE.md` (`profiles/claude-code/.claude/agents/discovery-reviewer.md:74`) | `AGENTS.md` (`profiles/codex/.codex/agents/discovery-reviewer.toml:37`) | `AGENTS.md` (verified: `profiles/cursor/AGENTS.md` exists at repo root, 45 lines) |
 | Reviewer output filename | `DISCOVERY-STATE.md` (`discovery-reviewer.md:304`) | `DISCOVERY-GRADE.md` (`discovery-reviewer.toml:258`) | `DISCOVERY-STATE.md` (per parity with Claude Code) |
 | Open-questions filename | `additional-info.md` (`discovery-reviewer.md:261`) | `open-questions.md` (`discovery-reviewer.toml:220`) | `additional-info.md` (per parity) |
 
@@ -146,9 +146,9 @@ Larger / discovery-tier agents add:
 
 ## 3. Cursor `.mdc` Rule Conventions
 
-`.mdc` files live under `cursor/.cursor/rules/` and are project-rules that Cursor injects into the agent context per its precedence rules.
+`.mdc` files live under `profiles/cursor/.cursor/rules/` and are project-rules that Cursor injects into the agent context per its precedence rules.
 
-**Frontmatter** (YAML between `---` lines), verified from `cursor/.cursor/rules/aid-methodology.mdc:1-4` and `cursor/.cursor/rules/aid-review.mdc:1-5`:
+**Frontmatter** (YAML between `---` lines), verified from `profiles/cursor/.cursor/rules/aid-methodology.mdc:1-4` and `profiles/cursor/.cursor/rules/aid-review.mdc:1-5`:
 
 | Field | Required | Type | Example |
 |-------|----------|------|---------|
@@ -207,11 +207,11 @@ After the metadata block, KB documents follow per-document templates under `temp
 
 ### 4.3 Inferred-content marking
 
-Per `templates/knowledge-base/coding-standards.md:7` and `claude-code/.claude/agents/discovery-analyst.md:29` ("Mark inferred conventions with ⚠️ Inferred from code — needs confirmation"), facts inferred from code (rather than from documentation) carry a `⚠️` prefix. The `aid-discover/SKILL.md:420` Quality Checklist enforces this: "Inferred info marked with ⚠️".
+Per `templates/knowledge-base/coding-standards.md:7` and `profiles/claude-code/.claude/agents/discovery-analyst.md:29` ("Mark inferred conventions with ⚠️ Inferred from code — needs confirmation"), facts inferred from code (rather than from documentation) carry a `⚠️` prefix. The `aid-discover/SKILL.md:420` Quality Checklist enforces this: "Inferred info marked with ⚠️".
 
 ### 4.4 File-path citation requirement
 
-`claude-code/.claude/agents/discovery-analyst.md:27` ("Every claim must cite a file path. No unsourced assertions") and `aid-discover/SKILL.md:419` ("Claims grounded in code evidence (file paths, line numbers)") establish that every factual claim in a KB document must have an inline `path:line` citation. This convention is enforced post-hoc by `discovery-reviewer` (see `discovery-reviewer.md:84-94` "Accuracy Spot-Check (AGGRESSIVE)" — minimum 15 spot-checks, 5 of which must verify versions).
+`profiles/claude-code/.claude/agents/discovery-analyst.md:27` ("Every claim must cite a file path. No unsourced assertions") and `aid-discover/SKILL.md:419` ("Claims grounded in code evidence (file paths, line numbers)") establish that every factual claim in a KB document must have an inline `path:line` citation. This convention is enforced post-hoc by `discovery-reviewer` (see `discovery-reviewer.md:84-94` "Accuracy Spot-Check (AGGRESSIVE)" — minimum 15 spot-checks, 5 of which must verify versions).
 
 ---
 
@@ -225,7 +225,7 @@ Templates use **single curly braces** for placeholders: `{Project Name}`, `{date
 - `templates/knowledge-base/data-model.md:14` (`| **Type** | {PostgreSQL / MySQL / SQLite / SQL Server / MongoDB / DynamoDB / other} |`)
 - `templates/reports/discovery-state-template.md:5` (`- **Minimum Grade:** {grade, default A}`)
 - `templates/delivery-plans/task-template.md:1` (`# task-NNN: {Name}`)
-- `claude-code/.claude/templates/discovery-state.md:5` (`**Minimum Grade:** {minimum}`)
+- `profiles/claude-code/.claude/templates/discovery-state.md:5` (`**Minimum Grade:** {minimum}`)
 
 **Convention:**
 - Single braces for fillable values.
@@ -234,7 +234,7 @@ Templates use **single curly braces** for placeholders: `{Project Name}`, `{date
 
 **Other observed placeholder patterns:**
 - `*(pending)*` — italic-parenthesized placeholder for not-yet-addressed sections (`templates/requirements/requirements-template.md:14`).
-- `<!-- Comment -->` — HTML comment blocks for guidance the user should remove (`templates/feedback-artifacts/IMPEDIMENT.md:18`, `claude-code/.claude/templates/known-issues.md:6`).
+- `<!-- Comment -->` — HTML comment blocks for guidance the user should remove (`templates/feedback-artifacts/IMPEDIMENT.md:18`, `profiles/claude-code/.claude/templates/known-issues.md:6`).
 - `_No issues yet._` / `_none yet_` — italicized empty-state strings (`templates/implementation-state.md:18`).
 
 ### 5.2 Templates-within-templates
@@ -344,16 +344,16 @@ Inferred from a sample of ~20 files across this repo:
 | Class | Convention | Example | Source |
 |-------|-----------|---------|--------|
 | Skill slugs | `aid-{phase}` kebab-case | `aid-discover`, `aid-interview` | every `skills/aid-*/` |
-| Agent slugs | kebab-case | `discovery-reviewer`, `simple-extractor` | `claude-code/.claude/agents/*.md` |
+| Agent slugs | kebab-case | `discovery-reviewer`, `simple-extractor` | `profiles/claude-code/.claude/agents/*.md` |
 | KB documents | kebab-case `.md` | `module-map.md`, `coding-standards.md`, `data-model.md`, `tech-debt.md` | `templates/knowledge-base/*.md` |
-| State files | `SCREAMING-KEBAB-CASE.md` | `DISCOVERY-STATE.md`, `INTERVIEW-STATE.md`, `MONITOR-STATE.md`, `FEATURE-STATE.md` | `claude-code/.claude/templates/interview-state.md:1` (`# INTERVIEW-STATE.md`), `aid-discover/SKILL.md` (extensively) |
+| State files | `SCREAMING-KEBAB-CASE.md` | `DISCOVERY-STATE.md`, `INTERVIEW-STATE.md`, `MONITOR-STATE.md`, `FEATURE-STATE.md` | `profiles/claude-code/.claude/templates/interview-state.md:1` (`# INTERVIEW-STATE.md`), `aid-discover/SKILL.md` (extensively) |
 | First-class methodology artifacts | UPPERCASE.md | `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `CLAUDE.md`, `AGENTS.md`, `README.md`, `LICENSE`, `CONTRIBUTING.md` | `templates/requirements/requirements-template.md:16` ("File is uppercase (`REQUIREMENTS.md`) — it's a first-class artifact") |
 | Feedback artifacts | UPPERCASE-prefix + numeric ID | `IMPEDIMENT-{id}.md`, `KI-{n}` (known issue) | `templates/feedback-artifacts/IMPEDIMENT.md:1` |
-| Per-tool layout root | tool-name slug + dotted-hidden | `claude-code/.claude/`, `codex/.codex/`, `cursor/.cursor/` | `project-structure.md:64-66` |
-| Codex split | `codex/.codex/agents/` (TOML) + `codex/.agents/{skills,templates}/` (markdown) | — | `external-sources.md:81` |
+| Per-tool layout root | tool-name slug + dotted-hidden | `profiles/claude-code/.claude/`, `profiles/codex/.codex/`, `profiles/cursor/.cursor/` | `project-structure.md:64-66` |
+| Codex split | `profiles/codex/.codex/agents/` (TOML) + `profiles/codex/.agents/{skills,templates}/` (markdown) | — | `external-sources.md:81` |
 | Shell scripts | kebab-case `.sh` | `build-project-index.sh`, `grade.sh`, `check-preflight.sh`, `verify-kb.sh`, `validate-html.sh` | `project-index.md` |
 | JavaScript modules | kebab-case `.js` or `.mjs` (mjs for ESM) | `lightbox.js`, `mermaid-init.js`, `validate-diagrams.mjs`, `contrast-check.mjs` | `project-index.md` |
-| Cursor rules | kebab-case `.mdc` | `aid-methodology.mdc`, `aid-review.mdc` | `cursor/.cursor/rules/` |
+| Cursor rules | kebab-case `.mdc` | `aid-methodology.mdc`, `aid-review.mdc` | `profiles/cursor/.cursor/rules/` |
 
 **Anomaly:** `.claude/settings..json` (note the **double dot** in the filename) sits alongside `.claude/settings.json` at the repo root. Likely a typo. Flagged in `project-structure.md` as Anomaly 2.
 
@@ -372,9 +372,9 @@ Important: When updating a skill or agent, update ALL locations:
 Same for agents: update the human README, Claude Code .md, and Codex .toml.
 ```
 
-**Real path correction:** `CONTRIBUTING.md` shows the paths as `claude-code/skills/` and `codex/skills/` — but the actual on-disk paths are `claude-code/.claude/skills/` and `codex/.agents/skills/`. The CONTRIBUTING file is slightly stale in its path examples. ⚠️ Q34.
+**Real path correction:** `CONTRIBUTING.md` shows the paths as `claude-code/skills/` and `codex/skills/` — but the actual on-disk paths are `profiles/claude-code/.claude/skills/` and `profiles/codex/.agents/skills/`. The CONTRIBUTING file is slightly stale in its path examples. ⚠️ Q34.
 
-**Cursor is NOT listed** in CONTRIBUTING.md's triplicate rule (the doc enumerates only 3 locations), but Cursor support has since been added — Cursor is mentioned separately in `cursor/README.md`. So the discipline is actually **quadruplicate**: human README + Claude Code + Codex + Cursor. CONTRIBUTING.md needs updating.
+**Cursor is NOT listed** in CONTRIBUTING.md's triplicate rule (the doc enumerates only 3 locations), but Cursor support has since been added — Cursor is mentioned separately in `profiles/cursor/README.md`. So the discipline is actually **quadruplicate**: human README + Claude Code + Codex + Cursor. CONTRIBUTING.md needs updating.
 
 ---
 
@@ -386,7 +386,7 @@ This section is critical because it bounds what "convention" means in this repo.
 |-----------|--------|
 | Linter for SKILL.md frontmatter | **None.** No JSON Schema, no `yamllint`, no `frontmatter-validator`. A contributor could add an arbitrary frontmatter field and nothing would warn. |
 | Linter for TOML agent files | **None.** Standard TOML syntax errors would fail at load time but field correctness is unchecked. |
-| Triplication drift detection | **None.** No script compares `skills/aid-X/README.md` against `claude-code/.claude/skills/aid-X/SKILL.md` body, etc. The 244-vs-453-vs-1078-vs-1090 line divergence on `aid-discover` is visible only by manual `wc -l`. |
+| Triplication drift detection | **None.** No script compares `skills/aid-X/README.md` against `profiles/claude-code/.claude/skills/aid-X/SKILL.md` body, etc. The 244-vs-453-vs-1078-vs-1090 line divergence on `aid-discover` is visible only by manual `wc -l`. |
 | Markdown linter | **None.** No `markdownlint` config, no `remark` setup, no `.markdownlintrc`. |
 | Spell-check | **None.** |
 | CI workflow | **None.** No `.github/workflows/`, no `.gitlab-ci.yml`, no Jenkinsfile (per `project-structure.md:225-226`). |

@@ -10,9 +10,9 @@ This repository **is** the AID methodology — not a deployable application. It 
 
 1. The canonical methodology document (`methodology/aid-methodology.md`, V3 spec).
 2. Three **install payloads** — one per supported AI coding tool — each containing agents, skills, templates, and scripts in that tool's native format:
-   - `claude-code/.claude/` for Anthropic Claude Code.
-   - `codex/.codex/` (agent TOMLs) + `codex/.agents/` (skills + templates) for OpenAI Codex CLI.
-   - `cursor/.cursor/` for Cursor.
+   - `profiles/claude-code/.claude/` for Anthropic Claude Code.
+   - `profiles/codex/.codex/` (agent TOMLs) + `profiles/codex/.agents/` (skills + templates) for OpenAI Codex CLI.
+   - `profiles/cursor/.cursor/` for Cursor.
 3. Human-readable reference docs (`skills/`, `agents/`) describing each phase and agent role.
 4. Source-of-truth templates (`templates/`) consumed by installers and by the skills at runtime.
 5. Cross-platform installers: `setup.sh` (Bash, 161 lines) and `setup.ps1` (PowerShell 5.1+, 156 lines).
@@ -47,7 +47,7 @@ Runtime deps on the user's machine (per tool selected): Claude Code / Codex CLI 
 Pulled from actual files — not from a style guide (there isn't one). See `.aid/knowledge/coding-standards.md` for the full inventory.
 
 - **Filenames:** kebab-case for skill / agent slugs (`aid-discover`, never `aid_discover`); `SCREAMING-KEBAB-CASE.md` for state files (`DISCOVERY-STATE.md`, `MONITOR-STATE.md`); UPPERCASE.md for top-level methodology artifacts (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `CLAUDE.md`, `AGENTS.md`).
-- **Per-tool tree paths:** `claude-code/.claude/{agents,skills,templates}/`, `codex/.codex/agents/` + `codex/.agents/{skills,templates}/`, `cursor/.cursor/{agents,rules,skills,templates}/`.
+- **Per-tool tree paths:** `profiles/claude-code/.claude/{agents,skills,templates}/`, `profiles/codex/.codex/agents/` + `profiles/codex/.agents/{skills,templates}/`, `profiles/cursor/.cursor/{agents,rules,skills,templates}/`.
 - **SKILL.md frontmatter** (all three trees): `name`, `description` (YAML folded `>`), `allowed-tools` (comma-separated string, not YAML list), optional `argument-hint`. Claude Code may add `context: fork` and `agent: <name>`; Codex / Cursor omit them.
 - **Agent frontmatter:**
   - Claude Code (markdown): `name`, `description`, `tools` (comma-separated), `model` (`opus` / `sonnet` / `haiku`), optional `permissionMode: bypassPermissions`, optional `background: true`.

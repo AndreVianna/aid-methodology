@@ -51,9 +51,9 @@ class LayoutConfig:
 
         Examples
         --------
-        - Claude Code: ``output_root="claude-code/.claude"`` → ``"claude-code"``
-        - Codex split: ``agents_root="codex/.codex"`` → ``"codex"``
-        - Cursor: ``output_root="cursor/.cursor"`` → ``"cursor"``
+        - Claude Code: ``output_root="profiles/claude-code/.claude"`` → ``"profiles/claude-code"``
+        - Codex split: ``agents_root="profiles/codex/.codex"`` → ``"profiles/codex"``
+        - Cursor: ``output_root="profiles/cursor/.cursor"`` → ``"profiles/cursor"``
 
         Raises
         ------

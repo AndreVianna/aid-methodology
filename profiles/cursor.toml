@@ -1,9 +1,9 @@
 # Profile: Cursor (Cursor IDE)
 # Encodes the Cursor IDE host tool's install conventions.
-# Consumed by the render scripts (tasks 019-021) to emit the cursor/.cursor/ tree.
+# Consumed by the render scripts (tasks 019-021) to emit the profiles/cursor/.cursor/ tree.
 
 [layout]
-output_root    = "cursor/.cursor"
+output_root    = "profiles/cursor/.cursor"
 agents_dir     = "agents"
 skills_dir     = "skills"
 templates_dir  = "templates"
@@ -53,7 +53,7 @@ open_questions_file   = "additional-info.md"
 
 [extras]
 # Cursor-specific: .mdc always-on rule files.
-# The renderer must emit these into cursor/.cursor/rules/ when processing the Cursor profile.
+# The renderer must emit these into profiles/cursor/.cursor/rules/ when processing the Cursor profile.
 [[extras.rules]]
 filename     = "aid-methodology.mdc"
 description  = "AID methodology workflow and Knowledge Base integration"

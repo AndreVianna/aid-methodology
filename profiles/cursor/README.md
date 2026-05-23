@@ -9,7 +9,7 @@ Use the `setup.sh` (or `setup.ps1` on Windows) script at the repo root to instal
 path/to/aid-methodology/setup.sh /path/to/your/project
 
 # Manual
-cp -r path/to/aid-methodology/cursor/.cursor  .cursor/
+cp -r path/to/aid-methodology/profiles/cursor/.cursor  .cursor/
 cp path/to/aid-methodology/cursor/AGENTS.md   AGENTS.md
 ```
 

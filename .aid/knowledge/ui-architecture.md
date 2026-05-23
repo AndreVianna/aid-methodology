@@ -15,13 +15,13 @@ There **is** however one genuine HTML artifact emitted by AID: the **Knowledge B
 | Where | Files |
 |---|---|
 | Canonical source-of-truth assets | `templates/knowledge-summary/` (25 files per `project-structure.md:170-172`) |
-| Claude Code install copy | `claude-code/.claude/templates/knowledge-summary/` |
-| Codex install copy | `codex/.agents/templates/knowledge-summary/` |
-| Cursor install copy | `cursor/.cursor/templates/knowledge-summary/` |
+| Claude Code install copy | `profiles/claude-code/.claude/templates/knowledge-summary/` |
+| Codex install copy | `profiles/codex/.agents/templates/knowledge-summary/` |
+| Cursor install copy | `profiles/cursor/.cursor/templates/knowledge-summary/` |
 
 All four trees contain identical content. The `aid-summarize` skill reads from `.aid/templates/knowledge-summary/` (the path inside an installed project, which corresponds to one of the per-tool copies).
 
-The skill that emits the HTML lives at `claude-code/.claude/skills/aid-summarize/SKILL.md` (430 lines) and equivalents under `codex/.agents/skills/aid-summarize/SKILL.md` (436 lines) and `cursor/.cursor/skills/aid-summarize/SKILL.md` (436 lines).
+The skill that emits the HTML lives at `profiles/claude-code/.claude/skills/aid-summarize/SKILL.md` (430 lines) and equivalents under `profiles/codex/.agents/skills/aid-summarize/SKILL.md` (436 lines) and `profiles/cursor/.cursor/skills/aid-summarize/SKILL.md` (436 lines).
 
 ---
 
@@ -313,7 +313,7 @@ None of these have framework, component, state, routing, theming, or accessibili
 
 - File counts for HTML / CSS / JS: `technology-stack.md` §4-6 and `project-index.md` Language Breakdown lines 21, 22, 25.
 - Where the knowledge-summary assets live across the four trees (root + three install trees): `project-structure.md ## Templates` lines 170-172.
-- Skill that drives the generation: `claude-code/.claude/skills/aid-summarize/SKILL.md` (430 lines).
+- Skill that drives the generation: `profiles/claude-code/.claude/skills/aid-summarize/SKILL.md` (430 lines).
 - The `aid-summarize` 9-state state machine: `architecture.md` Pattern 1.
 - Validation scripts (the runtime "tests" of the UI): `technology-stack.md` §2, §4.
 - Design-tokens-vs-CSS drift open question: `DISCOVERY-STATE.md` Q14.

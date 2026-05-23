@@ -134,23 +134,23 @@ echo ""
 # Claude Code — uses CLAUDE.md only (no AGENTS.md)
 if [[ "${selected[1]}" -eq 1 ]]; then
   echo "--- Claude Code ---"
-  copy_dir "$SCRIPT_DIR/claude-code/.claude" "$TARGET/.claude"
-  copy_file "$SCRIPT_DIR/claude-code/CLAUDE.md" "$TARGET/CLAUDE.md"
+  copy_dir "$SCRIPT_DIR/profiles/claude-code/.claude" "$TARGET/.claude"
+  copy_file "$SCRIPT_DIR/profiles/claude-code/CLAUDE.md" "$TARGET/CLAUDE.md"
 fi
 
 # Codex — uses AGENTS.md only (no CLAUDE.md)
 if [[ "${selected[2]}" -eq 1 ]]; then
   echo "--- Codex ---"
-  copy_dir "$SCRIPT_DIR/codex/.codex" "$TARGET/.codex"
-  copy_dir "$SCRIPT_DIR/codex/.agents" "$TARGET/.agents"
-  copy_file "$SCRIPT_DIR/codex/AGENTS.md" "$TARGET/AGENTS.md"
+  copy_dir "$SCRIPT_DIR/profiles/codex/.codex" "$TARGET/.codex"
+  copy_dir "$SCRIPT_DIR/profiles/codex/.agents" "$TARGET/.agents"
+  copy_file "$SCRIPT_DIR/profiles/codex/AGENTS.md" "$TARGET/AGENTS.md"
 fi
 
 # Cursor — uses AGENTS.md + .cursor/rules/aid-project.mdc (no CLAUDE.md)
 if [[ "${selected[3]}" -eq 1 ]]; then
   echo "--- Cursor ---"
-  copy_dir "$SCRIPT_DIR/cursor/.cursor" "$TARGET/.cursor"
-  copy_file "$SCRIPT_DIR/cursor/AGENTS.md" "$TARGET/AGENTS.md"
+  copy_dir "$SCRIPT_DIR/profiles/cursor/.cursor" "$TARGET/.cursor"
+  copy_file "$SCRIPT_DIR/profiles/cursor/AGENTS.md" "$TARGET/AGENTS.md"
 fi
 
 echo ""

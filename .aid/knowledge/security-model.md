@@ -28,12 +28,12 @@ WARNING: Security assessment is from static analysis only. No dynamic testing ha
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir -p \"C:/Projects/Personal/AID/claude-code/.claude/templates/scripts\" ...)",
+      "Bash(mkdir -p \"C:/Projects/Personal/AID/profiles/claude-code/.claude/templates/scripts\" ...)",
       "Bash(cp \"C:/Projects/Personal/AID/templates/scripts/grade.sh\" ...)",
-      "Bash(chmod +x \"C:/Projects/Personal/AID/claude-code/.claude/templates/scripts/grade.sh\" ...)",
+      "Bash(chmod +x \"C:/Projects/Personal/AID/profiles/claude-code/.claude/templates/scripts/grade.sh\" ...)",
       "Bash(chmod +x \"C:/Projects/Personal/AID/templates/scripts/build-project-index.sh\")",
       "Bash(cp \"C:/Projects/Personal/AID/templates/scripts/build-project-index.sh\" ...)",
-      "Bash(chmod +x C:/Projects/Personal/AID/claude-code/.claude/templates/scripts/build-project-index.sh ...)"
+      "Bash(chmod +x C:/Projects/Personal/AID/profiles/claude-code/.claude/templates/scripts/build-project-index.sh ...)"
     ]
   }
 }
@@ -44,7 +44,7 @@ Analysis:
 - No deny-list. Everything not in the allow list prompts the user.
 - All allowed commands target the repo's own template-propagation workflow (copying `grade.sh` and `build-project-index.sh` into the three install trees) — i.e., dogfood housekeeping.
 
-**Install payload's `claude-code/CLAUDE.md`** does NOT ship a `claude-code/.claude/settings.json`. Searched: no such file exists in the install tree. Users get whatever default Claude Code permission posture applies to their machine. *This is by design* — the methodology does not impose a permission policy on users; it leaves that decision to the adopter.
+**Install payload's `profiles/claude-code/CLAUDE.md`** does NOT ship a `profiles/claude-code/.claude/settings.json`. Searched: no such file exists in the install tree. Users get whatever default Claude Code permission posture applies to their machine. *This is by design* — the methodology does not impose a permission policy on users; it leaves that decision to the adopter.
 
 [INFO] **Permission allow-list is narrow and well-formed** in this repo's own settings.
 
@@ -63,22 +63,22 @@ Content is **effectively** identical (only a trailing-newline difference per rev
 
 ### 1.3 Codex CLI — TOML Agents with `developer_instructions`
 
-Codex agents (`codex/.codex/agents/*.toml`) inline the entire system prompt in the `developer_instructions` triple-quoted string. There is no separate skill body for Codex agent execution — the agent's *entire* behavioral charter is in TOML.
+Codex agents (`profiles/codex/.codex/agents/*.toml`) inline the entire system prompt in the `developer_instructions` triple-quoted string. There is no separate skill body for Codex agent execution — the agent's *entire* behavioral charter is in TOML.
 
-Spot-check of `codex/.codex/agents/operator.toml`:
+Spot-check of `profiles/codex/.codex/agents/operator.toml`:
 - 38 lines, `model = "gpt-5.4"`, `model_reasoning_effort = "medium"`.
 - `developer_instructions` includes the rule "Safety-first. If anything is uncertain, stop and ask. Never \"just try\" with production." **(Note: this quote is in `operator.toml`, not `developer.toml` as an earlier draft of this section claimed — correction per reviewer spot-check.)**
 - No secrets, no API keys, no embedded credentials.
 
-Spot-check of `codex/.codex/agents/developer.toml`:
+Spot-check of `profiles/codex/.codex/agents/developer.toml`:
 - 17 lines. Brief instructions: read SPEC.md, follow KB, run build (`mvn clean verify -f ProjectRoot/pom.xml`), run tests.
 - The hardcoded `mvn` command and `ProjectRoot/pom.xml` path are **suspicious** — they appear to be a template fragment that escaped anonymization (or were intended as an example). They would direct any user's Codex Developer agent to attempt to build a Maven project at a path the user may not have.
 
-[MEDIUM] **`codex/.codex/agents/developer.toml:11-12` hardcodes Maven build commands** with a path (`ProjectRoot/pom.xml`) that is almost certainly a leftover from an example, not a placeholder template. A user installing Codex agents into a non-Java project gets a Developer agent that will try to run `mvn clean verify` regardless. See `tech-debt.md`.
+[MEDIUM] **`profiles/codex/.codex/agents/developer.toml:11-12` hardcodes Maven build commands** with a path (`ProjectRoot/pom.xml`) that is almost certainly a leftover from an example, not a placeholder template. A user installing Codex agents into a non-Java project gets a Developer agent that will try to run `mvn clean verify` regardless. See `tech-debt.md`.
 
 ### 1.4 Cursor — `.mdc` Rules with `alwaysApply`
 
-`cursor/.cursor/rules/aid-methodology.mdc` (29 lines):
+`profiles/cursor/.cursor/rules/aid-methodology.mdc` (29 lines):
 ```yaml
 ---
 description: "AID methodology workflow and Knowledge Base integration"
@@ -86,7 +86,7 @@ alwaysApply: true
 ---
 ```
 
-`cursor/.cursor/rules/aid-review.mdc` (11 lines):
+`profiles/cursor/.cursor/rules/aid-review.mdc` (11 lines):
 ```yaml
 ---
 description: "Code review standards for AID methodology"
@@ -104,9 +104,9 @@ But the pattern is dangerous in principle: any future contributor who adds an `a
 ## 2. High-Privilege Agents — Trust Boundary
 
 ### 2.1 `operator` Agent
-- **Claude Code:** `claude-code/.claude/agents/operator.md` — `model: sonnet`, `tools: Read, Glob, Grep, Bash, Write`.
-- **Codex:** `codex/.codex/agents/operator.toml` — `model = "gpt-5.4"`, `model_reasoning_effort = "medium"`.
-- **Cursor:** `cursor/.cursor/agents/operator.md` — identical to Claude Code.
+- **Claude Code:** `profiles/claude-code/.claude/agents/operator.md` — `model: sonnet`, `tools: Read, Glob, Grep, Bash, Write`.
+- **Codex:** `profiles/codex/.codex/agents/operator.toml` — `model = "gpt-5.4"`, `model_reasoning_effort = "medium"`.
+- **Cursor:** `profiles/cursor/.cursor/agents/operator.md` — identical to Claude Code.
 
 `agents/operator/README.md:9` (and its echoes in the three install trees) explicitly says the Operator is *"the only agent that executes actions with external consequences — deployment, PR creation, release management, KB updates."* `operator.md:23-28` enumerates the constraints:
 - "Verify before acting. Run the full test suite before creating a PR. Always."
@@ -117,7 +117,7 @@ But the pattern is dangerous in principle: any future contributor who adds an `a
 
 ### 2.2 `developer` Agent
 - **Tools:** `Read, Glob, Grep, Write, Edit, Bash`.
-- **Authority:** "The only agent authorized to modify production source code" (`claude-code/.claude/agents/developer.md:8`).
+- **Authority:** "The only agent authorized to modify production source code" (`profiles/claude-code/.claude/agents/developer.md:8`).
 - **Constraint:** "Build verification is mandatory. Every implementation must compile/pass. No exceptions." (`developer.md:25`).
 
 [INFO] **Code-writing privilege is monopolized** — Developer is the only writer; all other agents are read-or-suggest. This concentrates code-change risk to a single, well-scoped agent.
@@ -131,7 +131,7 @@ But the pattern is dangerous in principle: any future contributor who adds an `a
 [INFO] **DevOps is explicitly told to avoid secrets-in-code.** The constraint is documented; enforcement again relies on model behavior.
 
 ### 2.4 `discovery-reviewer` Agent — Elevated Trust
-`claude-code/.claude/agents/discovery-reviewer.md` lines 7-10:
+`profiles/claude-code/.claude/agents/discovery-reviewer.md` lines 7-10:
 ```yaml
 tools: Read, Glob, Grep, Bash, Write
 model: opus
@@ -170,7 +170,7 @@ What it does (from the same file, lines 13-19): reads every doc in `.aid/knowled
 
 [INFO] **No secrets are committed to this repository.** Confirmed by targeted `Grep` and spot-checks.
 
-[INFO] **Secrets-management posture for the user is encouraged via agent prompts.** The `devops` agent prompt at `claude-code/.claude/agents/devops.md:26` says "No secrets in code. Use secret management. Follow least-privilege for CI/CD." The `security` agent prompt at `agents/security/README.md` and `claude-code/.claude/agents/security.md` enumerates OWASP-adjacent threats.
+[INFO] **Secrets-management posture for the user is encouraged via agent prompts.** The `devops` agent prompt at `profiles/claude-code/.claude/agents/devops.md:26` says "No secrets in code. Use secret management. Follow least-privilege for CI/CD." The `security` agent prompt at `agents/security/README.md` and `profiles/claude-code/.claude/agents/security.md` enumerates OWASP-adjacent threats.
 
 ## 4. Sample Anonymization in `examples/`
 
@@ -196,7 +196,7 @@ What it does (from the same file, lines 13-19): reads every doc in `.aid/knowled
 ## 5. Supply-Chain / Injection Risks
 
 The installation flow is:
-1. User runs `git clone https://github.com/AndreVianna/aid-methodology` (URL per `README.md:267` and `codex/AGENTS.md:24`).
+1. User runs `git clone https://github.com/AndreVianna/aid-methodology` (URL per `README.md:267` and `profiles/codex/AGENTS.md:24`).
 2. User runs `bash setup.sh /path/to/project` (or `setup.ps1`).
 3. `setup.sh` (`setup.sh:135-153`) copies one or more install trees into the target project.
 4. User invokes a skill (e.g., `/aid-init`, `/aid-discover`); the skill SKILL.md instructs the host AI to run scripts inside the installed tree (e.g., `templates/scripts/build-project-index.sh`).
@@ -218,7 +218,7 @@ The installation flow is:
 
 [LOW] **`setup.sh` and `setup.ps1` do not warn about new files** being copied into the target project. The `copy_file` helper (`setup.sh:87`) prompts before overwriting *different* files but silently copies *new* files. A user re-running setup after pulling new commits has no signal that new scripts have been added. Suggested: a per-tool changelog or `--diff` mode.
 
-[INFO] **The Cursor `Task tool is experimental — Mar 2026` note** in `cursor/AGENTS.md:30` is documented honesty. Users should know that delegating to sub-agents via Cursor may not behave the same as Claude Code.
+[INFO] **The Cursor `Task tool is experimental — Mar 2026` note** in `profiles/cursor/AGENTS.md:30` is documented honesty. Users should know that delegating to sub-agents via Cursor may not behave the same as Claude Code.
 
 ## 6. Discovery-Output Privacy (User-Side Concern)
 
@@ -233,7 +233,7 @@ When AID's discovery sub-agents (`discovery-architect`, `discovery-analyst`, `di
 
 If the user commits `.aid/knowledge/` to a public repo without thinking, this is a **disclosure event**.
 
-**Mitigation in place:** `claude-code/.claude/skills/aid-init/SKILL.md:349-356` instructs the init skill to **add `.aid/` to `.gitignore`** of the target project:
+**Mitigation in place:** `profiles/claude-code/.claude/skills/aid-init/SKILL.md:349-356` instructs the init skill to **add `.aid/` to `.gitignore`** of the target project:
 
 ```
 ### .gitignore
@@ -269,7 +269,7 @@ This is verified in this repo: `.gitignore` (at repo root) contains exactly one 
 ### OWASP-Adjacent (User-Side, Indirect)
 
 This repo does not have an attack surface in the conventional OWASP sense (no web app, no API, no auth). But it *teaches* the AID methodology, which downstream produces:
-- A `security` agent (`claude-code/.claude/agents/security.md`, `cursor/.cursor/agents/security.md`, `codex/.codex/agents/security.toml`).
+- A `security` agent (`profiles/claude-code/.claude/agents/security.md`, `profiles/cursor/.cursor/agents/security.md`, `profiles/codex/.codex/agents/security.toml`).
 - A KB template at `templates/knowledge-base/security-model.md` (117 lines).
 - A `discovery-quality` sub-agent that has produced *this very document* for the user.
 
@@ -279,9 +279,9 @@ The methodology's posture is: every user project should run security analysis vi
 
 ### Cursor `alwaysApply: true` Rule Content
 
-`cursor/.cursor/rules/aid-methodology.mdc:5-30` contains the always-injected text. Lines 17-23 reference the AID workspace structure including `task-NNN-{name}/` and `feature-NNN-{name}/` paths. None of the content gives the model instructions to bypass safety, exfiltrate data, or take destructive actions.
+`profiles/cursor/.cursor/rules/aid-methodology.mdc:5-30` contains the always-injected text. Lines 17-23 reference the AID workspace structure including `task-NNN-{name}/` and `feature-NNN-{name}/` paths. None of the content gives the model instructions to bypass safety, exfiltrate data, or take destructive actions.
 
-`cursor/.cursor/rules/aid-review.mdc:6-11` is scoped to code-review and is gated on `globs: "**/*.{java,py,ts,js,cs,go,rs}"` (not `alwaysApply`). Content is short and benign.
+`profiles/cursor/.cursor/rules/aid-review.mdc:6-11` is scoped to code-review and is gated on `globs: "**/*.{java,py,ts,js,cs,go,rs}"` (not `alwaysApply`). Content is short and benign.
 
 [INFO] **Cursor rules content is currently benign.** No re-review needed unless changed.
 

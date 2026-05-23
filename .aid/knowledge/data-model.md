@@ -47,7 +47,7 @@ Each row is one artifact "type". Producer/consumer mappings are extracted from s
 
 The central state file for `aid-discover`. Two schemas exist on disk because `aid-init` scaffolds one shape (`templates/discovery-state.md`) and `discovery-reviewer` rewrites it to a richer shape (`templates/reports/discovery-state-template.md`).
 
-**Init-time schema** (verified at `claude-code/.claude/templates/discovery-state.md:1-23`):
+**Init-time schema** (verified at `profiles/claude-code/.claude/templates/discovery-state.md:1-23`):
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -62,7 +62,7 @@ The central state file for `aid-discover`. Two schemas exist on disk because `ai
 
 **Reviewer-time schema** (verified at `templates/reports/discovery-state-template.md:1-67`): adds `## Settings`, `## Current Grade`, `## Documents` table (18-row grade matrix), `## Issues Found` (severity-tagged), `## Verification Spot-Checks` (claim/document/verified/evidence table, ≥15 rows), `## Cross-Cutting Concerns`. The reviewer template's `## Documents` column count is 4 (Document / Grade / Status / Issues); the init template has no Documents table.
 
-**Q&A entry sub-schema** (verified at `claude-code/.claude/skills/aid-discover/SKILL.md:191-199`):
+**Q&A entry sub-schema** (verified at `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:191-199`):
 
 | Field | Type | Required | Example |
 |-------|------|----------|---------|
@@ -76,7 +76,7 @@ The central state file for `aid-discover`. Two schemas exist on disk because `ai
 | `- **Answer:**` | freeform | conditional (when Status=Answered) | user's reply or accepted suggestion |
 | `- **Applied to:**` | filename(s) | conditional (set in FIX cycle) | which KB doc absorbed the answer |
 
-**Review History sub-schema** (verified at `claude-code/.claude/templates/discovery-state.md:22-23`):
+**Review History sub-schema** (verified at `profiles/claude-code/.claude/templates/discovery-state.md:22-23`):
 
 | Column | Type | Example |
 |--------|------|---------|
@@ -109,7 +109,7 @@ Verified at `templates/requirements/requirements-template.md:22-80`. Schema:
 
 ### 2.3 INTERVIEW-STATE.md
 
-Verified at `claude-code/.claude/templates/interview-state.md:1-29`.
+Verified at `profiles/claude-code/.claude/templates/interview-state.md:1-29`.
 
 | Field | Type | Required | Notes |
 |-------|------|----------|-------|
@@ -171,7 +171,7 @@ Verified at `templates/delivery-plans/task-template.md:1-20`. Six sections only 
 | `**Scope:**` | bullet list | yes | What the task produces or modifies — depends on Type; specific and bounded |
 | `**Acceptance Criteria:**` | checkbox list | yes | Concrete, testable; always ends with "All §6 quality gates pass" |
 
-**Task type taxonomy** (verified at `templates/implementation-state.md:5`): enum of `RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE`. One type per task. The type drives execution rules — `claude-code/.claude/skills/aid-execute/references/task-type-rules.md` (104 lines) details per-type protocols.
+**Task type taxonomy** (verified at `templates/implementation-state.md:5`): enum of `RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE`. One type per task. The type drives execution rules — `profiles/claude-code/.claude/skills/aid-execute/references/task-type-rules.md` (104 lines) details per-type protocols.
 
 ### 2.7 task-NNN-STATE.md
 
@@ -214,7 +214,7 @@ Verified at `templates/feedback-artifacts/IMPEDIMENT.md:1-119`.
 
 ### 2.9 known-issues.md (per-work)
 
-Verified at `claude-code/.claude/templates/known-issues.md:1-15`. Schema is documented as **HTML comments** in the template (lines 6–14). Per-entry schema:
+Verified at `profiles/claude-code/.claude/templates/known-issues.md:1-15`. Schema is documented as **HTML comments** in the template (lines 6–14). Per-entry schema:
 
 | Field | Type | Required | Notes |
 |-------|------|----------|-------|
@@ -228,7 +228,7 @@ Verified at `claude-code/.claude/templates/known-issues.md:1-15`. Schema is docu
 
 ### 2.10 DEPLOYMENT-STATE.md + package-NNN.md
 
-Verified at `claude-code/.claude/templates/deployment-state.md:1-9` and `claude-code/.claude/templates/package.md:1-27`.
+Verified at `profiles/claude-code/.claude/templates/deployment-state.md:1-9` and `profiles/claude-code/.claude/templates/package.md:1-27`.
 
 **DEPLOYMENT-STATE schema** (minimal):
 
@@ -463,7 +463,7 @@ There is no central validation layer for these artifacts. The validation that ex
 
 There are no migrations in the traditional sense (this repo has no database). The closest analogue is **template-shape evolution** — when a template's schema changes, downstream artifacts may need to be regenerated or migrated by hand. There is no migration tool. The discipline is: when a template changes, update the four copies (root + three trees per `CONTRIBUTING.md:21-26`), then re-run the producer skill on a fresh project to validate output.
 
-The `codex/README.md:35` "May 2026 migration note" referenced in `external-sources.md:81` documents a past tier-assignment migration (correcting agent `model_reasoning_effort` values). This is the only documented migration event in the repo.
+The `profiles/codex/README.md:35` "May 2026 migration note" referenced in `external-sources.md:81` documents a past tier-assignment migration (correcting agent `model_reasoning_effort` values). This is the only documented migration event in the repo.
 
 ---
 

@@ -1,9 +1,9 @@
 # Profile: Claude Code (Anthropic Claude Code)
 # Encodes the Claude Code host tool's install conventions.
-# Consumed by the render scripts (tasks 019-021) to emit the claude-code/.claude/ tree.
+# Consumed by the render scripts (tasks 019-021) to emit the profiles/claude-code/.claude/ tree.
 
 [layout]
-output_root    = "claude-code/.claude"
+output_root    = "profiles/claude-code/.claude"
 agents_dir     = "agents"
 skills_dir     = "skills"
 templates_dir  = "templates"

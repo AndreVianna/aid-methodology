@@ -117,14 +117,14 @@ for kb_file in "$KB_DIR"/*.md; do
                     "templates/knowledge-base/" "templates/requirements/" \
                     "templates/specs/" "templates/delivery-plans/" \
                     "templates/feedback-artifacts/" "templates/reports/" \
-                    "claude-code/.claude/skills/" "claude-code/.claude/agents/" \
-                    "claude-code/.claude/templates/" \
-                    "claude-code/.claude/templates/knowledge-summary/" \
-                    "claude-code/.claude/templates/scripts/" \
-                    "codex/.codex/agents/" "codex/.agents/skills/" \
-                    "codex/.agents/templates/" \
-                    "cursor/.cursor/agents/" "cursor/.cursor/rules/" \
-                    "cursor/.cursor/skills/" "cursor/.cursor/templates/" \
+                    "profiles/claude-code/.claude/skills/" "profiles/claude-code/.claude/agents/" \
+                    "profiles/claude-code/.claude/templates/" \
+                    "profiles/claude-code/.claude/templates/knowledge-summary/" \
+                    "profiles/claude-code/.claude/templates/scripts/" \
+                    "profiles/codex/.codex/agents/" "profiles/codex/.agents/skills/" \
+                    "profiles/codex/.agents/templates/" \
+                    "profiles/cursor/.cursor/agents/" "profiles/cursor/.cursor/rules/" \
+                    "profiles/cursor/.cursor/skills/" "profiles/cursor/.cursor/templates/" \
                     "methodology/" "agents/" "skills/" "docs/"; do
         candidate="$ROOT/${prefix}${cited_path}"
         if [[ -f "$candidate" ]]; then

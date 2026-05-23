@@ -12,17 +12,17 @@ Understanding the structure is key to contributing in the right place:
 | `agents/` | Humans | README.md | Rich documentation per agent role (hand-maintained) |
 | `canonical/` | Generator | .md / .toml | Single source of truth for all install-tree content |
 | `profiles/` | Generator | .toml | Per-tool rendering conventions (one profile per tool) |
-| `claude-code/.claude/` | LLMs | .md (YAML frontmatter) | Generated — Claude Code install tree |
-| `codex/.codex/agents/` | LLMs | .toml | Generated — Codex CLI agent definitions |
-| `codex/.agents/skills/` | LLMs | SKILL.md | Generated — Codex CLI skill files |
-| `cursor/.cursor/` | LLMs | .md / .mdc | Generated — Cursor IDE install tree |
+| `profiles/claude-code/.claude/` | LLMs | .md (YAML frontmatter) | Generated — Claude Code install tree |
+| `profiles/codex/.codex/agents/` | LLMs | .toml | Generated — Codex CLI agent definitions |
+| `profiles/codex/.agents/skills/` | LLMs | SKILL.md | Generated — Codex CLI skill files |
+| `profiles/cursor/.cursor/` | LLMs | .md / .mdc | Generated — Cursor IDE install tree |
 | `templates/` | Both | Markdown | Fill-in templates (canonical source in `canonical/templates/`) |
 | `examples/` | Humans | Markdown | Real-world case studies |
 | `methodology/` | Humans | Markdown | Core methodology document |
 
 **Important:** To update a skill, agent, or template, edit the canonical source under
-`canonical/` and run `/aid-generate`. The three install trees (`claude-code/.claude/`,
-`codex/.codex/` + `codex/.agents/`, `cursor/.cursor/`) are **generated artifacts** —
+`canonical/` and run `/aid-generate`. The three install trees (`profiles/claude-code/.claude/`,
+`profiles/codex/.codex/` + `profiles/codex/.agents/`, `profiles/cursor/.cursor/`) are **generated artifacts** —
 do not hand-edit them directly. Your changes will be overwritten on the next generator run.
 See `canonical/EMISSION-MANIFEST.md` for the deletion safety boundary and
 `.claude/skills/aid-generate/SKILL.md` for the full generation pipeline.
@@ -108,7 +108,7 @@ separately when methodology content changes.
 - Agent files: YAML frontmatter with `name`, `description`, `tools`, `tier` (abstract)
 - Under 500 lines per skill (AgentSkills best practice)
 - Strip verbose explanations — keep: purpose, inputs, process steps, outputs, checklist
-- Generated install trees (`claude-code/.claude/`, `codex/`, `cursor/.cursor/`) are produced by `/aid-generate` — do not edit directly
+- Generated install trees (`profiles/claude-code/.claude/`, `codex/`, `profiles/cursor/.cursor/`) are produced by `/aid-generate` — do not edit directly
 
 ### General
 - **Tone:** Professional and practical. Opinionated. Methodology from someone who ships.

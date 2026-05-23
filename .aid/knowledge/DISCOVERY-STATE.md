@@ -87,16 +87,16 @@ Web fetching deferred. Each vendor's local cross-reference (which directory in *
 | 3 | tech-debt.md severity counts HIGH=7, MEDIUM=6, LOW=7, TOTAL=20 | tech-debt L356-360, INDEX L20, README L33 | Yes | `grep -cE "^### \["` = 20; script 7/6/7 |
 | 4 | security-model.md severity counts 1H+4M+4L+12I=21 | security-model L292-299 | Yes | `grep -cE "^\["` = 21; script 1/4/4/12 |
 | 5 | README line-count column: all 17 docs match disk | README L20-36 | Yes | Script: 17 OK, 0 drifts |
-| 6 | Claude Code agent tier counts: 3 haiku + 10 opus + 9 sonnet = 22 | host-tools-matrix L80-82 | Yes | `grep -E "^model:" claude-code/.claude/agents/*.md` = 3+10+9 |
-| 7 | Codex agent tier counts: 3 mini + 9 5.4 + 10 5.5 = 22 | host-tools-matrix L80-82 | Yes | `grep -E "^model = " codex/.codex/agents/*.toml` = 9+3+10 |
+| 6 | Claude Code agent tier counts: 3 haiku + 10 opus + 9 sonnet = 22 | host-tools-matrix L80-82 | Yes | `grep -E "^model:" profiles/claude-code/.claude/agents/*.md` = 3+10+9 |
+| 7 | Codex agent tier counts: 3 mini + 9 5.4 + 10 5.5 = 22 | host-tools-matrix L80-82 | Yes | `grep -E "^model = " profiles/codex/.codex/agents/*.toml` = 9+3+10 |
 | 8 | Cursor tools Bash count = 6, Terminal count = 13 (M6) | tech-debt M6 | Yes | `grep -lE "tools:.*Bash"` = 6; `grep -lE "tools:.*Terminal"` = 13 |
-| 9 | Claude Code has 10 SKILL.md (no 11 anywhere) | api/integration/module/project-structure | Yes | `find claude-code/.claude/skills -name SKILL.md` = 10 |
-| 10 | Codex has 10 SKILL.md | integration-map L49 | Yes | `find codex/.agents/skills -name SKILL.md` = 10 |
-| 11 | Cursor has 10 SKILL.md | integration-map L63, module-map L114 | Yes | `find cursor/.cursor/skills -name SKILL.md` = 10 |
+| 9 | Claude Code has 10 SKILL.md (no 11 anywhere) | api/integration/module/project-structure | Yes | `find profiles/claude-code/.claude/skills -name SKILL.md` = 10 |
+| 10 | Codex has 10 SKILL.md | integration-map L49 | Yes | `find profiles/codex/.agents/skills -name SKILL.md` = 10 |
+| 11 | Cursor has 10 SKILL.md | integration-map L63, module-map L114 | Yes | `find profiles/cursor/.cursor/skills -name SKILL.md` = 10 |
 | 12 | `ls skills/` = 10 entries (9 aid-* + README) | project-structure L244 | Yes | matches; entries: aid-correct, aid-deploy, aid-detail, aid-discover, aid-execute, aid-interview, aid-monitor, aid-plan, aid-specify, README.md |
-| 13 | claude-code/.claude/skills total files = 24 | module-map L64 | Yes | `find claude-code/.claude/skills -type f` = 24; 10 SKILL + 11 references + 2 scripts + 1 README |
-| 14 | codex/.agents/skills total files = 12 | module-map L97 | Yes | `find` = 12; 10 SKILL + 1 references/kb-hydration + 1 README |
-| 15 | cursor/.cursor/skills total files = 12 | module-map L114 | Yes | `find` = 12; 10 SKILL + 1 references/kb-hydration + 1 README |
+| 13 | profiles/claude-code/.claude/skills total files = 24 | module-map L64 | Yes | `find profiles/claude-code/.claude/skills -type f` = 24; 10 SKILL + 11 references + 2 scripts + 1 README |
+| 14 | profiles/codex/.agents/skills total files = 12 | module-map L97 | Yes | `find` = 12; 10 SKILL + 1 references/kb-hydration + 1 README |
+| 15 | profiles/cursor/.cursor/skills total files = 12 | module-map L114 | Yes | `find` = 12; 10 SKILL + 1 references/kb-hydration + 1 README |
 | 16 | `grep -nE "11 [Ss]kill" .aid/knowledge/*.md \| grep -v DISCOVERY-STATE` = 0 matches | cross-doc systemic check | Yes | confirms cycle-8 Q170 FIX held cleanly across all KB |
 | 17 | methodology/aid-methodology.md = 1,158 lines | architecture L169, module-map L32 | Yes | `wc -l` = 1158 |
 | 18 | setup.sh=161, setup.ps1=156, build-project-index.sh=368, grade.sh=141 | infrastructure, technology-stack | Yes | `wc -l` matches |
@@ -215,7 +215,7 @@ Web fetching deferred. Each vendor's local cross-reference (which directory in *
 - Impact: Medium
 - Status: Answered
 - Answer: Auto-resolution: document Codex .codex/ + .agents/ split rationale.
-- Applied to: api-contracts.md, integration-map.md, codex/README.md.
+- Applied to: api-contracts.md, integration-map.md, profiles/codex/README.md.
 
 ### Q10
 - Category: Release Process
@@ -380,7 +380,7 @@ Web fetching deferred. Each vendor's local cross-reference (which directory in *
 - Category: Infrastructure
 - Impact: High
 - Status: Answered
-- Answer: CONFIRMED BUG — promote to HIGH. Patch: add copy_dir codex/.agents to Codex branch in both setup.sh and setup.ps1.
+- Answer: CONFIRMED BUG — promote to HIGH. Patch: add copy_dir profiles/codex/.agents to Codex branch in both setup.sh and setup.ps1.
 - Applied to: infrastructure.md, tech-debt.md H6, host-tools-matrix.md.
 
 ### Q71
@@ -476,7 +476,7 @@ Web fetching deferred. Each vendor's local cross-reference (which directory in *
 - Impact: Medium
 - Status: Answered
 - Answer: Auto-resolution: add post-cycle reconcile pass to discovery-reviewer prompt.
-- Applied to: claude-code/.claude/agents/discovery-reviewer.md prompt.
+- Applied to: profiles/claude-code/.claude/agents/discovery-reviewer.md prompt.
 
 ### Q102
 - Category: KB Conventions
@@ -690,7 +690,7 @@ Web fetching deferred. Each vendor's local cross-reference (which directory in *
 - Impact: Low
 - Status: Answered
 - Context: coding-standards.md §2.3 L131 still said "Not re-read this pass" while §2.2 had been updated to VERIFIED.
-- Answer: Fixed in FIX cycle 6. §2.3 L131 updated to VERIFIED post-cycle-7 with direct read of cursor/.cursor/agents/architect.md:1-7. Cycle-8/9/10 verified.
+- Answer: Fixed in FIX cycle 6. §2.3 L131 updated to VERIFIED post-cycle-7 with direct read of profiles/cursor/.cursor/agents/architect.md:1-7. Cycle-8/9/10 verified.
 - Applied to: coding-standards.md §2.3 L131.
 
 ### Q152

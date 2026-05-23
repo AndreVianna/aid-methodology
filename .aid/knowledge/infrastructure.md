@@ -21,7 +21,7 @@ Each of these is examined below.
 | Aspect | Value | Evidence |
 |--------|-------|----------|
 | VCS | Git | `.gitignore` exists; git worktree is the current execution context |
-| Host | GitHub | `README.md:267` and `codex/AGENTS.md:24` reference `https://github.com/AndreVianna/aid-methodology` |
+| Host | GitHub | `README.md:267` and `profiles/codex/AGENTS.md:24` reference `https://github.com/AndreVianna/aid-methodology` |
 | Branching | Inferred GitHub-flow (PRs to `master`) | Current branch per git status: `master`. Recent merge commits (`af5b942`, `fda9063`) follow PR-merge style. ⚠️ Inferred from code — needs confirmation. The fact that `master` (not `main`) is the default branch is documented in the agent context |
 | Release artifacts | None visible | No `releases/` directory; no GitHub Release artifacts mentioned in repo. `setup.sh` and `setup.ps1` are the entry points |
 | Version file | None | No `VERSION`, no `package.json` version field, no `aid-version.txt`. The "V3" designation lives only in `methodology/aid-methodology.md` prose |
@@ -44,11 +44,11 @@ Each of these is examined below.
   - Different file: prompt `y/N` to overwrite, unless `--force` is set.
   - Directory tree: copy via `find -mindepth 1 -type d` to recreate structure, then `find -type f` to copy each file through `copy_file()`.
 - **Per-tool copy rules** (`setup.sh:135-153`):
-  - Claude Code: `cp -r claude-code/.claude/ $TARGET/.claude/` + `cp claude-code/CLAUDE.md $TARGET/CLAUDE.md`.
-  - Codex: `cp -r codex/.codex/ $TARGET/.codex/` + `cp codex/AGENTS.md $TARGET/AGENTS.md`. Note: does NOT copy `codex/.agents/` (skills + templates), which is a documented omission to verify — the Codex tree's skills live under `.agents/` not `.codex/` per `codex/README.md:12-15`, and `setup.sh:144` only copies `.codex/`.
+  - Claude Code: `cp -r profiles/claude-code/.claude/ $TARGET/.claude/` + `cp profiles/claude-code/CLAUDE.md $TARGET/CLAUDE.md`.
+  - Codex: `cp -r profiles/codex/.codex/ $TARGET/.codex/` + `cp profiles/codex/AGENTS.md $TARGET/AGENTS.md`. Note: does NOT copy `profiles/codex/.agents/` (skills + templates), which is a documented omission to verify — the Codex tree's skills live under `.agents/` not `.codex/` per `profiles/codex/README.md:12-15`, and `setup.sh:144` only copies `.codex/`.
 - **Post-install message:** Prints "Next steps: 1. Run /aid-init ... 2a. Brownfield: /aid-discover ... 2b. Greenfield: /aid-interview".
 
-[CONFIRMED HIGH BUG — Q70] `setup.sh:142-145` (the Codex branch) copies `.codex/` and `AGENTS.md` but **not `.agents/`**. Per `codex/README.md:12-15`, manual install uses `cp -r path/to/aid-methodology/codex/.codex .codex/` AND `cp -r path/to/aid-methodology/codex/.agents .agents/`. The `setup.sh` script omits the second copy. This means a user who runs `setup.sh` for Codex gets the agent TOML definitions but NOT the skills or templates. **Confirmed via reviewer static-analysis spot-check #20** (`sed -n '140,155p' setup.sh` shows only `.codex` and `AGENTS.md` referenced). Patch tracked as `tech-debt.md H6`.
+[CONFIRMED HIGH BUG — Q70] `setup.sh:142-145` (the Codex branch) copies `.codex/` and `AGENTS.md` but **not `.agents/`**. Per `profiles/codex/README.md:12-15`, manual install uses `cp -r path/to/aid-methodology/profiles/codex/.codex .codex/` AND `cp -r path/to/aid-methodology/profiles/codex/.agents .agents/`. The `setup.sh` script omits the second copy. This means a user who runs `setup.sh` for Codex gets the agent TOML definitions but NOT the skills or templates. **Confirmed via reviewer static-analysis spot-check #20** (`sed -n '140,155p' setup.sh` shows only `.codex` and `AGENTS.md` referenced). Patch tracked as `tech-debt.md H6`.
 
 ### `setup.ps1` (PowerShell, 156 lines)
 
@@ -127,7 +127,7 @@ GitHub Copilot and Google Antigravity are mentioned in `README.md:267`, `CONTRIB
 | Ansible (`playbook.yml`) | None | — |
 | CDK (`cdk.json`) | None | — |
 
-[INFO] **No containerization, no IaC.** Consistent with the methodology-only nature of this repo. Methodology *describes* infrastructure best practices and ships a `devops` agent for users (`claude-code/.claude/agents/devops.md:11-15`: "Configure CI/CD pipelines ... Write Dockerfiles ... Create and manage infrastructure-as-code") but does not itself contain any of those artifacts.
+[INFO] **No containerization, no IaC.** Consistent with the methodology-only nature of this repo. Methodology *describes* infrastructure best practices and ships a `devops` agent for users (`profiles/claude-code/.claude/agents/devops.md:11-15`: "Configure CI/CD pipelines ... Write Dockerfiles ... Create and manage infrastructure-as-code") but does not itself contain any of those artifacts.
 
 ## 5. CI / CD
 

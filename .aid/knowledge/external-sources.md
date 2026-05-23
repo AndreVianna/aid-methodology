@@ -53,14 +53,14 @@ Discovery-scout has mapped each external source to the directory inside this rep
 
 ### 1 & 2 — Anthropic Claude Code + Claude Agent SDK
 
-**Local payload:** `claude-code/.claude/` (agents, skills, templates) + `claude-code/CLAUDE.md` (project config placeholder).
+**Local payload:** `profiles/claude-code/.claude/` (agents, skills, templates) + `profiles/claude-code/CLAUDE.md` (project config placeholder).
 
 **Example files:**
-- `claude-code/.claude/agents/architect.md` — Claude Code agent definition with YAML frontmatter (`name`, `description`, `tools`, `model`). 40 lines.
-- `claude-code/.claude/agents/discovery-reviewer.md` — Larger background-mode agent showing `permissionMode: bypassPermissions` and `background: true` fields. 381 lines.
-- `claude-code/.claude/skills/aid-discover/SKILL.md` — AgentSkills format with `name`, `description`, `allowed-tools`, `argument-hint` frontmatter and a structured body. 453 lines.
-- `claude-code/.claude/skills/aid-interview/references/kb-hydration.md` — `references/` subdirectory pattern used to externalize skill content out of the main SKILL.md body.
-- `claude-code/.claude/templates/scripts/build-project-index.sh` — runtime Bash script consumed by `aid-discover`.
+- `profiles/claude-code/.claude/agents/architect.md` — Claude Code agent definition with YAML frontmatter (`name`, `description`, `tools`, `model`). 40 lines.
+- `profiles/claude-code/.claude/agents/discovery-reviewer.md` — Larger background-mode agent showing `permissionMode: bypassPermissions` and `background: true` fields. 381 lines.
+- `profiles/claude-code/.claude/skills/aid-discover/SKILL.md` — AgentSkills format with `name`, `description`, `allowed-tools`, `argument-hint` frontmatter and a structured body. 453 lines.
+- `profiles/claude-code/.claude/skills/aid-interview/references/kb-hydration.md` — `references/` subdirectory pattern used to externalize skill content out of the main SKILL.md body.
+- `profiles/claude-code/.claude/templates/scripts/build-project-index.sh` — runtime Bash script consumed by `aid-discover`.
 - `.claude/settings.json` (this repo's own) — narrow Bash permission allow-list pattern as understood by Claude Code.
 
 **Covered locally:** agent file format, AgentSkills SKILL.md format including `agents:` selector tables, `references/` and `scripts/` subdirectory patterns, tier mapping (Opus / Sonnet / Haiku), permission allow-list shape in `.claude/settings.json`, and the dispatch idiom whereby a skill calls multiple sub-agents in parallel via the Agent tool.
@@ -69,31 +69,31 @@ Discovery-scout has mapped each external source to the directory inside this rep
 
 ### 3 & 4 — OpenAI Codex CLI + Codex docs
 
-**Local payload:** `codex/.codex/agents/` (TOML agent defs) + `codex/.agents/{skills,templates}/` (markdown skills + scripts) + `codex/AGENTS.md` (project config placeholder).
+**Local payload:** `profiles/codex/.codex/agents/` (TOML agent defs) + `profiles/codex/.agents/{skills,templates}/` (markdown skills + scripts) + `profiles/codex/AGENTS.md` (project config placeholder).
 
 **Example files:**
-- `codex/.codex/agents/architect.toml` — TOML format with `name`, `description`, `developer_instructions`, `model`, `model_reasoning_effort`. 39 lines.
-- `codex/.codex/agents/discovery-reviewer.toml` — Largest agent definition. 314 lines.
-- `codex/.codex/agents/simple-extractor.toml` — Haiku-tier utility agent showing the `gpt-5.4-mini` + `low` reasoning combination.
-- `codex/.agents/skills/aid-discover/SKILL.md` — Inlined skill body (1,078 lines — much longer than the Claude Code equivalent because Codex tree appears to inline what Claude Code factors out into `references/`).
-- `codex/AGENTS.md` — Top-level project context placeholder consumed by Codex CLI. 28 lines.
+- `profiles/codex/.codex/agents/architect.toml` — TOML format with `name`, `description`, `developer_instructions`, `model`, `model_reasoning_effort`. 39 lines.
+- `profiles/codex/.codex/agents/discovery-reviewer.toml` — Largest agent definition. 314 lines.
+- `profiles/codex/.codex/agents/simple-extractor.toml` — Haiku-tier utility agent showing the `gpt-5.4-mini` + `low` reasoning combination.
+- `profiles/codex/.agents/skills/aid-discover/SKILL.md` — Inlined skill body (1,078 lines — much longer than the Claude Code equivalent because Codex tree appears to inline what Claude Code factors out into `references/`).
+- `profiles/codex/AGENTS.md` — Top-level project context placeholder consumed by Codex CLI. 28 lines.
 
-**Covered locally:** Codex agent TOML schema, model tier mapping (`gpt-5.5` high / `gpt-5.4` medium / `gpt-5.4-mini` low), the AGENTS.md project-context convention, and the deliberate split between `.codex/` (agent defs) and `.agents/` (skills + templates) per `codex/README.md:12-15`. The May 2026 migration note in `codex/README.md:35` documents past tier-assignment inconsistencies that have been corrected.
+**Covered locally:** Codex agent TOML schema, model tier mapping (`gpt-5.5` high / `gpt-5.4` medium / `gpt-5.4-mini` low), the AGENTS.md project-context convention, and the deliberate split between `.codex/` (agent defs) and `.agents/` (skills + templates) per `profiles/codex/README.md:12-15`. The May 2026 migration note in `profiles/codex/README.md:35` documents past tier-assignment inconsistencies that have been corrected.
 
 **Still requires vendor docs:** authoritative AGENTS.md schema and any nested override semantics; whether Codex CLI supports skills beyond AGENTS.md sections at all (the AID install ships skills under `.agents/skills/` but it is unclear from local files alone whether Codex CLI reads them); Codex hook lifecycle (if any); confirmation that the `model_reasoning_effort` field is honored by current Codex CLI versions; the exact dispatch mechanism for sub-agents in Codex.
 
 ### 5 & 6 — Cursor Rules & Agents + Cursor MCP & Hooks
 
-**Local payload:** `cursor/.cursor/{rules,agents,skills,templates}/` + `cursor/AGENTS.md` (project context placeholder).
+**Local payload:** `profiles/cursor/.cursor/{rules,agents,skills,templates}/` + `profiles/cursor/AGENTS.md` (project context placeholder).
 
 **Example files:**
-- `cursor/.cursor/rules/aid-methodology.mdc` — Always-on `.mdc` rule with `description` + `alwaysApply: true` frontmatter. 29 lines.
-- `cursor/.cursor/rules/aid-review.mdc` — Glob-scoped `.mdc` rule with `globs: "**/*.{java,py,ts,js,cs,go,rs}"` and `alwaysApply: false`. 11 lines.
-- `cursor/.cursor/agents/architect.md` — Agent definition reused verbatim from the Claude Code shape (Cursor consumes the same markdown + YAML frontmatter).
-- `cursor/.cursor/skills/aid-discover/SKILL.md` — 1,090 lines (longest of the three trees).
-- `cursor/AGENTS.md` — Project context placeholder. 45 lines. Notes that `Task tool is experimental — Mar 2026`.
+- `profiles/cursor/.cursor/rules/aid-methodology.mdc` — Always-on `.mdc` rule with `description` + `alwaysApply: true` frontmatter. 29 lines.
+- `profiles/cursor/.cursor/rules/aid-review.mdc` — Glob-scoped `.mdc` rule with `globs: "**/*.{java,py,ts,js,cs,go,rs}"` and `alwaysApply: false`. 11 lines.
+- `profiles/cursor/.cursor/agents/architect.md` — Agent definition reused verbatim from the Claude Code shape (Cursor consumes the same markdown + YAML frontmatter).
+- `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` — 1,090 lines (longest of the three trees).
+- `profiles/cursor/AGENTS.md` — Project context placeholder. 45 lines. Notes that `Task tool is experimental — Mar 2026`.
 
-**Covered locally:** `.mdc` rule format (frontmatter + body), the rules vs. skills distinction (rules = always-on constraints, skills = on-demand workflows per `cursor/README.md:141`), the AGENTS.md convention shared with Codex, and the cross-tool compatibility note that Cursor also reads skills from `.claude/skills/` and `.codex/skills/` (`cursor/README.md:142`).
+**Covered locally:** `.mdc` rule format (frontmatter + body), the rules vs. skills distinction (rules = always-on constraints, skills = on-demand workflows per `profiles/cursor/README.md:141`), the AGENTS.md convention shared with Codex, and the cross-tool compatibility note that Cursor also reads skills from `.claude/skills/` and `.codex/skills/` (`profiles/cursor/README.md:142`).
 
 **Still requires vendor docs:** the precise status of Cursor's Task tool for sub-agent dispatch (locally marked experimental as of March 2026 — needs confirmation against current Cursor docs); whether Cursor honors `tools:` and `model:` fields in agent frontmatter the same way Claude Code does; Cursor MCP server registration; Cursor hook events (if any); precedence rules for `.cursor/rules/` versus `AGENTS.md` versus `.cursor/skills/`.
 
@@ -125,9 +125,9 @@ Discovery-scout has mapped each external source to the directory inside this rep
 
 | Vendor | Local tree | Format reference files | Web fetch still needed for |
 |--------|------------|------------------------|----------------------------|
-| Anthropic / Claude Code | `claude-code/.claude/` | agents `*.md`, skills `*/SKILL.md`, templates `templates/`, this repo's `.claude/settings.json` | Hooks, Plugins, MCP registration, current Agent SDK surface, full frontmatter inventory |
-| OpenAI / Codex | `codex/.codex/` + `codex/.agents/` + `codex/AGENTS.md` | agents `*.toml`, skills `*/SKILL.md`, AGENTS.md | AGENTS.md authoritative schema, skill-loading behavior, hooks, sub-agent dispatch |
-| Cursor | `cursor/.cursor/` + `cursor/AGENTS.md` | rules `*.mdc`, agents `*.md`, skills `*/SKILL.md` | Task tool status, MCP / hooks, precedence rules across rules/skills/AGENTS.md |
+| Anthropic / Claude Code | `profiles/claude-code/.claude/` | agents `*.md`, skills `*/SKILL.md`, templates `templates/`, this repo's `.claude/settings.json` | Hooks, Plugins, MCP registration, current Agent SDK surface, full frontmatter inventory |
+| OpenAI / Codex | `profiles/codex/.codex/` + `profiles/codex/.agents/` + `profiles/codex/AGENTS.md` | agents `*.toml`, skills `*/SKILL.md`, AGENTS.md | AGENTS.md authoritative schema, skill-loading behavior, hooks, sub-agent dispatch |
+| Cursor | `profiles/cursor/.cursor/` + `profiles/cursor/AGENTS.md` | rules `*.mdc`, agents `*.md`, skills `*/SKILL.md` | Task tool status, MCP / hooks, precedence rules across rules/skills/AGENTS.md |
 | GitHub Copilot | (none — future) | — | Everything: CLI install, instructions format, Extensions API |
 | Google Antigravity | (none — future, URL unconfirmed) | — | Everything, starting with URL existence |
 
@@ -139,7 +139,7 @@ When AID's discovery agents fetch the 8 registered vendor doc URLs, they operate
 
 1. **Vendor docs are trusted not to be adversarial.** AID treats `docs.claude.com`, `github.com/openai`, `developers.openai.com`, `docs.cursor.com`, `docs.github.com`, and `antigravity.google` as authoritative origin-of-truth sources for their respective tools' agent / skill / hook formats. The fetched content is allowed to inform downstream KB documents (`api-contracts.md`, `coding-standards.md`, `integration-map.md`).
 2. **No per-URL allow-list of expected content patterns** is currently enforced. A compromised CDN, URL hijack, or vendor-site defacement would deliver malicious instructions directly into the AID discovery agent's context window.
-3. **Mitigation in place:** discovery-scout and the 4 parallel discovery sub-agents do **not** have `WebFetch` in their tool allow-lists (per `claude-code/.claude/agents/discovery-*.md` frontmatter). Web content from these URLs reaches the agents only via the orchestrator (the skill itself) including content in the prompt, OR via a future Q&A cycle where the user pastes content. Direct adversarial code execution from a compromised vendor site is therefore bounded by what the orchestrator chooses to include.
+3. **Mitigation in place:** discovery-scout and the 4 parallel discovery sub-agents do **not** have `WebFetch` in their tool allow-lists (per `profiles/claude-code/.claude/agents/discovery-*.md` frontmatter). Web content from these URLs reaches the agents only via the orchestrator (the skill itself) including content in the prompt, OR via a future Q&A cycle where the user pastes content. Direct adversarial code execution from a compromised vendor site is therefore bounded by what the orchestrator chooses to include.
 4. **Adopter responsibility:** users running AID against their own projects who add additional `external-sources.md` rows are responsible for vouching for those URLs' integrity.
 
 **Future hardening (deferred to v3.x per Q80 resolution):** add a per-URL "expected content patterns" allow-list to `templates/scripts/fetch-vendor-docs.sh` (if such a script is introduced) that rejects fetched content not matching expected markers (e.g., expected H1 headings, expected code-fence languages). Until then, the trust assumption is stated explicitly and adopters can audit.

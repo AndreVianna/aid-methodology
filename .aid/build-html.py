@@ -218,9 +218,9 @@ FIG8 = """graph TB
 
     Canon["Canonical sources<br/>methodology/ + skills/ + agents/ + templates/<br/>(human-readable)"]:::canon
 
-    CC["claude-code/.claude/<br/>22 .md agents + 10 SKILL.md + templates"]:::tree
-    CX["codex/.codex/agents/ + codex/.agents/<br/>22 .toml agents + 10 SKILL.md (inlined) + templates"]:::tree
-    CR["cursor/.cursor/<br/>22 .md agents + 10 SKILL.md (inlined) + 2 .mdc rules + templates"]:::tree
+    CC["profiles/claude-code/.claude/<br/>22 .md agents + 10 SKILL.md + templates"]:::tree
+    CX["profiles/codex/.codex/agents/ + profiles/codex/.agents/<br/>22 .toml agents + 10 SKILL.md (inlined) + templates"]:::tree
+    CR["profiles/cursor/.cursor/<br/>22 .md agents + 10 SKILL.md (inlined) + 2 .mdc rules + templates"]:::tree
 
     Sync["⚠️ Manual cross-tree sync<br/>(CONTRIBUTING.md:21-26 — needs Cursor add per Q34/Q72)<br/>~36% of repo is 4-way duplicated"]:::sync
 
@@ -409,7 +409,7 @@ s6 = section(6, "artifact-dataflow", "Artifact Dataflow Across the Pipeline", f'
 
 <p>Every artifact carries a metadata header (Source / Status / Last Updated). The long-lived ones (REQUIREMENTS, SPEC, KB docs) carry a mandatory <code>## Revision History</code> table — every edit gets a row.</p>''')
 
-s7 = section(7, "cross-tool-delivery", "Cross-Tool Delivery — One Pipeline, Three Install Bundles", f'''<p>AID ships the same methodology to three host AI coding tools. The canonical sources live at the repo root (<code>methodology/</code>, <code>skills/</code>, <code>agents/</code>, <code>templates/</code>). The three install bundles (<code>claude-code/.claude/</code>, <code>codex/.codex/</code> + <code>codex/.agents/</code>, <code>cursor/.cursor/</code>) duplicate the content in each tool's native format.</p>
+s7 = section(7, "cross-tool-delivery", "Cross-Tool Delivery — One Pipeline, Three Install Bundles", f'''<p>AID ships the same methodology to three host AI coding tools. The canonical sources live at the repo root (<code>methodology/</code>, <code>skills/</code>, <code>agents/</code>, <code>templates/</code>). The three install bundles (<code>profiles/claude-code/.claude/</code>, <code>profiles/codex/.codex/</code> + <code>profiles/codex/.agents/</code>, <code>profiles/cursor/.cursor/</code>) duplicate the content in each tool's native format.</p>
 
 {figure(9, "Triplicated install bundles", FIG8, "The canonical sources are human-readable. Each install tree carries the same content in its host tool's native format: Claude Code uses markdown + YAML frontmatter; Codex uses split layout — TOML agents under .codex/ + markdown skills under .agents/ (inlined SKILL.md bodies); Cursor uses markdown + YAML (like Claude Code) plus .mdc rules for always-on context. ~36% of repo lines are 4-way duplicated. Manual cross-tree sync is enforced by CONTRIBUTING.md:21-26 (pending Cursor add per Q34/Q72). Copilot CLI + Antigravity are aspirational future targets per Q5.")}
 
@@ -430,7 +430,7 @@ s8 = section(8, "tech-debt", "Tech Debt", '''<p>Audit complete in <a href="./tec
 <table>
   <thead><tr><th>ID</th><th>Severity</th><th>Item</th><th>Effort</th></tr></thead>
   <tbody>
-    <tr><td><strong>H6</strong></td><td>HIGH (CONFIRMED bug)</td><td><code>setup.sh</code> + <code>setup.ps1</code> Codex branches omit copying <code>codex/.agents/</code> (skills + templates). Every Codex user has been getting agent TOMLs without skill bodies.</td><td>Trivial (~10 min)</td></tr>
+    <tr><td><strong>H6</strong></td><td>HIGH (CONFIRMED bug)</td><td><code>setup.sh</code> + <code>setup.ps1</code> Codex branches omit copying <code>profiles/codex/.agents/</code> (skills + templates). Every Codex user has been getting agent TOMLs without skill bodies.</td><td>Trivial (~10 min)</td></tr>
     <tr><td><strong>H7</strong></td><td>HIGH</td><td>Missing Monitor-phase templates (<code>MONITOR-STATE.md</code>, <code>track-report-template.md</code>) referenced in <code>templates/README.md</code> but not authored.</td><td>Small</td></tr>
     <tr><td>H1</td><td>HIGH</td><td>Triplication drift between install trees (SKILL.md bodies diverge 2.4× across trees; no propagation tool)</td><td>Medium</td></tr>
     <tr><td>H2</td><td>HIGH</td><td>No CI / no test runner / no <code>VERSION</code> file</td><td>Medium</td></tr>
@@ -440,7 +440,7 @@ s8 = section(8, "tech-debt", "Tech Debt", '''<p>Audit complete in <a href="./tec
   </tbody>
 </table>
 
-<p><strong>Positive parity finding:</strong> all 22 agents are tier-consistent across all 3 install trees — the May 2026 tier-rename migration (<code>codex/README.md:35</code>) was applied cleanly. Verified during cycle-1 review.</p>
+<p><strong>Positive parity finding:</strong> all 22 agents are tier-consistent across all 3 install trees — the May 2026 tier-rename migration (<code>profiles/codex/README.md:35</code>) was applied cleanly. Verified during cycle-1 review.</p>
 
 <p><strong>Tooling shipped this cycle:</strong> <code>templates/scripts/verify-kb-claims.sh</code> (R29 implementation, 300 lines Bash) — scans KB markdown for <code>file.ext:NN</code> citations and grep-checks them; checks README.md line-counts vs actual; targeted count-drift spot-checks. Latest run: <strong>897/897 citations valid, 0 drifts</strong>.</p>''')
 

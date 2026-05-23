@@ -1,16 +1,16 @@
 # Profile: Codex CLI (OpenAI Codex CLI)
 # Encodes the Codex CLI host tool's install conventions.
-# Consumed by the render scripts (tasks 019-021) to emit the codex/ tree.
+# Consumed by the render scripts (tasks 019-021) to emit the profiles/codex/ tree.
 #
 # NOTE: Codex has a split layout unique among the three tools:
-#   - Agent TOML files go under codex/.codex/agents/
-#   - Skills and templates go under codex/.agents/{skills,templates}/
+#   - Agent TOML files go under profiles/codex/.codex/agents/
+#   - Skills and templates go under profiles/codex/.agents/{skills,templates}/
 # The renderer must handle both roots when emitting Codex output.
 
 [layout]
 # Two-root layout: agents under agents_root, everything else under assets_root.
-agents_root   = "codex/.codex"
-assets_root   = "codex/.agents"
+agents_root   = "profiles/codex/.codex"
+assets_root   = "profiles/codex/.agents"
 agents_dir    = "agents"
 skills_dir    = "skills"
 templates_dir = "templates"
@@ -66,8 +66,8 @@ reviewer_output_file  = "DISCOVERY-STATE.md"   # was DISCOVERY-GRADE.md pre-R12;
 open_questions_file   = "additional-info.md"   # was open-questions.md pre-R12; now standardized
 
 [extras]
-# No extra files in codex/.codex/ beyond the agents/ directory.
-# (codex/.codex/ contains only the agents/ subdirectory — verified by inspecting the install tree.)
+# No extra files in profiles/codex/.codex/ beyond the agents/ directory.
+# (profiles/codex/.codex/ contains only the agents/ subdirectory — verified by inspecting the install tree.)
 
 [capabilities]
 # Values based on host-tools-matrix.md and external-sources.md Rows 3-4.

@@ -129,23 +129,23 @@ Write-Host ""
 # Claude Code — uses CLAUDE.md only (no AGENTS.md)
 if ($selected[1]) {
     Write-Host "--- Claude Code ---"
-    Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "claude-code\.claude") -DstDir (Join-Path $Target ".claude")
-    Copy-Item-Safe -Src (Join-Path $ScriptDir "claude-code\CLAUDE.md") -Dst (Join-Path $Target "CLAUDE.md")
+    Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "profiles\claude-code\.claude") -DstDir (Join-Path $Target ".claude")
+    Copy-Item-Safe -Src (Join-Path $ScriptDir "profiles\claude-code\CLAUDE.md") -Dst (Join-Path $Target "CLAUDE.md")
 }
 
 # Codex — uses AGENTS.md only (no CLAUDE.md)
 if ($selected[2]) {
     Write-Host "--- Codex ---"
-    Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "codex\.codex") -DstDir (Join-Path $Target ".codex")
-    Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "codex\.agents") -DstDir (Join-Path $Target ".agents")
-    Copy-Item-Safe -Src (Join-Path $ScriptDir "codex\AGENTS.md") -Dst (Join-Path $Target "AGENTS.md")
+    Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "profiles\codex\.codex") -DstDir (Join-Path $Target ".codex")
+    Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "profiles\codex\.agents") -DstDir (Join-Path $Target ".agents")
+    Copy-Item-Safe -Src (Join-Path $ScriptDir "profiles\codex\AGENTS.md") -Dst (Join-Path $Target "AGENTS.md")
 }
 
 # Cursor — uses AGENTS.md + .cursor/rules/aid-project.mdc (no CLAUDE.md)
 if ($selected[3]) {
     Write-Host "--- Cursor ---"
-    Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "cursor\.cursor") -DstDir (Join-Path $Target ".cursor")
-    Copy-Item-Safe -Src (Join-Path $ScriptDir "cursor\AGENTS.md") -Dst (Join-Path $Target "AGENTS.md")
+    Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "profiles\cursor\.cursor") -DstDir (Join-Path $Target ".cursor")
+    Copy-Item-Safe -Src (Join-Path $ScriptDir "profiles\cursor\AGENTS.md") -Dst (Join-Path $Target "AGENTS.md")
 }
 
 Write-Host ""
