@@ -1,7 +1,7 @@
 # Work State — work-003-traceability
 
-> **Status:** Specifying
-> **Phase:** Specify
+> **Status:** Planned
+> **Phase:** Plan (PLAN.md approved; /aid-detail not yet run)
 > **Minimum Grade:** A
 > **Started:** 2026-05-23
 > **User Approved:** yes (Interview)
@@ -38,7 +38,7 @@ This is the single state file for `work-003-traceability` — visibility / heart
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| _none yet_ | — | — | `/aid-plan` not yet run for this work |
+| delivery-001 | Approved | 12 | Heartbeat (FR1) across all 10 SKILLs + state-ref updates (FR2 finishing) bundled. 10 IMPLEMENT tasks + 1 rough-time-hints table + 1 verification. Critical path: task-011 → task-007 → task-012. |
 
 ## Tasks Status
 
@@ -67,3 +67,4 @@ The 3 OQs in feature-002's SPEC are scoped questions for `/aid-specify` to resol
 | 2026-05-23 | FR2 added (state-file consolidation) — feature-002 created | — (pending review) | Codifies the one-STATE-per-area rule. CW1 (this commit predecessor) wrote the spec; CW2–CW7 (this branch in progress) execute templates + dogfood-works migration + KB doc updates. |
 | 2026-05-23 | CW3: work-003 migrated to area-STATE shape (this commit) | — | INTERVIEW-STATE.md + feature-001 STATE.md absorbed into this STATE.md. feature-002 had no per-feature STATE.md by design. |
 | 2026-05-23 | CW1–CW8 complete (work-003 branch f61d281); 3 OQs resolved on feature-002 SPEC | A | OQ-1 single-writer orchestrator (matches AID orchestrator-worker pattern), OQ-2 delete outright (CW2 executed; tombstones would ship as noise), OQ-3 wait until Monitor matures (premature-design risk). feature-002 now spec-complete. |
+| 2026-05-23 | /aid-plan delivery-001 — Approved | — | Single delivery bundling FR1 heartbeat + FR2 skill-body state-ref updates. 12 tasks (10 per-skill IMPLEMENT + rough-time-hints table + verification). Sequencing: independent of work-001; SKILL.md edited once in this delivery. Open Questions section: (none open) — all OQs from spec + 2 planning decisions resolved during /aid-plan. |
