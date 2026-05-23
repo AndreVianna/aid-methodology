@@ -113,29 +113,27 @@ If a contributor opens a PR today, there is no automated signal whether they hav
 
 ---
 
-### [HIGH] H6 — Codex installer omits `.agents/` copy (CONFIRMED BUG)
+### [HIGH] H6 — Codex installer omits `.agents/` copy (CONFIRMED BUG) — **RETIRED 2026-05-22**
 
-**Evidence:** `setup.sh:142-145` (Codex branch) copies `codex/.codex/` to `$TARGET/.codex/` and `codex/AGENTS.md` to `$TARGET/AGENTS.md` — but **does NOT** copy `codex/.agents/` which contains all 10 SKILL.md files and the `templates/` asset bundle. `setup.ps1:137-141` has the identical omission. Reviewer static-analysis spot-check #20 confirmed: `sed -n '140,155p' setup.sh` shows only `.codex` and `AGENTS.md` are referenced in the Codex branch. `codex/README.md:12-15` documents that manual install requires BOTH `cp -r ... /.codex .codex/` AND `cp -r ... /.agents .agents/`. The installer is missing the second step.
+**Evidence:** `setup.sh:142-145` (Codex branch) copies `codex/.codex/` to `$TARGET/.codex/` and `codex/AGENTS.md` to `$TARGET/AGENTS.md` — but **did NOT** copy `codex/.agents/` which contains all 10 SKILL.md files and the `templates/` asset bundle. `setup.ps1:137-141` had the identical omission. Reviewer static-analysis spot-check #20 confirmed: `sed -n '140,155p' setup.sh` showed only `.codex` and `AGENTS.md` referenced in the Codex branch. `codex/README.md:12-15` documents that manual install requires BOTH `cp -r ... /.codex .codex/` AND `cp -r ... /.agents .agents/`. The installer was missing the second step.
 
-**Impact:** Every Codex user who installed AID via the bundled installer has been getting agent TOML definitions **without skill bodies**. Slash commands appear to do nothing because the SKILL.md files are absent. Silent failure mode — no error message, just inert tooling.
+**Impact:** Every Codex user who installed AID via the bundled installer was getting agent TOML definitions **without skill bodies**. Slash commands appeared to do nothing because the SKILL.md files were absent. Silent failure mode — no error message, just inert tooling.
 
-**Effort:** Trivial (~10 min). Add `copy_dir codex/.agents` to the Codex branch of `setup.sh` (Bash) and `Copy-Tree codex/.agents` equivalent to `setup.ps1`. Tracks DISCOVERY-STATE Q70 (confirmed bug).
-
-**Also recommended:** add an installer smoke test (see H2 CI scope) that runs `setup.sh` against an empty target and asserts the expected files land.
+**Resolution (work-002-canonical-generator / task-001 + task-002 + task-030):** `copy_dir codex/.agents` added to `setup.sh` Codex branch; equivalent `Copy-Dir-Safe` call added to `setup.ps1`. Live smoke test (task-030) confirmed: `setup.sh` + `setup.ps1` both install all 10 Codex SKILL.md files under `<target>/.agents/skills/aid-*/SKILL.md`. Claude Code and Cursor artifacts unaffected (regression check passed). H6 is retired. Tracks DISCOVERY-STATE Q70.
 
 ---
 
 ### [HIGH] H7 — Missing templates for the Monitor phase (Q8 promoted)
 
 **Evidence:** `templates/README.md` references two templates that do not exist on disk:
-- Line 31: `templates/feedback-artifacts/MONITOR-STATE.md` — used by `aid-monitor` for production telemetry state. Verified missing via `ls templates/feedback-artifacts/` (only `GAP.md` + `IMPEDIMENT.md` present).
-- Line 37: `templates/reports/track-report-template.md` — used by `aid-monitor` for periodic monitor reports. Verified missing via `ls templates/reports/` (only `correction-template.md`, `discovery-state-template.md`, `review-template.md`, `test-report-template.md` present).
+- Line 31: `templates/feedback-artifacts/MONITOR-STATE.md` — used by `aid-monitor` for production telemetry state. Verified missing via `ls templates/feedback-artifacts/` (only `IMPEDIMENT.md` present).
+- Line 37: `templates/reports/track-report-template.md` — used by `aid-monitor` for periodic monitor reports. Verified missing via `ls templates/reports/` (only `discovery-state-template.md` present).
 
 The `aid-monitor` skill (242 lines in each install tree) presumably produces these artifacts but agents have no canonical template to follow.
 
 **Impact:** The Monitor phase (feature 10 in `feature-inventory.md`) is shipping as ⚠️ Partial. Adopters running `/aid-monitor` get an agent that doesn't know what shape its output artifacts should take. Promoted from MEDIUM (M2 in earlier framing) to HIGH because it blocks the production-monitoring story end-to-end.
 
-**Effort:** Small (less than 4 h). **Resolution per DISCOVERY-STATE Q8 / Q31 / Q77:** author both templates — `MONITOR-STATE.md` modeled on `templates/feedback-artifacts/GAP.md` (~88 lines), `track-report-template.md` modeled on `templates/reports/test-report-template.md` (~103 lines). M2 below is now superseded by H7.
+**Effort:** Small (less than 4 h). **Resolution per DISCOVERY-STATE Q8 / Q31 / Q77:** author both templates — `MONITOR-STATE.md` modeled on `templates/feedback-artifacts/IMPEDIMENT.md`, `track-report-template.md` defined inline per the `aid-monitor` skill body. M2 below is now superseded by H7.
 
 ---
 
@@ -243,13 +241,13 @@ Contradicts scout's hypothesis that this was a forward-looking placeholder — a
 
 ---
 
-### [LOW] L2 — `correction-template.md` deprecation note inline
+### [LOW] L2 — `correction-template.md` deprecation note inline (resolved — deleted in methodology cleanup)
 
-**Evidence:** `templates/reports/correction-template.md:3`: "Deprecated: The Correct phase has been merged into Triage. Root cause analysis, patch scope, and test requirements are now documented directly in MONITOR-STATE.md. This template is retained for reference only."
+**Evidence (historical):** `templates/reports/correction-template.md` formerly carried an inline note: "Deprecated: The Correct phase has been merged into Triage. ... This template is retained for reference only."
 
-**Impact:** Same as L1 — a deprecated artifact still in the tree. The "retained for reference only" note suggests the maintainer kept it intentionally; a more honest fix is to move it to a `templates/.deprecated/` subdirectory or delete it.
+**Impact:** Resolved — the file was deleted in the methodology-correctness cleanup; no deprecated artifact remains in the tree.
 
-**Effort:** Trivial (less than 30 min).
+**Effort:** Done.
 
 ---
 
@@ -347,7 +345,6 @@ The three install-template variants are intentionally lighter than the dogfood `
 ### [LOW] L7 — Dead-code / unreferenced files
 
 **Search performed:** Looked for files in the repo that no other file references:
-- `templates/reports/correction-template.md` — referenced by methodology document only as deprecated. Tombstone candidate (see L2).
 - `skills/aid-correct/README.md` — tombstone (see L1).
 - `templates/grading-rubric.md` (74 lines, universal) vs. `templates/knowledge-summary/grading-rubric.md` (226 lines, HTML-specific) — both intentional and used by different consumers; **not** duplicates.
 
@@ -366,7 +363,7 @@ No genuinely orphaned files found.
 - **Test-to-code ratio:** ⚠️ Not meaningful for a methodology + docs + scripts repo. There are zero test files for ~5,490 lines of shell and ~3,428 lines of JavaScript. By the most literal reading, the test-to-code ratio is 0.
 - **CI/CD coverage:** 0 pipelines, 0 workflows. Confirmed.
 - **Per-severity debt-item count (OPEN items; post-cycle-2 reconciliation):**
-  - HIGH: 7 open (H1, H2, H3, H4, H5, H6, H7) — H6 (Codex installer Q70 CONFIRMED) and H7 (Monitor templates Q8 promoted) added 2026-05-21.
+  - HIGH: 6 open (H1, H2, H3, H4, H5, H7) — H6 RETIRED 2026-05-22 (Codex installer smoke test passed); H7 (Monitor templates Q8 promoted) added 2026-05-21.
   - MEDIUM: 6 (M1, M2 [superseded by H7 — kept as back-pointer], M3, M4, M5, M6) — M6 (Cursor Terminal/Bash internal inconsistency Q52) added 2026-05-21.
   - LOW: 7 (L1, L2, L3, L4, L5, L6 [informational — VERIFIED CONSISTENT tier mapping], L7 [informational]).
   - **Total: 20 open items.**
@@ -396,7 +393,7 @@ Items below were added or refined as a result of the Q&A pass on 2026-05-21. Cro
 | R2 | Q2, Q5 (user-confirmed) | Document supported tools matrix (Claude Code + Codex + Cursor committed; Copilot + Antigravity future). Update README + CONTRIBUTING + faq wording. Add tagged GitHub Releases for pinning. | Small | Pending |
 | R3 | Q3, Q73 (auto) | Author `tools/propagate-skills.{sh,py}` that derives Codex / Cursor SKILL.md from Claude Code source + `references/`. Add CI drift-check. | Medium | Pending |
 | R4 | Q4, Q12, Q35 (auto) | Minimal CI workflow: shellcheck on `*.sh`, markdownlint, link-check, structural cross-tree-parity test, wired `validate-*` scripts, JSON-Schema frontmatter validation, dogfood-discovery smoke test, unit tests on `grade.sh` + `build-project-index.sh`. | Medium | Pending |
-| R5 | Q6 (auto) | Delete `skills/aid-correct/` + `templates/reports/correction-template.md`. Add migration note to `CHANGELOG.md`. (Tombstones; phase merged into Triage/Monitor per `methodology/aid-methodology.md:889`.) | Trivial | Pending |
+| R5 | Q6 (auto) | Delete `skills/aid-correct/`. (`templates/reports/correction-template.md` already deleted in the methodology cleanup.) Add migration note to `CHANGELOG.md`. (Tombstones; phase merged into Triage/Monitor per `methodology/aid-methodology.md:889`.) | Trivial | Partially done — `correction-template.md` deleted; `skills/aid-correct/` pending |
 | R6 | Q11 (auto) | Add `.github/ISSUE_TEMPLATE/{bug-report,feature-request,methodology-question}.md` + `.github/PULL_REQUEST_TEMPLATE.md` aligned with AID phase taxonomy. | Trivial | Pending |
 | R7 | Q13 (auto) | Document branching strategy in `CONTRIBUTING.md`: trunk-based, branch naming `<owner>/<short-desc>`, squash-with-Conventional-Commits merge policy. | Trivial | Pending |
 | R8 | Q14 (auto) | Mark `templates/knowledge-summary/design-tokens.md` as documentation regenerated from `component-css.css` (CSS is source-of-truth). Future: one-shot doc-extraction script. | Trivial | Pending |
@@ -411,7 +408,7 @@ Items below were added or refined as a result of the Q&A pass on 2026-05-21. Cro
 | R17 | Q52 (auto) | Audit all 22 `cursor/.cursor/agents/*.md` and unify on `Terminal` (Cursor canonical name). Document in `cursor/README.md`. | Trivial | Pending — covered by M6 |
 | R18 | Q53 (auto) | Sync `templates/reports/discovery-state-template.md` with the rich shape embedded in `claude-code/.claude/agents/discovery-reviewer.md:309-369`. Document the skeleton→rich lifecycle. | Trivial | Pending |
 | R19 | Q55 (auto) | Add one-line Mermaid CLI install guidance to README + aid-summarize README. | Trivial | Pending |
-| R20 | Q70 (CONFIRMED bug) | Add `copy_dir codex/.agents` to `setup.sh:142-145` Codex branch and equivalent to `setup.ps1:137-141`. | Trivial | Pending — covered by H6 |
+| R20 | Q70 (CONFIRMED bug) | Add `copy_dir codex/.agents` to `setup.sh:142-145` Codex branch and equivalent to `setup.ps1:137-141`. | Trivial | **RETIRED 2026-05-22** — both installers fixed; task-030 smoke test confirmed 10 SKILL.md files present. |
 | R21 | Q74 (auto) | Add `.github/CODEOWNERS` requiring maintainer approval for changes that introduce `permissionMode: bypassPermissions` or `background: true`. Add CI check listing currently-elevated agents (today: 6 discovery-* agents). | Trivial | Pending |
 | R22 | Q75 (auto) | Add `tools/redact-kb.{sh,py}` masking file paths / URLs / configurable identifiers in `.aid/knowledge/*.md`. Document in `security-model.md` as recommended adopter practice. | Small | Deferred to v3.1 |
 | R23 | Q79 (auto) | Add `setup.sh --dry-run` + `setup.sh --prune` (with strong confirmation). Same for `setup.ps1`. | Small | Pending |
@@ -424,7 +421,7 @@ Items below were added or refined as a result of the Q&A pass on 2026-05-21. Cro
 
 ## Recommendations (Priority Order — updated 2026-05-21)
 
-1. **Fix `setup.sh` Codex `.agents/` omission (H6 / R20)**. Promoted to top — silent failure mode for every Codex user.
+1. ~~**Fix `setup.sh` Codex `.agents/` omission (H6 / R20)**~~ — **RETIRED 2026-05-22**. `setup.sh` + `setup.ps1` now copy `.agents/` in the Codex branch. Live smoke test confirmed 10 SKILL.md files present.
 2. **Add CI (H2 / R4)**. One workflow that runs shellcheck, validates frontmatter, runs triplication-drift check, runs install smoke tests, runs dogfood discovery. Single highest-leverage change.
 3. **Fix `CONTRIBUTING.md` (H5 / R15)**. Quadruplicate rule + correct paths + Cursor.
 4. **Author propagation script + drift checker (H3 / R3)**.
@@ -433,4 +430,4 @@ Items below were added or refined as a result of the Q&A pass on 2026-05-21. Cro
 7. **Add `VERSION` file + tag releases (R1)** — trivial, high-value for adopters.
 8. **Fix `developer.toml` hardcoded Maven path (M3)**.
 9. **Audit Cursor agents for `Terminal`/`Bash` consistency (M6 / R17)**.
-10. **Delete tombstones (L1, L2 / R5)** — `aid-correct/`, `correction-template.md`.
+10. **Delete tombstones (L1 / R5)** — `aid-correct/` (the `correction-template.md` tombstone, L2, was already deleted in the methodology cleanup).
