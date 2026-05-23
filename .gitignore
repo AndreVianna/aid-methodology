@@ -41,3 +41,4 @@ desktop.ini
 
 # Claude Code files
 .claude/worktrees/
+.claude/settings.local.json

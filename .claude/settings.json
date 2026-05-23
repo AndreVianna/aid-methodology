@@ -3,6 +3,10 @@
     "allow": [
       "Bash(mkdir *)",
       "Bash(cp *)",
+      "Bash(python *)",
+      "Bash(rm *)",
+      "Bash(./setup.sh *)",
+      "Bash(grep *)",
       "Bash(chmod *)"
     ]
   }
