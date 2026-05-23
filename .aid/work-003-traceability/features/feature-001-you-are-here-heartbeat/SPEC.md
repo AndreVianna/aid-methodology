@@ -4,6 +4,7 @@
 
 | Date | Change | Source |
 |------|--------|--------|
+| 2026-05-23 | **AC4 added — sub-unit drill-down.** Extended the "you are here" map to drill into states that iterate over a known list of sub-units (notably `aid-execute/EXECUTE-WAVE` and `aid-discover/GENERATE`). Adds AC4 to Acceptance Criteria, Flow D to Feature Flow, a new sub-unit-iteration row to Layers & Components, a soft dependency on work-001's `feature-009` (parallel execution model) for the `EXECUTE-WAVE` drill-down, and a Migration Plan note for the two-phase rollout. Sub-unit drill-down is graceful-degradable and never blocks the pipeline; for states without a qualifying iteration, AC3 behavior is unchanged. Per-task internal substates (implement → quick-check → done) are deferred to v2. | extension |
 | 2026-05-23 | **Moved to `work-003-traceability` and renumbered: feature-007 (in `work-001-aid-lite`) → feature-001 (in `work-003-traceability`).** Underlying spec content unchanged; this entry records the rename only. The receiving REQUIREMENTS.md renumbers FR4 → FR1; this SPEC's body still references FR4 by historical name where it cites work-001's framing — those references remain valid as historical context. | split |
 | 2026-05-22 | Feature identified from REQUIREMENTS.md §5 (FR4 — P1) | /aid-interview |
 | 2026-05-22 | Technical Specification written — Data Model, State Machines, Feature Flow, Layers & Components, Events & Messaging, Migration Plan; 4 open questions surfaced (heartbeat cadence, watcher mechanism, state-map source-of-truth, OQ6 run-context ownership resolution) | /aid-specify |
@@ -27,6 +28,15 @@ brackets the operation with a "starting … (~rough expected time)" line before 
 than hung. This keeps the user informed and engaged throughout, which is part of
 what success looks like for AID Lite.
 
+Within long, structured states that iterate over a known list of sub-units —
+notably `aid-execute/EXECUTE-WAVE` (which iterates over the tasks in a wave)
+and `aid-discover/GENERATE` (which dispatches multiple parallel discovery
+sub-agents) — the "you are here" map drills in: instead of a single
+highlighted state, it shows the sub-unit list with per-item status (done /
+running with elapsed time / queued) and an iteration counter. This answers
+"how far through this state am I?" — the question that is most acute during
+`EXECUTE-WAVE`, the longest opaque stretch in the pipeline.
+
 ## User Stories
 
 - As an AID end user, I want every skill to show a "you are here" state map so that
@@ -34,6 +44,10 @@ what success looks like for AID Lite.
 - As an AID end user, I want each long operation to be bracketed with a "starting …
   (~rough expected time)" line and a "done in …" line so that I can tell the process
   is working and not stuck.
+- As an AID end user running `aid-execute` against a delivery, I want the "you are
+  here" map to drill into the current wave so I can see at a glance which tasks are
+  done, which are still running (with elapsed time), and which are queued — without
+  scrolling back through bracket-pair lines.
 
 ## Priority
 
@@ -55,6 +69,17 @@ Should
   print) it renders an ASCII "you are here" map showing the skill's ordered state
   sequence with the current state marked (and completed vs. upcoming states
   distinguished).
+- [ ] **AC4 — sub-unit drill-down for states that iterate over a known list.**
+  Given a skill is in a state whose body iterates over an enumerable list of
+  sub-units (the qualifying states are enumerated in Technical Specification
+  → Flow D), when the state is entered and on every sub-unit state transition
+  (queued → running → done / failed), then the "you are here" map renders an
+  expanded view showing each sub-unit with status icon, name, and elapsed /
+  expected time on in-flight items, plus an iteration counter (e.g.
+  `Wave 1 of 2 · 2/6 done`). Re-renders triggered by multiple transitions
+  within the same second are coalesced into one render to bound chat noise.
+  For skills/states without a qualifying iteration, AC3 (bare skill-level map)
+  is unchanged.
 
 ---
 
@@ -268,6 +293,45 @@ tool and the load-bearing answer to "am I stuck?".
 observability, not control flow — a failure to render the map (e.g. malformed
 descriptor) is swallowed and never aborts the skill.
 
+#### Flow D — sub-unit drill-down (AC4)
+
+For **qualifying states** that iterate over a known list of sub-units, the AC3
+map render is extended with a sub-unit snapshot block. The snapshot re-renders
+on every sub-unit transition (queued → running → done / failed); multiple
+transitions within the same second are coalesced into one render.
+
+```
+sub-unit transitions  (any of: dispatched, completed, failed)
+        │
+        ▼
+[snapshot tick]  the skill body re-prints the sub-unit block:
+        │  1. iteration header line:  Wave M of N · K/T done
+        │  2. one row per sub-unit:
+        │       <status icon> <sub-unit name>   <elapsed / expected time>
+        │     where status icon is:  ✓ done · ● running · ✗ failed · (blank) queued
+        │  3. coalesce: if >1 transition happened in the last second,
+        │     emit only one snapshot for the batch
+        ▼
+user sees a refreshed snapshot of the wave's progress
+```
+
+**Qualifying states for drill-down (v1):**
+
+| Skill | State | Iteration source | Notes |
+|---|---|---|---|
+| `aid-execute` | `EXECUTE-WAVE` | Tasks in the current wave (from PLAN.md execution graph, or the work-root SPEC.md for lite path) | Highest-value drill-down; the longest opaque stretch. Full fidelity activates once work-001's `feature-009` lands (wave-level concurrent dispatch). Until then the wave runs serially and the snapshot shows one task in flight at a time — still useful but not the multi-task view. |
+| `aid-discover` | `GENERATE` | The set of parallel discovery sub-agents (architect, analyst, integrator, quality, plus the earlier solo scout and the later solo reviewer) | Full fidelity from day 1; discovery already dispatches concurrently. |
+
+**Out of v1 scope:**
+
+- Other skill states that iterate but iterate very fast (sub-second per item) — bracket-pairs already cover them and a snapshot block would be noise.
+- Per-sub-unit substates (e.g. a task running its developer step vs its quick-check step). Surfacing those would couple AC4 to work-001's `feature-004` (two-tier review) and is deferred to a v2 iteration once we see whether the outer-status snapshot is sufficient.
+- Global pipeline view ("where in the overall AID lifecycle am I") — out of scope per the original SPEC's per-skill scope decision.
+
+**Render placement.** The sub-unit snapshot is printed in the chat as a fresh block on each coalesced tick (not updated in place — markdown chat does not support in-place edits). Readers see the most recent snapshot by scrolling to the bottom; older snapshots remain in the history as a poor-man's timeline.
+
+**Never blocks the pipeline.** Same as AC3: a snapshot render failure (malformed iteration source, missing rough-time entry) is swallowed and never aborts the skill.
+
 ### Layers & Components
 
 | Layer | Component | Role |
@@ -275,6 +339,7 @@ descriptor) is swallowed and never aborts the skill.
 | Skill body (FR3 thin router) | State-entry print + map-render + bracket-pair invocation points in each `SKILL.md` / `references/state-*.md` | feature-007 is woven into every skill: each state's entry prints `[State: NAME] — {description}` and renders the map; each long-operation site brackets itself with start/done/error prints. This is **canonical content** edited once and rendered to all trees by FR5 (work-002's feature-001-profile-driven-generator). |
 | State topology | Per-skill **state-map descriptor**, **derived** from feature-002's `SKILL.md` `## Dispatch` table (state ids + ordering) and the opening sentence of each `references/state-{name}.md` (per-state description). No separate descriptor file. | The dispatch table is the single source of truth for the state list (feature-002 SPEC's *"State descriptors and single source of truth"* subsection — resolves feature-007 OQ-A and OQ-C); feature-007 reads, never duplicates. |
 | Rough-time hints | Static **per-operation-class table** | Ships with feature-007. Maps an operation class (sub-agent name, script name, tool-call kind) to a rough expected-time band used in the bracket-pair "starting" line. |
+| Sub-unit drill-down (AC4) | Per-qualifying-state **sub-unit iteration logic** inside the skill body — for `aid-execute/EXECUTE-WAVE` and `aid-discover/GENERATE`, the skill body knows its sub-unit list (from PLAN.md execution graph / lite-path SPEC for tasks; from the fixed agent set for discovery) and re-renders the map snapshot on each sub-unit transition, with 1-second coalescing. | New for v1. Couples to work-001's `feature-009` for `EXECUTE-WAVE` (the wave-execution model defines the iteration source); `GENERATE` has no work-001 coupling. |
 
 **Implementation — pure skill-body text.** No shipped scripts, no helpers, no
 hooks. The state-entry print, map render, and bracket-pair are instructions in
@@ -312,6 +377,18 @@ No new mandatory end-user dependency (NFR5).
   cleanest fit.
 - **No dependency on any event stream, hook infrastructure, JSONL file, context
   file, or telemetry pipeline.** feature-007 is standalone — pure skill-body text.
+- **AC4 — soft dependency on work-001's `feature-009` (parallel execution)** for
+  the `aid-execute/EXECUTE-WAVE` sub-unit drill-down. Before feature-009 lands,
+  the wave runs tasks serially and the drill-down still works but shows only one
+  task in flight at a time. After feature-009, the drill-down shows the full
+  concurrent wave with relative progress. AC4 ships with this feature; its
+  `EXECUTE-WAVE` fidelity scales up as feature-009 lands.
+- **AC4 — no dependency on work-001's `feature-004` (two-tier review)** for v1.
+  Surfacing per-task internal substates (implement → quick-check → done) would
+  make feature-004 a soft dependency; that is deferred to a v2.
+- **AC4 — `aid-discover/GENERATE` drill-down has no work-001 dependency.** The
+  parallel discovery sub-agents already dispatch concurrently in the current
+  implementation.
 
 ### Migration Plan
 
@@ -326,6 +403,13 @@ several skills already do is **extended** (description suffix) rather than repla
    derived from. feature-007 then adds the state-entry print, map-render, and
    bracket-pair invocation points to each skill body, plus the static rough-time
    hints table — all additively. `aid-plan` fixes the exact slot.
+
+   **AC4 phasing.** The `aid-discover/GENERATE` drill-down ships at full fidelity
+   from day 1 (discovery already runs in parallel). The `aid-execute/EXECUTE-WAVE`
+   drill-down ships with this feature but reaches full fidelity only after
+   work-001's `feature-009` lands (concurrent wave dispatch); before then,
+   `EXECUTE-WAVE` runs serially and the snapshot shows one task in flight at a
+   time.
 2. **No existing data, no existing contract.** feature-007 persists nothing of its
    own and reads nothing it doesn't ship; it has no schema and no backward-
    compatibility surface of its own.
