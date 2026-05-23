@@ -55,6 +55,6 @@ Review outcomes and test results are recorded in the task's task-NNN-STATE.md.
 
 ## When to Escalate
 - SPEC itself is defective → write a Q&A entry to the feature's `STATE.md`
-- KB conventions contradictory → write a Q&A entry to `.aid/knowledge/DISCOVERY-STATE.md`
+- KB conventions contradictory → write a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)` section
 - Cannot run tests (env issues) → report to Orchestrator
 - Need specialist input → request Security, Performance, or UX Designer via Orchestrator

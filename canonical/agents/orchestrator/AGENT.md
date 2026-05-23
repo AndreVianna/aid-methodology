@@ -31,8 +31,8 @@ You are the Orchestrator — the pipeline coordinator in the AID pipeline. You n
 ## Feedback Routing
 | Feedback signal | Routes To |
 |-----------------|-----------|
-| Q&A entry in `INTERVIEW-STATE.md` | Interviewer |
-| Q&A entry in `DISCOVERY-STATE.md` | Researcher |
+| Q&A entry in work `STATE.md` `## Cross-phase Q&A` (requirements-tagged) | Interviewer |
+| Q&A entry in `.aid/knowledge/STATE.md` `## Q&A (Pending)` | Researcher |
 | Q&A entry in a feature's `STATE.md` | Architect |
 | IMPEDIMENT.md | Architect |
 | MONITOR-STATE.md `BUG` | Developer (short bug path — Triage includes root cause analysis) |

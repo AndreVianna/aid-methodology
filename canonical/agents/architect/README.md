@@ -64,6 +64,6 @@ The Architect's output is the contract that the Developer follows and the Review
 
 ## Escalation
 
-- **Requirements ambiguous** → writes a Q&A entry to the work's `INTERVIEW-STATE.md`, routes to Interviewer
-- **KB insufficient** → writes a Q&A entry to `.aid/knowledge/DISCOVERY-STATE.md`, routes to Researcher
+- **Requirements ambiguous** → writes a Q&A entry to the work's `STATE.md` `## Cross-phase Q&A` section, routes to Interviewer
+- **KB insufficient** → writes a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)` section, routes to Researcher
 - **Contradictory constraints** → writes a Q&A entry to the relevant STATE file and flags it for human decision

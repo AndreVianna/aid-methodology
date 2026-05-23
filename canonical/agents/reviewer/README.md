@@ -100,6 +100,6 @@ cat task-NNN-STATE.md | templates/scripts/grade.sh
 ## Escalation
 
 - **SPEC itself has issues** → writes a Q&A entry to the feature's `STATE.md`, routes to Architect
-- **KB conventions are contradictory** → writes a Q&A entry to `.aid/knowledge/DISCOVERY-STATE.md`
+- **KB conventions are contradictory** → writes a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)` section
 - **Cannot run tests** (environment issues) → reports to Orchestrator
 - **Needs specialist input** → requests Security, Performance, or UX Designer agent
