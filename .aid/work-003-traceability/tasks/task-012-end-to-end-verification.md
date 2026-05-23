@@ -28,7 +28,9 @@
 
 ## §6 Quality Gates (this task type)
 
+Severities and grade calculation follow `canonical/templates/grading-rubric.md`. Tag findings with bracketed all-caps form so `grade.sh` counts them.
+
 - [ ] **§6.1 — Generator clean.** `python run_generator.py` runs to completion; VERIFY-4a `overall_passed: true`; VERIFY-4b advisory skip-count = 8 (vendor URLs pending fetch — expected).
 - [ ] **§6.2 — Installer smoke.** `setup.sh` installs the Claude Code profile into a fresh tmp directory without prompts; install includes the heartbeat-bearing SKILL bodies.
-- [ ] **§6.3 — Heartbeat visibly renders.** Three sample SKILLs invoked on toy scenarios (aid-discover GENERATE, aid-execute EXECUTE-WAVE, aid-summarize); each produces the expected state-entry line, state-map, and bracket-pair output. aid-discover + aid-execute additionally show the AC4 sub-unit drill-down.
-- [ ] **§6.4 — No orphan refs across all canonical.** `git grep -n "DISCOVERY-STATE\.md\|SUMMARY-STATE\.md\|INTERVIEW-STATE\.md\|task-NNN-STATE\.md\|DEPLOYMENT-STATE\.md\|feature-state\.md\|implementation-state\.md" canonical/skills/` returns no matches (Change Log mentions in `## Change Log` sections allowed).
+- [ ] **§6.3 — Heartbeat visibly renders *(manual verification — not automatable)*.** Three sample SKILLs invoked on toy scenarios per their per-task §6.4 specifications: aid-discover (AC4 GENERATE drill-down), aid-execute (AC4 EXECUTE-WAVE serial-fallback drill-down), aid-summarize (AC1+AC2+AC3 only). Each produces the expected state-entry line, state-map, and bracket-pair output.
+- [ ] **§6.4 — No orphan refs across all canonical.** `git grep -nE "DISCOVERY-STATE\.md|SUMMARY-STATE\.md|INTERVIEW-STATE\.md|task-([A-Z]+|[0-9]+[a-z]*|\{[^}]+\})-STATE\.md|DEPLOYMENT-STATE\.md|feature-state\.md|implementation-state\.md" canonical/skills/` returns no matches (Change Log mentions in `## Change Log` sections allowed).

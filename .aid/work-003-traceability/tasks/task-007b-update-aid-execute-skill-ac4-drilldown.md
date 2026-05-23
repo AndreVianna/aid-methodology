@@ -1,13 +1,15 @@
-# task-007b-update-aid-execute-skill-ac4-drilldown: Update aid-execute SKILL.md — AC4 sub-unit drill-down for EXECUTE-WAVE *(critical path)*
+# task-007b-update-aid-execute-skill-ac4-drilldown: Update aid-execute SKILL.md — AC4 sub-unit drill-down for EXECUTE-WAVE
 
 **Type:** IMPLEMENT
+
+**Critical path:** Yes — this task gates downstream nodes in `delivery-001`'s execution graph; delays here delay task-012 verification.
 
 **Source:** feature-001-you-are-here-heartbeat (AC4 for EXECUTE-WAVE) → delivery-001
 
 **Depends on:** task-007a
 
 **Scope:**
-- Build on task-007a's base implementation by adding **AC4 sub-unit drill-down for `EXECUTE-WAVE` state** per feature-001 SPEC Flow D.
+- Build on task-007a's base implementation by adding **AC4 sub-unit drill-down for `EXECUTE-WAVE` state** per feature-001 SPEC `### Feature Flow → Flow D — sub-unit drill-down (AC4)` (qualifying-states table, snapshot format, coalescing rule, serial-fallback degradation).
 - **Iteration source:** the work `STATE.md` `## Tasks Status` table — already in place per FR2 (work-002+CW3-CW6).
 - **Display:** when in EXECUTE-WAVE state, render a sub-unit snapshot block immediately after the AC3 state-map showing each task in the current wave with status icon (✓ done / ● running / ✗ failed / (blank) queued), task name, and elapsed/expected time. Iteration header line: `Wave {M} of {N} · {K}/{T} done`.
 - **Re-render trigger:** on every sub-unit transition (queued → running → done / failed). **1-second coalescing** — multiple transitions in the same second emit one snapshot.
@@ -27,7 +29,9 @@
 
 ## §6 Quality Gates (this task type)
 
+Severities and grade calculation follow `canonical/templates/grading-rubric.md`. Tag findings with bracketed all-caps form ([MINOR], [LOW], [MEDIUM], [HIGH], [CRITICAL]) so `grade.sh` counts them.
+
 - [ ] **§6.1 — Line endings preserved.** Edit uses binary-mode write; the edited file's pre-edit line-ending convention (LF or CRLF) is preserved post-edit.
-- [ ] **§6.2 — No orphan refs.** `git grep -n "DISCOVERY-STATE\.md\|SUMMARY-STATE\.md\|INTERVIEW-STATE\.md\|task-NNN-STATE\.md\|DEPLOYMENT-STATE\.md\|feature-state\.md\|implementation-state\.md"` in the edited SKILL.md returns no matches (except historical references inside `## Change Log` if applicable).
+- [ ] **§6.2 — No orphan refs.** `git grep -nE "DISCOVERY-STATE\.md|SUMMARY-STATE\.md|INTERVIEW-STATE\.md|task-([A-Z]+|[0-9]+[a-z]*|\{[^}]+\})-STATE\.md|DEPLOYMENT-STATE\.md|feature-state\.md|implementation-state\.md"` in the edited SKILL.md returns no matches (except historical references inside `## Change Log` if applicable). Pattern handles all placeholder conventions: `task-NNN-`, `task-001-`, `task-{id}-`.
 - [ ] **§6.3 — Generator passes.** `python run_generator.py` runs to completion after the edit; VERIFY-4a `overall_passed: true`.
-- [ ] **§6.4 — Heartbeat renders correctly.** When the edited SKILL is invoked on a toy scenario (one state transition + one bracketed operation), the chat output contains: a `[State: NAME] — {desc}` line; an ASCII state-map block; a matching `▶ … starting (~…)` / `✓ … done in …` pair around the operation.
+- [ ] **§6.4 — Heartbeat renders correctly *(manual verification — not automatable)*.** Invoke the edited SKILL in Claude Code (or equivalent host) on the following toy scenario: re-run the same 3-task synthetic delivery from task-007a; observe AC4 sub-unit drill-down rendering during EXECUTE-WAVE — serial-task fallback (1 task in flight at a time) shows queued → running → done transitions for each of the 3 tasks with 1-second coalescing. Observe in the chat output: a `[State: NAME] — {desc}` line at each state entry; an ASCII state-map block; a matching `▶ … starting (~…)` / `✓ … done in …` pair around the bracketed operation.
