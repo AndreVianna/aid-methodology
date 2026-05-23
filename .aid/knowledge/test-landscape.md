@@ -20,7 +20,7 @@ None of these exercise this repo's own artifacts. The repo ships untested.
 
 | Pattern | Found | Notes |
 |---------|-------|-------|
-| `tests/`, `test/`, `spec/` | None at repo level | `templates/reports/test-report-template.md` is a template, not a test file |
+| `tests/`, `test/`, `spec/` | None at repo level | — |
 | `*.test.{js,ts,py,go,java}` | None | — |
 | `*_test.go`, `*Test.java`, `test_*.py` | None | — |
 | `pytest.ini`, `jest.config.*`, `vitest.config.*`, `mocha.opts`, `karma.conf.*` | None | — |
@@ -28,7 +28,7 @@ None of these exercise this repo's own artifacts. The repo ships untested.
 | `.github/workflows/*` | None | Confirmed by `project-index.md` Notable Files (which would list CI configs) |
 | `.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`, `.circleci/` | None | — |
 
-Search method: `Glob` patterns for the above + `Grep` over `project-index.md`'s Full File Inventory. The only files matching `*test*` are `templates/knowledge-base/test-landscape.md` (the KB template) and `templates/reports/test-report-template.md` — both are templates *for downstream user projects*, not tests of this repo.
+Search method: `Glob` patterns for the above + `Grep` over `project-index.md`'s Full File Inventory. The only file matching `*test*` is `templates/knowledge-base/test-landscape.md` (the KB template) — a template *for downstream user projects*, not a test of this repo.
 
 ## Validation / Quality Scripts (Runtime, Ship to User Projects)
 
@@ -55,17 +55,17 @@ These run inside the `aid-summarize` skill (state machine PREFLIGHT -> STALE-CHE
 
 | Script | Lines | Language | Purpose | Invoked at |
 |--------|-------|----------|---------|------------|
-| `claude-code/.claude/skills/aid-discover/scripts/check-preflight.sh` | 45 | Bash | Verifies (1) `DISCOVERY-STATE.md` exists and is non-empty (init has run), (2) Plan Mode not active (env-var heuristic). Exits 1 if init not run, 2 if Plan Mode. | Step 0a of `aid-discover` |
-| `claude-code/.claude/skills/aid-discover/scripts/verify-kb.sh` | 60 | Bash | After discovery, verifies all 16 expected KB files exist in the target directory. Used to detect which sub-agents need re-dispatch. Note: hardcoded list of 16 files (does not include `additional-info.md`). | Post-generation step of `aid-discover` |
+| `profiles/claude-code/.claude/skills/aid-discover/scripts/check-preflight.sh` | 45 | Bash | Verifies (1) `DISCOVERY-STATE.md` exists and is non-empty (init has run), (2) Plan Mode not active (env-var heuristic). Exits 1 if init not run, 2 if Plan Mode. | Step 0a of `aid-discover` |
+| `profiles/claude-code/.claude/skills/aid-discover/scripts/verify-kb.sh` | 60 | Bash | After discovery, verifies all 16 expected KB files exist in the target directory. Used to detect which sub-agents need re-dispatch. Note: hardcoded list of 16 files (does not include `additional-info.md`). | Post-generation step of `aid-discover` |
 
-**Scope:** *User runtime.* These ship only in the Claude Code tree (`claude-code/.claude/skills/aid-discover/scripts/`); the Codex and Cursor trees inline equivalent logic into their longer SKILL.md bodies.
+**Scope:** *User runtime.* These ship only in the Claude Code tree (`profiles/claude-code/.claude/skills/aid-discover/scripts/`); the Codex and Cursor trees inline equivalent logic into their longer SKILL.md bodies.
 
 ### 3. Build / Index Scripts (Runtime)
 
 | Script | Lines | Language | Purpose |
 |--------|-------|----------|---------|
 | `templates/scripts/build-project-index.sh` | 368 | Bash | Step 0c pre-pass for `aid-discover`. Emits `.aid/knowledge/project-index.md` so the 5 discovery sub-agents share a common file inventory. Duplicated 4x across `templates/` + 3 install trees (identical content). |
-| `templates/scripts/grade.sh` | 141 | Bash | Deterministic grade calculation from a Reviewer's structured issue list. **Same input -> same grade.** Duplicated 4x across `templates/` + 3 install trees (verified identical to `claude-code/.claude/templates/scripts/grade.sh` by `diff`). |
+| `templates/scripts/grade.sh` | 141 | Bash | Deterministic grade calculation from a Reviewer's structured issue list. **Same input -> same grade.** Duplicated 4x across `templates/` + 3 install trees (verified identical to `profiles/claude-code/.claude/templates/scripts/grade.sh` by `diff`). |
 
 ## Test Commands
 
@@ -79,7 +79,7 @@ node templates/knowledge-summary/scripts/validate-diagrams.mjs path/to/knowledge
 node templates/knowledge-summary/scripts/contrast-check.mjs path/to/knowledge-summary.html
 
 # Verify a user-project KB has all 16 expected docs (user-side, after /aid-discover)
-bash claude-code/.claude/skills/aid-discover/scripts/verify-kb.sh .aid/knowledge/
+bash profiles/claude-code/.claude/skills/aid-discover/scripts/verify-kb.sh .aid/knowledge/
 
 # Compute a deterministic grade from a Reviewer's issue list
 bash templates/scripts/grade.sh < reviewer-output.json
@@ -116,7 +116,7 @@ This means there is **no automated check** that:
 >
 > Same for agents: update the human README, Claude Code .md, and Codex .toml.
 
-Cursor is documented separately in `cursor/README.md`. The CONTRIBUTING guide does NOT explicitly mention the cursor tree in the triplication rule even though Cursor is a fully-shipped 4th target — this is an inconsistency between docs and reality.
+Cursor is documented separately in `profiles/cursor/README.md`. The CONTRIBUTING guide does NOT explicitly mention the cursor tree in the triplication rule even though Cursor is a fully-shipped 4th target — this is an inconsistency between docs and reality.
 
 Additional CONTRIBUTING constraints:
 - `CONTRIBUTING.md:75` — "For examples: Add to `examples/` with a `README.md` explaining context. **Anonymize everything.**"
@@ -130,7 +130,7 @@ AID itself defines runtime quality gates. While none enforce quality of *this re
 |-------|------|-----------|-------|
 | Init | Plan-mode check | `check-preflight.sh` | aid-init skill |
 | Discover | REVIEW state — DISCOVERY-STATE.md must reach grade >= Minimum (default A) | discovery-reviewer agent + `grade.sh` | aid-discover skill |
-| Specify | GAP.md when KB insufficient or requirements ambiguous | Architect agent (manual emission) | architect agent |
+| Specify | Q&A entry in feature STATE.md / DISCOVERY-STATE.md when KB insufficient or requirements ambiguous | Architect agent (manual emission) | architect agent |
 | Execute | Per-task review loop — reviewer issues -> `grade.sh` -> fix-or-pass | reviewer agent + `grade.sh` | aid-execute skill |
 | Deploy | Full build + test verification before PR creation | operator agent (calls user's existing build/test) | aid-deploy skill |
 | Monitor | Production findings classified and routed | monitor skill + monitor agent | aid-monitor skill |
@@ -149,18 +149,18 @@ Each gap below is real, not hypothetical, and each carries a measurable risk for
 
 ### [HIGH] No triplication-drift checker
 **Evidence:** `CONTRIBUTING.md:21-26` requires manual propagation; no automated equivalent exists. `aid-discover/SKILL.md` is 453 / 1,078 / 1,090 lines (Claude Code / Codex / Cursor) — 2.4x variance — undetected by tooling.
-**Impact:** A bug fix applied only to `claude-code/.claude/skills/aid-discover/SKILL.md` silently leaves the Codex and Cursor versions stale. Users of those tools get an outdated experience.
+**Impact:** A bug fix applied only to `profiles/claude-code/.claude/skills/aid-discover/SKILL.md` silently leaves the Codex and Cursor versions stale. Users of those tools get an outdated experience.
 **Remediation (suggested):** Script that for each `aid-*/SKILL.md`, diffs the bodies and asserts a maximum allowed delta — or, better, normalizes via a transform that strips Codex/Cursor-specific inlining and compares the resulting canonical body.
 
 ### [HIGH] No smoke test of any AID skill end-to-end
 **Evidence:** No script invokes a full skill against a sample project. The `examples/` directory contains anonymized *outputs*, not test fixtures with expected-output diffs.
 **Impact:** A subtle frontmatter break, a script regression, or a permission allow-list mistake can ship without anyone noticing until a user opens an issue.
-**Remediation (suggested):** A scripted run of `setup.sh` against `examples/brownfield-enterprise/` followed by `bash claude-code/.claude/skills/aid-discover/scripts/check-preflight.sh` and `verify-kb.sh` would catch the most basic regressions.
+**Remediation (suggested):** A scripted run of `setup.sh` against `examples/brownfield-enterprise/` followed by `bash profiles/claude-code/.claude/skills/aid-discover/scripts/check-preflight.sh` and `verify-kb.sh` would catch the most basic regressions.
 
 ### [MEDIUM] No schema validation of SKILL.md or agent frontmatter
 **Evidence:** No JSON Schema / Ajv config / `actionlint`-style validator in the repo.
 **Impact:** A typo in `allowed-tools:` or a missing `model:` field passes review silently; the host AI tool may then ignore the file or behave unexpectedly.
-**Remediation (suggested):** A simple Python or Node validator that parses every `**/SKILL.md`'s YAML frontmatter and every `codex/.codex/agents/*.toml`, asserts required fields, and checks values against an allow-list (e.g., `model` in `{opus, sonnet, haiku}`).
+**Remediation (suggested):** A simple Python or Node validator that parses every `**/SKILL.md`'s YAML frontmatter and every `profiles/codex/.codex/agents/*.toml`, asserts required fields, and checks values against an allow-list (e.g., `model` in `{opus, sonnet, haiku}`).
 
 ### [MEDIUM] No verification that installer scripts produce a working tree
 **Evidence:** `setup.sh` and `setup.ps1` exist but have no test coverage.

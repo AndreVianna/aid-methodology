@@ -170,9 +170,9 @@ See `project-structure.md` §"Top-Level Layout" (lines 22-43) and §"Per-Tool In
 |---|---|---|
 | Normative spec | `methodology/aid-methodology.md` (1,158 lines) + 4 PNGs in `methodology/images/` | The single source of truth for what AID is. |
 | Human-readable references | `skills/` (10 skill READMEs), `agents/` (17 agent READMEs), `docs/` (FAQ, glossary), `examples/` (3 case studies) | Documentation aimed at humans who want to understand AID without LLM optimization. |
-| LLM-format payload — Claude Code | `claude-code/.claude/{agents,skills,templates}/` + `claude-code/CLAUDE.md` | Markdown + YAML frontmatter (`name`, `description`, `tools`, `model`); skills are `skills/aid-*/SKILL.md`; complex skills externalize content into `references/` and `scripts/` subdirs. |
-| LLM-format payload — Codex CLI | `codex/.codex/agents/*.toml` (TOML) + `codex/.agents/{skills,templates}/` (markdown shared assets) + `codex/AGENTS.md` | Split layout: agents under `.codex/`, skills + templates under `.agents/`. Inline-everything style — skill bodies are 2-3x longer than Claude Code equivalents (`aid-discover/SKILL.md`: 1,078 vs 453 lines per `project-index.md:181`). |
-| LLM-format payload — Cursor | `cursor/.cursor/{rules,agents,skills,templates}/` + `cursor/AGENTS.md` | Same markdown + YAML shape as Claude Code, plus `.mdc` rules files (`cursor/.cursor/rules/aid-methodology.mdc` always-on, `aid-review.mdc` glob-scoped). Skill bodies match Codex length (1,090 lines for `aid-discover`). |
+| LLM-format payload — Claude Code | `profiles/claude-code/.claude/{agents,skills,templates}/` + `profiles/claude-code/CLAUDE.md` | Markdown + YAML frontmatter (`name`, `description`, `tools`, `model`); skills are `skills/aid-*/SKILL.md`; complex skills externalize content into `references/` and `scripts/` subdirs. |
+| LLM-format payload — Codex CLI | `profiles/codex/.codex/agents/*.toml` (TOML) + `profiles/codex/.agents/{skills,templates}/` (markdown shared assets) + `profiles/codex/AGENTS.md` | Split layout: agents under `.codex/`, skills + templates under `.agents/`. Inline-everything style — skill bodies are 2-3x longer than Claude Code equivalents (`aid-discover/SKILL.md`: 1,078 vs 453 lines per `project-index.md:181`). |
+| LLM-format payload — Cursor | `profiles/cursor/.cursor/{rules,agents,skills,templates}/` + `profiles/cursor/AGENTS.md` | Same markdown + YAML shape as Claude Code, plus `.mdc` rules files (`profiles/cursor/.cursor/rules/aid-methodology.mdc` always-on, `aid-review.mdc` glob-scoped). Skill bodies match Codex length (1,090 lines for `aid-discover`). |
 | Source-of-truth templates | `templates/` (~50 files: KB document templates, requirements / specs / delivery plans / feedback artifacts / reports / knowledge-summary assets / shell scripts) | Copied verbatim into each tool tree. |
 | Installers | `setup.sh` (161 lines), `setup.ps1` (156 lines) | Interactive menu selects one or more of Claude Code / Codex / Cursor; copies the matching tree into a target project. |
 
@@ -190,9 +190,9 @@ This repository has no language-level modules (no packages, no namespaces, no co
 | `skills/` | Human-readable per-phase documentation (10 folders, one `README.md` each). Plus the top-level `skills/README.md` (77 lines) that lists all phases with starting-point guidance. The format here is rich prose with rationale and examples — **not** optimized for LLM consumption. | `project-structure.md:78-91` |
 | `agents/` | Human-readable per-agent documentation (17 specialty folders, one `README.md` each, plus a top-level `README.md` listing all three categories: Core / Specialist / Utility). Same human-prose format as `skills/`. | `project-structure.md:97-141` |
 | `templates/` | The canonical source-of-truth templates. Sub-folders: `knowledge-base/` (16 KB document templates), `requirements/`, `specs/`, `delivery-plans/`, `feedback-artifacts/`, `reports/`, `knowledge-summary/` (the HTML viewer assets — 25 files), `scripts/` (`build-project-index.sh`, `grade.sh`). Also contains `grading-rubric.md` and `implementation-state.md` at root. | `project-structure.md:144-183` |
-| `claude-code/.claude/` | Install payload for Anthropic Claude Code. Agents as `*.md` with YAML frontmatter; skills with `references/` and `scripts/` externalization; templates copied verbatim from `templates/`. | `project-structure.md:62-66` |
-| `codex/` | Install payload for OpenAI Codex CLI. Split into `.codex/agents/*.toml` and `.agents/{skills,templates}/`. Per `codex/README.md:12-15`, this split is intentional. | `project-structure.md:62-66` |
-| `cursor/.cursor/` | Install payload for Cursor. Same markdown shape as Claude Code, plus `.mdc` rule files. | `project-structure.md:62-66` |
+| `profiles/claude-code/.claude/` | Install payload for Anthropic Claude Code. Agents as `*.md` with YAML frontmatter; skills with `references/` and `scripts/` externalization; templates copied verbatim from `templates/`. | `project-structure.md:62-66` |
+| `codex/` | Install payload for OpenAI Codex CLI. Split into `.codex/agents/*.toml` and `.agents/{skills,templates}/`. Per `profiles/codex/README.md:12-15`, this split is intentional. | `project-structure.md:62-66` |
+| `profiles/cursor/.cursor/` | Install payload for Cursor. Same markdown shape as Claude Code, plus `.mdc` rule files. | `project-structure.md:62-66` |
 | `examples/` | Three anonymized case studies showing AID applied to: brownfield-enterprise (Java/OSGi), desktop-app (.NET/Avalonia/MVVM), data-pipeline (multi-agent analytics). | `project-structure.md:196-202` |
 | `docs/` | Adopter-facing FAQ and glossary. 2 files. | `project-structure.md:184-194` |
 | `setup.sh`, `setup.ps1` | The installation entry point. Identical menu, identical copy semantics. Both at repo root. | `project-structure.md:37-38` |
@@ -206,9 +206,9 @@ flowchart LR
   S["skills/<br/>(human READMEs)"]
   A["agents/<br/>(human READMEs)"]
   T["templates/<br/>(canonical assets)"]
-  CC["claude-code/.claude/"]
-  CX["codex/.codex/ + .agents/"]
-  CU["cursor/.cursor/"]
+  CC["profiles/claude-code/.claude/"]
+  CX["profiles/codex/.codex/ + .agents/"]
+  CU["profiles/cursor/.cursor/"]
   I["setup.sh / setup.ps1"]
   EX["examples/"]
   D["docs/"]
@@ -244,9 +244,9 @@ Every skill is a **stateful, resumable orchestrator** that does one step per inv
 
 Evidence:
 
-- `aid-discover` — explicit `State machine: GENERATE → REVIEW → Q&A → FIX → APPROVAL → DONE` in its frontmatter description (`claude-code/.claude/skills/aid-discover/SKILL.md:6-7`). Six modes documented at `:46-55`. State detection logic at `:57-79`. Each mode is a single bounded step ending with "Run /aid-discover again to ..." (e.g., `:215`, `:251`, `:292`, `:348`).
-- `aid-execute` — explicit `State machine: EXECUTE → REVIEW → FIX → back to REVIEW → DONE when grade ≥ minimum` (`claude-code/.claude/skills/aid-execute/SKILL.md:6-7`). State table at `:154-163` (Check 6: Determine State).
-- `aid-summarize` — 9-state machine: `PREFLIGHT → STALE-CHECK → PROFILE → GENERATE → VALIDATE → FIX → APPROVAL → WRITEBACK → DONE` (`claude-code/.claude/skills/aid-summarize/SKILL.md:7-9`). State detection at `:56-95`.
+- `aid-discover` — explicit `State machine: GENERATE → REVIEW → Q&A → FIX → APPROVAL → DONE` in its frontmatter description (`profiles/claude-code/.claude/skills/aid-discover/SKILL.md:6-7`). Six modes documented at `:46-55`. State detection logic at `:57-79`. Each mode is a single bounded step ending with "Run /aid-discover again to ..." (e.g., `:215`, `:251`, `:292`, `:348`).
+- `aid-execute` — explicit `State machine: EXECUTE → REVIEW → FIX → back to REVIEW → DONE when grade ≥ minimum` (`profiles/claude-code/.claude/skills/aid-execute/SKILL.md:6-7`). State table at `:154-163` (Check 6: Determine State).
+- `aid-summarize` — 9-state machine: `PREFLIGHT → STALE-CHECK → PROFILE → GENERATE → VALIDATE → FIX → APPROVAL → WRITEBACK → DONE` (`profiles/claude-code/.claude/skills/aid-summarize/SKILL.md:7-9`). State detection at `:56-95`.
 
 Two invariants make this pattern work:
 
@@ -257,7 +257,7 @@ Two invariants make this pattern work:
 
 An orchestrator skill dispatches multiple specialized sub-agents in parallel, waits for completion, then merges results. The orchestrator does no investigation itself — it only coordinates.
 
-Canonical example: `aid-discover` Steps 2-5 (`claude-code/.claude/skills/aid-discover/SKILL.md:130-156`):
+Canonical example: `aid-discover` Steps 2-5 (`profiles/claude-code/.claude/skills/aid-discover/SKILL.md:130-156`):
 
 1. **Step 1** runs `discovery-scout` *alone, first*, because it produces the `project-structure.md` and `external-sources.md` that every other agent depends on.
 2. **Steps 2-5** then dispatch four sub-agents in parallel with `background: true`:
@@ -268,7 +268,7 @@ Canonical example: `aid-discover` Steps 2-5 (`claude-code/.claude/skills/aid-dis
 3. The orchestrator then **waits without polling**: `"After dispatching, WAIT. Do not check files. Do not take any action. ... Only proceed when ALL dispatched agents have reported completion."` (`:152-156`).
 4. After convergence, a separate `discovery-reviewer` agent is dispatched with **clean context** (no info about which agents ran, no prior state) — `:230-237` and `:334-340`. This is the *Reviewer ≠ Executor* invariant declared at `agents/README.md:21`.
 
-The same pattern recurs in `aid-execute` (`claude-code/.claude/skills/aid-execute/SKILL.md:42-60`) where each task Type dispatches a specific executor agent (RESEARCH → `researcher`, DESIGN → `ux-designer`, IMPLEMENT/TEST/REFACTOR → `developer`, etc.) followed by a separate `reviewer` agent.
+The same pattern recurs in `aid-execute` (`profiles/claude-code/.claude/skills/aid-execute/SKILL.md:42-60`) where each task Type dispatches a specific executor agent (RESEARCH → `researcher`, DESIGN → `ux-designer`, IMPLEMENT/TEST/REFACTOR → `developer`, etc.) followed by a separate `reviewer` agent.
 
 ### Pattern 3: Reference-file decomposition (Claude Code only)
 
@@ -276,9 +276,9 @@ Claude Code skills externalize content into `references/` and `scripts/` subdire
 
 Evidence:
 
-- `claude-code/.claude/skills/aid-discover/references/agent-prompts.md` (142 lines), `references/document-expectations.md` (121), `references/reviewer-prompt.md` (75). `scripts/check-preflight.sh` (45), `scripts/verify-kb.sh` (60). Total externalized: ~443 lines. The main SKILL.md is 453 lines.
-- The Codex equivalent `codex/.agents/skills/aid-discover/SKILL.md` is 1,078 lines (per `project-index.md:181`).
-- The Cursor equivalent `cursor/.cursor/skills/aid-discover/SKILL.md` is 1,090 lines.
+- `profiles/claude-code/.claude/skills/aid-discover/references/agent-prompts.md` (142 lines), `references/document-expectations.md` (121), `references/reviewer-prompt.md` (75). `scripts/check-preflight.sh` (45), `scripts/verify-kb.sh` (60). Total externalized: ~443 lines. The main SKILL.md is 453 lines.
+- The Codex equivalent `profiles/codex/.agents/skills/aid-discover/SKILL.md` is 1,078 lines (per `project-index.md:181`).
+- The Cursor equivalent `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` is 1,090 lines.
 
 This is a **design tension**, not an accident. Claude Code supports the `references/` pattern natively; Codex and Cursor either don't, or AID hasn't yet adopted it there. Drift between the three trees is currently a manual maintenance burden — see `project-structure.md` Anomaly #7 (line 260) and the discovery-scout question Q3.
 
@@ -299,7 +299,7 @@ The KB is deliberately structured so an agent **never loads the whole repository
 
 1. **Tier 1 — `INDEX.md`, always loaded.** Every task prompt carries `INDEX.md`: a 2-3 line summary of every KB document, ~200-500 tokens total (`methodology/aid-methodology.md:161-191`). At negligible context cost the agent knows *what knowledge exists and which file holds it*.
 2. **Tier 2 — one specific KB document, loaded on demand.** From an `INDEX.md` entry the agent decides which of the 16 standard KB docs (or the 3 meta-docs / extensions) a task actually needs and reads only that file. The **fixed-shape directory** makes this deterministic — `data-model.md` always holds schemas, `tech-debt.md` always holds debt — so the agent navigates by convention, never by search.
-3. **Tier 3 — an exact repository location, pinpointed via citation.** Every factual claim in a KB document carries an inline `path:line` citation (the mandatory convention in `coding-standards.md §4.4`; `claude-code/.claude/agents/discovery-analyst.md:27` "Every claim must cite a file path. No unsourced assertions"). From a KB doc the agent jumps straight to the precise file and line in the 49,226-line repository — never globbing, never bulk-loading unrelated source.
+3. **Tier 3 — an exact repository location, pinpointed via citation.** Every factual claim in a KB document carries an inline `path:line` citation (the mandatory convention in `coding-standards.md §4.4`; `profiles/claude-code/.claude/agents/discovery-analyst.md:27` "Every claim must cite a file path. No unsourced assertions"). From a KB doc the agent jumps straight to the precise file and line in the 49,226-line repository — never globbing, never bulk-loading unrelated source.
 
 **Net effect:** the agent pays ~200-500 tokens to know the location of *everything*, then spends context budget only on the one KB doc and the specific repo lines a task genuinely needs. This is what "RAG-by-convention" means here — predictable structure + a navigation index + mandatory citations deliver retrieval-augmented behavior with **no vector database, no embeddings, no chunking**. The same `path:line` citations that enforce accuracy (Tier 3, verified by `discovery-reviewer` spot-checks) double as the context-economy navigation layer.
 
@@ -309,7 +309,7 @@ Every artifact template has a `## Revision History` table at the bottom. Every c
 
 This is enforced by:
 
-- The feedback loops (see §2.1 above) — each loop produces a `GAP.md` (`templates/feedback-artifacts/GAP.md`, 88 lines) or `IMPEDIMENT.md` (`templates/feedback-artifacts/IMPEDIMENT.md`, 118 lines) that explicitly identifies what artifact needs revision.
+- The feedback loops (see §2.1 above) — each loop produces a Q&A entry in a STATE file (DISCOVERY-STATE.md for KB gaps, INTERVIEW-STATE.md for requirements gaps, feature STATE.md for spec gaps) or an `IMPEDIMENT.md` (`templates/feedback-artifacts/IMPEDIMENT.md`, 118 lines) that explicitly identifies what artifact needs revision.
 - The `## Change Log` section that prefixes user-facing requirements artifacts like REQUIREMENTS.md (`methodology/aid-methodology.md:611-614`) and per-feature SPEC.md (`:636-639`).
 - The Reviewer agent that tags every issue by source (`[CODE]` / `[TASK]` / `[SPEC]` / `[KB]` / `[ARCHITECTURE]`) per `methodology/aid-methodology.md:814` — so a review can route a problem upstream to whichever artifact owns it.
 
@@ -391,7 +391,7 @@ flowchart TB
 
   HUMAN -- "/aid-deploy" --> DEP["aid-deploy skill"]
   CODE -- "verified" --> DEP
-  DEP -- "writes" --> DELIV["DELIVERY-NNN.md"]
+  DEP -- "writes" --> DELIV["release package +<br/>DEPLOYMENT-STATE.md"]
   DEP -- "may update" --> KB
 
   HUMAN -- "/aid-monitor" --> MON["aid-monitor skill"]
@@ -411,15 +411,10 @@ Per `methodology/aid-methodology.md:589-606` (Artifacts Reference table) and the
 | `DISCOVERY-STATE.md` | `templates/reports/discovery-state-template.md` | Discover |
 | `REQUIREMENTS.md` | `templates/requirements/requirements-template.md` (95 lines) | Interview |
 | Feature `SPEC.md` | `templates/specs/spec-template.md` (75 lines) | Interview (req side) + Specify (tech side) |
-| `PLAN.md` | `templates/delivery-plans/delivery-template.md` (83 lines) | Plan |
-| `DETAIL.md` | `templates/delivery-plans/detail-template.md` (158 lines) | Detail |
-| `task-NNN.md` | `templates/delivery-plans/task-template.md` (142 lines) | Detail |
-| `REVIEW.md` | `templates/reports/review-template.md` (125 lines) | Reviewer agent (inside Execute) |
-| `TEST-REPORT.md` | `templates/reports/test-report-template.md` (103 lines) | Reviewer agent (inside Execute, TEST tasks) |
-| `GAP.md` | `templates/feedback-artifacts/GAP.md` (88 lines) | Specify / Plan / Detail / Review |
+| `PLAN.md` | (no template; format defined inline by `aid-plan`) | Plan |
+| `task-NNN.md` | `templates/delivery-plans/task-template.md` (20 lines) | Detail |
 | `IMPEDIMENT.md` | `templates/feedback-artifacts/IMPEDIMENT.md` (118 lines) | Execute (Developer agent) |
 | `MONITOR-STATE.md` | (referenced in `templates/README.md` but file is **missing** — see `project-structure.md` Anomaly #8 line 261 and Q8 in `DISCOVERY-STATE.md`) | Monitor |
-| `CORRECTION.md` | `templates/reports/correction-template.md` (47 lines, deprecated per `methodology/aid-methodology.md:887-889`) | Deprecated; merged into Monitor |
 
 ### Workspace shape
 
@@ -438,7 +433,6 @@ Per `methodology/aid-methodology.md:245-258` and `aid-execute/SKILL.md:73-87`:
     INTERVIEW-STATE.md
     REQUIREMENTS.md
     PLAN.md
-    DETAIL.md
     known-issues.md
     features/
       feature-NNN-{name}/
@@ -459,7 +453,7 @@ There is no runtime DI container — there is no runtime at all. The equivalent 
 
 ### 6.1 Skill → Agent wiring
 
-The frontmatter of each Claude Code skill declares the agent it dispatches at runtime. Example `claude-code/.claude/skills/aid-execute/SKILL.md:1-12`:
+The frontmatter of each Claude Code skill declares the agent it dispatches at runtime. Example `profiles/claude-code/.claude/skills/aid-execute/SKILL.md:1-12`:
 
 ```yaml
 ---
@@ -476,11 +470,11 @@ The `agent: developer` field is the **default** executor. The skill body then **
 
 > Dispatch with the Task tool, setting `subagent_type` explicitly to the chosen executor — this overrides the skill's default `agent: developer` from frontmatter. Example: a DESIGN task dispatches with `subagent_type: ux-designer`...
 
-So the **skill is the wiring document**; the **task Type** is the selector key; the **agent definition file** (e.g., `claude-code/.claude/agents/ux-designer.md`) is the implementation. This is a hand-coded service locator pattern, not a container.
+So the **skill is the wiring document**; the **task Type** is the selector key; the **agent definition file** (e.g., `profiles/claude-code/.claude/agents/ux-designer.md`) is the implementation. This is a hand-coded service locator pattern, not a container.
 
 ### 6.2 Tool-access declaration
 
-Each agent file declares which host-tool capabilities (Read, Write, Edit, Bash, Glob, Grep, Agent, etc.) it is allowed to use. Example `claude-code/.claude/agents/architect.md:1-6`:
+Each agent file declares which host-tool capabilities (Read, Write, Edit, Bash, Glob, Grep, Agent, etc.) it is allowed to use. Example `profiles/claude-code/.claude/agents/architect.md:1-6`:
 
 ```yaml
 ---
@@ -497,14 +491,14 @@ The host tool enforces this allow-list. AID has no enforcement layer of its own 
 
 Per agent file:
 - Claude Code: `model: opus | sonnet | haiku` in YAML frontmatter.
-- Codex: `model = "gpt-5.5"` + `model_reasoning_effort = "high|medium|low"` in TOML (`codex/.codex/agents/architect.toml:3-4`).
-- Cursor: same as Claude Code per `cursor/.cursor/agents/architect.md` (and `cursor/AGENTS.md:1-45` notes Cursor's Task-tool support is `experimental — Mar 2026`).
+- Codex: `model = "gpt-5.5"` + `model_reasoning_effort = "high|medium|low"` in TOML (`profiles/codex/.codex/agents/architect.toml:3-4`).
+- Cursor: same as Claude Code per `profiles/cursor/.cursor/agents/architect.md` (and `profiles/cursor/AGENTS.md:1-45` notes Cursor's Task-tool support is `experimental — Mar 2026`).
 
 The skill body may further override the model at dispatch time for genuinely complex work (`aid-execute/SKILL.md:58`): *"For genuinely complex work — REFACTOR over a tangled module, MIGRATE with edge cases, IMPLEMENT touching critical security paths — the orchestrator may dispatch with an explicit higher-tier model in the Task tool's `model` parameter. This is a runtime decision per dispatch, not a skill configuration."*
 
 ### 6.4 Permission allow-lists
 
-The repo's own `.claude/settings.json` (11 lines) and the typo file `.claude/settings..json` (12 lines, see `project-structure.md` Anomaly #2 line 255) contain narrow Bash allow-lists scoped to this dogfood session. These are not part of the install payload — they govern only this worktree. The install-time equivalent is the project-config placeholder at `claude-code/CLAUDE.md` (which currently says `## Project (pending discovery)`).
+The repo's own `.claude/settings.json` (11 lines) and the typo file `.claude/settings..json` (12 lines, see `project-structure.md` Anomaly #2 line 255) contain narrow Bash allow-lists scoped to this dogfood session. These are not part of the install payload — they govern only this worktree. The install-time equivalent is the project-config placeholder at `profiles/claude-code/CLAUDE.md` (which currently says `## Project (pending discovery)`).
 
 ---
 
@@ -525,16 +519,16 @@ After install, every entry point is a slash command provided by the host AI tool
 
 | Slash command | Skill file (Claude Code) |
 |---|---|
-| `/aid-init` | `claude-code/.claude/skills/aid-init/SKILL.md` (438 lines) |
-| `/aid-discover` | `claude-code/.claude/skills/aid-discover/SKILL.md` (453 lines) |
-| `/aid-interview` | `claude-code/.claude/skills/aid-interview/SKILL.md` (477 lines) |
-| `/aid-specify` | `claude-code/.claude/skills/aid-specify/SKILL.md` (413 lines) |
-| `/aid-plan` | `claude-code/.claude/skills/aid-plan/SKILL.md` (336 lines) |
-| `/aid-detail` | `claude-code/.claude/skills/aid-detail/SKILL.md` (390 lines) |
-| `/aid-execute` | `claude-code/.claude/skills/aid-execute/SKILL.md` (386 lines) |
-| `/aid-deploy` | `claude-code/.claude/skills/aid-deploy/SKILL.md` (265 lines) |
-| `/aid-monitor` | `claude-code/.claude/skills/aid-monitor/SKILL.md` (242 lines) |
-| `/aid-summarize` | `claude-code/.claude/skills/aid-summarize/SKILL.md` (430 lines) |
+| `/aid-init` | `profiles/claude-code/.claude/skills/aid-init/SKILL.md` (438 lines) |
+| `/aid-discover` | `profiles/claude-code/.claude/skills/aid-discover/SKILL.md` (453 lines) |
+| `/aid-interview` | `profiles/claude-code/.claude/skills/aid-interview/SKILL.md` (477 lines) |
+| `/aid-specify` | `profiles/claude-code/.claude/skills/aid-specify/SKILL.md` (413 lines) |
+| `/aid-plan` | `profiles/claude-code/.claude/skills/aid-plan/SKILL.md` (336 lines) |
+| `/aid-detail` | `profiles/claude-code/.claude/skills/aid-detail/SKILL.md` (390 lines) |
+| `/aid-execute` | `profiles/claude-code/.claude/skills/aid-execute/SKILL.md` (386 lines) |
+| `/aid-deploy` | `profiles/claude-code/.claude/skills/aid-deploy/SKILL.md` (265 lines) |
+| `/aid-monitor` | `profiles/claude-code/.claude/skills/aid-monitor/SKILL.md` (242 lines) |
+| `/aid-summarize` | `profiles/claude-code/.claude/skills/aid-summarize/SKILL.md` (430 lines) |
 
 Required ordering per `README.md:64-72` and `skills/README.md:55-64`: `/aid-init` once → then either `/aid-discover` (brownfield) or `/aid-interview` (greenfield) → then `/aid-specify` → `/aid-plan` → `/aid-detail` → `/aid-execute` (per task) → `/aid-deploy` → `/aid-monitor`. `/aid-summarize` is optional and runs after Discovery is approved.
 
@@ -550,7 +544,7 @@ The integration boundaries are with the **host AI coding tool** — Claude Code,
 |---|---|---|
 | Anthropic Claude Code | Agent `.md` files with YAML frontmatter; Skill `SKILL.md` files with optional `references/` and `scripts/`; templates copied into `templates/` inside `.claude/` | Slash-command loader; the `Task` tool for sub-agent dispatch; `permissionMode`, `background` flags; settings.json allow-list |
 | OpenAI Codex CLI | TOML agent defs under `.codex/agents/`; shared markdown skills/templates under `.agents/`; `AGENTS.md` project context | TOML agent loader; AGENTS.md hierarchical context; `model_reasoning_effort` honoring |
-| Cursor | `.mdc` rules (always-on or glob-scoped); markdown agents identical to Claude Code; `AGENTS.md` | Rules engine; agent loader; cross-tool compatibility (Cursor also reads `.claude/skills/` and `.codex/skills/` per `cursor/README.md:142`); Task tool (experimental as of Mar 2026 per `cursor/AGENTS.md`) |
+| Cursor | `.mdc` rules (always-on or glob-scoped); markdown agents identical to Claude Code; `AGENTS.md` | Rules engine; agent loader; cross-tool compatibility (Cursor also reads `.claude/skills/` and `.codex/skills/` per `profiles/cursor/README.md:142`); Task tool (experimental as of Mar 2026 per `profiles/cursor/AGENTS.md`) |
 
 Two install-time boundaries:
 
@@ -573,17 +567,17 @@ Spot-checks performed against `methodology/aid-methodology.md`, the human README
 
 | Skill | Methodology / human README claims | Claude Code SKILL.md reality | Match? |
 |---|---|---|---|
-| `aid-discover` | Methodology `:214-238`: "Brownfield discovery, produces 16-document KB plus INDEX.md, 11 steps from structure scan to context index generation." | `claude-code/.claude/skills/aid-discover/SKILL.md:59-63` lists 16 expected docs (matches); state machine with 6 modes; INDEX.md generated in Step 6 at `:165-176`. | Faithful. The methodology's process numbered list (steps 1-11) maps loosely to the SKILL.md's mode-by-mode flow; the SKILL.md is more explicit about the state machine. |
-| `aid-execute` | Methodology `:387-421`: "Type-aware: 8 task types (RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE). Universal loop with separate reviewer." | `claude-code/.claude/skills/aid-execute/SKILL.md:30-39` lists the same 8 types with identical names; Agent Selection table at `:46-55` shows executor + reviewer + specialist consult per type. | Faithful. |
-| `aid-summarize` | `skills/README.md:51`: "Optional. Runs after `/aid-discover` reaches DONE. Generates single-file `knowledge-summary.html` with Mermaid, WCAG-AA, idempotent." | `claude-code/.claude/skills/aid-summarize/SKILL.md:1-28` matches description verbatim. State machine `PREFLIGHT → STALE-CHECK → PROFILE → GENERATE → VALIDATE → FIX → APPROVAL → WRITEBACK → DONE` declared in description, implemented in body. | Faithful. |
+| `aid-discover` | Methodology `:214-238`: "Brownfield discovery, produces 16-document KB plus INDEX.md, 11 steps from structure scan to context index generation." | `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:59-63` lists 16 expected docs (matches); state machine with 6 modes; INDEX.md generated in Step 6 at `:165-176`. | Faithful. The methodology's process numbered list (steps 1-11) maps loosely to the SKILL.md's mode-by-mode flow; the SKILL.md is more explicit about the state machine. |
+| `aid-execute` | Methodology `:387-421`: "Type-aware: 8 task types (RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE). Universal loop with separate reviewer." | `profiles/claude-code/.claude/skills/aid-execute/SKILL.md:30-39` lists the same 8 types with identical names; Agent Selection table at `:46-55` shows executor + reviewer + specialist consult per type. | Faithful. |
+| `aid-summarize` | `skills/README.md:51`: "Optional. Runs after `/aid-discover` reaches DONE. Generates single-file `knowledge-summary.html` with Mermaid, WCAG-AA, idempotent." | `profiles/claude-code/.claude/skills/aid-summarize/SKILL.md:1-28` matches description verbatim. State machine `PREFLIGHT → STALE-CHECK → PROFILE → GENERATE → VALIDATE → FIX → APPROVAL → WRITEBACK → DONE` declared in description, implemented in body. | Faithful. |
 
 ### Agent spot-checks
 
 | Agent | Human `agents/{name}/README.md` claims | Claude Code agent definition | Codex agent definition | Match? |
 |---|---|---|---|---|
-| `architect` | "Transforms understanding into structure. SPEC.md / PLAN.md / DETAIL.md / TASK files. Opus tier. Invoked in Specify/Plan/Detail." (`agents/architect/README.md:1-18`) | `name: architect`, `model: opus`, `tools: Read, Glob, Grep, Write, Edit, Bash`. Body: "Transform REQUIREMENTS.md + KB into grounded SPEC.md" etc. (`claude-code/.claude/agents/architect.md`) | `name = "architect"`, `model = "gpt-5.5"`, `model_reasoning_effort = "high"`. Same body content. (`codex/.codex/agents/architect.toml`) | Faithful across all three. The Codex `developer_instructions` strips YAML `##` markdown headers from the body but preserves all content. |
-| `discovery-architect` (this agent) | No human README under `agents/discovery-architect/` — discovery sub-agents are documented only in `agents/README.md:122-131` and within `claude-code/.claude/agents/discovery-architect.md` (172 lines). | 172-line agent definition declaring "Discovery Architect — a specialized analysis agent in the AID discovery pipeline" with full output document templates and the firm `**Bash is READ-ONLY.**` constraint. | TOML equivalent at `codex/.codex/agents/discovery-architect.toml` (169 lines). | ⚠️ **Discrepancy.** The 6 discovery sub-agents have no individual `agents/{name}/README.md` human-readable docs. They are documented only inline in `agents/README.md:122-131` and in the install-tree agent definitions. This is a documentation gap, not a behavioral one. Recorded as Q18. |
-| `reviewer` | "Adversarial quality evaluator. Produces structured issue list with severity + source tags. Does NOT fix; does NOT compute grade — `grade.sh` does that." (`agents/reviewer/README.md` per `project-structure.md:108`) | 60 lines (`claude-code/.claude/agents/reviewer.md`). Tier: opus. | TOML equivalent at `codex/.codex/agents/reviewer.toml` (59 lines). | Faithful. The "does NOT fix" and "does NOT compute grade" rules are consistent across the README, the SKILL.md files that invoke the reviewer (`aid-execute/SKILL.md:232`, `aid-discover/SKILL.md:336`), the methodology `:814`, and the agent definition itself. |
+| `architect` | "Transforms understanding into structure. SPEC.md / PLAN.md / TASK files. Opus tier. Invoked in Specify/Plan/Detail." (`agents/architect/README.md:1-18`) | `name: architect`, `model: opus`, `tools: Read, Glob, Grep, Write, Edit, Bash`. Body: "Transform REQUIREMENTS.md + KB into grounded SPEC.md" etc. (`profiles/claude-code/.claude/agents/architect.md`) | `name = "architect"`, `model = "gpt-5.5"`, `model_reasoning_effort = "high"`. Same body content. (`profiles/codex/.codex/agents/architect.toml`) | Faithful across all three. The Codex `developer_instructions` strips YAML `##` markdown headers from the body but preserves all content. |
+| `discovery-architect` (this agent) | No human README under `agents/discovery-architect/` — discovery sub-agents are documented only in `agents/README.md:122-131` and within `profiles/claude-code/.claude/agents/discovery-architect.md` (172 lines). | 172-line agent definition declaring "Discovery Architect — a specialized analysis agent in the AID discovery pipeline" with full output document templates and the firm `**Bash is READ-ONLY.**` constraint. | TOML equivalent at `profiles/codex/.codex/agents/discovery-architect.toml` (169 lines). | ⚠️ **Discrepancy.** The 6 discovery sub-agents have no individual `agents/{name}/README.md` human-readable docs. They are documented only inline in `agents/README.md:122-131` and in the install-tree agent definitions. This is a documentation gap, not a behavioral one. Recorded as Q18. |
+| `reviewer` | "Adversarial quality evaluator. Produces structured issue list with severity + source tags. Does NOT fix; does NOT compute grade — `grade.sh` does that." (`agents/reviewer/README.md` per `project-structure.md:108`) | 60 lines (`profiles/claude-code/.claude/agents/reviewer.md`). Tier: opus. | TOML equivalent at `profiles/codex/.codex/agents/reviewer.toml` (59 lines). | Faithful. The "does NOT fix" and "does NOT compute grade" rules are consistent across the README, the SKILL.md files that invoke the reviewer (`aid-execute/SKILL.md:232`, `aid-discover/SKILL.md:336`), the methodology `:814`, and the agent definition itself. |
 
 ### Other discrepancies (recorded but lower-impact)
 

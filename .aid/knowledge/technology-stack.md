@@ -23,8 +23,8 @@ Per `project-index.md` Language Breakdown (line 19). Markdown is the primary con
 | Purpose | Where | Example |
 |---|---|---|
 | Normative methodology spec | `methodology/aid-methodology.md` (1,158 lines) | The single source of truth for what AID is. |
-| Skill bodies for LLM consumption | `claude-code/.claude/skills/aid-*/SKILL.md`, `codex/.agents/skills/aid-*/SKILL.md`, `cursor/.cursor/skills/aid-*/SKILL.md` | The 10 skills triplicated across three install trees. |
-| Agent definitions (Claude Code / Cursor) | `claude-code/.claude/agents/*.md` (22), `cursor/.cursor/agents/*.md` (22) | Markdown + YAML frontmatter. |
+| Skill bodies for LLM consumption | `profiles/claude-code/.claude/skills/aid-*/SKILL.md`, `profiles/codex/.agents/skills/aid-*/SKILL.md`, `profiles/cursor/.cursor/skills/aid-*/SKILL.md` | The 10 skills triplicated across three install trees. |
+| Agent definitions (Claude Code / Cursor) | `profiles/claude-code/.claude/agents/*.md` (22), `profiles/cursor/.cursor/agents/*.md` (22) | Markdown + YAML frontmatter. |
 | Human-readable skill / agent READMEs | `skills/<name>/README.md` (10), `agents/<name>/README.md` (17) | Rich prose for humans. |
 | KB document templates | `templates/knowledge-base/*.md` (16) | The shape every AID Knowledge Base follows. |
 | Adopter docs and examples | `docs/` (2 files), `examples/` (9 files), `README.md`, `CONTRIBUTING.md` | |
@@ -32,9 +32,9 @@ Per `project-index.md` Language Breakdown (line 19). Markdown is the primary con
 
 **Frontmatter conventions** (full inventory at `coding-standards.md §1-§4`):
 
-- Claude Code / Cursor agents: YAML between `---` lines with `name`, `description`, `tools`, `model`, optional `permissionMode`, `background`. Example at `claude-code/.claude/agents/architect.md:1-6`. (Cursor uses `Terminal` instead of `Bash` for shell-tool — see `tech-debt.md M6` for the internal-inconsistency cleanup tracked in DISCOVERY-STATE Q52.)
+- Claude Code / Cursor agents: YAML between `---` lines with `name`, `description`, `tools`, `model`, optional `permissionMode`, `background`. Example at `profiles/claude-code/.claude/agents/architect.md:1-6`. (Cursor uses `Terminal` instead of `Bash` for shell-tool — see `tech-debt.md M6` for the internal-inconsistency cleanup tracked in DISCOVERY-STATE Q52.)
 - Claude Code / Cursor skills: YAML with `name`, `description`, `allowed-tools`, optional `argument-hint`, `context`, `agent` (the `context: fork` and `agent:` fields are Claude-Code-specific harness hints; Codex omits them by design per Q51).
-- Codex agents: TOML with `name`, `description`, `model`, `model_reasoning_effort`, multi-line `developer_instructions = """..."""`. Example at `codex/.codex/agents/architect.toml:1-39`.
+- Codex agents: TOML with `name`, `description`, `model`, `model_reasoning_effort`, multi-line `developer_instructions = """..."""`. Example at `profiles/codex/.codex/agents/architect.toml:1-39`.
 - Cursor `.mdc` rules: YAML with `description`, optional `globs`, `alwaysApply: true|false`.
 
 **No build, no compile.** Markdown is shipped as-is. There is no static-site generator, no markdown-to-HTML pipeline in CI, no `.markdownlint` config anywhere in the tree.
@@ -55,7 +55,7 @@ Per `project-index.md` Language Breakdown (line 20). The high file count comes f
 |---|---|---|
 | `setup.sh` | 161 | Top-level installer. **Single copy** — not triplicated. |
 | `templates/scripts/build-project-index.sh` | 368 | `aid-discover` Step 0c pre-pass: emits `.aid/knowledge/project-index.md` with file inventory, sizes, language detection, mtimes. Largest single file in the repo. Run before the 5 sub-agents to eliminate duplicated `find` / `wc` work. |
-| `templates/scripts/grade.sh` | 141 | Deterministic grading: reads `[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]` severity tags from a REVIEW.md, computes a letter grade per the rubric in `templates/grading-rubric.md`. Same input → same grade. |
+| `templates/scripts/grade.sh` | 141 | Deterministic grading: reads `[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]` severity tags from a reviewer's issue list recorded in `task-NNN-STATE.md`, computes a letter grade per the rubric in `templates/grading-rubric.md`. Same input → same grade. |
 | `templates/knowledge-summary/scripts/grade.sh` | 194 | Variant for `aid-summarize` HTML quality gating. Slightly more elaborate rubric (a11y, contrast, mermaid validity). |
 | `templates/knowledge-summary/scripts/check-preflight.sh` | 100 | `aid-summarize` PREFLIGHT mode entry. |
 | `templates/knowledge-summary/scripts/stale-check.sh` | 93 | `aid-summarize` STALE-CHECK mode: compare KB mtime vs last summary mtime. |
@@ -64,8 +64,8 @@ Per `project-index.md` Language Breakdown (line 20). The high file count comes f
 | `templates/knowledge-summary/scripts/fetch-mermaid.sh` | 77 | Downloads latest Mermaid library for inlining. |
 | `templates/knowledge-summary/scripts/concatenate.sh` | 23 | Inlines CSS + JS + Mermaid into the single HTML output. |
 | `templates/knowledge-summary/scripts/writeback-discovery-state.sh` | 138 | Updates `DISCOVERY-STATE.md ## Summarization History` after a successful generate. |
-| `claude-code/.claude/skills/aid-discover/scripts/check-preflight.sh` | 45 | `aid-discover` PREFLIGHT (Claude Code only — Codex / Cursor inline this). |
-| `claude-code/.claude/skills/aid-discover/scripts/verify-kb.sh` | 60 | Verifies all 16 KB files exist after agent dispatch. |
+| `profiles/claude-code/.claude/skills/aid-discover/scripts/check-preflight.sh` | 45 | `aid-discover` PREFLIGHT (Claude Code only — Codex / Cursor inline this). |
+| `profiles/claude-code/.claude/skills/aid-discover/scripts/verify-kb.sh` | 60 | Verifies all 16 KB files exist after agent dispatch. |
 
 All shell scripts are **Bash**, not POSIX `sh`. They use Bash-specific features (arrays, `[[ ]]`, parameter expansion). No `#!/bin/sh` shebangs.
 
@@ -146,7 +146,7 @@ The skeleton uses Mustache-style `{{PLACEHOLDER}}` substitution (`{{LANG}}`, `{{
 |---|---|
 | **22** | **1,522** |
 
-Per `project-index.md` Language Breakdown (line 24). All 22 files live under `codex/.codex/agents/` — one per agent. Schema per `codex/.codex/agents/architect.toml`:
+Per `project-index.md` Language Breakdown (line 24). All 22 files live under `profiles/codex/.codex/agents/` — one per agent. Schema per `profiles/codex/.codex/agents/architect.toml`:
 
 ```toml
 name = "architect"
@@ -158,7 +158,7 @@ developer_instructions = """
 """
 ```
 
-Models per Codex tier (per `agents/README.md:13-19` and `codex/README.md:35`):
+Models per Codex tier (per `agents/README.md:13-19` and `profiles/codex/README.md:35`):
 
 | Tier | Codex model | reasoning_effort |
 |---|---|---|
@@ -166,7 +166,7 @@ Models per Codex tier (per `agents/README.md:13-19` and `codex/README.md:35`):
 | Sonnet | `gpt-5.4` | `medium` |
 | Haiku | `gpt-5.4-mini` | `low` |
 
-**Sonnet tier mapping VERIFIED** per DISCOVERY-STATE Q36 + reviewer spot-check #17: `grep model codex/.codex/agents/{orchestrator,operator,researcher,developer,interviewer,architect,reviewer}.toml` all return `model = "gpt-5.4"` and `model_reasoning_effort = "medium"`. Quality agent also verified tier-consistency across all 22 agents × 3 trees (`tech-debt.md L6`). No exceptions found. The `model_reasoning_effort` field is honored by current Codex CLI versions per the AID install design; vendor-doc cross-reference still pending (see `external-sources.md` §3-4 "Still requires vendor docs").
+**Sonnet tier mapping VERIFIED** per DISCOVERY-STATE Q36 + reviewer spot-check #17: `grep model profiles/codex/.codex/agents/{orchestrator,operator,researcher,developer,interviewer,architect,reviewer}.toml` all return `model = "gpt-5.4"` and `model_reasoning_effort = "medium"`. Quality agent also verified tier-consistency across all 22 agents × 3 trees (`tech-debt.md L6`). No exceptions found. The `model_reasoning_effort` field is honored by current Codex CLI versions per the AID install design; vendor-doc cross-reference still pending (see `external-sources.md` §3-4 "Still requires vendor docs").
 
 ---
 
@@ -194,8 +194,8 @@ Per `project-index.md` Language Breakdown (line 23):
 | `methodology/images/*.png` | 4 | The four canonical pipeline diagrams. Binary; line counts in `project-index.md` are byte-derived placeholders, not real lines. |
 | `LICENSE` | 1 | MIT, 21 lines. |
 | `.gitignore` | 1 | One line: `.aid/`. |
-| `cursor/.cursor/rules/aid-methodology.mdc` | 1 | 29 lines. Always-on Cursor rule. |
-| `cursor/.cursor/rules/aid-review.mdc` | 1 | 11 lines. Glob-scoped rule (`globs: "**/*.{java,py,ts,js,cs,go,rs}"`). |
+| `profiles/cursor/.cursor/rules/aid-methodology.mdc` | 1 | 29 lines. Always-on Cursor rule. |
+| `profiles/cursor/.cursor/rules/aid-review.mdc` | 1 | 11 lines. Glob-scoped rule (`globs: "**/*.{java,py,ts,js,cs,go,rs}"`). |
 
 ---
 

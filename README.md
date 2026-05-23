@@ -292,7 +292,7 @@ cd aid-methodology
 
 The script shows a menu — select the tools you use (Claude Code, Codex, Cursor) and install. **Re-running is safe:** identical files are skipped, changed files prompt before overwriting. Pass `--force` to overwrite without prompts.
 
-Prefer to install by hand? Copy the tool directory into your project root — `claude-code/.claude/`, `codex/.codex/` + `codex/.agents/`, or `cursor/.cursor/` — and see that tool's [setup guide](claude-code/README.md).
+Prefer to install by hand? Copy the tool directory into your project root — `profiles/claude-code/.claude/`, `profiles/codex/.codex/` + `profiles/codex/.agents/`, or `profiles/cursor/.cursor/` — and see that tool's [setup guide](profiles/claude-code/README.md).
 
 ### 2. Run the pipeline
 

@@ -18,16 +18,16 @@ If a contributor opens a PR today, there is no automated signal whether they hav
 ### [HIGH] H1 — Triplication drift between install trees
 
 **Evidence:**
-- `claude-code/.claude/skills/aid-discover/SKILL.md` — 453 lines
-- `codex/.agents/skills/aid-discover/SKILL.md` — 1,078 lines
-- `cursor/.cursor/skills/aid-discover/SKILL.md` — 1,090 lines (2.4x the Claude Code version)
-- `claude-code/.claude/skills/aid-interview/SKILL.md` — 477 lines vs. `codex/.agents/skills/aid-interview/SKILL.md` — 694 lines vs. `cursor/.cursor/skills/aid-interview/SKILL.md` — 698 lines
-- `claude-code/.claude/skills/aid-execute/SKILL.md` — 386 lines vs. `codex/.agents/skills/aid-execute/SKILL.md` — 558 lines vs. `cursor/.cursor/skills/aid-execute/SKILL.md` — 562 lines
-- `claude-code/.claude/skills/aid-specify/SKILL.md` — 413 lines vs. `codex/.agents/skills/aid-specify/SKILL.md` — 485 lines vs. `cursor/.cursor/skills/aid-specify/SKILL.md` — 488 lines
-- `claude-code/.claude/skills/aid-plan/SKILL.md` — 336 lines vs. `codex/.agents/skills/aid-plan/SKILL.md` — 332 lines (small drift, 4 lines)
-- `claude-code/.claude/skills/aid-detail/SKILL.md` vs. `codex/.agents/skills/aid-detail/SKILL.md`: 5 line-differences (very minor)
-- `claude-code/.claude/skills/aid-detail/SKILL.md` vs. `cursor/.cursor/skills/aid-detail/SKILL.md`: 0 line-differences (identical)
-- `claude-code/.claude/skills/aid-deploy/SKILL.md` and `aid-monitor/SKILL.md` are identical across all three trees.
+- `profiles/claude-code/.claude/skills/aid-discover/SKILL.md` — 453 lines
+- `profiles/codex/.agents/skills/aid-discover/SKILL.md` — 1,078 lines
+- `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` — 1,090 lines (2.4x the Claude Code version)
+- `profiles/claude-code/.claude/skills/aid-interview/SKILL.md` — 477 lines vs. `profiles/codex/.agents/skills/aid-interview/SKILL.md` — 694 lines vs. `profiles/cursor/.cursor/skills/aid-interview/SKILL.md` — 698 lines
+- `profiles/claude-code/.claude/skills/aid-execute/SKILL.md` — 386 lines vs. `profiles/codex/.agents/skills/aid-execute/SKILL.md` — 558 lines vs. `profiles/cursor/.cursor/skills/aid-execute/SKILL.md` — 562 lines
+- `profiles/claude-code/.claude/skills/aid-specify/SKILL.md` — 413 lines vs. `profiles/codex/.agents/skills/aid-specify/SKILL.md` — 485 lines vs. `profiles/cursor/.cursor/skills/aid-specify/SKILL.md` — 488 lines
+- `profiles/claude-code/.claude/skills/aid-plan/SKILL.md` — 336 lines vs. `profiles/codex/.agents/skills/aid-plan/SKILL.md` — 332 lines (small drift, 4 lines)
+- `profiles/claude-code/.claude/skills/aid-detail/SKILL.md` vs. `profiles/codex/.agents/skills/aid-detail/SKILL.md`: 5 line-differences (very minor)
+- `profiles/claude-code/.claude/skills/aid-detail/SKILL.md` vs. `profiles/cursor/.cursor/skills/aid-detail/SKILL.md`: 0 line-differences (identical)
+- `profiles/claude-code/.claude/skills/aid-deploy/SKILL.md` and `aid-monitor/SKILL.md` are identical across all three trees.
 - `CONTRIBUTING.md:21-26` requires manual propagation; no script exists.
 
 **Impact:** A bug fix or improvement applied to one tree silently goes missing from the others. Users of Codex or Cursor get an experience that diverges from Claude Code, and there is no signal until someone notices. The size differences for `aid-discover` are partly *by design* (Claude Code factors content into `references/` and `scripts/` subdirectories; the other trees inline it), but the same design intent could be enforced by a propagation script that re-generates Codex/Cursor SKILL.md from Claude Code SKILL.md + the linked references — none exists today.
@@ -70,8 +70,8 @@ If a contributor opens a PR today, there is no automated signal whether they hav
 
 | Asset | Lines per copy | Copies | Total lines | Locations |
 |-------|----------------|--------|-------------|-----------|
-| `build-project-index.sh` | 368 | 4 | 1,472 | `templates/scripts/`, `claude-code/.claude/templates/scripts/`, `codex/.agents/templates/scripts/`, `cursor/.cursor/templates/scripts/` |
-| `lightbox.js` | 359 | 4 | 1,436 | `templates/knowledge-summary/`, `claude-code/.claude/templates/knowledge-summary/`, `codex/.agents/templates/knowledge-summary/`, `cursor/.cursor/templates/knowledge-summary/` |
+| `build-project-index.sh` | 368 | 4 | 1,472 | `templates/scripts/`, `profiles/claude-code/.claude/templates/scripts/`, `profiles/codex/.agents/templates/scripts/`, `profiles/cursor/.cursor/templates/scripts/` |
+| `lightbox.js` | 359 | 4 | 1,436 | `templates/knowledge-summary/`, `profiles/claude-code/.claude/templates/knowledge-summary/`, `profiles/codex/.agents/templates/knowledge-summary/`, `profiles/cursor/.cursor/templates/knowledge-summary/` |
 | `validate-diagrams.mjs` | 294 | 4 | 1,176 | (same 4 locations as lightbox.js) |
 | `grade.sh` (knowledge-summary) | 194 | 4 | 776 | (same 4 locations) |
 | `contrast-check.mjs` | 151 | 4 | 604 | (same 4 locations) |
@@ -95,7 +95,7 @@ If a contributor opens a PR today, there is no automated signal whether they hav
 
 **Total duplicated content (knowledge-summary + scripts):** approximately **17,600 lines** are duplicated 4-way. The repo total is 49,226 lines — so duplication accounts for **~36% of the line count**.
 
-**Verified identical:** `diff templates/scripts/grade.sh claude-code/.claude/templates/scripts/grade.sh` returns no differences. `diff templates/grading-rubric.md claude-code/.claude/templates/grading-rubric.md` returns no differences (root vs. install tree — identical). The two top-level `grading-rubric.md` files at `templates/grading-rubric.md` (74 lines, universal rubric) and `templates/knowledge-summary/grading-rubric.md` (226 lines, HTML-specific rubric) are **intentionally different files for different purposes** — not duplicates.
+**Verified identical:** `diff templates/scripts/grade.sh profiles/claude-code/.claude/templates/scripts/grade.sh` returns no differences. `diff templates/grading-rubric.md profiles/claude-code/.claude/templates/grading-rubric.md` returns no differences (root vs. install tree — identical). The two top-level `grading-rubric.md` files at `templates/grading-rubric.md` (74 lines, universal rubric) and `templates/knowledge-summary/grading-rubric.md` (226 lines, HTML-specific rubric) are **intentionally different files for different purposes** — not duplicates.
 
 **Impact:** Every bug fix in a duplicated script requires 4 commits (or, more realistically, an `sed`-and-commit dance that hopefully reaches all 4 locations). The risk that one location is missed is high — verified empirically by the fact that no script enforces parity.
 
@@ -105,7 +105,7 @@ If a contributor opens a PR today, there is no automated signal whether they hav
 
 ### [HIGH] H5 — `CONTRIBUTING.md` does not mention the Cursor tree
 
-**Evidence:** `CONTRIBUTING.md:21-26` lists three locations to update for any skill/agent change: human README, Claude Code, Codex. Cursor — a fully-supported, fully-shipped 4th target — is omitted from the rule. **DISCOVERY-STATE Q34 + Q72:** also uses *wrong* on-disk paths (`claude-code/skills/` instead of `claude-code/.claude/skills/`; `codex/skills/` instead of `codex/.agents/skills/`).
+**Evidence:** `CONTRIBUTING.md:21-26` lists three locations to update for any skill/agent change: human README, Claude Code, Codex. Cursor — a fully-supported, fully-shipped 4th target — is omitted from the rule. **DISCOVERY-STATE Q34 + Q72:** also uses *wrong* on-disk paths (`claude-code/skills/` instead of `profiles/claude-code/.claude/skills/`; `codex/skills/` instead of `profiles/codex/.agents/skills/`).
 
 **Impact:** A new contributor follows CONTRIBUTING literally and ships a PR that updates 3 of 4 trees, possibly using the wrong paths. The Cursor tree silently drifts. This is the dominant failure mode for triplication drift in practice.
 
@@ -113,29 +113,27 @@ If a contributor opens a PR today, there is no automated signal whether they hav
 
 ---
 
-### [HIGH] H6 — Codex installer omits `.agents/` copy (CONFIRMED BUG)
+### [HIGH] H6 — Codex installer omits `.agents/` copy (CONFIRMED BUG) — **RETIRED 2026-05-22**
 
-**Evidence:** `setup.sh:142-145` (Codex branch) copies `codex/.codex/` to `$TARGET/.codex/` and `codex/AGENTS.md` to `$TARGET/AGENTS.md` — but **does NOT** copy `codex/.agents/` which contains all 10 SKILL.md files and the `templates/` asset bundle. `setup.ps1:137-141` has the identical omission. Reviewer static-analysis spot-check #20 confirmed: `sed -n '140,155p' setup.sh` shows only `.codex` and `AGENTS.md` are referenced in the Codex branch. `codex/README.md:12-15` documents that manual install requires BOTH `cp -r ... /.codex .codex/` AND `cp -r ... /.agents .agents/`. The installer is missing the second step.
+**Evidence:** `setup.sh:142-145` (Codex branch) copies `profiles/codex/.codex/` to `$TARGET/.codex/` and `profiles/codex/AGENTS.md` to `$TARGET/AGENTS.md` — but **did NOT** copy `profiles/codex/.agents/` which contains all 10 SKILL.md files and the `templates/` asset bundle. `setup.ps1:137-141` had the identical omission. Reviewer static-analysis spot-check #20 confirmed: `sed -n '140,155p' setup.sh` showed only `.codex` and `AGENTS.md` referenced in the Codex branch. `profiles/codex/README.md:12-15` documents that manual install requires BOTH `cp -r ... /.codex .codex/` AND `cp -r ... /.agents .agents/`. The installer was missing the second step.
 
-**Impact:** Every Codex user who installed AID via the bundled installer has been getting agent TOML definitions **without skill bodies**. Slash commands appear to do nothing because the SKILL.md files are absent. Silent failure mode — no error message, just inert tooling.
+**Impact:** Every Codex user who installed AID via the bundled installer was getting agent TOML definitions **without skill bodies**. Slash commands appeared to do nothing because the SKILL.md files were absent. Silent failure mode — no error message, just inert tooling.
 
-**Effort:** Trivial (~10 min). Add `copy_dir codex/.agents` to the Codex branch of `setup.sh` (Bash) and `Copy-Tree codex/.agents` equivalent to `setup.ps1`. Tracks DISCOVERY-STATE Q70 (confirmed bug).
-
-**Also recommended:** add an installer smoke test (see H2 CI scope) that runs `setup.sh` against an empty target and asserts the expected files land.
+**Resolution (work-002-canonical-generator / task-001 + task-002 + task-030):** `copy_dir profiles/codex/.agents` added to `setup.sh` Codex branch; equivalent `Copy-Dir-Safe` call added to `setup.ps1`. Live smoke test (task-030) confirmed: `setup.sh` + `setup.ps1` both install all 10 Codex SKILL.md files under `<target>/.agents/skills/aid-*/SKILL.md`. Claude Code and Cursor artifacts unaffected (regression check passed). H6 is retired. Tracks DISCOVERY-STATE Q70.
 
 ---
 
 ### [HIGH] H7 — Missing templates for the Monitor phase (Q8 promoted)
 
 **Evidence:** `templates/README.md` references two templates that do not exist on disk:
-- Line 31: `templates/feedback-artifacts/MONITOR-STATE.md` — used by `aid-monitor` for production telemetry state. Verified missing via `ls templates/feedback-artifacts/` (only `GAP.md` + `IMPEDIMENT.md` present).
-- Line 37: `templates/reports/track-report-template.md` — used by `aid-monitor` for periodic monitor reports. Verified missing via `ls templates/reports/` (only `correction-template.md`, `discovery-state-template.md`, `review-template.md`, `test-report-template.md` present).
+- Line 31: `templates/feedback-artifacts/MONITOR-STATE.md` — used by `aid-monitor` for production telemetry state. Verified missing via `ls templates/feedback-artifacts/` (only `IMPEDIMENT.md` present).
+- Line 37: `templates/reports/track-report-template.md` — used by `aid-monitor` for periodic monitor reports. Verified missing via `ls templates/reports/` (only `discovery-state-template.md` present).
 
 The `aid-monitor` skill (242 lines in each install tree) presumably produces these artifacts but agents have no canonical template to follow.
 
 **Impact:** The Monitor phase (feature 10 in `feature-inventory.md`) is shipping as ⚠️ Partial. Adopters running `/aid-monitor` get an agent that doesn't know what shape its output artifacts should take. Promoted from MEDIUM (M2 in earlier framing) to HIGH because it blocks the production-monitoring story end-to-end.
 
-**Effort:** Small (less than 4 h). **Resolution per DISCOVERY-STATE Q8 / Q31 / Q77:** author both templates — `MONITOR-STATE.md` modeled on `templates/feedback-artifacts/GAP.md` (~88 lines), `track-report-template.md` modeled on `templates/reports/test-report-template.md` (~103 lines). M2 below is now superseded by H7.
+**Effort:** Small (less than 4 h). **Resolution per DISCOVERY-STATE Q8 / Q31 / Q77:** author both templates — `MONITOR-STATE.md` modeled on `templates/feedback-artifacts/IMPEDIMENT.md`, `track-report-template.md` defined inline per the `aid-monitor` skill body. M2 below is now superseded by H7.
 
 ---
 
@@ -167,15 +165,15 @@ This item has been promoted to HIGH severity per the production-impact analysis 
 
 ---
 
-### [MEDIUM] M3 — Hardcoded build commands in `codex/.codex/agents/developer.toml`
+### [MEDIUM] M3 — Hardcoded build commands in `profiles/codex/.codex/agents/developer.toml`
 
-**Evidence:** `codex/.codex/agents/developer.toml` lines 11-12:
+**Evidence:** `profiles/codex/.codex/agents/developer.toml` lines 11-12:
 ```
 1. Run the build: `mvn clean verify -f ProjectRoot/pom.xml`
 2. Run tests: `mvn test -f ProjectRoot/pom.xml`
 ```
 
-The other tool trees' equivalent (`claude-code/.claude/agents/developer.md`) say "Build verification is mandatory" without nominating a build tool, which is correct for a tool-agnostic methodology. Codex's version uniquely hardcodes Maven with a placeholder-looking path.
+The other tool trees' equivalent (`profiles/claude-code/.claude/agents/developer.md`) say "Build verification is mandatory" without nominating a build tool, which is correct for a tool-agnostic methodology. Codex's version uniquely hardcodes Maven with a placeholder-looking path.
 
 **Impact:** A Codex user installing this developer agent into a non-Java project will see the agent attempt to run `mvn` on every code change. The agent prompt is normative for the model — even Sonnet-tier models tend to follow explicit shell commands literally.
 
@@ -189,9 +187,9 @@ The other tool trees' equivalent (`claude-code/.claude/agents/developer.md`) say
 
 **Phase 5 (Detail):**
 - `methodology/aid-methodology.md:353` introduces "Phase 5: Detail (`aid-detail`)".
-- `claude-code/.claude/skills/aid-detail/SKILL.md` (390 lines) is the skill body.
-- `diff claude-code/.claude/skills/aid-detail/SKILL.md cursor/.cursor/skills/aid-detail/SKILL.md` returns 0 differences.
-- `diff claude-code/.claude/skills/aid-detail/SKILL.md codex/.agents/skills/aid-detail/SKILL.md` returns 5 lines of difference (essentially title and frontmatter).
+- `profiles/claude-code/.claude/skills/aid-detail/SKILL.md` (390 lines) is the skill body.
+- `diff profiles/claude-code/.claude/skills/aid-detail/SKILL.md profiles/cursor/.cursor/skills/aid-detail/SKILL.md` returns 0 differences.
+- `diff profiles/claude-code/.claude/skills/aid-detail/SKILL.md profiles/codex/.agents/skills/aid-detail/SKILL.md` returns 5 lines of difference (essentially title and frontmatter).
 
 The aid-detail skill bodies are consistent across trees AND consistent with the methodology's description of the phase. No drift detected here.
 
@@ -214,12 +212,12 @@ The aid-detail skill bodies are consistent across trees AND consistent with the 
 ### [MEDIUM] M5 — `aid-discover` SKILL.md violates the "Under 500 lines" guideline
 
 **Evidence:** `CONTRIBUTING.md:97` — "Under 500 lines per skill (AgentSkills best practice)". Actual:
-- `codex/.agents/skills/aid-discover/SKILL.md` — 1,078 lines (216% over).
-- `cursor/.cursor/skills/aid-discover/SKILL.md` — 1,090 lines (218% over).
-- `codex/.agents/skills/aid-interview/SKILL.md` — 694 lines (139% over).
-- `cursor/.cursor/skills/aid-interview/SKILL.md` — 698 lines (140% over).
-- `codex/.agents/skills/aid-execute/SKILL.md` — 558 lines (112% over).
-- `cursor/.cursor/skills/aid-execute/SKILL.md` — 562 lines (112% over).
+- `profiles/codex/.agents/skills/aid-discover/SKILL.md` — 1,078 lines (216% over).
+- `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` — 1,090 lines (218% over).
+- `profiles/codex/.agents/skills/aid-interview/SKILL.md` — 694 lines (139% over).
+- `profiles/cursor/.cursor/skills/aid-interview/SKILL.md` — 698 lines (140% over).
+- `profiles/codex/.agents/skills/aid-execute/SKILL.md` — 558 lines (112% over).
+- `profiles/cursor/.cursor/skills/aid-execute/SKILL.md` — 562 lines (112% over).
 
 **Impact:** The guideline exists because long SKILL.md files consume context window aggressively. Codex and Cursor models (especially at high reasoning effort) pay a token cost on every invocation. Either the guideline should be revised (with rationale), or the Codex/Cursor versions should be factored using a `references/` mechanism analogous to Claude Code.
 
@@ -243,32 +241,32 @@ Contradicts scout's hypothesis that this was a forward-looking placeholder — a
 
 ---
 
-### [LOW] L2 — `correction-template.md` deprecation note inline
+### [LOW] L2 — `correction-template.md` deprecation note inline (resolved — deleted in methodology cleanup)
 
-**Evidence:** `templates/reports/correction-template.md:3`: "Deprecated: The Correct phase has been merged into Triage. Root cause analysis, patch scope, and test requirements are now documented directly in MONITOR-STATE.md. This template is retained for reference only."
+**Evidence (historical):** `templates/reports/correction-template.md` formerly carried an inline note: "Deprecated: The Correct phase has been merged into Triage. ... This template is retained for reference only."
 
-**Impact:** Same as L1 — a deprecated artifact still in the tree. The "retained for reference only" note suggests the maintainer kept it intentionally; a more honest fix is to move it to a `templates/.deprecated/` subdirectory or delete it.
+**Impact:** Resolved — the file was deleted in the methodology-correctness cleanup; no deprecated artifact remains in the tree.
 
-**Effort:** Trivial (less than 30 min).
+**Effort:** Done.
 
 ---
 
 ### [LOW] L3 — TODO / FIXME density
 
 **Evidence:** `Grep` for `TODO|FIXME|XXX|HACK|TBD|pending discovery` returns 69 total occurrences across 21 files. Highest hotspots:
-- `cursor/.cursor/skills/aid-discover/SKILL.md` — 6 hits
-- `codex/.agents/skills/aid-discover/SKILL.md` — 6 hits
-- `cursor/.cursor/skills/aid-init/SKILL.md` — 5 hits
-- `claude-code/.claude/skills/aid-init/SKILL.md` — 5 hits
-- `cursor/.cursor/agents/discovery-reviewer.md` — 5 hits
-- `claude-code/.claude/agents/discovery-reviewer.md` — 5 hits
-- `codex/.agents/skills/aid-init/SKILL.md` — 5 hits
+- `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` — 6 hits
+- `profiles/codex/.agents/skills/aid-discover/SKILL.md` — 6 hits
+- `profiles/cursor/.cursor/skills/aid-init/SKILL.md` — 5 hits
+- `profiles/claude-code/.claude/skills/aid-init/SKILL.md` — 5 hits
+- `profiles/cursor/.cursor/agents/discovery-reviewer.md` — 5 hits
+- `profiles/claude-code/.claude/agents/discovery-reviewer.md` — 5 hits
+- `profiles/codex/.agents/skills/aid-init/SKILL.md` — 5 hits
 
 Top-level files with `(pending discovery)` placeholders (verified post-dogfood-cycle 2026-05-21 per DISCOVERY-STATE Q81):
 - `CLAUDE.md` (repo root) — **0 hits** (was the dogfood subject; now 90 lines, fully populated by this discovery cycle).
-- `claude-code/CLAUDE.md` (install template) — 1 hit (correct: install templates ship with placeholders for users to fill in via `/aid-init` + `/aid-discover`).
-- `codex/AGENTS.md` (install template) — 4 hits (correct: same lifecycle).
-- `cursor/AGENTS.md` (install template) — 4 hits (correct: same lifecycle).
+- `profiles/claude-code/CLAUDE.md` (install template) — 1 hit (correct: install templates ship with placeholders for users to fill in via `/aid-init` + `/aid-discover`).
+- `profiles/codex/AGENTS.md` (install template) — 4 hits (correct: same lifecycle).
+- `profiles/cursor/AGENTS.md` (install template) — 4 hits (correct: same lifecycle).
 
 **Analysis:** Most "TODO"-like matches in skill bodies are not actual TODOs — they are documentation strings about what an agent should do. The `(pending discovery)` matches in the 3 install-template files are *intentional placeholders* that `aid-init` / `aid-discover` instruct users to fill in on their own project. So the real TODO density in production code is approximately zero. Adjusted total: ~13 intentional placeholders in install templates (1 + 4 + 4) + ~52 documentation-string false-positives = ~65 of the 69 grep hits are non-issues.
 
@@ -282,9 +280,9 @@ Top-level files with `(pending discovery)` placeholders (verified post-dogfood-c
 
 **Evidence (verified 2026-05-21):**
 - `CLAUDE.md` (repo root) — **90 lines**, fully populated by the dogfood discovery cycle (NOT a template — this is the project-config for this repo itself).
-- `claude-code/CLAUDE.md` (install template) — 30 lines, minimal structure, ships with "(pending discovery)" placeholders.
-- `codex/AGENTS.md` (install template) — 28 lines, similar structure to claude-code, "(pending discovery)" placeholders.
-- `cursor/AGENTS.md` (install template) — 45 lines, *more content* than the others, includes "Knowledge Base" section, "Skills & Agents" section, "Permissions" section.
+- `profiles/claude-code/CLAUDE.md` (install template) — 30 lines, minimal structure, ships with "(pending discovery)" placeholders.
+- `profiles/codex/AGENTS.md` (install template) — 28 lines, similar structure to claude-code, "(pending discovery)" placeholders.
+- `profiles/cursor/AGENTS.md` (install template) — 45 lines, *more content* than the others, includes "Knowledge Base" section, "Skills & Agents" section, "Permissions" section.
 
 The three install-template variants are intentionally lighter than the dogfood `CLAUDE.md` (which has been populated). Among the install templates, the Cursor variant has additional sections (especially "Permissions" and "Skills & Agents") that are absent from the Claude Code and Codex templates. There is no documented reason for the asymmetry.
 
@@ -298,17 +296,17 @@ The three install-template variants are intentionally lighter than the dogfood `
 
 **Evidence (from `project-index.md`):**
 - `methodology/aid-methodology.md` — 1,158 lines (canonical methodology spec; long-form by design, no refactor needed).
-- `cursor/.cursor/skills/aid-discover/SKILL.md` — 1,090 lines (see M5).
-- `codex/.agents/skills/aid-discover/SKILL.md` — 1,078 lines (see M5).
-- `cursor/.cursor/skills/aid-interview/SKILL.md` — 698 lines (see M5).
-- `codex/.agents/skills/aid-interview/SKILL.md` — 694 lines (see M5).
+- `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` — 1,090 lines (see M5).
+- `profiles/codex/.agents/skills/aid-discover/SKILL.md` — 1,078 lines (see M5).
+- `profiles/cursor/.cursor/skills/aid-interview/SKILL.md` — 698 lines (see M5).
+- `profiles/codex/.agents/skills/aid-interview/SKILL.md` — 694 lines (see M5).
 - `templates/knowledge-summary/component-css.css` (and 3 duplicates) — 642 lines each (CSS for HTML viewer; reasonable for a styled deliverable).
-- `cursor/.cursor/skills/aid-execute/SKILL.md` — 562 lines (see M5).
-- `codex/.agents/skills/aid-execute/SKILL.md` — 558 lines (see M5).
-- `cursor/.cursor/skills/aid-specify/SKILL.md` — 488 lines (see M5 - 88 lines over).
-- `codex/.agents/skills/aid-specify/SKILL.md` — 485 lines.
-- `claude-code/.claude/skills/aid-interview/SKILL.md` — 477 lines.
-- `claude-code/.claude/skills/aid-discover/SKILL.md` — 453 lines.
+- `profiles/cursor/.cursor/skills/aid-execute/SKILL.md` — 562 lines (see M5).
+- `profiles/codex/.agents/skills/aid-execute/SKILL.md` — 558 lines (see M5).
+- `profiles/cursor/.cursor/skills/aid-specify/SKILL.md` — 488 lines (see M5 - 88 lines over).
+- `profiles/codex/.agents/skills/aid-specify/SKILL.md` — 485 lines.
+- `profiles/claude-code/.claude/skills/aid-interview/SKILL.md` — 477 lines.
+- `profiles/claude-code/.claude/skills/aid-discover/SKILL.md` — 453 lines.
 
 **Impact:** The Claude Code versions of all SKILL.md files are at or under the 500-line guideline. Codex and Cursor variants exceed it as noted. The methodology document at 1,158 lines is intentionally long and out of scope for the AgentSkills guideline (which targets SKILL.md, not free-form docs).
 
@@ -338,7 +336,7 @@ The three install-template variants are intentionally lighter than the dogfood `
 | discovery-* (all 6) | opus | opus | gpt-5.5, high | Yes |
 | simple-* (all 3) | haiku | haiku | gpt-5.4-mini, low | Yes |
 
-**Conclusion:** The May 2026 migration note in `codex/README.md:35` ("7 of the 9 Sonnet-tier agents ... have been corrected to gpt-5.4 medium") was successfully applied. All 22 agents are now tier-consistent across the 3 trees. The Codex tier mapping (`gpt-5.5/high` = Opus, `gpt-5.4/medium` = Sonnet, `gpt-5.4-mini/low` = Haiku) is uniform.
+**Conclusion:** The May 2026 migration note in `profiles/codex/README.md:35` ("7 of the 9 Sonnet-tier agents ... have been corrected to gpt-5.4 medium") was successfully applied. All 22 agents are now tier-consistent across the 3 trees. The Codex tier mapping (`gpt-5.5/high` = Opus, `gpt-5.4/medium` = Sonnet, `gpt-5.4-mini/low` = Haiku) is uniform.
 
 [INFO] **No tier drift detected.** Listed as Low debt because the only remaining work is to keep it that way (covered by the CI proposal in H2 and the propagation script in H3).
 
@@ -347,7 +345,6 @@ The three install-template variants are intentionally lighter than the dogfood `
 ### [LOW] L7 — Dead-code / unreferenced files
 
 **Search performed:** Looked for files in the repo that no other file references:
-- `templates/reports/correction-template.md` — referenced by methodology document only as deprecated. Tombstone candidate (see L2).
 - `skills/aid-correct/README.md` — tombstone (see L1).
 - `templates/grading-rubric.md` (74 lines, universal) vs. `templates/knowledge-summary/grading-rubric.md` (226 lines, HTML-specific) — both intentional and used by different consumers; **not** duplicates.
 
@@ -361,12 +358,12 @@ No genuinely orphaned files found.
 
 - **TODO / FIXME / XXX / HACK / TBD / "pending discovery" count:** 69 occurrences across 21 files. Of these, ~17 are intentional placeholders in `CLAUDE.md` / `AGENTS.md` variants (4 trees x ~4 placeholders each). The remainder are documentation strings rather than actual code TODOs.
 - **Files over 500 lines:** 12 total. 1 is the methodology spec (1,158 lines, by design). 6 are inlined Codex/Cursor SKILL.md files (debt item M5). 4 are duplicated knowledge-summary assets per H4 (`component-css.css` x 4, `lightbox.js` x 4, etc., none individually over 500 lines except `component-css.css`). 1 is `build-project-index.sh` x 4 at 368 lines each (under 500 individually).
-- **Files over 1000 lines:** 3. `methodology/aid-methodology.md` (1,158), `codex/.agents/skills/aid-discover/SKILL.md` (1,078), `cursor/.cursor/skills/aid-discover/SKILL.md` (1,090).
+- **Files over 1000 lines:** 3. `methodology/aid-methodology.md` (1,158), `profiles/codex/.agents/skills/aid-discover/SKILL.md` (1,078), `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` (1,090).
 - **Triplication ratio:** approximately 36% of total lines (~17,600 of 49,226) are 4-way duplicates of canonical sources (see H4).
 - **Test-to-code ratio:** ⚠️ Not meaningful for a methodology + docs + scripts repo. There are zero test files for ~5,490 lines of shell and ~3,428 lines of JavaScript. By the most literal reading, the test-to-code ratio is 0.
 - **CI/CD coverage:** 0 pipelines, 0 workflows. Confirmed.
 - **Per-severity debt-item count (OPEN items; post-cycle-2 reconciliation):**
-  - HIGH: 7 open (H1, H2, H3, H4, H5, H6, H7) — H6 (Codex installer Q70 CONFIRMED) and H7 (Monitor templates Q8 promoted) added 2026-05-21.
+  - HIGH: 6 open (H1, H2, H3, H4, H5, H7) — H6 RETIRED 2026-05-22 (Codex installer smoke test passed); H7 (Monitor templates Q8 promoted) added 2026-05-21.
   - MEDIUM: 6 (M1, M2 [superseded by H7 — kept as back-pointer], M3, M4, M5, M6) — M6 (Cursor Terminal/Bash internal inconsistency Q52) added 2026-05-21.
   - LOW: 7 (L1, L2, L3, L4, L5, L6 [informational — VERIFIED CONSISTENT tier mapping], L7 [informational]).
   - **Total: 20 open items.**
@@ -375,14 +372,14 @@ No genuinely orphaned files found.
 ### [MEDIUM] M6 — Cursor agent tool name internally inconsistent (`Terminal` vs `Bash`)
 
 **Evidence:** Reviewer spot-check #21 found Cursor's own tree is inconsistent on the shell-execution tool name:
-- `cursor/.cursor/agents/architect.md:4` declares `tools: Read, Glob, Grep, Write, Edit, Terminal`
-- `cursor/.cursor/agents/discovery-reviewer.md:7` declares `tools: Read, Glob, Grep, Bash, Write`
+- `profiles/cursor/.cursor/agents/architect.md:4` declares `tools: Read, Glob, Grep, Write, Edit, Terminal`
+- `profiles/cursor/.cursor/agents/discovery-reviewer.md:7` declares `tools: Read, Glob, Grep, Bash, Write`
 
 Per `external-sources.md` rows 5-6, the canonical Cursor tool name is `Terminal` (Cursor renamed from `Bash` at some point). Some Cursor agents in this tree were missed during the rename.
 
 **Impact:** Some Cursor agents may not have shell execution available because they declare a non-canonical tool name. Slash commands that depend on shell access would silently fail in those agents.
 
-**Effort:** Trivial (~15 min). Audit all 22 `cursor/.cursor/agents/*.md` files, rename every `Bash` → `Terminal` in `tools:` declarations. Per DISCOVERY-STATE Q52 resolution. Add to CI cross-tree parity check (H3) so it doesn't reoccur.
+**Effort:** Trivial (~15 min). Audit all 22 `profiles/cursor/.cursor/agents/*.md` files, rename every `Bash` → `Terminal` in `tools:` declarations. Per DISCOVERY-STATE Q52 resolution. Add to CI cross-tree parity check (H3) so it doesn't reoccur.
 
 ---
 
@@ -396,22 +393,22 @@ Items below were added or refined as a result of the Q&A pass on 2026-05-21. Cro
 | R2 | Q2, Q5 (user-confirmed) | Document supported tools matrix (Claude Code + Codex + Cursor committed; Copilot + Antigravity future). Update README + CONTRIBUTING + faq wording. Add tagged GitHub Releases for pinning. | Small | Pending |
 | R3 | Q3, Q73 (auto) | Author `tools/propagate-skills.{sh,py}` that derives Codex / Cursor SKILL.md from Claude Code source + `references/`. Add CI drift-check. | Medium | Pending |
 | R4 | Q4, Q12, Q35 (auto) | Minimal CI workflow: shellcheck on `*.sh`, markdownlint, link-check, structural cross-tree-parity test, wired `validate-*` scripts, JSON-Schema frontmatter validation, dogfood-discovery smoke test, unit tests on `grade.sh` + `build-project-index.sh`. | Medium | Pending |
-| R5 | Q6 (auto) | Delete `skills/aid-correct/` + `templates/reports/correction-template.md`. Add migration note to `CHANGELOG.md`. (Tombstones; phase merged into Triage/Monitor per `methodology/aid-methodology.md:889`.) | Trivial | Pending |
+| R5 | Q6 (auto) | Delete `skills/aid-correct/`. (`templates/reports/correction-template.md` already deleted in the methodology cleanup.) Add migration note to `CHANGELOG.md`. (Tombstones; phase merged into Triage/Monitor per `methodology/aid-methodology.md:889`.) | Trivial | Partially done — `correction-template.md` deleted; `skills/aid-correct/` pending |
 | R6 | Q11 (auto) | Add `.github/ISSUE_TEMPLATE/{bug-report,feature-request,methodology-question}.md` + `.github/PULL_REQUEST_TEMPLATE.md` aligned with AID phase taxonomy. | Trivial | Pending |
 | R7 | Q13 (auto) | Document branching strategy in `CONTRIBUTING.md`: trunk-based, branch naming `<owner>/<short-desc>`, squash-with-Conventional-Commits merge policy. | Trivial | Pending |
 | R8 | Q14 (auto) | Mark `templates/knowledge-summary/design-tokens.md` as documentation regenerated from `component-css.css` (CSS is source-of-truth). Future: one-shot doc-extraction script. | Trivial | Pending |
 | R9 | Q15 (auto) | Move repo's own `.claude/settings.json` content to a developer-local `.claude/settings.local.json` + gitignore. Keep minimal shared `settings.json` only if project-wide defaults are needed. | Trivial | Pending |
 | R10 | Q16 (user-confirmed), Q17 (auto) | Update `methodology/aid-methodology.md` heading "## 3. The Nine Phases" + README wording to canonical 10-SKILL taxonomy (Init + 8 dev + Summarize). Add explicit `Loop 11: Any phase → aid-discover (targeted re-entry)` between L8 and L9. | Small | Pending |
 | R11 | Q18 (auto) | Author 6 READMEs under `agents/discovery-{architect,analyst,integrator,quality,scout,reviewer}/README.md`. Shape per `agents/architect/README.md`. Cross-link from `agents/README.md`. | Medium | Pending |
-| R12 | Q30 (auto) | Standardize on Claude Code / Cursor filenames: `DISCOVERY-STATE.md` + `additional-info.md`. Update `codex/.codex/agents/discovery-reviewer.toml`. Document filename-constants rule in CONTRIBUTING. | Trivial | Pending |
+| R12 | Q30 (auto) | Standardize on Claude Code / Cursor filenames: `DISCOVERY-STATE.md` + `additional-info.md`. Update `profiles/codex/.codex/agents/discovery-reviewer.toml`. Document filename-constants rule in CONTRIBUTING. | Trivial | Pending |
 | R13 | Q32 (auto) | Lift state-file templates (`discovery-state.md`, `interview-state.md`, `feature-state.md`, etc.) from install trees to canonical `templates/` root. Install trees copy from there. | Small | Pending |
 | R14 | Q33 (auto) | Define closed Status enum (`Not Started`, `Pending`, `Populated`, `Approved`, `Below Minimum`, `Exempt`) in new `templates/CONVENTIONS.md`. Normalize KB doc headers. | Small | Pending |
 | R15 | Q34, Q72 (auto) | Update `CONTRIBUTING.md:21-26` to (a) use correct dotted-hidden on-disk paths and (b) add Cursor to the cross-tree-update rule. Quadruplicate, not triplicate. | Trivial | Pending — covered by H5 |
 | R16 | Q50, Q51, Q81, Q82 (auto) | Document install-template lifecycle (single-line placeholders → matched-pair after `/aid-init`/`/aid-discover`). Note Codex `context: fork` omission is intentional. Align install templates to Cursor shape. | Trivial | Pending |
-| R17 | Q52 (auto) | Audit all 22 `cursor/.cursor/agents/*.md` and unify on `Terminal` (Cursor canonical name). Document in `cursor/README.md`. | Trivial | Pending — covered by M6 |
-| R18 | Q53 (auto) | Sync `templates/reports/discovery-state-template.md` with the rich shape embedded in `claude-code/.claude/agents/discovery-reviewer.md:309-369`. Document the skeleton→rich lifecycle. | Trivial | Pending |
+| R17 | Q52 (auto) | Audit all 22 `profiles/cursor/.cursor/agents/*.md` and unify on `Terminal` (Cursor canonical name). Document in `profiles/cursor/README.md`. | Trivial | Pending — covered by M6 |
+| R18 | Q53 (auto) | Sync `templates/reports/discovery-state-template.md` with the rich shape embedded in `profiles/claude-code/.claude/agents/discovery-reviewer.md:309-369`. Document the skeleton→rich lifecycle. | Trivial | Pending |
 | R19 | Q55 (auto) | Add one-line Mermaid CLI install guidance to README + aid-summarize README. | Trivial | Pending |
-| R20 | Q70 (CONFIRMED bug) | Add `copy_dir codex/.agents` to `setup.sh:142-145` Codex branch and equivalent to `setup.ps1:137-141`. | Trivial | Pending — covered by H6 |
+| R20 | Q70 (CONFIRMED bug) | Add `copy_dir profiles/codex/.agents` to `setup.sh:142-145` Codex branch and equivalent to `setup.ps1:137-141`. | Trivial | **RETIRED 2026-05-22** — both installers fixed; task-030 smoke test confirmed 10 SKILL.md files present. |
 | R21 | Q74 (auto) | Add `.github/CODEOWNERS` requiring maintainer approval for changes that introduce `permissionMode: bypassPermissions` or `background: true`. Add CI check listing currently-elevated agents (today: 6 discovery-* agents). | Trivial | Pending |
 | R22 | Q75 (auto) | Add `tools/redact-kb.{sh,py}` masking file paths / URLs / configurable identifiers in `.aid/knowledge/*.md`. Document in `security-model.md` as recommended adopter practice. | Small | Deferred to v3.1 |
 | R23 | Q79 (auto) | Add `setup.sh --dry-run` + `setup.sh --prune` (with strong confirmation). Same for `setup.ps1`. | Small | Pending |
@@ -424,7 +421,7 @@ Items below were added or refined as a result of the Q&A pass on 2026-05-21. Cro
 
 ## Recommendations (Priority Order — updated 2026-05-21)
 
-1. **Fix `setup.sh` Codex `.agents/` omission (H6 / R20)**. Promoted to top — silent failure mode for every Codex user.
+1. ~~**Fix `setup.sh` Codex `.agents/` omission (H6 / R20)**~~ — **RETIRED 2026-05-22**. `setup.sh` + `setup.ps1` now copy `.agents/` in the Codex branch. Live smoke test confirmed 10 SKILL.md files present.
 2. **Add CI (H2 / R4)**. One workflow that runs shellcheck, validates frontmatter, runs triplication-drift check, runs install smoke tests, runs dogfood discovery. Single highest-leverage change.
 3. **Fix `CONTRIBUTING.md` (H5 / R15)**. Quadruplicate rule + correct paths + Cursor.
 4. **Author propagation script + drift checker (H3 / R3)**.
@@ -433,4 +430,4 @@ Items below were added or refined as a result of the Q&A pass on 2026-05-21. Cro
 7. **Add `VERSION` file + tag releases (R1)** — trivial, high-value for adopters.
 8. **Fix `developer.toml` hardcoded Maven path (M3)**.
 9. **Audit Cursor agents for `Terminal`/`Bash` consistency (M6 / R17)**.
-10. **Delete tombstones (L1, L2 / R5)** — `aid-correct/`, `correction-template.md`.
+10. **Delete tombstones (L1 / R5)** — `aid-correct/` (the `correction-template.md` tombstone, L2, was already deleted in the methodology cleanup).

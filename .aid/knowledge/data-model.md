@@ -26,19 +26,16 @@ Each row is one artifact "type". Producer/consumer mappings are extracted from s
 | 8 | `feature.md` (one per feature) | per-feature folder | markdown | `aid-interview` | `aid-specify` | `{install-tree}/templates/feature.md` |
 | 9 | `feature-inventory.md` | `.aid/knowledge/` | structured markdown | `aid-discover` (FIX cycle) | `aid-interview`, `aid-specify` | `{install-tree}/templates/feature-inventory.md` + `templates/knowledge-base/feature-inventory.md` |
 | 10 | `SPEC.md` (one per feature) | per-feature folder | structured markdown | `aid-specify` | `aid-plan`, `aid-execute` | `templates/specs/spec-template.md` |
-| 11 | `PLAN.md` | per-work | structured markdown | `aid-plan` | `aid-detail` | `templates/delivery-plans/delivery-template.md` |
-| 12 | `DETAIL.md` | per-work | structured markdown | `aid-detail` | `aid-execute` | `templates/delivery-plans/detail-template.md` |
-| 13 | `task-NNN.md` (one per task) | per-work | structured markdown | `aid-detail` | `aid-execute` | `templates/delivery-plans/task-template.md` |
-| 14 | `task-NNN-STATE.md` (one per task) | per-task | structured markdown | `aid-execute` | `aid-execute` review loop | `templates/implementation-state.md` + `{install-tree}/templates/implementation-state.md` |
-| 15 | `DELIVERY-{id}.md` | per-work | structured markdown | `aid-plan` / `aid-deploy` | `aid-deploy` | implied by `templates/delivery-plans/delivery-template.md` |
-| 16 | `package-{NNN}.md` | per-package | structured markdown | `aid-deploy` | `aid-deploy` | `{install-tree}/templates/package.md` |
-| 17 | `DEPLOYMENT-STATE.md` | per-work | structured markdown | `aid-deploy` | `aid-deploy` (resume) | `{install-tree}/templates/deployment-state.md` |
-| 18 | `MONITOR-STATE.md` | per-work | structured markdown | `aid-monitor` | `aid-monitor` (resume) | ⚠️ **Template MISSING** — referenced at `templates/README.md:31` but no file on disk (Q31) |
-| 19 | `track-report-{id}.md` | per-work | structured markdown | `aid-monitor` | `aid-execute` (bugs) / `aid-discover` (CRs) | ⚠️ **Template MISSING** — referenced at `templates/README.md:37` but no file on disk (Q31) |
-| 20 | `GAP-{id}.md` | per-work `.aid/works/{work}/feedback/` | structured markdown | `aid-specify` / `aid-plan` / `aid-detail` / `aid-execute` | `aid-discover` (re-entry), `aid-interview` (re-entry) | `templates/feedback-artifacts/GAP.md` |
-| 21 | `IMPEDIMENT-{id}.md` | per-task | structured markdown | `aid-execute` | `aid-specify`, `aid-plan` (revision) | `templates/feedback-artifacts/IMPEDIMENT.md` |
-| 22 | `KI-{n}` entries (in `known-issues.md`) | per-work | structured markdown subdocument | `aid-specify` | `aid-plan` (sequencing) | `{install-tree}/templates/known-issues.md` |
-| 23 | `project-index.md` | `.aid/knowledge/` | structured markdown (generated) | `templates/scripts/build-project-index.sh` | every `aid-discover` sub-agent | (generated script output, no separate template) |
+| 11 | `PLAN.md` | per-work | structured markdown | `aid-plan` | `aid-detail` | (no template; format defined inline by `aid-plan`) |
+| 12 | `task-NNN.md` (one per task) | per-work | structured markdown | `aid-detail` | `aid-execute` | `templates/delivery-plans/task-template.md` |
+| 13 | `task-NNN-STATE.md` (one per task) | per-task | structured markdown | `aid-execute` | `aid-execute` review loop | `templates/implementation-state.md` + `{install-tree}/templates/implementation-state.md` |
+| 14 | `package-{NNN}.md` | per-package | structured markdown | `aid-deploy` | `aid-deploy` | `{install-tree}/templates/package.md` |
+| 15 | `DEPLOYMENT-STATE.md` | per-work | structured markdown | `aid-deploy` | `aid-deploy` (resume) | `{install-tree}/templates/deployment-state.md` |
+| 16 | `MONITOR-STATE.md` | per-work | structured markdown | `aid-monitor` | `aid-monitor` (resume) | ⚠️ **Template MISSING** — referenced at `templates/README.md:31` but no file on disk (Q31) |
+| 17 | `track-report-{id}.md` | per-work | structured markdown | `aid-monitor` | `aid-execute` (bugs) / `aid-discover` (CRs) | ⚠️ **Template MISSING** — referenced at `templates/README.md:37` but no file on disk (Q31) |
+| 18 | `IMPEDIMENT-{id}.md` | per-task | structured markdown | `aid-execute` | `aid-specify`, `aid-plan` (revision) | `templates/feedback-artifacts/IMPEDIMENT.md` |
+| 19 | `KI-{n}` entries (in `known-issues.md`) | per-work | structured markdown subdocument | `aid-specify` | `aid-plan` (sequencing) | `{install-tree}/templates/known-issues.md` |
+| 20 | `project-index.md` | `.aid/knowledge/` | structured markdown (generated) | `templates/scripts/build-project-index.sh` | every `aid-discover` sub-agent | (generated script output, no separate template) |
 
 (Cross-reference: every "template" path comes from `project-index.md`; producer/consumer mappings come from `module-map.md` Per-template consumption matrix and each skill's SKILL.md body.)
 
@@ -50,7 +47,7 @@ Each row is one artifact "type". Producer/consumer mappings are extracted from s
 
 The central state file for `aid-discover`. Two schemas exist on disk because `aid-init` scaffolds one shape (`templates/discovery-state.md`) and `discovery-reviewer` rewrites it to a richer shape (`templates/reports/discovery-state-template.md`).
 
-**Init-time schema** (verified at `claude-code/.claude/templates/discovery-state.md:1-23`):
+**Init-time schema** (verified at `profiles/claude-code/.claude/templates/discovery-state.md:1-23`):
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -65,7 +62,7 @@ The central state file for `aid-discover`. Two schemas exist on disk because `ai
 
 **Reviewer-time schema** (verified at `templates/reports/discovery-state-template.md:1-67`): adds `## Settings`, `## Current Grade`, `## Documents` table (18-row grade matrix), `## Issues Found` (severity-tagged), `## Verification Spot-Checks` (claim/document/verified/evidence table, ≥15 rows), `## Cross-Cutting Concerns`. The reviewer template's `## Documents` column count is 4 (Document / Grade / Status / Issues); the init template has no Documents table.
 
-**Q&A entry sub-schema** (verified at `claude-code/.claude/skills/aid-discover/SKILL.md:191-199`):
+**Q&A entry sub-schema** (verified at `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:191-199`):
 
 | Field | Type | Required | Example |
 |-------|------|----------|---------|
@@ -79,7 +76,7 @@ The central state file for `aid-discover`. Two schemas exist on disk because `ai
 | `- **Answer:**` | freeform | conditional (when Status=Answered) | user's reply or accepted suggestion |
 | `- **Applied to:**` | filename(s) | conditional (set in FIX cycle) | which KB doc absorbed the answer |
 
-**Review History sub-schema** (verified at `claude-code/.claude/templates/discovery-state.md:22-23`):
+**Review History sub-schema** (verified at `profiles/claude-code/.claude/templates/discovery-state.md:22-23`):
 
 | Column | Type | Example |
 |--------|------|---------|
@@ -112,7 +109,7 @@ Verified at `templates/requirements/requirements-template.md:22-80`. Schema:
 
 ### 2.3 INTERVIEW-STATE.md
 
-Verified at `claude-code/.claude/templates/interview-state.md:1-29`.
+Verified at `profiles/claude-code/.claude/templates/interview-state.md:1-29`.
 
 | Field | Type | Required | Notes |
 |-------|------|----------|-------|
@@ -145,9 +142,9 @@ Verified at `templates/specs/spec-template.md:1-75`.
 
 The 18 conditional H3s (per `spec-template.md:55-75`): `API Contracts`, `UI Specs`, `Events & Messaging`, `DDD Analysis`, `BDD Scenarios`, `CQRS Specs`, `State Machines`, `Security Specs`, `Migration Plan`, `Cache Strategy`, `External Integrations`, `Batch/Jobs`, `Mobile Specs`, `Search/Indexing`, `AI Enhancements`, `Telemetry & Tracking`, `Recovery Management`, `Cloud Support`, `Hardware Requirements`.
 
-### 2.5 PLAN.md (delivery-template)
+### 2.5 PLAN.md
 
-Verified at `templates/delivery-plans/delivery-template.md` (per `project-index.md` line count 83). Schema (per spot-read of the template):
+PLAN.md has **no template file** — its format is defined inline by `aid-plan`. It holds the ordered Deliveries (a "Delivery" is a section within PLAN.md, not a separate file) plus the execution graph appended by `aid-detail`. Schema (per `aid-plan`'s inline definition):
 
 | Section | Required | Purpose |
 |---------|----------|---------|
@@ -155,56 +152,28 @@ Verified at `templates/delivery-plans/delivery-template.md` (per `project-index.
 | `## Overview` | yes | One-paragraph delivery summary |
 | `## Deliveries` | yes | Ordered list of delivery blocks; each block has Title, Goal, Scope (in/out), Acceptance Criteria, Estimated tasks, Dependencies on prior deliveries |
 | `## Sequencing Rationale` | yes | Why this order: dependency chains + MVP-slice reasoning |
+| `## Execution Graph` | yes | Appended by `aid-detail` — dependency and parallel-wave tables across all tasks |
 | `## Risks` | optional | Open risks per delivery |
 | `## Revision History` | yes | Date / Change / Source rows — every edit |
 
 Cardinality: 1 PLAN.md per Work. Each delivery becomes a git branch `aid/{delivery-NNN}` during `aid-execute`.
 
-### 2.6 DETAIL.md
+### 2.6 task-NNN.md
 
-Verified at `templates/delivery-plans/detail-template.md:1-159`.
+Verified at `templates/delivery-plans/task-template.md:1-20`. Six sections only — nothing else. `aid-detail` produces one `task-NNN.md` per task directly (there is no `DETAIL.md` artifact) and appends the execution graph to `PLAN.md`.
 
-| Section | Required | Notes |
-|---------|----------|-------|
-| `# {Project Name} — Execution Detail` | yes | H1 |
-| Metadata block (`> **Version:** 1.0`, `> **Date:**`, `> **Source:** aid-detail (Phase 5)`, `> **Inputs:**`) | yes | Block-quote format, not metadata header |
-| `## User Stories` with `### US-{id}: {Title}` entries | yes | Each US has `**As a**`, `**I want**`, `**So that**`, `**Acceptance Criteria:**` checklist, `**Source:**` traceability, `**Size estimate:**` (S/M/L/XL) |
-| `## Task List` with `### task-NNN: {Name}` entries | yes | Per `detail-template.md:33-65` schema |
-| `## Precedence Graph` | yes | Mermaid `graph LR` or text-form arrows |
-| `## Delivery Breakdown` with `### DELIVERY-{id}: {Name}` entries | yes | Each lists User Stories, Tasks, Success Criteria, Depends on |
-| `## Execution Plan` (Wave 1, Wave 2, ...) | yes | Parallel-execution grouping |
-| `## Integration Contract` | yes | NEW — explicitly required per template lines 122–150 |
-| `### Scene Tree / Component Additions` | conditional | UI projects |
-| `### Bootstrap / Initialization Changes` | yes | per `detail-template.md:133-138` |
-| `### Visual / Functional Smoke Test` | yes | Checkbox list of observable behaviors |
-| `### Dev Environment Requirements` | yes | — |
-| `## Revision History` | yes | Standard rev table |
+| Field / Section | Type | Required | Notes |
+|-----------------|------|----------|-------|
+| `# task-NNN: {Title}` | H1 | yes | — |
+| `**Type:**` | enum (`RESEARCH` / `DESIGN` / `IMPLEMENT` / `TEST` / `DOCUMENT` / `MIGRATE` / `REFACTOR` / `CONFIGURE`) | yes | One type per task; never mixed |
+| `**Source:**` | reference | yes | `feature-NNN-{name} → delivery-NNN` |
+| `**Depends on:**` | reference | yes | `task-NNN [, task-NNN]` or `— (none)` for the first task |
+| `**Scope:**` | bullet list | yes | What the task produces or modifies — depends on Type; specific and bounded |
+| `**Acceptance Criteria:**` | checkbox list | yes | Concrete, testable; always ends with "All §6 quality gates pass" |
 
-### 2.7 task-NNN.md
+**Task type taxonomy** (verified at `templates/implementation-state.md:5`): enum of `RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE`. One type per task. The type drives execution rules — `profiles/claude-code/.claude/skills/aid-execute/references/task-type-rules.md` (104 lines) details per-type protocols.
 
-Verified at `templates/delivery-plans/task-template.md:1-143`. Required fields per task:
-
-| Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| `# task-NNN: {Name}` | H1 | yes | — |
-| `> **Delivery:**` | reference | yes | — |
-| `> **User Story:**` | reference | yes | — |
-| `> **Status:**` | enum (`Not Started` / `In Progress` / `In Review` / `Complete`) | yes | — |
-| `> **Complexity:**` | enum (`S` / `M` / `L` / `XL`) | yes | — |
-| `> **Assigned to:**` | freeform | yes | "agent instance or human" |
-| `## Objective` | freeform | yes | 1–2 sentences |
-| `## Context` | freeform | yes | Must include `.aid/knowledge/INDEX.md` reference (line 22) |
-| `## Interface Contracts` | code block (C# / TypeScript / etc.) | yes | Language from KB technology-stack.md |
-| `## Acceptance Criteria` | checkbox list | yes | Includes "Zero warnings on build", "Unit tests pass" |
-| `## Test Requirements` | structured (Unit / Integration / Edge cases) | yes | — |
-| `## Files to Touch` | structured (Create / Modify / Do NOT modify) | yes | "guidance, not mandate" |
-| `## Notes & Gotchas` | freeform | yes | — |
-| `## Impediment Protocol` | constant text | yes | Boilerplate at lines 120–130 |
-| `## Completion Record` | filled at completion | yes | Date / Branch / Files changed / Tests added / Build status / Review grade |
-
-**Task type taxonomy** (verified at `templates/implementation-state.md:5`): enum of `RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE`. One type per task. The type drives execution rules — `claude-code/.claude/skills/aid-execute/references/task-type-rules.md` (104 lines) details per-type protocols.
-
-### 2.8 task-NNN-STATE.md
+### 2.7 task-NNN-STATE.md
 
 Verified at `templates/implementation-state.md:1-30`.
 
@@ -223,24 +192,9 @@ Verified at `templates/implementation-state.md:1-30`.
 | `## Dispatches` (5-col table) | yes | Step / Agent / Reason / Cycle |
 | `## Review History` | yes | Initial `_No reviews yet._` |
 
-### 2.9 GAP-{id}.md
+Review and test outcomes are recorded here in `task-NNN-STATE.md` — there is no separate `REVIEW.md` or `TEST-REPORT.md` artifact.
 
-Verified at `templates/feedback-artifacts/GAP.md:1-88`.
-
-| Section | Required | Notes |
-|---------|----------|-------|
-| `# GAP: GAP-{id}` | yes | H1 with structured ID |
-| Metadata block (Generated by / Phase / Date / Status) | yes | — |
-| `## Summary` (one sentence) | yes | — |
-| `## Type` (checkbox enum) | yes | 4 types: `discovery-needed` / `ambiguity` / `contradiction` / `plan-too-vague` |
-| `## Source` (Phase / Artifact / Blocking) | yes | — |
-| `## Description` (Expected / Found / Evidence) | yes | — |
-| `## Impact` (If unresolved / Blocks) | yes | — |
-| `## Resolution Required` (checkbox enum) | yes | 4 options: `discovery` / `needs-human` / `needs-spike` / `spec-revision` + `Assigned to:` |
-| `## Resolution` | conditional | Filled at close |
-| `## Revision History` | yes | — |
-
-### 2.10 IMPEDIMENT-{id}.md
+### 2.8 IMPEDIMENT-{id}.md
 
 Verified at `templates/feedback-artifacts/IMPEDIMENT.md:1-119`.
 
@@ -258,9 +212,9 @@ Verified at `templates/feedback-artifacts/IMPEDIMENT.md:1-119`.
 | `## Resolution` | conditional | — |
 | `## Revision History` | yes | — |
 
-### 2.11 known-issues.md (per-work)
+### 2.9 known-issues.md (per-work)
 
-Verified at `claude-code/.claude/templates/known-issues.md:1-15`. Schema is documented as **HTML comments** in the template (lines 6–14). Per-entry schema:
+Verified at `profiles/claude-code/.claude/templates/known-issues.md:1-15`. Schema is documented as **HTML comments** in the template (lines 6–14). Per-entry schema:
 
 | Field | Type | Required | Notes |
 |-------|------|----------|-------|
@@ -272,9 +226,9 @@ Verified at `claude-code/.claude/templates/known-issues.md:1-15`. Schema is docu
 | `- **Description:**` | freeform | yes | — |
 | `- **See also:**` | tech-debt cross-ref | optional | `tech-debt.md #TD-NNN` |
 
-### 2.12 DEPLOYMENT-STATE.md + package-NNN.md
+### 2.10 DEPLOYMENT-STATE.md + package-NNN.md
 
-Verified at `claude-code/.claude/templates/deployment-state.md:1-9` and `claude-code/.claude/templates/package.md:1-27`.
+Verified at `profiles/claude-code/.claude/templates/deployment-state.md:1-9` and `profiles/claude-code/.claude/templates/package.md:1-27`.
 
 **DEPLOYMENT-STATE schema** (minimal):
 
@@ -298,11 +252,11 @@ Verified at `claude-code/.claude/templates/deployment-state.md:1-9` and `claude-
 | `## Release Notes` | yes | Generated during packaging |
 | `## Status:` | yes | `Draft` initially |
 
-### 2.13 MONITOR-STATE.md and track-report-*.md
+### 2.11 MONITOR-STATE.md and track-report-*.md
 
-⚠️ **Both templates are MISSING from disk** (Q8 / Q31 / Q77). `templates/README.md:31` references `templates/feedback-artifacts/MONITOR-STATE.md` and `templates/README.md:37` references `templates/reports/track-report-template.md`. Neither file is present per `project-index.md`. The skill `aid-monitor/SKILL.md` (242 lines per `project-index.md`) presumably defines or expects these — but without the templates, agents generating these artifacts have no canonical shape to follow. **Per DISCOVERY-STATE Q8 resolution: author both templates.** MONITOR-STATE.md modeled on `templates/feedback-artifacts/GAP.md` (~88 lines); track-report-template.md modeled on `templates/reports/test-report-template.md` (~103 lines). Tracked as `tech-debt.md H7` (promoted from MEDIUM to HIGH because it blocks the Monitor phase end-to-end).
+⚠️ **Both templates are MISSING from disk** (Q8 / Q31 / Q77). `templates/README.md:31` references `templates/feedback-artifacts/MONITOR-STATE.md` and `templates/README.md:37` references `templates/reports/track-report-template.md`. Neither file is present per `project-index.md`. The skill `aid-monitor/SKILL.md` (242 lines per `project-index.md`) presumably defines or expects these — but without the templates, agents generating these artifacts have no canonical shape to follow. **Per DISCOVERY-STATE Q8 resolution: author both templates.** Tracked as `tech-debt.md H7` (promoted from MEDIUM to HIGH because it blocks the Monitor phase end-to-end).
 
-### 2.14 project-index.md (generated)
+### 2.12 project-index.md (generated)
 
 Verified at `.aid/knowledge/project-index.md:1-13`. Schema:
 
@@ -318,7 +272,7 @@ Verified at `.aid/knowledge/project-index.md:1-13`. Schema:
 
 Producer: `templates/scripts/build-project-index.sh` (368 lines). Consumer: every `aid-discover` sub-agent (per `aid-discover/SKILL.md:136-140` foundation reference block).
 
-### 2.15 Agent / Skill frontmatter (cross-reference)
+### 2.13 Agent / Skill frontmatter (cross-reference)
 
 Schemas already documented in `coding-standards.md` §1 (SKILL.md), §2.1 (Claude Code agents), §2.2 (Codex TOML), §2.3 (Cursor agents), §3 (Cursor .mdc rules). Not duplicated here.
 
@@ -356,11 +310,11 @@ graph LR
 
     SP --> PLAN[aid-plan]
     KI --> PLAN
-    PLAN --> PL[PLAN.md / DELIVERY-x.md]
+    PLAN --> PL[PLAN.md]
 
     PL --> DET[aid-detail]
-    DET --> DT[DETAIL.md]
     DET --> TK[task-id.md per task]
+    DET --> EG[execution graph<br/>appended to PLAN.md]
 
     TK --> EXE[aid-execute]
     EXE --> IST[task-NNN-STATE.md per task]
@@ -374,9 +328,9 @@ graph LR
     MON --> MS[MONITOR-STATE.md ⚠️ template missing]
     MON --> TR[track-report-id.md ⚠️ template missing]
 
-    SPEC -.GAP.-> DISC
-    PLAN -.GAP.-> DISC
-    DET -.GAP.-> DISC
+    SPEC -.STATE Q&A.-> DISC
+    PLAN -.STATE Q&A.-> DISC
+    DET -.STATE Q&A.-> DISC
     EXE -.IMPEDIMENT.-> SPEC
     MON -.bug.-> EXE
     MON -.CR.-> DISC
@@ -396,7 +350,7 @@ graph LR
 | `aid-execute` → `task-NNN-STATE.md` | 1:1 per task | — |
 | `aid-deploy` → `package-{NNN}.md` | 1:1 per package | — |
 | `aid-deploy` → `DEPLOYMENT-STATE.md` | 1:1 per work | Mutated across deploys |
-| Any phase → `GAP-{id}.md` | 1:N | One per gap |
+| Any phase → STATE-file Q&A entry | 1:N | One per KB/upstream gap (DISCOVERY-STATE.md / INTERVIEW-STATE.md / feature STATE.md) |
 | `aid-execute` → `IMPEDIMENT-{id}.md` | 1:N | One per impediment |
 | `discovery-reviewer` → `DISCOVERY-STATE.md` updates | N:1 | Each review cycle rewrites issues + appends Review History row |
 
@@ -407,7 +361,6 @@ Per `templates/requirements/requirements-template.md:16` and `aid-discover/SKILL
 - `REQUIREMENTS.md`
 - `SPEC.md` (per feature)
 - `PLAN.md`
-- `DETAIL.md`
 - `DISCOVERY-STATE.md`
 - `INTERVIEW-STATE.md`
 - `FEATURE-STATE.md`
@@ -447,7 +400,7 @@ Phase 3  Specify (per feature)
                                                        --> SPEC.md (Technical Specification appended)
                                                        --> FEATURE-STATE.md
                                                        --> known-issues.md (entries)
-                                                       --> GAP.md (if KB gap discovered)
+                                                       --> Q&A entry in feature STATE.md / DISCOVERY-STATE.md (if KB gap discovered)
 
 Phase 4  Plan
          all SPEC.md + .aid/knowledge/tech-debt.md + known-issues.md --> aid-plan
@@ -455,8 +408,8 @@ Phase 4  Plan
 
 Phase 5  Detail
          PLAN.md + SPEC.md + .aid/knowledge/ --> aid-detail
-                                             --> DETAIL.md (user stories, task list, precedence, integration contract)
                                              --> task-NNN.md (one per task)
+                                             --> execution graph (parallel-wave tables) appended to PLAN.md
 
 Phase 6  Execute (per task)
          task-NNN.md + .aid/knowledge/ --> aid-execute (reviewer loop)
@@ -501,7 +454,7 @@ There is no central validation layer for these artifacts. The validation that ex
 
 - No schema validator for SKILL.md / agent frontmatter.
 - No schema validator for any artifact template — a SPEC.md missing required sections will not be flagged automatically.
-- No referential integrity check (e.g., does every `task-NNN.md`'s `User Story:` field point to a real US entry in DETAIL.md?).
+- No referential integrity check (e.g., does every `task-NNN.md`'s `Source:` field point to a real `feature-NNN → delivery-NNN` pair in PLAN.md?).
 - No producer-consumer parity check (e.g., does the version of REQUIREMENTS.md that aid-specify reads match the version aid-interview last wrote?).
 
 ---
@@ -510,7 +463,7 @@ There is no central validation layer for these artifacts. The validation that ex
 
 There are no migrations in the traditional sense (this repo has no database). The closest analogue is **template-shape evolution** — when a template's schema changes, downstream artifacts may need to be regenerated or migrated by hand. There is no migration tool. The discipline is: when a template changes, update the four copies (root + three trees per `CONTRIBUTING.md:21-26`), then re-run the producer skill on a fresh project to validate output.
 
-The `codex/README.md:35` "May 2026 migration note" referenced in `external-sources.md:81` documents a past tier-assignment migration (correcting agent `model_reasoning_effort` values). This is the only documented migration event in the repo.
+The `profiles/codex/README.md:35` "May 2026 migration note" referenced in `external-sources.md:81` documents a past tier-assignment migration (correcting agent `model_reasoning_effort` values). This is the only documented migration event in the repo.
 
 ---
 

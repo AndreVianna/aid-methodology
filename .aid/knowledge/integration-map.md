@@ -18,11 +18,11 @@
 | Direction | AID installs into Claude Code (one-way) |
 | Install location | `<project>/.claude/` (per-project) or `~/.claude/` (global) |
 | Loader picks up | `agents/`, `skills/`, `templates/`; reads `settings.json`; auto-loads `CLAUDE.md` at project root |
-| Local payload | `claude-code/.claude/` (64 files: 22 agents + 10 skills + 31 templates/scripts per `project-structure.md`); `claude-code/CLAUDE.md` placeholder |
+| Local payload | `profiles/claude-code/.claude/` (64 files: 22 agents + 10 skills + 31 templates/scripts per `project-structure.md`); `profiles/claude-code/CLAUDE.md` placeholder |
 | Version pins (model IDs) | `opus` (10 agents), `sonnet` (9 agents), `haiku` (3 agents) — symbolic aliases; concrete model resolved by Claude Code |
 | Source-of-truth doc | `external-sources.md` row 1: <https://docs.claude.com/en/docs/claude-code/overview> |
 | Known-issues / open gaps | ⚠️ Pending vendor-doc fetch — full frontmatter inventory, Hooks lifecycle, Plugins API, MCP server registration, `permissionMode: bypassPermissions` semantics, `background: true` long-running agent semantics (`external-sources.md:67-68`) |
-| Evidence | `claude-code/.claude/agents/*.md` (22 files); `claude-code/.claude/skills/aid-*/SKILL.md` (10 skills per Q16 canonical taxonomy); `claude-code/CLAUDE.md`; `cursor/README.md:142` (Cursor cross-load reference) |
+| Evidence | `profiles/claude-code/.claude/agents/*.md` (22 files); `profiles/claude-code/.claude/skills/aid-*/SKILL.md` (10 skills per Q16 canonical taxonomy); `profiles/claude-code/CLAUDE.md`; `profiles/cursor/README.md:142` (Cursor cross-load reference) |
 
 ### Anthropic Claude Agent SDK
 
@@ -46,11 +46,11 @@
 | Direction | AID installs into Codex CLI (one-way) |
 | Install location | `<project>/.codex/agents/` (TOML agents) + `<project>/.agents/{skills,templates}/` (markdown skills/templates); `AGENTS.md` at project root |
 | Loader picks up | `.codex/agents/*.toml` for agent definitions, `.agents/skills/aid-*/SKILL.md` for skill bodies, `AGENTS.md` for project context |
-| Local payload | `codex/.codex/agents/` (22 TOML files) + `codex/.agents/skills/` (10 skill folders) + `codex/.agents/templates/` (KB + script templates) + `codex/AGENTS.md` (28 lines) |
-| Version pins (model IDs) | `gpt-5.5` (Opus tier, 10 agents), `gpt-5.4` (Sonnet tier, 9 agents), `gpt-5.4-mini` (Haiku tier, 3 agents) — pinned per `Grep` over `codex/.codex/agents/*.toml` |
+| Local payload | `profiles/codex/.codex/agents/` (22 TOML files) + `profiles/codex/.agents/skills/` (10 skill folders) + `profiles/codex/.agents/templates/` (KB + script templates) + `profiles/codex/AGENTS.md` (28 lines) |
+| Version pins (model IDs) | `gpt-5.5` (Opus tier, 10 agents), `gpt-5.4` (Sonnet tier, 9 agents), `gpt-5.4-mini` (Haiku tier, 3 agents) — pinned per `Grep` over `profiles/codex/.codex/agents/*.toml` |
 | Source-of-truth doc | `external-sources.md` rows 3-4: <https://github.com/openai/codex>, <https://developers.openai.com/codex/> |
-| Known-issues / open gaps | ⚠️ AGENTS.md authoritative schema unverified; whether Codex CLI reads `.agents/skills/` at all needs vendor confirmation; sub-agent dispatch mechanism unknown (`external-sources.md:83`); May-2026 tier-migration history at `codex/README.md:35` |
-| Evidence | `codex/.codex/agents/architect.toml:3-4`; `codex/AGENTS.md:1-28`; `codex/README.md:1-117` |
+| Known-issues / open gaps | ⚠️ AGENTS.md authoritative schema unverified; whether Codex CLI reads `.agents/skills/` at all needs vendor confirmation; sub-agent dispatch mechanism unknown (`external-sources.md:83`); May-2026 tier-migration history at `profiles/codex/README.md:35` |
+| Evidence | `profiles/codex/.codex/agents/architect.toml:3-4`; `profiles/codex/AGENTS.md:1-28`; `profiles/codex/README.md:1-117` |
 
 ### Cursor
 
@@ -60,12 +60,12 @@
 | Direction | AID installs into Cursor (one-way) |
 | Install location | `<project>/.cursor/{agents,rules,skills,templates}/`; `AGENTS.md` at project root |
 | Loader picks up | `.cursor/rules/*.mdc` for always-on / glob-scoped rules, `.cursor/agents/*.md` for agent definitions, `.cursor/skills/aid-*/SKILL.md` for skills, `AGENTS.md` for project context |
-| Local payload | `cursor/.cursor/` (≈80 files: 22 agents + 2 rules + 10 skills + 45 templates/scripts); `cursor/AGENTS.md` (45 lines) |
+| Local payload | `profiles/cursor/.cursor/` (≈80 files: 22 agents + 2 rules + 10 skills + 45 templates/scripts); `profiles/cursor/AGENTS.md` (45 lines) |
 | Version pins (model IDs) | Same symbolic aliases as Claude Code (`opus` / `sonnet` / `haiku`) |
 | Source-of-truth doc | `external-sources.md` rows 5-6: <https://docs.cursor.com/context/rules-for-ai>, <https://docs.cursor.com/context/model-context-protocol> |
-| Known-issues / open gaps | ⚠️ Task tool dispatch marked **experimental as of March 2026** (`cursor/AGENTS.md:30`, `cursor/README.md:128`); precedence between `.cursor/rules/` vs. `AGENTS.md` vs. `.cursor/skills/` unverified; `Terminal` vs `Bash` tool naming divergence from Claude Code observed (see `api-contracts.md` 3b) |
-| Cross-tool compatibility | Cursor will additionally load skills from `.claude/skills/` and `.codex/skills/` per `cursor/README.md:142` — only documented loader fallback chain in the AID install set |
-| Evidence | `cursor/.cursor/agents/architect.md:1-7`; `cursor/.cursor/rules/aid-methodology.mdc:1-30`; `cursor/AGENTS.md:1-45`; `cursor/README.md:140-146` |
+| Known-issues / open gaps | ⚠️ Task tool dispatch marked **experimental as of March 2026** (`profiles/cursor/AGENTS.md:30`, `profiles/cursor/README.md:128`); precedence between `.cursor/rules/` vs. `AGENTS.md` vs. `.cursor/skills/` unverified; `Terminal` vs `Bash` tool naming divergence from Claude Code observed (see `api-contracts.md` 3b) |
+| Cross-tool compatibility | Cursor will additionally load skills from `.claude/skills/` and `.codex/skills/` per `profiles/cursor/README.md:142` — only documented loader fallback chain in the AID install set |
+| Evidence | `profiles/cursor/.cursor/agents/architect.md:1-7`; `profiles/cursor/.cursor/rules/aid-methodology.mdc:1-30`; `profiles/cursor/AGENTS.md:1-45`; `profiles/cursor/README.md:140-146` |
 
 ### GitHub Copilot CLI
 
@@ -169,7 +169,7 @@
 | Direction | AID consumes Git (clone for distribution; branch-per-delivery for aid-execute) |
 | Local artifacts | `.gitignore` (1 line — gitignores `.aid/`); no `.gitattributes`, no `.gitmodules` |
 | Version pins | None |
-| Known-issues / open gaps | Git is the only assumed install/distribution mechanism. No npm package, no Homebrew tap, no PyPI module observed — adopters clone or copy the relevant tool tree (`README.md`, `setup.sh:1-161`). `aid-execute` uses one Git branch per delivery (`aid/{delivery-NNN}`, see `claude-code/.claude/skills/aid-execute/SKILL.md:74-79`) |
+| Known-issues / open gaps | Git is the only assumed install/distribution mechanism. No npm package, no Homebrew tap, no PyPI module observed — adopters clone or copy the relevant tool tree (`README.md`, `setup.sh:1-161`). `aid-execute` uses one Git branch per delivery (`aid/{delivery-NNN}`, see `profiles/claude-code/.claude/skills/aid-execute/SKILL.md:74-79`) |
 | Evidence | `.gitignore:1`; `setup.sh`; `aid-execute/SKILL.md:74-79`; absence of npm/PyPI manifests |
 
 ---
@@ -181,7 +181,7 @@
 - **Caches:** No Redis, Memcached, Varnish, or in-process cache invocation. No `cache.config.*` files.
 - **Message queues / event buses:** No Kafka, RabbitMQ, NATS, SQS, Pub/Sub, EventBridge, or in-process bus. No `.proto` files.
 - **Webhooks:** No incoming-webhook receiver. No outgoing-webhook caller. No `webhook.*` config.
-- **Third-party services:** No API client SDK consumed at runtime. No `axios`, `requests`, `httpx`, `okhttp`, etc. The only external URLs anywhere are the 8 vendor documentation entries in `external-sources.md:15-24` and the AID methodology repo URL (`https://github.com/AndreVianna/aid-methodology`) embedded in `codex/AGENTS.md:24`, `cursor/AGENTS.md:41`, and similar placeholders.
+- **Third-party services:** No API client SDK consumed at runtime. No `axios`, `requests`, `httpx`, `okhttp`, etc. The only external URLs anywhere are the 8 vendor documentation entries in `external-sources.md:15-24` and the AID methodology repo URL (`https://github.com/AndreVianna/aid-methodology`) embedded in `profiles/codex/AGENTS.md:24`, `profiles/cursor/AGENTS.md:41`, and similar placeholders.
 - **Feature flags:** No LaunchDarkly, Unleash, Statsig, or in-house flag system. No `flags.*` config.
 
 This is consistent with `project-structure.md`'s observation that "this repo is fundamentally a static set of markdown + shell + a few JS files — not a deployable application."
@@ -195,9 +195,9 @@ graph TB
     AID[AID Methodology<br/>this repo]
 
     subgraph current["Current install targets"]
-        CC[Anthropic Claude Code<br/>claude-code/.claude/]
-        CDX[OpenAI Codex CLI<br/>codex/.codex/ + codex/.agents/]
-        CUR[Cursor<br/>cursor/.cursor/]
+        CC[Anthropic Claude Code<br/>profiles/claude-code/.claude/]
+        CDX[OpenAI Codex CLI<br/>profiles/codex/.codex/ + profiles/codex/.agents/]
+        CUR[Cursor<br/>profiles/cursor/.cursor/]
     end
 
     subgraph future["Future install targets"]

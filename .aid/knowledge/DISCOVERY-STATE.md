@@ -87,16 +87,16 @@ Web fetching deferred. Each vendor's local cross-reference (which directory in *
 | 3 | tech-debt.md severity counts HIGH=7, MEDIUM=6, LOW=7, TOTAL=20 | tech-debt L356-360, INDEX L20, README L33 | Yes | `grep -cE "^### \["` = 20; script 7/6/7 |
 | 4 | security-model.md severity counts 1H+4M+4L+12I=21 | security-model L292-299 | Yes | `grep -cE "^\["` = 21; script 1/4/4/12 |
 | 5 | README line-count column: all 17 docs match disk | README L20-36 | Yes | Script: 17 OK, 0 drifts |
-| 6 | Claude Code agent tier counts: 3 haiku + 10 opus + 9 sonnet = 22 | host-tools-matrix L80-82 | Yes | `grep -E "^model:" claude-code/.claude/agents/*.md` = 3+10+9 |
-| 7 | Codex agent tier counts: 3 mini + 9 5.4 + 10 5.5 = 22 | host-tools-matrix L80-82 | Yes | `grep -E "^model = " codex/.codex/agents/*.toml` = 9+3+10 |
+| 6 | Claude Code agent tier counts: 3 haiku + 10 opus + 9 sonnet = 22 | host-tools-matrix L80-82 | Yes | `grep -E "^model:" profiles/claude-code/.claude/agents/*.md` = 3+10+9 |
+| 7 | Codex agent tier counts: 3 mini + 9 5.4 + 10 5.5 = 22 | host-tools-matrix L80-82 | Yes | `grep -E "^model = " profiles/codex/.codex/agents/*.toml` = 9+3+10 |
 | 8 | Cursor tools Bash count = 6, Terminal count = 13 (M6) | tech-debt M6 | Yes | `grep -lE "tools:.*Bash"` = 6; `grep -lE "tools:.*Terminal"` = 13 |
-| 9 | Claude Code has 10 SKILL.md (no 11 anywhere) | api/integration/module/project-structure | Yes | `find claude-code/.claude/skills -name SKILL.md` = 10 |
-| 10 | Codex has 10 SKILL.md | integration-map L49 | Yes | `find codex/.agents/skills -name SKILL.md` = 10 |
-| 11 | Cursor has 10 SKILL.md | integration-map L63, module-map L114 | Yes | `find cursor/.cursor/skills -name SKILL.md` = 10 |
+| 9 | Claude Code has 10 SKILL.md (no 11 anywhere) | api/integration/module/project-structure | Yes | `find profiles/claude-code/.claude/skills -name SKILL.md` = 10 |
+| 10 | Codex has 10 SKILL.md | integration-map L49 | Yes | `find profiles/codex/.agents/skills -name SKILL.md` = 10 |
+| 11 | Cursor has 10 SKILL.md | integration-map L63, module-map L114 | Yes | `find profiles/cursor/.cursor/skills -name SKILL.md` = 10 |
 | 12 | `ls skills/` = 10 entries (9 aid-* + README) | project-structure L244 | Yes | matches; entries: aid-correct, aid-deploy, aid-detail, aid-discover, aid-execute, aid-interview, aid-monitor, aid-plan, aid-specify, README.md |
-| 13 | claude-code/.claude/skills total files = 24 | module-map L64 | Yes | `find claude-code/.claude/skills -type f` = 24; 10 SKILL + 11 references + 2 scripts + 1 README |
-| 14 | codex/.agents/skills total files = 12 | module-map L97 | Yes | `find` = 12; 10 SKILL + 1 references/kb-hydration + 1 README |
-| 15 | cursor/.cursor/skills total files = 12 | module-map L114 | Yes | `find` = 12; 10 SKILL + 1 references/kb-hydration + 1 README |
+| 13 | profiles/claude-code/.claude/skills total files = 24 | module-map L64 | Yes | `find profiles/claude-code/.claude/skills -type f` = 24; 10 SKILL + 11 references + 2 scripts + 1 README |
+| 14 | profiles/codex/.agents/skills total files = 12 | module-map L97 | Yes | `find` = 12; 10 SKILL + 1 references/kb-hydration + 1 README |
+| 15 | profiles/cursor/.cursor/skills total files = 12 | module-map L114 | Yes | `find` = 12; 10 SKILL + 1 references/kb-hydration + 1 README |
 | 16 | `grep -nE "11 [Ss]kill" .aid/knowledge/*.md \| grep -v DISCOVERY-STATE` = 0 matches | cross-doc systemic check | Yes | confirms cycle-8 Q170 FIX held cleanly across all KB |
 | 17 | methodology/aid-methodology.md = 1,158 lines | architecture L169, module-map L32 | Yes | `wc -l` = 1158 |
 | 18 | setup.sh=161, setup.ps1=156, build-project-index.sh=368, grade.sh=141 | infrastructure, technology-stack | Yes | `wc -l` matches |
@@ -215,7 +215,7 @@ Web fetching deferred. Each vendor's local cross-reference (which directory in *
 - Impact: Medium
 - Status: Answered
 - Answer: Auto-resolution: document Codex .codex/ + .agents/ split rationale.
-- Applied to: api-contracts.md, integration-map.md, codex/README.md.
+- Applied to: api-contracts.md, integration-map.md, profiles/codex/README.md.
 
 ### Q10
 - Category: Release Process
@@ -380,7 +380,7 @@ Web fetching deferred. Each vendor's local cross-reference (which directory in *
 - Category: Infrastructure
 - Impact: High
 - Status: Answered
-- Answer: CONFIRMED BUG — promote to HIGH. Patch: add copy_dir codex/.agents to Codex branch in both setup.sh and setup.ps1.
+- Answer: CONFIRMED BUG — promote to HIGH. Patch: add copy_dir profiles/codex/.agents to Codex branch in both setup.sh and setup.ps1.
 - Applied to: infrastructure.md, tech-debt.md H6, host-tools-matrix.md.
 
 ### Q71
@@ -476,7 +476,7 @@ Web fetching deferred. Each vendor's local cross-reference (which directory in *
 - Impact: Medium
 - Status: Answered
 - Answer: Auto-resolution: add post-cycle reconcile pass to discovery-reviewer prompt.
-- Applied to: claude-code/.claude/agents/discovery-reviewer.md prompt.
+- Applied to: profiles/claude-code/.claude/agents/discovery-reviewer.md prompt.
 
 ### Q102
 - Category: KB Conventions
@@ -690,7 +690,7 @@ Web fetching deferred. Each vendor's local cross-reference (which directory in *
 - Impact: Low
 - Status: Answered
 - Context: coding-standards.md §2.3 L131 still said "Not re-read this pass" while §2.2 had been updated to VERIFIED.
-- Answer: Fixed in FIX cycle 6. §2.3 L131 updated to VERIFIED post-cycle-7 with direct read of cursor/.cursor/agents/architect.md:1-7. Cycle-8/9/10 verified.
+- Answer: Fixed in FIX cycle 6. §2.3 L131 updated to VERIFIED post-cycle-7 with direct read of profiles/cursor/.cursor/agents/architect.md:1-7. Cycle-8/9/10 verified.
 - Applied to: coding-standards.md §2.3 L131.
 
 ### Q152
@@ -741,6 +741,18 @@ Web fetching deferred. Each vendor's local cross-reference (which directory in *
 - Answer: Fixed in this turn. Expanded `architecture.md` Pattern 4 ("The Knowledge Base as gravitational center") with a new subsection **"Progressive disclosure — the 3-tier context-economy model"** that unifies the three already-documented mechanisms into one explicit design: Tier 1 INDEX.md (always loaded) → Tier 2 specific KB doc (on demand, fixed-shape navigation) → Tier 3 exact repo `path:line` (via citation, never bulk-loaded). No invented facts — pure synthesis of `architecture.md:291` + `coding-standards.md §4.4`. The `/aid-summarize` HTML summary gained a new Figure 3 ("RAG-by-convention — the 3-tier context economy") in §3 representing it.
 - Applied to: `.aid/knowledge/architecture.md` Pattern 4 (new "Progressive disclosure" subsection).
 
+## KB staleness found during /aid-interview cross-reference (2026-05-22)
+
+### Q181
+- Category: KB Staleness — abolished artifacts
+- Impact: High
+- Status: Answered
+- Context: The cross-reference validation of work-001-aid-lite (`/aid-interview` State 6, 2026-05-22) found that the Knowledge Base — generated 2026-05-21 and approved A+ the same day — references AID artifacts and templates that were **abolished after KB approval** by the subsequent methodology-correctness cleanup. Stale references to the non-existent `DETAIL.md`, `GAP.md`, `DELIVERY-{id}.md`, `REVIEW.md`, `TEST-REPORT.md`, `additional-info.md`, and the deleted `detail-template.md` / `delivery-template.md` / `review-template.md` / `test-report-template.md` / `correction-template.md` span 12 KB docs — including whole schema sections (`api-contracts.md` §`GAP.md` schema; `data-model.md` §2.6 `DETAIL.md`), artifact tables (`architecture.md`, `module-map.md`), glossary terms (`domain-glossary.md`: DETAIL.md, GAP.md, REVIEW.md, TEST-REPORT.md, DELIVERY), plus `feature-inventory.md`, `project-structure.md`, `coding-standards.md`, `technology-stack.md`, `test-landscape.md`, and the generated `project-index.md` and `knowledge-summary.html`. A downstream phase (e.g. `/aid-specify`) reading this KB would design against phantom artifacts.
+- Suggested: Re-run `/aid-discover` (a full `--reset` re-discovery is cleanest given the breadth) against the current post-cleanup codebase, then `/aid-summarize` to regenerate `knowledge-summary.html`. Current canonical AID artifact model to discover against: no `DETAIL.md` (task decomposition + execution graph live in `PLAN.md`); no `GAP.md` (KB/upstream gaps use Q&A entries in STATE files); no `REVIEW.md` / `TEST-REPORT.md` (review/test outcomes live in `task-NNN-STATE.md`); no `DELIVERY-{id}.md` (deliveries are sections in `PLAN.md`); no `additional-info.md` (consolidated into DISCOVERY-STATE `## Q&A`).
+- Question: Re-discover the KB now (recommended — before `/aid-specify` runs for work-001-aid-lite) or defer?
+- Answer: Resolved 2026-05-22 by a targeted surgical re-sync — not `--reset` (that would have destroyed the A+ KB and its 181-entry Q&A / 24-cycle history to fix artifact references). 12 KB docs were corrected to the current artifact model (no `DETAIL.md` / `GAP.md` / `REVIEW.md` / `TEST-REPORT.md` / `DELIVERY-{id}.md` / `additional-info.md`; `task-NNN.md` follows the 6-section template; `PLAN.md` holds the execution graph; review/test outcomes live in `task-NNN-STATE.md`). `project-index.md` regenerated via `build-project-index.sh`. Verified by re-grep (only intentional negations and this file's own history remain) and spot-reads of the schema rewrites. `knowledge-summary.html` was NOT regenerated — it is generated output; run `/aid-summarize` to refresh it.
+- Applied to: api-contracts.md, architecture.md, data-model.md, domain-glossary.md, feature-inventory.md, module-map.md, project-structure.md, technology-stack.md, test-landscape.md, coding-standards.md, tech-debt.md, project-index.md.
+
 ## Review History
 
 | # | Date | Grade | Source | Notes |
@@ -769,6 +781,7 @@ Web fetching deferred. Each vendor's local cross-reference (which directory in *
 | 22 | 2026-05-21 | C+ (pending re-review) | aid-discover (Q&A + FIX cycle 8) | Q170 auto-answered. FIX: corrected the 14 "11 skills" sites + 4 module-map subfile breakdowns + project-structure L244 entry count, all to disk-verified canonical "10 SKILL.md per install tree" (per Q16). Bulk sed-replace + 5 targeted Edits. Disk re-verification all green. |
 | 23 | 2026-05-21 | **A+** | aid-discover (REVIEW cycle 10 — THIS REVIEW) | **0 CRITICAL, 0 HIGH, 0 MEDIUM, 0 LOW, ~21 MINOR (cosmetic only).** 25 spot-checks (all verified, 0 drift). 0 new Q-entries. verify-kb-claims.sh v8 foreground run: 896/896 valid citations, 0 README drifts, 0 spot-check drifts. **All cycle-9 Q170 FIX sites verified held cleanly on disk** (14 narrative sites + 4 module-map subfile breakdowns + project-structure L244 entry count). `grep -nE "11 [Ss]kill" .aid/knowledge/*.md \| grep -v DISCOVERY-STATE` returns 0 matches. Cross-doc consistency: complete. **Strict rubric per templates/grading-rubric.md: worst severity = MINOR (cosmetic only), zero count-level issues = A+.** **APPROVED for next AID phase (Interview).** KB meets the A+ minimum-grade bar set in project metadata. Skills-count load-bearing fact is now consistent at "10 SKILL.md per install tree" across all 19 KB docs. Downstream skills (aid-interview, aid-specify, aid-plan) will read consistent inputs. Script verification provides a regression-detection floor for future drift. |
 | 24 | 2026-05-21 | A+ (USER APPROVED) | aid-discover (APPROVAL) | User explicitly approved the KB for the next AID phase (Interview) via AskUserQuestion. `**User Approved:**` flipped to `yes`. State machine transitions to DONE. KB is ready for downstream phases (`/aid-interview`, `/aid-specify`, `/aid-plan`, etc.). |
+| 25 | 2026-05-22 | A+ (re-sync) | /aid-interview (cross-reference) | Targeted re-sync after the methodology-correctness cleanup abolished DETAIL.md / GAP.md / REVIEW.md / TEST-REPORT.md / correction-template and the delivery/detail/review/test-report templates. 12 KB docs corrected to the current artifact model; project-index.md regenerated. Surgical correction — A+ content and the full Q&A history preserved (no --reset). See Q181. knowledge-summary.html pending a /aid-summarize refresh. |
 
 ## Summarization History
 

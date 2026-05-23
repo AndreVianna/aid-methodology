@@ -1,0 +1,64 @@
+# Profile: Claude Code (Anthropic Claude Code)
+# Encodes the Claude Code host tool's install conventions.
+# Consumed by the render scripts (tasks 019-021) to emit the profiles/claude-code/.claude/ tree.
+
+[layout]
+output_root    = "profiles/claude-code/.claude"
+agents_dir     = "agents"
+skills_dir     = "skills"
+templates_dir  = "templates"
+# project_context_file is installed at the repo root, not inside output_root
+project_context_file = "CLAUDE.md"
+
+[agent]
+# Agent files are Markdown with YAML frontmatter
+format = "markdown"
+
+[agent.frontmatter]
+# Required fields (all agents must have these)
+required = ["name", "description", "tools", "model"]
+# Optional fields (emitted only when present on the canonical agent)
+optional = ["permissionMode", "background"]
+# Claude Code-specific optional fields (not present in canonical frontmatter;
+# the renderer injects these from the profile when needed)
+claude_code_optional = ["context", "agent"]
+
+[skill]
+# Skills externalize references into references/ subdirectories (Decision F)
+decomposition = "references"
+
+[skill.frontmatter]
+# Required fields
+required = ["name", "description", "allowed-tools"]
+# Optional fields
+optional = ["argument-hint"]
+# Claude Code-specific optional fields (injected by renderer per-skill)
+claude_code_optional = ["context", "agent"]
+
+[model_tiers]
+large  = "opus"
+medium = "sonnet"
+small  = "haiku"
+
+[tool_names]
+# Claude Code uses the abstract tool names directly — no remapping needed.
+# Identity map: all abstract names pass through unchanged.
+# (Bash stays Bash, Read stays Read, etc.)
+
+[filename_map]
+# Per-tool filename substitutions for canonical placeholders.
+# The renderer replaces {project_context_file} → CLAUDE.md, etc.
+project_context_file  = "CLAUDE.md"
+reviewer_output_file  = "DISCOVERY-STATE.md"
+open_questions_file   = "additional-info.md"
+
+[extras]
+# Claude Code has no extra files beyond agents, skills, and templates.
+# (No settings.json shipped by AID — permissions are inline in CLAUDE.md.)
+
+[capabilities]
+# Verified against Claude Code docs (external-sources.md Row 1).
+hooks                  = true   # Claude Code supports pre/post hooks
+skill_chaining         = true   # Skills can invoke other skills
+background_execution   = true   # background: true agents supported
+stop_hook_autocontinue = true   # Stop hook can auto-continue execution
