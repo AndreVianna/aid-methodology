@@ -142,6 +142,7 @@ fi
 if [[ "${selected[2]}" -eq 1 ]]; then
   echo "--- Codex ---"
   copy_dir "$SCRIPT_DIR/codex/.codex" "$TARGET/.codex"
+  copy_dir "$SCRIPT_DIR/codex/.agents" "$TARGET/.agents"
   copy_file "$SCRIPT_DIR/codex/AGENTS.md" "$TARGET/AGENTS.md"
 fi
 

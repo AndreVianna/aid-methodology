@@ -137,6 +137,7 @@ if ($selected[1]) {
 if ($selected[2]) {
     Write-Host "--- Codex ---"
     Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "codex\.codex") -DstDir (Join-Path $Target ".codex")
+    Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "codex\.agents") -DstDir (Join-Path $Target ".agents")
     Copy-Item-Safe -Src (Join-Path $ScriptDir "codex\AGENTS.md") -Dst (Join-Path $Target "AGENTS.md")
 }
 
