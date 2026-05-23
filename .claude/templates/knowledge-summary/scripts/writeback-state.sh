@@ -3,24 +3,58 @@
 # the consolidated Discovery area state file (.aid/knowledge/STATE.md, per FR2).
 # Atomic via a sentinel lock file. Pre-FR2 this wrote to DISCOVERY-STATE.md.
 #
-# Usage: writeback-state.sh GRADE PROFILE MERMAID_VERSION OUTPUT_FILENAME OUTPUT_SIZE NOTES
-# Exit 0 on success, non-zero on failure.
+# Usage:
+#   writeback-state.sh GRADE PROFILE MERMAID_VERSION OUTPUT_FILENAME OUTPUT_SIZE NOTES
+#   writeback-state.sh -h | --help
+#
+#   GRADE  must match [A-F][+-]?  (e.g. A, A-, B+, C, F)
+#
+# Exit codes:
+#   0 success
+#   1 STATE.md missing
+#   2 lock contention
+#   3 writeback produced empty / unverifiable output
+#   4 invalid GRADE argument
+#   5 missing required argument
 
 set -u
 
-GRADE="${1:-?}"
+usage() {
+    sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+case "${1:-}" in
+    -h|--help)
+        usage
+        exit 0
+        ;;
+    "")
+        echo "ERROR: writeback-state.sh: GRADE argument required." >&2
+        usage >&2
+        exit 5
+        ;;
+esac
+
+GRADE="$1"
 PROFILE="${2:-?}"
 MERMAID="${3:-?}"
 OUTPUT="${4:-knowledge-summary.html}"
 SIZE="${5:-?}"
 NOTES="${6:-Initial generation}"
 
+# Validate GRADE - letter A-F with optional + or - modifier.
+# Rejects garbage like --help, JSON fragments, etc.
+if ! [[ "$GRADE" =~ ^[A-F][+-]?$ ]]; then
+    echo "ERROR: writeback-state.sh: invalid GRADE '$GRADE' - must match ^[A-F][+-]?\$ (e.g. A, A-, B+, F)." >&2
+    exit 4
+fi
+
 KB_DIR=".aid/knowledge"
 STATE="$KB_DIR/STATE.md"
 LOCK="$KB_DIR/.state.lock"
 
 if [ ! -f "$STATE" ]; then
-    echo "❌ $STATE does not exist." >&2
+    echo "ERROR: $STATE does not exist." >&2
     exit 1
 fi
 
@@ -29,14 +63,14 @@ ATTEMPTS=0
 while [ -e "$LOCK" ]; do
     ATTEMPTS=$((ATTEMPTS + 1))
     if [ "$ATTEMPTS" -ge 10 ]; then
-        echo "⚠️  $STATE is locked by another AID process. Try again shortly." >&2
+        echo "WARN: $STATE is locked by another AID process. Try again shortly." >&2
         exit 2
     fi
     sleep 0.5
 done
-# Atomic create — fails if another process beat us
+# Atomic create - fails if another process beat us
 if ! ( set -o noclobber; echo $$ > "$LOCK" ) 2>/dev/null; then
-    echo "⚠️  Failed to acquire lock on $STATE." >&2
+    echo "WARN: Failed to acquire lock on $STATE." >&2
     exit 2
 fi
 
@@ -64,8 +98,8 @@ fi
 NEW_ROW="| $NEXT_NUM | $DATE | $GRADE | $PROFILE | $MERMAID | $OUTPUT ($SIZE) | $NOTES |"
 
 # Update file using a Python-free approach. Two cases:
-# 1. ## Summarization History exists → append row to its table
-# 2. Doesn't exist → insert new section after ## Review History
+# 1. ## Summarization History exists -> append row to its table
+# 2. Doesn't exist -> insert new section after ## Review History
 
 TMP=$(mktemp)
 if grep -q '^## Summarization History' "$STATE"; then
@@ -75,7 +109,7 @@ if grep -q '^## Summarization History' "$STATE"; then
         BEGIN { in_section=0; printed=0 }
         /^## Summarization History/ { in_section=1; print; next }
         in_section && /^## / {
-            # Reached next section — print new_row before it (if not printed).
+            # Reached next section - print new_row before it (if not printed).
             if (!printed) { print new_row; print ""; printed=1 }
             in_section=0
             print
@@ -121,19 +155,19 @@ else
 fi
 
 if [ ! -s "$TMP" ]; then
-    echo "❌ Writeback produced empty output. Aborting (state preserved)." >&2
+    echo "ERROR: Writeback produced empty output. Aborting (state preserved)." >&2
     rm -f "$TMP"
     exit 3
 fi
 
 # Sanity check: new row must appear in output
 if ! grep -qF "$NEW_ROW" "$TMP"; then
-    echo "❌ New row was not written to output. Aborting." >&2
+    echo "ERROR: New row was not written to output. Aborting." >&2
     rm -f "$TMP"
     exit 3
 fi
 
 mv "$TMP" "$STATE"
-echo "✓ $STATE updated:"
-echo "    ## Summarization History → entry #$NEXT_NUM added ($DATE, grade $GRADE)"
+echo "OK: $STATE updated:"
+echo "    ## Summarization History -> entry #$NEXT_NUM added ($DATE, grade $GRADE)"
 exit 0
