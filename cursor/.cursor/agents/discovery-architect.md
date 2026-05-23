@@ -1,7 +1,7 @@
 ---
 name: discovery-architect
 description: Analyzes codebase structure, architectural patterns, technology stack, and UI/frontend architecture. Produces architecture.md, technology-stack.md, and ui-architecture.md for the Knowledge Base.
-tools: Read, Glob, Grep, Bash, Write
+tools: Read, Glob, Grep, Terminal, Write
 model: opus
 permissionMode: bypassPermissions
 background: true

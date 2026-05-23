@@ -6,7 +6,6 @@ description: >
   KB, grade, and ask targeted questions to resolve gaps and contradictions.
   Final step decomposes functional requirements into discrete feature files.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
-agent: interviewer
 argument-hint: "[work-001] resume work  [--reset work-001] clear and restart  [--features work-001] re-run feature decomposition"
 ---
 
@@ -473,5 +472,3 @@ When a downstream phase (e.g., `/aid-specify`) needs clarification on requiremen
 **Suggested:** {answer if inferrable, or "—"}
 **Status:** Pending
 ```
-
-

@@ -5,8 +5,6 @@ description: >
   on the previous. Strategy, not tactics. Use when feature SPECs are complete and
   you need a delivery roadmap.
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
-context: fork
-agent: architect
 argument-hint: "work-001 (required if multiple works)  [--reset] clear PLAN.md and restart"
 ---
 
@@ -73,6 +71,10 @@ Each deliverable follows the same cycle:
 3. No features → **STOP.** "Run `/aid-interview` then `/aid-specify`."
 4. Some not Ready → warn, offer to plan with completed only or wait
 
+### Check 3: Verify Not in Plan Mode
+
+- ✅ `Default` or `Auto-accept edits` → Proceed.
+- ❌ `Plan mode` → **STOP.**
 
 ### Check 4: Detect State
 

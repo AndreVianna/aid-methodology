@@ -6,7 +6,6 @@ description: >
   technical solutions, and builds the spec collaboratively with the developer.
   Writes to SPEC.md in the feature folder.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
-agent: architect
 argument-hint: "work-001/feature-001 (required)  [--reset] clear technical spec for this feature"
 ---
 

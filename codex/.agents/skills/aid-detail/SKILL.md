@@ -6,8 +6,6 @@ description: >
   DOCUMENT, MIGRATE, REFACTOR, CONFIGURE) from SPEC signals. One type per task.
   Builds execution graph per delivery with explicit dependencies and parallelism.
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
-context: fork
-agent: architect
 argument-hint: "work-001 (required if multiple works)  [--reset] clear tasks/"
 ---
 
@@ -73,6 +71,10 @@ Each deliverable follows the same cycle:
 1. Check for `.aid/{work}/PLAN.md`
 2. If missing → **STOP.** "No PLAN.md found. Run `/aid-plan` first."
 
+### Check 3: Verify Not in Plan Mode
+
+- ✅ `Default` or `Auto-accept edits` → Proceed.
+- ❌ `Plan mode` → **STOP.**
 
 ### Check 4: Detect State
 

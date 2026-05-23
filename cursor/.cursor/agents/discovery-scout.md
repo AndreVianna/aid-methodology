@@ -1,7 +1,7 @@
 ---
 name: discovery-scout
 description: Maps deployment infrastructure, CI/CD pipelines, and identifies gaps that cannot be determined from code alone. Produces infrastructure.md and project-structure.md for the Knowledge Base.
-tools: Read, Glob, Grep, Bash, Write
+tools: Read, Glob, Grep, Terminal, Write
 model: opus
 permissionMode: bypassPermissions
 background: true

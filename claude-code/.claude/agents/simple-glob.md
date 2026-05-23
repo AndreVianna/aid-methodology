@@ -1,6 +1,6 @@
 ---
 name: simple-glob
-description: "INTERNAL UTILITY (sub-agent only — do NOT invoke from a skill). Enumerates files matching glob patterns and returns a sorted markdown table with path, size, and mtime. Called when full agents need an authoritative file inventory before deciding where to read."
+description: INTERNAL UTILITY (sub-agent only — do NOT invoke from a skill). Enumerates files matching glob patterns and returns a sorted markdown table with path, size, and mtime. Called when full agents need an authoritative file inventory before deciding where to read.
 tools: Glob, Bash
 model: haiku
 ---

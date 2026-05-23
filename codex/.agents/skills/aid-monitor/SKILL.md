@@ -6,8 +6,6 @@ description: >
   for bugs, and route to aid-execute (bugs) or aid-discover (change requests).
   Per-work scope. Use post-deployment, on schedule, or on-demand.
 allowed-tools: Read, Glob, Grep, Bash, Write
-context: fork
-agent: orchestrator
 ---
 
 # Observe, Classify, Act

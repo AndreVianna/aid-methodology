@@ -31,7 +31,7 @@
 | feature-inventory.md | {grade} | {status} | {issues} |
 | INDEX.md | {grade} | {status} | {issues} |
 | README.md | {grade} | {status} | {issues} |
-| CLAUDE.md | {grade} | {status} | {issues} |
+| {project_context_file} | {grade} | {status} | {issues} |
 
 ## Issues Found
 

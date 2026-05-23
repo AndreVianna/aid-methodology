@@ -70,6 +70,6 @@ evaluate the KB purely on what's on disk — as if a stranger wrote it.
 > categorize by area, and assign impact levels (High/Medium/Low). Only add questions for things
 > genuinely needing human input — if you can grep the answer, fix it in the review instead.
 >
-> Write the review results (grades, issues, spot-checks) to .aid/knowledge/DISCOVERY-STATE.md,
+> Write the review results (grades, issues, spot-checks) to DISCOVERY-STATE.md,
 > preserving the existing `## Q&A` section and adding to it. Update `**Grade:**` from `Pending`
 > to the actual grade.

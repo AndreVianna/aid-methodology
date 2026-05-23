@@ -3,9 +3,9 @@ name: aid-init
 description: >
   Initialize an AID project. Asks greenfield or brownfield, collects project metadata,
   external documentation paths, and scaffolds the .aid/ directory structure.
-  Sets up CLAUDE.md with placeholders. Run once at project start — before
+  Sets up {project_context_file} with placeholders. Run once at project start — before
   aid-discover (brownfield) or aid-interview (greenfield).
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit
+allowed-tools: Read, Glob, Grep, Terminal, Write, Edit
 argument-hint: "[--reset] clear existing .aid/ and re-initialize"
 ---
 
@@ -19,7 +19,7 @@ workspace, and determines the workflow path. Run this once before any other AID 
 **Workspace structure:**
 ```
 {ProjectFolder}/
-  CLAUDE.md
+  AGENTS.md
   .aid/
     knowledge/
       DISCOVERY-STATE.md
@@ -321,9 +321,9 @@ Copy the template from `../../templates/discovery-state.md` to
 
 ---
 
-## Step 4: Set Up CLAUDE.md
+## Step 4: Set Up AGENTS.md
 
-Check if `CLAUDE.md` exists in the project root.
+Check if `AGENTS.md` exists in the project root.
 
 - **If it doesn't exist:** Create it with the AID template:
 
@@ -363,7 +363,7 @@ Read `.aid/knowledge/INDEX.md` to find what you need.
 - **If it already exists:** Do NOT overwrite. Check for `<!-- AID-DISCOVER -->` placeholders.
   If none exist, append an "AID Workspace" section at the end pointing to
   `.aid/knowledge/INDEX.md`.
-  Print: `[Init] CLAUDE.md exists — appended workspace reference.`
+  Print: `[Init] AGENTS.md exists — appended workspace reference.`
 
 ### .gitignore
 
@@ -389,7 +389,7 @@ scaffolded once). Currently:
 ### `knowledge-summary/` for `/aid-summarize`
 
 If the source tree exists at `../../templates/knowledge-summary/` (relative to this
-skill — i.e., `.cursor/templates/knowledge-summary/`), copy the entire tree into the
+skill — i.e., `.claude/templates/knowledge-summary/`), copy the entire tree into the
 project at `.aid/templates/knowledge-summary/`:
 
 ```bash
@@ -430,7 +430,7 @@ Print a summary of everything created:
 
   Created:
     knowledge/    (16 KB documents + README + INDEX + DISCOVERY-STATE)
-    CLAUDE.md                   {created / updated / unchanged}
+    AGENTS.md                   {created / updated / unchanged}
 
   AID workspace (.aid/):        {tracked by Git | local only — added to .gitignore}
 
@@ -445,7 +445,7 @@ Print a summary of everything created:
 
 - **Running init twice on the same project** does not overwrite documents that have real
   content (Status ≠ "Pending"). Only resets documents still at "Pending" status.
-- **CLAUDE.md** is never overwritten if it exists — only appended to.
+- **AGENTS.md** is never overwritten if it exists — only appended to.
 - **DISCOVERY-STATE.md** is recreated (it's metadata, not content).
 - **`--reset`** is the nuclear option — deletes everything and starts fresh.
 
@@ -458,6 +458,6 @@ Print a summary of everything created:
 - [ ] INDEX.md has all 16 documents listed
 - [ ] DISCOVERY-STATE.md has correct minimum grade and project type
 - [ ] External paths (if any) verified accessible and recorded
-- [ ] CLAUDE.md has workspace reference and AID placeholders (created or appended)
+- [ ] AGENTS.md has workspace reference and AID placeholders (created or appended)
 - [ ] `.gitignore` matches the Q6 choice (`.aid/` entry present only if the user chose [2], local-only)
-- [ ] No files outside .aid/, CLAUDE.md, .gitignore were modified
+- [ ] No files outside .aid/, AGENTS.md, .gitignore were modified

@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: Adversarial quality evaluator. Produces a structured issue list with severity and source tags. Does NOT fix anything; does NOT compute the grade. Grading is computed deterministically by `templates/scripts/grade.sh` from the issue list.
-tools: Read, Glob, Grep, Bash
+tools: Read, Glob, Grep, Terminal
 model: opus
 ---
 

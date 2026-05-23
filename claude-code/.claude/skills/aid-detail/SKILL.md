@@ -6,8 +6,6 @@ description: >
   DOCUMENT, MIGRATE, REFACTOR, CONFIGURE) from SPEC signals. One type per task.
   Builds execution graph per delivery with explicit dependencies and parallelism.
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
-context: fork
-agent: architect
 argument-hint: "work-001 (required if multiple works)  [--reset] clear tasks/"
 ---
 

@@ -5,8 +5,6 @@ description: >
   on the previous. Strategy, not tactics. Use when feature SPECs are complete and
   you need a delivery roadmap.
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
-context: fork
-agent: architect
 argument-hint: "work-001 (required if multiple works)  [--reset] clear PLAN.md and restart"
 ---
 

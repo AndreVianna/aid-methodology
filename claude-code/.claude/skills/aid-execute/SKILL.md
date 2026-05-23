@@ -6,8 +6,6 @@ description: >
   State machine: EXECUTE → REVIEW → FIX → back to REVIEW → DONE when grade ≥ minimum.
   Branch per delivery for isolation.
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
-context: fork
-agent: developer
 argument-hint: "task-001 (required)  [work-001 if multiple works]"
 ---
 

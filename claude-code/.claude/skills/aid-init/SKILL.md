@@ -3,7 +3,7 @@ name: aid-init
 description: >
   Initialize an AID project. Asks greenfield or brownfield, collects project metadata,
   external documentation paths, and scaffolds the .aid/ directory structure.
-  Sets up CLAUDE.md with placeholders. Run once at project start — before
+  Sets up {project_context_file} with placeholders. Run once at project start — before
   aid-discover (brownfield) or aid-interview (greenfield).
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 argument-hint: "[--reset] clear existing .aid/ and re-initialize"

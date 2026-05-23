@@ -1,7 +1,7 @@
 ---
 name: simple-extractor
 description: "INTERNAL UTILITY (sub-agent only — do NOT invoke from a skill). Mechanical extraction of structured items from source files. Returns markdown tables/lists with file path and line number for every item. Called by Researcher, discovery-*, and other full agents when they need pre-extracted facts."
-tools: Read, Glob, Grep, Bash
+tools: Read, Glob, Grep, Terminal
 model: haiku
 ---
 

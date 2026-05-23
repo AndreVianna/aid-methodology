@@ -5,9 +5,7 @@ description: >
   The ultimate breakdown. Detects task types (RESEARCH, DESIGN, IMPLEMENT, TEST,
   DOCUMENT, MIGRATE, REFACTOR, CONFIGURE) from SPEC signals. One type per task.
   Builds execution graph per delivery with explicit dependencies and parallelism.
-allowed-tools: Read, Glob, Grep, Write, Edit, Bash
-context: fork
-agent: architect
+allowed-tools: Read, Glob, Grep, Write, Edit, Terminal
 argument-hint: "work-001 (required if multiple works)  [--reset] clear tasks/"
 ---
 

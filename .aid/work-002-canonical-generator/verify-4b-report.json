@@ -1,0 +1,73 @@
+{
+  "skipped_count": 8,
+  "checked_count": 0,
+  "warning_count": 0,
+  "total_urls": 8,
+  "results": [
+    {
+      "num": "1",
+      "source": "Anthropic \u2014 Claude Code",
+      "url": "https://docs.claude.com/en/docs/claude-code/overview",
+      "status": "skipped",
+      "warnings": [],
+      "skip_reason": "marked as pending fetch in external-sources.md"
+    },
+    {
+      "num": "2",
+      "source": "Anthropic \u2014 Claude Agent SDK",
+      "url": "https://docs.claude.com/en/api/agent-sdk/overview",
+      "status": "skipped",
+      "warnings": [],
+      "skip_reason": "marked as pending fetch in external-sources.md"
+    },
+    {
+      "num": "3",
+      "source": "OpenAI \u2014 Codex CLI",
+      "url": "https://github.com/openai/codex",
+      "status": "skipped",
+      "warnings": [],
+      "skip_reason": "marked as pending fetch in external-sources.md"
+    },
+    {
+      "num": "4",
+      "source": "OpenAI \u2014 Codex docs",
+      "url": "https://developers.openai.com/codex/",
+      "status": "skipped",
+      "warnings": [],
+      "skip_reason": "marked as pending fetch in external-sources.md"
+    },
+    {
+      "num": "5",
+      "source": "Cursor \u2014 Rules & Agents",
+      "url": "https://docs.cursor.com/context/rules-for-ai",
+      "status": "skipped",
+      "warnings": [],
+      "skip_reason": "marked as pending fetch in external-sources.md"
+    },
+    {
+      "num": "6",
+      "source": "Cursor \u2014 MCP & Hooks",
+      "url": "https://docs.cursor.com/context/model-context-protocol",
+      "status": "skipped",
+      "warnings": [],
+      "skip_reason": "marked as pending fetch in external-sources.md"
+    },
+    {
+      "num": "7",
+      "source": "GitHub Copilot CLI",
+      "url": "https://docs.github.com/en/copilot",
+      "status": "skipped",
+      "warnings": [],
+      "skip_reason": "marked as pending fetch in external-sources.md"
+    },
+    {
+      "num": "8",
+      "source": "Google Antigravity",
+      "url": "https://antigravity.google/docs",
+      "status": "skipped",
+      "warnings": [],
+      "skip_reason": "marked as pending fetch in external-sources.md"
+    }
+  ],
+  "note": "VERIFY-4b is advisory only \u2014 never blocks the run. 8 URL(s) skipped (pending fetch or unreachable). Once external-sources.md URLs are fetched, conformance checks will activate."
+}

@@ -93,7 +93,7 @@ verbatim if it follows our conventions; otherwise re-author.
 ### Step 5 — Write `part1.html`
 
 Start from `references/html-skeleton.html`. Replace placeholders:
-- `{{LANG}}` — `en` (or read from CLAUDE.md if specified).
+- `{{LANG}}` — `en` (or read from `AGENTS.md` if specified).
 - `{{PROJECT_NAME}}` — from DISCOVERY-STATE.md or build files.
 - `{{INLINE_CSS}}` — full content of `references/component-css.css`.
 - `{{BODY_CONTENT}}` — the section content you've written (Step 6 below).

@@ -6,8 +6,6 @@ description: >
   generates release notes, and updates artifact statuses. Use when deliveries
   are complete and ready to ship.
 allowed-tools: Read, Glob, Grep, Bash, Write
-context: fork
-agent: operator
 ---
 
 # Package & Ship

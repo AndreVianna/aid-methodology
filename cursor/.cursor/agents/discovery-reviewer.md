@@ -1,10 +1,7 @@
 ---
 name: discovery-reviewer
-description: >
-  Reviews and grades Knowledge Base documents produced by Discovery.
-  Cross-references claims against actual source code. Produces DISCOVERY-STATE.md.
-  Also adds new questions to DISCOVERY-STATE.md when review findings reveal information gaps.
-tools: Read, Glob, Grep, Bash, Write
+description: "Reviews and grades Knowledge Base documents produced by Discovery. Cross-references claims against actual source code. Produces {reviewer_output_file}. Also adds new questions to {reviewer_output_file} when review findings reveal information gaps."
+tools: Read, Glob, Grep, Terminal, Write
 model: opus
 permissionMode: bypassPermissions
 background: true
@@ -70,7 +67,7 @@ Read ALL of these:
 1. All documents in `.aid/knowledge/` (16 primary KB docs)
 2. `.aid/knowledge/INDEX.md`
 3. `.aid/knowledge/README.md`
-4. `CLAUDE.md` (project root)
+4. `AGENTS.md` (project root)
 
 ## How You Review
 
@@ -276,7 +273,7 @@ Must have: accurate 2-3 line summary per document. Summaries must reflect actual
 Must have: completeness table, revision history.
 **Red flags**: Missing gap acknowledgment.
 
-### CLAUDE.md
+### AGENTS.md
 Must have: accurate project description, project overview, real build/test commands,
 conventions from code, architecture summary, KB reference. No remaining `(pending discovery)` placeholders.
 **Red flags**: Placeholder text still present. Commands that wouldn't actually work. Missing key gotchas for agents.
@@ -288,7 +285,7 @@ These 4 documents are derived from the 16 primary KB docs. **ALWAYS verify them 
 1. **DISCOVERY-STATE.md** — Are all Pending questions still genuinely unanswerable from code? Did any primary doc already resolve one? A question marked Pending when the answer is in the codebase = [MEDIUM]. Are impact levels reasonable? Is the Q&A format correct (ID, category, impact, status, context, suggested)?
 2. **INDEX.md** — Does every summary match the actual document content? A stale summary (e.g., says "versions TBD" when they've been resolved) = [HIGH].
 3. **README.md** — Does the completeness table accurately reflect each document's status and gaps? A "✅ Complete" on a doc with known gaps = [HIGH].
-4. **CLAUDE.md** — Do build commands, conventions, architecture, and project overview match what the primary docs say? Wrong or outdated commands = [HIGH]. Stale or contradictory content = [MEDIUM].
+4. **AGENTS.md** — Do build commands, conventions, architecture, and project overview match what the primary docs say? Wrong or outdated commands = [HIGH]. Stale or contradictory content = [MEDIUM].
 
 ## Cross-Cutting Checks
 
@@ -337,7 +334,7 @@ Write the complete review to `.aid/knowledge/DISCOVERY-STATE.md` using the templ
 | DISCOVERY-STATE.md | {grade} | {status} | {issues} |
 | INDEX.md | {grade} | {status} | {issues} |
 | README.md | {grade} | {status} | {issues} |
-| CLAUDE.md | {grade} | {status} | {issues} |
+| AGENTS.md | {grade} | {status} | {issues} |
 
 ## Issues Found
 
