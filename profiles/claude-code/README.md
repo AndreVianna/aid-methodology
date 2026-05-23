@@ -53,7 +53,7 @@ This gives you:
 | discovery-integrator | `.claude/agents/discovery-integrator.md` | opus | api-contracts.md, integration-map.md, domain-glossary.md |
 | discovery-quality | `.claude/agents/discovery-quality.md` | opus | test-landscape.md, security-model.md, tech-debt.md |
 | discovery-scout | `.claude/agents/discovery-scout.md` | opus | project-structure.md, external-sources.md |
-| discovery-reviewer | `.claude/agents/discovery-reviewer.md` | opus | DISCOVERY-STATE.md (KB grading) |
+| discovery-reviewer | `.claude/agents/discovery-reviewer.md` | opus | `.aid/knowledge/STATE.md` (KB grading; per FR2) |
 
 ### Utility Sub-Agents (called by Core/Specialist agents)
 

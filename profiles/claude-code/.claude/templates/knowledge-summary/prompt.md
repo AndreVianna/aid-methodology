@@ -9,9 +9,12 @@ preflight, etc.); this file describes the actual content generation work.
 ## Inputs
 
 - **`.aid/knowledge/`** — the populated, approved KB.
-- **`SUMMARY-STATE.md`** — has the chosen profile, theme, minimum grade.
-- **`DISCOVERY-STATE.md`** — has the project's overall grade, project type,
-  external doc paths, Review History.
+- **`.aid/knowledge/STATE.md`** (consolidated per FR2) — has both:
+  - `## Knowledge Summary Status` block: chosen profile, theme, minimum grade
+    (pre-FR2 this was `SUMMARY-STATE.md`).
+  - `## KB Documents Status` block (and `## Review History`): the project's
+    overall grade, project type, external doc paths, review history
+    (pre-FR2 this was `DISCOVERY-STATE.md`).
 - **`references/section-templates/{profile}.md`** — the section list to render.
 - **`references/component-css.css`** — the styles to inline.
 - **`references/lightbox.js`** — the script to inline.
@@ -72,9 +75,10 @@ triple. You'll cite these in the HTML.
 
 ### Step 3 — Read the project's identity
 
-Open `DISCOVERY-STATE.md` for project name, type, version, Review History.
-If the project root has a `pom.xml`, `package.json`, `Cargo.toml`, etc., read
-the version + name from there. Cross-check against KB.
+Open `.aid/knowledge/STATE.md` `## KB Documents Status` (and `## Review History`)
+for project name, type, version, review history (per FR2; pre-FR2 this was
+`DISCOVERY-STATE.md`). If the project root has a `pom.xml`, `package.json`,
+`Cargo.toml`, etc., read the version + name from there. Cross-check against KB.
 
 ### Step 4 — Plan the diagrams
 
@@ -94,11 +98,11 @@ verbatim if it follows our conventions; otherwise re-author.
 
 Start from `references/html-skeleton.html`. Replace placeholders:
 - `{{LANG}}` — `en` (or read from `CLAUDE.md` if specified).
-- `{{PROJECT_NAME}}` — from DISCOVERY-STATE.md or build files.
+- `{{PROJECT_NAME}}` — from `.aid/knowledge/STATE.md` `## KB Documents Status` or build files.
 - `{{INLINE_CSS}}` — full content of `references/component-css.css`.
 - `{{BODY_CONTENT}}` — the section content you've written (Step 6 below).
 - `{{GENERATION_DATE}}` — today's date in `YYYY-MM-DD`.
-- `{{MERMAID_VERSION}}` — fetched version from SUMMARY-STATE.md.
+- `{{MERMAID_VERSION}}` — fetched version from `.aid/knowledge/STATE.md` `## Knowledge Summary Status`.
 - `{{INLINE_LIGHTBOX_JS}}` — full content of `references/lightbox.js`.
 - `{{MERMAID_VERSION_COMMENT}}` — `Mermaid v{ver} bundled inline below`.
 
@@ -226,9 +230,10 @@ Output: `.aid/knowledge/knowledge-summary.html`.
 
 Remove temp `part1.html` and `part2.html`.
 
-### Step 10 — Update SUMMARY-STATE.md
+### Step 10 — Update `.aid/knowledge/STATE.md` `## Knowledge Summary Status`
 
 Set `**Output Size:**` to actual file size, `**Last Run:**` to now.
+(Per FR2 — pre-FR2 this lived in `SUMMARY-STATE.md`.)
 
 Transition to VALIDATE.
 

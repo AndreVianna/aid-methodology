@@ -13,7 +13,7 @@ catalog replaces "API surface".
 
 | # | Title | Featured? | KB Sources |
 |---|-------|-----------|------------|
-| 1 | At a Glance | | DISCOVERY-STATE.md, project-structure.md, technology-stack.md |
+| 1 | At a Glance | | STATE.md, project-structure.md, technology-stack.md |
 | 2 | Architecture | ★ | architecture.md |
 | 3 | Subcommand Catalog | ★ | api-contracts.md |
 | 4 | Internal Modules | | module-map.md |

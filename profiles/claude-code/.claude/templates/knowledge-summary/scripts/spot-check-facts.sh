@@ -148,9 +148,9 @@ while IFS= read -r claim; do
     MATCH=""
     MATCH=$(grep -rniE "$PATTERN" "$KB_DIR"/*.md \
         --include="*.md" \
-        --exclude="DISCOVERY-STATE.md" \
-        --exclude="SUMMARY-STATE.md" \
+        --exclude="STATE.md" \
         --exclude="README.md" \
+        --exclude="INDEX.md" \
         2>/dev/null | head -1 || true)
 
     if [ -n "$MATCH" ]; then

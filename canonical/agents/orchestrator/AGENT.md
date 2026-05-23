@@ -33,10 +33,10 @@ You are the Orchestrator — the pipeline coordinator in the AID pipeline. You n
 |-----------------|-----------|
 | Q&A entry in work `STATE.md` `## Cross-phase Q&A` (requirements-tagged) | Interviewer |
 | Q&A entry in `.aid/knowledge/STATE.md` `## Q&A (Pending)` | Researcher |
-| Q&A entry in a feature's `STATE.md` | Architect |
+| Q&A entry in work `STATE.md` `## Cross-phase Q&A` (spec-tagged) | Architect |
 | IMPEDIMENT.md | Architect |
-| MONITOR-STATE.md `BUG` | Developer (short bug path — Triage includes root cause analysis) |
-| MONITOR-STATE.md `CR` | Discover (new cycle) |
+| Monitor area STATE (per-work, deferred per FR2 OQ-3) `BUG` | Developer (short bug path — Triage includes root cause analysis) |
+| Monitor area STATE (per-work, deferred per FR2 OQ-3) `CR` | Discover (new cycle) |
 
 ## Output Format
 - Phase transition recommendations with justification

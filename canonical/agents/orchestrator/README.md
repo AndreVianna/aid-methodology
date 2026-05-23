@@ -72,10 +72,10 @@ The Orchestrator never writes code, never writes specs, never runs tests. It *co
 |-----------------|-----------|--------|
 | Q&A entry in work `STATE.md` `## Cross-phase Q&A` (requirements) | Interviewer | Requirements clarification needed |
 | Q&A entry in `.aid/knowledge/STATE.md` `## Q&A (Pending)` | Researcher | KB gap, targeted investigation |
-| Q&A entry in a feature's `STATE.md` | Architect | Spec defect or ambiguity |
+| Q&A entry in work `STATE.md` `## Cross-phase Q&A` (spec-tagged) | Architect | Spec defect or ambiguity |
 | IMPEDIMENT.md | Architect | Spec vs. reality mismatch |
-| MONITOR-STATE.md `classification: BUG` | Developer (short bug path) | Monitor includes root cause analysis; route directly to Implement |
-| MONITOR-STATE.md `classification: CR` | Discover (new cycle) | Full lifecycle for change requests |
+| Monitor area STATE (per-work, deferred per FR2 OQ-3) `classification: BUG` | Developer (short bug path) | Monitor includes root cause analysis; route directly to Implement |
+| Monitor area STATE (per-work, deferred per FR2 OQ-3) `classification: CR` | Discover (new cycle) | Full lifecycle for change requests |
 
 ## Escalation
 

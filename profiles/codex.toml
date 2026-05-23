@@ -62,7 +62,7 @@ reasoning_effort = "low"
 # Per-tool filename substitutions for canonical placeholders.
 # Standardized to canonical names per R12 / Q30 (eliminates DISCOVERY-GRADE.md divergence).
 project_context_file  = "AGENTS.md"
-reviewer_output_file  = "DISCOVERY-STATE.md"   # was DISCOVERY-GRADE.md pre-R12; now standardized
+reviewer_output_file  = "STATE.md"   # was DISCOVERY-GRADE.md pre-R12; then DISCOVERY-STATE.md; now STATE.md post-FR2 (CW6 consolidation, work-003 feature-002)
 open_questions_file   = "additional-info.md"   # was open-questions.md pre-R12; now standardized
 
 [extras]

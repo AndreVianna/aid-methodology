@@ -123,11 +123,14 @@ Pull data from configured sources. Scope the observation window:
 - **Scheduled:** last monitor run → now
 - **On-demand:** user-specified window
 
+▶ telemetry pull starting (~30 s–2 min per source per `canonical/templates/rough-time-hints.md`)
 For each data source, capture:
 - Raw signals (errors, latency spikes, failures, ticket clusters)
 - Metadata (timestamps, affected users/endpoints, frequency)
 - Trends vs. baseline (is this new? worsening? stable?)
+✓ telemetry pull done (record actual time, sources hit, signals collected) — or ✗ telemetry pull failed: {source, reason}
 
+▶ anomaly detection starting (~10–30 s)
 **Anomaly detection — compare to baseline:**
 - Error rate changes (new error types, rate spikes)
 - Performance degradation (latency, throughput)
@@ -140,6 +143,7 @@ For each data source, capture:
 - Correlation narrows investigation scope — don't just list, connect.
 
 Use KB to filter: known conditions, expected variation, already-documented issues.
+✓ anomaly detection done (record actual time, N findings above threshold) — or ✗ anomaly detection failed: {reason}
 
 ### Step 2: Classify
 
@@ -164,6 +168,7 @@ Assess severity per finding:
 
 ### Step 3: Analyze (BUGs only)
 
+▶ root cause analysis starting (~2–5 min per BUG per `canonical/templates/rough-time-hints.md`)
 Root cause analysis before routing:
 
 1. **Reproduce the path.** Trace from evidence: endpoint → module → function.
@@ -176,6 +181,7 @@ Root cause analysis before routing:
 Root cause = one sentence:
 "The `PaymentService.Process()` method doesn't validate null `currency` field,
 which spec says must default to USD."
+✓ root cause analysis done (record actual time, root cause, patch scope) — or ✗ root cause analysis blocked: {reason — usually KB gap or unreproducible}
 
 ### Step 4: Propose Actions
 
@@ -226,10 +232,13 @@ For each approved finding:
 
 ### Step 6: Update State
 
-- Print monitor run summary: date, window, finding count, routing summary
-- If PM tool configured (infrastructure.md § Project Management):
-  - Create tickets for BUG tasks
-  - Link to existing Sprint/Epic
+Print monitor run summary: date, window, finding count, routing summary.
+
+▶ PM tool ticket creation starting (~10–30 s per ticket per `canonical/templates/rough-time-hints.md`; skip block entirely if no PM tool)
+If PM tool configured (infrastructure.md § Project Management):
+- Create tickets for BUG tasks
+- Link to existing Sprint/Epic
+✓ PM tool ticket creation done (record actual time, N tickets created) — or ✗ PM tool ticket creation failed: {reason — usually auth/network}
 
 ## Severity Thresholds
 

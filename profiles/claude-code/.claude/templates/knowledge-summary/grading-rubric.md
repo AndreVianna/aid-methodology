@@ -56,7 +56,8 @@ grade exists.
 | | **Human total** | | **30** | |
 
 > File size is **not graded**. The output's actual size is recorded in
-> `SUMMARY-STATE.md` for transparency, but no maximum is enforced.
+> `.aid/knowledge/STATE.md` `## Knowledge Summary Status` for transparency
+> (per FR2; pre-FR2 this lived in `SUMMARY-STATE.md`), but no maximum is enforced.
 
 ## Grade boundaries
 
@@ -104,7 +105,7 @@ If Human Grade is absent (manual-checklist.sh never ran): Overall = **"Pending H
    is graded F. There is no partial credit. Fix the diagram before re-grading.
 2. **Fewer diagrams than the active profile's `target_diagrams` = automatic C+
    ceiling.** Profile templates declare `target_diagrams: N` in frontmatter;
-   `grade.sh` reads `SUMMARY-STATE.md` to find the active profile, then reads
+   `grade.sh` reads `.aid/knowledge/STATE.md` `## Knowledge Summary Status` to find the active profile, then reads
    the profile template to find N. If the HTML has fewer than N
    `<pre class="mermaid">` blocks, the Machine Grade is capped at C+ regardless
    of other points.
@@ -113,7 +114,7 @@ If Human Grade is absent (manual-checklist.sh never ran): Overall = **"Pending H
 4. **Human Grade unscored = APPROVAL blocked.** The two-grade model requires
    running `manual-checklist.sh` before APPROVAL. The script will refuse to
    write `Writeback Status: ok` if the Human Grade is missing from
-   `SUMMARY-STATE.md`.
+   `.aid/knowledge/STATE.md` `## Knowledge Summary Status` (per FR2).
 5. **V1 visual gate fail = Human Grade F = APPROVAL blocked.** V1 is mandatory.
    If the human visual gate is not affirmatively passed, Human Grade is forced
    to F (so Overall = F), regardless of K1/K2. The summary cannot be approved
@@ -165,7 +166,8 @@ all four. Any failure → V1 = 0 → Human Grade F → APPROVAL blocked. Also ve
 the EXPANDED (lightbox) view, not only the inline diagrams — they can differ.
 
 **D1 (critical):** `mermaid.parse(text)` must not throw for any block. ANY
-failure → automatic F; error + source location written to SUMMARY-STATE.md.
+failure → automatic F; error + source location written to
+`.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation)` (per FR2).
 Common causes: `<word>` labels (use `{word}`), missing spaces in dotted arrows,
 unclosed quotes, reserved words in erDiagram. See `mermaid-examples.md`.
 
@@ -199,7 +201,7 @@ The fallback path is noted in the grade output. Warnings allowed in all modes.
 `accessibility-checklist.md`; every pair must meet its target ratio.
 
 **S2:** Mermaid library inlined (`__esbuild_esm_mermaid` marker), OR
-`--cdn-mermaid` recorded in SUMMARY-STATE.md.
+`--cdn-mermaid` recorded in `.aid/knowledge/STATE.md` `## Knowledge Summary Status` (per FR2).
 
 ## How a grading run reports
 

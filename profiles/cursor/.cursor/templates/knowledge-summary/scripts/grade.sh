@@ -24,7 +24,8 @@
 # V1 (human visual gate) is MANDATORY: V1=0 forces Human Grade = F.
 #
 # Diagram-count hard rule:
-#   Reads active profile from .aid/knowledge/SUMMARY-STATE.md (**Profile:** line).
+#   Reads active profile from .aid/knowledge/STATE.md `## Knowledge Summary Status`
+#   block (**Profile:** line). Pre-FR2 this lived in SUMMARY-STATE.md.
 #   Reads target_diagrams from templates/knowledge-summary/section-templates/{profile}.md
 #   YAML frontmatter. Falls back to 6 if the field is absent.
 #   If actual diagram count < target, grade is capped at C+.
@@ -61,23 +62,30 @@ fi
 
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 KB_DIR=".aid/knowledge"
-SUMMARY_STATE="$KB_DIR/SUMMARY-STATE.md"
+STATE="$KB_DIR/STATE.md"
 MANUAL_CHECKLIST_FILE="$KB_DIR/.manual-checklist.json"
 SECTION_TEMPLATES_DIR="$SCRIPT_DIR/../section-templates"
 
 # ---------------------------------------------------------------------------
 # Resolve active profile and target_diagrams
 # ---------------------------------------------------------------------------
+# FR2: profile lives in STATE.md `## Knowledge Summary Status` block.
+# Scope the lookup to that section so we don't pick up a Profile line that
+# might appear elsewhere (e.g., inside a KB document quoted in another section).
 ACTIVE_PROFILE=""
-if [ -f "$SUMMARY_STATE" ]; then
-    ACTIVE_PROFILE=$(grep -m1 '^\*\*Profile:\*\*' "$SUMMARY_STATE" 2>/dev/null \
+if [ -f "$STATE" ]; then
+    ACTIVE_PROFILE=$(awk '
+        /^## Knowledge Summary Status/ {in_section=1; next}
+        in_section && /^## / {in_section=0}
+        in_section && /^\*\*Profile:\*\*/ {print; exit}
+    ' "$STATE" \
         | sed 's/^\*\*Profile:\*\*[[:space:]]*//' \
         | awk '{print $1}' \
         | tr -d '\r')
 fi
 
 if [ -z "$ACTIVE_PROFILE" ]; then
-    echo "⚠️  Cannot determine active profile from $SUMMARY_STATE; defaulting to 'cli'."
+    echo "⚠️  Cannot determine active profile from $STATE (## Knowledge Summary Status); defaulting to 'cli'."
     ACTIVE_PROFILE="cli"
 fi
 
