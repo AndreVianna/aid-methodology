@@ -42,6 +42,36 @@ class LayoutConfig:
     # Repo-root file name for the project-context document
     project_context_file: str = "CLAUDE.md"
 
+    def common_parent(self) -> str:
+        """
+        Return the deepest common parent directory of the profile's output roots.
+
+        This is the directory where ``emission-manifest.jsonl`` is placed
+        (per EMISSION-MANIFEST.md §"Filename and Location").
+
+        Examples
+        --------
+        - Claude Code: ``output_root="claude-code/.claude"`` → ``"claude-code"``
+        - Codex split: ``agents_root="codex/.codex"`` → ``"codex"``
+        - Cursor: ``output_root="cursor/.cursor"`` → ``"cursor"``
+
+        Raises
+        ------
+        ValueError
+            If neither ``output_root`` nor ``agents_root`` is set (invalid layout).
+        """
+        from pathlib import PurePosixPath
+
+        if self.output_root is not None:
+            parent = str(PurePosixPath(self.output_root).parent)
+            return "." if parent == "." else parent
+        if self.agents_root is not None:
+            parent = str(PurePosixPath(self.agents_root).parent)
+            return "." if parent == "." else parent
+        raise ValueError(
+            "LayoutConfig has neither output_root nor agents_root — cannot determine common_parent"
+        )
+
 
 @dataclass
 class FrontmatterConfig:
