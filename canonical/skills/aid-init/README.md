@@ -11,7 +11,7 @@ Conversational. Asks a small set of questions and scaffolds the AID workspace:
 1. **Classify the project** — greenfield (new) or brownfield (existing code).
 2. **Collect metadata** — project name, one-line description, external doc paths, minimum acceptable KB grade.
 3. **Scaffold the Knowledge Base** — `.aid/knowledge/` with all 16 KB document templates pre-populated for the project type.
-4. **Generate meta-documents** — `INDEX.md`, `README.md`, `DISCOVERY-STATE.md` with the project's metadata baked in.
+4. **Generate meta-documents** — `INDEX.md`, `README.md`, `STATE.md` with the project's metadata baked in.
 5. **Set up the project context file** — `CLAUDE.md` (Claude Code) or `AGENTS.md` (Codex/Cursor) with AID placeholders.
 6. **Update `.gitignore`** — based on whether the user wants `.aid/` versioned.
 
@@ -25,7 +25,7 @@ Conversational. Asks a small set of questions and scaffolds the AID workspace:
 
 | Artifact | Location | Purpose |
 |----------|----------|---------|
-| `.aid/knowledge/` | project root | All 16 KB documents + `INDEX.md` + `README.md` + `DISCOVERY-STATE.md` |
+| `.aid/knowledge/` | project root | All 16 KB documents + `INDEX.md` + `README.md` + `STATE.md` |
 | `{project_context_file}` | project root | `CLAUDE.md` or `AGENTS.md` (per host tool) with AID placeholders for `aid-discover` to fill in |
 
 ## Next Step

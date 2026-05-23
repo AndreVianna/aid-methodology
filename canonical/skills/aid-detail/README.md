@@ -87,4 +87,4 @@ Four sections. Nothing else.
 
 - **→ Plan:** Too vague to decompose → return to `/aid-plan`
 - **→ Specify:** SPEC missing detail → Q&A to feature's STATE.md
-- **→ Discovery:** KB gap → Q&A to DISCOVERY-STATE.md
+- **→ Discovery:** KB gap → Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)`

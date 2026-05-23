@@ -8,12 +8,12 @@ Analyze an existing codebase and produce a structured Knowledge Base (`.aid/know
 ## When to Use
 
 - **Full discovery:** New brownfield project. No KB exists yet.
-- **Targeted discovery:** A downstream phase (aid-interview, aid-specify, aid-plan, aid-detail, aid-execute, aid-execute (built-in review), aid-execute) wrote a Q&A entry to `.aid/knowledge/DISCOVERY-STATE.md` signalling a KB gap. Only analyze the specific area identified in that entry.
+- **Targeted discovery:** A downstream phase (aid-interview, aid-specify, aid-plan, aid-detail, aid-execute, aid-execute (built-in review), aid-execute) wrote a Q&A entry to `.aid/knowledge/STATE.md` signalling a KB gap. Only analyze the specific area identified in that entry.
 
 ## Inputs
 
 - Access to the codebase (local path, git repo URL, or archive).
-- For targeted discovery: the Q&A entry in `DISCOVERY-STATE.md` or the IMPEDIMENT.md that triggered re-entry.
+- For targeted discovery: the Q&A entry in `.aid/knowledge/STATE.md` or the IMPEDIMENT.md that triggered re-entry.
 
 ## Process
 
@@ -147,7 +147,7 @@ Record in `.aid/knowledge/tech-debt.md` with risk ratings (High/Medium/Low).
 
 ### Step 10: Open Questions
 
-Record in `DISCOVERY-STATE.md`'s Q&A section everything that code analysis alone could not determine. Each entry includes an ID (Q{N}), question, category, impact (High / Medium / Low), status (Pending / Answered / Skipped), code evidence, and optional suggested answer. This covers business rules not explicit in code, deployment procedures not captured in scripts, and data flows requiring human explanation. These feed directly into aid-interview.
+Record in `.aid/knowledge/STATE.md`'s Q&A section everything that code analysis alone could not determine. Each entry includes an ID (Q{N}), question, category, impact (High / Medium / Low), status (Pending / Answered / Skipped), code evidence, and optional suggested answer. This covers business rules not explicit in code, deployment procedures not captured in scripts, and data flows requiring human explanation. These feed directly into aid-interview.
 
 ### Step 11: KB Index
 
@@ -165,7 +165,7 @@ Create `.aid/knowledge/README.md` with completeness tracking:
 
 ## Output
 
-A `.aid/knowledge/` directory containing the relevant subset of these 16 documents (plus a README.md index and DISCOVERY-STATE.md):
+A `.aid/knowledge/` directory containing the relevant subset of these 16 documents (plus a README.md index and `.aid/knowledge/STATE.md`):
 
 | Document | Always? | Description |
 |----------|---------|-------------|
@@ -189,7 +189,7 @@ A `.aid/knowledge/` directory containing the relevant subset of these 16 documen
 
 ## Targeted Discovery (Re-entry)
 
-When triggered by a Q&A entry in `DISCOVERY-STATE.md` or an IMPEDIMENT.md from a downstream phase:
+When triggered by a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT.md from a downstream phase:
 
 1. Read the Q&A entry or impediment to understand exactly what's missing.
 2. Focus analysis ONLY on the identified area.
@@ -206,7 +206,7 @@ When triggered by a Q&A entry in `DISCOVERY-STATE.md` or an IMPEDIMENT.md from a
 - [ ] Every KB document has a clear scope — no overlap between documents.
 - [ ] Claims are grounded in code evidence (file paths, line numbers, grep results).
 - [ ] Inferred information is marked as inferred (e.g., "⚠️ Inferred from code — needs confirmation").
-- [ ] `DISCOVERY-STATE.md` Q&A section captures everything that requires human input with structured entries.
+- [ ] `.aid/knowledge/STATE.md` Q&A section captures everything that requires human input with structured entries.
 - [ ] `README.md` accurately reflects completeness status.
 - [ ] `README.md` includes a revision history section with the initial discovery entry.
 
@@ -227,8 +227,8 @@ Without Discovery, specs are generic and agents improvise. With Discovery, specs
 
 ## Related Phases
 
-- **Next:** [Interview](../aid-interview/) — uses open questions from `DISCOVERY-STATE.md` to focus requirements gathering
-- **Triggered by:** Any downstream phase via a Q&A entry in `DISCOVERY-STATE.md`
+- **Next:** [Interview](../aid-interview/) — uses open questions from `.aid/knowledge/STATE.md` to focus requirements gathering
+- **Triggered by:** Any downstream phase via a Q&A entry in `.aid/knowledge/STATE.md`
 
 ## See Also
 
