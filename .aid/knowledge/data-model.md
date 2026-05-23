@@ -41,9 +41,23 @@ Each row is one artifact "type". Producer/consumer mappings are extracted from s
 
 ---
 
+## 1A. State-File Rule (FR2 — work-003-traceability)
+
+**One STATE.md per area.** AID has three areas with distinct lifecycles:
+
+- **Discovery** (persistent to the repo) — KB + visual summary. One `.aid/knowledge/STATE.md` absorbs the legacy `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`.
+- **Work** (per-work dev lifecycle) — req → spec → plan → impl → deploy. One `.aid/work-NNN-{name}/STATE.md` absorbs the legacy `INTERVIEW-STATE.md` + per-feature `STATE.md` × N + per-task `task-NNN-STATE.md` × N + (future) `DEPLOYMENT-STATE.md`.
+- **Monitor** (per-work post-conclusion) — observe → classify → route. **Deferred** until the Monitor area matures; `.aid/work-NNN-{name}/MONITOR-STATE.md` will follow the same area-STATE pattern when authored. The standalone naming reflects that *Monitor is itself the state* — no separate artifact to suffix against.
+
+**Artifact files keep their inline `## Change Log` sections** — that is *content history* (what changed in the document), distinct from *process state* (where are we in the workflow). Artifact files (REQUIREMENTS.md, SPEC.md, PLAN.md, task-NNN.md, KB docs) are unchanged.
+
+**Canonical templates** for the area-STATE shape live at `canonical/templates/discovery-state-template.md` and `canonical/templates/work-state-template.md`. The legacy per-artifact templates (`interview-state.md`, `feature-state.md`, `implementation-state.md`, `deployment-state.md`, the old `discovery-state.md`, the reports/discovery-state-template.md reviewer variant) have been retired.
+
+**Sections §2.1, §2.3, §2.7, §2.10 below describe the legacy per-skill / per-artifact state files.** Their schemas are preserved as historical reference; they no longer exist as separate files on disk. The active schemas are in the canonical templates referenced above.
+
 ## 2. Detailed Schemas
 
-### 2.1 DISCOVERY-STATE.md
+### 2.1 DISCOVERY-STATE.md *(LEGACY — absorbed into `.aid/knowledge/STATE.md` per FR2; schema preserved as historical reference)*
 
 The central state file for `aid-discover`. Two schemas exist on disk because `aid-init` scaffolds one shape (`templates/discovery-state.md`) and `discovery-reviewer` rewrites it to a richer shape (`templates/reports/discovery-state-template.md`).
 
@@ -107,7 +121,7 @@ Verified at `templates/requirements/requirements-template.md:22-80`. Schema:
 
 **Convention:** any section not yet discussed contains `*(pending)*` as a placeholder (`requirements-template.md:14`). Cross-reference runs add Change Log entries with source `/aid-interview (cross-reference)` (`requirements-template.md:15`).
 
-### 2.3 INTERVIEW-STATE.md
+### 2.3 INTERVIEW-STATE.md *(LEGACY — absorbed into the per-work `.aid/work-NNN/STATE.md` `## Interview Status` section per FR2; schema preserved as historical reference)*
 
 Verified at `profiles/claude-code/.claude/templates/interview-state.md:1-29`.
 
@@ -173,7 +187,7 @@ Verified at `templates/delivery-plans/task-template.md:1-20`. Six sections only 
 
 **Task type taxonomy** (verified at `templates/implementation-state.md:5`): enum of `RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE`. One type per task. The type drives execution rules — `profiles/claude-code/.claude/skills/aid-execute/references/task-type-rules.md` (104 lines) details per-type protocols.
 
-### 2.7 task-NNN-STATE.md
+### 2.7 task-NNN-STATE.md *(LEGACY — absorbed into the per-work `.aid/work-NNN/STATE.md` `## Tasks Status` table per FR2; schema preserved as historical reference. `task-NNN.md` task-definition files remain unchanged at the 6-section template — definition stays inside the task file, status moves to work STATE.md.)*
 
 Verified at `templates/implementation-state.md:1-30`.
 
@@ -226,7 +240,7 @@ Verified at `profiles/claude-code/.claude/templates/known-issues.md:1-15`. Schem
 | `- **Description:**` | freeform | yes | — |
 | `- **See also:**` | tech-debt cross-ref | optional | `tech-debt.md #TD-NNN` |
 
-### 2.10 DEPLOYMENT-STATE.md + package-NNN.md
+### 2.10 DEPLOYMENT-STATE.md + package-NNN.md *(LEGACY — DEPLOYMENT-STATE.md absorbed into the per-work `.aid/work-NNN/STATE.md` `## Deploy Status` section per FR2; package-NNN.md keeps its independent file. Schemas preserved as historical reference.)*
 
 Verified at `profiles/claude-code/.claude/templates/deployment-state.md:1-9` and `profiles/claude-code/.claude/templates/package.md:1-27`.
 
@@ -252,7 +266,7 @@ Verified at `profiles/claude-code/.claude/templates/deployment-state.md:1-9` and
 | `## Release Notes` | yes | Generated during packaging |
 | `## Status:` | yes | `Draft` initially |
 
-### 2.11 MONITOR-STATE.md and track-report-*.md
+### 2.11 MONITOR-STATE.md and track-report-*.md *(Monitor area STATE per FR2 — deferred until Monitor area matures; follows the area-STATE pattern when authored.)*
 
 ⚠️ **Both templates are MISSING from disk** (Q8 / Q31 / Q77). `templates/README.md:31` references `templates/feedback-artifacts/MONITOR-STATE.md` and `templates/README.md:37` references `templates/reports/track-report-template.md`. Neither file is present per `project-index.md`. The skill `aid-monitor/SKILL.md` (242 lines per `project-index.md`) presumably defines or expects these — but without the templates, agents generating these artifacts have no canonical shape to follow. **Per DISCOVERY-STATE Q8 resolution: author both templates.** Tracked as `tech-debt.md H7` (promoted from MEDIUM to HIGH because it blocks the Monitor phase end-to-end).
 
