@@ -13,7 +13,7 @@ Slimmer than web-app: no UI section, no service-mesh diagram.
 
 | # | Title | Featured? | KB Sources |
 |---|-------|-----------|------------|
-| 1 | At a Glance | | DISCOVERY-STATE.md, project-structure.md, technology-stack.md |
+| 1 | At a Glance | | STATE.md, project-structure.md, technology-stack.md |
 | 2 | Architecture | ★ | architecture.md |
 | 3 | Packages / Modules | | module-map.md |
 | 4 | Data Model & Types | ★ | data-model.md |

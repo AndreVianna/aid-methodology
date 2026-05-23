@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# writeback-discovery-state.sh — append a new ## Summarization History entry to
-# DISCOVERY-STATE.md. Atomic via a sentinel lock file.
+# writeback-state.sh — append a new ## Summarization History entry to
+# the consolidated Discovery area state file (.aid/knowledge/STATE.md, per FR2).
+# Atomic via a sentinel lock file. Pre-FR2 this wrote to DISCOVERY-STATE.md.
 #
-# Usage: writeback-discovery-state.sh GRADE PROFILE MERMAID_VERSION OUTPUT_FILENAME OUTPUT_SIZE NOTES
+# Usage: writeback-state.sh GRADE PROFILE MERMAID_VERSION OUTPUT_FILENAME OUTPUT_SIZE NOTES
 # Exit 0 on success, non-zero on failure.
 
 set -u
@@ -15,8 +16,8 @@ SIZE="${5:-?}"
 NOTES="${6:-Initial generation}"
 
 KB_DIR=".aid/knowledge"
-STATE="$KB_DIR/DISCOVERY-STATE.md"
-LOCK="$KB_DIR/.discovery-state.lock"
+STATE="$KB_DIR/STATE.md"
+LOCK="$KB_DIR/.state.lock"
 
 if [ ! -f "$STATE" ]; then
     echo "❌ $STATE does not exist." >&2
@@ -133,6 +134,6 @@ if ! grep -qF "$NEW_ROW" "$TMP"; then
 fi
 
 mv "$TMP" "$STATE"
-echo "✓ DISCOVERY-STATE.md updated:"
+echo "✓ $STATE updated:"
 echo "    ## Summarization History → entry #$NEXT_NUM added ($DATE, grade $GRADE)"
 exit 0

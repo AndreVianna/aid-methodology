@@ -21,7 +21,7 @@ Validate against KB and codebase.
 ## 6a. Load Context
 
 1. Read REQUIREMENTS.md (in the work folder)
-2. Read INTERVIEW-STATE.md
+2. Read STATE.md `## Interview Status` and `## Cross-phase Q&A`
 3. Read `.aid/knowledge/INDEX.md` (if exists)
 4. Read ALL KB documents listed in INDEX.md
 5. Read all SPEC.md files in the work's `features/` subdirectories
@@ -42,9 +42,9 @@ For each section of REQUIREMENTS.md, check against KB:
 Use the universal rubric (`../../../templates/grading-rubric.md`). Classify each finding
 by severity (Minor/Low/Medium/High/Critical). Grade is calculated — worst issue dominates.
 
-Compare to minimum grade from `.aid/knowledge/DISCOVERY-STATE.md`.
+Compare to minimum grade from `.aid/knowledge/STATE.md` `**Minimum Grade:**`.
 
-**Update `**Grade:**` in INTERVIEW-STATE.md.**
+**Update `**Interview Grade:**` in STATE.md `## Interview Status`.**
 
 ## 6d. Present Findings
 
@@ -69,7 +69,7 @@ I have {N} questions to resolve these. Let's go through them one at a time.
 
 ## 6e. Create Q&A Entries and Ask
 
-For each finding, add a Q&A entry in INTERVIEW-STATE.md `## Pending Q&A`:
+For each finding, add a Q&A entry in STATE.md `## Cross-phase Q&A`:
 
 ```markdown
 ### IQ{N}: [{Category}: {Impact}]
@@ -92,6 +92,6 @@ After each answer:
 
 After all questions answered:
 
-1. Add Review History entry in INTERVIEW-STATE.md
+1. Add Review History entry in STATE.md `## Interview Status`
 2. Add Change Log entry in REQUIREMENTS.md
 3. Print: `✅ Cross-reference complete. Run /aid-interview again to verify.`

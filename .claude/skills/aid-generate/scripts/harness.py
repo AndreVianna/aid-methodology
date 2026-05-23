@@ -412,14 +412,15 @@ def main() -> int:
     # -----------------------------------------------------------------------
     # Test: substitute_filenames — known placeholders
     # -----------------------------------------------------------------------
+    # Post-FR2, reviewer_output_file is STATE.md (was DISCOVERY-STATE.md pre-FR2).
     fmap = {
         "project_context_file": "CLAUDE.md",
-        "reviewer_output_file": "DISCOVERY-STATE.md",
+        "reviewer_output_file": "STATE.md",
         "open_questions_file": "additional-info.md",
     }
     body = "See {project_context_file} and {reviewer_output_file}. Progress: {step/total}."
     result = substitute_filenames(body, fmap)
-    expected = "See CLAUDE.md and DISCOVERY-STATE.md. Progress: {step/total}."
+    expected = "See CLAUDE.md and STATE.md. Progress: {step/total}."
     if result != expected:
         failures.append(
             f"substitute_filenames: got {result!r}, expected {expected!r}"

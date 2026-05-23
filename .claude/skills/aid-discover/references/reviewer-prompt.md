@@ -55,7 +55,7 @@ evaluate the KB purely on what's on disk — as if a stranger wrote it.
 >    derived from the 16 primary documents.
 >    - Do their summaries and values accurately reflect the current primary doc content?
 >    - Is placeholder text or template markers still present?
->    - Are questions marked Pending in the Q&A section of DISCOVERY-STATE.md actually still unanswerable from the repository?
+>    - Are questions marked Pending in the Q&A section of STATE.md actually still unanswerable from the repository?
 >
 > **Grading:** Use the universal rubric (read `../../../templates/grading-rubric.md`).
 > Classify every issue as [MINOR], [LOW], [MEDIUM], [HIGH], or [CRITICAL].
@@ -64,12 +64,12 @@ evaluate the KB purely on what's on disk — as if a stranger wrote it.
 >
 > **Minimum 15 spot-checks** (verify claims against actual code). At least 5 must be version verifications.
 >
-> **After grading, add new questions to the `## Q&A` section of DISCOVERY-STATE.md** for any
+> **After grading, add new questions to the `## Q&A` section of STATE.md** for any
 > information gaps found during review that cannot be resolved from the repository. These become
 > Q&A items for the user. Use the next sequential Q{N} ID (continuing from existing entries),
 > categorize by area, and assign impact levels (High/Medium/Low). Only add questions for things
 > genuinely needing human input — if you can grep the answer, fix it in the review instead.
 >
-> Write the review results (grades, issues, spot-checks) to DISCOVERY-STATE.md,
+> Write the review results (grades, issues, spot-checks) to STATE.md,
 > preserving the existing `## Q&A` section and adding to it. Update `**Grade:**` from `Pending`
 > to the actual grade.

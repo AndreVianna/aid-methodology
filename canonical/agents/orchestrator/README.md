@@ -28,7 +28,7 @@ The Orchestrator is always present. It is the first agent invoked and the last t
 
 - **Phase transition decisions** — which phase is next, with justification
 - **Agent dispatch instructions** — which agent, what context, what success criteria
-- **Routing decisions** — where feedback signals go (Q&A entry in INTERVIEW-STATE → Interviewer, Q&A entry in DISCOVERY-STATE → Researcher, IMPEDIMENT → Architect)
+- **Routing decisions** — where feedback signals go (Q&A entry in work `STATE.md` `## Cross-phase Q&A` (requirements-tagged) → Interviewer; Q&A entry in `.aid/knowledge/STATE.md` `## Q&A (Pending)` → Researcher; IMPEDIMENT → Architect) — per FR2; pre-FR2 these were `INTERVIEW-STATE.md` and `DISCOVERY-STATE.md`
 - **Status reports** — pipeline state for human oversight
 
 ## How It Differs from Similar Agents

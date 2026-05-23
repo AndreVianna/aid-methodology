@@ -63,7 +63,8 @@ A+ > A > A- > B+ > B > B- > C+ > C > C- > D+ > D > D- > E+ > E > E- > F
 
 ## Minimum Grade
 
-Defined during `/aid-init` and stored in `DISCOVERY-STATE.md` as `**Minimum Grade:**`.
+Defined during `/aid-init` and stored in `.aid/knowledge/STATE.md` (Discovery area
+STATE, per FR2) as `**Minimum Grade:**`. Pre-FR2 this lived in `DISCOVERY-STATE.md`.
 All phases read this value. The loop continues until grade ≥ minimum grade.
 
 ## Why This Scale

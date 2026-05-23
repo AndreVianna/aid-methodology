@@ -24,15 +24,15 @@ err() {
     exit 1
 }
 
-# Check 1: DISCOVERY-STATE.md exists
-if [ ! -f "$KB_DIR/DISCOVERY-STATE.md" ]; then
-    err "$KB_DIR/DISCOVERY-STATE.md does not exist." \
+# Check 1: STATE.md exists (consolidated Discovery area state — FR2)
+if [ ! -f "$KB_DIR/STATE.md" ]; then
+    err "$KB_DIR/STATE.md does not exist." \
         "Run /aid-init then /aid-discover to set up the Knowledge Base."
 fi
 
-# Check 2: User Approved: yes
-if ! grep -q '^\*\*User Approved:\*\* yes' "$KB_DIR/DISCOVERY-STATE.md"; then
-    APPROVAL_VALUE=$(grep -m1 '^\*\*User Approved:\*\*' "$KB_DIR/DISCOVERY-STATE.md" 2>/dev/null | sed 's/^\*\*User Approved:\*\* *//')
+# Check 2: User Approved: yes (in KB Documents Status block)
+if ! grep -q '^\*\*User Approved:\*\* yes' "$KB_DIR/STATE.md"; then
+    APPROVAL_VALUE=$(grep -m1 '^\*\*User Approved:\*\*' "$KB_DIR/STATE.md" 2>/dev/null | sed 's/^\*\*User Approved:\*\* *//')
     APPROVAL_VALUE="${APPROVAL_VALUE:-not set}"
     err "Knowledge Base discovery is not yet approved. Current status: **User Approved:** $APPROVAL_VALUE" \
         "Run /aid-discover until it reaches APPROVAL state and approve the KB. Then re-run /aid-summarize."
@@ -45,7 +45,7 @@ if [ -d "$KB_DIR" ]; then
         [ -f "$f" ] || continue
         # Skip state files; look at content docs
         case "$(basename "$f")" in
-            DISCOVERY-STATE.md|SUMMARY-STATE.md|README.md) continue ;;
+            STATE.md|README.md|INDEX.md) continue ;;
         esac
         # A doc is "populated" if it has more than 30 non-blank lines and doesn't only say "Pending"
         LINES=$(grep -cve '^[[:space:]]*$' "$f" 2>/dev/null || echo 0)
