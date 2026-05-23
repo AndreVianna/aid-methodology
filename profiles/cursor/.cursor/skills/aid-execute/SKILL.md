@@ -62,8 +62,8 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
 The grade is **computed deterministically**, not judged. The reviewer outputs a structured issue list with `[CRITICAL]`/`[HIGH]`/`[MEDIUM]`/`[LOW]`/`[MINOR]` severity tags. The grade follows from the rubric.
 
 - Rubric: `../../templates/grading-rubric.md`
-- Script: `../../templates/scripts/grade.sh` — run it on the reviewer's issue list (recorded in `task-NNN-STATE.md`).
-- Minimum grade: read from `.aid/knowledge/DISCOVERY-STATE.md` field `**Minimum Grade:**`
+- Script: `../../templates/scripts/grade.sh` — run it on the reviewer's issue list (recorded in the work `STATE.md` `## Tasks Status` table).
+- Minimum grade: read from `.aid/knowledge/STATE.md` field `**Minimum Grade:**`
 
 Run the script after the reviewer completes. The script prints the grade. Compare against minimum grade to decide DONE vs FIX.
 
@@ -72,13 +72,13 @@ Run the script after the reviewer completes. The script prints the grade. Compar
 ```
 .aid/
   knowledge/                ← shared KB (via INDEX.md)
-    DISCOVERY-STATE.md      ← minimum grade
+    STATE.md                ← minimum grade
   work-NNN-{name}/
+    STATE.md                ← § Tasks Status (task rows updated here)
     PLAN.md                 ← delivery context
     known-issues.md         ← issues to watch for
     tasks/
       task-NNN.md           ← PRIMARY INPUT (has Type field)
-      task-NNN-STATE.md     ← execution state (created here)
     features/
       feature-NNN-{name}/
         SPEC.md             ← architectural constraints
@@ -114,12 +114,12 @@ Read `task-NNN.md`. It has 6 sections:
 ### Check 2b: Verify Dependencies Met
 
 Read the Execution Graph from PLAN.md for this task's delivery.
-Check that all tasks listed in `Depends on:` have Status `Done` in their STATE files.
+Check that all tasks listed in `Depends on:` have Status `Done` in the work `STATE.md` `## Tasks Status` table.
 If any dependency is not Done → **STOP.** List which dependencies are pending.
 
 ### Check 3: Read Minimum Grade
 
-Read `.aid/knowledge/DISCOVERY-STATE.md` → extract `**Minimum Grade:**` value.
+Read `.aid/knowledge/STATE.md` → extract `**Minimum Grade:**` value.
 This is the exit criterion for the review loop.
 
 ### Check 4: Verify Not in Plan Mode
@@ -150,14 +150,47 @@ If the task only produces `.aid/` artifacts, skip branch isolation.
 
 ### Check 6: Determine State
 
-Read `task-NNN-STATE.md` if it exists.
+Read the task's row in work `STATE.md` `## Tasks Status` table if it exists.
 
 | Condition | State |
 |-----------|-------|
-| No STATE file exists | **EXECUTE** (Step 1) |
+| No row in Tasks Status (or row absent) | **EXECUTE** (Step 1) |
 | Status: `In Progress`, no issues pending | **EXECUTE** (Step 1 — resume) |
 | Status: `In Review`, issues listed | **FIX** (Step 3) |
 | Status: `Done` | **RE-RUN** (see Re-run below) |
+
+Print the state-entry line and "you are here" map:
+
+**EXECUTE:**
+```
+[State: EXECUTE] — Running the executor agent to produce task deliverables.
+aid-execute  ▸ you are here
+  [● EXECUTE ] → [ REVIEW ] → [ FIX ] → [ DONE ]
+                                ↑______________|
+```
+
+**REVIEW:**
+```
+[State: REVIEW] — Grading task output against acceptance criteria with a clean-context reviewer.
+aid-execute  ▸ you are here
+  [✓ EXECUTE ] → [● REVIEW ] → [ FIX ] → [ DONE ]
+                                 ↑______________|
+```
+
+**FIX:**
+```
+[State: FIX] — Applying CODE-issue fixes and returning to REVIEW.
+aid-execute  ▸ you are here
+  [✓ EXECUTE ] → [✓ REVIEW ] → [● FIX ] → [ DONE ]
+                                  ↑______________|
+```
+
+**DONE:**
+```
+[State: DONE] — Grade meets minimum; task complete.
+aid-execute  ▸ you are here
+  [✓ EXECUTE ] → [✓ REVIEW ] → [✓ FIX ] → [● DONE ]
+```
 
 ---
 
@@ -165,9 +198,15 @@ Read `task-NNN-STATE.md` if it exists.
 
 When the task is already `Done` and the user runs `/aid-execute task-NNN` again:
 
+```
+[State: RE-RUN] — Task already Done; confirming whether to reopen for review.
+aid-execute  ▸ you are here
+  [✓ EXECUTE ] → [✓ REVIEW ] → [✓ FIX ] → [✓ DONE ] → [● RE-RUN ]
+```
+
 1. Ask: _"This task is marked Done. Do you want to reopen it for review?
    Is there something specific you want to re-examine?"_
-2. If user confirms → set Status to `In Review` in STATE.md, proceed to Step 2 (REVIEW)
+2. If user confirms → set Status to `In Review` in work `STATE.md` `## Tasks Status`, proceed to Step 2 (REVIEW)
 3. If user has a specific concern → record it as context for the reviewer
 
 ---
@@ -189,8 +228,7 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 
 ## Step 1: EXECUTE (Do the Work)
 
-Create `task-NNN-STATE.md` from template (`../../templates/implementation-state.md`).
-Set Status to `In Progress`.
+Update work `STATE.md` `## Tasks Status` table: set this task's row Status to `In Progress`.
 
 **Pick the executor by task Type from the Agent Selection table above** (RESEARCH → `researcher`, DESIGN → `ux-designer`, IMPLEMENT/TEST/REFACTOR → `developer`, DOCUMENT → `tech-writer`, MIGRATE → `data-engineer`, CONFIGURE → `devops`).
 
@@ -198,12 +236,14 @@ Dispatch with the Task tool, setting `subagent_type` explicitly to the chosen ex
 
 **Before dispatching, print:** `[Step 1] Dispatching {executor} for {Type} task → subagent_type={executor}` (substituting actual values).
 
-Also append a row to `task-NNN-STATE.md` `## Dispatches`: `| 1 | {executor} | EXECUTE Type={Type} | {cycle} |`.
+Also update the task's row in work `STATE.md` `## Dispatches` sub-column (if tracked): `| 1 | {executor} | EXECUTE Type={Type} | {cycle} |`.
 
+▶ {executor} starting (~{time band per rough-time-hints})
 Load the section matching the task's Type from `references/task-type-rules.md` and pass it to the executor as the type-specific RULES it must follow.
 
 **When agent reports done:** verify relevant gates pass (build, lint, tests — as applicable to the type).
-When execution passes → update STATE.md Status to `In Review` → proceed to Step 2.
+✓ {executor} done (record actual time) — or ✗ {executor} failed: {reason}
+When execution passes → update work `STATE.md` `## Tasks Status` row Status to `In Review` → proceed to Step 2.
 
 ---
 
@@ -213,8 +253,9 @@ Dispatch the `reviewer` agent (Task tool with `subagent_type: reviewer`). Clean 
 
 **Before dispatching, print:** `[Step 2] Dispatching reviewer for review → subagent_type=reviewer`.
 
-Also append a row to `task-NNN-STATE.md` `## Dispatches`: `| 2 | reviewer | REVIEW | {cycle} |`.
+Also update the task's row in work `STATE.md` `## Dispatches` sub-column: `| 2 | reviewer | REVIEW | {cycle} |`.
 
+▶ reviewer starting (~1–2 min)
 **Reviewer receives:**
 - All changes/artifacts produced by the task
 - task-NNN.md — acceptance criteria and scope
@@ -229,11 +270,12 @@ Worst issue dominates.
 
 **⚠️ The reviewer NEVER fixes anything.** It only grades and lists issues.
 
-**Output:** Update `task-NNN-STATE.md`:
+✓ reviewer done (record actual time) — or ✗ reviewer failed: {reason}
+**Output:** Update work `STATE.md` `## Tasks Status` table row for this task:
 - Set Cycle number (increment)
 - Set Grade
-- Write all issues under `### Issues` with severity, source, description
-- Append cycle summary to `## Review History`
+- Write all issues in the task's issues section with severity, source, description
+- Append cycle summary to the task's review history
 
 ---
 
@@ -273,10 +315,10 @@ Proceed with auto-fix of CODE issues?
 
 **Non-CODE issues (TASK, SPEC, KB):**
 - **TASK** → Present to user with suggestion. User updates task, re-run.
-- **SPEC** → Write Q&A to feature STATE.md → suggest `/aid-specify`
-- **KB** → Write Q&A to DISCOVERY-STATE.md → suggest `/aid-discover`
+- **SPEC** → Write Q&A to `.aid/{work}/STATE.md` `## Cross-phase Q&A` → suggest `/aid-specify`
+- **KB** → Write Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)` → suggest `/aid-discover`
 
-Mark non-CODE issues as `Loopback` in STATE.md with target phase.
+Mark non-CODE issues as `Loopback` in work `STATE.md` `## Tasks Status` with target phase.
 
 **If ONLY non-CODE issues remain:** **STOP.** The work is as good as it can be —
 the problem is upstream. Present what needs to change and where.
@@ -353,9 +395,9 @@ RESEARCH and DOCUMENT tasks that produce only `.aid/` artifacts may skip branchi
 ## Output
 
 - Artifacts appropriate to the task type (code, tests, docs, configs, research, designs)
-- Grade ≥ minimum grade (from DISCOVERY-STATE.md)
+- Grade ≥ minimum grade (from `.aid/knowledge/STATE.md` `**Minimum Grade:**`)
 - Commit messages reference task-NNN (for types that produce commits)
-- `task-NNN-STATE.md` with full review history
+- Work `STATE.md` `## Tasks Status` row updated with full review history
 - IMPEDIMENT-task-NNN.md if blocked
 
 ## Project Management Sync (conditional)
@@ -378,7 +420,7 @@ If no PM tool → skip.
 - [ ] Reviewer graded using deterministic rubric (separate agent, clean context)
 - [ ] Reviewer did NOT fix anything — only graded and listed issues
 - [ ] ALL issues presented to user (not just CODE)
-- [ ] Non-CODE issues marked as Loopback with target phase
+- [ ] Non-CODE issues marked as Loopback with target phase in work STATE.md
 - [ ] No silent workarounds — impediments documented
 - [ ] Commit messages reference task-NNN (where applicable)
-- [ ] STATE.md has full review history
+- [ ] Work STATE.md `## Tasks Status` row has full review history

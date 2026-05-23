@@ -28,8 +28,11 @@ Required: work ID. If only one work exists, auto-select it.
 ## Workspace
 
 ```
+.aid/
+  knowledge/
+    STATE.md                   ← minimum grade, Q&A (Pending)
 .aid/{work}/
-  DEPLOYMENT-STATE.md          ← process (current operation status)
+  STATE.md                     ← § Deploy Status (current operation status, history)
   packages/                    ← product (one file per release)
     package-001-{name}.md
     package-002-{name}.md
@@ -42,26 +45,63 @@ Required: work ID. If only one work exists, auto-select it.
 
 1. Verify `.aid/` workspace exists.
 2. Resolve work directory (same routing as other skills).
-3. Read or create `DEPLOYMENT-STATE.md` from template (`../../templates/deployment-state.md`).
+3. Read work `STATE.md` `## Deploy Status` section (or create it if absent).
 4. Read `PLAN.md` — identify deliveries and their statuses.
-5. Scan task files in `.aid/{work}/tasks/` — check statuses and grades.
-6. If DEPLOYMENT-STATE.md shows an active package → resume from that step (see State Detection).
+5. Check work `STATE.md` `## Tasks Status` — check statuses and grades.
+6. If Deploy Status shows an active package → resume from that step (see State Detection).
 
 ## State Detection
 
-Read `DEPLOYMENT-STATE.md`:
+Read work `STATE.md` `## Deploy Status`:
 - **Status: Idle** → Start new package (Step 1)
 - **Status: Selecting** → Resume delivery selection (Step 2)
 - **Status: Verifying** → Resume verification (Step 3)
 - **Status: Packaging** → Resume packaging (Step 4)
 - **Status: Done** → Re-run mode (see Re-run section)
 
+Print the state-entry line and "you are here" map:
+
+**IDLE / first run:**
+```
+[State: IDLE] — No active release; begin assessing eligible deliveries.
+aid-deploy  ▸ you are here
+  [● IDLE ] → [ SELECTING ] → [ VERIFYING ] → [ PACKAGING ] → [ DONE ]
+```
+
+**SELECTING:**
+```
+[State: SELECTING] — Presenting eligible deliveries for user to include in this release.
+aid-deploy  ▸ you are here
+  [✓ IDLE ] → [● SELECTING ] → [ VERIFYING ] → [ PACKAGING ] → [ DONE ]
+```
+
+**VERIFYING:**
+```
+[State: VERIFYING] — Running full build, tests, and lint against selected deliveries.
+aid-deploy  ▸ you are here
+  [✓ IDLE ] → [✓ SELECTING ] → [● VERIFYING ] → [ PACKAGING ] → [ DONE ]
+```
+
+**PACKAGING:**
+```
+[State: PACKAGING] — Producing release artifacts per infrastructure.md § Deployment.
+aid-deploy  ▸ you are here
+  [✓ IDLE ] → [✓ SELECTING ] → [✓ VERIFYING ] → [● PACKAGING ] → [ DONE ]
+```
+
+**DONE:**
+```
+[State: DONE] — Release complete; all deliveries and tasks marked Shipped.
+aid-deploy  ▸ you are here
+  [✓ IDLE ] → [✓ SELECTING ] → [✓ VERIFYING ] → [✓ PACKAGING ] → [● DONE ]
+```
+
 ## Inputs
 
 - `.aid/{work}/PLAN.md` — deliveries, sequencing, success criteria
 - `.aid/{work}/tasks/task-*.md` — task statuses and scope
 - `.aid/{work}/features/*/SPEC.md` — what was specified
-- `task-NNN-STATE.md` files — review grades per task
+- Work `STATE.md` `## Tasks Status` table — review grades per task
 - `known-issues.md` — if exists, check for Critical/High blockers
 - **KB via INDEX.md** — Read `.aid/knowledge/INDEX.md`, pull:
   - `infrastructure.md` § Deployment — how to package, where to publish
@@ -86,9 +126,9 @@ Read all inputs. Build a picture:
 
 If infrastructure.md has no Deployment section or it's a placeholder:
 → Ask the user how this project gets packaged and deployed.
-→ Write a Q&A entry to `DISCOVERY-STATE.md` § Pending Q&A to capture the answer.
+→ Write a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)` to capture the answer.
 
-Update DEPLOYMENT-STATE.md: Status → Selecting.
+Update work `STATE.md` `## Deploy Status`: Status → Selecting.
 
 ### Step 2: Select Deliveries
 
@@ -110,7 +150,7 @@ Which deliveries should be in this release? [all ready / select / cancel]
 
 If user selects "all ready" → include all eligible.
 If user selects specific ones → include only those.
-If user cancels → reset DEPLOYMENT-STATE to Idle, stop.
+If user cancels → reset work `STATE.md` `## Deploy Status` to Idle, stop.
 
 Ask for:
 - Version/tag name (suggest based on versioning scheme from KB)
@@ -121,7 +161,7 @@ Create the package file from template (`../../templates/package.md`):
 - Determine package number (next sequential after existing packages)
 - Save to `.aid/{work}/packages/package-NNN-{slug}.md`
 
-Update DEPLOYMENT-STATE.md: Status → Verifying, Active Package → package-NNN.
+Update work `STATE.md` `## Deploy Status`: Status → Verifying, Active Package → package-NNN.
 
 ### Step 3: Verify
 
@@ -133,13 +173,15 @@ Run full verification against the COMBINED scope of all selected deliveries:
 
 All three must pass. Record results in the package file (Verification section).
 
+▶ full build + test suite + lint starting (~30 s – 5 min depending on project)
 If any fails:
 - Show the failure clearly
 - Ask user: fix here (minor) or loop back to aid-execute (non-trivial)?
 - If fixing here: fix → re-verify (max 3 attempts, then must loop to execute)
-- If looping back: set DEPLOYMENT-STATE Status → Idle, keep package file as Draft
+- If looping back: set work `STATE.md` `## Deploy Status` → Idle, keep package file as Draft
+✓ verification done (record actual time) — or ✗ verification failed: {reason}
 
-Update DEPLOYMENT-STATE.md: Status → Packaging.
+Update work `STATE.md` `## Deploy Status`: Status → Packaging.
 
 ### Step 4: Package
 
@@ -155,7 +197,7 @@ Follow what infrastructure.md § Deployment prescribes. This step varies by proj
 
 Record what was produced in the package file (Deployment section).
 
-If the project type isn't clear from KB → ask the user, route answer to DISCOVERY-STATE Q&A.
+If the project type isn't clear from KB → ask the user, route answer to `.aid/knowledge/STATE.md` `## Q&A (Pending)`.
 
 **PR description format (when applicable):**
 ```markdown
@@ -200,9 +242,9 @@ Check if implementation revealed anything that should update the Knowledge Base:
 - Deployment process changes → flag for infrastructure.md
 
 For each KB update needed:
-→ Write a Q&A entry to `.aid/knowledge/DISCOVERY-STATE.md` § Pending Q&A
+→ Write a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)`
 → The next aid-discover run will process these
-- New features shipped → add to feature-inventory.md (route through DISCOVERY-STATE Q&A with category: Features)
+- New features shipped → add to feature-inventory.md (route through `.aid/knowledge/STATE.md` Q&A with category: Features)
 
 ⚠️ Do NOT directly edit KB docs from deploy — route through Discovery.
 
@@ -210,10 +252,9 @@ For each KB update needed:
 
 - Package file → Status: Shipped, add date
 - Each included delivery in PLAN.md → add `Shipped in: package-NNN` and date
-- Each task in included deliveries → Status: Shipped
-- task-NNN-STATE.md files for included tasks → Status: Shipped
-- DEPLOYMENT-STATE.md → Status: Done, Active Package: —
-- DEPLOYMENT-STATE.md History → add entry with package name, date, delivery count
+- Work `STATE.md` `## Tasks Status` rows for included tasks → Status: Shipped
+- Work `STATE.md` `## Deploy Status` → Status: Done, Active Package: —
+- Work `STATE.md` `## Deploy Status` History → add entry with package name, date, delivery count
 
 ### Step 8: Project Management Sync (conditional)
 
@@ -234,13 +275,20 @@ Print what was done:
    Verification: ✅ Build + Tests + Lint
    Output: {what was produced}
    Package file: .aid/{work}/packages/package-NNN-{slug}.md
-   KB updates: {count} Q&A entries routed to DISCOVERY-STATE
+   KB updates: {count} Q&A entries routed to .aid/knowledge/STATE.md
 ```
 
 ## Re-run
 
-When DEPLOYMENT-STATE.md Status is Done:
-1. Show package history (from DEPLOYMENT-STATE History section).
+When work `STATE.md` `## Deploy Status` is Done:
+
+```
+[State: RE-RUN] — Prior release found; confirming whether to start a new release or review.
+aid-deploy  ▸ you are here
+  [✓ IDLE ] → [✓ SELECTING ] → [✓ VERIFYING ] → [✓ PACKAGING ] → [✓ DONE ] → [● RE-RUN ]
+```
+
+1. Show package history (from work `STATE.md` `## Deploy Status` History section).
 2. Ask: **[1] New release** or **[2] Review package-NNN**?
 3. If [1] → reset Status to Idle, proceed with Step 1 (only unshipped deliveries eligible).
 4. If [2] → read the package file, compare against current state of tasks/deliveries,
@@ -250,7 +298,7 @@ When DEPLOYMENT-STATE.md Status is Done:
 ## Quality Checklist
 
 - [ ] All selected deliveries have all tasks complete
-- [ ] All task grades meet minimum (from DISCOVERY-STATE.md)
+- [ ] All task grades meet minimum (from `.aid/knowledge/STATE.md` `**Minimum Grade:**`)
 - [ ] No Critical/High known-issues unresolved
 - [ ] Full build passes (not incremental)
 - [ ] Full test suite passes
@@ -258,6 +306,6 @@ When DEPLOYMENT-STATE.md Status is Done:
 - [ ] Package created per infrastructure.md § Deployment
 - [ ] Package file saved with all sections filled
 - [ ] Release notes generated in package file
-- [ ] KB updates routed to DISCOVERY-STATE.md (not direct edits)
-- [ ] Delivery and task statuses updated to Shipped
-- [ ] DEPLOYMENT-STATE.md updated (Done + History entry)
+- [ ] KB updates routed to `.aid/knowledge/STATE.md` `## Q&A (Pending)` (not direct edits)
+- [ ] Delivery and task statuses updated to Shipped in work STATE.md
+- [ ] Work STATE.md `## Deploy Status` updated (Done + History entry)

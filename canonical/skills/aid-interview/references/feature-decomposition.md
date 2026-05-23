@@ -65,7 +65,7 @@ template from `../../../templates/feature.md`. Fill in:
 
 ## Step 5: Update Meta-Documents
 
-1. Add Review History entry in INTERVIEW-STATE.md:
+1. Add Review History entry in STATE.md `## Interview Status`:
    `| {N} | {today} | — | Feature Decomposition | {N} features created |`
 2. Update `.aid/knowledge/INDEX.md` if it exists — add work/features reference
 3. Update `.aid/knowledge/README.md` if it exists — add work to revision history

@@ -14,7 +14,7 @@ Produces one self-contained `knowledge-summary.html` from `.aid/knowledge/`:
 4. **Validate** — `mermaid.parse()` on every diagram, anchor + relative-link check, HTML validity, contrast ratios. Produces the **Machine Grade**.
 5. **Manual checklist** — interactive walkthrough of KB-completeness (K1), fact-grounding (K2), and a mandatory human visual gate (V1). Produces the **Human Grade**.
 6. **Approval gate** — both Machine and Human grades must meet the minimum (default `A`) before writeback.
-7. **Writeback** — appends an entry to `DISCOVERY-STATE.md ## Summarization History`.
+7. **Writeback** — appends an entry to `.aid/knowledge/STATE.md ## Summarization History`.
 
 ## When to Use
 
@@ -27,7 +27,7 @@ Produces one self-contained `knowledge-summary.html` from `.aid/knowledge/`:
 | Artifact | Location | Purpose |
 |----------|----------|---------|
 | `knowledge-summary.html` | `.aid/knowledge/` | Single-file offline visual summary |
-| `SUMMARY-STATE.md` | `.aid/knowledge/` | Profile, grades, approval status, last-run metadata |
+| `.aid/knowledge/STATE.md` `## Knowledge Summary Status` | `.aid/knowledge/STATE.md` | Profile, grades, approval status, last-run metadata |
 | `.aid/knowledge/.cache/mermaid.min.js` | cache | Pinned Mermaid version (gitignored) |
 
 ## Quality Gate

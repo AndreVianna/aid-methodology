@@ -38,7 +38,9 @@ Each deliverable follows the same cycle:
 ```
 .aid/
   knowledge/                ← shared KB (read)
+    STATE.md                ← minimum grade
   work-NNN-{name}/
+    STATE.md                ← § Tasks Status (written here)
     PLAN.md                 ← roadmap with deliverables (read — must exist)
     features/
       feature-NNN-{name}/
@@ -81,6 +83,29 @@ Each deliverable follows the same cycle:
 - `tasks/` empty or missing → **FIRST RUN** (Step 1)
 - `tasks/` has files → **REVIEW** (enter loop at step 4)
 
+Print the state-entry line and "you are here" map:
+
+**FIRST-RUN:**
+```
+[State: FIRST-RUN] — No task files yet; begin proposing task breakdown per deliverable.
+aid-detail  ▸ you are here
+  [● FIRST-RUN ] → [ REVIEW ] → [ DONE ]
+```
+
+**REVIEW:**
+```
+[State: REVIEW] — Existing tasks found; re-review against current PLAN.md and SPECs.
+aid-detail  ▸ you are here
+  [✓ FIRST-RUN ] → [● REVIEW ] → [ DONE ]
+```
+
+**DONE:**
+```
+[State: DONE] — Task list approved and meets minimum grade.
+aid-detail  ▸ you are here
+  [✓ FIRST-RUN ] → [✓ REVIEW ] → [● DONE ]
+```
+
 ## Inputs
 
 - **PLAN.md** — deliverables, ordering, dependencies
@@ -114,7 +139,7 @@ Every task has exactly ONE type. Never mix types in a single task.
 
 When proposing tasks, the agent reads the feature SPEC and automatically detects types:
 
-1. **Spike Needed** in feature STATE.md → RESEARCH task first
+1. **Spike Needed** in work STATE.md `## Features Status` → RESEARCH task first
 2. **UI Specs** section in SPEC.md → DESIGN task before IMPLEMENT
 3. **Data Model / Feature Flow / Layers & Components** → IMPLEMENT task(s)
 4. **Integration points / acceptance criteria** → TEST task(s) after IMPLEMENT
@@ -247,12 +272,16 @@ Once approved:
 
 **Agent:** Dispatch with `subagent_type: reviewer` (overriding the default `architect`). The reviewer must run with clean context — it grades against KB/codebase reality without seeing the architect's working notes. Print before dispatch: `[Review] Dispatching reviewer for task list validation.`
 
+▶ reviewer starting (~1–2 min)
+After writing, **review immediately:** Do the tasks hold up?
+✓ reviewer done (record actual time) — or ✗ reviewer failed: {reason}
+
 Use the universal rubric (`../../templates/grading-rubric.md`). Classify each issue
 by severity. The grade is calculated — worst issue dominates.
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum (from DISCOVERY-STATE.md) | Move to next deliverable. |
+| Grade ≥ minimum (from `.aid/knowledge/STATE.md` `**Minimum Grade:**`) | Move to next deliverable. |
 | Grade < minimum, fixable | Back to Propose with findings. |
 
 ```
@@ -343,7 +372,7 @@ For each deliverable, check its corresponding tasks:
 Use the universal rubric (`../../templates/grading-rubric.md`). Classify each issue
 by severity. The grade is calculated — worst issue dominates.
 
-Compare to minimum grade from DISCOVERY-STATE.md.
+Compare to minimum grade from `.aid/knowledge/STATE.md` `**Minimum Grade:**`.
 
 | Condition | Action |
 |-----------|--------|
@@ -359,8 +388,8 @@ Update task files, create new ones, delete orphans, renumber if needed.
 ## Feedback Loops
 
 - **→ Plan:** Plan too vague to decompose → return to `/aid-plan`
-- **→ Specify:** SPEC missing detail for scope → write Q&A to feature's `STATE.md`
-- **→ Discovery:** KB gap → write Q&A to `.aid/knowledge/DISCOVERY-STATE.md`
+- **→ Specify:** SPEC missing detail for scope → write Q&A to `.aid/{work}/STATE.md` `## Cross-phase Q&A`
+- **→ Discovery:** KB gap → write Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)`
 
 ## Project Management Sync (conditional)
 

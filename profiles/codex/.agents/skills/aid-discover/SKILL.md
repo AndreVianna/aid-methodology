@@ -20,20 +20,27 @@ Includes a built-in quality gate that reviews, grades, and fixes KB documents.
 ## ⚠️ Pre-flight Checks
 
 Run `scripts/check-preflight.sh .aid/knowledge/` to verify:
-1. `.aid/knowledge/DISCOVERY-STATE.md` exists (init has run)
+1. `.aid/knowledge/STATE.md` exists (init has run)
 2. Not in Plan Mode (subagents need write access)
 
 If Check 1 fails: `⚠️ Knowledge Base not initialized. Run /aid-init first to set up the project.` — Exit.
 If Check 2 fails: Tell user to press `Shift+Tab` to exit Plan Mode, then re-run.
 
+> **State machine for this skill:**
+> ```
+> aid-discover  ▸ one step per run
+>   [ GENERATE ] → [ REVIEW ] → [ Q&A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
+> ```
+> Each run detects which state to enter from disk and does exactly that step.
+
 ## Arguments
 
 | Argument | Effect |
 |----------|--------|
-| `--grade X` | Set minimum acceptable grade. Format: `[A-F][-+]?` (e.g., A, A-, B+). Default: `A`. Persists in DISCOVERY-STATE.md. |
+| `--grade X` | Set minimum acceptable grade. Format: `[A-F][-+]?` (e.g., A, A-, B+). Default: `A`. Persists in `.aid/knowledge/STATE.md`. |
 | `--reset` | Clear entire `.aid/knowledge/` directory and restart from scratch. |
 
-**Grade persistence:** Saved to DISCOVERY-STATE.md on first run. `--grade` updates it; omitting it reads the stored value.
+**Grade persistence:** Saved to `.aid/knowledge/STATE.md` on first run. `--grade` updates it; omitting it reads the stored value.
 
 ---
 
@@ -62,11 +69,11 @@ State 6: GRADE file, grade >= min, user-approved        → DONE
    `integration-map.md`, `domain-glossary.md`, `test-landscape.md`, `security-model.md`,
    `tech-debt.md`, `infrastructure.md`, `ui-architecture.md`, `feature-inventory.md`
 2. A document is "populated" only if it contains real content (files with only `❌ Pending` = missing). If any are missing → **GENERATE**
-3. If all 16 populated and DISCOVERY-STATE.md has `**Grade:** Pending` or `Not Started` → **REVIEW**
-4. If all 16 populated but no DISCOVERY-STATE.md → **REVIEW** (legacy)
-5. If DISCOVERY-STATE.md exists with a grade:
+3. If all 16 populated and `.aid/knowledge/STATE.md` has `**Grade:** Pending` or `Not Started` → **REVIEW**
+4. If all 16 populated but no `.aid/knowledge/STATE.md` → **REVIEW** (legacy)
+5. If `.aid/knowledge/STATE.md` exists with a grade:
    - Read current/minimum grade; if `--grade` provided, update minimum
-   - Read `## Q&A` for `**Status:** Pending` entries
+   - Read `## Q&A (Pending)` section of `.aid/knowledge/STATE.md` for `**Status:** Pending` entries
    - If any Pending with `**Impact:** Required` → **Q&A** (regardless of grade)
    - If grade < minimum: Pending entries → **Q&A**; no Pending → **FIX**
    - If grade >= minimum and no Required Pending Q&A:
@@ -75,7 +82,49 @@ State 6: GRADE file, grade >= min, user-approved        → DONE
 **Grade ordering** (highest to lowest):
 `A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, E+, E, E-, F`
 
-Print: `[State: {GENERATE|REVIEW|Q&A|FIX|APPROVAL|DONE}]`
+Print the state-entry line with description, then the "you are here" state-map. Use one of these depending on the detected state:
+
+**GENERATE:**
+```
+[State: GENERATE] — Populate missing KB documents by orchestrating parallel discovery sub-agents.
+aid-discover  ▸ you are here
+  [● GENERATE ] → [ REVIEW ] → [ Q&A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
+```
+
+**REVIEW:**
+```
+[State: REVIEW] — Grade all KB documents for accuracy, completeness, and evidence quality.
+aid-discover  ▸ you are here
+  [✓ GENERATE ] → [● REVIEW ] → [ Q&A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
+```
+
+**Q&A:**
+```
+[State: Q&A] — Resolve pending questions with the user before attempting automated fixes.
+aid-discover  ▸ you are here
+  [✓ GENERATE ] → [✓ REVIEW ] → [● Q&A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
+```
+
+**FIX:**
+```
+[State: FIX] — Apply Q&A answers and reviewer feedback to bring KB documents up to minimum grade.
+aid-discover  ▸ you are here
+  [✓ GENERATE ] → [✓ REVIEW ] → [✓ Q&A ] → [● FIX ] → [ APPROVAL ] → [ DONE ]
+```
+
+**APPROVAL:**
+```
+[State: APPROVAL] — KB meets minimum grade; ask the user to confirm it is ready for Interview.
+aid-discover  ▸ you are here
+  [✓ GENERATE ] → [✓ REVIEW ] → [✓ Q&A ] → [✓ FIX ] → [● APPROVAL ] → [ DONE ]
+```
+
+**DONE:**
+```
+[State: DONE] — Discovery is complete and user-approved; KB is ready for Interview.
+aid-discover  ▸ you are here
+  [✓ GENERATE ] → [✓ REVIEW ] → [✓ Q&A ] → [✓ FIX ] → [✓ APPROVAL ] → [● DONE ]
+```
 
 ---
 
@@ -91,7 +140,7 @@ If ALL 16 have real content and no `--reset`, skip to Step 6.
 
 ### Step 0b: Read External Documentation Paths
 
-Read DISCOVERY-STATE.md `## External Documentation` for paths from `aid-init`. Verify accessible:
+Read `.aid/knowledge/STATE.md` `## External Documentation` for paths from `aid-init`. Verify accessible:
 ```bash
 test -r <path> && echo "✅ $path" || echo "❌ $path — no longer accessible"
 ```
@@ -103,11 +152,13 @@ Run the lightweight file-index pre-pass before dispatching sub-agents. This prod
 
 > **Working directory assumption:** All bash commands in this skill (Step 0c, Step 1, etc.) assume the current working directory is the project root (the directory containing `.aid/`). Relative paths like `../../templates/scripts/...` resolve from that root. Verify with `pwd` if unsure.
 
+▶ build-project-index starting (~30 s)
 ```bash
 bash ../../templates/scripts/build-project-index.sh \
   --root . \
   --output .aid/knowledge/project-index.md
 ```
+✓ build-project-index done (record actual time)
 
 Print: `[0c] Building project index...` then on completion `[0c] Project index ready (N files, M lines)`.
 
@@ -125,7 +176,9 @@ Print: `[1/5] Pre-scan: mapping project structure and external sources...`
 Read `references/agent-prompts.md` section `## Scout` for the full prompt. Substitute the
 external docs placeholder with actual paths (or the "no docs" variant).
 
+▶ discovery-scout starting (~2–4 min)
 Wait for completion. Verify both files exist. Re-dispatch if missing.
+✓ discovery-scout done (record actual time) — or ✗ discovery-scout failed: {reason}
 
 ### Steps 2-5: Dispatch 4 Subagents in Parallel
 
@@ -148,10 +201,48 @@ REFERENCE DOCUMENTS (read these FIRST before analyzing):
 | [4/5] | discovery-integrator | api-contracts.md, integration-map.md, domain-glossary.md | `references/agent-prompts.md` → `## Integrator` |
 | [5/5] | discovery-quality | test-landscape.md, security-model.md, tech-debt.md, infrastructure.md | `references/agent-prompts.md` → `## Quality` |
 
+Before dispatching, print the AC4 sub-unit snapshot header for the GENERATE state:
+```
+GENERATE  Wave 1 of 1 · 0/4 done
+  (queued) discovery-architect  ~3–5 min
+  (queued) discovery-analyst    ~3–5 min
+  (queued) discovery-integrator ~3–5 min
+  (queued) discovery-quality    ~3–5 min
+```
+
+Print the AC2 bracket-pair before each parallel dispatch:
+```
+▶ discovery-architect starting (~3–5 min)
+▶ discovery-analyst starting (~3–5 min)
+▶ discovery-integrator starting (~3–5 min)
+▶ discovery-quality starting (~3–5 min)
+```
+
 ### Wait for ALL Agents
 
 **After dispatching, WAIT. Do not check files. Do not take any action.**
-Print each completion: `Agent "[name]" completed. [N/4] done.`
+
+On each agent completion, re-render the AC4 snapshot (coalesce multiple completions within the same second into one render):
+```
+✓ discovery-architect done in {actual}
+GENERATE  Wave 1 of 1 · 1/4 done
+  ✓ discovery-architect  {actual}
+  ● discovery-analyst    {elapsed} / ~3–5 min
+  (queued) discovery-integrator ~3–5 min
+  (queued) discovery-quality    ~3–5 min
+```
+
+Print each completion with the AC2 bracket close: `✓ {agent} done in {actual time}` (or `✗ {agent} failed: {reason}` on error).
+
+When ALL dispatched agents complete, print the final snapshot:
+```
+GENERATE  Wave 1 of 1 · 4/4 done
+  ✓ discovery-architect  {actual}
+  ✓ discovery-analyst    {actual}
+  ✓ discovery-integrator {actual}
+  ✓ discovery-quality    {actual}
+```
+
 **Only proceed when ALL dispatched agents have reported completion.**
 
 ### Verify All 16 Files
@@ -175,13 +266,13 @@ Regenerate on every discovery run.
 **.aid/knowledge/feature-inventory.md** — copy template from `../../templates/feature-inventory.md`.
 Populated during Q&A → FIX cycle, but must exist for state machine.
 
-### Step 6b: Update DISCOVERY-STATE.md with Q&A
+### Step 6b: Update `.aid/knowledge/STATE.md` with Q&A
 
 **⚠️ Do NOT recreate this file.** It was created by `/aid-init` with metadata. Update only:
 
 1. Read `.aid/knowledge/.scout-questions.tmp` (from scout)
 2. Read all KB documents for flagged questions/uncertainties/TODOs
-3. Consolidate into `## Q&A` section with sequential IDs (Q1, Q2, ...)
+3. Consolidate into `## Q&A (Pending)` section with sequential IDs (Q1, Q2, ...)
 4. Delete `.scout-questions.tmp`
 5. Set `**Grade:**` to `Pending` (was `Not Started`)
 6. **Preserve** `**Minimum Grade:**`, `**Project Type:**`, `**User Approved:**`, `## External Documentation`
@@ -201,7 +292,7 @@ Populated during Q&A → FIX cycle, but must exist for state machine.
 **Required Q&A entry** (inject if not present): Category: Features, Impact: Required, Status: Pending.
 Adapt question to project type (web app, API, library, mobile, CLI, or generic).
 
-Print: `[DISCOVERY-STATE] Updated with {N} Q&A questions. Grade: Pending.`
+Print: `[STATE.md] Updated with {N} Q&A questions. Grade: Pending.`
 
 ### Step 7: Update Project Config Files
 
@@ -234,18 +325,20 @@ or prior state. The reviewer evaluates purely on what's on disk.
 - Do NOT tell the reviewer what was fixed or previous grade
 - Do NOT say "re-review" — reviewer must approach fresh
 
+▶ discovery-reviewer starting (~2–3 min)
 Wait for completion.
+✓ discovery-reviewer done (record actual time) — or ✗ discovery-reviewer failed: {reason}
 
-### Step 2: Post-Process DISCOVERY-STATE.md
+### Step 2: Post-Process `.aid/knowledge/STATE.md`
 
-Verify DISCOVERY-STATE.md contains:
+Verify `.aid/knowledge/STATE.md` `## KB Documents Status` and `## Issues` sections contain:
 - [ ] Grade for every document (16 KB + AGENTS.md + INDEX.md + README.md)
 - [ ] Issues with severity levels ([CRITICAL], [HIGH], [MEDIUM], [MINOR])
-- [ ] Verification spot-checks (minimum 10)
-- [ ] Overall grade and recommendation
+- [ ] Verification spot-checks (minimum 10) under `## Verification Spot-Checks`
+- [ ] Overall grade and recommendation under `## Review History`
 - [ ] Cross-cutting concerns
 
-Set Minimum Grade (from `--grade` or default `A`). Add first Review History entry.
+Set Minimum Grade (from `--grade` or default `A`). Add first Review History entry under `## Review History`.
 
 Print: `[Review 2/2] Review complete. Grade: {overall}. Minimum: {min}. Run /aid-discover again to {fix issues|proceed}.`
 
@@ -257,7 +350,7 @@ Grade below minimum and `## Q&A` has Pending entries.
 
 ### Step 1: Load and Filter Questions
 
-Read `## Q&A` from DISCOVERY-STATE.md. For each Pending entry:
+Read `## Q&A (Pending)` from `.aid/knowledge/STATE.md`. For each Pending entry:
 1. **Check KB** — answer already in another KB doc? → Auto-answer, set `Answered`
 2. **Check duplicates** — already answered in a previous cycle? → Skip
 3. **Inferrable?** — ensure `**Suggested:**` is populated if possible
@@ -284,7 +377,7 @@ Suggested: {suggested answer, if present}
 - **[2] Accept:** Set `**Status:** Answered`, copy suggested to `**Answer:**`
 - **[3] Custom:** Set `**Status:** Answered`, record text in `**Answer:**`
 
-**Write to file immediately after each answer.**
+**Write to `.aid/knowledge/STATE.md` immediately after each answer.**
 
 ### Step 4: Continue or Exit
 
@@ -299,19 +392,19 @@ Grade below minimum, no Pending Q&A.
 
 ### Step 1: Identify Documents Below Threshold
 
-Read DISCOVERY-STATE.md. List documents below minimum grade.
+Read `.aid/knowledge/STATE.md` `## KB Documents Status`. List documents below minimum grade.
 Prioritize: [CRITICAL] → [HIGH] → [MEDIUM].
 Print: `[Fix] {N} documents below {minimum}. Fixing...`
 
 ### Step 2: Fix Each Document
 
 For each document below minimum, in priority order:
-1. Read issues from DISCOVERY-STATE.md
-2. Read Answered Q&A entries applicable to this document
+1. Read issues from `.aid/knowledge/STATE.md` `## Issues`
+2. Read Answered Q&A entries from `.aid/knowledge/STATE.md` `## Q&A` applicable to this document
 3. Read relevant source code for missing info
 4. Edit KB document — combine review findings WITH user answers
-5. **REMOVE fixed issue lines** from DISCOVERY-STATE.md
-6. Update `**Applied to:**` for each incorporated Q&A answer
+5. **REMOVE fixed issue lines** from `.aid/knowledge/STATE.md` `## Issues`
+6. Update `**Applied to:**` for each incorporated Q&A answer in STATE.md `## Q&A`
 7. Re-grade the document
 
 Print: `[Fix] Improving {document}... {old grade} → {new grade}`
@@ -324,7 +417,7 @@ Print: `[Fix] Improving {document}... {old grade} → {new grade}`
 ### Step 2b: Verify Meta-Documents (MANDATORY after every fix pass)
 
 After ALL primary fixes, verify and update in order:
-1. **DISCOVERY-STATE.md Q&A** — resolved questions? new unknowns?
+1. **`.aid/knowledge/STATE.md` Q&A** — resolved questions? new unknowns?
 2. **INDEX.md** — summaries still match?
 3. **README.md** — completeness table still accurate?
 4. **AGENTS.md** — build commands, conventions, architecture stale?
@@ -339,11 +432,13 @@ Print: `[Fix 2/3] Re-reviewing after fixes...`
 
 Read `references/reviewer-prompt.md` for the full prompt. Same contamination prevention rules as REVIEW mode.
 
+▶ discovery-reviewer starting (~2–3 min)
 Wait for completion.
+✓ discovery-reviewer done (record actual time) — or ✗ discovery-reviewer failed: {reason}
 
 ### Step 4: Post-Fix Update
 
-Read new DISCOVERY-STATE.md. Verify Review History preserved (append, not replace).
+Read new `.aid/knowledge/STATE.md`. Verify Review History preserved (append, not replace under `## Review History`).
 
 Print: `[Fix 3/3] Complete. Grade: {old} → {new}. Run /aid-discover again to {fix remaining issues|proceed}.`
 
@@ -371,9 +466,9 @@ Please review .aid/knowledge/ and let us know if there is anything else to consi
 
 ### Step 3: Process Response
 
-- **[1] Approved:** Add `**User Approved:** yes` to DISCOVERY-STATE.md. Add Review History entry.
+- **[1] Approved:** Add `**User Approved:** yes` to `.aid/knowledge/STATE.md`. Add Review History entry under `## Review History`.
   Print: `✅ Discovery complete. Grade: {grade}. KB approved and ready for the Interview phase.`
-- **[2] Consideration:** Add as new Q&A entry (Category: `User Feedback`, Impact: `High`, Status: `Pending`).
+- **[2] Consideration:** Add as new Q&A entry in STATE.md `## Q&A (Pending)` (Category: `User Feedback`, Impact: `High`, Status: `Pending`).
   Print: `[Approval] Consideration recorded as Q{N}. Run /aid-discover again to address it.`
 
 ---
@@ -400,14 +495,14 @@ After printing the success message, also suggest the optional visual summary:
 
 ## Targeted Discovery (Re-entry)
 
-When a Q&A entry in DISCOVERY-STATE.md or an IMPEDIMENT triggers re-discovery:
+When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-discovery:
 
-1. Read the Q&A entry in DISCOVERY-STATE.md or the IMPEDIMENT to understand what's missing
+1. Read the Q&A entry in STATE.md `## Q&A (Pending)` or the IMPEDIMENT to understand what's missing
 2. Identify which subagent owns the documents (see `scripts/verify-kb.sh` comments for mapping)
 3. Dispatch ONLY the relevant subagent
 4. Regenerate README.md and INDEX.md
 5. Update README.md revision history
-6. Delete DISCOVERY-STATE.md so next run re-reviews
+6. Reset the `**Grade:**` field in STATE.md to `Pending` so next run re-reviews
 7. Report completion
 
 ---
@@ -417,14 +512,14 @@ When a Q&A entry in DISCOVERY-STATE.md or an IMPEDIMENT triggers re-discovery:
 - [ ] No overlap between KB documents
 - [ ] Claims grounded in code evidence (file paths, line numbers)
 - [ ] Inferred info marked with ⚠️
-- [ ] DISCOVERY-STATE.md Q&A captures everything needing human input
+- [ ] `.aid/knowledge/STATE.md` Q&A captures everything needing human input
 - [ ] external-sources.md documents all sources (or states none provided)
 - [ ] README.md reflects completeness and revision history
 - [ ] INDEX.md has 2-3 line summaries per document
 - [ ] feature-inventory.md exists (template or populated)
 - [ ] AGENTS.md placeholders filled with discovered data
 - [ ] All issues have severity: [CRITICAL], [HIGH], or [MEDIUM]
-- [ ] Minimum 10 spot-checks in DISCOVERY-STATE.md
+- [ ] Minimum 10 spot-checks in `.aid/knowledge/STATE.md` `## Verification Spot-Checks`
 
 ---
 

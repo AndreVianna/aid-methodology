@@ -38,11 +38,11 @@ Every section follows the same cycle:
 .aid/
   knowledge/               ← shared KB
   work-NNN-{name}/
+    STATE.md               ← process (§ Features Status table, § Cross-phase Q&A)
     REQUIREMENTS.md
     features/
       feature-NNN-{name}/
         SPEC.md            ← product (requirements + technical specification)
-        STATE.md           ← process (section status, Q&A, loopbacks)
 ```
 
 ---
@@ -63,7 +63,7 @@ Available features:
 ```
 
 Scan all `.aid/work-*/features/feature-*/` directories.
-For each, check if STATE.md exists and show status. Exit.
+For each, check the work STATE.md `## Features Status` row for this feature and show status. Exit.
 
 **Shortcut:** If only one work exists, accept bare `feature-001` and resolve automatically.
 
@@ -99,14 +99,41 @@ Resolve the feature path using **prefix matching** (glob):
 All paths relative to `.aid/{work}/features/{feature}/`.
 
 ```
-State 1: No STATE.md                                        → INITIALIZE
-State 2: STATE.md exists, Status: In Discussion              → CONTINUE
-State 3: STATE.md exists, Status: Spike Needed               → SPIKE INFO
-State 4: STATE.md exists, Status: Blocked (loopback pending) → BLOCKED
-State 5: STATE.md exists, Status: Ready                      → REVIEW (enter loop at step 4)
+State 1: No Feature STATUS row in work STATE.md              → INITIALIZE
+State 2: Feature STATUS: In Discussion                        → CONTINUE
+State 3: Feature STATUS: Spike Needed                         → SPIKE INFO
+State 4: Feature STATUS: Blocked (loopback pending)           → BLOCKED
+State 5: Feature STATUS: Ready                                → REVIEW (enter loop at step 4)
 ```
 
-Print: `[{work}/{feature}: {STATE}]`
+Print the state-entry line and "you are here" map. Examples for INITIALIZE:
+
+```
+[State: INITIALIZE] — First run for this feature; load context, determine sections, begin The Loop.
+aid-specify ({feature})  ▸ you are here
+  [● INITIALIZE ] → [ CONTINUE ] → [ REVIEW ] → [ DONE ]
+```
+
+For CONTINUE:
+```
+[State: CONTINUE] — Resume The Loop (Propose → Discuss → Write → Review) for the next pending section.
+aid-specify ({feature})  ▸ you are here
+  [✓ INITIALIZE ] → [● CONTINUE ] → [ REVIEW ] → [ DONE ]
+```
+
+For REVIEW:
+```
+[State: REVIEW] — All sections complete; re-review entire spec against current KB and codebase.
+aid-specify ({feature})  ▸ you are here
+  [✓ INITIALIZE ] → [✓ CONTINUE ] → [● REVIEW ] → [ DONE ]
+```
+
+For DONE (Ready):
+```
+[State: DONE] — Spec is Ready and has met the minimum grade.
+aid-specify ({feature})  ▸ you are here
+  [✓ INITIALIZE ] → [✓ CONTINUE ] → [✓ REVIEW ] → [● DONE ]
+```
 
 ---
 
@@ -186,12 +213,12 @@ Each has two paths: **Auto-activate** (obvious from context) or **Ask** (use def
 - Native APIs: camera, GPS, biometrics, storage, permissions required
 - App Store Impact: new permissions, review guideline considerations
 
-### Step 3: Create STATE.md
+### Step 3: Register in work STATE.md
 
-Create from template (`../../templates/feature-state.md`):
-- **Started:** today's date
-- **Sections table:** each activated section, Status `Pending`, source (`core`/`auto`/`user-confirmed`)
-- **Change Log:** initial entry
+In the work's `.aid/{work}/STATE.md`, update the `## Features Status` table:
+- Find or add a row for this feature
+- Set Status to `In Discussion`, Started date to today
+- Columns: Feature | Status | Sections | Started | Last Updated | Notes
 
 ### Step 4: Present and Start
 
@@ -215,13 +242,13 @@ I've analyzed {feature} against the KB and codebase.
 Does this look right? Answer the questions, and tell me if I'm missing anything.
 ```
 
-Process response → update STATE.md → begin **The Loop** for first Pending section.
+Process response → update work STATE.md `## Features Status` → begin **The Loop** for first Pending section.
 
 ---
 
 ## State 2: CONTINUE
 
-STATE.md exists, status "In Discussion." Find first `Pending` or `In Discussion` section.
+Work STATE.md `## Features Status` shows this feature `In Discussion`. Find first `Pending` or `In Discussion` section in SPEC.md.
 Resume **The Loop** for that section.
 
 ---
@@ -244,7 +271,7 @@ If changing something that exists, call it out.}
 What do you think?
 ```
 
-Update section status to `In Discussion` in STATE.md.
+Update section status to `In Discussion` in work STATE.md `## Features Status`.
 
 **Proposal quality rules:**
 - Reference specific files, classes, patterns from the codebase
@@ -273,7 +300,7 @@ Continue until the developer is satisfied.
 When agreed:
 
 1. Write section to SPEC.md under `## Technical Specification`
-2. Update STATE.md: section status → `Written`
+2. Update work STATE.md `## Features Status` section status → `Written`
 3. Add Change Log entry to SPEC.md
 4. **KB Seeding (greenfield):** If the decision fills a gap in an empty KB doc,
    update that KB doc + INDEX.md + README.md. Log which KB docs were seeded.
@@ -282,20 +309,23 @@ When agreed:
 
 **Agent:** Dispatch with `subagent_type: reviewer` (overriding the default `architect`). The reviewer must run with clean context — it grades against KB/codebase reality without seeing the architect's working notes. Print before dispatch: `[Review] Dispatching reviewer for SPEC validation.`
 
+▶ reviewer starting (~1–2 min)
+
 Immediately after writing, verify what was written:
 
 - Does it contradict other completed sections in this SPEC?
 - Does it align with KB reality (architecture, coding standards, existing patterns)?
 - Does it reference real codebase artifacts (not hallucinated paths/classes)?
 - Is it concrete enough for implementation (no vague "appropriate pattern" language)?
+✓ reviewer done (record actual time) — or ✗ reviewer failed: {reason}
 
 **Grade the section** using the universal rubric (`../../templates/grading-rubric.md`).
 Classify each issue by severity (Minor/Low/Medium/High/Critical). The grade is
-calculated — worst issue dominates. Compare to minimum grade from DISCOVERY-STATE.md.
+calculated — worst issue dominates. Compare to minimum grade from `.aid/knowledge/STATE.md` `**Minimum Grade:**`.
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum | Mark `Complete` in STATE.md. Next section. |
+| Grade ≥ minimum | Mark `Complete` in work STATE.md `## Features Status`. Next section. |
 | Grade < minimum, fixable | Back to Propose with findings. |
 | Grade < minimum, systemic | Loopback (KB/Requirements issue). |
 
@@ -315,7 +345,7 @@ in coding-standards.md §3.2 (composite indices discouraged). Let me re-propose.
 
 - More Pending sections → Propose next one (step 1)
 - All sections Complete:
-  - Set STATUS to `Ready` in STATE.md
+  - Set feature status to `Ready` in work STATE.md `## Features Status`
   - Print summary with all completed sections
   - `/aid-specify` on this feature now enters **REVIEW** (step 4 on all sections)
 
@@ -323,12 +353,12 @@ in coding-standards.md §3.2 (composite indices discouraged). Let me re-propose.
 
 ## State 5: REVIEW (re-run on completed feature)
 
-The spec was completed previously (`Ready` status).
+The spec was completed previously (feature status `Ready` in work STATE.md `## Features Status`).
 
 **Ask first:** _"This feature spec is marked Ready. Do you want to reopen it for review?
 Is there something specific you want to re-examine?"_
 
-If user confirms → set Status to `In Progress`, continue below.
+If user confirms → set feature status to `In Discussion`, continue below.
 If user has a specific concern → record it as context for the review.
 
 Re-run enters **the same loop at step 4** —
@@ -353,11 +383,11 @@ For each section in SPEC.md, run step 4 of the loop against current state:
 Use the universal rubric (`../../templates/grading-rubric.md`). Classify each issue
 by severity. The grade is calculated — worst issue dominates.
 
-Compare to minimum grade from DISCOVERY-STATE.md.
+Compare to minimum grade from `.aid/knowledge/STATE.md` `**Minimum Grade:**`.
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum | Print summary, done. |
+| Grade ≥ minimum | Print summary, done. Set feature status to `Ready` in work STATE.md. |
 | Grade < minimum, fixable sections | List findings, re-enter loop for affected sections. |
 | Grade < minimum, core assumptions wrong | Recommend `--reset`. |
 
