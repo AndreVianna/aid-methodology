@@ -390,6 +390,44 @@ create branch aid/delivery-001
 All tasks in a delivery accumulate on the same branch.
 RESEARCH and DOCUMENT tasks that produce only `.aid/` artifacts may skip branching.
 
+### EXECUTE-WAVE: AC4 Sub-unit Drill-down
+
+When executing a delivery wave (multiple tasks in sequence), render a sub-unit snapshot
+immediately after the AC3 state-map on each sub-unit transition. This is the
+**AC4 drill-down** for the EXECUTE-WAVE state.
+
+**Snapshot format:**
+
+```
+Wave {M} of {N} · {K}/{T} done
+
+| Task | Type | Status | Time |
+|------|------|--------|------|
+| task-001 | RESEARCH | ✓ done | 4m 12s |
+| task-002 | IMPLEMENT | ● running | ~3–8 min |
+| task-003 | TEST | (queued) | — |
+| task-004 | DOCUMENT | (queued) | — |
+```
+
+**Status icons:**
+- `✓ done` — task completed and passed review
+- `● running` — task currently in EXECUTE or REVIEW
+- `✗ failed` — task blocked or errored
+- `(queued)` — task not yet started
+
+**Re-render trigger:** render a fresh snapshot block on every sub-unit transition
+(queued → running → done / failed). Apply **1-second coalescing** — multiple
+transitions within the same second emit a single merged snapshot.
+
+**Serial-task fallback (current behavior):** Until work-001/feature-009 (parallel
+execution) ships, tasks run serially — at most 1 task appears as `● running` at a time.
+This is documented degradation per the SPEC Migration Plan §1 "AC4 phasing"; it is
+not a bug. The snapshot still renders for each serial task transition.
+
+**Failure tolerance:** If snapshot rendering fails for any reason (malformed iteration
+source, missing data), swallow the error silently and continue. The snapshot is
+informational — it must never block or abort task execution.
+
 ---
 
 ## Output

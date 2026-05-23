@@ -31,7 +31,7 @@
 {"dst": ".cursor/skills/aid-discover/references/reviewer-prompt.md", "profile": "cursor", "sha256": "1c0538eee4e40de533901d2b9b95ecaf29544a17fd75675f9e9090269430d20b", "src": "canonical/skills/aid-discover/references/reviewer-prompt.md"}
 {"dst": ".cursor/skills/aid-discover/scripts/check-preflight.sh", "profile": "cursor", "sha256": "45d7246cd3ca966aafb3f16cfe6bcabc3cf869a2cdfd3f094cf88ab5598cfdf1", "src": "canonical/skills/aid-discover/scripts/check-preflight.sh"}
 {"dst": ".cursor/skills/aid-discover/scripts/verify-kb.sh", "profile": "cursor", "sha256": "2010efb7555a7bc12ad4d9d1ffd3ef7ade5837b4b9be27a102e7bf4704c0834e", "src": "canonical/skills/aid-discover/scripts/verify-kb.sh"}
-{"dst": ".cursor/skills/aid-execute/SKILL.md", "profile": "cursor", "sha256": "8002f6374d32eafbf8fbd0cc87ca682564829218fb3a1167778d05c0a460e11c", "src": "canonical/skills/aid-execute/SKILL.md"}
+{"dst": ".cursor/skills/aid-execute/SKILL.md", "profile": "cursor", "sha256": "9429c28a8fba63c00075cb299701f4e5ff6641e172ba50cf7d534189cb7b1e4d", "src": "canonical/skills/aid-execute/SKILL.md"}
 {"dst": ".cursor/skills/aid-execute/references/reviewer-guide.md", "profile": "cursor", "sha256": "7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f", "src": "canonical/skills/aid-execute/references/reviewer-guide.md"}
 {"dst": ".cursor/skills/aid-execute/references/task-type-rules.md", "profile": "cursor", "sha256": "5f8ff036290b4103b3219e25104139046775afe9f9bd24e4847030d4a88c417e", "src": "canonical/skills/aid-execute/references/task-type-rules.md"}
 {"dst": ".cursor/skills/aid-init/SKILL.md", "profile": "cursor", "sha256": "78050e25fd7c81092891906ff56c00519eacc82ddf9b5567a284231695162d32", "src": "canonical/skills/aid-init/SKILL.md"}

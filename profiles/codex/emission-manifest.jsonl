@@ -7,7 +7,7 @@
 {"dst": ".agents/skills/aid-discover/references/reviewer-prompt.md", "profile": "codex", "sha256": "1c0538eee4e40de533901d2b9b95ecaf29544a17fd75675f9e9090269430d20b", "src": "canonical/skills/aid-discover/references/reviewer-prompt.md"}
 {"dst": ".agents/skills/aid-discover/scripts/check-preflight.sh", "profile": "codex", "sha256": "45d7246cd3ca966aafb3f16cfe6bcabc3cf869a2cdfd3f094cf88ab5598cfdf1", "src": "canonical/skills/aid-discover/scripts/check-preflight.sh"}
 {"dst": ".agents/skills/aid-discover/scripts/verify-kb.sh", "profile": "codex", "sha256": "2010efb7555a7bc12ad4d9d1ffd3ef7ade5837b4b9be27a102e7bf4704c0834e", "src": "canonical/skills/aid-discover/scripts/verify-kb.sh"}
-{"dst": ".agents/skills/aid-execute/SKILL.md", "profile": "codex", "sha256": "2fb73bcfdf1ae532033de1ed63bd2eb587051fc194d0bd36a62c6607eb247bd6", "src": "canonical/skills/aid-execute/SKILL.md"}
+{"dst": ".agents/skills/aid-execute/SKILL.md", "profile": "codex", "sha256": "a42ead310c0cd523f5225eb1f70d354f2ce6b13dd3fd43f3b86d74ac87f3a428", "src": "canonical/skills/aid-execute/SKILL.md"}
 {"dst": ".agents/skills/aid-execute/references/reviewer-guide.md", "profile": "codex", "sha256": "7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f", "src": "canonical/skills/aid-execute/references/reviewer-guide.md"}
 {"dst": ".agents/skills/aid-execute/references/task-type-rules.md", "profile": "codex", "sha256": "5f8ff036290b4103b3219e25104139046775afe9f9bd24e4847030d4a88c417e", "src": "canonical/skills/aid-execute/references/task-type-rules.md"}
 {"dst": ".agents/skills/aid-init/SKILL.md", "profile": "codex", "sha256": "f02dc40b75f522fff61271652b286c5af5f2e152aca39d80ed480930a4f0c27e", "src": "canonical/skills/aid-init/SKILL.md"}
