@@ -309,7 +309,7 @@ Every artifact template has a `## Revision History` table at the bottom. Every c
 
 This is enforced by:
 
-- The feedback loops (see §2.1 above) — each loop produces a `GAP.md` (`templates/feedback-artifacts/GAP.md`, 88 lines) or `IMPEDIMENT.md` (`templates/feedback-artifacts/IMPEDIMENT.md`, 118 lines) that explicitly identifies what artifact needs revision.
+- The feedback loops (see §2.1 above) — each loop produces a Q&A entry in a STATE file (DISCOVERY-STATE.md for KB gaps, INTERVIEW-STATE.md for requirements gaps, feature STATE.md for spec gaps) or an `IMPEDIMENT.md` (`templates/feedback-artifacts/IMPEDIMENT.md`, 118 lines) that explicitly identifies what artifact needs revision.
 - The `## Change Log` section that prefixes user-facing requirements artifacts like REQUIREMENTS.md (`methodology/aid-methodology.md:611-614`) and per-feature SPEC.md (`:636-639`).
 - The Reviewer agent that tags every issue by source (`[CODE]` / `[TASK]` / `[SPEC]` / `[KB]` / `[ARCHITECTURE]`) per `methodology/aid-methodology.md:814` — so a review can route a problem upstream to whichever artifact owns it.
 
@@ -391,7 +391,7 @@ flowchart TB
 
   HUMAN -- "/aid-deploy" --> DEP["aid-deploy skill"]
   CODE -- "verified" --> DEP
-  DEP -- "writes" --> DELIV["DELIVERY-NNN.md"]
+  DEP -- "writes" --> DELIV["release package +<br/>DEPLOYMENT-STATE.md"]
   DEP -- "may update" --> KB
 
   HUMAN -- "/aid-monitor" --> MON["aid-monitor skill"]
@@ -411,15 +411,10 @@ Per `methodology/aid-methodology.md:589-606` (Artifacts Reference table) and the
 | `DISCOVERY-STATE.md` | `templates/reports/discovery-state-template.md` | Discover |
 | `REQUIREMENTS.md` | `templates/requirements/requirements-template.md` (95 lines) | Interview |
 | Feature `SPEC.md` | `templates/specs/spec-template.md` (75 lines) | Interview (req side) + Specify (tech side) |
-| `PLAN.md` | `templates/delivery-plans/delivery-template.md` (83 lines) | Plan |
-| `DETAIL.md` | `templates/delivery-plans/detail-template.md` (158 lines) | Detail |
-| `task-NNN.md` | `templates/delivery-plans/task-template.md` (142 lines) | Detail |
-| `REVIEW.md` | `templates/reports/review-template.md` (125 lines) | Reviewer agent (inside Execute) |
-| `TEST-REPORT.md` | `templates/reports/test-report-template.md` (103 lines) | Reviewer agent (inside Execute, TEST tasks) |
-| `GAP.md` | `templates/feedback-artifacts/GAP.md` (88 lines) | Specify / Plan / Detail / Review |
+| `PLAN.md` | (no template; format defined inline by `aid-plan`) | Plan |
+| `task-NNN.md` | `templates/delivery-plans/task-template.md` (20 lines) | Detail |
 | `IMPEDIMENT.md` | `templates/feedback-artifacts/IMPEDIMENT.md` (118 lines) | Execute (Developer agent) |
 | `MONITOR-STATE.md` | (referenced in `templates/README.md` but file is **missing** — see `project-structure.md` Anomaly #8 line 261 and Q8 in `DISCOVERY-STATE.md`) | Monitor |
-| `CORRECTION.md` | `templates/reports/correction-template.md` (47 lines, deprecated per `methodology/aid-methodology.md:887-889`) | Deprecated; merged into Monitor |
 
 ### Workspace shape
 
@@ -438,7 +433,6 @@ Per `methodology/aid-methodology.md:245-258` and `aid-execute/SKILL.md:73-87`:
     INTERVIEW-STATE.md
     REQUIREMENTS.md
     PLAN.md
-    DETAIL.md
     known-issues.md
     features/
       feature-NNN-{name}/
@@ -581,7 +575,7 @@ Spot-checks performed against `methodology/aid-methodology.md`, the human README
 
 | Agent | Human `agents/{name}/README.md` claims | Claude Code agent definition | Codex agent definition | Match? |
 |---|---|---|---|---|
-| `architect` | "Transforms understanding into structure. SPEC.md / PLAN.md / DETAIL.md / TASK files. Opus tier. Invoked in Specify/Plan/Detail." (`agents/architect/README.md:1-18`) | `name: architect`, `model: opus`, `tools: Read, Glob, Grep, Write, Edit, Bash`. Body: "Transform REQUIREMENTS.md + KB into grounded SPEC.md" etc. (`claude-code/.claude/agents/architect.md`) | `name = "architect"`, `model = "gpt-5.5"`, `model_reasoning_effort = "high"`. Same body content. (`codex/.codex/agents/architect.toml`) | Faithful across all three. The Codex `developer_instructions` strips YAML `##` markdown headers from the body but preserves all content. |
+| `architect` | "Transforms understanding into structure. SPEC.md / PLAN.md / TASK files. Opus tier. Invoked in Specify/Plan/Detail." (`agents/architect/README.md:1-18`) | `name: architect`, `model: opus`, `tools: Read, Glob, Grep, Write, Edit, Bash`. Body: "Transform REQUIREMENTS.md + KB into grounded SPEC.md" etc. (`claude-code/.claude/agents/architect.md`) | `name = "architect"`, `model = "gpt-5.5"`, `model_reasoning_effort = "high"`. Same body content. (`codex/.codex/agents/architect.toml`) | Faithful across all three. The Codex `developer_instructions` strips YAML `##` markdown headers from the body but preserves all content. |
 | `discovery-architect` (this agent) | No human README under `agents/discovery-architect/` — discovery sub-agents are documented only in `agents/README.md:122-131` and within `claude-code/.claude/agents/discovery-architect.md` (172 lines). | 172-line agent definition declaring "Discovery Architect — a specialized analysis agent in the AID discovery pipeline" with full output document templates and the firm `**Bash is READ-ONLY.**` constraint. | TOML equivalent at `codex/.codex/agents/discovery-architect.toml` (169 lines). | ⚠️ **Discrepancy.** The 6 discovery sub-agents have no individual `agents/{name}/README.md` human-readable docs. They are documented only inline in `agents/README.md:122-131` and in the install-tree agent definitions. This is a documentation gap, not a behavioral one. Recorded as Q18. |
 | `reviewer` | "Adversarial quality evaluator. Produces structured issue list with severity + source tags. Does NOT fix; does NOT compute grade — `grade.sh` does that." (`agents/reviewer/README.md` per `project-structure.md:108`) | 60 lines (`claude-code/.claude/agents/reviewer.md`). Tier: opus. | TOML equivalent at `codex/.codex/agents/reviewer.toml` (59 lines). | Faithful. The "does NOT fix" and "does NOT compute grade" rules are consistent across the README, the SKILL.md files that invoke the reviewer (`aid-execute/SKILL.md:232`, `aid-discover/SKILL.md:336`), the methodology `:814`, and the agent definition itself. |
 

@@ -7,21 +7,21 @@
 
 | Metric | Value |
 |--------|-------|
-| Total files | 353 |
-| Total lines | 49226 |
-| Generated | 2026-05-21 |
+| Total files | 356 |
+| Total lines | 53191 |
+| Generated | 2026-05-22 |
 | Root | `.` |
 
 ## Language Breakdown
 
 | Language | Files | Lines |
 |----------|-------|-------|
-| Markdown | 249 | 33022 |
-| Shell | 43 | 5490 |
-| JavaScript | 16 | 3428 |
-| CSS | 4 | 2568 |
-| Other | 8 | 2469 |
-| TOML | 22 | 1522 |
+| Markdown | 245 | 32956 |
+| Shell | 52 | 9581 |
+| JavaScript | 16 | 4548 |
+| CSS | 4 | 2628 |
+| TOML | 22 | 1521 |
+| Other | 6 | 1230 |
 | HTML | 4 | 404 |
 | PowerShell | 5 | 300 |
 | JSON | 2 | 23 |
@@ -34,12 +34,20 @@ Manifest, build config, and CI files identified by name.
 |------|-------|----------|
 | `CONTRIBUTING.md` | 116 | 2026-05-21 |
 | `LICENSE` | 21 | 2026-05-21 |
-| `README.md` | 286 | 2026-05-21 |
+| `README.md` | 374 | 2026-05-22 |
 
 ## Top 20 Largest Source Files
 
 | Path | Language | Lines | Modified |
 |------|----------|-------|----------|
+| `templates/knowledge-summary/scripts/validate-diagrams.mjs` | JavaScript | 574 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/scripts/validate-diagrams.mjs` | JavaScript | 574 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/scripts/validate-diagrams.mjs` | JavaScript | 574 | 2026-05-21 |
+| `claude-code/.claude/templates/knowledge-summary/scripts/validate-diagrams.mjs` | JavaScript | 574 | 2026-05-21 |
+| `templates/knowledge-summary/scripts/grade.sh` | Shell | 519 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/scripts/grade.sh` | Shell | 519 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/scripts/grade.sh` | Shell | 519 | 2026-05-21 |
+| `claude-code/.claude/templates/knowledge-summary/scripts/grade.sh` | Shell | 519 | 2026-05-21 |
 | `templates/scripts/build-project-index.sh` | Shell | 368 | 2026-05-21 |
 | `cursor/.cursor/templates/scripts/build-project-index.sh` | Shell | 368 | 2026-05-21 |
 | `codex/.agents/templates/scripts/build-project-index.sh` | Shell | 368 | 2026-05-21 |
@@ -48,18 +56,10 @@ Manifest, build config, and CI files identified by name.
 | `cursor/.cursor/templates/knowledge-summary/lightbox.js` | JavaScript | 359 | 2026-05-21 |
 | `codex/.agents/templates/knowledge-summary/lightbox.js` | JavaScript | 359 | 2026-05-21 |
 | `claude-code/.claude/templates/knowledge-summary/lightbox.js` | JavaScript | 359 | 2026-05-21 |
-| `templates/knowledge-summary/scripts/validate-diagrams.mjs` | JavaScript | 294 | 2026-05-21 |
-| `cursor/.cursor/templates/knowledge-summary/scripts/validate-diagrams.mjs` | JavaScript | 294 | 2026-05-21 |
-| `codex/.agents/templates/knowledge-summary/scripts/validate-diagrams.mjs` | JavaScript | 294 | 2026-05-21 |
-| `claude-code/.claude/templates/knowledge-summary/scripts/validate-diagrams.mjs` | JavaScript | 294 | 2026-05-21 |
-| `templates/knowledge-summary/scripts/grade.sh` | Shell | 194 | 2026-05-21 |
-| `cursor/.cursor/templates/knowledge-summary/scripts/grade.sh` | Shell | 194 | 2026-05-21 |
-| `codex/.agents/templates/knowledge-summary/scripts/grade.sh` | Shell | 194 | 2026-05-21 |
-| `claude-code/.claude/templates/knowledge-summary/scripts/grade.sh` | Shell | 194 | 2026-05-21 |
-| `setup.sh` | Shell | 161 | 2026-05-21 |
-| `setup.ps1` | PowerShell | 156 | 2026-05-21 |
-| `templates/knowledge-summary/scripts/contrast-check.mjs` | JavaScript | 151 | 2026-05-21 |
-| `cursor/.cursor/templates/knowledge-summary/scripts/contrast-check.mjs` | JavaScript | 151 | 2026-05-21 |
+| `templates/scripts/verify-kb-claims.sh` | Shell | 351 | 2026-05-21 |
+| `templates/knowledge-summary/scripts/manual-checklist.sh` | Shell | 269 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/scripts/manual-checklist.sh` | Shell | 269 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/scripts/manual-checklist.sh` | Shell | 269 | 2026-05-21 |
 
 ## Full File Inventory
 
@@ -69,26 +69,26 @@ All files, sorted alphabetically by path. Paths are relative to root.
 |------|----------|-------|----------|
 | `.claude/settings..json` | JSON | 12 | 2026-05-21 |
 | `.claude/settings.json` | JSON | 11 | 2026-05-21 |
-| `.gitignore` | Other | 1 | 2026-05-21 |
-| `agents/architect/README.md` | Markdown | 68 | 2026-05-21 |
+| `.gitignore` | Other | 0 | 2026-05-21 |
+| `agents/architect/README.md` | Markdown | 67 | 2026-05-22 |
 | `agents/data-engineer/README.md` | Markdown | 53 | 2026-05-21 |
 | `agents/developer/README.md` | Markdown | 69 | 2026-05-21 |
 | `agents/devops/README.md` | Markdown | 52 | 2026-05-21 |
-| `agents/interviewer/README.md` | Markdown | 64 | 2026-05-21 |
+| `agents/interviewer/README.md` | Markdown | 64 | 2026-05-22 |
 | `agents/operator/README.md` | Markdown | 66 | 2026-05-21 |
-| `agents/orchestrator/README.md` | Markdown | 83 | 2026-05-21 |
+| `agents/orchestrator/README.md` | Markdown | 82 | 2026-05-22 |
 | `agents/performance/README.md` | Markdown | 52 | 2026-05-21 |
-| `agents/README.md` | Markdown | 174 | 2026-05-21 |
-| `agents/researcher/README.md` | Markdown | 63 | 2026-05-21 |
-| `agents/reviewer/README.md` | Markdown | 103 | 2026-05-21 |
+| `agents/README.md` | Markdown | 184 | 2026-05-22 |
+| `agents/researcher/README.md` | Markdown | 63 | 2026-05-22 |
+| `agents/reviewer/README.md` | Markdown | 103 | 2026-05-22 |
 | `agents/security/README.md` | Markdown | 52 | 2026-05-21 |
 | `agents/simple-extractor/README.md` | Markdown | 83 | 2026-05-21 |
 | `agents/simple-formatter/README.md` | Markdown | 78 | 2026-05-21 |
 | `agents/simple-glob/README.md` | Markdown | 89 | 2026-05-21 |
 | `agents/tech-writer/README.md` | Markdown | 51 | 2026-05-21 |
 | `agents/ux-designer/README.md` | Markdown | 49 | 2026-05-21 |
-| `CLAUDE.md` | Markdown | 30 | 2026-05-21 |
-| `claude-code/.claude/agents/architect.md` | Markdown | 40 | 2026-05-21 |
+| `CLAUDE.md` | Markdown | 90 | 2026-05-22 |
+| `claude-code/.claude/agents/architect.md` | Markdown | 39 | 2026-05-22 |
 | `claude-code/.claude/agents/data-engineer.md` | Markdown | 33 | 2026-05-21 |
 | `claude-code/.claude/agents/developer.md` | Markdown | 39 | 2026-05-21 |
 | `claude-code/.claude/agents/devops.md` | Markdown | 32 | 2026-05-21 |
@@ -96,14 +96,14 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `claude-code/.claude/agents/discovery-architect.md` | Markdown | 172 | 2026-05-21 |
 | `claude-code/.claude/agents/discovery-integrator.md` | Markdown | 103 | 2026-05-21 |
 | `claude-code/.claude/agents/discovery-quality.md` | Markdown | 145 | 2026-05-21 |
-| `claude-code/.claude/agents/discovery-reviewer.md` | Markdown | 381 | 2026-05-21 |
-| `claude-code/.claude/agents/discovery-scout.md` | Markdown | 153 | 2026-05-21 |
-| `claude-code/.claude/agents/interviewer.md` | Markdown | 39 | 2026-05-21 |
+| `claude-code/.claude/agents/discovery-reviewer.md` | Markdown | 381 | 2026-05-22 |
+| `claude-code/.claude/agents/discovery-scout.md` | Markdown | 110 | 2026-05-22 |
+| `claude-code/.claude/agents/interviewer.md` | Markdown | 39 | 2026-05-22 |
 | `claude-code/.claude/agents/operator.md` | Markdown | 39 | 2026-05-21 |
-| `claude-code/.claude/agents/orchestrator.md` | Markdown | 50 | 2026-05-21 |
+| `claude-code/.claude/agents/orchestrator.md` | Markdown | 49 | 2026-05-22 |
 | `claude-code/.claude/agents/performance.md` | Markdown | 34 | 2026-05-21 |
-| `claude-code/.claude/agents/researcher.md` | Markdown | 38 | 2026-05-21 |
-| `claude-code/.claude/agents/reviewer.md` | Markdown | 60 | 2026-05-21 |
+| `claude-code/.claude/agents/researcher.md` | Markdown | 38 | 2026-05-22 |
+| `claude-code/.claude/agents/reviewer.md` | Markdown | 60 | 2026-05-22 |
 | `claude-code/.claude/agents/security.md` | Markdown | 34 | 2026-05-21 |
 | `claude-code/.claude/agents/simple-extractor.md` | Markdown | 50 | 2026-05-21 |
 | `claude-code/.claude/agents/simple-formatter.md` | Markdown | 36 | 2026-05-21 |
@@ -117,11 +117,11 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `claude-code/.claude/skills/aid-discover/references/reviewer-prompt.md` | Markdown | 75 | 2026-05-21 |
 | `claude-code/.claude/skills/aid-discover/scripts/check-preflight.sh` | Shell | 45 | 2026-05-21 |
 | `claude-code/.claude/skills/aid-discover/scripts/verify-kb.sh` | Shell | 60 | 2026-05-21 |
-| `claude-code/.claude/skills/aid-discover/SKILL.md` | Markdown | 453 | 2026-05-21 |
+| `claude-code/.claude/skills/aid-discover/SKILL.md` | Markdown | 453 | 2026-05-22 |
 | `claude-code/.claude/skills/aid-execute/references/reviewer-guide.md` | Markdown | 82 | 2026-05-21 |
 | `claude-code/.claude/skills/aid-execute/references/task-type-rules.md` | Markdown | 104 | 2026-05-21 |
-| `claude-code/.claude/skills/aid-execute/SKILL.md` | Markdown | 386 | 2026-05-21 |
-| `claude-code/.claude/skills/aid-init/SKILL.md` | Markdown | 438 | 2026-05-21 |
+| `claude-code/.claude/skills/aid-execute/SKILL.md` | Markdown | 386 | 2026-05-22 |
+| `claude-code/.claude/skills/aid-init/SKILL.md` | Markdown | 463 | 2026-05-22 |
 | `claude-code/.claude/skills/aid-interview/references/cross-reference.md` | Markdown | 97 | 2026-05-21 |
 | `claude-code/.claude/skills/aid-interview/references/feature-decomposition.md` | Markdown | 82 | 2026-05-21 |
 | `claude-code/.claude/skills/aid-interview/references/interview-strategies.md` | Markdown | 81 | 2026-05-21 |
@@ -132,7 +132,7 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `claude-code/.claude/skills/aid-specify/references/handling-outcomes.md` | Markdown | 37 | 2026-05-21 |
 | `claude-code/.claude/skills/aid-specify/references/known-issues-scope.md` | Markdown | 52 | 2026-05-21 |
 | `claude-code/.claude/skills/aid-specify/SKILL.md` | Markdown | 413 | 2026-05-21 |
-| `claude-code/.claude/skills/aid-summarize/SKILL.md` | Markdown | 430 | 2026-05-21 |
+| `claude-code/.claude/skills/aid-summarize/SKILL.md` | Markdown | 497 | 2026-05-21 |
 | `claude-code/.claude/skills/README.md` | Markdown | 30 | 2026-05-21 |
 | `claude-code/.claude/templates/deployment-state.md` | Markdown | 9 | 2026-05-21 |
 | `claude-code/.claude/templates/discovery-state.md` | Markdown | 23 | 2026-05-21 |
@@ -143,12 +143,12 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `claude-code/.claude/templates/implementation-state.md` | Markdown | 30 | 2026-05-21 |
 | `claude-code/.claude/templates/interview-state.md` | Markdown | 29 | 2026-05-21 |
 | `claude-code/.claude/templates/knowledge-summary/accessibility-checklist.md` | Markdown | 125 | 2026-05-21 |
-| `claude-code/.claude/templates/knowledge-summary/component-css.css` | CSS | 642 | 2026-05-21 |
+| `claude-code/.claude/templates/knowledge-summary/component-css.css` | CSS | 657 | 2026-05-21 |
 | `claude-code/.claude/templates/knowledge-summary/design-tokens.md` | Markdown | 124 | 2026-05-21 |
-| `claude-code/.claude/templates/knowledge-summary/grading-rubric.md` | Markdown | 226 | 2026-05-21 |
+| `claude-code/.claude/templates/knowledge-summary/grading-rubric.md` | Markdown | 259 | 2026-05-21 |
 | `claude-code/.claude/templates/knowledge-summary/html-skeleton.html` | HTML | 101 | 2026-05-21 |
 | `claude-code/.claude/templates/knowledge-summary/lightbox.js` | JavaScript | 359 | 2026-05-21 |
-| `claude-code/.claude/templates/knowledge-summary/mermaid-examples.md` | Markdown | 187 | 2026-05-21 |
+| `claude-code/.claude/templates/knowledge-summary/mermaid-examples.md` | Markdown | 192 | 2026-05-21 |
 | `claude-code/.claude/templates/knowledge-summary/mermaid-init.js` | JavaScript | 53 | 2026-05-21 |
 | `claude-code/.claude/templates/knowledge-summary/prompt.md` | Markdown | 248 | 2026-05-21 |
 | `claude-code/.claude/templates/knowledge-summary/scripts/check-preflight.sh` | Shell | 100 | 2026-05-21 |
@@ -156,37 +156,39 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `claude-code/.claude/templates/knowledge-summary/scripts/concatenate.sh` | Shell | 23 | 2026-05-21 |
 | `claude-code/.claude/templates/knowledge-summary/scripts/contrast-check.mjs` | JavaScript | 151 | 2026-05-21 |
 | `claude-code/.claude/templates/knowledge-summary/scripts/fetch-mermaid.sh` | Shell | 77 | 2026-05-21 |
-| `claude-code/.claude/templates/knowledge-summary/scripts/grade.sh` | Shell | 194 | 2026-05-21 |
+| `claude-code/.claude/templates/knowledge-summary/scripts/grade.sh` | Shell | 519 | 2026-05-21 |
+| `claude-code/.claude/templates/knowledge-summary/scripts/manual-checklist.sh` | Shell | 269 | 2026-05-21 |
+| `claude-code/.claude/templates/knowledge-summary/scripts/spot-check-facts.sh` | Shell | 176 | 2026-05-21 |
 | `claude-code/.claude/templates/knowledge-summary/scripts/stale-check.sh` | Shell | 93 | 2026-05-21 |
-| `claude-code/.claude/templates/knowledge-summary/scripts/validate-diagrams.mjs` | JavaScript | 294 | 2026-05-21 |
-| `claude-code/.claude/templates/knowledge-summary/scripts/validate-html.sh` | Shell | 94 | 2026-05-21 |
+| `claude-code/.claude/templates/knowledge-summary/scripts/validate-diagrams.mjs` | JavaScript | 574 | 2026-05-21 |
+| `claude-code/.claude/templates/knowledge-summary/scripts/validate-html.sh` | Shell | 259 | 2026-05-21 |
 | `claude-code/.claude/templates/knowledge-summary/scripts/validate-links.sh` | Shell | 78 | 2026-05-21 |
 | `claude-code/.claude/templates/knowledge-summary/scripts/writeback-discovery-state.sh` | Shell | 138 | 2026-05-21 |
-| `claude-code/.claude/templates/knowledge-summary/section-templates/auto-detect.md` | Markdown | 107 | 2026-05-21 |
-| `claude-code/.claude/templates/knowledge-summary/section-templates/cli.md` | Markdown | 77 | 2026-05-21 |
-| `claude-code/.claude/templates/knowledge-summary/section-templates/data-pipeline.md` | Markdown | 104 | 2026-05-21 |
-| `claude-code/.claude/templates/knowledge-summary/section-templates/library.md` | Markdown | 70 | 2026-05-21 |
-| `claude-code/.claude/templates/knowledge-summary/section-templates/microservices.md` | Markdown | 87 | 2026-05-21 |
-| `claude-code/.claude/templates/knowledge-summary/section-templates/web-app.md` | Markdown | 98 | 2026-05-21 |
+| `claude-code/.claude/templates/knowledge-summary/section-templates/auto-detect.md` | Markdown | 115 | 2026-05-21 |
+| `claude-code/.claude/templates/knowledge-summary/section-templates/cli.md` | Markdown | 83 | 2026-05-21 |
+| `claude-code/.claude/templates/knowledge-summary/section-templates/data-pipeline.md` | Markdown | 110 | 2026-05-21 |
+| `claude-code/.claude/templates/knowledge-summary/section-templates/library.md` | Markdown | 76 | 2026-05-21 |
+| `claude-code/.claude/templates/knowledge-summary/section-templates/microservices.md` | Markdown | 93 | 2026-05-21 |
+| `claude-code/.claude/templates/knowledge-summary/section-templates/web-app.md` | Markdown | 104 | 2026-05-21 |
 | `claude-code/.claude/templates/known-issues.md` | Markdown | 15 | 2026-05-21 |
 | `claude-code/.claude/templates/package.md` | Markdown | 27 | 2026-05-21 |
 | `claude-code/.claude/templates/requirements.md` | Markdown | 30 | 2026-05-21 |
 | `claude-code/.claude/templates/scripts/build-project-index.sh` | Shell | 368 | 2026-05-21 |
-| `claude-code/.claude/templates/scripts/grade.sh` | Shell | 141 | 2026-05-21 |
+| `claude-code/.claude/templates/scripts/grade.sh` | Shell | 141 | 2026-05-22 |
 | `claude-code/.claude/templates/ui-architecture.md` | Markdown | 5 | 2026-05-21 |
 | `claude-code/CLAUDE.md` | Markdown | 30 | 2026-05-21 |
-| `claude-code/README.md` | Markdown | 97 | 2026-05-21 |
+| `claude-code/README.md` | Markdown | 97 | 2026-05-22 |
 | `codex/.agents/skills/aid-deploy/SKILL.md` | Markdown | 265 | 2026-05-21 |
 | `codex/.agents/skills/aid-detail/SKILL.md` | Markdown | 386 | 2026-05-21 |
-| `codex/.agents/skills/aid-discover/SKILL.md` | Markdown | 1078 | 2026-05-21 |
-| `codex/.agents/skills/aid-execute/SKILL.md` | Markdown | 558 | 2026-05-21 |
-| `codex/.agents/skills/aid-init/SKILL.md` | Markdown | 412 | 2026-05-21 |
+| `codex/.agents/skills/aid-discover/SKILL.md` | Markdown | 1078 | 2026-05-22 |
+| `codex/.agents/skills/aid-execute/SKILL.md` | Markdown | 558 | 2026-05-22 |
+| `codex/.agents/skills/aid-init/SKILL.md` | Markdown | 437 | 2026-05-22 |
 | `codex/.agents/skills/aid-interview/references/kb-hydration.md` | Markdown | 106 | 2026-05-21 |
 | `codex/.agents/skills/aid-interview/SKILL.md` | Markdown | 694 | 2026-05-21 |
 | `codex/.agents/skills/aid-monitor/SKILL.md` | Markdown | 242 | 2026-05-21 |
 | `codex/.agents/skills/aid-plan/SKILL.md` | Markdown | 332 | 2026-05-21 |
 | `codex/.agents/skills/aid-specify/SKILL.md` | Markdown | 485 | 2026-05-21 |
-| `codex/.agents/skills/aid-summarize/SKILL.md` | Markdown | 436 | 2026-05-21 |
+| `codex/.agents/skills/aid-summarize/SKILL.md` | Markdown | 498 | 2026-05-21 |
 | `codex/.agents/skills/README.md` | Markdown | 30 | 2026-05-21 |
 | `codex/.agents/templates/deployment-state.md` | Markdown | 9 | 2026-05-21 |
 | `codex/.agents/templates/discovery-state.md` | Markdown | 23 | 2026-05-21 |
@@ -197,12 +199,12 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `codex/.agents/templates/implementation-state.md` | Markdown | 30 | 2026-05-21 |
 | `codex/.agents/templates/interview-state.md` | Markdown | 29 | 2026-05-21 |
 | `codex/.agents/templates/knowledge-summary/accessibility-checklist.md` | Markdown | 125 | 2026-05-21 |
-| `codex/.agents/templates/knowledge-summary/component-css.css` | CSS | 642 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/component-css.css` | CSS | 657 | 2026-05-21 |
 | `codex/.agents/templates/knowledge-summary/design-tokens.md` | Markdown | 124 | 2026-05-21 |
-| `codex/.agents/templates/knowledge-summary/grading-rubric.md` | Markdown | 226 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/grading-rubric.md` | Markdown | 259 | 2026-05-21 |
 | `codex/.agents/templates/knowledge-summary/html-skeleton.html` | HTML | 101 | 2026-05-21 |
 | `codex/.agents/templates/knowledge-summary/lightbox.js` | JavaScript | 359 | 2026-05-21 |
-| `codex/.agents/templates/knowledge-summary/mermaid-examples.md` | Markdown | 187 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/mermaid-examples.md` | Markdown | 192 | 2026-05-21 |
 | `codex/.agents/templates/knowledge-summary/mermaid-init.js` | JavaScript | 53 | 2026-05-21 |
 | `codex/.agents/templates/knowledge-summary/prompt.md` | Markdown | 248 | 2026-05-21 |
 | `codex/.agents/templates/knowledge-summary/scripts/check-preflight.sh` | Shell | 100 | 2026-05-21 |
@@ -210,25 +212,27 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `codex/.agents/templates/knowledge-summary/scripts/concatenate.sh` | Shell | 23 | 2026-05-21 |
 | `codex/.agents/templates/knowledge-summary/scripts/contrast-check.mjs` | JavaScript | 151 | 2026-05-21 |
 | `codex/.agents/templates/knowledge-summary/scripts/fetch-mermaid.sh` | Shell | 77 | 2026-05-21 |
-| `codex/.agents/templates/knowledge-summary/scripts/grade.sh` | Shell | 194 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/scripts/grade.sh` | Shell | 519 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/scripts/manual-checklist.sh` | Shell | 269 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/scripts/spot-check-facts.sh` | Shell | 176 | 2026-05-21 |
 | `codex/.agents/templates/knowledge-summary/scripts/stale-check.sh` | Shell | 93 | 2026-05-21 |
-| `codex/.agents/templates/knowledge-summary/scripts/validate-diagrams.mjs` | JavaScript | 294 | 2026-05-21 |
-| `codex/.agents/templates/knowledge-summary/scripts/validate-html.sh` | Shell | 94 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/scripts/validate-diagrams.mjs` | JavaScript | 574 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/scripts/validate-html.sh` | Shell | 259 | 2026-05-21 |
 | `codex/.agents/templates/knowledge-summary/scripts/validate-links.sh` | Shell | 78 | 2026-05-21 |
 | `codex/.agents/templates/knowledge-summary/scripts/writeback-discovery-state.sh` | Shell | 138 | 2026-05-21 |
-| `codex/.agents/templates/knowledge-summary/section-templates/auto-detect.md` | Markdown | 107 | 2026-05-21 |
-| `codex/.agents/templates/knowledge-summary/section-templates/cli.md` | Markdown | 77 | 2026-05-21 |
-| `codex/.agents/templates/knowledge-summary/section-templates/data-pipeline.md` | Markdown | 104 | 2026-05-21 |
-| `codex/.agents/templates/knowledge-summary/section-templates/library.md` | Markdown | 70 | 2026-05-21 |
-| `codex/.agents/templates/knowledge-summary/section-templates/microservices.md` | Markdown | 87 | 2026-05-21 |
-| `codex/.agents/templates/knowledge-summary/section-templates/web-app.md` | Markdown | 98 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/section-templates/auto-detect.md` | Markdown | 115 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/section-templates/cli.md` | Markdown | 83 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/section-templates/data-pipeline.md` | Markdown | 110 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/section-templates/library.md` | Markdown | 76 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/section-templates/microservices.md` | Markdown | 93 | 2026-05-21 |
+| `codex/.agents/templates/knowledge-summary/section-templates/web-app.md` | Markdown | 104 | 2026-05-21 |
 | `codex/.agents/templates/known-issues.md` | Markdown | 15 | 2026-05-21 |
 | `codex/.agents/templates/package.md` | Markdown | 27 | 2026-05-21 |
 | `codex/.agents/templates/requirements.md` | Markdown | 30 | 2026-05-21 |
 | `codex/.agents/templates/scripts/build-project-index.sh` | Shell | 368 | 2026-05-21 |
-| `codex/.agents/templates/scripts/grade.sh` | Shell | 141 | 2026-05-21 |
+| `codex/.agents/templates/scripts/grade.sh` | Shell | 141 | 2026-05-22 |
 | `codex/.agents/templates/ui-architecture.md` | Markdown | 5 | 2026-05-21 |
-| `codex/.codex/agents/architect.toml` | TOML | 39 | 2026-05-21 |
+| `codex/.codex/agents/architect.toml` | TOML | 38 | 2026-05-22 |
 | `codex/.codex/agents/data-engineer.toml` | TOML | 32 | 2026-05-21 |
 | `codex/.codex/agents/developer.toml` | TOML | 17 | 2026-05-21 |
 | `codex/.codex/agents/devops.toml` | TOML | 31 | 2026-05-21 |
@@ -238,12 +242,12 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `codex/.codex/agents/discovery-quality.toml` | TOML | 142 | 2026-05-21 |
 | `codex/.codex/agents/discovery-reviewer.toml` | TOML | 314 | 2026-05-21 |
 | `codex/.codex/agents/discovery-scout.toml` | TOML | 127 | 2026-05-21 |
-| `codex/.codex/agents/interviewer.toml` | TOML | 38 | 2026-05-21 |
+| `codex/.codex/agents/interviewer.toml` | TOML | 38 | 2026-05-22 |
 | `codex/.codex/agents/operator.toml` | TOML | 38 | 2026-05-21 |
 | `codex/.codex/agents/orchestrator.toml` | TOML | 27 | 2026-05-21 |
 | `codex/.codex/agents/performance.toml` | TOML | 33 | 2026-05-21 |
-| `codex/.codex/agents/researcher.toml` | TOML | 37 | 2026-05-21 |
-| `codex/.codex/agents/reviewer.toml` | TOML | 59 | 2026-05-21 |
+| `codex/.codex/agents/researcher.toml` | TOML | 37 | 2026-05-22 |
+| `codex/.codex/agents/reviewer.toml` | TOML | 59 | 2026-05-22 |
 | `codex/.codex/agents/security.toml` | TOML | 33 | 2026-05-21 |
 | `codex/.codex/agents/simple-extractor.toml` | TOML | 44 | 2026-05-21 |
 | `codex/.codex/agents/simple-formatter.toml` | TOML | 35 | 2026-05-21 |
@@ -253,7 +257,7 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `codex/AGENTS.md` | Markdown | 28 | 2026-05-21 |
 | `codex/README.md` | Markdown | 116 | 2026-05-21 |
 | `CONTRIBUTING.md` | Markdown | 116 | 2026-05-21 |
-| `cursor/.cursor/agents/architect.md` | Markdown | 40 | 2026-05-21 |
+| `cursor/.cursor/agents/architect.md` | Markdown | 39 | 2026-05-22 |
 | `cursor/.cursor/agents/data-engineer.md` | Markdown | 33 | 2026-05-21 |
 | `cursor/.cursor/agents/developer.md` | Markdown | 39 | 2026-05-21 |
 | `cursor/.cursor/agents/devops.md` | Markdown | 32 | 2026-05-21 |
@@ -261,14 +265,14 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `cursor/.cursor/agents/discovery-architect.md` | Markdown | 172 | 2026-05-21 |
 | `cursor/.cursor/agents/discovery-integrator.md` | Markdown | 105 | 2026-05-21 |
 | `cursor/.cursor/agents/discovery-quality.md` | Markdown | 147 | 2026-05-21 |
-| `cursor/.cursor/agents/discovery-reviewer.md` | Markdown | 381 | 2026-05-21 |
-| `cursor/.cursor/agents/discovery-scout.md` | Markdown | 153 | 2026-05-21 |
-| `cursor/.cursor/agents/interviewer.md` | Markdown | 39 | 2026-05-21 |
+| `cursor/.cursor/agents/discovery-reviewer.md` | Markdown | 381 | 2026-05-22 |
+| `cursor/.cursor/agents/discovery-scout.md` | Markdown | 110 | 2026-05-22 |
+| `cursor/.cursor/agents/interviewer.md` | Markdown | 39 | 2026-05-22 |
 | `cursor/.cursor/agents/operator.md` | Markdown | 39 | 2026-05-21 |
-| `cursor/.cursor/agents/orchestrator.md` | Markdown | 50 | 2026-05-21 |
+| `cursor/.cursor/agents/orchestrator.md` | Markdown | 49 | 2026-05-22 |
 | `cursor/.cursor/agents/performance.md` | Markdown | 34 | 2026-05-21 |
-| `cursor/.cursor/agents/researcher.md` | Markdown | 38 | 2026-05-21 |
-| `cursor/.cursor/agents/reviewer.md` | Markdown | 60 | 2026-05-21 |
+| `cursor/.cursor/agents/researcher.md` | Markdown | 38 | 2026-05-22 |
+| `cursor/.cursor/agents/reviewer.md` | Markdown | 60 | 2026-05-22 |
 | `cursor/.cursor/agents/security.md` | Markdown | 34 | 2026-05-21 |
 | `cursor/.cursor/agents/simple-extractor.md` | Markdown | 50 | 2026-05-21 |
 | `cursor/.cursor/agents/simple-formatter.md` | Markdown | 36 | 2026-05-21 |
@@ -279,16 +283,16 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `cursor/.cursor/rules/aid-review.mdc` | Other | 11 | 2026-05-21 |
 | `cursor/.cursor/skills/aid-deploy/SKILL.md` | Markdown | 265 | 2026-05-21 |
 | `cursor/.cursor/skills/aid-detail/SKILL.md` | Markdown | 390 | 2026-05-21 |
-| `cursor/.cursor/skills/aid-discover/SKILL.md` | Markdown | 1090 | 2026-05-21 |
-| `cursor/.cursor/skills/aid-execute/SKILL.md` | Markdown | 562 | 2026-05-21 |
-| `cursor/.cursor/skills/aid-init/SKILL.md` | Markdown | 438 | 2026-05-21 |
+| `cursor/.cursor/skills/aid-discover/SKILL.md` | Markdown | 1090 | 2026-05-22 |
+| `cursor/.cursor/skills/aid-execute/SKILL.md` | Markdown | 562 | 2026-05-22 |
+| `cursor/.cursor/skills/aid-init/SKILL.md` | Markdown | 463 | 2026-05-22 |
 | `cursor/.cursor/skills/aid-interview/references/kb-hydration.md` | Markdown | 106 | 2026-05-21 |
 | `cursor/.cursor/skills/aid-interview/SKILL.md` | Markdown | 698 | 2026-05-21 |
 | `cursor/.cursor/skills/aid-monitor/SKILL.md` | Markdown | 242 | 2026-05-21 |
 | `cursor/.cursor/skills/aid-plan/SKILL.md` | Markdown | 336 | 2026-05-21 |
 | `cursor/.cursor/skills/aid-specify/SKILL.md` | Markdown | 488 | 2026-05-21 |
-| `cursor/.cursor/skills/aid-summarize/SKILL.md` | Markdown | 436 | 2026-05-21 |
-| `cursor/.cursor/skills/README.md` | Markdown | 38 | 2026-05-21 |
+| `cursor/.cursor/skills/aid-summarize/SKILL.md` | Markdown | 498 | 2026-05-21 |
+| `cursor/.cursor/skills/README.md` | Markdown | 38 | 2026-05-22 |
 | `cursor/.cursor/templates/deployment-state.md` | Markdown | 9 | 2026-05-21 |
 | `cursor/.cursor/templates/discovery-state.md` | Markdown | 23 | 2026-05-21 |
 | `cursor/.cursor/templates/feature.md` | Markdown | 33 | 2026-05-21 |
@@ -298,12 +302,12 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `cursor/.cursor/templates/implementation-state.md` | Markdown | 30 | 2026-05-21 |
 | `cursor/.cursor/templates/interview-state.md` | Markdown | 29 | 2026-05-21 |
 | `cursor/.cursor/templates/knowledge-summary/accessibility-checklist.md` | Markdown | 125 | 2026-05-21 |
-| `cursor/.cursor/templates/knowledge-summary/component-css.css` | CSS | 642 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/component-css.css` | CSS | 657 | 2026-05-21 |
 | `cursor/.cursor/templates/knowledge-summary/design-tokens.md` | Markdown | 124 | 2026-05-21 |
-| `cursor/.cursor/templates/knowledge-summary/grading-rubric.md` | Markdown | 226 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/grading-rubric.md` | Markdown | 259 | 2026-05-21 |
 | `cursor/.cursor/templates/knowledge-summary/html-skeleton.html` | HTML | 101 | 2026-05-21 |
 | `cursor/.cursor/templates/knowledge-summary/lightbox.js` | JavaScript | 359 | 2026-05-21 |
-| `cursor/.cursor/templates/knowledge-summary/mermaid-examples.md` | Markdown | 187 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/mermaid-examples.md` | Markdown | 192 | 2026-05-21 |
 | `cursor/.cursor/templates/knowledge-summary/mermaid-init.js` | JavaScript | 53 | 2026-05-21 |
 | `cursor/.cursor/templates/knowledge-summary/prompt.md` | Markdown | 248 | 2026-05-21 |
 | `cursor/.cursor/templates/knowledge-summary/scripts/check-preflight.sh` | Shell | 100 | 2026-05-21 |
@@ -311,31 +315,33 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `cursor/.cursor/templates/knowledge-summary/scripts/concatenate.sh` | Shell | 23 | 2026-05-21 |
 | `cursor/.cursor/templates/knowledge-summary/scripts/contrast-check.mjs` | JavaScript | 151 | 2026-05-21 |
 | `cursor/.cursor/templates/knowledge-summary/scripts/fetch-mermaid.sh` | Shell | 77 | 2026-05-21 |
-| `cursor/.cursor/templates/knowledge-summary/scripts/grade.sh` | Shell | 194 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/scripts/grade.sh` | Shell | 519 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/scripts/manual-checklist.sh` | Shell | 269 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/scripts/spot-check-facts.sh` | Shell | 176 | 2026-05-21 |
 | `cursor/.cursor/templates/knowledge-summary/scripts/stale-check.sh` | Shell | 93 | 2026-05-21 |
-| `cursor/.cursor/templates/knowledge-summary/scripts/validate-diagrams.mjs` | JavaScript | 294 | 2026-05-21 |
-| `cursor/.cursor/templates/knowledge-summary/scripts/validate-html.sh` | Shell | 94 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/scripts/validate-diagrams.mjs` | JavaScript | 574 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/scripts/validate-html.sh` | Shell | 259 | 2026-05-21 |
 | `cursor/.cursor/templates/knowledge-summary/scripts/validate-links.sh` | Shell | 78 | 2026-05-21 |
 | `cursor/.cursor/templates/knowledge-summary/scripts/writeback-discovery-state.sh` | Shell | 138 | 2026-05-21 |
-| `cursor/.cursor/templates/knowledge-summary/section-templates/auto-detect.md` | Markdown | 107 | 2026-05-21 |
-| `cursor/.cursor/templates/knowledge-summary/section-templates/cli.md` | Markdown | 77 | 2026-05-21 |
-| `cursor/.cursor/templates/knowledge-summary/section-templates/data-pipeline.md` | Markdown | 104 | 2026-05-21 |
-| `cursor/.cursor/templates/knowledge-summary/section-templates/library.md` | Markdown | 70 | 2026-05-21 |
-| `cursor/.cursor/templates/knowledge-summary/section-templates/microservices.md` | Markdown | 87 | 2026-05-21 |
-| `cursor/.cursor/templates/knowledge-summary/section-templates/web-app.md` | Markdown | 98 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/section-templates/auto-detect.md` | Markdown | 115 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/section-templates/cli.md` | Markdown | 83 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/section-templates/data-pipeline.md` | Markdown | 110 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/section-templates/library.md` | Markdown | 76 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/section-templates/microservices.md` | Markdown | 93 | 2026-05-21 |
+| `cursor/.cursor/templates/knowledge-summary/section-templates/web-app.md` | Markdown | 104 | 2026-05-21 |
 | `cursor/.cursor/templates/known-issues.md` | Markdown | 15 | 2026-05-21 |
 | `cursor/.cursor/templates/package.md` | Markdown | 27 | 2026-05-21 |
 | `cursor/.cursor/templates/requirements.md` | Markdown | 30 | 2026-05-21 |
 | `cursor/.cursor/templates/scripts/build-project-index.sh` | Shell | 368 | 2026-05-21 |
-| `cursor/.cursor/templates/scripts/grade.sh` | Shell | 141 | 2026-05-21 |
+| `cursor/.cursor/templates/scripts/grade.sh` | Shell | 141 | 2026-05-22 |
 | `cursor/.cursor/templates/ui-architecture.md` | Markdown | 5 | 2026-05-21 |
 | `cursor/AGENTS.md` | Markdown | 45 | 2026-05-21 |
-| `cursor/README.md` | Markdown | 146 | 2026-05-21 |
-| `docs/faq.md` | Markdown | 61 | 2026-05-21 |
-| `docs/glossary.md` | Markdown | 80 | 2026-05-21 |
+| `cursor/README.md` | Markdown | 146 | 2026-05-22 |
+| `docs/faq.md` | Markdown | 61 | 2026-05-22 |
+| `docs/glossary.md` | Markdown | 76 | 2026-05-22 |
 | `examples/brownfield-enterprise/discovery-report.md` | Markdown | 75 | 2026-05-21 |
 | `examples/brownfield-enterprise/knowledge-base/architecture.md` | Markdown | 40 | 2026-05-21 |
-| `examples/brownfield-enterprise/README.md` | Markdown | 60 | 2026-05-21 |
+| `examples/brownfield-enterprise/README.md` | Markdown | 60 | 2026-05-22 |
 | `examples/data-pipeline/pipeline-architecture.md` | Markdown | 113 | 2026-05-21 |
 | `examples/data-pipeline/README.md` | Markdown | 78 | 2026-05-21 |
 | `examples/desktop-app/delivery-plan.md` | Markdown | 51 | 2026-05-21 |
@@ -343,29 +349,25 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `examples/desktop-app/task-spec.md` | Markdown | 110 | 2026-05-21 |
 | `examples/README.md` | Markdown | 27 | 2026-05-21 |
 | `LICENSE` | Other | 21 | 2026-05-21 |
-| `methodology/aid-methodology.md` | Markdown | 1158 | 2026-05-21 |
-| `methodology/images/1-pipeline.png` | Other | 533 | 2026-05-21 |
+| `methodology/aid-methodology.md` | Markdown | 1071 | 2026-05-22 |
 | `methodology/images/2-comparison.png` | Other | 575 | 2026-05-21 |
 | `methodology/images/3-ironman.png` | Other | 594 | 2026-05-21 |
-| `methodology/images/4-feedback-loops.png` | Other | 705 | 2026-05-21 |
-| `README.md` | Markdown | 286 | 2026-05-21 |
+| `README.md` | Markdown | 374 | 2026-05-22 |
 | `setup.ps1` | PowerShell | 156 | 2026-05-21 |
 | `setup.sh` | Shell | 161 | 2026-05-21 |
 | `skills/aid-correct/README.md` | Markdown | 5 | 2026-05-21 |
-| `skills/aid-deploy/README.md` | Markdown | 198 | 2026-05-21 |
+| `skills/aid-deploy/README.md` | Markdown | 197 | 2026-05-22 |
 | `skills/aid-detail/README.md` | Markdown | 88 | 2026-05-21 |
-| `skills/aid-discover/README.md` | Markdown | 244 | 2026-05-21 |
+| `skills/aid-discover/README.md` | Markdown | 234 | 2026-05-22 |
 | `skills/aid-execute/README.md` | Markdown | 58 | 2026-05-21 |
 | `skills/aid-interview/README.md` | Markdown | 191 | 2026-05-21 |
 | `skills/aid-monitor/README.md` | Markdown | 28 | 2026-05-21 |
 | `skills/aid-plan/README.md` | Markdown | 93 | 2026-05-21 |
 | `skills/aid-specify/README.md` | Markdown | 102 | 2026-05-21 |
-| `skills/README.md` | Markdown | 77 | 2026-05-21 |
-| `templates/delivery-plans/delivery-template.md` | Markdown | 83 | 2026-05-21 |
-| `templates/delivery-plans/detail-template.md` | Markdown | 158 | 2026-05-21 |
-| `templates/delivery-plans/task-template.md` | Markdown | 142 | 2026-05-21 |
-| `templates/feedback-artifacts/GAP.md` | Markdown | 88 | 2026-05-21 |
-| `templates/feedback-artifacts/IMPEDIMENT.md` | Markdown | 118 | 2026-05-21 |
+| `skills/README.md` | Markdown | 70 | 2026-05-21 |
+| `templates/delivery-plans/task-template.md` | Markdown | 19 | 2026-05-22 |
+| `templates/deployment-state.md` | Markdown | 9 | 2026-05-22 |
+| `templates/feedback-artifacts/IMPEDIMENT.md` | Markdown | 116 | 2026-05-22 |
 | `templates/grading-rubric.md` | Markdown | 74 | 2026-05-21 |
 | `templates/implementation-state.md` | Markdown | 30 | 2026-05-21 |
 | `templates/knowledge-base/api-contracts.md` | Markdown | 110 | 2026-05-21 |
@@ -375,23 +377,24 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `templates/knowledge-base/domain-glossary.md` | Markdown | 100 | 2026-05-21 |
 | `templates/knowledge-base/external-sources.md` | Markdown | 55 | 2026-05-21 |
 | `templates/knowledge-base/feature-inventory.md` | Markdown | 8 | 2026-05-21 |
-| `templates/knowledge-base/INDEX.md` | Markdown | 28 | 2026-05-21 |
+| `templates/knowledge-base/INDEX.md` | Markdown | 30 | 2026-05-22 |
 | `templates/knowledge-base/infrastructure.md` | Markdown | 121 | 2026-05-21 |
 | `templates/knowledge-base/integration-map.md` | Markdown | 117 | 2026-05-21 |
 | `templates/knowledge-base/module-map.md` | Markdown | 90 | 2026-05-21 |
 | `templates/knowledge-base/project-structure.md` | Markdown | 75 | 2026-05-21 |
-| `templates/knowledge-base/README.md` | Markdown | 81 | 2026-05-21 |
+| `templates/knowledge-base/README.md` | Markdown | 83 | 2026-05-22 |
 | `templates/knowledge-base/security-model.md` | Markdown | 117 | 2026-05-21 |
 | `templates/knowledge-base/tech-debt.md` | Markdown | 118 | 2026-05-21 |
 | `templates/knowledge-base/technology-stack.md` | Markdown | 93 | 2026-05-21 |
 | `templates/knowledge-base/test-landscape.md` | Markdown | 111 | 2026-05-21 |
+| `templates/knowledge-base/ui-architecture.md` | Markdown | 129 | 2026-05-22 |
 | `templates/knowledge-summary/accessibility-checklist.md` | Markdown | 125 | 2026-05-21 |
-| `templates/knowledge-summary/component-css.css` | CSS | 642 | 2026-05-21 |
+| `templates/knowledge-summary/component-css.css` | CSS | 657 | 2026-05-21 |
 | `templates/knowledge-summary/design-tokens.md` | Markdown | 124 | 2026-05-21 |
-| `templates/knowledge-summary/grading-rubric.md` | Markdown | 226 | 2026-05-21 |
+| `templates/knowledge-summary/grading-rubric.md` | Markdown | 259 | 2026-05-21 |
 | `templates/knowledge-summary/html-skeleton.html` | HTML | 101 | 2026-05-21 |
 | `templates/knowledge-summary/lightbox.js` | JavaScript | 359 | 2026-05-21 |
-| `templates/knowledge-summary/mermaid-examples.md` | Markdown | 187 | 2026-05-21 |
+| `templates/knowledge-summary/mermaid-examples.md` | Markdown | 192 | 2026-05-21 |
 | `templates/knowledge-summary/mermaid-init.js` | JavaScript | 53 | 2026-05-21 |
 | `templates/knowledge-summary/prompt.md` | Markdown | 248 | 2026-05-21 |
 | `templates/knowledge-summary/scripts/check-preflight.sh` | Shell | 100 | 2026-05-21 |
@@ -399,24 +402,24 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `templates/knowledge-summary/scripts/concatenate.sh` | Shell | 23 | 2026-05-21 |
 | `templates/knowledge-summary/scripts/contrast-check.mjs` | JavaScript | 151 | 2026-05-21 |
 | `templates/knowledge-summary/scripts/fetch-mermaid.sh` | Shell | 77 | 2026-05-21 |
-| `templates/knowledge-summary/scripts/grade.sh` | Shell | 194 | 2026-05-21 |
+| `templates/knowledge-summary/scripts/grade.sh` | Shell | 519 | 2026-05-21 |
+| `templates/knowledge-summary/scripts/manual-checklist.sh` | Shell | 269 | 2026-05-21 |
+| `templates/knowledge-summary/scripts/spot-check-facts.sh` | Shell | 176 | 2026-05-21 |
 | `templates/knowledge-summary/scripts/stale-check.sh` | Shell | 93 | 2026-05-21 |
-| `templates/knowledge-summary/scripts/validate-diagrams.mjs` | JavaScript | 294 | 2026-05-21 |
-| `templates/knowledge-summary/scripts/validate-html.sh` | Shell | 94 | 2026-05-21 |
+| `templates/knowledge-summary/scripts/validate-diagrams.mjs` | JavaScript | 574 | 2026-05-21 |
+| `templates/knowledge-summary/scripts/validate-html.sh` | Shell | 259 | 2026-05-21 |
 | `templates/knowledge-summary/scripts/validate-links.sh` | Shell | 78 | 2026-05-21 |
 | `templates/knowledge-summary/scripts/writeback-discovery-state.sh` | Shell | 138 | 2026-05-21 |
-| `templates/knowledge-summary/section-templates/auto-detect.md` | Markdown | 107 | 2026-05-21 |
-| `templates/knowledge-summary/section-templates/cli.md` | Markdown | 77 | 2026-05-21 |
-| `templates/knowledge-summary/section-templates/data-pipeline.md` | Markdown | 104 | 2026-05-21 |
-| `templates/knowledge-summary/section-templates/library.md` | Markdown | 70 | 2026-05-21 |
-| `templates/knowledge-summary/section-templates/microservices.md` | Markdown | 87 | 2026-05-21 |
-| `templates/knowledge-summary/section-templates/web-app.md` | Markdown | 98 | 2026-05-21 |
-| `templates/README.md` | Markdown | 49 | 2026-05-21 |
-| `templates/reports/correction-template.md` | Markdown | 47 | 2026-05-21 |
-| `templates/reports/discovery-state-template.md` | Markdown | 67 | 2026-05-21 |
-| `templates/reports/review-template.md` | Markdown | 125 | 2026-05-21 |
-| `templates/reports/test-report-template.md` | Markdown | 103 | 2026-05-21 |
+| `templates/knowledge-summary/section-templates/auto-detect.md` | Markdown | 115 | 2026-05-21 |
+| `templates/knowledge-summary/section-templates/cli.md` | Markdown | 83 | 2026-05-21 |
+| `templates/knowledge-summary/section-templates/data-pipeline.md` | Markdown | 110 | 2026-05-21 |
+| `templates/knowledge-summary/section-templates/library.md` | Markdown | 76 | 2026-05-21 |
+| `templates/knowledge-summary/section-templates/microservices.md` | Markdown | 93 | 2026-05-21 |
+| `templates/knowledge-summary/section-templates/web-app.md` | Markdown | 104 | 2026-05-21 |
+| `templates/README.md` | Markdown | 42 | 2026-05-22 |
+| `templates/reports/discovery-state-template.md` | Markdown | 68 | 2026-05-22 |
 | `templates/requirements/requirements-template.md` | Markdown | 95 | 2026-05-21 |
 | `templates/scripts/build-project-index.sh` | Shell | 368 | 2026-05-21 |
-| `templates/scripts/grade.sh` | Shell | 141 | 2026-05-21 |
+| `templates/scripts/grade.sh` | Shell | 141 | 2026-05-22 |
+| `templates/scripts/verify-kb-claims.sh` | Shell | 351 | 2026-05-21 |
 | `templates/specs/spec-template.md` | Markdown | 75 | 2026-05-21 |

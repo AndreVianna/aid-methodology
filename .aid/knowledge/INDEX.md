@@ -22,3 +22,10 @@ If your task touches an area covered here, read the relevant document first.
 | ui-architecture.md | The single HTML artifact AID emits: `aid-summarize` KB viewer. Single-file offline HTML (CSS / JS / Mermaid all inlined), light/dark theme via CSS variables, breadcrumb scrollspy, lightbox dialog, profile-driven section templates (auto-detect / web-app / library / CLI / microservices / data-pipeline). No framework — vanilla JS IIFE. |
 | feature-inventory.md | **Populated** — 18 features from user-confirmed Q-FEATURES answer. Methodology doc + 10 SKILL files (Init + 8 dev + Summarize) + 3 install bundles (Claude Code, Codex, Cursor) + installers + 66 agent files + examples + reference docs. **12 ✅ Shipped, 6 ⚠️ Partial** (cross-linked to Q-IDs that block them: Q70 Codex installer, Q52 Cursor, Q8 Monitor templates, etc.). |
 | host-tools-matrix.md ⭐ | **KB extension** (outside the standard 16, project-type specific). Per-host-tool feature-parity matrix consolidating info from `integration-map.md`, `tech-debt.md`, `coding-standards.md`, and `external-sources.md`. Covers: tool support status (3 live, 1 reference-only, 2 future); capability × tool parity matrix; per-tool native formats; tier mapping across all 3 trees; 10 known divergences/bugs cross-linked to Q&A entries; 4-way asset duplication inventory; future-tool onboarding checklist. |
+
+## Active Works
+
+| Work | Status | Artifacts |
+|------|--------|-----------|
+| work-001-aid-lite | Requirements approved · 5 features specified (post fresh-eyes scope reshape) | `.aid/work-001-aid-lite/` — REQUIREMENTS.md + 5 feature SPEC.md files (feature-002, 004, 005, 007, 009) |
+| work-002-canonical-generator | Approved · 1 feature specified (split from work-001 during reshape; sequenced first) | `.aid/work-002-canonical-generator/` — REQUIREMENTS.md + feature-001-profile-driven-generator SPEC.md |

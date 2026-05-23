@@ -103,7 +103,7 @@ Source: `claude-code/.claude/agents/*.md` frontmatter `description:` field. The 
 | `orchestrator` | Sonnet | Coordinates AID pipeline — routes work, manages phase transitions with human gates, handles feedback artifacts, dispatches specialists. |
 | `researcher` | Sonnet | Investigates, classifies, and synthesizes information from code, docs, logs, APIs into KB documents and analysis reports. |
 | `interviewer` | Opus | Conducts adaptive one-question-at-a-time dialogue to gather requirements and produce `REQUIREMENTS.md`. |
-| `architect` | Opus | Transforms requirements + KB into SPEC.md, PLAN.md, DETAIL.md, and TASK files. |
+| `architect` | Opus | Transforms requirements + KB into SPEC.md, PLAN.md, and TASK files. |
 | `developer` | Sonnet | The only agent that modifies production code. Implements TASK files with mandatory build verification + IMPEDIMENT.md escalation. |
 | `reviewer` | Opus | Adversarial quality evaluator. Produces structured issue list with severity + source tags. Does NOT fix; does NOT compute grade (`grade.sh` does that). |
 | `operator` | Sonnet | Executes actions with external consequences — deployment, PR creation, release management, KB updates. |
@@ -150,22 +150,16 @@ Each utility agent is explicitly marked `INTERNAL UTILITY (sub-agent only — do
 
 - `requirements/requirements-template.md` (95 lines) — REQUIREMENTS.md template.
 - `specs/spec-template.md` (75 lines) — per-feature SPEC.md (requirements + tech spec).
-- `delivery-plans/delivery-template.md` (83 lines) — high-level DELIVERY.
-- `delivery-plans/detail-template.md` (158 lines) — DETAIL.md (the per-delivery decomposition).
-- `delivery-plans/task-template.md` (142 lines) — individual TASK.md.
+- `delivery-plans/task-template.md` (20 lines) — individual `task-NNN.md` (the only file in `delivery-plans/`). PLAN.md has no template — its format is defined inline by `aid-plan`.
 
 ### `templates/feedback-artifacts/`
 
-- `GAP.md` (88 lines) — KB gap discovered during any phase.
-- `IMPEDIMENT.md` (118 lines) — implementation blocker requiring spec/plan revision.
+- `IMPEDIMENT.md` (118 lines) — implementation blocker requiring spec/plan revision. The only file in `feedback-artifacts/`.
 - (MONITOR-STATE.md is referenced in `templates/README.md` but is not present as a file under `templates/feedback-artifacts/`.)
 
 ### `templates/reports/`
 
-- `review-template.md` (125 lines) — code review report with grading.
-- `test-report-template.md` (103 lines) — staging/E2E test validation.
-- `discovery-state-template.md` (67 lines) — DISCOVERY-STATE.md skeleton.
-- `correction-template.md` (47 lines) — deprecated bug-fix scope.
+- `discovery-state-template.md` (67 lines) — DISCOVERY-STATE.md skeleton. The only file in `reports/`.
 
 ### `templates/knowledge-summary/` (`aid-summarize` assets)
 
@@ -256,7 +250,7 @@ Total: 353 files per `project-index.md`.
 3. **No CI, no manifest, no version file.** Nothing in the repo declares the AID version number programmatically. README and methodology document refer to "V3" but there is no `VERSION` file, no git tag visible in this worktree, no GitHub release artifact tracked in-repo.
 4. **`.aid/` is gitignored** but is being populated by the current dogfood run. The KB outputs will not be committed — they exist only for runtime use of this worktree.
 5. **Codex tree uses a split layout** (`.codex/` for agents, `.agents/` for skills + templates) — different from Claude Code (everything under `.claude/`) and Cursor (everything under `.cursor/`). This split is intentional per `codex/README.md:12-15` but is a source of asymmetry.
-6. **`aid-correct` tombstone — CONFIRMED.** `skills/aid-correct/README.md` is 5 lines containing "# Correct (Deprecated)" and "This phase has been merged into Triage." Confirmed by `methodology/aid-methodology.md:889` and `templates/reports/correction-template.md:3`. Pending deletion per DISCOVERY-STATE Q6 — not a forward-looking placeholder (the earlier characterization was wrong).
+6. **`aid-correct` tombstone — CONFIRMED.** `skills/aid-correct/README.md` is 5 lines containing "# Correct (Deprecated)" and "This phase has been merged into Triage." Confirmed by `methodology/aid-methodology.md:889`. Pending deletion per DISCOVERY-STATE Q6 — not a forward-looking placeholder (the earlier characterization was wrong).
 7. **Skill body length drift between trees.** `aid-discover/SKILL.md` is 453 lines in Claude Code, 1,078 lines in Codex, 1,090 lines in Cursor. Similar drift on `aid-interview`, `aid-execute`, `aid-specify`. The Claude Code versions appear to externalize content into `references/` and `scripts/` subfolders; the Codex and Cursor versions appear to inline the same content. Worth confirming this is intentional.
 8. **Missing report and feedback templates referenced in docs.** No `templates/reports/track-report-template.md` exists, but `templates/README.md` references it. Same for `templates/feedback-artifacts/MONITOR-STATE.md`. Likely documentation drift.
 9. **GitHub Copilot and Google Antigravity** are mentioned in `README.md`, `CONTRIBUTING.md`, and `docs/faq.md` as supported / future-supported tools, but there is no install tree for either. Cursor was the most recent addition.

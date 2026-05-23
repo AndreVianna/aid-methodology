@@ -20,7 +20,7 @@ None of these exercise this repo's own artifacts. The repo ships untested.
 
 | Pattern | Found | Notes |
 |---------|-------|-------|
-| `tests/`, `test/`, `spec/` | None at repo level | `templates/reports/test-report-template.md` is a template, not a test file |
+| `tests/`, `test/`, `spec/` | None at repo level | — |
 | `*.test.{js,ts,py,go,java}` | None | — |
 | `*_test.go`, `*Test.java`, `test_*.py` | None | — |
 | `pytest.ini`, `jest.config.*`, `vitest.config.*`, `mocha.opts`, `karma.conf.*` | None | — |
@@ -28,7 +28,7 @@ None of these exercise this repo's own artifacts. The repo ships untested.
 | `.github/workflows/*` | None | Confirmed by `project-index.md` Notable Files (which would list CI configs) |
 | `.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`, `.circleci/` | None | — |
 
-Search method: `Glob` patterns for the above + `Grep` over `project-index.md`'s Full File Inventory. The only files matching `*test*` are `templates/knowledge-base/test-landscape.md` (the KB template) and `templates/reports/test-report-template.md` — both are templates *for downstream user projects*, not tests of this repo.
+Search method: `Glob` patterns for the above + `Grep` over `project-index.md`'s Full File Inventory. The only file matching `*test*` is `templates/knowledge-base/test-landscape.md` (the KB template) — a template *for downstream user projects*, not a test of this repo.
 
 ## Validation / Quality Scripts (Runtime, Ship to User Projects)
 
@@ -130,7 +130,7 @@ AID itself defines runtime quality gates. While none enforce quality of *this re
 |-------|------|-----------|-------|
 | Init | Plan-mode check | `check-preflight.sh` | aid-init skill |
 | Discover | REVIEW state — DISCOVERY-STATE.md must reach grade >= Minimum (default A) | discovery-reviewer agent + `grade.sh` | aid-discover skill |
-| Specify | GAP.md when KB insufficient or requirements ambiguous | Architect agent (manual emission) | architect agent |
+| Specify | Q&A entry in feature STATE.md / DISCOVERY-STATE.md when KB insufficient or requirements ambiguous | Architect agent (manual emission) | architect agent |
 | Execute | Per-task review loop — reviewer issues -> `grade.sh` -> fix-or-pass | reviewer agent + `grade.sh` | aid-execute skill |
 | Deploy | Full build + test verification before PR creation | operator agent (calls user's existing build/test) | aid-deploy skill |
 | Monitor | Production findings classified and routed | monitor skill + monitor agent | aid-monitor skill |

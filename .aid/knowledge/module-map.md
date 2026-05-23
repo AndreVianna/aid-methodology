@@ -52,7 +52,7 @@ The **triplication relationship** (root canonical → `claude-code/.claude/...` 
 | **External dependencies** | None. |
 | **Downstream consumers** | (a) Contributors reading the methodology. (b) The three install-tree SKILL.md authors — when a skill changes, all four files change per `CONTRIBUTING.md:21-26`. (c) Adopters whose tool has no install tree (e.g., GitHub Copilot, Antigravity) — the canonical READMEs are the manual-setup fallback per `README.md` quick-start fallback table. |
 | **Test / validation coverage** | None. No script verifies that the human README and the three SKILL.md siblings stay in sync. ⚠️ Drift is possible and undetected — Anomaly 7 in `project-structure.md` documents `aid-discover` line counts of 244 (README) vs. 453 (Claude Code) vs. 1,078 (Codex) vs. 1,090 (Cursor). |
-| **Placeholder / Tombstone** | `skills/aid-correct/README.md` is a 5-line **tombstone** — reads "# Correct (Deprecated)" and "This phase has been merged into Triage". Phase confirmed merged into Triage/Monitor per `methodology/aid-methodology.md:889` and `templates/reports/correction-template.md:3`. Pending deletion per DISCOVERY-STATE Q6. Not counted as an active skill. |
+| **Placeholder / Tombstone** | `skills/aid-correct/README.md` is a 5-line **tombstone** — reads "# Correct (Deprecated)" and "This phase has been merged into Triage". Phase confirmed merged into Triage/Monitor per `methodology/aid-methodology.md:889`. Pending deletion per DISCOVERY-STATE Q6. Not counted as an active skill. |
 
 ---
 
@@ -192,14 +192,14 @@ The **triplication relationship** (root canonical → `claude-code/.claude/...` 
 | Field | Value |
 |-------|-------|
 | **Path** | `templates/` |
-| **Files** | ~50 across: `knowledge-base/` (17 markdown templates including `INDEX.md` and `README.md`), `requirements/` (1), `specs/` (1), `delivery-plans/` (3), `feedback-artifacts/` (2 — `GAP.md`, `IMPEDIMENT.md`), `reports/` (4), `knowledge-summary/` (25 — see Module 11), `scripts/` (2 — `build-project-index.sh` 368, `grade.sh` 141), and root `grading-rubric.md` (74), `implementation-state.md` (30), `README.md` (49). |
-| **Lines** | See `project-index.md` for exact counts. Highlights: `knowledge-base/coding-standards.md` 118, `knowledge-base/api-contracts.md` 110, `knowledge-base/architecture.md` 111, `knowledge-base/data-model.md` 108, `requirements/requirements-template.md` 95, `specs/spec-template.md` 75, `delivery-plans/task-template.md` 142, `delivery-plans/detail-template.md` 158, `delivery-plans/delivery-template.md` 83, `feedback-artifacts/GAP.md` 88, `feedback-artifacts/IMPEDIMENT.md` 118, `reports/review-template.md` 125. |
+| **Files** | `knowledge-base/` (17 markdown templates including `INDEX.md` and `README.md`), `requirements/` (1), `specs/` (1), `delivery-plans/` (1 — `task-template.md`), `feedback-artifacts/` (1 — `IMPEDIMENT.md`), `reports/` (1 — `discovery-state-template.md`), `knowledge-summary/` (25 — see Module 11), `scripts/` (2 — `build-project-index.sh` 368, `grade.sh` 141), and root `grading-rubric.md` (74), `implementation-state.md` (30), `README.md` (49). |
+| **Lines** | See `project-index.md` for exact counts. Highlights: `knowledge-base/coding-standards.md` 118, `knowledge-base/api-contracts.md` 110, `knowledge-base/architecture.md` 111, `knowledge-base/data-model.md` 108, `requirements/requirements-template.md` 95, `specs/spec-template.md` 75, `delivery-plans/task-template.md` 20, `feedback-artifacts/IMPEDIMENT.md` 118. |
 | **Purpose** | Source-of-truth artifact templates. Each AID phase produces files using these as starting shapes. |
 | **Internal dependencies** | None on each other (each template is self-contained). |
 | **External dependencies** | None at build time; some templates assume Mermaid is renderable downstream (e.g., `data-model.md` and `module-map.md` embed `mermaid` code blocks). |
 | **Downstream consumers** | The three install-tree templates directories (`claude-code/.claude/templates/`, `codex/.agents/templates/`, `cursor/.cursor/templates/`) carry verbatim copies — see `project-index.md` showing every large template script appearing **four times** (root + three trees). |
 | **Test / validation coverage** | `templates/scripts/build-project-index.sh` is itself an executable producing structured output, but no test verifies it. `templates/knowledge-summary/scripts/*` validate the *output* of `aid-summarize` but not the templates themselves. |
-| **Notable gaps** | `templates/README.md:31` references `templates/feedback-artifacts/MONITOR-STATE.md` and `templates/README.md:37` references `templates/reports/track-report-template.md` — **neither file exists on disk** (verified by `Glob` against `project-index.md`). Per DISCOVERY-STATE Q8 / Q31 / Q77 resolution: **author both templates** (model MONITOR-STATE.md on `templates/feedback-artifacts/GAP.md` ~88 lines; model track-report-template.md on `templates/reports/test-report-template.md` ~103 lines). Tracked as `tech-debt.md H7`. Also: the 6 discovery sub-agents (architect, analyst, integrator, quality, scout, reviewer) currently lack individual READMEs under `agents/<name>/README.md` — pending authoring per DISCOVERY-STATE Q18. |
+| **Notable gaps** | `templates/README.md:31` references `templates/feedback-artifacts/MONITOR-STATE.md` and `templates/README.md:37` references `templates/reports/track-report-template.md` — **neither file exists on disk** (verified by `Glob` against `project-index.md`). Per DISCOVERY-STATE Q8 / Q31 / Q77 resolution: **author both templates**. Tracked as `tech-debt.md H7`. Also: the 6 discovery sub-agents (architect, analyst, integrator, quality, scout, reviewer) currently lack individual READMEs under `agents/<name>/README.md` — pending authoring per DISCOVERY-STATE Q18. |
 
 ### Per-template consumption matrix (the KB document templates)
 
@@ -229,16 +229,10 @@ The **triplication relationship** (root canonical → `claude-code/.claude/...` 
 |----------|-------|----------------|-------------------|
 | `requirements/requirements-template.md` | 95 | aid-interview | aid-specify |
 | `specs/spec-template.md` | 75 | aid-specify | aid-plan, aid-execute |
-| `delivery-plans/delivery-template.md` | 83 | aid-plan | aid-detail |
-| `delivery-plans/detail-template.md` | 158 | aid-detail | aid-execute |
-| `delivery-plans/task-template.md` | 142 | aid-detail | aid-execute |
+| `delivery-plans/task-template.md` | 20 | aid-detail | aid-execute |
 | `implementation-state.md` (root) | 30 | aid-execute | aid-execute reviewer loop |
-| `feedback-artifacts/GAP.md` | 88 | aid-specify / aid-plan / aid-detail / aid-execute | aid-discover (re-entry), aid-interview |
 | `feedback-artifacts/IMPEDIMENT.md` | 118 | aid-execute | aid-specify, aid-plan (revision) |
-| `reports/review-template.md` | 125 | reviewer agent | aid-execute |
-| `reports/test-report-template.md` | 103 | reviewer / operator | aid-deploy |
 | `reports/discovery-state-template.md` | 67 | aid-discover (discovery-reviewer) | aid-discover (Q&A, FIX modes) |
-| `reports/correction-template.md` | 47 | (deprecated — superseded by MONITOR-STATE) | — |
 | `grading-rubric.md` (root) | 74 | (constant) | every reviewer agent |
 
 ### Per-template consumption matrix (install-tree-only templates)

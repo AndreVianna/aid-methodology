@@ -55,7 +55,7 @@ Per `project-index.md` Language Breakdown (line 20). The high file count comes f
 |---|---|---|
 | `setup.sh` | 161 | Top-level installer. **Single copy** — not triplicated. |
 | `templates/scripts/build-project-index.sh` | 368 | `aid-discover` Step 0c pre-pass: emits `.aid/knowledge/project-index.md` with file inventory, sizes, language detection, mtimes. Largest single file in the repo. Run before the 5 sub-agents to eliminate duplicated `find` / `wc` work. |
-| `templates/scripts/grade.sh` | 141 | Deterministic grading: reads `[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]` severity tags from a REVIEW.md, computes a letter grade per the rubric in `templates/grading-rubric.md`. Same input → same grade. |
+| `templates/scripts/grade.sh` | 141 | Deterministic grading: reads `[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]` severity tags from a reviewer's issue list recorded in `task-NNN-STATE.md`, computes a letter grade per the rubric in `templates/grading-rubric.md`. Same input → same grade. |
 | `templates/knowledge-summary/scripts/grade.sh` | 194 | Variant for `aid-summarize` HTML quality gating. Slightly more elaborate rubric (a11y, contrast, mermaid validity). |
 | `templates/knowledge-summary/scripts/check-preflight.sh` | 100 | `aid-summarize` PREFLIGHT mode entry. |
 | `templates/knowledge-summary/scripts/stale-check.sh` | 93 | `aid-summarize` STALE-CHECK mode: compare KB mtime vs last summary mtime. |

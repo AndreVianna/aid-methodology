@@ -94,7 +94,7 @@ Pattern: `[step/total]` for counted phases, `[State: NAME]` for state transition
 4. `## What You Don't Do` — bullet list of boundaries (each item identifies which agent owns that work instead).
 5. `## Key Constraints` — bold-prefixed bullets (`**Grounded in KB.**`, `**Specs are hypotheses.**`).
 6. `## Output Format` — list of artifacts produced with template path references.
-7. `## When to Escalate` — bullet list mapping situation → escalation artifact (GAP.md / IMPEDIMENT.md).
+7. `## When to Escalate` — bullet list mapping situation → escalation route (a Q&A entry in a STATE file, or IMPEDIMENT.md).
 
 Larger / discovery-tier agents add:
 - `## Your Mission`, `## ⚠️ {section}`, `## Document Expectations` (`discovery-reviewer.md`).
@@ -347,8 +347,8 @@ Inferred from a sample of ~20 files across this repo:
 | Agent slugs | kebab-case | `discovery-reviewer`, `simple-extractor` | `claude-code/.claude/agents/*.md` |
 | KB documents | kebab-case `.md` | `module-map.md`, `coding-standards.md`, `data-model.md`, `tech-debt.md` | `templates/knowledge-base/*.md` |
 | State files | `SCREAMING-KEBAB-CASE.md` | `DISCOVERY-STATE.md`, `INTERVIEW-STATE.md`, `MONITOR-STATE.md`, `FEATURE-STATE.md` | `claude-code/.claude/templates/interview-state.md:1` (`# INTERVIEW-STATE.md`), `aid-discover/SKILL.md` (extensively) |
-| First-class methodology artifacts | UPPERCASE.md | `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `DETAIL.md`, `DELIVERY.md`, `CLAUDE.md`, `AGENTS.md`, `README.md`, `LICENSE`, `CONTRIBUTING.md` | `templates/requirements/requirements-template.md:16` ("File is uppercase (`REQUIREMENTS.md`) — it's a first-class artifact") |
-| Feedback artifacts | UPPERCASE-prefix + numeric ID | `GAP-{id}.md`, `IMPEDIMENT-{id}.md`, `KI-{n}` (known issue) | `templates/feedback-artifacts/GAP.md:1`, `templates/feedback-artifacts/IMPEDIMENT.md:1` |
+| First-class methodology artifacts | UPPERCASE.md | `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `CLAUDE.md`, `AGENTS.md`, `README.md`, `LICENSE`, `CONTRIBUTING.md` | `templates/requirements/requirements-template.md:16` ("File is uppercase (`REQUIREMENTS.md`) — it's a first-class artifact") |
+| Feedback artifacts | UPPERCASE-prefix + numeric ID | `IMPEDIMENT-{id}.md`, `KI-{n}` (known issue) | `templates/feedback-artifacts/IMPEDIMENT.md:1` |
 | Per-tool layout root | tool-name slug + dotted-hidden | `claude-code/.claude/`, `codex/.codex/`, `cursor/.cursor/` | `project-structure.md:64-66` |
 | Codex split | `codex/.codex/agents/` (TOML) + `codex/.agents/{skills,templates}/` (markdown) | — | `external-sources.md:81` |
 | Shell scripts | kebab-case `.sh` | `build-project-index.sh`, `grade.sh`, `check-preflight.sh`, `verify-kb.sh`, `validate-html.sh` | `project-index.md` |
