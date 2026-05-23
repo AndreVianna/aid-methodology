@@ -8,22 +8,32 @@ Understanding the structure is key to contributing in the right place:
 
 | Directory | Audience | Format | Purpose |
 |-----------|----------|--------|---------|
-| `skills/` | Humans | README.md | Rich documentation per phase |
-| `agents/` | Humans | README.md | Rich documentation per agent role |
-| `claude-code/skills/` | LLMs | SKILL.md (YAML frontmatter) | Concise, context-window-optimized |
-| `claude-code/agents/` | LLMs | .md (YAML frontmatter) | Claude Code agent definitions |
-| `codex/skills/` | LLMs | SKILL.md (YAML frontmatter) | Same as claude-code (shared standard) |
-| `codex/agents/` | LLMs | .toml | Codex agent definitions |
-| `templates/` | Both | Markdown | Fill-in templates for artifacts |
+| `skills/` | Humans | README.md | Rich documentation per phase (hand-maintained) |
+| `agents/` | Humans | README.md | Rich documentation per agent role (hand-maintained) |
+| `canonical/` | Generator | .md / .toml | Single source of truth for all install-tree content |
+| `profiles/` | Generator | .toml | Per-tool rendering conventions (one profile per tool) |
+| `claude-code/.claude/` | LLMs | .md (YAML frontmatter) | Generated — Claude Code install tree |
+| `codex/.codex/agents/` | LLMs | .toml | Generated — Codex CLI agent definitions |
+| `codex/.agents/skills/` | LLMs | SKILL.md | Generated — Codex CLI skill files |
+| `cursor/.cursor/` | LLMs | .md / .mdc | Generated — Cursor IDE install tree |
+| `templates/` | Both | Markdown | Fill-in templates (canonical source in `canonical/templates/`) |
 | `examples/` | Humans | Markdown | Real-world case studies |
 | `methodology/` | Humans | Markdown | Core methodology document |
 
-**Important:** When updating a skill or agent, update ALL locations:
-1. `skills/aid-{phase}/README.md` — human docs
-2. `claude-code/skills/aid-{phase}/SKILL.md` — LLM version
-3. `codex/skills/aid-{phase}/SKILL.md` — LLM version (shared body, Codex-specific frontmatter)
+**Important:** To update a skill, agent, or template, edit the canonical source under
+`canonical/` and run `/aid-generate`. The three install trees (`claude-code/.claude/`,
+`codex/.codex/` + `codex/.agents/`, `cursor/.cursor/`) are **generated artifacts** —
+do not hand-edit them directly. Your changes will be overwritten on the next generator run.
+See `canonical/EMISSION-MANIFEST.md` for the deletion safety boundary and
+`.claude/skills/aid-generate/SKILL.md` for the full generation pipeline.
 
-Same for agents: update the human README, Claude Code .md, and Codex .toml.
+**Exception:** The human-readable `skills/` and `agents/` directories at the repo root
+are **not** generated — they remain hand-maintained READMEs and must be updated
+separately when methodology content changes.
+
+**End-user installation** (not generator): users install AID into their own projects via
+`./setup.sh` (Bash) or `.\setup.ps1` (PowerShell) — not `/aid-generate`.
+`/aid-generate` is maintainer-only tooling for regenerating the install trees in this repo.
 
 ## What We Accept
 
@@ -31,12 +41,14 @@ Same for agents: update the human README, Claude Code .md, and Codex .toml.
 - Improved phase instructions based on production experience
 - Specialized variants (e.g., aid-discover for monorepos or Python projects)
 - Skills for edge cases (multi-repo, microservices, data science)
-- **Remember:** Update human README + both LLM formats
+- **Remember:** Edit `canonical/skills/aid-{phase}/SKILL.md` (and `references/` files if any),
+  then run `/aid-generate`. Also update the human `skills/aid-{phase}/README.md` separately.
 
 ### Agent Improvements
 - Better system prompts, tool constraints, or role definitions
 - New agent roles for specialized workflows
-- **Remember:** Update human README + Claude Code .md + Codex .toml
+- **Remember:** Edit `canonical/agents/{name}.md`, then run `/aid-generate`.
+  Also update the human `agents/{name}/README.md` separately.
 
 ### Improved Templates
 - Better KB document templates with more concrete guidance
@@ -55,8 +67,9 @@ Same for agents: update the human README, Claude Code .md, and Codex .toml.
 - Adoption challenges and how you solved them
 
 ### New Tool Formats
-- Agent/skill definitions for tools not yet supported (Cursor, Copilot, etc.)
-- Add a new top-level directory following the `claude-code/` and `codex/` pattern
+- Agent/skill definitions for tools not yet supported (GitHub Copilot CLI, Google Antigravity, etc.)
+- Add a new `profiles/{tool-name}.toml` following the existing profile schema, then run `/aid-generate`.
+  Claude Code, Codex CLI, and Cursor are already supported.
 
 ## What We Don't Accept
 
@@ -68,7 +81,7 @@ Same for agents: update the human README, Claude Code .md, and Codex .toml.
 
 1. **Fork the repo** and create a branch: `git checkout -b your-contribution`
 
-2. **For skill/agent improvements:** Update ALL three locations (human README + claude-code + codex). The human version should be rich and explanatory. The LLM versions should be concise and structured.
+2. **For skill/agent improvements:** Edit `canonical/` (the single source of truth), run `/aid-generate` to regenerate all install trees, then update the human README in `skills/` or `agents/`. The human version should be rich and explanatory. The generated LLM versions are concise and structured.
 
 3. **For new templates:** Add to the appropriate `templates/` subdirectory. Include guidance comments explaining *why* each section exists.
 
@@ -89,13 +102,13 @@ Same for agents: update the human README, Claude Code .md, and Codex .toml.
 - No token optimization — clarity over brevity
 - Markdown tables, diagrams, and examples welcome
 
-### LLM Files (`claude-code/`, `codex/`)
-- Concise — these go into context windows
-- SKILL.md files: YAML frontmatter with `name` and `description`
-- Claude Code agents: YAML frontmatter with `name`, `description`, `tools`, `model`
-- Codex agents: TOML with `name`, `description`, `developer_instructions`, `model`
+### Canonical Files (`canonical/`)
+- Concise — these go into context windows after generation
+- SKILL.md files: YAML frontmatter with `name`, `description`, `allowed-tools`; `tier: large|medium|small` (abstract)
+- Agent files: YAML frontmatter with `name`, `description`, `tools`, `tier` (abstract)
 - Under 500 lines per skill (AgentSkills best practice)
 - Strip verbose explanations — keep: purpose, inputs, process steps, outputs, checklist
+- Generated install trees (`claude-code/.claude/`, `codex/`, `cursor/.cursor/`) are produced by `/aid-generate` — do not edit directly
 
 ### General
 - **Tone:** Professional and practical. Opinionated. Methodology from someone who ships.
