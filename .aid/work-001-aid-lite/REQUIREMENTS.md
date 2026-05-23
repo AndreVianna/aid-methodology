@@ -35,6 +35,7 @@
 | 2026-05-22 | Cross-reference verification (State 6, grade B) — 2 LOW + 2 MINOR fixed: FR1 lite-path output contract (aid-execute input deferred to aid-specify); FR2 lite-delivery gate unit; FR3 "constraint" wording; §8 knowledge-summary residual trimmed | /aid-interview |
 | 2026-05-22 | Cross-reference verification (State 6) — final independent grade A (C → B → A across passes), meets the A minimum; 3 cosmetic MINORs cleaned up. Cleared for /aid-specify | /aid-interview |
 | 2026-05-22 | /aid-specify scope updates — FR1 lite-path output resolved (one consolidated work-root SPEC.md); task-NNN-STATE.md → task-NNN.md merge recorded as a scope addition; §8 refreshed with round-2 Codex/Cursor capability research | /aid-specify |
+| 2026-05-23 | **Split: traceability moved to `work-003-traceability`.** FR4 (progress traceability), pain-point #4 ("no progress visibility"), and `feature-007-you-are-here-heartbeat` (renumbered to `feature-001` there) extracted to a dedicated work. Rationale: the traceability concern is orthogonal to the AID-Lite speed concern; separating them keeps each work's scope tight. NFR4 also moved; §1 success criterion about staying "informed and engaged" moved; §9 FR4 ACs moved; §10 Should bucket reduced to FR6 only. | split |
 | 2026-05-22 | **Fresh-eyes scope reshape.** Independent critique flagged the work as over-engineered (4 user pain points → 10 features + 8 CRs). Reshaped to 5 features in this work + 1 feature split to work-002. FR5 moved to `work-002-canonical-generator` (sequenced first; the canonical-source consolidation unblocks single-source editing). Dropped: FR3-M3 auto-advance (fighting the platform), FR3-M2 hooks (no surviving consumer), FR4-P3 event stream + FR4-P2 HTML viewer (observability product nested in a methodology refactor), FR7 telemetry (speculative meta-work). FR3 simplified to M1 only with M4 folded in as an authoring discipline. FR4 simplified to P1 only as pure skill-body text (state-entry print + bracket-pair floor + ASCII state-map). Deleted features 003, 006, 008, 010. CR1–CR6 retired; CR7 (two-zone task-NNN.md) retained; CR8 retired. | reshape |
 
 ## 1. Objective
@@ -52,8 +53,6 @@ large work.
 
 - A small task is **faster to complete through AID than through ad-hoc prompting**
   of the AI.
-- The user stays **informed and engaged** throughout — never left wondering whether
-  the process is stuck.
 - The full pipeline remains intact and unaffected for large work.
 
 ## 2. Problem Statement
@@ -96,9 +95,6 @@ once-per-project phase — is not part of this per-work comparison.
 3. **Heavy skills.** Each skill carries a full state machine; the large footprint
    may itself contribute to slowness. There is no mechanism for a skill to call
    another skill or otherwise offload work (hooks, chaining).
-4. **No progress visibility.** Skills provide almost no traceability or progress
-   feedback. Users feel disconnected from the process and assume it is stuck.
-
 These are the main items raised; the interview remains open to additional
 improvement opportunities.
 
@@ -118,8 +114,6 @@ improvement opportunities.
 - A two-tier review model for faster `aid-execute` (FR2).
 - A **thin-router refactor** to reduce per-skill footprint (FR3 — **M1 only**;
   M4 folded in as a per-skill authoring discipline).
-- **Progress traceability** across skills via pure skill-body text (FR4 — **P1
-  only**; state-entry print + bracket-pair floor + ASCII state-map).
 - **Parallel execution** of independent tasks by default (FR6).
 
 > *Reshape note (2026-05-22):* originally also in scope: the four-mechanism FR3
@@ -231,32 +225,8 @@ improvement opportunities.
   3-mode degradation ladder fought the platform) and **M2** (hook-based mechanical
   offload — its consumers, FR4-P3 and M3, are gone). Realized by `feature-002`
   (`feature-003` was deleted).
-- **FR4 — Progress traceability via "you are here" + bracket-pair floor.** Make
-  pipeline progress continuously visible so the user always knows what is
-  happening, where they are, and that the process is not stuck. **Pure skill-body
-  text** — no hooks, no event stream, no HTML viewer, no schema. Three
-  components, all printed in the chat:
-  - **State-entry print:** every state prints `[State: NAME] — {one-line
-    description}` on entry.
-  - **Bracket-pair floor:** every long operation brackets itself —
-    `▶ {operation} starting (~{rough expected time})` before, `✓ {operation} done
-    in {actual time}` after, `✗ {operation} failed: {reason}` on error. This is
-    the load-bearing answer to "am I stuck?" — guaranteed on every host tool
-    because every host tool can print text.
-  - **"You are here" map:** the skill body renders an ASCII state-map on each
-    state transition with the current state marked.
-
-  P4 (native host-tool progress UI — task checklists, background-run
-  notifications) is **not** a committed requirement; it may be used
-  opportunistically where a host tool offers it for free.
-
-  *Reshape note (2026-05-22):* the original FR4 specified P1 + P3 (hook-emitted
-  JSONL event stream) + P2 (HTML viewer). The fresh-eyes scope reshape dropped
-  **P3** and **P2** — they were an observability product nested inside a
-  methodology refactor; the bracket-pair text floor (which was P1's NFR4 tier-3
-  degradation in the original design) already solves the user's "is it stuck?"
-  question without any of it. Realized by `feature-007` (`feature-006` and
-  `feature-008` were deleted).
+- **FR4 — Progress traceability.** *Moved to `work-003-traceability` on 2026-05-23;
+  see that work's REQUIREMENTS.md and `feature-001-you-are-here-heartbeat` SPEC.*
 
 - **FR5 — Profile-driven generation of install trees.** *Moved to
   `work-002-canonical-generator` during the fresh-eyes scope reshape (2026-05-22).*
@@ -312,14 +282,10 @@ improvement opportunities.
   cross-tree edit surface**; this NFR scopes only this work's FR3 refactor.)
 - **NFR3 — Cross-tool parity (inherited from `work-002`).** `work-002`'s
   generator must produce functionally equivalent install trees; this work's
-  surviving features (FR1, FR2, FR3, FR4, FR6) must respect that parity (no
+  surviving features (FR1, FR2, FR3, FR6) must respect that parity (no
   per-tool bifurcation in canonical content).
-- **NFR4 — Graceful degradation.** Where a per-skill state-map descriptor or
-  rough-time band is missing, FR4's progress traceability falls back to the bare
-  `[State: NAME]` print and an unparameterized bracket-pair; the skill still
-  functions and the user can still tell it is moving. *(The original NFR4 framing
-  — about hooks / skill chaining / background execution — became vestigial when
-  the reshape dropped FR3-M3 and FR4-P3.)*
+- **NFR4 — Graceful degradation.** *Moved to `work-003-traceability` (it was an
+  FR4 companion).*
 - **NFR5 — Minimal end-user runtime footprint.** New machinery must not impose
   heavy mandatory runtime dependencies on end users. This work's surviving
   features add only skill-body text and shell scripts (no new runtime deps); the
@@ -416,13 +382,8 @@ improvement opportunities.
   `canonical/` once `work-002` lands).
 - The methodology pipeline behaves identically before and after (§7).
 
-**FR4 — Progress traceability (pure skill-body text):**
-
-- Every state prints `[State: NAME] — {description}` on entry.
-- Every long operation prints `▶ {op} starting (~{rough time})` before and
-  `✓ {op} done in {actual time}` after (the bracket-pair floor).
-- The skill body renders an ASCII "you are here" state-map on each state
-  transition with the current state marked.
+**FR4 — Progress traceability.** *Moved to `work-003-traceability`; see that
+work's REQUIREMENTS.md §9.*
 
 **FR5 — Profile-driven generator.** *Moved to `work-002-canonical-generator`; see
 that work's REQUIREMENTS.md and feature-001 SPEC for acceptance criteria.*
@@ -442,7 +403,7 @@ Priority below is the requirement-level scope *after* the fresh-eyes reshape
 | Bucket | Items | Rationale |
 |--------|-------|-----------|
 | **Must** | FR1 (`feature-005`) · FR2 (`feature-004`) · FR3 (`feature-002`) | The three speed-core changes — lite path, two-tier review, thin-router refactor — that directly address pain points 1, 2, and 3. |
-| **Should** | FR4 (`feature-007`) · FR6 (`feature-009`) | Pain point 4 (traceability, via the bracket-pair-floor text design) and parallel-by-default execution. |
+| **Should** | FR6 (`feature-009`) | Parallel-by-default execution. (FR4 / pain-point #4 / `feature-007` moved to `work-003-traceability` on 2026-05-23.) |
 | **(Moved)** | FR5 → `work-002-canonical-generator` | Sequenced **first** — the canonical-source consolidation it delivers makes every subsequent edit to AID's skills single-source instead of triplicated. |
 | **(Dropped)** | FR3-M3 (auto-advance) · FR3-M2 (mechanical-offload hooks) · FR4-P2 (HTML viewer) · FR4-P3 (event stream) · FR7 (telemetry) | Over-engineered per the independent critique. The bracket-pair text floor (FR4) replaces the observability stack; M3 fought the platform; M2 lost its consumers; telemetry was speculative meta-work. |
 
@@ -450,14 +411,11 @@ Priority below is the requirement-level scope *after* the fresh-eyes reshape
 
 1. **`work-002` first** (canonical generator) — unblocks single-source editing for
    everything below.
-2. **`work-001-aid-lite`:** FR3 (`feature-002`) before FR1 / FR2 / FR4 — it
-   refactors the skills the others modify. FR4 (`feature-007`) is loosely coupled
-   to FR3 (it uses the state-map descriptor that FR3-M1's dispatch table makes
-   structured, but works inline before the refactor). FR6 (`feature-009`) ships
-   anytime.
+2. **`work-001-aid-lite`:** FR3 (`feature-002`) before FR1 / FR2 — it refactors
+   the skills the others modify. FR6 (`feature-009`) ships anytime.
 
-Detailed sequencing is `aid-plan`'s job; see the 5 surviving feature folders
-(`feature-002`, `feature-004`, `feature-005`, `feature-007`, `feature-009`).
+Detailed sequencing is `aid-plan`'s job; see the 4 surviving feature folders
+(`feature-002`, `feature-004`, `feature-005`, `feature-009`).
 
 ### Pain-point → surviving feature coverage
 
@@ -466,7 +424,6 @@ Detailed sequencing is `aid-plan`'s job; see the 5 surviving feature folders
 | **1.** Heavy pipeline for small work | `feature-005-lite-path` | Triage fork in `aid-interview`; single consolidated work-root `SPEC.md`; no per-feature folders for lite work |
 | **2.** Slow per-task execution | `feature-004-two-tier-review` + `feature-009-parallel-task-execution` | Cheap per-task quick check + one full A-grade gate per delivery; concurrent dispatch of graph-independent tasks |
 | **3.** Heavy skills | `feature-002-skill-footprint-refactor` | Thin-router `SKILL.md` + per-state `references/state-*.md` loaded on demand |
-| **4.** No progress visibility | `feature-007-you-are-here-heartbeat` | Pure skill-body text: `[State: NAME]` print + bracket-pair floor around long operations + ASCII state-map |
 
-All four pain points have a surviving owner. **Cross-cutting:** `work-002` lands
+All three pain points have a surviving owner here; pain-point #4 was split to `work-003-traceability` on 2026-05-23. **Cross-cutting:** `work-002` lands
 first so every subsequent edit is single-source rather than triplicated.
