@@ -4,6 +4,7 @@
 
 | Date | Change | Source |
 |------|--------|--------|
+| 2026-05-23 | **3 OQs resolved.** OQ-1 (concurrent-write design): chose **single-writer orchestrator** — matches AID's existing orchestrator-worker pattern (architecture.md §4 #2); aid-execute is the sole writer, sub-agents return results to it, orchestrator serially appends to STATE.md as results arrive; no locking, no event sourcing. OQ-2 (retire vs deprecate templates): **delete outright** — CW2 already executed this; tombstones in install trees would ship as noise to end-user projects. OQ-3 (Monitor stub template timing): **wait until Monitor area matures** — area-STATE pattern is documented; premature design risk; H7 (template missing) remains a known tech-debt item, not blocking. All three moved to Resolved Questions. | aid-specify (OQ resolution) |
 | 2026-05-23 | Feature created — codifies the area-based state-file rule (Discovery, Work, Monitor; Monitor deferred). Drives FR2 in `work-003-traceability/REQUIREMENTS.md`. Per the new rule, this feature does NOT have its own per-feature STATE.md — its status will be tracked in `.aid/work-003-traceability/STATE.md` (which itself is created by this feature). | aid-specify (manual draft) |
 
 ## Source
@@ -228,33 +229,57 @@ done
 
 Genuine decision points — surfaced, not assumed.
 
-#### OQ-1 — Concurrent-write design for Work STATE.md during parallel-task execution
+*(none open — all three original OQs RESOLVED on 2026-05-23; see Resolved Questions below.)*
 
-When `work-001/feature-009` (parallel execution) is shipped, multiple in-flight tasks in the same wave may simultaneously want to update the Work STATE.md `## Tasks Status` table. Three candidate mechanisms:
+### Resolved Questions
 
-1. **Single-writer orchestrator** — only the orchestrating skill (`aid-execute`) writes STATE.md. Parallel sub-agents (developer / reviewer) return results to the orchestrator; the orchestrator serially appends updates. Simplest; requires no file-locking.
-2. **Per-task event append** — each task appends a single status line to a `## Events` section of STATE.md (write-only, never rewrites). A reader reconstructs current status from the event stream. Event-sourcing pattern; tolerates concurrent writes via append-only semantics.
-3. **File-lock with retry** — each writer acquires a lockfile, edits, releases. Standard pattern but cross-platform locking is fiddly (Windows vs POSIX).
+#### OQ-1 — Concurrent-write design for Work STATE.md during parallel-task execution — **RESOLVED: Single-writer orchestrator**
 
-**Resolution deferred to `/aid-specify` on feature-002.** This SPEC commits to FR2's shape, not its concurrency model. The shape is shippable today (work-001's `feature-009` doesn't exist yet); the concurrency model is needed before `feature-009` lands.
+When `work-001/feature-009` (parallel execution) is shipped, multiple in-flight tasks in the same wave may simultaneously want to update the Work STATE.md `## Tasks Status` table.
 
-#### OQ-2 — Retire vs deprecate the old templates
+**Decision: single-writer orchestrator.** Only the orchestrating skill (`aid-execute`) writes STATE.md. Parallel sub-agents (developer / reviewer) return results to the orchestrator; the orchestrator serially appends updates to the `## Tasks Status` table (and to `## Lifecycle History` on phase transitions) as each result arrives.
 
-`canonical/templates/interview-state.md`, `feature-state.md`, `implementation-state.md`, `deployment-state.md`, `discovery-state.md`, `reports/discovery-state-template.md`, the summary-state file. Two options:
+**Reasoning:**
 
-1. **Delete outright.** Cleanest; no dead templates. Risk: any in-flight branch references one — would break. None do today.
-2. **Keep as deprecated pointers** — replace each file's content with a one-paragraph "DEPRECATED — see {area}-state-template.md" stub. Slightly slower cleanup; safer for any external consumers we don't know about.
+1. **Matches AID's existing architecture.** `aid-execute` already operates as the orchestrator-worker pattern (architecture.md §4 pattern #2). It dispatches sub-agents and collects results — extending that to "and serially appends to STATE.md on each result arrival" is the natural fit, not a new mechanism.
+2. **No locking, no event sourcing.** File-lock requires cross-platform reconciliation (Windows vs POSIX semantics differ). Event-append needs a reader to reconstruct current status, adding complexity.
+3. **Predictable ordering.** Status rows appear in the order results arrive, not in race-condition order — deterministic for human readers.
+4. **Zero new dependency.** The orchestrator already has per-task results in hand; the write is an extra side-effect on each arrival.
 
-**Resolution deferred to `/aid-specify`.** This SPEC commits to retiring; the disposal mechanism is /aid-specify's call.
+**Rejected alternatives:** per-task event append (event-sourcing-style — reader complexity outweighs the writer simplicity benefit); file-lock with retry (cross-platform locking is fiddly).
 
-#### OQ-3 — Should Monitor get a stub `MONITOR-STATE.md` template now, or wait?
+**Implementation:** lands in `work-001/feature-009` (parallel-task execution) when that feature is implemented. Feature-002 (this SPEC) commits to the architectural decision; feature-009's SPEC will commit to the exact mechanism (e.g., a single `append-task-status` helper call in `aid-execute`'s wave-completion loop).
 
-User said "skip Monitor for now (not mature)". Two interpretations:
+#### OQ-2 — Retire vs deprecate the old templates — **RESOLVED: Delete outright**
 
-1. **Stub now** — create `canonical/templates/monitor-state-template.md` with placeholders, so the area-STATE pattern is uniform across all three areas (Discovery, Work, Monitor) in the templates dir.
-2. **Wait until Monitor matures** — H7 (the MONITOR-STATE template is missing) stays open; this feature explicitly notes Monitor's STATE follows the area-STATE pattern when authored.
+`canonical/templates/{interview-state, feature-state, implementation-state, deployment-state, discovery-state}.md` + `canonical/templates/reports/discovery-state-template.md`, plus the 12 phantom install-tree-only templates (`{interview, feature, discovery}-state.md` × 4 install locations).
 
-**Resolution deferred to `/aid-specify`.** Both are valid; tradeoff is "uniform templates now" vs "premature design".
+**Decision: delete outright.** No tombstone stubs.
+
+**Reasoning:**
+
+- **Tombstones in install trees ship as noise to end-user projects.** A project installing AID via `setup.sh` would receive `.claude/templates/interview-state.md` containing "DEPRECATED — see work-state-template.md" — unhelpful clutter the end user never asked for.
+- **No external consumers.** AID's state-file templates are internal to the methodology; no external tooling reads them. Breakage risk is zero.
+- **History preserved by git.** Anyone tracing the evolution of state files via git log/blame can see the migration commits (CW1–CW7 on the `work-003` branch).
+
+**Status:** Already executed in CW2 (commit `e363348`) as a forced pragmatic choice — the SPEC was being committed alongside the template deletions; deferring to a later /aid-specify pass wasn't feasible. This resolution formalizes that choice; no further file changes needed.
+
+#### OQ-3 — Should Monitor get a stub `MONITOR-STATE.md` template now, or wait? — **RESOLVED: Wait until Monitor area matures**
+
+**Decision: wait.** Do not author `canonical/templates/monitor-state-template.md` as part of work-003.
+
+**Reasoning:**
+
+- **Premature-design risk.** Monitor's lifecycle (observe → classify → route) isn't well-defined yet. A template authored now would crystallize assumptions that might not match the eventual Monitor design.
+- **Not blocking.** H7 (the MONITOR-STATE template missing) is a documented tech-debt item; no project actively runs `aid-monitor` end-to-end today, so the absence doesn't block any active workflow.
+- **The pattern is documented.** When Monitor matures and someone authors the template, the area-STATE rule (in REQUIREMENTS.md FR2 + data-model.md §1A + coding-standards.md §8.5) tells them exactly what shape to follow — no design context will be lost by waiting.
+- **Uniform-templates-now is a weak win.** Two existing templates (`work-state-template.md`, `discovery-state-template.md`) already demonstrate the pattern; a third stub adds little.
+
+**Trigger for revisiting:** when `aid-monitor` ships in production for any project (including AID's own dogfooding of itself), revisit OQ-3 and author the template. Until then, H7 stays open in tech-debt.md and Monitor-area work routes to the dedicated future work that matures the area.
+
+---
+
+## Notes
 
 ---
 
