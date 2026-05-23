@@ -454,7 +454,7 @@ def main() -> int:
         m = EmissionManifest(profile_name="claude-code")
         m.add(
             profile="claude-code",
-            src="canonical/agents/architect.md",
+            src="canonical/agents/architect/AGENT.md",
             dst=".claude/agents/architect.md",
             sha256="a" * 64,
         )
@@ -518,7 +518,7 @@ def main() -> int:
     m_orig = EmissionManifest(profile_name="claude-code")
     m_orig.add(
         profile="claude-code",
-        src="canonical/agents/developer.md",
+        src="canonical/agents/developer/AGENT.md",
         dst=".claude/agents/developer.md",
         sha256="e" * 64,
     )
@@ -569,7 +569,7 @@ def main() -> int:
     test_bytes = b"hello manifest content"
     m_content.add(
         profile="test",
-        src="canonical/agents/architect.md",
+        src="canonical/agents/architect/AGENT.md",
         dst=".claude/agents/architect.md",
         content=test_bytes,
     )

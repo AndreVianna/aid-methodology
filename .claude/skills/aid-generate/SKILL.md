@@ -10,6 +10,8 @@ argument-hint: "[--tool claude-code|codex|cursor] regenerate only one tree (defa
 
 # AID Install-Tree Generator
 
+> **Maintainer-only skill — outside `canonical/`.** This is the lone exception to the canonical-source pattern. It lives at `.claude/skills/aid-generate/` only and is NOT in `canonical/skills/`. Edits to this skill are made directly to its files. Reason: it generates the install trees, so it cannot itself be generated from canonical without a chicken-and-egg deployment problem.
+
 This skill regenerates the three install trees (`claude-code/`, `codex/`, `cursor/`) from
 the single canonical source (`canonical/`) and the per-tool profiles (`profiles/`).
 

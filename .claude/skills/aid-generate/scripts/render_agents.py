@@ -2,7 +2,7 @@
 # render_agents.py — AID canonical-generator agent renderer (task-019)
 #
 # Purpose:
-#   Render canonical/agents/*.md into per-tool install trees using the
+#   Render canonical/agents/<name>/AGENT.md into per-tool install trees using the
 #   per-tool profile. Supports both markdown (Claude Code, Cursor) and
 #   TOML (Codex) output formats.
 #
@@ -230,7 +230,7 @@ def _render_agent_for_profile(
     raw_text = read_canonical_file(canonical_path)
     fm, body = _parse_frontmatter(raw_text)
 
-    agent_name = fm.get("name", canonical_path.stem)
+    agent_name = fm.get("name", canonical_path.parent.name)
     description = fm.get("description", "")
     tier = fm.get("tier", "medium")
     tools_str = fm.get("tools", "")
@@ -336,7 +336,7 @@ def render_agents(
     output_base = Path(output_base)
     agents_dir = canonical_root / "canonical" / "agents"
 
-    agent_files = sorted(agents_dir.glob("*.md"))
+    agent_files = sorted(agents_dir.glob("*/AGENT.md"))
     if not agent_files:
         raise FileNotFoundError(f"No agent files found in {agents_dir}")
 

@@ -108,7 +108,7 @@ def test_user_file_untouched() -> list[str]:
         prev = EmissionManifest(profile_name="claude-code")
         prev.add(
             profile="claude-code",
-            src="canonical/agents/architect.md",
+            src="canonical/agents/architect/AGENT.md",
             dst=".claude/agents/architect.md",
             content=gen_bytes,
         )
@@ -116,7 +116,7 @@ def test_user_file_untouched() -> list[str]:
         curr = EmissionManifest(profile_name="claude-code")
         curr.add(
             profile="claude-code",
-            src="canonical/agents/architect.md",
+            src="canonical/agents/architect/AGENT.md",
             dst=".claude/agents/architect.md",
             content=gen_bytes,
         )
@@ -170,13 +170,13 @@ def test_canonical_removal_cascades() -> list[str]:
         prev = EmissionManifest(profile_name="claude-code")
         prev.add(
             profile="claude-code",
-            src="canonical/agents/architect.md",
+            src="canonical/agents/architect/AGENT.md",
             dst=".claude/agents/architect.md",
             content=arch_bytes,
         )
         prev.add(
             profile="claude-code",
-            src="canonical/agents/developer.md",
+            src="canonical/agents/developer/AGENT.md",
             dst=".claude/agents/developer.md",
             content=dev_bytes,
         )
@@ -185,7 +185,7 @@ def test_canonical_removal_cascades() -> list[str]:
         curr = EmissionManifest(profile_name="claude-code")
         curr.add(
             profile="claude-code",
-            src="canonical/agents/architect.md",
+            src="canonical/agents/architect/AGENT.md",
             dst=".claude/agents/architect.md",
             content=arch_bytes,
         )
