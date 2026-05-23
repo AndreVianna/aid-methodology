@@ -90,6 +90,6 @@ Already covered by Specify:
 
 ## Feedback Loops
 
-- **→ Discovery:** KB insufficient → Q&A to DISCOVERY-STATE.md
-- **→ Specify:** SPEC ambiguous → Q&A to feature's STATE.md
-- **→ Interview:** Priority unclear → Q&A to INTERVIEW-STATE.md
+- **→ Discovery:** KB insufficient → Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)`
+- **→ Specify:** SPEC ambiguous → Q&A to `.aid/{work}/STATE.md` `## Cross-phase Q&A`
+- **→ Interview:** Priority unclear → Q&A to `.aid/{work}/STATE.md` `## Cross-phase Q&A`

@@ -16,9 +16,11 @@
 #   --kb PATH         KB directory (default: .aid/knowledge)
 #   --root PATH       Project root for resolving cited paths (default: .)
 #   --format FORMAT   human (default) | tsv
-#   --include-state   Also verify citations inside DISCOVERY-STATE.md
-#                     (default: skip it — it documents historical state by
-#                     design and would generate false positives).
+#   --include-state   Also verify citations inside .aid/knowledge/STATE.md
+#                     (the consolidated Discovery area STATE, per FR2; pre-FR2
+#                     this was DISCOVERY-STATE.md). Default: skip it — it
+#                     documents historical state by design and would generate
+#                     false positives.
 #   --quiet           Suppress per-doc output; only show summary + broken findings.
 #
 # Exit codes:
@@ -84,7 +86,10 @@ fi
 for kb_file in "$KB_DIR"/*.md; do
   [[ -f "$kb_file" ]] || continue
   base=$(basename "$kb_file")
-  if [[ $SKIP_STATE -eq 1 && "$base" == "DISCOVERY-STATE.md" ]]; then
+  # Post-FR2: the consolidated Discovery area state lives in STATE.md.
+  # Pre-FR2 it was DISCOVERY-STATE.md; we still skip both names so the
+  # script works on legacy projects that haven't migrated yet.
+  if [[ $SKIP_STATE -eq 1 && ( "$base" == "STATE.md" || "$base" == "DISCOVERY-STATE.md" ) ]]; then
     continue
   fi
 
@@ -117,14 +122,14 @@ for kb_file in "$KB_DIR"/*.md; do
                     "templates/knowledge-base/" "templates/requirements/" \
                     "templates/specs/" "templates/delivery-plans/" \
                     "templates/feedback-artifacts/" "templates/reports/" \
-                    "claude-code/.claude/skills/" "claude-code/.claude/agents/" \
-                    "claude-code/.claude/templates/" \
-                    "claude-code/.claude/templates/knowledge-summary/" \
-                    "claude-code/.claude/templates/scripts/" \
-                    "codex/.codex/agents/" "codex/.agents/skills/" \
-                    "codex/.agents/templates/" \
-                    "cursor/.cursor/agents/" "cursor/.cursor/rules/" \
-                    "cursor/.cursor/skills/" "cursor/.cursor/templates/" \
+                    "profiles/claude-code/.claude/skills/" "profiles/claude-code/.claude/agents/" \
+                    "profiles/claude-code/.claude/templates/" \
+                    "profiles/claude-code/.claude/templates/knowledge-summary/" \
+                    "profiles/claude-code/.claude/templates/scripts/" \
+                    "profiles/codex/.codex/agents/" "profiles/codex/.agents/skills/" \
+                    "profiles/codex/.agents/templates/" \
+                    "profiles/cursor/.cursor/agents/" "profiles/cursor/.cursor/rules/" \
+                    "profiles/cursor/.cursor/skills/" "profiles/cursor/.cursor/templates/" \
                     "methodology/" "agents/" "skills/" "docs/"; do
         candidate="$ROOT/${prefix}${cited_path}"
         if [[ -f "$candidate" ]]; then

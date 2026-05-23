@@ -94,8 +94,8 @@ The agent is a **tech lead**, not an interviewer:
 
 ## Feedback Loops
 
-- **→ Discovery:** KB wrong → Q&A to DISCOVERY-STATE.md
-- **→ Interview:** Requirements wrong → Q&A to INTERVIEW-STATE.md
+- **→ Discovery:** KB wrong → Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)`
+- **→ Interview:** Requirements wrong → Q&A to `.aid/{work}/STATE.md` `## Cross-phase Q&A`
 - **→ Spike:** Investigation needed → pause, record, resume later
 - **→ Split/Merge:** Feature scope → create/merge feature folders
 

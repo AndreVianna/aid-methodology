@@ -28,7 +28,7 @@ The Orchestrator is always present. It is the first agent invoked and the last t
 
 - **Phase transition decisions** — which phase is next, with justification
 - **Agent dispatch instructions** — which agent, what context, what success criteria
-- **Routing decisions** — where feedback signals go (Q&A entry in INTERVIEW-STATE → Interviewer, Q&A entry in DISCOVERY-STATE → Researcher, IMPEDIMENT → Architect)
+- **Routing decisions** — where feedback signals go (Q&A entry in work `STATE.md` `## Cross-phase Q&A` (requirements-tagged) → Interviewer; Q&A entry in `.aid/knowledge/STATE.md` `## Q&A (Pending)` → Researcher; IMPEDIMENT → Architect) — per FR2; pre-FR2 these were `INTERVIEW-STATE.md` and `DISCOVERY-STATE.md`
 - **Status reports** — pipeline state for human oversight
 
 ## How It Differs from Similar Agents
@@ -62,7 +62,7 @@ The Orchestrator never writes code, never writes specs, never runs tests. It *co
 
 - **Human gates are sacred.** Phase transitions require explicit human approval. No auto-advancing.
 - **Context preparation.** Before dispatching an agent, the Orchestrator assembles the right context: relevant KB docs, spec sections, task files, constraints.
-- **Feedback routing.** Q&A entry in INTERVIEW-STATE.md → Interviewer (requirements ambiguity). Q&A entry in DISCOVERY-STATE.md → Researcher (KB gaps). Q&A entry in feature STATE.md → Architect (spec defects). IMPEDIMENT.md → Architect for spec revision. MONITOR-STATE.md → Implement for bugs (short path), Discover for CRs.
+- **Feedback routing.** Per FR2, all area Q&A lives in one STATE.md per area. Work `STATE.md` `## Cross-phase Q&A` (requirements-tagged) → Interviewer (requirements ambiguity). `.aid/knowledge/STATE.md` `## Q&A (Pending)` → Researcher (KB gaps). Work `STATE.md` `## Cross-phase Q&A` (spec-tagged) → Architect (spec defects). IMPEDIMENT.md → Architect for spec revision. Monitor area STATE (per-work, deferred per FR2 OQ-3) → Implement for bugs (short path), Discover for CRs.
 - **Never implements directly.** The Orchestrator's power is in *knowing who to call*, not in doing the work.
 - **Parallel awareness.** Tracks which tasks are independent, which have dependencies, and manages execution order accordingly.
 
@@ -70,12 +70,12 @@ The Orchestrator never writes code, never writes specs, never runs tests. It *co
 
 | Feedback signal | Routes To | Reason |
 |-----------------|-----------|--------|
-| Q&A entry in `INTERVIEW-STATE.md` | Interviewer | Requirements clarification needed |
-| Q&A entry in `DISCOVERY-STATE.md` | Researcher | KB gap, targeted investigation |
-| Q&A entry in a feature's `STATE.md` | Architect | Spec defect or ambiguity |
+| Q&A entry in work `STATE.md` `## Cross-phase Q&A` (requirements) | Interviewer | Requirements clarification needed |
+| Q&A entry in `.aid/knowledge/STATE.md` `## Q&A (Pending)` | Researcher | KB gap, targeted investigation |
+| Q&A entry in work `STATE.md` `## Cross-phase Q&A` (spec-tagged) | Architect | Spec defect or ambiguity |
 | IMPEDIMENT.md | Architect | Spec vs. reality mismatch |
-| MONITOR-STATE.md `classification: BUG` | Developer (short bug path) | Monitor includes root cause analysis; route directly to Implement |
-| MONITOR-STATE.md `classification: CR` | Discover (new cycle) | Full lifecycle for change requests |
+| Monitor area STATE (per-work, deferred per FR2 OQ-3) `classification: BUG` | Developer (short bug path) | Monitor includes root cause analysis; route directly to Implement |
+| Monitor area STATE (per-work, deferred per FR2 OQ-3) `classification: CR` | Discover (new cycle) | Full lifecycle for change requests |
 
 ## Escalation
 

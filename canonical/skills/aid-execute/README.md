@@ -55,6 +55,6 @@ RESEARCH and DOCUMENT tasks that produce only `.aid/` artifacts may skip branchi
 ## Output
 
 - Artifacts appropriate to task type
-- `task-NNN-STATE.md` with review history
-- Grade ≥ minimum (from DISCOVERY-STATE.md)
+- Work `STATE.md` `## Tasks Status` row updated with review history
+- Grade ≥ minimum (from `.aid/knowledge/STATE.md` `**Minimum Grade:**`)
 - IMPEDIMENT-task-NNN.md if blocked

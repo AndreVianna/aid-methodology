@@ -38,13 +38,14 @@ Each deliverable follows the same cycle:
 ```
 .aid/
   knowledge/                ← shared KB (read)
+    STATE.md                ← minimum grade
   work-NNN-{name}/
+    STATE.md                ← § Plan / Deliveries (written here)
     REQUIREMENTS.md         ← read
     PLAN.md                 ← OUTPUT
     features/
       feature-NNN-{name}/
-        SPEC.md             ← read
-        STATE.md            ← check Ready status
+        SPEC.md             ← read (check Features Status in work STATE.md)
 ```
 
 ## Arguments
@@ -67,7 +68,7 @@ Each deliverable follows the same cycle:
 ### Check 2: Verify Feature SPECs
 
 1. Scan `.aid/{work}/features/*/SPEC.md`
-2. Check each `STATE.md` — should be `Ready`
+2. Check work STATE.md `## Features Status` — each feature should be `Ready`
 3. No features → **STOP.** "Run `/aid-interview` then `/aid-specify`."
 4. Some not Ready → warn, offer to plan with completed only or wait
 
@@ -80,6 +81,29 @@ Each deliverable follows the same cycle:
 
 - No PLAN.md → **FIRST RUN** (Step 1)
 - PLAN.md exists → **REVIEW** (enter loop at step 4)
+
+Print the state-entry line and "you are here" map:
+
+**FIRST-RUN:**
+```
+[State: FIRST-RUN] — No PLAN.md found; begin dependency mapping and deliverable sequencing.
+aid-plan  ▸ you are here
+  [● FIRST-RUN ] → [ REVIEW ] → [ DONE ]
+```
+
+**REVIEW:**
+```
+[State: REVIEW] — PLAN.md exists; re-review deliverables against current SPECs and KB.
+aid-plan  ▸ you are here
+  [✓ FIRST-RUN ] → [● REVIEW ] → [ DONE ]
+```
+
+**DONE:**
+```
+[State: DONE] — Plan is complete and meets minimum grade.
+aid-plan  ▸ you are here
+  [✓ FIRST-RUN ] → [✓ REVIEW ] → [● DONE ]
+```
 
 ## Inputs
 
@@ -167,7 +191,9 @@ When the developer agrees on a deliverable, **IMMEDIATELY write it to the file.*
 
 **Agent:** Dispatch with `subagent_type: reviewer` (overriding the default `architect`). The reviewer must run with clean context — it grades against KB/codebase reality without seeing the architect's working notes. Print before dispatch: `[Review] Dispatching reviewer for PLAN validation.`
 
+▶ reviewer starting (~1–2 min)
 After writing, **review immediately:** Does it hold up?
+✓ reviewer done (record actual time) — or ✗ reviewer failed: {reason}
 - All included features' dependencies satisfied by prior deliverables?
 - Actually standalone-functional?
 - Consistent with KB architecture?
@@ -177,7 +203,7 @@ by severity. The grade is calculated — worst issue dominates.
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum (from DISCOVERY-STATE.md) | Move to next deliverable. |
+| Grade ≥ minimum (from `.aid/knowledge/STATE.md` `**Minimum Grade:**`) | Move to next deliverable. |
 | Grade < minimum, fixable | Back to Propose with findings. |
 
 ```
@@ -259,11 +285,11 @@ For each deliverable in PLAN.md, run step 4:
 Use the universal rubric (`../../templates/grading-rubric.md`). Classify each issue
 by severity. The grade is calculated — worst issue dominates.
 
-Compare to minimum grade from DISCOVERY-STATE.md.
+Compare to minimum grade from `.aid/knowledge/STATE.md` `**Minimum Grade:**`.
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum | Print summary, done. |
+| Grade ≥ minimum | Print summary, done. Update work STATE.md `## Plan / Deliveries`. |
 | Grade < minimum, deliverables fixable | List findings, re-enter loop for affected deliverables. |
 | Grade < minimum, sequence invalidated | Recommend `--reset`. |
 
@@ -273,9 +299,9 @@ For grades below minimum: re-enter the loop for affected deliverables.
 
 ## Feedback Loops
 
-- **→ Discovery:** KB insufficient → Q&A to `.aid/knowledge/DISCOVERY-STATE.md`
-- **→ Specify:** SPEC ambiguous → Q&A to feature's `STATE.md`
-- **→ Interview:** Priority unclear → Q&A to work's `INTERVIEW-STATE.md`
+- **→ Discovery:** KB insufficient → Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)`
+- **→ Specify:** SPEC ambiguous → Q&A to work STATE.md `## Cross-phase Q&A`
+- **→ Interview:** Priority unclear → Q&A to work STATE.md `## Cross-phase Q&A`
 
 ## Output
 

@@ -31,8 +31,8 @@ Typically invoked by the **Orchestrator** after the Developer completes a task. 
 
 ## What It Produces
 
-- **Structured issue list** recorded in the task's task-NNN-STATE.md — source/severity tags, evidence, and recommendations
-- **Test results** — test execution pass/fail summary and failure analysis, also recorded in task-NNN-STATE.md
+- **Structured issue list** recorded in the work `STATE.md` `## Tasks Status` row for the task (per FR2 §1A; pre-FR2 this lived in a per-task `task-NNN-STATE.md`) — source/severity tags, evidence, and recommendations
+- **Test results** — test execution pass/fail summary and failure analysis, also recorded in the work `STATE.md` `## Tasks Status` row for the task
 - Issue tags: `[CODE]`, `[TASK]`, `[SPEC]`, `[KB]`, `[ARCHITECTURE]`
 - Severity levels: `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`
 
@@ -61,9 +61,9 @@ The Reviewer ≥ executor invariant is enforced. When reviewing Architect or Sec
 
 ## Examples
 
-- *"Developer completed task-003. Review the implementation."* → Reviewer produces a structured issue list in task-003-STATE.md; grading script computes the grade
-- *"Run the full E2E test suite in staging."* → Reviewer executes tests, records results in task-NNN-STATE.md
-- *"Is this code ready to ship?"* → Reviewer evaluates against all criteria, produces evidence-tagged findings in task-NNN-STATE.md; the grade follows from the rubric
+- *"Developer completed task-003. Review the implementation."* → Reviewer produces a structured issue list in the work `STATE.md` `## Tasks Status` row for task-003; grading script computes the grade
+- *"Run the full E2E test suite in staging."* → Reviewer executes tests, records results in the work `STATE.md` `## Tasks Status` row for the task
+- *"Is this code ready to ship?"* → Reviewer evaluates against all criteria, produces evidence-tagged findings in the work `STATE.md` `## Tasks Status` row for the task; the grade follows from the rubric
 
 ## Key Behaviors
 
@@ -92,14 +92,15 @@ The full rubric lives in [`templates/grading-rubric.md`](../../templates/grading
 Run it after producing the issue list:
 
 ```bash
-templates/scripts/grade.sh task-NNN-STATE.md
-# or
-cat task-NNN-STATE.md | templates/scripts/grade.sh
+# Per FR2 §1A, the reviewer's issue list lives in the work STATE.md
+# ## Tasks Status row for the task; pre-FR2 it lived in a per-task
+# task-NNN-STATE.md file.
+templates/scripts/grade.sh .aid/work-NNN-{name}/STATE.md
 ```
 
 ## Escalation
 
-- **SPEC itself has issues** → writes a Q&A entry to the feature's `STATE.md`, routes to Architect
-- **KB conventions are contradictory** → writes a Q&A entry to `.aid/knowledge/DISCOVERY-STATE.md`
+- **SPEC itself has issues** → writes a Q&A entry to the work `STATE.md` `## Cross-phase Q&A` section (tagged with the feature ID), routes to Architect (per FR2; pre-FR2 this lived in a per-feature `STATE.md`)
+- **KB conventions are contradictory** → writes a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)` section
 - **Cannot run tests** (environment issues) → reports to Orchestrator
 - **Needs specialist input** → requests Security, Performance, or UX Designer agent

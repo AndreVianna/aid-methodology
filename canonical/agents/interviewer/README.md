@@ -18,14 +18,14 @@ In brownfield projects (where the Knowledge Base already exists), interviews are
 |-------|---------|
 | **Interview** | Primary requirements gathering → produces REQUIREMENTS.md |
 | **Triage** | When a production finding needs human input to classify |
-| **Any phase** | When a Q&A entry is written to the work's `INTERVIEW-STATE.md` signalling a requirements gap |
+| **Any phase** | When a Q&A entry is written to the work's `STATE.md` `## Cross-phase Q&A` section signalling a requirements gap |
 
 Typically invoked by the **Orchestrator** after Discovery (brownfield) or at the start of a greenfield project. May be re-invoked when any phase identifies ambiguous or missing requirements.
 
 ## What It Produces
 
 - **REQUIREMENTS.md** — structured requirements document with sections for functional, non-functional, constraints, assumptions, and open questions
-- **Clarification notes** — targeted answers to specific Q&A entries in `INTERVIEW-STATE.md`
+- **Clarification notes** — targeted answers to specific Q&A entries in the work's `STATE.md` `## Cross-phase Q&A` section
 
 ## How It Differs from Similar Agents
 

@@ -34,8 +34,8 @@ summarization.
 
 Run `.aid/templates/knowledge-summary/scripts/check-preflight.sh` before any state. It verifies:
 
-1. `.aid/knowledge/DISCOVERY-STATE.md` exists.
-2. `**User Approved:** yes` is present in DISCOVERY-STATE.md.
+1. `.aid/knowledge/STATE.md` exists.
+2. `**User Approved:** yes` is present in `.aid/knowledge/STATE.md`.
 3. At least one populated KB document exists (`.aid/knowledge/*.md` with real content).
 4. Not in Plan Mode (need write access).
 5. Network reachable to `registry.npmjs.org` (skipped if `--cdn-mermaid`).
@@ -47,11 +47,11 @@ proceed; do NOT create any state files.
 
 | Argument | Effect |
 |----------|--------|
-| `--grade X` | Override the minimum acceptable grade. Format: `[A-F][-+]?`. Without this, reads `**Minimum Grade:**` from `DISCOVERY-STATE.md` (fallback `A`). Persists to `SUMMARY-STATE.md`. |
+| `--grade X` | Override the minimum acceptable grade. Format: `[A-F][-+]?`. Without this, reads `**Minimum Grade:**` from `.aid/knowledge/STATE.md` (fallback `A`). Persists to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`. |
 | `--profile X` | Force a specific profile. One of: `auto` (default), `web-app`, `library`, `cli`, `microservices`, `data-pipeline`. |
 | `--theme palette=X` | Override color palette (e.g., `--theme palette=brand-acme`). Default uses the canonical palette in `.aid/templates/knowledge-summary/design-tokens.md`. |
 | `--cdn-mermaid` | Load Mermaid from jsdelivr CDN at runtime instead of inlining (drops ~3 MB; loses offline support). |
-| `--reset` | Force regeneration regardless of staleness check; clears `SUMMARY-STATE.md`. |
+| `--reset` | Force regeneration regardless of staleness check; clears `## Knowledge Summary Status` in `.aid/knowledge/STATE.md`. |
 
 ---
 
@@ -64,23 +64,23 @@ The state-detection logic determines which mode this run executes:
 ```
 1. PREFLIGHT (synchronous gate). Aborts on failure — no further state runs.
 
-2. Read .aid/knowledge/SUMMARY-STATE.md (if it exists) and .aid/knowledge/DISCOVERY-STATE.md.
+2. Read .aid/knowledge/STATE.md §§ Knowledge Summary Status, Summarization History.
 
 3. STALE-CHECK first (always):
-   - Compare LAST_KB_CHANGE_DATE (latest entry in DISCOVERY-STATE ## Review History)
-     vs LAST_SUMMARY_DATE (latest entry in DISCOVERY-STATE ## Summarization History,
-     or the **Last Run** field in SUMMARY-STATE.md).
+   - Compare LAST_KB_CHANGE_DATE (latest entry in STATE.md ## Review History)
+     vs LAST_SUMMARY_DATE (latest entry in STATE.md ## Summarization History,
+     or the **Last Run** field in ## Knowledge Summary Status).
    - If --reset → mode = GENERATE (force).
    - If knowledge-summary.html missing → mode = GENERATE.
    - If ## Summarization History missing/empty → mode = GENERATE.
    - If LAST_KB_CHANGE_DATE > LAST_SUMMARY_DATE → mode = GENERATE.
    - If LAST_KB_CHANGE_DATE <= LAST_SUMMARY_DATE AND HTML exists:
-       AND SUMMARY-STATE.md says **User Approved:** yes → mode = DONE-IDEMPOTENT (exit cleanly)
+       AND ## Knowledge Summary Status says **User Approved:** yes → mode = DONE-IDEMPOTENT (exit cleanly)
        OTHERWISE → mode = APPROVAL (HTML is current; just need user sign-off)
 
 4. If mode = GENERATE:
-   - SUMMARY-STATE.md missing → run PROFILE first to detect/persist project type, then GENERATE.
-   - SUMMARY-STATE.md present → reuse stored profile; go straight to GENERATE.
+   - ## Knowledge Summary Status absent/no Profile → run PROFILE first to detect/persist project type, then GENERATE.
+   - ## Knowledge Summary Status has Profile → reuse stored profile; go straight to GENERATE.
 
 5. After GENERATE → VALIDATE.
 
@@ -100,7 +100,56 @@ The state-detection logic determines which mode this run executes:
 
 **Two-grade model:** the rubric is split into machine-verifiable checks (the AUTO_POOL — D1/D2/L1/L2/H1/A1/A2/A3/A4/A5/C1/C2/S2 = 73 pts) and human-judgment checks (the MANUAL_POOL — K1/K2/V1 = 30 pts). The script can NEVER auto-pass MANUAL_POOL; the user must run `manual-checklist.sh` and answer the prompts honestly. **V1 (human visual gate) is mandatory — a V1 fail forces Human Grade = F.** Overall Grade = `min(Machine_letter, Human_letter)`. A+ requires both Machine and Human grades to be A+ on their respective subsets. See `grading-rubric.md` for the per-subset boundaries.
 
-Print the chosen mode at the start of each run: `[State: PROFILE]`, `[State: GENERATE]`, etc.
+Print the state-entry line and "you are here" map at the start of each mode:
+
+**PREFLIGHT:**
+```
+[State: PREFLIGHT] — Verifying prerequisites: KB approved, Node.js available, network reachable.
+aid-summarize  ▸ you are here
+  [● PREFLIGHT ] → [ STALE-CHECK ] → [ PROFILE ] → [ GENERATE ] → [ VALIDATE ] → [ APPROVAL ] → [ DONE ]
+```
+
+**STALE-CHECK:**
+```
+[State: STALE-CHECK] — Comparing KB review date vs last summary date to determine if regeneration is needed.
+aid-summarize  ▸ you are here
+  [✓ PREFLIGHT ] → [● STALE-CHECK ] → [ PROFILE ] → [ GENERATE ] → [ VALIDATE ] → [ APPROVAL ] → [ DONE ]
+```
+
+**PROFILE:**
+```
+[State: PROFILE] — Auto-detecting project type from KB signals to select the section template.
+aid-summarize  ▸ you are here
+  [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [● PROFILE ] → [ GENERATE ] → [ VALIDATE ] → [ APPROVAL ] → [ DONE ]
+```
+
+**GENERATE:**
+```
+[State: GENERATE] — Building knowledge-summary.html from KB content and Mermaid diagrams.
+aid-summarize  ▸ you are here
+  [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [✓ PROFILE ] → [● GENERATE ] → [ VALIDATE ] → [ APPROVAL ] → [ DONE ]
+```
+
+**VALIDATE:**
+```
+[State: VALIDATE] — Running machine-verifiable quality checks (diagrams, links, HTML, contrast).
+aid-summarize  ▸ you are here
+  [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [✓ PROFILE ] → [✓ GENERATE ] → [● VALIDATE ] → [ APPROVAL ] → [ DONE ]
+```
+
+**APPROVAL:**
+```
+[State: APPROVAL] — Both Machine and Human grades meet minimum; awaiting user approval.
+aid-summarize  ▸ you are here
+  [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [✓ PROFILE ] → [✓ GENERATE ] → [✓ VALIDATE ] → [● APPROVAL ] → [ DONE ]
+```
+
+**DONE:**
+```
+[State: DONE] — Summary approved and Summarization History updated.
+aid-summarize  ▸ you are here
+  [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [✓ PROFILE ] → [✓ GENERATE ] → [✓ VALIDATE ] → [✓ APPROVAL ] → [● DONE ]
+```
 
 ---
 
@@ -130,7 +179,7 @@ If STALE: tell the user *why* it's stale:
 
 ## Mode: PROFILE
 
-Decide which section template to use. Skip if `SUMMARY-STATE.md` already has a
+Decide which section template to use. Skip if `.aid/knowledge/STATE.md` `## Knowledge Summary Status` already has a
 `**Profile:**` entry (preserved from previous run unless `--reset`).
 
 If `--profile X` was passed (and X is not `auto`), use that. Otherwise auto-detect:
@@ -160,7 +209,7 @@ Persist:
 **Profile Source:** auto-detected | user-specified
 **Profile Confidence:** {level}
 ```
-to `.aid/knowledge/SUMMARY-STATE.md`.
+to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`.
 
 ---
 
@@ -172,11 +221,11 @@ This is the bulk of the work. Steps:
 
 ```
 if --grade present: MIN_GRADE = flag value
-elif DISCOVERY-STATE.md has **Minimum Grade:**: read it
+elif .aid/knowledge/STATE.md has **Minimum Grade:**: read it
 else: MIN_GRADE = "A"
 ```
 
-Persist to `SUMMARY-STATE.md`.
+Persist to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`.
 
 ### 2. Fetch Mermaid (latest)
 
@@ -186,7 +235,7 @@ Run `.aid/templates/knowledge-summary/scripts/fetch-mermaid.sh`. It:
 3. If stale or missing, downloads `https://cdn.jsdelivr.net/npm/mermaid@{ver}/dist/mermaid.min.js`.
 4. Writes meta file with version + timestamp + sha256.
 
-Records in SUMMARY-STATE.md:
+Records in `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 ```
 **Mermaid Version:** {ver}
 **Mermaid Fetched At:** {iso8601}
@@ -206,7 +255,7 @@ If the KB says X, the HTML says X.
 ### 4. Build the HTML
 
 Use `.aid/templates/knowledge-summary/html-skeleton.html` as the document shell. Inject:
-- Hero with project name (read from DISCOVERY-STATE.md or `pom.xml` / `package.json` etc.)
+- Hero with project name (read from `.aid/knowledge/STATE.md` or `pom.xml` / `package.json` etc.)
 - Section structure from `.aid/templates/knowledge-summary/section-templates/{profile}.md`
 - Per-section content drawn from KB (cite source via relative `./xxx.md` link)
 - 6–8 Mermaid diagrams using syntax patterns from `.aid/templates/knowledge-summary/mermaid-examples.md`
@@ -225,18 +274,16 @@ Build via the part-concatenation pattern (see `.aid/templates/knowledge-summary/
 - Lightbox SVG sizing: chrome on wrapper, SVG fills 100%/100%.
 - Use `el.textContent` not `el.innerHTML` when restoring diagram source.
 
-### 5. Write SUMMARY-STATE.md
+### 5. Write Knowledge Summary Status
 
-Initial fields:
+Write initial fields to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 ```markdown
-# Summary State
-
 **Profile:** {profile}
 **Profile Source:** {source}
 **Profile Confidence:** {level}
 **Theme:** default
 **Minimum Grade:** {grade}
-**Minimum Grade Source:** {DISCOVERY-STATE.md | --grade flag | default}
+**Minimum Grade Source:** {.aid/knowledge/STATE.md | --grade flag | default}
 **Machine Grade:** Pending
 **Machine Grade Source:** `grade.sh` AUTO_POOL (68 pts)
 **Human Grade:** Pending (run `manual-checklist.sh` before APPROVAL)
@@ -255,12 +302,11 @@ Initial fields:
 **Writeback Status:** pending
 ```
 
-Print: `[State: GENERATE → VALIDATE]`
-
 ---
 
 ## Mode: VALIDATE
 
+▶ validation suite starting (~2 min total — 4 scripts × ~30 s each per `canonical/templates/rough-time-hints.md`)
 Run `.aid/templates/knowledge-summary/scripts/grade.sh .aid/knowledge/knowledge-summary.html`. It orchestrates the AUTO_POOL (machine-verifiable) checks only:
 
 1. **`.aid/templates/knowledge-summary/scripts/validate-diagrams.mjs`** — D1: extracts every `<pre class="mermaid">` block, parses each via `mermaid.parse()`. **Any failure = automatic F.** D2: renders each block via `jsdom` + Mermaid and asserts the SVG is non-trivial (>500 bytes, contains `<g>` or `<path>`, no `mermaid-error` marker). If `jsdom` is unavailable, D2 falls back to parse-only and the output flags `D2: jsdom-fallback`.
@@ -269,7 +315,9 @@ Run `.aid/templates/knowledge-summary/scripts/grade.sh .aid/knowledge/knowledge-
 4. **`.aid/templates/knowledge-summary/scripts/contrast-check.mjs`** — C1/C2: WCAG ratios for both themes.
 5. Computes the Machine Grade from the AUTO_POOL tally + per-profile diagram-count enforcement (reads `target_diagrams: N` from the active profile template; caps at C+ if `actual < target`). **Does NOT compute a final Overall Grade** — that requires Human Grade too.
 
-Persist Machine Grade + per-check table to SUMMARY-STATE.md under `## Findings (last validation — Machine)`.
+✓ validation suite done (record actual time, per-script pass/fail summary) — or ✗ validation suite failed: {script, reason}
+
+Persist Machine Grade + per-check table to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation — Machine)`.
 
 If Machine Grade ≥ minimum → MANUAL-CHECKLIST. Otherwise → FIX.
 
@@ -303,7 +351,7 @@ This writes `.aid/knowledge/.manual-checklist.json` with `K1_score`, `K2_score`,
 
 ### Step 4 — score and route
 
-Re-run `grade.sh` — it reads `.manual-checklist.json`, computes the Human Grade from MANUAL_POOL (K1+K2+V1, 30 pts), and the Overall Grade = `min(Machine_letter, Human_letter)`. Persist Machine + Human + Overall Grade to SUMMARY-STATE.md under `## Findings (last validation)`.
+Re-run `grade.sh` — it reads `.manual-checklist.json`, computes the Human Grade from MANUAL_POOL (K1+K2+V1, 30 pts), and the Overall Grade = `min(Machine_letter, Human_letter)`. Persist Machine + Human + Overall Grade to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation)`.
 
 - Overall Grade ≥ minimum → APPROVAL.
 - **V1 failed → mandatory: Human Grade is forced to F.** Go to FIX; the visual defect must be fixed and V1 re-confirmed before APPROVAL.
@@ -317,7 +365,7 @@ FIX handles two fundamentally different kinds of failure. **Route each failure b
 
 ### Machine-pool failures — fix directly (objective; one correct fix)
 
-Read `## Findings (last validation — Machine)` in SUMMARY-STATE.md. For each failed AUTO_POOL check there is exactly one correct repair — apply it autonomously:
+Read `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation — Machine)`. For each failed AUTO_POOL check there is exactly one correct repair — apply it autonomously:
 
 - **D1 (diagram parse)** — locate the failing `<pre.mermaid>` block, identify the syntax error from the validator output, apply the fix per `.aid/templates/knowledge-summary/mermaid-examples.md` "Common failure patterns" table.
 - **D2 (diagram render)** — the block parses but renders trivially / as an error SVG; inspect the jsdom render output, fix the structural issue (often an empty subgraph or an unreachable node).
@@ -337,7 +385,7 @@ When a MANUAL_POOL item failed (K1 partial/no, K2 partial/no) or the user left a
 2. **Propose** — offer a concrete, specific fix. Example: *"Proposed: expand §5 Data Model to include the field-level schema table for each of the 15 artifacts, pulled from `data-model.md §2.1-§2.15`. Adds ~40 lines."*
 3. **Ask** — use `AskUserQuestion` to ask the user to (a) approve the proposed fix, (b) provide their own fix / direction, or (c) mark the issue as won't-fix (accept the lower score). Wait for the answer before editing.
 
-Apply only what the user confirms. Capture the resolution in `## Manual Notes`. After all human-pool issues are resolved (or accepted as won't-fix), return to VALIDATE → MANUAL-CHECKLIST so the user can re-score.
+Apply only what the user confirms. Capture the resolution in `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Manual Notes`. After all human-pool issues are resolved (or accepted as won't-fix), return to VALIDATE → MANUAL-CHECKLIST so the user can re-score.
 
 **Rationale:** machine-detected issues have one objective fix; human-detected / subjective issues do not — applying the agent's guess silently risks solving the wrong problem or overwriting the user's intent. The user is the judgment input; collaboration produces the right outcome.
 
@@ -369,30 +417,29 @@ Preview:  python -m http.server 8000   # then open
 
 Use `AskUserQuestion` to ask:
 > Approve this summary?
-> - **Approve** — record approval and update DISCOVERY-STATE.md
+> - **Approve** — record approval and update `.aid/knowledge/STATE.md` `## Summarization History`
 > - **Reject** — exit without recording
 > - **Changes needed** — describe what to change, transition to FIX
 
-On approval: write `**User Approved:** yes` + timestamp to SUMMARY-STATE.md, transition
-to WRITEBACK.
+On approval: write `**User Approved:** yes` + timestamp to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`, transition to WRITEBACK.
 
-On rejection: write `**User Approved:** no`, exit. DISCOVERY-STATE.md is NOT updated.
+On rejection: write `**User Approved:** no` to `## Knowledge Summary Status`, exit. `## Summarization History` is NOT updated.
 
-On changes-needed: capture the user's notes in `## Pending Changes` of SUMMARY-STATE.md,
-transition to FIX.
+On changes-needed: capture the user's notes in `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Pending Changes`, transition to FIX.
 
 ---
 
 ## Mode: WRITEBACK
 
-Run `.aid/templates/knowledge-summary/scripts/writeback-discovery-state.sh`. It atomically:
+▶ writeback-state.sh starting (~5 s)
+Run `.aid/templates/knowledge-summary/scripts/writeback-state.sh`. It atomically:
 
-1. Acquires `.aid/knowledge/.discovery-state.lock` (file rename sentinel, 5s timeout).
-2. Reads `DISCOVERY-STATE.md`.
+1. Acquires `.aid/knowledge/.state.lock` (file rename sentinel, 5s timeout).
+2. Reads `.aid/knowledge/STATE.md`.
 3. Locates `## Review History`. If `## Summarization History` does not exist, inserts
    it immediately after the Review History table.
 4. Computes next `#` (last entry + 1, or 1 if first).
-5. Appends a new row:
+5. Appends a new row to `## Summarization History`:
    - **#:** {next}
    - **Date:** {YYYY-MM-DD}
    - **Grade:** {final}
@@ -403,10 +450,11 @@ Run `.aid/templates/knowledge-summary/scripts/writeback-discovery-state.sh`. It 
 6. Writes back, preserving everything else byte-for-byte.
 7. Releases lock.
 
+✓ writeback done (record actual time) — or ✗ writeback failed: {reason}
 On failure (lock timeout, write error): mark `**Writeback Status:** failed` in
-SUMMARY-STATE.md, instruct the user to manually add the entry, exit non-zero.
+`.aid/knowledge/STATE.md` `## Knowledge Summary Status`, instruct the user to manually add the entry, exit non-zero.
 
-On success: mark `**Writeback Status:** ok`, transition to DONE.
+On success: mark `**Writeback Status:** ok` in `## Knowledge Summary Status`, transition to DONE.
 
 ---
 
@@ -414,9 +462,9 @@ On success: mark `**Writeback Status:** ok`, transition to DONE.
 
 Print:
 ```
-✓ DISCOVERY-STATE.md updated:
+✓ .aid/knowledge/STATE.md updated:
     ## Summarization History → entry #{N} added ({date}, grade {grade})
-✓ SUMMARY-STATE.md → User Approved: yes
+✓ ## Knowledge Summary Status → User Approved: yes
 
 [State: DONE]
 
@@ -439,7 +487,7 @@ Print:
 [State: DONE]
 ```
 
-Exit with success. SUMMARY-STATE.md and DISCOVERY-STATE.md are NOT modified.
+Exit with success. `.aid/knowledge/STATE.md` `## Knowledge Summary Status` and `## Summarization History` are NOT modified.
 
 ---
 
@@ -493,5 +541,5 @@ See `.aid/templates/knowledge-summary/grading-rubric.md` for the complete rubric
 | Preflight aborts: "no network" | Cannot reach npm registry | Check connection, or use `--cdn-mermaid`. |
 | Validate fails: D1 (parse error) | Bad Mermaid syntax in generated diagram | Skill enters FIX automatically; if it loops, manually inspect the failing block. |
 | Writeback fails: lock contention | `/aid-discover` running concurrently | Wait, retry; the lock auto-releases. |
-| Writeback fails: write error | Disk full / permissions | Manually add the entry to `## Summarization History`; mark `**Writeback Status:** ok` in SUMMARY-STATE.md. |
+| Writeback fails: write error | Disk full / permissions | Manually add the entry to `.aid/knowledge/STATE.md` `## Summarization History`; mark `**Writeback Status:** ok` in `## Knowledge Summary Status`. |
 | Browser shows red diagram error block | A diagram somehow passed parse but failed render (rare) | Open browser console, find the offending Figure number, manually fix in HTML, re-run with `--reset`. |

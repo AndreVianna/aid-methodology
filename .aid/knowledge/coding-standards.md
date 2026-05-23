@@ -359,6 +359,27 @@ Inferred from a sample of ~20 files across this repo:
 
 ---
 
+### 8.5 State file naming (FR2 area-STATE rule)
+
+State files use **area-based consolidation** (per `work-003-traceability/REQUIREMENTS.md` FR2).
+
+| Area | File path | What it tracks |
+|---|---|---|
+| Discovery | `.aid/knowledge/STATE.md` | KB documents status, knowledge summary status, Q&A, review history, summarization history |
+| Work | `.aid/work-NNN-{name}/STATE.md` | Interview status, features status, plan/deliveries, tasks status, deploy status, cross-phase Q&A, lifecycle history |
+| Monitor *(deferred)* | `.aid/work-NNN-{name}/MONITOR-STATE.md` | Observations, classifications, action routing — area not mature; follows the same area-STATE pattern when authored. The standalone naming reflects that Monitor is itself the state (no separate artifact to suffix against). |
+
+**Naming rule:** the state file is named `STATE.md` (plain) when it tracks a directory of multiple artifacts (Discovery, Work). It is named `{AREA}-STATE.md` (SCREAMING-KEBAB) when the state is itself the artifact (Monitor).
+
+**Retired patterns** (one-time consolidation completed in `work-003-traceability/feature-002`):
+- Per-skill SCREAMING-KEBAB: `INTERVIEW-STATE.md`, `SUMMARY-STATE.md`, `DEPLOYMENT-STATE.md` — absorbed into area STATE files.
+- Plain `STATE.md` per feature: `features/<name>/STATE.md` — absorbed.
+- Artifact-named: `task-NNN-STATE.md` — absorbed.
+
+**Artifact files keep their inline `## Change Log` sections** — that is content history, distinct from process state. Artifact files (REQUIREMENTS.md, SPEC.md, PLAN.md, task-NNN.md, KB docs) are unchanged by FR2.
+
+**Canonical templates** for area STATE files: `canonical/templates/{discovery,work}-state-template.md`.
+
 ## 9. The "Triplicate Updates" Rule
 
 CONFIRMED — explicit in `CONTRIBUTING.md:21-26`:

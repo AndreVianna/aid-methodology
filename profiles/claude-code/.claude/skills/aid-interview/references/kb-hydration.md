@@ -81,7 +81,7 @@ This helps fill the project Knowledge Base so future phases have full context.
 After each answer:
 1. Update the KB document with the new information
 2. Update REQUIREMENTS.md if the answer adds requirement-level info
-3. Update INTERVIEW-STATE.md section status if relevant
+3. Update STATE.md `## Interview Status` section status if relevant
 
 ### Step 4: Update Meta-Documents
 

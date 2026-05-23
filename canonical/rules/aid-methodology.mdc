@@ -9,17 +9,28 @@ This project uses the AI-Integrated Development (AID) methodology.
 - Always consult relevant KB documents before making changes
 - The KB is the single source of truth for architecture, conventions, and patterns
 
-## Workspace Structure
+## Workspace Structure (per FR2 area-STATE rule)
+
+AID has three areas; each has exactly one STATE.md (absorbing what used to be
+per-skill / per-artifact state files).
+
 ```
 .aid/
-  .aid/knowledge/           ← shared KB (14 docs + README + INDEX + DISCOVERY-STATE)
-  task-NNN-{name}/     ← per-task work (created by /aid-interview)
-    INTERVIEW-STATE.md
+  knowledge/                ← Discovery area (persistent KB)
+    INDEX.md                ← map of all KB docs
+    README.md               ← completeness table + revision history
+    STATE.md                ← Discovery area state (was DISCOVERY-STATE.md + SUMMARY-STATE.md)
+    {16 KB documents}       ← architecture, coding-standards, data-model, ...
+  work-NNN-{name}/          ← Work area (per work — one full dev lifecycle)
+    STATE.md                ← Work area state (was INTERVIEW-STATE.md + per-feature/per-task state)
     REQUIREMENTS.md
+    PLAN.md
     features/
       feature-NNN-{name}/
-        SPEC.md        ← requirements + technical specification
-        STATE.md       ← specify process state
+        SPEC.md             ← requirements + technical specification
+    tasks/
+      task-NNN-{name}.md    ← per-task acceptance criteria
+  {monitor area STATE deferred per FR2 OQ-3 — per-work, future}
 ```
 
 ## Workflow

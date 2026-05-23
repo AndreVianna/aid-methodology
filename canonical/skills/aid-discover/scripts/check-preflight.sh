@@ -5,12 +5,12 @@
 # Example: check-preflight.sh .aid/knowledge/
 #
 # Checks:
-#   1. DISCOVERY-STATE.md exists (init has run)
+#   1. STATE.md exists (init has run)
 #   2. Not in Plan Mode (checks CLAUDE_MODE env var if available)
 #
 # Exit codes:
 #   0 = all checks pass
-#   1 = init has not run (DISCOVERY-STATE.md missing)
+#   1 = init has not run (STATE.md missing)
 #   2 = Plan Mode detected
 
 set -euo pipefail
@@ -18,18 +18,18 @@ set -euo pipefail
 KB_DIR="${1:-.aid/knowledge}"
 
 # Check 1: Verify Init Has Run
-if [ ! -f "$KB_DIR/DISCOVERY-STATE.md" ]; then
+if [ ! -f "$KB_DIR/STATE.md" ]; then
   echo "⚠️ Knowledge Base not initialized. Run /aid-init first to set up the project."
   exit 1
 fi
 
-# Check that DISCOVERY-STATE.md is not empty
-if [ ! -s "$KB_DIR/DISCOVERY-STATE.md" ]; then
-  echo "⚠️ DISCOVERY-STATE.md is empty. Run /aid-init first to set up the project."
+# Check that STATE.md is not empty
+if [ ! -s "$KB_DIR/STATE.md" ]; then
+  echo "⚠️ STATE.md is empty. Run /aid-init first to set up the project."
   exit 1
 fi
 
-echo "✅ DISCOVERY-STATE.md exists."
+echo "✅ STATE.md exists."
 
 # Check 2: Verify Not in Plan Mode
 # Note: Plan Mode is a Claude Code UI state. This script checks for the

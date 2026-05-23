@@ -86,5 +86,5 @@ Four sections. Nothing else.
 ## Feedback Loops
 
 - **→ Plan:** Too vague to decompose → return to `/aid-plan`
-- **→ Specify:** SPEC missing detail → Q&A to feature's STATE.md
-- **→ Discovery:** KB gap → Q&A to DISCOVERY-STATE.md
+- **→ Specify:** SPEC missing detail → Q&A entry in work `STATE.md` `## Cross-phase Q&A` (spec-tagged) — per FR2; pre-FR2 this lived in the feature's `STATE.md`
+- **→ Discovery:** KB gap → Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)`

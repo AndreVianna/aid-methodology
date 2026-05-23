@@ -37,35 +37,66 @@ Optional flags:
 
 ```
 .aid/{work}/
-  MONITOR-STATE.md             ← process (observation log, finding statuses)
   packages/                    ← deployment history
   features/                    ← SPECs (expected behavior)
   tasks/                       ← task files (acceptance criteria)
   known-issues.md              ← known problems
 ```
 
+<!-- NOTE (FR2 area-STATE rule, work-003-traceability/feature-002 OQ-3 resolution): The Monitor area STATE is deferred until the area matures. When authored, MONITOR-STATE.md follows the area-STATE pattern documented at canonical/templates/work-state-template.md (per-work) and .aid/knowledge/data-model.md §1A. -->
+
 ## Pre-flight
 
 1. Verify `.aid/` workspace exists.
 2. Resolve work directory.
-3. Read or create `MONITOR-STATE.md`:
-   ```markdown
-   # Monitor State
-
-   ## Last Run
-   Date: {never}
+3. Read or create the in-memory monitor context (observation log, finding statuses):
+   ```
+   Last Run: {never}
    Window: {start} → {end}
    Findings: 0
-
-   ## Active Findings
-   {none}
-
-   ## Resolved Findings
-   {none}
+   Active Findings: {none}
+   Resolved Findings: {none}
    ```
 4. Read `PLAN.md` — understand deliveries and what was shipped.
 5. Read `packages/` — what's deployed and when.
 6. Read `known-issues.md` — filter out already-known problems.
+
+## State Detection
+
+Determine the current entry state from context:
+- No prior run context → **OBSERVE** (Step 1)
+- Active findings present → **CLASSIFY/ROUTE** (Step 2–4)
+- All findings resolved → **DONE**
+
+Print the state-entry line and "you are here" map:
+
+**OBSERVE:**
+```
+[State: OBSERVE] — Pulling telemetry signals and correlating against baselines.
+aid-monitor  ▸ you are here
+  [● OBSERVE ] → [ CLASSIFY ] → [ ROUTE ] → [ DONE ]
+```
+
+**CLASSIFY:**
+```
+[State: CLASSIFY] — Classifying each anomaly as BUG, CHANGE REQUEST, INFRASTRUCTURE, or NO ACTION.
+aid-monitor  ▸ you are here
+  [✓ OBSERVE ] → [● CLASSIFY ] → [ ROUTE ] → [ DONE ]
+```
+
+**ROUTE:**
+```
+[State: ROUTE] — Proposing and executing routing actions per finding classification.
+aid-monitor  ▸ you are here
+  [✓ OBSERVE ] → [✓ CLASSIFY ] → [● ROUTE ] → [ DONE ]
+```
+
+**DONE:**
+```
+[State: DONE] — All findings routed; monitor cycle complete.
+aid-monitor  ▸ you are here
+  [✓ OBSERVE ] → [✓ CLASSIFY ] → [✓ ROUTE ] → [● DONE ]
+```
 
 ## Inputs
 
@@ -92,11 +123,14 @@ Pull data from configured sources. Scope the observation window:
 - **Scheduled:** last monitor run → now
 - **On-demand:** user-specified window
 
+▶ telemetry pull starting (~30 s–2 min per source per `canonical/templates/rough-time-hints.md`)
 For each data source, capture:
 - Raw signals (errors, latency spikes, failures, ticket clusters)
 - Metadata (timestamps, affected users/endpoints, frequency)
 - Trends vs. baseline (is this new? worsening? stable?)
+✓ telemetry pull done (record actual time, sources hit, signals collected) — or ✗ telemetry pull failed: {source, reason}
 
+▶ anomaly detection starting (~10–30 s)
 **Anomaly detection — compare to baseline:**
 - Error rate changes (new error types, rate spikes)
 - Performance degradation (latency, throughput)
@@ -109,6 +143,7 @@ For each data source, capture:
 - Correlation narrows investigation scope — don't just list, connect.
 
 Use KB to filter: known conditions, expected variation, already-documented issues.
+✓ anomaly detection done (record actual time, N findings above threshold) — or ✗ anomaly detection failed: {reason}
 
 ### Step 2: Classify
 
@@ -133,6 +168,7 @@ Assess severity per finding:
 
 ### Step 3: Analyze (BUGs only)
 
+▶ root cause analysis starting (~2–5 min per BUG per `canonical/templates/rough-time-hints.md`)
 Root cause analysis before routing:
 
 1. **Reproduce the path.** Trace from evidence: endpoint → module → function.
@@ -145,6 +181,7 @@ Root cause analysis before routing:
 Root cause = one sentence:
 "The `PaymentService.Process()` method doesn't validate null `currency` field,
 which spec says must default to USD."
+✓ root cause analysis done (record actual time, root cause, patch scope) — or ✗ root cause analysis blocked: {reason — usually KB gap or unreproducible}
 
 ### Step 4: Propose Actions
 
@@ -181,26 +218,27 @@ For each approved finding:
 - The task goes through the normal execute cycle (code → review → done)
 
 **CHANGE REQUEST → aid-discover:**
-- Write a Q&A entry to `DISCOVERY-STATE.md` § Pending Q&A describing the gap
+- Write a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)` describing the gap
 - Optionally create a new work if scope is large enough
 
 **INFRASTRUCTURE → escalate:**
-- Document in MONITOR-STATE.md with recommended ops action
+- Document in the monitor run summary with recommended ops action
 - Not in AID's scope — human handles this
 
 **NO ACTION → close:**
-- Document justification in MONITOR-STATE.md → Resolved Findings
+- Document justification in the monitor run summary → Resolved Findings list
 
 **Update known-issues.md** if findings reveal new known issues affecting other features.
 
 ### Step 6: Update State
 
-- MONITOR-STATE.md § Last Run → update date, window, finding count
-- MONITOR-STATE.md § Active Findings → add unresolved findings with status
-- MONITOR-STATE.md § Resolved Findings → move closed findings here
-- If PM tool configured (infrastructure.md § Project Management):
-  - Create tickets for BUG tasks
-  - Link to existing Sprint/Epic
+Print monitor run summary: date, window, finding count, routing summary.
+
+▶ PM tool ticket creation starting (~10–30 s per ticket per `canonical/templates/rough-time-hints.md`; skip block entirely if no PM tool)
+If PM tool configured (infrastructure.md § Project Management):
+- Create tickets for BUG tasks
+- Link to existing Sprint/Epic
+✓ PM tool ticket creation done (record actual time, N tickets created) — or ✗ PM tool ticket creation failed: {reason — usually auth/network}
 
 ## Severity Thresholds
 
@@ -215,7 +253,14 @@ For each approved finding:
 
 ## Re-run
 
-When MONITOR-STATE.md has prior findings:
+When prior findings exist (from conversation context or referenced findings list):
+
+```
+[State: RE-RUN] — Prior findings on record; confirming whether to run fresh or review a finding.
+aid-monitor  ▸ you are here
+  [✓ OBSERVE ] → [✓ CLASSIFY ] → [✓ ROUTE ] → [✓ DONE ] → [● RE-RUN ]
+```
+
 1. Show active findings and their current status.
 2. Show observation history (last runs).
 3. Ask: **[1] New observation** (fresh run) or **[2] Review finding-N** (check if resolved)?
@@ -236,5 +281,5 @@ When MONITOR-STATE.md has prior findings:
 - [ ] Routing decision clear for each finding
 - [ ] Known issues filtered out (no duplicate findings)
 - [ ] Correlations with deployments noted
-- [ ] MONITOR-STATE.md updated with all findings and statuses
+- [ ] Monitor run summary printed with all findings and statuses
 - [ ] KB docs consulted via INDEX.md (not hardcoded)

@@ -5,17 +5,17 @@ that arise during the propose→discuss→write→review loop.
 
 ## KB is Wrong or Incomplete
 
-**Simple fix:** Fix the KB document directly, note in STATE.md Change Log.
+**Simple fix:** Fix the KB document directly, note in work STATE.md `## Cross-phase Q&A`.
 
-**Needs re-discovery:** Add Q&A entry to `.aid/knowledge/DISCOVERY-STATE.md`,
-add Loopback entry to STATE.md, continue with non-blocked sections.
+**Needs re-discovery:** Add Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)`,
+note the loopback in work STATE.md `## Features Status`, continue with non-blocked sections.
 
 ## Requirements are Wrong or Incomplete
 
 **Simple fix:** Fix REQUIREMENTS.md and SPEC.md directly, add Change Log entries.
 
-**Needs re-interview:** Add Q&A entry to `.aid/{work}/INTERVIEW-STATE.md`,
-add Loopback entry to STATE.md.
+**Needs re-interview:** Add Q&A entry to `.aid/{work}/STATE.md` `## Cross-phase Q&A`,
+note the loopback in work STATE.md `## Features Status`.
 
 ## Spike Needed (State 3)
 

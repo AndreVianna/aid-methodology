@@ -22,7 +22,7 @@ workspace, and determines the workflow path. Run this once before any other AID 
   {project_context_file}
   .aid/
     knowledge/
-      DISCOVERY-STATE.md
+      STATE.md
       (...16 KB docs, INDEX.md, README.md)
 ```
 
@@ -31,6 +31,13 @@ Works and features are created later by `/aid-interview`.
 ---
 
 ## Pre-flight Checks
+
+> **[State: PRE-FLIGHT] — Verify mode and check for an existing workspace before collecting any input.**
+>
+> ```
+> aid-init  ▸ you are here
+>   [● PRE-FLIGHT] → [ COLLECT ] → [ SCAFFOLD ] → [ META-DOCS ] → [ SETUP ] → [ DONE ]
+> ```
 
 ### Check 0: Verify Not in Plan Mode
 
@@ -60,6 +67,13 @@ Works and features are created later by `/aid-interview`.
 ---
 
 ## Step 1: Collect Project Metadata
+
+> **[State: COLLECT] — Gather project metadata through a short conversational interview (6 questions).**
+>
+> ```
+> aid-init  ▸ you are here
+>   [✓ PRE-FLIGHT] → [● COLLECT ] → [ SCAFFOLD ] → [ META-DOCS ] → [ SETUP ] → [ DONE ]
+> ```
 
 Ask these questions **one at a time**. Wait for each answer before asking the next.
 
@@ -158,6 +172,15 @@ Store the answer. It controls the `.gitignore` step in Step 4.
 
 ## Step 2: Scaffold Knowledge Base
 
+> **[State: SCAFFOLD] — Create the `.aid/knowledge/` directory and all 16 KB document templates.**
+>
+> ```
+> aid-init  ▸ you are here
+>   [✓ PRE-FLIGHT] → [✓ COLLECT ] → [● SCAFFOLD ] → [ META-DOCS ] → [ SETUP ] → [ DONE ]
+> ```
+
+▶ Scaffolding Knowledge Base (~5–10 s for 16 template files)
+
 Create `.aid/knowledge/` directory and all 16 KB document templates.
 
 ### For Brownfield Projects
@@ -217,6 +240,8 @@ them into the file immediately:
 
 If no external paths: write the standard "no external documentation" message.
 
+✓ Scaffolding Knowledge Base done
+
 ### For Greenfield Projects
 
 Create each file with a header indicating it will be filled during interview/specify:
@@ -237,6 +262,15 @@ for a new project), and that's expected. The reviewer in later phases understand
 ---
 
 ## Step 3: Create Meta-Documents
+
+> **[State: META-DOCS] — Write README.md, INDEX.md, and STATE.md to complete the knowledge workspace.**
+>
+> ```
+> aid-init  ▸ you are here
+>   [✓ PRE-FLIGHT] → [✓ COLLECT ] → [✓ SCAFFOLD ] → [● META-DOCS ] → [ SETUP ] → [ DONE ]
+> ```
+
+▶ Writing meta-documents (~5 s)
 
 ### .aid/knowledge/README.md
 
@@ -310,18 +344,27 @@ If your task touches an area covered here, read the relevant document first.
 | feature-inventory.md | Pending discovery |
 ```
 
-### .aid/knowledge/DISCOVERY-STATE.md
+### .aid/knowledge/STATE.md
 
-Copy the template from `../../templates/discovery-state.md` to
-`.aid/knowledge/DISCOVERY-STATE.md`. Fill in the placeholders:
+Copy the template from `../../templates/discovery-state-template.md` to
+`.aid/knowledge/STATE.md`. Fill in the placeholders:
 
 - `{minimum}` → grade from Q5
 - `{Brownfield / Greenfield}` → from Q1
 - `{List of paths from init Q4, or "None provided"}` → from Q4
 
+✓ Meta-documents written
+
 ---
 
 ## Step 4: Set Up {project_context_file}
+
+> **[State: SETUP] — Configure `{project_context_file}`, `.gitignore`, and install skill templates.**
+>
+> ```
+> aid-init  ▸ you are here
+>   [✓ PRE-FLIGHT] → [✓ COLLECT ] → [✓ SCAFFOLD ] → [✓ META-DOCS ] → [● SETUP ] → [ DONE ]
+> ```
 
 Check if `{project_context_file}` exists in the project root.
 
@@ -418,6 +461,13 @@ templates just sit unused.
 
 ## Step 5: Summary and Next Steps
 
+> **[State: DONE] — Print the initialization summary and suggest the next AID phase.**
+>
+> ```
+> aid-init  ▸ you are here
+>   [✓ PRE-FLIGHT] → [✓ COLLECT ] → [✓ SCAFFOLD ] → [✓ META-DOCS ] → [✓ SETUP ] → [● DONE ]
+> ```
+
 Print a summary of everything created:
 
 ```
@@ -429,7 +479,7 @@ Print a summary of everything created:
   External:    {N paths / None}
 
   Created:
-    knowledge/    (16 KB documents + README + INDEX + DISCOVERY-STATE)
+    knowledge/    (16 KB documents + README + INDEX + STATE)
     {project_context_file}                   {created / updated / unchanged}
 
   AID workspace (.aid/):        {tracked by Git | local only — added to .gitignore}
@@ -446,7 +496,7 @@ Print a summary of everything created:
 - **Running init twice on the same project** does not overwrite documents that have real
   content (Status ≠ "Pending"). Only resets documents still at "Pending" status.
 - **{project_context_file}** is never overwritten if it exists — only appended to.
-- **DISCOVERY-STATE.md** is recreated (it's metadata, not content).
+- **STATE.md** is recreated (it's metadata, not content).
 - **`--reset`** is the nuclear option — deletes everything and starts fresh.
 
 ---
@@ -456,7 +506,7 @@ Print a summary of everything created:
 - [ ] `.aid/knowledge/` created with all 16 KB templates
 - [ ] README.md has correct project type, name, and completeness table
 - [ ] INDEX.md has all 16 documents listed
-- [ ] DISCOVERY-STATE.md has correct minimum grade and project type
+- [ ] STATE.md (`.aid/knowledge/STATE.md`) has correct minimum grade and project type
 - [ ] External paths (if any) verified accessible and recorded
 - [ ] {project_context_file} has workspace reference and AID placeholders (created or appended)
 - [ ] `.gitignore` matches the Q6 choice (`.aid/` entry present only if the user chose [2], local-only)

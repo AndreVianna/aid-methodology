@@ -13,7 +13,7 @@ inter-service contracts, and saga orchestration become central.
 
 | # | Title | Featured? | KB Sources |
 |---|-------|-----------|------------|
-| 1 | At a Glance | | DISCOVERY-STATE.md, project-structure.md |
+| 1 | At a Glance | | STATE.md, project-structure.md |
 | 2 | Architecture | ★ | architecture.md |
 | 3 | Service Catalog | ★ | module-map.md |
 | 4 | Inter-service Contracts | | api-contracts.md |

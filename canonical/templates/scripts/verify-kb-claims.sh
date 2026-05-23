@@ -16,9 +16,11 @@
 #   --kb PATH         KB directory (default: .aid/knowledge)
 #   --root PATH       Project root for resolving cited paths (default: .)
 #   --format FORMAT   human (default) | tsv
-#   --include-state   Also verify citations inside DISCOVERY-STATE.md
-#                     (default: skip it — it documents historical state by
-#                     design and would generate false positives).
+#   --include-state   Also verify citations inside .aid/knowledge/STATE.md
+#                     (the consolidated Discovery area STATE, per FR2; pre-FR2
+#                     this was DISCOVERY-STATE.md). Default: skip it — it
+#                     documents historical state by design and would generate
+#                     false positives.
 #   --quiet           Suppress per-doc output; only show summary + broken findings.
 #
 # Exit codes:
@@ -84,7 +86,10 @@ fi
 for kb_file in "$KB_DIR"/*.md; do
   [[ -f "$kb_file" ]] || continue
   base=$(basename "$kb_file")
-  if [[ $SKIP_STATE -eq 1 && "$base" == "DISCOVERY-STATE.md" ]]; then
+  # Post-FR2: the consolidated Discovery area state lives in STATE.md.
+  # Pre-FR2 it was DISCOVERY-STATE.md; we still skip both names so the
+  # script works on legacy projects that haven't migrated yet.
+  if [[ $SKIP_STATE -eq 1 && ( "$base" == "STATE.md" || "$base" == "DISCOVERY-STATE.md" ) ]]; then
     continue
   fi
 

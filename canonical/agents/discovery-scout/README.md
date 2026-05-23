@@ -11,7 +11,7 @@ The Scout is the pre-pass. It maps the territory before the specialized analysts
 1. **Maps project structure** — folder layout, file counts by language, entry points, monorepo vs single-package.
 2. **Catalogs deployment infrastructure** — CI/CD pipelines, Docker, IaC (Terraform, Pulumi, CDK), environment configs, monitoring setup.
 3. **Reads external documentation** — paths registered during `aid-init` (architecture docs, wikis, design PDFs).
-4. **Surfaces unknowns** — what the code cannot tell us. Open questions are written to `DISCOVERY-STATE.md` Q&A section for human resolution.
+4. **Surfaces unknowns** — what the code cannot tell us. Open questions are written to `.aid/knowledge/STATE.md` `## Q&A (Pending)` section for human resolution.
 
 ## When It Is Invoked
 
@@ -23,7 +23,7 @@ The Scout is the pre-pass. It maps the territory before the specialized analysts
 
 - **`.aid/knowledge/project-structure.md`** — repository layout map, project type detection, entry points.
 - **`.aid/knowledge/infrastructure.md`** — deployment pipelines, IaC, environments, monitoring.
-- **`.aid/knowledge/.scout-questions.tmp`** — raw question list (consolidated into DISCOVERY-STATE.md Q&A by the orchestrator).
+- **`.aid/knowledge/.scout-questions.tmp`** — raw question list (consolidated into `.aid/knowledge/STATE.md` `## Q&A (Pending)` by the orchestrator).
 
 ## Tools
 

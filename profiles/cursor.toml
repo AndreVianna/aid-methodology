@@ -48,7 +48,7 @@ Bash = "Terminal"
 # Per-tool filename substitutions for canonical placeholders.
 # Cursor uses canonical names (same as Claude Code).
 project_context_file  = "AGENTS.md"
-reviewer_output_file  = "DISCOVERY-STATE.md"
+reviewer_output_file  = "STATE.md"   # was DISCOVERY-STATE.md pre-FR2 (CW6 consolidation, work-003 feature-002)
 open_questions_file   = "additional-info.md"
 
 [extras]

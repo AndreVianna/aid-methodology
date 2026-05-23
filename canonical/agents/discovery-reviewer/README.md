@@ -23,7 +23,7 @@ The Reviewer reads the Knowledge Base on disk and grades it against reality. The
 
 ## What It Produces
 
-- **Updates to `.aid/knowledge/DISCOVERY-STATE.md`** — Issues section, per-doc grades, overall grade, verification spot-checks, review history entries, new Q&A entries when findings reveal information gaps.
+- **Updates to `.aid/knowledge/STATE.md`** — Issues section, per-doc grades, overall grade, verification spot-checks, review history entries, new Q&A entries when findings reveal information gaps. (Discovery area state, post-FR2 consolidation.)
 
 ## Tools
 

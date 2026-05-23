@@ -56,7 +56,7 @@ All Discovery sub-agents run at the Large tier — Discovery is foundational and
 | discovery-integrator | `.cursor/agents/discovery-integrator.md` | opus | api-contracts.md, integration-map.md, domain-glossary.md |
 | discovery-quality | `.cursor/agents/discovery-quality.md` | opus | test-landscape.md, security-model.md, tech-debt.md |
 | discovery-scout | `.cursor/agents/discovery-scout.md` | opus | project-structure.md, external-sources.md |
-| discovery-reviewer | `.cursor/agents/discovery-reviewer.md` | opus | DISCOVERY-STATE.md (KB grading) |
+| discovery-reviewer | `.cursor/agents/discovery-reviewer.md` | opus | `.aid/knowledge/STATE.md` (KB grading; per FR2) |
 
 A bash pre-pass (`templates/scripts/build-project-index.sh`) runs before the 5 sub-agents to emit `project-index.md` — a shared file inventory that eliminates duplicated `find`/`wc` work across agents.
 

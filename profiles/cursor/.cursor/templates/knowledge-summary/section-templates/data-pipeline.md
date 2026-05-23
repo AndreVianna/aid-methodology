@@ -13,7 +13,7 @@ sources/sinks are central.
 
 | # | Title | Featured? | KB Sources |
 |---|-------|-----------|------------|
-| 1 | At a Glance | | DISCOVERY-STATE.md, project-structure.md |
+| 1 | At a Glance | | STATE.md, project-structure.md |
 | 2 | Architecture | ★ | architecture.md |
 | 3 | Pipeline DAG | ★ | module-map.md, integration-map.md |
 | 4 | Data Schemas | ★ | data-model.md |

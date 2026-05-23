@@ -49,7 +49,7 @@ small  = "haiku"
 # Per-tool filename substitutions for canonical placeholders.
 # The renderer replaces {project_context_file} → CLAUDE.md, etc.
 project_context_file  = "CLAUDE.md"
-reviewer_output_file  = "DISCOVERY-STATE.md"
+reviewer_output_file  = "STATE.md"   # was DISCOVERY-STATE.md pre-FR2 (CW6 consolidation, work-003 feature-002)
 open_questions_file   = "additional-info.md"
 
 [extras]
