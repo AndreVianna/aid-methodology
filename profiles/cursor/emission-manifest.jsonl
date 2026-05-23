@@ -98,6 +98,7 @@
 {"dst": ".cursor/templates/knowledge-summary/section-templates/microservices.md", "profile": "cursor", "sha256": "a4d07922206d04cf31e086c946c15d9d9e306267cd91934212b99a6c4906088e", "src": "canonical/templates/knowledge-summary/section-templates/microservices.md"}
 {"dst": ".cursor/templates/knowledge-summary/section-templates/web-app.md", "profile": "cursor", "sha256": "19c191299a96773f57bf5266cffe4ecd016f3e8eae1e8d9ea7ab6134b519fbcb", "src": "canonical/templates/knowledge-summary/section-templates/web-app.md"}
 {"dst": ".cursor/templates/requirements/requirements-template.md", "profile": "cursor", "sha256": "1a1ae36c8342e45c94edcf87b9b2263ff706e2e8866193e31fd07b4004343ce1", "src": "canonical/templates/requirements/requirements-template.md"}
+{"dst": ".cursor/templates/rough-time-hints.md", "profile": "cursor", "sha256": "71fbc277ef4fd581362148c5212d613102404a2a5c1859d76307199e376fe24c", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".cursor/templates/scripts/build-project-index.sh", "profile": "cursor", "sha256": "3bd1c60e8275c2a2043a7e4a3fd6975fb011cb87141585de441716782e15ce0f", "src": "canonical/templates/scripts/build-project-index.sh"}
 {"dst": ".cursor/templates/scripts/grade.sh", "profile": "cursor", "sha256": "6155b1f2fae1ff85c1b6c083deb830305c231cd0f9ce9cbe983b3b3001edf3a3", "src": "canonical/templates/scripts/grade.sh"}
 {"dst": ".cursor/templates/scripts/verify-kb-claims.sh", "profile": "cursor", "sha256": "301689304f92343bdc3d6923b83a4e405f73a81cff3942d58870c70b5d5655d8", "src": "canonical/templates/scripts/verify-kb-claims.sh"}
