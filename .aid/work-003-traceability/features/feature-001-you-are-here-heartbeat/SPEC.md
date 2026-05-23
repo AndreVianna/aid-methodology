@@ -4,6 +4,7 @@
 
 | Date | Change | Source |
 |------|--------|--------|
+| 2026-05-23 | **Moved to `work-003-traceability` and renumbered: feature-007 (in `work-001-aid-lite`) → feature-001 (in `work-003-traceability`).** Underlying spec content unchanged; this entry records the rename only. The receiving REQUIREMENTS.md renumbers FR4 → FR1; this SPEC's body still references FR4 by historical name where it cites work-001's framing — those references remain valid as historical context. | split |
 | 2026-05-22 | Feature identified from REQUIREMENTS.md §5 (FR4 — P1) | /aid-interview |
 | 2026-05-22 | Technical Specification written — Data Model, State Machines, Feature Flow, Layers & Components, Events & Messaging, Migration Plan; 4 open questions surfaced (heartbeat cadence, watcher mechanism, state-map source-of-truth, OQ6 run-context ownership resolution) | /aid-specify |
 | 2026-05-22 | Fresh-eyes scope reshape — redesigned standalone (no dependency on feature-006); pure skill-body text design (state-entry print + bracket-pair floor + ASCII state-map); all hook/JSONL/schema/context-file references removed; OQ-B (mid-wait tick) dropped; OQ6 (run-context ownership) dropped; (graded A) preamble references removed (prior grade reflects a different design). | /aid-specify |
