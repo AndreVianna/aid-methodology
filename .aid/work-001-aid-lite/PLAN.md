@@ -33,6 +33,12 @@
   re-renders three install trees from canonical source.
 - **Notes:** CR7 (two-zone task-template.md) was retired per the 2026-05-24
   REQUIREMENTS refresh; this delivery does NOT change `task-template.md`.
+  The skill bodies this delivery decomposes already include the
+  subagent-visibility-patch growth (e.g., `aid-discover/SKILL.md` is 596
+  lines post-patch, up from the pre-patch 548); the thin-router refactor
+  uses these post-patch sizes as its baseline. The feature-002 SPEC's
+  Migration Plan accounts for the current sizes (~333-359 lines for
+  aid-deploy/aid-monitor; ~512 for aid-execute; ~596 for aid-discover).
 
 ### delivery-002: Lite Path with Type-Aware Routing
 
@@ -214,9 +220,12 @@ contract:
   the sole writer of `task-NNN`'s row. No two executors contend for the
   same row.
 - **File lock for write serialization:** the row-update step takes a
-  file-level lock (POSIX `flock` / Windows `LockFileEx` via the helper) so
-  the actual write is serialized across all tasks. Contention window is
-  tiny (~milliseconds per row update).
+  file-level lock via the helper. The lock mechanism is **inherited from
+  work-003's `writeback-state.sh` precedent**: a sentinel-file lock
+  (`set -o noclobber` atomic-create + sleep-poll retry on contention),
+  cross-platform via plain Bash semantics. Contention window is tiny
+  (~milliseconds per row update); the sentinel pattern is proven by the
+  shipped work-003 helper.
 - **Helper:** `canonical/templates/scripts/writeback-task-status.sh`
   (new — mirrors work-003's existing `writeback-state.sh` pattern), takes
   `--task-id NNN --field <field> --value <value>`, updates that row's
@@ -246,6 +255,15 @@ The back-port is 3 small additions:
 3. **Emission manifest extension:** extend `canonical/EMISSION-MANIFEST.md`
    to own paths under `recipes/` (otherwise work-002's
    mirror-deletion logic would ignore them).
+4. **Generator re-run + manifest re-commit:** after the renderer + layout +
+   manifest changes land in canonical source, re-run work-002's generator
+   to render the three install trees with the new `recipes/` directory,
+   then **commit the regenerated `EMISSION-MANIFEST.md`** alongside the
+   rendered trees per the manifest's safety-boundary semantics (the
+   committed manifest is the reproducible reference for the next run's
+   deletion-safety check; failing to re-commit it would either cause new
+   `recipes/` files to be flagged as untracked or — worse — cause a
+   subsequent generator run to delete them as "not in prev manifest").
 
 **Process:**
 
@@ -266,7 +284,7 @@ recipes catalog.
 |---|------|--------|------------|
 | 1 | Row-level write coordination (IQ7) is novel for this project — the writeback helper has no precedent at row-scope (work-003's `writeback-state.sh` operates at section-scope). First implementation in delivery-003 could surface unexpected platform quirks (POSIX flock vs Windows LockFileEx on the Bash-on-Windows host the project uses). | Medium | delivery-003 should ship `writeback-task-status.sh` with a small smoke-test harness (~5-row concurrent-write test). delivery-005 consumes the validated helper. If platform-quirk issues surface, IMPEDIMENT raises them; delivery-003 can iterate before delivery-005 lands. |
 | 2 | delivery-001 (thin-router refactor) touches all 10 skills; mid-cutover state could leave some skills refactored and others not, causing inconsistent skill UX during the rollout. | Medium | delivery-001's SPEC § Migration Plan specifies incremental cutover (smallest skills first — aid-deploy, aid-monitor — then mid-size, then aid-discover last). Each skill's cutover is a single task; the pipeline behaves identically before and after each per-skill cutover (the structural invariant). Acceptable transient state. |
-| 3 | Cross-feature scope addition: delivery-002 + delivery-003 + delivery-005 each extend `work-state-template.md` (adding `## Triage`, `## Delivery Gates`, and `## Max Parallel Tasks:` metadata respectively). Three independent template edits could collide if delivered concurrently. | Low | Sequential delivery order resolves this naturally — each delivery's `work-state-template.md` edit lands on top of the previous one. data-model.md §2.3 updates similarly serialised. |
+| 3 | Cross-feature scope addition: delivery-002 + delivery-003 + delivery-005 each extend **two canonical artifacts in parallel** — `canonical/templates/work-state-template.md` (adding `## Triage`, `## Delivery Gates`, and `## Max Parallel Tasks:` metadata respectively) **and** `.aid/knowledge/data-model.md §2.3` (Work-area STATE.md schema, extended in parallel by deliveries 002 + 003). Three independent template edits + two schema edits could collide if delivered concurrently. | Low | Sequential delivery order resolves both naturally — each delivery's `work-state-template.md` edit and `data-model.md §2.3` edit lands on top of the previous one in commit order. |
 | 4 | IQ6 resolution (Agent tool, not Task tool) means feature-009's SPEC body's "Task-tool dispatch" framing is technically inaccurate. The Alignment Update covers the per-task state contract change but not this primitive-name change. | Low (cosmetic) | Body wording can be polished at /aid-detail when feature-009 decomposes into tasks (one task is "implement pool dispatch using Agent tool with run_in_background"). Not a /aid-plan blocker. |
 
 ## Deferred
