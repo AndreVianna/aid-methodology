@@ -15,6 +15,7 @@
 | 2026-05-22 | Cross-cutting fixes (CR6, CR7) + LOW finding fixes: (CR6) Data Model paragraph stating the dispatch table's `State` column owns the canonical UPPERCASE-with-hyphens state-id format for the methodology; (CR7) Layers & Components and a new Migration Plan "Template surgery" subsection now state that feature-002 delivers the extended two-zone `templates/delivery-plans/task-template.md` (Definition + empty Execution Record scaffold), updates `aid-detail` to write both zones, and deletes `templates/implementation-state.md`; vocabulary-bridge note (now removed by the M3 strip) and inline-Mode line-count narrative reworded — ~370 lines = 453 − 82 (full inline-Mode span); the 381→453 framing is the *last* Mode block only (~72 lines). | reviewer |
 | 2026-05-22 | **Fresh-eyes scope reshape — M3 stripped; M1-only design.** Independent reviewer flagged M3 as fighting the platform (no host-tool hook can solicit a keystroke, the 3-mode degradation ladder is over-engineered, and `/aid-{skill}` re-invocation between states is acceptable to the user). M3 removed in its entirety: the 3-mode ladder (auto-advance / confirm-advance / manual), the Stop-hook integration, the capability-input table (`stop_hook_autocontinue` etc.), the vocabulary bridge, and all references to feature-003's M2 hook infrastructure / `emit-advance.sh` / advance signal. The dispatch table's `Advance` column is simplified to either the literal next-state name or `→ halt`. **M4 (sub-agent offload) survives as a per-skill authoring discipline inside M1** — each state's heavy work *may* dispatch a sub-agent if the per-skill design calls for it (as `aid-discover` already does), but it is not a separate mechanism. Feature-003 (which used to own M4 as a separate feature) and feature-006 have been dropped from work-001. Feature-001 reference repointed from work-001 to **work-002's feature-001-profile-driven-generator**. M1 thin-router design, CR6 (canonical state-id format = UPPERCASE-with-hyphens), CR7 (two-zone `task-template.md` + `implementation-state.md` deletion), and the line-count narrative (453/82/370) are unchanged. | /aid-specify |
 | 2026-05-22 | Reviewer fixes (1 LOW, 1 MINOR) + feature-007 cross-feature resolution: (MINOR) AC2 run-on sentence split — terminal/human-gated halt-message clause is now its own sentence. (cross-feature) Resolved feature-007's deferred open questions OQ-A and OQ-C in a new Data Model subsection "State descriptors and single source of truth": OQ-A — the dispatch-table `State` column is the canonical state-id source, the human-readable descriptor lives in `references/state-{name}.md` (the file's first-line opening sentence is the descriptor); feature-002 owns the convention, feature-007 reads it. OQ-C — the `## Dispatch` table is the single source of truth for each skill's state set; feature-007's state-map descriptor must derive from it, never duplicate. No architecture change. | reviewer |
+| 2026-05-24 | **Alignment Update** added (between Acceptance Criteria and Technical Specification). Explicitly retires CR7's two-zone `task-NNN.md` proposal — per work-003's deployed FR2 per-area STATE rule (now canonical per the 2026-05-24 REQUIREMENTS refresh), `task-NNN.md` stays 6-section flat and per-task state lives in the per-work `STATE.md ## Tasks Status` row. Body sections describing the two-zone shape become historical reference; the alignment update is the operative contract for /aid-plan and implementation. `implementation-state.md` deletion still applies (different reason — absorbed into per-area STATE consolidation rather than into a two-zone task-NNN.md). | /aid-specify |
 
 ## Source
 
@@ -59,6 +60,58 @@ Must
 - [ ] Given the refactor is applied, when the AID pipeline is run, then its phases,
   artifacts, feedback loops, and quality gates — including the lite path — behave
   identically before and after the refactor.
+
+---
+
+## Alignment Update — 2026-05-24
+
+> **REQUIREMENTS.md was refreshed on 2026-05-24** to align with work-003's
+> deployed FR2 per-area STATE rule. Per the updated §5 scope-addition:
+>
+> - **`task-NNN.md` stays 6-section flat** (Definition only: Title, Type,
+>   Source, Depends on, Scope, Acceptance Criteria). The on-disk
+>   `canonical/templates/delivery-plans/task-template.md` already matches this
+>   shape — **no template change is needed**.
+> - **Per-task status, review records, and dispatch history live in the
+>   per-work `.aid/work-NNN/STATE.md ## Tasks Status` row** (the FR2 area-STATE
+>   rule shipped by work-003).
+>
+> **CR7 (two-zone `task-NNN.md` shape) is retired.** The original intent of CR7
+> — retire `task-NNN-STATE.md` and consolidate per-task state — is achieved by
+> work-003's per-area STATE consolidation rather than by the two-zone
+> `task-NNN.md` shape this SPEC's body originally proposed.
+>
+> **What changes for this feature's body:**
+>
+> - The §Layers & Components "Template authorship" subsection's claim that
+>   feature-002 *delivers* a two-zone `task-template.md` is superseded —
+>   `task-template.md` is unchanged; feature-002 only **confirms** the shape.
+> - The §Migration Plan "Template surgery" subsection (two-zone scaffold
+>   addition + `aid-detail` update to write Execution Record + retain
+>   `implementation-state.md` deletion) collapses to **just**
+>   `implementation-state.md` deletion (still needed; its retirement reason is
+>   now "absorbed into per-area STATE" instead of "absorbed into two-zone
+>   task-NNN.md").
+> - The §Data Model "now a single file with the Definition and Execution Record
+>   zones" framing is superseded — task-NNN.md remains the same file, with the
+>   same 6 sections it always had.
+>
+> **What stays the same:**
+>
+> - The thin-router refactor itself (M1) — SKILL.md shrinks to frontmatter +
+>   pre-flight + state detection + dispatch table; per-state detail in
+>   `references/state-*.md`.
+> - CR6 — canonical state-id format (UPPERCASE-with-hyphens), owned by the
+>   dispatch table's `State` column.
+> - `templates/implementation-state.md` deletion — still happens (no consumer).
+> - The state descriptors / single-source resolution for feature-007 (now
+>   work-003/feature-001) OQ-A and OQ-C.
+>
+> Body sections below describe the original two-zone design as historical
+> reference; treat their "two-zone task-template.md" / "Execution Record zone"
+> references through this alignment update during /aid-plan and
+> implementation. A focused body-text rewrite is a candidate /aid-detail task
+> and is not scoped into this feature.
 
 ---
 

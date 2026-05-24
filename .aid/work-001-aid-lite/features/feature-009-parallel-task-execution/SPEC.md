@@ -11,6 +11,7 @@
 | 2026-05-23 | **Pool-model revision.** Wave-based barrier loop replaced with a **continuous agent pool** (topological-order, work-stealing): the next ready task is dispatched the moment any in-flight task finishes, not after a wave joins. **`MaxConcurrent` parameter** introduced (default 5, project-configurable via a new `aid-init` question asked between Heartbeat Interval and Commit AID Workspace, stored in `.aid/knowledge/STATE.md` as `**Max Parallel Tasks:**`). **Failure handling narrowed** to transitive descendants only — unrelated chains continue executing until natural completion. Explicit "must complete before" barriers are now expressed by planning *as dependencies* in the Execution Graph (no first-class wave concept in execution). | /aid-specify |
 | 2026-05-23 | **Fix-pass after re-review.** Citations re-anchored from absolute SKILL.md line numbers to section names (patch-resilient; cycle-14 KB pattern); "ready queue" → "ready set" everywhere except where FIFO admission ordering is being asserted; AC6 rephrased to test the persistence property, not the absolute Q-number; pull-quote schema-change claim reconciled with §Data Model; NFR4 user-set-value handling on degraded hosts made explicit (informational log); pool observability cross-references FR1's EXECUTE-WAVE drill-down; trust-boundary widening under pool admission made explicit; "CW8" tag dropped; §Constraints adds a "per-task state contract — deferred to /aid-plan" note (cross-feature concern with features 002/004/005); IQ raised in work STATE.md asking whether host Task-tool surface supports wait-for-any-completion semantic the pool needs. | /aid-specify |
 | 2026-05-23 | **Fix-pass-2 after second re-review** (graded D+, 1 HIGH + 1 MED + 2 LOW + 1 MIN). Per-task state contract deferment swept through the 4 in-line locations missed in fix-pass-1 (Data Model Depends-On bullet, Feature Flow step 3, both Failure-semantics bullets) — body now uses "canonical per-task state contract" phrasing consistently with §Data Model "Per-task state" paragraph and §Constraints deferred-contract bullet. Broken NFR4 cite (REQUIREMENTS.md §6 — NFR4 was relocated to work-003) fixed by inlining the graceful-degradation principle and noting the relocation. EXECUTE-WAVE drill-down icon vocabulary now reuses the existing `(queued)` token verbatim and is explicit that FR6 *supplements* the set with `⊘ blocked` rather than replacing existing glyphs. Three descriptive "Q7" body references (L93, L209, L433) replaced with position-based phrasing ("the new aid-init Max Parallel Tasks question, asked between Heartbeat Interval and Commit AID Workspace"); the prescriptive Layers row at L352 retains "Q7" since it defines the renumber. Minor cosmetic at the Layers Data row (L356) acknowledges the FR2-shipped shape exists today. | /aid-specify |
+| 2026-05-24 | **Alignment Update** added (between Acceptance Criteria and Technical Specification). The per-task state contract previously "deferred to /aid-plan" is **now resolved** by the 2026-05-24 REQUIREMENTS refresh: the canonical contract is work-003's FR2 per-area STATE rule — task-NNN.md stays 6-section flat; per-task Status / dispatch history / Blocked state live in the per-work `STATE.md ## Tasks Status` row. The pool algorithm, all 6 ACs, the `MaxConcurrent` parameter, and the IQ6 deferment are unchanged; only the per-task state target is now pinned. Body sections that say "the canonical per-task state contract — see §Constraints" still parse correctly under the resolution — they now point at the work `STATE.md ## Tasks Status` row. | /aid-specify |
 
 ## Source
 
@@ -65,6 +66,53 @@ Should
   Workspace), then a default of **5** is offered, the chosen value is persisted
   to `.aid/knowledge/STATE.md` as the `**Max Parallel Tasks:**` metadata line,
   and `aid-execute` reads from that field at delivery start.
+
+---
+
+## Alignment Update — 2026-05-24
+
+> **REQUIREMENTS.md was refreshed on 2026-05-24** to align with work-003's
+> deployed FR2 per-area STATE rule. This SPEC's body (post-pool-revision +
+> two fix-passes) describes the per-task state contract as
+> **"deferred to /aid-plan"**. That deferment is now **resolved**: the
+> canonical contract is work-003's FR2 per-area STATE rule:
+>
+> - **`task-NNN.md` stays 6-section flat** (Definition only).
+> - **Per-task Status / dispatch history / Blocked state live in the per-work
+>   `.aid/work-NNN/STATE.md ## Tasks Status` row.**
+>
+> **What changes for this feature's body:**
+>
+> - The §Data Model "Per-task state" paragraph and the §Constraints "Per-task
+>   state contract — deferred to /aid-plan" bullet are superseded — the
+>   contract is no longer deferred; it points at the work `STATE.md ## Tasks
+>   Status` row.
+> - The §Layers Data row's "Whether `Blocked` is written to the canonical
+>   `task-NNN.md` shape (post-/aid-plan reconciliation) or to the work
+>   `STATE.md ## Tasks Status` row" hedge is superseded — the answer is the
+>   work `STATE.md ## Tasks Status` row.
+> - Feature Flow step 3, the failure-semantics bullets ("The failing task is
+>   removed from in-flight" / "Its transitive descendants are marked Blocked")
+>   read against the work `STATE.md ## Tasks Status` row as the per-task state
+>   target.
+>
+> **What stays the same:**
+>
+> - The pool algorithm (continuous admission, `MaxConcurrent` ceiling,
+>   transitive-descendant failure block, wave barriers as graph dependencies,
+>   graceful degradation).
+> - All 6 ACs — the algorithm + the configuration contract are independent of
+>   where per-task state lives.
+> - The `MaxConcurrent` parameter (default 5, configured via new aid-init
+>   question between Heartbeat Interval and Commit AID Workspace, stored in
+>   `.aid/knowledge/STATE.md` as `**Max Parallel Tasks:**`).
+> - IQ6 (Task-tool wait-for-any semantic) remains open in work `STATE.md
+>   ## Cross-phase Q&A` for /aid-plan to resolve.
+>
+> Body sections below treat the per-task state contract as deferred; the
+> alignment update above is the operative contract for /aid-plan and
+> implementation. A focused body-text rewrite is a candidate /aid-detail task
+> and is not scoped into this feature.
 
 ---
 
