@@ -111,6 +111,57 @@ Must
 >   numbers shifted; treat them as **section-name references** ("the IMPEDIMENT
 >   section", "the Re-run path", etc.) per the cycle-14 KB anti-drift pattern.
 >
+> **Additional clarifications (added in fix-pass):**
+>
+> - **SKILL.md line-cite list is known-stale.** The body's §Layers prescriptive
+>   list of 16 `aid-execute/SKILL.md` line numbers (`:67, :83, :119, :155,
+>   :159, :172, :194, :203, :208, :218, :234, :281, :291, :297, :360, :386`)
+>   drifted with the subagent-visibility-patch (skill grew from 464 → 512
+>   lines). Treat the list as **identifying sections by current name** (the
+>   IMPEDIMENT section, the Re-run path, etc.) per the cycle-14 KB anti-drift
+>   pattern. A focused body-text re-anchor (line numbers → section names) is
+>   flagged for /aid-detail.
+> - **Row-level write coordination under FR6 + per-area STATE — IQ7 raised.**
+>   The original spec's "single-writer per `task-NNN.md`" coordination relied
+>   on file-level isolation (one writer per file). Under per-area STATE the
+>   write target is a *shared* file — the per-work `STATE.md ## Tasks Status`
+>   table — with one *row* per task. With FR6 pool concurrency, N parallel
+>   tasks each want to update their own row simultaneously. The coordination
+>   contract is: each quick-check writes its task's row + any `## Quick Check
+>   Findings` block keyed by the task id (single-writer per task by
+>   construction); the gate's `AGGREGATE` step (step 0) is the only writer of
+>   the `## Delivery Gates` block (single-writer by construction). Concurrent
+>   row writes need either a row-level append helper or work-003's
+>   `writeback-state.sh` adapted to row scope — a /aid-detail task. Raised
+>   as IQ7 in work `STATE.md ## Cross-phase Q&A`.
+> - **Delivery Gate placement rule — `delivery-NNN` id, not Execution-Graph
+>   terminal-node.** The body's "Determinism rule (explicit, FR6-aware)"
+>   subsection (which derives the gate-record id from the Execution Graph's
+>   terminal node + highest-numbered tiebreak) is **superseded**. Under
+>   per-area STATE, the `## Delivery Gates` block in work `STATE.md` is keyed
+>   directly by `delivery-NNN` — the delivery's own identifier, deterministic
+>   without graph computation. Both writer (`aid-execute`) and reader
+>   (`aid-deploy`) use the same `delivery-NNN` key. The terminal-node rule is
+>   no longer load-bearing.
+> - **`delivery-NNN-issues.md` and the `## Delivery Gates` block coexist by
+>   design.** The two artifacts hold *different* issue lists: the
+>   `delivery-NNN-issues.md` instance file holds the **deferred-`[HIGH]`** log
+>   accumulated by per-task quick checks across the delivery; the
+>   `## Delivery Gates` block in work `STATE.md` holds the **gate reviewer's
+>   fresh issue list** + the deterministic grade output. Both are required;
+>   neither replaces the other.
+> - **State Machines descriptions** (both per-task quick-check and
+>   per-delivery gate) write transitions that target the per-area STATE
+>   contract — every "writes to the `task-NNN.md` Execution Record" reference
+>   in §State Machines (e.g., L611, L640) reads as "writes the appropriate
+>   row + sub-block in work `STATE.md`" per this Alignment Update.
+> - **Cross-feature with feature-002:** feature-002's own Alignment Update
+>   retired CR7 (the two-zone task-template ownership). feature-004's §Layers
+>   "Template authorship — feature-002 owns the two-zone `task-NNN.md` (CR7)"
+>   subsection is therefore superseded — feature-004 writes directly to work
+>   `STATE.md` rows; no two-zone template authorship dependency on
+>   feature-002.
+>
 > **What stays the same:**
 >
 > - The two-tier model itself (per-task quick check, no grade loop, cheap-tier

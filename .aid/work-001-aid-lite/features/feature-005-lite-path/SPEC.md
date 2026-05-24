@@ -152,6 +152,13 @@ Must
 > - Lite → full escalation (FR1) without losing captured info.
 > - Cross-tree propagation via work-002's generator (single-source canonical).
 >
+> The body's Migration Plan §5 specifically asks to "create the
+> `INTERVIEW-STATE.md` template" — this step is **also superseded** by the
+> per-area STATE rule (INTERVIEW-STATE.md is retired as a separate file;
+> the triage block lives in work-area STATE.md per the area-STATE rule).
+> The Migration Plan addition for the `## Triage` section (in the
+> Type-Aware section below) replaces this template-create step.
+>
 > Body sections below describe the original INTERVIEW-STATE.md + two-zone
 > design as historical reference; the alignment update above is the operative
 > contract for /aid-plan and implementation. A focused body-text rewrite is
@@ -166,6 +173,25 @@ routing extension introduced in the 2026-05-24 REQUIREMENTS update. The
 original lite-path design treated all small work uniformly; this extension
 makes the lite path's behavior depend on the triage's (c) type-of-work
 answer (which already existed but was used only loosely).
+
+### T3 prose → workType kebab mapping (added in fix-pass)
+
+The body's State TRIAGE Q&A presents user-facing prose choices (Q3 = type
+of work, with free-form readable answers). The new sub-path logic operates
+on kebab-case `workType` enum values. The triage step normalizes the user's
+prose answer to the kebab enum via this mapping — it is the bridge between
+the body's question UI and the new section's enum:
+
+| T3 user-facing choice (body) | `workType` enum value (this section) |
+|------------------------------|--------------------------------------|
+| `bug fix` | `bug-fix` |
+| `small refactor` | `small-refactor` |
+| `single document/artifact` | `single-doc` |
+| `new feature or system` | `small-new-feature` |
+
+If T3's answer doesn't match any of the four prose values (e.g., the user
+typed something else), the triage falls back to the full path — the lite
+path is only selected when T3 yields one of these four normalisable values.
 
 ### Sub-path table
 
@@ -191,8 +217,19 @@ The triage step's output is structured as two values written to the work-area
 - **Path:** lite | full
 - **Work Type:** bug-fix | single-doc | small-refactor | small-new-feature
 - **Sub-path:** LITE-BUG-FIX | LITE-DOC | LITE-REFACTOR | LITE-FEATURE | (n/a for full)
-- **Decision rationale:** {one-sentence explanation derived from the triage answers}
+- **Sub-path (auto):** {the sub-path the auto-rule selected; omitted if no override}
+- **Decision rationale:** {one-sentence explanation; templated form `T1={value} + T2={value} + T3={value} → {path}/{sub-path}` is acceptable, or natural prose}
+- **Override:** yes | (omitted when no override)
+- **Recipe:** {recipe-name; written by feature-011 when a recipe is instantiated; omitted otherwise}
 ```
+
+The `Sub-path` field always reflects the **final** sub-path the lite path
+operates on. When the user overrides, `Sub-path (auto)` records what the
+auto-rule originally selected and `Override: yes` flags the deviation — a
+useful audit trail for tuning the type-aware rule with experience (per the
+Description §41-42 "criterion is acknowledged as somewhat subjective and
+will be tuned with experience"). `Recipe` is reserved for feature-011's
+recipe-offer step.
 
 The `Sub-path` value is deterministic from `workType` (1:1 mapping per the
 table above). The mapping is hard-coded in the `aid-interview` triage logic;
@@ -228,11 +265,19 @@ recorded in the `STATE.md § Triage` block; if overridden, an additional
 
 Each sub-path is realised as a small branch in the existing lite-path State L1
 (CONDENSED-INTAKE) state machine. The State L1 logic reads `Sub-path` from
-the `§ Triage` block and dispatches to a sub-path-specific prompt template:
+the `§ Triage` block and dispatches to a sub-path-specific prompt template.
+
+> **Note:** the body's existing State L1 description and the lite-path
+> State Machines transition table do not yet reflect this sub-path
+> branching — they predate this Type-Aware extension. The body's L1
+> description is *historical reference*; the operative L1 behavior is
+> described here. A focused body-text update is flagged for /aid-detail.
 
 - **LITE-BUG-FIX:** prompts for `bug-title`, `bug-description`, `reproduction-steps`,
-  `intended-behavior`; emits a work-root `SPEC.md` matching the same shape as
-  the `bug-fix` recipe (see feature-011).
+  `intended-behavior`; emits a work-root `SPEC.md` matching the contract above
+  (reproduction + intended-behavior + task list, no Specify-equivalent block).
+  feature-011's `bug-fix` recipe instantiates the same shape and consumes
+  this contract.
 - **LITE-DOC:** prompts for `doc-title`, `doc-purpose`, `outline-bullets`;
   emits a work-root `SPEC.md` that IS the document outline.
 - **LITE-REFACTOR:** unchanged from the original lite-path L1 logic; this is
@@ -241,11 +286,30 @@ the `§ Triage` block and dispatches to a sub-path-specific prompt template:
   elicitation** — explicit per-AC prompts asking what behavior would prove
   the feature is done.
 
+### Migration Plan addition — work-state-template + data-model.md (added in fix-pass)
+
+The Type-Aware section above introduces a `## Triage` block in the per-work
+`STATE.md` that the canonical `work-state-template.md` does not yet declare.
+Two coordinated artifact updates are required at implementation time:
+
+1. **Extend `canonical/templates/work-state-template.md`** with a `## Triage`
+   section after the metadata block, holding the bullet-list fields (`Path`
+   / `Work Type` / `Sub-path` / `Sub-path (auto)` / `Decision rationale` /
+   `Override` / `Recipe`) described in the Triage emission section above.
+   The section is empty for full-path works and populated for lite-path
+   works.
+2. **Extend `.aid/knowledge/data-model.md §2.3` (Work-area STATE.md schema)**
+   to list the `## Triage` section among the work STATE's recognised
+   sections.
+
+These changes are additive (full-path works simply have an empty `## Triage`
+section); no backward-compatibility migration is required.
+
 ### Interaction with feature-011 (Recipes)
 
 When feature-011 ships, the triage's recipe-offer step (a sub-step
 **after** the sub-path is selected but **before** the sub-path's
-condensed interview runs) reads the `Sub-path` value to filter the recipe
+condensed interview runs) reads the `Work Type` value (the normalized kebab `workType`) to filter the recipe
 catalog: recipes whose `applies-to` matches the `workType` are offered first.
 If the user accepts a recipe, the sub-path's condensed interview is skipped
 entirely (the recipe's slot-fill takes its place). If declined, the

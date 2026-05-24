@@ -117,6 +117,8 @@ Must
 
 ## Technical Specification
 
+> **Read the Alignment Update above first** — it supersedes parts of the body sections below.
+>
 > This feature delivers FR3 mechanism **M1** (thin state router), with **M4**
 > (sub-agent dispatch) folded in as a **per-skill authoring discipline** rather
 > than as a separate mechanism: a state's `Worker` column in the dispatch table
@@ -141,14 +143,12 @@ Must
 This feature has no database. Its "data model" is the **on-disk shape of a
 refactored skill** — the structural contract the generator renders and the host
 tool loads. Today a skill is a single monolithic `SKILL.md` carrying its whole
-state machine inline (`aid-discover/SKILL.md` is 453 / 1,078 / 1,090 lines across
-the three trees). M1 replaces that with a fixed thin-router anatomy.
+state machine inline (`aid-discover/SKILL.md` is 596 lines, byte-identical across all 3 install trees + the canonical source after work-002). M1 replaces that with a fixed thin-router anatomy.
 
 #### Refactored skill — canonical structure
 
 The unit of work is one `canonical/skills/aid-{name}/` folder. After M1 it has
-this fixed shape (the same `canonical/` thin-router structure work-002's
-feature-001-profile-driven-generator already defines as the canonical form):
+this fixed shape (uses the same `canonical/` source-of-truth invariant work-002's feature-001-profile-driven-generator established; this feature adds the thin-router decomposition on top):
 
 ```
 canonical/skills/aid-{name}/
@@ -175,12 +175,12 @@ has a bounded role; nothing state-specific lives here.
 
 The router carries **no state body**. The current `## Mode: GENERATE`,
 `## Mode: REVIEW`, etc. H2 blocks move out wholesale into `references/state-*.md`.
-For `aid-discover/SKILL.md` the **full span of inline Mode blocks** is roughly
-lines 82–453 — first `## Mode:` opens at line 82, the file ends at line 453 — so
-**~370 lines (≈ 453 − 82)** of inline state body lift out of the router. (The
-narrower 381–453 span — *last* `## Mode:` to end of file — is only the *final*
-Mode block, ~72 lines, not the whole inline-state surface; do not confuse the
-two.) All numbers are estimates.
+For `aid-discover/SKILL.md` the inline state-body block is the bulk of the
+file (currently spans ~lines 131-596 in the post-subagent-visibility-patch
+version, ~465 lines). Lifting this body into per-state `references/state-*.md`
+files leaves a thin router that is a small fraction of the original. Numbers
+are illustrative and drift with each skill-body edit — the structural claim
+(most of the file lifts out) survives any specific line-count refresh.
 
 #### `references/state-{name}.md` — per-state detail file
 
@@ -266,9 +266,9 @@ a standalone feature, has been dropped from work-001.)
 
 The refactor changes skill *packaging* only. It does not touch any `.aid/`
 workspace artifact — `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `task-NNN.md`
-(now a single file with the Definition and Execution Record zones, the
-`task-NNN-STATE.md` merge), and the `*-STATE.md` workflow files are all
-unchanged. An in-flight workspace created before the refactor is read identically
+(unchanged 6-section flat shape; per-task state now lives in the per-work
+`STATE.md ## Tasks Status` row per work-003's FR2 area-STATE rule — see
+Alignment Update above), and the work `STATE.md` is unchanged in shape. An in-flight workspace created before the refactor is read identically
 by a refactored skill, because state detection still reads the same files
 (Pattern 1's "filesystem is the only source of truth" invariant is preserved
 verbatim).
@@ -343,7 +343,7 @@ generator.
 | Router | `canonical/skills/aid-{name}/SKILL.md` | The thin state router (M1): frontmatter + pre-flight + state detection + dispatch table. Loads exactly one state-detail file per run. Carries no state body. |
 | State detail | `canonical/skills/aid-{name}/references/state-*.md` | One file per state (M1): the heavy per-state steps and prompts, loaded on demand by the router. |
 | Source | `canonical/` (work-002's feature-001-profile-driven-generator) | Edits are made here once; the generator re-renders all three trees. M1's thin-router structure **is** that feature's canonical format. |
-| Task template | `templates/delivery-plans/task-template.md` (extended) + `aid-detail` skill update | This feature **delivers** the extended two-zone `task-NNN.md` template: a **Definition zone** (`Type` / `Source` / `Depends on` / `Scope` / `Acceptance Criteria`) and an **empty Execution Record zone scaffold** (section headers only, no content). `aid-detail` is updated to write **both** zones — Definition filled, Execution Record scaffold empty — so downstream skills (`aid-execute`, and feature-004's quick-check / delivery-gate blocks) write into a pre-existing scaffold rather than creating one. The retired `templates/implementation-state.md` template is **deleted by this feature**. |
+| Task template *(superseded — see Alignment Update above; row retained as historical reference)* | `templates/delivery-plans/task-template.md` (extended) + `aid-detail` skill update | This feature **delivers** the extended two-zone `task-NNN.md` template: a **Definition zone** (`Type` / `Source` / `Depends on` / `Scope` / `Acceptance Criteria`) and an **empty Execution Record zone scaffold** (section headers only, no content). `aid-detail` is updated to write **both** zones — Definition filled, Execution Record scaffold empty — so downstream skills (`aid-execute`, and feature-004's quick-check / delivery-gate blocks) write into a pre-existing scaffold rather than creating one. The retired `templates/implementation-state.md` template is **deleted by this feature**. |
 
 #### Placement and the per-tool render
 
@@ -370,8 +370,10 @@ earlier open question OQ-2.1 (which scoped the footprint win to Claude Code) is
 
 - **Owns:** the thin-router anatomy, the `references/state-*.md` decomposition,
   the dispatch-table schema (with the simplified `Advance` column), the
-  per-skill state-extraction work, and the two-zone `task-template.md` + the
-  `aid-detail` update + the `implementation-state.md` deletion (CR7).
+  per-skill state-extraction work, and the `implementation-state.md` deletion (CR7 itself is retired per
+  the Alignment Update above; only this deletion bullet survives, with the
+  rationale now "absorbed into per-area STATE consolidation" rather than
+  "absorbed into the two-zone task-NNN.md").
 - **Consumes from work-002's feature-001-profile-driven-generator:** the
   `canonical/` source location and the generator that renders the trees.
 - **Does not consume from feature-003 or feature-006:** both have been dropped
@@ -431,8 +433,8 @@ skill renders to the thin-router + `references/state-*.md` shape on **all three*
 trees (every profile uses `references` decomposition). So the trees stay valid
 and shippable after every single skill is converted — no big-bang cutover.
 
-**Suggested order:** start with `aid-deploy` / `aid-monitor` (smallest, ~242–265
-lines, identical across trees — lowest risk, fastest validation of the recipe),
+**Suggested order:** start with `aid-deploy` / `aid-monitor` (smallest at ~333–359
+lines after the subagent-visibility-patch, identical across trees — lowest risk, fastest validation of the recipe),
 then the mid-size skills, then `aid-discover` (largest, most states) last. The
 exact order is `aid-plan`'s call.
 
@@ -440,9 +442,12 @@ exact order is `aid-plan`'s call.
 
 Doing M1 uniformly on `canonical/` retires the skill-body triplication drift
 (`tech-debt.md` H1, M5): there is one authored source and the generator produces
-the trees. After migration, the 453-vs-1,078-vs-1,090-line `aid-discover`
-divergence is structurally impossible — Codex/Cursor length is a deterministic
-render of the canonical source, not hand-maintained.
+the trees. After migration, the thin-router shape inherits the post-work-002
+uniform-line-count property — every skill renders byte-identically to all three
+install trees, and that property extends to the per-state reference files.
+(The pre-work-002 line-count divergence — 453/1,078/1,090 for aid-discover,
+similar splits for other skills — was already retired by work-002's canonical
+generator; M1 preserves that invariant at the per-state-file level.)
 
 #### Backward compatibility (NFR2)
 
@@ -456,6 +461,8 @@ render of the canonical source, not hand-maintained.
   depend on, any auto-advance mechanism.
 
 #### Template surgery — two-zone `task-template.md` + `implementation-state.md` deletion (CR7)
+
+> ***This subsection is superseded by the Alignment Update above. Retained as historical reference. Only the `implementation-state.md` deletion (step 3) survives — steps 1 + 2 (two-zone scaffold + `aid-detail` Execution Record write) are retired by the per-area STATE rule.***
 
 In addition to the 10-skill router cutover, this feature performs a one-off
 **template change** that the downstream features (notably feature-004) consume:
