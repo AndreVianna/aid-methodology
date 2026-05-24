@@ -69,13 +69,13 @@ See `PLAN.md` for full details, IQ resolutions, and cross-cutting risks.
 | 016 | `task-016` | IMPLEMENT | W2 | Pending | — | — | Implement 4 lite-path sub-paths in State L1 |
 | 017 | `task-017` | IMPLEMENT | W3 | Pending | — | — | Lite → full escalation (preserve captured info) |
 | 018 | `task-018` | TEST | W4 | Pending | — | — | E2E lite path test |
-| 019 | `task-019` | IMPLEMENT | W0 | Pending | — | — | writeback-task-status.sh helper + smoke harness |
+| 019 | `task-019` | IMPLEMENT | W0 | **Done ✅ (Loopback: test-coverage)** | C3 A+ | 8m9s+~7m+14m+~6m+~4m | writeback-task-status.sh helper (520L) + smoke test (427L, 57/57 PASS). Sentinel-file lock (set -o noclobber + atomic create + sleep-poll). C1=FIX (2 HIGH+2 MED+5 LOW+5 MIN) → C2 fix-batch (HIGH H1 schema-mismatch + H2 pipe-corruption + MED M1 --help sed + M2 lock-dir-missing all fixed; new MED found: newline bypasses pipe check) → C3 fix (extended pipe check to also reject \n) → C3 review A+ (1 LOW Loopback: no newline-rejection test, deferred). |
 | 020 | `task-020` | CONFIGURE | W0 | Pending | — | — | Extend work-state-template ## Delivery Gates + data-model.md §2.3 |
 | 021 | `task-021` | IMPLEMENT | W1 | Pending | — | — | Per-task quick-check in aid-execute |
 | 022 | `task-022` | IMPLEMENT | W2 | Pending | — | — | Per-delivery quality gate + FR6 interlock |
 | 023 | `task-023` | TEST | W3 | Pending | — | — | E2E two-tier review test |
-| 024 | `task-024` | IMPLEMENT | W0 | Pending | — | — | Work-002 back-port for recipes asset kind |
-| 025 | `task-025` | DOCUMENT | W0 | Pending | — | — | Recipe meta-template + README |
+| 024 | `task-024` | IMPLEMENT | W0 | **Done ✅** | C1 A+ | 9m21s+~6m | work-002 generator back-port for recipes asset kind. canonical/recipes/ recognized; emits to all 3 install trees per profile contract. EMISSION-MANIFEST.md declares Recipes section. VERIFY-4a PASS. No regression to existing asset kinds. C1 PASS at A+ (0 HIGH/MED, 1 LOW + 2 MIN cosmetic). |
+| 025 | `task-025` | DOCUMENT | W0 | **Done ✅** | C3 A+ | 6m53s+~7m+14m+~5m+~4m | Recipe meta-template + README. C1=FIX (3 HIGH+4 MED+4 LOW+3 MIN). C2 fix-batch (path move canonical/recipes/RECIPE-TEMPLATE.md → canonical/templates/recipe-template.md + Metadata block + slot-count fix + ## spec rationale + multi-task example). C2 review surfaced 1 new HIGH (multi-task example slot-count 6→5). C3 fix (1-line) → C3 review A+ (0 defects). |
 | 026 | `task-026` | DOCUMENT | W1 | Pending | — | — | 5 seed recipes |
 | 027 | `task-027` | IMPLEMENT | W1 | Pending | — | — | parse-recipe.sh |
 | 028 | `task-028` | IMPLEMENT | W2 | Pending | — | — | Triage recipe-offer + slot-fill + emit (+ {!{ rewrite) |
@@ -274,6 +274,26 @@ Format: `| Date | Agent | Task / Cycle | ETA band | Actual | Notes |`
 | 2026-05-24 | reviewer | task-009 cycle-2 | 1–10 min | ~5m | Grade A+/A. |
 | 2026-05-24 | reviewer | task-011 cycle-2 | 1–10 min | 1m30s | Grade A+. PASS. |
 | 2026-05-24 | reviewer | task-002 cycle-3 (post-mojibake-discovery) | 1–10 min | ~8m | Grade HIGH regression (mojibake). |
+
+| 2026-05-24 | reviewer | task-002 cycle-3 (post-mojibake-fix) | 1-10 min | 5m22s | A+ SHIP. 0 defects. Mojibake gone (hex-verified). |
+| 2026-05-24 | developer | task-019 cycle-1 (writeback-task-status.sh) | 5-15 min | 8m9s | First implement, sentinel-file lock 4 arg-modes. Commit ede82d6→d2fba50. |
+| 2026-05-24 | developer | task-024 cycle-1 (recipes generator back-port) | 5-15 min | 9m21s | Generator-side wiring. Commit 307c9ff direct on work-001 (worktree bypass). |
+| 2026-05-24 | tech-writer | task-025 cycle-1 (recipe meta-template+README) | 5-15 min | 6m53s | Required orchestrator commit (no Bash tool). beaf99e→ef80de1. |
+| 2026-05-24 | reviewer | task-019 cycle-1 | 5-20 min | ~7m | 2 HIGH (silent-success, pipe-corruption) + 2 MED + 5 LOW + 5 MIN. |
+| 2026-05-24 | reviewer | task-024 cycle-1 | 5-20 min | ~6m | A+ PASS (0 HIGH/MED, 1 LOW + 2 MIN). |
+| 2026-05-24 | reviewer | task-025 cycle-1 | 5-20 min | ~7m | 3 HIGH (wrong path, missing Metadata, slot-count) + 4 MED + 4 LOW + 3 MIN. |
+| 2026-05-24 | developer | wave-3 cycle-1 fix-batch (019+025, 9 fixes) | 8-20 min | 14m | All applied. 57/57 smoke tests pass. Commit 0884e34→b13c012. |
+| 2026-05-24 | reviewer | task-019 cycle-2 | 1-10 min | ~6m | 4 cycle-1 HIGH/MED fixed; new MED (newline bypass). |
+| 2026-05-24 | reviewer | task-025 cycle-2 | 1-10 min | ~5m | 3 HIGH + 4 MED fixed; new HIGH (multi-task slot-count). |
+| 2026-05-24 | reviewer | task-019+025 cycle-3 combined | 1-10 min | 3m56s | Both A+ PASS. 1 LOW Loopback (test coverage). |
+
+**Wave-3 calibration observations (refresh):**
+
+- `tech-writer` ETA NEW class: 5–10 min for 100-500 line documentation tasks. **Refine rough-time-hints.md row `tech-writer`: 5–10 min, 1 sample**. CAVEAT: tech-writer has no Bash tool — orchestrator must commit on its behalf.
+- `developer (IMPLEMENT)` ETA refined: 8–15 min for ~500-1000 LOC implement+test tasks (task-019 was 8m9s for 947 lines).
+- Single-line cycle-3 fixes via orchestrator inline Python: ~30s + generator + commit = ~1 min total. Much faster than dispatch overhead.
+- Combined verification reviewer (multiple tasks in one dispatch): ~4m. Halves overhead vs 2 separate reviewers.
+- Heartbeat compliance: 3 of 5 wave-3 agents updated heartbeat well (rev-task002-c3, dev-task024, all 3 wave-3 reviewers); 2 of 5 ignored (dev-task019, dev-task025). Calibration finding: developer agents inconsistent about heartbeat writes despite explicit prompt instruction.
 
 **Calibration observations:**
 
