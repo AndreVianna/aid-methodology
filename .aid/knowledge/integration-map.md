@@ -1,8 +1,8 @@
 # Integration Map
 
 > **Source:** aid-discover (discovery-integrator)
-> **Status:** Populated (initial dogfood pass)
-> **Last Updated:** 2026-05-21
+> **Status:** Populated (initial dogfood pass; cycle-11 FIX applied — script rename `writeback-state.sh` propagated, API consumption matrix annotated with FR2 area-STATE writes)
+> **Last Updated:** 2026-05-23
 
 > AID's "integrations" are not the usual stack of message queues, caches, and webhooks. They are the **host AI coding tools** AID installs itself into, the **MCP / hook ecosystem** those tools expose, and a small number of **local runtimes** (Node, Bash/PowerShell, Git, optional `mmdc`) needed to execute the bundled scripts. See `api-contracts.md` "Consumed APIs" for the (empty) HTTP surface — everything here is install-time or local-runtime.
 
@@ -21,7 +21,7 @@
 | Local payload | `profiles/claude-code/.claude/` (64 files: 22 agents + 10 skills + 31 templates/scripts per `project-structure.md`); `profiles/claude-code/CLAUDE.md` placeholder |
 | Version pins (model IDs) | `opus` (10 agents), `sonnet` (9 agents), `haiku` (3 agents) — symbolic aliases; concrete model resolved by Claude Code |
 | Source-of-truth doc | `external-sources.md` row 1: <https://docs.claude.com/en/docs/claude-code/overview> |
-| Known-issues / open gaps | ⚠️ Pending vendor-doc fetch — full frontmatter inventory, Hooks lifecycle, Plugins API, MCP server registration, `permissionMode: bypassPermissions` semantics, `background: true` long-running agent semantics (`external-sources.md:67-68`) |
+| Known-issues / open gaps | ⚠️ Pending vendor-doc fetch — full frontmatter inventory, Hooks lifecycle, Plugins API, MCP server registration, `permissionMode: bypassPermissions` semantics, `background: true` long-running agent semantics (`external-sources.md:67-68`). ⚠️ Per-session SKILL.md caching observed (Q192): host harness loads `SKILL.md` text once at session start — restart required after edits to skill bodies |
 | Evidence | `profiles/claude-code/.claude/agents/*.md` (22 files); `profiles/claude-code/.claude/skills/aid-*/SKILL.md` (10 skills per Q16 canonical taxonomy); `profiles/claude-code/CLAUDE.md`; `profiles/cursor/README.md:142` (Cursor cross-load reference) |
 
 ### Anthropic Claude Agent SDK
@@ -133,10 +133,10 @@
 |-----------|-------|
 | Kind | Local runtime |
 | Direction | AID invokes Node to run validation scripts |
-| Local artifacts | `templates/knowledge-summary/scripts/validate-diagrams.mjs` (294 lines), `templates/knowledge-summary/scripts/contrast-check.mjs` (151 lines) plus three copies (Claude Code, Cursor, Codex trees) |
+| Local artifacts | `canonical/templates/knowledge-summary/scripts/validate-diagrams.mjs` (294 lines), `canonical/templates/knowledge-summary/scripts/contrast-check.mjs` (151 lines) plus three copies (Claude Code, Cursor, Codex trees) propagated by `run_generator.py` |
 | Version pins | None observed. No `package.json`, no `.node-version`, no `engines` field |
 | Known-issues / open gaps | ⚠️ `validate-diagrams.mjs` uses ES module syntax with top-level `await` (`validate-diagrams.mjs:177`); minimum Node version is not stated. Likely Node 18+ but unverified. [Q54] |
-| Evidence | `templates/knowledge-summary/scripts/validate-diagrams.mjs:1-50`; `project-index.md` JavaScript breakdown (16 files, 3,428 lines) |
+| Evidence | `canonical/templates/knowledge-summary/scripts/validate-diagrams.mjs:1-50`; `project-index.md` JavaScript breakdown (16 files, 3,428 lines) |
 
 ### Mermaid CLI (`mmdc`)
 
@@ -146,9 +146,9 @@
 | Direction | AID invokes `mmdc` (or `npx @mermaid-js/mermaid-cli` as fallback) for diagram parse/render validation |
 | Local artifacts | n/a (external tool) |
 | Version pins | None pinned. Both `mmdc` direct and `npx @mermaid-js/mermaid-cli` invocation paths are attempted with no `--version` lower bound check (`validate-diagrams.mjs:163-166`) |
-| Used by | `aid-summarize` skill exclusively — via `templates/knowledge-summary/scripts/validate-diagrams.mjs:158-227` |
+| Used by | `aid-summarize` skill exclusively — via `canonical/templates/knowledge-summary/scripts/validate-diagrams.mjs:158-227` |
 | Known-issues / open gaps | Graceful degradation: if `mmdc` is unavailable the script falls back to a regex sanity check (`validate-diagrams.mjs:178-188`). No installation guidance in the install payloads. [Q55] |
-| Evidence | `validate-diagrams.mjs:1-50, 158-227`; `templates/knowledge-summary/scripts/fetch-mermaid.sh` (77 lines) appears to be a related bootstrap helper |
+| Evidence | `validate-diagrams.mjs:1-50, 158-227`; `canonical/templates/knowledge-summary/scripts/fetch-mermaid.sh` (77 lines) appears to be a related bootstrap helper |
 
 ### Bash / PowerShell
 
@@ -156,7 +156,7 @@
 |-----------|-------|
 | Kind | Local shell runtimes |
 | Direction | AID invokes both for installer + runtime scripts |
-| Local artifacts | 43 `.sh` files (5,490 lines per `project-index.md`); 5 `.ps1` files (300 lines). Key scripts: `setup.sh` / `setup.ps1` (installer), `templates/scripts/build-project-index.sh` (368-line discovery pre-pass), `templates/scripts/grade.sh` (141-line deterministic grader), `templates/knowledge-summary/scripts/*.sh` (10 validation/preflight scripts) |
+| Local artifacts | 43 `.sh` files (5,490 lines per `project-index.md`); 5 `.ps1` files (300 lines). Key scripts: `setup.sh` / `setup.ps1` (installer), `canonical/templates/scripts/build-project-index.sh` (368-line discovery pre-pass), `canonical/templates/scripts/grade.sh` (141-line deterministic grader), `canonical/templates/knowledge-summary/scripts/*.sh` (10 validation/preflight scripts including `writeback-state.sh`) |
 | Version pins | None observed. Bash invoked as `bash <script>`; PowerShell as `pwsh` or via `.ps1` extension |
 | Known-issues / open gaps | The `.sh` scripts use Bash idioms (heredocs, process substitution) so POSIX `sh` will not always suffice. The `.ps1` files mirror `.sh` semantics 1:1 but the PowerShell variants are smaller / fewer (only `setup.ps1` + 4× `concatenate.ps1`) |
 | Evidence | `project-index.md` Language Breakdown (Shell 43 files / 5,490 lines; PowerShell 5 files / 300 lines) |
@@ -247,21 +247,24 @@ Solid arrows = active integration. Dashed arrows = future / unused. AID sits at 
 
 Which AID skill invokes which host-tool API (across all three currently-supported tools). "API" here means the host harness's tool surface — `Agent`, `Bash`, `Read`, `Write`, `Edit`, `Glob`, `Grep` — not HTTP.
 
+Per-skill state-file writes reflect the FR2 area-STATE rule (per `coding-standards.md §8.5` and `data-model.md §1A`): every dev-phase skill updates the per-work `STATE.md` (Work area); `aid-discover` and `aid-summarize` update `.aid/knowledge/STATE.md` (Discovery area); `aid-monitor` will use `MONITOR-STATE.md` (deferred).
+
 | Skill | Read | Glob | Grep | Bash | Write | Edit | Agent | Notes |
 |-------|------|------|------|------|-------|------|-------|-------|
-| `aid-init` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Scaffolds `.aid/` + KB templates + CLAUDE.md / AGENTS.md placeholders (`aid-init/SKILL.md:8`) |
-| `aid-discover` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **✅** | Only skill that dispatches sub-agents in parallel via the **Agent tool** (5 discovery sub-agents + reviewer) — `aid-discover/SKILL.md:8` |
-| `aid-interview` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Pre-loads `interviewer` agent via `agent: interviewer` frontmatter (`aid-interview/SKILL.md:9`); switches to `architect` (State 5) and `reviewer` (State 6) via in-body dispatch points |
-| `aid-specify` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Pre-loads `architect` agent (`aid-specify/SKILL.md:9`); switches to `reviewer` for REVIEW step |
-| `aid-plan` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Pre-loads `architect` agent (`aid-plan/SKILL.md:9`); switches to `reviewer` for REVIEW step |
-| `aid-detail` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Pre-loads `architect` agent (`aid-detail/SKILL.md:10`); `context: fork` (`aid-detail/SKILL.md:9`) |
-| `aid-execute` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Pre-loads `developer` agent (`aid-execute/SKILL.md:10`); dispatches type-specific executor (RESEARCH→researcher, IMPLEMENT→developer, etc.) and `reviewer` for grading. Invokes Bash to run `grade.sh` |
-| `aid-deploy` | ✅ | ✅ | ✅ | ✅ | ✅ | — | — | Pre-loads `operator` agent (`aid-deploy/SKILL.md:10`). Bash for build verification / PR creation |
-| `aid-monitor` | ✅ | ✅ | ✅ | ✅ | ✅ | — | — | Pre-loads `orchestrator` agent (`aid-monitor/SKILL.md:10`). Bash for telemetry collection |
-| `aid-summarize` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Bash invokes `validate-diagrams.mjs` (Node + `mmdc` subprocess), `contrast-check.mjs`, `validate-html.sh`, `validate-links.sh`, `stale-check.sh`, `check-preflight.sh`, `writeback-discovery-state.sh` (`templates/knowledge-summary/scripts/*`) |
+| `aid-init` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Scaffolds `.aid/` + KB templates + CLAUDE.md / AGENTS.md placeholders; creates the Discovery-area `.aid/knowledge/STATE.md` skeleton and (when a work-NNN dir is created) the Work-area `STATE.md` skeleton per FR2 (`aid-init/SKILL.md:8`) |
+| `aid-discover` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **✅** | Only skill that dispatches sub-agents in parallel via the **Agent tool** (5 discovery sub-agents + reviewer). Updates `.aid/knowledge/STATE.md` (Discovery area) across REVIEW / Q&A / FIX / APPROVAL modes — `aid-discover/SKILL.md:8` |
+| `aid-interview` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Pre-loads `interviewer` agent via `agent: interviewer` frontmatter (`aid-interview/SKILL.md:9`); switches to `architect` (State 5) and `reviewer` (State 6) via in-body dispatch points. Updates the Work-area `STATE.md` `## Interview Status` table + `## Cross-phase Q&A` (per FR2; absorbs retired INTERVIEW-STATE.md) |
+| `aid-specify` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Pre-loads `architect` agent (`aid-specify/SKILL.md:9`); switches to `reviewer` for REVIEW step. Updates the Work-area `STATE.md` `## Features Status` row per feature (per FR2; absorbs retired per-feature FEATURE-STATE.md) |
+| `aid-plan` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Pre-loads `architect` agent (`aid-plan/SKILL.md:9`); switches to `reviewer` for REVIEW step. Writes PLAN.md + appends rows to Work-area `STATE.md` `## Plan / Deliveries` |
+| `aid-detail` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Pre-loads `architect` agent (`aid-detail/SKILL.md:10`); `context: fork` (`aid-detail/SKILL.md:9`). Writes `task-NNN.md` files + appends rows to Work-area `STATE.md` `## Tasks Status` |
+| `aid-execute` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Pre-loads `developer` agent (`aid-execute/SKILL.md:10`); dispatches type-specific executor (RESEARCH→researcher, IMPLEMENT→developer, etc.) and `reviewer` for grading. Invokes Bash to run `grade.sh`. Updates per-task row in Work-area `STATE.md` `## Tasks Status` (per FR2; absorbs retired task-NNN-STATE.md) |
+| `aid-deploy` | ✅ | ✅ | ✅ | ✅ | ✅ | — | — | Pre-loads `operator` agent (`aid-deploy/SKILL.md:10`). Bash for build verification / PR creation. Writes `package-NNN.md` + appends rows to Work-area `STATE.md` `## Deploy Status` (per FR2; absorbs retired DEPLOYMENT-STATE.md `## History`) |
+| `aid-monitor` | ✅ | ✅ | ✅ | ✅ | ✅ | — | — | Pre-loads `orchestrator` agent (`aid-monitor/SKILL.md:10`). Bash for telemetry collection. ⚠️ Will write to `.aid/work-NNN-{name}/MONITOR-STATE.md` when the Monitor area matures (deferred per FR2 OQ-3; no canonical template yet) |
+| `aid-summarize` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Bash invokes `validate-diagrams.mjs` (Node + `mmdc` subprocess), `contrast-check.mjs`, `validate-html.sh`, `validate-links.sh`, `stale-check.sh`, `check-preflight.sh`, `writeback-state.sh` (`canonical/templates/knowledge-summary/scripts/*` — renamed from `writeback-discovery-state.sh` per work-002 / FR2). Writeback updates `.aid/knowledge/STATE.md` `## Summarization History` |
 
 **Key takeaways:**
 - The **Agent tool** is used by **exactly one skill** (`aid-discover`) — for parallel sub-agent dispatch. All other skills use the harness's pre-loaded `agent:` field or in-body dispatch points that are documented but not declared as tool prerequisites.
 - The **Bash tool** is used by **every one of the 10 skills** — it is universally required, primarily for `grade.sh` invocation and for the discovery pre-pass / summarize validation scripts.
 - The **Edit tool** is absent from `aid-deploy` and `aid-monitor` — both of which produce new artifacts rather than mutate existing ones (per `aid-deploy/SKILL.md:8` and `aid-monitor/SKILL.md:8`).
+- **State-file writes consolidated under FR2.** All dev-phase skills (`aid-interview` → `aid-deploy`) write to a **single per-work `STATE.md`** in the work directory rather than the 5 retired per-skill state files (`INTERVIEW-STATE.md`, per-feature `FEATURE-STATE.md`, `task-NNN-STATE.md`, `DEPLOYMENT-STATE.md`, plus the discovery-side `DISCOVERY-STATE.md`). `aid-discover` + `aid-summarize` write to the **Discovery-area `.aid/knowledge/STATE.md`**. See `coding-standards.md §8.5` and `data-model.md §1A` for the area-STATE rule.
 - No skill consumes any HTTP or MCP surface.

@@ -14,7 +14,7 @@ There **is** however one genuine HTML artifact emitted by AID: the **Knowledge B
 
 | Where | Files |
 |---|---|
-| Canonical source-of-truth assets | `templates/knowledge-summary/` (25 files per `project-structure.md:170-172`) |
+| Canonical source-of-truth assets | `canonical/templates/knowledge-summary/` (25 files per `project-structure.md:170-172`) |
 | Claude Code install copy | `profiles/claude-code/.claude/templates/knowledge-summary/` |
 | Codex install copy | `profiles/codex/.agents/templates/knowledge-summary/` |
 | Cursor install copy | `profiles/cursor/.cursor/templates/knowledge-summary/` |
@@ -29,7 +29,7 @@ The skill that emits the HTML lives at `profiles/claude-code/.claude/skills/aid-
 
 ### 2.1 The HTML skeleton
 
-`templates/knowledge-summary/html-skeleton.html` (101 lines) defines the document shell with Mustache-style `{{PLACEHOLDER}}` substitution. Sections (in DOM order):
+`canonical/templates/knowledge-summary/html-skeleton.html` (101 lines) defines the document shell with Mustache-style `{{PLACEHOLDER}}` substitution. Sections (in DOM order):
 
 | Section | Lines in skeleton | Purpose |
 |---|---|---|
@@ -45,7 +45,7 @@ The skill that emits the HTML lives at `profiles/claude-code/.claude/skills/aid-
 
 ### 2.2 Page-level content composition
 
-The `{{BODY_CONTENT}}` placeholder is filled by `aid-summarize` GENERATE mode (`aid-summarize/SKILL.md:198-200`) using one of six **profile-specific section templates** under `templates/knowledge-summary/section-templates/`:
+The `{{BODY_CONTENT}}` placeholder is filled by `aid-summarize` GENERATE mode (`aid-summarize/SKILL.md:198-200`) using one of six **profile-specific section templates** under `canonical/templates/knowledge-summary/section-templates/`:
 
 | Profile | Template | Lines |
 |---|---|---|
@@ -84,7 +84,7 @@ All state lives inside the single IIFE in `lightbox.js`. No global namespace pol
 
 ### 4.1 The token palette
 
-`templates/knowledge-summary/design-tokens.md` (124 lines) is the **documentation** of the design token palette. It is **not consumed at runtime** — the actual tokens live in `component-css.css` as CSS custom properties (`component-css.css:6-63`).
+`canonical/templates/knowledge-summary/design-tokens.md` (124 lines) is the **documentation** of the design token palette. It is **not consumed at runtime** — the actual tokens live in `component-css.css` as CSS custom properties (`component-css.css:6-63`).
 
 **Token categories** (per `component-css.css:7-36` light theme, `:37-63` dark theme):
 
@@ -98,7 +98,7 @@ All state lives inside the single IIFE in `lightbox.js`. No global namespace pol
 | Shadows | `--shadow-sm`, `--shadow-md`, `--shadow-lg` | Three elevation levels |
 | Radius | `--radius-sm`, `--radius`, `--radius-lg` | Three border-radius scales |
 
-⚠️ **Design tension — Inferred from code, needs confirmation.** `design-tokens.md` and `component-css.css` are maintained in parallel with no propagation tooling. If a token changes in CSS, the doc must be updated manually (and vice versa). Recorded by scout as Q14 in `DISCOVERY-STATE.md`.
+⚠️ **Design tension — Inferred from code, needs confirmation.** `design-tokens.md` and `component-css.css` are maintained in parallel with no propagation tooling. If a token changes in CSS, the doc must be updated manually (and vice versa). Recorded by scout as Q14 in `.aid/knowledge/STATE.md` (per FR2; pre-FR2 was DISCOVERY-STATE.md).
 
 ### 4.2 Light / Dark theming
 
@@ -157,7 +157,7 @@ The generated HTML is **responsive via viewport meta + relative units**, not via
 
 ## 7. Accessibility
 
-`templates/knowledge-summary/accessibility-checklist.md` (125 lines) is the authoritative checklist. Target: **WCAG 2.1 AA**.
+`canonical/templates/knowledge-summary/accessibility-checklist.md` (125 lines) is the authoritative checklist. Target: **WCAG 2.1 AA**.
 
 ### 7.1 What is verified automatically (`[auto]`)
 
@@ -202,7 +202,7 @@ There is no Vite, Webpack, Rollup, esbuild, Turbopack, or Parcel anywhere in thi
 
 ### 8.2 The generation pipeline
 
-Per `aid-summarize/SKILL.md` GENERATE mode (`:159-200`) and the scripts in `templates/knowledge-summary/scripts/`:
+Per `aid-summarize/SKILL.md` GENERATE mode (`:159-200`) and the scripts in `canonical/templates/knowledge-summary/scripts/`:
 
 ```
                                 ┌──────────────────────────────┐
@@ -289,8 +289,8 @@ The hardest design constraint on this UI is: **the output must be a single offli
 | Inline placement | At `html-skeleton.html:89-94`, BEFORE the lightbox.js IIFE so `window.mermaid` is defined when `initMermaid()` runs. |
 | Init flags | `startOnLoad: false`, `securityLevel: 'loose'`, font from the system stack, `useMaxWidth: true` for flowchart / er / sequence (per `mermaid-init.js:44-50` and `lightbox.js:65-72`). |
 | Re-render on theme toggle | `lightbox.js renderAllDiagrams()` — re-stashes the raw source via `data-source`, removes `data-processed`, calls `mermaid.run()` again. Uses `textContent`, never `innerHTML`, because `innerHTML` re-parses any `<token>` in diagram text as an HTML element and silently corrupts the source (see comment at `lightbox.js:85-90`). |
-| Supported diagram types | Documented in `templates/knowledge-summary/mermaid-examples.md` (187 lines). |
-| Quality gate | `validate-diagrams.mjs` (294 lines) attempts to render every Mermaid block via Mermaid CLI (`mmdc`); failure to parse or render blocks any grade higher than F per `templates/knowledge-summary/grading-rubric.md` (226 lines). |
+| Supported diagram types | Documented in `canonical/templates/knowledge-summary/mermaid-examples.md` (187 lines). |
+| Quality gate | `validate-diagrams.mjs` (294 lines) attempts to render every Mermaid block via Mermaid CLI (`mmdc`); failure to parse or render blocks any grade higher than F per `canonical/templates/knowledge-summary/grading-rubric.md` (226 lines). |
 
 ---
 
@@ -316,4 +316,4 @@ None of these have framework, component, state, routing, theming, or accessibili
 - Skill that drives the generation: `profiles/claude-code/.claude/skills/aid-summarize/SKILL.md` (430 lines).
 - The `aid-summarize` 9-state state machine: `architecture.md` Pattern 1.
 - Validation scripts (the runtime "tests" of the UI): `technology-stack.md` §2, §4.
-- Design-tokens-vs-CSS drift open question: `DISCOVERY-STATE.md` Q14.
+- Design-tokens-vs-CSS drift open question: `.aid/knowledge/STATE.md` Q14 (per FR2; pre-FR2 was DISCOVERY-STATE.md).

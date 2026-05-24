@@ -24,10 +24,11 @@ The dogfood works on this branch (`work-001`, `work-002`, `work-003`) and the do
 
 | Field | Value |
 |---|---|
-| **Status** | Ready |
+| **Status** | **Shipped (2026-05-23 in package-001-traceability, PR #9)** |
 | **Features** | `feature-001-you-are-here-heartbeat` (all 4 ACs); `feature-002-state-file-consolidation` (SKILL-body updates only — ACs 1–7 already complete via CW1–CW7) |
 | **Priority** | Should (per REQUIREMENTS §10) |
 | **Depends on** | — (no upstream deliveries; `work-002` canonical generator is the foundation, already shipped on master) |
+| **Shipped in** | [package-001-traceability](packages/package-001-traceability.md) — [PR #9](https://github.com/AndreVianna/aid-methodology/pull/9) |
 
 #### Goal
 

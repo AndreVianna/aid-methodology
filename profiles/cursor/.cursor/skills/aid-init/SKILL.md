@@ -151,7 +151,25 @@ What minimum quality grade should the Knowledge Base meet before proceeding?
 
 Parse and validate the grade. Store it.
 
-### Q6: Commit the AID Workspace?
+### Q6: Heartbeat Interval (for long-running subagent dispatches)
+
+```
+How often should long-running subagents report progress?
+(Per `canonical/templates/subagent-heartbeat-protocol.md` — applies when
+a dispatched subagent's ETA exceeds 5 min)
+
+[1] 1 minute (default — strong signal, minimal noise)
+[2] 2 minutes (lighter signal)
+[3] 5 minutes (very light — for noise-sensitive sessions)
+[4] 0 (disable heartbeat entirely; subagents won't self-report)
+```
+
+Store the answer as a number of minutes (1, 2, 5, or 0). Written to
+`STATE.md` top-of-file as `**Heartbeat Interval:** N minutes` (or `0` to
+disable). Dispatchers read this value before dispatching long-running
+subagents and pass `HEARTBEAT_INTERVAL=Nm` to the subagent prompt.
+
+### Q7: Commit the AID Workspace?
 
 The `.aid/` directory holds the Knowledge Base and all AID work artifacts. Ask
 the user whether Git should track it. Phrase the question exactly like this:
@@ -410,11 +428,14 @@ Read `.aid/knowledge/INDEX.md` to find what you need.
 
 ### .gitignore
 
-What happens here depends on the user's answer to **Q6**:
+What happens here depends on the user's answer to **Q7**:
 
-- **If the user chose [1] — commit `.aid/`:** Do NOT add a `.aid/` entry.
-  Leave any existing `.gitignore` untouched, and do not create one.
-  Print: `[Init] .aid/ will be tracked by Git (your Q6 choice).`
+- **If the user chose [1] — commit `.aid/`:** Do NOT add a `.aid/` entry,
+  but ALWAYS add `.aid/.heartbeat/` (heartbeat files are ephemeral runtime
+  artifacts that should never be committed, even if `.aid/` is tracked).
+  If `.gitignore` exists and doesn't contain `.aid/.heartbeat/`, append it.
+  If no `.gitignore` exists, create one with just `.aid/.heartbeat/`.
+  Print: `[Init] .aid/ will be tracked by Git (your Q7 choice); .aid/.heartbeat/ excluded.`
 
 - **If the user chose [2] — keep `.aid/` local:**
   - If `.gitignore` doesn't exist: create it with `.aid/` as the only entry.
@@ -509,5 +530,5 @@ Print a summary of everything created:
 - [ ] STATE.md (`.aid/knowledge/STATE.md`) has correct minimum grade and project type
 - [ ] External paths (if any) verified accessible and recorded
 - [ ] AGENTS.md has workspace reference and AID placeholders (created or appended)
-- [ ] `.gitignore` matches the Q6 choice (`.aid/` entry present only if the user chose [2], local-only)
+- [ ] `.gitignore` matches the Q7 choice (`.aid/` entry present only if the user chose [2], local-only); `.aid/.heartbeat/` entry present REGARDLESS of Q7 choice
 - [ ] No files outside .aid/, AGENTS.md, .gitignore were modified

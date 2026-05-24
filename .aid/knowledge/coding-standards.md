@@ -1,10 +1,10 @@
 # Coding Standards
 
 > **Source:** aid-discover (discovery-analyst)
-> **Status:** Populated (initial dogfood pass)
-> **Last Updated:** 2026-05-21
+> **Status:** Populated (cycle-11 FIX — post work-002 canonical-generator + work-003 FR2)
+> **Last Updated:** 2026-05-23
 
-> ⚠️ **Important:** Because this repo has effectively **no source code** (no Java/Python/Go/TS service, no `package.json`, no compiled artifact), the "coding standards" mined here are the **authoring conventions for AID's own asset types** — SKILL.md, agent definitions, KB documents, templates, scripts. These are the conventions a contributor must follow to keep the three install trees consistent. Every claim cites a file path. Unless marked CONFIRMED, conventions are **inferred from a small sample** (typically 2–5 files of each kind); a wider sample may surface exceptions.
+> ⚠️ **Important:** Because this repo has effectively **no source code** (no Java/Python/Go/TS service, no `package.json`, no compiled artifact), the "coding standards" mined here are the **authoring conventions for AID's own asset types** — SKILL.md, agent definitions, KB documents, templates, scripts. These are the conventions a contributor must follow when editing `canonical/` (the source of truth) before re-running `run_generator.py`. Every claim cites a file path. Unless marked CONFIRMED, conventions are **inferred from a small sample** (typically 2–5 files of each kind); a wider sample may surface exceptions.
 
 ---
 
@@ -12,7 +12,7 @@
 
 ### 1.1 Frontmatter — required fields
 
-The `SKILL.md` frontmatter is YAML, delimited by `---` lines. Verified directly against `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:1-10`, `profiles/claude-code/.claude/skills/aid-init/SKILL.md:1-10`, `profiles/codex/.agents/skills/aid-discover/SKILL.md:1-10`, and `profiles/cursor/.cursor/skills/aid-discover/SKILL.md:1-10`. All four use **the same shape**, regardless of host tool:
+The `SKILL.md` frontmatter is YAML, delimited by `---` lines. Verified directly against `canonical/skills/aid-discover/SKILL.md:1-10`, `canonical/skills/aid-init/SKILL.md:1-10`, and the propagated copies in `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:1-10`, `profiles/codex/.agents/skills/aid-discover/SKILL.md:1-10`, `profiles/cursor/.cursor/skills/aid-discover/SKILL.md:1-10`. All four locations use **the same shape** (the canonical-generator emits identical bodies; only profile-specific tool-name substitutions like `Bash` → `Terminal` for Cursor differ):
 
 | Field | Required | Type | Example |
 |-------|----------|------|---------|
@@ -21,50 +21,50 @@ The `SKILL.md` frontmatter is YAML, delimited by `---` lines. Verified directly 
 | `allowed-tools` | yes | comma-separated list (NOT YAML array) | `allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent` |
 | `argument-hint` | optional | quoted string | `argument-hint: "[--grade A] minimum acceptable grade (default: A)  [--reset] clear KB and restart"` |
 
-**Observation — identical frontmatter across trees.** `aid-discover/SKILL.md` lines 1–10 in **all three install trees** are byte-identical: same `name`, same `description` (folded block), same `allowed-tools` enumerated as `Read, Glob, Grep, Bash, Write, Edit, Agent`, same `argument-hint`. CONFIRMED from direct read of all three. The frontmatter does NOT vary by host tool — only the **body** varies (Claude Code factors out `references/`, Codex / Cursor inline).
+**Observation — identical frontmatter + body across trees post-canonical-generator.** `aid-discover/SKILL.md` is 596 lines in all 4 locations (canonical + 3 profiles), verified 2026-05-23. The pre-work-002 narrative ("Claude Code 453 / Codex 1,078 / Cursor 1,090 — divergent") is RETIRED. The frontmatter and body are emitted from a single canonical source by `render_skills.py` (450 lines in `.claude/skills/aid-generate/scripts/`).
 
-⚠️ The Cursor and Codex SKILL.md frontmatter declares `Agent` in `allowed-tools` (Claude Code's tool name), but the underlying tools (Codex CLI / Cursor) may not expose a tool by that name. This is an unconfirmed cross-tool compatibility issue and is already flagged in `external-sources.md`.
+⚠️ The Cursor and Codex SKILL.md frontmatter inherits the canonical `allowed-tools` shape; profile-specific tool-name remapping (e.g., Claude Code `Bash` → Cursor `Terminal`, per Q52) is performed by `render_skills.py` at emission time, so what lands in each profile already matches the host tool's tool vocabulary.
 
 ### 1.2 Body structure
 
-A canonical SKILL.md body follows this section order (verified against `profiles/claude-code/.claude/skills/aid-discover/SKILL.md`):
+A canonical SKILL.md body follows this section order (verified against `canonical/skills/aid-discover/SKILL.md`):
 
 1. `# {Title}` — H1, sentence-case, descriptive (e.g., `# Brownfield Project Discovery`).
 2. Opening paragraph — what the skill does, one paragraph, no lists.
-3. `## ⚠️ Pre-flight Checks` — environment / state preconditions. Always present in skills that mutate state (`aid-discover` line 20, `aid-init` line 33).
+3. `## ⚠️ Pre-flight Checks` — environment / state preconditions. Always present in skills that mutate state.
 4. `## Arguments` — a markdown table mapping `--flag` → effect. Present whenever `argument-hint` is set.
 5. `## State Detection` and `## Mode: {NAME}` sections — state-machine skills (`aid-discover`, `aid-summarize`) decompose into one H2 per mode.
 6. `## Quality Checklist` — bullet checklist of what "done" means.
 7. `## Grading Criteria` and/or `## Document Expectations` — when the skill grades its own output.
 
-Example: `aid-discover/SKILL.md` lines 20, 40, 82, 219, 254, 296, 352, 381, 415, 431 mark each of the section headers in order.
+### 1.3 Decomposition idiom (post-canonical-generator)
 
-### 1.3 Decomposition idiom
-
-**Claude Code:** when a skill body grows large, content is extracted into siblings:
+When a skill body grows large, content is extracted into siblings under the canonical source:
 
 - `references/*.md` — long-form prompts and explanations that the SKILL.md body refers to by filename.
 - `scripts/*.sh` — runnable shell scripts invoked from the SKILL.md.
 
-Example (`profiles/claude-code/.claude/skills/aid-discover/`): SKILL.md (453 lines) + `references/agent-prompts.md` (142) + `references/document-expectations.md` (121) + `references/reviewer-prompt.md` (75) + `scripts/check-preflight.sh` (45) + `scripts/verify-kb.sh` (60) = 6 files, 896 lines total. The SKILL.md body uses phrases like "Read `references/agent-prompts.md` section `## Scout`" (line 126).
+Example (`canonical/skills/aid-discover/`): SKILL.md (596 lines) + `references/agent-prompts.md` (142) + `references/document-expectations.md` (121) + `references/reviewer-prompt.md` (75) + `scripts/check-preflight.sh` (45) + `scripts/verify-kb.sh` (60) = 6 files, 1,039 lines total. The SKILL.md body uses phrases like "Read `references/agent-prompts.md` section `## Scout`".
 
-**Codex / Cursor:** the same content is **inlined into a single, longer SKILL.md**. `profiles/codex/.agents/skills/aid-discover/SKILL.md` is 1,078 lines; `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` is 1,090 lines. This is why the file is 2.4x larger in those trees. (One exception in both Codex and Cursor: `aid-interview/references/kb-hydration.md` 106 lines — a single `references/` survivor.)
+**Post-work-002 propagation:** `run_generator.py` (top-level, 83 lines) reads each canonical skill folder and emits the full decomposition (SKILL.md + references/ + scripts/) verbatim into all 3 profile trees plus the dogfood `.claude/skills/`. The pre-work-002 narrative — "Claude Code factors out references/ while Codex / Cursor inline" — is RETIRED. Verified 2026-05-23: `wc -l` on `aid-discover/SKILL.md` returns 596 across canonical + all 3 profiles. The same `references/*.md` siblings are present in every profile tree. Contributors edit `canonical/` only; the generator handles the propagation.
+
+⚠️ One historical exception remains visible in the file tree: `aid-interview/references/kb-hydration.md` (106 lines) — present in canonical and all 3 profiles. This is now the propagated norm, not an exception.
 
 ### 1.4 State-machine notation
 
 State-machine skills (`aid-discover`, `aid-summarize`, `aid-execute`, `aid-interview`) consistently use this notation in the description / body:
 
-- States named in `SCREAMING_CASE` (`GENERATE`, `REVIEW`, `Q&A`, `FIX`, `APPROVAL`, `DONE` in `aid-discover/SKILL.md:7`; `PREFLIGHT`, `STALE-CHECK`, `PROFILE`, `GENERATE`, `VALIDATE`, `FIX`, `APPROVAL`, `WRITEBACK`, `DONE` in `project-structure.md:89`).
+- States named in `SCREAMING_CASE` (`GENERATE`, `REVIEW`, `Q&A`, `FIX`, `APPROVAL`, `DONE` in `aid-discover/SKILL.md:7`; `PREFLIGHT`, `STALE-CHECK`, `PROFILE`, `GENERATE`, `VALIDATE`, `FIX`, `APPROVAL`, `WRITEBACK`, `DONE` per `project-structure.md`).
 - Arrows are `->` (ASCII) or `→` (Unicode); both appear interchangeably across files.
-- `[State: {NAME}]` is printed at runtime — e.g., `aid-discover/SKILL.md:78`.
+- `[State: {NAME}]` is printed at runtime (FR1 heartbeat — every canonical SKILL.md emits `[State:` markers; verified ≥3 per skill via `grep -c "\[State:"`).
 
 ### 1.5 Print-progress idiom
 
 Skill bodies prescribe **literal `Print:` lines** for runtime status output, with bracketed step markers:
 
-- `Print: \`[0c] Building project index...\`` (`aid-discover/SKILL.md:112`)
-- `Print: \`[1/5] Pre-scan: mapping project structure...\`` (`aid-discover/SKILL.md:124`)
-- `Print: \`Agent "[name]" completed. [N/4] done.\`` (`aid-discover/SKILL.md:154`)
+- `Print: \`[0c] Building project index...\``
+- `Print: \`[1/5] Pre-scan: mapping project structure...\``
+- `Print: \`Agent "[name]" completed. [N/4] done.\``
 
 Pattern: `[step/total]` for counted phases, `[State: NAME]` for state transitions, plain bracketed prefix `[Review 1/2]`, `[Q&A]`, `[Fix]` for mode-specific output.
 
@@ -74,7 +74,7 @@ Pattern: `[step/total]` for counted phases, `[State: NAME]` for state transition
 
 ### 2.1 Claude Code agent format
 
-**File path:** `profiles/claude-code/.claude/agents/{name}.md` (kebab-case slug = `name` frontmatter value).
+**File path (profile tree):** `profiles/claude-code/.claude/agents/{name}.md` — emitted from `canonical/agents/{name}/AGENT.md` by `render_agents.py` (503 lines).
 **Frontmatter:** YAML between `---` lines. Required fields verified directly:
 
 | Field | Required | Type | Source |
@@ -82,14 +82,14 @@ Pattern: `[step/total]` for counted phases, `[State: NAME]` for state transition
 | `name` | yes | string (kebab-case) | `profiles/claude-code/.claude/agents/architect.md:2` |
 | `description` | yes | string OR YAML folded block | `architect.md:3` (single line), `discovery-reviewer.md:3-6` (folded block) |
 | `tools` | yes | comma-separated list (NOT YAML array) | `architect.md:4` (`Read, Glob, Grep, Write, Edit, Bash`), `discovery-analyst.md:4` (`Read, Glob, Grep, Bash, Write`) |
-| `model` | yes | one of `opus`/`sonnet`/`haiku` | `architect.md:5` (`opus`), `profiles/claude-code/.claude/agents/orchestrator.md` (Sonnet per project-structure.md) |
+| `model` | yes | one of `opus`/`sonnet`/`haiku` | `architect.md:5` (`opus`) |
 | `permissionMode` | optional | string, observed value `bypassPermissions` | `discovery-reviewer.md:9`, `discovery-analyst.md:6` |
 | `background` | optional | boolean | `discovery-reviewer.md:10` (`true`), `discovery-analyst.md:7` (`true`) |
 
-**Body structure** (verified against `architect.md`, `discovery-analyst.md`, `discovery-reviewer.md`):
+**Body structure** (verified against `canonical/agents/architect/AGENT.md`, `discovery-analyst/AGENT.md`, `discovery-reviewer/AGENT.md`):
 
-1. `# {Title}` — H1, omitted in some smaller agents (e.g., `architect.md` opens with prose paragraph rather than H1).
-2. Opening sentence: `You are a/an {Role} — {one-line mission}.` (`architect.md:8`, `discovery-analyst.md:10`, `discovery-reviewer.md:13`).
+1. `# {Title}` — H1, omitted in some smaller agents (e.g., `architect/AGENT.md` opens with prose paragraph rather than H1).
+2. Opening sentence: `You are a/an {Role} — {one-line mission}.`
 3. `## What You Do` — bullet list of responsibilities.
 4. `## What You Don't Do` — bullet list of boundaries (each item identifies which agent owns that work instead).
 5. `## Key Constraints` — bold-prefixed bullets (`**Grounded in KB.**`, `**Specs are hypotheses.**`).
@@ -97,12 +97,12 @@ Pattern: `[step/total]` for counted phases, `[State: NAME]` for state transition
 7. `## When to Escalate` — bullet list mapping situation → escalation route (a Q&A entry in a STATE file, or IMPEDIMENT.md).
 
 Larger / discovery-tier agents add:
-- `## Your Mission`, `## ⚠️ {section}`, `## Document Expectations` (`discovery-reviewer.md`).
-- `## ⚠️ File Writing` — warning footer about the Write-tool bug in background subagents, prescribing `cat > path << 'KBEOF' ... KBEOF` (`discovery-reviewer.md:372-381`, `discovery-analyst.md:96-105`). CONFIRMED present in all three discovery sub-agents read.
+- `## Your Mission`, `## ⚠️ {section}`, `## Document Expectations` (`discovery-reviewer/AGENT.md`).
+- `## ⚠️ File Writing` — warning footer about the Write-tool bug in background subagents, prescribing `cat > path << 'KBEOF' ... KBEOF`. CONFIRMED present in all three discovery sub-agents read.
 
 ### 2.2 Codex agent format
 
-**File path:** `profiles/codex/.codex/agents/{name}.toml`. TOML at the top, then the prose body lives inside a `developer_instructions = """..."""` multi-line string.
+**File path (profile tree):** `profiles/codex/.codex/agents/{name}.toml` — emitted from `canonical/agents/{name}/AGENT.md` by `render_agents.py` with tier mapping applied. TOML at the top, then the prose body lives inside a `developer_instructions = """..."""` multi-line string.
 
 | Field | Required | Type | Source |
 |-------|----------|------|--------|
@@ -112,53 +112,47 @@ Larger / discovery-tier agents add:
 | `model_reasoning_effort` | yes | one of `low` / `medium` / `high` | `architect.toml:4` (`high`), `simple-extractor.toml:4` (`low`) |
 | `developer_instructions` | yes | triple-quoted multi-line string | `architect.toml:5-39` |
 
-**Tier mapping (model + reasoning_effort)** — partially verified directly:
+**Tier mapping (model + reasoning_effort)** — generator-enforced via `profiles/codex.toml`:
 
 | Tier | Model | Reasoning effort | Verified |
 |------|-------|-------------------|----------|
-| Opus | `gpt-5.5` | `high` | `architect.toml:3-4`, `discovery-reviewer.toml:3-4`, `discovery-analyst.toml`, `discovery-architect.toml`, `discovery-quality.toml`, `discovery-scout.toml`, `discovery-integrator.toml` |
-| Sonnet | `gpt-5.4` | `medium` | ✅ VERIFIED post-Q36 via direct grep across all 9 Sonnet-tier `profiles/codex/.codex/agents/*.toml` files (orchestrator, developer, operator, researcher, devops, data-engineer, performance, tech-writer, ux-designer) — all match. |
+| Opus | `gpt-5.5` | `high` | `architect.toml:3-4`, `discovery-reviewer.toml`, all 6 discovery sub-agents |
+| Sonnet | `gpt-5.4` | `medium` | ✅ VERIFIED across all 9 Sonnet-tier `profiles/codex/.codex/agents/*.toml` files (orchestrator, developer, operator, researcher, devops, data-engineer, performance, tech-writer, ux-designer) |
 | Haiku | `gpt-5.4-mini` | `low` | `simple-extractor.toml:3-4` |
 
-✅ The Sonnet tier mapping is VERIFIED post-Q36 (cycle 1) by direct grep over all 9 Sonnet-tier Codex `*.toml` files. The May 2026 tier-rename migration documented in `profiles/codex/README.md:35` was confirmed clean across all 22 agents × 3 install trees per `tech-debt.md L6`.
+✅ The Sonnet tier mapping is VERIFIED. The May 2026 tier-rename migration documented in `profiles/codex/README.md:35` was confirmed clean across all 22 agents × 3 install trees post-generator.
 
-**Body inside `developer_instructions`:** same H2 section order as Claude Code (`## What You Do`, `## What You Don't Do`, `## Key Constraints`, `## Output Format`, `## When to Escalate`), verified at `profiles/codex/.codex/agents/architect.toml:7-38`. **Note:** the Codex body uses **markdown headers inside a triple-quoted TOML string** — the markdown rendering depends on Codex CLI's interpretation, which is not directly verifiable from local files.
+**Body inside `developer_instructions`:** same H2 section order as Claude Code (`## What You Do`, `## What You Don't Do`, `## Key Constraints`, `## Output Format`, `## When to Escalate`). **Note:** the Codex body uses **markdown headers inside a triple-quoted TOML string** — the markdown rendering depends on Codex CLI's interpretation.
 
 ### 2.3 Cursor agent format
 
-**File path:** `profiles/cursor/.cursor/agents/{name}.md`. Per `project-structure.md:66` and `project-index.md`, line counts are essentially identical to Claude Code (e.g., both `architect.md` files are 40 lines; both `discovery-reviewer.md` files are 381 lines). **Same YAML frontmatter shape as Claude Code, same body structure.**
+**File path (profile tree):** `profiles/cursor/.cursor/agents/{name}.md` — emitted from `canonical/agents/{name}/AGENT.md` by `render_agents.py`. Per `project-index.md`, line counts are essentially identical to Claude Code (e.g., both `architect.md` files are 39 lines; both `discovery-reviewer.md` files are 378 lines). **Same YAML frontmatter shape as Claude Code, same body structure.**
 
-✅ VERIFIED post-cycle-7: direct read of `profiles/cursor/.cursor/agents/architect.md:1-7` confirms YAML frontmatter with `name`, `description`, `tools`, `model` — same shape as Claude Code (with the documented `tools: ... Terminal` vs `Bash` divergence per Q52 / M6). Line-count parity per `project-index.md` also holds.
+✅ VERIFIED: line-count parity per `project-index.md` (regenerated 2026-05-23) holds across all 22 agents.
 
-### 2.4 Drift between trees — same agent, different filename references
+### 2.4 Cross-tree filename substitution (handled by the generator)
 
-`discovery-reviewer` is one logical agent but its three instantiations have **real semantic drift**:
+`discovery-reviewer` historically had real semantic drift between trees (Claude Code → `CLAUDE.md` for project context, Codex → `AGENTS.md`; Claude Code → `additional-info.md` for open questions, Codex → `open-questions.md`). Post-canonical-generator, these substitutions are centralized in `harness.substitute_filenames` and applied during emission. Contributors edit `canonical/agents/{name}/AGENT.md` with **canonical placeholders**; the generator substitutes per-profile.
 
-| Convention element | Claude Code | Codex | Cursor |
-|-------------------|-------------|-------|--------|
-| Project-context filename | `CLAUDE.md` (`profiles/claude-code/.claude/agents/discovery-reviewer.md:74`) | `AGENTS.md` (`profiles/codex/.codex/agents/discovery-reviewer.toml:37`) | `AGENTS.md` (verified: `profiles/cursor/AGENTS.md` exists at repo root, 45 lines) |
-| Reviewer output filename | `DISCOVERY-STATE.md` (`discovery-reviewer.md:304`) | `DISCOVERY-GRADE.md` (`discovery-reviewer.toml:258`) | `DISCOVERY-STATE.md` (per parity with Claude Code) |
-| Open-questions filename | `additional-info.md` (`discovery-reviewer.md:261`) | `open-questions.md` (`discovery-reviewer.toml:220`) | `additional-info.md` (per parity) |
-
-**Convention implication:** When updating an agent body, the contributor must adapt these three filenames per tree. There is no abstraction layer or templating that handles this — it is a manual substitution discipline. ⚠️ Q30 below records the broader question of which set of filenames is canonical.
+**Post-FR2 update:** Both `DISCOVERY-STATE.md` and `DISCOVERY-GRADE.md` are RETIRED — `discovery-reviewer` now writes to `.aid/knowledge/STATE.md` (Discovery area) regardless of profile. Same shape, single name across all 3 trees.
 
 ---
 
 ## 3. Cursor `.mdc` Rule Conventions
 
-`.mdc` files live under `profiles/cursor/.cursor/rules/` and are project-rules that Cursor injects into the agent context per its precedence rules.
+`.mdc` files live under `canonical/rules/` (source of truth) and are propagated to `profiles/cursor/.cursor/rules/` by the generator. Cursor injects them into the agent context per its precedence rules.
 
-**Frontmatter** (YAML between `---` lines), verified from `profiles/cursor/.cursor/rules/aid-methodology.mdc:1-4` and `profiles/cursor/.cursor/rules/aid-review.mdc:1-5`:
+**Frontmatter** (YAML between `---` lines), verified from `canonical/rules/aid-methodology.mdc:1-4` and `canonical/rules/aid-review.mdc:1-5`:
 
 | Field | Required | Type | Example |
 |-------|----------|------|---------|
 | `description` | yes | quoted string | `description: "AID methodology workflow and Knowledge Base integration"` |
-| `alwaysApply` | yes | boolean | `alwaysApply: true` (`aid-methodology.mdc:3`) or `alwaysApply: false` (`aid-review.mdc:4`) |
-| `globs` | optional | quoted glob expression — REQUIRED when `alwaysApply: false` | `globs: "**/*.{java,py,ts,js,cs,go,rs}"` (`aid-review.mdc:3`) |
+| `alwaysApply` | yes | boolean | `alwaysApply: true` or `alwaysApply: false` |
+| `globs` | optional | quoted glob expression — REQUIRED when `alwaysApply: false` | `globs: "**/*.{java,py,ts,js,cs,go,rs}"` |
 
 **Two distinct rule classes observed:**
 
-1. **Always-on rules** (`alwaysApply: true`, no `globs`) — `aid-methodology.mdc` (29 lines). Inject KB-first workflow on every request.
+1. **Always-on rules** (`alwaysApply: true`, no `globs`) — `aid-methodology.mdc` (40 lines per `project-index.md:238`). Inject KB-first workflow on every request.
 2. **Glob-scoped rules** (`alwaysApply: false`, with `globs`) — `aid-review.mdc` (11 lines). Inject review constraints only when editing source files matching the glob.
 
 **Body convention:** plain markdown, no required H1 / H2 structure. The `aid-methodology.mdc` body uses `## Knowledge Base`, `## Workspace Structure`, `## Workflow` H2s; `aid-review.mdc` is a flat numbered list of 5 review checks.
@@ -167,7 +161,7 @@ Larger / discovery-tier agents add:
 
 ## 4. KB Document Conventions
 
-Every file under `.aid/knowledge/*.md` carries a **metadata header block** as its first content after the H1. Verified against the three KB documents already on disk (`.aid/knowledge/project-structure.md:1-7`, `.aid/knowledge/external-sources.md:1-7`, `.aid/knowledge/project-index.md:1-4`) and against the canonical templates (`templates/knowledge-base/module-map.md:1-7`, `templates/knowledge-base/data-model.md:1-7`, `templates/knowledge-base/coding-standards.md:1-9`).
+Every file under `.aid/knowledge/*.md` carries a **metadata header block** as its first content after the H1. Verified against the canonical templates (`canonical/templates/knowledge-base/module-map.md:1-7`, `canonical/templates/knowledge-base/data-model.md:1-7`, `canonical/templates/knowledge-base/coding-standards.md:1-9`) and against actual KB instances on disk.
 
 ### 4.1 Metadata header
 
@@ -182,20 +176,21 @@ Every file under `.aid/knowledge/*.md` carries a **metadata header block** as it
 **Source vocabulary** observed:
 - `aid-init` — for files created by init only.
 - `aid-discover` — for KB docs produced by the broad discovery skill.
-- `aid-discover (discovery-scout)` / `aid-discover (discovery-analyst)` / etc. — narrowed to the specific sub-agent (per `external-sources.md:3`, `project-structure.md:3`).
-- `aid-init + aid-discover (discovery-scout) enrichment` — multi-producer file (`external-sources.md:3`).
+- `aid-discover (discovery-scout)` / `aid-discover (discovery-analyst)` / etc. — narrowed to the specific sub-agent.
+- `aid-init + aid-discover (discovery-scout) enrichment` — multi-producer file.
 
 **Status vocabulary** observed across the on-disk KB:
-- `❌ Pending Discovery` — the templated placeholder, used by `aid-init`'s scaffolding (`.aid/knowledge/coding-standards.md:4` before this pass).
-- `⚠️ Paths Registered / web fetch deferred` — partial status with caveat (`.aid/knowledge/external-sources.md:4`).
-- `⚠️ URLs registered + local cross-reference — web fetch deferred` — variant (`external-sources.md:4`).
-- `Populated (initial dogfood pass)` — fully populated with discovery output (`project-structure.md:4`).
+- `❌ Pending Discovery` — the templated placeholder, used by `aid-init`'s scaffolding.
+- `⚠️ Paths Registered / web fetch deferred` — partial status with caveat.
+- `⚠️ URLs registered + local cross-reference — web fetch deferred` — variant.
+- `Populated (initial dogfood pass)` — fully populated with discovery output.
+- `Populated (cycle-NN FIX — ...)` — after a FIX cycle (this document, cycle-11 FIX).
 
-⚠️ The status vocabulary is **not formally enumerated** anywhere — it has emerged organically. The reviewer's `templates/reports/discovery-state-template.md:14-31` uses a different status enum (`✅ Pass / ❌ Below minimum`) for the *grade-table*. There is no central list of valid status strings — a contributor inventing a new status would not violate any explicit rule. ⚠️ Q33 below.
+⚠️ The status vocabulary is **not formally enumerated** anywhere — it has emerged organically. There is no central list of valid status strings — a contributor inventing a new status would not violate any explicit rule. ⚠️ Q33 below.
 
 ### 4.2 Body structure
 
-After the metadata block, KB documents follow per-document templates under `templates/knowledge-base/`. Each ends with a `## Revision History` table (verified from `templates/knowledge-base/module-map.md:86-91`, `templates/knowledge-base/data-model.md:104-109`, `templates/knowledge-base/coding-standards.md:114-119`):
+After the metadata block, KB documents follow per-document templates under `canonical/templates/knowledge-base/`. Each ends with a `## Revision History` table:
 
 ```markdown
 ## Revision History
@@ -207,11 +202,11 @@ After the metadata block, KB documents follow per-document templates under `temp
 
 ### 4.3 Inferred-content marking
 
-Per `templates/knowledge-base/coding-standards.md:7` and `profiles/claude-code/.claude/agents/discovery-analyst.md:29` ("Mark inferred conventions with ⚠️ Inferred from code — needs confirmation"), facts inferred from code (rather than from documentation) carry a `⚠️` prefix. The `aid-discover/SKILL.md:420` Quality Checklist enforces this: "Inferred info marked with ⚠️".
+Per `canonical/templates/knowledge-base/coding-standards.md` and `canonical/agents/discovery-analyst/AGENT.md` ("Mark inferred conventions with ⚠️ Inferred from code — needs confirmation"), facts inferred from code (rather than from documentation) carry a `⚠️` prefix. The `aid-discover/SKILL.md` Quality Checklist enforces this: "Inferred info marked with ⚠️".
 
 ### 4.4 File-path citation requirement
 
-`profiles/claude-code/.claude/agents/discovery-analyst.md:27` ("Every claim must cite a file path. No unsourced assertions") and `aid-discover/SKILL.md:419` ("Claims grounded in code evidence (file paths, line numbers)") establish that every factual claim in a KB document must have an inline `path:line` citation. This convention is enforced post-hoc by `discovery-reviewer` (see `discovery-reviewer.md:84-94` "Accuracy Spot-Check (AGGRESSIVE)" — minimum 15 spot-checks, 5 of which must verify versions).
+`canonical/agents/discovery-analyst/AGENT.md` ("Every claim must cite a file path. No unsourced assertions") and `aid-discover/SKILL.md` ("Claims grounded in code evidence (file paths, line numbers)") establish that every factual claim in a KB document must have an inline `path:line` citation. This convention is enforced post-hoc by `discovery-reviewer` (minimum 15 spot-checks, 5 of which must verify versions/counts) and by `canonical/templates/scripts/verify-kb-claims.sh` (356 lines) which does grep-based fact-checking against on-disk reality.
 
 ---
 
@@ -220,36 +215,36 @@ Per `templates/knowledge-base/coding-standards.md:7` and `profiles/claude-code/.
 ### 5.1 Placeholder syntax
 
 Templates use **single curly braces** for placeholders: `{Project Name}`, `{date}`, `{grade}`. Verified across:
-- `templates/knowledge-base/INDEX.md:1` (`# Knowledge Base Index — {Project Name}`)
-- `templates/knowledge-base/module-map.md:15` (`| {module-name} | {what it does in one sentence} | ...`)
-- `templates/knowledge-base/data-model.md:14` (`| **Type** | {PostgreSQL / MySQL / SQLite / SQL Server / MongoDB / DynamoDB / other} |`)
-- `templates/reports/discovery-state-template.md:5` (`- **Minimum Grade:** {grade, default A}`)
-- `templates/delivery-plans/task-template.md:1` (`# task-NNN: {Name}`)
-- `profiles/claude-code/.claude/templates/discovery-state.md:5` (`**Minimum Grade:** {minimum}`)
+- `canonical/templates/knowledge-base/INDEX.md:1` (`# Knowledge Base Index — {Project Name}`)
+- `canonical/templates/knowledge-base/module-map.md` (`| {module-name} | {what it does in one sentence} | ...`)
+- `canonical/templates/knowledge-base/data-model.md` (`| **Type** | {PostgreSQL / MySQL / SQLite / SQL Server / MongoDB / DynamoDB / other} |`)
+- `canonical/templates/discovery-state-template.md:5` (`- **Minimum Grade:** {grade}`)
+- `canonical/templates/work-state-template.md:5` (`> **Minimum Grade:** {from .aid/knowledge/STATE.md}`)
+- `canonical/templates/delivery-plans/task-template.md:1` (`# task-NNN: {Name}`)
 
 **Convention:**
 - Single braces for fillable values.
-- Pipe-separated enumerations inside braces show the allowed set: `{✅ Complete | ⚠️ Partial | ❌ Missing}` (`templates/knowledge-base/module-map.md:5`).
-- Slash-separated also seen, equivalent: `{PostgreSQL / MySQL / SQLite / ...}` (`templates/knowledge-base/data-model.md:14`). Both notations co-exist — no single convention.
+- Pipe-separated enumerations inside braces show the allowed set: `{✅ Complete | ⚠️ Partial | ❌ Missing}`.
+- Slash-separated also seen, equivalent: `{PostgreSQL / MySQL / SQLite / ...}`. Both notations co-exist — no single convention.
 
 **Other observed placeholder patterns:**
-- `*(pending)*` — italic-parenthesized placeholder for not-yet-addressed sections (`templates/requirements/requirements-template.md:14`).
-- `<!-- Comment -->` — HTML comment blocks for guidance the user should remove (`templates/feedback-artifacts/IMPEDIMENT.md:18`, `profiles/claude-code/.claude/templates/known-issues.md:6`).
-- `_No issues yet._` / `_none yet_` — italicized empty-state strings (`templates/implementation-state.md:18`).
+- `*(pending)*` — italic-parenthesized placeholder for not-yet-addressed sections (`canonical/templates/requirements/requirements-template.md:14`).
+- `<!-- Comment -->` — HTML comment blocks for guidance the user should remove (`canonical/templates/feedback-artifacts/IMPEDIMENT.md:18`, `canonical/templates/known-issues.md:6`).
+- `_No issues yet._` / `_none yet_` — italicized empty-state strings (`canonical/templates/work-state-template.md:36`).
 
 ### 5.2 Templates-within-templates
 
-Some templates document the **template-of-a-template**: `templates/requirements/requirements-template.md` is structured as `# Requirements Template` (lines 1–18 documentation) then a fenced code block (lines 22–80) containing the actual template to copy. The discovery state template at `templates/reports/discovery-state-template.md` does the same. **Convention:** the file-level H1 is the *meta* title (e.g., "REQUIREMENTS.md Template"), the fenced block inside is the *substantive* template starting with its own `# Requirements` H1.
+Some templates document the **template-of-a-template**: `canonical/templates/requirements/requirements-template.md` is structured as `# Requirements Template` (lines 1–18 documentation) then a fenced code block (lines 22–80) containing the actual template to copy. **Convention:** the file-level H1 is the *meta* title (e.g., "REQUIREMENTS.md Template"), the fenced block inside is the *substantive* template starting with its own `# Requirements` H1.
 
 ### 5.3 Conditional sections
 
-Templates use HTML comments to gate optional sections: `templates/specs/spec-template.md:54-75` lists 18 conditional sections (`### API Contracts`, `### UI Specs`, `### Events & Messaging`, `### DDD Analysis`, `### BDD Scenarios`, etc.) inside `<!-- ... -->` to be activated by `aid-specify` only when the feature warrants them.
+Templates use HTML comments to gate optional sections: `canonical/templates/specs/spec-template.md:54-75` lists 18 conditional sections (`### API Contracts`, `### UI Specs`, `### Events & Messaging`, `### DDD Analysis`, `### BDD Scenarios`, etc.) inside `<!-- ... -->` to be activated by `aid-specify` only when the feature warrants them.
 
 ---
 
 ## 6. Shell-Script Conventions
 
-Verified from `templates/scripts/build-project-index.sh:1-40` and consistent with `project-structure.md:228-230`'s catalog of runtime scripts.
+Verified from `canonical/templates/scripts/build-project-index.sh:1-40` and consistent with `project-structure.md`'s catalog of runtime scripts.
 
 ### 6.1 Shebang & strict mode
 
@@ -266,12 +261,12 @@ Verified from `templates/scripts/build-project-index.sh:1-40` and consistent wit
 set -euo pipefail
 ```
 
-Verified at `templates/scripts/build-project-index.sh:1-20`. The opening comment block:
+Verified at `canonical/templates/scripts/build-project-index.sh:1-20`. The opening comment block:
 - Line 1: `#!/usr/bin/env bash` (NOT `#!/bin/bash` — portable shebang convention).
 - Line 2: comment with script filename + em-dash + one-line purpose.
 - Lines 3+: multi-line description, each line `#`-prefixed.
 - A `Usage:` block listing flag invocations.
-- `set -euo pipefail` immediately after the comment block — verified line 20 in `build-project-index.sh`.
+- `set -euo pipefail` immediately after the comment block.
 
 ### 6.2 Argument parsing
 
@@ -297,6 +292,8 @@ done
 
 Notable: `-h|--help` echoes the script's own comment block (lines 2–17, stripped of `# ` prefix) as the usage text. Avoids duplicating help.
 
+⚠️ Not all scripts follow this convention rigorously — `canonical/templates/knowledge-summary/scripts/writeback-state.sh` (173 lines) lacks `-h|--help` handling and lacks GRADE format validation (Q191, pending fix).
+
 ### 6.3 Configurable skip-list
 
 `build-project-index.sh:43-52` declares a bash array of paths to prune:
@@ -318,7 +315,7 @@ SKIP_DIRS=(
 
 ### 6.4 Portable mtime detection
 
-⚠️ Not directly inspected this pass; asserted from `project-structure.md` and `project-index.md`'s listing of `build-project-index.sh` as the largest shell file (368 lines), implying coverage of cross-platform `stat` invocation (GNU vs. BSD). Needs spot check.
+⚠️ Not directly inspected this pass; asserted from `project-structure.md` and `project-index.md`'s listing of `build-project-index.sh` as 368 lines, implying coverage of cross-platform `stat` invocation (GNU vs. BSD). Needs spot check.
 
 ---
 
@@ -329,12 +326,12 @@ Inferred from a sample of ~20 files across this repo:
 | Element | Convention | Source |
 |---------|-----------|--------|
 | Heading hierarchy | Single H1 per file, then H2 / H3. No H1 skipping. | `aid-methodology.md`, every SKILL.md, every template |
-| Section dividers | `---` on its own line between H2 sections (state-machine skills especially) | `aid-discover/SKILL.md:38`, `80`, `217`, `252`, `294`, `350` |
+| Section dividers | `---` on its own line between H2 sections (state-machine skills especially) | `canonical/skills/aid-discover/SKILL.md` |
 | Tables | Pipe tables with header separator. Cells left-aligned unless numeric. | every template that uses tables |
-| Code blocks | Triple-backtick fenced, language-tagged (`bash`, `markdown`, `csharp`, `typescript`, `mermaid`) | `aid-discover/SKILL.md:107` (`bash`), `templates/knowledge-base/data-model.md:51-58` (`mermaid`) |
-| Inline code | Backticks for paths (`templates/scripts/build-project-index.sh`), filenames, flags (`--grade`), tool names (`Read`, `Glob`) | universal across SKILL.md and agent bodies |
-| Emphasis | `**bold**` for required terms and key constraints; `_italic_` for empty-state placeholders (`_No issues yet._`) | `templates/implementation-state.md:18`, agent "Key Constraints" sections |
-| Warning markers | `⚠️` emoji for inferred / uncertain claims. `✅` / `❌` for binary pass/fail. | `templates/knowledge-base/coding-standards.md:7`, `project-structure.md` (extensively) |
+| Code blocks | Triple-backtick fenced, language-tagged (`bash`, `markdown`, `csharp`, `typescript`, `mermaid`) | `aid-discover/SKILL.md`, `canonical/templates/knowledge-base/data-model.md` |
+| Inline code | Backticks for paths (`canonical/templates/scripts/build-project-index.sh`), filenames, flags (`--grade`), tool names (`Read`, `Glob`) | universal across SKILL.md and agent bodies |
+| Emphasis | `**bold**` for required terms and key constraints; `_italic_` for empty-state placeholders (`_None yet._`) | `canonical/templates/work-state-template.md:36`, agent "Key Constraints" sections |
+| Warning markers | `⚠️` emoji for inferred / uncertain claims. `✅` / `❌` for binary pass/fail. | `canonical/templates/knowledge-base/coding-standards.md:7`, `project-structure.md` (extensively) |
 | Em-dash usage | Free use of `—` for parenthetical clauses ("Generated by — aid-discover (Phase 1)") | every KB doc header, every template |
 
 ---
@@ -343,19 +340,19 @@ Inferred from a sample of ~20 files across this repo:
 
 | Class | Convention | Example | Source |
 |-------|-----------|---------|--------|
-| Skill slugs | `aid-{phase}` kebab-case | `aid-discover`, `aid-interview` | every `skills/aid-*/` |
-| Agent slugs | kebab-case | `discovery-reviewer`, `simple-extractor` | `profiles/claude-code/.claude/agents/*.md` |
-| KB documents | kebab-case `.md` | `module-map.md`, `coding-standards.md`, `data-model.md`, `tech-debt.md` | `templates/knowledge-base/*.md` |
-| State files | `SCREAMING-KEBAB-CASE.md` | `DISCOVERY-STATE.md`, `INTERVIEW-STATE.md`, `MONITOR-STATE.md`, `FEATURE-STATE.md` | `profiles/claude-code/.claude/templates/interview-state.md:1` (`# INTERVIEW-STATE.md`), `aid-discover/SKILL.md` (extensively) |
-| First-class methodology artifacts | UPPERCASE.md | `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `CLAUDE.md`, `AGENTS.md`, `README.md`, `LICENSE`, `CONTRIBUTING.md` | `templates/requirements/requirements-template.md:16` ("File is uppercase (`REQUIREMENTS.md`) — it's a first-class artifact") |
-| Feedback artifacts | UPPERCASE-prefix + numeric ID | `IMPEDIMENT-{id}.md`, `KI-{n}` (known issue) | `templates/feedback-artifacts/IMPEDIMENT.md:1` |
-| Per-tool layout root | tool-name slug + dotted-hidden | `profiles/claude-code/.claude/`, `profiles/codex/.codex/`, `profiles/cursor/.cursor/` | `project-structure.md:64-66` |
-| Codex split | `profiles/codex/.codex/agents/` (TOML) + `profiles/codex/.agents/{skills,templates}/` (markdown) | — | `external-sources.md:81` |
-| Shell scripts | kebab-case `.sh` | `build-project-index.sh`, `grade.sh`, `check-preflight.sh`, `verify-kb.sh`, `validate-html.sh` | `project-index.md` |
+| Skill slugs | `aid-{phase}` kebab-case | `aid-discover`, `aid-interview` | every `canonical/skills/aid-*/` |
+| Agent slugs | kebab-case | `discovery-reviewer`, `simple-extractor` | `canonical/agents/*/` |
+| KB documents | kebab-case `.md` | `module-map.md`, `coding-standards.md`, `data-model.md`, `tech-debt.md` | `canonical/templates/knowledge-base/*.md` |
+| State files | See §8.5 below (FR2 area-STATE rule) | `STATE.md` (areas), `MONITOR-STATE.md` (deferred) | `canonical/templates/{discovery,work}-state-template.md` |
+| First-class methodology artifacts | UPPERCASE.md | `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `CLAUDE.md`, `AGENTS.md`, `README.md`, `LICENSE`, `CONTRIBUTING.md` | `canonical/templates/requirements/requirements-template.md:16` |
+| Feedback artifacts | UPPERCASE-prefix + numeric ID | `IMPEDIMENT-{id}.md`, `KI-{n}` (known issue) | `canonical/templates/feedback-artifacts/IMPEDIMENT.md:1` |
+| Per-tool layout root | tool-name slug + dotted-hidden | `profiles/claude-code/.claude/`, `profiles/codex/.codex/`, `profiles/cursor/.cursor/` | `project-structure.md` |
+| Codex split | `profiles/codex/.codex/agents/` (TOML) + `profiles/codex/.agents/{skills,templates}/` (markdown) | — | `external-sources.md` |
+| Shell scripts | kebab-case `.sh` | `build-project-index.sh`, `grade.sh`, `check-preflight.sh`, `verify-kb.sh`, `validate-html.sh`, `writeback-state.sh` | `project-index.md` |
 | JavaScript modules | kebab-case `.js` or `.mjs` (mjs for ESM) | `lightbox.js`, `mermaid-init.js`, `validate-diagrams.mjs`, `contrast-check.mjs` | `project-index.md` |
-| Cursor rules | kebab-case `.mdc` | `aid-methodology.mdc`, `aid-review.mdc` | `profiles/cursor/.cursor/rules/` |
+| Cursor rules | kebab-case `.mdc` | `aid-methodology.mdc`, `aid-review.mdc` | `canonical/rules/` |
 
-**Anomaly:** `.claude/settings..json` (note the **double dot** in the filename) sits alongside `.claude/settings.json` at the repo root. Likely a typo. Flagged in `project-structure.md` as Anomaly 2.
+**Anomaly:** `.claude/settings.local.json` sits alongside `.claude/settings.json` at the repo root — this is intentional (`local` is for per-developer overrides). Confirmed normal.
 
 ---
 
@@ -378,24 +375,38 @@ State files use **area-based consolidation** (per `work-003-traceability/REQUIRE
 
 **Artifact files keep their inline `## Change Log` sections** — that is content history, distinct from process state. Artifact files (REQUIREMENTS.md, SPEC.md, PLAN.md, task-NNN.md, KB docs) are unchanged by FR2.
 
-**Canonical templates** for area STATE files: `canonical/templates/{discovery,work}-state-template.md`.
+**Canonical templates** for area STATE files: `canonical/templates/{discovery,work}-state-template.md` (83 + 82 lines respectively).
 
-## 9. The "Triplicate Updates" Rule
+## 9. The Canonical-Generator Authoring Rule (replaces the old "Triplicate Updates" rule)
 
-CONFIRMED — explicit in `CONTRIBUTING.md:21-26`:
+**Post-work-002 discipline (CONFIRMED, generator-enforced):**
 
 ```
-Important: When updating a skill or agent, update ALL locations:
-1. skills/aid-{phase}/README.md — human docs
-2. claude-code/skills/aid-{phase}/SKILL.md — LLM version
-3. codex/skills/aid-{phase}/SKILL.md — LLM version (shared body, Codex-specific frontmatter)
-
-Same for agents: update the human README, Claude Code .md, and Codex .toml.
+When updating a skill, agent, template, or rule:
+1. Edit canonical/ ONLY — never edit profile trees directly.
+   - canonical/skills/aid-{phase}/{SKILL.md, README.md, references/*.md, scripts/*.sh}
+   - canonical/agents/{name}/{AGENT.md, README.md}
+   - canonical/templates/...
+   - canonical/rules/*.mdc (Cursor-specific extras)
+2. Run: python run_generator.py
+3. Verify VERIFY-4a passes (byte-deterministic emission).
+4. Commit canonical/ changes + the regenerated profiles/{claude-code,codex,cursor}/ + .claude/ together.
 ```
 
-**Real path correction:** `CONTRIBUTING.md` shows the paths as `claude-code/skills/` and `codex/skills/` — but the actual on-disk paths are `profiles/claude-code/.claude/skills/` and `profiles/codex/.agents/skills/`. The CONTRIBUTING file is slightly stale in its path examples. ⚠️ Q34.
+**Why this replaces the old rule:** Before work-002, the same logical asset existed in 4 parallel locations (`skills/`, `profiles/claude-code/.claude/skills/`, `profiles/codex/.agents/skills/`, `profiles/cursor/.cursor/skills/`) and contributors had to manually keep them in sync per `CONTRIBUTING.md:21-26`. That discipline produced documented drift (line counts diverging 244 / 453 / 1078 / 1090 for `aid-discover`). Post-work-002:
+- `canonical/` is the single source of truth (`canonical/skills/`, `canonical/agents/`, `canonical/templates/`, `canonical/rules/`).
+- `run_generator.py` (top-level, 83 lines) reads `canonical/` + profile manifests (`profiles/{tool}.toml`) and re-emits all 3 profile trees plus the dogfood `.claude/` tree.
+- Generator scripts (`.claude/skills/aid-generate/scripts/{render_agents.py 503, render_skills.py 450, render_templates.py 245}`) handle profile-specific substitutions (e.g., tool-name remapping `Bash` → `Terminal` for Cursor, Codex tier mapping `opus` → `gpt-5.5`).
+- `verify_deterministic.py` (513 lines) confirms byte-equality across emission targets.
+- Emission manifests at `profiles/{tool}/emission-manifest.jsonl` track every file emitted.
 
-**Cursor is NOT listed** in CONTRIBUTING.md's triplicate rule (the doc enumerates only 3 locations), but Cursor support has since been added — Cursor is mentioned separately in `profiles/cursor/README.md`. So the discipline is actually **quadruplicate**: human README + Claude Code + Codex + Cursor. CONTRIBUTING.md needs updating.
+**Pre-work-002 narrative RETIRED:** The "manual triplicate/quadruplicate update" rule and the `CONTRIBUTING.md:21-26` reference to it are obsolete. `CONTRIBUTING.md` itself was updated as part of the cleanup; see also the deletion of the pre-work-002 top-level `skills/` and `agents/` directories.
+
+**Residual contributor discipline:**
+- Edit `canonical/` only; do not edit `profiles/{tool}/` or `.claude/` directly (such edits are wiped on the next generator run).
+- After `canonical/` edits, run `python run_generator.py` and commit the regenerated files alongside.
+- Profile-specific filename substitutions (e.g., `CLAUDE.md` vs `AGENTS.md` for project-context) are handled by `harness.substitute_filenames` — extend that table when adding new substitution patterns, not the canonical body.
+- ⚠️ Orphan detection in `run_generator.py` is still being hardened (Q190 follow-up): new files appearing in `profiles/{tool}/...` but absent from `canonical/` are caught by `verify_advisory.py` but not blocked.
 
 ---
 
@@ -405,19 +416,19 @@ This section is critical because it bounds what "convention" means in this repo.
 
 | Convention | Status |
 |-----------|--------|
-| Linter for SKILL.md frontmatter | **None.** No JSON Schema, no `yamllint`, no `frontmatter-validator`. A contributor could add an arbitrary frontmatter field and nothing would warn. |
-| Linter for TOML agent files | **None.** Standard TOML syntax errors would fail at load time but field correctness is unchecked. |
-| Triplication drift detection | **None.** No script compares `skills/aid-X/README.md` against `profiles/claude-code/.claude/skills/aid-X/SKILL.md` body, etc. The 244-vs-453-vs-1078-vs-1090 line divergence on `aid-discover` is visible only by manual `wc -l`. |
+| Linter for SKILL.md frontmatter | **None.** No JSON Schema, no `yamllint`, no `frontmatter-validator`. A contributor could add an arbitrary frontmatter field to a canonical SKILL.md and nothing would warn; the generator would propagate the typo. |
+| Linter for TOML agent files | **None.** Standard TOML syntax errors would fail at load time (and `profile.py:516` validates *profile* TOML) but field correctness on emitted agent TOML is unchecked. |
+| Canonical-vs-profile drift detection | **Generator-enforced for the canonical→profile direction** (via `verify_deterministic.py`). Profile-side manual edits are caught by the next `run_generator.py` run (they get overwritten). New files appearing in profiles but not canonical → flagged by `verify_advisory.py` but not blocked. |
 | Markdown linter | **None.** No `markdownlint` config, no `remark` setup, no `.markdownlintrc`. |
 | Spell-check | **None.** |
-| CI workflow | **None.** No `.github/workflows/`, no `.gitlab-ci.yml`, no Jenkinsfile (per `project-structure.md:225-226`). |
+| CI workflow | **None.** No `.github/workflows/`, no `.gitlab-ci.yml`, no Jenkinsfile. |
 | Pre-commit hooks | **None.** No `.pre-commit-config.yaml`, no `husky` setup. |
-| Test runner for shell scripts | **None.** `build-project-index.sh` (368 lines) and `grade.sh` (141 lines) ship with no tests. |
+| Test runner for shell scripts | **Partial.** No bats/shellcheck integration. The Python generator has `test_manifest_safety.py` (254 lines) — sole automated test in the repo. |
 | Schema for KB document status strings | **None.** "Status" vocabulary is informal (see §4.1). |
 | Versioning | **None.** No `VERSION` file, no semver tag at the repo level; "V3" is referenced in prose only. |
 | Code-style guide for `lightbox.js` / `*.mjs` | **None.** No `eslint`, no `prettier`. |
 
-**Implication for contributors:** Every convention documented above is **descriptive**, not prescriptive at the tooling level. A change that violates any of them will land cleanly. The only enforcement loop is human review at PR time.
+**Implication for contributors:** Every convention documented above is **descriptive**, not prescriptive at the tooling level (with the partial exception of canonical→profile byte-equality, which `run_generator.py` enforces). A change to `canonical/` that violates any of these conventions will land cleanly and propagate. The only enforcement loop is human review at PR time, plus `verify-kb-claims.sh` for KB-fact integrity.
 
 ---
 
@@ -426,3 +437,4 @@ This section is critical because it bounds what "convention" means in this repo.
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | 2026-05-21 | aid-discover (discovery-analyst) | Initial dogfood pass: 10 convention areas mined from SKILL.md, agent, .mdc, KB-document, template, and shell-script samples. "Conventions NOT enforced" section identifies tooling gaps. |
+| 1.1 | 2026-05-23 | aid-discover cycle-11 FIX (KB-FIX work) | §1.1, §1.3 rewritten to describe canonical-generator pattern (work-002): canonical is source of truth, `run_generator.py` propagates byte-identically to 3 profile trees + dogfood. Retired the "Claude Code 453 / Codex 1,078 / Cursor 1,090 divergence" narrative — all four locations now 548 lines for `aid-discover/SKILL.md`. §2.1-§2.3, §3, §5.1, §5.2, §5.3 path citations updated from `profiles/...` to `canonical/...` (the source of truth). §2.4 rewrote cross-tree filename drift section to note generator-centralized substitution + FR2 STATE.md unification. §6.2 added Q191 note. §8 row for "State files" reduced to a pointer at §8.5 (which is already correct from CW7). §9 fully rewritten as "Canonical-Generator Authoring Rule" — the old "Triplicate Updates Rule" referencing `CONTRIBUTING.md:21-26` is RETIRED. §10 row on "Triplication drift detection" updated to "Canonical-vs-profile drift detection (generator-enforced)". §8.5 (FR2 area-STATE rule) preserved unchanged from CW7. Resolves cycle-11 HIGH findings on coding-standards.md §1.3 + §9. |
