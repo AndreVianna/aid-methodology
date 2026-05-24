@@ -51,7 +51,7 @@ See `PLAN.md` for full details, IQ resolutions, and cross-cutting risks.
 
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|
-| 001 | `task-001` | REFACTOR | W0 | Pending | — | — | Refactor aid-deploy to thin-router (smallest; first cutover) |
+| 001 | `task-001` | REFACTOR | W0 | In Progress | — | — | Refactor aid-deploy to thin-router (smallest; first cutover) |
 | 002 | `task-002` | REFACTOR | W0 | Pending | — | — | Refactor aid-monitor to thin-router (smallest) |
 | 003 | `task-003` | REFACTOR | W0 | Pending | — | — | Refactor aid-summarize to thin-router (small-mid) |
 | 004 | `task-004` | REFACTOR | W0 | Pending | — | — | Refactor aid-init to thin-router (mid; leaves MaxConcurrent Q hook for d-005) |
