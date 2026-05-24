@@ -1,7 +1,7 @@
 # Work State — work-001-aid-lite
 
-> **Status:** Planning complete ✅ — 5 deliveries sequenced in PLAN.md; all 3 IQs resolved at plan time; ready for /aid-detail
-> **Phase:** Detail (next)
+> **Status:** Detailed ✅ — 37 task files written; Execution Graphs in PLAN.md; ready for /aid-execute
+> **Phase:** Execute (next)
 > **Minimum Grade:** A+ *(was A; updated 2026-05-24 to track project STATE.md minimum)*
 > **Started:** 2026-05-22
 > **User Approved:** yes (Interview)
@@ -51,7 +51,43 @@ See `PLAN.md` for full details, IQ resolutions, and cross-cutting risks.
 
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|
-| _none yet_ | — | — | — | — | — | — | `/aid-detail` not yet run for this work |
+| 001 | `task-001` | REFACTOR | W0 | Pending | — | — | Refactor aid-deploy to thin-router (smallest; first cutover) |
+| 002 | `task-002` | REFACTOR | W0 | Pending | — | — | Refactor aid-monitor to thin-router (smallest) |
+| 003 | `task-003` | REFACTOR | W0 | Pending | — | — | Refactor aid-summarize to thin-router (small-mid) |
+| 004 | `task-004` | REFACTOR | W0 | Pending | — | — | Refactor aid-init to thin-router (mid; leaves MaxConcurrent Q hook for d-005) |
+| 005 | `task-005` | REFACTOR | W0 | Pending | — | — | Refactor aid-interview to thin-router (mid; leaves State TRIAGE hook for d-002) |
+| 006 | `task-006` | REFACTOR | W0 | Pending | — | — | Refactor aid-specify to thin-router (large; multi-state) |
+| 007 | `task-007` | REFACTOR | W0 | Pending | — | — | Refactor aid-plan to thin-router (mid) |
+| 008 | `task-008` | REFACTOR | W0 | Pending | — | — | Refactor aid-detail to thin-router (mid) |
+| 009 | `task-009` | REFACTOR | W0 | Pending | — | — | Refactor aid-execute to thin-router (large; most-touched downstream) |
+| 010 | `task-010` | REFACTOR | W0 | Pending | — | — | Refactor aid-discover to thin-router (largest; last) |
+| 011 | `task-011` | IMPLEMENT | W0 | Pending | — | — | Delete implementation-state.md template + orphan-ref grep sweep |
+| 012 | `task-012` | TEST | W1 | Pending | — | — | E2E pipeline parity test |
+| 013 | `task-013` | CONFIGURE | W0 | Pending | — | — | Extend work-state-template ## Triage + data-model.md §2.3 |
+| 014 | `task-014` | IMPLEMENT | W1 | Pending | — | — | Implement State TRIAGE + T3→workType mapping |
+| 015 | `task-015` | IMPLEMENT | W2 | Pending | — | — | User-override mechanism on triage turn |
+| 016 | `task-016` | IMPLEMENT | W2 | Pending | — | — | Implement 4 lite-path sub-paths in State L1 |
+| 017 | `task-017` | IMPLEMENT | W3 | Pending | — | — | Lite → full escalation (preserve captured info) |
+| 018 | `task-018` | TEST | W4 | Pending | — | — | E2E lite path test |
+| 019 | `task-019` | IMPLEMENT | W0 | Pending | — | — | writeback-task-status.sh helper + smoke harness |
+| 020 | `task-020` | CONFIGURE | W0 | Pending | — | — | Extend work-state-template ## Delivery Gates + data-model.md §2.3 |
+| 021 | `task-021` | IMPLEMENT | W1 | Pending | — | — | Per-task quick-check in aid-execute |
+| 022 | `task-022` | IMPLEMENT | W2 | Pending | — | — | Per-delivery quality gate + FR6 interlock |
+| 023 | `task-023` | TEST | W3 | Pending | — | — | E2E two-tier review test |
+| 024 | `task-024` | IMPLEMENT | W0 | Pending | — | — | Work-002 back-port for recipes asset kind |
+| 025 | `task-025` | DOCUMENT | W0 | Pending | — | — | Recipe meta-template + README |
+| 026 | `task-026` | DOCUMENT | W1 | Pending | — | — | 5 seed recipes |
+| 027 | `task-027` | IMPLEMENT | W1 | Pending | — | — | parse-recipe.sh |
+| 028 | `task-028` | IMPLEMENT | W2 | Pending | — | — | Triage recipe-offer + slot-fill + emit (+ {!{ rewrite) |
+| 029 | `task-029` | IMPLEMENT | W3 | Pending | — | — | Recipe → standard-lite escalation (preserve slots) |
+| 030 | `task-030` | TEST | W4 | Pending | — | — | E2E recipes test |
+| 031 | `task-031` | CONFIGURE | W0 | Pending | — | — | Add Max Parallel Tasks metadata to STATE template + project STATE |
+| 032 | `task-032` | IMPLEMENT | W1 | Pending | — | — | Add Max Parallel Tasks Q to aid-init |
+| 033 | `task-033` | IMPLEMENT | W1 | Pending | — | — | Pool dispatch (Agent tool + run_in_background) |
+| 034 | `task-034` | IMPLEMENT | W2 | Pending | — | — | Failure-block-radius (transitive descendants Blocked) |
+| 035 | `task-035` | IMPLEMENT | W2 | Pending | — | — | EXECUTE-WAVE drill-down extension |
+| 036 | `task-036` | IMPLEMENT | W2 | Pending | — | — | Graceful degradation (effective MaxConcurrent=1) |
+| 037 | `task-037` | TEST | W3 | Pending | — | — | E2E parallel pool test |
 
 ## Deploy Status
 
