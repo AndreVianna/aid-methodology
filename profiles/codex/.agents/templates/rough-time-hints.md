@@ -29,7 +29,7 @@ check-in pattern that emits mid-wait status when ETAs exceed 5 minutes.
 | `discovery-integrator` | 12–16 min | 2026-05-23 | 1 (14m09s observed) | Reads integration points, API contracts, external sources |
 | `discovery-quality` | 11–15 min | 2026-05-23 | 1 (13m14s observed) | Reads test landscape, security model, tech-debt, infrastructure |
 | `discovery-scout` | 9–13 min | 2026-05-23 | 1 (11m03s observed) | Initial repo scan; produces project-structure and external-sources KB docs |
-| `discovery-reviewer` | 18–25 min | 2026-05-23 | 2 (20m16s + 23m30s observed in cycles 11 + 12; cycle 13 crashed at 9m32s before completion — not counted) | Adversarial review of all KB docs against current code; produces severity-tagged issue list + spot-checks + Review History entry |
+| `discovery-reviewer` | 15-25 min | 2026-05-23 | 3 (16m48s + 20m16s + 23m30s observed in cycles 14 + 11 + 12; cycle 13 crashed at 9m32s before completion - not counted) | Adversarial review of all KB docs against current code; produces severity-tagged issue list + spot-checks + Review History entry. Cycle 14 was faster (~16m) because KB was already near-clean post cycle-12 cleanup - fewer findings to write up. |
 | `reviewer` | 5–20 min | 2026-05-23 | ~3 (5–20 min range observed across work-003 review passes; varies sharply with delivery size) | Reviews task output against acceptance criteria and grading rubric |
 | `developer` (IMPLEMENT) | 3–8 min | (gut estimate) | 0 | Writes code + unit tests; time scales with task complexity. **Not yet measured — calibrate after next /aid-execute run.** |
 | `developer` (DOCUMENT) | 1–3 min | (gut estimate) | 0 | Writes documentation artifact; shorter than code tasks. **Not yet measured.** |
