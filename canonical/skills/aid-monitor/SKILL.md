@@ -182,7 +182,7 @@ them more informative by adding mid-wait check-ins + structured progress.
 | DONE | _(inline — see Re-run below)_ | `inline` | → halt |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, print `Next: [State: {NEXT}] — run /aid-monitor again` and exit.
+When a state completes, print `Next: [State: {NEXT}] — run /aid-monitor again` and exit. For `â halt` rows (DONE), print the appropriate halt/completion message instead of the Next-state hint and exit.
 
 ## Re-run
 
@@ -197,7 +197,7 @@ aid-monitor  ▸ you are here
 1. Show active findings and their current status.
 2. Show observation history (last runs).
 3. Ask: **[1] New observation** (fresh run) or **[2] Review finding-N** (check if resolved)?
-4. If [1] → Step 1 with new window (previous run end → now).
+4. If [1] → re-enter the OBSERVE state with a new window (previous run end → now); router exits and user re-invokes `/aid-monitor`.
 5. If [2] → Re-check evidence for that specific finding, update status.
 
 ## Quality Checklist
