@@ -7,7 +7,7 @@
 **Depends on:** —
 
 **Scope:**
-- Create `canonical/templates/scripts/writeback-task-status.sh`.
+- Create `canonical/templates/scripts/writeback-task-status.sh` — placed under the existing general-helper scripts directory (alongside `build-project-index.sh`, `grade.sh`, `verify-kb-claims.sh`). Note: work-003's `writeback-state.sh` precedent lives one level deeper at `canonical/templates/knowledge-summary/scripts/` because it is knowledge-summary-specific; the new helper is general-purpose (consumed by aid-execute), so the top-level scripts directory is the right level.
 - Lock mechanism: sentinel-file lock (`set -o noclobber` atomic-create + sleep-poll retry on contention), mirroring work-003's `writeback-state.sh` pattern.
 - Args: `--task-id NNN --field <field> --value <value>` for `## Tasks Status` row updates.
 - Args: `--delivery-id NNN --block <markdown-block>` for `## Delivery Gates` section block writes.
