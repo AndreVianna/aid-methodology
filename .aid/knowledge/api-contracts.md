@@ -67,7 +67,7 @@ Markdown with YAML frontmatter plus an optional `references/` and `scripts/` sub
 - `profiles/claude-code/.claude/skills/aid-discover/scripts/check-preflight.sh` (45 lines), `verify-kb.sh` (60 lines) — bash helpers invoked from the SKILL body.
 - Same pattern in `aid-execute/references/` (`reviewer-guide.md`, `task-type-rules.md`), `aid-interview/references/` (4 files), `aid-specify/references/` (2 files).
 
-⚠️ **Post-work-002 (canonical-generator) update:** all three install trees now contain identical `references/` subdirs and identical SKILL.md bodies (548 lines each for `aid-discover` per cycle-11 verification). The earlier "Claude Code externalizes; Codex / Cursor inline" divergence (453/1078/1090 line counts) was eliminated by `run_generator.py` which propagates `canonical/skills/` → 3 profile trees. The Pattern 3 narrative in `architecture.md` (cycle-11 FIX pending) needs to reflect this.
+⚠️ **Post-work-002 (canonical-generator) update:** all three install trees now contain identical `references/` subdirs and identical SKILL.md bodies (596 lines each for `aid-discover` (post subagent-visibility-patch; was 548 pre-patch) per cycle-11 verification). The earlier "Claude Code externalizes; Codex / Cursor inline" divergence (453/1078/1090 line counts) was eliminated by `run_generator.py` which propagates `canonical/skills/` → 3 profile trees. The Pattern 3 narrative in `architecture.md` (cycle-11 FIX pending) needs to reflect this.
 
 **No sentinel files observed** (no `.skill`, `.meta.json`, or version file inside skill folders).
 
@@ -202,7 +202,7 @@ Two rules ship: `aid-methodology.mdc` (29 lines, always on — KB lookup + phase
 
 #### 3c. Skill SKILL.md Contract — `profiles/cursor/.cursor/skills/aid-*/SKILL.md`
 
-Same shape as Claude Code 1b. Post-work-002, all three trees carry identical SKILL.md content (548 lines each for `aid-discover` per cycle-11 verification). Sampled `profiles/cursor/.cursor/skills/aid-discover/SKILL.md:1-15` — identical frontmatter to the Claude Code version (`name`, `description`, `allowed-tools`, `argument-hint`).
+Same shape as Claude Code 1b. Post-work-002, all three trees carry identical SKILL.md content (596 lines each for `aid-discover` (post subagent-visibility-patch; was 548 pre-patch) per cycle-11 verification). Sampled `profiles/cursor/.cursor/skills/aid-discover/SKILL.md:1-15` — identical frontmatter to the Claude Code version (`name`, `description`, `allowed-tools`, `argument-hint`).
 
 Per `profiles/cursor/README.md:136-142`, Cursor reads skills from `.cursor/skills/`, **and** is cross-tool compatible — it will also read `.claude/skills/` and `.codex/skills/`. This is the only documented "skill loader fallback chain" in the AID install set.
 

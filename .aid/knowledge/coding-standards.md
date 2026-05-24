@@ -21,7 +21,7 @@ The `SKILL.md` frontmatter is YAML, delimited by `---` lines. Verified directly 
 | `allowed-tools` | yes | comma-separated list (NOT YAML array) | `allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent` |
 | `argument-hint` | optional | quoted string | `argument-hint: "[--grade A] minimum acceptable grade (default: A)  [--reset] clear KB and restart"` |
 
-**Observation — identical frontmatter + body across trees post-canonical-generator.** `aid-discover/SKILL.md` is 548 lines in all 4 locations (canonical + 3 profiles), verified 2026-05-23. The pre-work-002 narrative ("Claude Code 453 / Codex 1,078 / Cursor 1,090 — divergent") is RETIRED. The frontmatter and body are emitted from a single canonical source by `render_skills.py` (450 lines in `.claude/skills/aid-generate/scripts/`).
+**Observation — identical frontmatter + body across trees post-canonical-generator.** `aid-discover/SKILL.md` is 596 lines in all 4 locations (canonical + 3 profiles), verified 2026-05-23. The pre-work-002 narrative ("Claude Code 453 / Codex 1,078 / Cursor 1,090 — divergent") is RETIRED. The frontmatter and body are emitted from a single canonical source by `render_skills.py` (450 lines in `.claude/skills/aid-generate/scripts/`).
 
 ⚠️ The Cursor and Codex SKILL.md frontmatter inherits the canonical `allowed-tools` shape; profile-specific tool-name remapping (e.g., Claude Code `Bash` → Cursor `Terminal`, per Q52) is performed by `render_skills.py` at emission time, so what lands in each profile already matches the host tool's tool vocabulary.
 
@@ -44,9 +44,9 @@ When a skill body grows large, content is extracted into siblings under the cano
 - `references/*.md` — long-form prompts and explanations that the SKILL.md body refers to by filename.
 - `scripts/*.sh` — runnable shell scripts invoked from the SKILL.md.
 
-Example (`canonical/skills/aid-discover/`): SKILL.md (548 lines) + `references/agent-prompts.md` (142) + `references/document-expectations.md` (121) + `references/reviewer-prompt.md` (75) + `scripts/check-preflight.sh` (45) + `scripts/verify-kb.sh` (60) = 6 files, 991 lines total. The SKILL.md body uses phrases like "Read `references/agent-prompts.md` section `## Scout`".
+Example (`canonical/skills/aid-discover/`): SKILL.md (596 lines) + `references/agent-prompts.md` (142) + `references/document-expectations.md` (121) + `references/reviewer-prompt.md` (75) + `scripts/check-preflight.sh` (45) + `scripts/verify-kb.sh` (60) = 6 files, 1,039 lines total. The SKILL.md body uses phrases like "Read `references/agent-prompts.md` section `## Scout`".
 
-**Post-work-002 propagation:** `run_generator.py` (top-level, 83 lines) reads each canonical skill folder and emits the full decomposition (SKILL.md + references/ + scripts/) verbatim into all 3 profile trees plus the dogfood `.claude/skills/`. The pre-work-002 narrative — "Claude Code factors out references/ while Codex / Cursor inline" — is RETIRED. Verified 2026-05-23: `wc -l` on `aid-discover/SKILL.md` returns 548 across canonical + all 3 profiles. The same `references/*.md` siblings are present in every profile tree. Contributors edit `canonical/` only; the generator handles the propagation.
+**Post-work-002 propagation:** `run_generator.py` (top-level, 83 lines) reads each canonical skill folder and emits the full decomposition (SKILL.md + references/ + scripts/) verbatim into all 3 profile trees plus the dogfood `.claude/skills/`. The pre-work-002 narrative — "Claude Code factors out references/ while Codex / Cursor inline" — is RETIRED. Verified 2026-05-23: `wc -l` on `aid-discover/SKILL.md` returns 596 across canonical + all 3 profiles. The same `references/*.md` siblings are present in every profile tree. Contributors edit `canonical/` only; the generator handles the propagation.
 
 ⚠️ One historical exception remains visible in the file tree: `aid-interview/references/kb-hydration.md` (106 lines) — present in canonical and all 3 profiles. This is now the propagated norm, not an exception.
 

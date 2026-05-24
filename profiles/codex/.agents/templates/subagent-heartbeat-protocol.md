@@ -122,7 +122,13 @@ Easy to scan; easy to parse (`head -1`, `awk -F'|'`).
 - **Updated:** by subagent every N minutes
 - **Read:** by dispatcher when L2 timer fires
 - **Deleted:** by dispatcher on completion notification
-- **Location:** `.aid/.heartbeat/` (subdir under gitignored `.aid/`)
+- **Location:** `.aid/.heartbeat/` (always gitignored — see below)
+- **Gitignore requirement:** because heartbeat files are ephemeral runtime
+  artifacts, `.aid/.heartbeat/` MUST be present in the project's `.gitignore`
+  regardless of whether `.aid/` itself is tracked (per aid-init Q7). When
+  `aid-init` runs, it adds `.aid/.heartbeat/` to `.gitignore` unconditionally;
+  for projects initialized before this patch, the dispatcher SHOULD ensure
+  this exclusion exists before its first dispatch.
 - **Stale-file cleanup:** dispatchers SHOULD delete `.aid/.heartbeat/*.txt`
   older than 24h at the START of any dispatch (covers crashed/abandoned
   subagents from prior sessions)

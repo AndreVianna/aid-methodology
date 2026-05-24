@@ -16,7 +16,7 @@ This document describes the **conceptual architecture of the AID methodology** (
 | Deployable artifact | None. Distribution unit is the git repository itself. |
 | Top-level interface to consumers | `setup.sh` / `setup.ps1` (the installer) and, post-install, the host AI tool's slash-command surface (`/aid-init`, `/aid-discover`, ...). |
 | Number of supported host tools | 3 with payloads (Anthropic Claude Code, OpenAI Codex CLI, Cursor); 2 named-as-future (GitHub Copilot, Google Antigravity) with no payload — see `external-sources.md` §7-8. |
-| Dogfooded? | Yes. This repo's `.aid/knowledge/` is currently being populated by AID's own discovery pipeline running against itself. The KB is gitignored (`.gitignore`: `.aid/`). |
+| Dogfooded? | Yes. This repo's `.aid/knowledge/` is currently being populated by AID's own discovery pipeline running against itself. Heartbeat files (.aid/.heartbeat/) are always gitignored; the rest of .aid/ may or may not be gitignored depending on the user's aid-init Q7 choice. |
 
 Evidence: `README.md:1-30`; `setup.sh` (161 lines); `methodology/aid-methodology.md:1-31` (Executive Summary states "AID is a structured methodology"); `project-structure.md` "What This Repository Is" (lines 9-20).
 
@@ -171,8 +171,8 @@ See `project-structure.md` §"Top-Level Layout" (lines 22-43) and §"Per-Tool In
 | Normative spec | `methodology/aid-methodology.md` (1,071 lines, verified 2026-05-23) + 4 PNGs in `methodology/images/` | The single source of truth for what AID is. |
 | Human-readable references | `canonical/skills/aid-*/README.md` (10 skill READMEs), `canonical/agents/*/README.md` (22 agent READMEs), `docs/` (FAQ, glossary), `examples/` (3 case studies) | Documentation aimed at humans who want to understand AID without LLM optimization. |
 | LLM-format payload — Claude Code | `profiles/claude-code/.claude/{agents,skills,templates}/` + `profiles/claude-code/CLAUDE.md` | Markdown + YAML frontmatter (`name`, `description`, `tools`, `model`); skills are `skills/aid-*/SKILL.md`; complex skills externalize content into `references/` and `scripts/` subdirs. |
-| LLM-format payload — Codex CLI | `profiles/codex/.codex/agents/*.toml` (TOML) + `profiles/codex/.agents/{skills,templates}/` (markdown shared assets) + `profiles/codex/AGENTS.md` | Split layout: agents under `.codex/`, skills + templates under `.agents/`. Post-work-002 (canonical-generator): byte-identical to Claude Code and Cursor for skill bodies (`aid-discover/SKILL.md`: 548 lines across all 3 trees, verified via `wc -l`). Pre-2026-05-22 narrative claimed 1,078-vs-453 line divergence (Q73) — RESOLVED by `run_generator.py`. |
-| LLM-format payload — Cursor | `profiles/cursor/.cursor/{rules,agents,skills,templates}/` + `profiles/cursor/AGENTS.md` | Same markdown + YAML shape as Claude Code, plus `.mdc` rules files (`profiles/cursor/.cursor/rules/aid-methodology.mdc` always-on, `aid-review.mdc` glob-scoped). Post-work-002: byte-identical SKILL.md bodies across all 3 trees (548 lines for `aid-discover`). Pre-2026-05-22 1,090-line claim is obsolete. |
+| LLM-format payload — Codex CLI | `profiles/codex/.codex/agents/*.toml` (TOML) + `profiles/codex/.agents/{skills,templates}/` (markdown shared assets) + `profiles/codex/AGENTS.md` | Split layout: agents under `.codex/`, skills + templates under `.agents/`. Post-work-002 (canonical-generator): byte-identical to Claude Code and Cursor for skill bodies (`aid-discover/SKILL.md`: 596 lines across all 3 trees (post subagent-visibility-patch), verified via `wc -l`). Pre-2026-05-22 narrative claimed 1,078-vs-453 line divergence (Q73) — RESOLVED by `run_generator.py`. |
+| LLM-format payload — Cursor | `profiles/cursor/.cursor/{rules,agents,skills,templates}/` + `profiles/cursor/AGENTS.md` | Same markdown + YAML shape as Claude Code, plus `.mdc` rules files (`profiles/cursor/.cursor/rules/aid-methodology.mdc` always-on, `aid-review.mdc` glob-scoped). Post-work-002: byte-identical SKILL.md bodies across all 3 trees (596 lines for `aid-discover` (post subagent-visibility-patch; was 548 pre-patch)). Pre-2026-05-22 1,090-line claim is obsolete. |
 | Source-of-truth templates | `canonical/templates/` (KB doc templates, requirements / specs / delivery plans / feedback artifacts / knowledge-summary assets / shell scripts; KB-F1 lifted 6 orphans: feature.md, feature-inventory.md, known-issues.md, package.md, requirements.md, ui-architecture.md) | Rendered to each profile tree by `run_generator.py` (canonical-generator), then copied verbatim by `setup.sh` / `setup.ps1`. |
 | Installers | `setup.sh` (161 lines), `setup.ps1` (156 lines) | Interactive menu selects one or more of Claude Code / Codex / Cursor; copies the matching tree into a target project. |
 
@@ -197,7 +197,7 @@ This repository has no language-level modules (no packages, no namespaces, no co
 | `examples/` | Three anonymized case studies showing AID applied to: brownfield-enterprise (Java/OSGi), desktop-app (.NET/Avalonia/MVVM), data-pipeline (multi-agent analytics). | `project-structure.md:196-202` |
 | `docs/` | Adopter-facing FAQ and glossary. 2 files. | `project-structure.md:184-194` |
 | `setup.sh`, `setup.ps1` | The installation entry point. Identical menu, identical copy semantics. Both at repo root. | `project-structure.md:37-38` |
-| Root files | `README.md` (286 lines, project overview), `CONTRIBUTING.md` (116 lines, triplication rule), `LICENSE` (MIT), `CLAUDE.md` (this repo's own dogfood config), `.gitignore` (one line: `.aid/`) | `project-structure.md:39-43` |
+| Root files | `README.md` (286 lines, project overview), `CONTRIBUTING.md` (116 lines, triplication rule), `LICENSE` (MIT), `CLAUDE.md` (this repo's own dogfood config), `.gitignore` (project-dependent; always includes `.aid/.heartbeat/` per subagent-visibility-patch) | `project-structure.md:39-43` |
 
 ### Inter-module dependencies (content level)
 
@@ -279,13 +279,13 @@ Every canonical skill under `canonical/skills/aid-{name}/` externalizes verbose 
 
 Evidence (cycle-11 disk truth, all line counts verified by `wc -l`):
 
-- `canonical/skills/aid-discover/SKILL.md` = **548 lines**. References: `agent-prompts.md` (142), `document-expectations.md` (121), `reviewer-prompt.md` (75). Scripts: `check-preflight.sh` (45), `verify-kb.sh` (60).
-- All three profile trees ship **548 lines each** for `aid-discover/SKILL.md` (`profiles/claude-code/.claude/skills/aid-discover/SKILL.md`, `profiles/codex/.agents/skills/aid-discover/SKILL.md`, `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` — verified `wc -l` cycle 11).
+- `canonical/skills/aid-discover/SKILL.md` = **596 lines**. References: `agent-prompts.md` (142), `document-expectations.md` (121), `reviewer-prompt.md` (75). Scripts: `check-preflight.sh` (45), `verify-kb.sh` (60).
+- All three profile trees ship **596 lines each** for `aid-discover/SKILL.md` (`profiles/claude-code/.claude/skills/aid-discover/SKILL.md`, `profiles/codex/.agents/skills/aid-discover/SKILL.md`, `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` — verified `wc -l` cycle 11).
 - The `references/` subtree is identical across all three profile trees **except** for per-profile filename substitutions performed by the renderer (e.g., `CLAUDE.md` in the Claude-Code tree becomes `AGENTS.md` in the Codex and Cursor trees — driven by `[filename_map] project_context_file` in each `profiles/{tool}.toml`; verified by `diff -r` cycle 11, only 2 substitution-driven line diffs in `document-expectations.md:117` and `reviewer-prompt.md:54`).
 
 Historical drift (Q73) — the pre-work-002 era recorded 453 / 1,078 / 1,090-line divergence between the Claude Code, Codex, and Cursor variants of `aid-discover/SKILL.md`. **That drift was resolved by work-002 (canonical-generator).** The numbers no longer apply.
 
-The residual length tension is now between canonical and the 500-line skill-body guideline (tracked as `tech-debt.md M5` — `aid-discover/SKILL.md` at 548 lines still exceeds the 500-line target, but the magnitude is roughly half of the pre-generator 1,078 number).
+The residual length tension is now between canonical and the 500-line skill-body guideline (tracked as `tech-debt.md M5` — `aid-discover/SKILL.md` at 596 lines still exceeds the 500-line target, but the magnitude is roughly half of the pre-generator 1,078 number).
 
 ### Pattern 4: The Knowledge Base as gravitational center (Conviction #3)
 
@@ -441,7 +441,7 @@ Per `methodology/aid-methodology.md:589-606` (Artifacts Reference table) and the
 | `PLAN.md` | (no template; format defined inline by `aid-plan`) | Plan |
 | `task-NNN.md` | `canonical/templates/delivery-plans/task-template.md` (20 lines) | Detail |
 | `IMPEDIMENT.md` | `canonical/templates/feedback-artifacts/IMPEDIMENT.md` (118 lines) | Execute (Developer agent) |
-| `MONITOR-STATE.md` | (referenced in `templates/README.md` but file is **missing** — see `project-structure.md` Anomaly #8 line 261 and Q8 in `DISCOVERY-STATE.md`) | Monitor |
+| `MONITOR-STATE.md` | (referenced in `templates/README.md` but file is **missing** — see `project-structure.md` Anomaly #8 line 261 and Q8 in `.aid/knowledge/STATE.md ## Q&A` per FR2) | Monitor |
 
 ### Workspace shape
 
@@ -457,7 +457,7 @@ Per `methodology/aid-methodology.md:245-258` and `aid-execute/SKILL.md:73-87`:
     project-index.md, project-structure.md, external-sources.md
     feature-inventory.md
   work-NNN-{name}/                 # one work per interview
-    INTERVIEW-STATE.md
+    STATE.md  # Work area (per FR2; absorbs former INTERVIEW-STATE.md + per-feature STATE × N + per-task STATE × N)
     REQUIREMENTS.md
     PLAN.md
     known-issues.md
@@ -546,15 +546,15 @@ After install, every entry point is a slash command provided by the host AI tool
 
 | Slash command | Skill file (Claude Code) |
 |---|---|
-| `/aid-init` | `canonical/skills/aid-init/SKILL.md` (513 lines; byte-identical across all 3 profile trees) |
-| `/aid-discover` | `canonical/skills/aid-discover/SKILL.md` (548 lines; byte-identical across all 3 profile trees; pre-2026-05-22 was 453/1078/1090 — see Q73) |
+| `/aid-init` | `canonical/skills/aid-init/SKILL.md` (531 lines; byte-identical across all 3 profile trees) |
+| `/aid-discover` | `canonical/skills/aid-discover/SKILL.md` (596 lines; byte-identical across all 3 profile trees; pre-2026-05-22 was 453/1078/1090 — see Q73) |
 | `/aid-interview` | `canonical/skills/aid-interview/SKILL.md` (527 lines) |
 | `/aid-specify` | `canonical/skills/aid-specify/SKILL.md` (442 lines) |
 | `/aid-plan` | `canonical/skills/aid-plan/SKILL.md` (360 lines) |
 | `/aid-detail` | `canonical/skills/aid-detail/SKILL.md` (417 lines) |
-| `/aid-execute` | `canonical/skills/aid-execute/SKILL.md` (464 lines) |
-| `/aid-deploy` | `canonical/skills/aid-deploy/SKILL.md` (311 lines) |
-| `/aid-monitor` | `canonical/skills/aid-monitor/SKILL.md` (285 lines) |
+| `/aid-execute` | `canonical/skills/aid-execute/SKILL.md` (512 lines) |
+| `/aid-deploy` | `canonical/skills/aid-deploy/SKILL.md` (359 lines) |
+| `/aid-monitor` | `canonical/skills/aid-monitor/SKILL.md` (333 lines) |
 | `/aid-summarize` | `canonical/skills/aid-summarize/SKILL.md` (545 lines) |
 
 Required ordering per `README.md:64-72` and `architecture.md` §Pattern 1 (Skills as state-machine orchestrators): `/aid-init` once → then either `/aid-discover` (brownfield) or `/aid-interview` (greenfield) → then `/aid-specify` → `/aid-plan` → `/aid-detail` → `/aid-execute` (per task) → `/aid-deploy` → `/aid-monitor`. `/aid-summarize` is optional and runs after Discovery is approved.

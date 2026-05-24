@@ -2,9 +2,10 @@
 
 > **Status:** Approved (re-grade pending after cycle-12 review identified residual drift)
 > **Minimum Grade:** A+
-> **Current Grade:** B (cycle-12 — major FIX from cycle-11 cleared 7 of 8 CRITICAL + most HIGH/MEDIUM, but architecture.md was only partially fixed and 4 docs still carry FALSE pre-canonical-generator line-count claims)
+> **Current Grade:** C (cycle-14 post-cleanup + post-visibility-patch — content fixes from cycles 11-13 hold, but PR #10 added 50 lines to 5 skills + 18 to 22 agents without a KB line-count sweep, invalidating ~15 cited counts across 9 KB docs; also 7 stale FR2/.gitignore-claim refs in architecture.md that cycle-13 self-review missed; verify-kb-claims.sh still exits 0 because it does not check inline-prose SKILL.md counts)
 > **User Approved:** yes (2026-05-21) — **stale; predates work-002/work-003 deploys and the in-progress cycle-11/12 KB FIX work**
-> **Last KB Review:** 2026-05-23 (cycle 12, post-cycle-11-FIX independent re-grade)
+> **Heartbeat Interval:** 1 minute
+> **Last KB Review:** 2026-05-23 (cycle 14, post-cleanup + post-subagent-visibility-patch clean-context adversarial)
 > **Last Summary:** 2026-05-21
 > **Project Type:** Brownfield
 
@@ -288,6 +289,159 @@ Registered web sources (see `external-sources.md` for full details): 8 vendor do
 | 31 | 2026-05-23 | **B** | aid-discover (REVIEW cycle 12 — post-FIX re-grade) | **0 CRITICAL · 4 HIGH · 3 MEDIUM · 2 LOW · 1 MINOR. 33 new spot-checks (rows 50-82). Of 39 cycle-11 findings, 32 ✅ Fixed, 3 ⚠️ Partial (incl. domain-glossary count half-fixed), 4 ❌ Not fixed (all in architecture.md §2.2/§3/§5/§7.2 — these sections were never touched by the cycle-11 FIX). Pre-canonical-generator "453/1,078/1,090" line-count narrative still lives in 4 docs: architecture.md (most severe — same doc's Pattern 3 contradicts §2.2), external-sources.md L78/L93, domain-glossary.md L140 "Skill body drift" entry, host-tools-matrix.md L38/L94. All CRITICAL items RESOLVED. Cycle-11 FIX work was overwhelmingly successful — 12 of 16 primary docs now at A/A- grade. Recommendation: one targeted FIX pass on architecture.md §2.2/§3/§5/§7.2 + a 4-doc grep-sed sweep for "453\|1,078\|1,090" → "548 (all 3 trees post-canonical-generator)" + 3-line count fix (domain-glossary.md L6, INDEX.md L17). Estimated effort: ≤4 h. Then A+ achievable.** |
 
 | 32 | 2026-05-23 | **A** (orchestrator self-review; cycle-13 reviewer subagent crashed at 9.5m with API socket error, did not land changes) | aid-discover (REVIEW cycle 13 — orchestrator self-verification post-cleanup) | All 10 cycle-12 findings verified resolved via grep spot-checks: HIGH 1-4 (arch §2.2 ✅, §3 ✅, §5 workspace+registry ✅ after residual fix, §7.2 ✅), MED 1-3 (domain-glossary 151 ✅, INDEX 151 ✅, host-tools 548-everywhere ✅, domain-glossary L140 ✅ after residual fix), LOW 1-2 (external-sources ✅, tech-stack ✅ after L67 residual fix), MINOR (ui-arch ✅ after residual fix). verify-kb-claims.sh exit 0 confirmed post-cleanup. Self-review caveat: not a clean-context adversarial review; subagent dispatch failed with network error and partial output didn't land. Recommend a fresh /aid-discover REVIEW pass when network is more stable, but the resolution evidence is concrete and verifiable. |
+| 33 | 2026-05-23 | **C** | aid-discover (REVIEW cycle 14 — post-cleanup + post-visibility-patch, clean-context adversarial) | **8 NEW HIGH + 2 NEW MEDIUM. verify-kb-claims.sh exit 0 (707 valid citations). Refutes cycle-13 self-review Grade A: while content-level cycle-12 findings ARE largely resolved (paths swept, RETIRED markers added, count restored to 151), the subagent-visibility-patch (PR #10) grew 5 SKILL.md bodies (aid-discover 548->596, aid-init 513->531, aid-execute 464->512, aid-deploy 311->359, aid-monitor 285->333) without a parallel KB line-count refresh — invalidating ~15 specific citations across 9 KB docs (architecture.md, module-map.md, README.md, coding-standards.md, tech-debt.md, host-tools-matrix.md, external-sources.md, domain-glossary.md, INDEX.md). Cycle-13 also missed 7 stale FR2/.gitignore-claim refs clustered in architecture.md (L19, L200, L444, L460, L541, L613, L614). NEW finding: subagent-heartbeat-protocol.md L111 claims `.aid/` is gitignored — FALSE (only `.aid/knowledge/.cache/` is). 22/22 agents got Heartbeat protocol section cleanly; 4/4 orchestrator skills got Dispatch Protocol cleanly; 4/4 templates propagated to all 3 profiles. The PATCH ITSELF landed cleanly; the COLLATERAL is what dropped the grade. See ## Cycle-14 Findings section above for full breakdown + per-doc grade matrix.** |
+
+---
+
+## Cycle-14 Findings (post-cleanup + subagent-visibility-patch verification)
+
+**Reviewer:** discovery-reviewer subagent (clean-context adversarial)
+**Date:** 2026-05-23
+**Grade:** **C** (verify-kb-claims.sh passes, but 8 NEW HIGH + 2 NEW MEDIUM findings from the subagent-visibility-patch invalidating widely-cited SKILL.md line counts; the cycle-13 self-review's Grade A claim is **refuted** because cycle-13 verified content correctness but did NOT re-verify the line counts that depend on SKILL.md sizes)
+
+### Cycle-13 self-review verdict — REFUTED for the line-count subset, CONFIRMED for content fixes
+
+**Confirmed RESOLVED (cycle-13 was right):**
+- architecture.md §2.2 — no longer cites 453/1,078/1,090 in layer table (L174-175 cite 548 — but see new finding)
+- architecture.md §3 Module Boundaries table — paths swept to canonical/skills/, canonical/agents/, canonical/templates/ (L187-200 clean)
+- domain-glossary.md count = 151 in header L6 and INDEX.md L17
+- domain-glossary.md L140 — now cites 548-uniform (cycle-12 finding fixed)
+- external-sources.md L61/L78/L93 — now cite 548 (cycle-12 finding fixed)
+- technology-stack.md — L67 "Claude Code only" caveat removed; L58 task-NNN-STATE.md replaced
+- ui-architecture.md L101/L319 — DISCOVERY-STATE refs annotated with "per FR2; pre-FR2 was DISCOVERY-STATE.md"
+- writeback-state.sh — -h/--help handler + GRADE regex (still verified)
+
+**NOT fully resolved (cycle-13 missed these):**
+- **architecture.md §5 Workspace shape L460** still lists INTERVIEW-STATE.md as a separate file under work-NNN/ (FR2 says it's consolidated into work-area STATE.md).
+- **architecture.md L19 + L200** claim .gitignore contains the single line .aid/ — actual .gitignore has 44 lines (Python/Node/IDE/editor blocks + .aid/knowledge/.cache/ + .claude/worktrees/ + .claude/settings.local.json). project-structure.md L41 correctly notes "No longer the single-line .aid/ from the pre-work-003 era" — architecture.md contradicts project-structure.md and reality.
+- **architecture.md L444** artifact registry row for MONITOR-STATE.md still cites Q8 in DISCOVERY-STATE.md — should be Q8 in .aid/knowledge/STATE.md per FR2.
+- **architecture.md L541, L613, L614** still reference DISCOVERY-STATE.md Q2, Q8, Q6 — pre-FR2 file name.
+- **host-tools-matrix.md L94** still says "Pending decision" for Q3/Q73 + cites "453 (Claude Code) vs 548 (Codex)" — should be RESOLVED + "548 (all 3 trees)".
+- **INDEX.md L10** architecture summary still says "8 patterns identified ... triplicated payloads" — the "triplicated payloads" pattern is RETIRED per cycle-11 (canonical-generator pattern replaces it).
+
+### Subagent-visibility-patch (PR #10) landing assessment
+
+**Templates:** All 4 land cleanly (canonical + 3 profiles byte-identical):
+- canonical/templates/long-wait-protocol.md (133 lines) — present in all 3 profiles
+- canonical/templates/subagent-heartbeat-protocol.md (140 lines) — present in all 3 profiles
+- canonical/templates/rough-time-hints.md — present
+- canonical/templates/discovery-state-template.md — present (+1 line Heartbeat Interval)
+
+**Agents:** All **22 of 22** canonical AGENT.md files have a `## Heartbeat protocol` section.
+
+**Skills:** **4 of 4** orchestrator skills (aid-discover, aid-execute, aid-deploy, aid-monitor) have `## Dispatch Protocol` section. aid-init adds Q6 Heartbeat Interval question (L154-168).
+
+**STATE.md:** `**Heartbeat Interval:** 1 minute` line present at L7.
+
+### NEW findings from the patch (collateral drift)
+
+The patch grew skill bodies — aid-discover/SKILL.md went from 548 to **596 lines** (+48 = +8.8%); aid-init 513 to **531**; aid-execute 464 to **512**; aid-deploy 311 to **359**; aid-monitor 285 to **333**. 6 KB docs cite the OLD line counts:
+
+#### [HIGH] [KB] architecture.md §7.2 line-count table (L549-557) — 5 of 10 affected skills wrong
+- Evidence: L549 cites aid-init=513 (disk=531); L550 cites aid-discover=548 (disk=596); L555 cites aid-execute=464 (disk=512); L556 cites aid-deploy=311 (disk=359); L557 cites aid-monitor=285 (disk=333). The same table promises "byte-identical across all 3 profile trees" — still true, but the value cited is the pre-patch value.
+- Fix: Refresh all 5 affected rows from `wc -l canonical/skills/aid-*/SKILL.md`.
+
+#### [HIGH] [KB] module-map.md Module 2/3/4 cite 548/513/464/311/285 for aid-discover/init/execute/deploy/monitor
+- Evidence: L49 "Lines (SKILL.md bodies)" aggregate is `4,212 total: aid-discover/SKILL.md (548) ... aid-init/SKILL.md (513), aid-execute/SKILL.md (464), aid-deploy/SKILL.md (311), aid-monitor/SKILL.md (285)`. L64-72 per-skill table same values. L85 and L101 Claude Code + Cursor "byte-identical" tables cite "548/527/513/545/464/442/417/360/311/285" — 5 of 10 wrong. L315 Canonical-to-Profile Tree Relationship row cites "548" four times for aid-discover.
+- Fix: Refresh from disk to 596/527/531/545/512/442/417/360/359/333. Aggregate becomes 4,422 not 4,212.
+
+#### [HIGH] [KB] README.md L20 still says "SKILL.md 548-line parity verified"
+- Evidence: Project-structure.md row cites a literal 548 count.
+- Fix: Use stable phrasing "SKILL.md parity verified across canonical + 3 profile trees" (no number), OR update to 596.
+
+#### [HIGH] [KB] README.md L26 says "§1.3 rewritten around canonical-generator (548-everywhere)"
+- Evidence: Same pre-patch line count narrative.
+- Fix: Drop the explicit number or update to 596.
+
+#### [HIGH] [KB] coding-standards.md L24, L47, L49 cite 548 for aid-discover/SKILL.md
+- Evidence: L24 "aid-discover/SKILL.md is 548 lines in all 4 locations" — disk truth is 596. L47 example "SKILL.md (548 lines)". L49 propagation summary "wc -l on aid-discover/SKILL.md returns 548".
+- Fix: 3-line sweep.
+
+#### [HIGH] [KB] tech-debt.md M5 (L190-198) cites 548 for aid-discover/SKILL.md
+- Evidence: L193 "canonical/skills/aid-discover/SKILL.md — 548 lines (9.6% over)"; L194 "All 3 profile copies — 548 lines each"; L198 "548 vs 500 is a modest overage (~10%)". L267 and L316-317 also cite 548 for aid-discover.
+- Disk truth: 596 lines (19.2% over the 500-line guideline, not 9.6%).
+- Fix: Rewrite M5 with 596 + recalc percentage. The decision pressure on this debt item is now HIGHER, not lower.
+
+#### [HIGH] [KB] host-tools-matrix.md L38 + L94 cite 548 across all 3 profile trees
+- Evidence: L38 capability matrix `aid-discover skill | 548 lines | 548 lines (inlined) | 548 lines (inlined)`. L94 row 3 similarly.
+- Fix: Update both rows to 596.
+
+#### [HIGH] [KB] external-sources.md L61, L78, L93 cite 548 for aid-discover/SKILL.md
+- Evidence: L61 "548 lines (post-canonical-generator; pre-2026-05-22 was 453)"; L78 "Inlined skill body (548 lines)"; L93 "548 lines (longest of the three trees)".
+- Fix: Update all 3 to 596.
+
+#### [MEDIUM] [KB] domain-glossary.md L140 "Skill body drift" entry cites "548 lines across all 3 trees"
+- Evidence: Cycle-12 fixed the prior 453/1,078/1,090 narrative by updating to 548. The visibility-patch broke this fix.
+- Fix: Update to 596 or rephrase to avoid hard-coding the count.
+
+#### [MEDIUM] [TEMPLATE] subagent-heartbeat-protocol.md L111 claims `.aid/` is gitignored — FALSE
+- Evidence: Template L111 says "Location: `.aid/.heartbeat/` (subdir under gitignored `.aid/`)". Actual `.gitignore` does NOT contain `.aid/` — it only contains `.aid/knowledge/.cache/` (L40). The L111 claim is FALSE.
+- Risk: Users following the protocol will end up with `.aid/.heartbeat/*.txt` files showing as untracked in git status (verified: `git status --short` lists `?? .aid/.heartbeat/`). project-structure.md L41 documents that `.aid/` was deliberately un-ignored in work-003 era.
+- Fix: Add `.aid/.heartbeat/` to `.gitignore`, OR rewrite L111 to "(subdir under `.aid/`; add `.aid/.heartbeat/` to .gitignore if heartbeat files clutter git status)".
+
+### Cycle-14 spot-checks (rows 83-102)
+
+| # | Claim | Source | Verified | Evidence |
+|---|-------|--------|----------|----------|
+| 83 | canonical/skills/aid-discover/SKILL.md = 596 lines (NOT 548 as claimed in 6 KB docs) | adversarial vs visibility-patch | FALSE | `wc -l canonical/skills/aid-discover/SKILL.md profiles/{claude-code,codex,cursor}/.../skills/aid-discover/SKILL.md` returns 596 four times |
+| 84 | canonical/skills/aid-init/SKILL.md = 531 lines (NOT 513 as claimed in architecture.md L549 + module-map.md) | adversarial | FALSE | wc -l = 531 |
+| 85 | canonical/skills/aid-execute/SKILL.md = 512 lines (NOT 464) | adversarial | FALSE | wc -l = 512 |
+| 86 | canonical/skills/aid-deploy/SKILL.md = 359 lines (NOT 311) | adversarial | FALSE | wc -l = 359 |
+| 87 | canonical/skills/aid-monitor/SKILL.md = 333 lines (NOT 285) | adversarial | FALSE | wc -l = 333 |
+| 88 | All 22 canonical/agents/*/AGENT.md have `## Heartbeat protocol` section | patch verification | TRUE | for f in canonical/agents/*/AGENT.md; do grep -q "^## Heartbeat protocol" "$f"; done returns 22/22 |
+| 89 | canonical/skills/aid-{discover,execute,deploy,monitor}/SKILL.md have `## Dispatch Protocol` section | patch verification | TRUE | grep returns one match per file for all 4 |
+| 90 | canonical/templates/long-wait-protocol.md exists (133 lines, well-formed) | patch verification | TRUE | file present + structure intact |
+| 91 | canonical/templates/subagent-heartbeat-protocol.md exists (140 lines) | patch verification | TRUE | file present + L1/L2/L3 layering documented |
+| 92 | `.aid/.heartbeat/` is gitignored as claimed in subagent-heartbeat-protocol.md L111 | adversarial | FALSE | `git check-ignore -v .aid/.heartbeat/discovery-reviewer-1779582668.txt` exit=1 (not ignored); `.gitignore` has 44 lines but no `.aid/` or `.aid/.heartbeat/` pattern; only `.aid/knowledge/.cache/` is ignored |
+| 93 | architecture.md L19 says `.gitignore: .aid/` | adversarial vs disk | FALSE | `.gitignore` has 44 lines; first 38 are Python/Node/IDE/editor; line 40 is `.aid/knowledge/.cache/` |
+| 94 | architecture.md L200 says `.gitignore (one line: .aid/)` | adversarial vs disk | FALSE | same — 44 lines, not 1; doesn't contain `.aid/` |
+| 95 | project-structure.md L41 correctly documents `.gitignore` content | confirming | TRUE | "No longer the single-line .aid/ from the pre-work-003 era" matches reality |
+| 96 | architecture.md L460 Workspace shape lists `INTERVIEW-STATE.md` as separate file under work-NNN/ | adversarial vs FR2 | FALSE | FR2 says consolidated into work-area STATE.md; data-model.md §1A is correct |
+| 97 | architecture.md L444 cites Q8 in `DISCOVERY-STATE.md` | adversarial vs FR2 | FALSE | should be `.aid/knowledge/STATE.md` per FR2 |
+| 98 | architecture.md L541 cites `DISCOVERY-STATE.md` Q2 | adversarial vs FR2 | FALSE | should be `.aid/knowledge/STATE.md` Q2 |
+| 99 | architecture.md L613-614 cite `DISCOVERY-STATE.md` Q8 + Q6 | adversarial vs FR2 | FALSE | should be `.aid/knowledge/STATE.md` |
+| 100 | INDEX.md L10 architecture summary mentions "triplicated payloads" as a current pattern | adversarial vs cycle-11 FIX | FALSE | Pattern 3 + Pattern 7 in architecture.md were rewritten to canonical-generator; INDEX summary not updated |
+| 101 | host-tools-matrix.md L94 marked "Pending decision" for Q3/Q73 | adversarial | FALSE | work-002 canonical-generator RESOLVED this; should be RESOLVED |
+| 102 | verify-kb-claims.sh cycle-14 run: exit 0, 707 valid citations, 0 drifts of KB-doc line counts | verification | TRUE | RESULT: all checks passed — exit 0. NOTE: script checks KB-doc line counts and `path:line` citations, NOT skill-body line counts cited inline as numbers in prose — that's why it misses the cycle-14 drift |
+
+**Cycle-14 spot-check summary:** 20 new checks (rows 83-102). 6 confirmations of patch landing; 14 disk-vs-KB drifts (5 SKILL.md line counts cited in 6 docs each = ~25 hits of collateral drift from the visibility-patch + 4 cycle-13-missed FR2 references + 1 false gitignore claim + 1 false self-claim in the new heartbeat template + INDEX/host-tools stale narrative).
+
+### Per-doc cycle-14 grade matrix
+
+| Document | Cycle-13 claim | Cycle-14 actual | Δ | Reason |
+|----------|----------------|-----------------|---|--------|
+| project-structure.md | A | A | = | Stable. L41 .gitignore note is correct. |
+| external-sources.md | A | C+ | down 1 | 3 × 548 cites broken by patch. |
+| architecture.md | A | D+ | down 3 | 5 wrong SKILL.md counts §7.2 + 4 cycle-13-missed FR2 refs + 2 wrong .gitignore descriptions + INTERVIEW-STATE in workspace shape. **The doc that cycle-13 claimed to have fully cleaned is still the most-drifted.** |
+| technology-stack.md | A | A | = | Cycle-13 fixes hold; no line counts cited in body. |
+| ui-architecture.md | A | A | = | Cycle-13 fixes hold; no SKILL.md line counts cited. |
+| module-map.md | A | D | down 3 | 5 wrong SKILL.md counts + aggregate (4,212 should be 4,422) drifted in 4-5 locations each. Most propagated. |
+| coding-standards.md | A | C+ | down 1 | 3 × 548 cites broken by patch. |
+| data-model.md | A | A | = | No SKILL.md line counts cited. |
+| api-contracts.md | A | A | = | No SKILL.md line counts cited. |
+| integration-map.md | A | A | = | No SKILL.md line counts cited. |
+| domain-glossary.md | A | C+ | down 1 | L140 548-cite broken by patch; term count still correct. |
+| test-landscape.md | A | A | = | No SKILL.md line counts cited. |
+| security-model.md | A | A | = | No SKILL.md line counts cited. |
+| tech-debt.md | A | C+ | down 1 | M5 evidence + ~5 other "548" cites all broken; M5 impact calc now wrong. |
+| infrastructure.md | A | A | = | No SKILL.md line counts cited. |
+| feature-inventory.md | A | A | = | No SKILL.md line counts cited. |
+| host-tools-matrix.md | A | C | down 1 | L38 + L94 wrong; L94 also still marked "Pending decision". |
+| INDEX.md | A | C+ | down 1 | L10 "triplicated payloads" still stale; otherwise clean. |
+| README.md | A | C+ | down 1 | L20 + L26 cite 548-everywhere. |
+| STATE.md | n/a | (being updated) | — | This file. |
+| subagent-heartbeat-protocol.md (template) | n/a | C | down 1 | NEW from patch; L111 claims `.aid/` is gitignored — FALSE. |
+| long-wait-protocol.md (template) | n/a | A | = | Clean. |
+
+**Overall:** **C** — verify-kb-claims still passes (it doesn't check inline SKILL.md prose counts), but the visibility-patch invalidated ~15 specific line-count citations across 9 KB docs, and cycle-13's content-only self-review missed 7 stale FR2/.gitignore-claim refs in architecture.md.
+
+### Root-cause analysis (cycle-14)
+
+1. **The visibility-patch shipped without a KB sweep.** Every cycle of KB changes since work-002 has needed a parallel SKILL.md-line-count refresh. The patch added ~50 lines to each of 5 skills + 18 lines to each of 22 agents but did not run an "update KB line counts" step. **Recommendation:** add a pre-merge checklist to PR template requiring KB line-count refresh OR rephrase ALL KB docs to use stable phrasings like "byte-identical across canonical + 3 profile trees" (no number) — which is the property that's actually load-bearing.
+2. **cycle-13 was a content-only self-review.** It verified that the cycle-12 FIX work was DONE (paths swept, RETIRED markers added, count restored from 147 to 151) but did NOT re-spot-check line counts because the orchestrator's expectation was that "verify-kb-claims.sh exit 0 means no drift" — which is FALSE for inline-prose line counts.
+3. **The new subagent-heartbeat-protocol.md L111 claim was untested.** The template asserts `.aid/` is gitignored. If the template author had run `git check-ignore .aid/.heartbeat/some-file.txt` once, they'd have caught this. **Recommendation:** add a one-line sanity check to the deploy script that verifies `.aid/` ignore status.
+4. **The 5 cycle-13-missed architecture.md issues are clustered.** L19, L200 (.gitignore claims), L444, L460, L541, L613, L614 (FR2 file-name refs) — all in one doc. **Recommendation:** dedicated architecture.md SWEEP cycle that greps for DISCOVERY-STATE.md, task-NNN-STATE.md, INTERVIEW-STATE.md, MONITOR-STATE.md, DEPLOYMENT-STATE.md, .gitignore literal, and forces every hit to be a "per FR2" annotation.
+
 ## Summarization History
 
 | # | Date | Grade | Profile | Mermaid | Output | Notes |
