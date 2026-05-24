@@ -5,7 +5,7 @@ description: >
   builds REQUIREMENTS.md incrementally. Subsequent runs cross-reference against
   KB, grade, and ask targeted questions to resolve gaps and contradictions.
   Final step decomposes functional requirements into discrete feature files.
-  State machine: FIRST-RUN → Q-AND-A → CONTINUE → COMPLETION → FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE.
+  State machine: FIRST-RUN → Q-AND-A → TRIAGE → CONTINUE → COMPLETION → FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 argument-hint: "[work-001] resume work  [--reset work-001] clear and restart  [--features work-001] re-run feature decomposition"
 ---
@@ -18,12 +18,12 @@ aid-interview is **multi-agent** — different states use different agents.
 
 | State | Phase | Agent | Why |
 |-------|-------|-------|-----|
-| 1–4 | Conversational interview | `interviewer` | Empathetic dialogue, one question at a time |
+| 1–4, TRIAGE | Conversational interview + triage | `interviewer` | Empathetic dialogue, deterministic routing |
 | 5 | Feature Decomposition | `architect` | Design work — breaking requirements into structured features |
 | 6 | Cross-Reference & Refine | `reviewer` | Adversarial validation against KB and codebase |
 | 7 | DONE | (no dispatch) | Terminal state, user choice prompt |
 
-The frontmatter default `agent: interviewer` covers States 1–4. States 5 and 6 explicitly override `subagent_type` at dispatch (see those state sections below).
+The frontmatter default `agent: interviewer` covers States 1–4 and TRIAGE. States 5 and 6 explicitly override `subagent_type` at dispatch (see those state sections below).
 
 Gather requirements from a human stakeholder through adaptive, one-question-at-a-time
 conversation. Builds REQUIREMENTS.md incrementally — each answer updates the document
@@ -121,6 +121,7 @@ All paths below are relative to `.aid/{work}/`.
 ```plaintext
 State 1: No STATE.md (§ Interview Status)                          → FIRST-RUN
 State 2: STATE.md § Cross-phase Q&A has Pending entries            → Q-AND-A
+State T: STATE.md § Triage absent or § Triage **Path:** missing    → TRIAGE
 State 3: STATE.md § Interview Status: In Progress, incomplete      → CONTINUE
 State 4: STATE.md § Interview Status: In Progress, all done        → COMPLETION
 State 5: STATE.md § Interview Status: Approved, no feature folders → FEATURE-DECOMPOSITION
@@ -138,12 +139,17 @@ State 7: STATE.md § Interview Status: Approved, features + cross-ref
 4. If exists:
    a. Check `## Cross-phase Q&A` section for entries with `**Status:** Pending`
    b. If Pending entries exist → **State 2: Q-AND-A**
-   c. Read `**Interview Status:**` field in `## Interview Status`
-   d. If Status is `In Progress`:
+   c. Check `## Triage` section for a populated `**Path:**` field
+      - If `## Triage` section is absent **or** `**Path:**` field is missing/empty → **State T: TRIAGE**
+        (Exception: if `## Interview Status` exists and is not an empty scaffold — i.e., any
+        section has status other than `Pending` — treat absent `**Path:**` as `full` and skip
+        TRIAGE, to preserve backward compatibility with pre-TRIAGE in-flight works.)
+   d. Read `**Interview Status:**` field in `## Interview Status`
+   e. If Status is `In Progress`:
       - Read Section Status table under `## Interview Status`
       - If any section is `Pending` or `Partial` → **State 3: CONTINUE**
       - If all sections are `Complete` or `N/A` → **State 4: COMPLETION**
-   e. If Status is `Approved`:
+   f. If Status is `Approved`:
       - If `--features` flag provided → **State 5: FEATURE-DECOMPOSITION**
       - Check if `features/` directory exists and contains `feature-*` subdirectories
       - If no feature folders → **State 5: FEATURE-DECOMPOSITION**
@@ -159,49 +165,56 @@ Print the state-entry line and "you are here" map. Examples for each state:
 ```
 [State: FIRST-RUN] — Start a new interview from scratch; create STATE.md and REQUIREMENTS.md scaffold.
 aid-interview  ▸ you are here
-  [● FIRST-RUN ] → [ Q-AND-A ] → [ CONTINUE ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
+  [● FIRST-RUN ] → [ Q-AND-A ] → [ TRIAGE ] → [ CONTINUE ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
 ```
 
 **Q-AND-A:**
 ```
 [State: Q-AND-A] — Resolve pending cross-phase questions before continuing.
 aid-interview  ▸ you are here
-  [✓ FIRST-RUN ] → [● Q-AND-A ] → [ CONTINUE ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
+  [✓ FIRST-RUN ] → [● Q-AND-A ] → [ TRIAGE ] → [ CONTINUE ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
+```
+
+**TRIAGE:**
+```
+[State: TRIAGE] — 3 deterministic questions to choose lite or full path.
+aid-interview  ▸ you are here
+  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [● TRIAGE ] → [ CONTINUE ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
 ```
 
 **CONTINUE:**
 ```
 [State: CONTINUE] — Resume the conversational interview for incomplete sections.
 aid-interview  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [● CONTINUE ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
+  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ TRIAGE ] → [● CONTINUE ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
 ```
 
 **COMPLETION:**
 ```
 [State: COMPLETION] — All sections captured; run KB hydration and present requirements for approval.
 aid-interview  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ CONTINUE ] → [● COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
+  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ TRIAGE ] → [✓ CONTINUE ] → [● COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
 ```
 
 **FEATURE-DECOMPOSITION:**
 ```
 [State: FEATURE-DECOMPOSITION] — Decompose approved requirements into discrete feature folders.
 aid-interview  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ CONTINUE ] → [✓ COMPLETION ] → [● FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
+  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ TRIAGE ] → [✓ CONTINUE ] → [✓ COMPLETION ] → [● FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
 ```
 
 **CROSS-REFERENCE:**
 ```
 [State: CROSS-REFERENCE] — Validate REQUIREMENTS.md against KB and codebase; create Q&A for gaps.
 aid-interview  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ CONTINUE ] → [✓ COMPLETION ] → [✓ FEATURE-DECOMPOSITION ] → [● CROSS-REFERENCE ] → [ DONE ]
+  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ TRIAGE ] → [✓ CONTINUE ] → [✓ COMPLETION ] → [✓ FEATURE-DECOMPOSITION ] → [● CROSS-REFERENCE ] → [ DONE ]
 ```
 
 **DONE:**
 ```
 [State: DONE] — Interview complete, approved, decomposed, and cross-referenced.
 aid-interview  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ CONTINUE ] → [✓ COMPLETION ] → [✓ FEATURE-DECOMPOSITION ] → [✓ CROSS-REFERENCE ] → [● DONE ]
+  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ TRIAGE ] → [✓ CONTINUE ] → [✓ COMPLETION ] → [✓ FEATURE-DECOMPOSITION ] → [✓ CROSS-REFERENCE ] → [● DONE ]
 ```
 
 ---
@@ -210,8 +223,9 @@ aid-interview  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| FIRST-RUN | `references/state-first-run.md` | `interviewer` | → CONTINUE |
-| Q-AND-A | `references/state-q-and-a.md` | `interviewer` | → CONTINUE |
+| FIRST-RUN | `references/state-first-run.md` | `interviewer` | → TRIAGE |
+| Q-AND-A | `references/state-q-and-a.md` | `interviewer` | → TRIAGE |
+| TRIAGE | `references/state-triage.md` | `interviewer` | → CONTINUE |
 | CONTINUE | `references/state-continue.md` | `interviewer` | → COMPLETION |
 | COMPLETION | `references/state-completion.md` | `interviewer` | → FEATURE-DECOMPOSITION |
 | FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `architect` | → CROSS-REFERENCE |
