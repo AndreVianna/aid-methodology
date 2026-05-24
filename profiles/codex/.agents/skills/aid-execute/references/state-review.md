@@ -19,7 +19,7 @@ Dispatch the `reviewer` agent (Task tool with `subagent_type: reviewer`). Clean 
 
 **Before dispatching, print:** `[Step 2] Dispatching reviewer for review → subagent_type=reviewer`.
 
-Also update the task's row in work `STATE.md` `## Dispatches` sub-column: `| 2 | reviewer | REVIEW | {cycle} |`.
+Also update the task's row in work `STATE.md` `## Dispatches` sub-column (mandatory per work-003 traceability): `| 2 | reviewer | REVIEW | {cycle} |`.
 
 ▶ reviewer starting (~1–2 min)
 **Reviewer receives:**

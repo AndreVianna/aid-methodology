@@ -52,7 +52,7 @@ Dispatch with the Task tool, setting `subagent_type` explicitly to the chosen ex
 
 **Before dispatching, print:** `[Step 1] Dispatching {executor} for {Type} task → subagent_type={executor}` (substituting actual values).
 
-Also update the task's row in work `STATE.md` `## Dispatches` sub-column (if tracked): `| 1 | {executor} | EXECUTE Type={Type} | {cycle} |`.
+Also update the task's row in work `STATE.md` `## Dispatches` sub-column (always — mandatory per work-003 traceability, not conditional): `| 1 | {executor} | EXECUTE Type={Type} | {cycle} |`.
 
 ▶ {executor} starting (~{time band per rough-time-hints})
 Load the section matching the task's Type from `references/task-type-rules.md` and pass it to the executor as the type-specific RULES it must follow.

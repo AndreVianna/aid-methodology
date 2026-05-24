@@ -1,11 +1,13 @@
 # Subagent Heartbeat Protocol
 
-When an AID skill (an "orchestrator") dispatches a subagent that may run longer
-than 5 minutes, the orchestrator MAY pass a `HEARTBEAT_FILE=...` +
-`HEARTBEAT_INTERVAL=Nm` parameter to the subagent. If passed, the subagent MUST
-write periodic progress notes to that file. The orchestrator can then read the
-file when its L2 check-in timer fires (see `long-wait-protocol.md`) to surface
-real progress rather than just elapsed time.
+When an AID skill (an "orchestrator") dispatches a subagent, the orchestrator
+MUST pass `HEARTBEAT_FILE=...` + `HEARTBEAT_INTERVAL=Nm` parameters to every
+subagent dispatch (unless heartbeat is explicitly disabled via
+`**Heartbeat Interval:** 0` in `.aid/knowledge/STATE.md`). The subagent MUST
+write periodic progress notes to that file. The orchestrator reads the file
+when its L2 check-in timer fires (see `long-wait-protocol.md`) to surface real
+progress rather than just elapsed time. Heartbeat is unconditional: never gate
+on ETA threshold or task type.
 
 This protocol is the L3 layer of the subagent-visibility scheme. L1 = honest
 ETAs (`rough-time-hints.md`); L2 = orchestrator check-in timers
@@ -31,7 +33,7 @@ work):
 
 ## Orchestrator-side responsibilities (dispatcher)
 
-Before dispatching a subagent that will run > 5 min:
+Before dispatching any subagent (always, regardless of ETA):
 
 1. **Read the heartbeat interval** from `.aid/knowledge/STATE.md`. If absent,
    default to `1 minute`. If `0`, skip heartbeat entirely (no parameters

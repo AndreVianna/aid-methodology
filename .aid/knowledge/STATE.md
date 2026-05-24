@@ -448,3 +448,7 @@ The patch grew skill bodies — aid-discover/SKILL.md went from 548 to **596 lin
 | # | Date | Grade | Profile | Mermaid | Output | Notes |
 |---|------|-------|---------|---------|--------|-------|
 | 1 | 2026-05-21 | A+ | cli | 11.15.0 | knowledge-summary.html (~3.39 MB, 9 diagrams) | Initial generation. **Cycle-11/12:** HTML stale — predates work-002/work-003 deploys; Fig 9 ("triplicated install bundles") describes a pattern that no longer exists. Re-run /aid-summarize after architecture.md FIX. |
+
+## Calibration Log
+
+Project-level cross-skill calibration tracking. Per-work calibration data lives in the corresponding work STATE.md `## Calibration Log` section. This section can aggregate roll-ups when needed; for now, see each work's STATE.md for primary data.

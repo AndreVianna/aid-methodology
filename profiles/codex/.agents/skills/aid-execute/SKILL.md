@@ -158,10 +158,11 @@ protocol lives in two reference docs; this section is a checklist citing them.
    subagent's operation class. Capture LOW–HIGH band.
 2. **Read heartbeat config** from `.aid/knowledge/STATE.md` top-of-file
    `**Heartbeat Interval:** N minutes` (default 1; `0` = disabled).
-3. **If ETA LOW > 5 min AND heartbeat enabled:**
+3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
-   - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt
-4. **Arm 3 L2 timers** (via `run_in_background: true`):
+   - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt with explicit instruction to update during long phases
+   - SKIP only if `**Heartbeat Interval:** 0` (user-explicit opt-out in STATE.md)
+4. **Arm 3 L2 timers** (always — even for short ETAs use minimums 60s/120s/180s; never gate on ETA):
    - `sleep <LOW/2 in s> && echo "... <agent> still running (Xm elapsed of ~LOW–HIGH)"`
    - `sleep <LOW in s> && echo "... <agent> at estimated time (LOWm elapsed)"`
    - `sleep <1.5×LOW in s> && echo "⚠️ <agent> EXCEEDED estimate (1.5×LOWm elapsed); consider checking on it or cancelling"`
@@ -174,8 +175,12 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **On completion / failure:**
 
-- **Success:** emit `✓ <agent> done in <actual>` with measured time. Log to
-  `STATE.md ## Calibration Log` for L1 calibration. Delete heartbeat file.
+- **Success:** emit `✓ <agent> done in <actual>` with measured time. Append a row to
+  the work `STATE.md ## Calibration Log` section (create section if missing) with
+  format `| YYYY-MM-DD | <agent> | <task-id/cycle> | <ETA-band> | <actual> | <notes> |`.
+  Also update the task's `## Dispatches` sub-column with the dispatch record.
+  Both are mandatory per work-003 traceability (never optional, never "if tracked").
+  Delete heartbeat file.
 - **Failure:** emit `✗ <agent> FAILED after <elapsed> (reason: <one-line>)`.
   Decide whether to re-dispatch, fall back, or surface to user. Delete
   heartbeat file.
