@@ -52,16 +52,16 @@ See `PLAN.md` for full details, IQ resolutions, and cross-cutting risks.
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|
 | 001 | `task-001` | REFACTOR | W0 | **Done ✅** | C2 A+ | 7m14s + 3m47s | Refactor aid-deploy to thin-router. Commits 22381aa (refactor) + b8b87e8 (cycle-1 fix-pass: RE-RUN header restored, state-idle heading normalized, state-packaging opener trimmed, State Detection parentheticals updated). SKILL.md 360→201; 4 refs (idle/selecting/verifying/packaging). All 3 install trees byte-identical. C1=B (2 LOW + 2 MINOR, all CODE, all fixed). C2=A+ (0 issues). Generator VERIFY-4a PASS both cycles. |
-| 002 | `task-002` | REFACTOR | W0 | Pending | — | — | Refactor aid-monitor to thin-router (smallest) |
-| 003 | `task-003` | REFACTOR | W0 | Pending | — | — | Refactor aid-summarize to thin-router (small-mid) |
-| 004 | `task-004` | REFACTOR | W0 | Pending | — | — | Refactor aid-init to thin-router (mid; leaves MaxConcurrent Q hook for d-005) |
-| 005 | `task-005` | REFACTOR | W0 | Pending | — | — | Refactor aid-interview to thin-router (mid; leaves State TRIAGE hook for d-002) |
-| 006 | `task-006` | REFACTOR | W0 | Pending | — | — | Refactor aid-specify to thin-router (large; multi-state) |
-| 007 | `task-007` | REFACTOR | W0 | Pending | — | — | Refactor aid-plan to thin-router (mid) |
-| 008 | `task-008` | REFACTOR | W0 | Pending | — | — | Refactor aid-detail to thin-router (mid) |
-| 009 | `task-009` | REFACTOR | W0 | Pending | — | — | Refactor aid-execute to thin-router (large; most-touched downstream) |
-| 010 | `task-010` | REFACTOR | W0 | Pending | — | — | Refactor aid-discover to thin-router (largest; last) |
-| 011 | `task-011` | IMPLEMENT | W0 | Done | — | — | Confirm template absent + orphan-ref grep sweep (KB docs updated to work-003 FR2 per-area STATE rule) |
+| 002 | `task-002` | REFACTOR | W0 | In Review (C3) | C1 D+ → C2 A → C3 pending | 6m18s+~8m+~7m+~? | Refactor aid-monitor. C3 dispatched after fix-pass + mojibake repair. |
+| 003 | `task-003` | REFACTOR | W0 | **Done ✅** | C2 A+ | ~7m+~5m+~2.5m | aid-summarize (Mode-keyed, 10 refs, DONE-IDEMPOTENT composite). C1=A (2 MIN) → C2=A+ (0 defects). |
+| 004 | `task-004` | REFACTOR | W0 | **Done ✅** | C2 A+ | 7m49s+~10m+~3m | aid-init (Step-keyed, 5 step refs). MaxConcurrent insertion-point preserved for task-032. C1=C+ disputed → C2=A+ (1 MIN theoretical dead-branch). |
+| 005 | `task-005` | REFACTOR | W0 | **Done ✅ (Loopback IQ9)** | C2 A+ effective | 7m47s+~7m+~4m | aid-interview (State-keyed, 7 refs + interview-loop.md shared partial). TRIAGE insertion-point preserved. C1 surfaced pre-existing SPEC auto-advance contradiction in state-completion.md L64. C2 confirmed: 1 HIGH [SPEC] + 3 MIN — all pre-existing. **Loopback IQ9** in Cross-phase Q&A: route to /aid-specify. |
+| 006 | `task-006` | REFACTOR | W0 | **Done ✅** | C2 A+ | 6m43s+~7m+~2m | aid-specify (State-keyed, 6-state INITIALIZE/CONTINUE/SPIKE/BLOCKED/REVIEW/DONE). C1=B/C+ → C2=A+ (0 defects). |
+| 007 | `task-007` | REFACTOR | W0 | **Done ✅** | C1 A+ | ~11m+~5m | aid-plan (Section-keyed, 2 thematic refs). PASS cycle-1: A+. No cycle-2 needed. |
+| 008 | `task-008` | REFACTOR | W0 | **Done ✅** | C1 A+ | 7m11s+~7m | aid-detail (Section-keyed, 4 thematic refs incl. task-decomposition shared methodology). 77-line router (82% reduction!). PASS cycle-1: A+. |
+| 009 | `task-009` | REFACTOR | W0 | **Done ✅ (Loopback IQ10)** | C2 A+/A | 8m4s+~11m+~5m | aid-execute (Step-keyed, 4 new + 2 preserved refs). Insertion-point markers for delivery-003/005. C1=C → C2 fix-pass moved cross-cutting sections back to SKILL.md; State Detection inversion fixed. Remaining 1 MED [SPEC] dual-Advance gap + carryovers. **Loopback IQ10** in Cross-phase Q&A. |
+| 010 | `task-010` | REFACTOR | W0 | **Done ✅** | C1 A+ | 11m26s+~10m | aid-discover (Mode-keyed with Step substructure; LARGEST 596→253, 58% reduction). 6 state refs + 3 preserved. Sub-agent fanout in GENERATE preserved verbatim. CR6 (Q&A→Q-AND-A) applied to 22 occurrences. PASS cycle-1: A+. |
+| 011 | `task-011` | IMPLEMENT | W0 | **Done ✅** | C2 A+ | 10m48s+~5m+1m30s | Orphan-ref sweep. 6 KB docs + 2 STATE.md updated to ref work-003 FR2. Zero current-state matches. C1=A+ (PASS-with-LOW) → C2 fix-pass restored api-contracts L305 specificity → A+ (0 defects). |
 | 012 | `task-012` | TEST | W1 | Pending | — | — | E2E pipeline parity test |
 | 013 | `task-013` | CONFIGURE | W0 | Pending | — | — | Extend work-state-template ## Triage + data-model.md §2.3 |
 | 014 | `task-014` | IMPLEMENT | W1 | Pending | — | — | Implement State TRIAGE + T3→workType mapping |

@@ -21,6 +21,8 @@
 {"dst": ".claude/agents/simple-glob.md", "profile": "claude-code", "sha256": "1bbe0f11eee07e347bf573061a574f0928d422cb3da9c274028df1947605ec96", "src": "canonical/agents/simple-glob/AGENT.md"}
 {"dst": ".claude/agents/tech-writer.md", "profile": "claude-code", "sha256": "f897b09e78640b96ba1e4fd9e8efc4e79dbab8264c67c04a0b289a3fbc9bb16b", "src": "canonical/agents/tech-writer/AGENT.md"}
 {"dst": ".claude/agents/ux-designer.md", "profile": "claude-code", "sha256": "b1922b74840774ec1681c7e81b1d5f95dfee33effb83b4531a4b67ddee3daf2d", "src": "canonical/agents/ux-designer/AGENT.md"}
+{"dst": ".claude/recipes/README.md", "profile": "claude-code", "sha256": "f6ec6023a5220ee0f9aaccab624639469ce6d3f3b8059082d8c0857816aa9966", "src": "canonical/recipes/README.md"}
+{"dst": ".claude/recipes/RECIPE-TEMPLATE.md", "profile": "claude-code", "sha256": "6391f2fdd4fed984e600deb6d66d79973e47b8ec7cffbe12ec8f5a44ae1658da", "src": "canonical/recipes/RECIPE-TEMPLATE.md"}
 {"dst": ".claude/skills/aid-deploy/SKILL.md", "profile": "claude-code", "sha256": "9f6d6d9a59d756c0a0c75fb5b7bf1a43472a875f9569a71f6d0bff6bf6f820d3", "src": "canonical/skills/aid-deploy/SKILL.md"}
 {"dst": ".claude/skills/aid-deploy/references/state-idle.md", "profile": "claude-code", "sha256": "a411f3f92a7d351a45de466448547155861031f8eb499a39c6220b230d42b361", "src": "canonical/skills/aid-deploy/references/state-idle.md"}
 {"dst": ".claude/skills/aid-deploy/references/state-packaging.md", "profile": "claude-code", "sha256": "9dba7411d9b9c22b6823aa5e91fedf9c0b547338f9ba7a8f259cd04857a1c182", "src": "canonical/skills/aid-deploy/references/state-packaging.md"}
@@ -157,7 +159,9 @@
 {"dst": ".claude/templates/rough-time-hints.md", "profile": "claude-code", "sha256": "5e540b999ffcd15f002ecffe3e8069bf1daa1ff5d9e7d3b4efd0231fbfb8e97f", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".claude/templates/scripts/build-project-index.sh", "profile": "claude-code", "sha256": "3bd1c60e8275c2a2043a7e4a3fd6975fb011cb87141585de441716782e15ce0f", "src": "canonical/templates/scripts/build-project-index.sh"}
 {"dst": ".claude/templates/scripts/grade.sh", "profile": "claude-code", "sha256": "6155b1f2fae1ff85c1b6c083deb830305c231cd0f9ce9cbe983b3b3001edf3a3", "src": "canonical/templates/scripts/grade.sh"}
+{"dst": ".claude/templates/scripts/test-writeback-task-status.sh", "profile": "claude-code", "sha256": "18ad4cc337158c7d60287f835841e424930ac9d1f32390593d725a23dfd2a06e", "src": "canonical/templates/scripts/test-writeback-task-status.sh"}
 {"dst": ".claude/templates/scripts/verify-kb-claims.sh", "profile": "claude-code", "sha256": "d65e3d334e1c2c83392b35623b2744496efe1a001f7954758fa13b3bc928f6b4", "src": "canonical/templates/scripts/verify-kb-claims.sh"}
+{"dst": ".claude/templates/scripts/writeback-task-status.sh", "profile": "claude-code", "sha256": "eea73dfe692730a94f465c7f096c7a6ba0aba3fe829c2899216de6dd9e8a86e8", "src": "canonical/templates/scripts/writeback-task-status.sh"}
 {"dst": ".claude/templates/specs/spec-template.md", "profile": "claude-code", "sha256": "5e8e8653b6e30baafc411c75a03b381076c40fe2807f3767d680d7ffdee050ee", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".claude/templates/subagent-heartbeat-protocol.md", "profile": "claude-code", "sha256": "d05cf07ba85743209e3f99211360d89150544a232d1c3cc634389df1563cdb01", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".claude/templates/ui-architecture.md", "profile": "claude-code", "sha256": "eb3ee918a84233881fad358463eb1ca47c453a98d507989d436c08ff3e3224fb", "src": "canonical/templates/ui-architecture.md"}
