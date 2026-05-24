@@ -61,7 +61,7 @@ See `PLAN.md` for full details, IQ resolutions, and cross-cutting risks.
 | 008 | `task-008` | REFACTOR | W0 | Pending | — | — | Refactor aid-detail to thin-router (mid) |
 | 009 | `task-009` | REFACTOR | W0 | Pending | — | — | Refactor aid-execute to thin-router (large; most-touched downstream) |
 | 010 | `task-010` | REFACTOR | W0 | Pending | — | — | Refactor aid-discover to thin-router (largest; last) |
-| 011 | `task-011` | IMPLEMENT | W0 | Pending | — | — | Delete implementation-state.md template + orphan-ref grep sweep |
+| 011 | `task-011` | IMPLEMENT | W0 | Done | — | — | Confirm template absent + orphan-ref grep sweep (KB docs updated to work-003 FR2 per-area STATE rule) |
 | 012 | `task-012` | TEST | W1 | Pending | — | — | E2E pipeline parity test |
 | 013 | `task-013` | CONFIGURE | W0 | Pending | — | — | Extend work-state-template ## Triage + data-model.md §2.3 |
 | 014 | `task-014` | IMPLEMENT | W1 | Pending | — | — | Implement State TRIAGE + T3→workType mapping |

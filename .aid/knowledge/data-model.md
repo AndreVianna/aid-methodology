@@ -48,7 +48,7 @@ Each row is one artifact "type". Producer/consumer mappings are extracted from s
 
 **Artifact files keep their inline `## Change Log` sections** — that is *content history* (what changed in the document), distinct from *process state* (where are we in the workflow). Artifact files (REQUIREMENTS.md, SPEC.md, PLAN.md, task-NNN.md, KB docs) are unchanged.
 
-**Canonical templates** for the area-STATE shape live at `canonical/templates/discovery-state-template.md` (83 lines) and `canonical/templates/work-state-template.md` (82 lines). The legacy per-artifact templates (`interview-state.md`, `feature-state.md`, `implementation-state.md`, `deployment-state.md`, the old `discovery-state.md`, the `reports/discovery-state-template.md` reviewer variant) have all been retired — they no longer exist on disk under `canonical/templates/` nor under any of the three install trees.
+**Canonical templates** for the area-STATE shape live at `canonical/templates/discovery-state-template.md` (83 lines) and `canonical/templates/work-state-template.md` (82 lines). The legacy per-artifact templates (`interview-state.md`, `feature-state.md`, `deployment-state.md`, the old `discovery-state.md`, the `reports/discovery-state-template.md` reviewer variant, and the per-task state template) have all been retired by work-003 FR2 — they no longer exist on disk under `canonical/templates/` nor under any of the three install trees. See `coding-standards.md §8.5` for the naming rule and §2.7 below for the consolidated per-work STATE schema.
 
 **Sections §2.1, §2.3, §2.7, §2.10 below describe the legacy per-skill / per-artifact state files.** Their schemas are preserved as historical reference; they no longer exist as separate files on disk. The active schemas are in the canonical templates referenced above.
 
@@ -190,7 +190,7 @@ Verified at `canonical/templates/delivery-plans/task-template.md:1-20`. Six sect
 
 ### 2.7 task-NNN-STATE.md *(RETIRED — absorbed into the per-work `.aid/work-NNN/STATE.md` `## Tasks Status` table per FR2; schema preserved as historical reference. `task-NNN.md` task-definition files remain unchanged at the 6-section template — definition stays inside the task file, status moves to work STATE.md.)*
 
-The pre-FR2 `task-NNN-STATE.md` file (one per task, with `## Current Review`, `## Issues`, `## Dispatches`, `## Review History`) has been retired. Its data is now one row in the per-work `STATE.md` `## Tasks Status` table per §2.3 above. The standalone `implementation-state.md` template no longer exists on disk under `canonical/templates/` nor any install tree. Review and test outcomes for a task are now recorded in the work-STATE row plus inline in the task's review report.
+The pre-FR2 `task-NNN-STATE.md` file (one per task, with `## Current Review`, `## Issues`, `## Dispatches`, `## Review History`) has been retired by work-003 FR2. Its data is now one row in the per-work `STATE.md` `## Tasks Status` table per §2.3 above. The canonical template that generated per-task state files no longer exists on disk under `canonical/templates/` nor any install tree. Review and test outcomes for a task are now recorded in the work-STATE row plus inline in the task's review report. See work-003 FR2 per-area STATE rule for the consolidation mechanism.
 
 ### 2.8 IMPEDIMENT-{id}.md
 

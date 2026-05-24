@@ -229,7 +229,7 @@ Cursor **does not** use `CLAUDE.md` — `profiles/cursor/README.md:143` is expli
 
 These are the schemas AID phases use to communicate with each other. Every artifact below is the contract between two AID phases — broken contracts mean broken hand-offs. Templates listed are the source-of-truth shape.
 
-> **FR2 (work-003-traceability) — state-file consolidation.** Five legacy state files (`DISCOVERY-STATE.md`, `INTERVIEW-STATE.md`, per-feature `FEATURE-STATE.md`, per-task `task-NNN-STATE.md`, `DEPLOYMENT-STATE.md`) have been retired and absorbed into **two area-STATE files**: `.aid/knowledge/STATE.md` (Discovery area) and `.aid/work-NNN-{name}/STATE.md` (Work area). The Monitor area's STATE file is deferred until that area matures (per `data-model.md §1A` and FR2 OQ-3). The retired-artifact schemas previously documented in this file are now consolidated into the two area-STATE schemas below; their old per-artifact templates (`discovery-state.md`, `interview-state.md`, `feature-state.md`, `implementation-state.md`, `deployment-state.md`) have been deleted from the install trees. See `coding-standards.md §8.5` for the naming rule and `data-model.md §1A` for the consolidation map.
+> **FR2 (work-003-traceability) — state-file consolidation.** Five legacy state files (`DISCOVERY-STATE.md`, `INTERVIEW-STATE.md`, per-feature `FEATURE-STATE.md`, per-task `task-NNN-STATE.md`, `DEPLOYMENT-STATE.md`) have been retired and absorbed into **two area-STATE files**: `.aid/knowledge/STATE.md` (Discovery area) and `.aid/work-NNN-{name}/STATE.md` (Work area). The Monitor area's STATE file is deferred until that area matures (per `data-model.md §1A` and FR2 OQ-3). The retired-artifact schemas previously documented in this file are now consolidated into the two area-STATE schemas below; their old per-artifact templates have been deleted from the install trees. See `coding-standards.md §8.5` for the per-area STATE naming rule and `data-model.md §1A` for the consolidation map.
 
 ### `REQUIREMENTS.md` Schema
 
@@ -302,7 +302,7 @@ This single file absorbs the legacy `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`. T
 
 Source-of-truth template: `canonical/templates/work-state-template.md` (83 lines). Per-instance file lives at `.aid/work-NNN-{name}/STATE.md`. Produced by `aid-init` (skeleton when a new `work-NNN` directory is created) and updated by every skill that operates on the work — `aid-interview`, `aid-specify` (per-feature row), `aid-plan` (delivery row), `aid-detail` (task rows), `aid-execute` (task review status), `aid-deploy` (deploy status row).
 
-This single file absorbs four legacy per-skill / per-artifact state files. The retired install-tree templates (`profiles/*/templates/interview-state.md`, `feature-state.md`, `implementation-state.md`, `deployment-state.md`) have been deleted.
+This single file absorbs four legacy per-skill / per-artifact state files. The retired per-artifact install-tree templates have been deleted per work-003 FR2 (per-area STATE rule — `coding-standards.md §8.5`).
 
 | Field / Section | Required | Type | Allowed values | Evidence |
 |-----------------|----------|------|----------------|----------|
