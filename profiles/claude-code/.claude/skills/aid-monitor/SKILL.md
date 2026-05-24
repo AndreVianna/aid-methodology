@@ -5,6 +5,7 @@ description: >
   interpretation with triage — detect anomalies, perform root cause analysis
   for bugs, and route to aid-execute (bugs) or aid-discover (change requests).
   Per-work scope. Use post-deployment, on schedule, or on-demand.
+  State machine: OBSERVE → CLASSIFY → ROUTE → DONE.
 allowed-tools: Read, Glob, Grep, Bash, Write
 ---
 
@@ -45,7 +46,7 @@ Optional flags:
 
 <!-- NOTE (FR2 area-STATE rule, work-003-traceability/feature-002 OQ-3 resolution): The Monitor area STATE is deferred until the area matures. When authored, MONITOR-STATE.md follows the area-STATE pattern documented at canonical/templates/work-state-template.md (per-work) and .aid/knowledge/data-model.md §1A. -->
 
-## Pre-flight
+## ⚠️ Pre-flight Checks
 
 1. Verify `.aid/` workspace exists.
 2. Resolve work directory.
@@ -64,8 +65,9 @@ Optional flags:
 ## State Detection
 
 Determine the current entry state from context:
-- No prior run context → **OBSERVE** (Step 1)
-- Active findings present → **CLASSIFY/ROUTE** (Step 2–4)
+- No prior run context → **OBSERVE** state (pull telemetry; see `references/state-observe.md`)
+- Active findings present → **CLASSIFY** state (classify and analyze; see `references/state-classify.md`)
+- All findings classified → **ROUTE** state (propose and act; see `references/state-route.md`)
 - All findings resolved → **DONE**
 
 Print the state-entry line and "you are here" map:
@@ -114,11 +116,6 @@ APM/performance metrics, test trends, user feedback, support tickets, log files.
 Read `.aid/knowledge/INDEX.md`, pull relevant docs (typically architecture, module-map,
 infrastructure, test-landscape) for baseline context and root cause analysis.
 
-## Process
-
-#
----
-
 ## Dispatch Protocol (L1+L2+L3 subagent visibility, subagent-visibility-patch)
 
 Every subagent dispatch in this skill MUST follow this protocol so the user
@@ -164,140 +161,17 @@ The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair
 lines elsewhere in this skill body remain in place; this protocol just makes
 them more informative by adding mid-wait check-ins + structured progress.
 
-## Step 1: Observe
+## Dispatch
 
-Pull data from configured sources. Scope the observation window:
-- **Post-deploy:** last deploy → now
-- **Scheduled:** last monitor run → now
-- **On-demand:** user-specified window
+| State | Detail | Worker | Advance |
+|-------|--------|--------|---------|
+| OBSERVE | `references/state-observe.md` | `researcher` | → CLASSIFY |
+| CLASSIFY | `references/state-classify.md` | `researcher` | → ROUTE |
+| ROUTE | `references/state-route.md` | `orchestrator` | → DONE |
+| DONE | _(inline — see Re-run below)_ | `inline` | → halt |
 
-▶ telemetry pull starting (~30 s–2 min per source per `canonical/templates/rough-time-hints.md`)
-For each data source, capture:
-- Raw signals (errors, latency spikes, failures, ticket clusters)
-- Metadata (timestamps, affected users/endpoints, frequency)
-- Trends vs. baseline (is this new? worsening? stable?)
-✓ telemetry pull done (record actual time, sources hit, signals collected) — or ✗ telemetry pull failed: {source, reason}
-
-▶ anomaly detection starting (~10–30 s)
-**Anomaly detection — compare to baseline:**
-- Error rate changes (new error types, rate spikes)
-- Performance degradation (latency, throughput)
-- Test instability (new flaky tests, persistent failures)
-- Behavioral anomalies (unexpected patterns in usage or data)
-
-**Correlation — connect signals:**
-- "Error spike started 23 min after deploy of package-002"
-- "Performance drop coincides with new region traffic"
-- Correlation narrows investigation scope — don't just list, connect.
-
-Use KB to filter: known conditions, expected variation, already-documented issues.
-✓ anomaly detection done (record actual time, N findings above threshold) — or ✗ anomaly detection failed: {reason}
-
-### Step 2: Classify
-
-For each finding above threshold:
-
-```
-Does code do what the feature SPEC says?
-├── NO → BUG (spec right, code wrong)
-├── YES, spec doesn't cover this case →
-│     Obvious fix? → BUG (spec gap)
-│     Needs requirements input? → CHANGE REQUEST
-├── YES, spec is now wrong → CHANGE REQUEST
-├── NOT CODE → INFRASTRUCTURE
-└── FALSE POSITIVE → NO ACTION
-```
-
-Assess severity per finding:
-- **Critical:** Data loss, security breach, total outage → Immediate
-- **High:** Core functionality broken → Same day
-- **Medium:** Non-critical affected, workaround exists → This week
-- **Low:** Minor, limited impact → Next cycle
-
-### Step 3: Analyze (BUGs only)
-
-▶ root cause analysis starting (~2–5 min per BUG per `canonical/templates/rough-time-hints.md`)
-Root cause analysis before routing:
-
-1. **Reproduce the path.** Trace from evidence: endpoint → module → function.
-2. **Identify the fault.** What specific code is wrong?
-3. **Understand why.** Spec ambiguous? Edge case? KB assumption wrong?
-4. **Assess blast radius.** Check module consumers via INDEX.md → module-map.
-5. **Define patch scope.** Exactly which files change. Minimal surface — fix the bug, don't refactor.
-6. **Test requirements.** Fix verification + regression + coverage gap.
-
-Root cause = one sentence:
-"The `PaymentService.Process()` method doesn't validate null `currency` field,
-which spec says must default to USD."
-✓ root cause analysis done (record actual time, root cause, patch scope) — or ✗ root cause analysis blocked: {reason — usually KB gap or unreproducible}
-
-### Step 4: Propose Actions
-
-Present findings to the user with proposed routing:
-
-```
-📊 Monitor Report — work-001 (since 2026-03-20)
-
-Finding 1: [CRITICAL] [BUG] Null currency causes 500 error
-  Evidence: 342 errors in 48h, payment module, started after package-002
-  Root cause: PaymentService.Process() missing null validation
-  Patch scope: PaymentService.cs + PaymentServiceTests.cs
-  → Proposed: Create task in delivery-hotfix → aid-execute
-
-Finding 2: [MEDIUM] [CHANGE REQUEST] Reports need local timezone
-  Evidence: 12 support tickets requesting midnight-local instead of midnight-UTC
-  → Proposed: Route to aid-discover → new work cycle
-
-Finding 3: [LOW] [NO ACTION] Intermittent 504 on health endpoint
-  Evidence: 3 occurrences in 7 days, all self-resolved < 30s
-  → Proposed: Document, no action
-
-[1] Approve all routes
-[2] Adjust — change routing for specific findings
-```
-
-### Step 5: Act
-
-For each approved finding:
-
-**BUG → aid-execute (short path):**
-- Create a new task file in `.aid/{work}/tasks/` with type IMPLEMENT
-- Include: root cause, patch scope, test requirements, severity
-- The task goes through the normal execute cycle (code → review → done)
-
-**CHANGE REQUEST → aid-discover:**
-- Write a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)` describing the gap
-- Optionally create a new work if scope is large enough
-
-**INFRASTRUCTURE → escalate:**
-- Document in the monitor run summary with recommended ops action
-- Not in AID's scope — human handles this
-
-**NO ACTION → close:**
-- Document justification in the monitor run summary → Resolved Findings list
-
-**Update known-issues.md** if findings reveal new known issues affecting other features.
-
-### Step 6: Update State
-
-Print monitor run summary: date, window, finding count, routing summary.
-
-▶ PM tool ticket creation starting (~10–30 s per ticket per `canonical/templates/rough-time-hints.md`; skip block entirely if no PM tool)
-If PM tool configured (infrastructure.md § Project Management):
-- Create tickets for BUG tasks
-- Link to existing Sprint/Epic
-✓ PM tool ticket creation done (record actual time, N tickets created) — or ✗ PM tool ticket creation failed: {reason — usually auth/network}
-
-## Severity Thresholds
-
-| Signal | Threshold | Classification |
-|--------|-----------|----------------|
-| New error type | Any | Finding |
-| Error rate increase | >200% baseline | Finding |
-| Performance degradation | >50% latency | Finding |
-| Persistent test failure | Any new | Finding |
-| Support ticket cluster | 3+ same issue | Finding |
-| Below all thresholds | — | Clean report, no findings |
+On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
+When a state completes, print `Next: [State: {NEXT}] — run /aid-monitor again` and exit.
 
 ## Re-run
 

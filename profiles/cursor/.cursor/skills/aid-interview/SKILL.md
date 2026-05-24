@@ -5,6 +5,7 @@ description: >
   builds REQUIREMENTS.md incrementally. Subsequent runs cross-reference against
   KB, grade, and ask targeted questions to resolve gaps and contradictions.
   Final step decomposes functional requirements into discrete feature files.
+  State machine: FIRST-RUN → Q-AND-A → CONTINUE → COMPLETION → FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit
 argument-hint: "[work-001] resume work  [--reset work-001] clear and restart  [--features work-001] re-run feature decomposition"
 ---
@@ -118,11 +119,11 @@ Do NOT rely on memory from previous runs. ALWAYS read the actual files on disk.
 All paths below are relative to `.aid/{work}/`.
 
 ```plaintext
-State 1: No STATE.md (§ Interview Status)                          → FIRST RUN
-State 2: STATE.md § Cross-phase Q&A has Pending entries            → Q&A mode
-State 3: STATE.md § Interview Status: In Progress, incomplete      → CONTINUE INTERVIEW
-State 4: STATE.md § Interview Status: In Progress, all done        → COMPLETION & APPROVAL
-State 5: STATE.md § Interview Status: Approved, no feature folders → FEATURE DECOMPOSITION
+State 1: No STATE.md (§ Interview Status)                          → FIRST-RUN
+State 2: STATE.md § Cross-phase Q&A has Pending entries            → Q-AND-A
+State 3: STATE.md § Interview Status: In Progress, incomplete      → CONTINUE
+State 4: STATE.md § Interview Status: In Progress, all done        → COMPLETION
+State 5: STATE.md § Interview Status: Approved, no feature folders → FEATURE-DECOMPOSITION
 State 6: STATE.md § Interview Status: Approved, features exist,
          cross-reference not yet done                              → CROSS-REFERENCE
 State 7: STATE.md § Interview Status: Approved, features + cross-ref
@@ -133,19 +134,19 @@ State 7: STATE.md § Interview Status: Approved, features + cross-ref
 
 1. If `--reset` → delete the work folder → recreate → proceed as State 1
 2. Check for `STATE.md` in the work folder and look for the `## Interview Status` section
-3. If missing → **State 1: FIRST RUN**
+3. If missing → **State 1: FIRST-RUN**
 4. If exists:
    a. Check `## Cross-phase Q&A` section for entries with `**Status:** Pending`
-   b. If Pending entries exist → **State 2: Q&A**
+   b. If Pending entries exist → **State 2: Q-AND-A**
    c. Read `**Interview Status:**` field in `## Interview Status`
    d. If Status is `In Progress`:
       - Read Section Status table under `## Interview Status`
-      - If any section is `Pending` or `Partial` → **State 3: CONTINUE INTERVIEW**
-      - If all sections are `Complete` or `N/A` → **State 4: COMPLETION & APPROVAL**
+      - If any section is `Pending` or `Partial` → **State 3: CONTINUE**
+      - If all sections are `Complete` or `N/A` → **State 4: COMPLETION**
    e. If Status is `Approved`:
-      - If `--features` flag provided → **State 5: FEATURE DECOMPOSITION**
+      - If `--features` flag provided → **State 5: FEATURE-DECOMPOSITION**
       - Check if `features/` directory exists and contains `feature-*` subdirectories
-      - If no feature folders → **State 5: FEATURE DECOMPOSITION**
+      - If no feature folders → **State 5: FEATURE-DECOMPOSITION**
       - If feature folders exist:
         - Check STATE.md `## Interview Status` `## Cross-Reference` sub-section for `**Status:** Complete`
           (or check if cross-reference entries exist from a prior run)
@@ -161,9 +162,9 @@ aid-interview  ▸ you are here
   [● FIRST-RUN ] → [ Q&A ] → [ CONTINUE ] → [ COMPLETION ] → [ FEATURES ] → [ CROSS-REF ] → [ DONE ]
 ```
 
-**Q&A:**
+**Q-AND-A:**
 ```
-[State: Q&A] — Resolve pending cross-phase questions before continuing.
+[State: Q-AND-A] — Resolve pending cross-phase questions before continuing.
 aid-interview  ▸ you are here
   [✓ FIRST-RUN ] → [● Q&A ] → [ CONTINUE ] → [ COMPLETION ] → [ FEATURES ] → [ CROSS-REF ] → [ DONE ]
 ```
@@ -182,16 +183,16 @@ aid-interview  ▸ you are here
   [✓ FIRST-RUN ] → [✓ Q&A ] → [✓ CONTINUE ] → [● COMPLETION ] → [ FEATURES ] → [ CROSS-REF ] → [ DONE ]
 ```
 
-**FEATURES:**
+**FEATURE-DECOMPOSITION:**
 ```
-[State: FEATURES] — Decompose approved requirements into discrete feature folders.
+[State: FEATURE-DECOMPOSITION] — Decompose approved requirements into discrete feature folders.
 aid-interview  ▸ you are here
   [✓ FIRST-RUN ] → [✓ Q&A ] → [✓ CONTINUE ] → [✓ COMPLETION ] → [● FEATURES ] → [ CROSS-REF ] → [ DONE ]
 ```
 
-**CROSS-REF:**
+**CROSS-REFERENCE:**
 ```
-[State: CROSS-REF] — Validate REQUIREMENTS.md against KB and codebase; create Q&A for gaps.
+[State: CROSS-REFERENCE] — Validate REQUIREMENTS.md against KB and codebase; create Q&A for gaps.
 aid-interview  ▸ you are here
   [✓ FIRST-RUN ] → [✓ Q&A ] → [✓ CONTINUE ] → [✓ COMPLETION ] → [✓ FEATURES ] → [● CROSS-REF ] → [ DONE ]
 ```
@@ -205,301 +206,20 @@ aid-interview  ▸ you are here
 
 ---
 
-## State 1: FIRST RUN
-
-This happens only when STATE.md `## Interview Status` does not exist in the work folder.
-
-### 1a. Read KB (if it exists)
-
-Check for `.aid/knowledge/INDEX.md`. If it exists, read it to understand what's
-already known about the project. This context prevents asking questions the KB already answers.
-
-If no KB exists, that's fine — this is a greenfield project.
-
-### 1b. Create or update STATE.md
-
-Ensure `.aid/{work}/STATE.md` exists and has an `## Interview Status` section and a
-`## Cross-phase Q&A` section. Copy from `../../templates/work-state-template.md` if
-the file does not yet exist.
-
-### 1c. Create REQUIREMENTS.md scaffold
-
-Copy the template from `../../templates/requirements.md` to
-`.aid/{work}/REQUIREMENTS.md`.
-Add the first Change Log entry: `| {today} | Initial interview started | /aid-interview |`
-
-**Note:** Sections are empty — no placeholder markers. The STATE.md `## Interview Status` tracks
-which sections have been filled.
-
-### 1d. Ask the opening question
-
-**The first question is always the same:**
-
-```
-What are we building? Tell me the goal and what success looks like.
-```
-
-Wait for the user's response.
-
-### 1e. Record and continue
-
-After each answer:
-
-1. Update the relevant section(s) in REQUIREMENTS.md
-2. Update the Section Status table in STATE.md `## Interview Status`:
-   - `Pending` → `Partial` (some content) or `Complete` (fully addressed)
-   - Update `Last Updated` column with today's date
-3. If the answer touches multiple sections, update all of them
-4. Follow the **Interview Loop** below to decide what to ask next
-
-**Write immediately after each answer. Do not batch.**
-
----
-
-## Interview Loop
-
-This loop runs during State 1 (First Run) and State 3 (Continue Interview).
-
-### Assess current state
-
-Read STATE.md `## Interview Status` Section Status table. For each section:
-- **Complete** — has substantive content, confirmed by user
-- **Partial** — has some content but gaps remain
-- **Pending** — empty
-- **N/A** — not applicable to this project
-
-### Decide what to ask next
-
-Read `references/interview-strategies.md` for question priority logic, KB inference,
-quality gates, and UI-aware probing.
-
-In summary: (1) Infer from KB first — suggest answers with source references, don't fill
-silently. (2) Pick the most critical gap. (3) Deepen Partial sections. (4) When all
-sections addressed → State 4.
-
-### Rules
-
-- **ONE question per turn.** Never batch.
-- Use the user's language, not jargon they haven't used.
-- If the user gave direction ("focus on security"), pivot to that area.
-- If an answer contradicts the KB, flag it:
-  "The codebase shows X, but you're saying Y — which should we go with?"
-- Short context before the question (1-2 sentences max). Don't recite everything back.
-- If a section is genuinely N/A for this project, mark it `N/A` in STATE.md `## Interview Status`
-  and move on.
-
-### Update after each answer
-
-1. Update the relevant section(s) in REQUIREMENTS.md
-2. Update Section Status in STATE.md `## Interview Status`
-3. If the change is significant, add a Change Log entry in REQUIREMENTS.md
-4. If applicable, update `.aid/knowledge/INDEX.md` and
-   `.aid/knowledge/README.md`
-
----
-
-## State 2: Q&A Mode
-
-STATE.md `## Cross-phase Q&A` has entries with `**Status:** Pending`.
-
-These may come from:
-- Cross-reference analysis (State 6)
-- Loopback from downstream phases (e.g., `/aid-specify` injected a question)
-- Review findings
-
-### Step 1: Load and Filter
-
-Read `## Cross-phase Q&A` section of STATE.md. Collect all entries with `**Status:** Pending`.
-
-**Before presenting each question, filter:**
-
-1. **Already answered in REQUIREMENTS.md?** → Set status to `Answered`, fill answer,
-   cite the section. Skip to next.
-2. **Answered in KB?** → Set status to `Answered`, fill answer, cite KB document. Skip.
-3. **Inferrable from context?** → Keep but ensure `**Suggested:**` answer exists.
-
-After filtering, sort remaining Pending by impact: **High → Medium → Low**.
-
-If zero remain: `[Q&A] All questions resolved from existing material.` and exit.
-
-Print: `[Q&A] {N} questions for user input.`
-
-### Step 2: Ask One at a Time
-
-For each Pending question:
-
-```
-IQ{N}: [{Category}: {Impact}] {question text}
-
-Context: {why this matters}
-Source: {who injected this — /aid-specify feature-001, cross-reference, etc.}
-
-Suggested: {suggestion if present}
-
-[1] Skip / Not applicable
-[2] Accept suggestion (only if Suggested exists)
-[3] Your answer: ___
-```
-
-**Wait for the user's response before asking the next.**
-
-### Step 3: Record
-
-Based on the user's response, update the entry in STATE.md `## Cross-phase Q&A`:
-
-- **[1] Skip:** Set `**Status:** Skipped`
-- **[2] Accept suggestion:** Set `**Status:** Answered`, copy suggestion to `**Answer:**`
-- **[3] Answer:** Set `**Status:** Answered`, record text in `**Answer:**`
-
-**Write immediately.** Also update REQUIREMENTS.md with the answer content where relevant.
-
-If the answer affects a feature that already exists, update that feature's SPEC.md too
-and add a Change Log entry.
-
-### Step 4: Continue Until Done
-
-When all questions addressed:
-`[Q&A] Complete. {answered} answered, {skipped} skipped.`
-
----
-
-## State 3: CONTINUE INTERVIEW
-
-Resume the conversational interview. Same logic as State 1 — assess sections, ask next
-question, update files. The Interview Loop section above applies.
-
-Read STATE.md `## Interview Status` section status table to know where to continue.
-Read REQUIREMENTS.md to know what's already captured.
-
----
-
-## State 4: COMPLETION & APPROVAL
-
-All sections are `Complete` or `N/A` in STATE.md `## Interview Status`.
-
-### Step 1: Quality Check
-
-Before presenting for approval, verify:
-- [ ] All "Must" requirements in §5 have acceptance criteria in §9
-- [ ] No contradictions between sections
-- [ ] Scope (§4) is consistent with Functional Requirements (§5)
-- [ ] Constraints (§7) don't conflict with requirements
-
-If issues found, ask the user to clarify instead of approving.
-
-### Step 2: KB Hydration
-
-The interview captured project knowledge that belongs in the Knowledge Base — not just
-in REQUIREMENTS.md. Before approval, populate KB docs from what was learned.
-
-Read `references/kb-hydration.md` for the full process.
-
-In summary:
-1. **Extract** — scan REQUIREMENTS.md and write substantive content into each KB document
-   (technology-stack.md, coding-standards.md, architecture.md, infrastructure.md, etc.)
-2. **Gap check** — identify KB docs still empty where the user likely has answers
-3. **Ask** — for each gap the user would reasonably know, ask ONE question at a time
-   (same interactive pattern as the interview). If the user says "skip", respect it.
-4. **Update meta** — refresh README.md completeness table, INDEX.md summaries,
-   `.aid/knowledge/STATE.md` (KB section), and REQUIREMENTS.md change log
-
-**This step is mandatory.** Do not skip it even if the user seems eager to approve.
-The KB is consumed by all downstream phases — empty KB docs force specify/detail/execute
-to guess.
-
-After hydration is complete, proceed to the summary.
-
-### Step 3: Present Summary
-
-```
-I believe I have enough information. Here's a summary:
-
-**Objective:** [1-2 sentences from §1]
-**Problem:** [1-2 sentences from §2]
-**Key features:** [bullet list of must-haves from §5]
-**Main constraints:** [bullet list from §7]
-**Target users:** [list from §3]
-
-Is there anything else we should consider, or are the requirements ready?
-
-[1] Approved — requirements are ready
-[2] Additional consideration: ___
-```
-
-### Step 4: Process Response
-
-- **[1] Approved:**
-  - Set `**Interview Status:** Approved` in STATE.md `## Interview Status`
-  - Add Change Log entry in REQUIREMENTS.md: `| {today} | Interview complete — approved | /aid-interview |`
-  - Add Review History entry in STATE.md `## Interview Status`
-  - Update `.aid/knowledge/INDEX.md` and `.aid/knowledge/README.md`
-    if they exist
-  - If `infrastructure.md § Project Management` defines a tool → create an Epic for this work
-  - Print: `✅ Requirements approved. Proceeding to feature decomposition...`
-  - **Immediately proceed to State 5 (Feature Decomposition) in the same run.**
-
-- **[2] Additional consideration:**
-  - Incorporate into relevant section(s) of REQUIREMENTS.md
-  - Update STATE.md `## Interview Status` section statuses if needed
-  - Return to Interview Loop for any new gaps
-
----
-
-## State 5: FEATURE DECOMPOSITION
-
-Requirements are approved. Decompose Functional Requirements (§5) into discrete,
-independently implementable features with SPEC.md files.
-
-**Agent:** This is design work, not interview work. Dispatch with `subagent_type: architect` (overriding the default `interviewer`). Print before dispatch: `[State 5] Dispatching architect for Feature Decomposition.`
-
-▶ architect starting (~2–4 min)
-Read `references/feature-decomposition.md` for the full decomposition process
-(analyze, propose, create folders, update meta-documents).
-✓ architect done (record actual time) — or ✗ architect failed: {reason}
-
----
-
-## State 6: CROSS-REFERENCE & REFINE
-
-Requirements approved and features created. Validates REQUIREMENTS.md against KB
-documents and codebase, grades findings, and creates Q&A entries for issues.
-
-**Agent:** This is adversarial validation, not interview work. Dispatch with `subagent_type: reviewer` (overriding the default `interviewer`). Print before dispatch: `[State 6] Dispatching reviewer for Cross-Reference validation.`
-
-▶ reviewer starting (~1–2 min)
-Read `references/cross-reference.md` for the full cross-reference validation process
-(load context, cross-reference, grade, present findings, create Q&A, wrap up).
-✓ reviewer done (record actual time) — or ✗ reviewer failed: {reason}
-
----
-
-## State 7: DONE
-
-Interview is complete, approved, features decomposed, and cross-references validated.
-
-Print:
-
-```
-Interview for {work} is complete and approved.
-
-[1] Add more information — reopen for additional input
-[2] Re-run cross-reference validation
-[3] Done — nothing to add
-```
-
-- **[1] Add more information:**
-  - Ask: _"What would you like to add or change?"_
-  - Record the user's input into the relevant REQUIREMENTS.md section
-  - Update STATE.md `## Interview Status` section statuses if needed
-  - Update affected feature SPEC.md files if the change impacts a feature
-  - Update KB documents if the new info is KB-relevant
-  - Print: `✅ Updated. Run /aid-interview {work} again to re-validate.`
-
-- **[2] Re-run cross-reference:**
-  - Proceed to State 6 (CROSS-REFERENCE) for a fresh validation pass
-
-- **[3] Done:**
-  - Print: `✅ Interview complete. Requirements approved. Ready for /aid-specify.`
+## Dispatch
+
+| State | Detail | Worker | Advance |
+|-------|--------|--------|---------|
+| FIRST-RUN | `references/state-first-run.md` | `interviewer` | → CONTINUE |
+| Q-AND-A | `references/state-q-and-a.md` | `interviewer` | → CONTINUE |
+| CONTINUE | `references/state-continue.md` | `interviewer` | → COMPLETION |
+| COMPLETION | `references/state-completion.md` | `interviewer` | → FEATURE-DECOMPOSITION |
+| FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `architect` | → CROSS-REFERENCE |
+| CROSS-REFERENCE | `references/state-cross-reference.md` | `reviewer` | → DONE |
+| DONE | `references/state-done.md` | `inline` | → halt |
+
+On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
+When a state completes, print `Next: [State: {NEXT}] — run /aid-interview again` and exit.
 
 ---
 
@@ -509,7 +229,7 @@ When a downstream phase (e.g., `/aid-specify`) needs clarification on requiremen
 
 1. The calling phase writes Q&A entries directly to the work's STATE.md
    in the `## Cross-phase Q&A` section
-2. Next `/aid-interview {work}` run detects Pending Q&A → enters State 2 (Q&A mode)
+2. Next `/aid-interview {work}` run detects Pending Q&A → enters State 2 (Q-AND-A)
 3. Questions are presented to the user one at a time
 4. Answers are recorded in STATE.md `## Cross-phase Q&A` and REQUIREMENTS.md
 5. Feature SPEC.md files are updated if the answer affects a specific feature

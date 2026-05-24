@@ -1,0 +1,56 @@
+# REVIEW — Re-review Existing Tasks
+
+Existing task files found; re-review against current PLAN.md and SPECs.
+
+Load `references/task-decomposition.md` for task type rules, file format, and quality criteria.
+
+---
+
+## REVIEW (re-run on existing tasks)
+
+`tasks/` has files and were previously completed.
+
+**Ask first:** _"Tasks for this work are already complete. Do you want to reopen for review?
+Is there something specific you want to re-examine?"_
+
+If user confirms → continue below.
+If user has a specific concern → record it as context for the review.
+
+Enter **the same loop at step 4** — review tasks against
+current PLAN.md and SPECs.
+
+### Load Current State
+
+Re-read PLAN.md, all feature SPECs, all existing task files.
+
+### Review Each Deliverable's Tasks
+
+For each deliverable, check its corresponding tasks:
+
+1. **PLAN.md changed** — deliverables added, removed, resequenced?
+2. **SPECs changed** — feature content updated since tasks were written?
+3. **Orphan tasks** — tasks referencing deliverables/features that no longer exist?
+4. **Missing tasks** — new deliverables/features with no corresponding tasks?
+5. **Sequence broken** — task order invalid given changes?
+
+### Grade Overall
+
+Use the universal rubric (`../../templates/grading-rubric.md`). Classify each issue
+by severity. The grade is calculated — worst issue dominates.
+
+Compare to minimum grade from `.aid/knowledge/STATE.md` `**Minimum Grade:**`.
+
+| Condition | Action |
+|-----------|--------|
+| Grade ≥ minimum | Print summary, done. |
+| Grade < minimum, tasks fixable | List findings, re-enter loop for affected deliverables. |
+| Grade < minimum, most tasks orphaned | Recommend `--reset`. |
+
+For grades below minimum: re-enter the loop for affected deliverables.
+Update task files, create new ones, delete orphans, renumber if needed.
+
+[State: REVIEW] complete.
+
+Next: [State: DONE] — run /aid-detail again
+
+**Advance:** `/aid-detail`

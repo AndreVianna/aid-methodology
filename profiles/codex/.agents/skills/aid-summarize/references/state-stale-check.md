@@ -1,0 +1,27 @@
+# State: STALE-CHECK
+
+STALE-CHECK compares the KB review date against the last summary date to determine if regeneration is needed; it is selected immediately after PREFLIGHT passes.
+
+Run `.aid/templates/knowledge-summary/scripts/stale-check.sh`. It outputs one of:
+
+- `STALE` — KB is newer than last summary (or first run). Continue to PROFILE/GENERATE.
+- `CURRENT_APPROVED` — HTML is up-to-date and approved. Print:
+  ```
+  ✅ knowledge-summary.html is already up-to-date with the current KB. Nothing to do.
+  ```
+  Exit cleanly.
+- `CURRENT_UNAPPROVED` — HTML is up-to-date but not yet approved. Print:
+  ```
+  ℹ️  HTML is current with KB but pending your approval.
+  ```
+  Skip to APPROVAL.
+
+If STALE: tell the user *why* it's stale:
+```
+ℹ️  KB was reviewed on {LAST_KB_CHANGE_DATE}, last summary was {LAST_SUMMARY_DATE}.
+   Regenerating to match latest KB...
+```
+
+Print: `[State: STALE-CHECK] complete.`
+
+**Advance:** Next: [State: PROFILE] — run /aid-summarize again
