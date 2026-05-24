@@ -153,8 +153,9 @@ Must
 > - **State Machines descriptions** (both per-task quick-check and
 >   per-delivery gate) write transitions that target the per-area STATE
 >   contract — every "writes to the `task-NNN.md` Execution Record" reference
->   in §State Machines (e.g., L611, L640) reads as "writes the appropriate
->   row + sub-block in work `STATE.md`" per this Alignment Update.
+>   in §State Machines (notably the per-task `TASK-DONE` writeback step and
+>   the per-delivery `RECORD` step) reads as "writes the appropriate row +
+>   sub-block in work `STATE.md`" per this Alignment Update.
 > - **Cross-feature with feature-002:** feature-002's own Alignment Update
 >   retired CR7 (the two-zone task-template ownership). feature-004's §Layers
 >   "Template authorship — feature-002 owns the two-zone `task-NNN.md` (CR7)"
