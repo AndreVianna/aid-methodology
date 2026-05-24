@@ -54,10 +54,10 @@ Required: work ID. If only one work exists, auto-select it.
 ## State Detection
 
 Read work `STATE.md` `## Deploy Status`:
-- **Status: Idle** → Start new package (Step 1)
-- **Status: Selecting** → Resume delivery selection (Step 2)
-- **Status: Verifying** → Resume verification (Step 3)
-- **Status: Packaging** → Resume packaging (Step 4)
+- **Status: Idle** → IDLE state (start new package; see `references/state-idle.md`)
+- **Status: Selecting** → SELECTING state (resume delivery selection; see `references/state-selecting.md`)
+- **Status: Verifying** → VERIFYING state (resume verification; see `references/state-verifying.md`)
+- **Status: Packaging** → PACKAGING state (resume packaging; see `references/state-packaging.md`)
 - **Status: Done** → Re-run mode (see Re-run section)
 
 Print the state-entry line and "you are here" map:
@@ -173,9 +173,9 @@ When a state completes, print `Next: [State: {NEXT}] — run /aid-deploy again` 
 When work `STATE.md` `## Deploy Status` is Done:
 
 ```
-[State: DONE] — Release complete; all deliveries and tasks marked Shipped.
+[State: RE-RUN] — Prior release found; confirming whether to start a new release or review.
 aid-deploy  ▸ you are here
-  [✓ IDLE ] → [✓ SELECTING ] → [✓ VERIFYING ] → [✓ PACKAGING ] → [● DONE ]
+  [✓ IDLE ] → [✓ SELECTING ] → [✓ VERIFYING ] → [✓ PACKAGING ] → [✓ DONE ] → [● RE-RUN ]
 ```
 
 1. Show package history (from work `STATE.md` `## Deploy Status` History section).
