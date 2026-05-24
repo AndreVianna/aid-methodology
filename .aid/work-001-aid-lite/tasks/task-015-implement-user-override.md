@@ -9,7 +9,7 @@
 **Scope:**
 - After triage emits its auto-selected Sub-path, present the choice to the user with options: [1] Proceed, [2] Use different sub-path (a/b/c), [3] Escalate to full.
 - If overridden: record `Sub-path (auto)` (the original auto value) and set `Override: yes` in `## Triage`.
-- If user selects [3] Escalate: set Path=full + Sub-path=n/a + record escalation rationale.
+- If user selects [3] Escalate: set Path=full + **omit Sub-path field** (no n/a placeholder — matches task-014's contract: full-route Sub-path field is absent) + record escalation rationale.
 - Final Sub-path field always reflects the user's chosen sub-path.
 
 **Acceptance Criteria:**
