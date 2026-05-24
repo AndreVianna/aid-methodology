@@ -7,14 +7,15 @@
 **Depends on:** —
 
 **Scope:**
-- Delete `canonical/templates/implementation-state.md` (purpose now absorbed by work-003's per-area STATE rule).
-- Grep across `canonical/`, `profiles/`, `.aid/` for any remaining reference to `implementation-state.md`.
-- Update or remove every stale reference (commit messages excluded).
-- Re-run work-002 generator + verify install trees no longer contain a copy.
+- Verify `canonical/templates/implementation-state.md` is absent (already retired by work-002; this task's "delete" step is a no-op verification rather than an action).
+- **Primary work — orphan reference sweep:** grep across `.aid/knowledge/` (data-model.md, architecture.md, module-map.md, feature-inventory.md, api-contracts.md), `.aid/work-001-aid-lite/`, `.aid/work-003-traceability/`, `canonical/`, `profiles/` for any remaining reference to `implementation-state.md`.
+- Update KB references to point at the per-area STATE rule (work-003 FR2) as the consolidation mechanism instead.
+- Remove stale references in spec/plan/task bodies (excluding historical change-log rows + commit messages).
+- Re-run work-002 generator + verify install trees no longer mention the template.
 
 **Acceptance Criteria:**
-- [ ] `canonical/templates/implementation-state.md` does not exist.
-- [ ] `grep -r 'implementation-state.md' canonical profiles .aid` returns zero matches (excluding `.git/`).
-- [ ] Generator output (3 install trees) does not contain `implementation-state.md`.
-- [ ] Manifest re-committed (`canonical/EMISSION-MANIFEST.md` no longer claims the file).
+- [ ] `canonical/templates/implementation-state.md` confirmed absent (already retired).
+- [ ] `grep -r 'implementation-state.md' canonical profiles .aid --include='*.md'` returns zero matches in current-state docs (historical change-log rows in REQUIREMENTS / SPECs may still cite it as part of the historical record — those are acceptable; current-state KB docs must not).
+- [ ] KB docs (data-model.md, architecture.md, module-map.md, feature-inventory.md, api-contracts.md) updated to reference the per-area STATE rule (work-003 FR2) instead.
+- [ ] `canonical/EMISSION-MANIFEST.md` does not claim the file.
 - [ ] All §6 quality gates pass.

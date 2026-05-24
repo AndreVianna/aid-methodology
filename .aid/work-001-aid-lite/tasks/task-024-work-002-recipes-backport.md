@@ -13,7 +13,7 @@
 - Extend `canonical/EMISSION-MANIFEST.md` to own paths under `recipes/`.
 - Re-run work-002 generator to render the three install trees with `recipes/`.
 - Commit the regenerated `EMISSION-MANIFEST.md` alongside the rendered trees (safety-boundary requirement).
-- Record a Lifecycle History row in work-002's `STATE.md` documenting this back-port (attribute to work-001 FR8).
+- Record a Lifecycle History row in work-002's `STATE.md` documenting this back-port. Use the existing Lifecycle History table format already in work-002 STATE.md (columns: # / Date / Phase Transition or Gate / Grade / Notes). Notes should explicitly attribute the back-port to work-001 FR8 (feature-011-recipes) implementation.
 
 **Acceptance Criteria:**
 - [ ] work-002 generator renders `canonical/recipes/` into each profile's install tree.

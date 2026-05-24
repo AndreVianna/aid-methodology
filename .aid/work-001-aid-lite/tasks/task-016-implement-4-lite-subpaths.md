@@ -18,6 +18,6 @@
 - [ ] Each of the 4 sub-paths produces execution-ready output: work-root `SPEC.md` + at least one `tasks/task-NNN.md`.
 - [ ] Sub-path-specific SPEC shapes match the SPEC's Sub-path-table contract.
 - [ ] No per-feature `SPEC.md`, no separate `PLAN.md`, no feature folders (lite shape).
-- [ ] `/aid-execute task-001 work-NNN` can run the emitted output (handoff message printed on completion).
+- [ ] Emitted work-root `SPEC.md` + `tasks/task-NNN.md` files validate against the lite-path shape (correct sections, correct flat 6-section task shape). (End-to-end /aid-execute runnability is verified by task-018, not here.)
 - [ ] Unit tests for each sub-path's prompt set + emission.
 - [ ] All §6 quality gates pass.

@@ -9,7 +9,7 @@
 **Scope:**
 - Create `canonical/skills/aid-interview/scripts/` directory (first script for that skill).
 - Create `parse-recipe.sh` — mechanical parser only (not the orchestrator slot-fill loop).
-- 5-step contract: (1) YAML front-matter split via `awk`; (2) validate required YAML fields (name/applies-to/slot-count/task-count); (3) extract unique slot tokens via `grep -oE '\{\{[a-z][a-z0-9-]*\}\}' | sort -u` (POSIX ERE, cross-platform); (4) validate slot-count + task-count against actual body counts (warn on mismatch; continue); (5) split body on `## spec` and `## tasks` headings; return each block.
+- 5-step contract: (1) YAML front-matter split via `awk`; (2) validate required YAML fields (name/applies-to/slot-count/task-count); (3) extract unique slot tokens via `grep -oE '\{\{[a-z][a-z0-9-]*\}\}' | sort -u` (POSIX ERE, cross-platform) — **but exclude escaped tokens (`{!{...}}`): pre-process the body by replacing `{!{` with a sentinel string before slot extraction, then restore at emission time so the parser does NOT see escape tokens as real slots**; (4) validate slot-count + task-count against actual body counts (warn on mismatch; continue); (5) split body on `## spec` and `## tasks` headings; return each block.
 - Output: structured stdout that the orchestrator (aid-interview SKILL.md) consumes.
 
 **Acceptance Criteria:**

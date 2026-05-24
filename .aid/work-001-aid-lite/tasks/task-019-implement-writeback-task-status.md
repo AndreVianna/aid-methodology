@@ -10,7 +10,9 @@
 - Create `canonical/templates/scripts/writeback-task-status.sh` — placed under the existing general-helper scripts directory (alongside `build-project-index.sh`, `grade.sh`, `verify-kb-claims.sh`). Note: work-003's `writeback-state.sh` precedent lives one level deeper at `canonical/templates/knowledge-summary/scripts/` because it is knowledge-summary-specific; the new helper is general-purpose (consumed by aid-execute), so the top-level scripts directory is the right level.
 - Lock mechanism: sentinel-file lock (`set -o noclobber` atomic-create + sleep-poll retry on contention), mirroring work-003's `writeback-state.sh` pattern.
 - Args: `--task-id NNN --field <field> --value <value>` for `## Tasks Status` row updates.
+- Args: `--task-id NNN --findings <block>` for `## Quick Check Findings` keyed-section writes (task-021 consumer).
 - Args: `--delivery-id NNN --block <markdown-block>` for `## Delivery Gates` section block writes.
+- Args: `--delivery-id NNN --append-issue <row>` for `delivery-NNN-issues.md` instance-file append-row writes (single-writer per task).
 - Cross-platform via plain Bash semantics (no `flock`/`LockFileEx` dependency).
 - Write a 5-row concurrent-write smoke-test harness under `canonical/templates/scripts/test-writeback-task-status.sh`.
 

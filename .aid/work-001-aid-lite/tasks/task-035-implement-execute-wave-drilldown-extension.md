@@ -7,7 +7,7 @@
 **Depends on:** task-033
 
 **Scope:**
-- Extend the existing EXECUTE-WAVE sub-unit drill-down (introduced by FR1 / work-003 feature-001 AC4) to render pool state.
+- Extend the existing EXECUTE-WAVE sub-unit drill-down (introduced by **work-003's FR1** — `feature-001-you-are-here-heartbeat` AC4; note: work-001's FR1 is the lite-path, not the drill-down — disambiguating here) to render pool state.
 - Reuse existing icon vocabulary verbatim: `✓ done`, `● running`, `✗ failed`, `(queued)`.
 - Supplement with `⊘ blocked` for tasks downstream of a Failed ancestor.
 - Add a single counts summary line: `done / in-flight / queued / blocked / failed`.
