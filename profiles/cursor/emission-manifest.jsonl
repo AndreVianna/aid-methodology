@@ -21,8 +21,7 @@
 {"dst": ".cursor/agents/simple-glob.md", "profile": "cursor", "sha256": "72c90c889c7e351ecb48c1ecfb764264d291c73684388638902f0d3c71f118b1", "src": "canonical/agents/simple-glob/AGENT.md"}
 {"dst": ".cursor/agents/tech-writer.md", "profile": "cursor", "sha256": "f897b09e78640b96ba1e4fd9e8efc4e79dbab8264c67c04a0b289a3fbc9bb16b", "src": "canonical/agents/tech-writer/AGENT.md"}
 {"dst": ".cursor/agents/ux-designer.md", "profile": "cursor", "sha256": "c3f7178f2851e4232f18d02d6b2ad3acb8da6fdad936afb1769999b0e48ff84c", "src": "canonical/agents/ux-designer/AGENT.md"}
-{"dst": ".cursor/recipes/README.md", "profile": "cursor", "sha256": "f6ec6023a5220ee0f9aaccab624639469ce6d3f3b8059082d8c0857816aa9966", "src": "canonical/recipes/README.md"}
-{"dst": ".cursor/recipes/RECIPE-TEMPLATE.md", "profile": "cursor", "sha256": "6391f2fdd4fed984e600deb6d66d79973e47b8ec7cffbe12ec8f5a44ae1658da", "src": "canonical/recipes/RECIPE-TEMPLATE.md"}
+{"dst": ".cursor/recipes/README.md", "profile": "cursor", "sha256": "7b243b4a6a0189817d6f8f22d44cb213aebd864b681c60e2882704916a1e5c4b", "src": "canonical/recipes/README.md"}
 {"dst": ".cursor/rules/aid-methodology.mdc", "profile": "cursor", "sha256": "01b1edec0f4b84872109f6cf3a9f475fc898d6e28c8d10a25b603f5345b8050d", "src": "canonical/rules/aid-methodology.mdc"}
 {"dst": ".cursor/rules/aid-review.mdc", "profile": "cursor", "sha256": "dd8784fc66b2b2b3b5f9c488a9235777b47b9b667673b05686cead8ce31e2d9b", "src": "canonical/rules/aid-review.mdc"}
 {"dst": ".cursor/skills/aid-deploy/SKILL.md", "profile": "cursor", "sha256": "6d01a98d74eb10bee6cbaa76f470387421c91f7e89a1785fab948d9fb7ce1a7c", "src": "canonical/skills/aid-deploy/SKILL.md"}
@@ -156,14 +155,15 @@
 {"dst": ".cursor/templates/known-issues.md", "profile": "cursor", "sha256": "25e4e508e41508cb825126c2c2e73dc90d886c52abacacf55932bbafc13c520f", "src": "canonical/templates/known-issues.md"}
 {"dst": ".cursor/templates/long-wait-protocol.md", "profile": "cursor", "sha256": "9790806fd38cbafc4af09d5f1add4bd994eb9e47073389e878964e2ec91db508", "src": "canonical/templates/long-wait-protocol.md"}
 {"dst": ".cursor/templates/package.md", "profile": "cursor", "sha256": "d8bbbe4e1daa2cc548d3c0c544525ad3a7f827e568b94a3f815798973ce63044", "src": "canonical/templates/package.md"}
+{"dst": ".cursor/templates/recipe-template.md", "profile": "cursor", "sha256": "2ca6a4f5703fb815cfef7206773c0d3bb525a49835adc9ab208e0ab4416b11f9", "src": "canonical/templates/recipe-template.md"}
 {"dst": ".cursor/templates/requirements.md", "profile": "cursor", "sha256": "c2b5e54c627a81c3edd71273d80eba157853e4a3128512792cf0f478f68909c3", "src": "canonical/templates/requirements.md"}
 {"dst": ".cursor/templates/requirements/requirements-template.md", "profile": "cursor", "sha256": "1a1ae36c8342e45c94edcf87b9b2263ff706e2e8866193e31fd07b4004343ce1", "src": "canonical/templates/requirements/requirements-template.md"}
 {"dst": ".cursor/templates/rough-time-hints.md", "profile": "cursor", "sha256": "5e540b999ffcd15f002ecffe3e8069bf1daa1ff5d9e7d3b4efd0231fbfb8e97f", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".cursor/templates/scripts/build-project-index.sh", "profile": "cursor", "sha256": "3bd1c60e8275c2a2043a7e4a3fd6975fb011cb87141585de441716782e15ce0f", "src": "canonical/templates/scripts/build-project-index.sh"}
 {"dst": ".cursor/templates/scripts/grade.sh", "profile": "cursor", "sha256": "6155b1f2fae1ff85c1b6c083deb830305c231cd0f9ce9cbe983b3b3001edf3a3", "src": "canonical/templates/scripts/grade.sh"}
-{"dst": ".cursor/templates/scripts/test-writeback-task-status.sh", "profile": "cursor", "sha256": "18ad4cc337158c7d60287f835841e424930ac9d1f32390593d725a23dfd2a06e", "src": "canonical/templates/scripts/test-writeback-task-status.sh"}
+{"dst": ".cursor/templates/scripts/test-writeback-task-status.sh", "profile": "cursor", "sha256": "0ba2c0edbe7268866c7355be03b0959b16f97216bf54edfaeadbc09a17a533d5", "src": "canonical/templates/scripts/test-writeback-task-status.sh"}
 {"dst": ".cursor/templates/scripts/verify-kb-claims.sh", "profile": "cursor", "sha256": "d65e3d334e1c2c83392b35623b2744496efe1a001f7954758fa13b3bc928f6b4", "src": "canonical/templates/scripts/verify-kb-claims.sh"}
-{"dst": ".cursor/templates/scripts/writeback-task-status.sh", "profile": "cursor", "sha256": "eea73dfe692730a94f465c7f096c7a6ba0aba3fe829c2899216de6dd9e8a86e8", "src": "canonical/templates/scripts/writeback-task-status.sh"}
+{"dst": ".cursor/templates/scripts/writeback-task-status.sh", "profile": "cursor", "sha256": "2a7aa805a65d032320bdf028c388958e74bb5fc09bdb02bb186006d1a1476b8b", "src": "canonical/templates/scripts/writeback-task-status.sh"}
 {"dst": ".cursor/templates/specs/spec-template.md", "profile": "cursor", "sha256": "5e8e8653b6e30baafc411c75a03b381076c40fe2807f3767d680d7ffdee050ee", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".cursor/templates/subagent-heartbeat-protocol.md", "profile": "cursor", "sha256": "d05cf07ba85743209e3f99211360d89150544a232d1c3cc634389df1563cdb01", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".cursor/templates/ui-architecture.md", "profile": "cursor", "sha256": "eb3ee918a84233881fad358463eb1ca47c453a98d507989d436c08ff3e3224fb", "src": "canonical/templates/ui-architecture.md"}

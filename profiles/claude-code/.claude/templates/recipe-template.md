@@ -9,6 +9,11 @@ task-count: {{task-count}}
 
 # {{work-title}}
 
+**Work:** {{work-name}}
+**Created:** {{date}}
+**Source:** recipe `{{recipe-name}}` via /aid-interview lite path
+**Status:** Active
+
 ## Goal
 
 {{goal-one-paragraph}}
@@ -125,10 +130,18 @@ The ## spec heading marks the start of the work-root SPEC.md skeleton. Everythin
 between ## spec and ## tasks (or end of file if no ## tasks block exists) becomes
 the rendered work-root .aid/work-NNN/SPEC.md after slot substitution.
 
+Lowercase ## spec is intentional — it distinguishes the in-recipe block-marker from
+any ## SPEC heading the body might contain. The parser matches this marker
+case-sensitively; ## Spec or ## SPEC are not recognized as the block-start marker.
+
 The spec block must include the sections that aid-execute and the FR2 delivery gate
 need (per feature-005 work-root SPEC.md schema):
   # {title}
-  Metadata (Work / Created / Source / Status)
+  Metadata block — four bold key/value lines:
+    **Work:** ...      — the work identifier
+    **Created:** ...   — creation date
+    **Source:** ...    — originating recipe and path
+    **Status:** ...    — current status (typically Active)
   ## Goal
   ## Context
   ## Acceptance Criteria

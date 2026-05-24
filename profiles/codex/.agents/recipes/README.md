@@ -128,9 +128,24 @@ The body contains two blocks in order:
 ```
 
 **`## spec` block** — becomes the rendered `.aid/work-NNN/SPEC.md` after slot
-substitution. Must include the sections that `aid-execute` and the FR2 delivery
-gate consume: `# {title}`, `## Goal`, `## Context`, `## Acceptance Criteria`,
-`## Tasks` (table), `## Execution Graph` (two tables), `## Revision History`.
+substitution. The lowercase `## spec` is intentional — it distinguishes the
+in-recipe block-marker from any `## SPEC` heading the body might contain. The
+parser matches this marker case-sensitively. Must include the sections that
+`aid-execute` and the FR2 delivery gate consume (per feature-005 SPEC work-root
+schema):
+
+- `# {title}` — work title heading
+- **Metadata block** — four bold key/value lines immediately after the title:
+  - `**Work:** ...` — the work identifier (e.g., `work-NNN`)
+  - `**Created:** ...` — creation date
+  - `**Source:** ...` — originating recipe and path (e.g., `/aid-interview lite path`)
+  - `**Status:** ...` — current status (e.g., `Active`)
+- `## Goal`
+- `## Context`
+- `## Acceptance Criteria`
+- `## Tasks` (table: Task | Type | Title)
+- `## Execution Graph` (two tables: Task | Depends On; Can Be Done In Parallel)
+- `## Revision History`
 
 **`## tasks` block** — one `### task-NNN — Title` sub-heading per task. Each
 becomes a rendered `tasks/task-NNN.md` file. The task shape is the 6-section
@@ -139,17 +154,30 @@ flat form defined in `canonical/templates/delivery-plans/task-template.md`
 
 ### Full Example (bug-fix recipe)
 
+> **slot-count note:** `{{date}}` and `{{work-name}}` are counted as explicit
+> slot tokens in this example (slot-count: 6). In a real recipe these two tokens
+> would normally be auto-filled by the orchestrator from context (current date and
+> the assigned work identifier), which would reduce the user-visible slot-fill
+> count to 4. Whether to treat them as explicit slots or rely on auto-fill is an
+> authoring choice; the parser-counting rule is the same either way — count every
+> unique `{{slot-name}}` token present in the body.
+
 ```markdown
 ---
 name: bug-fix
 applies-to: bug-fix
-slot-count: 4
+slot-count: 6
 task-count: 1
 ---
 
 ## spec
 
 # Fix: {{bug-title}}
+
+**Work:** {{work-name}}
+**Created:** {{date}}
+**Source:** recipe `bug-fix` via /aid-interview lite path
+**Status:** Active
 
 ## Goal
 
@@ -200,6 +228,101 @@ Fix the defect described below.
   - [ ] The reproduction steps no longer produce the bug.
   - [ ] A unit test exists that fails on the pre-fix code and passes on the post-fix code.
   - [ ] No regression in adjacent test suites.
+```
+
+### Multi-Task Example (add-crud-endpoint shape)
+
+The following abbreviated example shows the `## tasks` block with multiple
+`### task-NNN` headings. Front-matter and spec block are truncated for brevity.
+
+```markdown
+---
+name: add-crud-endpoint
+applies-to: small-new-feature
+slot-count: 6
+task-count: 3
+---
+
+## spec
+
+# Add CRUD endpoint: {{resource-name}}
+
+**Work:** {{work-name}}
+**Created:** {{date}}
+**Source:** recipe `add-crud-endpoint` via /aid-interview lite path
+**Status:** Active
+
+## Goal
+
+Add a full CRUD REST endpoint for the `{{resource-name}}` resource.
+
+## Context
+
+{{resource-description}}
+
+## Acceptance Criteria
+
+- [ ] GET / POST / PUT / DELETE endpoints exist for `/{{route-prefix}}/{{resource-name}}`.
+- [ ] All endpoints are covered by integration tests.
+- [ ] No regression in existing endpoint tests.
+
+## Tasks
+
+| Task | Type | Title |
+|------|------|-------|
+| task-001 | IMPLEMENT | Implement {{resource-name}} data layer |
+| task-002 | IMPLEMENT | Implement {{resource-name}} API handlers |
+| task-003 | TEST | Integration tests for {{resource-name}} endpoints |
+
+## Execution Graph
+
+| Task | Depends On |
+|------|-----------|
+| task-001 | — |
+| task-002 | task-001 |
+| task-003 | task-002 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| — |
+
+## Revision History
+
+| Date | Change | Source |
+|------|--------|--------|
+| {{date}} | Created from recipe `add-crud-endpoint` | /aid-interview lite path |
+
+## tasks
+
+### task-001 — Implement {{resource-name}} data layer
+
+- Type: IMPLEMENT
+- Source: {{work-name}} → delivery-001
+- Depends on: —
+- Scope: Create the data model and repository layer for `{{resource-name}}`.
+- Acceptance Criteria:
+  - [ ] Data model defined for `{{resource-name}}`.
+  - [ ] Repository CRUD methods implemented and unit-tested.
+
+### task-002 — Implement {{resource-name}} API handlers
+
+- Type: IMPLEMENT
+- Source: {{work-name}} → delivery-001
+- Depends on: task-001
+- Scope: Add GET / POST / PUT / DELETE handlers at `/{{route-prefix}}/{{resource-name}}`.
+- Acceptance Criteria:
+  - [ ] All four HTTP methods respond correctly.
+  - [ ] Error responses follow the existing API error shape.
+
+### task-003 — Integration tests for {{resource-name}} endpoints
+
+- Type: TEST
+- Source: {{work-name}} → delivery-001
+- Depends on: task-002
+- Scope: Write integration tests covering all four CRUD operations.
+- Acceptance Criteria:
+  - [ ] Happy-path tests pass for all four operations.
+  - [ ] At least one error-path test per operation.
 ```
 
 ---
@@ -271,7 +394,7 @@ A recipe-instantiated work can escalate at any point:
 
 ## Authoring a New Recipe
 
-1. Copy `canonical/recipes/RECIPE-TEMPLATE.md` to `canonical/recipes/{name}.md`
+1. Copy `canonical/templates/recipe-template.md` to `canonical/recipes/{name}.md`
    where `{name}` is the kebab-case recipe id.
 
 2. Fill in the YAML front-matter:

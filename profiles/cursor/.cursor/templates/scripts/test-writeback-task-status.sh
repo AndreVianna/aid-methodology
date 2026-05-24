@@ -411,6 +411,74 @@ export AID_STATE_FILE="$SAVED"
 
 # ---------------------------------------------------------------------------
 echo ""
+echo "=== Unit 8: H1 — schema mismatch (row has wrong column count) ==="
+
+# Create a STATE.md with a task row that has only 6 columns instead of 8
+BAD_STATE="${TMPDIR_BASE}/bad-state/STATE.md"
+mkdir -p "${TMPDIR_BASE}/bad-state"
+cat > "$BAD_STATE" <<'BADSTATEOF'
+# Work State — work-test
+
+## Tasks Status
+
+| # | Task | Type | Wave | Status | Notes |
+|---|------|------|------|--------|-------|
+| 042 | task-042-bad | IMPLEMENT | 1 | Pending | — |
+
+## Deploy Status
+
+| Delivery | State | PR |
+|----------|----|---|
+| — | — | — |
+BADSTATEOF
+
+code=0
+err_out=$(AID_STATE_FILE="$BAD_STATE" bash "$SCRIPT" --task-id 42 --field Status --value Done 2>&1) || code=$?
+assert_exit_nonzero "$code" "H1 schema mismatch: wrong column count → exit 4"
+if echo "$err_out" | grep -q "wrong column count"; then
+    pass "H1 schema mismatch: error message mentions 'wrong column count'"
+else
+    fail "H1 schema mismatch: expected 'wrong column count' in error output, got: $err_out"
+fi
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 9: H2 — --value containing literal '|' rejected ==="
+
+code=0
+err_out=$(bash "$SCRIPT" --task-id 1 --field Notes --value "a|b" 2>&1) || code=$?
+assert_exit_nonzero "$code" "H2 pipe in --value → exit 4"
+if echo "$err_out" | grep -q "cannot contain '|'"; then
+    pass "H2 pipe in --value: error message mentions \"cannot contain '|'\""
+else
+    fail "H2 pipe in --value: expected \"cannot contain '|'\" in error output, got: $err_out"
+fi
+
+# Also test that the check fires before lock acquisition (STATE.md not modified)
+BEFORE_SIZE=$(wc -c < "$AID_STATE_FILE")
+bash "$SCRIPT" --task-id 1 --field Notes --value "pipe|here" 2>/dev/null || true
+AFTER_SIZE=$(wc -c < "$AID_STATE_FILE")
+if [[ "$BEFORE_SIZE" -eq "$AFTER_SIZE" ]]; then
+    pass "H2 pipe rejection: STATE.md not modified"
+else
+    fail "H2 pipe rejection: STATE.md was modified despite pipe in value"
+fi
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 10: M2 — missing lock directory detected before contention ==="
+
+code=0
+err_out=$(AID_LOCK_DIR="${TMPDIR_BASE}/nonexistent-lock-dir" bash "$SCRIPT" --task-id 1 --field Status --value Done 2>&1) || code=$?
+assert_exit_nonzero "$code" "M2 missing lock dir → exit non-zero (exit 1)"
+if echo "$err_out" | grep -q "lock directory does not exist"; then
+    pass "M2 missing lock dir: error message mentions 'lock directory does not exist'"
+else
+    fail "M2 missing lock dir: expected 'lock directory does not exist' in error output, got: $err_out"
+fi
+
+# ---------------------------------------------------------------------------
+echo ""
 echo "=== Summary ==="
 echo "  Tests passed: $PASS"
 echo "  Tests failed: $FAIL"

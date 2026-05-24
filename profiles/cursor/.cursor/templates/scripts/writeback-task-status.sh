@@ -48,7 +48,7 @@ LOCK_TIMEOUT="${AID_LOCK_TIMEOUT:-10}"   # max retries (0.5s each → 5s default
 
 # ---------------------------------------------------------------------------
 usage() {
-    sed -n '3,29p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,36p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 die() { echo "ERROR: writeback-task-status.sh: $*" >&2; exit "${2:-1}"; }
@@ -136,6 +136,11 @@ LOCK_FILE="${LOCK_DIR}/.writeback-task-status.lock"
 LOCK_ACQUIRED=0
 
 acquire_lock() {
+    # M2: Distinguish missing lock directory (ENOENT) from lock contention (EEXIST).
+    local lock_parent
+    lock_parent="$(dirname "$LOCK_FILE")"
+    [[ -d "$lock_parent" ]] || die "lock directory does not exist: $lock_parent" 1
+
     local attempts=0
     while true; do
         # Atomic create — succeeds only if file does not exist
@@ -169,6 +174,11 @@ trap 'release_lock' EXIT
 # Field names (case-insensitive): Status, Review, Elapsed, Notes, Wave, Type, Task
 # ---------------------------------------------------------------------------
 mode_field() {
+    # H2: Reject --value containing literal '|' to prevent row corruption.
+    if [[ "$FIELD_VALUE" == *"|"* ]]; then
+        die "--value cannot contain '|' (pipe is the column separator); escape with HTML entity or rephrase" 4
+    fi
+
     if [[ ! -f "$STATE_FILE" ]]; then
         die "$STATE_FILE does not exist" 1
     fi
@@ -223,7 +233,7 @@ mode_field() {
         -v col="$col_idx" \
         -v new_val=" $FIELD_VALUE " \
         '
-        BEGIN { in_tasks=0; updated=0 }
+        BEGIN { in_tasks=0; updated=0; schema_error=0 }
 
         /^## Tasks Status/ { in_tasks=1; print; next }
 
@@ -242,6 +252,12 @@ mode_field() {
                 cell_num = cell + 0
                 # Also check padded form
                 if (cell == task_id || cell_num == task_id_num + 0) {
+                    # H1: Verify the row has the expected 8 columns (n == 10: 8 cols + 2 boundary empties)
+                    if (n != 10) {
+                        printf "ERROR: Tasks Status table row '\''%s'\'' has wrong column count (expected 8, got %d); refusing to update\n", task_id, n - 2 > "/dev/stderr"
+                        schema_error = 1
+                        exit 4
+                    }
                     # Replace the target column
                     fields[col + 1] = new_val
                     # Reconstruct the row
@@ -261,12 +277,26 @@ mode_field() {
         { print }
 
         END {
+            if (schema_error) { exit 4 }
             if (!updated) {
                 print "ERROR: task row not updated" > "/dev/stderr"
                 exit 3
             }
         }
         ' "$STATE_FILE" > "$tmp"
+    local awk_exit=$?
+    if [[ "$awk_exit" -eq 4 ]]; then
+        rm -f "$tmp"
+        # Re-read the actual column count from the file for the die message
+        local bad_row actual_cols
+        bad_row=$(awk "/^## Tasks Status/{s=1} s && /^## / && !/^## Tasks Status/{s=0} s && /^\|/{n=split(\$0,f,\"|\"); cell=f[2]; gsub(/^[[:space:]]+|[[:space:]]+\$/,\"\",cell); if(cell==\"$padded_id\" || cell+0==$TASK_ID+0) print \$0}" "$STATE_FILE" | head -1)
+        actual_cols=$(echo "$bad_row" | awk '{n=split($0,f,"|"); print n-2}')
+        die "Tasks Status table row '${padded_id}' has wrong column count (expected 8, got ${actual_cols}); refusing to update" 4
+    fi
+    if [[ "$awk_exit" -ne 0 ]]; then
+        rm -f "$tmp"
+        die "writeback awk failed (exit $awk_exit); STATE.md preserved" 3
+    fi
 
     # Verify output is non-empty
     if [[ ! -s "$tmp" ]]; then
