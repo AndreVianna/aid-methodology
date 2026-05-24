@@ -179,6 +179,11 @@ mode_field() {
         die "--value cannot contain '|' (pipe is the column separator); escape with HTML entity or rephrase" 4
     fi
 
+    # Cycle-3 fix: also reject newline characters (same row-corruption class as H2).
+    if [[ "$FIELD_VALUE" == *$'\n'* ]]; then
+        die "--value cannot contain newline characters (row separator); rephrase to single line" 4
+    fi
+
     if [[ ! -f "$STATE_FILE" ]]; then
         die "$STATE_FILE does not exist" 1
     fi

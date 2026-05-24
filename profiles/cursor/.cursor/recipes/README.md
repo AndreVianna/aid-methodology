@@ -239,7 +239,7 @@ The following abbreviated example shows the `## tasks` block with multiple
 ---
 name: add-crud-endpoint
 applies-to: small-new-feature
-slot-count: 6
+slot-count: 5
 task-count: 3
 ---
 

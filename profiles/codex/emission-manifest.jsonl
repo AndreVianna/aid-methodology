@@ -1,5 +1,5 @@
 {"_manifest_version": 1}
-{"dst": ".agents/recipes/README.md", "profile": "codex", "sha256": "7b243b4a6a0189817d6f8f22d44cb213aebd864b681c60e2882704916a1e5c4b", "src": "canonical/recipes/README.md"}
+{"dst": ".agents/recipes/README.md", "profile": "codex", "sha256": "55d2a8de7319a7bbf5176ec22f7616e98abd3584f043e8711d55b7e660b3bed4", "src": "canonical/recipes/README.md"}
 {"dst": ".agents/skills/aid-deploy/SKILL.md", "profile": "codex", "sha256": "9f6d6d9a59d756c0a0c75fb5b7bf1a43472a875f9569a71f6d0bff6bf6f820d3", "src": "canonical/skills/aid-deploy/SKILL.md"}
 {"dst": ".agents/skills/aid-deploy/references/state-idle.md", "profile": "codex", "sha256": "a411f3f92a7d351a45de466448547155861031f8eb499a39c6220b230d42b361", "src": "canonical/skills/aid-deploy/references/state-idle.md"}
 {"dst": ".agents/skills/aid-deploy/references/state-packaging.md", "profile": "codex", "sha256": "9dba7411d9b9c22b6823aa5e91fedf9c0b547338f9ba7a8f259cd04857a1c182", "src": "canonical/skills/aid-deploy/references/state-packaging.md"}
@@ -139,7 +139,7 @@
 {"dst": ".agents/templates/scripts/grade.sh", "profile": "codex", "sha256": "6155b1f2fae1ff85c1b6c083deb830305c231cd0f9ce9cbe983b3b3001edf3a3", "src": "canonical/templates/scripts/grade.sh"}
 {"dst": ".agents/templates/scripts/test-writeback-task-status.sh", "profile": "codex", "sha256": "0ba2c0edbe7268866c7355be03b0959b16f97216bf54edfaeadbc09a17a533d5", "src": "canonical/templates/scripts/test-writeback-task-status.sh"}
 {"dst": ".agents/templates/scripts/verify-kb-claims.sh", "profile": "codex", "sha256": "d65e3d334e1c2c83392b35623b2744496efe1a001f7954758fa13b3bc928f6b4", "src": "canonical/templates/scripts/verify-kb-claims.sh"}
-{"dst": ".agents/templates/scripts/writeback-task-status.sh", "profile": "codex", "sha256": "2a7aa805a65d032320bdf028c388958e74bb5fc09bdb02bb186006d1a1476b8b", "src": "canonical/templates/scripts/writeback-task-status.sh"}
+{"dst": ".agents/templates/scripts/writeback-task-status.sh", "profile": "codex", "sha256": "d152b6ee4c367ec163f3a3741102e18803faaf792cf0cab6f9bab9757cb5b819", "src": "canonical/templates/scripts/writeback-task-status.sh"}
 {"dst": ".agents/templates/specs/spec-template.md", "profile": "codex", "sha256": "5e8e8653b6e30baafc411c75a03b381076c40fe2807f3767d680d7ffdee050ee", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".agents/templates/subagent-heartbeat-protocol.md", "profile": "codex", "sha256": "d05cf07ba85743209e3f99211360d89150544a232d1c3cc634389df1563cdb01", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".agents/templates/ui-architecture.md", "profile": "codex", "sha256": "eb3ee918a84233881fad358463eb1ca47c453a98d507989d436c08ff3e3224fb", "src": "canonical/templates/ui-architecture.md"}
