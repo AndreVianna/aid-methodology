@@ -51,14 +51,14 @@ Read `.aid/knowledge/INDEX.md` to find what you need.
 
 ### .gitignore
 
-What happens here depends on the user's answer to **Q7**:
+What happens here depends on the user's answer to **Q8**:
 
 - **If the user chose [1] — commit `.aid/`:** Do NOT add a `.aid/` entry,
   but ALWAYS add `.aid/.heartbeat/` (heartbeat files are ephemeral runtime
   artifacts that should never be committed, even if `.aid/` is tracked).
   If `.gitignore` exists and doesn't contain `.aid/.heartbeat/`, append it.
   If no `.gitignore` exists, create one with just `.aid/.heartbeat/`.
-  Print: `[Init] .aid/ will be tracked by Git (your Q7 choice); .aid/.heartbeat/ excluded.`
+  Print: `[Init] .aid/ will be tracked by Git (your Q8 choice); .aid/.heartbeat/ excluded.`
 
 - **If the user chose [2] — keep `.aid/` local:**
   - If `.gitignore` doesn't exist: create it with `.aid/` as the only entry.

@@ -90,6 +90,14 @@ Copy the template from `../../templates/discovery-state-template.md` to
 - `{Brownfield / Greenfield}` → from Q1
 - `{List of paths from init Q4, or "None provided"}` → from Q4
 
+After copying, patch the `**Max Parallel Tasks:**` line in STATE.md with the
+value chosen in Q7 (default 5). Replace the template's `5` with the user's
+actual answer so re-initialising never silently resets a custom value.
+
+If re-running init on an existing project, read the current `**Max Parallel Tasks:**`
+value from STATE.md before overwriting, and restore it (unless the user changed
+it during this run).
+
 ✓ Meta-documents written
 
 **Advance:** Next state is `SETUP` — when this state's work completes, router prints `Next: [State: SETUP] — run /aid-init again` and exits.

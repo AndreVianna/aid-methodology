@@ -1,6 +1,6 @@
 # State: COLLECT
 
-Gather project metadata through a short conversational interview (6 questions).
+Gather project metadata through a short conversational interview (7 questions).
 
 > ```
 > aid-init  ▸ you are here
@@ -101,7 +101,29 @@ Store the answer as a number of minutes (1, 2, 5, or 0). Written to
 disable). Dispatchers read this value before dispatching long-running
 subagents and pass `HEARTBEAT_INTERVAL=Nm` to the subagent prompt.
 
-### Q7: Commit the AID Workspace?
+### Q7: Max Parallel Tasks
+
+```
+How many tasks should the orchestrator run in parallel at most?
+(Controls the FR6 pool dispatch limit — see feature-009)
+
+[5] to accept the default, or type a positive integer:
+```
+
+Validation rules:
+- Accept any positive integer (1 or greater).
+- Reject 0, negative numbers, and non-integer input with:
+  ```
+  ⚠️ Invalid input — enter a positive integer (e.g. 5).
+  ```
+  Re-ask until a valid value is entered.
+- If re-running init and STATE.md already has a `**Max Parallel Tasks:**` line, read
+  that value and offer it as the default instead of 5.
+
+Store the answer. Written to `STATE.md` top-of-file as `**Max Parallel Tasks:** N`.
+Pool dispatch (FR6) reads this value to cap concurrent agent slots.
+
+### Q8: Commit the AID Workspace?
 
 The `.aid/` directory holds the Knowledge Base and all AID work artifacts. Ask
 the user whether Git should track it. Phrase the question exactly like this:

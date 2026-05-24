@@ -1,6 +1,6 @@
 # State: FIRST-RUN
 
-This state runs only when STATE.md `## Interview Status` does not exist in the work folder; it creates the scaffolding and opens the conversation.
+This state runs only when STATE.md `## Interview Status` does not exist in the work folder; it creates the scaffolding so that TRIAGE can ask the 3 path-determination questions before the conversational interview begins.
 
 ### 1a. Read KB (if it exists)
 
@@ -24,31 +24,6 @@ Add the first Change Log entry: `| {today} | Initial interview started | /aid-in
 **Note:** Sections are empty — no placeholder markers. The STATE.md `## Interview Status` tracks
 which sections have been filled.
 
-### 1d. Ask the opening question
-
-**The first question is always the same:**
-
-```
-What are we building? Tell me the goal and what success looks like.
-```
-
-Wait for the user's response.
-
-### 1e. Record and continue
-
-After each answer:
-
-1. Update the relevant section(s) in REQUIREMENTS.md
-2. Update the Section Status table in STATE.md `## Interview Status`:
-   - `Pending` → `Partial` (some content) or `Complete` (fully addressed)
-   - Update `Last Updated` column with today's date
-3. If the answer touches multiple sections, update all of them
-4. Follow the **Interview Loop** below to decide what to ask next
-
-**Write immediately after each answer. Do not batch.**
-
 ---
 
-**See `references/interview-loop.md`** for the loop body (shared between FIRST-RUN and CONTINUE).
-
-**Advance:** Next state is `CONTINUE` — when interview sections are all Complete or N/A the router advances to COMPLETION; between turns the user re-invokes `/aid-interview`. Run `/aid-interview again` to continue.
+**Advance:** Next state is `TRIAGE` — after scaffolding is complete, triage determines the path (lite or full) before the conversational interview begins. Print `Next: [State: TRIAGE] — run /aid-interview again` and exit.

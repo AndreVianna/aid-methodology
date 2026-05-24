@@ -61,4 +61,4 @@ and add a Change Log entry.
 When all questions addressed:
 `[Q&A] Complete. {answered} answered, {skipped} skipped.`
 
-**Advance:** Next state is `CONTINUE` — when Q&A is complete, print `Next: [State: CONTINUE] — run /aid-interview again` and exit.
+**Advance:** Next state is `TRIAGE` — when Q&A is complete, check if triage is done. If not yet done, print `Next: [State: TRIAGE] — run /aid-interview again` and exit. If triage was already completed (§ Triage **Path:** is populated), the router will skip to CONTINUE automatically on the next run.
