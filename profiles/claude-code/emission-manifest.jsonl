@@ -98,7 +98,7 @@
 {"dst": ".claude/skills/aid-summarize/references/state-validate.md", "profile": "claude-code", "sha256": "70925bc1973793bfa7c9b7d28bb25f88d8bc403b52c9baf105408a017a91c4c0", "src": "canonical/skills/aid-summarize/references/state-validate.md"}
 {"dst": ".claude/skills/aid-summarize/references/state-writeback.md", "profile": "claude-code", "sha256": "55caebb881d2db861f7edfa462f8ccbd5567f32a4ea666a3b5ce0d2ed4741afb", "src": "canonical/skills/aid-summarize/references/state-writeback.md"}
 {"dst": ".claude/templates/README.md", "profile": "claude-code", "sha256": "88f2449c453ffa1e3d0d45264210bf4b8ca07adc421aca8dfed79c3a46e617cc", "src": "canonical/templates/README.md"}
-{"dst": ".claude/templates/delivery-issues.md", "profile": "claude-code", "sha256": "d7a53b99360c2dc02d876555f8037f94c48f327643177cba38aaed11c51aad9a", "src": "canonical/templates/delivery-issues.md"}
+{"dst": ".claude/templates/delivery-issues.md", "profile": "claude-code", "sha256": "eb4488b742a1c1b76c2ed6732f967211f7d482312c68f05980fb4682a18a48de", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".claude/templates/delivery-plans/task-template.md", "profile": "claude-code", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
 {"dst": ".claude/templates/discovery-state-template.md", "profile": "claude-code", "sha256": "c60235e9383fa419331a5013f8fefa368ed7c31b7059676bbd63a4d23b116a9f", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".claude/templates/feature-inventory.md", "profile": "claude-code", "sha256": "1866cfe95be8ac1d1a5b1e6e5b003c95093e659fc3362fd0bf8943ed5c81956f", "src": "canonical/templates/feature-inventory.md"}
@@ -166,4 +166,4 @@
 {"dst": ".claude/templates/specs/spec-template.md", "profile": "claude-code", "sha256": "5e8e8653b6e30baafc411c75a03b381076c40fe2807f3767d680d7ffdee050ee", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".claude/templates/subagent-heartbeat-protocol.md", "profile": "claude-code", "sha256": "d05cf07ba85743209e3f99211360d89150544a232d1c3cc634389df1563cdb01", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".claude/templates/ui-architecture.md", "profile": "claude-code", "sha256": "eb3ee918a84233881fad358463eb1ca47c453a98d507989d436c08ff3e3224fb", "src": "canonical/templates/ui-architecture.md"}
-{"dst": ".claude/templates/work-state-template.md", "profile": "claude-code", "sha256": "399acbf774fc72bb4b5f5cc1673537a4e479ac57676594ddc6a1a876eccdf376", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".claude/templates/work-state-template.md", "profile": "claude-code", "sha256": "73f3390b5f6e10afced0d15e15b71fbaaafb8a6305e523da4b333c7f43e6c591", "src": "canonical/templates/work-state-template.md"}

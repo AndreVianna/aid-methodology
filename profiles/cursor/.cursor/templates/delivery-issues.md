@@ -1,4 +1,4 @@
-# delivery-NNN-issues.md — Deferred [HIGH] Log
+# Delivery Issue Log — delivery-NNN
 
 > **Source:** `aid-execute` delivery-gate step (step 0 AGGREGATE) — written once when every task
 > in the delivery reaches `Done`. Single-writer, no parallel-write race.
@@ -17,22 +17,22 @@ Instances live at `.aid/work-NNN/delivery-NNN-issues.md`. Template source:
 
 ## Deferred [HIGH] Issues
 
-| task-id | Severity | Description | Source File:Line | Deferred At | Status |
-|---------|----------|-------------|------------------|-------------|--------|
-| task-NNN | [HIGH] | {one-line description of the finding} | {path/to/file:NN} | {YYYY-MM-DDTHH:MM:SSZ} | Open |
+| Source task | Severity | Description | Status |
+|-------------|----------|-------------|--------|
+| task-NNN | [HIGH] | {one-line description of the finding} | Open |
 
 **Column definitions:**
 
-- **task-id** — the `task-NNN` that generated this finding during quick-check.
+- **Source task** — the `task-NNN` that generated this finding during quick-check.
 - **Severity** — always `[HIGH]` in this file; `[CRITICAL]` findings are fixed on-the-spot and
   never reach this log.
 - **Description** — one-line summary matching the finding text in the quick-check report.
-- **Source File:Line** — canonical path and line number where the issue was observed, enabling the
-  gate reviewer to locate it without re-reading the quick-check report.
-- **Deferred At** — ISO-8601 timestamp when the quick-check triage marked this finding
-  `Deferred-to-gate` and appended the row here.
 - **Status** — lifecycle of the row:
   - `Open` — not yet reviewed by the delivery gate.
   - `Resolved` — gate reviewer confirmed the issue was fixed during the gate FIX cycle.
   - `Accepted` — gate reviewer accepted the issue as a known risk / non-blocking; rationale
     recorded in the delivery gate block of `STATE.md ## Delivery Gates`.
+
+> **Schema note (IQ11 — Cross-phase Q&A):** Task-020 scope originally proposed a richer 6-column
+> schema (adding `Source File:Line` and `Deferred At` columns). Reverted to the 4-column SPEC
+> per feature-004 SPEC L272-282; the richer columns can be added back via /aid-specify if needed.
