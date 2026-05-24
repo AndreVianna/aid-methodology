@@ -5,6 +5,7 @@
 > **Current Grade:** A (cycle-15 orchestrator self-attestation, 2026-05-23) - cycle-14 reviewer's 10 collateral findings (8 HIGH line-count drift + 1 MEDIUM gitignore claim + 1 MEDIUM domain-glossary L140) all FIXED in commit `fc8628e`. Plus 5 cycle-12 misses (4 architecture.md + 1 host-tools-matrix.md) FIXED in same commit. verify-kb-claims.sh: exit 0. Heartbeat protocol live-test SUCCEEDED (L1+L2+L3 all validated). Caveat: self-attestation, not adversarial reviewer pass - recommend cycle-16 reviewer next /aid-discover run.
 > **User Approved:** yes (2026-05-21) — **stale; predates work-002/work-003 deploys and the in-progress cycle-11/12 KB FIX work**
 > **Heartbeat Interval:** 1 minute
+> **Max Parallel Tasks:** 5
 > **Last KB Review:** 2026-05-23 (cycle 14, post-cleanup + post-subagent-visibility-patch clean-context adversarial)
 > **Last Summary:** 2026-05-21
 > **Project Type:** Brownfield
