@@ -136,7 +136,7 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| EXECUTE | `references/state-execute.md` | _(type-specific — see state file; delivery-mode uses pool dispatch PD-0→PD-5)_ | → REVIEW |
+| EXECUTE | `references/state-execute.md` | _(type-specific — see state file; delivery-mode uses pool dispatch PD-0→PD-6)_ | → REVIEW |
 | REVIEW | `references/state-review.md` | `reviewer` | → FIX (grade < min) / → DONE (grade ≥ min) |
 | FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | → REVIEW |
 | DONE | _(inline — task complete)_ | `inline` | → halt |
@@ -178,8 +178,7 @@ protocol lives in two reference docs; this section is a checklist citing them.
 - **Success:** emit `✓ <agent> done in <actual>` with measured time. Append a row to
   the work `STATE.md ## Calibration Log` section (create section if missing) with
   format `| YYYY-MM-DD | <agent> | <task-id/cycle> | <ETA-band> | <actual> | <notes> |`.
-  Also update the task's `## Dispatches` sub-column with the dispatch record.
-  Both are mandatory per work-003 traceability (never optional, never "if tracked").
+  Dispatch metadata is logged via the Calibration Log appendix in STATE.md (per work-003 traceability rule — never optional, never "if tracked").
   Delete heartbeat file.
 - **Failure:** emit `✗ <agent> FAILED after <elapsed> (reason: <one-line>)`.
   Decide whether to re-dispatch, fall back, or surface to user. Delete

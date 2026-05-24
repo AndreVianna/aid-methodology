@@ -131,7 +131,8 @@ WORKTREE: .aid/.worktrees/task-{NNN}/
 HEARTBEAT_FILE: .aid/.heartbeat/{executor}-{ts}.txt
 HEARTBEAT_INTERVAL: 1m
 
-Execute task-{NNN} using the aid-execute skill (single-task mode — Step 1 only).
+Execute task-{NNN} using the aid-execute skill in per-task mode — full pipeline
+EXECUTE → QUICK CHECK → REVIEW → cycles until DONE.
 Read task-{NNN}.md from .aid/{work}/tasks/. Follow the type-specific executor
 rules from references/task-type-rules.md. On completion, commit to the delivery
 branch in the worktree. Report: DONE or FAILED with reason.
@@ -157,40 +158,36 @@ Remove `task-{NNN}` from the in-flight set.
 
 **If the task completed successfully (DONE):**
 
-1. **Cherry-pick the worktree commits** onto the shared delivery branch:
+1. **Verify worktree HEAD is on delivery branch.** Under the shared-branch model,
+   each worktree was provisioned on the same `aid/delivery-NNN` branch (PD-2 step 3)
+   and committed directly to it. No cherry-pick is needed — the commits are already
+   on the shared delivery branch by construction. This is a no-op verification:
    ```bash
-   git -C .aid/.worktrees/task-{NNN}/ log --oneline origin/{delivery-branch}..HEAD \
-       | awk '{print $1}' | tac | xargs git cherry-pick
+   git -C .aid/.worktrees/task-{NNN}/ log --oneline origin/{delivery-branch}..HEAD
    ```
-   (If the worktree was on the same branch and committed directly, this step
-   is a no-op — the commits are already on the branch.)
+   (Expected output: the sub-agent's commits, already on the delivery branch.)
 
-2. **Update STATUS via writeback-task-status.sh:**
-   ```bash
-   writeback-task-status.sh --task-id NNN --field Status --value "In Review"
-   ```
-   _(The per-task quick check for this task runs as part of Step 1 → REVIEW
-   inside the dispatched sub-agent; by the time DONE is reported, it has already
-   passed. Update to "Done" once the sub-agent's own REVIEW completes.)_
-
-3. **Update STATUS to Done:**
+2. **Update STATUS to Done:**
    ```bash
    writeback-task-status.sh --task-id NNN --field Status --value "Done"
    ```
+   _(The per-task full pipeline EXECUTE → QUICK CHECK → REVIEW ran inside the
+   dispatched sub-agent; by the time DONE is reported, the sub-agent has already
+   completed its own review cycles.)_
 
-4. **Update the ready set:** for every Pending task whose `Depends On` set is
+3. **Update the ready set:** for every Pending task whose `Depends On` set is
    now entirely `Done`, add that task to the ready set.
 
-5. Emit `✓ <executor> done for task-{NNN} in <actual>`.
+4. Emit `✓ <executor> done for task-{NNN} in <actual>`.
    Append to work `STATE.md ## Calibration Log`:
    `| YYYY-MM-DD | <executor> | task-{NNN} | <ETA-band> | <actual> | pool-dispatch |`
 
-6. Delete the worktree: `git worktree remove .aid/.worktrees/task-{NNN}/`.
+5. Delete the worktree: `git worktree remove .aid/.worktrees/task-{NNN}/`.
    Delete heartbeat file.
 
-7. Re-render EXECUTE-WAVE snapshot with `task-{NNN}` now `✓ done`.
+6. Re-render EXECUTE-WAVE snapshot with `task-{NNN}` now `✓ done`.
 
-8. **Go to PD-2** (fill pool — immediately dispatch newly-ready tasks).
+7. **Go to PD-2** (fill pool — immediately dispatch newly-ready tasks).
 
 **If the task Failed (IMPEDIMENT raised, unresolved):**
 
@@ -297,7 +294,7 @@ Dispatch with the Task tool, setting `subagent_type` explicitly to the chosen ex
 
 **Before dispatching, print:** `[Step 1] Dispatching {executor} for {Type} task → subagent_type={executor}` (substituting actual values).
 
-Also update the task's row in work `STATE.md` `## Dispatches` sub-column (always — mandatory per work-003 traceability, not conditional): `| 1 | {executor} | EXECUTE Type={Type} | {cycle} |`.
+Dispatch metadata is logged via the Calibration Log appendix in STATE.md (per work-003 traceability rule — always, not conditional).
 
 ▶ {executor} starting (~{time band per rough-time-hints})
 Load the section matching the task's Type from `references/task-type-rules.md` and pass it to the executor as the type-specific RULES it must follow.

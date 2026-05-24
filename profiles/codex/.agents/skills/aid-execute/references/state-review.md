@@ -15,7 +15,7 @@ runs — this is a fast filter only.
 
 **Before dispatching, print:** `[Step 1.5] Dispatching reviewer (quick-check, Small tier) for quick-check → subagent_type=reviewer`.
 
-Also update the task's row in work `STATE.md` `## Dispatches` sub-column (mandatory per work-003 traceability): `| 1.5 | reviewer | QUICK-CHECK | {cycle} |`.
+Dispatch metadata is logged via the Calibration Log appendix in STATE.md (per work-003 traceability rule).
 
 ### Quick-Check Dispatch
 
@@ -124,7 +124,7 @@ Dispatch the `reviewer` agent (Task tool with `subagent_type: reviewer`). Clean 
 
 **Before dispatching, print:** `[Step 2] Dispatching reviewer for review → subagent_type=reviewer`.
 
-Also update the task's row in work `STATE.md` `## Dispatches` sub-column (mandatory per work-003 traceability): `| 2 | reviewer | REVIEW | {cycle} |`.
+Dispatch metadata is logged via the Calibration Log appendix in STATE.md (per work-003 traceability rule).
 
 ▶ reviewer starting (~1–2 min)
 **Reviewer receives:**

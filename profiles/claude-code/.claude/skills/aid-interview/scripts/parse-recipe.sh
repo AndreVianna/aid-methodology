@@ -63,7 +63,7 @@ usage() {
 }
 
 die() { echo "ERROR: parse-recipe.sh: $*" >&2; exit "${2:-1}"; }
-warn() { echo "WARN: parse-recipe.sh: $*"; }
+warn() { echo "WARN: parse-recipe.sh: $*" >&2; }
 
 # ---------------------------------------------------------------------------
 # Argument parsing

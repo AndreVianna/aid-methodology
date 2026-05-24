@@ -22,6 +22,11 @@
 #   Unit 12: Error paths — missing required arguments
 #   Unit 13: --render lock file created and released
 #   Unit 14: --validate name-vs-filename mismatch warning
+#   Unit 15: --validate seed recipe 'bug-fix' (task-026 fixture)
+#   Unit 16: --validate seed recipe 'write-release-note' (task-026 fixture)
+#   Unit 17: --validate seed recipe 'method-refactor' (task-026 fixture)
+#   Unit 18: --validate seed recipe 'add-crud-endpoint' (task-026 fixture)
+#   Unit 19: --validate seed recipe 'add-unit-test' (task-026 fixture)
 #
 # Exit codes:
 #   0 — all tests passed
@@ -870,6 +875,78 @@ code=$?
 assert_exit_zero "$code" "--validate name mismatch still exits 0"
 assert_output_contains "$out" "declared-name" "--validate name mismatch: declared name shown"
 assert_output_contains "$out" "actual-name" "--validate name mismatch: filename basename shown"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 15: --validate seed recipe 'bug-fix' ==="
+# Seed recipes live at SCRIPT_DIR/../../../recipes/ (canonical/recipes/)
+SEED_RECIPES_DIR="${SCRIPT_DIR}/../../../recipes"
+
+SEED_FILE="${SEED_RECIPES_DIR}/bug-fix.md"
+if [[ -f "$SEED_FILE" ]]; then
+    seed_out=$(bash "$SCRIPT" --validate "$SEED_FILE" 2>/dev/null)
+    seed_code=$?
+    assert_exit_zero "$seed_code" "--validate seed 'bug-fix': exits 0"
+    assert_output_contains "$seed_out" "OK: all checks passed" "--validate seed 'bug-fix': all checks passed"
+else
+    fail "seed recipe file not found: $SEED_FILE"
+fi
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 16: --validate seed recipe 'write-release-note' ==="
+
+SEED_FILE="${SEED_RECIPES_DIR}/write-release-note.md"
+if [[ -f "$SEED_FILE" ]]; then
+    seed_out=$(bash "$SCRIPT" --validate "$SEED_FILE" 2>/dev/null)
+    seed_code=$?
+    assert_exit_zero "$seed_code" "--validate seed 'write-release-note': exits 0"
+    assert_output_contains "$seed_out" "OK: all checks passed" "--validate seed 'write-release-note': all checks passed"
+else
+    fail "seed recipe file not found: $SEED_FILE"
+fi
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 17: --validate seed recipe 'method-refactor' ==="
+
+SEED_FILE="${SEED_RECIPES_DIR}/method-refactor.md"
+if [[ -f "$SEED_FILE" ]]; then
+    seed_out=$(bash "$SCRIPT" --validate "$SEED_FILE" 2>/dev/null)
+    seed_code=$?
+    assert_exit_zero "$seed_code" "--validate seed 'method-refactor': exits 0"
+    assert_output_contains "$seed_out" "OK: all checks passed" "--validate seed 'method-refactor': all checks passed"
+else
+    fail "seed recipe file not found: $SEED_FILE"
+fi
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 18: --validate seed recipe 'add-crud-endpoint' ==="
+
+SEED_FILE="${SEED_RECIPES_DIR}/add-crud-endpoint.md"
+if [[ -f "$SEED_FILE" ]]; then
+    seed_out=$(bash "$SCRIPT" --validate "$SEED_FILE" 2>/dev/null)
+    seed_code=$?
+    assert_exit_zero "$seed_code" "--validate seed 'add-crud-endpoint': exits 0"
+    assert_output_contains "$seed_out" "OK: all checks passed" "--validate seed 'add-crud-endpoint': all checks passed"
+else
+    fail "seed recipe file not found: $SEED_FILE"
+fi
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 19: --validate seed recipe 'add-unit-test' ==="
+
+SEED_FILE="${SEED_RECIPES_DIR}/add-unit-test.md"
+if [[ -f "$SEED_FILE" ]]; then
+    seed_out=$(bash "$SCRIPT" --validate "$SEED_FILE" 2>/dev/null)
+    seed_code=$?
+    assert_exit_zero "$seed_code" "--validate seed 'add-unit-test': exits 0"
+    assert_output_contains "$seed_out" "OK: all checks passed" "--validate seed 'add-unit-test': all checks passed"
+else
+    fail "seed recipe file not found: $SEED_FILE"
+fi
 
 # ---------------------------------------------------------------------------
 echo ""

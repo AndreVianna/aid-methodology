@@ -13,8 +13,9 @@
 #       Fields: Status | Review | Elapsed | Notes | Wave | Type
 #
 #   writeback-task-status.sh --task-id NNN --findings BLOCK
-#       Write/replace the ## Quick Check block in the task's Execution Record
-#       (task-NNN.md). BLOCK is the multi-line findings text.
+#       Write/replace the ### task-NNN block under ## Quick Check Findings
+#       in the work STATE.md (per work-003 FR2 per-area STATE rule). BLOCK is
+#       the multi-line findings text. task-NNN.md is NOT modified.
 #
 #   writeback-task-status.sh --delivery-id NNN --block MARKDOWN_BLOCK
 #       Write/replace the ## Delivery Gate block in the delivery's gate-record
@@ -321,29 +322,18 @@ mode_field() {
 
 # ---------------------------------------------------------------------------
 # Mode: --task-id NNN --findings BLOCK
-# Write/replace the ## Quick Check block in task-NNN.md Execution Record.
-# Creates the block if absent, replaces it if it already exists.
+# Write/replace the ### task-NNN block under ## Quick Check Findings in
+# STATE.md (per work-003 FR2 per-area STATE rule). task-NNN.md is NOT modified.
+# Creates the ## Quick Check Findings section if absent (appends to STATE.md).
+# Creates/replaces the ### task-NNN sub-block within that section.
 # ---------------------------------------------------------------------------
 mode_findings() {
-    # Locate task file
     local padded_id
     padded_id=$(printf '%03d' "$TASK_ID")
-    local task_file=""
-    # Search for task-NNN.md (may be named task-019-... or simply task-019.md)
-    if [[ -f "${TASKS_DIR}/task-${padded_id}.md" ]]; then
-        task_file="${TASKS_DIR}/task-${padded_id}.md"
-    else
-        # Glob for task-NNN-*.md
-        for f in "${TASKS_DIR}/task-${padded_id}-"*.md "${TASKS_DIR}/task-${padded_id}.md"; do
-            if [[ -f "$f" ]]; then
-                task_file="$f"
-                break
-            fi
-        done
-    fi
+    local task_heading="### task-${padded_id}"
 
-    if [[ -z "$task_file" ]]; then
-        die "task file for task-id $TASK_ID not found in $TASKS_DIR" 1
+    if [[ ! -f "$STATE_FILE" ]]; then
+        die "$STATE_FILE does not exist" 1
     fi
 
     acquire_lock
@@ -351,43 +341,85 @@ mode_findings() {
     local tmp
     tmp=$(mktemp)
 
-    # If ## Quick Check block exists, replace it.
-    # Otherwise, append it before the next ## section or at EOF.
-    if grep -q '^## Quick Check' "$task_file"; then
-        # Replace existing block: delete from ## Quick Check up to (but not
-        # including) the next ## section, then insert new block.
-        awk -v new_block="$FINDINGS_BLOCK" '
-            BEGIN { in_qc=0; inserted=0 }
-            /^## Quick Check/ {
-                in_qc=1
-                print "## Quick Check"
-                print ""
-                print new_block
-                inserted=1
-                next
-            }
-            in_qc && /^## / {
-                in_qc=0
-                print
-                next
-            }
-            in_qc { next }
-            { print }
-            END {
-                if (!inserted) {
-                    print ""
-                    print "## Quick Check"
+    if grep -q '^## Quick Check Findings' "$STATE_FILE"; then
+        # Section exists. Replace ### task-NNN block if present; otherwise insert
+        # before the next ## section (or at EOF of the Quick Check Findings section).
+        if grep -q "^${task_heading}$" "$STATE_FILE"; then
+            # Replace existing ### task-NNN block: skip old content from ### task-NNN
+            # up to (but not including) the next ## section OR the next peer ### task-
+            # heading. Sub-headings within the findings block (e.g. ### Findings) are
+            # NOT peer blocks — only ### task-NNN lines from the file are peers.
+            awk -v heading="$task_heading" -v new_block="$FINDINGS_BLOCK" '
+                BEGIN { in_task=0; inserted=0 }
+                $0 == heading {
+                    in_task=1
+                    print heading
                     print ""
                     print new_block
+                    inserted=1
+                    next
                 }
-            }
-        ' "$task_file" > "$tmp"
+                in_task && /^## / {
+                    in_task=0
+                    print ""
+                    print
+                    next
+                }
+                in_task && /^### task-/ && $0 != heading {
+                    in_task=0
+                    print ""
+                    print
+                    next
+                }
+                in_task { next }
+                { print }
+                END {
+                    if (!inserted) {
+                        print ""
+                        print heading
+                        print ""
+                        print new_block
+                    }
+                }
+            ' "$STATE_FILE" > "$tmp"
+        else
+            # Append ### task-NNN block within the ## Quick Check Findings section.
+            # Strategy: insert before the NEXT ## section after Quick Check Findings,
+            # or at EOF if no such section follows.
+            awk -v heading="$task_heading" -v new_block="$FINDINGS_BLOCK" '
+                BEGIN { in_qcf=0; inserted=0 }
+                /^## Quick Check Findings/ { in_qcf=1; print; next }
+                in_qcf && /^## / && !/^## Quick Check Findings/ {
+                    if (!inserted) {
+                        print ""
+                        print heading
+                        print ""
+                        print new_block
+                        inserted=1
+                    }
+                    in_qcf=0
+                    print
+                    next
+                }
+                { print }
+                END {
+                    if (!inserted) {
+                        print ""
+                        print heading
+                        print ""
+                        print new_block
+                    }
+                }
+            ' "$STATE_FILE" > "$tmp"
+        fi
     else
-        # Append new block at end of file
+        # ## Quick Check Findings section absent — append it (with the task block) at EOF.
         {
-            cat "$task_file"
+            cat "$STATE_FILE"
             echo ""
-            echo "## Quick Check"
+            echo "## Quick Check Findings"
+            echo ""
+            echo "$task_heading"
             echo ""
             printf '%s\n' "$FINDINGS_BLOCK"
         } > "$tmp"
@@ -395,23 +427,23 @@ mode_findings() {
 
     if [[ ! -s "$tmp" ]]; then
         rm -f "$tmp"
-        die "writeback produced empty output; $task_file preserved" 3
+        die "writeback produced empty output; $STATE_FILE preserved" 3
     fi
 
-    # Verify the findings block appears in output (idempotency check)
-    # Use a short prefix to verify (first 40 chars of block)
-    local block_prefix
-    block_prefix="${FINDINGS_BLOCK:0:40}"
-    if [[ -n "$block_prefix" ]] && ! grep -qF "$block_prefix" "$tmp" 2>/dev/null; then
-        # Block might contain newlines — just verify ## Quick Check header
-        if ! grep -q '^## Quick Check' "$tmp"; then
-            rm -f "$tmp"
-            die "## Quick Check block was not written to output" 3
-        fi
+    # Sanity: ## Quick Check Findings section must be present in output
+    if ! grep -q '^## Quick Check Findings' "$tmp"; then
+        rm -f "$tmp"
+        die "## Quick Check Findings section was not written to output" 3
     fi
 
-    mv "$tmp" "$task_file"
-    echo "OK: $task_file updated — ## Quick Check block written for task $TASK_ID"
+    # Sanity: ### task-NNN heading must be present in output
+    if ! grep -q "^${task_heading}$" "$tmp"; then
+        rm -f "$tmp"
+        die "${task_heading} was not written to output" 3
+    fi
+
+    mv "$tmp" "$STATE_FILE"
+    echo "OK: $STATE_FILE updated — ## Quick Check Findings ### task-${padded_id} block written"
 }
 
 # ---------------------------------------------------------------------------

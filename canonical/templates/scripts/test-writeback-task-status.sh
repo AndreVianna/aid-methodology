@@ -133,10 +133,6 @@ for i in 001 002 003 004 005; do
 
 Pending
 
-## Dispatches
-
-(none yet)
-
 TASKEOF
 done
 
@@ -180,9 +176,13 @@ FINDINGS_BLOCK="**Reviewer Tier:** Small
 | 1 | [HIGH] | missing error path | Deferred-to-gate |"
 
 bash "$SCRIPT" --task-id 1 --findings "$FINDINGS_BLOCK"
-assert_file_contains "${TASKS_DIR}/task-001.md" "## Quick Check" "task-001.md has ## Quick Check"
-assert_file_contains "${TASKS_DIR}/task-001.md" "[HIGH]" "findings block written to task-001.md"
-assert_file_contains "${TASKS_DIR}/task-001.md" "Deferred-to-gate" "status in findings"
+# Findings must go to STATE.md ## Quick Check Findings (per work-003 FR2 per-area STATE rule)
+assert_file_contains "$AID_STATE_FILE" "## Quick Check Findings" "STATE.md has ## Quick Check Findings section"
+assert_file_contains "$AID_STATE_FILE" "### task-001" "STATE.md has ### task-001 block under Quick Check Findings"
+assert_file_contains "$AID_STATE_FILE" "[HIGH]" "findings block written to STATE.md"
+assert_file_contains "$AID_STATE_FILE" "Deferred-to-gate" "status in findings in STATE.md"
+# task-001.md must NOT be modified by --findings
+assert_file_not_contains "${TASKS_DIR}/task-001.md" "## Quick Check" "task-001.md NOT modified by --findings (STATE.md is target)"
 
 FINDINGS_BLOCK2="**Reviewer Tier:** Small
 ### Findings
@@ -191,12 +191,18 @@ FINDINGS_BLOCK2="**Reviewer Tier:** Small
 | 1 | [CRITICAL] | null deref on empty input | Fixed-on-spot |"
 
 bash "$SCRIPT" --task-id 2 --findings "$FINDINGS_BLOCK2"
-assert_file_contains "${TASKS_DIR}/task-002.md" "[CRITICAL]" "task-002.md critical finding written"
-assert_file_contains "${TASKS_DIR}/task-002.md" "Fixed-on-spot" "fixed-on-spot status in task-002"
+assert_file_contains "$AID_STATE_FILE" "### task-002" "STATE.md has ### task-002 block"
+assert_file_contains "$AID_STATE_FILE" "[CRITICAL]" "critical finding written to STATE.md"
+assert_file_contains "$AID_STATE_FILE" "Fixed-on-spot" "fixed-on-spot status in STATE.md"
+# task-002.md must NOT be modified
+assert_file_not_contains "${TASKS_DIR}/task-002.md" "## Quick Check" "task-002.md NOT modified by --findings"
 
-# Verify other sections not disturbed
-assert_file_contains "${TASKS_DIR}/task-001.md" "## Status" "## Status section preserved after findings write"
-assert_file_contains "${TASKS_DIR}/task-001.md" "## Dispatches" "## Dispatches section preserved"
+# Verify both task blocks coexist in STATE.md (multi-task accumulation)
+assert_file_contains "$AID_STATE_FILE" "### task-001" "task-001 block still present after task-002 write"
+assert_file_contains "$AID_STATE_FILE" "### task-002" "task-002 block present alongside task-001"
+
+# Verify Tasks Status section not disturbed
+assert_file_contains "$AID_STATE_FILE" "## Tasks Status" "## Tasks Status section preserved after findings write"
 
 # ---------------------------------------------------------------------------
 echo ""
@@ -271,14 +277,14 @@ else
     fail "field mode: not idempotent — size changed from $BEFORE to $AFTER"
 fi
 
-# Re-run findings with same block — file size must not change
-BEFORE=$(wc -c < "${TASKS_DIR}/task-001.md")
+# Re-run findings with same block — STATE.md size must not change
+BEFORE=$(wc -c < "$AID_STATE_FILE")
 bash "$SCRIPT" --task-id 1 --findings "$FINDINGS_BLOCK"
-AFTER=$(wc -c < "${TASKS_DIR}/task-001.md")
+AFTER=$(wc -c < "$AID_STATE_FILE")
 if [[ "$BEFORE" -eq "$AFTER" ]]; then
     pass "findings mode: idempotent — same block, no size change"
 else
-    fail "findings mode: not idempotent — size changed from $BEFORE to $AFTER"
+    fail "findings mode: not idempotent — STATE.md size changed from $BEFORE to $AFTER"
 fi
 
 # Re-run append-issue with same row — must be no-op (no duplicate row)

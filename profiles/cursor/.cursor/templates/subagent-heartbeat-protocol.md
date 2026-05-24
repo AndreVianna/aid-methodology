@@ -127,7 +127,7 @@ Easy to scan; easy to parse (`head -1`, `awk -F'|'`).
 - **Location:** `.aid/.heartbeat/` (always gitignored — see below)
 - **Gitignore requirement:** because heartbeat files are ephemeral runtime
   artifacts, `.aid/.heartbeat/` MUST be present in the project's `.gitignore`
-  regardless of whether `.aid/` itself is tracked (per aid-init Q7). When
+  regardless of whether `.aid/` itself is tracked (per aid-init Q8). When
   `aid-init` runs, it adds `.aid/.heartbeat/` to `.gitignore` unconditionally;
   for projects initialized before this patch, the dispatcher SHOULD ensure
   this exclusion exists before its first dispatch.
