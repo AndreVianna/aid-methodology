@@ -2,7 +2,7 @@
 
 No active release; assess eligible deliveries and transition to SELECTING.
 
-## Step 1: Assess
+### Step 1: Assess
 
 Read all inputs. Build a picture:
 - Which deliveries are complete (all tasks done, all grades ≥ minimum)?

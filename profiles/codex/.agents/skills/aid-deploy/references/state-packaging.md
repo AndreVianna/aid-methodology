@@ -1,6 +1,6 @@
 # State: PACKAGING
 
-Release artifacts are produced, release notes generated, KB updates routed, and statuses updated across all six linear packaging steps.
+Release artifacts are produced, release notes generated, KB updates routed, and statuses updated.
 
 ### Step 4: Package
 
