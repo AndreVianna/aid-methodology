@@ -63,14 +63,14 @@ See `PLAN.md` for full details, IQ resolutions, and cross-cutting risks.
 | 010 | `task-010` | REFACTOR | W0 | **Done ✅** | C1 A+ | 11m26s+~10m | aid-discover (Mode-keyed with Step substructure; LARGEST 596→253, 58% reduction). 6 state refs + 3 preserved. Sub-agent fanout in GENERATE preserved verbatim. CR6 (Q&A→Q-AND-A) applied to 22 occurrences. PASS cycle-1: A+. |
 | 011 | `task-011` | IMPLEMENT | W0 | **Done ✅** | C2 A+ | 10m48s+~5m+1m30s | Orphan-ref sweep. 6 KB docs + 2 STATE.md updated to ref work-003 FR2. Zero current-state matches. C1=A+ (PASS-with-LOW) → C2 fix-pass restored api-contracts L305 specificity → A+ (0 defects). |
 | 012 | `task-012` | TEST | W1 | Pending | — | — | E2E pipeline parity test |
-| 013 | `task-013` | CONFIGURE | W0 | Pending | — | — | Extend work-state-template ## Triage + data-model.md §2.3 |
+| 013 | `task-013` | CONFIGURE | W0 | **Done ✅** | C1 FIX → C2 A+ | ~8m+~6m+~1m | ## Triage section added (Path/Work Type/Sub-path/Sub-path-auto/rationale/Override/Recipe). C1=FIX (1 HIGH workType enum drift) → inline fix to kebab values per feature-005 SPEC L196-208. data-model.md §2.3 updated. |
 | 014 | `task-014` | IMPLEMENT | W1 | Pending | — | — | Implement State TRIAGE + T3→workType mapping |
 | 015 | `task-015` | IMPLEMENT | W2 | Pending | — | — | User-override mechanism on triage turn |
 | 016 | `task-016` | IMPLEMENT | W2 | Pending | — | — | Implement 4 lite-path sub-paths in State L1 |
 | 017 | `task-017` | IMPLEMENT | W3 | Pending | — | — | Lite → full escalation (preserve captured info) |
 | 018 | `task-018` | TEST | W4 | Pending | — | — | E2E lite path test |
 | 019 | `task-019` | IMPLEMENT | W0 | **Done ✅ (Loopback: test-coverage)** | C3 A+ | 8m9s+~7m+14m+~6m+~4m | writeback-task-status.sh helper (520L) + smoke test (427L, 57/57 PASS). Sentinel-file lock (set -o noclobber + atomic create + sleep-poll). C1=FIX (2 HIGH+2 MED+5 LOW+5 MIN) → C2 fix-batch (HIGH H1 schema-mismatch + H2 pipe-corruption + MED M1 --help sed + M2 lock-dir-missing all fixed; new MED found: newline bypasses pipe check) → C3 fix (extended pipe check to also reject \n) → C3 review A+ (1 LOW Loopback: no newline-rejection test, deferred). |
-| 020 | `task-020` | CONFIGURE | W0 | Pending | — | — | Extend work-state-template ## Delivery Gates + data-model.md §2.3 |
+| 020 | `task-020` | CONFIGURE | W0 | **Done ✅ (Loopback IQ11)** | C1 FIX → C2 A+ | ~8m+~6m+~1m | ## Delivery Gates + ## Quick Check Findings sections added; new delivery-issues.md template. C1=FIX (2 HIGH delivery-issues.md row schema + H1 drift from feature-004 SPEC L272-282) → inline fix reverted to SPEC 4-col schema. **IQ11** flags task scope vs SPEC schema discrepancy: richer 6-col schema (task scope) vs simpler 4-col (SPEC). Reverted to SPEC; can add columns back via /aid-specify. |
 | 021 | `task-021` | IMPLEMENT | W1 | Pending | — | — | Per-task quick-check in aid-execute |
 | 022 | `task-022` | IMPLEMENT | W2 | Pending | — | — | Per-delivery quality gate + FR6 interlock |
 | 023 | `task-023` | TEST | W3 | Pending | — | — | E2E two-tier review test |
@@ -81,7 +81,7 @@ See `PLAN.md` for full details, IQ resolutions, and cross-cutting risks.
 | 028 | `task-028` | IMPLEMENT | W2 | Pending | — | — | Triage recipe-offer + slot-fill + emit (+ {!{ rewrite) |
 | 029 | `task-029` | IMPLEMENT | W3 | Pending | — | — | Recipe → standard-lite escalation (preserve slots) |
 | 030 | `task-030` | TEST | W4 | Pending | — | — | E2E recipes test |
-| 031 | `task-031` | CONFIGURE | W0 | Pending | — | — | Add Max Parallel Tasks metadata to STATE template + project STATE |
+| 031 | `task-031` | CONFIGURE | W0 | **Done ✅** | C1 A+ | ~8m+~6m | `**Max Parallel Tasks:** 5` metadata added to discovery-state-template.md + .aid/knowledge/STATE.md. data-model.md §2.1 updated. PASS cycle-1 clean (1 MINOR cosmetic). |
 | 032 | `task-032` | IMPLEMENT | W1 | Pending | — | — | Add Max Parallel Tasks Q to aid-init |
 | 033 | `task-033` | IMPLEMENT | W1 | Pending | — | — | Pool dispatch (Agent tool + run_in_background) |
 | 034 | `task-034` | IMPLEMENT | W2 | Pending | — | — | Failure-block-radius (transitive descendants Blocked) |
@@ -295,6 +295,9 @@ Format: `| Date | Agent | Task / Cycle | ETA band | Actual | Notes |`
 - Combined verification reviewer (multiple tasks in one dispatch): ~4m. Halves overhead vs 2 separate reviewers.
 - Heartbeat compliance: 3 of 5 wave-3 agents updated heartbeat well (rev-task002-c3, dev-task024, all 3 wave-3 reviewers); 2 of 5 ignored (dev-task019, dev-task025). Calibration finding: developer agents inconsistent about heartbeat writes despite explicit prompt instruction.
 
+| 2026-05-24 | devops | wave-4 serial (013+020+031) | 5-15 min | 7m56s | All 3 done. 9 canonical files + 12 profile-generated. VERIFY-4a PASS. Commit 0bec5a5→be05af2. |
+| 2026-05-24 | reviewer | wave-4 combined (013+020+031) | 1-10 min | 5m51s | task-031 PASS A+; task-013 FIX 1 HIGH workType enum; task-020 FIX 2 HIGH delivery-issues.md schema. |
+
 **Calibration observations:**
 
 - REFACTOR developer ETAs were estimated at 5–12 min; actual span 6m18s – 11m26s; mean ~8m. **Refine `rough-time-hints.md` row `developer (REFACTOR)`: 6–12 min, 10 samples**.
@@ -304,3 +307,14 @@ Format: `| Date | Agent | Task / Cycle | ETA band | Actual | Notes |`
 - Parallelism win: wave-1+2 wall-clock ~11m26s (longest member) vs sequential ~80m → ~7× speedup.
 
 **Backfill source:** Backfilled from Agent tool `<usage>` blocks observed during the 2026-05-24 /aid-execute work-001 run. Times are agent-reported actuals (duration_ms / 1000), rounded to nearest 30s. ETA bands were the per-dispatch L2 timer settings (often wider than the rough-time-hints baseline to account for parallel-tail-latency).
+
+### IQ11: delivery-issues.md row schema — task scope vs SPEC mismatch
+
+**Question:** Task-020 scope proposed a richer 6-column delivery-issues.md schema (`task-id | Severity | Description | Source File:Line | Deferred At | Status`) but feature-004 SPEC L272-282 mandates a simpler 4-column schema (`Source task | Severity | Description | Status`). Which is canonical?
+
+**Context:** Discovered by wave-4 combined reviewer (2026-05-24). Reverted to SPEC 4-col in wave-4 cycle-1 fix-pass commit `ddf1d17`. The richer schema's extra columns (Source File:Line, Deferred At) provide useful operational detail for gate reviewers but aren't required by the SPEC.
+
+**Source:** /aid-execute work-001 wave-4 task-020 cycle-1 review (2026-05-24)
+**Suggested:** If the richer schema is preferred, update feature-004 SPEC L272-282 to extend the column set + bump the template back to 6 cols. If the SPEC's 4-col minimal schema is canonical, leave as-is (current state).
+**Status:** Pending — route to /aid-specify for SPEC clarification.
+
