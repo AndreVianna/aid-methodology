@@ -68,39 +68,53 @@ Before dispatching a subagent that will run > 5 min:
 If the dispatch prompt includes `HEARTBEAT_FILE=...`:
 
 1. **Every N minutes of work** (where N = `HEARTBEAT_INTERVAL` value, default
-   1 min if not specified), write a fresh status block to the heartbeat file:
-   ```
-   state: <current state name; e.g., GENERATE, REVIEW, FIX>
-   progress: <e.g., "4/16 docs read", "3/13 tasks complete", "validating arch.md">
-   eta-remaining: <e.g., "~5m", "unknown", "almost done">
-   activity: <one-line description of what you are CURRENTLY doing>
-   updated: <ISO-8601 timestamp; e.g., 2026-05-23T14:32:08Z>
+   1 min if not specified), write a single-line status to the heartbeat file
+   using a shell command (NOT direct LLM text — the timestamp MUST be shell-generated):
+   ```bash
+   echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] <STATE> | <progress> | <activity> (~<eta-remaining>)" > "$HEARTBEAT_FILE"
    ```
 
-2. **Overwrite, don't append.** Only the latest state matters. The orchestrator
-   only reads the most recent contents.
+   Field meanings:
+   - `<STATE>`: current state name; e.g., `GENERATE`, `REVIEW`, `FIX`
+   - `<progress>`: e.g., `4/16 docs read`, `3/13 tasks complete`, `validating arch.md`
+   - `<activity>`: one-line description of what you are CURRENTLY doing
+   - `<eta-remaining>`: e.g., `~5m`, `unknown`, `almost done`
 
-3. **If you can't predict ETA-remaining**, use `unknown`. Never lie.
+   Example output line:
+   ```
+   [2026-05-23T20:35:05Z] REVIEW | 4/21 docs | Checking line-count drift across module-map/architecture (~12m remaining)
+   ```
 
-4. **The activity line should change between updates** — if you write the same
-   activity line twice, you're probably stuck. The orchestrator may interpret
-   identical consecutive updates as "subagent may be hung."
+2. **Use `> "$HEARTBEAT_FILE"` (overwrite), NOT `>> "$HEARTBEAT_FILE"` (append).**
+   Only the latest state matters. The orchestrator reads with `cat` and expects
+   a single line.
 
-5. **If you finish before the next heartbeat interval**, no need to write a
+3. **The timestamp MUST come from `$(date -u +%Y-%m-%dT%H:%M:%SZ)`, not from
+   your own text generation.** LLM-generated timestamps are placeholder-prone
+   (e.g., `2026-05-23T00:00:00Z` midnight). The shell substitution guarantees a
+   real, current UTC timestamp.
+
+4. **If you can't predict eta-remaining**, use `unknown`. Never lie.
+
+5. **The activity field should change between updates** — if you write the
+   same activity twice in a row, you're probably stuck. The orchestrator may
+   interpret identical consecutive updates as "subagent may be hung."
+
+6. **If you finish before the next heartbeat interval**, no need to write a
    final heartbeat — your completion notification suffices.
 
-6. **If `HEARTBEAT_FILE` is not in the dispatch prompt**, do nothing. Don't
+7. **If `HEARTBEAT_FILE` is not in the dispatch prompt**, do nothing. Don't
    write speculatively. Don't error.
 
 ## Example heartbeat file
 
+A single line, written by `echo "[$(date -u +...)] ..." > "$HEARTBEAT_FILE"`:
+
 ```
-state: REVIEW
-progress: 14/21 KB docs reviewed
-eta-remaining: ~8m
-activity: Reading data-model.md §3 (Mermaid dataflow); cross-checking against current code
-updated: 2026-05-23T14:32:08Z
+[2026-05-23T14:32:08Z] REVIEW | 14/21 KB docs reviewed | Reading data-model.md §3 (Mermaid dataflow); cross-checking against current code (~8m remaining)
 ```
+
+Easy to scan; easy to parse (`head -1`, `awk -F'|'`).
 
 ## File lifecycle
 
@@ -119,7 +133,7 @@ updated: 2026-05-23T14:32:08Z
   cooperation. Works on every host (Claude Code, Codex, Cursor).
 - **Opt-in via parameter:** subagents that don't get `HEARTBEAT_FILE` do
   nothing — no behavior change for hosts/tools that haven't been updated.
-- **Key:value text:** human-readable AND machine-parseable via grep/awk.
+- **Single-line text:** human-readable AND machine-parseable via `head -1` / `awk -F'|'`. Compact enough to fit one terminal line.
 - **Overwrite-not-append:** unbounded file growth is not a concern.
 - **1-minute default:** the user (work-003 PR #9 review) flagged the
   visibility gap; 1 minute gives the user a strong signal that the subagent
@@ -133,8 +147,12 @@ updated: 2026-05-23T14:32:08Z
 - **Don't reuse heartbeat filenames across dispatches.** Unique per dispatch
   (via unix timestamp suffix) avoids collision when the orchestrator
   dispatches multiple subagents in parallel.
-- **Subagent must write key:value lines, not free prose.** The orchestrator
-  parses by field name. Free prose breaks the grep/awk parsing.
+- **Subagent must use the single-line format with `|` delimiters.** Free
+  prose breaks `awk -F'|'` parsing. Multi-line breaks `head -1`.
 - **Don't echo the heartbeat to the user on every read.** Surface it only
   when the L2 timer fires (i.e., once per check-in interval), not on every
   Read tool call.
+- **Always use `$(date -u +%Y-%m-%dT%H:%M:%SZ)` for the timestamp**, never
+  hand-written ISO strings. LLMs often write plausible-looking placeholders
+  (e.g., `2026-05-23T00:00:00Z` midnight) when asked to generate timestamps
+  directly. The shell substitution side-steps this entirely.

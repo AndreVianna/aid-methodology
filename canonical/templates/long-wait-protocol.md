@@ -66,7 +66,7 @@ the heartbeat file and append its latest state:
 
 ```
 ... <agent-name> still running (<m> elapsed of ~<low>–<high>)
-    [from heartbeat] state: <state> · progress: <progress> · activity: <activity>
+    [from heartbeat] <single line from heartbeat file, e.g., '[2026-05-23T20:35:05Z] REVIEW | 4/21 docs | Reading data-model.md (~12m remaining)'>
 ```
 
 ### Step 5 — On completion notification
@@ -100,7 +100,7 @@ or surface to the user.
 
 [9 minutes pass; first timer fires]
 ... discovery-reviewer still running (9m elapsed of ~18–25)
-    [from heartbeat] state: REVIEW · progress: 14/21 KB docs reviewed · activity: Reading data-model.md §3 (Mermaid dataflow)
+    [from heartbeat] [2026-05-23T14:32:08Z] REVIEW | 14/21 KB docs reviewed | Reading data-model.md §3 (Mermaid dataflow); cross-checking against current code (~8m remaining)
 
 [14 more minutes pass; subagent notification arrives at 23m30s before second timer fires]
 ✓ discovery-reviewer done in 23m30s (estimated 18–25; within band)
