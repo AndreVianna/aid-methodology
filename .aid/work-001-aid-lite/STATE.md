@@ -65,14 +65,14 @@ See `PLAN.md` for full details, IQ resolutions, and cross-cutting risks.
 | 012 | `task-012` | TEST | W1 | **Done ✅** | C1 PASS | ~20m | E2E pipeline parity test. All 10 thin-router skills PASS: dispatch tables correct (State/Detail/Worker/Advance), no inline state bodies, all referenced files present. VERIFY-4a PASS all 3 install trees (168/168/170 SHA256 matches). task-011 orphan-ref sweep confirmed clean. State-name changes verified as CR6 normalization (not regressions). Report: `.aid/work-001-aid-lite/test-reports/task-012-pipeline-parity.md`. |
 | 013 | `task-013` | CONFIGURE | W0 | **Done ✅** | C1 FIX → C2 A+ | ~8m+~6m+~1m | ## Triage section added (Path/Work Type/Sub-path/Sub-path-auto/rationale/Override/Recipe). C1=FIX (1 HIGH workType enum drift) → inline fix to kebab values per feature-005 SPEC L196-208. data-model.md §2.3 updated. |
 | 014 | `task-014` | IMPLEMENT | W1 | **Done ✅** | C1 A+ | 10m27s+~4m | State TRIAGE in aid-interview. 3-question flow + T3→workType deterministic mapping. TRIAGE inserted between Q-AND-A and CONTINUE; FIRST-RUN also redirected to TRIAGE per SPEC. Backward compat for pre-TRIAGE in-flight works. C1 ACCEPT at A+. |
-| 015 | `task-015` | IMPLEMENT | W2 | Pending | — | — | User-override mechanism on triage turn |
-| 016 | `task-016` | IMPLEMENT | W2 | Pending | — | — | Implement 4 lite-path sub-paths in State L1 |
+| 015 | `task-015` | IMPLEMENT | W2 | In Progress | — | — | User-override mechanism on triage turn — Wave-6 parallel |
+| 016 | `task-016` | IMPLEMENT | W2 | In Progress | — | — | 4 lite-path sub-paths in State L1 — Wave-6 parallel |
 | 017 | `task-017` | IMPLEMENT | W3 | Pending | — | — | Lite → full escalation (preserve captured info) |
 | 018 | `task-018` | TEST | W4 | Pending | — | — | E2E lite path test |
 | 019 | `task-019` | IMPLEMENT | W0 | **Done ✅ (Loopback: test-coverage)** | C3 A+ | 8m9s+~7m+14m+~6m+~4m | writeback-task-status.sh helper (520L) + smoke test (427L, 57/57 PASS). Sentinel-file lock (set -o noclobber + atomic create + sleep-poll). C1=FIX (2 HIGH+2 MED+5 LOW+5 MIN) → C2 fix-batch (HIGH H1 schema-mismatch + H2 pipe-corruption + MED M1 --help sed + M2 lock-dir-missing all fixed; new MED found: newline bypasses pipe check) → C3 fix (extended pipe check to also reject \n) → C3 review A+ (1 LOW Loopback: no newline-rejection test, deferred). |
 | 020 | `task-020` | CONFIGURE | W0 | **Done ✅ (Loopback IQ11)** | C1 FIX → C2 A+ | ~8m+~6m+~1m | ## Delivery Gates + ## Quick Check Findings sections added; new delivery-issues.md template. C1=FIX (2 HIGH delivery-issues.md row schema + H1 drift from feature-004 SPEC L272-282) → inline fix reverted to SPEC 4-col schema. **IQ11** flags task scope vs SPEC schema discrepancy: richer 6-col schema (task scope) vs simpler 4-col (SPEC). Reverted to SPEC; can add columns back via /aid-specify. |
 | 021 | `task-021` | IMPLEMENT | W1 | **Done ✅** | C1 FIX → C2 A+ | 4m17s+~7m+19m+~7m | Per-task quick-check in aid-execute. C1=FIX (1 CRIT helper/caller contract mismatch + 2 HIGH ## Dispatches vaporware) → C2 fix-batch rewired writeback-task-status.sh mode_findings to STATE.md ## Quick Check Findings + removed Dispatches refs (Calibration Log serves that role). C2 A+ (0 defects). |
-| 022 | `task-022` | IMPLEMENT | W2 | Pending | — | — | Per-delivery quality gate + FR6 interlock |
+| 022 | `task-022` | IMPLEMENT | W2 | In Progress | — | — | Per-delivery quality gate + FR6 interlock — Wave-6 parallel |
 | 023 | `task-023` | TEST | W3 | Pending | — | — | E2E two-tier review test |
 | 024 | `task-024` | IMPLEMENT | W0 | **Done ✅** | C1 A+ | 9m21s+~6m | work-002 generator back-port for recipes asset kind. canonical/recipes/ recognized; emits to all 3 install trees per profile contract. EMISSION-MANIFEST.md declares Recipes section. VERIFY-4a PASS. No regression to existing asset kinds. C1 PASS at A+ (0 HIGH/MED, 1 LOW + 2 MIN cosmetic). |
 | 025 | `task-025` | DOCUMENT | W0 | **Done ✅** | C3 A+ | 6m53s+~7m+14m+~5m+~4m | Recipe meta-template + README. C1=FIX (3 HIGH+4 MED+4 LOW+3 MIN). C2 fix-batch (path move canonical/recipes/RECIPE-TEMPLATE.md → canonical/templates/recipe-template.md + Metadata block + slot-count fix + ## spec rationale + multi-task example). C2 review surfaced 1 new HIGH (multi-task example slot-count 6→5). C3 fix (1-line) → C3 review A+ (0 defects). |
@@ -84,9 +84,9 @@ See `PLAN.md` for full details, IQ resolutions, and cross-cutting risks.
 | 031 | `task-031` | CONFIGURE | W0 | **Done ✅** | C1 A+ | ~8m+~6m | `**Max Parallel Tasks:** 5` metadata added to discovery-state-template.md + .aid/knowledge/STATE.md. data-model.md §2.1 updated. PASS cycle-1 clean (1 MINOR cosmetic). |
 | 032 | `task-032` | IMPLEMENT | W1 | **Done ✅** | C1 FIX → C2 A+ | ~10m+~6m+19m+~7m | MaxConcurrent Q (Q7) in aid-init. Default 5 per feature-009 FR6. Q7→Q8 renumbering. C1=FIX (2 HIGH Q7→Q8 missed in subagent-heartbeat-protocol.md) → C2 fix-batch updated all 4 files. C2 A+. |
 | 033 | `task-033` | IMPLEMENT | W1 | **Done ✅** | C1 FIX → C2 A+ | ~10m+~7m+19m+~7m | Pool dispatch (PD-0→PD-6) in aid-execute EXECUTE-WAVE. MaxConcurrent default 5, graceful degradation. C1=FIX (1 CRIT PD-2a "Step 1 only" contradicts PD-4; 3 HIGH cherry-pick, double STATE write, Dispatches vaporware) → C2 fix-batch resolved all. C2 A+. |
-| 034 | `task-034` | IMPLEMENT | W2 | Pending | — | — | Failure-block-radius (transitive descendants Blocked) |
-| 035 | `task-035` | IMPLEMENT | W2 | Pending | — | — | EXECUTE-WAVE drill-down extension |
-| 036 | `task-036` | IMPLEMENT | W2 | Pending | — | — | Graceful degradation (effective MaxConcurrent=1) |
+| 034 | `task-034` | IMPLEMENT | W2 | In Progress | — | — | Failure-block-radius (transitive descendants Blocked) — Wave-6 parallel |
+| 035 | `task-035` | IMPLEMENT | W2 | In Progress | — | — | EXECUTE-WAVE drill-down extension — Wave-6 parallel |
+| 036 | `task-036` | IMPLEMENT | W2 | In Progress | — | — | Graceful degradation (effective MaxConcurrent=1) — Wave-6 parallel |
 | 037 | `task-037` | TEST | W3 | Pending | — | — | E2E parallel pool test |
 
 ## Deploy Status
