@@ -10,6 +10,7 @@ from harness import EmissionManifest
 from render_agents import render_agents
 from render_skills import render_skills
 from render_templates import render_templates
+from render_recipes import render_recipes
 from verify_deterministic import run_verify
 from verify_advisory import run_advisory
 
@@ -39,6 +40,7 @@ for profile_path in sorted(profiles_dir.glob('*.toml')):
     render_agents(repo, profile, manifest, repo)
     render_skills(repo, profile, manifest, repo)
     render_templates(repo, profile, manifest, repo)
+    render_recipes(repo, profile, manifest, repo)
 
     # Deletion pass
     deleted = []

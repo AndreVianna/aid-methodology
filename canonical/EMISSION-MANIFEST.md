@@ -102,22 +102,51 @@ JSON Lines was chosen because it is:
 - **SQLite** — binary format, not diff-friendly; overkill for a simple sequential list; adds a
   runtime dependency.
 
+## Asset Kinds
+
+The generator recognises the following canonical asset kinds. Each kind maps to
+an install-tree sub-directory per the profile's layout configuration.
+
+| Canonical source | Claude Code | Codex (split) | Cursor | Renderer |
+|-----------------|-------------|---------------|--------|----------|
+| `canonical/agents/` | `.claude/agents/` | `.codex/agents/` | `.cursor/agents/` | `render_agents.py` |
+| `canonical/skills/` | `.claude/skills/` | `.agents/skills/` | `.cursor/skills/` | `render_skills.py` |
+| `canonical/templates/` | `.claude/templates/` | `.agents/templates/` | `.cursor/templates/` | `render_templates.py` |
+| `canonical/recipes/` | `.claude/recipes/` | `.agents/recipes/` | `.cursor/recipes/` | `render_recipes.py` |
+
+### Recipes asset kind (FR8 — feature-011-recipes back-port, work-001)
+
+`canonical/recipes/` holds pre-filled lite-path templates with `{{slot}}`
+placeholders. Recipes are plain Markdown files (passthrough renderer — no
+format conversion or frontmatter injection). They follow the same profile-
+emission contract as templates:
+
+- **Single-root profiles** (Claude Code, Cursor): emit under `{output_root}/recipes/`
+- **Split-root profile** (Codex): emit under `{assets_root}/recipes/`
+- **Idempotent**: if `canonical/recipes/` is empty or absent, the generator
+  emits nothing and records no manifest entries for this kind.
+- **Mirror-deletion**: removing a recipe and re-running the generator deletes
+  the rendered copy from all 3 install trees via the normal manifest diff.
+
 ## Worked Example
 
 ```jsonl
 {"_manifest_version": 1}
 {"profile": "claude-code", "src": "canonical/agents/architect.md", "dst": ".claude/agents/architect.md", "sha256": "a1b2c3d4e5f6..."}
+{"profile": "claude-code", "src": "canonical/recipes/new-feature.md", "dst": ".claude/recipes/new-feature.md", "sha256": "e5f6a1b2c3d4..."}
 {"profile": "claude-code", "src": "canonical/skills/aid-deploy/SKILL.md", "dst": ".claude/skills/aid-deploy/SKILL.md", "sha256": "b2c3d4e5f6a1..."}
 {"profile": "claude-code", "src": "canonical/skills/aid-discover/references/agent-prompts.md", "dst": ".claude/skills/aid-discover/references/agent-prompts.md", "sha256": "c3d4e5f6a1b2..."}
 {"profile": "claude-code", "src": "canonical/templates/grading-rubric.md", "dst": ".claude/templates/grading-rubric.md", "sha256": "d4e5f6a1b2c3..."}
 ```
 
-The four example records cover:
+The five example records cover:
 1. An agent file
-2. A skill `SKILL.md`
-3. A skill `references/*.md` sub-file
-4. A template
+2. A recipe file (new — FR8)
+3. A skill `SKILL.md`
+4. A skill `references/*.md` sub-file
+5. A template
 
 For Codex (split layout), records under `.codex/` and `.agents/` both appear in
-`codex/emission-manifest.jsonl` with `dst` values like `.codex/agents/architect.toml`
-and `.agents/skills/aid-deploy/SKILL.md` — both relative to `codex/`.
+`codex/emission-manifest.jsonl` with `dst` values like `.codex/agents/architect.toml`,
+`.agents/recipes/new-feature.md`, and `.agents/skills/aid-deploy/SKILL.md` — all
+relative to `codex/`.
