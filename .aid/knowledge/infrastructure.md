@@ -2,8 +2,8 @@
 
 > **Source:** aid-discover (discovery-quality)
 > **Status:** Populated (initial dogfood pass)
-> **Last Updated:** 2026-05-21
-> **Cross-references:** `project-index.md`, `project-structure.md:222-232` (Build/Test/CI absence), `test-landscape.md` (overlapping CI gap), `security-model.md` (supply-chain trust chain), `tech-debt.md` (H2: no CI, H4: duplication)
+> **Last Updated:** 2026-05-23 (cycle 11 FIX: canonical/ + run_generator.py noted in §§1-2; skill-loading cache subsection added to §3.1)
+> **Cross-references:** `project-index.md`, `project-structure.md:222-232` (Build/Test/CI absence), `test-landscape.md` (overlapping CI gap), `security-model.md` (supply-chain trust chain), `tech-debt.md` (H2: no CI, H5: orphan-detection gap)
 
 ## Framing
 
@@ -22,13 +22,18 @@ Each of these is examined below.
 |--------|-------|----------|
 | VCS | Git | `.gitignore` exists; git worktree is the current execution context |
 | Host | GitHub | `README.md:267` and `profiles/codex/AGENTS.md:24` reference `https://github.com/AndreVianna/aid-methodology` |
-| Branching | Inferred GitHub-flow (PRs to `master`) | Current branch per git status: `master`. Recent merge commits (`af5b942`, `fda9063`) follow PR-merge style. ⚠️ Inferred from code — needs confirmation. The fact that `master` (not `main`) is the default branch is documented in the agent context |
+| Branching | Inferred GitHub-flow (PRs to `master`) | Current branch per git status: `master`. ⚠️ Inferred from code — needs confirmation. The fact that `master` (not `main`) is the default branch is documented in the agent context |
 | Release artifacts | None visible | No `releases/` directory; no GitHub Release artifacts mentioned in repo. `setup.sh` and `setup.ps1` are the entry points |
 | Version file | None | No `VERSION`, no `package.json` version field, no `aid-version.txt`. The "V3" designation lives only in `methodology/aid-methodology.md` prose |
-| Git tags | Not visible from this worktree | The worktree shows `master` HEAD at `af5b942` with no tags annotated in `git log` output |
+| Git tags | Not visible from this worktree | The worktree shows `master` HEAD with no tags annotated in `git log` output |
 | LICENSE | MIT | `LICENSE` (21 lines), confirmed by `project-index.md:345` |
+| **Single source of truth** | `canonical/` top-level directory (new post work-002 — 2026-05-22) | `ls canonical/` shows `agents/`, `skills/`, `templates/`, `rules/`, `EMISSION-MANIFEST.md`. Authoritative source for all 22 agent definitions, 10 skill bodies, and template assets. The three install trees under `profiles/{claude-code,codex,cursor}/` are **generator output**, not hand-maintained |
+| **Propagation mechanism** | `run_generator.py` (top-level, ~83 lines Python, new post work-002) | Reads profile TOMLs from `profiles/*.toml`, invokes per-profile renderers (`render_agents`, `render_skills`, `render_templates` under `.claude/skills/aid-generate/scripts/`), emits files into each install tree, writes an `emission-manifest.jsonl` per profile, prunes empty directories on delete, and runs VERIFY-4a (deterministic) + VERIFY-4b (advisory) gates. Exit 1 on VERIFY-4a failure |
+| **Pre-canonical era artifacts** | Top-level `skills/` and `agents/` directories — DELETED 2026-05-22 | Verified: `ls skills/` and `ls agents/` both error "No such file or directory". Their content was promoted into `canonical/{skills,agents}/` and the human READMEs were retired in favor of the canonical sources being the single readable form |
 
 **Implication:** Distribution is `git clone` only. Users do not download a tagged tarball; they pull the tip of `master`. This is the most common pattern for methodology / template repos but it has consequences for adopters who want reproducibility — see `tech-debt.md` H2.
+
+**Canonical authority (post work-002):** Contributors edit `canonical/{skills,agents,templates}/`, then run `python run_generator.py` to regenerate the three profile trees deterministically. The pre-work-002 CONTRIBUTING.md "update all 3 trees by hand" rule is obsolete. See `tech-debt.md H5` for the residual orphan-detection gap (`run_generator.py` VERIFY-4a checks canonical → profile propagation but does not flag templates that exist in profile trees and not in `canonical/templates/`; 6 such orphans existed pre-cycle-11, resolved by KB-F1).
 
 ## 2. Installer Scripts
 
@@ -45,10 +50,10 @@ Each of these is examined below.
   - Directory tree: copy via `find -mindepth 1 -type d` to recreate structure, then `find -type f` to copy each file through `copy_file()`.
 - **Per-tool copy rules** (`setup.sh:135-153`):
   - Claude Code: `cp -r profiles/claude-code/.claude/ $TARGET/.claude/` + `cp profiles/claude-code/CLAUDE.md $TARGET/CLAUDE.md`.
-  - Codex: `cp -r profiles/codex/.codex/ $TARGET/.codex/` + `cp profiles/codex/AGENTS.md $TARGET/AGENTS.md`. Note: does NOT copy `profiles/codex/.agents/` (skills + templates), which is a documented omission to verify — the Codex tree's skills live under `.agents/` not `.codex/` per `profiles/codex/README.md:12-15`, and `setup.sh:144` only copies `.codex/`.
+  - Codex: `cp -r profiles/codex/.codex/ $TARGET/.codex/` + `cp -r profiles/codex/.agents/ $TARGET/.agents/` + `cp profiles/codex/AGENTS.md $TARGET/AGENTS.md`. (Pre-2026-05-22 the `.agents/` line was missing — Q70/H6 — now fixed.)
+  - Cursor: `cp -r profiles/cursor/.cursor/ $TARGET/.cursor/` + `cp profiles/cursor/AGENTS.md $TARGET/AGENTS.md`.
+- **Source = generator output, not canonical/:** `setup.sh` installs from `profiles/{claude-code,codex,cursor}/`, which are themselves the output of `python run_generator.py` applied to `canonical/`. The installer does **not** read `canonical/` directly — adopters get the staged per-tool layout already shaped by the generator (paths like `.claude/skills/`, `.codex/agents/`, `.cursor/rules/`).
 - **Post-install message:** Prints "Next steps: 1. Run /aid-init ... 2a. Brownfield: /aid-discover ... 2b. Greenfield: /aid-interview".
-
-[CONFIRMED HIGH BUG — Q70] `setup.sh:142-145` (the Codex branch) copies `.codex/` and `AGENTS.md` but **not `.agents/`**. Per `profiles/codex/README.md:12-15`, manual install uses `cp -r path/to/aid-methodology/profiles/codex/.codex .codex/` AND `cp -r path/to/aid-methodology/profiles/codex/.agents .agents/`. The `setup.sh` script omits the second copy. This means a user who runs `setup.sh` for Codex gets the agent TOML definitions but NOT the skills or templates. **Confirmed via reviewer static-analysis spot-check #20** (`sed -n '140,155p' setup.sh` shows only `.codex` and `AGENTS.md` referenced). Patch tracked as `tech-debt.md H6`.
 
 ### `setup.ps1` (PowerShell, 156 lines)
 
@@ -58,9 +63,9 @@ Each of these is examined below.
 - **Requires PowerShell 5.1+** (`#Requires -Version 5.1`).
 - **Same menu** as Bash version. Identical output strings.
 - **Copy semantics** (`setup.ps1:67-99`): uses `Get-FileHash` (MD5) to compare files for parity (Bash version uses `cmp -s`). Otherwise functionally identical.
-- **Per-tool copy rules** (`setup.ps1:130-148`): same as Bash. **Same omission**: the Codex branch (`setup.ps1:137-141`) copies `.codex\` and `AGENTS.md` but not `.agents\`.
+- **Per-tool copy rules** (`setup.ps1:130-148`): same as Bash; both installers carry the `.agents/` copy step in the Codex branch post-2026-05-22 H6 fix. Same `profiles/`-as-source contract (canonical/ is invisible to the adopter).
 
-[CONFIRMED HIGH BUG — Q70] Same Codex `.agents/` omission as `setup.sh`. Both installer scripts agree, so this is consistent — but consistently *missing* the Codex skills + templates copy step that the documentation says is required. Patch tracked as `tech-debt.md H6`.
+[INFO — RESOLVED Q70/H6] Both installers correctly copy `.agents/` in the Codex branch as of 2026-05-22 (task-030 smoke test passed: 10 Codex SKILL.md files placed under `<target>/.agents/skills/aid-*/SKILL.md`). The pre-fix variant was [CONFIRMED HIGH BUG] until then.
 
 ## 3. User-Side Runtime Requirements
 
@@ -76,14 +81,31 @@ The AID skills, once installed, depend on the user's machine having the followin
 
 GitHub Copilot and Google Antigravity are mentioned in `README.md:267`, `CONTRIBUTING.md:58`, and `docs/faq.md` as future-supported but have no install tree (`external-sources.md:101-120`).
 
+#### 3.1.1 Host harness skill-loading behavior (per Q192)
+
+**Observation (verified for Claude Code 2026-05-22):** the host harness loads `SKILL.md` text **once at session start** and serves the cached body for the remainder of the session. If a maintainer edits a skill body mid-session (e.g., during dogfood work), the running session continues to dispatch the **pre-edit** SKILL.md until the host is restarted or a fresh session is opened.
+
+**Symptoms of stale skill cache:**
+- Heartbeat (FR1) `[State: ...]` markers expected after an edit are absent from agent output.
+- Area-STATE file references (FR2) match a pre-FR2 filename even though disk has been updated.
+- New step numbers / new bracket-pair labels in the on-disk SKILL.md are not reflected in the agent's behavior.
+
+**Recommendation:** After any mid-session edit to a `canonical/skills/aid-*/SKILL.md`, restart the host (or open a new conversation/CLI session) before re-invoking the skill. Re-running `python run_generator.py` propagates the edit to the install trees but does **not** by itself flush the host's skill cache.
+
+**Scope:**
+- ✅ **Verified for Claude Code** (Q192 evidence trail: `/aid-deploy work-003` session showed PRE-FR2 cached SKILL.md body despite on-disk file being post-F1-F9).
+- ⚠️ **Presumed for Codex and Cursor** — same per-session-cache pattern is the default for slash-command-style hosts; spot-check needed when convenient. File an upstream issue only if behavior diverges from Claude Code.
+
+This is treated as **host-platform behavior**, not an AID bug. Documentation only.
+
 ### 3.2 Shell Requirements
 
 | Tool | Why | Required for | Evidence |
 |------|-----|--------------|----------|
 | Bash 4+ | `setup.sh` uses associative arrays (`declare -A`, line 27); `build-project-index.sh` uses `set -euo pipefail`, process substitution `< <(...)`, and bash arrays | `setup.sh`, `build-project-index.sh`, `grade.sh`, `verify-kb.sh`, `check-preflight.sh`, all `aid-summarize` `validate-*.sh` and `*-check.sh` scripts | `setup.sh:1` `#!/usr/bin/env bash`; bash-4 features used throughout |
 | GNU coreutils | `find -print0`, `cp -r`, `cmp -s`, `chmod +x` (Windows git-bash typically includes these) | Same as Bash | `setup.sh:122,127` `find ... -print0` |
-| `curl` or `wget` | Network reachability check in `check-preflight.sh` for `aid-summarize` | `aid-summarize` PREFLIGHT state | `templates/knowledge-summary/scripts/check-preflight.sh:71-84` |
-| `awk`, `sed`, `grep` (BSD or GNU) | Validation scripts; KB writeback | `aid-summarize`, `stale-check.sh` | `templates/knowledge-summary/scripts/stale-check.sh:31-41` (uses awk for table parsing) |
+| `curl` or `wget` | Network reachability check in `check-preflight.sh` for `aid-summarize` | `aid-summarize` PREFLIGHT state | `canonical/templates/knowledge-summary/scripts/check-preflight.sh` |
+| `awk`, `sed`, `grep` (BSD or GNU) | Validation scripts; KB writeback | `aid-summarize`, `stale-check.sh` | `canonical/templates/knowledge-summary/scripts/stale-check.sh:31-41` (uses awk for table parsing) |
 
 **Windows users** typically have git-bash from Git for Windows, which provides all the above. `setup.sh` will work in git-bash; native Windows users may prefer `setup.ps1`.
 
@@ -93,23 +115,29 @@ GitHub Copilot and Google Antigravity are mentioned in `README.md:267`, `CONTRIB
 |------|-----|--------------|----------|
 | PowerShell 5.1+ | `setup.ps1` and `concatenate.ps1` | Windows native install | `setup.ps1:1` `#Requires -Version 5.1` |
 
-### 3.4 Node.js
+### 3.4 Python
 
 | Tool | Why | Required for | Evidence |
 |------|-----|--------------|----------|
-| Node.js 18+ | `validate-diagrams.mjs` (294 lines), `contrast-check.mjs` (151 lines), `mermaid-init.js`, `lightbox.js` (in user's generated HTML) | `aid-summarize` VALIDATE state | `templates/knowledge-summary/scripts/check-preflight.sh:87-96` checks `node -v` and rejects less than 18 |
+| Python 3.x | `run_generator.py` (top-level propagator) | Maintainer-side only: regenerating install trees from `canonical/` | `run_generator.py:1` `#!/usr/bin/env python3`. Adopters do **not** need Python — they consume the generator output via `setup.sh` / `setup.ps1` |
 
-### 3.5 Mermaid CLI (optional)
+### 3.5 Node.js
 
 | Tool | Why | Required for | Evidence |
 |------|-----|--------------|----------|
-| `mmdc` (mermaid-cli) | Full Mermaid diagram validation (parse + render). Falls back to regex sanity check if absent | `aid-summarize` VALIDATE state, optional | `templates/knowledge-summary/scripts/validate-diagrams.mjs:7-12` |
+| Node.js 18+ | `validate-diagrams.mjs` (294 lines), `contrast-check.mjs` (151 lines), `mermaid-init.js`, `lightbox.js` (in user's generated HTML) | `aid-summarize` VALIDATE state | `canonical/templates/knowledge-summary/scripts/check-preflight.sh` checks `node -v` and rejects less than 18 |
 
-### 3.6 Network
+### 3.6 Mermaid CLI (optional)
+
+| Tool | Why | Required for | Evidence |
+|------|-----|--------------|----------|
+| `mmdc` (mermaid-cli) | Full Mermaid diagram validation (parse + render). Falls back to regex sanity check if absent | `aid-summarize` VALIDATE state, optional | `canonical/templates/knowledge-summary/scripts/validate-diagrams.mjs:7-12` |
+
+### 3.7 Network
 
 | Resource | Why | Required for | Evidence |
 |----------|-----|--------------|----------|
-| `registry.npmjs.org` | Fetch Mermaid library for inlining | `aid-summarize` GENERATE state (skippable with `--cdn-mermaid`) | `templates/knowledge-summary/scripts/check-preflight.sh:69-85` |
+| `registry.npmjs.org` | Fetch Mermaid library for inlining | `aid-summarize` GENERATE state (skippable with `--cdn-mermaid`) | `canonical/templates/knowledge-summary/scripts/check-preflight.sh` |
 | Vendor doc URLs (8) | `external-sources.md` registers vendor docs to fetch during downstream discovery | Optional — current discovery deferred web fetch | `external-sources.md:15-24` |
 
 ## 4. Containers / IaC
@@ -127,7 +155,7 @@ GitHub Copilot and Google Antigravity are mentioned in `README.md:267`, `CONTRIB
 | Ansible (`playbook.yml`) | None | — |
 | CDK (`cdk.json`) | None | — |
 
-[INFO] **No containerization, no IaC.** Consistent with the methodology-only nature of this repo. Methodology *describes* infrastructure best practices and ships a `devops` agent for users (`profiles/claude-code/.claude/agents/devops.md:11-15`: "Configure CI/CD pipelines ... Write Dockerfiles ... Create and manage infrastructure-as-code") but does not itself contain any of those artifacts.
+[INFO] **No containerization, no IaC.** Consistent with the methodology-only nature of this repo. Methodology *describes* infrastructure best practices and ships a `devops` agent for users (`canonical/agents/devops/` per work-002 promotion) but does not itself contain any of those artifacts.
 
 ## 5. CI / CD
 
@@ -142,23 +170,23 @@ GitHub Copilot and Google Antigravity are mentioned in `README.md:267`, `CONTRIB
 | CircleCI (`.circleci/config.yml`) | None | — |
 | Travis (`.travis.yml`) | None | — |
 
-[HIGH GAP] No automated check exists for installer correctness, frontmatter validity, shell-syntax correctness, triplication drift, link rot, or example anonymization. The maintainer is the only quality gate. See `tech-debt.md` H2.
+[HIGH GAP] No automated check exists for installer correctness, frontmatter validity, shell-syntax correctness, canonical-vs-generator-output parity, link rot, or example anonymization. The maintainer is the only quality gate. See `tech-debt.md` H2.
 
 ## 6. Monitoring / Observability
 
 **Not applicable.** No deployed system means nothing to monitor.
 
-The methodology defines a `Monitor` phase (`aid-monitor` skill, 242 lines across all three trees — identical), but this is a phase the *user* runs against *their* production system, not anything this repo runs.
+The methodology defines a `Monitor` phase (`aid-monitor` skill, 285 lines per `canonical/skills/aid-monitor/SKILL.md` post work-002, propagated identically to all 3 install trees), but this is a phase the *user* runs against *their* production system, not anything this repo runs.
 
-[INFO] **The `aid-monitor` skill is uniform** across the three install trees (242 lines, identical content). Verified by line count.
+[INFO] **The `aid-monitor` skill is uniform** across the three install trees (285 lines each, identical content). Verified by line count.
 
 ## 7. Branching and Release Strategy
 
 | Aspect | Value | Confidence |
 |--------|-------|------------|
 | Default branch | `master` | High — `git status` shows "Current branch: master" and "Main branch (you will usually use this for PRs): master" |
-| Worktree branch | `master` (this dogfood discovery is on `master`) | High |
-| PR-based merges | Likely (GitHub-flow) | Medium — recent commit log shows merge commits like `af5b942 Merge pull request #4` and `fda9063 Merge pull request #3` |
+| Worktree branch | Per-work-item branch (e.g., `work-003` for current work) | High |
+| PR-based merges | Likely (GitHub-flow) | Medium — recent commit log shows merge commits like `Merge pull request #4` and `Merge pull request #3` |
 | Release tags | None visible from this worktree | Medium — `git log` shows no annotated-tag markers; the lack of a `VERSION` file is consistent |
 | Release artifacts | None | High — no `dist/` or `releases/` directory; `setup.sh` operates on the source tree directly |
 
@@ -174,11 +202,9 @@ The closest concept is "which install tree a user activates" (Claude Code, Codex
 
 `project-structure.md:35-36` documents the dogfood pattern. This repo's own `.aid/` directory:
 
-- Was scaffolded by `aid-init` (creating `.aid/knowledge/` with 16 KB templates + `DISCOVERY-STATE.md`).
+- Was scaffolded by `aid-init` (creating `.aid/knowledge/` with 16 KB templates + the consolidated `STATE.md`).
 - Is being populated by `aid-discover` (running discovery sub-agents against this repo's source tree to produce the KB).
 - Is **gitignored** via `.gitignore:1` (single line: `.aid/`).
-
-**⚠️ Note (per DISCOVERY-STATE Q125):** the byte-count listing previously shown here was a snapshot from BEFORE the KB was populated. It is now stale by multiple orders of magnitude (e.g., `tech-debt.md` was 155 bytes; current state is 423 lines / ~25 KB). For current state, see `project-index.md` (regenerated every `/aid-discover` run) or the completeness table in `.aid/knowledge/README.md`. The dogfood workspace is gitignored, so the only durable snapshot is via `git stash` or by manually committing against `.gitignore`.
 
 **Implication for contributors:** running `/aid-discover` in a worktree of this repo will regenerate the KB. The KB is not committed (gitignored) — it is regenerated on demand. A future contributor who wants to share their discovery output for a feature branch must either:
 
@@ -190,25 +216,37 @@ The closest concept is "which install tree a user activates" (Claude Code, Codex
 ## 10. Distribution Mechanism Summary
 
 ```
+Maintainer-side
+   canonical/{skills,agents,templates,rules}/
+                |
+                | python run_generator.py
+                v
+   profiles/{claude-code,codex,cursor}/   <-- generator output (deterministic)
+                |
+                | git commit + push to GitHub (master)
+                v
 GitHub (origin)
-  |
-  | git clone
-  v
+   |
+   | git clone
+   v
 User's workstation
-  |
-  | bash setup.sh /path/to/their/project [--force]
-  | OR powershell setup.ps1 -TargetDirectory C:\Path\To\Project -Force
-  v
+   |
+   | bash setup.sh /path/to/their/project [--force]
+   | OR powershell setup.ps1 -TargetDirectory C:\Path\To\Project -Force
+   |
+   | (copies from profiles/<tool>/, NOT from canonical/)
+   v
 User's project
-  +-- .claude/                (if Claude Code selected)
-  |    +-- agents/
-  |    +-- skills/
-  |    +-- templates/
-  +-- .codex/                 (if Codex selected) [WARNING: setup.sh omits .agents/]
-  +-- .cursor/                (if Cursor selected)
-  +-- CLAUDE.md               (if Claude Code selected)
-  +-- AGENTS.md               (if Codex or Cursor selected)
-  +-- (user's existing code, untouched)
+   +-- .claude/                (if Claude Code selected)
+   |    +-- agents/
+   |    +-- skills/
+   |    +-- templates/
+   +-- .codex/                 (if Codex selected) — agent TOMLs
+   +-- .agents/                (if Codex selected) — skills + templates
+   +-- .cursor/                (if Cursor selected)
+   +-- CLAUDE.md               (if Claude Code selected)
+   +-- AGENTS.md               (if Codex or Cursor selected)
+   +-- (user's existing code, untouched)
 
 User then runs the host tool against their project.
 The first command is /aid-init (per setup.sh post-install message).
@@ -220,10 +258,23 @@ The first command is /aid-init (per setup.sh post-install message).
 |---|-----|----------|-----|
 | 1 | No CI / automated quality gates | HIGH | `tech-debt.md` H2, `test-landscape.md` HIGH gap 1 |
 | 2 | No version file / no release tags / no manifest | HIGH | `tech-debt.md` H2 |
-| 3 | `setup.sh` and `setup.ps1` CONFIRMED to omit Codex `.agents/` copy step | HIGH — CONFIRMED via reviewer static-analysis (`sed -n '140,155p' setup.sh`) and tracked in `tech-debt.md H6`. Patch trivial (~10 min). | Section 2 above, DISCOVERY-STATE Q70 (Answered) |
-| 4 | No installer smoke test | MEDIUM | `test-landscape.md` HIGH gap 3 |
-| 5 | No containerization (intentional, not a gap per se for a methodology repo) | INFO | Section 4 above |
-| 6 | Web fetch of vendor docs deferred | INFO | `external-sources.md` |
-| 7 | No automatic update mechanism (users must `git pull` and re-run `setup.sh`) | LOW | Section 1 above |
+| 3 | No canonical-vs-generator-output parity check in CI | HIGH | `test-landscape.md` HIGH gap 2 (post-cycle-11) |
+| 4 | Generator orphan-detection gap (VERIFY-4a checks canonical→profile only, not profile-only orphans) | HIGH | `tech-debt.md` H5 (Q190 generalization) |
+| 5 | No installer smoke test | MEDIUM | `test-landscape.md` MEDIUM gap 2 |
+| 6 | No containerization (intentional, not a gap per se for a methodology repo) | INFO | Section 4 above |
+| 7 | Web fetch of vendor docs deferred | INFO | `external-sources.md` |
+| 8 | No automatic update mechanism (users must `git pull` and re-run `setup.sh`) | LOW | Section 1 above |
+| 9 | Host harness caches SKILL.md per session — mid-session edits require restart | LOW (documented behavior) | §3.1.1 above (Q192) |
 
-WARNING: Several findings here (especially the Codex `.agents/` omission in `setup.sh` / `setup.ps1`) are based on static reading of the scripts against the documentation. They should be validated with a real `setup.sh tmp-test/` run before being escalated. These are forwarded as questions to `DISCOVERY-STATE.md`.
+## Verification Spot-Checks (cycle-11 FIX)
+
+| # | Claim | Evidence |
+|---|-------|----------|
+| 1 | `canonical/` top-level dir exists with `agents/`, `skills/`, `templates/`, `rules/`, `EMISSION-MANIFEST.md` | `ls canonical/` |
+| 2 | `run_generator.py` exists at top level | `ls run_generator.py` (~83 lines Python) |
+| 3 | `canonical/skills/aid-discover/SKILL.md` and all 3 profile copies are 548 lines each (uniform) | `wc -l canonical/skills/aid-discover/SKILL.md profiles/*/skills/aid-discover/SKILL.md` returns 548 four times |
+| 4 | Top-level `skills/` and `agents/` dirs are GONE | `ls skills/`, `ls agents/` both error |
+| 5 | `setup.sh` and `setup.ps1` install from `profiles/<tool>/`, not from `canonical/` | `grep -nE "canonical/" setup.sh setup.ps1` returns 0 matches |
+| 6 | `aid-monitor` SKILL.md is 285 lines (not the obsolete 242 cited pre-cycle-11) | `wc -l canonical/skills/aid-monitor/SKILL.md` |
+
+WARNING: The Q192 skill-loading-cache observation is verified for Claude Code only. The Codex/Cursor presumption is based on the per-session-cache pattern being the standard for slash-command-style hosts; explicit verification is pending. File an upstream issue only if behavior diverges from Claude Code.

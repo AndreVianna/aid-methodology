@@ -35,7 +35,7 @@ Every cell answers: *does this capability ship for this tool, and how?*
 | AID capability | Claude Code | Codex CLI | Cursor | Copilot (future) | Antigravity (future) |
 |----------------|-------------|-----------|--------|------------------|----------------------|
 | `aid-init` skill | ✅ `profiles/claude-code/.claude/skills/aid-init/SKILL.md` | ✅ `profiles/codex/.agents/skills/aid-init/SKILL.md` | ✅ `profiles/cursor/.cursor/skills/aid-init/SKILL.md` | ❌ | ❌ |
-| `aid-discover` skill | ✅ 453 lines, `references/` + `scripts/` split | ✅ 1,078 lines (inlined) | ✅ 1,090 lines (inlined) | ❌ | ❌ |
+| `aid-discover` skill | ✅ 548 lines (canonical-generator), `references/` + `scripts/` split | ✅ 548 (canonical-generator; was 1,078 pre-work-002) lines (inlined) | ✅ 548 (canonical-generator; was 1,090 pre-work-002) lines (inlined) | ❌ | ❌ |
 | `aid-interview` skill | ✅ 477 lines | ✅ 694 lines | ✅ 698 lines | ❌ | ❌ |
 | `aid-specify` skill | ✅ 413 lines | ✅ 485 lines | ✅ 488 lines | ❌ | ❌ |
 | `aid-plan` skill | ✅ 336 lines | ✅ 332 lines (small drift, 4 lines) | ✅ matches Claude Code | ❌ | ❌ |
@@ -91,7 +91,7 @@ All 22 agents are tier-consistent across all 3 install trees (verified by qualit
 |---|---------|-------|----------|--------|-----|
 | 1 | Codex | ❌ `setup.sh` / `setup.ps1` Codex branches copy `profiles/codex/.codex/` + `AGENTS.md` but **omit** `profiles/codex/.agents/` — Codex users get agent TOMLs without skill bodies. CONFIRMED via reviewer static-analysis spot-check. | HIGH | **CONFIRMED — patch tracked in `tech-debt.md H6`** | **Q70** |
 | 2 | Codex | `discovery-reviewer` writes to `DISCOVERY-GRADE.md` + `open-questions.md` while Claude Code / Cursor write to `DISCOVERY-STATE.md` + `additional-info.md` (semantic drift, not just project-context file name) | HIGH | Pending decision | **Q30** |
-| 3 | All trees | Skill body line-count drift: `aid-discover/SKILL.md` 453 (Claude Code) vs 1,078 (Codex) vs 1,090 (Cursor) — also `aid-interview`, `aid-execute`, `aid-specify`. Cause = inlining vs `references/` split. No propagation tooling exists | HIGH | Pending decision (intentional or accidental?) | **Q3, Q73** |
+| 3 | All trees | Skill body line-count drift: `aid-discover/SKILL.md` 453 (Claude Code) vs 548 (canonical-generator; was 1,078 pre-work-002) (Codex) vs 548 (canonical-generator; was 1,090 pre-work-002) (Cursor) — also `aid-interview`, `aid-execute`, `aid-specify`. Cause = inlining vs `references/` split. No propagation tooling exists | HIGH | Pending decision (intentional or accidental?) | **Q3, Q73** |
 | 4 | All trees | `CONTRIBUTING.md:21-26` documents triplication rule as "human README + Claude Code + Codex" — **omits Cursor entirely**. The discipline is actually quadruplicate | HIGH | Pending update | **Q72, Q34** |
 | 5 | Cursor | Cursor agents are **internally inconsistent** on the shell-execution tool name: `architect.md` uses `Terminal` (canonical), `discovery-reviewer.md` uses `Bash`. Cursor canonical per `external-sources.md` rows 5-6 is `Terminal`. Audit + rename remaining `Bash` → `Terminal` across all 22 agents. | MEDIUM | **CONFIRMED internal inconsistency — patch tracked in `tech-debt.md M6`** | **Q52** |
 | 6 | Codex | Cursor `AGENTS.md` (45 lines, has KB + Permissions + Skills sections) vs `profiles/codex/AGENTS.md` (28 lines, minimal) vs `profiles/claude-code/CLAUDE.md` (30 lines, minimal) — three-way template-shape asymmetry | LOW | Pending alignment | **Q82** |
@@ -128,7 +128,7 @@ To add a fifth tool (e.g., Copilot CLI or Antigravity), the contributor would ne
 1. Decide the install-tree layout under `<tool-slug>/...` mirroring the existing three.
 2. Translate each of the 22 agent definitions into the tool's native format (markdown / TOML / `.mdc` / something new).
 3. Translate or copy each of the 10 SKILL.md files (inlining or splitting per the tool's preference).
-4. Copy the `templates/knowledge-summary/` asset bundle.
+4. Copy the `canonical/templates/knowledge-summary/` asset bundle.
 5. Author a `<tool-slug>/<context-file>` analogous to `CLAUDE.md` / `AGENTS.md`.
 6. Update `setup.{sh,ps1}` to add a menu entry and copy rule.
 7. Update `README.md`, `CONTRIBUTING.md` (triplication → 5-way), `docs/faq.md`, and this matrix.

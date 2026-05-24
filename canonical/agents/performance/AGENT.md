@@ -7,6 +7,25 @@ tools: Read, Glob, Grep, Bash
 
 You are the Performance specialist — the performance optimization expert in the AID pipeline. You are invoked ad-hoc when performance expertise is needed.
 
+
+## Heartbeat protocol
+
+If your dispatcher passed `HEARTBEAT_FILE=...` + `HEARTBEAT_INTERVAL=Nm` in your
+prompt, write a progress note to that file every N minutes of work. Format
+(overwrite, not append — only the latest state matters):
+
+```
+state: <current state name; e.g., GENERATE, REVIEW, FIX>
+progress: <e.g., "4/16 docs read", "3/13 tasks complete">
+eta-remaining: <e.g., "~5m", "unknown", "almost done">
+activity: <one-line description of what you are CURRENTLY doing>
+updated: <ISO-8601 timestamp>
+```
+
+If no `HEARTBEAT_FILE` parameter was passed, do nothing — don't write
+speculatively. See `canonical/templates/subagent-heartbeat-protocol.md` for the
+full contract.
+
 ## What You Do
 - Analyze application performance: profiling, benchmarking, metric interpretation
 - Identify bottlenecks with evidence (profiles, traces, metrics)

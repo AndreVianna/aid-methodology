@@ -5,6 +5,7 @@
 > **Minimum Grade:** {grade}
 > **Current Grade:** {grade or Pending}
 > **User Approved:** yes | no
+> **Heartbeat Interval:** 1 minute
 > **Last KB Review:** {YYYY-MM-DD or —}
 > **Last Summary:** {YYYY-MM-DD or —}
 

@@ -26,7 +26,7 @@ Per `project-index.md` Language Breakdown (line 19). Markdown is the primary con
 | Skill bodies for LLM consumption | `profiles/claude-code/.claude/skills/aid-*/SKILL.md`, `profiles/codex/.agents/skills/aid-*/SKILL.md`, `profiles/cursor/.cursor/skills/aid-*/SKILL.md` | The 10 skills triplicated across three install trees. |
 | Agent definitions (Claude Code / Cursor) | `profiles/claude-code/.claude/agents/*.md` (22), `profiles/cursor/.cursor/agents/*.md` (22) | Markdown + YAML frontmatter. |
 | Human-readable skill / agent READMEs | `skills/<name>/README.md` (10), `agents/<name>/README.md` (17) | Rich prose for humans. |
-| KB document templates | `templates/knowledge-base/*.md` (16) | The shape every AID Knowledge Base follows. |
+| KB document templates | `canonical/templates/knowledge-base/*.md` (16) | The shape every AID Knowledge Base follows. |
 | Adopter docs and examples | `docs/` (2 files), `examples/` (9 files), `README.md`, `CONTRIBUTING.md` | |
 | `.aid/knowledge/` outputs (this dogfood) | this very file | |
 
@@ -54,17 +54,17 @@ Per `project-index.md` Language Breakdown (line 20). The high file count comes f
 | Script | Lines | Purpose |
 |---|---|---|
 | `setup.sh` | 161 | Top-level installer. **Single copy** — not triplicated. |
-| `templates/scripts/build-project-index.sh` | 368 | `aid-discover` Step 0c pre-pass: emits `.aid/knowledge/project-index.md` with file inventory, sizes, language detection, mtimes. Largest single file in the repo. Run before the 5 sub-agents to eliminate duplicated `find` / `wc` work. |
-| `templates/scripts/grade.sh` | 141 | Deterministic grading: reads `[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]` severity tags from a reviewer's issue list recorded in `task-NNN-STATE.md`, computes a letter grade per the rubric in `templates/grading-rubric.md`. Same input → same grade. |
-| `templates/knowledge-summary/scripts/grade.sh` | 194 | Variant for `aid-summarize` HTML quality gating. Slightly more elaborate rubric (a11y, contrast, mermaid validity). |
-| `templates/knowledge-summary/scripts/check-preflight.sh` | 100 | `aid-summarize` PREFLIGHT mode entry. |
-| `templates/knowledge-summary/scripts/stale-check.sh` | 93 | `aid-summarize` STALE-CHECK mode: compare KB mtime vs last summary mtime. |
-| `templates/knowledge-summary/scripts/validate-html.sh` | 94 | HTML structure validation for generated `knowledge-summary.html`. |
-| `templates/knowledge-summary/scripts/validate-links.sh` | 78 | Link integrity check. |
-| `templates/knowledge-summary/scripts/fetch-mermaid.sh` | 77 | Downloads latest Mermaid library for inlining. |
-| `templates/knowledge-summary/scripts/concatenate.sh` | 23 | Inlines CSS + JS + Mermaid into the single HTML output. |
-| `templates/knowledge-summary/scripts/writeback-discovery-state.sh` | 138 | Updates `DISCOVERY-STATE.md ## Summarization History` after a successful generate. |
-| `profiles/claude-code/.claude/skills/aid-discover/scripts/check-preflight.sh` | 45 | `aid-discover` PREFLIGHT (Claude Code only — Codex / Cursor inline this). |
+| `canonical/templates/scripts/build-project-index.sh` | 368 | `aid-discover` Step 0c pre-pass: emits `.aid/knowledge/project-index.md` with file inventory, sizes, language detection, mtimes. Largest single file in the repo. Run before the 5 sub-agents to eliminate duplicated `find` / `wc` work. |
+| `canonical/templates/scripts/grade.sh` | 141 | Deterministic grading: reads `[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]` severity tags from a reviewer's issue list recorded in `work STATE.md ## Tasks Status` (per FR2; pre-FR2 was `task-NNN-STATE.md`), computes a letter grade per the rubric in `canonical/templates/grading-rubric.md`. Same input → same grade. |
+| `canonical/templates/knowledge-summary/scripts/grade.sh` | 194 | Variant for `aid-summarize` HTML quality gating. Slightly more elaborate rubric (a11y, contrast, mermaid validity). |
+| `canonical/templates/knowledge-summary/scripts/check-preflight.sh` | 100 | `aid-summarize` PREFLIGHT mode entry. |
+| `canonical/templates/knowledge-summary/scripts/stale-check.sh` | 93 | `aid-summarize` STALE-CHECK mode: compare KB mtime vs last summary mtime. |
+| `canonical/templates/knowledge-summary/scripts/validate-html.sh` | 94 | HTML structure validation for generated `knowledge-summary.html`. |
+| `canonical/templates/knowledge-summary/scripts/validate-links.sh` | 78 | Link integrity check. |
+| `canonical/templates/knowledge-summary/scripts/fetch-mermaid.sh` | 77 | Downloads latest Mermaid library for inlining. |
+| `canonical/templates/knowledge-summary/scripts/concatenate.sh` | 23 | Inlines CSS + JS + Mermaid into the single HTML output. |
+| `canonical/templates/knowledge-summary/scripts/writeback-state.sh` | 139 (canonical) / 173 (per-profile post-render) | Updates the Discovery-area `STATE.md ## Summarization History` after a successful generate. Renamed from `writeback-discovery-state.sh` post-FR2 (work-003 feature-002 area-STATE consolidation). |
+| `profiles/claude-code/.claude/skills/aid-discover/scripts/check-preflight.sh` | 45 | `aid-discover` PREFLIGHT (all 3 profile trees ship identical scripts via canonical-generator). |
 | `profiles/claude-code/.claude/skills/aid-discover/scripts/verify-kb.sh` | 60 | Verifies all 16 KB files exist after agent dispatch. |
 
 All shell scripts are **Bash**, not POSIX `sh`. They use Bash-specific features (arrays, `[[ ]]`, parameter expansion). No `#!/bin/sh` shebangs.
@@ -84,7 +84,7 @@ Per `project-index.md` Language Breakdown (line 26).
 | Script | Lines | Purpose |
 |---|---|---|
 | `setup.ps1` | 156 | Windows port of `setup.sh`. Identical menu, identical copy semantics, identical "Next steps" message. Single copy at repo root. |
-| `templates/knowledge-summary/scripts/concatenate.ps1` | 36 (× 4 copies = 144 lines) | Windows port of `concatenate.sh` for the `aid-summarize` HTML output. Triplicated like all knowledge-summary assets. |
+| `canonical/templates/knowledge-summary/scripts/concatenate.ps1` | 36 (× 4 copies = 144 lines) | Windows port of `concatenate.sh` for the `aid-summarize` HTML output. Triplicated like all knowledge-summary assets. |
 
 The PowerShell scripts target PowerShell 5+ (Windows PowerShell or PowerShell 7). They use PowerShell-specific syntax: `$null`, `$env:VAR`, backtick line continuation.
 
@@ -102,10 +102,10 @@ Per `project-index.md` Language Breakdown (line 21). All JavaScript belongs to t
 
 | File | Lines | Purpose |
 |---|---|---|
-| `templates/knowledge-summary/lightbox.js` | 359 | Theme toggle, Mermaid init, click-to-expand lightbox, breadcrumb scrollspy, focus trap, skip-link a11y. Self-contained — no external deps. Inlined into the generated HTML. |
-| `templates/knowledge-summary/mermaid-init.js` | 53 | Reference-only standalone copy of the Mermaid theming config. The actual runtime init lives inside `lightbox.js` (see `mermaid-init.js:1-7`). |
-| `templates/knowledge-summary/scripts/validate-diagrams.mjs` | 294 | Node-based validator: parses every Mermaid block in `knowledge-summary.html`, attempts to render via Mermaid CLI (`mmdc`), fails the build if any diagram does not parse. Run during `aid-summarize` VALIDATE mode. |
-| `templates/knowledge-summary/scripts/contrast-check.mjs` | 151 | Node-based WCAG-AA contrast checker. Verifies the token pairs declared in `accessibility-checklist.md ## Color contrast` for both light and dark themes. |
+| `canonical/templates/knowledge-summary/lightbox.js` | 359 | Theme toggle, Mermaid init, click-to-expand lightbox, breadcrumb scrollspy, focus trap, skip-link a11y. Self-contained — no external deps. Inlined into the generated HTML. |
+| `canonical/templates/knowledge-summary/mermaid-init.js` | 53 | Reference-only standalone copy of the Mermaid theming config. The actual runtime init lives inside `lightbox.js` (see `mermaid-init.js:1-7`). |
+| `canonical/templates/knowledge-summary/scripts/validate-diagrams.mjs` | 294 | Node-based validator: parses every Mermaid block in `knowledge-summary.html`, attempts to render via Mermaid CLI (`mmdc`), fails the build if any diagram does not parse. Run during `aid-summarize` VALIDATE mode. |
+| `canonical/templates/knowledge-summary/scripts/contrast-check.mjs` | 151 | Node-based WCAG-AA contrast checker. Verifies the token pairs declared in `accessibility-checklist.md ## Color contrast` for both light and dark themes. |
 
 Total distinct JS source: 359 + 53 + 294 + 151 = **857 lines** × 4 trees = 3,428 lines (matches the language total).
 
@@ -119,12 +119,12 @@ Total distinct JS source: 359 + 53 + 294 + 151 = **857 lines** × 4 trees = 3,42
 |---|---|
 | **4** | **2,568** |
 
-Per `project-index.md` Language Breakdown (line 22). Single file `templates/knowledge-summary/component-css.css` (642 lines) × 4 copies.
+Per `project-index.md` Language Breakdown (line 22). Single file `canonical/templates/knowledge-summary/component-css.css` (642 lines) × 4 copies.
 
 **Architecture:**
 - CSS custom properties (variables) for theming, scoped via `html[data-theme="light"]` and `html[data-theme="dark"]` (see `component-css.css:6-63`).
 - No preprocessor. No PostCSS pipeline. No autoprefixer. Hand-authored.
-- Tokens documented in `templates/knowledge-summary/design-tokens.md` (124 lines) — this is **documentation**, not a build input. ⚠️ The drift question of "is the CSS or the tokens doc the source of truth" is recorded by scout as Q14 in `DISCOVERY-STATE.md`.
+- Tokens documented in `canonical/templates/knowledge-summary/design-tokens.md` (124 lines) — this is **documentation**, not a build input. ⚠️ The drift question of "is the CSS or the tokens doc the source of truth" is recorded by scout as Q14 in `DISCOVERY-STATE.md`.
 
 ---
 
@@ -134,7 +134,7 @@ Per `project-index.md` Language Breakdown (line 22). Single file `templates/know
 |---|---|
 | **4** | **404** |
 
-Per `project-index.md` Language Breakdown (line 25). Single file `templates/knowledge-summary/html-skeleton.html` (101 lines) × 4 copies.
+Per `project-index.md` Language Breakdown (line 25). Single file `canonical/templates/knowledge-summary/html-skeleton.html` (101 lines) × 4 copies.
 
 The skeleton uses Mustache-style `{{PLACEHOLDER}}` substitution (`{{LANG}}`, `{{PROJECT_NAME}}`, `{{INLINE_CSS}}`, `{{BODY_CONTENT}}`, `{{GENERATION_DATE}}`, `{{MERMAID_VERSION}}`, `{{INLINE_LIGHTBOX_JS}}`, `{{MERMAID_VERSION_COMMENT}}`) — replacement is performed by `aid-summarize` at generation time, not by a templating engine. See `aid-summarize/SKILL.md:198-200` (Step 4 "Build the HTML").
 
@@ -158,7 +158,7 @@ developer_instructions = """
 """
 ```
 
-Models per Codex tier (per `agents/README.md:13-19` and `profiles/codex/README.md:35`):
+Models per Codex tier (per `architecture.md:354-380` Pattern 8 Three-tier agent model and `profiles/codex/README.md:35`):
 
 | Tier | Codex model | reasoning_effort |
 |---|---|---|
@@ -229,9 +229,9 @@ What the install payloads *expect on the user's machine*:
 | Capability | Expected by | Hard or soft? |
 |---|---|---|
 | **The host AI tool itself** — Claude Code, OpenAI Codex CLI, or Cursor | Everything | Hard. AID cannot function without one of these. |
-| **Bash** (Linux / macOS / WSL / Git Bash on Windows) | `aid-discover` (`build-project-index.sh`, `verify-kb.sh`), `aid-summarize` (`validate-html.sh`, `validate-links.sh`, `check-preflight.sh`, `stale-check.sh`, `fetch-mermaid.sh`, `concatenate.sh`, `writeback-discovery-state.sh`, `grade.sh`) | Hard for those skills. Windows-only users without Bash can use `setup.ps1` + Cursor / Codex's own runners, but `aid-discover` Step 0c will not run on pure-PowerShell. |
+| **Bash** (Linux / macOS / WSL / Git Bash on Windows) | `aid-discover` (`build-project-index.sh`, `verify-kb.sh`), `aid-summarize` (`validate-html.sh`, `validate-links.sh`, `check-preflight.sh`, `stale-check.sh`, `fetch-mermaid.sh`, `concatenate.sh`, `writeback-state.sh`, `grade.sh`) | Hard for those skills. Windows-only users without Bash can use `setup.ps1` + Cursor / Codex's own runners, but `aid-discover` Step 0c will not run on pure-PowerShell. |
 | **PowerShell 5+** | `setup.ps1`, `concatenate.ps1` | Soft. Bash equivalents exist. Required only for Windows-without-Bash users. |
-| **Node.js >= 18** (verified at `templates/knowledge-summary/scripts/check-preflight.sh:87-96` which enforces the version per DISCOVERY-STATE Q54) | `aid-summarize` (`validate-diagrams.mjs`, `contrast-check.mjs` — both use ES module syntax + top-level `await` stable from Node 18 LTS) | Soft. Only `aid-summarize` needs it; skipping these validators means skipping the HTML quality gate. |
+| **Node.js >= 18** (verified at `canonical/templates/knowledge-summary/scripts/check-preflight.sh:87-96` which enforces the version per DISCOVERY-STATE Q54) | `aid-summarize` (`validate-diagrams.mjs`, `contrast-check.mjs` — both use ES module syntax + top-level `await` stable from Node 18 LTS) | Soft. Only `aid-summarize` needs it; skipping these validators means skipping the HTML quality gate. |
 | **Mermaid CLI `mmdc`** | `aid-summarize` validate-diagrams step | Soft. Optional per `validate-diagrams.mjs` heuristics. |
 | **Network egress to `registry.npmjs.org` + `cdn.jsdelivr.net`** | `aid-summarize` `fetch-mermaid.sh` (only on first run or when Mermaid version is stale) | Soft. Bypassable with `--cdn-mermaid` flag per `aid-summarize/SKILL.md:175-179`. |
 | **`git`** | The whole repo is distributed via `git clone` | Hard for installation. |
@@ -249,15 +249,51 @@ Verified absences:
 - No `.github/workflows/`, no `.gitlab-ci.yml`, no `.circleci/`, no `Jenkinsfile`, no `azure-pipelines.yml`, no `bitbucket-pipelines.yml`.
 - No `Dockerfile`, no `docker-compose.yml`, no Helm chart, no Kubernetes manifest, no Terraform / Pulumi / CDK.
 
-This repo has **no build step**. Distribution = checked-in source files. The only "transforms" performed in the codebase are:
+This repo has **no traditional build step** (no compile, no transpile, no bundling). It does, however, have a **canonical generator** (shipped via work-002) that propagates a single source tree to the per-tool install payloads. The "transforms" performed in the codebase are:
 
-1. The host AI tool's own loader reads `*.md` / `*.toml` / `*.mdc` files at startup.
-2. `aid-summarize` concatenates CSS + JS + Mermaid into the single `knowledge-summary.html` at user runtime, **not** at repo build time.
-3. `setup.sh` / `setup.ps1` performs a literal `cp -r` of the chosen tree into the target project.
+1. **`run_generator.py`** (top-level, 83 lines) — the canonical generator. Reads `profiles/{claude-code,codex,cursor}.toml` (3 profile descriptors), then for each profile invokes the three worker renderers (`render_agents.py`, `render_skills.py`, `render_templates.py`) under `.claude/skills/aid-generate/scripts/` to emit `profiles/{claude-code,codex,cursor}/...` from `canonical/{agents,skills,templates,rules}/`. Each render emits an `emission-manifest.jsonl` with `sha256` per file; subsequent runs diff against the previous manifest and delete obsolete files (`run_generator.py:43-60`). Followed by `VERIFY-4a` (deterministic re-render check, `verify_deterministic.py`, 513 lines) and `VERIFY-4b` (advisory drift check, `verify_advisory.py`, 343 lines) — see §12.0 below.
+2. The host AI tool's own loader reads `*.md` / `*.toml` / `*.mdc` files at startup.
+3. `aid-summarize` concatenates CSS + JS + Mermaid into the single `knowledge-summary.html` at user runtime, **not** at repo build time.
+4. `setup.sh` / `setup.ps1` performs a literal `cp -r` of the chosen pre-rendered profile tree into the target project. The installer is a downstream consumer of `run_generator.py`'s output — it does not re-render.
+
+### 12.0 Canonical Generator (the closest thing to a build)
+
+The canonical-generator pipeline (work-002) is the only Python code in this repo and the only thing that runs at "contributor build" time (as opposed to user-runtime). Entry point: `run_generator.py` (top-level). Workers and supporting modules live under `.claude/skills/aid-generate/scripts/`:
+
+| File | Lines | Purpose |
+|---|---|---|
+| `run_generator.py` | 83 | Top-level driver. Iterates `profiles/*.toml`, loads each profile, dispatches the three render workers, runs VERIFY-4a + VERIFY-4b. |
+| `.claude/skills/aid-generate/scripts/profile.py` | 516 | Profile loader + validator. `load_profile(path) -> Profile`, `validate(profile) -> errors`. Reads the `[layout]`, `[agent]`, `[skill]`, `[model_tiers]`, `[tool_names]`, `[filename_map]`, `[extras]`, `[capabilities]` TOML sections. |
+| `.claude/skills/aid-generate/scripts/harness.py` | 615 | Shared utilities: `EmissionManifest` (records emitted-file `sha256` + relative dst path; supports `load`, `diff(prev)`, `write`), `read_canonical_file`, `substitute_filenames` (canonical placeholder -> per-profile filename, e.g., `{project_context_file}` -> `CLAUDE.md` for Claude Code, `AGENTS.md` for Codex / Cursor), `sha256_hex`. |
+| `.claude/skills/aid-generate/scripts/render_agents.py` | 503 | Worker: emits per-profile agent files from `canonical/agents/{name}/AGENT.md`. Markdown -> markdown (Claude Code, Cursor) or markdown -> TOML (Codex). |
+| `.claude/skills/aid-generate/scripts/render_skills.py` | 450 | Worker: emits per-profile skill files from `canonical/skills/aid-{name}/`. Copies SKILL.md + the entire `references/` + `scripts/` subtree, applying filename substitutions to `.md` files. |
+| `.claude/skills/aid-generate/scripts/render_templates.py` | 245 | Worker: copies `canonical/templates/` subtree to each profile's `{templates_dir}` location with the same substitution discipline. |
+| `.claude/skills/aid-generate/scripts/verify_deterministic.py` | 513 | VERIFY-4a: re-runs the renderers in a temp dir and compares against the on-disk profile trees; any byte difference fails the build. Used as a determinism guard. |
+| `.claude/skills/aid-generate/scripts/verify_advisory.py` | 343 | VERIFY-4b: non-blocking drift detector that flags advisory concerns (e.g., orphan files, manifest gaps). Reports skip/check counts. |
+| `.claude/skills/aid-generate/scripts/test_manifest_safety.py` | 254 | Manifest-safety regression test (run via `python test_manifest_safety.py`). |
+| `.claude/skills/aid-generate/SKILL.md` | 261 | The skill front-end that drives the same pipeline from inside a host (the methodology dogfoods its own generator). |
+
+The canonical source tree (`canonical/`, top-level since work-002) holds:
+
+- `canonical/agents/{name}/AGENT.md` + `README.md` (22 agents).
+- `canonical/skills/aid-{name}/SKILL.md` + `references/*.md` + `scripts/*.sh` + `README.md` (10 skills).
+- `canonical/templates/` (everything under templates — `knowledge-base/`, `knowledge-summary/`, `requirements/`, `specs/`, `delivery-plans/`, `feedback-artifacts/`, `scripts/`, plus root-level `work-state-template.md`, `discovery-state-template.md`, `feature.md`, `feature-inventory.md`, `known-issues.md`, `package.md`, `requirements.md`, `ui-architecture.md`).
+- `canonical/rules/{aid-methodology,aid-review}.mdc` (Cursor-only outputs).
+- `canonical/EMISSION-MANIFEST.md` (manifest documentation).
+
+`canonical/` is the **edit surface** — contributors change a skill / agent / template here, then re-run `python run_generator.py` to refresh the three profile trees. The pre-canonical-generator "quadruplicate rule" (`CONTRIBUTING.md:21-26`) is now superseded by this generator.
+
+Six orphan templates currently exist in install trees but not in `canonical/templates/` (`feature.md`, `feature-inventory.md` at root, `known-issues.md`, `package.md`, `requirements.md` at root, `ui-architecture.md` at root) — escalated as Q190 cycle 11, pending promotion + orphan-detection check in `run_generator.py`.
 
 ### 12.1 Build Commands
 
-There is no compile / transpile / package step. The canonical "build" is the **install step** — copying the chosen tree(s) into a target project:
+There is no compile / transpile / package step. The canonical "build" is the **generator pass** that renders `canonical/` into the three `profiles/{claude-code,codex,cursor}/` install trees, followed by the **install step** that copies the chosen tree into a target project:
+
+```bash
+# Regenerate all 3 profile trees from canonical/ (contributor workflow)
+python run_generator.py                              # writes emission-manifest.jsonl + runs VERIFY-4a + VERIFY-4b
+
+# Then install the chosen tree into a user project:
 
 ```bash
 # Install AID into a target project (interactive menu)
@@ -283,7 +319,7 @@ pwsh .aid/templates/knowledge-summary/scripts/concatenate.ps1
 bash templates/scripts/grade.sh <issue-list-file>
 ```
 
-**Future build** (per DISCOVERY-STATE Q3 / Q73 resolution): a `tools/propagate-skills.{sh,py}` will derive Codex / Cursor SKILL.md from the canonical Claude Code source + linked `references/` content. Not yet authored — tracked in `tech-debt.md`.
+**Note (cycle 11):** The "Future build" placeholder above (DISCOVERY-STATE Q3 / Q73) was **shipped by work-002 as `run_generator.py` + the three renderers** described in §12.0. The propagation no longer goes from a Claude-Code-anchored source to Codex / Cursor variants — instead, all three trees are derived from `canonical/` via per-profile TOMLs. Q73 (453/1078/1090-line SKILL.md divergence) is resolved — all three trees ship 548 lines for `aid-discover/SKILL.md` (verified cycle 11).
 
 ### 12.2 Lint Commands
 
@@ -321,6 +357,7 @@ bash templates/scripts/verify-kb.sh .aid/knowledge/
 | Claude Code | Optional but recommended (to test the `claude-code/` install tree end-to-end and to dogfood discovery) | This repo's own `.claude/settings.json` |
 | OpenAI Codex CLI | Optional (to test the `codex/` install tree) | — |
 | Cursor | Optional (to test the `cursor/` install tree) | — |
+| **Python 3.11+** | **Required for contributors who edit `canonical/` and need to re-render the profile trees** (entry point `python run_generator.py`) | Profile TOMLs at `profiles/{claude-code,codex,cursor}.toml`; worker scripts under `.claude/skills/aid-generate/scripts/` |
 
 A "complete" contributor environment for this repo includes all three host AI tools plus Bash + Node + git + PowerShell. None of this is documented in `CONTRIBUTING.md:1-116`; that file covers PR mechanics and the triplication rule, not toolchain.
 
@@ -336,7 +373,7 @@ To call out the omission explicitly (as required by this discovery's brief):
 - **No pre-commit / pre-push hooks** (no `.husky/`, no `.pre-commit-config.yaml`, no `lefthook.yml`).
 - **No structural parity test** verifying the cross-tree duplication is complete (every skill / agent / template exists in all three install trees with no drift).
 
-The only quality-gating mechanism that exists in this repo is the suite of **runtime validation scripts under `templates/knowledge-summary/scripts/`** (`validate-diagrams.mjs`, `validate-html.sh`, `validate-links.sh`, `contrast-check.mjs`, `check-preflight.sh`, `stale-check.sh`). These are invoked from inside the `aid-summarize` skill at runtime against a *user's* KB — not against this repository's own correctness.
+The only quality-gating mechanism that exists in this repo is the suite of **runtime validation scripts under `canonical/templates/knowledge-summary/scripts/`** (`validate-diagrams.mjs`, `validate-html.sh`, `validate-links.sh`, `contrast-check.mjs`, `check-preflight.sh`, `stale-check.sh`). These are invoked from inside the `aid-summarize` skill at runtime against a *user's* KB — not against this repository's own correctness.
 
 The closest thing to a "test of this repo" is the current dogfood discovery: if `/aid-discover` cannot complete a clean pass on the methodology repo itself, that is a structural regression. **Resolution per DISCOVERY-STATE Q12:** adopt the dogfood discovery as a CI smoke test alongside unit tests on `grade.sh` and `build-project-index.sh` (pure Bash, easy to fixture). Tracked in `tech-debt.md`.
 

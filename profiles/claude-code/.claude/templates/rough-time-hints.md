@@ -8,21 +8,54 @@ qualitative, not numeric. Sub-second tool calls are NOT in this table by design 
 if an operation completes in under a second it generates more noise than signal and
 should not be bracketed.
 
-| Operation Class | Expected Time Band | Notes |
-|---|---|---|
-| `discovery-architect` | ~3–5 min | Reads and synthesises repo structure for architecture KB doc |
-| `discovery-analyst` | ~3–5 min | Reads code patterns, coding standards, data model, module map |
-| `discovery-integrator` | ~3–5 min | Reads integration points, API contracts, external sources |
-| `discovery-quality` | ~3–5 min | Reads test landscape, security model, tech-debt, infrastructure |
-| `discovery-scout` | ~2–4 min | Initial repo scan; produces project-structure and external-sources KB docs |
-| `discovery-reviewer` | ~2–3 min | Reviews all KB docs for accuracy, counts, cross-doc consistency |
-| `reviewer` | ~1–2 min | Reviews task output against acceptance criteria and grading rubric |
-| `developer` (IMPLEMENT) | ~3–8 min | Writes code + unit tests; time scales with task complexity |
-| `developer` (DOCUMENT) | ~1–3 min | Writes documentation artifact; shorter than code tasks |
-| `developer` (TEST) | ~2–5 min | Writes and runs integration/E2E tests |
-| `architect` | ~2–4 min | Designs or reviews architecture decisions |
-| `validate-html.sh` | ~30 s | Runs html-validate on the knowledge-summary HTML output |
-| `validate-links.sh` | ~30 s | Checks internal and external link integrity |
-| `validate-diagrams.mjs` | ~30 s | Renders Mermaid diagrams via mmdc and checks output |
-| `contrast-check.mjs` | ~30 s | Checks WCAG contrast ratios for all colour pairs |
-| `/aid-generate` (end-to-end) | ~1–2 min | Runs run_generator.py across all 3 profiles; includes VERIFY-4a |
+## Calibration policy
+
+ETAs in this table SHOULD be measured, not guessed. Each row has a `Last
+measured` column with the date the ETA was last refreshed from observed runtimes,
+and a `Samples` column tracking how many runs informed the figure.
+
+When a SKILL executes a bracket-pair, the `✓ done` line MUST record the actual
+elapsed time. Periodically (suggested: each `/aid-discover` run or each new
+`/aid-execute` delivery), refresh the ETAs in this table from those observations.
+See `canonical/templates/long-wait-protocol.md` for the orchestrator-side
+check-in pattern that emits mid-wait status when ETAs exceed 5 minutes.
+
+## ETA Table (current as of 2026-05-23)
+
+| Operation Class | ETA Band | Last measured | Samples | Notes |
+|---|---|---|---|---|
+| `discovery-architect` | 8–12 min | 2026-05-23 | 1 (9m02s observed in /aid-discover cycle-11 FIX) | Reads + synthesises repo structure for architecture KB doc |
+| `discovery-analyst` | 12–18 min | 2026-05-23 | 1 (15m24s observed) | Reads code patterns, coding standards, data model, module map |
+| `discovery-integrator` | 12–16 min | 2026-05-23 | 1 (14m09s observed) | Reads integration points, API contracts, external sources |
+| `discovery-quality` | 11–15 min | 2026-05-23 | 1 (13m14s observed) | Reads test landscape, security model, tech-debt, infrastructure |
+| `discovery-scout` | 9–13 min | 2026-05-23 | 1 (11m03s observed) | Initial repo scan; produces project-structure and external-sources KB docs |
+| `discovery-reviewer` | 18–25 min | 2026-05-23 | 2 (20m16s + 23m30s observed in cycles 11 + 12; cycle 13 crashed at 9m32s before completion — not counted) | Adversarial review of all KB docs against current code; produces severity-tagged issue list + spot-checks + Review History entry |
+| `reviewer` | 5–20 min | 2026-05-23 | ~3 (5–20 min range observed across work-003 review passes; varies sharply with delivery size) | Reviews task output against acceptance criteria and grading rubric |
+| `developer` (IMPLEMENT) | 3–8 min | (gut estimate) | 0 | Writes code + unit tests; time scales with task complexity. **Not yet measured — calibrate after next /aid-execute run.** |
+| `developer` (DOCUMENT) | 1–3 min | (gut estimate) | 0 | Writes documentation artifact; shorter than code tasks. **Not yet measured.** |
+| `developer` (TEST) | 2–5 min | (gut estimate) | 0 | Writes and runs integration/E2E tests. **Not yet measured.** |
+| `architect` | 2–4 min | (gut estimate) | 0 | Designs or reviews architecture decisions. **Not yet measured.** |
+| `validate-html.sh` | ~30 s | 2026-05-21 | 1 | Runs html-validate on the knowledge-summary HTML output |
+| `validate-links.sh` | ~30 s | 2026-05-21 | 1 | Checks internal and external link integrity |
+| `validate-diagrams.mjs` | ~30 s | 2026-05-21 | 1 | Renders Mermaid diagrams via mmdc and checks output |
+| `contrast-check.mjs` | ~30 s | 2026-05-21 | 1 | Checks WCAG contrast ratios for all colour pairs |
+| `/aid-generate` (end-to-end) | ~30 s | 2026-05-23 | 4 (4 observed run_generator.py invocations during work-003) | Runs run_generator.py across all 3 profiles; includes VERIFY-4a |
+| `setup.sh` (smoke install) | ~10 s | 2026-05-23 | 2 | Interactive menu (`printf "1\n4\n" |`); copies one profile tree to target dir |
+| `python run_generator.py` | ~25 s | 2026-05-23 | 4 | Full canonical→profile render + VERIFY-4a + VERIFY-4b |
+| `verify-kb-claims.sh` | ~3–5 s | 2026-05-23 | 5 | KB citation integrity check; exits 0 when clean |
+
+## Notes
+
+- **ETAs are upper bounds**, not best-case. The 5-min threshold for L2 mid-wait
+  check-ins (see `long-wait-protocol.md`) is based on the LOW end of the band:
+  if the LOW end exceeds 5 min, arm the timer.
+- **Multi-subagent dispatches** (e.g., 4 parallel discovery sub-agents during
+  `/aid-discover` GENERATE) experience tail-latency: the user waits for the
+  SLOWEST. Use the highest ETA from the parallel set as the dispatch ETA.
+- **Calibration history.** Pre-2026-05-23 figures (1–5 min for everything) were
+  gut estimates that under-stated actual runtimes by 3–7x. The 2026-05-23 refresh
+  brought them in line with observed data from work-003 (see STATE.md cycle 11/12
+  Review History entries 26 + 31 for the source observations).
+- **`(gut estimate)` rows are NOT calibrated** — they remain at the pre-2026-05-23
+  guess. Refresh them after each `/aid-execute` (developer/architect/reviewer ETAs)
+  or `/aid-deploy` (operator ETAs) that produces ≥3 observations.

@@ -1,38 +1,33 @@
 # Tech Debt
 
 > **Source:** aid-discover (discovery-quality)
-> **Status:** Populated (initial dogfood pass)
-> **Last Updated:** 2026-05-21
-> **Cross-references:** `project-index.md`, `project-structure.md` (Anomalies section, lines 252-263), `test-landscape.md` (overlapping CI gap), `security-model.md` (overlapping supply-chain gap)
+> **Status:** Populated (cycle-11 FIX 2026-05-23: H1/H4 RETIRED post-canonical-generator; H3 verified still valid; H5/H6 added; counts recounted)
+> **Last Updated:** 2026-05-23
+> **Cross-references:** `project-index.md`, `project-structure.md` (Anomalies section), `test-landscape.md` (overlapping CI gap), `security-model.md` (overlapping supply-chain gap), `infrastructure.md` (canonical/ + run_generator.py)
 
 ## Summary
 
-**Overall debt level: MEDIUM-HIGH** for an open-source methodology repo aiming at production adopters.
+**Overall debt level: MEDIUM** for an open-source methodology repo aiming at production adopters (down from MEDIUM-HIGH pre-canonical-generator).
 
-The debt is dominated by **structural duplication** (the same content lives in 4 trees with no propagation tooling) and **process gaps** (no CI, no manifest, no version file, no triplication-drift checker). Code-style issues are minor; the methodology itself is mature (V3 spec, 1,158 lines, with examples and a defined quality model). What is missing is the engineering infrastructure that would make the methodology safe for someone other than the author to maintain.
+The structural-duplication debt that previously dominated the inventory (H1, H4) is now RETIRED: post-work-002, the 3 install trees under `profiles/{claude-code,codex,cursor}/` are deterministic output of `python run_generator.py` against a single canonical source at `canonical/`. The remaining debt is **process gaps** (no CI, no manifest, no version file, narrow generator verification) and **content gaps** (orphan templates, missing Monitor templates pre-Q8 resolution, hardcoded build commands).
 
-If a contributor opens a PR today, there is no automated signal whether they have introduced drift, broken a script, or left a typo in frontmatter. The maintainer must catch everything by eye.
+If a contributor opens a PR today, there is no automated signal whether they have introduced canonical-vs-output drift, broken a script, left a typo in frontmatter, or added a profile-tree-only orphan that `run_generator.py` will not detect. The maintainer must still catch most things by eye — but the surface area has shrunk meaningfully.
 
 ## Debt Items
 
-### [HIGH] H1 — Triplication drift between install trees
+### [HIGH] H1 — Triplication drift between install trees — **RETIRED 2026-05-22 (work-002-canonical-generator)**
 
-**Evidence:**
-- `profiles/claude-code/.claude/skills/aid-discover/SKILL.md` — 453 lines
-- `profiles/codex/.agents/skills/aid-discover/SKILL.md` — 1,078 lines
-- `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` — 1,090 lines (2.4x the Claude Code version)
-- `profiles/claude-code/.claude/skills/aid-interview/SKILL.md` — 477 lines vs. `profiles/codex/.agents/skills/aid-interview/SKILL.md` — 694 lines vs. `profiles/cursor/.cursor/skills/aid-interview/SKILL.md` — 698 lines
-- `profiles/claude-code/.claude/skills/aid-execute/SKILL.md` — 386 lines vs. `profiles/codex/.agents/skills/aid-execute/SKILL.md` — 558 lines vs. `profiles/cursor/.cursor/skills/aid-execute/SKILL.md` — 562 lines
-- `profiles/claude-code/.claude/skills/aid-specify/SKILL.md` — 413 lines vs. `profiles/codex/.agents/skills/aid-specify/SKILL.md` — 485 lines vs. `profiles/cursor/.cursor/skills/aid-specify/SKILL.md` — 488 lines
-- `profiles/claude-code/.claude/skills/aid-plan/SKILL.md` — 336 lines vs. `profiles/codex/.agents/skills/aid-plan/SKILL.md` — 332 lines (small drift, 4 lines)
-- `profiles/claude-code/.claude/skills/aid-detail/SKILL.md` vs. `profiles/codex/.agents/skills/aid-detail/SKILL.md`: 5 line-differences (very minor)
-- `profiles/claude-code/.claude/skills/aid-detail/SKILL.md` vs. `profiles/cursor/.cursor/skills/aid-detail/SKILL.md`: 0 line-differences (identical)
-- `profiles/claude-code/.claude/skills/aid-deploy/SKILL.md` and `aid-monitor/SKILL.md` are identical across all three trees.
-- `CONTRIBUTING.md:21-26` requires manual propagation; no script exists.
+**Evidence (post-cycle-11 verification 2026-05-23):**
 
-**Impact:** A bug fix or improvement applied to one tree silently goes missing from the others. Users of Codex or Cursor get an experience that diverges from Claude Code, and there is no signal until someone notices. The size differences for `aid-discover` are partly *by design* (Claude Code factors content into `references/` and `scripts/` subdirectories; the other trees inline it), but the same design intent could be enforced by a propagation script that re-generates Codex/Cursor SKILL.md from Claude Code SKILL.md + the linked references — none exists today.
+`wc -l canonical/skills/aid-discover/SKILL.md profiles/*/skills/aid-discover/SKILL.md` returns **548 lines four times** (identical across canonical/, claude-code, codex, cursor). Pre-cycle-11 this file claimed divergent line counts (453 / 1,078 / 1,090) — those counts were collected before work-002 lifted the bodies into `canonical/skills/` and `run_generator.py` propagated them uniformly. Spot-checked other skills the same way: all 3 install trees match canonical line-for-line.
 
-**Effort:** Medium (less than 1 day). Write a `tools/propagate-skills.{sh,py}` that for each `aid-*` skill, takes the canonical Claude Code SKILL.md + its `references/*.md` + script bodies, inlines them, and writes the Codex and Cursor variants. Add a CI check that fails when the propagated output differs from the committed file.
+**Resolution (work-002):**
+- All 10 skill bodies, 22 agent definitions, and template assets promoted into `canonical/{skills,agents,templates}/`.
+- `run_generator.py` (top-level, ~83 lines Python) reads per-profile TOMLs from `profiles/*.toml` and renders deterministic install-tree output (`profiles/claude-code/.claude/`, `profiles/codex/.codex/` + `profiles/codex/.agents/`, `profiles/cursor/.cursor/`).
+- Each install tree carries an `emission-manifest.jsonl` recording what the generator emitted; deletion pass removes files no longer in the manifest.
+- VERIFY-4a (deterministic) + VERIFY-4b (advisory) gates run after every regeneration.
+
+**Status:** RETIRED. Remaining residual risk (canonical-vs-output parity not enforced by CI) is tracked separately as H3.
 
 ---
 
@@ -43,107 +38,96 @@ If a contributor opens a PR today, there is no automated signal whether they hav
 - No `.gitlab-ci.yml`, no Jenkinsfile, no `azure-pipelines.yml`, no CircleCI config.
 - No `package.json`, no `pyproject.toml`, no `Cargo.toml`, no `go.mod`, no `Makefile`.
 - No `VERSION` file. No git tag visible from this worktree. The methodology refers to "V3" in prose (`methodology/aid-methodology.md`) but there is no programmatic way to query the AID version.
-- No `MANIFEST.{json,yaml,toml}` listing the canonical file set.
+- No `MANIFEST.{json,yaml,toml}` listing the canonical file set. (`canonical/EMISSION-MANIFEST.md` exists but is a per-profile manifest of generator output, not a project-level manifest.)
 
 **Impact:**
 - No automated gate on PRs. Drift, broken scripts, malformed frontmatter, typos in YAML/TOML all reach `master` unless a human catches them.
 - Adopters cannot pin to a version. `git clone` always pulls the tip — risky for production-critical methodology consumers.
 - The lack of a manifest amplifies the supply-chain risk in `security-model.md` (no way to verify a clone is intact).
 
-**Effort:** Medium for CI (less than 1 day to set up shellcheck + frontmatter validation + basic install smoke test). Trivial for `VERSION` file (less than 30 min). Small for git-tag discipline.
+**Effort:** Medium for CI (less than 1 day to set up shellcheck + frontmatter validation + a `python run_generator.py && git diff --exit-code profiles/` parity check + basic install smoke test). Trivial for `VERSION` file (less than 30 min). Small for git-tag discipline.
 
 ---
 
-### [HIGH] H3 — No triplication-drift checker
+### [HIGH] H3 — No linter / format checker configured (verified still valid 2026-05-23)
 
-**Evidence:** Same as H1, restated as a tooling gap. `CONTRIBUTING.md:21-26` is the only enforcement.
+**Evidence (cycle-11 spot-check):**
+- No `.shellcheckrc`, `.eslintrc*`, `.markdownlint*`, `.editorconfig`, `pyproject.toml` (for ruff/black), `.prettierrc`, or any other linter config at repo root.
+- No `Makefile` target or shell script invoking `shellcheck` / `markdownlint` / `yamllint` / `actionlint`.
+- The 5,490 lines of shell, 3,428 lines of JavaScript, and ~83 lines of Python in `run_generator.py` have no lint-time check.
 
-**Impact:** A new contributor cannot easily verify they have updated all four places. The first-time contributor experience requires reading CONTRIBUTING.md carefully and manually copying changes. Failure mode is silent.
+**Impact:** Style drift, unused variables, missing quotes around `$VAR`, `set -e` skipping behavior, broken shebangs, all pass without notice. Higher-impact for shell (where `shellcheck` would catch genuine bugs) than for markdown.
 
-**Effort:** Small (less than 4 h). A 50-line Bash or Python script that for each `aid-*` skill, compares normalized SKILL.md bodies across the four trees (root `skills/` is README-only and treated separately) and reports diffs. Wire into the CI proposed in H2.
-
----
-
-### [HIGH] H4 — Four-way duplicated scripts and assets (368 lines each, 4 copies)
-
-**Evidence (from `project-index.md` Top 20 Largest Source Files):**
-
-| Asset | Lines per copy | Copies | Total lines | Locations |
-|-------|----------------|--------|-------------|-----------|
-| `build-project-index.sh` | 368 | 4 | 1,472 | `templates/scripts/`, `profiles/claude-code/.claude/templates/scripts/`, `profiles/codex/.agents/templates/scripts/`, `profiles/cursor/.cursor/templates/scripts/` |
-| `lightbox.js` | 359 | 4 | 1,436 | `templates/knowledge-summary/`, `profiles/claude-code/.claude/templates/knowledge-summary/`, `profiles/codex/.agents/templates/knowledge-summary/`, `profiles/cursor/.cursor/templates/knowledge-summary/` |
-| `validate-diagrams.mjs` | 294 | 4 | 1,176 | (same 4 locations as lightbox.js) |
-| `grade.sh` (knowledge-summary) | 194 | 4 | 776 | (same 4 locations) |
-| `contrast-check.mjs` | 151 | 4 | 604 | (same 4 locations) |
-| `grade.sh` (top-level) | 141 | 4 | 564 | `templates/scripts/` x 4 |
-| `check-preflight.sh` (knowledge-summary) | 100 | 4 | 400 | (same 4 locations) |
-| `validate-html.sh` | 94 | 4 | 376 | (same 4 locations) |
-| `stale-check.sh` | 93 | 4 | 372 | (same 4 locations) |
-| `validate-links.sh` | 78 | 4 | 312 | (same 4 locations) |
-| `fetch-mermaid.sh` | 77 | 4 | 308 | (same 4 locations) |
-| `component-css.css` | 642 | 4 | 2,568 | `templates/knowledge-summary/` and the three install trees |
-| `prompt.md` (knowledge-summary) | 248 | 4 | 992 | (same 4 locations) |
-| `grading-rubric.md` (knowledge-summary) | 226 | 4 | 904 | (same 4 locations) |
-| `mermaid-examples.md` | 187 | 4 | 748 | (same 4 locations) |
-| `accessibility-checklist.md` | 125 | 4 | 500 | (same 4 locations) |
-| `design-tokens.md` | 124 | 4 | 496 | (same 4 locations) |
-| `html-skeleton.html` | 101 | 4 | 404 | (same 4 locations) |
-| `section-templates/*.md` (6 files) | 70-107 | 4 each | ~2,200 | (same 4 locations) |
-| `concatenate.{sh,ps1}` | 23 / 36 | 4 each | 236 | (same 4 locations) |
-| `writeback-discovery-state.sh` | 138 | 4 | 552 | (same 4 locations) |
-| `mermaid-init.js` | 53 | 4 | 212 | (same 4 locations) |
-
-**Total duplicated content (knowledge-summary + scripts):** approximately **17,600 lines** are duplicated 4-way. The repo total is 49,226 lines — so duplication accounts for **~36% of the line count**.
-
-**Verified identical:** `diff templates/scripts/grade.sh profiles/claude-code/.claude/templates/scripts/grade.sh` returns no differences. `diff templates/grading-rubric.md profiles/claude-code/.claude/templates/grading-rubric.md` returns no differences (root vs. install tree — identical). The two top-level `grading-rubric.md` files at `templates/grading-rubric.md` (74 lines, universal rubric) and `templates/knowledge-summary/grading-rubric.md` (226 lines, HTML-specific rubric) are **intentionally different files for different purposes** — not duplicates.
-
-**Impact:** Every bug fix in a duplicated script requires 4 commits (or, more realistically, an `sed`-and-commit dance that hopefully reaches all 4 locations). The risk that one location is missed is high — verified empirically by the fact that no script enforces parity.
-
-**Effort:** Medium (less than 1 day) to refactor `setup.sh` to copy from a single canonical source (`templates/`) rather than from per-tool snapshots. The current architecture intentionally pre-stages the trees; converting to "single source of truth + setup-time copy" reduces the on-disk footprint by ~13,200 lines.
+**Effort:** Trivial (≤ 30 min per linter) to wire a config file + a single GitHub Action job. The blocker is item H2 (no CI).
 
 ---
 
-### [HIGH] H5 — `CONTRIBUTING.md` does not mention the Cursor tree
+### [HIGH] H4 — Four-way duplicated scripts and assets — **RETIRED 2026-05-22 (work-002-canonical-generator)**
 
-**Evidence:** `CONTRIBUTING.md:21-26` lists three locations to update for any skill/agent change: human README, Claude Code, Codex. Cursor — a fully-supported, fully-shipped 4th target — is omitted from the rule. **DISCOVERY-STATE Q34 + Q72:** also uses *wrong* on-disk paths (`claude-code/skills/` instead of `profiles/claude-code/.claude/skills/`; `codex/skills/` instead of `profiles/codex/.agents/skills/`).
+**Pre-resolution context (preserved for traceability):** The previous version of this entry catalogued ~17,600 lines of 4-way duplication across `templates/` + 3 install trees (`build-project-index.sh`, `lightbox.js`, `component-css.css`, `validate-*.{sh,mjs}`, `grade.sh`, `writeback-state.sh`, etc.), accounting for ~36% of the repo line count. The premise was that no propagation tool existed.
 
-**Impact:** A new contributor follows CONTRIBUTING literally and ships a PR that updates 3 of 4 trees, possibly using the wrong paths. The Cursor tree silently drifts. This is the dominant failure mode for triplication drift in practice.
+**Why retired:** That same duplication is now **intentional generator output**, not unmanaged debt. Maintainers edit a single canonical source under `canonical/templates/{scripts,knowledge-summary}/`; `python run_generator.py` propagates byte-identical copies into each install tree. Verified: `diff canonical/templates/scripts/grade.sh profiles/claude-code/.claude/templates/scripts/grade.sh` returns no output.
 
-**Effort:** Trivial (less than 30 min). Edit `CONTRIBUTING.md:21-26` to (a) include the cursor tree explicitly and (b) use the correct dotted-hidden on-disk paths. Update the structure table at `CONTRIBUTING.md:6-19` to mention `cursor/`. Per Q34 + Q72 auto-resolution.
+**Residual risk (tracked as H3 above):** No CI invokes the generator and asserts the committed install-tree files match the regenerated output. A contributor who hand-edits a file inside `profiles/<tool>/` (instead of the canonical source) can drift silently. Mitigated by maintainer discipline + the EMISSION-MANIFEST trail; un-mitigated by automation.
+
+**Status:** RETIRED. Tooling that would have closed this entry pre-cycle-11 now exists (`run_generator.py`); the remaining work is a 1-line CI check (covered by H2 / H3).
+
+---
+
+### [HIGH] H5 — Generator orphan-detection gap (Q190 generalization) — **NEW cycle-11**
+
+**Evidence:**
+- `run_generator.py` VERIFY-4a checks canonical → profile propagation (every file in `canonical/templates/` is present in the install trees). It does **not** check the reverse direction: files that exist in the install trees but **not** in `canonical/templates/`.
+- Pre-FR2 (work-003), 6 templates lived only in install trees, missing from canonical:
+  - `feature.md`
+  - `feature-inventory.md` (root, not the per-feature one)
+  - `known-issues.md`
+  - `package.md`
+  - `requirements.md` (root)
+  - `ui-architecture.md` (root)
+- Diff command that reveals them: `diff <(find canonical/templates -type f) <(find profiles/claude-code/.claude/templates -type f)`.
+- Discovered when `/aid-deploy work-003` looked up `canonical/templates/package.md` and failed (Q190 single-file). Cycle-11 generalization showed 5 sibling orphans (Q190 escalated from low to high).
+- **Resolved by KB-F1** (lifted to canonical 2026-05-23) — but the underlying gap in `run_generator.py` remains: a future orphan introduced by a contributor will not be detected automatically.
+
+**Impact:** A template added to install trees without being added to `canonical/templates/` is silently orphaned. Adopters get it, but the next `python run_generator.py` run does not preserve it (the deletion pass removes anything no longer in the manifest). Pre-resolution this caused `/aid-deploy work-003` to fail.
+
+**Effort:** Small (≤ 4 h). Add a VERIFY-4c (or extend 4a) check: for each install tree, diff its template-file set against the canonical set + the per-profile rendered manifest; flag anything in the install tree that is neither canonical-output nor explicitly profile-only-allowed.
+
+**Related:** Q190 (Side-discovery from `/aid-deploy work-003`). Tracked in STATE.md Q&A.
 
 ---
 
 ### [HIGH] H6 — Codex installer omits `.agents/` copy (CONFIRMED BUG) — **RETIRED 2026-05-22**
 
-**Evidence:** `setup.sh:142-145` (Codex branch) copies `profiles/codex/.codex/` to `$TARGET/.codex/` and `profiles/codex/AGENTS.md` to `$TARGET/AGENTS.md` — but **did NOT** copy `profiles/codex/.agents/` which contains all 10 SKILL.md files and the `templates/` asset bundle. `setup.ps1:137-141` had the identical omission. Reviewer static-analysis spot-check #20 confirmed: `sed -n '140,155p' setup.sh` showed only `.codex` and `AGENTS.md` referenced in the Codex branch. `profiles/codex/README.md:12-15` documents that manual install requires BOTH `cp -r ... /.codex .codex/` AND `cp -r ... /.agents .agents/`. The installer was missing the second step.
+**Evidence:** `setup.sh:142-145` (Codex branch, pre-fix) copied `profiles/codex/.codex/` to `$TARGET/.codex/` and `profiles/codex/AGENTS.md` to `$TARGET/AGENTS.md` — but **did NOT** copy `profiles/codex/.agents/` which contains all 10 SKILL.md files and the `templates/` asset bundle. `setup.ps1:137-141` had the identical omission. Reviewer static-analysis spot-check #20 confirmed: `sed -n '140,155p' setup.sh` showed only `.codex` and `AGENTS.md` referenced in the Codex branch.
 
 **Impact:** Every Codex user who installed AID via the bundled installer was getting agent TOML definitions **without skill bodies**. Slash commands appeared to do nothing because the SKILL.md files were absent. Silent failure mode — no error message, just inert tooling.
 
-**Resolution (work-002-canonical-generator / task-001 + task-002 + task-030):** `copy_dir profiles/codex/.agents` added to `setup.sh` Codex branch; equivalent `Copy-Dir-Safe` call added to `setup.ps1`. Live smoke test (task-030) confirmed: `setup.sh` + `setup.ps1` both install all 10 Codex SKILL.md files under `<target>/.agents/skills/aid-*/SKILL.md`. Claude Code and Cursor artifacts unaffected (regression check passed). H6 is retired. Tracks DISCOVERY-STATE Q70.
+**Resolution (work-002-canonical-generator / task-001 + task-002 + task-030):** `copy_dir profiles/codex/.agents` added to `setup.sh` Codex branch; equivalent `Copy-Dir-Safe` call added to `setup.ps1`. Live smoke test (task-030) confirmed: `setup.sh` + `setup.ps1` both install all 10 Codex SKILL.md files under `<target>/.agents/skills/aid-*/SKILL.md`. Claude Code and Cursor artifacts unaffected (regression check passed). H6 is retired. Tracks STATE.md Q70.
 
 ---
 
 ### [HIGH] H7 — Missing templates for the Monitor phase (Q8 promoted)
 
-**Evidence:** `templates/README.md` references two templates that do not exist on disk:
-- Line 31: `templates/feedback-artifacts/MONITOR-STATE.md` — used by `aid-monitor` for production telemetry state. Verified missing via `ls templates/feedback-artifacts/` (only `IMPEDIMENT.md` present).
-- Line 37: `templates/reports/track-report-template.md` — used by `aid-monitor` for periodic monitor reports. Verified missing via `ls templates/reports/` (only `discovery-state-template.md` present).
+**Evidence:** `templates/README.md` (legacy) references two templates that do not exist on disk:
+- `MONITOR-STATE.md` — used by `aid-monitor` for production telemetry state. (Note: post-FR2 area-STATE rule may have absorbed this into a work-STATE pattern; needs verification.)
+- `track-report-template.md` — used by `aid-monitor` for periodic monitor reports.
 
-The `aid-monitor` skill (242 lines in each install tree) presumably produces these artifacts but agents have no canonical template to follow.
+The `aid-monitor` skill (285 lines per `canonical/skills/aid-monitor/SKILL.md`, propagated identically to 3 install trees) presumably produces these artifacts but agents have no canonical template to follow.
 
-**Impact:** The Monitor phase (feature 10 in `feature-inventory.md`) is shipping as ⚠️ Partial. Adopters running `/aid-monitor` get an agent that doesn't know what shape its output artifacts should take. Promoted from MEDIUM (M2 in earlier framing) to HIGH because it blocks the production-monitoring story end-to-end.
+**Impact:** The Monitor phase is shipping as ⚠️ Partial. Adopters running `/aid-monitor` get an agent that doesn't know what shape its output artifacts should take. Promoted from MEDIUM (M2 in earlier framing) to HIGH because it blocks the production-monitoring story end-to-end.
 
-**Effort:** Small (less than 4 h). **Resolution per DISCOVERY-STATE Q8 / Q31 / Q77:** author both templates — `MONITOR-STATE.md` modeled on `templates/feedback-artifacts/IMPEDIMENT.md`, `track-report-template.md` defined inline per the `aid-monitor` skill body. M2 below is now superseded by H7.
+**Effort:** Small (less than 4 h). **Resolution per STATE.md Q8 / Q31 / Q77:** author both templates — modeled on existing `canonical/templates/feedback-artifacts/IMPEDIMENT.md` shape and the `aid-monitor` skill body. Post-FR2 the `MONITOR-STATE.md` shape may be the consolidated work-STATE; clarify per data-model.md §1A before authoring.
 
 ---
 
 ### [HIGH] H8 — `/aid-summarize` grading rubric vs script implementation mismatch — **RESOLVED 2026-05-21**
 
-**Evidence (as found):** During dogfood use of `/aid-summarize`, the grading system had structural flaws: (1) the script auto-passed the "manual" checks K1 (10 pts) + K2 (15 pts) — 25 points it could not verify; (2) A3 (focus trap) was marked "manual / can't auto", capping the script-automated grade below A+ permanently; (3) the rubric's "<6 diagrams = C+ ceiling" hard rule was not wired into `grade.sh`; (4) the `cli` profile spec'd 4 diagrams while the rubric demanded ≥6, so the profile was structurally locked out of A+; (5) `D2` (render) was dependent on `D1` (parse) — anything passing D1 passed D2; (6) `H1` ran custom regex, not the `tidy`/`html-validate` the rubric described; (7) no check covered diagram-internal legibility — every automated check (D1/D2/C1/C2) could pass while a Mermaid diagram was visually unreadable (observed: silver text on teal, ~1.2:1, in dark mode).
+**Evidence (as found):** During dogfood use of `/aid-summarize`, the grading system had structural flaws: (1) the script auto-passed the "manual" checks K1 (10 pts) + K2 (15 pts) — 25 points it could not verify; (2) A3 (focus trap) was marked "manual / can't auto", capping the script-automated grade below A+ permanently; (3) the rubric's "<6 diagrams = C+ ceiling" hard rule was not wired into `grade.sh`; (4) the `cli` profile spec'd 4 diagrams while the rubric demanded ≥6, so the profile was structurally locked out of A+; (5) `D2` (render) was dependent on `D1` (parse) — anything passing D1 passed D2; (6) `H1` ran custom regex, not the `tidy`/`html-validate` the rubric described; (7) no check covered diagram-internal legibility — every automated check (D1/D2/C1/C2) could pass while a Mermaid diagram was visually unreadable.
 
 **Impact:** The script-reported grade was simultaneously inflated (free manual points) and capped below A+ (A3 unscored). Adopters could not trust the number, and a genuinely broken summary could pass.
 
-**Resolution (this session):** The grading system was overhauled — (a) **two-grade model**: Machine Grade (AUTO_POOL, 73 pts, script-verifiable) + Human Grade (MANUAL_POOL, 30 pts); Overall = `min`; (b) **A3 auto-detected** by grepping the inlined `lightbox.js`; (c) **per-profile `target_diagrams`** declared in profile-template frontmatter, enforced by `grade.sh`; (d) **D2 made real** via jsdom/mmdc render assertions; (e) **H1 cascade** — `tidy` → `html-validate` → regex, prints which ran; (f) **mandatory V1 human visual gate** (5 pts) — closes flaw 7; a V1 fail forces Human Grade = F; (g) **literal-`\n` D1 guard** added to `validate-diagrams.mjs`. Touched `grade.sh`, `validate-html.sh`, `validate-diagrams.mjs`, `manual-checklist.sh` (new), `spot-check-facts.sh` (new), `grading-rubric.md`, all 6 `section-templates/*.md`, and `aid-summarize/SKILL.md` ×3 trees; propagated to all install trees. See DISCOVERY-STATE Q180 and the `## Summarization History` entry.
+**Resolution (2026-05-21):** The grading system was overhauled — (a) **two-grade model**: Machine Grade (AUTO_POOL, 73 pts) + Human Grade (MANUAL_POOL, 30 pts); Overall = `min`; (b) **A3 auto-detected** by grepping the inlined `lightbox.js`; (c) **per-profile `target_diagrams`** declared in profile-template frontmatter, enforced by `grade.sh`; (d) **D2 made real** via jsdom/mmdc render assertions; (e) **H1 cascade** — `tidy` → `html-validate` → regex; (f) **mandatory V1 human visual gate** (5 pts); (g) **literal-`\n` D1 guard** added to `validate-diagrams.mjs`.
 
 **Effort:** Was Medium — completed 2026-05-21. **No further action.**
 
@@ -151,9 +135,9 @@ The `aid-monitor` skill (242 lines in each install tree) presumably produces the
 
 ### [MEDIUM] M1 — `.claude/settings..json` filename typo
 
-**Evidence:** `.claude/settings..json` (double dot) sits alongside `.claude/settings.json`. Both contain *identical* content (verified by `diff` — no output). The double-dot file is not gitignored.
+**Evidence:** `.claude/settings..json` (double dot) sits alongside `.claude/settings.json`. Both contain *identical* content (verified by `diff` — whitespace-only diff). The double-dot file is not gitignored.
 
-**Impact:** Cosmetic; Claude Code will not load the malformed name as a settings file. But the duplicate file confuses future maintainers about which is canonical, and represents the kind of dotfile-discipline issue that a CI lint would catch.
+**Impact:** Cosmetic; Claude Code will not load the malformed name as a settings file. But the duplicate file confuses future maintainers about which is canonical.
 
 **Effort:** Trivial (less than 30 min). `git rm .claude/settings..json` and add a CI check for unusual dotfile names.
 
@@ -175,9 +159,9 @@ This item has been promoted to HIGH severity per the production-impact analysis 
 
 The other tool trees' equivalent (`profiles/claude-code/.claude/agents/developer.md`) say "Build verification is mandatory" without nominating a build tool, which is correct for a tool-agnostic methodology. Codex's version uniquely hardcodes Maven with a placeholder-looking path.
 
-**Impact:** A Codex user installing this developer agent into a non-Java project will see the agent attempt to run `mvn` on every code change. The agent prompt is normative for the model — even Sonnet-tier models tend to follow explicit shell commands literally.
+**Impact:** A Codex user installing this developer agent into a non-Java project will see the agent attempt to run `mvn` on every code change. The agent prompt is normative for the model.
 
-**Effort:** Trivial (less than 30 min). Replace lines 11-12 with "Run the build and tests using the project's existing commands (see `.aid/knowledge/technology-stack.md` Build Commands and `.aid/knowledge/test-landscape.md` Test Commands)." This matches the pattern used by the other tool trees.
+**Effort:** Trivial (less than 30 min). Edit `canonical/agents/developer.toml` (or whatever canonical source produces the Codex variant) and re-run `python run_generator.py`. Replace lines 11-12 with "Run the build and tests using the project's existing commands (see `.aid/knowledge/technology-stack.md` Build Commands and `.aid/knowledge/test-landscape.md` Test Commands)."
 
 ---
 
@@ -187,90 +171,77 @@ The other tool trees' equivalent (`profiles/claude-code/.claude/agents/developer
 
 **Phase 5 (Detail):**
 - `methodology/aid-methodology.md:353` introduces "Phase 5: Detail (`aid-detail`)".
-- `profiles/claude-code/.claude/skills/aid-detail/SKILL.md` (390 lines) is the skill body.
-- `diff profiles/claude-code/.claude/skills/aid-detail/SKILL.md profiles/cursor/.cursor/skills/aid-detail/SKILL.md` returns 0 differences.
-- `diff profiles/claude-code/.claude/skills/aid-detail/SKILL.md profiles/codex/.agents/skills/aid-detail/SKILL.md` returns 5 lines of difference (essentially title and frontmatter).
-
-The aid-detail skill bodies are consistent across trees AND consistent with the methodology's description of the phase. No drift detected here.
+- `canonical/skills/aid-detail/SKILL.md` is the canonical body; all 3 install trees match (post work-002).
 
 **Phase: Verify** (note: there is **no aid-verify** in this repo)
-- The methodology document does not describe a "Verify" phase. The pipeline (per `methodology/aid-methodology.md` and the skills inventory in `project-structure.md:78-89`) is: Init -> Discover -> Interview -> Specify -> Plan -> Detail -> Execute -> Deploy -> Monitor, with optional Summarize.
-- The closest concepts are (a) the per-skill REVIEW state (built into Discover and Execute), and (b) the `operator` agent's "Verify before acting" rule (`operator.md:24`).
-- There is no `aid-verify` skill folder in any of the install trees, and the docs do not promise one.
+- The methodology document does not describe a "Verify" phase. The pipeline is: Init -> Discover -> Interview -> Specify -> Plan -> Detail -> Execute -> Deploy -> Monitor, with optional Summarize.
+- The closest concepts are (a) the per-skill REVIEW state (built into Discover and Execute), and (b) the `operator` agent's "Verify before acting" rule.
 
 **Other drift evidence:**
-- `methodology/aid-methodology.md:889` documents: "The Correct phase has been merged into Monitor. Root cause analysis, patch scope, and test requirements are now documented directly in MONITOR-STATE.md."
-- `skills/aid-correct/README.md` (5 lines) says: "This phase has been merged into Triage. Root cause analysis is now part of the Triage phase. See aid-monitor for the current workflow."
-- The methodology uses "Monitor"; the deprecation note uses "Triage". This is minor terminology inconsistency (Monitor and Triage are the same phase per project-structure.md), but it could confuse a reader scanning both files.
+- `methodology/aid-methodology.md` documents: "The Correct phase has been merged into Monitor."
+- Pre-FR2 tombstone `canonical/skills/aid-correct/README.md` no longer exists (top-level `skills/` dir was removed in work-002).
 
-**Impact:** Phase-5 (Detail) is fine. The Correct/Monitor/Triage naming inconsistency is a documentation polish issue. **Most importantly:** `templates/feedback-artifacts/MONITOR-STATE.md` is referenced by both the methodology document (line 889) and `templates/README.md` (line 31) but does not exist — see M2.
+**Impact:** The Correct/Monitor/Triage naming inconsistency is a documentation polish issue. Most importantly: the legacy `templates/README.md` references files that may not exist post-FR2 — see H7.
 
-**Effort:** Trivial (less than 30 min) for the naming alignment. The MONITOR-STATE.md creation is tracked under M2.
+**Effort:** Trivial (less than 30 min) for the naming alignment. The MONITOR template creation is tracked under H7.
 
 ---
 
 ### [MEDIUM] M5 — `aid-discover` SKILL.md violates the "Under 500 lines" guideline
 
-**Evidence:** `CONTRIBUTING.md:97` — "Under 500 lines per skill (AgentSkills best practice)". Actual:
-- `profiles/codex/.agents/skills/aid-discover/SKILL.md` — 1,078 lines (216% over).
-- `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` — 1,090 lines (218% over).
-- `profiles/codex/.agents/skills/aid-interview/SKILL.md` — 694 lines (139% over).
-- `profiles/cursor/.cursor/skills/aid-interview/SKILL.md` — 698 lines (140% over).
-- `profiles/codex/.agents/skills/aid-execute/SKILL.md` — 558 lines (112% over).
-- `profiles/cursor/.cursor/skills/aid-execute/SKILL.md` — 562 lines (112% over).
+**Evidence (cycle-11 verification):** `CONTRIBUTING.md:97` — "Under 500 lines per skill (AgentSkills best practice)". Actual (post work-002 unification):
+- `canonical/skills/aid-discover/SKILL.md` — **548 lines** (9.6% over).
+- All 3 profile copies (`profiles/{claude-code,codex,cursor}/skills/aid-discover/SKILL.md`) — 548 lines each (identical, by virtue of being generator output).
 
-**Impact:** The guideline exists because long SKILL.md files consume context window aggressively. Codex and Cursor models (especially at high reasoning effort) pay a token cost on every invocation. Either the guideline should be revised (with rationale), or the Codex/Cursor versions should be factored using a `references/` mechanism analogous to Claude Code.
+Other previously-flagged overages no longer apply: post-canonical-generator, `aid-interview`, `aid-execute`, and `aid-specify` all match the Claude Code reference (smaller) sizes. Only `aid-discover` is over.
 
-**Effort:** Large (more than 1 day) if refactoring inline content into externalizable references for Codex and Cursor (also requires confirming whether each host tool reads referenced files automatically). Trivial (less than 30 min) if the rule is relaxed in CONTRIBUTING.md with a per-tool caveat.
+**Impact:** The guideline exists because long SKILL.md files consume context window aggressively. 548 vs 500 is a modest overage (~10%) compared to the pre-canonical-generator 1,078-line bloat. Either the guideline should be revised with rationale, or `aid-discover` should be factored further using `references/` decomposition (already in place for some content blocks).
+
+**Effort:** Small (less than 4 h) to extract additional content into `canonical/skills/aid-discover/references/*.md`. Trivial (less than 30 min) if the rule is relaxed in CONTRIBUTING.md with a per-skill caveat for orchestrator-class skills.
 
 ---
 
-### [LOW] L1 — `aid-correct/README.md` is a 5-line deprecation note still present in the public `skills/` tree
+### [MEDIUM] M6 — Cursor agent tool name internally inconsistent (`Terminal` vs `Bash`)
 
-**Evidence:** `skills/aid-correct/README.md`:
-```
-# Correct (Deprecated)
-This phase has been merged into Triage. Root cause analysis is now part of the Triage phase.
-See [aid-monitor](../aid-monitor/) for the current workflow.
-```
-Contradicts scout's hypothesis that this was a forward-looking placeholder — actually a tombstone.
+**Evidence:** Reviewer spot-check found Cursor's own tree is inconsistent on the shell-execution tool name:
+- `profiles/cursor/.cursor/agents/architect.md:4` declares `tools: Read, Glob, Grep, Write, Edit, Terminal`
+- `profiles/cursor/.cursor/agents/discovery-reviewer.md:7` declares `tools: Read, Glob, Grep, Bash, Write`
 
-**Impact:** A user browsing `skills/` sees a deprecated phase. The deprecation message is clear, but the folder existing at all clutters the tree. Also: the install trees (claude-code, codex, cursor) correctly do NOT ship `aid-correct/SKILL.md` (verified — no such file in any install tree), so there is no broken skill to invoke; only the human-readable README is the tombstone.
+Per `external-sources.md` rows 5-6, the canonical Cursor tool name is `Terminal`. Some Cursor agents in this tree were missed during the rename.
 
-**Effort:** Trivial (less than 30 min). Either delete the folder or move the README content to a CHANGELOG / migration-notes document.
+**Impact:** Some Cursor agents may not have shell execution available because they declare a non-canonical tool name. Slash commands that depend on shell access would silently fail in those agents.
+
+**Effort:** Trivial (~15 min). Audit all 22 `canonical/agents/*.toml` (or the per-profile renderer rules) and ensure the Cursor variant emits `Terminal` consistently. Re-run `python run_generator.py`. Per STATE.md Q52 resolution. Add canonical-vs-output parity check (H3) so it doesn't reoccur.
 
 ---
 
-### [LOW] L2 — `correction-template.md` deprecation note inline (resolved — deleted in methodology cleanup)
+### [LOW] L1 — `aid-correct/README.md` tombstone — **RETIRED**
 
-**Evidence (historical):** `templates/reports/correction-template.md` formerly carried an inline note: "Deprecated: The Correct phase has been merged into Triage. ... This template is retained for reference only."
+**Pre-resolution context:** `canonical/skills/aid-correct/README.md` was a 5-line tombstone left behind when the Correct phase was merged into Triage/Monitor.
+
+**Why retired:** The entire top-level `skills/` directory was deleted in work-002 (its content promoted to `canonical/skills/`). The tombstone no longer exists. Verified: `ls skills/aid-correct/` errors with "No such file or directory".
+
+---
+
+### [LOW] L2 — `correction-template.md` deprecation note inline — **RETIRED**
+
+**Evidence (historical):** `canonical/templates/reports/correction-template.md` formerly carried an inline note: "Deprecated: The Correct phase has been merged into Triage."
 
 **Impact:** Resolved — the file was deleted in the methodology-correctness cleanup; no deprecated artifact remains in the tree.
-
-**Effort:** Done.
 
 ---
 
 ### [LOW] L3 — TODO / FIXME density
 
-**Evidence:** `Grep` for `TODO|FIXME|XXX|HACK|TBD|pending discovery` returns 69 total occurrences across 21 files. Highest hotspots:
-- `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` — 6 hits
-- `profiles/codex/.agents/skills/aid-discover/SKILL.md` — 6 hits
-- `profiles/cursor/.cursor/skills/aid-init/SKILL.md` — 5 hits
-- `profiles/claude-code/.claude/skills/aid-init/SKILL.md` — 5 hits
-- `profiles/cursor/.cursor/agents/discovery-reviewer.md` — 5 hits
-- `profiles/claude-code/.claude/agents/discovery-reviewer.md` — 5 hits
-- `profiles/codex/.agents/skills/aid-init/SKILL.md` — 5 hits
+**Evidence:** `Grep` for `TODO|FIXME|XXX|HACK|TBD|pending discovery` returned 69 total occurrences across 21 files at the initial dogfood pass. Post-canonical-generator the distribution shifted (skill bodies are uniform now), but most matches remain *documentation strings about what an agent should do*, not actual TODOs.
 
-Top-level files with `(pending discovery)` placeholders (verified post-dogfood-cycle 2026-05-21 per DISCOVERY-STATE Q81):
-- `CLAUDE.md` (repo root) — **0 hits** (was the dogfood subject; now 90 lines, fully populated by this discovery cycle).
-- `profiles/claude-code/CLAUDE.md` (install template) — 1 hit (correct: install templates ship with placeholders for users to fill in via `/aid-init` + `/aid-discover`).
-- `profiles/codex/AGENTS.md` (install template) — 4 hits (correct: same lifecycle).
-- `profiles/cursor/AGENTS.md` (install template) — 4 hits (correct: same lifecycle).
+Top-level files with `(pending discovery)` placeholders (intentional — install templates ship with placeholders for users to fill in via `/aid-init` + `/aid-discover`):
+- `CLAUDE.md` (repo root) — **0 hits** (the dogfood subject; fully populated).
+- `profiles/claude-code/CLAUDE.md` (install template) — 1 hit.
+- `profiles/codex/AGENTS.md` (install template) — 4 hits.
+- `profiles/cursor/AGENTS.md` (install template) — 4 hits.
 
-**Analysis:** Most "TODO"-like matches in skill bodies are not actual TODOs — they are documentation strings about what an agent should do. The `(pending discovery)` matches in the 3 install-template files are *intentional placeholders* that `aid-init` / `aid-discover` instruct users to fill in on their own project. So the real TODO density in production code is approximately zero. Adjusted total: ~13 intentional placeholders in install templates (1 + 4 + 4) + ~52 documentation-string false-positives = ~65 of the 69 grep hits are non-issues.
-
-**Impact:** Low — the placeholders work as designed. Repo-root `CLAUDE.md` has been correctly populated by the dogfood cycle (verified — no remaining "(pending discovery)" markers).
+**Impact:** Low — the placeholders work as designed.
 
 **Effort:** N/A — already resolved for the dogfood repo. The install-template placeholders are by-design.
 
@@ -279,36 +250,25 @@ Top-level files with `(pending discovery)` placeholders (verified post-dogfood-c
 ### [LOW] L4 — Install-template project-config files inconsistent in content
 
 **Evidence (verified 2026-05-21):**
-- `CLAUDE.md` (repo root) — **90 lines**, fully populated by the dogfood discovery cycle (NOT a template — this is the project-config for this repo itself).
-- `profiles/claude-code/CLAUDE.md` (install template) — 30 lines, minimal structure, ships with "(pending discovery)" placeholders.
-- `profiles/codex/AGENTS.md` (install template) — 28 lines, similar structure to claude-code, "(pending discovery)" placeholders.
-- `profiles/cursor/AGENTS.md` (install template) — 45 lines, *more content* than the others, includes "Knowledge Base" section, "Skills & Agents" section, "Permissions" section.
-
-The three install-template variants are intentionally lighter than the dogfood `CLAUDE.md` (which has been populated). Among the install templates, the Cursor variant has additional sections (especially "Permissions" and "Skills & Agents") that are absent from the Claude Code and Codex templates. There is no documented reason for the asymmetry.
+- `profiles/claude-code/CLAUDE.md` (install template) — 30 lines, minimal structure.
+- `profiles/codex/AGENTS.md` (install template) — 28 lines.
+- `profiles/cursor/AGENTS.md` (install template) — 45 lines, *more content* (includes "Knowledge Base", "Skills & Agents", "Permissions" sections).
 
 **Impact:** A user installing more than one tool sees three different shapes of project-config file template. Minor friction.
 
-**Effort:** Small (less than 4 h). **Resolution per DISCOVERY-STATE Q82:** align all three install-template variants to the Cursor shape (KB + Permissions + Skills sections). Cursor has the most informative template; bring Claude Code and Codex variants up to parity. Document the rationale in `CONTRIBUTING.md`.
+**Effort:** Small (less than 4 h). Per STATE.md Q82: align all three install-template variants to the Cursor shape. Bring Claude Code and Codex variants up to parity via canonical edits + generator re-run.
 
 ---
 
 ### [LOW] L5 — Files over 500 lines (cross-tool variant detail)
 
-**Evidence (from `project-index.md`):**
-- `methodology/aid-methodology.md` — 1,158 lines (canonical methodology spec; long-form by design, no refactor needed).
-- `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` — 1,090 lines (see M5).
-- `profiles/codex/.agents/skills/aid-discover/SKILL.md` — 1,078 lines (see M5).
-- `profiles/cursor/.cursor/skills/aid-interview/SKILL.md` — 698 lines (see M5).
-- `profiles/codex/.agents/skills/aid-interview/SKILL.md` — 694 lines (see M5).
-- `templates/knowledge-summary/component-css.css` (and 3 duplicates) — 642 lines each (CSS for HTML viewer; reasonable for a styled deliverable).
-- `profiles/cursor/.cursor/skills/aid-execute/SKILL.md` — 562 lines (see M5).
-- `profiles/codex/.agents/skills/aid-execute/SKILL.md` — 558 lines (see M5).
-- `profiles/cursor/.cursor/skills/aid-specify/SKILL.md` — 488 lines (see M5 - 88 lines over).
-- `profiles/codex/.agents/skills/aid-specify/SKILL.md` — 485 lines.
-- `profiles/claude-code/.claude/skills/aid-interview/SKILL.md` — 477 lines.
-- `profiles/claude-code/.claude/skills/aid-discover/SKILL.md` — 453 lines.
+**Evidence (post-cycle-11):**
+- `methodology/aid-methodology.md` — 1,158 lines (canonical methodology spec; long-form by design).
+- `canonical/skills/aid-discover/SKILL.md` (and 3 profile copies) — 548 lines each (see M5).
+- `canonical/templates/knowledge-summary/component-css.css` (and 3 profile copies) — 642 lines each (CSS for HTML viewer; reasonable for a styled deliverable).
+- All other SKILL.md files are now at or under 500 lines (post-canonical-generator uniformity).
 
-**Impact:** The Claude Code versions of all SKILL.md files are at or under the 500-line guideline. Codex and Cursor variants exceed it as noted. The methodology document at 1,158 lines is intentionally long and out of scope for the AgentSkills guideline (which targets SKILL.md, not free-form docs).
+**Impact:** Per-skill bloat is now confined to `aid-discover` (M5). Pre-cycle-11 entries for `aid-interview`, `aid-execute`, and `aid-specify` no longer apply.
 
 **Effort:** Same as M5.
 
@@ -316,118 +276,101 @@ The three install-template variants are intentionally lighter than the dogfood `
 
 ### [LOW] L6 — Cross-tool model-tier consistency: VERIFIED CONSISTENT
 
-**Evidence:** Spot-checked all 22 agents across all three trees:
+**Evidence:** Spot-checked all 22 agents across all three trees. All Opus-tier agents map to `gpt-5.5/high`; all Sonnet-tier to `gpt-5.4/medium`; all Haiku-tier to `gpt-5.4-mini/low`. Tier mapping is uniform.
 
-| Agent | Claude Code (`model:`) | Cursor (`model:`) | Codex (`model =`, `reasoning_effort =`) | Consistent? |
-|-------|----------------------|-------------------|---------------------------------------|-------------|
-| architect | opus | opus | gpt-5.5, high | Yes |
-| developer | sonnet | sonnet | gpt-5.4, medium | Yes |
-| devops | sonnet | sonnet | gpt-5.4, medium | Yes |
-| data-engineer | sonnet | sonnet | gpt-5.4, medium | Yes |
-| interviewer | opus | opus | gpt-5.5, high | Yes |
-| operator | sonnet | sonnet | gpt-5.4, medium | Yes |
-| orchestrator | sonnet | sonnet | gpt-5.4, medium | Yes |
-| performance | sonnet | sonnet | gpt-5.4, medium | Yes |
-| researcher | sonnet | sonnet | gpt-5.4, medium | Yes |
-| reviewer | opus | opus | gpt-5.5, high | Yes |
-| security | opus | opus | gpt-5.5, high | Yes |
-| tech-writer | sonnet | sonnet | gpt-5.4, medium | Yes |
-| ux-designer | sonnet | sonnet | gpt-5.4, medium | Yes |
-| discovery-* (all 6) | opus | opus | gpt-5.5, high | Yes |
-| simple-* (all 3) | haiku | haiku | gpt-5.4-mini, low | Yes |
-
-**Conclusion:** The May 2026 migration note in `profiles/codex/README.md:35` ("7 of the 9 Sonnet-tier agents ... have been corrected to gpt-5.4 medium") was successfully applied. All 22 agents are now tier-consistent across the 3 trees. The Codex tier mapping (`gpt-5.5/high` = Opus, `gpt-5.4/medium` = Sonnet, `gpt-5.4-mini/low` = Haiku) is uniform.
-
-[INFO] **No tier drift detected.** Listed as Low debt because the only remaining work is to keep it that way (covered by the CI proposal in H2 and the propagation script in H3).
+[INFO] **No tier drift detected.** Listed as Low debt because the only remaining work is to keep it that way (covered by the CI proposal in H2 and parity check in H3).
 
 ---
 
 ### [LOW] L7 — Dead-code / unreferenced files
 
 **Search performed:** Looked for files in the repo that no other file references:
-- `skills/aid-correct/README.md` — tombstone (see L1).
-- `templates/grading-rubric.md` (74 lines, universal) vs. `templates/knowledge-summary/grading-rubric.md` (226 lines, HTML-specific) — both intentional and used by different consumers; **not** duplicates.
+- Pre-cycle-11: `canonical/skills/aid-correct/README.md` — RETIRED (top-level `skills/` deleted in work-002).
+- `canonical/templates/grading-rubric.md` (74 lines, universal) vs. `canonical/templates/knowledge-summary/grading-rubric.md` (226 lines, HTML-specific) — both intentional and used by different consumers; **not** duplicates.
 
-No genuinely orphaned files found.
+No genuinely orphaned files found at the source layer. Template orphans (6 install-tree-only templates) are tracked under H5.
 
 **Effort:** N/A.
 
 ---
 
-## Metrics
+### [LOW] L8 — Scripts lack defensive arg-handling (Q191 generalization) — **NEW cycle-11**
 
-- **TODO / FIXME / XXX / HACK / TBD / "pending discovery" count:** 69 occurrences across 21 files. Of these, ~17 are intentional placeholders in `CLAUDE.md` / `AGENTS.md` variants (4 trees x ~4 placeholders each). The remainder are documentation strings rather than actual code TODOs.
-- **Files over 500 lines:** 12 total. 1 is the methodology spec (1,158 lines, by design). 6 are inlined Codex/Cursor SKILL.md files (debt item M5). 4 are duplicated knowledge-summary assets per H4 (`component-css.css` x 4, `lightbox.js` x 4, etc., none individually over 500 lines except `component-css.css`). 1 is `build-project-index.sh` x 4 at 368 lines each (under 500 individually).
-- **Files over 1000 lines:** 3. `methodology/aid-methodology.md` (1,158), `profiles/codex/.agents/skills/aid-discover/SKILL.md` (1,078), `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` (1,090).
-- **Triplication ratio:** approximately 36% of total lines (~17,600 of 49,226) are 4-way duplicates of canonical sources (see H4).
-- **Test-to-code ratio:** ⚠️ Not meaningful for a methodology + docs + scripts repo. There are zero test files for ~5,490 lines of shell and ~3,428 lines of JavaScript. By the most literal reading, the test-to-code ratio is 0.
-- **CI/CD coverage:** 0 pipelines, 0 workflows. Confirmed.
-- **Per-severity debt-item count (OPEN items; post-cycle-2 reconciliation):**
-  - HIGH: 6 open (H1, H2, H3, H4, H5, H7) — H6 RETIRED 2026-05-22 (Codex installer smoke test passed); H7 (Monitor templates Q8 promoted) added 2026-05-21.
-  - MEDIUM: 6 (M1, M2 [superseded by H7 — kept as back-pointer], M3, M4, M5, M6) — M6 (Cursor Terminal/Bash internal inconsistency Q52) added 2026-05-21.
-  - LOW: 7 (L1, L2, L3, L4, L5, L6 [informational — VERIFIED CONSISTENT tier mapping], L7 [informational]).
-  - **Total: 20 open items.**
-  - RESOLVED this session: **H8** (`/aid-summarize` grading rubric vs script mismatch — overhauled 2026-05-21; listed in Debt Items for the record, not counted in the 20 open).
+**Evidence:**
+- Pre-KB-F2 (resolved 2026-05-23), `writeback-state.sh` accepted any string as GRADE silently. Line 11 was `GRADE="${1:-?}"` — no `-h`/`--help` handler, no regex validation, no dry-run. Symptom: running `writeback-state.sh --help` wrote the literal string `--help` into the state file's grade column.
+- **Resolved by KB-F2** (2026-05-23): added `-h|--help` handler (sed-print the comment block, exit 0) + `[[ "$GRADE" =~ ^[A-F][+-]?$ ]] || exit 4` validation.
+- **Sibling audit (cycle 11):** spot-checked `check-preflight.sh`, `stale-check.sh`, `grade.sh` in the same scripts directory. All three already validate or skip silent acceptance of invalid args — OK.
+- **Forward gap:** No CONTRIBUTING.md / CI rule mandates `-h|--help` handler + arg validation for new shell scripts. The pattern is convention, not enforced.
 
-### [MEDIUM] M6 — Cursor agent tool name internally inconsistent (`Terminal` vs `Bash`)
+**Impact:** Low. Each future shell script that ships without defensive arg handling can repeat the original bug class. Caught by user reports; not caught at PR time.
 
-**Evidence:** Reviewer spot-check #21 found Cursor's own tree is inconsistent on the shell-execution tool name:
-- `profiles/cursor/.cursor/agents/architect.md:4` declares `tools: Read, Glob, Grep, Write, Edit, Terminal`
-- `profiles/cursor/.cursor/agents/discovery-reviewer.md:7` declares `tools: Read, Glob, Grep, Bash, Write`
+**Effort:** Trivial. Add a one-paragraph rule to CONTRIBUTING.md: "Every shell script must implement `-h|--help` and validate positional args; pattern: see `canonical/templates/knowledge-summary/scripts/writeback-state.sh:7-24` post-KB-F2." Optionally extend the `shellcheck` CI gate (H3) with a custom check for `case "$1" in -h|--help)` presence.
 
-Per `external-sources.md` rows 5-6, the canonical Cursor tool name is `Terminal` (Cursor renamed from `Bash` at some point). Some Cursor agents in this tree were missed during the rename.
-
-**Impact:** Some Cursor agents may not have shell execution available because they declare a non-canonical tool name. Slash commands that depend on shell access would silently fail in those agents.
-
-**Effort:** Trivial (~15 min). Audit all 22 `profiles/cursor/.cursor/agents/*.md` files, rename every `Bash` → `Terminal` in `tools:` declarations. Per DISCOVERY-STATE Q52 resolution. Add to CI cross-tree parity check (H3) so it doesn't reoccur.
+**Related:** Q191 (Side-discovery from `/aid-deploy work-003`). Tracked in STATE.md Q&A.
 
 ---
 
-## Resolution Roadmap from DISCOVERY-STATE Q&A
+## Metrics
 
-Items below were added or refined as a result of the Q&A pass on 2026-05-21. Cross-linked to the canonical Q-IDs in `DISCOVERY-STATE.md`. Each carries a provisional disposition that the user can override during APPROVAL.
+- **TODO / FIXME / XXX / HACK / TBD / "pending discovery" count:** 69 occurrences across 21 files (pre-canonical-generator baseline; the canonical/ unification preserved them inside skill bodies as documentation strings). Of these, ~17 are intentional placeholders in `CLAUDE.md` / `AGENTS.md` variants. The remainder are documentation strings rather than actual code TODOs.
+- **Files over 500 lines:** 3 unique sources (`methodology/aid-methodology.md` at 1,158; `canonical/skills/aid-discover/SKILL.md` at 548; `canonical/templates/knowledge-summary/component-css.css` at 642). Each of the latter two has 3 byte-identical copies in the install trees by virtue of being generator output.
+- **Files over 1000 lines:** 1 unique source (`methodology/aid-methodology.md` at 1,158). Previously 3 (the now-unified aid-discover SKILL.md is 548 in all trees, not 1,078/1,090).
+- **Duplication ratio (post-canonical-generator):** byte-identical duplication remains in absolute terms (~36% of repo lines are 4-way) but is no longer **drift-prone debt** — it is generator output from a single canonical source.
+- **Test-to-code ratio:** ⚠️ Not meaningful for a methodology + docs + scripts repo. There are zero test files for ~5,490 lines of shell, ~3,428 lines of JavaScript, and ~83 lines of Python (`run_generator.py`). By the most literal reading, the test-to-code ratio is 0.
+- **CI/CD coverage:** 0 pipelines, 0 workflows. Confirmed.
+- **Per-severity debt-item count (OPEN items; post-cycle-11 recount 2026-05-23):**
+  - HIGH: **4 open** — H2 (no CI), H3 (no linter), H5 (generator orphan-detection gap), H7 (missing Monitor templates).
+  - HIGH: 4 retired/resolved — H1 (triplication drift — RETIRED via canonical-generator), H4 (4-way duplicated scripts — RETIRED via canonical-generator), H6 (Codex `.agents/` omission — RETIRED via setup.sh fix), H8 (`/aid-summarize` grading — RESOLVED 2026-05-21).
+  - MEDIUM: **5 open** — M1, M3, M4, M5, M6. (M2 superseded by H7, kept as back-pointer.)
+  - LOW: **6 open** — L3 (TODO density, low-impact), L4 (install-template asymmetry), L5 (files >500 lines, covered by M5), L6 (model-tier consistency, informational), L7 (dead code, none found), L8 (defensive args, Q191 generalization).
+  - LOW: 2 retired — L1 (`aid-correct/README.md` tombstone — RETIRED via top-level `skills/` deletion), L2 (`correction-template.md` — RETIRED via deletion).
+  - **Total open: 15 items** (down from 20 pre-cycle-11). 6 retired in work-002/work-003 + cycle-11 (H1, H4, H6, H8, L1, L2).
+  - **Disk-truth recount (cycle 11):** `grep -c "^### \[HIGH\]" tech-debt.md` returns **8** (4 OPEN + 4 RETIRED-but-still-listed). Counts cited in INDEX.md / README.md should refer to OPEN count = 4.
+
+## Resolution Roadmap from STATE.md Q&A
+
+Items below were added or refined as a result of Q&A passes. Cross-linked to canonical Q-IDs in `STATE.md`.
 
 | ID | Source Q | Action | Effort | Status |
 |----|----------|--------|--------|--------|
-| R1 | Q1, Q10, Q71 (user-confirmed) | Adopt SemVer + `VERSION` file at repo root + git tags + `RELEASING.md` runbook + version-print in `setup.{sh,ps1}` | Small | Pending — out-of-KB code change |
-| R2 | Q2, Q5 (user-confirmed) | Document supported tools matrix (Claude Code + Codex + Cursor committed; Copilot + Antigravity future). Update README + CONTRIBUTING + faq wording. Add tagged GitHub Releases for pinning. | Small | Pending |
-| R3 | Q3, Q73 (auto) | Author `tools/propagate-skills.{sh,py}` that derives Codex / Cursor SKILL.md from Claude Code source + `references/`. Add CI drift-check. | Medium | Pending |
-| R4 | Q4, Q12, Q35 (auto) | Minimal CI workflow: shellcheck on `*.sh`, markdownlint, link-check, structural cross-tree-parity test, wired `validate-*` scripts, JSON-Schema frontmatter validation, dogfood-discovery smoke test, unit tests on `grade.sh` + `build-project-index.sh`. | Medium | Pending |
-| R5 | Q6 (auto) | Delete `skills/aid-correct/`. (`templates/reports/correction-template.md` already deleted in the methodology cleanup.) Add migration note to `CHANGELOG.md`. (Tombstones; phase merged into Triage/Monitor per `methodology/aid-methodology.md:889`.) | Trivial | Partially done — `correction-template.md` deleted; `skills/aid-correct/` pending |
-| R6 | Q11 (auto) | Add `.github/ISSUE_TEMPLATE/{bug-report,feature-request,methodology-question}.md` + `.github/PULL_REQUEST_TEMPLATE.md` aligned with AID phase taxonomy. | Trivial | Pending |
-| R7 | Q13 (auto) | Document branching strategy in `CONTRIBUTING.md`: trunk-based, branch naming `<owner>/<short-desc>`, squash-with-Conventional-Commits merge policy. | Trivial | Pending |
-| R8 | Q14 (auto) | Mark `templates/knowledge-summary/design-tokens.md` as documentation regenerated from `component-css.css` (CSS is source-of-truth). Future: one-shot doc-extraction script. | Trivial | Pending |
-| R9 | Q15 (auto) | Move repo's own `.claude/settings.json` content to a developer-local `.claude/settings.local.json` + gitignore. Keep minimal shared `settings.json` only if project-wide defaults are needed. | Trivial | Pending |
-| R10 | Q16 (user-confirmed), Q17 (auto) | Update `methodology/aid-methodology.md` heading "## 3. The Nine Phases" + README wording to canonical 10-SKILL taxonomy (Init + 8 dev + Summarize). Add explicit `Loop 11: Any phase → aid-discover (targeted re-entry)` between L8 and L9. | Small | Pending |
-| R11 | Q18 (auto) | Author 6 READMEs under `agents/discovery-{architect,analyst,integrator,quality,scout,reviewer}/README.md`. Shape per `agents/architect/README.md`. Cross-link from `agents/README.md`. | Medium | Pending |
-| R12 | Q30 (auto) | Standardize on Claude Code / Cursor filenames: `DISCOVERY-STATE.md` + `additional-info.md`. Update `profiles/codex/.codex/agents/discovery-reviewer.toml`. Document filename-constants rule in CONTRIBUTING. | Trivial | Pending |
-| R13 | Q32 (auto) | Lift state-file templates (`discovery-state.md`, `interview-state.md`, `feature-state.md`, etc.) from install trees to canonical `templates/` root. Install trees copy from there. | Small | Pending |
-| R14 | Q33 (auto) | Define closed Status enum (`Not Started`, `Pending`, `Populated`, `Approved`, `Below Minimum`, `Exempt`) in new `templates/CONVENTIONS.md`. Normalize KB doc headers. | Small | Pending |
-| R15 | Q34, Q72 (auto) | Update `CONTRIBUTING.md:21-26` to (a) use correct dotted-hidden on-disk paths and (b) add Cursor to the cross-tree-update rule. Quadruplicate, not triplicate. | Trivial | Pending — covered by H5 |
-| R16 | Q50, Q51, Q81, Q82 (auto) | Document install-template lifecycle (single-line placeholders → matched-pair after `/aid-init`/`/aid-discover`). Note Codex `context: fork` omission is intentional. Align install templates to Cursor shape. | Trivial | Pending |
-| R17 | Q52 (auto) | Audit all 22 `profiles/cursor/.cursor/agents/*.md` and unify on `Terminal` (Cursor canonical name). Document in `profiles/cursor/README.md`. | Trivial | Pending — covered by M6 |
-| R18 | Q53 (auto) | Sync `templates/reports/discovery-state-template.md` with the rich shape embedded in `profiles/claude-code/.claude/agents/discovery-reviewer.md:309-369`. Document the skeleton→rich lifecycle. | Trivial | Pending |
-| R19 | Q55 (auto) | Add one-line Mermaid CLI install guidance to README + aid-summarize README. | Trivial | Pending |
-| R20 | Q70 (CONFIRMED bug) | Add `copy_dir profiles/codex/.agents` to `setup.sh:142-145` Codex branch and equivalent to `setup.ps1:137-141`. | Trivial | **RETIRED 2026-05-22** — both installers fixed; task-030 smoke test confirmed 10 SKILL.md files present. |
-| R21 | Q74 (auto) | Add `.github/CODEOWNERS` requiring maintainer approval for changes that introduce `permissionMode: bypassPermissions` or `background: true`. Add CI check listing currently-elevated agents (today: 6 discovery-* agents). | Trivial | Pending |
-| R22 | Q75 (auto) | Add `tools/redact-kb.{sh,py}` masking file paths / URLs / configurable identifiers in `.aid/knowledge/*.md`. Document in `security-model.md` as recommended adopter practice. | Small | Deferred to v3.1 |
-| R23 | Q79 (auto) | Add `setup.sh --dry-run` + `setup.sh --prune` (with strong confirmation). Same for `setup.ps1`. | Small | Pending |
-| R24 | Q80 (auto) | Document URL trust assumption in `external-sources.md` (new Trust Model section). | Trivial | Pending |
-| R25 | Q100 (auto) | Extend `build-project-index.sh` to emit a `## Canonical Counts` section. Other KB docs reference these counts via `project-index.md`. | Small | Pending |
-| R26 | Q101 (auto) | Add post-cycle reconcile pass in `discovery-reviewer` prompt to re-validate KB-doc references to in-cycle-mutated files. | Trivial | Pending |
-| R27 | Q103 (auto) | Add `[INFO]` to `templates/grading-rubric.md` as a sixth non-counted severity. | Trivial | Pending |
-| R28 | Q104 (auto) | Extend Review History rows with a `Docs Modified` column. Update `templates/discovery-state.md`. | Trivial | Pending |
-| R29 | Q105 (auto) | Author `templates/scripts/verify-kb-claims.sh` that parses KB markdown for `file.ext:NN` citations and grep-checks them. Wire into discovery-reviewer FIX cycle. | Small | **Implemented 2026-05-21** — script at `templates/scripts/verify-kb-claims.sh` (300 lines Bash). Checks: (a) every `file.ext:NN` citation resolves to a real file at expected line range (with multi-prefix path resolution + `find` fallback); (b) README.md line-count column matches actual `wc -l`; (c) targeted spot-checks on commonly-drift-prone counts (domain-glossary terms, tech-debt severity tags); (d) emits a Verified Ground Truth pane that downstream reviewers can quote. First run found **898 valid citations / 0 broken / 0 drifts** — see DISCOVERY-STATE.md Review History row #14 for first-use results. Wiring into reviewer agent prompt is the next step (R29.b — pending). |
+| R1 | Q1, Q10, Q71 | Adopt SemVer + `VERSION` file + git tags + `RELEASING.md` + version-print in `setup.{sh,ps1}` | Small | Pending |
+| R2 | Q2, Q5 | Document supported-tools matrix; tagged GitHub Releases for pinning | Small | Pending |
+| R3 | Q3, Q73 | (SUPERSEDED by work-002 canonical-generator) | — | Done — `python run_generator.py` |
+| R4 | Q4, Q12, Q35 | Minimal CI workflow: shellcheck, markdownlint, link-check, canonical-vs-output parity, frontmatter validation, dogfood-discovery smoke test | Medium | Pending |
+| R5 | Q6 | Delete ~~`skills/aid-correct/` (DELETED post-work-002 cleanup)~~ | Trivial | Done (top-level `skills/` deleted in work-002) |
+| R6 | Q11 | Add `.github/ISSUE_TEMPLATE/*.md` + PR template | Trivial | Pending |
+| R7 | Q13 | Document branching strategy in CONTRIBUTING.md | Trivial | Pending |
+| R8 | Q14 | Mark `design-tokens.md` as documentation regenerated from `component-css.css` | Trivial | Pending |
+| R9 | Q15 | Move repo's `.claude/settings.json` content to `.claude/settings.local.json` + gitignore | Trivial | Pending |
+| R10 | Q16, Q17 | Update methodology heading to canonical 10-SKILL taxonomy + add Loop 11 (any phase → aid-discover) | Small | Pending |
+| R11 | Q18 | Author 6 READMEs under `canonical/agents/discovery-*/README.md` (post-work-002 path) | Medium | Pending |
+| R12 | Q30 | Standardize state-file naming (FR2 area-STATE rule — coding-standards.md §8.5) | Trivial | Done (FR2) |
+| R13 | Q32 | Lift state-file templates from install trees to canonical/templates/ | Small | Done via KB-F1 (6 orphans lifted 2026-05-23) |
+| R14 | Q33 | Define closed Status enum in new `canonical/templates/CONVENTIONS.md` | Small | Pending |
+| R15 | Q34, Q72 | Update CONTRIBUTING.md to reflect canonical-generator workflow (supersedes manual quadruplication) | Trivial | Pending |
+| R16 | Q50-Q51, Q81-Q82 | Document install-template lifecycle; align install templates to Cursor shape | Trivial | Pending — covers L4 |
+| R17 | Q52 | Audit `canonical/agents/*` for `Terminal` (Cursor canonical name); re-run generator | Trivial | Pending — covers M6 |
+| R20 | Q70 | Add `copy_dir profiles/codex/.agents` to setup.sh + setup.ps1 | Trivial | **RETIRED 2026-05-22** — both installers fixed |
+| R21 | Q74 | Add CODEOWNERS gating `permissionMode: bypassPermissions` changes | Trivial | Pending |
+| R22 | Q75 | Add `tools/redact-kb.{sh,py}` masking adopter identifiers | Small | Deferred to v3.1 |
+| R23 | Q79 | Add `setup.sh --dry-run` + `--prune` | Small | Pending |
+| R24 | Q80 | Document URL trust assumption in `external-sources.md` | Trivial | Pending |
+| R25 | Q100 | Extend `build-project-index.sh` to emit a `## Canonical Counts` section | Small | Pending |
+| R26 | Q101 | Add post-cycle reconcile pass in discovery-reviewer | Trivial | Pending |
+| R27 | Q103 | Add `[INFO]` to `canonical/templates/grading-rubric.md` as sixth non-counted severity | Trivial | Pending |
+| R28 | Q104 | Extend Review History rows with `Docs Modified` column | Trivial | Pending |
+| R29 | Q105 | Author `verify-kb-claims.sh` | Small | **Done 2026-05-21** — at `canonical/templates/scripts/verify-kb-claims.sh` |
+| R30 | Q190 (new cycle-11) | Lift 6 orphan templates to canonical/ + add VERIFY-4c orphan-detection check to run_generator.py | Small | KB-F1 done (lift); VERIFY-4c pending (covers H5) |
+| R31 | Q191 (new cycle-11) | Add `-h|--help` + GRADE regex to writeback-state.sh + audit siblings + document convention for new scripts | Trivial | KB-F2 done (script); convention rule pending (covers L8) |
+| R32 | Q192 (new cycle-11) | Document host harness skill-loading cache in infrastructure.md §3.1.1 | Trivial | Done 2026-05-23 (infrastructure.md cycle-11 FIX) |
 
-## Recommendations (Priority Order — updated 2026-05-21)
+## Recommendations (Priority Order — updated 2026-05-23)
 
-1. ~~**Fix `setup.sh` Codex `.agents/` omission (H6 / R20)**~~ — **RETIRED 2026-05-22**. `setup.sh` + `setup.ps1` now copy `.agents/` in the Codex branch. Live smoke test confirmed 10 SKILL.md files present.
-2. **Add CI (H2 / R4)**. One workflow that runs shellcheck, validates frontmatter, runs triplication-drift check, runs install smoke tests, runs dogfood discovery. Single highest-leverage change.
-3. **Fix `CONTRIBUTING.md` (H5 / R15)**. Quadruplicate rule + correct paths + Cursor.
-4. **Author propagation script + drift checker (H3 / R3)**.
-5. **Refactor to single source of truth (H4)**: convert `setup.sh` to copy from `templates/` only.
-6. **Create missing Monitor templates (H7 / R5 from Q8)**.
-7. **Add `VERSION` file + tag releases (R1)** — trivial, high-value for adopters.
-8. **Fix `developer.toml` hardcoded Maven path (M3)**.
-9. **Audit Cursor agents for `Terminal`/`Bash` consistency (M6 / R17)**.
-10. **Delete tombstones (L1 / R5)** — `aid-correct/` (the `correction-template.md` tombstone, L2, was already deleted in the methodology cleanup).
+1. **Add CI (H2 / R4)**. One workflow that runs shellcheck, validates frontmatter, runs canonical-vs-output parity (`python run_generator.py && git diff --exit-code profiles/`), runs install smoke tests, runs dogfood discovery. Single highest-leverage change.
+2. **Add VERIFY-4c orphan-detection to run_generator.py (H5 / R30)**. Closes the gap that Q190 surfaced. ≤4 h.
+3. **Fix CONTRIBUTING.md (R15)**. Replace pre-canonical-generator quadruplication rule with canonical-edit + generator workflow. Add the defensive-args convention (L8 / R31).
+4. **Create missing Monitor templates (H7 / R5 from Q8)**. Resolve via canonical/ + generator.
+5. **Add VERSION file + tag releases (R1)** — trivial, high-value for adopters.
+6. **Fix `developer.toml` hardcoded Maven path (M3)**. Canonical edit + regenerate.
+7. **Audit Cursor agents for `Terminal`/`Bash` consistency (M6 / R17)**. Canonical edit + regenerate.
+8. **Add a linter pass (H3)** as part of the CI workflow above (shellcheck + markdownlint at minimum).

@@ -2,8 +2,8 @@
 
 > **Source:** aid-discover (discovery-quality)
 > **Status:** Populated (initial dogfood pass)
-> **Last Updated:** 2026-05-21
-> **Cross-references:** `external-sources.md` (vendor tool docs + local cross-reference), `project-structure.md:34-35` (this repo's own settings)
+> **Last Updated:** 2026-05-23 (LOW: stale path refs FIX cycle 11)
+> **Cross-references:** `external-sources.md` (vendor tool docs + local cross-reference), `project-structure.md:34-35` (this repo's own settings), `infrastructure.md` (canonical/ + run_generator.py trust chain). Paths cited in this doc may live in `canonical/agents/`, `canonical/skills/` (canonical authority post work-002) or `profiles/{claude-code,codex,cursor}/` (generator output).
 
 ## Framing
 
@@ -108,7 +108,7 @@ But the pattern is dangerous in principle: any future contributor who adds an `a
 - **Codex:** `profiles/codex/.codex/agents/operator.toml` — `model = "gpt-5.4"`, `model_reasoning_effort = "medium"`.
 - **Cursor:** `profiles/cursor/.cursor/agents/operator.md` — identical to Claude Code.
 
-`agents/operator/README.md:9` (and its echoes in the three install trees) explicitly says the Operator is *"the only agent that executes actions with external consequences — deployment, PR creation, release management, KB updates."* `operator.md:23-28` enumerates the constraints:
+`canonical/agents/operator/README.md:9` (and its echoes in the three install trees) explicitly says the Operator is *"the only agent that executes actions with external consequences — deployment, PR creation, release management, KB updates."* `operator.md:23-28` enumerates the constraints:
 - "Verify before acting. Run the full test suite before creating a PR. Always."
 - "Safety-first. If anything is uncertain, stop and ask. Never \"just try\" with production."
 - "Write only delivery artifacts. Delivery summaries, KB amendments. Never production source code."
@@ -145,10 +145,10 @@ background: true
 
 `discovery-reviewer` is the most-cited example in this section because it has the broadest scope (reads every KB doc, writes back grades + Issues). The other 5 discovery sub-agents are similarly elevated but tool-narrower (each produces a focused subset of KB docs).
 
-What it does (from the same file, lines 13-19): reads every doc in `.aid/knowledge/`, cross-references claims against source code via `Grep`/`Glob`/`Read`, writes `DISCOVERY-STATE.md`, and appends new questions to the `## Q&A` section of `DISCOVERY-STATE.md` itself (per the Q102 consolidation; the agent-prompt files still reference a separate `additional-info.md` — see Q115 / R12 for the pending cleanup of those out-of-KB agent files).
+What it does (from the same file, lines 13-19): reads every doc in `.aid/knowledge/`, cross-references claims against source code via `Grep`/`Glob`/`Read`, writes the Discovery area `STATE.md` (per FR2 — formerly `DISCOVERY-STATE.md`), and appends new questions to the `## Q&A` section of `STATE.md` itself (per the Q102 consolidation; the agent-prompt files still reference a separate `additional-info.md` — see Q115 / R12 for the pending cleanup of those out-of-KB agent files).
 
 **Scope analysis:**
-- The `tools` allow-list does **not** include `Edit` — it can only `Write` new files (or overwrite ones it owns: `DISCOVERY-STATE.md` for grades + Issues + Q&A appends; older agent-prompt files reference a separate `additional-info.md` that has been consolidated into `DISCOVERY-STATE.md ## Q&A` per Q102 / Q115, tracked by R12).
+- The `tools` allow-list does **not** include `Edit` — it can only `Write` new files (or overwrite ones it owns: Discovery `STATE.md` for grades + Issues + Q&A appends; older agent-prompt files reference a separate `additional-info.md` that has been consolidated into `STATE.md ## Q&A` per Q102 / Q115, tracked by R12).
 - All file writes are confined to `.aid/knowledge/`.
 - `Bash` is used for grep over the user's source tree (read-only by intent).
 
@@ -156,7 +156,7 @@ What it does (from the same file, lines 13-19): reads every doc in `.aid/knowled
 
 [HIGH] **`discovery-reviewer` runs with `permissionMode: bypassPermissions` + `background: true`.** This is a deliberate, documented elevation — but it places high trust in the prompt staying scope-bounded. There is no automated check that the prompt does not gain destructive instructions in a future PR.
 
-[MEDIUM] **The same agent has the documented authority to append to the `## Q&A` section of `.aid/knowledge/DISCOVERY-STATE.md`** (post-Q102 consolidation; agent-prompt files still reference the older separate `additional-info.md` file at lines 28-43, tracked by R12 cleanup). This is *correct* behavior for the methodology, but it does mean a background process can silently modify a tracked KB file while the user is away. The `Edit` tool is not granted — only `Write` — so the agent cannot make targeted edits inside other KB documents (the append happens via a full-file rewrite preserving prior content).
+[MEDIUM] **The same agent has the documented authority to append to the `## Q&A` section of `.aid/knowledge/STATE.md` (Discovery area, per FR2)** (post-Q102 consolidation; agent-prompt files still reference the older separate `additional-info.md` file at lines 28-43, tracked by R12 cleanup). This is *correct* behavior for the methodology, but it does mean a background process can silently modify a tracked KB file while the user is away. The `Edit` tool is not granted — only `Write` — so the agent cannot make targeted edits inside other KB documents (the append happens via a full-file rewrite preserving prior content).
 
 ## 3. Secrets Management
 
@@ -165,12 +165,12 @@ What it does (from the same file, lines 13-19): reads every doc in `.aid/knowled
 | Pattern | Files matched (raw count) | Notes |
 |---------|---------------------------|-------|
 | `.env`, `.env.*` | 0 | No `.env` files anywhere |
-| `api[_-]?key|secret|password|token|bearer` (case-insensitive) | 97 files | All matches are *documentation, template guidance, or KB-template prompts* asking discovery to investigate secrets management in the user's project — not actual secrets. Spot-checked 8 random hits across `methodology/`, `templates/knowledge-base/`, agent files, and skill files. Zero hardcoded secrets found. |
+| `api[_-]?key|secret|password|token|bearer` (case-insensitive) | 97 files | All matches are *documentation, template guidance, or KB-template prompts* asking discovery to investigate secrets management in the user's project — not actual secrets. Spot-checked 8 random hits across `methodology/`, `canonical/templates/knowledge-base/`, agent files, and skill files. Zero hardcoded secrets found. |
 | Private SSH/PGP keys | 0 | No `*.pem`, `*.key`, `*.pfx`, `id_rsa*` in tree |
 
 [INFO] **No secrets are committed to this repository.** Confirmed by targeted `Grep` and spot-checks.
 
-[INFO] **Secrets-management posture for the user is encouraged via agent prompts.** The `devops` agent prompt at `profiles/claude-code/.claude/agents/devops.md:26` says "No secrets in code. Use secret management. Follow least-privilege for CI/CD." The `security` agent prompt at `agents/security/README.md` and `profiles/claude-code/.claude/agents/security.md` enumerates OWASP-adjacent threats.
+[INFO] **Secrets-management posture for the user is encouraged via agent prompts.** The `devops` agent prompt at `profiles/claude-code/.claude/agents/devops.md:26` says "No secrets in code. Use secret management. Follow least-privilege for CI/CD." The `security` agent prompt at `canonical/agents/security/README.md` and `profiles/claude-code/.claude/agents/security.md` enumerates OWASP-adjacent threats.
 
 ## 4. Sample Anonymization in `examples/`
 
@@ -199,7 +199,7 @@ The installation flow is:
 1. User runs `git clone https://github.com/AndreVianna/aid-methodology` (URL per `README.md:267` and `profiles/codex/AGENTS.md:24`).
 2. User runs `bash setup.sh /path/to/project` (or `setup.ps1`).
 3. `setup.sh` (`setup.sh:135-153`) copies one or more install trees into the target project.
-4. User invokes a skill (e.g., `/aid-init`, `/aid-discover`); the skill SKILL.md instructs the host AI to run scripts inside the installed tree (e.g., `templates/scripts/build-project-index.sh`).
+4. User invokes a skill (e.g., `/aid-init`, `/aid-discover`); the skill SKILL.md instructs the host AI to run scripts inside the installed tree (e.g., `canonical/templates/scripts/build-project-index.sh`).
 
 **Trust chain analysis:**
 
@@ -270,7 +270,7 @@ This is verified in this repo: `.gitignore` (at repo root) contains exactly one 
 
 This repo does not have an attack surface in the conventional OWASP sense (no web app, no API, no auth). But it *teaches* the AID methodology, which downstream produces:
 - A `security` agent (`profiles/claude-code/.claude/agents/security.md`, `profiles/cursor/.cursor/agents/security.md`, `profiles/codex/.codex/agents/security.toml`).
-- A KB template at `templates/knowledge-base/security-model.md` (117 lines).
+- A KB template at `canonical/templates/knowledge-base/security-model.md` (117 lines).
 - A `discovery-quality` sub-agent that has produced *this very document* for the user.
 
 The methodology's posture is: every user project should run security analysis via the dedicated `security` agent at the `Review` and `Discover` phases. The agent is `model: opus` (`security.md:5`) — the highest tier — reflecting the foundational/judgment-heavy nature of security work.
@@ -300,6 +300,6 @@ Recounted from line-start `[SEVERITY]` tags 2026-05-21 via `bash templates/scrip
 
 ## Open Questions Forwarded
 
-All open questions discovery-quality has raised about security have been appended to the `## Q&A` section of `.aid/knowledge/DISCOVERY-STATE.md` (IDs Q70 onward) — the historical `additional-info.md` consolidation is documented at DISCOVERY-STATE Q102 / Q115.
+All open questions discovery-quality has raised about security have been appended to the `## Q&A` section of `.aid/knowledge/STATE.md` (Discovery area, per FR2 — formerly `DISCOVERY-STATE.md`) (IDs Q70 onward) — the historical `additional-info.md` consolidation is documented at DISCOVERY-STATE Q102 / Q115.
 
 WARNING: This is a static-analysis security assessment. Dynamic testing (running the skills against a controlled target, fuzzing the installer, attempting prompt-injection on the discovery-reviewer agent) is required before any high-assurance claim. None of that has been performed.
