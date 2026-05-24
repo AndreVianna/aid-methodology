@@ -115,6 +115,45 @@ Must
 
 ---
 
+## Alignment Update — 2026-05-24 (post-/aid-detail)
+
+> **A second precision issue surfaced at /aid-detail time:** the §Data Model
+> "Refactored skill — canonical structure" subsection assumes every skill
+> uses `## Mode: NAME` H2 blocks as its per-state body convention. **Only 1
+> of 10 skills (`aid-summarize`) actually uses this convention.** The reality:
+>
+> | Convention | Skills using it |
+> |---|---|
+> | `## Mode: NAME` | aid-summarize, aid-discover (mode-keyed with `## Step:` substructure) |
+> | `## State N: NAME` | aid-interview, aid-specify |
+> | `## Step N: TITLE` | aid-init, aid-deploy, aid-monitor, aid-execute |
+> | Section-keyed (no per-state blocks) | aid-plan, aid-detail |
+>
+> The thin-router refactor (M1) **still applies** — every skill's body lifts
+> into `references/*.md` files loaded on demand — but the **per-state block
+> convention is per-skill, not uniform**. The body's `## Mode:` framing is a
+> *Mode-keyed example*; the refactor recipe **generalizes** to whatever
+> convention the source skill uses:
+>
+> - **Mode-keyed skills:** extract per-`## Mode:` body → `references/state-{mode-lower}.md`
+> - **State-keyed skills:** extract per-`## State N:` body → `references/state-{state-name-slug}.md`
+> - **Step-keyed skills:** extract per-`## Step N:` body → `references/step-{N}-{slug}.md` (or fold into a single procedural reference if the steps are tightly linear)
+> - **Section-keyed skills (aid-plan, aid-detail):** no per-state blocks exist; refactor splits the body *thematically* into `references/{theme}.md` files (e.g., `references/dependency-mapping.md`, `references/parallel-grouping.md`); the dispatch table's rows become section anchors rather than state names
+>
+> **The thin-router invariant holds across all 4 patterns:** SKILL.md =
+> frontmatter + pre-flight + state detection + dispatch table; per-state /
+> per-section heavy detail lives in `references/`.
+>
+> **Dispatch table — `Detail` column** (was `Reference` in some downstream
+> task drafts): per the §Data Model "Dispatch table" anatomy, the column
+> name is **`Detail`** — the path to the per-state `references/*.md` file
+> to load. /aid-detail tasks should use `Detail`.
+>
+> /aid-detail tasks 001-010 carry per-skill convention notes in their Scope
+> bullets per this alignment update.
+
+---
+
 ## Technical Specification
 
 > **Read the Alignment Update above first** — it supersedes parts of the body sections below.
