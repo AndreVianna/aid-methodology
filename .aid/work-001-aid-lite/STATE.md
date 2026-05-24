@@ -51,7 +51,7 @@ See `PLAN.md` for full details, IQ resolutions, and cross-cutting risks.
 
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|
-| 001 | `task-001` | REFACTOR | W0 | In Review | C1 | 7m14s | Refactor aid-deploy to thin-router. Commit 22381aa. SKILL.md 360→201; 4 refs (idle/selecting/verifying/packaging). All 3 install trees re-rendered byte-identical. Generator VERIFY-4a PASS. |
+| 001 | `task-001` | REFACTOR | W0 | **Done ✅** | C2 A+ | 7m14s + 3m47s | Refactor aid-deploy to thin-router. Commits 22381aa (refactor) + b8b87e8 (cycle-1 fix-pass: RE-RUN header restored, state-idle heading normalized, state-packaging opener trimmed, State Detection parentheticals updated). SKILL.md 360→201; 4 refs (idle/selecting/verifying/packaging). All 3 install trees byte-identical. C1=B (2 LOW + 2 MINOR, all CODE, all fixed). C2=A+ (0 issues). Generator VERIFY-4a PASS both cycles. |
 | 002 | `task-002` | REFACTOR | W0 | Pending | — | — | Refactor aid-monitor to thin-router (smallest) |
 | 003 | `task-003` | REFACTOR | W0 | Pending | — | — | Refactor aid-summarize to thin-router (small-mid) |
 | 004 | `task-004` | REFACTOR | W0 | Pending | — | — | Refactor aid-init to thin-router (mid; leaves MaxConcurrent Q hook for d-005) |
