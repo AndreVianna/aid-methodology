@@ -115,5 +115,5 @@ For the DONE state, print the summary and halt — no next-state line.
 - [ ] STATE.md (`.aid/knowledge/STATE.md`) has correct minimum grade and project type
 - [ ] External paths (if any) verified accessible and recorded
 - [ ] {project_context_file} has workspace reference and AID placeholders (created or appended)
-- [ ] `.gitignore` matches the Q7 choice (`.aid/` entry present only if the user chose [2], local-only); `.aid/.heartbeat/` entry present REGARDLESS of Q7 choice
+- [ ] `.gitignore` matches the Q8 choice (`.aid/` entry present only if the user chose [2], local-only); `.aid/.heartbeat/` entry present REGARDLESS of Q8 choice
 - [ ] No files outside .aid/, {project_context_file}, .gitignore were modified
