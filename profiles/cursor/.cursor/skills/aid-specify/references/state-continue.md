@@ -1,9 +1,6 @@
 # State: CONTINUE
 
-Work STATE.md `## Features Status` shows this feature `In Discussion`; resume The Loop for the next pending section.
-
-Work STATE.md `## Features Status` shows this feature `In Discussion`. Find first `Pending` or `In Discussion` section in SPEC.md.
-Resume **The Loop** for that section.
+Work STATE.md `## Features Status` shows this feature `In Discussion`; find first `Pending` or `In Discussion` section in SPEC.md and resume **The Loop** for that section.
 
 ---
 

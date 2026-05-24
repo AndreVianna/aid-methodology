@@ -70,7 +70,8 @@ Inspect the `.aid/` directory after pre-flight:
 - `.aid/knowledge/` exists but fewer than 16 KB document templates present → **SCAFFOLD**
 - All 16 KB templates exist but `README.md`, `INDEX.md`, or `STATE.md` missing from `.aid/knowledge/` → **META-DOCS**
 - All meta-documents exist but `AGENTS.md` has no `<!-- AID-DISCOVER -->` placeholders and no AID Workspace section → **SETUP**
-- All of the above complete → **DONE**
+- All of the above complete but `.aid/templates/knowledge-summary/` does not exist → **SETUP** (step-4b knowledge-summary template install did not run)
+- All of the above complete, including `.aid/templates/knowledge-summary/` present → **DONE**
 
 Print the state-entry line:
 

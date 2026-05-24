@@ -100,6 +100,17 @@ aid-monitor  ▸ you are here
   [✓ OBSERVE ] → [✓ CLASSIFY ] → [✓ ROUTE ] → [● DONE ]
 ```
 
+## Severity Thresholds
+
+| Signal | Threshold | Classification |
+|--------|-----------|----------------|
+| New error type | Any | Finding |
+| Error rate increase | >200% baseline | Finding |
+| Performance degradation | >50% latency | Finding |
+| Persistent test failure | Any new | Finding |
+| Support ticket cluster | 3+ same issue | Finding |
+| Below all thresholds | — | Clean report, no findings |
+
 ## Inputs
 
 **From the project (what to observe):**

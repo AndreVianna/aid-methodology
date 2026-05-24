@@ -32,7 +32,7 @@ Re-run `grade.sh` — it reads `.manual-checklist.json`, computes the Human Grad
 
 - Overall Grade ≥ minimum → APPROVAL.
 - **V1 failed → mandatory: Human Grade is forced to F.** Go to FIX; the visual defect must be fixed and V1 re-confirmed before APPROVAL.
-- Overall Grade < minimum → FIX. **If the shortfall is in MANUAL_POOL** (K1/K2 partial-or-no, or V1 fail) or the free-text notes flagged something, FIX uses the **expose → propose → ask** loop (see Mode: FIX, "Human-pool / subjective failures") — never silent guess-fixing.
+- Overall Grade < minimum → FIX. **If the shortfall is in MANUAL_POOL** (K1/K2 partial-or-no, or V1 fail) or the free-text notes flagged something, FIX uses the **expose → propose → ask** loop (see `references/state-fix.md`) — never silent guess-fixing.
 
 Print: `[State: MANUAL-CHECKLIST] complete.`
 

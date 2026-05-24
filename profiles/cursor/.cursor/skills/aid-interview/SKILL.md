@@ -159,49 +159,49 @@ Print the state-entry line and "you are here" map. Examples for each state:
 ```
 [State: FIRST-RUN] — Start a new interview from scratch; create STATE.md and REQUIREMENTS.md scaffold.
 aid-interview  ▸ you are here
-  [● FIRST-RUN ] → [ Q&A ] → [ CONTINUE ] → [ COMPLETION ] → [ FEATURES ] → [ CROSS-REF ] → [ DONE ]
+  [● FIRST-RUN ] → [ Q-AND-A ] → [ CONTINUE ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
 ```
 
 **Q-AND-A:**
 ```
 [State: Q-AND-A] — Resolve pending cross-phase questions before continuing.
 aid-interview  ▸ you are here
-  [✓ FIRST-RUN ] → [● Q&A ] → [ CONTINUE ] → [ COMPLETION ] → [ FEATURES ] → [ CROSS-REF ] → [ DONE ]
+  [✓ FIRST-RUN ] → [● Q-AND-A ] → [ CONTINUE ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
 ```
 
 **CONTINUE:**
 ```
 [State: CONTINUE] — Resume the conversational interview for incomplete sections.
 aid-interview  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ Q&A ] → [● CONTINUE ] → [ COMPLETION ] → [ FEATURES ] → [ CROSS-REF ] → [ DONE ]
+  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [● CONTINUE ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
 ```
 
 **COMPLETION:**
 ```
 [State: COMPLETION] — All sections captured; run KB hydration and present requirements for approval.
 aid-interview  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ Q&A ] → [✓ CONTINUE ] → [● COMPLETION ] → [ FEATURES ] → [ CROSS-REF ] → [ DONE ]
+  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ CONTINUE ] → [● COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
 ```
 
 **FEATURE-DECOMPOSITION:**
 ```
 [State: FEATURE-DECOMPOSITION] — Decompose approved requirements into discrete feature folders.
 aid-interview  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ Q&A ] → [✓ CONTINUE ] → [✓ COMPLETION ] → [● FEATURES ] → [ CROSS-REF ] → [ DONE ]
+  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ CONTINUE ] → [✓ COMPLETION ] → [● FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
 ```
 
 **CROSS-REFERENCE:**
 ```
 [State: CROSS-REFERENCE] — Validate REQUIREMENTS.md against KB and codebase; create Q&A for gaps.
 aid-interview  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ Q&A ] → [✓ CONTINUE ] → [✓ COMPLETION ] → [✓ FEATURES ] → [● CROSS-REF ] → [ DONE ]
+  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ CONTINUE ] → [✓ COMPLETION ] → [✓ FEATURE-DECOMPOSITION ] → [● CROSS-REFERENCE ] → [ DONE ]
 ```
 
 **DONE:**
 ```
 [State: DONE] — Interview complete, approved, decomposed, and cross-referenced.
 aid-interview  ▸ you are here
-  [✓ FIRST-RUN ] → [✓ Q&A ] → [✓ CONTINUE ] → [✓ COMPLETION ] → [✓ FEATURES ] → [✓ CROSS-REF ] → [● DONE ]
+  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ CONTINUE ] → [✓ COMPLETION ] → [✓ FEATURE-DECOMPOSITION ] → [✓ CROSS-REFERENCE ] → [● DONE ]
 ```
 
 ---

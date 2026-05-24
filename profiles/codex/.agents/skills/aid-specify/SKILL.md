@@ -5,7 +5,7 @@ description: >
   The agent acts as a tech lead — reads KB, Requirements, and codebase, proposes
   technical solutions, and builds the spec collaboratively with the developer.
   Writes to SPEC.md in the feature folder.
-  State machine: INITIALIZE → CONTINUE → REVIEW → DONE (SPIKE / BLOCKED are loopback states).
+  State machine: INITIALIZE → CONTINUE → REVIEW → DONE (SPIKE / BLOCKED are loopback states that return to CONTINUE).
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 argument-hint: "work-001/feature-001 (required)  [--reset] clear technical spec for this feature"
 ---
@@ -102,7 +102,7 @@ All paths relative to `.aid/{work}/features/{feature}/`.
 ```
 State 1: No Feature STATUS row in work STATE.md              → INITIALIZE
 State 2: Feature STATUS: In Discussion                        → CONTINUE
-State 3: Feature STATUS: Spike Needed                         → SPIKE INFO
+State 3: Feature STATUS: Spike Needed                         → SPIKE
 State 4: Feature STATUS: Blocked (loopback pending)           → BLOCKED
 State 5: Feature STATUS: Ready                                → REVIEW (enter loop at step 4)
 ```
@@ -134,6 +134,20 @@ For DONE (Ready):
 [State: DONE] — Spec is Ready and has met the minimum grade.
 aid-specify ({feature})  ▸ you are here
   [✓ INITIALIZE ] → [✓ CONTINUE ] → [✓ REVIEW ] → [● DONE ]
+```
+
+**SPIKE:**
+```
+[State: SPIKE] — Feature has unknowns requiring investigation; spike work needed.
+aid-specify ({feature})  ▸ you are here
+  [✓ INITIALIZE ] → [ CONTINUE ] → [● SPIKE ] → [ REVIEW ] → [ DONE ]
+```
+
+**BLOCKED:**
+```
+[State: BLOCKED] — Feature has a pending loopback that must be resolved before continuing.
+aid-specify ({feature})  ▸ you are here
+  [✓ INITIALIZE ] → [ CONTINUE ] → [● BLOCKED ] → [ REVIEW ] → [ DONE ]
 ```
 
 ---

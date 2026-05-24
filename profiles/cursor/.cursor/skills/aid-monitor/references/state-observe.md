@@ -2,7 +2,7 @@
 
 No prior run context; pull telemetry signals and correlate against baselines.
 
-## Step 1: Observe
+### Step 1: Observe
 
 Pull data from configured sources. Scope the observation window:
 - **Post-deploy:** last deploy → now

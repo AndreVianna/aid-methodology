@@ -40,15 +40,6 @@ Root cause = one sentence:
 which spec says must default to USD."
 ✓ root cause analysis done (record actual time, root cause, patch scope) — or ✗ root cause analysis blocked: {reason — usually KB gap or unreproducible}
 
-## Severity Thresholds
-
-| Signal | Threshold | Classification |
-|--------|-----------|----------------|
-| New error type | Any | Finding |
-| Error rate increase | >200% baseline | Finding |
-| Performance degradation | >50% latency | Finding |
-| Persistent test failure | Any new | Finding |
-| Support ticket cluster | 3+ same issue | Finding |
-| Below all thresholds | — | Clean report, no findings |
+For threshold definitions, see `## Severity Thresholds` in SKILL.md.
 
 **Advance:** Next state is `ROUTE` — when this state's work completes, router prints `Next: [State: ROUTE] — run /aid-monitor again` and exits.
