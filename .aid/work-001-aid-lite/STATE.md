@@ -1,7 +1,7 @@
 # Work State — work-001-aid-lite
 
-> **Status:** Specifying complete — all 5 features at A+; ready for /aid-plan (2 IQs open for resolution at planning)
-> **Phase:** Specify
+> **Status:** Planning complete ✅ — 5 deliveries sequenced in PLAN.md; all 3 IQs resolved at plan time; ready for /aid-detail
+> **Phase:** Detail (next)
 > **Minimum Grade:** A+ *(was A; updated 2026-05-24 to track project STATE.md minimum)*
 > **Started:** 2026-05-22
 > **User Approved:** yes (Interview)
@@ -37,9 +37,15 @@ This is the single state file for `work-001-aid-lite` — speed-focused AID-Lite
 
 ## Plan / Deliveries
 
-| Delivery | Status | Tasks | Notes |
-|----------|--------|-------|-------|
-| _none yet_ | — | — | `/aid-plan` not yet run for this work |
+| Delivery | Features | Status | Tasks | Notes |
+|----------|----------|--------|-------|-------|
+| delivery-001 | feature-002 | Planned | — | Skill Footprint Refactor (foundation; Must). All 10 skills → thin-router. |
+| delivery-002 | feature-005 | Planned | — | Lite Path with Type-Aware Routing (Must; pain-point #1). Depends on delivery-001. |
+| delivery-003 | feature-004 | Planned | — | Two-Tier Review (Must; pain-point #2). Depends on delivery-001. Implements `writeback-task-status.sh` helper (IQ7). |
+| delivery-004 | feature-011 | Planned | — | Recipes Catalog (Should). Depends on delivery-002 (workType signal) + work-002 back-port (IQ8 sub-step). |
+| delivery-005 | feature-009 | Planned | — | Parallel Pool Execution (Should). Depends on delivery-001 + delivery-003. Uses Agent tool wait-for-any (IQ6) + writeback-task-status.sh helper. |
+
+See `PLAN.md` for full details, IQ resolutions, and cross-cutting risks.
 
 ## Tasks Status
 
@@ -53,9 +59,11 @@ This is the single state file for `work-001-aid-lite` — speed-focused AID-Lite
 |----------|-------|----|-----------|----|----|
 | _none yet_ | — | — | — | — | — |
 
-## Cross-phase Q&A (Pending — 3 open)
+## Cross-phase Q&A (Pending — 0 open) ✅
 
-### IQ6: [Host Capability — feature-009 pool model: Medium]
+*(all 3 IQs resolved at /aid-plan 2026-05-24; see PLAN.md § IQ Resolutions for resolution details. Historical entries moved to Resolved Q&A below.)*
+
+### IQ6 (Resolved at /aid-plan 2026-05-24): [Host Capability — feature-009 pool model: Medium]
 
 **Question:** Does the host's **Task-tool** sub-agent dispatch surface support a
 **wait-for-any-of-N completion** semantic (i.e., dispatch N concurrent Task-tool
@@ -97,7 +105,7 @@ a guess; the host-tool surface needs to be checked.
 
 ---
 
-### IQ7: [Implementation Coordination — FR2 × FR6 row-level write coordination: Medium]
+### IQ7 (Resolved at /aid-plan 2026-05-24): [Implementation Coordination — FR2 × FR6 row-level write coordination: Medium]
 
 **Question:** Under FR6 pool execution (feature-009) + FR2 two-tier review
 (feature-004) + per-area STATE rule (work-003 FR2), N parallel tasks write
@@ -127,7 +135,7 @@ deferred to /aid-plan or early /aid-detail.
 
 ---
 
-### IQ8: [Cross-work Coordination — work-002 backport for FR8 recipes: Low]
+### IQ8 (Resolved at /aid-plan 2026-05-24): [Cross-work Coordination — work-002 backport for FR8 recipes: Low]
 
 **Question:** Adding `canonical/recipes/` (feature-011) requires a back-port
 against work-002's shipped `feature-001-profile-driven-generator`: a new
