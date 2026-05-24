@@ -80,7 +80,7 @@
 {"dst": ".agents/templates/package.md", "profile": "codex", "sha256": "d8bbbe4e1daa2cc548d3c0c544525ad3a7f827e568b94a3f815798973ce63044", "src": "canonical/templates/package.md"}
 {"dst": ".agents/templates/requirements.md", "profile": "codex", "sha256": "c2b5e54c627a81c3edd71273d80eba157853e4a3128512792cf0f478f68909c3", "src": "canonical/templates/requirements.md"}
 {"dst": ".agents/templates/requirements/requirements-template.md", "profile": "codex", "sha256": "1a1ae36c8342e45c94edcf87b9b2263ff706e2e8866193e31fd07b4004343ce1", "src": "canonical/templates/requirements/requirements-template.md"}
-{"dst": ".agents/templates/rough-time-hints.md", "profile": "codex", "sha256": "c1f2ed3102b37ebc20b48931be5c3cf7b38e0bf2f8642b5a913b0e357a99e75d", "src": "canonical/templates/rough-time-hints.md"}
+{"dst": ".agents/templates/rough-time-hints.md", "profile": "codex", "sha256": "5e540b999ffcd15f002ecffe3e8069bf1daa1ff5d9e7d3b4efd0231fbfb8e97f", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".agents/templates/scripts/build-project-index.sh", "profile": "codex", "sha256": "3bd1c60e8275c2a2043a7e4a3fd6975fb011cb87141585de441716782e15ce0f", "src": "canonical/templates/scripts/build-project-index.sh"}
 {"dst": ".agents/templates/scripts/grade.sh", "profile": "codex", "sha256": "6155b1f2fae1ff85c1b6c083deb830305c231cd0f9ce9cbe983b3b3001edf3a3", "src": "canonical/templates/scripts/grade.sh"}
 {"dst": ".agents/templates/scripts/verify-kb-claims.sh", "profile": "codex", "sha256": "d65e3d334e1c2c83392b35623b2744496efe1a001f7954758fa13b3bc928f6b4", "src": "canonical/templates/scripts/verify-kb-claims.sh"}
