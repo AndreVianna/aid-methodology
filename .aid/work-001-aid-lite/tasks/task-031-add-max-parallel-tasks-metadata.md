@@ -8,6 +8,7 @@
 
 **Scope:**
 - Add `**Max Parallel Tasks:** N` metadata line to `canonical/templates/discovery-state-template.md` top-of-file metadata block (same shape as `**Heartbeat Interval:**`).
+- **Template → instance mapping:** `discovery-state-template.md` is the canonical template that renders to `.aid/knowledge/STATE.md` (the Discovery-area STATE.md per work-003 FR2 area-STATE rule). Adding the metadata line in the template + the existing instance keeps the schema consistent for fresh `/aid-init` runs and for the current project.
 - Add the same line to existing project `.aid/knowledge/STATE.md` with default value `5`.
 - Generator re-renders the template into install trees.
 

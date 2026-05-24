@@ -12,7 +12,7 @@
 - Step 1 (REVIEW): dispatch a proportional-tier reviewer (tier computed from delivery complexity score — number of tasks, code surface, integration count).
 - Step 2 (FIX): apply review fixes; run review→fix→review loop.
 - Step 3 (GRADE): invoke `grade.sh` on the aggregated severity-tagged issue list; compare to project minimum grade.
-- Step 4 (WRITE): write final grade + issue list to `## Delivery Gates` block in work `STATE.md` via `writeback-task-status.sh --delivery-id NNN --block ...`.
+- Step 4 (WRITE): write final grade + issue list to `## Delivery Gates` block in work `STATE.md` via `writeback-task-status.sh --delivery-id NNN --block ...` (note: despite the helper's name implying task-only scope, the helper is general per task-019 — it handles row updates, quick-check findings, delivery gate blocks, AND deferred-issue file appends via different `--` arg modes).
 - Step 5 (HANDOFF): if grade >= minimum → delivery complete; else → loopback to fix.
 
 **Acceptance Criteria:**
