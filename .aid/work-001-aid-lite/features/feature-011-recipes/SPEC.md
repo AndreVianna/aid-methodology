@@ -277,7 +277,7 @@ begins.
    ```
    I have N recipes for this kind of work. Instantiate from one?
    [1] bug-fix — Fix: {{title}} (4 slots, 1 task)
-   [2] add-unit-test — Add unit test for {{class}}.{{method}} (3 slots, 1 task)
+   [2] add-unit-test — Add unit test for {{class}}.{{method}} (4 slots, 1 task)
    [3] No — use the standard lite-path interview
    ```
    If the user picks a recipe → step 4 (slot-fill). Otherwise → unchanged step
@@ -358,7 +358,13 @@ aid-interview just hasn't needed one before. The script:
 
 The orchestrator (the skill body) does the user-facing slot-fill loop, the slot
 substitution (`sed`-based or in-orchestrator string replace), and the file
-emission. The script is mechanical helper, not the substantive logic.
+emission. **After slot substitution, the orchestrator performs one final
+emit-time rewrite: any remaining `{!{` token in the body is replaced with
+literal `{{` (this realizes the escape contract declared in §Data Model:
+recipe authors who want literal `{{` in the rendered work-root `SPEC.md` /
+`task-NNN.md` write `{!{`, and this final rewrite step turns it back into
+`{{` at emit time).** The script is a mechanical helper, not the substantive
+logic.
 
 ### Migration Plan
 
@@ -374,12 +380,12 @@ flow). No backward-compatibility migration is required.
    Author `aid-interview`'s triage extension in the canonical SKILL.md.
    Author `parse-recipe.sh` per the §Layers "Recipe-parser implementation"
    contract.
-1a. **Author the meta-template.** Author
+2. **Author the meta-template.** Author
    `canonical/templates/recipe-template.md` (the meta-template recipe
    authors copy when creating a new recipe). This is its own deliverable
    since the meta-template itself is reviewable for clarity, slot-syntax
    examples, and YAML-schema documentation.
-2. **Generator back-port against shipped work-002.** work-002 has shipped, so
+3. **Generator back-port against shipped work-002.** work-002 has shipped, so
    the generator change required to render `canonical/recipes/` is a back-port,
    not in-progress coordination. File the back-port as a focused change
    against work-002's `feature-001-profile-driven-generator/SPEC.md`:
@@ -389,12 +395,12 @@ flow). No backward-compatibility migration is required.
    `recipes/`. This is the IQ8 noted in the Layers row above; raise it in
    work STATE.md `## Cross-phase Q&A` if the back-port shape is unclear
    before /aid-plan.
-3. **Smoke test.** Run `/aid-interview` against a sample small work; verify the
+4. **Smoke test.** Run `/aid-interview` against a sample small work; verify the
    recipe-offer step appears for matching `workType` values and the standard
    sub-path appears for non-matching ones; verify slot-fill produces a valid
    work-root `SPEC.md` + `tasks/`; verify `/aid-execute task-001` runs against
    the emitted output.
-4. **Catalog hygiene.** Add a `canonical/recipes/README.md` documenting the
+5. **Catalog hygiene.** Add a `canonical/recipes/README.md` documenting the
    catalog conventions, the slot syntax, the YAML schema, and how a project
    maintainer adds a new recipe. The README is itself a stable artifact —
    updated when the catalog conventions change, not per recipe.
