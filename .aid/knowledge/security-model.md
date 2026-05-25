@@ -48,7 +48,10 @@ Analysis:
 
 [INFO] **Permission allow-list is narrow and well-formed** in this repo's own settings.
 
-### 1.2 The `.claude/settings.json` (the historical double-dot typo file `.claude/settings..json` was removed; see `project-structure.md` Anomaly #2) Double-Dot File
+### 1.2 The `.claude/settings..json` Double-Dot File — **HISTORICAL (file removed 2026-05-25)**
+
+> **Status:** The double-dot file `.claude/settings..json` was removed from the repository. The analysis below is preserved as a record of the bug that previously existed. See `project-structure.md` Anomaly #2 for current state.
+
 
 `.claude/settings.json` (the historical double-dot typo file `.claude/settings..json` was removed; see `project-structure.md` Anomaly #2) exists alongside `.claude/settings.json` (see `project-structure.md` anomaly #2). Diffing (verified 2026-05-21):
 

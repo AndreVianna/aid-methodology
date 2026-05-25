@@ -206,7 +206,7 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `canonical/agents/discovery-integrator/README.md` | Markdown | 49 | 2026-05-23 |
 | `canonical/agents/discovery-quality/AGENT.md` | Markdown | 145 | 2026-05-23 |
 | `canonical/agents/discovery-quality/README.md` | Markdown | 48 | 2026-05-23 |
-| `canonical/agents/discovery-reviewer/AGENT.md` | Markdown | 381 | 2026-05-23 |
+| `canonical/agents/discovery-reviewer/AGENT.md` | Markdown | 405 | 2026-05-23 |
 | `canonical/agents/discovery-reviewer/README.md` | Markdown | 45 | 2026-05-23 |
 | `canonical/agents/discovery-scout/AGENT.md` | Markdown | 110 | 2026-05-23 |
 | `canonical/agents/discovery-scout/README.md` | Markdown | 40 | 2026-05-23 |

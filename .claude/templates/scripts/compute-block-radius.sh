@@ -103,6 +103,8 @@ done
 [[ -n "$PLAN_FILE" && -n "$GRAPH_FILE" ]] && die "specify only one of --plan-file or --graph-file" 4
 
 # Normalize failed task: accept NNN (digits) or task-NNN form
+# Defensive: strip surrounding whitespace and backticks (callers should pass clean form, but be safe)
+FAILED_TASK=$(echo "$FAILED_TASK" | tr -d ' \t`\r\n')
 if [[ "$FAILED_TASK" =~ ^task-([0-9]+)$ ]]; then
     FAILED_TASK_ID="${BASH_REMATCH[1]}"
 elif [[ "$FAILED_TASK" =~ ^([0-9]+)$ ]]; then
@@ -197,8 +199,13 @@ build_reverse_graph_from_plan() {
 # reverse_graph_tsv: file with lines "dependency TAB dependent"
 # ---------------------------------------------------------------------------
 bfs_block_radius() {
-    local failed_task="$1"    # task-NNN
+    local failed_task="$1"    # task-NNN (may have surrounding whitespace; normalized below)
     local rg_file="$2"        # TSV file: dep TAB dependent
+
+    # Defensive normalization: callers should already pass canonical task-NNN
+    # form (see FAILED_TASK_NORM at top of script), but bfs_block_radius is
+    # callable independently — strip whitespace + backticks to be safe.
+    failed_task=$(echo "$failed_task" | tr -d ' \t`')
 
     # Use awk to run BFS entirely in memory.
     # rg_file format: "dependency<TAB>dependent" — meaning "dependent depends on dependency"

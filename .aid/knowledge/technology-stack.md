@@ -319,7 +319,7 @@ pwsh .aid/templates/knowledge-summary/scripts/concatenate.ps1
 bash templates/scripts/grade.sh <issue-list-file>
 ```
 
-**Note (cycle 11):** The "Future build" placeholder above (DISCOVERY-STATE Q3 / Q73) was **shipped by work-002 as `run_generator.py` + the three renderers** described in §12.0. The propagation no longer goes from a Claude-Code-anchored source to Codex / Cursor variants — instead, all three trees are derived from `canonical/` via per-profile TOMLs. Q73 (453/1078/1090-line SKILL.md divergence) is resolved — all three trees ship 548 lines for `aid-discover/SKILL.md` (verified cycle 11).
+**Note (cycle 11):** The "Future build" placeholder above (DISCOVERY-STATE Q3 / Q73) was **shipped by work-002 as `run_generator.py` + the three renderers** described in §12.0. The propagation no longer goes from a Claude-Code-anchored source to Codex / Cursor variants — instead, all three trees are derived from `canonical/` via per-profile TOMLs. Q73 (453/1078/1090-line SKILL.md divergence) is resolved — all three trees ship 258 lines for `aid-discover/SKILL.md` (post-thin-router refactor; was 548 pre-refactor) (verified cycle 11).
 
 ### 12.2 Lint Commands
 

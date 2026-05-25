@@ -341,7 +341,7 @@ Source-of-truth: `canonical/templates/delivery-plans/task-template.md` (20 lines
 
 ### `IMPEDIMENT.md` Feedback Artifact Schema
 
-Source-of-truth: `canonical/templates/feedback-artifacts/IMPEDIMENT.md` (118 lines). Per-instance at `.aid/{work}/tasks/task-{NNN}/IMPEDIMENT-{N}.md` (path inferred). Produced exclusively by aid-execute (Phase 6).
+Source-of-truth: `canonical/templates/feedback-artifacts/IMPEDIMENT.md` (116 lines). Per-instance at `.aid/{work}/tasks/task-{NNN}/IMPEDIMENT-{N}.md` (path inferred). Produced exclusively by aid-execute (Phase 6).
 
 | Section | Required | Type | Allowed values | Evidence |
 |---------|----------|------|----------------|----------|
@@ -355,7 +355,7 @@ Source-of-truth: `canonical/templates/feedback-artifacts/IMPEDIMENT.md` (118 lin
 | `## Options` | yes | Option A / B / [C] sub-sections with Approach / Effort / Risk / Scope impact / Spec impact | min 2 options | `IMPEDIMENT.md:69-90` |
 | `## Recommendation` | yes | prose | agent recommendation only; human decides | `IMPEDIMENT.md:94-96` |
 | `## Resolution` | yes | structured | filled when resolved | `IMPEDIMENT.md:100-110` |
-| `## Revision History` | yes | table | — | `IMPEDIMENT.md:114-118` |
+| `## Revision History` | yes | table | — | `IMPEDIMENT.md:114-116` |
 
 ### `KNOWN-ISSUES.md` Schema
 

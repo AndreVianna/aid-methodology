@@ -137,64 +137,22 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
 | EXECUTE | `references/state-execute.md` | _(type-specific — see state file; delivery-mode uses pool dispatch PD-0→PD-6)_ | → REVIEW |
-| REVIEW | `references/state-review.md` | `reviewer` | → FIX (grade < min) / → DONE (grade ≥ min) |
+| REVIEW | `references/state-review.md` | `reviewer` (Small tier, quick-check only — no grade loop per FR2) | → DONE |
 | FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | → REVIEW |
 | DONE | _(inline — task complete)_ | `inline` | → halt |
 | RE-RUN | `references/state-re-run.md` | `inline` | → halt |
-| DELIVERY-GATE | `references/state-delivery-gate.md` | `reviewer` (tier = complexity score) | → RECORD → halt (pass) / → FIX → REVIEW (grade < min) |
+| DELIVERY-GATE | `references/state-delivery-gate.md` | `reviewer` (tier = complexity score) | → halt (grade ≥ min) / → FIX (grade < min) |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, print `Next: [State: {NEXT}] — run /aid-execute again` and exit.
 For DONE and RE-RUN (Advance: → halt), print the appropriate halt/summary message and exit.
 
-## Dispatch Protocol (L1+L2+L3 subagent visibility, subagent-visibility-patch)
+## Dispatch Protocol
 
-Every subagent dispatch in this skill MUST follow this protocol so the user
-sees mid-wait progress instead of going silent for 10–25+ minutes. The full
-protocol lives in two reference docs; this section is a checklist citing them.
-
-**Before each dispatch:**
-
-1. **Look up ETA** in `canonical/templates/rough-time-hints.md` for the
-   subagent's operation class. Capture LOW–HIGH band.
-2. **Read heartbeat config** from `.aid/knowledge/STATE.md` top-of-file
-   `**Heartbeat Interval:** N minutes` (default 1; `0` = disabled).
-3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
-   - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
-   - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt with explicit instruction to update during long phases
-   - SKIP only if `**Heartbeat Interval:** 0` (user-explicit opt-out in STATE.md)
-4. **Arm 3 L2 timers** (always — even for short ETAs use minimums 60s/120s/180s; never gate on ETA):
-   - `sleep <LOW/2 in s> && echo "... <agent> still running (Xm elapsed of ~LOW–HIGH)"`
-   - `sleep <LOW in s> && echo "... <agent> at estimated time (LOWm elapsed)"`
-   - `sleep <1.5×LOW in s> && echo "⚠️ <agent> EXCEEDED estimate (1.5×LOWm elapsed); consider checking on it or cancelling"`
-
-**During dispatch:**
-
-- **On L2 timer fire:** surface the timer output. If heartbeat file exists,
-  also read it and append `[from heartbeat] state: <state> · progress: <progress>
-  · activity: <activity>` to the narration.
-
-**On completion / failure:**
-
-- **Success:** emit `✓ <agent> done in <actual>` with measured time. Append a row to
-  the work `STATE.md ## Calibration Log` section (create section if missing) with
-  format `| YYYY-MM-DD | <agent> | <task-id/cycle> | <ETA-band> | <actual> | <notes> |`.
-  Dispatch metadata is logged via the Calibration Log appendix in STATE.md (per work-003 traceability rule — never optional, never "if tracked").
-  Delete heartbeat file.
-- **Failure:** emit `✗ <agent> FAILED after <elapsed> (reason: <one-line>)`.
-  Decide whether to re-dispatch, fall back, or surface to user. Delete
-  heartbeat file.
-
-**References:**
-
-- `canonical/templates/long-wait-protocol.md` — full L2 spec
-- `canonical/templates/subagent-heartbeat-protocol.md` — full L3 spec
-- `canonical/templates/rough-time-hints.md` — current measured ETAs
-- `canonical/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
-
-The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair
-lines elsewhere in this skill body remain in place; this protocol just makes
-them more informative by adding mid-wait check-ins + structured progress.
+This skill follows the L1+L2+L3 subagent-visibility protocol (work-003 traceability —
+heartbeats, ETA timers, calibration). The full checklist lives in
+`canonical/templates/dispatch-protocol-checklist.md`; read it before any subagent
+dispatch in this skill.
 
 ## Workspace
 
@@ -253,44 +211,14 @@ other than one task in flight at a time (sequential execution).
 
 ### EXECUTE-WAVE: AC4 Sub-unit Drill-down
 
-When executing a delivery wave (multiple tasks in sequence), render a sub-unit snapshot
-immediately after the AC3 state-map on each sub-unit transition. This is the
-**AC4 drill-down** for the EXECUTE-WAVE state.
+When executing a delivery wave, render a sub-unit snapshot after each sub-unit transition.
 
-**Snapshot format:**
-
-```
-Wave {M} of {N} · {K}/{T} done
-
-| Task | Type | Status | Time |
-|------|------|--------|------|
-| task-001 | RESEARCH | ✓ done | 4m 12s |
-| task-002 | IMPLEMENT | ● running | ~3–8 min |
-| task-003 | TEST | (queued) | — |
-| task-004 | DOCUMENT | (queued) | — |
-```
-
-**Status icons:**
-- `✓ done` — task completed and passed review
-- `● running` — task currently in EXECUTE or REVIEW
-- `✗ failed` — task errored (IMPEDIMENT raised)
-- `(queued)` — task not yet started (waiting for a pool slot)
-- `⊘ blocked` — task is a transitive descendant of a failed task; will not be dispatched
-
-**Re-render trigger:** render a fresh snapshot block on every sub-unit transition
-(queued → running → done / failed). Apply **1-second coalescing** — multiple
-transitions within the same second emit a single merged snapshot.
-
-**Serial-task fallback:** When `run_in_background` is not supported on the host
-(detected by the PD-0 capability probe — see `references/state-execute.md`),
-or when effective `MaxConcurrent=1` for any reason, at most 1 task appears as
-`● running` at a time. The snapshot still renders for each serial task
-transition. This is correct behavior, not a bug — the pool algorithm runs
-identically at pool size 1.
-
-**Failure tolerance:** If snapshot rendering fails for any reason (malformed iteration
-source, missing data), swallow the error silently and continue. The snapshot is
-informational — it must never block or abort task execution.
+> **Authoritative spec:** `references/state-execute.md § EXECUTE-WAVE Drill-down`
+> contains the full snapshot format, status-icon vocabulary, re-render trigger
+> rules (1-second coalescing), serial-task fallback semantics, and failure
+> tolerance. This SKILL.md section is a brief router-level pointer; do not
+> duplicate the spec here — read it from state-execute.md so the two stay in
+> sync.
 
 ## Impediments
 

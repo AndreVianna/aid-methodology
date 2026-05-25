@@ -161,12 +161,15 @@ aid-summarize  ▸ you are here
 | STALE-CHECK | `references/state-stale-check.md` | inline | → PROFILE |
 | PROFILE | `references/state-profile.md` | inline | → GENERATE |
 | GENERATE | `references/state-generate.md` | inline | → VALIDATE |
-| VALIDATE | `references/state-validate.md` | inline | → MANUAL-CHECKLIST |
+| VALIDATE | `references/state-validate.md` | inline | → MANUAL-CHECKLIST (grade ≥ min) / → FIX (grade < min) |
 | MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | → APPROVAL |
 | FIX | `references/state-fix.md` | inline | → VALIDATE |
 | APPROVAL | `references/state-approval.md` | inline | → WRITEBACK |
 | WRITEBACK | `references/state-writeback.md` | inline | → DONE |
 | DONE | `references/state-done.md` | inline | → halt |
+
+> **Note on DONE extraction:** Unlike other AID skills (aid-deploy/aid-execute/aid-detail/aid-plan) which keep DONE inline as a trivial halt-message state, aid-summarize's DONE is a **composite state** (handles both Normal-completion-after-WRITEBACK and DONE-IDEMPOTENT-after-STALE-CHECK branches with distinct messaging). The 38-line state body warrants extraction to `references/state-done.md` per the thin-router principle. This asymmetry is intentional, not a defect.
+
 
 > **Note — DONE-IDEMPOTENT:** When STALE-CHECK determines the HTML is already
 > up-to-date and approved, the router dispatches to the `DONE` row. The

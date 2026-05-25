@@ -198,7 +198,7 @@ The pre-FR2 `task-NNN-STATE.md` file (one per task, with `## Current Review`, `#
 
 ### 2.8 IMPEDIMENT-{id}.md
 
-Verified at `canonical/templates/feedback-artifacts/IMPEDIMENT.md:1-119`.
+Verified at `canonical/templates/feedback-artifacts/IMPEDIMENT.md (116 lines)`.
 
 | Section | Required | Notes |
 |---------|----------|-------|

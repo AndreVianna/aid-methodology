@@ -54,7 +54,7 @@ If a contributor opens a PR today, there is no automated signal whether they hav
 **Evidence (cycle-11 spot-check):**
 - No `.shellcheckrc`, `.eslintrc*`, `.markdownlint*`, `.editorconfig`, `pyproject.toml` (for ruff/black), `.prettierrc`, or any other linter config at repo root.
 - No `Makefile` target or shell script invoking `shellcheck` / `markdownlint` / `yamllint` / `actionlint`.
-- The 5,490 lines of shell, 3,428 lines of JavaScript, and ~83 lines of Python in `run_generator.py` have no lint-time check.
+- The 5,490 lines of shell, 3,428 lines of JavaScript, and ~84 lines of Python in `run_generator.py` have no lint-time check.
 
 **Impact:** Style drift, unused variables, missing quotes around `$VAR`, `set -e` skipping behavior, broken shebangs, all pass without notice. Higher-impact for shell (where `shellcheck` would catch genuine bugs) than for markdown.
 
@@ -133,7 +133,11 @@ The `aid-monitor` skill (223 lines per `canonical/skills/aid-monitor/SKILL.md`, 
 
 ---
 
-### [MEDIUM] M1 — `.claude/settings.json` (the historical double-dot typo file `.claude/settings..json` was removed; see `project-structure.md` Anomaly #2) filename typo
+### [MEDIUM] M1 — `.claude/settings..json` filename typo — **RETIRED 2026-05-25 (file removed)**
+
+> **Status:** The `.claude/settings..json` double-dot typo file no longer exists on disk. The historical bug analysis below is preserved as a record. See `project-structure.md` Anomaly #2 for the current state.
+
+### M1 (HISTORICAL — RETIRED) — `.claude/settings..json` filename typo
 
 **Evidence:** `.claude/settings.json` (the historical double-dot typo file `.claude/settings..json` was removed; see `project-structure.md` Anomaly #2) (double dot) sits alongside `.claude/settings.json`. Both contain *identical* content (verified by `diff` — whitespace-only diff). The double-dot file is not gitignored.
 
@@ -187,10 +191,14 @@ The other tool trees' equivalent (`profiles/claude-code/.claude/agents/developer
 
 ---
 
-### [MEDIUM] M5 — `aid-discover` SKILL.md violates the "Under 500 lines" guideline
+### [MEDIUM] M5 — `aid-discover` SKILL.md size guideline — **RESOLVED 2026-05-25 (work-001 thin-router refactor)**
+
+> **Status:** Post-work-001 PR #13 thin-router refactor reduced `aid-discover/SKILL.md` from 596 lines to 258 lines (well under the 500-line guideline). M5 is moot. The 9.6% over-target framing was based on pre-thin-router metrics and is no longer applicable. Historical analysis preserved below for reference.
+
+### M5 (HISTORICAL — RESOLVED) — `aid-discover` SKILL.md violated the "Under 500 lines" guideline pre-thin-router
 
 **Evidence (cycle-11 verification):** `CONTRIBUTING.md:97` — "Under 500 lines per skill (AgentSkills best practice)". Actual (post work-002 unification):
-- `canonical/skills/aid-discover/SKILL.md` — **258 lines** (9.6% over).
+- `canonical/skills/aid-discover/SKILL.md` — **258 lines** (was 596 pre-thin-router refactor; now well under 500 — M5 RESOLVED).
 - All 3 profile copies (`profiles/{claude-code,codex,cursor}/skills/aid-discover/SKILL.md`) — 258 lines each (identical, by virtue of being generator output).
 
 Other previously-flagged overages no longer apply: post-canonical-generator, `aid-interview`, `aid-execute`, and `aid-specify` all match the Claude Code reference (smaller) sizes. Only `aid-discover` is over.
@@ -316,7 +324,7 @@ No genuinely orphaned files found at the source layer. Template orphans (6 insta
 - **Files over 500 lines:** 3 unique sources (`methodology/aid-methodology.md` at 1,071; `canonical/skills/aid-discover/SKILL.md` at 258; `canonical/templates/knowledge-summary/component-css.css` at 642). Each of the latter two has 3 byte-identical copies in the install trees by virtue of being generator output.
 - **Files over 1000 lines:** 1 unique source (`methodology/aid-methodology.md` at 1,071). Previously 3 (the now-unified aid-discover SKILL.md is 258 in all trees, not 1,078/1,090).
 - **Duplication ratio (post-canonical-generator):** byte-identical duplication remains in absolute terms (~36% of repo lines are 4-way) but is no longer **drift-prone debt** — it is generator output from a single canonical source.
-- **Test-to-code ratio:** ⚠️ Not meaningful for a methodology + docs + scripts repo. There are zero test files for ~5,490 lines of shell, ~3,428 lines of JavaScript, and ~83 lines of Python (`run_generator.py`). By the most literal reading, the test-to-code ratio is 0.
+- **Test-to-code ratio:** ⚠️ Not meaningful for a methodology + docs + scripts repo. There are zero test files for ~5,490 lines of shell, ~3,428 lines of JavaScript, and ~84 lines of Python (`run_generator.py`). By the most literal reading, the test-to-code ratio is 0.
 - **CI/CD coverage:** 0 pipelines, 0 workflows. Confirmed.
 - **Per-severity debt-item count (OPEN items; post-cycle-11 recount 2026-05-23):**
   - HIGH: **4 open** — H2 (no CI), H3 (no linter), H5 (generator orphan-detection gap), H7 (missing Monitor templates).
