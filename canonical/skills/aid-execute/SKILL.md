@@ -137,7 +137,7 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
 | EXECUTE | `references/state-execute.md` | _(type-specific — see state file; delivery-mode uses pool dispatch PD-0→PD-6)_ | → REVIEW |
-| REVIEW | `references/state-review.md` | `reviewer` | → FIX (grade < min) / → DONE (grade ≥ min) |
+| REVIEW | `references/state-review.md` | `reviewer` (Small tier, quick-check only — no grade loop per FR2) | → DONE |
 | FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | → REVIEW |
 | DONE | _(inline — task complete)_ | `inline` | → halt |
 | RE-RUN | `references/state-re-run.md` | `inline` | → halt |
