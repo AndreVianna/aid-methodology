@@ -8,6 +8,7 @@
 #   - Contain required sections and unit-testable decision tables
 #   - state-condensed-intake.md covers all 4 sub-paths
 #   - SKILL.md dispatch table routes to all L1–L4 states
+#   - state-triage.md contains recipe-offer step (Step 5a) per task-028
 #
 # Usage:
 #   test-lite-subpaths.sh [-v | --verbose]
@@ -31,6 +32,18 @@
 #   Unit 16: SKILL.md dispatch table — all 4 lite-path states present (L1/L2/L3/L4)
 #   Unit 17: SKILL.md state detection — lite-path routing (Path=lite branches)
 #   Unit 18: lite-spec-template.md — exists with required sections
+#   Unit 19: state-triage.md — Step 5a recipe-offer step present
+#   Unit 20: state-triage.md — recipe-offer filter rule (applies-to == workType OR *)
+#   Unit 21: state-triage.md — slot-fill loop spec (multi-line, empty rejection, escalation)
+#   Unit 22: state-triage.md — confirm-before-render step (edit/abort options)
+#   Unit 23: state-triage.md — emit step calls parse-recipe.sh --render
+#   Unit 24: state-triage.md — STATE.md ## Recipe Slots written after emit
+#   Unit 25: state-triage.md — STATE.md ## Triage Recipe field written on pick
+#   Unit 26: state-triage.md — decline path: no Recipe field, flows to CONDENSED-INTAKE
+#   Unit 27: state-triage.md — FULL path: recipe-offer step NOT triggered
+#   Unit 28: state-triage.md — recipe-offer step skipped when no matching recipes
+#   Unit 29: state-triage.md — auto-fill work-name and date slots
+#   Unit 30: state-triage.md — recipe unit-testable table present
 #
 # Exit codes:
 #   0 — all tests passed
@@ -274,6 +287,114 @@ assert_file_contains "$LITE_TEMPLATE" "## Execution Graph" "template: ## Executi
 assert_file_contains "$LITE_TEMPLATE" "## Revision History" "template: ## Revision History section present"
 assert_file_contains "$LITE_TEMPLATE" "delivery-001" "template: delivery-001 referenced"
 assert_file_contains "$LITE_TEMPLATE" "lite path" "template: lite path provenance noted"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 19: state-triage.md — Step 5a recipe-offer step present ==="
+
+TRIAGE="${REFS_DIR}/state-triage.md"
+assert_file_exists "$TRIAGE" "state-triage.md exists"
+assert_file_contains "$TRIAGE" "Step 5a" "triage: Step 5a recipe-offer step present"
+assert_file_contains "$TRIAGE" "Recipe-offer" "triage: Recipe-offer heading present"
+assert_file_contains "$TRIAGE" "5a-1" "triage: 5a-1 Discover matching recipes sub-step present"
+assert_file_contains "$TRIAGE" "5a-2" "triage: 5a-2 Present recipe list sub-step present"
+assert_file_contains "$TRIAGE" "5a-3a" "triage: 5a-3a pick-recipe path present"
+assert_file_contains "$TRIAGE" "5a-3b" "triage: 5a-3b decline path present"
+assert_file_contains "$TRIAGE" "5a-4" "triage: 5a-4 write/emit sub-step present"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 20: state-triage.md — recipe filter rule ==="
+
+assert_file_contains "$TRIAGE" "applies-to == workType" "triage: applies-to == workType filter rule present"
+assert_file_contains "$TRIAGE" "applies-to == '*'" "triage: applies-to == * wildcard rule present"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 21: state-triage.md — slot-fill loop spec ==="
+
+assert_file_contains "$TRIAGE" "multi-line" "triage: multi-line slot answer described"
+assert_file_contains "$TRIAGE" "empty line" "triage: empty line terminator described"
+assert_file_contains "$TRIAGE" "empty value" "triage: empty value rejection described"
+assert_file_contains "$TRIAGE" "re-prompt" "triage: re-prompt on empty value described"
+assert_file_contains "$TRIAGE" "escalate-from-recipe" "triage: escalation keyword during slot-fill described"
+assert_file_contains "$TRIAGE" "partial slots" "triage: partial slot preservation on escalation described"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 22: state-triage.md — confirm-before-render step ==="
+
+assert_file_contains "$TRIAGE" "Confirm before render" "triage: confirm-before-render step present"
+assert_file_contains "$TRIAGE" "[1] Emit" "triage: [1] Emit option in confirm step"
+assert_file_contains "$TRIAGE" "[2] Edit" "triage: [2] Edit option in confirm step"
+assert_file_contains "$TRIAGE" "[3] Abort" "triage: [3] Abort option in confirm step"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 23: state-triage.md — emit calls parse-recipe.sh --render ==="
+
+assert_file_contains "$TRIAGE" "parse-recipe.sh --render" "triage: emit step calls parse-recipe.sh --render"
+assert_file_contains "$TRIAGE" "slots-json" "triage: slots-json argument in emit step"
+assert_file_contains "$TRIAGE" "work-dir" "triage: work-dir argument in emit step"
+assert_file_contains "$TRIAGE" "{!{" "triage: {!{ escape rewrite mentioned"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 24: state-triage.md — STATE.md ## Recipe Slots written ==="
+
+assert_file_contains "$TRIAGE" "## Recipe Slots" "triage: ## Recipe Slots section specified"
+assert_file_contains "$TRIAGE" "Slot | Value" "triage: Slot/Value table in Recipe Slots"
+assert_file_contains "$TRIAGE" "preserves slot values" "triage: slot value preservation for task-017 escalation noted"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 25: state-triage.md — ## Triage Recipe field written on pick ==="
+
+assert_file_contains "$TRIAGE" "Recipe:** {recipe-name}" "triage: Recipe field format in STATE.md ## Triage block"
+assert_file_contains "$TRIAGE" "recipe-name}" "triage: recipe-name token in triage block"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 26: state-triage.md — decline path: no Recipe field, CONDENSED-INTAKE ==="
+
+assert_file_contains "$TRIAGE" "declines" "triage: decline action described"
+assert_file_contains "$TRIAGE" "Recipe" "triage: Recipe field omitted on decline"
+if grep -qF 'omitted' "$TRIAGE" 2>/dev/null && grep -qF 'not written, not "none"' "$TRIAGE" 2>/dev/null; then
+    pass "triage: Recipe field omit description complete (omitted + not written + not none)"
+else
+    fail "triage: Recipe field omit description incomplete in state-triage.md"
+fi
+assert_file_contains "$TRIAGE" "CONDENSED-INTAKE" "triage: decline flows to CONDENSED-INTAKE"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 27: state-triage.md — FULL path: recipe-offer NOT triggered ==="
+
+assert_file_contains "$TRIAGE" "only when Path = lite" "triage: recipe-offer fires only on lite path"
+assert_file_contains "$TRIAGE" "NOT when" "triage: recipe-offer not triggered on full path"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 28: state-triage.md — recipe-offer skipped when no matching recipes ==="
+
+assert_file_contains "$TRIAGE" "no recipes match" "triage: no-match condition described"
+assert_file_contains "$TRIAGE" "skip this entire step" "triage: step skipped when no match"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 29: state-triage.md — auto-fill work-name and date slots ==="
+
+assert_file_contains "$TRIAGE" "work-name" "triage: work-name auto-fill described"
+assert_file_contains "$TRIAGE" "auto-fill" "triage: auto-fill keyword present"
+assert_file_contains "$TRIAGE" "YYYY-MM-DD" "triage: date format for auto-fill specified"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 30: state-triage.md — recipe unit-testable table present ==="
+
+assert_file_contains "$TRIAGE" "Recipe-offer paths" "triage: Recipe-offer paths table heading present"
+assert_file_contains "$TRIAGE" "Slot-fill rules" "triage: Slot-fill rules table heading present"
+assert_file_contains "$TRIAGE" "task-028" "triage: task-028 scope noted in tables"
 
 # ---------------------------------------------------------------------------
 echo ""
