@@ -19,9 +19,9 @@ Each row is one artifact "type". Producer/consumer mappings are extracted from s
 | 1 | `.aid/knowledge/*.md` (16 standard KB docs per DISCOVERY-STATE Q102: `project-structure`, `external-sources`, `architecture`, `technology-stack`, `module-map`, `coding-standards`, `data-model`, `api-contracts`, `integration-map`, `domain-glossary`, `test-landscape`, `security-model`, `tech-debt`, `infrastructure`, `ui-architecture`, `feature-inventory`) | `.aid/knowledge/` | structured markdown | `aid-discover` sub-agents | every downstream skill | `canonical/templates/knowledge-base/*.md` (16 templates; propagated to 3 install trees by `run_generator.py`) |
 | 2 | `.aid/knowledge/INDEX.md` | `.aid/knowledge/` | markdown | `aid-discover` Step 6 | every downstream skill (task context) | `canonical/templates/knowledge-base/INDEX.md` |
 | 3 | `.aid/knowledge/README.md` | `.aid/knowledge/` | markdown | `aid-discover` Step 6 | humans | `canonical/templates/knowledge-base/README.md` |
-| 4 | **`.aid/knowledge/STATE.md`** (Discovery area) | `.aid/knowledge/` | structured markdown | `aid-init` (creates), `aid-discover` + `aid-summarize` (update) | `aid-discover` state machine, `aid-summarize` writeback | `canonical/templates/discovery-state-template.md` (83 lines) — absorbs the legacy `DISCOVERY-STATE.md` + `SUMMARY-STATE.md` per FR2 |
+| 4 | **`.aid/knowledge/STATE.md`** (Discovery area) | `.aid/knowledge/` | structured markdown | `aid-init` (creates), `aid-discover` + `aid-summarize` (update) | `aid-discover` state machine, `aid-summarize` writeback | `canonical/templates/discovery-state-template.md` (85 lines) — absorbs the legacy `DISCOVERY-STATE.md` + `SUMMARY-STATE.md` per FR2 |
 | 5 | `REQUIREMENTS.md` | per-work `.aid/work-NNN-{name}/` | structured markdown | `aid-interview` | `aid-specify`, `aid-plan` | `canonical/templates/requirements/requirements-template.md` |
-| 6 | **`.aid/work-NNN-{name}/STATE.md`** (Work area) | per-work | structured markdown | `aid-init` (creates), `aid-interview` + `aid-specify` + `aid-plan` + `aid-detail` + `aid-execute` + `aid-deploy` (update) | the same skills (resume), `aid-discover` (cross-phase Q&A surface) | `canonical/templates/work-state-template.md` (82 lines) — absorbs the legacy `INTERVIEW-STATE.md` + per-feature `STATE.md` × N + per-task `task-NNN-STATE.md` × N + `DEPLOYMENT-STATE.md` per FR2 |
+| 6 | **`.aid/work-NNN-{name}/STATE.md`** (Work area) | per-work | structured markdown | `aid-init` (creates), `aid-interview` + `aid-specify` + `aid-plan` + `aid-detail` + `aid-execute` + `aid-deploy` (update) | the same skills (resume), `aid-discover` (cross-phase Q&A surface) | `canonical/templates/work-state-template.md` (116 lines) — absorbs the legacy `INTERVIEW-STATE.md` + per-feature `STATE.md` × N + per-task `task-NNN-STATE.md` × N + `DEPLOYMENT-STATE.md` per FR2 |
 | 7 | `feature.md` (one per feature) | per-feature folder | markdown | `aid-interview` | `aid-specify` | `canonical/templates/feature.md` |
 | 8 | `feature-inventory.md` | `.aid/knowledge/` | structured markdown | `aid-discover` (FIX cycle) | `aid-interview`, `aid-specify` | `canonical/templates/feature-inventory.md` + `canonical/templates/knowledge-base/feature-inventory.md` |
 | 9 | `SPEC.md` (one per feature) | per-feature folder | structured markdown | `aid-specify` | `aid-plan`, `aid-execute` | `canonical/templates/specs/spec-template.md` |
@@ -48,7 +48,7 @@ Each row is one artifact "type". Producer/consumer mappings are extracted from s
 
 **Artifact files keep their inline `## Change Log` sections** — that is *content history* (what changed in the document), distinct from *process state* (where are we in the workflow). Artifact files (REQUIREMENTS.md, SPEC.md, PLAN.md, task-NNN.md, KB docs) are unchanged.
 
-**Canonical templates** for the area-STATE shape live at `canonical/templates/discovery-state-template.md` (83 lines) and `canonical/templates/work-state-template.md` (82 lines). The legacy per-artifact templates (`interview-state.md`, `feature-state.md`, `implementation-state.md`, `deployment-state.md`, the old `discovery-state.md`, the `reports/discovery-state-template.md` reviewer variant) have all been retired — they no longer exist on disk under `canonical/templates/` nor under any of the three install trees.
+**Canonical templates** for the area-STATE shape live at `canonical/templates/discovery-state-template.md` (85 lines) and `canonical/templates/work-state-template.md` (116 lines). The legacy per-artifact templates (`interview-state.md`, `feature-state.md`, `deployment-state.md`, the old `discovery-state.md`, the `reports/discovery-state-template.md` reviewer variant, and the per-task state template) have all been retired by work-003 FR2 — they no longer exist on disk under `canonical/templates/` nor under any of the three install trees. See `coding-standards.md §8.5` for the naming rule and §2.7 below for the consolidated per-work STATE schema.
 
 **Sections §2.1, §2.3, §2.7, §2.10 below describe the legacy per-skill / per-artifact state files.** Their schemas are preserved as historical reference; they no longer exist as separate files on disk. The active schemas are in the canonical templates referenced above.
 
@@ -56,12 +56,12 @@ Each row is one artifact "type". Producer/consumer mappings are extracted from s
 
 ### 2.1 STATE.md (Discovery area) — current shape
 
-Canonical template: `canonical/templates/discovery-state-template.md` (83 lines).
+Canonical template: `canonical/templates/discovery-state-template.md` (85 lines).
 
 | Section | Required | Notes |
 |---------|----------|-------|
 | `# Discovery State` (H1) | yes | Fixed title (no project name in H1) |
-| Metadata block (Source / Status / Minimum Grade / Current Grade / User Approved / Last KB Review / Last Summary) | yes | Block-quote header — Source includes both `aid-init` and downstream skills |
+| Metadata block (Source / Status / Minimum Grade / Current Grade / User Approved / **Heartbeat Interval** / **Max Parallel Tasks** / Last KB Review / Last Summary) | yes | Block-quote header — Source includes both `aid-init` and downstream skills. `**Max Parallel Tasks:**` defaults to `5` (feature-009 SPEC FR6 pool model). |
 | `## External Documentation` (Path / Type / Accessible / Notes table) | yes | Initial value `None provided` row |
 | `## KB Documents Status` (16-row Document / Status / Grade / Last Reviewed / Notes table) | yes | Pre-populated with the 16 canonical KB docs in fixed order |
 | `## Knowledge Summary Status` (Field / Value table) | yes | Tracks `aid-summarize` runs (Profile, Theme, Grades, Output, Mermaid Version, Mermaid Cached) |
@@ -118,18 +118,22 @@ Verified at `canonical/templates/requirements/requirements-template.md:22-80` (9
 
 ### 2.3 STATE.md (Work area) — current shape
 
-Canonical template: `canonical/templates/work-state-template.md` (82 lines).
+Canonical template: `canonical/templates/work-state-template.md` (137 lines).
 
 | Section | Required | Notes |
 |---------|----------|-------|
 | `# Work State — work-NNN-{name}` (H1) | yes | Includes the work-NNN slug |
 | Metadata block (Status / Phase / Minimum Grade / Started / User Approved) | yes | Block-quote header |
-| `## Interview Status` (10-row Section Status table) | yes | One row per REQUIREMENTS section (1–10); columns: `#` / `Section` / `Status` / `Last Updated`. Initial values `Pending` / `—`. |
+| `## Triage` | yes | Populated by `aid-interview` TRIAGE state for lite-path works; left empty for full-path works. Fields: Path (lite\|full\|escalated) / Work Type / Sub-path / Sub-path (auto) / Decision rationale / Override / Recipe. When a lite work escalates, Path changes to `escalated`. |
+| `## Escalation Carry` | conditional | Present only when a work started on the lite path and was escalated to full via `references/lite-to-full-escalation.md`. Fields: Escalated from / Escalated at / Escalation rationale / `### Captured Slot Values` (one bullet per answered slot) / `### Artifacts at Escalation` (SPEC.md + tasks/ notes). Read by CONTINUE state to avoid re-asking already-answered questions. Absent on full-path works that were never on the lite path. |
+| `## Interview Status` (10-row Section Status table) | yes | One row per REQUIREMENTS section (1–10); columns: `#` / `Section` / `Status` / `Last Updated`. Initial values `Pending` / `—`. Sections pre-seeded from `## Escalation Carry` slot values are set to `Partial` on creation. |
 | `## Features Status` (table: # / Feature / Spec Status / Spec Grade / Q&A Count / Notes) | yes | One row per feature spec'd via `/aid-specify` |
 | `## Plan / Deliveries` (table: Delivery / Status / Tasks / Notes) | yes | One row per delivery from PLAN.md |
 | `## Tasks Status` (table: # / Task / Type / Wave / Status / Review / Elapsed / Notes) | yes | One row per task; replaces the per-task `task-NNN-STATE.md` files |
 | `## Deploy Status` (table: Delivery / State / PR / KB Updated / Tag / Notes) | yes | One row per delivery from `/aid-deploy`; replaces `DEPLOYMENT-STATE.md` |
 | `## Cross-phase Q&A (Pending)` | yes | `### Q{N}: [{Phase}: {Category}: {Impact}]` entries with Question / Context / Source / Suggested / Status / Answer / Applied to |
+| `## Delivery Gates` | yes | One block per delivery, keyed by `delivery-NNN`. Fields: Reviewer Tier / Grade / Issue List / Timestamp. Written by the delivery-gate step of `aid-execute`. Distinct from per-task `## Quick Check Findings`. See `canonical/templates/delivery-issues.md` for the deferred-[HIGH] log template that feeds each gate's issue list. |
+| `## Quick Check Findings` | yes | One block per task, keyed by `task-id`. Fields: Reviewer Tier + Findings list (severity-tagged). Written by `writeback-task-status.sh --findings` during `aid-execute` per-task quick-check. |
 | `## Lifecycle History` (table: Date / Phase Transition / Gate / Grade / Notes) | yes | Append-only audit trail |
 
 ### 2.3-LEGACY INTERVIEW-STATE.md *(RETIRED — absorbed into `.aid/work-NNN/STATE.md` `## Interview Status` section per FR2; schema preserved as historical reference)*
@@ -190,7 +194,7 @@ Verified at `canonical/templates/delivery-plans/task-template.md:1-20`. Six sect
 
 ### 2.7 task-NNN-STATE.md *(RETIRED — absorbed into the per-work `.aid/work-NNN/STATE.md` `## Tasks Status` table per FR2; schema preserved as historical reference. `task-NNN.md` task-definition files remain unchanged at the 6-section template — definition stays inside the task file, status moves to work STATE.md.)*
 
-The pre-FR2 `task-NNN-STATE.md` file (one per task, with `## Current Review`, `## Issues`, `## Dispatches`, `## Review History`) has been retired. Its data is now one row in the per-work `STATE.md` `## Tasks Status` table per §2.3 above. The standalone `implementation-state.md` template no longer exists on disk under `canonical/templates/` nor any install tree. Review and test outcomes for a task are now recorded in the work-STATE row plus inline in the task's review report.
+The pre-FR2 `task-NNN-STATE.md` file (one per task, with `## Current Review`, `## Issues`, `## Dispatches`, `## Review History`) has been retired by work-003 FR2. Its data is now one row in the per-work `STATE.md` `## Tasks Status` table per §2.3 above. The canonical template that generated per-task state files no longer exists on disk under `canonical/templates/` nor any install tree. Review and test outcomes for a task are now recorded in the work-STATE row plus inline in the task's review report. See work-003 FR2 per-area STATE rule for the consolidation mechanism.
 
 ### 2.8 IMPEDIMENT-{id}.md
 

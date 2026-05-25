@@ -1,8 +1,8 @@
 # Long-Wait Protocol (orchestrator-side subagent dispatch heartbeat)
 
-When an AID skill (an "orchestrator") dispatches a subagent that may run longer
-than 5 minutes, the orchestrator MUST follow this protocol so the user sees
-steady progress signal instead of going silent for 10–25 minutes between the
+When an AID skill (an "orchestrator") dispatches any subagent, the orchestrator
+MUST follow this protocol so the user sees steady progress signal instead of
+going silent for 10–25 minutes between the
 opening `▶` and the completion notification.
 
 This protocol is the L2 layer of the subagent-visibility scheme introduced in
@@ -123,8 +123,10 @@ actively poll (which is hard in a pure-skill-body design).
 
 ## Pitfalls
 
-- **Don't arm timers if ETA < 5 min.** The mid-wait check-in adds noise; the
-  user will get the completion notification before the timer fires anyway.
+- **Always arm timers, regardless of ETA.** Use sensible minimums for short
+  ETAs (e.g., 60s / 120s / 180s for a < 3min dispatch). Mid-wait check-ins
+  are unconditional per the work-003 traceability rule — never gate on ETA
+  threshold.
 - **Always emit `✗` on failure.** A silent failure (no `✓`, no `✗`) is worse
   than the original silent wait — it suggests the subagent is still running.
 - **Calibrate.** When `rough-time-hints.md` has a row marked `(gut estimate)`

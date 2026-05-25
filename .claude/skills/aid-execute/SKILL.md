@@ -13,85 +13,7 @@ argument-hint: "task-001 (required)  [work-001 if multiple works]"
 
 Read the type. Do the work. Review it. Fix it. Ship it.
 
-## State Machine
-
-```
-EXECUTE → REVIEW → [present all issues] → FIX → back to REVIEW
-                                        → DONE when grade ≥ minimum
-```
-
-Review is a separate step with its own agent (clean context).
-Fix is a separate step. Reviewer NEVER fixes — only grades and lists issues.
-
-## Task Types
-
-| Type | What the agent does | What the reviewer checks |
-|------|--------------------|-----------------------|
-| **RESEARCH** | Investigate, compare options, document findings | Completeness, bias, sources cited, actionable conclusion |
-| **DESIGN** | Mockups, wireframes, UI prototypes, interaction flows | Adherence to requirements, UX consistency, design system |
-| **IMPLEMENT** | Write code + unit tests | Code quality, conventions, test coverage, build health |
-| **TEST** | Write integration/E2E/UI/load tests, run them, report results | Coverage vs acceptance criteria, test quality, environment |
-| **DOCUMENT** | Docs, diagrams, ADRs, API docs, runbooks | Accuracy vs KB and SPECs, completeness, audience clarity |
-| **MIGRATE** | Data migration scripts, schema changes, data transformation | Reversibility, data integrity, rollback plan, idempotency |
-| **REFACTOR** | Restructure code without changing behavior | Behavior preserved, tests still pass, measurable improvement |
-| **CONFIGURE** | Config files, environment setup, CI/CD, infra-as-code | Correctness, security, idempotency, documentation |
-
-## Agent Selection
-
-Each task type dispatches a specific executor agent. The reviewer is always the same role (`reviewer`), separate from the executor for clean context. Specialist consults are dispatched in addition to the reviewer when the task type warrants it.
-
-| Task Type | Executor | Reviewer | Specialist consult |
-|-----------|----------|----------|---------------------|
-| RESEARCH | `researcher` | `reviewer` | — |
-| DESIGN | `ux-designer` | `reviewer` | — |
-| IMPLEMENT | `developer` | `reviewer` | `security` if task touches auth/PII; `performance` if hot path |
-| TEST | `developer` | `reviewer` | `performance` for load/integration tests |
-| DOCUMENT | `tech-writer` | `reviewer` | — |
-| MIGRATE | `data-engineer` | `reviewer` | `data-engineer` review (different instance than executor) |
-| REFACTOR | `developer` | `reviewer` | — |
-| CONFIGURE | `devops` | `reviewer` | `security` if config touches secrets/auth |
-
-**Reviewer ≠ executor invariant.** Even when a task type uses the same agent role for both execution and consult-review (MIGRATE), they run as separate dispatches with clean context. The reviewer never sees the executor's working notes.
-
-**Model override per task type.** Each executor has a default tier from its agent definition (Developer is Medium tier, etc.). For genuinely complex work — REFACTOR over a tangled module, MIGRATE with edge cases, IMPLEMENT touching critical security paths — the orchestrator may dispatch with an explicit higher-tier model in the Task tool's `model` parameter. This is a runtime decision per dispatch, not a skill configuration.
-
-**Mechanical sub-tasks.** Executors may delegate mechanical work (extraction, file enumeration, template filling) to `simple-extractor`, `simple-glob`, `simple-formatter` — Small-tier utility sub-agents. See `agents/simple-*/README.md` for the caller contract.
-
-## Grading
-
-The grade is **computed deterministically**, not judged. The reviewer outputs a structured issue list with `[CRITICAL]`/`[HIGH]`/`[MEDIUM]`/`[LOW]`/`[MINOR]` severity tags. The grade follows from the rubric.
-
-- Rubric: `../../templates/grading-rubric.md`
-- Script: `../../templates/scripts/grade.sh` — run it on the reviewer's issue list (recorded in the work `STATE.md` `## Tasks Status` table).
-- Minimum grade: read from `.aid/knowledge/STATE.md` field `**Minimum Grade:**`
-
-Run the script after the reviewer completes. The script prints the grade. Compare against minimum grade to decide DONE vs FIX.
-
-## Workspace
-
-```
-.aid/
-  knowledge/                ← shared KB (via INDEX.md)
-    STATE.md                ← minimum grade
-  work-NNN-{name}/
-    STATE.md                ← § Tasks Status (task rows updated here)
-    PLAN.md                 ← delivery context
-    known-issues.md         ← issues to watch for
-    tasks/
-      task-NNN.md           ← PRIMARY INPUT (has Type field)
-    features/
-      feature-NNN-{name}/
-        SPEC.md             ← architectural constraints
-```
-
-## Arguments
-
-| Argument | Effect |
-|----------|--------|
-| `task-NNN` | Required. Which task to execute. |
-| `work-NNN` | Required if multiple works exist. |
-
-## Pre-flight
+## ⚠️ Pre-flight Checks
 
 ### Check 1: Locate Work and Task
 
@@ -150,14 +72,7 @@ If the task only produces `.aid/` artifacts, skip branch isolation.
 
 ### Check 6: Determine State
 
-Read the task's row in work `STATE.md` `## Tasks Status` table if it exists.
-
-| Condition | State |
-|-----------|-------|
-| No row in Tasks Status (or row absent) | **EXECUTE** (Step 1) |
-| Status: `In Progress`, no issues pending | **EXECUTE** (Step 1 — resume) |
-| Status: `In Review`, issues listed | **FIX** (Step 3) |
-| Status: `Done` | **RE-RUN** (see Re-run below) |
+Read the task's row in work `STATE.md` `## Tasks Status` table if it exists. Apply the routing table in `## State Detection` below.
 
 Print the state-entry line and "you are here" map:
 
@@ -192,24 +107,17 @@ aid-execute  ▸ you are here
   [✓ EXECUTE ] → [✓ REVIEW ] → [✓ FIX ] → [● DONE ]
 ```
 
----
+## State Detection
 
-## Re-run (Status: Done)
+⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.** Never assume or infer state from
+conversation history. Read the task's row in work `STATE.md` `## Tasks Status`:
 
-When the task is already `Done` and the user runs `/aid-execute task-NNN` again:
-
-```
-[State: RE-RUN] — Task already Done; confirming whether to reopen for review.
-aid-execute  ▸ you are here
-  [✓ EXECUTE ] → [✓ REVIEW ] → [✓ FIX ] → [✓ DONE ] → [● RE-RUN ]
-```
-
-1. Ask: _"This task is marked Done. Do you want to reopen it for review?
-   Is there something specific you want to re-examine?"_
-2. If user confirms → set Status to `In Review` in work `STATE.md` `## Tasks Status`, proceed to Step 2 (REVIEW)
-3. If user has a specific concern → record it as context for the reviewer
-
----
+| Condition | State |
+|-----------|-------|
+| No row in Tasks Status (or row absent) | **EXECUTE** (Step 1) |
+| Status: `In Progress`, no issues pending | **EXECUTE** (Step 1 — resume) |
+| Status: `In Review`, issues listed | **FIX** (Step 3) |
+| Status: `Done` | **RE-RUN** (see Re-run below) |
 
 ## Inputs
 
@@ -224,10 +132,20 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 **Load if exists:**
 - `.aid/{work}/known-issues.md` — issues in code the task touches
 
----
+## Dispatch
 
+| State | Detail | Worker | Advance |
+|-------|--------|--------|---------|
+| EXECUTE | `references/state-execute.md` | _(type-specific — see state file; delivery-mode uses pool dispatch PD-0→PD-6)_ | → REVIEW |
+| REVIEW | `references/state-review.md` | `reviewer` | → FIX (grade < min) / → DONE (grade ≥ min) |
+| FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | → REVIEW |
+| DONE | _(inline — task complete)_ | `inline` | → halt |
+| RE-RUN | `references/state-re-run.md` | `inline` | → halt |
+| DELIVERY-GATE | `references/state-delivery-gate.md` | `reviewer` (tier = complexity score) | → RECORD → halt (pass) / → FIX → REVIEW (grade < min) |
 
----
+On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
+When a state completes, print `Next: [State: {NEXT}] — run /aid-execute again` and exit.
+For DONE and RE-RUN (Advance: → halt), print the appropriate halt/summary message and exit.
 
 ## Dispatch Protocol (L1+L2+L3 subagent visibility, subagent-visibility-patch)
 
@@ -241,10 +159,11 @@ protocol lives in two reference docs; this section is a checklist citing them.
    subagent's operation class. Capture LOW–HIGH band.
 2. **Read heartbeat config** from `.aid/knowledge/STATE.md` top-of-file
    `**Heartbeat Interval:** N minutes` (default 1; `0` = disabled).
-3. **If ETA LOW > 5 min AND heartbeat enabled:**
+3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
-   - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt
-4. **Arm 3 L2 timers** (via `run_in_background: true`):
+   - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt with explicit instruction to update during long phases
+   - SKIP only if `**Heartbeat Interval:** 0` (user-explicit opt-out in STATE.md)
+4. **Arm 3 L2 timers** (always — even for short ETAs use minimums 60s/120s/180s; never gate on ETA):
    - `sleep <LOW/2 in s> && echo "... <agent> still running (Xm elapsed of ~LOW–HIGH)"`
    - `sleep <LOW in s> && echo "... <agent> at estimated time (LOWm elapsed)"`
    - `sleep <1.5×LOW in s> && echo "⚠️ <agent> EXCEEDED estimate (1.5×LOWm elapsed); consider checking on it or cancelling"`
@@ -257,8 +176,11 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **On completion / failure:**
 
-- **Success:** emit `✓ <agent> done in <actual>` with measured time. Log to
-  `STATE.md ## Calibration Log` for L1 calibration. Delete heartbeat file.
+- **Success:** emit `✓ <agent> done in <actual>` with measured time. Append a row to
+  the work `STATE.md ## Calibration Log` section (create section if missing) with
+  format `| YYYY-MM-DD | <agent> | <task-id/cycle> | <ETA-band> | <actual> | <notes> |`.
+  Dispatch metadata is logged via the Calibration Log appendix in STATE.md (per work-003 traceability rule — never optional, never "if tracked").
+  Delete heartbeat file.
 - **Failure:** emit `✗ <agent> FAILED after <elapsed> (reason: <one-line>)`.
   Decide whether to re-dispatch, fall back, or surface to user. Delete
   heartbeat file.
@@ -274,123 +196,101 @@ The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair
 lines elsewhere in this skill body remain in place; this protocol just makes
 them more informative by adding mid-wait check-ins + structured progress.
 
-## Step 1: EXECUTE (Do the Work)
-
-Update work `STATE.md` `## Tasks Status` table: set this task's row Status to `In Progress`.
-
-**Pick the executor by task Type from the Agent Selection table above** (RESEARCH → `researcher`, DESIGN → `ux-designer`, IMPLEMENT/TEST/REFACTOR → `developer`, DOCUMENT → `tech-writer`, MIGRATE → `data-engineer`, CONFIGURE → `devops`).
-
-Dispatch with the Task tool, setting `subagent_type` explicitly to the chosen executor — this overrides the skill's default `agent: developer` from frontmatter. Example: a DESIGN task dispatches with `subagent_type: ux-designer`; an IMPLEMENT task uses `subagent_type: developer` (matches the default).
-
-**Before dispatching, print:** `[Step 1] Dispatching {executor} for {Type} task → subagent_type={executor}` (substituting actual values).
-
-Also update the task's row in work `STATE.md` `## Dispatches` sub-column (if tracked): `| 1 | {executor} | EXECUTE Type={Type} | {cycle} |`.
-
-▶ {executor} starting (~{time band per rough-time-hints})
-Load the section matching the task's Type from `references/task-type-rules.md` and pass it to the executor as the type-specific RULES it must follow.
-
-**When agent reports done:** verify relevant gates pass (build, lint, tests — as applicable to the type).
-✓ {executor} done (record actual time) — or ✗ {executor} failed: {reason}
-When execution passes → update work `STATE.md` `## Tasks Status` row Status to `In Review` → proceed to Step 2.
-
----
-
-## Step 2: REVIEW (Grade)
-
-Dispatch the `reviewer` agent (Task tool with `subagent_type: reviewer`). Clean context — the reviewer must NOT see the executor's working notes.
-
-**Before dispatching, print:** `[Step 2] Dispatching reviewer for review → subagent_type=reviewer`.
-
-Also update the task's row in work `STATE.md` `## Dispatches` sub-column: `| 2 | reviewer | REVIEW | {cycle} |`.
-
-▶ reviewer starting (~1–2 min)
-**Reviewer receives:**
-- All changes/artifacts produced by the task
-- task-NNN.md — acceptance criteria and scope
-- Feature SPEC — expected behavior
-- KB docs via INDEX.md (as relevant to the type)
-- Grading rubric (`../../templates/grading-rubric.md`)
-
-Read `references/reviewer-guide.md` for severity/source classifications and type-specific review checklists.
-
-**Grade is CALCULATED, not judged.** Count issues per severity, apply rubric.
-Worst issue dominates.
-
-**⚠️ The reviewer NEVER fixes anything.** It only grades and lists issues.
-
-✓ reviewer done (record actual time) — or ✗ reviewer failed: {reason}
-**Output:** Update work `STATE.md` `## Tasks Status` table row for this task:
-- Set Cycle number (increment)
-- Set Grade
-- Write all issues in the task's issues section with severity, source, description
-- Append cycle summary to the task's review history
-
----
-
-## Step 3: Present and Route
-
-**Present ALL issues to the user** regardless of source.
+## Workspace
 
 ```
-[Review — Cycle {N} — Grade: {grade} — Minimum: {min}]
-
-Issues found:
-
-| # | Severity | Source | Description |
-|---|----------|--------|-------------|
-| 1 | Medium | CODE | ... |
-| 2 | Low | TASK | ... |
-
-{If grade ≥ minimum:}
-✅ Grade meets minimum. Marking as Done.
-
-{If grade < minimum:}
-Grade below minimum. Next steps:
-- CODE issues (#1, #3): I'll fix these automatically.
-- TASK issues (#2): This needs a task update. {explain}
-- SPEC issues: Would require re-running /aid-specify.
-- KB issues: Would require re-running /aid-discover.
-
-Proceed with auto-fix of CODE issues?
+.aid/
+  knowledge/                ← shared KB (via INDEX.md)
+    STATE.md                ← minimum grade
+  work-NNN-{name}/
+    STATE.md                ← § Tasks Status (task rows updated here)
+    PLAN.md                 ← delivery context
+    known-issues.md         ← issues to watch for
+    tasks/
+      task-NNN.md           ← PRIMARY INPUT (has Type field)
+    features/
+      feature-NNN-{name}/
+        SPEC.md             ← architectural constraints
 ```
 
-**Routing:**
+## Delivery Lifecycle
 
-| Condition | Action |
-|-----------|--------|
-| Grade ≥ minimum | Mark all issues as `Accepted`. Set Status to `Done`. ✅ |
-| Grade < minimum | Auto-fix CODE issues (Step 4). Present non-CODE for user decision. |
+Execution follows the **Execution Graph** in PLAN.md. Tasks run in dependency order.
+Independent tasks (listed in the "Can Be Done In Parallel" table) can run concurrently.
 
-**Non-CODE issues (TASK, SPEC, KB):**
-- **TASK** → Present to user with suggestion. User updates task, re-run.
-- **SPEC** → Write Q&A to `.aid/{work}/STATE.md` `## Cross-phase Q&A` → suggest `/aid-specify`
-- **KB** → Write Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)` → suggest `/aid-discover`
+```
+create branch aid/delivery-001
+  → /aid-execute task-001 [RESEARCH]      ← investigate → review → ✅
+  → /aid-execute task-002 [DESIGN]        ← mockup → review → ✅
+  → /aid-execute task-003 [IMPLEMENT]  ┐
+  → /aid-execute task-004 [IMPLEMENT]  ┘  ← parallel (both depend on task-002)
+  → /aid-execute task-005 [TEST]          ← waits for task-003 + task-004
+  → /aid-execute task-006 [DOCUMENT]      ← ADR → review → ✅
+  → merge to main
+```
 
-Mark non-CODE issues as `Loopback` in work `STATE.md` `## Tasks Status` with target phase.
+All tasks in a delivery accumulate on the same branch.
+RESEARCH and DOCUMENT tasks that produce only `.aid/` artifacts may skip branching.
 
-**If ONLY non-CODE issues remain:** **STOP.** The work is as good as it can be —
-the problem is upstream. Present what needs to change and where.
+**Delivery-mode pool dispatch (FR6):** When `/aid-execute` is invoked for a
+delivery (not a single task), a continuous pool dispatcher replaces the serial
+loop. Full pool dispatch spec — including the `run_in_background` capability
+probe and graceful degradation — lives in
+`references/state-execute.md § EXECUTE-WAVE: Pool Dispatch (PD-0 through PD-6)`.
 
----
+**Graceful degradation:** On hosts where the Agent tool's `run_in_background`
+parameter is not supported, `aid-execute` detects this via a capability probe
+(PD-0 step 2 in `references/state-execute.md`) and automatically falls back to
+effective `MaxConcurrent=1`. A user-visible notice is printed:
 
-## Step 4: FIX
+```
+[degradation] MaxConcurrent={N} requested, host capability=sequential — running effective=1
+```
 
-Dispatch agent with:
-- Issues from STATE.md where Source = CODE and Status = Pending
-- Original task context
+The degradation event is also appended to the work `STATE.md ## Calibration Log`.
+The pool algorithm runs identically at pool size 1 — no behavioral difference
+other than one task in flight at a time (sequential execution).
 
-**Agent fixes CODE issues only.** Verifies gates still pass.
+### EXECUTE-WAVE: AC4 Sub-unit Drill-down
 
-When done:
-1. Mark fixed issues as `Fixed` in STATE.md
-2. → **Back to Step 2 (REVIEW)** — fresh reviewer, clean context
+When executing a delivery wave (multiple tasks in sequence), render a sub-unit snapshot
+immediately after the AC3 state-map on each sub-unit transition. This is the
+**AC4 drill-down** for the EXECUTE-WAVE state.
 
-**Loop continues until grade ≥ minimum.**
+**Snapshot format:**
 
-⚠️ **Circuit breaker:** If grade has not improved after 3 consecutive
-cycles (same or worse), **STOP.** Something systemic is wrong.
+```
+Wave {M} of {N} · {K}/{T} done
 
----
+| Task | Type | Status | Time |
+|------|------|--------|------|
+| task-001 | RESEARCH | ✓ done | 4m 12s |
+| task-002 | IMPLEMENT | ● running | ~3–8 min |
+| task-003 | TEST | (queued) | — |
+| task-004 | DOCUMENT | (queued) | — |
+```
+
+**Status icons:**
+- `✓ done` — task completed and passed review
+- `● running` — task currently in EXECUTE or REVIEW
+- `✗ failed` — task errored (IMPEDIMENT raised)
+- `(queued)` — task not yet started (waiting for a pool slot)
+- `⊘ blocked` — task is a transitive descendant of a failed task; will not be dispatched
+
+**Re-render trigger:** render a fresh snapshot block on every sub-unit transition
+(queued → running → done / failed). Apply **1-second coalescing** — multiple
+transitions within the same second emit a single merged snapshot.
+
+**Serial-task fallback:** When `run_in_background` is not supported on the host
+(detected by the PD-0 capability probe — see `references/state-execute.md`),
+or when effective `MaxConcurrent=1` for any reason, at most 1 task appears as
+`● running` at a time. The snapshot still renders for each serial task
+transition. This is correct behavior, not a bug — the pool algorithm runs
+identically at pool size 1.
+
+**Failure tolerance:** If snapshot rendering fails for any reason (malformed iteration
+source, missing data), swallow the error silently and continue. The snapshot is
+informational — it must never block or abort task execution.
 
 ## Impediments
 
@@ -416,67 +316,6 @@ Resolution by type:
 - **wrong-assumption** → update task or SPEC, retry
 
 After resolving: delete IMPEDIMENT file, retry from Step 1.
-
----
-
-## Delivery Lifecycle
-
-Execution follows the **Execution Graph** in PLAN.md. Tasks run in dependency order.
-Independent tasks (listed in the "Can Be Done In Parallel" table) can run concurrently.
-
-```
-create branch aid/delivery-001
-  → /aid-execute task-001 [RESEARCH]      ← investigate → review → ✅
-  → /aid-execute task-002 [DESIGN]        ← mockup → review → ✅
-  → /aid-execute task-003 [IMPLEMENT]  ┐
-  → /aid-execute task-004 [IMPLEMENT]  ┘  ← parallel (both depend on task-002)
-  → /aid-execute task-005 [TEST]          ← waits for task-003 + task-004
-  → /aid-execute task-006 [DOCUMENT]      ← ADR → review → ✅
-  → merge to main
-```
-
-All tasks in a delivery accumulate on the same branch.
-RESEARCH and DOCUMENT tasks that produce only `.aid/` artifacts may skip branching.
-
-### EXECUTE-WAVE: AC4 Sub-unit Drill-down
-
-When executing a delivery wave (multiple tasks in sequence), render a sub-unit snapshot
-immediately after the AC3 state-map on each sub-unit transition. This is the
-**AC4 drill-down** for the EXECUTE-WAVE state.
-
-**Snapshot format:**
-
-```
-Wave {M} of {N} · {K}/{T} done
-
-| Task | Type | Status | Time |
-|------|------|--------|------|
-| task-001 | RESEARCH | ✓ done | 4m 12s |
-| task-002 | IMPLEMENT | ● running | ~3–8 min |
-| task-003 | TEST | (queued) | — |
-| task-004 | DOCUMENT | (queued) | — |
-```
-
-**Status icons:**
-- `✓ done` — task completed and passed review
-- `● running` — task currently in EXECUTE or REVIEW
-- `✗ failed` — task blocked or errored
-- `(queued)` — task not yet started
-
-**Re-render trigger:** render a fresh snapshot block on every sub-unit transition
-(queued → running → done / failed). Apply **1-second coalescing** — multiple
-transitions within the same second emit a single merged snapshot.
-
-**Serial-task fallback (current behavior):** Until work-001/feature-009 (parallel
-execution) ships, tasks run serially — at most 1 task appears as `● running` at a time.
-This is documented degradation per the SPEC Migration Plan §1 "AC4 phasing"; it is
-not a bug. The snapshot still renders for each serial task transition.
-
-**Failure tolerance:** If snapshot rendering fails for any reason (malformed iteration
-source, missing data), swallow the error silently and continue. The snapshot is
-informational — it must never block or abort task execution.
-
----
 
 ## Output
 

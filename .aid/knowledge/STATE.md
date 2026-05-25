@@ -5,6 +5,7 @@
 > **Current Grade:** A (cycle-15 orchestrator self-attestation, 2026-05-23) - cycle-14 reviewer's 10 collateral findings (8 HIGH line-count drift + 1 MEDIUM gitignore claim + 1 MEDIUM domain-glossary L140) all FIXED in commit `fc8628e`. Plus 5 cycle-12 misses (4 architecture.md + 1 host-tools-matrix.md) FIXED in same commit. verify-kb-claims.sh: exit 0. Heartbeat protocol live-test SUCCEEDED (L1+L2+L3 all validated). Caveat: self-attestation, not adversarial reviewer pass - recommend cycle-16 reviewer next /aid-discover run.
 > **User Approved:** yes (2026-05-21) — **stale; predates work-002/work-003 deploys and the in-progress cycle-11/12 KB FIX work**
 > **Heartbeat Interval:** 1 minute
+> **Max Parallel Tasks:** 5
 > **Last KB Review:** 2026-05-23 (cycle 14, post-cleanup + post-subagent-visibility-patch clean-context adversarial)
 > **Last Summary:** 2026-05-21
 > **Project Type:** Brownfield
@@ -17,7 +18,7 @@ This is the single state file for the **Discovery area** — persistent project 
 |----------|----------|----------|--------|-------|
 | project-structure.md | A (FIX cycle 11) | A | ✅ Clean | Top-level layout post-canonical-generator; aid-correct deleted; SKILL.md 548-line parity documented; line counts verified. |
 | external-sources.md | A | C+ | ⚠️ Stale pre-canonical-generator claim | L78: "Codex inlines ... 1,078 lines"; L93: "1,090 lines (longest)". Both FALSE post-work-002 (all 3 trees = 548). Otherwise unchanged. |
-| architecture.md | C+ (cycle-11 partial FIX) | C+ | ⚠️ Still significantly drifted | Patterns 3/5/7 correctly rewritten by cycle-11 FIX. BUT §2.2 layer table (L174-175) STILL claims "Codex inline-everything 1,078 vs 453, Cursor 1,090" — DIRECTLY CONTRADICTS Pattern 3 on L282-285. §3 Module Boundaries table (L187-200) still lists `skills/`, `agents/`, `codex/` as live module paths + `implementation-state.md` as live template. §5 data-flow Mermaid (L379-427) still renders DISCOVERY-STATE.md, task-NNN-STATE.md, DEPLOYMENT-STATE.md, MONITOR-STATE.md as live nodes. §5 Artifact Registry (L437,443) cites retired `canonical/templates/reports/discovery-state-template.md` path. §5 Workspace shape (L449-470) still embeds DISCOVERY-STATE.md / INTERVIEW-STATE.md / task-NNN-STATE.md / per-feature STATE.md. §7.2 line counts table (L548-557) uses pre-canonical-generator values (453/477/413/336/390/386/265/242/430/438) — actual is 548/527/442/360/417/464/311/285/545/513. §9 phase-count-drift narrative obsolete. ~50 lines of stale content in one doc. |
+| architecture.md | C+ (cycle-11 partial FIX) | C+ | ⚠️ Still significantly drifted | Patterns 3/5/7 correctly rewritten by cycle-11 FIX. BUT §2.2 layer table (L174-175) STILL claims "Codex inline-everything 1,078 vs 453, Cursor 1,090" — DIRECTLY CONTRADICTS Pattern 3 on L282-285. §3 Module Boundaries table now uses canonical/ paths (retired per-artifact state template refs removed per task-011); §5 data-flow Mermaid (L379-427) still renders DISCOVERY-STATE.md, task-NNN-STATE.md, DEPLOYMENT-STATE.md, MONITOR-STATE.md as live nodes. §5 Artifact Registry (L437,443) cites retired `canonical/templates/reports/discovery-state-template.md` path. §5 Workspace shape (L449-470) still embeds DISCOVERY-STATE.md / INTERVIEW-STATE.md / task-NNN-STATE.md / per-feature STATE.md. §7.2 line counts table (L548-557) uses pre-canonical-generator values (453/477/413/336/390/386/265/242/430/438) — actual is 548/527/442/360/417/464/311/285/545/513. §9 phase-count-drift narrative obsolete. ~45 lines of stale content remain. |
 | technology-stack.md | B (cycle-11 FIX) | B | ⚠️ Two stale claims | §12.0 Canonical Generator correctly added. §12 Build Commands correct. Worker-script inventory complete. **One stale claim:** L58 — `grade.sh` "reads issue list recorded in task-NNN-STATE.md" — retired per FR2. L67 — "Claude Code only — Codex / Cursor inline this" for check-preflight.sh contradicts the canonical-generator (all 3 trees identical). |
 | ui-architecture.md | B | B | ⚠️ Minor stale refs | L101, L319 cite "DISCOVERY-STATE.md Q14" — pre-FR2 file name. Should be `.aid/knowledge/STATE.md`. Otherwise content is correct. |
 | module-map.md | D | A | ✅ Fully rewritten | 14 modules, all paths canonical/, per-skill line counts refreshed from project-index, install-tree-only templates table retired (KB-F1 applied), Canonical → Profile relationship table, Module 14 for run_generator.py + 8 worker scripts. Excellent. |
@@ -85,7 +86,7 @@ Registered web sources (see `external-sources.md` for full details): 8 vendor do
 - Fix: Rewrite §2.2 layer table to reflect canonical-generator reality (replace 3 LLM-format-payload rows with a single "Canonical source + 3 profile mirrors" row, citing run_generator.py).
 
 #### [HIGH] [KB] architecture.md §3 Module Boundaries table (L187-200) references deleted top-level directories
-- Evidence: L190 lists `skills/`, L191 lists `agents/`, L194 lists `codex/`, L192 lists `templates/.../implementation-state.md`. All of these were deleted in work-002 (top-level skills/ + agents/ removed; templates/ moved to canonical/templates/; implementation-state.md retired by FR2). `ls skills/`, `ls agents/`, `ls codex/` all error.
+- Evidence: L190 lists `skills/`, L191 lists `agents/`, L194 lists `codex/`. All of these were deleted in work-002 (top-level skills/ + agents/ removed; templates/ moved to canonical/templates/). `ls skills/`, `ls agents/`, `ls codex/` all error. Note: per-artifact state template reference in the `canonical/templates/` row fixed by task-011 (work-003 FR2 per-area STATE rule now cited instead).
 - Fix: Rewrite §3 to match module-map.md Module 1-14 (which is correct).
 
 #### [HIGH] [KB] architecture.md §5 Data Flow Mermaid + Workspace shape + Artifact Registry all show retired state files
@@ -161,7 +162,7 @@ Registered web sources (see `external-sources.md` for full details): 8 vendor do
 | tech-debt.md H6 inconsistent retirement annotation | MEDIUM | ✅ Fixed | H6 RETIRED + body updated. |
 | integration-map.md per-skill matrix updated for FR2 | MEDIUM | ✅ Fixed | Cycle-11 FIX. |
 | infrastructure.md §1, §2, §3.1 incomplete | MEDIUM | ✅ Fixed | Cycle-11 FIX. |
-| data-model.md L188, L192, L202 cite retired implementation-state.md | LOW | ✅ Fixed | Now point to work STATE.md ## Tasks Status. |
+| data-model.md retired per-artifact state template refs (cycle-12 LOW) | LOW | ✅ Fixed | Now cite work-003 FR2 per-area STATE rule; work STATE.md ## Tasks Status is the consolidation mechanism. |
 | project-structure.md L162, L166 reference retired files | LOW | ✅ Fixed | Cycle-11 FIX. |
 | tech-debt.md M5 (line count 548 not 1078) | LOW | ✅ Fixed | Count updated. |
 | architecture.md L584 phase-count drift narrative obsolete | LOW | ❌ Not fixed | Still present at architecture.md L611 ("the doc title says '9 phases'…"). |
@@ -448,3 +449,7 @@ The patch grew skill bodies — aid-discover/SKILL.md went from 548 to **596 lin
 | # | Date | Grade | Profile | Mermaid | Output | Notes |
 |---|------|-------|---------|---------|--------|-------|
 | 1 | 2026-05-21 | A+ | cli | 11.15.0 | knowledge-summary.html (~3.39 MB, 9 diagrams) | Initial generation. **Cycle-11/12:** HTML stale — predates work-002/work-003 deploys; Fig 9 ("triplicated install bundles") describes a pattern that no longer exists. Re-run /aid-summarize after architecture.md FIX. |
+
+## Calibration Log
+
+Project-level cross-skill calibration tracking. Per-work calibration data lives in the corresponding work STATE.md `## Calibration Log` section. This section can aggregate roll-ups when needed; for now, see each work's STATE.md for primary data.

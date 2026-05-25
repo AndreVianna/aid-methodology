@@ -10,6 +10,39 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep their inline `## Change Log` sections — that's *content history* (what changed in the document), distinct from *process state* (where are we in the workflow). Both are useful; they live in different places.
 
+## Triage
+
+> Populated by `aid-interview` TRIAGE state for lite-path works. Left empty for full-path works (aid-interview runs the full interview flow instead).
+
+- **Path:** lite | full
+- **Work Type:** bug-fix | single-doc | small-refactor | small-new-feature | {omitted for full path}
+- **Sub-path:** LITE-BUG-FIX | LITE-DOC | LITE-REFACTOR | LITE-FEATURE | — (absent for full path)
+- **Sub-path (auto):** {auto-detected sub-path label, or — if overridden or full path}
+- **Decision rationale:** {one sentence: why this path/sub-path was selected}
+- **Override:** yes | no (yes = human changed auto-detected sub-path)
+- **Recipe:** {recipe-name} | none
+
+## Escalation Carry
+
+> Written by `aid-interview` lite→full escalation (Steps 3–9 of `lite-to-full-escalation.md`).
+> Present only when a work started on the lite path and was escalated to full.
+> The CONTINUE state reads this section to avoid re-asking questions already answered
+> during the lite-path session. See `references/state-continue.md § Escalation Carry`.
+
+- **Escalated from:** {state name} (Sub-path: {sub-path value})
+- **Escalated at:** {YYYY-MM-DDTHH:MM:SSZ}
+- **Escalation rationale:** {one sentence}
+
+### Captured Slot Values
+
+- **{slot-name}:** {slot-value}
+- (no slots captured — escalation before CONDENSED-INTAKE)
+
+### Artifacts at Escalation
+
+- **SPEC.md:** present | absent — {notes on content available for seeding}
+- **tasks/:** {N} task files present | absent
+
 ## Interview Status
 
 **Status:** In Progress | Complete | Approved · **Grade:** {grade or Pending}
@@ -72,6 +105,28 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 - **Status:** Pending | Answered | Skipped
 - **Answer:** {filled when status is Answered}
 - **Applied to:** {artifact(s) the answer was applied to}
+
+## Delivery Gates
+
+> One block per delivery from PLAN.md (or the single work-root SPEC.md delivery on the lite path), written by the delivery-gate closing step of `aid-execute`. Distinct from per-task quick-check findings — the gate aggregates those deferred [HIGH] rows (via `delivery-NNN-issues.md`) and runs a full grade.sh pass. Instances of the deferred-[HIGH] log live at `.aid/work-NNN/delivery-NNN-issues.md`; see `canonical/templates/delivery-issues.md` for the template.
+
+### delivery-NNN
+
+- **Reviewer Tier:** Small | Medium | Large
+- **Grade:** {grade or Pending}
+- **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
+- **Timestamp:** {YYYY-MM-DDTHH:MM:SSZ}
+
+## Quick Check Findings
+
+> One block per task, keyed by task-id. Written by `writeback-task-status.sh --findings` during the per-task quick-check step of `aid-execute`. Records the reviewer tier used and all [HIGH] / [CRITICAL] findings for that task. [CRITICAL] findings trigger an immediate fix-on-spot; [HIGH] findings are deferred to the delivery gate via `delivery-NNN-issues.md`. No grade is recorded here — grading is per-delivery, not per-task.
+
+### task-NNN
+
+- **Reviewer Tier:** Small (quick check always uses Small tier)
+- **Findings:**
+  - [CRITICAL] {description} — {source-file:line} — Fixed-on-spot
+  - [HIGH] {description} — {source-file:line} — Deferred-to-gate
 
 ## Lifecycle History
 

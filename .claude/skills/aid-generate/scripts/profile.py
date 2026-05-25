@@ -37,6 +37,7 @@ class LayoutConfig:
     agents_dir: str = "agents"
     skills_dir: str = "skills"
     templates_dir: str = "templates"
+    recipes_dir: str = "recipes"
     # Cursor-specific
     rules_dir: str | None = None
     # Repo-root file name for the project-context document
@@ -172,6 +173,7 @@ def _parse_layout(raw: dict[str, Any]) -> LayoutConfig:
         agents_dir=raw.get("agents_dir", "agents"),
         skills_dir=raw.get("skills_dir", "skills"),
         templates_dir=raw.get("templates_dir", "templates"),
+        recipes_dir=raw.get("recipes_dir", "recipes"),
         rules_dir=raw.get("rules_dir"),
         project_context_file=raw.get("project_context_file", "CLAUDE.md"),
     )
@@ -461,6 +463,7 @@ def main() -> int:
                 "agents_dir": profile.layout.agents_dir,
                 "skills_dir": profile.layout.skills_dir,
                 "templates_dir": profile.layout.templates_dir,
+                "recipes_dir": profile.layout.recipes_dir,
                 "rules_dir": profile.layout.rules_dir,
                 "project_context_file": profile.layout.project_context_file,
             },

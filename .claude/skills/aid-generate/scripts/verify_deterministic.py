@@ -33,6 +33,7 @@ from harness import EmissionManifest  # noqa: E402
 from render_agents import render_agents  # noqa: E402
 from render_skills import render_skills  # noqa: E402
 from render_templates import render_templates  # noqa: E402
+from render_recipes import render_recipes  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -98,6 +99,7 @@ def _render_all(canonical_root: Path, profiles: list[Profile], output_dir: Path)
         render_agents(canonical_root, profile, manifest, output_dir)
         render_skills(canonical_root, profile, manifest, output_dir)
         render_templates(canonical_root, profile, manifest, output_dir)
+        render_recipes(canonical_root, profile, manifest, output_dir)
         manifests.append(manifest)
     return manifests
 
