@@ -161,7 +161,7 @@ aid-summarize  ▸ you are here
 | STALE-CHECK | `references/state-stale-check.md` | inline | → PROFILE |
 | PROFILE | `references/state-profile.md` | inline | → GENERATE |
 | GENERATE | `references/state-generate.md` | inline | → VALIDATE |
-| VALIDATE | `references/state-validate.md` | inline | → MANUAL-CHECKLIST |
+| VALIDATE | `references/state-validate.md` | inline | → MANUAL-CHECKLIST (grade ≥ min) / → FIX (grade < min) |
 | MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | → APPROVAL |
 | FIX | `references/state-fix.md` | inline | → VALIDATE |
 | APPROVAL | `references/state-approval.md` | inline | → WRITEBACK |

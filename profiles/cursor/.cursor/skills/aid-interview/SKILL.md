@@ -309,7 +309,7 @@ aid-interview  ▸ you are here
 | TRIAGE | `references/state-triage.md` | `interviewer` | → CONDENSED-INTAKE (lite) or CONTINUE (full) |
 | CONDENSED-INTAKE | `references/state-condensed-intake.md` | `interviewer` | → TASK-BREAKDOWN (or escalate → CONTINUE) |
 | TASK-BREAKDOWN | `references/state-task-breakdown.md` | `architect` | → LITE-REVIEW (or escalate → CONTINUE) |
-| LITE-REVIEW | `references/state-lite-review.md` | `reviewer` | → LITE-DONE (or loopback to L1/L2, or escalate → CONTINUE) |
+| LITE-REVIEW | `references/state-lite-review.md` | `reviewer` | → LITE-DONE (grade ≥ min) / → CONDENSED-INTAKE (grade < min, loopback). User-driven escalate → CONTINUE handled separately via `lite-to-full-escalation.md`. |
 | LITE-DONE | `references/state-lite-done.md` | `inline` | → halt (or escalate → CONTINUE) |
 | lite→full escalation | `references/lite-to-full-escalation.md` | (caller's worker) | → CONTINUE |
 | CONTINUE | `references/state-continue.md` | `interviewer` | → COMPLETION |
