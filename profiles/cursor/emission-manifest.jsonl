@@ -23,7 +23,11 @@
 {"dst": ".cursor/agents/ux-designer.md", "profile": "cursor", "sha256": "c3f7178f2851e4232f18d02d6b2ad3acb8da6fdad936afb1769999b0e48ff84c", "src": "canonical/agents/ux-designer/AGENT.md"}
 {"dst": ".cursor/rules/aid-methodology.mdc", "profile": "cursor", "sha256": "01b1edec0f4b84872109f6cf3a9f475fc898d6e28c8d10a25b603f5345b8050d", "src": "canonical/rules/aid-methodology.mdc"}
 {"dst": ".cursor/rules/aid-review.mdc", "profile": "cursor", "sha256": "dd8784fc66b2b2b3b5f9c488a9235777b47b9b667673b05686cead8ce31e2d9b", "src": "canonical/rules/aid-review.mdc"}
-{"dst": ".cursor/skills/aid-deploy/SKILL.md", "profile": "cursor", "sha256": "d456eb7b1a4b10bb7d3693c097cbe320c4ee64e2e1732657148d1925a2aee988", "src": "canonical/skills/aid-deploy/SKILL.md"}
+{"dst": ".cursor/skills/aid-deploy/SKILL.md", "profile": "cursor", "sha256": "f53e8f633aa037720472caa7d1b26f35f9b92f7964fa0e6cefbe42c47b501b66", "src": "canonical/skills/aid-deploy/SKILL.md"}
+{"dst": ".cursor/skills/aid-deploy/references/state-idle.md", "profile": "cursor", "sha256": "a411f3f92a7d351a45de466448547155861031f8eb499a39c6220b230d42b361", "src": "canonical/skills/aid-deploy/references/state-idle.md"}
+{"dst": ".cursor/skills/aid-deploy/references/state-packaging.md", "profile": "cursor", "sha256": "9dba7411d9b9c22b6823aa5e91fedf9c0b547338f9ba7a8f259cd04857a1c182", "src": "canonical/skills/aid-deploy/references/state-packaging.md"}
+{"dst": ".cursor/skills/aid-deploy/references/state-selecting.md", "profile": "cursor", "sha256": "3bebd84b5a2e1327a6941621ffccff8eafdc50f732d2fff4478210050c957eee", "src": "canonical/skills/aid-deploy/references/state-selecting.md"}
+{"dst": ".cursor/skills/aid-deploy/references/state-verifying.md", "profile": "cursor", "sha256": "21a73b26662c2254be8f213eebad24e1976813cd91adac96af07597dc307155f", "src": "canonical/skills/aid-deploy/references/state-verifying.md"}
 {"dst": ".cursor/skills/aid-detail/SKILL.md", "profile": "cursor", "sha256": "34d56bbb230771f1edd3d6813088cb22e42bb4b43a2b97f85246e46bc0d20882", "src": "canonical/skills/aid-detail/SKILL.md"}
 {"dst": ".cursor/skills/aid-discover/SKILL.md", "profile": "cursor", "sha256": "b8b86b68515d898cb94dbd09252ae6a10cb36e38b021d7e7074aacd7ec213fb9", "src": "canonical/skills/aid-discover/SKILL.md"}
 {"dst": ".cursor/skills/aid-discover/references/agent-prompts.md", "profile": "cursor", "sha256": "7e3fe8db777ec12cb1a486a18886aa432aa7d5114047f6cb7d0a314ec547c6f9", "src": "canonical/skills/aid-discover/references/agent-prompts.md"}

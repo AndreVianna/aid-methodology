@@ -21,7 +21,11 @@
 {"dst": ".claude/agents/simple-glob.md", "profile": "claude-code", "sha256": "1bbe0f11eee07e347bf573061a574f0928d422cb3da9c274028df1947605ec96", "src": "canonical/agents/simple-glob/AGENT.md"}
 {"dst": ".claude/agents/tech-writer.md", "profile": "claude-code", "sha256": "f897b09e78640b96ba1e4fd9e8efc4e79dbab8264c67c04a0b289a3fbc9bb16b", "src": "canonical/agents/tech-writer/AGENT.md"}
 {"dst": ".claude/agents/ux-designer.md", "profile": "claude-code", "sha256": "b1922b74840774ec1681c7e81b1d5f95dfee33effb83b4531a4b67ddee3daf2d", "src": "canonical/agents/ux-designer/AGENT.md"}
-{"dst": ".claude/skills/aid-deploy/SKILL.md", "profile": "claude-code", "sha256": "56e00c8597c21da5a394108b79540c820e9b9f663c13c771e0c1aca52beef266", "src": "canonical/skills/aid-deploy/SKILL.md"}
+{"dst": ".claude/skills/aid-deploy/SKILL.md", "profile": "claude-code", "sha256": "0c4bddfdf40704f90da700946c35172a6cc330dc9e65a993f5dc1a468e93b433", "src": "canonical/skills/aid-deploy/SKILL.md"}
+{"dst": ".claude/skills/aid-deploy/references/state-idle.md", "profile": "claude-code", "sha256": "a411f3f92a7d351a45de466448547155861031f8eb499a39c6220b230d42b361", "src": "canonical/skills/aid-deploy/references/state-idle.md"}
+{"dst": ".claude/skills/aid-deploy/references/state-packaging.md", "profile": "claude-code", "sha256": "9dba7411d9b9c22b6823aa5e91fedf9c0b547338f9ba7a8f259cd04857a1c182", "src": "canonical/skills/aid-deploy/references/state-packaging.md"}
+{"dst": ".claude/skills/aid-deploy/references/state-selecting.md", "profile": "claude-code", "sha256": "3bebd84b5a2e1327a6941621ffccff8eafdc50f732d2fff4478210050c957eee", "src": "canonical/skills/aid-deploy/references/state-selecting.md"}
+{"dst": ".claude/skills/aid-deploy/references/state-verifying.md", "profile": "claude-code", "sha256": "21a73b26662c2254be8f213eebad24e1976813cd91adac96af07597dc307155f", "src": "canonical/skills/aid-deploy/references/state-verifying.md"}
 {"dst": ".claude/skills/aid-detail/SKILL.md", "profile": "claude-code", "sha256": "f518eccf4a30f23d8d2d78980bb257a5a365d109835ea4d2288a5421a113c04e", "src": "canonical/skills/aid-detail/SKILL.md"}
 {"dst": ".claude/skills/aid-discover/SKILL.md", "profile": "claude-code", "sha256": "76afa99fe64a49adc5b36633b9f8f4c122898937ec44355d7ab436314a01fa0a", "src": "canonical/skills/aid-discover/SKILL.md"}
 {"dst": ".claude/skills/aid-discover/references/agent-prompts.md", "profile": "claude-code", "sha256": "7e3fe8db777ec12cb1a486a18886aa432aa7d5114047f6cb7d0a314ec547c6f9", "src": "canonical/skills/aid-discover/references/agent-prompts.md"}

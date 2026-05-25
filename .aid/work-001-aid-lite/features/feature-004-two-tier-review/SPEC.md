@@ -11,6 +11,7 @@
 | 2026-05-22 | Technical Specification — State Machines section written (revised aid-execute state machine + new delivery-gate state machine) | /aid-specify |
 | 2026-05-22 | Technical Specification revised — (A) merged-task-file: quick check + delivery gate record into the `task-NNN.md` Execution Record zone, no separate `task-NNN-STATE.md`; (B) lite path uses one consolidated work-root `SPEC.md`, gate + complexity score read inputs from `PLAN.md` (full) or work-root `SPEC.md` (lite) | /aid-specify |
 | 2026-05-22 | Cross-cutting + precision fixes (CR7) — (1) corrected the `task-NNN-STATE.md` reference count from ~12 to **16** and enumerated all 16 line cites in the `aid-execute/SKILL.md` edit surface (67, 83, 119, 155, 159, 172, 194, 203, 208, 218, 234, 281, 291, 297, 360, 386); (2) added "Template authorship — feature-002 owns the two-zone `task-NNN.md` (CR7)" subsection in Layers & Components — feature-004 *writes into* the Execution Record scaffold created by `aid-detail` (delivered by feature-002), it does **not** create the zone; (3) reconciled the Data Model "Changed — Execution Record zone of `task-NNN.md`" passage with the same model — `aid-detail` creates `task-NNN.md` with Definition filled and Execution Record as empty scaffold, `aid-execute` populates the scaffold (no contradiction with Layers & Components); (4) replaced the stray `[MAJOR…]` token in the `### Findings` table row with `[HIGH]` for consistency with the spec's "major" → `[HIGH]` mapping; (5) made the `## Delivery Gate` block location-rule **explicit and FR6-aware** in Data Model — terminal node of the Execution Graph, highest-numbered tiebreak, identical for writer (`aid-execute`) and reader (`aid-deploy`); (6) added a "Naming reconciliation (both forms intentional)" note pinning instance to `.aid/{work}/delivery-NNN-issues.md` and template to `templates/delivery-issues.md` — mirrors the `task-template.md` → `task-NNN.md` convention; (7) added a "Parallel-write coordination (FR6)" note — quick checks write deferred `[HIGH]` rows into their own `task-NNN.md` Execution Record (single-writer), and the gate's new step 0 (`AGGREGATE`) writes `delivery-NNN-issues.md` once, serially, after the all-`Done` trigger — no append race; updated Flow A TRIAGE and Flow B gate to reflect this; (8) corrected the IMPEDIMENT line cite from `aid-execute/SKILL.md:308-330` to `:305-330`. `## Open Questions` (OQ1–3) already present and inline-ref-consistent — verified, no change. | reviewer |
+| 2026-05-24 | **Alignment Update** added (between Acceptance Criteria and Technical Specification). Per work-003's deployed FR2 per-area STATE rule (now canonical per the 2026-05-24 REQUIREMENTS refresh), all "Execution Record zone of task-NNN.md" body references are superseded: per-task quick-check records live under the task's row in work `STATE.md ## Tasks Status`; the per-delivery gate record lives in a `## Delivery Gates` section of work `STATE.md`. The two-tier model, the deterministic grade (`grade.sh`), the proportional reviewer tier, the FR2 severity-mapping convention, and the `delivery-NNN-issues.md` naming convention all stay the same. Body sections describing the two-zone shape become historical reference; the alignment update is the operative contract for /aid-plan and implementation. | /aid-specify |
 
 ## Source
 
@@ -64,6 +65,120 @@ Must
   then its model tier varies with the delivery's complexity.
 - [ ] Given the per-delivery quality gate runs, when the grade is determined, then it
   is computed deterministically (`grade.sh`) from a severity-tagged issue list.
+
+---
+
+## Alignment Update — 2026-05-24
+
+> **REQUIREMENTS.md was refreshed on 2026-05-24** to align with work-003's
+> deployed FR2 per-area STATE rule. The body of this SPEC was written against
+> the (now-retired) two-zone `task-NNN.md` shape. Per the updated §5
+> scope-addition:
+>
+> - **`task-NNN.md` stays 6-section flat** (Definition only).
+> - **Per-task quick-check records and the per-delivery gate record live in the
+>   per-work `.aid/work-NNN/STATE.md`** — specifically:
+>   - Per-task **Quick Check findings** go under the task's row in
+>     `## Tasks Status` (either as a sub-block under the row or via a separate
+>     `## Quick Check Findings` section keyed by task id — final shape is an
+>     /aid-detail decision).
+>   - Per-delivery **Delivery Gate record** goes in a dedicated
+>     `## Delivery Gates` section of work `STATE.md`, one block per delivery
+>     (deterministic id derived from the delivery-NNN identifier).
+>   - The deterministic grade (`grade.sh`) still runs at the per-delivery gate
+>     and reads from the same severity-tagged issue list — that list now lives
+>     in the Delivery Gate block in work `STATE.md`, not in a task-NNN.md
+>     Execution Record zone.
+>
+> **What changes for this feature's body:**
+>
+> - Every "Execution Record zone of `task-NNN.md`" reference is superseded —
+>   reads as "the task's row in work `STATE.md ## Tasks Status`" or "the
+>   `## Delivery Gates` section of work `STATE.md`" depending on whether the
+>   write is per-task (quick check) or per-delivery (gate).
+> - The §Data Model "Template authorship — feature-002 owns the two-zone
+>   `task-NNN.md` (CR7)" subsection is superseded — feature-002 no longer
+>   delivers a two-zone shape (see feature-002's Alignment Update); the
+>   review-record writes target work `STATE.md` directly.
+> - The §Data Model "Parallel-write coordination (FR6)" note (deferred
+>   `[HIGH]` rows to per-task Execution Record + serialized `AGGREGATE` step)
+>   still applies *in spirit* — quick checks still write per-task rows
+>   (single-writer per task), and the gate's `AGGREGATE` step still writes the
+>   delivery-issue log serially — but the targets are work `STATE.md` blocks,
+>   not Execution Record zones.
+> - The reference to `aid-execute/SKILL.md` line numbers (the 16 cites at
+>   `:67, :83, :119, ...`) will drift after the post-visibility-patch line
+>   numbers shifted; treat them as **section-name references** ("the IMPEDIMENT
+>   section", "the Re-run path", etc.) per the cycle-14 KB anti-drift pattern.
+>
+> **Additional clarifications (added in fix-pass):**
+>
+> - **SKILL.md line-cite list is known-stale.** The body's §Layers prescriptive
+>   list of 16 `aid-execute/SKILL.md` line numbers (`:67, :83, :119, :155,
+>   :159, :172, :194, :203, :208, :218, :234, :281, :291, :297, :360, :386`)
+>   drifted with the subagent-visibility-patch (skill grew from 464 → 512
+>   lines). Treat the list as **identifying sections by current name** (the
+>   IMPEDIMENT section, the Re-run path, etc.) per the cycle-14 KB anti-drift
+>   pattern. A focused body-text re-anchor (line numbers → section names) is
+>   flagged for /aid-detail.
+> - **Row-level write coordination under FR6 + per-area STATE — IQ7 raised.**
+>   The original spec's "single-writer per `task-NNN.md`" coordination relied
+>   on file-level isolation (one writer per file). Under per-area STATE the
+>   write target is a *shared* file — the per-work `STATE.md ## Tasks Status`
+>   table — with one *row* per task. With FR6 pool concurrency, N parallel
+>   tasks each want to update their own row simultaneously. The coordination
+>   contract is: each quick-check writes its task's row + any `## Quick Check
+>   Findings` block keyed by the task id (single-writer per task by
+>   construction); the gate's `AGGREGATE` step (step 0) is the only writer of
+>   the `## Delivery Gates` block (single-writer by construction). Concurrent
+>   row writes need either a row-level append helper or work-003's
+>   `writeback-state.sh` adapted to row scope — a /aid-detail task. Raised
+>   as IQ7 in work `STATE.md ## Cross-phase Q&A`.
+> - **Delivery Gate placement rule — `delivery-NNN` id, not Execution-Graph
+>   terminal-node.** The body's "Determinism rule (explicit, FR6-aware)"
+>   subsection (which derives the gate-record id from the Execution Graph's
+>   terminal node + highest-numbered tiebreak) is **superseded**. Under
+>   per-area STATE, the `## Delivery Gates` block in work `STATE.md` is keyed
+>   directly by `delivery-NNN` — the delivery's own identifier, deterministic
+>   without graph computation. Both writer (`aid-execute`) and reader
+>   (`aid-deploy`) use the same `delivery-NNN` key. The terminal-node rule is
+>   no longer load-bearing.
+> - **`delivery-NNN-issues.md` and the `## Delivery Gates` block coexist by
+>   design.** The two artifacts hold *different* issue lists: the
+>   `delivery-NNN-issues.md` instance file holds the **deferred-`[HIGH]`** log
+>   accumulated by per-task quick checks across the delivery; the
+>   `## Delivery Gates` block in work `STATE.md` holds the **gate reviewer's
+>   fresh issue list** + the deterministic grade output. Both are required;
+>   neither replaces the other.
+> - **State Machines descriptions** (both per-task quick-check and
+>   per-delivery gate) write transitions that target the per-area STATE
+>   contract — every "writes to the `task-NNN.md` Execution Record" reference
+>   in §State Machines (notably the per-task `TASK-DONE` writeback step and
+>   the per-delivery `RECORD` step) reads as "writes the appropriate row +
+>   sub-block in work `STATE.md`" per this Alignment Update.
+> - **Cross-feature with feature-002:** feature-002's own Alignment Update
+>   retired CR7 (the two-zone task-template ownership). feature-004's §Layers
+>   "Template authorship — feature-002 owns the two-zone `task-NNN.md` (CR7)"
+>   subsection is therefore superseded — feature-004 writes directly to work
+>   `STATE.md` rows; no two-zone template authorship dependency on
+>   feature-002.
+>
+> **What stays the same:**
+>
+> - The two-tier model itself (per-task quick check, no grade loop, cheap-tier
+>   reviewer, only `[CRITICAL]` and `[HIGH]` surfaced; one immediate fix for
+>   critical; deferred-to-gate for the rest).
+> - The per-delivery quality gate as the closing step of `aid-execute`.
+> - The proportional reviewer tier based on a complexity score.
+> - The deterministic grade (`grade.sh`) at the gate.
+> - The FR2 → severity-mapping convention ("major" = `[HIGH]`, "critical" =
+>   `[CRITICAL]`).
+> - The `delivery-NNN-issues.md` instance-vs-template naming convention.
+>
+> Body sections below describe the original two-zone design as historical
+> reference; the alignment update above is the operative contract for
+> /aid-plan and implementation. A focused body-text rewrite is a candidate
+> /aid-detail task and is not scoped into this feature.
 
 ---
 

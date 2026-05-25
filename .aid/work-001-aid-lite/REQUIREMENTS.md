@@ -36,6 +36,8 @@
 | 2026-05-22 | Cross-reference verification (State 6) — final independent grade A (C → B → A across passes), meets the A minimum; 3 cosmetic MINORs cleaned up. Cleared for /aid-specify | /aid-interview |
 | 2026-05-22 | /aid-specify scope updates — FR1 lite-path output resolved (one consolidated work-root SPEC.md); task-NNN-STATE.md → task-NNN.md merge recorded as a scope addition; §8 refreshed with round-2 Codex/Cursor capability research | /aid-specify |
 | 2026-05-23 | **Split: traceability moved to `work-003-traceability`.** FR4 (progress traceability), pain-point #4 ("no progress visibility"), and `feature-007-you-are-here-heartbeat` (renumbered to `feature-001` there) extracted to a dedicated work. Rationale: the traceability concern is orthogonal to the AID-Lite speed concern; separating them keeps each work's scope tight. NFR4 also moved; §1 success criterion about staying "informed and engaged" moved; §9 FR4 ACs moved; §10 Should bucket reduced to FR6 only. | split |
+| 2026-05-24 | **REQUIREMENTS refresh after feature-009 pool revision + work-003 per-area STATE deployment.** (1) **FR6 expanded** in §5 and §9 to reflect the pool execution model that replaced the original wave-barrier framing: continuous admission, `MaxConcurrent` ceiling (default 5, configurable via a new `aid-init` question), transitive-descendant failure block, wave barriers expressed as graph dependencies. (2) **§5 scope-addition rewritten** to align with work-003's deployed FR2 area-STATE rule: per-task status lives in the per-work `.aid/work-NNN/STATE.md ## Tasks Status` row; `task-NNN.md` stays 6-section flat (Definition only). The original intent — retire `task-NNN-STATE.md` and consolidate per-task state — is achieved by work-003's per-area STATE consolidation rather than by a two-zone `task-NNN.md`. Feature SPECs (002, 004, 005, 009) currently carry the older two-zone assumption; a coordinated sweep to align them with this updated REQUIREMENTS is flagged for resolution at /aid-plan. | /aid-specify |
+| 2026-05-24 | **Adaptiveness scope additions** after sufficiency analysis. Two scope additions to make the methodology more adaptive: **(1) FR1 extended** to make the lite-path triage **type-aware** — different small-work types (bug fix, single doc, small refactor, small new feature) take different lite sub-paths optimised to their respective ceremony floors, instead of all flowing through the same lite path. Realised by **extending feature-005**. **(2) NEW FR8 — Recipes catalog for common small-work patterns.** A library of pre-filled lite-path templates (bug fix, method refactor, add CRUD endpoint, write release note, add unit test, etc.) the user can instantiate by name to collapse the lite-path interview to slot-filling. Recipe instantiation produces an execution-ready work-root `SPEC.md` + `tasks/` in under a minute. Realised by a **new feature-011-recipes**. §4 In Scope, §9 ACs, §10 Priority, and the §10 pain-point coverage table all updated. | /aid-specify |
 | 2026-05-22 | **Fresh-eyes scope reshape.** Independent critique flagged the work as over-engineered (4 user pain points → 10 features + 8 CRs). Reshaped to 5 features in this work + 1 feature split to work-002. FR5 moved to `work-002-canonical-generator` (sequenced first; the canonical-source consolidation unblocks single-source editing). Dropped: FR3-M3 auto-advance (fighting the platform), FR3-M2 hooks (no surviving consumer), FR4-P3 event stream + FR4-P2 HTML viewer (observability product nested in a methodology refactor), FR7 telemetry (speculative meta-work). FR3 simplified to M1 only with M4 folded in as an authoring discipline. FR4 simplified to P1 only as pure skill-body text (state-entry print + bracket-pair floor + ASCII state-map). Deleted features 003, 006, 008, 010. CR1–CR6 retired; CR7 (two-zone task-NNN.md) retained; CR8 retired. | reshape |
 
 ## 1. Objective
@@ -110,11 +112,17 @@ improvement opportunities.
 ### In Scope
 
 - A lite path inside `aid-interview` (an early fork) for small work — problem to
-  execution-ready, no new skill (FR1).
+  execution-ready, no new skill (FR1). **Type-aware:** the triage's
+  type-of-work answer routes within the lite path so that bug fixes, single
+  docs, small refactors, and small new features each take a sub-path tuned to
+  their ceremony floor.
 - A two-tier review model for faster `aid-execute` (FR2).
 - A **thin-router refactor** to reduce per-skill footprint (FR3 — **M1 only**;
   M4 folded in as a per-skill authoring discipline).
 - **Parallel execution** of independent tasks by default (FR6).
+- A **recipes catalog** of pre-filled lite-path templates for common small-work
+  patterns (FR8) — instantiating a recipe collapses the lite-path interview to
+  slot-filling.
 
 > *Reshape note (2026-05-22):* originally also in scope: the four-mechanism FR3
 > refactor (M3 hook-driven auto-advance + M2 mechanical-offload hooks — both
@@ -178,6 +186,24 @@ improvement opportunities.
   `SPEC.md` on the lite path. FR2's per-delivery gate treats the lite work's single
   delivery (defined in that `SPEC.md`) as one delivery. *(Resolved during
   `/aid-specify` — feature-005.)*
+
+  **Type-aware lite-path routing (FR1 extension, 2026-05-24).** The triage's
+  (c) type-of-work answer does double duty: it contributes to the lite/full
+  decision *and* selects a **lite sub-path** matched to the work type's
+  ceremony floor:
+  - **Bug fix** — skip the Specify-equivalent block of the work-root `SPEC.md`
+    (the fix itself is the spec; the `SPEC.md` carries only the reproduction
+    + intended behavior + task list).
+  - **Single doc** — single-task delivery; the work-root `SPEC.md` carries
+    the doc outline; no separate Specify or Plan content.
+  - **Small refactor** — standard lite-path output (work-root `SPEC.md` +
+    tasks); no special compression.
+  - **Small new feature** — standard lite-path output, but the `SPEC.md`
+    spends a few extra slots on AC clarity (the only sub-path that can't lean
+    on existing behavior as its spec).
+  Sub-path selection is deterministic from the (c) answer; the user can
+  override the chosen sub-path on the same triage turn if the auto-routing
+  misclassifies. Realised by an extension to **feature-005**.
 - **FR2 — Two-tier review in `aid-execute`.** Replace today's per-task full quality
   gate (a review → fix → review loop to grade A on *every* task) with a two-tier
   model:
@@ -237,15 +263,53 @@ improvement opportunities.
   `.aid/work-002-canonical-generator/REQUIREMENTS.md` for the full requirements and
   `.aid/work-002-canonical-generator/features/feature-001-profile-driven-generator/SPEC.md`
   for the spec (already graded **A** in the prior cycle).
-- **FR6 — Parallel task execution by default.** Today `aid-execute` *permits*
-  concurrent execution of independent tasks — those the PLAN.md execution graph
-  marks parallelizable — but does not do it automatically: the user must manually
-  launch the parallel invocations. FR6 makes parallel execution of independent
-  tasks the **automatic default**. *Note:* in real-world use the wall-time gain from parallelism alone
-  was modest (the larger speed wins are FR2 and FR3), but parallel-by-default is
-  the correct behavior and complements them — each task still gets its FR2 per-task
-  quick check, and the per-delivery gate still runs once. Per the post-reshape
-  §10 priority table, FR6 is in the **Should** bucket (`feature-009`).
+- **FR6 — Parallel task execution by default (continuous pool model).** Today
+  `aid-execute` *permits* concurrent execution of independent tasks — those the
+  execution graph leaves mutually independent — but does not do it automatically:
+  the user must manually launch the parallel invocations. FR6 makes parallel
+  execution the **automatic default** through a **continuous agent pool**:
+  `aid-execute` maintains up to `MaxConcurrent` tasks in flight, and the *moment*
+  any in-flight task completes (and its completion newly satisfies a downstream
+  task's dependencies), the pool admits the next ready task — without waiting for
+  a synchronized wave to join.
+
+  - **Two bounds.** The pool is bounded by exactly two things: (a) the Execution
+    Graph (correctness — a task may run only when all its `Depends On` tasks are
+    `Done`), and (b) `MaxConcurrent` (resource cap — a ceiling on simultaneously
+    in-flight tasks). The graph is non-negotiable; `MaxConcurrent` is tunable.
+  - **`MaxConcurrent` configuration.** Default value is **5**. The value is set
+    interactively during `aid-init` by a new question (Max Parallel Tasks)
+    inserted in the existing question sequence, and persisted to
+    `.aid/knowledge/STATE.md` top-of-file metadata as `**Max Parallel Tasks:** N`
+    (same metadata pattern as `**Heartbeat Interval:**`).
+  - **Failure semantics (transitive-descendant block).** When a task **Fails**
+    (raises an Impediment that survives its one fix-on-spot), every task that
+    depends on it — directly or transitively — is marked **Blocked** and never
+    dispatched. Tasks in **unrelated chains** (no transitive dependency on the
+    failed task) continue executing in the pool until natural completion. All
+    `Depends On` edges are AND (no alternative paths); a single failure
+    deterministically blocks its entire downstream subtree.
+  - **Wave barriers expressed as dependencies, not a separate concept.** If
+    planning needs `{D, E, F}` to wait until all of `{A, B, C}` are complete
+    (e.g., a checkpoint), this is encoded in the Execution Graph as `D`, `E`,
+    `F` each depending on `A`, `B`, `C` (or via a synthetic checkpoint task).
+    The pool then honors the barrier through its normal readiness rule — no
+    first-class "wave" concept in the executor.
+  - **Graceful degradation.** On hosts whose sub-agent dispatch surface lacks
+    a wait-for-any-completion primitive (capability flag owned by `work-002`'s
+    `feature-001-profile-driven-generator`), `aid-execute` falls back to
+    sequential dispatch (effective `MaxConcurrent` = 1), preserving correctness
+    and the methodology, losing only the wall-time overlap. The user's
+    configured `MaxConcurrent` becomes informational on such hosts;
+    `aid-execute` emits a single info line at delivery start so the user is
+    not surprised.
+
+  *Note:* in real-world use the wall-time gain from parallelism alone was modest
+  (the larger speed wins are FR2 and FR3); FR6 is included because pool-driven
+  parallel-by-default is the correct execution behavior and complements them —
+  each task still gets its FR2 per-task quick check, and the per-delivery gate
+  still runs once. Per the post-reshape §10 priority table, FR6 is in the
+  **Should** bucket (`feature-009`).
 - **FR7 — Self-telemetry.** *Dropped during the fresh-eyes scope reshape
   (2026-05-22).* The independent critique noted: per-task token / cost is
   best-effort (host-tool session logs are not keyed to AID task IDs), the
@@ -255,15 +319,68 @@ improvement opportunities.
   known benchmark, no JSONL summary will rescue it. Measure when there is a
   specific question; do not build measurement infrastructure speculatively.
 
-> **Scope addition (2026-05-22, during `/aid-specify`).** `task-NNN-STATE.md` is
-> merged into `task-NNN.md` — the per-task file carries a **Definition** zone
-> (written by `aid-detail`) and an **Execution Record** zone (appended by
-> `aid-execute`: status, review cycles, dispatches). This retires a per-task
-> artifact and the `implementation-state.md` template, consistent with the aid-lite
-> thesis. A decision beyond the original FR1–FR7, surfaced and confirmed during
-> feature specification; realized across feature-002 (the task-file shape),
-> feature-004 (the review writes into the Execution Record), and the core artifact
-> model.
+- **FR8 — Recipes catalog for common small-work patterns.** Even the lite path
+  (FR1) derives its task breakdown from scratch each time, via interview-style
+  questions. For frequently-occurring small-work patterns (bug fix, method
+  refactor, add CRUD endpoint, write release note, add unit test, …), this is
+  wasted reasoning. FR8 adds a **recipes catalog** — a directory of pre-filled
+  lite-path templates — that the lite-path triage can offer the user to
+  instantiate by name. Instantiating a recipe collapses the lite path to
+  ~30 seconds of filling slots.
+
+  - **Recipe shape.** Each recipe specifies (a) the triage answers it
+    presumes (size = small, type = whichever applies), (b) a work-root
+    `SPEC.md` skeleton with `{{slot}}` placeholders, (c) a `tasks/task-NNN.md`
+    list with type / scope / acceptance-criteria defaults pre-filled, (d) a
+    minimal Q&A list the user must answer to fill the slots.
+  - **Catalog location.** A new `canonical/recipes/` directory in the
+    canonical source (rendered into install trees by work-002's generator).
+    Each recipe is one Markdown file with a short YAML front-matter
+    (`name`, `applies-to`, `slot-count`, `task-count`).
+  - **Triage integration.** After the lite/full decision routes a work to
+    lite, the triage offers: "Instantiate from a recipe? `[1] yes — pick one`
+    / `[2] no — full lite interview`". If yes, the user picks a recipe from
+    a short list filtered by the triage's type-of-work answer (FR1
+    extension), fills slots, and the lite path emits the work-root `SPEC.md`
+    + `tasks/` directly.
+  - **Seed catalog.** Five seed recipes ship with the feature:
+    `bug-fix`, `method-refactor`, `add-crud-endpoint`,
+    `write-release-note`, `add-unit-test`. The catalog is expected to grow
+    organically with each project's experience.
+  - **Escalation.** If a recipe-instantiated work proves a poor fit, the
+    user can fall back to the standard lite-path interview without losing
+    captured slots (mirrors FR1's lite→full escalation).
+
+  Per the post-reshape §10 priority, FR8 sits in the **Should** bucket
+  alongside FR6 (`feature-011`).
+
+> **Scope addition (2026-05-22, during `/aid-specify`; updated 2026-05-24 to
+> reflect work-003's deployed per-area STATE rule).** `task-NNN-STATE.md` is
+> **retired** and the `implementation-state.md` template is **removed**. Per-task
+> state is consolidated under **work-003's FR2 per-area STATE rule** (deployed):
+>
+> - **`task-NNN.md` stays 6-section flat** (Title, Type, Source, Depends on,
+>   Scope, Acceptance Criteria) — the Definition only, written by `aid-detail`.
+> - **Per-task status, review history, and dispatch records live in the per-work
+>   `.aid/work-NNN/STATE.md ## Tasks Status` row** — written/updated by
+>   `aid-execute` as the task progresses.
+>
+> The original intent of this scope addition — retire `task-NNN-STATE.md` and
+> consolidate per-task state — is achieved by work-003's per-area STATE
+> consolidation rather than by the originally-proposed two-zone `task-NNN.md`
+> shape. A decision beyond the original FR1–FR7, surfaced and confirmed during
+> feature specification; realized across feature-002 (`task-template.md` stays
+> 6-section, no Execution Record scaffold; `implementation-state.md` deletion),
+> feature-004 (per-task quick-check record + per-delivery gate record write
+> through the work `STATE.md ## Tasks Status` row), feature-009 (pool admission
+> reads task Status from the same row), and the core artifact model.
+>
+> **Cascade.** Feature SPECs 002, 004, 005, and 009 still describe the older
+> two-zone `task-NNN.md` shape in their bodies — a coordinated sweep aligning
+> them with this updated scope-addition is flagged for resolution at /aid-plan
+> (or as a coordinated fix-pass before planning, if the user prefers). The pool
+> algorithm, the two-tier review structure, and the lite-path artifact set are
+> all *independent of the shape decision* — only the wording shifts.
 
 ## 6. Non-Functional Requirements
 
@@ -362,6 +479,21 @@ improvement opportunities.
 - A lite work item that proves large escalates to the full path without losing
   captured information.
 
+**FR1 extension — Type-aware lite-path routing (2026-05-24):**
+
+- Given the triage's (c) type-of-work answer is one of `bug-fix`, `single-doc`,
+  `small-refactor`, or `small-new-feature`, when the work routes to the lite
+  path, then the lite path selects a sub-path matched to that type.
+- Given the work type is `bug-fix`, when the lite-path sub-path runs, then the
+  work-root `SPEC.md` carries reproduction + intended-behavior + task list only
+  (no Specify-equivalent block; the fix is the spec).
+- Given the work type is `single-doc`, when the lite-path sub-path runs, then
+  it produces a single-task delivery whose work-root `SPEC.md` is the document
+  outline.
+- Given the auto-selected sub-path is wrong for the user's intent, when the
+  triage step exposes the sub-path choice, then the user can override the
+  selection on the same turn.
+
 **FR2 — Two-tier review:**
 
 - During execution, each task gets exactly one quick review pass (no grade loop)
@@ -388,12 +520,55 @@ work's REQUIREMENTS.md §9.*
 **FR5 — Profile-driven generator.** *Moved to `work-002-canonical-generator`; see
 that work's REQUIREMENTS.md and feature-001 SPEC for acceptance criteria.*
 
-**FR6 — Parallel execution:**
+**FR6 — Parallel execution (continuous pool model):**
 
-- `aid-execute` runs tasks marked parallelizable in the execution graph
-  concurrently, by default.
+- Given an Execution Graph with parallelizable tasks, when `aid-execute` runs the
+  delivery, then ready tasks (`Depends On` all `Done`) are dispatched concurrently
+  up to `MaxConcurrent` in flight at a time by default.
+- Given the pool has fewer than `MaxConcurrent` tasks in flight, when any
+  in-flight task completes and a previously-blocked task becomes ready, then the
+  pool dispatches that newly-ready task immediately — without waiting for the
+  other in-flight tasks to finish.
+- Given `MaxConcurrent` is N, when more than N tasks are ready simultaneously,
+  then no more than N tasks are in flight concurrently; the surplus stays in the
+  ready set and is admitted in FIFO-by-task-number order as slots free.
+- Given each task is run via the pool, when it completes, then it still receives
+  its per-task quick check (FR2), and the per-delivery quality gate (FR2) still
+  runs exactly once per delivery.
+- Given a task **Fails** (Impediment), when its transitive descendants are still
+  pending, then those descendants are marked **Blocked** and never dispatched;
+  tasks in **unrelated** chains continue executing in the pool until they reach
+  natural completion or are themselves Blocked.
+- Given `aid-init` is run, when the user is asked the Max Parallel Tasks question
+  (asked between Heartbeat Interval and Commit AID Workspace), then a default of
+  **5** is offered, the chosen value is persisted to `.aid/knowledge/STATE.md`
+  as the `**Max Parallel Tasks:**` metadata line, and `aid-execute` reads from
+  that field at delivery start.
 
 **FR7 — Self-telemetry.** *Dropped — see FR7 in §5.*
+
+**FR8 — Recipes catalog:**
+
+- A `canonical/recipes/` directory exists; the install trees ship its rendered
+  copy via work-002's generator; the lite-path triage discovers recipes from
+  the rendered directory at run time.
+- The seed catalog contains at least five recipes: `bug-fix`,
+  `method-refactor`, `add-crud-endpoint`, `write-release-note`,
+  `add-unit-test`.
+- Each recipe is one Markdown file with YAML front-matter (`name`,
+  `applies-to`, `slot-count`, `task-count`), a work-root `SPEC.md` skeleton
+  with `{{slot}}` placeholders, and a `tasks/task-NNN.md` skeleton list with
+  type / scope / acceptance-criteria defaults.
+- Given the lite-path triage has routed a work to lite, when the recipes
+  catalog has at least one recipe matching the triage's type-of-work answer,
+  then the triage offers the user the option to instantiate from a recipe.
+- Given the user picks a recipe, when slot-filling completes, then the lite
+  path emits an execution-ready work-root `SPEC.md` + `tasks/task-NNN.md`
+  files within one minute of user time (slot-fill + render only — no
+  free-form interview).
+- Given a recipe-instantiated work proves a poor fit, when the user requests
+  escalation, then the work falls back to the standard lite-path interview
+  without losing captured slot values.
 
 ## 10. Priority
 
@@ -402,8 +577,8 @@ Priority below is the requirement-level scope *after* the fresh-eyes reshape
 
 | Bucket | Items | Rationale |
 |--------|-------|-----------|
-| **Must** | FR1 (`feature-005`) · FR2 (`feature-004`) · FR3 (`feature-002`) | The three speed-core changes — lite path, two-tier review, thin-router refactor — that directly address pain points 1, 2, and 3. |
-| **Should** | FR6 (`feature-009`) | Parallel-by-default execution. (FR4 / pain-point #4 / `feature-007` moved to `work-003-traceability` on 2026-05-23.) |
+| **Must** | FR1 + FR1 type-aware ext (`feature-005`) · FR2 (`feature-004`) · FR3 (`feature-002`) | The three speed-core changes — lite path (with type-aware sub-paths), two-tier review, thin-router refactor — that directly address pain points 1, 2, and 3. |
+| **Should** | FR6 (`feature-009`) · FR8 (`feature-011`) | Parallel-by-default execution. Recipes catalog — instantiable lite-path templates for repetitive small-work patterns. (FR4 / pain-point #4 / `feature-007` moved to `work-003-traceability` on 2026-05-23.) |
 | **(Moved)** | FR5 → `work-002-canonical-generator` | Sequenced **first** — the canonical-source consolidation it delivers makes every subsequent edit to AID's skills single-source instead of triplicated. |
 | **(Dropped)** | FR3-M3 (auto-advance) · FR3-M2 (mechanical-offload hooks) · FR4-P2 (HTML viewer) · FR4-P3 (event stream) · FR7 (telemetry) | Over-engineered per the independent critique. The bracket-pair text floor (FR4) replaces the observability stack; M3 fought the platform; M2 lost its consumers; telemetry was speculative meta-work. |
 
@@ -412,18 +587,19 @@ Priority below is the requirement-level scope *after* the fresh-eyes reshape
 1. **`work-002` first** (canonical generator) — unblocks single-source editing for
    everything below.
 2. **`work-001-aid-lite`:** FR3 (`feature-002`) before FR1 / FR2 — it refactors
-   the skills the others modify. FR6 (`feature-009`) ships anytime.
+   the skills the others modify. FR6 (`feature-009`) and FR8 (`feature-011`)
+   ship anytime; FR8 has a soft dependency on FR1's triage extension being in
+   place (recipes integrate into the triage step).
 
-Detailed sequencing is `aid-plan`'s job; see the 4 surviving feature folders
-(`feature-002`, `feature-004`, `feature-005`, `feature-009`).
+Detailed sequencing is `aid-plan`'s job; see the 5 surviving feature folders
+(`feature-002`, `feature-004`, `feature-005`, `feature-009`, `feature-011`).
 
 ### Pain-point → surviving feature coverage
 
-| Pain point (§2) | Owning feature | Mechanism |
+| Pain point (§2) | Owning feature(s) | Mechanism |
 |---|---|---|
-| **1.** Heavy pipeline for small work | `feature-005-lite-path` | Triage fork in `aid-interview`; single consolidated work-root `SPEC.md`; no per-feature folders for lite work |
-| **2.** Slow per-task execution | `feature-004-two-tier-review` + `feature-009-parallel-task-execution` | Cheap per-task quick check + one full A-grade gate per delivery; concurrent dispatch of graph-independent tasks |
+| **1.** Heavy pipeline for small work | `feature-005-lite-path` (with type-aware sub-paths) **+** `feature-011-recipes` | Triage fork in `aid-interview`; type-aware lite sub-paths; single consolidated work-root `SPEC.md`; no per-feature folders for lite work; recipes catalog for repetitive small-work patterns |
+| **2.** Slow per-task execution | `feature-004-two-tier-review` + `feature-009-parallel-task-execution` | Cheap per-task quick check + one full A-grade gate per delivery; concurrent pool dispatch (bounded by `MaxConcurrent`) of graph-independent tasks |
 | **3.** Heavy skills | `feature-002-skill-footprint-refactor` | Thin-router `SKILL.md` + per-state `references/state-*.md` loaded on demand |
 
-All three pain points have a surviving owner here; pain-point #4 was split to `work-003-traceability` on 2026-05-23. **Cross-cutting:** `work-002` lands
-first so every subsequent edit is single-source rather than triplicated.
+All three pain points have a surviving owner here, with **pain-point #1 now covered by two complementary features** (lite path for one-off small work, recipes for repetitive small-work patterns); pain-point #4 was split to `work-003-traceability` on 2026-05-23. **Cross-cutting:** `work-002` lands first so every subsequent edit is single-source rather than triplicated.

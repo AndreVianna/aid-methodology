@@ -14,6 +14,7 @@
 | 2026-05-22 | Technical Specification — revised against locked decisions: (B) `DELIVERY.md` removed entirely, replaced by ONE consolidated work-root `SPEC.md` (`.aid/work-NNN/SPEC.md`) merging the condensed spec + PLAN.md info; lite work has no feature folder, no per-feature `SPEC.md`, no `PLAN.md`; (A) `task-NNN-STATE.md` merged into `task-NNN.md` (two-zone shape); `aid-execute` delivery-descriptor resolution rule updated (full → `PLAN.md`, lite → work-root `SPEC.md`); Data Model, Feature Flow, Layers & Components, State Machines, Migration Plan all updated | /aid-specify |
 | 2026-05-22 | Reviewer-identified fixes applied (1 LOW + 3 MINOR): Resume detection special-cases the 1b–1.5 interrupt window (re-enters State 1.5, not State 3); `## Source` now lists §8; State L4 hand-off prints `/aid-execute task-001 {work-NNN}`; the two `references/` files marked conditional on FR3/feature-002 | /aid-specify |
 | 2026-05-22 | Reviewer-identified fixes applied (1 MEDIUM + 1 LOW + 3 MINOR). **MEDIUM (cross-reference).** Every bare `FR5` reference qualified as `work-002's feature-001-profile-driven-generator` per the post-reshape `REQUIREMENTS.md §10` (`FR5 (Moved)` to work-002): Cross-tree propagation paragraph, Layers row for `references/triage.md`, Sequencing note, and Migration Plan §5 all rewritten; no bare `FR5` remains in the SPEC. **LOW (dead text).** Cross-tree propagation paragraph's pre-FR5 manual-quadruplicate fallback removed — `REQUIREMENTS.md §10` sequences work-002 **first**, so by the time feature-005 lands the generator is in place; the fallback is dead text. **MINOR (CR6).** Lite-path state ids converted from embedded-space to hyphenated UPPERCASE per feature-002's locked CR6: `CONDENSED INTAKE` → `CONDENSED-INTAKE`, `TASK BREAKDOWN` → `TASK-BREAKDOWN`, `LITE REVIEW` → `LITE-REVIEW`, `LITE DONE` → `LITE-DONE` (L1–L4 dispatch table, transition table, ASCII state diagram, all in-prose `State Lx ...` references). **MINOR (state-id).** `State 1.5 TRIAGE` pinned as canonical `State TRIAGE` (drops the numeric-fractional `1.5` from the id); positional framing kept in prose ("positioned between State 1 and State 2") where useful. **MINOR (data-model registration).** Migration Plan §5's data-model.md write-action now states concrete targets: extend `§2.4 SPEC.md (per-feature)` with a lite-path sub-note (work-root placement, merged spec + PLAN-level content) and update `§3.2 Cardinality` for one-per-lite-work cardinality; renaming §2.4 to cover both placements is at implementer's discretion. | /aid-specify |
+| 2026-05-24 | **Alignment Update** added (between Acceptance Criteria and Technical Specification) **+** new "Type-Aware Lite Sub-paths (FR1 extension)" section added between Alignment Update and Technical Specification **+** 4 new ACs for the FR1 type-aware extension. Per the 2026-05-24 REQUIREMENTS refresh: (1) `INTERVIEW-STATE.md` is retired as a separate file — triage result + lite-path status live in the consolidated per-work `STATE.md` per work-003 FR2 area-STATE rule; `task-NNN.md` stays 6-section flat; per-task state in work `STATE.md ## Tasks Status` row. Body references to INTERVIEW-STATE.md / two-zone task-NNN.md / Execution Record become historical reference. (2) New FR1 type-aware extension: triage's (c) type-of-work answer routes within the lite path to one of LITE-BUG-FIX / LITE-DOC / LITE-REFACTOR / LITE-FEATURE sub-paths; user can override on the same triage turn. The Type-Aware Lite Sub-paths section documents the sub-path table, the triage emission shape, the user override flow, the per-sub-path mechanics, and the integration point with feature-011 (recipes). | /aid-specify |
 
 ## Source
 
@@ -71,6 +72,250 @@ Must
   (see FR1).
 - [ ] Given a lite work item that proves to be large, when escalation is triggered,
   then it moves to the full path without losing any captured information.
+
+## Acceptance Criteria — Type-aware extension (added 2026-05-24)
+
+- [ ] Given the triage's (c) type-of-work answer is one of `bug-fix`,
+  `single-doc`, `small-refactor`, or `small-new-feature`, when the work
+  routes to the lite path, then the lite path selects a sub-path matched to
+  that type.
+- [ ] Given the work type is `bug-fix`, when the lite-path sub-path runs,
+  then the work-root `SPEC.md` carries reproduction + intended-behavior +
+  task list only (no Specify-equivalent block; the fix is the spec).
+- [ ] Given the work type is `single-doc`, when the lite-path sub-path runs,
+  then it produces a single-task delivery whose work-root `SPEC.md` is the
+  document outline.
+- [ ] Given the auto-selected sub-path is wrong for the user's intent, when
+  the triage step exposes the sub-path choice, then the user can override
+  the selection on the same turn.
+
+---
+
+## Alignment Update — 2026-05-24
+
+> **REQUIREMENTS.md was refreshed on 2026-05-24** with two changes that touch
+> this feature:
+>
+> **(1) Per-area STATE rule (work-003 FR2 deployment).** Per the updated §5
+> scope-addition:
+>
+> - **`task-NNN.md` stays 6-section flat** (Definition only). The two-zone
+>   shape (Definition + Execution Record) this SPEC's body uses is retired.
+> - **`INTERVIEW-STATE.md` is retired as a separate file** — the triage
+>   result + lite-path status live in the consolidated per-work
+>   `.aid/work-NNN/STATE.md` (the work-area STATE.md per work-003 FR2
+>   area-STATE rule). work-001's own STATE.md is already in this shape.
+> - **Per-task status lives in the per-work `.aid/work-NNN/STATE.md
+>   ## Tasks Status` row** (not in a task-NNN.md Execution Record zone).
+>
+> **(2) Type-aware lite-path routing (FR1 extension).** REQUIREMENTS.md §5
+> FR1 was extended on 2026-05-24 to make the lite-path triage's (c)
+> type-of-work answer route within the lite path — see the new "Type-Aware
+> Lite Sub-paths" section below for the substantive new content this feature
+> now owns.
+>
+> **What changes for this feature's body:**
+>
+> - Every "INTERVIEW-STATE.md" reference in the body is superseded — reads as
+>   "the work-area `.aid/work-NNN/STATE.md`" (the consolidated work STATE per
+>   work-003 FR2 area-STATE rule). The `§ Triage` block lives in that STATE.md
+>   instead of in a separate `INTERVIEW-STATE.md`.
+> - Every "two-zone task-NNN.md" / "Execution Record zone" reference is
+>   superseded — task-NNN.md remains 6-section flat; per-task status lives in
+>   the per-work `STATE.md ## Tasks Status` row.
+> - The lite-path workspace diagram showing `INTERVIEW-STATE.md` and
+>   `tasks/task-001.md ← execution-ready, two-zone task shape` is superseded
+>   — the workspace shape is:
+>   ```
+>   .aid/work-NNN-{name}/
+>     STATE.md             ← work-area STATE (triage + tasks status + lifecycle)
+>     SPEC.md              ← the ONE consolidated work-root spec (lite path only)
+>     tasks/
+>       task-001.md        ← 6-section flat
+>       task-002.md
+>       ...
+>   ```
+> - The Migration Plan's "two-zone shape coordinated repo-wide" notes are
+>   superseded (no two-zone shape exists; per-area STATE consolidation
+>   replaces it).
+>
+> **What stays the same:**
+>
+> - The lite-path fork inside aid-interview, decided by 2-3 deterministic
+>   triage questions.
+> - The lite-path output shape: one consolidated work-root `SPEC.md` + a
+>   `tasks/` folder, no per-feature SPEC, no PLAN.md, no feature folders.
+> - aid-execute's delivery-descriptor resolution rule: PLAN.md on full path,
+>   work-root SPEC.md on lite path.
+> - The FR2 per-delivery gate treating the lite work's single delivery as one
+>   delivery.
+> - Lite → full escalation (FR1) without losing captured info.
+> - Cross-tree propagation via work-002's generator (single-source canonical).
+>
+> The body's Migration Plan §5 specifically asks to "create the
+> `INTERVIEW-STATE.md` template" — this step is **also superseded** by the
+> per-area STATE rule (INTERVIEW-STATE.md is retired as a separate file;
+> the triage block lives in work-area STATE.md per the area-STATE rule).
+> The Migration Plan addition for the `## Triage` section (in the
+> Type-Aware section below) replaces this template-create step.
+>
+> Body sections below describe the original INTERVIEW-STATE.md + two-zone
+> design as historical reference; the alignment update above is the operative
+> contract for /aid-plan and implementation. A focused body-text rewrite is
+> a candidate /aid-detail task and is not scoped into this feature.
+
+---
+
+## Type-Aware Lite Sub-paths (FR1 extension, added 2026-05-24)
+
+This section is **net-new content** added for the FR1 type-aware lite-path
+routing extension introduced in the 2026-05-24 REQUIREMENTS update. The
+original lite-path design treated all small work uniformly; this extension
+makes the lite path's behavior depend on the triage's (c) type-of-work
+answer (which already existed but was used only loosely).
+
+### T3 prose → workType kebab mapping (added in fix-pass)
+
+The body's State TRIAGE Q&A presents user-facing prose choices (Q3 = type
+of work, with free-form readable answers). The new sub-path logic operates
+on kebab-case `workType` enum values. The triage step normalizes the user's
+prose answer to the kebab enum via this mapping — it is the bridge between
+the body's question UI and the new section's enum:
+
+| T3 user-facing choice (body) | `workType` enum value (this section) |
+|------------------------------|--------------------------------------|
+| `bug fix` | `bug-fix` |
+| `small refactor` | `small-refactor` |
+| `single document/artifact` | `single-doc` |
+| `new feature or system` | `small-new-feature` |
+
+If T3's answer doesn't match any of the four prose values (e.g., the user
+typed something else), the triage falls back to the full path — the lite
+path is only selected when T3 yields one of these four normalisable values.
+
+### Sub-path table
+
+The triage emits two signals: `path` (lite/full) and `workType` (one of
+`bug-fix`, `single-doc`, `small-refactor`, `small-new-feature`). When
+`path = lite`, the lite path selects a sub-path keyed on `workType`:
+
+| `workType` | Sub-path name | Work-root `SPEC.md` shape | Task count | Notes |
+|---|---|---|---|---|
+| `bug-fix` | LITE-BUG-FIX | reproduction + intended-behavior + task list (no Specify-equivalent block — the fix IS the spec) | typically 1 (apply fix + add test) | Skips the "what are we building" Specify content; the reproduction + intended-behavior pair plays that role. |
+| `single-doc` | LITE-DOC | document outline (sections + brief intent per section) + single task list | exactly 1 | The "delivery" is the doc itself; no Specify-equivalent. |
+| `small-refactor` | LITE-REFACTOR | standard lite-path SPEC (before/after sketch + scope + AC) + task list | typically 1-3 | Standard lite-path output; no compression beyond what the lite path already does. |
+| `small-new-feature` | LITE-FEATURE | standard lite-path SPEC + task list, with **extra AC slots** | typically 2-5 | The only sub-path that cannot lean on existing behavior as the spec; needs AC clarity. |
+
+### Triage emission
+
+The triage step's output is structured as two values written to the work-area
+`STATE.md § Triage` block:
+
+```markdown
+## Triage
+
+- **Path:** lite | full
+- **Work Type:** bug-fix | single-doc | small-refactor | small-new-feature
+- **Sub-path:** LITE-BUG-FIX | LITE-DOC | LITE-REFACTOR | LITE-FEATURE | (n/a for full)
+- **Sub-path (auto):** {the sub-path the auto-rule selected; omitted if no override}
+- **Decision rationale:** {one-sentence explanation; templated form `T1={value} + T2={value} + T3={value} → {path}/{sub-path}` is acceptable, or natural prose}
+- **Override:** yes | (omitted when no override)
+- **Recipe:** {recipe-name; written by feature-011 when a recipe is instantiated; omitted otherwise}
+```
+
+The `Sub-path` field always reflects the **final** sub-path the lite path
+operates on. When the user overrides, `Sub-path (auto)` records what the
+auto-rule originally selected and `Override: yes` flags the deviation — a
+useful audit trail for tuning the type-aware rule with experience (per the
+Description §41-42 "criterion is acknowledged as somewhat subjective and
+will be tuned with experience"). `Recipe` is reserved for feature-011's
+recipe-offer step.
+
+The `Sub-path` value is deterministic from `workType` (1:1 mapping per the
+table above). The mapping is hard-coded in the `aid-interview` triage logic;
+it is not user-configurable per project (a future extension could allow
+per-project overrides, deferred for now).
+
+### User override
+
+After the triage emits its decision, the lite path **exposes the chosen
+sub-path** to the user before proceeding:
+
+```
+Triage decided:
+  Path:     lite
+  Type:     bug-fix
+  Sub-path: LITE-BUG-FIX (reproduction + intended-behavior + 1 task)
+
+[1] Proceed with LITE-BUG-FIX
+[2] Use a different sub-path:
+      [a] LITE-DOC
+      [b] LITE-REFACTOR
+      [c] LITE-FEATURE
+[3] Escalate to full path (FR1 escalation)
+```
+
+This override is **on the same triage turn** (not after slot-fill or
+interview start) — the user sees the decision and can correct misclassification
+immediately, before any sub-path-specific work begins. The chosen sub-path is
+recorded in the `STATE.md § Triage` block; if overridden, an additional
+`**Override:** yes` line records the deviation.
+
+### Sub-path mechanics
+
+Each sub-path is realised as a small branch in the existing lite-path State L1
+(CONDENSED-INTAKE) state machine. The State L1 logic reads `Sub-path` from
+the `§ Triage` block and dispatches to a sub-path-specific prompt template.
+
+> **Note:** the body's existing State L1 description and the lite-path
+> State Machines transition table do not yet reflect this sub-path
+> branching — they predate this Type-Aware extension. The body's L1
+> description is *historical reference*; the operative L1 behavior is
+> described here. A focused body-text update is flagged for /aid-detail.
+
+- **LITE-BUG-FIX:** prompts for `bug-title`, `bug-description`, `reproduction-steps`,
+  `intended-behavior`; emits a work-root `SPEC.md` matching the contract above
+  (reproduction + intended-behavior + task list, no Specify-equivalent block).
+  feature-011's `bug-fix` recipe instantiates the same shape and consumes
+  this contract.
+- **LITE-DOC:** prompts for `doc-title`, `doc-purpose`, `outline-bullets`;
+  emits a work-root `SPEC.md` that IS the document outline.
+- **LITE-REFACTOR:** unchanged from the original lite-path L1 logic; this is
+  the "default" sub-path the original spec describes.
+- **LITE-FEATURE:** extends the LITE-REFACTOR prompts with **additional AC
+  elicitation** — explicit per-AC prompts asking what behavior would prove
+  the feature is done.
+
+### Migration Plan addition — work-state-template + data-model.md (added in fix-pass)
+
+The Type-Aware section above introduces a `## Triage` block in the per-work
+`STATE.md` that the canonical `work-state-template.md` does not yet declare.
+Two coordinated artifact updates are required at implementation time:
+
+1. **Extend `canonical/templates/work-state-template.md`** with a `## Triage`
+   section after the metadata block, holding the bullet-list fields (`Path`
+   / `Work Type` / `Sub-path` / `Sub-path (auto)` / `Decision rationale` /
+   `Override` / `Recipe`) described in the Triage emission section above.
+   The section is empty for full-path works and populated for lite-path
+   works.
+2. **Extend `.aid/knowledge/data-model.md §2.3` (Work-area STATE.md schema)**
+   to list the `## Triage` section among the work STATE's recognised
+   sections.
+
+These changes are additive (full-path works simply have an empty `## Triage`
+section); no backward-compatibility migration is required.
+
+### Interaction with feature-011 (Recipes)
+
+When feature-011 ships, the triage's recipe-offer step (a sub-step
+**after** the sub-path is selected but **before** the sub-path's
+condensed interview runs) reads the `Work Type` value (the normalized kebab `workType`) to filter the recipe
+catalog: recipes whose `applies-to` matches the `workType` are offered first.
+If the user accepts a recipe, the sub-path's condensed interview is skipped
+entirely (the recipe's slot-fill takes its place). If declined, the
+sub-path-specific interview runs as described above.
+
+### Acceptance — covered by the §Acceptance Criteria — Type-aware extension block above
 
 ---
 
