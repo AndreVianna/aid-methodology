@@ -122,8 +122,11 @@ Write the review result to `STATE.md ## Delivery Gates`:
   - Exit. Detection will route to TASK-BREAKDOWN on next run.
 
 - **[4] Escalate:**
-  - Invoke lite→full escalation per `references/state-triage.md` escalation rules.
-  - Exit.
+  - Invoke `references/lite-to-full-escalation.md` (lite→full escalation procedure).
+    Pass current state name (`LITE-REVIEW`) and all captured info: the work-root
+    `SPEC.md`, all task files in `tasks/`, and the review grade + findings just
+    recorded in `STATE.md ## Delivery Gates`.
+  - Exit LITE-REVIEW after escalation completes.
 
 ---
 
@@ -141,5 +144,5 @@ Print: `Next: [State: LITE-DONE] — run /aid-interview again` and exit.
 | Grade < minimum, user selects loopback to L1 | Lifecycle entry with reason; exit (next run enters CONDENSED-INTAKE) |
 | Grade < minimum, user selects loopback to L2 | tasks/ reset; SPEC.md Tasks+Graph reset; lifecycle entry; exit (next run enters TASK-BREAKDOWN) |
 | Grade < minimum, user selects [1] override | Grade recorded; lifecycle entry notes override; advance to LITE-DONE |
-| User selects [4] Escalate | Escalation triggered; exit |
+| User selects [4] Escalate | `lite-to-full-escalation.md` invoked; SPEC.md + tasks/ + grade carried; `Path: escalated` written; REQUIREMENTS.md seeded; exit LITE-REVIEW; next state = CONTINUE |
 | LITE-REVIEW already complete in lifecycle | Skip; advance to LITE-DONE (idempotent) |

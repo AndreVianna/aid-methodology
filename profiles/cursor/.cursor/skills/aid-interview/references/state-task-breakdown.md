@@ -85,8 +85,13 @@ Proposed task breakdown for {work-NNN-name} ({Sub-path}):
 Wait for user response:
 - **[1] Approve:** proceed to Step 4.
 - **[2] Modify:** incorporate the change and re-present for approval (loop until [1]).
-- **[3] Escalate:** invoke lite→full escalation per `references/state-triage.md`
-  escalation rules; exit TASK-BREAKDOWN.
+- **[3] Escalate:** invoke `references/lite-to-full-escalation.md` (lite→full
+  escalation procedure). Pass current state name (`TASK-BREAKDOWN`) and all
+  captured info: the approved task list (if any), the work-root `SPEC.md` (already
+  written by CONDENSED-INTAKE), and all slot values from CONDENSED-INTAKE (read
+  `STATE.md ## Escalation Carry` if escalation was partially triggered earlier, or
+  read the `SPEC.md` sections to reconstruct slot values). Exit TASK-BREAKDOWN after
+  escalation completes.
 
 ### Step 4: Create tasks/ folder and write task files
 
@@ -188,4 +193,4 @@ Print: `Next: [State: LITE-REVIEW] — run /aid-interview again` and exit.
 | LITE-REFACTOR SPEC.md, 2-task breakdown approved | task-001 REFACTOR + task-002 TEST written; dependency graph: task-002 depends on task-001 |
 | LITE-FEATURE SPEC.md, 3-task breakdown approved | 3 tasks written; parallel waves calculated correctly |
 | tasks/ already has task-NNN rows in SPEC.md ## Tasks | Skip; advance to LITE-REVIEW (idempotent) |
-| User selects [3] Escalate | Escalation triggered; exit TASK-BREAKDOWN |
+| User selects [3] Escalate | `lite-to-full-escalation.md` invoked; SPEC.md + captured slots carried; `Path: escalated` written; REQUIREMENTS.md seeded; exit TASK-BREAKDOWN; next state = CONTINUE |

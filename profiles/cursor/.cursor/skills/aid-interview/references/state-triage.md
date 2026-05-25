@@ -157,6 +157,191 @@ rule's own conservative logic already handles this case. The user may re-run wit
 
 ---
 
+## Step 5a: Recipe-offer (lite path only)
+
+This step runs **only when Path = lite** (auto-detected or overridden, but NOT when
+escalated to full). It fires immediately after the user's sub-path choice is recorded
+in Step 5, before STATE.md is written in Step 6.
+
+**Trigger condition:** Path = lite AND at least one recipe matches `workType`.
+
+### 5a-1: Discover matching recipes
+
+Scan the canonical recipes directory (the path is:
+`canonical/recipes/` relative to the AID installation root, i.e. the same directory
+that contains `canonical/skills/`). For each `.md` file, read the `applies-to` field
+from its YAML front-matter. A recipe matches if:
+
+```
+recipe.applies-to == workType   OR   recipe.applies-to == '*'
+```
+
+If no recipes match — the catalog is empty or no applies-to matches `workType` or `*`
+— skip this entire step (Step 5a). Proceed directly to Step 6.
+
+### 5a-2: Present recipe list to user
+
+If at least one recipe matches, present the filtered list and offer a choice on
+**one turn**:
+
+```
+Recipe catalog — {N} recipe(s) available for {workType}:
+
+  [1] {recipe-name-1} — {one-line description from recipe name}
+  [2] {recipe-name-2} — {one-line description from recipe name}
+  ...
+  [0] Decline — use the standard {Sub-path} condensed interview instead
+
+Recipes give you a pre-filled SPEC + tasks in under 1 minute.
+Pick a number, or press 0 to skip:
+```
+
+The one-line description per recipe is derived from the recipe `name` field: convert
+kebab-case to title-case words (e.g., `bug-fix` → "Bug Fix",
+`add-crud-endpoint` → "Add CRUD Endpoint"). Do not re-read the file body to generate
+the description — the name field is sufficient.
+
+Wait for the user's response **on this same turn** before advancing.
+
+### 5a-3a: User picks a recipe — slot-fill loop
+
+When the user picks a recipe number:
+
+1. **Identify the recipe file:** resolve the chosen recipe's `.md` path in
+   `canonical/recipes/`.
+
+2. **List slots:** call `parse-recipe.sh --list <recipe-file>` to get the ordered
+   list of slot names (one per line, unique, order of first appearance).
+
+   - If the slot list is empty (recipe has no slots), skip the slot-fill loop and
+     proceed directly to rendering.
+
+3. **For each slot name (in order):**
+
+   Present a prompt:
+
+   ```
+   Slot: {slot-name}
+   Enter value (press Enter twice / empty line to finish multi-line input):
+   ```
+
+   Wait for the user's input. Multi-line answers are terminated by an **empty line**
+   (user presses Enter on a blank line after their text). Single-line answers may
+   end on the first line if the next line is blank.
+
+   If the user provides an **empty value** (first input is immediately an empty line),
+   reject it and re-prompt:
+
+   ```
+   Slot {slot-name} cannot be empty. Please enter a value:
+   ```
+
+   Repeat until the user provides a non-empty value.
+
+   **Escalation during slot-fill:** If the user types the literal string
+   `/aid-interview escalate-from-recipe` as their slot value, stop the slot-fill
+   loop immediately. Preserve any slot values already collected. Write them to
+   `STATE.md ## Recipe Slots` (see 5a-4). Then proceed to the standard
+   {Sub-path} condensed interview (same as the decline path, Step 5a-3b), but
+   seed the CONDENSED-INTAKE state with the note: "Recipe '{recipe-name}' partially
+   filled; slots collected so far are available in STATE.md ## Recipe Slots."
+
+4. **Collect all slot values** into an internal mapping:
+   `{ "slot-name": "user-supplied-value", ... }`
+
+5. **Confirm before render:** After all slots are filled, show a summary:
+
+   ```
+   Recipe: {recipe-name}
+   Slots filled:
+     {slot-1}: {value-1}
+     {slot-2}: {value-2}
+     ...
+
+   [1] Emit SPEC.md + tasks and proceed
+   [2] Edit a slot value (enter slot name to re-fill)
+   [3] Abort and use the standard condensed interview instead
+   ```
+
+   Wait for the user's choice **on this same turn**.
+
+   - **[1] Emit:** proceed to Step 5a-4.
+   - **[2] Edit:** prompt `Which slot to re-fill? (enter name):` and re-run the
+     slot prompt for that slot only. Loop back to the summary.
+   - **[3] Abort:** treat as a decline (proceed to Step 5a-3b).
+
+### 5a-3b: User declines (or aborts from confirmation)
+
+When the user picks `[0]` (decline) or aborts from the confirmation step:
+
+- No recipe is recorded.
+- The `Recipe` field in `STATE.md ## Triage` is **omitted** (not written, not "none").
+- Control flows to Step 6 with the current lite-path settings unchanged.
+- CONDENSED-INTAKE will run the standard sub-path condensed interview per
+  task-016.
+
+### 5a-4: Write slots JSON + emit + update STATE.md
+
+After the user confirms emission (Step 5a-3a choice [1]):
+
+1. **Write slots JSON** to a temporary file (e.g., `<system-temp>/aid-slots-{work}.json`)
+   as a flat JSON object: `{ "slot-name": "value", ... }`.
+
+   Auto-fill two special slots if present in the recipe but not prompted
+   (i.e., if `work-name` or `date` appear in the slot list, auto-fill them
+   rather than prompting the user):
+   - `work-name` → the current work identifier (e.g., `work-001-aid-lite`)
+   - `date` → today's date in `YYYY-MM-DD` format
+
+   If these slots were already prompted and the user provided a value, use
+   the user-supplied value (do not override with the auto-fill).
+
+2. **Emit:** call `parse-recipe.sh --render --recipe <file> --slots-json <json> --work-dir <work-dir>`
+   where `<work-dir>` is the `.aid/{work}/` directory for this work. This writes:
+   - `.aid/{work}/SPEC.md` — rendered spec block with all slots substituted
+   - `.aid/{work}/tasks/task-NNN.md` — one file per task heading
+
+   The `{!{` → `{{` escape rewrite is applied by `parse-recipe.sh` at emit time;
+   no additional rewrite is needed here.
+
+3. **Write `STATE.md ## Recipe Slots`** section immediately after emission succeeds:
+
+   ```markdown
+   ## Recipe Slots
+
+   Recipe: {recipe-name}
+
+   | Slot | Value |
+   |------|-------|
+   | {slot-1} | {value-1} |
+   | {slot-2} | {value-2} |
+   | ... | ... |
+   ```
+
+   This section is written even for escalation (with only the slots filled so far).
+   It preserves slot values for task-017 escalation handling.
+
+4. **Populate `STATE.md ## Tasks Status`** table from the emitted task files.
+   For each emitted `tasks/task-NNN.md`:
+   - Read the task `Type` field from the file.
+   - Add one row to the Tasks Status table: `| NNN | task-NNN | {Type} | 1 | Pending | — | — | Recipe-generated |`
+
+5. **Record recipe name** — set internal `recipe = {recipe-name}`. This value is
+   written to `STATE.md ## Triage` in Step 6 as the `Recipe:` field.
+
+6. **Advance to LITE-DONE** instead of CONDENSED-INTAKE. Print:
+
+   ```
+   Recipe '{recipe-name}' emitted: SPEC.md + {N} task file(s).
+   Next: [State: LITE-DONE] — run /aid-interview again
+   ```
+
+   (Recipe-instantiated works skip CONDENSED-INTAKE, TASK-BREAKDOWN, and LITE-REVIEW;
+   the recipe already produced the complete deliverable set. LITE-DONE sets
+   SPEC.md Status=Ready and prints the /aid-execute hand-off.)
+
+---
+
 ## Step 6: Write STATE.md `## Triage` block
 
 Write the triage result to the work-area `STATE.md ## Triage` section.
@@ -186,7 +371,7 @@ Write the triage result to the work-area `STATE.md ## Triage` section.
 `Work Type`, `Sub-path`, `Sub-path (auto)`, `Override`, and `Recipe` fields are **absent**
 (not written, not "n/a") for escalated-to-full works.
 
-**Lite-path result (no override — user accepted auto):**
+**Lite-path result (no override, no recipe):**
 
 ```markdown
 ## Triage
@@ -197,7 +382,22 @@ Write the triage result to the work-area `STATE.md ## Triage` section.
 - **Decision rationale:** T1={T1 value} + T2={T2 value} + T3={T3 value} → lite/{Sub-path}
 ```
 
-**Lite-path result (user chose different sub-path):**
+`Recipe` field is **absent** (not written, not "none") when the user declines the
+recipe-offer or no recipes matched.
+
+**Lite-path result (no override, recipe picked):**
+
+```markdown
+## Triage
+
+- **Path:** lite
+- **Work Type:** {workType}
+- **Sub-path:** {Sub-path}
+- **Decision rationale:** T1={T1 value} + T2={T2 value} + T3={T3 value} → lite/{Sub-path}
+- **Recipe:** {recipe-name}
+```
+
+**Lite-path result (user chose different sub-path, no recipe):**
 
 ```markdown
 ## Triage
@@ -210,6 +410,20 @@ Write the triage result to the work-area `STATE.md ## Triage` section.
 - **Override:** yes
 ```
 
+**Lite-path result (user chose different sub-path, recipe picked):**
+
+```markdown
+## Triage
+
+- **Path:** lite
+- **Work Type:** {workType}
+- **Sub-path:** {user-chosen Sub-path}
+- **Sub-path (auto):** {originally auto-detected Sub-path}
+- **Decision rationale:** T1={T1 value} + T2={T2 value} + T3={T3 value} → lite/{user-chosen Sub-path}
+- **Override:** yes
+- **Recipe:** {recipe-name}
+```
+
 ---
 
 ## Step 7: Advance
@@ -217,7 +431,10 @@ Write the triage result to the work-area `STATE.md ## Triage` section.
 - **FULL path:** print `Next: [State: CONTINUE] — run /aid-interview again` and exit.
   The state machine continues with the full-path interview (FIRST-RUN Step 1d opens the
   conversation; the next invocation enters CONTINUE).
-- **LITE path:** print `Next: [State: CONDENSED-INTAKE] — run /aid-interview again` and exit.
+- **LITE path (recipe emitted):** Step 5a-4 already printed the advance message.
+  No additional print needed. The next state is LITE-DONE (not CONDENSED-INTAKE).
+- **LITE path (no recipe / declined):** print
+  `Next: [State: CONDENSED-INTAKE] — run /aid-interview again` and exit.
   (State CONDENSED-INTAKE is the lite-path L1 state; it is outside the scope of this file
   and handled by the lite-path states.)
 
@@ -250,3 +467,29 @@ Write the triage result to the work-area `STATE.md ## Triage` section.
 | LITE / LITE-BUG-FIX | [3] Escalate | no (Sub-path absent) | Path=full, Sub-path absent, rationale includes escalation reason |
 | LITE / LITE-DOC | [3] Escalate | no (Sub-path absent) | Path=full, Sub-path absent, rationale includes escalation reason |
 | FULL (routing rule) | (no override offered) | n/a | Path=full, no Sub-path, no Override |
+
+### Recipe-offer paths (task-028 scope)
+
+| Path | workType | Recipe catalog | User action | Slot-fill result | Final STATE.md | Next state |
+|------|----------|----------------|-------------|-----------------|----------------|------------|
+| FULL | any | any | (not offered) | n/a | no Recipe field | CONTINUE |
+| LITE escalated to full | any | any | (not offered) | n/a | no Recipe field | CONTINUE |
+| LITE | bug-fix | no matching recipes | (skip — step not shown) | n/a | no Recipe field | CONDENSED-INTAKE |
+| LITE | bug-fix | ≥1 match | [0] Decline | n/a | no Recipe field | CONDENSED-INTAKE |
+| LITE | bug-fix | ≥1 match | pick recipe, confirm [1] Emit | all slots filled | Recipe=bug-fix | LITE-DONE |
+| LITE | bug-fix | ≥1 match | pick recipe, confirm [3] Abort | abandoned | no Recipe field | CONDENSED-INTAKE |
+| LITE | small-refactor | ≥1 match | pick recipe, escalate during slot-fill | partial slots in STATE.md ## Recipe Slots | no Recipe field | CONDENSED-INTAKE (seeded) |
+| LITE | * (add-unit-test) | workType=single-doc, add-unit-test applies-to=* | pick add-unit-test | all slots filled | Recipe=add-unit-test | LITE-DONE |
+
+### Slot-fill rules (task-028 scope)
+
+| Scenario | Expected behavior |
+|----------|------------------|
+| Empty slot answer (immediate empty line) | Rejected; re-prompted with error message |
+| Multi-line slot value (text then empty line) | Full multi-line text captured as slot value |
+| Slot value `/aid-interview escalate-from-recipe` | Slot-fill loop aborted; partial slots preserved in STATE.md; decline path taken |
+| All slots filled, user picks [1] Emit | parse-recipe.sh --render called; SPEC.md + task files written |
+| All slots filled, user picks [2] Edit | Named slot re-prompted; back to summary |
+| All slots filled, user picks [3] Abort | Decline path; no Recipe field in STATE.md |
+| `work-name` or `date` in slot list | Auto-filled from context; not prompted to user |
+| Recipe has zero slots | No prompts; proceed directly to confirm and render |
