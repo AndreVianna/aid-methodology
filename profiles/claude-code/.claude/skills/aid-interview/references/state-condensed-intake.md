@@ -28,6 +28,68 @@ documentation relevant to this work — KB references are used to populate the
 
 ---
 
+## Step 1.5: Pre-fill from Recipe Slots (recipe→standard-lite escalation)
+
+**This step only applies when a recipe was escalated (not declined or aborted).**
+
+Read `STATE.md`. Check for a `## Recipe Slots` section. If it exists AND contains
+`Status: abandoned — escalated to standard interview`, this is a recipe-escalation
+session:
+
+1. Parse the slot table from `## Recipe Slots` into a mapping:
+   `{ "slot-name": "value", ... }` — skip rows with value `—` or placeholder text
+   `(none filled before escalation)`.
+
+2. For the current `Sub-path`, identify which slot names correspond to the sub-path's
+   questions (the slot names are the same names used as variable names in
+   state-condensed-intake.md — e.g., `bug-title`, `bug-description`, `reproduction-steps`,
+   `intended-behavior` for LITE-BUG-FIX).
+
+3. **Display pre-filled summary (one turn, before any interactive prompt):**
+
+   ```
+   Pre-filled from recipe '{recipe-name}':
+     {slot-name-1}: {value-1}
+     {slot-name-2}: {value-2}
+     ...
+
+   These answers will be used as-is. You will only be asked for the remaining questions.
+   (To change a pre-filled answer, type the slot name and new value when prompted for
+   the next question, or re-run with --reset to start over.)
+   ```
+
+   If zero matching slots were found (the recipe had no slots that overlap with this
+   sub-path's questions), print:
+
+   ```
+   Note: Recipe '{recipe-name}' was abandoned before any matching answers were captured.
+   Running full standard {Sub-path} interview.
+   ```
+
+4. Mark the pre-filled slots as answered internally. Skip the interactive prompt for
+   each pre-filled slot — do not ask the user again. Proceed directly to the first
+   **unanswered** sub-path question.
+
+5. After all sub-path questions are resolved (pre-filled + newly asked), continue
+   with Step 3 (Write work-root SPEC.md) using the combined slot values.
+
+**Slot name cross-reference (recipe slot name → sub-path question slot name):**
+
+The slot names in `## Recipe Slots` are recipe-defined names. They match sub-path
+question slot names when they are **identical** (exact string match). No fuzzy matching.
+
+| Sub-path | Known question slot names |
+|----------|--------------------------|
+| LITE-BUG-FIX | `bug-title`, `bug-description`, `reproduction-steps`, `intended-behavior` |
+| LITE-DOC | `doc-title`, `doc-purpose`, `outline-bullets` |
+| LITE-REFACTOR | `scope`, `before-sketch`, `after-sketch`, `ac` |
+| LITE-FEATURE | `feature-title`, `goal`, `scope`, `ac-1`, `ac-additional` |
+
+Any recipe slot name that does NOT appear in the table above is ignored (it was a
+recipe-specific slot that has no corresponding standard sub-path question).
+
+---
+
 ## Escalation
 
 At any point during CONDENSED-INTAKE, the user may type `/aid-interview escalate`
@@ -461,3 +523,15 @@ sections of `SPEC.md`.
 | Sub-path = LITE-BUG-FIX, SPEC.md already has `## Acceptance Criteria` | Skip intake; advance to TASK-BREAKDOWN |
 | User types `/aid-interview escalate` before any question answered | `lite-to-full-escalation.md` invoked with no slots; `Path: escalated`; REQUIREMENTS.md scaffold created; next state = CONTINUE |
 | User types `/aid-interview escalate` after answering 2 of 4 LITE-BUG-FIX questions | `lite-to-full-escalation.md` invoked with `bug-title` + `bug-description`; §1 Objective + §2 Problem Statement pre-seeded as Partial; next state = CONTINUE |
+
+### Recipe-escalation pre-fill cases (task-029 scope)
+
+| Input | Expected behavior |
+|-------|------------------|
+| `## Recipe Slots` absent (no recipe or recipe declined/aborted) | Step 1.5 is skipped entirely; full standard interview runs |
+| `## Recipe Slots` present, `Status: abandoned`, 0 matching slots | Pre-fill notice printed ("no matching answers"); all sub-path questions asked normally |
+| `## Recipe Slots` present, `Status: abandoned`, LITE-BUG-FIX, `bug-title` + `bug-description` present | Pre-fill summary shown; `bug-title` + `bug-description` skipped; `reproduction-steps` + `intended-behavior` asked |
+| `## Recipe Slots` present, `Status: abandoned`, LITE-BUG-FIX, all 4 slots present | Pre-fill summary shows all 4 values; no interactive prompts; SPEC.md written from pre-filled values |
+| `## Recipe Slots` present, `Status: abandoned`, LITE-FEATURE, `feature-title` + `goal` present; `scope` absent | `feature-title` + `goal` pre-filled; `scope`, `ac-1`, `ac-additional` asked |
+| `## Recipe Slots` present, `Status: abandoned`, recipe slot name does NOT match any known sub-path slot | Unknown slot ignored; corresponding sub-path question asked normally |
+| Pre-filled via recipe, user then types `/aid-interview escalate` | `lite-to-full-escalation.md` invoked; carried slots include both pre-filled recipe values AND any newly-answered values; `## Escalation Carry` block written; `Path: escalated`; next state = CONTINUE |

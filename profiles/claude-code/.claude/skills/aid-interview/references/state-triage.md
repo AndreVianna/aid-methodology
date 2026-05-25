@@ -240,11 +240,12 @@ When the user picks a recipe number:
 
    **Escalation during slot-fill:** If the user types the literal string
    `/aid-interview escalate-from-recipe` as their slot value, stop the slot-fill
-   loop immediately. Preserve any slot values already collected. Write them to
-   `STATE.md ## Recipe Slots` (see 5a-4). Then proceed to the standard
-   {Sub-path} condensed interview (same as the decline path, Step 5a-3b), but
-   seed the CONDENSED-INTAKE state with the note: "Recipe '{recipe-name}' partially
-   filled; slots collected so far are available in STATE.md ## Recipe Slots."
+   loop immediately. Invoke `references/recipe-to-lite-escalation.md` (Trigger A),
+   passing the recipe name and the partial slot-value mapping collected so far.
+   Do NOT re-prompt "slot cannot be empty" for the escalation trigger — the trigger
+   string is a command, not a slot value. After the escalation procedure completes,
+   proceed to Step 5a-3b (decline path) — the `Recipe` field is omitted and
+   CONDENSED-INTAKE is the next state.
 
 4. **Collect all slot values** into an internal mapping:
    `{ "slot-name": "user-supplied-value", ... }`
@@ -261,6 +262,7 @@ When the user picks a recipe number:
    [1] Emit SPEC.md + tasks and proceed
    [2] Edit a slot value (enter slot name to re-fill)
    [3] Abort and use the standard condensed interview instead
+   [4] Escalate to standard interview (preserves all slot values)
    ```
 
    Wait for the user's choice **on this same turn**.
@@ -268,7 +270,14 @@ When the user picks a recipe number:
    - **[1] Emit:** proceed to Step 5a-4.
    - **[2] Edit:** prompt `Which slot to re-fill? (enter name):` and re-run the
      slot prompt for that slot only. Loop back to the summary.
-   - **[3] Abort:** treat as a decline (proceed to Step 5a-3b).
+   - **[3] Abort:** treat as a decline (proceed to Step 5a-3b). Slot values are
+     discarded — no `## Recipe Slots` block is written.
+   - **[4] Escalate:** invoke `references/recipe-to-lite-escalation.md` (Trigger B),
+     passing the recipe name and the **complete** slot-value mapping (all slots filled).
+     After the escalation procedure completes, proceed to Step 5a-3b — the `Recipe`
+     field is omitted and CONDENSED-INTAKE is the next state. The `## Recipe Slots`
+     block written by the escalation procedure contains all slots, so CONDENSED-INTAKE
+     will skip all sub-path questions that were already answered.
 
 ### 5a-3b: User declines (or aborts from confirmation)
 
@@ -477,19 +486,30 @@ recipe-offer or no recipes matched.
 | LITE | bug-fix | no matching recipes | (skip — step not shown) | n/a | no Recipe field | CONDENSED-INTAKE |
 | LITE | bug-fix | ≥1 match | [0] Decline | n/a | no Recipe field | CONDENSED-INTAKE |
 | LITE | bug-fix | ≥1 match | pick recipe, confirm [1] Emit | all slots filled | Recipe=bug-fix | LITE-DONE |
-| LITE | bug-fix | ≥1 match | pick recipe, confirm [3] Abort | abandoned | no Recipe field | CONDENSED-INTAKE |
-| LITE | small-refactor | ≥1 match | pick recipe, escalate during slot-fill | partial slots in STATE.md ## Recipe Slots | no Recipe field | CONDENSED-INTAKE (seeded) |
+| LITE | bug-fix | ≥1 match | pick recipe, confirm [3] Abort | abandoned; no slot carry | no Recipe field | CONDENSED-INTAKE (no pre-fill) |
+| LITE | small-refactor | ≥1 match | pick recipe, escalate during slot-fill | partial slots in STATE.md ## Recipe Slots; Status=abandoned | no Recipe field | CONDENSED-INTAKE (seeded from partial slots) |
+| LITE | small-refactor | ≥1 match | pick recipe, all slots filled, confirm [4] Escalate | all slots in STATE.md ## Recipe Slots; Status=abandoned | no Recipe field | CONDENSED-INTAKE (all questions pre-filled) |
 | LITE | * (add-unit-test) | workType=single-doc, add-unit-test applies-to=* | pick add-unit-test | all slots filled | Recipe=add-unit-test | LITE-DONE |
 
-### Slot-fill rules (task-028 scope)
+### Slot-fill rules (task-028 / task-029 scope)
 
 | Scenario | Expected behavior |
 |----------|------------------|
 | Empty slot answer (immediate empty line) | Rejected; re-prompted with error message |
 | Multi-line slot value (text then empty line) | Full multi-line text captured as slot value |
-| Slot value `/aid-interview escalate-from-recipe` | Slot-fill loop aborted; partial slots preserved in STATE.md; decline path taken |
+| Slot value `/aid-interview escalate-from-recipe` | Trigger A: slot-fill loop aborted; recipe-to-lite-escalation.md invoked; partial slots preserved in STATE.md ## Recipe Slots (Status=abandoned); no Recipe field in Triage; CONDENSED-INTAKE next |
 | All slots filled, user picks [1] Emit | parse-recipe.sh --render called; SPEC.md + task files written |
 | All slots filled, user picks [2] Edit | Named slot re-prompted; back to summary |
-| All slots filled, user picks [3] Abort | Decline path; no Recipe field in STATE.md |
+| All slots filled, user picks [3] Abort | Decline path; no slot carry; no Recipe field in STATE.md |
+| All slots filled, user picks [4] Escalate | Trigger B: recipe-to-lite-escalation.md invoked with full slot set; all slots preserved in STATE.md ## Recipe Slots (Status=abandoned); no Recipe field in Triage; CONDENSED-INTAKE next (all questions skipped) |
 | `work-name` or `date` in slot list | Auto-filled from context; not prompted to user |
-| Recipe has zero slots | No prompts; proceed directly to confirm and render |
+| Recipe has zero slots | No prompts; proceed directly to confirm and render (confirm has [1]/[3]/[4] options; [4] writes empty Recipe Slots block) |
+
+### Recipe-escalation paths (task-029 scope)
+
+| Trigger | Slots at escalation | ## Recipe Slots block | Recipe field in Triage | CONDENSED-INTAKE effect |
+|---------|--------------------|-----------------------|------------------------|------------------------|
+| Trigger A — 0 slots filled | none | placeholder row; Status=abandoned | absent | no pre-fill; all questions asked |
+| Trigger A — N of M slots filled (N < M) | N slots | N rows + Status=abandoned | absent | N questions skipped; M−N questions asked |
+| Trigger B — all slots filled | all slots | all rows + Status=abandoned | absent | all questions skipped; user sees pre-fill summary then SPEC.md |
+| Chained: recipe-escalate → CONDENSED-INTAKE escalate | recipe slots + CONDENSED-INTAKE slots | ## Recipe Slots present + ## Escalation Carry added | absent (lite→full escalation clears Recipe field too) | CONTINUE (full path) |
