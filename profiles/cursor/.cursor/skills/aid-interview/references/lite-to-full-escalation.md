@@ -183,13 +183,80 @@ Add to `STATE.md ## Lifecycle History`:
 
 ---
 
-## Step 9: Print escalation summary and exit
+## Step 9: Create feature folder, per-feature SPEC.md placeholder, and PLAN.md placeholder
+
+Create the initial full-path workspace shape so that post-escalation State Detection
+routes cleanly to CONTINUE and no coexistence invariant is violated.
+
+### 9a: Create `features/feature-001-{work-name}/SPEC.md` placeholder
+
+```markdown
+# Feature: feature-001-{work-name}
+
+> Placeholder — created by lite→full escalation. The full-path feature
+> decomposition step (/aid-interview State 5: FEATURE-DECOMPOSITION) will
+> replace this file with the structured feature SPEC.
+
+**Status:** Pending (escalation placeholder)
+**Source:** Escalated from lite path — {escalation-rationale}
+**Created:** {YYYY-MM-DDTHH:MM:SSZ}
+```
+
+### 9b: Create `PLAN.md` placeholder
+
+```markdown
+# Plan — {work-name}
+
+> Placeholder — created by lite→full escalation. The full-path planning step
+> will replace this with a structured delivery plan.
+
+## Deliveries
+
+| # | Name | Scope | Status |
+|---|------|-------|--------|
+| 1 | delivery-001 | (TBD — pending full interview) | Pending |
+```
+
+### 9c: Delete `.aid/{work}/SPEC.md` (work-root lite SPEC)
+
+**This is the last step and is load-bearing for crash recovery.**
+
+The work-root `SPEC.md` is the lite-path artifact. After escalation, the workspace
+must have **only** the full-path shape:
+
+```
+REQUIREMENTS.md          ← seeded in Step 5
+features/
+  feature-001-{name}/
+    SPEC.md              ← placeholder created in Step 9a
+PLAN.md                  ← placeholder created in Step 9b
+STATE.md                 ← updated throughout; Path: escalated
+```
+
+**There must be NO work-root `SPEC.md` after this step completes.**
+
+```bash
+rm .aid/{work}/SPEC.md
+```
+
+**Write-order contract:** Steps 9a and 9b must complete before Step 9c runs.
+Step 9c is the commitment point. If the process crashes before Step 9c, the
+work-root `SPEC.md` still exists and State Detection's resume rule (SKILL.md
+§ State Detection, `escalated + SPEC.md present`) will replay the escalation
+steps idempotently from Step 9a.
+
+---
+
+## Step 10: Print escalation summary and exit
 
 ```
 Escalated to full path.
 
 Captured info preserved in STATE.md ## Escalation Carry.
 REQUIREMENTS.md seeded from {N} slot(s): {slot names}.
+Feature placeholder: features/feature-001-{work-name}/SPEC.md
+PLAN.md placeholder created.
+Work-root SPEC.md removed.
 
 Next: [State: CONTINUE] — run /aid-interview again
 ```
@@ -211,15 +278,21 @@ This means `Path: escalated` causes State Detection to enter the full-path branc
 Step 6 above ensures `## Interview Status` exists with `In Progress` status and some
 `Partial` sections, the first post-escalation invocation always enters **State 3: CONTINUE**.
 
+**Coexistence invariant:** After Step 9c completes, the workspace contains ONLY the
+full-path shape: `REQUIREMENTS.md` + `features/feature-001-{name}/SPEC.md` + `PLAN.md`
++ `STATE.md`. The work-root `SPEC.md` is absent. This invariant is enforced by Step 9c
+and verified by the resume detection rule in SKILL.md State Detection.
+
 ---
 
 ## Unit-testable cases
 
-| Trigger state | Slots carried | Expected STATE.md outcome | Expected REQUIREMENTS.md | Next state |
-|---|---|---|---|---|
-| CONDENSED-INTAKE (no questions answered yet) | none | `## Escalation Carry` with "(no slots captured)"; `Path: escalated` | Scaffold created; no sections pre-seeded (all Pending) | CONTINUE |
-| CONDENSED-INTAKE (LITE-BUG-FIX, 2 of 4 questions answered) | `bug-title`, `bug-description` | Carry block lists both slots; §1 Objective + §2 Problem Statement pre-seeded as Partial | §Objective + §Problem Statement seeded | CONTINUE |
-| CONDENSED-INTAKE (LITE-FEATURE, all 5 questions answered) | all 5 slots | All 5 slots in carry; SPEC.md artifact listed; §1/2/4/9 pre-seeded as Partial | 4 sections seeded | CONTINUE |
-| TASK-BREAKDOWN (user selects [3] Escalate) | SPEC.md present + tasks/ present | Carry block: SPEC.md + N task files noted; `Path: escalated` | Seeded from SPEC.md content | CONTINUE |
-| LITE-REVIEW (user selects [4] Escalate) | SPEC.md present + tasks/ present + grade recorded | Carry block: SPEC.md + tasks + grade; `Path: escalated` | Seeded from SPEC.md content | CONTINUE |
-| LITE-DONE (user selects escalate after hand-off) | SPEC.md Ready + tasks/ present | Same as LITE-REVIEW case; SPEC.md status reset to Draft | Seeded from SPEC.md content | CONTINUE |
+| Trigger state | Slots carried | Expected STATE.md outcome | Expected REQUIREMENTS.md | Expected workspace shape | Next state |
+|---|---|---|---|---|---|
+| CONDENSED-INTAKE (no questions answered yet) | none | `## Escalation Carry` with "(no slots captured)"; `Path: escalated` | Scaffold created; no sections pre-seeded (all Pending) | REQUIREMENTS.md + features/feature-001-*/SPEC.md + PLAN.md; NO work-root SPEC.md | CONTINUE |
+| CONDENSED-INTAKE (LITE-BUG-FIX, 2 of 4 questions answered) | `bug-title`, `bug-description` | Carry block lists both slots; §1 Objective + §2 Problem Statement pre-seeded as Partial | §Objective + §Problem Statement seeded | REQUIREMENTS.md + features/feature-001-*/SPEC.md + PLAN.md; NO work-root SPEC.md | CONTINUE |
+| CONDENSED-INTAKE (LITE-FEATURE, all 5 questions answered) | all 5 slots | All 5 slots in carry; SPEC.md artifact listed; §1/2/4/9 pre-seeded as Partial | 4 sections seeded | REQUIREMENTS.md + features/feature-001-*/SPEC.md + PLAN.md; NO work-root SPEC.md | CONTINUE |
+| TASK-BREAKDOWN (user selects [3] Escalate) | SPEC.md present + tasks/ present | Carry block: SPEC.md + N task files noted; `Path: escalated` | Seeded from SPEC.md content | REQUIREMENTS.md + features/feature-001-*/SPEC.md + PLAN.md; NO work-root SPEC.md | CONTINUE |
+| LITE-REVIEW (user selects [4] Escalate) | SPEC.md present + tasks/ present + grade recorded | Carry block: SPEC.md + tasks + grade; `Path: escalated` | Seeded from SPEC.md content | REQUIREMENTS.md + features/feature-001-*/SPEC.md + PLAN.md; NO work-root SPEC.md | CONTINUE |
+| LITE-DONE (user selects escalate after hand-off) | SPEC.md Ready + tasks/ present | Same as LITE-REVIEW case; SPEC.md status reset to Draft | Seeded from SPEC.md content | REQUIREMENTS.md + features/feature-001-*/SPEC.md + PLAN.md; NO work-root SPEC.md | CONTINUE |
+| Crash recovery: `Path: escalated` AND work-root SPEC.md still present | (whatever was carried) | State Detection triggers replay from Step 9a idempotently | Already seeded (Steps 5-7 were complete) | After replay: NO work-root SPEC.md | CONTINUE |

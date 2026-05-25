@@ -219,12 +219,15 @@ GATE_BLOCK="**Tier:** Small
 **Result:** PASS"
 
 bash "$SCRIPT" --delivery-id 1 --block "$GATE_BLOCK"
-# Gate task is the highest-numbered: task-005.md
-assert_file_contains "${TASKS_DIR}/task-005.md" "## Delivery Gate" "task-005.md has ## Delivery Gate"
-assert_file_contains "${TASKS_DIR}/task-005.md" "**Grade:** A+" "grade in gate block"
-assert_file_contains "${TASKS_DIR}/task-005.md" "PASS" "PASS in gate block"
+# Gate block must land in STATE.md ## Delivery Gates (per feature-004 Alignment Update + SPEC L240-260)
+assert_file_contains "$AID_STATE_FILE" "## Delivery Gates" "STATE.md has ## Delivery Gates section"
+assert_file_contains "$AID_STATE_FILE" "### delivery-001" "STATE.md has ### delivery-001 block under Delivery Gates"
+assert_file_contains "$AID_STATE_FILE" "**Grade:** A+" "grade in gate block in STATE.md"
+assert_file_contains "$AID_STATE_FILE" "PASS" "PASS in gate block in STATE.md"
+# task files must NOT be modified by --block
+assert_file_not_contains "${TASKS_DIR}/task-005.md" "## Delivery Gate" "task-005.md NOT modified by --block (STATE.md is target)"
 
-# Re-run with different grade to verify replace (not append)
+# Re-run with different grade to verify replace (not append) — keyed by delivery-NNN
 GATE_BLOCK2="**Tier:** Medium
 **Grade:** A
 **Cycles:** 2
@@ -238,9 +241,29 @@ GATE_BLOCK2="**Tier:** Medium
 **Result:** PASS"
 
 bash "$SCRIPT" --delivery-id 1 --block "$GATE_BLOCK2"
-assert_file_contains "${TASKS_DIR}/task-005.md" "**Grade:** A" "gate block replaced — grade A present"
-assert_file_not_contains "${TASKS_DIR}/task-005.md" "**Grade:** A+" "old grade A+ removed"
-assert_file_contains "${TASKS_DIR}/task-005.md" "**Cycles:** 2" "cycle count updated"
+assert_file_contains "$AID_STATE_FILE" "**Grade:** A" "gate block replaced — grade A present in STATE.md"
+assert_file_not_contains "$AID_STATE_FILE" "**Grade:** A+" "old grade A+ removed from STATE.md"
+assert_file_contains "$AID_STATE_FILE" "**Cycles:** 2" "cycle count updated in STATE.md"
+
+# Test a second delivery-id to verify keying
+GATE_BLOCK3="**Tier:** Small
+**Grade:** B
+**Cycles:** 1
+**Date:** 2026-05-24
+
+### Gate Issues
+| # | Severity | Description |
+|---|----------|-------------|
+| 1 | [HIGH] | major issue found |
+
+**Result:** FAIL"
+
+bash "$SCRIPT" --delivery-id 2 --block "$GATE_BLOCK3"
+assert_file_contains "$AID_STATE_FILE" "### delivery-002" "STATE.md has ### delivery-002 block (second delivery)"
+assert_file_contains "$AID_STATE_FILE" "**Grade:** B" "grade B for delivery-002 in STATE.md"
+# Both delivery blocks must coexist
+assert_file_contains "$AID_STATE_FILE" "### delivery-001" "delivery-001 block still present after delivery-002 write"
+assert_file_contains "$AID_STATE_FILE" "### delivery-002" "delivery-002 block present alongside delivery-001"
 
 # ---------------------------------------------------------------------------
 echo ""
@@ -285,6 +308,16 @@ if [[ "$BEFORE" -eq "$AFTER" ]]; then
     pass "findings mode: idempotent — same block, no size change"
 else
     fail "findings mode: not idempotent — STATE.md size changed from $BEFORE to $AFTER"
+fi
+
+# Re-run delivery-block with same block — STATE.md size must not change
+BEFORE=$(wc -c < "$AID_STATE_FILE")
+bash "$SCRIPT" --delivery-id 1 --block "$GATE_BLOCK2"
+AFTER=$(wc -c < "$AID_STATE_FILE")
+if [[ "$BEFORE" -eq "$AFTER" ]]; then
+    pass "delivery-block mode: idempotent — same block, STATE.md size unchanged"
+else
+    fail "delivery-block mode: not idempotent — STATE.md size changed from $BEFORE to $AFTER"
 fi
 
 # Re-run append-issue with same row — must be no-op (no duplicate row)

@@ -18,8 +18,10 @@
 #       the multi-line findings text. task-NNN.md is NOT modified.
 #
 #   writeback-task-status.sh --delivery-id NNN --block MARKDOWN_BLOCK
-#       Write/replace the ## Delivery Gate block in the delivery's gate-record
-#       task Execution Record. MARKDOWN_BLOCK is the full block text.
+#       Write/replace the ### delivery-NNN block under ## Delivery Gates in the
+#       work STATE.md (per feature-004 Alignment Update + SPEC L240-260).
+#       MARKDOWN_BLOCK is the full block text. STATE.md is the canonical target;
+#       task files are NOT modified by this mode.
 #
 #   writeback-task-status.sh --delivery-id NNN --append-issue ROW
 #       Append a single issue row to the delivery's delivery-NNN-issues.md.
@@ -448,27 +450,20 @@ mode_findings() {
 
 # ---------------------------------------------------------------------------
 # Mode: --delivery-id NNN --block MARKDOWN_BLOCK
-# Write/replace the ## Delivery Gate block in the gate-record task's
-# Execution Record. The gate-record task is the highest-numbered task file
-# found in TASKS_DIR (the Execution-Graph terminal node rule from FR6).
+# Write/replace the ### delivery-NNN block under ## Delivery Gates in
+# STATE.md (per feature-004 Alignment Update + SPEC L240-260). STATE.md is
+# the canonical write target. task files are NOT modified by this mode.
+# Creates the ## Delivery Gates section if absent (appends to STATE.md).
+# Creates/replaces the ### delivery-NNN sub-block within that section.
+# Mirrors the pattern of mode_findings (which writes ## Quick Check Findings).
 # ---------------------------------------------------------------------------
 mode_delivery_block() {
     local padded_id
     padded_id=$(printf '%03d' "$DELIVERY_ID")
+    local delivery_heading="### delivery-${padded_id}"
 
-    # Find the gate-record task: highest-numbered task-NNN*.md in TASKS_DIR
-    local gate_task=""
-    # Sort all task files, pick the last one (highest number)
-    for f in "${TASKS_DIR}/task-"*.md; do
-        [[ -f "$f" ]] && gate_task="$f"
-    done
-    # Explicit sort to ensure we get the highest
-    if compgen -G "${TASKS_DIR}/task-*.md" > /dev/null 2>&1; then
-        gate_task=$(ls -1 "${TASKS_DIR}/task-"*.md 2>/dev/null | sort | tail -n 1)
-    fi
-
-    if [[ -z "$gate_task" || ! -f "$gate_task" ]]; then
-        die "no task files found in $TASKS_DIR" 1
+    if [[ ! -f "$STATE_FILE" ]]; then
+        die "$STATE_FILE does not exist" 1
     fi
 
     acquire_lock
@@ -476,42 +471,80 @@ mode_delivery_block() {
     local tmp
     tmp=$(mktemp)
 
-    # Delivery gate block header uses delivery-NNN
-    local gate_header="## Delivery Gate — delivery-${padded_id}"
-
-    if grep -q "^## Delivery Gate" "$gate_task"; then
-        # Replace existing block
-        awk -v header="$gate_header" -v new_block="$DELIVERY_BLOCK" '
-            BEGIN { in_gate=0; inserted=0 }
-            /^## Delivery Gate/ {
-                in_gate=1
-                print header
-                print ""
-                print new_block
-                inserted=1
-                next
-            }
-            in_gate && /^## / {
-                in_gate=0
-                print
-                next
-            }
-            in_gate { next }
-            { print }
-            END {
-                if (!inserted) {
-                    print ""
-                    print header
+    if grep -q '^## Delivery Gates' "$STATE_FILE"; then
+        # Section exists. Replace ### delivery-NNN block if present; otherwise insert
+        # before the next ## section (or at EOF of the Delivery Gates section).
+        if grep -q "^${delivery_heading}$" "$STATE_FILE"; then
+            # Replace existing ### delivery-NNN block.
+            awk -v heading="$delivery_heading" -v new_block="$DELIVERY_BLOCK" '
+                BEGIN { in_delivery=0; inserted=0 }
+                $0 == heading {
+                    in_delivery=1
+                    print heading
                     print ""
                     print new_block
+                    inserted=1
+                    next
                 }
-            }
-        ' "$gate_task" > "$tmp"
+                in_delivery && /^## / {
+                    in_delivery=0
+                    print ""
+                    print
+                    next
+                }
+                in_delivery && /^### delivery-/ && $0 != heading {
+                    in_delivery=0
+                    print ""
+                    print
+                    next
+                }
+                in_delivery { next }
+                { print }
+                END {
+                    if (!inserted) {
+                        print ""
+                        print heading
+                        print ""
+                        print new_block
+                    }
+                }
+            ' "$STATE_FILE" > "$tmp"
+        else
+            # Append ### delivery-NNN block within ## Delivery Gates section.
+            awk -v heading="$delivery_heading" -v new_block="$DELIVERY_BLOCK" '
+                BEGIN { in_dg=0; inserted=0 }
+                /^## Delivery Gates/ { in_dg=1; print; next }
+                in_dg && /^## / && !/^## Delivery Gates/ {
+                    if (!inserted) {
+                        print ""
+                        print heading
+                        print ""
+                        print new_block
+                        inserted=1
+                    }
+                    in_dg=0
+                    print
+                    next
+                }
+                { print }
+                END {
+                    if (!inserted) {
+                        print ""
+                        print heading
+                        print ""
+                        print new_block
+                    }
+                }
+            ' "$STATE_FILE" > "$tmp"
+        fi
     else
+        # ## Delivery Gates section absent — append it (with the delivery block) at EOF.
         {
-            cat "$gate_task"
+            cat "$STATE_FILE"
             echo ""
-            printf '%s\n' "$gate_header"
+            echo "## Delivery Gates"
+            echo ""
+            echo "$delivery_heading"
             echo ""
             printf '%s\n' "$DELIVERY_BLOCK"
         } > "$tmp"
@@ -519,16 +552,23 @@ mode_delivery_block() {
 
     if [[ ! -s "$tmp" ]]; then
         rm -f "$tmp"
-        die "writeback produced empty output; $gate_task preserved" 3
+        die "writeback produced empty output; $STATE_FILE preserved" 3
     fi
 
-    if ! grep -q "^## Delivery Gate" "$tmp"; then
+    # Sanity: ## Delivery Gates section must be present in output
+    if ! grep -q '^## Delivery Gates' "$tmp"; then
         rm -f "$tmp"
-        die "## Delivery Gate block was not written to output" 3
+        die "## Delivery Gates section was not written to output" 3
     fi
 
-    mv "$tmp" "$gate_task"
-    echo "OK: $gate_task updated — ## Delivery Gate block written for delivery $DELIVERY_ID"
+    # Sanity: ### delivery-NNN heading must be present in output
+    if ! grep -q "^${delivery_heading}$" "$tmp"; then
+        rm -f "$tmp"
+        die "${delivery_heading} was not written to output" 3
+    fi
+
+    mv "$tmp" "$STATE_FILE"
+    echo "OK: $STATE_FILE updated — ## Delivery Gates ### delivery-${padded_id} block written"
 }
 
 # ---------------------------------------------------------------------------

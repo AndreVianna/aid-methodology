@@ -118,14 +118,15 @@ Verified at `canonical/templates/requirements/requirements-template.md:22-80` (9
 
 ### 2.3 STATE.md (Work area) — current shape
 
-Canonical template: `canonical/templates/work-state-template.md` (116 lines).
+Canonical template: `canonical/templates/work-state-template.md` (137 lines).
 
 | Section | Required | Notes |
 |---------|----------|-------|
 | `# Work State — work-NNN-{name}` (H1) | yes | Includes the work-NNN slug |
 | Metadata block (Status / Phase / Minimum Grade / Started / User Approved) | yes | Block-quote header |
-| `## Triage` | yes | Populated by `aid-interview` TRIAGE state for lite-path works; left empty for full-path works. Fields: Path (lite\|full) / Work Type / Sub-path / Sub-path (auto) / Decision rationale / Override / Recipe. |
-| `## Interview Status` (10-row Section Status table) | yes | One row per REQUIREMENTS section (1–10); columns: `#` / `Section` / `Status` / `Last Updated`. Initial values `Pending` / `—`. |
+| `## Triage` | yes | Populated by `aid-interview` TRIAGE state for lite-path works; left empty for full-path works. Fields: Path (lite\|full\|escalated) / Work Type / Sub-path / Sub-path (auto) / Decision rationale / Override / Recipe. When a lite work escalates, Path changes to `escalated`. |
+| `## Escalation Carry` | conditional | Present only when a work started on the lite path and was escalated to full via `references/lite-to-full-escalation.md`. Fields: Escalated from / Escalated at / Escalation rationale / `### Captured Slot Values` (one bullet per answered slot) / `### Artifacts at Escalation` (SPEC.md + tasks/ notes). Read by CONTINUE state to avoid re-asking already-answered questions. Absent on full-path works that were never on the lite path. |
+| `## Interview Status` (10-row Section Status table) | yes | One row per REQUIREMENTS section (1–10); columns: `#` / `Section` / `Status` / `Last Updated`. Initial values `Pending` / `—`. Sections pre-seeded from `## Escalation Carry` slot values are set to `Partial` on creation. |
 | `## Features Status` (table: # / Feature / Spec Status / Spec Grade / Q&A Count / Notes) | yes | One row per feature spec'd via `/aid-specify` |
 | `## Plan / Deliveries` (table: Delivery / Status / Tasks / Notes) | yes | One row per delivery from PLAN.md |
 | `## Tasks Status` (table: # / Task / Type / Wave / Status / Review / Elapsed / Notes) | yes | One row per task; replaces the per-task `task-NNN-STATE.md` files |

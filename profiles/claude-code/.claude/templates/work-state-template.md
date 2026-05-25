@@ -22,6 +22,27 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 - **Override:** yes | no (yes = human changed auto-detected sub-path)
 - **Recipe:** {recipe-name} | none
 
+## Escalation Carry
+
+> Written by `aid-interview` lite→full escalation (Steps 3–9 of `lite-to-full-escalation.md`).
+> Present only when a work started on the lite path and was escalated to full.
+> The CONTINUE state reads this section to avoid re-asking questions already answered
+> during the lite-path session. See `references/state-continue.md § Escalation Carry`.
+
+- **Escalated from:** {state name} (Sub-path: {sub-path value})
+- **Escalated at:** {YYYY-MM-DDTHH:MM:SSZ}
+- **Escalation rationale:** {one sentence}
+
+### Captured Slot Values
+
+- **{slot-name}:** {slot-value}
+- (no slots captured — escalation before CONDENSED-INTAKE)
+
+### Artifacts at Escalation
+
+- **SPEC.md:** present | absent — {notes on content available for seeding}
+- **tasks/:** {N} task files present | absent
+
 ## Interview Status
 
 **Status:** In Progress | Complete | Approved · **Grade:** {grade or Pending}

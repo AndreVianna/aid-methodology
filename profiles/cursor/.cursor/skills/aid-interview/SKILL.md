@@ -178,7 +178,17 @@ State 7:  **Path:** full, Interview Status: Approved, features +
       - Check `STATE.md ## Lifecycle History` for a `LITE-REVIEW complete` entry:
         - If absent → **State L3: LITE-REVIEW**
         - If present → **State L4: LITE-DONE**
-   f. **If `**Path:** full` (or `escalated`)** — route through full-path detection.
+   f. **If `**Path:** escalated`** — check for incomplete escalation first:
+      - Check if `.aid/{work}/SPEC.md` (work-root) still exists.
+      - If **`Path: escalated` AND work-root `SPEC.md` still exists** → the
+        final delete step (Step 9c of `lite-to-full-escalation.md`) did not
+        complete (crash recovery). Replay escalation steps 9a–9c idempotently:
+        ensure `features/feature-001-*/SPEC.md` placeholder exists, ensure
+        `PLAN.md` placeholder exists, then delete the work-root `SPEC.md`.
+        After replay, continue to full-path detection below.
+      - Then route through full-path detection as `Path: full`:
+
+   **If `**Path:** full` (or `escalated` after crash-recovery check above)** — route through full-path detection.
       `Path: escalated` is treated identically to `Path: full`. The `## Escalation Carry`
       block in STATE.md provides context for CONTINUE to avoid re-asking questions that
       were already answered during the lite-path session.

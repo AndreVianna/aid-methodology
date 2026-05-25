@@ -37,6 +37,7 @@ TASKS_DIR="$WORK_DIR/tasks"
 STATE_FILE="$WORK_DIR/STATE.md"
 
 mkdir -p "$TASKS_DIR"
+trap 'rm -rf "$TMPDIR_E2E"' EXIT INT TERM
 
 cat > "$STATE_FILE" << 'STATEEOF'
 # Work State — work-e2e-test
@@ -304,36 +305,48 @@ GATE_BLOCK="- **Reviewer Tier:** Small
 
 run_helper --delivery-id 1 --block "$GATE_BLOCK" > /dev/null
 
-# Gate-record task = highest-numbered task file = task-003.md
-GATE_TASK_FILE="$TASKS_DIR/task-003.md"
-if grep -q "^## Delivery Gate" "$GATE_TASK_FILE"; then
-  pass "## Delivery Gate block written to gate-record task file (task-003.md — highest numbered)"
+# Gate block must land in STATE.md ## Delivery Gates (per feature-004 Alignment Update + SPEC L240-260)
+if grep -q "^## Delivery Gates" "$STATE_FILE"; then
+  pass "## Delivery Gates section written to STATE.md"
 else
-  fail "## Delivery Gate block NOT found in task-003.md"
+  fail "## Delivery Gates section NOT found in STATE.md"
 fi
 
-if grep -q "Grade:" "$GATE_TASK_FILE"; then
-  pass "Grade field present in Delivery Gate block"
+if grep -q "^### delivery-001" "$STATE_FILE"; then
+  pass "### delivery-001 block keyed correctly in STATE.md ## Delivery Gates"
 else
-  fail "Grade field NOT in Delivery Gate block"
+  fail "### delivery-001 block NOT found in STATE.md"
 fi
 
-if grep -q "Reviewer Tier:" "$GATE_TASK_FILE"; then
-  pass "Reviewer Tier field present in Delivery Gate block"
+if grep -q "Grade:" "$STATE_FILE"; then
+  pass "Grade field present in Delivery Gates block in STATE.md"
 else
-  fail "Reviewer Tier NOT in Delivery Gate block"
+  fail "Grade field NOT in Delivery Gates block"
 fi
 
-if grep -q "Cycles:" "$GATE_TASK_FILE"; then
-  pass "Cycles field present in Delivery Gate block"
+if grep -q "Reviewer Tier:" "$STATE_FILE"; then
+  pass "Reviewer Tier field present in Delivery Gates block in STATE.md"
 else
-  fail "Cycles field NOT in Delivery Gate block"
+  fail "Reviewer Tier NOT in Delivery Gates block"
 fi
 
-if grep -q "Timestamp:" "$GATE_TASK_FILE"; then
-  pass "Timestamp field present in Delivery Gate block"
+if grep -q "Cycles:" "$STATE_FILE"; then
+  pass "Cycles field present in Delivery Gates block in STATE.md"
 else
-  fail "Timestamp NOT in Delivery Gate block"
+  fail "Cycles field NOT in Delivery Gates block"
+fi
+
+if grep -q "Timestamp:" "$STATE_FILE"; then
+  pass "Timestamp field present in Delivery Gates block in STATE.md"
+else
+  fail "Timestamp NOT in Delivery Gates block"
+fi
+
+# task files must NOT be modified by --block
+if ! grep -q "## Delivery Gate" "$TASKS_DIR/task-003.md" 2>/dev/null; then
+  pass "task-003.md NOT modified by --block (STATE.md is canonical target)"
+else
+  fail "task-003.md was incorrectly modified by --block (should write to STATE.md)"
 fi
 
 # ---------------------------------------------------------------------------
@@ -343,12 +356,13 @@ echo ""
 echo "=== PHASE 4: Gate grade matches standalone grade.sh ==="
 
 STANDALONE_GRADE=$(bash "$GRADE_SH" "$GATE_ISSUES_FILE" 2>/dev/null)
-RECORDED_GRADE=$(grep "\*\*Grade:\*\*" "$GATE_TASK_FILE" 2>/dev/null | head -1 | sed 's/.*\*\*Grade:\*\* //' | tr -d '\r')
+# Recorded grade is now in STATE.md ## Delivery Gates ### delivery-001
+RECORDED_GRADE=$(grep "\*\*Grade:\*\*" "$STATE_FILE" 2>/dev/null | head -1 | sed 's/.*\*\*Grade:\*\* //' | tr -d '\r')
 
 if [[ "$STANDALONE_GRADE" == "$RECORDED_GRADE" ]]; then
-  pass "Standalone grade.sh ($STANDALONE_GRADE) == gate-recorded grade ($RECORDED_GRADE)"
+  pass "Standalone grade.sh ($STANDALONE_GRADE) == gate-recorded grade in STATE.md ($RECORDED_GRADE)"
 else
-  fail "Grade mismatch: standalone=$STANDALONE_GRADE, recorded=$RECORDED_GRADE"
+  fail "Grade mismatch: standalone=$STANDALONE_GRADE, recorded in STATE.md=$RECORDED_GRADE"
 fi
 
 # ---------------------------------------------------------------------------
@@ -386,11 +400,11 @@ else
   fail "AC3: grade mismatch standalone=$STANDALONE_GRADE gate=$GATE_GRADE"
 fi
 
-# AC4: reviewer tier scales with complexity — verified by gate block
-if grep -q "Reviewer Tier:" "$GATE_TASK_FILE"; then
-  pass "AC4: gate reviewer tier recorded (complexity-proportional selection verified)"
+# AC4: reviewer tier scales with complexity — verified by gate block in STATE.md
+if grep -q "Reviewer Tier:" "$STATE_FILE"; then
+  pass "AC4: gate reviewer tier recorded in STATE.md ## Delivery Gates (complexity-proportional selection verified)"
 else
-  fail "AC4: Reviewer Tier NOT recorded in gate block"
+  fail "AC4: Reviewer Tier NOT recorded in STATE.md ## Delivery Gates"
 fi
 
 # AC5: grade.sh runs deterministically — verified in Phase 3
@@ -401,9 +415,8 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# CLEANUP
+# CLEANUP: handled by trap EXIT INT TERM — rm -rf "$TMPDIR_E2E"
 # ---------------------------------------------------------------------------
-rm -rf "$TMPDIR_E2E"
 
 # ---------------------------------------------------------------------------
 # SUMMARY

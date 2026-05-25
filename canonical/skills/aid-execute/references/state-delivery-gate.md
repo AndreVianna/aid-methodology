@@ -342,12 +342,10 @@ Use the writeback helper:
 writeback-task-status.sh --delivery-id NNN --block "BLOCK"
 ```
 
-> **Note on helper routing:** `writeback-task-status.sh --delivery-id NNN
-> --block BLOCK` writes the `## Delivery Gates` section of the work `STATE.md`
-> keyed by `delivery-NNN`. In the current implementation (task-019) the helper
-> targets the task file for the delivery's gate-record task; per the Alignment
-> Update in feature-004 SPEC the canonical write target is work `STATE.md`
-> `## Delivery Gates`. The helper behaviour is consistent with that contract.
+> **Helper target:** `writeback-task-status.sh --delivery-id NNN --block BLOCK`
+> writes the `### delivery-NNN` block under `## Delivery Gates` in the work
+> `STATE.md`. Task files are not modified. This is the canonical write target
+> per feature-004 Alignment Update and SPEC L240-260.
 
 ### 6c: Mark Deferred Issues Resolved/Accepted
 

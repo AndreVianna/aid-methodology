@@ -373,12 +373,20 @@ Write the triage result to the work-area `STATE.md ## Triage` section.
 ```markdown
 ## Triage
 
-- **Path:** full
+- **Path:** escalated
 - **Decision rationale:** T1={T1 value} + T2={T2 value} + T3={T3 value} → lite (auto); escalated to full — {user escalation rationale}
 ```
 
 `Work Type`, `Sub-path`, `Sub-path (auto)`, `Override`, and `Recipe` fields are **absent**
 (not written, not "n/a") for escalated-to-full works.
+
+> **`Path: escalated` vs `Path: full` rationale:** `escalated` is a distinct sentinel value
+> (not `full`) so that State Detection can detect mid-escalation crash recovery — if
+> `Path: escalated` AND `.aid/{work}/SPEC.md` still exists, the final delete step (Step 9c
+> of `references/lite-to-full-escalation.md`) did not complete, and escalation steps 9a–9c
+> must be replayed idempotently. Once the work is fully escalated and `SPEC.md` is deleted,
+> `Path: escalated` routes identically to `Path: full` in all state detection branches.
+> See `SKILL.md § State Detection` step (f) and `references/lite-to-full-escalation.md § State Detection contract`.
 
 **Lite-path result (no override, no recipe):**
 
