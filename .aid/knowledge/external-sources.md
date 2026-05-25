@@ -75,7 +75,7 @@ Discovery-scout has mapped each external source to the directory inside this rep
 - `profiles/codex/.codex/agents/architect.toml` — TOML format with `name`, `description`, `developer_instructions`, `model`, `model_reasoning_effort`. 39 lines.
 - `profiles/codex/.codex/agents/discovery-reviewer.toml` — Largest agent definition. 314 lines.
 - `profiles/codex/.codex/agents/simple-extractor.toml` — Haiku-tier utility agent showing the `gpt-5.4-mini` + `low` reasoning combination.
-- `profiles/codex/.agents/skills/aid-discover/SKILL.md` — Inlined skill body (258 lines (post-work-001 thin-router refactor; byte-identical to canonical via canonical-generator; pre-canonical-generator the Codex tree inlined to 1,078 lines while Claude Code was 453)).
+- `profiles/codex/.agents/skills/aid-discover/SKILL.md` — Skill body, 307 lines (post-work-001 thin-router refactor + cycle-19 orchestrator-protocol additions; byte-identical to canonical via canonical-generator; pre-canonical-generator the Codex tree inlined to 1,078 lines while Claude Code was 453).
 - `profiles/codex/AGENTS.md` — Top-level project context placeholder consumed by Codex CLI. 28 lines.
 
 **Covered locally:** Codex agent TOML schema, model tier mapping (`gpt-5.5` high / `gpt-5.4` medium / `gpt-5.4-mini` low), the AGENTS.md project-context convention, and the deliberate split between `.codex/` (agent defs) and `.agents/` (skills + templates) per `profiles/codex/README.md:12-15`. The May 2026 migration note in `profiles/codex/README.md:35` documents past tier-assignment inconsistencies that have been corrected.
@@ -90,7 +90,7 @@ Discovery-scout has mapped each external source to the directory inside this rep
 - `profiles/cursor/.cursor/rules/aid-methodology.mdc` — Always-on `.mdc` rule with `description` + `alwaysApply: true` frontmatter. 29 lines.
 - `profiles/cursor/.cursor/rules/aid-review.mdc` — Glob-scoped `.mdc` rule with `globs: "**/*.{java,py,ts,js,cs,go,rs}"` and `alwaysApply: false`. 11 lines.
 - `profiles/cursor/.cursor/agents/architect.md` — Agent definition reused verbatim from the Claude Code shape (Cursor consumes the same markdown + YAML frontmatter).
-- `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` — 258 lines (post-work-001 thin-router refactor; byte-identical via canonical-generator; pre-canonical-generator the Cursor tree was 1,090 lines).
+- `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` — 307 lines (post-work-001 thin-router refactor + cycle-19 orchestrator-protocol additions; byte-identical via canonical-generator; pre-canonical-generator the Cursor tree was 1,090 lines).
 - `profiles/cursor/AGENTS.md` — Project context placeholder. 45 lines. Notes that `Task tool is experimental — Mar 2026`.
 
 **Covered locally:** `.mdc` rule format (frontmatter + body), the rules vs. skills distinction (rules = always-on constraints, skills = on-demand workflows per `profiles/cursor/README.md:141`), the AGENTS.md convention shared with Codex, and the cross-tool compatibility note that Cursor also reads skills from `.claude/skills/` and `.codex/skills/` (`profiles/cursor/README.md:142`).

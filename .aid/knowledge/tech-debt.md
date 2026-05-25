@@ -19,7 +19,7 @@ If a contributor opens a PR today, there is no automated signal whether they hav
 
 **Evidence (post-cycle-11 verification 2026-05-23):**
 
-`wc -l canonical/skills/aid-discover/SKILL.md profiles/*/skills/aid-discover/SKILL.md` returns **258 lines four times** (identical across canonical/, claude-code, codex, cursor). Pre-cycle-11 this file claimed divergent line counts (258 / 1,078 / 1,090) — those counts were collected before work-002 lifted the bodies into `canonical/skills/` and `run_generator.py` propagated them uniformly. Spot-checked other skills the same way: all 3 install trees match canonical line-for-line.
+`wc -l canonical/skills/aid-discover/SKILL.md profiles/*/.*/skills/aid-discover/SKILL.md` returns **307 lines four times** (identical across canonical + 3 profile trees). Pre-canonical-generator this file claimed divergent line counts (Claude Code 453 / Codex 1,078 / Cursor 1,090) — those counts were collected before work-002 lifted the bodies into `canonical/skills/` and `run_generator.py` propagated them uniformly. Spot-checked other skills the same way: all 3 profile trees match canonical line-for-line.
 
 **Resolution (work-002):**
 - All 10 skill bodies, 22 agent definitions, and template assets promoted into `canonical/{skills,agents,templates}/`.
@@ -193,13 +193,13 @@ The other tool trees' equivalent (`profiles/claude-code/.claude/agents/developer
 
 ### [MEDIUM] M5 — `aid-discover` SKILL.md size guideline — **RESOLVED 2026-05-25 (work-001 thin-router refactor)**
 
-> **Status:** Post-work-001 PR #13 thin-router refactor reduced `aid-discover/SKILL.md` from 596 lines to 258 lines (well under the 500-line guideline). M5 is moot. The 9.6% over-target framing was based on pre-thin-router metrics and is no longer applicable. Historical analysis preserved below for reference.
+> **Status:** Post-work-001 PR #13 thin-router refactor reduced `aid-discover/SKILL.md` from 596 lines to 307 lines (well under the 500-line guideline; cycle-19 orchestrator-protocol additions brought it from 258 to 307, still well under). M5 is moot. The 9.6% over-target framing was based on pre-thin-router metrics and is no longer applicable. Historical analysis preserved below for reference.
 
 ### M5 (HISTORICAL — RESOLVED) — `aid-discover` SKILL.md violated the "Under 500 lines" guideline pre-thin-router
 
 **Evidence (cycle-11 verification):** `CONTRIBUTING.md:97` — "Under 500 lines per skill (AgentSkills best practice)". Actual (post work-002 unification):
-- `canonical/skills/aid-discover/SKILL.md` — **258 lines** (was 596 pre-thin-router refactor; now well under 500 — M5 RESOLVED).
-- All 3 profile copies (`profiles/{claude-code,codex,cursor}/skills/aid-discover/SKILL.md`) — 258 lines each (identical, by virtue of being generator output).
+- `canonical/skills/aid-discover/SKILL.md` — **307 lines** (was 596 pre-thin-router refactor; now well under 500 — M5 RESOLVED).
+- All 3 profile copies (`profiles/{claude-code,codex,cursor}/.../skills/aid-discover/SKILL.md`) — 307 lines each (identical, by virtue of being generator output).
 
 Other previously-flagged overages no longer apply: post-canonical-generator, `aid-interview`, `aid-execute`, and `aid-specify` all match the Claude Code reference (smaller) sizes. Only `aid-discover` is over.
 
@@ -272,7 +272,7 @@ Top-level files with `(pending discovery)` placeholders (intentional — install
 
 **Evidence (post-cycle-11):**
 - `methodology/aid-methodology.md` — 1,071 lines (canonical methodology spec; long-form by design).
-- `canonical/skills/aid-discover/SKILL.md` (and 3 profile copies) — 258 lines each (see M5).
+- `canonical/skills/aid-discover/SKILL.md` (and 3 profile copies) — 307 lines each (see M5; well under 500-line guideline).
 - `canonical/templates/knowledge-summary/component-css.css` (and 3 profile copies) — 642 lines each (CSS for HTML viewer; reasonable for a styled deliverable).
 - All other SKILL.md files are now at or under 500 lines (post-canonical-generator uniformity).
 
@@ -321,8 +321,8 @@ No genuinely orphaned files found at the source layer. Template orphans (6 insta
 ## Metrics
 
 - **TODO / FIXME / XXX / HACK / TBD / "pending discovery" count:** 69 occurrences across 21 files (pre-canonical-generator baseline; the canonical/ unification preserved them inside skill bodies as documentation strings). Of these, ~17 are intentional placeholders in `CLAUDE.md` / `AGENTS.md` variants. The remainder are documentation strings rather than actual code TODOs.
-- **Files over 500 lines:** 3 unique sources (`methodology/aid-methodology.md` at 1,071; `canonical/skills/aid-discover/SKILL.md` at 258; `canonical/templates/knowledge-summary/component-css.css` at 642). Each of the latter two has 3 byte-identical copies in the install trees by virtue of being generator output.
-- **Files over 1000 lines:** 1 unique source (`methodology/aid-methodology.md` at 1,071). Previously 3 (the now-unified aid-discover SKILL.md is 258 in all trees, not 1,078/1,090).
+- **Files over 500 lines:** 2 unique sources (`methodology/aid-methodology.md` at 1,071; `canonical/templates/knowledge-summary/component-css.css` at 642). The latter has 3 byte-identical copies in the install trees by virtue of being generator output. `canonical/skills/aid-discover/SKILL.md` at 307 is well under guideline post-thin-router refactor.
+- **Files over 1000 lines:** 1 unique source (`methodology/aid-methodology.md` at 1,071). Previously 3 (the now-unified aid-discover SKILL.md is 307 in all profile trees post-thin-router refactor + cycle-19 orchestrator additions, not the pre-canonical-generator 453/1,078/1,090).
 - **Duplication ratio (post-canonical-generator):** byte-identical duplication remains in absolute terms (~36% of repo lines are 4-way) but is no longer **drift-prone debt** — it is generator output from a single canonical source.
 - **Test-to-code ratio:** ⚠️ Not meaningful for a methodology + docs + scripts repo. There are zero test files for ~5,490 lines of shell, ~3,428 lines of JavaScript, and ~84 lines of Python (`run_generator.py`). By the most literal reading, the test-to-code ratio is 0.
 - **CI/CD coverage:** 0 pipelines, 0 workflows. Confirmed.

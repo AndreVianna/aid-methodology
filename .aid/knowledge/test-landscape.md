@@ -123,7 +123,7 @@ This means there is **no automated check** that:
 
 Additional CONTRIBUTING constraints (still valid in spirit):
 - `CONTRIBUTING.md:75` — "For examples: Add to `examples/` with a `README.md` explaining context. **Anonymize everything.**"
-- `CONTRIBUTING.md:97` — "Under 500 lines per skill (AgentSkills best practice)" — currently violated by `aid-discover` (258 lines, 9.6% over).
+- `CONTRIBUTING.md:97` — "Under 500 lines per skill (AgentSkills best practice)" — currently satisfied. `aid-discover` was 596 lines pre-thin-router; now 307 lines, well under guideline (tech-debt.md M5 RESOLVED post-work-001 PR #13).
 
 ### The Methodology's Inherited Quality Posture
 

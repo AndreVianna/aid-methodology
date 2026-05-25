@@ -20,7 +20,7 @@ This repository is the **AID methodology + multi-tool install bundles**. There i
 - **Examples** — anonymized case studies.
 - **Reference docs** — adopter-facing `docs/`.
 
-**The canonical-generator pattern (work-002, deployed 2026-05):** `run_generator.py` (top-level, 84 lines) reads each `profiles/{tool}.toml`, loads canonical sources from `canonical/{agents,skills,templates,rules}/`, and emits the per-tool install tree under `profiles/{tool}/...`. Every change goes to `canonical/` first; the 3 install trees plus the dogfood `.claude/` tree are propagated automatically. The pre-work-002 narrative — "3 install trees as parallel sources of truth maintained by manual cross-tree sync" — is RETIRED. There is no longer any divergence between trees for the same logical asset (verified: all 3 profile `aid-discover/SKILL.md` files are 258 lines, byte-identical, matching `canonical/skills/aid-discover/SKILL.md`).
+**The canonical-generator pattern (work-002, deployed 2026-05):** `run_generator.py` (top-level, 84 lines) reads each `profiles/{tool}.toml`, loads canonical sources from `canonical/{agents,skills,templates,rules}/`, and emits the per-tool install tree under `profiles/{tool}/...`. Every change goes to `canonical/` first; the 3 profile trees are propagated automatically (the dogfood `.claude/` at the repo root is downstream of `profiles/claude-code/.claude/` via `setup.sh`, not a generator target). The pre-work-002 narrative — "3 install trees as parallel sources of truth maintained by manual cross-tree sync" — is RETIRED. There is no longer any divergence between profile trees for the same logical asset (verified: all 3 profile `aid-discover/SKILL.md` files are 307 lines, byte-identical, matching `canonical/skills/aid-discover/SKILL.md`).
 
 ---
 
@@ -46,14 +46,14 @@ This repository is the **AID methodology + multi-tool install bundles**. There i
 |-------|-------|
 | **Path** | `canonical/skills/` |
 | **Files** | 92 across 10 skill folders: 10 SKILL.md + 10 README.md + 72 `references/*.md` (state-keyed + thematic per skill, e.g. aid-discover has 6 state-*.md + 3 prompt-aux; aid-interview has 12 state-*.md + 6 aux; etc.) + 6 `scripts/*.sh` (5 in `aid-discover/`, 2 in `aid-interview/`) (verified via `find canonical/skills`) |
-| **Lines (SKILL.md bodies)** | 2,108 total: `aid-discover/SKILL.md` (258), `aid-interview/SKILL.md` (357), `aid-init/SKILL.md` (119), `aid-summarize/SKILL.md` (233), `aid-execute/SKILL.md` (279), `aid-specify/SKILL.md` (207), `aid-detail/SKILL.md` (77), `aid-plan/SKILL.md` (208), `aid-deploy/SKILL.md` (147), `aid-monitor/SKILL.md` (223), `aid-generate/SKILL.md` (261, in `.claude/skills/` — not under `canonical/skills/`, see Module 14) |
+| **Lines (SKILL.md bodies)** | 2,157 total: `aid-discover/SKILL.md` (307), `aid-interview/SKILL.md` (357), `aid-init/SKILL.md` (119), `aid-summarize/SKILL.md` (233), `aid-execute/SKILL.md` (279), `aid-specify/SKILL.md` (207), `aid-detail/SKILL.md` (77), `aid-plan/SKILL.md` (208), `aid-deploy/SKILL.md` (147), `aid-monitor/SKILL.md` (223), `aid-generate/SKILL.md` (261, in `.claude/skills/` — not under `canonical/skills/`, see Module 14) |
 | **Lines (references/)** | 845 total (e.g., `aid-discover/references/agent-prompts.md` 142, `aid-interview/references/kb-hydration.md` 106, `aid-execute/references/task-type-rules.md` 104, `aid-specify/references/known-issues-scope.md` 52, etc.) |
 | **Lines (scripts/)** | ~705 total: `aid-discover/scripts/check-preflight.sh` 45 + `aid-discover/scripts/verify-kb.sh` 60; `aid-interview/scripts/parse-recipe.sh` 540 + `aid-interview/scripts/test-parse-recipe.sh` (smoke); `aid-interview/scripts/test-lite-subpaths.sh`; `aid-interview/scripts/test-lite-to-full-escalation.sh` |
 | **Lines (per-skill READMEs)** | 1,068 total: `aid-discover/README.md` (236), `aid-deploy/README.md` (199), `aid-interview/README.md` (193), `aid-specify/README.md` (104), `aid-plan/README.md` (95), `aid-detail/README.md` (90), `aid-execute/README.md` (60), `aid-init/README.md` (36), `aid-summarize/README.md` (35), `aid-monitor/README.md` (30) |
 | **Purpose** | Canonical source-of-truth for every skill. Each `canonical/skills/aid-{phase}/` folder holds the SKILL.md (LLM body), an optional human-oriented README.md, optional `references/*.md` siblings (factored prompts/explanations), and optional `scripts/*.sh` for runtime helpers. `run_generator.py` reads from here and emits identical copies into each profile's install tree. |
 | **Internal dependencies** | References `methodology/aid-methodology.md` for phase definitions; references `canonical/templates/` for artifact shapes; references `canonical/agents/` for sub-agent dispatch. |
 | **External dependencies** | None. |
-| **Downstream consumers** | `run_generator.py` (which propagates to the 3 install trees + dogfood `.claude/`). Contributors authoring methodology changes. |
+| **Downstream consumers** | `run_generator.py` (which propagates `canonical/` to the 3 profile trees under `profiles/`). The dogfood `.claude/` at the repo root is downstream of `profiles/claude-code/.claude/` via `setup.sh`, not a generator target. Contributors authoring methodology changes. |
 | **Test / validation coverage** | `aid-discover/scripts/verify-kb.sh` (60 lines) checks 16-file presence; `aid-discover/scripts/check-preflight.sh` (45 lines) verifies init has run. Generator output is verified by `.claude/skills/aid-generate/scripts/verify_deterministic.py` (513 lines), invoked by `run_generator.py`. No frontmatter schema validator. |
 | **Tombstones** | The old top-level `canonical/skills/aid-correct/README.md` (5-line "merged into Triage" tombstone) no longer exists — the entire pre-work-002 top-level `skills/` directory was removed. Correct merge is documented in `methodology/aid-methodology.md` and `architecture.md`. |
 
@@ -62,7 +62,7 @@ This repository is the **AID methodology + multi-tool install bundles**. There i
 | Skill | SKILL.md lines | `allowed-tools` | references/ files | scripts/ files |
 |-------|----------------|-----------------|-------------------|----------------|
 | `aid-init` | 119 | Read, Glob, Grep, Bash, Write, Edit | step-0-preflight.md, step-1-collect.md, step-2-scaffold.md, step-3-meta-docs.md, step-4-setup.md | — |
-| `aid-discover` | 258 | Read, Glob, Grep, Bash, Write, Edit, Agent | state-generate.md, state-review.md, state-q-and-a.md, state-fix.md, state-approval.md, state-done.md, plus agent-prompts.md (142), document-expectations.md (121), reviewer-prompt.md (75) | check-preflight.sh (45), verify-kb.sh (60) |
+| `aid-discover` | 307 | Read, Glob, Grep, Bash, Write, Edit, Agent | state-generate.md, state-review.md, state-q-and-a.md, state-fix.md, state-approval.md, state-done.md, plus agent-prompts.md (142), document-expectations.md (121), reviewer-prompt.md (75) | check-preflight.sh (45), verify-kb.sh (60) |
 | `aid-interview` | 357 | Read, Glob, Grep, Bash, Write, Edit | 12 state-*.md (state-first-run, state-q-and-a, state-triage, state-continue, state-completion, state-feature-decomposition, state-cross-reference, state-done, state-condensed-intake, state-task-breakdown, state-lite-review, state-lite-done) + 6 aux (cross-reference.md, feature-decomposition.md, interview-strategies.md, kb-hydration.md, lite-to-full-escalation.md, recipe-to-lite-escalation.md) | parse-recipe.sh (540), test-parse-recipe.sh |
 | `aid-specify` | 207 | Read, Glob, Grep, Bash, Write, Edit | state-initialize.md, state-continue.md, state-spike.md, state-blocked.md, state-review.md, state-done.md, plus handling-outcomes.md (37), known-issues-scope.md (52) | — |
 | `aid-plan` | 208 | Read, Glob, Grep, Write, Edit, Bash | first-run-loop.md, review-deliverables.md | — |
@@ -82,7 +82,7 @@ This repository is the **AID methodology + multi-tool install bundles**. There i
 |-------|-------|
 | **Path** | `profiles/claude-code/.claude/skills/` |
 | **Files** | 25 (10 SKILL.md + 9 `references/*.md` + 2 `scripts/*.sh` + 4 top-level entries including `README.md`) — verified via `project-index.md` (paths 377-400) |
-| **Lines (SKILL.md bodies)** | 2,108 total — byte-identical to `canonical/skills/` (258 + 279 + 77 + 207 + 147 + 223 + 208 + 119 + 357 + 233) |
+| **Lines (SKILL.md bodies)** | 2,157 total — byte-identical to `canonical/skills/` (307 + 279 + 77 + 207 + 147 + 223 + 208 + 119 + 357 + 233) |
 | **Generation** | Emitted from `canonical/skills/` by `run_generator.py` via `.claude/skills/aid-generate/scripts/render_skills.py` (450 lines). Emission manifest at `profiles/claude-code/emission-manifest.jsonl` records every file. |
 | **Frontmatter** | YAML — `name`, `description`, `allowed-tools` (comma-separated string, NOT YAML array), `argument-hint`. May add `context: fork` / `agent: <name>` per Claude Code conventions. |
 | **Internal dependencies** | Each SKILL.md declares its `allowed-tools` (see Module 2 table). All read from `.aid/knowledge/` and `profiles/claude-code/.claude/templates/` at runtime. `aid-discover/SKILL.md` dispatches the 5 discovery sub-agents under `profiles/claude-code/.claude/agents/discovery-*.md`. |
@@ -98,7 +98,7 @@ This repository is the **AID methodology + multi-tool install bundles**. There i
 |-------|-------|
 | **Path** | `profiles/codex/.agents/skills/` (skills + references) + `profiles/codex/.codex/agents/` (TOML agent files) |
 | **Files** | 25 in `.agents/skills/` (10 SKILL.md + 9 `references/*.md` + 2 `scripts/*.sh` + 4 top-level) — paths 469-500+ in `project-index.md` |
-| **Lines (SKILL.md bodies)** | 2,108 total — **byte-identical to canonical and to Claude Code** (258 + 279 + 77 + 207 + 147 + 223 + 208 + 119 + 357 + 233). The pre-work-002 narrative of "Codex inlines what Claude Code factors out → 2.4× larger" is RETIRED — all three trees now ship the same SKILL.md plus the same `references/` siblings. |
+| **Lines (SKILL.md bodies)** | 2,157 total — **byte-identical to canonical and to Claude Code** (307 + 279 + 77 + 207 + 147 + 223 + 208 + 119 + 357 + 233). The pre-work-002 narrative of "Codex inlines what Claude Code factors out → 2.4× larger" is RETIRED — all three profile trees now ship the same SKILL.md plus the same `references/` siblings. |
 | **Generation** | Emitted from `canonical/skills/` by `run_generator.py`. Emission manifest at `profiles/codex/emission-manifest.jsonl`. |
 | **Frontmatter** | Same YAML shape as Claude Code. Codex omits `context:` / `agent:` extras. |
 | **Internal dependencies** | Reads from `.aid/knowledge/` and `profiles/codex/.agents/templates/` at runtime. References `profiles/codex/.codex/agents/discovery-*.toml` for sub-agent dispatch. |
@@ -308,16 +308,16 @@ This repository is the **AID methodology + multi-tool install bundles**. There i
 
 ## Canonical → Profile Tree Relationship (post-canonical-generator)
 
-Since work-002, every skill/agent/template edit goes to `canonical/` and `run_generator.py` propagates to the 4 destinations. The pre-work-002 "manual quadruplicate edits" discipline is RETIRED.
+Since work-002, every skill/agent/template edit goes to `canonical/` and `run_generator.py` propagates to the 3 profile-tree destinations (`profiles/{claude-code,codex,cursor}/`). The pre-work-002 "manual quadruplicate edits" discipline is RETIRED. The dogfood `.claude/` at the repo root is downstream of `profiles/claude-code/.claude/` via `setup.sh` (this repo's own dogfood install of AID) and is NOT a generator target.
 
-| Asset | Canonical source | Profile mirrors (all 3 identical, post-generator) | Dogfood mirror |
-|-------|------------------|----------------------------------------------------|----------------|
-| `aid-discover` SKILL.md | `canonical/skills/aid-discover/SKILL.md` (258) | `profiles/{claude-code,codex,cursor}/.../skills/aid-discover/SKILL.md` (258 each) | `.claude/skills/aid-discover/SKILL.md` (258) |
-| `aid-discover` references | `canonical/skills/aid-discover/references/{agent-prompts,document-expectations,reviewer-prompt}.md` | propagated identically to all 3 profiles | propagated to `.claude/` |
-| `aid-interview` SKILL.md | `canonical/skills/aid-interview/SKILL.md` (357) | `profiles/{...}/skills/aid-interview/SKILL.md` (357 each) | `.claude/skills/aid-interview/SKILL.md` (357) |
-| `discovery-reviewer` agent body | `canonical/agents/discovery-reviewer/AGENT.md` (405) | `profiles/claude-code/.claude/agents/discovery-reviewer.md` (378), `profiles/codex/.codex/agents/discovery-reviewer.toml` (~314 TOML), `profiles/cursor/.cursor/agents/discovery-reviewer.md` (378) | `.claude/agents/discovery-reviewer.md` (378) |
-| `architect` agent body | `canonical/agents/architect/AGENT.md` (39) | `profiles/claude-code/.claude/agents/architect.md` (39), `profiles/codex/.codex/agents/architect.toml` (39), `profiles/cursor/.cursor/agents/architect.md` (39) | `.claude/agents/architect.md` (39) |
-| `canonical/templates/scripts/build-project-index.sh` | `canonical/templates/scripts/build-project-index.sh` (368) | propagated 1:1 to 3 profile trees | propagated to `.claude/` |
+| Asset | Canonical source | Profile mirrors (all 3 identical, post-generator) |
+|-------|------------------|----------------------------------------------------|
+| `aid-discover` SKILL.md | `canonical/skills/aid-discover/SKILL.md` (307) | `profiles/{claude-code,codex,cursor}/.../skills/aid-discover/SKILL.md` (307 each) |
+| `aid-discover` references | `canonical/skills/aid-discover/references/{agent-prompts,document-expectations,reviewer-prompt}.md` + 6 `state-*.md` | propagated identically to all 3 profile trees |
+| `aid-interview` SKILL.md | `canonical/skills/aid-interview/SKILL.md` (357) | `profiles/{...}/skills/aid-interview/SKILL.md` (357 each) |
+| `discovery-reviewer` agent body | `canonical/agents/discovery-reviewer/AGENT.md` (405) | `profiles/claude-code/.claude/agents/discovery-reviewer.md` (378), `profiles/codex/.codex/agents/discovery-reviewer.toml` (~314 TOML), `profiles/cursor/.cursor/agents/discovery-reviewer.md` (378) |
+| `architect` agent body | `canonical/agents/architect/AGENT.md` (39) | `profiles/claude-code/.claude/agents/architect.md` (39), `profiles/codex/.codex/agents/architect.toml` (39), `profiles/cursor/.cursor/agents/architect.md` (39) |
+| `canonical/templates/scripts/build-project-index.sh` | `canonical/templates/scripts/build-project-index.sh` (368) | propagated 1:1 to 3 profile trees |
 
 **Generator-enforced invariants** (verified by `verify_deterministic.py`):
 1. For each canonical asset, the rendered body in every profile is byte-identical to canonical (modulo profile-specific tool-name substitution, e.g., `Bash` → `Terminal` for Cursor — handled deterministically by `render_skills.py`).

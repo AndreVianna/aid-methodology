@@ -272,7 +272,7 @@ The first command is /aid-init (per setup.sh post-install message).
 |---|-------|----------|
 | 1 | `canonical/` top-level dir exists with `agents/`, `skills/`, `templates/`, `rules/`, `EMISSION-MANIFEST.md` | `ls canonical/` |
 | 2 | `run_generator.py` exists at top level | `ls run_generator.py` (~84 lines Python) |
-| 3 | `canonical/skills/aid-discover/SKILL.md` and all 3 profile copies are 258 lines each (uniform) | `wc -l canonical/skills/aid-discover/SKILL.md profiles/*/skills/aid-discover/SKILL.md` returns 258 four times |
+| 3 | `canonical/skills/aid-discover/SKILL.md` and all 3 profile copies are 307 lines each (uniform) | `wc -l canonical/skills/aid-discover/SKILL.md profiles/*/.*/skills/aid-discover/SKILL.md` returns 307 four times (canonical + 3 profile trees) |
 | 4 | Top-level `skills/` and `agents/` dirs are GONE | `ls skills/`, `ls agents/` both error |
 | 5 | `setup.sh` and `setup.ps1` install from `profiles/<tool>/`, not from `canonical/` | `grep -nE "canonical/" setup.sh setup.ps1` returns 0 matches |
 | 6 | `aid-monitor` SKILL.md is 223 lines (not the obsolete 242 cited pre-cycle-11) | `wc -l canonical/skills/aid-monitor/SKILL.md` |

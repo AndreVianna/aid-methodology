@@ -2,29 +2,62 @@
 
 FIX applies Q&A answers and reviewer feedback to bring KB documents up to minimum grade; it is selected when the grade is below minimum and no Pending Q&A entries remain.
 
+### Step 0: Partition Findings by KB File (Parallel-FIX prep)
+
+Before dispatching any sub-agent, **partition the reviewer's findings by KB file**. The output is a map `{file: [findings]}` — every finding belongs to exactly one file. Each file's bucket holds its entire finding list.
+
+**Why partition?** FIX dispatches **one sub-agent per affected file**, all in parallel. Each agent owns its file exclusively (single-writer per file is the parallelism-safety invariant). The orchestrator only serializes at the commit/push boundary (Step 4).
+
 ### Step 1: Identify Documents Below Threshold
 
 Read `.aid/knowledge/STATE.md` `## KB Documents Status`. List documents below minimum grade.
 Prioritize: [CRITICAL] → [HIGH] → [MEDIUM].
-Print: `[Fix] {N} documents below {minimum}. Fixing...`
+Print: `[Fix] {N} documents below {minimum}. Dispatching {N} sub-agents in parallel...`
 
-### Step 2: Fix Each Document
+### Step 2: Dispatch Parallel FIX Agents (one per affected file)
 
-For each document below minimum, in priority order:
-1. Read issues from `.aid/knowledge/STATE.md` `## Issues`
-2. Read Answered Q&A entries from `.aid/knowledge/STATE.md` `## Q&A` applicable to this document
-3. Read relevant source code for missing info
-4. Edit KB document — combine review findings WITH user answers
-5. **REMOVE fixed issue lines** from `.aid/knowledge/STATE.md` `## Issues`
-6. Update `**Applied to:**` for each incorporated Q&A answer in STATE.md `## Q&A`
-7. Re-grade the document
+**Single message, multiple `Agent` tool calls** — all agents run concurrently. For each file with findings:
 
-Print: `[Fix] Improving {document}... {old grade} → {new grade}`
+- **Subagent type**: `tech-writer` for narrative KB docs; `researcher` if depth investigation is needed.
+- **Prompt contents**:
+  1. The file path being edited.
+  2. The file's COMPLETE finding list (severity-tagged, source-tagged).
+  3. Any Answered Q&A entries from `STATE.md ## Q&A` that this file should incorporate.
+  4. Pointer to relevant source files for verification.
+  5. **Manual-edits directive** — the agent MUST use the `Edit` tool to apply targeted changes one-by-one. **NO regex scripts.** Scripts generalize and produce new defects:
+     - Replace historical-narrative values (e.g. cycle-log entries)
+     - Mangle section headers via context-bleed in regex matches
+     - Embed authoring annotations (`(line cite stripped...)`) into user-facing prose
+     - Miss inline-narrative variants the anchor didn't anticipate
+  6. **Commit-stage only** directive — the agent leaves changes unstaged or staged-but-not-committed. The orchestrator owns the final `git commit` + `git push` step.
 
-**Feature Inventory Generation:** When processing Features Q&A answers:
-1. Cross-reference with api-contracts.md, module-map.md, domain-glossary.md, ui-architecture.md, data-model.md
-2. Generate/update feature-inventory.md with enriched table
-3. Mark Features Q&A as Applied to: `feature-inventory.md`
+- **L2+L3 trace per agent** — each agent gets its own pre-created heartbeat file `.aid/.heartbeat/fix-{agent-type}-{file-slug}-{ts}.txt` and three SEPARATE `Bash(..., run_in_background=true)` timer dispatches per the Dispatch Protocol above.
+
+Print before dispatch:
+```
+[Fix] Dispatching {N} parallel FIX agents:
+  ▶ tech-writer (file: architecture.md, ~{ETA}, heartbeat: ...) starting
+  ▶ tech-writer (file: module-map.md, ~{ETA}, heartbeat: ...) starting
+  ...
+```
+
+**Feature Inventory Generation:** if Features Q&A is in the answered set, the file-agent for `feature-inventory.md` should cross-reference api-contracts.md, module-map.md, domain-glossary.md, ui-architecture.md, data-model.md while editing.
+
+### Step 3: Wait for ALL Parallel Agents
+
+Do NOT proceed to Step 4 until every dispatched agent has reported completion. For each completion, surface `✓ tech-writer (file: X) done in {actual}` and append a calibration row.
+
+### Step 4: Aggregate, Verify, Commit (Sequential — single writer)
+
+After ALL parallel agents return:
+1. **REMOVE fixed issue lines** from `.aid/knowledge/STATE.md` `## Issues` (orchestrator only — agents never touch STATE.md).
+2. Update `**Applied to:**` for each incorporated Q&A answer in `STATE.md ## Q&A`.
+3. Run `bash canonical/templates/scripts/verify-kb-claims.sh` — expect exit 0.
+4. Run any smoke tests relevant to changes.
+5. Single `git commit` listing which files each agent touched.
+6. `git push`.
+
+Print: `[Fix] Improving {document}... {old grade} → {new grade}` for each.
 
 ### Step 2b: Verify Meta-Documents (MANDATORY after every fix pass)
 
