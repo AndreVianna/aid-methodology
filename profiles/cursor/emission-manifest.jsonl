@@ -29,7 +29,7 @@
 {"dst": ".cursor/recipes/write-release-note.md", "profile": "cursor", "sha256": "92e2fe8b6d4b2060f56eb7f5f321ab8fe73a95997ae8b5526ed33236fda9b4a3", "src": "canonical/recipes/write-release-note.md"}
 {"dst": ".cursor/rules/aid-methodology.mdc", "profile": "cursor", "sha256": "01b1edec0f4b84872109f6cf3a9f475fc898d6e28c8d10a25b603f5345b8050d", "src": "canonical/rules/aid-methodology.mdc"}
 {"dst": ".cursor/rules/aid-review.mdc", "profile": "cursor", "sha256": "dd8784fc66b2b2b3b5f9c488a9235777b47b9b667673b05686cead8ce31e2d9b", "src": "canonical/rules/aid-review.mdc"}
-{"dst": ".cursor/skills/aid-deploy/SKILL.md", "profile": "cursor", "sha256": "6d01a98d74eb10bee6cbaa76f470387421c91f7e89a1785fab948d9fb7ce1a7c", "src": "canonical/skills/aid-deploy/SKILL.md"}
+{"dst": ".cursor/skills/aid-deploy/SKILL.md", "profile": "cursor", "sha256": "f53e8f633aa037720472caa7d1b26f35f9b92f7964fa0e6cefbe42c47b501b66", "src": "canonical/skills/aid-deploy/SKILL.md"}
 {"dst": ".cursor/skills/aid-deploy/references/state-idle.md", "profile": "cursor", "sha256": "a411f3f92a7d351a45de466448547155861031f8eb499a39c6220b230d42b361", "src": "canonical/skills/aid-deploy/references/state-idle.md"}
 {"dst": ".cursor/skills/aid-deploy/references/state-packaging.md", "profile": "cursor", "sha256": "9dba7411d9b9c22b6823aa5e91fedf9c0b547338f9ba7a8f259cd04857a1c182", "src": "canonical/skills/aid-deploy/references/state-packaging.md"}
 {"dst": ".cursor/skills/aid-deploy/references/state-selecting.md", "profile": "cursor", "sha256": "3bebd84b5a2e1327a6941621ffccff8eafdc50f732d2fff4478210050c957eee", "src": "canonical/skills/aid-deploy/references/state-selecting.md"}

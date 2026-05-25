@@ -27,7 +27,7 @@
 {"dst": ".claude/recipes/bug-fix.md", "profile": "claude-code", "sha256": "0115e2eed997abb3f865f47d45292901fa92811e5f6bb95546c16af2a57b2308", "src": "canonical/recipes/bug-fix.md"}
 {"dst": ".claude/recipes/method-refactor.md", "profile": "claude-code", "sha256": "15f1e0686a7c5e25542cedf5454dec12dceaf09a748b7d9bc105d3de1fc8dd26", "src": "canonical/recipes/method-refactor.md"}
 {"dst": ".claude/recipes/write-release-note.md", "profile": "claude-code", "sha256": "92e2fe8b6d4b2060f56eb7f5f321ab8fe73a95997ae8b5526ed33236fda9b4a3", "src": "canonical/recipes/write-release-note.md"}
-{"dst": ".claude/skills/aid-deploy/SKILL.md", "profile": "claude-code", "sha256": "9f6d6d9a59d756c0a0c75fb5b7bf1a43472a875f9569a71f6d0bff6bf6f820d3", "src": "canonical/skills/aid-deploy/SKILL.md"}
+{"dst": ".claude/skills/aid-deploy/SKILL.md", "profile": "claude-code", "sha256": "0c4bddfdf40704f90da700946c35172a6cc330dc9e65a993f5dc1a468e93b433", "src": "canonical/skills/aid-deploy/SKILL.md"}
 {"dst": ".claude/skills/aid-deploy/references/state-idle.md", "profile": "claude-code", "sha256": "a411f3f92a7d351a45de466448547155861031f8eb499a39c6220b230d42b361", "src": "canonical/skills/aid-deploy/references/state-idle.md"}
 {"dst": ".claude/skills/aid-deploy/references/state-packaging.md", "profile": "claude-code", "sha256": "9dba7411d9b9c22b6823aa5e91fedf9c0b547338f9ba7a8f259cd04857a1c182", "src": "canonical/skills/aid-deploy/references/state-packaging.md"}
 {"dst": ".claude/skills/aid-deploy/references/state-selecting.md", "profile": "claude-code", "sha256": "3bebd84b5a2e1327a6941621ffccff8eafdc50f732d2fff4478210050c957eee", "src": "canonical/skills/aid-deploy/references/state-selecting.md"}
