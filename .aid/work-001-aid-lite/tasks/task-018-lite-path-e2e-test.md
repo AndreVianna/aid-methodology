@@ -15,9 +15,9 @@
 - Capture results in `.aid/work-001-aid-lite/test-reports/task-018-lite-path-e2e.md`.
 
 **Acceptance Criteria:**
-- [ ] All 4 sub-paths exercised end-to-end with positive results.
-- [ ] User override exercised end-to-end with the right Sub-path / Sub-path (auto) / Override fields recorded.
-- [ ] Escalation exercised end-to-end with full-path resumption + carried info.
-- [ ] All AC1-4 from feature-005 § Acceptance Criteria and AC1-4 from § Type-aware extension verified.
-- [ ] Tests deterministic + clean setup/teardown.
-- [ ] All §6 quality gates pass.
+- [x] All 4 sub-paths exercised end-to-end with positive results.
+- [x] User override exercised end-to-end with the right Sub-path / Sub-path (auto) / Override fields recorded.
+- [x] Escalation exercised end-to-end with full-path resumption + carried info.
+- [x] All AC1-4 from feature-005 § Acceptance Criteria and AC1-4 from § Type-aware extension verified.
+- [x] Tests deterministic + clean setup/teardown.
+- [x] All §6 quality gates pass.
