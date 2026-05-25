@@ -176,9 +176,9 @@ This is treated as **host-platform behavior**, not an AID bug. Documentation onl
 
 **Not applicable.** No deployed system means nothing to monitor.
 
-The methodology defines a `Monitor` phase (`aid-monitor` skill, 285 lines per `canonical/skills/aid-monitor/SKILL.md` post work-002, propagated identically to all 3 install trees), but this is a phase the *user* runs against *their* production system, not anything this repo runs.
+The methodology defines a `Monitor` phase (`aid-monitor` skill, 223 lines per `canonical/skills/aid-monitor/SKILL.md` post work-002, propagated identically to all 3 install trees), but this is a phase the *user* runs against *their* production system, not anything this repo runs.
 
-[INFO] **The `aid-monitor` skill is uniform** across the three install trees (285 lines each, identical content). Verified by line count.
+[INFO] **The `aid-monitor` skill is uniform** across the three install trees (223 lines each, identical content). Verified by line count.
 
 ## 7. Branching and Release Strategy
 
@@ -204,7 +204,7 @@ The closest concept is "which install tree a user activates" (Claude Code, Codex
 
 - Was scaffolded by `aid-init` (creating `.aid/knowledge/` with 16 KB templates + the consolidated `STATE.md`).
 - Is being populated by `aid-discover` (running discovery sub-agents against this repo's source tree to produce the KB).
-- Is **gitignored** via `.gitignore:1` (single line: `.aid/`).
+- Is **gitignored** via `.gitignore` (47 lines) (single line: `.aid/`).
 
 **Implication for contributors:** running `/aid-discover` in a worktree of this repo will regenerate the KB. The KB is not committed (gitignored) — it is regenerated on demand. A future contributor who wants to share their discovery output for a feature branch must either:
 
@@ -272,9 +272,9 @@ The first command is /aid-init (per setup.sh post-install message).
 |---|-------|----------|
 | 1 | `canonical/` top-level dir exists with `agents/`, `skills/`, `templates/`, `rules/`, `EMISSION-MANIFEST.md` | `ls canonical/` |
 | 2 | `run_generator.py` exists at top level | `ls run_generator.py` (~83 lines Python) |
-| 3 | `canonical/skills/aid-discover/SKILL.md` and all 3 profile copies are 548 lines each (uniform) | `wc -l canonical/skills/aid-discover/SKILL.md profiles/*/skills/aid-discover/SKILL.md` returns 548 four times |
+| 3 | `canonical/skills/aid-discover/SKILL.md` and all 3 profile copies are 258 lines each (uniform) | `wc -l canonical/skills/aid-discover/SKILL.md profiles/*/skills/aid-discover/SKILL.md` returns 258 four times |
 | 4 | Top-level `skills/` and `agents/` dirs are GONE | `ls skills/`, `ls agents/` both error |
 | 5 | `setup.sh` and `setup.ps1` install from `profiles/<tool>/`, not from `canonical/` | `grep -nE "canonical/" setup.sh setup.ps1` returns 0 matches |
-| 6 | `aid-monitor` SKILL.md is 285 lines (not the obsolete 242 cited pre-cycle-11) | `wc -l canonical/skills/aid-monitor/SKILL.md` |
+| 6 | `aid-monitor` SKILL.md is 223 lines (not the obsolete 242 cited pre-cycle-11) | `wc -l canonical/skills/aid-monitor/SKILL.md` |
 
 WARNING: The Q192 skill-loading-cache observation is verified for Claude Code only. The Codex/Cursor presumption is based on the per-session-cache pattern being the standard for slash-command-style hosts; explicit verification is pending. File an upstream issue only if behavior diverges from Claude Code.

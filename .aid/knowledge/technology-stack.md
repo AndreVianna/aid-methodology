@@ -22,7 +22,7 @@ Per `project-index.md` Language Breakdown (line 19). Markdown is the primary con
 
 | Purpose | Where | Example |
 |---|---|---|
-| Normative methodology spec | `methodology/aid-methodology.md` (1,158 lines) | The single source of truth for what AID is. |
+| Normative methodology spec | `methodology/aid-methodology.md` (1,071 lines) | The single source of truth for what AID is. |
 | Skill bodies for LLM consumption | `profiles/claude-code/.claude/skills/aid-*/SKILL.md`, `profiles/codex/.agents/skills/aid-*/SKILL.md`, `profiles/cursor/.cursor/skills/aid-*/SKILL.md` | The 10 skills triplicated across three install trees. |
 | Agent definitions (Claude Code / Cursor) | `profiles/claude-code/.claude/agents/*.md` (22), `profiles/cursor/.cursor/agents/*.md` (22) | Markdown + YAML frontmatter. |
 | Human-readable skill / agent READMEs | `skills/<name>/README.md` (10), `agents/<name>/README.md` (17) | Rich prose for humans. |
@@ -181,7 +181,7 @@ Per `project-index.md` Language Breakdown (line 27).
 | File | Lines | Notes |
 |---|---|---|
 | `.claude/settings.json` | 11 | Narrow Bash permission allow-list scoped to this dogfood worktree. Not shipped in the install payload. |
-| `.claude/settings..json` | 12 | ⚠️ **Typo file (double dot in name).** Sits alongside `settings.json` with similar contents. See `project-structure.md` Anomaly #2 (line 255) and `DISCOVERY-STATE.md` Q7 — recommended action is to delete it. |
+| `.claude/settings.json` (the historical double-dot typo file `.claude/settings..json` was removed; see `project-structure.md` Anomaly #2) | 12 | ⚠️ **Typo file (double dot in name).** Sits alongside `settings.json` with similar contents. See `project-structure.md` Anomaly #2 (line 255) and `DISCOVERY-STATE.md` Q7 — recommended action is to delete it. |
 
 ---
 
@@ -193,7 +193,7 @@ Per `project-index.md` Language Breakdown (line 23):
 |---|---|---|
 | `methodology/images/*.png` | 4 | The four canonical pipeline diagrams. Binary; line counts in `project-index.md` are byte-derived placeholders, not real lines. |
 | `LICENSE` | 1 | MIT, 21 lines. |
-| `.gitignore` | 1 | One line: `.aid/`. |
+| `.gitignore` | 1 | 47 lines (Python/Node/IDE patterns + selective `.aid/knowledge/.cache/` L40 + `.aid/.heartbeat/` L47; does NOT exclude the full `.aid/` tree — KB and work artifacts are version-tracked). |
 | `profiles/cursor/.cursor/rules/aid-methodology.mdc` | 1 | 29 lines. Always-on Cursor rule. |
 | `profiles/cursor/.cursor/rules/aid-review.mdc` | 1 | 11 lines. Glob-scoped rule (`globs: "**/*.{java,py,ts,js,cs,go,rs}"`). |
 
@@ -350,7 +350,7 @@ bash templates/scripts/verify-kb.sh .aid/knowledge/
 
 | Tool | Required? | Config file |
 |---|---|---|
-| `git` | Yes (the whole repo is git-distributed) | `.gitignore` (1 line: `.aid/`) |
+| `git` | Yes (the whole repo is git-distributed) | `.gitignore` (47 lines — Python/Node/IDE + selective `.aid/knowledge/.cache/` + `.aid/.heartbeat/`) |
 | Bash | Yes (for any contributor who wants to test discovery against the repo itself) | — |
 | PowerShell 5+ | Optional (Windows contributors who want to verify `setup.ps1`) | — |
 | Node.js | Optional (only for `aid-summarize` validation) | — |

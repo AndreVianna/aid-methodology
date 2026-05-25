@@ -48,9 +48,9 @@ Analysis:
 
 [INFO] **Permission allow-list is narrow and well-formed** in this repo's own settings.
 
-### 1.2 The `.claude/settings..json` Double-Dot File
+### 1.2 The `.claude/settings.json` (the historical double-dot typo file `.claude/settings..json` was removed; see `project-structure.md` Anomaly #2) Double-Dot File
 
-`.claude/settings..json` exists alongside `.claude/settings.json` (see `project-structure.md` anomaly #2). Diffing (verified 2026-05-21):
+`.claude/settings.json` (the historical double-dot typo file `.claude/settings..json` was removed; see `project-structure.md` Anomaly #2) exists alongside `.claude/settings.json` (see `project-structure.md` anomaly #2). Diffing (verified 2026-05-21):
 
 ```
 $ diff .claude/settings.json .claude/settings..json
@@ -233,7 +233,7 @@ When AID's discovery sub-agents (`discovery-architect`, `discovery-analyst`, `di
 
 If the user commits `.aid/knowledge/` to a public repo without thinking, this is a **disclosure event**.
 
-**Mitigation in place:** `profiles/claude-code/.claude/skills/aid-init/SKILL.md:349-356` instructs the init skill to **add `.aid/` to `.gitignore`** of the target project:
+**Mitigation in place:** `profiles/claude-code/.claude/skills/aid-init/SKILL.md (line cite stripped — file shrank post-thin-router refactor; reference the file as a whole)` instructs the init skill to **add `.aid/` to `.gitignore`** of the target project:
 
 ```
 ### .gitignore
@@ -294,7 +294,7 @@ Recounted from line-start `[SEVERITY]` tags 2026-05-21 via `bash templates/scrip
 | CRITICAL | 0 | — |
 | HIGH | 1 | All 6 discovery sub-agents share `permissionMode: bypassPermissions` + `background: true` trust assumption (line 157; corrected from "only discovery-reviewer" per cycle-1 review). |
 | MEDIUM | 4 | (L77) Hardcoded Maven path in Codex `developer.toml:11-12`; (L159) `discovery-reviewer` documented authority to append to KB while user is away; (L217) no supply-chain verification (no signed tags / SHA manifest); (L263) prompt-injection risk via 8 fetched vendor doc URLs (Q80 Trust Model documented). |
-| LOW | 4 | (L62) `.claude/settings..json` filename typo (cosmetic); (L102) Cursor `alwaysApply: true` rules have no guardrail; (L219) `setup.sh` silent on new files; (L253) `.gitignore` silent-update by `aid-init`. |
+| LOW | 4 | (L62) `.claude/settings.json` (the historical double-dot typo file `.claude/settings..json` was removed; see `project-structure.md` Anomaly #2) filename typo (cosmetic); (L102) Cursor `alwaysApply: true` rules have no guardrail; (L219) `setup.sh` silent on new files; (L253) `.gitignore` silent-update by `aid-init`. |
 | INFO | 12 | Non-issue observations (narrow allow-list, no secrets committed, examples anonymized, trust boundary correctly placed, Cursor Task tool flagged experimental, Antigravity URL unverified, etc.) — see Q103 for the rubric reconciliation of `[INFO]` as a sixth non-counted severity. |
 | **Total tagged** | **21** | (1 HIGH + 4 MEDIUM + 4 LOW + 12 INFO = 21 distinct severity-tagged findings; 0 CRITICAL.) Recounted post-cycle-3 by `^\[SEVERITY\]` line-start grep. |
 

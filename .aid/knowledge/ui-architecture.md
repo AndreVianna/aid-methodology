@@ -21,7 +21,7 @@ There **is** however one genuine HTML artifact emitted by AID: the **Knowledge B
 
 All four trees contain identical content. The `aid-summarize` skill reads from `.aid/templates/knowledge-summary/` (the path inside an installed project, which corresponds to one of the per-tool copies).
 
-The skill that emits the HTML lives at `profiles/claude-code/.claude/skills/aid-summarize/SKILL.md` (430 lines) and equivalents under `profiles/codex/.agents/skills/aid-summarize/SKILL.md` (436 lines) and `profiles/cursor/.cursor/skills/aid-summarize/SKILL.md` (436 lines).
+The skill that emits the HTML lives at `profiles/claude-code/.claude/skills/aid-summarize/SKILL.md` (233 lines) and equivalents under `profiles/codex/.agents/skills/aid-summarize/SKILL.md` (233 lines) and `profiles/cursor/.cursor/skills/aid-summarize/SKILL.md` (233 lines).
 
 ---
 
@@ -313,7 +313,7 @@ None of these have framework, component, state, routing, theming, or accessibili
 
 - File counts for HTML / CSS / JS: `technology-stack.md` §4-6 and `project-index.md` Language Breakdown lines 21, 22, 25.
 - Where the knowledge-summary assets live across the four trees (root + three install trees): `project-structure.md ## Templates` lines 170-172.
-- Skill that drives the generation: `profiles/claude-code/.claude/skills/aid-summarize/SKILL.md` (430 lines).
+- Skill that drives the generation: `profiles/claude-code/.claude/skills/aid-summarize/SKILL.md` (233 lines).
 - The `aid-summarize` 9-state state machine: `architecture.md` Pattern 1.
 - Validation scripts (the runtime "tests" of the UI): `technology-stack.md` §2, §4.
 - Design-tokens-vs-CSS drift open question: `.aid/knowledge/STATE.md` Q14 (per FR2; pre-FR2 was DISCOVERY-STATE.md).

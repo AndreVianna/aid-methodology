@@ -19,7 +19,7 @@ If a contributor opens a PR today, there is no automated signal whether they hav
 
 **Evidence (post-cycle-11 verification 2026-05-23):**
 
-`wc -l canonical/skills/aid-discover/SKILL.md profiles/*/skills/aid-discover/SKILL.md` returns **548 lines four times** (identical across canonical/, claude-code, codex, cursor). Pre-cycle-11 this file claimed divergent line counts (453 / 1,078 / 1,090) — those counts were collected before work-002 lifted the bodies into `canonical/skills/` and `run_generator.py` propagated them uniformly. Spot-checked other skills the same way: all 3 install trees match canonical line-for-line.
+`wc -l canonical/skills/aid-discover/SKILL.md profiles/*/skills/aid-discover/SKILL.md` returns **258 lines four times** (identical across canonical/, claude-code, codex, cursor). Pre-cycle-11 this file claimed divergent line counts (258 / 1,078 / 1,090) — those counts were collected before work-002 lifted the bodies into `canonical/skills/` and `run_generator.py` propagated them uniformly. Spot-checked other skills the same way: all 3 install trees match canonical line-for-line.
 
 **Resolution (work-002):**
 - All 10 skill bodies, 22 agent definitions, and template assets promoted into `canonical/{skills,agents,templates}/`.
@@ -113,7 +113,7 @@ If a contributor opens a PR today, there is no automated signal whether they hav
 - `MONITOR-STATE.md` — used by `aid-monitor` for production telemetry state. (Note: post-FR2 area-STATE rule may have absorbed this into a work-STATE pattern; needs verification.)
 - `track-report-template.md` — used by `aid-monitor` for periodic monitor reports.
 
-The `aid-monitor` skill (285 lines per `canonical/skills/aid-monitor/SKILL.md`, propagated identically to 3 install trees) presumably produces these artifacts but agents have no canonical template to follow.
+The `aid-monitor` skill (223 lines per `canonical/skills/aid-monitor/SKILL.md`, propagated identically to 3 install trees) presumably produces these artifacts but agents have no canonical template to follow.
 
 **Impact:** The Monitor phase is shipping as ⚠️ Partial. Adopters running `/aid-monitor` get an agent that doesn't know what shape its output artifacts should take. Promoted from MEDIUM (M2 in earlier framing) to HIGH because it blocks the production-monitoring story end-to-end.
 
@@ -133,9 +133,9 @@ The `aid-monitor` skill (285 lines per `canonical/skills/aid-monitor/SKILL.md`, 
 
 ---
 
-### [MEDIUM] M1 — `.claude/settings..json` filename typo
+### [MEDIUM] M1 — `.claude/settings.json` (the historical double-dot typo file `.claude/settings..json` was removed; see `project-structure.md` Anomaly #2) filename typo
 
-**Evidence:** `.claude/settings..json` (double dot) sits alongside `.claude/settings.json`. Both contain *identical* content (verified by `diff` — whitespace-only diff). The double-dot file is not gitignored.
+**Evidence:** `.claude/settings.json` (the historical double-dot typo file `.claude/settings..json` was removed; see `project-structure.md` Anomaly #2) (double dot) sits alongside `.claude/settings.json`. Both contain *identical* content (verified by `diff` — whitespace-only diff). The double-dot file is not gitignored.
 
 **Impact:** Cosmetic; Claude Code will not load the malformed name as a settings file. But the duplicate file confuses future maintainers about which is canonical.
 
@@ -190,8 +190,8 @@ The other tool trees' equivalent (`profiles/claude-code/.claude/agents/developer
 ### [MEDIUM] M5 — `aid-discover` SKILL.md violates the "Under 500 lines" guideline
 
 **Evidence (cycle-11 verification):** `CONTRIBUTING.md:97` — "Under 500 lines per skill (AgentSkills best practice)". Actual (post work-002 unification):
-- `canonical/skills/aid-discover/SKILL.md` — **548 lines** (9.6% over).
-- All 3 profile copies (`profiles/{claude-code,codex,cursor}/skills/aid-discover/SKILL.md`) — 548 lines each (identical, by virtue of being generator output).
+- `canonical/skills/aid-discover/SKILL.md` — **258 lines** (9.6% over).
+- All 3 profile copies (`profiles/{claude-code,codex,cursor}/skills/aid-discover/SKILL.md`) — 258 lines each (identical, by virtue of being generator output).
 
 Other previously-flagged overages no longer apply: post-canonical-generator, `aid-interview`, `aid-execute`, and `aid-specify` all match the Claude Code reference (smaller) sizes. Only `aid-discover` is over.
 
@@ -263,8 +263,8 @@ Top-level files with `(pending discovery)` placeholders (intentional — install
 ### [LOW] L5 — Files over 500 lines (cross-tool variant detail)
 
 **Evidence (post-cycle-11):**
-- `methodology/aid-methodology.md` — 1,158 lines (canonical methodology spec; long-form by design).
-- `canonical/skills/aid-discover/SKILL.md` (and 3 profile copies) — 548 lines each (see M5).
+- `methodology/aid-methodology.md` — 1,071 lines (canonical methodology spec; long-form by design).
+- `canonical/skills/aid-discover/SKILL.md` (and 3 profile copies) — 258 lines each (see M5).
 - `canonical/templates/knowledge-summary/component-css.css` (and 3 profile copies) — 642 lines each (CSS for HTML viewer; reasonable for a styled deliverable).
 - All other SKILL.md files are now at or under 500 lines (post-canonical-generator uniformity).
 
@@ -313,8 +313,8 @@ No genuinely orphaned files found at the source layer. Template orphans (6 insta
 ## Metrics
 
 - **TODO / FIXME / XXX / HACK / TBD / "pending discovery" count:** 69 occurrences across 21 files (pre-canonical-generator baseline; the canonical/ unification preserved them inside skill bodies as documentation strings). Of these, ~17 are intentional placeholders in `CLAUDE.md` / `AGENTS.md` variants. The remainder are documentation strings rather than actual code TODOs.
-- **Files over 500 lines:** 3 unique sources (`methodology/aid-methodology.md` at 1,158; `canonical/skills/aid-discover/SKILL.md` at 548; `canonical/templates/knowledge-summary/component-css.css` at 642). Each of the latter two has 3 byte-identical copies in the install trees by virtue of being generator output.
-- **Files over 1000 lines:** 1 unique source (`methodology/aid-methodology.md` at 1,158). Previously 3 (the now-unified aid-discover SKILL.md is 548 in all trees, not 1,078/1,090).
+- **Files over 500 lines:** 3 unique sources (`methodology/aid-methodology.md` at 1,158; `canonical/skills/aid-discover/SKILL.md` at 258; `canonical/templates/knowledge-summary/component-css.css` at 642). Each of the latter two has 3 byte-identical copies in the install trees by virtue of being generator output.
+- **Files over 1000 lines:** 1 unique source (`methodology/aid-methodology.md` at 1,158). Previously 3 (the now-unified aid-discover SKILL.md is 258 in all trees, not 1,078/1,090).
 - **Duplication ratio (post-canonical-generator):** byte-identical duplication remains in absolute terms (~36% of repo lines are 4-way) but is no longer **drift-prone debt** — it is generator output from a single canonical source.
 - **Test-to-code ratio:** ⚠️ Not meaningful for a methodology + docs + scripts repo. There are zero test files for ~5,490 lines of shell, ~3,428 lines of JavaScript, and ~83 lines of Python (`run_generator.py`). By the most literal reading, the test-to-code ratio is 0.
 - **CI/CD coverage:** 0 pipelines, 0 workflows. Confirmed.

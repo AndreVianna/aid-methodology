@@ -170,7 +170,7 @@
 | Local artifacts | `.gitignore` (1 line — gitignores `.aid/`); no `.gitattributes`, no `.gitmodules` |
 | Version pins | None |
 | Known-issues / open gaps | Git is the only assumed install/distribution mechanism. No npm package, no Homebrew tap, no PyPI module observed — adopters clone or copy the relevant tool tree (`README.md`, `setup.sh:1-161`). `aid-execute` uses one Git branch per delivery (`aid/{delivery-NNN}`, see `profiles/claude-code/.claude/skills/aid-execute/SKILL.md:74-79`) |
-| Evidence | `.gitignore:1`; `setup.sh`; `aid-execute/SKILL.md:74-79`; absence of npm/PyPI manifests |
+| Evidence | `.gitignore` (47 lines); `setup.sh`; `aid-execute/SKILL.md:74-79`; absence of npm/PyPI manifests |
 
 ---
 
@@ -268,3 +268,22 @@ Per-skill state-file writes reflect the FR2 area-STATE rule (per `coding-standar
 - The **Edit tool** is absent from `aid-deploy` and `aid-monitor` — both of which produce new artifacts rather than mutate existing ones (per `aid-deploy/SKILL.md:8` and `aid-monitor/SKILL.md:8`).
 - **State-file writes consolidated under FR2.** All dev-phase skills (`aid-interview` → `aid-deploy`) write to a **single per-work `STATE.md`** in the work directory rather than the 5 retired per-skill state files (`INTERVIEW-STATE.md`, per-feature `FEATURE-STATE.md`, `task-NNN-STATE.md`, `DEPLOYMENT-STATE.md`, plus the discovery-side `DISCOVERY-STATE.md`). `aid-discover` + `aid-summarize` write to the **Discovery-area `.aid/knowledge/STATE.md`**. See `coding-standards.md §8.5` and `data-model.md §1A` for the area-STATE rule.
 - No skill consumes any HTTP or MCP surface.
+
+## Recipes Catalog (FR8, work-001 feature-011 — shipped 2026-05-25)
+
+**Producer:** Maintainer-authored Markdown files under `canonical/recipes/` (5 seed recipes + meta-template).
+
+**Consumer:** `aid-interview` skill, TRIAGE state Step 5a. When the user's work matches a recipe's `applies-to` field (via T3-derived workType), the skill offers recipe choice + runs the slot-fill loop + emits execution-ready lite-path output.
+
+**Helper:** `canonical/skills/aid-interview/scripts/parse-recipe.sh` is the only consumer-side script. It exposes 4 modes:
+- `--list <dir>` — enumerate recipes in a directory
+- `--validate <file>` — verify front-matter + body schema
+- `--spec <file>` — extract spec block
+- `--tasks <file>` — extract tasks block
+- `--render <file> <slot-json>` — substitute slots + emit final spec + tasks
+
+**Cross-tree propagation:** `run_generator.py` mirrors `canonical/recipes/` into all 3 profile trees (`profiles/{claude-code/.claude,codex/.agents,cursor/.cursor}/recipes/`) byte-identically. `EMISSION-MANIFEST.md` tracks recipes as an asset kind.
+
+**Runtime install location:** `setup.sh` / `setup.ps1` copies the profile's `recipes/` directory into the user's project (path varies by profile — typically `.claude/recipes/` for Claude Code, `.codex/recipes/` for Codex, `.cursor/recipes/` for Cursor).
+
+**Escalation path:** If a recipe-instantiated work proves a poor fit, `recipe-to-lite-escalation.md` defines the trigger + slot-preservation contract (escalation falls back to standard lite-path; preserves filled slot values as carry-block).

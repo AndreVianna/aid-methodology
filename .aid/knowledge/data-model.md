@@ -496,3 +496,15 @@ Not applicable. Search across artifacts is performed by skills via the Grep/Glob
 |-----|------|--------|-------------|
 | 1.0 | 2026-05-21 | aid-discover (discovery-analyst) | Initial dogfood pass: 15 artifact-section entries cataloged with schemas, cardinality, dataflow diagram across the 10 SKILL files of the AID pipeline, validation surface assessed, MONITOR-STATE.md and track-report-template.md gaps recorded. |
 | 1.1 | 2026-05-23 | aid-discover cycle-11 FIX (KB-FIX work) | §1 Artifact Inventory rewritten: retired DISCOVERY-STATE/INTERVIEW-STATE/FEATURE-STATE/task-NNN-STATE/DEPLOYMENT-STATE rows replaced with 3 area-STATE rows (Discovery / Work / Monitor-deferred); template paths updated to `canonical/templates/*` post-canonical-generator (work-002); §§2.1, 2.3, 2.10 rewritten to describe the new area-STATE shapes; §§3-4 Mermaid + textual dataflow diagrams redrawn to show area-STATE flows; §6 Migrations section added documenting work-002 + work-003 + Codex tier-rename. Resolves cycle-11 HIGH findings on data-model.md §1 and §§3-4. |
+
+### `canonical/recipes/` (work-001 feature-011 — shipped 2026-05-25)
+
+**Asset type:** Markdown with YAML front-matter + slot-templated body (`{{slot-name}}` placeholders + `{!{` escape).
+
+**Cardinality:** 5 seed recipes + 1 README + meta-template (`canonical/templates/recipe-template.md`); rendered byte-identically into all 3 install trees (`profiles/{claude-code/.claude,codex/.agents,cursor/.cursor}/recipes/`).
+
+**Lifecycle:** Authored in `canonical/recipes/`. Generator (`run_generator.py`) propagates to install trees. Consumed at runtime by `aid-interview` TRIAGE state (Step 5a) when Path=lite + workType matches recipe.applies-to. Emitted output: `.aid/{work}/SPEC.md` + `tasks/task-NNN.md` (no `features/`, no `PLAN.md`).
+
+**Schema:** See `api-contracts.md ## Recipe File Schema` for the front-matter + body contract.
+
+**Validation:** `canonical/skills/aid-interview/scripts/parse-recipe.sh --validate <file>` (113 smoke tests; runs in CI eventually).

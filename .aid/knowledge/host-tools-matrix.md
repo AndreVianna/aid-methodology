@@ -35,15 +35,15 @@ Every cell answers: *does this capability ship for this tool, and how?*
 | AID capability | Claude Code | Codex CLI | Cursor | Copilot (future) | Antigravity (future) |
 |----------------|-------------|-----------|--------|------------------|----------------------|
 | `aid-init` skill | ✅ `profiles/claude-code/.claude/skills/aid-init/SKILL.md` | ✅ `profiles/codex/.agents/skills/aid-init/SKILL.md` | ✅ `profiles/cursor/.cursor/skills/aid-init/SKILL.md` | ❌ | ❌ |
-| `aid-discover` skill | ✅ 548 lines (canonical-generator), `references/` + `scripts/` split | ✅ 548 (canonical-generator; was 1,078 pre-work-002) lines (inlined) | ✅ 548 (canonical-generator; was 1,090 pre-work-002) lines (inlined) | ❌ | ❌ |
-| `aid-interview` skill | ✅ 477 lines | ✅ 694 lines | ✅ 698 lines | ❌ | ❌ |
-| `aid-specify` skill | ✅ 413 lines | ✅ 485 lines | ✅ 488 lines | ❌ | ❌ |
-| `aid-plan` skill | ✅ 336 lines | ✅ 332 lines (small drift, 4 lines) | ✅ matches Claude Code | ❌ | ❌ |
+| `aid-discover` skill | ✅ 258 lines (canonical-generator), `references/` + `scripts/` split | ✅ 548 (canonical-generator; was 1,078 pre-work-002) lines (inlined) | ✅ 548 (canonical-generator; was 1,090 pre-work-002) lines (inlined) | ❌ | ❌ |
+| `aid-interview` skill | ✅ 357 lines | ✅ 357 lines | ✅ 357 lines | ❌ | ❌ |
+| `aid-specify` skill | ✅ 207 lines | ✅ 207 lines | ✅ 207 lines | ❌ | ❌ |
+| `aid-plan` skill | ✅ 208 lines | ✅ 208 lines (small drift, 4 lines) | ✅ matches Claude Code | ❌ | ❌ |
 | `aid-detail` skill | ✅ | ✅ (5-line drift vs Claude Code) | ✅ (byte-identical to Claude Code) | ❌ | ❌ |
-| `aid-execute` skill | ✅ 386 lines | ✅ 558 lines | ✅ 562 lines | ❌ | ❌ |
+| `aid-execute` skill | ✅ 279 lines | ✅ 279 lines | ✅ 279 lines | ❌ | ❌ |
 | `aid-deploy` skill | ✅ | ✅ (identical to Claude Code) | ✅ (identical) | ❌ | ❌ |
 | `aid-monitor` skill | ✅ | ✅ (identical) | ✅ (identical) | ❌ | ❌ |
-| `aid-summarize` skill | ✅ 430 lines | ✅ 436 lines | ✅ 436 lines | ❌ | ❌ |
+| `aid-summarize` skill | ✅ 233 lines | ✅ 233 lines | ✅ 436 lines | ❌ | ❌ |
 | 22 named agents | ✅ markdown + YAML frontmatter | ✅ TOML with `developer_instructions` | ✅ markdown + YAML (uses `Terminal` tool name vs `Bash`) | ❌ | ❌ |
 | Knowledge-summary HTML viewer assets | ✅ `profiles/claude-code/.claude/templates/knowledge-summary/` (~25 files) | ✅ `profiles/codex/.agents/templates/knowledge-summary/` (~25 files) | ✅ `profiles/cursor/.cursor/templates/knowledge-summary/` (~25 files) | ❌ | ❌ |
 | `setup.sh` installer | ✅ copies `profiles/claude-code/.claude/` + `CLAUDE.md` | ❌ **CONFIRMED BUG (Q70)** — copies `profiles/codex/.codex/` + `AGENTS.md` but omits `profiles/codex/.agents/` (skills + templates). Patch trivial; tracked as `tech-debt.md H6`. | ✅ copies `profiles/cursor/.cursor/` + `AGENTS.md` | ❌ | ❌ |
@@ -91,7 +91,7 @@ All 22 agents are tier-consistent across all 3 install trees (verified by qualit
 |---|---------|-------|----------|--------|-----|
 | 1 | Codex | ❌ `setup.sh` / `setup.ps1` Codex branches copy `profiles/codex/.codex/` + `AGENTS.md` but **omit** `profiles/codex/.agents/` — Codex users get agent TOMLs without skill bodies. CONFIRMED via reviewer static-analysis spot-check. | HIGH | **CONFIRMED — patch tracked in `tech-debt.md H6`** | **Q70** |
 | 2 | Codex | `discovery-reviewer` writes to `DISCOVERY-GRADE.md` + `open-questions.md` while Claude Code / Cursor write to `DISCOVERY-STATE.md` + `additional-info.md` (semantic drift, not just project-context file name) | HIGH | Pending decision | **Q30** |
-| 3 | All trees | (RESOLVED post-work-002) Skill body line-count drift: `aid-discover/SKILL.md` was 453 (Claude Code) / 1,078 (Codex) / 1,090 (Cursor) pre-work-002 — eliminated by canonical-generator. Currently 596 lines across all 3 trees + canonical (post subagent-visibility-patch). `run_generator.py` enforces byte-identical propagation; VERIFY-4a catches drift. Cycle-14 reviewer (2026-05-23) confirmed parity. | RESOLVED | n/a (work-002 + PR #10) | **Q3, Q73 — both RESOLVED** |
+| 3 | All trees | (RESOLVED post-work-002) Skill body line-count drift: `aid-discover/SKILL.md` was 258 (Claude Code) / 1,078 (Codex) / 1,090 (Cursor) pre-work-002 — eliminated by canonical-generator. Currently 258 lines across all 3 trees + canonical (post subagent-visibility-patch). `run_generator.py` enforces byte-identical propagation; VERIFY-4a catches drift. Cycle-14 reviewer (2026-05-23) confirmed parity. | RESOLVED | n/a (work-002 + PR #10) | **Q3, Q73 — both RESOLVED** |
 | 4 | All trees | `CONTRIBUTING.md:21-26` documents triplication rule as "human README + Claude Code + Codex" — **omits Cursor entirely**. The discipline is actually quadruplicate | HIGH | Pending update | **Q72, Q34** |
 | 5 | Cursor | Cursor agents are **internally inconsistent** on the shell-execution tool name: `architect.md` uses `Terminal` (canonical), `discovery-reviewer.md` uses `Bash`. Cursor canonical per `external-sources.md` rows 5-6 is `Terminal`. Audit + rename remaining `Bash` → `Terminal` across all 22 agents. | MEDIUM | **CONFIRMED internal inconsistency — patch tracked in `tech-debt.md M6`** | **Q52** |
 | 6 | Codex | Cursor `AGENTS.md` (45 lines, has KB + Permissions + Skills sections) vs `profiles/codex/AGENTS.md` (28 lines, minimal) vs `profiles/claude-code/CLAUDE.md` (30 lines, minimal) — three-way template-shape asymmetry | LOW | Pending alignment | **Q82** |
@@ -119,7 +119,7 @@ The same templates and scripts are duplicated four ways (root `templates/` + 3 i
 | `accessibility-checklist.md` | 125 | 4 | 500 |
 | ...rest of scripts/assets | (see `tech-debt.md` H4 for full table) | 4 each | — |
 
-**Total estimated 4-way duplicated content:** ~17,600 lines = ~36% of the 49,226-line repository total.
+**Total estimated 4-way duplicated content:** ~17,600 lines = ~36% of the 90,011-line repo (post work-001 merge)sitory total.
 
 ## 7. Future Tool Onboarding Checklist
 

@@ -18,7 +18,7 @@ This document describes the **conceptual architecture of the AID methodology** (
 | Number of supported host tools | 3 with payloads (Anthropic Claude Code, OpenAI Codex CLI, Cursor); 2 named-as-future (GitHub Copilot, Google Antigravity) with no payload — see `external-sources.md` §7-8. |
 | Dogfooded? | Yes. This repo's `.aid/knowledge/` is currently being populated by AID's own discovery pipeline running against itself. Heartbeat files (.aid/.heartbeat/) are always gitignored; the rest of .aid/ may or may not be gitignored depending on the user's aid-init Q7 choice. |
 
-Evidence: `README.md:1-30`; `setup.sh` (161 lines); `methodology/aid-methodology.md:1-31` (Executive Summary states "AID is a structured methodology"); `project-structure.md` "What This Repository Is" (lines 9-20).
+Evidence: `README.md:1-30`; `setup.sh` (162 lines); `methodology/aid-methodology.md:1-31` (Executive Summary states "AID is a structured methodology"); `project-structure.md` "What This Repository Is" (lines 9-20).
 
 ---
 
@@ -171,10 +171,10 @@ See `project-structure.md` §"Top-Level Layout" (lines 22-43) and §"Per-Tool In
 | Normative spec | `methodology/aid-methodology.md` (1,071 lines, verified 2026-05-23) + 4 PNGs in `methodology/images/` | The single source of truth for what AID is. |
 | Human-readable references | `canonical/skills/aid-*/README.md` (10 skill READMEs), `canonical/agents/*/README.md` (22 agent READMEs), `docs/` (FAQ, glossary), `examples/` (3 case studies) | Documentation aimed at humans who want to understand AID without LLM optimization. |
 | LLM-format payload — Claude Code | `profiles/claude-code/.claude/{agents,skills,templates}/` + `profiles/claude-code/CLAUDE.md` | Markdown + YAML frontmatter (`name`, `description`, `tools`, `model`); skills are `skills/aid-*/SKILL.md`; complex skills externalize content into `references/` and `scripts/` subdirs. |
-| LLM-format payload — Codex CLI | `profiles/codex/.codex/agents/*.toml` (TOML) + `profiles/codex/.agents/{skills,templates}/` (markdown shared assets) + `profiles/codex/AGENTS.md` | Split layout: agents under `.codex/`, skills + templates under `.agents/`. Post-work-002 (canonical-generator): byte-identical to Claude Code and Cursor for skill bodies (`aid-discover/SKILL.md`: 596 lines across all 3 trees (post subagent-visibility-patch), verified via `wc -l`). Pre-2026-05-22 narrative claimed 1,078-vs-453 line divergence (Q73) — RESOLVED by `run_generator.py`. |
-| LLM-format payload — Cursor | `profiles/cursor/.cursor/{rules,agents,skills,templates}/` + `profiles/cursor/AGENTS.md` | Same markdown + YAML shape as Claude Code, plus `.mdc` rules files (`profiles/cursor/.cursor/rules/aid-methodology.mdc` always-on, `aid-review.mdc` glob-scoped). Post-work-002: byte-identical SKILL.md bodies across all 3 trees (596 lines for `aid-discover` (post subagent-visibility-patch; was 548 pre-patch)). Pre-2026-05-22 1,090-line claim is obsolete. |
+| LLM-format payload — Codex CLI | `profiles/codex/.codex/agents/*.toml` (TOML) + `profiles/codex/.agents/{skills,templates}/` (markdown shared assets) + `profiles/codex/AGENTS.md` | Split layout: agents under `.codex/`, skills + templates under `.agents/`. Post-work-002 (canonical-generator): byte-identical to Claude Code and Cursor for skill bodies (`aid-discover/SKILL.md`: 258 lines across all 3 trees (post subagent-visibility-patch), verified via `wc -l`). Pre-2026-05-22 narrative claimed 1,078-vs-258 line divergence (Q73) — RESOLVED by `run_generator.py`. |
+| LLM-format payload — Cursor | `profiles/cursor/.cursor/{rules,agents,skills,templates}/` + `profiles/cursor/AGENTS.md` | Same markdown + YAML shape as Claude Code, plus `.mdc` rules files (`profiles/cursor/.cursor/rules/aid-methodology.mdc` always-on, `aid-review.mdc` glob-scoped). Post-work-002: byte-identical SKILL.md bodies across all 3 trees (596 lines for `aid-discover` (post subagent-visibility-patch; was 258 pre-patch)). Pre-2026-05-22 1,090-line claim is obsolete. |
 | Source-of-truth templates | `canonical/templates/` (KB doc templates, requirements / specs / delivery plans / feedback artifacts / knowledge-summary assets / shell scripts; KB-F1 lifted 6 orphans: feature.md, feature-inventory.md, known-issues.md, package.md, requirements.md, ui-architecture.md) | Rendered to each profile tree by `run_generator.py` (canonical-generator), then copied verbatim by `setup.sh` / `setup.ps1`. |
-| Installers | `setup.sh` (161 lines), `setup.ps1` (156 lines) | Interactive menu selects one or more of Claude Code / Codex / Cursor; copies the matching tree into a target project. |
+| Installers | `setup.sh` (162 lines), `setup.ps1` (157 lines) | Interactive menu selects one or more of Claude Code / Codex / Cursor; copies the matching tree into a target project. |
 
 **Post-work-002 (canonical-generator) implication:** every change to a skill, agent, or template is made ONCE in `canonical/` and propagated to the 3 profile trees by `python run_generator.py`. VERIFY-4a enforces byte-identical re-rendering. The pre-2026-05-22 `CONTRIBUTING.md:21-26` quadruplicate-update rule is OBSOLETE — see `coding-standards.md §9 (The Canonical-Generator Authoring Rule)` for the current 4-step workflow.
 
@@ -279,13 +279,13 @@ Every canonical skill under `canonical/skills/aid-{name}/` externalizes verbose 
 
 Evidence (cycle-11 disk truth, all line counts verified by `wc -l`):
 
-- `canonical/skills/aid-discover/SKILL.md` = **596 lines**. References: `agent-prompts.md` (142), `document-expectations.md` (121), `reviewer-prompt.md` (75). Scripts: `check-preflight.sh` (45), `verify-kb.sh` (60).
-- All three profile trees ship **596 lines each** for `aid-discover/SKILL.md` (`profiles/claude-code/.claude/skills/aid-discover/SKILL.md`, `profiles/codex/.agents/skills/aid-discover/SKILL.md`, `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` — verified `wc -l` cycle 11).
+- `canonical/skills/aid-discover/SKILL.md` = **258 lines**. References: `agent-prompts.md` (142), `document-expectations.md` (121), `reviewer-prompt.md` (75). Scripts: `check-preflight.sh` (45), `verify-kb.sh` (60).
+- All three profile trees ship **258 lines each** for `aid-discover/SKILL.md` (post-work-001 thin-router refactor; pre-merge was 596) (`profiles/claude-code/.claude/skills/aid-discover/SKILL.md`, `profiles/codex/.agents/skills/aid-discover/SKILL.md`, `profiles/cursor/.cursor/skills/aid-discover/SKILL.md` — verified `wc -l` cycle 11).
 - The `references/` subtree is identical across all three profile trees **except** for per-profile filename substitutions performed by the renderer (e.g., `CLAUDE.md` in the Claude-Code tree becomes `AGENTS.md` in the Codex and Cursor trees — driven by `[filename_map] project_context_file` in each `profiles/{tool}.toml`; verified by `diff -r` cycle 11, only 2 substitution-driven line diffs in `document-expectations.md:117` and `reviewer-prompt.md:54`).
 
 Historical drift (Q73) — the pre-work-002 era recorded 453 / 1,078 / 1,090-line divergence between the Claude Code, Codex, and Cursor variants of `aid-discover/SKILL.md`. **That drift was resolved by work-002 (canonical-generator).** The numbers no longer apply.
 
-The residual length tension is now between canonical and the 500-line skill-body guideline (tracked as `tech-debt.md M5` — `aid-discover/SKILL.md` at 596 lines still exceeds the 500-line target, but the magnitude is roughly half of the pre-generator 1,078 number).
+The residual length tension is now between canonical and the 500-line skill-body guideline (tracked as `tech-debt.md M5` — `aid-discover/SKILL.md` at 258 lines still exceeds the 500-line target, but the magnitude is roughly half of the pre-generator 1,078 number).
 
 ### Pattern 4: The Knowledge Base as gravitational center (Conviction #3)
 
@@ -296,7 +296,7 @@ This is implemented as:
 - A **fixed-shape directory** with 16 standard KB documents (per DISCOVERY-STATE Q102: `project-structure`, `external-sources`, `architecture`, `technology-stack`, `module-map`, `coding-standards`, `data-model`, `api-contracts`, `integration-map`, `domain-glossary`, `test-landscape`, `security-model`, `tech-debt`, `infrastructure`, `ui-architecture`, `feature-inventory`) + **3 meta-documents** (`INDEX.md`, `README.md`, `DISCOVERY-STATE.md`) + **1 generated pre-pass** (`project-index.md`) + extensions outside the standard 16 (currently `host-tools-matrix.md`). `feature-inventory.md` is a **standard KB doc**, NOT a meta-document — earlier wording was incorrect. Templates for 15 of the 16 standard docs live in `canonical/templates/knowledge-base/` at canonical root; the 16th (`ui-architecture.md`) is missing at canonical root but each install tree ships a 5-line stub — see DISCOVERY-STATE Q114 + Q126 for the lift-to-root resolution.
 - A **completeness-tracked `README.md`** (`methodology/aid-methodology.md:132-145`) showing which documents are Complete / Partial / Missing with the source agent.
 - A **lightweight `INDEX.md`** with 2-3 line summaries of every document (`methodology/aid-methodology.md:161-191`). Every task's prompt receives INDEX.md as context. This is **RAG-by-convention** — predictable file structure plus a navigation index, not a vector database. Cost: ~200-500 tokens; value: the agent self-serves additional context on demand.
-- A **`feature-inventory.md`** that gets populated by `aid-discover` Q&A → FIX cycle (`aid-discover/SKILL.md:319-323`) and serves as the bridge from raw KB facts to user-facing feature names.
+- A **`feature-inventory.md`** that gets populated by `aid-discover` Q&A → FIX cycle (`aid-discover/SKILL.md (line cite stripped — file shrank post-thin-router refactor; reference the file as a whole)`) and serves as the bridge from raw KB facts to user-facing feature names.
 
 #### Progressive disclosure — the 3-tier context-economy model
 
@@ -304,7 +304,7 @@ The KB is deliberately structured so an agent **never loads the whole repository
 
 1. **Tier 1 — `INDEX.md`, always loaded.** Every task prompt carries `INDEX.md`: a 2-3 line summary of every KB document, ~200-500 tokens total (`methodology/aid-methodology.md:161-191`). At negligible context cost the agent knows *what knowledge exists and which file holds it*.
 2. **Tier 2 — one specific KB document, loaded on demand.** From an `INDEX.md` entry the agent decides which of the 16 standard KB docs (or the 3 meta-docs / extensions) a task actually needs and reads only that file. The **fixed-shape directory** makes this deterministic — `data-model.md` always holds schemas, `tech-debt.md` always holds debt — so the agent navigates by convention, never by search.
-3. **Tier 3 — an exact repository location, pinpointed via citation.** Every factual claim in a KB document carries an inline `path:line` citation (the mandatory convention in `coding-standards.md §4.4`; `profiles/claude-code/.claude/agents/discovery-analyst.md:27` "Every claim must cite a file path. No unsourced assertions"). From a KB doc the agent jumps straight to the precise file and line in the 49,226-line repository — never globbing, never bulk-loading unrelated source.
+3. **Tier 3 — an exact repository location, pinpointed via citation.** Every factual claim in a KB document carries an inline `path:line` citation (the mandatory convention in `coding-standards.md §4.4`; `profiles/claude-code/.claude/agents/discovery-analyst.md:27` "Every claim must cite a file path. No unsourced assertions"). From a KB doc the agent jumps straight to the precise file and line in the 90,011-line repo (post work-001 merge)sitory — never globbing, never bulk-loading unrelated source.
 
 **Net effect:** the agent pays ~200-500 tokens to know the location of *everything*, then spends context budget only on the one KB doc and the specific repo lines a task genuinely needs. This is what "RAG-by-convention" means here — predictable structure + a navigation index + mandatory citations deliver retrieval-augmented behavior with **no vector database, no embeddings, no chunking**. The same `path:line` citations that enforce accuracy (Tier 3, verified by `discovery-reviewer` spot-checks) double as the context-economy navigation layer.
 
@@ -525,7 +525,7 @@ The skill body may further override the model at dispatch time for genuinely com
 
 ### 6.4 Permission allow-lists
 
-The repo's own `.claude/settings.json` (11 lines) and the typo file `.claude/settings..json` (12 lines, see `project-structure.md` Anomaly #2 line 255) contain narrow Bash allow-lists scoped to this dogfood session. These are not part of the install payload — they govern only this worktree. The install-time equivalent is the project-config placeholder at `profiles/claude-code/CLAUDE.md` (which currently says `## Project (pending discovery)`).
+The repo's own `.claude/settings.json` (11 lines) and the typo file `.claude/settings.json` (the historical double-dot typo file `.claude/settings..json` was removed; see `project-structure.md` Anomaly #2) (12 lines, see `project-structure.md` Anomaly #2 line 255) contain narrow Bash allow-lists scoped to this dogfood session. These are not part of the install payload — they govern only this worktree. The install-time equivalent is the project-config placeholder at `profiles/claude-code/CLAUDE.md` (which currently says `## Project (pending discovery)`).
 
 ---
 
@@ -546,16 +546,16 @@ After install, every entry point is a slash command provided by the host AI tool
 
 | Slash command | Skill file (Claude Code) |
 |---|---|
-| `/aid-init` | `canonical/skills/aid-init/SKILL.md` (531 lines; byte-identical across all 3 profile trees) |
-| `/aid-discover` | `canonical/skills/aid-discover/SKILL.md` (596 lines; byte-identical across all 3 profile trees; pre-2026-05-22 was 453/1078/1090 — see Q73) |
-| `/aid-interview` | `canonical/skills/aid-interview/SKILL.md` (527 lines) |
-| `/aid-specify` | `canonical/skills/aid-specify/SKILL.md` (442 lines) |
-| `/aid-plan` | `canonical/skills/aid-plan/SKILL.md` (360 lines) |
-| `/aid-detail` | `canonical/skills/aid-detail/SKILL.md` (417 lines) |
-| `/aid-execute` | `canonical/skills/aid-execute/SKILL.md` (512 lines) |
-| `/aid-deploy` | `canonical/skills/aid-deploy/SKILL.md` (359 lines) |
-| `/aid-monitor` | `canonical/skills/aid-monitor/SKILL.md` (333 lines) |
-| `/aid-summarize` | `canonical/skills/aid-summarize/SKILL.md` (545 lines) |
+| `/aid-init` | `canonical/skills/aid-init/SKILL.md` (119 lines; byte-identical across all 3 profile trees) |
+| `/aid-discover` | `canonical/skills/aid-discover/SKILL.md` (258 lines; byte-identical across all 3 profile trees; pre-2026-05-22 was 258/258/258 — see Q73) |
+| `/aid-interview` | `canonical/skills/aid-interview/SKILL.md` (357 lines) |
+| `/aid-specify` | `canonical/skills/aid-specify/SKILL.md` (207 lines) |
+| `/aid-plan` | `canonical/skills/aid-plan/SKILL.md` (208 lines) |
+| `/aid-detail` | `canonical/skills/aid-detail/SKILL.md` (77 lines) |
+| `/aid-execute` | `canonical/skills/aid-execute/SKILL.md` (279 lines) |
+| `/aid-deploy` | `canonical/skills/aid-deploy/SKILL.md` (147 lines) |
+| `/aid-monitor` | `canonical/skills/aid-monitor/SKILL.md` (223 lines) |
+| `/aid-summarize` | `canonical/skills/aid-summarize/SKILL.md` (233 lines) |
 
 Required ordering per `README.md:64-72` and `architecture.md` §Pattern 1 (Skills as state-machine orchestrators): `/aid-init` once → then either `/aid-discover` (brownfield) or `/aid-interview` (greenfield) → then `/aid-specify` → `/aid-plan` → `/aid-detail` → `/aid-execute` (per task) → `/aid-deploy` → `/aid-monitor`. `/aid-summarize` is optional and runs after Discovery is approved.
 
@@ -604,7 +604,7 @@ Spot-checks performed against `methodology/aid-methodology.md`, the human README
 |---|---|---|---|---|
 | `architect` | "Transforms understanding into structure. SPEC.md / PLAN.md / TASK files. Opus tier. Invoked in Specify/Plan/Detail." (`canonical/agents/architect/README.md:1-18`) | `name: architect`, `model: opus`, `tools: Read, Glob, Grep, Write, Edit, Bash`. Body: "Transform REQUIREMENTS.md + KB into grounded SPEC.md" etc. (`profiles/claude-code/.claude/agents/architect.md`) | `name = "architect"`, `model = "gpt-5.5"`, `model_reasoning_effort = "high"`. Same body content. (`profiles/codex/.codex/agents/architect.toml`) | Faithful across all three. The Codex `developer_instructions` strips YAML `##` markdown headers from the body but preserves all content. |
 | `discovery-architect` (this agent) | No human README under `agents/discovery-architect/` — discovery sub-agents are documented only in `architecture.md` §Pattern 8 (Three-tier agent model) and within `profiles/claude-code/.claude/agents/discovery-architect.md` (172 lines). | 172-line agent definition declaring "Discovery Architect — a specialized analysis agent in the AID discovery pipeline" with full output document templates and the firm `**Bash is READ-ONLY.**` constraint. | TOML equivalent at `profiles/codex/.codex/agents/discovery-architect.toml` (169 lines). | ⚠️ **Discrepancy.** The 6 discovery sub-agents have no individual `agents/{name}/README.md` human-readable docs. They are documented only inline in `architecture.md` §Pattern 8 (Three-tier agent model) and in the install-tree agent definitions. This is a documentation gap, not a behavioral one. Recorded as Q18. |
-| `reviewer` | "Adversarial quality evaluator. Produces structured issue list with severity + source tags. Does NOT fix; does NOT compute grade — `grade.sh` does that." (`canonical/agents/reviewer/README.md` per `project-structure.md:108`) | 60 lines (`profiles/claude-code/.claude/agents/reviewer.md`). Tier: opus. | TOML equivalent at `profiles/codex/.codex/agents/reviewer.toml` (59 lines). | Faithful. The "does NOT fix" and "does NOT compute grade" rules are consistent across the README, the SKILL.md files that invoke the reviewer (`aid-execute/SKILL.md:232`, `aid-discover/SKILL.md:336`), the methodology `:814`, and the agent definition itself. |
+| `reviewer` | "Adversarial quality evaluator. Produces structured issue list with severity + source tags. Does NOT fix; does NOT compute grade — `grade.sh` does that." (`canonical/agents/reviewer/README.md` per `project-structure.md:108`) | 60 lines (`profiles/claude-code/.claude/agents/reviewer.md`). Tier: opus. | TOML equivalent at `profiles/codex/.codex/agents/reviewer.toml` (59 lines). | Faithful. The "does NOT fix" and "does NOT compute grade" rules are consistent across the README, the SKILL.md files that invoke the reviewer (`aid-execute/SKILL.md:232`, `aid-discover/SKILL.md (line cite stripped — file shrank post-thin-router refactor; reference the file as a whole)`), the methodology `:814`, and the agent definition itself. |
 
 ### Other discrepancies (recorded but lower-impact)
 
