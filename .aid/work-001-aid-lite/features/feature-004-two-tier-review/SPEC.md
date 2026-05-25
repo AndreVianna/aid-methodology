@@ -162,6 +162,21 @@ Must
 >   subsection is therefore superseded — feature-004 writes directly to work
 >   `STATE.md` rows; no two-zone template authorship dependency on
 >   feature-002.
+> - **IQ11 resolution — `delivery-issues.md` schema is canonically 4 columns.**
+>   The body's instance example at L278 (`Source task | Severity | Description |
+>   Status`) is the **canonical schema**, confirmed 2026-05-24. Task-020's
+>   original scope proposed a richer 6-column shape (adding `Source File:Line`
+>   and `Deferred At`); reverted to 4-col per this SPEC. Rationale: the
+>   delivery-issues log is a *summary aggregation view* for the gate reviewer,
+>   not the rich per-finding record. The richer per-finding metadata (severity
+>   context, source file:line refs if needed, timestamps, status transitions)
+>   lives in the per-task `## Quick Check Findings` blocks in work `STATE.md`
+>   (one block per task, keyed by task-id, written by `aid-execute` via
+>   `writeback-task-status.sh --task-id NNN --findings BLOCK`). The
+>   `AGGREGATE` step at the per-delivery gate reads those rich blocks and
+>   projects the 4-col summary view into `delivery-issues.md`. If a future
+>   gate-reviewer workflow needs the richer columns, the SPEC can re-extend;
+>   for now 4-col is the operative contract.
 >
 > **What stays the same:**
 >
@@ -280,6 +295,11 @@ One template, many `delivery-NNN-issues.md` instances:
 | task-003 | [HIGH] | error path not covered by a test | Open |
 | task-005 | [HIGH] | naming deviates from coding-standards | Open |
 ```
+
+> **Canonical schema (IQ11 — resolved 2026-05-24):** the 4 columns above are the
+> canonical `delivery-issues.md` schema. See the Alignment Update's IQ11 bullet
+> for the rationale — richer per-finding metadata lives in the per-task
+> `## Quick Check Findings` blocks in work `STATE.md`.
 
 `Status` is `Open` until the per-delivery gate's review → fix loop resolves it,
 then `Resolved` (or `Accepted` if the gate grade clears the minimum with it still

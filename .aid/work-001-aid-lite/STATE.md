@@ -325,13 +325,14 @@ Format: `| Date | Agent | Task / Cycle | ETA band | Actual | Notes |`
 **Commits:** `8c07b66` (initial), follow-up cycle-2 fix-pass for sibling rows.
 **Status:** Resolved.
 
-### IQ11: delivery-issues.md row schema — task scope vs SPEC mismatch
+### IQ11 (Resolved 2026-05-24): delivery-issues.md row schema — task scope vs SPEC mismatch
 
 **Question:** Task-020 scope proposed a richer 6-column delivery-issues.md schema (`task-id | Severity | Description | Source File:Line | Deferred At | Status`) but feature-004 SPEC L272-282 mandates a simpler 4-column schema (`Source task | Severity | Description | Status`). Which is canonical?
 
-**Context:** Discovered by wave-4 combined reviewer (2026-05-24). Reverted to SPEC 4-col in wave-4 cycle-1 fix-pass commit `ddf1d17`. The richer schema's extra columns (Source File:Line, Deferred At) provide useful operational detail for gate reviewers but aren't required by the SPEC.
+**Context:** Discovered by wave-4 combined reviewer (2026-05-24). Reverted to SPEC 4-col in wave-4 cycle-1 fix-pass commit `ddf1d17`.
 
 **Source:** /aid-execute work-001 wave-4 task-020 cycle-1 review (2026-05-24)
-**Suggested:** If the richer schema is preferred, update feature-004 SPEC L272-282 to extend the column set + bump the template back to 6 cols. If the SPEC's 4-col minimal schema is canonical, leave as-is (current state).
-**Status:** Pending — route to /aid-specify for SPEC clarification.
+**Resolution:** Confirmed 4-col as canonical per /aid-specify work-001/feature-004 cycle. Rationale: `delivery-issues.md` is a *summary aggregation view* for the gate reviewer, not the rich per-finding record. Richer per-finding metadata (severity context, file:line refs, timestamps, status transitions) lives in the per-task `## Quick Check Findings` blocks in work `STATE.md`, keyed by task-id. The gate's AGGREGATE step reads those rich blocks and projects the 4-col summary view. Future re-extension to 6-col remains possible if gate-reviewer workflow needs it.
+**SPEC update:** feature-004 SPEC Alignment Update + L278 canonical-schema marker.
+**Status:** Resolved.
 
