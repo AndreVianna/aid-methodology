@@ -101,11 +101,19 @@ Must
 >   delivers a two-zone shape (see feature-002's Alignment Update); the
 >   review-record writes target work `STATE.md` directly.
 > - The §Data Model "Parallel-write coordination (FR6)" note (deferred
->   `[HIGH]` rows to per-task Execution Record + serialized `AGGREGATE` step)
->   still applies *in spirit* — quick checks still write per-task rows
->   (single-writer per task), and the gate's `AGGREGATE` step still writes the
->   delivery-issue log serially — but the targets are work `STATE.md` blocks,
->   not Execution Record zones.
+>   `[HIGH]` rows to per-task Execution Record + serialized `AGGREGATE` step
+>   writing the delivery-issue log) is **superseded** by the IQ11-resolution
+>   bullet below. The actual shipped implementation (per task-019/021/022)
+>   inverts the writer/reader split: per-task quick-checks write deferred-`[HIGH]`
+>   rows **directly** into `delivery-NNN-issues.md` via
+>   `writeback-task-status.sh --append-issue` (concurrent-writer-safe via
+>   sentinel-file lock — append-only, idempotent on duplicate rows). The
+>   per-delivery gate **reads** `delivery-NNN-issues.md` as input context. The
+>   rich per-finding metadata (severity context, file:line, timestamps) lives
+>   in the per-task `## Quick Check Findings` blocks in work `STATE.md`,
+>   keyed by task-id, written by the same quick-checks via
+>   `writeback-task-status.sh --findings`. See the IQ11-resolution bullet below
+>   for the full data-flow rationale.
 > - The reference to `aid-execute/SKILL.md` line numbers (the 16 cites at
 >   `:67, :83, :119, ...`) will drift after the post-visibility-patch line
 >   numbers shifted; treat them as **section-name references** ("the IMPEDIMENT
@@ -164,7 +172,7 @@ Must
 >   feature-002.
 > - **IQ11 resolution — `delivery-issues.md` schema is canonically 4 columns.**
 >   The body's instance example (see §Data Model "delivery issue log" subsection,
->   fenced code block immediately after the path-rule paragraph) shows the
+>   the only fenced code block in that subsection) shows the
 >   canonical schema: `Source task | Severity | Description | Status`. Confirmed
 >   2026-05-24. Task-020's original scope proposed a richer 6-column shape
 >   (adding `Source File:Line` and `Deferred At`); reverted to 4-col per this
@@ -496,10 +504,18 @@ path** (decision B):
 
 ```
 DELIVERY-GATE  (closing step of aid-execute, once every task in the delivery is Done)
-  0. AGGREGATE  serially read every task-NNN.md ## Quick Check block in the
-                delivery and write the deferred [HIGH] rows into a fresh
-                delivery-NNN-issues.md (single writer, no race — see Data
-                Model "Parallel-write coordination").
+  0. AGGREGATE  [SUPERSEDED — original design; preserved as historical reference.]
+                Original: serially read every task-NNN.md ## Quick Check block
+                in the delivery and write the deferred [HIGH] rows into a fresh
+                delivery-NNN-issues.md (single writer, no race — see Data Model
+                "Parallel-write coordination").
+                Operative (per Alignment Update IQ11): NO aggregate-write step.
+                Per-task quick-checks already wrote their deferred-[HIGH] rows
+                directly to delivery-NNN-issues.md via writeback-task-status.sh
+                --append-issue during execution (concurrent-writer-safe via
+                sentinel lock). Step 0 is effectively a no-op for this gate —
+                or, equivalently, it simply confirms that delivery-NNN-issues.md
+                is present and well-formed before SCORE/REVIEW proceed.
   1. SCORE      compute the delivery-complexity score (see Data Model) →
                 select gate reviewer tier (Small / Medium / Large).
   2. REVIEW     dispatch the reviewer at the selected tier, clean context.
