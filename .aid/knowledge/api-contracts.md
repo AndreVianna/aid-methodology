@@ -10,7 +10,7 @@
 
 **None.** No HTTP listener, RPC server, GraphQL endpoint, WebSocket, gRPC service, message-queue producer, or webhook receiver exists in this repository. Verified by negative search: no `app.js`, `server.py`, `*Controller.cs`, `package.json` with an `express`/`fastify`/`koa` dependency, no `*.proto`, no `openapi.yaml`, no `Dockerfile`, no Kubernetes manifest (see `project-structure.md` "Build / Test / CI" and "Detected Languages and Frameworks").
 
-The closest thing to an "API" is the installer's interactive menu (`setup.sh` lines 1-161, `setup.ps1` lines 1-156) — a stdin/stdout dialog, not a network surface.
+The closest thing to an "API" is the installer's interactive menu (`setup.sh` lines 1-162, `setup.ps1` lines 1-157) — a stdin/stdout dialog, not a network surface.
 
 ## Consumed APIs
 
@@ -45,7 +45,7 @@ Markdown with YAML frontmatter, then a free-form system-prompt body. Sampled acr
 
 **Observed model-value space across all 22 agents:** `opus` (10x), `sonnet` (9x), `haiku` (3x). The `permissionMode: bypassPermissions` + `background: true` pair appears only on the six `discovery-*.md` agents — these are the parallel-dispatched discovery sub-agents that must run without per-call permission prompts.
 
-**Body conventions** (not enforced but consistent across all 22 agents): `## What You Do`, `## What You Don't Do`, `## Key Constraints`, `## Output Format`, `## When to Escalate`. See `architect.md:8-41` for the canonical shape; `discovery-reviewer.md` (381 lines) is the expanded shape with `## Document Expectations`, `## Cross-Cutting Checks`, `## Output` sections plus a full STATE.md template embedded in the prompt.
+**Body conventions** (not enforced but consistent across all 22 agents): `## What You Do`, `## What You Don't Do`, `## Key Constraints`, `## Output Format`, `## When to Escalate`. See `architect.md:8-41` for the canonical shape; `discovery-reviewer.md` (405 lines) is the expanded shape with `## Document Expectations`, `## Cross-Cutting Checks`, `## Output` sections plus a full STATE.md template embedded in the prompt.
 
 #### 1b. Skill Package Contract — `profiles/claude-code/.claude/skills/aid-*/SKILL.md`
 
@@ -67,7 +67,7 @@ Markdown with YAML frontmatter plus an optional `references/` and `scripts/` sub
 - `profiles/claude-code/.claude/skills/aid-discover/scripts/check-preflight.sh` (45 lines), `verify-kb.sh` (60 lines) — bash helpers invoked from the SKILL body.
 - Same pattern in `aid-execute/references/` (`reviewer-guide.md`, `task-type-rules.md`), `aid-interview/references/` (4 files), `aid-specify/references/` (2 files).
 
-⚠️ **Post-work-002 (canonical-generator) update:** all three install trees now contain identical `references/` subdirs and identical SKILL.md bodies (596 lines each for `aid-discover` (post subagent-visibility-patch; was 258 pre-patch) per cycle-11 verification). The earlier "Claude Code externalizes; Codex / Cursor inline" divergence (258/258/258 line counts) was eliminated by `run_generator.py` which propagates `canonical/skills/` → 3 profile trees. The Pattern 3 narrative in `architecture.md` (cycle-11 FIX pending) needs to reflect this.
+⚠️ **Post-work-002 (canonical-generator) update:** all three install trees now contain identical `references/` subdirs and identical SKILL.md bodies (258 lines each for `aid-discover` (post-thin-router refactor; byte-identical across all 3 trees post-canonical-generator) per cycle-11 verification). The earlier "Claude Code externalizes; Codex / Cursor inline" divergence (historical: 453/1,078/1,090 pre-canonical-generator; now 258/258/258 post-thin-router) was eliminated by `run_generator.py` which propagates `canonical/skills/` → 3 profile trees. The Pattern 3 narrative in `architecture.md` (cycle-11 FIX pending) needs to reflect this.
 
 **No sentinel files observed** (no `.skill`, `.meta.json`, or version file inside skill folders).
 
@@ -86,7 +86,7 @@ Top-level project context file that Claude Code auto-loads. The AID install ship
 | `## AID Workspace` (or `## Knowledge Base`) | yes | — | aid-init (static) | `CLAUDE.md:27-30`; `profiles/claude-code/CLAUDE.md:7-12` |
 | `## Skills`, `## Agents`, `## Permissions`, `## Conventions` | optional | — | aid-init (static, install variant only) | `profiles/claude-code/CLAUDE.md:14-30` |
 
-The placeholders are wrapped in matched `<!-- AID-DISCOVER {id} -->` / `<!-- /AID-DISCOVER -->` comments. `aid-discover` looks for any `<!-- AID-DISCOVER ... -->` block and replaces the content between the open and close markers, preserving the comments so future re-discoveries can update the same regions (`profiles/codex/.agents/skills/aid-discover/SKILL.md (line cite stripped — file shrank post-thin-router refactor; reference the file as a whole)`).
+The placeholders are wrapped in matched `<!-- AID-DISCOVER {id} -->` / `<!-- /AID-DISCOVER -->` comments. `aid-discover` looks for any `<!-- AID-DISCOVER ... -->` block and replaces the content between the open and close markers, preserving the comments so future re-discoveries can update the same regions (`profiles/codex/.agents/skills/aid-discover/SKILL.md`).
 
 The install payload (`profiles/claude-code/CLAUDE.md`) uses a simpler single-line comment style (`<!-- AID-DISCOVER — Replace with... -->`) without the matched-pair structure — see `profiles/claude-code/CLAUDE.md:4`. ⚠️ **Drift between the install payload's placeholder style and the matched-pair style this repo's own CLAUDE.md uses.** [Q50 — see `.aid/knowledge/STATE.md`]
 
@@ -202,7 +202,7 @@ Two rules ship: `aid-methodology.mdc` (29 lines, always on — KB lookup + phase
 
 #### 3c. Skill SKILL.md Contract — `profiles/cursor/.cursor/skills/aid-*/SKILL.md`
 
-Same shape as Claude Code 1b. Post-work-002, all three trees carry identical SKILL.md content (596 lines each for `aid-discover` (post subagent-visibility-patch; was 258 pre-patch) per cycle-11 verification). Sampled `profiles/cursor/.cursor/skills/aid-discover/SKILL.md:1-15` — identical frontmatter to the Claude Code version (`name`, `description`, `allowed-tools`, `argument-hint`).
+Same shape as Claude Code 1b. Post-work-002, all three trees carry identical SKILL.md content (258 lines each for `aid-discover` (post-thin-router refactor; byte-identical across all 3 trees post-canonical-generator) per cycle-11 verification). Sampled `profiles/cursor/.cursor/skills/aid-discover/SKILL.md:1-15` — identical frontmatter to the Claude Code version (`name`, `description`, `allowed-tools`, `argument-hint`).
 
 Per `profiles/cursor/README.md:136-142`, Cursor reads skills from `.cursor/skills/`, **and** is cross-tool compatible — it will also read `.claude/skills/` and `.codex/skills/`. This is the only documented "skill loader fallback chain" in the AID install set.
 
@@ -300,7 +300,7 @@ This single file absorbs the legacy `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`. T
 
 ### Work-area `STATE.md` Schema *(replaces retired `INTERVIEW-STATE.md` + per-feature `FEATURE-STATE.md` + per-task `task-NNN-STATE.md` + `DEPLOYMENT-STATE.md` per FR2)*
 
-Source-of-truth template: `canonical/templates/work-state-template.md` (83 lines). Per-instance file lives at `.aid/work-NNN-{name}/STATE.md`. Produced by `aid-init` (skeleton when a new `work-NNN` directory is created) and updated by every skill that operates on the work — `aid-interview`, `aid-specify` (per-feature row), `aid-plan` (delivery row), `aid-detail` (task rows), `aid-execute` (task review status), `aid-deploy` (deploy status row).
+Source-of-truth template: `canonical/templates/work-state-template.md` (137 lines). Per-instance file lives at `.aid/work-NNN-{name}/STATE.md`. Produced by `aid-init` (skeleton when a new `work-NNN` directory is created) and updated by every skill that operates on the work — `aid-interview`, `aid-specify` (per-feature row), `aid-plan` (delivery row), `aid-detail` (task rows), `aid-execute` (task review status), `aid-deploy` (deploy status row).
 
 This single file absorbs four legacy per-skill / per-artifact state files. The corresponding install-tree templates have been deleted per work-003 FR2 (per-area STATE rule — see `coding-standards.md §8.5`); for historical record of the retired template names, see the `coding-standards.md §8.5` migration note.
 
@@ -318,7 +318,7 @@ This single file absorbs four legacy per-skill / per-artifact state files. The c
 | `## Tasks Status` | yes | table (#, Task, Type, Wave, Status, Review, Elapsed, Notes) | one row per task; this is the FR1 AC4 iteration source for aid-execute heartbeat drill-down | `work-state-template.md:46-52` |
 | `## Deploy Status` | yes | table (Delivery, State, PR, KB Updated, Tag, Notes) | one row per `/aid-deploy` run; absorbs DEPLOYMENT-STATE.md `## History` | `work-state-template.md:54-60` |
 | `## Cross-phase Q&A (Pending)` | yes | sequence of `### Q{N}: [{Phase}: {Category}: {Impact}]` entries | absorbs INTERVIEW-STATE.md `## Pending Q&A` and per-feature FEATURE-STATE.md `## Pending Q&A`; same Q-entry sub-schema as Discovery STATE | `work-state-template.md:62-74` |
-| `## Lifecycle History` | yes | table (Date, Phase Transition / Gate, Grade, Notes) | append-only audit trail; absorbs INTERVIEW-STATE.md `## Review History` and FEATURE-STATE.md `## Change Log` | `work-state-template.md:76-82` |
+| `## Lifecycle History` | yes | table (Date, Phase Transition / Gate, Grade, Notes) | append-only audit trail; absorbs INTERVIEW-STATE.md `## Review History` and FEATURE-STATE.md `## Change Log` | `work-state-template.md:76-137` |
 
 **Inline `## Change Log` distinction:** Per FR2, artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md, KB docs) **keep their inline `## Change Log` sections** — that is *content history* (what changed in the document), distinct from *process state* (where are we in the workflow). The work-area STATE.md tracks the latter; the artifact-inline Change Log tracks the former. See `data-model.md §1A` and `coding-standards.md §8.5`.
 
@@ -398,7 +398,7 @@ Which host-tool contracts are most exposed to upstream change? Ranked highest to
 
 1. **Claude Code agent frontmatter (1a).** Anthropic adding required fields, deprecating `permissionMode: bypassPermissions`, or renaming `tools:` would break all 22 Claude Code agents and (because Cursor consumes the same shape) the 22 Cursor agents too. Highest-risk vector. See `external-sources.md:67-68` — Anthropic Hooks, Plugins, and the full frontmatter inventory still need fetch.
 2. **Cursor `.mdc` rule schema (3a).** Only 2 files, but `alwaysApply` + `globs` precedence is documented as in flux. A new required field would break both `aid-methodology.mdc` and `aid-review.mdc`. See `external-sources.md:98` — Cursor precedence rules still need fetch.
-3. **`AGENTS.md` placeholder convention (2c, 3d).** OpenAI/Cursor have shipped a shared `AGENTS.md` standard, but the `<!-- AID-DISCOVER {id} -->` matched-comment placeholder convention is **AID-specific**. If either vendor introduces a competing placeholder syntax or starts post-processing HTML comments, the aid-discover writeback at `profiles/codex/.agents/skills/aid-discover/SKILL.md (line cite stripped — file shrank post-thin-router refactor; reference the file as a whole)` will silently fail to update.
+3. **`AGENTS.md` placeholder convention (2c, 3d).** OpenAI/Cursor have shipped a shared `AGENTS.md` standard, but the `<!-- AID-DISCOVER {id} -->` matched-comment placeholder convention is **AID-specific**. If either vendor introduces a competing placeholder syntax or starts post-processing HTML comments, the aid-discover writeback at `profiles/codex/.agents/skills/aid-discover/SKILL.md` will silently fail to update.
 4. **Codex TOML `model` value space (2a).** The pinned `gpt-5.5` / `gpt-5.4` / `gpt-5.4-mini` model IDs will sunset on OpenAI's normal model-deprecation cycle. Every TOML in `profiles/codex/.codex/agents/` will need re-pinning. `profiles/codex/README.md:35` already documents one corrective migration (May 2026).
 5. **Claude Code `model` enum (1a).** Same risk — `opus` / `sonnet` / `haiku` are stable aliases today but the Anthropic docs link in `external-sources.md:17` is the source of truth.
 6. **Claude Code SKILL.md `context: fork` and `agent: <name>` fields (1b).** Used by 7 of 10 skills. Not present in the Codex equivalent — ⚠️ if these are deprecated by Anthropic, those 7 skills lose their harness pre-load behavior but still function (degraded). Cursor exposure is the same as Claude Code (shared shape).

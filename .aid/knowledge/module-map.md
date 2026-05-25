@@ -20,7 +20,7 @@ This repository is the **AID methodology + multi-tool install bundles**. There i
 - **Examples** — anonymized case studies.
 - **Reference docs** — adopter-facing `docs/`.
 
-**The canonical-generator pattern (work-002, deployed 2026-05):** `run_generator.py` (top-level, 83 lines) reads each `profiles/{tool}.toml`, loads canonical sources from `canonical/{agents,skills,templates,rules}/`, and emits the per-tool install tree under `profiles/{tool}/...`. Every change goes to `canonical/` first; the 3 install trees plus the dogfood `.claude/` tree are propagated automatically. The pre-work-002 narrative — "3 install trees as parallel sources of truth maintained by manual cross-tree sync" — is RETIRED. There is no longer any divergence between trees for the same logical asset (verified: all 3 profile `aid-discover/SKILL.md` files are 258 lines, byte-identical, matching `canonical/skills/aid-discover/SKILL.md`).
+**The canonical-generator pattern (work-002, deployed 2026-05):** `run_generator.py` (top-level, 84 lines) reads each `profiles/{tool}.toml`, loads canonical sources from `canonical/{agents,skills,templates,rules}/`, and emits the per-tool install tree under `profiles/{tool}/...`. Every change goes to `canonical/` first; the 3 install trees plus the dogfood `.claude/` tree are propagated automatically. The pre-work-002 narrative — "3 install trees as parallel sources of truth maintained by manual cross-tree sync" — is RETIRED. There is no longer any divergence between trees for the same logical asset (verified: all 3 profile `aid-discover/SKILL.md` files are 258 lines, byte-identical, matching `canonical/skills/aid-discover/SKILL.md`).
 
 ---
 
@@ -131,7 +131,7 @@ This repository is the **AID methodology + multi-tool install bundles**. There i
 |-------|-------|
 | **Path** | `canonical/agents/` (one folder per agent: `architect/`, `data-engineer/`, `developer/`, `devops/`, `discovery-analyst/`, `discovery-architect/`, `discovery-integrator/`, `discovery-quality/`, `discovery-reviewer/`, `discovery-scout/`, `interviewer/`, `operator/`, `orchestrator/`, `performance/`, `researcher/`, `reviewer/`, `security/`, `simple-extractor/`, `simple-formatter/`, `simple-glob/`, `tech-writer/`, `ux-designer/`) |
 | **Files** | 44 total — 22 `AGENT.md` (LLM body) + 22 `README.md` (human docs); verified via `project-index.md` paths 193-236 |
-| **Lines (AGENT.md bodies)** | 2,074 total — `discovery-reviewer/AGENT.md` (381 — by far the largest), `discovery-architect/AGENT.md` (172), `discovery-quality/AGENT.md` (145), `discovery-scout/AGENT.md` (110), `discovery-analyst/AGENT.md` (105), `discovery-integrator/AGENT.md` (103), `reviewer/AGENT.md` (60), `simple-extractor/AGENT.md` (50), `orchestrator/AGENT.md` (49), `simple-glob/AGENT.md` (46), `architect/AGENT.md` (39), `developer/AGENT.md` (39), `interviewer/AGENT.md` (39), `operator/AGENT.md` (39), `researcher/AGENT.md` (38), `simple-formatter/AGENT.md` (36), `performance/AGENT.md` (34), `security/AGENT.md` (34), `data-engineer/AGENT.md` (33), `tech-writer/AGENT.md` (33), `devops/AGENT.md` (32), `ux-designer/AGENT.md` (31) |
+| **Lines (AGENT.md bodies)** | 2,074 total — `discovery-reviewer/AGENT.md` (405 — by far the largest), `discovery-architect/AGENT.md` (172), `discovery-quality/AGENT.md` (145), `discovery-scout/AGENT.md` (110), `discovery-analyst/AGENT.md` (105), `discovery-integrator/AGENT.md` (103), `reviewer/AGENT.md` (60), `simple-extractor/AGENT.md` (50), `orchestrator/AGENT.md` (49), `simple-glob/AGENT.md` (46), `architect/AGENT.md` (39), `developer/AGENT.md` (39), `interviewer/AGENT.md` (39), `operator/AGENT.md` (39), `researcher/AGENT.md` (38), `simple-formatter/AGENT.md` (36), `performance/AGENT.md` (34), `security/AGENT.md` (34), `data-engineer/AGENT.md` (33), `tech-writer/AGENT.md` (33), `devops/AGENT.md` (32), `ux-designer/AGENT.md` (31) |
 | **Lines (READMEs)** | 1,333 total — `reviewer/README.md` (106), `simple-glob/README.md` (91), `simple-extractor/README.md` (85), `orchestrator/README.md` (84), `simple-formatter/README.md` (80), `developer/README.md` (71), `architect/README.md` (69), `operator/README.md` (68), `interviewer/README.md` (66), `researcher/README.md` (65), `data-engineer/README.md` (55), `devops/README.md` (54), `performance/README.md` (54), `security/README.md` (54), `tech-writer/README.md` (53), `ux-designer/README.md` (51), `simple-formatter/README.md` (80), discovery sub-agent READMEs (40-49 each). |
 | **Purpose** | Canonical source-of-truth for all 22 agents. `AGENT.md` is the LLM-facing body, `README.md` is the human-facing role doc (What You Do, What You Don't Do, Key Constraints, Output Format, When to Escalate). |
 | **Internal dependencies** | References `methodology/aid-methodology.md`, `canonical/templates/` for output formats. |
@@ -193,7 +193,7 @@ This repository is the **AID methodology + multi-tool install bundles**. There i
 | Field | Value |
 |-------|-------|
 | **Path** | `canonical/templates/` |
-| **Files** | Top-level: `discovery-state-template.md` (83), `work-state-template.md` (82), `feature.md` (33), `feature-inventory.md` (8), `grading-rubric.md` (75), `known-issues.md` (15), `package.md` (27), `README.md` (42), `requirements.md` (30), `rough-time-hints.md` (28), `ui-architecture.md` (5). Subfolders: `knowledge-base/` (18 markdown templates including `INDEX.md` and `README.md`), `requirements/` (1 — `requirements-template.md` 95), `specs/` (1 — `spec-template.md` 75), `delivery-plans/` (1 — `task-template.md` 19), `feedback-artifacts/` (1 — `IMPEDIMENT.md` 116), `knowledge-summary/` (25 — see Module 11), `scripts/` (3 — `build-project-index.sh` 368, `grade.sh` 141, `verify-kb-claims.sh` 356). |
+| **Files** | Top-level: `discovery-state-template.md` (83), `work-state-template.md` (137), `feature.md` (33), `feature-inventory.md` (8), `grading-rubric.md` (75), `known-issues.md` (15), `package.md` (27), `README.md` (42), `requirements.md` (30), `rough-time-hints.md` (28), `ui-architecture.md` (5). Subfolders: `knowledge-base/` (18 markdown templates including `INDEX.md` and `README.md`), `requirements/` (1 — `requirements-template.md` 95), `specs/` (1 — `spec-template.md` 75), `delivery-plans/` (1 — `task-template.md` 19), `feedback-artifacts/` (1 — `IMPEDIMENT.md` 116), `knowledge-summary/` (25 — see Module 11), `scripts/` (3 — `build-project-index.sh` 368, `grade.sh` 141, `verify-kb-claims.sh` 356). |
 | **Highlights** | `knowledge-base/coding-standards.md` 118, `knowledge-base/api-contracts.md` 110, `knowledge-base/architecture.md` 111, `knowledge-base/data-model.md` 108, `requirements/requirements-template.md` 95, `specs/spec-template.md` 75, `delivery-plans/task-template.md` 19, `feedback-artifacts/IMPEDIMENT.md` 116. |
 | **Purpose** | Source-of-truth artifact templates. Each AID phase produces files using these as starting shapes. **All templates are lifted to `canonical/templates/` and propagated to the 3 install trees by `run_generator.py`** — there are no more install-tree-only orphans post-KB-F1 (work-003 cleanup). |
 | **Internal dependencies** | None on each other (each template is self-contained). |
@@ -230,7 +230,7 @@ This repository is the **AID methodology + multi-tool install bundles**. There i
 | Template (path under `canonical/templates/`) | Lines | Producer skill | Consumer skill(s) |
 |----------|-------|----------------|-------------------|
 | `discovery-state-template.md` | 83 | aid-init (skeleton), aid-discover + aid-summarize (update) | aid-discover state machine, aid-summarize writeback |
-| `work-state-template.md` | 82 | aid-init (skeleton), every dev-lifecycle skill (update) | every dev-lifecycle skill (resume) |
+| `work-state-template.md` | 137 | aid-init (skeleton), every dev-lifecycle skill (update) | every dev-lifecycle skill (resume) |
 | `requirements/requirements-template.md` | 95 | aid-interview | aid-specify |
 | `requirements.md` (top-level shorthand) | 30 | aid-interview seed | aid-interview |
 | `specs/spec-template.md` | 75 | aid-specify | aid-plan, aid-execute |
@@ -268,7 +268,7 @@ This repository is the **AID methodology + multi-tool install bundles**. There i
 | Field | Value |
 |-------|-------|
 | **Path** | repo root |
-| **Files** | 2 (`setup.sh` 161 lines, `setup.ps1` 156 lines) |
+| **Files** | 2 (`setup.sh` 162 lines, `setup.ps1` 157 lines) |
 | **Purpose** | Interactive menu installer. Lets the user pick one or more of Claude Code / Codex / Cursor; copies the matching profile tree into a target project directory. Safe re-run: skips identical files, prompts on differences, `--force` overwrites. |
 | **Internal dependencies** | Reads from `profiles/{claude-code,codex,cursor}/`. Does NOT regenerate them — pure copy of the already-generated install trees. |
 | **External dependencies** | None beyond bash / PowerShell. |
@@ -296,8 +296,8 @@ This repository is the **AID methodology + multi-tool install bundles**. There i
 
 | Field | Value |
 |-------|-------|
-| **Path** | `run_generator.py` (top-level, 83 lines), `.claude/skills/aid-generate/scripts/` (the generator implementation, 8 Python files), `docs/` (2 files) |
-| **Files** | `run_generator.py` (83 lines), `.claude/skills/aid-generate/scripts/{harness.py 615, profile.py 516, verify_deterministic.py 513, render_agents.py 503, render_skills.py 450, verify_advisory.py 343, test_manifest_safety.py 254, render_templates.py 245}` = 3,439 lines of Python. Plus `docs/faq.md` 61, `docs/glossary.md` 76. Profile manifests: `profiles/claude-code.toml` 64, `profiles/codex.toml` 78, `profiles/cursor.toml` (in `profiles/`). |
+| **Path** | `run_generator.py` (top-level, 84 lines), `.claude/skills/aid-generate/scripts/` (the generator implementation, 8 Python files), `docs/` (2 files) |
+| **Files** | `run_generator.py` (84 lines), `.claude/skills/aid-generate/scripts/{harness.py 615, profile.py 516, verify_deterministic.py 513, render_agents.py 503, render_skills.py 450, verify_advisory.py 343, test_manifest_safety.py 254, render_templates.py 245}` = 3,439 lines of Python. Plus `docs/faq.md` 61, `docs/glossary.md` 76. Profile manifests: `profiles/claude-code.toml` 64, `profiles/codex.toml` 78, `profiles/cursor.toml` (in `profiles/`). |
 | **Purpose** | The canonical-generator pipeline (work-002). `run_generator.py` orchestrates: for each `profiles/*.toml`, load profile → render agents + skills + templates from `canonical/` → diff against previous manifest → delete removed files → write new manifest. Followed by `verify_deterministic.py` (VERIFY-4a, deterministic byte-equality) and `verify_advisory.py` (VERIFY-4b, advisory checks). The dogfood `.claude/` tree is also a generator output (claude-code profile rendered at repo root for self-use). Plus `docs/` for adopter-facing FAQ + glossary. |
 | **Internal dependencies** | Reads `canonical/` + `profiles/*.toml`; writes `profiles/{tool}/...` and `.claude/` (claude-code profile dogfood). Emission manifests at `profiles/{tool}/emission-manifest.jsonl` track what was written. |
 | **External dependencies** | Python 3.11+. |
@@ -315,7 +315,7 @@ Since work-002, every skill/agent/template edit goes to `canonical/` and `run_ge
 | `aid-discover` SKILL.md | `canonical/skills/aid-discover/SKILL.md` (258) | `profiles/{claude-code,codex,cursor}/.../skills/aid-discover/SKILL.md` (258 each) | `.claude/skills/aid-discover/SKILL.md` (258) |
 | `aid-discover` references | `canonical/skills/aid-discover/references/{agent-prompts,document-expectations,reviewer-prompt}.md` | propagated identically to all 3 profiles | propagated to `.claude/` |
 | `aid-interview` SKILL.md | `canonical/skills/aid-interview/SKILL.md` (357) | `profiles/{...}/skills/aid-interview/SKILL.md` (357 each) | `.claude/skills/aid-interview/SKILL.md` (357) |
-| `discovery-reviewer` agent body | `canonical/agents/discovery-reviewer/AGENT.md` (381) | `profiles/claude-code/.claude/agents/discovery-reviewer.md` (378), `profiles/codex/.codex/agents/discovery-reviewer.toml` (~314 TOML), `profiles/cursor/.cursor/agents/discovery-reviewer.md` (378) | `.claude/agents/discovery-reviewer.md` (378) |
+| `discovery-reviewer` agent body | `canonical/agents/discovery-reviewer/AGENT.md` (405) | `profiles/claude-code/.claude/agents/discovery-reviewer.md` (378), `profiles/codex/.codex/agents/discovery-reviewer.toml` (~314 TOML), `profiles/cursor/.cursor/agents/discovery-reviewer.md` (378) | `.claude/agents/discovery-reviewer.md` (378) |
 | `architect` agent body | `canonical/agents/architect/AGENT.md` (39) | `profiles/claude-code/.claude/agents/architect.md` (39), `profiles/codex/.codex/agents/architect.toml` (39), `profiles/cursor/.cursor/agents/architect.md` (39) | `.claude/agents/architect.md` (39) |
 | `canonical/templates/scripts/build-project-index.sh` | `canonical/templates/scripts/build-project-index.sh` (368) | propagated 1:1 to 3 profile trees | propagated to `.claude/` |
 

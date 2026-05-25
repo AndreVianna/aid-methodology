@@ -57,7 +57,7 @@ Discovery-scout has mapped each external source to the directory inside this rep
 
 **Example files:**
 - `profiles/claude-code/.claude/agents/architect.md` — Claude Code agent definition with YAML frontmatter (`name`, `description`, `tools`, `model`). 40 lines.
-- `profiles/claude-code/.claude/agents/discovery-reviewer.md` — Larger background-mode agent showing `permissionMode: bypassPermissions` and `background: true` fields. 381 lines.
+- `profiles/claude-code/.claude/agents/discovery-reviewer.md` — Larger background-mode agent showing `permissionMode: bypassPermissions` and `background: true` fields. 405 lines.
 - `profiles/claude-code/.claude/skills/aid-discover/SKILL.md` — AgentSkills format with `name`, `description`, `allowed-tools`, `argument-hint` frontmatter and a structured body. 258 lines (post-canonical-generator + subagent-visibility-patch; was 258 between work-002 and PR #10; pre-2026-05-22 was 258).
 - `profiles/claude-code/.claude/skills/aid-interview/references/kb-hydration.md` — `references/` subdirectory pattern used to externalize skill content out of the main SKILL.md body.
 - `profiles/claude-code/.claude/templates/scripts/build-project-index.sh` — runtime Bash script consumed by `aid-discover`.

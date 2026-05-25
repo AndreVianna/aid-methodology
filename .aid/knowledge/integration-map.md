@@ -167,9 +167,9 @@
 |-----------|-------|
 | Kind | Distribution + branching mechanism |
 | Direction | AID consumes Git (clone for distribution; branch-per-delivery for aid-execute) |
-| Local artifacts | `.gitignore` (1 line — gitignores `.aid/`); no `.gitattributes`, no `.gitmodules` |
+| Local artifacts | `.gitignore` (47 lines; selectively excludes `.aid/knowledge/.cache/` + `.aid/.heartbeat/`; does NOT exclude the full `.aid/` tree); no `.gitattributes`, no `.gitmodules` |
 | Version pins | None |
-| Known-issues / open gaps | Git is the only assumed install/distribution mechanism. No npm package, no Homebrew tap, no PyPI module observed — adopters clone or copy the relevant tool tree (`README.md`, `setup.sh:1-161`). `aid-execute` uses one Git branch per delivery (`aid/{delivery-NNN}`, see `profiles/claude-code/.claude/skills/aid-execute/SKILL.md:74-79`) |
+| Known-issues / open gaps | Git is the only assumed install/distribution mechanism. No npm package, no Homebrew tap, no PyPI module observed — adopters clone or copy the relevant tool tree (`README.md`, `setup.sh:1-162`). `aid-execute` uses one Git branch per delivery (`aid/{delivery-NNN}`, see `profiles/claude-code/.claude/skills/aid-execute/SKILL.md:74-79`) |
 | Evidence | `.gitignore` (47 lines); `setup.sh`; `aid-execute/SKILL.md:74-79`; absence of npm/PyPI manifests |
 
 ---

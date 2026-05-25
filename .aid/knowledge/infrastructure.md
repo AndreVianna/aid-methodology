@@ -28,7 +28,7 @@ Each of these is examined below.
 | Git tags | Not visible from this worktree | The worktree shows `master` HEAD with no tags annotated in `git log` output |
 | LICENSE | MIT | `LICENSE` (21 lines), confirmed by `project-index.md:345` |
 | **Single source of truth** | `canonical/` top-level directory (new post work-002 — 2026-05-22) | `ls canonical/` shows `agents/`, `skills/`, `templates/`, `rules/`, `EMISSION-MANIFEST.md`. Authoritative source for all 22 agent definitions, 10 skill bodies, and template assets. The three install trees under `profiles/{claude-code,codex,cursor}/` are **generator output**, not hand-maintained |
-| **Propagation mechanism** | `run_generator.py` (top-level, ~83 lines Python, new post work-002) | Reads profile TOMLs from `profiles/*.toml`, invokes per-profile renderers (`render_agents`, `render_skills`, `render_templates` under `.claude/skills/aid-generate/scripts/`), emits files into each install tree, writes an `emission-manifest.jsonl` per profile, prunes empty directories on delete, and runs VERIFY-4a (deterministic) + VERIFY-4b (advisory) gates. Exit 1 on VERIFY-4a failure |
+| **Propagation mechanism** | `run_generator.py` (top-level, ~84 lines Python, new post work-002) | Reads profile TOMLs from `profiles/*.toml`, invokes per-profile renderers (`render_agents`, `render_skills`, `render_templates` under `.claude/skills/aid-generate/scripts/`), emits files into each install tree, writes an `emission-manifest.jsonl` per profile, prunes empty directories on delete, and runs VERIFY-4a (deterministic) + VERIFY-4b (advisory) gates. Exit 1 on VERIFY-4a failure |
 | **Pre-canonical era artifacts** | Top-level `skills/` and `agents/` directories — DELETED 2026-05-22 | Verified: `ls skills/` and `ls agents/` both error "No such file or directory". Their content was promoted into `canonical/{skills,agents}/` and the human READMEs were retired in favor of the canonical sources being the single readable form |
 
 **Implication:** Distribution is `git clone` only. Users do not download a tagged tarball; they pull the tip of `master`. This is the most common pattern for methodology / template repos but it has consequences for adopters who want reproducibility — see `tech-debt.md` H2.
@@ -37,7 +37,7 @@ Each of these is examined below.
 
 ## 2. Installer Scripts
 
-### `setup.sh` (Bash, 161 lines)
+### `setup.sh` (Bash, 162 lines)
 
 **Read in full from `setup.sh:1-162`.** Key behavior:
 
@@ -55,7 +55,7 @@ Each of these is examined below.
 - **Source = generator output, not canonical/:** `setup.sh` installs from `profiles/{claude-code,codex,cursor}/`, which are themselves the output of `python run_generator.py` applied to `canonical/`. The installer does **not** read `canonical/` directly — adopters get the staged per-tool layout already shaped by the generator (paths like `.claude/skills/`, `.codex/agents/`, `.cursor/rules/`).
 - **Post-install message:** Prints "Next steps: 1. Run /aid-init ... 2a. Brownfield: /aid-discover ... 2b. Greenfield: /aid-interview".
 
-### `setup.ps1` (PowerShell, 156 lines)
+### `setup.ps1` (PowerShell, 157 lines)
 
 **Read in full from `setup.ps1:1-157`.** Key behavior:
 
@@ -204,7 +204,7 @@ The closest concept is "which install tree a user activates" (Claude Code, Codex
 
 - Was scaffolded by `aid-init` (creating `.aid/knowledge/` with 16 KB templates + the consolidated `STATE.md`).
 - Is being populated by `aid-discover` (running discovery sub-agents against this repo's source tree to produce the KB).
-- Is **gitignored** via `.gitignore` (47 lines) (single line: `.aid/`).
+- Is **gitignored** via `.gitignore` (47 lines; selectively excludes `.aid/knowledge/.cache/` L40 + `.aid/.heartbeat/` L47, plus Python/Node/IDE patterns; does NOT exclude the full `.aid/` tree).
 
 **Implication for contributors:** running `/aid-discover` in a worktree of this repo will regenerate the KB. The KB is not committed (gitignored) — it is regenerated on demand. A future contributor who wants to share their discovery output for a feature branch must either:
 
@@ -271,7 +271,7 @@ The first command is /aid-init (per setup.sh post-install message).
 | # | Claim | Evidence |
 |---|-------|----------|
 | 1 | `canonical/` top-level dir exists with `agents/`, `skills/`, `templates/`, `rules/`, `EMISSION-MANIFEST.md` | `ls canonical/` |
-| 2 | `run_generator.py` exists at top level | `ls run_generator.py` (~83 lines Python) |
+| 2 | `run_generator.py` exists at top level | `ls run_generator.py` (~84 lines Python) |
 | 3 | `canonical/skills/aid-discover/SKILL.md` and all 3 profile copies are 258 lines each (uniform) | `wc -l canonical/skills/aid-discover/SKILL.md profiles/*/skills/aid-discover/SKILL.md` returns 258 four times |
 | 4 | Top-level `skills/` and `agents/` dirs are GONE | `ls skills/`, `ls agents/` both error |
 | 5 | `setup.sh` and `setup.ps1` install from `profiles/<tool>/`, not from `canonical/` | `grep -nE "canonical/" setup.sh setup.ps1` returns 0 matches |

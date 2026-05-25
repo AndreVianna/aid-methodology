@@ -35,7 +35,7 @@ Every cell answers: *does this capability ship for this tool, and how?*
 | AID capability | Claude Code | Codex CLI | Cursor | Copilot (future) | Antigravity (future) |
 |----------------|-------------|-----------|--------|------------------|----------------------|
 | `aid-init` skill | ✅ `profiles/claude-code/.claude/skills/aid-init/SKILL.md` | ✅ `profiles/codex/.agents/skills/aid-init/SKILL.md` | ✅ `profiles/cursor/.cursor/skills/aid-init/SKILL.md` | ❌ | ❌ |
-| `aid-discover` skill | ✅ 258 lines (canonical-generator), `references/` + `scripts/` split | ✅ 548 (canonical-generator; was 1,078 pre-work-002) lines (inlined) | ✅ 548 (canonical-generator; was 1,090 pre-work-002) lines (inlined) | ❌ | ❌ |
+| `aid-discover` skill | ✅ 258 lines (post-thin-router refactor; byte-identical via canonical-generator), `references/state-*.md` decomposition | ✅ 258 lines (byte-identical via canonical-generator; pre-work-002 was 1,078) | ✅ 258 lines (byte-identical via canonical-generator; pre-work-002 was 1,090) | ❌ | ❌ |
 | `aid-interview` skill | ✅ 357 lines | ✅ 357 lines | ✅ 357 lines | ❌ | ❌ |
 | `aid-specify` skill | ✅ 207 lines | ✅ 207 lines | ✅ 207 lines | ❌ | ❌ |
 | `aid-plan` skill | ✅ 208 lines | ✅ 208 lines (small drift, 4 lines) | ✅ matches Claude Code | ❌ | ❌ |
@@ -43,7 +43,7 @@ Every cell answers: *does this capability ship for this tool, and how?*
 | `aid-execute` skill | ✅ 279 lines | ✅ 279 lines | ✅ 279 lines | ❌ | ❌ |
 | `aid-deploy` skill | ✅ | ✅ (identical to Claude Code) | ✅ (identical) | ❌ | ❌ |
 | `aid-monitor` skill | ✅ | ✅ (identical) | ✅ (identical) | ❌ | ❌ |
-| `aid-summarize` skill | ✅ 233 lines | ✅ 233 lines | ✅ 436 lines | ❌ | ❌ |
+| `aid-summarize` skill | ✅ 233 lines | ✅ 233 lines (byte-identical via canonical-generator) | ✅ 233 lines (byte-identical) | ❌ | ❌ |
 | 22 named agents | ✅ markdown + YAML frontmatter | ✅ TOML with `developer_instructions` | ✅ markdown + YAML (uses `Terminal` tool name vs `Bash`) | ❌ | ❌ |
 | Knowledge-summary HTML viewer assets | ✅ `profiles/claude-code/.claude/templates/knowledge-summary/` (~25 files) | ✅ `profiles/codex/.agents/templates/knowledge-summary/` (~25 files) | ✅ `profiles/cursor/.cursor/templates/knowledge-summary/` (~25 files) | ❌ | ❌ |
 | `setup.sh` installer | ✅ copies `profiles/claude-code/.claude/` + `CLAUDE.md` | ❌ **CONFIRMED BUG (Q70)** — copies `profiles/codex/.codex/` + `AGENTS.md` but omits `profiles/codex/.agents/` (skills + templates). Patch trivial; tracked as `tech-debt.md H6`. | ✅ copies `profiles/cursor/.cursor/` + `AGENTS.md` | ❌ | ❌ |
@@ -119,7 +119,7 @@ The same templates and scripts are duplicated four ways (root `templates/` + 3 i
 | `accessibility-checklist.md` | 125 | 4 | 500 |
 | ...rest of scripts/assets | (see `tech-debt.md` H4 for full table) | 4 each | — |
 
-**Total estimated 4-way duplicated content:** ~17,600 lines = ~36% of the 90,011-line repo (post work-001 merge)sitory total.
+**Total estimated 4-way duplicated content:** ~17,600 lines = ~36% of the 90,011-line repo repository total (post work-001 merge).
 
 ## 7. Future Tool Onboarding Checklist
 

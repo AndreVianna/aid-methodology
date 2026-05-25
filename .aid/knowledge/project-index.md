@@ -696,6 +696,6 @@ All files, sorted alphabetically by path. Paths are relative to root.
 | `profiles/cursor/emission-manifest.jsonl` | Other | 112 | 2026-05-23 |
 | `profiles/cursor/README.md` | Markdown | 146 | 2026-05-23 |
 | `README.md` | Markdown | 374 | 2026-05-23 |
-| `run_generator.py` | Python | 82 | 2026-05-23 |
+| `run_generator.py` | Python | 84 | 2026-05-23 |
 | `setup.ps1` | PowerShell | 157 | 2026-05-23 |
 | `setup.sh` | Shell | 162 | 2026-05-23 |

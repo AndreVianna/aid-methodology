@@ -233,7 +233,7 @@ When AID's discovery sub-agents (`discovery-architect`, `discovery-analyst`, `di
 
 If the user commits `.aid/knowledge/` to a public repo without thinking, this is a **disclosure event**.
 
-**Mitigation in place:** `profiles/claude-code/.claude/skills/aid-init/SKILL.md (line cite stripped — file shrank post-thin-router refactor; reference the file as a whole)` instructs the init skill to **add `.aid/` to `.gitignore`** of the target project:
+**Mitigation in place:** `profiles/claude-code/.claude/skills/aid-init/SKILL.md` instructs the init skill to **add `.aid/` to `.gitignore`** of the target project:
 
 ```
 ### .gitignore
@@ -246,7 +246,7 @@ Check if `.gitignore` exists in the project root.
   Print: `[Init] .gitignore updated — added .aid/ entry.`
 ```
 
-This is verified in this repo: `.gitignore` (at repo root) contains exactly one line: `.aid/`. Confirmed by `project-index.md:72`.
+This is verified in this repo: `.gitignore` (at repo root) contains 47 lines (Python/Node/IDE/editor patterns + selective `.aid/knowledge/.cache/` + `.aid/.heartbeat/`; does NOT exclude the full `.aid/` tree — KB and work artifacts version-tracked). Confirmed by `project-index.md:72`.
 
 [INFO] **Discovery output is gitignored by default** in user projects. The mitigation is documented and demonstrated by the repo's own `.gitignore`. Discovery-quality is dependent on `aid-init` actually running first — a user who copy-pastes skills into their project without running `aid-init` will not get this protection automatically.
 

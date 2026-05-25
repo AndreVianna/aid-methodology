@@ -23,7 +23,7 @@ If a contributor opens a PR today, there is no automated signal whether they hav
 
 **Resolution (work-002):**
 - All 10 skill bodies, 22 agent definitions, and template assets promoted into `canonical/{skills,agents,templates}/`.
-- `run_generator.py` (top-level, ~83 lines Python) reads per-profile TOMLs from `profiles/*.toml` and renders deterministic install-tree output (`profiles/claude-code/.claude/`, `profiles/codex/.codex/` + `profiles/codex/.agents/`, `profiles/cursor/.cursor/`).
+- `run_generator.py` (top-level, ~84 lines Python) reads per-profile TOMLs from `profiles/*.toml` and renders deterministic install-tree output (`profiles/claude-code/.claude/`, `profiles/codex/.codex/` + `profiles/codex/.agents/`, `profiles/cursor/.cursor/`).
 - Each install tree carries an `emission-manifest.jsonl` recording what the generator emitted; deletion pass removes files no longer in the manifest.
 - VERIFY-4a (deterministic) + VERIFY-4b (advisory) gates run after every regeneration.
 
@@ -313,8 +313,8 @@ No genuinely orphaned files found at the source layer. Template orphans (6 insta
 ## Metrics
 
 - **TODO / FIXME / XXX / HACK / TBD / "pending discovery" count:** 69 occurrences across 21 files (pre-canonical-generator baseline; the canonical/ unification preserved them inside skill bodies as documentation strings). Of these, ~17 are intentional placeholders in `CLAUDE.md` / `AGENTS.md` variants. The remainder are documentation strings rather than actual code TODOs.
-- **Files over 500 lines:** 3 unique sources (`methodology/aid-methodology.md` at 1,158; `canonical/skills/aid-discover/SKILL.md` at 258; `canonical/templates/knowledge-summary/component-css.css` at 642). Each of the latter two has 3 byte-identical copies in the install trees by virtue of being generator output.
-- **Files over 1000 lines:** 1 unique source (`methodology/aid-methodology.md` at 1,158). Previously 3 (the now-unified aid-discover SKILL.md is 258 in all trees, not 1,078/1,090).
+- **Files over 500 lines:** 3 unique sources (`methodology/aid-methodology.md` at 1,071; `canonical/skills/aid-discover/SKILL.md` at 258; `canonical/templates/knowledge-summary/component-css.css` at 642). Each of the latter two has 3 byte-identical copies in the install trees by virtue of being generator output.
+- **Files over 1000 lines:** 1 unique source (`methodology/aid-methodology.md` at 1,071). Previously 3 (the now-unified aid-discover SKILL.md is 258 in all trees, not 1,078/1,090).
 - **Duplication ratio (post-canonical-generator):** byte-identical duplication remains in absolute terms (~36% of repo lines are 4-way) but is no longer **drift-prone debt** — it is generator output from a single canonical source.
 - **Test-to-code ratio:** ⚠️ Not meaningful for a methodology + docs + scripts repo. There are zero test files for ~5,490 lines of shell, ~3,428 lines of JavaScript, and ~83 lines of Python (`run_generator.py`). By the most literal reading, the test-to-code ratio is 0.
 - **CI/CD coverage:** 0 pipelines, 0 workflows. Confirmed.

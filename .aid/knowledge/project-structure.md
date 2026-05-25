@@ -12,7 +12,7 @@ This repository IS the AID methodology — it is not a deployable application. I
 
 1. A canonical methodology document (`methodology/aid-methodology.md`, 1,071 lines, V3 spec).
 2. A **canonical source tree** (`canonical/`) — the single authority for skills, agents, rules, and templates. All three install payloads are **generated** from it.
-3. A **canonical-to-profile generator** (`run_generator.py` at the repo root, 82 lines) — runs the per-profile renderers and propagates `canonical/` into each install tree per its profile spec.
+3. A **canonical-to-profile generator** (`run_generator.py` at the repo root, 84 lines) — runs the per-profile renderers and propagates `canonical/` into each install tree per its profile spec.
 4. Three **install payloads** (`profiles/claude-code/`, `profiles/codex/`, `profiles/cursor/`) — one per supported AI coding tool — **generated, not hand-maintained**. Each contains agents, skills, templates, and (for Cursor) rules in that tool native format, plus an `emission-manifest.jsonl` recording what the generator emitted.
 5. Three **profile spec TOMLs** (`profiles/claude-code.toml`, `profiles/codex.toml`, `profiles/cursor.toml`) — declarative descriptions of each host tool filename conventions, frontmatter rules, model tier mapping, and capability matrix. These are the generator per-tool input.
 6. Cross-platform installer scripts (`setup.sh`, `setup.ps1`) that copy the relevant generated tree into a target project. (Generator and installer are separate concerns: the generator builds the install payloads inside this repo; the installer copies a payload into a downstream project.)
@@ -26,7 +26,7 @@ The dogfood pattern: this repo own `.aid/knowledge/` is being populated by runni
 |------|---------|
 | `canonical/` | **Single source of truth** for skills, agents, rules, and templates. Subdirs: `agents/` (22 agent folders), `skills/` (10 aid-* folders), `rules/` (2 `.mdc` files for Cursor — `aid-methodology.mdc`, `aid-review.mdc`), `templates/` (KB templates, requirements, specs, delivery-plans, feedback-artifacts, knowledge-summary, scripts, root-level templates). Also contains `EMISSION-MANIFEST.md` — design spec for the per-profile manifest format. |
 | `profiles/` | **Generated** per-tool install payloads (three trees) plus their profile spec TOMLs. Contents: `claude-code/`, `codex/`, `cursor/` (the generated install trees, each with its own `emission-manifest.jsonl` and a `README.md`) + `claude-code.toml`, `codex.toml`, `cursor.toml` (the profile spec inputs). |
-| `run_generator.py` | Top-level orchestrator (82 lines). Iterates every `profiles/*.toml`, loads the profile, runs `render_agents` / `render_skills` / `render_templates` (sourced from `.claude/skills/aid-generate/scripts/`), diffs against the previous emission manifest to compute deletions, writes the new manifest, then runs `verify_deterministic` (VERIFY-4a) and `verify_advisory` (VERIFY-4b). |
+| `run_generator.py` | Top-level orchestrator (84 lines). Iterates every `profiles/*.toml`, loads the profile, runs `render_agents` / `render_skills` / `render_templates` (sourced from `.claude/skills/aid-generate/scripts/`), diffs against the previous emission manifest to compute deletions, writes the new manifest, then runs `verify_deterministic` (VERIFY-4a) and `verify_advisory` (VERIFY-4b). |
 | `methodology/` | Authoritative AID V3 methodology document (`aid-methodology.md`, 1,071 lines) plus the four pipeline diagrams under `methodology/images/`. |
 | `examples/` | Three anonymized case studies: `brownfield-enterprise/` (Java/OSGi monorepo), `desktop-app/` (.NET/Avalonia/MVVM), `data-pipeline/` (multi-brand e-commerce analytics). |
 | `docs/` | `faq.md` and `glossary.md` — short reference docs aimed at adopters. |
@@ -49,7 +49,7 @@ The dogfood pattern: this repo own `.aid/knowledge/` is being populated by runni
 | File | Purpose |
 |------|---------|
 | `methodology/aid-methodology.md` | The complete V3 methodology spec (1,071 lines). The single normative document; everything else is derived from this. |
-| `run_generator.py` | 82-line Python orchestrator (top level). The only entry point for propagating canonical edits into all three install trees. Calls per-renderer modules from `.claude/skills/aid-generate/scripts/` and writes `profiles/<tool>/emission-manifest.jsonl` after each render. |
+| `run_generator.py` | 84-line Python orchestrator (top level). The only entry point for propagating canonical edits into all three install trees. Calls per-renderer modules from `.claude/skills/aid-generate/scripts/` and writes `profiles/<tool>/emission-manifest.jsonl` after each render. |
 | `canonical/EMISSION-MANIFEST.md` | Design spec for the per-profile emission manifest (JSONL format, sha256 records, pure-mirror deletion semantics). Defines the generator safety boundary — only files the generator emitted can be deleted on subsequent runs. |
 | `profiles/claude-code.toml` / `codex.toml` / `cursor.toml` | Per-tool profile specs: layout roots, agent/skill frontmatter rules, model tier mapping, tool-name remap (Cursor: `Bash` to `Terminal`), filename remap (e.g. `reviewer_output_file = "STATE.md"` post-FR2), capability matrix (hooks / skill_chaining / background_execution / stop_hook_autocontinue). |
 | `setup.sh` / `setup.ps1` | Tool installers (162 / 157 lines). Identical menu, identical copy semantics, identical "Next steps" message. They copy from `profiles/<tool>/` into a downstream project — they do **not** invoke the generator. |
@@ -235,7 +235,7 @@ From the regenerated `project-index.md` Language Breakdown (2026-05-23):
 | Shell | 76 | 13,957 | `setup.sh`, generator scripts under `.claude/skills/aid-generate/scripts/`, `canonical/templates/scripts/`, knowledge-summary validation scripts. |
 | (Other languages — JavaScript / CSS / TOML / HTML / PowerShell / JSON / Python) follow in the regenerated index. |
 
-**No application framework signals.** There is no `package.json`, no `requirements.txt`, no `Cargo.toml`, no `pom.xml`, no `go.mod`, no `*.csproj`, no `Dockerfile`, no Kubernetes manifests, no Terraform / CDK / Pulumi files anywhere in the tree. The single Python file is the top-level `run_generator.py` (82 lines, stdlib-only — no `requirements.txt` because the generator depends only on Python stdlib + modules sourced from `.claude/skills/aid-generate/scripts/`). This repo is fundamentally a static set of markdown + shell + one Python orchestrator + a few JS files — not a deployable application.
+**No application framework signals.** There is no `package.json`, no `requirements.txt`, no `Cargo.toml`, no `pom.xml`, no `go.mod`, no `*.csproj`, no `Dockerfile`, no Kubernetes manifests, no Terraform / CDK / Pulumi files anywhere in the tree. The single Python file is the top-level `run_generator.py` (84 lines, stdlib-only — no `requirements.txt` because the generator depends only on Python stdlib + modules sourced from `.claude/skills/aid-generate/scripts/`). This repo is fundamentally a static set of markdown + shell + one Python orchestrator + a few JS files — not a deployable application.
 
 ## Build / Test / CI
 

@@ -53,7 +53,7 @@ Per `project-index.md` Language Breakdown (line 20). The high file count comes f
 
 | Script | Lines | Purpose |
 |---|---|---|
-| `setup.sh` | 161 | Top-level installer. **Single copy** — not triplicated. |
+| `setup.sh` | 162 | Top-level installer. **Single copy** — not triplicated. |
 | `canonical/templates/scripts/build-project-index.sh` | 368 | `aid-discover` Step 0c pre-pass: emits `.aid/knowledge/project-index.md` with file inventory, sizes, language detection, mtimes. Largest single file in the repo. Run before the 5 sub-agents to eliminate duplicated `find` / `wc` work. |
 | `canonical/templates/scripts/grade.sh` | 141 | Deterministic grading: reads `[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]` severity tags from a reviewer's issue list recorded in `work STATE.md ## Tasks Status` (per FR2; pre-FR2 was `task-NNN-STATE.md`), computes a letter grade per the rubric in `canonical/templates/grading-rubric.md`. Same input → same grade. |
 | `canonical/templates/knowledge-summary/scripts/grade.sh` | 194 | Variant for `aid-summarize` HTML quality gating. Slightly more elaborate rubric (a11y, contrast, mermaid validity). |
@@ -83,7 +83,7 @@ Per `project-index.md` Language Breakdown (line 26).
 
 | Script | Lines | Purpose |
 |---|---|---|
-| `setup.ps1` | 156 | Windows port of `setup.sh`. Identical menu, identical copy semantics, identical "Next steps" message. Single copy at repo root. |
+| `setup.ps1` | 157 | Windows port of `setup.sh`. Identical menu, identical copy semantics, identical "Next steps" message. Single copy at repo root. |
 | `canonical/templates/knowledge-summary/scripts/concatenate.ps1` | 36 (× 4 copies = 144 lines) | Windows port of `concatenate.sh` for the `aid-summarize` HTML output. Triplicated like all knowledge-summary assets. |
 
 The PowerShell scripts target PowerShell 5+ (Windows PowerShell or PowerShell 7). They use PowerShell-specific syntax: `$null`, `$env:VAR`, backtick line continuation.
@@ -251,7 +251,7 @@ Verified absences:
 
 This repo has **no traditional build step** (no compile, no transpile, no bundling). It does, however, have a **canonical generator** (shipped via work-002) that propagates a single source tree to the per-tool install payloads. The "transforms" performed in the codebase are:
 
-1. **`run_generator.py`** (top-level, 83 lines) — the canonical generator. Reads `profiles/{claude-code,codex,cursor}.toml` (3 profile descriptors), then for each profile invokes the three worker renderers (`render_agents.py`, `render_skills.py`, `render_templates.py`) under `.claude/skills/aid-generate/scripts/` to emit `profiles/{claude-code,codex,cursor}/...` from `canonical/{agents,skills,templates,rules}/`. Each render emits an `emission-manifest.jsonl` with `sha256` per file; subsequent runs diff against the previous manifest and delete obsolete files (`run_generator.py:43-60`). Followed by `VERIFY-4a` (deterministic re-render check, `verify_deterministic.py`, 513 lines) and `VERIFY-4b` (advisory drift check, `verify_advisory.py`, 343 lines) — see §12.0 below.
+1. **`run_generator.py`** (top-level, 84 lines) — the canonical generator. Reads `profiles/{claude-code,codex,cursor}.toml` (3 profile descriptors), then for each profile invokes the three worker renderers (`render_agents.py`, `render_skills.py`, `render_templates.py`) under `.claude/skills/aid-generate/scripts/` to emit `profiles/{claude-code,codex,cursor}/...` from `canonical/{agents,skills,templates,rules}/`. Each render emits an `emission-manifest.jsonl` with `sha256` per file; subsequent runs diff against the previous manifest and delete obsolete files (`run_generator.py:43-60`). Followed by `VERIFY-4a` (deterministic re-render check, `verify_deterministic.py`, 513 lines) and `VERIFY-4b` (advisory drift check, `verify_advisory.py`, 343 lines) — see §12.0 below.
 2. The host AI tool's own loader reads `*.md` / `*.toml` / `*.mdc` files at startup.
 3. `aid-summarize` concatenates CSS + JS + Mermaid into the single `knowledge-summary.html` at user runtime, **not** at repo build time.
 4. `setup.sh` / `setup.ps1` performs a literal `cp -r` of the chosen pre-rendered profile tree into the target project. The installer is a downstream consumer of `run_generator.py`'s output — it does not re-render.
@@ -262,7 +262,7 @@ The canonical-generator pipeline (work-002) is the only Python code in this repo
 
 | File | Lines | Purpose |
 |---|---|---|
-| `run_generator.py` | 83 | Top-level driver. Iterates `profiles/*.toml`, loads each profile, dispatches the three render workers, runs VERIFY-4a + VERIFY-4b. |
+| `run_generator.py` | 84 | Top-level driver. Iterates `profiles/*.toml`, loads each profile, dispatches the three render workers, runs VERIFY-4a + VERIFY-4b. |
 | `.claude/skills/aid-generate/scripts/profile.py` | 516 | Profile loader + validator. `load_profile(path) -> Profile`, `validate(profile) -> errors`. Reads the `[layout]`, `[agent]`, `[skill]`, `[model_tiers]`, `[tool_names]`, `[filename_map]`, `[extras]`, `[capabilities]` TOML sections. |
 | `.claude/skills/aid-generate/scripts/harness.py` | 615 | Shared utilities: `EmissionManifest` (records emitted-file `sha256` + relative dst path; supports `load`, `diff(prev)`, `write`), `read_canonical_file`, `substitute_filenames` (canonical placeholder -> per-profile filename, e.g., `{project_context_file}` -> `CLAUDE.md` for Claude Code, `AGENTS.md` for Codex / Cursor), `sha256_hex`. |
 | `.claude/skills/aid-generate/scripts/render_agents.py` | 503 | Worker: emits per-profile agent files from `canonical/agents/{name}/AGENT.md`. Markdown -> markdown (Claude Code, Cursor) or markdown -> TOML (Codex). |
