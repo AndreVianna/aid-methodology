@@ -246,7 +246,7 @@ The `## Dispatch` table is the router's single routing surface. Schema:
 | `State` | **UPPERCASE** state name (hyphens for multi-word — see "Canonical state-id format" below); matches a `references/state-{name}.md` and the detection logic |
 | `Detail` | Relative path `references/state-{name}.md` loaded **only** when this state is entered |
 | `Worker` | Executor / sub-agent for the state's heavy work (per-skill authoring discipline), or `inline` if trivial |
-| `Advance` | Either `→ {NEXT-STATE-NAME}` (the literal name of the next state in the machine) or `→ halt` (terminal / human-gated — the user re-invokes the skill to proceed). No mode logic, no ladder. |
+| `Advance` | **One of three forms.** (1) **Unconditional:** `→ {NEXT-STATE-NAME}` — the literal name of the next state in the machine. (2) **Halt:** `→ halt` — terminal / human-gated (the user re-invokes the skill to proceed). (3) **Conditional:** `→ {STATE-A} ({condition}) / → {STATE-B} ({otherwise})` — allowed *only* when the branch depends on a **computed criterion** (a grade, a count, a status field) that is deterministic and inspectable from STATE.md without further dialog. Exactly one conditional split per row, with a clear else. No multi-step ladders, no mode logic, no user-input branches (those are state-detection logic). **Canonical example:** `aid-execute` REVIEW row — `→ FIX (grade < min) / → DONE (grade ≥ min)`. **Retro-apply candidates:** `aid-summarize` VALIDATE row, `aid-interview` LITE-REVIEW row (each has grade-driven routing previously hidden in state-body prose). |
 
 > **Canonical state-id format (owned here, CR6).** The dispatch table's `State`
 > column is the **canonical source of truth for state ids across the

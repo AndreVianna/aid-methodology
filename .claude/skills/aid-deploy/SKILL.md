@@ -5,6 +5,7 @@ description: >
   verifies the combined build, packages according to project infrastructure,
   generates release notes, and updates artifact statuses. Use when deliveries
   are complete and ready to ship.
+  State machine: IDLE → SELECTING → VERIFYING → PACKAGING → DONE.
 allowed-tools: Read, Glob, Grep, Bash, Write
 ---
 
@@ -41,7 +42,7 @@ Required: work ID. If only one work exists, auto-select it.
   features/                    ← feature SPECs
 ```
 
-## Pre-flight
+## ⚠️ Pre-flight Checks
 
 1. Verify `.aid/` workspace exists.
 2. Resolve work directory (same routing as other skills).
@@ -53,10 +54,10 @@ Required: work ID. If only one work exists, auto-select it.
 ## State Detection
 
 Read work `STATE.md` `## Deploy Status`:
-- **Status: Idle** → Start new package (Step 1)
-- **Status: Selecting** → Resume delivery selection (Step 2)
-- **Status: Verifying** → Resume verification (Step 3)
-- **Status: Packaging** → Resume packaging (Step 4)
+- **Status: Idle** → IDLE state (start new package; see `references/state-idle.md`)
+- **Status: Selecting** → SELECTING state (resume delivery selection; see `references/state-selecting.md`)
+- **Status: Verifying** → VERIFYING state (resume verification; see `references/state-verifying.md`)
+- **Status: Packaging** → PACKAGING state (resume packaging; see `references/state-packaging.md`)
 - **Status: Done** → Re-run mode (see Re-run section)
 
 Print the state-entry line and "you are here" map:
@@ -109,11 +110,6 @@ aid-deploy  ▸ you are here
   - `technology-stack.md` § Commands — build, lint, test commands
   - Any other docs INDEX summaries indicate are relevant
 
-## Process
-
-#
----
-
 ## Dispatch Protocol (L1+L2+L3 subagent visibility, subagent-visibility-patch)
 
 Every subagent dispatch in this skill MUST follow this protocol so the user
@@ -126,10 +122,11 @@ protocol lives in two reference docs; this section is a checklist citing them.
    subagent's operation class. Capture LOW–HIGH band.
 2. **Read heartbeat config** from `.aid/knowledge/STATE.md` top-of-file
    `**Heartbeat Interval:** N minutes` (default 1; `0` = disabled).
-3. **If ETA LOW > 5 min AND heartbeat enabled:**
+3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
-   - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt
-4. **Arm 3 L2 timers** (via `run_in_background: true`):
+   - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt with explicit instruction to update during long phases
+   - SKIP only if `**Heartbeat Interval:** 0` (user-explicit opt-out in STATE.md)
+4. **Arm 3 L2 timers** (always — even for short ETAs use minimums 60s/120s/180s; never gate on ETA):
    - `sleep <LOW/2 in s> && echo "... <agent> still running (Xm elapsed of ~LOW–HIGH)"`
    - `sleep <LOW in s> && echo "... <agent> at estimated time (LOWm elapsed)"`
    - `sleep <1.5×LOW in s> && echo "⚠️ <agent> EXCEEDED estimate (1.5×LOWm elapsed); consider checking on it or cancelling"`
@@ -142,8 +139,12 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **On completion / failure:**
 
-- **Success:** emit `✓ <agent> done in <actual>` with measured time. Log to
-  `STATE.md ## Calibration Log` for L1 calibration. Delete heartbeat file.
+- **Success:** emit `✓ <agent> done in <actual>` with measured time. Append a row to
+  the work `STATE.md ## Calibration Log` section (create section if missing) with
+  format `| YYYY-MM-DD | <agent> | <task-id/cycle> | <ETA-band> | <actual> | <notes> |`.
+  Also update the task's `## Dispatches` sub-column with the dispatch record.
+  Both are mandatory per work-003 traceability (never optional, never "if tracked").
+  Delete heartbeat file.
 - **Failure:** emit `✗ <agent> FAILED after <elapsed> (reason: <one-line>)`.
   Decide whether to re-dispatch, fall back, or surface to user. Delete
   heartbeat file.
@@ -159,172 +160,18 @@ The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair
 lines elsewhere in this skill body remain in place; this protocol just makes
 them more informative by adding mid-wait check-ins + structured progress.
 
-## Step 1: Assess
+## Dispatch
 
-Read all inputs. Build a picture:
-- Which deliveries are complete (all tasks done, all grades ≥ minimum)?
-- Which deliveries are partially complete?
-- Which deliveries are already shipped (from prior packages)?
-- What does infrastructure.md § Deployment say about packaging?
-  - Build output type (executable, container, package, library, static site, installer)
-  - Target (app store, registry, cloud, on-prem, CDN)
-  - CI/CD pipeline (if any)
-  - Versioning scheme (semver, calver, custom)
-  - Environment details (runtime, config, secrets, dependencies)
+| State | Detail | Worker | Advance |
+|-------|--------|--------|---------|
+| IDLE | `references/state-idle.md` | `operator` | → SELECTING |
+| SELECTING | `references/state-selecting.md` | `operator` | → VERIFYING |
+| VERIFYING | `references/state-verifying.md` | `operator` | → PACKAGING |
+| PACKAGING | `references/state-packaging.md` | `operator` | → DONE |
+| DONE | _(inline — see Re-run below)_ | `inline` | → halt |
 
-If infrastructure.md has no Deployment section or it's a placeholder:
-→ Ask the user how this project gets packaged and deployed.
-→ Write a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)` to capture the answer.
-
-Update work `STATE.md` `## Deploy Status`: Status → Selecting.
-
-### Step 2: Select Deliveries
-
-Present eligible deliveries to the user:
-
-```
-Ready to ship:
-  ✅ delivery-001: User Authentication (4 tasks, all A or above)
-  ✅ delivery-002: API Rate Limiting (3 tasks, all A-)
-
-Already shipped:
-  📦 delivery-003: Core Models (in package-001-mvp)
-
-Not ready:
-  ⏳ delivery-004: Reporting Dashboard (2/5 tasks complete)
-
-Which deliveries should be in this release? [all ready / select / cancel]
-```
-
-If user selects "all ready" → include all eligible.
-If user selects specific ones → include only those.
-If user cancels → reset work `STATE.md` `## Deploy Status` to Idle, stop.
-
-Ask for:
-- Version/tag name (suggest based on versioning scheme from KB)
-- Package name slug (for the filename: `package-NNN-{slug}.md`)
-
-Create the package file from template (`../../templates/package.md`):
-- Fill in: deliveries, deployment type/target from KB, environment from KB
-- Determine package number (next sequential after existing packages)
-- Save to `.aid/{work}/packages/package-NNN-{slug}.md`
-
-Update work `STATE.md` `## Deploy Status`: Status → Verifying, Active Package → package-NNN.
-
-### Step 3: Verify
-
-Run full verification against the COMBINED scope of all selected deliveries:
-
-1. **Full build** (not incremental) — using commands from `technology-stack.md § Commands`
-2. **Full test suite** — ALL tests, not just ones added by selected deliveries
-3. **Lint/format check** — zero warnings
-
-All three must pass. Record results in the package file (Verification section).
-
-▶ full build + test suite + lint starting (~30 s – 5 min depending on project)
-If any fails:
-- Show the failure clearly
-- Ask user: fix here (minor) or loop back to aid-execute (non-trivial)?
-- If fixing here: fix → re-verify (max 3 attempts, then must loop to execute)
-- If looping back: set work `STATE.md` `## Deploy Status` → Idle, keep package file as Draft
-✓ verification done (record actual time) — or ✗ verification failed: {reason}
-
-Update work `STATE.md` `## Deploy Status`: Status → Packaging.
-
-### Step 4: Package
-
-Follow what infrastructure.md § Deployment prescribes. This step varies by project type.
-
-**The agent adapts to what the KB says. Examples:**
-- **PR-based:** Create pull request with structured description
-- **Container:** Build image, tag with version, push to registry
-- **Package/Library:** Build package, publish to registry (npm, NuGet, Maven, PyPI)
-- **Installer:** Build installer (MSIX, DMG, deb), sign if configured
-- **Static site:** Build, deploy to CDN/hosting
-- **Multiple outputs:** Some projects produce more than one — follow KB
-
-Record what was produced in the package file (Deployment section).
-
-If the project type isn't clear from KB → ask the user, route answer to `.aid/knowledge/STATE.md` `## Q&A (Pending)`.
-
-**PR description format (when applicable):**
-```markdown
-## Release: {version}
-
-### Deliveries
-- delivery-NNN: {name} ({task count} tasks)
-
-### Verification
-- Build: ✅
-- Tests: ✅ {count} pass ({new} new)
-- Lint: ✅
-
-### Changes
-- Files changed: {count}
-- Lines: +{add} / -{del}
-```
-
-### Step 5: Release Notes
-
-Generate release notes in the package file (Release Notes section):
-
-```markdown
-## What's New
-{For each delivery: one paragraph summarizing user-visible changes}
-
-## Technical Changes
-{Significant architecture/infrastructure changes, if any}
-
-## Known Issues
-{From known-issues.md — anything deferred or unresolved}
-```
-
-### Step 6: KB Updates
-
-Check if implementation revealed anything that should update the Knowledge Base:
-- New conventions → flag for coding-standards.md
-- Architecture changes → flag for architecture.md
-- New integrations → flag for integration-map.md
-- Tech debt created or resolved → flag for tech-debt.md
-- Data model changes → flag for data-model.md
-- Deployment process changes → flag for infrastructure.md
-
-For each KB update needed:
-→ Write a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)`
-→ The next aid-discover run will process these
-- New features shipped → add to feature-inventory.md (route through `.aid/knowledge/STATE.md` Q&A with category: Features)
-
-⚠️ Do NOT directly edit KB docs from deploy — route through Discovery.
-
-### Step 7: Update Statuses
-
-- Package file → Status: Shipped, add date
-- Each included delivery in PLAN.md → add `Shipped in: package-NNN` and date
-- Work `STATE.md` `## Tasks Status` rows for included tasks → Status: Shipped
-- Work `STATE.md` `## Deploy Status` → Status: Done, Active Package: —
-- Work `STATE.md` `## Deploy Status` History → add entry with package name, date, delivery count
-
-### Step 8: Project Management Sync (conditional)
-
-If `infrastructure.md § Project Management` defines a tool:
-- Create a Release in the PM tool corresponding to this package
-- Update tickets for shipped tasks → mark as Done/Closed
-- Link the release to the corresponding Epic (work)
-
-If no PM tool → skip this step.
-
-### Step 9: Summary
-
-Print what was done:
-```
-📦 package-NNN: {version}
-   Deliveries: {count} ({list})
-   Tasks: {total count}
-   Verification: ✅ Build + Tests + Lint
-   Output: {what was produced}
-   Package file: .aid/{work}/packages/package-NNN-{slug}.md
-   KB updates: {count} Q&A entries routed to .aid/knowledge/STATE.md
-```
+On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
+When a state completes, print `Next: [State: {NEXT}] — run /aid-deploy again` and exit.
 
 ## Re-run
 
