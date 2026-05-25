@@ -28,6 +28,19 @@ documentation relevant to this work — KB references are used to populate the
 
 ---
 
+## Escalation
+
+At any point during CONDENSED-INTAKE, the user may type `/aid-interview escalate`
+or respond with "escalate to full path". When that happens:
+
+- Invoke `references/lite-to-full-escalation.md` immediately.
+- Pass the current sub-path name and all slot values captured so far (even if only
+  partially answered).
+- Do NOT write the work-root `SPEC.md` before escalating.
+- Exit CONDENSED-INTAKE after the escalation procedure completes.
+
+---
+
 ## Step 2: Run sub-path-specific intake
 
 Read `**Sub-path:**` from `STATE.md ## Triage`. Dispatch to the matching
@@ -446,3 +459,5 @@ sections of `SPEC.md`.
 | LITE-REFACTOR + all 4 answers | `## Goal` + `## Context` (before/after/scope) + `## Acceptance Criteria` |
 | LITE-FEATURE + all 5 answers | `## Goal` + `## Context` + `## Acceptance Criteria` (explicit Given/when/then per AC slot) |
 | Sub-path = LITE-BUG-FIX, SPEC.md already has `## Acceptance Criteria` | Skip intake; advance to TASK-BREAKDOWN |
+| User types `/aid-interview escalate` before any question answered | `lite-to-full-escalation.md` invoked with no slots; `Path: escalated`; REQUIREMENTS.md scaffold created; next state = CONTINUE |
+| User types `/aid-interview escalate` after answering 2 of 4 LITE-BUG-FIX questions | `lite-to-full-escalation.md` invoked with `bug-title` + `bug-description`; §1 Objective + §2 Problem Statement pre-seeded as Partial; next state = CONTINUE |

@@ -5,7 +5,7 @@ description: >
   builds REQUIREMENTS.md incrementally. Subsequent runs cross-reference against
   KB, grade, and ask targeted questions to resolve gaps and contradictions.
   Final step decomposes functional requirements into discrete feature files.
-  State machine: FIRST-RUN → Q-AND-A → TRIAGE → {full: CONTINUE → COMPLETION → FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE | lite: CONDENSED-INTAKE → TASK-BREAKDOWN → LITE-REVIEW → LITE-DONE}.
+  State machine: FIRST-RUN → Q-AND-A → TRIAGE → {full: CONTINUE → COMPLETION → FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE | lite: CONDENSED-INTAKE → TASK-BREAKDOWN → LITE-REVIEW → LITE-DONE | escalated: any lite state → CONTINUE → ...full path...}.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 argument-hint: "[work-001] resume work  [--reset work-001] clear and restart  [--features work-001] re-run feature decomposition"
 ---
@@ -178,7 +178,10 @@ State 7:  **Path:** full, Interview Status: Approved, features +
       - Check `STATE.md ## Lifecycle History` for a `LITE-REVIEW complete` entry:
         - If absent → **State L3: LITE-REVIEW**
         - If present → **State L4: LITE-DONE**
-   f. **If `**Path:** full` (or `escalated`)** — route through full-path detection:
+   f. **If `**Path:** full` (or `escalated`)** — route through full-path detection.
+      `Path: escalated` is treated identically to `Path: full`. The `## Escalation Carry`
+      block in STATE.md provides context for CONTINUE to avoid re-asking questions that
+      were already answered during the lite-path session.
       - Read `**Interview Status:**` field in `## Interview Status`
       - If Status is `In Progress`:
         - Read Section Status table under `## Interview Status`
@@ -223,6 +226,7 @@ aid-interview  ▸ you are here
 [State: CONDENSED-INTAKE] — Sub-path-specific condensed interview; write work-root SPEC.md.
 aid-interview  ▸ you are here (lite path)
   [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ TRIAGE ] → [● CONDENSED-INTAKE ] → [ TASK-BREAKDOWN ] → [ LITE-REVIEW ] → [ LITE-DONE ]
+  (escalate at any point) → [ CONTINUE ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
 ```
 
 **TASK-BREAKDOWN (lite path L2):**
@@ -230,6 +234,7 @@ aid-interview  ▸ you are here (lite path)
 [State: TASK-BREAKDOWN] — Architect proposes typed task breakdown; writes tasks/task-NNN.md files.
 aid-interview  ▸ you are here (lite path)
   [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ TRIAGE ] → [✓ CONDENSED-INTAKE ] → [● TASK-BREAKDOWN ] → [ LITE-REVIEW ] → [ LITE-DONE ]
+  (escalate at any point) → [ CONTINUE ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
 ```
 
 **LITE-REVIEW (lite path L3):**
@@ -237,6 +242,7 @@ aid-interview  ▸ you are here (lite path)
 [State: LITE-REVIEW] — Reviewer grades task set against SPEC; pre-execution quality gate.
 aid-interview  ▸ you are here (lite path)
   [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ TRIAGE ] → [✓ CONDENSED-INTAKE ] → [✓ TASK-BREAKDOWN ] → [● LITE-REVIEW ] → [ LITE-DONE ]
+  (escalate at any point) → [ CONTINUE ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
 ```
 
 **LITE-DONE (lite path L4):**
@@ -244,6 +250,7 @@ aid-interview  ▸ you are here (lite path)
 [State: LITE-DONE] — Lite path complete; SPEC.md set to Ready; hand-off to /aid-execute.
 aid-interview  ▸ you are here (lite path)
   [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ TRIAGE ] → [✓ CONDENSED-INTAKE ] → [✓ TASK-BREAKDOWN ] → [✓ LITE-REVIEW ] → [● LITE-DONE ]
+  (escalate: [E]) → [ CONTINUE ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
 ```
 
 **CONTINUE:**
@@ -290,10 +297,11 @@ aid-interview  ▸ you are here
 | FIRST-RUN | `references/state-first-run.md` | `interviewer` | → TRIAGE |
 | Q-AND-A | `references/state-q-and-a.md` | `interviewer` | → TRIAGE |
 | TRIAGE | `references/state-triage.md` | `interviewer` | → CONDENSED-INTAKE (lite) or CONTINUE (full) |
-| CONDENSED-INTAKE | `references/state-condensed-intake.md` | `interviewer` | → TASK-BREAKDOWN |
-| TASK-BREAKDOWN | `references/state-task-breakdown.md` | `architect` | → LITE-REVIEW |
-| LITE-REVIEW | `references/state-lite-review.md` | `reviewer` | → LITE-DONE (or loopback to L1/L2) |
-| LITE-DONE | `references/state-lite-done.md` | `inline` | → halt |
+| CONDENSED-INTAKE | `references/state-condensed-intake.md` | `interviewer` | → TASK-BREAKDOWN (or escalate → CONTINUE) |
+| TASK-BREAKDOWN | `references/state-task-breakdown.md` | `architect` | → LITE-REVIEW (or escalate → CONTINUE) |
+| LITE-REVIEW | `references/state-lite-review.md` | `reviewer` | → LITE-DONE (or loopback to L1/L2, or escalate → CONTINUE) |
+| LITE-DONE | `references/state-lite-done.md` | `inline` | → halt (or escalate → CONTINUE) |
+| lite→full escalation | `references/lite-to-full-escalation.md` | (caller's worker) | → CONTINUE |
 | CONTINUE | `references/state-continue.md` | `interviewer` | → COMPLETION |
 | COMPLETION | `references/state-completion.md` | `interviewer` | → FEATURE-DECOMPOSITION |
 | FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `architect` | → CROSS-REFERENCE |

@@ -59,7 +59,28 @@ Tasks ready:
   ...
 
 Next step: /aid-execute task-001 {work-NNN-name}
+
+[E] Escalate to full path instead (e.g., scope revealed too broad for lite execution)
 ```
+
+Wait for user response. If the user types `E`, `escalate`, or `/aid-interview escalate`:
+escalate (see below). Otherwise, the session ends — no further state machine advance.
+
+---
+
+## Escalation from LITE-DONE
+
+Although LITE-DONE is the terminal lite-path state, the user may still escalate after
+seeing the hand-off (e.g., they realize the task list is too broad for lite execution).
+
+When escalation is triggered from LITE-DONE:
+
+1. Reset `SPEC.md` status back to `Draft` (reverse the Step 1 change that set it to
+   `Ready`) before invoking the escalation procedure — the full path will manage
+   SPEC.md status independently.
+2. Invoke `references/lite-to-full-escalation.md`. Pass current state name (`LITE-DONE`)
+   and all captured info: the work-root `SPEC.md`, all task files in `tasks/`, and the
+   `LITE-REVIEW` grade (if recorded in `STATE.md ## Delivery Gates`).
 
 The `{work-NNN-name}` work id is appended to the `/aid-execute` command so that
 multi-work `.aid/` directories resolve unambiguously.
@@ -83,3 +104,4 @@ Terminal state. No further state advance. The user's next step is:
 | LITE-DONE reached for LITE-BUG-FIX, 1 task | SPEC.md Status=Ready; lifecycle entry; hand-off printed with task-001 |
 | LITE-DONE reached for LITE-FEATURE, 3 tasks | SPEC.md Status=Ready; lifecycle entry; hand-off prints task-001/002/003 |
 | LITE-DONE entry already in lifecycle | Prints hand-off again; exits (idempotent) |
+| User selects [E] Escalate at LITE-DONE | SPEC.md reset to Draft; `lite-to-full-escalation.md` invoked; SPEC.md + tasks/ + LITE-REVIEW grade carried; `Path: escalated` written; REQUIREMENTS.md seeded; next state = CONTINUE |
