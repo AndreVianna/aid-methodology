@@ -1,5 +1,5 @@
 ---
-name: {{recipe-name}}
+name: {{recipe-name}}  # Fill in before saving as canonical/recipes/{name}.md. These slots are placeholders, not real recipe slots.
 applies-to: {{applies-to}}
 slot-count: {{slot-count}}
 task-count: {{task-count}}
@@ -50,6 +50,8 @@ task-count: {{task-count}}
 | {{date}} | Created from recipe `{{recipe-name}}` | /aid-interview lite path |
 
 ## tasks
+
+<!-- Multi-task recipes add ### task-002 etc. with `**Depends on:** task-NNN` per task; see canonical/recipes/add-crud-endpoint.md for a 3-task example. -->
 
 ### task-001 — {{task-001-title}}
 

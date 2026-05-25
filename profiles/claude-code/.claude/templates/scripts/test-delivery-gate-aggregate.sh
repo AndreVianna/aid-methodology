@@ -466,12 +466,9 @@ EOF
         > /dev/null 2>&1
     local rc=$?
 
-    # Note: current writeback-task-status.sh --delivery-id --block targets the
-    # gate-record task file (highest-numbered task in TASKS_DIR). The Alignment
-    # Update in the SPEC says the canonical target is work STATE.md ## Delivery
-    # Gates. Both are valid write targets per the task-019 helper design.
-    # This test verifies the helper writes without error and the gate-record task
-    # file contains the block.
+    # Per feature-004 Alignment Update + wave-7+8 fix-batch, the canonical
+    # target for writeback-task-status.sh --delivery-id --block is work STATE.md
+    # ## Delivery Gates section (NOT the task file). Test 7b/7c assert that.
 
     # Helper should exit 0
     if [[ "$rc" -eq 0 ]]; then
@@ -481,20 +478,20 @@ EOF
              "Helper exited with code $rc"
     fi
 
-    # Gate-record task file should contain the block
-    local gate_file="$ws/.aid/work/tasks/task-002-test.md"
-    if grep -q "## Delivery Gate" "$gate_file" 2>/dev/null; then
-        pass "Test 7b: Gate-record task file contains ## Delivery Gate block"
+    # work STATE.md ## Delivery Gates section should contain the block
+    local state_file="$ws/.aid/work/STATE.md"
+    if grep -q "## Delivery Gates" "$state_file" 2>/dev/null && grep -q "### delivery-003" "$state_file" 2>/dev/null; then
+        pass "Test 7b: STATE.md ## Delivery Gates contains ### delivery-NNN block"
     else
-        fail "Test 7b: Gate-record task file contains ## Delivery Gate block" \
-             "## Delivery Gate not found in $gate_file"
+        fail "Test 7b: STATE.md ## Delivery Gates contains ### delivery-NNN block" \
+             "## Delivery Gates / ### delivery-003 not found in $state_file"
     fi
 
-    if grep -q "Reviewer Tier" "$gate_file" 2>/dev/null; then
+    if grep -q "Reviewer Tier" "$state_file" 2>/dev/null; then
         pass "Test 7c: Gate block content written correctly (Reviewer Tier present)"
     else
         fail "Test 7c: Gate block content written correctly" \
-             "Reviewer Tier not found in $gate_file"
+             "Reviewer Tier not found in $state_file"
     fi
 
     cleanup "$ws"

@@ -311,7 +311,6 @@ aid-interview  ▸ you are here
 | TASK-BREAKDOWN | `references/state-task-breakdown.md` | `architect` | → LITE-REVIEW |
 | LITE-REVIEW | `references/state-lite-review.md` | `reviewer` | → LITE-DONE (grade ≥ min) / → CONDENSED-INTAKE (grade < min, loopback). User-driven escalate → CONTINUE handled separately via `lite-to-full-escalation.md`. |
 | LITE-DONE | `references/state-lite-done.md` | `inline` | → halt |
-| lite→full escalation | `references/lite-to-full-escalation.md` | (caller's worker) | → CONTINUE |
 | CONTINUE | `references/state-continue.md` | `interviewer` | → COMPLETION |
 | COMPLETION | `references/state-completion.md` | `interviewer` | → FEATURE-DECOMPOSITION |
 | FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `architect` | → CROSS-REFERENCE |

@@ -147,54 +147,12 @@ On state entry, print `[State: NAME]` + the "you are here" map from State Detect
 When a state completes, print `Next: [State: {NEXT}] — run /aid-execute again` and exit.
 For DONE and RE-RUN (Advance: → halt), print the appropriate halt/summary message and exit.
 
-## Dispatch Protocol (L1+L2+L3 subagent visibility, subagent-visibility-patch)
+## Dispatch Protocol
 
-Every subagent dispatch in this skill MUST follow this protocol so the user
-sees mid-wait progress instead of going silent for 10–25+ minutes. The full
-protocol lives in two reference docs; this section is a checklist citing them.
-
-**Before each dispatch:**
-
-1. **Look up ETA** in `canonical/templates/rough-time-hints.md` for the
-   subagent's operation class. Capture LOW–HIGH band.
-2. **Read heartbeat config** from `.aid/knowledge/STATE.md` top-of-file
-   `**Heartbeat Interval:** N minutes` (default 1; `0` = disabled).
-3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
-   - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
-   - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt with explicit instruction to update during long phases
-   - SKIP only if `**Heartbeat Interval:** 0` (user-explicit opt-out in STATE.md)
-4. **Arm 3 L2 timers** (always — even for short ETAs use minimums 60s/120s/180s; never gate on ETA):
-   - `sleep <LOW/2 in s> && echo "... <agent> still running (Xm elapsed of ~LOW–HIGH)"`
-   - `sleep <LOW in s> && echo "... <agent> at estimated time (LOWm elapsed)"`
-   - `sleep <1.5×LOW in s> && echo "⚠️ <agent> EXCEEDED estimate (1.5×LOWm elapsed); consider checking on it or cancelling"`
-
-**During dispatch:**
-
-- **On L2 timer fire:** surface the timer output. If heartbeat file exists,
-  also read it and append `[from heartbeat] state: <state> · progress: <progress>
-  · activity: <activity>` to the narration.
-
-**On completion / failure:**
-
-- **Success:** emit `✓ <agent> done in <actual>` with measured time. Append a row to
-  the work `STATE.md ## Calibration Log` section (create section if missing) with
-  format `| YYYY-MM-DD | <agent> | <task-id/cycle> | <ETA-band> | <actual> | <notes> |`.
-  Dispatch metadata is logged via the Calibration Log appendix in STATE.md (per work-003 traceability rule — never optional, never "if tracked").
-  Delete heartbeat file.
-- **Failure:** emit `✗ <agent> FAILED after <elapsed> (reason: <one-line>)`.
-  Decide whether to re-dispatch, fall back, or surface to user. Delete
-  heartbeat file.
-
-**References:**
-
-- `canonical/templates/long-wait-protocol.md` — full L2 spec
-- `canonical/templates/subagent-heartbeat-protocol.md` — full L3 spec
-- `canonical/templates/rough-time-hints.md` — current measured ETAs
-- `canonical/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
-
-The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair
-lines elsewhere in this skill body remain in place; this protocol just makes
-them more informative by adding mid-wait check-ins + structured progress.
+This skill follows the L1+L2+L3 subagent-visibility protocol (work-003 traceability —
+heartbeats, ETA timers, calibration). The full checklist lives in
+`canonical/templates/dispatch-protocol-checklist.md`; read it before any subagent
+dispatch in this skill.
 
 ## Workspace
 

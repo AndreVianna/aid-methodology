@@ -170,7 +170,9 @@ in Step 5, before STATE.md is written in Step 6.
 Scan the canonical recipes directory (the path is:
 `canonical/recipes/` relative to the AID installation root, i.e. the same directory
 that contains `canonical/skills/`). For each `.md` file, read the `applies-to` field
-from its YAML front-matter. A recipe matches if:
+from its YAML front-matter. **Skip any file whose front-matter cannot be parsed or is missing required fields** (e.g., `README.md` has no front-matter — `parse-recipe.sh --validate` exits non-zero on it). Parse failures are not errors; handle gracefully and continue.
+
+A recipe matches if:
 
 ```
 recipe.applies-to == workType   OR   recipe.applies-to == '*'

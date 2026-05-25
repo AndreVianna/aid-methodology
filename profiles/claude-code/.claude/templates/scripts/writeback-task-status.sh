@@ -19,7 +19,7 @@
 #
 #   writeback-task-status.sh --delivery-id NNN --block MARKDOWN_BLOCK
 #       Write/replace the ### delivery-NNN block under ## Delivery Gates in the
-#       work STATE.md (per feature-004 Alignment Update + SPEC L240-260).
+#       work STATE.md (per feature-004 Alignment Update — see SPEC §Alignment Update; line cites in body are known-stale).
 #       MARKDOWN_BLOCK is the full block text. STATE.md is the canonical target;
 #       task files are NOT modified by this mode.
 #
@@ -451,7 +451,7 @@ mode_findings() {
 # ---------------------------------------------------------------------------
 # Mode: --delivery-id NNN --block MARKDOWN_BLOCK
 # Write/replace the ### delivery-NNN block under ## Delivery Gates in
-# STATE.md (per feature-004 Alignment Update + SPEC L240-260). STATE.md is
+# STATE.md (per feature-004 Alignment Update — see SPEC §Alignment Update; line cites in body are known-stale). STATE.md is
 # the canonical write target. task files are NOT modified by this mode.
 # Creates the ## Delivery Gates section if absent (appends to STATE.md).
 # Creates/replaces the ### delivery-NNN sub-block within that section.
