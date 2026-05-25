@@ -211,44 +211,14 @@ other than one task in flight at a time (sequential execution).
 
 ### EXECUTE-WAVE: AC4 Sub-unit Drill-down
 
-When executing a delivery wave (multiple tasks in sequence), render a sub-unit snapshot
-immediately after the AC3 state-map on each sub-unit transition. This is the
-**AC4 drill-down** for the EXECUTE-WAVE state.
+When executing a delivery wave, render a sub-unit snapshot after each sub-unit transition.
 
-**Snapshot format:**
-
-```
-Wave {M} of {N} · {K}/{T} done
-
-| Task | Type | Status | Time |
-|------|------|--------|------|
-| task-001 | RESEARCH | ✓ done | 4m 12s |
-| task-002 | IMPLEMENT | ● running | ~3–8 min |
-| task-003 | TEST | (queued) | — |
-| task-004 | DOCUMENT | (queued) | — |
-```
-
-**Status icons:**
-- `✓ done` — task completed and passed review
-- `● running` — task currently in EXECUTE or REVIEW
-- `✗ failed` — task errored (IMPEDIMENT raised)
-- `(queued)` — task not yet started (waiting for a pool slot)
-- `⊘ blocked` — task is a transitive descendant of a failed task; will not be dispatched
-
-**Re-render trigger:** render a fresh snapshot block on every sub-unit transition
-(queued → running → done / failed). Apply **1-second coalescing** — multiple
-transitions within the same second emit a single merged snapshot.
-
-**Serial-task fallback:** When `run_in_background` is not supported on the host
-(detected by the PD-0 capability probe — see `references/state-execute.md`),
-or when effective `MaxConcurrent=1` for any reason, at most 1 task appears as
-`● running` at a time. The snapshot still renders for each serial task
-transition. This is correct behavior, not a bug — the pool algorithm runs
-identically at pool size 1.
-
-**Failure tolerance:** If snapshot rendering fails for any reason (malformed iteration
-source, missing data), swallow the error silently and continue. The snapshot is
-informational — it must never block or abort task execution.
+> **Authoritative spec:** `references/state-execute.md § EXECUTE-WAVE Drill-down`
+> contains the full snapshot format, status-icon vocabulary, re-render trigger
+> rules (1-second coalescing), serial-task fallback semantics, and failure
+> tolerance. This SKILL.md section is a brief router-level pointer; do not
+> duplicate the spec here — read it from state-execute.md so the two stay in
+> sync.
 
 ## Impediments
 

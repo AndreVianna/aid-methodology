@@ -302,7 +302,7 @@ This single file absorbs the legacy `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`. T
 
 Source-of-truth template: `canonical/templates/work-state-template.md` (83 lines). Per-instance file lives at `.aid/work-NNN-{name}/STATE.md`. Produced by `aid-init` (skeleton when a new `work-NNN` directory is created) and updated by every skill that operates on the work — `aid-interview`, `aid-specify` (per-feature row), `aid-plan` (delivery row), `aid-detail` (task rows), `aid-execute` (task review status), `aid-deploy` (deploy status row).
 
-This single file absorbs four legacy per-skill / per-artifact state files. The retired per-artifact install-tree templates (`profiles/*/templates/interview-state.md`, `feature-state.md`, `implementation-state.md`, `deployment-state.md`) have been deleted per work-003 FR2 (per-area STATE rule — see `coding-standards.md §8.5`).
+This single file absorbs four legacy per-skill / per-artifact state files. The corresponding install-tree templates have been deleted per work-003 FR2 (per-area STATE rule — see `coding-standards.md §8.5`); for historical record of the retired template names, see the `coding-standards.md §8.5` migration note.
 
 | Field / Section | Required | Type | Allowed values | Evidence |
 |-----------------|----------|------|----------------|----------|

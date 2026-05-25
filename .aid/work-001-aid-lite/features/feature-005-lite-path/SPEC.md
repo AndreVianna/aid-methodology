@@ -347,19 +347,21 @@ root** instead of the full path's per-feature SPECs.
 .aid/
   knowledge/                      ← shared KB (read-only; unchanged)
   work-NNN-{name}/
-    INTERVIEW-STATE.md            ← process — carries the triage result + lite-path status
+    STATE.md                      ← per-area STATE (FR2) — Triage section carries the triage result + lite-path status
     SPEC.md                       ← the ONE consolidated work-root spec (lite path only)
     tasks/
-      task-001.md                 ← execution-ready, two-zone task shape (Definition + Execution Record)
+      task-001.md                 ← execution-ready, 6-section flat shape (per-task state lives in STATE.md ## Tasks Status row)
       task-002.md
       ...
 ```
 
 A lite work has **no `features/` folder, no per-feature `SPEC.md` inside a feature
 folder, no separate `PLAN.md`** — just the one work-root `SPEC.md`, the
-`tasks/task-NNN.md` files, and `INTERVIEW-STATE.md`. This is grounded in the locked
-rationale: a lite work is **one-or-no feature**, so per-work scope == per-feature
-scope — one `SPEC.md` per lite work is the natural unit.
+`tasks/task-NNN.md` files, and the consolidated `STATE.md` (per-area STATE under
+work-003 FR2 — triage result + lite-path status live in its `## Triage` section).
+This is grounded in the locked rationale: a lite work is **one-or-no feature**, so
+per-work scope == per-feature scope — one `SPEC.md` per lite work is the natural
+unit.
 
 What the lite path **does not** create (vs. the full path):
 
@@ -454,9 +456,9 @@ writes:
 The `delivery-001` token is preserved so `aid-execute` Check 5 (Branch Isolation —
 `aid/delivery-NNN`) works unchanged. A lite work always has exactly `delivery-001`.
 
-#### `INTERVIEW-STATE.md` — triage fields (extension)
+#### Per-area `STATE.md ## Triage` section — triage fields (extension; FR2 area-STATE)
 
-`INTERVIEW-STATE.md` gains a small, additive block recording the triage outcome
+The per-work `STATE.md` `## Triage` section (per FR2 area-STATE; supersedes the historical standalone `INTERVIEW-STATE.md`) holds a small, additive block recording the triage outcome
 (it does not alter the existing Section Status / Pending Q&A / Review History schema):
 
 | Field | Type | Notes |

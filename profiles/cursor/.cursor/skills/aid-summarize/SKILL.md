@@ -168,6 +168,9 @@ aid-summarize  ▸ you are here
 | WRITEBACK | `references/state-writeback.md` | inline | → DONE |
 | DONE | `references/state-done.md` | inline | → halt |
 
+> **Note on DONE extraction:** Unlike other AID skills (aid-deploy/aid-execute/aid-detail/aid-plan) which keep DONE inline as a trivial halt-message state, aid-summarize's DONE is a **composite state** (handles both Normal-completion-after-WRITEBACK and DONE-IDEMPOTENT-after-STALE-CHECK branches with distinct messaging). The 38-line state body warrants extraction to `references/state-done.md` per the thin-router principle. This asymmetry is intentional, not a defect.
+
+
 > **Note — DONE-IDEMPOTENT:** When STALE-CHECK determines the HTML is already
 > up-to-date and approved, the router dispatches to the `DONE` row. The
 > `references/state-done.md` file contains both the normal-completion body and the

@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+#
+# parse-recipe.sh — feature-011 helper for canonical/recipes/ files.
+# Portability: POSIX-portable; runs on Linux, macOS (Big Sur+), and Windows Git Bash.
+# Avoids GNU-only grep flags. Uses `sleep 0.5` (fractional seconds — requires
+# modern macOS [Big Sur+] or any Linux/Git Bash; not POSIX-strict but accepted
+# by GNU coreutils sleep and macOS sleep ≥11).
+
 # parse-recipe.sh — recipe parser for FR8 (feature-011) lite-path slot-fill
 #
 # Parses AID recipe files (YAML front-matter + ## spec / ## tasks body blocks).
@@ -223,7 +230,7 @@ extract_slots_unique_count() {
 # ---------------------------------------------------------------------------
 count_task_headings() {
     local tasks_block="$1"
-    echo "$tasks_block" | grep -cE '^### task-[0-9]' || echo 0
+    { echo "$tasks_block" | grep -cE '^### task-[0-9]'; true; }
 }
 
 # ---------------------------------------------------------------------------

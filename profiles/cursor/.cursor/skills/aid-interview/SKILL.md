@@ -324,6 +324,15 @@ When a state completes, print `Next: [State: {NEXT}] — run /aid-interview agai
 
 ---
 
+## Scripts
+
+This skill ships executable helpers in `scripts/`:
+
+| Script | Used by | Purpose |
+|--------|---------|---------|
+| `scripts/parse-recipe.sh` | State TRIAGE (Step 5a recipe-offer + slot-fill + emit) | Parses canonical recipe files (YAML front-matter validation, slot extraction, `## spec`/`## tasks` block split, `{!{` escape handling, render with slot substitution). |
+| `scripts/test-parse-recipe.sh` | smoke test (CI / pre-commit) | 111-assertion smoke harness for `parse-recipe.sh`. |
+
 ## Targeted Interview (Loopback Re-entry)
 
 When a downstream phase (e.g., `/aid-specify`) needs clarification on requirements:
