@@ -308,13 +308,13 @@ Format: `| Date | Agent | Task / Cycle | ETA band | Actual | Notes |`
 
 **Backfill source:** Backfilled from Agent tool `<usage>` blocks observed during the 2026-05-24 /aid-execute work-001 run. Times are agent-reported actuals (duration_ms / 1000), rounded to nearest 30s. ETA bands were the per-dispatch L2 timer settings (often wider than the rough-time-hints baseline to account for parallel-tail-latency).
 
-### IQ9: aid-interview state-completion.md auto-advance contradiction
+### IQ9 (Resolved 2026-05-24): aid-interview state-completion.md auto-advance contradiction
 
-**Question:** Pre-existing behavior in `canonical/skills/aid-interview/references/state-completion.md:64` instructs "Immediately proceed to State 5 (Feature Decomposition) in the same run." Contradicts thin-router contract (router prints `Next:` and exits) per feature-002 SPEC. Was preserved verbatim by task-005 refactor (AC8 parity).
+**Question:** Pre-existing behavior in `canonical/skills/aid-interview/references/state-completion.md:64` instructed "Immediately proceed to State 5 (Feature Decomposition) in the same run." Contradicted thin-router contract (router prints `Next:` and exits) per feature-002 SPEC. Was preserved verbatim by task-005 refactor (AC8 parity).
 
 **Source:** /aid-execute work-001 task-005 cycle-1 review (2026-05-24)
-**Suggested:** Update state-completion.md to remove the auto-advance — emit standard `Next: [State: FEATURE-DECOMPOSITION] — run /aid-interview again` and exit.
-**Status:** Pending — small implementation fix; will be applied as part of Step 1c of the verification plan.
+**Resolution:** Updated state-completion.md to remove the auto-advance. On `[1] Approved`, prints `✅ Requirements approved.` + standard router exit `Next: [State: FEATURE-DECOMPOSITION] — run /aid-interview again` and exits. Updated Advance footer to drop the "or proceed immediately" clause and explicitly cite feature-002 SPEC thin-router contract.
+**Status:** Resolved.
 
 ### IQ10 (Resolved 2026-05-24): aid-execute REVIEW dual-Advance schema gap
 
