@@ -52,16 +52,16 @@ See `PLAN.md` for full details, IQ resolutions, and cross-cutting risks.
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|
 | 001 | `task-001` | REFACTOR | W0 | **Done ✅** | C2 A+ | 7m14s + 3m47s | Refactor aid-deploy to thin-router. Commits 22381aa (refactor) + b8b87e8 (cycle-1 fix-pass: RE-RUN header restored, state-idle heading normalized, state-packaging opener trimmed, State Detection parentheticals updated). SKILL.md 360→201; 4 refs (idle/selecting/verifying/packaging). All 3 install trees byte-identical. C1=B (2 LOW + 2 MINOR, all CODE, all fixed). C2=A+ (0 issues). Generator VERIFY-4a PASS both cycles. |
-| 002 | `task-002` | REFACTOR | W0 | Pending | — | — | Refactor aid-monitor to thin-router (smallest) |
-| 003 | `task-003` | REFACTOR | W0 | Pending | — | — | Refactor aid-summarize to thin-router (small-mid) |
-| 004 | `task-004` | REFACTOR | W0 | Pending | — | — | Refactor aid-init to thin-router (mid; leaves MaxConcurrent Q hook for d-005) |
-| 005 | `task-005` | REFACTOR | W0 | Pending | — | — | Refactor aid-interview to thin-router (mid; leaves State TRIAGE hook for d-002) |
-| 006 | `task-006` | REFACTOR | W0 | Pending | — | — | Refactor aid-specify to thin-router (large; multi-state) |
-| 007 | `task-007` | REFACTOR | W0 | Pending | — | — | Refactor aid-plan to thin-router (mid) |
-| 008 | `task-008` | REFACTOR | W0 | Pending | — | — | Refactor aid-detail to thin-router (mid) |
-| 009 | `task-009` | REFACTOR | W0 | Pending | — | — | Refactor aid-execute to thin-router (large; most-touched downstream) |
-| 010 | `task-010` | REFACTOR | W0 | Pending | — | — | Refactor aid-discover to thin-router (largest; last) |
-| 011 | `task-011` | IMPLEMENT | W0 | Pending | — | — | Delete implementation-state.md template + orphan-ref grep sweep |
+| 002 | `task-002` | REFACTOR | W0 | In Progress | — | — | Refactor aid-monitor to thin-router (smallest) — Wave-1 parallel |
+| 003 | `task-003` | REFACTOR | W0 | In Progress | — | — | Refactor aid-summarize to thin-router (small-mid) — Wave-1 parallel |
+| 004 | `task-004` | REFACTOR | W0 | In Progress | — | — | Refactor aid-init to thin-router (mid; leaves MaxConcurrent Q hook for d-005) — Wave-1 parallel |
+| 005 | `task-005` | REFACTOR | W0 | In Progress | — | — | Refactor aid-interview to thin-router (mid; leaves State TRIAGE hook for d-002) — Wave-1 parallel |
+| 006 | `task-006` | REFACTOR | W0 | In Progress | — | — | Refactor aid-specify to thin-router (large; multi-state) — Wave-1 parallel |
+| 007 | `task-007` | REFACTOR | W0 | **Done ✅** | C1 A+ | ~11m + ~5m | aid-plan Section-keyed (first-run-loop, review-deliverables). PASS cycle-1: 1 LOW [SPEC classification mismatch, not refactor defect] + 2 MIN cosmetic. |
+| 008 | `task-008` | REFACTOR | W0 | **Done ✅** | C1 A+ | ~7m + ~7m | aid-detail Section-keyed (first-run, review, task-decomposition, execution-graph-generation). 77-line router (82% reduction!). PASS cycle-1: 1 LOW [TASK] + 2 MIN. |
+| 009 | `task-009` | REFACTOR | W0 | In Review (FIX cycle 2) | C1 ~C | ~8m + ~10m | Refactor aid-execute (Step-keyed). C1: 3 MED (cross-cutting buried in state-execute.md, dual-Advance SPEC gap) + 4 LOW + 2 MIN. FIX in batch fix-pass. |
+| 010 | `task-010` | REFACTOR | W0 | **Done ✅** | C1 A+ | ~11m + ~11m | aid-discover Mode-keyed (largest, 596→253 line router). PASS cycle-1: 2 LOW (placement/abstraction consistency) + 3 MIN. CR6 applied to 22 Q&A→Q-AND-A occurrences without error. |
+| 011 | `task-011` | IMPLEMENT | W0 | In Review (FIX cycle 2) | C1 PASS-LOW | ~11m + ~5m | Orphan-ref sweep. C1: 1 LOW (api-contracts asymmetry) + 4 MIN. Minor fix in batch fix-pass. |
 | 012 | `task-012` | TEST | W1 | Pending | — | — | E2E pipeline parity test |
 | 013 | `task-013` | CONFIGURE | W0 | Pending | — | — | Extend work-state-template ## Triage + data-model.md §2.3 |
 | 014 | `task-014` | IMPLEMENT | W1 | Pending | — | — | Implement State TRIAGE + T3→workType mapping |
