@@ -58,7 +58,7 @@ Discovery-scout has mapped each external source to the directory inside this rep
 **Example files:**
 - `profiles/claude-code/.claude/agents/architect.md` — Claude Code agent definition with YAML frontmatter (`name`, `description`, `tools`, `model`). 40 lines.
 - `profiles/claude-code/.claude/agents/discovery-reviewer.md` — Larger background-mode agent showing `permissionMode: bypassPermissions` and `background: true` fields. 405 lines.
-- `profiles/claude-code/.claude/skills/aid-discover/SKILL.md` — AgentSkills format with `name`, `description`, `allowed-tools`, `argument-hint` frontmatter and a structured body. 258 lines (post-work-001 thin-router refactor; byte-identical across canonical + 3 profile trees post-canonical-generator; pre-thin-router was 596; pre-canonical-generator the Claude Code tree was 453 lines while Codex+Cursor inlined to 1,078/1,090).
+- `profiles/claude-code/.claude/skills/aid-discover/SKILL.md` — AgentSkills format with `name`, `description`, `allowed-tools`, `argument-hint` frontmatter and a structured body. 307 lines (post-work-001 thin-router refactor + cycle-19 orchestrator-protocol additions; byte-identical across canonical + 3 profile trees post-canonical-generator; pre-thin-router was 596; pre-canonical-generator the Claude Code tree was 453 lines while Codex+Cursor inlined to 1,078/1,090).
 - `profiles/claude-code/.claude/skills/aid-interview/references/kb-hydration.md` — `references/` subdirectory pattern used to externalize skill content out of the main SKILL.md body.
 - `profiles/claude-code/.claude/templates/scripts/build-project-index.sh` — runtime Bash script consumed by `aid-discover`.
 - `.claude/settings.json` (this repo's own) — narrow Bash permission allow-list pattern as understood by Claude Code.
@@ -72,8 +72,8 @@ Discovery-scout has mapped each external source to the directory inside this rep
 **Local payload:** `profiles/codex/.codex/agents/` (TOML agent defs) + `profiles/codex/.agents/{skills,templates}/` (markdown skills + scripts) + `profiles/codex/AGENTS.md` (project config placeholder).
 
 **Example files:**
-- `profiles/codex/.codex/agents/architect.toml` — TOML format with `name`, `description`, `developer_instructions`, `model`, `model_reasoning_effort`. 39 lines.
-- `profiles/codex/.codex/agents/discovery-reviewer.toml` — Largest agent definition. 314 lines.
+- `profiles/codex/.codex/agents/architect.toml` — TOML format with `name`, `description`, `developer_instructions`, `model`, `model_reasoning_effort`. 62 lines.
+- `profiles/codex/.codex/agents/discovery-reviewer.toml` — Largest agent definition. 399 lines.
 - `profiles/codex/.codex/agents/simple-extractor.toml` — Haiku-tier utility agent showing the `gpt-5.4-mini` + `low` reasoning combination.
 - `profiles/codex/.agents/skills/aid-discover/SKILL.md` — Skill body, 307 lines (post-work-001 thin-router refactor + cycle-19 orchestrator-protocol additions; byte-identical to canonical via canonical-generator; pre-canonical-generator the Codex tree inlined to 1,078 lines while Claude Code was 453).
 - `profiles/codex/AGENTS.md` — Top-level project context placeholder consumed by Codex CLI. 28 lines.
