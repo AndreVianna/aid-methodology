@@ -80,7 +80,7 @@ See `PLAN.md` for full details, IQ resolutions, and cross-cutting risks.
 | 027 | `task-027` | IMPLEMENT | W1 | **Done ✅** | C1 FIX → C2 A+ | 15m40s+~10m+19m+~7m | parse-recipe.sh (533L + 889L test, 111/111 pass). 5 modes (--list/--validate/--spec/--tasks/--render). Sentinel-file lock. C1=FIX (1 CRIT wrong path: must be canonical/skills/aid-interview/scripts/ per SPEC L341-346; 2 HIGH warn-to-stdout + asset misclass) → C2 fix-batch git-mv to correct path + warn→stderr + 5 fixture tests. C2 A+. |
 | 028 | `task-028` | IMPLEMENT | W2 | In Progress | — | — | Triage recipe-offer + slot-fill + emit — Wave-7 parallel |
 | 029 | `task-029` | IMPLEMENT | W3 | In Progress | — | — | Recipe → standard-lite escalation — Wave-8 |
-| 030 | `task-030` | TEST | W4 | Pending | — | — | E2E recipes test |
+| 030 | `task-030` | TEST | W4 | In Progress | — | — | E2E recipes test — Wave-9 final |
 | 031 | `task-031` | CONFIGURE | W0 | **Done ✅** | C1 A+ | ~8m+~6m | `**Max Parallel Tasks:** 5` metadata added to discovery-state-template.md + .aid/knowledge/STATE.md. data-model.md §2.1 updated. PASS cycle-1 clean (1 MINOR cosmetic). |
 | 032 | `task-032` | IMPLEMENT | W1 | **Done ✅** | C1 FIX → C2 A+ | ~10m+~6m+19m+~7m | MaxConcurrent Q (Q7) in aid-init. Default 5 per feature-009 FR6. Q7→Q8 renumbering. C1=FIX (2 HIGH Q7→Q8 missed in subagent-heartbeat-protocol.md) → C2 fix-batch updated all 4 files. C2 A+. |
 | 033 | `task-033` | IMPLEMENT | W1 | **Done ✅** | C1 FIX → C2 A+ | ~10m+~7m+19m+~7m | Pool dispatch (PD-0→PD-6) in aid-execute EXECUTE-WAVE. MaxConcurrent default 5, graceful degradation. C1=FIX (1 CRIT PD-2a "Step 1 only" contradicts PD-4; 3 HIGH cherry-pick, double STATE write, Dispatches vaporware) → C2 fix-batch resolved all. C2 A+. |
