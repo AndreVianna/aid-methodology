@@ -95,11 +95,14 @@ yields a normalisable value.
 
 ---
 
-## Step 5: Expose decision and offer override (lite path only)
+## Step 5: Expose decision and offer override
 
-For **FULL** verdict: proceed directly to Step 6.
+This step runs on **both** LITE and FULL verdicts, but with different options.
 
-For **LITE** verdict, show the decision to the user and allow override:
+### For LITE verdict — show decision and offer 3 choices
+
+Show the auto-detected decision to the user on the same triage turn (no re-invocation
+needed) and wait for their response:
 
 ```
 Triage decided:
@@ -116,21 +119,50 @@ Triage decided:
 [3] Escalate to full path
 ```
 
-Wait for user response:
+Wait for user response **on this same turn** before advancing.
 
-- **[1] Proceed:** No override; `Sub-path (auto)` is omitted from the STATE.md write.
-- **[2] Different sub-path:** User selects `[a]–[d]`; record `Sub-path (auto)` = original
-  auto-detected value; update `Sub-path` to the user's choice; set `Override: yes`.
-- **[3] Escalate:** Set `Path: full`; set `Sub-path` absent; clear any workType; proceed
-  as FULL path.
+**[1] Accept auto-detected sub-path:**
+- No override recorded.
+- `Sub-path (auto)` and `Override` fields are **omitted** from the STATE.md write.
+- Proceed to Step 6 with Path=lite, Sub-path={auto-detected value}.
+
+**[2] Use a different sub-path:**
+- Record `Sub-path (auto)` = the original auto-detected Sub-path value.
+- Update `Sub-path` to the user's selected sub-path (`[a]`→`LITE-BUG-FIX`, `[b]`→`LITE-DOC`,
+  `[c]`→`LITE-REFACTOR`, `[d]`→`LITE-FEATURE`).
+- Set `Override: yes`.
+- Update `workType` to match the new Sub-path:
+  - `LITE-BUG-FIX` → `bug-fix`
+  - `LITE-DOC` → `single-doc`
+  - `LITE-REFACTOR` → `small-refactor`
+  - `LITE-FEATURE` → `small-new-feature`
+- Proceed to Step 6 with Path=lite, Sub-path={user-chosen value}.
+
+**[3] Escalate to full path:**
+- Set `Path: full`.
+- `Sub-path` field is **absent** — do NOT write "n/a" or any placeholder.
+- `Work Type`, `Sub-path (auto)`, and `Override` fields are also **absent**.
+- Ask the user for the escalation rationale (ONE follow-up question):
+  ```
+  Why escalate to full path? (e.g., "scope is broader than expected", "need full spec")
+  ```
+  Wait for the user's response. Record it as the escalation rationale.
+- Proceed to Step 6 with Path=full.
+
+### For FULL verdict (from routing rule, not escalation)
+
+Proceed directly to Step 6. No override offer — FULL is the safe default and the routing
+rule's own conservative logic already handles this case. The user may re-run with
+`--reset` if they believe FULL is wrong.
 
 ---
 
 ## Step 6: Write STATE.md `## Triage` block
 
 Write the triage result to the work-area `STATE.md ## Triage` section.
+**Write immediately** after the user accepts, overrides, or escalates. Do not batch.
 
-**Full-path result:**
+**Full-path result (from routing rule):**
 
 ```markdown
 ## Triage
@@ -142,7 +174,19 @@ Write the triage result to the work-area `STATE.md ## Triage` section.
 `Work Type`, `Sub-path`, `Sub-path (auto)`, `Override`, and `Recipe` fields are **absent**
 (not written, not "n/a") for full-path works.
 
-**Lite-path result (no override):**
+**Full-path result (user escalated from lite):**
+
+```markdown
+## Triage
+
+- **Path:** full
+- **Decision rationale:** T1={T1 value} + T2={T2 value} + T3={T3 value} → lite (auto); escalated to full — {user escalation rationale}
+```
+
+`Work Type`, `Sub-path`, `Sub-path (auto)`, `Override`, and `Recipe` fields are **absent**
+(not written, not "n/a") for escalated-to-full works.
+
+**Lite-path result (no override — user accepted auto):**
 
 ```markdown
 ## Triage
@@ -153,7 +197,7 @@ Write the triage result to the work-area `STATE.md ## Triage` section.
 - **Decision rationale:** T1={T1 value} + T2={T2 value} + T3={T3 value} → lite/{Sub-path}
 ```
 
-**Lite-path result (with user override):**
+**Lite-path result (user chose different sub-path):**
 
 ```markdown
 ## Triage
@@ -165,8 +209,6 @@ Write the triage result to the work-area `STATE.md ## Triage` section.
 - **Decision rationale:** T1={T1 value} + T2={T2 value} + T3={T3 value} → lite/{user-chosen Sub-path}
 - **Override:** yes
 ```
-
-**Write immediately** after the user accepts or overrides the decision. Do not batch.
 
 ---
 
@@ -183,6 +225,8 @@ Write the triage result to the work-area `STATE.md ## Triage` section.
 
 ## Unit-testable mapping rules (summary)
 
+### Routing and mapping (task-014 scope)
+
 | Input | Rule | Output |
 |-------|------|--------|
 | T1=none, T2=a few, T3=bug fix | LITE | path=lite, workType=bug-fix, Sub-path=LITE-BUG-FIX |
@@ -193,3 +237,16 @@ Write the triage result to the work-area `STATE.md ## Triage` section.
 | T1=multiple, T2=a few, T3=bug fix | FULL | path=full (T1=multiple forces FULL) |
 | T1=none, T2=many, T3=bug fix | FULL | path=full (T2=many forces FULL) |
 | T1=none, T2=a few, T3={unrecognised} | FULL | path=full (T3 non-normalisable → fallback FULL) |
+
+### Override paths (task-015 scope)
+
+| Auto-result | User choice | Override recorded? | Final STATE.md |
+|-------------|-------------|-------------------|---------------|
+| LITE / LITE-BUG-FIX | [1] Accept | no | Path=lite, Sub-path=LITE-BUG-FIX (no Override field, no Sub-path (auto) field) |
+| LITE / LITE-BUG-FIX | [2] Choose LITE-REFACTOR | yes | Path=lite, Sub-path=LITE-REFACTOR, Sub-path (auto)=LITE-BUG-FIX, Override=yes |
+| LITE / LITE-REFACTOR | [2] Choose LITE-FEATURE | yes | Path=lite, Sub-path=LITE-FEATURE, Sub-path (auto)=LITE-REFACTOR, Override=yes |
+| LITE / LITE-DOC | [2] Choose LITE-BUG-FIX | yes | Path=lite, Sub-path=LITE-BUG-FIX, Sub-path (auto)=LITE-DOC, Override=yes |
+| LITE / LITE-FEATURE | [2] Choose same (LITE-FEATURE) | yes | Path=lite, Sub-path=LITE-FEATURE, Sub-path (auto)=LITE-FEATURE, Override=yes |
+| LITE / LITE-BUG-FIX | [3] Escalate | no (Sub-path absent) | Path=full, Sub-path absent, rationale includes escalation reason |
+| LITE / LITE-DOC | [3] Escalate | no (Sub-path absent) | Path=full, Sub-path absent, rationale includes escalation reason |
+| FULL (routing rule) | (no override offered) | n/a | Path=full, no Sub-path, no Override |

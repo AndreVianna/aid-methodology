@@ -5,7 +5,7 @@ description: >
   builds REQUIREMENTS.md incrementally. Subsequent runs cross-reference against
   KB, grade, and ask targeted questions to resolve gaps and contradictions.
   Final step decomposes functional requirements into discrete feature files.
-  State machine: FIRST-RUN → Q-AND-A → TRIAGE → CONTINUE → COMPLETION → FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE.
+  State machine: FIRST-RUN → Q-AND-A → TRIAGE → {full: CONTINUE → COMPLETION → FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE | lite: CONDENSED-INTAKE → TASK-BREAKDOWN → LITE-REVIEW → LITE-DONE}.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 argument-hint: "[work-001] resume work  [--reset work-001] clear and restart  [--features work-001] re-run feature decomposition"
 ---
@@ -19,27 +19,46 @@ aid-interview is **multi-agent** — different states use different agents.
 | State | Phase | Agent | Why |
 |-------|-------|-------|-----|
 | 1–4, TRIAGE | Conversational interview + triage | `interviewer` | Empathetic dialogue, deterministic routing |
+| L1 CONDENSED-INTAKE | Lite-path condensed interview | `interviewer` | Sub-path-specific slot-fill dialogue |
+| L2 TASK-BREAKDOWN | Lite-path task design | `architect` | Design work — proposing typed task breakdown |
+| L3 LITE-REVIEW | Lite-path pre-execution gate | `reviewer` | Adversarial validation of task set against SPEC |
+| L4 LITE-DONE | Lite-path terminal | (no dispatch) | Hand-off prompt to `/aid-execute` |
 | 5 | Feature Decomposition | `architect` | Design work — breaking requirements into structured features |
 | 6 | Cross-Reference & Refine | `reviewer` | Adversarial validation against KB and codebase |
 | 7 | DONE | (no dispatch) | Terminal state, user choice prompt |
 
-The frontmatter default `agent: interviewer` covers States 1–4 and TRIAGE. States 5 and 6 explicitly override `subagent_type` at dispatch (see those state sections below).
+The frontmatter default `agent: interviewer` covers States 1–4, TRIAGE, and L1. L2 and 5 dispatch `architect`; L3 and 6 dispatch `reviewer`. L4 and 7 run inline.
 
 Gather requirements from a human stakeholder through adaptive, one-question-at-a-time
 conversation. Builds REQUIREMENTS.md incrementally — each answer updates the document
 immediately.
 
-**Workspace structure:**
+**Workspace structure (full path):**
 ```
 .aid/
   knowledge/           ← shared KB (populated by /aid-discover)
   work-001-name/       ← one work = one interview cycle
-    STATE.md           ← process (§§ Interview Status, Cross-phase Q&A, Features Status…)
+    STATE.md           ← process (§§ Triage, Interview Status, Cross-phase Q&A, Features Status…)
     REQUIREMENTS.md    ← product (clean document, only project information)
     features/          ← product (one folder per feature, created after approval)
       feature-001-name/
         SPEC.md        ← product (technical specification, added by /aid-specify)
 ```
+
+**Workspace structure (lite path):**
+```
+.aid/
+  knowledge/           ← shared KB (populated by /aid-discover)
+  work-001-name/       ← one lite work
+    STATE.md           ← process (§§ Triage, Tasks Status, Lifecycle History…)
+    SPEC.md            ← the ONE consolidated work-root spec (lite path only)
+    tasks/
+      task-001.md      ← 6-section flat task file
+      task-002.md
+      ...
+```
+
+A lite work has **no `features/` folder, no per-feature `SPEC.md`, no `REQUIREMENTS.md`, no `PLAN.md`** — just the work-root `SPEC.md` and `tasks/` folder.
 
 **First run:** Conversational interview from scratch.
 **Subsequent runs (before approval):** Resume interview for incomplete sections.
@@ -119,16 +138,22 @@ Do NOT rely on memory from previous runs. ALWAYS read the actual files on disk.
 All paths below are relative to `.aid/{work}/`.
 
 ```plaintext
-State 1: No STATE.md (§ Interview Status)                          → FIRST-RUN
-State 2: STATE.md § Cross-phase Q&A has Pending entries            → Q-AND-A
-State T: STATE.md § Triage absent or § Triage **Path:** missing    → TRIAGE
-State 3: STATE.md § Interview Status: In Progress, incomplete      → CONTINUE
-State 4: STATE.md § Interview Status: In Progress, all done        → COMPLETION
-State 5: STATE.md § Interview Status: Approved, no feature folders → FEATURE-DECOMPOSITION
-State 6: STATE.md § Interview Status: Approved, features exist,
-         cross-reference not yet done                              → CROSS-REFERENCE
-State 7: STATE.md § Interview Status: Approved, features + cross-ref
-         already complete                                          → DONE
+State 1:  No STATE.md (§ Interview Status)                          → FIRST-RUN
+State 2:  STATE.md § Cross-phase Q&A has Pending entries            → Q-AND-A
+State T:  STATE.md § Triage absent or § Triage **Path:** missing    → TRIAGE
+State L1: **Path:** lite, SPEC.md § Acceptance Criteria absent      → CONDENSED-INTAKE
+State L2: **Path:** lite, SPEC.md § Acceptance Criteria present,
+          tasks/ absent or empty                                    → TASK-BREAKDOWN
+State L3: **Path:** lite, tasks/ present, LITE-REVIEW not complete  → LITE-REVIEW
+State L4: **Path:** lite, LITE-REVIEW complete                      → LITE-DONE
+State 3:  **Path:** full, Interview Status: In Progress, incomplete → CONTINUE
+State 4:  **Path:** full, Interview Status: In Progress, all done   → COMPLETION
+State 5:  **Path:** full, Interview Status: Approved,
+          no feature folders                                        → FEATURE-DECOMPOSITION
+State 6:  **Path:** full, Interview Status: Approved, features exist,
+          cross-reference not yet done                              → CROSS-REFERENCE
+State 7:  **Path:** full, Interview Status: Approved, features +
+          cross-ref already complete                                → DONE
 ```
 
 **Detection logic:**
@@ -144,20 +169,30 @@ State 7: STATE.md § Interview Status: Approved, features + cross-ref
         (Exception: if `## Interview Status` exists and is not an empty scaffold — i.e., any
         section has status other than `Pending` — treat absent `**Path:**` as `full` and skip
         TRIAGE, to preserve backward compatibility with pre-TRIAGE in-flight works.)
-   d. Read `**Interview Status:**` field in `## Interview Status`
-   e. If Status is `In Progress`:
-      - Read Section Status table under `## Interview Status`
-      - If any section is `Pending` or `Partial` → **State 3: CONTINUE**
-      - If all sections are `Complete` or `N/A` → **State 4: COMPLETION**
-   f. If Status is `Approved`:
-      - If `--features` flag provided → **State 5: FEATURE-DECOMPOSITION**
-      - Check if `features/` directory exists and contains `feature-*` subdirectories
-      - If no feature folders → **State 5: FEATURE-DECOMPOSITION**
-      - If feature folders exist:
-        - Check STATE.md `## Interview Status` `## Cross-Reference` sub-section for `**Status:** Complete`
-          (or check if cross-reference entries exist from a prior run)
-        - If cross-reference not yet done → **State 6: CROSS-REFERENCE**
-        - If cross-reference already complete → **State 7: DONE**
+   d. Read `**Path:**` from `## Triage`
+   e. **If `**Path:** lite`** — route through lite-path detection:
+      - Check work-root `SPEC.md` (``.aid/{work}/SPEC.md``):
+        - If absent **or** `## Acceptance Criteria` section is absent/empty → **State L1: CONDENSED-INTAKE**
+      - Check `tasks/` folder:
+        - If `tasks/` absent or no `task-NNN.md` files present → **State L2: TASK-BREAKDOWN**
+      - Check `STATE.md ## Lifecycle History` for a `LITE-REVIEW complete` entry:
+        - If absent → **State L3: LITE-REVIEW**
+        - If present → **State L4: LITE-DONE**
+   f. **If `**Path:** full` (or `escalated`)** — route through full-path detection:
+      - Read `**Interview Status:**` field in `## Interview Status`
+      - If Status is `In Progress`:
+        - Read Section Status table under `## Interview Status`
+        - If any section is `Pending` or `Partial` → **State 3: CONTINUE**
+        - If all sections are `Complete` or `N/A` → **State 4: COMPLETION**
+      - If Status is `Approved`:
+        - If `--features` flag provided → **State 5: FEATURE-DECOMPOSITION**
+        - Check if `features/` directory exists and contains `feature-*` subdirectories
+        - If no feature folders → **State 5: FEATURE-DECOMPOSITION**
+        - If feature folders exist:
+          - Check STATE.md `## Interview Status` `## Cross-Reference` sub-section for `**Status:** Complete`
+            (or check if cross-reference entries exist from a prior run)
+          - If cross-reference not yet done → **State 6: CROSS-REFERENCE**
+          - If cross-reference already complete → **State 7: DONE**
 
 Print the state-entry line and "you are here" map. Examples for each state:
 
@@ -180,6 +215,35 @@ aid-interview  ▸ you are here
 [State: TRIAGE] — 3 deterministic questions to choose lite or full path.
 aid-interview  ▸ you are here
   [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [● TRIAGE ] → [ CONTINUE ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
+  (lite path)  → [ CONDENSED-INTAKE ] → [ TASK-BREAKDOWN ] → [ LITE-REVIEW ] → [ LITE-DONE ]
+```
+
+**CONDENSED-INTAKE (lite path L1):**
+```
+[State: CONDENSED-INTAKE] — Sub-path-specific condensed interview; write work-root SPEC.md.
+aid-interview  ▸ you are here (lite path)
+  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ TRIAGE ] → [● CONDENSED-INTAKE ] → [ TASK-BREAKDOWN ] → [ LITE-REVIEW ] → [ LITE-DONE ]
+```
+
+**TASK-BREAKDOWN (lite path L2):**
+```
+[State: TASK-BREAKDOWN] — Architect proposes typed task breakdown; writes tasks/task-NNN.md files.
+aid-interview  ▸ you are here (lite path)
+  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ TRIAGE ] → [✓ CONDENSED-INTAKE ] → [● TASK-BREAKDOWN ] → [ LITE-REVIEW ] → [ LITE-DONE ]
+```
+
+**LITE-REVIEW (lite path L3):**
+```
+[State: LITE-REVIEW] — Reviewer grades task set against SPEC; pre-execution quality gate.
+aid-interview  ▸ you are here (lite path)
+  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ TRIAGE ] → [✓ CONDENSED-INTAKE ] → [✓ TASK-BREAKDOWN ] → [● LITE-REVIEW ] → [ LITE-DONE ]
+```
+
+**LITE-DONE (lite path L4):**
+```
+[State: LITE-DONE] — Lite path complete; SPEC.md set to Ready; hand-off to /aid-execute.
+aid-interview  ▸ you are here (lite path)
+  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ TRIAGE ] → [✓ CONDENSED-INTAKE ] → [✓ TASK-BREAKDOWN ] → [✓ LITE-REVIEW ] → [● LITE-DONE ]
 ```
 
 **CONTINUE:**
@@ -225,7 +289,11 @@ aid-interview  ▸ you are here
 |-------|--------|--------|---------|
 | FIRST-RUN | `references/state-first-run.md` | `interviewer` | → TRIAGE |
 | Q-AND-A | `references/state-q-and-a.md` | `interviewer` | → TRIAGE |
-| TRIAGE | `references/state-triage.md` | `interviewer` | → CONTINUE |
+| TRIAGE | `references/state-triage.md` | `interviewer` | → CONDENSED-INTAKE (lite) or CONTINUE (full) |
+| CONDENSED-INTAKE | `references/state-condensed-intake.md` | `interviewer` | → TASK-BREAKDOWN |
+| TASK-BREAKDOWN | `references/state-task-breakdown.md` | `architect` | → LITE-REVIEW |
+| LITE-REVIEW | `references/state-lite-review.md` | `reviewer` | → LITE-DONE (or loopback to L1/L2) |
+| LITE-DONE | `references/state-lite-done.md` | `inline` | → halt |
 | CONTINUE | `references/state-continue.md` | `interviewer` | → COMPLETION |
 | COMPLETION | `references/state-completion.md` | `interviewer` | → FEATURE-DECOMPOSITION |
 | FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `architect` | → CROSS-REFERENCE |

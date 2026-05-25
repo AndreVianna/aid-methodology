@@ -48,13 +48,60 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
 1. **Read `MaxConcurrent`** from `.aid/knowledge/STATE.md` top-of-file metadata:
    `**Max Parallel Tasks:** N` (default `5` if the field is absent).
 
-2. **Detect host capability.** If the Agent tool's `run_in_background` parameter
-   is not supported on this host (test by issuing a no-op probe dispatch):
-   - Log: `[degradation] MaxConcurrent={N} requested, host capability=sequential — running effective=1`
-   - Set effective `MaxConcurrent` to `1` (graceful degradation — not an error,
-     no Impediment raised).
-   - Continue with `MaxConcurrent=1`; the algorithm below still operates correctly
-     in serial mode — "fill pool" always dispatches exactly one task at a time.
+2. **Detect host capability — `run_in_background` probe.**
+
+   Issue a **no-op probe dispatch** to determine whether the host Agent tool
+   supports `run_in_background: true`. The probe is a minimal Agent call that
+   does nothing but return a fixed string immediately:
+
+   ```
+   Agent(
+     subagent_type: simple-extractor,
+     prompt: "Reply with the single word: PROBE_OK. Do nothing else.",
+     run_in_background: true
+   )
+   ```
+
+   **Interpret the result:**
+
+   | Result | Interpretation |
+   |--------|---------------|
+   | Call returns **immediately** (before the sub-agent finishes) with a background handle | `run_in_background` is **supported** — proceed with configured `MaxConcurrent` |
+   | Call **blocks** until the sub-agent replies (synchronous — no handle, just the reply text) | `run_in_background` is **not supported** — apply graceful degradation |
+   | Call **errors** (unsupported parameter, tool error, timeout < 5 s) | `run_in_background` is **not supported** — apply graceful degradation |
+
+   **On `run_in_background` not supported — apply graceful degradation:**
+
+   a. Capture the user-configured `MaxConcurrent` value (N) from step 1.
+
+   b. Set effective `MaxConcurrent` to `1`.
+
+   c. **Print user-visible degradation notice** (required — must always appear
+      when effective MaxConcurrent is reduced below the configured value):
+
+      ```
+      [degradation] MaxConcurrent={N} requested, host capability=sequential — running effective=1
+      ```
+
+      where `{N}` is the configured value read in step 1.
+
+   d. **Append degradation event to work `STATE.md` `## Calibration Log`:**
+
+      ```
+      | {YYYY-MM-DD} | probe | background_execution | n/a | n/a | degraded — host capability=sequential; effective MaxConcurrent=1 (configured={N}) |
+      ```
+
+      Use the current date for `{YYYY-MM-DD}` and the actual configured value
+      for `{N}`. This entry is informational — it records that degradation
+      occurred, its reason, and the configured value that was overridden.
+
+   e. Continue with `MaxConcurrent=1`. The pool algorithm below operates
+      identically in serial mode — "fill pool" (PD-2) dispatches exactly one
+      task at a time, PD-3 waits for it, PD-4 processes it, and PD-2 repeats.
+      No Impediment is raised; degradation is not an error.
+
+   **On `run_in_background` supported:** no action needed. Continue with the
+   configured `MaxConcurrent` from step 1 as the effective value.
 
 3. **Locate the Execution Graph:**
    - If `PLAN.md` exists in the work directory → read the `#### Execution Graph`
@@ -107,6 +154,12 @@ While `|in-flight| < MaxConcurrent` and the ready set is non-empty:
 
    The return handle is stored in `in-flight[task-NNN] = handle`.
 
+   > **Sequential fallback (effective MaxConcurrent=1):** When `run_in_background`
+   > is not supported (degraded host — detected in PD-0 step 2), dispatch the
+   > Agent call **without** `run_in_background`. The call blocks until the
+   > sub-agent returns. Treat the returned result as the completion event and
+   > proceed directly to PD-4 for that task, then loop back to PD-2.
+
 5. Update work `STATE.md` row Status to `In Progress` via:
    ```
    writeback-task-status.sh --task-id NNN --field Status --value "In Progress"
@@ -143,6 +196,11 @@ branch in the worktree. Report: DONE or FAILED with reason.
 **Block until any one in-flight agent returns** (completion notification from
 the Agent tool's `run_in_background` dispatch). This is a **one-event wait**,
 not a join — the pool reacts to each completion independently.
+
+> **Sequential fallback (effective MaxConcurrent=1):** When running in degraded
+> mode (no `run_in_background` support), PD-2 blocks synchronously on each
+> dispatch. PD-3 is therefore a no-op — the completion is already in hand.
+> Skip directly to PD-4.
 
 While waiting, service L2 timers (per the Dispatch Protocol in `SKILL.md`):
 - Fire timer 1 at ETA/2 — read heartbeat files for each in-flight task and emit
@@ -198,25 +256,80 @@ Remove `task-{NNN}` from the in-flight set.
    writeback-task-status.sh --task-id NNN --field Status --value "Failed"
    ```
 
-3. **Compute transitive descendant set** — every task that transitively depends
-   on `task-{NNN}` in the Dependency Map. For each descendant `task-DDD`:
-   ```bash
-   writeback-task-status.sh --task-id DDD --field Status --value "Blocked"
-   ```
-   Remove descendants from the ready set (if present) and add them to the
-   blocked set. They will never be dispatched.
+3. Emit `[pool] ✗ task-{NNN} FAILED — computing failure-block-radius`.
 
-4. Re-render EXECUTE-WAVE snapshot: `task-{NNN}` → `✗ failed`;
+4. **Compute the failure-block-radius (transitive-descendant BFS):**
+
+   Run `canonical/templates/scripts/compute-block-radius.sh` with the
+   failed task and the reverse dependency graph:
+
+   ```bash
+   compute-block-radius.sh --failed-task NNN --graph-file <graph-snapshot>
+   ```
+
+   The script returns a newline-separated list of task IDs that transitively
+   depend on `task-{NNN}` (BFS over the reverse dependency graph). This is the
+   **block-radius set** — every task that must be marked Blocked because
+   it cannot run without the failed task's output.
+
+   **BFS algorithm (authoritative specification):**
+
+   ```
+   Input:  failed_id         — the task-NNN that just failed
+           reverse_graph     — map: task-NNN → [tasks that directly depend on it]
+
+   Output: blocked_set       — all transitive descendants of failed_id
+
+   Algorithm:
+     queue    ← [failed_id]
+     visited  ← {failed_id}
+     blocked_set ← {}
+
+     while queue is non-empty:
+       current ← dequeue(queue)
+       for each dependent D in reverse_graph[current]:
+         if D not in visited:
+           visited ← visited ∪ {D}
+           blocked_set ← blocked_set ∪ {D}
+           enqueue(queue, D)
+
+     return blocked_set   // does NOT include failed_id itself
+   ```
+
+   **Properties:**
+   - The failed task itself is NOT in `blocked_set` (it is already Failed).
+   - `blocked_set` is the minimal set: only tasks that cannot run because
+     they have a transitive dependency on the failed task.
+   - All `Depends On` edges are AND — there are no alternative paths that
+     could satisfy a dependency via a non-failed ancestor.
+   - If `failed_id` has no dependents, `blocked_set` is empty (no radius).
+
+5. For each task `B` in the block-radius set:
+
+   - Mark it Blocked via:
+     ```bash
+     writeback-task-status.sh --task-id B --field Status --value "Blocked"
+     writeback-task-status.sh --task-id B --field Notes \
+       --value "Blocked: transitive dependency on failed task-{NNN}"
+     ```
+   - Remove `B` from the ready set if present (blocked tasks are never dispatched).
+   - Add `B` to the blocked set.
+   - Print: `[pool] ⊘ task-{B} blocked (transitive dependency on task-{NNN})`.
+
+6. Re-render EXECUTE-WAVE snapshot: `task-{NNN}` → `✗ failed`;
    each blocked descendant → `⊘ blocked`.
 
-5. Surface the IMPEDIMENT: read `.aid/{work}/IMPEDIMENT-task-{NNN}.md` and
+7. Surface the IMPEDIMENT: read `.aid/{work}/IMPEDIMENT-task-{NNN}.md` and
    print it. The pool **continues operating** on unrelated chains — do NOT stop.
+   Tasks already in flight at the moment of failure are NOT cancelled — they are
+   graph-independent of the failed task. Pending tasks in unrelated chains
+   continue to enter the pool normally as their own dependencies clear.
 
-6. Delete the worktree and heartbeat file.
+8. Delete the worktree and heartbeat file.
 
-7. **Go to PD-2** (pool continues with remaining ready tasks).
+9. **Go to PD-2** (pool continues with remaining ready tasks).
 
-### PD-5: Fixed Point
+### PD-5: Fixed Point and Diagnostic Report
 
 The pool has reached **fixed point** when BOTH conditions are met:
 
@@ -228,59 +341,269 @@ At fixed point, print the final EXECUTE-WAVE snapshot and then evaluate:
 **Case A — Fully successful (no failed, no blocked tasks):**
 
 ```
-Pool fixed point reached. All tasks Done.
+[pool] Fixed point — all tasks Done. Running per-delivery quality gate.
 Done: {N}  In-flight: 0  Queued: 0  Blocked: 0  Failed: 0
-
-Proceeding to per-delivery quality gate.
 ```
 
-Proceed to the per-delivery REVIEW gate (see `references/state-review.md` —
+Proceed to the per-delivery quality gate (see `references/state-delivery-gate.md` —
 dispatched once for the delivery, not per task).
 
 **Case B — Partial (some tasks Failed or Blocked):**
 
+The delivery is **partially complete**. The per-delivery quality gate does
+NOT run (FR6 × FR2 interlock: gate fires only after a fully successful fixed
+point).
+
+Print the **damage-radius diagnostic report**:
+
 ```
-Pool fixed point reached — partial completion.
-Done: {D}  In-flight: 0  Queued: 0  Blocked: {B}  Failed: {F}
+[pool] Fixed point — delivery PARTIALLY COMPLETE (delivery failed)
 
-Failed tasks:
-  task-{NNN} — see .aid/{work}/IMPEDIMENT-task-{NNN}.md
+Tasks Done:    {D}
+Tasks Failed:  {F}
+Tasks Blocked: {B}
+Tasks Pending: {P}  (should be 0 at fixed point — verify if non-zero)
 
-Blocked tasks (transitive descendants of failed ancestors):
-  task-{DDD} — blocked by task-{NNN}
+Failed tasks (with Impediment references):
+  ✗ task-{NNN} — IMPEDIMENT: .aid/{work}/IMPEDIMENT-task-{NNN}.md
   ...
 
-Per-delivery quality gate will NOT run while tasks are Failed/Blocked.
-Resolve the failure(s), then re-invoke /aid-execute to resume.
+Blocked tasks (transitive descendants of failed ancestors):
+  ⊘ task-{B1} — blocked by task-{NNN}
+  ⊘ task-{B2} — blocked by task-{NNN}
+  ...
+
+Per-delivery quality gate: SKIPPED (tasks Failed/Blocked — interlock active)
+
+Next steps:
+  1. Resolve the Impediment(s) listed above.
+  2. Re-run the failed task(s): /aid-execute task-{NNN}
+  3. Resume the delivery: /aid-execute delivery-{DDD}
+     The pool will re-admit blocked tasks whose dependencies become Done.
 ```
 
+**State invariants at fixed point (Case B):**
+
+- Every task in the failed set has Status `Failed` in work `STATE.md`.
+- Every task in the blocked set has Status `Blocked` in work `STATE.md` with
+  a Notes entry naming its failed ancestor.
+- No Blocked task was dispatched (Blocked tasks never enter the ready set).
+- Every task NOT in the failed or blocked sets and not already `Done` has
+  Status `Pending` — it was not reached this run because it was not yet ready
+  when the pool exhausted all forward progress. This is normal for partially-
+  ordered deliveries and is NOT the same as being Blocked.
+
+**Resume semantics:** After the user resolves a failure (fixes and re-runs the
+failed task), a fresh `aid-execute delivery-{DDD}` invocation re-initializes
+the pool (PD-1). Previously-Done tasks stay Done. The newly-resolved task
+becomes Done. Tasks that were Blocked because of the resolved task are reset
+to Pending and will be admitted to the pool as their dependencies clear.
+
 **STOP.** Do not proceed to the delivery gate. The user resolves failures and
-re-invokes `aid-execute`; on re-invoke, the pool reloads STATE and resumes from
-the remaining un-Done tasks (newly-unblocked tasks become ready again once their
-ancestors are fixed and Done).
+re-invokes `aid-execute`.
 
 ### PD-6: Graceful Degradation (MaxConcurrent = 1)
 
-When effective `MaxConcurrent` is `1` (either user-configured or host-degraded):
+When effective `MaxConcurrent` is `1` (either user-configured or reduced by the
+host-capability probe in PD-0 step 2):
 
-- Pool fill (PD-2) dispatches exactly one task at a time.
-- PD-3 waits for that single task.
-- PD-4 processes its result.
-- PD-2 dispatches the next ready task.
+**Algorithm semantics are identical to the general case** — the pool loop (PD-1
+through PD-5) runs without modification. The only behavioral difference is:
 
-This produces **serial execution** — the algorithm is identical to the general
-case but with pool size 1. The EXECUTE-WAVE snapshot still renders after each
-transition. The user sees:
+- Pool fill (PD-2) dispatches exactly **one task at a time** (`|in-flight| ≤ 1`).
+- PD-3 waits for that single task. On degraded hosts (no `run_in_background`),
+  PD-2's synchronous dispatch already delivers the result; PD-3 is a no-op.
+- PD-4 processes the result and updates the ready set.
+- PD-2 then dispatches the next ready task.
+
+This produces **serial execution** — the pool loop is not short-circuited,
+bypassed, or replaced. It runs exactly as with `MaxConcurrent=5`, just with a
+ceiling of 1 in-flight at a time.
+
+**No degenerate behaviors:** The ready-set FIFO ordering, dependency tracking,
+failure radius (Blocked propagation), fixed-point detection, and the EXECUTE-WAVE
+snapshot all function identically with pool size 1. The snapshot still renders
+after each transition, showing at most one task as `● running` at a time — this
+is the same serial-task snapshot documented in `SKILL.md`'s **EXECUTE-WAVE**
+section as the "Serial-task fallback (current behavior)."
+
+**Degradation message at pool entry** (when `MaxConcurrent=1` due to host
+capability — i.e., when PD-0 step 2 applied the probe and detected no support):
+
+The user-visible notice was already printed at PD-0 step 2c. At PD-1
+initialization, additionally print the local reminder:
 
 ```
 [degradation] MaxConcurrent=1 — running tasks serially.
 ```
 
-_(If caused by host capability, the fuller message was already printed at PD-0.)_
+If `MaxConcurrent` is `1` because the user *configured* it that way (not because
+of host capability), only the local reminder is printed at PD-1 (no "requested N"
+prefix — the user intentionally chose 1).
+
+**Calibration Log entry:** The degradation event was appended to
+`STATE.md ## Calibration Log` at PD-0 step 2d (on probe failure). No additional
+Calibration Log entry is written at PD-6 for the same degradation event. If
+`MaxConcurrent=1` is user-configured (no degradation), no Calibration Log entry
+is written (not an event — it is the intended configuration).
 
 Serial-mode tasks share the delivery branch without coordination overhead —
 each commit lands before the next task starts, so no cherry-pick step is needed;
 the worktree is still provisioned (for isolation) but the commit is sequential.
+
+---
+
+## EXECUTE-WAVE Drill-down (per-in-flight-task detail)
+
+> **Feature:** task-035 — extends the pool snapshot with per-task detail rows
+> for every in-flight task, enabling the user to see agent type, heartbeat state,
+> elapsed time, and ETA at a glance without leaving the execution session.
+>
+> **When to use:** automatically on every sub-unit transition (PD-2 / PD-4) and
+> on explicit user "status" request during a long-running pool wait (PD-3).
+
+### Icon Vocabulary (complete set — no glyph replacements)
+
+FR1's existing icons are **reused verbatim**. Task-035 adds only `⊘ blocked`.
+
+| Icon | Meaning |
+|------|---------|
+| `✓ done` | Task completed and passed review |
+| `● running` | Task currently dispatched (EXECUTE → REVIEW cycles in progress) |
+| `✗ failed` | Task raised an unresolved Impediment |
+| `(queued)` | Task in the ready set, waiting for a pool slot to free |
+| `⊘ blocked` | Task downstream of a Failed ancestor; will never be dispatched |
+
+### Snapshot Format — Summary View
+
+Rendered on every sub-unit transition (PD-2 dispatch, PD-4 completion/failure):
+
+```
+Wave ∞ (pool) · {K}/{T} done
+
+| Task | Type | Status | Time |
+|------|------|--------|------|
+| task-001 | IMPLEMENT | ✓ done    | 4m 12s   |
+| task-002 | RESEARCH  | ● running | ~3–8 min |
+| task-003 | DOCUMENT  | ● running | ~1–3 min |
+| task-004 | TEST      | (queued)  | —        |
+| task-005 | IMPLEMENT | ⊘ blocked | —        |
+
+Done: {D}  In-flight: {I}  Queued: {Q}  Blocked: {B}  Failed: {F}
+```
+
+**Counts summary line** appears at the bottom of every snapshot. Values:
+- `Done` — tasks with Status `Done`
+- `In-flight` — tasks in the in-flight set (Status `In Progress`)
+- `Queued` — tasks in the ready set waiting for a pool slot
+- `Blocked` — tasks in the blocked set (Status `Blocked`)
+- `Failed` — tasks with Status `Failed`
+
+### Snapshot Format — Drill-down View (per-in-flight-task detail)
+
+Rendered when: (a) any `● running` row is present AND context warrants detail
+(long-running pool wait at timer-1 or timer-2 fire), OR (b) user explicitly
+requests status during a pool wait.
+
+The drill-down **extends** the summary table — each `● running` task gains a
+sub-row with per-agent detail:
+
+```
+Wave ∞ (pool) · {K}/{T} done
+
+| Task | Type | Status | Time |
+|------|------|--------|------|
+| task-001 | IMPLEMENT | ✓ done    | 4m 12s        |
+| task-002 | RESEARCH  | ● running | 6m 40s (↑ ~8m)|
+|          |           | agent: researcher · heartbeat: RUNNING · elapsed: 6m 40s · ETA: ~8 min |
+| task-003 | DOCUMENT  | ● running | 1m 15s (↑ ~3m)|
+|          |           | agent: tech-writer · heartbeat: REVIEW · elapsed: 1m 15s · ETA: ~3 min |
+| task-004 | TEST      | (queued)  | —             |
+| task-005 | IMPLEMENT | ⊘ blocked | —             |
+
+Done: {D}  In-flight: {I}  Queued: {Q}  Blocked: {B}  Failed: {F}
+```
+
+**Per-task drill-down row fields:**
+
+| Field | Source | Format |
+|-------|--------|--------|
+| `agent` | Executor role dispatched for this task (from Agent Selection table) | e.g., `developer`, `researcher` |
+| `heartbeat` | Last state written to `.aid/.heartbeat/<executor>-<ts>.txt` | `EXECUTE` / `REVIEW` / `FIX` / `DONE` / `STALE` / `unknown` |
+| `elapsed` | Wall time since PD-2 dispatched this task | `Xm Ys` (minutes + seconds) |
+| `ETA` | Rough band from `canonical/templates/rough-time-hints.md` for the executor + task type | `~LOW–HIGH min` |
+
+**Heartbeat states:**
+- `EXECUTE` — sub-agent is currently running the executor
+- `REVIEW` — sub-agent is running the reviewer
+- `FIX` — sub-agent is applying fixes
+- `DONE` — sub-agent reported done (race with completion notification)
+- `STALE` — heartbeat file exists but last write was > 2× HEARTBEAT_INTERVAL ago
+- `unknown` — heartbeat file absent or unreadable
+
+### Re-render Trigger Rules
+
+Render a fresh snapshot block on these events — **never** render more often
+than once per coalescing window (see below):
+
+| Event | Trigger type | Snapshot type |
+|-------|--------------|---------------|
+| Task moves from ready set → in-flight (PD-2 dispatch) | Sub-unit transition | Summary |
+| Task completes successfully (PD-4 DONE path) | Sub-unit transition | Summary |
+| Task fails with Impediment (PD-4 FAILED path) | Sub-unit transition | Summary |
+| Descendant marked `⊘ blocked` (PD-4 failure cascade) | Sub-unit transition | Summary |
+| L2 timer-1 fires (ETA/2 elapsed for longest in-flight task) | Long-run check-in | Drill-down |
+| L2 timer-2 fires (ETA elapsed for longest in-flight task) | Long-run check-in | Drill-down |
+| User types "status" during pool wait (PD-3) | On-demand | Drill-down |
+
+**1-second coalescing:** when multiple sub-unit transitions occur within the
+same second (e.g., pool fills 3 tasks simultaneously on startup), emit a single
+merged snapshot after all transitions settle. Do not emit one snapshot per event.
+
+**Drill-down on timer fire:** when an L2 timer fires during PD-3 (waiting for
+completion), read all in-flight heartbeat files and emit the drill-down view.
+If a heartbeat file is absent or unreadable, use `unknown` for that task's
+heartbeat field — do not fail the render.
+
+### Failure Tolerance
+
+> **Invariant:** snapshot rendering must NEVER block or abort task execution.
+
+Apply these failure-tolerance rules unconditionally:
+
+- **Missing data:** if a task row is missing Type, Status, or Time information,
+  render the available fields and leave the unknown field as `—`.
+- **Malformed heartbeat file:** treat as `unknown` heartbeat state; do not parse
+  further; do not raise an error.
+- **Stale heartbeat file** (last write > 2× HEARTBEAT_INTERVAL ago): render
+  heartbeat state as `STALE` with the last-known state appended in parentheses,
+  e.g., `STALE (REVIEW)`. Continue rendering.
+- **Render exception** (any unexpected error during snapshot construction):
+  swallow the error silently. Print nothing for this snapshot event. Execution
+  continues unaffected. Log the error to `STATE.md ## Calibration Log` as
+  `| YYYY-MM-DD | snapshot-render | <error-one-line> | — | — | swallowed |`
+  only if that log section already exists (do not create it solely for this).
+- **Empty in-flight set:** summary-only view; skip the per-task drill-down rows.
+
+### Snapshot Rendering — Decision Tree
+
+```
+On every snapshot event:
+  try:
+    1. Read pool sets (in-flight, ready, blocked) from current in-memory state.
+    2. Read task metadata (id, type) from task files.
+    3. For each in-flight task:
+       a. Compute elapsed = now - dispatch_time.
+       b. Read heartbeat file → parse state; if absent/unreadable → "unknown".
+       c. Read ETA band from rough-time-hints.md for (executor, task-type).
+    4. Render summary table rows (all tasks, all statuses).
+    5. Append counts summary line.
+    6. If event = drill-down trigger (timer fire or on-demand):
+       append per-task detail sub-rows for each ● running task.
+    7. Emit rendered block.
+  except any error:
+    swallow silently; continue execution.
+```
 
 ---
 

@@ -141,6 +141,7 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 | FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | → REVIEW |
 | DONE | _(inline — task complete)_ | `inline` | → halt |
 | RE-RUN | `references/state-re-run.md` | `inline` | → halt |
+| DELIVERY-GATE | `references/state-delivery-gate.md` | `reviewer` (tier = complexity score) | → RECORD → halt (pass) / → FIX → REVIEW (grade < min) |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, print `Next: [State: {NEXT}] — run /aid-execute again` and exit.
@@ -231,6 +232,25 @@ create branch aid/delivery-001
 All tasks in a delivery accumulate on the same branch.
 RESEARCH and DOCUMENT tasks that produce only `.aid/` artifacts may skip branching.
 
+**Delivery-mode pool dispatch (FR6):** When `/aid-execute` is invoked for a
+delivery (not a single task), a continuous pool dispatcher replaces the serial
+loop. Full pool dispatch spec — including the `run_in_background` capability
+probe and graceful degradation — lives in
+`references/state-execute.md § EXECUTE-WAVE: Pool Dispatch (PD-0 through PD-6)`.
+
+**Graceful degradation:** On hosts where the Agent tool's `run_in_background`
+parameter is not supported, `aid-execute` detects this via a capability probe
+(PD-0 step 2 in `references/state-execute.md`) and automatically falls back to
+effective `MaxConcurrent=1`. A user-visible notice is printed:
+
+```
+[degradation] MaxConcurrent={N} requested, host capability=sequential — running effective=1
+```
+
+The degradation event is also appended to the work `STATE.md ## Calibration Log`.
+The pool algorithm runs identically at pool size 1 — no behavioral difference
+other than one task in flight at a time (sequential execution).
+
 ### EXECUTE-WAVE: AC4 Sub-unit Drill-down
 
 When executing a delivery wave (multiple tasks in sequence), render a sub-unit snapshot
@@ -253,17 +273,20 @@ Wave {M} of {N} · {K}/{T} done
 **Status icons:**
 - `✓ done` — task completed and passed review
 - `● running` — task currently in EXECUTE or REVIEW
-- `✗ failed` — task blocked or errored
-- `(queued)` — task not yet started
+- `✗ failed` — task errored (IMPEDIMENT raised)
+- `(queued)` — task not yet started (waiting for a pool slot)
+- `⊘ blocked` — task is a transitive descendant of a failed task; will not be dispatched
 
 **Re-render trigger:** render a fresh snapshot block on every sub-unit transition
 (queued → running → done / failed). Apply **1-second coalescing** — multiple
 transitions within the same second emit a single merged snapshot.
 
-**Serial-task fallback (current behavior):** Until work-001/feature-009 (parallel
-execution) ships, tasks run serially — at most 1 task appears as `● running` at a time.
-This is documented degradation per the SPEC Migration Plan §1 "AC4 phasing"; it is
-not a bug. The snapshot still renders for each serial task transition.
+**Serial-task fallback:** When `run_in_background` is not supported on the host
+(detected by the PD-0 capability probe — see `references/state-execute.md`),
+or when effective `MaxConcurrent=1` for any reason, at most 1 task appears as
+`● running` at a time. The snapshot still renders for each serial task
+transition. This is correct behavior, not a bug — the pool algorithm runs
+identically at pool size 1.
 
 **Failure tolerance:** If snapshot rendering fails for any reason (malformed iteration
 source, missing data), swallow the error silently and continue. The snapshot is

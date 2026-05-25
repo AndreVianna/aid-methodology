@@ -2,10 +2,12 @@
 
 Task output is graded by a lightweight quick-check pass first; then a clean-context reviewer agent produces the full grade. Routing to FIX or DONE follows from the computed grade.
 
-<!-- INSERTION POINT: task-022 (per-delivery gate) — when delivery-003 ships,
-     a ## Delivery Gate section will be inserted after Step 3: Present and Route
-     (when grade ≥ min) to run the delivery-level gate before marking DONE. The
-     gate checks cross-task consistency within the delivery. -->
+> **Two-tier review model (feature-004):** Per-task REVIEW (this state) runs the
+> quick-check + full reviewer loop for an individual task. The **per-delivery
+> quality gate** runs once for the whole delivery after all tasks are `Done` —
+> that is a separate state; see `references/state-delivery-gate.md`. The gate
+> is triggered from pool dispatch PD-5 (in `references/state-execute.md`), not
+> from this per-task state.
 
 ## Step 1.5: QUICK CHECK (Pre-Reviewer Triage)
 
