@@ -375,7 +375,7 @@ State files use **area-based consolidation** (per `work-003-traceability/REQUIRE
 
 **Artifact files keep their inline `## Change Log` sections** — that is content history, distinct from process state. Artifact files (REQUIREMENTS.md, SPEC.md, PLAN.md, task-NNN.md, KB docs) are unchanged by FR2.
 
-**Canonical templates** for area STATE files: `canonical/templates/{discovery,work}-state-template.md` (83 + 82 lines respectively).
+**Canonical templates** for area STATE files: `canonical/templates/{discovery,work}-state-template.md` (85 + 137 lines respectively).
 
 ## 9. The Canonical-Generator Authoring Rule (replaces the old "Triplicate Updates" rule)
 

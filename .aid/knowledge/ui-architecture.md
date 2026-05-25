@@ -283,7 +283,7 @@ The hardest design constraint on this UI is: **the output must be a single offli
 
 | Aspect | Detail |
 |---|---|
-| Library version | Pinned per generation. Tracked at `.aid/knowledge/SUMMARY-STATE.md` as `**Mermaid Version:**`, `**Mermaid Fetched At:**`, `**Mermaid Cached:**` (per `aid-summarize/SKILL.md:178-186`). |
+| Library version | Pinned per generation. Tracked at `.aid/knowledge/STATE.md` (`## Knowledge Summary Status` section) as `**Mermaid Version:**`, `**Mermaid Fetched At:**`, `**Mermaid Cached:**` (per `aid-summarize/SKILL.md:178-186`). |
 | Source | `https://cdn.jsdelivr.net/npm/mermaid@{ver}/dist/mermaid.min.js`, with version discovered from `https://registry.npmjs.org/mermaid/latest`. |
 | Local cache | `.aid/knowledge/.cache/mermaid.min.js` + `.meta` (sha256 + timestamp). |
 | Inline placement | At `html-skeleton.html:89-94`, BEFORE the lightbox.js IIFE so `window.mermaid` is defined when `initMermaid()` runs. |

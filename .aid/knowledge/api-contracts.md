@@ -275,7 +275,7 @@ Source-of-truth template: `profiles/claude-code/.claude/templates/feature.md` (3
 
 ### Discovery-area `STATE.md` Schema *(replaces retired `DISCOVERY-STATE.md` per FR2)*
 
-Source-of-truth template: `canonical/templates/discovery-state-template.md` (83 lines). Per-instance file lives at `.aid/knowledge/STATE.md`. Produced by `aid-init` (skeleton via `aid-init/SKILL.md` Step 4), updated by `aid-discover` (REVIEW / Q&A / FIX / APPROVAL cycles) and `aid-summarize` (Summarization History rows).
+Source-of-truth template: `canonical/templates/discovery-state-template.md` (85 lines). Per-instance file lives at `.aid/knowledge/STATE.md`. Produced by `aid-init` (skeleton via `aid-init/SKILL.md` Step 4), updated by `aid-discover` (REVIEW / Q&A / FIX / APPROVAL cycles) and `aid-summarize` (Summarization History rows).
 
 This single file absorbs the legacy `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`. The retired install-tree templates (`profiles/*/templates/discovery-state.md` and `canonical/templates/reports/discovery-state-template.md`) have been deleted.
 
