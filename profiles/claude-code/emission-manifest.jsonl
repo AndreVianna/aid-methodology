@@ -115,7 +115,7 @@
 {"dst": ".claude/skills/aid-summarize/references/state-validate.md", "profile": "claude-code", "sha256": "70925bc1973793bfa7c9b7d28bb25f88d8bc403b52c9baf105408a017a91c4c0", "src": "canonical/skills/aid-summarize/references/state-validate.md"}
 {"dst": ".claude/skills/aid-summarize/references/state-writeback.md", "profile": "claude-code", "sha256": "55caebb881d2db861f7edfa462f8ccbd5567f32a4ea666a3b5ce0d2ed4741afb", "src": "canonical/skills/aid-summarize/references/state-writeback.md"}
 {"dst": ".claude/templates/README.md", "profile": "claude-code", "sha256": "88f2449c453ffa1e3d0d45264210bf4b8ca07adc421aca8dfed79c3a46e617cc", "src": "canonical/templates/README.md"}
-{"dst": ".claude/templates/delivery-issues.md", "profile": "claude-code", "sha256": "eb4488b742a1c1b76c2ed6732f967211f7d482312c68f05980fb4682a18a48de", "src": "canonical/templates/delivery-issues.md"}
+{"dst": ".claude/templates/delivery-issues.md", "profile": "claude-code", "sha256": "ca032a74f7730430263272362db453dcafe74a4e6235e1ab4f8dcf6c10ed0f7e", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".claude/templates/delivery-plans/task-template.md", "profile": "claude-code", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
 {"dst": ".claude/templates/discovery-state-template.md", "profile": "claude-code", "sha256": "c60235e9383fa419331a5013f8fefa368ed7c31b7059676bbd63a4d23b116a9f", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".claude/templates/feature-inventory.md", "profile": "claude-code", "sha256": "1866cfe95be8ac1d1a5b1e6e5b003c95093e659fc3362fd0bf8943ed5c81956f", "src": "canonical/templates/feature-inventory.md"}

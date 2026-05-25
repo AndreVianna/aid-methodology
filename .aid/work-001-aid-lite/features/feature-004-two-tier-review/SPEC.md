@@ -163,20 +163,36 @@ Must
 >   `STATE.md` rows; no two-zone template authorship dependency on
 >   feature-002.
 > - **IQ11 resolution — `delivery-issues.md` schema is canonically 4 columns.**
->   The body's instance example at L278 (`Source task | Severity | Description |
->   Status`) is the **canonical schema**, confirmed 2026-05-24. Task-020's
->   original scope proposed a richer 6-column shape (adding `Source File:Line`
->   and `Deferred At`); reverted to 4-col per this SPEC. Rationale: the
->   delivery-issues log is a *summary aggregation view* for the gate reviewer,
->   not the rich per-finding record. The richer per-finding metadata (severity
->   context, source file:line refs if needed, timestamps, status transitions)
->   lives in the per-task `## Quick Check Findings` blocks in work `STATE.md`
->   (one block per task, keyed by task-id, written by `aid-execute` via
->   `writeback-task-status.sh --task-id NNN --findings BLOCK`). The
->   `AGGREGATE` step at the per-delivery gate reads those rich blocks and
->   projects the 4-col summary view into `delivery-issues.md`. If a future
->   gate-reviewer workflow needs the richer columns, the SPEC can re-extend;
->   for now 4-col is the operative contract.
+>   The body's instance example (see §Data Model "delivery issue log" subsection,
+>   fenced code block immediately after the path-rule paragraph) shows the
+>   canonical schema: `Source task | Severity | Description | Status`. Confirmed
+>   2026-05-24. Task-020's original scope proposed a richer 6-column shape
+>   (adding `Source File:Line` and `Deferred At`); reverted to 4-col per this
+>   SPEC.
+>   **Data-flow rationale (matches shipped task-019/021/022 implementation):**
+>   per-task quick-checks write deferred-`[HIGH]` rows directly into
+>   `delivery-NNN-issues.md` via `writeback-task-status.sh --delivery-id NNN
+>   --append-issue '<row>'` (concurrent-writer-safe via sentinel-file lock —
+>   the helper's --append-issue mode is single-writer per row, append-only,
+>   idempotent on duplicate rows). The per-delivery gate **reads**
+>   `delivery-NNN-issues.md` as input context (gate-reviewer's prior-context
+>   feed) — it is *not* graded; the gate produces its own fresh issue list and
+>   `grade.sh` runs on that. Richer per-finding metadata (severity context,
+>   source file:line refs, timestamps, status transitions) lives in the
+>   per-task `## Quick Check Findings` blocks in work `STATE.md` (one block
+>   per task, keyed by task-id, written by the same quick-check via
+>   `writeback-task-status.sh --task-id NNN --findings <block>`). The 4-col
+>   schema is sufficient for the gate's input-context use; the per-task rich
+>   blocks support deeper drill-down on demand. If a future gate-reviewer
+>   workflow needs the richer columns in the aggregated log itself, the SPEC
+>   can re-extend; for now 4-col is the operative contract.
+>   **Note on body §Data Model "Parallel-write coordination (FR6)" paragraph:**
+>   that paragraph describes the *original* "write locally to task-NNN.md
+>   Execution Record, aggregate serially at gate" design. It is superseded by
+>   this Alignment Update bullet — the actual implementation writes directly
+>   to `delivery-NNN-issues.md` (concurrent, lock-coordinated) and to per-task
+>   `STATE.md ## Quick Check Findings` blocks (single-writer per task by id).
+>   Body remains as historical reference per Alignment Update convention.
 >
 > **What stays the same:**
 >

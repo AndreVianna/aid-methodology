@@ -33,6 +33,11 @@ Instances live at `.aid/work-NNN/delivery-NNN-issues.md`. Template source:
   - `Accepted` — gate reviewer accepted the issue as a known risk / non-blocking; rationale
     recorded in the delivery gate block of `STATE.md ## Delivery Gates`.
 
-> **Schema note (IQ11 — Cross-phase Q&A):** Task-020 scope originally proposed a richer 6-column
-> schema (adding `Source File:Line` and `Deferred At` columns). Reverted to the 4-column SPEC
-> per feature-004 SPEC L272-282; the richer columns can be added back via /aid-specify if needed.
+> **Schema note (IQ11 — Resolved 2026-05-24):** Task-020 scope originally proposed a richer
+> 6-column schema (adding `Source File:Line` and `Deferred At` columns). Reverted to the
+> canonical 4-column SPEC. **Rationale:** delivery-issues.md is the deferred-`[HIGH]` log
+> written by per-task quick-checks via `writeback-task-status.sh --append-issue`
+> (concurrent-writer-safe via sentinel-file lock) and **read** by the per-delivery gate as
+> input context. Richer per-finding metadata (file:line refs, timestamps) lives in the
+> per-task `## Quick Check Findings` blocks in work `STATE.md`. See feature-004 SPEC
+> Alignment Update (IQ11 bullet) for the full rationale.
