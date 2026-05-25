@@ -67,18 +67,18 @@ See `PLAN.md` for full details, IQ resolutions, and cross-cutting risks.
 | 014 | `task-014` | IMPLEMENT | W1 | **Done ✅** | C1 A+ | 10m27s+~4m | State TRIAGE in aid-interview. 3-question flow + T3→workType deterministic mapping. TRIAGE inserted between Q-AND-A and CONTINUE; FIRST-RUN also redirected to TRIAGE per SPEC. Backward compat for pre-TRIAGE in-flight works. C1 ACCEPT at A+. |
 | 015 | `task-015` | IMPLEMENT | W2 | In Progress | — | — | User-override mechanism on triage turn — Wave-6 parallel |
 | 016 | `task-016` | IMPLEMENT | W2 | In Progress | — | — | 4 lite-path sub-paths in State L1 — Wave-6 parallel |
-| 017 | `task-017` | IMPLEMENT | W3 | Pending | — | — | Lite → full escalation (preserve captured info) |
+| 017 | `task-017` | IMPLEMENT | W3 | In Progress | — | — | Lite→full escalation — Wave-7 parallel |
 | 018 | `task-018` | TEST | W4 | Pending | — | — | E2E lite path test |
 | 019 | `task-019` | IMPLEMENT | W0 | **Done ✅ (Loopback: test-coverage)** | C3 A+ | 8m9s+~7m+14m+~6m+~4m | writeback-task-status.sh helper (520L) + smoke test (427L, 57/57 PASS). Sentinel-file lock (set -o noclobber + atomic create + sleep-poll). C1=FIX (2 HIGH+2 MED+5 LOW+5 MIN) → C2 fix-batch (HIGH H1 schema-mismatch + H2 pipe-corruption + MED M1 --help sed + M2 lock-dir-missing all fixed; new MED found: newline bypasses pipe check) → C3 fix (extended pipe check to also reject \n) → C3 review A+ (1 LOW Loopback: no newline-rejection test, deferred). |
 | 020 | `task-020` | CONFIGURE | W0 | **Done ✅ (Loopback IQ11)** | C1 FIX → C2 A+ | ~8m+~6m+~1m | ## Delivery Gates + ## Quick Check Findings sections added; new delivery-issues.md template. C1=FIX (2 HIGH delivery-issues.md row schema + H1 drift from feature-004 SPEC L272-282) → inline fix reverted to SPEC 4-col schema. **IQ11** flags task scope vs SPEC schema discrepancy: richer 6-col schema (task scope) vs simpler 4-col (SPEC). Reverted to SPEC; can add columns back via /aid-specify. |
 | 021 | `task-021` | IMPLEMENT | W1 | **Done ✅** | C1 FIX → C2 A+ | 4m17s+~7m+19m+~7m | Per-task quick-check in aid-execute. C1=FIX (1 CRIT helper/caller contract mismatch + 2 HIGH ## Dispatches vaporware) → C2 fix-batch rewired writeback-task-status.sh mode_findings to STATE.md ## Quick Check Findings + removed Dispatches refs (Calibration Log serves that role). C2 A+ (0 defects). |
 | 022 | `task-022` | IMPLEMENT | W2 | In Progress | — | — | Per-delivery quality gate + FR6 interlock — Wave-6 parallel |
-| 023 | `task-023` | TEST | W3 | Pending | — | — | E2E two-tier review test |
+| 023 | `task-023` | TEST | W3 | In Progress | — | — | E2E two-tier review test — Wave-7 parallel |
 | 024 | `task-024` | IMPLEMENT | W0 | **Done ✅** | C1 A+ | 9m21s+~6m | work-002 generator back-port for recipes asset kind. canonical/recipes/ recognized; emits to all 3 install trees per profile contract. EMISSION-MANIFEST.md declares Recipes section. VERIFY-4a PASS. No regression to existing asset kinds. C1 PASS at A+ (0 HIGH/MED, 1 LOW + 2 MIN cosmetic). |
 | 025 | `task-025` | DOCUMENT | W0 | **Done ✅** | C3 A+ | 6m53s+~7m+14m+~5m+~4m | Recipe meta-template + README. C1=FIX (3 HIGH+4 MED+4 LOW+3 MIN). C2 fix-batch (path move canonical/recipes/RECIPE-TEMPLATE.md → canonical/templates/recipe-template.md + Metadata block + slot-count fix + ## spec rationale + multi-task example). C2 review surfaced 1 new HIGH (multi-task example slot-count 6→5). C3 fix (1-line) → C3 review A+ (0 defects). |
 | 026 | `task-026` | DOCUMENT | W1 | **Done ✅** | C1 A+ | 3m8s+~10m | 5 seed recipes (bug-fix/release-note/method-refactor/add-crud-endpoint/add-unit-test). All slot-count + task-count match SPEC L107-114. Metadata block per feature-005 SPEC. C1 PASS at A+ (2 MIN cosmetic). |
 | 027 | `task-027` | IMPLEMENT | W1 | **Done ✅** | C1 FIX → C2 A+ | 15m40s+~10m+19m+~7m | parse-recipe.sh (533L + 889L test, 111/111 pass). 5 modes (--list/--validate/--spec/--tasks/--render). Sentinel-file lock. C1=FIX (1 CRIT wrong path: must be canonical/skills/aid-interview/scripts/ per SPEC L341-346; 2 HIGH warn-to-stdout + asset misclass) → C2 fix-batch git-mv to correct path + warn→stderr + 5 fixture tests. C2 A+. |
-| 028 | `task-028` | IMPLEMENT | W2 | Pending | — | — | Triage recipe-offer + slot-fill + emit (+ {!{ rewrite) |
+| 028 | `task-028` | IMPLEMENT | W2 | In Progress | — | — | Triage recipe-offer + slot-fill + emit — Wave-7 parallel |
 | 029 | `task-029` | IMPLEMENT | W3 | Pending | — | — | Recipe → standard-lite escalation (preserve slots) |
 | 030 | `task-030` | TEST | W4 | Pending | — | — | E2E recipes test |
 | 031 | `task-031` | CONFIGURE | W0 | **Done ✅** | C1 A+ | ~8m+~6m | `**Max Parallel Tasks:** 5` metadata added to discovery-state-template.md + .aid/knowledge/STATE.md. data-model.md §2.1 updated. PASS cycle-1 clean (1 MINOR cosmetic). |
@@ -87,7 +87,7 @@ See `PLAN.md` for full details, IQ resolutions, and cross-cutting risks.
 | 034 | `task-034` | IMPLEMENT | W2 | In Progress | — | — | Failure-block-radius (transitive descendants Blocked) — Wave-6 parallel |
 | 035 | `task-035` | IMPLEMENT | W2 | In Progress | — | — | EXECUTE-WAVE drill-down extension — Wave-6 parallel |
 | 036 | `task-036` | IMPLEMENT | W2 | In Progress | — | — | Graceful degradation (effective MaxConcurrent=1) — Wave-6 parallel |
-| 037 | `task-037` | TEST | W3 | Pending | — | — | E2E parallel pool test |
+| 037 | `task-037` | TEST | W3 | In Progress | — | — | E2E parallel pool test — Wave-7 parallel |
 
 ## Deploy Status
 
