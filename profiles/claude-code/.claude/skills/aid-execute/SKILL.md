@@ -141,7 +141,7 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 | FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | → REVIEW |
 | DONE | _(inline — task complete)_ | `inline` | → halt |
 | RE-RUN | `references/state-re-run.md` | `inline` | → halt |
-| DELIVERY-GATE | `references/state-delivery-gate.md` | `reviewer` (tier = complexity score) | → RECORD → halt (pass) / → FIX → REVIEW (grade < min) |
+| DELIVERY-GATE | `references/state-delivery-gate.md` | `reviewer` (tier = complexity score) | → halt (grade ≥ min) / → FIX (grade < min) |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, print `Next: [State: {NEXT}] — run /aid-execute again` and exit.

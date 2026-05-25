@@ -306,11 +306,11 @@ aid-interview  ▸ you are here
 |-------|--------|--------|---------|
 | FIRST-RUN | `references/state-first-run.md` | `interviewer` | → TRIAGE |
 | Q-AND-A | `references/state-q-and-a.md` | `interviewer` | → TRIAGE |
-| TRIAGE | `references/state-triage.md` | `interviewer` | → CONDENSED-INTAKE (lite) or CONTINUE (full) |
-| CONDENSED-INTAKE | `references/state-condensed-intake.md` | `interviewer` | → TASK-BREAKDOWN (or escalate → CONTINUE) |
-| TASK-BREAKDOWN | `references/state-task-breakdown.md` | `architect` | → LITE-REVIEW (or escalate → CONTINUE) |
+| TRIAGE | `references/state-triage.md` | `interviewer` | → CONDENSED-INTAKE (Path: lite) / → CONTINUE (Path: full) |
+| CONDENSED-INTAKE | `references/state-condensed-intake.md` | `interviewer` | → TASK-BREAKDOWN |
+| TASK-BREAKDOWN | `references/state-task-breakdown.md` | `architect` | → LITE-REVIEW |
 | LITE-REVIEW | `references/state-lite-review.md` | `reviewer` | → LITE-DONE (grade ≥ min) / → CONDENSED-INTAKE (grade < min, loopback). User-driven escalate → CONTINUE handled separately via `lite-to-full-escalation.md`. |
-| LITE-DONE | `references/state-lite-done.md` | `inline` | → halt (or escalate → CONTINUE) |
+| LITE-DONE | `references/state-lite-done.md` | `inline` | → halt |
 | lite→full escalation | `references/lite-to-full-escalation.md` | (caller's worker) | → CONTINUE |
 | CONTINUE | `references/state-continue.md` | `interviewer` | → COMPLETION |
 | COMPLETION | `references/state-completion.md` | `interviewer` | → FEATURE-DECOMPOSITION |
@@ -320,6 +320,8 @@ aid-interview  ▸ you are here
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, print `Next: [State: {NEXT}] — run /aid-interview again` and exit.
+
+**User-driven escalate-to-full (lite → full):** Not represented as a dispatch-row branch (per feature-002 SPEC: Conditional advance is for *computed* criteria only, never user input). From any lite-path state (CONDENSED-INTAKE / TASK-BREAKDOWN / LITE-REVIEW / LITE-DONE), if the user invokes escalate, the orchestrator loads `references/lite-to-full-escalation.md` (a state-detection-driven re-entry), which writes `Path: escalated` to STATE.md and routes to CONTINUE on the next run.
 
 ---
 

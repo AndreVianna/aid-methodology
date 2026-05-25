@@ -308,6 +308,23 @@ Format: `| Date | Agent | Task / Cycle | ETA band | Actual | Notes |`
 
 **Backfill source:** Backfilled from Agent tool `<usage>` blocks observed during the 2026-05-24 /aid-execute work-001 run. Times are agent-reported actuals (duration_ms / 1000), rounded to nearest 30s. ETA bands were the per-dispatch L2 timer settings (often wider than the rough-time-hints baseline to account for parallel-tail-latency).
 
+### IQ9: aid-interview state-completion.md auto-advance contradiction
+
+**Question:** Pre-existing behavior in `canonical/skills/aid-interview/references/state-completion.md:64` instructs "Immediately proceed to State 5 (Feature Decomposition) in the same run." Contradicts thin-router contract (router prints `Next:` and exits) per feature-002 SPEC. Was preserved verbatim by task-005 refactor (AC8 parity).
+
+**Source:** /aid-execute work-001 task-005 cycle-1 review (2026-05-24)
+**Suggested:** Update state-completion.md to remove the auto-advance — emit standard `Next: [State: FEATURE-DECOMPOSITION] — run /aid-interview again` and exit.
+**Status:** Pending — small implementation fix; will be applied as part of Step 1c of the verification plan.
+
+### IQ10 (Resolved 2026-05-24): aid-execute REVIEW dual-Advance schema gap
+
+**Question:** `aid-execute SKILL.md` REVIEW row used `→ FIX (grade < min) / → DONE (grade ≥ min)` (conditional dual-routing) but feature-002 SPEC §Dispatch-table-contract previously mandated only `→ {NEXT-STATE-NAME}` or `→ halt`. SPEC schema gap.
+
+**Source:** /aid-execute work-001 task-009 cycle-1 + cycle-2 reviews (2026-05-24)
+**Resolution:** Extended feature-002 SPEC L249 Dispatch-table-contract with third Advance form — **Conditional advance** `→ STATE-A (cond) / → STATE-B (otherwise)` — bounded to computed criteria (grade, count, status), no user input, exactly one split per row, no multi-step ladders. Canonical example: aid-execute REVIEW. Retro-applied to aid-summarize VALIDATE and aid-interview LITE-REVIEW.
+**Commits:** `8c07b66` (initial), follow-up cycle-2 fix-pass for sibling rows.
+**Status:** Resolved.
+
 ### IQ11: delivery-issues.md row schema — task scope vs SPEC mismatch
 
 **Question:** Task-020 scope proposed a richer 6-column delivery-issues.md schema (`task-id | Severity | Description | Source File:Line | Deferred At | Status`) but feature-004 SPEC L272-282 mandates a simpler 4-column schema (`Source task | Severity | Description | Status`). Which is canonical?
