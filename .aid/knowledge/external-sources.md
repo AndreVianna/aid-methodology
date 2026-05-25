@@ -133,7 +133,7 @@ Discovery-scout has mapped each external source to the directory inside this rep
 
 ---
 
-## Trust Model for Web-Fetched Vendor Documentation (per DISCOVERY-STATE Q80)
+## Trust Model for Web-Fetched Vendor Documentation (per STATE.md Q80)
 
 When AID's discovery agents fetch the 8 registered vendor doc URLs, they operate on the following trust assumptions:
 

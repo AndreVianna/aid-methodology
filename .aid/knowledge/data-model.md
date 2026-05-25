@@ -6,7 +6,7 @@
 
 > ⚠️ **Important:** This repository has **no database, no ORM, no schema files, no migrations** — it is a methodology + multi-tool install bundle (see `module-map.md`). The traditional "data model" sections (tables / columns / FKs / indices) do not apply. Verified by `Glob` against `project-index.md`: no `*.sql`, no `migrations/`, no `*.prisma`, no `*.csproj` with EF Core packages, no `pom.xml`, no `package.json`, no `requirements.txt`. The Specialty `data-engineer` agent description (`canonical/agents/data-engineer/README.md`) governs the schema/migration patterns for projects USING AID, not this repo itself.
 >
-> What this document captures instead is the **structured-artifact model** of the AID pipeline: the set of markdown / TOML / YAML / shell files produced and consumed across the **10 SKILL files** of AID (1 setup [Init] + 8 development + 1 optional [Summarize] per user-confirmed canonical taxonomy DISCOVERY-STATE Q16). These are AID's actual "data" — they flow between phases the same way records flow through a database in a traditional application.
+> What this document captures instead is the **structured-artifact model** of the AID pipeline: the set of markdown / TOML / YAML / shell files produced and consumed across the **10 SKILL files** of AID (1 setup [Init] + 8 development + 1 optional [Summarize] per user-confirmed canonical taxonomy STATE.md Q16). These are AID's actual "data" — they flow between phases the same way records flow through a database in a traditional application.
 
 ---
 
@@ -16,7 +16,7 @@ Each row is one artifact "type". Producer/consumer mappings are extracted from s
 
 | # | Artifact (filename pattern) | Location | Type | Producer | Consumer(s) | Source-of-truth template |
 |---|---------------------------|---------|------|----------|-------------|--------------------------|
-| 1 | `.aid/knowledge/*.md` (16 standard KB docs per DISCOVERY-STATE Q102: `project-structure`, `external-sources`, `architecture`, `technology-stack`, `module-map`, `coding-standards`, `data-model`, `api-contracts`, `integration-map`, `domain-glossary`, `test-landscape`, `security-model`, `tech-debt`, `infrastructure`, `ui-architecture`, `feature-inventory`) | `.aid/knowledge/` | structured markdown | `aid-discover` sub-agents | every downstream skill | `canonical/templates/knowledge-base/*.md` (16 templates; propagated to 3 install trees by `run_generator.py`) |
+| 1 | `.aid/knowledge/*.md` (16 standard KB docs per STATE.md Q102: `project-structure`, `external-sources`, `architecture`, `technology-stack`, `module-map`, `coding-standards`, `data-model`, `api-contracts`, `integration-map`, `domain-glossary`, `test-landscape`, `security-model`, `tech-debt`, `infrastructure`, `ui-architecture`, `feature-inventory`) | `.aid/knowledge/` | structured markdown | `aid-discover` sub-agents | every downstream skill | `canonical/templates/knowledge-base/*.md` (16 templates; propagated to 3 install trees by `run_generator.py`) |
 | 2 | `.aid/knowledge/INDEX.md` | `.aid/knowledge/` | markdown | `aid-discover` Step 6 | every downstream skill (task context) | `canonical/templates/knowledge-base/INDEX.md` |
 | 3 | `.aid/knowledge/README.md` | `.aid/knowledge/` | markdown | `aid-discover` Step 6 | humans | `canonical/templates/knowledge-base/README.md` |
 | 4 | **`.aid/knowledge/STATE.md`** (Discovery area) | `.aid/knowledge/` | structured markdown | `aid-init` (creates), `aid-discover` + `aid-summarize` (update) | `aid-discover` state machine, `aid-summarize` writeback | `canonical/templates/discovery-state-template.md` (85 lines) — absorbs the legacy `DISCOVERY-STATE.md` + `SUMMARY-STATE.md` per FR2 |
@@ -28,7 +28,7 @@ Each row is one artifact "type". Producer/consumer mappings are extracted from s
 | 10 | `PLAN.md` | per-work | structured markdown | `aid-plan` | `aid-detail` | (no template; format defined inline by `aid-plan`) |
 | 11 | `task-NNN.md` (one per task) | per-work | structured markdown | `aid-detail` | `aid-execute` | `canonical/templates/delivery-plans/task-template.md` |
 | 12 | `package-{NNN}.md` | per-package | structured markdown | `aid-deploy` | `aid-deploy` | `canonical/templates/package.md` |
-| 13 | **`.aid/work-NNN-{name}/MONITOR-STATE.md`** (Monitor area, **DEFERRED**) | per-work | structured markdown | `aid-monitor` (when implemented) | `aid-monitor` (resume) | ⚠️ **Template not yet authored** — Monitor area implementation deferred (OQ-3 / DISCOVERY-STATE Q31). The standalone `MONITOR-STATE.md` filename reflects that *Monitor is itself the state* — no separate artifact to suffix against. Will follow the same area-STATE pattern when authored. |
+| 13 | **`.aid/work-NNN-{name}/MONITOR-STATE.md`** (Monitor area, **DEFERRED**) | per-work | structured markdown | `aid-monitor` (when implemented) | `aid-monitor` (resume) | ⚠️ **Template not yet authored** — Monitor area implementation deferred (OQ-3 / STATE.md Q31). The standalone `MONITOR-STATE.md` filename reflects that *Monitor is itself the state* — no separate artifact to suffix against. Will follow the same area-STATE pattern when authored. |
 | 14 | `track-report-{id}.md` | per-work | structured markdown | `aid-monitor` (when implemented) | `aid-execute` (bugs) / `aid-discover` (CRs) | ⚠️ **Template MISSING** — referenced at `canonical/templates/README.md` but no file on disk; deferred with Monitor area (Q31) |
 | 15 | `IMPEDIMENT-{id}.md` | per-task | structured markdown | `aid-execute` | `aid-specify`, `aid-plan` (revision) | `canonical/templates/feedback-artifacts/IMPEDIMENT.md` |
 | 16 | `KI-{n}` entries (in `known-issues.md`) | per-work | structured markdown subdocument | `aid-specify` | `aid-plan` (sequencing) | `canonical/templates/known-issues.md` |
@@ -377,7 +377,7 @@ All other artifacts (the 16 KB docs, `INDEX.md`, `README.md`, `feature-inventory
 
 ## 4. Dataflow Diagram — the 10 SKILL files (post-FR2)
 
-The artifact propagation across the **10 SKILL files** (1 setup + 8 development + 1 optional per user-confirmed canonical taxonomy DISCOVERY-STATE Q16; see `architecture.md §2.1` for the full taxonomy and pipeline diagram). Each arrow shows producer → consumer with the carried artifact in parentheses. **Two area-STATE files (Discovery + Work) absorb all process-state writes.**
+The artifact propagation across the **10 SKILL files** (1 setup + 8 development + 1 optional per user-confirmed canonical taxonomy STATE.md Q16; see `architecture.md §2.1` for the full taxonomy and pipeline diagram). Each arrow shows producer → consumer with the carried artifact in parentheses. **Two area-STATE files (Discovery + Work) absorb all process-state writes.**
 
 ```
 Phase 0  Init

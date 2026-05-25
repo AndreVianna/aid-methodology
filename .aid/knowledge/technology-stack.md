@@ -32,7 +32,7 @@ Per `project-index.md` Language Breakdown (line 19). Markdown is the primary con
 
 **Frontmatter conventions** (full inventory at `coding-standards.md §1-§4`):
 
-- Claude Code / Cursor agents: YAML between `---` lines with `name`, `description`, `tools`, `model`, optional `permissionMode`, `background`. Example at `profiles/claude-code/.claude/agents/architect.md:1-6`. (Cursor uses `Terminal` instead of `Bash` for shell-tool — see `tech-debt.md M6` for the internal-inconsistency cleanup tracked in DISCOVERY-STATE Q52.)
+- Claude Code / Cursor agents: YAML between `---` lines with `name`, `description`, `tools`, `model`, optional `permissionMode`, `background`. Example at `profiles/claude-code/.claude/agents/architect.md:1-6`. (Cursor uses `Terminal` instead of `Bash` for shell-tool — see `tech-debt.md M6` for the internal-inconsistency cleanup tracked in STATE.md Q52.)
 - Claude Code / Cursor skills: YAML with `name`, `description`, `allowed-tools`, optional `argument-hint`, `context`, `agent` (the `context: fork` and `agent:` fields are Claude-Code-specific harness hints; Codex omits them by design per Q51).
 - Codex agents: TOML with `name`, `description`, `model`, `model_reasoning_effort`, multi-line `developer_instructions = """..."""`. Example at `profiles/codex/.codex/agents/architect.toml:1-39`.
 - Cursor `.mdc` rules: YAML with `description`, optional `globs`, `alwaysApply: true|false`.
@@ -166,7 +166,7 @@ Models per Codex tier (per `architecture.md:354-380` Pattern 8 Three-tier agent 
 | Sonnet | `gpt-5.4` | `medium` |
 | Haiku | `gpt-5.4-mini` | `low` |
 
-**Sonnet tier mapping VERIFIED** per DISCOVERY-STATE Q36 + reviewer spot-check #17: `grep model profiles/codex/.codex/agents/{orchestrator,operator,researcher,developer,interviewer,architect,reviewer}.toml` all return `model = "gpt-5.4"` and `model_reasoning_effort = "medium"`. Quality agent also verified tier-consistency across all 22 agents × 3 trees (`tech-debt.md L6`). No exceptions found. The `model_reasoning_effort` field is honored by current Codex CLI versions per the AID install design; vendor-doc cross-reference still pending (see `external-sources.md` §3-4 "Still requires vendor docs").
+**Sonnet tier mapping VERIFIED** per STATE.md Q36 + reviewer spot-check #17: `grep model profiles/codex/.codex/agents/{orchestrator,operator,researcher,developer,interviewer,architect,reviewer}.toml` all return `model = "gpt-5.4"` and `model_reasoning_effort = "medium"`. Quality agent also verified tier-consistency across all 22 agents × 3 trees (`tech-debt.md L6`). No exceptions found. The `model_reasoning_effort` field is honored by current Codex CLI versions per the AID install design; vendor-doc cross-reference still pending (see `external-sources.md` §3-4 "Still requires vendor docs").
 
 ---
 
@@ -181,7 +181,7 @@ Per `project-index.md` Language Breakdown (line 27).
 | File | Lines | Notes |
 |---|---|---|
 | `.claude/settings.json` | 11 | Narrow Bash permission allow-list scoped to this dogfood worktree. Not shipped in the install payload. |
-| `.claude/settings.json` (the historical double-dot typo file `.claude/settings..json` was removed; see `project-structure.md` Anomaly #2) | 12 | ⚠️ **Typo file (double dot in name).** Sits alongside `settings.json` with similar contents. See `project-structure.md` Anomaly #2 (line 255) and `DISCOVERY-STATE.md` Q7 — recommended action is to delete it. |
+| `.claude/settings.json` (the historical double-dot typo file `.claude/settings..json` was removed; see `project-structure.md` Anomaly #2) | 12 | ⚠️ **Typo file (double dot in name).** Sits alongside `settings.json` with similar contents. See `project-structure.md` Anomaly #2 (line 255) and `STATE.md` Q7 — recommended action is to delete it. |
 
 ---
 
@@ -231,7 +231,7 @@ What the install payloads *expect on the user's machine*:
 | **The host AI tool itself** — Claude Code, OpenAI Codex CLI, or Cursor | Everything | Hard. AID cannot function without one of these. |
 | **Bash** (Linux / macOS / WSL / Git Bash on Windows) | `aid-discover` (`build-project-index.sh`, `verify-kb.sh`), `aid-summarize` (`validate-html.sh`, `validate-links.sh`, `check-preflight.sh`, `stale-check.sh`, `fetch-mermaid.sh`, `concatenate.sh`, `writeback-state.sh`, `grade.sh`) | Hard for those skills. Windows-only users without Bash can use `setup.ps1` + Cursor / Codex's own runners, but `aid-discover` Step 0c will not run on pure-PowerShell. |
 | **PowerShell 5+** | `setup.ps1`, `concatenate.ps1` | Soft. Bash equivalents exist. Required only for Windows-without-Bash users. |
-| **Node.js >= 18** (verified at `canonical/templates/knowledge-summary/scripts/check-preflight.sh:87-96` which enforces the version per DISCOVERY-STATE Q54) | `aid-summarize` (`validate-diagrams.mjs`, `contrast-check.mjs` — both use ES module syntax + top-level `await` stable from Node 18 LTS) | Soft. Only `aid-summarize` needs it; skipping these validators means skipping the HTML quality gate. |
+| **Node.js >= 18** (verified at `canonical/templates/knowledge-summary/scripts/check-preflight.sh:87-96` which enforces the version per STATE.md Q54) | `aid-summarize` (`validate-diagrams.mjs`, `contrast-check.mjs` — both use ES module syntax + top-level `await` stable from Node 18 LTS) | Soft. Only `aid-summarize` needs it; skipping these validators means skipping the HTML quality gate. |
 | **Mermaid CLI `mmdc`** | `aid-summarize` validate-diagrams step | Soft. Optional per `validate-diagrams.mjs` heuristics. |
 | **Network egress to `registry.npmjs.org` + `cdn.jsdelivr.net`** | `aid-summarize` `fetch-mermaid.sh` (only on first run or when Mermaid version is stale) | Soft. Bypassable with `--cdn-mermaid` flag per `aid-summarize/SKILL.md:175-179`. |
 | **`git`** | The whole repo is distributed via `git clone` | Hard for installation. |
@@ -319,7 +319,7 @@ pwsh .aid/templates/knowledge-summary/scripts/concatenate.ps1
 bash templates/scripts/grade.sh <issue-list-file>
 ```
 
-**Note (cycle 11):** The "Future build" placeholder above (DISCOVERY-STATE Q3 / Q73) was **shipped by work-002 as `run_generator.py` + the three renderers** described in §12.0. The propagation no longer goes from a Claude-Code-anchored source to Codex / Cursor variants — instead, all three trees are derived from `canonical/` via per-profile TOMLs. Q73 (453/1078/1090-line SKILL.md divergence) is resolved — all three trees ship 258 lines for `aid-discover/SKILL.md` (post-thin-router refactor; was 548 pre-refactor) (verified cycle 11).
+**Note (cycle 11):** The "Future build" placeholder above (STATE.md Q3 / Q73) was **shipped by work-002 as `run_generator.py` + the three renderers** described in §12.0. The propagation no longer goes from a Claude-Code-anchored source to Codex / Cursor variants — instead, all three trees are derived from `canonical/` via per-profile TOMLs. Q73 (453/1078/1090-line SKILL.md divergence) is resolved — all three trees ship 307 lines for `aid-discover/SKILL.md` (post-thin-router refactor + cycle-19 additions; was 548 pre-refactor).
 
 ### 12.2 Lint Commands
 
@@ -342,7 +342,7 @@ bash templates/knowledge-summary/scripts/stale-check.sh
 bash templates/scripts/verify-kb.sh .aid/knowledge/
 ```
 
-**Future lint** (per DISCOVERY-STATE Q4 + Q35 resolution): a minimal `.github/workflows/ci.yml` adding `shellcheck` on `*.sh`, `markdownlint` on docs, link-check on README + methodology, a structural cross-tree-parity test, and JSON-Schema validation for SKILL.md + agent frontmatter. Not yet authored — tracked in `tech-debt.md`.
+**Future lint** (per STATE.md Q4 + Q35 resolution): a minimal `.github/workflows/ci.yml` adding `shellcheck` on `*.sh`, `markdownlint` on docs, link-check on README + methodology, a structural cross-tree-parity test, and JSON-Schema validation for SKILL.md + agent frontmatter. Not yet authored — tracked in `tech-debt.md`.
 
 ---
 
@@ -375,7 +375,7 @@ To call out the omission explicitly (as required by this discovery's brief):
 
 The only quality-gating mechanism that exists in this repo is the suite of **runtime validation scripts under `canonical/templates/knowledge-summary/scripts/`** (`validate-diagrams.mjs`, `validate-html.sh`, `validate-links.sh`, `contrast-check.mjs`, `check-preflight.sh`, `stale-check.sh`). These are invoked from inside the `aid-summarize` skill at runtime against a *user's* KB — not against this repository's own correctness.
 
-The closest thing to a "test of this repo" is the current dogfood discovery: if `/aid-discover` cannot complete a clean pass on the methodology repo itself, that is a structural regression. **Resolution per DISCOVERY-STATE Q12:** adopt the dogfood discovery as a CI smoke test alongside unit tests on `grade.sh` and `build-project-index.sh` (pure Bash, easy to fixture). Tracked in `tech-debt.md`.
+The closest thing to a "test of this repo" is the current dogfood discovery: if `/aid-discover` cannot complete a clean pass on the methodology repo itself, that is a structural regression. **Resolution per STATE.md Q12:** adopt the dogfood discovery as a CI smoke test alongside unit tests on `grade.sh` and `build-project-index.sh` (pure Bash, easy to fixture). Tracked in `tech-debt.md`.
 
 ---
 
@@ -385,5 +385,5 @@ The closest thing to a "test of this repo" is the current dogfood discovery: if 
 - Triplication math (why every script appears four times): `project-structure.md ## Per-Tool Installation Trees` (line 58-72).
 - Anomalies (double-dot settings file, missing templates, `aid-correct` stub): `project-structure.md ## Anomalies and Things to Flag` (line 252-263).
 - Vendor docs not yet fetched (Claude Code, Codex, Cursor, Copilot, Antigravity): `external-sources.md` (full document).
-- Distribution / versioning / CI / cross-tree-sync open questions: `DISCOVERY-STATE.md` Q1 (SemVer + VERSION file — user-confirmed), Q2 (git-clone + tagged releases — user-confirmed), Q3 (propagation script + CI drift-check — auto-resolved), Q4 (minimal CI workflow — auto-resolved).
+- Distribution / versioning / CI / cross-tree-sync open questions: `STATE.md` Q1 (SemVer + VERSION file — user-confirmed), Q2 (git-clone + tagged releases — user-confirmed), Q3 (propagation script + CI drift-check — auto-resolved), Q4 (minimal CI workflow — auto-resolved).
 - HTML viewer specifics: `ui-architecture.md`.

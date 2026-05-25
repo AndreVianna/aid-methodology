@@ -303,6 +303,6 @@ Recounted from line-start `[SEVERITY]` tags 2026-05-21 via `bash templates/scrip
 
 ## Open Questions Forwarded
 
-All open questions discovery-quality has raised about security have been appended to the `## Q&A` section of `.aid/knowledge/STATE.md` (Discovery area, per FR2 — formerly `DISCOVERY-STATE.md`) (IDs Q70 onward) — the historical `additional-info.md` consolidation is documented at DISCOVERY-STATE Q102 / Q115.
+All open questions discovery-quality has raised about security have been appended to the `## Q&A` section of `.aid/knowledge/STATE.md` (Discovery area, per FR2 — formerly `DISCOVERY-STATE.md`) (IDs Q70 onward) — the historical `additional-info.md` consolidation is documented at STATE.md Q102 / Q115.
 
 WARNING: This is a static-analysis security assessment. Dynamic testing (running the skills against a controlled target, fuzzing the installer, attempting prompt-injection on the discovery-reviewer agent) is required before any high-assurance claim. None of that has been performed.

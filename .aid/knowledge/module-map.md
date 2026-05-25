@@ -32,7 +32,7 @@ This repository is the **AID methodology + multi-tool install bundles**. There i
 | **Files** | 5 (1 markdown + 4 PNG diagrams) |
 | **Lines (markdown)** | 1,071 (`methodology/aid-methodology.md` per `project-index.md:351`) |
 | **Key files** | `methodology/aid-methodology.md` (the V3 normative spec, 1,071 lines); `methodology/images/2-comparison.png`, `3-ironman.png`, plus 2 other diagram PNGs |
-| **Purpose** | Single normative document for the AID methodology. Defines the **10 SKILL files** (1 setup [Init] + 8 development + 1 optional [Summarize] per user-confirmed canonical taxonomy DISCOVERY-STATE Q16), the feedback loops, the human-vs-AI division of labor, the knowledge-base shape, the artifact lifecycle, and the grading model. Every other module is downstream of this. |
+| **Purpose** | Single normative document for the AID methodology. Defines the **10 SKILL files** (1 setup [Init] + 8 development + 1 optional [Summarize] per user-confirmed canonical taxonomy STATE.md Q16), the feedback loops, the human-vs-AI division of labor, the knowledge-base shape, the artifact lifecycle, and the grading model. Every other module is downstream of this. |
 | **Internal dependencies** | None. This is the root. |
 | **External dependencies** | None at runtime. References the PNG diagrams. |
 | **Downstream consumers** | Every skill body, every agent body, every README, every template — they *implement* what this document specifies. |

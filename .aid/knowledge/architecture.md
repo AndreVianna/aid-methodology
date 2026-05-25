@@ -49,7 +49,7 @@ The **Prepare** group holds two non-phase skills per `architecture.md` §Pattern
 - `/aid-init` — bootstrap skill (NOT a numbered phase): scaffolds `.aid/knowledge/` and creates `CLAUDE.md` / `AGENTS.md` placeholders. Runs once per project.
 - `/aid-summarize` — optional post-discovery skill (NOT a numbered phase): generates a single-file `knowledge-summary.html` from `.aid/knowledge/`.
 
-**Canonical taxonomy — user-confirmed via DISCOVERY-STATE Q16 (2026-05-21):**
+**Canonical taxonomy — user-confirmed via STATE.md Q16 (2026-05-21):**
 
 > **1 setup phase (Init) + 8 development phases (Discover, Interview, Specify, Plan, Detail, Execute, Deploy, Monitor) + 1 optional phase (Summarize) = 10 SKILL.md files total.**
 > `aid-verify` is folded into `aid-execute`'s built-in review loop and `aid-deploy`'s final-verification step (it is **not** a distinct phase).
@@ -144,7 +144,7 @@ Per `methodology/aid-methodology.md:476-543`, plus `README.md:15` which calls th
 | L9 Monitor → Execute (Bug path) | 532-536 | Monitor classifies finding as BUG |
 | L10 Monitor → Discover (CR path) | 538-542 | Monitor classifies finding as Change Request |
 
-⚠️ The methodology header `methodology/aid-methodology.md:478` says "The Eleven Loops"; the body enumerates ten. **Resolution per DISCOVERY-STATE Q17:** add an explicit `Loop 11: Any phase → aid-discover (targeted re-entry)` between L8 and L9 in `methodology/aid-methodology.md`, with the same Trigger/Protocol format. The "Discovery re-entry from any phase" pattern is real (the pipeline diagram at `methodology/aid-methodology.md:993` shows the "ANY PHASE → aid-discover (targeted) → .aid/knowledge/* → resume" arrow) — it just hasn't been numbered. Out-of-scope for this KB doc; tracked in `tech-debt.md`.
+⚠️ The methodology header `methodology/aid-methodology.md:478` says "The Eleven Loops"; the body enumerates ten. **Resolution per STATE.md Q17:** add an explicit `Loop 11: Any phase → aid-discover (targeted re-entry)` between L8 and L9 in `methodology/aid-methodology.md`, with the same Trigger/Protocol format. The "Discovery re-entry from any phase" pattern is real (the pipeline diagram at `methodology/aid-methodology.md:993` shows the "ANY PHASE → aid-discover (targeted) → .aid/knowledge/* → resume" arrow) — it just hasn't been numbered. Out-of-scope for this KB doc; tracked in `tech-debt.md`.
 
 #### Roles
 
@@ -293,7 +293,7 @@ The 500-line skill-body guideline tension is now resolved — `aid-discover/SKIL
 
 This is implemented as:
 
-- A **fixed-shape directory** with 16 standard KB documents (per DISCOVERY-STATE Q102: `project-structure`, `external-sources`, `architecture`, `technology-stack`, `module-map`, `coding-standards`, `data-model`, `api-contracts`, `integration-map`, `domain-glossary`, `test-landscape`, `security-model`, `tech-debt`, `infrastructure`, `ui-architecture`, `feature-inventory`) + **3 meta-documents** (`INDEX.md`, `README.md`, `DISCOVERY-STATE.md`) + **1 generated pre-pass** (`project-index.md`) + extensions outside the standard 16 (currently `host-tools-matrix.md`). `feature-inventory.md` is a **standard KB doc**, NOT a meta-document — earlier wording was incorrect. Templates for 15 of the 16 standard docs live in `canonical/templates/knowledge-base/` at canonical root; the 16th (`ui-architecture.md`) is missing at canonical root but each install tree ships a 5-line stub — see DISCOVERY-STATE Q114 + Q126 for the lift-to-root resolution.
+- A **fixed-shape directory** with 16 standard KB documents (per STATE.md Q102: `project-structure`, `external-sources`, `architecture`, `technology-stack`, `module-map`, `coding-standards`, `data-model`, `api-contracts`, `integration-map`, `domain-glossary`, `test-landscape`, `security-model`, `tech-debt`, `infrastructure`, `ui-architecture`, `feature-inventory`) + **2 meta-documents** (`INDEX.md`, `README.md`) + **1 area-STATE file** (`STATE.md`, replacing the pre-FR2 `DISCOVERY-STATE.md`/`SUMMARY-STATE.md` split per work-003) + **1 generated pre-pass** (`project-index.md`) + extensions outside the standard 16 (currently `host-tools-matrix.md`). `feature-inventory.md` is a **standard KB doc**, NOT a meta-document — earlier wording was incorrect. Templates for 15 of the 16 standard docs live in `canonical/templates/knowledge-base/` at canonical root; the 16th (`ui-architecture.md`) is missing at canonical root but each install tree ships a 5-line stub — see STATE.md Q114 + Q126 for the lift-to-root resolution.
 - A **completeness-tracked `README.md`** (`methodology/aid-methodology.md:132-145`) showing which documents are Complete / Partial / Missing with the source agent.
 - A **lightweight `INDEX.md`** with 2-3 line summaries of every document (`methodology/aid-methodology.md:161-191`). Every task's prompt receives INDEX.md as context. This is **RAG-by-convention** — predictable file structure plus a navigation index, not a vector database. Cost: ~200-500 tokens; value: the agent self-serves additional context on demand.
 - A **`feature-inventory.md`** that gets populated by `aid-discover` Q&A → FIX cycle (`aid-discover/SKILL.md`) and serves as the bridge from raw KB facts to user-facing feature names.
@@ -538,7 +538,7 @@ The repo's own `.claude/settings.json` (11 lines) and the typo file `.claude/set
 | `setup.sh` | 162 | Bash installer. Interactive menu (1=Claude Code, 2=Codex, 3=Cursor, 4=Install, 5=Quit). Copies the matching tree(s) into the target project. Safe re-run: identical files skipped, changed files prompted, `--force` to overwrite. |
 | `setup.ps1` | 157 | PowerShell port with identical semantics. |
 
-Distribution model per `README.md:31-53` is `git clone` + `./setup.sh`. There is no npm / pip / Homebrew / winget package, no curl-pipe-bash bootstrap, no published tarball. See `external-sources.md` and `DISCOVERY-STATE.md` Q2 for the open question on distribution model.
+Distribution model per `README.md:31-53` is `git clone` + `./setup.sh`. There is no npm / pip / Homebrew / winget package, no curl-pipe-bash bootstrap, no published tarball. See `external-sources.md` and `STATE.md` Q2 for the open question on distribution model.
 
 ### 7.2 Runtime entry (per host tool)
 
@@ -610,8 +610,8 @@ Spot-checks performed against `methodology/aid-methodology.md`, the human README
 
 - **Phase-count drift** (covered in §2.1 above and Q16): the doc title says "9 phases", the body lists "8 development phases", `architecture.md` §Pattern 1 (Skills as state-machine orchestrators) lists "8 phases + 1 setup + 1 optional" = 10 SKILL files, the user prompt refers to "11 phases", and an `aid-correct` stub exists for an 11th.
 - **Loop-count drift** (covered in §2.1 above and Q17): the methodology and README both say "eleven feedback loops"; the body of `methodology/aid-methodology.md:482-543` enumerates ten (L1-L10). The 11th is plausibly the "any-phase → Discovery targeted re-entry" but is not numbered.
-- **Missing templates** (per `project-structure.md` Anomaly #8 line 261 and `DISCOVERY-STATE.md` Q8): `canonical/templates/reports/track-report-template.md` and `canonical/templates/feedback-artifacts/MONITOR-STATE.md` are referenced in `templates/README.md` but do not exist on disk.
-- **`aid-correct` placeholder** (per `project-structure.md` Anomaly #6 line 259 and `DISCOVERY-STATE.md` Q6): `canonical/skills/aid-correct/README.md` is a 5-line stub with no implementation in any install tree and no body in the methodology document.
+- **Missing templates** (per `project-structure.md` Anomaly #8 line 261 and `STATE.md` Q8): `canonical/templates/reports/track-report-template.md` and `canonical/templates/feedback-artifacts/MONITOR-STATE.md` are referenced in `templates/README.md` but do not exist on disk.
+- **`aid-correct` placeholder** (per `project-structure.md` Anomaly #6 line 259 and `STATE.md` Q6): `canonical/skills/aid-correct/README.md` is a 5-line stub with no implementation in any install tree and no body in the methodology document.
 
 ---
 
