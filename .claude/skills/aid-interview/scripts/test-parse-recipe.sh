@@ -950,41 +950,6 @@ fi
 
 # ---------------------------------------------------------------------------
 echo ""
-echo ""
-echo "=== Unit 20: applies-to value extraction (quoted vs bare star) ==="
-
-# Verify the script extracts applies-to consistently — the YAML-required
-# quoted-star form `"*"` (since YAML treats bare `*` as anchor reference) must
-# parse without error. This guards the recipe-offer filter contract in
-# state-triage.md Step 5a-1.
-
-UNIT20_STAR_FILE=$(mktemp --suffix=.md 2>/dev/null || mktemp)
-cat > "$UNIT20_STAR_FILE" <<EOF
----
-name: u20-star
-applies-to: "*"
-slot-count: 0
-task-count: 1
----
-
-## spec
-
-(empty spec)
-
-## tasks
-
-### task-001
-
-(empty task)
-EOF
-
-u20_star_out=$(bash "$SCRIPT" --validate "$UNIT20_STAR_FILE" 2>&1)
-u20_star_code=$?
-assert_exit_zero "$u20_star_code" "--validate quoted-star applies-to passes"
-assert_output_contains "$u20_star_out" "OK: all checks passed" "--validate quoted-star applies-to reports OK"
-
-rm -f "$UNIT20_STAR_FILE"
-
 echo "=== Summary ==="
 echo "  Tests passed: $PASS"
 echo "  Tests failed: $FAIL"

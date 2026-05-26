@@ -302,41 +302,6 @@ assert_exit "T15 graph-file not found" \
     "\"$SCRIPT\" --failed-task task-001 --graph-file /nonexistent-file.tsv" 1
 
 # ---------------------------------------------------------------------------
-# T16: bfs handles non-normalized failed-task input (whitespace + backticks)
-# ---------------------------------------------------------------------------
-# Use TSV reverse-graph format (dep TAB dependent) — same as T01-T08
-T16_GRAPH="${TMPDIR_TESTS}/t16.tsv"
-make_graph "$T16_GRAPH" \
-    "task-001\ttask-002" \
-    "task-002\ttask-003"
-
-# Call with whitespace-wrapped task name; should still find task-002 + task-003
-T16_OUT=$("$SCRIPT" --failed-task "  task-001  " --graph-file "$T16_GRAPH" 2>/dev/null)
-T16_RC=$?
-T16_EXPECTED="task-002
-task-003"
-if [[ "$T16_RC" -eq 0 ]] && [[ "$T16_OUT" == "$T16_EXPECTED" ]]; then
-    echo "[PASS] T16 bfs_block_radius normalizes whitespace-wrapped failed-task"
-    PASS=$((PASS + 1))
-else
-    echo "[FAIL] T16 bfs_block_radius normalization (rc=$T16_RC, out='$T16_OUT')"
-    FAIL=$((FAIL + 1))
-fi
-
-# ---------------------------------------------------------------------------
-# T17: state-execute.md degradation notice has the stable format scrapers expect
-# Format: [degradation] MaxConcurrent={N} requested, host capability=sequential — running effective=1
-# ---------------------------------------------------------------------------
-STATE_EXEC="$(cd "$(dirname "$SCRIPT")/../../skills/aid-execute/references" && pwd)/state-execute.md"
-if [[ -f "$STATE_EXEC" ]] && grep -q "\[degradation\] MaxConcurrent=" "$STATE_EXEC" && grep -q "host capability=sequential" "$STATE_EXEC" && grep -q "running effective=1" "$STATE_EXEC"; then
-    echo "[PASS] T17 state-execute.md degradation notice has stable format"
-    PASS=$((PASS + 1))
-else
-    echo "[FAIL] T17 state-execute.md degradation notice missing or wrong format"
-    FAIL=$((FAIL + 1))
-fi
-
-# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 echo ""

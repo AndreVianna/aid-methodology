@@ -1,7 +1,4 @@
 {
-  "worktree": {
-    "bgIsolation": "none"
-  },
   "permissions": {
     "allow": [
       "Bash(mkdir *)",
