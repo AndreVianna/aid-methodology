@@ -62,7 +62,7 @@ Status legend: ✅ Shipped at V3 = feature is complete and exercised in all 3 in
 
 ## Notes on the Inventory Shape
 
-The 25-item inventory reflects the user-confirmed canonical scope of AID at V3 (18 items from initial dogfood pass 2026-05-21, plus 2 added in cycle-11 refresh 2026-05-23: FR1 heartbeat and FR2 state-file consolidation from work-003) (per `DISCOVERY-STATE.md` Q-FEATURES answered 2026-05-21). Three observations:
+The 25-item inventory reflects the user-confirmed canonical scope of AID at V3 (18 items from initial dogfood pass 2026-05-21, plus 2 added in cycle-11 refresh 2026-05-23: FR1 heartbeat and FR2 state-file consolidation from work-003) (per `.aid/knowledge/STATE.md` Q-FEATURES answered 2026-05-21; per FR2, pre-FR2 was `DISCOVERY-STATE.md`). Three observations:
 
 1. **No HTTP / RPC endpoints exist.** The "Endpoints" column repurposed for slash commands is the user-facing surface for the 10 phase-skill features; install bundle features have no command surface (only install-time invocation via `setup.{sh,ps1}`).
 2. **Data Entities map to AID's pipeline artifacts.** See `data-model.md` for full schemas of every artifact named here (per FR2: `.aid/knowledge/STATE.md` and `.aid/{work}/STATE.md` as area-STATE files; REQUIREMENTS.md, SPEC.md, PLAN.md, task-NNN.md task-definition files; pre-FR2 names `DISCOVERY-STATE.md`, `INTERVIEW-STATE.md`, `task-NNN-STATE.md`, `DEPLOYMENT-STATE.md` are RETIRED).

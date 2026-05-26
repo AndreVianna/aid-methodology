@@ -124,7 +124,7 @@ Per `project-index.md` Language Breakdown (line 22). Single file `canonical/temp
 **Architecture:**
 - CSS custom properties (variables) for theming, scoped via `html[data-theme="light"]` and `html[data-theme="dark"]` (see `component-css.css:6-63`).
 - No preprocessor. No PostCSS pipeline. No autoprefixer. Hand-authored.
-- Tokens documented in `canonical/templates/knowledge-summary/design-tokens.md` (124 lines) — this is **documentation**, not a build input. ⚠️ The drift question of "is the CSS or the tokens doc the source of truth" is recorded by scout as Q14 in `DISCOVERY-STATE.md`.
+- Tokens documented in `canonical/templates/knowledge-summary/design-tokens.md` (124 lines) — this is **documentation**, not a build input. ⚠️ The drift question of "is the CSS or the tokens doc the source of truth" is recorded by scout as Q14 in `.aid/knowledge/STATE.md` (per FR2; pre-FR2 was DISCOVERY-STATE.md).
 
 ---
 
@@ -216,7 +216,7 @@ Verified absences (no file of the following name appears anywhere in `project-in
 
 Confirmed by `project-index.md ## Notable Files` (line 29-37): the only files there are `CONTRIBUTING.md`, `LICENSE`, `README.md`. No manifest.
 
-The repository ships as a git repository. Distribution = `git clone` + `setup.sh` per `README.md:31-53`. There is no npm / pip / Homebrew / winget package; no curl-pipe-bash bootstrap; no published tarball. The open question of "what is the canonical distribution model beyond git-clone" is recorded by scout as Q2 in `DISCOVERY-STATE.md`.
+The repository ships as a git repository. Distribution = `git clone` + `setup.sh` per `README.md:31-53`. There is no npm / pip / Homebrew / winget package; no curl-pipe-bash bootstrap; no published tarball. The open question of "what is the canonical distribution model beyond git-clone" is recorded by scout as Q2 in `.aid/knowledge/STATE.md` (per FR2; pre-FR2 was DISCOVERY-STATE.md).
 
 ---
 
