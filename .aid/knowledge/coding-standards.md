@@ -21,7 +21,7 @@ The `SKILL.md` frontmatter is YAML, delimited by `---` lines. Verified directly 
 | `allowed-tools` | yes | comma-separated list (NOT YAML array) | `allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent` |
 | `argument-hint` | optional | quoted string | `argument-hint: "[--grade A] minimum acceptable grade (default: A)  [--reset] clear KB and restart"` |
 
-**Observation — identical frontmatter + body across trees post-canonical-generator.** `aid-discover/SKILL.md` is 596 lines in all 4 locations (canonical + 3 profiles), verified 2026-05-23. The pre-work-002 narrative ("Claude Code 453 / Codex 1,078 / Cursor 1,090 — divergent") is RETIRED. The frontmatter and body are emitted from a single canonical source by `render_skills.py` (450 lines in `.claude/skills/aid-generate/scripts/`).
+**Observation — identical frontmatter + body across trees post-canonical-generator.** `aid-discover/SKILL.md` is 307 lines in all 4 locations (canonical + 3 profile trees). The pre-work-002 narrative ("Claude Code 453 / Codex 1,078 / Cursor 1,090 — divergent") is RETIRED. The frontmatter and body are emitted from a single canonical source by `render_skills.py` (450 lines in `.claude/skills/aid-generate/scripts/`).
 
 ⚠️ The Cursor and Codex SKILL.md frontmatter inherits the canonical `allowed-tools` shape; profile-specific tool-name remapping (e.g., Claude Code `Bash` → Cursor `Terminal`, per Q52) is performed by `render_skills.py` at emission time, so what lands in each profile already matches the host tool's tool vocabulary.
 
@@ -44,9 +44,9 @@ When a skill body grows large, content is extracted into siblings under the cano
 - `references/*.md` — long-form prompts and explanations that the SKILL.md body refers to by filename.
 - `scripts/*.sh` — runnable shell scripts invoked from the SKILL.md.
 
-Example (`canonical/skills/aid-discover/`): SKILL.md (596 lines) + `references/agent-prompts.md` (142) + `references/document-expectations.md` (121) + `references/reviewer-prompt.md` (75) + `scripts/check-preflight.sh` (45) + `scripts/verify-kb.sh` (60) = 6 files, 1,039 lines total. The SKILL.md body uses phrases like "Read `references/agent-prompts.md` section `## Scout`".
+Example (`canonical/skills/aid-discover/`): SKILL.md (307 lines) + 3 prompt-aux references (`agent-prompts.md` 142, `document-expectations.md` 121, `reviewer-prompt.md` 75) + 6 state references (`state-generate.md`, `state-review.md`, `state-q-and-a.md`, `state-fix.md`, `state-approval.md`, `state-done.md`) + 2 scripts (`check-preflight.sh` 45, `verify-kb.sh` 60). The SKILL.md body uses phrases like "Read `references/agent-prompts.md` section `## Scout`".
 
-**Post-work-002 propagation:** `run_generator.py` (top-level, 83 lines) reads each canonical skill folder and emits the full decomposition (SKILL.md + references/ + scripts/) verbatim into all 3 profile trees plus the dogfood `.claude/skills/`. The pre-work-002 narrative — "Claude Code factors out references/ while Codex / Cursor inline" — is RETIRED. Verified 2026-05-23: `wc -l` on `aid-discover/SKILL.md` returns 596 across canonical + all 3 profiles. The same `references/*.md` siblings are present in every profile tree. Contributors edit `canonical/` only; the generator handles the propagation.
+**Post-work-002 propagation:** `run_generator.py` (top-level, 84 lines) reads each canonical skill folder and emits the full decomposition (SKILL.md + references/ + scripts/) verbatim into all 3 profile trees (`profiles/{claude-code,codex,cursor}/`). The pre-work-002 narrative — "Claude Code factors out references/ while Codex / Cursor inline" — is RETIRED. Verified: `wc -l` on `aid-discover/SKILL.md` returns the same line count across canonical + all 3 profile trees. The same `references/*.md` siblings are present in every profile tree. Contributors edit `canonical/` only; the generator handles the propagation. The dogfood `.claude/` at the repo root is **not** a generator target — it is the install consumer for this repo's own use of AID, populated by `setup.sh` and out of scope for the canonical byte-identity property.
 
 ⚠️ One historical exception remains visible in the file tree: `aid-interview/references/kb-hydration.md` (106 lines) — present in canonical and all 3 profiles. This is now the propagated norm, not an exception.
 
@@ -375,7 +375,7 @@ State files use **area-based consolidation** (per `work-003-traceability/REQUIRE
 
 **Artifact files keep their inline `## Change Log` sections** — that is content history, distinct from process state. Artifact files (REQUIREMENTS.md, SPEC.md, PLAN.md, task-NNN.md, KB docs) are unchanged by FR2.
 
-**Canonical templates** for area STATE files: `canonical/templates/{discovery,work}-state-template.md` (83 + 82 lines respectively).
+**Canonical templates** for area STATE files: `canonical/templates/{discovery,work}-state-template.md` (85 + 137 lines respectively).
 
 ## 9. The Canonical-Generator Authoring Rule (replaces the old "Triplicate Updates" rule)
 
@@ -395,7 +395,7 @@ When updating a skill, agent, template, or rule:
 
 **Why this replaces the old rule:** Before work-002, the same logical asset existed in 4 parallel locations (`skills/`, `profiles/claude-code/.claude/skills/`, `profiles/codex/.agents/skills/`, `profiles/cursor/.cursor/skills/`) and contributors had to manually keep them in sync per `CONTRIBUTING.md:21-26`. That discipline produced documented drift (line counts diverging 244 / 453 / 1078 / 1090 for `aid-discover`). Post-work-002:
 - `canonical/` is the single source of truth (`canonical/skills/`, `canonical/agents/`, `canonical/templates/`, `canonical/rules/`).
-- `run_generator.py` (top-level, 83 lines) reads `canonical/` + profile manifests (`profiles/{tool}.toml`) and re-emits all 3 profile trees plus the dogfood `.claude/` tree.
+- `run_generator.py` (top-level, 84 lines) reads `canonical/` + profile manifests (`profiles/{tool}.toml`) and re-emits all 3 profile trees. (The dogfood `.claude/` at the repo root is downstream of `profiles/claude-code/.claude/` — populated by `setup.sh` for this repo's own use of AID — and is NOT a generator target.)
 - Generator scripts (`.claude/skills/aid-generate/scripts/{render_agents.py 503, render_skills.py 450, render_templates.py 245}`) handle profile-specific substitutions (e.g., tool-name remapping `Bash` → `Terminal` for Cursor, Codex tier mapping `opus` → `gpt-5.5`).
 - `verify_deterministic.py` (513 lines) confirms byte-equality across emission targets.
 - Emission manifests at `profiles/{tool}/emission-manifest.jsonl` track every file emitted.
@@ -437,4 +437,39 @@ This section is critical because it bounds what "convention" means in this repo.
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | 2026-05-21 | aid-discover (discovery-analyst) | Initial dogfood pass: 10 convention areas mined from SKILL.md, agent, .mdc, KB-document, template, and shell-script samples. "Conventions NOT enforced" section identifies tooling gaps. |
-| 1.1 | 2026-05-23 | aid-discover cycle-11 FIX (KB-FIX work) | §1.1, §1.3 rewritten to describe canonical-generator pattern (work-002): canonical is source of truth, `run_generator.py` propagates byte-identically to 3 profile trees + dogfood. Retired the "Claude Code 453 / Codex 1,078 / Cursor 1,090 divergence" narrative — all four locations now 548 lines for `aid-discover/SKILL.md`. §2.1-§2.3, §3, §5.1, §5.2, §5.3 path citations updated from `profiles/...` to `canonical/...` (the source of truth). §2.4 rewrote cross-tree filename drift section to note generator-centralized substitution + FR2 STATE.md unification. §6.2 added Q191 note. §8 row for "State files" reduced to a pointer at §8.5 (which is already correct from CW7). §9 fully rewritten as "Canonical-Generator Authoring Rule" — the old "Triplicate Updates Rule" referencing `CONTRIBUTING.md:21-26` is RETIRED. §10 row on "Triplication drift detection" updated to "Canonical-vs-profile drift detection (generator-enforced)". §8.5 (FR2 area-STATE rule) preserved unchanged from CW7. Resolves cycle-11 HIGH findings on coding-standards.md §1.3 + §9. |
+| 1.1 | 2026-05-23 | aid-discover cycle-11 FIX (KB-FIX work) | §1.1, §1.3 rewritten to describe canonical-generator pattern (work-002): canonical is source of truth, `run_generator.py` propagates byte-identically to 3 profile trees + dogfood. Retired the "Claude Code 453 / Codex 1,078 / Cursor 1,090 divergence" narrative — all four locations now 258 lines (post-thin-router) for `aid-discover/SKILL.md`. §2.1-§2.3, §3, §5.1, §5.2, §5.3 path citations updated from `profiles/...` to `canonical/...` (the source of truth). §2.4 rewrote cross-tree filename drift section to note generator-centralized substitution + FR2 STATE.md unification. §6.2 added Q191 note. §8 row for "State files" reduced to a pointer at §8.5 (which is already correct from CW7). §9 fully rewritten as "Canonical-Generator Authoring Rule" — the old "Triplicate Updates Rule" referencing `CONTRIBUTING.md:21-26` is RETIRED. §10 row on "Triplication drift detection" updated to "Canonical-vs-profile drift detection (generator-enforced)". §8.5 (FR2 area-STATE rule) preserved unchanged from CW7. Resolves cycle-11 HIGH findings on coding-standards.md §1.3 + §9. |
+
+## §10 Thin-Router SKILL.md Convention (work-001 feature-002 — shipped 2026-05-25)
+
+When SKILL.md grows past ~200 lines, extract per-state bodies into `references/state-{name}.md` siblings. SKILL.md becomes a **state-machine router** holding only:
+
+- Frontmatter (name, description, tools, model, agent default)
+- Pre-flight checks (single section, ≤~30 lines)
+- State Detection (filesystem-based; "you are here" map)
+- **Dispatch table** (the canonical state machine — see schema below)
+- A brief Quality Checklist (optional)
+
+The Dispatch table is the canonical state machine. Each row has 4 columns: `State`, `Detail` (path to `references/state-*.md` or `inline`), `Worker` (agent subagent_type or `inline`), `Advance`. The Advance column has **exactly three valid forms** (per feature-002 SPEC §Data Model):
+
+1. **Unconditional:** `→ {NEXT-STATE-NAME}` — the next state's literal name
+2. **Halt:** `→ halt` — terminal/human-gated (user re-invokes the skill)
+3. **Conditional:** `→ {STATE-A|halt} ({condition}) / → {STATE-B|halt} ({otherwise})` — branches on a *computed criterion* (grade, count, status field) inspectable from STATE.md without dialog. Exactly one split per row. Either leg may be a named state OR the literal `halt`. User-input branches are NOT allowed (those are state-detection re-entries).
+
+**Naming patterns observed in shipped skills:**
+
+| Pattern | Used by | Convention |
+|---------|---------|------------|
+| State-keyed | aid-discover, aid-interview, aid-execute, aid-specify, aid-summarize | `references/state-{state-name-lowercase-with-hyphens}.md` |
+| Step-keyed | aid-init | `references/step-{N}-{phase}.md` (linear flow with no branches) |
+| Section-keyed | aid-plan, aid-detail | `references/{semantic-section-name}.md` (e.g. `first-run-loop.md`, `review-deliverables.md`) |
+| Mode-keyed | aid-deploy | `references/state-{state}.md` (state-machine with terminal states inline) |
+
+**State-id format:** UPPERCASE with hyphens (per CR6) — `FIRST-RUN`, `Q-AND-A`, `DELIVERY-GATE`, `LITE-REVIEW`, etc.
+
+**Exit contract:** Every state must end with `Next: [State: {NEXT}] — run /aid-{name} again` (no auto-advance, per IQ9). The router itself never advances states; the user re-invokes the skill, state detection picks the next state, and the new router dispatches.
+
+**Aggregated impact:** Work-001 feature-002 reduced total skill body from 4,467 lines to 2,108 lines (53% reduction) across all 10 `aid-*` skills, with per-state logic now living in ~54 `references/state-*.md` siblings.
+
+**Authoring rule:** New skills should start as thin-routers if they have ≥2 states. Adding new states to an existing thin-router skill = add a row to Dispatch + create the corresponding `references/state-{name}.md`. Never inline a new state body in SKILL.md.
+
+**See also:** `.aid/work-001-aid-lite/features/feature-002-skill-footprint-refactor/SPEC.md` for the full contract + retro-application examples.

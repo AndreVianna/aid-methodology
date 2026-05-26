@@ -26,6 +26,31 @@ Run `scripts/check-preflight.sh .aid/knowledge/` to verify:
 If Check 1 fails: `⚠️ Knowledge Base not initialized. Run /aid-init first to set up the project.` — Exit.
 If Check 2 fails: Tell user to press `Shift+Tab` to exit Plan Mode, then re-run.
 
+---
+
+## ⚠️ Pre-flight Cleanup (orchestrator-only — never grade these)
+
+**Before dispatching the REVIEW reviewer, sweep the KB for mechanical drift that should never appear as a "finding".** These are housekeeping items the orchestrator owns; they pollute reviewer attention and burn cycles if left for the reviewer to surface.
+
+**Sweep categories (auto-correct silently):**
+
+- **Line-count drift** — `wc -l` every cited file (SKILL.md, AGENT.md, scripts, templates, methodology) and replace stale citations with disk truth.
+- **Off-by-1 drift** — small numerical changes in file sizes / counts that the prior cycle missed.
+- **Aggregate counts** — per-skill or per-tree file/script/reference totals computed from current disk state (`find ... | wc -l`).
+- **Path & citation hygiene** — bare citations missing skill prefix (`SKILL.md:NNN` → `canonical/skills/<skill>/SKILL.md:NNN`); out-of-range line cites (line numbers that no longer exist after a file shrunk); broken `path:line` references.
+- **Math** — verify any `%` calculations using real values (e.g., "X% over Y" assertions). If the underlying numbers changed, recompute.
+- **Ghost references** — once confirmed a file/feature was removed, delete references to it (don't leave "(retired)" or "(see below)" stubs in current-state docs; historical change-log entries are fine).
+- **Meta-doc counting** — `INDEX.md` / `README.md` per-doc line counts, feature counts, file-type tallies (same nature as line-count drift).
+
+**Out of KB scope — never check, never claim:**
+
+- **`.claude/` at the repo root** — this is the **dogfood install** (AID applied to AID itself), conceptually identical to any user's `.claude/` after running `setup.sh`. The KB makes **no claims** about it. Byte-identity comparisons are scoped to **4-tree** (canonical + 3 profile trees), NOT 5-tree.
+
+**Why pre-flight cleanup matters:**
+- Reviewer focus should be **semantic** quality (missing post-merge content, internal contradictions, factually wrong claims that mislead downstream phases) — not arithmetic drift.
+- Sweeping these first lets the reviewer score the KB on what actually matters.
+- Edits in this sweep should be **manual one-by-one** (not regex scripts). Scripts generalize and produce new defects (replacing historical-narrative values, mangling section headers via context-bleed, embedding authoring annotations as user-facing prose, missing inline variants the anchor didn't anticipate). Each edit should see its full surrounding context.
+
 > **State machine for this skill:**
 > ```
 > aid-discover  ▸ one step per run
@@ -60,10 +85,11 @@ protocol lives in two reference docs; this section is a checklist citing them.
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
    - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt with explicit instruction to update during long phases
    - SKIP only if `**Heartbeat Interval:** 0` (user-explicit opt-out in STATE.md)
-4. **Arm 3 L2 timers** (always — even for short ETAs use minimums 60s/120s/180s; never gate on ETA):
-   - `sleep <LOW/2 in s> && echo "... <agent> still running (Xm elapsed of ~LOW–HIGH)"`
-   - `sleep <LOW in s> && echo "... <agent> at estimated time (LOWm elapsed)"`
-   - `sleep <1.5×LOW in s> && echo "⚠️ <agent> EXCEEDED estimate (1.5×LOWm elapsed); consider checking on it or cancelling"`
+4. **Arm 3 L2 timers as SEPARATE background dispatches** (always — even for short ETAs use minimums 60s/120s/180s; never gate on ETA). Each timer is its OWN `Bash(..., run_in_background=true)` call:
+   - Call A: `sleep <LOW/2 in s> && echo "... <agent> still running (Xm elapsed of ~LOW–HIGH)"` — own background dispatch
+   - Call B: `sleep <LOW in s> && echo "... <agent> at estimated time (LOWm elapsed)"` — own background dispatch
+   - Call C: `sleep <1.5×LOW in s> && echo "⚠️ <agent> EXCEEDED estimate (1.5×LOWm elapsed); consider checking on it or cancelling"` — own background dispatch
+   - ⚠️ **DO NOT chain timers with `&` inside a single wrapper Bash call.** If you do, the wrapper exits when the last `&` is queued, orphaning the sleeps — their stdout is silently lost and you'll never see the timer fire. Each timer needs its own `run_in_background: true` task so the harness can track and notify on completion.
 
 **During dispatch:**
 
@@ -197,6 +223,29 @@ aid-discover  ▸ you are here
 > `discovery-quality` in parallel (Steps 2–5). The full fanout protocol is
 > documented inside `references/state-generate.md`. The Dispatch Protocol above
 > (L1+L2+L3 visibility) applies to all sub-agent dispatches.
+
+> **REVIEW scope (semantic only).** The REVIEW reviewer's job is to grade
+> **semantic quality** — missing post-merge content, internal contradictions,
+> factual claims that would mislead a downstream phase (architecture,
+> module-map, coding-standards weighted highest). **Mechanical drift is OUT
+> of scope** — line counts, off-by-1, aggregate counts, bare-cite resolver
+> edge cases, math arithmetic, ghost references, meta-doc counting are
+> orchestrator-side **Pre-flight Cleanup** (above), swept BEFORE the
+> reviewer is dispatched. The reviewer should never need to flag mechanical
+> drift as a finding; if it does, the pre-flight sweep was incomplete.
+
+> **FIX parallelism (parallel-agent dispatch when independent).** The
+> `architect` Worker for FIX **partitions the reviewer's findings by KB
+> file** and dispatches **one sub-agent per affected file** (typically
+> `tech-writer` for KB docs, or `researcher` if depth is needed). All agents
+> run in **parallel** — single message with multiple `Agent` tool calls.
+> Each agent's prompt contains only that file's finding list and a clear
+> manual-edits directive (no regex scripts — scripts generalize and produce
+> new defects). Each agent commits-stages its file's changes only. After
+> ALL agents return, the orchestrator runs a **sequential aggregate step**:
+> `verify-kb-claims.sh`, then a single `git commit` + `git push`. The
+> serial constraint exists only at the commit/push boundary; the edits
+> themselves are parallel-safe because each file has exactly one writer.
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, print `Next: [State: {NEXT}] — run /aid-discover again` and exit.

@@ -6,7 +6,7 @@
 
 > ⚠️ **Important:** This repository has **no database, no ORM, no schema files, no migrations** — it is a methodology + multi-tool install bundle (see `module-map.md`). The traditional "data model" sections (tables / columns / FKs / indices) do not apply. Verified by `Glob` against `project-index.md`: no `*.sql`, no `migrations/`, no `*.prisma`, no `*.csproj` with EF Core packages, no `pom.xml`, no `package.json`, no `requirements.txt`. The Specialty `data-engineer` agent description (`canonical/agents/data-engineer/README.md`) governs the schema/migration patterns for projects USING AID, not this repo itself.
 >
-> What this document captures instead is the **structured-artifact model** of the AID pipeline: the set of markdown / TOML / YAML / shell files produced and consumed across the **10 SKILL files** of AID (1 setup [Init] + 8 development + 1 optional [Summarize] per user-confirmed canonical taxonomy DISCOVERY-STATE Q16). These are AID's actual "data" — they flow between phases the same way records flow through a database in a traditional application.
+> What this document captures instead is the **structured-artifact model** of the AID pipeline: the set of markdown / TOML / YAML / shell files produced and consumed across the **10 SKILL files** of AID (1 setup [Init] + 8 development + 1 optional [Summarize] per user-confirmed canonical taxonomy STATE.md Q16). These are AID's actual "data" — they flow between phases the same way records flow through a database in a traditional application.
 
 ---
 
@@ -16,19 +16,19 @@ Each row is one artifact "type". Producer/consumer mappings are extracted from s
 
 | # | Artifact (filename pattern) | Location | Type | Producer | Consumer(s) | Source-of-truth template |
 |---|---------------------------|---------|------|----------|-------------|--------------------------|
-| 1 | `.aid/knowledge/*.md` (16 standard KB docs per DISCOVERY-STATE Q102: `project-structure`, `external-sources`, `architecture`, `technology-stack`, `module-map`, `coding-standards`, `data-model`, `api-contracts`, `integration-map`, `domain-glossary`, `test-landscape`, `security-model`, `tech-debt`, `infrastructure`, `ui-architecture`, `feature-inventory`) | `.aid/knowledge/` | structured markdown | `aid-discover` sub-agents | every downstream skill | `canonical/templates/knowledge-base/*.md` (16 templates; propagated to 3 install trees by `run_generator.py`) |
+| 1 | `.aid/knowledge/*.md` (16 standard KB docs per STATE.md Q102: `project-structure`, `external-sources`, `architecture`, `technology-stack`, `module-map`, `coding-standards`, `data-model`, `api-contracts`, `integration-map`, `domain-glossary`, `test-landscape`, `security-model`, `tech-debt`, `infrastructure`, `ui-architecture`, `feature-inventory`) | `.aid/knowledge/` | structured markdown | `aid-discover` sub-agents | every downstream skill | `canonical/templates/knowledge-base/*.md` (16 templates; propagated to 3 install trees by `run_generator.py`) |
 | 2 | `.aid/knowledge/INDEX.md` | `.aid/knowledge/` | markdown | `aid-discover` Step 6 | every downstream skill (task context) | `canonical/templates/knowledge-base/INDEX.md` |
 | 3 | `.aid/knowledge/README.md` | `.aid/knowledge/` | markdown | `aid-discover` Step 6 | humans | `canonical/templates/knowledge-base/README.md` |
 | 4 | **`.aid/knowledge/STATE.md`** (Discovery area) | `.aid/knowledge/` | structured markdown | `aid-init` (creates), `aid-discover` + `aid-summarize` (update) | `aid-discover` state machine, `aid-summarize` writeback | `canonical/templates/discovery-state-template.md` (85 lines) — absorbs the legacy `DISCOVERY-STATE.md` + `SUMMARY-STATE.md` per FR2 |
 | 5 | `REQUIREMENTS.md` | per-work `.aid/work-NNN-{name}/` | structured markdown | `aid-interview` | `aid-specify`, `aid-plan` | `canonical/templates/requirements/requirements-template.md` |
-| 6 | **`.aid/work-NNN-{name}/STATE.md`** (Work area) | per-work | structured markdown | `aid-init` (creates), `aid-interview` + `aid-specify` + `aid-plan` + `aid-detail` + `aid-execute` + `aid-deploy` (update) | the same skills (resume), `aid-discover` (cross-phase Q&A surface) | `canonical/templates/work-state-template.md` (116 lines) — absorbs the legacy `INTERVIEW-STATE.md` + per-feature `STATE.md` × N + per-task `task-NNN-STATE.md` × N + `DEPLOYMENT-STATE.md` per FR2 |
+| 6 | **`.aid/work-NNN-{name}/STATE.md`** (Work area) | per-work | structured markdown | `aid-init` (creates), `aid-interview` + `aid-specify` + `aid-plan` + `aid-detail` + `aid-execute` + `aid-deploy` (update) | the same skills (resume), `aid-discover` (cross-phase Q&A surface) | `canonical/templates/work-state-template.md` (137 lines) — absorbs the legacy `INTERVIEW-STATE.md` + per-feature `STATE.md` × N + per-task `task-NNN-STATE.md` × N + `DEPLOYMENT-STATE.md` per FR2 |
 | 7 | `feature.md` (one per feature) | per-feature folder | markdown | `aid-interview` | `aid-specify` | `canonical/templates/feature.md` |
 | 8 | `feature-inventory.md` | `.aid/knowledge/` | structured markdown | `aid-discover` (FIX cycle) | `aid-interview`, `aid-specify` | `canonical/templates/feature-inventory.md` + `canonical/templates/knowledge-base/feature-inventory.md` |
 | 9 | `SPEC.md` (one per feature) | per-feature folder | structured markdown | `aid-specify` | `aid-plan`, `aid-execute` | `canonical/templates/specs/spec-template.md` |
 | 10 | `PLAN.md` | per-work | structured markdown | `aid-plan` | `aid-detail` | (no template; format defined inline by `aid-plan`) |
 | 11 | `task-NNN.md` (one per task) | per-work | structured markdown | `aid-detail` | `aid-execute` | `canonical/templates/delivery-plans/task-template.md` |
 | 12 | `package-{NNN}.md` | per-package | structured markdown | `aid-deploy` | `aid-deploy` | `canonical/templates/package.md` |
-| 13 | **`.aid/work-NNN-{name}/MONITOR-STATE.md`** (Monitor area, **DEFERRED**) | per-work | structured markdown | `aid-monitor` (when implemented) | `aid-monitor` (resume) | ⚠️ **Template not yet authored** — Monitor area implementation deferred (OQ-3 / DISCOVERY-STATE Q31). The standalone `MONITOR-STATE.md` filename reflects that *Monitor is itself the state* — no separate artifact to suffix against. Will follow the same area-STATE pattern when authored. |
+| 13 | **`.aid/work-NNN-{name}/MONITOR-STATE.md`** (Monitor area, **DEFERRED**) | per-work | structured markdown | `aid-monitor` (when implemented) | `aid-monitor` (resume) | ⚠️ **Template not yet authored** — Monitor area implementation deferred (OQ-3 / STATE.md Q31). The standalone `MONITOR-STATE.md` filename reflects that *Monitor is itself the state* — no separate artifact to suffix against. Will follow the same area-STATE pattern when authored. |
 | 14 | `track-report-{id}.md` | per-work | structured markdown | `aid-monitor` (when implemented) | `aid-execute` (bugs) / `aid-discover` (CRs) | ⚠️ **Template MISSING** — referenced at `canonical/templates/README.md` but no file on disk; deferred with Monitor area (Q31) |
 | 15 | `IMPEDIMENT-{id}.md` | per-task | structured markdown | `aid-execute` | `aid-specify`, `aid-plan` (revision) | `canonical/templates/feedback-artifacts/IMPEDIMENT.md` |
 | 16 | `KI-{n}` entries (in `known-issues.md`) | per-work | structured markdown subdocument | `aid-specify` | `aid-plan` (sequencing) | `canonical/templates/known-issues.md` |
@@ -48,7 +48,7 @@ Each row is one artifact "type". Producer/consumer mappings are extracted from s
 
 **Artifact files keep their inline `## Change Log` sections** — that is *content history* (what changed in the document), distinct from *process state* (where are we in the workflow). Artifact files (REQUIREMENTS.md, SPEC.md, PLAN.md, task-NNN.md, KB docs) are unchanged.
 
-**Canonical templates** for the area-STATE shape live at `canonical/templates/discovery-state-template.md` (85 lines) and `canonical/templates/work-state-template.md` (116 lines). The legacy per-artifact templates (`interview-state.md`, `feature-state.md`, `deployment-state.md`, the old `discovery-state.md`, the `reports/discovery-state-template.md` reviewer variant, and the per-task state template) have all been retired by work-003 FR2 — they no longer exist on disk under `canonical/templates/` nor under any of the three install trees. See `coding-standards.md §8.5` for the naming rule and §2.7 below for the consolidated per-work STATE schema.
+**Canonical templates** for the area-STATE shape live at `canonical/templates/discovery-state-template.md` (85 lines) and `canonical/templates/work-state-template.md` (137 lines). The legacy per-artifact templates (`interview-state.md`, `feature-state.md`, `deployment-state.md`, the old `discovery-state.md`, the `reports/discovery-state-template.md` reviewer variant, and the per-task state template) have all been retired by work-003 FR2 — they no longer exist on disk under `canonical/templates/` nor under any of the three install trees. See `coding-standards.md §8.5` for the naming rule and §2.7 below for the consolidated per-work STATE schema.
 
 **Sections §2.1, §2.3, §2.7, §2.10 below describe the legacy per-skill / per-artifact state files.** Their schemas are preserved as historical reference; they no longer exist as separate files on disk. The active schemas are in the canonical templates referenced above.
 
@@ -198,7 +198,7 @@ The pre-FR2 `task-NNN-STATE.md` file (one per task, with `## Current Review`, `#
 
 ### 2.8 IMPEDIMENT-{id}.md
 
-Verified at `canonical/templates/feedback-artifacts/IMPEDIMENT.md:1-119`.
+Verified at `canonical/templates/feedback-artifacts/IMPEDIMENT.md (116 lines)`.
 
 | Section | Required | Notes |
 |---------|----------|-------|
@@ -377,7 +377,7 @@ All other artifacts (the 16 KB docs, `INDEX.md`, `README.md`, `feature-inventory
 
 ## 4. Dataflow Diagram — the 10 SKILL files (post-FR2)
 
-The artifact propagation across the **10 SKILL files** (1 setup + 8 development + 1 optional per user-confirmed canonical taxonomy DISCOVERY-STATE Q16; see `architecture.md §2.1` for the full taxonomy and pipeline diagram). Each arrow shows producer → consumer with the carried artifact in parentheses. **Two area-STATE files (Discovery + Work) absorb all process-state writes.**
+The artifact propagation across the **10 SKILL files** (1 setup + 8 development + 1 optional per user-confirmed canonical taxonomy STATE.md Q16; see `architecture.md §2.1` for the full taxonomy and pipeline diagram). Each arrow shows producer → consumer with the carried artifact in parentheses. **Two area-STATE files (Discovery + Work) absorb all process-state writes.**
 
 ```
 Phase 0  Init
@@ -496,3 +496,15 @@ Not applicable. Search across artifacts is performed by skills via the Grep/Glob
 |-----|------|--------|-------------|
 | 1.0 | 2026-05-21 | aid-discover (discovery-analyst) | Initial dogfood pass: 15 artifact-section entries cataloged with schemas, cardinality, dataflow diagram across the 10 SKILL files of the AID pipeline, validation surface assessed, MONITOR-STATE.md and track-report-template.md gaps recorded. |
 | 1.1 | 2026-05-23 | aid-discover cycle-11 FIX (KB-FIX work) | §1 Artifact Inventory rewritten: retired DISCOVERY-STATE/INTERVIEW-STATE/FEATURE-STATE/task-NNN-STATE/DEPLOYMENT-STATE rows replaced with 3 area-STATE rows (Discovery / Work / Monitor-deferred); template paths updated to `canonical/templates/*` post-canonical-generator (work-002); §§2.1, 2.3, 2.10 rewritten to describe the new area-STATE shapes; §§3-4 Mermaid + textual dataflow diagrams redrawn to show area-STATE flows; §6 Migrations section added documenting work-002 + work-003 + Codex tier-rename. Resolves cycle-11 HIGH findings on data-model.md §1 and §§3-4. |
+
+### `canonical/recipes/` (work-001 feature-011 — shipped 2026-05-25)
+
+**Asset type:** Markdown with YAML front-matter + slot-templated body (`{{slot-name}}` placeholders + `{!{` escape).
+
+**Cardinality:** 5 seed recipes + 1 README + meta-template (`canonical/templates/recipe-template.md`); rendered byte-identically into all 3 install trees (`profiles/{claude-code/.claude,codex/.agents,cursor/.cursor}/recipes/`).
+
+**Lifecycle:** Authored in `canonical/recipes/`. Generator (`run_generator.py`) propagates to install trees. Consumed at runtime by `aid-interview` TRIAGE state (Step 5a) when Path=lite + workType matches recipe.applies-to. Emitted output: `.aid/{work}/SPEC.md` + `tasks/task-NNN.md` (no `features/`, no `PLAN.md`).
+
+**Schema:** See `api-contracts.md ## Recipe File Schema` for the front-matter + body contract.
+
+**Validation:** `canonical/skills/aid-interview/scripts/parse-recipe.sh --validate <file>` (113 smoke tests; runs in CI eventually).

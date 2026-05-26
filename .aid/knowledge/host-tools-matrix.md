@@ -2,7 +2,7 @@
 
 > **Source:** aid-discover (orchestrator — KB extension, outside the standard 16)
 > **Status:** Populated (initial pass, 2026-05-21)
-> **Companions:** `integration-map.md` (per-tool integration depth), `tech-debt.md` H1/H3 (triplication drift), `coding-standards.md` §1–§4 (per-tool frontmatter contracts), `external-sources.md` (vendor docs + per-vendor local cross-reference).
+> **Companions:** `integration-map.md` (per-tool integration depth), `tech-debt.md` H1/H3 (canonical-generator output drift), `coding-standards.md` §1–§4 (per-tool frontmatter contracts), `external-sources.md` (vendor docs + per-vendor local cross-reference).
 
 ## Purpose
 
@@ -35,19 +35,19 @@ Every cell answers: *does this capability ship for this tool, and how?*
 | AID capability | Claude Code | Codex CLI | Cursor | Copilot (future) | Antigravity (future) |
 |----------------|-------------|-----------|--------|------------------|----------------------|
 | `aid-init` skill | ✅ `profiles/claude-code/.claude/skills/aid-init/SKILL.md` | ✅ `profiles/codex/.agents/skills/aid-init/SKILL.md` | ✅ `profiles/cursor/.cursor/skills/aid-init/SKILL.md` | ❌ | ❌ |
-| `aid-discover` skill | ✅ 548 lines (canonical-generator), `references/` + `scripts/` split | ✅ 548 (canonical-generator; was 1,078 pre-work-002) lines (inlined) | ✅ 548 (canonical-generator; was 1,090 pre-work-002) lines (inlined) | ❌ | ❌ |
-| `aid-interview` skill | ✅ 477 lines | ✅ 694 lines | ✅ 698 lines | ❌ | ❌ |
-| `aid-specify` skill | ✅ 413 lines | ✅ 485 lines | ✅ 488 lines | ❌ | ❌ |
-| `aid-plan` skill | ✅ 336 lines | ✅ 332 lines (small drift, 4 lines) | ✅ matches Claude Code | ❌ | ❌ |
+| `aid-discover` skill | ✅ 307 lines (post-thin-router refactor + cycle-19 orchestrator-protocol additions; byte-identical via canonical-generator), `references/state-*.md` decomposition | ✅ 307 lines (byte-identical via canonical-generator; pre-canonical-generator Codex was 1,078, Claude Code was 453) | ✅ 307 lines (byte-identical via canonical-generator; pre-canonical-generator Cursor was 1,090) | ❌ | ❌ |
+| `aid-interview` skill | ✅ 357 lines | ✅ 357 lines | ✅ 357 lines | ❌ | ❌ |
+| `aid-specify` skill | ✅ 207 lines | ✅ 207 lines | ✅ 207 lines | ❌ | ❌ |
+| `aid-plan` skill | ✅ 208 lines | ✅ 208 lines (small drift, 4 lines) | ✅ matches Claude Code | ❌ | ❌ |
 | `aid-detail` skill | ✅ | ✅ (5-line drift vs Claude Code) | ✅ (byte-identical to Claude Code) | ❌ | ❌ |
-| `aid-execute` skill | ✅ 386 lines | ✅ 558 lines | ✅ 562 lines | ❌ | ❌ |
+| `aid-execute` skill | ✅ 279 lines | ✅ 279 lines | ✅ 279 lines | ❌ | ❌ |
 | `aid-deploy` skill | ✅ | ✅ (identical to Claude Code) | ✅ (identical) | ❌ | ❌ |
 | `aid-monitor` skill | ✅ | ✅ (identical) | ✅ (identical) | ❌ | ❌ |
-| `aid-summarize` skill | ✅ 430 lines | ✅ 436 lines | ✅ 436 lines | ❌ | ❌ |
+| `aid-summarize` skill | ✅ 233 lines | ✅ 233 lines (byte-identical via canonical-generator) | ✅ 233 lines (byte-identical) | ❌ | ❌ |
 | 22 named agents | ✅ markdown + YAML frontmatter | ✅ TOML with `developer_instructions` | ✅ markdown + YAML (uses `Terminal` tool name vs `Bash`) | ❌ | ❌ |
 | Knowledge-summary HTML viewer assets | ✅ `profiles/claude-code/.claude/templates/knowledge-summary/` (~25 files) | ✅ `profiles/codex/.agents/templates/knowledge-summary/` (~25 files) | ✅ `profiles/cursor/.cursor/templates/knowledge-summary/` (~25 files) | ❌ | ❌ |
-| `setup.sh` installer | ✅ copies `profiles/claude-code/.claude/` + `CLAUDE.md` | ❌ **CONFIRMED BUG (Q70)** — copies `profiles/codex/.codex/` + `AGENTS.md` but omits `profiles/codex/.agents/` (skills + templates). Patch trivial; tracked as `tech-debt.md H6`. | ✅ copies `profiles/cursor/.cursor/` + `AGENTS.md` | ❌ | ❌ |
-| `setup.ps1` installer | ✅ | ❌ **CONFIRMED same Q70 omission** as `setup.sh` (lines 137-141). | ✅ | ❌ | ❌ |
+| `setup.sh` installer | ✅ copies `profiles/claude-code/.claude/` + `CLAUDE.md` | ✅ copies `profiles/codex/.codex/` + `profiles/codex/.agents/` (skills + templates) + `AGENTS.md` — **Q70/H6 RESOLVED 2026-05-22** (setup.sh L144-146; task-030 smoke test confirmed 10 Codex SKILL.md files under `<target>/.agents/skills/aid-*/SKILL.md`). | ✅ copies `profiles/cursor/.cursor/` + `AGENTS.md` | ❌ | ❌ |
+| `setup.ps1` installer | ✅ | ✅ same Codex `.agents/` copy present — **Q70/H6 RESOLVED 2026-05-22** (setup.ps1 L139-141; same smoke test). | ✅ | ❌ | ❌ |
 | MCP integration | ⚪ Documented as supported by tool, AID ships nothing | ⚪ Unknown — needs vendor-doc fetch | ⚪ Documented as supported, AID ships nothing | n/a | n/a |
 | Hooks ecosystem | ⚪ Documented, AID ships nothing | ⚪ Unknown | ⚪ Documented, AID ships nothing | n/a | n/a |
 | `Project-context` file convention | `CLAUDE.md` | `AGENTS.md` | `AGENTS.md` (+ `.cursor/rules/*.mdc` always-on) | n/a | n/a |
@@ -61,7 +61,7 @@ Every cell answers: *does this capability ship for this tool, and how?*
 |--------|-------------|-----------|--------|
 | Agent file format | Markdown + YAML frontmatter | TOML | Markdown + YAML frontmatter |
 | Agent frontmatter required fields | `name`, `description`, `tools`, `model` | `name`, `description`, `model`, `model_reasoning_effort`, `developer_instructions` (multi-line) | `name`, `description`, `tools`, `model` |
-| Agent shell-tool name | `Bash` | (Bash invoked via `developer_instructions` prose) | `Terminal` (Cursor canonical name) — but `profiles/cursor/.cursor/agents/` is **internally inconsistent** (some agents use `Bash`, e.g., `discovery-reviewer.md`). Per DISCOVERY-STATE Q52: audit + unify on `Terminal`. Tracked as `tech-debt.md M6`. |
+| Agent shell-tool name | `Bash` | (Bash invoked via `developer_instructions` prose) | `Terminal` (Cursor canonical name) — but `profiles/cursor/.cursor/agents/` is **internally inconsistent** (some agents use `Bash`, e.g., `discovery-reviewer.md`). Per STATE.md Q52: audit + unify on `Terminal`. Tracked as `tech-debt.md M6`. |
 | Skill file format | `SKILL.md` (YAML frontmatter + markdown body) | `SKILL.md` (same frontmatter) | `SKILL.md` (same frontmatter) |
 | Skill optional fields | `context: fork`, `agent: <name>` (Claude-specific harness hints) | Omits `context:` / `agent:` (Codex CLI has no equivalent — Q51) | Same as Claude Code |
 | Skill decomposition | Externalize content into `references/*.md` + `scripts/*.sh` (canonical pattern) | Inline everything in the SKILL.md body (cause of 2.4× line-count vs Claude Code) | Inline everything (same as Codex) |
@@ -85,14 +85,14 @@ All 22 agents are tier-consistent across all 3 install trees (verified by qualit
 
 ## 5. Known Divergences and Bugs
 
-> Each row links to the DISCOVERY-STATE Q&A item where it's tracked.
+> Each row links to the STATE.md Q&A item where it's tracked.
 
 | # | Tool(s) | Issue | Severity | Status | Q&A |
 |---|---------|-------|----------|--------|-----|
-| 1 | Codex | ❌ `setup.sh` / `setup.ps1` Codex branches copy `profiles/codex/.codex/` + `AGENTS.md` but **omit** `profiles/codex/.agents/` — Codex users get agent TOMLs without skill bodies. CONFIRMED via reviewer static-analysis spot-check. | HIGH | **CONFIRMED — patch tracked in `tech-debt.md H6`** | **Q70** |
-| 2 | Codex | `discovery-reviewer` writes to `DISCOVERY-GRADE.md` + `open-questions.md` while Claude Code / Cursor write to `DISCOVERY-STATE.md` + `additional-info.md` (semantic drift, not just project-context file name) | HIGH | Pending decision | **Q30** |
-| 3 | All trees | (RESOLVED post-work-002) Skill body line-count drift: `aid-discover/SKILL.md` was 453 (Claude Code) / 1,078 (Codex) / 1,090 (Cursor) pre-work-002 — eliminated by canonical-generator. Currently 596 lines across all 3 trees + canonical (post subagent-visibility-patch). `run_generator.py` enforces byte-identical propagation; VERIFY-4a catches drift. Cycle-14 reviewer (2026-05-23) confirmed parity. | RESOLVED | n/a (work-002 + PR #10) | **Q3, Q73 — both RESOLVED** |
-| 4 | All trees | `CONTRIBUTING.md:21-26` documents triplication rule as "human README + Claude Code + Codex" — **omits Cursor entirely**. The discipline is actually quadruplicate | HIGH | Pending update | **Q72, Q34** |
+| 1 | Codex | `setup.sh` / `setup.ps1` Codex branches previously omitted `profiles/codex/.agents/` — Codex users were getting agent TOMLs without skill bodies. CONFIRMED via reviewer static-analysis spot-check. **RESOLVED 2026-05-22** — `copy_dir profiles/codex/.agents` added to `setup.sh` (L145) and `Copy-Dir-Safe` equivalent added to `setup.ps1` (L140). Task-030 smoke test confirmed 10 Codex SKILL.md files present under `<target>/.agents/skills/aid-*/SKILL.md`. | RESOLVED | **RESOLVED — `tech-debt.md H6` RETIRED 2026-05-22** | **Q70** |
+| 2 | Codex | `discovery-reviewer` writes to a separate grade file + `open-questions.md` while Claude Code / Cursor write to `.aid/knowledge/STATE.md` (semantic drift, not just project-context file name) | HIGH | Pending decision | **Q30** |
+| 3 | All trees | (RESOLVED post-work-002) Skill body line-count drift: `aid-discover/SKILL.md` was 453 (Claude Code) / 1,078 (Codex) / 1,090 (Cursor) pre-canonical-generator — eliminated by canonical-generator. Currently 307 lines across canonical + all 3 profile trees (post-thin-router refactor + cycle-19 orchestrator-protocol additions). `run_generator.py` enforces byte-identical propagation; VERIFY-4a catches drift. | RESOLVED | n/a (work-002 + PR #10) | **Q3, Q73 — both RESOLVED** |
+| 4 | All trees | `CONTRIBUTING.md:21-26` documents a manual multi-copy update rule as "human README + Claude Code + Codex" — **omits Cursor entirely**, and is superseded by the canonical-generator authoring rule (§9). | HIGH | Pending update | **Q72, Q34** |
 | 5 | Cursor | Cursor agents are **internally inconsistent** on the shell-execution tool name: `architect.md` uses `Terminal` (canonical), `discovery-reviewer.md` uses `Bash`. Cursor canonical per `external-sources.md` rows 5-6 is `Terminal`. Audit + rename remaining `Bash` → `Terminal` across all 22 agents. | MEDIUM | **CONFIRMED internal inconsistency — patch tracked in `tech-debt.md M6`** | **Q52** |
 | 6 | Codex | Cursor `AGENTS.md` (45 lines, has KB + Permissions + Skills sections) vs `profiles/codex/AGENTS.md` (28 lines, minimal) vs `profiles/claude-code/CLAUDE.md` (30 lines, minimal) — three-way template-shape asymmetry | LOW | Pending alignment | **Q82** |
 | 7 | Codex | `profiles/codex/.codex/agents/developer.toml:11-12` hardcodes a Maven build command + `ProjectRoot/pom.xml` path — likely template-fragment leak | MEDIUM | Pending cleanup | (in `security-model.md` 1.3; not separately Q'd) |
@@ -119,7 +119,7 @@ The same templates and scripts are duplicated four ways (root `templates/` + 3 i
 | `accessibility-checklist.md` | 125 | 4 | 500 |
 | ...rest of scripts/assets | (see `tech-debt.md` H4 for full table) | 4 each | — |
 
-**Total estimated 4-way duplicated content:** ~17,600 lines = ~36% of the 49,226-line repository total.
+**Total estimated 4-way duplicated content:** ~17,600 lines = ~36% of the 90,011-line repository total (post work-001 merge).
 
 ## 7. Future Tool Onboarding Checklist
 
@@ -131,14 +131,14 @@ To add a fifth tool (e.g., Copilot CLI or Antigravity), the contributor would ne
 4. Copy the `canonical/templates/knowledge-summary/` asset bundle.
 5. Author a `<tool-slug>/<context-file>` analogous to `CLAUDE.md` / `AGENTS.md`.
 6. Update `setup.{sh,ps1}` to add a menu entry and copy rule.
-7. Update `README.md`, `CONTRIBUTING.md` (triplication → 5-way), `docs/faq.md`, and this matrix.
+7. Update `README.md`, `CONTRIBUTING.md` (add tool to canonical-generator authoring rule per `coding-standards.md §9`), `docs/faq.md`, and this matrix.
 8. Add the tool's vendor docs URL to `external-sources.md` and write a local cross-reference once a payload exists.
 
-The largest cost is item 2 (22 agent translations) plus item 6 (installer logic + the still-unresolved cross-tree-sync question from **Q3 / Q72**).
+The largest cost is item 2 (22 agent translations) plus item 6 (installer logic). Cross-tree sync (**Q3 RESOLVED** by work-002 canonical-generator; **Q72** CONTRIBUTING.md doc-modernization pending — see `coding-standards.md §9`).
 
 ## 8. Where to Read Next
 
 - **Choosing a tool as an adopter** → `external-sources.md` (vendor docs + local payload paths) + Section 1 above.
-- **Implementing a fix that must hit all 3 trees** → `coding-standards.md` §9 (the triplicate-updates rule, with Q34/Q72 corrections in mind).
-- **Investigating a parity bug** → Section 5 above, then jump to the linked Q&A entry in `DISCOVERY-STATE.md`.
+- **Implementing a fix that must hit all 3 trees** → `coding-standards.md` §9 (the canonical-generator authoring rule, with Q34/Q72 corrections in mind).
+- **Investigating a parity bug** → Section 5 above, then jump to the linked Q&A entry in `.aid/knowledge/STATE.md`.
 - **Adding a 5th tool** → Section 7 above + `CONTRIBUTING.md` (pending the Q34/Q72 update).

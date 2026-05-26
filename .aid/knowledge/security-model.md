@@ -48,9 +48,12 @@ Analysis:
 
 [INFO] **Permission allow-list is narrow and well-formed** in this repo's own settings.
 
-### 1.2 The `.claude/settings..json` Double-Dot File
+### 1.2 The `.claude/settings..json` Double-Dot File — **HISTORICAL (file removed 2026-05-25)**
 
-`.claude/settings..json` exists alongside `.claude/settings.json` (see `project-structure.md` anomaly #2). Diffing (verified 2026-05-21):
+> **Status:** The double-dot file `.claude/settings..json` was removed from the repository. The analysis below is preserved as a record of the bug that previously existed. See `project-structure.md` Anomaly #2 for current state.
+
+
+`.claude/settings.json` (the historical double-dot typo file `.claude/settings..json` was removed; see `project-structure.md` Anomaly #2) exists alongside `.claude/settings.json` (see `project-structure.md` anomaly #2). Diffing (verified 2026-05-21):
 
 ```
 $ diff .claude/settings.json .claude/settings..json
@@ -233,7 +236,7 @@ When AID's discovery sub-agents (`discovery-architect`, `discovery-analyst`, `di
 
 If the user commits `.aid/knowledge/` to a public repo without thinking, this is a **disclosure event**.
 
-**Mitigation in place:** `profiles/claude-code/.claude/skills/aid-init/SKILL.md:349-356` instructs the init skill to **add `.aid/` to `.gitignore`** of the target project:
+**Mitigation in place:** `profiles/claude-code/.claude/skills/aid-init/SKILL.md` instructs the init skill to **add `.aid/` to `.gitignore`** of the target project:
 
 ```
 ### .gitignore
@@ -246,7 +249,7 @@ Check if `.gitignore` exists in the project root.
   Print: `[Init] .gitignore updated — added .aid/ entry.`
 ```
 
-This is verified in this repo: `.gitignore` (at repo root) contains exactly one line: `.aid/`. Confirmed by `project-index.md:72`.
+This is verified in this repo: `.gitignore` (at repo root) contains 47 lines (Python/Node/IDE/editor patterns + selective `.aid/knowledge/.cache/` + `.aid/.heartbeat/`; does NOT exclude the full `.aid/` tree — KB and work artifacts version-tracked). Confirmed by `project-index.md:72`.
 
 [INFO] **Discovery output is gitignored by default** in user projects. The mitigation is documented and demonstrated by the repo's own `.gitignore`. Discovery-quality is dependent on `aid-init` actually running first — a user who copy-pastes skills into their project without running `aid-init` will not get this protection automatically.
 
@@ -294,12 +297,12 @@ Recounted from line-start `[SEVERITY]` tags 2026-05-21 via `bash templates/scrip
 | CRITICAL | 0 | — |
 | HIGH | 1 | All 6 discovery sub-agents share `permissionMode: bypassPermissions` + `background: true` trust assumption (line 157; corrected from "only discovery-reviewer" per cycle-1 review). |
 | MEDIUM | 4 | (L77) Hardcoded Maven path in Codex `developer.toml:11-12`; (L159) `discovery-reviewer` documented authority to append to KB while user is away; (L217) no supply-chain verification (no signed tags / SHA manifest); (L263) prompt-injection risk via 8 fetched vendor doc URLs (Q80 Trust Model documented). |
-| LOW | 4 | (L62) `.claude/settings..json` filename typo (cosmetic); (L102) Cursor `alwaysApply: true` rules have no guardrail; (L219) `setup.sh` silent on new files; (L253) `.gitignore` silent-update by `aid-init`. |
+| LOW | 4 | (L62) `.claude/settings.json` (the historical double-dot typo file `.claude/settings..json` was removed; see `project-structure.md` Anomaly #2) filename typo (cosmetic); (L102) Cursor `alwaysApply: true` rules have no guardrail; (L219) `setup.sh` silent on new files; (L253) `.gitignore` silent-update by `aid-init`. |
 | INFO | 12 | Non-issue observations (narrow allow-list, no secrets committed, examples anonymized, trust boundary correctly placed, Cursor Task tool flagged experimental, Antigravity URL unverified, etc.) — see Q103 for the rubric reconciliation of `[INFO]` as a sixth non-counted severity. |
 | **Total tagged** | **21** | (1 HIGH + 4 MEDIUM + 4 LOW + 12 INFO = 21 distinct severity-tagged findings; 0 CRITICAL.) Recounted post-cycle-3 by `^\[SEVERITY\]` line-start grep. |
 
 ## Open Questions Forwarded
 
-All open questions discovery-quality has raised about security have been appended to the `## Q&A` section of `.aid/knowledge/STATE.md` (Discovery area, per FR2 — formerly `DISCOVERY-STATE.md`) (IDs Q70 onward) — the historical `additional-info.md` consolidation is documented at DISCOVERY-STATE Q102 / Q115.
+All open questions discovery-quality has raised about security have been appended to the `## Q&A` section of `.aid/knowledge/STATE.md` (Discovery area, per FR2 — formerly `DISCOVERY-STATE.md`) (IDs Q70 onward) — the historical `additional-info.md` consolidation is documented at STATE.md Q102 / Q115.
 
 WARNING: This is a static-analysis security assessment. Dynamic testing (running the skills against a controlled target, fuzzing the installer, attempting prompt-injection on the discovery-reviewer agent) is required before any high-assurance claim. None of that has been performed.

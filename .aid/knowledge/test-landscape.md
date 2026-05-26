@@ -7,7 +7,7 @@
 
 ## TL;DR
 
-**There is no traditional test suite in this repository, and no CI/CD.** This is a methodology + multi-tool install-bundle repo (353 files, 49,226 lines; 70.6% Markdown, 11.1% Shell, 7.0% JavaScript). The closest analogues to "tests" are:
+**There is no traditional test suite in this repository, and no CI/CD.** This is a methodology + multi-tool install-bundle repo (631 files, 90,011 lines (pre-merge baseline; refresh with `bash canonical/templates/scripts/build-project-index.sh`); 70.6% Markdown, 11.1% Shell, 7.0% JavaScript). The closest analogues to "tests" are:
 
 1. **Runtime quality scripts** that ship to user projects via the `aid-summarize` skill (validate generated HTML, links, Mermaid diagrams, contrast).
 2. **Skill pre-flight scripts** that gate AID skills on a user's project (verify-kb, check-preflight).
@@ -46,7 +46,7 @@ These run inside the `aid-summarize` skill (state machine PREFLIGHT -> STALE-CHE
 | `stale-check.sh` | 93 | Bash | Compares latest dates in Discovery `STATE.md`'s "Review History" vs. "Summarization History" tables. Emits `STALE` / `CURRENT_APPROVED` / `CURRENT_UNAPPROVED` / `FIRST_RUN`. Lexical date comparison (works for `YYYY-MM-DD`). | STALE-CHECK state of `aid-summarize` |
 | `fetch-mermaid.sh` | 77 | Bash | Downloads Mermaid library from npm for inlining. | GENERATE state of `aid-summarize` |
 | `concatenate.sh` / `concatenate.ps1` | 23 / 36 | Bash / PS | Concatenates section markdown files into a single working document. | GENERATE state of `aid-summarize` |
-| `writeback-state.sh` | 139 | Bash | Appends a new entry to the Discovery area `STATE.md`'s "Summarization History" after VALIDATE passes and the user approves. Renamed from `writeback-discovery-state.sh` as part of FR2 area-STATE consolidation. Post-cycle-11 KB-F2: ships with `-h|--help` handler and GRADE regex `^[A-F][+-]?$` (per Q191 auto-resolution). | WRITEBACK state of `aid-summarize` |
+| `writeback-state.sh` | 173 | Bash | Appends a new entry to the Discovery area `STATE.md`'s "Summarization History" after VALIDATE passes and the user approves. Renamed from `writeback-discovery-state.sh` as part of FR2 area-STATE consolidation. Post-cycle-11 KB-F2: ships with `-h|--help` handler and GRADE regex `^[A-F][+-]?$` (per Q191 auto-resolution). | WRITEBACK state of `aid-summarize` |
 | `grade.sh` (knowledge-summary variant) | 194 | Bash | Deterministic A+/A/B/C/D/F grading for the HTML, based on weighted check results from validate-html.sh, validate-links.sh, validate-diagrams.mjs, contrast-check.mjs. **Any unparseable Mermaid diagram = automatic F.** Distinct from the top-level `canonical/templates/scripts/grade.sh` (141 lines), which grades general issue lists. | VALIDATE state of `aid-summarize` |
 
 **Scope:** *User runtime, not this repo.* These scripts run when a user invokes `/aid-summarize` against their own KB to produce `.aid/knowledge/knowledge-summary.html`. They do not exercise any file in this repository.
@@ -123,7 +123,7 @@ This means there is **no automated check** that:
 
 Additional CONTRIBUTING constraints (still valid in spirit):
 - `CONTRIBUTING.md:75` — "For examples: Add to `examples/` with a `README.md` explaining context. **Anonymize everything.**"
-- `CONTRIBUTING.md:97` — "Under 500 lines per skill (AgentSkills best practice)" — currently violated by `aid-discover` (548 lines, 9.6% over).
+- `CONTRIBUTING.md:97` — "Under 500 lines per skill (AgentSkills best practice)" — currently satisfied. `aid-discover` was 596 lines pre-thin-router; now 307 lines, well under guideline (tech-debt.md M5 RESOLVED post-work-001 PR #13).
 
 ### The Methodology's Inherited Quality Posture
 
@@ -194,3 +194,31 @@ Each gap below is real, not hypothetical, and each carries a measurable risk for
 | 2 | `writeback-state.sh` ships with `-h`/`--help` handler + GRADE regex (KB-F2) | `head -25 canonical/templates/knowledge-summary/scripts/writeback-state.sh` shows `-h | --help` usage in comment block, lines 22-24 define `usage()` |
 
 WARNING: All "no X found" claims above are based on the file inventory in `project-index.md` and targeted `Glob`/`Grep` searches. Re-verified 2026-05-23 against `project-index.md` regenerated same day.
+
+## Canonical Script Tests (work-001 PR #13 — shipped 2026-05-25)
+
+The repo now ships an executable test suite for the canonical helper scripts. **There IS a traditional test suite for the canonical helpers** (the prior TL;DR claim "no traditional test suite" was correct for application-level tests but is misleading for canonical helpers). Run from repo root:
+
+| Test script | Tests | What it covers | Where it lives |
+|---|---|---|---|
+| `test-writeback-task-status.sh` | 69 | All 4 modes of `writeback-task-status.sh` (--field, --findings, --delivery-block, --append-issue); row-integrity validation; sentinel-file locking; idempotency; cross-platform paths | `canonical/templates/scripts/` |
+| `test-delivery-gate-aggregate.sh` | 18 | DELIVERY-GATE aggregate flow: aggregate quick-check findings, score complexity, write gate-record to STATE.md ## Delivery Gates section (per FR2), FR6×FR2 interlock (skip gate on Failed/Blocked tasks) | `canonical/templates/scripts/` |
+| `test-compute-block-radius.sh` | 17 | BFS-based failure-block-radius computation: linear/diamond/fan-out/multi-root graphs; defensive normalization (T16 whitespace-wrapped input); degradation-notice format (T17) | `canonical/templates/scripts/` |
+| `test-pool-dispatch.sh` | 7 | Symbolic Python simulation of PD-2..PD-4 pool semantics: MaxConcurrent cap, FIFO admission, failure-block-radius, isolated-chain continuation, fixed-point exit. Invariant-based (does not dispatch real subagents) | `canonical/templates/scripts/` |
+| `test-parse-recipe.sh` | 113 | Recipe parsing: YAML front-matter validation, slot extraction (POSIX lex rule), `## spec`/`## tasks` block split, `{!{` escape handling, --render output schema, per-seed-recipe `--validate` | `canonical/skills/aid-interview/scripts/` |
+| `e2e-two-tier-runner.sh` | 35 | End-to-end two-tier review flow: per-task quick-check (CRITICAL fix-on-spot + HIGH deferred), FR6 interlock, per-delivery gate, grade.sh determinism | `.aid/work-001-aid-lite/test-reports/` |
+| `e2e-lite-path-runner.sh` | 38 | End-to-end lite-path: triage mapping (T1/T2/T3 → workType), 4 sub-path emission templates, lite-to-full escalation crash-safe ordering, recipe-to-lite escalation, cross-tree byte-identity | `.aid/work-001-aid-lite/test-reports/` |
+
+**Aggregate:** 297 tests pass on the master branch HEAD (verified 2026-05-25). Run all sequentially:
+
+```bash
+bash canonical/templates/scripts/test-writeback-task-status.sh    \
+ && bash canonical/templates/scripts/test-delivery-gate-aggregate.sh \
+ && bash canonical/templates/scripts/test-compute-block-radius.sh    \
+ && bash canonical/templates/scripts/test-pool-dispatch.sh           \
+ && bash canonical/skills/aid-interview/scripts/test-parse-recipe.sh \
+ && bash .aid/work-001-aid-lite/test-reports/e2e-two-tier-runner.sh  \
+ && bash .aid/work-001-aid-lite/test-reports/e2e-lite-path-runner.sh
+```
+
+**Coverage gap (acknowledged):** No CI, so these are run-on-demand. `tech-debt.md` H2 tracks the CI gap.
