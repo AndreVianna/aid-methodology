@@ -1,3 +1,13 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Project-specific vocabulary with definitions. Disambiguates terms that mean different things in different contexts; canonical reference for naming.
+contracts: []
+changelog:
+  - 2026-05-26: KB Authoring v2 template seed
+---
+
 # Domain Glossary
 
 > **Source:** aid-interview (Phase 2) — captured from stakeholder language

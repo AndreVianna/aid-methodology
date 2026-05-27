@@ -24,7 +24,7 @@ Issues must be tagged with the bracketed all-caps form so the grading script cou
 | High                             | `[HIGH]`                              |
 | Critical                         | `[CRITICAL]`                          |
 
-The script (`templates/scripts/grade.sh`) counts occurrences of `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]` in the issue list — not their sentence-case names. An issue written `Minor: missing comment` will be counted as zero issues, producing a silent A+.
+The script (`scripts/grade.sh`) counts occurrences of `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]` in the issue list — not their sentence-case names. An issue written `Minor: missing comment` will be counted as zero issues, producing a silent A+.
 
 Always tag with brackets:
 - ✅ Correct: `[MINOR] missing JSDoc on public helper | utils.ts:42`
@@ -63,7 +63,7 @@ A+ > A > A- > B+ > B > B- > C+ > C > C- > D+ > D > D- > E+ > E > E- > F
 
 ## Minimum Grade
 
-Defined during `/aid-init` and stored in `.aid/knowledge/STATE.md` (Discovery area
+Defined during `/aid-config` and stored in `.aid/knowledge/STATE.md` (Discovery area
 STATE, per FR2) as `**Minimum Grade:**`. Pre-FR2 this lived in `DISCOVERY-STATE.md`.
 All phases read this value. The loop continues until grade ≥ minimum grade.
 

@@ -1,3 +1,13 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  External integration topology — what the project consumes, what it exposes, and the communication patterns between components. Read this for integration-touching work.
+contracts: []
+changelog:
+  - 2026-05-26: KB Authoring v2 template seed
+---
+
 # Integration Map
 
 > **Source:** aid-discover (Phase 1) + aid-interview (Phase 2)

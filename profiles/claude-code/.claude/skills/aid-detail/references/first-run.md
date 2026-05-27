@@ -67,18 +67,25 @@ Once approved:
    - Scope aligned with what the SPECs actually say?
    - Criteria concrete enough to verify?
 
-**Agent:** Dispatch with `subagent_type: reviewer` (overriding the default `architect`). The reviewer must run with clean context — it grades against KB/codebase reality without seeing the architect's working notes. Print before dispatch: `[Review] Dispatching reviewer for task list validation.`
+**Agent:** Dispatch with `subagent_type: reviewer` (overriding the default `architect`). The reviewer must run with clean context — it grades against KB/codebase reality without seeing the architect's working notes.
+
+**Dispatch package:** render `references/reviewer-brief.md` with:
+- `{{SCOPE}}` = `per-deliverable`
+- `{{ARTIFACTS}}` = the task files just written for delivery-NNN + the Execution Graph section just appended to PLAN.md (if present)
+- `{{CONTEXT}}` = `Tasks for delivery-NNN of work-NNN; feature SPECs: feature-NNN-{name}, ...`
+
+Print before dispatch: `[Review] Dispatching reviewer for task list validation (per-deliverable scope).`
 
 ▶ reviewer starting (~1–2 min)
 After writing, **review immediately:** Do the tasks hold up?
 ✓ reviewer done (record actual time) — or ✗ reviewer failed: {reason}
 
-Use the universal rubric (`../../templates/grading-rubric.md`). Classify each issue
+Use the universal rubric (`canonical/templates/grading-rubric.md`). Classify each issue
 by severity. The grade is calculated — worst issue dominates.
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum (from `.aid/knowledge/STATE.md` `**Minimum Grade:**`) | Move to next deliverable. |
+| Grade ≥ minimum (from `bash canonical/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`) | Move to next deliverable. |
 | Grade < minimum, fixable | Back to Propose with findings. |
 
 ```

@@ -1,0 +1,78 @@
+# .aid/settings.yml — AID pipeline configuration (single source of truth)
+#
+# This file is the AUTHORITATIVE source for all AID pipeline settings.
+# Other AID skills (aid-discover, aid-execute, aid-summarize, ...) read
+# their configuration from here at invocation time.
+#
+# Managed by: /aid-config skill. Run /aid-config to view or update.
+# Format: YAML 1.2.
+# Convention: edit via /aid-config; manual edits are allowed but discouraged.
+
+# ---------------------------------------------------------------------------
+# project: identifying metadata for this AID-managed project
+# ---------------------------------------------------------------------------
+project:
+  name: <project-name>              # set during /aid-config INIT
+  description: <project-description>  # set during /aid-config INIT — sole source of truth (not duplicated in CLAUDE.md/AGENTS.md)
+  type: brownfield                  # brownfield | greenfield
+
+# ---------------------------------------------------------------------------
+# tools: which AI host tools have AID installed in this project
+# ---------------------------------------------------------------------------
+tools:
+  installed:
+    - claude-code
+    # - codex
+    # - cursor
+
+# ---------------------------------------------------------------------------
+# review: quality bar for every skill's REVIEW state
+# ---------------------------------------------------------------------------
+# Global default. Applies to every skill that has a REVIEW state and grades
+# its artifacts (discover, summary, interview, specify, plan, detail,
+# execute, deploy, monitor). Skills compare their computed grade against
+# this value and only exit when grade >= minimum_grade.
+#
+# Per-skill overrides are allowed — see the bottom of this file.
+review:
+  minimum_grade: A
+
+# ---------------------------------------------------------------------------
+# execution: settings specific to /aid-execute + /aid-deploy
+# ---------------------------------------------------------------------------
+execution:
+  max_parallel_tasks: 5   # parallel pool dispatch capacity (work-001 feature-009)
+
+# ---------------------------------------------------------------------------
+# traceability: heartbeat + L2 timer subagent visibility (work-003)
+# ---------------------------------------------------------------------------
+traceability:
+  heartbeat_interval: 1   # minutes — interval at which long-running sub-agents update their heartbeat file
+
+# ---------------------------------------------------------------------------
+# Optional per-skill overrides
+# ---------------------------------------------------------------------------
+# Each top-level skill-name key (when set) overrides the corresponding
+# global value in `review:`. Uncomment + set as needed.
+#
+# Valid grade values: A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F
+#
+# Examples:
+# discover:
+#   minimum_grade: A+
+# summary:
+#   minimum_grade: A+
+# interview:
+#   minimum_grade: A-
+# specify:
+#   minimum_grade: A
+# plan:
+#   minimum_grade: A
+# detail:
+#   minimum_grade: A
+# execute:
+#   minimum_grade: A+
+# deploy:
+#   minimum_grade: A+
+# monitor:
+#   minimum_grade: A

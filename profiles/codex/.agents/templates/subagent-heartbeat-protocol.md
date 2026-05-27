@@ -18,7 +18,7 @@ ETAs (`rough-time-hints.md`); L2 = orchestrator check-in timers
 The heartbeat interval is configured in `.aid/knowledge/STATE.md` top-of-file
 metadata as `**Heartbeat Interval:** N minutes`. Default value = **1 minute**.
 
-`aid-init` writes this line during initial scaffolding (asking the user if they
+`aid-config` writes this line during initial scaffolding (asking the user if they
 want to override the default). If the line is absent from STATE.md, dispatchers
 fall back to 1 minute. Orchestrators reading the value MUST tolerate the line
 being absent — never error on it.
@@ -127,8 +127,8 @@ Easy to scan; easy to parse (`head -1`, `awk -F'|'`).
 - **Location:** `.aid/.heartbeat/` (always gitignored — see below)
 - **Gitignore requirement:** because heartbeat files are ephemeral runtime
   artifacts, `.aid/.heartbeat/` MUST be present in the project's `.gitignore`
-  regardless of whether `.aid/` itself is tracked (per aid-init Q8). When
-  `aid-init` runs, it adds `.aid/.heartbeat/` to `.gitignore` unconditionally;
+  regardless of whether `.aid/` itself is tracked (per aid-config Q8). When
+  `aid-config` runs, it adds `.aid/.heartbeat/` to `.gitignore` unconditionally;
   for projects initialized before this patch, the dispatcher SHOULD ensure
   this exclusion exists before its first dispatch.
 - **Stale-file cleanup:** dispatchers SHOULD delete `.aid/.heartbeat/*.txt`
