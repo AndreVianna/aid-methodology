@@ -1,13 +1,15 @@
 ---
 name: aid-config
 description: >
-  Initialize an AID project AND manage pipeline settings ongoingly. First run scaffolds
-  the .aid/ structure, writes .aid/settings.yml from defaults, and sets up
-  {project_context_file} placeholders. Subsequent runs view + update settings
-  (single source of truth for grades, parallelism, heartbeat, project metadata).
-  State machine: PRE-FLIGHT → (INIT | INIT-SETTINGS | VIEW) → SELECT → UPDATE → PERSIST → VIEW → DONE.
+  Initialize an AID project AND manage pipeline settings ongoingly — the single
+  source of truth for grades, parallelism, heartbeat, project metadata.
+  First run scaffolds .aid/ + writes settings.yml from defaults.
+  Subsequent runs: --show prints the current settings; KEY=VALUE (e.g.,
+  /aid-config review.minimum_grade=A-) sets one value; bare invocation
+  enters interactive VIEW → UPDATE → PERSIST flow.
+  State machine: PRE-FLIGHT → (INIT | INIT-SETTINGS | VIEW) → UPDATE → PERSIST → VIEW → DONE.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, AskUserQuestion
-argument-hint: "[--show] view only; [--reset] rewrite settings.yml from defaults (keeps .aid/ structure)"
+argument-hint: "[--show] view only · [--reset] rewrite settings.yml from defaults · [KEY=VALUE] quick-set one key (e.g., review.minimum_grade=A-)"
 ---
 
 # AID Project Configuration
@@ -64,12 +66,18 @@ If confirmed, delete `.aid/settings.yml` so PRE-FLIGHT detection routes to INIT-
 
 Inspect after pre-flight:
 
-| Filesystem | State |
-|---|---|
-| `.aid/` does NOT exist | **INIT** (first-time scaffold) |
-| `.aid/` exists AND `.aid/settings.yml` does NOT exist | **INIT-SETTINGS** (write defaults; existing project gaining settings.yml) |
-| `.aid/` exists AND `.aid/settings.yml` exists, AND `--show` was passed | **VIEW** (read-only) |
-| `.aid/` exists AND `.aid/settings.yml` exists | **VIEW** (default; user can choose to update or exit) |
+| Filesystem | Argument | State |
+|---|---|---|
+| `.aid/` does NOT exist | (any) | **INIT** (first-time scaffold) |
+| `.aid/` exists AND `.aid/settings.yml` does NOT exist | (any) | **INIT-SETTINGS** (write defaults; existing project gaining settings.yml) |
+| `.aid/settings.yml` exists | `KEY=VALUE` | **UPDATE** (quick-set form — skip VIEW; set the single key, then PERSIST) |
+| `.aid/settings.yml` exists | `--show` | **VIEW** (read-only) |
+| `.aid/settings.yml` exists | (bare) | **VIEW** (interactive; user can choose to update or exit) |
+
+**Quick-set form:** if the positional arg matches `<dotted.key>=<value>` (e.g.,
+`review.minimum_grade=A-`), the dispatcher skips VIEW and routes straight to
+UPDATE with the parsed key/value, then PERSIST. Validates the same as
+interactive UPDATE. Returns to DONE without re-rendering VIEW.
 
 Print the state-entry line + "you are here" map (see each state-detail file).
 
@@ -141,6 +149,8 @@ bash .agents/scripts/config/read-setting.sh --skill discover --key minimum_grade
 - [ ] CLAUDE.md or AGENTS.md created (per `tools.installed` selection)
 - [ ] CLAUDE.md / AGENTS.md project-context section does NOT include a description field
   (per single-source-of-truth — description lives only in settings.yml)
-- [ ] `.aid/knowledge/` scaffolded with 16 KB templates + STATE.md + README.md + INDEX.md
-  (only on first INIT; not on subsequent VIEW/UPDATE runs)
-- [ ] `.gitignore` updated per Q8 choice
+- [ ] `.aid/knowledge/` scaffolded with 16 KB templates + STATE.md + README.md
+  (only on first INIT; not on subsequent VIEW/UPDATE runs). INDEX.md is
+  *generated* by `build-index.sh` in Step 4 — not hand-authored.
+- [ ] `.gitignore` updated per Q8 choice (`.aid/.heartbeat/` MUST be ignored
+  per the heartbeat protocol; aid-config offers to append on confirmation)

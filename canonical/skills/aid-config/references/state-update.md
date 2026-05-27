@@ -38,7 +38,7 @@ Valid values:    <see table below>
 | Key path | Valid values | Canonical default |
 |---|---|---|
 | `project.name` | non-empty string, no spaces | `<project-name>` (placeholder) |
-| `project.description` | non-empty string (one line; long descriptions OK) | `<project-description>` (placeholder) |
+| `project.description` | non-empty single-line string (NO newlines — settings.yml uses inline YAML scalars; multi-line input must be reformatted or rejected) | `<project-description>` (placeholder) |
 | `project.type` | `brownfield` or `greenfield` | `brownfield` |
 | `tools.installed` | list of `claude-code` / `codex` / `cursor` (at least one) | `[claude-code]` |
 | `review.minimum_grade` | regex `^[A-F][+-]?$` | `A` |
@@ -72,6 +72,11 @@ Validate per the table above. Specific checks:
 - **`tools.installed`** — must contain at least one of `claude-code`, `codex`, `cursor`. Reject unknown tools.
 - **`project.type`** — must be exactly `brownfield` or `greenfield`.
 - **String fields** — non-empty, no leading/trailing whitespace.
+- **`project.description`** — additionally, MUST NOT contain newlines. The
+  settings.yml schema serializes the description as an inline YAML scalar
+  (`description: <text>` on one line). Multi-line input corrupts the YAML.
+  If the user pastes a multi-line value, reject with: "project.description
+  must be single-line. Got <N> lines. Please consolidate or shorten."
 
 If invalid, print the validation error and re-prompt (loop back to Step 3).
 

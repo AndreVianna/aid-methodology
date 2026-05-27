@@ -37,12 +37,17 @@ Capture as `project.name`. Validate: non-empty, no spaces. Re-ask if invalid.
 ### Q3 — Brief Description
 
 ```
-One-sentence description (what does this project DO?)
+One-sentence description (what does this project DO?) — single line, ~100 chars.
 ```
 
 Capture as `project.description`. **This is the SOLE source of truth — it will NOT be
 duplicated in CLAUDE.md/AGENTS.md.** The project-context file links to settings.yml
 instead.
+
+**Validation:** must be single-line (no newlines). The settings.yml schema
+serializes this as an inline YAML scalar. If the user enters a multi-line
+value, re-prompt: "project.description must be single-line. Got <N> lines.
+Please consolidate or shorten."
 
 ### Q4 — External Documentation Paths (optional)
 
@@ -257,23 +262,61 @@ the source moved (.cursor/templates/knowledge-summary/ unchanged).
 
 ---
 
-## Step 7: Update `.gitignore` (per user's earlier policy on `.aid/`)
+## Step 7: Update `.gitignore` (with explicit user confirmation)
 
-The adopter's `.gitignore` is NOT touched automatically. Instead, print
-recommendations:
+The heartbeat protocol declares `.aid/.heartbeat/` **MUST** be gitignored
+(see `.cursor/templates/subagent-heartbeat-protocol.md`). The transient
+state (`.aid/.temp/`) and local caches (`.aid/.cache/`) should also be
+ignored to avoid noisy diffs and accidental secret commits.
+
+Rather than touch the user's `.gitignore` silently, prompt with an
+AskUserQuestion offering three options:
 
 ```
-Recommended .gitignore entries (you may add manually):
-  .aid/.temp/        # transient state — never commit
-  .aid/.heartbeat/   # heartbeat files — never commit
-  .aid/.cache/       # local caches — never commit
+.gitignore entries: aid-config recommends ignoring transient AID state.
+Three options:
 
-To keep the KB local-only (not shared via git):
-  .aid/              # ignores everything in .aid/
+[1] Append the protocol-required minimum (.aid/.temp/, .aid/.heartbeat/, .aid/.cache/)
+    — keeps your KB tracked; ignores only transient runtime state.
+[2] Append .aid/ (ignore everything inside .aid/)
+    — KB stays local-only (not shared via git).
+[3] Skip — I'll manage .gitignore myself.
 ```
 
-(Adopters who DO want to commit their KB add only the `.temp`/`.heartbeat`/`.cache`
-entries.)
+**Option 1 (recommended) and Option 2 actually append** (with a check to
+avoid duplicate lines). Use a guarded block so re-running aid-config doesn't
+double-append:
+
+```bash
+GITIGNORE=".gitignore"
+BLOCK_BEGIN="# >>> aid-config managed >>>"
+BLOCK_END="# <<< aid-config managed <<<"
+
+# Skip if the managed block already exists
+if [ -f "$GITIGNORE" ] && grep -qF "$BLOCK_BEGIN" "$GITIGNORE"; then
+  echo "ℹ️  .gitignore already has an aid-config managed block — skipping."
+else
+  {
+    [ -f "$GITIGNORE" ] && echo ""
+    echo "$BLOCK_BEGIN"
+    case "$choice" in
+      1) echo ".aid/.temp/"; echo ".aid/.heartbeat/"; echo ".aid/.cache/" ;;
+      2) echo ".aid/" ;;
+    esac
+    echo "$BLOCK_END"
+  } >> "$GITIGNORE"
+  echo "✓ .gitignore updated with aid-config managed block."
+fi
+```
+
+**Option 3** prints the recommended entries for manual copying but does not
+write to `.gitignore`. If chosen, also warn: "⚠️ .aid/.heartbeat/ MUST be
+gitignored per the heartbeat protocol; please add it manually before running
+any subagent-dispatching skill."
+
+Re-running `/aid-config` later detects the managed block and does not
+re-append; users who want to change the choice should edit the block manually
+or delete it and re-run.
 
 ---
 
