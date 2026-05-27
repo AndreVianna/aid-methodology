@@ -175,21 +175,28 @@ for ref in state-triage.md state-condensed-intake.md state-task-breakdown.md \
     fail "P5: canonical $ref missing"
     continue
   fi
-  canonical_sha=$(sha256sum "$canonical" | awk '{print $1}')
+  # After F1 (PR #15 review fix), the renderer rewrites canonical/{scripts,
+  # templates,skills,agents,rules,recipes}/ → <install_root>/ in skill bodies.
+  # So profile ≠ canonical for files containing those refs. Instead, we
+  # apply the same rewrite to canonical in-memory and compare.
   match_count=0
-  for profile_dir in claude-code/.claude codex/.agents cursor/.cursor; do
+  for entry in "claude-code/.claude:.claude" "codex/.agents:.agents" "cursor/.cursor:.cursor"; do
+    profile_dir="${entry%%:*}"
+    install_root="${entry##*:}"
     profile_ref="$REPO_ROOT/profiles/$profile_dir/skills/aid-interview/references/$ref"
     if [[ -f "$profile_ref" ]]; then
       profile_sha=$(sha256sum "$profile_ref" | awk '{print $1}')
-      if [[ "$canonical_sha" == "$profile_sha" ]]; then
+      # Rewrite canonical → install-root paths in-memory, then compare
+      expected_sha=$(sed -E "s#\bcanonical/(scripts|templates|skills|agents|rules|recipes)/#${install_root}/\1/#g" "$canonical" | sha256sum | awk '{print $1}')
+      if [[ "$expected_sha" == "$profile_sha" ]]; then
         match_count=$((match_count + 1))
       fi
     fi
   done
   if [[ "$match_count" -eq 3 ]]; then
-    pass "P5: $ref byte-identical across canonical + 3 profile trees"
+    pass "P5: $ref matches canonical (with F1 install-path rewrite applied) across 3 profile trees"
   else
-    fail "P5: $ref byte-identity broken ($match_count/3 profiles match)"
+    fail "P5: $ref rewrite-aware match broken ($match_count/3 profiles match)"
   fi
 done
 
