@@ -175,6 +175,25 @@ intent: |
 
 Lint discovers this file and merges its rules with the canonical rubric.
 
+## Lint output → severity mapping
+
+`.agents/scripts/kb/verify-claims.sh` emits findings in the canonical format
+`[SEVERITY] [TAG] <description>` so the reviewer subagent and any downstream
+tool can extract severity programmatically without a translation table.
+
+| Lint tag | Severity | Meaning |
+|---|---|---|
+| `[FM-MISSING]` | HIGH | Frontmatter field absent (kb-category / source / intent / generator / AUTO-GENERATED marker missing) |
+| `[FM-INVALID]` | HIGH | Frontmatter field has invalid value (e.g., kb-category not in primary/meta/extension) |
+| `[KB-MISSING]` | HIGH | A standard primary KB document is not present on disk |
+| `[GEN-MISSING]` | HIGH | A registered generated file (per `generated-files.txt`) does not exist; the build command needs to be run |
+
+All current lint findings are HIGH severity by the rubric's check-1/3/5/8
+rules (frontmatter parse failure, contract mismatch, T2 structure mismatch,
+broken citation). If future lint checks emit MEDIUM/LOW findings, the
+emission MUST prefix the appropriate severity tag — never emit a bare
+`[TAG]` without a severity prefix.
+
 ## See also
 
 - [principles.md](principles.md) — the 7 principles, especially P3 (temp ledger), P4 (lint enforcement), P7 (read-only on repo)

@@ -71,3 +71,10 @@ DELIVERABLES:
   ```
   Do NOT include "we already fixed X", prior grades, or branch history.
 - `{{MODE}}` — literal `per-task` or `per-delivery`.
+
+**Derive from disk, not memory.** When populating `{{ARTIFACTS}}` at dispatch
+time, derive the list from a deterministic source (e.g., `git diff --name-only`
+for PR-level reviews, or the executor's produced-file list for per-task reviews),
+filtered by the OUT OF SCOPE list above. Lists built from memory of what was
+worked on tend to omit incidentally-touched files; the reviewer then can't grade
+what it doesn't know about.

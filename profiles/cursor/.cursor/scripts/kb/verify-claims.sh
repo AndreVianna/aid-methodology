@@ -78,7 +78,7 @@ KB_MISSING_FILE=$(mktemp)
 # PART 0 — Standard KB file presence (folded in from former verify-kb.sh)
 # ---------------------------------------------------------------------------
 # Verifies the 16 standard primary KB documents exist in the KB directory.
-# Missing files are reported as [KB-MISSING] findings; subsequent parts will
+# Missing files are reported as [HIGH] [KB-MISSING] findings; subsequent parts will
 # not produce useful results if standard files are absent. Does not abort
 # early (runs remaining checks for completeness).
 #
@@ -116,7 +116,7 @@ for f in "${STANDARD_KB_FILES[@]}"; do
     kb_present=$((kb_present + 1))
   else
     kb_missing=$((kb_missing + 1))
-    echo "[KB-MISSING] $f (standard primary KB document not found in $KB_DIR/)" >> "$KB_MISSING_FILE"
+    echo "[HIGH] [KB-MISSING] $f (standard primary KB document not found in $KB_DIR/)" >> "$KB_MISSING_FILE"
   fi
 done
 
@@ -422,7 +422,7 @@ for f in "$KB_DIR"/*.md; do
     first_line=$(head -1 "$f")
     if [[ "$first_line" != "---" ]]; then
         fm_errors=$((fm_errors + 1))
-        echo "[FM-MISSING] $name: no YAML frontmatter (first line != '---')" >> "$FM_ERRORS"
+        echo "[HIGH] [FM-MISSING] $name: no YAML frontmatter (first line != '---')" >> "$FM_ERRORS"
         continue
     fi
 
@@ -436,12 +436,12 @@ for f in "$KB_DIR"/*.md; do
         primary|meta|extension) ;;
         "")
             fm_errors=$((fm_errors + 1))
-            echo "[FM-MISSING] $name: kb-category not declared" >> "$FM_ERRORS"
+            echo "[HIGH] [FM-MISSING] $name: kb-category not declared" >> "$FM_ERRORS"
             continue
             ;;
         *)
             fm_errors=$((fm_errors + 1))
-            echo "[FM-INVALID] $name: kb-category='$kb_cat' (must be primary|meta|extension)" >> "$FM_ERRORS"
+            echo "[HIGH] [FM-INVALID] $name: kb-category='$kb_cat' (must be primary|meta|extension)" >> "$FM_ERRORS"
             continue
             ;;
     esac
@@ -451,18 +451,18 @@ for f in "$KB_DIR"/*.md; do
         hand-authored|generated) ;;
         "")
             fm_errors=$((fm_errors + 1))
-            echo "[FM-MISSING] $name: source not declared" >> "$FM_ERRORS"
+            echo "[HIGH] [FM-MISSING] $name: source not declared" >> "$FM_ERRORS"
             ;;
         *)
             fm_errors=$((fm_errors + 1))
-            echo "[FM-INVALID] $name: source='$src' (must be hand-authored|generated)" >> "$FM_ERRORS"
+            echo "[HIGH] [FM-INVALID] $name: source='$src' (must be hand-authored|generated)" >> "$FM_ERRORS"
             ;;
     esac
 
     # generator required iff source: generated
     if [[ "$src" == "generated" && -z "$generator" ]]; then
         fm_errors=$((fm_errors + 1))
-        echo "[FM-MISSING] $name: source=generated but generator: not declared" >> "$FM_ERRORS"
+        echo "[HIGH] [FM-MISSING] $name: source=generated but generator: not declared" >> "$FM_ERRORS"
     fi
 
     # intent should be non-empty AND have actual content under the literal block.
@@ -470,7 +470,7 @@ for f in "$KB_DIR"/*.md; do
     if [[ -z "$intent" || "$intent" == "|" ]]; then
         if ! grep -qE "^intent:[[:space:]]*\|" "$f"; then
             fm_errors=$((fm_errors + 1))
-            echo "[FM-MISSING] $name: intent: not declared" >> "$FM_ERRORS"
+            echo "[HIGH] [FM-MISSING] $name: intent: not declared" >> "$FM_ERRORS"
         else
             # Literal block declared — verify at least one non-blank indented content line follows
             # (peek next 5 lines after the `intent: |` line; require at least one indented non-blank)
@@ -481,7 +481,7 @@ for f in "$KB_DIR"/*.md; do
             ' "$f")
             if [[ -z "$intent_content" ]]; then
                 fm_errors=$((fm_errors + 1))
-                echo "[FM-MISSING] $name: intent: literal block declared but body is empty/whitespace-only" >> "$FM_ERRORS"
+                echo "[HIGH] [FM-MISSING] $name: intent: literal block declared but body is empty/whitespace-only" >> "$FM_ERRORS"
             fi
         fi
     fi
@@ -490,7 +490,7 @@ for f in "$KB_DIR"/*.md; do
     if [[ "$src" == "generated" ]]; then
         if ! grep -qE "<!--[[:space:]]*AUTO-GENERATED" "$f"; then
             fm_errors=$((fm_errors + 1))
-            echo "[FM-MISSING] $name: source=generated but no <!-- AUTO-GENERATED ... --> header" >> "$FM_ERRORS"
+            echo "[HIGH] [FM-MISSING] $name: source=generated but no <!-- AUTO-GENERATED ... --> header" >> "$FM_ERRORS"
         fi
     fi
 
@@ -530,7 +530,7 @@ if [[ -f "$REGISTRY" ]]; then
         out_path="${out_path%"${out_path##*[![:space:]]}"}"
         if [[ ! -f "$ROOT/$out_path" ]]; then
             generated_missing=$((generated_missing + 1))
-            echo "[GEN-MISSING] $out_path: registered generated file does not exist (run: $build_cmd)" >> "$GENERATED_MISSING"
+            echo "[HIGH] [GEN-MISSING] $out_path: registered generated file does not exist (run: $build_cmd)" >> "$GENERATED_MISSING"
         fi
     done < "$REGISTRY"
 fi

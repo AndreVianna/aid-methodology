@@ -161,8 +161,11 @@ The expected output. Always:
 ## Brief generation
 
 Each skill that dispatches a reviewer ships a brief template at
-`.agents/skills/<skill>/references/reviewer-brief.md` **(not yet implemented — will be
-added per-skill during the Phase B skill-update pass; see roadmap)**.
+`.agents/skills/<skill>/references/reviewer-brief.md`. Six per-skill briefs
+are shipped: `aid-discover`, `aid-execute`, `aid-specify`, `aid-plan`,
+`aid-detail`, `aid-interview`. Each renders this protocol's 5-section structure
+with skill-specific RUBRIC + OUT OF SCOPE; the consumer state file fills the
+dynamic slots and dispatches.
 
 The template is HYBRID — fixed structure with two dynamic slots:
 
@@ -176,8 +179,16 @@ The template is HYBRID — fixed structure with two dynamic slots:
 | DELIVERABLES | **Static per skill** — same expected outputs |
 
 Substitution mechanism: the brief template uses `{{ARTIFACTS}}` and
-`{{CONTEXT}}` placeholders. Skill renders them at dispatch time (bash heredoc,
-small render helper, or inline string substitution).
+`{{CONTEXT}}` placeholders (some briefs also use `{{MODE}}` or `{{SCOPE}}`).
+Skill renders them at dispatch time (bash heredoc, small render helper, or
+inline string substitution).
+
+**Deriving `{{ARTIFACTS}}` — always from disk, never from memory.** For
+PR-level reviews, derive from `git diff --name-only <base>..HEAD` filtered
+by the OUT-OF-SCOPE list. For per-task/per-delivery reviews, derive from
+the executor's produced-file list. Building the list from memory of what
+was worked on tends to omit incidentally-touched files; the reviewer then
+can't grade what it doesn't know about.
 
 **Inspectability requirement:** the rendered brief is logged with the dispatch
 record so it can be inspected after the fact (per work-003 traceability).
@@ -267,6 +278,11 @@ docs. Therefore this doc carries no `kb-category:`/`source:` frontmatter.
 For changes to this doc, append a dated line at the bottom of this section:
 
 - 2026-05-26: Initial authoring (Phase A KB Authoring overhaul)
+- 2026-05-27: Phase B landed 6 per-skill `reviewer-brief.md` templates
+  (aid-discover, aid-execute, aid-specify, aid-plan, aid-detail,
+  aid-interview); removed the "not yet implemented" parenthetical;
+  documented the rendering convention; added "derive ARTIFACTS from
+  disk, not memory" rule (closes F10, F22, F26 from PR #15 review)
 
 ## See also
 

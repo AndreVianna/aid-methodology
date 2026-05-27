@@ -68,3 +68,10 @@ DELIVERABLES:
   Do NOT include the architect's working notes, prior REVIEW cycle grades, or
   references to /aid-detail/aid-execute.
 - `{{SCOPE}}` — literal `per-deliverable` or `whole-plan`.
+
+**Derive from disk, not memory.** When populating `{{ARTIFACTS}}` at dispatch
+time, derive the list from a deterministic source (e.g., `git diff --name-only`
+for PR-level reviews, or the executor's produced-file list for per-task reviews),
+filtered by the OUT OF SCOPE list above. Lists built from memory of what was
+worked on tend to omit incidentally-touched files; the reviewer then can't grade
+what it doesn't know about.

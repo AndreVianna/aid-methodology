@@ -69,6 +69,10 @@ changelog:
 - **`verify-claims.sh`** — parses frontmatter; lint-checks `contracts:` against disk; warns on inline T3/T4 markers in primary-category docs
 - **`build-index.sh`** — composes `INDEX.md` from each doc's `intent:` + `kb-category:` + path
 - **`build-metrics.sh`** — produces `metrics.md` with all numeric facts (T3) the project tracks
+- **`build-project-index.sh`** — produces `.aid/generated/project-index.md`, a build-time inventory of repository files (used by `/aid-discover` Step 0c). Classified `meta + source: generated` → Build-Verify Only.
+
+All three builders are registered in `.cursor/templates/generated-files.txt`
+so `/aid-discover` FIX state can iterate them on auto-gen-last (per [principles.md](principles.md) P3).
 
 ## Project-specific extension
 
@@ -81,5 +85,6 @@ extend the canonical rubric with project-specific lint rules. See
 - `.cursor/scripts/kb/verify-claims.sh` — lint implementation
 - `.cursor/scripts/kb/build-metrics.sh` — T3 fact generator
 - `.cursor/scripts/kb/build-index.sh` — INDEX.md generator
+- `.cursor/scripts/kb/build-project-index.sh` — project-index.md generator
 - `.cursor/templates/generated-files.txt` — registry of all generated files + build commands
 - `.cursor/templates/knowledge-base/*.md` — KB doc templates pre-filled with frontmatter

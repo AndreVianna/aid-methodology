@@ -47,8 +47,10 @@ DELIVERABLES:
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
   - Grade: per .cursor/scripts/grade.sh; minimum resolved via
     `bash .cursor/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`
-  - Pending Q&A: write user-facing questions to `.aid/{work}/INTERVIEW-STATE.md ## Pending Q&A`
-    so the next `/aid-interview` run picks them up in Q&A mode
+  - Pending Q&A: write user-facing questions to `.aid/{work}/STATE.md ## Pending Q&A`
+    (the consolidated work STATE.md per FR2 area-STATE consolidation; the
+    legacy `INTERVIEW-STATE.md` is RETIRED) so the next `/aid-interview` run
+    picks them up in Q&A mode
   - The reviewer NEVER edits REQUIREMENTS.md or SPEC scaffolds — only grades and lists issues
 ```
 
@@ -66,3 +68,10 @@ DELIVERABLES:
   ```
   Do NOT include interview transcripts, the interviewer's working notes, or
   references to downstream skills.
+
+**Derive from disk, not memory.** When populating `{{ARTIFACTS}}` at dispatch
+time, derive the list from a deterministic source (e.g., `git diff --name-only`
+for PR-level reviews, or the executor's produced-file list for per-task reviews),
+filtered by the OUT OF SCOPE list above. Lists built from memory of what was
+worked on tend to omit incidentally-touched files; the reviewer then can't grade
+what it doesn't know about.
