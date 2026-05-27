@@ -42,7 +42,7 @@ For each section of REQUIREMENTS.md, check against KB:
 Use the universal rubric (`../../../templates/grading-rubric.md`). Classify each finding
 by severity (Minor/Low/Medium/High/Critical). Grade is calculated — worst issue dominates.
 
-Compare to minimum grade from `.aid/knowledge/STATE.md` `**Minimum Grade:**`.
+Compare to minimum grade from `bash .claude/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`.
 
 **Update `**Interview Grade:**` in STATE.md `## Interview Status`.**
 

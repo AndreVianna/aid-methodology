@@ -31,7 +31,7 @@ Required: work ID. If only one work exists, auto-select it.
 ```
 .aid/
   knowledge/
-    STATE.md                   ← minimum grade, Q&A (Pending)
+    STATE.md                   ← Q&A, Review History (settings → .aid/settings.yml), Q&A (Pending)
 .aid/{work}/
   STATE.md                     ← § Deploy Status (current operation status, history)
   packages/                    ← product (one file per release)
@@ -110,55 +110,12 @@ aid-deploy  ▸ you are here
   - `technology-stack.md` § Commands — build, lint, test commands
   - Any other docs INDEX summaries indicate are relevant
 
-## Dispatch Protocol (L1+L2+L3 subagent visibility, subagent-visibility-patch)
+## Dispatch Protocol
 
-Every subagent dispatch in this skill MUST follow this protocol so the user
-sees mid-wait progress instead of going silent for 10–25+ minutes. The full
-protocol lives in two reference docs; this section is a checklist citing them.
-
-**Before each dispatch:**
-
-1. **Look up ETA** in `canonical/templates/rough-time-hints.md` for the
-   subagent's operation class. Capture LOW–HIGH band.
-2. **Read heartbeat config** from `.aid/knowledge/STATE.md` top-of-file
-   `**Heartbeat Interval:** N minutes` (default 1; `0` = disabled).
-3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
-   - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
-   - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt with explicit instruction to update during long phases
-   - SKIP only if `**Heartbeat Interval:** 0` (user-explicit opt-out in STATE.md)
-4. **Arm 3 L2 timers** (always — even for short ETAs use minimums 60s/120s/180s; never gate on ETA):
-   - `sleep <LOW/2 in s> && echo "... <agent> still running (Xm elapsed of ~LOW–HIGH)"`
-   - `sleep <LOW in s> && echo "... <agent> at estimated time (LOWm elapsed)"`
-   - `sleep <1.5×LOW in s> && echo "⚠️ <agent> EXCEEDED estimate (1.5×LOWm elapsed); consider checking on it or cancelling"`
-
-**During dispatch:**
-
-- **On L2 timer fire:** surface the timer output. If heartbeat file exists,
-  also read it and append `[from heartbeat] state: <state> · progress: <progress>
-  · activity: <activity>` to the narration.
-
-**On completion / failure:**
-
-- **Success:** emit `✓ <agent> done in <actual>` with measured time. Append a row to
-  the work `STATE.md ## Calibration Log` section (create section if missing) with
-  format `| YYYY-MM-DD | <agent> | <task-id/cycle> | <ETA-band> | <actual> | <notes> |`.
-  Also update the task's `## Dispatches` sub-column with the dispatch record.
-  Both are mandatory per work-003 traceability (never optional, never "if tracked").
-  Delete heartbeat file.
-- **Failure:** emit `✗ <agent> FAILED after <elapsed> (reason: <one-line>)`.
-  Decide whether to re-dispatch, fall back, or surface to user. Delete
-  heartbeat file.
-
-**References:**
-
-- `canonical/templates/long-wait-protocol.md` — full L2 spec
-- `canonical/templates/subagent-heartbeat-protocol.md` — full L3 spec
-- `canonical/templates/rough-time-hints.md` — current measured ETAs
-- `canonical/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
-
-The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair
-lines elsewhere in this skill body remain in place; this protocol just makes
-them more informative by adding mid-wait check-ins + structured progress.
+This skill follows the L1+L2+L3 subagent-visibility protocol (work-003 traceability —
+heartbeats, ETA timers, calibration). The full checklist lives in
+`.claude/templates/dispatch-protocol-checklist.md`; read it before any subagent
+dispatch in this skill.
 
 ## Dispatch
 
@@ -168,32 +125,16 @@ them more informative by adding mid-wait check-ins + structured progress.
 | SELECTING | `references/state-selecting.md` | `operator` | → VERIFYING |
 | VERIFYING | `references/state-verifying.md` | `operator` | → PACKAGING |
 | PACKAGING | `references/state-packaging.md` | `operator` | → DONE |
-| DONE | _(inline — see Re-run below)_ | `inline` | → halt |
+| DONE | _(inline — terminal)_ | `inline` | → halt |
+| RE-RUN | `references/state-re-run.md` | `inline` | → halt |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, print `Next: [State: {NEXT}] — run /aid-deploy again` and exit.
 
-## Re-run
-
-When work `STATE.md` `## Deploy Status` is Done:
-
-```
-[State: RE-RUN] — Prior release found; confirming whether to start a new release or review.
-aid-deploy  ▸ you are here
-  [✓ IDLE ] → [✓ SELECTING ] → [✓ VERIFYING ] → [✓ PACKAGING ] → [✓ DONE ] → [● RE-RUN ]
-```
-
-1. Show package history (from work `STATE.md` `## Deploy Status` History section).
-2. Ask: **[1] New release** or **[2] Review package-NNN**?
-3. If [1] → reset Status to Idle, proceed with Step 1 (only unshipped deliveries eligible).
-4. If [2] → read the package file, compare against current state of tasks/deliveries,
-   flag any discrepancies (tasks modified after shipping, new known issues).
-   Offer to regenerate release notes if content changed.
-
 ## Quality Checklist
 
 - [ ] All selected deliveries have all tasks complete
-- [ ] All task grades meet minimum (from `.aid/knowledge/STATE.md` `**Minimum Grade:**`)
+- [ ] All task grades meet minimum (from `bash .claude/scripts/config/read-setting.sh --skill deploy --key minimum_grade --default A`)
 - [ ] No Critical/High known-issues unresolved
 - [ ] Full build passes (not incremental)
 - [ ] Full test suite passes

@@ -1,7 +1,7 @@
 ---
 name: aid-discover
 description: >
-  Brownfield project discovery with built-in quality gate. Run `/aid-init` first to scaffold
+  Brownfield project discovery with built-in quality gate. Run `/aid-config` first to scaffold
   the KB. Analyzes all repository content (code, configuration, and documentation) to populate
   KB documents. Reviews, collects user input, fixes issues, and gets user approval — one step
   per run. State-machine: GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE.
@@ -19,12 +19,37 @@ Includes a built-in quality gate that reviews, grades, and fixes KB documents.
 
 ## ⚠️ Pre-flight Checks
 
-Run `scripts/check-preflight.sh .aid/knowledge/` to verify:
+Run `bash .claude/scripts/kb/preflight.sh .aid/knowledge/` to verify:
 1. `.aid/knowledge/STATE.md` exists (init has run)
 2. Not in Plan Mode (subagents need write access)
 
-If Check 1 fails: `⚠️ Knowledge Base not initialized. Run /aid-init first to set up the project.` — Exit.
+If Check 1 fails: `⚠️ Knowledge Base not initialized. Run /aid-config first to set up the project.` — Exit.
 If Check 2 fails: Tell user to press `Shift+Tab` to exit Plan Mode, then re-run.
+
+---
+
+## ⚠️ Pre-flight Cleanup (orchestrator-only — never grade these)
+
+**Before dispatching the REVIEW reviewer, sweep the KB for mechanical drift that should never appear as a "finding".** These are housekeeping items the orchestrator owns; they pollute reviewer attention and burn cycles if left for the reviewer to surface.
+
+**Sweep categories (auto-correct silently):**
+
+- **Line-count drift** — `wc -l` every cited file (SKILL.md, AGENT.md, scripts, templates, methodology) and replace stale citations with disk truth.
+- **Off-by-1 drift** — small numerical changes in file sizes / counts that the prior cycle missed.
+- **Aggregate counts** — per-skill or per-tree file/script/reference totals computed from current disk state (`find ... | wc -l`).
+- **Path & citation hygiene** — bare citations missing skill prefix (`SKILL.md:NNN` → `.claude/skills/<skill>/SKILL.md:NNN`); out-of-range line cites (line numbers that no longer exist after a file shrunk); broken `path:line` references.
+- **Math** — verify any `%` calculations using real values (e.g., "X% over Y" assertions). If the underlying numbers changed, recompute.
+- **Ghost references** — once confirmed a file/feature was removed, delete references to it (don't leave "(retired)" or "(see below)" stubs in current-state docs; historical change-log entries are fine).
+- **Meta-doc counting** — `INDEX.md` / `README.md` per-doc line counts, feature counts, file-type tallies (same nature as line-count drift).
+
+**Out of KB scope — never check, never claim:**
+
+- **`.claude/` at the repo root** — this is the **dogfood install** (AID applied to AID itself), conceptually identical to any user's `.claude/` after running `setup.sh`. The KB makes **no claims** about it. Byte-identity comparisons are scoped to **4-tree** (canonical + 3 profile trees), NOT 5-tree.
+
+**Why pre-flight cleanup matters:**
+- Reviewer focus should be **semantic** quality (missing post-merge content, internal contradictions, factually wrong claims that mislead downstream phases) — not arithmetic drift.
+- Sweeping these first lets the reviewer score the KB on what actually matters.
+- Edits in this sweep should be **manual one-by-one** (not regex scripts). Scripts generalize and produce new defects (replacing historical-narrative values, mangling section headers via context-bleed, embedding authoring annotations as user-facing prose, missing inline variants the anchor didn't anticipate). Each edit should see its full surrounding context.
 
 > **State machine for this skill:**
 > ```
@@ -52,18 +77,20 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **Before each dispatch:**
 
-1. **Look up ETA** in `canonical/templates/rough-time-hints.md` for the
+1. **Look up ETA** in `.claude/templates/rough-time-hints.md` for the
    subagent's operation class. Capture LOW–HIGH band.
-2. **Read heartbeat config** from `.aid/knowledge/STATE.md` top-of-file
-   `**Heartbeat Interval:** N minutes` (default 1; `0` = disabled).
+2. **Read heartbeat config** via
+   `bash .claude/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
+   (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
 3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
    - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt with explicit instruction to update during long phases
-   - SKIP only if `**Heartbeat Interval:** 0` (user-explicit opt-out in STATE.md)
-4. **Arm 3 L2 timers** (always — even for short ETAs use minimums 60s/120s/180s; never gate on ETA):
-   - `sleep <LOW/2 in s> && echo "... <agent> still running (Xm elapsed of ~LOW–HIGH)"`
-   - `sleep <LOW in s> && echo "... <agent> at estimated time (LOWm elapsed)"`
-   - `sleep <1.5×LOW in s> && echo "⚠️ <agent> EXCEEDED estimate (1.5×LOWm elapsed); consider checking on it or cancelling"`
+   - SKIP only if `traceability.heartbeat_interval: 0` (user-explicit opt-out in `.aid/settings.yml`)
+4. **Arm 3 L2 timers as SEPARATE background dispatches** (always — even for short ETAs use minimums 60s/120s/180s; never gate on ETA). Each timer is its OWN `Bash(..., run_in_background=true)` call:
+   - Call A: `sleep <LOW/2 in s> && echo "... <agent> still running (Xm elapsed of ~LOW–HIGH)"` — own background dispatch
+   - Call B: `sleep <LOW in s> && echo "... <agent> at estimated time (LOWm elapsed)"` — own background dispatch
+   - Call C: `sleep <1.5×LOW in s> && echo "⚠️ <agent> EXCEEDED estimate (1.5×LOWm elapsed); consider checking on it or cancelling"` — own background dispatch
+   - ⚠️ **DO NOT chain timers with `&` inside a single wrapper Bash call.** If you do, the wrapper exits when the last `&` is queued, orphaning the sleeps — their stdout is silently lost and you'll never see the timer fire. Each timer needs its own `run_in_background: true` task so the harness can track and notify on completion.
 
 **During dispatch:**
 
@@ -85,10 +112,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **References:**
 
-- `canonical/templates/long-wait-protocol.md` — full L2 spec
-- `canonical/templates/subagent-heartbeat-protocol.md` — full L3 spec
-- `canonical/templates/rough-time-hints.md` — current measured ETAs
-- `canonical/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
+- `.claude/templates/long-wait-protocol.md` — full L2 spec
+- `.claude/templates/subagent-heartbeat-protocol.md` — full L3 spec
+- `.claude/templates/rough-time-hints.md` — current measured ETAs
+- `.claude/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
 
 The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair
 lines elsewhere in this skill body remain in place; this protocol just makes
@@ -198,6 +225,29 @@ aid-discover  ▸ you are here
 > documented inside `references/state-generate.md`. The Dispatch Protocol above
 > (L1+L2+L3 visibility) applies to all sub-agent dispatches.
 
+> **REVIEW scope (semantic only).** The REVIEW reviewer's job is to grade
+> **semantic quality** — missing post-merge content, internal contradictions,
+> factual claims that would mislead a downstream phase (architecture,
+> module-map, coding-standards weighted highest). **Mechanical drift is OUT
+> of scope** — line counts, off-by-1, aggregate counts, bare-cite resolver
+> edge cases, math arithmetic, ghost references, meta-doc counting are
+> orchestrator-side **Pre-flight Cleanup** (above), swept BEFORE the
+> reviewer is dispatched. The reviewer should never need to flag mechanical
+> drift as a finding; if it does, the pre-flight sweep was incomplete.
+
+> **FIX parallelism (parallel-agent dispatch when independent).** The
+> `architect` Worker for FIX **partitions the reviewer's findings by KB
+> file** and dispatches **one sub-agent per affected file** (typically
+> `tech-writer` for KB docs, or `researcher` if depth is needed). All agents
+> run in **parallel** — single message with multiple `Agent` tool calls.
+> Each agent's prompt contains only that file's finding list and a clear
+> manual-edits directive (no regex scripts — scripts generalize and produce
+> new defects). Each agent commits-stages its file's changes only. After
+> ALL agents return, the orchestrator runs a **sequential aggregate step**:
+> `verify-claims.sh`, then a single `git commit` + `git push`. The
+> serial constraint exists only at the commit/push boundary; the edits
+> themselves are parallel-safe because each file has exactly one writer.
+
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, print `Next: [State: {NEXT}] — run /aid-discover again` and exit.
 
@@ -208,7 +258,7 @@ When a state completes, print `Next: [State: {NEXT}] — run /aid-discover again
 When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-discovery:
 
 1. Read the Q&A entry in STATE.md `## Q&A (Pending)` or the IMPEDIMENT to understand what's missing
-2. Identify which subagent owns the documents (see `scripts/verify-kb.sh` comments for mapping)
+2. Identify which subagent owns the documents (see `.claude/scripts/kb/verify-claims.sh` comments for mapping)
 3. Dispatch ONLY the relevant subagent
 4. Regenerate README.md and INDEX.md
 5. Update README.md revision history

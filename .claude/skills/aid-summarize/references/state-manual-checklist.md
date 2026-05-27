@@ -6,7 +6,7 @@ The MANUAL_POOL (K1 KB-completeness, K2 fact-grounding) needs human judgment —
 
 ### Step 1 — generate the fact spot-check report (helps the user answer K2)
 
-Run `.aid/templates/knowledge-summary/scripts/spot-check-facts.sh`. It extracts numeric/named claims from the HTML, greps the source KB, and writes `.aid/knowledge/.spot-check-facts.txt` (each line: `[OK|MISS] HTML-claim | KB-evidence`). Show the user the `MISS` lines, if any.
+Run `.claude/scripts/summarize/spot-check-facts.sh`. It extracts numeric/named claims from the HTML, greps the source KB, and writes `.aid/knowledge/.spot-check-facts.txt` (each line: `[OK|MISS] HTML-claim | KB-evidence`). Show the user the `MISS` lines, if any.
 
 ### Step 2 — elicit the human-judgment answers via `AskUserQuestion`
 
@@ -21,7 +21,7 @@ Ask the user (use `AskUserQuestion`; the user must have actually opened the HTML
 
 The agent passes the answers to `manual-checklist.sh` (non-interactive mode — it computes the scores and writes the JSON, so the script stays the single source of truth for scoring):
 ```
-bash .aid/templates/knowledge-summary/scripts/manual-checklist.sh \
+bash .claude/scripts/summarize/manual-checklist.sh \
   --k1 <y|p|n> --k2 <y|p|n> --v1 <y|n> --notes "..." --html .aid/knowledge/knowledge-summary.html
 ```
 This writes `.aid/knowledge/.manual-checklist.json` with `K1_score`, `K2_score`, `V1_score`, the answers, notes, and timestamp. (A contributor in a raw terminal can instead run `manual-checklist.sh --interactive`.)
