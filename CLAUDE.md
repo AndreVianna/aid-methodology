@@ -87,7 +87,7 @@ There is **no CI** — see `tech-debt.md` H2. Quality gates are the AID skills t
 ## Skills
 
 AID methodology skills are installed in `.claude/skills/`:
-`aid-init`, `aid-discover`, `aid-interview`, `aid-specify`, `aid-plan`, `aid-detail`,
+`aid-config`, `aid-discover`, `aid-interview`, `aid-specify`, `aid-plan`, `aid-detail`,
 `aid-execute`, `aid-deploy`, `aid-monitor`, `aid-summarize` (10 skills) plus
 maintainer-only `aid-generate`. Use them by invoking the matching slash command.
 

@@ -20,7 +20,7 @@ No. Use what applies:
 The phases are a menu, not a checklist. But know what you're skipping and why.
 
 ### How do I start a new project?
-Run `/aid-init` first — regardless of whether it's greenfield or brownfield. Init scaffolds the Knowledge Base structure (16 empty templates), creates `AGENTS.md` and `CLAUDE.md` placeholders, and records project metadata. Once init is done, proceed to `/aid-discover` (existing codebase) or `/aid-interview` (new project).
+Run `/aid-config` first — regardless of whether it's greenfield or brownfield. Init scaffolds the Knowledge Base structure (16 empty templates), creates `AGENTS.md` and `CLAUDE.md` placeholders, and records project metadata. Once init is done, proceed to `/aid-discover` (existing codebase) or `/aid-interview` (new project).
 
 ## Adoption
 
