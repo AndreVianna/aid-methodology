@@ -33,6 +33,32 @@ If no `HEARTBEAT_FILE` parameter was passed, do nothing — don't write
 speculatively. See `canonical/templates/subagent-heartbeat-protocol.md` for
 the full contract.
 
+## Self-review discipline
+
+Before declaring any work complete, adversarially review your own output. The
+downstream reviewer is verification, not discovery — if a reviewer surfaces an
+issue you should have caught, that is a self-review gap.
+
+1. **Read contracts end-to-end before editing.** Understand every transform
+   (schema, parser, renderer, build step, validator) that touches what you
+   produce. Do not edit by pattern-match.
+2. **Enumerate the class, not the instance.** Grep for every shape of the
+   change; address every instance. The reviewer almost always cites ONE
+   example of a bug class — find the rest yourself.
+3. **Verify rendered/built output.** If your change flows through a transform
+   (renderer, template, regex, build), execute it and read the actual output
+   before declaring done. Do not trust source-side changes to produce intended
+   downstream results.
+4. **Catalog what you might have broken.** List the contracts and invariants
+   your change touches; confirm each still holds.
+5. **Find nothing more to find before handing off.** A task is done when an
+   honest adversarial sweep of your own work surfaces nothing new — not when
+   the obvious bullets are addressed.
+
+Apply regardless of task size. See `canonical/templates/self-review-protocol.md`
+for the full protocol.
+
+
 ## What You Do
 - Map APIs exposed by this codebase: endpoints, methods, request/response shapes, auth
 - Map APIs consumed by this codebase: external services, SDKs, HTTP clients
