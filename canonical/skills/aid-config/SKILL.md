@@ -1,156 +1,176 @@
 ---
 name: aid-config
 description: >
-  Initialize an AID project AND manage pipeline settings ongoingly — the single
-  source of truth for grades, parallelism, heartbeat, project metadata.
-  First run scaffolds .aid/ + writes settings.yml from defaults.
-  Subsequent runs: --show prints the current settings; KEY=VALUE (e.g.,
-  /aid-config review.minimum_grade=A-) sets one value; bare invocation
-  enters interactive VIEW → UPDATE → PERSIST flow.
-  State machine: PRE-FLIGHT → (INIT | INIT-SETTINGS | VIEW) → UPDATE → PERSIST → VIEW → DONE.
+  View or update AID pipeline settings. Bare invocation shows all values in a
+  table; first run auto-creates .aid/settings.yml from the template. Pass a
+  dotted key (e.g., /aid-config project.name) to view + update one setting
+  interactively.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, AskUserQuestion
-argument-hint: "[--show] view only · [--reset] rewrite settings.yml from defaults · [KEY=VALUE] quick-set one key (e.g., review.minimum_grade=A-)"
+argument-hint: "(none) view all  |  <dotted.key> view+update one (e.g., project.name, review.minimum_grade)"
 ---
 
 # AID Project Configuration
 
-`/aid-config` is the **single skill for AID pipeline configuration** — both the
-initial scaffold (first run, no `.aid/` yet) AND ongoing setting changes
-(any run thereafter).
+`/aid-config` reads and writes `.aid/settings.yml` — the single source of truth
+for AID pipeline settings (grades, parallelism, heartbeat, project identity).
 
-**Single source of truth.** All AID pipeline configuration lives in
-`.aid/settings.yml`. Every other skill (`/aid-discover`, `/aid-execute`,
-`/aid-summarize`, etc.) reads its settings from this file at invocation time.
+**Two modes, nothing else.**
 
-**This is a conversational skill** in INIT and UPDATE states (asks questions
-and waits for answers); in VIEW state it renders the current settings and
-prompts the user to select a key to update or exit.
+| Invocation | What it does |
+|---|---|
+| `/aid-config` | Show all settings as a table. On first run (no `settings.yml`), copy the template into place first, then show. |
+| `/aid-config <dotted.key>` | Show the current value of `<dotted.key>`; prompt for new (with suggestions + always a free-form option); validate; write in place. |
 
-**Workspace structure after INIT:**
+Examples: `/aid-config project.name`, `/aid-config review.minimum_grade`,
+`/aid-config discover.minimum_grade` (per-skill override).
+
+---
+
+## Pre-flight
+
+- ✅ `Default` or `Auto-accept edits` → proceed
+- ❌ `Plan mode` → STOP. This skill writes files.
+
+---
+
+## Mode 1 — Show all settings (`/aid-config`)
+
+### Step 1: Ensure `.aid/settings.yml` exists
+
+If `.aid/settings.yml` is missing:
+- Create `.aid/` directory if absent (do NOT touch `.aid/knowledge/` or other subdirs).
+- Copy `.claude/templates/settings.yml` → `.aid/settings.yml` verbatim.
+- Print: `Created .aid/settings.yml from template.`
+
+### Step 2: Render the table
+
+Read `.aid/settings.yml`. Print a table with these columns:
+`Section | Key | Value`
+
+Order: project (name, description, type), tools (installed), review (minimum_grade), execution (max_parallel_tasks), traceability (heartbeat_interval), then any per-skill override sections present.
+
+If any value matches a `<placeholder>` pattern (e.g., `<project-name>`), append ` ⚠ unset` after the value.
+
+### Step 3: Suggest commands for unset values + the general update form
+
+After the table, ALWAYS print the line:
 ```
-{ProjectFolder}/
-  {project_context_file}
-  .aid/
-    settings.yml              ← the source of truth, managed by /aid-config
-    knowledge/
-      STATE.md
-      (...16 KB docs, INDEX.md, README.md)
+Run /aid-config <dotted.key> to update any value.
 ```
 
----
-
-## ⚠️ Pre-flight Checks
-
-### Check 0: Verify Not in Plan Mode
-
-- ✅ `Default` or `Auto-accept edits` → Proceed
-- ❌ `Plan mode` → STOP. Tell user to switch. `/aid-config` writes files — Plan mode will block all writes.
-
-### Check 1: --reset Confirmation (if flag passed)
-
-If `--reset` was passed and `.aid/settings.yml` exists, confirm:
+If ANY rows were marked `⚠ unset`, ALSO emit a copy-pasteable command per unset row, so the user can act without having to assemble the dotted key themselves:
 
 ```
-⚠️ --reset will rewrite .aid/settings.yml from defaults.
-Your current settings will be LOST. The .aid/ directory structure
-(knowledge/, work-*/) is NOT touched. Continue? [y/N]
+N values unset. To set them:
+  /aid-config project.name
+  /aid-config project.description
 ```
 
-If confirmed, delete `.aid/settings.yml` so PRE-FLIGHT detection routes to INIT-SETTINGS.
+Exit. No prompt; no further interaction.
 
 ---
 
-## State Detection
+## Mode 2 — View/update one key (`/aid-config <dotted.key>`)
 
-⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH** — determine state from disk, not from memory.
+### Step 1: Validate the key argument
 
-Inspect after pre-flight:
+Accepted dotted keys:
+- `project.name`, `project.description`, `project.type`
+- `tools.installed`
+- `review.minimum_grade`
+- `execution.max_parallel_tasks`
+- `traceability.heartbeat_interval`
+- `<skill>.minimum_grade` where `<skill>` ∈ {discover, summary, interview, specify, plan, detail, execute, deploy, monitor}
 
-| Filesystem | Argument | State |
-|---|---|---|
-| `.aid/` does NOT exist | (any) | **INIT** (first-time scaffold) |
-| `.aid/` exists AND `.aid/settings.yml` does NOT exist | (any) | **INIT-SETTINGS** (write defaults; existing project gaining settings.yml) |
-| `.aid/settings.yml` exists | `KEY=VALUE` | **UPDATE** (quick-set form — skip VIEW; set the single key, then PERSIST) |
-| `.aid/settings.yml` exists | `--show` | **VIEW** (read-only) |
-| `.aid/settings.yml` exists | (bare) | **VIEW** (interactive; user can choose to update or exit) |
+If the key doesn't match: print `❌ Unknown key: <key>` + the accepted list + exit.
 
-**Quick-set form:** if the positional arg matches `<dotted.key>=<value>` (e.g.,
-`review.minimum_grade=A-`), the dispatcher skips VIEW and routes straight to
-UPDATE with the parsed key/value, then PERSIST. Validates the same as
-interactive UPDATE. Returns to DONE without re-rendering VIEW.
+### Step 2: Ensure `.aid/settings.yml` exists
 
-Print the state-entry line + "you are here" map (see each state-detail file).
+Same as Mode 1 Step 1.
 
----
+### Step 3: Read current value
 
-## Dispatch
+Run:
+```bash
+bash .claude/scripts/config/read-setting.sh --path <key> --default '(unset)'
+```
 
-| State | Detail | Worker | Advance |
-|-------|--------|--------|---------|
-| INIT          | `references/state-init.md`          | inline | → VIEW |
-| INIT-SETTINGS | `references/state-init-settings.md` | inline | → VIEW |
-| VIEW          | `references/state-view.md`          | inline | → UPDATE (user selects a key) / → DONE (user exits) |
-| UPDATE        | `references/state-update.md`        | inline | → PERSIST |
-| PERSIST       | `references/state-persist.md`       | inline | → VIEW |
-| DONE          | `references/state-done.md`          | inline | → halt |
+Print: `Current value of <key>: <value>`.
 
-On state entry, print `[State: NAME]` + the "you are here" map from the matching state-detail file.
-When a state completes (other than DONE), print `Next: [State: {NEXT}] — run /aid-config again` and exit.
-For DONE, print summary and halt — no next-state line.
+### Step 4: Prompt for new value
 
----
+Use `AskUserQuestion` with 2–3 suggestion options (per the Suggestions table below) PLUS the standard `Other` free-form option that's always offered. Also offer a `Keep current value` option so the user can exit without change.
 
-## Settings schema reference
+### Step 5: Validate
 
-Canonical schema: `canonical/templates/settings.yml`. Top-level sections:
+Per the Validation table below. If invalid: print the validation error + re-prompt (loop back to Step 4).
 
-| Section | Keys | Purpose |
-|---|---|---|
-| `project` | `name`, `description`, `type` | Project identity (description is the sole source of truth — not duplicated in CLAUDE.md/AGENTS.md) |
-| `tools` | `installed` | Which AI host tools have AID installed (claude-code / codex / cursor) |
-| `review` | `minimum_grade` | Global default grade bar for every skill's REVIEW state |
-| `execution` | `max_parallel_tasks` | /aid-execute + /aid-deploy parallelism (work-001 feature-009 pool capacity) |
-| `traceability` | `heartbeat_interval` | Long-running sub-agent heartbeat cadence in minutes (work-003) |
+### Step 6: Save in place
 
-**Per-skill overrides:** any top-level key whose name matches a skill
-(`discover`, `summary`, `interview`, `specify`, `plan`, `detail`, `execute`,
-`deploy`, `monitor`) can carry `minimum_grade:` to override
-`review.minimum_grade` for that skill only. Default to absent
-(use the global value).
+Read `.aid/settings.yml` into memory. Replace the line containing `<key>` with the new value, preserving surrounding lines and inline comments. Use a same-directory temp file + `mv -f` for crash-safety (POSIX atomic rename), but no lock-dir mutex — `aid-config` is interactive single-user; concurrent writes are not a real failure mode.
+
+For per-skill overrides on a skill section that doesn't yet exist (e.g., setting `discover.minimum_grade: A+` when no `discover:` block exists), append a new block:
+```yaml
+
+discover:
+  minimum_grade: A+
+```
+at the end of the file.
+
+### Step 7: Confirm
+
+Print: `✓ <key>: <old> → <new>` and exit.
 
 ---
 
-## How other skills read settings
+## Validation table
 
-Consumer skills (`/aid-discover`, `/aid-execute`, etc.) resolve their settings
-using this order:
+| Key | Valid values |
+|---|---|
+| `project.name` | Non-empty string, no whitespace |
+| `project.description` | Non-empty single-line string (NO newlines — settings.yml uses inline YAML scalars) |
+| `project.type` | `brownfield` or `greenfield` |
+| `tools.installed` | List of `claude-code` / `codex` / `cursor` (at least one). Input formats: comma-separated, bracketed YAML inline (`[claude-code, codex]`), or newline-separated. Whitespace around items ignored. |
+| `review.minimum_grade` | Regex `^[A-F][+-]?$`. E-grades are accepted but rarely useful as a floor. |
+| `execution.max_parallel_tasks` | Positive integer |
+| `traceability.heartbeat_interval` | Positive integer (minutes). `0` disables heartbeat. |
+| `<skill>.minimum_grade` | Same regex as `review.minimum_grade`. |
+
+---
+
+## Suggestions table (for Mode 2 AskUserQuestion)
+
+| Key | Suggestions |
+|---|---|
+| `project.name` | (no defaults — user types their own) |
+| `project.description` | (no defaults — user types their own) |
+| `project.type` | `brownfield`, `greenfield` |
+| `tools.installed` | `[claude-code]`, `[claude-code, codex]`, `[claude-code, codex, cursor]` |
+| `review.minimum_grade` | `A+`, `A`, `B+` |
+| `execution.max_parallel_tasks` | `1`, `3`, `5`, `8` |
+| `traceability.heartbeat_interval` | `0` (disabled), `1`, `5` |
+| `<skill>.minimum_grade` | `A+`, `A`, `A-` |
+
+Always include a `Keep current value` option and let `AskUserQuestion`'s built-in `Other` field handle free-form input.
+
+---
+
+## How consumer skills read settings
+
+Consumer skills (`/aid-discover`, `/aid-execute`, etc.) resolve their settings using this order:
 
 1. **Per-skill override key** (e.g., `discover.minimum_grade`) — use if present
 2. **Global category default** (e.g., `review.minimum_grade`) — use otherwise
 3. **Hardcoded skill default** — use only if `.aid/settings.yml` is missing entirely
 
-A helper script `canonical/scripts/config/read-setting.sh` (authored alongside
-this skill) provides the canonical resolution logic. Consumer skills invoke:
+The canonical resolution helper is `.claude/scripts/config/read-setting.sh`. Consumer skills invoke:
 
 ```bash
-bash canonical/scripts/config/read-setting.sh --skill discover --key minimum_grade
-# → prints A (or A+, A-, etc.) depending on settings.yml + overrides
+bash .claude/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A
 ```
 
 ---
 
-## Quality Checklist
+## Schema reference
 
-- [ ] `.aid/settings.yml` exists and parses as valid YAML
-- [ ] All required top-level sections present (project, tools, review, execution, traceability)
-- [ ] `project.name` not equal to `<project-name>` placeholder
-- [ ] `tools.installed` non-empty
-- [ ] `review.minimum_grade` is a valid grade (`[A-F][+-]?`)
-- [ ] CLAUDE.md or AGENTS.md created (per `tools.installed` selection)
-- [ ] CLAUDE.md / AGENTS.md project-context section does NOT include a description field
-  (per single-source-of-truth — description lives only in settings.yml)
-- [ ] `.aid/knowledge/` scaffolded with 16 KB templates + STATE.md + README.md
-  (only on first INIT; not on subsequent VIEW/UPDATE runs). INDEX.md is
-  *generated* by `build-index.sh` in Step 4 — not hand-authored.
-- [ ] `.gitignore` updated per Q8 choice (`.aid/.heartbeat/` MUST be ignored
-  per the heartbeat protocol; aid-config offers to append on confirmation)
+Canonical schema: `.claude/templates/settings.yml`. Top-level sections + per-skill overrides as described in the tables above.

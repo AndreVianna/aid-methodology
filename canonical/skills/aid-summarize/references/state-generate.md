@@ -49,13 +49,13 @@ If the KB says X, the HTML says X.
 
 ### 4. Build the HTML
 
-Use `.aid/templates/knowledge-summary/html-skeleton.html` as the document shell. Inject:
+Use `canonical/templates/knowledge-summary/html-skeleton.html` as the document shell. Inject:
 - Hero with project name (read from `.aid/knowledge/STATE.md` or `pom.xml` / `package.json` etc.)
-- Section structure from `.aid/templates/knowledge-summary/section-templates/{profile}.md`
+- Section structure from `canonical/templates/knowledge-summary/section-templates/{profile}.md`
 - Per-section content drawn from KB (cite source via relative `./xxx.md` link)
-- 6–8 Mermaid diagrams using syntax patterns from `.aid/templates/knowledge-summary/mermaid-examples.md`
-- Inlined CSS from `.aid/templates/knowledge-summary/component-css.css`
-- Inlined JS from `.aid/templates/knowledge-summary/lightbox.js` and `.aid/templates/knowledge-summary/mermaid-init.js`
+- 6–8 Mermaid diagrams using syntax patterns from `canonical/templates/knowledge-summary/mermaid-examples.md`
+- Inlined CSS from `canonical/templates/knowledge-summary/component-css.css`
+- Inlined JS from `canonical/templates/knowledge-summary/lightbox.js` and `canonical/templates/knowledge-summary/mermaid-init.js`
 - Inlined Mermaid library from cached file
 
 Build via the part-concatenation pattern (see `canonical/scripts/summarize/concatenate.sh` or `.ps1`):
@@ -63,7 +63,7 @@ Build via the part-concatenation pattern (see `canonical/scripts/summarize/conca
 2. Cat `part1.html` + cached Mermaid + `part2.html` → final `knowledge-summary.html`.
 3. Remove temp files.
 
-**Critical pitfalls — see `.aid/templates/knowledge-summary/mermaid-examples.md` for full list:**
+**Critical pitfalls — see `canonical/templates/knowledge-summary/mermaid-examples.md` for full list:**
 - Never put `<word>` HTML-tag-like tokens in Mermaid labels (use `{word}` instead).
 - Use `-. text .->` (with spaces) for dotted-arrow labels, not `-.text.->`.
 - Lightbox SVG sizing: chrome on wrapper, SVG fills 100%/100%.
