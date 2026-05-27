@@ -117,10 +117,11 @@ GENERATE  Wave 1 of 1 · 4/4 done
 
 ### Verify All 16 Files
 
-Run `.agents/scripts/kb/verify-claims.sh .aid/knowledge/` to check all 16 files exist.
+Run `ls .aid/knowledge/*.md 2>/dev/null | wc -l` and confirm count == 16 (or whatever the project's declared kb-doc-set size is). Cross-check filenames against the agent-to-file mapping below.
 
-**If any missing:** Re-dispatch ONLY the responsible agent (see agent-to-file mapping in the script comments).
-Wait, verify again. Repeat until all 16 exist.
+**If any missing:** Re-dispatch ONLY the responsible agent per the mapping in the **Targeted Discovery** section of `SKILL.md`. Wait, verify again. Repeat until all expected files exist.
+
+Semantic verification of the docs (frontmatter compliance, contract claims, cross-doc consistency, spot-checks against source) happens in the **REVIEW** state, dispatched as the `discovery-reviewer` sub-agent — not as a separate shell script.
 
 ### Step 6: Generate README.md and INDEX.md
 
@@ -170,10 +171,11 @@ Scan for `AGENTS.md`. Replace `<!-- AID-DISCOVER ... -->` placeholders with real
 project description, overview, build/test commands, conventions, architecture summary.
 Keep the comment markers for future re-discoveries.
 
-### Step 8: Final Verification
+### Step 8: Final Wrap-up
 
-Run `.agents/scripts/kb/verify-claims.sh .aid/knowledge/` one final time.
 Print: `[16/16] Generation complete — Knowledge Base ready. Run /aid-discover again to review.`
+
+(File-presence was confirmed in the **Verify All 16 Files** step above; semantic quality is the **REVIEW** state's job — no additional pre-REVIEW check needed.)
 
 Print: `[State: GENERATE] complete.`
 

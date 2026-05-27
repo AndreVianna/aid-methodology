@@ -244,9 +244,11 @@ aid-discover  ▸ you are here
 > manual-edits directive (no regex scripts — scripts generalize and produce
 > new defects). Each agent commits-stages its file's changes only. After
 > ALL agents return, the orchestrator runs a **sequential aggregate step**:
-> `verify-claims.sh`, then a single `git commit` + `git push`. The
-> serial constraint exists only at the commit/push boundary; the edits
-> themselves are parallel-safe because each file has exactly one writer.
+> regenerate-and-confirm generated files (per `state-fix.md` Step 3-4),
+> then a single `git commit` + `git push`. The serial constraint exists
+> only at the commit/push boundary; the edits themselves are
+> parallel-safe because each file has exactly one writer. Semantic
+> re-verification of the changes is the next cycle's REVIEW state job.
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, print `Next: [State: {NEXT}] — run /aid-discover again` and exit.
@@ -258,7 +260,17 @@ When a state completes, print `Next: [State: {NEXT}] — run /aid-discover again
 When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-discovery:
 
 1. Read the Q&A entry in STATE.md `## Q&A (Pending)` or the IMPEDIMENT to understand what's missing
-2. Identify which subagent owns the documents (see `.cursor/scripts/kb/verify-claims.sh` comments for mapping)
+2. Identify which subagent owns the documents per this mapping:
+
+   | Sub-agent | KB documents |
+   |---|---|
+   | `discovery-scout` | project-structure.md, external-sources.md |
+   | `discovery-architect` | architecture.md, technology-stack.md, ui-architecture.md |
+   | `discovery-analyst` | module-map.md, coding-standards.md, data-model.md |
+   | `discovery-integrator` | api-contracts.md, integration-map.md, domain-glossary.md |
+   | `discovery-quality` | test-landscape.md, security-model.md, tech-debt.md, infrastructure.md |
+   | orchestrator (no sub-agent) | feature-inventory.md, README.md, INDEX.md |
+
 3. Dispatch ONLY the relevant subagent
 4. Regenerate README.md and INDEX.md
 5. Update README.md revision history

@@ -62,7 +62,21 @@ After ALL parallel agents return:
      eval "$build_cmd" || echo "[Fix] WARNING: build failed for $out_path"
    done < .cursor/templates/generated-files.txt
    ```
-4. Run `bash .cursor/scripts/kb/verify-claims.sh` — expect exit 0. (The verify script's [GEN-MISSING] check will now find the freshly-regenerated files; if any are still missing, the corresponding build command failed in Step 3.)
+4. Confirm each registered generated file now exists on disk:
+   ```bash
+   missing=0
+   while IFS='|' read -r out_path _; do
+     case "$out_path" in ''|\#*) continue ;; esac
+     out_path="${out_path#"${out_path%%[![:space:]]*}"}"
+     out_path="${out_path%"${out_path##*[![:space:]]}"}"
+     if [[ ! -f "$out_path" ]]; then
+       echo "[Fix] WARNING: $out_path missing after regenerate (Step 3 build command failed)"
+       missing=$((missing + 1))
+     fi
+   done < .cursor/templates/generated-files.txt
+   [[ $missing -eq 0 ]] || echo "[Fix] $missing generated file(s) missing — investigate before commit"
+   ```
+   (Semantic re-verification of KB docs against source happens in REVIEW state, not here.)
 5. Run any smoke tests relevant to changes.
 6. Single `git commit` listing which files each agent touched + the regenerated outputs in `.aid/generated/`.
 7. `git push`.

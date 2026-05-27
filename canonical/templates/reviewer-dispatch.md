@@ -215,7 +215,6 @@ ARTIFACTS UNDER REVIEW:
   - canonical/templates/generated-files.txt
   - canonical/scripts/kb/build-metrics.sh
   - canonical/scripts/kb/build-index.sh
-  - canonical/scripts/kb/verify-claims.sh  (NEW SECTIONS ONLY — see PART 0 onward)
   - canonical/templates/knowledge-base/*.md  (17 templates with prepended frontmatter)
 
 CONTEXT:

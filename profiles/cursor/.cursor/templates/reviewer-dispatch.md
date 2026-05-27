@@ -215,7 +215,6 @@ ARTIFACTS UNDER REVIEW:
   - .cursor/templates/generated-files.txt
   - .cursor/scripts/kb/build-metrics.sh
   - .cursor/scripts/kb/build-index.sh
-  - .cursor/scripts/kb/verify-claims.sh  (NEW SECTIONS ONLY — see PART 0 onward)
   - .cursor/templates/knowledge-base/*.md  (17 templates with prepended frontmatter)
 
 CONTEXT:

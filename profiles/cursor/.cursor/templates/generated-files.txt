@@ -8,7 +8,7 @@
 #
 # Consumed by:
 #   - /aid-discover FIX state (refresh-all at end of cycle per principles.md P3)
-#   - verify-claims.sh (confirms each file was regenerated)
+#   - /aid-discover state-fix.md Step 4 (`test -f` loop confirms each file was regenerated)
 #
 # Comments (lines starting with #) and blank lines are ignored.
 # Order matters: scripts are executed top-to-bottom, so list dependencies first.

@@ -215,7 +215,6 @@ ARTIFACTS UNDER REVIEW:
   - .agents/templates/generated-files.txt
   - .agents/scripts/kb/build-metrics.sh
   - .agents/scripts/kb/build-index.sh
-  - .agents/scripts/kb/verify-claims.sh  (NEW SECTIONS ONLY — see PART 0 onward)
   - .agents/templates/knowledge-base/*.md  (17 templates with prepended frontmatter)
 
 CONTEXT:
