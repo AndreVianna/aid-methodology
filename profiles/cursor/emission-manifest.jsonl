@@ -29,7 +29,7 @@
 {"dst": ".cursor/recipes/write-release-note.md", "profile": "cursor", "sha256": "92e2fe8b6d4b2060f56eb7f5f321ab8fe73a95997ae8b5526ed33236fda9b4a3", "src": "canonical/recipes/write-release-note.md"}
 {"dst": ".cursor/rules/aid-methodology.mdc", "profile": "cursor", "sha256": "01b1edec0f4b84872109f6cf3a9f475fc898d6e28c8d10a25b603f5345b8050d", "src": "canonical/rules/aid-methodology.mdc"}
 {"dst": ".cursor/rules/aid-review.mdc", "profile": "cursor", "sha256": "dd8784fc66b2b2b3b5f9c488a9235777b47b9b667673b05686cead8ce31e2d9b", "src": "canonical/rules/aid-review.mdc"}
-{"dst": ".cursor/scripts/config/read-setting.sh", "profile": "cursor", "sha256": "e9476f1948041673ca0f937cc49946f6c4bbda6e2d9e28cae4823545c7b9745a", "src": "canonical/scripts/config/read-setting.sh"}
+{"dst": ".cursor/scripts/config/read-setting.sh", "profile": "cursor", "sha256": "f7418a0fcb09bdcb606de6f79fec1d6596964bd1da75ccb215e62a7d757403b6", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".cursor/scripts/execute/complexity-score.sh", "profile": "cursor", "sha256": "786b8d513f6794506ba77df147912898df620b4c5f85052c1fa4a1f157dddc52", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".cursor/scripts/execute/compute-block-radius.sh", "profile": "cursor", "sha256": "99a2f1a122378150022a57c99e57d9c629e78459748a52d35c042e6f262e2100", "src": "canonical/scripts/execute/compute-block-radius.sh"}
 {"dst": ".cursor/scripts/execute/writeback-task-status.sh", "profile": "cursor", "sha256": "a2dbf3f292eac91eaf66b8871fc97349de4ec69371321d997088c781f769af02", "src": "canonical/scripts/execute/writeback-task-status.sh"}

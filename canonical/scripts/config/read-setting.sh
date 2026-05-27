@@ -20,21 +20,28 @@
 #   # Path mode (direct lookup, no override resolution):
 #   bash read-setting.sh --path execution.max_parallel_tasks --default 5
 #
+#   # Path mode against a list-valued key (returns comma-joined items):
+#   bash read-setting.sh --path tools.installed --default claude-code
+#   # → "claude-code,codex" when the file has tools.installed: [claude-code, codex]
+#
 # Exit codes:
 #   0 — value found (printed to stdout) or default used
 #   1 — value missing AND no --default provided
-#   2 — argument error / settings.yml unreadable
+#   2 — argument error / settings.yml unreadable / malformed YAML
 #
 # Output:
-#   stdout: the resolved value (single line, no trailing newline beyond echo's default)
-#   stderr: nothing on success; error messages on failure
+#   stdout: the resolved value (single line, no trailing newline beyond echo's default).
+#           For list-valued keys, items are comma-joined.
+#   stderr: nothing on success; error messages on failure (always include the
+#           absolute resolved path of the settings file for debuggability).
 #
 # Format: settings.yml is YAML 1.2. This script does NOT require a YAML parser
 # binary (yq, python) — uses awk for the simple flat-section dotted-path
-# lookups that AID actually stores. For nested or complex YAML, install yq
-# and the script will defer to it.
+# lookups that AID actually stores, plus list-valued top-level keys
+# (e.g., tools.installed: [a, b] or block-list form). For nested or complex
+# YAML, install yq and the script will defer to it.
 
-set -uo pipefail
+set -euo pipefail
 
 SETTINGS_FILE=".aid/settings.yml"
 SKILL=""
@@ -81,32 +88,57 @@ else
     exit 2
 fi
 
+# Resolve to absolute path before existence check + error reporting (F20).
+# realpath/readlink coverage varies across BSD/GNU/macOS; use a portable fallback.
+abs_path() {
+    local p="$1"
+    if command -v realpath >/dev/null 2>&1; then
+        realpath -m "$p" 2>/dev/null || printf '%s/%s' "$(pwd)" "$p"
+    else
+        # Strip leading ./ for cleaner output; prepend $PWD if relative
+        case "$p" in
+            /*) printf '%s' "$p" ;;
+            *)  printf '%s/%s' "$(pwd)" "${p#./}" ;;
+        esac
+    fi
+}
+SETTINGS_FILE_ABS=$(abs_path "$SETTINGS_FILE")
+
 # settings.yml missing → use default if provided, else exit 1
 if [[ ! -f "$SETTINGS_FILE" ]]; then
     if [[ $HAS_DEFAULT -eq 1 ]]; then
         echo "$DEFAULT"
         exit 0
     fi
-    echo "read-setting.sh: $SETTINGS_FILE not found and no --default provided" >&2
+    echo "read-setting.sh: settings file not found at $SETTINGS_FILE_ABS and no --default provided" >&2
     exit 1
 fi
 
 # ---------------------------------------------------------------------------
 # YAML lookup helper — extracts the value of a dotted path from a simple YAML
-# document. Handles two cases:
+# document. Handles three cases:
 #   1) Top-level scalar key:            review.minimum_grade
 #   2) Per-skill override (top-level):  discover.minimum_grade
+#   3) List-valued key, either inline   tools.installed: [claude-code, codex]
+#      or block form                    tools:
+#                                         installed:
+#                                           - claude-code
+#                                           - codex
+#      Returns items comma-joined: "claude-code,codex".
 #
-# Both shapes use the same flat-section layout:
+# Top-level shape uses the flat-section layout:
 #   <section>:
 #     <key>: <value>
 #
-# Lists (like tools.installed) are NOT supported by this lookup — they need a
-# proper YAML parser. Use --skill mode for grade-only lookups; use yq/python
-# for complex shapes.
+# Sub-shell awk return codes are checked: on awk failure (e.g., malformed
+# YAML that the simple parser can't handle), the lookup returns empty AND
+# the caller falls back to --default or exit 1 / 2. set -e is active so
+# unhandled failures abort.
 # ---------------------------------------------------------------------------
 lookup() {
     local file="$1" section="$2" key="$3"
+    # `|| true` so an awk that finds no match (returns 0 with empty output)
+    # or a defensive nonzero (rare) doesn't trigger the script's `set -e`.
     awk -v section="$section" -v key="$key" '
         # Enter the named top-level section when we see its bare line
         $0 ~ "^"section":[[:space:]]*$" { in_section=1; next }
@@ -118,12 +150,60 @@ lookup() {
             sub("^[[:space:]]+"key":[[:space:]]*", "")
             # Strip inline comments (anything after ` # `)
             sub("[[:space:]]+#.*$", "")
+            # If the value looks like an inline list ([...]) or empty (block-form
+            # marker), return empty so the list lookup runs as fallback.
+            if ($0 ~ /^\[.*\]$/ || $0 == "") { exit }
             # Strip surrounding quotes if any
             gsub("^[\"\047]|[\"\047]$", "")
             print
             exit
         }
-    ' "$file"
+    ' "$file" || true
+}
+
+# ---------------------------------------------------------------------------
+# List lookup — handles both inline `[a, b]` and block `- a\n- b` forms
+# for a single dotted path (section.key). Returns items comma-joined; empty
+# if the key is not present or has no items.
+# ---------------------------------------------------------------------------
+lookup_list() {
+    local file="$1" section="$2" key="$3"
+    awk -v section="$section" -v key="$key" '
+        # Enter section
+        $0 ~ "^"section":[[:space:]]*$" { in_section=1; next }
+        in_section && /^[a-zA-Z]/ { in_section=0; in_list=0 }
+        in_section && $0 ~ "^[[:space:]]+"key":" {
+            line = $0
+            sub("^[[:space:]]+"key":[[:space:]]*", "", line)
+            sub("[[:space:]]+#.*$", "", line)
+            # Inline list form: [a, b, c]
+            if (match(line, /^\[.*\]$/)) {
+                inner = substr(line, 2, length(line) - 2)
+                gsub(/[[:space:]]+/, "", inner)
+                gsub(/["\047]/, "", inner)
+                print inner
+                exit
+            }
+            # Block list form: the next lines begin with "  - item"
+            if (line == "") {
+                in_list=1
+                next
+            }
+        }
+        # Block-form list items (indented "- item")
+        in_list && /^[[:space:]]+-[[:space:]]/ {
+            item = $0
+            sub("^[[:space:]]+-[[:space:]]+", "", item)
+            sub("[[:space:]]+#.*$", "", item)
+            gsub(/["\047]/, "", item)
+            items = items (items == "" ? "" : ",") item
+            next
+        }
+        # Anything else terminates the list
+        in_list && /^[[:space:]]*$/ { next }
+        in_list { in_list=0 }
+        END { if (items != "") print items }
+    ' "$file" || true
 }
 
 # ---------------------------------------------------------------------------
@@ -152,7 +232,8 @@ if [[ "$MODE" == "skill" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Path mode: direct dotted-path lookup, e.g. execution.max_parallel_tasks
+# Path mode: direct dotted-path lookup, e.g. execution.max_parallel_tasks.
+# Tries scalar lookup first; falls back to list lookup (inline or block form).
 # ---------------------------------------------------------------------------
 if [[ "$MODE" == "path" ]]; then
     # Split A.B into section + key
@@ -167,10 +248,16 @@ if [[ "$MODE" == "path" ]]; then
         echo "$val"
         exit 0
     fi
+    # Fall back to list lookup (handles tools.installed and similar)
+    val=$(lookup_list "$SETTINGS_FILE" "$section" "$key")
+    if [[ -n "$val" ]]; then
+        echo "$val"
+        exit 0
+    fi
     if [[ $HAS_DEFAULT -eq 1 ]]; then
         echo "$DEFAULT"
         exit 0
     fi
-    echo "read-setting.sh: no value for $DPATH and no --default" >&2
+    echo "read-setting.sh: no value for $DPATH in $SETTINGS_FILE_ABS and no --default" >&2
     exit 1
 fi

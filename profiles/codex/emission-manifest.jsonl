@@ -5,7 +5,7 @@
 {"dst": ".agents/recipes/bug-fix.md", "profile": "codex", "sha256": "0115e2eed997abb3f865f47d45292901fa92811e5f6bb95546c16af2a57b2308", "src": "canonical/recipes/bug-fix.md"}
 {"dst": ".agents/recipes/method-refactor.md", "profile": "codex", "sha256": "15f1e0686a7c5e25542cedf5454dec12dceaf09a748b7d9bc105d3de1fc8dd26", "src": "canonical/recipes/method-refactor.md"}
 {"dst": ".agents/recipes/write-release-note.md", "profile": "codex", "sha256": "92e2fe8b6d4b2060f56eb7f5f321ab8fe73a95997ae8b5526ed33236fda9b4a3", "src": "canonical/recipes/write-release-note.md"}
-{"dst": ".agents/scripts/config/read-setting.sh", "profile": "codex", "sha256": "e9476f1948041673ca0f937cc49946f6c4bbda6e2d9e28cae4823545c7b9745a", "src": "canonical/scripts/config/read-setting.sh"}
+{"dst": ".agents/scripts/config/read-setting.sh", "profile": "codex", "sha256": "f7418a0fcb09bdcb606de6f79fec1d6596964bd1da75ccb215e62a7d757403b6", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".agents/scripts/execute/complexity-score.sh", "profile": "codex", "sha256": "10f8309a313e536ba75a7d0201ed98f58ad877341ce5b565eb85bf0ac0c20bfa", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".agents/scripts/execute/compute-block-radius.sh", "profile": "codex", "sha256": "99a2f1a122378150022a57c99e57d9c629e78459748a52d35c042e6f262e2100", "src": "canonical/scripts/execute/compute-block-radius.sh"}
 {"dst": ".agents/scripts/execute/writeback-task-status.sh", "profile": "codex", "sha256": "a2dbf3f292eac91eaf66b8871fc97349de4ec69371321d997088c781f769af02", "src": "canonical/scripts/execute/writeback-task-status.sh"}

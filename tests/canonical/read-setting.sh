@@ -266,6 +266,69 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Test 14 (F12): inline list-form value via --path returns comma-joined items
+# ---------------------------------------------------------------------------
+fixture="$TMPDIR/t14.yml"
+cat > "$fixture" <<'EOF'
+tools:
+  installed: [claude-code, codex, cursor]
+EOF
+out=$(bash "$SUT" --file "$fixture" --path tools.installed --default fallback 2>&1)
+ec=$?
+if [[ "$out" == "claude-code,codex,cursor" && $ec -eq 0 ]]; then
+    pass "T14 (F12): inline list returns comma-joined items"
+else
+    fail "T14 (F12): inline list" "got '$out' (ec=$ec), expected 'claude-code,codex,cursor'"
+fi
+
+# ---------------------------------------------------------------------------
+# Test 15 (F12): block-form list value via --path returns comma-joined items
+# ---------------------------------------------------------------------------
+fixture="$TMPDIR/t15.yml"
+cat > "$fixture" <<'EOF'
+tools:
+  installed:
+    - claude-code
+    - codex
+EOF
+out=$(bash "$SUT" --file "$fixture" --path tools.installed --default fallback 2>&1)
+ec=$?
+if [[ "$out" == "claude-code,codex" && $ec -eq 0 ]]; then
+    pass "T15 (F12): block-form list returns comma-joined items"
+else
+    fail "T15 (F12): block list" "got '$out' (ec=$ec), expected 'claude-code,codex'"
+fi
+
+# ---------------------------------------------------------------------------
+# Test 16 (F20): error message includes absolute resolved path
+# ---------------------------------------------------------------------------
+fixture="$TMPDIR/t16-missing.yml"
+err=$(bash "$SUT" --file "$fixture" --skill discover --key minimum_grade 2>&1 1>/dev/null)
+ec=$?
+if [[ $ec -eq 1 ]] && [[ "$err" == *"$TMPDIR"* ]] && [[ "$err" == *"t16-missing.yml"* ]]; then
+    pass "T16 (F20): error message includes absolute resolved path"
+else
+    fail "T16 (F20): abs path in error" "got '$err' (ec=$ec), expected error containing '$TMPDIR/t16-missing.yml'"
+fi
+
+# ---------------------------------------------------------------------------
+# Test 17 (F13): set -e does NOT abort on lookup() finding no match
+# ---------------------------------------------------------------------------
+fixture="$TMPDIR/t17.yml"
+cat > "$fixture" <<'EOF'
+project:
+  name: only-this-key
+EOF
+# Asking for a key not in the file should return the default cleanly, not abort.
+out=$(bash "$SUT" --file "$fixture" --skill discover --key minimum_grade --default A 2>&1)
+ec=$?
+if [[ "$out" == "A" && $ec -eq 0 ]]; then
+    pass "T17 (F13): set -e does not abort on key-not-found; default returned"
+else
+    fail "T17 (F13): set -e + miss" "got '$out' (ec=$ec), expected 'A'"
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 
