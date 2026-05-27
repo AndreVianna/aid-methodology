@@ -20,13 +20,13 @@ KB_DIR="${1:-.aid/knowledge}"
 
 # Check 1: Verify Init Has Run
 if [ ! -f "$KB_DIR/STATE.md" ]; then
-  echo "⚠️ Knowledge Base not initialized. Run /aid-init first to set up the project."
+  echo "⚠️ Knowledge Base not initialized. Run /aid-config first to set up the project."
   exit 1
 fi
 
 # Check that STATE.md is not empty
 if [ ! -s "$KB_DIR/STATE.md" ]; then
-  echo "⚠️ STATE.md is empty. Run /aid-init first to set up the project."
+  echo "⚠️ STATE.md is empty. Run /aid-config first to set up the project."
   exit 1
 fi
 

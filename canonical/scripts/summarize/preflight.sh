@@ -28,7 +28,7 @@ err() {
 # Check 1: STATE.md exists (consolidated Discovery area state — FR2)
 if [ ! -f "$KB_DIR/STATE.md" ]; then
     err "$KB_DIR/STATE.md does not exist." \
-        "Run /aid-init then /aid-discover to set up the Knowledge Base."
+        "Run /aid-config then /aid-discover to set up the Knowledge Base."
 fi
 
 # Check 2: User Approved: yes (in KB Documents Status block)

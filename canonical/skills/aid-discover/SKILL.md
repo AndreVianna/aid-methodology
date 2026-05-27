@@ -1,7 +1,7 @@
 ---
 name: aid-discover
 description: >
-  Brownfield project discovery with built-in quality gate. Run `/aid-init` first to scaffold
+  Brownfield project discovery with built-in quality gate. Run `/aid-config` first to scaffold
   the KB. Analyzes all repository content (code, configuration, and documentation) to populate
   KB documents. Reviews, collects user input, fixes issues, and gets user approval — one step
   per run. State-machine: GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE.
@@ -23,7 +23,7 @@ Run `scripts/kb/preflight.sh .aid/knowledge/` to verify:
 1. `.aid/knowledge/STATE.md` exists (init has run)
 2. Not in Plan Mode (subagents need write access)
 
-If Check 1 fails: `⚠️ Knowledge Base not initialized. Run /aid-init first to set up the project.` — Exit.
+If Check 1 fails: `⚠️ Knowledge Base not initialized. Run /aid-config first to set up the project.` — Exit.
 If Check 2 fails: Tell user to press `Shift+Tab` to exit Plan Mode, then re-run.
 
 ---
@@ -80,11 +80,11 @@ protocol lives in two reference docs; this section is a checklist citing them.
 1. **Look up ETA** in `canonical/templates/rough-time-hints.md` for the
    subagent's operation class. Capture LOW–HIGH band.
 2. **Read heartbeat config** from `.aid/knowledge/STATE.md` top-of-file
-   `**Heartbeat Interval:** N minutes` (default 1; `0` = disabled).
+   `bash canonical/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1` (default 1; `0` = disabled).
 3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
    - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt with explicit instruction to update during long phases
-   - SKIP only if `**Heartbeat Interval:** 0` (user-explicit opt-out in STATE.md)
+   - SKIP only if `traceability.heartbeat_interval: 0` (user-explicit opt-out in STATE.md)
 4. **Arm 3 L2 timers as SEPARATE background dispatches** (always — even for short ETAs use minimums 60s/120s/180s; never gate on ETA). Each timer is its OWN `Bash(..., run_in_background=true)` call:
    - Call A: `sleep <LOW/2 in s> && echo "... <agent> still running (Xm elapsed of ~LOW–HIGH)"` — own background dispatch
    - Call B: `sleep <LOW in s> && echo "... <agent> at estimated time (LOWm elapsed)"` — own background dispatch

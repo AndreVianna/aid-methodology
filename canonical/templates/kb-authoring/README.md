@@ -1,7 +1,7 @@
 # KB Authoring
 
 > Normative specification for authoring `.aid/knowledge/` Knowledge Base documents.
-> Loaded by `aid-discover` (review), `aid-init` (scaffold), `aid-summarize` (render),
+> Loaded by `aid-discover` (review), `aid-config` (scaffold), `aid-summarize` (render),
 > and `verify-claims.sh` (lint).
 
 ## What's here
@@ -64,7 +64,7 @@ changelog:
 ## How tools consume these docs
 
 - **`/aid-discover`** — reads each KB doc's frontmatter; picks rubric from [review-rubric.md](review-rubric.md); writes findings to temp ledger per [principles.md](principles.md) P3
-- **`/aid-init`** — scaffolds new KB docs with frontmatter from [frontmatter-schema.md](frontmatter-schema.md) seed
+- **`/aid-config`** — scaffolds new KB docs with frontmatter from [frontmatter-schema.md](frontmatter-schema.md) seed
 - **`/aid-summarize`** — extracts `intent:` field from each doc to populate section descriptions in `knowledge-summary.html`
 - **`verify-claims.sh`** — parses frontmatter; lint-checks `contracts:` against disk; warns on inline T3/T4 markers in primary-category docs
 - **`build-index.sh`** — composes `INDEX.md` from each doc's `intent:` + `kb-category:` + path

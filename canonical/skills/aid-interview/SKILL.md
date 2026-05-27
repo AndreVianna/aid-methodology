@@ -72,7 +72,7 @@ A lite work has **no `features/` folder, no per-feature `SPEC.md`, no `REQUIREME
 
 Check if `.aid/` directory exists. If it doesn't:
 ```
-⚠️ AID workspace not found. Run /aid-init first to set up the project.
+⚠️ AID workspace not found. Run /aid-config first to set up the project.
 ```
 Exit. Do not proceed.
 

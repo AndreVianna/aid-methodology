@@ -33,12 +33,21 @@ For each deliverable, check its corresponding tasks:
 4. **Missing tasks** — new deliverables/features with no corresponding tasks?
 5. **Sequence broken** — task order invalid given changes?
 
+### Dispatch the Reviewer
+
+Render `references/reviewer-brief.md` with:
+- `{{SCOPE}}` = `whole-list`
+- `{{ARTIFACTS}}` = every `.aid/{work}/tasks/task-*.md` + the full `PLAN.md` (incl. Execution Graphs)
+- `{{CONTEXT}}` = `Re-review of all tasks for work-NNN after PLAN/SPEC changes.`
+
+Dispatch the `reviewer` subagent with the rendered brief.
+
 ### Grade Overall
 
-Use the universal rubric (`../../templates/grading-rubric.md`). Classify each issue
+Use the universal rubric (`canonical/templates/grading-rubric.md`). Classify each issue
 by severity. The grade is calculated — worst issue dominates.
 
-Compare to minimum grade from `.aid/knowledge/STATE.md` `**Minimum Grade:**`.
+Compare to minimum grade from `bash canonical/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|

@@ -46,7 +46,7 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
 ### PD-0: Read Configuration
 
 1. **Read `MaxConcurrent`** from `.aid/knowledge/STATE.md` top-of-file metadata:
-   `**Max Parallel Tasks:** N` (default `5` if the field is absent).
+   `bash canonical/scripts/config/read-setting.sh --path execution.max_parallel_tasks --default 5` (default `5` if absent).
 
 2. **Detect host capability — `run_in_background` probe.**
 

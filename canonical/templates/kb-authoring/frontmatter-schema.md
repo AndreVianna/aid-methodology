@@ -1,7 +1,7 @@
 # KB Authoring — Frontmatter Schema
 
 > YAML frontmatter specification for `.aid/knowledge/*.md` documents.
-> Loaded by `aid-discover` (review classification), `aid-init` (scaffolding),
+> Loaded by `aid-discover` (review classification), `aid-config` (scaffolding),
 > `aid-summarize` (section intent), and `verify-claims.sh` (lint).
 
 Every KB document MUST begin with a YAML frontmatter block delimited by `---` markers.

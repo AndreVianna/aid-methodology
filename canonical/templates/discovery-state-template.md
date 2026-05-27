@@ -1,6 +1,6 @@
 # Discovery State
 
-> **Source:** aid-init (creates) · aid-discover + aid-summarize (update)
+> **Source:** aid-config (creates) · aid-discover + aid-summarize (update)
 > **Status:** Initial | In Progress | Approved
 > **Minimum Grade:** {grade}
 > **Current Grade:** {grade or Pending}

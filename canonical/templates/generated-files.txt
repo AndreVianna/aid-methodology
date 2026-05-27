@@ -16,7 +16,7 @@
 # PATH CONVENTION: build commands reference `canonical/scripts/...` paths. This
 # works in the DOGFOOD repo (where canonical/ exists at root). In ADOPTER projects
 # the scripts live under the install tree (`.claude/scripts/`, `.codex/scripts/`,
-# `.cursor/scripts/`); aid-init or the skill orchestrator must resolve the actual
+# `.cursor/scripts/`); aid-config or the skill orchestrator must resolve the actual
 # script location at FIX-state refresh time. The registry FORMAT is canonical;
 # the path resolver lives in the consuming skill.
 
