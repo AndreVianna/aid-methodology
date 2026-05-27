@@ -1,6 +1,6 @@
 ---
 name: discovery-reviewer
-description: "Reviews and grades Knowledge Base documents produced by Discovery. Cross-references claims against actual source code. Produces {reviewer_output_file}. Also adds new questions to {reviewer_output_file} when review findings reveal information gaps."
+description: Reviews and grades Knowledge Base documents produced by Discovery. Cross-references claims against actual source code. Produces STATE.md. Also adds new questions to STATE.md when review findings reveal information gaps.
 tools: Read, Glob, Grep, Bash, Write
 model: opus
 permissionMode: bypassPermissions

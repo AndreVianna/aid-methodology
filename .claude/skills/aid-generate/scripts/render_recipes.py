@@ -116,9 +116,14 @@ def render_recipes(
         if _is_text_file(src_file):
             try:
                 raw = src_file.read_text(encoding="utf-8")
-                # Policy (see render_agents.py): every text renderer applies
-                # substitute_filenames THEN rewrite_install_paths so adopter
-                # projects can resolve canonical/{scripts,templates,...}/ refs.
+                # Renderer policy (also in render_agents/templates/scripts/skills):
+                # every text-emitting renderer applies substitute_filenames THEN
+                # rewrite_install_paths so adopter projects (no canonical/ at root)
+                # can resolve canonical/{scripts,templates,skills,agents,rules,
+                # recipes}/ references. The rewriter skips lines starting with
+                # `#` so prose-about-the-mechanism in comments survives intact.
+                # See harness.py rewrite_install_paths docstring for the regex
+                # + comment-skip rule.
                 content = substitute_filenames(raw, profile.filename_map)
                 content = rewrite_install_paths(content, profile.layout.install_root())
                 encoded = content.encode("utf-8")

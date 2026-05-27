@@ -15,7 +15,7 @@ Persist `--grade` overrides to `.aid/settings.yml` (via `/aid-config` or direct 
 
 ### 2. Fetch Mermaid (latest)
 
-Run `.aid/scripts/summarize/fetch-mermaid.sh`. It:
+Run `.claude/scripts/summarize/fetch-mermaid.sh`. It:
 1. Calls `https://registry.npmjs.org/mermaid/latest` to discover current version.
 2. Compares to cached version at `.aid/knowledge/.cache/mermaid.min.js.meta`.
 3. If stale or missing, downloads `https://cdn.jsdelivr.net/npm/mermaid@{ver}/dist/mermaid.min.js`.
@@ -58,7 +58,7 @@ Use `.aid/templates/knowledge-summary/html-skeleton.html` as the document shell.
 - Inlined JS from `.aid/templates/knowledge-summary/lightbox.js` and `.aid/templates/knowledge-summary/mermaid-init.js`
 - Inlined Mermaid library from cached file
 
-Build via the part-concatenation pattern (see `.aid/scripts/summarize/concatenate.sh` or `.ps1`):
+Build via the part-concatenation pattern (see `.claude/scripts/summarize/concatenate.sh` or `.ps1`):
 1. Generate `part1.html` (everything from `<!DOCTYPE>` up to the opening `<script>` for Mermaid).
 2. Cat `part1.html` + cached Mermaid + `part2.html` → final `knowledge-summary.html`.
 3. Remove temp files.

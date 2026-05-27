@@ -32,7 +32,7 @@ summarization.
 
 ## ⚠️ Pre-flight Checks
 
-Run `.aid/scripts/summarize/preflight.sh` before any state. It verifies:
+Run `.cursor/scripts/summarize/preflight.sh` before any state. It verifies:
 
 1. `.aid/knowledge/STATE.md` exists.
 2. `**User Approved:** yes` is present in `.aid/knowledge/STATE.md`.
@@ -215,9 +215,9 @@ See `.aid/templates/knowledge-summary/grading-rubric.md` for the complete rubric
 - `.aid/templates/knowledge-summary/accessibility-checklist.md` — WCAG AA targets, focus trap pattern
 - `.aid/templates/knowledge-summary/grading-rubric.md` — two-grade rubric (Machine + Human), per-profile diagram counts
 - `.aid/templates/knowledge-summary/html-skeleton.html` — doctype, head, semantic landmarks, noscript
-- `.aid/scripts/summarize/run-validators.sh` — orchestrates AUTO_POOL checks, reads `.manual-checklist.json` for MANUAL_POOL, prints Machine + Human + Overall grades
-- `.aid/scripts/summarize/manual-checklist.sh` — validates / scores the MANUAL_POOL result file (`--input PATH` headless mode; `--interactive` for raw-terminal use)
-- `.aid/scripts/summarize/spot-check-facts.sh` — extracts HTML claims, grep-matches against source KB, writes `.spot-check-facts.txt` (aids the user's K2 judgment)
+- `.cursor/scripts/summarize/run-validators.sh` — orchestrates AUTO_POOL checks, reads `.manual-checklist.json` for MANUAL_POOL, prints Machine + Human + Overall grades
+- `.cursor/scripts/summarize/manual-checklist.sh` — validates / scores the MANUAL_POOL result file (`--input PATH` headless mode; `--interactive` for raw-terminal use)
+- `.cursor/scripts/summarize/spot-check-facts.sh` — extracts HTML claims, grep-matches against source KB, writes `.spot-check-facts.txt` (aids the user's K2 judgment)
 
 ---
 

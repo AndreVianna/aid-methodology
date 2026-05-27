@@ -95,7 +95,7 @@ Run it after producing the issue list:
 # Per FR2 §1A, the reviewer's issue list lives in the work STATE.md
 # ## Tasks Status row for the task; pre-FR2 it lived in a per-task
 # task-NNN-STATE.md file.
-scripts/grade.sh .aid/work-NNN-{name}/STATE.md
+bash canonical/scripts/grade.sh .aid/work-NNN-{name}/STATE.md
 ```
 
 ## Escalation

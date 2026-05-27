@@ -32,6 +32,15 @@
 
 set -uo pipefail
 
+# Resolve script's own install-tree root for citation prefix discovery
+# (round-5 Item 3 fix). The script may run from canonical/ in the dev tree
+# OR from .claude/scripts/kb/, .agents/scripts/kb/, .cursor/scripts/kb/
+# in adopter installs. SCRIPT_INSTALL_ROOT lets the PREFIXES discovery
+# below find prefix candidates that actually exist at runtime even when
+# $ROOT/canonical/ does not (adopter context).
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_INSTALL_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 KB_DIR=".aid/knowledge"
 ROOT="."
 FORMAT="human"
@@ -185,6 +194,35 @@ for top in tests methodology docs; do
 done
 [[ -d "$ROOT/tests/canonical" ]] && PREFIXES+=("tests/canonical/")
 [[ -d "$ROOT/tests/skills" ]] && PREFIXES+=("tests/skills/")
+
+# Install-tree discovery (round-5 Item 3 fix). When the script runs from an
+# adopter install (e.g., .claude/scripts/kb/verify-claims.sh), $ROOT/canonical/
+# does not exist so the discovery blocks above add nothing. Use the script's
+# own install-tree location to find install-rooted prefix candidates.
+abs_root=$(cd "$ROOT" 2>/dev/null && pwd || echo "")
+if [[ -n "$abs_root" && -d "$SCRIPT_INSTALL_ROOT" && "$SCRIPT_INSTALL_ROOT" != "$abs_root/canonical" ]]; then
+  if [[ "$SCRIPT_INSTALL_ROOT" == "$abs_root"/* ]]; then
+    install_rel="${SCRIPT_INSTALL_ROOT#$abs_root/}"
+  else
+    install_rel="$SCRIPT_INSTALL_ROOT"  # absolute fallback
+  fi
+  # Don't duplicate canonical/-based prefixes if dev-tree already discovered them.
+  if [[ "$install_rel" != "canonical" ]]; then
+    for sub in scripts templates skills agents recipes rules; do
+      [[ -d "$SCRIPT_INSTALL_ROOT/$sub" ]] && PREFIXES+=("$install_rel/$sub/")
+    done
+    if [[ -d "$SCRIPT_INSTALL_ROOT/scripts" ]]; then
+      while IFS= read -r d; do
+        PREFIXES+=("$install_rel/scripts/$(basename "$d")/")
+      done < <(find "$SCRIPT_INSTALL_ROOT/scripts" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
+    fi
+    if [[ -d "$SCRIPT_INSTALL_ROOT/templates" ]]; then
+      while IFS= read -r d; do
+        PREFIXES+=("$install_rel/templates/$(basename "$d")/")
+      done < <(find "$SCRIPT_INSTALL_ROOT/templates" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
+    fi
+  fi
+fi
 
 total_cite=0
 ok_cite=0

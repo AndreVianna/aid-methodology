@@ -197,6 +197,15 @@ def _render_skill_md(
     # rewrite_install_paths so adopter projects (no canonical/ at root) can
     # resolve canonical/{scripts,templates,...}/ references. See harness.py
     # rewrite_install_paths docstring for the regex + comment-skip rule.
+    #
+    # Apply BOTH to frontmatter as well as body (round-4 NEW-HIGH-1 lesson):
+    # the description field — even though preserved here as raw lines rather
+    # than parsed into a dict like render_agents.py does — may contain
+    # canonical/X/ references that must rewrite per profile. The rewriter
+    # regex is narrow enough that bare-key lines like `name: foo` won't match;
+    # only lines actually containing canonical/<dir>/ patterns get touched.
+    fm_block = substitute_filenames(fm_block, profile.filename_map)
+    fm_block = rewrite_install_paths(fm_block, profile.layout.install_root())
     body = substitute_filenames(body, profile.filename_map)
     body = rewrite_install_paths(body, profile.layout.install_root())
     content = fm_block + body

@@ -206,7 +206,7 @@ The fallback path is noted in the grade output. Warnings allowed in all modes.
 ## How a grading run reports
 
 ```
-$ scripts/grade.sh .aid/knowledge/knowledge-summary.html
+$ bash .cursor/scripts/grade.sh .aid/knowledge/knowledge-summary.html
 
 Validating .aid/knowledge/knowledge-summary.html ...
 Active profile: web-app  (target_diagrams: 8)

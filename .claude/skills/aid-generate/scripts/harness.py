@@ -142,6 +142,10 @@ def rewrite_install_paths(body: str, install_root: str) -> str:
     markdown headings start with ``#`` too but rarely contain literal
     canonical/ path references — so the same rule is safe across formats.
 
+    Non-comment lines (everything not starting with ``#`` after leading
+    whitespace) still receive normal rewriting — the skip rule is line-local
+    and does not change behavior for the surrounding code lines.
+
     Parameters
     ----------
     body : str
@@ -513,6 +517,77 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — basic rewrite on a non-comment line
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "bash canonical/scripts/grade.sh foo\n", ".claude"
+    )
+    if out != "bash .claude/scripts/grade.sh foo\n":
+        failures.append(f"rewrite_install_paths: basic rewrite wrong, got {out!r}")
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — comment line SKIPPED
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "# Refer to canonical/scripts/grade.sh for the script\n", ".claude"
+    )
+    expected = "# Refer to canonical/scripts/grade.sh for the script\n"
+    if out != expected:
+        failures.append(
+            f"rewrite_install_paths: comment line should be preserved, got {out!r}"
+        )
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — indented comment SKIPPED
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "    # nested canonical/templates/X.md\n", ".claude"
+    )
+    if out != "    # nested canonical/templates/X.md\n":
+        failures.append(
+            f"rewrite_install_paths: indented comment should be preserved, got {out!r}"
+        )
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — non-comment lines AFTER a comment line
+    # still get rewritten (comment skip is line-local)
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "# canonical/scripts/X.sh (do not rewrite)\nbash canonical/scripts/Y.sh real\n",
+        ".claude",
+    )
+    expected = (
+        "# canonical/scripts/X.sh (do not rewrite)\n"
+        "bash .claude/scripts/Y.sh real\n"
+    )
+    if out != expected:
+        failures.append(
+            f"rewrite_install_paths: line-local skip failed, got {out!r}"
+        )
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — idempotent (rewrite of rewritten is no-op)
+    # -----------------------------------------------------------------------
+    once = rewrite_install_paths("bash canonical/scripts/X.sh\n", ".claude")
+    twice = rewrite_install_paths(once, ".claude")
+    if once != twice:
+        failures.append(
+            f"rewrite_install_paths: not idempotent, once={once!r}, twice={twice!r}"
+        )
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — unrelated canonical/ paths pass through
+    # (e.g., canonical/work-NNN/ is not in the known-dirs allowlist)
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "see canonical/work-001/feature-002.md\n", ".claude"
+    )
+    if out != "see canonical/work-001/feature-002.md\n":
+        failures.append(
+            f"rewrite_install_paths: unrelated canonical/ should pass through, got {out!r}"
+        )
+
+    # -----------------------------------------------------------------------
     # Test: EmissionManifest determinism (two runs, same output)
     # -----------------------------------------------------------------------
     import tempfile, os
@@ -674,7 +749,7 @@ def main() -> int:
 
 def _count_tests() -> int:
     """Return the approximate number of checks performed in main()."""
-    return 16
+    return 22  # 16 prior + 6 rewrite_install_paths assertions (round-5 Item 6)
 
 
 if __name__ == "__main__":

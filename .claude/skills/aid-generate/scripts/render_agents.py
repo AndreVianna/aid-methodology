@@ -238,6 +238,15 @@ def _render_agent_for_profile(
     permission_mode = fm.get("permissionMode")
     background = fm.get("background")
 
+    # Apply the install-path rewrite to the frontmatter description too.
+    # (round-4 NEW-HIGH-1 fix.) The description field flows through a separate
+    # code path (re-emitted via _build_frontmatter_md / _render_codex_toml) that
+    # the body rewrite below does not touch. Any canonical/{scripts,templates,
+    # skills,agents,rules,recipes}/ reference inside a description must be
+    # rewritten to the profile's install root, exactly as in the body.
+    description = substitute_filenames(description, profile.filename_map)
+    description = rewrite_install_paths(description, profile.layout.install_root())
+
     # Apply filename substitution to body, then install-path rewrite.
     # Policy: every text-emitting renderer (render_skills, render_templates,
     # render_scripts, render_agents, render_recipes) MUST apply BOTH
