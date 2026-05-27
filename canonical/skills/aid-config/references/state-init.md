@@ -131,8 +131,8 @@ Create the directory structure:
     README.md              ← meta
     STATE.md               ← meta (skill state ledger only — no config)
   generated/               ← .aid/generated/* — empty initially; created by build scripts later
-  .temp/                   ← .aid/.temp/* — empty initially; gitignored
-  .heartbeat/              ← .aid/.heartbeat/* — empty initially; gitignored
+  .temp/                   ← .aid/.temp/* — empty initially; gitignored if Step 7 Option 1 or 2 picked (Option 3: user manages)
+  .heartbeat/              ← .aid/.heartbeat/* — empty initially; SHOULD be gitignored (MUST per heartbeat protocol; Step 7 offers append, Option 3 warns if user skips)
 ```
 
 Copy each of the 16 KB doc templates from `canonical/templates/knowledge-base/<name>.md`
@@ -285,15 +285,25 @@ Three options:
 
 **Option 1 (recommended) and Option 2 actually append** (with a check to
 avoid duplicate lines). Use a guarded block so re-running aid-config doesn't
-double-append:
+double-append. Wire the AskUserQuestion response into `$choice` first:
 
 ```bash
+# AskUserQuestion returns the user's pick as a label string. Map to 1/2/3.
+case "$ASK_USER_RESPONSE" in
+  *"protocol-required minimum"*) choice=1 ;;
+  *".aid/"*)                     choice=2 ;;
+  *)                             choice=3 ;;  # Skip
+esac
+
 GITIGNORE=".gitignore"
 BLOCK_BEGIN="# >>> aid-config managed >>>"
 BLOCK_END="# <<< aid-config managed <<<"
 
-# Skip if the managed block already exists
-if [ -f "$GITIGNORE" ] && grep -qF "$BLOCK_BEGIN" "$GITIGNORE"; then
+if [ "$choice" -eq 3 ]; then
+  echo "⚠️  Option 3 chosen — .aid/.heartbeat/ MUST be gitignored per the"
+  echo "    heartbeat protocol. Please add it manually before running any"
+  echo "    subagent-dispatching skill (/aid-discover, /aid-execute, etc.)."
+elif [ -f "$GITIGNORE" ] && grep -qF "$BLOCK_BEGIN" "$GITIGNORE"; then
   echo "ℹ️  .gitignore already has an aid-config managed block — skipping."
 else
   {
@@ -310,9 +320,8 @@ fi
 ```
 
 **Option 3** prints the recommended entries for manual copying but does not
-write to `.gitignore`. If chosen, also warn: "⚠️ .aid/.heartbeat/ MUST be
-gitignored per the heartbeat protocol; please add it manually before running
-any subagent-dispatching skill."
+write to `.gitignore`. The warning above (in the `if [ "$choice" -eq 3 ]`
+branch of the recipe) is the user-facing notice.
 
 Re-running `/aid-config` later detects the managed block and does not
 re-append; users who want to change the choice should edit the block manually

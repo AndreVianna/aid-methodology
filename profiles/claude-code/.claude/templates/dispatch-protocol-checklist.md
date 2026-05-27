@@ -11,9 +11,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 1. **Look up ETA** in `.claude/templates/rough-time-hints.md` for the
    subagent's operation class. Capture LOW–HIGH band.
-2. **Read heartbeat config** from `.aid/knowledge/STATE.md` top-of-file
-   `**Heartbeat Interval:** N minutes` (default 1; `0` = disabled).
-3. **If ETA LOW > 5 min AND heartbeat enabled:**
+2. **Read heartbeat config** via
+   `bash .claude/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
+   (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
+3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
    - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt
 4. **Arm 3 L2 timers** (via `run_in_background: true`):

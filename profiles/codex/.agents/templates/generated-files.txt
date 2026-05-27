@@ -13,12 +13,15 @@
 # Comments (lines starting with #) and blank lines are ignored.
 # Order matters: scripts are executed top-to-bottom, so list dependencies first.
 #
-# PATH CONVENTION: build commands reference `.agents/scripts/...` paths. This
-# works in the DOGFOOD repo (where canonical/ exists at root). In ADOPTER projects
-# the scripts live under the install tree (`.claude/scripts/`, `.codex/scripts/`,
-# `.cursor/scripts/`); aid-config or the skill orchestrator must resolve the actual
-# script location at FIX-state refresh time. The registry FORMAT is canonical;
-# the path resolver lives in the consuming skill.
+# PATH CONVENTION: build commands reference `.agents/scripts/...` paths.
+# The renderer (run_generator.py + rewrite_install_paths in harness.py) rewrites
+# these at render time to the profile-appropriate install root:
+#   `.agents/scripts/...` → `.claude/scripts/...` (Claude Code)
+#                          → `.agents/scripts/...`  (Codex)
+#                          → `.cursor/scripts/...`  (Cursor)
+# So this registry's literal `canonical/` paths are correct in canonical/ AND
+# the renderer makes them correct in every profile install. No runtime resolver
+# is needed in consuming skills.
 
 # Project file inventory — read by discovery sub-agents as a pre-pass.
 # Depends on: the entire project file tree.

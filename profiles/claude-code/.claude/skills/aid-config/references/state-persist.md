@@ -94,9 +94,10 @@ write leaves the old content intact, not a half-file). The lock prevents two
 concurrent `/aid-config` runs from clobbering each other (rare, but possible
 across terminal sessions).
 
-If a future PR ships `.claude/scripts/config/persist-setting.sh`, this
-inline recipe should be replaced with a call to it — but until then, the
-inline form is the spec.
+This inline recipe is the canonical implementation. Do not promise a future
+`persist-setting.sh` helper here — if write contention or a richer atomic
+contract is needed later, extract this recipe into a helper at that point
+and update this section accordingly (no hedge).
 
 ---
 

@@ -15,9 +15,17 @@ PERSIST.
 
 ## Step 1: Read the pending key
 
-Read `.aid/.temp/aid-config-pending.txt`. Extract the `key:` line. If the file
-is missing or malformed, fall back to asking the user which key (per VIEW state
-Step 2).
+Read `.aid/.temp/aid-config-pending.txt`. Extract the `key:` line.
+
+**If invoked via the quick-set form** (`/aid-config KEY=VALUE` per SKILL.md
+"Quick-set form"), the dispatcher skips VIEW and there is no pending-file
+breadcrumb. In that case, parse the positional arg directly: split on `=`,
+left half is the dotted key, right half is the value. Skip the prompt in
+Step 3 (the value is already known) but still run validation in Step 4 and
+proceed to PERSIST.
+
+If the file is missing AND no `KEY=VALUE` arg was provided, fall back to
+asking the user which key (per VIEW state Step 2).
 
 ---
 

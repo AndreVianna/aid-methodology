@@ -41,7 +41,7 @@ All other seed recipes target a specific workType.
 
 ## Recipe Format
 
-A recipe is a single Markdown file directly under `canonical/recipes/`. It has two
+A recipe is a single Markdown file directly under `.agents/recipes/`. It has two
 parts: a YAML front-matter block and a body containing `## spec` and `## tasks`
 blocks.
 
@@ -149,7 +149,7 @@ schema):
 
 **`## tasks` block** — one `### task-NNN — Title` sub-heading per task. Each
 becomes a rendered `tasks/task-NNN.md` file. The task shape is the 6-section
-flat form defined in `canonical/templates/delivery-plans/task-template.md`
+flat form defined in `.agents/templates/delivery-plans/task-template.md`
 (title heading, Type, Source, Depends on, Scope, Acceptance Criteria).
 
 ### Full Example (bug-fix recipe)
@@ -394,7 +394,7 @@ A recipe-instantiated work can escalate at any point:
 
 ## Authoring a New Recipe
 
-1. Copy `canonical/templates/recipe-template.md` to `canonical/recipes/{name}.md`
+1. Copy `.agents/templates/recipe-template.md` to `.agents/recipes/{name}.md`
    where `{name}` is the kebab-case recipe id.
 
 2. Fill in the YAML front-matter:
@@ -423,7 +423,7 @@ A recipe-instantiated work can escalate at any point:
    ```
 
 7. After adding the file, re-run the work-002 generator to render the updated
-   `canonical/recipes/` into all three install trees (claude-code, codex, cursor).
+   `.agents/recipes/` into all three install trees (claude-code, codex, cursor).
 
 ### Conventions
 
@@ -440,7 +440,7 @@ A recipe-instantiated work can escalate at any point:
 - **No recipe versioning.** Updating a recipe file updates everyone's behavior. If
   a recipe needs breaking changes, author a new recipe (`bug-fix-v2`) and let the
   old one age out.
-- **Flat layout.** Place recipes directly under `canonical/recipes/` — no
+- **Flat layout.** Place recipes directly under `.agents/recipes/` — no
   subdirectories. Sub-directories may be introduced if the catalog grows past
   approximately 15 recipes.
 - **Default task types:** IMPLEMENT for code changes, DOCUMENT for document
@@ -471,7 +471,7 @@ free-form-interview lite work.
 ## Adding Recipes to This Catalog
 
 This catalog is open. Projects are expected to add their own recipes as patterns
-emerge. Project-local recipes live alongside the seed recipes in `canonical/recipes/`
+emerge. Project-local recipes live alongside the seed recipes in `.agents/recipes/`
 if maintained with the canonical source.
 
 To contribute a recipe back to the seed catalog, follow the authoring steps above,

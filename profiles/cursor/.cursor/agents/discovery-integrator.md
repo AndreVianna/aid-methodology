@@ -30,7 +30,7 @@ between updates — repeating the same activity twice signals "stuck" to the
 orchestrator. Use `unknown` if you can't predict eta-remaining.
 
 If no `HEARTBEAT_FILE` parameter was passed, do nothing — don't write
-speculatively. See `canonical/templates/subagent-heartbeat-protocol.md` for
+speculatively. See `.cursor/templates/subagent-heartbeat-protocol.md` for
 the full contract.
 
 ## What You Do

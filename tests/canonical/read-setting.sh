@@ -312,6 +312,23 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Test 17a: inline list with whitespace inside brackets (MIN2 from round-2)
+# tools.installed: [ claude-code , codex , cursor ]  ← spaces around items
+# ---------------------------------------------------------------------------
+fixture="$TMPDIR/t17a.yml"
+cat > "$fixture" <<'EOF'
+tools:
+  installed: [ claude-code , codex , cursor ]
+EOF
+out=$(bash "$SUT" --file "$fixture" --path tools.installed --default fallback 2>&1)
+ec=$?
+if [[ "$out" == "claude-code,codex,cursor" && $ec -eq 0 ]]; then
+    pass "T17a (MIN2): inline list with bracket-padding whitespace parses correctly"
+else
+    fail "T17a (MIN2): bracket-padding" "got '$out' (ec=$ec), expected 'claude-code,codex,cursor'"
+fi
+
+# ---------------------------------------------------------------------------
 # Test 17 (F13): set -e does NOT abort on lookup() finding no match
 # ---------------------------------------------------------------------------
 fixture="$TMPDIR/t17.yml"

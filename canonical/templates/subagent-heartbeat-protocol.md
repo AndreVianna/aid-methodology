@@ -3,7 +3,9 @@
 When an AID skill (an "orchestrator") dispatches a subagent, the orchestrator
 MUST pass `HEARTBEAT_FILE=...` + `HEARTBEAT_INTERVAL=Nm` parameters to every
 subagent dispatch (unless heartbeat is explicitly disabled via
-`**Heartbeat Interval:** 0` in `.aid/knowledge/STATE.md`). The subagent MUST
+`traceability.heartbeat_interval: 0` in `.aid/settings.yml`, resolved by
+`bash canonical/scripts/config/read-setting.sh --path traceability.heartbeat_interval`).
+The subagent MUST
 write periodic progress notes to that file. The orchestrator reads the file
 when its L2 check-in timer fires (see `long-wait-protocol.md`) to surface real
 progress rather than just elapsed time. Heartbeat is unconditional: never gate
@@ -131,10 +133,13 @@ Easy to scan; easy to parse (`head -1`, `awk -F'|'`).
 - **Location:** `.aid/.heartbeat/` (always gitignored — see below)
 - **Gitignore requirement:** because heartbeat files are ephemeral runtime
   artifacts, `.aid/.heartbeat/` MUST be present in the project's `.gitignore`
-  regardless of whether `.aid/` itself is tracked (per aid-config Q8). When
-  `aid-config` runs, it adds `.aid/.heartbeat/` to `.gitignore` unconditionally;
-  for projects initialized before this patch, the dispatcher SHOULD ensure
-  this exclusion exists before its first dispatch.
+  regardless of whether `.aid/` itself is tracked. `/aid-config` INIT Step 7
+  offers to append the managed block (Option 1 = explicit per-line entries;
+  Option 2 = `.aid/` blanket; Option 3 = user manages manually). If the user
+  picks Option 3, the dispatcher SHOULD ensure this exclusion exists before
+  its first dispatch — and aid-config warns about this on Option 3 selection.
+  For projects initialized before this protocol existed, run `/aid-config`
+  again to surface the prompt.
 - **Stale-file cleanup:** dispatchers SHOULD delete `.aid/.heartbeat/*.txt`
   older than 24h at the START of any dispatch (covers crashed/abandoned
   subagents from prior sessions)
@@ -150,7 +155,8 @@ Easy to scan; easy to parse (`head -1`, `awk -F'|'`).
 - **1-minute default:** the user (work-003 PR #9 review) flagged the
   visibility gap; 1 minute gives the user a strong signal that the subagent
   is alive without overwhelming the narration. Users can override per-project
-  via STATE.md.
+  via `.aid/settings.yml` `traceability.heartbeat_interval` (set with
+  `/aid-config`).
 
 ## Pitfalls
 
