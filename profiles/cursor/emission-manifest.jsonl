@@ -52,7 +52,7 @@
 {"dst": ".cursor/scripts/summarize/validate-diagrams.mjs", "profile": "cursor", "sha256": "a50045310dce84618fb806629c702f7188be0ee0f9535418cf32f60d8b1c1d71", "src": "canonical/scripts/summarize/validate-diagrams.mjs"}
 {"dst": ".cursor/scripts/summarize/validate-html-output.sh", "profile": "cursor", "sha256": "b3a4016040363b741d326f8eaff66fef370a5264ed0d020308249eefc746ad52", "src": "canonical/scripts/summarize/validate-html-output.sh"}
 {"dst": ".cursor/scripts/summarize/writeback-state.sh", "profile": "cursor", "sha256": "b8d23c3266eabfb722f008ac3026e8489b0ea96bcb599ae8dd70c56367ea55a0", "src": "canonical/scripts/summarize/writeback-state.sh"}
-{"dst": ".cursor/skills/aid-config/SKILL.md", "profile": "cursor", "sha256": "d1ee90fce19e85135b3d367f86683fe93c702436c627276617501af51f9c4e13", "src": "canonical/skills/aid-config/SKILL.md"}
+{"dst": ".cursor/skills/aid-config/SKILL.md", "profile": "cursor", "sha256": "99d9b74d3ea155ca5f63508db0b42f6210bb76ae5a4f7838041120e9f6334b8c", "src": "canonical/skills/aid-config/SKILL.md"}
 {"dst": ".cursor/skills/aid-deploy/SKILL.md", "profile": "cursor", "sha256": "e06cef5287889e2ae1d5545932bde819038a678f6c8e3bab938afcc86c7689ad", "src": "canonical/skills/aid-deploy/SKILL.md"}
 {"dst": ".cursor/skills/aid-deploy/references/state-idle.md", "profile": "cursor", "sha256": "a411f3f92a7d351a45de466448547155861031f8eb499a39c6220b230d42b361", "src": "canonical/skills/aid-deploy/references/state-idle.md"}
 {"dst": ".cursor/skills/aid-deploy/references/state-packaging.md", "profile": "cursor", "sha256": "9dba7411d9b9c22b6823aa5e91fedf9c0b547338f9ba7a8f259cd04857a1c182", "src": "canonical/skills/aid-deploy/references/state-packaging.md"}
