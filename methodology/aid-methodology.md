@@ -184,7 +184,7 @@ A common failure mode: an agent receives a task spec and the project spec, imple
 
 **AID solves this with the KB Index — a lightweight map of the entire Knowledge Base.**
 
-`aid-init` creates `.aid/knowledge/INDEX.md` at setup with placeholder rows; Discovery regenerates it with real content as its final step (and on the greenfield path, which skips Discovery, `aid-interview` updates it where applicable). This file contains a 2-3 line summary of each KB document — what it covers, when to consult it. It costs almost nothing to include in an agent's context, but it gives the agent the ability to self-serve.
+`aid-config` creates `.aid/knowledge/INDEX.md` at setup with placeholder rows; Discovery regenerates it with real content as its final step (and on the greenfield path, which skips Discovery, `aid-interview` updates it where applicable). This file contains a 2-3 line summary of each KB document — what it covers, when to consult it. It costs almost nothing to include in an agent's context, but it gives the agent the ability to self-serve.
 
 ```markdown
 # Knowledge Base Index — {Project Name}
@@ -218,7 +218,7 @@ The agent pays a few hundred tokens to know where everything is, then spends its
 
 **Why not a vector database?** Because the KB is small enough (16 standard documents, each a short markdown file) that convention beats infrastructure. The bottleneck isn't retrieval speed — it's knowing what exists. The INDEX solves that.
 
-**When does the INDEX update?** `aid-init` seeds it at setup; thereafter it is regenerated every time Discovery runs (full or targeted), and `aid-interview` updates it where applicable as requirements evolve. It is always rebuilt from the current state of the KB — never manually maintained.
+**When does the INDEX update?** `aid-config` seeds it at setup; thereafter it is regenerated every time Discovery runs (full or targeted), and `aid-interview` updates it where applicable as requirements evolve. It is always rebuilt from the current state of the KB — never manually maintained.
 
 ### The KB Outlives the Project
 
@@ -237,7 +237,7 @@ AID organizes eight development phases into five groups. The pipeline is linear 
 
 ### Group 1: Prepare
 
-*Set up the workspace and build an understanding of the existing system. This group also holds two non-phase skills, `aid-init` and `aid-summarize` — see Prepare-Group Skills below.*
+*Set up the workspace and build an understanding of the existing system. This group also holds two non-phase skills, `aid-config` and `aid-summarize` — see Prepare-Group Skills below.*
 
 ---
 
@@ -271,11 +271,11 @@ Generation opens with a fast, deterministic pre-pass that writes `.aid/knowledge
 
 **When to re-enter:** Any downstream phase finds the KB wrong or incomplete and routes a feedback loop back to Discovery (§4). Re-entry is always *targeted* — fill the specific gap, not redo full discovery.
 
-#### Prepare-Group Skills: `aid-init` and `aid-summarize`
+#### Prepare-Group Skills: `aid-config` and `aid-summarize`
 
 Two skills sit in the Prepare group but are **not numbered phases**:
 
-- **`aid-init`** — the bootstrap skill, run once before the pipeline begins. It collects project metadata (greenfield or brownfield, name, description, minimum grade), scaffolds `.aid/knowledge/` with the 16 KB document templates plus the meta-documents, creates the host-tool context file (`CLAUDE.md` or `AGENTS.md`), and asks whether the `.aid/` workspace should be committed to Git.
+- **`aid-config`** — the bootstrap skill, run once before the pipeline begins. It collects project metadata (greenfield or brownfield, name, description, minimum grade), scaffolds `.aid/knowledge/` with the 16 KB document templates plus the meta-documents, creates the host-tool context file (`CLAUDE.md` or `AGENTS.md`), and asks whether the `.aid/` workspace should be committed to Git.
 - **`aid-summarize`** — an optional, read-only skill, run after Discovery is approved. It generates a single self-contained `knowledge-summary.html` from the Knowledge Base — offline, light/dark theme, accessibility-first, with Mermaid diagrams. It is idempotent: re-running it on an unchanged KB is a no-op.
 
 ---
@@ -321,7 +321,7 @@ The interview runs as a seven-state machine, advancing one state per run (State 
 
 **State 6: Cross-Reference.** Validates REQUIREMENTS.md against the full KB. Checks for contradictions, gaps, missing evidence, and staleness, then grades the findings with AID's universal rubric. Grade is a snapshot — doesn't change within the same run.
 
-**One grading rubric across the pipeline.** Every development phase that grades — Discover, Interview, Specify, Plan, Detail, Execute — works the same way: the reviewer classifies each issue it finds by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`), and the letter grade is then **computed deterministically** — the worst severity present dominates, and the count within that tier sets the modifier — a scale that runs A+ down to F, with an E band for critical-severity issues. The reviewer never hand-picks a grade. Each phase loops until its grade meets the project's minimum (set at `aid-init`). See §5 and `templates/grading-rubric.md`. The one exception is the optional `aid-summarize` skill — not a pipeline phase — which validates its generated HTML against a separate, purpose-built rubric: an automated quality score plus a human review score, rather than the severity rubric described here.
+**One grading rubric across the pipeline.** Every development phase that grades — Discover, Interview, Specify, Plan, Detail, Execute — works the same way: the reviewer classifies each issue it finds by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`), and the letter grade is then **computed deterministically** — the worst severity present dominates, and the count within that tier sets the modifier — a scale that runs A+ down to F, with an E band for critical-severity issues. The reviewer never hand-picks a grade. Each phase loops until its grade meets the project's minimum (set at `aid-config`). See §5 and `templates/grading-rubric.md`. The one exception is the optional `aid-summarize` skill — not a pipeline phase — which validates its generated HTML against a separate, purpose-built rubric: an automated quality score plus a human review score, rather than the severity rubric described here.
 
 **State 7: Done.** REQUIREMENTS.md is approved and each per-feature SPEC.md exists with its requirements side filled in — the work is ready for Specify. Re-running `/aid-interview` from Done offers a choice — add more information, re-run the cross-reference validation (State 6), or exit.
 
@@ -828,7 +828,7 @@ Six sections — Title, Type, Source, Depends on, Scope, Acceptance Criteria. No
 
 ### Review Record Format
 
-Inside Execute, the reviewer produces a structured issue list. Each issue is tagged by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`) and source (`[CODE]` / `[TASK]` / `[SPEC]` / `[KB]`). The reviewer **does not assign a letter grade** — the grade is computed deterministically by `templates/scripts/grade.sh` from the bracketed severity tags (worst severity dominates; count within that tier sets the `+` / none / `-` modifier). See `templates/grading-rubric.md` for the full table.
+Inside Execute, the reviewer produces a structured issue list. Each issue is tagged by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`) and source (`[CODE]` / `[TASK]` / `[SPEC]` / `[KB]`). The reviewer **does not assign a letter grade** — the grade is computed deterministically by `canonical/scripts/grade.sh` from the bracketed severity tags (worst severity dominates; count within that tier sets the `+` / none / `-` modifier). See `canonical/templates/grading-rubric.md` for the full table.
 
 There is no standalone review document. The reviewer records each cycle in the task's `task-NNN-STATE.md`:
 
@@ -889,7 +889,7 @@ flowchart TB
     classDef aux fill:#E5E7EB,stroke:#9CA3AF,color:#1F2937,stroke-dasharray:4 3
 
     subgraph G1[" 1 · Prepare "]
-        Init["aid-init<br/>setup · once per project"]:::aux
+        Init["aid-config<br/>setup · once per project"]:::aux
         Disc["1 · aid-discover<br/>brownfield"]:::prep
         Sum["aid-summarize<br/>optional"]:::aux
     end
@@ -912,7 +912,7 @@ flowchart TB
     Init --> Disc --> Intv --> Spec --> Plan --> Det --> Exe --> Dep --> Mon
 ```
 
-The forward path is the default; the eleven feedback loops (see §4) are the escape hatches. Brownfield projects enter at Discover; greenfield projects skip Discover and enter at Interview. `aid-init` runs once before the pipeline, and `aid-summarize` is an optional read-only viewer of the Knowledge Base.
+The forward path is the default; the eleven feedback loops (see §4) are the escape hatches. Brownfield projects enter at Discover; greenfield projects skip Discover and enter at Interview. `aid-config` runs once before the pipeline, and `aid-summarize` is an optional read-only viewer of the Knowledge Base.
 
 ### The Two Post-Production Paths
 
@@ -1028,7 +1028,7 @@ SDD is not wrong. It's incomplete. AID is SDD + Discovery + Feedback Loops + Two
 
 ### Starting with an Existing Project (Brownfield)
 
-1. Run `/aid-init`, then `/aid-discover` on the codebase. This produces your Knowledge Base.
+1. Run `/aid-config`, then `/aid-discover` on the codebase. This produces your Knowledge Base.
 2. Review the KB. Fill gaps with human knowledge.
 3. For the next feature request, run `/aid-interview` with the stakeholder.
 4. Run `/aid-specify` to add a technical spec to each feature.
@@ -1039,7 +1039,7 @@ SDD is not wrong. It's incomplete. AID is SDD + Discovery + Feedback Loops + Two
 
 ### Starting a New Project (Greenfield)
 
-1. Run `/aid-init`, then `/aid-interview` with the stakeholder. This is your starting point.
+1. Run `/aid-config`, then `/aid-interview` with the stakeholder. This is your starting point.
 2. A minimal KB is populated from interview answers.
 3. Run `/aid-specify` to add a technical spec to each feature.
 4. Continue with Plan → Detail → Execute → Deploy → Monitor.
@@ -1047,7 +1047,7 @@ SDD is not wrong. It's incomplete. AID is SDD + Discovery + Feedback Loops + Two
 
 ### Adopting Incrementally
 
-You don't need to use all eight phases from day one — though `/aid-init` always runs once first:
+You don't need to use all eight phases from day one — though `/aid-config` always runs once first:
 
 - **Start with Detail + Execute.** If you already have specs, formalize your task decomposition and reviewed execution — Execute codes, reviews, and grades in one loop.
 - **Add Plan.** Separate delivery strategy from tactical decomposition with two-level planning.

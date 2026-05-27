@@ -25,7 +25,7 @@ Assess severity per finding:
 
 ### Step 3: Analyze (BUGs only)
 
-▶ root cause analysis starting (~2–5 min per BUG per `canonical/templates/rough-time-hints.md`)
+▶ root cause analysis starting (~2–5 min per BUG per `.claude/templates/rough-time-hints.md`)
 Root cause analysis before routing:
 
 1. **Reproduce the path.** Trace from evidence: endpoint → module → function.

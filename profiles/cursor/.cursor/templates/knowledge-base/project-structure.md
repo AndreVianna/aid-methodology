@@ -1,3 +1,13 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Repository layout, top-level directory purposes, and file-inventory shape. Read this to understand the on-disk organization of the project.
+contracts: []
+changelog:
+  - 2026-05-26: KB Authoring v2 template seed
+---
+
 # Project Structure
 
 > **Source:** aid-discover (Phase 1 — Pre-scan)

@@ -1,6 +1,6 @@
 # Grading Rubric
 
-The skill's `VALIDATE` state runs `scripts/grade.sh` against the generated
+The skill's `VALIDATE` state runs `.cursor/scripts/grade.sh` against the generated
 `knowledge-summary.html`. Each check is binary pass/fail; the grade is the
 weighted aggregate. **Any unparseable Mermaid diagram is an automatic F.**
 
@@ -41,17 +41,17 @@ grade exists.
 | **V1** | Human visual gate (mandatory) | A human opens the HTML in a browser and confirms ALL of: every diagram renders (no error blocks); diagram + node text is legible in BOTH light AND dark themes; theme toggle works; lightbox opens / Esc closes / Tab cycles. Pass=5, fail=0. **V1=0 forces Human Grade F.** | 5 | manual (`manual-checklist.sh`) |
 | **D1** | Mermaid parse | `mermaid.parse()` succeeds for every block | 20 | `validate-diagrams.mjs` |
 | **D2** | Mermaid render | Each block renders to non-trivial SVG (>500 bytes, contains `<g>` or `<path>`, no `mermaid-error` class) | 10 | `validate-diagrams.mjs` (jsdom + Mermaid render) |
-| **L1** | Anchor links | Every `href="#X"` resolves to in-page `id="X"` | 5 | `validate-links.sh` |
-| **L2** | Relative md links | Every `./*.md` link points to an existing file in `.aid/knowledge/` | 5 | `validate-links.sh` |
-| **H1** | HTML validity | If `tidy` or `html-validate` is available, zero errors reported; otherwise regex structural checks pass | 5 | `validate-html.sh` |
-| **A1** | Semantic landmarks | `<header role="banner">`, `<main>`, `<nav>`, `<footer>` present | 5 | `validate-html.sh` |
-| **A2** | ARIA on lightbox | Dialog has `role`, `aria-modal`, `aria-labelledby`, `aria-hidden` | 3 | `validate-html.sh` |
-| **A3** | Focus trap | Inlined `lightbox.js` contains `trapFocusOnTab`, `lastFocused.focus()`, and `key === 'Escape'` | 5 | `validate-html.sh` (grep on inlined JS) |
-| **A4** | Reduced motion | `prefers-reduced-motion` block present in CSS | 2 | `validate-html.sh` |
-| **A5** | Visible focus | `:focus-visible` rule present in CSS | 3 | `validate-html.sh` |
+| **L1** | Anchor links | Every `href="#X"` resolves to in-page `id="X"` | 5 | `validate-html-output.sh` |
+| **L2** | Relative md links | Every `./*.md` link points to an existing file in `.aid/knowledge/` | 5 | `validate-html-output.sh` |
+| **H1** | HTML validity | If `tidy` or `html-validate` is available, zero errors reported; otherwise regex structural checks pass | 5 | `validate-html-output.sh` |
+| **A1** | Semantic landmarks | `<header role="banner">`, `<main>`, `<nav>`, `<footer>` present | 5 | `validate-html-output.sh` |
+| **A2** | ARIA on lightbox | Dialog has `role`, `aria-modal`, `aria-labelledby`, `aria-hidden` | 3 | `validate-html-output.sh` |
+| **A3** | Focus trap | Inlined `lightbox.js` contains `trapFocusOnTab`, `lastFocused.focus()`, and `key === 'Escape'` | 5 | `validate-html-output.sh` (grep on inlined JS) |
+| **A4** | Reduced motion | `prefers-reduced-motion` block present in CSS | 2 | `validate-html-output.sh` |
+| **A5** | Visible focus | `:focus-visible` rule present in CSS | 3 | `validate-html-output.sh` |
 | **C1** | Light theme contrast | All token pairs in checklist ≥ target ratios | 4 | `contrast-check.mjs` |
 | **C2** | Dark theme contrast | Same | 4 | `contrast-check.mjs` |
-| **S2** | Offline render | Mermaid library is inlined (or `--cdn-mermaid` chosen explicitly) | 2 | `validate-html.sh` |
+| **S2** | Offline render | Mermaid library is inlined (or `--cdn-mermaid` chosen explicitly) | 2 | `validate-html-output.sh` |
 | | **Machine total** | | **73** | |
 | | **Human total** | | **30** | |
 
@@ -178,7 +178,7 @@ unclosed quotes, reserved words in erDiagram. See `mermaid-examples.md`.
 
 **L2:** Every `<a href="./X.md">` must point to an existing `.aid/knowledge/X.md`.
 
-**H1 cascade:** `validate-html.sh` tries in order:
+**H1 cascade:** `validate-html-output.sh` tries in order:
 1. `tidy -e --quiet yes` — fails on any error line.
 2. `html-validate` — fails on errors.
 3. Regex fallback (unclosed tags, duplicate IDs, missing `<!DOCTYPE html>`).
@@ -190,7 +190,7 @@ The fallback path is noted in the grade output. Warnings allowed in all modes.
 **A2:** `#lightbox` has `role="dialog"`, `aria-modal="true"`,
 `aria-hidden="true"`, and `aria-labelledby` referencing an existing element.
 
-**A3:** `validate-html.sh` greps inlined `lightbox.js` for all three markers:
+**A3:** `validate-html-output.sh` greps inlined `lightbox.js` for all three markers:
 `trapFocusOnTab`, `lastFocused.focus()`, `key === 'Escape'`.
 
 **A4:** CSS has `@media (prefers-reduced-motion: reduce)` with at least one rule.
@@ -206,7 +206,7 @@ The fallback path is noted in the grade output. Warnings allowed in all modes.
 ## How a grading run reports
 
 ```
-$ scripts/grade.sh .aid/knowledge/knowledge-summary.html
+$ bash .cursor/scripts/grade.sh .aid/knowledge/knowledge-summary.html
 
 Validating .aid/knowledge/knowledge-summary.html ...
 Active profile: web-app  (target_diagrams: 8)

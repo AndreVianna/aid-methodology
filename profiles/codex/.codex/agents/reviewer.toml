@@ -1,5 +1,5 @@
 name = "reviewer"
-description = "Adversarial quality evaluator. Produces a structured issue list with severity and source tags. Does NOT fix anything; does NOT compute the grade. Grading is computed deterministically by `templates/scripts/grade.sh` from the issue list."
+description = "Adversarial quality evaluator. Produces a structured issue list with severity and source tags. Does NOT fix anything; does NOT compute the grade. Grading is computed deterministically by `.agents/scripts/grade.sh` from the issue list."
 model = "gpt-5.5"
 model_reasoning_effort = "high"
 developer_instructions = """
@@ -26,7 +26,7 @@ between updates — repeating the same activity twice signals "stuck" to the
 orchestrator. Use `unknown` if you can't predict eta-remaining.
 
 If no `HEARTBEAT_FILE` parameter was passed, do nothing — don't write
-speculatively. See `canonical/templates/subagent-heartbeat-protocol.md` for
+speculatively. See `.agents/templates/subagent-heartbeat-protocol.md` for
 the full contract.
 
 ## What You Do

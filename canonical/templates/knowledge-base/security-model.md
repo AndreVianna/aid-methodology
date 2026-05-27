@@ -1,3 +1,13 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Threat model, authentication and authorization patterns, secrets handling, and OWASP-adjacent considerations. Read this for any security-sensitive change.
+contracts: []
+changelog:
+  - 2026-05-26: KB Authoring v2 template seed
+---
+
 # Security Model
 
 > **Source:** aid-discover (Phase 1) + aid-interview (Phase 2)

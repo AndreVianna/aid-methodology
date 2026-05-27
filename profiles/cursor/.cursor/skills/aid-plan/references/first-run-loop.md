@@ -74,7 +74,14 @@ When the developer agrees on a deliverable, **IMMEDIATELY write it to the file.*
 ⚠️ **DO NOT continue to the next deliverable without writing this one first.**
 ⚠️ **DO NOT accumulate multiple deliverables "in your head" — write each one immediately.**
 
-**Agent:** Dispatch with `subagent_type: reviewer` (overriding the default `architect`). The reviewer must run with clean context — it grades against KB/codebase reality without seeing the architect's working notes. Print before dispatch: `[Review] Dispatching reviewer for PLAN validation.`
+**Agent:** Dispatch with `subagent_type: reviewer` (overriding the default `architect`). The reviewer must run with clean context — it grades against KB/codebase reality without seeing the architect's working notes.
+
+**Dispatch package:** render `references/reviewer-brief.md` with:
+- `{{SCOPE}}` = `per-deliverable`
+- `{{ARTIFACTS}}` = the deliverable section just appended to `PLAN.md` + the SPECs of the features it assigns
+- `{{CONTEXT}}` = `delivery-NNN of work-NNN just written; preceding deliveries: delivery-NNN..MMM (titles).`
+
+Print before dispatch: `[Review] Dispatching reviewer for PLAN validation (per-deliverable scope).`
 
 ▶ reviewer starting (~1–2 min)
 After writing, **review immediately:** Does it hold up?
@@ -83,12 +90,12 @@ After writing, **review immediately:** Does it hold up?
 - Actually standalone-functional?
 - Consistent with KB architecture?
 
-Use the universal rubric (`../../templates/grading-rubric.md`). Classify each issue
+Use the universal rubric (`.cursor/templates/grading-rubric.md`). Classify each issue
 by severity. The grade is calculated — worst issue dominates.
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum (from `.aid/knowledge/STATE.md` `**Minimum Grade:**`) | Move to next deliverable. |
+| Grade ≥ minimum (from `bash .cursor/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`) | Move to next deliverable. |
 | Grade < minimum, fixable | Back to Propose with findings. |
 
 ```

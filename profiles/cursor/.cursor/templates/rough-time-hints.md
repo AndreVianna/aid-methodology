@@ -17,7 +17,7 @@ and a `Samples` column tracking how many runs informed the figure.
 When a SKILL executes a bracket-pair, the `✓ done` line MUST record the actual
 elapsed time. Periodically (suggested: each `/aid-discover` run or each new
 `/aid-execute` delivery), refresh the ETAs in this table from those observations.
-See `canonical/templates/long-wait-protocol.md` for the orchestrator-side
+See `.cursor/templates/long-wait-protocol.md` for the orchestrator-side
 check-in pattern that emits mid-wait status when ETAs exceed 5 minutes.
 
 ## ETA Table (current as of 2026-05-23)
@@ -35,14 +35,13 @@ check-in pattern that emits mid-wait status when ETAs exceed 5 minutes.
 | `developer` (DOCUMENT) | 1–3 min | (gut estimate) | 0 | Writes documentation artifact; shorter than code tasks. **Not yet measured.** |
 | `developer` (TEST) | 2–5 min | (gut estimate) | 0 | Writes and runs integration/E2E tests. **Not yet measured.** |
 | `architect` | 2–4 min | (gut estimate) | 0 | Designs or reviews architecture decisions. **Not yet measured.** |
-| `validate-html.sh` | ~30 s | 2026-05-21 | 1 | Runs html-validate on the knowledge-summary HTML output |
-| `validate-links.sh` | ~30 s | 2026-05-21 | 1 | Checks internal and external link integrity |
+| `validate-html-output.sh` | ~30 s | 2026-05-21 | 1 | Runs html-validate + link-integrity checks (H1+A1-A5+S2 structural/a11y plus L1+L2 anchor/relative-md links) on the knowledge-summary HTML output. Merged from the former validate-html.sh + validate-links.sh in 2026-05-26 script consolidation. |
 | `validate-diagrams.mjs` | ~30 s | 2026-05-21 | 1 | Renders Mermaid diagrams via mmdc and checks output |
 | `contrast-check.mjs` | ~30 s | 2026-05-21 | 1 | Checks WCAG contrast ratios for all colour pairs |
 | `/aid-generate` (end-to-end) | ~30 s | 2026-05-23 | 4 (4 observed run_generator.py invocations during work-003) | Runs run_generator.py across all 3 profiles; includes VERIFY-4a |
 | `setup.sh` (smoke install) | ~10 s | 2026-05-23 | 2 | Interactive menu (`printf "1\n4\n" |`); copies one profile tree to target dir |
 | `python run_generator.py` | ~25 s | 2026-05-23 | 4 | Full canonical→profile render + VERIFY-4a + VERIFY-4b |
-| `verify-kb-claims.sh` | ~3–5 s | 2026-05-23 | 5 | KB citation integrity check; exits 0 when clean |
+| `verify-claims.sh` | ~3–5 s | 2026-05-23 | 5 | KB citation integrity check; exits 0 when clean |
 
 ## Notes
 

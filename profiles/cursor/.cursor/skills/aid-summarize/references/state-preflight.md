@@ -2,7 +2,7 @@
 
 PREFLIGHT is the synchronous gate that verifies all prerequisites before any summarization state runs; it is selected on every invocation before state detection proceeds.
 
-Run `.aid/templates/knowledge-summary/scripts/check-preflight.sh` before any state. It verifies:
+Run `.cursor/scripts/summarize/preflight.sh` before any state. It verifies:
 
 1. `.aid/knowledge/STATE.md` exists.
 2. `**User Approved:** yes` is present in `.aid/knowledge/STATE.md`.

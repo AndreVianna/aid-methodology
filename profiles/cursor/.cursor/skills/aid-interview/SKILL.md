@@ -72,7 +72,7 @@ A lite work has **no `features/` folder, no per-feature `SPEC.md`, no `REQUIREME
 
 Check if `.aid/` directory exists. If it doesn't:
 ```
-⚠️ AID workspace not found. Run /aid-init first to set up the project.
+⚠️ AID workspace not found. Run /aid-config first to set up the project.
 ```
 Exit. Do not proceed.
 
@@ -330,8 +330,8 @@ This skill ships executable helpers in `scripts/`:
 
 | Script | Used by | Purpose |
 |--------|---------|---------|
-| `scripts/parse-recipe.sh` | State TRIAGE (Step 5a recipe-offer + slot-fill + emit) | Parses canonical recipe files (YAML front-matter validation, slot extraction, `## spec`/`## tasks` block split, `{!{` escape handling, render with slot substitution). |
-| `scripts/test-parse-recipe.sh` | smoke test (CI / pre-commit) | 111-assertion smoke harness for `parse-recipe.sh`. |
+| `.cursor/scripts/interview/parse-recipe.sh` | State TRIAGE (Step 5a recipe-offer + slot-fill + emit) | Parses canonical recipe files (YAML front-matter validation, slot extraction, `## spec`/`## tasks` block split, `{!{` escape handling, render with slot substitution). |
+| `tests/canonical/parse-recipe.sh` | smoke test (CI / pre-commit) | 111-assertion smoke harness for `parse-recipe.sh` (maintainer-only; not shipped to adopters). |
 
 ## Targeted Interview (Loopback Re-entry)
 

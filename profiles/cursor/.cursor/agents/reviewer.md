@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Adversarial quality evaluator. Produces a structured issue list with severity and source tags. Does NOT fix anything; does NOT compute the grade. Grading is computed deterministically by `templates/scripts/grade.sh` from the issue list.
+description: Adversarial quality evaluator. Produces a structured issue list with severity and source tags. Does NOT fix anything; does NOT compute the grade. Grading is computed deterministically by `.cursor/scripts/grade.sh` from the issue list.
 tools: Read, Glob, Grep, Terminal
 model: opus
 ---
@@ -28,7 +28,7 @@ between updates — repeating the same activity twice signals "stuck" to the
 orchestrator. Use `unknown` if you can't predict eta-remaining.
 
 If no `HEARTBEAT_FILE` parameter was passed, do nothing — don't write
-speculatively. See `canonical/templates/subagent-heartbeat-protocol.md` for
+speculatively. See `.cursor/templates/subagent-heartbeat-protocol.md` for
 the full contract.
 
 ## What You Do

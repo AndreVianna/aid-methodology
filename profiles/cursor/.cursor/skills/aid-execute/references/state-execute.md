@@ -46,7 +46,7 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
 ### PD-0: Read Configuration
 
 1. **Read `MaxConcurrent`** from `.aid/knowledge/STATE.md` top-of-file metadata:
-   `**Max Parallel Tasks:** N` (default `5` if the field is absent).
+   `bash .cursor/scripts/config/read-setting.sh --path execution.max_parallel_tasks --default 5` (default `5` if absent).
 
 2. **Detect host capability — `run_in_background` probe.**
 
@@ -260,7 +260,7 @@ Remove `task-{NNN}` from the in-flight set.
 
 4. **Compute the failure-block-radius (transitive-descendant BFS):**
 
-   Run `canonical/templates/scripts/compute-block-radius.sh` with the
+   Run `.cursor/scripts/execute/compute-block-radius.sh` with the
    failed task and the reverse dependency graph:
 
    ```bash
@@ -531,7 +531,7 @@ Done: {D}  In-flight: {I}  Queued: {Q}  Blocked: {B}  Failed: {F}
 | `agent` | Executor role dispatched for this task (from Agent Selection table) | e.g., `developer`, `researcher` |
 | `heartbeat` | Last state written to `.aid/.heartbeat/<executor>-<ts>.txt` | `EXECUTE` / `REVIEW` / `FIX` / `DONE` / `STALE` / `unknown` |
 | `elapsed` | Wall time since PD-2 dispatched this task | `Xm Ys` (minutes + seconds) |
-| `ETA` | Rough band from `canonical/templates/rough-time-hints.md` for the executor + task type | `~LOW–HIGH min` |
+| `ETA` | Rough band from `.cursor/templates/rough-time-hints.md` for the executor + task type | `~LOW–HIGH min` |
 
 **Heartbeat states:**
 - `EXECUTE` — sub-agent is currently running the executor

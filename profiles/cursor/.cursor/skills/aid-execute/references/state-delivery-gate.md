@@ -110,7 +110,7 @@ Parse the `| Task | Depends On |` table to build the dependency map.
 
 ### Tier Selection
 
-Read thresholds from `.aid/knowledge/STATE.md` (fields set at `/aid-init`):
+Read thresholds from `.aid/knowledge/STATE.md` (fields set at `/aid-config`):
 - `**Gate Tier Low Threshold:**` (default `6` if absent)
 - `**Gate Tier High Threshold:**` (default `14` if absent)
 
@@ -150,7 +150,13 @@ arm 3 L2 timers; pre-create heartbeat file; include `HEARTBEAT_FILE` +
 ### Gate Reviewer Inputs
 
 The gate reviewer receives a **fresh, clean-context package** — not a summary
-of per-task reviews. It reads directly from source:
+of per-task reviews. The package wrapper is the universal brief at
+`references/reviewer-brief.md` rendered with:
+- `{{MODE}}` = `per-delivery`
+- `{{ARTIFACTS}}` = the full delivery branch diff + every task's STATE.md row + the PLAN.md delivery section
+- `{{CONTEXT}}` = `delivery-NNN aggregates tasks {NNN..MMM}; this is the post-execution quality gate before merge to main.`
+
+Then append the gate-specific prompt below. The reviewer reads directly from source:
 
 - **All delivery artifacts** — every file produced or modified by tasks in the
   delivery (code, docs, configs, tests, etc.)
@@ -165,7 +171,7 @@ of per-task reviews. It reads directly from source:
 - **`delivery-NNN-issues.md`** — the deferred `[HIGH]` prior context (from
   AGGREGATE). Read as context only; the reviewer produces its own fresh list.
 - **KB docs via INDEX.md** — load relevant docs per INDEX summaries
-- **Grading rubric** (`../../templates/grading-rubric.md`)
+- **Grading rubric** (`../../../templates/grading-rubric.md`)
 
 ### Gate Reviewer Prompt (gate mode)
 
@@ -397,7 +403,7 @@ These tests verify the delivery-gate logic in isolation, without dispatching
 actual reviewer sub-agents. They use the `writeback-task-status.sh` helper
 with test fixtures.
 
-Test harness: `canonical/templates/scripts/test-delivery-gate-aggregate.sh`
+Test harness: `tests/canonical/delivery-gate-aggregate.sh`
 
 See that file for the 6 test scenarios covering:
 1. AGGREGATE with existing `delivery-NNN-issues.md` (rows preserved)

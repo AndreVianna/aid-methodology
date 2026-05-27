@@ -6,12 +6,20 @@ REVIEW grades all 16 KB documents for accuracy, completeness, and evidence quali
 
 Print: `[Review 1/2] Reviewing Knowledge Base quality...`
 
-Read `references/reviewer-prompt.md` for the full prompt to pass to the **discovery-reviewer** subagent.
+**Dispatch package:**
+1. Render the universal 5-section brief from `references/reviewer-brief.md`,
+   substituting `{{ARTIFACTS}}` (the list of 16 KB doc paths under review for
+   this cycle) and `{{CONTEXT}}` (descriptive-only — no downstream phase
+   references; see the brief's CONTEXT discipline rule).
+2. Append the rubric-detail body from `references/reviewer-prompt.md` — that
+   file contains the per-claim verification checklist + spot-check minimums
+   that go beyond the universal rubric pointer in the brief.
+3. Dispatch the **discovery-reviewer** subagent with the combined prompt.
 
 **⚠️ CLEAN CONTEXT:** Do NOT include any info about generation process, which agents ran,
 or prior state. The reviewer evaluates purely on what's on disk.
 
-**⚠️ CONTAMINATION PREVENTION (also applies in FIX mode Step 3):**
+**⚠️ CONTAMINATION PREVENTION (also applies in FIX mode Step 6):**
 - Do NOT include previous review results in the prompt
 - Do NOT tell the reviewer what was fixed or previous grade
 - Do NOT say "re-review" — reviewer must approach fresh
@@ -29,7 +37,7 @@ Verify `.aid/knowledge/STATE.md` `## KB Documents Status` and `## Issues` sectio
 - [ ] Overall grade and recommendation under `## Review History`
 - [ ] Cross-cutting concerns
 
-Set Minimum Grade (from `--grade` or default `A`). Add first Review History entry under `## Review History`.
+If `--grade` provided, update `.aid/settings.yml` `discover.minimum_grade` (via `/aid-config` or direct YAML edit). Add first Review History entry under `## Review History`. Resolve current minimum via `bash .cursor/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`.
 
 Print: `[Review 2/2] Review complete. Grade: {overall}. Minimum: {min}. Run /aid-discover again to {fix issues|proceed}.`
 

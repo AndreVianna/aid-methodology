@@ -29,6 +29,7 @@ from harness import (  # noqa: E402
     read_canonical_file,
     write_output_file,
     substitute_filenames,
+    rewrite_install_paths,
     sha256_hex,
     EmissionManifest,
 )
@@ -237,8 +238,26 @@ def _render_agent_for_profile(
     permission_mode = fm.get("permissionMode")
     background = fm.get("background")
 
-    # Apply filename substitution to body
+    # Apply the install-path rewrite to the frontmatter description too.
+    # (round-4 NEW-HIGH-1 fix.) The description field flows through a separate
+    # code path (re-emitted via _build_frontmatter_md / _render_codex_toml) that
+    # the body rewrite below does not touch. Any canonical/{scripts,templates,
+    # skills,agents,rules,recipes}/ reference inside a description must be
+    # rewritten to the profile's install root, exactly as in the body.
+    description = substitute_filenames(description, profile.filename_map)
+    description = rewrite_install_paths(description, profile.layout.install_root())
+
+    # Apply filename substitution to body, then install-path rewrite.
+    # Policy: every text-emitting renderer (render_skills, render_templates,
+    # render_scripts, render_agents, render_recipes) MUST apply BOTH
+    # substitute_filenames AND rewrite_install_paths in that order. Any
+    # canonical/{scripts,templates,skills,agents,rules,recipes}/ reference in
+    # a body becomes <install_root>/<dir>/ in the rendered output so adopter
+    # projects (which have no canonical/ at root) can resolve the paths.
+    # Adding a new renderer? Apply both. (See harness.py rewrite_install_paths
+    # docstring.)
     body = substitute_filenames(body, profile.filename_map)
+    body = rewrite_install_paths(body, profile.layout.install_root())
 
     if profile.agent.format == "toml":
         # Codex: emit TOML file

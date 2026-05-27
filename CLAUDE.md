@@ -34,17 +34,17 @@ python run_generator.py
 python .claude/skills/aid-generate/scripts/verify_deterministic.py
 
 # Validate KB claims against disk
-bash canonical/templates/scripts/verify-kb-claims.sh
+bash canonical/scripts/kb/verify-claims.sh
 
 # Rebuild project file inventory (used by aid-discover Step 0c)
-bash canonical/templates/scripts/build-project-index.sh --root . --output .aid/knowledge/project-index.md
+bash canonical/scripts/kb/build-project-index.sh --root . --output .aid/knowledge/project-index.md
 
 # Run the canonical helper test suite (297/297 expected)
-bash canonical/templates/scripts/test-writeback-task-status.sh    # 69 tests
-bash canonical/templates/scripts/test-delivery-gate-aggregate.sh  # 18 tests
-bash canonical/templates/scripts/test-compute-block-radius.sh     # 17 tests
-bash canonical/templates/scripts/test-pool-dispatch.sh            #  7 tests
-bash canonical/skills/aid-interview/scripts/test-parse-recipe.sh  # 113 tests
+bash tests/canonical/writeback-task-status.sh    # 69 tests
+bash tests/canonical/delivery-gate-aggregate.sh  # 18 tests
+bash tests/canonical/compute-block-radius.sh     # 17 tests
+bash tests/canonical/pool-dispatch.sh            #  7 tests
+bash tests/canonical/parse-recipe.sh  # 113 tests
 bash .aid/work-001-aid-lite/test-reports/e2e-two-tier-runner.sh   # 35 tests
 bash .aid/work-001-aid-lite/test-reports/e2e-lite-path-runner.sh  # 38 tests
 ```
@@ -87,7 +87,7 @@ There is **no CI** — see `tech-debt.md` H2. Quality gates are the AID skills t
 ## Skills
 
 AID methodology skills are installed in `.claude/skills/`:
-`aid-init`, `aid-discover`, `aid-interview`, `aid-specify`, `aid-plan`, `aid-detail`,
+`aid-config`, `aid-discover`, `aid-interview`, `aid-specify`, `aid-plan`, `aid-detail`,
 `aid-execute`, `aid-deploy`, `aid-monitor`, `aid-summarize` (10 skills) plus
 maintainer-only `aid-generate`. Use them by invoking the matching slash command.
 

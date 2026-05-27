@@ -1,7 +1,7 @@
 ---
 name: aid-discover
 description: >
-  Brownfield project discovery with built-in quality gate. Run `/aid-init` first to scaffold
+  Brownfield project discovery with built-in quality gate. Run `/aid-config` first to scaffold
   the KB. Analyzes all repository content (code, configuration, and documentation) to populate
   KB documents. Reviews, collects user input, fixes issues, and gets user approval — one step
   per run. State-machine: GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE.
@@ -19,11 +19,11 @@ Includes a built-in quality gate that reviews, grades, and fixes KB documents.
 
 ## ⚠️ Pre-flight Checks
 
-Run `scripts/check-preflight.sh .aid/knowledge/` to verify:
+Run `bash .cursor/scripts/kb/preflight.sh .aid/knowledge/` to verify:
 1. `.aid/knowledge/STATE.md` exists (init has run)
 2. Not in Plan Mode (subagents need write access)
 
-If Check 1 fails: `⚠️ Knowledge Base not initialized. Run /aid-init first to set up the project.` — Exit.
+If Check 1 fails: `⚠️ Knowledge Base not initialized. Run /aid-config first to set up the project.` — Exit.
 If Check 2 fails: Tell user to press `Shift+Tab` to exit Plan Mode, then re-run.
 
 ---
@@ -37,7 +37,7 @@ If Check 2 fails: Tell user to press `Shift+Tab` to exit Plan Mode, then re-run.
 - **Line-count drift** — `wc -l` every cited file (SKILL.md, AGENT.md, scripts, templates, methodology) and replace stale citations with disk truth.
 - **Off-by-1 drift** — small numerical changes in file sizes / counts that the prior cycle missed.
 - **Aggregate counts** — per-skill or per-tree file/script/reference totals computed from current disk state (`find ... | wc -l`).
-- **Path & citation hygiene** — bare citations missing skill prefix (`SKILL.md:NNN` → `canonical/skills/<skill>/SKILL.md:NNN`); out-of-range line cites (line numbers that no longer exist after a file shrunk); broken `path:line` references.
+- **Path & citation hygiene** — bare citations missing skill prefix (`SKILL.md:NNN` → `.cursor/skills/<skill>/SKILL.md:NNN`); out-of-range line cites (line numbers that no longer exist after a file shrunk); broken `path:line` references.
 - **Math** — verify any `%` calculations using real values (e.g., "X% over Y" assertions). If the underlying numbers changed, recompute.
 - **Ghost references** — once confirmed a file/feature was removed, delete references to it (don't leave "(retired)" or "(see below)" stubs in current-state docs; historical change-log entries are fine).
 - **Meta-doc counting** — `INDEX.md` / `README.md` per-doc line counts, feature counts, file-type tallies (same nature as line-count drift).
@@ -77,14 +77,15 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **Before each dispatch:**
 
-1. **Look up ETA** in `canonical/templates/rough-time-hints.md` for the
+1. **Look up ETA** in `.cursor/templates/rough-time-hints.md` for the
    subagent's operation class. Capture LOW–HIGH band.
-2. **Read heartbeat config** from `.aid/knowledge/STATE.md` top-of-file
-   `**Heartbeat Interval:** N minutes` (default 1; `0` = disabled).
+2. **Read heartbeat config** via
+   `bash .cursor/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
+   (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
 3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
    - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt with explicit instruction to update during long phases
-   - SKIP only if `**Heartbeat Interval:** 0` (user-explicit opt-out in STATE.md)
+   - SKIP only if `traceability.heartbeat_interval: 0` (user-explicit opt-out in `.aid/settings.yml`)
 4. **Arm 3 L2 timers as SEPARATE background dispatches** (always — even for short ETAs use minimums 60s/120s/180s; never gate on ETA). Each timer is its OWN `Bash(..., run_in_background=true)` call:
    - Call A: `sleep <LOW/2 in s> && echo "... <agent> still running (Xm elapsed of ~LOW–HIGH)"` — own background dispatch
    - Call B: `sleep <LOW in s> && echo "... <agent> at estimated time (LOWm elapsed)"` — own background dispatch
@@ -111,10 +112,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **References:**
 
-- `canonical/templates/long-wait-protocol.md` — full L2 spec
-- `canonical/templates/subagent-heartbeat-protocol.md` — full L3 spec
-- `canonical/templates/rough-time-hints.md` — current measured ETAs
-- `canonical/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
+- `.cursor/templates/long-wait-protocol.md` — full L2 spec
+- `.cursor/templates/subagent-heartbeat-protocol.md` — full L3 spec
+- `.cursor/templates/rough-time-hints.md` — current measured ETAs
+- `.cursor/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
 
 The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair
 lines elsewhere in this skill body remain in place; this protocol just makes
@@ -243,7 +244,7 @@ aid-discover  ▸ you are here
 > manual-edits directive (no regex scripts — scripts generalize and produce
 > new defects). Each agent commits-stages its file's changes only. After
 > ALL agents return, the orchestrator runs a **sequential aggregate step**:
-> `verify-kb-claims.sh`, then a single `git commit` + `git push`. The
+> `verify-claims.sh`, then a single `git commit` + `git push`. The
 > serial constraint exists only at the commit/push boundary; the edits
 > themselves are parallel-safe because each file has exactly one writer.
 
@@ -257,7 +258,7 @@ When a state completes, print `Next: [State: {NEXT}] — run /aid-discover again
 When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-discovery:
 
 1. Read the Q&A entry in STATE.md `## Q&A (Pending)` or the IMPEDIMENT to understand what's missing
-2. Identify which subagent owns the documents (see `scripts/verify-kb.sh` comments for mapping)
+2. Identify which subagent owns the documents (see `.cursor/scripts/kb/verify-claims.sh` comments for mapping)
 3. Dispatch ONLY the relevant subagent
 4. Regenerate README.md and INDEX.md
 5. Update README.md revision history

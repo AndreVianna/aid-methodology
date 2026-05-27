@@ -2,7 +2,7 @@
 
 > **Status:** Interview Complete | Specifying | Planning | Detailing | Executing | Deployed
 > **Phase:** Interview | Specify | Plan | Detail | Execute | Deploy
-> **Minimum Grade:** {from .aid/knowledge/STATE.md}
+> **Minimum Grade:** {resolved at runtime by `bash canonical/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** {YYYY-MM-DD}
 > **User Approved:** yes | no
 
@@ -134,4 +134,4 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 
 | Date | Phase Transition / Gate | Grade | Notes |
 |------|------------------------|-------|-------|
-| {YYYY-MM-DD} | Work created | — | Initial scaffold by aid-init |
+| {YYYY-MM-DD} | Work created | — | Initial scaffold by aid-config |

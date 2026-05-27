@@ -49,6 +49,16 @@ _PLACEHOLDER_RE = re.compile(
     r"\{(" + "|".join(re.escape(k) for k in sorted(_FILENAME_PLACEHOLDERS)) + r")\}"
 )
 
+# Regex matching canonical/* path references that must be rewritten to the
+# install-tree path during render (F1 fix). Uses a word boundary so substrings
+# like "foocanonical/..." don't match; constrains the second segment to the
+# known canonical subdirectories so unrelated paths (e.g., "canonical/work-NNN")
+# pass through untouched.
+_CANONICAL_PATH_DIRS = ("scripts", "templates", "skills", "agents", "rules", "recipes")
+_CANONICAL_PATH_RE = re.compile(
+    r"\bcanonical/(" + "|".join(_CANONICAL_PATH_DIRS) + r")/"
+)
+
 
 # ---------------------------------------------------------------------------
 # sha256_hex
@@ -106,6 +116,66 @@ def substitute_filenames(body: str, filename_map: dict[str, str]) -> str:
         return match.group(0)
 
     return _PLACEHOLDER_RE.sub(_replace, body)
+
+
+# ---------------------------------------------------------------------------
+# rewrite_install_paths (F1 fix)
+# ---------------------------------------------------------------------------
+
+def rewrite_install_paths(body: str, install_root: str) -> str:
+    """
+    Rewrite ``canonical/{scripts,templates,skills,agents,rules,recipes}/...``
+    path references in *body* to the per-profile install-tree path.
+
+    Adopters install the bundle under ``.claude/`` / ``.agents/`` / ``.cursor/``;
+    skill bodies that hard-code ``canonical/scripts/...`` would fail to resolve
+    in adopter projects. This rewriter runs during render so each profile's
+    output contains install-rooted paths instead.
+
+    Comment lines (lines whose first non-whitespace character is ``#``) are
+    SKIPPED. This protects prose-about-the-mechanism (e.g.,
+    ``generated-files.txt`` PATH CONVENTION header) from circular rewrites:
+    a comment that describes the renderer's behavior using literal
+    ``canonical/scripts/...`` strings would otherwise become circular
+    nonsense in the profile (``.claude/scripts/... → .claude/scripts/...``).
+    Shell, YAML, and .txt files use ``#`` as their comment character;
+    markdown headings start with ``#`` too but rarely contain literal
+    canonical/ path references — so the same rule is safe across formats.
+
+    Non-comment lines (everything not starting with ``#`` after leading
+    whitespace) still receive normal rewriting — the skip rule is line-local
+    and does not change behavior for the surrounding code lines.
+
+    Parameters
+    ----------
+    body : str
+        Text content (typically a SKILL.md, reference, template, or script body).
+    install_root : str
+        The profile's install-tree basename (e.g., ``.claude``, ``.agents``,
+        ``.cursor``). Obtained from ``profile.layout.install_root()``.
+
+    Returns
+    -------
+    str
+        Body with every matched canonical/<dir>/ prefix rewritten to
+        <install_root>/<dir>/, EXCEPT on comment lines (`#` at first non-ws).
+
+    Notes
+    -----
+    - Uses a word boundary so substrings like ``foocanonical/...`` don't match.
+    - Only rewrites the 6 known canonical subdirectories — paths like
+      ``canonical/work-NNN/...`` or ``canonical/scratch/`` pass through.
+    - Idempotent: rewriting already-rewritten text is a no-op.
+    - Comment skip is line-by-line; multi-line constructs not detected.
+    """
+    out_lines = []
+    for line in body.splitlines(keepends=True):
+        stripped = line.lstrip()
+        if stripped.startswith("#"):
+            out_lines.append(line)  # comment line — preserve verbatim
+        else:
+            out_lines.append(_CANONICAL_PATH_RE.sub(install_root + r"/\1/", line))
+    return "".join(out_lines)
 
 
 # ---------------------------------------------------------------------------
@@ -447,6 +517,77 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — basic rewrite on a non-comment line
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "bash canonical/scripts/grade.sh foo\n", ".claude"
+    )
+    if out != "bash .claude/scripts/grade.sh foo\n":
+        failures.append(f"rewrite_install_paths: basic rewrite wrong, got {out!r}")
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — comment line SKIPPED
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "# Refer to canonical/scripts/grade.sh for the script\n", ".claude"
+    )
+    expected = "# Refer to canonical/scripts/grade.sh for the script\n"
+    if out != expected:
+        failures.append(
+            f"rewrite_install_paths: comment line should be preserved, got {out!r}"
+        )
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — indented comment SKIPPED
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "    # nested canonical/templates/X.md\n", ".claude"
+    )
+    if out != "    # nested canonical/templates/X.md\n":
+        failures.append(
+            f"rewrite_install_paths: indented comment should be preserved, got {out!r}"
+        )
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — non-comment lines AFTER a comment line
+    # still get rewritten (comment skip is line-local)
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "# canonical/scripts/X.sh (do not rewrite)\nbash canonical/scripts/Y.sh real\n",
+        ".claude",
+    )
+    expected = (
+        "# canonical/scripts/X.sh (do not rewrite)\n"
+        "bash .claude/scripts/Y.sh real\n"
+    )
+    if out != expected:
+        failures.append(
+            f"rewrite_install_paths: line-local skip failed, got {out!r}"
+        )
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — idempotent (rewrite of rewritten is no-op)
+    # -----------------------------------------------------------------------
+    once = rewrite_install_paths("bash canonical/scripts/X.sh\n", ".claude")
+    twice = rewrite_install_paths(once, ".claude")
+    if once != twice:
+        failures.append(
+            f"rewrite_install_paths: not idempotent, once={once!r}, twice={twice!r}"
+        )
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — unrelated canonical/ paths pass through
+    # (e.g., canonical/work-NNN/ is not in the known-dirs allowlist)
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "see canonical/work-001/feature-002.md\n", ".claude"
+    )
+    if out != "see canonical/work-001/feature-002.md\n":
+        failures.append(
+            f"rewrite_install_paths: unrelated canonical/ should pass through, got {out!r}"
+        )
+
+    # -----------------------------------------------------------------------
     # Test: EmissionManifest determinism (two runs, same output)
     # -----------------------------------------------------------------------
     import tempfile, os
@@ -608,7 +749,7 @@ def main() -> int:
 
 def _count_tests() -> int:
     """Return the approximate number of checks performed in main()."""
-    return 16
+    return 22  # 16 prior + 6 rewrite_install_paths assertions (round-5 Item 6)
 
 
 if __name__ == "__main__":

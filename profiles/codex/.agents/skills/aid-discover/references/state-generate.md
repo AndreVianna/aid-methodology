@@ -10,7 +10,7 @@ If ALL 16 have real content and no `--reset`, skip to Step 6.
 
 ### Step 0b: Read External Documentation Paths
 
-Read `.aid/knowledge/STATE.md` `## External Documentation` for paths from `aid-init`. Verify accessible:
+Read `.aid/knowledge/STATE.md` `## External Documentation` for paths from `aid-config`. Verify accessible:
 ```bash
 test -r <path> && echo "✅ $path" || echo "❌ $path — no longer accessible"
 ```
@@ -20,13 +20,13 @@ Store accessible paths for the scout prompt. Warn on inaccessible (but continue)
 
 Run the lightweight file-index pre-pass before dispatching sub-agents. This produces a structured inventory consumed by all 5 sub-agents, eliminating duplicated `find`/`wc` work across parallel agents.
 
-> **Working directory assumption:** All bash commands in this skill (Step 0c, Step 1, etc.) assume the current working directory is the project root (the directory containing `.aid/`). Relative paths like `../../templates/scripts/...` resolve from that root. Verify with `pwd` if unsure.
+> **Working directory assumption:** All bash commands in this skill assume the current working directory is the project root (the directory containing `.aid/`). Scripts are written here as `.agents/scripts/...` paths; the renderer rewrites them to the profile's install-tree root at render time (`.claude/scripts/...` for Claude Code, `.agents/scripts/...` for Codex assets, `.cursor/scripts/...` for Cursor). No runtime resolution needed.
 
 ▶ build-project-index starting (~30 s)
 ```bash
-bash ../../templates/scripts/build-project-index.sh \
+bash .agents/scripts/kb/build-project-index.sh \
   --root . \
-  --output .aid/knowledge/project-index.md
+  --output .aid/generated/project-index.md
 ```
 ✓ build-project-index done (record actual time)
 
@@ -117,7 +117,7 @@ GENERATE  Wave 1 of 1 · 4/4 done
 
 ### Verify All 16 Files
 
-Run `scripts/verify-kb.sh .aid/knowledge/` to check all 16 files exist.
+Run `.agents/scripts/kb/verify-claims.sh .aid/knowledge/` to check all 16 files exist.
 
 **If any missing:** Re-dispatch ONLY the responsible agent (see agent-to-file mapping in the script comments).
 Wait, verify again. Repeat until all 16 exist.
@@ -138,15 +138,15 @@ Populated during Q&A → FIX cycle, but must exist for state machine.
 
 ### Step 6b: Update `.aid/knowledge/STATE.md` with Q&A
 
-**⚠️ Do NOT recreate this file.** It was created by `/aid-init` with metadata. Update only:
+**⚠️ Do NOT recreate this file.** It was created by `/aid-config` with metadata. Update only:
 
 1. Read `.aid/knowledge/.scout-questions.tmp` (from scout)
 2. Read all KB documents for flagged questions/uncertainties/TODOs
 3. Consolidate into `## Q&A (Pending)` section with sequential IDs (Q1, Q2, ...)
 4. Delete `.scout-questions.tmp`
 5. Set `**Grade:**` to `Pending` (was `Not Started`)
-6. **Preserve** `**Minimum Grade:**`, `**Project Type:**`, `**User Approved:**`, `## External Documentation`
-7. If `--grade` provided, update `**Minimum Grade:**`
+6. **Preserve** `**Project Type:**`, `**User Approved:**`, `## External Documentation` (the `**Minimum Grade:**` field is now in `.aid/settings.yml` — read it via `bash .agents/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`)
+7. If `--grade` provided, update `.aid/settings.yml` via `/aid-config` (NOT STATE.md)
 
 **Q&A entry format:**
 ```markdown
@@ -172,7 +172,7 @@ Keep the comment markers for future re-discoveries.
 
 ### Step 8: Final Verification
 
-Run `scripts/verify-kb.sh .aid/knowledge/` one final time.
+Run `.agents/scripts/kb/verify-claims.sh .aid/knowledge/` one final time.
 Print: `[16/16] Generation complete — Knowledge Base ready. Run /aid-discover again to review.`
 
 Print: `[State: GENERATE] complete.`

@@ -1,6 +1,6 @@
 ---
 name: discovery-reviewer
-description: "Reviews and grades Knowledge Base documents produced by Discovery. Cross-references claims against actual source code. Produces {reviewer_output_file}. Also adds new questions to {reviewer_output_file} when review findings reveal information gaps."
+description: Reviews and grades Knowledge Base documents produced by Discovery. Cross-references claims against actual source code. Produces STATE.md. Also adds new questions to STATE.md when review findings reveal information gaps.
 tools: Read, Glob, Grep, Terminal, Write
 model: opus
 permissionMode: bypassPermissions
@@ -30,7 +30,7 @@ between updates — repeating the same activity twice signals "stuck" to the
 orchestrator. Use `unknown` if you can't predict eta-remaining.
 
 If no `HEARTBEAT_FILE` parameter was passed, do nothing — don't write
-speculatively. See `canonical/templates/subagent-heartbeat-protocol.md` for
+speculatively. See `.cursor/templates/subagent-heartbeat-protocol.md` for
 the full contract.
 
 ## Your Mission

@@ -1,3 +1,13 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Public API surfaces, frontmatter schemas, request/response shapes, and protocol contracts. Read this when implementing or modifying any externally-visible interface.
+contracts: []
+changelog:
+  - 2026-05-26: KB Authoring v2 template seed
+---
+
 # API Contracts
 
 > **Source:** aid-discover (Phase 1) + aid-interview (Phase 2)

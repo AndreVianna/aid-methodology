@@ -25,6 +25,7 @@ from profile import load_profile, validate, Profile  # noqa: E402
 from harness import (  # noqa: E402
     read_canonical_file,
     substitute_filenames,
+    rewrite_install_paths,
     sha256_hex,
     EmissionManifest,
 )
@@ -191,7 +192,22 @@ def _render_skill_md(
     )
 
     fm_block = "---\n" + "".join(new_fm_lines) + "---\n"
+    # Renderer policy (also in render_agents/recipes/templates/scripts): every
+    # text-emitting renderer applies substitute_filenames THEN
+    # rewrite_install_paths so adopter projects (no canonical/ at root) can
+    # resolve canonical/{scripts,templates,...}/ references. See harness.py
+    # rewrite_install_paths docstring for the regex + comment-skip rule.
+    #
+    # Apply BOTH to frontmatter as well as body (round-4 NEW-HIGH-1 lesson):
+    # the description field — even though preserved here as raw lines rather
+    # than parsed into a dict like render_agents.py does — may contain
+    # canonical/X/ references that must rewrite per profile. The rewriter
+    # regex is narrow enough that bare-key lines like `name: foo` won't match;
+    # only lines actually containing canonical/<dir>/ patterns get touched.
+    fm_block = substitute_filenames(fm_block, profile.filename_map)
+    fm_block = rewrite_install_paths(fm_block, profile.layout.install_root())
     body = substitute_filenames(body, profile.filename_map)
+    body = rewrite_install_paths(body, profile.layout.install_root())
     content = fm_block + body
 
     out_path = out_skill_dir / "SKILL.md"
@@ -211,7 +227,10 @@ def _render_reference_file(
 ) -> Path:
     """Render one file from references/."""
     raw = read_canonical_file(ref_path)
+    # Renderer policy: see SKILL.md rendering function above for the canonical
+    # substitute_filenames + rewrite_install_paths convention.
     content = substitute_filenames(raw, profile.filename_map)
+    content = rewrite_install_paths(content, profile.layout.install_root())
     out_path = out_skill_dir / "references" / ref_path.name
     encoded = content.encode("utf-8")
     _write(out_path, encoded)

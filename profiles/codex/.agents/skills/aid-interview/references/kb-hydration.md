@@ -27,7 +27,7 @@ that discovery may not have captured.
 | ui-architecture.md | §5 FRs, §6 NFRs | UI framework, target devices, responsive strategy, HUD/layout |
 | tech-debt.md | — | Skip for greenfield (no existing debt). Brownfield: leave to /aid-discover |
 | feature-inventory.md | — | Skip — populated after feature decomposition |
-| external-sources.md | — | Already populated by /aid-init |
+| external-sources.md | — | Already populated by /aid-config |
 
 ---
 

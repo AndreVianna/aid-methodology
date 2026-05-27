@@ -27,12 +27,20 @@ For each section in SPEC.md, run step 4 of the loop against current state:
 4. **Missing sections** — New conditional sections should now be activated?
 5. **Stale content** — Section contradicts what now exists?
 
+### Dispatch the Reviewer
+
+Render `references/reviewer-brief.md` with:
+- `{{ARTIFACTS}}` = `SPEC.md` path + the section list under review (or "full SPEC")
+- `{{CONTEXT}}` = `SPEC.md for feature-NNN-{name} in work-NNN-{name}. All sections marked Complete in the work STATE.md \`## Features Status\` row. This is the final review pass before the feature is marked Ready.`
+
+Dispatch the `reviewer` subagent with the rendered brief.
+
 ### Grade Overall
 
-Use the universal rubric (`../../templates/grading-rubric.md`). Classify each issue
+Use the universal rubric (`.agents/templates/grading-rubric.md`). Classify each issue
 by severity. The grade is calculated — worst issue dominates.
 
-Compare to minimum grade from `.aid/knowledge/STATE.md` `**Minimum Grade:**`.
+Compare to minimum grade from `bash .agents/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|

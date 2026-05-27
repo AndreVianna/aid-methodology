@@ -69,7 +69,7 @@ flowchart TB
     classDef aux fill:#E5E7EB,stroke:#9CA3AF,color:#1F2937,stroke-dasharray:4 3
 
     subgraph G1[" 1 · Prepare "]
-        Init["aid-init<br/>setup · once per project"]:::aux
+        Init["aid-config<br/>setup · once per project"]:::aux
         Disc["1 · aid-discover<br/>brownfield"]:::prep
         Sum["aid-summarize<br/>optional"]:::aux
     end
@@ -94,7 +94,7 @@ flowchart TB
 
 | Group | Phase | Skill | What it produces |
 |---|---|---|---|
-| **1 · Prepare** | — Init | `/aid-init` | `.aid/` scaffold, KB placeholders, `CLAUDE.md` / `AGENTS.md` |
+| **1 · Prepare** | — Init | `/aid-config` | `.aid/` scaffold, KB placeholders, `CLAUDE.md` / `AGENTS.md` |
 | | 1 · Discover | `/aid-discover` | the 16-document Knowledge Base |
 | | — Summarize | `/aid-summarize` | optional offline HTML viewer of the KB |
 | **2 · Define** | 2 · Interview | `/aid-interview` | `REQUIREMENTS.md` + per-feature `SPEC.md` stubs |
@@ -105,7 +105,7 @@ flowchart TB
 | **5 · Deliver** | 7 · Deploy | `/aid-deploy` | a shipped delivery + pull request |
 | | 8 · Monitor | `/aid-monitor` | production findings classified and routed to fixes |
 
-`aid-init` (setup) and `aid-summarize` (optional) are skills but **not numbered phases** — hence the dashes. Discovery is brownfield-only; greenfield projects enter at Interview.
+`aid-config` (setup) and `aid-summarize` (optional) are skills but **not numbered phases** — hence the dashes. Discovery is brownfield-only; greenfield projects enter at Interview.
 
 ---
 
@@ -299,7 +299,7 @@ Prefer to install by hand? Copy the tool directory into your project root — `p
 Open your AI coding tool in the project and run the skills as slash commands:
 
 ```
-/aid-init           # once per project — scaffolds .aid/ and the KB structure
+/aid-config           # once per project — scaffolds .aid/ and the KB structure
 /aid-discover       # brownfield: analyze the existing code into the KB
 /aid-interview      # greenfield: build REQUIREMENTS.md from a guided dialogue
 /aid-specify        # add the technical spec to each feature
@@ -311,12 +311,12 @@ Open your AI coding tool in the project and run the skills as slash commands:
 /aid-summarize      # optional — generate an offline HTML viewer of the KB
 ```
 
-`/aid-init` runs first, always. Then **brownfield** projects run `/aid-discover`; **greenfield** projects start at `/aid-interview`. Every phase is gated — nothing advances without your explicit approval.
+`/aid-config` runs first, always. Then **brownfield** projects run `/aid-discover`; **greenfield** projects start at `/aid-interview`. Every phase is gated — nothing advances without your explicit approval.
 
 ### 3. What gets installed
 
 - `.claude/`, `.codex/` + `.agents/`, or `.cursor/` (depending on the tools you picked) — agents, skills, templates, and scripts.
-- `CLAUDE.md` or `AGENTS.md` at the project root — the host-tool project-context file, with placeholders that `/aid-init` and `/aid-discover` populate.
+- `CLAUDE.md` or `AGENTS.md` at the project root — the host-tool project-context file, with placeholders that `/aid-config` and `/aid-discover` populate.
 - `.aid/` appended to your project's `.gitignore` — the Knowledge Base stays out of git by default; remove the entry if you want to commit it.
 
 ### Runtime requirements

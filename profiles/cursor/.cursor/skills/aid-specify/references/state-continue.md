@@ -70,9 +70,9 @@ Immediately after writing, verify what was written:
 - Is it concrete enough for implementation (no vague "appropriate pattern" language)?
 ✓ reviewer done (record actual time) — or ✗ reviewer failed: {reason}
 
-**Grade the section** using the universal rubric (`../../templates/grading-rubric.md`).
+**Grade the section** using the universal rubric (`../../../templates/grading-rubric.md`).
 Classify each issue by severity (Minor/Low/Medium/High/Critical). The grade is
-calculated — worst issue dominates. Compare to minimum grade from `.aid/knowledge/STATE.md` `**Minimum Grade:**`.
+calculated — worst issue dominates. Compare to minimum grade from `bash .cursor/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|

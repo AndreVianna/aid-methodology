@@ -103,7 +103,7 @@ Must have: list of all external documentation sources provided by the user (if a
 path, type (file/directory), date provided, accessibility status, and summary of key content.
 If no external sources were provided, must explicitly state that all knowledge was derived
 from repository content only.
-**Red flags**: Missing when external paths were registered in aid-init. No summary of what
+**Red flags**: Missing when external paths were registered in aid-config. No summary of what
 was found in external sources. Not reflecting which KB documents reference external content.
 
 ### INDEX.md

@@ -20,7 +20,7 @@ Terms and concepts used throughout the AID methodology.
 
 ## Setup
 
-**aid-init:** Bootstrapping step that runs before the pipeline begins. Asks greenfield or brownfield, collects project metadata, and scaffolds the `.aid/knowledge/` directory with 16 empty KB document templates. Also creates `AGENTS.md`, `CLAUDE.md`, `DISCOVERY-STATE.md`, `README.md`, and `INDEX.md` placeholders. Not a methodology phase — it prepares the project so Discovery (or Interview) can begin cleanly.
+**aid-config:** Bootstrapping step that runs before the pipeline begins. Asks greenfield or brownfield, collects project metadata, and scaffolds the `.aid/knowledge/` directory with 16 empty KB document templates. Also creates `AGENTS.md`, `CLAUDE.md`, `DISCOVERY-STATE.md`, `README.md`, and `INDEX.md` placeholders. Not a methodology phase — it prepares the project so Discovery (or Interview) can begin cleanly.
 
 ---
 
@@ -57,7 +57,7 @@ Terms and concepts used throughout the AID methodology.
 
 | Group | Phases | Focus |
 |-------|--------|-------|
-| **Prepare** | Discover (+ aid-init, aid-summarize) | Set up the workspace and understand the system |
+| **Prepare** | Discover (+ aid-config, aid-summarize) | Set up the workspace and understand the system |
 | **Define** | Interview, Specify | Define the problem and how to solve it |
 | **Map** | Plan, Detail | From requirements to an executable task list |
 | **Execute** | Execute | Build, review, and test |

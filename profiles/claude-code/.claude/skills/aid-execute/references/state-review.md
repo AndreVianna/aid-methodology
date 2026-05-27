@@ -22,12 +22,18 @@ Dispatch metadata is logged via the Calibration Log appendix in STATE.md (per wo
 ### Quick-Check Dispatch
 
 Dispatch the `reviewer` agent with `subagent_type: reviewer` at **Small tier**
-(cheap, fast). Pass the following context:
+(cheap, fast).
 
-- Task deliverables / artifacts produced by Step 1 (EXECUTE)
-- `task-NNN.md` — acceptance criteria and scope
-- Feature SPEC — expected behaviour
-- Grading rubric (`../../templates/grading-rubric.md`) — for severity tag reference only
+**Dispatch package:** render `references/reviewer-brief.md` with:
+- `{{MODE}}` = `per-task`
+- `{{ARTIFACTS}}` = the files/artifacts the executor produced in Step 1
+- `{{CONTEXT}}` = `task-NNN of type {Type} produced these artifacts; AC list lives in task-NNN.md.`
+
+Then append the quick-check-specific prompt below.
+
+The brief carries the universal rubric pointer (`.claude/templates/grading-rubric.md`)
+and the OOS policy. Pass the rendered brief + the quick-check prompt as a single
+dispatch.
 
 **Reviewer prompt (quick-check mode):**
 
