@@ -14,7 +14,7 @@ Read `.aid/knowledge/`:
 - `infrastructure.md` — CLI? deployment manifests? Airflow/dbt?
 - `integration-map.md` — inbound HTTP? inter-service? ETL/transforms?
 
-Apply the scoring rules in `.aid/templates/knowledge-summary/section-templates/auto-detect.md` to pick a profile.
+Apply the scoring rules in `.claude/templates/knowledge-summary/section-templates/auto-detect.md` to pick a profile.
 
 Output to user:
 ```

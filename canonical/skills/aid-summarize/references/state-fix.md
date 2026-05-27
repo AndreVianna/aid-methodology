@@ -8,7 +8,7 @@ FIX handles two fundamentally different kinds of failure. **Route each failure b
 
 Read `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation — Machine)`. For each failed AUTO_POOL check there is exactly one correct repair — apply it autonomously:
 
-- **D1 (diagram parse)** — locate the failing `<pre.mermaid>` block, identify the syntax error from the validator output, apply the fix per `.aid/templates/knowledge-summary/mermaid-examples.md` "Common failure patterns" table.
+- **D1 (diagram parse)** — locate the failing `<pre.mermaid>` block, identify the syntax error from the validator output, apply the fix per `canonical/templates/knowledge-summary/mermaid-examples.md` "Common failure patterns" table.
 - **D2 (diagram render)** — the block parses but renders trivially / as an error SVG; inspect the jsdom render output, fix the structural issue (often an empty subgraph or an unreachable node).
 - **L1 (anchor links)** — fix the `href` or add the missing `id`.
 - **L2 (md links)** — correct the relative path.
