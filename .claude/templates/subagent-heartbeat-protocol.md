@@ -3,7 +3,9 @@
 When an AID skill (an "orchestrator") dispatches a subagent, the orchestrator
 MUST pass `HEARTBEAT_FILE=...` + `HEARTBEAT_INTERVAL=Nm` parameters to every
 subagent dispatch (unless heartbeat is explicitly disabled via
-`**Heartbeat Interval:** 0` in `.aid/knowledge/STATE.md`). The subagent MUST
+`traceability.heartbeat_interval: 0` in `.aid/settings.yml`, resolved by
+`bash .claude/scripts/config/read-setting.sh --path traceability.heartbeat_interval`).
+The subagent MUST
 write periodic progress notes to that file. The orchestrator reads the file
 when its L2 check-in timer fires (see `long-wait-protocol.md`) to surface real
 progress rather than just elapsed time. Heartbeat is unconditional: never gate
@@ -15,29 +17,33 @@ ETAs (`rough-time-hints.md`); L2 = orchestrator check-in timers
 
 ## Configuration
 
-The heartbeat interval is configured in `.aid/knowledge/STATE.md` top-of-file
-metadata as `**Heartbeat Interval:** N minutes`. Default value = **1 minute**.
+The heartbeat interval is configured in `.aid/settings.yml` under
+`traceability.heartbeat_interval` (integer minutes). Default value = **1 minute**.
 
-`aid-init` writes this line during initial scaffolding (asking the user if they
-want to override the default). If the line is absent from STATE.md, dispatchers
-fall back to 1 minute. Orchestrators reading the value MUST tolerate the line
-being absent — never error on it.
+`aid-config` writes this key during initial scaffolding (asking the user if they
+want to override the default). If `.aid/settings.yml` is absent or the key
+is missing, dispatchers fall back to 1 minute via `read-setting.sh --default 1`.
+Orchestrators reading the value MUST tolerate the file/key being absent —
+never error on it.
 
 To change the interval after init:
-1. Edit the line in `.aid/knowledge/STATE.md` to a new value (e.g. `2 minutes`)
+1. Run `/aid-config` (recommended), OR edit `.aid/settings.yml` directly to
+   set `traceability.heartbeat_interval: <N>` (integer minutes)
 2. The change takes effect on the next dispatched subagent
 
 To disable heartbeat entirely (e.g., for noise reduction in slow-progress
 work):
-1. Set `**Heartbeat Interval:** 0` — dispatchers MUST NOT pass `HEARTBEAT_FILE`
+1. Set `traceability.heartbeat_interval: 0` in `.aid/settings.yml` —
+   dispatchers MUST NOT pass `HEARTBEAT_FILE`
 
 ## Orchestrator-side responsibilities (dispatcher)
 
 Before dispatching any subagent (always, regardless of ETA):
 
-1. **Read the heartbeat interval** from `.aid/knowledge/STATE.md`. If absent,
-   default to `1 minute`. If `0`, skip heartbeat entirely (no parameters
-   passed; subagent runs without self-reporting).
+1. **Read the heartbeat interval** via
+   `bash .claude/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`.
+   If `0`, skip heartbeat entirely (no parameters passed; subagent runs without
+   self-reporting).
 
 2. **Pre-create the heartbeat directory + file:**
    ```bash
@@ -127,10 +133,13 @@ Easy to scan; easy to parse (`head -1`, `awk -F'|'`).
 - **Location:** `.aid/.heartbeat/` (always gitignored — see below)
 - **Gitignore requirement:** because heartbeat files are ephemeral runtime
   artifacts, `.aid/.heartbeat/` MUST be present in the project's `.gitignore`
-  regardless of whether `.aid/` itself is tracked (per aid-init Q8). When
-  `aid-init` runs, it adds `.aid/.heartbeat/` to `.gitignore` unconditionally;
-  for projects initialized before this patch, the dispatcher SHOULD ensure
-  this exclusion exists before its first dispatch.
+  regardless of whether `.aid/` itself is tracked. `/aid-config` INIT Step 7
+  offers to append the managed block (Option 1 = explicit per-line entries;
+  Option 2 = `.aid/` blanket; Option 3 = user manages manually). If the user
+  picks Option 3, the dispatcher SHOULD ensure this exclusion exists before
+  its first dispatch — and aid-config warns about this on Option 3 selection.
+  For projects initialized before this protocol existed, run `/aid-config`
+  again to surface the prompt.
 - **Stale-file cleanup:** dispatchers SHOULD delete `.aid/.heartbeat/*.txt`
   older than 24h at the START of any dispatch (covers crashed/abandoned
   subagents from prior sessions)
@@ -146,7 +155,8 @@ Easy to scan; easy to parse (`head -1`, `awk -F'|'`).
 - **1-minute default:** the user (work-003 PR #9 review) flagged the
   visibility gap; 1 minute gives the user a strong signal that the subagent
   is alive without overwhelming the narration. Users can override per-project
-  via STATE.md.
+  via `.aid/settings.yml` `traceability.heartbeat_interval` (set with
+  `/aid-config`).
 
 ## Pitfalls
 

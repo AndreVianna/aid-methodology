@@ -60,12 +60,12 @@ Is there anything else we should consider, or are the requirements ready?
   - Update `.aid/knowledge/INDEX.md` and `.aid/knowledge/README.md`
     if they exist
   - If `infrastructure.md § Project Management` defines a tool → create an Epic for this work
-  - Print: `✅ Requirements approved. Proceeding to feature decomposition...`
-  - **Immediately proceed to State 5 (Feature Decomposition) in the same run.**
+  - Print: `✅ Requirements approved.`
+  - Print the standard router exit: `Next: [State: FEATURE-DECOMPOSITION] — run /aid-interview again` and exit (per feature-002 thin-router contract — no auto-advance; user re-invokes the skill to proceed).
 
 - **[2] Additional consideration:**
   - Incorporate into relevant section(s) of REQUIREMENTS.md
   - Update STATE.md `## Interview Status` section statuses if needed
   - Return to Interview Loop for any new gaps
 
-**Advance:** Next state is `FEATURE-DECOMPOSITION` — on approval, print `Next: [State: FEATURE-DECOMPOSITION] — run /aid-interview again` and exit (or proceed immediately per Step 4 above).
+**Advance:** Next state is `FEATURE-DECOMPOSITION` — on approval, print `Next: [State: FEATURE-DECOMPOSITION] — run /aid-interview again` and exit. No auto-advance — the thin-router contract (feature-002 SPEC) requires the user to re-invoke `/aid-interview` to proceed. (IQ9 resolution 2026-05-24.)

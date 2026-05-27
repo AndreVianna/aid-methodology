@@ -1,16 +1,19 @@
 # Discovery State
 
-> **Source:** aid-init (creates) · aid-discover + aid-summarize (update)
+> **Source:** aid-config (creates) · aid-discover + aid-summarize (update)
 > **Status:** Initial | In Progress | Approved
-> **Minimum Grade:** {grade}
 > **Current Grade:** {grade or Pending}
 > **User Approved:** yes | no
-> **Heartbeat Interval:** 1 minute
-> **Max Parallel Tasks:** 5
 > **Last KB Review:** {YYYY-MM-DD or —}
 > **Last Summary:** {YYYY-MM-DD or —}
 
 This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary. One STATE.md per project's `.aid/knowledge/` directory. Absorbs what used to be `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`.
+
+> **Project-level settings** (minimum grade, heartbeat interval, max parallel tasks,
+> etc.) live in `.aid/settings.yml`, not here. STATE.md is for run-state only —
+> per-area review history, Q&A, current-cycle grade snapshots. Resolve any
+> configured value via:
+> `bash .claude/scripts/config/read-setting.sh --skill <name> --key <key> --default <fallback>`
 
 ## External Documentation
 
