@@ -63,9 +63,17 @@ A+ > A > A- > B+ > B > B- > C+ > C > C- > D+ > D > D- > E+ > E > E- > F
 
 ## Minimum Grade
 
-Defined during `/aid-config` and stored in `.aid/knowledge/STATE.md` (Discovery area
-STATE, per FR2) as `**Minimum Grade:**`. Pre-FR2 this lived in `DISCOVERY-STATE.md`.
-All phases read this value. The loop continues until grade ≥ minimum grade.
+Defined during `/aid-config` and stored in `.aid/settings.yml` under
+`review.minimum_grade` (global default) with optional per-skill overrides
+(e.g., `discover.minimum_grade`, `execute.minimum_grade`). All phases resolve
+their threshold via:
+
+```
+bash .claude/scripts/config/read-setting.sh --skill <name> --key minimum_grade --default A
+```
+
+The three-tier resolution is: per-skill override → global `review.minimum_grade` →
+hardcoded default. The loop continues until grade ≥ minimum grade.
 
 ## Why This Scale
 

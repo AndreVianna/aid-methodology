@@ -71,7 +71,7 @@
 {"dst": ".cursor/skills/aid-detail/references/review.md", "profile": "cursor", "sha256": "042854c49fcfad472087d0876f48b114aafd912655c4a398d78ee37d11e6e20d", "src": "canonical/skills/aid-detail/references/review.md"}
 {"dst": ".cursor/skills/aid-detail/references/reviewer-brief.md", "profile": "cursor", "sha256": "3dd7560f26d630ca509334501066e88a07f584b7e3da72df7763d00f4613b2b3", "src": "canonical/skills/aid-detail/references/reviewer-brief.md"}
 {"dst": ".cursor/skills/aid-detail/references/task-decomposition.md", "profile": "cursor", "sha256": "30d1c1580113ea3062e9f49885728d3b3bfb5fa0828dbad810a9027f7fa9954b", "src": "canonical/skills/aid-detail/references/task-decomposition.md"}
-{"dst": ".cursor/skills/aid-discover/SKILL.md", "profile": "cursor", "sha256": "7192c1aa8abbe82bf4fe6ede43160219f078ab67112194ebf4fcf93063aa34e7", "src": "canonical/skills/aid-discover/SKILL.md"}
+{"dst": ".cursor/skills/aid-discover/SKILL.md", "profile": "cursor", "sha256": "0e0acbeda64a5866ed011efab436404f25f553074536e219feb5be5725f467f3", "src": "canonical/skills/aid-discover/SKILL.md"}
 {"dst": ".cursor/skills/aid-discover/references/agent-prompts.md", "profile": "cursor", "sha256": "7e3fe8db777ec12cb1a486a18886aa432aa7d5114047f6cb7d0a314ec547c6f9", "src": "canonical/skills/aid-discover/references/agent-prompts.md"}
 {"dst": ".cursor/skills/aid-discover/references/document-expectations.md", "profile": "cursor", "sha256": "237e2192e045d81ee911b84442a41a1c49b3ab4388bfdffd7ee56c0d9fd20a5a", "src": "canonical/skills/aid-discover/references/document-expectations.md"}
 {"dst": ".cursor/skills/aid-discover/references/reviewer-brief.md", "profile": "cursor", "sha256": "59d2b608d5b7c59f6d6f73229b2f8025021f9b97f46d3d5e54c980f62afbf8ba", "src": "canonical/skills/aid-discover/references/reviewer-brief.md"}
@@ -144,13 +144,13 @@
 {"dst": ".cursor/templates/README.md", "profile": "cursor", "sha256": "88f2449c453ffa1e3d0d45264210bf4b8ca07adc421aca8dfed79c3a46e617cc", "src": "canonical/templates/README.md"}
 {"dst": ".cursor/templates/delivery-issues.md", "profile": "cursor", "sha256": "0c916a352ef55a3ea13b1a96e29e1347de11ce141ac924dc856a8162a01f94f4", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".cursor/templates/delivery-plans/task-template.md", "profile": "cursor", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
-{"dst": ".cursor/templates/discovery-state-template.md", "profile": "cursor", "sha256": "380cb79cfb94768b18a77844ee1a055d19aa4726ec2513940fdbf1111df0f5b2", "src": "canonical/templates/discovery-state-template.md"}
+{"dst": ".cursor/templates/discovery-state-template.md", "profile": "cursor", "sha256": "c3d25fce6ef4eaf77316612cb36ec4ab910244b2d3eb286748503a51ab2c4960", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".cursor/templates/dispatch-protocol-checklist.md", "profile": "cursor", "sha256": "618e6baa3888e1e27907c512d197aa339df1c7a8aab9cbad0aae0a8da3654137", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".cursor/templates/feature-inventory.md", "profile": "cursor", "sha256": "1866cfe95be8ac1d1a5b1e6e5b003c95093e659fc3362fd0bf8943ed5c81956f", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".cursor/templates/feature.md", "profile": "cursor", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
 {"dst": ".cursor/templates/feedback-artifacts/IMPEDIMENT.md", "profile": "cursor", "sha256": "9128ca3631209d6094808c2a3232958605a45aec118fc651bf5b9c3c00e5e96b", "src": "canonical/templates/feedback-artifacts/IMPEDIMENT.md"}
 {"dst": ".cursor/templates/generated-files.txt", "profile": "cursor", "sha256": "aca4653f7073d78c8fab13f2f138d538a250d1830987579b9e55064c1d3f88af", "src": "canonical/templates/generated-files.txt"}
-{"dst": ".cursor/templates/grading-rubric.md", "profile": "cursor", "sha256": "045f47e4ab9eca38e697fc141ed9c06cf5deda39c273cbdb6e06a94e9828073a", "src": "canonical/templates/grading-rubric.md"}
+{"dst": ".cursor/templates/grading-rubric.md", "profile": "cursor", "sha256": "142e6f6fdd2ae10935ce4c4f60b121e2cf1000a00454f6a8a2cc6438c30c7155", "src": "canonical/templates/grading-rubric.md"}
 {"dst": ".cursor/templates/kb-authoring/README.md", "profile": "cursor", "sha256": "e7cd52b5ddff3727c1509e762d4f5f5ea34f07b266cd177b05435144a23ce292", "src": "canonical/templates/kb-authoring/README.md"}
 {"dst": ".cursor/templates/kb-authoring/frontmatter-schema.md", "profile": "cursor", "sha256": "0aafa224599e8a266b74e8fa46762fa5dff8d5fedd459bed5438745e10e669f9", "src": "canonical/templates/kb-authoring/frontmatter-schema.md"}
 {"dst": ".cursor/templates/kb-authoring/principles.md", "profile": "cursor", "sha256": "ed81f704022614d78ced7fbcb3988c9c1ac2e7d4b378b1adba9da31a92280daa", "src": "canonical/templates/kb-authoring/principles.md"}
@@ -199,6 +199,6 @@
 {"dst": ".cursor/templates/settings.yml", "profile": "cursor", "sha256": "4e08515c61d3ee7f840dba91b3c876c0d456f2a220428163d0eebb18d64860e5", "src": "canonical/templates/settings.yml"}
 {"dst": ".cursor/templates/specs/lite-spec-template.md", "profile": "cursor", "sha256": "0f1c32a84738e890dbb2f25f521748ba4a68aaa5f9fbf5009dce112eb3932c45", "src": "canonical/templates/specs/lite-spec-template.md"}
 {"dst": ".cursor/templates/specs/spec-template.md", "profile": "cursor", "sha256": "5e8e8653b6e30baafc411c75a03b381076c40fe2807f3767d680d7ffdee050ee", "src": "canonical/templates/specs/spec-template.md"}
-{"dst": ".cursor/templates/subagent-heartbeat-protocol.md", "profile": "cursor", "sha256": "8514e46a167c4c485fb9590e06001cdb08777a9d59e33e00ae749b0577a0c062", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
+{"dst": ".cursor/templates/subagent-heartbeat-protocol.md", "profile": "cursor", "sha256": "4fa16035694958541e841812d6d412b59542f033ffaa39d4758505baa4079b08", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".cursor/templates/ui-architecture.md", "profile": "cursor", "sha256": "eb3ee918a84233881fad358463eb1ca47c453a98d507989d436c08ff3e3224fb", "src": "canonical/templates/ui-architecture.md"}
 {"dst": ".cursor/templates/work-state-template.md", "profile": "cursor", "sha256": "18e15065b59725bcb285b7037f6c68ac5de800af46d6f61c33f70d875025340d", "src": "canonical/templates/work-state-template.md"}

@@ -47,7 +47,7 @@
 {"dst": ".agents/skills/aid-detail/references/review.md", "profile": "codex", "sha256": "1385225a8df522835431f3a70cfdc813c6288844b9d47b320e1a4bf501299918", "src": "canonical/skills/aid-detail/references/review.md"}
 {"dst": ".agents/skills/aid-detail/references/reviewer-brief.md", "profile": "codex", "sha256": "f16ba3fd557059a5aa7ed2e0be3e6eda9739b2e17a5227733d8da92133c52b74", "src": "canonical/skills/aid-detail/references/reviewer-brief.md"}
 {"dst": ".agents/skills/aid-detail/references/task-decomposition.md", "profile": "codex", "sha256": "30d1c1580113ea3062e9f49885728d3b3bfb5fa0828dbad810a9027f7fa9954b", "src": "canonical/skills/aid-detail/references/task-decomposition.md"}
-{"dst": ".agents/skills/aid-discover/SKILL.md", "profile": "codex", "sha256": "8f43a0a56d1ef41bd365539044a3a27e9b7e1a07d8cf11e9e4cfa9fba74a2a97", "src": "canonical/skills/aid-discover/SKILL.md"}
+{"dst": ".agents/skills/aid-discover/SKILL.md", "profile": "codex", "sha256": "002755fed7d32e5e85296e8608ca9dd6df8babafb529901e6f401a6cab9e39f5", "src": "canonical/skills/aid-discover/SKILL.md"}
 {"dst": ".agents/skills/aid-discover/references/agent-prompts.md", "profile": "codex", "sha256": "7e3fe8db777ec12cb1a486a18886aa432aa7d5114047f6cb7d0a314ec547c6f9", "src": "canonical/skills/aid-discover/references/agent-prompts.md"}
 {"dst": ".agents/skills/aid-discover/references/document-expectations.md", "profile": "codex", "sha256": "237e2192e045d81ee911b84442a41a1c49b3ab4388bfdffd7ee56c0d9fd20a5a", "src": "canonical/skills/aid-discover/references/document-expectations.md"}
 {"dst": ".agents/skills/aid-discover/references/reviewer-brief.md", "profile": "codex", "sha256": "19bb8bc9df1a05e6eeb24b5cb74505ffbc62e86593c952e7651658680bbb939e", "src": "canonical/skills/aid-discover/references/reviewer-brief.md"}
@@ -120,13 +120,13 @@
 {"dst": ".agents/templates/README.md", "profile": "codex", "sha256": "88f2449c453ffa1e3d0d45264210bf4b8ca07adc421aca8dfed79c3a46e617cc", "src": "canonical/templates/README.md"}
 {"dst": ".agents/templates/delivery-issues.md", "profile": "codex", "sha256": "ddf4418aa28c889898a3e930f8513c9c0fc9bcc943d8b06e1a0a6a54dc53c3a9", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".agents/templates/delivery-plans/task-template.md", "profile": "codex", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
-{"dst": ".agents/templates/discovery-state-template.md", "profile": "codex", "sha256": "380cb79cfb94768b18a77844ee1a055d19aa4726ec2513940fdbf1111df0f5b2", "src": "canonical/templates/discovery-state-template.md"}
+{"dst": ".agents/templates/discovery-state-template.md", "profile": "codex", "sha256": "3f18469cd8b7e28a398421b4458f1cc1505de657ba529e7a02adc25e88e65ca7", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".agents/templates/dispatch-protocol-checklist.md", "profile": "codex", "sha256": "d883f76c07300f9cef23da3e8adc41e1a1cf29f81455d00c4986050b153462aa", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".agents/templates/feature-inventory.md", "profile": "codex", "sha256": "1866cfe95be8ac1d1a5b1e6e5b003c95093e659fc3362fd0bf8943ed5c81956f", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".agents/templates/feature.md", "profile": "codex", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
 {"dst": ".agents/templates/feedback-artifacts/IMPEDIMENT.md", "profile": "codex", "sha256": "9128ca3631209d6094808c2a3232958605a45aec118fc651bf5b9c3c00e5e96b", "src": "canonical/templates/feedback-artifacts/IMPEDIMENT.md"}
 {"dst": ".agents/templates/generated-files.txt", "profile": "codex", "sha256": "89c4da60fc8163d2c5535fcb80cb0ed6156a92dc9a3844276bc9f1c379bea121", "src": "canonical/templates/generated-files.txt"}
-{"dst": ".agents/templates/grading-rubric.md", "profile": "codex", "sha256": "045f47e4ab9eca38e697fc141ed9c06cf5deda39c273cbdb6e06a94e9828073a", "src": "canonical/templates/grading-rubric.md"}
+{"dst": ".agents/templates/grading-rubric.md", "profile": "codex", "sha256": "aa3bf14896d800febb471bd1a2343151d078196dbd05d6a54fb37ffcf13fbd46", "src": "canonical/templates/grading-rubric.md"}
 {"dst": ".agents/templates/kb-authoring/README.md", "profile": "codex", "sha256": "19084e54bf9c1bf23843d9ff6c0cdab0eee752c57dceff8d5327763540fd6a83", "src": "canonical/templates/kb-authoring/README.md"}
 {"dst": ".agents/templates/kb-authoring/frontmatter-schema.md", "profile": "codex", "sha256": "5a5e0bf389014b307a52b6c4ea01c553475a335ef1ca5aa7fd1b20ba3f708405", "src": "canonical/templates/kb-authoring/frontmatter-schema.md"}
 {"dst": ".agents/templates/kb-authoring/principles.md", "profile": "codex", "sha256": "e2048159d1c4d912a4e801336ff9860c2ad875b3ac3b5b9f2fb15438415043e9", "src": "canonical/templates/kb-authoring/principles.md"}
@@ -175,7 +175,7 @@
 {"dst": ".agents/templates/settings.yml", "profile": "codex", "sha256": "4e08515c61d3ee7f840dba91b3c876c0d456f2a220428163d0eebb18d64860e5", "src": "canonical/templates/settings.yml"}
 {"dst": ".agents/templates/specs/lite-spec-template.md", "profile": "codex", "sha256": "0f1c32a84738e890dbb2f25f521748ba4a68aaa5f9fbf5009dce112eb3932c45", "src": "canonical/templates/specs/lite-spec-template.md"}
 {"dst": ".agents/templates/specs/spec-template.md", "profile": "codex", "sha256": "5e8e8653b6e30baafc411c75a03b381076c40fe2807f3767d680d7ffdee050ee", "src": "canonical/templates/specs/spec-template.md"}
-{"dst": ".agents/templates/subagent-heartbeat-protocol.md", "profile": "codex", "sha256": "8514e46a167c4c485fb9590e06001cdb08777a9d59e33e00ae749b0577a0c062", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
+{"dst": ".agents/templates/subagent-heartbeat-protocol.md", "profile": "codex", "sha256": "615d447a3851564a9070dd738238375e75bf746471f5633c14e8db1bc22c0c4c", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".agents/templates/ui-architecture.md", "profile": "codex", "sha256": "eb3ee918a84233881fad358463eb1ca47c453a98d507989d436c08ff3e3224fb", "src": "canonical/templates/ui-architecture.md"}
 {"dst": ".agents/templates/work-state-template.md", "profile": "codex", "sha256": "e04bfe029366f2c94b5344d87cdd0cfd189340d2ba39e0a2fecafbdb0c896e0c", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".codex/agents/architect.toml", "profile": "codex", "sha256": "f65a3c891e24d4822c6990fcd215cd02404c77a89515651a3748e1d0403fd889", "src": "canonical/agents/architect/AGENT.md"}

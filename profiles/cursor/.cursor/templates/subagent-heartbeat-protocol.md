@@ -15,29 +15,33 @@ ETAs (`rough-time-hints.md`); L2 = orchestrator check-in timers
 
 ## Configuration
 
-The heartbeat interval is configured in `.aid/knowledge/STATE.md` top-of-file
-metadata as `**Heartbeat Interval:** N minutes`. Default value = **1 minute**.
+The heartbeat interval is configured in `.aid/settings.yml` under
+`traceability.heartbeat_interval` (integer minutes). Default value = **1 minute**.
 
-`aid-config` writes this line during initial scaffolding (asking the user if they
-want to override the default). If the line is absent from STATE.md, dispatchers
-fall back to 1 minute. Orchestrators reading the value MUST tolerate the line
-being absent — never error on it.
+`aid-config` writes this key during initial scaffolding (asking the user if they
+want to override the default). If `.aid/settings.yml` is absent or the key
+is missing, dispatchers fall back to 1 minute via `read-setting.sh --default 1`.
+Orchestrators reading the value MUST tolerate the file/key being absent —
+never error on it.
 
 To change the interval after init:
-1. Edit the line in `.aid/knowledge/STATE.md` to a new value (e.g. `2 minutes`)
+1. Run `/aid-config` (recommended), OR edit `.aid/settings.yml` directly to
+   set `traceability.heartbeat_interval: <N>` (integer minutes)
 2. The change takes effect on the next dispatched subagent
 
 To disable heartbeat entirely (e.g., for noise reduction in slow-progress
 work):
-1. Set `**Heartbeat Interval:** 0` — dispatchers MUST NOT pass `HEARTBEAT_FILE`
+1. Set `traceability.heartbeat_interval: 0` in `.aid/settings.yml` —
+   dispatchers MUST NOT pass `HEARTBEAT_FILE`
 
 ## Orchestrator-side responsibilities (dispatcher)
 
 Before dispatching any subagent (always, regardless of ETA):
 
-1. **Read the heartbeat interval** from `.aid/knowledge/STATE.md`. If absent,
-   default to `1 minute`. If `0`, skip heartbeat entirely (no parameters
-   passed; subagent runs without self-reporting).
+1. **Read the heartbeat interval** via
+   `bash .cursor/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`.
+   If `0`, skip heartbeat entirely (no parameters passed; subagent runs without
+   self-reporting).
 
 2. **Pre-create the heartbeat directory + file:**
    ```bash
