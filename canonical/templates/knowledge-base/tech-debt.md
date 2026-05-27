@@ -1,3 +1,13 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Severity-tagged technical debt items with remediation paths. Read this before starting work in any area; declared debt items may affect approach or scope.
+contracts: []
+changelog:
+  - 2026-05-26: KB Authoring v2 template seed
+---
+
 # Tech Debt
 
 > **Source:** aid-discover (Phase 1)
@@ -5,6 +15,12 @@
 > **Last Updated:** {date}
 
 > This document is a diagnosis, not a sprint plan. It identifies what exists so that agents don't create more of it, and so the team can make informed decisions about what to address and when.
+
+> **Severity tag convention** (used by `build-metrics.sh` for the severity tally):
+> Per-item severity headers should follow the form `### [HIGH] H1 — Title` /
+> `### [MEDIUM] M1 — Title` / `### [LOW] L1 — Title`, OR table rows with the
+> `| **H1**` / `| **M1**` / `| **L1**` ID format. The metrics builder counts
+> `^### \[HIGH\]` line headers and the table-row ID patterns.
 
 ---
 

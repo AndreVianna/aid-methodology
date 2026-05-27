@@ -1,3 +1,13 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Data schemas, artifact shapes, dataflow across the pipeline, and cardinality relationships. Read this when modeling persistence, designing migrations, or tracing data lineage.
+contracts: []
+changelog:
+  - 2026-05-26: KB Authoring v2 template seed
+---
+
 # Data Model
 
 > **Source:** aid-discover (Phase 1)

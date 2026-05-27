@@ -23,7 +23,8 @@ set -u
 
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SCRIPT="${SCRIPT_DIR}/writeback-task-status.sh"
+# SUT moved to canonical/scripts/execute/ in 2026-05-26 consolidation
+SCRIPT="${SCRIPT_DIR}/../../canonical/scripts/execute/writeback-task-status.sh"
 
 VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1

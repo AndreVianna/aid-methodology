@@ -1,3 +1,13 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Project-specific authoring conventions mined from actual code: naming, formatting, idioms, and any process rules the project follows. Read this before writing or reviewing code.
+contracts: []
+changelog:
+  - 2026-05-26: KB Authoring v2 template seed
+---
+
 # Coding Standards
 
 > **Source:** aid-discover (Phase 1) — inferred from code analysis

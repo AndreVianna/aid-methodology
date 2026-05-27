@@ -2,7 +2,7 @@
 
 STALE-CHECK compares the KB review date against the last summary date to determine if regeneration is needed; it is selected immediately after PREFLIGHT passes.
 
-Run `.aid/templates/knowledge-summary/scripts/stale-check.sh`. It outputs one of:
+Run `.aid/scripts/summarize/stale-check.sh`. It outputs one of:
 
 - `STALE` — KB is newer than last summary (or first run). Continue to PROFILE/GENERATE.
 - `CURRENT_APPROVED` — HTML is up-to-date and approved. Print:

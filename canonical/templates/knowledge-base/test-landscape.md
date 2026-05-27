@@ -1,3 +1,13 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Test frameworks in use, coverage areas, and gaps. Read this before writing or modifying tests to follow established patterns.
+contracts: []
+changelog:
+  - 2026-05-26: KB Authoring v2 template seed
+---
+
 # Test Landscape
 
 > **Source:** aid-discover (Phase 1)

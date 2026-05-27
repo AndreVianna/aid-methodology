@@ -31,7 +31,8 @@
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+# Test moved to tests/skills/ in 2026-05-26 consolidation — repo root is 2 levels up now
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 REQUIREMENTS_TEMPLATE="$REPO_ROOT/canonical/templates/requirements.md"
 
 VERBOSE=0

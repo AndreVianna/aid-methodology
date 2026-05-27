@@ -1,3 +1,13 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Distribution model, environments, CI/CD setup, source-control conventions, and project management tooling. Read this for deploy/release context.
+contracts: []
+changelog:
+  - 2026-05-26: KB Authoring v2 template seed
+---
+
 # Infrastructure
 
 > **Source:** aid-discover (Phase 1) + aid-interview (Phase 2)

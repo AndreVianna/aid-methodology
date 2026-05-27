@@ -1,3 +1,13 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Front-end / UI architecture: component model, state management, routing, design tokens. Read this for any UI-touching change.
+contracts: []
+changelog:
+  - 2026-05-26: KB Authoring v2 template seed
+---
+
 # UI Architecture
 
 > **Source:** aid-discover (Phase 1)

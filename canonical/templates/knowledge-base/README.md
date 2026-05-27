@@ -1,12 +1,23 @@
+---
+kb-category: meta
+source: hand-authored
+intent: |
+  Knowledge Base completeness table + revision history. Meta-document; not part of the reviewed knowledge surface.
+contracts: []
+changelog:
+  - 2026-05-26: KB Authoring v2 template seed
+---
+
 # Knowledge Base Templates
 
 The Knowledge Base (`.aid/knowledge/`) is the gravitational center of every AID project. Every phase reads from it. Any phase can trigger updates to it. It outlives the project.
 
 ## Documents
 
+> **Note:** `INDEX.md` is auto-generated at `.aid/generated/INDEX.md` by `build-index.sh` from each KB doc's `intent:` frontmatter field. There is no template for it here — adopters should not hand-author it.
+
 | Template | Purpose | Source |
 |----------|---------|--------|
-| INDEX.md | Lightweight context map — 2-3 line summaries per doc, included in every task | aid-discover |
 | [project-structure.md](project-structure.md) | Top-level folder layout, entry points, key config files | aid-discover |
 | [external-sources.md](external-sources.md) | External documentation ingested into the KB | aid-discover |
 | [architecture.md](architecture.md) | Patterns, layers, module boundaries, data flow | aid-discover |

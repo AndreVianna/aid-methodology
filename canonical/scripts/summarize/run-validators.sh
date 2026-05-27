@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# grade.sh — orchestrator for /aid-summarize VALIDATE state.
+# run-validators.sh — orchestrator for /aid-summarize VALIDATE state.
+# (Renamed from knowledge-summary/scripts/grade.sh in 2026-05-26 script
+#  consolidation; the universal grade computation lives at canonical/scripts/grade.sh.)
 # Runs all automated checks and emits a structured two-grade report.
 #
 # Usage:
-#   grade.sh <html-file> [--fast]
+#   run-validators.sh <html-file> [--fast]
 #
 # Flags:
 #   --fast    Pass --fast to validate-diagrams.mjs (skip render; for development).
@@ -56,7 +58,7 @@ for arg in "$@"; do
 done
 
 if [ -z "$HTML" ] || [ ! -f "$HTML" ]; then
-    echo "❌ Usage: grade.sh <html-file> [--fast]" >&2
+    echo "❌ Usage: run-validators.sh <html-file> [--fast]" >&2
     exit 2
 fi
 
@@ -190,30 +192,14 @@ rm -f "$DIAG_LOG"
 echo ""
 
 # ---------------------------------------------------------------------------
-# L1 + L2: link validation
+# H1 + A1-A5 + S2 + L1 + L2: HTML structure/validity/a11y + link validation
+# (validate-html-output.sh merges the former validate-html.sh + validate-links.sh
+#  per 2026-05-26 script consolidation)
 # ---------------------------------------------------------------------------
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "[Link validation — L1 anchors, L2 relative md links]"
-LINK_LOG=$(mktemp)
-if bash "$SCRIPT_DIR/validate-links.sh" "$HTML" > "$LINK_LOG" 2>&1; then
-    cat "$LINK_LOG"
-    RESULTS[L1]=pass
-    RESULTS[L2]=pass
-else
-    cat "$LINK_LOG"
-    if grep -q "anchor links resolve" "$LINK_LOG"; then RESULTS[L1]=pass; fi
-    if grep -q "md links resolve"     "$LINK_LOG"; then RESULTS[L2]=pass; fi
-fi
-rm -f "$LINK_LOG"
-echo ""
-
-# ---------------------------------------------------------------------------
-# H1 + A1 + A2 + A3 + A4 + A5 + S2: HTML structure, validity, accessibility
-# ---------------------------------------------------------------------------
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "[HTML structure, validity & accessibility — H1 A1 A2 A3 A4 A5 S2]"
+echo "[HTML output validation — H1 A1 A2 A3 A4 A5 S2 + L1 L2]"
 HTML_LOG=$(mktemp)
-if bash "$SCRIPT_DIR/validate-html.sh" "$HTML" > "$HTML_LOG" 2>&1; then
+if bash "$SCRIPT_DIR/validate-html-output.sh" "$HTML" > "$HTML_LOG" 2>&1; then
     cat "$HTML_LOG"
     RESULTS[H1]=pass
     RESULTS[A1]=pass
@@ -222,6 +208,8 @@ if bash "$SCRIPT_DIR/validate-html.sh" "$HTML" > "$HTML_LOG" 2>&1; then
     RESULTS[A4]=pass
     RESULTS[A5]=pass
     RESULTS[S2]=pass
+    RESULTS[L1]=pass
+    RESULTS[L2]=pass
 else
     cat "$HTML_LOG"
     grep -q "✅ H1\."        "$HTML_LOG" && RESULTS[H1]=pass
@@ -231,6 +219,9 @@ else
     grep -q "✅ A4\."        "$HTML_LOG" && RESULTS[A4]=pass
     grep -q "✅ A5\."        "$HTML_LOG" && RESULTS[A5]=pass
     grep -q "✅ S2\."        "$HTML_LOG" && RESULTS[S2]=pass
+    # L1/L2 link checks (merged from former validate-links.sh into validate-html-output.sh)
+    grep -q "✅ L1\."        "$HTML_LOG" && RESULTS[L1]=pass
+    grep -q "✅ L2\."        "$HTML_LOG" && RESULTS[L2]=pass
 
     # Fallback: check older label styles used by sub-checks
     grep -q "✅ A1.1"        "$HTML_LOG" && RESULTS[A1]=pass
@@ -491,8 +482,8 @@ if [ "$MANUAL_RUN" -eq 1 ]; then
     [ -n "$CHECKLIST_TS" ] && echo "  Checklist completed: $CHECKLIST_TS"
 else
     echo "  ⚠️  manual-checklist.sh not yet run."
-    echo "     Run: bash templates/knowledge-summary/scripts/manual-checklist.sh --html $HTML"
-    echo "     Then re-run grade.sh to see your Human Grade."
+    echo "     Run: bash canonical/scripts/summarize/manual-checklist.sh --html $HTML"
+    echo "     Then re-run run-validators.sh to see your Human Grade."
 fi
 
 printf "  Manual score: %d / %d\n" "$MANUAL_EARNED" "$MANUAL_MAX"

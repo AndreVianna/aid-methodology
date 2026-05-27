@@ -28,8 +28,9 @@ VERBOSE=0
 PASS=0
 FAIL=0
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-WRITEBACK="${SCRIPT_DIR}/writeback-task-status.sh"
-GRADE="${SCRIPT_DIR}/grade.sh"
+# SUTs moved in 2026-05-26 consolidation
+WRITEBACK="${SCRIPT_DIR}/../../canonical/scripts/execute/writeback-task-status.sh"
+GRADE="${SCRIPT_DIR}/../../canonical/scripts/grade.sh"
 
 # ---------------------------------------------------------------------------
 # Helpers

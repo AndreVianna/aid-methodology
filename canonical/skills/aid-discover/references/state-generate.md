@@ -20,13 +20,13 @@ Store accessible paths for the scout prompt. Warn on inaccessible (but continue)
 
 Run the lightweight file-index pre-pass before dispatching sub-agents. This produces a structured inventory consumed by all 5 sub-agents, eliminating duplicated `find`/`wc` work across parallel agents.
 
-> **Working directory assumption:** All bash commands in this skill (Step 0c, Step 1, etc.) assume the current working directory is the project root (the directory containing `.aid/`). Relative paths like `../../templates/scripts/...` resolve from that root. Verify with `pwd` if unsure.
+> **Working directory assumption:** All bash commands in this skill (Step 0c, Step 1, etc.) assume the current working directory is the project root (the directory containing `.aid/`). Scripts are invoked by their location in the install tree (`.claude/scripts/kb/...` for Claude Code, `.codex/scripts/kb/...` for Codex, `.cursor/scripts/kb/...` for Cursor). The skill author references them via `scripts/kb/<name>.sh` — the agent resolves to the correct install-tree path.
 
 ▶ build-project-index starting (~30 s)
 ```bash
-bash ../../templates/scripts/build-project-index.sh \
+bash scripts/kb/build-project-index.sh \
   --root . \
-  --output .aid/knowledge/project-index.md
+  --output .aid/generated/project-index.md
 ```
 ✓ build-project-index done (record actual time)
 
@@ -117,7 +117,7 @@ GENERATE  Wave 1 of 1 · 4/4 done
 
 ### Verify All 16 Files
 
-Run `scripts/verify-kb.sh .aid/knowledge/` to check all 16 files exist.
+Run `scripts/kb/verify-claims.sh .aid/knowledge/` to check all 16 files exist.
 
 **If any missing:** Re-dispatch ONLY the responsible agent (see agent-to-file mapping in the script comments).
 Wait, verify again. Repeat until all 16 exist.
@@ -172,7 +172,7 @@ Keep the comment markers for future re-discoveries.
 
 ### Step 8: Final Verification
 
-Run `scripts/verify-kb.sh .aid/knowledge/` one final time.
+Run `scripts/kb/verify-claims.sh .aid/knowledge/` one final time.
 Print: `[16/16] Generation complete — Knowledge Base ready. Run /aid-discover again to review.`
 
 Print: `[State: GENERATE] complete.`

@@ -19,7 +19,7 @@ Includes a built-in quality gate that reviews, grades, and fixes KB documents.
 
 ## ⚠️ Pre-flight Checks
 
-Run `scripts/check-preflight.sh .aid/knowledge/` to verify:
+Run `scripts/kb/preflight.sh .aid/knowledge/` to verify:
 1. `.aid/knowledge/STATE.md` exists (init has run)
 2. Not in Plan Mode (subagents need write access)
 
@@ -243,7 +243,7 @@ aid-discover  ▸ you are here
 > manual-edits directive (no regex scripts — scripts generalize and produce
 > new defects). Each agent commits-stages its file's changes only. After
 > ALL agents return, the orchestrator runs a **sequential aggregate step**:
-> `verify-kb-claims.sh`, then a single `git commit` + `git push`. The
+> `verify-claims.sh`, then a single `git commit` + `git push`. The
 > serial constraint exists only at the commit/push boundary; the edits
 > themselves are parallel-safe because each file has exactly one writer.
 
@@ -257,7 +257,7 @@ When a state completes, print `Next: [State: {NEXT}] — run /aid-discover again
 When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-discovery:
 
 1. Read the Q&A entry in STATE.md `## Q&A (Pending)` or the IMPEDIMENT to understand what's missing
-2. Identify which subagent owns the documents (see `scripts/verify-kb.sh` comments for mapping)
+2. Identify which subagent owns the documents (see `scripts/kb/verify-claims.sh` comments for mapping)
 3. Dispatch ONLY the relevant subagent
 4. Regenerate README.md and INDEX.md
 5. Update README.md revision history

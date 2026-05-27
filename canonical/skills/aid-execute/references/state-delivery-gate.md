@@ -397,7 +397,7 @@ These tests verify the delivery-gate logic in isolation, without dispatching
 actual reviewer sub-agents. They use the `writeback-task-status.sh` helper
 with test fixtures.
 
-Test harness: `canonical/templates/scripts/test-delivery-gate-aggregate.sh`
+Test harness: `tests/canonical/delivery-gate-aggregate.sh`
 
 See that file for the 6 test scenarios covering:
 1. AGGREGATE with existing `delivery-NNN-issues.md` (rows preserved)

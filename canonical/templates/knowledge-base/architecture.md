@@ -1,3 +1,13 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Architectural patterns, levels, data flow, and module boundaries. Read this to understand HOW the system hangs together — not WHAT each module does.
+contracts: []
+changelog:
+  - 2026-05-26: KB Authoring v2 template seed
+---
+
 # Architecture
 
 > **Source:** aid-discover (Phase 1)

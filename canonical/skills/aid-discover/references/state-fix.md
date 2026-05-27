@@ -52,7 +52,7 @@ Do NOT proceed to Step 4 until every dispatched agent has reported completion. F
 After ALL parallel agents return:
 1. **REMOVE fixed issue lines** from `.aid/knowledge/STATE.md` `## Issues` (orchestrator only — agents never touch STATE.md).
 2. Update `**Applied to:**` for each incorporated Q&A answer in `STATE.md ## Q&A`.
-3. Run `bash canonical/templates/scripts/verify-kb-claims.sh` — expect exit 0.
+3. Run `bash canonical/scripts/kb/verify-claims.sh` — expect exit 0.
 4. Run any smoke tests relevant to changes.
 5. Single `git commit` listing which files each agent touched.
 6. `git push`.

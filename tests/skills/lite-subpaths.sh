@@ -52,9 +52,10 @@
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REFS_DIR="${SCRIPT_DIR}/../references"
-SKILL_FILE="${SCRIPT_DIR}/../SKILL.md"
-TEMPLATES_DIR="${SCRIPT_DIR}/../../../templates/specs"
+# Test moved to tests/skills/ in 2026-05-26 consolidation; SUTs still under canonical/
+REFS_DIR="${SCRIPT_DIR}/../../canonical/skills/aid-interview/references"
+SKILL_FILE="${SCRIPT_DIR}/../../canonical/skills/aid-interview/SKILL.md"
+TEMPLATES_DIR="${SCRIPT_DIR}/../../canonical/templates/specs"
 
 VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1

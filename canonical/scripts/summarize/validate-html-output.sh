@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# validate-html.sh — structural / accessibility / validity checks on the generated HTML.
+# validate-html-output.sh — structural / accessibility / validity + link checks
+# on the generated HTML.
 #
 # Usage:
-#   validate-html.sh <html-file>
+#   validate-html-output.sh <html-file> [--kb-dir DIR]
 #
 # Flags:
+#   --kb-dir DIR  Resolve relative .md links against this dir (default: .aid/knowledge)
 #   -h, --help    Print this header and exit.
 #
 # Exit codes:
@@ -20,32 +22,44 @@
 #   A4  Reduced motion — @media (prefers-reduced-motion: reduce).
 #   A5  Visible focus — :focus-visible rule.
 #   S2  Offline render — Mermaid library inlined.
+#   L1  Anchor links resolve — every href="#X" matches an id="X".
+#   L2  Relative md links resolve — every href="./X.md" exists in --kb-dir.
 #   (Additional structural checks for skip-link, noscript, color-scheme, etc.)
+#
+# History: merged validate-html.sh + validate-links.sh per 2026-05-26 script consolidation.
 
 set -euo pipefail
 
 # --- Argument parsing ---
 HTML=""
-for arg in "$@"; do
-    case "$arg" in
+KB_DIR=".aid/knowledge"
+while [ $# -gt 0 ]; do
+    case "$1" in
         -h|--help)
-            sed -n '2,/^[^#]/{ /^#/!d; s/^# \{0,1\}//; p }' "$0" | head -20
+            sed -n '2,/^[^#]/{ /^#/!d; s/^# \{0,1\}//; p }' "$0" | head -30
             exit 0
             ;;
+        --kb-dir)
+            KB_DIR="$2"
+            shift 2
+            ;;
         -*)
-            echo "❌ Unknown flag: $arg" >&2
+            echo "❌ Unknown flag: $1" >&2
             exit 2
             ;;
         *)
-            HTML="$arg"
+            HTML="$1"
+            shift
             ;;
     esac
 done
 
 if [ -z "$HTML" ] || [ ! -f "$HTML" ]; then
-    echo "❌ Usage: validate-html.sh <html-file>" >&2
+    echo "❌ Usage: validate-html-output.sh <html-file> [--kb-dir DIR]" >&2
     exit 2
 fi
+
+HTML_DIR=$(dirname "$HTML")
 
 FAIL=0
 declare -i PASS=0 TOTAL=0
@@ -108,7 +122,6 @@ else
             H1_MODE="html-validate"
             echo "  H1: using npx html-validate"
             HV_OUT=$(npx --no html-validate --max-warnings=0 "$HTML" 2>&1 || true)
-            HV_EXIT=$?
             # html-validate exits 0 only when no errors
             if echo "$HV_OUT" | grep -qiE '^[[:space:]]*[0-9]+ error'; then
                 echo "  ❌ H1. HTML validity (html-validate reported errors)"
@@ -157,9 +170,6 @@ else
         else
             FAIL=1
         fi
-
-        # Emit the "fallback" note regardless so grade.sh can detect the mode
-        echo "  H1: regex fallback (tidy/html-validate not installed)"
     fi
 fi
 
@@ -247,13 +257,65 @@ check_count "at least one mermaid diagram"  'class="mermaid"'     1
 check_count "mermaid-box wrappers"          'class="mermaid-box"' 1
 
 # ---------------------------------------------------------------------------
+# L1 — Anchor links resolve to in-page IDs
+# ---------------------------------------------------------------------------
+echo ""
+echo "  [L1: anchor link resolution]"
+
+ANCHOR_HREFS=$(grep -oE 'href="#[^"]+"' "$HTML" | sed 's/href="#//;s/"$//' | sort -u || true)
+ANCHOR_FAIL=0
+ANCHOR_TOTAL=0
+for anchor in $ANCHOR_HREFS; do
+    ANCHOR_TOTAL=$((ANCHOR_TOTAL + 1))
+    [ -z "$anchor" ] && continue
+    if ! grep -qE "id=\"$anchor\"" "$HTML"; then
+        echo "    ❌ #$anchor — no matching id=\"$anchor\""
+        ANCHOR_FAIL=$((ANCHOR_FAIL + 1))
+    fi
+done
+TOTAL=$((TOTAL + 1))
+if [ "$ANCHOR_FAIL" -eq 0 ]; then
+    echo "  ✅ L1. $ANCHOR_TOTAL/$ANCHOR_TOTAL anchor links resolve"
+    PASS=$((PASS + 1))
+else
+    echo "  ❌ L1. $ANCHOR_FAIL anchor link(s) broken (of $ANCHOR_TOTAL)"
+    FAIL=1
+fi
+
+# ---------------------------------------------------------------------------
+# L2 — Relative .md links resolve to existing files
+# ---------------------------------------------------------------------------
+echo ""
+echo "  [L2: relative .md link resolution] (kb-dir=$KB_DIR)"
+
+MD_HREFS=$(grep -oE 'href="\./[^"]+\.md"' "$HTML" | sed 's/href="\.\///;s/"$//' | sort -u || true)
+MD_FAIL=0
+MD_TOTAL=0
+for mdlink in $MD_HREFS; do
+    MD_TOTAL=$((MD_TOTAL + 1))
+    target="$HTML_DIR/$mdlink"
+    if [ ! -f "$target" ]; then
+        echo "    ❌ ./$mdlink — file does not exist at $target"
+        MD_FAIL=$((MD_FAIL + 1))
+    fi
+done
+TOTAL=$((TOTAL + 1))
+if [ "$MD_FAIL" -eq 0 ]; then
+    echo "  ✅ L2. $MD_TOTAL/$MD_TOTAL relative md links resolve"
+    PASS=$((PASS + 1))
+else
+    echo "  ❌ L2. $MD_FAIL md link(s) broken (of $MD_TOTAL)"
+    FAIL=1
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 echo ""
 if [ "$FAIL" -ne 0 ]; then
-    echo "❌ HTML validation failed: $PASS/$TOTAL checks passed"
+    echo "❌ HTML output validation failed: $PASS/$TOTAL checks passed"
     exit 1
 fi
 
-echo "✅ HTML validation passed: $PASS/$TOTAL checks"
+echo "✅ HTML output validation passed: $PASS/$TOTAL checks"
 exit 0

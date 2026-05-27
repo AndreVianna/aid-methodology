@@ -25,7 +25,8 @@
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT="${SCRIPT_DIR}/compute-block-radius.sh"
+# SUT moved to canonical/scripts/execute/ in 2026-05-26 consolidation
+SCRIPT="${SCRIPT_DIR}/../../canonical/scripts/execute/compute-block-radius.sh"
 
 [[ -f "$SCRIPT" ]] || { echo "ERROR: compute-block-radius.sh not found at $SCRIPT" >&2; exit 1; }
 [[ -x "$SCRIPT" ]] || chmod +x "$SCRIPT"

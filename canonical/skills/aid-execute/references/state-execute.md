@@ -260,7 +260,7 @@ Remove `task-{NNN}` from the in-flight set.
 
 4. **Compute the failure-block-radius (transitive-descendant BFS):**
 
-   Run `canonical/templates/scripts/compute-block-radius.sh` with the
+   Run `canonical/scripts/execute/compute-block-radius.sh` with the
    failed task and the reverse dependency graph:
 
    ```bash

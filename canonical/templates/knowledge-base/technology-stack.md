@@ -1,3 +1,13 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Languages, runtimes, frameworks, build tools, and test infrastructure the project uses. Read this for language-version or tool-version questions.
+contracts: []
+changelog:
+  - 2026-05-26: KB Authoring v2 template seed
+---
+
 # Technology Stack
 
 > **Source:** aid-discover (Phase 1)
