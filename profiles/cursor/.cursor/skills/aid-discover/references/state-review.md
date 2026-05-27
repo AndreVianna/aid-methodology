@@ -19,7 +19,7 @@ Print: `[Review 1/2] Reviewing Knowledge Base quality...`
 **⚠️ CLEAN CONTEXT:** Do NOT include any info about generation process, which agents ran,
 or prior state. The reviewer evaluates purely on what's on disk.
 
-**⚠️ CONTAMINATION PREVENTION (also applies in FIX mode Step 3):**
+**⚠️ CONTAMINATION PREVENTION (also applies in FIX mode Step 6):**
 - Do NOT include previous review results in the prompt
 - Do NOT tell the reviewer what was fixed or previous grade
 - Do NOT say "re-review" — reviewer must approach fresh

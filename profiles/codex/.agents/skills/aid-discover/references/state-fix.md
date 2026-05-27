@@ -69,7 +69,7 @@ After ALL parallel agents return:
 
 Print: `[Fix] Improving {document}... {old grade} → {new grade}` for each.
 
-### Step 2b: Verify Meta-Documents (MANDATORY after every fix pass)
+### Step 5: Verify Meta-Documents (MANDATORY after every fix pass)
 
 After ALL primary fixes, verify and update in order:
 1. **`.aid/knowledge/STATE.md` Q&A** — resolved questions? new unknowns?
@@ -79,7 +79,7 @@ After ALL primary fixes, verify and update in order:
 
 Print: `[Fix] Verifying 4 meta-documents...`
 
-### Step 3: Re-Review (MANDATORY — Do NOT Self-Evaluate)
+### Step 6: Re-Review (MANDATORY — Do NOT Self-Evaluate)
 
 **Dispatch discovery-reviewer again.** The fixer CANNOT evaluate its own work.
 
@@ -91,7 +91,7 @@ Read `references/reviewer-prompt.md` for the full prompt. Same contamination pre
 Wait for completion.
 ✓ discovery-reviewer done (record actual time) — or ✗ discovery-reviewer failed: {reason}
 
-### Step 4: Post-Fix Update
+### Step 7: Post-Fix Update
 
 Read new `.aid/knowledge/STATE.md`. Verify Review History preserved (append, not replace under `## Review History`).
 

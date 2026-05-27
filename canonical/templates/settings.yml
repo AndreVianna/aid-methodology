@@ -55,7 +55,10 @@ traceability:
 # Each top-level skill-name key (when set) overrides the corresponding
 # global value in `review:`. Uncomment + set as needed.
 #
-# Valid grade values: A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, F
+# Valid grade values: A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, E+, E, E-, F
+# E+/E/E- are accepted but rarely useful as a floor — E grades indicate CRITICAL
+# severity findings; setting one as the minimum means "do not block on any
+# non-critical issues." Most projects should pick from A..D.
 #
 # Examples:
 # discover:

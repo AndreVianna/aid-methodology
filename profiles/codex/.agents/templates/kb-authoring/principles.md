@@ -88,7 +88,11 @@ Two kinds of non-curated files exist:
 
 - **Generated content** (`.aid/generated/*`) — persistent build artifacts produced by
   registered scripts. Each file MUST carry an HTML-style comment at the top:
-  `<!-- AUTO-GENERATED <ISO-8601-timestamp> by <build-script.sh> — DO NOT EDIT — regenerate with `<script>` -->`.
+
+  ```html
+  <!-- AUTO-GENERATED 2026-05-27T12:34:56Z by build-index.sh — DO NOT EDIT — regenerate with `bash .agents/scripts/kb/build-index.sh` -->
+  ```
+
   The `source: generated` + `generator: <script>` frontmatter fields also declare this.
 - **Temporary state** (`.aid/.temp/*`) — transient ledger / scratch files used during
   a skill's state machine execution. Gitignored. Lifecycle = "exists during a skill

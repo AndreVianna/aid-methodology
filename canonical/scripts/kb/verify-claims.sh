@@ -130,6 +130,62 @@ done
 
 EXT_RE='(md|sh|ps1|py|js|mjs|cjs|toml|json|yaml|yml|css|html|htm|java|kt|kts|go|rs|cs|fs|cpp|c|h|hpp|rb|php|swift|scala|tsx|ts|jsx|sql|xml|mdc)'
 
+# ---------------------------------------------------------------------------
+# Build the citation-resolution prefix list dynamically (F23 from PR #15 review).
+#
+# KB authors cite short paths assuming reader resolves via convention. Rather
+# than maintain a 30-entry hand-curated prefix list (which goes stale every
+# time a new canonical subdir is added), we discover the live tree at script
+# start and assemble the prefix list from real directories.
+#
+# Order matters: more-specific prefixes come first so a bare "preflight.sh"
+# resolves to canonical/scripts/kb/preflight.sh (specific) before falling
+# through to canonical/ (general).
+# ---------------------------------------------------------------------------
+PREFIXES=("" ".aid/knowledge/")
+
+# canonical/scripts/*/ — each subdir as a prefix
+if [[ -d "$ROOT/canonical/scripts" ]]; then
+  PREFIXES+=("canonical/scripts/")
+  while IFS= read -r d; do
+    PREFIXES+=("canonical/scripts/$(basename "$d")/")
+  done < <(find "$ROOT/canonical/scripts" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
+fi
+
+# canonical/templates/*/ — each subdir as a prefix + canonical/templates/ itself
+if [[ -d "$ROOT/canonical/templates" ]]; then
+  PREFIXES+=("canonical/templates/")
+  while IFS= read -r d; do
+    PREFIXES+=("canonical/templates/$(basename "$d")/")
+  done < <(find "$ROOT/canonical/templates" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
+fi
+
+# canonical/{skills,agents,recipes,rules}/ tops
+for top in skills agents recipes rules; do
+  [[ -d "$ROOT/canonical/$top" ]] && PREFIXES+=("canonical/$top/")
+done
+
+# Generic canonical/ fallback (before profile mirrors)
+PREFIXES+=("canonical/")
+
+# Profile install-tree mirrors (each profile + its scripts/skills/agents/templates)
+if [[ -d "$ROOT/profiles" ]]; then
+  while IFS= read -r install_dir; do
+    rel="${install_dir#$ROOT/}"
+    PREFIXES+=("$rel/")
+    for sub in skills agents templates scripts rules; do
+      [[ -d "$install_dir/$sub" ]] && PREFIXES+=("$rel/$sub/")
+    done
+  done < <(find "$ROOT/profiles" -mindepth 2 -maxdepth 2 -type d -name '.*' 2>/dev/null | sort)
+fi
+
+# Repo-root commons
+for top in tests methodology docs; do
+  [[ -d "$ROOT/$top" ]] && PREFIXES+=("$top/")
+done
+[[ -d "$ROOT/tests/canonical" ]] && PREFIXES+=("tests/canonical/")
+[[ -d "$ROOT/tests/skills" ]] && PREFIXES+=("tests/skills/")
+
 total_cite=0
 ok_cite=0
 broken_cite=0
@@ -168,37 +224,11 @@ for kb_file in "$KB_DIR"/*.md; do
       total_cite=$((total_cite+1))
       per_doc=$((per_doc+1))
 
-      # Try multi-location resolution. KB authors commonly cite short paths
-      # assuming the reader will resolve via convention. Prefix list below
-      # covers the major locations; if all fail, a single `find` fallback
-      # locates the file's basename anywhere in the project (excluding .git,
-      # .aid, node_modules, etc.).
+      # Try multi-location resolution against the dynamic PREFIXES array
+      # (built at script start; see "Build the citation-resolution prefix list"
+      # block above). If all fail, fall through to the basename find below.
       full=""
-      for prefix in "" ".aid/knowledge/" \
-                    "canonical/" "canonical/scripts/" \
-                    "canonical/scripts/kb/" "canonical/scripts/execute/" \
-                    "canonical/scripts/summarize/" "canonical/scripts/interview/" \
-                    "canonical/skills/" "canonical/agents/" "canonical/recipes/" \
-                    "canonical/templates/" "canonical/templates/knowledge-base/" \
-                    "canonical/templates/knowledge-summary/" \
-                    "canonical/templates/kb-authoring/" "canonical/templates/reports/" \
-                    "canonical/templates/specs/" "canonical/templates/delivery-plans/" \
-                    "canonical/templates/feedback-artifacts/" \
-                    "templates/" "templates/knowledge-summary/" \
-                    "scripts/" "scripts/kb/" "scripts/execute/" "scripts/summarize/" "scripts/interview/" \
-                    "templates/knowledge-base/" "templates/requirements/" \
-                    "templates/specs/" "templates/delivery-plans/" \
-                    "templates/feedback-artifacts/" "templates/reports/" \
-                    "profiles/claude-code/.claude/skills/" "profiles/claude-code/.claude/agents/" \
-                    "profiles/claude-code/.claude/templates/" \
-                    "profiles/claude-code/.claude/templates/knowledge-summary/" \
-                    "profiles/claude-code/.claude/scripts/" \
-                    "profiles/codex/.codex/agents/" "profiles/codex/.agents/skills/" \
-                    "profiles/codex/.agents/templates/" \
-                    "profiles/cursor/.cursor/agents/" "profiles/cursor/.cursor/rules/" \
-                    "profiles/cursor/.cursor/skills/" "profiles/cursor/.cursor/templates/" \
-                    "tests/" "tests/canonical/" "tests/skills/" \
-                    "methodology/" "agents/" "skills/" "docs/"; do
+      for prefix in "${PREFIXES[@]}"; do
         candidate="$ROOT/${prefix}${cited_path}"
         if [[ -f "$candidate" ]]; then
           full="$candidate"
