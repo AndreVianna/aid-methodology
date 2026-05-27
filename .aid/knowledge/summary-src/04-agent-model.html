@@ -1,0 +1,67 @@
+<section id="agent-model" class="featured">
+<h2>4. The Agent Model — Three Tiers ★</h2>
+<p>AID separates agents into three provider-agnostic <strong>model tiers</strong> — <strong>Opus / Sonnet / Haiku</strong> — by the cost/precision trade-off the work justifies, applied consistently across all 3 install trees. The mapping was verified across all 22 agents (see <a href="./tech-debt.md">tech-debt.md</a> L6, re-confirmed cycle-25 2026-05-25). The tier names follow Anthropic's; Codex uses <code>model_reasoning_effort</code> levels to express the same ladder.</p>
+
+<table>
+  <thead><tr><th>Tier (canonical)</th><th>Cost &amp; speed</th><th>Precision</th><th>Best for</th><th>Anthropic</th><th>Codex CLI</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Haiku</strong></td><td>cheapest, fastest</td><td>lower — more prone to mistakes</td><td>small, well-defined, mechanical tasks (utility sub-agents)</td><td><code>haiku</code></td><td><code>gpt-5.4-mini</code> · <code>model_reasoning_effort = "low"</code></td></tr>
+    <tr><td><strong>Sonnet</strong></td><td>moderate price &amp; speed</td><td>good — fewer mistakes</td><td>operational + orchestration work</td><td><code>sonnet</code></td><td><code>gpt-5.4</code> · <code>medium</code></td></tr>
+    <tr><td><strong>Opus</strong></td><td>most expensive, slowest</td><td>highest — fewest mistakes</td><td>judgment-heavy, open-ended analysis</td><td><code>opus</code> (alias for <code>claude-opus-4-7</code>)</td><td><code>gpt-5.5</code> · <code>high</code></td></tr>
+  </tbody>
+</table>
+
+<figure class="diagram" id="fig5">
+  <div class="mermaid-box" tabindex="0" role="button" aria-label="Expand Figure 5: Three-tier agent model">
+    <pre class="mermaid">graph TB
+    classDef large  fill:#0B1F3A,stroke:#00A3A1,color:#fff,stroke-width:2px;
+    classDef medium fill:#0E4D4A,stroke:#00A3A1,color:#fff,stroke-width:2px;
+    classDef small  fill:#DBEAFE,stroke:#1D4ED8,color:#1D4ED8;
+
+    subgraph LargeTier[&quot; Opus tier — 10 agents &quot;]
+        OC[&quot;Core (3): architect, reviewer, interviewer&quot;]:::large
+        OS[&quot;Specialist (1): security&quot;]:::large
+        OD[&quot;Discovery sub-agents (6): scout, architect, analyst, integrator, quality, reviewer&quot;]:::large
+    end
+
+    subgraph MediumTier[&quot; Sonnet tier — 9 agents &quot;]
+        SC[&quot;Core (4): orchestrator, researcher, developer, operator&quot;]:::medium
+        SS[&quot;Specialist (5): data-engineer, performance, devops, tech-writer, ux-designer&quot;]:::medium
+    end
+
+    subgraph SmallTier[&quot; Haiku tier — 3 agents &quot;]
+        HU[&quot;Utility (3): simple-extractor, simple-formatter, simple-glob&lt;br/&gt;(mechanical work only — never synthesis)&quot;]:::small
+    end
+
+    Total[&quot;Total: 22 agents per install tree&lt;br/&gt;tier-consistent across Claude Code + Codex + Cursor&lt;br/&gt;verified cycle-25 2026-05-25&quot;]</pre>
+  </div>
+  <figcaption><strong>Figure 5.</strong> Opus tier (10 agents): judgment-heavy work — 3 Core (architect, reviewer, interviewer) + 1 Specialist (security) + all 6 Discovery sub-agents. Sonnet tier (9 agents): operational / orchestration work — 4 Core (orchestrator, researcher, developer, operator) + 5 Specialist (data-engineer, performance, devops, tech-writer, ux-designer). Haiku tier (3 agents): mechanical-only utility — simple-extractor, simple-formatter, simple-glob. Tier-consistent across all three install trees — see the mapping table above for the concrete model per provider.</figcaption>
+</figure>
+
+<h3>Skill → Agent dispatch</h3>
+<p>Skills are the state-machine orchestrators; agents are the workers. The dispatch mapping is deterministic — each skill has a default executor agent + a default reviewer (the <strong>Reviewer ≥ Executor tier invariant</strong> is enforced: a Sonnet-tier executor gets an Opus-tier reviewer; a Haiku-tier utility never reviews anything).</p>
+
+<figure class="diagram" id="fig6">
+  <div class="mermaid-box" tabindex="0" role="button" aria-label="Expand Figure 6: Skill → Agent dispatch">
+    <pre class="mermaid">graph LR
+    classDef skill fill:#0B1F3A,stroke:#00A3A1,color:#fff,stroke-width:2px;
+    classDef large  fill:#0B1F3A,stroke:#00A3A1,color:#fff;
+    classDef medium fill:#0E4D4A,stroke:#00A3A1,color:#fff,stroke-width:2px;
+    classDef small fill:#DBEAFE,stroke:#1D4ED8,color:#1D4ED8;
+
+    AidDisc[&quot;/aid-discover&quot;]:::skill --&gt; DispDisc[&quot;6 discovery sub-agents&lt;br/&gt;(all Opus tier)&quot;]:::large
+    AidIntv[&quot;/aid-interview&quot;]:::skill --&gt; Interv[&quot;Interviewer&lt;br/&gt;(Opus tier)&quot;]:::large
+    AidSpec[&quot;/aid-specify&quot;]:::skill --&gt; ArchA[&quot;Architect&lt;br/&gt;(Opus tier)&quot;]:::large
+    AidPlan[&quot;/aid-plan&quot;]:::skill --&gt; ArchB[&quot;Architect&lt;br/&gt;(Opus tier)&quot;]:::large
+    AidDet[&quot;/aid-detail&quot;]:::skill --&gt; ArchC[&quot;Architect&lt;br/&gt;(Opus tier)&quot;]:::large
+    AidExe[&quot;/aid-execute&quot;]:::skill --&gt; Dev[&quot;Developer&lt;br/&gt;(Sonnet tier, default)&quot;]:::medium
+    AidExe -. &quot;task-type-routed&quot; .-&gt; Spec[&quot;Specialist agents&lt;br/&gt;(Sonnet tier, e.g., Data Engineer for MIGRATE tasks)&quot;]:::medium
+    AidExe -. &quot;review&quot; .-&gt; Rev[&quot;Reviewer&lt;br/&gt;(Opus tier, ≥ Executor invariant)&quot;]:::large
+    AidDep[&quot;/aid-deploy&quot;]:::skill --&gt; Ops[&quot;Operator&lt;br/&gt;(Sonnet tier)&quot;]:::medium
+    AidMon[&quot;/aid-monitor&quot;]:::skill --&gt; Orch[&quot;Orchestrator&lt;br/&gt;(Sonnet tier)&quot;]:::medium
+    Util[&quot;Utility sub-agents (Haiku tier)&lt;br/&gt;simple-extractor, -formatter, -glob&quot;]:::small -. &quot;internal-only, never user-invoked&quot; .-&gt; AnyAgent[&quot;any higher-tier agent&quot;]</pre>
+  </div>
+  <figcaption><strong>Figure 6.</strong> Per-skill default agent assignments. /aid-discover dispatches all 6 Discovery sub-agents (Opus tier). Interview/Specify/Plan/Detail share the Architect (Opus tier). Execute defaults to Developer (Sonnet tier) but routes task-type-specific work to matching Specialists (Sonnet tier) and uses an Opus-tier Reviewer per the tier-invariant rule. Deploy uses Operator, Monitor uses Orchestrator. Utility (Haiku-tier) agents are internal-only (never user-invoked, never used for synthesis).</figcaption>
+</figure>
+</section>
+

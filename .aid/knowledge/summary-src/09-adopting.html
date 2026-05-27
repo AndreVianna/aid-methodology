@@ -1,0 +1,43 @@
+<section id="adopting-aid">
+<h2>9. Adopting AID</h2>
+<p>To use AID in your own project:</p>
+
+<pre><code># 1. Get the methodology
+git clone https://github.com/AndreVianna/aid-methodology.git
+cd aid-methodology
+
+# 2. Install into your target project (interactive menu picks tools)
+bash setup.sh /path/to/your/project           # Linux / macOS / git-bash
+bash setup.sh /path/to/your/project --force   # overwrite without prompts
+# Windows native (PowerShell 5.1+):
+.\setup.ps1 C:\path\to\your\project
+
+# 3. In your project, run the AID pipeline (slash commands)
+/aid-init           # once per project — scaffolds .aid/
+/aid-discover       # brownfield only — analyzes existing code into the KB
+/aid-interview      # build REQUIREMENTS.md from a dialogue
+/aid-specify        # add technical spec per feature
+/aid-plan           # sequence features into deliveries
+/aid-detail         # decompose deliveries into typed tasks
+/aid-execute        # implement tasks (with built-in review loop)
+/aid-deploy         # package + ship a delivery
+/aid-monitor        # observe production; classify findings; route fixes
+/aid-summarize      # optional — generate an HTML KB viewer like this one</code></pre>
+
+<h3>What gets installed in your project</h3>
+<ul>
+  <li><code>.claude/</code>, <code>.codex/</code>, <code>.agents/</code>, or <code>.cursor/</code> (depending on the tools you selected) — agents, skills, templates, scripts.</li>
+  <li><code>CLAUDE.md</code> or <code>AGENTS.md</code> at project root — host-tool project-context file with <code>(pending discovery)</code> placeholders that <code>/aid-init</code> + <code>/aid-discover</code> populate.</li>
+  <li>Your project's <code>.aid/</code> directory holds the Knowledge Base + work artifacts. <code>setup.sh</code> does NOT touch your <code>.gitignore</code> — you decide whether to commit <code>.aid/</code> (this repo dogfoods AID-on-AID and commits it; private projects often keep it ignored).</li>
+</ul>
+
+<h3>Runtime requirements</h3>
+<ul>
+  <li>One or more host AI tools: Claude Code / Codex CLI / Cursor</li>
+  <li>Bash (or git-bash on Windows) for scripts</li>
+  <li>PowerShell 5.1+ for <code>setup.ps1</code></li>
+  <li>Node 18+ (optional, only for <code>/aid-summarize</code> diagram validation)</li>
+  <li>Git</li>
+</ul>
+</section>
+

@@ -1,0 +1,21 @@
+<section id="tech-debt">
+<h2>8. Tech Debt</h2>
+<p>Audit complete in <a href="./tech-debt.md">tech-debt.md</a>: <strong>22 items total — 8 HIGH, 6 MEDIUM, 8 LOW</strong> (verified cycle-25 2026-05-25). Several historical "duplication" items (H1, H4) and the Codex installer bug (H6) have been RETIRED as work-002 (canonical-generator) and the 2026-05-22 installer fix shipped. Current HIGH list focuses on missing CI gates + Monitor scaffold:</p>
+
+<table>
+  <thead><tr><th>ID</th><th>Severity</th><th>Item</th><th>Effort</th></tr></thead>
+  <tbody>
+    <tr><td><strong>H6</strong></td><td>RETIRED 2026-05-22</td><td><code>setup.sh</code> L144-146 + <code>setup.ps1</code> L139-141 now copy <code>profiles/codex/.agents/</code> (skills + templates). Codex installs are complete. Tracked as RETIRED in tech-debt.md.</td><td>—</td></tr>
+    <tr><td><strong>H1, H4</strong></td><td>RETIRED</td><td>"Triplication drift" + "4-way duplicated assets" — both RESOLVED by work-002 canonical-generator. <code>canonical/</code> is single source of truth; <code>run_generator.py</code> renders 3 profile trees byte-identically.</td><td>—</td></tr>
+    <tr><td><strong>H7</strong></td><td>HIGH</td><td>Missing Monitor-phase templates (Monitor area STATE, <code>track-report-template.md</code>) referenced in <code>templates/README.md</code> but DEFERRED per FR2 OQ-3 until that area matures.</td><td>Small</td></tr>
+    <tr><td>H2</td><td>HIGH</td><td>No CI / no <code>VERSION</code> file (canonical script test suites exist: 7 scripts, 297 tests — but no CI runner)</td><td>Medium</td></tr>
+    <tr><td>H3</td><td>HIGH</td><td>No CI canonical-render-drift checker (<code>verify_deterministic.py</code> exists locally; CI gate still pending)</td><td>Small</td></tr>
+    <tr><td>H5</td><td>HIGH (Q72)</td><td><code>CONTRIBUTING.md</code> doc-modernization pending — the pre-work-002 "triplication rule" and Cursor-omission note both need rewriting around the canonical-generator workflow (per <code>coding-standards.md §9</code>)</td><td>Trivial</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Positive parity finding:</strong> all 22 agents are tier-consistent across all 3 install trees (10 Opus + 9 Sonnet + 3 Haiku). Verified during cycle-25 adversarial regrade (2026-05-25).</p>
+
+<p><strong>Tooling shipped:</strong> <code>canonical/templates/scripts/verify-kb-claims.sh</code> (R29) — scans KB markdown for <code>file.ext:NN</code> citations and grep-checks them; checks README.md line-counts vs actual; targeted count-drift spot-checks. Latest run (cycle-25): <strong>707/707 citations valid, 0 README drifts, 0 spot-check drifts</strong>. Plus 7 canonical test suites with 297 total tests covering the helper scripts (writeback-task-status, delivery-gate-aggregate, compute-block-radius, pool-dispatch, parse-recipe, lite-path-e2e, two-tier-review-e2e).</p>
+</section>
+

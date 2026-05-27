@@ -1,0 +1,104 @@
+<section id="kb-gravitational-center" class="featured">
+<h2>3. The Knowledge Base — the Gravitational Center ★</h2>
+<p><strong>The KB is the central artifact AID is built around.</strong> Not the spec, not the code — the accumulated living understanding of the project. Every phase reads it (KB context fed to every task as RAG-by-convention). Every phase may revise it (the formal feedback loops). The KB has a <em>fixed shape</em> — 16 standard documents enforced by tooling — so downstream skills (<code>aid-interview</code>, <code>aid-specify</code>, <code>aid-plan</code>) know exactly where to look.</p>
+
+<figure class="diagram" id="fig3">
+  <div class="mermaid-box" tabindex="0" role="button" aria-label="Expand Figure 3: KB document taxonomy">
+    <pre class="mermaid">graph TD
+    classDef center fill:#0B1F3A,stroke:#00A3A1,color:#fff,stroke-width:2px;
+    classDef std    fill:#0E4D4A,stroke:#00A3A1,color:#fff,stroke-width:2px;
+    classDef meta   fill:#DBEAFE,stroke:#1D4ED8,color:#1D4ED8;
+    classDef gen    fill:#E8F5E9,stroke:#2E7D32,color:#2E7D32;
+    classDef ext    fill:#FEF3C7,stroke:#B45309,color:#B45309;
+
+    KB[(&quot;.aid/knowledge/&lt;br/&gt;21 files total&quot;)]:::center
+
+    Standard[&quot;16 standard KB docs&lt;br/&gt;(load-bearing for downstream skills)&quot;]:::std
+    Meta[&quot;2 meta-documents&lt;br/&gt;INDEX + README&quot;]:::meta
+    AreaState[&quot;1 area-STATE file&lt;br/&gt;STATE.md (per FR2 — replaces&lt;br/&gt;retired DISCOVERY-STATE.md)&quot;]:::meta
+    Gen[&quot;1 generated pre-pass&lt;br/&gt;project-index.md (from build-project-index.sh)&quot;]:::gen
+    Ext[&quot;KB extensions (outside the 16)&lt;br/&gt;currently: host-tools-matrix.md&quot;]:::ext
+
+    KB --&gt; Standard
+    KB --&gt; Meta
+    KB --&gt; AreaState
+    KB --&gt; Gen
+    KB --&gt; Ext
+
+    Std1[&quot;project-structure / external-sources&lt;br/&gt;(scout)&quot;]:::std
+    Std2[&quot;architecture / technology-stack / ui-architecture&lt;br/&gt;(architect)&quot;]:::std
+    Std3[&quot;module-map / coding-standards / data-model&lt;br/&gt;(analyst)&quot;]:::std
+    Std4[&quot;api-contracts / integration-map / domain-glossary&lt;br/&gt;(integrator)&quot;]:::std
+    Std5[&quot;test-landscape / security-model / tech-debt / infrastructure&lt;br/&gt;(quality)&quot;]:::std
+    Std6[&quot;feature-inventory&lt;br/&gt;(orchestrator, post-Q&amp;A)&quot;]:::std
+
+    Standard --&gt; Std1
+    Standard --&gt; Std2
+    Standard --&gt; Std3
+    Standard --&gt; Std4
+    Standard --&gt; Std5
+    Standard --&gt; Std6</pre>
+  </div>
+  <figcaption><strong>Figure 3.</strong> The .aid/knowledge/ directory: 21 files = 16 standard KB docs (load-bearing — downstream skills depend on these exact names) + 2 meta-documents (INDEX, README) + 1 area-STATE file (STATE.md, replacing the retired DISCOVERY-STATE.md per FR2/work-003) + 1 generated pre-pass (project-index.md) + KB extensions outside the standard 16 (currently host-tools-matrix.md, project-type-specific). The 16 standard docs are produced by the 6 discovery sub-agents grouped by domain.</figcaption>
+</figure>
+
+<h3>What every KB doc covers</h3>
+<table>
+  <thead><tr><th>Doc</th><th>Owner sub-agent</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>project-structure</td><td>scout</td><td>Repo layout, file inventory</td></tr>
+    <tr><td>external-sources</td><td>scout</td><td>Vendor docs registered as references</td></tr>
+    <tr><td>architecture</td><td>architect</td><td>Patterns, levels, data flow</td></tr>
+    <tr><td>technology-stack</td><td>architect</td><td>Languages, runtimes, build/test commands</td></tr>
+    <tr><td>ui-architecture</td><td>architect</td><td>Front-end / HTML viewer architecture (this file's source profile)</td></tr>
+    <tr><td>module-map</td><td>analyst</td><td>Module dependency graph + per-module owners</td></tr>
+    <tr><td>coding-standards</td><td>analyst</td><td>Conventions mined from actual code/configs</td></tr>
+    <tr><td>data-model</td><td>analyst</td><td>Schemas, artifact flow, cardinality</td></tr>
+    <tr><td>api-contracts</td><td>integrator</td><td>Public surfaces (or, for AID: host-tool frontmatter schemas)</td></tr>
+    <tr><td>integration-map</td><td>integrator</td><td>External integration topology</td></tr>
+    <tr><td>domain-glossary</td><td>integrator</td><td>Project-specific vocabulary</td></tr>
+    <tr><td>test-landscape</td><td>quality</td><td>Test frameworks + coverage + gaps</td></tr>
+    <tr><td>security-model</td><td>quality</td><td>Auth, permissions, OWASP-adjacent</td></tr>
+    <tr><td>tech-debt</td><td>quality</td><td>Severity-rated debt items + remediation</td></tr>
+    <tr><td>infrastructure</td><td>quality</td><td>Distribution, CI, environments</td></tr>
+    <tr><td>feature-inventory</td><td>orchestrator (post-Q&A)</td><td>Canonical feature list (from Required Q&A answer)</td></tr>
+  </tbody>
+</table>
+
+<h3>Progressive disclosure — the 3-tier context economy</h3>
+<p>FIG2 above shows <em>what</em> files exist. Just as important is <em>how an agent reads them</em>: the KB is structured so an agent <strong>never loads the whole repository — or even the whole KB — into its context window</strong>. Retrieval happens in three tiers, cheapest first (per <a href="./architecture.md">architecture.md</a> Pattern 4, "Progressive disclosure").</p>
+
+<figure class="diagram" id="fig4">
+  <div class="mermaid-box" tabindex="0" role="button" aria-label="Expand Figure 4: RAG-by-convention — the 3-tier context economy">
+    <pre class="mermaid">flowchart TB
+    classDef ctx  fill:#0B1F3A,stroke:#00A3A1,color:#fff,stroke-width:2px;
+    classDef tier fill:#0E4D4A,stroke:#00A3A1,color:#fff,stroke-width:2px;
+    classDef repo fill:#E3E8EF,stroke:#667085,color:#101828;
+
+    Agent[&quot;Agent task context&lt;br/&gt;(kept lean — pays only for what a task needs)&quot;]:::ctx
+
+    subgraph T1[&quot; Tier 1 - always loaded &quot;]
+        IDX[&quot;INDEX.md&lt;br/&gt;2-3 line summary of every KB doc&lt;br/&gt;(~200-500 tokens total)&quot;]:::tier
+    end
+    subgraph T2[&quot; Tier 2 - loaded on demand &quot;]
+        DOC[&quot;one specific KB document&lt;br/&gt;16 standard + 2 meta + 1 area-STATE + extensions&lt;br/&gt;(fixed-shape — navigate by convention)&quot;]:::tier
+    end
+    subgraph T3[&quot; Tier 3 - pinpointed, never bulk-loaded &quot;]
+        REPO[&quot;exact file + line in the repo&lt;br/&gt;via inline path:line citation&lt;br/&gt;(145,793-line repository)&quot;]:::repo
+    end
+
+    Agent --&gt; IDX
+    IDX -- &quot;agent picks the one doc it needs&quot; --&gt; DOC
+    DOC -- &quot;agent jumps to path:line&quot; --&gt; REPO</pre>
+  </div>
+  <figcaption><strong>Figure 4.</strong> How an agent navigates the KB without bloating its context. Tier 1: INDEX.md (~200-500 tokens) rides in every task prompt — the agent always knows what exists and where. Tier 2: from an INDEX entry the agent loads exactly one specific KB document on demand — the fixed 16-doc shape makes this deterministic, no search. Tier 3: every KB claim carries an inline path:line citation, so the agent jumps straight to the exact file + line in the 145,793-line repository — never globbing, never bulk-loading source. Net effect: retrieval-augmented behavior with no vector database, no embeddings, no chunking.</figcaption>
+</figure>
+
+<ol>
+  <li><strong>Tier 1 — <code>INDEX.md</code>, always loaded.</strong> Every task prompt carries INDEX.md (a 2-3 line summary of every KB doc, ~200-500 tokens total). The agent knows what knowledge exists and which file holds it — at negligible context cost.</li>
+  <li><strong>Tier 2 — one KB document, on demand.</strong> From an INDEX entry the agent reads only the single KB doc a task needs. The fixed 16-doc shape makes this navigation deterministic — <code>data-model.md</code> always holds schemas, <code>tech-debt.md</code> always holds debt — so the agent navigates by convention, never by search.</li>
+  <li><strong>Tier 3 — exact repo location, via citation.</strong> Every factual claim in a KB doc carries an inline <code>path:line</code> citation (<a href="./coding-standards.md">coding-standards.md §4.4</a>). The agent jumps straight to the precise file and line in the 145,793-line repository — never globbing, never bulk-loading unrelated source. The same citations that enforce accuracy double as the context-economy navigation layer.</li>
+</ol>
+<p><strong>Net effect:</strong> the agent pays ~200-500 tokens to know the location of everything, then spends context budget only on the one KB doc and the specific repo lines a task genuinely needs. That is what "RAG-by-convention" means — no vector store, no embeddings, no chunking; just predictable structure + a navigation index + mandatory citations.</p>
+</section>
+
