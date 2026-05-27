@@ -1,289 +1,362 @@
 # Integration Map
 
-> **Source:** aid-discover (discovery-integrator)
-> **Status:** Populated (initial dogfood pass; cycle-11 FIX applied — script rename `writeback-state.sh` propagated, API consumption matrix annotated with FR2 area-STATE writes)
-> **Last Updated:** 2026-05-23
-
-> AID's "integrations" are not the usual stack of message queues, caches, and webhooks. They are the **host AI coding tools** AID installs itself into, the **MCP / hook ecosystem** those tools expose, and a small number of **local runtimes** (Node, Bash/PowerShell, Git, optional `mmdc`) needed to execute the bundled scripts. See `api-contracts.md` "Consumed APIs" for the (empty) HTTP surface — everything here is install-time or local-runtime.
-
----
-
-## Host AI Coding Tools (Primary Integration Targets)
-
-### Anthropic Claude Code
-
-| Attribute | Value |
-|-----------|-------|
-| Kind | Host AI coding tool (CLI + IDE) |
-| Direction | AID installs into Claude Code (one-way) |
-| Install location | `<project>/.claude/` (per-project) or `~/.claude/` (global) |
-| Loader picks up | `agents/`, `skills/`, `templates/`; reads `settings.json`; auto-loads `CLAUDE.md` at project root |
-| Local payload | `profiles/claude-code/.claude/` (64 files: 22 agents + 10 skills + 31 templates/scripts per `project-structure.md`); `profiles/claude-code/CLAUDE.md` placeholder |
-| Version pins (model IDs) | `opus` (10 agents), `sonnet` (9 agents), `haiku` (3 agents) — symbolic aliases; concrete model resolved by Claude Code |
-| Source-of-truth doc | `external-sources.md` row 1: <https://docs.claude.com/en/docs/claude-code/overview> |
-| Known-issues / open gaps | ⚠️ Pending vendor-doc fetch — full frontmatter inventory, Hooks lifecycle, Plugins API, MCP server registration, `permissionMode: bypassPermissions` semantics, `background: true` long-running agent semantics (`external-sources.md:67-68`). ⚠️ Per-session SKILL.md caching observed (Q192): host harness loads `SKILL.md` text once at session start — restart required after edits to skill bodies |
-| Evidence | `profiles/claude-code/.claude/agents/*.md` (22 files); `profiles/claude-code/.claude/skills/aid-*/SKILL.md` (10 skills per Q16 canonical taxonomy); `profiles/claude-code/CLAUDE.md`; `profiles/cursor/README.md:142` (Cursor cross-load reference) |
-
-### Anthropic Claude Agent SDK
-
-| Attribute | Value |
-|-----------|-------|
-| Kind | SDK (programmatic agent dispatch) |
-| Direction | None — AID has no programmatic SDK integration in this repo |
-| Install location | n/a (would be a separate library) |
-| Loader picks up | n/a |
-| Local payload | **None.** No `package.json`, no Python SDK consumer, no programmatic agent loader anywhere in the tree |
-| Version pins | n/a |
-| Source-of-truth doc | `external-sources.md` row 2: <https://docs.claude.com/en/api/agent-sdk/overview> |
-| Known-issues / open gaps | Listed for completeness. AID currently relies on the Claude Code CLI's built-in agent dispatch (via the `Agent` tool — used only by `aid-discover/SKILL.md`); the SDK is not consumed |
-| Evidence | Negative search: no `package.json`, no `@anthropic-ai/*` import, no `claude_agent_sdk` import anywhere in the 353-file inventory (`project-index.md`) |
-
-### OpenAI Codex CLI
-
-| Attribute | Value |
-|-----------|-------|
-| Kind | Host AI coding tool (CLI) |
-| Direction | AID installs into Codex CLI (one-way) |
-| Install location | `<project>/.codex/agents/` (TOML agents) + `<project>/.agents/{skills,templates}/` (markdown skills/templates); `AGENTS.md` at project root |
-| Loader picks up | `.codex/agents/*.toml` for agent definitions, `.agents/skills/aid-*/SKILL.md` for skill bodies, `AGENTS.md` for project context |
-| Local payload | `profiles/codex/.codex/agents/` (22 TOML files) + `profiles/codex/.agents/skills/` (10 skill folders) + `profiles/codex/.agents/templates/` (KB + script templates) + `profiles/codex/AGENTS.md` (28 lines) |
-| Version pins (model IDs) | `gpt-5.5` (Opus tier, 10 agents), `gpt-5.4` (Sonnet tier, 9 agents), `gpt-5.4-mini` (Haiku tier, 3 agents) — pinned per `Grep` over `profiles/codex/.codex/agents/*.toml` |
-| Source-of-truth doc | `external-sources.md` rows 3-4: <https://github.com/openai/codex>, <https://developers.openai.com/codex/> |
-| Known-issues / open gaps | ⚠️ AGENTS.md authoritative schema unverified; whether Codex CLI reads `.agents/skills/` at all needs vendor confirmation; sub-agent dispatch mechanism unknown (`external-sources.md:83`); May-2026 tier-migration history at `profiles/codex/README.md:35` |
-| Evidence | `profiles/codex/.codex/agents/architect.toml:3-4`; `profiles/codex/AGENTS.md:1-28`; `profiles/codex/README.md:1-117` |
-
-### Cursor
-
-| Attribute | Value |
-|-----------|-------|
-| Kind | Host AI coding tool (IDE) |
-| Direction | AID installs into Cursor (one-way) |
-| Install location | `<project>/.cursor/{agents,rules,skills,templates}/`; `AGENTS.md` at project root |
-| Loader picks up | `.cursor/rules/*.mdc` for always-on / glob-scoped rules, `.cursor/agents/*.md` for agent definitions, `.cursor/skills/aid-*/SKILL.md` for skills, `AGENTS.md` for project context |
-| Local payload | `profiles/cursor/.cursor/` (≈80 files: 22 agents + 2 rules + 10 skills + 45 templates/scripts); `profiles/cursor/AGENTS.md` (45 lines) |
-| Version pins (model IDs) | Same symbolic aliases as Claude Code (`opus` / `sonnet` / `haiku`) |
-| Source-of-truth doc | `external-sources.md` rows 5-6: <https://docs.cursor.com/context/rules-for-ai>, <https://docs.cursor.com/context/model-context-protocol> |
-| Known-issues / open gaps | ⚠️ Task tool dispatch marked **experimental as of March 2026** (`profiles/cursor/AGENTS.md:30`, `profiles/cursor/README.md:128`); precedence between `.cursor/rules/` vs. `AGENTS.md` vs. `.cursor/skills/` unverified; `Terminal` vs `Bash` tool naming divergence from Claude Code observed (see `api-contracts.md` 3b) |
-| Cross-tool compatibility | Cursor will additionally load skills from `.claude/skills/` and `.codex/skills/` per `profiles/cursor/README.md:142` — only documented loader fallback chain in the AID install set |
-| Evidence | `profiles/cursor/.cursor/agents/architect.md:1-7`; `profiles/cursor/.cursor/rules/aid-methodology.mdc:1-30`; `profiles/cursor/AGENTS.md:1-45`; `profiles/cursor/README.md:140-146` |
-
-### GitHub Copilot CLI
-
-| Attribute | Value |
-|-----------|-------|
-| Kind | Host AI coding tool (CLI + IDE) |
-| Direction | None yet (future target) |
-| Install location | n/a (no install tree in this repo) |
-| Loader picks up | n/a |
-| Local payload | **None.** No `copilot/` directory, no `copilot-instructions.md`, no `.github/copilot*` file anywhere in the tree (verified per `external-sources.md:108`) |
-| Version pins | n/a |
-| Source-of-truth doc | `external-sources.md` row 7: <https://docs.github.com/en/copilot> |
-| Known-issues / open gaps | Future target — adopters using Copilot currently load `skills/` READMEs manually (`README.md:87`, `README.md:267`, `CONTRIBUTING.md:58`, `docs/faq.md:28`) |
-| Evidence | Three documentation mentions, zero payload files |
-
-### Google Antigravity
-
-| Attribute | Value |
-|-----------|-------|
-| Kind | Host AI coding tool |
-| Direction | None yet (future target — URL unconfirmed) |
-| Install location | n/a |
-| Loader picks up | n/a |
-| Local payload | **None.** Zero footprint in repo per `external-sources.md:116` |
-| Version pins | n/a |
-| Source-of-truth doc | `external-sources.md` row 8: <https://antigravity.google/docs> (URL flagged as "to confirm via search") |
-| Known-issues / open gaps | Future target. Even the basic shape of Antigravity's agent/skill/workflow model is unknown to AID. ⚠️ URL existence to be confirmed |
-| Evidence | Single mention in `external-sources.md:24`; zero in payload trees |
+> The AID repo has **no application runtime** — it ships a methodology distribution.
+> External integrations are limited to: (1) the Mermaid library + npm registry + jsdelivr
+> CDN consumed by the optional `aid-summarize` skill, (2) the `gh` GitHub CLI used in
+> the PR-creation workflow, and (3) the **multi-tool distribution model** that emits the
+> canonical source into 3 host-tool install trees.
+>
+> All claims cite `path:line` against the canonical source.
 
 ---
 
-## MCP (Model Context Protocol)
+## Message Queues / Event Buses
 
-| Attribute | Value |
-|-----------|-------|
-| Kind | Protocol — cross-tool standard for exposing tools/resources to AI agents |
-| Direction | n/a (AID would consume MCP servers; AID does not currently register any) |
-| Local payload | **None.** Zero MCP server registration files in this repo. No `mcp.json`, no `.mcp/`, no `mcp.config.*` |
-| Version pins | n/a |
-| Source-of-truth doc | `external-sources.md` row 6 (via Cursor docs): <https://docs.cursor.com/context/model-context-protocol>. Likely also supported by Claude Code (see `external-sources.md:67`) |
-| Known-issues / open gaps | ⚠️ MCP is referenced as a documented integration surface for both Claude Code and Cursor (`external-sources.md:67`, `external-sources.md:98`) but AID does not register or consume any MCP server. Future opportunity: an AID-specific MCP server could expose KB query as an MCP resource |
-| Evidence | Negative search: zero MCP-related files across all 353 files inventoried in `project-index.md` |
+**None.** No Kafka, RabbitMQ, NATS, SQS, Pub/Sub, EventBridge, or similar broker is
+present. The repo has no networked event surface.
 
----
+The closest equivalent — **inter-skill choreography** — is implemented via filesystem
+state hand-offs:
+- One skill writes `.aid/{work}/STATE.md` section + an artifact (e.g., PLAN.md, SPEC.md,
+  task-NNN.md)
+- The next skill reads the FILESYSTEM (not memory) to detect state and resume
+- No daemon, no listener — each skill exits after one state and re-enters on the next
+  slash-command invocation
 
-## Hooks Ecosystem
+Source: every aid-* SKILL.md `## State Detection` block, e.g.
+`canonical/skills/aid-execute/SKILL.md:110-121`,
+`canonical/skills/aid-discover/SKILL.md:127-159`.
 
-| Attribute | Value |
-|-----------|-------|
-| Kind | Lifecycle event integration (host-tool-specific) |
-| Direction | AID would register hooks; AID currently does not |
-| Local payload | **None.** No hook examples ship in any install payload. No `.claude/hooks/`, no `.cursor/hooks/`, no Codex hook-equivalent file |
-| Version pins | n/a |
-| Source-of-truth doc | `external-sources.md` row 1 (Claude Code hooks), row 6 (Cursor hooks) |
-| Known-issues / open gaps | ⚠️ Hook lifecycle, event payload schema, exit-code semantics, and blocking-vs-non-blocking behavior are all on the vendor-doc fetch list (`external-sources.md:33`). AID is leaving the hook surface unused. A natural future use: a Claude Code pre-edit hook that enforces "Discovery agents may only write under `.aid/knowledge/`" |
-| Evidence | Negative search; documentation gap noted in `external-sources.md:67` |
+The state-machine + Q&A loopback pattern (§ Feedback Loops in
+`methodology/aid-methodology.md:524-635`) is conceptually a single-producer / single-consumer
+queue per loop, but materialized as Markdown-formatted entries appended to STATE files
+rather than a runtime queue.
 
 ---
 
-## Local Runtimes
+## Caches
 
-### Node.js (for `.mjs` validators)
+### Mermaid Library Cache
 
-| Attribute | Value |
-|-----------|-------|
-| Kind | Local runtime |
-| Direction | AID invokes Node to run validation scripts |
-| Local artifacts | `canonical/templates/knowledge-summary/scripts/validate-diagrams.mjs` (294 lines), `canonical/templates/knowledge-summary/scripts/contrast-check.mjs` (151 lines) plus three copies (Claude Code, Cursor, Codex trees) propagated by `run_generator.py` |
-| Version pins | None observed. No `package.json`, no `.node-version`, no `engines` field |
-| Known-issues / open gaps | ⚠️ `validate-diagrams.mjs` uses ES module syntax with top-level `await` (`validate-diagrams.mjs:177`); minimum Node version is not stated. Likely Node 18+ but unverified. [Q54] |
-| Evidence | `canonical/templates/knowledge-summary/scripts/validate-diagrams.mjs:1-50`; `project-index.md` JavaScript breakdown (16 files, 3,428 lines) |
+- **System:** Plain filesystem (no Redis, no Memcached)
+- **Location:** `.aid/knowledge/.cache/mermaid.min.js` + `mermaid.min.js.meta`
+- **What is cached:** The minified Mermaid library bytes from jsdelivr CDN
+- **Cache key:** npm-registry `latest` version string
+- **Meta file format (KV):** `version=`, `sha256=`, `fetched_at=`, `url=`
+- **Invalidation:** New invocation of `fetch-mermaid.sh` queries npm; cache hit only when
+  cached `version` equals fetched `latest`; otherwise re-downloads and overwrites
+- **TTL:** None (version-pinned, not time-pinned)
+- **Atomicity:** `.tmp` file + `mv` to atomically swap
+- **Source:** `canonical/scripts/summarize/fetch-mermaid.sh:9-74`
 
-### Mermaid CLI (`mmdc`)
+### Discovery `project-index.md` (functions as a cache)
 
-| Attribute | Value |
-|-----------|-------|
-| Kind | Local CLI tool (optional) |
-| Direction | AID invokes `mmdc` (or `npx @mermaid-js/mermaid-cli` as fallback) for diagram parse/render validation |
-| Local artifacts | n/a (external tool) |
-| Version pins | None pinned. Both `mmdc` direct and `npx @mermaid-js/mermaid-cli` invocation paths are attempted with no `--version` lower bound check (`validate-diagrams.mjs:163-166`) |
-| Used by | `aid-summarize` skill exclusively — via `canonical/templates/knowledge-summary/scripts/validate-diagrams.mjs:158-227` |
-| Known-issues / open gaps | Graceful degradation: if `mmdc` is unavailable the script falls back to a regex sanity check (`validate-diagrams.mjs:178-188`). No installation guidance in the install payloads. [Q55] |
-| Evidence | `validate-diagrams.mjs:1-50, 158-227`; `canonical/templates/knowledge-summary/scripts/fetch-mermaid.sh` (77 lines) appears to be a related bootstrap helper |
+- **Location:** `.aid/generated/project-index.md` (1,149 lines per
+  `.aid/knowledge/project-structure.md:29`)
+- **What is cached:** Full file inventory (path, size, language, mtime, notable annotation)
+  for the entire repo — a deterministic pre-pass
+- **Purpose:** All 5 discovery sub-agents read this **instead of** re-scanning the repo
+  (`canonical/skills/aid-discover/SKILL.md:251-253` in §Process)
+- **Invalidation:** Re-generated each discovery run by
+  `canonical/scripts/kb/build-project-index.sh`
+- **Source:** `canonical/scripts/kb/build-project-index.sh:1-50` (368 lines total per
+  `.aid/knowledge/project-structure.md:153`)
 
-### Bash / PowerShell
+### `.aid/knowledge/.cache/` (general scratch)
 
-| Attribute | Value |
-|-----------|-------|
-| Kind | Local shell runtimes |
-| Direction | AID invokes both for installer + runtime scripts |
-| Local artifacts | 43 `.sh` files (5,490 lines per `project-index.md`); 5 `.ps1` files (300 lines). Key scripts: `setup.sh` / `setup.ps1` (installer), `canonical/templates/scripts/build-project-index.sh` (368-line discovery pre-pass), `canonical/templates/scripts/grade.sh` (141-line deterministic grader), `canonical/templates/knowledge-summary/scripts/*.sh` (10 validation/preflight scripts including `writeback-state.sh`) |
-| Version pins | None observed. Bash invoked as `bash <script>`; PowerShell as `pwsh` or via `.ps1` extension |
-| Known-issues / open gaps | The `.sh` scripts use Bash idioms (heredocs, process substitution) so POSIX `sh` will not always suffice. The `.ps1` files mirror `.sh` semantics 1:1 but the PowerShell variants are smaller / fewer (only `setup.ps1` + 4× `concatenate.ps1`) |
-| Evidence | `project-index.md` Language Breakdown (Shell 43 files / 5,490 lines; PowerShell 5 files / 300 lines) |
+- **Location:** `.aid/knowledge/.cache/`
+- **Gitignored:** Yes (`.gitignore:44` per
+  `.aid/knowledge/project-structure.md:113`)
+- **Purpose:** Working-set cache for `aid-summarize` (Mermaid above) + future caches
 
-### Git
-
-| Attribute | Value |
-|-----------|-------|
-| Kind | Distribution + branching mechanism |
-| Direction | AID consumes Git (clone for distribution; branch-per-delivery for aid-execute) |
-| Local artifacts | `.gitignore` (47 lines; selectively excludes `.aid/knowledge/.cache/` + `.aid/.heartbeat/`; does NOT exclude the full `.aid/` tree); no `.gitattributes`, no `.gitmodules` |
-| Version pins | None |
-| Known-issues / open gaps | Git is the only assumed install/distribution mechanism. No npm package, no Homebrew tap, no PyPI module observed — adopters clone or copy the relevant tool tree (`README.md`, `setup.sh:1-162`). `aid-execute` uses one Git branch per delivery (`aid/{delivery-NNN}`, see `profiles/claude-code/.claude/skills/aid-execute/SKILL.md:74-79`) |
-| Evidence | `.gitignore` (47 lines); `setup.sh`; `aid-execute/SKILL.md:74-79`; absence of npm/PyPI manifests |
+No application-tier cache (no Redis, Memcached, etcd, etc.) exists or is invoked.
 
 ---
 
-## Caches, Queues, Webhooks, Feature Flags, Third-Party Services
+## Webhooks
 
-**None.** Negative search across all 353 files inventoried in `project-index.md`:
+**None — incoming or outgoing.** The repo exposes no HTTP server, has no webhook
+endpoints, no Stripe-style signed-payload verification, no Slack/Discord adapters.
 
-- **Caches:** No Redis, Memcached, Varnish, or in-process cache invocation. No `cache.config.*` files.
-- **Message queues / event buses:** No Kafka, RabbitMQ, NATS, SQS, Pub/Sub, EventBridge, or in-process bus. No `.proto` files.
-- **Webhooks:** No incoming-webhook receiver. No outgoing-webhook caller. No `webhook.*` config.
-- **Third-party services:** No API client SDK consumed at runtime. No `axios`, `requests`, `httpx`, `okhttp`, etc. The only external URLs anywhere are the 8 vendor documentation entries in `external-sources.md:15-24` and the AID methodology repo URL (`https://github.com/AndreVianna/aid-methodology`) embedded in `profiles/codex/AGENTS.md:24`, `profiles/cursor/AGENTS.md:41`, and similar placeholders.
-- **Feature flags:** No LaunchDarkly, Unleash, Statsig, or in-house flag system. No `flags.*` config.
-
-This is consistent with `project-structure.md`'s observation that "this repo is fundamentally a static set of markdown + shell + a few JS files — not a deployable application."
+The `gh` CLI (see Third-Party Services below) interacts with GitHub via the user's
+personal credentials and does not register webhooks.
 
 ---
 
-## Integration Topology
+## Third-Party Services
 
-```mermaid
-graph TB
-    AID[AID Methodology<br/>this repo]
+| Service | Purpose | Integration method | Auth / credentials | Source |
+|---------|---------|--------------------|--------------------|--------|
+| **npm registry** (`registry.npmjs.org`) | Mermaid library version discovery | `curl -sSf --max-time 30` against `/mermaid/latest`, regex-extract `"version"` field | None (public read endpoint, no API key) | `canonical/scripts/summarize/fetch-mermaid.sh:16-18` |
+| **jsdelivr CDN** (`cdn.jsdelivr.net`) | Fetch Mermaid library bytes | `curl -sSf --max-time 120` against `/npm/mermaid@<ver>/dist/mermaid.min.js` | None (public CDN, no API key) | `canonical/scripts/summarize/fetch-mermaid.sh:41-47` |
+| **GitHub** (via `gh` CLI) | PR creation, issue mgmt, repo ops | Subprocess invocation of `gh` (assumed installed by adopter) | `gh auth login` — credential stored by `gh` (out-of-band), never embedded in repo. ⚠️ Maintainer note in user memory: `AndreVianna` account required for AID push access | `CLAUDE.md` PR/git workflow blocks |
+| **Git server (any)** | VCS operations (branch, commit, push) | Inline `git` invocations by `aid-execute` / `aid-deploy` / dev workflow | OS git config / SSH key (out-of-band) | `canonical/skills/aid-execute/SKILL.md:53-71` (branch isolation block) |
 
-    subgraph current["Current install targets"]
-        CC[Anthropic Claude Code<br/>profiles/claude-code/.claude/]
-        CDX[OpenAI Codex CLI<br/>profiles/codex/.codex/ + profiles/codex/.agents/]
-        CUR[Cursor<br/>profiles/cursor/.cursor/]
-    end
+⚠️ Credentials not visible in code — likely environment-injected (gh CLI auth context,
+git config, OS keyring). No `.env`, no secrets manager, no token file inside the repo.
 
-    subgraph future["Future install targets"]
-        GHC[GitHub Copilot CLI<br/>future, no payload]
-        GAG[Google Antigravity<br/>future, URL unconfirmed]
-    end
+### External-service runtime requirements
 
-    subgraph runtimes["Local runtimes"]
-        NODE[Node.js<br/>validate-diagrams.mjs]
-        MMDC[mmdc / mermaid-cli<br/>optional]
-        BASH[Bash + PowerShell<br/>installers + scripts]
-        GIT[Git<br/>distribution + branching]
-    end
+| Requirement | Purpose | Source |
+|-------------|---------|--------|
+| `curl` | Mermaid fetch | `canonical/scripts/summarize/fetch-mermaid.sh:16, 43` |
+| `sha256sum` OR `shasum -a 256` | Mermaid bytes integrity | `canonical/scripts/summarize/fetch-mermaid.sh:59-64` |
+| `node` (Node 18+) | `validate-diagrams.mjs` | `README.md:326` (per `.aid/knowledge/project-structure.md:318`) |
+| `python3` OR `python` | Recipe slot-fill JSON parse | `canonical/scripts/interview/parse-recipe.sh:38` |
+| `awk`, `sed`, `grep`, `wc`, `find` | Universal helper-script dependencies | every `canonical/scripts/**/*.sh` |
+| `gh` CLI | PR creation workflow (dev only) | `CLAUDE.md` |
 
-    subgraph protocols["Protocols + ecosystems"]
-        MCP[MCP<br/>no registration]
-        HOOK[Hooks<br/>no registration]
-    end
+---
 
-    AID -- "installs into" --> CC
-    AID -- "installs into" --> CDX
-    AID -- "installs into" --> CUR
-    AID -. "future" .-> GHC
-    AID -. "future" .-> GAG
+## Feature Flags
 
-    CC -- "auto-loads<br/>.claude/CLAUDE.md" --> AID
-    CDX -- "auto-loads<br/>AGENTS.md" --> AID
-    CUR -- "auto-loads<br/>AGENTS.md + .mdc rules" --> AID
-    CUR -. "also reads<br/>.claude/skills, .codex/skills" .-> AID
+**None.** No LaunchDarkly, no internal flag table, no environment-variable gating that
+toggles user-facing features.
 
-    AID --> NODE
-    NODE --> MMDC
-    AID --> BASH
-    AID --> GIT
+Two adjacent mechanisms exist but are NOT runtime feature flags:
 
-    CC -. "exposes<br/>not used by AID" .-> MCP
-    CUR -. "exposes<br/>not used by AID" .-> MCP
-    CC -. "exposes<br/>not used by AID" .-> HOOK
-    CUR -. "exposes<br/>not used by AID" .-> HOOK
+### Profile Capabilities (build-time, not feature flags)
+
+Each profile TOML declares its host tool's supported capabilities. These are
+**informational** for the renderer / skill author — they do NOT toggle features at
+runtime; the renderer always emits the same canonical content regardless.
+
+| Capability | Claude Code | Codex | Cursor | Notes |
+|------------|-------------|-------|--------|-------|
+| `hooks` | `true` | `false` (⚠️ TODO) | (per cursor.toml) | Pre/post hooks |
+| `skill_chaining` | `true` | `true` | (per cursor.toml) | Skills invoking skills |
+| `background_execution` | `true` | `false` | (per cursor.toml) | `background: true` agents |
+| `stop_hook_autocontinue` | `true` | `false` (⚠️ TODO) | (per cursor.toml) | Stop hook continues |
+
+Source: `profiles/claude-code.toml:60-64`, `profiles/codex.toml:72-78`
+
+### Per-Skill Grade Overrides (config, not feature flag)
+
+`.aid/settings.yml` supports per-skill `minimum_grade` overrides
+(`<skill>.minimum_grade`) that override the global `review.minimum_grade`. This is
+config, not a feature flag — controls quality floor, not feature availability.
+
+Source: `canonical/templates/settings.yml:52-81`,
+`canonical/scripts/config/read-setting.sh:212-232`
+
+### Graceful Degradation Switch (runtime capability probe, not a flag)
+
+`aid-execute` probes whether the host supports `run_in_background: true` and falls back
+to `MaxConcurrent=1` sequential execution if not. Surfaced as:
+
+```
+[degradation] MaxConcurrent={N} requested, host capability=sequential — running effective=1
 ```
 
-Solid arrows = active integration. Dashed arrows = future / unused. AID sits at the center of a star pattern with three current spokes (Claude Code, Codex, Cursor), two dashed spokes (Copilot, Antigravity), four local-runtime spokes (Node, mmdc, shell, Git), and two unused protocol spokes (MCP, Hooks).
+Source: `canonical/skills/aid-execute/SKILL.md:198-211`
 
 ---
 
-## API Consumption Matrix
+## Multi-Tool Distribution Integration
 
-Which AID skill invokes which host-tool API (across all three currently-supported tools). "API" here means the host harness's tool surface — `Agent`, `Bash`, `Read`, `Write`, `Edit`, `Glob`, `Grep` — not HTTP.
+This is the integration story unique to the AID repo: **one canonical source emitted into
+three host-tool install trees** plus a dogfood `.claude/` tree the repo uses on itself.
 
-Per-skill state-file writes reflect the FR2 area-STATE rule (per `coding-standards.md §8.5` and `data-model.md §1A`): every dev-phase skill updates the per-work `STATE.md` (Work area); `aid-discover` and `aid-summarize` update `.aid/knowledge/STATE.md` (Discovery area); `aid-monitor` will use `MONITOR-STATE.md` (deferred).
+### Architecture
 
-| Skill | Read | Glob | Grep | Bash | Write | Edit | Agent | Notes |
-|-------|------|------|------|------|-------|------|-------|-------|
-| `aid-init` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Scaffolds `.aid/` + KB templates + CLAUDE.md / AGENTS.md placeholders; creates the Discovery-area `.aid/knowledge/STATE.md` skeleton and (when a work-NNN dir is created) the Work-area `STATE.md` skeleton per FR2 (`aid-init/SKILL.md:8`) |
-| `aid-discover` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | **✅** | Only skill that dispatches sub-agents in parallel via the **Agent tool** (5 discovery sub-agents + reviewer). Updates `.aid/knowledge/STATE.md` (Discovery area) across REVIEW / Q&A / FIX / APPROVAL modes — `aid-discover/SKILL.md:8` |
-| `aid-interview` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Pre-loads `interviewer` agent via `agent: interviewer` frontmatter (`aid-interview/SKILL.md:9`); switches to `architect` (State 5) and `reviewer` (State 6) via in-body dispatch points. Updates the Work-area `STATE.md` `## Interview Status` table + `## Cross-phase Q&A` (per FR2; absorbs retired INTERVIEW-STATE.md) |
-| `aid-specify` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Pre-loads `architect` agent (`aid-specify/SKILL.md:9`); switches to `reviewer` for REVIEW step. Updates the Work-area `STATE.md` `## Features Status` row per feature (per FR2; absorbs retired per-feature FEATURE-STATE.md) |
-| `aid-plan` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Pre-loads `architect` agent (`aid-plan/SKILL.md:9`); switches to `reviewer` for REVIEW step. Writes PLAN.md + appends rows to Work-area `STATE.md` `## Plan / Deliveries` |
-| `aid-detail` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Pre-loads `architect` agent (`aid-detail/SKILL.md:10`); `context: fork` (`aid-detail/SKILL.md:9`). Writes `task-NNN.md` files + appends rows to Work-area `STATE.md` `## Tasks Status` |
-| `aid-execute` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Pre-loads `developer` agent (`aid-execute/SKILL.md:10`); dispatches type-specific executor (RESEARCH→researcher, IMPLEMENT→developer, etc.) and `reviewer` for grading. Invokes Bash to run `grade.sh`. Updates per-task row in Work-area `STATE.md` `## Tasks Status` (per FR2; absorbs retired task-NNN-STATE.md) |
-| `aid-deploy` | ✅ | ✅ | ✅ | ✅ | ✅ | — | — | Pre-loads `operator` agent (`aid-deploy/SKILL.md:10`). Bash for build verification / PR creation. Writes `package-NNN.md` + appends rows to Work-area `STATE.md` `## Deploy Status` (per FR2; absorbs retired DEPLOYMENT-STATE.md `## History`) |
-| `aid-monitor` | ✅ | ✅ | ✅ | ✅ | ✅ | — | — | Pre-loads `orchestrator` agent (`aid-monitor/SKILL.md:10`). Bash for telemetry collection. ⚠️ Will write to `.aid/work-NNN-{name}/MONITOR-STATE.md` when the Monitor area matures (deferred per FR2 OQ-3; no canonical template yet) |
-| `aid-summarize` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | Bash invokes `validate-diagrams.mjs` (Node + `mmdc` subprocess), `contrast-check.mjs`, `validate-html.sh`, `validate-links.sh`, `stale-check.sh`, `check-preflight.sh`, `writeback-state.sh` (`canonical/templates/knowledge-summary/scripts/*` — renamed from `writeback-discovery-state.sh` per work-002 / FR2). Writeback updates `.aid/knowledge/STATE.md` `## Summarization History` |
+```
+canonical/                          ← single source of truth (maintainer edits here)
+  ├── agents/        (22 dirs)
+  ├── skills/        (10 dirs + maintainer-only aid-generate)
+  ├── templates/     (knowledge-base, knowledge-summary, kb-authoring, ...)
+  ├── recipes/       (5 lite-path templates + README)
+  ├── scripts/       (config/, execute/, interview/, kb/, summarize/, grade.sh)
+  └── EMISSION-MANIFEST.md          ← safety-boundary spec
 
-**Key takeaways:**
-- The **Agent tool** is used by **exactly one skill** (`aid-discover`) — for parallel sub-agent dispatch. All other skills use the harness's pre-loaded `agent:` field or in-body dispatch points that are documented but not declared as tool prerequisites.
-- The **Bash tool** is used by **every one of the 10 skills** — it is universally required, primarily for `grade.sh` invocation and for the discovery pre-pass / summarize validation scripts.
-- The **Edit tool** is absent from `aid-deploy` and `aid-monitor` — both of which produce new artifacts rather than mutate existing ones (per `aid-deploy/SKILL.md:8` and `aid-monitor/SKILL.md:8`).
-- **State-file writes consolidated under FR2.** All dev-phase skills (`aid-interview` → `aid-deploy`) write to a **single per-work `STATE.md`** in the work directory rather than the 5 retired per-skill state files (`INTERVIEW-STATE.md`, per-feature `FEATURE-STATE.md`, `task-NNN-STATE.md`, `DEPLOYMENT-STATE.md`, plus the discovery-side `DISCOVERY-STATE.md`). `aid-discover` + `aid-summarize` write to the **Discovery-area `.aid/knowledge/STATE.md`**. See `coding-standards.md §8.5` and `data-model.md §1A` for the area-STATE rule.
-- No skill consumes any HTTP or MCP surface.
+run_generator.py                    ← entrypoint (86 lines)
+  └─ .claude/skills/aid-generate/scripts/  ← the actual renderer
+       ├── harness.py               (756 lines — emission-manifest + pure-mirror deletion)
+       ├── profile.py               (550 lines — parses profiles/*.toml)
+       ├── render_agents.py         (522 lines)
+       ├── render_skills.py         (469 lines)
+       ├── render_recipes.py        (261 lines)
+       ├── render_scripts.py        (224 lines)
+       ├── render_templates.py      (252 lines)
+       ├── verify_deterministic.py  (515 lines — VERIFY-4a byte-identity)
+       ├── verify_advisory.py       (343 lines — VERIFY-4b advisory)
+       └── test_manifest_safety.py  (254 lines — generator self-tests)
+```
 
-## Recipes Catalog (FR8, work-001 feature-011 — shipped 2026-05-25)
+Source: `.aid/knowledge/project-structure.md:124-136`
 
-**Producer:** Maintainer-authored Markdown files under `canonical/recipes/` (5 seed recipes + meta-template).
+### Output Trees (3 profile install bundles + 1 dogfood)
 
-**Consumer:** `aid-interview` skill, TRIAGE state Step 5a. When the user's work matches a recipe's `applies-to` field (via T3-derived workType), the skill offers recipe choice + runs the slot-fill loop + emits execution-ready lite-path output.
+| Tree | Location | Purpose | Frontmatter format |
+|------|----------|---------|-----|
+| **canonical** | `canonical/` | Source of truth (humans edit here) | YAML (markdown) |
+| **dogfood** | `.claude/` (top-level) | AID applied to AID itself | Same as Claude Code |
+| **claude-code** | `profiles/claude-code/.claude/` + repo-root `CLAUDE.md` | Anthropic Claude Code install bundle | Markdown + YAML |
+| **codex** | `profiles/codex/.codex/agents/*.toml` + `profiles/codex/.agents/{skills,scripts,recipes,templates}/*` | OpenAI Codex CLI bundle (split layout) | TOML (agents only) |
+| **cursor** | `profiles/cursor/.cursor/*` + repo-root `AGENTS.md` | Cursor IDE bundle | Markdown + `.mdc` rules |
 
-**Helper:** `canonical/skills/aid-interview/scripts/parse-recipe.sh` is the only consumer-side script. It exposes 4 modes:
-- `--list <dir>` — enumerate recipes in a directory
-- `--validate <file>` — verify front-matter + body schema
-- `--spec <file>` — extract spec block
-- `--tasks <file>` — extract tasks block
-- `--render <file> <slot-json>` — substitute slots + emit final spec + tasks
+Source: `.aid/knowledge/project-structure.md:32-55`,
+`canonical/EMISSION-MANIFEST.md:110-130`
 
-**Cross-tree propagation:** `run_generator.py` mirrors `canonical/recipes/` into all 3 profile trees (`profiles/{claude-code/.claude,codex/.agents,cursor/.cursor}/recipes/`) byte-identically. `EMISSION-MANIFEST.md` tracks recipes as an asset kind.
+### Codex split-layout exception
 
-**Runtime install location:** `setup.sh` / `setup.ps1` copies the profile's `recipes/` directory into the user's project (path varies by profile — typically `.claude/recipes/` for Claude Code, `.codex/recipes/` for Codex, `.cursor/recipes/` for Cursor).
+Codex is unique among the three tools — agent TOML files go under one root
+(`profiles/codex/.codex/agents/`), everything else goes under a separate root
+(`profiles/codex/.agents/{skills,scripts,recipes,templates}/`). A single
+`profiles/codex/emission-manifest.jsonl` covers both roots; record paths in the
+manifest are relative to the common parent (`codex/`) so the safety boundary covers
+both roots from one manifest. (Resolves OQ2.)
 
-**Escalation path:** If a recipe-instantiated work proves a poor fit, `recipe-to-lite-escalation.md` defines the trigger + slot-preservation contract (escalation falls back to standard lite-path; preserves filled slot values as carry-block).
+Source: `canonical/EMISSION-MANIFEST.md:16-27`, `profiles/codex.toml:1-18`
+
+### Byte-identity invariant (the integration contract)
+
+The renderer guarantees that:
+1. `canonical/skills/<skill>/SKILL.md` + `.claude/skills/<skill>/SKILL.md` (dogfood) +
+   `profiles/{claude-code,codex,cursor}/.../<skill>/SKILL.md` are byte-identical in the
+   body portion across all 4 trees (CLAUDE.md `## Architecture` bullet 1)
+2. Re-running `python run_generator.py` on unchanged inputs produces a byte-identical
+   install tree AND a byte-identical manifest (the AC2 determinism guarantee)
+3. Only files in the previous manifest's `removed_dst` are deleted; files outside any
+   manifest are NEVER touched (pure-mirror deletion safety)
+
+Source: `canonical/EMISSION-MANIFEST.md:46-50, 70-83`
+
+### Manifest as the safety boundary
+
+The `emission-manifest.jsonl` is the **authoritative input** to deletion logic. The
+generator:
+1. Loads the previous run's committed manifest
+2. Runs all renderers — each emitted file goes into the current run's in-memory manifest
+3. Computes `diff(prev, curr)` — `added_dst`, `removed_dst`, `changed_dst`
+4. Deletes ONLY files in `removed_dst`; overwrites `changed_dst`; lets the renderer
+   create `added_dst`
+5. Writes the new manifest
+
+Files the user creates manually (outside any manifest) are NEVER touched.
+
+Source: `canonical/EMISSION-MANIFEST.md:70-83`
+
+### Adopter installation flow
+
+End users install AID into their own projects via:
+- `./setup.sh <target-directory>` (Bash; macOS / Linux / Git Bash) — interactive menu
+  for tool selection (Claude Code / Codex / Cursor), copies the relevant
+  `profiles/<tool>/` tree into the target with diff-aware copy semantics
+- `.\setup.ps1 <target-directory>` (PowerShell; Windows) — equivalent
+- Source: `setup.sh:1-100`, `setup.ps1` (per `.aid/knowledge/project-structure.md:111`)
+
+Setup.sh diff handling: `new = copy`, `identical = skip`, `different = ask`
+(or overwrite with `--force`). Source: `setup.sh:86-100`.
+
+---
+
+## Inter-Skill Choreography (Pipeline Integration)
+
+The 8 numbered phases + 2 non-phase Prepare skills + 1 maintainer skill compose a
+pipeline. Skills hand work to each other via **filesystem state**, not direct calls.
+
+### Phase Sequence (linear with feedback loops)
+
+```
+aid-config          ← non-phase Setup (run once)
+   ↓
+aid-discover        ← Phase 1: Prepare
+   ↓
+aid-interview       ← Phase 2: Define (lite path may collapse 2-5 into one)
+   ↓
+aid-specify         ← Phase 3: Define
+   ↓
+aid-plan            ← Phase 4: Map
+   ↓
+aid-detail          ← Phase 5: Map
+   ↓
+aid-execute         ← Phase 6: Execute
+   ↓
+aid-deploy          ← Phase 7: Deliver
+   ↓
+aid-monitor         ← Phase 8: Deliver
+
+aid-summarize       ← non-phase, optional, runs against approved KB
+aid-generate        ← maintainer-only (canonical → profile trees)
+```
+
+Source: `methodology/aid-methodology.md:528-556` (the 11 feedback loops Mermaid graph),
+`docs/glossary.md:29-39` (phase table),
+`canonical/templates/work-state-template.md:1-100`
+
+### Eleven Feedback Loops (the integration backbone)
+
+| Loop | From → To | Trigger | Carrier artifact |
+|------|-----------|---------|-------------------|
+| L1 | Interview → Discovery | KB wrong/incomplete during interview | `DISCOVERY-STATE.md` Q&A |
+| L2 | Specify → Discovery | Writing spec exposes KB gap | `DISCOVERY-STATE.md` Q&A |
+| L3 | Plan → Discovery | Planning reveals KB miss | `DISCOVERY-STATE.md` Q&A |
+| L4 | Plan → Specify | SPEC ambiguous/contradictory | Feature `STATE.md` Q&A |
+| L5 | Detail → Plan | PLAN too vague to decompose | Plan revision |
+| L6 | Execute → Discovery / Specify / Detail | Assumption broke at impl time | `IMPEDIMENT-task-NNN.md` (typed) |
+| L7 | Execute Review → upstream | Reviewer finds TASK/SPEC/KB issues | Tagged issues in STATE.md |
+| L8 | Deploy → Execute | Deploy verification failed | Re-route to `/aid-execute` |
+| L9 | Monitor → Execute | BUG classification | New `task-NNN.md` |
+| L10 | Monitor → Discover | Change Request classification | `DISCOVERY-STATE.md` Q&A |
+| L11 | Any phase → Discovery | Targeted re-discovery | `DISCOVERY-STATE.md` Q&A |
+
+Source: `methodology/aid-methodology.md:560-635`
+
+### State-File Read/Write Contract Between Skills
+
+Each skill detects state by reading specific sections of `STATE.md` files; never trusts
+memory:
+
+| Skill | Reads | Writes |
+|-------|-------|--------|
+| `aid-config` | `.aid/settings.yml` | `.aid/settings.yml`, `AGENTS.md`/`CLAUDE.md`, `.aid/knowledge/{STATE.md, INDEX.md, README.md}` + 16 KB doc scaffolds |
+| `aid-discover` | `.aid/knowledge/STATE.md ## Q&A`, all 16 KB docs | All 16 KB docs + `STATE.md ## Review History` + `INDEX.md` |
+| `aid-interview` | `.aid/{work}/STATE.md ## Triage, ## Interview Status, ## Cross-phase Q&A` | `STATE.md ## Triage, ## Interview Status, ## Features Status`; `REQUIREMENTS.md` OR work-root `SPEC.md` (lite); `tasks/task-NNN.md` (lite) |
+| `aid-specify` | Feature `SPEC.md` (requirements side), KB | Feature `SPEC.md ## Technical Specification`; `STATE.md ## Features Status` |
+| `aid-plan` | All feature SPECs marked `Ready`, KB | `PLAN.md`; `STATE.md ## Plan / Deliveries` |
+| `aid-detail` | `PLAN.md`, feature SPECs | `tasks/task-NNN.md`; `PLAN.md` ## Execution Graph |
+| `aid-execute` | `task-NNN.md`, `PLAN.md`, feature `SPEC.md`, `known-issues.md`, `INDEX.md`, `STATE.md ## Tasks Status` | `STATE.md ## Tasks Status` (via `writeback-task-status.sh`), `STATE.md ## Quick Check Findings`, `STATE.md ## Delivery Gates`, `IMPEDIMENT-task-NNN.md`, code |
+| `aid-deploy` | `STATE.md ## Tasks Status` (all Done), `PLAN.md`, infrastructure config | `STATE.md ## Deploy Status`; `packages/package-NNN-{name}.md`; routes KB-affecting findings to `DISCOVERY-STATE.md` Q&A (never writes KB directly) |
+| `aid-monitor` | Telemetry sources, `packages/`, `known-issues.md`, feature SPECs | `MONITOR-STATE.md`; new `tasks/task-NNN.md` (bug path); `DISCOVERY-STATE.md` Q&A (CR path) |
+| `aid-summarize` | Approved `.aid/knowledge/` + `STATE.md ## Knowledge Summary Status` | `.aid/knowledge/knowledge-summary.html`; `STATE.md ## Knowledge Summary Status, ## Summarization History` |
+| `aid-generate` (maintainer) | `canonical/`, `profiles/*.toml`, previous `emission-manifest.jsonl` per profile | `profiles/{claude-code,codex,cursor}/...`, new `emission-manifest.jsonl` per profile, repo-root `CLAUDE.md` / `AGENTS.md` |
+
+Sources cited inline above per skill SKILL.md.
+
+### Universal context-feeding protocol (KB INDEX)
+
+Every task prompt receives `.aid/knowledge/INDEX.md` — a ~200–500 token map of all 16 KB
+docs. The agent uses it as a navigation directory (Tier 1), then loads at most one
+relevant KB doc on demand (Tier 2), and follows inline `path:line` citations to the
+exact lines (Tier 3). This is RAG-by-convention, not vector embeddings.
+
+Source: `methodology/aid-methodology.md:179-219`
+
+---
+
+## Cross-Cutting: Subagent Visibility (work-003 traceability — always-on)
+
+Every long-running subagent dispatch surfaces L1 + L2 + L3 traceability:
+
+- **L1** — Honest ETA bracket pair `▶ <agent> starting (~LOW-HIGH)` / `✓ <agent> done in <actual>`. ETAs sourced from `canonical/templates/rough-time-hints.md`.
+- **L2** — Three backgrounded `run_in_background: true` Bash timers at `LOW/2`, `LOW`, `1.5×LOW` minutes; each fires an echo even if the subagent completes earlier.
+- **L3** — Pre-created heartbeat file at `.aid/.heartbeat/<agent>-<unix-ts>.txt`; subagent overwrites it every N minutes with `[ISO-8601] STATE | progress | activity (~eta)`.
+
+Always-on per `CLAUDE.md ## Architecture` bullet 7 and user-memory rule
+(`feedback_traceability-unconditional.md`): "work-003 traceability is always-on; remove
+ETA/threshold gates; not subject to my judgment."
+
+Calibration row appended to work `STATE.md ## Calibration Log` AND `## Dispatches`
+sub-column on every dispatch (unconditional).
+
+Source: `canonical/templates/long-wait-protocol.md:1-60`,
+`canonical/templates/subagent-heartbeat-protocol.md:1-176`,
+`canonical/skills/aid-discover/SKILL.md:72-122`
+
+---
+
+## Discrepancies (doc vs code)
+
+- **`infrastructure.md § Source Control` / `infrastructure.md § Deployment` / `infrastructure.md § Project Management`** — referenced as integration contract surfaces by multiple skills (`canonical/skills/aid-execute/SKILL.md:58, 258`, `canonical/skills/aid-deploy/SKILL.md` §PACKAGING, `canonical/skills/aid-monitor/SKILL.md`) but the AID repo itself does not publish a populated `infrastructure.md` for itself (the discovery cycle is filling this gap). ⚠️ Contract-by-convention until populated.
+- **`profiles/codex.toml` `hooks` + `stop_hook_autocontinue` capabilities** — both `false` with `TODO: confirm` comments (`profiles/codex.toml:75, 78`); the documented integration is unverified against the vendor docs.
+- **`.aid/work-001-aid-lite/` + `.aid/work-002-canonical-generator/`** — referenced by `CLAUDE.md:35-36` and `run_generator.py:76, 83` respectively but absent on the `kb-overhaul` branch. ⚠️ Integration sinks documented but missing (per `.aid/knowledge/project-structure.md:310-312`).

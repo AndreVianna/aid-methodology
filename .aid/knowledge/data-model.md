@@ -1,510 +1,457 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Documents the document-and-config schemas that AID treats as its "data model":
+  .aid/settings.yml, the per-area STATE.md (discovery + work) markdown shapes,
+  the frontmatter contracts for SKILL.md / AGENT.md / KB docs, the emission-
+  manifest JSONL schema, the recipe + task templates, and the work-area
+  filesystem layout. There is NO relational database in AID — the project ships
+  methodology + tooling, no application. Read this when authoring or modifying
+  any of the above structured documents. NOT a module map (see module-map.md)
+  and NOT a coding-conventions reference (see coding-standards.md).
+contracts:
+  - "Settings file = .aid/settings.yml, YAML 1.2, with 5 mandatory top-level sections (project, tools, review, execution, traceability)"
+  - "Discovery STATE.md tracks exactly 16 standard KB documents"
+  - "Emission manifest is JSON-Lines (.jsonl) with 4-key record schema (profile, src, dst, sha256) + 1-key sentinel object {_manifest_version: 1}"
+  - "Frontmatter schema for KB docs requires kb-category + source + intent; generator required iff source=generated"
+  - "Recipe slot syntax: {{slot-name}} where slot-name matches POSIX ERE [a-z][a-z0-9-]*"
+  - "Task templates have 6 sections: title heading, Type, Source, Depends on, Scope, Acceptance Criteria"
+changelog:
+  - 2026-05-27: Initial generation by discovery-analyst (cycle-1)
+---
+
 # Data Model
 
-> **Source:** aid-discover (discovery-analyst)
-> **Status:** Populated (cycle-11 FIX — post work-002 canonical-generator + work-003 FR2 area-STATE consolidation)
-> **Last Updated:** 2026-05-23
+> **There is no database.** AID is a methodology + multi-tool distribution; it
+> ships skills, agents, templates, recipes, and helper scripts (per CLAUDE.md:23-25,
+> project-structure.md:18-19). Every "schema" below is a document or config
+> contract — YAML, JSONL, or structured Markdown — that the pipeline reads + writes.
 
-> ⚠️ **Important:** This repository has **no database, no ORM, no schema files, no migrations** — it is a methodology + multi-tool install bundle (see `module-map.md`). The traditional "data model" sections (tables / columns / FKs / indices) do not apply. Verified by `Glob` against `project-index.md`: no `*.sql`, no `migrations/`, no `*.prisma`, no `*.csproj` with EF Core packages, no `pom.xml`, no `package.json`, no `requirements.txt`. The Specialty `data-engineer` agent description (`canonical/agents/data-engineer/README.md`) governs the schema/migration patterns for projects USING AID, not this repo itself.
->
-> What this document captures instead is the **structured-artifact model** of the AID pipeline: the set of markdown / TOML / YAML / shell files produced and consumed across the **10 SKILL files** of AID (1 setup [Init] + 8 development + 1 optional [Summarize] per user-confirmed canonical taxonomy STATE.md Q16). These are AID's actual "data" — they flow between phases the same way records flow through a database in a traditional application.
+## 1. Database
 
----
-
-## 1. Artifact Inventory — the structured artifacts
-
-Each row is one artifact "type". Producer/consumer mappings are extracted from skill SKILL.md bodies and canonical-template references. **State-file rows reflect the FR2 area-STATE consolidation (work-003-traceability).**
-
-| # | Artifact (filename pattern) | Location | Type | Producer | Consumer(s) | Source-of-truth template |
-|---|---------------------------|---------|------|----------|-------------|--------------------------|
-| 1 | `.aid/knowledge/*.md` (16 standard KB docs per STATE.md Q102: `project-structure`, `external-sources`, `architecture`, `technology-stack`, `module-map`, `coding-standards`, `data-model`, `api-contracts`, `integration-map`, `domain-glossary`, `test-landscape`, `security-model`, `tech-debt`, `infrastructure`, `ui-architecture`, `feature-inventory`) | `.aid/knowledge/` | structured markdown | `aid-discover` sub-agents | every downstream skill | `canonical/templates/knowledge-base/*.md` (16 templates; propagated to 3 install trees by `run_generator.py`) |
-| 2 | `.aid/knowledge/INDEX.md` | `.aid/knowledge/` | markdown | `aid-discover` Step 6 | every downstream skill (task context) | `canonical/templates/knowledge-base/INDEX.md` |
-| 3 | `.aid/knowledge/README.md` | `.aid/knowledge/` | markdown | `aid-discover` Step 6 | humans | `canonical/templates/knowledge-base/README.md` |
-| 4 | **`.aid/knowledge/STATE.md`** (Discovery area) | `.aid/knowledge/` | structured markdown | `aid-init` (creates), `aid-discover` + `aid-summarize` (update) | `aid-discover` state machine, `aid-summarize` writeback | `canonical/templates/discovery-state-template.md` (85 lines) — absorbs the legacy `DISCOVERY-STATE.md` + `SUMMARY-STATE.md` per FR2 |
-| 5 | `REQUIREMENTS.md` | per-work `.aid/work-NNN-{name}/` | structured markdown | `aid-interview` | `aid-specify`, `aid-plan` | `canonical/templates/requirements/requirements-template.md` |
-| 6 | **`.aid/work-NNN-{name}/STATE.md`** (Work area) | per-work | structured markdown | `aid-init` (creates), `aid-interview` + `aid-specify` + `aid-plan` + `aid-detail` + `aid-execute` + `aid-deploy` (update) | the same skills (resume), `aid-discover` (cross-phase Q&A surface) | `canonical/templates/work-state-template.md` (137 lines) — absorbs the legacy `INTERVIEW-STATE.md` + per-feature `STATE.md` × N + per-task `task-NNN-STATE.md` × N + `DEPLOYMENT-STATE.md` per FR2 |
-| 7 | `feature.md` (one per feature) | per-feature folder | markdown | `aid-interview` | `aid-specify` | `canonical/templates/feature.md` |
-| 8 | `feature-inventory.md` | `.aid/knowledge/` | structured markdown | `aid-discover` (FIX cycle) | `aid-interview`, `aid-specify` | `canonical/templates/feature-inventory.md` + `canonical/templates/knowledge-base/feature-inventory.md` |
-| 9 | `SPEC.md` (one per feature) | per-feature folder | structured markdown | `aid-specify` | `aid-plan`, `aid-execute` | `canonical/templates/specs/spec-template.md` |
-| 10 | `PLAN.md` | per-work | structured markdown | `aid-plan` | `aid-detail` | (no template; format defined inline by `aid-plan`) |
-| 11 | `task-NNN.md` (one per task) | per-work | structured markdown | `aid-detail` | `aid-execute` | `canonical/templates/delivery-plans/task-template.md` |
-| 12 | `package-{NNN}.md` | per-package | structured markdown | `aid-deploy` | `aid-deploy` | `canonical/templates/package.md` |
-| 13 | **`.aid/work-NNN-{name}/MONITOR-STATE.md`** (Monitor area, **DEFERRED**) | per-work | structured markdown | `aid-monitor` (when implemented) | `aid-monitor` (resume) | ⚠️ **Template not yet authored** — Monitor area implementation deferred (OQ-3 / STATE.md Q31). The standalone `MONITOR-STATE.md` filename reflects that *Monitor is itself the state* — no separate artifact to suffix against. Will follow the same area-STATE pattern when authored. |
-| 14 | `track-report-{id}.md` | per-work | structured markdown | `aid-monitor` (when implemented) | `aid-execute` (bugs) / `aid-discover` (CRs) | ⚠️ **Template MISSING** — referenced at `canonical/templates/README.md` but no file on disk; deferred with Monitor area (Q31) |
-| 15 | `IMPEDIMENT-{id}.md` | per-task | structured markdown | `aid-execute` | `aid-specify`, `aid-plan` (revision) | `canonical/templates/feedback-artifacts/IMPEDIMENT.md` |
-| 16 | `KI-{n}` entries (in `known-issues.md`) | per-work | structured markdown subdocument | `aid-specify` | `aid-plan` (sequencing) | `canonical/templates/known-issues.md` |
-| 17 | `project-index.md` | `.aid/knowledge/` | structured markdown (generated) | `canonical/templates/scripts/build-project-index.sh` | every `aid-discover` sub-agent | (generated script output, no separate template) |
-
-(Cross-reference: every "template" path comes from `project-index.md` and the canonical tree at `canonical/templates/`; producer/consumer mappings come from `module-map.md` Per-template consumption matrix and each skill's SKILL.md body. Install-tree mirrors at `profiles/{claude-code,codex,cursor}/...templates/...` are byte-identical copies emitted by `run_generator.py`.)
+| Property | Value |
+|----------|-------|
+| **Type** | None — no DB. AID ships no application; state lives in filesystem documents. |
+| **Persistent state** | `.aid/` directory tree (settings, knowledge base, per-work state, generated artifacts) |
+| **Ephemeral state** | `.aid/.heartbeat/` (subagent heartbeat files, gitignored per `.gitignore:47`), `.aid/.temp/` (skill scratch / review-pending ledgers) |
+| **Cache** | `.aid/knowledge/.cache/` (Mermaid library cache for `aid-summarize`; gitignored per `.gitignore:40`) |
+| **Configs (non-runtime)** | `profiles/*.toml` (generator profiles), `.claude/settings.json` (Claude Code permissions) |
 
 ---
 
-## 1A. State-File Rule (FR2 — work-003-traceability)
+## 2. Settings — `.aid/settings.yml`
 
-**One STATE.md per area.** AID has three areas with distinct lifecycles:
+**Source of truth:** `canonical/templates/settings.yml` → rendered identically into all 3 install trees and copied to `.aid/settings.yml` by `/aid-config` on first run.
 
-- **Discovery** (persistent to the repo) — KB + visual summary. One `.aid/knowledge/STATE.md` absorbs the legacy `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`.
-- **Work** (per-work dev lifecycle) — req → spec → plan → impl → deploy. One `.aid/work-NNN-{name}/STATE.md` absorbs the legacy `INTERVIEW-STATE.md` + per-feature `STATE.md` × N + per-task `task-NNN-STATE.md` × N + `DEPLOYMENT-STATE.md`.
-- **Monitor** (per-work post-conclusion) — observe → classify → route. **Deferred** until the Monitor area matures; `.aid/work-NNN-{name}/MONITOR-STATE.md` will follow the same area-STATE pattern when authored. The standalone naming reflects that *Monitor is itself the state* — no separate artifact to suffix against.
+**Schema (YAML 1.2, per `canonical/templates/settings.yml:1-82`):**
 
-**Artifact files keep their inline `## Change Log` sections** — that is *content history* (what changed in the document), distinct from *process state* (where are we in the workflow). Artifact files (REQUIREMENTS.md, SPEC.md, PLAN.md, task-NNN.md, KB docs) are unchanged.
+| Path | Type | Default | Purpose |
+|------|------|---------|---------|
+| `project.name` | string | `<project-name>` | Set during `/aid-config` INIT |
+| `project.description` | string | `<project-description>` | Sole source of truth (not duplicated in CLAUDE.md/AGENTS.md per settings.yml:16) |
+| `project.type` | enum `brownfield`|`greenfield` | `brownfield` | Project class |
+| `tools.installed` | list of strings | `[claude-code]` | Which install trees are active; valid values: `claude-code`, `codex`, `cursor` |
+| `review.minimum_grade` | grade string | `A` | Quality bar for every skill's REVIEW state |
+| `execution.max_parallel_tasks` | int | `5` | Parallel pool dispatch capacity (FR6 / work-001 feature-009) |
+| `traceability.heartbeat_interval` | int (minutes) | `1` | L3 heartbeat interval; `0` disables heartbeat entirely |
+| `<skill>.minimum_grade` | grade string | — | Optional per-skill override; falls back to `review.minimum_grade` |
 
-**Canonical templates** for the area-STATE shape live at `canonical/templates/discovery-state-template.md` (85 lines) and `canonical/templates/work-state-template.md` (137 lines). The legacy per-artifact templates (`interview-state.md`, `feature-state.md`, `deployment-state.md`, the old `discovery-state.md`, the `reports/discovery-state-template.md` reviewer variant, and the per-task state template) have all been retired by work-003 FR2 — they no longer exist on disk under `canonical/templates/` nor under any of the three install trees. See `coding-standards.md §8.5` for the naming rule and §2.7 below for the consolidated per-work STATE schema.
+**Grade enum** (per `canonical/templates/settings.yml:58`):
+```
+A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, E+, E, E-, F
+```
 
-**Sections §2.1, §2.3, §2.7, §2.10 below describe the legacy per-skill / per-artifact state files.** Their schemas are preserved as historical reference; they no longer exist as separate files on disk. The active schemas are in the canonical templates referenced above.
+**Per-skill override skills** (per `canonical/templates/settings.yml:63-81`):
+`discover`, `summary`, `interview`, `specify`, `plan`, `detail`, `execute`,
+`deploy`, `monitor` — each may set `minimum_grade:`.
 
-## 2. Detailed Schemas
-
-### 2.1 STATE.md (Discovery area) — current shape
-
-Canonical template: `canonical/templates/discovery-state-template.md` (85 lines).
-
-| Section | Required | Notes |
-|---------|----------|-------|
-| `# Discovery State` (H1) | yes | Fixed title (no project name in H1) |
-| Metadata block (Source / Status / Minimum Grade / Current Grade / User Approved / **Heartbeat Interval** / **Max Parallel Tasks** / Last KB Review / Last Summary) | yes | Block-quote header — Source includes both `aid-init` and downstream skills. `**Max Parallel Tasks:**` defaults to `5` (feature-009 SPEC FR6 pool model). |
-| `## External Documentation` (Path / Type / Accessible / Notes table) | yes | Initial value `None provided` row |
-| `## KB Documents Status` (16-row Document / Status / Grade / Last Reviewed / Notes table) | yes | Pre-populated with the 16 canonical KB docs in fixed order |
-| `## Knowledge Summary Status` (Field / Value table) | yes | Tracks `aid-summarize` runs (Profile, Theme, Grades, Output, Mermaid Version, Mermaid Cached) |
-| `## Q&A (Pending)` | yes | `### Q{N}: [{Category}: {Impact}]` entries with Question / Context / Suggested / Status / Answer / Applied to |
-| `## Review History` (table: # / Date / Grade / Source / Notes) | yes | One row per `/aid-discover` review cycle |
-| `## Summarization History` (table: # / Date / Grade / Profile / Mermaid / Output / Notes) | yes | One row per `/aid-summarize` run |
-
-**Q&A entry sub-schema** (Q&A bullets — fields):
-
-| Field | Type | Required | Example |
-|-------|------|----------|---------|
-| `### Q{N}: [{Category}: {Impact}]` | sequential ID, monotonic across runs | yes | `### Q1: [Architecture: High]` |
-| `- **Question:**` | freeform | yes | the actual question text |
-| `- **Context:**` | freeform | yes | "why this matters" |
-| `- **Suggested:**` | freeform OR `—` | yes (may be em-dash) | inferred default answer if available |
-| `- **Status:**` | enum (`Pending` / `Answered` / `Skipped`) | yes | `Pending` |
-| `- **Answer:**` | freeform | conditional (when Status=Answered) | user's reply or accepted suggestion |
-| `- **Applied to:**` | filename(s) | conditional (set in FIX cycle) | which KB doc absorbed the answer |
-
-**Review History sub-schema:**
-
-| Column | Type | Example |
-|--------|------|---------|
-| `#` | integer | `1`, `2`, ... |
-| `Date` | ISO date | `2026-05-21` |
-| `Grade` | grade enum | `B+`, `A` |
-| `Source` | text | `/aid-discover (REVIEW cycle 1)`, `/aid-summarize (writeback)` |
-| `Notes` | freeform | "12 issues fixed, 3 Q&A answered" |
-
-### 2.1-LEGACY DISCOVERY-STATE.md *(RETIRED — absorbed into `.aid/knowledge/STATE.md` per FR2; schema preserved as historical reference only)*
-
-The pre-FR2 `DISCOVERY-STATE.md` had two on-disk shapes (an `aid-init` skeleton at ~23 lines and a richer reviewer-rewritten variant at ~67 lines). Both have been retired. The active schema is §2.1 above.
-
-### 2.2 REQUIREMENTS.md
-
-Verified at `canonical/templates/requirements/requirements-template.md:22-80` (95 lines). Schema:
-
-| Section | Required | Notes |
-|---------|----------|-------|
-| `# Requirements` (H1) | yes | First line |
-| `## Change Log` (table: Date \| Change \| Source) | yes | Per `requirements-template.md:11` "Change Log is mandatory" |
-| `## 1. Objective` | yes | Stakeholder's own words preferred |
-| `## 2. Problem Statement` | yes | — |
-| `## 3. Users & Stakeholders` (with Role/Description/Primary Needs table) | yes | — |
-| `## 4. Scope` (with `### In Scope` and `### Out of Scope` H3s) | yes | — |
-| `## 5. Functional Requirements` | yes | — |
-| `## 6. Non-Functional Requirements` | yes | Measurable; see `aid-interview` for cross-reference enforcement |
-| `## 7. Constraints` | yes | — |
-| `## 8. Assumptions & Dependencies` | yes | — |
-| `## 9. Acceptance Criteria` | yes | Must be testable per template note ("API response < 200ms p95", not "fast") |
-| `## 10. Priority` | yes | Must/Should/Could or numbered |
-
-**Convention:** any section not yet discussed contains `*(pending)*` as a placeholder (`requirements-template.md:14`). Cross-reference runs add Change Log entries with source `/aid-interview (cross-reference)` (`requirements-template.md:15`).
-
-### 2.3 STATE.md (Work area) — current shape
-
-Canonical template: `canonical/templates/work-state-template.md` (137 lines).
-
-| Section | Required | Notes |
-|---------|----------|-------|
-| `# Work State — work-NNN-{name}` (H1) | yes | Includes the work-NNN slug |
-| Metadata block (Status / Phase / Minimum Grade / Started / User Approved) | yes | Block-quote header |
-| `## Triage` | yes | Populated by `aid-interview` TRIAGE state for lite-path works; left empty for full-path works. Fields: Path (lite\|full\|escalated) / Work Type / Sub-path / Sub-path (auto) / Decision rationale / Override / Recipe. When a lite work escalates, Path changes to `escalated`. |
-| `## Escalation Carry` | conditional | Present only when a work started on the lite path and was escalated to full via `references/lite-to-full-escalation.md`. Fields: Escalated from / Escalated at / Escalation rationale / `### Captured Slot Values` (one bullet per answered slot) / `### Artifacts at Escalation` (SPEC.md + tasks/ notes). Read by CONTINUE state to avoid re-asking already-answered questions. Absent on full-path works that were never on the lite path. |
-| `## Interview Status` (10-row Section Status table) | yes | One row per REQUIREMENTS section (1–10); columns: `#` / `Section` / `Status` / `Last Updated`. Initial values `Pending` / `—`. Sections pre-seeded from `## Escalation Carry` slot values are set to `Partial` on creation. |
-| `## Features Status` (table: # / Feature / Spec Status / Spec Grade / Q&A Count / Notes) | yes | One row per feature spec'd via `/aid-specify` |
-| `## Plan / Deliveries` (table: Delivery / Status / Tasks / Notes) | yes | One row per delivery from PLAN.md |
-| `## Tasks Status` (table: # / Task / Type / Wave / Status / Review / Elapsed / Notes) | yes | One row per task; replaces the per-task `task-NNN-STATE.md` files |
-| `## Deploy Status` (table: Delivery / State / PR / KB Updated / Tag / Notes) | yes | One row per delivery from `/aid-deploy`; replaces `DEPLOYMENT-STATE.md` |
-| `## Cross-phase Q&A (Pending)` | yes | `### Q{N}: [{Phase}: {Category}: {Impact}]` entries with Question / Context / Source / Suggested / Status / Answer / Applied to |
-| `## Delivery Gates` | yes | One block per delivery, keyed by `delivery-NNN`. Fields: Reviewer Tier / Grade / Issue List / Timestamp. Written by the delivery-gate step of `aid-execute`. Distinct from per-task `## Quick Check Findings`. See `canonical/templates/delivery-issues.md` for the deferred-[HIGH] log template that feeds each gate's issue list. |
-| `## Quick Check Findings` | yes | One block per task, keyed by `task-id`. Fields: Reviewer Tier + Findings list (severity-tagged). Written by `writeback-task-status.sh --findings` during `aid-execute` per-task quick-check. |
-| `## Lifecycle History` (table: Date / Phase Transition / Gate / Grade / Notes) | yes | Append-only audit trail |
-
-### 2.3-LEGACY INTERVIEW-STATE.md *(RETIRED — absorbed into `.aid/work-NNN/STATE.md` `## Interview Status` section per FR2; schema preserved as historical reference)*
-
-The pre-FR2 `INTERVIEW-STATE.md` was a standalone file with its own `## Section Status`, `## Pending Q&A`, `## Review History` sections. Those sections are now folded into the per-work `STATE.md` per §2.3 above. The standalone `interview-state.md` template no longer exists on disk.
-
-### 2.4 SPEC.md (per-feature)
-
-Verified at `canonical/templates/specs/spec-template.md:1-75`.
-
-| Section | Required | Phase that fills it |
-|---------|----------|---------------------|
-| `# {Feature Title}` | yes | aid-interview |
-| `## Change Log` | yes | aid-interview |
-| `## Source` (REQUIREMENTS.md back-refs) | yes | aid-interview |
-| `## Description` | yes | aid-interview |
-| `## User Stories` | yes | aid-interview |
-| `## Priority` (Must/Should/Could) | yes | aid-interview |
-| `## Acceptance Criteria` (Given/When/Then) | yes | aid-interview |
-| `## Technical Specification` | yes | aid-specify |
-| `### Data Model` | yes | aid-specify |
-| `### Feature Flow` | yes | aid-specify |
-| `### Layers & Components` | yes | aid-specify |
-| Conditional H3s (18 options) | optional | aid-specify when triggered |
-
-The 18 conditional H3s (per `spec-template.md:55-75`): `API Contracts`, `UI Specs`, `Events & Messaging`, `DDD Analysis`, `BDD Scenarios`, `CQRS Specs`, `State Machines`, `Security Specs`, `Migration Plan`, `Cache Strategy`, `External Integrations`, `Batch/Jobs`, `Mobile Specs`, `Search/Indexing`, `AI Enhancements`, `Telemetry & Tracking`, `Recovery Management`, `Cloud Support`, `Hardware Requirements`.
-
-### 2.5 PLAN.md
-
-PLAN.md has **no template file** — its format is defined inline by `aid-plan`. It holds the ordered Deliveries (a "Delivery" is a section within PLAN.md, not a separate file) plus the execution graph appended by `aid-detail`. Schema (per `aid-plan`'s inline definition):
-
-| Section | Required | Purpose |
-|---------|----------|---------|
-| Front-matter metadata (Project / Created / Source / Status) | yes | Provenance + lifecycle status (e.g., `Draft`, `Approved`, `In Progress`) |
-| `## Overview` | yes | One-paragraph delivery summary |
-| `## Deliveries` | yes | Ordered list of delivery blocks; each block has Title, Goal, Scope (in/out), Acceptance Criteria, Estimated tasks, Dependencies on prior deliveries |
-| `## Sequencing Rationale` | yes | Why this order: dependency chains + MVP-slice reasoning |
-| `## Execution Graph` | yes | Appended by `aid-detail` — dependency and parallel-wave tables across all tasks |
-| `## Risks` | optional | Open risks per delivery |
-| `## Revision History` | yes | Date / Change / Source rows — every edit |
-
-Cardinality: 1 PLAN.md per Work. Each delivery becomes a git branch `aid/{delivery-NNN}` during `aid-execute`.
-
-### 2.6 task-NNN.md
-
-Verified at `canonical/templates/delivery-plans/task-template.md:1-20`. Six sections only — nothing else. `aid-detail` produces one `task-NNN.md` per task directly (there is no `DETAIL.md` artifact) and appends the execution graph to `PLAN.md`.
-
-| Field / Section | Type | Required | Notes |
-|-----------------|------|----------|-------|
-| `# task-NNN: {Title}` | H1 | yes | — |
-| `**Type:**` | enum (`RESEARCH` / `DESIGN` / `IMPLEMENT` / `TEST` / `DOCUMENT` / `MIGRATE` / `REFACTOR` / `CONFIGURE`) | yes | One type per task; never mixed |
-| `**Source:**` | reference | yes | `feature-NNN-{name} → delivery-NNN` |
-| `**Depends on:**` | reference | yes | `task-NNN [, task-NNN]` or `— (none)` for the first task |
-| `**Scope:**` | bullet list | yes | What the task produces or modifies — depends on Type; specific and bounded |
-| `**Acceptance Criteria:**` | checkbox list | yes | Concrete, testable; always ends with "All §6 quality gates pass" |
-
-**Task type taxonomy:** enum of `RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE`. One type per task. The type drives execution rules — `canonical/skills/aid-execute/references/task-type-rules.md` (104 lines) details per-type protocols.
-
-### 2.7 task-NNN-STATE.md *(RETIRED — absorbed into the per-work `.aid/work-NNN/STATE.md` `## Tasks Status` table per FR2; schema preserved as historical reference. `task-NNN.md` task-definition files remain unchanged at the 6-section template — definition stays inside the task file, status moves to work STATE.md.)*
-
-The pre-FR2 `task-NNN-STATE.md` file (one per task, with `## Current Review`, `## Issues`, `## Dispatches`, `## Review History`) has been retired by work-003 FR2. Its data is now one row in the per-work `STATE.md` `## Tasks Status` table per §2.3 above. The canonical template that generated per-task state files no longer exists on disk under `canonical/templates/` nor any install tree. Review and test outcomes for a task are now recorded in the work-STATE row plus inline in the task's review report. See work-003 FR2 per-area STATE rule for the consolidation mechanism.
-
-### 2.8 IMPEDIMENT-{id}.md
-
-Verified at `canonical/templates/feedback-artifacts/IMPEDIMENT.md (116 lines)`.
-
-| Section | Required | Notes |
-|---------|----------|-------|
-| `# IMPEDIMENT: IMP-{id}` | yes | Note: ID prefix is `IMP-`, not `IMPEDIMENT-` |
-| Metadata block (Generated by / Task / Date / Status) | yes | — |
-| `## Summary` | yes | — |
-| `## Type` (checkbox enum) | yes | 6 types: `wrong-assumption` / `missing-dependency` / `architecture-conflict` / `kb-gap` / `spec-gap` / `scope-creep` |
-| `## Source` | yes | Task / Phase / File encountered |
-| `## What Was Found` (Expected / Actual / Evidence) | yes | — |
-| `## KB Impact` (Document / Section / Current / Correct) | yes | — |
-| `## Options` (`### Option A/B/C`) | yes | Each with Approach / Effort / Risk / Scope impact / Spec impact |
-| `## Recommendation` | yes | Brief rationale, no decision |
-| `## Resolution` | conditional | — |
-| `## Revision History` | yes | — |
-
-### 2.9 known-issues.md (per-work)
-
-Verified at `canonical/templates/known-issues.md:1-15`. Schema is documented as **HTML comments** in the template (lines 6–14). Per-entry schema:
-
-| Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| `## KI-NNN: {Title}` | H2 with ID | yes | — |
-| `- **Type:**` | enum | yes | `Bug` / `Security` / `Deprecated Dependency` / `Breaking API Contract` |
-| `- **Severity:**` | enum | yes | `Critical` / `High` / `Medium` |
-| `- **Affects:**` | feature ID list | yes | `feature-NNN-{name}` |
-| `- **Source:**` | path:line OR dependency:version | yes | — |
-| `- **Description:**` | freeform | yes | — |
-| `- **See also:**` | tech-debt cross-ref | optional | `tech-debt.md #TD-NNN` |
-
-### 2.10 package-NNN.md (and Deploy Status row)
-
-**DEPLOYMENT-STATE.md is RETIRED** — its data is now the `## Deploy Status` table in the per-work `STATE.md` (§2.3). The standalone `deployment-state.md` template no longer exists on disk. `package-NNN.md` is unchanged.
-
-Verified at `canonical/templates/package.md:1-27`.
-
-**package-NNN schema:**
-
-| Section | Required | Fields |
-|---------|----------|--------|
-| `# package-NNN: {version/name}` | yes | H1 |
-| `## Deliveries` | yes | `delivery-NNN: {name}` list |
-| `## Deployment` | yes | `Type:` enum (`container` / `installer` / `package` / `static-site` / `executable` / `library`); `Target:`; `Version:`; `Tag:` |
-| `## Environment` | yes | `Runtime:`; `Config:`; `Secrets:`; `Dependencies:` |
-| `## Verification` | yes | Build / Tests / Lint, each `pending` initially |
-| `## Release Notes` | yes | Generated during packaging |
-| `## Status:` | yes | `Draft` initially |
-
-**Work STATE.md `## Deploy Status` row** (per §2.3 above): one row per delivery with `Delivery` / `State` / `PR` / `KB Updated` / `Tag` / `Notes` columns.
-
-### 2.11 MONITOR-STATE.md and track-report-*.md *(Monitor area STATE per FR2 — DEFERRED until Monitor area matures)*
-
-⚠️ **Both templates remain unauthored** (Q8 / Q31 / Q77 — deferred per OQ-3). When the Monitor area matures, `MONITOR-STATE.md` will follow the area-STATE pattern (one per-work `.aid/work-NNN/MONITOR-STATE.md`). The standalone `MONITOR-STATE.md` filename (rather than plain `STATE.md`) reflects that *Monitor is itself the state* — no separate artifact to suffix against. Tracked as `tech-debt.md H7`.
-
-### 2.12 project-index.md (generated)
-
-Verified at `.aid/knowledge/project-index.md:1-13`. Schema:
-
-| Section | Required | Notes |
-|---------|----------|-------|
-| `# Project Index` | yes | H1 |
-| Source-attribution block-quote | yes | "Generated by `canonical/templates/scripts/build-project-index.sh` for AID discovery." |
-| `## Summary` (4-row metrics table) | yes | Total files / Total lines / Generated / Root |
-| `## Language Breakdown` (Language / Files / Lines table) | yes | Aggregated by file extension |
-| `## Notable Files` | yes | Manifest, build config, CI files identified by name |
-| `## Top {N} Largest Source Files` | yes | Default N=20 per `build-project-index.sh:24` |
-| `## Full File Inventory` (Path / Language / Lines / Modified) | yes | All files, alphabetical |
-
-Producer: `canonical/templates/scripts/build-project-index.sh` (368 lines, propagated identically to all 3 profile trees by `run_generator.py`). Consumer: every `aid-discover` sub-agent (per `aid-discover/SKILL.md` foundation reference block).
-
-### 2.13 Agent / Skill frontmatter (cross-reference)
-
-Schemas already documented in `coding-standards.md` §1 (SKILL.md), §2.1 (Claude Code agents), §2.2 (Codex TOML), §2.3 (Cursor agents), §3 (Cursor .mdc rules). Not duplicated here.
+**Resolution helper:** `canonical/scripts/config/read-setting.sh` implements
+the per-skill override → global default → hardcoded `--default` fallback
+(per its header comment `read-setting.sh:4-17`).
 
 ---
 
-## 3. Relationships
+## 3. Discovery State — `.aid/knowledge/STATE.md`
 
-### 3.1 Artifact dependency graph (post-FR2, post-canonical-generator)
+**Source of truth:** `canonical/templates/discovery-state-template.md`.
+
+**Purpose:** the per-area state hub for the Discovery area (per FR2 area-state
+consolidation per CLAUDE.md:57-59). Absorbs former `DISCOVERY-STATE.md` +
+`SUMMARY-STATE.md`.
+
+**Schema (Markdown, per `canonical/templates/discovery-state-template.md:1-89`):**
+
+| Section | Shape | Cardinality |
+|---------|-------|-------------|
+| Top-level metadata (blockquote) | `Source:`, `Status:` (Initial / In Progress / Approved), `Current Grade:`, `User Approved:`, `Last KB Review:`, `Last Summary:` | 1 |
+| `## External Documentation` | Table: `Path | Type | Accessible | Notes` | 1 table |
+| `## KB Documents Status` | Table: `# | Document | Status | Grade | Last Reviewed | Notes` | **Exactly 16 rows** for the 16 standard KB docs (per `canonical/scripts/kb/verify-claims.sh:102-119` STANDARD_KB_FILES array) |
+| `## Knowledge Summary Status` | Table: `Field | Value` with 10 fields (Profile, Profile Source, Profile Confidence, Theme, Machine Grade, Human Grade, User Approved, Last Run, Output, Mermaid Version, Mermaid Cached) | 1 table |
+| `## Q&A (Pending)` | Free-form block per Q entry: `Q{N}: [{Category}: {Impact}]` with `Question:`, `Context:`, `Suggested:`, `Status:`, `Answer:`, `Applied to:` | 0..N |
+| `## Review History` | Append-only table: `# | Date | Grade | Source | Notes` | 1..N |
+| `## Summarization History` | Append-only table: `# | Date | Grade | Profile | Mermaid | Output | Notes` | 1..N |
+
+**16 standard KB documents** (per `canonical/scripts/kb/verify-claims.sh:102-119`):
+project-structure, external-sources, architecture, technology-stack, module-map,
+coding-standards, data-model, api-contracts, integration-map, domain-glossary,
+test-landscape, security-model, tech-debt, infrastructure, ui-architecture,
+feature-inventory.
+
+---
+
+## 4. Work State — `.aid/work-NNN-{name}/STATE.md`
+
+**Source of truth:** `canonical/templates/work-state-template.md`.
+
+**Purpose:** the single per-area state hub for one work item; absorbs former
+`INTERVIEW-STATE.md` + per-feature `STATE.md` × N + per-task `task-NNN-STATE.md`
+× N + (future) `DEPLOYMENT-STATE.md` per `work-state-template.md:9-12`.
+
+**Schema (Markdown):**
+
+| Section | Shape | Cardinality |
+|---------|-------|-------------|
+| Top-level metadata (blockquote) | `Status:`, `Phase:`, `Minimum Grade:`, `Started:`, `User Approved:` | 1 |
+| `## Triage` | Bullets: `Path:` (lite/full), `Work Type:` enum, `Sub-path:` enum, `Sub-path (auto):`, `Decision rationale:`, `Override:`, `Recipe:` | 1 |
+| `## Escalation Carry` | Conditional — only when work was escalated from lite to full | 0 or 1 |
+| `## Interview Status` | Table: 10 standard sections (Objective / Problem Statement / Users & Stakeholders / Scope / Functional Requirements / Non-Functional Requirements / Constraints / Assumptions & Dependencies / Acceptance Criteria / Priority) with Status + Last Updated | Fixed 10 rows |
+| `## Features Status` | Table: `# | Feature | Spec Status | Spec Grade | Q&A Count | Notes` | 0..N |
+| `## Plan / Deliveries` | Table: `Delivery | Status | Tasks | Notes` | 0..N |
+| `## Tasks Status` | Table: `# | Task | Type | Wave | Status | Review | Elapsed | Notes` | 0..N |
+| `## Deploy Status` | Table: `Delivery | State | PR | KB Updated | Tag | Notes` | 0..N |
+| `## Cross-phase Q&A (Pending)` | Free-form Q-blocks (same shape as discovery-state Q&A) | 0..N |
+| `## Delivery Gates` | Free-form per-delivery blocks: `Reviewer Tier`, `Grade`, `Issue List`, `Timestamp` | 0..N |
+| `## Quick Check Findings` | Free-form per-task blocks: `Reviewer Tier`, `Findings` list with severity tags | 0..N |
+| `## Lifecycle History` | Append-only table: `Date | Phase Transition / Gate | Grade | Notes` | 1..N |
+
+**Triage enum values** (per `work-state-template.md:18-22`):
+
+- `Path:` ∈ {`lite`, `full`}
+- `Work Type:` ∈ {`bug-fix`, `single-doc`, `small-refactor`, `small-new-feature`} (omitted for full path)
+- `Sub-path:` ∈ {`LITE-BUG-FIX`, `LITE-DOC`, `LITE-REFACTOR`, `LITE-FEATURE`, `—`}
+- `Override:` ∈ {`yes`, `no`}
+
+**Task `Type` enum** (per `work-state-template.md:80-85` + `canonical/templates/delivery-plans/task-template.md:3`):
+8 values — `RESEARCH`, `DESIGN`, `IMPLEMENT`, `TEST`, `DOCUMENT`, `MIGRATE`, `REFACTOR`, `CONFIGURE`.
+
+**Quick-Check finding severity enum** (per `work-state-template.md:128-129`):
+`[CRITICAL]` (Fixed-on-spot), `[HIGH]` (Deferred-to-gate); no `[MEDIUM]` /
+`[LOW]` / `[MINOR]` appear in quick-check (they remain inline in the broader
+delivery gate per `canonical/scripts/grade.sh:5-7`).
+
+---
+
+## 5. KB Document Frontmatter
+
+**Source of truth:** `canonical/templates/kb-authoring/frontmatter-schema.md`.
+
+**Schema (YAML, delimited by `---` markers as the FIRST content in the file):**
+
+| Field | Type | Required? | Allowed values |
+|-------|------|-----------|----------------|
+| `kb-category` | enum | YES | `primary` / `meta` / `extension` (per frontmatter-schema.md:50-54) |
+| `source` | enum | YES | `hand-authored` / `generated` (per frontmatter-schema.md:62-65) |
+| `generator` | string | YES iff `source: generated` | Build-script name relative to `canonical/scripts/` (per frontmatter-schema.md:70-74) |
+| `intent` | folded string (YAML `|`) | YES | 1-4 sentences describing what the doc is FOR (per frontmatter-schema.md:76-89) |
+| `contracts` | list of strings | NO (defaults to `[]`) | Each entry is a structural cardinality assertion verified by `verify-claims.sh` (per frontmatter-schema.md:104-127) |
+| `changelog` | list of dated entries | NO (defaults to `[]`) | Free-form ISO-dated notes; exempt from review (per frontmatter-schema.md:129-147) |
+
+**Parsing rules** (per frontmatter-schema.md:161-169):
+
+- Block MUST be the first content (no whitespace, no BOM, no comments before).
+- Opening + closing `---` on their own lines.
+- Body MUST be valid YAML 1.2.
+- Missing fields default-empty.
+- Unknown fields tolerated (forward-compatible).
+- Parse failure → doc treated as `kb-category: primary, source: hand-authored` with empty intent/contracts/changelog + lint emits HIGH-severity warning.
+
+**Per-doc review treatment** (per `canonical/templates/kb-authoring/review-rubric.md:8-21`): the combination of `kb-category` and `source` selects one of six rubrics — Full Primary (hand-authored), Full Primary + Build-Verify (generated INDEX.md), Spot-Check Snapshot (meta hand-authored), Build-Verify Only (meta generated, e.g., metrics.md / project-index.md), Extension-Scope, Extension Build-Verify.
+
+---
+
+## 6. Skill Frontmatter
+
+**Source of truth:** `canonical/skills/*/SKILL.md` (10 user-facing + 1 maintainer-only) + `profiles/claude-code.toml:30-36` (skill frontmatter schema declaration).
+
+**Schema (YAML, per `profiles/claude-code.toml:30-36`):**
+
+| Field | Type | Required? | Notes |
+|-------|------|-----------|-------|
+| `name` | string | YES | Matches the skill directory name (e.g., `aid-discover`) |
+| `description` | folded string (YAML `>`) | YES | One paragraph describing the skill's purpose + state-machine summary |
+| `allowed-tools` | comma-separated string | YES | Subset of `Read, Glob, Grep, Bash, Write, Edit, Agent, AskUserQuestion` |
+| `argument-hint` | string | NO | Brief flag description shown by the host's slash-command help |
+| `context` | string | NO (claude-code-only) | Injected by renderer for Claude Code (per `profiles/claude-code.toml:36`) |
+| `agent` | string | NO (claude-code-only) | Injected by renderer for Claude Code |
+
+**Renderer behavior** (per `.claude/skills/aid-generate/scripts/render_skills.py:64-79`):
+
+- Tool name remapping applied to `allowed-tools:` line via the profile's `[tool_names]` table (identity map for Claude Code per `profiles/claude-code.toml:43-46`).
+- `claude_code_optional` fields are dropped from non-Claude-Code renders.
+
+---
+
+## 7. Agent Frontmatter
+
+**Source of truth:** `canonical/agents/*/AGENT.md` (22 agents) + `profiles/claude-code.toml:17-24`.
+
+**Schema (YAML, per `profiles/claude-code.toml:17-24`):**
+
+| Field | Type | Required? | Notes |
+|-------|------|-----------|-------|
+| `name` | string | YES | Kebab-case, matches the directory name; used as `subagent_type` in the host's Task tool call |
+| `description` | string OR folded YAML `>` | YES | One paragraph; for sub-agent-only utilities, must begin with `INTERNAL UTILITY (sub-agent only — do NOT invoke from a skill)` per `canonical/agents/simple-extractor/AGENT.md:3` |
+| `tier` | enum | YES (canonical) | `large` / `medium` / `small` — maps to `model:` via the profile's `[model_tiers]` table |
+| `tools` | comma-separated string | YES | Subset of `Read, Glob, Grep, Bash, Write, Edit` |
+| `model` | string | YES (rendered output, NOT canonical input) | Derived by the renderer from `tier:` via `[model_tiers]` (per `.claude/skills/aid-generate/scripts/render_agents.py`) |
+| `permissionMode` | enum | NO | `bypassPermissions` — set on all 5 `discovery-*` sub-agents (per `canonical/agents/discovery-analyst/AGENT.md:6`) |
+| `background` | bool | NO | `true` — set on all 5 `discovery-*` sub-agents (per `canonical/agents/discovery-analyst/AGENT.md:7`) |
+
+**Tier → model mapping** (per `profiles/claude-code.toml:38-41`):
+- `large` → `opus`
+- `medium` → `sonnet`
+- `small` → `haiku`
+
+Codex uses a `[model_tiers.<tier>]` sub-table with `model` + `reasoning_effort` fields (per `.claude/skills/aid-generate/scripts/profile.py:137-141` `ModelTierDetailed`).
+
+---
+
+## 8. Emission Manifest — `<install-tree>/emission-manifest.jsonl`
+
+**Source of truth:** `canonical/EMISSION-MANIFEST.md`.
+
+**Purpose:** authoritative safety boundary for the generator's pure-mirror deletion logic (per `canonical/EMISSION-MANIFEST.md:5-13`). Every file the generator emits is recorded; only manifest-tracked paths are eligible for deletion.
+
+**Format:** JSON-Lines (`.jsonl`); one record per line, LF-only line endings even on Windows (per `EMISSION-MANIFEST.md:51-56`).
+
+**Record schemas:**
+
+**Sentinel object** (first line of every manifest):
+```json
+{"_manifest_version": 1}
+```
+
+**Data record** (lines 2..N):
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `profile` | string | Profile name — one of `claude-code`, `codex`, `cursor` (per `EMISSION-MANIFEST.md:38`) |
+| `src` | string | Repo-relative path inside `canonical/` |
+| `dst` | string | Path inside the install tree, relative to the manifest's directory |
+| `sha256` | string | Lowercase hex SHA-256 of the rendered file's bytes |
+
+**Ordering** (per `EMISSION-MANIFEST.md:46-49`): records sorted lexicographically by `dst` before writing.
+
+**One manifest per profile** at the deepest common parent (per `EMISSION-MANIFEST.md:16-27`):
+
+| Profile | Manifest path |
+|---------|---------------|
+| `claude-code` | `profiles/claude-code/emission-manifest.jsonl` |
+| `codex` | `profiles/codex/emission-manifest.jsonl` (covers BOTH `.codex/` and `.agents/` split roots) |
+| `cursor` | `profiles/cursor/emission-manifest.jsonl` |
+
+**Safety-boundary algorithm** (per `EMISSION-MANIFEST.md:70-83`):
+
+1. Load previous run's committed manifest.
+2. Render — add each emitted path to current in-memory manifest.
+3. Diff: compute `added_dst` (no action), `removed_dst` (delete from disk), `changed_dst` (overwrite via renderer).
+4. Delete each path in `removed_dst`; prune empty parents within the generator-owned subtree.
+5. Write current manifest to disk.
+
+Files **outside** any manifest are NEVER touched.
+
+---
+
+## 9. Profile TOML — `profiles/*.toml`
+
+**Source of truth:** `profiles/claude-code.toml`, `profiles/codex.toml`, `profiles/cursor.toml`.
+
+**Schema (TOML 1.0, parsed by `.claude/skills/aid-generate/scripts/profile.py:_parse_layout` etc.):**
+
+| Section | Keys | Purpose |
+|---------|------|---------|
+| `[layout]` | `output_root` (single-root tools), `agents_root` + `assets_root` (split-root Codex), `agents_dir`, `skills_dir`, `templates_dir`, `recipes_dir`, `scripts_dir`, `rules_dir` (Cursor only), `project_context_file` | Where rendered files go |
+| `[agent]` | `format` ∈ {`markdown`, `toml`} | Per-tool agent output format |
+| `[agent.frontmatter]` | `required` list, `optional` list, `claude_code_optional` list | Which frontmatter keys are required/optional in agent output |
+| `[skill]` | `decomposition` (always `"references"` per Decision F per `profile.py:127`) | Skill body decomposition strategy |
+| `[skill.frontmatter]` | `required` list, `optional` list, `claude_code_optional` list | Same as agent frontmatter |
+| `[model_tiers]` | `large`, `medium`, `small` — string OR sub-table | Tier-to-model mapping |
+| `[tool_names]` | flat map, e.g., `Read = "read_file"` | Per-tool tool-name remapping (identity for Claude Code per `claude-code.toml:43-46`) |
+| `[filename_map]` | `project_context_file`, `reviewer_output_file`, `open_questions_file` | Per-tool placeholder substitutions for `{project_context_file}` etc. |
+| `[extras]` | varies; for Cursor includes `[[extras.rules]]` array of `{filename, always_apply, description, globs}` | Tool-specific extras |
+| `[capabilities]` | `hooks`, `skill_chaining`, `background_execution`, `stop_hook_autocontinue` (booleans) | Tool capabilities (verified against host docs) |
+
+The dataclasses mirror this schema 1:1 in `.claude/skills/aid-generate/scripts/profile.py:28-192`.
+
+---
+
+## 10. Recipe Front-Matter + Body — `canonical/recipes/*.md`
+
+**Source of truth:** `canonical/templates/recipe-template.md` +
+`canonical/scripts/interview/parse-recipe.sh`.
+
+**Front-matter schema (YAML, all fields required per `recipe-template.md:81-86`):**
+
+| Field | Type | Validation |
+|-------|------|------------|
+| `name` | string (kebab-case) | Must match the file basename without `.md` |
+| `applies-to` | enum | One of `bug-fix`, `small-refactor`, `single-doc`, `small-new-feature`, or `*` (matches any workType — use sparingly per `recipe-template.md:170-172`) |
+| `slot-count` | integer | Count of unique `{{slot-name}}` tokens in body; parser warns on mismatch |
+| `task-count` | integer | Count of `### task-NNN` headings in `## tasks` block; parser warns on mismatch |
+
+**Body schema** (per `recipe-template.md:129-167`):
+
+- `## spec` block (lowercase intentional per `recipe-template.md:136-138`) — becomes the rendered `.aid/work-NNN/SPEC.md`. Must include sections: `# {title}`, metadata block (4 bold key/value lines: Work / Created / Source / Status), `## Goal`, `## Context`, `## Acceptance Criteria`, `## Tasks` (table), `## Execution Graph` (two tables), `## Revision History`.
+- `## tasks` block — one `### task-NNN — Title` heading per task; renders one `task-NNN.md` per heading.
+
+**Slot syntax** (per `recipe-template.md:96-100`):
+
+- Slots written as `{{slot-name}}` anywhere in body.
+- Slot names match POSIX ERE `[a-z][a-z0-9-]*` — lowercase ASCII letter first, then lowercase letters / digits / hyphens.
+- No underscores, no uppercase, no dots, no spaces.
+
+**Escape** (per `recipe-template.md:108-114`): `{!{` renders as literal `{{` at emit time without being treated as a slot token. Use when a recipe body discusses AID slot syntax as content.
+
+**Parser modes** (per `canonical/scripts/interview/parse-recipe.sh:14-58`): `--list`, `--validate`, `--spec`, `--tasks`, `--render --recipe X --slots-json Y --work-dir Z`.
+
+---
+
+## 11. Task Template — `canonical/templates/delivery-plans/task-template.md`
+
+**Source of truth:** `canonical/templates/delivery-plans/task-template.md`.
+
+**Schema (Markdown, 6 sections — flat, no nesting):**
+
+1. `# task-NNN: {Title}` — heading
+2. `**Type:**` — one of 8 enum values (RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE)
+3. `**Source:**` — `feature-NNN-{name} → delivery-NNN`
+4. `**Depends on:**` — `task-NNN[, task-NNN]` or `— (none)`
+5. `**Scope:**` — bullet list, type-dependent
+6. `**Acceptance Criteria:**` — checklist bullets
+
+**Invariants** (per `task-template.md:19`):
+- Six sections, nothing else.
+- One Type per task; never mix.
+- Every task except the first declares at least one `Depends on` entry.
+
+---
+
+## 12. Delivery Issues Log — `.aid/work-NNN/delivery-NNN-issues.md`
+
+**Source of truth:** `canonical/templates/delivery-issues.md`.
+
+**Purpose:** aggregates all `[HIGH]` findings deferred from per-task quick-checks. Input to the delivery-gate reviewer (per `delivery-issues.md:11-13`).
+
+**Schema (Markdown, single table):**
+
+```
+| Source task | Severity | Description | Status |
+|-------------|----------|-------------|--------|
+| task-NNN    | [HIGH]   | ...         | Open   |
+```
+
+**Column constraints** (per `delivery-issues.md:25-34`):
+
+- `Source task` — the `task-NNN` that generated the finding.
+- `Severity` — always `[HIGH]` (`[CRITICAL]` findings are fixed on-the-spot; never deferred).
+- `Description` — one-line summary matching the original quick-check finding.
+- `Status` ∈ {`Open`, `Resolved`, `Accepted`}.
+
+**Writer:** `canonical/scripts/execute/writeback-task-status.sh --append-issue` (sentinel-lock concurrent-safe per `writeback-task-status.sh:42-50`).
+
+---
+
+## 13. IMPEDIMENT Schema — `.aid/{work}/task-NNN/IMPEDIMENT.md`
+
+**Source of truth:** `canonical/templates/feedback-artifacts/IMPEDIMENT.md`.
+
+**Schema (Markdown):**
+
+| Section | Shape | Required |
+|---------|-------|----------|
+| Header blockquote | `Generated by`, `Task`, `Date`, `Status` (Open / Escalated / Resolved / No Action) | YES |
+| `## Summary` | One sentence | YES |
+| `## Type` | Checkbox — exactly one of: `wrong-assumption`, `missing-dependency`, `architecture-conflict`, `kb-gap` (per IMPEDIMENT.md:20-23) | YES |
+| `## Source` | `Task:`, `Phase:`, `File encountered:` | YES |
+| `## What Was Found` | Expected vs. Actual code blocks + Evidence block | YES |
+| `## KB Impact` | `Document:`, `Section:`, `Current content:`, `Correct content:` | Conditional (when `kb-gap`) |
+| `## Options` | One `### Option A: {Name}` per option with `Approach`, `Effort` (S/M/L/XL), `Risk`, `Scope impact`, `Spec impact` | YES, ≥ 2 options |
+
+---
+
+## 14. Generated-Files Registry — `canonical/templates/generated-files.txt`
+
+**Source of truth:** `canonical/templates/generated-files.txt`.
+
+**Purpose:** registry of every file in `.aid/generated/` with its build command. Consumed by `/aid-discover` FIX state (refresh-all at end of cycle per P3) and by `canonical/scripts/kb/verify-claims.sh` (freshness check).
+
+**Format** (per `generated-files.txt:3-13`):
+
+```
+<output-path>|<build-command>
+```
+
+- `output-path` — relative to the target project root (where `.aid/` lives).
+- `build-command` — shell command to regenerate, run from the target project root.
+- Comments (lines starting with `#`) and blank lines are ignored.
+- Order matters: scripts are executed top-to-bottom; list dependencies first.
+
+**Path-rewriting convention** (per `generated-files.txt:16-26`): build commands cite repo-root paths under `canonical/`. The renderer (`run_generator.py` + `rewrite_install_paths` in `harness.py`) rewrites those at render time to each profile's install-tree root (`.claude` for Claude Code, `.agents` for Codex assets, `.cursor` for Cursor). Comment blocks at the top of the file are skipped by the rewriter so the prose survives intact in profile renders.
+
+**Currently registered** (per `generated-files.txt:30,34,39`): `.aid/generated/project-index.md` (`build-project-index.sh`), `.aid/generated/metrics.md` (`build-metrics.sh`), `.aid/generated/INDEX.md` (`build-index.sh`).
+
+---
+
+## 15. Filesystem Layout (logical ER)
+
+This is the closest the project has to a "relationship diagram" — each work item, each KB document, each emission tree relates to others via shared identifiers + paths.
 
 ```mermaid
-graph LR
-    INIT[aid-init] --> DSTATE[.aid/knowledge/STATE.md<br/>Discovery area]
-    INIT --> ES[.aid/knowledge/* placeholders]
-    INIT --> WSTATE_INIT[.aid/work-NNN/STATE.md skeleton<br/>Work area]
-
-    BPI[build-project-index.sh] --> PI[project-index.md]
-    DSTATE --> DISC[aid-discover]
-    PI --> DISC
-    DISC --> KB[.aid/knowledge/16 KB docs]
-    DISC --> IDX[INDEX.md]
-    DISC --> KRM[README.md]
-    DISC --> DSTATE
-
-    KB --> INT[aid-interview]
-    INT --> REQ[REQUIREMENTS.md]
-    INT --> WSTATE[.aid/work-NNN/STATE.md<br/>Interview Status section]
-    INT --> FT[feature.md per feature]
-    INT --> FI[feature-inventory.md]
-
-    REQ --> SPEC[aid-specify]
-    KB --> SPEC
-    FT --> SPEC
-    SPEC --> SP[SPEC.md per feature]
-    SPEC --> WSTATE
-    SPEC --> KI[known-issues.md]
-
-    SP --> PLAN[aid-plan]
-    KI --> PLAN
-    PLAN --> PL[PLAN.md]
-    PLAN --> WSTATE
-
-    PL --> DET[aid-detail]
-    DET --> TK[task-id.md per task]
-    DET --> EG[execution graph<br/>appended to PLAN.md]
-    DET --> WSTATE
-
-    TK --> EXE[aid-execute]
-    EXE --> WSTATE
-    EXE --> IMP[IMPEDIMENT-id.md when blocked]
-
-    EXE --> DEP[aid-deploy]
-    DEP --> PKG[package-NNN.md]
-    DEP --> WSTATE
-
-    DEP --> MON[aid-monitor]
-    MON --> MSTATE[.aid/work-NNN/MONITOR-STATE.md<br/>⚠️ deferred]
-    MON --> TR[track-report-id.md ⚠️ deferred]
-
-    SPEC -.cross-phase Q&A.-> WSTATE
-    PLAN -.cross-phase Q&A.-> WSTATE
-    DET -.cross-phase Q&A.-> WSTATE
-    EXE -.IMPEDIMENT.-> SPEC
-    MON -.bug.-> EXE
-    MON -.CR.-> DISC
-
-    SUM[aid-summarize] --> DSTATE
-    KB --> SUM
+erDiagram
+    PROJECT ||--|| SETTINGS_YAML : "configures"
+    PROJECT ||--|| DISCOVERY_STATE : "tracks"
+    DISCOVERY_STATE ||--o{ KB_DOC : "lists 16 standard"
+    PROJECT ||--o{ WORK : "contains"
+    WORK ||--|| WORK_STATE : "tracks"
+    WORK ||--|| REQUIREMENTS : "produces"
+    WORK ||--o{ FEATURE : "decomposes into"
+    FEATURE ||--|| FEATURE_SPEC : "specified by"
+    WORK ||--|| PLAN : "planned by"
+    PLAN ||--o{ DELIVERY : "groups"
+    DELIVERY ||--o{ TASK : "decomposes into"
+    TASK ||--o| IMPEDIMENT : "may raise"
+    DELIVERY ||--o| DELIVERY_ISSUES : "aggregates HIGH"
+    PROJECT ||--o{ INSTALL_TREE : "renders to"
+    INSTALL_TREE ||--|| EMISSION_MANIFEST : "tracks"
+    EMISSION_MANIFEST ||--o{ EMITTED_FILE : "records"
 ```
 
-### 3.2 Cardinality
+**Identifier conventions** (per `coding-standards.md` §2d):
 
-| From → To | Cardinality | Notes |
-|-----------|-------------|-------|
-| `aid-init` → `.aid/knowledge/STATE.md` (Discovery area) | 1:1 per project | Created once |
-| `aid-discover` → `.aid/knowledge/*.md` | 1:16 | One run produces 16 KB docs |
-| `aid-init` → `.aid/work-NNN/STATE.md` (Work area) | 1:1 per work | Created when work folder created |
-| `aid-interview` → `REQUIREMENTS.md` | 1:1 per work | Single doc, mutated across runs |
-| `aid-interview` → `feature.md` | 1:N | One per identified feature |
-| `aid-specify` → `SPEC.md` | 1:1 per feature | Same file mutated to add Technical Specification |
-| `aid-specify` → work `STATE.md` row in `## Features Status` | 1:N | One row per feature |
-| `aid-plan` → `PLAN.md` | 1:1 per work | — |
-| `aid-detail` → `task-NNN.md` | 1:N | One per task |
-| `aid-execute` → work `STATE.md` row in `## Tasks Status` | 1:N | One row per task (replaces retired `task-NNN-STATE.md`) |
-| `aid-deploy` → `package-{NNN}.md` | 1:1 per package | — |
-| `aid-deploy` → work `STATE.md` row in `## Deploy Status` | 1:N | One row per delivery (replaces retired `DEPLOYMENT-STATE.md`) |
-| Any phase → work `STATE.md` `## Cross-phase Q&A` entry | 1:N | One per cross-phase open question |
-| `aid-discover`/`aid-summarize` → `.aid/knowledge/STATE.md` `## Q&A` entry | 1:N | One per KB question |
-| `aid-execute` → `IMPEDIMENT-{id}.md` | 1:N | One per impediment |
-| `aid-summarize` → `.aid/knowledge/STATE.md` `## Summarization History` row | N:1 | Each run appends a row (via `writeback-state.sh`) |
-| `discovery-reviewer` → `.aid/knowledge/STATE.md` `## Review History` row | N:1 | Each review cycle rewrites issues + appends Review History row |
+- `work-NNN` — zero-padded 3-digit, optional kebab suffix (e.g., `work-001`, `work-002-canonical-generator`)
+- `feature-NNN` — zero-padded 3-digit (e.g., `feature-005`)
+- `delivery-NNN` — zero-padded 3-digit (e.g., `delivery-001`)
+- `task-NNN` — zero-padded 3-digit (e.g., `task-019`)
+- `Q{N}` — Q&A entry (NOT zero-padded; per `discovery-state-template.md:65`)
 
-### 3.3 First-class artifact identification
-
-Per `canonical/templates/requirements/requirements-template.md:16` and `aid-discover/SKILL.md`, the **first-class** artifacts (UPPERCASE filenames living at the `.aid/knowledge/` root or per-work root) are:
-
-- `REQUIREMENTS.md`
-- `SPEC.md` (per feature)
-- `PLAN.md`
-- `STATE.md` (Discovery area — at `.aid/knowledge/STATE.md`)
-- `STATE.md` (Work area — at `.aid/work-NNN/STATE.md`, one per work)
-- `MONITOR-STATE.md` (Monitor area — deferred)
-
-All other artifacts (the 16 KB docs, `INDEX.md`, `README.md`, `feature-inventory.md`, `task-NNN.md`, `package-{NNN}.md`) are **second-class** — kebab-case or sub-numbered, living under per-work folders or as nested supporting documents.
+**Foreign keys** are textual: task → delivery via `task.Source = "feature-NNN → delivery-NNN"` (per `task-template.md:5`); feature → work via `feature.Source = "REQUIREMENTS.md §5.{n}"` (per `feature.md:8-12`).
 
 ---
 
-## 4. Dataflow Diagram — the 10 SKILL files (post-FR2)
+## 16. No Migrations, No Indexes, No Soft Deletes
 
-The artifact propagation across the **10 SKILL files** (1 setup + 8 development + 1 optional per user-confirmed canonical taxonomy STATE.md Q16; see `architecture.md §2.1` for the full taxonomy and pipeline diagram). Each arrow shows producer → consumer with the carried artifact in parentheses. **Two area-STATE files (Discovery + Work) absorb all process-state writes.**
-
-```
-Phase 0  Init
-         user input --> aid-init --> .aid/knowledge/STATE.md (Discovery skeleton)
-                                   --> .aid/knowledge/ (16 placeholders)
-                                   --> .aid/knowledge/external-sources.md (registered URLs)
-                                   --> .aid/work-NNN/STATE.md (Work skeleton, when work folder created)
-
-Phase 1  Discover (brownfield only)
-         project source code --> aid-discover (5 sub-agents + reviewer)
-                              --> .aid/knowledge/{16 KB docs}.md
-                              --> .aid/knowledge/STATE.md (Q&A, KB Documents Status, Review History)
-                              --> .aid/knowledge/INDEX.md, README.md
-
-Phase 2  Interview
-         REQUIREMENTS.md (none) + .aid/knowledge/ --> aid-interview
-                                                  --> REQUIREMENTS.md
-                                                  --> .aid/work-NNN/STATE.md (Interview Status section update)
-                                                  --> feature.md (per feature)
-                                                  --> feature-inventory.md (updated)
-
-Phase 3  Specify (per feature)
-         feature.md + REQUIREMENTS.md + .aid/knowledge/ --> aid-specify
-                                                       --> SPEC.md (Technical Specification appended)
-                                                       --> .aid/work-NNN/STATE.md (Features Status row + Cross-phase Q&A)
-                                                       --> known-issues.md (entries)
-
-Phase 4  Plan
-         all SPEC.md + .aid/knowledge/tech-debt.md + known-issues.md --> aid-plan
-                                                                    --> PLAN.md (deliverables, sequencing)
-                                                                    --> .aid/work-NNN/STATE.md (Plan / Deliveries section)
-
-Phase 5  Detail
-         PLAN.md + SPEC.md + .aid/knowledge/ --> aid-detail
-                                             --> task-NNN.md (one per task)
-                                             --> execution graph (parallel-wave tables) appended to PLAN.md
-                                             --> .aid/work-NNN/STATE.md (Tasks Status seed rows)
-
-Phase 6  Execute (per task)
-         task-NNN.md + .aid/knowledge/ --> aid-execute (reviewer loop)
-                                         --> code modifications (in target project, not in .aid/)
-                                         --> .aid/work-NNN/STATE.md (Tasks Status row update per task)
-                                         --> review report
-                                         --> IMPEDIMENT-{id}.md (when blocked) → loops back to aid-specify
-
-Phase 7  Deploy
-         all completed tasks + .aid/knowledge/infrastructure.md --> aid-deploy
-                                                                  --> package-{NNN}.md
-                                                                  --> .aid/work-NNN/STATE.md (Deploy Status row update)
-                                                                  --> release notes
-
-Phase 8  Monitor (DEFERRED — area not yet implemented)
-         production telemetry --> aid-monitor
-                                --> .aid/work-NNN/MONITOR-STATE.md (⚠️ template not yet authored)
-                                --> track-report-{id}.md (⚠️ template not yet authored)
-                                --> classified findings:
-                                    - bug → routes to aid-execute (new task)
-                                    - change request → routes to aid-discover (re-entry)
-
-Phase 9  Summarize (optional)
-         .aid/knowledge/* --> aid-summarize
-                          --> .aid/knowledge/knowledge-summary.html
-                          --> .aid/knowledge/STATE.md (Summarization History row via writeback-state.sh)
-```
-
-(Phases beyond Monitor — Triage, Correct, ongoing iteration — are not separate skills today. `aid-correct` was merged into Triage/Monitor.)
+| Aspect | Status |
+|--------|--------|
+| **Migrations** | N/A — no DB. Document schema changes are tracked via the per-doc `changelog:` frontmatter field (per `frontmatter-schema.md:129-147`) + KB doc cycle history in `STATE.md ## Review History`. |
+| **Indexes** | N/A — no DB. The closest analog is `.aid/generated/INDEX.md` — an agent-facing RAG navigation index built by `canonical/scripts/kb/build-index.sh` from each KB doc's `intent:` frontmatter. |
+| **Soft Deletes** | N/A — no DB. The emission-manifest's `removed_dst` set serves a related purpose: only paths previously emitted by the generator are eligible for deletion (per `EMISSION-MANIFEST.md:70-83`); user-created files are NEVER touched. |
+| **Validation** | Three mechanisms: (1) `canonical/scripts/kb/verify-claims.sh` validates KB frontmatter + cited file:line + 16-doc presence + generated-files freshness; (2) `.claude/skills/aid-generate/scripts/profile.py:validate()` validates profile TOML; (3) `parse-recipe.sh --validate` validates recipe front-matter + body. |
 
 ---
 
-## 5. Validation
+## 17. Data Volume
 
-There is no central validation layer for these artifacts. The validation that exists is **inside the skills themselves**:
+T3 numeric volume facts (file counts + line counts per language and per category) live in `.aid/generated/project-index.md` and `.aid/generated/metrics.md`. They are intentionally not duplicated here — those generated files are regenerated from disk on every discovery cycle so any inline copy would drift.
 
-| Validation point | What's checked | Where |
-|------------------|----------------|-------|
-| Pre-flight (state file exists) | `.aid/knowledge/STATE.md` presence | `canonical/skills/aid-discover/SKILL.md`, `canonical/skills/aid-discover/scripts/check-preflight.sh` (45 lines) |
-| Pre-flight (16 KB docs exist) | File presence | `canonical/skills/aid-discover/scripts/verify-kb.sh` (60 lines) |
-| Reviewer grading | Schema integrity + claim accuracy | `canonical/agents/discovery-reviewer/AGENT.md` (15+ spot-checks min) |
-| Grade calculation | Worst-issue-dominates rubric | `canonical/templates/scripts/grade.sh` (141 lines) + `discovery-reviewer` agent body |
-| KB-claim verification | line counts, file existence, spot-checks | `canonical/templates/scripts/verify-kb-claims.sh` (356 lines) |
-| HTML output validation | WCAG-AA, link integrity, mermaid syntax | `canonical/templates/knowledge-summary/scripts/{validate-html.sh, validate-links.sh, validate-diagrams.mjs, contrast-check.mjs}` |
-| Stale-check on KB summary | mtime-based regeneration trigger | `canonical/templates/knowledge-summary/scripts/stale-check.sh` |
-| STATE.md writeback | grade format + history row append | `canonical/templates/knowledge-summary/scripts/writeback-state.sh` (173 lines) |
-| Generator output verification | deterministic propagation | `.claude/skills/aid-generate/scripts/verify_deterministic.py` (513 lines), invoked by `run_generator.py` |
-
-**Not validated** (gaps):
-
-- No schema validator for SKILL.md / agent frontmatter (the `run_generator.py` validates *profile* TOMLs, not skill frontmatter).
-- No schema validator for any artifact template — a SPEC.md missing required sections will not be flagged automatically.
-- No referential integrity check (e.g., does every `task-NNN.md`'s `Source:` field point to a real `feature-NNN → delivery-NNN` pair in PLAN.md?).
-- No producer-consumer parity check (e.g., does the version of REQUIREMENTS.md that aid-specify reads match the version aid-interview last wrote?).
-
----
-
-## 6. Migrations
-
-There are no migrations in the traditional sense (this repo has no database). The closest analogues are:
-
-1. **Canonical-generator propagation** (work-002, deployed 2026-05) — when a canonical asset under `canonical/{agents,skills,templates}/` changes, `run_generator.py` re-emits the 3 profile trees (`profiles/claude-code/.claude/`, `profiles/codex/.agents/` + `profiles/codex/.codex/`, `profiles/cursor/.cursor/`). Replaces the pre-work-002 manual cross-tree sync discipline.
-2. **FR2 state-file consolidation** (work-003, deployed 2026-05) — one-time consolidation of `INTERVIEW-STATE.md`, `FEATURE-STATE.md`, `task-NNN-STATE.md`, `DEPLOYMENT-STATE.md`, `DISCOVERY-STATE.md`, `SUMMARY-STATE.md` into per-area `STATE.md` files. The legacy templates were retired (deleted) from `canonical/templates/` and from all 3 install trees.
-3. **Codex tier-rename** (per `profiles/codex/README.md:35` "May 2026 migration note") — a past correction to agent `model_reasoning_effort` values, verified clean across all 22 agents × 3 trees.
-
-There is no migration tool for end-user `.aid/` artifacts; if a project's `.aid/work-NNN/` directory predates FR2, the consolidation is manual.
-
----
-
-## 7. Indexes (n/a — no database)
-
-Not applicable. Search across artifacts is performed by skills via the Grep/Glob tools at runtime.
-
----
-
-## Revision History
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-05-21 | aid-discover (discovery-analyst) | Initial dogfood pass: 15 artifact-section entries cataloged with schemas, cardinality, dataflow diagram across the 10 SKILL files of the AID pipeline, validation surface assessed, MONITOR-STATE.md and track-report-template.md gaps recorded. |
-| 1.1 | 2026-05-23 | aid-discover cycle-11 FIX (KB-FIX work) | §1 Artifact Inventory rewritten: retired DISCOVERY-STATE/INTERVIEW-STATE/FEATURE-STATE/task-NNN-STATE/DEPLOYMENT-STATE rows replaced with 3 area-STATE rows (Discovery / Work / Monitor-deferred); template paths updated to `canonical/templates/*` post-canonical-generator (work-002); §§2.1, 2.3, 2.10 rewritten to describe the new area-STATE shapes; §§3-4 Mermaid + textual dataflow diagrams redrawn to show area-STATE flows; §6 Migrations section added documenting work-002 + work-003 + Codex tier-rename. Resolves cycle-11 HIGH findings on data-model.md §1 and §§3-4. |
-
-### `canonical/recipes/` (work-001 feature-011 — shipped 2026-05-25)
-
-**Asset type:** Markdown with YAML front-matter + slot-templated body (`{{slot-name}}` placeholders + `{!{` escape).
-
-**Cardinality:** 5 seed recipes + 1 README + meta-template (`canonical/templates/recipe-template.md`); rendered byte-identically into all 3 install trees (`profiles/{claude-code/.claude,codex/.agents,cursor/.cursor}/recipes/`).
-
-**Lifecycle:** Authored in `canonical/recipes/`. Generator (`run_generator.py`) propagates to install trees. Consumed at runtime by `aid-interview` TRIAGE state (Step 5a) when Path=lite + workType matches recipe.applies-to. Emitted output: `.aid/{work}/SPEC.md` + `tasks/task-NNN.md` (no `features/`, no `PLAN.md`).
-
-**Schema:** See `api-contracts.md ## Recipe File Schema` for the front-matter + body contract.
-
-**Validation:** `canonical/skills/aid-interview/scripts/parse-recipe.sh --validate <file>` (113 smoke tests; runs in CI eventually).
+**Volume shape note (T1):** every canonical asset is multiplied ~4x by the renderer (canonical + 3 install trees + dogfood `.claude/`), so the headline file count overstates unique content by roughly 4x (per project-structure.md:296).

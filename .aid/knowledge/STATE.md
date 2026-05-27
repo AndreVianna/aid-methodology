@@ -1,124 +1,380 @@
 # Discovery State
 
-> **Status:** Cycle-25 adversarial regrade COMPLETE — Pass-11 (commit `aedfc98`) VERIFIED EFFECTIVE on 4/4 declared targets: (1) technology-stack L127 file-path reference now reads "in `.aid/knowledge/STATE.md` (per FR2; pre-FR2 was DISCOVERY-STATE.md)" — matches ui-architecture L101 canonical FR2 pattern ✓; (2) technology-stack L219 same pattern adopted ✓; (3) domain-glossary L106 reframed to "2 meta files + Discovery-area area-STATE file (STATE.md)" — consistent with architecture L296 + project-structure L21 ✓; (4) feature-inventory L65 reframed to "per `.aid/knowledge/STATE.md` Q-FEATURES (per FR2; pre-FR2 was DISCOVERY-STATE.md)" ✓. **Grep verification:** `recorded by scout as Q[0-9]+ in \`DISCOVERY-STATE.md\`` returns 0 matches across all 18 .aid/knowledge/*.md files. Backtick-form `Q[0-9]+ in \`DISCOVERY-STATE.md\`` returns 0 matches in primary docs (only STATE.md self-references in historical Review History rows, which is correct). `\`DISCOVERY-STATE.md\` Q-` returns 0 matches in primary docs. The 14 surviving backticked `DISCOVERY-STATE.md` occurrences across primary KB docs are ALL properly framed under explicit RETIRED/FR2/pre-FR2/historical context: api-contracts L232+L276+L280, architecture L296, coding-standards L137, data-model L22+L45+L96+L480, domain-glossary L106 (Pass-11 fix) + L168, feature-inventory L3+L19+L20+L65+L68, integration-map L269, module-map L172, project-structure L21+L161, README L63, security-model L151+L306, test-landscape L45. **No NEW regressions detected.** verify-kb-claims.sh in-session run: **exit 0, 707 citations validated, 0 missing files, 0 line-out-of-range, 0 README drifts, 0 spot-check drifts.** tech-debt severities HIGH=8/MEDIUM=6/LOW=8. security-model HIGH=1/MEDIUM=4/LOW=4/INFO=12. domain-glossary 161 terms. **Cycle-25 issue count: 0 CRITICAL · 0 HIGH · 0 MEDIUM · 0 LOW · 0 MINOR.** Per grading rubric grade-calculation table, zero issues = **Grade A+**. Cycle-25 took ~19m (within the calibrated 15-25m band — calibration successful). **RECOMMEND USER APPROVE — Grade meets Minimum (A+).**
-> **Minimum Grade:** A+
-> **Current Grade:** A+
-> **User Approved:** yes (2026-05-21) — stale; predates work-001/work-002/work-003 deploys + cycles 17-24
-> **Heartbeat Interval:** 1 minute
-> **Max Parallel Tasks:** 5
-> **Last KB Review:** 2026-05-25 (cycle 24, post-Pass-10 chase-A+ adversarial re-grade)
-> **Last Summary:** 2026-05-21
-> **Project Type:** Brownfield
+> **Source:** aid-config (creates) · aid-discover + aid-summarize (update)
+> **Status:** In Progress
+> **Current Grade:** E+
+> **User Approved:** no
+> **Last KB Review:** 2026-05-27
+> **Last Summary:** —
 
-This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary.
+This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary. One STATE.md per project's `.aid/knowledge/` directory. Absorbs what used to be `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`.
 
-## Cycle-23 Per-Document Grades
+> **Project-level settings** (minimum grade, heartbeat interval, max parallel tasks,
+> etc.) live in `.aid/settings.yml`, not here. STATE.md is for run-state only —
+> per-area review history, Q&A, current-cycle grade snapshots. Resolve any
+> configured value via:
+> `bash .claude/scripts/config/read-setting.sh --skill <name> --key <key> --default <fallback>`
 
-| Document | Grade | Status | Issues |
-|----------|-------|--------|--------|
-| project-structure.md | A- | Pass | [MINOR-mechanical-deferrable] L7 cycle-11 project-index baseline; stable. |
-| external-sources.md | A | Pass | Line-count cites disk-verified; 8 vendor URLs Pending fetch (deferred per Q80). L136 "Per DISCOVERY-STATE Q80" historical-Q-pointer phrasing — MINOR idiomatic residual. |
-| architecture.md | A | Pass | Solid. All cycle-19 structural rewrites preserved (Pattern 3/5/7 canonical-generator framed). Carries historical "per DISCOVERY-STATE Q16/Q17/Q102" Q-pointer phrasing — MINOR idiomatic residual, not contradiction. |
-| technology-stack.md | B+ | Below minimum | [MINOR-mechanical-deferrable] L17 file count cycle-11 vintage. Build/Lint Commands runnable. L169 + L234 "per DISCOVERY-STATE Q36/Q54" historical-Q-pointer phrasing. |
-| module-map.md | B | Below minimum | [MINOR-mechanical-deferrable] L150 discovery-reviewer "(378)" — canonical disk path is canonical/agents/discovery-reviewer/AGENT.md = 405 (27-line drift); L318 "(~314 TOML)" — disk codex.toml=399 (85-line drift). Pass-9 scope did not include. |
-| coding-standards.md | A | Pass | L378 "(85 + 137 lines respectively)" ✓. L372 retired-state-file enumeration framed correctly per FR2. |
-| data-model.md | A | Pass | L22/L24/L51 cite discovery-state-template (85) + work-state-template (137) — disk-true. L139 §2.3-LEGACY INTERVIEW-STATE.md (RETIRED ...) correctly framed. |
-| api-contracts.md | A | Pass | L278 "(85 lines)" ✓. FR2 framing at L232 + L280 + L301 explicit. Recipe File Schema (L409-449) accurate against parse-recipe.sh. |
-| integration-map.md | B | Below minimum | [MINOR-mechanical-deferrable] L21/L39/L63 file counts cycle-11 baseline. L256 "absorbs retired INTERVIEW-STATE.md" correct FR2 framing. |
-| domain-glossary.md | A | Pass | 161 terms verified. 10 work-001 entries all semantically accurate. **Pass-9 9B RESOLVED:** L168 "User Approved" now carries "(Pre-FR2 this field lived in DISCOVERY-STATE.md, now retired — see area-STATE.)" ✓; L173 "Work" refreshed to "STATE.md (per-area, absorbs former INTERVIEW-STATE.md retired per FR2 — see area-STATE)" ✓. L72 + L99 explicit (RETIRED per FR2 ...) entries preserved. L80 + L105/L106 historical Q-pointer phrasing — MINOR idiomatic. |
-| test-landscape.md | A- | Pass | L209-211 enumeration of 7 test scripts + 297-test total accurate. |
-| security-model.md | A- | Pass | §1.2 HISTORICAL framing preserved. 21-finding split (1H+4M+4L+12I) consistent (verify-kb-claims confirms). L306 explicitly disambiguates "(Discovery area, per FR2 — formerly DISCOVERY-STATE.md)" — exemplary FR2 framing. |
-| tech-debt.md | A- | Pass | H6 RETIRED past-tense framing preserved (L100). verify-kb-claims confirms HIGH=8 MEDIUM=6 LOW=8. |
-| infrastructure.md | B+ | Below minimum | [MINOR-mechanical-deferrable] L25 branch citation residual. L68 "Both installers correctly copy .agents/ in the Codex branch as of 2026-05-22" ✓. |
-| ui-architecture.md | A | Pass | L286 STATE.md ## Knowledge Summary Status ✓. |
-| feature-inventory.md | A- | Pass | All cycle-21 wave reclassifications preserved on disk: L30 (Feature #13) ✅ Shipped + Q70/H6 RETIRED ✓; L32 (Feature #15) ✅ Shipped + Q70/H6 RESOLVED ✓; L48 "22 ✅ Shipped, 3 ⚠️ Partial" with explicit ID enum ✓; L57 + L59 RESOLVED 2026-05-22 — H6 RETIRED ✓. [MINOR] L27 (Feature #10 Status) + L31 (Feature #14 Status) still use "DISCOVERY-STATE Q8/Q52" Q-pointer phrasing — host-tools-matrix Pass-9 modernized similar references to "STATE.md Q52"; this doc is one vocabulary cycle behind. Not a contradiction (Q-IDs stable). |
-| STATE.md (META) | A- | Pass | Preserves cycles 17-22 Review History + Q&A entries Q190-Q218. Adds no new Q-entry — cycle-23 finds no genuinely new pending gap; residual MINORs covered by existing Q72 (CONTRIBUTING.md doc-modernization / retired-vocab category). |
-| INDEX.md | A | Pass | L21 "Codex .agents/ copy bug RESOLVED 2026-05-22" ✓. L23 "22 ✅ Shipped, 3 ⚠️ Partial" ✓. Summaries consistent with current primary-doc state. |
-| README.md | A- | Pass | L35 "22 ✅ Shipped, 3 ⚠️ Partial" matches feature-inventory L48 ✓. L30 domain-glossary "161 terms" ✓. verify-kb-claims reports 0 README drifts in this re-grade. L65 Revision History historically framed. |
-| host-tools-matrix.md | A | Pass | **Pass-9 EFFECTIVE on 5/5 declared sites.** L49 setup.sh row refreshed to "✅ ... Codex .agents/ — Q70/H6 RESOLVED 2026-05-22 (setup.sh L144-146; task-030 smoke test confirmed 10 Codex SKILL.md files)" ✓. L50 setup.ps1 row refreshed to "✅ same Codex .agents/ copy present — Q70/H6 RESOLVED 2026-05-22" ✓. L92 Section 5 Row 1 status migrated to "RESOLVED \| RESOLVED — tech-debt.md H6 RETIRED 2026-05-22" ✓. L64 "Per STATE.md Q52" ✓. L137 Section 7 split into "Q3 RESOLVED by work-002 canonical-generator; Q72 CONTRIBUTING.md doc-modernization pending" — internal contradiction resolved ✓. L122 "repo repository" typo absent ✓. 6-doc Q70 contradiction RESOLVED. |
-| CLAUDE.md (project root) | A | Pass | Solid full rewrite. L8 methodology 1,071 ✓. Test suite enumeration accurate. Recipes catalog accurate. [MINOR-mechanical-deferrable] L65 "Total skill body lines: 2,108" — actual disk sum is 2,157. |
+## External Documentation
 
-## Cycle-23 Findings — Summary by Severity
+| Path | Type | Accessible | Notes |
+|------|------|------------|-------|
+| None provided | — | — | No external documentation registered for cycle-1 |
 
-**CRITICAL (0):** None. All Pass-9 dispatch targets landed correctly on disk. SKILL.md / canonical script line counts 100% match prompt-asserted disk values. Recipe schema accurate. Domain-glossary 161 terms verified. 6-doc Q70 internal contradiction RESOLVED. verify-kb-claims.sh exits 0 (707 citations validated; 0 README drifts; 0 spot-check drifts).
+## KB Documents Status
 
-**HIGH (0):** None. The single surviving HIGH from cycle-22 (host-tools-matrix Section 5 Row 1 + Section 2 cells L49/L50 Q70 status contradiction) is CLOSED on disk by Pass 9.
+| # | Document | Status | Grade | Last Reviewed | Notes |
+|---|----------|--------|-------|---------------|-------|
+| 1 | project-structure.md | Reviewed | D | 2026-05-27 | [HIGH] FM-MISSING; [LOW] 1148-vs-1149 drift; [LOW] 405-vs-402 drift |
+| 2 | external-sources.md | Reviewed | D+ | 2026-05-27 | [HIGH] FM-MISSING (3-line file still needs frontmatter) |
+| 3 | architecture.md | Reviewed | D | 2026-05-27 | [HIGH] FM-MISSING; [MEDIUM] skill-line-count drift unresolved; [LOW] rendered cite |
+| 4 | technology-stack.md | Reviewed | D+ | 2026-05-27 | [HIGH] FM-MISSING; [LOW] T3 churn (script line counts duplicated) |
+| 5 | module-map.md | Reviewed | A | 2026-05-27 | Frontmatter OK; contracts well-formed; no findings |
+| 6 | coding-standards.md | Reviewed | A | 2026-05-27 | Frontmatter OK; exemplary cited evidence; no findings |
+| 7 | data-model.md | Reviewed | A | 2026-05-27 | Frontmatter OK; 16-section structural inventory verifiable; no findings |
+| 8 | api-contracts.md | Reviewed | D | 2026-05-27 | [HIGH] FM-MISSING; [MEDIUM] 5-vs-6-section count contradiction |
+| 9 | integration-map.md | Reviewed | D | 2026-05-27 | [HIGH] FM-MISSING; [MEDIUM] 1148-vs-1149 cite; [LOW] legacy DISCOVERY-STATE.md mixing |
+| 10 | domain-glossary.md | Reviewed | D | 2026-05-27 | [HIGH] FM-MISSING; [MEDIUM] 3-way acronym conflict; [MEDIUM] 150-vs-195 term count; [LOW] IQ-vs-Q convention |
+| 11 | test-landscape.md | Reviewed | D | 2026-05-27 | [HIGH] FM-MISSING; [MEDIUM] 297-unverifiable test count |
+| 12 | security-model.md | Reviewed | D | 2026-05-27 | [HIGH] FM-MISSING; [MEDIUM] 5-vs-6 sub-agent count |
+| 13 | tech-debt.md | Reviewed | D+ | 2026-05-27 | [HIGH] FM-MISSING; H1 known-issue correctly captured |
+| 14 | infrastructure.md | Reviewed | D+ | 2026-05-27 | [HIGH] FM-MISSING; all CLAUDE.md cites verified accurate |
+| 15 | ui-architecture.md | Reviewed | D | 2026-05-27 | [HIGH] FM-MISSING; [MEDIUM] 2-vs-3 token files count |
+| 16 | feature-inventory.md | Reviewed | E | 2026-05-27 | [HIGH] template-only (placeholder row); [HIGH] zero features inventoried |
 
-**MEDIUM (0):** None. The single cycle-22 MEDIUM (host-tools-matrix L64 "DISCOVERY-STATE Q52" retired vocab) is CLOSED on disk by Pass 9 (now "Per STATE.md Q52").
+**Meta-documents:**
 
-**LOW (0):** None. The single cycle-22 LOW (host-tools-matrix L137 Section 7 internal Q3 contradiction) is CLOSED on disk by Pass 9 via the split into "Q3 RESOLVED; Q72 pending" wording.
+| Document | Status | Grade | Notes |
+|----------|--------|-------|-------|
+| INDEX.md | Reviewed | E | [HIGH] stale vs .aid/generated/INDEX.md; [HIGH] 67% no-intent due to FM-MISSING propagation |
+| README.md | Reviewed | B+ | [LOW] "All 16 populated" overstates (feature-inventory is Template) |
+| STATE.md (this file) | Reviewed | C | [MEDIUM] placeholders unfilled; [MEDIUM] Status:Pending contradicts README:Populated; [MEDIUM] Q&A schema variance |
 
-**MINOR (2 — residuals, not Pass-9-scope failures):**
-- feature-inventory.md L27 (Feature #10 Status) "see DISCOVERY-STATE Q8" + L31 (Feature #14 Status) "DISCOVERY-STATE Q52" + L35 "DISCOVERY-STATE Q52" — retired-state-file Q-pointer phrasing. Host-tools-matrix Pass-9 modernized similar refs to "STATE.md Q52" / direct Q-ID without retired-state-file prefix; feature-inventory is one vocabulary cycle behind. Acceptable as historical Q-pointer reference (Q-IDs stable) but inconsistent with the modernization wave. Not a contradiction.
-- Multiple primary docs (architecture, data-model, external-sources, security-model, technology-stack, module-map, domain-glossary) carry "per DISCOVERY-STATE Q16/Q17/Q36/Q54/Q80/Q102/Q152" historical Q-pointer phrasing in body prose (not file-path references). These are idiomatic Q-pointers, not retired-file references — but a strict FR2-vocabulary sweep would replace them with bare "per Q16" form or "per STATE.md Q16". MINOR / stylistic only.
+## Knowledge Summary Status
 
-**[MINOR-mechanical-deferrable] (NOT counted against grade per prompt rule):**
-- module-map.md L150 discovery-reviewer "(378)" — disk=405; L318 "(~314)" — disk=399.
-- integration-map.md L21/L39/L63 file counts cycle-11 baseline.
-- infrastructure.md L25 branch citation.
-- technology-stack.md L17 Markdown file count cycle-11 vintage.
-- CLAUDE.md (project root) L65 "2,108 total" — disk sum is 2,157.
+| Field | Value |
+|-------|-------|
+| Profile | — (no summarize run yet on cycle-1) |
+| Profile Source | — |
+| Profile Confidence | n/a |
+| Theme | — |
+| Machine Grade | — |
+| Human Grade | — |
+| User Approved | no |
+| Last Run | — |
+| Output | — |
+| Mermaid Version | — |
+| Mermaid Cached | — |
 
-## Cycle-23 Verification Spot-Checks (12 checks — SEMANTIC focus, Pass-9 targets)
+## Issues
 
-| # | Claim | Source | Verified | Evidence |
-|---|-------|--------|----------|----------|
-| C23-1 | host-tools-matrix Section 2 L49 (setup.sh row) refreshed from ❌ CONFIRMED BUG to ✅ with Q70/H6 RESOLVED qualifier | host-tools-matrix.md L49 | TRUE | "✅ copies profiles/codex/.codex/ + profiles/codex/.agents/ (skills + templates) + AGENTS.md — Q70/H6 RESOLVED 2026-05-22 (setup.sh L144-146; task-030 smoke test confirmed 10 Codex SKILL.md files under <target>/.agents/skills/aid-*/SKILL.md)." Pass-9 sweep 1 LANDED. |
-| C23-2 | host-tools-matrix Section 2 L50 (setup.ps1 row) refreshed similarly | host-tools-matrix.md L50 | TRUE | "✅ same Codex .agents/ copy present — Q70/H6 RESOLVED 2026-05-22 (setup.ps1 L139-141; same smoke test)." Pass-9 sweep 1 LANDED. |
-| C23-3 | host-tools-matrix Section 5 Row 1 (L92) Severity migrated HIGH→RESOLVED with explicit RETIRED reference | host-tools-matrix.md L92 | TRUE | Severity column = "RESOLVED"; Status column = "RESOLVED — tech-debt.md H6 RETIRED 2026-05-22"; Q&A column = "Q70". Pass-9 sweep 1 LANDED. 3-site Q70 contradiction CLOSED. |
-| C23-4 | 6-doc Q70 consensus achieved (was 5-doc + setup-script disk truth vs host-tools-matrix 3 dissent sites in cycle-22) | host-tools-matrix L49/L50/L92 vs tech-debt L100, infrastructure L68, INDEX L21, feature-inventory L30/L57/L59, setup.sh L145, setup.ps1 L140 | TRUE | All 6 KB docs + 2 installer-script disk-truth sites now uniformly assert Q70/H6 RESOLVED 2026-05-22. Adopter agents reading any doc get a consistent narrative. |
-| C23-5 | host-tools-matrix L64 "DISCOVERY-STATE Q52" → "STATE.md Q52" per Pass 9 sweep 3 | host-tools-matrix.md L64 | TRUE | "Per STATE.md Q52: audit + unify on Terminal. Tracked as tech-debt.md M6." Pass-9 sweep 3 LANDED. |
-| C23-6 | host-tools-matrix L137 Section 7 internal Q3 contradiction resolved (Q3 was RESOLVED per same-doc Section 2 row 3 + Section 5 row 3) | host-tools-matrix.md L137 | TRUE | "Cross-tree sync (Q3 RESOLVED by work-002 canonical-generator; Q72 CONTRIBUTING.md doc-modernization pending — see coding-standards.md §9)." Split into RESOLVED-vs-pending — contradiction CLOSED. Pass-9 sweep 2 LANDED. |
-| C23-7 | domain-glossary L168 "User Approved" entry FR2 retirement qualifier added per Pass 9B | domain-glossary.md L168 | TRUE | "(Pre-FR2 this field lived in DISCOVERY-STATE.md, now retired — see area-STATE.)" — matches L165 "Triplication" retired-pattern framing. Pass-9B LANDED. |
-| C23-8 | domain-glossary L173 "Work" entry refreshed from INTERVIEW-STATE to per-area STATE.md with FR2 retirement qualifier | domain-glossary.md L173 | TRUE | "STATE.md (per-area, absorbs former INTERVIEW-STATE.md retired per FR2 — see area-STATE)". Pass-9B LANDED. |
-| C23-9 | Disk-truth: setup.sh L144-146 + setup.ps1 L139-141 both invoke profiles/codex/.agents copy | setup.sh L144-146 + setup.ps1 L139-141 | TRUE | setup.sh L145: copy_dir "$SCRIPT_DIR/profiles/codex/.agents" "$TARGET/.agents"; setup.ps1 L140: Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "profiles\codex\.agents") -DstDir (Join-Path $Target ".agents"). Both present. |
-| C23-10 | Disk-truth: SKILL.md totals = 2,157 across 10 skills | canonical/skills/aid-*/SKILL.md | TRUE | aid-discover=307 ✓; aid-execute=279 ✓; aid-detail=77 ✓; (spot-checked 3 of 10; prompt + verify-kb-claims confirm other 7 match). |
-| C23-11 | Disk-truth: parse-recipe.sh = 540 lines located at canonical/skills/aid-interview/scripts/ | canonical/skills/aid-interview/scripts/parse-recipe.sh | TRUE | wc -l = 540. Matches prompt and domain-glossary L125 + feature-inventory L42. |
-| C23-12 | Disk-truth: discovery-reviewer AGENT.md = 405 lines at canonical/agents/discovery-reviewer/AGENT.md | canonical/agents/discovery-reviewer/AGENT.md | TRUE | wc -l = 405. Matches prompt. (Note: module-map L150 cites "(378)" — that drift is [MINOR-mechanical-deferrable] per orchestrator pre-flight rule.) |
+> Issues found during REVIEW state, cycle-1. Severity tags drive grade.sh.
+> Full per-doc breakdown in `.aid/.temp/review-pending/discovery.md`.
 
-**Cycle-23 spot-check summary:** 12 checks. **12 TRUE / 0 FALSE / 0 PARTIAL = 100% pass on Pass-9-landing-verification.**
+### project-structure.md (D)
+- [HIGH] [FM-MISSING] No YAML frontmatter present
+- [LOW] Line 29 says project-index.md is 1149 lines; actual is 1148
+- [LOW] Line 256 says discovery-reviewer.md is 402 lines; actual is 405
 
-Additional disk-truth verification from in-session verify-kb-claims.sh run: 707 citations checked, 707 valid, 0 missing files, 0 line-out-of-range, 0 README drifts, 0 spot-check drifts. tech-debt severities HIGH=8 MEDIUM=6 LOW=8. security-model severities HIGH=1 MEDIUM=4 LOW=4 INFO=12. domain-glossary 161 terms. **Exit code: 0.**
+### external-sources.md (D+)
+- [HIGH] [FM-MISSING] 3-line file still needs frontmatter per kb-authoring/frontmatter-schema.md:6-7
 
-## Cross-Cutting Concerns (cycle-23)
+### architecture.md (D)
+- [HIGH] [FM-MISSING] No YAML frontmatter present
+- [MEDIUM] Skill-body line count: CLAUDE.md says 2108, canonical sums to 2230 — doc flags but does not resolve
+- [LOW] Rendered-vs-canonical aid-config size cited (190 vs 176) without path to rendered copy
 
-1. **Pass 9 was the first cycle where dispatch scope = semantic-contradiction surface (not vocabulary-cosmetic surface).** Cycles 20-21 dispatched on cheapest-wins (vocab + line counts). Pass 9 dispatched directly on the worst-issue (3-site Q70 contradiction + 1-site internal Q3 contradiction + 2 MINOR FR2 glossary residuals). Result: 6/6 declared targets landed; pass rate 100%; worst-issue closed.
+### technology-stack.md (D+)
+- [HIGH] [FM-MISSING] No YAML frontmatter present
+- [LOW] Development Tools table duplicates T3 metric data from module-map.md and metrics.md (P1 violation: drift-prone)
 
-2. **6-doc Q70/H6 internal consistency achieved.** host-tools-matrix.md (L49, L50, L92) + tech-debt.md (L100) + infrastructure.md (L68) + INDEX.md (L21) + feature-inventory.md (L30, L57, L59) + README.md (L35 status totals reflect Shipped) + setup.sh L145 + setup.ps1 L140 all uniformly assert RESOLVED 2026-05-22. Adopter agents get a consistent narrative.
+### module-map.md (A)
+- (none)
 
-3. **Residual MINOR retired-vocab footprint is idiomatic Q-pointer phrasing, not file-path references.** Multiple primary docs use "per DISCOVERY-STATE Q16/Q17/Q102" phrasing in body prose to cite Q&A items historically resolved while STATE.md was named DISCOVERY-STATE.md. These are stable Q-pointers (Q-IDs survive the FR2 rename) and not actively misleading — but they are pre-FR2 vocabulary residuals. Not flagged HIGH/MEDIUM because: (a) Q-IDs are stable, (b) the historical reference is still findable, (c) FR2 retirement is documented in 6+ explicit "(RETIRED per FR2 ...)" entries across glossary + data-model + architecture + api-contracts + integration-map. A future cosmetic-only sweep could collapse "per DISCOVERY-STATE Q16" → "per Q16" or "per STATE.md Q16" — but it is NOT blocking.
+### coding-standards.md (A)
+- (none)
 
-4. **feature-inventory.md L27 + L31 + L35 are the closest remaining "active" retired-vocab residuals** (these sit in feature-status descriptions, not historical narrative). Host-tools-matrix Pass 9 modernized similar refs to "STATE.md Q52"; feature-inventory is one vocabulary cycle behind. MINOR.
+### data-model.md (A)
+- (none)
 
-5. **Cycle-23 introduces no new mechanical-drift findings beyond the inherited [MINOR-mechanical-deferrable] set.** All asserted disk truths verified TRUE. verify-kb-claims.sh exits 0 with 0 drifts.
+### api-contracts.md (D)
+- [HIGH] [FM-MISSING] No YAML frontmatter present
+- [MEDIUM] api-contracts.md:99-110 says "EXACTLY 5 sections" then lists 6 items (load-bearing protocol contract contradicts itself)
 
-## Q&A
+### integration-map.md (D)
+- [HIGH] [FM-MISSING] No YAML frontmatter present
+- [MEDIUM] Line 54 cites project-index.md as 1149 lines; actual is 1148 (inherits drift from project-structure.md:29)
+- [LOW] Loop 1-11 table at lines 291-302 uses legacy "DISCOVERY-STATE.md" alongside current STATE.md terminology
 
-> Cycle-23 preserves Q190-Q218 from cycles 18-22. Q218 marked Answered by cycle-22 Pass 9 (verified TRUE on disk in this re-grade — see Per-Document Grades table). **No new Q-entry added** — the residual MINORs are pre-existing tech-debt categories already covered by Q72 (CONTRIBUTING.md doc-modernization / retired-vocab category) and the general FR2 sweep. A fresh Q-entry would over-fragment the Q&A surface.
+### domain-glossary.md (D)
+- [HIGH] [FM-MISSING] No YAML frontmatter present
+- [MEDIUM] Line 18 defines AID as "AI-Integrated Development" but CLAUDE.md:5 says "Agentic Implementation Discipline" and settings.yml:16 says "AI Integrated Development" and user-memory says "Agent Integrated Development" — three-way conflict not flagged
+- [MEDIUM] Line 351 says "~150 terms"; actual count = 195
+- [LOW] Q&A schema cited as IQ{N} but actual STATE.md uses Q{N}
 
-### Q190-Q218
-- (preserved from cycles 18-22; Q218 confirmed Answered by cycle-22 Pass 9 commit `2a0c7dd`)
+### test-landscape.md (D)
+- [HIGH] [FM-MISSING] No YAML frontmatter present
+- [MEDIUM] Line 111 notes 73 tests are uninvocable but does not surface the locally-runnable count (~224/297) — users cannot verify the 297/297 claim
+
+### security-model.md (D)
+- [HIGH] [FM-MISSING] No YAML frontmatter present
+- [MEDIUM] Authorization table lists 6 discovery-* entries; module-map.md and project-structure.md count 5 discovery sub-agents (excluding discovery-reviewer); terminology inconsistent
+
+### tech-debt.md (D+)
+- [HIGH] [FM-MISSING] No YAML frontmatter present (the canonical template has frontmatter; the deployed copy does not)
+- [LOW] H1 correctly verified (e2e runners missing from disk)
+
+### infrastructure.md (D+)
+- [HIGH] [FM-MISSING] No YAML frontmatter present
+- All CLAUDE.md citations verified accurate
+
+### ui-architecture.md (D)
+- [HIGH] [FM-MISSING] No YAML frontmatter present
+- [MEDIUM] Lines 102/109 say "two files that must stay in sync" but table immediately lists THREE files (design-tokens.md, component-css.css, mermaid-init.js)
+
+### feature-inventory.md (E)
+- [HIGH] [FM-PARTIAL] Frontmatter present but document is template-only (placeholder row at line 25)
+- [HIGH] Zero features inventoried; metrics.md:96-97 reports false-positive Shipped=2/Partial=2 from legend block
+
+### INDEX.md (E)
+- [HIGH] STALE: `.aid/knowledge/INDEX.md` (4687 bytes, 2026-05-27T19:30:58Z) differs from `.aid/generated/INDEX.md` (4753 bytes, 2026-05-27T20:01:25Z) — generated copy has README.md entry; knowledge copy does not
+- [HIGH] 12 of 18 entries show "*(no intent: declared)*" — cannot fulfill stated purpose for 67% of KB
+
+### README.md (B+)
+- [LOW] Line 6 claims "All 16 canonical KB documents populated" but feature-inventory.md is Template-only (acknowledged in row 29 but overstated in prose)
+
+### STATE.md (C)
+- [MEDIUM] Template placeholders unfilled at lines 8, 22, 49-59 (Last Summary, External Documentation row, Knowledge Summary Status fields)
+- [MEDIUM] KB Documents Status (lines 27-43) marks all 16 docs Status=Pending, contradicting README.md:14-29 (all Populated)
+- [MEDIUM] Q&A entries use ### Q1 / sub-bullets schema; methodology spec / work-state-template uses ### IQ1: [Category: Impact] inline — two Q&A schemas now coexist in codebase
+- [LOW] Review History row 140-141 still has template placeholder `{YYYY-MM-DD}`
+
+## Cross-Cutting Concerns
+
+- **CC1 [HIGH]:** Frontmatter missing on 12 of 16 primary KB docs (already counted per-doc above; here for visibility)
+- **CC2 [HIGH]:** INDEX.md stale relative to generator output (two-copy drift)
+- **CC3 [MEDIUM]:** Project acronym defined four different ways (CLAUDE.md / settings.yml / domain-glossary.md / user-memory)
+- **CC4 [MEDIUM]:** project-index.md cited as 1149 lines; actual = 1148 (drift in project-structure.md:29 → integration-map.md:54)
+- **CC5 [MEDIUM]:** discovery-reviewer.md cited as 402 lines; actual = 405 (drift in project-structure.md:256 → domain-glossary.md:240)
+- **CC6 [MEDIUM]:** "5 sub-agents" vs "6 discovery-* agents" terminology inconsistent across module-map / integration-map / security-model
+- **CC7 [MEDIUM]:** feature-inventory.md empty + metrics.md reports false counts (2 Shipped, 2 Partial from legend block matches)
+- **CC8 [LOW]:** domain-glossary.md says ~150 terms; actual = 195 (also wrong in metrics.md)
+
+## Verification Spot-Checks
+
+> 30 spot-checks performed; 26 verified-true, 4 verified-false. Full list in
+> `.aid/.temp/review-pending/discovery.md` § Verification Spot-Checks. Failed
+> checks below:
+
+| # | Claim | Doc | Verified | Evidence |
+|---|-------|-----|----------|----------|
+| 21 | project-index.md = 1149 lines | project-structure.md:29, integration-map.md:54 | NO | `wc -l .aid/generated/project-index.md` = 1148 |
+| 22 | discovery-reviewer.md = 402 lines | project-structure.md:256, domain-glossary.md:240 | NO | `wc -l canonical/agents/discovery-reviewer/AGENT.md` = 405 |
+| 24 | Mermaid fetch is version-pinned + SHA-verified | (dispatcher claim about scout) | NO | `grep EXPECTED_SHA256 canonical/scripts/summarize/fetch-mermaid.sh` returns nothing; SHA computed after download |
+| 27 | 297/297 expected tests | CLAUDE.md:42 | NO unverifiable | 73 tests from missing `.aid/work-001-aid-lite/` runners; locally-runnable ~224 |
+| 30 | domain-glossary.md ~150 terms | domain-glossary.md:351 | NO | Actual = 195 terms (`grep -c "^\| \*\*"` ) |
+
+Verified-true (sample):
+- Python 3.11+ at `.claude/skills/aid-generate/scripts/harness.py:15`
+- PowerShell 5.1+ at `setup.ps1:1` (`#Requires -Version 5.1`)
+- 22 agents (verified via `ls canonical/agents/ | wc -l`)
+- 10 user-facing skills (verified via `ls canonical/skills/ | wc -l`)
+- 5 recipes + README (verified via `ls canonical/recipes/`)
+- 16 STANDARD_KB_FILES (verified via `sed -n 102,119p canonical/scripts/kb/verify-claims.sh`)
+- methodology/aid-methodology.md = 1071 lines
+- verify-claims.sh = 695 lines
+- writeback-task-status.sh = 627 lines
+- state-execute.md = 629 lines
+- harness.py = 756 lines
+- profile.py = 550 lines
+- setup.sh = 162 lines
+- Skill canonical sum = 2230 lines (architecture.md acknowledges drift vs CLAUDE.md's 2108)
+- settings.yml minimum_grade default at line 38
+- settings.yml heartbeat_interval at line 50
+- `.aid/work-001-aid-lite/` missing (tech-debt.md H1 correct)
+- `.aid/work-002-canonical-generator/` missing (tech-debt.md M1 correct)
+- project-index.md Total files = 1077 (header)
+- 12 of 16 primary docs lack frontmatter (verified per-doc)
+- `.aid/knowledge/INDEX.md` stale vs `.aid/generated/INDEX.md` (verified via diff)
+
+## Q&A (Pending)
+
+> Open questions from cycle-1 GENERATE (Q1-Q10) + cycle-1 REVIEW (Q11+). Renumbered from scout-local Q-S{N} to canonical Q{N}.
+
+### Q1
+- **Category:** Documentation / Project-State
+- **Impact:** High
+- **Status:** Answered
+- **Context:** `CLAUDE.md:35-36` lists two test-runner scripts as part of the canonical helper suite — `.aid/work-001-aid-lite/test-reports/e2e-two-tier-runner.sh` (35 tests) and `e2e-lite-path-runner.sh` (38 tests). Neither file appears in `.aid/generated/project-index.md` (1077 files, full inventory). If these are claimed quality gates and they do not exist on this branch, the documented test coverage (297/297) cannot be reproduced. Either the docs are stale or the scripts were lost during a branch operation (CLAUDE.md:118 notes PR #12 lost 63 commits during a worktree-sprawl incident — was this collateral damage?).
+- **Suggested:** Confirm whether `.aid/work-001-aid-lite/` should be present. If retired, update `CLAUDE.md:35-36` to remove the dead references. If accidentally lost, recover from git history.
+- **Answer:** **Structural error.** Per user (2026-05-27): "No canonical file should be in the work-* folder. That is a big mistake." The `.aid/work-*/` directories are for transient work-in-progress artifacts (PLAN.md, REQUIREMENTS.md, tasks/, features/), NOT for canonical test scripts. FIX state actions: (1) Remove `e2e-two-tier-runner.sh` (35) and `e2e-lite-path-runner.sh` (38) lines from `CLAUDE.md:35-36`; (2) Recompute the 297-total test claim (excluding the 73 phantom tests = 224 across 5 canonical/ suites); (3) If the e2e tests are actually wanted in the project, relocate to `tests/canonical/` or `tests/e2e/` — not a work-* folder. Also see [[work-folder-scope]] memory.
+
+### Q2
+- **Category:** Documentation / Project-State
+- **Impact:** High
+- **Status:** Answered
+- **Context:** `run_generator.py:76,83` writes verify reports to `.aid/work-002-canonical-generator/verify-4a-report.json` and `verify-4b-report.json`. That directory is NOT present in the project index. The script will fail on a clean checkout (the parent directory does not exist and open with mode "w" on a missing parent throws). Inferred: maintainers must `mkdir -p` the directory before each run, or the script needs a `Path(...).parent.mkdir(exist_ok=True, parents=True)` guard.
+- **Suggested:** Either (a) add the directory with a `.gitkeep` and document its purpose, (b) move the verify reports somewhere already-tracked, or (c) add `mkdir -p` logic to `run_generator.py`.
+- **Answer:** **Drop the reports entirely.** Per user (2026-05-27): "Drop them and add a note to investigate later if there are more unnecessary reports, files, or logs being generated by the skills so we can eliminate the crud." Investigation showed: `run_verify`/`run_advisory` already accept `report_path=None` and skip the JSON write internally (`verify_deterministic.py:364-368`); `run_generator.py` is the only caller passing a path; the reports are write-only (script logic uses return values, not the file). FIX state actions: (1) Change `run_generator.py:76,83` to pass `report_path=None` (or omit the arg); (2) `--report-path` CLI arg stays on standalone invocations for debugging; (3) Add a tech-debt audit item for a project-wide skills/script crud audit (see tech-debt.md update). The original premise about mkdir failure was wrong — `verify_deterministic.py:366` already does `rp.parent.mkdir(parents=True, exist_ok=True)`. Also see [[no-crud-outputs]] memory.
+
+### Q3
+- **Category:** Discovery-Scope
+- **Impact:** High
+- **Status:** Answered
+- **Context:** The repo is unusual: it ships NO application code, only a methodology + a 4-way-mirrored install bundle. Discovery is being run on the repo that defines discovery. Some standard KB docs (`api-contracts`, `data-model`, `ui-architecture`, `security-model` insofar as it covers a runtime app) will have nothing to say — there are no APIs, no data models, no runtime UI, no production attack surface. This is expected and not a defect.
+- **Suggested:** Confirm with the user that these KB docs may be intentionally near-empty (or repurposed to describe the methodology contracts — e.g., `api-contracts.md` could document the canonical-to-render-to-install contract, `data-model.md` could document the KB shape and emission-manifest schema). Capture the decision before downstream sub-agents (analyst, integrator, quality) start.
+- **Answer:** **Rename misleading + delete irrelevant + replace.** Per user (2026-05-27): "The KB must be a correct representation of the intent of the repo." FIX state actions:
+  1. **Rename `api-contracts.md` → `pipeline-contracts.md`** — actual content is pipeline-component interfaces (skill ↔ subagent dispatch, script CLI signatures + exit codes, file-format contracts, render contract). Cascade: INDEX.md, README.md, verify-claims.sh expected-doc list, aid-discover sub-agent prompts (`discovery-integrator` agent owns), methodology spec, `canonical/templates/knowledge-base/api-contracts.md` template.
+  2. **Rename `data-model.md` → `schemas.md`** — actual content is YAML/JSONL/markdown shape contracts (settings.yml, STATE.md sections, frontmatter, emission-manifest JSONL, recipe/task templates). Cascade: same files as #1, plus `discovery-analyst` agent ownership map.
+  3. **Delete `ui-architecture.md` + write new `repo-presentation.md`** — current 320L content (KB-viewer architecture) is implementation detail that belongs in `aid-summarize` skill README. New doc describes how the methodology is *presented to users via the GitHub repo*: README structure, docs/ taxonomy, examples/ catalog, methodology spec link, blog references. Cascade: same as #1, plus `discovery-architect` ownership re-map.
+  4. **Delete `security-model.md`** — for a non-runtime methodology repo, dedicated security doc is contortion. Relocate salvageable bullets: (a) secret hygiene/`.gitignore` policy → `coding-standards.md` as a bullet; (b) Mermaid CDN pin status → already in `tech-debt.md` C1; (c) agent-tools allowlist → already documented in agent definitions + `coding-standards.md`; (d) adopter-side permission contract → methodology spec. Cascade: same as #1, plus `discovery-quality` ownership re-map.
+  5. **New follow-up Q16** captures the broader methodology change (canonical 16-doc set becomes a flexible default).
+  
+  Net cycle-end KB-doc count: 15 (was 16 — net delete 1 because `security-model.md` is deleted but `ui-architecture.md` is replaced 1:1 by `repo-presentation.md`).
+
+### Q4
+- **Category:** Build / Determinism
+- **Impact:** Medium
+- **Status:** Answered
+- **Context:** The mirror-replication design implies that every helper-script change must be made in `canonical/scripts/` and propagated by `python run_generator.py`. There is no enforcement mechanism documented in the project index (no pre-commit hook, no CI gate per `CLAUDE.md:44`). A contributor who edits one of the 4 mirror copies directly will be silently overwritten on the next render. `CLAUDE.md:75-76` warns "Never edit `profiles/{claude-code,codex,cursor}/` directly" — but `.claude/` (the dogfood tree) is also a mirror per the same logic and is not in the warning list.
+- **Suggested:** Confirm whether `.claude/` (dogfood) is in scope for the same do-not-hand-edit rule. If yes, update `CLAUDE.md:75-76` to include it. Consider whether a pre-commit hook should reject edits to any of the 4 mirror trees.
+- **Answer:** **Keep .claude/ hand-editable (current behavior).** Per user (2026-05-27). The 4-tree byte-identity rule applies to canonical + 3 profile trees (claude-code, codex, cursor) only. `.claude/` is the dogfood install — conceptually identical to any user's `.claude/` after `setup.sh`, intentionally hand-editable so the maintainer can test changes without re-rendering. **Note:** The rule's home moved from `CLAUDE.md:75-76` (now removed in user's cleanup) to `coding-standards.md:328` — Q4 line-cite needs updating in FIX. No coding-standards change required; current wording is correct as-is.
+
+### Q5
+- **Category:** Distribution / Packaging
+- **Impact:** Medium
+- **Status:** Answered
+- **Context:** End-user install is via `setup.sh` / `setup.ps1` (per `README.md:282-296`), not via a package manager. There is no semver/calver version source visible in the project index (no `VERSION` file, no `__version__` in Python, no `version =` in any TOML). It is unclear how end users learn that an upgrade is available, what version they have installed, or how AID itself is versioned.
+- **Suggested:** Confirm versioning scheme + release process. If "git SHA = version" is the answer, document it; if there is a planned semver, add a `VERSION` file.
+- **Answer:** **Not versioned yet — document as "continuous master".** Per user (2026-05-27). AID is methodology-in-development; explicit non-versioning is the honest position. FIX state actions: (1) Add a section to `README.md` (likely under "Installation" or a new "Versioning" subsection) explaining: "AID has no version yet; install pulls current `master`; re-run `setup.sh` to get updates."; (2) Add a tech-debt item `Versioning-scheme-when-stable` for when AID stabilizes enough to warrant formal releases; (3) Update `coding-standards.md` (or `tech-debt.md`) to clarify the "no version" stance so contributors don't add a VERSION file prematurely.
+
+### Q6
+- **Category:** Test-Tooling
+- **Impact:** Medium
+- **Status:** Answered
+- **Context:** Tests are pure bash scripts (`tests/canonical/*.sh`, `tests/skills/*.sh`). 8 total: 6 in canonical/ + 2 in skills/. The project index shows no test runner.
+- **Suggested:** Confirm whether a top-level test runner exists or whether the manual list is the actual contract. A `tests/run-all.sh` aggregator would reduce friction.
+- **Answer:** **Cleanup + rename + clean-code refactor.** Per user (2026-05-27): cycle-1 FIX state actions: (1) **Delete** `tests/skills/lite-subpaths.sh` and `tests/skills/lite-to-full-escalation.sh` — both are doc-conformance checks pretending to be tests (verify state-*.md files contain specific text; break on doc rewrites; stay passing when underlying logic breaks). The skills/ folder itself can be removed. (2) **Delete** `tests/canonical/pool-dispatch.sh` — 3 assertions in 153 lines is ceremony, not testing; the "symbolic simulation" doesn't actually test dispatch behavior. (3) **Keep 5 remaining canonical/ tests** — they protect non-trivial deterministic bash logic where silent bugs are the alternative (settings resolution, task-status concurrency, recipe parsing, BFS failure cascade, delivery-gate integration). (4) **Add `tests/README.md`** listing what each kept suite covers + how to run individually. (5) **No aggregator** for now (5 hand-runnable suites is fine). **Plus follow-up:** Q17 captures the broader test-refactor toward clean-code patterns + clearer names. Net: 8 → 5 test files this cycle; longer-term refactor in a separate work item.
+
+### Q7
+- **Category:** Knowledge-Base
+- **Impact:** Medium
+- **Status:** Skipped
+- **Context:** The KB output directory (`.aid/knowledge/`) currently contains only `STATE.md` (3629 bytes). The "16 standard KB docs" promised by the methodology (`README.md:114-145`) are not present. This is expected for a discovery cycle that has not run, but means the downstream agents have no prior KB to read — they are producing the KB from scratch on a repo whose own purpose is to enable such KB production. Cite-everything discipline must be especially tight to avoid circular fluff.
+- **Suggested:** No action needed — flag for the orchestrator: this is the first KB cycle on this repo. Prior knowledge-summary artifacts (e.g., `.aid/knowledge/knowledge-summary.html` per git status) may be reference material but are not authoritative.
+- **Answer:** Auto-skipped in Q-AND-A Step 1 — informational observation about cycle-1 state; no user-decision needed. The cycle has since completed GENERATE (all 16 docs populated) so the precondition described in Context no longer holds.
+
+### Q8
+- **Category:** Examples
+- **Impact:** Low
+- **Status:** Answered
+- **Context:** `examples/` contains three case studies (`brownfield-enterprise/`, `data-pipeline/`, `desktop-app/`). Modification dates skew to March 2026 (3+ months stale relative to the current 2026-05-27 snapshot), and example sizes are small (~50-110 lines per file). It is unclear whether they are still authoritative or are demonstration-only.
+- **Suggested:** Note their staleness; not a blocker for discovery. Discovery-architect or discovery-quality may want to flag for refresh in `tech-debt.md`.
+- **Answer:** **Accept stale + add tech-debt entry.** Per user (2026-05-27). FIX state action: add a Medium-severity entry to `tech-debt.md`: "examples/ case studies (brownfield-enterprise, data-pipeline, desktop-app) are 3+ months stale (last touched March 2026). Refresh when methodology changes substantially (e.g., after Q3's KB-doc rename + Q11's acronym fix propagate). No refresh blocking this cycle."
+
+### Q9
+- **Category:** Generated-Artifacts
+- **Impact:** Low
+- **Status:** Answered
+- **Context:** `.gitignore:39-47` excludes `.aid/knowledge/.cache/`, `.claude/worktrees/`, `.claude/settings.local.json`, and `.aid/.heartbeat/` — but does NOT exclude `.aid/` as a whole. The README (line 320) claims `.aid/` is appended to your project gitignore — the Knowledge Base stays out of git by default. The discrepancy is intentional for this repo (the KB is the deliverable here) but is worth noting so that contributors do not get confused.
+- **Suggested:** Confirm in `CONTRIBUTING.md` or `CLAUDE.md` that this repo deliberately commits `.aid/knowledge/` because the KB IS part of the product. Otherwise, the README promise might mislead readers.
+- **Answer:** Self-evident: `git ls-files | grep "^\.aid/" | wc -l` = 67 — `.aid/` IS deliberately committed in this repo because AID is dogfooding itself (the KB and work-artifacts are part of the product). Surfaced for FIX state to add a `CLAUDE.md` clarifying note so external contributors are not misled by the README's general-case guidance.
+
+### Q10
+- **Category:** External-Documentation
+- **Impact:** Low
+- **Status:** Answered
+- **Context:** No external documentation paths were registered in the `STATE.md ## External Documentation` table for this discovery cycle (per orchestrator instructions). Per the agent-prompts spec, this is the no-docs variant. If the user has external design notes, blog drafts, internal Notion pages, or methodology comparison material on disk that should inform discovery, they have not been surfaced.
+- **Suggested:** Re-confirm with the user that no external sources exist. If any exist (e.g., the blog post referenced by `README.md:374` at casuloailabs.com/blog/aid-methodology/), they could be added at Q&A time.
+- **Answer:** **Confirmed: no external docs.** Per user (2026-05-27). All authoritative content lives in the repo. The blog post at casuloailabs.com/blog/aid-methodology/ is referenced from README but doesn't need to be re-ingested. Discovery is self-contained. No FIX action.
+
+### Q11
+- **Category:** Documentation / Acronym
+- **Impact:** High
+- **Status:** Answered
+- **Context:** AID is expanded FOUR different ways in the codebase:
+  (1) `CLAUDE.md:5` = "Agentic Implementation Discipline"
+  (2) `.aid/settings.yml:16` = "AI Integrated Development"
+  (3) `domain-glossary.md:18` = "AI-Integrated Development" (hyphenated)
+  (4) User memory `project_aid-acronym.md` body = "AI Integrated Development" (memory INDEX line previously said "Agent Integrated Development" — corrected in this session)
+  Downstream skills, README, and any new contributor will pick a different one. tech-debt.md M2 captures only #1 vs #2; this is broader.
+- **Suggested (corrected from reviewer's stale read):** Canonical = "AI Integrated Development" per `.aid/settings.yml:16` + user-memory body.
+- **Answer:** **AID = "AI Integrated Development" (no hyphen).** Per user confirmation (2026-05-27). FIX state actions: (1) `CLAUDE.md:5` — replace "Agentic Implementation Discipline" → "AI Integrated Development"; (2) `domain-glossary.md:18` — remove hyphen ("AI-Integrated Development" → "AI Integrated Development"); (3) Grep entire repo for "Agentic Implementation Discipline", "Agent Integrated Development", "AI-Integrated Development" (hyphenated) and replace each with canonical; (4) Update `methodology/aid-methodology.md` if it carries any variant; (5) Update profile-tree mirrors (`profiles/{claude-code,codex,cursor}/`) so they pick up the canonical via render; (6) Update `tech-debt.md` M2 to mark resolved.
+
+### Q12
+- **Category:** KB-Generator
+- **Impact:** Medium
+- **Status:** Answered
+- **Context:** `.aid/knowledge/INDEX.md` is generated by `bash .claude/scripts/kb/build-index.sh --root .aid/knowledge --output .aid/generated/INDEX.md` (per its own header line 16). The default output is `.aid/generated/INDEX.md`, NOT `.aid/knowledge/INDEX.md`. Two copies now exist on disk, with different timestamps and contents (the knowledge/ copy lacks the README.md entry the generated/ copy has).
+- **Suggested:** Either (a) Have `build-index.sh` also write to `.aid/knowledge/INDEX.md` so the two stay in sync, (b) Delete `.aid/knowledge/INDEX.md` and point all consumers at `.aid/generated/INDEX.md`, or (c) Document explicitly which one is canonical.
+- **Answer:** **Single copy at `.aid/knowledge/INDEX.md`.** Per user (2026-05-27). Co-located with the docs it indexes (RAG pattern). FIX state actions: (1) Update `build-index.sh` default output from `.aid/generated/INDEX.md` to `.aid/knowledge/INDEX.md`; (2) Update `verify-claims.sh` GEN-MISSING registry to expect INDEX.md at `.aid/knowledge/INDEX.md` (or remove from registry since it's now co-located with primary docs); (3) Delete `.aid/generated/INDEX.md`; (4) Update `generated-files.txt` registry to drop the `.aid/generated/INDEX.md` line; (5) Grep skills + state-*.md references for `.aid/generated/INDEX.md` and replace with `.aid/knowledge/INDEX.md`.
+
+### Q13
+- **Category:** Feature-Inventory
+- **Impact:** High
+- **Status:** Answered
+- **Context:** `.aid/knowledge/feature-inventory.md` contains a single placeholder row `*(populated during Discovery Q&A + FIX)*` at line 25. README.md correctly marks it as "Template" in the table. But `build-metrics.sh` matches against the legend block (lines 17-21) and reports "Shipped=2, Partial=2" in `.aid/generated/metrics.md:96-97`. The metric is meaningless because the table is empty, but downstream code reads it.
+- **Suggested:** Populate feature-inventory.md from CLAUDE.md `## Architecture` bullets + the 10 user-facing skills as discrete "features". Use a status of ✅ Shipped for everything in the current canonical/ tree.
+- **Answer:** **10 user-facing skills as features.** Per user (2026-05-27). FIX state actions: (1) Populate `feature-inventory.md` table with one row per user-facing skill: `aid-config`, `aid-discover`, `aid-interview`, `aid-specify`, `aid-plan`, `aid-detail`, `aid-execute`, `aid-deploy`, `aid-monitor`, `aid-summarize` — all with status `✓ Shipped`; (2) Add a separate row or footnote for `aid-generate` (maintainer-only, also Shipped); (3) Each row should cite the skill's `.claude/skills/<skill>/SKILL.md` source. **Important context note from user:** They have independently cleaned up CLAUDE.md to remove incorrect/stale info — FIX state actions touching CLAUDE.md must re-read the file first; do not rely on prior content cached in agent contexts.
+
+### Q14
+- **Category:** Frontmatter
+- **Impact:** High
+- **Status:** Answered
+- **Context:** 12 of 16 primary KB docs lack the required YAML frontmatter (`kb-category`, `source`, `intent`, etc. per `canonical/templates/kb-authoring/frontmatter-schema.md:14-26`). The 4 that have it (module-map, coding-standards, data-model, feature-inventory) appear to be ones authored from the template. The other 12 either pre-date the schema or had it stripped during a recent rewrite. INDEX.md as a result shows "*(no intent: declared)*" for 12 of 18 entries. This is the single biggest blocker to KB usefulness.
+- **Suggested:** Add frontmatter to all 12 missing docs. Use the schema template as the source; cycle each through review.
+- **Answer:** Pure FIX action, no user-decision needed — accept Suggested. FIX state will dispatch tech-writer agents (one per missing doc, parallel) to add `kb-category`, `source`, `intent` frontmatter per schema. The 4 that already have FM (module-map, coding-standards, data-model, feature-inventory) are the template for the other 12.
+
+### Q15
+- **Category:** STATE-Schema
+- **Impact:** Medium
+- **Status:** Answered
+- **Context:** Two Q&A entry schemas now exist in the codebase: (1) `### Q1` with sub-bullets for Category / Impact / Status / Context / Suggested (this STATE.md's style); (2) `### IQ1: [Category: Impact]` inline followed by Question / Context / Source / Suggested / Status (the methodology spec / work-state-template.md style). Both are valid and used. Should the canonical schema be one or the other? Currently downstream skills must support both.
+- **Suggested:** Pick one canonical schema (probably the methodology spec's IQ-style, since it is more compact and inline-grep-able) and update `canonical/templates/discovery-state-template.md` to match. Migrate existing STATE.md entries via a one-time script.
+- **Answer:** **Canonical = Style A** (`### Q{N}` + sub-bullets). Per user (2026-05-27). FIX state actions: (1) Update `canonical/templates/work-state-template.md` to use Style A for the `## Cross-phase Q&A` section; (2) Update `methodology/aid-methodology.md` Q&A spec to use Style A; (3) Update `aid-interview` skill body + references to emit Style A on Q&A injection from downstream phases; (4) Document Style A in `coding-standards.md` as the canonical Q&A schema (with example block); (5) No existing-entry migration needed (this cycle's STATE.md already uses Style A; aid-interview hasn't been run on a real work-item recently).
+
+### Q16
+- **Category:** Methodology / Doc-Set
+- **Impact:** High
+- **Status:** Answered
+- **Context:** Q3's resolution (rename 2 + delete 1 + delete-and-replace 1) effectively customizes the canonical 16-doc KB set for this repo. Currently the methodology spec, `aid-discover` skill (verify-claims expected-doc list), and `canonical/templates/knowledge-base/` template-set all assume a rigid 16-doc set. After Q3 lands, this repo will have a 15-doc set with 2 renamed and 1 replaced. The methodology should support this flexibility as a first-class feature instead of treating it as drift.
+- **Suggested:** Decide whether this is (a) a one-off carve-out for the AID repo itself, or (b) a methodology-level change.
+- **Answer:** **(b) Methodology-level change.** Per user (2026-05-27): "If the methodology assumes a rigid 16-doc set, we need to change that. That is like a default set that could be changed by the user. We could add or remove new docs to better represent the content of the repo. The methodology should be flexible to adapt to the intent and content of the project. The INDEX.md is the aggregator, the true representation of the content of the KB." Action: this Discovery cycle's FIX state (a) captures the user's principle in `coding-standards.md` (or `methodology.md` if more appropriate) AND (b) **adds a tech-debt.md entry**: "Methodology change — flexible KB doc-set. Scope: redesign methodology spec to treat 16-doc list as default, add `discovery.kb_docs:` section to `.aid/settings.yml` schema, rewrite `aid-discover` state-detection + verify-claims to read declared list, update `canonical/templates/knowledge-base/` from 'mandatory templates' to 'default templates + sub-folder for custom'. Pick up via `/aid-interview` when prioritized — work-NNN assignment happens then." Cycle-1 FIX still uses the 15-doc post-Q3 set as a one-time carve-out until the larger refactor ships. **Do NOT reserve a work-NNN number here** — Discovery defers that to /aid-interview.
+
+### Q17
+- **Category:** Test-Refactor
+- **Impact:** Medium
+- **Status:** Answered
+- **Context:** Per Q6's answer, cycle-1 FIX state cleans up obvious test cruft (delete 3, keep 5). User also requested a broader refactor of the remaining 5 tests toward clean-code patterns and clearer names. Current names describe the SCRIPT under test, not the BEHAVIOR being asserted. Bash test patterns vary across the suites; some use plain `[[ ]]`, others have helper functions. No shared test-utility module.
+- **Suggested:** Decide whether to (a) do the refactor inline during cycle-1 FIX, or (b) capture as separate `work-NNN-test-refactor` work item.
+- **Answer:** **(b) Separate work-NNN (recommended).** Per user (2026-05-27). Cycle-1 FIX scope stays as Q6 (delete 3 + keep 5, no rename). The broader refactor is captured as a **tech-debt.md entry**: "Test-refactor toward clean-code patterns. Scope: rename convention (`<behavior-under-test>_test.sh` or bats migration), shared test-utility extraction (assertions, setup/teardown, common fixtures), consistent failure messages, optional aggregator script if warranted. Pick up via `/aid-interview` when prioritized — work-NNN assignment happens then." **Do NOT reserve a work-NNN number here** — Discovery defers that to /aid-interview.
 
 ## Review History
 
+> One row per /aid-discover review cycle. Append-only.
+
 | # | Date | Grade | Source | Notes |
 |---|------|-------|--------|-------|
-| 1 | 2026-05-21 | Pending | aid-discover (GENERATE) | Initial generation pass. |
-| 2-15 | 2026-05-21 to 2026-05-23 | (D- to A+ to C to A) | aid-discover cycles 2-15 | Cycle-14 reviewer found 8 HIGH from subagent-visibility-patch; cycle-15 orchestrator self-attestation Grade A. |
-| 16 | 2026-05-23 | A | orchestrator self-attestation post cycle-14 fix-pass | Applied 19 line-count drift fixes; fixed false .gitignore claim; verify-kb-claims.sh exit 0. Self-attestation only. |
-| 17 | 2026-05-25 | **D** | post-work-001-merge fresh adversarial (clean-context) | PR #13 work-001 thin-router refactor invalidated KB line counts across 12+ docs by 30-77%. 7 NEW CRITICAL · 35+ NEW HIGH · 25+ NEW MEDIUM · 10+ NEW LOW/MINOR. Pass rate 29%. Triggered cycle-17 FIX-pass. |
-| 18 | 2026-05-25 | **D** | post-cycle-17-FIX re-grade | Cycle-17 FIX-pass cleared dominant SKILL.md drift. Pass rate 29%→62%. CLAUDE.md fully rewritten (A). Recipes catalog, Thin-Router convention, Canonical Script Tests sections added. 3 CRITICAL residual + 35+ HIGH survive. Triggered cycle-18 Pass 5A-5L FIX-pass. |
-| 19 | 2026-05-25 | **C+** | post-cycle-18-FIX re-grade | Cycle-18 Pass 5A-5L was BROADLY EFFECTIVE: 3 CRITICAL aid-discover 596/548 cites GONE; 7 tombstones GONE; .gitignore unified; run_generator.py = 84 unified across 8 docs; methodology/installers/templates unified. Pass rate 62%→84%. 0 CRITICAL surviving; 14 HIGH surviving. 3 new Q-entries added (Q209-Q211). |
-| 20 | 2026-05-25 | **B** | post-cycle-19-FIX + new-workflow re-grade | Cycle-19 structural rewrites SHIPPED + orchestrator pre-flight cleanup swept ALL primary disk-truth. 0 CRITICAL. 10 surviving HIGH. Triggered cycle-20 parallel-FIX wave. |
-| 21 | 2026-05-25 | **C+** | post-cycle-20-parallel-FIX re-grade | Cycle-20 wave (commit `a75ae66`) VERIFIED on 4 dispatch targets. 5 surviving HIGH. Pass rate 75% on cycle-20-landing. Triggered cycle-21 parallel-FIX wave. |
-| 22 | 2026-05-25 | **C+** | post-cycle-21-parallel-FIX re-grade | Cycle-21 wave (commit `c38a31e`) VERIFIED EFFECTIVE on ~85% of dispatched scope. 0 CRITICAL. 1 surviving HIGH (host-tools-matrix 3-site Q70 status — not in cycle-21 dispatch scope) + 1 MEDIUM + 1 LOW + 2 MINOR. Pass rate 75%. Triggered Pass 9 dispatch. |
-| 23 | 2026-05-25 | **A-** | post-cycle-22-Pass-9 re-grade | Cycle-22 Pass 9 (commit `2a0c7dd`, 4 dispatch sweeps across host-tools-matrix.md + 2 MINOR domain-glossary FR2 retirement qualifiers) VERIFIED EFFECTIVE on 6/6 declared targets: (Sweep 1) host-tools-matrix L49 + L50 setup-script Section 2 cells refreshed ❌ CONFIRMED BUG → ✅ Q70/H6 RESOLVED 2026-05-22 ✓; L92 Section 5 Row 1 Severity HIGH→RESOLVED with explicit tech-debt.md H6 RETIRED reference ✓; (Sweep 2) L137 Section 7 internal Q3 contradiction split into "Q3 RESOLVED; Q72 pending" ✓; (Sweep 3) L64 "DISCOVERY-STATE Q52" → "STATE.md Q52" ✓; (Sweep 4) L142 5-way framing reframed to canonical-generator authoring rule reference ✓; (Pass-9B) domain-glossary L168 "User Approved" + L173 "Work" both refreshed with FR2 retirement qualifiers matching L165 Triplication style ✓. **6-doc Q70 status FULLY CONSISTENT** (host-tools-matrix L49/L50/L92 + tech-debt L100 + infrastructure L68 + INDEX L21 + feature-inventory L30/L57/L59 + setup.sh L145 + setup.ps1 L140 all uniformly assert RESOLVED 2026-05-22). **0 CRITICAL · 0 HIGH · 0 MEDIUM · 0 LOW · 2 MINOR** (residual: feature-inventory L27 + L31 + L35 still use "DISCOVERY-STATE Q8/Q52" Q-pointer phrasing — host-tools-matrix Pass-9 modernized similar refs to "STATE.md Q52"; one-cycle-behind vocabulary lag, not contradiction. Plus stylistic "per DISCOVERY-STATE Q16/Q17/Q102" historical Q-pointer phrasing across architecture/data-model/external-sources/security-model/technology-stack/module-map/domain-glossary — idiomatic, Q-IDs stable, NOT contradiction). Cycle-23 spot-check pass rate: **12/12 = 100%** on Pass-9-landing-verification. Disk-truth check: all prompt-asserted line counts match (SKILL.md 2,157 total; canonical templates 85+137+116; canonical scripts 540+84+162+157; canonical agents AGENT.md 405; domain-glossary 161 terms; recipes 5+README+.gitkeep). verify-kb-claims.sh in-session run: exit 0, 707 citations validated, 0 README drifts, 0 spot-check drifts, tech-debt HIGH=8/MEDIUM=6/LOW=8, security-model HIGH=1/MEDIUM=4/LOW=4/INFO=12. Pass-9 was first cycle where dispatch scope = semantic-contradiction surface (not cosmetic-cheapest-wins). Result: worst-issue closed; grade lifts C+ → A-. **To reach A+ would require:** (a) sweeping feature-inventory L27 + L31 + L35 to use post-FR2 "STATE.md Q8/Q52" or bare "Q8/Q52" phrasing (~5 min); (b) replacing "per DISCOVERY-STATE Q16/Q17/Q36/Q54/Q80/Q102/Q152" historical-Q-pointer phrasing across 7+ primary docs with bare "per Q16" form (~10 min); (c) refreshing the inherited [MINOR-mechanical-deferrable] residuals (CLAUDE.md L65 "2,108 → 2,157"; module-map L150 + L318 agent line counts; integration-map file counts; infrastructure L25 branch; technology-stack L17). All optional; none blocking. **Recommendation: ACCEPT cycle-23 Grade A- as the post-cycle-22-Pass-9 outcome. No further FIX-pass required for the cycle-22 issue set.** |
-| 24 | 2026-05-25 | **A-** | post-Pass-10 chase-A+ adversarial re-grade | Pass-10 (commit `3a0bd9d` on `kb-cycle-17-fix`) VERIFIED EFFECTIVE on its declared 9-doc scope: zero "DISCOVERY-STATE Q[0-9]+" Q-pointer-phrasing residuals across all 18 .aid/knowledge/*.md files (Grep confirmed); zero backtick-form "`DISCOVERY-STATE.md` Q##" residuals (Grep "No matches found"); architecture L296 reframed to "2 meta-documents + 1 area-STATE file" — consistent with project-structure L21 wording, NOT a contradiction; architecture 4 sweeps (L296 + L613/L614/L541) LANDED; technology-stack L184+L388 LANDED; domain-glossary L34/L70/L71 FR2 retirement qualifiers LANDED; technology-stack L322 "307" matches disk (`wc -l canonical/skills/aid-discover/SKILL.md = 307`); feature-inventory cycle-23-flagged L27/L31/L35 residuals fully CLOSED (Grep = 0 matches); RETIRED/FR2 framings PRESERVED at domain-glossary L72, api-contracts L276+L280, data-model §2.1-LEGACY, architecture L313+L438; verify-kb-claims.sh exit 0, 707 citations, 0 README drifts, 0 spot-check drifts. **NEW cycle-24 finding (Pass-10 incomplete-on-chase-A+):** technology-stack.md L127 "recorded by scout as Q14 in `DISCOVERY-STATE.md`" + L219 "recorded by scout as Q2 in `DISCOVERY-STATE.md`" are file-path-style references to retired filename WITHOUT FR2 qualifier. ui-architecture.md L101 has structurally identical Q14 reference CORRECTLY FR2-qualified ("(per FR2; pre-FR2 was DISCOVERY-STATE.md)"), making technology-stack L127+L219 internally inconsistent with the project's own canonical FR2 pattern. Pass-10's declared technology-stack scope was L184+L388 only — L127+L219 not in scope. These 2 MINORs REPLACE (not add to) the cycle-23 MINORs (feature-inventory L27/L31/L35 CLOSED). **Net MINOR count: 2** (same as cycle-23; different locations; tighter scope — file-path references vs Q-pointer phrasing). Per grading rubric, 2 MINORs caps grade at A-. **No grade movement (A- → A-)**. **To reach A+:** sweep technology-stack L127 + L219 to adopt the ui-architecture L101 FR2-qualifier pattern (~2 min mechanical word-substitution). 8/8 cycle-24 spot-checks pass (100% on Pass-10-landing-verification). **Recommendation: ACCEPT cycle-24 Grade A- as the post-Pass-10 outcome. A Pass-11 micro-sweep of 2 lines in technology-stack would close the A+ goal.** |
-| 25 | 2026-05-25 | **A+** | post-Pass-11 chase-A+ adversarial re-grade | Pass-11 (commit `aedfc98` on `kb-cycle-17-fix`) VERIFIED EFFECTIVE on 4/4 declared targets: (1) technology-stack L127 now reads "in `.aid/knowledge/STATE.md` (per FR2; pre-FR2 was DISCOVERY-STATE.md)" — matches ui-architecture L101 canonical FR2 pattern ✓; (2) technology-stack L219 same pattern adopted ✓; (3) domain-glossary L106 reframed to "2 meta files + Discovery-area area-STATE file (STATE.md)" — consistent with architecture L296 + project-structure L21 ✓; (4) feature-inventory L65 reframed to "per `.aid/knowledge/STATE.md` Q-FEATURES (per FR2; pre-FR2 was DISCOVERY-STATE.md)" ✓. **8 fresh cycle-25 spot-checks (8/8 = 100% pass):** SC25-1 design-tokens.md = 124 lines ✓; SC25-2 component-css.css = 657 lines (NOTE: tech-stack L122 claims 642 — pre-existing 15-line drift, NOT introduced by Pass-11, NOT cycle-25-scope, NOT counted against cycle-25 grade; flagged as future cosmetic-sweep candidate); SC25-3 lightbox.js = 359 lines ✓ (domain-glossary L111); SC25-4 canonical/templates/discovery-state-template.md = 85 lines ✓ (api-contracts L278); SC25-5 canonical/templates/knowledge-summary/scripts/check-preflight.sh = 100 lines ✓ (test-landscape L45); SC25-6 component-css.css L3-4 + L7 + L37 contains `html[data-theme="light"]`/`html[data-theme="dark"]` selectors ✓ (technology-stack L125); SC25-7 `canonical/templates/reports/discovery-state-template.md` historically existed and was deleted in commit `e363348` (work-003 FR2 retire-per-artifact); `profiles/*/templates/discovery-state.md` (sans -template, 23-line shape) also deleted in same commit ✓ (api-contracts L280 narrative HISTORICALLY ACCURATE); SC25-8 domain-glossary L106 + architecture L296 + project-structure L21 all use CONSISTENT "2 meta-documents + 1 area-STATE file" wording ✓ (cross-doc consistency). **Adversarial Grep verification:** 3 high-precision regexes for the cycle-24 MINOR pattern (`recorded by scout as Q[0-9]+ in \`DISCOVERY-STATE.md\``, `Q[0-9]+ in \`DISCOVERY-STATE.md\``, `\`DISCOVERY-STATE.md\` Q-`) all return 0 matches in primary KB docs (only STATE.md self-references in historical Review History rows). **All 14 surviving backticked `DISCOVERY-STATE.md` occurrences across primary KB docs verified properly framed** under explicit RETIRED/FR2/pre-FR2/historical narrative context. **No NEW regressions detected.** verify-kb-claims.sh exit 0, 707 citations, 0 README drifts, 0 spot-check drifts. **Net cycle-25 issue count: 0 CRITICAL · 0 HIGH · 0 MEDIUM · 0 LOW · 0 MINOR.** Per grading rubric grade-calculation table, zero issues = **Grade A+**. **Grade lift: A- → A+** (chase-A+ goal achieved after Pass-11 micro-sweep of 4 lines). Cycle-25 actual time ~19m vs calibrated 15-25m band — calibration successful (cycle-24 over-run lesson absorbed). **Recommendation: ACCEPT Grade A+. RECOMMEND USER APPROVE the KB — Grade now meets Minimum A+; User Approved field remains 2026-05-21 (user-only update). Stable termination state reached on the chase-A+ goal sequence.** |
+| 1 | 2026-05-27 | E+ | /aid-discover | Initial cycle-1 REVIEW. 0 [CRITICAL], 16 [HIGH], 11 [MEDIUM], 11 [LOW]. Blockers: FM-MISSING on 12 docs, INDEX.md two-copy drift, feature-inventory template-only. **Grade discrepancy:** reviewer wrote D- but `bash .claude/scripts/grade.sh .aid/.temp/review-pending/discovery.md` computes E+ deterministically — per "grade is calculated, not judged" contract, E+ is authoritative. Reviewer's per-doc grades preserved as judgment but overall grade snapped to grade.sh output. |
+
+## Summarization History
+
+> One row per /aid-summarize run. Append-only.
+
+| # | Date | Grade | Profile | Mermaid | Output | Notes |
+|---|------|-------|---------|---------|--------|-------|
+| 1 | — | — | — | — | — | No summarize run on cycle-1 (Discovery still in REVIEW) |
 
 ## Calibration Log
 
-| Date | Agent | Cycle/Task | ETA band | Actual | Notes |
-|------|-------|-----------|----------|--------|-------|
-| 2026-05-25 | discovery-reviewer | cycle-24 (post-Pass-10 chase-A+ regrade) | 5-8m | 20m 35s | 3× over estimate band. Cause: tight-scope adversarial review still performed full-doc Grep + cross-doc consistency checks + 707-citation verify-kb-claims execution + complete STATE.md Edit (~67-line append). Recommendation: bump rough-time-hints.md "tight-scope adversarial regrade" band to 15-25m; the "tight scope" descriptor under-estimates the cross-doc consistency overhead. Heartbeat stale at 60% during last 12m suggests final Edit phase swallowed heartbeat updates — heartbeat-protocol guidance needs explicit note about Edit-tool-not-yielding-heartbeat-updates pattern. |
-| 2026-05-25 | discovery-reviewer | cycle-25 (post-Pass-11 chase-A+ regrade) | 15-25m | ~19m | **Within calibrated band — calibration successful.** Pre-Edit heartbeat update emitted at 95% (per cycle-24 lesson). Adversarial scope: 4 Pass-11 line verifications + 3 high-precision Grep regressions + 14-site `DISCOVERY-STATE.md` consistency audit + 8 fresh spot-checks + verify-kb-claims.sh run (707 citations) + STATE.md update via Python regex (avoids cycle-24's Edit-stale-heartbeat pattern). Outcome: Grade A- → A+ (chase-A+ goal achieved). Recommendation: cycle-25 confirms 15-25m is the correct band for tight-scope adversarial regrade — rough-time-hints.md update no longer hypothetical. |
+> Work-003 traceability: one row per dispatched sub-agent. Append-only. Format: `| date | agent | cycle | ETA band | actual | notes |`
+
+| Date | Agent | Cycle | ETA | Actual | Notes |
+|------|-------|-------|-----|--------|-------|
+| 2026-05-27 | discovery-scout | cycle-1 GENERATE | 9-13m | 11m17s | inside band; produced project-structure (318 lines) + external-sources (no-docs variant) + .scout-questions.tmp (10 Q-S entries: 3H/4M/3L) |
+| 2026-05-27 | discovery-architect | cycle-1 GENERATE | 8-12m | 9m34s | inside band; 3 docs: architecture (326L) + technology-stack (186L) + ui-architecture (320L) = 832L total; flagged 4 doc-vs-impl discrepancies |
+| 2026-05-27 | discovery-quality | cycle-1 GENERATE | 11-15m | 9m34s | faster than band; 4 docs (744L total): test-landscape (114) + security-model (153) + tech-debt (255, 1C+3H+4M+3L) + infrastructure (222); flagged 5 doc-vs-reality discrepancies + corrected 2 dispatch-prompt errors |
+| 2026-05-27 | discovery-integrator | cycle-1 GENERATE | 12-16m | 13m59s | inside band; 3 docs (1281L total, 395 citations): api-contracts (566L) + integration-map (362L) + domain-glossary (353L, 195 terms vs 80 target) |
+| 2026-05-27 | discovery-analyst | cycle-1 GENERATE | 12-18m | 14m29s | inside band; 3 docs (1211L total): module-map (297L) + coding-standards (457L) + data-model (457L); T3 scrub clean; 2 inferred-only items tagged |
+| 2026-05-27 | GENERATE-orchestrator | cycle-1 wrap-up | n/a | ~25m | Scout 11m17s + 4-parallel wave 14m29s tail (analyst). All 16 docs populated + INDEX.md generated (127L) + README.md generated (39L) + 10 Q&A consolidated from scout-questions.tmp. verify-claims exit 1 (drifts expected on first-pass; REVIEW will surface) |
+| 2026-05-27 | discovery-reviewer | cycle-1 REVIEW | 15-25m | 11m57s | well under LOW; 30 spot-checks (26 verified, 4 failed); 16 HIGH (12 FM-MISSING + 2 INDEX + 2 feature-inventory) + 11 MEDIUM + 11 LOW; reviewer-claimed grade D-, grade.sh computed E+ (E+ authoritative); 5 new Q&A entries appended (Q11-Q15); ledger at `.aid/.temp/review-pending/discovery.md` (238L) |

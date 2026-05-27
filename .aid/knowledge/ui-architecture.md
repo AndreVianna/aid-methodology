@@ -1,319 +1,320 @@
 # UI Architecture
 
-> **Source:** aid-discover (discovery-architect)
-> **Status:** Populated (initial dogfood pass, 2026-05-21)
-> **Companions:** `architecture.md` (overall AID architecture), `technology-stack.md` (HTML / CSS / JS file counts), `project-structure.md` (where these files live and their triplication).
-
-There is **no traditional user-facing UI** in this repository. AID is a methodology + tooling repo — its primary user interface is the host AI tool's slash-command surface (`/aid-discover`, `/aid-init`, etc.) and the terminal output of `setup.sh` / `setup.ps1`. Those are not "UI architecture" in the conventional sense.
-
-There **is** however one genuine HTML artifact emitted by AID: the **Knowledge Base Summary viewer** produced by the `aid-summarize` skill. This document covers that artifact in detail and notes the deliberate design constraints around it.
-
----
-
-## 1. Location & Triplication
-
-| Where | Files |
-|---|---|
-| Canonical source-of-truth assets | `canonical/templates/knowledge-summary/` (25 files per `project-structure.md:170-172`) |
-| Claude Code install copy | `profiles/claude-code/.claude/templates/knowledge-summary/` |
-| Codex install copy | `profiles/codex/.agents/templates/knowledge-summary/` |
-| Cursor install copy | `profiles/cursor/.cursor/templates/knowledge-summary/` |
-
-All four trees contain identical content. The `aid-summarize` skill reads from `.aid/templates/knowledge-summary/` (the path inside an installed project, which corresponds to one of the per-tool copies).
-
-The skill that emits the HTML lives at `profiles/claude-code/.claude/skills/aid-summarize/SKILL.md` (233 lines) and equivalents under `profiles/codex/.agents/skills/aid-summarize/SKILL.md` (233 lines) and `profiles/cursor/.cursor/skills/aid-summarize/SKILL.md` (233 lines).
-
----
-
-## 2. Component Architecture
-
-### 2.1 The HTML skeleton
-
-`canonical/templates/knowledge-summary/html-skeleton.html` (101 lines) defines the document shell with Mustache-style `{{PLACEHOLDER}}` substitution. Sections (in DOM order):
-
-| Section | Lines in skeleton | Purpose |
-|---|---|---|
-| `<head>` | `:1-14` | Lang, charset, viewport, `color-scheme: light dark` meta, generator meta, robots: noindex, `<title>{{PROJECT_NAME}} — Knowledge Base Summary</title>`, inlined `{{INLINE_CSS}}` |
-| `<a class="skip-link">` | `:17-18` | Skip-to-content for keyboard / screen-reader users |
-| `<header role="banner">` (sticky top bar) | `:21-36` | Brand, breadcrumb (id `breadcrumb-current`), theme-toggle button (id `theme-toggle`) |
-| `<main id="top">` with `{{BODY_CONTENT}}` | `:39-44` | Hero + TOC + section content (inserted by the generator from KB documents) |
-| Lightbox dialog | `:47-60` | `role="dialog" aria-modal="true"` overlay with toolbar (zoom in/out/reset/close), stage, caption — toggled via `.open` class |
-| `<footer>` | `:62-67` | Attribution + Mermaid version + "Re-run /aid-summarize when the KB changes" |
-| `<noscript>` fallback | `:70-87` | Direct links to `.aid/knowledge/*.md` for JS-disabled users |
-| Inlined Mermaid library | `:89-94` | Concatenated at generation time |
-| Inlined `{{INLINE_LIGHTBOX_JS}}` | `:96-98` | The runtime JS |
-
-### 2.2 Page-level content composition
-
-The `{{BODY_CONTENT}}` placeholder is filled by `aid-summarize` GENERATE mode (`aid-summarize/SKILL.md:198-200`) using one of six **profile-specific section templates** under `canonical/templates/knowledge-summary/section-templates/`:
-
-| Profile | Template | Lines |
-|---|---|---|
-| Auto-detect | `auto-detect.md` | 107 |
-| Web app | `web-app.md` | 98 |
-| Library | `library.md` | 70 |
-| CLI | `cli.md` | 77 |
-| Microservices | `microservices.md` | 87 |
-| Data pipeline | `data-pipeline.md` | 104 |
-
-Profile selection is done in `aid-summarize` PROFILE mode (`aid-summarize/SKILL.md:122-156`) by scoring signals across `ui-architecture.md`, `api-contracts.md`, `module-map.md`, `infrastructure.md`, `integration-map.md`. The auto-detect rules live in `auto-detect.md`. If confidence is "low" the skill prompts the user via `AskUserQuestion`.
-
-### 2.3 Shared vs page-specific components
-
-Everything in the generated HTML is **page-specific** — there is no shared component library or framework. The "components" are CSS class conventions like `.top-bar`, `.breadcrumb`, `.lightbox`, `.mermaid-box`, `.noscript-fallback`, `.skip-link`. There is **no JavaScript componentization** (no React, Vue, Svelte, web components, lit-html). The skeleton is a single HTML file; the JS in `lightbox.js` is a single IIFE.
-
----
-
-## 3. State Management
-
-There is no client-side state management framework (no Redux, no Zustand, no MobX, no Pinia, no XState).
-
-**Persistent client state:**
-- `localStorage.kb-theme` — the user's chosen theme (`light` or `dark`). Read on init in `lightbox.js:14-19`. Written by `setTheme(theme)` at `lightbox.js:98-101`. Falls back to `window.matchMedia('(prefers-color-scheme: dark)')`.
-
-**Transient client state (in-memory, lives in closure variables):**
-- The current theme (mirror of `localStorage.kb-theme`, stored on `document.documentElement[data-theme]`).
-- Lightbox open/closed flag (`.lightbox.open` class) and currently zoomed-in element reference.
-- Breadcrumb scrollspy: the section currently in view (text injected into `#breadcrumb-current`).
-
-All state lives inside the single IIFE in `lightbox.js`. No global namespace pollution.
-
----
-
-## 4. Design System
-
-### 4.1 The token palette
-
-`canonical/templates/knowledge-summary/design-tokens.md` (124 lines) is the **documentation** of the design token palette. It is **not consumed at runtime** — the actual tokens live in `component-css.css` as CSS custom properties (`component-css.css:6-63`).
-
-**Token categories** (per `component-css.css:7-36` light theme, `:37-63` dark theme):
-
-| Category | Token examples | Purpose |
-|---|---|---|
-| Backgrounds | `--bg`, `--bg-elev`, `--bg-sunken` | Three depth levels |
-| Text | `--text`, `--text-muted`, `--text-dim` | Three emphasis levels |
-| Borders | `--border`, `--border-strong` | Two strengths |
-| Brand | `--primary`, `--primary-fg`, `--accent`, `--accent-fg` | Brand + interactive accents |
-| Status | `--ok`, `--ok-bg`, `--warn`, `--warn-bg`, `--err`, `--err-bg`, `--info`, `--info-bg`, `--purple`, `--purple-bg` | Five status badge colors with light backgrounds |
-| Shadows | `--shadow-sm`, `--shadow-md`, `--shadow-lg` | Three elevation levels |
-| Radius | `--radius-sm`, `--radius`, `--radius-lg` | Three border-radius scales |
-
-⚠️ **Design tension — Inferred from code, needs confirmation.** `design-tokens.md` and `component-css.css` are maintained in parallel with no propagation tooling. If a token changes in CSS, the doc must be updated manually (and vice versa). Recorded by scout as Q14 in `.aid/knowledge/STATE.md` (per FR2; pre-FR2 was DISCOVERY-STATE.md).
-
-### 4.2 Light / Dark theming
-
-Theming uses CSS variables scoped by `html[data-theme="light"]` and `html[data-theme="dark"]` (`component-css.css:6-63`). The toggle:
-
-1. User clicks `#theme-toggle` button → `lightbox.js` `setTheme(theme)` (`lightbox.js:98-101`).
-2. Function flips `document.documentElement.setAttribute('data-theme', theme)`, persists to `localStorage`, updates `#theme-icon` / `#theme-label` text, re-runs Mermaid with the new theme palette via `renderAllDiagrams()` and `initMermaid(theme)` (`lightbox.js:75-96`).
-3. Mermaid theme variables for each mode are defined inline in `lightbox.js:31-60` (`mermaidThemeFor(theme)`).
-
-Initial theme on first load:
-1. Read `localStorage.kb-theme` (`lightbox.js:14-17`).
-2. If missing, fall back to `window.matchMedia('(prefers-color-scheme: dark)').matches`.
-3. Default to `light` if no prefers-color-scheme.
-
-### 4.3 Reduced motion and forced colors
-
-Two media queries handle accessibility automation:
-
-- `@media (prefers-reduced-motion: reduce)` per `accessibility-checklist.md:57-62` — disables animations, transitions, smooth scroll, card hover transform.
-- `@media (forced-colors: active)` per `accessibility-checklist.md:64-66` — preserves borders on cards, callouts, accordions; uses `forced-color-adjust: none` only where critical (status badges).
-
-These are auto-verified by the validation pipeline (see §8 below).
-
----
-
-## 5. Routing & Navigation
-
-There is **no router** — the HTML output is a single page. Navigation is intra-page:
-
-| Mechanism | Implementation |
-|---|---|
-| **Skip link** | `<a class="skip-link" href="#top">` → jumps to `<main id="top">` (focused-only via CSS). |
-| **TOC links** | Generated in `{{BODY_CONTENT}}`; hash-anchors to per-section ids. CSS `html { scroll-behavior: smooth; scroll-padding-top: 80px; }` (`component-css.css:67`) accounts for the sticky top bar. |
-| **Breadcrumb scrollspy** | `lightbox.js` updates `#breadcrumb-current` text to reflect the section currently in view as the user scrolls. Implementation lives inside the `lightbox.js` IIFE (see `aid-summarize/SKILL.md:7-8` skill description: "breadcrumb scrollspy"). |
-| **Lightbox open/close** | URL is not modified. Lightbox state is purely DOM-class-based (`.lightbox.open`). |
-
-No route guards, no auth — the document is static and unauthenticated.
-
----
-
-## 6. Responsive & Adaptive
-
-The generated HTML is **responsive via viewport meta + relative units**, not via a CSS framework or explicit breakpoints documented in `design-tokens.md`.
-
-| Mechanism | Source |
-|---|---|
-| Viewport | `<meta name="viewport" content="width=device-width, initial-scale=1.0">` at `html-skeleton.html:5` |
-| Text sizing | `accessibility-checklist.md:108`: *"All sizes use `rem` or relative units, not fixed `px` for text."* Confirmed in `component-css.css` font sizes: `h1 { font-size: 2.2rem }`, `h2 { 1.5rem }`, `h3 { 1.15rem }`, body line-height: 1.55. |
-| Mermaid scaling | `mermaid-init.js:48-50`: `flowchart: { useMaxWidth: true }`, `er: { useMaxWidth: true }`, `sequence: { useMaxWidth: true }`. Diagrams shrink to fit their containers. |
-| Sticky top bar | `position: sticky; top: 0; z-index: 100;` at `component-css.css:91-103`. Survives all viewport widths. |
-| Code blocks / wide tables | `accessibility-checklist.md:105`: "Layout remains usable at 200% zoom (no horizontal scroll except in code blocks / wide tables)." Implies horizontal scroll is allowed for those two element types only. |
-
-⚠️ **Inferred from code — needs confirmation.** No explicit breakpoint variables (`@media (max-width: 768px) { ... }`) appear in the head of `component-css.css:1-120`. Strategy is implicitly **mobile-first via fluid layout**, but a deeper read of the remaining CSS lines would be needed to confirm there are no hidden media queries lower down. The discovery brief targets a summary; deferring to a future read.
-
----
-
-## 7. Accessibility
-
-`canonical/templates/knowledge-summary/accessibility-checklist.md` (125 lines) is the authoritative checklist. Target: **WCAG 2.1 AA**.
-
-### 7.1 What is verified automatically (`[auto]`)
-
-Per `accessibility-checklist.md:7-9`, items marked `[auto]` are checked by `scripts/grade.sh`, `scripts/contrast-check.mjs`, `scripts/validate-html.sh`. Items marked `[manual]` are inspected by the agent during the VALIDATE mode of `aid-summarize`.
-
-| Auto-checked area | Specifics |
-|---|---|
-| Document level | `<html lang="...">`, `<meta name="color-scheme" content="light dark">`, descriptive `<title>`, `<noscript>` block with KB links |
-| Landmarks | `<header role="banner">`, `<main id="top">`, `<nav aria-label="...">`, `<footer>` |
-| Skip link | First focusable element is `<a class="skip-link" href="#top">` |
-| Focus visibility | `:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }` in CSS |
-| Lightbox dialog | `role="dialog" aria-modal="true"`, `aria-labelledby="lb-caption"`, `aria-hidden` toggled, all toolbar buttons have `aria-label` |
-| Diagrams | Each `<div class="mermaid-box">` has `role="button"`, `tabindex="0"`, `aria-label` |
-| Reduced motion | `@media (prefers-reduced-motion: reduce)` block in CSS |
-| Forced colors | `@media (forced-colors: active)` block in CSS |
-| Color contrast | All 11 token pairs at `accessibility-checklist.md:84-96` verified ≥ 4.5:1 (body text) or ≥ 3:1 (large text / UI components), per WCAG AA, in **both light and dark themes** |
-| Live regions | `aria-live="polite"` for lightbox caption updates |
-
-### 7.2 What is checked manually (`[manual]`)
-
-- Tab order matches visual order.
-- Focus moves into the lightbox dialog when opened (close button by default); cycles within (focus trap); returns to originator on close.
-- 44 × 44 px minimum hit area for all interactive controls.
-- Heading hierarchy correct (no skipped levels).
-
-### 7.3 Explicit non-goals
-
-`accessibility-checklist.md:121-125` declares the following as deliberately out of scope:
-
-- Touch-zoom in the lightbox (browser-native pinch zoom is not overridden).
-- Voice control (relies on the browser accessibility tree; landmarks suffice).
-- RTL languages (out of scope for v1; doc flow assumes LTR).
-- High-contrast theme variant (`forced-colors` mode handles this at the OS level).
-
----
-
-## 8. Build & Bundle
-
-### 8.1 No bundler
-
-There is no Vite, Webpack, Rollup, esbuild, Turbopack, or Parcel anywhere in this repository. The generated `knowledge-summary.html` is **assembled by shell scripts at runtime on the user's machine**, not pre-built at repo time.
-
-### 8.2 The generation pipeline
-
-Per `aid-summarize/SKILL.md` GENERATE mode (`:159-200`) and the scripts in `canonical/templates/knowledge-summary/scripts/`:
+> The AID-methodology repository has **one UI surface**: a single-file, offline-capable
+> HTML Knowledge Base viewer generated by `/aid-summarize` from the populated `.aid/knowledge/`
+> directory. There is no other frontend (no web app, no desktop GUI, no mobile app, no
+> CLI TUI). All other repo content is documentation, code-generation, or shell tooling.
+>
+> The viewer is **not** an application that runs against a backend — it is a static HTML
+> artifact rendered once per KB approval, then opened in any modern browser. The "build" is
+> the `/aid-summarize` skill's `GENERATE` state, which concatenates a template skeleton,
+> inlined CSS, inlined JavaScript, and an inlined Mermaid library into a single
+> `knowledge-summary.html`.
+
+## Component Architecture
+
+The viewer is a **single HTML page** assembled from numbered fragments rather than
+React-style components. There is **no component framework** (no React/Vue/Svelte/Angular);
+everything is hand-rolled vanilla HTML/CSS/JS.
+
+### Page skeleton (semantic landmarks)
+
+| Element | Role | Source |
+|---------|------|--------|
+| `<a class="skip-link" href="#top">` | First focusable element — keyboard/SR skip | `canonical/templates/knowledge-summary/html-skeleton.html:18` |
+| `<header class="top-bar" role="banner">` | Sticky brand + breadcrumb + theme-toggle | `html-skeleton.html:21-36` |
+| `<nav class="breadcrumb" aria-label="Page navigation">` | Current section indicator (driven by IntersectionObserver scrollspy) | `html-skeleton.html:23-27`; `lightbox.js:296-330` |
+| `<main id="top">` + `{{BODY_CONTENT}}` placeholder | Primary content — hero, TOC, sections injected by generator | `html-skeleton.html:39-44` |
+| `<div class="lightbox" role="dialog" aria-modal="true">` | Click-to-expand diagram overlay (always in DOM, toggled via `.open` class) | `html-skeleton.html:47-60` |
+| `<footer>` | Generation timestamp + Mermaid version | `html-skeleton.html:62-67` |
+| `<noscript>` | Fallback links to source markdown when JS disabled | `html-skeleton.html:70-87` |
+
+### Section structure (chosen per project type)
+
+The skill picks **one** of 6 section templates during the PROFILE state, then injects that
+template's structure into `{{BODY_CONTENT}}`:
+
+| Profile | Template | Target diagrams |
+|---------|----------|-----------------|
+| `web-app` | `section-templates/web-app.md` | (default 6–8) |
+| `library` | `section-templates/library.md` | per template |
+| `cli` | `section-templates/cli.md` | per template |
+| `microservices` | `section-templates/microservices.md` | per template |
+| `data-pipeline` | `section-templates/data-pipeline.md` | per template |
+| `auto-detect` | `section-templates/auto-detect.md` (scoring rules — not a structure) | 0 |
+
+The selector lives in `canonical/templates/knowledge-summary/section-templates/auto-detect.md:13-50`
+and uses keyword scoring against `.aid/knowledge/*.md` (e.g., presence of `ui-architecture.md`
+≥ 30 non-blank lines and `api-contracts.md` mentions of REST/GraphQL score the `web-app`
+profile).
+
+### Composition pattern
+
+There is **no component composition** (no HOCs, no render props, no slots). Composition
+is *textual* and happens at build time:
 
 ```
-                                ┌──────────────────────────────┐
-                                │  templates/knowledge-summary/│
-                                │   html-skeleton.html         │
-                                │   component-css.css          │
-                                │   lightbox.js                │
-                                │   section-templates/*.md     │
-                                │   accessibility-checklist.md │
-                                └──────────────────────────────┘
-                                              │
-                                              ▼
-   .aid/knowledge/*.md  ────►  aid-summarize GENERATE mode (skill body)
-                                              │
-                                              ▼
-                              ┌──────────────────────────────────┐
-                              │  fetch-mermaid.sh                │
-                              │  (download latest if cache stale)│
-                              └──────────────────────────────────┘
-                                              │
-                                              ▼
-                              ┌──────────────────────────────────┐
-                              │  concatenate.sh / concatenate.ps1│
-                              │  (inline CSS + JS + Mermaid into │
-                              │   the html-skeleton)             │
-                              └──────────────────────────────────┘
-                                              │
-                                              ▼
-                                 knowledge-summary.html
-                                 (single self-contained file)
-                                              │
-                                              ▼
-                              ┌──────────────────────────────────┐
-                              │  VALIDATE mode:                  │
-                              │  validate-html.sh                │
-                              │  validate-links.sh               │
-                              │  validate-diagrams.mjs (mmdc)    │
-                              │  contrast-check.mjs              │
-                              │  grade.sh (computes letter grade)│
-                              └──────────────────────────────────┘
-                                              │
-                                              ▼
-                                       APPROVAL → WRITEBACK → DONE
+html-skeleton.html
+   │ + {{LANG}}              ← language code
+   │ + {{PROJECT_NAME}}      ← from .aid/knowledge/STATE.md or pom.xml/package.json
+   │ + {{INLINE_CSS}}        ← entire component-css.css inlined
+   │ + {{BODY_CONTENT}}      ← rendered KB sections + Mermaid diagrams + accordions
+   │ + {{INLINE_LIGHTBOX_JS}}← entire lightbox.js inlined
+   │ + {{MERMAID_VERSION}}   ← version string in footer
+   │ + {{GENERATION_DATE}}   ← ISO 8601
+   │ + {{MERMAID_VERSION_COMMENT}} ← machine-readable comment in <script>
+   ▼
+(GENERATE) Build part1.html (DOCTYPE → before-Mermaid-script)
+            + cached mermaid.min.js (~3 MB inlined)
+            + part2.html (after-Mermaid-script → </html>)
+   ▼
+concatenate.sh PART1 MERMAID PART2 OUTPUT      ← byte-level cat
+            (or concatenate.ps1 — uses byte-level concat to avoid CRLF issues)
+   ▼
+knowledge-summary.html (single self-contained file)
 ```
 
-### 8.3 Code splitting / lazy loading
+Evidence: `canonical/templates/knowledge-summary/html-skeleton.html:1-101`;
+`canonical/scripts/summarize/concatenate.sh:1-23`;
+`canonical/scripts/summarize/concatenate.ps1:29-32` (PowerShell byte-level concat note);
+`.claude/skills/aid-summarize/references/state-generate.md:50-65` (the part-concatenation
+pattern).
 
-**None.** Everything is inlined. There is exactly one HTTP response (the HTML file). No deferred chunks, no dynamic imports, no service worker, no preload / prefetch hints.
+## State Management
 
-### 8.4 Performance budget
+**No framework.** Run-time state is held in:
 
-No explicit budget declared. Practical implications of the inline-everything design:
+| Storage | Scope | Used for |
+|---------|-------|----------|
+| **`localStorage` (`kb-theme` key)** | Persists across page reloads | User's chosen theme ("light"/"dark"). Falls back to `window.matchMedia('(prefers-color-scheme: dark)')` if unset. Source: `lightbox.js:14-18` + `lightbox.js:100`. |
+| **`document.documentElement.dataset` (`data-theme`)** | DOM, single-page | Drives CSS variable resolution (`:root, html[data-theme="light"] { ... }` / `html[data-theme="dark"] { ... }`) without re-rendering. Source: `lightbox.js:18`; `component-css.css:7-63`. |
+| **Plain JS object `lb`** | Module-scoped closure | Lightbox state (root, stage, inner, caption, scale, tx/ty translation, dragging flag, lastFocused for focus restoration). Source: `lightbox.js:107-112`. |
+| **`element.dataset.source`** | DOM, per-diagram | Stashes the original Mermaid diagram text BEFORE first render so theme toggles can re-render without losing source. Critical: uses `el.textContent` not `el.innerHTML` to avoid HTML-token corruption (per `lightbox.js:85-88` comment). |
+| **`IntersectionObserver` + `visible` map** | Module-scoped closure | Breadcrumb scrollspy — tracks which section is currently in view. Falls back to scroll listener if `IntersectionObserver` is unavailable. Source: `lightbox.js:296-330`. |
 
-- The HTML output carries the entire Mermaid library inline (~3 MB unminified, ~600 KB minified per typical Mermaid 11.x distribution).
-- `--cdn-mermaid` flag (`aid-summarize/SKILL.md:51`) lets the user opt out: load Mermaid from `https://cdn.jsdelivr.net/npm/mermaid@{ver}/dist/mermaid.min.js` instead, which drops ~3 MB but loses offline support.
+No Redux/Zustand/Context — the viewer is read-only and ~3,000 lines of CSS/JS total.
 
----
+## Design System
 
-## 9. The deliberate "single offline HTML" constraint
+### Tokens — single source of truth
 
-The hardest design constraint on this UI is: **the output must be a single offline HTML file that works without any network at view time** (per `aid-summarize/SKILL.md:14-20`):
+All visual tokens live in **two files** that must stay in sync:
 
-> Generates a single self-contained knowledge-summary.html... The output works fully offline, includes 8 Mermaid diagrams (or fewer for non-web-app profiles), supports light/dark themes, provides keyboard-accessible click-to-expand lightboxes for every diagram, and meets WCAG AA contrast in both themes.
+| File | Format | Contents |
+|------|--------|----------|
+| `canonical/templates/knowledge-summary/design-tokens.md` (124 lines) | Markdown spec | Authoritative table of every token (color palette, typography, spacing, radii, shadows) for both light + dark themes. |
+| `canonical/templates/knowledge-summary/component-css.css` (657 lines) | CSS | Implementation: tokens as CSS custom properties on `:root` + `html[data-theme="dark"]`. |
+| `canonical/templates/knowledge-summary/mermaid-init.js` (53 lines) | JavaScript | Reference document for Mermaid theme variables — the actual init code lives in `lightbox.js` (functions `mermaidThemeFor()` + `initMermaid()`). |
 
-### Architectural implications
+⚠️ Drift risk noted in code itself: `design-tokens.md:25` lists `--accent: #00A3A1` (light)
+but `component-css.css:18` lists `--accent: #007F7D`. The Mermaid `primaryBorderColor`
+also uses `#00A3A1` (`lightbox.js:51`, `mermaid-init.js:14`). This is a **token mismatch**
+between the spec doc and the CSS implementation worth flagging to the maintainer.
 
-| Constraint | Implication |
-|---|---|
-| **Single file** | No `<link rel="stylesheet">`, no `<script src="...">` to local files. Everything is inlined via `{{INLINE_CSS}}` / `{{INLINE_LIGHTBOX_JS}}` placeholders and the concatenation scripts. |
-| **Offline at view time** | Mermaid library is inlined as text inside `<script>` blocks; no CDN URLs in production output (unless `--cdn-mermaid` flag is passed). Fonts use the system-font stack (`-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif` at `component-css.css:70`). No `@font-face` imports. |
-| **Mermaid offline** | `mermaid-init.js:46-50` sets `startOnLoad: false`, `securityLevel: 'loose'`; lightbox.js calls `mermaid.run()` manually after init, so diagrams render after the inlined library is parsed. |
-| **No analytics, no telemetry** | The output cannot phone home — there is no network at view time. `<meta name="robots" content="noindex">` at `html-skeleton.html:9` deliberately keeps the page out of search indexes. |
-| **Idempotent regeneration** | The skill compares KB mtime vs last summary mtime in STALE-CHECK mode (`aid-summarize/SKILL.md:99-119`). Re-running on an unchanged KB is a no-op. |
+### Color palette (light theme)
 
----
+Per `design-tokens.md:12-37` — backgrounds (`--bg #F7F9FC`, `--bg-elev #FFFFFF`,
+`--bg-sunken #EEF2F7`), text (`--text #101828`, `--text-muted #4B5565`,
+`--text-dim #667085`), borders, brand (`--primary #0B1F3A`, `--accent #00A3A1`), status
+(`--ok #2E7D32`, `--warn #B45309`, `--err #B42318`, `--info #1D4ED8`, `--purple #6941C6`),
+plus matching `*-bg` tint variants.
 
-## 10. Mermaid Handling
+### Color palette (dark theme)
 
-| Aspect | Detail |
-|---|---|
-| Library version | Pinned per generation. Tracked at `.aid/knowledge/STATE.md` (`## Knowledge Summary Status` section) as `**Mermaid Version:**`, `**Mermaid Fetched At:**`, `**Mermaid Cached:**` (per `aid-summarize/SKILL.md:178-186`). |
-| Source | `https://cdn.jsdelivr.net/npm/mermaid@{ver}/dist/mermaid.min.js`, with version discovered from `https://registry.npmjs.org/mermaid/latest`. |
-| Local cache | `.aid/knowledge/.cache/mermaid.min.js` + `.meta` (sha256 + timestamp). |
-| Inline placement | At `html-skeleton.html:89-94`, BEFORE the lightbox.js IIFE so `window.mermaid` is defined when `initMermaid()` runs. |
-| Init flags | `startOnLoad: false`, `securityLevel: 'loose'`, font from the system stack, `useMaxWidth: true` for flowchart / er / sequence (per `mermaid-init.js:44-50` and `lightbox.js:65-72`). |
-| Re-render on theme toggle | `lightbox.js renderAllDiagrams()` — re-stashes the raw source via `data-source`, removes `data-processed`, calls `mermaid.run()` again. Uses `textContent`, never `innerHTML`, because `innerHTML` re-parses any `<token>` in diagram text as an HTML element and silently corrupts the source (see comment at `lightbox.js:85-90`). |
-| Supported diagram types | Documented in `canonical/templates/knowledge-summary/mermaid-examples.md` (187 lines). |
-| Quality gate | `validate-diagrams.mjs` (294 lines) attempts to render every Mermaid block via Mermaid CLI (`mmdc`); failure to parse or render blocks any grade higher than F per `canonical/templates/knowledge-summary/grading-rubric.md` (226 lines). |
+Per `design-tokens.md:41-64` — adjusted backgrounds (`--bg #0B1220`, `--bg-elev #111A2E`),
+brighter accents for contrast (`--accent #2DD4D2`), and `rgba(..., 0.15-0.20)` tint
+variants for status backgrounds. Targets WCAG AA at every contrast pair listed in
+`accessibility-checklist.md:84-96`.
 
----
+### Theming integration with Mermaid
 
-## 11. The other "UI" surfaces (and why they don't count)
+Two parallel theme dictionaries, one for the CSS and one for Mermaid's
+`themeVariables`, kept in sync by hand. The theme toggle (`lightbox.js:98-103`) flips
+`html[data-theme]`, persists to localStorage, calls `initMermaid(theme)` with the matching
+Mermaid theme dict, then re-renders every diagram via `renderAllDiagrams()`.
 
-For completeness, the following surfaces exist but are **not UI architecture in any meaningful sense**:
+### Typography
 
-| Surface | What it is | Why it's not UI architecture |
-|---|---|---|
-| `setup.sh` / `setup.ps1` interactive menu | A numbered terminal prompt (1=Claude Code, 2=Codex, 3=Cursor, 4=Install, 5=Quit) | Plain `echo` + `read` in Bash / `Read-Host` in PowerShell. No layout, no styling, no state machine. ~30 lines combined. |
-| Slash-command output (per skill) | Markdown that the host AI tool renders in its chat panel | The host tool's chat UI does the rendering; AID supplies content, not presentation. |
-| The `[State: GENERATE]` / `[State: REVIEW]` markers printed by skills | Plain stdout strings | Diagnostic markers for the user; not a UI element. |
-| The knowledge-summary `<noscript>` block | Static HTML inside the generated page | Accessibility fallback only — not interactive. |
+System fonts only — no web fonts requested. Stack:
+`-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial,
+sans-serif` (`design-tokens.md:69-70`; `component-css.css:70`).
+Size scale: h1 2.2rem (hero h1 2.6rem) · h2 1.85rem · h3 1.15rem · h4 (kicker) 1rem
+uppercase · body 1rem · badge 0.78rem · eyebrow 0.78rem uppercase
+(`design-tokens.md:73-86`).
+Line-height: 1.55 body, 1.25 headings.
 
-None of these have framework, component, state, routing, theming, or accessibility-architecture decisions to document.
+## Routing & Navigation
 
----
+**No router.** The viewer is a single page; navigation is intra-page only:
 
-## 12. Cross-references
+- **TOC links** — anchor links to `<section id="...">` elements within the same document.
+- **Skip-link** — `<a href="#top">` jumps to `<main id="top">` (always the first
+  focusable element per `accessibility-checklist.md:26`).
+- **Breadcrumb scrollspy** — `IntersectionObserver` watches every
+  `section.sec[data-title]` and updates `#breadcrumb-current` to the in-view section's
+  `data-title` attribute (`lightbox.js:296-330`).
+- **Lightbox** — overlay state toggled via the `.open` class; not a route.
 
-- File counts for HTML / CSS / JS: `technology-stack.md` §4-6 and `project-index.md` Language Breakdown lines 21, 22, 25.
-- Where the knowledge-summary assets live across the four trees (root + three install trees): `project-structure.md ## Templates` lines 170-172.
-- Skill that drives the generation: `profiles/claude-code/.claude/skills/aid-summarize/SKILL.md` (233 lines).
-- The `aid-summarize` 9-state state machine: `architecture.md` Pattern 1.
-- Validation scripts (the runtime "tests" of the UI): `technology-stack.md` §2, §4.
-- Design-tokens-vs-CSS drift open question: `.aid/knowledge/STATE.md` Q14 (per FR2; pre-FR2 was DISCOVERY-STATE.md).
+No deep linking beyond the standard `#fragment` mechanism. No history-API manipulation.
+
+## Responsive & Adaptive
+
+| Aspect | Value | Source |
+|--------|-------|--------|
+| Strategy | Desktop-first with one mobile breakpoint | `design-tokens.md:101` |
+| Mobile breakpoint | 768 px (collapse grids to `1fr`) | `design-tokens.md:101` |
+| Max content width | 1200 px | `design-tokens.md:99` |
+| Top-bar height | ~60 px, sticky, `z-index: 100` | `design-tokens.md:100` |
+| Touch targets | minimum 44 × 44 px (manual check per `accessibility-checklist.md:99-100`) | a11y checklist |
+| Text resizing | layout usable at 200% zoom; all text uses `rem` | `accessibility-checklist.md:104-107` |
+
+### Device targets
+
+Desktop primary; tablet + mobile supported via the single breakpoint. No native mobile
+build — this is a static HTML file viewed in any modern browser.
+
+## Accessibility
+
+**Target: WCAG 2.x AA** in both light and dark themes. Two-grade gate
+(`accessibility-checklist.md` "Machine Grade" auto-checks + "Human Grade" manual checks)
+enforced by `/aid-summarize`'s `VALIDATE` and `MANUAL-CHECKLIST` states.
+
+### What's enforced automatically
+
+Per `canonical/templates/knowledge-summary/accessibility-checklist.md` `[auto]` items
+(verified by `canonical/scripts/summarize/run-validators.sh`,
+`validate-html-output.sh`, and `contrast-check.mjs`):
+
+- `<html lang="...">` set; `<meta name="color-scheme" content="light dark">` present.
+- `<title>` is descriptive (`{Project} — Knowledge Base Summary`).
+- `<noscript>` fallback present with links to `INDEX.md` + 5 core KB docs.
+- Semantic landmarks: `<header role="banner">`, `<main id="top">`, `<nav aria-label="...">`,
+  `<footer>`.
+- Skip link is first focusable; becomes visible on focus via CSS.
+- `:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }`
+  (`component-css.css:599-603`).
+- Lightbox dialog: `role="dialog" aria-modal="true"`, `aria-labelledby="lb-caption"`,
+  `aria-hidden` toggled; all toolbar buttons have `aria-label`.
+- Reduced-motion: `@media (prefers-reduced-motion: reduce)` zeroes animations + transitions
+  + `scroll-behavior: smooth` (`component-css.css:612-622`).
+- Forced-colors: `@media (forced-colors: active)` preserves borders + uses
+  `forced-color-adjust: none` only on status badges (`component-css.css:638-646`).
+- Color contrast: body text ≥ 4.5:1, large text ≥ 3:1, UI components ≥ 3:1 — verified
+  against the design-tokens palette by `contrast-check.mjs` (151 lines).
+
+### Lightbox a11y in detail
+
+`canonical/templates/knowledge-summary/lightbox.js:186-215` implements a **focus trap** —
+`Tab` cycles within the dialog; `Shift+Tab` wraps backward. On open, focus moves to the
+close button (`lightbox.js:147-149`); on close, focus restores to the element that
+opened it (`lightbox.js:158-163`). Keyboard commands: `Esc` close, `+`/`=` zoom in,
+`-`/`_` zoom out, `0` reset zoom (`lightbox.js:286-292`).
+
+Mermaid SVGs cloned into the lightbox receive `role="img"` + `aria-label` from the caption
+(`lightbox.js:135-136`).
+
+### What requires manual verification
+
+`accessibility-checklist.md` `[manual]` items — driven by `manual-checklist.sh` (269
+lines) during `MANUAL-CHECKLIST` state. Examples: Tab order matches visual order, focus
+moves into dialog on open, heading hierarchy is correct, touch-target ≥ 44 px.
+
+### Out of scope
+
+Per `accessibility-checklist.md:120-125`: pinch-zoom (browser-native), voice control
+(relies on browser accessibility tree), RTL languages, dedicated high-contrast theme
+variant (`forced-colors` mode handles this at OS level).
+
+## Styling Approach
+
+**Hand-written CSS with custom properties** — no preprocessor (no Sass, no Less, no
+PostCSS), no CSS-in-JS, no utility framework (no Tailwind).
+
+- **One file**, `canonical/templates/knowledge-summary/component-css.css` (657 lines),
+  inlined into the generated HTML via `{{INLINE_CSS}}` substitution.
+- **Theming via CSS custom properties** on `:root` + `html[data-theme="dark"]` — no JS
+  re-style needed when the theme toggles; only Mermaid (which doesn't use CSS variables
+  internally) re-renders.
+- **Sectioned by concern** within the single file: color tokens → base → typography →
+  layout → top-bar → cards → callouts → mermaid wrappers → lightbox → skip-link →
+  focus styles → reduced-motion → forced-colors → noscript.
+- **No external stylesheet** — fully self-contained per the offline-first design goal.
+
+## Build & Bundle
+
+**No bundler** (no Vite, no Webpack, no esbuild, no Rollup).
+
+The "build" is the part-concatenation pattern documented in
+`.claude/skills/aid-summarize/references/state-generate.md:50-65`:
+
+| Step | Script | Notes |
+|------|--------|-------|
+| 1 | `canonical/scripts/summarize/fetch-mermaid.sh` (77 lines) | Fetches latest Mermaid release metadata from `registry.npmjs.org/mermaid/latest`, downloads from jsdelivr CDN, caches at `.aid/knowledge/.cache/mermaid.min.js` with `sha256` + version meta. |
+| 2 | (in-skill generation) | Generate `part1.html` (DOCTYPE through opening `<script>` for Mermaid). Generate `part2.html` (after closing Mermaid `</script>` through `</html>`). |
+| 3 | `canonical/scripts/summarize/concatenate.sh` (23 lines, bash) **or** `concatenate.ps1` (36 lines, PowerShell — uses `[System.IO.File]::ReadAllBytes` for byte-level concat to avoid CRLF interpretation) | `cat PART1 MERMAID PART2 > OUTPUT`. |
+| 4 | `canonical/scripts/summarize/validate-html-output.sh` (321 lines) | HTML output validation. |
+| 5 | `canonical/scripts/summarize/validate-diagrams.mjs` (574 lines) | Mermaid syntax validation. |
+| 6 | `canonical/scripts/summarize/contrast-check.mjs` (151 lines) | WCAG AA contrast audit. |
+| 7 | `canonical/scripts/summarize/run-validators.sh` (518 lines) | Aggregates all the above into a Machine Grade. |
+
+### Bundle size + offline support
+
+Single self-contained file. Approximate weight:
+- HTML skeleton: ~100 lines.
+- Inlined CSS: 657 lines.
+- Inlined `lightbox.js`: 359 lines.
+- Inlined Mermaid library: ~3 MB (the dominant contribution).
+- KB content: depends on the project.
+
+Per `.claude/skills/aid-summarize/SKILL.md:53`: passing `--cdn-mermaid` skips Mermaid
+inlining and loads from CDN at view time (saves ~3 MB but loses offline support).
+
+### Code splitting / lazy loading
+
+**None.** The viewer is a single static page; there is nothing to split or lazy-load.
+`mermaid.run({ querySelector: '.mermaid' })` renders all diagrams on `DOMContentLoaded`
+(`lightbox.js:91-95`, `lightbox.js:333-336`).
+
+### Performance budget
+
+Not formally defined. Implicit: the Mermaid library dominates size; the rest of the
+viewer is well under 100 KB combined.
+
+## Idempotency
+
+`/aid-summarize` is idempotent — re-running it on an unchanged KB is a no-op. The
+`STALE-CHECK` state compares `LAST_KB_CHANGE_DATE` (from `STATE.md` `## Review History`)
+against `LAST_SUMMARY_DATE` (from `STATE.md` `## Summarization History`); if the KB has
+not changed and the existing HTML is User-Approved, the skill exits with mode
+`DONE-IDEMPOTENT` (`.claude/skills/aid-summarize/SKILL.md:73-79`).
+
+## Discrepancies with Documentation
+
+1. **`design-tokens.md` vs `component-css.css` accent color mismatch** (light theme):
+   - `design-tokens.md:25` declares `--accent: #00A3A1`.
+   - `component-css.css:18` implements `--accent: #007F7D`.
+   - Mermaid still uses `#00A3A1` for `primaryBorderColor` (`lightbox.js:51`,
+     `mermaid-init.js:14`).
+
+   The two files are described as a "single source of truth" but disagree on the light
+   `--accent` value by ~10% lightness. Likely a deliberate WCAG-AA contrast fix in the
+   CSS that wasn't back-ported to the spec doc. ⚠️ Inferred from code — needs
+   confirmation.
+
+2. **The KB file `.aid/knowledge/knowledge-summary.html` is referenced in
+   `.claude/settings.json`-adjacent tooling but is not on disk in the current snapshot.**
+   `git status` shows ` M .aid/knowledge/knowledge-summary.html` (the file is tracked
+   and modified-then-deleted on this branch) — the most recent `/aid-summarize` run
+   produced an HTML viewer that has since been removed pending the kb-overhaul refresh.
+   When the KB is re-approved post-discovery, re-running `/aid-summarize` will
+   regenerate it at `.aid/knowledge/knowledge-summary.html`.
+
+3. **`canonical/templates/knowledge-summary/mermaid-init.js` is reference-only.** Per its
+   own preamble (`mermaid-init.js:1-7`): "this file is for reference only. The actual
+   Mermaid initialization logic … lives inside `lightbox.js`." It is rendered into all
+   profile trees for documentation parity but is not loaded at runtime.
+
+4. **No `package.json` despite using Node 18+.** Per `README.md:326`, Node is optional
+   and only used by `/aid-summarize` for diagram validation. The `.mjs` validators run
+   with Node's built-in modules only — no `npm install` step is needed
+   (`project-structure.md:318-319`).
