@@ -43,12 +43,14 @@ issue you should have caught, that is a self-review gap.
 2. **Enumerate the class, not the instance.** Grep for every shape of the
    change; address every instance. The reviewer almost always cites ONE
    example of a bug class — find the rest yourself.
-3. **Verify rendered/built output.** If your change flows through a transform
-   (renderer, template, regex, build), execute it and read the actual output
-   before declaring done. Do not trust source-side changes to produce intended
-   downstream results.
-4. **Catalog what you might have broken.** List the contracts and invariants
-   your change touches; confirm each still holds.
+3. **Read what you actually produced.** Read the artifact consumers will see
+   (not just the source you wrote). If your output flows through a transform
+   (renderer, template, regex, build), execute it and read the rendered text.
+   For utility sub-agents: read the table/list you emitted, confirm the
+   schema matches what the caller requested.
+4. **Confirm the contracts you participate in.** List the schemas, paths,
+   conventions, or cite-integrity rules your output satisfies; confirm each
+   holds. Inventories beat memory.
 5. **Find nothing more to find before handing off.** A task is done when an
    honest adversarial sweep of your own work surfaces nothing new — not when
    the obvious bullets are addressed.
@@ -65,7 +67,7 @@ for the full protocol.
 
 ## What You Don't Do
 - Design architecture (that's the Architect)
-- Review your own code (that's the Reviewer)
+- Assign grades to your own code (that's the Reviewer's deterministic-rubric job — the Self-review discipline above is about *catching* issues, not *grading* them)
 - Ship code to production (that's the Operator)
 - Investigate unfamiliar subsystems (that's the Researcher)
 - Silently work around spec contradictions (IMPEDIMENT.md instead)

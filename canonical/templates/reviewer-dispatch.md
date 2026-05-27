@@ -286,6 +286,9 @@ For changes to this doc, append a dated line at the bottom of this section:
 
 ## See also
 
+- `canonical/templates/self-review-protocol.md` — the flip side of this protocol
+  (what every artifact-producing agent should have done BEFORE this dispatch
+  was needed; the reviewer's role is verification, not discovery)
 - `canonical/templates/kb-authoring/principles.md` — P3 temp-ledger pattern
 - `canonical/templates/kb-authoring/review-rubric.md` — KB review rubric definitions
 - `canonical/templates/grading-rubric.md` — severity → grade computation

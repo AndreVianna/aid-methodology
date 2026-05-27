@@ -47,33 +47,45 @@ Example: "this skill body uses bare `bash scripts/...` instead of
 `grep -rn "\`scripts/" canonical/` for backtick-quoted siblings. Then grep
 `.aid/scripts/` for misrooted variants. Enumerate the class, not the instance.
 
-### 3. Verify rendered or built output
+### 3. Read what you actually produced
 
-If your change flows through any transform, **execute the transform and read
-the actual output** before declaring the task complete. Do not trust
-source-side changes to produce intended downstream results.
+Before declaring done, **read the artifact you just produced** — not the
+source you wrote, the output that consumers will see. Do not trust the
+source-side change to produce the intended output.
 
-- Renderer change → run the renderer, `cat` at least one rendered file per
-  profile, confirm the rendered text reads sensibly.
-- Test or script added → execute it, read the actual output (not just the
-  pass/fail summary).
-- Template or schema change → render against a representative input, read the
-  rendered result.
-- Doc change that includes prose ABOUT a transform → render the doc, confirm
-  the transform did not mangle the prose (this is the "renderer ate its own
-  comment" pattern).
+- Full agent changing code or docs that flow through a transform (renderer,
+  template, regex, build): execute the transform, then `cat` at least one
+  rendered file to confirm the output reads sensibly. The "renderer ate its
+  own comment" pattern is caught here.
+- Full agent producing a test or script: execute it, read the actual output
+  (not just the pass/fail summary).
+- Utility sub-agent (simple-extractor, simple-formatter, simple-glob): read
+  the table/list you emitted. Confirm the schema matches what the caller
+  requested. Spot-check at least one row against the source it was extracted
+  from.
+- Doc change that includes prose ABOUT a transform: render the doc, confirm
+  the transform did not mangle the prose.
 
-### 4. Catalog what you might have broken
+### 4. Confirm the contracts you participate in still hold
 
-Before declaring complete, list the contracts, conventions, and invariants
-your change touches. For each, confirm it still holds. Inventories beat memory.
+Before declaring done, list the contracts your output satisfies (or your
+change touches) and confirm each holds. Inventories beat memory.
 
+For full agents producing code, docs, configs, or KB entries:
 - Schema invariants — does the YAML/JSON/TOML still parse?
 - Path conventions — do all referenced paths resolve in every consuming context?
 - Naming conventions — does every name match the project's conventions?
 - Cross-file references — do all `file.ext:line` cites still point at real lines?
 - Test contracts — do tests still pass for changed AND unchanged behaviors?
 - Renderer/build determinism — does a second render produce byte-identical output?
+
+For utility sub-agents producing extracted/formatted data:
+- Schema match — does every row carry the fields the caller named?
+- Count accuracy — if you reported "47 files searched, 0 matches," does
+  the search actually cover 47 files?
+- Cite integrity — every row's file/line cite resolves to a real location.
+- No interpretation — output is mechanical extraction; no inferences,
+  judgments, or fabrications.
 
 ### 5. Find nothing more to find before handing off
 
