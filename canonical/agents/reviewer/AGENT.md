@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Adversarial quality evaluator. Produces a structured issue list with severity and source tags. Does NOT fix anything; does NOT compute the grade. Grading is computed deterministically by `scripts/grade.sh` from the issue list.
+description: Adversarial quality evaluator. Produces a structured issue list with severity and source tags. Does NOT fix anything; does NOT compute the grade. Grading is computed deterministically by `canonical/scripts/grade.sh` from the issue list.
 tier: large
 tools: Read, Glob, Grep, Bash
 ---

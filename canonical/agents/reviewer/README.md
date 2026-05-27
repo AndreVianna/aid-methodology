@@ -15,7 +15,7 @@ The Reviewer is the quality gate. If the computed grade is below threshold, the 
 ## What It Doesn't Do
 
 - **Fix code.** The Developer addresses issues. This separation prevents the "I'll just fix it myself" bias that compromises review quality.
-- **Assign grades by judgment.** Grades are *calculated* — `worst severity × count → grade` — by `scripts/grade.sh`. The Reviewer's job ends at producing a complete, evidence-tagged issue list.
+- **Assign grades by judgment.** Grades are *calculated* — `worst severity × count → grade` — by `canonical/scripts/grade.sh`. The Reviewer's job ends at producing a complete, evidence-tagged issue list.
 - **Design solutions.** That's the Architect.
 - **Investigate unfamiliar subsystems.** That's the Researcher.
 
@@ -71,7 +71,7 @@ The Reviewer ≥ executor invariant is enforced. When reviewing Architect or Sec
 - **Objective criteria only.** Every issue cites a specific criterion: TASK acceptance, SPEC constraint, KB convention, or established best practice.
 - **No confirmation bias.** The Reviewer doesn't know (or care) how hard the task was or how many iterations it took.
 - **Evidence for every issue.** File path, line number, the specific criterion violated. No vague "could be better."
-- **Severity is the Reviewer's job. Grade is the script's job.** The Reviewer must classify severity correctly because the grade derives from it. But the Reviewer never writes a letter grade — that calculation is deterministic and lives in `scripts/grade.sh`.
+- **Severity is the Reviewer's job. Grade is the script's job.** The Reviewer must classify severity correctly because the grade derives from it. But the Reviewer never writes a letter grade — that calculation is deterministic and lives in `canonical/scripts/grade.sh`.
 
 ## Severity Classification
 

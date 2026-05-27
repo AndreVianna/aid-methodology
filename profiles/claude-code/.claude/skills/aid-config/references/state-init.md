@@ -283,45 +283,55 @@ Three options:
 [3] Skip — I'll manage .gitignore myself.
 ```
 
-**Option 1 (recommended) and Option 2 actually append** (with a check to
-avoid duplicate lines). Use a guarded block so re-running aid-config doesn't
-double-append. Wire the AskUserQuestion response into `$choice` first:
+**Dispatcher model.** `AskUserQuestion` is a tool call whose result is
+delivered to the agent's reasoning context — NOT exported to a shell
+environment variable. So the agent itself must read its own
+`AskUserQuestion` result and run the appropriate per-branch shell directly
+(do NOT write bash that pretends `$ASK_USER_RESPONSE` exists).
+
+**Per-branch actions** (the agent picks ONE based on the user's choice):
+
+**If user picked Option 1** (recommended — protocol-required minimum), run:
 
 ```bash
-# AskUserQuestion returns the user's pick as a label string. Map to 1/2/3.
-case "$ASK_USER_RESPONSE" in
-  *"protocol-required minimum"*) choice=1 ;;
-  *".aid/"*)                     choice=2 ;;
-  *)                             choice=3 ;;  # Skip
-esac
-
 GITIGNORE=".gitignore"
 BLOCK_BEGIN="# >>> aid-config managed >>>"
 BLOCK_END="# <<< aid-config managed <<<"
-
-if [ "$choice" -eq 3 ]; then
-  echo "⚠️  Option 3 chosen — .aid/.heartbeat/ MUST be gitignored per the"
-  echo "    heartbeat protocol. Please add it manually before running any"
-  echo "    subagent-dispatching skill (/aid-discover, /aid-execute, etc.)."
-elif [ -f "$GITIGNORE" ] && grep -qF "$BLOCK_BEGIN" "$GITIGNORE"; then
+if [ -f "$GITIGNORE" ] && grep -qF "$BLOCK_BEGIN" "$GITIGNORE"; then
   echo "ℹ️  .gitignore already has an aid-config managed block — skipping."
 else
   {
     [ -f "$GITIGNORE" ] && echo ""
     echo "$BLOCK_BEGIN"
-    case "$choice" in
-      1) echo ".aid/.temp/"; echo ".aid/.heartbeat/"; echo ".aid/.cache/" ;;
-      2) echo ".aid/" ;;
-    esac
+    echo ".aid/.temp/"
+    echo ".aid/.heartbeat/"
+    echo ".aid/.cache/"
     echo "$BLOCK_END"
   } >> "$GITIGNORE"
-  echo "✓ .gitignore updated with aid-config managed block."
+  echo "✓ .gitignore updated (Option 1: protocol-required minimum)."
 fi
 ```
 
-**Option 3** prints the recommended entries for manual copying but does not
-write to `.gitignore`. The warning above (in the `if [ "$choice" -eq 3 ]`
-branch of the recipe) is the user-facing notice.
+**If user picked Option 2** (`.aid/` blanket), run the same recipe but
+substitute the three `echo .aid/.XXX/` lines with a single `echo ".aid/"`.
+
+**If user picked Option 3** (Skip — user manages manually), run:
+
+```bash
+echo "⚠️  Option 3 chosen — .aid/.heartbeat/ MUST be gitignored per the"
+echo "    heartbeat protocol. Please add it manually before running any"
+echo "    subagent-dispatching skill (/aid-discover, /aid-execute, etc.)."
+echo ""
+echo "Recommended entries to add yourself:"
+echo "  .aid/.temp/"
+echo "  .aid/.heartbeat/"
+echo "  .aid/.cache/"
+```
+
+The guarded block (`# >>> aid-config managed >>>` … `# <<< aid-config managed <<<`)
+ensures re-running `/aid-config` later doesn't double-append on Options 1 or 2.
+The `grep -qF "$BLOCK_BEGIN"` skip-if-present check is the dispatcher's
+idempotency guarantee.
 
 Re-running `/aid-config` later detects the managed block and does not
 re-append; users who want to change the choice should edit the block manually

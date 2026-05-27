@@ -98,6 +98,11 @@ def render_scripts(
         if _is_text_file(src_file):
             try:
                 raw = src_file.read_text(encoding="utf-8")
+                # Renderer policy (also in render_agents/recipes/templates/skills):
+                # every text-emitting renderer applies substitute_filenames THEN
+                # rewrite_install_paths so adopter projects can resolve
+                # canonical/{scripts,templates,...}/ references. See harness.py
+                # rewrite_install_paths docstring for the comment-skip rule.
                 content = substitute_filenames(raw, profile.filename_map)
                 content = rewrite_install_paths(content, install_root)
                 encoded = content.encode("utf-8")

@@ -258,7 +258,7 @@ When a state completes, print `Next: [State: {NEXT}] — run /aid-discover again
 When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-discovery:
 
 1. Read the Q&A entry in STATE.md `## Q&A (Pending)` or the IMPEDIMENT to understand what's missing
-2. Identify which subagent owns the documents (see `scripts/kb/verify-claims.sh` comments for mapping)
+2. Identify which subagent owns the documents (see `.claude/scripts/kb/verify-claims.sh` comments for mapping)
 3. Dispatch ONLY the relevant subagent
 4. Regenerate README.md and INDEX.md
 5. Update README.md revision history

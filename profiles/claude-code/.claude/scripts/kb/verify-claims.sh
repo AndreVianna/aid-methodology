@@ -139,12 +139,12 @@ EXT_RE='(md|sh|ps1|py|js|mjs|cjs|toml|json|yaml|yml|css|html|htm|java|kt|kts|go|
 # start and assemble the prefix list from real directories.
 #
 # Order matters: more-specific prefixes come first so a bare "preflight.sh"
-# resolves to .claude/scripts/kb/preflight.sh (specific) before falling
+# resolves to canonical/scripts/kb/preflight.sh (specific) before falling
 # through to canonical/ (general).
 # ---------------------------------------------------------------------------
 PREFIXES=("" ".aid/knowledge/")
 
-# .claude/scripts/*/ — each subdir as a prefix
+# canonical/scripts/*/ — each subdir as a prefix
 if [[ -d "$ROOT/canonical/scripts" ]]; then
   PREFIXES+=(".claude/scripts/")
   while IFS= read -r d; do
@@ -152,7 +152,7 @@ if [[ -d "$ROOT/canonical/scripts" ]]; then
   done < <(find "$ROOT/canonical/scripts" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort)
 fi
 
-# .claude/templates/*/ — each subdir as a prefix + .claude/templates/ itself
+# canonical/templates/*/ — each subdir as a prefix + canonical/templates/ itself
 if [[ -d "$ROOT/canonical/templates" ]]; then
   PREFIXES+=(".claude/templates/")
   while IFS= read -r d; do
@@ -404,16 +404,16 @@ if [[ -f "$KB_DIR/security-model.md" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# FRONTMATTER + KB AUTHORING LINT (.claude/templates/kb-authoring/)
+# FRONTMATTER + KB AUTHORING LINT (canonical/templates/kb-authoring/)
 # ---------------------------------------------------------------------------
-# Per .claude/templates/kb-authoring/principles.md P4, the lint enforces
+# Per canonical/templates/kb-authoring/principles.md P4, the lint enforces
 # what the frontmatter declares. We check:
 #   - Every KB doc starts with YAML frontmatter
 #   - Required fields (kb-category, source, intent) present + valid values
 #   - generator: present iff source: generated
 #   - For primary docs: warn on inline T3 (line counts) and T4 (date stamps)
 #   - For generated docs: AUTO-GENERATED header present
-#   - Registered generated files (per .claude/templates/generated-files.txt) exist
+#   - Registered generated files (per canonical/templates/generated-files.txt) exist
 
 FM_ERRORS="$(mktemp)"
 T34_WARNINGS="$(mktemp)"

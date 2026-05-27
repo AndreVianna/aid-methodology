@@ -4,9 +4,9 @@
 # INDEX.md is the RAG (Retrieval-Augmented Generation) connection between agents and
 # the KB: every agent task prompt carries INDEX.md so the agent knows what KB doc to
 # load for what knowledge. It's composed from each KB doc's `intent:` field
-# (see .cursor/templates/kb-authoring/frontmatter-schema.md).
+# (see canonical/templates/kb-authoring/frontmatter-schema.md).
 #
-# Per .cursor/templates/kb-authoring/principles.md P3, this script runs LAST in
+# Per canonical/templates/kb-authoring/principles.md P3, this script runs LAST in
 # any /aid-discover cycle (after all hand-edits land), so the index reflects final
 # state.
 #

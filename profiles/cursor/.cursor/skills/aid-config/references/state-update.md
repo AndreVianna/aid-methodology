@@ -19,13 +19,23 @@ Read `.aid/.temp/aid-config-pending.txt`. Extract the `key:` line.
 
 **If invoked via the quick-set form** (`/aid-config KEY=VALUE` per SKILL.md
 "Quick-set form"), the dispatcher skips VIEW and there is no pending-file
-breadcrumb. In that case, parse the positional arg directly: split on `=`,
-left half is the dotted key, right half is the value. Skip the prompt in
-Step 3 (the value is already known) but still run validation in Step 4 and
-proceed to PERSIST.
+breadcrumb. The positional arg is delivered as the skill's argument string
+(`$1` in bash, or the equivalent in the host's slash-command runtime).
+Parse it directly:
 
-If the file is missing AND no `KEY=VALUE` arg was provided, fall back to
-asking the user which key (per VIEW state Step 2).
+```bash
+# Slash-command invocation: /aid-config review.minimum_grade=A-
+#   → arg = "review.minimum_grade=A-"
+if [[ -n "${1:-}" && "$1" == *=* ]]; then
+  KEY="${1%%=*}"     # left of first '=' → dotted key path
+  VALUE="${1#*=}"    # right of first '=' → value (preserves embedded '=' in value)
+  # Skip Step 3 prompt (value is already known); go straight to Step 4 validation
+  # with KEY and VALUE bound.
+fi
+```
+
+If `$1` is absent AND the breadcrumb file is missing, fall back to asking
+the user which key (per VIEW state Step 2).
 
 ---
 
@@ -48,7 +58,7 @@ Valid values:    <see table below>
 | `project.name` | non-empty string, no spaces | `<project-name>` (placeholder) |
 | `project.description` | non-empty single-line string (NO newlines — settings.yml uses inline YAML scalars; multi-line input must be reformatted or rejected) | `<project-description>` (placeholder) |
 | `project.type` | `brownfield` or `greenfield` | `brownfield` |
-| `tools.installed` | list of `claude-code` / `codex` / `cursor` (at least one) | `[claude-code]` |
+| `tools.installed` | list of `claude-code` / `codex` / `cursor` (at least one). Accepted input formats: comma-separated (`claude-code,codex`), bracketed YAML inline (`[claude-code, codex]`), or newline-separated. Whitespace around items ignored. Each item must match `^[a-z][a-z0-9-]+$` and be one of the canonical 3. | `[claude-code]` |
 | `review.minimum_grade` | regex `^[A-F][+-]?$` | `A` |
 | `execution.max_parallel_tasks` | positive integer | `5` |
 | `traceability.heartbeat_interval` | positive integer (minutes) | `1` |

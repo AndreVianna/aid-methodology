@@ -1,6 +1,6 @@
 # Grading Rubric
 
-The skill's `VALIDATE` state runs `scripts/grade.sh` against the generated
+The skill's `VALIDATE` state runs `canonical/scripts/grade.sh` against the generated
 `knowledge-summary.html`. Each check is binary pass/fail; the grade is the
 weighted aggregate. **Any unparseable Mermaid diagram is an automatic F.**
 

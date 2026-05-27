@@ -132,6 +132,16 @@ def rewrite_install_paths(body: str, install_root: str) -> str:
     in adopter projects. This rewriter runs during render so each profile's
     output contains install-rooted paths instead.
 
+    Comment lines (lines whose first non-whitespace character is ``#``) are
+    SKIPPED. This protects prose-about-the-mechanism (e.g.,
+    ``generated-files.txt`` PATH CONVENTION header) from circular rewrites:
+    a comment that describes the renderer's behavior using literal
+    ``canonical/scripts/...`` strings would otherwise become circular
+    nonsense in the profile (``.claude/scripts/... → .claude/scripts/...``).
+    Shell, YAML, and .txt files use ``#`` as their comment character;
+    markdown headings start with ``#`` too but rarely contain literal
+    canonical/ path references — so the same rule is safe across formats.
+
     Parameters
     ----------
     body : str
@@ -144,17 +154,24 @@ def rewrite_install_paths(body: str, install_root: str) -> str:
     -------
     str
         Body with every matched canonical/<dir>/ prefix rewritten to
-        <install_root>/<dir>/.
+        <install_root>/<dir>/, EXCEPT on comment lines (`#` at first non-ws).
 
     Notes
     -----
     - Uses a word boundary so substrings like ``foocanonical/...`` don't match.
     - Only rewrites the 6 known canonical subdirectories — paths like
       ``canonical/work-NNN/...`` or ``canonical/scratch/`` pass through.
-    - Idempotent: rewriting already-rewritten text is a no-op (no ``canonical/``
-      prefix to match).
+    - Idempotent: rewriting already-rewritten text is a no-op.
+    - Comment skip is line-by-line; multi-line constructs not detected.
     """
-    return _CANONICAL_PATH_RE.sub(install_root + r"/\1/", body)
+    out_lines = []
+    for line in body.splitlines(keepends=True):
+        stripped = line.lstrip()
+        if stripped.startswith("#"):
+            out_lines.append(line)  # comment line — preserve verbatim
+        else:
+            out_lines.append(_CANONICAL_PATH_RE.sub(install_root + r"/\1/", line))
+    return "".join(out_lines)
 
 
 # ---------------------------------------------------------------------------

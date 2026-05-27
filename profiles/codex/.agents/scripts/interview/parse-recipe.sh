@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# parse-recipe.sh — feature-011 helper for .agents/recipes/ files.
+# parse-recipe.sh — feature-011 helper for canonical/recipes/ files.
 # Portability: POSIX-portable; runs on Linux, macOS (Big Sur+), and Windows Git Bash.
 # Avoids GNU-only grep flags. Uses `sleep 0.5` (fractional seconds — requires
 # modern macOS [Big Sur+] or any Linux/Git Bash; not POSIX-strict but accepted

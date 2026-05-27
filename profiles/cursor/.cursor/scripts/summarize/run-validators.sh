@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # run-validators.sh — orchestrator for /aid-summarize VALIDATE state.
 # (Renamed from knowledge-summary/scripts/grade.sh in 2026-05-26 script
-#  consolidation; the universal grade computation lives at .cursor/scripts/grade.sh.)
+#  consolidation; the universal grade computation lives at canonical/scripts/grade.sh.)
 # Runs all automated checks and emits a structured two-grade report.
 #
 # Usage:

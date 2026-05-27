@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # complexity-score.sh — compute delivery-complexity score for aid-execute DELIVERY-GATE.
 #
-# Extracted from .agents/skills/aid-execute/references/state-delivery-gate.md
+# Extracted from canonical/skills/aid-execute/references/state-delivery-gate.md
 # (Step 1: SCORE) per feature-002 SPEC §Layers principle: "complexity scoring
 # is pure arithmetic over task files — belongs in scripts/, not in the skill
 # body".
