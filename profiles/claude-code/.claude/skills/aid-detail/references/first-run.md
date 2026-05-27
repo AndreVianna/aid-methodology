@@ -80,12 +80,12 @@ Print before dispatch: `[Review] Dispatching reviewer for task list validation (
 After writing, **review immediately:** Do the tasks hold up?
 ✓ reviewer done (record actual time) — or ✗ reviewer failed: {reason}
 
-Use the universal rubric (`canonical/templates/grading-rubric.md`). Classify each issue
+Use the universal rubric (`.claude/templates/grading-rubric.md`). Classify each issue
 by severity. The grade is calculated — worst issue dominates.
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum (from `bash canonical/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`) | Move to next deliverable. |
+| Grade ≥ minimum (from `bash .claude/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`) | Move to next deliverable. |
 | Grade < minimum, fixable | Back to Propose with findings. |
 
 ```

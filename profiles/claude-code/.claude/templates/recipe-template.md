@@ -1,5 +1,5 @@
 ---
-name: {{recipe-name}}  # Fill in before saving as canonical/recipes/{name}.md. These slots are placeholders, not real recipe slots.
+name: {{recipe-name}}  # Fill in before saving as .claude/recipes/{name}.md. These slots are placeholders, not real recipe slots.
 applies-to: {{applies-to}}
 slot-count: {{slot-count}}
 task-count: {{task-count}}
@@ -51,7 +51,7 @@ task-count: {{task-count}}
 
 ## tasks
 
-<!-- Multi-task recipes add ### task-002 etc. with `**Depends on:** task-NNN` per task; see canonical/recipes/add-crud-endpoint.md for a 3-task example. -->
+<!-- Multi-task recipes add ### task-002 etc. with `**Depends on:** task-NNN` per task; see .claude/recipes/add-crud-endpoint.md for a 3-task example. -->
 
 ### task-001 — {{task-001-title}}
 
@@ -156,14 +156,14 @@ need (per feature-005 work-root SPEC.md schema):
 The ## tasks heading marks the start of the task skeletons. Each ### task-NNN — Title
 sub-heading defines one task. The rendered task-NNN.md file follows the 6-section
 flat shape (task title heading, Type, Source, Depends on, Scope, Acceptance Criteria)
-as defined in canonical/templates/delivery-plans/task-template.md.
+as defined in .claude/templates/delivery-plans/task-template.md.
 
 Slots are allowed in the tasks block. The Source field of each rendered task is
 set to {work-name} → delivery-001 (the lite-path delivery id is always delivery-001).
 
 ## Naming and location
 
-File must live directly under canonical/recipes/ (not in a subdirectory). Name the
+File must live directly under .claude/recipes/ (not in a subdirectory). Name the
 file {recipe-name}.md where recipe-name matches the name field in the front-matter.
 
 ## Conventions

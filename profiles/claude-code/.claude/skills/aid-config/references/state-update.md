@@ -29,7 +29,7 @@ For the selected key, print:
 Updating: <key-path>
 
 Current value:   <current-value-from-settings.yml>
-Canonical default: <default-from-canonical/templates/settings.yml>
+Canonical default: <default-from-.claude/templates/settings.yml>
 Valid values:    <see table below>
 ```
 

@@ -63,7 +63,7 @@ so the user can retry. Advance to VIEW (next run can re-render).
 
 Write the updated YAML to `.aid/settings.yml.tmp`. Then atomically rename to
 `.aid/settings.yml`. Use a sentinel-lock pattern if a write helper is available
-at `canonical/scripts/config/persist-setting.sh`; otherwise do it inline.
+at `.claude/scripts/config/persist-setting.sh`; otherwise do it inline.
 
 Atomic rename ensures the file is never partially written (an interrupted
 write leaves the old content intact, not a half-file).

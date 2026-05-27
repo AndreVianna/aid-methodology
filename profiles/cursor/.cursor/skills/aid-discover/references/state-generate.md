@@ -145,7 +145,7 @@ Populated during Q&A → FIX cycle, but must exist for state machine.
 3. Consolidate into `## Q&A (Pending)` section with sequential IDs (Q1, Q2, ...)
 4. Delete `.scout-questions.tmp`
 5. Set `**Grade:**` to `Pending` (was `Not Started`)
-6. **Preserve** `**Project Type:**`, `**User Approved:**`, `## External Documentation` (the `**Minimum Grade:**` field is now in `.aid/settings.yml` — read it via `bash canonical/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`)
+6. **Preserve** `**Project Type:**`, `**User Approved:**`, `## External Documentation` (the `**Minimum Grade:**` field is now in `.aid/settings.yml` — read it via `bash .cursor/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`)
 7. If `--grade` provided, update `.aid/settings.yml` via `/aid-config` (NOT STATE.md)
 
 **Q&A entry format:**

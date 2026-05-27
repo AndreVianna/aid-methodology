@@ -52,7 +52,7 @@ Do NOT proceed to Step 4 until every dispatched agent has reported completion. F
 After ALL parallel agents return:
 1. **REMOVE fixed issue lines** from `.aid/knowledge/STATE.md` `## Issues` (orchestrator only — agents never touch STATE.md).
 2. Update `**Applied to:**` for each incorporated Q&A answer in `STATE.md ## Q&A`.
-3. **Regenerate all registered generated files (per principles.md P3 — auto-gen-last).** Read `canonical/templates/generated-files.txt`. For each non-comment line, parse `output-path|build-command` and execute the build command. This ensures `metrics.md`, `INDEX.md`, `project-index.md` (and any future registered builders) reflect the FINAL post-fix state of the KB:
+3. **Regenerate all registered generated files (per principles.md P3 — auto-gen-last).** Read `.cursor/templates/generated-files.txt`. For each non-comment line, parse `output-path|build-command` and execute the build command. This ensures `metrics.md`, `INDEX.md`, `project-index.md` (and any future registered builders) reflect the FINAL post-fix state of the KB:
    ```bash
    while IFS='|' read -r out_path build_cmd; do
      case "$out_path" in ''|\#*) continue ;; esac
@@ -60,9 +60,9 @@ After ALL parallel agents return:
      out_path="${out_path%"${out_path##*[![:space:]]}"}"
      echo "[Fix] Regenerating $out_path ..."
      eval "$build_cmd" || echo "[Fix] WARNING: build failed for $out_path"
-   done < canonical/templates/generated-files.txt
+   done < .cursor/templates/generated-files.txt
    ```
-4. Run `bash canonical/scripts/kb/verify-claims.sh` — expect exit 0. (The verify script's [GEN-MISSING] check will now find the freshly-regenerated files; if any are still missing, the corresponding build command failed in Step 3.)
+4. Run `bash .cursor/scripts/kb/verify-claims.sh` — expect exit 0. (The verify script's [GEN-MISSING] check will now find the freshly-regenerated files; if any are still missing, the corresponding build command failed in Step 3.)
 5. Run any smoke tests relevant to changes.
 6. Single `git commit` listing which files each agent touched + the regenerated outputs in `.aid/generated/`.
 7. `git push`.

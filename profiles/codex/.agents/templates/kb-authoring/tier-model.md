@@ -44,7 +44,7 @@ Numeric measurements of disk state: line counts, byte counts, file sizes, functi
 counts, term counts when not a contract.
 
 - **Examples:**
-  - "`canonical/skills/aid-discover/SKILL.md` is 307 lines."
+  - "`.agents/skills/aid-discover/SKILL.md` is 307 lines."
   - "The Mermaid library is 3.3 MB inlined."
   - "domain-glossary.md contains 161 terms." *(unless 161 is a contract — usually it isn't)*
 - **Stability:** every commit that touches the underlying file.

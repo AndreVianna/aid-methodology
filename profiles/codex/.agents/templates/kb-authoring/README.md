@@ -78,8 +78,8 @@ extend the canonical rubric with project-specific lint rules. See
 
 ## See also
 
-- `canonical/scripts/kb/verify-claims.sh` — lint implementation
-- `canonical/scripts/kb/build-metrics.sh` — T3 fact generator
-- `canonical/scripts/kb/build-index.sh` — INDEX.md generator
-- `canonical/templates/generated-files.txt` — registry of all generated files + build commands
-- `canonical/templates/knowledge-base/*.md` — KB doc templates pre-filled with frontmatter
+- `.agents/scripts/kb/verify-claims.sh` — lint implementation
+- `.agents/scripts/kb/build-metrics.sh` — T3 fact generator
+- `.agents/scripts/kb/build-index.sh` — INDEX.md generator
+- `.agents/templates/generated-files.txt` — registry of all generated files + build commands
+- `.agents/templates/knowledge-base/*.md` — KB doc templates pre-filled with frontmatter

@@ -62,7 +62,7 @@ out of cycle scope).
 
 **Auto-generated files refresh LAST.** Hand-edits land first; generated files
 (metrics.md, INDEX.md, project-index.md) regenerate at the end of FIX, so they reflect
-the final state. Refresh is driven by `canonical/templates/generated-files.txt`
+the final state. Refresh is driven by `.cursor/templates/generated-files.txt`
 registry.
 
 ## P4. Enforce via lint, not convention
@@ -70,7 +70,7 @@ registry.
 Convention alone won't survive contributor turnover. The principles must be enforced
 mechanically:
 
-- `canonical/scripts/kb/verify-claims.sh` is the enforcer. It parses
+- `.cursor/scripts/kb/verify-claims.sh` is the enforcer. It parses
   frontmatter, validates declared `contracts:` against disk, warns on inline T4
   markers in primary-category docs, and confirms registered generated files were
   regenerated.

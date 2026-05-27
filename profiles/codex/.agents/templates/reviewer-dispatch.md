@@ -38,9 +38,9 @@ OUT-OF-SCOPE FINDINGS POLICY:
   counts. Do NOT affect the grade.
 
 DELIVERABLES:
-  - Findings format: per `canonical/templates/kb-authoring/principles.md` P3 temp-ledger
+  - Findings format: per `.agents/templates/kb-authoring/principles.md` P3 temp-ledger
   - Severity scale: per the named RUBRIC
-  - Grade: computed per `canonical/templates/grading-rubric.md` (OOS observations excluded)
+  - Grade: computed per `.agents/templates/grading-rubric.md` (OOS observations excluded)
 ```
 
 Each section is mandatory. Empty content is allowed (e.g.,
@@ -51,7 +51,7 @@ Each section is mandatory. Empty content is allowed (e.g.,
 ### ARTIFACTS UNDER REVIEW
 
 An **explicit file list**. The reviewer reads + grades exactly these files. No
-wildcards beyond the artifact set (e.g., `canonical/templates/kb-authoring/*.md` is
+wildcards beyond the artifact set (e.g., `.agents/templates/kb-authoring/*.md` is
 fine if the entire directory is in scope; `canonical/**` is too broad).
 
 The reviewer MUST NOT open any file not listed here, except to:
@@ -115,8 +115,8 @@ If multiple artifacts use different rubrics, the brief maps each to its rubric:
 
 ```
 RUBRIC:
-  canonical/templates/kb-authoring/*.md   → kb-authoring/review-rubric.md#full-primary
-  canonical/scripts/*.sh        → (none — script bugs / shell correctness)
+  .agents/templates/kb-authoring/*.md   → kb-authoring/review-rubric.md#full-primary
+  .agents/scripts/*.sh        → (none — script bugs / shell correctness)
 ```
 
 When no pre-defined rubric exists (one-off reviews like Phase A foundation),
@@ -155,13 +155,13 @@ The expected output. Always:
 - **Ledger format** per [kb-authoring/principles.md](kb-authoring/principles.md)
   P3 — temp-file ledger pattern at `.aid/.temp/review-pending/<dispatcher>.md`
 - **Severity scale** per the named RUBRIC (or inline if no rubric)
-- **Grade** computed per `canonical/templates/grading-rubric.md`
+- **Grade** computed per `.agents/templates/grading-rubric.md`
 - **OOS section** as defined in OOS POLICY above
 
 ## Brief generation
 
 Each skill that dispatches a reviewer ships a brief template at
-`canonical/skills/<skill>/references/reviewer-brief.md` **(not yet implemented — will be
+`.agents/skills/<skill>/references/reviewer-brief.md` **(not yet implemented — will be
 added per-skill during the Phase B skill-update pass; see roadmap)**.
 
 The template is HYBRID — fixed structure with two dynamic slots:
@@ -195,17 +195,17 @@ The protocol applies; only the template-substitution mechanism is skipped.
 
 ```
 ARTIFACTS UNDER REVIEW:
-  - canonical/templates/kb-authoring/README.md
-  - canonical/templates/kb-authoring/principles.md
-  - canonical/templates/kb-authoring/tier-model.md
-  - canonical/templates/kb-authoring/frontmatter-schema.md
-  - canonical/templates/kb-authoring/review-rubric.md
-  - canonical/templates/reviewer-dispatch.md  (this doc, newly authored)
-  - canonical/templates/generated-files.txt
-  - canonical/scripts/kb/build-metrics.sh
-  - canonical/scripts/kb/build-index.sh
-  - canonical/scripts/kb/verify-claims.sh  (NEW SECTIONS ONLY — see PART 0 onward)
-  - canonical/templates/knowledge-base/*.md  (17 templates with prepended frontmatter)
+  - .agents/templates/kb-authoring/README.md
+  - .agents/templates/kb-authoring/principles.md
+  - .agents/templates/kb-authoring/tier-model.md
+  - .agents/templates/kb-authoring/frontmatter-schema.md
+  - .agents/templates/kb-authoring/review-rubric.md
+  - .agents/templates/reviewer-dispatch.md  (this doc, newly authored)
+  - .agents/templates/generated-files.txt
+  - .agents/scripts/kb/build-metrics.sh
+  - .agents/scripts/kb/build-index.sh
+  - .agents/scripts/kb/verify-claims.sh  (NEW SECTIONS ONLY — see PART 0 onward)
+  - .agents/templates/knowledge-base/*.md  (17 templates with prepended frontmatter)
 
 CONTEXT:
   These are canonical artifacts that define a KB Authoring discipline. They
@@ -243,7 +243,7 @@ OUT-OF-SCOPE FINDINGS POLICY:
 
 DELIVERABLES:
   - Write findings to: .aid/.temp/review-pending/phase-a-foundation-v2.md
-  - Format: per canonical/templates/kb-authoring/principles.md P3 temp-ledger
+  - Format: per .agents/templates/kb-authoring/principles.md P3 temp-ledger
   - Severity: CRITICAL / HIGH / MEDIUM / LOW / MINOR (worst-issue dominates)
   - Grade: computed; INCLUDE explicit "OOS observations excluded" note in summary
 ```
@@ -259,7 +259,7 @@ Revisions should:
 
 ## Bootstrap exemption
 
-This doc lives in `canonical/templates/` and is a **skill-bundle artifact**, not a KB
+This doc lives in `.agents/templates/` and is a **skill-bundle artifact**, not a KB
 document. The frontmatter schema defined in `kb-authoring/frontmatter-schema.md` applies
 to `.aid/knowledge/*.md` (KB docs in adopter projects), NOT to canonical skill-bundle
 docs. Therefore this doc carries no `kb-category:`/`source:` frontmatter.
@@ -270,8 +270,8 @@ For changes to this doc, append a dated line at the bottom of this section:
 
 ## See also
 
-- `canonical/templates/kb-authoring/principles.md` — P3 temp-ledger pattern
-- `canonical/templates/kb-authoring/review-rubric.md` — KB review rubric definitions
-- `canonical/templates/grading-rubric.md` — severity → grade computation
-- `canonical/templates/long-wait-protocol.md` — heartbeat / L2 timer dispatch protocol
-- `canonical/agents/reviewer/` — the reviewer agent definition
+- `.agents/templates/kb-authoring/principles.md` — P3 temp-ledger pattern
+- `.agents/templates/kb-authoring/review-rubric.md` — KB review rubric definitions
+- `.agents/templates/grading-rubric.md` — severity → grade computation
+- `.agents/templates/long-wait-protocol.md` — heartbeat / L2 timer dispatch protocol
+- `.agents/agents/reviewer/` — the reviewer agent definition

@@ -16,7 +16,7 @@ source to read from.
 
 ## Step 1: Write `.aid/settings.yml` from canonical defaults
 
-Copy `canonical/templates/settings.yml` to `.aid/settings.yml` verbatim.
+Copy `.cursor/templates/settings.yml` to `.aid/settings.yml` verbatim.
 **No substitution** — placeholder values (`<project-name>`, etc.) remain in
 the file. The user can update via subsequent VIEW → UPDATE cycles.
 

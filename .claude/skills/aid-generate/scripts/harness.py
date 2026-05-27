@@ -49,6 +49,16 @@ _PLACEHOLDER_RE = re.compile(
     r"\{(" + "|".join(re.escape(k) for k in sorted(_FILENAME_PLACEHOLDERS)) + r")\}"
 )
 
+# Regex matching canonical/* path references that must be rewritten to the
+# install-tree path during render (F1 fix). Uses a word boundary so substrings
+# like "foocanonical/..." don't match; constrains the second segment to the
+# known canonical subdirectories so unrelated paths (e.g., "canonical/work-NNN")
+# pass through untouched.
+_CANONICAL_PATH_DIRS = ("scripts", "templates", "skills", "agents", "rules", "recipes")
+_CANONICAL_PATH_RE = re.compile(
+    r"\bcanonical/(" + "|".join(_CANONICAL_PATH_DIRS) + r")/"
+)
+
 
 # ---------------------------------------------------------------------------
 # sha256_hex
@@ -106,6 +116,45 @@ def substitute_filenames(body: str, filename_map: dict[str, str]) -> str:
         return match.group(0)
 
     return _PLACEHOLDER_RE.sub(_replace, body)
+
+
+# ---------------------------------------------------------------------------
+# rewrite_install_paths (F1 fix)
+# ---------------------------------------------------------------------------
+
+def rewrite_install_paths(body: str, install_root: str) -> str:
+    """
+    Rewrite ``canonical/{scripts,templates,skills,agents,rules,recipes}/...``
+    path references in *body* to the per-profile install-tree path.
+
+    Adopters install the bundle under ``.claude/`` / ``.agents/`` / ``.cursor/``;
+    skill bodies that hard-code ``canonical/scripts/...`` would fail to resolve
+    in adopter projects. This rewriter runs during render so each profile's
+    output contains install-rooted paths instead.
+
+    Parameters
+    ----------
+    body : str
+        Text content (typically a SKILL.md, reference, template, or script body).
+    install_root : str
+        The profile's install-tree basename (e.g., ``.claude``, ``.agents``,
+        ``.cursor``). Obtained from ``profile.layout.install_root()``.
+
+    Returns
+    -------
+    str
+        Body with every matched canonical/<dir>/ prefix rewritten to
+        <install_root>/<dir>/.
+
+    Notes
+    -----
+    - Uses a word boundary so substrings like ``foocanonical/...`` don't match.
+    - Only rewrites the 6 known canonical subdirectories — paths like
+      ``canonical/work-NNN/...`` or ``canonical/scratch/`` pass through.
+    - Idempotent: rewriting already-rewritten text is a no-op (no ``canonical/``
+      prefix to match).
+    """
+    return _CANONICAL_PATH_RE.sub(install_root + r"/\1/", body)
 
 
 # ---------------------------------------------------------------------------

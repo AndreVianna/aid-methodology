@@ -38,10 +38,41 @@ class LayoutConfig:
     skills_dir: str = "skills"
     templates_dir: str = "templates"
     recipes_dir: str = "recipes"
+    scripts_dir: str = "scripts"
     # Cursor-specific
     rules_dir: str | None = None
     # Repo-root file name for the project-context document
     project_context_file: str = "CLAUDE.md"
+
+    def install_root(self) -> str:
+        """
+        Return the install-root path adopters see from their project root.
+
+        This is the basename of the directory where renderer output lands
+        (e.g., ``.claude`` for Claude Code, ``.agents`` for Codex assets,
+        ``.cursor`` for Cursor). Skill bodies that reference
+        ``canonical/scripts/...`` or ``canonical/templates/...`` get rewritten
+        to ``<install_root>/scripts/...`` / ``<install_root>/templates/...``
+        so they resolve in any adopter project (not just the dogfood repo).
+
+        For Codex's split layout, returns the *assets_root* basename
+        (``.agents``) since scripts + templates + skills all live there;
+        ``.codex`` only holds agent TOMLs and has no scripts/.
+
+        Examples
+        --------
+        - Claude Code: ``output_root="profiles/claude-code/.claude"`` → ``".claude"``
+        - Codex split: ``assets_root="profiles/codex/.agents"`` → ``".agents"``
+        - Cursor: ``output_root="profiles/cursor/.cursor"`` → ``".cursor"``
+        """
+        from pathlib import PurePosixPath
+
+        target = self.assets_root if self.assets_root is not None else self.output_root
+        if target is None:
+            raise ValueError(
+                "LayoutConfig has neither assets_root nor output_root — cannot determine install_root"
+            )
+        return PurePosixPath(target).name
 
     def common_parent(self) -> str:
         """

@@ -2,7 +2,7 @@
 
 VALIDATE runs the machine-verifiable quality checks (diagrams, links, HTML, contrast) to compute the Machine Grade; it is selected after GENERATE completes and again after FIX.
 
-▶ validation suite starting (~1.5 min total — 3 scripts × ~30 s each per `canonical/templates/rough-time-hints.md`)
+▶ validation suite starting (~1.5 min total — 3 scripts × ~30 s each per `.claude/templates/rough-time-hints.md`)
 Run `.aid/scripts/summarize/run-validators.sh .aid/knowledge/knowledge-summary.html`. It orchestrates the AUTO_POOL (machine-verifiable) checks only:
 
 1. **`.aid/scripts/summarize/validate-diagrams.mjs`** — D1: extracts every `<pre class="mermaid">` block, parses each via `mermaid.parse()`. **Any failure = automatic F.** D2: renders each block via `jsdom` + Mermaid and asserts the SVG is non-trivial (>500 bytes, contains `<g>` or `<path>`, no `mermaid-error` marker). If `jsdom` is unavailable, D2 falls back to parse-only and the output flags `D2: jsdom-fallback`.

@@ -94,7 +94,7 @@ For DONE, print summary and halt — no next-state line.
 
 ## Settings schema reference
 
-Canonical schema: `canonical/templates/settings.yml`. Top-level sections:
+Canonical schema: `.claude/templates/settings.yml`. Top-level sections:
 
 | Section | Keys | Purpose |
 |---|---|---|
@@ -121,11 +121,11 @@ using this order:
 2. **Global category default** (e.g., `review.minimum_grade`) — use otherwise
 3. **Hardcoded skill default** — use only if `.aid/settings.yml` is missing entirely
 
-A helper script `canonical/scripts/config/read-setting.sh` (authored alongside
+A helper script `.claude/scripts/config/read-setting.sh` (authored alongside
 this skill) provides the canonical resolution logic. Consumer skills invoke:
 
 ```bash
-bash canonical/scripts/config/read-setting.sh --skill discover --key minimum_grade
+bash .claude/scripts/config/read-setting.sh --skill discover --key minimum_grade
 # → prints A (or A+, A-, etc.) depending on settings.yml + overrides
 ```
 

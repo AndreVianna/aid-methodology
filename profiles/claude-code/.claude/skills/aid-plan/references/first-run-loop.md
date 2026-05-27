@@ -90,12 +90,12 @@ After writing, **review immediately:** Does it hold up?
 - Actually standalone-functional?
 - Consistent with KB architecture?
 
-Use the universal rubric (`canonical/templates/grading-rubric.md`). Classify each issue
+Use the universal rubric (`.claude/templates/grading-rubric.md`). Classify each issue
 by severity. The grade is calculated — worst issue dominates.
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum (from `bash canonical/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`) | Move to next deliverable. |
+| Grade ≥ minimum (from `bash .claude/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`) | Move to next deliverable. |
 | Grade < minimum, fixable | Back to Propose with findings. |
 
 ```

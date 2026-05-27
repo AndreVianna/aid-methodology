@@ -130,7 +130,7 @@ Create the directory structure:
   .heartbeat/              ← .aid/.heartbeat/* — empty initially; gitignored
 ```
 
-Copy each of the 16 KB doc templates from `canonical/templates/knowledge-base/<name>.md`
+Copy each of the 16 KB doc templates from `.claude/templates/knowledge-base/<name>.md`
 into `.aid/knowledge/<name>.md`. These templates already carry YAML frontmatter
 (`kb-category` + `source` + `intent` + `contracts` + `changelog`) per the
 canonical KB Authoring spec.
@@ -145,18 +145,18 @@ will populate them.
 
 ### `.aid/knowledge/README.md`
 
-Use template from `canonical/templates/knowledge-base/README.md`. Substitute:
+Use template from `.claude/templates/knowledge-base/README.md`. Substitute:
 - Project name
 - Project type (brownfield/greenfield)
 
 ### `.aid/knowledge/INDEX.md`
 
-INDEX.md is **generated** by `canonical/scripts/kb/build-index.sh` after KB docs
+INDEX.md is **generated** by `.claude/scripts/kb/build-index.sh` after KB docs
 have frontmatter content. **DO NOT hand-author INDEX.md.** Run the generator at
 the end of INIT (after all 16 KB docs are scaffolded):
 
 ```bash
-bash canonical/scripts/kb/build-index.sh \
+bash .claude/scripts/kb/build-index.sh \
   --root .aid/knowledge \
   --output .aid/generated/INDEX.md
 ```
@@ -171,7 +171,7 @@ STATE.md is the Discovery-area state ledger (cycle history, Q&A, calibration
 log per work-003). It is **NOT** the config file — config now lives in
 `.aid/settings.yml`.
 
-Create STATE.md from `canonical/templates/discovery-state-template.md`. Substitute:
+Create STATE.md from `.claude/templates/discovery-state-template.md`. Substitute:
 - Status: `Not Started` (Discovery hasn't run yet)
 - Last updated: today's ISO date
 
@@ -182,7 +182,7 @@ STATE.md does NOT contain `Minimum Grade`, `Heartbeat Interval`, or
 
 ## Step 4: Write `.aid/settings.yml`
 
-Copy `canonical/templates/settings.yml` to `.aid/settings.yml` and substitute the
+Copy `.claude/templates/settings.yml` to `.aid/settings.yml` and substitute the
 collected values from Step 1:
 
 ```yaml
@@ -221,8 +221,8 @@ For each tool in `tools.installed`:
 - `codex` or `cursor` → uses `AGENTS.md`
 
 If the project-context file does NOT exist, create it from the canonical template:
-- `canonical/templates/claude-md-template.md` (for CLAUDE.md)
-- `canonical/templates/agents-md-template.md` (for AGENTS.md)
+- `.claude/templates/claude-md-template.md` (for CLAUDE.md)
+- `.claude/templates/agents-md-template.md` (for AGENTS.md)
 
 **Key change vs legacy aid-init:** the AID Workspace section in CLAUDE.md/AGENTS.md
 links to `.aid/settings.yml` for project description rather than duplicating it.
@@ -250,10 +250,10 @@ If the file already exists, append the `## AID Workspace` section if missing
 Some skills (`/aid-summarize`) require non-canonical templates at runtime that
 must live in the adopter's project. Copy:
 
-- `canonical/templates/knowledge-summary/` → `.aid/templates/knowledge-summary/`
+- `.claude/templates/knowledge-summary/` → `.aid/templates/knowledge-summary/`
 
 This is the same step the legacy aid-init step-4b performed; only the location of
-the source moved (canonical/templates/knowledge-summary/ unchanged).
+the source moved (.claude/templates/knowledge-summary/ unchanged).
 
 ---
 

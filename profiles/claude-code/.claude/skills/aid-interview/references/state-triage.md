@@ -168,8 +168,8 @@ in Step 5, before STATE.md is written in Step 6.
 ### 5a-1: Discover matching recipes
 
 Scan the canonical recipes directory (the path is:
-`canonical/recipes/` relative to the AID installation root, i.e. the same directory
-that contains `canonical/skills/`). For each `.md` file, read the `applies-to` field
+`.claude/recipes/` relative to the AID installation root, i.e. the same directory
+that contains `.claude/skills/`). For each `.md` file, read the `applies-to` field
 from its YAML front-matter. **Skip any file whose front-matter cannot be parsed or is missing required fields** (e.g., `README.md` has no front-matter — `parse-recipe.sh --validate` exits non-zero on it). Parse failures are not errors; handle gracefully and continue.
 
 A recipe matches if:
@@ -210,7 +210,7 @@ Wait for the user's response **on this same turn** before advancing.
 When the user picks a recipe number:
 
 1. **Identify the recipe file:** resolve the chosen recipe's `.md` path in
-   `canonical/recipes/`.
+   `.claude/recipes/`.
 
 2. **List slots:** call `parse-recipe.sh --list <recipe-file>` to get the ordered
    list of slot names (one per line, unique, order of first appearance).

@@ -37,7 +37,7 @@ Verify `.aid/knowledge/STATE.md` `## KB Documents Status` and `## Issues` sectio
 - [ ] Overall grade and recommendation under `## Review History`
 - [ ] Cross-cutting concerns
 
-If `--grade` provided, update `.aid/settings.yml` `discover.minimum_grade` (via `/aid-config` or direct YAML edit). Add first Review History entry under `## Review History`. Resolve current minimum via `bash canonical/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`.
+If `--grade` provided, update `.aid/settings.yml` `discover.minimum_grade` (via `/aid-config` or direct YAML edit). Add first Review History entry under `## Review History`. Resolve current minimum via `bash .cursor/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`.
 
 Print: `[Review 2/2] Review complete. Grade: {overall}. Minimum: {min}. Run /aid-discover again to {fix issues|proceed}.`
 

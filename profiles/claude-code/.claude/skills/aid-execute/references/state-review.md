@@ -31,7 +31,7 @@ Dispatch the `reviewer` agent with `subagent_type: reviewer` at **Small tier**
 
 Then append the quick-check-specific prompt below.
 
-The brief carries the universal rubric pointer (`canonical/templates/grading-rubric.md`)
+The brief carries the universal rubric pointer (`.claude/templates/grading-rubric.md`)
 and the OOS policy. Pass the rendered brief + the quick-check prompt as a single
 dispatch.
 

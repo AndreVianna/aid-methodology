@@ -68,8 +68,8 @@ Production mode.
 
 ### `generator:` (required iff `source: generated`)
 
-Name of the build script (relative to `canonical/scripts/` or as a
-project-relative path). Listed in `canonical/templates/generated-files.txt` registry.
+Name of the build script (relative to `.claude/scripts/` or as a
+project-relative path). Listed in `.claude/templates/generated-files.txt` registry.
 
 Examples: `build-index.sh`, `build-metrics.sh`, `build-project-index.sh`.
 

@@ -13,7 +13,7 @@
 # Comments (lines starting with #) and blank lines are ignored.
 # Order matters: scripts are executed top-to-bottom, so list dependencies first.
 #
-# PATH CONVENTION: build commands reference `canonical/scripts/...` paths. This
+# PATH CONVENTION: build commands reference `.cursor/scripts/...` paths. This
 # works in the DOGFOOD repo (where canonical/ exists at root). In ADOPTER projects
 # the scripts live under the install tree (`.claude/scripts/`, `.codex/scripts/`,
 # `.cursor/scripts/`); aid-config or the skill orchestrator must resolve the actual
@@ -22,13 +22,13 @@
 
 # Project file inventory — read by discovery sub-agents as a pre-pass.
 # Depends on: the entire project file tree.
-.aid/generated/project-index.md|bash canonical/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md
+.aid/generated/project-index.md|bash .cursor/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md
 
 # Numeric metrics (T3 facts) — line counts, file counts, term counts, severity tallies.
 # Depends on: KB doc disk state + frontmatter contracts.
-.aid/generated/metrics.md|bash canonical/scripts/kb/build-metrics.sh --root . --output .aid/generated/metrics.md
+.aid/generated/metrics.md|bash .cursor/scripts/kb/build-metrics.sh --root . --output .aid/generated/metrics.md
 
 # KB index — agent-facing 2-3 line summary per KB doc, composed from frontmatter intent:.
 # Depends on: every KB doc's frontmatter (changes to intent: fields).
 # MUST run AFTER hand-edits to KB docs and BEFORE final commit.
-.aid/generated/INDEX.md|bash canonical/scripts/kb/build-index.sh --root .aid/knowledge --output .aid/generated/INDEX.md
+.aid/generated/INDEX.md|bash .cursor/scripts/kb/build-index.sh --root .aid/knowledge --output .aid/generated/INDEX.md

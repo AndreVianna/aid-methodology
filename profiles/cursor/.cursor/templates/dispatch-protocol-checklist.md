@@ -9,7 +9,7 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **Before each dispatch:**
 
-1. **Look up ETA** in `canonical/templates/rough-time-hints.md` for the
+1. **Look up ETA** in `.cursor/templates/rough-time-hints.md` for the
    subagent's operation class. Capture LOW–HIGH band.
 2. **Read heartbeat config** from `.aid/knowledge/STATE.md` top-of-file
    `**Heartbeat Interval:** N minutes` (default 1; `0` = disabled).
@@ -37,10 +37,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **References:**
 
-- `canonical/templates/long-wait-protocol.md` — full L2 spec
-- `canonical/templates/subagent-heartbeat-protocol.md` — full L3 spec
-- `canonical/templates/rough-time-hints.md` — current measured ETAs
-- `canonical/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
+- `.cursor/templates/long-wait-protocol.md` — full L2 spec
+- `.cursor/templates/subagent-heartbeat-protocol.md` — full L3 spec
+- `.cursor/templates/rough-time-hints.md` — current measured ETAs
+- `.cursor/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
 
 The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair
 lines elsewhere in this skill body remain in place; this protocol just makes

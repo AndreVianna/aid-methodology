@@ -19,7 +19,7 @@ Includes a built-in quality gate that reviews, grades, and fixes KB documents.
 
 ## ⚠️ Pre-flight Checks
 
-Run `scripts/kb/preflight.sh .aid/knowledge/` to verify:
+Run `bash .claude/scripts/kb/preflight.sh .aid/knowledge/` to verify:
 1. `.aid/knowledge/STATE.md` exists (init has run)
 2. Not in Plan Mode (subagents need write access)
 
@@ -37,7 +37,7 @@ If Check 2 fails: Tell user to press `Shift+Tab` to exit Plan Mode, then re-run.
 - **Line-count drift** — `wc -l` every cited file (SKILL.md, AGENT.md, scripts, templates, methodology) and replace stale citations with disk truth.
 - **Off-by-1 drift** — small numerical changes in file sizes / counts that the prior cycle missed.
 - **Aggregate counts** — per-skill or per-tree file/script/reference totals computed from current disk state (`find ... | wc -l`).
-- **Path & citation hygiene** — bare citations missing skill prefix (`SKILL.md:NNN` → `canonical/skills/<skill>/SKILL.md:NNN`); out-of-range line cites (line numbers that no longer exist after a file shrunk); broken `path:line` references.
+- **Path & citation hygiene** — bare citations missing skill prefix (`SKILL.md:NNN` → `.claude/skills/<skill>/SKILL.md:NNN`); out-of-range line cites (line numbers that no longer exist after a file shrunk); broken `path:line` references.
 - **Math** — verify any `%` calculations using real values (e.g., "X% over Y" assertions). If the underlying numbers changed, recompute.
 - **Ghost references** — once confirmed a file/feature was removed, delete references to it (don't leave "(retired)" or "(see below)" stubs in current-state docs; historical change-log entries are fine).
 - **Meta-doc counting** — `INDEX.md` / `README.md` per-doc line counts, feature counts, file-type tallies (same nature as line-count drift).
@@ -77,10 +77,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **Before each dispatch:**
 
-1. **Look up ETA** in `canonical/templates/rough-time-hints.md` for the
+1. **Look up ETA** in `.claude/templates/rough-time-hints.md` for the
    subagent's operation class. Capture LOW–HIGH band.
 2. **Read heartbeat config** from `.aid/knowledge/STATE.md` top-of-file
-   `bash canonical/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1` (default 1; `0` = disabled).
+   `bash .claude/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1` (default 1; `0` = disabled).
 3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
    - Include `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt with explicit instruction to update during long phases
@@ -111,10 +111,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **References:**
 
-- `canonical/templates/long-wait-protocol.md` — full L2 spec
-- `canonical/templates/subagent-heartbeat-protocol.md` — full L3 spec
-- `canonical/templates/rough-time-hints.md` — current measured ETAs
-- `canonical/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
+- `.claude/templates/long-wait-protocol.md` — full L2 spec
+- `.claude/templates/subagent-heartbeat-protocol.md` — full L3 spec
+- `.claude/templates/rough-time-hints.md` — current measured ETAs
+- `.claude/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
 
 The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair
 lines elsewhere in this skill body remain in place; this protocol just makes

@@ -25,6 +25,7 @@ from profile import load_profile, validate, Profile  # noqa: E402
 from harness import (  # noqa: E402
     read_canonical_file,
     substitute_filenames,
+    rewrite_install_paths,
     sha256_hex,
     EmissionManifest,
 )
@@ -192,6 +193,7 @@ def _render_skill_md(
 
     fm_block = "---\n" + "".join(new_fm_lines) + "---\n"
     body = substitute_filenames(body, profile.filename_map)
+    body = rewrite_install_paths(body, profile.layout.install_root())
     content = fm_block + body
 
     out_path = out_skill_dir / "SKILL.md"
@@ -212,6 +214,7 @@ def _render_reference_file(
     """Render one file from references/."""
     raw = read_canonical_file(ref_path)
     content = substitute_filenames(raw, profile.filename_map)
+    content = rewrite_install_paths(content, profile.layout.install_root())
     out_path = out_skill_dir / "references" / ref_path.name
     encoded = content.encode("utf-8")
     _write(out_path, encoded)

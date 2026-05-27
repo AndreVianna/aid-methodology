@@ -2,7 +2,7 @@
 
 > **Status:** Interview Complete | Specifying | Planning | Detailing | Executing | Deployed
 > **Phase:** Interview | Specify | Plan | Detail | Execute | Deploy
-> **Minimum Grade:** {resolved at runtime by `bash canonical/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
+> **Minimum Grade:** {resolved at runtime by `bash .cursor/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** {YYYY-MM-DD}
 > **User Approved:** yes | no
 
@@ -108,7 +108,7 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 
 ## Delivery Gates
 
-> One block per delivery from PLAN.md (or the single work-root SPEC.md delivery on the lite path), written by the delivery-gate closing step of `aid-execute`. Distinct from per-task quick-check findings — the gate aggregates those deferred [HIGH] rows (via `delivery-NNN-issues.md`) and runs a full grade.sh pass. Instances of the deferred-[HIGH] log live at `.aid/work-NNN/delivery-NNN-issues.md`; see `canonical/templates/delivery-issues.md` for the template.
+> One block per delivery from PLAN.md (or the single work-root SPEC.md delivery on the lite path), written by the delivery-gate closing step of `aid-execute`. Distinct from per-task quick-check findings — the gate aggregates those deferred [HIGH] rows (via `delivery-NNN-issues.md`) and runs a full grade.sh pass. Instances of the deferred-[HIGH] log live at `.aid/work-NNN/delivery-NNN-issues.md`; see `.cursor/templates/delivery-issues.md` for the template.
 
 ### delivery-NNN
 

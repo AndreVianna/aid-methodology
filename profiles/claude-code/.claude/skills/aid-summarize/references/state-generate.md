@@ -8,7 +8,7 @@ This is the bulk of the work. Steps:
 
 ```
 if --grade present: MIN_GRADE = flag value (and update .aid/settings.yml summary.minimum_grade via /aid-config)
-else: MIN_GRADE = bash canonical/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A
+else: MIN_GRADE = bash .claude/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A
 ```
 
 Persist `--grade` overrides to `.aid/settings.yml` (via `/aid-config` or direct YAML edit). Do NOT write minimum_grade to STATE.md — STATE.md is for run-state (Q&A, Review History, Summarization History), not config.
@@ -32,7 +32,7 @@ Records in `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 
 Read every `.aid/knowledge/*.md` listed in INDEX.md. For each, extract:
 - **Document purpose** — first read the YAML frontmatter `intent:` field (per
-  `canonical/templates/kb-authoring/frontmatter-schema.md`). The `intent:`
+  `.claude/templates/kb-authoring/frontmatter-schema.md`). The `intent:`
   paragraph is the authoritative source for the doc's section description in
   the HTML summary. Fall back to "first paragraph after H1" only when frontmatter
   is missing or `intent:` is empty (legacy docs pre-Phase-A migration).

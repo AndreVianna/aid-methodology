@@ -13,7 +13,7 @@ to `work-NNN/STATE.md ## Quick Check Findings`). It is the input to the delivery
 to `Resolved` or `Accepted`.
 
 Instances live at `.aid/work-NNN/delivery-NNN-issues.md`. Template source:
-`canonical/templates/delivery-issues.md`.
+`.cursor/templates/delivery-issues.md`.
 
 ## Deferred [HIGH] Issues
 

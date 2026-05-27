@@ -44,10 +44,10 @@ Dispatch the `reviewer` subagent with the rendered brief.
 
 ### Grade Overall
 
-Use the universal rubric (`canonical/templates/grading-rubric.md`). Classify each issue
+Use the universal rubric (`.claude/templates/grading-rubric.md`). Classify each issue
 by severity. The grade is calculated — worst issue dominates.
 
-Compare to minimum grade from `bash canonical/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`.
+Compare to minimum grade from `bash .claude/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|

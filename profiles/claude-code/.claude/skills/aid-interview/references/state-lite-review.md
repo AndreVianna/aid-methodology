@@ -86,7 +86,7 @@ Recommended action: {loopback to L1 | loopback to L2}
 [4] Escalate to full path
 ```
 
-**Minimum grade:** read from `bash canonical/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A` if it
+**Minimum grade:** read from `bash .claude/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A` if it
 exists, otherwise apply the rubric's default minimum.
 
 Wait for user response.

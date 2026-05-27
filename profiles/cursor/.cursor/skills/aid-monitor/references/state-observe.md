@@ -9,7 +9,7 @@ Pull data from configured sources. Scope the observation window:
 - **Scheduled:** last monitor run → now
 - **On-demand:** user-specified window
 
-▶ telemetry pull starting (~30 s–2 min per source per `canonical/templates/rough-time-hints.md`)
+▶ telemetry pull starting (~30 s–2 min per source per `.cursor/templates/rough-time-hints.md`)
 For each data source, capture:
 - Raw signals (errors, latency spikes, failures, ticket clusters)
 - Metadata (timestamps, affected users/endpoints, frequency)

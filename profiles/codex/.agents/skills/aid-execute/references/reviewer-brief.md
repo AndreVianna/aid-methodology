@@ -1,7 +1,7 @@
 # /aid-execute — Reviewer Dispatch Brief Template
 
 Loaded by `/aid-execute` REVIEW + DELIVERY-GATE states. Renders the brief passed
-to the `reviewer` sub-agent. Follows `canonical/templates/reviewer-dispatch.md`.
+to the `reviewer` sub-agent. Follows `.agents/templates/reviewer-dispatch.md`.
 
 Two dispatch points share this template (`{{MODE}}` distinguishes them):
 
@@ -29,8 +29,8 @@ MODE: {{MODE}}   # one of: per-task | per-delivery
   per-delivery:  Full quality gate. Aggregate across all tasks in the delivery.
                  The delivery as a whole must reach the minimum grade.
 
-RUBRIC: canonical/templates/grading-rubric.md (universal severity → grade table)
-  - Grade is COMPUTED by canonical/scripts/grade.sh, not judged
+RUBRIC: .agents/templates/grading-rubric.md (universal severity → grade table)
+  - Grade is COMPUTED by .agents/scripts/grade.sh, not judged
   - Worst issue dominates per the rubric
   - Task-Type-specific checks: see references/reviewer-guide.md for per-Type checklists
     (RESEARCH / DESIGN / IMPLEMENT / TEST / DOCUMENT / MIGRATE / REFACTOR / CONFIGURE)
@@ -53,8 +53,8 @@ DELIVERABLES:
       per-task:     `.aid/{work}/STATE.md ## Tasks Status` row for this task
       per-delivery: `.aid/.temp/review-pending/execute-delivery-{N}.md` then aggregated
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
-  - Grade: per canonical/scripts/grade.sh; minimum resolved via
-    `bash canonical/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`
+  - Grade: per .agents/scripts/grade.sh; minimum resolved via
+    `bash .agents/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`
   - The reviewer NEVER fixes anything — only grades and lists issues
 ```
 
