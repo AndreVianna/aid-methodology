@@ -71,9 +71,9 @@ This is the single state file for the **Discovery area** — persistent project 
 
 | Field | Value |
 |-------|-------|
-| Profile | — (no summarize run yet on any cycle) |
-| Profile Source | — |
-| Profile Confidence | n/a |
+| Profile | agentic-pipeline |
+| Profile Source | auto-detected (cycle-1 /aid-summarize PROFILE state) |
+| Profile Confidence | high (score 15; second-place cli scored 6) |
 | Theme | — |
 | Machine Grade | — |
 | Human Grade | — |
