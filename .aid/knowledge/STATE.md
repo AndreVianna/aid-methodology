@@ -18,9 +18,9 @@ changelog:
 # Discovery State
 
 > **Source:** aid-config (creates) · aid-discover + aid-summarize (update)
-> **Status:** In Progress
+> **Status:** Approved
 > **Current Grade:** A+ (computed by grade.sh on cycle-10 ledger; 0 CRITICAL / 0 HIGH / 0 MEDIUM / 0 LOW / 0 MINOR; 14 rows total = 12 Fixed + 2 Accepted; grade.sh M7 bug fixed by schema rollout commit bf4e814 — schema-table parsing eliminates the summary-line over-count)
-> **User Approved:** no
+> **User Approved:** yes (2026-05-28, cycle-10 — grade A+; user approved + push-to-remote authorized)
 > **Last KB Review:** 2026-05-28 (cycle-10 — convergence; ready for User Approval)
 > **Last Summary:** —
 
