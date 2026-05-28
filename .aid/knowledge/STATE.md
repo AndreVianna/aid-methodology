@@ -74,14 +74,25 @@ This is the single state file for the **Discovery area** — persistent project 
 | Profile | agentic-pipeline |
 | Profile Source | auto-detected (cycle-1 /aid-summarize PROFILE state) |
 | Profile Confidence | high (score 15; second-place cli scored 6) |
-| Theme | — |
-| Machine Grade | — |
-| Human Grade | — |
+| Theme | default |
+| Minimum Grade | A |
+| Minimum Grade Source | `.aid/settings.yml` `review.minimum_grade` (no per-skill override) |
+| Machine Grade | Pending |
+| Machine Grade Source | `grade.sh` AUTO_POOL (D1/D2/L1/L2/H1/A1-5/C1-2/S2 = 73 pts) |
+| Human Grade | Pending (run `manual-checklist.sh` before APPROVAL) |
+| Human Grade Source | `manual-checklist.sh` MANUAL_POOL (K1+K2+V1, 30 pts) |
+| Overall Grade | Pending (= min of Machine and Human letter grades) |
 | User Approved | no |
-| Last Run | — |
-| Output | — |
-| Mermaid Version | — |
-| Mermaid Cached | — |
+| Last Run | 2026-05-28T12:43:00Z |
+| Trigger Reason | initial (first /aid-summarize invocation; cycle-1 dogfood) |
+| Output | `.aid/knowledge/knowledge-summary.html` |
+| Output Size | 3.24 MB (3,394,537 bytes; 5,304 lines) |
+| Mermaid Version | 11.15.0 |
+| Mermaid Fetched At | 2026-05-28T12:30:00Z |
+| Mermaid Cached | `.aid/knowledge/.cache/mermaid.min.js` (sha256: 70137e77bb273bb2ef972b86e8b0400cca8be53cb25bfc45911a186dc98665de) |
+| Last Reviewed KB Date | 2026-05-28 (cycle-10 — A+ approved) |
+| Last Summary Date | N/A (first run) |
+| Writeback Status | pending (will be set by WRITEBACK state after APPROVAL) |
 
 ## Issues
 
