@@ -321,8 +321,8 @@ memory:
 
 | Skill | Reads | Writes |
 |-------|-------|--------|
-| `aid-config` | `.aid/settings.yml` | `.aid/settings.yml`, `AGENTS.md`/`CLAUDE.md`, `.aid/knowledge/{STATE.md, INDEX.md, README.md}` + 16 KB doc scaffolds |
-| `aid-discover` | `.aid/knowledge/STATE.md ## Q&A`, all 16 KB docs | All 16 KB docs + `STATE.md ## Review History` + `INDEX.md` |
+| `aid-config` | `.aid/settings.yml` | `.aid/settings.yml`, `AGENTS.md`/`CLAUDE.md`, `.aid/knowledge/{STATE.md, INDEX.md, README.md}` + 15 KB doc scaffolds |
+| `aid-discover` | `.aid/knowledge/STATE.md ## Q&A`, all 15 KB docs | All 15 KB docs + `STATE.md ## Review History` + `INDEX.md` |
 | `aid-interview` | `.aid/{work}/STATE.md ## Triage, ## Interview Status, ## Cross-phase Q&A` | `STATE.md ## Triage, ## Interview Status, ## Features Status`; `REQUIREMENTS.md` OR work-root `SPEC.md` (lite); `tasks/task-NNN.md` (lite) |
 | `aid-specify` | Feature `SPEC.md` (requirements side), KB | Feature `SPEC.md ## Technical Specification`; `STATE.md ## Features Status` |
 | `aid-plan` | All feature SPECs marked `Ready`, KB | `PLAN.md`; `STATE.md ## Plan / Deliveries` |
@@ -337,7 +337,7 @@ Sources cited inline above per skill SKILL.md.
 
 ### Universal context-feeding protocol (KB INDEX)
 
-Every task prompt receives `.aid/knowledge/INDEX.md` — a ~200–500 token map of all 16 KB
+Every task prompt receives `.aid/knowledge/INDEX.md` — a ~200–500 token map of all 15 KB
 docs. The agent uses it as a navigation directory (Tier 1), then loads at most one
 relevant KB doc on demand (Tier 2), and follows inline `path:line` citations to the
 exact lines (Tier 3). This is RAG-by-convention, not vector embeddings.

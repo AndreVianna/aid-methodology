@@ -193,7 +193,7 @@ key takeaway per case. Detailed files live within each case study subdirectory.
 ## methodology/aid-methodology.md
 
 Source: `methodology/aid-methodology.md:1-200` (first 200 lines read; full document
-is 1,070 lines per `project-structure.md:57`)
+is 1,070 lines per `project-structure.md:133`)
 
 The methodology specification is the load-bearing intellectual artifact of the repo.
 Every skill, agent, and template is derived from it. It is the authoritative definition

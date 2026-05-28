@@ -309,7 +309,7 @@ The Reviewer agent produces a structured issue list with two-tag classification 
   discovery sub-agents as a shared input (replaces re-scanning the repo)
 - **Flags:** `--root .`, `--output .aid/knowledge/project-index.md`
 - **Source:** `canonical/scripts/kb/build-project-index.sh` (368 lines per
-  `.aid/knowledge/project-structure.md:153`)
+  `.aid/knowledge/project-structure.md:167`)
 
 ### `bash canonical/scripts/summarize/run-validators.sh <html-file> [--fast]`
 
