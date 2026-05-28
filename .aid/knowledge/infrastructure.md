@@ -155,7 +155,15 @@ Recent merge history (`git log --oneline -20`):
 - PR #14 "kb cycle-17 refresh" — merged 2026-05-26
 - PR #13 "RECOVERY: restore lost work-001 implementation" — merged 2026-05-25
 
-Branch protection on `master`: **inferred unknown** — not in any tracked file. ⚠️ Needs confirmation.
+Branch protection on `master` (per `gh api repos/AndreVianna/aid-methodology/branches/master/protection` 2026-05-28):
+- **Required pull request reviews:** 1 approving review required; stale reviews dismissed on new push; code-owner reviews NOT required; last-push approval NOT required
+- **Required signatures:** disabled
+- **Enforce admins:** disabled (admins can bypass)
+- **Required linear history:** disabled (merge commits allowed)
+- **Force pushes:** blocked
+- **Branch deletion:** blocked
+- **Conversation resolution required before merge:** disabled
+- **Branch lock:** disabled
 
 ---
 
