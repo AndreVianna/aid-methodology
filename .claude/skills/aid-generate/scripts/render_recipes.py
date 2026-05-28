@@ -27,7 +27,7 @@ _SCRIPT_DIR = Path(__file__).parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
-from profile import load_profile, validate, Profile  # noqa: E402
+from aid_profile import load_profile, validate, Profile  # noqa: E402
 from harness import (  # noqa: E402
     substitute_filenames,
     rewrite_install_paths,

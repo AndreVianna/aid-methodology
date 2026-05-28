@@ -31,9 +31,12 @@ if [ ! -f "$KB_DIR/STATE.md" ]; then
         "Run /aid-config then /aid-discover to set up the Knowledge Base."
 fi
 
-# Check 2: User Approved: yes (in KB Documents Status block)
-if ! grep -q '^\*\*User Approved:\*\* yes' "$KB_DIR/STATE.md"; then
-    APPROVAL_VALUE=$(grep -m1 '^\*\*User Approved:\*\*' "$KB_DIR/STATE.md" 2>/dev/null | sed 's/^\*\*User Approved:\*\* *//')
+# Check 2: User Approved: yes (in top-of-file metadata block)
+# Match with OR without a leading `> ` blockquote prefix — the canonical
+# discovery-state-template.md uses `> **User Approved:** ...` in the
+# blockquoted metadata block at the top of the file.
+if ! grep -qE '^(> *)?\*\*User Approved:\*\* yes' "$KB_DIR/STATE.md"; then
+    APPROVAL_VALUE=$(grep -mE '^(> *)?\*\*User Approved:\*\*' "$KB_DIR/STATE.md" 2>/dev/null | head -1 | sed -E 's/^(> *)?\*\*User Approved:\*\* *//')
     APPROVAL_VALUE="${APPROVAL_VALUE:-not set}"
     err "Knowledge Base discovery is not yet approved. Current status: **User Approved:** $APPROVAL_VALUE" \
         "Run /aid-discover until it reaches APPROVAL state and approve the KB. Then re-run /aid-summarize."

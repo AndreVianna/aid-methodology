@@ -35,8 +35,7 @@ and how to design effective questions.
    These become the project baseline. `/aid-specify` may add feature-specific requirements
    on top, and `/aid-detail` concretizes them per task.
 
-   **UI-aware inference:** If `.aid/knowledge/ui-architecture.md` exists and has real content
-   (not "backend-only"), proactively ask about these topics when working on §6 Non-Functional
+   **UI-aware inference:** If `.aid/knowledge/architecture.md` documents UI/frontend patterns or if the project has frontend code, proactively ask about these topics when working on §6 Non-Functional
    Requirements (if not already covered):
    - Target devices and browsers (desktop, tablet, mobile — which combinations?)
    - Accessibility requirements (WCAG level? Keyboard navigation? Screen reader support?)

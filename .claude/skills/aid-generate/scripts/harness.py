@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from profile import Profile  # type: ignore[import]  # noqa: F401 (type-hint only)
+    from aid_profile import Profile  # type: ignore[import]  # noqa: F401 (type-hint only)
 
 
 # ---------------------------------------------------------------------------

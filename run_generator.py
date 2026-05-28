@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 sys.path.insert(0, '.claude/skills/aid-generate/scripts')
-from profile import load_profile, validate
+from aid_profile import load_profile, validate
 from harness import EmissionManifest
 from render_agents import render_agents
 from render_skills import render_skills

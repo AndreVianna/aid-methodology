@@ -7,7 +7,7 @@
 #
 # Usage:
 #   python profile.py --profile profiles/claude-code.toml
-#   python -c "from profile import load_profile, validate; p = load_profile('profiles/claude-code.toml'); print(validate(p))"
+#   python -c "from aid_profile import load_profile, validate; p = load_profile('profiles/claude-code.toml'); print(validate(p))"
 #
 # Requirements: Python 3.11+ (tomllib is stdlib from 3.11)
 from __future__ import annotations
