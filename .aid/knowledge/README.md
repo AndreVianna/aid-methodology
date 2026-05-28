@@ -13,8 +13,8 @@ changelog:
 # Knowledge Base — AID
 
 > **Project:** AID — AI Integrated Development
-> **Discovery cycle:** 1 (initial post-reset)
-> **Last KB review:** 2026-05-27 (cycle-1 REVIEW · post-FIX awaiting cycle-2)
+> **Discovery cycle:** 3 (post-FIX)
+> **Last KB review:** 2026-05-27 (cycle-3 REVIEW complete · post-FIX cycle-4 pending)
 > **Status:** 15 active KB documents (16 originally generated in cycle-1; 2 deleted in Q3 FIX — `security-model.md` merged into `coding-standards.md §11`, `ui-architecture.md` replaced by `repo-presentation.md` per Q3 user-decision; 2 renamed: `data-model.md → schemas.md`, `api-contracts.md → pipeline-contracts.md`).
 
 Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.
@@ -23,18 +23,18 @@ Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.
 
 | # | Document | Status | Lines | Last Reviewed | Notes |
 |---|----------|--------|-------|---------------|-------|
-| 1 | [project-structure.md](project-structure.md) | Populated | 334 | 2026-05-27 | discovery-scout cycle-1; FM added Phase B |
+| 1 | [project-structure.md](project-structure.md) | Populated | 328 | 2026-05-27 | discovery-scout cycle-1; FM added Phase B |
 | 2 | [external-sources.md](external-sources.md) | Populated | 15 | 2026-05-27 | no external docs provided; FM added Phase B |
-| 3 | [architecture.md](architecture.md) | Populated | 343 | 2026-05-27 | discovery-architect cycle-1; FM added Phase B |
+| 3 | [architecture.md](architecture.md) | Populated | 333 | 2026-05-27 | discovery-architect cycle-1; FM added Phase B |
 | 4 | [technology-stack.md](technology-stack.md) | Populated | 203 | 2026-05-27 | discovery-architect cycle-1; FM added Phase B |
-| 5 | [module-map.md](module-map.md) | Populated | 297 | 2026-05-27 | discovery-analyst cycle-1; FM since GENERATE |
-| 6 | [coding-standards.md](coding-standards.md) | Populated | 544 | 2026-05-27 | discovery-analyst cycle-1; +87 lines in FIX Phase A/B (§11 Security-By-Design + §12 Q&A Schema) |
+| 5 | [module-map.md](module-map.md) | Populated | 291 | 2026-05-27 | discovery-analyst cycle-1; FM since GENERATE |
+| 6 | [coding-standards.md](coding-standards.md) | Populated | 563 | 2026-05-27 | discovery-analyst cycle-1; +87 lines in FIX Phase A/B (§11 Security-By-Design + §12 Q&A Schema) |
 | 7 | [schemas.md](schemas.md) | Populated | 457 | 2026-05-27 | discovery-analyst cycle-1 (renamed from `data-model.md` in Q3 FIX); FM since GENERATE |
-| 8 | [pipeline-contracts.md](pipeline-contracts.md) | Populated | 581 | 2026-05-27 | discovery-integrator cycle-1 (renamed from `api-contracts.md` in Q3 FIX); FM added Phase B |
-| 9 | [integration-map.md](integration-map.md) | Populated | 375 | 2026-05-27 | discovery-integrator cycle-1; FM added Phase B |
+| 8 | [pipeline-contracts.md](pipeline-contracts.md) | Populated | 585 | 2026-05-27 | discovery-integrator cycle-1 (renamed from `api-contracts.md` in Q3 FIX); FM added Phase B |
+| 9 | [integration-map.md](integration-map.md) | Populated | 374 | 2026-05-27 | discovery-integrator cycle-1; FM added Phase B |
 | 10 | [domain-glossary.md](domain-glossary.md) | Populated | 366 | 2026-05-27 | discovery-integrator cycle-1 — 195 terms; FM added Phase B; acronym variants fixed Phase A |
-| 11 | [test-landscape.md](test-landscape.md) | Populated | 130 | 2026-05-27 | discovery-quality cycle-1; FM added Phase B |
-| 12 | [tech-debt.md](tech-debt.md) | Populated | 421 | 2026-05-27 | discovery-quality cycle-1 + 7 new entries from Q-AND-A in Phase B; M2 marked Resolved |
+| 11 | [test-landscape.md](test-landscape.md) | Populated | 189 | 2026-05-27 | discovery-quality cycle-1; full rewrite cycle-2 FIX; corrected to 130 total tests cycle-3 FIX |
+| 12 | [tech-debt.md](tech-debt.md) | Populated | 407 | 2026-05-27 | discovery-quality cycle-1 + 7 new entries from Q-AND-A in Phase B; H4 severity reconciled cycle-3 FIX |
 | 13 | [infrastructure.md](infrastructure.md) | Populated | 236 | 2026-05-27 | discovery-quality cycle-1; FM added Phase B |
 | 14 | [repo-presentation.md](repo-presentation.md) | Populated | 305 | 2026-05-27 | NEW in Phase B (Q3 replacement for deleted `ui-architecture.md`) — 8 sections covering README, docs/, examples/, methodology spec, blog refs, install surface |
 | 15 | [feature-inventory.md](feature-inventory.md) | Populated | 49 | 2026-05-27 | Phase B (Q13) — 10 user-facing skills + `aid-generate` maintainer-only footnote |
@@ -56,3 +56,7 @@ Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.
 | 3 | 2026-05-27 | cycle-1 | Q-AND-A complete | 17 entries: 16 Answered + 1 Skipped. Q16/Q17 captured as tech-debt for future `/aid-interview` pickup (no work-NNN reserved per `feedback_no-work-NNN-reservation` memory). |
 | 4 | 2026-05-27 | cycle-1 | FIX Phase A complete | commit 82a5bd5 — cross-file refactors: Q11 acronym, Q2 verify-reports dropped, Q6 3 test deletes + `tests/README.md`, Q12 INDEX single-copy, Q3 rename+delete cascade (50+ files via developer agent, 27m wall). |
 | 5 | 2026-05-27 | cycle-1 | FIX Phase B complete | commit c5a3d3d — per-file content: 12 FM additions, `repo-presentation.md` NEW (306L), `feature-inventory.md` populated, `tech-debt.md` +7 entries, README+CLAUDE small additions, Q15 Style A canonical migration. ~6m wall (6 parallel agents). |
+| 6 | 2026-05-27 | cycle-2 | REVIEW complete | discovery-reviewer ~13m. Grade D+ (computed by grade.sh; 16C / 24H / 20M / 5L / 8MIN findings). 5 new Q&A (Q18-Q22). CC1: CLAUDE.md collapsed; CC2: verify-claims.sh cascade not swept. |
+| 7 | 2026-05-27 | cycle-2 | FIX Phase A complete | CLAUDE.md cite cascade swept (CC1); verify-claims.sh cite cascade swept (CC2); test-landscape.md rewritten (Q20); technology-stack.md updated. |
+| 8 | 2026-05-27 | cycle-3 | REVIEW complete | discovery-reviewer ~12m. Grade E+ (computed by grade.sh; 0C / 5H / 14M / 16L / 7MIN findings). No new Q&A — all findings mechanically resolvable. Both cycle-2 cascades CLEAN; 5H residue + drift items. |
+| 9 | 2026-05-27 | cycle-3 | FIX complete | Comprehensive proactive sweep: all 5 HIGHs + 10+ additional drift items fixed. test-landscape.md corrected to 130 total tests. README.md banner + revision history updated. |

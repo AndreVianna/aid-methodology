@@ -68,7 +68,7 @@ Covers all 4 argument modes plus safety:
 - Concurrent lock contention (5 parallel writers, different rows)
 - Error paths (missing args, invalid task-id, lock timeout, missing lock dir)
 
-7 numbered units; **69 assertions** (most units exercise multiple assert helpers).
+7 numbered units; **39 assertions** (most units exercise multiple assert helpers).
 File: `tests/canonical/writeback-task-status.sh` (~535 lines)
 
 ### parse-recipe.sh
@@ -84,7 +84,7 @@ Covers all operating modes and error paths:
 - Error paths: missing file, malformed front-matter, missing blocks, bad args
 - Units 15–19: validates each of the 5 seed recipes in `canonical/recipes/` (dogfood)
 
-19 numbered units; **113 assertions**.
+19 numbered units; **38 assertions**.
 File: `tests/canonical/parse-recipe.sh` (~1,002 lines — the largest suite)
 
 ### compute-block-radius.sh
@@ -127,14 +127,13 @@ File: `tests/canonical/delivery-gate-aggregate.sh` (~535 lines)
 | Suite | Assertions |
 |---|---|
 | `read-setting.sh` | 18 |
-| `writeback-task-status.sh` | 69 |
-| `parse-recipe.sh` | 113 |
+| `writeback-task-status.sh` | 39 |
+| `parse-recipe.sh` | 38 |
 | `compute-block-radius.sh` | 17 |
 | `delivery-gate-aggregate.sh` | 18 |
-| **Total** | **235** |
+| **Total** | **130** |
 
-Count method: running each suite and summing PASS counts (cross-checked against
-assertion call sites in source for suites with simple call patterns).
+Count method: authoritative counts verified by orchestrator running each suite (cycle-3). Cross-checked against assertion call sites in source.
 
 ---
 

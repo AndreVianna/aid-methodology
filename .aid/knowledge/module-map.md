@@ -189,7 +189,7 @@ slash-command invocation. Every script has 4 byte-identical copies on disk
 | Script | Purpose |
 |--------|---------|
 | `build-project-index.sh` | Builds `.aid/generated/project-index.md` — used as the pre-pass shared input by the 5 discovery sub-agents |
-| `build-index.sh` | Builds `.aid/generated/INDEX.md` — agent-facing 2-3-line summary per KB doc, composed from each doc's `intent:` frontmatter |
+| `build-index.sh` | Builds `.aid/knowledge/INDEX.md` — agent-facing 2-3-line summary per KB doc, composed from each doc's `intent:` frontmatter (per Q12 resolution cycle-1: moved from `.aid/generated/` to `.aid/knowledge/`) |
 | `build-metrics.sh` | Builds `.aid/generated/metrics.md` — T3 numeric facts (line counts, file counts, term counts, severity tallies per `canonical/templates/kb-authoring/tier-model.md:42-54`) |
 | `preflight.sh` | Pre-flight checks for `aid-discover` (verifies `.aid/knowledge/STATE.md` exists + not in Plan Mode) |
 
@@ -278,7 +278,7 @@ placeholders (per `canonical/templates/recipe-template.md:97-100`).
 
 Consumed by `canonical/scripts/interview/parse-recipe.sh` during `/aid-interview` TRIAGE → recipe-offer.
 
-**Test coverage:** indirect — recipe behavior is exercised by `tests/canonical/parse-recipe.sh` and `tests/skills/lite-subpaths.sh`.
+**Test coverage:** indirect — recipe behavior is exercised by `tests/canonical/parse-recipe.sh`. (`tests/skills/lite-subpaths.sh` was deleted in cycle-1 per Q6.)
 
 ---
 

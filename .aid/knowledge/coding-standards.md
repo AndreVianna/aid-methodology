@@ -342,7 +342,7 @@ State references live alongside their skill: `canonical/skills/aid-discover/refe
 ### 7d. Per-script + per-test colocation
 
 - Helper scripts live under `canonical/scripts/<category>/<script>.sh`. Each script has byte-identical copies in 4 trees (per §7a). Tests live at `tests/canonical/<script-name>.sh`.
-- The two skill-level e2e tests live at `tests/skills/<test-name>.sh`.
+- The `tests/skills/` directory was deleted in cycle-1 (Q6 resolution). No skill-level e2e tests exist; the 5 canonical/ suites are the complete test inventory.
 
 ### 7e. Area-STATE consolidation (FR2, CONFIRMED per `canonical/templates/discovery-state-template.md`)
 

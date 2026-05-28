@@ -98,7 +98,7 @@ The canonical → 3-profiles render is the **only build artifact pipeline** in t
 | Advisory verifier | `.claude/skills/aid-generate/scripts/verify_advisory.py` | 343 | VERIFY-4b — advisory checks |
 | Generator self-tests | `.claude/skills/aid-generate/scripts/test_manifest_safety.py` | 254 | Internal correctness tests |
 
-Pipeline flow (per `run_generator.py:24-86`):
+Pipeline flow (per `run_generator.py:24-87`):
 
 ```
 profiles/*.toml ─┐

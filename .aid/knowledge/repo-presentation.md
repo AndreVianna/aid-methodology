@@ -41,7 +41,7 @@ reader experiences it.
 
 ## README.md (root)
 
-Source: `README.md:1-374` (374 lines)
+Source: `README.md:1-388` (388 lines)
 
 The README is the primary pitch document. It is structured as a progressive disclosure:
 hook first, proof second, how-to last. Its table of contents (`README.md:9-19`) lists
@@ -58,13 +58,13 @@ eight sections:
 | **AID vs. SDD** | `README.md:256-271` | Eight-row comparison table; framing quote |
 | **Using AID in your own project** | `README.md:275-336` | Install instructions (git clone + setup.sh/setup.ps1), slash command list, what gets installed, runtime requirements, incremental adoption |
 | **Repository structure** | `README.md:340-370` | Directory tree + navigation table (where to go to read methodology, skills, agents, examples) |
-| **Contributing / License** | `README.md:362-374` | Links to CONTRIBUTING.md, MIT license; closing tagline with blog link |
+| **Contributing / License** | `README.md:378-388` | Links to CONTRIBUTING.md, MIT license; closing tagline with blog link |
 
 The README deliberately does not reproduce the full methodology — it links to
 `methodology/aid-methodology.md` for depth. Its job is to orient a first-time reader
 in under 20 minutes and give them one clear action: install and run `/aid-config`.
 
-The footer (`README.md:374`) carries the external blog link:
+The footer (`README.md:388`) carries the external blog link:
 `https://casuloailabs.com/blog/aid-methodology/`
 
 ---
@@ -193,7 +193,7 @@ key takeaway per case. Detailed files live within each case study subdirectory.
 ## methodology/aid-methodology.md
 
 Source: `methodology/aid-methodology.md:1-200` (first 200 lines read; full document
-is 1,071 lines per `project-structure.md:57`)
+is 1,070 lines per `project-structure.md:57`)
 
 The methodology specification is the load-bearing intellectual artifact of the repo.
 Every skill, agent, and template is derived from it. It is the authoritative definition
@@ -228,7 +228,7 @@ artifacts but is not itself produced by any generator.
 
 ## External References
 
-The README footer (`README.md:374`) links to a blog post:
+The README footer (`README.md:388`) links to a blog post:
 
 > `https://casuloailabs.com/blog/aid-methodology/`
 
@@ -240,7 +240,7 @@ No other external links are cited in the README. The FAQ and glossary contain on
 internal cross-references (to `README.md` sections and `methodology/aid-methodology.md`).
 
 ⚠️ The blog post content has not been verified against the current repo state (as of
-this KB document authoring). The URL is confirmed from `README.md:374`; content
+this KB document authoring). The URL is confirmed from `README.md:388`; content
 accuracy relative to the v3.1 methodology spec is not verified here.
 
 ---

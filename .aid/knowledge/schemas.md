@@ -399,7 +399,7 @@ The dataclasses mirror this schema 1:1 in `.claude/skills/aid-generate/scripts/p
 
 **Path-rewriting convention** (per `generated-files.txt:16-26`): build commands cite repo-root paths under `canonical/`. The renderer (`run_generator.py` + `rewrite_install_paths` in `harness.py`) rewrites those at render time to each profile's install-tree root (`.claude` for Claude Code, `.agents` for Codex assets, `.cursor` for Cursor). Comment blocks at the top of the file are skipped by the rewriter so the prose survives intact in profile renders.
 
-**Currently registered** (per `generated-files.txt:30,34,39`): `.aid/generated/project-index.md` (`build-project-index.sh`), `.aid/generated/metrics.md` (`build-metrics.sh`), `.aid/generated/INDEX.md` (`build-index.sh`).
+**Currently registered** (per `generated-files.txt:30,34,39`): `.aid/generated/project-index.md` (`build-project-index.sh`), `.aid/generated/metrics.md` (`build-metrics.sh`), `.aid/knowledge/INDEX.md` (`build-index.sh`). Note: INDEX.md lives under `.aid/knowledge/`, not `.aid/generated/` — per Q12 resolution (cycle-1) it was moved to sit alongside the KB docs it indexes.
 
 ---
 
@@ -444,7 +444,7 @@ erDiagram
 | Aspect | Status |
 |--------|--------|
 | **Migrations** | N/A — no DB. Document schema changes are tracked via the per-doc `changelog:` frontmatter field (per `frontmatter-schema.md:129-147`) + KB doc cycle history in `STATE.md ## Review History`. |
-| **Indexes** | N/A — no DB. The closest analog is `.aid/generated/INDEX.md` — an agent-facing RAG navigation index built by `canonical/scripts/kb/build-index.sh` from each KB doc's `intent:` frontmatter. |
+| **Indexes** | N/A — no DB. The closest analog is `.aid/knowledge/INDEX.md` — an agent-facing RAG navigation index built by `canonical/scripts/kb/build-index.sh` from each KB doc's `intent:` frontmatter. |
 | **Soft Deletes** | N/A — no DB. The emission-manifest's `removed_dst` set serves a related purpose: only paths previously emitted by the generator are eligible for deletion (per `EMISSION-MANIFEST.md:70-83`); user-created files are NEVER touched. |
 | **Validation** | Three mechanisms: (1) `discovery-reviewer` sub-agent (in `/aid-discover REVIEW`) validates KB frontmatter + cited file:line + doc presence + generated-files freshness; (2) `.claude/skills/aid-generate/scripts/profile.py:validate()` validates profile TOML; (3) `parse-recipe.sh --validate` validates recipe front-matter + body. |
 

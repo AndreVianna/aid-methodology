@@ -70,18 +70,17 @@ aid-methodology/                       (repo root)
 │   ├── cursor.toml                    ← profile config (75 lines)
 │   └── cursor/                        ← generated .cursor/ tree + AGENTS.md + README.md + emission-manifest.jsonl
 ├── methodology/
-│   ├── aid-methodology.md             ← complete methodology spec (1,071 lines) — the load-bearing artifact
+│   ├── aid-methodology.md             ← complete methodology spec (1,070 lines) — the load-bearing artifact
 │   └── images/                        ← diagrams (2-comparison.png, 3-ironman.png)
 ├── examples/                          ← case studies (brownfield-enterprise, data-pipeline, desktop-app)
 ├── docs/                              ← FAQ + glossary
 ├── tests/
-│   ├── canonical/                     ← 6 helper-script test suites (parse-recipe, writeback-task-status, ...)
-│   └── skills/                        ← skill end-to-end tests (lite-subpaths, lite-to-full-escalation)
-├── README.md                          ← project pitch (374 lines)
-├── CLAUDE.md                          ← Claude Code project-context (118 lines, dogfood)
+│   └── canonical/                     ← 5 helper-script test suites (parse-recipe, writeback-task-status, ...)
+├── README.md                          ← project pitch (388 lines)
+├── CLAUDE.md                          ← Claude Code project-context (25 lines, dogfood)
 ├── CONTRIBUTING.md                    ← contribution guide (129 lines)
 ├── LICENSE                            ← MIT (21 lines)
-├── run_generator.py                   ← live generator entrypoint (86 lines)
+├── run_generator.py                   ← live generator entrypoint (87 lines)
 ├── setup.sh                           ← end-user installer (Bash, 162 lines)
 └── setup.ps1                          ← end-user installer (PowerShell, 157 lines)
 ```
@@ -131,7 +130,7 @@ Source: `.aid/generated/project-index.md:17-29` (Language Breakdown table).
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `methodology/aid-methodology.md` | **1,071** | The methodology document. The load-bearing artifact — every skill/agent is derived from it. |
+| `methodology/aid-methodology.md` | **1,070** | The methodology document. The load-bearing artifact — every skill/agent is derived from it. |
 | `methodology/images/2-comparison.png` | (binary) | SDD vs AID comparison diagram |
 | `methodology/images/3-ironman.png` | (binary) | Human-AI collaboration model |
 
@@ -181,8 +180,8 @@ Each script above has 4 byte-identical copies on disk: the canonical source, the
 
 | Path | Lines | Purpose |
 |------|-------|---------|
-| `tests/canonical/parse-recipe.sh` | 1,002 | Largest test file. 113 tests for `parse-recipe.sh` |
-| `tests/canonical/writeback-task-status.sh` | 535 | 69 tests for `writeback-task-status.sh` |
+| `tests/canonical/parse-recipe.sh` | 1,002 | Largest test file. 38 tests for `parse-recipe.sh` |
+| `tests/canonical/writeback-task-status.sh` | 535 | 39 tests for `writeback-task-status.sh` |
 | `tests/canonical/delivery-gate-aggregate.sh` | 535 | 18 tests for the delivery-gate aggregator |
 | `tests/canonical/compute-block-radius.sh` | 345 | 17 tests for BFS block-radius |
 | `tests/canonical/read-setting.sh` | 360 | `read-setting.sh` test suite |
@@ -300,7 +299,7 @@ Lite-path templates at `canonical/recipes/`, replicated into all 3 install trees
 |----------|-------------|---------------|
 | Maintainer build | `python run_generator.py` | Renders all 3 install trees + runs VERIFY-4a/4b |
 | End-user install | `./setup.sh` (Unix) / `.\setup.ps1` (Windows) | Installs selected profile(s) into a target project |
-| Methodology reader | `methodology/aid-methodology.md` (1,071 lines) | The complete spec |
+| Methodology reader | `methodology/aid-methodology.md` (1,070 lines) | The complete spec |
 | First-time AI agent reader | `CLAUDE.md` (dogfood) or `AGENTS.md` (per profile) | Project context, KB pointers |
 | End-user runtime | Slash commands `/aid-config`, `/aid-discover`, ... | One per skill |
 

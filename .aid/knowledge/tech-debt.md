@@ -29,9 +29,11 @@ changelog:
 | Severity | Count | Items |
 |----------|-------|-------|
 | Critical | 1 | C1 |
-| High | 6 | H1, H2, H3, H4, H5, H6 |
-| Medium | 6 | M1, M2 (resolved), M3, M4, M5, M6 |
+| High | 5 | H1, H2, H3, H5, H6 |
+| Medium | 7 | H4, M1, M2 (resolved), M3, M4, M5, M6 |
 | Low | 5 | L1, L2, L3, L4, L5 |
+
+> **Counting methodology:** this table counts unique debt _items_ (one row per entry, regardless of how many `[HIGH]`/`[MEDIUM]` tags appear in the fix recipe). The generated `metrics.md` (built by `build-metrics.sh`) counts every body-tag occurrence including those inside fix-recipe sub-bullets, producing higher totals. Neither is wrong; they answer different questions. Canonical item count is this table.
 
 ---
 
@@ -52,7 +54,7 @@ changelog:
 | M4 | Test Discoverability | No aggregator script: each of the 5 remaining test suites must be invoked manually with the right path; no way to run "all tests" with one command | `tests/README.md` (lists each separately); no `Makefile`/`task`/`npm test` | Medium | S | P3 |
 | M5 | Q&A Schema | Two Q&A entry schemas coexist; canonical decided = Style A but work-state-template.md + methodology spec + aid-interview not yet migrated | `canonical/templates/work-state-template.md`, `methodology/aid-methodology.md`, aid-interview skill | Medium | S | P3 |
 | M6 | Test Refactor | 5 remaining canonical/ test suites need: behavior-named files, shared test-utility extraction, consistent failure messages, optional aggregator | `tests/canonical/*.sh` (5 suites) | Medium | M | P3 |
-| L1 | Source Bloat | 5 files >500 lines under canonical/methodology (largest: `methodology/aid-methodology.md` 1,071, `tests/canonical/parse-recipe.sh` 1,002, `canonical/scripts/execute/writeback-task-status.sh` 627, `canonical/skills/aid-execute/references/state-execute.md` 629) | various | Low | M | P3 |
+| L1 | Source Bloat | 5 files >500 lines under canonical/methodology (largest: `methodology/aid-methodology.md` 1,070, `tests/canonical/parse-recipe.sh` 1,002, `canonical/scripts/execute/writeback-task-status.sh` 627, `canonical/skills/aid-execute/references/state-execute.md` 629) | various | Low | M | P3 |
 | L2 | Test Coverage Gap | Zero tests for PowerShell paths (`setup.ps1`, `concatenate.ps1`), `.mjs` validators, and the `setup.sh` install flow | `test-landscape.md` Gaps section | Low | L | P3 |
 | L3 | Allowlist Breadth | `.claude/settings.json` Bash allowlist includes broad `Bash(rm *)` and `Bash(python *)` without path scoping | `.claude/settings.json:5-14` | Low | XS | P3 |
 | L4 | Versioning | AID has no version (no VERSION file, no semver); current position is "continuous master" | repo-wide; absence confirmed by project-index | Low | S | P3 |
@@ -204,7 +206,7 @@ changelog:
 
 **Type:** Source Size / Complexity
 **Evidence (from `wc -l` over `canonical/`, `methodology/`, `tests/`):**
-- `methodology/aid-methodology.md` — 1,071 lines (the load-bearing spec; legitimately large)
+- `methodology/aid-methodology.md` — 1,070 lines (the load-bearing spec; legitimately large)
 - `tests/canonical/parse-recipe.sh` — 1,002 lines (113 tests; test-file size is justified)
 - `canonical/scripts/execute/writeback-task-status.sh` — 627 lines (already tested by 69-test suite)
 - `canonical/skills/aid-execute/references/state-execute.md` — 629 lines

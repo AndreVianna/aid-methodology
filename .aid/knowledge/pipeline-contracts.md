@@ -53,7 +53,7 @@ These are the only "endpoints" the user invokes. Each is an AID skill installed 
   `.aid/knowledge/` and restarts (`canonical/skills/aid-discover/SKILL.md:62-68`)
 - **Response:** Console output of state-entry line, "you are here" map, and per-state
   artifacts
-- **Side effects:** Writes 16 KB docs + `STATE.md` + `INDEX.md` to `.aid/knowledge/`
+- **Side effects:** Writes 15 KB docs + `STATE.md` + `INDEX.md` to `.aid/knowledge/`
 - **Source:** `canonical/skills/aid-discover/SKILL.md:1-200`
 
 ### `/aid-interview [work-NNN] [--reset work-NNN] [--features work-NNN]`

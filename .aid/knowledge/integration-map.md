@@ -180,7 +180,7 @@ canonical/                          ← single source of truth (maintainer edits
   ├── scripts/       (config/, execute/, interview/, kb/, summarize/, grade.sh)
   └── EMISSION-MANIFEST.md          ← safety-boundary spec
 
-run_generator.py                    ← entrypoint (86 lines)
+run_generator.py                    ← entrypoint (87 lines)
   └─ .claude/skills/aid-generate/scripts/  ← the actual renderer
        ├── harness.py               (756 lines — emission-manifest + pure-mirror deletion)
        ├── profile.py               (550 lines — parses profiles/*.toml)

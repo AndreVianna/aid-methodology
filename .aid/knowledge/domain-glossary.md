@@ -13,7 +13,7 @@ changelog:
 ---
 # Domain Glossary
 
-> Terms mined from `methodology/aid-methodology.md` (1,071-line spec),
+> Terms mined from `methodology/aid-methodology.md` (1,070-line spec),
 > `docs/glossary.md`, `CLAUDE.md`, `canonical/skills/*/SKILL.md` frontmatter and bodies,
 > `canonical/agents/*/AGENT.md`, `canonical/EMISSION-MANIFEST.md`,
 > `canonical/templates/*.md`, `canonical/scripts/**/*.sh`, and the work-state template.
@@ -75,7 +75,7 @@ changelog:
 | **README.md (KB)** | Meta — tracks completeness status (Complete / Partial / Missing) per KB document. | `methodology/aid-methodology.md:132`, `methodology/aid-methodology.md:154-167` |
 | **DISCOVERY-STATE.md** | Meta — discovery grade, Q&A entries, review history. Pre-FR2 name; post-FR2 consolidated into `.aid/knowledge/STATE.md`. | `methodology/aid-methodology.md:133`, `canonical/templates/discovery-state-template.md` |
 | **project-index.md** | Generated — file-inventory pre-pass for discovery sub-agents (1,148 lines in this repo). Built by `build-project-index.sh`. | `methodology/aid-methodology.md:134`, `project-structure.md` |
-| **14 KB docs (the active set)** | `project-structure.md`, `external-sources.md`, `architecture.md`, `technology-stack.md`, `module-map.md`, `coding-standards.md`, `schemas.md` (was `data-model.md`), `pipeline-contracts.md` (was `api-contracts.md`), `integration-map.md`, `domain-glossary.md`, `test-landscape.md`, `tech-debt.md`, `infrastructure.md`, `feature-inventory.md`. Removed: `security-model.md` (content in `coding-standards.md §11`), `ui-architecture.md` (pending `repo-presentation.md`). | `methodology/aid-methodology.md:136-151` |
+| **15 KB docs (the active set)** | `project-structure.md`, `external-sources.md`, `architecture.md`, `technology-stack.md`, `module-map.md`, `coding-standards.md`, `schemas.md` (was `data-model.md`), `pipeline-contracts.md` (was `api-contracts.md`), `integration-map.md`, `domain-glossary.md`, `test-landscape.md`, `tech-debt.md`, `infrastructure.md`, `repo-presentation.md` (NEW — replaced `ui-architecture.md` per Q3), `feature-inventory.md`. Removed: `security-model.md` (content in `coding-standards.md §11`), `ui-architecture.md` (replaced by `repo-presentation.md` in cycle-1 Phase B). | `methodology/aid-methodology.md:136-151` |
 | **Tier 1 / Tier 2 / Tier 3 (context economy)** | Tier 1 = INDEX.md (always loaded). Tier 2 = one KB doc on demand. Tier 3 = exact `path:line` via citation. "RAG by convention" — no embeddings/vector DB. | `methodology/aid-methodology.md:211-219` |
 | **Context Feeding Strategy** | The protocol by which agents are given KB context: always include INDEX.md; orchestrator pre-selects 2-4 relevant KB docs; agent self-serves additional docs via INDEX. | `methodology/aid-methodology.md:179-219` |
 | **Path:line citation** | Every factual KB claim carries an inline `path:line` reference. Anchors facts to source. Enables Tier 3 jump. | `methodology/aid-methodology.md:101` (Hallucination row) |
@@ -361,6 +361,6 @@ changelog:
 
 ## Glossary Statistics
 
-- **Total terms defined:** ~195 (across 16 categorical groups above; per `metrics.md` generated count)
+- **Total terms defined:** ~195 (across 16 categorical groups above; counted by row audit of this document — `metrics.md` generator undercounts at 172 due to regex mismatch with `✓` status markers)
 - **Primary sources:** `methodology/aid-methodology.md` (1,070 lines), `docs/glossary.md` (76 lines), 11 canonical SKILL.md files, 22 canonical AGENT.md files, `canonical/EMISSION-MANIFEST.md` (152 lines), `canonical/templates/{settings.yml, work-state-template.md, subagent-heartbeat-protocol.md, long-wait-protocol.md, reviewer-dispatch.md, feedback-artifacts/IMPEDIMENT.md}`, helper scripts under `canonical/scripts/`
 - **Every entry cites at least one `path:line` source.** ⚠️ Inferred-from-code annotations are explicit where used.

@@ -28,7 +28,7 @@ changelog:
 single-branch monorepo whose deliverable is **documentation rendered into three
 host-tool install bundles**. There is no application runtime; the project ships:
 
-1. The AID methodology specification (`methodology/aid-methodology.md`, 1,071 lines).
+1. The AID methodology specification (`methodology/aid-methodology.md`, 1,070 lines).
 2. Ten skills + 22 agents + templates + recipes + helper scripts, authored once in
    `canonical/` and rendered into three byte-identical install trees
    (`profiles/{claude-code,codex,cursor}/`).
@@ -45,7 +45,7 @@ Evidence:
 
 ```
 aid-methodology/                    (repo root — branch: kb-overhaul)
-├── methodology/                    ← the load-bearing spec (1 .md, 1,071 lines) + images/
+├── methodology/                    ← the load-bearing spec (1 .md, 1,070 lines) + images/
 ├── canonical/                      ← SINGLE SOURCE OF TRUTH (renderer input)
 │   ├── agents/                     ← 22 agent dirs (AGENT.md + README.md each)
 │   ├── skills/                     ← 10 skill dirs (Thin-Router SKILL.md + references/)
@@ -81,7 +81,7 @@ aid-methodology/                    (repo root — branch: kb-overhaul)
 │   ├── generated/project-index.md  ← built by build-project-index.sh
 │   ├── settings.yml                ← AID runtime config
 │   └── .heartbeat/                 ← ephemeral subagent heartbeat files (gitignored)
-├── run_generator.py                ← live entrypoint (86 lines)
+├── run_generator.py                ← live entrypoint (87 lines)
 ├── setup.sh / setup.ps1            ← end-user installers (162 / 157 lines)
 └── README.md / CLAUDE.md / CONTRIBUTING.md / LICENSE
 ```
@@ -170,7 +170,7 @@ Evidence:
 
 | Module | Path | Responsibility | Depends on |
 |--------|------|----------------|------------|
-| **Methodology spec** | `methodology/aid-methodology.md` | Authoritative human-readable methodology document (1,071 lines, version 3.1) | — |
+| **Methodology spec** | `methodology/aid-methodology.md` | Authoritative human-readable methodology document (1,070 lines, version 3.1) | — |
 | **Canonical source** | `canonical/` | Single source of truth for everything that ships into install trees | (manually edited by maintainer) |
 | **Generator harness** | `.claude/skills/aid-generate/scripts/harness.py` + `profile.py` | Profile parsing, placeholder substitution, manifest read/write/diff, SHA-256 fingerprinting | Python stdlib only (`tomllib`, `hashlib`, `json`, `pathlib`) |
 | **Asset renderers** | `render_agents.py`, `render_skills.py`, `render_templates.py`, `render_scripts.py`, `render_recipes.py` | One renderer per asset kind; each reads `canonical/<kind>/` and writes into the profile-specific install path | `harness`, `profile` |
@@ -290,7 +290,7 @@ mechanism was found in any source file.
 | **End-user install (Windows)** | `.\setup.ps1 C:\path\to\your\project` | PowerShell 5.1+ equivalent of `setup.sh`. |
 | **End-user runtime (per skill)** | Slash command `/aid-config`, `/aid-discover`, `/aid-interview`, …, `/aid-summarize` | One per skill (10 slash commands). Each enters at the state detected from disk and exits after one state. |
 | **First-time AI agent context** | `CLAUDE.md` (Claude Code dogfood) / `AGENTS.md` (Codex, Cursor profiles) | Top-level project-context document — describes purpose, KB location, build/test commands, conventions. |
-| **Methodology reader** | `methodology/aid-methodology.md` | The 1,071-line authoritative specification. Read by humans, not by skills directly. |
+| **Methodology reader** | `methodology/aid-methodology.md` | The 1,070-line authoritative specification. Read by humans, not by skills directly. |
 
 ## Documentation vs. Implementation Discrepancies
 
