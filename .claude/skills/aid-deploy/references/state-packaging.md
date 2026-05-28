@@ -97,4 +97,4 @@ Print what was done:
    KB updates: {count} Q&A entries routed to .aid/knowledge/STATE.md
 ```
 
-**Advance:** Next state is `DONE` — when this state's work completes, router prints `Next: [State: DONE] — run /aid-deploy again` and exits.
+**Advance:** **CHAIN** → [State: DONE] (continue inline).

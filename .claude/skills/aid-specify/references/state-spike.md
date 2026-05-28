@@ -9,4 +9,4 @@ Feature STATUS is `Spike Needed`; a knowledge gap must be resolved before specif
 
 On return: read spike results, record in SPEC.md, resume loop.
 
-**Advance:** Next state is `CONTINUE` — when spike results are recorded and the loop resumes, router prints `Next: [State: CONTINUE] — run /aid-specify again` and exits.
+**Advance:** **PAUSE-FOR-USER-ACTION** → spike work happens outside /aid-specify (separate investigation task). Re-run `/aid-specify` after recording spike results in SPEC.md to continue to [State: CONTINUE].
