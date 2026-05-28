@@ -1227,13 +1227,14 @@ flowchart LR
 		<p class="lede">Single-source canonical directory renders into three byte-identical host-tool install trees via <code>run_generator.py</code>. End users install by running <code>setup.sh</code> or <code>setup.ps1</code>, which copies the selected profile tree into their project. (per infrastructure.md, repo-presentation.md)</p>
 	</header>
 
-	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 3: Canonical source to three install trees — click or press Enter to expand">
+	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 3: Canonical source to three install trees plus setup.sh to any adopter repo — click or press Enter to expand">
 		<div class="mermaid">
 flowchart TB
     classDef src     fill:#0B1F3A,stroke:#00A3A1,color:#fff,stroke-width:2px;
     classDef render  fill:#1D4ED8,stroke:#1e40af,color:#fff,stroke-width:2px;
     classDef profile fill:#0E4D4A,stroke:#00A3A1,color:#fff,stroke-width:2px;
     classDef install fill:#6941C6,stroke:#5521b5,color:#fff,stroke-width:2px;
+    classDef adopter fill:#0E7490,stroke:#155E75,color:#fff,stroke-width:2px;
     classDef verify  fill:#2E7D32,stroke:#1B5E20,color:#fff,stroke-width:2px;
 
     SRC["canonical/<br/>agents, skills, templates,<br/>scripts, recipes"]:::src
@@ -1252,7 +1253,7 @@ flowchart TB
         T3["profiles/cursor/<br/>.cursor/"]:::install
     end
 
-    DOG["Dogfood .claude/<br/>(AID applied to itself)"]:::install
+    ADOPTER["Any adopter repo<br/>.claude/ or .codex/+.agents/ or .cursor/"]:::adopter
 
     VFY["verify_deterministic.py<br/>VERIFY-4a hard gate<br/>byte-identical re-render"]:::verify
 
@@ -1263,10 +1264,12 @@ flowchart TB
     GEN --> T1
     GEN --> T2
     GEN --> T3
-    GEN --> DOG
     GEN --> VFY
+    T1 -.->|setup.sh| ADOPTER
+    T2 -.->|setup.sh| ADOPTER
+    T3 -.->|setup.sh| ADOPTER
 		</div>
-		<p class="caption">Fig 3 — Canonical-to-3-install-trees pipeline: one canonical source, three profile TOML configs, five renderers per profile, VERIFY-4a hard gate. The dogfood .claude/ tree is the one this repo uses on itself. (per architecture.md)</p>
+		<p class="caption">Fig 3 — Canonical-to-3-install-trees pipeline: one canonical source, three profile TOML configs, five renderers per profile, VERIFY-4a hard gate. Adopters install by running setup.sh / setup.ps1, which copies the selected profile tree into their repo. (per architecture.md, infrastructure.md)</p>
 	</div>
 
 	<div class="grid g3">

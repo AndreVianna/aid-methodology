@@ -484,7 +484,7 @@ if [ "$MANUAL_RUN" -eq 1 ]; then
     [ -n "$CHECKLIST_TS" ] && echo "  Checklist completed: $CHECKLIST_TS"
 else
     echo "  ⚠️  manual-checklist.sh not yet run."
-    echo "     Run: bash canonical/scripts/summarize/manual-checklist.sh --html $HTML"
+    echo "     Run: bash .claude/scripts/summarize/manual-checklist.sh --html $HTML"
     echo "     Then re-run run-validators.sh to see your Human Grade."
 fi
 
