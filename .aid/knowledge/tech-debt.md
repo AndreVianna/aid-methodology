@@ -390,6 +390,27 @@ changelog:
 
 ---
 
+### [MEDIUM] M7 — `grade.sh` over-counts summary-line severity tags
+
+**Type:** Helper-script Bug
+**Evidence:**
+- `canonical/scripts/grade.sh` greps for `\[CRITICAL\]`, `\[HIGH\]`, etc. in the input file
+- Reviewer ledgers often include a Summary section with a literal tag-string like `0 [CRITICAL] / 0 [HIGH] / 0 [MEDIUM] / 2 [LOW] / 3 [MINOR]` to convey counts
+- grade.sh counts each literal `[CRITICAL]`, `[HIGH]`, etc. in that summary string AS IF each were an actual finding marker
+- Result: a ledger with 0 actual CRITICAL findings but with a "0 [CRITICAL]" mention in its summary gets graded as E+ (1 CRITICAL counted) instead of the correct B (only LOW + MINOR remain)
+- Discovered in cycle-7 of cycle-1 Discovery dogfood (2026-05-28): reviewer's summary said "Target HIT (0 HIGH / 0 MEDIUM)" but raw grade.sh returned E+; manual strip of the summary line returned correct B
+
+**Impact:** The deterministic grading contract is broken when the reviewer includes severity tags in summary statements. Two work-arounds today: (a) strip the summary line before piping to grade.sh; (b) instruct reviewers to use a different format ("0/0/0/2/3" instead of "0 [CRITICAL] / 0 [HIGH] / 0 [MEDIUM] / 2 [LOW] / 3 [MINOR]"). Neither is enforced.
+
+**Fix recipe (estimated S effort):**
+1. Update `canonical/scripts/grade.sh` to either (a) skip a `## Summary` section by line-range before counting, OR (b) require severity tags to appear at line-start (e.g., `^\s*- \[CRITICAL\]` instead of bare `\[CRITICAL\]` anywhere in line). Approach (b) is simpler and more robust.
+2. Update `canonical/agents/discovery-reviewer/AGENT.md` reviewer-prompt template to instruct: "When summarizing finding counts, do NOT use `[SEVERITY]` tag format inline. Use plain numbers (e.g., `0/0/0/2/3`) or escape the brackets (e.g., `\\[CRITICAL\\]`). The `[SEVERITY]` tag format is reserved for actual finding markers."
+3. Regression test: add a small test to `tests/canonical/` that pipes a summary-only fixture to grade.sh and asserts the correct grade.
+
+**Owner suggestion:** maintainer; priority P2 — affects every Discovery review going forward; current workaround (manual summary-line strip) is fragile.
+
+---
+
 ## Metrics
 
 - **TODO/FIXME count:** 9 occurrences across 6 files (source: `rg "TODO|FIXME"` over `canonical/`). Specifically:
