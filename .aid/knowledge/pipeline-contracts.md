@@ -1,4 +1,19 @@
-# API Contracts
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Defines the interfaces between AID pipeline components. Because AID ships no HTTP services
+  or RPC endpoints, "contracts" here means: skill slash-command signatures and state-machine
+  contracts, script CLI signatures + exit codes, file-format contracts (settings.yml,
+  emission-manifest.jsonl, heartbeat files, STATE.md sections), subagent dispatch conventions,
+  and the canonical→3-profile renderer contract. Read this to understand what each pipeline
+  boundary expects and emits.
+contracts:
+  - "10 skill slash-command contracts documented (aid-config through aid-monitor)"
+changelog:
+  - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
+---
+# Pipeline Contracts
 
 > AID ships **no HTTP services, no RPC endpoints, no SDK clients** — it is a methodology
 > distribution. "API contracts" here means the **interfaces between pipeline components**:

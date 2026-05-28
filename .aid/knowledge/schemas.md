@@ -21,12 +21,12 @@ changelog:
   - 2026-05-27: Initial generation by discovery-analyst (cycle-1)
 ---
 
-# Data Model
+# Schemas
 
 > **There is no database.** AID is a methodology + multi-tool distribution; it
-> ships skills, agents, templates, recipes, and helper scripts (per CLAUDE.md:23-25,
-> project-structure.md:18-19). Every "schema" below is a document or config
-> contract — YAML, JSONL, or structured Markdown — that the pipeline reads + writes.
+> ships skills, agents, templates, recipes, and helper scripts. Every "schema"
+> below is a document or config contract — YAML, JSONL, or structured Markdown —
+> that the pipeline reads + writes.
 
 ## 1. Database
 

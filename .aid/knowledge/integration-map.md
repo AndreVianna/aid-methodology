@@ -1,3 +1,16 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Maps all external services and integrations the AID repo depends on. Because AID has no
+  application runtime, integrations are minimal: the Mermaid library fetched from npm/jsdelivr
+  CDN (consumed by aid-summarize), the gh GitHub CLI used in PR-creation workflows, and the
+  multi-tool distribution model that renders canonical source into 3 host-tool install trees.
+  Inter-skill choreography is implemented via filesystem state hand-offs (not a message broker).
+contracts: []
+changelog:
+  - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
+---
 # Integration Map
 
 > The AID repo has **no application runtime** — it ships a methodology distribution.

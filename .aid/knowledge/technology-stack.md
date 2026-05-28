@@ -1,3 +1,20 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Concrete inventory of languages, runtimes, libraries, build tools, and dev tooling used
+  by the AID-methodology repository. Covers: Markdown (872 files), Bash (109 files), Python
+  3.11+ (stdlib only, no third-party deps), JavaScript/ES modules (Node built-ins only),
+  PowerShell 5.1+, CSS3, HTML5, TOML 1.0, YAML 1.2, JSON, and JSON Lines. The only runtime
+  library is Mermaid (fetched dynamically from npm/jsdelivr). Read this to understand what
+  toolchain is required to build, run, or contribute to AID.
+contracts:
+  - "Python 3.11+ required (tomllib stdlib dependency)"
+  - "No third-party Python packages (stdlib only)"
+  - "No npm package.json at any level"
+changelog:
+  - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
+---
 # Technology Stack
 
 > Concrete inventory of languages, runtimes, libraries, build tools, and dev tooling used

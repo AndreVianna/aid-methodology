@@ -9,6 +9,13 @@
 his project uses the [AID methodology](https://github.com/AndreVianna/aid-methodology).
 @`.aid/knowledge/INDEX.md`.
 
+## .aid/ committed (this repo only)
+
+This repository deliberately commits `.aid/knowledge/` and other `.aid/` artifacts
+to git, because AID is dogfooding itself — the Knowledge Base and work-artifacts
+ARE part of the product here. The general guidance in README.md (gitignore `.aid/`)
+applies to adopter projects, not to this repo.
+
 ## Permissions
 
 - Read any file in the project

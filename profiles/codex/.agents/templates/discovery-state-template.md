@@ -60,12 +60,13 @@ This is the single state file for the **Discovery area** — persistent project 
 
 > Open questions about KB facts, raised by any skill, awaiting human input or downstream resolution. Each entry: ID, category, impact, suggested answer (if inferrable), status.
 
-### Q{N}: [{Category}: {Impact}]
+### Q{N}
 
-- **Question:** {the actual question}
-- **Context:** {why this matters}
-- **Suggested:** {answer if inferrable, or —}
+- **Category:** {category, e.g., Architecture, Security, UX}
+- **Impact:** {High|Medium|Low|Required}
 - **Status:** Pending | Answered | Skipped
+- **Context:** {why this matters; what the downstream phase observed; cite relevant file:line if applicable}
+- **Suggested:** {answer if inferrable, or —}
 - **Answer:** {filled when status is Answered}
 - **Applied to:** {KB doc(s) the answer was applied to}
 

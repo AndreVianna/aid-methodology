@@ -1,3 +1,17 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Describes the hosting, runtime, build pipeline, and dev tooling for the AID-methodology
+  repo. There is no conventional runtime infrastructure (no Docker, no cloud, no Terraform).
+  "Infrastructure" here means: install scripts (setup.sh / setup.ps1) that put AID into a
+  target project, the canonical→3-profiles render pipeline driven by run_generator.py, and
+  the local-filesystem conventions for runtime state. Read this to understand how AID is
+  built, installed, and operated on a local workstation.
+contracts: []
+changelog:
+  - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
+---
 # Infrastructure
 
 > **Source:** `discovery-quality` (Phase 1), cycle-1

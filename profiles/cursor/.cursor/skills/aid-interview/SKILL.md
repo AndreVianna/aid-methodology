@@ -347,11 +347,11 @@ When a downstream phase (e.g., `/aid-specify`) needs clarification on requiremen
 **Q&A entry format for downstream phases to write:**
 
 ```markdown
-### IQ{N}: [{Category}: {Impact}]
+### Q{N}
 
-**Question:** {question text}
-**Context:** {why this matters — what the downstream phase found}
-**Source:** {calling phase, e.g., /aid-specify work-001/feature-001}
-**Suggested:** {answer if inferrable, or "—"}
-**Status:** Pending
+- **Category:** {category, e.g., Architecture, Requirements, Security}
+- **Impact:** {High|Medium|Low|Required}
+- **Status:** Pending
+- **Context:** {why this matters — what the downstream phase found; cite the calling phase, e.g., "Surfaced by /aid-specify work-001/feature-001"}
+- **Suggested:** {answer if inferrable, or "—"}
 ```

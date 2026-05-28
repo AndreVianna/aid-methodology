@@ -1,3 +1,16 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Authoritative glossary of AID-specific terms mined from the methodology spec, skill
+  frontmatter, agent definitions, templates, and scripts. Covers phase names (Discover through
+  Monitor), role names (Director, Orchestrator, Specialist), pipeline concepts (Phase Gate,
+  Lite Path, Two-Tier Review, Pool Dispatch), work-type taxonomy, traceability layers (L1–L3),
+  and rubric tiers. Read this when any AID term is unfamiliar.
+contracts: []
+changelog:
+  - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
+---
 # Domain Glossary
 
 > Terms mined from `methodology/aid-methodology.md` (1,071-line spec),

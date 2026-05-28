@@ -517,3 +517,28 @@ by path-scoped `Write` permission. A misbehaving agent COULD write outside
 
 See `canonical/agents/*/AGENT.md` `tools:` frontmatter for the per-agent
 allowlist. The full per-agent table is not reproduced here to avoid drift.
+
+---
+
+## 12. Q&A Schema (Cross-phase + Discovery)
+
+All Q&A entries (in `.aid/knowledge/STATE.md ## Q&A` and any work's `STATE.md
+## Cross-phase Q&A`) follow this schema:
+
+```markdown
+### Q{N}
+- **Category:** {category}
+- **Impact:** {High|Medium|Low|Required}
+- **Status:** Pending | Answered | Skipped
+- **Context:** {why this question matters}
+- **Suggested:** {best-guess answer if inferrable, or "—"}
+```
+
+After user response, append:
+```markdown
+- **Answer:** {actual answer text or decision}
+- **Applied to:** {file path or task-id where the answer was incorporated}
+```
+
+This is the **only canonical schema**. The older Style B (`### IQ{N}: [Category: Impact]`)
+was deprecated in cycle-1 (see tech-debt.md Q15 follow-up).

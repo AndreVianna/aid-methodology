@@ -16,6 +16,7 @@ It ships as an install bundle for three AI coding tools (Claude Code, OpenAI Cod
 - [Feedback Loops](#feedback-loops)
 - [AID vs. SDD](#aid-vs-sdd)
 - [Using AID in your own project](#using-aid-in-your-own-project)
+- [Versioning](#versioning)
 - [Repository structure](#repository-structure)
 
 ---
@@ -334,6 +335,19 @@ You don't need the whole pipeline on day one. Common entry points:
 - **Add Interview + Specify** when you take on new requirements.
 - **Add Plan** to separate delivery strategy from tactics.
 - **Add Deploy + Monitor** once you are shipping regularly.
+
+---
+
+## Versioning
+
+AID has **no version** yet. It is methodology-in-development; the canonical
+position is "continuous master". To get the latest changes:
+
+- Install via `setup.sh` (or `setup.ps1` on Windows) pulls the current `master`
+- Re-run `setup.sh` (or `setup.ps1`) to pick up updates
+
+Formal versioning (semver, VERSION file, releases) will be added when AID
+stabilizes enough to warrant it.
 
 ---
 

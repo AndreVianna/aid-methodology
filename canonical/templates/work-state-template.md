@@ -94,15 +94,15 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 
 ## Cross-phase Q&A (Pending)
 
-> Consolidated open questions across all phases of this work. Each entry: ID, source phase, category, impact, suggested answer, status. Cross-phase because the same question may originate in /aid-specify and apply to /aid-plan, etc.
+> Consolidated open questions across all phases of this work. Each entry: ID, category, impact, suggested answer, status. Cross-phase because the same question may originate in /aid-specify and apply to /aid-plan, etc.
 
-### Q{N}: [{Phase}: {Category}: {Impact}]
+### Q{N}
 
-- **Question:** {the actual question}
-- **Context:** {why this matters}
-- **Source:** {phase/skill that raised it}
-- **Suggested:** {answer if inferrable, or —}
+- **Category:** {category, e.g., Architecture, Requirements, Security}
+- **Impact:** {High|Medium|Low|Required}
 - **Status:** Pending | Answered | Skipped
+- **Context:** {why this matters; what the downstream phase observed; cite phase/skill that raised it, e.g., "Surfaced by /aid-specify feature-001"}
+- **Suggested:** {answer if inferrable, or —}
 - **Answer:** {filled when status is Answered}
 - **Applied to:** {artifact(s) the answer was applied to}
 

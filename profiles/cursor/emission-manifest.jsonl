@@ -84,8 +84,8 @@
 {"dst": ".cursor/skills/aid-execute/references/state-re-run.md", "profile": "cursor", "sha256": "b701ee864d07a2dfeb198bbd7520d74cdc0fa3c2f2e2507dab9e3442e460a4d1", "src": "canonical/skills/aid-execute/references/state-re-run.md"}
 {"dst": ".cursor/skills/aid-execute/references/state-review.md", "profile": "cursor", "sha256": "ac4ac2993ea7bdeaa15a137351dab1b17e0ede1c4a105a0e8784fd8497d402f8", "src": "canonical/skills/aid-execute/references/state-review.md"}
 {"dst": ".cursor/skills/aid-execute/references/task-type-rules.md", "profile": "cursor", "sha256": "03de3b3b2c9c36d6e28732af4cddbf071bd83d973d78700617340bf768c0e033", "src": "canonical/skills/aid-execute/references/task-type-rules.md"}
-{"dst": ".cursor/skills/aid-interview/SKILL.md", "profile": "cursor", "sha256": "46abb81459ec805abb9590f78f5dda901a1f26c1808ddfaeb3f542ff9f4a00ca", "src": "canonical/skills/aid-interview/SKILL.md"}
-{"dst": ".cursor/skills/aid-interview/references/cross-reference.md", "profile": "cursor", "sha256": "5236be2f141f8aeac09e01ef1fd4548290009cbfff678366f2b9e25ec67f5823", "src": "canonical/skills/aid-interview/references/cross-reference.md"}
+{"dst": ".cursor/skills/aid-interview/SKILL.md", "profile": "cursor", "sha256": "2a9ec942c23030fa9736a5a9315a490810e7e48e062413f84dd5300a582e358b", "src": "canonical/skills/aid-interview/SKILL.md"}
+{"dst": ".cursor/skills/aid-interview/references/cross-reference.md", "profile": "cursor", "sha256": "42dedfc281c3b36a926d801f73a6156e02b556774a8344dcd4b4d317309e874a", "src": "canonical/skills/aid-interview/references/cross-reference.md"}
 {"dst": ".cursor/skills/aid-interview/references/feature-decomposition.md", "profile": "cursor", "sha256": "da421bda1d95a27139ce99c0c6e0d0aa6015d2c099fd14db3fa75f281acd2c6f", "src": "canonical/skills/aid-interview/references/feature-decomposition.md"}
 {"dst": ".cursor/skills/aid-interview/references/interview-loop.md", "profile": "cursor", "sha256": "a7c2b395b188e697e201f6de46ae5247794bddc604c409b416236db2a1e5d6da", "src": "canonical/skills/aid-interview/references/interview-loop.md"}
 {"dst": ".cursor/skills/aid-interview/references/interview-strategies.md", "profile": "cursor", "sha256": "f776a35aa372b27cca7a54e7e65a0e2b22a8a6b55142a1887fe41145a89979d8", "src": "canonical/skills/aid-interview/references/interview-strategies.md"}
@@ -137,7 +137,7 @@
 {"dst": ".cursor/templates/README.md", "profile": "cursor", "sha256": "88f2449c453ffa1e3d0d45264210bf4b8ca07adc421aca8dfed79c3a46e617cc", "src": "canonical/templates/README.md"}
 {"dst": ".cursor/templates/delivery-issues.md", "profile": "cursor", "sha256": "0c916a352ef55a3ea13b1a96e29e1347de11ce141ac924dc856a8162a01f94f4", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".cursor/templates/delivery-plans/task-template.md", "profile": "cursor", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
-{"dst": ".cursor/templates/discovery-state-template.md", "profile": "cursor", "sha256": "c5ccbe147b08dca4f2f47f167456a9b7d69e6b3fb84e3f718b9bbe5fac1a73cc", "src": "canonical/templates/discovery-state-template.md"}
+{"dst": ".cursor/templates/discovery-state-template.md", "profile": "cursor", "sha256": "d124afbda07e69ab9fb49a75328dfbfa5013bf60d2da46e0264277c35f2ce39b", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".cursor/templates/dispatch-protocol-checklist.md", "profile": "cursor", "sha256": "4f6079a76c813fc7b8eedd6f5ed8f4fc880f5b0d28378339f1204eb8adefc9a0", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".cursor/templates/feature-inventory.md", "profile": "cursor", "sha256": "1866cfe95be8ac1d1a5b1e6e5b003c95093e659fc3362fd0bf8943ed5c81956f", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".cursor/templates/feature.md", "profile": "cursor", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
@@ -193,4 +193,4 @@
 {"dst": ".cursor/templates/specs/spec-template.md", "profile": "cursor", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".cursor/templates/subagent-heartbeat-protocol.md", "profile": "cursor", "sha256": "e3490a0df0132c5f2042e70de2755961f0089a10589d5e98fd87b00fe094095b", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".cursor/templates/ui-architecture.md", "profile": "cursor", "sha256": "eb3ee918a84233881fad358463eb1ca47c453a98d507989d436c08ff3e3224fb", "src": "canonical/templates/ui-architecture.md"}
-{"dst": ".cursor/templates/work-state-template.md", "profile": "cursor", "sha256": "18e15065b59725bcb285b7037f6c68ac5de800af46d6f61c33f70d875025340d", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".cursor/templates/work-state-template.md", "profile": "cursor", "sha256": "f3d711a2259580660569c4a5a0e37916bc1517efd95b4e133857cae2ed36b73c", "src": "canonical/templates/work-state-template.md"}

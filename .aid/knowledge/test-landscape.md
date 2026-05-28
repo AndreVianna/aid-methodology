@@ -1,3 +1,19 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Describes all test suites and coverage for the AID-methodology repo. Covers: 6 canonical
+  bash helper unit-test suites in tests/canonical/ (297 tests total across writeback-task-status,
+  delivery-gate-aggregate, compute-block-radius, pool-dispatch, parse-recipe, read-setting),
+  2 skill-level end-to-end suites in tests/skills/ (aid-interview lite-path routing and
+  escalation), and 5 Python renderer self-tests. No coverage tooling; no CI. Read this to
+  know what tests exist and how to run them.
+contracts:
+  - "6 suites in tests/canonical/"
+  - "2 suites in tests/skills/"
+changelog:
+  - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
+---
 # Test Landscape
 
 > **Source:** `discovery-quality` (Phase 1), cycle-1

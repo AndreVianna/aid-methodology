@@ -1,3 +1,20 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Architectural map of the AID-methodology repository: the canonical→render→install pipeline
+  that emits one canonical source into three byte-identical host-tool install trees (Claude Code,
+  Codex, Cursor), the phase-to-skill mapping across 8 pipeline phases, the agent-tier model
+  (Opus/Sonnet/Haiku), the Thin-Router SKILL.md pattern, and the two-tier review + parallel
+  pool dispatch execution model. Read this to understand how the methodology pieces hang together;
+  for raw file inventory see project-structure.md.
+contracts:
+  - "10 AID skills listed in Dispatch table"
+  - "22 specialist agents across 3 tiers (10 Opus, 9 Sonnet, 3 Haiku)"
+  - "3 rendered install trees: claude-code, codex, cursor"
+changelog:
+  - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
+---
 # Architecture
 
 > Architectural map of the AID-methodology repository — how the pieces fit together, what

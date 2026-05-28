@@ -82,8 +82,8 @@
 {"dst": ".claude/skills/aid-execute/references/state-re-run.md", "profile": "claude-code", "sha256": "b701ee864d07a2dfeb198bbd7520d74cdc0fa3c2f2e2507dab9e3442e460a4d1", "src": "canonical/skills/aid-execute/references/state-re-run.md"}
 {"dst": ".claude/skills/aid-execute/references/state-review.md", "profile": "claude-code", "sha256": "b7ec6c39054680f86133f79616005a5e6476c8cb14b6b5698d0d4ee8b8f16cbc", "src": "canonical/skills/aid-execute/references/state-review.md"}
 {"dst": ".claude/skills/aid-execute/references/task-type-rules.md", "profile": "claude-code", "sha256": "03de3b3b2c9c36d6e28732af4cddbf071bd83d973d78700617340bf768c0e033", "src": "canonical/skills/aid-execute/references/task-type-rules.md"}
-{"dst": ".claude/skills/aid-interview/SKILL.md", "profile": "claude-code", "sha256": "0fbee82e305f9a0c0ad5460e8fe68ff89f3641c2aac6e5ce3a8b72bcd2d9b177", "src": "canonical/skills/aid-interview/SKILL.md"}
-{"dst": ".claude/skills/aid-interview/references/cross-reference.md", "profile": "claude-code", "sha256": "827977f9606ad2da2ae60129b143925fe30d4c87db8ca4bf913e15e2e2e591e9", "src": "canonical/skills/aid-interview/references/cross-reference.md"}
+{"dst": ".claude/skills/aid-interview/SKILL.md", "profile": "claude-code", "sha256": "18eec9e2b06b0469137c5b8068c9f1e9bd5e2a3bd4959da3e348791316792f1b", "src": "canonical/skills/aid-interview/SKILL.md"}
+{"dst": ".claude/skills/aid-interview/references/cross-reference.md", "profile": "claude-code", "sha256": "0bec15321cc2e04ee9b6dc593df4c4b5aee6f00b1820ca3c0d89dd5658e2f084", "src": "canonical/skills/aid-interview/references/cross-reference.md"}
 {"dst": ".claude/skills/aid-interview/references/feature-decomposition.md", "profile": "claude-code", "sha256": "da421bda1d95a27139ce99c0c6e0d0aa6015d2c099fd14db3fa75f281acd2c6f", "src": "canonical/skills/aid-interview/references/feature-decomposition.md"}
 {"dst": ".claude/skills/aid-interview/references/interview-loop.md", "profile": "claude-code", "sha256": "a7c2b395b188e697e201f6de46ae5247794bddc604c409b416236db2a1e5d6da", "src": "canonical/skills/aid-interview/references/interview-loop.md"}
 {"dst": ".claude/skills/aid-interview/references/interview-strategies.md", "profile": "claude-code", "sha256": "f776a35aa372b27cca7a54e7e65a0e2b22a8a6b55142a1887fe41145a89979d8", "src": "canonical/skills/aid-interview/references/interview-strategies.md"}
@@ -135,7 +135,7 @@
 {"dst": ".claude/templates/README.md", "profile": "claude-code", "sha256": "88f2449c453ffa1e3d0d45264210bf4b8ca07adc421aca8dfed79c3a46e617cc", "src": "canonical/templates/README.md"}
 {"dst": ".claude/templates/delivery-issues.md", "profile": "claude-code", "sha256": "80a72f1d2204ffb461c3da3181e8d011146703749b6ba8cc0aa2614b8564fd20", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".claude/templates/delivery-plans/task-template.md", "profile": "claude-code", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
-{"dst": ".claude/templates/discovery-state-template.md", "profile": "claude-code", "sha256": "0063f88f94fa75f58eaa74790669dbefebc84fa8bcdb6530678cbdd53e61f88f", "src": "canonical/templates/discovery-state-template.md"}
+{"dst": ".claude/templates/discovery-state-template.md", "profile": "claude-code", "sha256": "6e85be54bf7b92474bea75ca456e8b0a1ec2b243b845bc27371e644851515b88", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".claude/templates/dispatch-protocol-checklist.md", "profile": "claude-code", "sha256": "60464d21814f1f7197221bb816b2d9936e70a1306db9e66fd37384a5d0bd5730", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".claude/templates/feature-inventory.md", "profile": "claude-code", "sha256": "1866cfe95be8ac1d1a5b1e6e5b003c95093e659fc3362fd0bf8943ed5c81956f", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".claude/templates/feature.md", "profile": "claude-code", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
@@ -191,4 +191,4 @@
 {"dst": ".claude/templates/specs/spec-template.md", "profile": "claude-code", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".claude/templates/subagent-heartbeat-protocol.md", "profile": "claude-code", "sha256": "3ad858b3ca274528e848edae82cbece2ff068f6129917508bd67e5ad07332f43", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".claude/templates/ui-architecture.md", "profile": "claude-code", "sha256": "eb3ee918a84233881fad358463eb1ca47c453a98d507989d436c08ff3e3224fb", "src": "canonical/templates/ui-architecture.md"}
-{"dst": ".claude/templates/work-state-template.md", "profile": "claude-code", "sha256": "2fdba460d19a4e49881fa495276c39dda21c22736ca07101cfed57eef88d2b90", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".claude/templates/work-state-template.md", "profile": "claude-code", "sha256": "fa95f5e535c4fbeda8ed401c92b4eb779e8f59e113f7a4c87537b0c0cc986611", "src": "canonical/templates/work-state-template.md"}

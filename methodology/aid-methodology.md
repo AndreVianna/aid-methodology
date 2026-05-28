@@ -650,12 +650,13 @@ Every change to an upstream artifact is tracked inside the artifact itself — a
 The design-phase loops record the gap as a **Q&A entry appended to the relevant phase's STATE file** — `DISCOVERY-STATE.md` for a KB gap, the work's `INTERVIEW-STATE.md` for a requirements gap, a feature's `STATE.md` for a spec gap. The next run of the owning phase detects the pending entry and resolves it in its Q&A mode:
 
 ```markdown
-### IQ{N}: [{Category}: {Impact}]
-**Question:** {what needs to be resolved}
-**Context:** {why — what the calling phase found}
-**Source:** {calling phase, e.g. /aid-plan work-001}
-**Suggested:** {answer if inferrable, or —}
-**Status:** Pending
+### Q{N}
+
+- **Category:** {category, e.g., Architecture, Requirements, Security}
+- **Impact:** {High|Medium|Low|Required}
+- **Status:** Pending
+- **Context:** {why — what the calling phase found; surfaced by {calling phase, e.g. /aid-plan work-001}}
+- **Suggested:** {answer if inferrable, or —}
 ```
 
 The one feedback loop with its own dedicated file is **`IMPEDIMENT-task-NNN.md`** — written by Execute to `.aid/{work}/` when a task hits a contradiction it cannot resolve within scope:
