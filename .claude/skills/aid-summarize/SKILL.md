@@ -32,7 +32,7 @@ summarization.
 
 ## ⚠️ Pre-flight Checks
 
-Run `canonical/scripts/summarize/preflight.sh` before any state. It verifies:
+Run `.claude/scripts/summarize/preflight.sh` before any state. It verifies:
 
 1. `.aid/knowledge/STATE.md` exists.
 2. `**User Approved:** yes` is present in `.aid/knowledge/STATE.md`.
@@ -47,9 +47,9 @@ proceed; do NOT create any state files.
 
 | Argument | Effect |
 |----------|--------|
-| `--grade X` | Override the minimum acceptable grade. Format: `[A-F][-+]?`. Without this, runs `bash canonical/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A` (resolves per-skill override → global `review.minimum_grade` → default `A`). When passed, persist to `.aid/settings.yml` `summary.minimum_grade` via `/aid-config`. |
+| `--grade X` | Override the minimum acceptable grade. Format: `[A-F][-+]?`. Without this, runs `bash .claude/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A` (resolves per-skill override → global `review.minimum_grade` → default `A`). When passed, persist to `.aid/settings.yml` `summary.minimum_grade` via `/aid-config`. |
 | `--profile X` | Force a specific profile. One of: `auto` (default), `web-app`, `library`, `cli`, `microservices`, `data-pipeline`, `agentic-pipeline`. |
-| `--theme palette=X` | Override color palette (e.g., `--theme palette=brand-acme`). Default uses the canonical palette in `canonical/templates/knowledge-summary/design-tokens.md`. |
+| `--theme palette=X` | Override color palette (e.g., `--theme palette=brand-acme`). Default uses the canonical palette in `.claude/templates/knowledge-summary/design-tokens.md`. |
 | `--cdn-mermaid` | Load Mermaid from jsdelivr CDN at runtime instead of inlining (drops ~3 MB; loses offline support). |
 | `--reset` | Force regeneration regardless of staleness check; clears `## Knowledge Summary Status` in `.aid/knowledge/STATE.md`. |
 
@@ -199,25 +199,25 @@ Without Node.js entirely, this skill cannot grade. If Node.js is unavailable on 
 There is no "skip validation" mode. The whole point of this skill is that broken
 diagrams are caught before publication.
 
-See `canonical/templates/knowledge-summary/grading-rubric.md` for the complete rubric and grade boundaries.
+See `.claude/templates/knowledge-summary/grading-rubric.md` for the complete rubric and grade boundaries.
 
 ---
 
 ## References
 
-- `canonical/templates/knowledge-summary/prompt.md` — agent guidance for the GENERATE step (long-form)
-- `canonical/templates/knowledge-summary/design-tokens.md` — color palette, typography, spacing
-- `canonical/templates/knowledge-summary/component-css.css` — full reusable CSS (inlined)
-- `canonical/templates/knowledge-summary/lightbox.js` — full reusable JS (theme, lightbox, scrollspy, a11y)
-- `canonical/templates/knowledge-summary/mermaid-init.js` — Mermaid theme variables for both modes
-- `canonical/templates/knowledge-summary/mermaid-examples.md` — one valid example per diagram type + pitfalls table
-- `canonical/templates/knowledge-summary/section-templates/{profile}.md` — section structure per project type
-- `canonical/templates/knowledge-summary/accessibility-checklist.md` — WCAG AA targets, focus trap pattern
-- `canonical/templates/knowledge-summary/grading-rubric.md` — two-grade rubric (Machine + Human), per-profile diagram counts
-- `canonical/templates/knowledge-summary/html-skeleton.html` — doctype, head, semantic landmarks, noscript
-- `canonical/scripts/summarize/run-validators.sh` — orchestrates AUTO_POOL checks, reads `.manual-checklist.json` for MANUAL_POOL, prints Machine + Human + Overall grades
-- `canonical/scripts/summarize/manual-checklist.sh` — validates / scores the MANUAL_POOL result file (`--input PATH` headless mode; `--interactive` for raw-terminal use)
-- `canonical/scripts/summarize/spot-check-facts.sh` — extracts HTML claims, grep-matches against source KB, writes `.spot-check-facts.txt` (aids the user's K2 judgment)
+- `.claude/templates/knowledge-summary/prompt.md` — agent guidance for the GENERATE step (long-form)
+- `.claude/templates/knowledge-summary/design-tokens.md` — color palette, typography, spacing
+- `.claude/templates/knowledge-summary/component-css.css` — full reusable CSS (inlined)
+- `.claude/templates/knowledge-summary/lightbox.js` — full reusable JS (theme, lightbox, scrollspy, a11y)
+- `.claude/templates/knowledge-summary/mermaid-init.js` — Mermaid theme variables for both modes
+- `.claude/templates/knowledge-summary/mermaid-examples.md` — one valid example per diagram type + pitfalls table
+- `.claude/templates/knowledge-summary/section-templates/{profile}.md` — section structure per project type
+- `.claude/templates/knowledge-summary/accessibility-checklist.md` — WCAG AA targets, focus trap pattern
+- `.claude/templates/knowledge-summary/grading-rubric.md` — two-grade rubric (Machine + Human), per-profile diagram counts
+- `.claude/templates/knowledge-summary/html-skeleton.html` — doctype, head, semantic landmarks, noscript
+- `.claude/scripts/summarize/run-validators.sh` — orchestrates AUTO_POOL checks, reads `.manual-checklist.json` for MANUAL_POOL, prints Machine + Human + Overall grades
+- `.claude/scripts/summarize/manual-checklist.sh` — validates / scores the MANUAL_POOL result file (`--input PATH` headless mode; `--interactive` for raw-terminal use)
+- `.claude/scripts/summarize/spot-check-facts.sh` — extracts HTML claims, grep-matches against source KB, writes `.spot-check-facts.txt` (aids the user's K2 judgment)
 
 ---
 

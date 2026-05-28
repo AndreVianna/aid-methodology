@@ -64,7 +64,7 @@ wins.
 |---|---|---|
 | `pipeline-contracts.md` mentions slash commands + sub-agent dispatch | +4 | grep `slash command`, `sub-agent`, `dispatch`, `/aid-` (or similar slash-command pattern); threshold ≥ 5 matches in the doc |
 | `architecture.md` describes pipeline state machines or phase gates | +3 | grep `state machine`, `phase gate`, `feedback loop`, `pipeline`; threshold ≥ 4 matches |
-| Multiple agent definitions exist (`canonical/agents/` or `.agents/` or equivalent with ≥3 `AGENT.md` files) | +3 | `find canonical/agents -name "AGENT.md" \| wc -l` (or equivalent path); threshold ≥ 3 |
+| Multiple agent definitions exist (`.claude/agents/` or `.agents/` or equivalent with ≥3 `AGENT.md` files) | +3 | `find canonical/agents -name "AGENT.md" \| wc -l` (or equivalent path); threshold ≥ 3 |
 | `coding-standards.md` or `schemas.md` describes review/grade/rubric discipline | +2 | grep `review`, `grade`, `rubric`, `severity`; threshold ≥ 3 matches in either doc |
 | `feature-inventory.md` uses "skill" framing (not generic "feature") | +2 | grep `skill\|slash command` count in feature-inventory.md; ≥ 5 matches |
 | Absence of runtime/server/CLI-binary signals (negative reinforcement) | +1 | grep absent: `daemon`, `server`, `binary`, `port \d+` in infrastructure.md |
