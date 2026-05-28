@@ -1,0 +1,71 @@
+<section class="sec" id="s5" data-title="Knowledge Base Shape">
+	<header>
+		<span class="eyebrow">Data Model</span>
+		<h2>Knowledge Base Shape</h2>
+		<p class="lede">AID has no database. The Knowledge Base is 15 primary Markdown documents under <code>.aid/knowledge/</code>, each with a YAML frontmatter block (kb-category, source, intent, contracts, changelog). The INDEX.md is auto-generated from each doc's <code>intent:</code> field. (per schemas.md)</p>
+	</header>
+
+	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 4: Knowledge Base document schema — click or press Enter to expand">
+		<div class="mermaid">
+erDiagram
+    KBDoc ||--|| Frontmatter : "has exactly one"
+    KBDoc ||--o{ Contract : "declares 0 or more"
+    KBDoc }|--|| Category : "belongs to one"
+    INDEX ||--o{ KBDoc : "indexes all primary"
+    STATE ||--o{ KBDoc : "tracks status of each"
+    GeneratedDoc ||--|| KBDoc : "is a kind of (source=generated)"
+
+    KBDoc {
+        string name "e.g. architecture.md"
+        string source "hand-authored or generated"
+        text intent "1-4 sentence description"
+        string generator "required if source=generated"
+    }
+    Frontmatter {
+        string kb-category "primary or meta or extension"
+        list changelog "YYYY-MM-DD entries"
+    }
+    Contract {
+        string assertion "structural cardinality claim"
+    }
+    Category {
+        string name "primary or meta or extension"
+        string description "load-bearing or process-ledger or custom"
+    }
+    INDEX {
+        string path ".aid/knowledge/INDEX.md"
+        string generator "build-index.sh"
+        string source "generated"
+    }
+    STATE {
+        string path ".aid/knowledge/STATE.md"
+        string sections "KB Documents Status table"
+    }
+    GeneratedDoc {
+        string generator "build-project-index.sh or build-index.sh"
+    }
+		</div>
+		<p class="caption">Fig 4 — Knowledge Base document schema: 15 primary docs + 2 meta docs (INDEX.md, STATE.md). Each primary doc has a YAML frontmatter with kb-category, source, intent, contracts, changelog. (per schemas.md)</p>
+	</div>
+
+	<div class="callout">
+		<h4>15 active primary KB documents (post-cycle-1 Q3)</h4>
+		<p>project-structure, external-sources, architecture, technology-stack, module-map, coding-standards, schemas, pipeline-contracts, integration-map, domain-glossary, test-landscape, tech-debt, infrastructure, repo-presentation, feature-inventory. The standard 16-doc set was trimmed (security-model and ui-architecture removed; data-model renamed to schemas; api-contracts renamed to pipeline-contracts; repo-presentation added as custom). (per schemas.md §3)</p>
+	</div>
+
+	<h3>Fact stability tiers (T1–T4)</h3>
+	<p>Every claim in a KB doc belongs to one of four tiers that govern whether it may appear inline. (per coding-standards.md §9a)</p>
+	<div class="tbl-wrap">
+		<table class="tbl">
+			<thead><tr><th>Tier</th><th>What</th><th>Inline Allowed?</th><th>Where It Lives</th></tr></thead>
+			<tbody>
+				<tr><td><strong>T1 Concept</strong></td><td>Patterns, definitions, architectural laws</td><td>Yes — this IS the knowledge</td><td>Inline in primary docs</td></tr>
+				<tr><td><strong>T2 Structure</strong></td><td>Cardinality contracts, schemas, named-list assertions</td><td>Yes — when load-bearing</td><td>Inline + <code>contracts:</code> frontmatter</td></tr>
+				<tr><td><strong>T3 Metric</strong></td><td>Line counts, byte counts, function counts</td><td>No — banned from primary docs</td><td><code>.aid/generated/metrics.md</code> only</td></tr>
+				<tr><td><strong>T4 Temporal</strong></td><td>Dates, cycle tags, "as of X"</td><td>No — banned from primary docs</td><td>Frontmatter <code>changelog:</code> + STATE.md history</td></tr>
+			</tbody>
+		</table>
+	</div>
+</section>
+
+<!-- ===== SECTION 6: Pipeline Contracts ===== -->

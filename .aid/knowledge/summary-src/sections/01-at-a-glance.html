@@ -1,0 +1,54 @@
+<section class="sec" id="s1" data-title="At a Glance">
+	<header>
+		<span class="eyebrow">Overview</span>
+		<h2>At a Glance</h2>
+		<p class="lede">AID (AI Integrated Development) is a methodology specification and multi-tool distribution that ships skills, agents, templates, and recipes into three host-tool install trees from a single canonical source.</p>
+	</header>
+
+	<div class="grid g4">
+		<div class="card">
+			<div class="kicker">Repository</div>
+			<div class="stat">1,077</div>
+			<div class="stat-sub">total files</div>
+			<div class="meta">148,068 lines — snapshot 2026-05-27<br>(per project-structure.md)</div>
+		</div>
+		<div class="card">
+			<div class="kicker">Skills</div>
+			<div class="stat">10</div>
+			<div class="stat-sub">user-facing slash commands</div>
+			<div class="meta">+ 1 maintainer-only aid-generate<br>(per module-map.md)</div>
+		</div>
+		<div class="card">
+			<div class="kicker">Agents</div>
+			<div class="stat">22</div>
+			<div class="stat-sub">specialist agents, 3 tiers</div>
+			<div class="meta">10 Large · 9 Medium · 3 Small<br>(per architecture.md)</div>
+		</div>
+		<div class="card">
+			<div class="kicker">Install Trees</div>
+			<div class="stat">3</div>
+			<div class="stat-sub">supported host tools</div>
+			<div class="meta">Claude Code · Codex CLI · Cursor<br>(per architecture.md)</div>
+		</div>
+	</div>
+
+	<div class="grid g3" style="margin-top:1rem;">
+		<div class="card">
+			<div class="kicker">Languages</div>
+			<h3>Polyglot Toolchain</h3>
+			<p>Markdown (872 files), Bash (109 files), Python 3.11+ (stdlib only), JavaScript/ESM, PowerShell 5.1+, CSS3, HTML5, TOML, YAML. No application frameworks — single runtime library is Mermaid, fetched dynamically. (per technology-stack.md)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">Architecture</div>
+			<h3>Single-Source Compilation</h3>
+			<p>One canonical source (<code>canonical/</code>) is rendered by <code>run_generator.py</code> into three byte-identical install trees. Never edit the profile trees directly — edit <code>canonical/</code> and re-run the generator. (per architecture.md)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">No Application Code</div>
+			<h3>Methodology Distribution</h3>
+			<p>This repo ships no application — it ships documentation rendered into install bundles. No Docker, no cloud, no database. Quality gates are the AID skills themselves running on the maintainer's local workstation. (per infrastructure.md)</p>
+		</div>
+	</div>
+</section>
+
+<!-- ===== SECTION 2: The Pipeline (FEATURED) ===== -->

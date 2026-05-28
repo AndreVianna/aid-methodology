@@ -15,6 +15,7 @@
 {"dst": ".agents/scripts/kb/build-metrics.sh", "profile": "codex", "sha256": "6564d9cb41b4c087a971f8974b07b4b8c52d1ca57e756384cc12b08062e0e893", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".agents/scripts/kb/build-project-index.sh", "profile": "codex", "sha256": "2beab9b255fd1f984843c7e4b9b4e579c9509c249c1bad30668baa7bd5ff55ec", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".agents/scripts/kb/preflight.sh", "profile": "codex", "sha256": "0a6cbcaed8e470cc93733692e06e069c9457f024002f44fdd8ccd2be74d534e4", "src": "canonical/scripts/kb/preflight.sh"}
+{"dst": ".agents/scripts/summarize/assemble.sh", "profile": "codex", "sha256": "4845da8f7d428f5c5d8f477a8fb248bff64fca72f78c3bd5b67bbaec49b2751c", "src": "canonical/scripts/summarize/assemble.sh"}
 {"dst": ".agents/scripts/summarize/concatenate.ps1", "profile": "codex", "sha256": "21de32ffc7a2da111bb2b2c27b83a1e502ea6689a35676e772936df569349bcb", "src": "canonical/scripts/summarize/concatenate.ps1"}
 {"dst": ".agents/scripts/summarize/concatenate.sh", "profile": "codex", "sha256": "905ab3d51f37cb2ae98ca4de296f697293ec95d51a9f98a3079f3ba649d07046", "src": "canonical/scripts/summarize/concatenate.sh"}
 {"dst": ".agents/scripts/summarize/contrast-check.mjs", "profile": "codex", "sha256": "8bde28f5ef626b8e9964d882b1ccd94b119520e830d51cc0ab9a9279337d4a75", "src": "canonical/scripts/summarize/contrast-check.mjs"}
@@ -103,7 +104,7 @@
 {"dst": ".agents/skills/aid-summarize/references/state-approval.md", "profile": "codex", "sha256": "3833eec12bfed083f0a79aaee1e259c9de452f4f7e8452f7aa596521c5833531", "src": "canonical/skills/aid-summarize/references/state-approval.md"}
 {"dst": ".agents/skills/aid-summarize/references/state-done.md", "profile": "codex", "sha256": "c588892222487901e061ac22f4e9f68108cdc3657982a9f24ac896d2fbfbfd4f", "src": "canonical/skills/aid-summarize/references/state-done.md"}
 {"dst": ".agents/skills/aid-summarize/references/state-fix.md", "profile": "codex", "sha256": "d76a98b4409b29cf0eb5d5db57cc9f967f45ee6b5383ba0ec9f0113e007f638c", "src": "canonical/skills/aid-summarize/references/state-fix.md"}
-{"dst": ".agents/skills/aid-summarize/references/state-generate.md", "profile": "codex", "sha256": "2ae325ed7d141a218a51ec2625125f3bff8d7e0caf0636a8bc4d0a5737672053", "src": "canonical/skills/aid-summarize/references/state-generate.md"}
+{"dst": ".agents/skills/aid-summarize/references/state-generate.md", "profile": "codex", "sha256": "d140147189dc08be6b54e9ebc0a0069b807d5ff484aa84c1fbe75e38bda6ed7a", "src": "canonical/skills/aid-summarize/references/state-generate.md"}
 {"dst": ".agents/skills/aid-summarize/references/state-manual-checklist.md", "profile": "codex", "sha256": "731ed43f53a5596ea8f129179bea8848b4824f1a4777d3aacff9cd69574fb871", "src": "canonical/skills/aid-summarize/references/state-manual-checklist.md"}
 {"dst": ".agents/skills/aid-summarize/references/state-preflight.md", "profile": "codex", "sha256": "729ca44e24503a9b36afa01c75fee54a283f9c1179102498e41cd38acc9216f4", "src": "canonical/skills/aid-summarize/references/state-preflight.md"}
 {"dst": ".agents/skills/aid-summarize/references/state-profile.md", "profile": "codex", "sha256": "69288b5cfddd3d4e85b8627f2175dd5d9571a7d54834b047b098991935c53ccc", "src": "canonical/skills/aid-summarize/references/state-profile.md"}

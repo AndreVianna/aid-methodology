@@ -47,21 +47,58 @@ Read every `.aid/knowledge/*.md` listed in INDEX.md. For each, extract:
 The KB is **authoritative**. Do not re-grade it, re-validate it, or contradict it.
 If the KB says X, the HTML says X.
 
-### 4. Build the HTML
+### 4. Author into the multi-source layout
 
-Use `canonical/templates/knowledge-summary/html-skeleton.html` as the document shell. Inject:
+**Authoring layout (`.aid/knowledge/summary-src/`)** — distribution is still a single
+self-contained HTML file, but sources are split for maintainability:
+
+```
+.aid/knowledge/summary-src/
+├── skeleton-head.html          # <!DOCTYPE> → opening <main> (includes inlined CSS, hero, nav)
+├── sections/
+│   ├── 01-{profile-section}.html
+│   ├── 02-{profile-section}.html
+│   └── …                       # one file per profile section (12 for agentic-pipeline)
+├── skeleton-foot.html          # </main> → opening <script> for the inlined Mermaid library
+└── post-mermaid.html           # closing </script> for Mermaid + lightbox.js + mermaid-init.js + </body>
+```
+
+Use `canonical/templates/knowledge-summary/html-skeleton.html` as the seed when scaffolding
+`skeleton-head.html` for the first time. Inject:
 - Hero with project name (read from `.aid/knowledge/STATE.md` or `pom.xml` / `package.json` etc.)
-- Section structure from `canonical/templates/knowledge-summary/section-templates/{profile}.md`
+- Inlined CSS from `canonical/templates/knowledge-summary/component-css.css` (in `skeleton-head.html`)
+
+Author each section file under `sections/` from KB content:
+- Section structure follows `canonical/templates/knowledge-summary/section-templates/{profile}.md`
 - Per-section content drawn from KB (cite source via relative `./xxx.md` link)
 - 6–8 Mermaid diagrams using syntax patterns from `canonical/templates/knowledge-summary/mermaid-examples.md`
-- Inlined CSS from `canonical/templates/knowledge-summary/component-css.css`
-- Inlined JS from `canonical/templates/knowledge-summary/lightbox.js` and `canonical/templates/knowledge-summary/mermaid-init.js`
-- Inlined Mermaid library from cached file
 
-Build via the part-concatenation pattern (see `canonical/scripts/summarize/concatenate.sh` or `.ps1`):
-1. Generate `part1.html` (everything from `<!DOCTYPE>` up to the opening `<script>` for Mermaid).
-2. Cat `part1.html` + cached Mermaid + `part2.html` → final `knowledge-summary.html`.
-3. Remove temp files.
+`post-mermaid.html` inlines `canonical/templates/knowledge-summary/lightbox.js` and
+`canonical/templates/knowledge-summary/mermaid-init.js`. It is also the file that closes
+the `<script>` that wraps the inlined Mermaid library (opened in `skeleton-foot.html`).
+
+**Parallel-safe authoring** — different agents/passes can edit different `sections/NN.html`
+files concurrently without merge conflicts, since each section is its own file.
+
+### 5. Assemble the single-file distribution
+
+Run `canonical/scripts/summarize/assemble.sh` to concatenate the multi-source layout into the
+final single-file `knowledge-summary.html`:
+
+```bash
+bash canonical/scripts/summarize/assemble.sh
+#   reads:  .aid/knowledge/summary-src/{skeleton-head.html, sections/*.html, skeleton-foot.html, post-mermaid.html}
+#   inlines: .aid/knowledge/.cache/mermaid.min.js (between skeleton-foot.html and post-mermaid.html)
+#   writes:  .aid/knowledge/knowledge-summary.html
+```
+
+Flags:
+- `--src DIR` — override source layout path (default `.aid/knowledge/summary-src`)
+- `--output PATH` — override output path
+- `--mermaid PATH` — override cached Mermaid library path
+- `--no-mermaid` — skip inlining (CDN-mode output; the page expects `<script src="…/mermaid.min.js"></script>` added externally)
+
+The script validates that all required source files exist and are non-empty before assembling.
 
 **Critical pitfalls — see `canonical/templates/knowledge-summary/mermaid-examples.md` for full list:**
 - Never put `<word>` HTML-tag-like tokens in Mermaid labels (use `{word}` instead).
@@ -69,7 +106,7 @@ Build via the part-concatenation pattern (see `canonical/scripts/summarize/conca
 - Lightbox SVG sizing: chrome on wrapper, SVG fills 100%/100%.
 - Use `el.textContent` not `el.innerHTML` when restoring diagram source.
 
-### 5. Write Knowledge Summary Status
+### 6. Write Knowledge Summary Status
 
 Write initial fields to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 ```markdown
