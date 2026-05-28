@@ -16,11 +16,11 @@ Slimmer than web-app: no UI section, no service-mesh diagram.
 | 1 | At a Glance | | STATE.md, project-structure.md, technology-stack.md |
 | 2 | Architecture | ★ | architecture.md |
 | 3 | Packages / Modules | | module-map.md |
-| 4 | Data Model & Types | ★ | data-model.md |
-| 5 | Public API | | api-contracts.md |
+| 4 | Data Model & Types | ★ | schemas.md |
+| 5 | Public API | | pipeline-contracts.md |
 | 6 | Consumers & Integrations | | integration-map.md |
 | 7 | Features / Capabilities | ★ | feature-inventory.md |
-| 8 | Security Considerations | | security-model.md |
+| 8 | Security Considerations | | coding-standards.md |
 | 9 | Test Landscape | | test-landscape.md |
 | 10 | Tech Debt | | tech-debt.md |
 | 11 | Build & Distribution | | infrastructure.md, technology-stack.md |

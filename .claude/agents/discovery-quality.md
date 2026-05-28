@@ -1,6 +1,6 @@
 ---
 name: discovery-quality
-description: Assesses test coverage and frameworks, evaluates security patterns, and audits tech debt. Produces test-landscape.md, security-model.md, and tech-debt.md for the Knowledge Base.
+description: Assesses test coverage and frameworks, and audits tech debt. Produces test-landscape.md and tech-debt.md for the Knowledge Base. Security authoring conventions are documented in coding-standards.md §11.
 tools: Read, Glob, Grep, Bash, Write
 model: opus
 permissionMode: bypassPermissions
@@ -65,7 +65,8 @@ for the full protocol.
 - Assess test frameworks, test types (unit/integration/E2E), coverage tooling, and CI/CD integration
 - Evaluate security patterns: authentication, authorization, secrets management, OWASP concerns
 - Audit tech debt: large files, circular dependencies, missing tests, outdated packages, TODO/FIXME density, dead code indicators
-- Produce `.aid/knowledge/test-landscape.md`, `.aid/knowledge/security-model.md`, `.aid/knowledge/tech-debt.md`
+- Produce `.aid/knowledge/test-landscape.md`, `.aid/knowledge/tech-debt.md`
+- Note any security authoring observations directly in `tech-debt.md` (security-model.md has been merged into `coding-standards.md §11`)
 
 ## What You Don't Do
 - Analyze overall architecture (that's Discovery Architect)
@@ -121,30 +122,6 @@ for the full protocol.
 {areas with no test coverage or very low coverage — ⚠️ Inferred if estimated}
 ```
 
-### .aid/knowledge/security-model.md
-```markdown
-# Security Model
-
-## Authentication
-{mechanism: JWT / sessions / OAuth / API keys / etc., implementation files}
-
-## Authorization
-{RBAC / ABAC / middleware / decorators — source files}
-
-## Secrets Management
-{how secrets are stored and loaded: env vars / vault / config files — source}
-
-## Input Validation
-{where validation occurs, libraries used, coverage — source files}
-
-## OWASP Concerns Observed
-{any patterns that suggest XSS, injection, CSRF, IDOR risks — cite evidence}
-⚠️ Security assessment from static analysis only — dynamic testing required
-
-## Dependencies with Known Vulnerabilities
-{packages with audit warnings if detectable from lock files}
-```
-
 ### .aid/knowledge/tech-debt.md
 ```markdown
 # Tech Debt
@@ -182,7 +159,7 @@ for the full protocol.
 - **Low:** Cosmetic or minor — address opportunistically
 
 ## When to Escalate
-- Cannot assess security without credentials/runtime → note in security-model.md
+- Cannot assess security without credentials/runtime → note as a tech-debt item in tech-debt.md; security authoring conventions are in coding-standards.md §11
 - No tests found → record explicitly, rate as Critical debt item
 
 ## ⚠️ File Writing

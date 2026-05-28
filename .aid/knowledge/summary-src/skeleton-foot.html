@@ -1,0 +1,49 @@
+</main>
+
+<!-- Lightbox overlay (always present in DOM, toggled via .open class) -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-hidden="true"
+     aria-labelledby="lb-caption" aria-describedby="lb-hint">
+	<div class="lb-toolbar" role="toolbar" aria-label="Diagram zoom controls">
+		<button type="button" id="lb-zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
+		<button type="button" id="lb-zoom-reset" aria-label="Reset zoom" title="Reset zoom">⟲</button>
+		<button type="button" id="lb-zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+		<button type="button" id="lb-close" aria-label="Close (Esc)" title="Close (Esc)">✕</button>
+	</div>
+	<div class="lb-hint" id="lb-hint">Scroll to zoom · Drag to pan · Esc to close</div>
+	<div class="lb-stage" id="lb-stage">
+		<div class="lb-inner" id="lb-inner"></div>
+	</div>
+	<div class="lb-caption" id="lb-caption" aria-live="polite"></div>
+</div>
+
+<footer>
+	<p>Generated from <code>.aid/knowledge/</code> on 2026-05-28 ·
+	   Re-run <code>/aid-summarize</code> when the Knowledge Base changes.<br>
+	   Diagrams: <a href="https://mermaid.js.org">Mermaid</a> (inlined for offline use).
+	   Styled with system fonts and CSS variables — no external assets.</p>
+</footer>
+
+<!-- Fallback for users with JavaScript disabled -->
+<noscript>
+	<div class="noscript-fallback">
+		<h2>JavaScript required</h2>
+		<p>This summary uses Mermaid to render diagrams and JavaScript to power the
+		   theme toggle, lightbox, and scrollspy. With JavaScript disabled, the
+		   diagrams and interactive features will not work.</p>
+		<p>Either enable JavaScript, or read the source markdown files directly in
+		   <code>.aid/knowledge/</code>:</p>
+		<ul>
+			<li><a href="./INDEX.md">INDEX.md</a> — Knowledge Base map</li>
+			<li><a href="./architecture.md">architecture.md</a></li>
+			<li><a href="./module-map.md">module-map.md</a></li>
+			<li><a href="./schemas.md">schemas.md</a></li>
+			<li><a href="./pipeline-contracts.md">pipeline-contracts.md</a></li>
+			<li><a href="./integration-map.md">integration-map.md</a></li>
+		</ul>
+	</div>
+</noscript>
+
+<script>
+/* Mermaid library inlined below by /aid-summarize concat step. */
+</script>
+<script>

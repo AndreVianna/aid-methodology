@@ -1,0 +1,52 @@
+<section class="sec" id="s6" data-title="Pipeline Contracts">
+	<header>
+		<span class="eyebrow">Interfaces</span>
+		<h2>Pipeline Contracts</h2>
+		<p class="lede">AID ships no HTTP services or RPC endpoints. Contracts here means: skill slash-command signatures and state-machine contracts, script CLI signatures and exit codes, file-format contracts, subagent dispatch conventions, and the canonical-to-3-profile renderer contract. (per pipeline-contracts.md)</p>
+	</header>
+
+	<h3>Slash-command contracts (10 skills)</h3>
+	<div class="tbl-wrap">
+		<table class="tbl">
+			<thead><tr><th>Skill</th><th>Signature</th><th>States</th><th>Side effects</th></tr></thead>
+			<tbody>
+				<tr><td><code>/aid-config</code></td><td><code>[dotted.key]</code></td><td>Single-state</td><td>Creates/updates <code>.aid/settings.yml</code></td></tr>
+				<tr><td><code>/aid-discover</code></td><td><code>[--grade A] [--reset]</code></td><td>GENERATE→REVIEW→Q-AND-A→FIX→APPROVAL→DONE</td><td>Writes 15 KB docs + STATE.md + INDEX.md</td></tr>
+				<tr><td><code>/aid-interview</code></td><td><code>[work-NNN] [--reset] [--features]</code></td><td>FIRST-RUN→Q-AND-A→TRIAGE→{full or lite}</td><td>Writes REQUIREMENTS.md + feature files</td></tr>
+				<tr><td><code>/aid-specify</code></td><td><code>[work-NNN/feature-NNN] [--reset]</code></td><td>INITIALIZE→CONTINUE→REVIEW→DONE</td><td>Writes SPEC.md per feature</td></tr>
+				<tr><td><code>/aid-plan</code></td><td><code>[work-NNN] [--reset]</code></td><td>FIRST-RUN→REVIEW→DONE</td><td>Writes PLAN.md</td></tr>
+				<tr><td><code>/aid-detail</code></td><td><code>[work-NNN] [--reset]</code></td><td>FIRST-RUN→REVIEW→DONE</td><td>Writes task-NNN.md per task</td></tr>
+				<tr><td><code>/aid-execute</code></td><td><code>[task-NNN] [work-NNN]</code></td><td>EXECUTE→REVIEW→FIX→DELIVERY-GATE</td><td>Implements task; updates STATE.md rows</td></tr>
+				<tr><td><code>/aid-deploy</code></td><td><code>[work-NNN]</code></td><td>IDLE→SELECTING→VERIFYING→PACKAGING→DONE</td><td>Creates PR; updates delivery statuses</td></tr>
+				<tr><td><code>/aid-monitor</code></td><td><code>[work-NNN] [--since] [--package]</code></td><td>OBSERVE→CLASSIFY→ROUTE→DONE</td><td>Routes findings to execute or discover</td></tr>
+				<tr><td><code>/aid-summarize</code></td><td><code>(no args)</code></td><td>PREFLIGHT→…→APPROVAL→WRITEBACK→DONE</td><td>Writes <code>knowledge-summary.html</code></td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h3 style="margin-top:1.5rem;">File-format contracts</h3>
+	<div class="grid g2">
+		<div class="card">
+			<div class="kicker">settings.yml</div>
+			<h3>Runtime configuration</h3>
+			<p>YAML 1.2, 5 mandatory top-level sections: <code>project</code>, <code>tools</code>, <code>review</code>, <code>execution</code>, <code>traceability</code>. Per-skill <code>minimum_grade</code> overrides fall back to global <code>review.minimum_grade</code> then the hardcoded default (A). (per schemas.md §2)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">emission-manifest.jsonl</div>
+			<h3>Deletion-safety boundary</h3>
+			<p>JSON Lines, LF-only. Sentinel first line <code>{"_manifest_version": 1}</code>. Four-key record schema: <code>profile</code>, <code>src</code>, <code>dst</code>, <code>sha256</code>. Sorted by <code>dst</code> for byte-stable diffs. Only files in the manifest are eligible for deletion on the next render pass. (per schemas.md)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">STATE.md</div>
+			<h3>Per-area state hub</h3>
+			<p>One STATE.md per area (<code>.aid/knowledge/STATE.md</code> for Discovery; <code>.aid/{work}/STATE.md</code> per work area). Absorbs legacy per-feature and per-task STATE files (FR2 area-STATE consolidation). Sections: External Documentation, KB Documents Status, Q&amp;A, Review History, Summarization History. (per schemas.md §3)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">Heartbeat files</div>
+			<h3>L3 subagent visibility</h3>
+			<p>Single-line files at <code>.aid/.heartbeat/{agent}-{unix-ts}.txt</code>. Format: <code>[YYYY-MM-DDTHH:MM:SSZ] STATE | progress | activity (~eta)</code>. Written with <code>&gt;</code> (overwrite), never <code>&gt;&gt;</code>. Activity must change between writes. (per coding-standards.md §5a)</p>
+		</div>
+	</div>
+</section>
+
+<!-- ===== SECTION 7: Authoring & Quality Gates ===== -->

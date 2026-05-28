@@ -1,0 +1,152 @@
+<section class="sec featured" id="s3" data-title="Phases &amp; Skills">
+	<header>
+		<span class="eyebrow">Featured</span>
+		<h2>Phases &amp; Skills</h2>
+		<p class="lede">Ten user-facing slash-command skills, all Shipped status. Each is a Thin-Router state machine (the SKILL.md router is at most ~360 lines) that delegates per-state logic to <code>references/state-*.md</code> files. (per feature-inventory.md, module-map.md)</p>
+	</header>
+
+	<div class="grid g2">
+
+		<div class="card plugin">
+			<div class="kicker">Phase 1 — Setup</div>
+			<div class="plugin-name">/aid-config</div>
+			<div class="plugin-body">View or update AID pipeline settings. Bare invocation shows all values in a table; first run auto-creates <code>.aid/settings.yml</code> from the template. Pass a dotted key to view and update one setting interactively.</div>
+			<div class="plugin-stats">
+				<span class="badge badge-ok">Shipped</span>
+				<span class="badge">0 reference files</span>
+			</div>
+			<dl>
+				<dt>States</dt><dd>Single-state (no state machine)</dd>
+				<dt>Key outputs</dt><dd><code>.aid/settings.yml</code></dd>
+			</dl>
+		</div>
+
+		<div class="card plugin">
+			<div class="kicker">Phase 2 — Discovery</div>
+			<div class="plugin-name">/aid-discover</div>
+			<div class="plugin-body">Brownfield project discovery with built-in quality gate. Dispatches 5 specialist sub-agents in parallel to generate 15 KB documents, then reviews, collects user input, fixes issues, and gets approval.</div>
+			<div class="plugin-stats">
+				<span class="badge badge-ok">Shipped</span>
+				<span class="badge">8 reference files</span>
+			</div>
+			<dl>
+				<dt>States</dt><dd>GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE</dd>
+				<dt>Key outputs</dt><dd><code>.aid/knowledge/*.md</code> (15 KB docs)</dd>
+				<dt>Agents</dt><dd>5 discovery-* sub-agents + discovery-reviewer</dd>
+			</dl>
+		</div>
+
+		<div class="card plugin">
+			<div class="kicker">Phase 3 — Interview</div>
+			<div class="plugin-name">/aid-interview</div>
+			<div class="plugin-body">Adaptive requirements gathering through conversational interview. Builds REQUIREMENTS.md incrementally; supports a Lite Path for small work (routes to LITE-BUG-FIX / LITE-DOC / LITE-REFACTOR / LITE-FEATURE sub-paths).</div>
+			<div class="plugin-stats">
+				<span class="badge badge-ok">Shipped</span>
+				<span class="badge">19 reference files</span>
+			</div>
+			<dl>
+				<dt>States</dt><dd>FIRST-RUN → Q-AND-A → TRIAGE → {full or lite path}</dd>
+				<dt>Lite path</dt><dd>CONDENSED-INTAKE → TASK-BREAKDOWN → LITE-REVIEW → LITE-DONE</dd>
+				<dt>Agents</dt><dd>interviewer, architect, reviewer</dd>
+			</dl>
+		</div>
+
+		<div class="card plugin">
+			<div class="kicker">Phase 4 — Specify</div>
+			<div class="plugin-name">/aid-specify</div>
+			<div class="plugin-body">Technical specification through conversational refinement, one feature at a time. Acts as a tech lead — reads KB, Requirements, and codebase, proposes technical solutions, and builds the spec collaboratively with the developer.</div>
+			<div class="plugin-stats">
+				<span class="badge badge-ok">Shipped</span>
+				<span class="badge">9 reference files</span>
+			</div>
+			<dl>
+				<dt>States</dt><dd>INITIALIZE → CONTINUE → REVIEW → DONE (+ SPIKE / BLOCKED)</dd>
+				<dt>Key outputs</dt><dd><code>SPEC.md</code> per feature</dd>
+			</dl>
+		</div>
+
+		<div class="card plugin">
+			<div class="kicker">Phase 5 — Plan</div>
+			<div class="plugin-name">/aid-plan</div>
+			<div class="plugin-body">Sequences feature SPECs into deliverables, each one a functional MVP that builds on the previous. Answers: in what order do we deliver, and does each delivery stand on its own?</div>
+			<div class="plugin-stats">
+				<span class="badge badge-ok">Shipped</span>
+				<span class="badge">3 reference files</span>
+			</div>
+			<dl>
+				<dt>States</dt><dd>FIRST-RUN → REVIEW → DONE</dd>
+				<dt>Key outputs</dt><dd><code>PLAN.md</code> per work area</dd>
+			</dl>
+		</div>
+
+		<div class="card plugin">
+			<div class="kicker">Phase 6 — Detail</div>
+			<div class="plugin-name">/aid-detail</div>
+			<div class="plugin-body">Breaks deliverables into small, dependency-driven, typed tasks — each one a reviewable unit. Detects task types from SPEC signals and builds an execution graph per delivery with explicit dependencies and parallelism.</div>
+			<div class="plugin-stats">
+				<span class="badge badge-ok">Shipped</span>
+				<span class="badge">5 reference files</span>
+			</div>
+			<dl>
+				<dt>States</dt><dd>FIRST-RUN → REVIEW → DONE</dd>
+				<dt>Task types</dt><dd>RESEARCH / DESIGN / IMPLEMENT / TEST / DOCUMENT / MIGRATE / REFACTOR / CONFIGURE</dd>
+			</dl>
+		</div>
+
+		<div class="card plugin">
+			<div class="kicker">Phase 7 — Execute</div>
+			<div class="plugin-name">/aid-execute</div>
+			<div class="plugin-body">Implements tasks with a built-in two-tier review loop. Runs a parallel pool (PD-0..PD-6, default MaxConcurrent=5) with BFS failure-block-radius and graceful degradation. Per-task quick-check plus per-delivery quality gate.</div>
+			<div class="plugin-stats">
+				<span class="badge badge-ok">Shipped</span>
+				<span class="badge">8 reference files</span>
+			</div>
+			<dl>
+				<dt>States</dt><dd>EXECUTE → REVIEW → FIX → DELIVERY-GATE</dd>
+				<dt>Key scripts</dt><dd>writeback-task-status.sh, compute-block-radius.sh, grade.sh</dd>
+			</dl>
+		</div>
+
+		<div class="card plugin">
+			<div class="kicker">Phase 8 — Deploy</div>
+			<div class="plugin-name">/aid-deploy</div>
+			<div class="plugin-body">Packages completed deliveries into a release. Selects eligible deliveries, verifies the combined build, packages according to project infrastructure, generates release notes, and updates artifact statuses.</div>
+			<div class="plugin-stats">
+				<span class="badge badge-ok">Shipped</span>
+				<span class="badge">5 reference files</span>
+			</div>
+			<dl>
+				<dt>States</dt><dd>IDLE → SELECTING → VERIFYING → PACKAGING → DONE</dd>
+			</dl>
+		</div>
+
+		<div class="card plugin">
+			<div class="kicker">Phase 9 — Monitor</div>
+			<div class="plugin-name">/aid-monitor</div>
+			<div class="plugin-body">Observes production, classifies findings, and routes actions. Combines telemetry interpretation with triage — detects anomalies, performs root cause analysis, and routes bugs to aid-execute or change requests to aid-discover.</div>
+			<div class="plugin-stats">
+				<span class="badge badge-ok">Shipped</span>
+				<span class="badge">3 reference files</span>
+			</div>
+			<dl>
+				<dt>States</dt><dd>OBSERVE → CLASSIFY → ROUTE → DONE</dd>
+			</dl>
+		</div>
+
+		<div class="card plugin">
+			<div class="kicker">Optional — KB Viewer</div>
+			<div class="plugin-name">/aid-summarize</div>
+			<div class="plugin-body">Generates a single self-contained <code>knowledge-summary.html</code> from <code>.aid/knowledge/</code>. Inlines Mermaid diagrams for offline use, supports light/dark themes, and enforces a two-grade quality gate (Machine + Human) before writing the final output.</div>
+			<div class="plugin-stats">
+				<span class="badge badge-ok">Shipped</span>
+				<span class="badge">10 reference files</span>
+			</div>
+			<dl>
+				<dt>States</dt><dd>PREFLIGHT → STALE-CHECK → PROFILE → GENERATE → VALIDATE → MANUAL-CHECKLIST → FIX → APPROVAL → WRITEBACK → DONE</dd>
+			</dl>
+		</div>
+
+	</div>
+</section>
+
+<!-- ===== SECTION 4: Agent Model & Tiers (FEATURED) ===== -->

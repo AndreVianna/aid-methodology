@@ -1,0 +1,77 @@
+<section class="sec" id="s8" data-title="Distribution / Install">
+	<header>
+		<span class="eyebrow">Build &amp; Install</span>
+		<h2>Distribution / Install</h2>
+		<p class="lede">Single-source canonical directory renders into three byte-identical host-tool install trees via <code>run_generator.py</code>. End users install by running <code>setup.sh</code> or <code>setup.ps1</code>, which copies the selected profile tree into their project. (per infrastructure.md, repo-presentation.md)</p>
+	</header>
+
+	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 3: Canonical source to three install trees plus setup.sh to any adopter repo — click or press Enter to expand">
+		<div class="mermaid">
+flowchart TB
+    classDef src     fill:#0B1F3A,stroke:#00A3A1,color:#fff,stroke-width:2px;
+    classDef render  fill:#1D4ED8,stroke:#1e40af,color:#fff,stroke-width:2px;
+    classDef profile fill:#0E4D4A,stroke:#00A3A1,color:#fff,stroke-width:2px;
+    classDef install fill:#6941C6,stroke:#5521b5,color:#fff,stroke-width:2px;
+    classDef adopter fill:#0E7490,stroke:#155E75,color:#fff,stroke-width:2px;
+    classDef verify  fill:#2E7D32,stroke:#1B5E20,color:#fff,stroke-width:2px;
+
+    SRC["canonical/<br/>agents, skills, templates,<br/>scripts, recipes"]:::src
+
+    GEN["run_generator.py<br/>87 lines — loads *.toml profiles<br/>calls 5 renderers per profile"]:::render
+
+    subgraph Profiles["Profile TOML configs"]
+        P1["claude-code.toml<br/>64 lines"]:::profile
+        P2["codex.toml<br/>78 lines"]:::profile
+        P3["cursor.toml<br/>75 lines"]:::profile
+    end
+
+    subgraph Trees["Install trees (byte-identical output)"]
+        T1["profiles/claude-code/<br/>.claude/"]:::install
+        T2["profiles/codex/<br/>.codex/ + .agents/"]:::install
+        T3["profiles/cursor/<br/>.cursor/"]:::install
+    end
+
+    ADOPTER["Any adopter repo<br/>.claude/ or .codex/+.agents/ or .cursor/"]:::adopter
+
+    VFY["verify_deterministic.py<br/>VERIFY-4a hard gate<br/>byte-identical re-render"]:::verify
+
+    SRC --> GEN
+    P1 --> GEN
+    P2 --> GEN
+    P3 --> GEN
+    GEN --> T1
+    GEN --> T2
+    GEN --> T3
+    GEN --> VFY
+    T1 -.->|setup.sh| ADOPTER
+    T2 -.->|setup.sh| ADOPTER
+    T3 -.->|setup.sh| ADOPTER
+		</div>
+		<p class="caption">Fig 3 — Canonical-to-3-install-trees pipeline: one canonical source, three profile TOML configs, five renderers per profile, VERIFY-4a hard gate. Adopters install by running setup.sh / setup.ps1, which copies the selected profile tree into their repo. (per architecture.md, infrastructure.md)</p>
+	</div>
+
+	<div class="grid g3">
+		<div class="card">
+			<div class="kicker">Generator</div>
+			<h3><code>run_generator.py</code></h3>
+			<p>87-line orchestrator. Loads every <code>profiles/*.toml</code>, calls <code>render_agents</code>, <code>render_skills</code>, <code>render_templates</code>, <code>render_scripts</code>, <code>render_recipes</code> per profile, performs deletion pass via emission manifest diff, then runs VERIFY-4a (hard) and VERIFY-4b (advisory). Python 3.11+ stdlib only. (per module-map.md §3)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">End-user install</div>
+			<h3><code>setup.sh</code> / <code>setup.ps1</code></h3>
+			<p>Interactive tool-selection menu (Claude Code / Codex / Cursor). Copies the selected profile tree into the user's project root. Existing identical files are skipped; differing files prompt unless <code>--force</code> is passed. Bash 4+ (Linux/macOS/Git Bash) or PowerShell 5.1+ (Windows). (per infrastructure.md)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">Codex split layout</div>
+			<h3>Split-root exception</h3>
+			<p>Codex CLI uses a split layout: <code>profiles/codex/.codex/agents/</code> holds TOML agent definitions; <code>profiles/codex/.agents/{skills,scripts,recipes,templates}/</code> holds markdown bodies. A single <code>emission-manifest.jsonl</code> covers both roots. This is the only profile that differs in structure from Claude Code and Cursor. (per project-structure.md §Unusual Structure)</p>
+		</div>
+	</div>
+
+	<div class="callout warn">
+		<h4>Never edit profile trees directly</h4>
+		<p>Files under <code>profiles/{claude-code,codex,cursor}/</code> are generator output. Edits are silently overwritten on the next <code>python run_generator.py</code> run. Always edit <code>canonical/</code> and re-run the generator. The emission manifest is the safety boundary — only previously-emitted files are eligible for deletion. (per coding-standards.md §7a)</p>
+	</div>
+</section>
+
+<!-- ===== SECTION 9: Test Landscape ===== -->

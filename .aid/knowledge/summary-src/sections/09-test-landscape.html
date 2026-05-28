@@ -1,0 +1,58 @@
+<section class="sec" id="s9" data-title="Test Landscape">
+	<header>
+		<span class="eyebrow">Tests</span>
+		<h2>Test Landscape</h2>
+		<p class="lede">5 unit/integration test suites under <code>tests/canonical/</code>, all deterministic Bash. 235 total assertions covering the canonical helper scripts that AID skills depend on. No CI — tests are run manually before merging. (per test-landscape.md)</p>
+	</header>
+
+	<div class="tbl-wrap">
+		<table class="tbl">
+			<thead><tr><th>Suite</th><th>Target</th><th>Assertions</th><th>Notable coverage</th></tr></thead>
+			<tbody>
+				<tr>
+					<td><code>read-setting.sh</code></td>
+					<td><code>canonical/scripts/config/read-setting.sh</code></td>
+					<td><strong>18</strong></td>
+					<td>Three-tier settings resolution (per-skill override → global → default), <code>--path</code> mode, missing file, comment/quote stripping</td>
+				</tr>
+				<tr>
+					<td><code>writeback-task-status.sh</code></td>
+					<td><code>canonical/scripts/execute/writeback-task-status.sh</code></td>
+					<td><strong>69</strong></td>
+					<td>All 4 modes (--field, --findings, --block, --append-issue), idempotency, concurrent lock contention (5 parallel writers), error paths</td>
+				</tr>
+				<tr>
+					<td><code>parse-recipe.sh</code></td>
+					<td><code>canonical/scripts/interview/parse-recipe.sh</code></td>
+					<td><strong>113</strong></td>
+					<td>All 5 modes (--list, --validate, --spec, --tasks, --render), slot substitution, escape rewrite, lock lifecycle, all 5 seed recipes (dogfood). Runtime ~150 s — timeout must be &gt;=180 s</td>
+				</tr>
+				<tr>
+					<td><code>compute-block-radius.sh</code></td>
+					<td><code>canonical/scripts/execute/compute-block-radius.sh</code></td>
+					<td><strong>17</strong></td>
+					<td>BFS transitive-descendant computation: linear chain, diamond, fan-out, unrelated chain, no-dependents, multi-root fan, end-to-end with --plan-file</td>
+				</tr>
+				<tr>
+					<td><code>delivery-gate-aggregate.sh</code></td>
+					<td>Delivery-gate logic in aid-execute</td>
+					<td><strong>18</strong></td>
+					<td>AGGREGATE, SCORE, grade.sh determinism, loopback guard, FR6 interlock (gate must not fire while any task is Failed or Blocked)</td>
+				</tr>
+				<tr style="font-weight:600;">
+					<td>Total</td>
+					<td></td>
+					<td><strong>235</strong></td>
+					<td>All suites are self-reporting; count method is each suite's own summary line — not grep of PASS markers</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="callout warn" style="margin-top:1rem;">
+		<h4>Coverage gaps</h4>
+		<p>No tests for PowerShell paths (<code>setup.ps1</code>, <code>concatenate.ps1</code>), <code>.mjs</code> validators, or the <code>setup.sh</code> install flow. No CI (see tech-debt H2). No skill-level e2e tests — skills are verified by dogfooding. (per test-landscape.md §Coverage gaps)</p>
+	</div>
+</section>
+
+<!-- ===== SECTION 10: Tech Debt ===== -->

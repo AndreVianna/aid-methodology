@@ -1,0 +1,37 @@
+<section class="sec" id="s11" data-title="Documentation Surface">
+	<header>
+		<span class="eyebrow">Docs</span>
+		<h2>Documentation Surface</h2>
+		<p class="lede">The AID GitHub repository is itself a documentation product. The user-facing surface has five layers: README (pitch and entry point), docs/ (reference), examples/ (case studies), methodology spec (load-bearing artifact), and install scripts. (per repo-presentation.md)</p>
+	</header>
+
+	<div class="grid g2">
+		<div class="card">
+			<div class="kicker">README.md — 388 lines</div>
+			<h3>Primary pitch document</h3>
+			<p>Eight sections with progressive disclosure: What is AID, Why AID (failure modes it removes), The Pipeline (Mermaid flowchart + 10 skills), The Knowledge Base (14-doc fixed shape), The Agent Model (3-tier diagram), Feedback Loops (11 formal loops), AID vs. SDD (8-row comparison), Using AID in your project (install instructions). (per repo-presentation.md)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">methodology/aid-methodology.md — 1,070 lines</div>
+			<h3>Load-bearing specification</h3>
+			<p>The complete methodology specification, version 3.1. Every skill and agent is derived from this document. It is read by humans, not by skills directly. It defines the phase model, feedback loops, phase gates, the human-AI Director/Orchestrator/Specialist roles, and the work-type taxonomy. (per project-structure.md §Methodology spec)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">docs/ folder</div>
+			<h3>Reference material</h3>
+			<p>Two files: <code>docs/faq.md</code> (61 lines — frequently asked questions) and <code>docs/glossary.md</code> (76 lines — term definitions). Supplements the domain-glossary KB doc. (per project-structure.md §Documentation)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">examples/ folder</div>
+			<h3>Case studies (3)</h3>
+			<p>Three real-world proof-of-concept case studies: <code>brownfield-enterprise/</code> (discovery report + architecture KB), <code>data-pipeline/</code> (multi-agent pipeline architecture), <code>desktop-app/</code> (greenfield delivery plan + task spec). Note: examples are 3+ months stale as of the KB snapshot — see tech-debt L5. (per project-structure.md §Examples)</p>
+		</div>
+	</div>
+
+	<div class="callout">
+		<h4>AID applied to itself</h4>
+		<p>This repository dogfoods AID: the top-level <code>.claude/</code> tree is functionally identical to <code>profiles/claude-code/.claude/</code> (the install bundle) but is the one the development environment actually uses. This means every AID skill has been exercised against this very codebase — discovery, interview, specify, plan, detail, execute, deploy, and summarize have all been run here. (per project-structure.md §Unusual Structure)</p>
+	</div>
+</section>
+
+<!-- ===== SECTION 12: Knowledge Base Index ===== -->

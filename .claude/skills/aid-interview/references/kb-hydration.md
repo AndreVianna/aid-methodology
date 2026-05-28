@@ -17,14 +17,13 @@ that discovery may not have captured.
 | coding-standards.md | §6 NFRs | Linting rules, test coverage targets, build policy, naming conventions |
 | architecture.md | §5 FRs (structure hints), §7 Constraints | High-level architecture pattern, component relationships, data flow |
 | project-structure.md | §7 Constraints, §5 FRs | Folder layout, module organization (if discussed) |
-| data-model.md | §5 FRs | Entities, relationships, storage format (if discussed) |
-| api-contracts.md | §5 FRs | API endpoints, protocols (if applicable) |
+| schemas.md | §5 FRs | Entities, relationships, storage format (if discussed) |
+| pipeline-contracts.md | §5 FRs | Pipeline/API endpoints, protocols (if applicable) |
 | integration-map.md | §8 Dependencies | External services, third-party integrations |
 | domain-glossary.md | All sections | Domain-specific terms used throughout the interview |
 | test-landscape.md | §6 NFRs | Testing strategy, frameworks, coverage goals |
-| security-model.md | §6 NFRs | Auth, encryption, data protection (if applicable) |
+| coding-standards.md | §6 NFRs | Auth, encryption, data protection conventions (see §11) |
 | infrastructure.md | §7 Constraints, §8 Assumptions | VCS, CI/CD, deployment targets, hosting, PM tools |
-| ui-architecture.md | §5 FRs, §6 NFRs | UI framework, target devices, responsive strategy, HUD/layout |
 | tech-debt.md | — | Skip for greenfield (no existing debt). Brownfield: leave to /aid-discover |
 | feature-inventory.md | — | Skip — populated after feature decomposition |
 | external-sources.md | — | Already populated by /aid-config |
@@ -102,5 +101,5 @@ After all KB docs are processed:
   discovery didn't capture. Never overwrite discovery content.
 - **Keep it natural.** Each KB doc should read like a standalone document, not a
   requirements dump reformatted into a different file.
-- **Respect N/A.** If a doc is genuinely not applicable (e.g., api-contracts.md for an
+- **Respect N/A.** If a doc is genuinely not applicable (e.g., pipeline-contracts.md for an
   offline game), mark it `N/A` in README.md and move on.
