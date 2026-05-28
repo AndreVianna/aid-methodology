@@ -37,18 +37,27 @@ Render `references/reviewer-brief.md` with:
 - `{{ARTIFACTS}}` = full `PLAN.md` + every `.aid/{work}/features/feature-*/SPEC.md`
 - `{{CONTEXT}}` = `PLAN.md for work-NNN with N deliveries; re-review against current SPECs.`
 
+Include in the prompt:
+- **Ledger lifecycle:** "Read `.aid/.temp/review-pending/plan.md` if it exists.
+  For each existing row: verify on disk, update Status (Pending→Fixed if resolved;
+  Fixed→Recurred if regressed). Append new findings with Status: Pending.
+  Output per `.claude/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
+
 Dispatch the `reviewer` subagent with the rendered brief.
 
 ### Grade Overall
 
-Use the universal rubric (`.claude/templates/grading-rubric.md`). Classify each issue
-by severity. The grade is calculated — worst issue dominates.
+After reviewer returns, run grade.sh:
+
+```bash
+bash .claude/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
+```
 
 Compare to minimum grade from `bash .claude/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum | Print summary, done. Update work STATE.md `## Plan / Deliveries`. |
+| Grade ≥ minimum | Print summary, done. Update work STATE.md `## Plan / Deliveries`. Delete ledger: `rm -f .aid/.temp/review-pending/plan.md` |
 | Grade < minimum, deliverables fixable | List findings, re-enter loop for affected deliverables. |
 | Grade < minimum, sequence invalidated | Recommend `--reset`. |
 

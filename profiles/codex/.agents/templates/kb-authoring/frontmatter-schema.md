@@ -1,8 +1,9 @@
 # KB Authoring — Frontmatter Schema
 
 > YAML frontmatter specification for `.aid/knowledge/*.md` documents.
-> Loaded by `aid-discover` (review classification), `aid-config` (scaffolding),
-> `aid-summarize` (section intent), and `verify-claims.sh` (lint).
+> Loaded by `aid-discover` (review classification — the `discovery-reviewer`
+> sub-agent validates compliance semantically), `aid-config` (scaffolding), and
+> `aid-summarize` (section intent extraction).
 
 Every KB document MUST begin with a YAML frontmatter block delimited by `---` markers.
 Per [principles.md](principles.md) P6, **the entire frontmatter block is exempt from review** — it
@@ -20,7 +21,7 @@ intent: |
   Drives the reviewer's relevance judgment + the agent's task-routing decision.
 contracts:
   - "Optional list of structural cardinality claims the doc asserts."
-  - "Each entry is verified against disk by verify-claims.sh."
+  - "Each entry is spot-checked against disk by the discovery-reviewer in REVIEW state."
 changelog:
   - 2026-05-26: Migrated to v2 format (KB Authoring overhaul)
 ---
@@ -49,9 +50,9 @@ Per-document classification. Determines which review rubric applies.
 
 | Value | Meaning |
 |-------|---------|
-| `primary` | Load-bearing knowledge doc (architecture, data-model, coding-standards, etc., AND `INDEX.md` — see `source:` for its generation status). Full review against T1+T2 facts; T3/T4 markers banned inline. |
+| `primary` | Load-bearing knowledge doc (architecture, schemas, coding-standards, etc., AND `INDEX.md` — see `source:` for its generation status). Full review against T1+T2 facts; T3/T4 markers banned inline. |
 | `meta` | Process / state ledger (`STATE.md`, `README.md`). Exempt from full review per P7-style reasoning. Spot-check current snapshot correctness only. |
-| `extension` | Project-type-specific addition outside the canonical 16 (e.g., `host-tools-matrix.md`). Reviewed but flagged as extension-scope. |
+| `extension` | Project-type-specific addition outside the canonical 14 (e.g., `host-tools-matrix.md`). Reviewed but flagged as extension-scope. |
 
 See [review-rubric.md](review-rubric.md) for per-category rubric details.
 
@@ -109,8 +110,8 @@ PLUS a machine-checkable predicate.
 
 Format: list of strings, each either:
 - A plain assertion (lint will warn if no checker is registered for it), OR
-- A tagged assertion with checker hint: `"count:.aid/knowledge/*.md = 21"` —
-  format TBD per `verify-claims.sh` parser.
+- A tagged assertion the reviewer can spot-check: `"count:.aid/knowledge/*.md = 21"` —
+  the reviewer reads each tagged assertion and confirms against disk during REVIEW.
 
 **Examples:**
 ```yaml

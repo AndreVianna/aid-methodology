@@ -1,4 +1,4 @@
-# AID — AI-Integrated Development
+# AID — AI Integrated Development
 
 **A methodology for building software with AI agents across the full lifecycle — from understanding an existing system to monitoring it in production.**
 
@@ -16,13 +16,14 @@ It ships as an install bundle for three AI coding tools (Claude Code, OpenAI Cod
 - [Feedback Loops](#feedback-loops)
 - [AID vs. SDD](#aid-vs-sdd)
 - [Using AID in your own project](#using-aid-in-your-own-project)
+- [Versioning](#versioning)
 - [Repository structure](#repository-structure)
 
 ---
 
 ## What is AID?
 
-AID (AI-Integrated Development) covers the **full lifecycle**: understanding an existing system, gathering requirements, writing grounded specifications, planning and detailing work, building with quality gates, shipping, and monitoring production. **Ten skills, five groups, eleven formal feedback loops.**
+AID (AI Integrated Development) covers the **full lifecycle**: understanding an existing system, gathering requirements, writing grounded specifications, planning and detailing work, building with quality gates, shipping, and monitoring production. **Ten skills, five groups, eleven formal feedback loops.**
 
 It rests on three convictions:
 
@@ -111,7 +112,7 @@ flowchart TB
 
 ## The Knowledge Base — the gravitational center
 
-The KB is the central artifact AID is built around. Not the spec, not the code — the **accumulated living understanding** of the project. Every phase reads it; every phase may revise it. It has a **fixed shape** — 16 standard documents enforced by tooling — so downstream skills always know exactly where to look.
+The KB is the central artifact AID is built around. Not the spec, not the code — the **accumulated living understanding** of the project. Every phase reads it; every phase may revise it. It has a **fixed shape** — 14 standard documents enforced by tooling — so downstream skills always know exactly where to look.
 
 ```mermaid
 graph TD
@@ -123,7 +124,7 @@ graph TD
 
     KB[(".aid/knowledge/<br/>the Knowledge Base")]:::center
 
-    Standard["16 standard KB docs<br/>load-bearing for downstream skills"]:::std
+    Standard["14 standard KB docs<br/>load-bearing for downstream skills"]:::std
     Meta["3 meta-documents<br/>INDEX · README · DISCOVERY-STATE"]:::meta
     Gen["1 generated pre-pass<br/>project-index.md"]:::gen
     Ext["KB extensions<br/>optional · project-specific"]:::ext
@@ -134,14 +135,14 @@ graph TD
     KB --> Ext
 
     Standard --> S1["project-structure · external-sources<br/>discovery-scout"]:::std
-    Standard --> S2["architecture · technology-stack · ui-architecture<br/>discovery-architect"]:::std
-    Standard --> S3["module-map · coding-standards · data-model<br/>discovery-analyst"]:::std
-    Standard --> S4["api-contracts · integration-map · domain-glossary<br/>discovery-integrator"]:::std
-    Standard --> S5["test-landscape · security-model · tech-debt · infrastructure<br/>discovery-quality"]:::std
+    Standard --> S2["architecture · technology-stack<br/>discovery-architect"]:::std
+    Standard --> S3["module-map · coding-standards · schemas<br/>discovery-analyst"]:::std
+    Standard --> S4["pipeline-contracts · integration-map · domain-glossary<br/>discovery-integrator"]:::std
+    Standard --> S5["test-landscape · tech-debt · infrastructure<br/>discovery-quality"]:::std
     Standard --> S6["feature-inventory<br/>orchestrator"]:::std
 ```
 
-The 16 standard documents are produced by six discovery sub-agents grouped by domain. Because the shape is fixed, an agent looking for the data model always reads `data-model.md`; looking for debt, always `tech-debt.md` — navigation is by **convention, not search**.
+The 14 standard documents are produced by six discovery sub-agents grouped by domain. Because the shape is fixed, an agent looking for data schemas always reads `schemas.md`; looking for debt, always `tech-debt.md` — navigation is by **convention, not search**.
 
 ### Progressive disclosure — the 3-tier context economy
 
@@ -334,6 +335,19 @@ You don't need the whole pipeline on day one. Common entry points:
 - **Add Interview + Specify** when you take on new requirements.
 - **Add Plan** to separate delivery strategy from tactics.
 - **Add Deploy + Monitor** once you are shipping regularly.
+
+---
+
+## Versioning
+
+AID has **no version** yet. It is methodology-in-development; the canonical
+position is "continuous master". To get the latest changes:
+
+- Install via `setup.sh` (or `setup.ps1` on Windows) pulls the current `master`
+- Re-run `setup.sh` (or `setup.ps1`) to pick up updates
+
+Formal versioning (semver, VERSION file, releases) will be added when AID
+stabilizes enough to warrant it.
 
 ---
 

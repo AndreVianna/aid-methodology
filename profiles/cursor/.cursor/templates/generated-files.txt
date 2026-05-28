@@ -8,7 +8,7 @@
 #
 # Consumed by:
 #   - /aid-discover FIX state (refresh-all at end of cycle per principles.md P3)
-#   - verify-claims.sh (confirms each file was regenerated)
+#   - /aid-discover state-fix.md Step 4 (`test -f` loop confirms each file was regenerated)
 #
 # Comments (lines starting with #) and blank lines are ignored.
 # Order matters: scripts are executed top-to-bottom, so list dependencies first.
@@ -36,4 +36,4 @@
 # KB index — agent-facing 2-3 line summary per KB doc, composed from frontmatter intent:.
 # Depends on: every KB doc's frontmatter (changes to intent: fields).
 # MUST run AFTER hand-edits to KB docs and BEFORE final commit.
-.aid/generated/INDEX.md|bash .cursor/scripts/kb/build-index.sh --root .aid/knowledge --output .aid/generated/INDEX.md
+.aid/knowledge/INDEX.md|bash .cursor/scripts/kb/build-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md

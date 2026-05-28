@@ -61,18 +61,25 @@ the full contract.
 | `[LOW]` | Minor convention deviation; could be better but not incorrect |
 | `[MINOR]` | Cosmetic, formatting, stylistic, nice-to-have |
 
-## Output Format
+## Output contract
 
-Each issue:
-```
-[SEVERITY] [SOURCE] Description | File:Line | Criterion violated
-```
+Your output is a single markdown file at `.aid/.temp/review-pending/<scope>.md` containing **exactly one markdown table** per the schema at `.claude/templates/reviewer-ledger-schema.md`.
 
-Example:
-```
-[CRITICAL] [CODE] User input flows to SQL query unsanitized | src/api/UserController.java:78 | OWASP A03 — Injection
-[MEDIUM] [TASK] Acceptance criterion 3 ("paginated response") not implemented | — | task-003.md AC#3
-[MINOR] [CODE] Inconsistent indentation (tabs/spaces mix) | src/api/UserController.java:42-58 | KB coding-standards.md
+The table is the entire file content. **No frontmatter, no headers, no narrative sections, no summary lines.** Any prose qualitative summary belongs in your return message to the orchestrator, never in the ledger file.
+
+Columns: `# | Severity | Status | Doc | Line | Description | Evidence`
+
+See schema doc for: severity enum, status enum, status lifecycle across cycles, pipe-character escape, authoring rules.
+
+**You append rows; you do NOT renumber existing rows.** On subsequent cycles, you may update an existing row's Status (Pending→Fixed, Fixed→Recurred), but never its Severity or Description.
+
+Example ledger file (the entire file — no other content):
+
+```markdown
+| # | Severity | Status | Doc | Line | Description | Evidence |
+|---|---|---|---|---|---|---|
+| 1 | [HIGH] | Pending | foo.md | 42 | claim Y is wrong: doc says N, actual is M | `wc -l foo.md = 42` (doc claims 43) |
+| 2 | [MINOR] | Pending | bar.md | — | formatting nit in header | heading uses `#` where `##` is expected |
 ```
 
 Review outcomes and test results are recorded in the work `STATE.md` `## Tasks Status` row for the task (per FR2 §1A; pre-FR2 this lived in a per-task `task-NNN-STATE.md`).

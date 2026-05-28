@@ -8,11 +8,45 @@ Run `.claude/scripts/summarize/run-validators.sh .aid/knowledge/knowledge-summar
 1. **`.claude/scripts/summarize/validate-diagrams.mjs`** — D1: extracts every `<pre class="mermaid">` block, parses each via `mermaid.parse()`. **Any failure = automatic F.** D2: renders each block via `jsdom` + Mermaid and asserts the SVG is non-trivial (>500 bytes, contains `<g>` or `<path>`, no `mermaid-error` marker). If `jsdom` is unavailable, D2 falls back to parse-only and the output flags `D2: jsdom-fallback`.
 2. **`.claude/scripts/summarize/validate-html-output.sh`** — single invocation that performs link-integrity AND HTML structural/a11y checks: L1/L2 (anchor and `./*.md` link integrity), H1 (tidy → html-validate → regex cascade — script picks the most rigorous tool available and prints which), A1/A2/A4/A5 (semantic landmarks, lightbox ARIA, reduced-motion, focus-visible), S2 (Mermaid library inlined). **A3 (focus trap)** is auto-detected via `grep` of the inlined `lightbox.js` for the markers `trapFocusOnTab`, `lastFocused.focus()`, `key === 'Escape'`.
 3. **`.claude/scripts/summarize/contrast-check.mjs`** — C1/C2: WCAG ratios for both themes.
-4. Computes the Machine Grade from the AUTO_POOL tally + per-profile diagram-count enforcement (reads `target_diagrams: N` from the active profile template; caps at C+ if `actual < target`). **Does NOT compute a final Overall Grade** — that requires Human Grade too.
 
 ✓ validation suite done (record actual time, per-script pass/fail summary) — or ✗ validation suite failed: {script, reason}
 
-Persist Machine Grade + per-check table to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation — Machine)`.
+### Translate Script Output to Schema Rows
+
+After each script exits, the orchestrator translates failed checks into schema rows in
+`.aid/.temp/review-pending/summarize.md` (per `.claude/templates/reviewer-ledger-schema.md`):
+
+| Script check | Severity mapping |
+|---|---|
+| D1 (diagram parse fail) | `[CRITICAL]` — automatic F; one row per failing diagram |
+| D2 (diagram renders trivially / as error SVG) | `[HIGH]` — one row per failing block |
+| L1 (broken anchor links) | `[HIGH]` — one row per broken link |
+| L2 (broken .md links) | `[HIGH]` — one row per broken path |
+| H1 (HTML validity failure) | `[HIGH]` — one row per reported error |
+| A1/A2/A4/A5 (missing ARIA / landmarks / reduced-motion / focus-visible) | `[MEDIUM]` — one row per check |
+| A3 (focus trap missing) | `[MEDIUM]` — one row |
+| S2 (Mermaid library not inlined) | `[HIGH]` — one row |
+| C1/C2 (WCAG contrast fail) | `[MEDIUM]` — one row per failing color pair |
+
+For each failed check, append a row:
+- `#` = next sequential row number
+- `Severity` = per mapping above (bracketed)
+- `Status` = `Pending`
+- `Doc` = `knowledge-summary.html`
+- `Line` = `—` (or nearest section if identifiable)
+- `Description` = one sentence: "check X failed: {what was wrong}"
+- `Evidence` = script output excerpt or exact error message
+
+Passed checks are NOT added to the ledger (no row = no finding).
+
+For the diagram-count enforcement (actual < target → cap at C+): if the cap applies, add
+a `[MEDIUM]` row: "diagram count below target: actual={N} target={M}".
+
+Persist Machine Grade + per-check table to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation — Machine)`. Grade is computed by running:
+
+```bash
+bash .claude/scripts/grade.sh --explain .aid/.temp/review-pending/summarize.md
+```
 
 If Machine Grade ≥ minimum → MANUAL-CHECKLIST. Otherwise → FIX.
 

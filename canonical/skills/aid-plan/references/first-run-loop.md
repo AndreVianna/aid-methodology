@@ -81,6 +81,11 @@ When the developer agrees on a deliverable, **IMMEDIATELY write it to the file.*
 - `{{ARTIFACTS}}` = the deliverable section just appended to `PLAN.md` + the SPECs of the features it assigns
 - `{{CONTEXT}}` = `delivery-NNN of work-NNN just written; preceding deliveries: delivery-NNN..MMM (titles).`
 
+Include in the prompt:
+- **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
+  `.aid/.temp/review-pending/plan.md`. Read the existing file first if it exists.
+  Output per `canonical/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
+
 Print before dispatch: `[Review] Dispatching reviewer for PLAN validation (per-deliverable scope).`
 
 ▶ reviewer starting (~1–2 min)
@@ -90,8 +95,11 @@ After writing, **review immediately:** Does it hold up?
 - Actually standalone-functional?
 - Consistent with KB architecture?
 
-Use the universal rubric (`canonical/templates/grading-rubric.md`). Classify each issue
-by severity. The grade is calculated — worst issue dominates.
+After reviewer returns, run grade.sh:
+
+```bash
+bash canonical/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
+```
 
 | Condition | Action |
 |-----------|--------|

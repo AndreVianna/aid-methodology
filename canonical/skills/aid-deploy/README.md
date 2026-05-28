@@ -130,7 +130,7 @@ Check if implementation revealed anything that should update the KB:
 2. **Architecture changed** → update `.aid/knowledge/architecture.md`.
 3. **New integrations added** → update `.aid/knowledge/integration-map.md`.
 4. **Tech debt created or resolved** → update `.aid/knowledge/tech-debt.md`.
-5. **Data model changed** → update `.aid/knowledge/data-model.md`.
+5. **Data schema changed** → update `.aid/knowledge/schemas.md`.
 
 Add revision entries to `.aid/knowledge/README.md` for any KB changes.
 

@@ -16,11 +16,11 @@ inter-service contracts, and saga orchestration become central.
 | 1 | At a Glance | | STATE.md, project-structure.md |
 | 2 | Architecture | ★ | architecture.md |
 | 3 | Service Catalog | ★ | module-map.md |
-| 4 | Inter-service Contracts | | api-contracts.md |
-| 5 | Data Ownership | ★ | data-model.md |
+| 4 | Inter-service Contracts | | pipeline-contracts.md |
+| 5 | Data Ownership | ★ | schemas.md |
 | 6 | Integration Topology | | integration-map.md |
 | 7 | Sagas / Workflows | | feature-inventory.md |
-| 8 | Security & Auth | | security-model.md |
+| 8 | Security & Auth | | coding-standards.md |
 | 9 | Test Landscape | | test-landscape.md |
 | 10 | Tech Debt | | tech-debt.md |
 | 11 | Infrastructure & Deployment | | infrastructure.md |

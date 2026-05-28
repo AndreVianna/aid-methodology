@@ -1,224 +1,189 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Inventory of test suites that protect the canonical bash helper scripts AID
+  skills depend on. 5 unit/integration suites under tests/canonical/, all
+  deterministic bash. NO methodology/orchestration/E2E tests — those don't
+  exist and aren't needed (the methodology is exercised by dogfooding, the
+  renderer has its own VERIFY-4a gate). Read this to understand what changes
+  to canonical/scripts/ are guarded by tests vs require manual verification.
+contracts:
+  - "5 test suites under tests/canonical/, no skill-level tests"
+  - "All suites are bash (POSIX); require Git Bash on Windows"
+  - "No aggregator script (per Q6 cycle-1 decision); explicit per-suite invocation"
+changelog:
+  - 2026-05-27: Initial generation by discovery-quality (cycle-1)
+  - 2026-05-27: Full rewrite during cycle-2 FIX Phase B for accurate post-Q6-cleanup state (Q20)
+---
 # Test Landscape
 
-> **Source:** aid-discover (discovery-quality)
-> **Status:** Populated (initial dogfood pass; cycle-11 script-rename FIX applied 2026-05-23)
-> **Last Updated:** 2026-05-23
-> **Cross-references:** `project-index.md` (file inventory), `project-structure.md:222-232` (Build/Test/CI absence)
+## Scope
 
-## TL;DR
+These tests cover **canonical bash helper scripts** only — the small, side-effect-free
+utilities that AID skills invoke at runtime (writeback, BFS compute, recipe parsing, etc.).
 
-**There is no traditional test suite in this repository, and no CI/CD.** This is a methodology + multi-tool install-bundle repo (631 files, 90,011 lines (pre-merge baseline; refresh with `bash canonical/templates/scripts/build-project-index.sh`); 70.6% Markdown, 11.1% Shell, 7.0% JavaScript). The closest analogues to "tests" are:
+What is NOT tested here:
+- **Orchestration skills** (`/aid-discover`, `/aid-execute`, …) — prompt-driven; no
+  scripted harness exists or is planned. The `discovery-reviewer` sub-agent acts as the
+  closest adversarial integration check each cycle.
+- **Renderer** (`run_generator.py`) — covered by its own VERIFY-4a determinism gate
+  (`verify_deterministic.py`); see `architecture.md`.
+- **Sub-agent definitions** — no test harness; verified by dogfooding.
+- **Cross-tool consistency** (Cursor vs Claude Code vs Codex) — covered by the renderer's
+  byte-identity assertion across the 3 install-tree profiles.
+- **E2E pipeline** (Discover → … → Deploy) — exercised by dogfooding this repo, not
+  scripted tests.
 
-1. **Runtime quality scripts** that ship to user projects via the `aid-summarize` skill (validate generated HTML, links, Mermaid diagrams, contrast).
-2. **Skill pre-flight scripts** that gate AID skills on a user's project (verify-kb, check-preflight).
-3. **Manual contributor discipline** documented in `CONTRIBUTING.md`.
-4. **The AID methodology's own quality gates** (REVIEW mode in Discover, review loop in Execute, deterministic grading via `grade.sh`).
+---
 
-None of these exercise this repo's own artifacts. The repo ships untested.
+## Suites (5)
 
-## Search Results — Conventional Test Indicators
+All suites live under `tests/canonical/` and target scripts under `canonical/scripts/`.
 
-| Pattern | Found | Notes |
-|---------|-------|-------|
-| `tests/`, `test/`, `spec/` | None at repo level | — |
-| `*.test.{js,ts,py,go,java}` | None | — |
-| `*_test.go`, `*Test.java`, `test_*.py` | None | — |
-| `pytest.ini`, `jest.config.*`, `vitest.config.*`, `mocha.opts`, `karma.conf.*` | None | — |
-| `package.json` (which could declare a test runner) | None | No JS/TS project metadata at root or in any tree |
-| `.github/workflows/*` | None | Confirmed by `project-index.md` Notable Files (which would list CI configs) |
-| `.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`, `.circleci/` | None | — |
+### read-setting.sh
 
-Search method: `Glob` patterns for the above + `Grep` over `project-index.md`'s Full File Inventory. The only file matching `*test*` is `canonical/templates/knowledge-base/test-landscape.md` (the KB template) — a template *for downstream user projects*, not a test of this repo.
+**Target:** `canonical/scripts/config/read-setting.sh`
 
-## Validation / Quality Scripts (Runtime, Ship to User Projects)
+Covers the three-tier settings-resolution model:
+- Per-skill override wins over global category default, which wins over hardcoded `--default`
+- `--path` mode (direct dotted key lookup)
+- Missing `settings.yml` with and without `--default`
+- Comment stripping, quote stripping
+- Error exits (bad `--path` format, unknown flag, missing paired args)
 
-### 1. `aid-summarize` Validation Suite
+11 numbered scenarios; **18 assertions** (some scenarios contain multiple asserts).
+File: `tests/canonical/read-setting.sh` (~360 lines)
 
-These run inside the `aid-summarize` skill (state machine PREFLIGHT -> STALE-CHECK -> PROFILE -> GENERATE -> VALIDATE -> FIX -> APPROVAL -> WRITEBACK -> DONE) against the HTML it just generated. They live under `canonical/templates/knowledge-summary/scripts/` (canonical authority post work-002) and are propagated by `run_generator.py` into each install tree.
+### writeback-task-status.sh
 
-| Script | Lines | Language | Purpose | Invoked at |
-|--------|-------|----------|---------|------------|
-| `validate-html.sh` | 94 | Bash | Structural + accessibility checks on generated `knowledge-summary.html` — verifies semantic landmarks (`html lang`, `header role=banner`, `main`, `nav`, `footer`, `title`), ARIA on lightbox dialog, `prefers-reduced-motion` media query, `:focus-visible`, skip-link, noscript fallback, color-scheme declaration, inlined Mermaid library, and at least one `pre class="mermaid"` block. | VALIDATE state of `aid-summarize` |
-| `validate-links.sh` | 78 | Bash | Verifies in-page anchor `href="#..."` links resolve to in-page `id="..."` attributes, and relative markdown links `href="./*.md"` resolve to existing files. | VALIDATE state of `aid-summarize` |
-| `validate-diagrams.mjs` | 294 | Node.js | Extracts every `pre class="mermaid"` block; calls `mmdc` (Mermaid CLI) to parse and render each. Falls back to regex sanity check if `mmdc` is unavailable. Exit 0 on success, 1 on failure, 2 on invocation error. Has `--fast` flag (skip `mmdc`). | VALIDATE state of `aid-summarize` |
-| `contrast-check.mjs` | 151 | Node.js | Extracts CSS variables from inlined `style` block, verifies WCAG AA contrast ratios for known token pairs in both light and dark themes. | VALIDATE state of `aid-summarize` |
-| `check-preflight.sh` | 100 | Bash | Pre-flight gate for `aid-summarize`. Verifies (1) the consolidated Discovery `STATE.md` (per FR2 — formerly `DISCOVERY-STATE.md`) exists, (2) `**User Approved:** yes` is set, (3) at least one KB doc is populated (more than 30 non-blank lines, not just "Pending"), (4) Plan Mode not active, (5) npm registry reachable (skippable with `--cdn-mermaid`), (6) Node.js >= 18. | PREFLIGHT state of `aid-summarize` |
-| `stale-check.sh` | 93 | Bash | Compares latest dates in Discovery `STATE.md`'s "Review History" vs. "Summarization History" tables. Emits `STALE` / `CURRENT_APPROVED` / `CURRENT_UNAPPROVED` / `FIRST_RUN`. Lexical date comparison (works for `YYYY-MM-DD`). | STALE-CHECK state of `aid-summarize` |
-| `fetch-mermaid.sh` | 77 | Bash | Downloads Mermaid library from npm for inlining. | GENERATE state of `aid-summarize` |
-| `concatenate.sh` / `concatenate.ps1` | 23 / 36 | Bash / PS | Concatenates section markdown files into a single working document. | GENERATE state of `aid-summarize` |
-| `writeback-state.sh` | 173 | Bash | Appends a new entry to the Discovery area `STATE.md`'s "Summarization History" after VALIDATE passes and the user approves. Renamed from `writeback-discovery-state.sh` as part of FR2 area-STATE consolidation. Post-cycle-11 KB-F2: ships with `-h|--help` handler and GRADE regex `^[A-F][+-]?$` (per Q191 auto-resolution). | WRITEBACK state of `aid-summarize` |
-| `grade.sh` (knowledge-summary variant) | 194 | Bash | Deterministic A+/A/B/C/D/F grading for the HTML, based on weighted check results from validate-html.sh, validate-links.sh, validate-diagrams.mjs, contrast-check.mjs. **Any unparseable Mermaid diagram = automatic F.** Distinct from the top-level `canonical/templates/scripts/grade.sh` (141 lines), which grades general issue lists. | VALIDATE state of `aid-summarize` |
+**Target:** `canonical/scripts/execute/writeback-task-status.sh`
 
-**Scope:** *User runtime, not this repo.* These scripts run when a user invokes `/aid-summarize` against their own KB to produce `.aid/knowledge/knowledge-summary.html`. They do not exercise any file in this repository.
+Covers all 4 argument modes plus safety:
+- `--task-id --field --value` (single-field row update)
+- `--task-id --findings` (Quick Check block write)
+- `--delivery-id --block` (Delivery Gate block write)
+- `--delivery-id --append-issue` (delivery-NNN-issues.md append)
+- Idempotency (re-running each mode produces no additional change)
+- Concurrent lock contention (5 parallel writers, different rows)
+- Error paths (missing args, invalid task-id, lock timeout, missing lock dir)
 
-### 2. `aid-discover` Pre-Flight Scripts
+7 numbered units; **69 assertions** (script prints "Tests passed: 69" then "All tests passed." in summary).
+File: `tests/canonical/writeback-task-status.sh` (~535 lines)
 
-| Script | Lines | Language | Purpose | Invoked at |
-|--------|-------|----------|---------|------------|
-| `canonical/skills/aid-discover/scripts/check-preflight.sh` | 45 | Bash | Verifies (1) Discovery `STATE.md` exists and is non-empty (init has run), (2) Plan Mode not active (env-var heuristic). Exits 1 if init not run, 2 if Plan Mode. | Step 0a of `aid-discover` |
-| `canonical/skills/aid-discover/scripts/verify-kb.sh` | 60 | Bash | After discovery, verifies all 16 expected KB files exist in the target directory. Used to detect which sub-agents need re-dispatch. Note: hardcoded list of 16 files (does not include `additional-info.md`). | Post-generation step of `aid-discover` |
+### parse-recipe.sh
 
-**Scope:** *User runtime.* These scripts are canonical-authored under `canonical/skills/aid-discover/scripts/` and propagated to all 3 install trees by `run_generator.py`. Pre work-002 they shipped only in the Claude Code tree; post work-002 all 3 install trees carry identical copies under `<install-tree>/skills/aid-discover/scripts/`.
+**Target:** `canonical/scripts/interview/parse-recipe.sh`
 
-### 3. Build / Index Scripts (Runtime)
+Covers all operating modes and error paths:
+- `--list`, `--validate`, `--spec`, `--tasks`, `--render`
+- Slot substitution, `{!{` escape rewrite, unmatched slot passthrough
+- Multi-task recipe emits multiple task files
+- Lock file lifecycle
+- Name-vs-filename mismatch warning
+- Error paths: missing file, malformed front-matter, missing blocks, bad args
+- Units 15–19: validates each of the 5 seed recipes in `canonical/recipes/` (dogfood)
 
-| Script | Lines | Language | Purpose |
-|--------|-------|----------|---------|
-| `canonical/templates/scripts/build-project-index.sh` | 368 | Bash | Step 0c pre-pass for `aid-discover`. Emits `.aid/knowledge/project-index.md` so the 5 discovery sub-agents share a common file inventory. Canonical source under `canonical/templates/scripts/`; propagated to 3 install trees by `run_generator.py` (identical content). |
-| `canonical/templates/scripts/grade.sh` | 141 | Bash | Deterministic grade calculation from a Reviewer's structured issue list. **Same input -> same grade.** Canonical source under `canonical/templates/scripts/`; propagated to 3 install trees by `run_generator.py` (verified identical by `diff`). |
+19 numbered units; **113 assertions** (script prints "Tests passed: 113" then "All tests passed." in summary). **Runtime note:** this suite takes ~150 s; do not impose timeouts under 180 s.
+File: `tests/canonical/parse-recipe.sh` (~1,002 lines — the largest suite)
 
-## Test Commands
+### compute-block-radius.sh
 
-There is no test runner in this repository. The closest "test commands" are:
+**Target:** `canonical/scripts/execute/compute-block-radius.sh`
 
-```bash
-# Validate a generated knowledge-summary HTML (user-side, after running /aid-summarize)
-bash canonical/templates/knowledge-summary/scripts/validate-html.sh path/to/knowledge-summary.html
-bash canonical/templates/knowledge-summary/scripts/validate-links.sh path/to/knowledge-summary.html
-node canonical/templates/knowledge-summary/scripts/validate-diagrams.mjs path/to/knowledge-summary.html
-node canonical/templates/knowledge-summary/scripts/contrast-check.mjs path/to/knowledge-summary.html
+Covers BFS transitive-descendant computation used by the pool-dispatch failure cascade:
+- Linear chain, diamond, fan-out, unrelated chain, mid-chain failure
+- No-dependents (leaf node) → empty block-radius
+- Multi-root fan graphs
+- End-to-end with `--plan-file` (PLAN.md parsing)
+- Integration: 5-task delivery graph with seeded failure
+- Error exits (missing required args, conflicting args, file-not-found)
+- Whitespace normalization on `--failed-task`
+- Stability check: `state-execute.md` degradation-notice format
 
-# Verify a user-project KB has all 16 expected docs (user-side, after /aid-discover)
-bash canonical/skills/aid-discover/scripts/verify-kb.sh .aid/knowledge/
+17 numbered tests (T01–T17).
+File: `tests/canonical/compute-block-radius.sh` (~345 lines)
 
-# Compute a deterministic grade from a Reviewer's issue list
-bash canonical/templates/scripts/grade.sh < reviewer-output.json
+### delivery-gate-aggregate.sh
 
-# Re-generate all 3 install trees from canonical/ (maintainer-side; verifies canonical authority is intact)
-python run_generator.py
-```
+**Target:** delivery-gate logic in `aid-execute` (uses `writeback-task-status.sh` +
+`canonical/scripts/grade.sh` as collaborators)
 
-**No command runs against this repo's own source artifacts** in the conventional test-suite sense. `python run_generator.py` is the closest thing to a "build" — it deterministically regenerates the 3 profile trees from `canonical/` and runs VERIFY-4a/4b checks.
+Covers:
+- AGGREGATE with existing `delivery-NNN-issues.md` (deferred rows preserved)
+- AGGREGATE with no issues file (creates empty log correctly)
+- SCORE computation for 3 sample deliveries of varying complexity
+- Grade computation via `grade.sh` (deterministic output verification)
+- Loopback guard (grade < min does NOT re-run quick-checks; only loops review)
+- FR6 interlock (gate must not fire while any task has status Failed or Blocked)
 
-## CI/CD Integration
+6 numbered scenarios; **18 assertions**.
+File: `tests/canonical/delivery-gate-aggregate.sh` (~535 lines)
 
-**None.** No `.github/workflows/`, no `.gitlab-ci.yml`, no Jenkinsfile, no Azure Pipelines, no CircleCI config, no Travis. Confirmed by:
+---
 
-- `project-index.md` Notable Files lists only `CONTRIBUTING.md`, `LICENSE`, `README.md` — CI configs are detected by name and would appear here.
-- `project-structure.md:225` explicitly states "No CI configuration found."
-- No `node_modules`, `package.json`, or other artifacts that would imply a JS-based CI runner.
+## Total test count
 
-This means there is **no automated check** that:
-- The 3 install trees stay in sync with `canonical/` (drift between canonical-source and generator output is unenforced outside an explicit `python run_generator.py` invocation).
-- The installer scripts (`setup.sh` / `setup.ps1`) actually copy what they say they copy.
-- Skill or agent frontmatter is well-formed.
-- The shell scripts pass `shellcheck`.
-- Mermaid examples in `methodology/aid-methodology.md` render.
-- Cross-document references actually resolve.
+| Suite | Assertions | Self-reported summary line |
+|---|---|---|
+| `read-setting.sh` | 18 | `Passed: 18 / Failed: 0` |
+| `writeback-task-status.sh` | 69 | `Tests passed: 69 / All tests passed.` |
+| `parse-recipe.sh` | 113 | `Tests passed: 113 / All tests passed.` |
+| `compute-block-radius.sh` | 17 | `Results: 17 passed, 0 failed` |
+| `delivery-gate-aggregate.sh` | 18 | `Results: 18 passed, 0 failed` |
+| **Total** | **235** | (sum of self-reported summary lines) |
 
-## Testing Patterns
+Count method: each suite's own self-reported summary line is authoritative. Verified end-to-end (cycle-5, 2026-05-27): run each suite with timeout ≥180s (parse-recipe takes ~150s), then read the script's own "Tests passed: N" / "Results: N passed" line. Do NOT count `PASS:` markers via grep — different suites use different formats and you may undercount if a suite hangs or is timed-out before completion. Recount after any test addition.
 
-### Manual Quality Discipline (CONTRIBUTING.md)
+---
 
-`CONTRIBUTING.md:21-26` is the de-facto QA process:
-
-> When updating a skill or agent, update ALL locations:
-> 1. `skills/aid-{phase}/README.md` — human docs
-> 2. `claude-code/skills/aid-{phase}/SKILL.md` — LLM version
-> 3. `codex/skills/aid-{phase}/SKILL.md` — LLM version (shared body, Codex-specific frontmatter)
->
-> Same for agents: update the human README, Claude Code .md, and Codex .toml.
-
-**Note (post work-002):** CONTRIBUTING.md is stale — the canonical-uniform regime introduced by `run_generator.py` makes this manual procedure obsolete for the install trees. Maintainers now edit `canonical/{skills,agents,templates}/` and run the generator; the 3 install trees become deterministic output. CONTRIBUTING.md text predates that change and needs a re-write.
-
-Additional CONTRIBUTING constraints (still valid in spirit):
-- `CONTRIBUTING.md:75` — "For examples: Add to `examples/` with a `README.md` explaining context. **Anonymize everything.**"
-- `CONTRIBUTING.md:97` — "Under 500 lines per skill (AgentSkills best practice)" — currently satisfied. `aid-discover` was 596 lines pre-thin-router; now 307 lines, well under guideline (tech-debt.md M5 RESOLVED post-work-001 PR #13).
-
-### The Methodology's Inherited Quality Posture
-
-AID itself defines runtime quality gates. While none enforce quality of *this repo*, they apply to user projects:
-
-| Phase | Gate | Mechanism | Owner |
-|-------|------|-----------|-------|
-| Init | Plan-mode check | `check-preflight.sh` | aid-init skill |
-| Discover | REVIEW state — Discovery `STATE.md` must reach grade >= Minimum (default A) | discovery-reviewer agent + `grade.sh` | aid-discover skill |
-| Specify | Q&A entry in feature STATE.md / Discovery `STATE.md` when KB insufficient or requirements ambiguous | Architect agent (manual emission) | architect agent |
-| Execute | Per-task review loop — reviewer issues -> `grade.sh` -> fix-or-pass | reviewer agent + `grade.sh` | aid-execute skill |
-| Deploy | Full build + test verification before PR creation | operator agent (calls user's existing build/test) | aid-deploy skill |
-| Monitor | Production findings classified and routed | monitor skill + monitor agent | aid-monitor skill |
-| Summarize | HTML quality gates (validate-html, validate-links, validate-diagrams, contrast-check, grade.sh) — must pass before WRITEBACK | scripts above + Reviewer | aid-summarize skill |
-
-These are *the methodology's QA story for user projects*. They demonstrably work (`examples/data-pipeline/README.md:43-50` — Grade A validation caught an LLM hallucination of $8,524 vs. $44,018). But none of them protect this repository itself from drift, typos, broken links, or incompatible vendor format changes.
-
-## Gaps — Test/QA Coverage of This Repository
-
-Each gap below is real, not hypothetical, and each carries a measurable risk for adopters.
-
-### [HIGH] No CI runs on PRs
-**Evidence:** No `.github/workflows/` anywhere in the tree.
-**Impact:** A PR can introduce broken shell syntax, malformed frontmatter, missing files, or canonical-vs-generated drift without any automated signal. The Reviewer is the human maintainer; nothing else.
-**Remediation (suggested):** Add a `.github/workflows/validate.yml` that runs `shellcheck` over `**/*.sh`, `yamllint` over agent frontmatter, runs `python run_generator.py` and asserts a zero-diff working tree (canonical-vs-output parity), and runs a custom orphan-detection script (per Q190 generalization).
-
-### [HIGH] No canonical-vs-generator-output parity check in CI
-**Evidence:** `python run_generator.py` regenerates the 3 install trees deterministically from `canonical/`. No CI invokes the generator and asserts that the committed install-tree files match the generator output. A contributor who hand-edits a profile file (instead of the canonical source) can drift silently.
-**Impact:** Defeats the purpose of canonical authority. Pre work-002 the failure mode was "3 hand-maintained trees drift"; post work-002 it is "an install-tree file silently diverges from canonical" — still drift, narrower scope.
-**Remediation (suggested):** A 1-step CI job: `python run_generator.py && git diff --exit-code profiles/`.
-
-### [HIGH] No smoke test of any AID skill end-to-end
-**Evidence:** No script invokes a full skill against a sample project. The `examples/` directory contains anonymized *outputs*, not test fixtures with expected-output diffs.
-**Impact:** A subtle frontmatter break, a script regression, or a permission allow-list mistake can ship without anyone noticing until a user opens an issue.
-**Remediation (suggested):** A scripted run of `setup.sh` against `examples/brownfield-enterprise/` followed by `bash canonical/skills/aid-discover/scripts/check-preflight.sh` and `verify-kb.sh` would catch the most basic regressions.
-
-### [MEDIUM] No schema validation of SKILL.md or agent frontmatter
-**Evidence:** No JSON Schema / Ajv config / `actionlint`-style validator in the repo.
-**Impact:** A typo in `allowed-tools:` or a missing `model:` field passes review silently; the host AI tool may then ignore the file or behave unexpectedly.
-**Remediation (suggested):** A simple Python or Node validator that parses every `**/SKILL.md`'s YAML frontmatter and every `profiles/codex/.codex/agents/*.toml`, asserts required fields, and checks values against an allow-list (e.g., `model` in `{opus, sonnet, haiku}`).
-
-### [MEDIUM] No verification that installer scripts produce a working tree
-**Evidence:** `setup.sh` and `setup.ps1` exist but have no test coverage.
-**Impact:** A `cp -r` rule mistake, a missing path translation between Bash and PowerShell, or a Windows-specific quoting bug can break installs without anyone noticing.
-**Remediation (suggested):** A `test-install.sh` that creates a temp directory, runs `setup.sh tmp/` for all three tools, then asserts expected paths exist and `diff -r` shows zero diff against the source tree (modulo the `--force` interactive behavior).
-
-### [MEDIUM] No spell-check / link-check on this repo's markdown
-**Evidence:** The `aid-summarize` validation scripts check links in generated *user* HTML, but no equivalent runs on this repo's own README.md, CONTRIBUTING.md, methodology/aid-methodology.md, or the 249 markdown files.
-**Impact:** Broken anchors and dead URLs in the methodology document degrade adopter experience. `templates/README.md` already references two files that do not exist (`track-report-template.md` and `MONITOR-STATE.md`) — see `tech-debt.md`.
-**Remediation (suggested):** `lychee` or `markdown-link-check` in a GitHub Action.
-
-### [LOW] No unit coverage of `build-project-index.sh` or `grade.sh`
-**Evidence:** Both are 100+ line Bash programs with no tests. `build-project-index.sh` (368 lines) is the file every discovery sub-agent consumes — a regression here cascades into 5 sub-agents reading wrong data. `grade.sh` (141 lines) determines whether work advances or returns for revision.
-**Impact:** A grading bug silently lets bad work through the gate or blocks good work indefinitely.
-**Remediation (suggested):** A `bats` test suite with golden inputs/outputs for each — at minimum, "empty input -> A+", "1 critical -> F", "5 minor -> A", etc.
-
-## Cross-References
-
-- `tech-debt.md` — Canonical-output drift (HIGH), missing CI (HIGH), placeholder templates (MEDIUM), file-size guideline violations (LOW)
-- `security-model.md` — Permission allow-list shape (LOW); the lack of CI also affects security regression detection
-- `infrastructure.md` — Distribution mechanism details + `run_generator.py` propagator
-
-## Verification Spot-Checks (cycle-11 FIX)
-
-| # | Claim | Evidence |
-|---|-------|----------|
-| 1 | `writeback-state.sh` is the canonical script name (post-FR2 rename) | `ls canonical/templates/knowledge-summary/scripts/` — `writeback-state.sh` (139 lines) present; `writeback-discovery-state.sh` not present |
-| 2 | `writeback-state.sh` ships with `-h`/`--help` handler + GRADE regex (KB-F2) | `head -25 canonical/templates/knowledge-summary/scripts/writeback-state.sh` shows `-h | --help` usage in comment block, lines 22-24 define `usage()` |
-
-WARNING: All "no X found" claims above are based on the file inventory in `project-index.md` and targeted `Glob`/`Grep` searches. Re-verified 2026-05-23 against `project-index.md` regenerated same day.
-
-## Canonical Script Tests (work-001 PR #13 — shipped 2026-05-25)
-
-The repo now ships an executable test suite for the canonical helper scripts. **There IS a traditional test suite for the canonical helpers** (the prior TL;DR claim "no traditional test suite" was correct for application-level tests but is misleading for canonical helpers). Run from repo root:
-
-| Test script | Tests | What it covers | Where it lives |
-|---|---|---|---|
-| `test-writeback-task-status.sh` | 69 | All 4 modes of `writeback-task-status.sh` (--field, --findings, --delivery-block, --append-issue); row-integrity validation; sentinel-file locking; idempotency; cross-platform paths | `canonical/templates/scripts/` |
-| `test-delivery-gate-aggregate.sh` | 18 | DELIVERY-GATE aggregate flow: aggregate quick-check findings, score complexity, write gate-record to STATE.md ## Delivery Gates section (per FR2), FR6×FR2 interlock (skip gate on Failed/Blocked tasks) | `canonical/templates/scripts/` |
-| `test-compute-block-radius.sh` | 17 | BFS-based failure-block-radius computation: linear/diamond/fan-out/multi-root graphs; defensive normalization (T16 whitespace-wrapped input); degradation-notice format (T17) | `canonical/templates/scripts/` |
-| `test-pool-dispatch.sh` | 7 | Symbolic Python simulation of PD-2..PD-4 pool semantics: MaxConcurrent cap, FIFO admission, failure-block-radius, isolated-chain continuation, fixed-point exit. Invariant-based (does not dispatch real subagents) | `canonical/templates/scripts/` |
-| `test-parse-recipe.sh` | 113 | Recipe parsing: YAML front-matter validation, slot extraction (POSIX lex rule), `## spec`/`## tasks` block split, `{!{` escape handling, --render output schema, per-seed-recipe `--validate` | `canonical/skills/aid-interview/scripts/` |
-| `e2e-two-tier-runner.sh` | 35 | End-to-end two-tier review flow: per-task quick-check (CRITICAL fix-on-spot + HIGH deferred), FR6 interlock, per-delivery gate, grade.sh determinism | `.aid/work-001-aid-lite/test-reports/` |
-| `e2e-lite-path-runner.sh` | 38 | End-to-end lite-path: triage mapping (T1/T2/T3 → workType), 4 sub-path emission templates, lite-to-full escalation crash-safe ordering, recipe-to-lite escalation, cross-tree byte-identity | `.aid/work-001-aid-lite/test-reports/` |
-
-**Aggregate:** 297 tests pass on the master branch HEAD (verified 2026-05-25). Run all sequentially:
+## Running
 
 ```bash
-bash canonical/templates/scripts/test-writeback-task-status.sh    \
- && bash canonical/templates/scripts/test-delivery-gate-aggregate.sh \
- && bash canonical/templates/scripts/test-compute-block-radius.sh    \
- && bash canonical/templates/scripts/test-pool-dispatch.sh           \
- && bash canonical/skills/aid-interview/scripts/test-parse-recipe.sh \
- && bash .aid/work-001-aid-lite/test-reports/e2e-two-tier-runner.sh  \
- && bash .aid/work-001-aid-lite/test-reports/e2e-lite-path-runner.sh
+# Individual suites (from repo root — Git Bash on Windows)
+bash tests/canonical/read-setting.sh
+bash tests/canonical/writeback-task-status.sh
+bash tests/canonical/parse-recipe.sh
+bash tests/canonical/compute-block-radius.sh
+bash tests/canonical/delivery-gate-aggregate.sh
+
+# Verbose output
+bash tests/canonical/read-setting.sh --verbose
+
+# Run all 5 in sequence (no aggregator — per Q6 cycle-1 decision)
+for f in tests/canonical/*.sh; do echo "=== $f ==="; bash "$f" || break; done
 ```
 
-**Coverage gap (acknowledged):** No CI, so these are run-on-demand. `tech-debt.md` H2 tracks the CI gap.
+**Windows note:** all suites are POSIX bash. Run from Git Bash, not PowerShell or CMD.
+
+Exit code: `0` = all passed, `1` = one or more failures. Each suite prints a
+`PASS`/`FAIL` line per assertion and a summary at the end.
+
+There is no CI. Maintainer runs suites manually before merging. See `tech-debt.md H2`
+for the formal debt item.
+
+---
+
+## Coverage gaps and roadmap
+
+- **No CI** — tests only run when someone runs them manually. See `tech-debt.md H2`.
+- **No coverage measurement** — statement/branch coverage of the canonical helpers is
+  unknown; test-line-to-source-line ratio is the only proxy.
+- **No tests for PowerShell variants** — `canonical/scripts/summarize/concatenate.ps1`
+  and mirror install-tree copies are untested.
+- **No tests for `.mjs` validators** — `validate-diagrams.mjs` (574 lines) and
+  `contrast-check.mjs` (151 lines) have no Node test harness.
+- **No tests for `setup.sh` / `setup.ps1`** — the end-user install flow is untested.
+- **bats migration** — the inline `PASS=0` / `FAIL=0` counter pattern works but
+  produces no TAP output. Migration to `bats-core` would enable parallel runs and
+  standard CI integration; deferred as low-priority.
+
+---
+
+## Adding a new suite
+
+1. Create `tests/canonical/<helper-name>.sh` targeting `canonical/scripts/<path>/<helper>.sh`.
+2. Use the same `PASS=0` / `FAIL=0` / `pass()` / `fail()` scaffold as existing suites.
+3. Use `set -u` (not `set -e`) so all failures are reported in one run.
+4. Use `mktemp -d` + `trap 'rm -rf ...' EXIT` for fixture cleanup.
+5. Add the suite to the table in `tests/README.md` and update the count here.

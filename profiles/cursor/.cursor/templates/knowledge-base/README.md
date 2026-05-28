@@ -14,7 +14,7 @@ The Knowledge Base (`.aid/knowledge/`) is the gravitational center of every AID 
 
 ## Documents
 
-> **Note:** `INDEX.md` is auto-generated at `.aid/generated/INDEX.md` by `build-index.sh` from each KB doc's `intent:` frontmatter field. There is no template for it here — adopters should not hand-author it.
+> **Note:** `INDEX.md` is auto-generated at `.aid/knowledge/INDEX.md` by `build-index.sh` from each KB doc's `intent:` frontmatter field. There is no template for it here — adopters should not hand-author it.
 
 | Template | Purpose | Source |
 |----------|---------|--------|
@@ -24,15 +24,13 @@ The Knowledge Base (`.aid/knowledge/`) is the gravitational center of every AID 
 | [technology-stack.md](technology-stack.md) | Languages, frameworks, versions, runtime | aid-discover |
 | [module-map.md](module-map.md) | Every module: purpose, dependencies, size, coverage | aid-discover |
 | [coding-standards.md](coding-standards.md) | Naming conventions, error handling, patterns | aid-discover |
-| [data-model.md](data-model.md) | Schema, entities, relationships, migrations | aid-discover |
-| [api-contracts.md](api-contracts.md) | APIs consumed/exposed, auth models, rate limits | aid-discover + aid-interview |
+| [schemas.md](schemas.md) | Schema, entities, relationships, migrations | aid-discover |
+| [pipeline-contracts.md](pipeline-contracts.md) | Pipelines/APIs consumed/exposed, auth models, rate limits | aid-discover + aid-interview |
 | [integration-map.md](integration-map.md) | Message queues, caches, third-party services | aid-discover + aid-interview |
 | [domain-glossary.md](domain-glossary.md) | Business terms, domain language, entity definitions | aid-interview |
 | [test-landscape.md](test-landscape.md) | Test frameworks, coverage, CI/CD pipeline | aid-discover |
-| [security-model.md](security-model.md) | Auth/authz, secrets, compliance | aid-interview + aid-discover |
 | [tech-debt.md](tech-debt.md) | Known debt items with file refs and risk ratings | aid-discover |
 | [infrastructure.md](infrastructure.md) | Hosting, networking, environments, deployment | aid-discover + aid-interview |
-| [ui-architecture.md](ui-architecture.md) | Component tree, state management, design system, routing, accessibility | aid-discover |
 | [feature-inventory.md](feature-inventory.md) | Feature list with module, endpoint, and data entity mapping | aid-discover + aid-interview |
 
 ## Top-Level README Template
@@ -56,15 +54,13 @@ The KB root `README.md` tracks completeness across all documents:
 | technology-stack.md | ✅ Complete | {date} | aid-discover |
 | module-map.md | ✅ Complete | {date} | aid-discover |
 | coding-standards.md | ⚠️ Partial | {date} | aid-discover (inferred) |
-| data-model.md | ✅ Complete | {date} | aid-discover |
-| api-contracts.md | ❌ Missing | — | Needs interview |
+| schemas.md | ✅ Complete | {date} | aid-discover |
+| pipeline-contracts.md | ❌ Missing | — | Needs interview |
 | integration-map.md | ❌ Missing | — | Needs interview |
 | domain-glossary.md | ❌ Missing | — | Needs interview |
 | test-landscape.md | ✅ Complete | {date} | aid-discover |
-| security-model.md | ❌ Missing | — | Needs interview |
 | tech-debt.md | ✅ Complete | {date} | aid-discover |
 | infrastructure.md | ❌ Missing | — | Needs interview |
-| ui-architecture.md | ❌ Missing | — | Needs interview |
 | feature-inventory.md | ❌ Missing | — | Needs interview |
 
 **Status key:** ✅ Complete | ⚠️ Partial | ❌ Missing
@@ -74,8 +70,8 @@ The KB root `README.md` tracks completeness across all documents:
 
 - **Simple CLI tool:** 4-5 documents (project-structure, architecture, technology-stack, coding-standards)
 - **Greenfield project:** Start with project-structure, technology-stack, coding-standards, domain-glossary — populated from interview
-- **Enterprise monorepo:** All 16 documents, possibly more
-- **Data pipeline:** Focus on data-model, integration-map, api-contracts, domain-glossary
+- **Enterprise monorepo:** All 14 documents, possibly more
+- **Data pipeline:** Focus on schemas, integration-map, pipeline-contracts, domain-glossary
 
 The Discovery phase assesses the project and generates what's relevant. Don't create documents for things that don't exist.
 

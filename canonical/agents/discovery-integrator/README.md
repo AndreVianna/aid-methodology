@@ -21,7 +21,7 @@ The Integrator maps everything the codebase talks to (or is talked to by) — an
 
 ## What It Produces
 
-- **`.aid/knowledge/api-contracts.md`** — exposed plus consumed APIs, breaking-change risk per contract.
+- **`.aid/knowledge/pipeline-contracts.md`** — exposed plus consumed pipelines/APIs, breaking-change risk per contract.
 - **`.aid/knowledge/integration-map.md`** — external systems, sync/async surface, integration topology.
 - **`.aid/knowledge/domain-glossary.md`** — alphabetized vocabulary with `[[wikilinks]]`.
 
@@ -46,4 +46,4 @@ Read, Glob, Grep, Bash, Write. Runs with `permissionMode: bypassPermissions` (ba
 
 - **Both sides of every integration.** For each external system: how we call it AND how it calls us (if applicable).
 - **Domain over generic.** Glossary surfaces business concepts (Tenant, Invoice, Audit Trail) — not framework terms.
-- **Honest about emptiness.** If there is no HTTP surface, `api-contracts.md` says so plainly rather than padding with template text.
+- **Honest about emptiness.** If there is no HTTP/pipeline surface, `pipeline-contracts.md` says so plainly rather than padding with template text.

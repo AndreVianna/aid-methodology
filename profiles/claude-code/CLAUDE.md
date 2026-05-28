@@ -6,17 +6,17 @@
 
 ## Knowledge Base
 
-After running Discovery, the Knowledge Base lives at .aid/knowledge/INDEX.md.
-Read INDEX.md first for a map of all available documentation.
+@.aid/knowledge.
 
-## Skills
+## Review output format (global)
 
-AID methodology skills are installed in .claude/skills/.
-Use them by describing the phase you want to execute.
-
-## Agents
-
-Specialist agents are available in .claude/agents/.
+Any review output you produce — dispatched sub-agent, script validator, or
+ad-hoc user-prompted — uses the schema at
+`.claude/templates/reviewer-ledger-schema.md`. Write the ledger as a single
+markdown table at `.aid/.temp/review-pending/<scope>.md`. Use the 7-column
+shape: `# | Severity | Status | Doc | Line | Description | Evidence`.
+Severity tags bracketed; Status enum: Pending/Fixed/Recurred/Accepted/OOS/Invalid.
+No narrative or summary sections in the ledger.
 
 ## Permissions
 
@@ -25,6 +25,3 @@ Specialist agents are available in .claude/agents/.
 - Run build and test commands
 - Do NOT modify files outside the project root
 
-## Conventions
-<!-- AID-DISCOVER — Replace with key conventions summary (naming, patterns, structure) -->
-- See .aid/knowledge/coding-standards.md for project-specific conventions

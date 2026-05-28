@@ -73,14 +73,15 @@ for profile_path in sorted(profiles_dir.glob('*.toml')):
 
 print(f"\nTotal: {total_emitted} files emitted, {total_deleted} deleted")
 print("\nRunning VERIFY-4a...")
-passed, report = run_verify(str(repo), str(repo / '.aid/work-002-canonical-generator/verify-4a-report.json'))
+passed, _report = run_verify(str(repo))
 if not passed:
     print("VERIFY-4a FAILED", file=sys.stderr)
+    print("  (re-run with `python -m verify_deterministic --canonical-root . --report-path /tmp/verify-4a.json` for details)", file=sys.stderr)
     sys.exit(1)
 print("VERIFY-4a: PASS")
 
 print("\nRunning VERIFY-4b...")
-report_4b = run_advisory(str(repo), str(repo / '.aid/work-002-canonical-generator/verify-4b-report.json'))
+report_4b = run_advisory(str(repo))
 print(f"VERIFY-4b: skipped={report_4b['skipped_count']} checked={report_4b['checked_count']}")
 
 print("\nDone. Install trees updated.")

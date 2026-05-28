@@ -24,10 +24,19 @@ Print before dispatch: `[State: LITE-REVIEW] Dispatching reviewer for lite-path 
 
 ## Dispatch
 
+The reviewer writes findings to `.aid/.temp/review-pending/interview-<work>-lite.md`
+per `.cursor/templates/reviewer-ledger-schema.md` (ONE markdown table, no narrative).
+
 ```
 ▶ reviewer starting
 Read `references/state-lite-review.md` for the full review process.
 ✓ reviewer done — or ✗ reviewer failed: {reason}
+```
+
+After reviewer returns, run grade.sh on the ledger:
+
+```bash
+bash .cursor/scripts/grade.sh --explain .aid/.temp/review-pending/interview-<work>-lite.md
 ```
 
 ---
@@ -44,7 +53,7 @@ Read:
 - `../../../templates/grading-rubric.md` — the universal grading rubric
 - `.aid/knowledge/INDEX.md` — for KB context if relevant
 
-### Step 2: Grade the task set
+### Step 2: Write findings to ledger and grade
 
 Evaluate the task set against the work-root `SPEC.md` using the universal rubric.
 For the lite path, the key checks are:
@@ -58,7 +67,12 @@ For the lite path, the key checks are:
 | Sub-path contract | SPEC.md shape matches the sub-path's required shape (see CONDENSED-INTAKE) |
 | Scope fit | Task count is within the sub-path's expected range (1–2 for BUG-FIX, 1 for DOC, 1–3 for REFACTOR, 1–5 for FEATURE) |
 
-Assign a grade per the rubric (typically A–F or the rubric's scale). Record the grade.
+Write findings to `.aid/.temp/review-pending/interview-<work>-lite.md` per
+`.cursor/templates/reviewer-ledger-schema.md`. The table is the entire file content
+— no headers, no narrative. Each issue is one row with Severity and Status: Pending.
+
+The grade is computed by the orchestrator via grade.sh (not assigned by the reviewer
+directly).
 
 ### Step 3: Present findings
 

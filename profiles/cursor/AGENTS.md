@@ -4,42 +4,24 @@
 <!-- AID-DISCOVER — Replace with project name, purpose, tech stack, and target platform -->
 (pending discovery)
 
-## Build & Test
-<!-- AID-DISCOVER — Replace with actual build, test, and lint commands found in the project -->
-- Build: (pending discovery)
-- Test: (pending discovery)
-- Lint: (pending discovery)
-
-## Code Conventions
-<!-- AID-DISCOVER — Replace with naming patterns, formatting rules, and idioms found in the codebase -->
-- See .aid/knowledge/coding-standards.md for project-specific conventions
-
-## Architecture
-<!-- AID-DISCOVER — Replace with high-level architecture summary (layers, modules, entry points) -->
-- See .aid/knowledge/architecture.md for system overview
-- See .aid/knowledge/module-map.md for component relationships
-
 ## Knowledge Base
 
-After running Discovery, the Knowledge Base lives at .aid/knowledge/INDEX.md.
-Read INDEX.md first for a map of all available documentation.
+his project uses the [AID methodology](https://github.com/AndreVianna/aid-methodology).
+- Read `.aid/knowledge/INDEX.md`.
 
-## Skills & Agents
+## Review output format (global)
 
-AID methodology rules are installed in .cursor/rules/.
-Specialist agents are available in .cursor/agents/ (Task tool is experimental — Mar 2026).
+Any review output you produce — dispatched sub-agent, script validator, or
+ad-hoc user-prompted — uses the schema at
+`.cursor/templates/reviewer-ledger-schema.md`. Write the ledger as a single
+markdown table at `.aid/.temp/review-pending/<scope>.md`. Use the 7-column
+shape: `# | Severity | Status | Doc | Line | Description | Evidence`.
+Severity tags bracketed; Status enum: Pending/Fixed/Recurred/Accepted/OOS/Invalid.
+No narrative or summary sections in the ledger.
 
 ## Permissions
 
 - Read any file in the project
 - Write only within the project directory
-- Run build and test commands
+- Run build and test commands (Python, Bash, PowerShell)
 - Do NOT modify files outside the project root
-
-## AI-Integrated Development
-
-This project uses the [AID methodology](https://github.com/AndreVianna/aid-methodology).
-
-- Knowledge Base: .aid/knowledge/INDEX.md (generated during Discovery phase)
-- Methodology: 9 phases across 4 stages (Define, Map, Execute, Deliver)
-- Every phase produces verifiable artifacts with quality gates

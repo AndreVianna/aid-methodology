@@ -2,17 +2,23 @@
 
 FIX applies Q&A answers and reviewer feedback to bring KB documents up to minimum grade; it is selected when the grade is below minimum and no Pending Q&A entries remain.
 
-### Step 0: Partition Findings by KB File (Parallel-FIX prep)
+### Step 0: Load Pending Findings from Ledger
 
-Before dispatching any sub-agent, **partition the reviewer's findings by KB file**. The output is a map `{file: [findings]}` — every finding belongs to exactly one file. Each file's bucket holds its entire finding list.
+Read `.aid/.temp/review-pending/discovery.md`. Filter rows where Status ∈ {`Pending`, `Recurred`} — these are the findings to address. If the file does not exist, there is nothing to fix (advance to REVIEW).
+
+**Do NOT modify the ledger during FIX.** The fixer addresses issues; the reviewer confirms resolution and updates Status. This separation is the reviewer-ledger contract.
+
+### Step 0b: Partition Findings by KB File (Parallel-FIX prep)
+
+Partition the Pending+Recurred rows by the `Doc` column. The output is a map `{file: [row numbers + descriptions]}` — every finding belongs to exactly one file. Each file's bucket holds its entire finding list.
 
 **Why partition?** FIX dispatches **one sub-agent per affected file**, all in parallel. Each agent owns its file exclusively (single-writer per file is the parallelism-safety invariant). The orchestrator only serializes at the commit/push boundary (Step 4).
 
 ### Step 1: Identify Documents Below Threshold
 
-Read `.aid/knowledge/STATE.md` `## KB Documents Status`. List documents below minimum grade.
+From the partitioned ledger rows (Step 0b), list affected documents ordered by worst severity.
 Prioritize: [CRITICAL] → [HIGH] → [MEDIUM].
-Print: `[Fix] {N} documents below {minimum}. Dispatching {N} sub-agents in parallel...`
+Print: `[Fix] {N} documents with Pending/Recurred findings. Dispatching {N} sub-agents in parallel...`
 
 ### Step 2: Dispatch Parallel FIX Agents (one per affected file)
 
@@ -41,7 +47,7 @@ Print before dispatch:
   ...
 ```
 
-**Feature Inventory Generation:** if Features Q&A is in the answered set, the file-agent for `feature-inventory.md` should cross-reference api-contracts.md, module-map.md, domain-glossary.md, ui-architecture.md, data-model.md while editing.
+**Feature Inventory Generation:** if Features Q&A is in the answered set, the file-agent for `feature-inventory.md` should cross-reference pipeline-contracts.md, module-map.md, domain-glossary.md, schemas.md while editing.
 
 ### Step 3: Wait for ALL Parallel Agents
 
@@ -50,7 +56,7 @@ Do NOT proceed to Step 4 until every dispatched agent has reported completion. F
 ### Step 4: Aggregate, Verify, Commit (Sequential — single writer)
 
 After ALL parallel agents return:
-1. **REMOVE fixed issue lines** from `.aid/knowledge/STATE.md` `## Issues` (orchestrator only — agents never touch STATE.md).
+1. **Do NOT modify the ledger** — that is the next reviewer's job. Issues stay Pending until the reviewer verifies and updates Status.
 2. Update `**Applied to:**` for each incorporated Q&A answer in `STATE.md ## Q&A`.
 3. **Regenerate all registered generated files (per principles.md P3 — auto-gen-last).** Read `canonical/templates/generated-files.txt`. For each non-comment line, parse `output-path|build-command` and execute the build command. This ensures `metrics.md`, `INDEX.md`, `project-index.md` (and any future registered builders) reflect the FINAL post-fix state of the KB:
    ```bash
@@ -62,7 +68,21 @@ After ALL parallel agents return:
      eval "$build_cmd" || echo "[Fix] WARNING: build failed for $out_path"
    done < canonical/templates/generated-files.txt
    ```
-4. Run `bash canonical/scripts/kb/verify-claims.sh` — expect exit 0. (The verify script's [GEN-MISSING] check will now find the freshly-regenerated files; if any are still missing, the corresponding build command failed in Step 3.)
+4. Confirm each registered generated file now exists on disk:
+   ```bash
+   missing=0
+   while IFS='|' read -r out_path _; do
+     case "$out_path" in ''|\#*) continue ;; esac
+     out_path="${out_path#"${out_path%%[![:space:]]*}"}"
+     out_path="${out_path%"${out_path##*[![:space:]]}"}"
+     if [[ ! -f "$out_path" ]]; then
+       echo "[Fix] WARNING: $out_path missing after regenerate (Step 3 build command failed)"
+       missing=$((missing + 1))
+     fi
+   done < canonical/templates/generated-files.txt
+   [[ $missing -eq 0 ]] || echo "[Fix] $missing generated file(s) missing — investigate before commit"
+   ```
+   (Semantic re-verification of KB docs against source happens in REVIEW state, not here.)
 5. Run any smoke tests relevant to changes.
 6. Single `git commit` listing which files each agent touched + the regenerated outputs in `.aid/generated/`.
 7. `git push`.

@@ -1,384 +1,428 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Known technical debt items in the AID methodology repo: items that work but
+  carry future-cost or fragility risk. Each entry has severity (CRITICAL / HIGH /
+  MEDIUM / LOW), evidence (file:line), impact, and a resolution roadmap.
+  Read when planning the next refactor cycle or scoping a new work-NNN.
+contracts: []
+changelog:
+  - 2026-05-27: Added 7 new entries from cycle-1 Q-AND-A; marked M2 (acronym) resolved
+  - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
+---
+
 # Tech Debt
 
-> **Source:** aid-discover (discovery-quality)
-> **Status:** Populated (cycle-11 FIX 2026-05-23: H1/H4 RETIRED post-canonical-generator; H3 verified still valid; H5/H6 added; counts recounted)
-> **Last Updated:** 2026-05-23
-> **Cross-references:** `project-index.md`, `project-structure.md` (Anomalies section), `test-landscape.md` (overlapping CI gap), `security-model.md` (overlapping supply-chain gap), `infrastructure.md` (canonical/ + run_generator.py)
+> **Source:** `discovery-quality` (Phase 1), cycle-1
+> **Status:** Complete
+> **Last Updated:** 2026-05-27
+
+> This document is a diagnosis, not a sprint plan. Severity tags use the form `[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` so `build-metrics.sh` (see `canonical/templates/knowledge-base/tech-debt.md:17`) can tally them.
+
+---
 
 ## Summary
 
-**Overall debt level: MEDIUM** for an open-source methodology repo aiming at production adopters (down from MEDIUM-HIGH pre-canonical-generator).
+**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 5-suite canonical test suite post-cycle-1 cleanup) but operates with **zero pre-merge automation** and several **structural gaps** surfaced by cycle-1 discovery (methodology rigidity, verify-claims.sh transition incomplete, crud outputs audit pending). There is **one Critical** item: the supply-chain risk in `fetch-mermaid.sh` materially affects end users. M2 (acronym drift) was resolved in cycle-1 Phase A.
 
-The structural-duplication debt that previously dominated the inventory (H1, H4) is now RETIRED: post-work-002, the 3 install trees under `profiles/{claude-code,codex,cursor}/` are deterministic output of `python run_generator.py` against a single canonical source at `canonical/`. The remaining debt is **process gaps** (no CI, no manifest, no version file, narrow generator verification) and **content gaps** (orphan templates, missing Monitor templates pre-Q8 resolution, hardcoded build commands).
+| Severity | Count | Items |
+|----------|-------|-------|
+| Critical | 1 | C1 |
+| High | 5 | H1, H2, H3, H5, H6 |
+| Medium | 7 | H4, M1, M2 (resolved), M3, M4, M5, M6 |
+| Low | 5 | L1, L2, L3, L4, L5 |
 
-If a contributor opens a PR today, there is no automated signal whether they have introduced canonical-vs-output drift, broken a script, left a typo in frontmatter, or added a profile-tree-only orphan that `run_generator.py` will not detect. The maintainer must still catch most things by eye — but the surface area has shrunk meaningfully.
-
-## Debt Items
-
-### [HIGH] H1 — Triplication drift between install trees — **RETIRED 2026-05-22 (work-002-canonical-generator)**
-
-**Evidence (post-cycle-11 verification 2026-05-23):**
-
-`wc -l canonical/skills/aid-discover/SKILL.md profiles/*/.*/skills/aid-discover/SKILL.md` returns **307 lines four times** (identical across canonical + 3 profile trees). Pre-canonical-generator this file claimed divergent line counts (Claude Code 453 / Codex 1,078 / Cursor 1,090) — those counts were collected before work-002 lifted the bodies into `canonical/skills/` and `run_generator.py` propagated them uniformly. Spot-checked other skills the same way: all 3 profile trees match canonical line-for-line.
-
-**Resolution (work-002):**
-- All 10 skill bodies, 22 agent definitions, and template assets promoted into `canonical/{skills,agents,templates}/`.
-- `run_generator.py` (top-level, ~84 lines Python) reads per-profile TOMLs from `profiles/*.toml` and renders deterministic install-tree output (`profiles/claude-code/.claude/`, `profiles/codex/.codex/` + `profiles/codex/.agents/`, `profiles/cursor/.cursor/`).
-- Each install tree carries an `emission-manifest.jsonl` recording what the generator emitted; deletion pass removes files no longer in the manifest.
-- VERIFY-4a (deterministic) + VERIFY-4b (advisory) gates run after every regeneration.
-
-**Status:** RETIRED. Remaining residual risk (canonical-vs-output parity not enforced by CI) is tracked separately as H3.
+> **Counting methodology:** this table counts unique debt _items_ (one row per entry, regardless of how many `[HIGH]`/`[MEDIUM]` tags appear in the fix recipe). The generated `metrics.md` (built by `build-metrics.sh`) counts every body-tag occurrence including those inside fix-recipe sub-bullets, producing higher totals. Neither is wrong; they answer different questions. Canonical item count is this table.
 
 ---
 
-### [HIGH] H2 — No CI / no test runner / no manifest / no version file
+## Debt Inventory
 
+| ID | Type | Description | Location | Risk | Effort | Priority |
+|----|------|-------------|----------|------|--------|----------|
+| C1 | Supply Chain | `fetch-mermaid.sh` fetches `mermaid@latest` from npm registry with no version pin and no SHA verification | `canonical/scripts/summarize/fetch-mermaid.sh:16-18, 41, 59-73` | Critical | S | P1 |
+| H1 | Doc Drift / Untestable Claim | Older docs cited two e2e test runners in `.aid/work-001-aid-lite/test-reports/` that do not exist on disk; per Q1 resolution (cycle-1) those runners were never correct canonical artifacts and have been removed from documentation | `tests/README.md` (the current contract); disk: `.aid/work-001-aid-lite/` correctly absent | High | S | P1 |
+| H2 | No CI | Zero pre-merge automation; every test/verify pass is manual | repo-wide | High | M | P2 |
+| H3 | Supply Chain (sibling of C1) | No language lock files exist (`package-lock.json`, `requirements.txt`, etc.) — vulnerability scanning is impossible | repo-wide; absence confirmed in `project-structure.md:96` | High | M | P2 |
+| H4 | Crud Outputs (partially resolved) | Skills/scripts audit needed: unnecessary write-only outputs (reports/logs/intermediate files) not consumed by any downstream step — known instance fixed in cycle-1 (Q2: report_path=None); broader audit remains | scope: 10 user-facing skills + 11 generators/builders | Medium | M | P3 |
+| H5 | Methodology Flexibility | Methodology assumes rigid 16-doc KB set; meta-repos / docs-only / library-only projects need flexibility | methodology spec, aid-discover, verify-claims, canonical/templates/knowledge-base/ | High | L | P2 |
+| H6 | verify-claims.sh deletion follow-up | verify-claims.sh deleted; discovery-reviewer now owns FM+contract verification semantically — reviewer prompt coverage must be confirmed explicitly | cycle-1 inline refactor; canonical/agents/discovery-reviewer/AGENT.md | High | S | P2 |
+| M1 | Doc Drift | `run_generator.py` writes VERIFY-4a/4b reports to `.aid/work-002-canonical-generator/` which does not exist; the script either crashes on first invocation or silently creates the dir without recording its purpose | `run_generator.py:76, 83`; disk: `.aid/work-002-canonical-generator/` missing | Medium | S | P2 |
+| M2 | Doc Drift (RESOLVED) | Project name expansion drift — all four variants now canonicalized to "AI Integrated Development" | resolved 2026-05-27 commit 82a5bd5 | Medium | XS | — |
+| M3 | Gitignore Fragility | `.aid/.temp/` is excluded only by the `*.temp` glob at `.gitignore:21`, not an explicit dir entry — a rename to e.g. `.aid/scratch/` would silently start tracking it | `.gitignore:18-21` | Medium | XS | P3 |
+| M4 | Test Discoverability | No aggregator script: each of the 5 remaining test suites must be invoked manually with the right path; no way to run "all tests" with one command | `tests/README.md` (lists each separately); no `Makefile`/`task`/`npm test` | Medium | S | P3 |
+| M5 | Q&A Schema | Two Q&A entry schemas coexist; canonical decided = Style A but work-state-template.md + methodology spec + aid-interview not yet migrated | `canonical/templates/work-state-template.md`, `methodology/aid-methodology.md`, aid-interview skill | Medium | S | P3 |
+| M6 | Test Refactor | 5 remaining canonical/ test suites need: behavior-named files, shared test-utility extraction, consistent failure messages, optional aggregator | `tests/canonical/*.sh` (5 suites) | Medium | M | P3 |
+| L1 | Source Bloat | 5 files >500 lines under canonical/methodology (largest: `methodology/aid-methodology.md` 1,070, `tests/canonical/parse-recipe.sh` 1,002, `canonical/scripts/execute/writeback-task-status.sh` 627, `canonical/skills/aid-execute/references/state-execute.md` 629) | various | Low | M | P3 |
+| L2 | Test Coverage Gap | Zero tests for PowerShell paths (`setup.ps1`, `concatenate.ps1`), `.mjs` validators, and the `setup.sh` install flow | `test-landscape.md` Gaps section | Low | L | P3 |
+| L3 | Allowlist Breadth | `.claude/settings.json` Bash allowlist includes broad `Bash(rm *)` and `Bash(python *)` without path scoping | `.claude/settings.json:5-14` | Low | XS | P3 |
+| L4 | Versioning | AID has no version (no VERSION file, no semver); current position is "continuous master" | repo-wide; absence confirmed by project-index | Low | S | P3 |
+| L5 | Examples Staleness | examples/ case studies (brownfield-enterprise, data-pipeline, desktop-app) are 3+ months stale (last touched March 2026) | `examples/` directory | Low | M | P3 |
+
+---
+
+## Detailed Debt Items
+
+### [CRITICAL] C1 — Mermaid CDN fetch not version-pinned or SHA-verified
+
+**Type:** Security / Supply Chain
 **Evidence:**
-- No `.github/workflows/` (confirmed by `project-index.md` Notable Files and `test-landscape.md` searches).
-- No `.gitlab-ci.yml`, no Jenkinsfile, no `azure-pipelines.yml`, no CircleCI config.
-- No `package.json`, no `pyproject.toml`, no `Cargo.toml`, no `go.mod`, no `Makefile`.
-- No `VERSION` file. No git tag visible from this worktree. The methodology refers to "V3" in prose (`methodology/aid-methodology.md`) but there is no programmatic way to query the AID version.
-- No `MANIFEST.{json,yaml,toml}` listing the canonical file set. (`canonical/EMISSION-MANIFEST.md` exists but is a per-profile manifest of generator output, not a project-level manifest.)
+- `canonical/scripts/summarize/fetch-mermaid.sh:16-18` queries `https://registry.npmjs.org/mermaid/latest` on every invocation, extracting whatever version is current.
+- `canonical/scripts/summarize/fetch-mermaid.sh:41` downloads `https://cdn.jsdelivr.net/npm/mermaid@${LATEST}/dist/mermaid.min.js` — no pin.
+- `canonical/scripts/summarize/fetch-mermaid.sh:59-73` computes sha256 AFTER download and stores it as cache metadata; there is no `EXPECTED_SHA256` constant compared at verification time.
 
-**Impact:**
-- No automated gate on PRs. Drift, broken scripts, malformed frontmatter, typos in YAML/TOML all reach `master` unless a human catches them.
-- Adopters cannot pin to a version. `git clone` always pulls the tip — risky for production-critical methodology consumers.
-- The lack of a manifest amplifies the supply-chain risk in `security-model.md` (no way to verify a clone is intact).
+**Impact:** Every end user who runs `/aid-summarize` receives whatever JS the npm registry serves at fetch time. An npm-registry compromise or jsDelivr MITM silently ships compromised JS into the offline KB viewer that the end user opens in their browser. Reproducibility is also broken — diagrams may render differently across runs.
 
-**Effort:** Medium for CI (less than 1 day to set up shellcheck + frontmatter validation + a `python run_generator.py && git diff --exit-code profiles/` parity check + basic install smoke test). Trivial for `VERSION` file (less than 30 min). Small for git-tag discipline.
+**Fix recipe (estimated S effort):**
+1. Add a constant near the top of the script: `PINNED_VERSION="<chosen-version>"` and `EXPECTED_SHA256="<sha-from-npmjs>"`.
+2. Replace the `curl ... /mermaid/latest | sed ...` block with `LATEST="$PINNED_VERSION"`.
+3. After the download (`mv "$CACHE_FILE.tmp" "$CACHE_FILE"`), compute the SHA, then `[ "$SHA" = "$EXPECTED_SHA256" ] || { echo "SHA mismatch"; rm -f "$CACHE_FILE"; exit 1; }`.
+4. Add a `# Renovate / Dependabot equivalent` comment block describing the manual bump procedure.
+5. Update `tests/canonical/` (or add a new suite) to cover the pin-mismatch path.
 
----
-
-### [HIGH] H3 — No linter / format checker configured (verified still valid 2026-05-23)
-
-**Evidence (cycle-11 spot-check):**
-- No `.shellcheckrc`, `.eslintrc*`, `.markdownlint*`, `.editorconfig`, `pyproject.toml` (for ruff/black), `.prettierrc`, or any other linter config at repo root.
-- No `Makefile` target or shell script invoking `shellcheck` / `markdownlint` / `yamllint` / `actionlint`.
-- The 5,490 lines of shell, 3,428 lines of JavaScript, and ~84 lines of Python in `run_generator.py` have no lint-time check.
-
-**Impact:** Style drift, unused variables, missing quotes around `$VAR`, `set -e` skipping behavior, broken shebangs, all pass without notice. Higher-impact for shell (where `shellcheck` would catch genuine bugs) than for markdown.
-
-**Effort:** Trivial (≤ 30 min per linter) to wire a config file + a single GitHub Action job. The blocker is item H2 (no CI).
+**Owner suggestion:** maintainer (single-file change in canonical/, then `python run_generator.py` to propagate to 4 install-tree copies).
 
 ---
 
-### [HIGH] H4 — Four-way duplicated scripts and assets — **RETIRED 2026-05-22 (work-002-canonical-generator)**
+### [HIGH] H1 — E2E test runners cited in older docs did not exist on disk (partially resolved)
 
-**Pre-resolution context (preserved for traceability):** The previous version of this entry catalogued ~17,600 lines of 4-way duplication across `templates/` + 3 install trees (`build-project-index.sh`, `lightbox.js`, `component-css.css`, `validate-*.{sh,mjs}`, `grade.sh`, `writeback-state.sh`, etc.), accounting for ~36% of the repo line count. The premise was that no propagation tool existed.
-
-**Why retired:** That same duplication is now **intentional generator output**, not unmanaged debt. Maintainers edit a single canonical source under `canonical/templates/{scripts,knowledge-summary}/`; `python run_generator.py` propagates byte-identical copies into each install tree. Verified: `diff canonical/templates/scripts/grade.sh profiles/claude-code/.claude/templates/scripts/grade.sh` returns no output.
-
-**Residual risk (tracked as H3 above):** No CI invokes the generator and asserts the committed install-tree files match the regenerated output. A contributor who hand-edits a file inside `profiles/<tool>/` (instead of the canonical source) can drift silently. Mitigated by maintainer discipline + the EMISSION-MANIFEST trail; un-mitigated by automation.
-
-**Status:** RETIRED. Tooling that would have closed this entry pre-cycle-11 now exists (`run_generator.py`); the remaining work is a 1-line CI check (covered by H2 / H3).
-
----
-
-### [HIGH] H5 — Generator orphan-detection gap (Q190 generalization) — **NEW cycle-11**
-
+**Type:** Documentation Drift / Untestable Claim
 **Evidence:**
-- `run_generator.py` VERIFY-4a checks canonical → profile propagation (every file in `canonical/templates/` is present in the install trees). It does **not** check the reverse direction: files that exist in the install trees but **not** in `canonical/templates/`.
-- Pre-FR2 (work-003), 6 templates lived only in install trees, missing from canonical:
-  - `feature.md`
-  - `feature-inventory.md` (root, not the per-feature one)
-  - `known-issues.md`
-  - `package.md`
-  - `requirements.md` (root)
-  - `ui-architecture.md` (root)
-- Diff command that reveals them: `diff <(find canonical/templates -type f) <(find profiles/claude-code/.claude/templates -type f)`.
-- Discovered when `/aid-deploy work-003` looked up `canonical/templates/package.md` and failed (Q190 single-file). Cycle-11 generalization showed 5 sibling orphans (Q190 escalated from low to high).
-- **Resolved by KB-F1** (lifted to canonical 2026-05-23) — but the underlying gap in `run_generator.py` remains: a future orphan introduced by a contributor will not be detected automatically.
+- Older documentation cited `.aid/work-001-aid-lite/test-reports/e2e-two-tier-runner.sh` (35 tests) and `e2e-lite-path-runner.sh` (38 tests) as part of the canonical test suite.
+- Per Q1 resolution (cycle-1): "No canonical file should be in the work-* folder." Those runners were never correctly placed there; they were removed from documentation.
+- Current test contract: 5 canonical suites in `tests/canonical/` (see `tests/README.md`); `.aid/work-001-aid-lite/` is correctly absent.
 
-**Impact:** A template added to install trees without being added to `canonical/templates/` is silently orphaned. Adopters get it, but the next `python run_generator.py` run does not preserve it (the deletion pass removes anything no longer in the manifest). Pre-resolution this caused `/aid-deploy work-003` to fail.
+**Impact (historical):** Inflated "297 expected" total by 73 phantom tests. Confusingly misleading to new contributors.
 
-**Effort:** Small (≤ 4 h). Add a VERIFY-4c (or extend 4a) check: for each install tree, diff its template-file set against the canonical set + the per-profile rendered manifest; flag anything in the install tree that is neither canonical-output nor explicitly profile-only-allowed.
+**Remaining action:** If E2E test coverage is wanted in the project, relocate scripts to `tests/canonical/` or `tests/e2e/`. See H2 (no CI) — adding E2E coverage is most impactful once H2 is addressed.
 
-**Related:** Q190 (Side-discovery from `/aid-deploy work-003`). Tracked in STATE.md Q&A.
+**Owner suggestion:** maintainer.
 
 ---
 
-### [HIGH] H6 — Codex installer omits `.agents/` copy (CONFIRMED BUG) — **RETIRED 2026-05-22**
+### [HIGH] H2 — No CI
 
-**Evidence:** `setup.sh:142-145` (Codex branch, pre-fix) copied `profiles/codex/.codex/` to `$TARGET/.codex/` and `profiles/codex/AGENTS.md` to `$TARGET/AGENTS.md` — but **did NOT** copy `profiles/codex/.agents/` which contains all 10 SKILL.md files and the `templates/` asset bundle. `setup.ps1:137-141` had the identical omission. Reviewer static-analysis spot-check #20 confirmed: `sed -n '140,155p' setup.sh` showed only `.codex` and `AGENTS.md` referenced in the Codex branch.
-
-**Impact:** Every Codex user who installed AID via the bundled installer was getting agent TOML definitions **without skill bodies**. Slash commands appeared to do nothing because the SKILL.md files were absent. Silent failure mode — no error message, just inert tooling.
-
-**Resolution (work-002-canonical-generator / task-001 + task-002 + task-030):** `copy_dir profiles/codex/.agents` added to `setup.sh` Codex branch; equivalent `Copy-Dir-Safe` call added to `setup.ps1`. Live smoke test (task-030) confirmed: `setup.sh` + `setup.ps1` both install all 10 Codex SKILL.md files under `<target>/.agents/skills/aid-*/SKILL.md`. Claude Code and Cursor artifacts unaffected (regression check passed). H6 is retired. Tracks STATE.md Q70.
-
----
-
-### [HIGH] H7 — Missing templates for the Monitor phase (Q8 promoted)
-
-**Evidence:** `templates/README.md` (legacy) references two templates that do not exist on disk:
-- `MONITOR-STATE.md` — used by `aid-monitor` for production telemetry state. (Note: post-FR2 area-STATE rule may have absorbed this into a work-STATE pattern; needs verification.)
-- `track-report-template.md` — used by `aid-monitor` for periodic monitor reports.
-
-The `aid-monitor` skill (223 lines per `canonical/skills/aid-monitor/SKILL.md`, propagated identically to 3 install trees) presumably produces these artifacts but agents have no canonical template to follow.
-
-**Impact:** The Monitor phase is shipping as ⚠️ Partial. Adopters running `/aid-monitor` get an agent that doesn't know what shape its output artifacts should take. Promoted from MEDIUM (M2 in earlier framing) to HIGH because it blocks the production-monitoring story end-to-end.
-
-**Effort:** Small (less than 4 h). **Resolution per STATE.md Q8 / Q31 / Q77:** author both templates — modeled on existing `canonical/templates/feedback-artifacts/IMPEDIMENT.md` shape and the `aid-monitor` skill body. Post-FR2 the `MONITOR-STATE.md` shape may be the consolidated work-STATE; clarify per data-model.md §1A before authoring.
-
----
-
-### [HIGH] H8 — `/aid-summarize` grading rubric vs script implementation mismatch — **RESOLVED 2026-05-21**
-
-**Evidence (as found):** During dogfood use of `/aid-summarize`, the grading system had structural flaws: (1) the script auto-passed the "manual" checks K1 (10 pts) + K2 (15 pts) — 25 points it could not verify; (2) A3 (focus trap) was marked "manual / can't auto", capping the script-automated grade below A+ permanently; (3) the rubric's "<6 diagrams = C+ ceiling" hard rule was not wired into `grade.sh`; (4) the `cli` profile spec'd 4 diagrams while the rubric demanded ≥6, so the profile was structurally locked out of A+; (5) `D2` (render) was dependent on `D1` (parse) — anything passing D1 passed D2; (6) `H1` ran custom regex, not the `tidy`/`html-validate` the rubric described; (7) no check covered diagram-internal legibility — every automated check (D1/D2/C1/C2) could pass while a Mermaid diagram was visually unreadable.
-
-**Impact:** The script-reported grade was simultaneously inflated (free manual points) and capped below A+ (A3 unscored). Adopters could not trust the number, and a genuinely broken summary could pass.
-
-**Resolution (2026-05-21):** The grading system was overhauled — (a) **two-grade model**: Machine Grade (AUTO_POOL, 73 pts) + Human Grade (MANUAL_POOL, 30 pts); Overall = `min`; (b) **A3 auto-detected** by grepping the inlined `lightbox.js`; (c) **per-profile `target_diagrams`** declared in profile-template frontmatter, enforced by `grade.sh`; (d) **D2 made real** via jsdom/mmdc render assertions; (e) **H1 cascade** — `tidy` → `html-validate` → regex; (f) **mandatory V1 human visual gate** (5 pts); (g) **literal-`\n` D1 guard** added to `validate-diagrams.mjs`.
-
-**Effort:** Was Medium — completed 2026-05-21. **No further action.**
-
----
-
-### [MEDIUM] M1 — `.claude/settings..json` filename typo — **RETIRED 2026-05-25 (file removed)**
-
-> **Status:** The `.claude/settings..json` double-dot typo file no longer exists on disk. The historical bug analysis below is preserved as a record. See `project-structure.md` Anomaly #2 for the current state.
-
-### M1 (HISTORICAL — RETIRED) — `.claude/settings..json` filename typo
-
-**Evidence:** `.claude/settings.json` (the historical double-dot typo file `.claude/settings..json` was removed; see `project-structure.md` Anomaly #2) (double dot) sits alongside `.claude/settings.json`. Both contain *identical* content (verified by `diff` — whitespace-only diff). The double-dot file is not gitignored.
-
-**Impact:** Cosmetic; Claude Code will not load the malformed name as a settings file. But the duplicate file confuses future maintainers about which is canonical.
-
-**Effort:** Trivial (less than 30 min). `git rm .claude/settings..json` and add a CI check for unusual dotfile names.
-
----
-
-### [MEDIUM] M2 — (SUPERSEDED by H7 — missing Monitor templates)
-
-This item has been promoted to HIGH severity per the production-impact analysis in H7 above. Leaving as a back-pointer; no separate action.
-
----
-
-### [MEDIUM] M3 — Hardcoded build commands in `profiles/codex/.codex/agents/developer.toml`
-
-**Evidence:** `profiles/codex/.codex/agents/developer.toml` lines 11-12:
-```
-1. Run the build: `mvn clean verify -f ProjectRoot/pom.xml`
-2. Run tests: `mvn test -f ProjectRoot/pom.xml`
-```
-
-The other tool trees' equivalent (`profiles/claude-code/.claude/agents/developer.md`) say "Build verification is mandatory" without nominating a build tool, which is correct for a tool-agnostic methodology. Codex's version uniquely hardcodes Maven with a placeholder-looking path.
-
-**Impact:** A Codex user installing this developer agent into a non-Java project will see the agent attempt to run `mvn` on every code change. The agent prompt is normative for the model.
-
-**Effort:** Trivial (less than 30 min). Edit `canonical/agents/developer.toml` (or whatever canonical source produces the Codex variant) and re-run `python run_generator.py`. Replace lines 11-12 with "Run the build and tests using the project's existing commands (see `.aid/knowledge/technology-stack.md` Build Commands and `.aid/knowledge/test-landscape.md` Test Commands)."
-
----
-
-### [MEDIUM] M4 — Documentation drift between methodology and skill bodies
-
-**Evidence (spot check, two phases):**
-
-**Phase 5 (Detail):**
-- `methodology/aid-methodology.md:353` introduces "Phase 5: Detail (`aid-detail`)".
-- `canonical/skills/aid-detail/SKILL.md` is the canonical body; all 3 install trees match (post work-002).
-
-**Phase: Verify** (note: there is **no aid-verify** in this repo)
-- The methodology document does not describe a "Verify" phase. The pipeline is: Init -> Discover -> Interview -> Specify -> Plan -> Detail -> Execute -> Deploy -> Monitor, with optional Summarize.
-- The closest concepts are (a) the per-skill REVIEW state (built into Discover and Execute), and (b) the `operator` agent's "Verify before acting" rule.
-
-**Other drift evidence:**
-- `methodology/aid-methodology.md` documents: "The Correct phase has been merged into Monitor."
-- Pre-FR2 tombstone `canonical/skills/aid-correct/README.md` no longer exists (top-level `skills/` dir was removed in work-002).
-
-**Impact:** The Correct/Monitor/Triage naming inconsistency is a documentation polish issue. Most importantly: the legacy `templates/README.md` references files that may not exist post-FR2 — see H7.
-
-**Effort:** Trivial (less than 30 min) for the naming alignment. The MONITOR template creation is tracked under H7.
-
----
-
-### [MEDIUM] M5 — `aid-discover` SKILL.md size guideline — **RESOLVED 2026-05-25 (work-001 thin-router refactor)**
-
-> **Status:** Post-work-001 PR #13 thin-router refactor reduced `aid-discover/SKILL.md` from 596 lines to 307 lines (well under the 500-line guideline; cycle-19 orchestrator-protocol additions brought it from 258 to 307, still well under). M5 is moot. The 9.6% over-target framing was based on pre-thin-router metrics and is no longer applicable. Historical analysis preserved below for reference.
-
-### M5 (HISTORICAL — RESOLVED) — `aid-discover` SKILL.md violated the "Under 500 lines" guideline pre-thin-router
-
-**Evidence (cycle-11 verification):** `CONTRIBUTING.md:97` — "Under 500 lines per skill (AgentSkills best practice)". Actual (post work-002 unification):
-- `canonical/skills/aid-discover/SKILL.md` — **307 lines** (was 596 pre-thin-router refactor; now well under 500 — M5 RESOLVED).
-- All 3 profile copies (`profiles/{claude-code,codex,cursor}/.../skills/aid-discover/SKILL.md`) — 307 lines each (identical, by virtue of being generator output).
-
-Other previously-flagged overages no longer apply: post-canonical-generator, `aid-interview`, `aid-execute`, and `aid-specify` all match the Claude Code reference (smaller) sizes. Only `aid-discover` is over.
-
-**Impact:** The guideline exists because long SKILL.md files consume context window aggressively. 548 vs 500 is a modest overage (~10%) compared to the pre-canonical-generator 1,078-line bloat. Either the guideline should be revised with rationale, or `aid-discover` should be factored further using `references/` decomposition (already in place for some content blocks).
-
-**Effort:** Small (less than 4 h) to extract additional content into `canonical/skills/aid-discover/references/*.md`. Trivial (less than 30 min) if the rule is relaxed in CONTRIBUTING.md with a per-skill caveat for orchestrator-class skills.
-
----
-
-### [MEDIUM] M6 — Cursor agent tool name internally inconsistent (`Terminal` vs `Bash`)
-
-**Evidence:** Reviewer spot-check found Cursor's own tree is inconsistent on the shell-execution tool name:
-- `profiles/cursor/.cursor/agents/architect.md:4` declares `tools: Read, Glob, Grep, Write, Edit, Terminal`
-- `profiles/cursor/.cursor/agents/discovery-reviewer.md:7` declares `tools: Read, Glob, Grep, Bash, Write`
-
-Per `external-sources.md` rows 5-6, the canonical Cursor tool name is `Terminal`. Some Cursor agents in this tree were missed during the rename.
-
-**Impact:** Some Cursor agents may not have shell execution available because they declare a non-canonical tool name. Slash commands that depend on shell access would silently fail in those agents.
-
-**Effort:** Trivial (~15 min). Audit all 22 `canonical/agents/*.toml` (or the per-profile renderer rules) and ensure the Cursor variant emits `Terminal` consistently. Re-run `python run_generator.py`. Per STATE.md Q52 resolution. Add canonical-vs-output parity check (H3) so it doesn't reoccur.
-
----
-
-### [LOW] L1 — `aid-correct/README.md` tombstone — **RETIRED**
-
-**Pre-resolution context:** `canonical/skills/aid-correct/README.md` was a 5-line tombstone left behind when the Correct phase was merged into Triage/Monitor.
-
-**Why retired:** The entire top-level `skills/` directory was deleted in work-002 (its content promoted to `canonical/skills/`). The tombstone no longer exists. Verified: `ls skills/aid-correct/` errors with "No such file or directory".
-
----
-
-### [LOW] L2 — `correction-template.md` deprecation note inline — **RETIRED**
-
-**Evidence (historical):** `canonical/templates/reports/correction-template.md` formerly carried an inline note: "Deprecated: The Correct phase has been merged into Triage."
-
-**Impact:** Resolved — the file was deleted in the methodology-correctness cleanup; no deprecated artifact remains in the tree.
-
----
-
-### [LOW] L3 — TODO / FIXME density
-
-**Evidence:** `Grep` for `TODO|FIXME|XXX|HACK|TBD|pending discovery` returned 69 total occurrences across 21 files at the initial dogfood pass. Post-canonical-generator the distribution shifted (skill bodies are uniform now), but most matches remain *documentation strings about what an agent should do*, not actual TODOs.
-
-Top-level files with `(pending discovery)` placeholders (intentional — install templates ship with placeholders for users to fill in via `/aid-init` + `/aid-discover`):
-- `CLAUDE.md` (repo root) — **0 hits** (the dogfood subject; fully populated).
-- `profiles/claude-code/CLAUDE.md` (install template) — 1 hit.
-- `profiles/codex/AGENTS.md` (install template) — 4 hits.
-- `profiles/cursor/AGENTS.md` (install template) — 4 hits.
-
-**Impact:** Low — the placeholders work as designed.
-
-**Effort:** N/A — already resolved for the dogfood repo. The install-template placeholders are by-design.
-
----
-
-### [LOW] L4 — Install-template project-config files inconsistent in content
-
-**Evidence (verified 2026-05-21):**
-- `profiles/claude-code/CLAUDE.md` (install template) — 30 lines, minimal structure.
-- `profiles/codex/AGENTS.md` (install template) — 28 lines.
-- `profiles/cursor/AGENTS.md` (install template) — 45 lines, *more content* (includes "Knowledge Base", "Skills & Agents", "Permissions" sections).
-
-**Impact:** A user installing more than one tool sees three different shapes of project-config file template. Minor friction.
-
-**Effort:** Small (less than 4 h). Per STATE.md Q82: align all three install-template variants to the Cursor shape. Bring Claude Code and Codex variants up to parity via canonical edits + generator re-run.
-
----
-
-### [LOW] L5 — Files over 500 lines (cross-tool variant detail)
-
-**Evidence (post-cycle-11):**
-- `methodology/aid-methodology.md` — 1,071 lines (canonical methodology spec; long-form by design).
-- `canonical/skills/aid-discover/SKILL.md` (and 3 profile copies) — 307 lines each (see M5; well under 500-line guideline).
-- `canonical/templates/knowledge-summary/component-css.css` (and 3 profile copies) — 642 lines each (CSS for HTML viewer; reasonable for a styled deliverable).
-- All other SKILL.md files are now at or under 500 lines (post-canonical-generator uniformity).
-
-**Impact:** Per-skill bloat is now confined to `aid-discover` (M5). Pre-cycle-11 entries for `aid-interview`, `aid-execute`, and `aid-specify` no longer apply.
-
-**Effort:** Same as M5.
-
----
-
-### [LOW] L6 — Cross-tool model-tier consistency: VERIFIED CONSISTENT
-
-**Evidence:** Spot-checked all 22 agents across all three trees. All Opus-tier agents map to `gpt-5.5/high`; all Sonnet-tier to `gpt-5.4/medium`; all Haiku-tier to `gpt-5.4-mini/low`. Tier mapping is uniform.
-
-[INFO] **No tier drift detected.** Listed as Low debt because the only remaining work is to keep it that way (covered by the CI proposal in H2 and parity check in H3).
-
----
-
-### [LOW] L7 — Dead-code / unreferenced files
-
-**Search performed:** Looked for files in the repo that no other file references:
-- Pre-cycle-11: `canonical/skills/aid-correct/README.md` — RETIRED (top-level `skills/` deleted in work-002).
-- `canonical/templates/grading-rubric.md` (74 lines, universal) vs. `canonical/templates/knowledge-summary/grading-rubric.md` (226 lines, HTML-specific) — both intentional and used by different consumers; **not** duplicates.
-
-No genuinely orphaned files found at the source layer. Template orphans (6 install-tree-only templates) are tracked under H5.
-
-**Effort:** N/A.
-
----
-
-### [LOW] L8 — Scripts lack defensive arg-handling (Q191 generalization) — **NEW cycle-11**
-
+**Type:** Process / Automation
 **Evidence:**
-- Pre-KB-F2 (resolved 2026-05-23), `writeback-state.sh` accepted any string as GRADE silently. Line 11 was `GRADE="${1:-?}"` — no `-h`/`--help` handler, no regex validation, no dry-run. Symptom: running `writeback-state.sh --help` wrote the literal string `--help` into the state file's grade column.
-- **Resolved by KB-F2** (2026-05-23): added `-h|--help` handler (sed-print the comment block, exit 0) + `[[ "$GRADE" =~ ^[A-F][+-]?$ ]] || exit 4` validation.
-- **Sibling audit (cycle 11):** spot-checked `check-preflight.sh`, `stale-check.sh`, `grade.sh` in the same scripts directory. All three already validate or skip silent acceptance of invalid args — OK.
-- **Forward gap:** No CONTRIBUTING.md / CI rule mandates `-h|--help` handler + arg validation for new shell scripts. The pattern is convention, not enforced.
+- No `.github/`, no `.gitlab-ci.yml`, no `Jenkinsfile`, no `azure-pipelines.yml`, no `.circleci/`, no `.travis.yml`, no `bitbucket-pipelines.yml` anywhere in the repo (confirmed by file-system search at scout time).
 
-**Impact:** Low. Each future shell script that ships without defensive arg handling can repeat the original bug class. Caught by user reports; not caught at PR time.
+**Impact:** Every quality gate (canonical helper tests, render-determinism, KB claim verification) is human-discretionary. PR reviewers cannot rely on green-build signal. A regression in `parse-recipe.sh` or `writeback-task-status.sh` only surfaces if the maintainer remembers to run the suite locally before merging.
 
-**Effort:** Trivial. Add a one-paragraph rule to CONTRIBUTING.md: "Every shell script must implement `-h|--help` and validate positional args; pattern: see `canonical/templates/knowledge-summary/scripts/writeback-state.sh:7-24` post-KB-F2." Optionally extend the `shellcheck` CI gate (H3) with a custom check for `case "$1" in -h|--help)` presence.
+**Fix recipe (estimated M effort):**
+1. Add `.github/workflows/test.yml` that on PR runs (in order): the 5 `tests/canonical/*.sh` suites, `python .claude/skills/aid-generate/scripts/verify_deterministic.py`, and the discovery-reviewer semantic check (see H6).
+2. Add a `Makefile` target `make test` that invokes the same list, so local + CI use the same entrypoint (also addresses M4).
+3. Pin GitHub-hosted runner OS (`ubuntu-24.04` not `ubuntu-latest`) for reproducibility.
+4. Cache the `mermaid.min.js` between runs once C1 is fixed (so the registry lookup is bypassed).
+5. Require status check in branch protection on `master`.
 
-**Related:** Q191 (Side-discovery from `/aid-deploy work-003`). Tracked in STATE.md Q&A.
+**Owner suggestion:** maintainer + devops agent.
+
+---
+
+### [HIGH] H3 — No language lock files; supply-chain vulnerability scan impossible
+
+**Type:** Security / Supply Chain
+**Evidence:**
+- No `package.json` / `package-lock.json` despite Node 18+ being required for `aid-summarize` validators (`project-structure.md:96`).
+- No `requirements.txt`, `pyproject.toml`, `Pipfile`, `Pipfile.lock` despite Python 3.11+ being required for the generator (`.claude/skills/aid-generate/scripts/harness.py:15`).
+- No `Cargo.toml`, `go.mod`, `Gemfile.lock`.
+
+**Impact:** Cannot run `npm audit` / `pip-audit` / `dependabot` / `renovate` against this repo. Vulnerability advisories in any transitive dependency (Mermaid included) are invisible. Compounds C1.
+
+**Fix recipe (estimated M effort):**
+1. Add a minimal `package.json` declaring the Mermaid CLI + any dev tooling used by the `.mjs` validators; commit `package-lock.json`.
+2. Add a `requirements.txt` (or `pyproject.toml`) listing Python's `tomllib` is stdlib — but if any future dep is added, capture it here.
+3. Once present, the CI from H2 can wire in `npm audit --audit-level=high` and `pip-audit` automatically.
+
+**Owner suggestion:** maintainer + security agent.
+
+---
+
+### [MEDIUM] M1 — `run_generator.py` wrote to `.aid/work-002-canonical-generator/` — RESOLVED
+
+**Type:** Documentation / Path Drift
+**Status:** Resolved in cycle-1 (Q2 resolution): `run_generator.py` now passes `report_path=None` to `run_verify()` / `run_advisory()`. No file writes occur; the directory is not created.
+**Evidence (historical):**
+- `run_generator.py:76` and `:83` previously passed `.aid/work-002-canonical-generator/verify-{4a,4b}-report.json` as report paths. Those JSON files were write-only — no downstream step read them.
+- Surfaced user principle: skills and scripts should not emit files nobody reads (see feedback memory `no-crud-outputs`).
+
+**Impact (historical):** On fresh clone, first build would have silently created the directory or failed.
+
+**Owner suggestion:** n/a — resolved.
+
+---
+
+### [MEDIUM] M2 — Project name expansion drift between CLAUDE.md and settings.yml — RESOLVED
+
+**Type:** Documentation Drift
+**Status:** Resolved 2026-05-27 (cycle-1 Phase A commit 82a5bd5: acronym canonicalized to "AI Integrated Development" across CLAUDE.md, README, methodology spec, docs/, KB docs)
+**Evidence (historical):**
+- Older CLAUDE.md text said *"AID (Agentic Implementation Discipline)"*.
+- `.aid/settings.yml:16` said `description: AI Integrated Development`.
+- Per user memory (cross-conversation), the canonical expansion is "AI Integrated Development" — the CLAUDE.md text was stale. A four-way conflict also existed with domain-glossary.md ("AI-Integrated Development", hyphenated) and user memory (formerly "Agent Integrated Development"). See Q11 in STATE.md for full context.
+
+**Impact (historical):** Low practical impact (no code reads either string) but undermined the canonical-source-of-truth convention. Surfaced by cycle-1 REVIEW as CC3.
+
+**Resolution:** Updated CLAUDE.md, domain-glossary.md, methodology spec, README, and all KB docs to use "AI Integrated Development" (no hyphen). Grepped entire repo for all four variants; all replaced consistently in Phase A commit 82a5bd5.
+
+**Owner suggestion:** n/a — resolved.
+
+---
+
+### [MEDIUM] M3 — `.aid/.temp/` gitignore is glob-fragile
+
+**Type:** Configuration / Hygiene
+**Evidence:**
+- `.gitignore:18-21` excludes `*.temp` as a global glob; `.aid/.temp/` matches by virtue of the suffix.
+- `.gitignore:46-47` explicitly excludes `.aid/.heartbeat/`. The asymmetry is suspicious — heartbeat is treated as a first-class dir but temp is not.
+
+**Impact:** If the `.aid/.temp/` directory is ever renamed (e.g., to `.aid/scratch/`, `.aid/workdir/`), files inside will silently begin being tracked by git. A noisy commit will eventually catch it but only after damage.
+
+**Fix recipe (estimated XS effort):** Add an explicit line `.aid/.temp/` to `.gitignore` (modeled on line 47). Optionally remove the `*.temp` glob if no other use exists.
+
+**Owner suggestion:** any contributor; one-line edit.
+
+---
+
+### [MEDIUM] M4 — No aggregator script for test suites
+
+**Type:** Developer Experience / Test Discoverability
+**Evidence:**
+- `tests/README.md` lists the 5 bash test commands the maintainer runs individually. After Q6-cleanup (cycle-1: 3 test files deleted, 5 remaining), there is still no `make test`, no `npm test`, no `pytest`, no `task test` (no `Makefile` / `package.json` / `pyproject.toml` / `Taskfile.yml` in the repo).
+- A new contributor must read `tests/README.md` to enumerate the suites; missing one means partial coverage.
+
+**Impact:** Friction; partial test runs; correlates with H2.
+
+**Fix recipe (estimated S effort):**
+1. Add a `Makefile` (or `tests/run-all.sh` aggregator) that invokes every suite in sequence, aggregates PASS/FAIL counts, and exits non-zero on any failure.
+2. Wire the same target into the CI workflow from H2.
+
+**Owner suggestion:** maintainer.
+
+---
+
+### [LOW] L1 — Five files exceed 500 lines (one exceeds 1,000)
+
+**Type:** Source Size / Complexity
+**Evidence (from `wc -l` over `canonical/`, `methodology/`, `tests/`):**
+- `methodology/aid-methodology.md` — 1,070 lines (the load-bearing spec; legitimately large)
+- `tests/canonical/parse-recipe.sh` — 1,002 lines (113 tests; test-file size is justified)
+- `canonical/scripts/execute/writeback-task-status.sh` — 627 lines (already tested by 69-test suite)
+- `canonical/skills/aid-execute/references/state-execute.md` — 629 lines
+- Note: `canonical/scripts/kb/verify-claims.sh` (695 lines, previously listed here) was deleted in cycle-1; its deletion is tracked in H6.
+
+**Impact:** None acute. The Thin-Router convention (`coding-standards.md §7b`) says SKILL.md should split past ~200 lines, but the `references/state-*.md` files do not have the same threshold. `state-execute.md` at 629 lines may justify further splitting if reviewers find it hard to navigate.
+
+**Fix recipe (estimated M effort, opportunistic):**
+- For `state-execute.md`: consider sub-splitting (e.g., `state-execute-pool.md`, `state-execute-review.md`) if specific sections grow further.
+- For the shell scripts: extract self-contained functions into `lib/` files; verify behavior unchanged via the existing test suites.
+
+**Owner suggestion:** address opportunistically during feature work in those files.
+
+---
+
+### [LOW] L2 — Test-coverage gaps for PowerShell, `.mjs`, and install flow
+
+**Type:** Test Coverage
+**Evidence:** see `test-landscape.md` Gaps section.
+
+**Fix recipe (estimated L effort):** Add `tests/pwsh/` for PowerShell scripts (use Pester or a parallel `pass`/`fail` counter pattern), a `tests/mjs/` directory using `node --test`, and a smoke test for `setup.sh` install into a tmpdir.
+
+**Owner suggestion:** maintainer or devops agent.
+
+---
+
+### [LOW] L3 — `.claude/settings.json` Bash allowlist is broad
+
+**Type:** Configuration / Hardening
+**Evidence:** `.claude/settings.json:5-14` permits `Bash(rm *)`, `Bash(python *)`, `Bash(chmod *)` without path scoping.
+
+**Impact:** Acceptable for a maintainer-trusted dogfood environment; would not be acceptable in a multi-tenant setting. Low priority because every Bash invocation by an agent goes through the per-agent `tools:` allowlist first.
+
+**Fix recipe (estimated XS effort, optional):** narrow `Bash(rm *)` to `Bash(rm -rf .aid/.temp/*)` and similar; or accept and document the rationale ("maintainer-trusted scope").
+
+**Owner suggestion:** maintainer; address if the project ever ships a shared/CI-runner-managed instance.
+
+---
+
+### [MEDIUM] H4 — Skills/scripts crud audit (write-only outputs, partially resolved)
+
+**Type:** Process / Hygiene
+**Status:** Known instance fixed in cycle-1 (Q2 resolution); broader audit remains.
+**Evidence:**
+- `run_generator.py:76,83` (pre-cycle-1): passed `.aid/work-002-canonical-generator/verify-{4a,4b}-report.json` as report paths to `run_verify()` / `run_advisory()`. These JSON files were write-only — no downstream step read them; the script itself uses return values, not the file. Fixed in cycle-1 by passing `report_path=None`.
+- Surfaced user principle: skills and scripts should not emit files nobody reads (see feedback memory `no-crud-outputs`).
+- The known instance has been fixed; a systematic audit has not been done.
+
+**Impact:** Write-only outputs create maintenance confusion (which files are authoritative?), bloat the `.aid/` tree, and can silently break when parent directories are missing. Any skill that writes to `.aid/.temp/` or `.aid/generated/` without a downstream reader is waste.
+
+**Fix recipe (estimated M effort):**
+1. Enumerate all file-write calls across 10 user-facing skills + 11 generator/builder scripts.
+2. For each output file: confirm at least one downstream consumer (another script, an agent read call, a committed artifact). If none, remove the write.
+3. Document confirmed output files in `canonical/templates/generated-files.txt` registry.
+
+**Owner suggestion:** maintainer; pick up via `/aid-interview` when prioritized.
+
+---
+
+### [HIGH] H5 — Methodology flexibility for KB doc-set
+
+**Type:** Methodology / Architecture
+**Evidence:**
+- `methodology/aid-methodology.md` defines a rigid 16-doc KB set.
+- `canonical/scripts/kb/verify-claims.sh` (deleted in cycle-1, see H6) hard-coded an expected-doc list.
+- `canonical/templates/knowledge-base/` treats the 16 templates as mandatory.
+- Discovery cycle-1 required a 15-doc carve-out (Q3: 2 renamed, 1 deleted, 1 replaced) for the AID meta-repo itself — the methodology had no facility for this, making the deviation an undocumented one-time exception.
+- Q16 answer: user confirmed this should be a methodology-level change; the canonical 16-doc list should become a configurable default.
+
+**Impact:** Every project type that doesn't match the standard 16-doc profile (meta-repos, docs-only repos, library-only repos, microservices) must fork methodology behavior or carry phantom placeholder docs. Blocks adoption in non-application contexts.
+
+**Fix recipe (estimated L effort):**
+1. Add `discovery.kb_docs:` list to `.aid/settings.yml` schema (default = the canonical 16-doc names).
+2. Redesign `aid-discover` state-detection + auto-doc-set verification to read the declared list.
+3. Update `canonical/templates/knowledge-base/` from "mandatory templates" to "default templates + `custom/` sub-folder for project-specific additions".
+4. Update methodology spec to describe the 16-doc set as "standard default, overridable per project".
+5. Validate the AID repo's cycle-1 15-doc carve-out as the first real-world test of the flexibility mechanism.
+
+**Owner suggestion:** maintainer; pick up via `/aid-interview` when prioritized (do NOT assign a work-NNN number here — Discovery defers that).
+
+---
+
+### [HIGH] H6 — verify-claims.sh deletion follow-up
+
+**Type:** Process / Quality
+**Evidence:**
+- `canonical/scripts/kb/verify-claims.sh` was deleted during cycle-1 inline refactor (commit c8ef59e). The discovery-reviewer agent now owns frontmatter + contract verification semantically.
+- No explicit follow-up has confirmed that the reviewer's prompt covers all the checks the script performed: FM presence, FM field validity, contract claims, AUTO-GENERATED header presence for generated docs.
+- The KB body still described verify-claims.sh as live in 18+ places across 6 docs (CC2 cascade); fixed in cycle-2 FIX Phase A.
+
+**Impact:** If the reviewer prompt gaps any check the script used to do, that class of defect will silently go undetected going forward. The transition from script-based to semantic-agent-based verification is incomplete until the coverage is explicitly confirmed.
+
+**Fix recipe (estimated S effort):**
+1. Read `canonical/agents/discovery-reviewer/AGENT.md` and compare its checklist against the former script's check list (FM presence, FM field validity, contract claims, AUTO-GENERATED header).
+2. For any gap: add an explicit check clause to the reviewer prompt.
+3. KB body references updated in cycle-2 FIX Phase A sweep.
+4. Add a note to `generated-files.txt` registry that the script no longer exists.
+
+**Owner suggestion:** maintainer; priority P2 — cycle-2 FIX Phase A addressed the KB body cascade.
+
+---
+
+### [MEDIUM] M5 — Q&A schema canonicalization
+
+**Type:** Documentation / Standards Drift
+**Evidence:**
+- Style A: `### Q{N}` header + sub-bullets for Category / Impact / Status / Context / Suggested / Answer. Used in `.aid/knowledge/STATE.md` (this repo's cycle) and in aid-discover output.
+- Style B: `### IQ{N}: [Category: Impact]` inline header followed by Question / Context / Source / Suggested / Status. Used in `methodology/aid-methodology.md` Q&A spec and `canonical/templates/work-state-template.md`.
+- Q15 answer: canonical decided = Style A. Phase B Q15 agent handles part of this migration.
+
+**Impact:** Skills that emit Q&A entries or parse existing ones must handle both schemas, increasing fragility. New contributors will not know which is authoritative. Search/grep tooling that relies on the `### Q{N}` or `### IQ{N}:` pattern will produce inconsistent results.
+
+**Fix recipe (estimated S effort):**
+1. Update `canonical/templates/work-state-template.md` `## Cross-phase Q&A` section to use Style A.
+2. Update `methodology/aid-methodology.md` Q&A spec to use Style A.
+3. Update `aid-interview` skill body + references to emit Style A on Q&A injection from downstream phases.
+4. Document Style A in `coding-standards.md` as the canonical Q&A schema (with an example block).
+5. Confirm any unfinished migration work from Phase B (Q15 agent) and capture remainder here.
+
+**Owner suggestion:** tech-writer + maintainer; pick up via `/aid-interview` when prioritized.
+
+---
+
+### [MEDIUM] M6 — Test refactor toward clean-code patterns
+
+**Type:** Test Quality / Developer Experience
+**Evidence:**
+- Phase A (cycle-1) deleted 3 stale test files (`tests/skills/lite-subpaths.sh`, `tests/skills/lite-to-full-escalation.sh`, `tests/canonical/pool-dispatch.sh`) per Q6 answer.
+- 5 remaining canonical/ suites are functionally sound but do not follow consistent conventions: file names describe the script under test, not the behavior being asserted; no shared test-utility module; assertion patterns vary across suites; failure messages are inconsistent.
+- Q17 answer: user confirmed refactor should be a separate work-NNN, not inline to cycle-1 FIX.
+
+**Impact:** Higher friction for contributors adding new test cases; harder to diagnose failures (inconsistent output format); test names that describe scripts-under-test rather than behaviors go stale when the script is renamed.
+
+**Fix recipe (estimated M effort):**
+1. Rename convention: adopt `<behavior-under-test>_test.sh` (e.g., `recipe-slot-extraction_test.sh`) or migrate to Bash Automated Testing System (bats).
+2. Extract shared test utilities into `tests/lib/assert.sh` (pass/fail counters, assertion helpers, setup/teardown).
+3. Standardize failure messages: every failing assertion should emit `FAIL: <test-name> — expected X got Y`.
+4. Optionally add an aggregator `tests/run-all.sh` once all suites share the same output format.
+
+**Owner suggestion:** maintainer; pick up via `/aid-interview` when prioritized (do NOT assign a work-NNN here — Discovery defers that).
+
+---
+
+### [LOW] L4 — Versioning scheme
+
+**Type:** Distribution / Packaging
+**Evidence:**
+- No `VERSION` file, no `__version__` in Python, no `version =` in any TOML, no git-tag-based semver/calver.
+- Q5 answer: user confirmed "continuous master" is the intentional current position. AID is methodology-in-development; explicit non-versioning is the honest position.
+- End users install by re-running `setup.sh` against current master; there is no upgrade notification mechanism.
+
+**Impact:** Low now (methodology-in-development). Will become high once AID stabilizes and external adopters want reproducible pinned installs or changelogs.
+
+**Fix recipe (estimated S effort, deferred):**
+1. Add `VERSION` file at repo root with a placeholder semver (e.g., `0.1.0-dev`).
+2. Add a "Versioning" subsection to `README.md` explaining the continuous-master model and when a formal version will be introduced.
+3. Wire `setup.sh` to print the installed version on completion.
+4. Revisit when the methodology-flexibility refactor (H5) lands — that is the natural semver-bump point.
+
+**Owner suggestion:** maintainer; revisit after H5 is resolved.
+
+---
+
+### [LOW] L5 — examples/ staleness
+
+**Type:** Documentation Drift
+**Evidence:**
+- `examples/brownfield-enterprise/`, `examples/data-pipeline/`, `examples/desktop-app/` — all last touched March 2026 (3+ months stale as of 2026-05-27).
+- File sizes are small (~50-110 lines per case study).
+- Q8 answer: user confirmed accept-stale for now; no refresh blocking this cycle.
+
+**Impact:** Case studies that diverge from current methodology conventions mislead adopters. Risk is proportional to how much the methodology has changed since March 2026; currently moderate (Thin-Router skill convention, Q3's KB-doc renaming, acronym canonicalization are all post-March changes).
+
+**Fix recipe (estimated M effort, deferred):**
+1. After Q3 KB-doc renaming (api-contracts → pipeline-contracts, data-model → schemas, etc.) lands, update any example references to those doc names.
+2. After acronym canonicalization (Q11) propagates, grep examples/ for old variants.
+3. Full refresh: re-run each case study scenario against current methodology spec; update narration.
+4. Add a `<!-- last-validated: YYYY-MM-DD -->` comment to each case study so staleness is visible.
+
+**Owner suggestion:** tech-writer; refresh when the methodology-flexibility refactor (H5) and KB-doc renaming (Q3) are both stable.
+
+---
+
+### [MEDIUM] M7 — `grade.sh` over-counts summary-line severity tags
+
+**Type:** Helper-script Bug
+**Evidence:**
+- `canonical/scripts/grade.sh` greps for `\[CRITICAL\]`, `\[HIGH\]`, etc. in the input file
+- Reviewer ledgers often include a Summary section with a literal tag-string like `0 [CRITICAL] / 0 [HIGH] / 0 [MEDIUM] / 2 [LOW] / 3 [MINOR]` to convey counts
+- grade.sh counts each literal `[CRITICAL]`, `[HIGH]`, etc. in that summary string AS IF each were an actual finding marker
+- Result: a ledger with 0 actual CRITICAL findings but with a "0 [CRITICAL]" mention in its summary gets graded as E+ (1 CRITICAL counted) instead of the correct B (only LOW + MINOR remain)
+- Discovered in cycle-7 of cycle-1 Discovery dogfood (2026-05-28): reviewer's summary said "Target HIT (0 HIGH / 0 MEDIUM)" but raw grade.sh returned E+; manual strip of the summary line returned correct B
+
+**Impact:** The deterministic grading contract is broken when the reviewer includes severity tags in summary statements. Two work-arounds today: (a) strip the summary line before piping to grade.sh; (b) instruct reviewers to use a different format ("0/0/0/2/3" instead of "0 [CRITICAL] / 0 [HIGH] / 0 [MEDIUM] / 2 [LOW] / 3 [MINOR]"). Neither is enforced.
+
+**Fix recipe (estimated S effort):**
+1. Update `canonical/scripts/grade.sh` to either (a) skip a `## Summary` section by line-range before counting, OR (b) require severity tags to appear at line-start (e.g., `^\s*- \[CRITICAL\]` instead of bare `\[CRITICAL\]` anywhere in line). Approach (b) is simpler and more robust.
+2. Update `canonical/agents/discovery-reviewer/AGENT.md` reviewer-prompt template to instruct: "When summarizing finding counts, do NOT use `[SEVERITY]` tag format inline. Use plain numbers (e.g., `0/0/0/2/3`) or escape the brackets (e.g., `\\[CRITICAL\\]`). The `[SEVERITY]` tag format is reserved for actual finding markers."
+3. Regression test: add a small test to `tests/canonical/` that pipes a summary-only fixture to grade.sh and asserts the correct grade.
+
+**Owner suggestion:** maintainer; priority P2 — affects every Discovery review going forward; current workaround (manual summary-line strip) is fragile.
 
 ---
 
 ## Metrics
 
-- **TODO / FIXME / XXX / HACK / TBD / "pending discovery" count:** 69 occurrences across 21 files (pre-canonical-generator baseline; the canonical/ unification preserved them inside skill bodies as documentation strings). Of these, ~17 are intentional placeholders in `CLAUDE.md` / `AGENTS.md` variants. The remainder are documentation strings rather than actual code TODOs.
-- **Files over 500 lines:** 2 unique sources (`methodology/aid-methodology.md` at 1,071; `canonical/templates/knowledge-summary/component-css.css` at 642). The latter has 3 byte-identical copies in the install trees by virtue of being generator output. `canonical/skills/aid-discover/SKILL.md` at 307 is well under guideline post-thin-router refactor.
-- **Files over 1000 lines:** 1 unique source (`methodology/aid-methodology.md` at 1,071). Previously 3 (the now-unified aid-discover SKILL.md is 307 in all profile trees post-thin-router refactor + cycle-19 orchestrator additions, not the pre-canonical-generator 453/1,078/1,090).
-- **Duplication ratio (post-canonical-generator):** byte-identical duplication remains in absolute terms (~36% of repo lines are 4-way) but is no longer **drift-prone debt** — it is generator output from a single canonical source.
-- **Test-to-code ratio:** ⚠️ Not meaningful for a methodology + docs + scripts repo. There are zero test files for ~5,490 lines of shell, ~3,428 lines of JavaScript, and ~84 lines of Python (`run_generator.py`). By the most literal reading, the test-to-code ratio is 0.
-- **CI/CD coverage:** 0 pipelines, 0 workflows. Confirmed.
-- **Per-severity debt-item count (OPEN items; post-cycle-11 recount 2026-05-23):**
-  - HIGH: **4 open** — H2 (no CI), H3 (no linter), H5 (generator orphan-detection gap), H7 (missing Monitor templates).
-  - HIGH: 4 retired/resolved — H1 (triplication drift — RETIRED via canonical-generator), H4 (4-way duplicated scripts — RETIRED via canonical-generator), H6 (Codex `.agents/` omission — RETIRED via setup.sh fix), H8 (`/aid-summarize` grading — RESOLVED 2026-05-21).
-  - MEDIUM: **5 open** — M1, M3, M4, M5, M6. (M2 superseded by H7, kept as back-pointer.)
-  - LOW: **6 open** — L3 (TODO density, low-impact), L4 (install-template asymmetry), L5 (files >500 lines, covered by M5), L6 (model-tier consistency, informational), L7 (dead code, none found), L8 (defensive args, Q191 generalization).
-  - LOW: 2 retired — L1 (`aid-correct/README.md` tombstone — RETIRED via top-level `skills/` deletion), L2 (`correction-template.md` — RETIRED via deletion).
-  - **Total open: 15 items** (down from 20 pre-cycle-11). 6 retired in work-002/work-003 + cycle-11 (H1, H4, H6, H8, L1, L2).
-  - **Disk-truth recount (cycle 11):** `grep -c "^### \[HIGH\]" tech-debt.md` returns **8** (4 OPEN + 4 RETIRED-but-still-listed). Counts cited in INDEX.md / README.md should refer to OPEN count = 4.
-
-## Resolution Roadmap from STATE.md Q&A
-
-Items below were added or refined as a result of Q&A passes. Cross-linked to canonical Q-IDs in `STATE.md`.
-
-| ID | Source Q | Action | Effort | Status |
-|----|----------|--------|--------|--------|
-| R1 | Q1, Q10, Q71 | Adopt SemVer + `VERSION` file + git tags + `RELEASING.md` + version-print in `setup.{sh,ps1}` | Small | Pending |
-| R2 | Q2, Q5 | Document supported-tools matrix; tagged GitHub Releases for pinning | Small | Pending |
-| R3 | Q3, Q73 | (SUPERSEDED by work-002 canonical-generator) | — | Done — `python run_generator.py` |
-| R4 | Q4, Q12, Q35 | Minimal CI workflow: shellcheck, markdownlint, link-check, canonical-vs-output parity, frontmatter validation, dogfood-discovery smoke test | Medium | Pending |
-| R5 | Q6 | Delete ~~`skills/aid-correct/` (DELETED post-work-002 cleanup)~~ | Trivial | Done (top-level `skills/` deleted in work-002) |
-| R6 | Q11 | Add `.github/ISSUE_TEMPLATE/*.md` + PR template | Trivial | Pending |
-| R7 | Q13 | Document branching strategy in CONTRIBUTING.md | Trivial | Pending |
-| R8 | Q14 | Mark `design-tokens.md` as documentation regenerated from `component-css.css` | Trivial | Pending |
-| R9 | Q15 | Move repo's `.claude/settings.json` content to `.claude/settings.local.json` + gitignore | Trivial | Pending |
-| R10 | Q16, Q17 | Update methodology heading to canonical 10-SKILL taxonomy + add Loop 11 (any phase → aid-discover) | Small | Pending |
-| R11 | Q18 | Author 6 READMEs under `canonical/agents/discovery-*/README.md` (post-work-002 path) | Medium | Pending |
-| R12 | Q30 | Standardize state-file naming (FR2 area-STATE rule — coding-standards.md §8.5) | Trivial | Done (FR2) |
-| R13 | Q32 | Lift state-file templates from install trees to canonical/templates/ | Small | Done via KB-F1 (6 orphans lifted 2026-05-23) |
-| R14 | Q33 | Define closed Status enum in new `canonical/templates/CONVENTIONS.md` | Small | Pending |
-| R15 | Q34, Q72 | Update CONTRIBUTING.md to reflect canonical-generator workflow (supersedes manual quadruplication) | Trivial | Pending |
-| R16 | Q50-Q51, Q81-Q82 | Document install-template lifecycle; align install templates to Cursor shape | Trivial | Pending — covers L4 |
-| R17 | Q52 | Audit `canonical/agents/*` for `Terminal` (Cursor canonical name); re-run generator | Trivial | Pending — covers M6 |
-| R20 | Q70 | Add `copy_dir profiles/codex/.agents` to setup.sh + setup.ps1 | Trivial | **RETIRED 2026-05-22** — both installers fixed |
-| R21 | Q74 | Add CODEOWNERS gating `permissionMode: bypassPermissions` changes | Trivial | Pending |
-| R22 | Q75 | Add `tools/redact-kb.{sh,py}` masking adopter identifiers | Small | Deferred to v3.1 |
-| R23 | Q79 | Add `setup.sh --dry-run` + `--prune` | Small | Pending |
-| R24 | Q80 | Document URL trust assumption in `external-sources.md` | Trivial | Pending |
-| R25 | Q100 | Extend `build-project-index.sh` to emit a `## Canonical Counts` section | Small | Pending |
-| R26 | Q101 | Add post-cycle reconcile pass in discovery-reviewer | Trivial | Pending |
-| R27 | Q103 | Add `[INFO]` to `canonical/templates/grading-rubric.md` as sixth non-counted severity | Trivial | Pending |
-| R28 | Q104 | Extend Review History rows with `Docs Modified` column | Trivial | Pending |
-| R29 | Q105 | Author `verify-kb-claims.sh` | Small | **Done 2026-05-21** — at `canonical/templates/scripts/verify-kb-claims.sh` |
-| R30 | Q190 (new cycle-11) | Lift 6 orphan templates to canonical/ + add VERIFY-4c orphan-detection check to run_generator.py | Small | KB-F1 done (lift); VERIFY-4c pending (covers H5) |
-| R31 | Q191 (new cycle-11) | Add `-h|--help` + GRADE regex to writeback-state.sh + audit siblings + document convention for new scripts | Trivial | KB-F2 done (script); convention rule pending (covers L8) |
-| R32 | Q192 (new cycle-11) | Document host harness skill-loading cache in infrastructure.md §3.1.1 | Trivial | Done 2026-05-23 (infrastructure.md cycle-11 FIX) |
-
-## Recommendations (Priority Order — updated 2026-05-23)
-
-1. **Add CI (H2 / R4)**. One workflow that runs shellcheck, validates frontmatter, runs canonical-vs-output parity (`python run_generator.py && git diff --exit-code profiles/`), runs install smoke tests, runs dogfood discovery. Single highest-leverage change.
-2. **Add VERIFY-4c orphan-detection to run_generator.py (H5 / R30)**. Closes the gap that Q190 surfaced. ≤4 h.
-3. **Fix CONTRIBUTING.md (R15)**. Replace pre-canonical-generator quadruplication rule with canonical-edit + generator workflow. Add the defensive-args convention (L8 / R31).
-4. **Create missing Monitor templates (H7 / R5 from Q8)**. Resolve via canonical/ + generator.
-5. **Add VERSION file + tag releases (R1)** — trivial, high-value for adopters.
-6. **Fix `developer.toml` hardcoded Maven path (M3)**. Canonical edit + regenerate.
-7. **Audit Cursor agents for `Terminal`/`Bash` consistency (M6 / R17)**. Canonical edit + regenerate.
-8. **Add a linter pass (H3)** as part of the CI workflow above (shellcheck + markdownlint at minimum).
+- **TODO/FIXME count:** 9 occurrences across 6 files (source: `rg "TODO|FIXME"` over `canonical/`). Specifically:
+  - `canonical/agents/discovery-quality/AGENT.md` (2)
+  - `canonical/agents/discovery-quality/README.md` (1)
+  - `canonical/skills/aid-discover/references/state-generate.md` (1)
+  - `canonical/skills/aid-discover/references/agent-prompts.md` (1)
+  - `canonical/skills/aid-discover/README.md` (3)
+  - `canonical/templates/knowledge-base/tech-debt.md` (1)
+  - These are all *template-explanatory* mentions (e.g., "fill in TODO sections"), not unresolved code TODOs. Net **0 unresolved code TODOs**.
+- **Files > 500 lines:** 4 (listed in L1; verify-claims.sh removed from list post-deletion)
+- **Files > 1,000 lines:** 2 (`methodology/aid-methodology.md`, `tests/canonical/parse-recipe.sh`)
+- **Test-to-code ratio (helper-script subset):** ⚠️ **Inferred from file counts.** After cycle-1 Q6 cleanup (pool-dispatch.sh deleted), 5 canonical helper suites remain. Lines-of-test for the 5 remaining suites (parse-recipe, writeback-task-status, delivery-gate-aggregate, compute-block-radius, read-setting) sum to approximately **2,777 lines** of test code against ~2,150 lines of canonical helper code — ratio **≈ 1.29×**. Healthy for shell helpers.
+- **Open PRs:** 0 (the previously-cited PR #16 "aid-config simplification" merged 2026-05-27 per `git log --oneline -20`). Note: the dispatcher's note referenced PR #16 as "yet to merge" — this is stale relative to the current commit history.
+- **Branches behind master:** current branch is `kb-overhaul`; recent merges suggest active KB work.

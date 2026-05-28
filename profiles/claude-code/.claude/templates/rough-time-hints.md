@@ -41,7 +41,6 @@ check-in pattern that emits mid-wait status when ETAs exceed 5 minutes.
 | `/aid-generate` (end-to-end) | ~30 s | 2026-05-23 | 4 (4 observed run_generator.py invocations during work-003) | Runs run_generator.py across all 3 profiles; includes VERIFY-4a |
 | `setup.sh` (smoke install) | ~10 s | 2026-05-23 | 2 | Interactive menu (`printf "1\n4\n" |`); copies one profile tree to target dir |
 | `python run_generator.py` | ~25 s | 2026-05-23 | 4 | Full canonical→profile render + VERIFY-4a + VERIFY-4b |
-| `verify-claims.sh` | ~3–5 s | 2026-05-23 | 5 | KB citation integrity check; exits 0 when clean |
 
 ## Notes
 

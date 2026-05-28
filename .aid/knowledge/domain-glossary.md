@@ -1,187 +1,366 @@
+---
+kb-category: primary
+source: hand-authored
+intent: |
+  Authoritative glossary of AID-specific terms mined from the methodology spec, skill
+  frontmatter, agent definitions, templates, and scripts. Covers phase names (Discover through
+  Monitor), role names (Director, Orchestrator, Specialist), pipeline concepts (Phase Gate,
+  Lite Path, Two-Tier Review, Pool Dispatch), work-type taxonomy, traceability layers (L1–L3),
+  and rubric tiers. Read this when any AID term is unfamiliar.
+contracts: []
+changelog:
+  - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
+---
 # Domain Glossary
 
-> **Source:** aid-discover (discovery-integrator)
-> **Status:** Populated (initial dogfood pass 2026-05-21; cycle-11 refresh 2026-05-23 - added FR1/FR2 terms, marked 5 state-file entries RETIRED per FR2; cycle-20 refresh 2026-05-25 - added 10 work-001 vocabulary terms)
-> **Last Updated:** 2026-05-25
-> **Term count:** 161 (was 151 pre-cycle-20; corrected via `grep -c "^| \*\*"`)
-
-> The "domain" of this repository is the **AID methodology itself**. This glossary mines the AID-specific vocabulary from `methodology/aid-methodology.md`, `docs/glossary.md`, `docs/faq.md`, `README.md`, the canonical `skills/aid-*/README.md` files, and the install-payload agent/skill files. For each term: definition (as the codebase uses it), first-introducing source file with line citation, and related terms in `[[wikilink]]` style.
-
-Terms are sorted alphabetically. Casing follows the source where consistent; otherwise normalized to the most-frequent form.
+> Terms mined from `methodology/aid-methodology.md` (1,070-line spec),
+> `docs/glossary.md`, `CLAUDE.md`, `canonical/skills/*/SKILL.md` frontmatter and bodies,
+> `canonical/agents/*/AGENT.md`, `canonical/EMISSION-MANIFEST.md`,
+> `canonical/templates/*.md`, `canonical/scripts/**/*.sh`, and the work-state template.
+>
+> The AID repo has its own dense vocabulary — phases, states, work types, sub-paths,
+> traceability layers, rubric tiers, and integration mechanisms — that any agent
+> operating in this repo must know. Each entry cites `path:line` evidence.
 
 ---
+
+## Core Methodology
 
 | Term | Definition (inferred from usage) | Source |
 |------|----------------------------------|--------|
-| **A+** | Highest [[Grade]] in the rubric — zero issues. | `canonical/templates/grading-rubric.md:41` |
-| **Adversarial Review** | The [[Reviewer]] is intentionally adversarial to the [[Developer]] / [[Executor]]; the agent that writes must never be the agent that grades. Tier of Reviewer ≥ tier of Executor. Related: [[Reviewer ≥ Executor invariant]]. | `architecture.md` §Pattern 8 (Three-tier agent model) |
-| **Agent** | A focused specialty (not a phase) with constrained tool access and a system-prompt body. Three categories: [[Core Agent]] (7), [[Specialist Agent]] (6), [[Utility Agent]] (3). 22 total per install tree. | `architecture.md` §Pattern 8 (Three-tier agent model) |
-| **AGENTS.md** | Project-context file shared by [[Codex CLI]] and [[Cursor]]. Replaces `CLAUDE.md` for those tools. Contains `<!-- AID-DISCOVER -->` placeholders filled by [[aid-discover]]. | `profiles/codex/AGENTS.md:1`; `profiles/cursor/AGENTS.md:1` |
-| **area-STATE** *(NEW cycle-11 / FR2)* | One `STATE.md` per AID area (Discovery / Work / Monitor). Codified by [[FR2]] in `data-model.md §1A` + `coding-standards.md §8.5`. Discovery area STATE = `.aid/knowledge/STATE.md` (absorbs former DISCOVERY-STATE.md + SUMMARY-STATE.md). Work area STATE = `.aid/{work}/STATE.md` (absorbs former INTERVIEW-STATE.md + per-feature STATE × N + per-task STATE × N + DEPLOYMENT-STATE.md). Monitor area STATE = `.aid/{work}/MONITOR-STATE.md` (DEFERRED per OQ-3). | `canonical/templates/work-state-template.md`; `canonical/templates/discovery-state-template.md` |
-| **aid-correct** *(DELETED post-work-002 cleanup)* | Was a placeholder/future skill folder (5-line README only); fully deleted when work-002 introduced the canonical-generator. The aid-correct concept was merged into [[Triage]] / [[Monitor]] per `methodology/aid-methodology.md:889`. | `project-structure.md` (Anomaly resolved); see also tech-debt history for the removal trace |
-| **aid-deploy** | Phase 7 skill — packages, verifies, and ships a completed [[Delivery]] to production. Default agent: [[Operator]]. | `canonical/skills/aid-deploy/README.md:1` |
-| **aid-detail** | Phase 5 skill — decomposes a [[Delivery]] into typed [[TASK]]s. Default agent: [[Architect]]. | `canonical/skills/aid-detail/README.md:1` |
-| **aid-discover** | Phase 1 skill — analyzes an existing codebase and produces the [[Knowledge Base]]. State machine: [[GENERATE]] → [[REVIEW]] → [[Q&A]] → [[FIX]] → [[APPROVAL]] → [[DONE]]. Only skill with the `Agent` tool. | `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:1-10` |
-| **aid-execute** | Phase 6 skill — type-aware [[TASK]] execution with built-in [[Review]] loop. Default agent: [[Developer]]; executor varies by [[TASK Type]]. | `profiles/claude-code/.claude/skills/aid-execute/SKILL.md:1-12` |
-| **aid-init** | Bootstrapping skill — scaffolds `.aid/`, asks [[Greenfield]] vs [[Brownfield]], collects metadata, creates [[CLAUDE.md]] / [[AGENTS.md]] placeholders. Runs once. Not a methodology phase. | `profiles/claude-code/.claude/skills/aid-init/SKILL.md:1-10`; `docs/glossary.md:23` |
-| **aid-interview** | Phase 2 skill — adaptive one-question-at-a-time dialogue. Produces [[REQUIREMENTS.md]] and per-feature [[SPEC.md]] (requirements side). Default agent: [[Interviewer]]. | `canonical/skills/aid-interview/README.md`; `methodology/aid-methodology.md:239-290` |
-| **aid-monitor** | Phase 8 skill — observe production, classify findings ([[BUG]] / [[CR]] / [[Infrastructure]] / [[No Action]]), route actions. Default agent: [[Orchestrator]]. | `canonical/skills/aid-monitor/README.md`; `methodology/aid-methodology.md:449-471` |
-| **aid-plan** | Phase 4 skill — sequences [[Feature]]s into [[Delivery]]s, each one a functional MVP. Default agent: [[Architect]]. Produces [[PLAN.md]]. | `canonical/skills/aid-plan/README.md`; `methodology/aid-methodology.md:329-352` |
-| **aid-specify** | Phase 3 skill — per-feature technical refinement; agent acts as tech lead, proposes solutions grounded in [[Knowledge Base]] and codebase. Default agent: [[Architect]]. Adds Technical Specification section to per-feature [[SPEC.md]]. | `canonical/skills/aid-specify/README.md`; `methodology/aid-methodology.md:292-319` |
-| **aid-summarize** | Optional post-discovery skill — generates a single-file `knowledge-summary.html` from `.aid/knowledge/`. State machine: [[PREFLIGHT]] → [[STALE-CHECK]] → [[PROFILE]] → [[GENERATE]] → [[VALIDATE]] → [[FIX]] → [[APPROVAL]] → [[WRITEBACK]] → [[DONE]]. | `profiles/claude-code/.claude/skills/aid-summarize/SKILL.md:1-12`; `architecture.md` §Pattern 1 (Skills as state-machine orchestrators) |
-| **AID-DISCOVER placeholder** | HTML-comment marker (`<!-- AID-DISCOVER {id} -->` ... `<!-- /AID-DISCOVER -->`) inside [[CLAUDE.md]] / [[AGENTS.md]] that [[aid-discover]] replaces with discovered content. | `CLAUDE.md:3-25`; `profiles/codex/.agents/skills/aid-discover/SKILL.md` |
-| **Allowed-tools** | YAML frontmatter field on every SKILL.md — comma-separated list of host-tool capabilities the skill needs (`Read, Glob, Grep, Bash, Write, Edit, Agent`). | `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:8` |
-| **APPROVAL** | State in the [[aid-discover]] and [[aid-summarize]] state machines — waiting for human to approve and set `**User Approved:** yes` in the area `STATE.md` (Discovery-area `.aid/knowledge/STATE.md` per FR2 — formerly [[DISCOVERY-STATE.md]]). | `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:53`; `aid-summarize/SKILL.md:8` |
-| **Architect** | [[Core Agent]] at [[Opus tier]]. Owns design across [[Specify]], [[Plan]], [[Detail]]. Produces SPEC, PLAN, TASK files. | `profiles/claude-code/.claude/agents/architect.md:1-7`; `architecture.md` §Pattern 8 (Three-tier agent model) |
-| **Argument-hint** | Optional SKILL.md frontmatter field — short usage hint shown by the host CLI for slash-command invocation. | `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:9` |
-| **bracket-pair** *(NEW cycle-11 / FR1)* | Pair of `▶ <op> starting (~<time band>)` and `✓ <op> done` (with `✗ <op> failed: <reason>` failure branch) lines wrapping a long-running operation in any AID skill, per [[FR1]] AC2 ([[Heartbeat marker]] floor). Time bands sourced from `canonical/templates/rough-time-hints.md`. | `canonical/skills/aid-monitor/SKILL.md` (4 pairs); `.aid/work-003-traceability/features/feature-001-you-are-here-heartbeat/SPEC.md` AC2 |
-| **Brownfield** | An existing codebase with history, debt, and undocumented knowledge. AID's [[Discover]] phase is designed for brownfield. | `docs/glossary.md:76`; `methodology/aid-methodology.md:201-204` |
-| **BUG** | Classification in [[aid-monitor]]: spec is right, code is wrong. Routes to [[aid-execute]] via the short path. | `methodology/aid-methodology.md:457`, `:466`; `docs/glossary.md:53` |
-| **Change Log** | Mandatory top-of-document table on [[REQUIREMENTS.md]] and per-feature [[SPEC.md]] — every edit gets a row with Date / Change / Source. | `canonical/templates/requirements/requirements-template.md:12-15, 25-29` |
-| **complexity-score.sh** | 209-line Bash script that computes a delivery-complexity score for [[aid-execute]] [[Delivery gate]]. Outputs `tasks=N`, `depth=N`, `risk=N`, `consults=N`, `score=N`, and `tier=Small|Medium|Large` (one token per line). Tier thresholds default to Low=6 / High=14, overridable via `AID_KB_STATE` (reads `.aid/knowledge/STATE.md`). Extracted from `state-delivery-gate.md` per [[Thin-Router SKILL.md Convention]] §Layers principle ("complexity scoring is pure arithmetic — belongs in scripts/, not in the skill body"). Called at DELIVERY-GATE SCORE step; also called by `complexity-score` unit tests. Related: [[Two-Tier Review Model]], [[Pool dispatch]]. | `canonical/templates/scripts/complexity-score.sh:1-34`; `feature-inventory.md` Row 22 |
-| **Change Request (CR)** | Classification in [[aid-monitor]]: requirements changed — spec needs revision. Routes to [[aid-discover]] via the full cycle. | `methodology/aid-methodology.md:457`, `:464`; `methodology/aid-methodology.md:204` |
-| **CLAUDE.md** | Project-context file auto-loaded by [[Claude Code]]. Top-level title + sections (Project Overview, Build & Test, Code Conventions, Architecture) with [[AID-DISCOVER placeholder]] markers. | `CLAUDE.md:1-25`; `profiles/claude-code/CLAUDE.md:1-30` |
-| **canonical-generator** *(NEW cycle-11 / work-002)* | Single source of truth at `canonical/` (skills, agents, templates, rules) that propagates to 3 profile trees (`profiles/{claude-code,codex,cursor}/`) via `run_generator.py`. Eliminates the pre-2026-05-22 triplication-drift problem (former [[H1]] tech debt). VERIFY-4a enforces byte-identical re-rendering across profiles + file-presence audit + frontmatter parse. VERIFY-4b advisory layer (vendor-URL conformance, stubbed). | `run_generator.py`; `canonical/EMISSION-MANIFEST.md`; `.claude/skills/aid-generate/SKILL.md` |
-| **Claude Code** | Anthropic's CLI/IDE host tool. AID install payload at `profiles/claude-code/.claude/`. Source-of-truth doc at `external-sources.md:17`. | `external-sources.md:54-67`; `profiles/claude-code/README.md` |
-| **Codex CLI** | OpenAI's CLI host tool. Split install payload at `profiles/codex/.codex/` (TOML agents) + `profiles/codex/.agents/` (skills + templates). Source-of-truth doc at `external-sources.md:19-20`. | `external-sources.md:70-83`; `profiles/codex/README.md` |
-| **Context: fork** | SKILL.md frontmatter value seen on 5 skills — instructs the host harness to run the skill in a forked context window. | `profiles/claude-code/.claude/skills/aid-detail/SKILL.md:9`, `aid-deploy/SKILL.md:9`, `aid-execute/SKILL.md:9`, `aid-monitor/SKILL.md:9`, `aid-plan/SKILL.md:8` |
-| **compute-block-radius.sh** | 293-line Bash script that computes the BFS transitive-descendant (failure-block-radius) for a failed task in a [[Pool dispatch]] execution. Given `--failed-task NNN` and `--plan-file PATH` (or a pre-computed `--graph-file`), prints one `task-NNN` per line — every task that cannot run because it depends (directly or transitively) on the failed task. Empty output means the failed task has no dependents. Exit 0 on success; exit 2 if the failed task is not in the graph. Related: [[Pool dispatch]], [[Two-Tier Review Model]]. | `canonical/templates/scripts/compute-block-radius.sh:1-45`; `feature-inventory.md` Row 24 |
-| **Core Agent** | One of the 7 always-present agents: [[Orchestrator]], [[Researcher]], [[Interviewer]], [[Architect]], [[Developer]], [[Reviewer]], [[Operator]]. | `architecture.md` §Pattern 8 (Three-tier agent model) |
-| **CR** | See [[Change Request]]. | `methodology/aid-methodology.md:457` |
-| **Cross-reference (Interview)** | State 6 of [[aid-interview]] — validates [[REQUIREMENTS.md]] against the full [[Knowledge Base]]; assigns a grade A–D. | `methodology/aid-methodology.md:270-278` |
-| **Cursor** | IDE host tool. Install payload at `profiles/cursor/.cursor/`. Also reads `.claude/skills/` and `.codex/skills/`. Source-of-truth doc at `external-sources.md:21-22`. | `external-sources.md:85-98`; `profiles/cursor/README.md` |
-| **Data Engineer** | [[Specialist Agent]] at [[Sonnet tier]] — schema design, migrations, query optimization, ETL. Called by Architect and Developer. | `canonical/agents/data-engineer/README.md`; `profiles/claude-code/.claude/agents/data-engineer.md:1-5` |
-| **Define (group)** | First of 4 methodology groups; contains phases [[Discover]], [[Interview]], [[Specify]]. | `docs/glossary.md:65`; `methodology/aid-methodology.md:208-210` |
-| **Deliver (group)** | Fourth methodology group; contains phases [[Deploy]], [[Monitor]]. | `docs/glossary.md:68`; `methodology/aid-methodology.md:424-426` |
-| **Delivery (Deliverable)** | A self-contained, functional MVP slice of the project produced by [[aid-plan]]. A Delivery is a **section within [[PLAN.md]]**, not a separate artifact file — there is no `delivery-template.md`. Each Delivery gets its own Git branch (`aid/{delivery-NNN}`) during [[aid-execute]]. | `methodology/aid-methodology.md:329-352`; `profiles/claude-code/.claude/skills/aid-execute/SKILL.md:74-79` |
-| **Delivery gate** | The second tier of the [[Two-Tier Review Model]] — a full reviewer/fix/review loop that runs **once per delivery** after all tasks in the delivery reach `Done`. Triggered from [[Pool dispatch]] PD-5 Case A. Flow: AGGREGATE (collect deferred `[HIGH]` issues from per-task quick checks) → SCORE (run [[complexity-score.sh]]) → REVIEW → GRADE → ROUTE (grade ≥ min → RECORD; grade < min → FIX loop, max 3 cycles, then CIRCUIT-BREAKER-STOP). Writes results to `## Delivery Gates` in work `STATE.md`. Related: [[Two-Tier Review Model]], [[Quality Gate]], [[writeback-task-status.sh]]. | `canonical/skills/aid-execute/references/state-delivery-gate.md:1-35`; `feature-inventory.md` Row 22 |
-| **DEPLOYMENT-STATE.md** *(RETIRED per FR2 - folded into work `STATE.md ## Deploy Status`)* | Pre-FR2: state file per [[Delivery]] — tracks deploy status and active [[PACKAGE]]. Template: `canonical/templates/work-state-template.md`. | `canonical/templates/work-state-template.md:1-9` |
-| **Determinism Test** | Heuristic to decide automation depth per phase: "can you write a complete set of rules to validate the outcome?" Yes → fully automate. No → keep human in the loop. | `docs/glossary.md` (Determinism Test section; line refs shifted in 2026-05 doc rewrites) |
-| **Developer** | [[Core Agent]] at [[Sonnet tier]]. **Only agent authorized to modify production code.** Implements TASK files; raises [[IMPEDIMENT.md]]. | `profiles/claude-code/.claude/agents/developer.md:1-9`; `architecture.md` §Pattern 8 (Three-tier agent model) |
-| **DevOps** | [[Specialist Agent]] at [[Sonnet tier]] — CI/CD, IaC, containerization, monitoring. Called by Operator and Researcher. | `canonical/agents/devops/README.md`; `profiles/claude-code/.claude/agents/devops.md:1-5` |
-| **Director** | Methodology role (human only) — sets direction, makes decisions, reviews artifacts, approves phase transitions. Spends 2-3 hours/day orchestrating, not coding. | `methodology/aid-methodology.md:97-101` |
-| **dispatch-protocol-checklist.md** | Extracted L1+L2+L3 subagent-visibility protocol shared by [[aid-deploy]] and [[aid-execute]] (and any skill that dispatches subagents). Canonical location: `canonical/templates/dispatch-protocol-checklist.md`. Defines the three-layer protocol: L1 ETA lookup (`rough-time-hints.md`), L2 background timer arms (3 timed `sleep` echoes surfaced on fire), L3 heartbeat file (`HEARTBEAT_FILE` + `HEARTBEAT_INTERVAL` in dispatch prompt, read on L2 fire). Every subagent dispatch in an AID skill MUST follow this checklist. Related: [[Heartbeat marker]], [[Subagent dispatch]], [[bracket-pair]]. | `canonical/templates/dispatch-protocol-checklist.md:1-40` |
-| **Discover** | Phase 1 of the methodology (skill: [[aid-discover]]). Produces the [[Knowledge Base]] from an existing codebase. | `methodology/aid-methodology.md:214-237`; `docs/glossary.md:31` |
-| **Discovery Sub-Agent** | One of 6 specialized sub-agents dispatched by [[aid-discover]] in parallel after [[discovery-scout]] runs alone: [[discovery-architect]], [[discovery-analyst]], [[discovery-integrator]], [[discovery-quality]], [[discovery-scout]], [[discovery-reviewer]]. All at [[Opus tier]]. | `architecture.md` §Pattern 8 (Three-tier agent model); `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:118-149` |
-| **discovery-analyst** | [[Discovery Sub-Agent]] — produces `module-map.md`, `coding-standards.md`, `data-model.md`. | `profiles/claude-code/.claude/agents/discovery-analyst.md:1-7` |
-| **discovery-architect** | [[Discovery Sub-Agent]] — produces `architecture.md`, `technology-stack.md`, `ui-architecture.md`. | `profiles/claude-code/.claude/agents/discovery-architect.md:1-7` |
-| **discovery-integrator** | [[Discovery Sub-Agent]] — produces `api-contracts.md`, `integration-map.md`, `domain-glossary.md` (this file). | `profiles/claude-code/.claude/agents/discovery-integrator.md:1-7` |
-| **discovery-quality** | [[Discovery Sub-Agent]] — produces `test-landscape.md`, `security-model.md`, `tech-debt.md`. | `profiles/claude-code/.claude/agents/discovery-quality.md:1-7` |
-| **discovery-reviewer** | [[Discovery Sub-Agent]] (the gate) — cross-references KB claims against actual source code; grades each document; writes Q&A and grade entries to the Discovery-area `STATE.md` (per FR2 — formerly produced [[DISCOVERY-STATE.md]]). Adds Q&A entries when review reveals gaps unanswerable from code. | `profiles/claude-code/.claude/agents/discovery-reviewer.md:1-380` |
-| **discovery-scout** | [[Discovery Sub-Agent]] — always runs alone first; produces `project-structure.md`, `external-sources.md`, and seeds Q&A entries directly in the Discovery-area `STATE.md` per FR2 (formerly [[DISCOVERY-STATE.md]] pre-consolidation per Q102; older agent docs reference `additional-info.md`, see Q115 / R12 for the agent-prompt cleanup). | `profiles/claude-code/.claude/agents/discovery-scout.md:1-7`; `aid-discover/SKILL.md:118-128` |
-| **DISCOVERY-STATE.md** *(RETIRED per FR2 - consolidated into `.aid/knowledge/STATE.md`)* | Pre-FR2: KB file that tracks discovery grade, minimum grade, project type, user approval, external documentation paths, issues, Q&A, and review history. Template: `canonical/templates/discovery-state-template.md`. | `canonical/templates/discovery-state-template.md:1-23` |
-| **Dogfood / Dogfooding** | The pattern of using AID's own discovery pipeline against this repo. The 21 files under `.aid/knowledge/` (16 standard KB docs + 3 meta + 1 generated pre-pass + 1 extension `host-tools-matrix.md` per Q102 taxonomy) are the dogfood discovery output. | `project-structure.md:20`; `CLAUDE.md` (this repo) |
-| **DONE** | Terminal state in [[aid-discover]] and [[aid-summarize]] state machines — grade ≥ minimum AND user approved. | `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:54` |
-| **Execute (group)** | Third methodology group; contains phases [[Implement]], [[Review]], [[Test]]. Note: the methodology document groups these into Execute (`methodology/aid-methodology.md:381`); the practical pipeline collapses them into the single [[aid-execute]] skill. | `docs/glossary.md:67`; `methodology/aid-methodology.md:381-422` |
-| **Executor** | The agent dispatched by [[aid-execute]] to do the work for a given [[TASK Type]] (RESEARCH→[[Researcher]], DESIGN→[[UX Designer]], IMPLEMENT→[[Developer]], TEST→[[Developer]], DOCUMENT→[[Tech Writer]], MIGRATE→[[Data Engineer]], REFACTOR→[[Developer]], CONFIGURE→[[DevOps]]). | `profiles/claude-code/.claude/skills/aid-execute/SKILL.md:45-54` |
-| **External Sources** | Registered third-party documentation URLs (vendor docs for host AI tools). 8 sources tracked in `.aid/knowledge/external-sources.md`. | `.aid/knowledge/external-sources.md:1-24` |
-| **FEATURE-STATE.md** *(RETIRED per FR2 - folded into work `STATE.md ## Features Status`)* | Pre-FR2: per-feature `STATE.md` produced by [[aid-specify]]. Tracks activated technical-spec sections, pending Q&A, loopbacks, change log. Template: `canonical/templates/work-state-template.md`. | `canonical/templates/work-state-template.md:1-22` |
-| **Feature (Feature folder)** | Unit of decomposition inside a [[Work]] — `.aid/{work}/features/feature-{NNN}-{name}/`. Contains [[SPEC.md]] + [[FEATURE-STATE.md]]. | `methodology/aid-methodology.md:246-258`; `profiles/cursor/.cursor/rules/aid-methodology.mdc:13-23` |
-| **Feedback Loop** | A formal pathway for a downstream phase to revise upstream artifacts. The methodology heading `methodology/aid-methodology.md:478` says "The Eleven Loops" but the body enumerates only L1-L10; per STATE.md Q17 resolution, the 11th loop is "Any phase → aid-discover (targeted re-entry)" (visible in the pipeline diagram at `:993`). Loops produce a Q&A entry in a STATE file (DISCOVERY-STATE.md, INTERVIEW-STATE.md, or feature STATE.md) or an [[IMPEDIMENT.md]]. | `methodology/aid-methodology.md:474-542`; `docs/glossary.md:13`; Q17 |
-| **FIX** | Mode in [[aid-discover]] state machine — apply fixes from Q&A answers and the reviewer's issue list; re-run discovery for affected docs. | `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:52` |
-| **Frontmatter** | YAML block at the top of an agent `.md` or `SKILL.md` file, between `---` fences. Defines `name`, `description`, `tools`/`allowed-tools`, `model`, etc. | `profiles/claude-code/.claude/agents/architect.md:1-6` |
-| **GENERATE** | Initial mode in [[aid-discover]] state machine — discovery sub-agents populate empty/pending KB documents. Also a mode of [[aid-summarize]]. | `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:48`; `aid-summarize/SKILL.md:8` |
-| **Grade** | Letter score (A+, A, A-, B+, B, B-, ..., F) computed deterministically by `canonical/templates/scripts/grade.sh` from the [[Reviewer]]'s structured issue list. | `canonical/templates/grading-rubric.md:36-62` |
-| **Grading Rubric** | The universal scale used across all AID phases. Severities `[CRITICAL]`/`[HIGH]`/`[MEDIUM]`/`[LOW]`/`[MINOR]`; worst issue dominates. | `canonical/templates/grading-rubric.md:1-74` |
-| **Greenfield** | A new project with no existing code. Runs [[aid-init]] then skips [[Discover]] and starts at [[Interview]]. | `docs/glossary.md` (Greenfield definition); `methodology/aid-methodology.md:235` |
-| **Haiku tier** | The lowest of the [[Three-tier agent model]] tiers. Maps: Claude Code `claude-haiku-4-5` (alias `haiku`) ↔ Codex `gpt-5.4-mini` + `model_reasoning_effort = "low"`. Used by the 3 [[Utility Agent]]s (Simple Extractor, Simple Formatter, Simple Glob) for mechanical work only — never synthesis. Verified consistent across all 22 agents × 3 install trees per `tech-debt.md L6` + STATE.md Q36. | `architecture.md` §Pattern 8 (Three-tier agent model); `profiles/codex/.codex/agents/simple-extractor.toml:3` |
-| **Hook (host-tool ecosystem)** | Lifecycle event registered with the host AI tool (Claude Code / Cursor). AID currently ships no hooks. | `external-sources.md:67-68` |
-| **Human-in-the-cockpit** | AID's collaboration philosophy — the human is the pilot ([[Director]]) and the AI is the Iron Man suit. Synonymous with "[[Iron Man Model]]". | `methodology/aid-methodology.md:67-77`; `docs/glossary.md:17` |
-| **IMPEDIMENT.md** | Feedback artifact created by [[aid-execute]] when reality contradicts the spec or task. Mandatory escalation — silent workarounds are forbidden. Types: `wrong-assumption`, `missing-dependency`, `architecture-conflict`, `kb-gap`, `spec-gap`, `scope-creep`. | `canonical/templates/feedback-artifacts/IMPEDIMENT.md:1-116`; `docs/glossary.md:51` |
-| **Implement** | Phase 6 of the methodology — see [[aid-execute]]. | `methodology/aid-methodology.md:387-422` |
-| **task-NNN-STATE.md** *(LEGACY per FR2 §1A + data-model.md §2.7 - folded into work `STATE.md ## Tasks Status` per-row)* | Pre-FR2: per-task state file produced by [[aid-execute]]. Tracks Type, Status, Branch, Current Review, Dispatches, Review History. Template: `canonical/templates/work-state-template.md`. | `canonical/templates/work-state-template.md:1-30` |
-| **Inception (stage)** | Stage name from the [[Cursor]] AGENTS.md "9 phases across 4 stages" framing — corresponds roughly to [[Define]] group. | `profiles/cursor/AGENTS.md:43-44`; `profiles/codex/AGENTS.md:26-27` |
-| **Heartbeat marker** / **You-are-here marker** *(NEW cycle-11 / FR1)* | Structured `[State: <NAME>] — <one-liner>` line printed by every AID skill on each state entry, per [[FR1]] AC1. Plus the ASCII state-map (e.g., `[✓ IDLE] → [● SELECTING] → [ VERIFYING ] → [ PACKAGING ] → [ DONE ]`) per AC3, the [[bracket-pair]] floor per AC2, and sub-unit drill-down for `aid-execute EXECUTE-WAVE` + `aid-discover GENERATE` per AC4. Pure skill-body text — no hooks, no event streams, no schemas; works on every host AI tool. | `canonical/skills/aid-*/SKILL.md` (10 files); `.aid/work-003-traceability/features/feature-001-you-are-here-heartbeat/SPEC.md` |
-| **INDEX.md** | The [[Knowledge Base]] index — 2-3 line summary of every KB document. Regenerated on every [[aid-discover]] run. Included in every task context for agent self-service. | `methodology/aid-methodology.md:160-191`; `canonical/templates/knowledge-base/INDEX.md` |
-| **Infrastructure (Monitor classification)** | One of the four classifications in [[aid-monitor]]: ops-owned issue, route to ops team. | `methodology/aid-methodology.md:457` |
-| **Init** | Phase 0 — see [[aid-init]]. Not a methodology phase; it's bootstrapping. | `docs/glossary.md:23` |
-| **Install Payload** | One of the three near-identical per-tool trees (`profiles/claude-code/.claude/`, `profiles/codex/.codex/`+`profiles/codex/.agents/`, `profiles/cursor/.cursor/`) that ships AID into a host AI tool. | `project-structure.md:58-72`; `README.md:266-272` |
-| **INTERVIEW-STATE.md** *(RETIRED per FR2 - folded into work `STATE.md ## Interview Status` + `## Cross-phase Q&A`)* | Pre-FR2: per-Work state file produced by [[aid-interview]]. 10-row section status table mirroring [[REQUIREMENTS.md]] §1-§10; pending Q&A; review history. | `canonical/templates/work-state-template.md:1-29` |
-| **Interviewer** | [[Core Agent]] at [[Opus tier]]. Conducts adaptive one-question-at-a-time dialogue with stakeholders. | `profiles/claude-code/.claude/agents/interviewer.md:1-5`; `architecture.md` §Pattern 8 (Three-tier agent model) |
-| **Iron Man Model** | The collaboration philosophy: AI is the suit (amplifies capability), human is the pilot (sets direction). Human never leaves the cockpit. | `methodology/aid-methodology.md:67-77`; `docs/glossary.md:17`; `methodology/images/3-ironman.png` |
-| **KB** | See [[Knowledge Base]]. | `methodology/aid-methodology.md:107-109` |
-| **KB Index** | See [[INDEX.md]]. | `methodology/aid-methodology.md:161` |
-| **Knowledge Base (KB)** | Up to 16 markdown documents at `.aid/knowledge/` that capture the living understanding of a project. **The gravitational center of AID** — not the spec, not the code. | `methodology/aid-methodology.md:107-196`; `docs/glossary.md:11` |
-| **Knowledge Base Document** | One of the **16 standard KB markdown files** in `.aid/knowledge/`: `project-structure`, `external-sources`, `architecture`, `technology-stack`, `module-map`, `coding-standards`, `data-model`, `api-contracts`, `integration-map`, `domain-glossary`, `test-landscape`, `security-model`, `tech-debt`, `infrastructure`, `ui-architecture`, `feature-inventory`. Distinct from [[Knowledge Base Meta-Document]] (INDEX, README, DISCOVERY-STATE) and [[Knowledge Base Extension]] (project-type-specific additions outside the standard 16, e.g., `host-tools-matrix`). Per STATE.md Q102. | `methodology/aid-methodology.md:113-130`; `canonical/templates/knowledge-base/` |
-| **Knowledge Base Meta-Document** | One of the 2 meta files in `.aid/knowledge/` that summarize / index across the [[Knowledge Base Document]]s: `INDEX.md` (per-doc summaries for agent self-service), `README.md` (completeness table + revision history). The Discovery-area `STATE.md` (grade, issues, Q&A, review history) is a separate area-STATE file per FR2 — the pre-FR2 `DISCOVERY-STATE.md` meta-doc is retired and consolidated into `.aid/knowledge/STATE.md`. | `aid-discover` skill Step 6 |
-| **Knowledge Base Extension** | A KB doc OUTSIDE the standard 16 added because the project type warrants it. Downstream skills (`aid-interview`, `aid-specify`, `aid-plan`) do NOT depend on extensions, so adding one is non-breaking. Current extension in this repo: `host-tools-matrix.md` (per-host-tool feature parity matrix). | `README.md` Project-Type Adaptation Notes; `host-tools-matrix.md` |
-| **Project Index** | The pre-pass file `project-index.md` emitted by `canonical/templates/scripts/build-project-index.sh` before the 5 discovery sub-agents run. Provides a shared file inventory (sizes, languages, mtimes, notable files) to avoid duplicated `find`/`wc` work. Not a [[Knowledge Base Document]] (no agent author) nor a [[Knowledge Base Meta-Document]] (not a summary). | `canonical/templates/scripts/build-project-index.sh`; `aid-discover` Step 0c |
-| **Knowledge Summary** | The single-file `knowledge-summary.html` produced by [[aid-summarize]] — visual HTML rendering of the KB with [[Mermaid]] diagrams, [[Lightbox]], light/dark theme, WCAG AA. | `profiles/claude-code/.claude/skills/aid-summarize/SKILL.md:14-20` |
-| **KNOWN-ISSUES.md** | Per-Work feedback artifact created by [[aid-specify]] during codebase exploration; consumed by [[aid-plan]] for [[Delivery]] sequencing. Entry types: `Bug \| Security \| Deprecated Dependency \| Breaking API Contract`. | `profiles/claude-code/.claude/templates/known-issues.md:1-15` |
-| **Lightbox** | Click-to-expand modal for diagrams in the [[Knowledge Summary]]. Implemented in `canonical/templates/knowledge-summary/lightbox.js` (359 lines). Keyboard accessible per [[Accessibility Checklist]]. | `canonical/templates/knowledge-summary/lightbox.js` |
-| **Map (group)** | Second methodology group; contains phases [[Plan]], [[Detail]]. | `docs/glossary.md:66`; `methodology/aid-methodology.md:323-326` |
-| **Mermaid** | Diagramming language used in [[Knowledge Summary]]. Validated by `canonical/templates/knowledge-summary/scripts/validate-diagrams.mjs` using `mmdc` CLI or a regex fallback. | `canonical/templates/knowledge-summary/scripts/validate-diagrams.mjs:1-50` |
-| **Methodology** | The AID document at `methodology/aid-methodology.md` (1,071 lines, V3 spec). The single normative document; everything else is derived. | `methodology/aid-methodology.md:1-6` |
-| **Minimum Grade** | The acceptable grade threshold defined during [[aid-init]] and stored in [[DISCOVERY-STATE.md]] as `**Minimum Grade:**`. All phases read this value; loops continue until grade ≥ minimum. Default: `A`. | `canonical/templates/grading-rubric.md:64-67` |
-| **Model reasoning effort** | [[Codex CLI]]-specific TOML field paired with `model`: `high` (gpt-5.5), `medium` (gpt-5.4), `low` (gpt-5.4-mini). | `profiles/codex/.codex/agents/architect.toml:4`; `profiles/codex/README.md:23-35` |
-| **MONITOR-STATE.md** | State file produced by [[aid-monitor]] — observation log, active findings with classification ([[BUG]] / [[CR]] / [[Infrastructure]] / [[No Action]]), severity, routing. Template not present in `canonical/templates/feedback-artifacts/` (referenced but missing — see `project-structure.md` Anomaly #8). | `methodology/aid-methodology.md:470-471`; `docs/glossary.md:53` |
-| **No Action** | One of the four [[aid-monitor]] classifications: false positive; monitor only. | `methodology/aid-methodology.md:457` |
-| **Operate (stage)** | Stage name from the "4 stages" framing in `profiles/cursor/AGENTS.md:44` — corresponds to [[Deliver]] group. | `profiles/cursor/AGENTS.md:44` |
-| **Operator** | [[Core Agent]] at [[Sonnet tier]]. Executes actions with external consequences — deployment, PR creation, release management, KB updates. | `profiles/claude-code/.claude/agents/operator.md:1-5`; `architecture.md` §Pattern 8 (Three-tier agent model) |
-| **Orchestrator** | [[Core Agent]] at [[Sonnet tier]]. Coordinates the AID pipeline — routes work, manages phase transitions with human gates, handles feedback artifacts, dispatches specialists. | `profiles/claude-code/.claude/agents/orchestrator.md:1-5`; `architecture.md` §Pattern 8 (Three-tier agent model) |
-| **Opus tier** | Highest model tier. Anthropic: `opus`. Codex: `gpt-5.5` + `model_reasoning_effort = "high"`. Used by judgment-heavy agents (Architect, Interviewer, Reviewer, Security, all 6 discovery-*). | `architecture.md` §Pattern 8 (Three-tier agent model); `profiles/codex/README.md:28` |
-| **PACKAGE** | Artifact representing a deployable bundle of one or more [[Delivery]]s. Template: `profiles/claude-code/.claude/templates/package.md` (27 lines). Tracked in [[DEPLOYMENT-STATE.md]]. | `profiles/claude-code/.claude/templates/package.md:1-27` |
-| **Performance** | [[Specialist Agent]] at [[Sonnet tier]] — profiling, load testing, bottleneck analysis, caching, optimization. | `canonical/agents/performance/README.md`; `profiles/claude-code/.claude/agents/performance.md:1-5` |
-| **parse-recipe.sh** | 540-line Bash script (POSIX-portable; works on Linux, macOS Big Sur+, Windows Git Bash) that validates and renders [[Recipe]] files for the [[aid-interview]] triage recipe-offer step. Three primary modes: `--list` (emits unique slot names in order of first appearance), `--validate` (compares front-matter `slot-count`/`task-count` against actual body counts — exits 0 even on mismatch; only structural errors are non-zero), `--render` (substitutes `{{slot-name}}` tokens using a flat JSON file, rewrites `{!{` escape sequences, and emits `SPEC.md` + `tasks/task-NNN.md` files into the target work directory using a sentinel-file lock for concurrent-write safety). Also `--spec` (prints raw spec block) and `--tasks` (prints raw tasks block). Related: [[Recipe]], [[Pool dispatch]]. | `canonical/skills/aid-interview/scripts/parse-recipe.sh:1-40`; `feature-inventory.md` Row 25 |
-| **permissionMode** | Claude Code agent frontmatter field. Value `bypassPermissions` observed on all 6 discovery-* agents. | `profiles/claude-code/.claude/agents/discovery-reviewer.md:9` |
-| **Phase** | A single methodology stage. **Canonical taxonomy (user-confirmed per STATE.md Q16 on 2026-05-21):** 1 setup phase ([[Init]]) + **8 development phases** ([[Discover]], [[Interview]], [[Specify]], [[Plan]], [[Detail]], [[Execute]], [[Deploy]], [[Monitor]]) + 1 optional phase ([[Summarize]]) = **10 SKILL.md files total**. `aid-verify` is folded into [[Execute]]'s built-in review loop and [[Deploy]]'s final-verification step (NOT a distinct phase). `aid-correct` is a tombstone per `methodology/aid-methodology.md:889` (merged into [[Triage]] / [[Monitor]]; pending deletion per Q6). Methodology doc heading `:199` "The Nine Phases" + README "nine phases / eleven loops" wording is pending update to match this canonical taxonomy. | `methodology/aid-methodology.md:199-203`; `docs/glossary.md:29-41`; STATE.md Q16 (user-confirmed) |
-| **Phase Gate** | Human decision point between phases. The pipeline never auto-advances. "OK?" is the gate. | `docs/glossary.md:15`; `methodology/aid-methodology.md:67-72` |
-| **Pipeline** | The full sequence of AID phases. Linear by default, with [[Feedback Loop]]s allowing any phase to revise upstream. | `methodology/aid-methodology.md:199-205`; `methodology/images/1-pipeline.png` |
-| **Pool dispatch** | The PD-0..PD-6 parallel task-execution model in [[aid-execute]] (work-001 feature-009 / FR6). PD-0 reads `MaxConcurrent` (default 5) from `STATE.md` and probes `run_in_background` host capability. PD-1 initializes ready/in-flight/blocked sets. PD-2 fills the pool up to `MaxConcurrent` tasks, each in its own git worktree. PD-3 waits for any completion. PD-4 processes the result (marks Done/Failed, runs [[Two-Tier Review Model]] quick-check, calls [[compute-block-radius.sh]] on failure to mark transitive descendants Blocked). PD-5 routes to next task or to [[Delivery gate]]. PD-6 handles final pool drain. Gracefully degrades to `MaxConcurrent=1` (serial) when host lacks background dispatch. Related: [[compute-block-radius.sh]], [[writeback-task-status.sh]], [[Delivery gate]]. | `canonical/skills/aid-execute/references/state-execute.md:39-160`; `feature-inventory.md` Row 24 |
-| **PLAN.md** | Strategy-level output of [[aid-plan]] — ordered list of [[Delivery]]s plus the execution graph appended by [[aid-detail]]. Has no template file; its format is defined inline by `aid-plan`. Per-instance at `.aid/{work}/PLAN.md`. | `methodology/aid-methodology.md:346` |
-| **PREFLIGHT** | First mode in [[aid-summarize]] state machine — runs `check-preflight.sh` to verify KB exists, user approved, network reachable, not in plan mode. | `profiles/claude-code/.claude/skills/aid-summarize/SKILL.md:31-42` |
-| **Profile** | Project-shape selector for [[aid-summarize]]: `auto`, `web-app`, `library`, `cli`, `microservices`, `data-pipeline`. Drives which `section-templates/*.md` apply. | `profiles/claude-code/.claude/skills/aid-summarize/SKILL.md:11, 49`; `canonical/templates/knowledge-summary/section-templates/` |
-| **PROJECT-INDEX (project-index.md)** | File inventory generated by `canonical/templates/scripts/build-project-index.sh` (368-line Bash). Pre-pass for [[aid-discover]] so the 5 sub-agents don't each re-glob the tree. | `canonical/templates/scripts/build-project-index.sh:1-50`; `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:100-114` |
-| **Q&A** | Mode in [[aid-discover]] state machine — collect user answers to pending questions (with `**Status:** Pending` and `**Impact:** Required`/`High`/`Medium`/`Low`). Also the schema for entries in [[DISCOVERY-STATE.md]] and [[INTERVIEW-STATE.md]]. See `api-contracts.md` "Q&A Entry Schema". | `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:50-52`; `profiles/claude-code/.claude/agents/discovery-reviewer.md:39-43` |
-| **Quality Gate** | A point in a state machine where the [[Grade]] is computed and compared to the [[Minimum Grade]] before advancing. Used by [[aid-discover]], [[aid-execute]], [[aid-summarize]]. | `profiles/claude-code/.claude/skills/aid-execute/SKILL.md:62-70` |
-| **REQUIREMENTS.md** | Per-Work product-requirements document produced by [[aid-interview]]. 10 numbered sections. Mandatory [[Change Log]] at top. | `canonical/templates/requirements/requirements-template.md:1-95` |
-| **Recipe** | A pre-filled lite-path template under `canonical/recipes/` that eliminates the [[aid-interview]] condensed interview for frequently recurring small-work patterns (bug fix, small refactor, single doc, CRUD endpoint, unit test). Format: single Markdown file with YAML front-matter (`name`, `applies-to`, `slot-count`, `task-count`) + a `## spec` block (work-root `SPEC.md` skeleton) + a `## tasks` block (one `### task-NNN — Title` sub-heading per task). Both blocks use `{{slot-name}}` placeholders (lexical rule: `[a-z][a-z0-9-]*`); literal `{{` is escaped as `{!{`. The [[aid-interview]] TRIAGE Step 5a offers matching recipes after `workType` is determined; the user can pick a recipe or decline (standard lite interview runs). Slot-fill produces execution-ready `.aid/work-NNN/SPEC.md` + `tasks/task-NNN.md` via [[parse-recipe.sh]] `--render`. 5 seed recipes ship: `bug-fix`, `method-refactor`, `add-crud-endpoint`, `write-release-note`, `add-unit-test`. Related: [[parse-recipe.sh]], [[Pool dispatch]]. | `canonical/recipes/README.md:1-50`; `api-contracts.md §Recipe File Schema`; `feature-inventory.md` Row 25 |
-| **Researcher** | [[Core Agent]] at [[Sonnet tier]]. Investigates code, docs, logs, APIs into KB documents. Read-heavy; never modifies production code. | `profiles/claude-code/.claude/agents/researcher.md:1-7`; `architecture.md` §Pattern 8 (Three-tier agent model) |
-| **REVIEW** | Mode in [[aid-discover]] state machine — [[discovery-reviewer]] runs against all populated KB docs and writes/updates [[DISCOVERY-STATE.md]]. Also a step inside [[aid-execute]] and most other skills. | `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:49`; `aid-execute/SKILL.md:19-26` |
-| **Review (phase)** | Methodology phase 7 (per `docs/glossary.md:37`). Subsumed into [[aid-execute]]'s review loop in the practical skill layer. Review outcomes — the reviewer's issue list and the resulting [[Grade]] — are recorded in `task-NNN-STATE.md`; there is no separate `REVIEW.md`. | `docs/glossary.md:37` |
-| **Reviewer** | [[Core Agent]] at [[Opus tier]]. Adversarial quality evaluator. Produces structured issue list with bracket-tagged severities. Does NOT fix; does NOT compute the [[Grade]] (the `grade.sh` script does). | `profiles/claude-code/.claude/agents/reviewer.md:1-5` |
-| **Reviewer ≥ Executor invariant** | The rule that the agent that grades is never below the agent it grades, in [[Tier]]. Prevents the grader from sharing the writer's blind spots. | `architecture.md` §Pattern 8 (Three-tier agent model); `profiles/codex/README.md:33` |
-| **Security** | [[Specialist Agent]] at [[Opus tier]] — threat modeling, OWASP, auth, secrets, dependency audit. Called by Reviewer and Researcher. | `canonical/agents/security/README.md`; `profiles/claude-code/.claude/agents/security.md:1-5` |
-| **Skill** | A reusable, user-invocable workflow loaded into the host AI tool's context. Defined in `SKILL.md` with YAML frontmatter. AID ships **10 SKILL.md files per install tree** = 1 setup ([[aid-init]]) + 8 development phases + 1 optional ([[aid-summarize]]) per user-confirmed Q16 canonical taxonomy. | `architecture.md` §Pattern 8 (Three-tier agent model); `profiles/claude-code/.claude/skills/README.md` |
-| **SKILL.md** | The skill body file — markdown with YAML frontmatter (`name`, `description`, `allowed-tools`, optional `argument-hint`, `context`, `agent`). | `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:1-10` |
-| **Skill body uniformity (formerly Skill body drift, retired)** | Pre-work-002, the same SKILL.md could have different line counts across install trees (Claude Code factored content into `references/`; Codex/Cursor inlined it). Post-canonical-generator: `aid-discover/SKILL.md` is 307 lines across all 3 profile trees + canonical, byte-identical. Pre-2026-05-22 the figures were Claude Code 453 / Codex 1,078 / Cursor 1,090 — see Q73 RESOLVED. | `project-structure.md` Anomaly #7 |
-| **Sonnet tier** | Middle model tier. Anthropic: `sonnet`. Codex: `gpt-5.4` + `model_reasoning_effort = "medium"`. Used by Orchestrator, Researcher, Developer, Operator, UX Designer, DevOps, Tech Writer, Data Engineer, Performance. | `architecture.md` §Pattern 8 (Three-tier agent model); `profiles/codex/README.md:29` |
-| **Specialist Agent** | One of the 6 ad-hoc agents: [[UX Designer]], [[DevOps]], [[Tech Writer]], [[Security]], [[Data Engineer]], [[Performance]]. Not every project uses every specialist. | `architecture.md` §Pattern 8 (Three-tier agent model) |
-| **SPEC.md** | Per-feature specification — requirements side (from [[aid-interview]]) + technical side (from [[aid-specify]]). Lives at `.aid/{work}/features/feature-{NNN}-{name}/SPEC.md`. | `profiles/claude-code/.claude/templates/feature.md:1-33`; `canonical/templates/specs/spec-template.md:1-75` |
-| **Spec-as-hypothesis** | The AID conviction that "specs are hypotheses, not contracts" — written before implementation, revised by evidence from implementation. | `methodology/aid-methodology.md:26-27`; `profiles/claude-code/.claude/agents/architect.md:26` |
-| **Stage** | A grouping of phases. AID describes 4 stages ([[Define]], [[Map]], [[Execute]], [[Deliver]] in `docs/glossary.md:63-68`; alternatively Inception, Definition, Build, [[Operate]] in `profiles/cursor/AGENTS.md:44`). | `docs/glossary.md:63-68`; `profiles/cursor/AGENTS.md:44` |
-| **STALE-CHECK** | Mode in [[aid-summarize]] state machine — checks whether the KB has changed since the last summarization. If not, exits as a no-op. | `profiles/claude-code/.claude/skills/aid-summarize/SKILL.md:8` |
-| **Subagent dispatch** | The act of one agent calling another. In [[Claude Code]] terms, via the `Agent` tool. Used only by [[aid-discover]] (5+1 parallel discovery sub-agents). Cursor's equivalent (`Task` tool) is experimental as of March 2026. | `profiles/claude-code/.claude/skills/aid-discover/SKILL.md:118-149`; `profiles/cursor/AGENTS.md:30` |
-| **TASK** | Smallest unit of work — one agent session = one PR = one human review. Template: `canonical/templates/delivery-plans/task-template.md` (19 lines). | `canonical/templates/delivery-plans/task-template.md:1-142`; `methodology/aid-methodology.md:355-377` |
-| **TASK Type** | Enum on every [[TASK]]: `RESEARCH`, `DESIGN`, `IMPLEMENT`, `TEST`, `DOCUMENT`, `MIGRATE`, `REFACTOR`, `CONFIGURE`. Drives [[Executor]] selection in [[aid-execute]]. | `profiles/claude-code/.claude/skills/aid-execute/SKILL.md:30-39`; `canonical/templates/work-state-template.md:5` |
-| **Tech Writer** | [[Specialist Agent]] at [[Sonnet tier]] — end-user docs, API docs, changelogs, README quality. | `canonical/agents/tech-writer/README.md`; `profiles/claude-code/.claude/agents/tech-writer.md:1-5` |
-| **Test (phase)** | Methodology phase 8 (per `docs/glossary.md:38`). Subsumed into [[aid-execute]]'s [[TASK Type]] `TEST` in the practical skill layer. Test outcomes are recorded in `task-NNN-STATE.md`; there is no separate `TEST-REPORT.md`. | `docs/glossary.md:38` |
-| **Thin-Router SKILL.md Convention** | Work-001 feature-002 (FR3) authoring pattern for [[SKILL.md]] files that exceed ~200 lines: the skill body is reduced to a **state-machine router** (frontmatter + pre-flight + state detection + dispatch table + optional quality checklist ≤~360 lines), and all per-state logic is extracted into `references/state-{name}.md` siblings. The dispatch table has 4 columns: `State`, `Detail` (reference file path or `inline`), `Worker` (agent type or `inline`), `Advance` (exactly 3 valid forms: unconditional `→ {NEXT}`, halt `→ halt`, conditional `→ {A|halt} ({cond}) / → {B|halt} ({otherwise})`). State ids are UPPERCASE-WITH-HYPHENS. Every state ends with `Next: [State: {NEXT}]` — no auto-advance; user re-invokes the skill. Applied retro-actively to all 10 `aid-*` skills, shrinking total skill body 4,467→2,108 lines (53%). Normative spec at `coding-standards.md §10`. Related: [[SKILL.md]], [[canonical-generator]]. | `coding-standards.md §10`; `feature-inventory.md` Row 21 |
-| **Three Convictions** | AID's foundational principles: (1) Understanding precedes specification; (2) Specs are hypotheses, not contracts; (3) The [[Knowledge Base]] is the gravitational center. | `methodology/aid-methodology.md:24-28` |
-| **Tier** | Model-capacity classification ([[Opus tier]], [[Sonnet tier]], [[Haiku tier]]). Mapped across vendors per `architecture.md` §Pattern 8 (Three-tier agent model). | `architecture.md` §Pattern 8 (Three-tier agent model) |
-| **Tier mapping** | The mapping table from AID tier to vendor model: Opus → `opus` / `gpt-5.5`-high; Sonnet → `sonnet` / `gpt-5.4`-medium; Haiku → `haiku` / `gpt-5.4-mini`-low. | `architecture.md` §Pattern 8 (Three-tier agent model); `profiles/codex/README.md:27-31` |
-| **Tool tree** | One of the three per-tool install trees (`claude-code/`, `codex/`, `cursor/`). See [[Triplication]]. | `project-structure.md:58-72` |
-| **Triage** | Combined observe→classify→act activity inside [[aid-monitor]]. Note: earlier methodology drafts treated Triage as Phase 9; current docs collapse it into Monitor. | `methodology/aid-methodology.md:449-471`; `docs/glossary.md:41` |
-| **Triplication** | The pattern of three near-identical install payloads — one per supported AI tool (`profiles/claude-code/.claude/`, `profiles/codex/.codex/`+`profiles/codex/.agents/`, `profiles/cursor/.cursor/`) — (retired pattern — superseded by canonical-generator, which is the propagation tooling). Drift between trees is possible and undetected. | `project-structure.md:58-72`; `CONTRIBUTING.md:21-26` |
-| **Two-Tier Review Model** | Work-001 feature-004 (FR2) review architecture in [[aid-execute]]. Tier 1 (per-task): a Small-tier reviewer runs a single quick-check pass — no grade loop, no grade computed. `[CRITICAL]` findings trigger an inline fix-on-spot; `[HIGH]` findings are marked `Deferred-to-gate` and written to `delivery-NNN-issues.md` via [[writeback-task-status.sh]]; `[MEDIUM]` and below are ignored. Tier 2 (per-delivery): the [[Delivery gate]] runs once after all tasks are `Done` — full Reviewer (tier varies with [[complexity-score.sh]] output: Small/Medium/Large), full grade loop (max 3 cycles), circuit-breaker stop. Reviewer tier for gate is set per complexity score thresholds (default Low=6/High=14). Related: [[Delivery gate]], [[complexity-score.sh]], [[writeback-task-status.sh]], [[Pool dispatch]]. | `canonical/skills/aid-execute/references/state-review.md:1-56`; `canonical/skills/aid-execute/references/state-delivery-gate.md:1-35`; `feature-inventory.md` Row 22 |
-| **Universal loop** | The propose → discuss → write → review cycle that drives [[aid-specify]], [[aid-plan]], [[aid-detail]]. | `methodology/aid-methodology.md:300-306` |
-| **User Approved** | Boolean field in `.aid/knowledge/STATE.md` (`**User Approved:** yes`/`no`) — required for [[aid-discover]] to reach [[DONE]] state. Also gating for [[aid-summarize]]. (Pre-FR2 this field lived in `DISCOVERY-STATE.md`, now retired — see [[area-STATE]].) | `canonical/templates/discovery-state-template.md:7`; `aid-summarize/SKILL.md:36` |
-| **Utility Agent** | One of the 3 Haiku-tier sub-agents called *by* full agents (never invoked at the skill layer): [[simple-extractor]], [[simple-formatter]], [[simple-glob]]. | `canonical/agents/simple-extractor/README.md`; `canonical/agents/simple-formatter/README.md`; `canonical/agents/simple-glob/README.md` |
-| **UX Designer** | [[Specialist Agent]] at [[Sonnet tier]] — UI/UX patterns, accessibility (WCAG), user flows. Called by Architect (DESIGN TASK) and Reviewer. | `canonical/agents/ux-designer/README.md`; `profiles/claude-code/.claude/agents/ux-designer.md:1-5` |
-| **VALIDATE** | Mode in [[aid-summarize]] state machine — runs `validate-diagrams.mjs` ([[Mermaid]] parse + render check), `validate-html.sh`, `validate-links.sh`, `contrast-check.mjs`. | `aid-summarize/SKILL.md:8`; `canonical/templates/knowledge-summary/scripts/` |
-| **Waterfall** | The classic Understand → Specify → Plan → Build → Verify → Ship sequence. AID embraces it deliberately — Waterfall failed because humans couldn't iterate fast enough; AI fixes the iteration cost. | `methodology/aid-methodology.md:50-65` |
-| **Work** | A self-contained scope unit inside `.aid/` — `.aid/{work}/`. Created by [[aid-interview]]. Contains [[REQUIREMENTS.md]], `STATE.md` (per-area, absorbs former `INTERVIEW-STATE.md` retired per FR2 — see [[area-STATE]]), `features/`, optional `tasks/`, [[KNOWN-ISSUES.md]]. Multiple works can coexist. | `methodology/aid-methodology.md:246-260`; `profiles/cursor/.cursor/rules/aid-methodology.mdc:13-23` |
-| **Worktree** | Git worktree pattern used during dogfooded discovery (this repo is currently being discovered from a worktree at `C:\Projects\Personal\AID\.claude\worktrees\aid-init`). Not part of the methodology — runtime convenience for parallel branch work. | (environment); referenced obliquely by [[aid-execute]]'s "branch per delivery" convention at `aid-execute/SKILL.md:74-79` |
-| **WRITEBACK** | Mode in [[aid-summarize]] state machine — runs `writeback-state.sh` (renamed from `writeback-discovery-state.sh` per FR2) to append a `## Summarization History` entry to `.aid/knowledge/STATE.md`. Post-cycle-11 KB-F2: defensive arg-handling (`-h`/`--help`, GRADE regex). | `canonical/skills/aid-summarize/SKILL.md`; `canonical/templates/knowledge-summary/scripts/writeback-state.sh` |
-| **writeback-task-status.sh** | 627-line Bash script providing 4 safe write modes for the work `STATE.md` during [[Pool dispatch]] parallel execution. Uses a sentinel-file lock (`set -o noclobber` + sleep-poll retry) to prevent write races when multiple parallel tasks dispatch reviewers concurrently. Modes: (1) `--task-id NNN --field FIELD --value VALUE` — update a single field in the `## Tasks Status` row (Status, Review, Elapsed, Notes, Wave, Type); (2) `--task-id NNN --findings BLOCK` — write/replace the `### task-NNN` block under `## Quick Check Findings`; (3) `--delivery-id NNN --block MARKDOWN_BLOCK` — write/replace the `### delivery-NNN` block under `## Delivery Gates`; (4) `--delivery-id NNN --append-issue ROW` — append a pipe-delimited issue row to `delivery-NNN-issues.md`. Exit codes: 0 success, 1 missing STATE.md, 2 lock timeout, 3 empty output, 4 invalid arg, 5 missing required arg, 6 malformed STATE.md. Related: [[Pool dispatch]], [[Two-Tier Review Model]], [[Delivery gate]]. | `canonical/templates/scripts/writeback-task-status.sh:1-40`; `feature-inventory.md` Row 22 |
+| **AID** | "AI Integrated Development" — a structured methodology for building/maintaining software with AI agents; 8 phases in 5 groups, every phase co-executed by human + AI. | `methodology/aid-methodology.md:1`, `CLAUDE.md:5`, `docs/glossary.md:9` |
+| **Iron Man Model** | The human-AI collaboration philosophy: AI is the suit (amplifies capability); human is the pilot (sets direction, decisions). Human never leaves the cockpit. | `methodology/aid-methodology.md:13`, `docs/glossary.md:17` |
+| **Director** | Role — the human. Sets direction, makes decisions, reviews artifacts, approves phase transitions. Orchestrates, doesn't code. | `methodology/aid-methodology.md:115` |
+| **Orchestrator** | Role — an AI agent (or human). Manages the pipeline: spawns agents, routes feedback loops, enforces quality gates, maintains KB. | `methodology/aid-methodology.md:116` |
+| **Specialist** | Role — an AI coding agent. Executes tasks within defined scope. Reports impediments rather than working around them. | `methodology/aid-methodology.md:117` |
+| **Phase Gate** | Human decision point between phases. The human reviews phase output and approves advancement. "OK?" is the gate. | `docs/glossary.md:15` |
+| **Determinism Test** | "Can you write a complete set of rules to validate the outcome?" If yes, automate fully; if no, keep a human in the loop. Used to decide automation depth per phase. | `docs/glossary.md:76` |
+| **Brownfield** | An existing codebase with history, technical debt, and undocumented knowledge. Discovery phase is designed for brownfield. | `docs/glossary.md:72`, `canonical/templates/settings.yml:17` |
+| **Greenfield** | A new project with no existing code. Runs `aid-config` first, then skips Discovery, starts at Interview. | `docs/glossary.md:74`, `methodology/aid-methodology.md:270-271` |
+| **SDD** | "Spec-Driven Development" — a methodology where specs drive code generation. AID contains SDD as a subset and extends it with discovery, two-level planning, feedback loops, and post-deployment phases. | `docs/glossary.md:70` |
 
 ---
 
-## Cross-Reference Notes
+## Pipeline Phases (the 8)
 
-- **simple-extractor / simple-formatter / simple-glob** are the three [[Utility Agent]]s — all at [[Haiku tier]], all explicitly marked `INTERNAL UTILITY (sub-agent only — do NOT invoke from a skill)` in their descriptions. Source: `profiles/claude-code/.claude/agents/simple-extractor.md:3`.
-- **Haiku tier** appears both in the tier table AND as a standalone glossary entry above (alphabetized at the H-section per STATE.md Q152 cycle-6 fix). The standalone entry is the canonical reference; this cross-reference note is preserved for navigation continuity.
-- **Accessibility Checklist** referenced for [[Lightbox]]: `canonical/templates/knowledge-summary/accessibility-checklist.md` (125 lines) — WCAG-AA target, keyboard navigation, focus trapping, ARIA roles.
-- **Design Tokens** for the [[Knowledge Summary]] colour palette: `canonical/templates/knowledge-summary/design-tokens.md` (124 lines).
-- **Section Templates** are the per-[[Profile]] HTML/Markdown fragments selected by [[aid-summarize]]: `canonical/templates/knowledge-summary/section-templates/{auto-detect, cli, data-pipeline, library, microservices, web-app}.md`.
-- **Breadcrumb scrollspy** is a [[Knowledge Summary]] viewer behavior implemented in `lightbox.js` — not surfaced as a standalone term in any methodology doc; mentioned only here for completeness as the task prompt called it out.
+| Term | Group | Skill | Definition | Source |
+|------|-------|-------|------------|--------|
+| **Discover** | Prepare | `aid-discover` | Phase 1 — Understand the existing system; produces the KB. State machine: GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE. | `methodology/aid-methodology.md:244-273`, `canonical/skills/aid-discover/SKILL.md:7` |
+| **Interview** | Define | `aid-interview` | Phase 2 — Gather requirements one question at a time; produces REQUIREMENTS.md + per-feature SPEC.md (requirements side). | `methodology/aid-methodology.md:289-339`, `canonical/skills/aid-interview/SKILL.md:1-30` |
+| **Specify** | Define | `aid-specify` | Phase 3 — Technical refinement per feature; agent acts as tech lead, proposes solutions, writes Technical Specification into SPEC.md. | `methodology/aid-methodology.md:341-368` |
+| **Plan** | Map | `aid-plan` | Phase 4 — Sequence features into deliverables, each a functional MVP. Plan answers ONE question: order + standalone-functionality. | `methodology/aid-methodology.md:378-400` |
+| **Detail** | Map | `aid-detail` | Phase 5 — Decompose each deliverable into PR-sized typed tasks. "Ultimate breakdown." | `methodology/aid-methodology.md:402-426` |
+| **Execute** | Execute | `aid-execute` | Phase 6 — Execute a task per its Type; built-in two-tier review (per-task quick-check + per-delivery gate). One branch per delivery. | `methodology/aid-methodology.md:436-469` |
+| **Deploy** | Deliver | `aid-deploy` | Phase 7 — Bundle deliveries into a release; final verification (build + tests + lint); ship per `infrastructure.md § Deployment`. Routes KB-affecting discoveries to Discovery (never edits KB directly). | `methodology/aid-methodology.md:479-497` |
+| **Monitor** | Deliver | `aid-monitor` | Phase 8 — Observe production; classify findings (BUG/CR/Infra/No Action); route. The short path (BUG → Execute) skips spec/plan. | `methodology/aid-methodology.md:499-520` |
+
+---
+
+## Non-Phase Skills
+
+| Term | Skill | Definition | Source |
+|------|-------|------------|--------|
+| **Config** | `aid-config` | Bootstrap skill; runs once before the pipeline. Creates `.aid/settings.yml` + 15 KB doc scaffolds + `AGENTS.md`/`CLAUDE.md` + `INDEX.md` placeholders + `DISCOVERY-STATE.md`. | `docs/glossary.md:23`, `methodology/aid-methodology.md:276-279` |
+| **Summarize** | `aid-summarize` | Optional read-only skill; generates `knowledge-summary.html` from approved KB. Idempotent. WCAG-AA accessibility-first. | `methodology/aid-methodology.md:278-279`, `canonical/skills/aid-summarize/SKILL.md:1-30` |
+| **Generate** | `aid-generate` | Maintainer-only skill; renders `canonical/` → 3 profile install trees. Wrapped by `run_generator.py`. | `.claude/skills/aid-generate/SKILL.md:1-20` |
+
+---
+
+## Knowledge Base (KB)
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **Knowledge Base / KB** | `.aid/knowledge/` — 15 active markdown documents (14 from the standard 16-doc set minus security-model + ui-architecture, plus the custom repo-presentation.md replacement) + 2 meta-documents (README, STATE) + 1 generated (INDEX) + 1 generated pre-pass (metrics + project-index in .aid/generated/). The gravitational center of AID — every phase reads from it; any phase can update it. | `methodology/aid-methodology.md:123-125`, `docs/glossary.md:11` |
+| **INDEX.md** | Meta — 2-3 line summary of every KB document; included in every task context for self-serve KB navigation. | `methodology/aid-methodology.md:131`, `methodology/aid-methodology.md:185-221` |
+| **README.md (KB)** | Meta — tracks completeness status (Complete / Partial / Missing) per KB document. | `methodology/aid-methodology.md:132`, `methodology/aid-methodology.md:154-167` |
+| **DISCOVERY-STATE.md** | Meta — discovery grade, Q&A entries, review history. Pre-FR2 name; post-FR2 consolidated into `.aid/knowledge/STATE.md`. | `methodology/aid-methodology.md:133`, `canonical/templates/discovery-state-template.md` |
+| **project-index.md** | Generated — file-inventory pre-pass for discovery sub-agents (1,148 lines in this repo). Built by `build-project-index.sh`. | `methodology/aid-methodology.md:134`, `project-structure.md` |
+| **15 KB docs (the active set)** | `project-structure.md`, `external-sources.md`, `architecture.md`, `technology-stack.md`, `module-map.md`, `coding-standards.md`, `schemas.md` (was `data-model.md`), `pipeline-contracts.md` (was `api-contracts.md`), `integration-map.md`, `domain-glossary.md`, `test-landscape.md`, `tech-debt.md`, `infrastructure.md`, `repo-presentation.md` (NEW — replaced `ui-architecture.md` per Q3), `feature-inventory.md`. Removed: `security-model.md` (content in `coding-standards.md §11`), `ui-architecture.md` (replaced by `repo-presentation.md` in cycle-1 Phase B). | `methodology/aid-methodology.md:136-151` |
+| **Tier 1 / Tier 2 / Tier 3 (context economy)** | Tier 1 = INDEX.md (always loaded). Tier 2 = one KB doc on demand. Tier 3 = exact `path:line` via citation. "RAG by convention" — no embeddings/vector DB. | `methodology/aid-methodology.md:211-219` |
+| **Context Feeding Strategy** | The protocol by which agents are given KB context: always include INDEX.md; orchestrator pre-selects 2-4 relevant KB docs; agent self-serves additional docs via INDEX. | `methodology/aid-methodology.md:179-219` |
+| **Path:line citation** | Every factual KB claim carries an inline `path:line` reference. Anchors facts to source. Enables Tier 3 jump. | `methodology/aid-methodology.md:101` (Hallucination row) |
+
+---
+
+## Workspace / Artifacts
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **Work** | A self-contained scope unit at `.aid/work-NNN-{name}/`. One interview = one work. Multiple works coexist; each has its own requirements + features; all share the KB. | `methodology/aid-methodology.md:295-312` |
+| **Feature** | A discrete capability inside a work. Lives at `.aid/{work}/features/feature-NNN-{name}/` with its own `SPEC.md`. Created by `aid-interview` Feature Decomposition state. | `methodology/aid-methodology.md:303-310` |
+| **Delivery / Deliverable** | A subset of features grouped by `aid-plan` such that the group is a standalone-functional MVP. One branch per delivery (`aid/delivery-NNN`). | `methodology/aid-methodology.md:380-395`, `canonical/skills/aid-execute/SKILL.md:53-57` |
+| **Task** | The atomic unit produced by `aid-detail`. `task-NNN.md` — 6 sections (Title, Type, Source, Depends on, Scope, Acceptance Criteria). One task = one agent session = one PR. | `methodology/aid-methodology.md:419-421`, `canonical/skills/aid-execute/SKILL.md:28-34` |
+| **Package** | A release artifact bundling one or more completed deliveries. `package-NNN-{name}.md` per shipped package. | `methodology/aid-methodology.md:482-494` |
+| **REQUIREMENTS.md** | The product-of-Interview document; one per work (full path only). Frozen after approval (rev-tracked). Holds Objective / Problem / Scope / FRs / NFRs / Constraints / Acceptance / Priority. | `methodology/aid-methodology.md:328`, `methodology/aid-methodology.md:337` |
+| **SPEC.md (per-feature)** | Per-feature spec; requirements side (from Interview) + technical side (from Specify). | `methodology/aid-methodology.md:303-310` |
+| **SPEC.md (work-root, lite path)** | A single consolidated work-root SPEC.md in lite path (no features/ folder, no REQUIREMENTS.md, no PLAN.md). | `canonical/skills/aid-interview/SKILL.md:48-61` |
+| **PLAN.md** | The product-of-Plan document; ordered deliverables + optional cross-cutting risks + deferred features + Execution Graph (appended by Detail). | `methodology/aid-methodology.md:395`, `methodology/aid-methodology.md:421` |
+| **known-issues.md** | Living issue log per work; created when the first issue is registered. Read by Plan, Execute, Deploy, Monitor. | `methodology/aid-methodology.md:698` |
+| **MONITOR-STATE.md** | The product-of-Monitor file: last-run log + active findings + resolved findings. | `methodology/aid-methodology.md:50`, `methodology/aid-methodology.md:519-520` |
+| **IMPEDIMENT-task-NNN.md** | Written by `aid-execute` when it discovers an assumption that doesn't hold. Has Type (wrong-assumption / missing-dependency / architecture-conflict / kb-gap), Options, Recommendation. The human decides. | `canonical/templates/feedback-artifacts/IMPEDIMENT.md:1-60`, `methodology/aid-methodology.md:663-680` |
+| **Q&A entry** | Universal loopback artifact appended to a STATE file. Schema (Style A): `### Q{N}` + sub-bullets `Category`, `Impact`, `Status`, `Context`, `Suggested`, `Answer` (per `coding-standards.md §12`). | `methodology/aid-methodology.md:652-661`, `coding-standards.md §12` |
+| **Revision History / Change Log** | Inline rev-tracking table on every artifact. Distinct from process state. | `methodology/aid-methodology.md:638-648`, `canonical/templates/work-state-template.md:11` |
+
+---
+
+## Task Types (8 — drive both Execute behavior + reviewer criteria)
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **RESEARCH** | Investigate, compare options, document findings. May skip branch isolation if only `.aid/` artifacts. | `methodology/aid-methodology.md:443`, `canonical/skills/aid-execute/SKILL.md:70-71` |
+| **DESIGN** | Mockups, wireframes, UI prototypes, interaction flows. | `methodology/aid-methodology.md:444` |
+| **IMPLEMENT** | Write code + unit tests. | `methodology/aid-methodology.md:445` |
+| **TEST** | Integration, E2E, UI, load tests. | `methodology/aid-methodology.md:446` |
+| **DOCUMENT** | ADRs, API docs, runbooks, diagrams. May skip branch isolation. | `methodology/aid-methodology.md:447` |
+| **MIGRATE** | Data migration scripts, schema changes. | `methodology/aid-methodology.md:448` |
+| **REFACTOR** | Restructure code without changing behavior. | `methodology/aid-methodology.md:449` |
+| **CONFIGURE** | Config files, CI/CD, environment setup. | `methodology/aid-methodology.md:450` |
+
+---
+
+## Lite Path / Sub-Paths (feature-005)
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **Lite Path** | Collapsed Interview → Specify → Plan → Detail into a single condensed flow; emits one work-root `SPEC.md` + `tasks/` (no features/, no REQUIREMENTS.md, no PLAN.md). | `canonical/skills/aid-interview/SKILL.md:48-61` |
+| **Full Path** | The standard pipeline — all four design phases run separately, REQUIREMENTS.md + per-feature SPEC.md + PLAN.md + tasks/. | `canonical/templates/work-state-template.md:17-19` |
+| **Triage** | The 2-3 question deterministic routing state inside `aid-interview` (T1 = breadth, T2 = size, T3 = type). Conservative — any "large" signal routes to FULL. | `canonical/skills/aid-interview/references/state-triage.md:1-100` |
+| **workType** | The kebab-normalized type from T3: `bug-fix | small-refactor | single-doc | small-new-feature`. | `canonical/skills/aid-interview/references/state-triage.md:75-81` |
+| **LITE-BUG-FIX** | Sub-path for `bug-fix` workType. Typically 1 IMPLEMENT task (fix + regression test). | `canonical/skills/aid-interview/references/state-task-breakdown.md:58-63` |
+| **LITE-DOC** | Sub-path for `single-doc` workType. Exactly 1 DOCUMENT task. | `canonical/skills/aid-interview/references/state-task-breakdown.md:58-63` |
+| **LITE-REFACTOR** | Sub-path for `small-refactor` workType. 1–3 REFACTOR + TEST tasks. | `canonical/skills/aid-interview/references/state-task-breakdown.md:58-63` |
+| **LITE-FEATURE** | Sub-path for `small-new-feature` workType. 1–5 IMPLEMENT + TEST + DOCUMENT tasks. | `canonical/skills/aid-interview/references/state-task-breakdown.md:58-63` |
+| **CONDENSED-INTAKE (L1)** | Lite-path sub-path-specific slot-fill conversational interview; written by `interviewer`. | `canonical/skills/aid-interview/SKILL.md:21-23` |
+| **TASK-BREAKDOWN (L2)** | Lite-path state — `architect` proposes typed task breakdown directly from work-root SPEC. | `canonical/skills/aid-interview/references/state-task-breakdown.md:1-10` |
+| **LITE-REVIEW (L3)** | Lite-path pre-execution gate — `reviewer` adversarially validates the task set against SPEC. | `canonical/skills/aid-interview/SKILL.md:24` |
+| **LITE-DONE (L4)** | Lite-path terminal — hand-off prompt to `/aid-execute`. | `canonical/skills/aid-interview/SKILL.md:25` |
+| **Escalated** | Path state where a work started on lite and was promoted to full mid-flight. `STATE.md ## Escalation Carry` block preserves slot answers + decisions to avoid re-asking. | `canonical/skills/aid-interview/SKILL.md:181-194`, `canonical/templates/work-state-template.md:26-43` |
+
+---
+
+## Recipes (FR8 / feature-011)
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **Recipe** | Pre-filled lite-path template at `canonical/recipes/<name>.md`. YAML front-matter + body with `## spec` + `## tasks` blocks + `{{slot}}` placeholders. Eliminates redundant interview for recurring patterns. | `canonical/recipes/README.md:1-20` |
+| **Slot** | `{{slot-name}}` placeholder in a recipe body. Lexical rule: `[a-z][a-z0-9-]*`. Substituted at render via `parse-recipe.sh --render`. | `canonical/recipes/README.md:82-95` |
+| **Slot escape** | `{!{` in recipe body — rewritten to literal `{{` at emit time (so recipes can quote slot syntax without triggering it). | `canonical/recipes/README.md:98-100` |
+| **applies-to** | Recipe front-matter field — which `workType` this recipe matches (or `*` for cross-type). | `canonical/recipes/README.md:65-77` |
+| **Seed Catalog (5 recipes)** | `bug-fix.md`, `method-refactor.md`, `add-crud-endpoint.md`, `add-unit-test.md`, `write-release-note.md`. | `canonical/recipes/README.md:26-39` |
+
+---
+
+## Two-Tier Review (feature-004)
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **Quick-Check** | Per-task fast review by Small-tier `reviewer`; NO grade loop; HIGH+ findings deferred to delivery gate. | `canonical/skills/aid-execute/SKILL.md:140`, `canonical/scripts/execute/writeback-task-status.sh:17-18` (Quick Check Findings section) |
+| **Delivery Gate** | Per-delivery full review by `reviewer` (tier = complexity score); full review/fix/review loop with `grade.sh`. | `canonical/skills/aid-execute/SKILL.md:144` |
+| **Complexity Score (Small / Medium / Large)** | Computed by `complexity-score.sh` from task count, depth, risk, consults — selects reviewer tier for the delivery gate. Thresholds: Low=6, High=14 default. | `canonical/scripts/execute/complexity-score.sh:14-32` |
+
+---
+
+## Parallel Pool Dispatch (feature-009)
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **Pool Dispatch** | The PD-0..PD-6 model used by `aid-execute` in delivery mode — continuous parallel pool replaces the serial task loop. | `canonical/skills/aid-execute/SKILL.md:193-211` |
+| **MaxConcurrent** | The pool's parallel capacity — sourced from `.aid/settings.yml` `execution.max_parallel_tasks` (default 5). | `canonical/templates/settings.yml:44`, `canonical/skills/aid-execute/SKILL.md:200` |
+| **Wait-for-any-completion** | Pool scheduling primitive — pool waits for any single task to finish before slotting the next. | `canonical/skills/aid-execute/SKILL.md:193-211` |
+| **Failure Block Radius** | The transitive descendants of a failed task — all are marked Blocked. Computed by `compute-block-radius.sh` via BFS. | `canonical/scripts/execute/compute-block-radius.sh:1-58` |
+| **Graceful Degradation** | When the host doesn't support `run_in_background: true`, pool falls back to MaxConcurrent=1 (sequential). User-visible notice + Calibration Log entry. | `canonical/skills/aid-execute/SKILL.md:198-211` |
+| **Capability Probe (PD-0)** | The early pool step that detects whether the host supports backgrounded dispatch. | `canonical/skills/aid-execute/SKILL.md:194-197` |
+| **EXECUTE-WAVE** | The named state inside `aid-execute` where pool dispatch runs. Includes AC4 Sub-unit Drill-down (re-rendered snapshot after each sub-unit transition). | `canonical/skills/aid-execute/SKILL.md:212-221` |
+| **Sub-unit** | A subdivision of an EXECUTE-WAVE step (e.g., per-task progress within a wave). Drives the AC4 drill-down snapshot. | `canonical/skills/aid-execute/SKILL.md:213-221` |
+
+---
+
+## Subagent Visibility (work-003 traceability — always-on)
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **L1 ETA Bracket Pair** | `▶ <agent> starting (~LOW-HIGH)` / `✓ <agent> done in <actual>` — bracket on every long-running dispatch. ETAs from `rough-time-hints.md`. | `canonical/templates/long-wait-protocol.md:38-49` |
+| **L2 Check-In Timers** | Three backgrounded `sleep && echo` Bash dispatches at `LOW/2`, `LOW`, `1.5×LOW` minutes — each fires an in-narration check-in. Each must be its OWN `run_in_background: true` call (no `&` chaining). | `canonical/skills/aid-discover/SKILL.md:89-95`, `canonical/templates/long-wait-protocol.md:41-49` |
+| **L3 Heartbeat File** | `.aid/.heartbeat/<agent>-<unix-ts>.txt` — pre-created by dispatcher; subagent overwrites every N minutes; single line pipe-delimited; deleted on completion. | `canonical/templates/subagent-heartbeat-protocol.md:39-115` |
+| **Calibration Log** | Per-work `STATE.md ## Calibration Log` section — every dispatch appends `\| YYYY-MM-DD \| agent \| task-id \| ETA-band \| actual \| notes \|`. Always-on, never optional. | `canonical/skills/aid-discover/SKILL.md:104-107` |
+| **Dispatches sub-column** | Per-task sub-column in `STATE.md ## Tasks Status` — records each dispatch attempt for the task. Always-on. | `canonical/skills/aid-discover/SKILL.md:106-108` |
+| **heartbeat_interval** | `.aid/settings.yml` `traceability.heartbeat_interval` (integer minutes; default 1; `0` disables). | `canonical/templates/settings.yml:49-50`, `canonical/templates/subagent-heartbeat-protocol.md:20-37` |
+
+---
+
+## State Machine / FR2 Area-STATE
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **State Machine (per-skill)** | Every `aid-*` skill exits after one state and re-enters on the next slash-command invocation (no auto-advance per IQ9). Each SKILL.md has a Dispatch table = state machine. | `canonical/skills/aid-discover/SKILL.md:54-59`, `coding-standards.md §8d` |
+| **FILESYSTEM IS THE ONLY SOURCE OF TRUTH** | Every state-detection block opens with this — skills never trust conversation memory; always read disk. | `canonical/skills/aid-execute/SKILL.md:112`, `canonical/skills/aid-discover/SKILL.md:128` |
+| **State Entry Line** | The `[State: NAME] — <description>` print + "you are here" ASCII state-map emitted on every state entry. | `canonical/skills/aid-discover/SKILL.md:166-200` |
+| **Dispatch Table** | The canonical state-machine table in every thin-router SKILL.md (State / Detail / Worker / Advance columns). The three Advance forms: Unconditional, Halt, Conditional. | `canonical/skills/aid-execute/SKILL.md:137-148`, `coding-standards.md §8d` |
+| **FR2 Area-STATE Consolidation** | The per-work `STATE.md` is the per-area state hub; legacy per-feature `STATE.md` + per-task `STATE.md` files are RETIRED. | `coding-standards.md §7e`, `canonical/templates/work-state-template.md:9` |
+| **Thin-Router SKILL.md Convention** | When SKILL.md grows past ~200 lines, extract per-state bodies into `references/state-{name}.md`; keep router as Dispatch table + Pre-flight + State Detection. Caps at ~360 lines. | `coding-standards.md §7b`, `project-structure.md:228-244` |
+
+---
+
+## Grading / Review
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **Universal Grading Rubric** | One rubric across the pipeline: severity tags `[CRITICAL] [HIGH] [MEDIUM] [LOW] [MINOR]` → grade computed deterministically by `grade.sh`. Worst severity dominates the letter; count sets modifier. | `methodology/aid-methodology.md:324`, `canonical/scripts/grade.sh:100-126` |
+| **Grade scale** | `A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, E+, E, E-, F`. E band = critical-severity present. F = non-functional. | `canonical/skills/aid-discover/SKILL.md:161-162`, `canonical/scripts/grade.sh:109-126`, `canonical/templates/settings.yml:58-61` |
+| **minimum_grade** | The REVIEW exit criterion (default `A`). Per-skill overrides possible (`<skill>.minimum_grade`). | `canonical/templates/settings.yml:37-38, 53-81` |
+| **Severity tag** | `[CRITICAL] [HIGH] [MEDIUM] [LOW] [MINOR]` — reviewer assigns; script computes grade. | `canonical/agents/reviewer/AGENT.md:36-37, 54-60` |
+| **Source tag** | `[CODE] [TASK] [SPEC] [KB] [ARCHITECTURE]` — reviewer tags issue origin; drives loopback routing. | `canonical/agents/reviewer/AGENT.md:36` |
+| **Reviewer-Dispatch Protocol** | The 5-section brief contract for every reviewer dispatch: ARTIFACTS UNDER REVIEW / CONTEXT / RUBRIC / OUT OF SCOPE / OUT-OF-SCOPE FINDINGS POLICY / DELIVERABLES. Enforces scope discipline. | `canonical/templates/reviewer-dispatch.md:1-80` |
+| **CONTEXT discipline** | "CONTEXT describes what the artifact IS. Does NOT describe what downstream consumers do with it." Prevents scope leak in reviewer briefs. | `canonical/templates/reviewer-dispatch.md:68-72` |
+| **Out-of-Scope Observations** | Reviewer ledger section for stray findings; logged but excluded from severity counts. Does NOT affect grade. | `canonical/templates/reviewer-dispatch.md:36-39` |
+| **Two-Grade Gate** (summarize) | `aid-summarize` requires BOTH Machine Grade AND Human Grade ≥ minimum. Overall = lower of the two. V1=0 forces Human Grade = F. | `canonical/skills/aid-summarize/SKILL.md:7-8`, `canonical/scripts/summarize/run-validators.sh:19-26` |
+| **AUTO_POOL (summarize)** | Auto-checkable criteria pool: `D1 D2 L1 L2 H1 A1 A2 A3 A4 A5 C1 C2 S2` (73 pts max). | `canonical/scripts/summarize/run-validators.sh:20` |
+| **MANUAL_POOL (summarize)** | Manual-checkable criteria pool: `K1 K2 V1` (30 pts max). | `canonical/scripts/summarize/run-validators.sh:21` |
+| **V1 visual gate** | Mandatory human visual check in `aid-summarize`. V1=0 forces Human Grade = F. | `canonical/scripts/summarize/run-validators.sh:26` |
+
+---
+
+## Feedback Loops (the 11 named loops)
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **Loop 1 — Interview→Discovery** | Q&A entry to DISCOVERY-STATE → targeted discovery → KB update → interview resumes. | `methodology/aid-methodology.md:566-570` |
+| **Loop 2 — Specify→Discovery** | Specify pauses → Q&A → discovery → resume. | `methodology/aid-methodology.md:572-576` |
+| **Loop 3 — Plan→Discovery** | Plan reveals codebase complexity → Q&A → discovery → resume. | `methodology/aid-methodology.md:578-582` |
+| **Loop 4 — Plan→Specify** | KB OK but SPEC ambiguous → feature `STATE.md` Q&A → spec revision. | `methodology/aid-methodology.md:584-588` |
+| **Loop 5 — Detail→Plan** | Plan too vague to decompose → Plan revises → Detail resumes. | `methodology/aid-methodology.md:590-594` |
+| **Loop 6 — Execute→Discovery / Specify / Detail** | IMPEDIMENT routed by Type. | `methodology/aid-methodology.md:596-600` |
+| **Loop 7 — Execute Review→upstream** | CODE auto-fixed; TASK/SPEC/KB issues escalate. | `methodology/aid-methodology.md:602-606` |
+| **Loop 8 — Deploy→Execute** | Deploy verification fails → back to Execute. | `methodology/aid-methodology.md:608-612` |
+| **Loop 9 — Monitor→Execute** | BUG classification → new task → Execute → Deploy. The "short path." | `methodology/aid-methodology.md:616-620` |
+| **Loop 10 — Monitor→Discover** | Change Request → Q&A → full new cycle. | `methodology/aid-methodology.md:622-626` |
+| **Loop 11 — Any→Discovery** | Cross-cutting targeted re-discovery — KB is always the return target; "the loop that makes the Knowledge Base the gravitational center." | `methodology/aid-methodology.md:630-634` |
+| **Targeted re-discovery** | Re-entry to Discovery that fills a specific gap; never a full redo. | `methodology/aid-methodology.md:272`, `methodology/aid-methodology.md:632-634` |
+| **Bug Path (short)** | Monitor → Execute → Deploy. Skips spec/plan because spec is already correct. | `methodology/aid-methodology.md:234`, `methodology/aid-methodology.md:516` |
+| **Change Request Path (full cycle)** | Monitor → Discover → ... full pipeline restart. | `methodology/aid-methodology.md:235`, `methodology/aid-methodology.md:622-626` |
+
+---
+
+## Agents (22) & Tiers
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **Tier (Large / Medium / Small)** | Model size tier per agent. Maps to Claude (Opus/Sonnet/Haiku), Codex (gpt-5.5/gpt-5.4/gpt-5.4-mini), Cursor. | `profiles/claude-code.toml:38-41`, `profiles/codex.toml:43-55` |
+| **Large-tier (10 agents)** | architect, reviewer, interviewer, security, discovery-{scout, architect, analyst, integrator, quality, reviewer}. | `.aid/knowledge/project-structure.md:252` |
+| **Medium-tier (9 agents)** | orchestrator, researcher, developer, operator, data-engineer, performance, devops, tech-writer, ux-designer. | `.aid/knowledge/project-structure.md:253` |
+| **Small-tier (3 agents)** | simple-extractor, simple-formatter, simple-glob. | `.aid/knowledge/project-structure.md:254` |
+| **Discovery sub-agents (5)** | Scout, Architect, Analyst, Integrator, Quality — orchestrated in parallel by `aid-discover`. Each owns specific KB docs. | `canonical/skills/aid-discover/references/agent-prompts.md:1-143` |
+| **discovery-reviewer** | Grades discovery output adversarially. Largest agent file (387 lines). | `canonical/agents/discovery-reviewer/AGENT.md` |
+
+---
+
+## Distribution / Generator
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **canonical/** | Single source of truth for all install-tree content. Never edit profile trees directly — edit canonical and run `run_generator.py`. | `coding-standards.md §7a`, `project-structure.md:41-48` |
+| **Profile** | A host-tool target spec — `profiles/{claude-code,codex,cursor}.toml`. Defines output_root, frontmatter schema, model tiers, filename_map, capabilities. | `profiles/claude-code.toml:1-65`, `profiles/codex.toml:1-78` |
+| **Install Tree** | One of the per-profile output directories: `profiles/claude-code/.claude/`, `profiles/codex/{.codex,.agents}/`, `profiles/cursor/.cursor/`. | `canonical/EMISSION-MANIFEST.md:14-22` |
+| **Dogfood Tree** | The top-level `.claude/` in this repo — AID applied to itself. Byte-identical body content to the claude-code profile output. NOT subject to KB claims (KB only covers the 4-tree set: canonical + 3 profile trees). | `canonical/skills/aid-discover/SKILL.md:45-47`, `.aid/knowledge/project-structure.md:296-298` |
+| **Emission Manifest** | `{profile}/emission-manifest.jsonl` — the authoritative safety boundary for pure-mirror deletion. JSONL records of (`profile`, `src`, `dst`, `sha256`), sorted by `dst`, LF endings, sentinel first line. | `canonical/EMISSION-MANIFEST.md:1-152` |
+| **Pure-Mirror Deletion** | The generator's safety rule: only files in the previous manifest's `removed_dst` set are deleted; files outside any manifest are NEVER touched. | `canonical/EMISSION-MANIFEST.md:70-83` |
+| **Sentinel (manifest)** | The reserved first line `{"_manifest_version": 1}` enabling future schema evolution. | `canonical/EMISSION-MANIFEST.md:57-67` |
+| **VERIFY-4a** | The strict byte-identity verification — re-runs generator and asserts identical output (`verify_deterministic.py`, 515 lines). | `.aid/knowledge/project-structure.md:109`, `.aid/knowledge/project-structure.md:133` |
+| **VERIFY-4b** | The advisory verification — non-blocking warnings (`verify_advisory.py`, 343 lines). | `.aid/knowledge/project-structure.md:134` |
+| **AC2** | The "byte-identical re-run" guarantee — re-running generator on unchanged inputs produces byte-identical install tree + byte-identical manifest. | `canonical/EMISSION-MANIFEST.md:46-50` |
+| **Split-root layout (Codex)** | Codex profile has TWO output roots: `profiles/codex/.codex/agents/` (TOML) + `profiles/codex/.agents/{skills,scripts,recipes,templates}/`. One manifest covers both. | `profiles/codex.toml:10-18`, `canonical/EMISSION-MANIFEST.md:24-27` |
+| **Filename map** | Per-profile substitution dictionary for canonical placeholders (`project_context_file`, `reviewer_output_file`, `open_questions_file`). | `profiles/claude-code.toml:48-53`, `profiles/codex.toml:61-66` |
+| **Asset Kind** | A category of canonical source (agents / skills / templates / recipes / scripts) — each maps to an install-tree sub-directory per profile. | `canonical/EMISSION-MANIFEST.md:105-115` |
+| **Passthrough Renderer** | Renderer that emits files without format conversion or frontmatter injection (e.g., recipes). | `canonical/EMISSION-MANIFEST.md:117-130` |
+| **setup.sh / setup.ps1** | End-user installers (Bash / PowerShell). Interactive menu to choose tools; diff-aware copy (`new=copy, identical=skip, different=ask`). | `setup.sh:1-100`, `.aid/knowledge/project-structure.md:111` |
+
+---
+
+## Settings & Configuration
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **.aid/settings.yml** | Single source of truth for AID pipeline settings (grades, parallelism, heartbeat, project identity). Managed by `/aid-config`. | `canonical/templates/settings.yml:1-11` |
+| **review.minimum_grade** | Global REVIEW exit criterion (default `A`). | `canonical/templates/settings.yml:37-38` |
+| **execution.max_parallel_tasks** | Pool dispatch capacity (default 5). | `canonical/templates/settings.yml:44` |
+| **traceability.heartbeat_interval** | Heartbeat cadence in minutes (default 1; `0` disables). | `canonical/templates/settings.yml:49-50` |
+| **Per-skill override** | `<skill>.minimum_grade` (e.g., `discover.minimum_grade: A+`) — overrides global. | `canonical/templates/settings.yml:54-81` |
+| **Resolution order (read-setting.sh skill mode)** | Per-skill override → `review.<key>` → script `--default` → exit 1. | `canonical/scripts/config/read-setting.sh:212-232` |
+| **read-setting.sh Skill Mode** | `--skill X --key Y --default V` — applies override resolution. | `canonical/scripts/config/read-setting.sh:14-19` |
+| **read-setting.sh Path Mode** | `--path A.B --default V` — direct dotted-path lookup, no override resolution. | `canonical/scripts/config/read-setting.sh:21-26` |
+
+---
+
+## Repository / Workflow Conventions
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **Single-Branch Work** | For ANY `work-NNN`, commit to ONE persistent branch (off master); no per-task worktrees or branches. Root cause of PR #12 losing 63 commits. | `coding-standards.md §7f`; `tech-debt.md H1` history |
+| **work-NNN branch convention** | Persistent `work-NNN` branch (off master); PR `work-NNN → master` when ready. | user-memory `project_work-branch-convention.md` |
+| **Pre-flight Cleanup** | Orchestrator-only KB sweep before reviewer dispatch — line-count drift, off-by-1, ghost references, path/citation hygiene. These are housekeeping items; never grade them. | `canonical/skills/aid-discover/SKILL.md:31-52` |
+| **Quadruple Mirror** | Each unique canonical helper script has 4 byte-identical copies: canonical + dogfood `.claude/` + 3 profile trees. Inflates file counts. | `.aid/knowledge/project-structure.md:296` |
+| **kb-overhaul branch** | The current working branch in this repo (per git status). Off master. | git status, `.aid/knowledge/project-structure.md:14` |
+| **Cycle (discovery)** | One full pass through GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL. KB authoring uses cycle numbering. | `STATE.md ## Review History` |
+| **Pass (discovery cycle internals)** | A sub-iteration inside a cycle. | `STATE.md ## Review History` |
+
+---
+
+## Universal Loop Cycle (Specify / Plan / Detail / Specify-section)
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **PROPOSE** | Step 1 of the universal loop — agent proposes a concrete solution grounded in KB / codebase / SPEC. | `methodology/aid-methodology.md:349-353`, `canonical/skills/aid-specify/SKILL.md:27-33` |
+| **DISCUSS** | Step 2 — developer validates, adjusts, redirects. Agent pushes back on contradictions, presents trade-offs. | `methodology/aid-methodology.md:349-353` |
+| **WRITE** | Step 3 — the agreed content is written to the target artifact. | `methodology/aid-methodology.md:349-353` |
+| **REVIEW** | Step 4 — agent verifies what was written against KB / codebase reality. Pass → next section. Fail → back to PROPOSE. | `methodology/aid-methodology.md:349-353` |
+| **Re-run = enter at step 4** | Re-running a design-phase skill enters at REVIEW with existing content — the same loop handles both creation and maintenance. | `methodology/aid-methodology.md:356`, `canonical/skills/aid-specify/SKILL.md:35` |
+
+---
+
+## Miscellaneous Domain Vocabulary
+
+| Term | Definition | Source |
+|------|------------|--------|
+| **Adversarial Reviewer** | The reviewer is structurally adversarial to the developer — never grades its own work. Separation prevents bias. | `canonical/agents/reviewer/AGENT.md:7-8, 48`, `methodology/aid-methodology.md:104` |
+| **Clean Context** | The reviewer is dispatched in a clean context (no chat history with the executor) — guarantees independent assessment. | `canonical/skills/aid-execute/SKILL.md:90` (REVIEW state) |
+| **Hypothesis vs Knowledge (specs)** | "A spec written before implementation is a hypothesis. A spec revised after implementation is knowledge." | `methodology/aid-methodology.md:86-88` |
+| **Spec-as-Hypothesis** | Treats SPEC.md as a living artifact with formal revision protocols — every change is tracked, justified, approved. | `methodology/aid-methodology.md:102`, `methodology/aid-methodology.md:86-88` |
+| **Spike** | A pause in `aid-specify` for investigation; records what needs research. | `methodology/aid-methodology.md:367`, `canonical/skills/aid-specify/SKILL.md:8` |
+| **Execution Graph** | Dependency + parallel-wave tables appended to PLAN.md by Detail. Drives `aid-execute` task ordering + pool dispatch. | `methodology/aid-methodology.md:421`, `canonical/skills/aid-execute/SKILL.md:39, 175-180` |
+| **Wave** | A group of tasks that can be executed in parallel (no inter-dependencies). Drives EXECUTE-WAVE pool dispatch. | `canonical/templates/work-state-template.md:81-85` |
+| **Failure Tolerance** | EXECUTE-WAVE policy for handling failed sub-units — references `state-execute.md § EXECUTE-WAVE Drill-down`. | `canonical/skills/aid-execute/SKILL.md:218-221` |
+| **Circuit Breaker** | The Execute review loop's safety stop: if grade hasn't improved (same or worse) after 3 consecutive cycles, halt. | `methodology/aid-methodology.md:460` |
+| **Stale-Check** | The `aid-summarize` state that compares `LAST_KB_CHANGE_DATE` vs `LAST_SUMMARY_DATE` to decide whether to regenerate the HTML. | `canonical/skills/aid-summarize/SKILL.md:70-80` |
+| **Knowledge Summary** | The single self-contained `.aid/knowledge/knowledge-summary.html` produced by `aid-summarize`. Offline, light/dark, accessible, Mermaid-rendered. | `canonical/skills/aid-summarize/SKILL.md:1-30` |
+| **Profile (summarize)** | One of `auto | web-app | library | cli | microservices | data-pipeline` — drives section-template selection for the knowledge-summary HTML. | `canonical/skills/aid-summarize/SKILL.md:14, 51` |
+| **Target diagrams** | Per-profile minimum diagram count for the knowledge-summary; if actual < target, grade capped at C+. | `canonical/scripts/summarize/run-validators.sh:28-34` |
+| **WCAG AA** | The accessibility floor for knowledge-summary HTML output (color contrast, keyboard nav, semantic markup). | `canonical/skills/aid-summarize/SKILL.md:21-22` |
+| **Lightbox** | Click-to-expand modal for diagrams in the knowledge-summary HTML. Implemented in `canonical/templates/knowledge-summary/lightbox.js` (359 lines). | `canonical/skills/aid-summarize/SKILL.md:20-22`, `.aid/knowledge/project-structure.md:279` |
+| **Plan Mode (Claude Code)** | A read-only mode that blocks file writes. Pre-flight checks in writing skills detect and abort. | `canonical/skills/aid-discover/SKILL.md:26-27`, `canonical/skills/aid-execute/SKILL.md:47-48` |
+| **Auto-Accept Edits** | Claude Code mode that allows writes without confirmation. Compatible with AID skills. | `canonical/skills/aid-execute/SKILL.md:47` |
+| **`--reset` flag** | Universal flag on aid-* skills — clears the artifact set the skill owns and restarts from scratch. | `canonical/skills/aid-discover/SKILL.md:65-66`, `canonical/skills/aid-interview/SKILL.md:88-89`, etc. |
+| **`--grade X` flag** | Universal flag — overrides the minimum acceptable grade for this skill. Persisted to STATE.md / settings.yml. | `canonical/skills/aid-discover/SKILL.md:64-67`, `canonical/skills/aid-summarize/SKILL.md:50` |
+| **`--non-functional` (grade.sh)** | Flag that forces grade = F (build/run failed or produced no usable output). | `canonical/scripts/grade.sh:51-54` |
+| **STATE.md Q&A (Pending)** | The section in `.aid/knowledge/STATE.md` (Discovery area STATE) where loopback questions from downstream phases accumulate until Discover's Q-AND-A state resolves them. | `canonical/skills/aid-discover/SKILL.md:155-159` |
+| **Cross-phase Q&A** | The `STATE.md ## Cross-phase Q&A (Pending)` section on work `STATE.md` — consolidated open questions across all phases of one work. | `canonical/templates/work-state-template.md:95-100` |
+| **Escalation Carry** | The `STATE.md ## Escalation Carry` block written by lite→full escalation; preserves slot values + decisions to avoid re-asking during CONTINUE. | `canonical/templates/work-state-template.md:26-43`, `canonical/skills/aid-interview/SKILL.md:181-194` |
+| **DELIVERY-GATE** | The Execute state where the delivery-gate reviewer runs (full review/fix loop with `grade.sh` determinism). | `canonical/skills/aid-execute/SKILL.md:144` |
+| **Quick Check Findings** | The `STATE.md ## Quick Check Findings` section where per-task quick-check HIGH+ findings accumulate for the delivery gate aggregator. | `canonical/scripts/execute/writeback-task-status.sh:17-18` |
+| **Delivery Gates** | The `STATE.md ## Delivery Gates` section where per-delivery review verdicts are recorded. | `canonical/scripts/execute/writeback-task-status.sh:20-23` |
+| **delivery-NNN-issues.md** | Per-delivery issue log inside the work directory. Append-only via `writeback-task-status.sh --delivery-id NNN --append-issue`. | `canonical/scripts/execute/writeback-task-status.sh:26-28` |
+| **Sentinel-File Lock** | The concurrency primitive used by `writeback-task-status.sh` and `parse-recipe.sh --render`: `set -o noclobber` + atomic create + sleep-poll retry. | `canonical/scripts/execute/writeback-task-status.sh:6-9` |
+| **AID Workspace** | `.aid/` — the runtime root for all KB + work artifacts. Gitignore convention varies (committed vs ignored is user choice). | `canonical/skills/aid-interview/SKILL.md:74` |
+| **Run** | One invocation of an aid-* slash command. Each run advances one state (no auto-advance). | `canonical/skills/aid-discover/SKILL.md:19` |
+| **One question at a time** | Interview discipline — never batch multiple questions in a single turn. User-memory rule `feedback_one-question-at-a-time.md`. | `methodology/aid-methodology.md:331`, user memory |
+| **Wait for responses** | When the user says wait or has open questions, do NOT proceed on assumed intent. User-memory rule `feedback_wait-when-told.md`. | user memory |
+| **Subjective-Issue Collaboration** | For human-detected/subjective issues: expose → propose → ask; never fix autonomously. User-memory rule. | user memory `feedback_subjective-issue-collaboration.md` |
+| **No Effort-Dodging** | Do what is asked or give a concrete specific reason; never vague hand-waves, never defer doable work. User-memory rule. | user memory `feedback_no-effort-dodging.md` |
+| **rough-time-hints.md** | The current measured ETA table per subagent operation class. Source of L1 ETA bands. | `canonical/skills/aid-discover/SKILL.md:81-82`, `.aid/knowledge/project-structure.md:282` |
+
+---
+
+## Glossary Statistics
+
+- **Total terms defined:** ~195 (across 16 categorical groups above; counted by row audit of this document — `metrics.md` generator undercounts at 172 due to regex mismatch with `✓` status markers)
+- **Primary sources:** `methodology/aid-methodology.md` (1,070 lines), `docs/glossary.md` (76 lines), 11 canonical SKILL.md files, 22 canonical AGENT.md files, `canonical/EMISSION-MANIFEST.md` (152 lines), `canonical/templates/{settings.yml, work-state-template.md, subagent-heartbeat-protocol.md, long-wait-protocol.md, reviewer-dispatch.md, feedback-artifacts/IMPEDIMENT.md}`, helper scripts under `canonical/scripts/`
+- **Every entry cites at least one `path:line` source.** ⚠️ Inferred-from-code annotations are explicit where used.

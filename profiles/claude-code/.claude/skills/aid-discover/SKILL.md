@@ -142,14 +142,14 @@ State 6: GRADE file, grade >= min, user-approved        → DONE
 
 **Detection logic:**
 
-1. Check `.aid/knowledge/` for the 16 expected documents:
+1. Check `.aid/knowledge/` for the 14 expected documents:
    `project-structure.md`, `external-sources.md`, `architecture.md`, `technology-stack.md`,
-   `module-map.md`, `coding-standards.md`, `data-model.md`, `api-contracts.md`,
-   `integration-map.md`, `domain-glossary.md`, `test-landscape.md`, `security-model.md`,
-   `tech-debt.md`, `infrastructure.md`, `ui-architecture.md`, `feature-inventory.md`
+   `module-map.md`, `coding-standards.md`, `schemas.md`, `pipeline-contracts.md`,
+   `integration-map.md`, `domain-glossary.md`, `test-landscape.md`,
+   `tech-debt.md`, `infrastructure.md`, `feature-inventory.md`
 2. A document is "populated" only if it contains real content (files with only `❌ Pending` = missing). If any are missing → **GENERATE**
-3. If all 16 populated and `.aid/knowledge/STATE.md` has `**Grade:** Pending` or `Not Started` → **REVIEW**
-4. If all 16 populated but no `.aid/knowledge/STATE.md` → **REVIEW** (legacy)
+3. If all 14 populated and `.aid/knowledge/STATE.md` has `**Grade:** Pending` or `Not Started` → **REVIEW**
+4. If all 14 populated but no `.aid/knowledge/STATE.md` → **REVIEW** (legacy)
 5. If `.aid/knowledge/STATE.md` exists with a grade:
    - Read current/minimum grade; if `--grade` provided, update minimum
    - Read `## Q&A (Pending)` section of `.aid/knowledge/STATE.md` for `**Status:** Pending` entries
@@ -244,9 +244,11 @@ aid-discover  ▸ you are here
 > manual-edits directive (no regex scripts — scripts generalize and produce
 > new defects). Each agent commits-stages its file's changes only. After
 > ALL agents return, the orchestrator runs a **sequential aggregate step**:
-> `verify-claims.sh`, then a single `git commit` + `git push`. The
-> serial constraint exists only at the commit/push boundary; the edits
-> themselves are parallel-safe because each file has exactly one writer.
+> regenerate-and-confirm generated files (per `state-fix.md` Step 3-4),
+> then a single `git commit` + `git push`. The serial constraint exists
+> only at the commit/push boundary; the edits themselves are
+> parallel-safe because each file has exactly one writer. Semantic
+> re-verification of the changes is the next cycle's REVIEW state job.
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, print `Next: [State: {NEXT}] — run /aid-discover again` and exit.
@@ -258,7 +260,17 @@ When a state completes, print `Next: [State: {NEXT}] — run /aid-discover again
 When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-discovery:
 
 1. Read the Q&A entry in STATE.md `## Q&A (Pending)` or the IMPEDIMENT to understand what's missing
-2. Identify which subagent owns the documents (see `.claude/scripts/kb/verify-claims.sh` comments for mapping)
+2. Identify which subagent owns the documents per this mapping:
+
+   | Sub-agent | KB documents |
+   |---|---|
+   | `discovery-scout` | project-structure.md, external-sources.md |
+   | `discovery-architect` | architecture.md, technology-stack.md |
+   | `discovery-analyst` | module-map.md, coding-standards.md, schemas.md |
+   | `discovery-integrator` | pipeline-contracts.md, integration-map.md, domain-glossary.md |
+   | `discovery-quality` | test-landscape.md, tech-debt.md, infrastructure.md |
+   | orchestrator (no sub-agent) | feature-inventory.md, README.md, INDEX.md |
+
 3. Dispatch ONLY the relevant subagent
 4. Regenerate README.md and INDEX.md
 5. Update README.md revision history

@@ -65,17 +65,22 @@ out of cycle scope).
 the final state. Refresh is driven by `.agents/templates/generated-files.txt`
 registry.
 
-## P4. Enforce via lint, not convention
+## P4. Enforce via review, not by mechanical lint
 
-Convention alone won't survive contributor turnover. The principles must be enforced
-mechanically:
+Convention alone won't survive contributor turnover, but a brittle shell-script
+linter doesn't either. The principles are enforced by the **`discovery-reviewer`
+sub-agent** in the REVIEW state:
 
-- `.agents/scripts/kb/verify-claims.sh` is the enforcer. It parses
-  frontmatter, validates declared `contracts:` against disk, warns on inline T4
-  markers in primary-category docs, and confirms registered generated files were
-  regenerated.
-- A per-project checklist may extend the linter, but the linter is the authority.
-  See [review-rubric.md](review-rubric.md) for the rubric the linter executes.
+- The reviewer reads each KB doc, validates its frontmatter against the schema in
+  [frontmatter-schema.md](frontmatter-schema.md), checks declared `contracts:`
+  against actual source, flags inline T4 markers in primary-category docs, and
+  spot-checks claims. A semantic agent doing this holistically per doc is faster
+  and more accurate than a per-claim shell loop.
+- Generated-file existence (`.aid/generated/*`) is the only check that warrants a
+  mechanical pre-commit gate; see `state-fix.md` Step 4 for the `test -f` loop
+  over `generated-files.txt`.
+- A per-project checklist may extend the reviewer's rubric. See
+  [review-rubric.md](review-rubric.md) for the rubric the reviewer applies.
 
 The checklist itself is intentionally adaptable per project profile — a CLI project's
 KB has different shape than a web-app's. The checklist template lives at

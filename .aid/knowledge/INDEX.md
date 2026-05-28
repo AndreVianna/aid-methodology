@@ -1,32 +1,186 @@
-# Knowledge Base Index — AID
+---
+kb-category: primary
+source: generated
+generator: build-index.sh
+intent: |
+  RAG navigation index — every agent task prompt loads this file so the agent knows
+  which KB doc to read for what knowledge. Each entry is the source doc's frontmatter
+  intent: field. Regenerated on every /aid-discover cycle.
+contracts:
+  - "One entry per non-dot, non-recursive KB document under .aid/knowledge/"
+changelog:
+  - 2026-05-28: Generated
+---
 
-Use this index to find the right document before making assumptions.
-If your task touches an area covered here, read the relevant document first.
+<!-- AUTO-GENERATED 2026-05-28T15:42:20Z by canonical/scripts/kb/build-index.sh -->
+<!-- DO NOT EDIT — regenerate with: bash canonical/scripts/kb/build-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md -->
 
-| Document | Summary |
-|----------|---------|
-| project-structure.md | Repo layout: methodology spec + 3 install trees (claude-code / codex / cursor) + canonical skills/agents/templates + installers + examples. Install trees are canonical-generator output (post work-002); documents 10 flagged anomalies. |
-| external-sources.md | 8 vendor doc URLs registered (Claude Code, Claude Agent SDK, Codex CLI + docs, Cursor Rules + MCP, Copilot CLI, Antigravity). Web fetch deferred; local cross-reference maps each vendor to the matching directory inside this repo with example files and "still requires vendor docs" gap lists. |
-| architecture.md | Two-level architecture: **10-SKILL AID pipeline** (1 setup [Init] + 8 development + 1 optional [Summarize] per user-confirmed Q16) and the repository structure that delivers it across 3 host tools. 8 patterns identified, incl. skills as state-machine orchestrators, sub-agent dispatch, reference-file decomposition, KB-as-gravitational-center, spec-as-hypothesis, deterministic grading, canonical-rendered payloads, 3-tier agent model. |
-| technology-stack.md | Multi-language tooling repo: Markdown (~482 files post work-001 merge), Shell (43), JS (16), CSS (4), TOML (22, Codex agent defs), HTML (4), PowerShell (5), JSON (2). No package manager, no build system, no CI workflows. Runtime deps documented per host tool. |
-| module-map.md | 14 functional modules: methodology spec, skills (canonical + 3 profile trees = 4 trees), agents (canonical + 3 profile trees), templates (canonical + 3 profile trees), knowledge-summary asset bundle, installers, examples, reference docs. Per-module deps, downstream consumers, validation coverage, canonical-generator relationships, Mermaid dependency graph. |
-| coding-standards.md | 10 convention areas mined from actual files: SKILL.md frontmatter, Claude Code / Codex / Cursor agent frontmatter, Cursor `.mdc` rules, KB-doc headers, template placeholder syntax, shell-script idioms, markdown style, kebab-case filenames, the canonical-generator-rendered cross-tree update rule (edit canonical/, run run_generator.py). Includes "Conventions NOT enforced" gap list. |
-| data-model.md | Pipeline-artifact sections (per FR2 area-STATE rule §1A): `.aid/knowledge/STATE.md` (Discovery area), `.aid/{work}/STATE.md` (Work area: absorbs former INTERVIEW-STATE + per-feature STATE × N + per-task STATE × N + DEPLOYMENT-STATE), Monitor area STATE (per-work, DEFERRED per OQ-3); REQUIREMENTS, SPEC, PLAN, TASK (task-NNN.md task-definition files unchanged), IMPEDIMENT, known-issues, package, track-report, project-index, agent/skill frontmatter cross-ref. Per-artifact schemas, cardinality matrix, Mermaid dataflow. |
-| api-contracts.md | No HTTP / RPC / GraphQL / queue surface (explicitly documented as null). 14 schema contracts for host-tool frontmatter (agent files, SKILL.md, CLAUDE.md / AGENTS.md, settings.json, `.mdc` rules) and internal AID artifact schemas (REQUIREMENTS, SPEC, *-STATE, TASK with 8-type enum, Q&A entries, GAP/IMPEDIMENT). Breaking-change risk ranked. |
-| integration-map.md | 12 integration sections: 6 host AI tools (Claude Code + Codex + Cursor live; Copilot + Antigravity future; Claude Agent SDK separate), MCP protocol (unused — opportunity), Hooks ecosystem (unused — opportunity), 4 local runtimes (Node, mmdc, Bash/PowerShell, Git). Mermaid topology + per-skill API consumption matrix (`aid-discover` is the only skill that uses the Agent tool for sub-agent dispatch). |
-| domain-glossary.md | **161** alphabetically-sorted terms (markdown table; verified via `grep -c "^| \*\*"` on 2026-05-25 cycle-20) covering full AID vocabulary: lifecycle phases + stages, artifacts, roles, quality concepts, task types, tooling primitives, canonical-generator and install-tree terminology, knowledge-summary state machine, work-001 vocabulary (recipes, thin-router, two-tier review, pool dispatch, etc.). `[[wikilink]]` cross-references between related terms. |
-| test-landscape.md | Zero traditional tests in repo. The "tests" that exist are user-runtime validation scripts shipped inside `aid-summarize` (validate-html, validate-links, validate-diagrams via Mermaid CLI, contrast-check via WCAG ratios). 6 documented gaps; HIGH gaps: no CI, no canonical-vs-output drift checker, no end-to-end smoke test. |
-| security-model.md | 21 severity-tagged findings: 1 HIGH (all 6 discovery sub-agents share `permissionMode: bypassPermissions` + `background: true` deliberate elevation), 4 MEDIUM (hardcoded Maven path in Codex `developer.toml`; discovery-reviewer KB-append authority; no supply-chain verification; prompt-injection risk via 8 fetched vendor URLs), 4 LOW, 12 INFO. Zero CRITICAL. Examples pass anonymization spot-check. |
-| tech-debt.md | **4 OPEN HIGH** (H2 no CI/manifest/version; H3 no linter; H5 generator orphan-detection gap NEW cycle-11 per Q190; H7 missing Monitor templates) plus 4 RETIRED/RESOLVED HIGH (H1 triplication drift resolved by work-002 canonical-generator; H4 4-way duplication reframed as intentional generator output; H6 Codex installer fix resolved 2026-05-22; H8 aid-summarize rebuild resolved 2026-05-21). 6 MEDIUM, 8 LOW (incl. NEW L8 cycle-11 script defensive-args gap per Q191). 32-row Resolution Roadmap (R1-R32). Notable positive: canonical-generator (work-002) eliminated H1 + H4 root causes. |
-| infrastructure.md | No deployed infrastructure. Distribution = `git clone` only (no GitHub Releases, no `VERSION` file, no tags visible from worktree). Install via `setup.sh` (Bash, 162 lines) or `setup.ps1` (PowerShell, 157 lines). Codex `.agents/` copy bug RESOLVED 2026-05-22 (Q70/H6 — both installers now correctly copy `profiles/codex/.agents/`). |
-| ui-architecture.md | The single HTML artifact AID emits: `aid-summarize` KB viewer. Single-file offline HTML (CSS / JS / Mermaid all inlined), light/dark theme via CSS variables, breadcrumb scrollspy, lightbox dialog, profile-driven section templates (auto-detect / web-app / library / CLI / microservices / data-pipeline). No framework — vanilla JS IIFE. |
-| feature-inventory.md | **Populated** — 25 features (18 from initial dogfood 2026-05-21 + 2 from work-003 cycle-11 refresh 2026-05-23: FR1 you-are-here heartbeat, FR2 state-file consolidation; + 5 from work-001 PR #13 2026-05-25: thin-router, two-tier review, lite path, parallel pool, recipes catalog). **22 ✅ Shipped, 3 ⚠️ Partial** (cross-linked to Q-IDs; cycle-20 reclassified #16 Shipped post-canonical-generator; cycle-21 reclassified #13 + #15 Shipped post-Q70/H6 RESOLVED). |
-| host-tools-matrix.md ⭐ | **KB extension** (outside the standard 16, project-type specific). Per-host-tool feature-parity matrix consolidating info from `integration-map.md`, `tech-debt.md`, `coding-standards.md`, and `external-sources.md`. Covers: tool support status (3 live, 1 reference-only, 2 future); capability × tool parity matrix; per-tool native formats; tier mapping across all 3 trees; 10 known divergences/bugs cross-linked to Q&A entries; 4-way asset duplication inventory; future-tool onboarding checklist. |
+# Knowledge Base Index
 
-## Active Works
+> Auto-generated by `build-index.sh` from each doc's `intent:` frontmatter field.
+> Do not edit by hand. Generated at: 2026-05-28T15:42:20Z.
 
-| Work | Status | Artifacts |
-|------|--------|-----------|
-| work-001-aid-lite | **Shipped** (PR #13, 2026-05-25 — 5 features: thin-router refactor, two-tier review, lite path, parallel pool, recipes catalog; all 37 tasks Done A+) | `.aid/work-001-aid-lite/` — REQUIREMENTS.md + 5 feature SPEC.md files (feature-002, 004, 005, 009, 011) |
-| work-002-canonical-generator | **Shipped** (work-002 delivery-001, master 2026-05-23) | `.aid/work-002-canonical-generator/` — REQUIREMENTS, SPEC × N, PLAN, packages/package-001-canonical-generator.md |
-| work-003-traceability | **Shipped** (work-003 delivery-001, package-001-traceability, PR #9 — Grade A pass-3 reviewer confirmed; awaiting merge to master) | `.aid/work-003-traceability/` — REQUIREMENTS, SPEC × 2 (feature-001 you-are-here-heartbeat + feature-002 state-file-consolidation), PLAN, packages/package-001-traceability.md |
+Each entry shows the document name, its `kb-category:`, and its declared intent.
+
+## Primary — load-bearing knowledge
+
+### [INDEX.md](../knowledge/INDEX.md)
+
+*Generated by `build-index.sh` — do not hand-edit.*
+
+RAG navigation index — every agent task prompt loads this file so the agent knows
+which KB doc to read for what knowledge. Each entry is the source doc's frontmatter
+intent: field. Regenerated on every /aid-discover cycle.
+
+### [architecture.md](../knowledge/architecture.md)
+
+Architectural map of the AID-methodology repository: the canonical→render→install pipeline
+that emits one canonical source into three byte-identical host-tool install trees (Claude Code,
+Codex, Cursor), the phase-to-skill mapping across 8 pipeline phases, the agent-tier model
+(Opus/Sonnet/Haiku), the Thin-Router SKILL.md pattern, and the two-tier review + parallel
+pool dispatch execution model. Read this to understand how the methodology pieces hang together;
+for raw file inventory see project-structure.md.
+
+### [coding-standards.md](../knowledge/coding-standards.md)
+
+Mines the de-facto coding conventions used across the AID repo by reading
+the actual code: SKILL.md frontmatter shape, AGENT.md authoring pattern,
+Python style in the renderer, Bash style in the helper scripts, Markdown
+conventions inside skill/agent bodies, and the cross-cutting rules from
+CLAUDE.md + canonical/templates/kb-authoring/principles.md. Read this when
+you are authoring a NEW skill, agent, script, template, recipe, or KB doc
+and need the existing-style fingerprint. NOT a tech-stack overview (see
+architecture.md) and NOT a per-doc review rubric (see
+canonical/templates/kb-authoring/review-rubric.md).
+
+### [domain-glossary.md](../knowledge/domain-glossary.md)
+
+Authoritative glossary of AID-specific terms mined from the methodology spec, skill
+frontmatter, agent definitions, templates, and scripts. Covers phase names (Discover through
+Monitor), role names (Director, Orchestrator, Specialist), pipeline concepts (Phase Gate,
+Lite Path, Two-Tier Review, Pool Dispatch), work-type taxonomy, traceability layers (L1–L3),
+and rubric tiers. Read this when any AID term is unfamiliar.
+
+### [external-sources.md](../knowledge/external-sources.md)
+
+Registry of external documentation paths registered for the current Discovery cycle.
+For this repo's discovery run, no external documentation was provided — all knowledge
+was derived from repository content only. If external docs become available, re-run
+discovery or add paths during Q&A to populate this file.
+
+### [feature-inventory.md](../knowledge/feature-inventory.md)
+
+Canonical feature list with status (Shipped / Partial / Pending / In Progress / Deprecated), source, and traceability to work items. Read this to understand WHAT the project does at a feature level.
+
+### [infrastructure.md](../knowledge/infrastructure.md)
+
+Describes the hosting, runtime, build pipeline, and dev tooling for the AID-methodology
+repo. There is no conventional runtime infrastructure (no Docker, no cloud, no Terraform).
+"Infrastructure" here means: install scripts (setup.sh / setup.ps1) that put AID into a
+target project, the canonical→3-profiles render pipeline driven by run_generator.py, and
+the local-filesystem conventions for runtime state. Read this to understand how AID is
+built, installed, and operated on a local workstation.
+
+### [integration-map.md](../knowledge/integration-map.md)
+
+Maps all external services and integrations the AID repo depends on. Because AID has no
+application runtime, integrations are minimal: the Mermaid library fetched from npm/jsdelivr
+CDN (consumed by aid-summarize), the gh GitHub CLI used in PR-creation workflows, and the
+multi-tool distribution model that renders canonical source into 3 host-tool install trees.
+Inter-skill choreography is implemented via filesystem state hand-offs (not a message broker).
+
+### [module-map.md](../knowledge/module-map.md)
+
+Maps the major code/content modules in AID — the 10 user-facing aid-* skills,
+the 11th maintainer-only aid-generate skill, the 22 agents, the 11 renderer
+Python files (10 under .claude/skills/aid-generate/scripts/ + run_generator.py),
+and the canonical helper scripts under canonical/scripts/{config,kb,execute,summarize,interview}.
+Each entry lists purpose, directory path, dependencies, and associated tests.
+Read this when you need to know what a directory holds and who consumes it.
+NOT a tech-stack overview (see architecture.md) and NOT a per-script API
+reference (see the script's own header comment block).
+
+### [pipeline-contracts.md](../knowledge/pipeline-contracts.md)
+
+Defines the interfaces between AID pipeline components. Because AID ships no HTTP services
+or RPC endpoints, "contracts" here means: skill slash-command signatures and state-machine
+contracts, script CLI signatures + exit codes, file-format contracts (settings.yml,
+emission-manifest.jsonl, heartbeat files, STATE.md sections), subagent dispatch conventions,
+and the canonical→3-profile renderer contract. Read this to understand what each pipeline
+boundary expects and emits.
+
+### [project-structure.md](../knowledge/project-structure.md)
+
+*Generated by `build-project-index.sh` — do not hand-edit.*
+
+Repository inventory for the AID-methodology repo. Covers the top-level folder layout
+(canonical/, profiles/, .claude/, .aid/, methodology/, tests/), entry points (run_generator.py,
+setup.sh, setup.ps1), and key config files (settings.yml, EMISSION-MANIFEST.md, profile
+TOML files). Generated by discovery-scout from .aid/generated/project-index.md; counts
+are authoritative as of the snapshot date. Read this for a navigational map before diving
+into any subtree.
+
+### [repo-presentation.md](../knowledge/repo-presentation.md)
+
+How the AID methodology is presented to users in this GitHub repository: the
+README's structure and key sections, the docs/ folder taxonomy, the examples/
+case studies, the methodology specification document, and external blog/marketing
+references. Read this to understand the user-facing surface of the repo (NOT
+the internal architecture — see architecture.md for that). Replaces the former
+ui-architecture.md (which was scoped wrong — described the KB-viewer UI rather
+than the repo's documentation surface).
+
+### [schemas.md](../knowledge/schemas.md)
+
+Documents the document-and-config schemas that AID treats as its "data model":
+.aid/settings.yml, the per-area STATE.md (discovery + work) markdown shapes,
+the frontmatter contracts for SKILL.md / AGENT.md / KB docs, the emission-
+manifest JSONL schema, the recipe + task templates, and the work-area
+filesystem layout. There is NO relational database in AID — the project ships
+methodology + tooling, no application. Read this when authoring or modifying
+any of the above structured documents. NOT a module map (see module-map.md)
+and NOT a coding-conventions reference (see coding-standards.md).
+
+### [tech-debt.md](../knowledge/tech-debt.md)
+
+Known technical debt items in the AID methodology repo: items that work but
+carry future-cost or fragility risk. Each entry has severity (CRITICAL / HIGH /
+MEDIUM / LOW), evidence (file:line), impact, and a resolution roadmap.
+Read when planning the next refactor cycle or scoping a new work-NNN.
+
+### [technology-stack.md](../knowledge/technology-stack.md)
+
+Concrete inventory of languages, runtimes, libraries, build tools, and dev tooling used
+by the AID-methodology repository. Covers: Markdown (872 files), Bash (109 files), Python
+3.11+ (stdlib only, no third-party deps), JavaScript/ES modules (Node built-ins only),
+PowerShell 5.1+, CSS3, HTML5, TOML 1.0, YAML 1.2, JSON, and JSON Lines. The only runtime
+library is Mermaid (fetched dynamically from npm/jsdelivr). Read this to understand what
+toolchain is required to build, run, or contribute to AID.
+
+### [test-landscape.md](../knowledge/test-landscape.md)
+
+Inventory of test suites that protect the canonical bash helper scripts AID
+skills depend on. 5 unit/integration suites under tests/canonical/, all
+deterministic bash. NO methodology/orchestration/E2E tests — those don't
+exist and aren't needed (the methodology is exercised by dogfooding, the
+renderer has its own VERIFY-4a gate). Read this to understand what changes
+to canonical/scripts/ are guarded by tests vs require manual verification.
+
+## Meta — process / ledger (review-exempt)
+
+### [README.md](../knowledge/README.md)
+
+Knowledge Base completeness tracking + per-doc status + revision history
+for the AID project. Updated after every /aid-discover cycle to reflect
+current disk state. Not part of the reviewed knowledge surface (kb-category: meta).
+
+### [STATE.md](../knowledge/STATE.md)
+
+Discovery-area state ledger: Q&A history, per-cycle Review History, per-doc
+KB Documents Status, Calibration Log of sub-agent dispatches. The runtime
+state hub for /aid-discover. Not part of the reviewed knowledge surface
+(kb-category: meta).
+
+---
+
+*To regenerate this index, run `bash canonical/scripts/kb/build-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md`.*

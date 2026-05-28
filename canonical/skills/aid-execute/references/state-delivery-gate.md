@@ -156,6 +156,14 @@ of per-task reviews. The package wrapper is the universal brief at
 - `{{ARTIFACTS}}` = the full delivery branch diff + every task's STATE.md row + the PLAN.md delivery section
 - `{{CONTEXT}}` = `delivery-NNN aggregates tasks {NNN..MMM}; this is the post-execution quality gate before merge to main.`
 
+Include in the prompt:
+- **Ledger lifecycle:** "Read the existing `.aid/.temp/review-pending/execute-delivery-NNN.md`
+  if it exists. For each existing row: verify on disk, update Status if needed
+  (Pending→Fixed if resolved; Fixed→Recurred if regressed). Append new findings
+  as rows with Status: Pending."
+- **Schema reference:** "Output per `canonical/templates/reviewer-ledger-schema.md`.
+  The ledger is the entire file — ONE markdown table, no headers, no narrative."
+
 Then append the gate-specific prompt below. The reviewer reads directly from source:
 
 - **All delivery artifacts** — every file produced or modified by tasks in the
@@ -208,20 +216,16 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
 
 ## Step 3: GRADE (Deterministic Grade Computation)
 
-Run `grade.sh` on the gate reviewer's issue list.
+Run `grade.sh` on the ledger file:
 
 ```bash
-grade.sh --explain <gate-reviewer-issue-list-file>
+bash canonical/scripts/grade.sh --explain .aid/.temp/review-pending/execute-delivery-NNN.md
 ```
 
-Or pipe the reviewer's output:
-
-```bash
-echo "<reviewer-output>" | grade.sh --explain
-```
-
-The script prints a grade letter (`A+`, `A`, `A-`, `B+`, …, `F`). The
-`--explain` flag prints the count breakdown to stderr.
+The script parses the Severity and Status columns from the markdown table, counts
+findings where Status ∈ {Pending, Recurred}, and prints a grade letter
+(`A+`, `A`, `A-`, `B+`, …, `F`). The `--explain` flag prints the count
+breakdown to stderr.
 
 **Record the grade** in the work `STATE.md` `## Delivery Gates` section
 (partial write — will be completed by RECORD step on PASS):
@@ -286,15 +290,19 @@ grade ≥ minimum.
 
 ## Step 5: FIX (Fix CODE Issues, Loop Back to REVIEW)
 
-Auto-fix all CODE issues from the gate reviewer's current issue list.
+Read `.aid/.temp/review-pending/execute-delivery-NNN.md`. Pass the Pending and
+Recurred rows to the executor agent — cite row numbers in fix commit messages
+(e.g., "fix row #2 (HIGH: missing null check)").
 
-Dispatch the **executor agent** (same agent type that executed the tasks —
-determined from the delivery's task types; if mixed, use `developer` as the
-default multi-type executor). Do NOT dispatch the reviewer — reviewer ≠
-executor invariant applies here too.
+Auto-fix all CODE issues. Dispatch the **executor agent** (same agent type that executed
+the tasks — if mixed, use `developer` as the default). Do NOT dispatch the reviewer —
+reviewer ≠ executor invariant applies here too.
 
 **Executor fixes CODE issues only.** Non-CODE issues (TASK, SPEC, KB) were
 surfaced to the user in Step 4 and do not reach this step.
+
+**Do NOT modify the ledger during FIX.** Status updates happen in the next REVIEW cycle
+when the reviewer re-verifies.
 
 After the executor reports done:
 1. Re-verify build/lint/test gates pass (as applicable to the delivery's
@@ -373,7 +381,14 @@ writeback-task-status.sh --task-id NNN --field Status --value "Done"
 
 _(Uses the delivery's gate-record task id to mark the delivery row done.)_
 
-### 6e: Emit DELIVERY-DONE
+### 6e: Delete Ledger
+
+```bash
+rm -f .aid/.temp/review-pending/execute-delivery-NNN.md
+rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true
+```
+
+### 6f: Emit DELIVERY-DONE
 
 ```
 [DELIVERY-GATE] Gate PASS — delivery-NNN is Done.

@@ -27,7 +27,7 @@ The Scout is the pre-pass. It maps the territory before the specialized analysts
 
 ## Tools
 
-Read, Glob, Grep, Bash, Write. Runs with elevated `permissionMode: bypassPermissions` (background-eligible) to handle long parallel analysis without prompts. See `security-model.md` for the rationale.
+Read, Glob, Grep, Bash, Write. Runs with elevated `permissionMode: bypassPermissions` (background-eligible) to handle long parallel analysis without prompts. See `coding-standards.md §11c` for the agent permission model rationale.
 
 ## Tier
 

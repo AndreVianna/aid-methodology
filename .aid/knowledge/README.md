@@ -1,65 +1,69 @@
+---
+kb-category: meta
+source: hand-authored
+intent: |
+  Knowledge Base completeness tracking + per-doc status + revision history
+  for the AID project. Updated after every /aid-discover cycle to reflect
+  current disk state. Not part of the reviewed knowledge surface (kb-category: meta).
+contracts: []
+changelog:
+  - 2026-05-27: Initial frontmatter added during cycle-2 FIX Phase B (Q22)
+---
+
 # Knowledge Base — AID
 
-> AI-Integrated Development methodology — structured AI-assisted software lifecycle from discovery to production monitoring.
+> **Project:** AID — AI Integrated Development
+> **Discovery cycle:** 8 (post-FIX, awaiting cycle-9 REVIEW)
+> **Last KB review:** 2026-05-28 (cycle-8 REVIEW complete · schema-table format)
+> **Status:** 15 active KB documents (16 originally generated in cycle-1; 2 deleted in Q3 FIX — `security-model.md` merged into `coding-standards.md §11`, `ui-architecture.md` replaced by `repo-presentation.md` per Q3 user-decision; 2 renamed: `data-model.md → schemas.md`, `api-contracts.md → pipeline-contracts.md`).
 
-## Project Info
-
-| Property | Value |
-|----------|-------|
-| **Type** | Brownfield |
-| **Initialized** | 2026-05-21 |
-| **Minimum Grade** | A+ |
-| **External Sources** | 8 web sources (vendor docs for Claude Code, Claude Agent SDK, Codex CLI + docs, Cursor Rules + MCP, Copilot CLI, Antigravity) |
-| **Inventory pre-pass** | 631 files, 90,011 lines (`project-index.md`, regenerated 2026-05-23) |
-| **Discovery posture** | Brownfield dogfood — this repo IS the AID methodology being discovered by AID itself |
+Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.
 
 ## Completeness
 
-| Document | Status | Lines | Source | Notes |
-|----------|--------|-------|--------|-------|
-| project-structure.md | ✅ Populated (cycle-11 refresh 2026-05-23) | 281 | aid-discover (scout) | Top-level: `canonical/`, `profiles/`, `run_generator.py`. Generator + Profile Architecture (replaces pre-2026-05-22 Triplication Pattern). aid-correct fully deleted. SKILL.md 258-line parity verified. |
-| external-sources.md | ✅ Populated (URLs registered, web fetch deferred) | 145 | aid-init + scout | 8 vendor doc URLs + a per-vendor cross-reference mapping each external source to local repo directories. |
-| architecture.md | ✅ Populated (cycle-11 refresh 2026-05-23) | 621 | aid-discover (architect) | Two-level architecture (10-SKILL pipeline per Q16: 1 setup + 8 dev + 1 optional; + repo structure with canonical-generator pattern post-work-002). 8 patterns: Pattern 3 rewritten as canonical-uniform reference decomposition; Pattern 5 rewritten with FR2 area-STATE preamble; Pattern 7 rewritten as canonical-rendered install payloads (single source → 3 profiles via run_generator.py); others unchanged. |
-| technology-stack.md | ✅ Populated (cycle-11 refresh 2026-05-23) | 390 | aid-discover (architect) | Multi-language tooling repo + new §12.0 Canonical Generator (run_generator.py + 8 worker scripts). Python 3.11+ required for contributors editing canonical/. |
-| ui-architecture.md | ✅ Populated | 320 | aid-discover (architect) | The `aid-summarize` HTML viewer — single-file offline HTML, light/dark theme via CSS variables, inline Mermaid, lightbox, breadcrumb scrollspy, profile-driven section templates. |
-| module-map.md | ✅ Populated (cycle-11 refresh 2026-05-23) | 416 | aid-discover (analyst) | 14 modules including new Module 14 (run_generator.py + 8 Python generator scripts). Canonical → Profile relationship table replaces pre-work-002 Triplication Relationship. Install-tree-only template table retired (KB-F1 moved 6 orphans to canonical/templates/). |
-| coding-standards.md | ✅ Populated (cycle-11 refresh 2026-05-23; §10 Thin-Router Convention added cycle-17 2026-05-25) | 476 | aid-discover (analyst) | 10 convention areas + §10 Thin-Router. §1.3 rewritten around canonical-generator (307-everywhere post-thin-router). §9 Canonical-Generator Authoring Rule (4-step workflow). §8.5 FR2 area-STATE naming rule. §1.4 FR1 heartbeat marker convention. §10 Thin-Router SKILL.md Convention (work-001 feature-002). |
-| data-model.md | ✅ Populated (cycle-11 refresh 2026-05-23) | 511 | aid-discover (analyst) | Pipeline-artifact sections post-FR2: §1 inventory collapsed retired state files into 3 area-STATE rows; §§2.1/2.3/2.10 rewritten with -LEGACY subsections preserving historical schemas; §3-4 Mermaid + cardinality redrawn for area-STATE flows; §6 Migrations NEW section. |
-| api-contracts.md | ✅ Populated (cycle-11 refresh 2026-05-23) | 450 | aid-discover (integrator) | No HTTP/RPC/queue surface. 5 retired-artifact schemas (DISCOVERY-STATE / task-NNN-STATE / INTERVIEW-STATE / FEATURE-STATE / DEPLOYMENT-STATE) replaced with 2 area-STATE schemas (Discovery + Work, Monitor deferred). Host-tool frontmatter contracts updated to note canonical-generator byte-identity. |
-| integration-map.md | ✅ Populated (cycle-11 refresh 2026-05-23) | 290 | aid-discover (integrator) | 12 integration sections. API Consumption Matrix annotated with per-skill FR2 state-file write targets; writeback-state.sh rename applied. |
-| domain-glossary.md | ✅ Populated (cycle-11 refresh 2026-05-23; cycle-20 refresh 2026-05-25 — 10 work-001 vocabulary entries added) | 187 | aid-discover (integrator) | **161 terms** (was 150 pre-cycle-11; cycle-11 added 4 NEW: area-STATE, bracket-pair, canonical-generator, Heartbeat marker; cycle-20 added 10 NEW: Recipe, parse-recipe, Thin-Router, Two-Tier Review, Delivery gate, Pool dispatch, compute-block-radius, writeback-task-status, complexity-score, dispatch-protocol-checklist; marked 5 retired-state-file entries as RETIRED per FR2; updated WRITEBACK to cite writeback-state.sh). |
-| test-landscape.md | ✅ Populated (cycle-11 refresh 2026-05-23) | 225 | aid-discover (quality) | Validation scripts; CI gap reframed as canonical-vs-generator-output parity check missing. KB-F2 writeback-state.sh hardening noted. |
-| security-model.md | ✅ Populated (cycle-11 refresh 2026-05-23) | 309 | aid-discover (quality) | 21 severity-tagged findings: 1 HIGH, 4 MEDIUM, 4 LOW, 12 INFO, 0 CRITICAL. Path refs updated to canonical/agents/; DISCOVERY-STATE refs annotated with FR2 STATE.md (Discovery area). |
-| tech-debt.md | ✅ Populated (cycle-11 refresh 2026-05-23) | 385 | aid-discover (quality) | **4 OPEN HIGH** (H2 no CI/manifest/version; H3 no linter; H5 generator orphan-detection gap NEW; H7 missing Monitor templates) + **4 RETIRED/RESOLVED HIGH** (H1 + H4 canonical-generator-resolved; H6 Codex installer fixed; H8 aid-summarize rebuild). 6 MEDIUM, 8 LOW (incl. NEW L8 script defensive-args). 32-row Resolution Roadmap (R1-R32). |
-| infrastructure.md | ✅ Populated (cycle-11 refresh 2026-05-23) | 281 | aid-discover (quality) | No deployed infra. Distribution = git clone only; install via `setup.sh` / `setup.ps1` (reads from `profiles/<tool>/`, generator output). §§1-2 updated for canonical-generator. §3.1.1 NEW: host harness skill-loading cache (Q192). §3.4 NEW: Python 3.11+ for maintainers. H6 (Codex installer) marked RESOLVED post-2026-05-22. |
-| feature-inventory.md | ✅ Populated (cycle-11 refresh 2026-05-23; cycle-21 reclassification 2026-05-25 — Features #13 + #15 Partial → Shipped) | 70 | aid-discover (orchestrator) | **25 features** (18 from initial dogfood + 2 from work-003 cycle-11 refresh: FR1 you-are-here heartbeat, FR2 state-file consolidation + 5 from work-001 PR #13: thin-router, two-tier review, lite path, parallel pool, recipes catalog). **22 ✅ Shipped, 3 ⚠️ Partial**. Stale paths swept (top-level skills/ + agents/ → canonical/). Retired state-file Data Entities annotated with FR2 STATE.md refs. |
-| host-tools-matrix.md ⭐ | ✅ Populated (extension) | 145 | aid-discover (orchestrator) | **KB extension** — per-host-tool feature parity matrix. |
+| # | Document | Status | Lines | Last Reviewed | Notes |
+|---|----------|--------|-------|---------------|-------|
+| 1 | [project-structure.md](project-structure.md) | Populated | 328 | 2026-05-28 | discovery-scout cycle-1; FM added Phase B |
+| 2 | [external-sources.md](external-sources.md) | Populated | 15 | 2026-05-28 | no external docs provided; FM added Phase B |
+| 3 | [architecture.md](architecture.md) | Populated | 333 | 2026-05-28 | discovery-architect cycle-1; FM added Phase B |
+| 4 | [technology-stack.md](technology-stack.md) | Populated | 203 | 2026-05-28 | discovery-architect cycle-1; FM added Phase B |
+| 5 | [module-map.md](module-map.md) | Populated | 291 | 2026-05-28 | discovery-analyst cycle-1; FM since GENERATE |
+| 6 | [coding-standards.md](coding-standards.md) | Populated | 589 | 2026-05-28 | discovery-analyst cycle-1; §11 Security-By-Design + §12 Q&A Schema + §13 no-CLAUDE-cites + §14 text-for-machine |
+| 7 | [schemas.md](schemas.md) | Populated | 457 | 2026-05-28 | discovery-analyst cycle-1 (renamed from `data-model.md` in Q3 FIX); FM since GENERATE |
+| 8 | [pipeline-contracts.md](pipeline-contracts.md) | Populated | 585 | 2026-05-28 | discovery-integrator cycle-1 (renamed from `api-contracts.md` in Q3 FIX); FM added Phase B |
+| 9 | [integration-map.md](integration-map.md) | Populated | 374 | 2026-05-28 | discovery-integrator cycle-1; FM added Phase B |
+| 10 | [domain-glossary.md](domain-glossary.md) | Populated | 366 | 2026-05-28 | discovery-integrator cycle-1 — 195 terms; FM added Phase B; acronym variants fixed Phase A |
+| 11 | [test-landscape.md](test-landscape.md) | Populated | 189 | 2026-05-28 | discovery-quality cycle-1; full rewrite cycle-2 FIX; counts corrected to actual **235** total in cycle-5 FIX (read self-reported summary lines, not grep-count of PASS markers; parse-recipe takes ~150s so 60s timeout was killing it mid-run) |
+| 12 | [tech-debt.md](tech-debt.md) | Populated | 428 | 2026-05-28 | discovery-quality cycle-1 + 7 new entries from Q-AND-A in Phase B + M7 grade.sh bug logged cycle-7; H4 severity reconciled cycle-3 FIX |
+| 13 | [infrastructure.md](infrastructure.md) | Populated | 244 | 2026-05-28 | discovery-quality cycle-1; FM added Phase B; branch-protection resolved via gh api cycle-8 |
+| 14 | [repo-presentation.md](repo-presentation.md) | Populated | 305 | 2026-05-28 | NEW in Phase B (Q3 replacement for deleted `ui-architecture.md`) — 8 sections covering README, docs/, examples/, methodology spec, blog refs, install surface |
+| 15 | [feature-inventory.md](feature-inventory.md) | Populated | 50 | 2026-05-28 | Phase B (Q13) — 10 user-facing skills + `aid-generate` maintainer-only footnote; glyph-to-text migration cycle-8 |
 
-## Project-Type Adaptation Notes
+**Removed in cycle-1 FIX Phase A (Q3):**
+- ~~`security-model.md`~~ — content extracted to `coding-standards.md §11 Security-By-Design Conventions` (gitignore policy, shell `set -euo pipefail` discipline, agent-permission allowlist pattern); dedicated security doc is contortion for a non-runtime methodology repo
+- ~~`ui-architecture.md`~~ — content was implementation detail of the KB-viewer (belongs in `aid-summarize` README); replaced by `repo-presentation.md` whose actual scope is the GitHub repo's documentation surface
 
-This is **not a typical development project.** It is a methodology + tooling repository that ships install payloads for multiple AI coding tools. Three of the 16 standard KB documents are awkward fits and have been **adapted** rather than dropped (downstream skills depend on the 16-doc shape):
-
-- **`api-contracts.md`** — no HTTP / RPC / GraphQL / queue surface exists. The doc was reframed as "host-tool frontmatter contracts (agent files, SKILL.md, CLAUDE.md / AGENTS.md, settings.json, `.mdc` rules) + internal AID artifact schemas."
-- **`ui-architecture.md`** — no traditional user-facing UI. The doc covers the single HTML artifact AID emits (the `aid-summarize` Knowledge Base viewer) — its single-file offline shape, theming, lightbox, breadcrumb scrollspy, and profile-driven section templates.
-- **`test-landscape.md`** — no test suite. The doc documents the runtime validation scripts shipped with `aid-summarize` (validate-html, validate-links, validate-diagrams via Mermaid CLI, contrast-check) plus the methodology's inherited quality gates, and is explicit about the gaps (no CI, no triplication-drift checker, no end-to-end smoke test).
-
-**Two standard docs got the most natural fit** because the methodology repo *is* full of these concepts:
-
-- **`domain-glossary.md`** — 161 AID-specific terms (lifecycle phases, artifacts, roles, quality concepts, task types, triplication terminology, knowledge-summary state machine). Most term-dense KB doc in the set.
-- **`module-map.md`** — modules are the **skills**, **agents**, **templates**, and **install trees** — not Java packages or Python modules. Triplication relationships are the dominant structure.
-
-**One KB extension added:** `host-tools-matrix.md` (per-tool feature parity table). Sits outside the standard 16-doc state machine, so downstream skills (`aid-interview`, `aid-specify`, `aid-plan`) won't fail looking for it; it exists for the reviewer and maintainers. Consolidates content scattered across `integration-map.md` + `tech-debt.md` + `coding-standards.md` + `external-sources.md` so adopters and contributors don't have to assemble per-tool parity from four sources.
-
-**No documents were removed.** The 16-doc shape is load-bearing for `aid-interview`, `aid-specify`, and `aid-plan`.
+**Meta-documents:**
+- [STATE.md](STATE.md) — Discovery-area state ledger (Q&A, Review History, Calibration Log)
+- [INDEX.md](INDEX.md) — Auto-generated per-doc summaries (regenerate via `bash canonical/scripts/kb/build-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md`)
 
 ## Revision History
 
-| Date | Phase | Description |
-|------|-------|-------------|
-| 2026-05-21 | aid-init | Initialized (brownfield), 8 external web sources registered, `.aid/templates/knowledge-summary/` installed. |
-| 2026-05-21 | aid-discover (GENERATE) | Project index built (353 files); scout produced project-structure.md + enriched external-sources.md; 4 specialist agents populated 13 KB docs in parallel; 44 Q&A entries consolidated + 1 Required Features question injected. Grade pending review. |
-| 2026-05-21 | aid-discover (pre-REVIEW hygiene) | User-directed pre-grade cleanup: corrected 4 count discrepancies in README/INDEX (domain-glossary 115→146 terms; security 16→21 findings with revised severity split; data-model 23→15 artifact sections; integration-map 13→12 sections). Added Project-Type Adaptation section documenting why 3 standard docs are reframed and none were removed. |
-| 2026-05-21 | aid-discover (pre-REVIEW extension) | User-directed: added `host-tools-matrix.md` as a project-type-specific KB extension outside the standard 16-doc shape. Consolidates per-host-tool feature parity from existing docs into a single matrix with 10 cross-linked known divergences/bugs. |
-| 2026-05-21 | aid-discover (FIX cycle 1) | Applied all 51 Q&A resolutions to KB docs. Major changes: (1) **feature-inventory.md populated** with 18 features from user-confirmed Q-FEATURES (lifts CRITICAL from F). (2) `architecture.md` phase-count drift fixed per Q16 — canonical 10-SKILL taxonomy (Init + 8 dev + Summarize), updated pipeline diagram. (3) `technology-stack.md` §12 Build/Lint commands populated with real commands; Node 18 + Sonnet tier flipped from "inferred" to "verified". (4) `tech-debt.md` stale CLAUDE.md claims corrected; added H6 (Codex installer bug Q70 CONFIRMED), H7 (Monitor templates Q8 promoted to HIGH), M6 (Cursor Terminal/Bash Q52); added 29-row Resolution Roadmap mapping every Q-ID to actionable items. (5) `project-structure.md`, `module-map.md`, `data-model.md`, `domain-glossary.md` count drifts fixed; canonical KB taxonomy (16 standard + 3 meta + 1 generated + extensions) documented. (6) `security-model.md` §1.2 diff-claim, §1.3 wrong-file-cite, §2.4 "only agent" contradiction all corrected. (7) `infrastructure.md` + `host-tools-matrix.md` updated to mark Q70 + Q52 as CONFIRMED. (8) `external-sources.md` Trust Model section added per Q80. (9) 13 stale `.scout/architect/analyst/integrator/quality-questions.tmp` references replaced with `DISCOVERY-STATE.md` across 6 KB docs. Awaiting re-review. |
-| 2026-05-22 | aid-interview | work-001-aid-lite — requirements gathered and approved; decomposed into 5 features (shipped via PR #13 2026-05-25) under `.aid/work-001-aid-lite/features/`. KB unchanged: hydration was a no-op because the interview produced forward-looking requirements, not current-state knowledge. |
-| 2026-05-23 | aid-execute work-003 + /aid-deploy + /aid-discover cycle-11 | **Major KB refresh** triggered by /aid-deploy work-003 routing 4 Q&A entries (Q190-Q193) + clean-context reviewer finding D+ grade from accumulated drift. **KB-F1**: lifted 6 orphan templates (`feature.md`, `feature-inventory.md`, `known-issues.md`, `package.md`, `requirements.md`, `ui-architecture.md`) into `canonical/templates/`. **KB-F2**: hardened `writeback-state.sh` (renamed from `writeback-discovery-state.sh`) with `-h\|--help` + GRADE regex. **KB-F3**: regenerated `project-index.md` (631 files / 90,011 lines vs. 353 / 49,226 pre-work-002). **KB-F4**: dispatched 5 specialist FIX agents in parallel — discovery-integrator (api-contracts 5 CRITICAL schemas + integration-map matrix), discovery-analyst (data-model §1+§§3-4 + module-map + coding-standards §1.3+§9), discovery-architect (architecture Patterns 3/5/7 + technology-stack §12), discovery-quality (tech-debt H1/H4 RETIRED + new H5/L8 + security + test-landscape + infrastructure §§1-2/§3.1.1), discovery-scout (project-structure layout). Orchestrator (this row): feature-inventory FR1+FR2 rows + 18 stale path sweeps + domain-glossary 4 NEW terms + 5 RETIRED markers + INDEX + README count/summary refresh. Net result: 7 CRITICAL → 0, 12 HIGH → ~2 (residual non-critical), 9 MEDIUM → much fewer. Awaiting verify-kb-claims.sh + discovery-reviewer cycle-12 grade. |
+| # | Date | Cycle | Action | Notes |
+|---|------|-------|--------|-------|
+| 1 | 2026-05-27 | cycle-1 | GENERATE complete | All 16 KB docs populated post-`--reset`. Scout 11m17s + 4-parallel wave 14m29s (tail = analyst) = ~25m total. |
+| 2 | 2026-05-27 | cycle-1 | REVIEW complete | discovery-reviewer 11m57s. Grade E+ (35 findings: 0C / 16H / 11M / 11L / 0MIN). 5 new Q&A (Q11-Q15). |
+| 3 | 2026-05-27 | cycle-1 | Q-AND-A complete | 17 entries: 16 Answered + 1 Skipped. Q16/Q17 captured as tech-debt for future `/aid-interview` pickup (no work-NNN reserved per `feedback_no-work-NNN-reservation` memory). |
+| 4 | 2026-05-27 | cycle-1 | FIX Phase A complete | commit 82a5bd5 — cross-file refactors: Q11 acronym, Q2 verify-reports dropped, Q6 3 test deletes + `tests/README.md`, Q12 INDEX single-copy, Q3 rename+delete cascade (50+ files via developer agent, 27m wall). |
+| 5 | 2026-05-27 | cycle-1 | FIX Phase B complete | commit c5a3d3d — per-file content: 12 FM additions, `repo-presentation.md` NEW (306L), `feature-inventory.md` populated, `tech-debt.md` +7 entries, README+CLAUDE small additions, Q15 Style A canonical migration. ~6m wall (6 parallel agents). |
+| 6 | 2026-05-27 | cycle-2 | REVIEW complete | discovery-reviewer ~13m. Grade D+ (computed by grade.sh; 16C / 24H / 20M / 5L / 8MIN findings). 5 new Q&A (Q18-Q22). CC1: CLAUDE.md collapsed; CC2: verify-claims.sh cascade not swept. |
+| 7 | 2026-05-27 | cycle-2 | FIX Phase A complete | CLAUDE.md cite cascade swept (CC1); verify-claims.sh cite cascade swept (CC2); test-landscape.md rewritten (Q20); technology-stack.md updated. |
+| 8 | 2026-05-27 | cycle-3 | REVIEW complete | discovery-reviewer ~12m. Grade E+ (computed by grade.sh; 0C / 5H / 14M / 16L / 7MIN findings). No new Q&A — all findings mechanically resolvable. Both cycle-2 cascades CLEAN; 5H residue + drift items. |
+| 9 | 2026-05-27 | cycle-3 | FIX complete | Comprehensive proactive sweep: all 5 HIGHs + 10+ additional drift items fixed. test-landscape.md mistakenly set total to 130 (orchestrator grep-pattern undercounted; corrected to actual 235 in cycle-5 FIX after two failed correction attempts). README.md banner + revision history updated. |
+| 10 | 2026-05-27 | cycle-4 | REVIEW complete | discovery-reviewer ~21m. 28 findings (0C / 3H / 3M / 15L / 7MIN). 3 HIGHs all cascade from one root cause (wrong test counts from cycle-3 sweep). The reviewer's claimed 235 total was CORRECT; my counter-claim of 173 was wrong (I confirmed it again in cycle-5 by running parse-recipe with a sufficient timeout). |
+| 11 | 2026-05-27 | cycle-4 | FIX complete | Test-count cascade attempted-fixed to 173 — STILL WRONG (parse-recipe was timed-out at 60s so undercounted to 51; actual is 113). Repeat-mistake of the same root cause. integration-map.md "16 KB doc(s)" residue cleared in 3 places. repo-presentation + pipeline-contracts wrong-line cites corrected. |
+| 12 | 2026-05-27 | cycle-5 | REVIEW complete | discovery-reviewer ~27m (cycle-5 verification discipline: re-run each suite). 19 findings (0C / 3H / 0M / 12L / 4MIN). 3 HIGHs all the same test-count root cause from cycle-3/cycle-4. **Reviewer was right both times.** 0 MEDIUM target hit. |
+| 13 | 2026-05-27 | cycle-5 | FIX complete | Test-count cascade finally fixed to actual 235 (write=69, parse=113, compute=17, deliver=18, read=18). Verification method changed: read self-reported summary lines from each suite (not grep-count of PASS markers). Operational note added: parse-recipe needs ≥180s timeout. |
+| 14 | 2026-05-28 | cycle-6 | REVIEW complete | 11 findings (0C / 2H / 2M / 3L / 4MIN). Test-count cascade fix from cycle-5 landed cleanly; 4 NEW drift items found in sweep-gaps: project-structure.md test-files table (38/39 → 113/69), domain-glossary.md "16 KB doc scaffolds" + "14 active standard", README.md cycle-3 banner staleness. |
+| 15 | 2026-05-28 | cycle-6 | FIX complete | 4 reviewer-flagged + 3 orchestrator-caught variants of same root cause (14 vs 15 active KB docs); coding-standards/module-map/project-structure cardinality reconciled with explicit "14 standard-set + 1 custom = 15 active" language. |
+| 16 | 2026-05-28 | cycle-7 | REVIEW complete | 7 findings (0C / 0H / 0M / 4L / 3MIN). **Target HIT: 0 HIGH / 0 MEDIUM.** All cycle-6 fixes landed cleanly. 30 spot-checks, 30 verified-TRUE. Remaining LOWs all carryover/build-script issues (metrics.md regex bugs, tech-debt PR snapshot, infrastructure branch-protection unknown). MINORs cosmetic. Grade: B (computed by grade.sh; raw output was E+ due to summary-line tag-string parse bug; tech-debt M7 logged). |

@@ -66,10 +66,10 @@ REFERENCE DOCUMENTS (read these FIRST before analyzing):
 
 | Step | Agent | Target Files | Prompt Section |
 |------|-------|-------------|----------------|
-| [2/5] | discovery-architect | architecture.md, technology-stack.md, ui-architecture.md | `references/agent-prompts.md` → `## Architect` |
-| [3/5] | discovery-analyst | module-map.md, coding-standards.md, data-model.md | `references/agent-prompts.md` → `## Analyst` |
-| [4/5] | discovery-integrator | api-contracts.md, integration-map.md, domain-glossary.md | `references/agent-prompts.md` → `## Integrator` |
-| [5/5] | discovery-quality | test-landscape.md, security-model.md, tech-debt.md, infrastructure.md | `references/agent-prompts.md` → `## Quality` |
+| [2/5] | discovery-architect | architecture.md, technology-stack.md | `references/agent-prompts.md` → `## Architect` |
+| [3/5] | discovery-analyst | module-map.md, coding-standards.md, schemas.md | `references/agent-prompts.md` → `## Analyst` |
+| [4/5] | discovery-integrator | pipeline-contracts.md, integration-map.md, domain-glossary.md | `references/agent-prompts.md` → `## Integrator` |
+| [5/5] | discovery-quality | test-landscape.md, tech-debt.md, infrastructure.md | `references/agent-prompts.md` → `## Quality` |
 
 Before dispatching, print the AC4 sub-unit snapshot header for the GENERATE state:
 ```
@@ -117,10 +117,11 @@ GENERATE  Wave 1 of 1 · 4/4 done
 
 ### Verify All 16 Files
 
-Run `.cursor/scripts/kb/verify-claims.sh .aid/knowledge/` to check all 16 files exist.
+Run `ls .aid/knowledge/*.md 2>/dev/null | wc -l` and confirm count == 16 (or whatever the project's declared kb-doc-set size is). Cross-check filenames against the agent-to-file mapping below.
 
-**If any missing:** Re-dispatch ONLY the responsible agent (see agent-to-file mapping in the script comments).
-Wait, verify again. Repeat until all 16 exist.
+**If any missing:** Re-dispatch ONLY the responsible agent per the mapping in the **Targeted Discovery** section of `SKILL.md`. Wait, verify again. Repeat until all expected files exist.
+
+Semantic verification of the docs (frontmatter compliance, contract claims, cross-doc consistency, spot-checks against source) happens in the **REVIEW** state, dispatched as the `discovery-reviewer` sub-agent — not as a separate shell script.
 
 ### Step 6: Generate README.md and INDEX.md
 
@@ -170,10 +171,11 @@ Scan for `AGENTS.md`. Replace `<!-- AID-DISCOVER ... -->` placeholders with real
 project description, overview, build/test commands, conventions, architecture summary.
 Keep the comment markers for future re-discoveries.
 
-### Step 8: Final Verification
+### Step 8: Final Wrap-up
 
-Run `.cursor/scripts/kb/verify-claims.sh .aid/knowledge/` one final time.
 Print: `[16/16] Generation complete — Knowledge Base ready. Run /aid-discover again to review.`
+
+(File-presence was confirmed in the **Verify All 16 Files** step above; semantic quality is the **REVIEW** state's job — no additional pre-REVIEW check needed.)
 
 Print: `[State: GENERATE] complete.`
 

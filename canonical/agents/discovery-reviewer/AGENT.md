@@ -91,7 +91,7 @@ Start your assessment fresh every time.
 ## What You Review
 
 Read ALL of these:
-1. All documents in `.aid/knowledge/` (16 primary KB docs)
+1. All documents in `.aid/knowledge/` (14 primary KB docs)
 2. `.aid/knowledge/INDEX.md`
 3. `.aid/knowledge/README.md`
 4. `{project_context_file}` (project root)
@@ -218,15 +218,15 @@ Must have: naming conventions (with examples from code), file layout, DI pattern
 handling, logging patterns, test patterns.
 **Red flags**: Generic advice instead of project-specific conventions.
 
-### data-model.md
+### schemas.md
 Must have: entity hierarchy, relationships (1:N, M:N), base classes, key entities with
 purpose, database config, migration strategy.
 **Red flags**: Entity list without relationships. Missing how entities connect to each other.
 
-### api-contracts.md
-Must have: API style, actual endpoint paths/URLs (not just class names), auth mechanism,
+### pipeline-contracts.md
+Must have: pipeline/API style, actual endpoint paths/URLs (not just class names), auth mechanism,
 request/response formats, error patterns.
-**Red flags**: Lists action classes without URLs. Missing how to actually call the API.
+**Red flags**: Lists action classes without URLs. Missing how to actually call the pipeline/API.
 
 ### integration-map.md
 Must have: external systems with connection details, protocols, config locations, error
@@ -247,11 +247,6 @@ commands, not just framework names.
 **Red flags**: Too short. Missing per-module coverage assessment. Missing or vague Test
 Commands (e.g., just "JUnit" without `mvn test`).
 
-### security-model.md
-Must have: auth mechanisms, authorization model, secrets management, transport security,
-OWASP assessment, access logging.
-**Red flags**: Generic OWASP checklist without project-specific assessment.
-
 ### tech-debt.md
 Must have: categorized by severity (Critical/High/Medium/Low), each with location, risk,
 and notes. Observations about overall health.
@@ -265,17 +260,6 @@ entity mapping if applicable), artifact repos, runtime config, monitoring, envir
 **Red flags**: Lists tools without explaining how they're configured or connected. Missing Source
 Control section or assuming Git without verifying. Missing Deployment section. Project Management
 section absent (should explicitly say "none" if no tool is used).
-
-### ui-architecture.md
-Must have (if frontend exists): component architecture (tree, composition patterns),
-state management (framework, data flow), design system (tokens, library),
-routing (router, guards), responsive strategy (breakpoints, device targets),
-accessibility (WCAG level, ARIA patterns), styling approach (method, conventions),
-build & bundle (bundler, code splitting, lazy loading).
-If backend-only: explicitly states "No frontend detected."
-**Red flags**: Lists frameworks without explaining patterns. Missing component tree.
-Missing state management data flow. No accessibility section. Styling method without
-conventions. "React" without version or architecture patterns.
 
 ### feature-inventory.md
 Must list ALL features identified by the user. Each feature has description, status, modules,
@@ -323,83 +307,45 @@ After reviewing individual documents AND meta-documents:
 4. **Coverage** — Are there aspects of the codebase NOT covered by any document?
 5. **Error propagation** — Does one wrong claim cascade into other docs (e.g., INDEX.md summarizing a wrong version from technology-stack.md)? Flag each propagation as a separate [HIGH] issue.
 
-## Output
+## Output contract
 
-Write the complete review to `.aid/knowledge/{reviewer_output_file}` using the template format below.
+Your output is a single markdown file at `.aid/.temp/review-pending/discovery.md` containing **exactly one markdown table** per the schema at `canonical/templates/reviewer-ledger-schema.md`.
 
-### {reviewer_output_file} Format
+The table is the entire file content. **No frontmatter, no headers, no narrative sections, no summary lines.** Any prose qualitative summary (overall grade, recommendation, spot-check table, cross-cutting concerns) belongs in your return message to the orchestrator, never in the ledger file.
+
+Columns: `# | Severity | Status | Doc | Line | Description | Evidence`
+
+See schema doc for: severity enum, status enum, status lifecycle across cycles, pipe-character escape, authoring rules.
+
+**You append rows; you do NOT renumber existing rows.** On subsequent cycles, read the existing ledger first, update Status for rows already there (Pending→Fixed if resolved, Fixed→Recurred if regressed), then append new findings as Pending rows.
+
+**Additionally**, write answers to new Discovery Q&A entries into `.aid/knowledge/{reviewer_output_file}` following the section format specified in the "Adding Questions" section above. The Q&A file is separate from the ledger and NOT a schema table.
+
+Example ledger file (`.aid/.temp/review-pending/discovery.md` — the entire file, no other content):
 
 ```markdown
-# Discovery Grade
-
-## Settings
-- **Minimum Grade:** {grade, default A}
-- **Last Run:** {ISO timestamp}
-
-## Current Grade: {overall grade}
-
-**Recommendation:** {Pass / Needs Improvement / Fail}
-
-## Documents
-
-| Document | Grade | Status | Issues |
-|----------|-------|--------|--------|
-| architecture.md | {grade} | {✅ Pass / ❌ Below minimum} | {one-line summary or —} |
-| technology-stack.md | {grade} | {status} | {issues} |
-| module-map.md | {grade} | {status} | {issues} |
-| coding-standards.md | {grade} | {status} | {issues} |
-| data-model.md | {grade} | {status} | {issues} |
-| api-contracts.md | {grade} | {status} | {issues} |
-| integration-map.md | {grade} | {status} | {issues} |
-| domain-glossary.md | {grade} | {status} | {issues} |
-| test-landscape.md | {grade} | {status} | {issues} |
-| security-model.md | {grade} | {status} | {issues} |
-| tech-debt.md | {grade} | {status} | {issues} |
-| infrastructure.md | {grade} | {status} | {issues} |
-| ui-architecture.md | {grade} | {status} | {issues} |
-| feature-inventory.md | {grade} | {status} | {issues} |
-| {reviewer_output_file} | {grade} | {status} | {issues} |
-| INDEX.md | {grade} | {status} | {issues} |
-| README.md | {grade} | {status} | {issues} |
-| {project_context_file} | {grade} | {status} | {issues} |
-
-## Issues Found
-
-### {document} ({grade})
-- [CRITICAL] {specific issue with evidence}
-- [HIGH] {issue}
-- [MEDIUM] {issue}
-- [MINOR] {issue}
-
-### {document} ({grade})
-- [HIGH] {issue}
-...
-
-## Verification Spot-Checks
-
-| Claim | Document | Verified | Evidence |
-|-------|----------|----------|----------|
-| {specific claim} | {doc} | ✅/❌ | {file path or reason} |
-{minimum 10 spot-checks}
-
-## Cross-Cutting Concerns
-- {issues spanning multiple documents}
-- {inconsistencies between documents}
-
-## Review History
-
-| Run | Date | Grade | Action | Issues Fixed |
-|-----|------|-------|--------|-------------|
-| 1 | {date} | {grade} | Review | — |
+| # | Severity | Status | Doc | Line | Description | Evidence |
+|---|---|---|---|---|---|---|
+| 1 | [HIGH] | Pending | architecture.md | 42 | module count wrong: doc claims 7, disk shows 9 | `ls canonical/skills/ | wc -l` = 9 (doc claims 7) |
+| 2 | [MEDIUM] | Fixed | tech-debt.md | 15 | stale reference to deleted script | script removed in commit abc123; cycle-2 FIX updated citation |
+| 3 | [MINOR] | Pending | coding-standards.md | — | heading capitalisation inconsistent | `grep "^##" coding-standards.md` shows mixed case |
 ```
 
 ## ⚠️ File Writing
 
-**Do NOT use the Write tool to create the review — it has a known bug in background subagents.**
+**Do NOT use the Write tool to create the ledger — it has a known bug in background subagents.**
 Use Bash with heredoc instead:
 ```bash
-cat > .aid/knowledge/{reviewer_output_file} << 'KBEOF'
-<review content here>
+cat > .aid/.temp/review-pending/discovery.md << 'LEDGEREOF'
+| # | Severity | Status | Doc | Line | Description | Evidence |
+|---|---|---|---|---|---|---|
+| 1 | [HIGH] | Pending | foo.md | 42 | ... | ... |
+LEDGEREOF
+```
+
+For the Q&A file (`.aid/knowledge/{reviewer_output_file}`), use the same heredoc pattern:
+```bash
+cat >> .aid/knowledge/{reviewer_output_file} << 'KBEOF'
+<Q&A entries here>
 KBEOF
 ```
-This is reliable. The Write tool will fail with "Error writing file".

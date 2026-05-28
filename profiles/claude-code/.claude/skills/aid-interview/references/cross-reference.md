@@ -72,13 +72,13 @@ I have {N} questions to resolve these. Let's go through them one at a time.
 For each finding, add a Q&A entry in STATE.md `## Cross-phase Q&A`:
 
 ```markdown
-### IQ{N}: [{Category}: {Impact}]
+### Q{N}
 
-**Question:** {text}
-**Context:** {why this matters, what evidence was found}
-**Source:** /aid-interview (cross-reference)
-**Suggested:** {answer if inferrable from KB/code, or "—"}
-**Status:** Pending
+- **Category:** {category, e.g., Architecture, Requirements, Security}
+- **Impact:** {High|Medium|Low|Required}
+- **Status:** Pending
+- **Context:** {why this matters; what evidence was found; surfaced by /aid-interview (cross-reference)}
+- **Suggested:** {answer if inferrable from KB/code, or "—"}
 ```
 
 Then present them one at a time using State 2 (Q&A mode) logic.

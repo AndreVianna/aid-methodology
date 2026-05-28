@@ -51,7 +51,7 @@ RULES:
 ```
 RULES:
 - Create design artifacts as specified in task scope (mockups, wireframes, flows)
-- Follow ui-architecture.md from KB (design system, tokens, component patterns)
+- Follow KB architecture docs (design system, tokens, component patterns) from architecture.md and any project-specific repo-presentation docs
 - Reference REQUIREMENTS.md for user stories and personas
 - Show responsive behavior if specified in SPEC
 - Note accessibility considerations

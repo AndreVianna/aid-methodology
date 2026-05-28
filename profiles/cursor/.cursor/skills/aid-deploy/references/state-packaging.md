@@ -57,7 +57,7 @@ Check if implementation revealed anything that should update the Knowledge Base:
 - Architecture changes → flag for architecture.md
 - New integrations → flag for integration-map.md
 - Tech debt created or resolved → flag for tech-debt.md
-- Data model changes → flag for data-model.md
+- Data schema changes → flag for schemas.md
 - Deployment process changes → flag for infrastructure.md
 
 For each KB update needed:

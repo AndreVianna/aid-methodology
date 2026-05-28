@@ -141,7 +141,7 @@ EOF
         echo "*(no canonical/skills directory — this is normal for adopters; only the dogfood repo has it)*"
     fi
 
-    # --- Severity tallies (tech-debt + security-model) ----------------------
+    # --- Severity tallies (tech-debt) -----------------------------------------
     echo ""
     echo "## 3. Severity tallies"
     echo ""
@@ -160,26 +160,16 @@ EOF
         echo ""
     fi
 
-    if [[ -f "$KB_DIR/security-model.md" ]]; then
-        sec_high=$(grep -cE '\[HIGH\]' "$KB_DIR/security-model.md" 2>/dev/null || echo 0)
-        sec_med=$(grep -cE '\[MEDIUM\]' "$KB_DIR/security-model.md" 2>/dev/null || echo 0)
-        sec_low=$(grep -cE '\[LOW\]' "$KB_DIR/security-model.md" 2>/dev/null || echo 0)
-        sec_info=$(grep -cE '\[INFO\]' "$KB_DIR/security-model.md" 2>/dev/null || echo 0)
-        echo "### security-model.md"
-        echo ""
-        echo "| Severity | Count |"
-        echo "|----------|-------|"
-        echo "| HIGH | $sec_high |"
-        echo "| MEDIUM | $sec_med |"
-        echo "| LOW | $sec_low |"
-        echo "| INFO | $sec_info |"
-        echo ""
-    fi
-
     # --- Glossary term count -----------------------------------------------
     if [[ -f "$KB_DIR/domain-glossary.md" ]]; then
-        # Terms are table rows starting with "| **TermName** |"
-        terms=$(grep -cE '^\| \*\*[A-Z]' "$KB_DIR/domain-glossary.md" 2>/dev/null || echo 0)
+        # Terms are table rows starting with "| **TermName**" where TermName can
+        # begin with any non-whitespace character (uppercase letter, lowercase
+        # letter, digit, or backtick for code-formatted names). The previous
+        # `[A-Z]` constraint undercounted 23 valid terms starting with
+        # lowercase / numeric / backtick (e.g., `project-index.md`,
+        # `heartbeat_interval`, `workType`).
+        terms=$(grep -cE '^\| \*\*[^ ]' "$KB_DIR/domain-glossary.md" 2>/dev/null || true)
+        terms=${terms:-0}
         echo "## 4. Domain glossary"
         echo ""
         echo "Term count: **$terms**"
@@ -188,15 +178,30 @@ EOF
 
     # --- Feature inventory counts ------------------------------------------
     if [[ -f "$KB_DIR/feature-inventory.md" ]]; then
-        # Shipped + Partial counts from table-row status cells
-        shipped=$(grep -cE '✅ Shipped' "$KB_DIR/feature-inventory.md" 2>/dev/null || echo 0)
-        partial=$(grep -cE '⚠️ Partial' "$KB_DIR/feature-inventory.md" 2>/dev/null || echo 0)
+        # Match Status TEXT values (not glyphs — per coding-standards.md §13:
+        # machine-parsed values are text, glyphs are display-only).
+        # Constrain to data rows: line starts with '|', has at least 2 columns
+        # before Status, Status text surrounded by spaces inside pipe-delimiters.
+        # This excludes legend rows, header rows, separator rows, and body prose.
+        # grep -c outputs "N\n" on matches AND exits 1 with no matches; the
+        # `|| true` suppresses the failure, and `${var:-0}` defaults empty → 0.
+        # This avoids the "0\n0" double-output bug from `|| echo 0`.
+        shipped=$(grep -cE '^\|[^|]*\|[^|]*\| Shipped \|' "$KB_DIR/feature-inventory.md" 2>/dev/null || true)
+        shipped=${shipped:-0}
+        partial=$(grep -cE '^\|[^|]*\|[^|]*\| Partial \|' "$KB_DIR/feature-inventory.md" 2>/dev/null || true)
+        partial=${partial:-0}
+        pending=$(grep -cE '^\|[^|]*\|[^|]*\| Pending \|' "$KB_DIR/feature-inventory.md" 2>/dev/null || true)
+        pending=${pending:-0}
+        deprecated=$(grep -cE '^\|[^|]*\|[^|]*\| Deprecated \|' "$KB_DIR/feature-inventory.md" 2>/dev/null || true)
+        deprecated=${deprecated:-0}
         echo "## 5. Feature inventory"
         echo ""
         echo "| Status | Count |"
         echo "|--------|-------|"
-        echo "| ✅ Shipped | $shipped |"
-        echo "| ⚠️ Partial | $partial |"
+        echo "| Shipped | $shipped |"
+        echo "| Partial | $partial |"
+        echo "| Pending | $pending |"
+        echo "| Deprecated | $deprecated |"
         echo ""
     fi
 
