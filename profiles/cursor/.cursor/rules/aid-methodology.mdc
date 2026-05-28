@@ -20,7 +20,7 @@ per-skill / per-artifact state files).
     INDEX.md                ← map of all KB docs
     README.md               ← completeness table + revision history
     STATE.md                ← Discovery area state (was DISCOVERY-STATE.md + SUMMARY-STATE.md)
-    {16 KB documents}       ← architecture, coding-standards, data-model, ...
+    {14 KB documents}       ← architecture, coding-standards, schemas, pipeline-contracts, ...
   work-NNN-{name}/          ← Work area (per work — one full dev lifecycle)
     STATE.md                ← Work area state (was INTERVIEW-STATE.md + per-feature/per-task state)
     REQUIREMENTS.md

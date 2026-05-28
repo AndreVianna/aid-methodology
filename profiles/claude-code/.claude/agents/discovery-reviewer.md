@@ -88,7 +88,7 @@ Start your assessment fresh every time.
 ## What You Review
 
 Read ALL of these:
-1. All documents in `.aid/knowledge/` (16 primary KB docs)
+1. All documents in `.aid/knowledge/` (14 primary KB docs)
 2. `.aid/knowledge/INDEX.md`
 3. `.aid/knowledge/README.md`
 4. `CLAUDE.md` (project root)
@@ -215,15 +215,15 @@ Must have: naming conventions (with examples from code), file layout, DI pattern
 handling, logging patterns, test patterns.
 **Red flags**: Generic advice instead of project-specific conventions.
 
-### data-model.md
+### schemas.md
 Must have: entity hierarchy, relationships (1:N, M:N), base classes, key entities with
 purpose, database config, migration strategy.
 **Red flags**: Entity list without relationships. Missing how entities connect to each other.
 
-### api-contracts.md
-Must have: API style, actual endpoint paths/URLs (not just class names), auth mechanism,
+### pipeline-contracts.md
+Must have: pipeline/API style, actual endpoint paths/URLs (not just class names), auth mechanism,
 request/response formats, error patterns.
-**Red flags**: Lists action classes without URLs. Missing how to actually call the API.
+**Red flags**: Lists action classes without URLs. Missing how to actually call the pipeline/API.
 
 ### integration-map.md
 Must have: external systems with connection details, protocols, config locations, error
@@ -244,11 +244,6 @@ commands, not just framework names.
 **Red flags**: Too short. Missing per-module coverage assessment. Missing or vague Test
 Commands (e.g., just "JUnit" without `mvn test`).
 
-### security-model.md
-Must have: auth mechanisms, authorization model, secrets management, transport security,
-OWASP assessment, access logging.
-**Red flags**: Generic OWASP checklist without project-specific assessment.
-
 ### tech-debt.md
 Must have: categorized by severity (Critical/High/Medium/Low), each with location, risk,
 and notes. Observations about overall health.
@@ -262,17 +257,6 @@ entity mapping if applicable), artifact repos, runtime config, monitoring, envir
 **Red flags**: Lists tools without explaining how they're configured or connected. Missing Source
 Control section or assuming Git without verifying. Missing Deployment section. Project Management
 section absent (should explicitly say "none" if no tool is used).
-
-### ui-architecture.md
-Must have (if frontend exists): component architecture (tree, composition patterns),
-state management (framework, data flow), design system (tokens, library),
-routing (router, guards), responsive strategy (breakpoints, device targets),
-accessibility (WCAG level, ARIA patterns), styling approach (method, conventions),
-build & bundle (bundler, code splitting, lazy loading).
-If backend-only: explicitly states "No frontend detected."
-**Red flags**: Lists frameworks without explaining patterns. Missing component tree.
-Missing state management data flow. No accessibility section. Styling method without
-conventions. "React" without version or architecture patterns.
 
 ### feature-inventory.md
 Must list ALL features identified by the user. Each feature has description, status, modules,
@@ -345,15 +329,13 @@ Write the complete review to `.aid/knowledge/STATE.md` using the template format
 | technology-stack.md | {grade} | {status} | {issues} |
 | module-map.md | {grade} | {status} | {issues} |
 | coding-standards.md | {grade} | {status} | {issues} |
-| data-model.md | {grade} | {status} | {issues} |
-| api-contracts.md | {grade} | {status} | {issues} |
+| schemas.md | {grade} | {status} | {issues} |
+| pipeline-contracts.md | {grade} | {status} | {issues} |
 | integration-map.md | {grade} | {status} | {issues} |
 | domain-glossary.md | {grade} | {status} | {issues} |
 | test-landscape.md | {grade} | {status} | {issues} |
-| security-model.md | {grade} | {status} | {issues} |
 | tech-debt.md | {grade} | {status} | {issues} |
 | infrastructure.md | {grade} | {status} | {issues} |
-| ui-architecture.md | {grade} | {status} | {issues} |
 | feature-inventory.md | {grade} | {status} | {issues} |
 | STATE.md | {grade} | {status} | {issues} |
 | INDEX.md | {grade} | {status} | {issues} |

@@ -16,12 +16,12 @@ with 13 sections and 8 diagrams.
 | 1 | At a Glance | | STATE.md, project-structure.md, technology-stack.md |
 | 2 | Architecture | ★ | architecture.md |
 | 3 | Modules / Plugins | | module-map.md |
-| 4 | Data Model | ★ | data-model.md |
-| 5 | API Surface | | api-contracts.md |
+| 4 | Data Model | ★ | schemas.md |
+| 5 | API Surface | | pipeline-contracts.md |
 | 6 | Integrations | | integration-map.md |
-| 7 | Frontend Architecture | | ui-architecture.md |
+| 7 | Frontend Architecture | | architecture.md |
 | 8 | Features | ★ | feature-inventory.md |
-| 9 | Security Model | | security-model.md |
+| 9 | Security Conventions | | coding-standards.md |
 | 10 | Test Landscape | | test-landscape.md |
 | 11 | Tech Debt | | tech-debt.md |
 | 12 | Infrastructure & Build | | infrastructure.md, technology-stack.md |
@@ -58,7 +58,7 @@ test counts. Use `card.plugin` style with `<dl>` metadata.
 ### §4 Data Model
 ER diagram + a full entity table with columns: Plugin, Entity, Mapping
 (JPA/hbm.xml/etc), Versioning, Key Fields, Notes. Plus 4 callouts for known
-data-model gotchas (no version on aggregate, cross-plugin refs, dialect-only
+schema gotchas (no version on aggregate, cross-plugin refs, dialect-only
 upgrades, doc-vs-code drift).
 
 ### §5 API Surface

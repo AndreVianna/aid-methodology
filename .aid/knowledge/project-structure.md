@@ -1,6 +1,6 @@
 # Project Structure
 
-> Repository inventory for AID (Agentic Implementation Discipline) — the methodology
+> Repository inventory for AID (AI Integrated Development) — the methodology
 > specification and multi-tool distribution that ships skills/agents/templates/recipes
 > into 3 install trees (Claude Code, Codex CLI, Cursor) from a single `canonical/` source.
 >
@@ -275,11 +275,11 @@ Lite-path templates at `canonical/recipes/`, replicated into all 3 install trees
 | `delivery-plans/` | 1 | `task-template.md` |
 | `feedback-artifacts/` | 1 | `IMPEDIMENT.md` (116 lines) — escalation contract |
 | `kb-authoring/` | 5 | README, frontmatter-schema, principles, review-rubric, tier-model |
-| `knowledge-base/` | 17 | Templates for all 16 KB docs (api-contracts, architecture, coding-standards, data-model, domain-glossary, external-sources, feature-inventory, infrastructure, integration-map, module-map, project-structure, security-model, tech-debt, technology-stack, test-landscape, ui-architecture) + README |
+| `knowledge-base/` | 15 | Templates for 14 active KB docs (pipeline-contracts, architecture, coding-standards, schemas, domain-glossary, external-sources, feature-inventory, infrastructure, integration-map, module-map, project-structure, tech-debt, technology-stack, test-landscape) + README |
 | `knowledge-summary/` | 19+ | HTML/CSS/JS for offline KB viewer (component-css.css 657 lines, lightbox.js 359 lines, html-skeleton.html, mermaid-init.js, design-tokens, mermaid-examples, prompt, plus 6 section-templates: auto-detect, cli, data-pipeline, library, microservices, web-app + accessibility-checklist + grading-rubric) |
 | `requirements/` | 1 | `requirements-template.md` |
 | `specs/` | 2 | `lite-spec-template.md`, `spec-template.md` |
-| Top-level templates | 17 | discovery-state-template.md, dispatch-protocol-checklist.md, feature.md, feature-inventory.md, generated-files.txt, grading-rubric.md, known-issues.md, long-wait-protocol.md, package.md, recipe-template.md, requirements.md, reviewer-dispatch.md (296 lines), rough-time-hints.md, self-review-protocol.md, settings.yml, subagent-heartbeat-protocol.md (176 lines), ui-architecture.md, work-state-template.md, delivery-issues.md |
+| Top-level templates | 18 | discovery-state-template.md, dispatch-protocol-checklist.md, feature.md, feature-inventory.md, generated-files.txt, grading-rubric.md, known-issues.md, long-wait-protocol.md, package.md, recipe-template.md, requirements.md, reviewer-dispatch.md (296 lines), rough-time-hints.md, self-review-protocol.md, settings.yml, subagent-heartbeat-protocol.md (176 lines), work-state-template.md, delivery-issues.md |
 
 ## Entry Points
 

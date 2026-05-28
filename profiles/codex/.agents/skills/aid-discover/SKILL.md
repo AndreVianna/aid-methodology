@@ -142,14 +142,14 @@ State 6: GRADE file, grade >= min, user-approved        → DONE
 
 **Detection logic:**
 
-1. Check `.aid/knowledge/` for the 16 expected documents:
+1. Check `.aid/knowledge/` for the 14 expected documents:
    `project-structure.md`, `external-sources.md`, `architecture.md`, `technology-stack.md`,
-   `module-map.md`, `coding-standards.md`, `data-model.md`, `api-contracts.md`,
-   `integration-map.md`, `domain-glossary.md`, `test-landscape.md`, `security-model.md`,
-   `tech-debt.md`, `infrastructure.md`, `ui-architecture.md`, `feature-inventory.md`
+   `module-map.md`, `coding-standards.md`, `schemas.md`, `pipeline-contracts.md`,
+   `integration-map.md`, `domain-glossary.md`, `test-landscape.md`,
+   `tech-debt.md`, `infrastructure.md`, `feature-inventory.md`
 2. A document is "populated" only if it contains real content (files with only `❌ Pending` = missing). If any are missing → **GENERATE**
-3. If all 16 populated and `.aid/knowledge/STATE.md` has `**Grade:** Pending` or `Not Started` → **REVIEW**
-4. If all 16 populated but no `.aid/knowledge/STATE.md` → **REVIEW** (legacy)
+3. If all 14 populated and `.aid/knowledge/STATE.md` has `**Grade:** Pending` or `Not Started` → **REVIEW**
+4. If all 14 populated but no `.aid/knowledge/STATE.md` → **REVIEW** (legacy)
 5. If `.aid/knowledge/STATE.md` exists with a grade:
    - Read current/minimum grade; if `--grade` provided, update minimum
    - Read `## Q&A (Pending)` section of `.aid/knowledge/STATE.md` for `**Status:** Pending` entries
@@ -265,10 +265,10 @@ When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-disco
    | Sub-agent | KB documents |
    |---|---|
    | `discovery-scout` | project-structure.md, external-sources.md |
-   | `discovery-architect` | architecture.md, technology-stack.md, ui-architecture.md |
-   | `discovery-analyst` | module-map.md, coding-standards.md, data-model.md |
-   | `discovery-integrator` | api-contracts.md, integration-map.md, domain-glossary.md |
-   | `discovery-quality` | test-landscape.md, security-model.md, tech-debt.md, infrastructure.md |
+   | `discovery-architect` | architecture.md, technology-stack.md |
+   | `discovery-analyst` | module-map.md, coding-standards.md, schemas.md |
+   | `discovery-integrator` | pipeline-contracts.md, integration-map.md, domain-glossary.md |
+   | `discovery-quality` | test-landscape.md, tech-debt.md, infrastructure.md |
    | orchestrator (no sub-agent) | feature-inventory.md, README.md, INDEX.md |
 
 3. Dispatch ONLY the relevant subagent

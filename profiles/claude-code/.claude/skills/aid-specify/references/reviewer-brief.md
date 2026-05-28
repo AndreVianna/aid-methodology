@@ -18,8 +18,8 @@ CONTEXT:
 
 RUBRIC: .claude/templates/grading-rubric.md (universal severity → grade table)
   Grade ONE feature's SPEC.md technical specification for:
-    - Consistency with the KB (architecture, module-map, coding-standards, data-model)
-    - Internal coherence (data model ↔ feature flow ↔ layers ↔ acceptance criteria)
+    - Consistency with the KB (architecture, module-map, coding-standards, schemas)
+    - Internal coherence (schemas ↔ feature flow ↔ layers ↔ acceptance criteria)
     - Codebase reality (does the proposed integration touch the modules it claims?)
     - Testability (acceptance criteria are concrete + verifiable)
     - Spec discipline (no implementation prose; design decisions captured)

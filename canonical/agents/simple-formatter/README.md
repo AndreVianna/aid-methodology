@@ -68,7 +68,7 @@ The Formatter **will**:
 
 ## Examples
 
-- *"Format these endpoint findings as `templates/knowledge-base/api-contracts.md`"* → properly-structured api-contracts.md
+- *"Format these pipeline/API findings as `templates/knowledge-base/pipeline-contracts.md`"* → properly-structured pipeline-contracts.md
 - *"Render this delivery payload as a PR description"* → markdown PR body with all standard sections
 - *"Fill the changelog template with these merged tasks"* → Keep-a-Changelog formatted entry
 

@@ -1,5 +1,5 @@
 name = "discovery-analyst"
-description = "Maps modules, mines coding conventions from actual code, and extracts data models. Produces module-map.md, coding-standards.md, and data-model.md for the Knowledge Base."
+description = "Maps modules, mines coding conventions from actual code, and extracts data schemas. Produces module-map.md, coding-standards.md, and schemas.md for the Knowledge Base."
 model = "gpt-5.5"
 model_reasoning_effort = "high"
 developer_instructions = """
@@ -61,7 +61,7 @@ for the full protocol.
 - Map every module: purpose, dependencies, size (lines/files), test coverage estimate
 - Mine coding conventions from actual code (not docs): naming, error handling, logging, config patterns, file organization
 - Extract data models: schema definitions, entity relationships, migrations, indexes, validation rules
-- Produce `.aid/knowledge/module-map.md`, `.aid/knowledge/coding-standards.md`, `.aid/knowledge/data-model.md`
+- Produce `.aid/knowledge/module-map.md`, `.aid/knowledge/coding-standards.md`, `.aid/knowledge/schemas.md`
 
 ## What You Don't Do
 - Analyze overall architecture or tech stack (that's Discovery Architect)
@@ -117,9 +117,9 @@ for the full protocol.
 {observed patterns: function length, comment density, async patterns, etc.}
 ```
 
-### .aid/knowledge/data-model.md
+### .aid/knowledge/schemas.md
 ```markdown
-# Data Model
+# Schemas
 
 ## Entities / Schemas
 {for each entity: fields, types, constraints, source file}

@@ -38,7 +38,7 @@ Write in plain language. This is what the feature does, not how.}
 ### Data Model
 
 {Tables, columns, types, constraints, FKs, indices — or "no schema changes".
-Reference `.aid/knowledge/data-model.md` for existing schema and conventions.}
+Reference `.aid/knowledge/schemas.md` for existing schema and conventions.}
 
 ### Feature Flow
 

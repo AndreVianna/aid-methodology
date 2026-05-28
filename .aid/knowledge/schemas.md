@@ -92,10 +92,10 @@ consolidation per CLAUDE.md:57-59). Absorbs former `DISCOVERY-STATE.md` +
 | `## Review History` | Append-only table: `# | Date | Grade | Source | Notes` | 1..N |
 | `## Summarization History` | Append-only table: `# | Date | Grade | Profile | Mermaid | Output | Notes` | 1..N |
 
-**16 standard KB documents** (per `canonical/scripts/kb/verify-claims.sh:102-119`):
+**14 active KB documents** (post-Q3 FIX):
 project-structure, external-sources, architecture, technology-stack, module-map,
-coding-standards, data-model, api-contracts, integration-map, domain-glossary,
-test-landscape, security-model, tech-debt, infrastructure, ui-architecture,
+coding-standards, schemas (was data-model), pipeline-contracts (was api-contracts), integration-map, domain-glossary,
+test-landscape, tech-debt, infrastructure,
 feature-inventory.
 
 ---

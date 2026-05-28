@@ -22,7 +22,7 @@ The Analyst mines the internals: how each module is built, what conventions the 
 
 - **`.aid/knowledge/module-map.md`** — per-module breakdown with dependency graph.
 - **`.aid/knowledge/coding-standards.md`** — mined conventions with file-path citations.
-- **`.aid/knowledge/data-model.md`** — schema, relationships, migration history.
+- **`.aid/knowledge/schemas.md`** — schema, relationships, migration history.
 
 ## Tools
 

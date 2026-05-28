@@ -21,7 +21,6 @@ The Quality agent owns the cross-cutting concerns that no single feature owns: t
 ## What It Produces
 
 - **`.aid/knowledge/test-landscape.md`** — test stack, coverage, gaps.
-- **`.aid/knowledge/security-model.md`** — severity-tagged findings, OWASP-mapped.
 - **`.aid/knowledge/tech-debt.md`** — severity-tagged debt items, plus a Resolution Roadmap.
 
 ## Tools

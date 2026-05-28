@@ -16,12 +16,12 @@ sources/sinks are central.
 | 1 | At a Glance | | STATE.md, project-structure.md |
 | 2 | Architecture | ★ | architecture.md |
 | 3 | Pipeline DAG | ★ | module-map.md, integration-map.md |
-| 4 | Data Schemas | ★ | data-model.md |
+| 4 | Data Schemas | ★ | schemas.md |
 | 5 | Sources & Sinks | | integration-map.md |
 | 6 | Transforms / Stages | | feature-inventory.md |
 | 7 | Schedules & Triggers | | infrastructure.md |
 | 8 | Data Quality & Validation | | test-landscape.md, tech-debt.md |
-| 9 | Operational Concerns | | security-model.md, tech-debt.md |
+| 9 | Operational Concerns | | tech-debt.md |
 | 10 | Build & Deployment | | infrastructure.md |
 | 11 | Knowledge Base Index | | INDEX.md |
 

@@ -443,7 +443,7 @@ Docs that describe a convention vs. what code actually does:
 |------------|---------------|----------------|-------|
 | Thin-Router SKILL.md ≤~360 lines | CLAUDE.md:51-56 | YES — all 10 user-facing skills fit under the threshold; the largest is `aid-interview`. Per-file line counts live in `.aid/generated/metrics.md` / `project-index.md` | Confirmed |
 | 22 agents, 3 tiers | CLAUDE.md (README.md:178-198) | YES — confirmed via 22 `AGENT.md` files with `tier: large|medium|small` frontmatter | Confirmed |
-| 16 standard KB docs | `verify-claims.sh:102-119` STANDARD_KB_FILES array; `canonical/skills/aid-discover/SKILL.md:145-149` | YES — list matches | Confirmed |
+| 14 active KB docs (was 16) | `canonical/skills/aid-discover/SKILL.md:145-149` | YES — list updated in Q3 FIX (removed: security-model, ui-architecture; renamed: data-model → schemas, api-contracts → pipeline-contracts) | Confirmed |
 | 8-task-type catalog | `canonical/skills/aid-execute/references/state-execute.md:6-16`; `canonical/templates/delivery-plans/task-template.md:3` | YES — both lists match: RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE | Confirmed |
 | 5 grade severity tags | `canonical/agents/reviewer/AGENT.md:54-62`; `canonical/scripts/grade.sh:5-7` | YES — [CRITICAL]/[HIGH]/[MEDIUM]/[LOW]/[MINOR] match in both | Confirmed |
 | 4 lite-path sub-paths | CLAUDE.md:57-59 (lite-bug-fix/lite-doc/lite-refactor/lite-feature) | YES — sub-path enum present in `canonical/templates/work-state-template.md:19`, `canonical/templates/recipe-template.md:90-93` | Confirmed |
@@ -455,3 +455,65 @@ Docs that describe a convention vs. what code actually does:
 ⚠️ Inferred from code — needs confirmation: no static lint rule enforces the
 single-branch work convention or the Thin-Router line ceiling. Both are
 convention + reviewer judgment, not mechanically verified.
+
+---
+
+## 11. Security-By-Design Conventions
+
+This section consolidates security-relevant authoring conventions applicable to
+this repo. AID has no application runtime, so the surface reduces to: what gets
+committed, how shell scripts handle input, and what tools each agent may invoke.
+
+### 11a. `.gitignore` exclusion policy (CONFIRMED)
+
+The following paths MUST remain gitignored (per `.gitignore:18-47`):
+
+- `.aid/.heartbeat/` — ephemeral per-subagent heartbeat files; accumulate and
+  pollute history. Confirmed gitignored at `.gitignore:46-47`; `git check-ignore
+  -v .aid/.heartbeat/` returns line 47.
+- `*.temp` — catches `.aid/.temp/` via glob. ⚠️ This is **indirect** — if the
+  temp directory is ever renamed (e.g., to `.aid/scratch/`), it would silently
+  become tracked. An explicit `.aid/.temp/` entry is preferable (see
+  `tech-debt.md` M3).
+- `.aid/knowledge/.cache/` — KB build cache; must not be tracked.
+- IDE/editor files (`.idea/`, `.vscode/`, `*.iml`, etc.) — per `.gitignore:18-30`.
+- `.claude/settings.local.json` — per-developer Claude Code overrides; excluded
+  at `.gitignore:44`. Not a credentials file (the repo has no credentials) but
+  excluded to prevent accidental personal-preference commits.
+
+### 11b. Shell script safety discipline (CONFIRMED)
+
+Every canonical helper script under `canonical/scripts/` declares
+`set -euo pipefail` at the top (per `canonical/scripts/config/read-setting.sh:44`
+as the exemplar). Exceptions are documented in §3b above:
+
+- `set -uo pipefail` (no `-e`) when the script runs many checks and must
+  continue past per-check failures (e.g., `verify-claims.sh:33`).
+- `set -u` only (no `-e`, no `-o pipefail`) when the script does explicit
+  mode-dispatch with named exit codes (e.g., `writeback-task-status.sh:41`).
+
+The principle: **fail fast by default**; deviate only with a documented rationale
+embedded in the script's header or inline comment.
+
+### 11c. Agent permission model (security-by-design)
+
+Each agent's tool access is declared in the `tools:` field of its YAML
+frontmatter at `canonical/agents/*/AGENT.md`. The host tool (Claude Code / Codex
+/ Cursor) enforces the allowlist at dispatch time. Key patterns:
+
+- **Discovery sub-agents** (`discovery-scout`, `discovery-analyst`,
+  `discovery-architect`, `discovery-integrator`, `discovery-quality`) share a
+  uniform `Read, Glob, Grep, Bash, Write` allowlist but are constrained by
+  prompt contract to write ONLY into `.aid/knowledge/`.
+- **Audit/review agents** (`security`, `reviewer`, `performance`) omit `Write`
+  and `Edit` — they are read-only assessors.
+- **`interviewer`** is the strictest: `Read, Glob, Grep` only — conversation-
+  only, no file writes and no shell execution.
+- **`tech-writer`** has `Write` and `Edit` but no `Bash` — docs-only, no shell.
+
+⚠️ The write-scope restriction for discovery agents is enforced by prompt, not
+by path-scoped `Write` permission. A misbehaving agent COULD write outside
+`.aid/knowledge/`. There is no path-scoping in the `tools:` schema.
+
+See `canonical/agents/*/AGENT.md` `tools:` frontmatter for the per-agent
+allowlist. The full per-agent table is not reproduced here to avoid drift.

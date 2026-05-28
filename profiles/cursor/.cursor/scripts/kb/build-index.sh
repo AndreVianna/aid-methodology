@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# build-index.sh — generate .aid/generated/INDEX.md from KB doc frontmatter.
+# build-index.sh — generate .aid/knowledge/INDEX.md from KB doc frontmatter.
 #
 # INDEX.md is the RAG (Retrieval-Augmented Generation) connection between agents and
 # the KB: every agent task prompt carries INDEX.md so the agent knows what KB doc to
@@ -30,7 +30,7 @@ while [[ $# -gt 0 ]]; do
         --output) OUTPUT="$2"; shift 2 ;;
         -h|--help)
             cat <<'HELP_EOF'
-build-index.sh — generate .aid/generated/INDEX.md from KB doc frontmatter.
+build-index.sh — generate .aid/knowledge/INDEX.md from KB doc frontmatter.
 
 Composes the RAG navigation index from each KB doc's `intent:` field.
 INDEX.md is the agent-facing self-service map; every task prompt loads it.
@@ -131,7 +131,7 @@ changelog:
 ---
 
 <!-- AUTO-GENERATED $TS by .cursor/scripts/kb/build-index.sh -->
-<!-- DO NOT EDIT — regenerate with: bash .cursor/scripts/kb/build-index.sh --root .aid/knowledge --output .aid/generated/INDEX.md -->
+<!-- DO NOT EDIT — regenerate with: bash .cursor/scripts/kb/build-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md -->
 
 # Knowledge Base Index
 
@@ -194,7 +194,7 @@ EOF
 
     echo "---"
     echo ""
-    echo "*To regenerate this index, run \`bash .cursor/scripts/kb/build-index.sh --root .aid/knowledge --output .aid/generated/INDEX.md\`.*"
+    echo "*To regenerate this index, run \`bash .cursor/scripts/kb/build-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md\`.*"
 
 } > "$OUTPUT"
 

@@ -66,10 +66,10 @@ REFERENCE DOCUMENTS (read these FIRST before analyzing):
 
 | Step | Agent | Target Files | Prompt Section |
 |------|-------|-------------|----------------|
-| [2/5] | discovery-architect | architecture.md, technology-stack.md, ui-architecture.md | `references/agent-prompts.md` → `## Architect` |
-| [3/5] | discovery-analyst | module-map.md, coding-standards.md, data-model.md | `references/agent-prompts.md` → `## Analyst` |
-| [4/5] | discovery-integrator | api-contracts.md, integration-map.md, domain-glossary.md | `references/agent-prompts.md` → `## Integrator` |
-| [5/5] | discovery-quality | test-landscape.md, security-model.md, tech-debt.md, infrastructure.md | `references/agent-prompts.md` → `## Quality` |
+| [2/5] | discovery-architect | architecture.md, technology-stack.md | `references/agent-prompts.md` → `## Architect` |
+| [3/5] | discovery-analyst | module-map.md, coding-standards.md, schemas.md | `references/agent-prompts.md` → `## Analyst` |
+| [4/5] | discovery-integrator | pipeline-contracts.md, integration-map.md, domain-glossary.md | `references/agent-prompts.md` → `## Integrator` |
+| [5/5] | discovery-quality | test-landscape.md, tech-debt.md, infrastructure.md | `references/agent-prompts.md` → `## Quality` |
 
 Before dispatching, print the AC4 sub-unit snapshot header for the GENERATE state:
 ```

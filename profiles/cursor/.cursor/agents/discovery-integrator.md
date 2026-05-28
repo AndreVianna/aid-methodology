@@ -1,6 +1,6 @@
 ---
 name: discovery-integrator
-description: Maps APIs consumed and exposed, external integrations, and builds a domain glossary from code terminology. Produces api-contracts.md, integration-map.md, and domain-glossary.md for the Knowledge Base.
+description: Maps pipelines consumed and exposed, external integrations, and builds a domain glossary from code terminology. Produces pipeline-contracts.md, integration-map.md, and domain-glossary.md for the Knowledge Base.
 tools: Read, Glob, Grep, Terminal, Write
 model: opus
 permissionMode: bypassPermissions
@@ -66,7 +66,7 @@ for the full protocol.
 - Map APIs consumed by this codebase: external services, SDKs, HTTP clients
 - Identify message queues, event buses, caches, webhooks, and third-party service integrations
 - Build a domain glossary by mining terminology from class names, method names, constants, and comments that encode business concepts
-- Produce `.aid/knowledge/api-contracts.md`, `.aid/knowledge/integration-map.md`, `.aid/knowledge/domain-glossary.md`
+- Produce `.aid/knowledge/pipeline-contracts.md`, `.aid/knowledge/integration-map.md`, `.aid/knowledge/domain-glossary.md`
 
 ## What You Don't Do
 - Analyze overall architecture (that's Discovery Architect)
@@ -83,9 +83,9 @@ for the full protocol.
 
 ## Output Documents
 
-### .aid/knowledge/api-contracts.md
+### .aid/knowledge/pipeline-contracts.md
 ```markdown
-# API Contracts
+# Pipeline Contracts
 
 ## Exposed APIs
 

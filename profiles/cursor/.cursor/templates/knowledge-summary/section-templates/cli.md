@@ -15,9 +15,9 @@ catalog replaces "API surface".
 |---|-------|-----------|------------|
 | 1 | At a Glance | | STATE.md, project-structure.md, technology-stack.md |
 | 2 | Architecture | ★ | architecture.md |
-| 3 | Subcommand Catalog | ★ | api-contracts.md |
+| 3 | Subcommand Catalog | ★ | pipeline-contracts.md |
 | 4 | Internal Modules | | module-map.md |
-| 5 | Data Model | | data-model.md |
+| 5 | Data Schemas | | schemas.md |
 | 6 | Inputs & Outputs | | integration-map.md |
 | 7 | Configuration | | technology-stack.md, infrastructure.md |
 | 8 | Test Landscape | | test-landscape.md |

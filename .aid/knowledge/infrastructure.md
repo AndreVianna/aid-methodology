@@ -198,7 +198,7 @@ The **single outbound HTTP call** in the entire codebase is `canonical/scripts/s
 
 No other script makes outbound HTTPS. No telemetry, no analytics, no auto-update check.
 
-⚠️ **Security risk:** these calls are unpinned — see `security-model.md` § Supply-Chain Concerns and `tech-debt.md` C1.
+⚠️ **Security risk:** these calls are unpinned — see `tech-debt.md` C1 for the supply-chain debt item.
 
 ---
 

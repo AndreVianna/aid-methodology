@@ -119,7 +119,7 @@ If the dispatch prompt includes `HEARTBEAT_FILE=...`:
 A single line, written by `echo "[$(date -u +...)] ..." > "$HEARTBEAT_FILE"`:
 
 ```
-[2026-05-23T14:32:08Z] REVIEW | 14/21 KB docs reviewed | Reading data-model.md §3 (Mermaid dataflow); cross-checking against current code (~8m remaining)
+[2026-05-23T14:32:08Z] REVIEW | 14/21 KB docs reviewed | Reading schemas.md §3 (Mermaid dataflow); cross-checking against current code (~8m remaining)
 ```
 
 Easy to scan; easy to parse (`head -1`, `awk -F'|'`).

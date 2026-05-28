@@ -23,7 +23,6 @@ The Architect-of-Discovery maps the macro shape of the codebase: patterns, layer
 
 - **`.aid/knowledge/architecture.md`** — patterns, layer breakdown, key architectural decisions.
 - **`.aid/knowledge/technology-stack.md`** — languages, frameworks, versions, runtime.
-- **`.aid/knowledge/ui-architecture.md`** — UI patterns when the project has frontend code (else empty / N/A).
 
 ## Tools
 
@@ -46,4 +45,4 @@ Read, Glob, Grep, Bash, Write. Runs with `permissionMode: bypassPermissions` (ba
 
 - **Pattern-named.** Uses canonical names (Hexagonal, CQRS, etc.) and cites code evidence for each.
 - **Stack-versioned.** Pins exact versions from manifests, never "latest."
-- **Honest about absence.** If the project has no frontend, `ui-architecture.md` says so explicitly with `Status: N/A`.
+- **Honest about absence.** If a technology area is absent, the relevant doc says so explicitly with `Status: N/A`.

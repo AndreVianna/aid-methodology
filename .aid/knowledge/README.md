@@ -3,7 +3,7 @@
 > **Project:** AID — AI Integrated Development
 > **Discovery cycle:** 1 (initial post-reset)
 > **Last KB review:** 2026-05-27 (cycle-1 GENERATE)
-> **Status:** All 16 canonical KB documents populated; awaiting REVIEW.
+> **Status:** 14 active KB documents (16 generated in cycle-1; 2 removed in Q3 FIX — security-model merged into coding-standards, ui-architecture deleted pending repo-presentation.md authoring in Phase B; 2 renamed: data-model → schemas, api-contracts → pipeline-contracts).
 
 Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.
 
@@ -17,15 +17,15 @@ Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.
 | 4 | [technology-stack.md](technology-stack.md) | Populated | 186 | 2026-05-27 | discovery-architect cycle-1 |
 | 5 | [module-map.md](module-map.md) | Populated | 297 | 2026-05-27 | discovery-analyst cycle-1 |
 | 6 | [coding-standards.md](coding-standards.md) | Populated | 457 | 2026-05-27 | discovery-analyst cycle-1 |
-| 7 | [data-model.md](data-model.md) | Populated | 457 | 2026-05-27 | discovery-analyst cycle-1 |
-| 8 | [api-contracts.md](api-contracts.md) | Populated | 566 | 2026-05-27 | discovery-integrator cycle-1 |
+| 7 | [schemas.md](schemas.md) | Populated | 457 | 2026-05-27 | discovery-analyst cycle-1 (was data-model.md) |
+| 8 | [pipeline-contracts.md](pipeline-contracts.md) | Populated | 566 | 2026-05-27 | discovery-integrator cycle-1 (was api-contracts.md) |
 | 9 | [integration-map.md](integration-map.md) | Populated | 362 | 2026-05-27 | discovery-integrator cycle-1 |
 | 10 | [domain-glossary.md](domain-glossary.md) | Populated | 353 | 2026-05-27 | discovery-integrator cycle-1 — 195 terms |
 | 11 | [test-landscape.md](test-landscape.md) | Populated | 114 | 2026-05-27 | discovery-quality cycle-1 |
-| 12 | [security-model.md](security-model.md) | Populated | 153 | 2026-05-27 | discovery-quality cycle-1 |
+| 12 | ~~security-model.md~~ | Removed | — | 2026-05-27 | Content extracted to coding-standards.md §11 (Q3 FIX) |
 | 13 | [tech-debt.md](tech-debt.md) | Populated | 255 | 2026-05-27 | discovery-quality cycle-1 — 1 Critical |
 | 14 | [infrastructure.md](infrastructure.md) | Populated | 222 | 2026-05-27 | discovery-quality cycle-1 |
-| 15 | [ui-architecture.md](ui-architecture.md) | Populated | 320 | 2026-05-27 | discovery-architect cycle-1 |
+| 15 | ~~ui-architecture.md~~ | Removed | — | 2026-05-27 | Deleted in Q3 FIX; repo-presentation.md authored in Phase B |
 | 16 | [feature-inventory.md](feature-inventory.md) | Template | 25 | 2026-05-27 | orchestrator template-copy; populated during Q&A→FIX |
 
 **Meta-documents:**

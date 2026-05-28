@@ -21,8 +21,8 @@ wins.
 
 | Signal | Points | How to detect |
 |---|---|---|
-| `ui-architecture.md` exists and non-empty (>30 non-blank lines) | +3 | `wc -l` after stripping blank lines |
-| `api-contracts.md` mentions REST, GraphQL, HTTP endpoints | +2 | grep `REST`, `GraphQL`, `HTTP`, `endpoint`, `route` |
+| `architecture.md` documents UI/frontend patterns (>30 non-blank lines in frontend sections) | +3 | grep `Component`, `frontend`, `UI architecture`, `React`, `Vue`, `Angular` |
+| `pipeline-contracts.md` mentions REST, GraphQL, HTTP endpoints | +2 | grep `REST`, `GraphQL`, `HTTP`, `endpoint`, `route` |
 | `integration-map.md` has inbound HTTP clients | +1 | grep `inbound.*HTTP` or `browser`, `client` |
 
 ### library
@@ -30,8 +30,8 @@ wins.
 | Signal | Points | How to detect |
 |---|---|---|
 | `module-map.md` describes "exports" or "public API" | +3 | grep `Export-Package`, `exported`, `public API`, `exports` |
-| No `ui-architecture.md` (or stub-only, < 30 lines) | +2 | `wc -l` |
-| `api-contracts.md` describes "exported symbols", "types" | +2 | grep `exported symbols`, `type`, `interface` |
+| `architecture.md` has no UI/frontend section (or stub-only) | +2 | grep absence of `Component`, `frontend`, `React`, `Vue` |
+| `pipeline-contracts.md` describes "exported symbols", "types" | +2 | grep `exported symbols`, `type`, `interface` |
 | `infrastructure.md` is sparse (no deployment manifest) | +1 | `wc -l` < 100, no Docker/K8s mentions |
 
 ### cli
@@ -39,7 +39,7 @@ wins.
 | Signal | Points | How to detect |
 |---|---|---|
 | `infrastructure.md` mentions "command-line" or `bin/` | +3 | grep `command-line`, `\bcli\b`, `bin/`, `argparse`, `clap` |
-| `api-contracts.md` describes subcommands | +3 | grep `subcommand`, `--flag`, `argv`, `parse` |
+| `pipeline-contracts.md` describes subcommands | +3 | grep `subcommand`, `--flag`, `argv`, `parse` |
 | `module-map.md` describes a single executable | +2 | one main module, no service/server mentions |
 
 ### microservices
@@ -55,7 +55,7 @@ wins.
 | Signal | Points | How to detect |
 |---|---|---|
 | `integration-map.md` mentions "transforms", "ETL", "streaming" | +3 | grep `ETL`, `transform`, `extract`, `streaming`, `Kafka`, `event source` |
-| `data-model.md` describes pipeline stages | +2 | grep `stage`, `transform`, `lineage`, `DAG` |
+| `schemas.md` describes pipeline stages | +2 | grep `stage`, `transform`, `lineage`, `DAG` |
 | `infrastructure.md` mentions Airflow, dbt, Spark, Flink | +2 | grep `Airflow`, `dbt`, `Spark`, `Flink`, `Beam`, `Dagster` |
 
 ## Confidence levels
@@ -102,8 +102,8 @@ fi
 ```
 [PROFILE] Auto-detected: web-app (score 6, confidence: high)
           Signals matched:
-            +3 ui-architecture.md non-empty
-            +2 api-contracts.md mentions REST endpoints
+            +3 architecture.md documents frontend UI patterns
+            +2 pipeline-contracts.md mentions REST endpoints
             +1 integration-map.md has inbound HTTP
           Override: re-run with --profile X --reset
 ```

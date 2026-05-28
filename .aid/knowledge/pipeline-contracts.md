@@ -153,10 +153,10 @@ The discover orchestrator passes 5 prose prompts — one per sub-agent — that 
 
 **Sub-agents:**
 - **Scout** — writes `project-structure.md`, `external-sources.md` + temp `.scout-questions.tmp`
-- **Architect** — writes `architecture.md`, `technology-stack.md`, `ui-architecture.md`
-- **Analyst** — writes `module-map.md`, `coding-standards.md`, `data-model.md`
-- **Integrator** — writes `api-contracts.md`, `integration-map.md`, `domain-glossary.md`
-- **Quality** — writes `test-landscape.md`, `security-model.md`, `tech-debt.md`, `infrastructure.md`
+- **Architect** — writes `architecture.md`, `technology-stack.md`
+- **Analyst** — writes `module-map.md`, `coding-standards.md`, `schemas.md`
+- **Integrator** — writes `pipeline-contracts.md`, `integration-map.md`, `domain-glossary.md`
+- **Quality** — writes `test-landscape.md`, `tech-debt.md`, `infrastructure.md`
 
 **Source:** `canonical/skills/aid-discover/references/agent-prompts.md:1-143`
 

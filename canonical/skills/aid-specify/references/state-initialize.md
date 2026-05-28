@@ -10,7 +10,7 @@ Read ALL before making any proposal:
 2. **REQUIREMENTS.md** — full requirements for cross-reference
 3. **KB via INDEX.md** — Read `.aid/knowledge/INDEX.md` first. Use the summaries
    to decide which KB docs are relevant to this feature, then load them.
-   At minimum you'll need architecture, coding-standards, and data-model for
+   At minimum you'll need architecture, coding-standards, and schemas for
    most features, but let the INDEX guide you — don't guess.
    - Check `feature-inventory.md` to understand existing features and how the
      new feature relates to them.
@@ -40,7 +40,7 @@ Each has two paths: **Auto-activate** (obvious from context) or **Ask** (use def
 | Section | Auto-activate when... | Default question |
 |---------|----------------------|------------------|
 | API Contracts | KB/Requirements mention endpoints/API | Does this feature expose or modify any APIs? |
-| UI Specs | Requirements mention screens/UI or ui-architecture.md has content | Does this feature include UI changes? |
+| UI Specs | Requirements mention screens/UI or architecture.md documents frontend patterns | Does this feature include UI changes? |
 | Events & Messaging | KB has queues/events or async | Does this feature involve async processing or events? |
 | DDD Analysis | KB/Requirements indicate DDD | Does the project follow DDD? Define bounded contexts? |
 | BDD Scenarios | Requirements indicate BDD/Gherkin | Does the project use BDD? Write Gherkin scenarios? |
@@ -51,7 +51,7 @@ Each has two paths: **Auto-activate** (obvious from context) or **Ask** (use def
 | Cache Strategy | Requirements mention performance | Performance requirements that may need caching? |
 | External Integrations | Requirements mention 3rd party | Does this integrate with external services? |
 | Batch/Jobs | Requirements mention scheduled work | Any scheduled jobs or background tasks? |
-| Mobile Specs | Requirements target mobile or ui-architecture.md shows mobile targets | Mobile platforms? Offline-first? Platform-specific? |
+| Mobile Specs | Requirements target mobile or architecture.md shows mobile targets | Mobile platforms? Offline-first? Platform-specific? |
 | Search/Indexing | Requirements mention search | Full-text search or complex filtering needed? |
 | AI Enhancements | Requirements mention AI/ML | AI or ML involved? (prompts, RAG, agents, fine-tuning) |
 | Telemetry & Tracking | Not obvious | Specific logging, auditing, or alerting requirements? |
@@ -61,7 +61,7 @@ Each has two paths: **Auto-activate** (obvious from context) or **Ask** (use def
 
 **Conditional section content guide (when activated):**
 
-**UI Specs** — Reference `ui-architecture.md` for existing patterns:
+**UI Specs** — Reference `architecture.md` (and any project-specific repo-presentation docs) for existing UI patterns:
 - Component Breakdown: new/modified components, props, state, composition within existing tree
 - State Management: local vs global state changes, stores affected, server state sync
 - Navigation Changes: new routes, guard changes, deep link additions
@@ -69,7 +69,7 @@ Each has two paths: **Auto-activate** (obvious from context) or **Ask** (use def
 - Design Integration: tokens used, theme changes, design system components extended
 - Accessibility: ARIA patterns for new components, keyboard nav, screen reader support
 
-**Mobile Specs** — Reference `ui-architecture.md` for platform context:
+**Mobile Specs** — Reference `architecture.md` for platform context:
 - Platform Differences: iOS vs Android behavior for this feature
 - Offline Behavior: what works offline, sync strategy, conflict resolution
 - Push Notifications: if this feature triggers or handles notifications

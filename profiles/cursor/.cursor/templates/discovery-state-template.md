@@ -31,16 +31,14 @@ This is the single state file for the **Discovery area** — persistent project 
 | 4 | technology-stack.md | Pending | — | — | |
 | 5 | module-map.md | Pending | — | — | |
 | 6 | coding-standards.md | Pending | — | — | |
-| 7 | data-model.md | Pending | — | — | |
-| 8 | api-contracts.md | Pending | — | — | |
+| 7 | schemas.md | Pending | — | — | |
+| 8 | pipeline-contracts.md | Pending | — | — | |
 | 9 | integration-map.md | Pending | — | — | |
 | 10 | domain-glossary.md | Pending | — | — | |
 | 11 | test-landscape.md | Pending | — | — | |
-| 12 | security-model.md | Pending | — | — | |
-| 13 | tech-debt.md | Pending | — | — | |
-| 14 | infrastructure.md | Pending | — | — | |
-| 15 | ui-architecture.md | Pending | — | — | |
-| 16 | feature-inventory.md | Pending | — | — | |
+| 12 | tech-debt.md | Pending | — | — | |
+| 13 | infrastructure.md | Pending | — | — | |
+| 14 | feature-inventory.md | Pending | — | — | |
 
 ## Knowledge Summary Status
 

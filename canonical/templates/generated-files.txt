@@ -36,4 +36,4 @@
 # KB index — agent-facing 2-3 line summary per KB doc, composed from frontmatter intent:.
 # Depends on: every KB doc's frontmatter (changes to intent: fields).
 # MUST run AFTER hand-edits to KB docs and BEFORE final commit.
-.aid/generated/INDEX.md|bash canonical/scripts/kb/build-index.sh --root .aid/knowledge --output .aid/generated/INDEX.md
+.aid/knowledge/INDEX.md|bash canonical/scripts/kb/build-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md

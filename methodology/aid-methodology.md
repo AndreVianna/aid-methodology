@@ -1,6 +1,6 @@
-# AID — AI-Integrated Development
+# AID — AI Integrated Development
 
-**A Complete Methodology for AI-Integrated Software Development**
+**A Complete Methodology for AI Integrated Software Development**
 
 *Version 3.1 — May 2026*
 
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-AID (AI-Integrated Development) is a structured methodology for building and maintaining software with AI agents. It defines eight development phases — plus a one-time setup step and an optional summary skill — organized into five groups, from problem mapping through production monitoring and issue routing, with formal feedback loops that allow any phase to revise upstream artifacts when reality contradicts assumptions.
+AID (AI Integrated Development) is a structured methodology for building and maintaining software with AI agents. It defines eight development phases — plus a one-time setup step and an optional summary skill — organized into five groups, from problem mapping through production monitoring and issue routing, with formal feedback loops that allow any phase to revise upstream artifacts when reality contradicts assumptions.
 
 Each phase is **co-executed by human and AI**. The AI is the Iron Man suit — it amplifies the human's capabilities. The human is the pilot — setting direction, making decisions, approving advancement between phases. The human never leaves the cockpit. This is not "AI executes, human validates." It is "human and AI work together, human drives."
 
@@ -139,15 +139,13 @@ The Knowledge Base (`.aid/knowledge/`) is the gravitational center of the entire
 ├── technology-stack.md    # Languages, frameworks, versions, build tools, runtime
 ├── module-map.md          # Every module: purpose, dependencies, size, test coverage
 ├── coding-standards.md    # Naming conventions, formatting, error handling patterns
-├── data-model.md          # Database schema, entities, relationships, migrations
-├── api-contracts.md       # APIs consumed and exposed: auth models, rate limits
+├── schemas.md             # Database schema, entities, relationships, migrations
+├── pipeline-contracts.md  # Pipelines/APIs consumed and exposed: auth models, rate limits
 ├── integration-map.md     # Message queues, caches, third-party services, webhooks
 ├── domain-glossary.md     # Business terms, domain language, entity definitions
 ├── test-landscape.md      # Test frameworks, coverage, test types, CI/CD pipeline
-├── security-model.md      # Auth/authz, secrets management, compliance requirements
 ├── tech-debt.md           # Known debt items with file refs, risk ratings, remediation
 ├── infrastructure.md      # Hosting, networking, environments, deployment model
-├── ui-architecture.md     # Front-end / UI architecture (sparse for non-UI projects)
 └── feature-inventory.md   # Canonical feature list, mapped to modules/endpoints/data
 ```
 
@@ -163,15 +161,15 @@ The `README.md` at the root of the Knowledge Base tracks what exists and what's 
 | architecture.md | ✅ Complete | Mar 16 | aid-discover |
 | coding-standards.md | ⚠️ Partial | Mar 16 | aid-discover (inferred) |
 | domain-glossary.md | ❌ Missing | — | Needs interview |
-| security-model.md | ❌ Missing | — | Needs interview |
+| tech-debt.md | ❌ Missing | — | Needs interview |
 ```
 
 ### Not Every Document Is Required
 
-The Knowledge Base has a fixed core — **16 standard documents**, 3 meta-documents, and 1 generated pre-pass (`project-index.md`) — and a project may add extension documents beyond the core (for example, a host-tools matrix). Not every standard document carries deep content on every project:
+The Knowledge Base has a fixed core — **14 standard documents**, 3 meta-documents, and 1 generated pre-pass (`project-index.md`) — and a project may add extension documents beyond the core (for example, a host-tools matrix). Not every standard document carries deep content on every project:
 
 - **Simple CLI tool?** A handful of documents carry real depth; the rest stay thin.
-- **Enterprise monorepo?** All 16 fill out.
+- **Enterprise monorepo?** All 14 fill out.
 - **Greenfield?** `technology-stack.md`, `coding-standards.md`, and `domain-glossary.md` are populated from the interview, not from code; the rest grow as the codebase does.
 
 The shape is fixed even when a document is sparse, so downstream skills always know exactly where to look.
@@ -196,7 +194,7 @@ If your task touches an area covered here, read the relevant document first.
 |----------|---------|
 | architecture.md | MVVM + Clean Architecture layers. Service registration in ServiceCollectionExtensions.cs. Navigation via INavigationService. |
 | coding-standards.md | PascalCase for public, _camelCase for fields. Result<T> for error handling. No exceptions for flow control. Async suffix on all async methods. |
-| data-model.md | SQLite via EF Core. 8 entities. Soft deletes on Recording and Transcript. Migrations in /Migrations. |
+| schemas.md | SQLite via EF Core. 8 entities. Soft deletes on Recording and Transcript. Migrations in /Migrations. |
 | module-map.md | 12 modules. Core (services), UI (views/viewmodels), Infrastructure (data access), Tests. Module dependency diagram. |
 | ... | ... |
 ```
@@ -204,19 +202,19 @@ If your task touches an area covered here, read the relevant document first.
 **The feeding protocol:**
 
 1. **Every task receives INDEX.md.** Always. It's the map. Cost: ~200-500 tokens. Value: the agent knows where to look.
-2. **The orchestrator selects 2-4 relevant KB docs** based on the task's domain (data work → data-model.md, API work → api-contracts.md).
+2. **The orchestrator selects 2-4 relevant KB docs** based on the task's domain (data work → schemas.md, pipeline/API work → pipeline-contracts.md).
 3. **The task template includes a search instruction:** "If you need context not provided, consult `.aid/knowledge/INDEX.md` and read the relevant document before making assumptions."
 4. **Review validates context usage.** One review criterion: did the agent use available KB context, or did it guess?
 
 This is **RAG by convention** — not embeddings and vector databases, but predictable file structure and an index that agents navigate. Retrieval happens in three tiers, cheapest first:
 
 1. **Tier 1 — `INDEX.md`, always loaded.** Every task prompt carries the index (~200–500 tokens total). The agent always knows *what knowledge exists and which file holds it*, at negligible context cost.
-2. **Tier 2 — one KB document, on demand.** From an INDEX entry the agent reads the single document a task needs. The fixed-shape directory makes this deterministic — `data-model.md` always holds schemas, `tech-debt.md` always holds debt — so the agent navigates by convention, never by search.
+2. **Tier 2 — one KB document, on demand.** From an INDEX entry the agent reads the single document a task needs. The fixed-shape directory makes this deterministic — `schemas.md` always holds schemas, `tech-debt.md` always holds debt — so the agent navigates by convention, never by search.
 3. **Tier 3 — an exact repository location, via citation.** Every factual claim in a KB document carries an inline `path:line` citation. From a KB doc the agent jumps straight to the precise file and line — never globbing, never bulk-loading unrelated source.
 
 The agent pays a few hundred tokens to know where everything is, then spends its context budget only on the one document and the specific lines a task genuinely needs.
 
-**Why not a vector database?** Because the KB is small enough (16 standard documents, each a short markdown file) that convention beats infrastructure. The bottleneck isn't retrieval speed — it's knowing what exists. The INDEX solves that.
+**Why not a vector database?** Because the KB is small enough (14 standard documents, each a short markdown file) that convention beats infrastructure. The bottleneck isn't retrieval speed — it's knowing what exists. The INDEX solves that.
 
 **When does the INDEX update?** `aid-config` seeds it at setup; thereafter it is regenerated every time Discovery runs (full or targeted), and `aid-interview` updates it where applicable as requirements evolve. It is always rebuilt from the current state of the KB — never manually maintained.
 
@@ -265,7 +263,7 @@ Generation opens with a fast, deterministic pre-pass that writes `.aid/knowledge
 10. **Gap identification** — What we couldn't determine from code alone → feeds into Interview.
 11. **INDEX generation** — The orchestrator assembles `.aid/knowledge/INDEX.md` with a 2-3 line summary of every KB document produced. This lightweight index is included in every task context so agents know what's available and can self-serve additional context on demand. See [Context Feeding Strategy](#context-feeding-strategy).
 
-**Output:** `.aid/knowledge/` — the project's Knowledge Base: all 16 standard documents, the generated `project-index.md` pre-pass, the `INDEX.md` and `README.md` meta-documents, and the grade and Q&A recorded into `DISCOVERY-STATE.md`. `feature-inventory.md` is scaffolded during the run and completed later, in the Q&A → fix cycle.
+**Output:** `.aid/knowledge/` — the project's Knowledge Base: all 14 standard documents, the generated `project-index.md` pre-pass, the `INDEX.md` and `README.md` meta-documents, and the grade and Q&A recorded into `DISCOVERY-STATE.md`. `feature-inventory.md` is scaffolded during the run and completed later, in the Q&A → fix cycle.
 
 **When to skip:** Pure greenfield projects with no existing code. Interview and Specify populate a minimal KB instead.
 
@@ -275,7 +273,7 @@ Generation opens with a fast, deterministic pre-pass that writes `.aid/knowledge
 
 Two skills sit in the Prepare group but are **not numbered phases**:
 
-- **`aid-config`** — the bootstrap skill, run once before the pipeline begins. It collects project metadata (greenfield or brownfield, name, description, minimum grade), scaffolds `.aid/knowledge/` with the 16 KB document templates plus the meta-documents, creates the host-tool context file (`CLAUDE.md` or `AGENTS.md`), and asks whether the `.aid/` workspace should be committed to Git.
+- **`aid-config`** — the bootstrap skill, run once before the pipeline begins. It collects project metadata (greenfield or brownfield, name, description, minimum grade), scaffolds `.aid/knowledge/` with the 14 KB document templates plus the meta-documents, creates the host-tool context file (`CLAUDE.md` or `AGENTS.md`), and asks whether the `.aid/` workspace should be committed to Git.
 - **`aid-summarize`** — an optional, read-only skill, run after Discovery is approved. It generates a single self-contained `knowledge-summary.html` from the Knowledge Base — offline, light/dark theme, accessibility-first, with Mermaid diagrams. It is idempotent: re-running it on an unchanged KB is a no-op.
 
 ---
@@ -687,7 +685,7 @@ wrong-assumption | missing-dependency | architecture-conflict | kb-gap
 
 | Artifact | Location | Produced By | Consumed By | Lifecycle |
 |----------|----------|------------|-------------|-----------|
-| Knowledge Base (16 docs) | `.aid/knowledge/` | Discover | All phases | Living — updated throughout project |
+| Knowledge Base (14 docs) | `.aid/knowledge/` | Discover | All phases | Living — updated throughout project |
 | INDEX.md | `.aid/knowledge/` | Init, Discover, Interview | All phases | Seeded at init; regenerated by Discovery; maintained by Interview |
 | DISCOVERY-STATE.md | `.aid/knowledge/` | Init, Discover | Discover (resume), all phases | Living — grade and review history; any phase appends Q&A entries |
 | project-index.md | `.aid/knowledge/` | Discover (pre-pass) | Discovery sub-agents | Regenerated each discovery run |

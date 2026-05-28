@@ -8,8 +8,8 @@ Decide which section template to use. Skip if `.aid/knowledge/STATE.md` `## Know
 If `--profile X` was passed (and X is not `auto`), use that. Otherwise auto-detect:
 
 Read `.aid/knowledge/`:
-- `ui-architecture.md` — non-empty?
-- `api-contracts.md` — REST/GraphQL? exported symbols? subcommands?
+- `architecture.md` — UI/frontend patterns documented?
+- `pipeline-contracts.md` — REST/GraphQL? exported symbols? subcommands?
 - `module-map.md` — count of services? single executable?
 - `infrastructure.md` — CLI? deployment manifests? Airflow/dbt?
 - `integration-map.md` — inbound HTTP? inter-service? ETL/transforms?

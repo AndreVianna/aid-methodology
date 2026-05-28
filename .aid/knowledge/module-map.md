@@ -91,10 +91,10 @@ Three tiers, per the `tier:` frontmatter field:
 | `interviewer` | One-question-at-a-time adaptive dialogue with stakeholders → REQUIREMENTS.md | `canonical/agents/interviewer/AGENT.md` |
 | `security` | Threat modeling, OWASP, auth patterns, secrets, SSRF/injection/XSS | `canonical/agents/security/AGENT.md` |
 | `discovery-scout` | Maps deployment infrastructure + project structure → `infrastructure.md`, `project-structure.md` | `canonical/agents/discovery-scout/AGENT.md` |
-| `discovery-architect` | Codebase structure, patterns, tech stack, UI architecture → `architecture.md`, `technology-stack.md`, `ui-architecture.md` | `canonical/agents/discovery-architect/AGENT.md` |
-| `discovery-analyst` | Modules, coding conventions, data models → `module-map.md`, `coding-standards.md`, `data-model.md` (this agent) | `canonical/agents/discovery-analyst/AGENT.md` |
-| `discovery-integrator` | APIs, integrations, domain glossary → `api-contracts.md`, `integration-map.md`, `domain-glossary.md` | `canonical/agents/discovery-integrator/AGENT.md` |
-| `discovery-quality` | Tests, security, tech debt, infrastructure assessment → `test-landscape.md`, `security-model.md`, `tech-debt.md` | `canonical/agents/discovery-quality/AGENT.md` |
+| `discovery-architect` | Codebase structure, patterns, tech stack → `architecture.md`, `technology-stack.md` | `canonical/agents/discovery-architect/AGENT.md` |
+| `discovery-analyst` | Modules, coding conventions, data schemas → `module-map.md`, `coding-standards.md`, `schemas.md` (was `data-model.md`) | `canonical/agents/discovery-analyst/AGENT.md` |
+| `discovery-integrator` | Pipelines, integrations, domain glossary → `pipeline-contracts.md` (was `api-contracts.md`), `integration-map.md`, `domain-glossary.md` | `canonical/agents/discovery-integrator/AGENT.md` |
+| `discovery-quality` | Tests, tech debt, infrastructure assessment → `test-landscape.md`, `tech-debt.md` (security content moved to `coding-standards.md §11`) | `canonical/agents/discovery-quality/AGENT.md` |
 | `discovery-reviewer` | Reviews + grades KB docs; cross-references claims against source. Densest agent contract per project-structure.md:256 | `canonical/agents/discovery-reviewer/AGENT.md` |
 
 ### 2b. Medium tier (9) — specialists + orchestrator + executors
@@ -266,7 +266,7 @@ Organized into categories (per project-structure.md:273-282):
 | `knowledge-summary/` | 19+ | HTML/CSS/JS for the offline `knowledge-summary.html` viewer; `component-css.css` is the largest CSS file in the repo |
 | `requirements/` | 1 | `requirements-template.md` |
 | `specs/` | 2 | `lite-spec-template.md`, `spec-template.md` |
-| `(top-level)` | 17 | `settings.yml`, `discovery-state-template.md`, `work-state-template.md`, `feature.md`, `recipe-template.md`, `subagent-heartbeat-protocol.md`, `long-wait-protocol.md`, `rough-time-hints.md`, `self-review-protocol.md`, `grading-rubric.md`, `reviewer-dispatch.md`, `delivery-issues.md`, `feature-inventory.md`, `generated-files.txt`, `known-issues.md`, `package.md`, `ui-architecture.md`, `dispatch-protocol-checklist.md` |
+| `(top-level)` | 17 | `settings.yml`, `discovery-state-template.md`, `work-state-template.md`, `feature.md`, `recipe-template.md`, `subagent-heartbeat-protocol.md`, `long-wait-protocol.md`, `rough-time-hints.md`, `self-review-protocol.md`, `grading-rubric.md`, `reviewer-dispatch.md`, `delivery-issues.md`, `feature-inventory.md`, `generated-files.txt`, `known-issues.md`, `package.md`, `dispatch-protocol-checklist.md` |
 
 ### 5b. Recipes — `canonical/recipes/`
 

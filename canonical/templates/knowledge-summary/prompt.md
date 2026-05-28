@@ -168,7 +168,7 @@ Card per module using `.card.plugin`. Each card:
 
 #### §4 — Data Model
 
-ER diagram + the entity catalog table from data-model.md:
+ER diagram + the entity catalog table from schemas.md:
 ```html
 <div class="tbl-wrap">
 <table class="tbl">
@@ -178,7 +178,7 @@ ER diagram + the entity catalog table from data-model.md:
 </div>
 ```
 
-Plus 3–4 callouts for known data-model gotchas (no version on aggregate, etc.).
+Plus 3–4 callouts for known schema gotchas (no version on aggregate, etc.).
 
 #### §5 — API Surface (or equivalent for profile)
 

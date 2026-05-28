@@ -141,7 +141,7 @@ EOF
         echo "*(no canonical/skills directory — this is normal for adopters; only the dogfood repo has it)*"
     fi
 
-    # --- Severity tallies (tech-debt + security-model) ----------------------
+    # --- Severity tallies (tech-debt) -----------------------------------------
     echo ""
     echo "## 3. Severity tallies"
     echo ""
@@ -157,22 +157,6 @@ EOF
         echo "| HIGH | $td_high |"
         echo "| MEDIUM | $td_med |"
         echo "| LOW | $td_low |"
-        echo ""
-    fi
-
-    if [[ -f "$KB_DIR/security-model.md" ]]; then
-        sec_high=$(grep -cE '\[HIGH\]' "$KB_DIR/security-model.md" 2>/dev/null || echo 0)
-        sec_med=$(grep -cE '\[MEDIUM\]' "$KB_DIR/security-model.md" 2>/dev/null || echo 0)
-        sec_low=$(grep -cE '\[LOW\]' "$KB_DIR/security-model.md" 2>/dev/null || echo 0)
-        sec_info=$(grep -cE '\[INFO\]' "$KB_DIR/security-model.md" 2>/dev/null || echo 0)
-        echo "### security-model.md"
-        echo ""
-        echo "| Severity | Count |"
-        echo "|----------|-------|"
-        echo "| HIGH | $sec_high |"
-        echo "| MEDIUM | $sec_med |"
-        echo "| LOW | $sec_low |"
-        echo "| INFO | $sec_info |"
         echo ""
     fi
 

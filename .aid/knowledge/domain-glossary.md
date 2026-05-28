@@ -15,7 +15,7 @@
 
 | Term | Definition (inferred from usage) | Source |
 |------|----------------------------------|--------|
-| **AID** | "AI-Integrated Development" — a structured methodology for building/maintaining software with AI agents; 8 phases in 5 groups, every phase co-executed by human + AI. (Earlier expansion "Agentic Implementation Discipline" appears in CLAUDE.md.) | `methodology/aid-methodology.md:1-9`, `CLAUDE.md:3`, `docs/glossary.md:9` |
+| **AID** | "AI Integrated Development" — a structured methodology for building/maintaining software with AI agents; 8 phases in 5 groups, every phase co-executed by human + AI. | `methodology/aid-methodology.md:1`, `CLAUDE.md:5`, `docs/glossary.md:9` |
 | **Iron Man Model** | The human-AI collaboration philosophy: AI is the suit (amplifies capability); human is the pilot (sets direction, decisions). Human never leaves the cockpit. | `methodology/aid-methodology.md:13`, `docs/glossary.md:17` |
 | **Director** | Role — the human. Sets direction, makes decisions, reviews artifacts, approves phase transitions. Orchestrates, doesn't code. | `methodology/aid-methodology.md:115` |
 | **Orchestrator** | Role — an AI agent (or human). Manages the pipeline: spawns agents, routes feedback loops, enforces quality gates, maintains KB. | `methodology/aid-methodology.md:116` |
@@ -57,12 +57,12 @@
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **Knowledge Base / KB** | `.aid/knowledge/` — 16 standard markdown documents + 3 meta-documents + 1 generated pre-pass. The gravitational center of AID — every phase reads from it; any phase can update it. | `methodology/aid-methodology.md:123-125`, `docs/glossary.md:11` |
+| **Knowledge Base / KB** | `.aid/knowledge/` — 14 active standard markdown documents + 3 meta-documents + 1 generated pre-pass (started as 16; security-model merged into coding-standards §11; ui-architecture pending repo-presentation.md replacement). The gravitational center of AID — every phase reads from it; any phase can update it. | `methodology/aid-methodology.md:123-125`, `docs/glossary.md:11` |
 | **INDEX.md** | Meta — 2-3 line summary of every KB document; included in every task context for self-serve KB navigation. | `methodology/aid-methodology.md:131`, `methodology/aid-methodology.md:185-221` |
 | **README.md (KB)** | Meta — tracks completeness status (Complete / Partial / Missing) per KB document. | `methodology/aid-methodology.md:132`, `methodology/aid-methodology.md:154-167` |
 | **DISCOVERY-STATE.md** | Meta — discovery grade, Q&A entries, review history. Pre-FR2 name; post-FR2 consolidated into `.aid/knowledge/STATE.md`. | `methodology/aid-methodology.md:133`, `canonical/scripts/kb/verify-claims.sh:21-25` |
 | **project-index.md** | Generated — file-inventory pre-pass for discovery sub-agents (1,149 lines in this repo). Built by `build-project-index.sh`. | `methodology/aid-methodology.md:134`, `.aid/knowledge/project-structure.md:29` |
-| **16 KB docs (the canonical set)** | `project-structure.md`, `external-sources.md`, `architecture.md`, `technology-stack.md`, `module-map.md`, `coding-standards.md`, `data-model.md`, `api-contracts.md`, `integration-map.md`, `domain-glossary.md`, `test-landscape.md`, `security-model.md`, `tech-debt.md`, `infrastructure.md`, `ui-architecture.md`, `feature-inventory.md`. | `methodology/aid-methodology.md:136-151`, `canonical/skills/aid-discover/SKILL.md:145-150` |
+| **14 KB docs (the active set)** | `project-structure.md`, `external-sources.md`, `architecture.md`, `technology-stack.md`, `module-map.md`, `coding-standards.md`, `schemas.md` (was `data-model.md`), `pipeline-contracts.md` (was `api-contracts.md`), `integration-map.md`, `domain-glossary.md`, `test-landscape.md`, `tech-debt.md`, `infrastructure.md`, `feature-inventory.md`. Removed: `security-model.md` (content in `coding-standards.md §11`), `ui-architecture.md` (pending `repo-presentation.md`). | `methodology/aid-methodology.md:136-151` |
 | **Tier 1 / Tier 2 / Tier 3 (context economy)** | Tier 1 = INDEX.md (always loaded). Tier 2 = one KB doc on demand. Tier 3 = exact `path:line` via citation. "RAG by convention" — no embeddings/vector DB. | `methodology/aid-methodology.md:211-219` |
 | **Context Feeding Strategy** | The protocol by which agents are given KB context: always include INDEX.md; orchestrator pre-selects 2-4 relevant KB docs; agent self-serves additional docs via INDEX. | `methodology/aid-methodology.md:179-219` |
 | **Path:line citation** | Every factual KB claim carries an inline `path:line` reference. Anchors facts to source. Enables Tier 3 jump. | `methodology/aid-methodology.md:101` (Hallucination row) |

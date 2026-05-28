@@ -41,7 +41,7 @@ Print before dispatch:
   ...
 ```
 
-**Feature Inventory Generation:** if Features Q&A is in the answered set, the file-agent for `feature-inventory.md` should cross-reference api-contracts.md, module-map.md, domain-glossary.md, ui-architecture.md, data-model.md while editing.
+**Feature Inventory Generation:** if Features Q&A is in the answered set, the file-agent for `feature-inventory.md` should cross-reference pipeline-contracts.md, module-map.md, domain-glossary.md, schemas.md while editing.
 
 ### Step 3: Wait for ALL Parallel Agents
 

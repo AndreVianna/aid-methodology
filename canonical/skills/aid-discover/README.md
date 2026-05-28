@@ -102,7 +102,7 @@ find . -name "*.sql" | head -20
 find . -name "schema.*" -o -name "*.prisma" -o -name "*.graphql" | head -10
 ```
 
-Record in `.aid/knowledge/data-model.md`.
+Record in `.aid/knowledge/schemas.md`.
 
 ### Step 7: Integration Surface
 
@@ -114,7 +114,7 @@ Map all external touchpoints:
 - Caches (Redis, Memcached, in-memory).
 - Third-party services (auth providers, payment, email).
 
-Record in `.aid/knowledge/api-contracts.md` and `.aid/knowledge/integration-map.md`.
+Record in `.aid/knowledge/pipeline-contracts.md` and `.aid/knowledge/integration-map.md`.
 
 ### Step 8: Test Landscape
 
@@ -176,15 +176,13 @@ A `.aid/knowledge/` directory containing the relevant subset of these 16 documen
 | technology-stack.md | Yes | Full stack catalog |
 | module-map.md | Yes (if >1 module) | Module inventory |
 | coding-standards.md | Yes | Inferred conventions |
-| data-model.md | If DB exists | Schema and relationships |
-| api-contracts.md | If APIs exist | External API surface |
+| schemas.md | If DB exists | Schema and relationships |
+| pipeline-contracts.md | If APIs/pipelines exist | External pipeline/API surface |
 | integration-map.md | If integrations exist | Third-party services |
 | domain-glossary.md | Rarely from code | Business terms (usually from interview) |
 | test-landscape.md | Yes | Test infrastructure |
-| security-model.md | If auth exists | Security architecture |
 | tech-debt.md | Yes | Known debt with risk ratings |
 | infrastructure.md | If infra is visible | Hosting, deployment |
-| ui-architecture.md | If frontend exists | Component tree, state management, design system, routing, a11y, styling |
 | feature-inventory.md | After Q&A | User-provided feature list enriched with module, endpoint, and data entity mapping |
 
 ## Targeted Discovery (Re-entry)

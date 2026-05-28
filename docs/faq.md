@@ -3,7 +3,7 @@
 ## General
 
 ### What does AID stand for?
-**AI-Integrated Development.** "Integrated" captures the core philosophy: human and AI co-execute every phase. Not "AI-driven" (human is the pilot) and not "AI-assisted" (AI does more than assist).
+**AI Integrated Development.** "Integrated" captures the core philosophy: human and AI co-execute every phase. Not "AI-driven" (human is the pilot) and not "AI-assisted" (AI does more than assist).
 
 ### How is AID different from SDD (Spec-Driven Development)?
 SDD covers spec→code. AID covers problem→production→maintenance. AID contains SDD as one layer — the spec-and-build span — and adds discovery, requirements gathering, multi-level planning, post-deployment monitoring, and formal feedback loops. See the [comparison table](../README.md#aid-vs-sdd).

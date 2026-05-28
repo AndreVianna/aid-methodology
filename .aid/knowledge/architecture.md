@@ -16,7 +16,7 @@ host-tool install bundles**. There is no application runtime; the project ships:
    `canonical/` and rendered into three byte-identical install trees
    (`profiles/{claude-code,codex,cursor}/`).
 3. An optional offline HTML Knowledge Base viewer (the UI surface — see
-   `ui-architecture.md`).
+   `canonical/templates/knowledge-summary/` for the HTML/CSS/JS bundle).
 
 Evidence:
 - `CLAUDE.md:23-25` — "This repo has no application code — it ships skills, agents,
@@ -172,7 +172,7 @@ Evidence:
 | **End-user installer** | `setup.sh` (162 lines), `setup.ps1` (157 lines) | Interactive tool-selection menu; copies the selected `profiles/<tool>/` subtree into a target project | None (pure shell / PowerShell, no Python) |
 | **Helper script library** | `canonical/scripts/{config,execute,interview,kb,summarize}/` + top-level `grade.sh` | Runtime helpers used by skill bodies (read-setting, parse-recipe, writeback-task-status, verify-claims, build-project-index, summarize pipeline, …) | bash 4+, occasionally Node 18+ for `.mjs` validators |
 | **Per-tool profile config** | `profiles/{claude-code,codex,cursor}.toml` | Per-host conventions: layout, agent frontmatter shape, model tier names, tool-name remapping, filename map, extras | Consumed by `profile.py` |
-| **HTML viewer asset bundle** | `canonical/templates/knowledge-summary/` | The optional offline KB viewer template + JS + CSS + Mermaid init + section profiles — see `ui-architecture.md` | Inlined Mermaid at render time (fetched by `fetch-mermaid.sh`) |
+| **HTML viewer asset bundle** | `canonical/templates/knowledge-summary/` | The optional offline KB viewer template + JS + CSS + Mermaid init + section profiles — see `canonical/templates/knowledge-summary/` for the bundle details | Inlined Mermaid at render time (fetched by `fetch-mermaid.sh`) |
 
 Dependency direction (no cycles):
 
