@@ -561,3 +561,29 @@ a KB doc. Move it there + cite the KB doc.
 This rule was added 2026-05-27 (cycle-2 Q18) after CLAUDE.md was collapsed from
 ~118 lines to 25 lines, leaving ~40 KB cites pointing past EOF. The rule
 prevents the recurrence — see also tech-debt.md H6 history.
+
+## 14. Machine-parsed values must be text, glyphs are display-only
+
+**Wherever a script, agent, or downstream tool parses a value from a markdown table or doc, the source-of-truth value MUST be plain text.** Glyphs (`✅` `⚠️` `❌` `✓` `🚧`) may decorate human-facing displays — legend rows, derived HTML views, README completeness tables read by humans — but the canonical machine-readable column is always plain text.
+
+**Why:** Two bug classes are eliminated:
+
+1. **Codepoint mismatch** — `✓` (U+2713 text checkmark) and `✅` (U+2705 emoji checkmark) look identical to humans, are different bytes to machines. `feature-inventory.md` used `✓` (cycle-1) → `build-metrics.sh` greped `✅` → `Shipped=0`. Q21 fix changed to `✅` → still buggy because:
+2. **Loose regex matching** — `grep ✅` matched the symbol *everywhere*, including the legend row that DEFINES `✅`. Cycle-7 found `Shipped=12` (vs body=11) from the legend row being counted as a feature.
+
+**The fix is both:** (a) use text values in the data column, and (b) constrain table-parsing regexes to data rows (e.g., `^\|[^|]*\|[^|]*\| Shipped \|`).
+
+**How to apply:**
+
+- **Inventory / tracking / status columns:** values are text (`Shipped`, `Partial`, `Pending`, `In Progress`, `Deprecated`, `Complete`, `Missing`, `Reviewed`, etc.). Examples: `feature-inventory.md` Status column, `tech-debt.md` Status column, work `STATE.md` per-task Status.
+- **Glyphs are allowed in:** (a) legend / explanation paragraphs (humans only); (b) rendered HTML output of `aid-summarize` knowledge-summary.html; (c) test runner stdout (`[PASS]` / `[FAIL]`); (d) `## Knowledge Summary Status` table in STATE.md (purely human-read).
+- **For scripts that parse markdown tables:** prefer text patterns AND constrain to data rows via regex like `^\|[^|]*\|.*\| <text-value> \|` which requires the line to start with `|`, have at least one column before the target, and have the target value enclosed in pipe-delimiters with surrounding spaces. This excludes legend rows, header rows, separator rows, and body prose.
+- **When auditing:** ask "is this column parsed by any script, agent, or downstream tool?" If yes → text. If no → glyph is fine.
+- **For new docs:** default to text. Only add glyph variants in derived/rendered views where no script reads them.
+
+**Examples of past violations:**
+- `feature-inventory.md` `✓` (cycle-1 GENERATE) → glyph mismatch, fixed cycle-2 Q21
+- `feature-inventory.md` `✅` (cycle-2 fix) → legend over-counted, fixed cycle-7 / this convention
+- The pattern keeps recurring with glyphs; the text-for-machine principle eliminates the class.
+
+This rule was added 2026-05-28 (cycle-7 closeout glyph analysis). Memory: `feedback_text-for-machine-glyphs-for-display`. Both build-metrics.sh and feature-inventory.md were migrated to text in commit `bf4e814+` (the schema rollout + this convention).

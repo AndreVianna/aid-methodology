@@ -172,15 +172,30 @@ EOF
 
     # --- Feature inventory counts ------------------------------------------
     if [[ -f "$KB_DIR/feature-inventory.md" ]]; then
-        # Shipped + Partial counts from table-row status cells
-        shipped=$(grep -cE '✅ Shipped' "$KB_DIR/feature-inventory.md" 2>/dev/null || echo 0)
-        partial=$(grep -cE '⚠️ Partial' "$KB_DIR/feature-inventory.md" 2>/dev/null || echo 0)
+        # Match Status TEXT values (not glyphs — per coding-standards.md §13:
+        # machine-parsed values are text, glyphs are display-only).
+        # Constrain to data rows: line starts with '|', has at least 2 columns
+        # before Status, Status text surrounded by spaces inside pipe-delimiters.
+        # This excludes legend rows, header rows, separator rows, and body prose.
+        # grep -c outputs "N\n" on matches AND exits 1 with no matches; the
+        # `|| true` suppresses the failure, and `${var:-0}` defaults empty → 0.
+        # This avoids the "0\n0" double-output bug from `|| echo 0`.
+        shipped=$(grep -cE '^\|[^|]*\|[^|]*\| Shipped \|' "$KB_DIR/feature-inventory.md" 2>/dev/null || true)
+        shipped=${shipped:-0}
+        partial=$(grep -cE '^\|[^|]*\|[^|]*\| Partial \|' "$KB_DIR/feature-inventory.md" 2>/dev/null || true)
+        partial=${partial:-0}
+        pending=$(grep -cE '^\|[^|]*\|[^|]*\| Pending \|' "$KB_DIR/feature-inventory.md" 2>/dev/null || true)
+        pending=${pending:-0}
+        deprecated=$(grep -cE '^\|[^|]*\|[^|]*\| Deprecated \|' "$KB_DIR/feature-inventory.md" 2>/dev/null || true)
+        deprecated=${deprecated:-0}
         echo "## 5. Feature inventory"
         echo ""
         echo "| Status | Count |"
         echo "|--------|-------|"
-        echo "| ✅ Shipped | $shipped |"
-        echo "| ⚠️ Partial | $partial |"
+        echo "| Shipped | $shipped |"
+        echo "| Partial | $partial |"
+        echo "| Pending | $pending |"
+        echo "| Deprecated | $deprecated |"
         echo ""
     fi
 

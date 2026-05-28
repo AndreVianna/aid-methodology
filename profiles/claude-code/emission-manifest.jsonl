@@ -34,7 +34,7 @@
 {"dst": ".claude/scripts/grade.sh", "profile": "claude-code", "sha256": "4984ef7486d0c66dc593db1e714db69b85e3a6aac636e68a4fc1b757aaced8c9", "src": "canonical/scripts/grade.sh"}
 {"dst": ".claude/scripts/interview/parse-recipe.sh", "profile": "claude-code", "sha256": "b6f8f4ff474e18ce9d4dc9d44291efa95f1de7942a209e94b0ddaa37b35a6a3d", "src": "canonical/scripts/interview/parse-recipe.sh"}
 {"dst": ".claude/scripts/kb/build-index.sh", "profile": "claude-code", "sha256": "853aa03c28dac3ddd12275c65cce8beb69a9ce3fdd5f6300d720d58e5e7ac3ac", "src": "canonical/scripts/kb/build-index.sh"}
-{"dst": ".claude/scripts/kb/build-metrics.sh", "profile": "claude-code", "sha256": "a17bdd4f7f33b67088bdc1953a36448e591d9b9dd07069877ef07118483ee670", "src": "canonical/scripts/kb/build-metrics.sh"}
+{"dst": ".claude/scripts/kb/build-metrics.sh", "profile": "claude-code", "sha256": "4535b7f7cb855ff44d60be6c438614f066eede66df8d326023b21f5d56c098d4", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".claude/scripts/kb/build-project-index.sh", "profile": "claude-code", "sha256": "000c8f16eb56fd7876ad5ffa22a36119cb435cdd048126a80d1c691a68424673", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".claude/scripts/kb/preflight.sh", "profile": "claude-code", "sha256": "0a6cbcaed8e470cc93733692e06e069c9457f024002f44fdd8ccd2be74d534e4", "src": "canonical/scripts/kb/preflight.sh"}
 {"dst": ".claude/scripts/summarize/concatenate.ps1", "profile": "claude-code", "sha256": "21de32ffc7a2da111bb2b2c27b83a1e502ea6689a35676e772936df569349bcb", "src": "canonical/scripts/summarize/concatenate.ps1"}
