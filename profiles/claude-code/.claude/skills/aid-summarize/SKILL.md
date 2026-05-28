@@ -168,6 +168,12 @@ aid-summarize  ▸ you are here
 | WRITEBACK | `references/state-writeback.md` | inline | → DONE |
 | DONE | `references/state-done.md` | inline | → halt |
 
+On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
+When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../templates/state-machine-chaining.md)):
+- **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
+- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
+- **HALT** → print the closing summary and exit.
+
 > **Note on DONE extraction:** Unlike other AID skills (aid-deploy/aid-execute/aid-detail/aid-plan) which keep DONE inline as a trivial halt-message state, aid-summarize's DONE is a **composite state** (handles both Normal-completion-after-WRITEBACK and DONE-IDEMPOTENT-after-STALE-CHECK branches with distinct messaging). The 38-line state body warrants extraction to `references/state-done.md` per the thin-router principle. This asymmetry is intentional, not a defect.
 
 

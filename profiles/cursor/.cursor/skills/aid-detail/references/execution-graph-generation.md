@@ -37,4 +37,4 @@ For each delivery, produce TWO tables:
 
 **This graph is what `/aid-execute` reads to determine task ordering and parallelism.**
 
-**Advance:** `/aid-detail`
+**Advance:** **CHAIN** → continue with the parent state's flow.

@@ -318,7 +318,10 @@ aid-interview  ▸ you are here
 | DONE | `references/state-done.md` | `inline` | → halt |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, print `Next: [State: {NEXT}] — run /aid-interview again` and exit.
+When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../templates/state-machine-chaining.md)):
+- **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
+- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
+- **HALT** → print the closing summary and exit.
 
 **User-driven escalate-to-full (lite → full):** Not represented as a dispatch-row branch (per feature-002 SPEC: Conditional advance is for *computed* criteria only, never user input). From any lite-path state (CONDENSED-INTAKE / TASK-BREAKDOWN / LITE-REVIEW / LITE-DONE), if the user invokes escalate, the orchestrator loads `references/lite-to-full-escalation.md` (a state-detection-driven re-entry), which writes `Path: escalated` to STATE.md and routes to CONTINUE on the next run.
 

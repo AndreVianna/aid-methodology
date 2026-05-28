@@ -9,4 +9,4 @@ Read `references/feature-decomposition.md` for the full decomposition process
 (analyze, propose, create folders, update meta-documents).
 ✓ architect done (record actual time) — or ✗ architect failed: {reason}
 
-**Advance:** Next state is `CROSS-REFERENCE` — when decomposition completes, print `Next: [State: CROSS-REFERENCE] — run /aid-interview again` and exit.
+**Advance:** **CHAIN** → [State: CROSS-REFERENCE] when decomposition completes (continue inline).

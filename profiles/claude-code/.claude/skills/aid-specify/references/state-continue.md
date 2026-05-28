@@ -100,4 +100,4 @@ in coding-standards.md §3.2 (composite indices discouraged). Let me re-propose.
   - Print summary with all completed sections
   - `/aid-specify` on this feature now enters **REVIEW** (step 4 on all sections)
 
-**Advance:** Next state is `REVIEW` — when all sections are Complete, router prints `Next: [State: REVIEW] — run /aid-specify again` and exits.
+**Advance:** **CHAIN** → [State: REVIEW] when all sections are Complete (continue inline).

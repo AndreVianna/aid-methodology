@@ -29,4 +29,4 @@ On success: mark `**Writeback Status:** ok` in `## Knowledge Summary Status`, tr
 
 Print: `[State: WRITEBACK] complete.`
 
-**Advance:** Next: [State: DONE] — run /aid-summarize again
+**Advance:** **CHAIN** → [State: DONE] (continue inline).

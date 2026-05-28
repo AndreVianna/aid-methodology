@@ -124,7 +124,7 @@ The helper writes/replaces the `### task-NNN` block under `## Quick Check
 Findings` in the work `STATE.md` (keyed by task-id, single-writer per task
 by construction — safe under FR6 parallel execution).
 
-**Advance:** After triage and findings write, advance to **TASK-DONE** (router exits with `Next: [State: DONE] — run /aid-execute again`).
+**Advance:** **CHAIN** → [State: DONE] after triage and findings write (continue inline).
 
 > **Two-tier model contract (feature-004 SPEC §State Machines):** Per-task REVIEW
 > runs the quick-check pass only. **No grade is computed at the task level.**

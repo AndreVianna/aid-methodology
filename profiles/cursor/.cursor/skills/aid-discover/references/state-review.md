@@ -62,4 +62,4 @@ Print: `[Review 2/2] Review complete. Grade: {overall}. Minimum: {min}. Run /aid
 
 Print: `[State: REVIEW] complete.`
 
-**Advance:** Next: [State: Q-AND-A] — run /aid-discover again
+**Advance:** **CHAIN** → [State: Q-AND-A] if Pending Q&A entries with Impact: Required exist; **CHAIN** → [State: FIX] otherwise. Both continue inline.

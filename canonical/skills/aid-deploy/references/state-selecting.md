@@ -35,4 +35,4 @@ Create the package file from template (`../../templates/package.md`):
 
 Update work `STATE.md` `## Deploy Status`: Status → Verifying, Active Package → package-NNN.
 
-**Advance:** Next state is `VERIFYING` — when this state's work completes, router prints `Next: [State: VERIFYING] — run /aid-deploy again` and exits.
+**Advance:** **CHAIN** → [State: VERIFYING] (continue inline).

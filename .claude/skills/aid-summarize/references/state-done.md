@@ -41,4 +41,4 @@ Exit with success. `.aid/knowledge/STATE.md` `## Knowledge Summary Status` and `
 
 ---
 
-**Advance:** → halt
+**Advance:** **HALT**.

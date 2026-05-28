@@ -150,4 +150,4 @@ Cross-cutting risks: {count} identified (see PLAN.md)
 PLAN.md written to: .aid/{work}/PLAN.md ✅
 ```
 
-**Advance:** Next state is `REVIEW` — when PLAN.md is written and the final summary is printed, router prints `Next: [State: REVIEW] — run /aid-plan again` and exits.
+**Advance:** **CHAIN** → [State: REVIEW] when PLAN.md is written and the final summary is printed (continue inline).

@@ -53,4 +53,4 @@ questions.
 
 **See `references/interview-loop.md`** for the loop body (shared between FIRST-RUN and CONTINUE).
 
-**Advance:** Next state is `COMPLETION` — when all sections are Complete or N/A, print `Next: [State: COMPLETION] — run /aid-interview again` and exit.
+**Advance:** **CHAIN** → [State: COMPLETION] when all sections are Complete or N/A (continue inline).

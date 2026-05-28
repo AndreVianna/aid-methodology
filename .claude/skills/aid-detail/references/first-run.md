@@ -127,6 +127,4 @@ Execution graphs written to PLAN.md.
 
 [State: FIRST-RUN] complete.
 
-Next: [State: REVIEW] — run /aid-detail again
-
-**Advance:** `/aid-detail`
+**Advance:** **CHAIN** → [State: REVIEW] (continue inline).

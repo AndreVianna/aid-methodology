@@ -179,4 +179,4 @@ Print: `[16/16] Generation complete — Knowledge Base ready. Run /aid-discover 
 
 Print: `[State: GENERATE] complete.`
 
-**Advance:** Next: [State: REVIEW] — run /aid-discover again
+**Advance:** **CHAIN** → [State: REVIEW] (continue inline).

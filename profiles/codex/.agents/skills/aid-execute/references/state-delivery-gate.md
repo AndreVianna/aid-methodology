@@ -79,7 +79,7 @@ from SPEC Data Model "Parallel-write coordination").**
 
    List each row from the file (task-id / description / status) for the user.
 
-**Advance:** Proceed to Step 1 (SCORE).
+**Advance:** **CHAIN** → Step 1 (SCORE).
 
 ---
 
@@ -128,7 +128,7 @@ Complexity score: {N}  (tasks={T}, depth={D}, risk={R}, consults={C})
 Gate reviewer tier: {Small | Medium | Large}
 ```
 
-**Advance:** Proceed to Step 2 (REVIEW).
+**Advance:** **CHAIN** → Step 2 (REVIEW).
 
 ---
 
@@ -210,7 +210,7 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
 ▶ reviewer (gate, {tier}) starting (~{ETA from rough-time-hints})
 ✓ reviewer (gate) done (record actual time) — or ✗ gate reviewer failed: {reason}
 
-**Advance:** Proceed to Step 3 (GRADE).
+**Advance:** **CHAIN** → Step 3 (GRADE).
 
 ---
 
@@ -235,7 +235,7 @@ breakdown to stderr.
 Gate grade: {grade}   Minimum: {min}   Cycle: {N}
 ```
 
-**Advance:** Proceed to Step 4 (ROUTE).
+**Advance:** **CHAIN** → Step 4 (ROUTE).
 
 ---
 
@@ -283,8 +283,7 @@ Gate grade below minimum. Next steps:
 **If ONLY non-CODE issues remain:** **STOP.** The delivery is as good as it
 can be — the problem is upstream. Present what needs to change and where.
 
-**Advance:** → Step 5 (FIX) when grade < minimum; → Step 6 (RECORD) when
-grade ≥ minimum.
+**Advance:** **CHAIN** → Step 5 (FIX) when grade < minimum; **CHAIN** → Step 6 (RECORD) when grade ≥ minimum.
 
 ---
 
@@ -325,7 +324,7 @@ Options:
 
 Write impediment to `.aid/{work}/IMPEDIMENT-delivery-NNN.md` if stopping.
 
-**Advance:** → back to Step 2 (REVIEW) — fresh reviewer, clean context.
+**Advance:** **CHAIN** → back to Step 2 (REVIEW) — fresh reviewer, clean context.
 
 ---
 
@@ -408,7 +407,7 @@ delivery-NNN  ·  {N} tasks  ·  gate grade {grade}  ·  Done at {timestamp}
 | task-NNN | TEST | Done | none | — |
 ```
 
-**Advance:** → halt (DELIVERY-GATE is the terminal state for a delivery).
+**Advance:** **HALT** (DELIVERY-GATE is the terminal state for a delivery).
 
 ---
 

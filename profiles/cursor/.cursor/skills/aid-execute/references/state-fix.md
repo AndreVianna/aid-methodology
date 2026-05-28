@@ -19,4 +19,4 @@ When done:
 ⚠️ **Circuit breaker:** If grade has not improved after 3 consecutive
 cycles (same or worse), **STOP.** Something systemic is wrong.
 
-**Advance:** Next state is `REVIEW` — when this state's work completes, router prints `Next: [State: REVIEW] — run /aid-execute again` and exits.
+**Advance:** **CHAIN** → [State: REVIEW] (continue inline).

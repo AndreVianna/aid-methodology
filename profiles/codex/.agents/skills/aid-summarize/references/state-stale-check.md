@@ -24,4 +24,4 @@ If STALE: tell the user *why* it's stale:
 
 Print: `[State: STALE-CHECK] complete.`
 
-**Advance:** Next: [State: PROFILE] — run /aid-summarize again
+**Advance:** **CHAIN** → [State: PROFILE] (continue inline). For DONE-IDEMPOTENT branch: **HALT**.

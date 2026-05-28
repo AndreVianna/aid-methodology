@@ -504,7 +504,7 @@ After writing SPEC.md, update `STATE.md ## Lifecycle History`:
 
 ## Advance
 
-Print: `Next: [State: TASK-BREAKDOWN] — run /aid-interview again` and exit.
+**CHAIN** → [State: TASK-BREAKDOWN] (continue inline).
 
 The TASK-BREAKDOWN state (L2) reads the work-root `SPEC.md` and produces the
 final `tasks/task-NNN.md` files plus the filled `## Tasks` and `## Execution Graph`

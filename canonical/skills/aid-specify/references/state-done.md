@@ -15,4 +15,4 @@ rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true
 
 To re-examine the spec, re-run `/aid-specify` — it will re-enter the REVIEW state.
 
-**Advance:** → halt
+**Advance:** **HALT**.

@@ -52,4 +52,4 @@ If Machine Grade ≥ minimum → MANUAL-CHECKLIST. Otherwise → FIX.
 
 Print: `[State: VALIDATE] complete.`
 
-**Advance:** Next: [State: MANUAL-CHECKLIST] — run /aid-summarize again
+**Advance:** **CHAIN** → [State: MANUAL-CHECKLIST] if Machine Grade ≥ minimum; **CHAIN** → [State: FIX] otherwise. Both continue inline.

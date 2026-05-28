@@ -340,16 +340,14 @@ After the user confirms emission (Step 5a-3a choice [1]):
 5. **Record recipe name** — set internal `recipe = {recipe-name}`. This value is
    written to `STATE.md ## Triage` in Step 6 as the `Recipe:` field.
 
-6. **Advance to LITE-DONE** instead of CONDENSED-INTAKE. Print:
+6. **CHAIN to LITE-DONE** instead of CONDENSED-INTAKE. Print:
 
    ```
    Recipe '{recipe-name}' emitted: SPEC.md + {N} task file(s).
-   Next: [State: LITE-DONE] — run /aid-interview again
+   → Advancing to [State: LITE-DONE]
    ```
 
-   (Recipe-instantiated works skip CONDENSED-INTAKE, TASK-BREAKDOWN, and LITE-REVIEW;
-   the recipe already produced the complete deliverable set. LITE-DONE sets
-   SPEC.md Status=Ready and prints the /aid-execute hand-off.)
+   Then continue inline. (Recipe-instantiated works skip CONDENSED-INTAKE, TASK-BREAKDOWN, and LITE-REVIEW; the recipe already produced the complete deliverable set. LITE-DONE sets SPEC.md Status=Ready and prints the /aid-execute hand-off.)
 
 ---
 
@@ -447,15 +445,9 @@ recipe-offer or no recipes matched.
 
 ## Step 7: Advance
 
-- **FULL path:** print `Next: [State: CONTINUE] — run /aid-interview again` and exit.
-  The state machine continues with the full-path interview (FIRST-RUN Step 1d opens the
-  conversation; the next invocation enters CONTINUE).
-- **LITE path (recipe emitted):** Step 5a-4 already printed the advance message.
-  No additional print needed. The next state is LITE-DONE (not CONDENSED-INTAKE).
-- **LITE path (no recipe / declined):** print
-  `Next: [State: CONDENSED-INTAKE] — run /aid-interview again` and exit.
-  (State CONDENSED-INTAKE is the lite-path L1 state; it is outside the scope of this file
-  and handled by the lite-path states.)
+- **FULL path:** **CHAIN** → [State: CONTINUE] (continue inline). FIRST-RUN Step 1d opens the conversation; the orchestrator proceeds directly into CONTINUE.
+- **LITE path (recipe emitted):** **CHAIN** → [State: LITE-DONE]. Step 5a-4 already printed the advance line; no additional print needed.
+- **LITE path (no recipe / declined):** **CHAIN** → [State: CONDENSED-INTAKE] (continue inline). State CONDENSED-INTAKE is the lite-path L1 state; it is outside the scope of this file and handled by the lite-path states.
 
 ---
 

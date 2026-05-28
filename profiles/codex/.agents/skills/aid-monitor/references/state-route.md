@@ -59,4 +59,4 @@ If PM tool configured (infrastructure.md § Project Management):
 - Link to existing Sprint/Epic
 ✓ PM tool ticket creation done (record actual time, N tickets created) — or ✗ PM tool ticket creation failed: {reason — usually auth/network}
 
-**Advance:** Next state is `DONE` — when this state's work completes, router prints `Next: [State: DONE] — run /aid-monitor again` and exits.
+**Advance:** **CHAIN** → [State: DONE] (continue inline).

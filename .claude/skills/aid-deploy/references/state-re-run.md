@@ -15,4 +15,4 @@ aid-deploy  ▸ you are here
    flag any discrepancies (tasks modified after shipping, new known issues).
    Offer to regenerate release notes if content changed.
 
-**Advance:** halt (terminal — user re-invokes the skill when ready).
+**Advance:** **HALT** (terminal — user re-invokes the skill when ready).

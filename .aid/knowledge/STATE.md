@@ -81,24 +81,27 @@ This is the single state file for the **Discovery area** — persistent project 
 **Minimum Grade Source:** `.aid/settings.yml` `review.minimum_grade` (no per-skill override)
 **Machine Grade:** A+
 **Machine Grade Source:** `run-validators.sh` AUTO_POOL (D1/D2/L1/L2/H1/A1-5/C1-2/S2 = 73 pts; 73/73 perfect; diagram count 5/5 matches agentic-pipeline target)
-**Human Grade:** Pending (run `manual-checklist.sh` before APPROVAL)
-**Human Grade Source:** `manual-checklist.sh` MANUAL_POOL (K1+K2+V1, 30 pts)
-**Overall Grade:** Pending (= min of Machine and Human letter grades)
-**User Approved:** no
-**Last Run:** 2026-05-28T12:43:00Z
+**Human Grade:** A+
+**Human Grade Source:** `manual-checklist.sh` MANUAL_POOL (K1=10/10, K2=15/15, V1=5/5; 30/30 perfect; checklist 2026-05-28T18:13:07Z)
+**Overall Grade:** A+ (= min of Machine=A+, Human=A+)
+**User Approved:** yes (2026-05-28T18:20:00Z — cycle-1; Overall Grade A+)
+**Last Run:** 2026-05-28T18:20:00Z
 **Trigger Reason:** initial (first /aid-summarize invocation; cycle-1 dogfood)
 **Output:** `.aid/knowledge/knowledge-summary.html`
-**Output Size:** 3.24 MB (3,394,537 bytes; 5,304 lines)
+**Output Size:** 3.24 MB (3,394,806 bytes; 5,307 lines)
 **Mermaid Version:** 11.15.0
 **Mermaid Fetched At:** 2026-05-28T12:30:00Z
 **Mermaid Cached:** `.aid/knowledge/.cache/mermaid.min.js` (sha256: 70137e77bb273bb2ef972b86e8b0400cca8be53cb25bfc45911a186dc98665de)
 **Last Reviewed KB Date:** 2026-05-28 (cycle-10 — A+ approved)
-**Last Summary Date:** N/A (first run)
-**Writeback Status:** pending (will be set by WRITEBACK state after APPROVAL)
+**Last Summary Date:** 2026-05-28
+**Writeback Status:** ok (entry #2 appended 2026-05-28 by writeback-state.sh)
 
-### Findings (last validation — Machine)
+### Findings (last validation)
 
-Cycle-1 VALIDATE · 2026-05-28 · Auto score 73/73 · Machine Grade A+ · 0 findings.
+Cycle-1 VALIDATE+MANUAL-CHECKLIST · 2026-05-28 · Auto 73/73 + Manual 30/30 · Machine A+, Human A+, Overall A+ · 0 findings.
+
+**Manual checklist answers:** K1=y (Full, 10/10) · K2=y (Full, 15/15) · V1=y (Pass, 5/5) · Notes: "Nothing else — ship it"
+**Spot-check report:** 10 OK / 0 MISS (every checked HTML claim grounds in the KB).
 
 | ID | Check | Status | Points |
 |----|-------|--------|--------|
@@ -395,6 +398,8 @@ Verified-true sample full list (30 checks) in `.aid/.temp/review-pending/discove
 | # | Date | Grade | Profile | Mermaid | Output | Notes |
 |---|------|-------|---------|---------|--------|-------|
 | 1 | — | — | — | — | — | No summarize run on cycles 1-7 (Discovery still in REVIEW) |
+
+| 2 | 2026-05-28 | A+ | agentic-pipeline | 11.15.0 | knowledge-summary.html (3.24MB (3,394,806 bytes; 5,307 lines)) | Initial generation (cycle-1 /aid-summarize dogfood; Machine A+ 73/73 + Human A+ 30/30 = Overall A+) |
 
 ## Calibration Log
 

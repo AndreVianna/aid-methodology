@@ -136,4 +136,4 @@ Write initial fields to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 
 Print: `[State: GENERATE] complete.`
 
-**Advance:** Next: [State: VALIDATE] — run /aid-summarize again
+**Advance:** **CHAIN** → [State: VALIDATE] (continue inline).

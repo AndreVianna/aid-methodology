@@ -28,4 +28,4 @@ After printing the success message, also suggest the optional visual summary:
 
 Print: `[State: DONE] complete.`
 
-**Advance:** → halt
+**Advance:** **HALT**.

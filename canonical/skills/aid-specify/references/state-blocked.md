@@ -6,4 +6,4 @@ Feature STATUS is `Blocked` with a loopback pending; check each pending loopback
 
 Check each Pending loopback. If resolved → unblock, resume loop. If still blocked → exit.
 
-**Advance:** Next state is `CONTINUE` — when the block is resolved, router prints `Next: [State: CONTINUE] — run /aid-specify again` and exits.
+**Advance:** **PAUSE-FOR-USER-ACTION** → blocker resolution happens outside /aid-specify (Discovery loopback, requirement clarification, or upstream phase fix). Re-run `/aid-specify` after the blocker clears to continue to [State: CONTINUE].

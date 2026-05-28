@@ -258,11 +258,10 @@ Feature placeholder: features/feature-001-{work-name}/SPEC.md
 PLAN.md placeholder created.
 Work-root SPEC.md removed.
 
-Next: [State: CONTINUE] — run /aid-interview again
+→ Advancing to [State: CONTINUE]
 ```
 
-The state detection in `SKILL.md` reads `**Path:** escalated` as equivalent to `full` and
-routes to CONTINUE (State 3), where the carried answers are visible in REQUIREMENTS.md
+(Per the chain rule, the orchestrator proceeds inline to CONTINUE without exiting.) The state detection in `SKILL.md` reads `**Path:** escalated` as equivalent to `full` and routes to CONTINUE (State 3), where the carried answers are visible in REQUIREMENTS.md
 and `## Escalation Carry`.
 
 ---

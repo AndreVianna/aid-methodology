@@ -107,4 +107,4 @@ Does this look right? Answer the questions, and tell me if I'm missing anything.
 
 Process response → update work STATE.md `## Features Status` → begin **The Loop** for first Pending section.
 
-**Advance:** Next state is `CONTINUE` — when this state's work completes, router prints `Next: [State: CONTINUE] — run /aid-specify again` and exits.
+**Advance:** **CHAIN** → [State: CONTINUE] (continue inline).

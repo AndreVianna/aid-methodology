@@ -626,4 +626,4 @@ Load the section matching the task's Type from `references/task-type-rules.md` a
 ✓ {executor} done (record actual time) — or ✗ {executor} failed: {reason}
 When execution passes → update work `STATE.md` `## Tasks Status` row Status to `In Review` → proceed to Step 2 (REVIEW).
 
-**Advance:** Next state is `REVIEW` — when this state's work completes, router prints `Next: [State: REVIEW] — run /aid-execute again` and exits.
+**Advance:** **CHAIN** → [State: REVIEW] (continue inline).

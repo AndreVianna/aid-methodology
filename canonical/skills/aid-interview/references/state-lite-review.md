@@ -146,7 +146,7 @@ Write the review result to `STATE.md ## Delivery Gates`:
 
 ## Advance
 
-Print: `Next: [State: LITE-DONE] — run /aid-interview again` and exit.
+**CHAIN** → [State: LITE-DONE] (continue inline).
 
 ---
 

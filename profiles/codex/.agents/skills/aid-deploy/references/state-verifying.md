@@ -49,4 +49,4 @@ Delete ledger on success: `rm -f .aid/.temp/review-pending/deploy.md`
 
 Update work `STATE.md` `## Deploy Status`: Status → Packaging.
 
-**Advance:** Next state is `PACKAGING` — when this state's work completes, router prints `Next: [State: PACKAGING] — run /aid-deploy again` and exits.
+**Advance:** **CHAIN** → [State: PACKAGING] (continue inline).

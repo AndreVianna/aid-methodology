@@ -36,4 +36,4 @@ Re-run `grade.sh` — it reads `.manual-checklist.json`, computes the Human Grad
 
 Print: `[State: MANUAL-CHECKLIST] complete.`
 
-**Advance:** Next: [State: APPROVAL] — run /aid-summarize again
+**Advance:** **CHAIN** → [State: APPROVAL] if Overall Grade ≥ minimum; **CHAIN** → [State: FIX] otherwise. Both continue inline.

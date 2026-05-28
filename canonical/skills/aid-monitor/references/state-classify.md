@@ -42,4 +42,4 @@ which spec says must default to USD."
 
 For threshold definitions, see `## Severity Thresholds` in SKILL.md.
 
-**Advance:** Next state is `ROUTE` — when this state's work completes, router prints `Next: [State: ROUTE] — run /aid-monitor again` and exits.
+**Advance:** **CHAIN** → [State: ROUTE] (continue inline).

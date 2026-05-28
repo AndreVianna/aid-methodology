@@ -32,4 +32,4 @@ After reviewer returns, run grade.sh on the ledger to confirm the grade:
 bash .cursor/scripts/grade.sh --explain .aid/.temp/review-pending/interview-<work>-cross-ref.md
 ```
 
-**Advance:** Next state is `DONE` — when cross-reference completes, print `Next: [State: DONE] — run /aid-interview again` and exit.
+**Advance:** **CHAIN** → [State: DONE] when cross-reference completes (continue inline).

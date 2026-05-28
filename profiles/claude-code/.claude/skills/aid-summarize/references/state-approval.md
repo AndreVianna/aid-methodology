@@ -38,4 +38,4 @@ On changes-needed: capture the user's notes in `.aid/knowledge/STATE.md` `## Kno
 
 Print: `[State: APPROVAL] complete.`
 
-**Advance:** Next: [State: WRITEBACK] — run /aid-summarize again
+**Advance:** If user approved: **CHAIN** → [State: WRITEBACK] (continue inline). If user rejected: **HALT** (exit; no writeback). If user said "changes needed": **CHAIN** → [State: FIX] (continue inline).

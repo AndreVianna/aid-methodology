@@ -104,10 +104,10 @@ is omitted from the Triage write.
 After Step 6, State 7 of state-triage.md prints:
 
 ```
-Next: [State: CONDENSED-INTAKE] — run /aid-interview again
+→ Advancing to [State: CONDENSED-INTAKE]
 ```
 
-CONDENSED-INTAKE detects the `## Recipe Slots` block and pre-fills matching answers
+(Per the chain rule, the orchestrator proceeds inline to CONDENSED-INTAKE without exiting.) CONDENSED-INTAKE detects the `## Recipe Slots` block and pre-fills matching answers
 (see state-condensed-intake.md Step 1.5).
 
 ---
