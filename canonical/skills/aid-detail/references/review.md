@@ -69,6 +69,4 @@ Update task files, create new ones, delete orphans, renumber if needed.
 
 [State: REVIEW] complete.
 
-Next: [State: DONE] — run /aid-detail again
-
-**Advance:** `/aid-detail`
+**Advance:** **CHAIN** → [State: DONE] (continue inline).

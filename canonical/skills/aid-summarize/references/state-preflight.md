@@ -15,4 +15,4 @@ proceed; do NOT create any state files.
 
 Print: `[State: PREFLIGHT] complete.`
 
-**Advance:** Next: [State: STALE-CHECK] — run /aid-summarize again
+**Advance:** **CHAIN** → [State: STALE-CHECK] (continue inline).

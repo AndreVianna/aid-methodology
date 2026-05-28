@@ -144,8 +144,10 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 | DELIVERY-GATE | `references/state-delivery-gate.md` | `reviewer` (tier = complexity score) | → halt (grade ≥ min) / → FIX (grade < min) |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, print `Next: [State: {NEXT}] — run /aid-execute again` and exit.
-For DONE and RE-RUN (Advance: → halt), print the appropriate halt/summary message and exit.
+When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../templates/state-machine-chaining.md)):
+- **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
+- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
+- **HALT** → print the closing summary and exit.
 
 ## Dispatch Protocol
 

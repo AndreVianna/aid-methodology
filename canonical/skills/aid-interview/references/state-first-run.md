@@ -26,4 +26,4 @@ which sections have been filled.
 
 ---
 
-**Advance:** Next state is `TRIAGE` — after scaffolding is complete, triage determines the path (lite or full) before the conversational interview begins. Print `Next: [State: TRIAGE] — run /aid-interview again` and exit.
+**Advance:** **CHAIN** → [State: TRIAGE] after scaffolding is complete (continue inline). Triage then determines the path (lite or full).

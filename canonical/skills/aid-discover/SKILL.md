@@ -15,7 +15,7 @@ Analyze an existing project repository — all code, configuration, and document
 produce a structured `.aid/knowledge/` directory by orchestrating 5 specialized discovery subagents.
 Includes a built-in quality gate that reviews, grades, and fixes KB documents.
 
-**State machine — each `/aid-discover` run does ONE step and exits.**
+**State machine — each `/aid-discover` invocation drives the state machine until it hits a natural pause point per [`canonical/templates/state-machine-chaining.md`](../../templates/state-machine-chaining.md). Mechanical states and inline-question states auto-chain; only PAUSE-FOR-USER-ACTION, PAUSE-FOR-USER-DECISION, and HALT stop the run.**
 
 ## ⚠️ Pre-flight Checks
 
@@ -251,7 +251,10 @@ aid-discover  ▸ you are here
 > re-verification of the changes is the next cycle's REVIEW state job.
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, print `Next: [State: {NEXT}] — run /aid-discover again` and exit.
+When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../templates/state-machine-chaining.md)):
+- **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
+- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
+- **HALT** → print the closing summary and exit.
 
 ---
 

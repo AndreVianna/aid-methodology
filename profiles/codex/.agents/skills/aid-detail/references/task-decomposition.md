@@ -182,4 +182,4 @@ If `infrastructure.md § Project Management` defines a tool:
 
 If no PM tool → skip.
 
-**Advance:** `/aid-detail`
+**Advance:** **CHAIN** → continue with the parent state's flow.

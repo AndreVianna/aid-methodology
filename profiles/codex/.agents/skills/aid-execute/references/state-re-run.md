@@ -17,4 +17,4 @@ aid-execute  ▸ you are here
 2. If user confirms → set Status to `In Review` in work `STATE.md` `## Tasks Status`, proceed to Step 2 (REVIEW)
 3. If user has a specific concern → record it as context for the reviewer
 
-**Advance:** → halt — this is a human-gated decision point; the router prints the prompt above and waits for the user to re-invoke `/aid-execute` with their answer.
+**Advance:** **PAUSE-FOR-USER-DECISION** → this is a human-gated decision point. The router prints the prompt above and exits; the user re-invokes `/aid-execute` with their answer to continue to [State: REVIEW] or [State: DONE] depending on the decision.

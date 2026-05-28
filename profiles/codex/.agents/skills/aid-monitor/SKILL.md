@@ -188,7 +188,10 @@ them more informative by adding mid-wait check-ins + structured progress.
 | DONE | _(inline — see Re-run below)_ | `inline` | → halt |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, print `Next: [State: {NEXT}] — run /aid-monitor again` and exit. For `→ halt` rows (DONE), print the appropriate halt/completion message instead of the Next-state hint and exit.
+When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../templates/state-machine-chaining.md)):
+- **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
+- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
+- **HALT** → print the closing summary and exit.
 
 ## Re-run
 

@@ -180,7 +180,7 @@ Add entry to `STATE.md ## Lifecycle History`:
 
 ## Advance
 
-Print: `Next: [State: LITE-REVIEW] — run /aid-interview again` and exit.
+**CHAIN** → [State: LITE-REVIEW] (continue inline).
 
 ---
 

@@ -31,4 +31,4 @@ For each data source, capture:
 Use KB to filter: known conditions, expected variation, already-documented issues.
 ✓ anomaly detection done (record actual time, N findings above threshold) — or ✗ anomaly detection failed: {reason}
 
-**Advance:** Next state is `CLASSIFY` — when this state's work completes, router prints `Next: [State: CLASSIFY] — run /aid-monitor again` and exits.
+**Advance:** **CHAIN** → [State: CLASSIFY] (continue inline).

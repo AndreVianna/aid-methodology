@@ -61,11 +61,11 @@ Is there anything else we should consider, or are the requirements ready?
     if they exist
   - If `infrastructure.md § Project Management` defines a tool → create an Epic for this work
   - Print: `✅ Requirements approved.`
-  - Print the standard router exit: `Next: [State: FEATURE-DECOMPOSITION] — run /aid-interview again` and exit (per feature-002 thin-router contract — no auto-advance; user re-invokes the skill to proceed).
+  - Print the pause reason and resume command: `[Pause] User approval is a contracted checkpoint (feature-002 SPEC IQ9). Re-run /aid-interview to continue to [State: FEATURE-DECOMPOSITION].` and exit (this state is **PAUSE-FOR-USER-DECISION** — does NOT auto-chain).
 
 - **[2] Additional consideration:**
   - Incorporate into relevant section(s) of REQUIREMENTS.md
   - Update STATE.md `## Interview Status` section statuses if needed
   - Return to Interview Loop for any new gaps
 
-**Advance:** Next state is `FEATURE-DECOMPOSITION` — on approval, print `Next: [State: FEATURE-DECOMPOSITION] — run /aid-interview again` and exit. No auto-advance — the thin-router contract (feature-002 SPEC) requires the user to re-invoke `/aid-interview` to proceed. (IQ9 resolution 2026-05-24.)
+**Advance:** **PAUSE-FOR-USER-DECISION** (contracted checkpoint per feature-002 SPEC IQ9 resolution 2026-05-24) — on approval, print the pause reason + resume command and exit. User re-invokes `/aid-interview` to continue to [State: FEATURE-DECOMPOSITION]. Do NOT chain — this is the only explicit no-auto-advance contract in the AID methodology.

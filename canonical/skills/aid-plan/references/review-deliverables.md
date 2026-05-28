@@ -63,4 +63,4 @@ Compare to minimum grade from `bash canonical/scripts/config/read-setting.sh --s
 
 For grades below minimum: re-enter the loop for affected deliverables.
 
-**Advance:** Next state is `DONE` — when the grade meets minimum and work STATE.md is updated, router prints `Next: [State: DONE] — run /aid-plan again` and exits.
+**Advance:** **CHAIN** → [State: DONE] when the grade meets minimum and work STATE.md is updated (continue inline).

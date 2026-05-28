@@ -27,4 +27,4 @@ Please review .aid/knowledge/ and let us know if there is anything else to consi
 
 Print: `[State: APPROVAL] complete.`
 
-**Advance:** → halt
+**Advance:** **HALT** (user approval is the natural pause — once user approves, **CHAIN** → [State: DONE]).

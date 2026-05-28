@@ -34,4 +34,4 @@ Apply only what the user confirms. Capture the resolution in `.aid/knowledge/STA
 
 Print: `[State: FIX] complete.`
 
-**Advance:** Next: [State: VALIDATE] — run /aid-summarize again
+**Advance:** **CHAIN** → [State: VALIDATE] (continue inline).

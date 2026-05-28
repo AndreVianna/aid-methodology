@@ -32,4 +32,4 @@ Interview for {work} is complete and approved.
     ```
   - Print: `✅ Interview complete. Requirements approved. Ready for /aid-specify.`
 
-**Advance:** → halt. This is the terminal state. Run `/aid-interview` again only to add information or re-validate.
+**Advance:** **HALT**. This is the terminal state. Run `/aid-interview` again only to add information or re-validate.

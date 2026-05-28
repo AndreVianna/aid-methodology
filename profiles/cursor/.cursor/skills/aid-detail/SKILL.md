@@ -74,4 +74,8 @@ aid-detail  ▸ you are here
 | DONE | — | `inline` | `→ halt` |
 
 Load the `Detail` file for the detected state and execute it.
-For DONE: print the task summary and exit — task list is complete.
+
+On state completion, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../templates/state-machine-chaining.md)):
+- **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
+- **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
+- **HALT** → print the closing summary and exit (DONE prints the task summary).

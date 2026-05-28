@@ -68,4 +68,4 @@ Minimum: B+. ✅ Meets minimum.
 For grades below minimum: re-enter the loop (Propose → Discuss → Write → Review)
 for affected sections. When all resolved, set status back to Ready.
 
-**Advance:** Next state is `DONE` — when spec is Ready and meets minimum grade, router prints `Next: [State: DONE] — run /aid-specify again` and exits.
+**Advance:** **CHAIN** → [State: DONE] when spec is Ready and meets minimum grade (continue inline).

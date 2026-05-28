@@ -21,4 +21,4 @@ If infrastructure.md has no Deployment section or it's a placeholder:
 
 Update work `STATE.md` `## Deploy Status`: Status → Selecting.
 
-**Advance:** Next state is `SELECTING` — when this state's work completes, router prints `Next: [State: SELECTING] — run /aid-deploy again` and exits.
+**Advance:** **CHAIN** → [State: SELECTING] (continue inline).

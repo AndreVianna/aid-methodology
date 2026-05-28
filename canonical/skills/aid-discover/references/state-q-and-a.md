@@ -40,4 +40,4 @@ Print: `[Q&A] Complete. {answered} answered, {skipped} skipped. Run /aid-discove
 
 Print: `[State: Q-AND-A] complete.`
 
-**Advance:** Next: [State: FIX] — run /aid-discover again
+**Advance:** **CHAIN** → [State: FIX] (continue inline).

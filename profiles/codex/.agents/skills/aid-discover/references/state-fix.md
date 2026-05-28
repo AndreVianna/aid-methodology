@@ -119,4 +119,4 @@ Print: `[Fix 3/3] Complete. Grade: {old} → {new}. Run /aid-discover again to {
 
 Print: `[State: FIX] complete.`
 
-**Advance:** Next: [State: APPROVAL] — run /aid-discover again
+**Advance:** **CHAIN** → [State: REVIEW] if grade < minimum (rerun review); **CHAIN** → [State: APPROVAL] if grade ≥ minimum. Both continue inline.

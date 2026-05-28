@@ -36,4 +36,4 @@ to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`.
 
 Print: `[State: PROFILE] complete.`
 
-**Advance:** Next: [State: GENERATE] — run /aid-summarize again
+**Advance:** **CHAIN** → [State: GENERATE] (continue inline).
