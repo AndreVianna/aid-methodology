@@ -19,9 +19,9 @@ changelog:
 
 > **Source:** aid-config (creates) · aid-discover + aid-summarize (update)
 > **Status:** In Progress
-> **Current Grade:** B (computed by grade.sh after stripping reviewer's summary-line tag-string; raw grade.sh output was E+ due to a script bug — the summary line literally contains "0 [CRITICAL] / 0 [HIGH] / 0 [MEDIUM] / 2 [LOW] / 3 [MINOR]" which grade.sh's grep counts as if real findings; logged as tech-debt M7)
+> **Current Grade:** A+ (computed by grade.sh on cycle-10 ledger; 0 CRITICAL / 0 HIGH / 0 MEDIUM / 0 LOW / 0 MINOR; 14 rows total = 12 Fixed + 2 Accepted; grade.sh M7 bug fixed by schema rollout commit bf4e814 — schema-table parsing eliminates the summary-line over-count)
 > **User Approved:** no
-> **Last KB Review:** 2026-05-28 (cycle-7)
+> **Last KB Review:** 2026-05-28 (cycle-10 — convergence; ready for User Approval)
 > **Last Summary:** —
 
 This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary. One STATE.md per project's `.aid/knowledge/` directory. Absorbs what used to be `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`.
