@@ -74,14 +74,22 @@ Once approved:
 - `{{ARTIFACTS}}` = the task files just written for delivery-NNN + the Execution Graph section just appended to PLAN.md (if present)
 - `{{CONTEXT}}` = `Tasks for delivery-NNN of work-NNN; feature SPECs: feature-NNN-{name}, ...`
 
+Include in the prompt:
+- **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
+  `.aid/.temp/review-pending/detail.md`. Read the existing file first if it exists.
+  Output per `.cursor/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
+
 Print before dispatch: `[Review] Dispatching reviewer for task list validation (per-deliverable scope).`
 
 ▶ reviewer starting (~1–2 min)
 After writing, **review immediately:** Do the tasks hold up?
 ✓ reviewer done (record actual time) — or ✗ reviewer failed: {reason}
 
-Use the universal rubric (`.cursor/templates/grading-rubric.md`). Classify each issue
-by severity. The grade is calculated — worst issue dominates.
+After reviewer returns, run grade.sh:
+
+```bash
+bash .cursor/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
+```
 
 | Condition | Action |
 |-----------|--------|

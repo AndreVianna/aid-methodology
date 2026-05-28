@@ -38,9 +38,17 @@ OUT-OF-SCOPE FINDINGS POLICY:
   counts. Do NOT affect the grade.
 
 DELIVERABLES:
-  - Findings format: per `.claude/templates/kb-authoring/principles.md` P3 temp-ledger
-  - Severity scale: per the named RUBRIC
-  - Grade: computed per `.claude/templates/grading-rubric.md` (OOS observations excluded)
+  - Findings ledger at `.aid/.temp/review-pending/<scope>.md` per
+    `.claude/templates/reviewer-ledger-schema.md`
+  - Output format: ONE markdown table only, no headers/narrative
+  - Severity tags MUST be bracketed: [CRITICAL] / [HIGH] / [MEDIUM] / [LOW] / [MINOR]
+  - Status enum: Pending / Fixed / Recurred / Accepted / OOS / Invalid
+  - For new findings this cycle: append rows with Status: Pending
+  - For existing rows from prior cycles: update Status only (Fixed if resolved, Recurred if regressed)
+  - Do NOT include severity tag-strings in narrative or summary text
+    (qualitative summary goes in the agent return message, not the ledger file)
+  - OOS observations: log to `## Out-of-Scope Observations` section in the return message
+    (NOT in the ledger table — they do not count toward grade)
 ```
 
 Each section is mandatory. Empty content is allowed (e.g.,
@@ -253,9 +261,11 @@ OUT-OF-SCOPE FINDINGS POLICY:
 
 DELIVERABLES:
   - Write findings to: .aid/.temp/review-pending/phase-a-foundation-v2.md
-  - Format: per .claude/templates/kb-authoring/principles.md P3 temp-ledger
-  - Severity: CRITICAL / HIGH / MEDIUM / LOW / MINOR (worst-issue dominates)
-  - Grade: computed; INCLUDE explicit "OOS observations excluded" note in summary
+  - Format: per .claude/templates/reviewer-ledger-schema.md (ONE markdown table only)
+  - Severity tags bracketed: [CRITICAL] / [HIGH] / [MEDIUM] / [LOW] / [MINOR]
+  - Status enum: Pending / Fixed / Recurred / Accepted / OOS / Invalid
+  - Grade computed by orchestrator via: grade.sh .aid/.temp/review-pending/phase-a-foundation-v2.md
+  - OOS observations: return-message only, NOT in the ledger table
 ```
 
 ## When this protocol changes

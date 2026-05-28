@@ -16,6 +16,16 @@ to git, because AID is dogfooding itself — the Knowledge Base and work-artifac
 ARE part of the product here. The general guidance in README.md (gitignore `.aid/`)
 applies to adopter projects, not to this repo.
 
+## Review output format (global)
+
+Any review output you produce — dispatched sub-agent, script validator, or
+ad-hoc user-prompted — uses the schema at
+`canonical/templates/reviewer-ledger-schema.md`. Write the ledger as a
+single markdown table at `.aid/.temp/review-pending/<scope>.md`. Use the
+7-column shape: `# | Severity | Status | Doc | Line | Description | Evidence`.
+Severity tags bracketed; Status enum: Pending/Fixed/Recurred/Accepted/OOS/Invalid.
+No narrative or summary sections in the ledger.
+
 ## Permissions
 
 - Read any file in the project

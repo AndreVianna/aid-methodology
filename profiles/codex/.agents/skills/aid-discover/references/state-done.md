@@ -8,6 +8,14 @@ Print: _"Discovery is complete and approved (Grade: {grade}). Do you want to reo
 - User has specific concern → record as context for reviewer
 - User says no → `✅ Discovery complete. Grade: {grade}. Minimum: {minimum}. KB approved and ready for the Interview phase.`
 
+### Ledger cleanup
+
+Delete the review ledger:
+```bash
+rm -f .aid/.temp/review-pending/discovery.md
+rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true
+```
+
 After printing the success message, also suggest the optional visual summary:
 
 ```

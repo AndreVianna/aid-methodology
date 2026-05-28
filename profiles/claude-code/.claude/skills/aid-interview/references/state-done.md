@@ -24,6 +24,12 @@ Interview for {work} is complete and approved.
   - Proceed to State 6 (CROSS-REFERENCE) for a fresh validation pass
 
 - **[3] Done:**
+  - Delete review ledgers:
+    ```bash
+    rm -f .aid/.temp/review-pending/interview-{work}-cross-ref.md
+    rm -f .aid/.temp/review-pending/interview-{work}-lite.md
+    rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true
+    ```
   - Print: `✅ Interview complete. Requirements approved. Ready for /aid-specify.`
 
 **Advance:** → halt. This is the terminal state. Run `/aid-interview` again only to add information or re-validate.

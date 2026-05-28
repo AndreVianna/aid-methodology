@@ -6,7 +6,9 @@ FIX handles two fundamentally different kinds of failure. **Route each failure b
 
 ### Machine-pool failures — fix directly (objective; one correct fix)
 
-Read `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation — Machine)`. For each failed AUTO_POOL check there is exactly one correct repair — apply it autonomously:
+Read `.aid/.temp/review-pending/summarize.md`. Filter rows where Status ∈ {`Pending`, `Recurred`} — these are the machine-pool failures to address. **Do NOT modify the ledger Status column during FIX**; VALIDATE will re-run the checks and create fresh rows in the next cycle.
+
+For each Pending/Recurred row, apply the corresponding repair autonomously:
 
 - **D1 (diagram parse)** — locate the failing `<pre.mermaid>` block, identify the syntax error from the validator output, apply the fix per `.agents/templates/knowledge-summary/mermaid-examples.md` "Common failure patterns" table.
 - **D2 (diagram render)** — the block parses but renders trivially / as an error SVG; inspect the jsdom render output, fix the structural issue (often an empty subgraph or an unreachable node).

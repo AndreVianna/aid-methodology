@@ -225,41 +225,42 @@ run_test_4() {
         fail "Test 4a: grade.sh on empty issue list" "Got '$grade_clean', expected 'A+'"
     fi
 
-    # One [HIGH] → D+
+    # One [HIGH] → D+ (schema-table format)
     local grade_high
-    grade_high=$(printf '[HIGH] some issue\n' | "$GRADE")
+    grade_high=$(printf '| # | Severity | Status | Doc | Line | Description | Evidence |\n|---|---|---|---|---|---|---|\n| 1 | [HIGH] | Pending | foo.md | 1 | some issue | evidence |\n' | "$GRADE")
     if [[ "$grade_high" == "D+" ]]; then
         pass "Test 4b: grade.sh with 1 [HIGH] → D+"
     else
         fail "Test 4b: grade.sh with 1 [HIGH]" "Got '$grade_high', expected 'D+'"
     fi
 
-    # One [CRITICAL] → E+
+    # One [CRITICAL] → E+ (schema-table format)
     local grade_crit
-    grade_crit=$(printf '[CRITICAL] fatal issue\n' | "$GRADE")
+    grade_crit=$(printf '| # | Severity | Status | Doc | Line | Description | Evidence |\n|---|---|---|---|---|---|---|\n| 1 | [CRITICAL] | Pending | foo.md | 1 | fatal issue | evidence |\n' | "$GRADE")
     if [[ "$grade_crit" == "E+" ]]; then
         pass "Test 4c: grade.sh with 1 [CRITICAL] → E+"
     else
         fail "Test 4c: grade.sh with 1 [CRITICAL]" "Got '$grade_crit', expected 'E+'"
     fi
 
-    # Three [MEDIUM] → C (not C+ since count > 1; not C- since count ≤ 5)
+    # Three [MEDIUM] → C (schema-table format; not C+ since count > 1; not C- since count <= 5)
     local grade_medium
-    grade_medium=$(printf '[MEDIUM] issue 1\n[MEDIUM] issue 2\n[MEDIUM] issue 3\n' | "$GRADE")
+    grade_medium=$(printf '| # | Severity | Status | Doc | Line | Description | Evidence |\n|---|---|---|---|---|---|---|\n| 1 | [MEDIUM] | Pending | foo.md | 1 | issue 1 | evidence |\n| 2 | [MEDIUM] | Pending | foo.md | 2 | issue 2 | evidence |\n| 3 | [MEDIUM] | Pending | foo.md | 3 | issue 3 | evidence |\n' | "$GRADE")
     if [[ "$grade_medium" == "C" ]]; then
         pass "Test 4d: grade.sh with 3 [MEDIUM] → C"
     else
         fail "Test 4d: grade.sh with 3 [MEDIUM]" "Got '$grade_medium', expected 'C'"
     fi
 
-    # Tags inside backticks are ignored (should not count)
+    # Tags in Description column are ignored -- schema-table mode reads only col3 (Severity)
+    # This is the cycle-7 regression test: summary prose with tag strings must NOT inflate grade
     local grade_backtick
-    grade_backtick=$(echo "The rubric says \`[CRITICAL]\` issues must be fixed." | "$GRADE")
-    if [[ "$grade_backtick" == "A+" ]]; then
-        pass "Test 4e: grade.sh ignores tags inside backticks"
+    grade_backtick=$(printf '| # | Severity | Status | Doc | Line | Description | Evidence |\n|---|---|---|---|---|---|---|\n| 1 | [MINOR] | Pending | foo.md | 1 | 0 [CRITICAL] / 0 [HIGH] found in summary | prose leaked tags |\n' | "$GRADE")
+    if [[ "$grade_backtick" == "A" ]]; then
+        pass "Test 4e: grade.sh ignores tags in Description column (cycle-7 regression)"
     else
-        fail "Test 4e: grade.sh ignores tags inside backticks" \
-             "Got '$grade_backtick', expected 'A+'"
+        fail "Test 4e: grade.sh ignores tags in Description column (cycle-7 regression)" \
+             "Got '$grade_backtick', expected 'A'"
     fi
 }
 

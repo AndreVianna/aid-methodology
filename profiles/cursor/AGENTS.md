@@ -9,6 +9,16 @@
 his project uses the [AID methodology](https://github.com/AndreVianna/aid-methodology).
 - Read `.aid/knowledge/INDEX.md`.
 
+## Review output format (global)
+
+Any review output you produce — dispatched sub-agent, script validator, or
+ad-hoc user-prompted — uses the schema at
+`.cursor/templates/reviewer-ledger-schema.md`. Write the ledger as a single
+markdown table at `.aid/.temp/review-pending/<scope>.md`. Use the 7-column
+shape: `# | Severity | Status | Doc | Line | Description | Evidence`.
+Severity tags bracketed; Status enum: Pending/Fixed/Recurred/Accepted/OOS/Invalid.
+No narrative or summary sections in the ledger.
+
 ## Permissions
 
 - Read any file in the project

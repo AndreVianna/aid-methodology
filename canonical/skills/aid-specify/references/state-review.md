@@ -33,12 +33,22 @@ Render `references/reviewer-brief.md` with:
 - `{{ARTIFACTS}}` = `SPEC.md` path + the section list under review (or "full SPEC")
 - `{{CONTEXT}}` = `SPEC.md for feature-NNN-{name} in work-NNN-{name}. All sections marked Complete in the work STATE.md \`## Features Status\` row. This is the final review pass before the feature is marked Ready.`
 
+Include in the prompt:
+- **Ledger lifecycle:** "Read `.aid/.temp/review-pending/specify-<feature>.md` if it
+  exists. For each existing row: verify on disk, update Status (Pending→Fixed if
+  resolved; Fixed→Recurred if regressed). Append new findings with Status: Pending."
+- **Schema reference:** "Output per `canonical/templates/reviewer-ledger-schema.md`.
+  The ledger is the entire file — ONE markdown table, no headers, no narrative."
+
 Dispatch the `reviewer` subagent with the rendered brief.
 
 ### Grade Overall
 
-Use the universal rubric (`canonical/templates/grading-rubric.md`). Classify each issue
-by severity. The grade is calculated — worst issue dominates.
+After the reviewer returns, run grade.sh on the ledger:
+
+```bash
+bash canonical/scripts/grade.sh --explain .aid/.temp/review-pending/specify-<feature>.md
+```
 
 Compare to minimum grade from `bash canonical/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`.
 
@@ -51,7 +61,7 @@ Compare to minimum grade from `bash canonical/scripts/config/read-setting.sh --s
 ```
 Reviewing {work}/{feature} against current KB and codebase...
 
-Issues found: 1 Low (stale DB column ref), 3 Minor (naming) → **Grade: B+**
+Issues found: 1 [LOW] (stale DB column ref), 3 [MINOR] (naming) → **Grade: B+**
 Minimum: B+. ✅ Meets minimum.
 ```
 

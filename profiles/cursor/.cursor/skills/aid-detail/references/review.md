@@ -40,18 +40,27 @@ Render `references/reviewer-brief.md` with:
 - `{{ARTIFACTS}}` = every `.aid/{work}/tasks/task-*.md` + the full `PLAN.md` (incl. Execution Graphs)
 - `{{CONTEXT}}` = `Re-review of all tasks for work-NNN after PLAN/SPEC changes.`
 
+Include in the prompt:
+- **Ledger lifecycle:** "Read `.aid/.temp/review-pending/detail.md` if it exists.
+  For each existing row: verify on disk, update Status (Pending→Fixed if resolved;
+  Fixed→Recurred if regressed). Append new findings with Status: Pending.
+  Output per `.cursor/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
+
 Dispatch the `reviewer` subagent with the rendered brief.
 
 ### Grade Overall
 
-Use the universal rubric (`.cursor/templates/grading-rubric.md`). Classify each issue
-by severity. The grade is calculated — worst issue dominates.
+After reviewer returns, run grade.sh:
+
+```bash
+bash .cursor/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
+```
 
 Compare to minimum grade from `bash .cursor/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum | Print summary, done. |
+| Grade ≥ minimum | Print summary, done. Delete ledger: `rm -f .aid/.temp/review-pending/detail.md` |
 | Grade < minimum, tasks fixable | List findings, re-enter loop for affected deliverables. |
 | Grade < minimum, most tasks orphaned | Recommend `--reset`. |
 

@@ -2,17 +2,23 @@
 
 FIX applies Q&A answers and reviewer feedback to bring KB documents up to minimum grade; it is selected when the grade is below minimum and no Pending Q&A entries remain.
 
-### Step 0: Partition Findings by KB File (Parallel-FIX prep)
+### Step 0: Load Pending Findings from Ledger
 
-Before dispatching any sub-agent, **partition the reviewer's findings by KB file**. The output is a map `{file: [findings]}` — every finding belongs to exactly one file. Each file's bucket holds its entire finding list.
+Read `.aid/.temp/review-pending/discovery.md`. Filter rows where Status ∈ {`Pending`, `Recurred`} — these are the findings to address. If the file does not exist, there is nothing to fix (advance to REVIEW).
+
+**Do NOT modify the ledger during FIX.** The fixer addresses issues; the reviewer confirms resolution and updates Status. This separation is the reviewer-ledger contract.
+
+### Step 0b: Partition Findings by KB File (Parallel-FIX prep)
+
+Partition the Pending+Recurred rows by the `Doc` column. The output is a map `{file: [row numbers + descriptions]}` — every finding belongs to exactly one file. Each file's bucket holds its entire finding list.
 
 **Why partition?** FIX dispatches **one sub-agent per affected file**, all in parallel. Each agent owns its file exclusively (single-writer per file is the parallelism-safety invariant). The orchestrator only serializes at the commit/push boundary (Step 4).
 
 ### Step 1: Identify Documents Below Threshold
 
-Read `.aid/knowledge/STATE.md` `## KB Documents Status`. List documents below minimum grade.
+From the partitioned ledger rows (Step 0b), list affected documents ordered by worst severity.
 Prioritize: [CRITICAL] → [HIGH] → [MEDIUM].
-Print: `[Fix] {N} documents below {minimum}. Dispatching {N} sub-agents in parallel...`
+Print: `[Fix] {N} documents with Pending/Recurred findings. Dispatching {N} sub-agents in parallel...`
 
 ### Step 2: Dispatch Parallel FIX Agents (one per affected file)
 
@@ -50,7 +56,7 @@ Do NOT proceed to Step 4 until every dispatched agent has reported completion. F
 ### Step 4: Aggregate, Verify, Commit (Sequential — single writer)
 
 After ALL parallel agents return:
-1. **REMOVE fixed issue lines** from `.aid/knowledge/STATE.md` `## Issues` (orchestrator only — agents never touch STATE.md).
+1. **Do NOT modify the ledger** — that is the next reviewer's job. Issues stay Pending until the reviewer verifies and updates Status.
 2. Update `**Applied to:**` for each incorporated Q&A answer in `STATE.md ## Q&A`.
 3. **Regenerate all registered generated files (per principles.md P3 — auto-gen-last).** Read `canonical/templates/generated-files.txt`. For each non-comment line, parse `output-path|build-command` and execute the build command. This ensures `metrics.md`, `INDEX.md`, `project-index.md` (and any future registered builders) reflect the FINAL post-fix state of the KB:
    ```bash
