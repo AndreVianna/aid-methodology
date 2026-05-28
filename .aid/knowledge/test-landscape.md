@@ -2,118 +2,189 @@
 kb-category: primary
 source: hand-authored
 intent: |
-  Describes all test suites and coverage for the AID-methodology repo. Covers: 5 canonical
-  bash helper unit-test suites in tests/canonical/ (writeback-task-status, delivery-gate-aggregate,
-  compute-block-radius, parse-recipe, read-setting) and Python renderer self-tests. No coverage
-  tooling; no CI. Read this to know what tests exist and how to run them.
+  Inventory of test suites that protect the canonical bash helper scripts AID
+  skills depend on. 5 unit/integration suites under tests/canonical/, all
+  deterministic bash. NO methodology/orchestration/E2E tests — those don't
+  exist and aren't needed (the methodology is exercised by dogfooding, the
+  renderer has its own VERIFY-4a gate). Read this to understand what changes
+  to canonical/scripts/ are guarded by tests vs require manual verification.
 contracts:
-  - "5 suites in tests/canonical/"
+  - "5 test suites under tests/canonical/, no skill-level tests"
+  - "All suites are bash (POSIX); require Git Bash on Windows"
+  - "No aggregator script (per Q6 cycle-1 decision); explicit per-suite invocation"
 changelog:
-  - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
-  - 2026-05-27: Updated in cycle-2 FIX Phase A to reflect post-Q6 cleanup (5 suites; tests/skills/ removed; pool-dispatch.sh removed)
+  - 2026-05-27: Initial generation by discovery-quality (cycle-1)
+  - 2026-05-27: Full rewrite during cycle-2 FIX Phase B for accurate post-Q6-cleanup state (Q20)
 ---
 # Test Landscape
 
-> **Source:** `discovery-quality` (Phase 1), cycle-1
-> **Status:** Complete
-> **Last Updated:** 2026-05-27
-> **Scope:** This repo ships a methodology + a multi-tool distribution; there is no application code (see `architecture.md §Project Type`). "Tests" here means the canonical-helper bash test suites and the renderer's Python self-tests.
+## Scope
+
+These tests cover **canonical bash helper scripts** only — the small, side-effect-free
+utilities that AID skills invoke at runtime (writeback, BFS compute, recipe parsing, etc.).
+
+What is NOT tested here:
+- **Orchestration skills** (`/aid-discover`, `/aid-execute`, …) — prompt-driven; no
+  scripted harness exists or is planned. The `discovery-reviewer` sub-agent acts as the
+  closest adversarial integration check each cycle.
+- **Renderer** (`run_generator.py`) — covered by its own VERIFY-4a determinism gate
+  (`verify_deterministic.py`); see `architecture.md`.
+- **Sub-agent definitions** — no test harness; verified by dogfooding.
+- **Cross-tool consistency** (Cursor vs Claude Code vs Codex) — covered by the renderer's
+  byte-identity assertion across the 3 install-tree profiles.
+- **E2E pipeline** (Discover → … → Deploy) — exercised by dogfooding this repo, not
+  scripted tests.
 
 ---
 
-## Test Frameworks
+## Suites (5)
 
-| Framework | Version | Config | Where used |
-|-----------|---------|--------|------------|
-| Bash (pure POSIX, no test harness) | n/a — uses inline `PASS=`/`FAIL=` counters + `set -u` | none (no `bats`, no `shunit2`, no `pytest.ini`) | `tests/canonical/*.sh` (5 suites — see `tests/README.md`) |
-| Python `argparse` self-tests | Python 3.11+ (stdlib `tomllib`) per `.claude/skills/aid-generate/scripts/harness.py:15` | flag-based: `--self-test --canonical-root <repo>` | 5 renderer modules under `.claude/skills/aid-generate/scripts/` |
+All suites live under `tests/canonical/` and target scripts under `canonical/scripts/`.
 
-No `pytest`, no `unittest`, no `jest`, no `mocha`. Test discovery is **manual** — each suite is invoked one at a time (see `tests/README.md`).
+### read-setting.sh
+
+**Target:** `canonical/scripts/config/read-setting.sh`
+
+Covers the three-tier settings-resolution model:
+- Per-skill override wins over global category default, which wins over hardcoded `--default`
+- `--path` mode (direct dotted key lookup)
+- Missing `settings.yml` with and without `--default`
+- Comment stripping, quote stripping
+- Error exits (bad `--path` format, unknown flag, missing paired args)
+
+11 numbered scenarios; **18 assertions** (some scenarios contain multiple asserts).
+File: `tests/canonical/read-setting.sh` (~360 lines)
+
+### writeback-task-status.sh
+
+**Target:** `canonical/scripts/execute/writeback-task-status.sh`
+
+Covers all 4 argument modes plus safety:
+- `--task-id --field --value` (single-field row update)
+- `--task-id --findings` (Quick Check block write)
+- `--delivery-id --block` (Delivery Gate block write)
+- `--delivery-id --append-issue` (delivery-NNN-issues.md append)
+- Idempotency (re-running each mode produces no additional change)
+- Concurrent lock contention (5 parallel writers, different rows)
+- Error paths (missing args, invalid task-id, lock timeout, missing lock dir)
+
+7 numbered units; **69 assertions** (most units exercise multiple assert helpers).
+File: `tests/canonical/writeback-task-status.sh` (~535 lines)
+
+### parse-recipe.sh
+
+**Target:** `canonical/scripts/interview/parse-recipe.sh`
+
+Covers all operating modes and error paths:
+- `--list`, `--validate`, `--spec`, `--tasks`, `--render`
+- Slot substitution, `{!{` escape rewrite, unmatched slot passthrough
+- Multi-task recipe emits multiple task files
+- Lock file lifecycle
+- Name-vs-filename mismatch warning
+- Error paths: missing file, malformed front-matter, missing blocks, bad args
+- Units 15–19: validates each of the 5 seed recipes in `canonical/recipes/` (dogfood)
+
+19 numbered units; **113 assertions**.
+File: `tests/canonical/parse-recipe.sh` (~1,002 lines — the largest suite)
+
+### compute-block-radius.sh
+
+**Target:** `canonical/scripts/execute/compute-block-radius.sh`
+
+Covers BFS transitive-descendant computation used by the pool-dispatch failure cascade:
+- Linear chain, diamond, fan-out, unrelated chain, mid-chain failure
+- No-dependents (leaf node) → empty block-radius
+- Multi-root fan graphs
+- End-to-end with `--plan-file` (PLAN.md parsing)
+- Integration: 5-task delivery graph with seeded failure
+- Error exits (missing required args, conflicting args, file-not-found)
+- Whitespace normalization on `--failed-task`
+- Stability check: `state-execute.md` degradation-notice format
+
+17 numbered tests (T01–T17).
+File: `tests/canonical/compute-block-radius.sh` (~345 lines)
+
+### delivery-gate-aggregate.sh
+
+**Target:** delivery-gate logic in `aid-execute` (uses `writeback-task-status.sh` +
+`canonical/scripts/grade.sh` as collaborators)
+
+Covers:
+- AGGREGATE with existing `delivery-NNN-issues.md` (deferred rows preserved)
+- AGGREGATE with no issues file (creates empty log correctly)
+- SCORE computation for 3 sample deliveries of varying complexity
+- Grade computation via `grade.sh` (deterministic output verification)
+- Loopback guard (grade < min does NOT re-run quick-checks; only loops review)
+- FR6 interlock (gate must not fire while any task has status Failed or Blocked)
+
+6 numbered scenarios; **18 assertions**.
+File: `tests/canonical/delivery-gate-aggregate.sh` (~535 lines)
 
 ---
 
-## Test Types Found
+## Total test count
 
-- **Unit tests (helper-script granularity):** `tests/canonical/` — 5 suites, each targeting ONE canonical bash helper:
-  - `tests/canonical/read-setting.sh` (360 lines) — 17+ numbered scenarios for the settings-resolution helper
-  - `tests/canonical/writeback-task-status.sh` (535 lines) — 69 tests
-  - `tests/canonical/delivery-gate-aggregate.sh` (535 lines) — 18 tests
-  - `tests/canonical/compute-block-radius.sh` (345 lines) — 17 tests
-  - `tests/canonical/parse-recipe.sh` (1,002 lines — the largest test file) — 113 tests; 19 numbered "Unit" scenarios per `tests/canonical/parse-recipe.sh:11-29`
+| Suite | Assertions |
+|---|---|
+| `read-setting.sh` | 18 |
+| `writeback-task-status.sh` | 69 |
+| `parse-recipe.sh` | 113 |
+| `compute-block-radius.sh` | 17 |
+| `delivery-gate-aggregate.sh` | 18 |
+| **Total** | **235** |
 
-> **Post-Q6-cleanup (cycle-1):** `tests/canonical/pool-dispatch.sh` and the `tests/skills/` directory (2 suites: `lite-subpaths.sh`, `lite-to-full-escalation.sh`) were deleted. See `tests/README.md` for current suite list.
-- **Generator self-tests (Python):** 5 renderer modules + `harness.py` + `test_manifest_safety.py` invoked via `--self-test` (see `.claude/skills/aid-generate/scripts/render_agents.py:410-467`, `render_recipes.py:167-205`)
-- **Integration tests (cross-component):** none — the canonical/renderer split has no integration harness beyond the deterministic-render verification (see Coverage below)
-- **Snapshot / contract / performance tests:** none found
-
----
-
-## Coverage
-
-No coverage tool is configured. There is no `.coveragerc`, no `coverage.xml`, no `nyc`, no `c8`, no `jacoco`. Coverage is **assessed by inspection**, not measured.
-
-The closest equivalents are the **renderer determinism checks** (functional coverage of the build pipeline):
-
-- `python .claude/skills/aid-generate/scripts/verify_deterministic.py` — **VERIFY-4a (strict)** — byte-identical re-render guarantee per `run_generator.py:75-80`. Re-renders the entire `canonical/` source twice and asserts every output file is bit-for-bit identical.
-- `python .claude/skills/aid-generate/scripts/verify_advisory.py` — **VERIFY-4b (advisory)** invoked from `run_generator.py:82-84`. Soft checks (skipped/checked counts reported).
-
-⚠️ **Inferred from code — needs confirmation:** since coverage tooling is absent, statement/branch coverage of helper scripts is unknown. The high test-line-to-source-line ratio for `parse-recipe.sh` (test 1,002 / source 540 = 1.86×) and `writeback-task-status.sh` (test 535 / source 627 = 0.85×) is the only proxy.
+Count method: running each suite and summing PASS counts (cross-checked against
+assertion call sites in source for suites with simple call patterns).
 
 ---
 
-## Test Commands
+## Running
 
 ```bash
-# Run canonical helper unit tests (5 suites — see tests/README.md)
-bash tests/canonical/writeback-task-status.sh    # 69 tests
-bash tests/canonical/delivery-gate-aggregate.sh  # 18 tests
-bash tests/canonical/compute-block-radius.sh     # 17 tests
-bash tests/canonical/parse-recipe.sh             # 113 tests
-bash tests/canonical/read-setting.sh             # 17+ scenarios
+# Individual suites (from repo root — Git Bash on Windows)
+bash tests/canonical/read-setting.sh
+bash tests/canonical/writeback-task-status.sh
+bash tests/canonical/parse-recipe.sh
+bash tests/canonical/compute-block-radius.sh
+bash tests/canonical/delivery-gate-aggregate.sh
 
-# Verify the canonical → 3-profiles render is byte-correct + complete
-python .claude/skills/aid-generate/scripts/verify_deterministic.py
+# Verbose output
+bash tests/canonical/read-setting.sh --verbose
 
-# Run a single renderer's Python self-test
-python .claude/skills/aid-generate/scripts/render_agents.py --self-test --canonical-root .
-python .claude/skills/aid-generate/scripts/render_recipes.py --self-test --canonical-root .
-python .claude/skills/aid-generate/scripts/harness.py --self-test
+# Run all 5 in sequence (no aggregator — per Q6 cycle-1 decision)
+for f in tests/canonical/*.sh; do echo "=== $f ==="; bash "$f" || break; done
 ```
 
-There is no `Makefile`, no `npm test`, no `pytest`, no `task` runner — every test command is the literal interpreter invocation above.
+**Windows note:** all suites are POSIX bash. Run from Git Bash, not PowerShell or CMD.
+
+Exit code: `0` = all passed, `1` = one or more failures. Each suite prints a
+`PASS`/`FAIL` line per assertion and a summary at the end.
+
+There is no CI. Maintainer runs suites manually before merging. See `tech-debt.md H2`
+for the formal debt item.
 
 ---
 
-## CI/CD Integration
+## Coverage gaps and roadmap
 
-**None.** Confirmed by absence of `.github/`, `.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`, `.circleci/`, `.travis.yml`, and `bitbucket-pipelines.yml` in the repository tree. See `tech-debt.md H2` for the formal debt item.
-
-Quality gating is therefore **in-loop, agent-mediated**, not pre-merge automated:
-- `aid-discover` runs adversarial review of KB drafts
-- `aid-execute` runs two-tier review per task (small-tier reviewer) + per-delivery quality gate with `grade.sh` determinism
-- `aid-deploy` runs a verification step
-- Maintainer is expected to run the canonical suites manually before merging
-
----
-
-## Testing Patterns
-
-- **Pattern — Inline counter + `pass`/`fail` helpers:** every `tests/canonical/*.sh` declares `PASS=0`, `FAIL=0`, and helpers `pass() { PASS=$((PASS+1)); ... }` / `fail() { FAIL=$((FAIL+1)); ... }`. Example: `tests/canonical/parse-recipe.sh:46-52`, `tests/canonical/read-setting.sh:29-30`. No `BATS_RUN` or framework macros.
-- **Pattern — Numbered scenario comments:** suites enumerate cases in the header (e.g., `tests/canonical/parse-recipe.sh:11-29`, `tests/canonical/read-setting.sh:101-332`). This is the de-facto test-case index since there's no framework auto-discovery.
-- **Pattern — `set -u` not `set -e`:** suites use `set -u` only (e.g., `tests/canonical/parse-recipe.sh:35`); a failing assertion increments the counter rather than aborting the run — lets each suite report all failures in one pass.
-- **Pattern — Fixture recipes for `parse-recipe.sh`:** the 5 production recipes in `canonical/recipes/` double as `parse-recipe.sh` test fixtures (Units 15–19 per `tests/canonical/parse-recipe.sh:25-29`). Dogfood pattern.
-- **Test data setup:** tests create fixtures inline via heredoc (`cat > $TMPDIR/foo.yml <<EOF ... EOF`); no shared `fixtures/` directory, no factory functions.
-- **Mocking:** none in bash tests (helpers are real shell scripts run against real tmpdirs). The Python pool-dispatch simulator IS a mock of the live dispatch loop.
+- **No CI** — tests only run when someone runs them manually. See `tech-debt.md H2`.
+- **No coverage measurement** — statement/branch coverage of the canonical helpers is
+  unknown; test-line-to-source-line ratio is the only proxy.
+- **No tests for PowerShell variants** — `canonical/scripts/summarize/concatenate.ps1`
+  and mirror install-tree copies are untested.
+- **No tests for `.mjs` validators** — `validate-diagrams.mjs` (574 lines) and
+  `contrast-check.mjs` (151 lines) have no Node test harness.
+- **No tests for `setup.sh` / `setup.ps1`** — the end-user install flow is untested.
+- **bats migration** — the inline `PASS=0` / `FAIL=0` counter pattern works but
+  produces no TAP output. Migration to `bats-core` would enable parallel runs and
+  standard CI integration; deferred as low-priority.
 
 ---
 
-## Gaps
+## Adding a new suite
 
-- **No CI execution of any test.** Every test pass requires manual local invocation. No automated record of the last green run.
-- **No coverage measurement.** Statement/branch coverage of the 21 unique canonical helper scripts is unknown. ⚠️ Inferred.
-- **No integration tests for the full skill pipeline.** Each skill is tested in isolation (or not at all); no end-to-end test runs Discover→Interview→Specify→Plan→Detail→Execute→Deploy across the live skills with a dummy project.
-- **No tests for the renderer integration with `run_generator.py`.** The five `render_*.py` modules each have `--self-test`, but `run_generator.py` itself (which orchestrates them + runs VERIFY-4a/4b) has no test fixture.
-- **No E2E test coverage.** The `tests/canonical/` suites test individual helpers in isolation; no end-to-end runner exercises a full `/aid-discover` → `/aid-execute` → `/aid-deploy` cycle. The `.aid/work-001-aid-lite/test-reports/` runners were never committed as canonical artifacts — their absence is the largest single test-coverage gap (see `tech-debt.md H1`).
-- **No tests for the 4 PowerShell scripts** (`setup.ps1`, `concatenate.ps1`, plus 2 install-tree mirrors). The bash equivalents are tested by `tests/canonical/`; the PowerShell paths are not.
-- **No tests for `setup.sh` / `setup.ps1` end-user install flow.** A user installing claude-code+codex+cursor into a target project has no automated verification that the install succeeded.
-- **No tests for `canonical/scripts/summarize/*.mjs`** (`validate-diagrams.mjs` 574 lines, `contrast-check.mjs` 151 lines) — JavaScript validators have no Node test harness.
+1. Create `tests/canonical/<helper-name>.sh` targeting `canonical/scripts/<path>/<helper>.sh`.
+2. Use the same `PASS=0` / `FAIL=0` / `pass()` / `fail()` scaffold as existing suites.
+3. Use `set -u` (not `set -e`) so all failures are reported in one run.
+4. Use `mktemp -d` + `trap 'rm -rf ...' EXIT` for fixture cleanup.
+5. Add the suite to the table in `tests/README.md` and update the count here.

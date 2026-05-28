@@ -1,3 +1,16 @@
+---
+kb-category: meta
+source: hand-authored
+intent: |
+  Discovery-area state ledger: Q&A history, per-cycle Review History, per-doc
+  KB Documents Status, Calibration Log of sub-agent dispatches. The runtime
+  state hub for /aid-discover. Not part of the reviewed knowledge surface
+  (kb-category: meta).
+contracts: []
+changelog:
+  - 2026-05-27: Initial frontmatter added during cycle-2 FIX Phase B (Q22)
+---
+
 # Discovery State
 
 > **Source:** aid-config (creates) · aid-discover + aid-summarize (update)

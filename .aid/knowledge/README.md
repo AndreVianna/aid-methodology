@@ -1,3 +1,15 @@
+---
+kb-category: meta
+source: hand-authored
+intent: |
+  Knowledge Base completeness tracking + per-doc status + revision history
+  for the AID project. Updated after every /aid-discover cycle to reflect
+  current disk state. Not part of the reviewed knowledge surface (kb-category: meta).
+contracts: []
+changelog:
+  - 2026-05-27: Initial frontmatter added during cycle-2 FIX Phase B (Q22)
+---
+
 # Knowledge Base — AID
 
 > **Project:** AID — AI Integrated Development

@@ -12,7 +12,7 @@ intent: |
   and NOT a coding-conventions reference (see coding-standards.md).
 contracts:
   - "Settings file = .aid/settings.yml, YAML 1.2, with 5 mandatory top-level sections (project, tools, review, execution, traceability)"
-  - "Discovery STATE.md tracks exactly 16 standard KB documents"
+  - "Discovery KB has 15 active primary documents post-cycle-1 Q3 carve-out (14 from the standard 16-doc set minus security-model and ui-architecture, plus repo-presentation custom doc)"
   - "Emission manifest is JSON-Lines (.jsonl) with 4-key record schema (profile, src, dst, sha256) + 1-key sentinel object {_manifest_version: 1}"
   - "Frontmatter schema for KB docs requires kb-category + source + intent; generator required iff source=generated"
   - "Recipe slot syntax: {{slot-name}} where slot-name matches POSIX ERE [a-z][a-z0-9-]*"
@@ -92,10 +92,10 @@ consolidation — see `coding-standards.md §7e`). Absorbs former `DISCOVERY-STA
 | `## Review History` | Append-only table: `# | Date | Grade | Source | Notes` | 1..N |
 | `## Summarization History` | Append-only table: `# | Date | Grade | Profile | Mermaid | Output | Notes` | 1..N |
 
-**14 active KB documents** (post-Q3 FIX):
+**15 active KB documents** (post-Q3 FIX):
 project-structure, external-sources, architecture, technology-stack, module-map,
 coding-standards, schemas (was data-model), pipeline-contracts (was api-contracts), integration-map, domain-glossary,
-test-landscape, tech-debt, infrastructure,
+test-landscape, tech-debt, infrastructure, repo-presentation,
 feature-inventory.
 
 ---
