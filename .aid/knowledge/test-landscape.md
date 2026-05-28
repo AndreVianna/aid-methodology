@@ -68,7 +68,7 @@ Covers all 4 argument modes plus safety:
 - Concurrent lock contention (5 parallel writers, different rows)
 - Error paths (missing args, invalid task-id, lock timeout, missing lock dir)
 
-7 numbered units; **69 assertions** (most units exercise multiple assert helpers).
+7 numbered units; **69 assertions** (script prints "Tests passed: 69" then "All tests passed." in summary).
 File: `tests/canonical/writeback-task-status.sh` (~535 lines)
 
 ### parse-recipe.sh
@@ -84,7 +84,7 @@ Covers all operating modes and error paths:
 - Error paths: missing file, malformed front-matter, missing blocks, bad args
 - Units 15–19: validates each of the 5 seed recipes in `canonical/recipes/` (dogfood)
 
-19 numbered units; **51 assertions** (several units contain multiple assert helpers).
+19 numbered units; **113 assertions** (script prints "Tests passed: 113" then "All tests passed." in summary). **Runtime note:** this suite takes ~150 s; do not impose timeouts under 180 s.
 File: `tests/canonical/parse-recipe.sh` (~1,002 lines — the largest suite)
 
 ### compute-block-radius.sh
@@ -124,16 +124,16 @@ File: `tests/canonical/delivery-gate-aggregate.sh` (~535 lines)
 
 ## Total test count
 
-| Suite | Assertions |
-|---|---|
-| `read-setting.sh` | 18 |
-| `writeback-task-status.sh` | 69 |
-| `parse-recipe.sh` | 51 |
-| `compute-block-radius.sh` | 17 |
-| `delivery-gate-aggregate.sh` | 18 |
-| **Total** | **173** |
+| Suite | Assertions | Self-reported summary line |
+|---|---|---|
+| `read-setting.sh` | 18 | `Passed: 18 / Failed: 0` |
+| `writeback-task-status.sh` | 69 | `Tests passed: 69 / All tests passed.` |
+| `parse-recipe.sh` | 113 | `Tests passed: 113 / All tests passed.` |
+| `compute-block-radius.sh` | 17 | `Results: 17 passed, 0 failed` |
+| `delivery-gate-aggregate.sh` | 18 | `Results: 18 passed, 0 failed` |
+| **Total** | **235** | (sum of self-reported summary lines) |
 
-Count method: counts verified by running each suite end-to-end and counting `PASS:` / `[PASS]` markers in stdout (cycle-4, 2026-05-27). Recount after any test addition.
+Count method: each suite's own self-reported summary line is authoritative. Verified end-to-end (cycle-5, 2026-05-27): run each suite with timeout ≥180s (parse-recipe takes ~150s), then read the script's own "Tests passed: N" / "Results: N passed" line. Do NOT count `PASS:` markers via grep — different suites use different formats and you may undercount if a suite hangs or is timed-out before completion. Recount after any test addition.
 
 ---
 

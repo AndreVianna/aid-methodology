@@ -117,11 +117,11 @@ no `pyproject.toml`). Quality is enforced by:
 # Rebuild file inventory used by Discovery
 bash canonical/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md
 
-# Canonical helper-script test suites (5 suites, 173 tests total)
+# Canonical helper-script test suites (5 suites, 235 tests total)
 bash tests/canonical/writeback-task-status.sh    # 69 tests
 bash tests/canonical/delivery-gate-aggregate.sh  # 18 tests
 bash tests/canonical/compute-block-radius.sh     # 17 tests
-bash tests/canonical/parse-recipe.sh             # 51 tests
+bash tests/canonical/parse-recipe.sh             # 113 tests (runtime ~150s — needs timeout ≥180s)
 bash tests/canonical/read-setting.sh             # 18 tests
 ```
 

@@ -72,7 +72,7 @@ rather than a runtime queue.
 - **Invalidation:** Re-generated each discovery run by
   `canonical/scripts/kb/build-project-index.sh`
 - **Source:** `canonical/scripts/kb/build-project-index.sh:1-50` (368 lines total per
-  `.aid/knowledge/project-structure.md:153`)
+  `.aid/knowledge/project-structure.md:167`)
 
 ### `.aid/knowledge/.cache/` (general scratch)
 
