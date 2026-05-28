@@ -12,7 +12,7 @@
 {"dst": ".agents/scripts/grade.sh", "profile": "codex", "sha256": "4984ef7486d0c66dc593db1e714db69b85e3a6aac636e68a4fc1b757aaced8c9", "src": "canonical/scripts/grade.sh"}
 {"dst": ".agents/scripts/interview/parse-recipe.sh", "profile": "codex", "sha256": "b6f8f4ff474e18ce9d4dc9d44291efa95f1de7942a209e94b0ddaa37b35a6a3d", "src": "canonical/scripts/interview/parse-recipe.sh"}
 {"dst": ".agents/scripts/kb/build-index.sh", "profile": "codex", "sha256": "dc8169e667b768f03add12bd11a55bf4e84afc3fe90bba98ec99eb79c410d4ec", "src": "canonical/scripts/kb/build-index.sh"}
-{"dst": ".agents/scripts/kb/build-metrics.sh", "profile": "codex", "sha256": "f2d4169043a13dc26ee716bda0c11581b1884ddae76c2248e9ded8ea86799079", "src": "canonical/scripts/kb/build-metrics.sh"}
+{"dst": ".agents/scripts/kb/build-metrics.sh", "profile": "codex", "sha256": "6564d9cb41b4c087a971f8974b07b4b8c52d1ca57e756384cc12b08062e0e893", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".agents/scripts/kb/build-project-index.sh", "profile": "codex", "sha256": "2beab9b255fd1f984843c7e4b9b4e579c9509c249c1bad30668baa7bd5ff55ec", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".agents/scripts/kb/preflight.sh", "profile": "codex", "sha256": "0a6cbcaed8e470cc93733692e06e069c9457f024002f44fdd8ccd2be74d534e4", "src": "canonical/scripts/kb/preflight.sh"}
 {"dst": ".agents/scripts/summarize/concatenate.ps1", "profile": "codex", "sha256": "21de32ffc7a2da111bb2b2c27b83a1e502ea6689a35676e772936df569349bcb", "src": "canonical/scripts/summarize/concatenate.ps1"}

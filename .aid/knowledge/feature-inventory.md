@@ -2,7 +2,7 @@
 kb-category: primary
 source: hand-authored
 intent: |
-  Canonical feature list with status (Shipped / Partial / Deferred), source, and traceability to work items. Read this to understand WHAT the project does at a feature level.
+  Canonical feature list with status (Shipped / Partial / Pending / In Progress / Deprecated), source, and traceability to work items. Read this to understand WHAT the project does at a feature level.
 contracts: []
 changelog:
   - 2026-05-26: KB Authoring v2 template seed
@@ -15,7 +15,7 @@ changelog:
 > commands an adopter can invoke once they have AID installed in their project.
 
 **Status values (text-only — machine-parsed):** `Shipped` · `Partial` · `Pending` · `In Progress` · `Deprecated`
-(Decorative glyphs are NOT used here — see `coding-standards.md §13` for the text-for-machine rule.)
+(Decorative glyphs are NOT used here — see `coding-standards.md §14` for the text-for-machine rule.)
 
 ## User-facing skills (10)
 

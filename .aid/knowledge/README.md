@@ -13,8 +13,8 @@ changelog:
 # Knowledge Base — AID
 
 > **Project:** AID — AI Integrated Development
-> **Discovery cycle:** 6 (post-FIX, awaiting cycle-7 REVIEW)
-> **Last KB review:** 2026-05-28 (cycle-6 REVIEW complete)
+> **Discovery cycle:** 8 (post-FIX, awaiting cycle-9 REVIEW)
+> **Last KB review:** 2026-05-28 (cycle-8 REVIEW complete · schema-table format)
 > **Status:** 15 active KB documents (16 originally generated in cycle-1; 2 deleted in Q3 FIX — `security-model.md` merged into `coding-standards.md §11`, `ui-architecture.md` replaced by `repo-presentation.md` per Q3 user-decision; 2 renamed: `data-model.md → schemas.md`, `api-contracts.md → pipeline-contracts.md`).
 
 Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.
@@ -23,21 +23,21 @@ Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.
 
 | # | Document | Status | Lines | Last Reviewed | Notes |
 |---|----------|--------|-------|---------------|-------|
-| 1 | [project-structure.md](project-structure.md) | Populated | 328 | 2026-05-27 | discovery-scout cycle-1; FM added Phase B |
-| 2 | [external-sources.md](external-sources.md) | Populated | 15 | 2026-05-27 | no external docs provided; FM added Phase B |
-| 3 | [architecture.md](architecture.md) | Populated | 333 | 2026-05-27 | discovery-architect cycle-1; FM added Phase B |
-| 4 | [technology-stack.md](technology-stack.md) | Populated | 203 | 2026-05-27 | discovery-architect cycle-1; FM added Phase B |
-| 5 | [module-map.md](module-map.md) | Populated | 291 | 2026-05-27 | discovery-analyst cycle-1; FM since GENERATE |
-| 6 | [coding-standards.md](coding-standards.md) | Populated | 563 | 2026-05-27 | discovery-analyst cycle-1; +87 lines in FIX Phase A/B (§11 Security-By-Design + §12 Q&A Schema) |
-| 7 | [schemas.md](schemas.md) | Populated | 457 | 2026-05-27 | discovery-analyst cycle-1 (renamed from `data-model.md` in Q3 FIX); FM since GENERATE |
-| 8 | [pipeline-contracts.md](pipeline-contracts.md) | Populated | 585 | 2026-05-27 | discovery-integrator cycle-1 (renamed from `api-contracts.md` in Q3 FIX); FM added Phase B |
-| 9 | [integration-map.md](integration-map.md) | Populated | 374 | 2026-05-27 | discovery-integrator cycle-1; FM added Phase B |
-| 10 | [domain-glossary.md](domain-glossary.md) | Populated | 366 | 2026-05-27 | discovery-integrator cycle-1 — 195 terms; FM added Phase B; acronym variants fixed Phase A |
-| 11 | [test-landscape.md](test-landscape.md) | Populated | 190 | 2026-05-27 | discovery-quality cycle-1; full rewrite cycle-2 FIX; counts corrected to actual **235** total in cycle-5 FIX (read self-reported summary lines, not grep-count of PASS markers; parse-recipe takes ~150s so 60s timeout was killing it mid-run) |
-| 12 | [tech-debt.md](tech-debt.md) | Populated | 407 | 2026-05-27 | discovery-quality cycle-1 + 7 new entries from Q-AND-A in Phase B; H4 severity reconciled cycle-3 FIX |
-| 13 | [infrastructure.md](infrastructure.md) | Populated | 236 | 2026-05-27 | discovery-quality cycle-1; FM added Phase B |
-| 14 | [repo-presentation.md](repo-presentation.md) | Populated | 305 | 2026-05-27 | NEW in Phase B (Q3 replacement for deleted `ui-architecture.md`) — 8 sections covering README, docs/, examples/, methodology spec, blog refs, install surface |
-| 15 | [feature-inventory.md](feature-inventory.md) | Populated | 49 | 2026-05-27 | Phase B (Q13) — 10 user-facing skills + `aid-generate` maintainer-only footnote |
+| 1 | [project-structure.md](project-structure.md) | Populated | 328 | 2026-05-28 | discovery-scout cycle-1; FM added Phase B |
+| 2 | [external-sources.md](external-sources.md) | Populated | 15 | 2026-05-28 | no external docs provided; FM added Phase B |
+| 3 | [architecture.md](architecture.md) | Populated | 333 | 2026-05-28 | discovery-architect cycle-1; FM added Phase B |
+| 4 | [technology-stack.md](technology-stack.md) | Populated | 203 | 2026-05-28 | discovery-architect cycle-1; FM added Phase B |
+| 5 | [module-map.md](module-map.md) | Populated | 291 | 2026-05-28 | discovery-analyst cycle-1; FM since GENERATE |
+| 6 | [coding-standards.md](coding-standards.md) | Populated | 563 | 2026-05-28 | discovery-analyst cycle-1; +87 lines in FIX Phase A/B (§11 Security-By-Design + §12 Q&A Schema) |
+| 7 | [schemas.md](schemas.md) | Populated | 457 | 2026-05-28 | discovery-analyst cycle-1 (renamed from `data-model.md` in Q3 FIX); FM since GENERATE |
+| 8 | [pipeline-contracts.md](pipeline-contracts.md) | Populated | 585 | 2026-05-28 | discovery-integrator cycle-1 (renamed from `api-contracts.md` in Q3 FIX); FM added Phase B |
+| 9 | [integration-map.md](integration-map.md) | Populated | 374 | 2026-05-28 | discovery-integrator cycle-1; FM added Phase B |
+| 10 | [domain-glossary.md](domain-glossary.md) | Populated | 366 | 2026-05-28 | discovery-integrator cycle-1 — 195 terms; FM added Phase B; acronym variants fixed Phase A |
+| 11 | [test-landscape.md](test-landscape.md) | Populated | 190 | 2026-05-28 | discovery-quality cycle-1; full rewrite cycle-2 FIX; counts corrected to actual **235** total in cycle-5 FIX (read self-reported summary lines, not grep-count of PASS markers; parse-recipe takes ~150s so 60s timeout was killing it mid-run) |
+| 12 | [tech-debt.md](tech-debt.md) | Populated | 407 | 2026-05-28 | discovery-quality cycle-1 + 7 new entries from Q-AND-A in Phase B; H4 severity reconciled cycle-3 FIX |
+| 13 | [infrastructure.md](infrastructure.md) | Populated | 236 | 2026-05-28 | discovery-quality cycle-1; FM added Phase B |
+| 14 | [repo-presentation.md](repo-presentation.md) | Populated | 305 | 2026-05-28 | NEW in Phase B (Q3 replacement for deleted `ui-architecture.md`) — 8 sections covering README, docs/, examples/, methodology spec, blog refs, install surface |
+| 15 | [feature-inventory.md](feature-inventory.md) | Populated | 49 | 2026-05-28 | Phase B (Q13) — 10 user-facing skills + `aid-generate` maintainer-only footnote |
 
 **Removed in cycle-1 FIX Phase A (Q3):**
 - ~~`security-model.md`~~ — content extracted to `coding-standards.md §11 Security-By-Design Conventions` (gitignore policy, shell `set -euo pipefail` discipline, agent-permission allowlist pattern); dedicated security doc is contortion for a non-runtime methodology repo

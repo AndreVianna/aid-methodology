@@ -162,8 +162,14 @@ EOF
 
     # --- Glossary term count -----------------------------------------------
     if [[ -f "$KB_DIR/domain-glossary.md" ]]; then
-        # Terms are table rows starting with "| **TermName** |"
-        terms=$(grep -cE '^\| \*\*[A-Z]' "$KB_DIR/domain-glossary.md" 2>/dev/null || echo 0)
+        # Terms are table rows starting with "| **TermName**" where TermName can
+        # begin with any non-whitespace character (uppercase letter, lowercase
+        # letter, digit, or backtick for code-formatted names). The previous
+        # `[A-Z]` constraint undercounted 23 valid terms starting with
+        # lowercase / numeric / backtick (e.g., `project-index.md`,
+        # `heartbeat_interval`, `workType`).
+        terms=$(grep -cE '^\| \*\*[^ ]' "$KB_DIR/domain-glossary.md" 2>/dev/null || true)
+        terms=${terms:-0}
         echo "## 4. Domain glossary"
         echo ""
         echo "Term count: **$terms**"
