@@ -55,7 +55,10 @@ try {
 // Extract Mermaid diagram blocks
 // ---------------------------------------------------------------------------
 
-const blockRegex = /<pre\s+class="mermaid"[^>]*>([\s\S]*?)<\/pre>/g;
+// Mermaid officially supports both <pre class="mermaid"> and <div class="mermaid"> as
+// default-recognized selectors. Accept either to match what /aid-summarize generates
+// (current authoring uses <div class="mermaid"> inside a <div class="mermaid-box"> wrapper).
+const blockRegex = /<(pre|div)\s+class="mermaid"[^>]*>([\s\S]*?)<\/\1>/g;
 const decodeHtml = (s) => s
 	.replace(/&lt;/g, '<')
 	.replace(/&gt;/g, '>')
@@ -66,11 +69,11 @@ const decodeHtml = (s) => s
 const blocks = [];
 let m;
 while ((m = blockRegex.exec(html)) !== null) {
-	blocks.push({ index: blocks.length + 1, source: decodeHtml(m[1]).trim() });
+	blocks.push({ index: blocks.length + 1, source: decodeHtml(m[2]).trim() });
 }
 
 if (blocks.length === 0) {
-	console.error(`⚠️  No <pre class="mermaid"> blocks found in ${htmlPath}`);
+	console.error(`⚠️  No <pre class="mermaid"> or <div class="mermaid"> blocks found in ${htmlPath}`);
 	process.exit(0);
 }
 

@@ -46,10 +46,10 @@
 {"dst": ".cursor/scripts/summarize/fetch-mermaid.sh", "profile": "cursor", "sha256": "29762f152ccde2836838f3482bc2068b533a5a570a59d4c054b20e8317cee278", "src": "canonical/scripts/summarize/fetch-mermaid.sh"}
 {"dst": ".cursor/scripts/summarize/manual-checklist.sh", "profile": "cursor", "sha256": "9b7be36ea4e52362cd75b6b87da5999103dbfc022680997f7fd3dadedf8b7bd9", "src": "canonical/scripts/summarize/manual-checklist.sh"}
 {"dst": ".cursor/scripts/summarize/preflight.sh", "profile": "cursor", "sha256": "3c5e2aa0652081639471f959a1223934a977193ad732f2805279b9c617a11526", "src": "canonical/scripts/summarize/preflight.sh"}
-{"dst": ".cursor/scripts/summarize/run-validators.sh", "profile": "cursor", "sha256": "c8bc532c393f8a12018428c34294c78712b77d177cefbbb84e78548420b638b9", "src": "canonical/scripts/summarize/run-validators.sh"}
+{"dst": ".cursor/scripts/summarize/run-validators.sh", "profile": "cursor", "sha256": "684bb78047d9834298ca8543bdcea9e83602fc38ed003b613e5fd69ef34a7b73", "src": "canonical/scripts/summarize/run-validators.sh"}
 {"dst": ".cursor/scripts/summarize/spot-check-facts.sh", "profile": "cursor", "sha256": "e02998fd760993734a53e6ec133e03e2625dfa24afa38f5e55428276ed6bc4cf", "src": "canonical/scripts/summarize/spot-check-facts.sh"}
 {"dst": ".cursor/scripts/summarize/stale-check.sh", "profile": "cursor", "sha256": "10d8b5b4dbd47c2e8e64a9a29b5e797b3525df19bd1f12f713caefe717e1e53d", "src": "canonical/scripts/summarize/stale-check.sh"}
-{"dst": ".cursor/scripts/summarize/validate-diagrams.mjs", "profile": "cursor", "sha256": "a50045310dce84618fb806629c702f7188be0ee0f9535418cf32f60d8b1c1d71", "src": "canonical/scripts/summarize/validate-diagrams.mjs"}
+{"dst": ".cursor/scripts/summarize/validate-diagrams.mjs", "profile": "cursor", "sha256": "639cfe6dabbc3cb0d680f818b1066f2042972a95b0064638fe25b3b17fe958e4", "src": "canonical/scripts/summarize/validate-diagrams.mjs"}
 {"dst": ".cursor/scripts/summarize/validate-html-output.sh", "profile": "cursor", "sha256": "b3a4016040363b741d326f8eaff66fef370a5264ed0d020308249eefc746ad52", "src": "canonical/scripts/summarize/validate-html-output.sh"}
 {"dst": ".cursor/scripts/summarize/writeback-state.sh", "profile": "cursor", "sha256": "b8d23c3266eabfb722f008ac3026e8489b0ea96bcb599ae8dd70c56367ea55a0", "src": "canonical/scripts/summarize/writeback-state.sh"}
 {"dst": ".cursor/skills/aid-config/SKILL.md", "profile": "cursor", "sha256": "99d9b74d3ea155ca5f63508db0b42f6210bb76ae5a4f7838041120e9f6334b8c", "src": "canonical/skills/aid-config/SKILL.md"}

@@ -66,7 +66,9 @@ SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 KB_DIR=".aid/knowledge"
 STATE="$KB_DIR/STATE.md"
 MANUAL_CHECKLIST_FILE="$KB_DIR/.manual-checklist.json"
-SECTION_TEMPLATES_DIR="$SCRIPT_DIR/../section-templates"
+# Section templates live under templates/knowledge-summary/, not next to the scripts.
+# SCRIPT_DIR = .claude/scripts/summarize  →  templates dir is 2 levels up + templates/knowledge-summary/section-templates.
+SECTION_TEMPLATES_DIR="$SCRIPT_DIR/../../templates/knowledge-summary/section-templates"
 
 # ---------------------------------------------------------------------------
 # Resolve active profile and target_diagrams
@@ -482,7 +484,7 @@ if [ "$MANUAL_RUN" -eq 1 ]; then
     [ -n "$CHECKLIST_TS" ] && echo "  Checklist completed: $CHECKLIST_TS"
 else
     echo "  ⚠️  manual-checklist.sh not yet run."
-    echo "     Run: bash .claude/scripts/summarize/manual-checklist.sh --html $HTML"
+    echo "     Run: bash canonical/scripts/summarize/manual-checklist.sh --html $HTML"
     echo "     Then re-run run-validators.sh to see your Human Grade."
 fi
 

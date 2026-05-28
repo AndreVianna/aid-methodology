@@ -69,30 +69,54 @@ This is the single state file for the **Discovery area** — persistent project 
 
 ## Knowledge Summary Status
 
-| Field | Value |
-|-------|-------|
-| Profile | agentic-pipeline |
-| Profile Source | auto-detected (cycle-1 /aid-summarize PROFILE state) |
-| Profile Confidence | high (score 15; second-place cli scored 6) |
-| Theme | default |
-| Minimum Grade | A |
-| Minimum Grade Source | `.aid/settings.yml` `review.minimum_grade` (no per-skill override) |
-| Machine Grade | Pending |
-| Machine Grade Source | `grade.sh` AUTO_POOL (D1/D2/L1/L2/H1/A1-5/C1-2/S2 = 73 pts) |
-| Human Grade | Pending (run `manual-checklist.sh` before APPROVAL) |
-| Human Grade Source | `manual-checklist.sh` MANUAL_POOL (K1+K2+V1, 30 pts) |
-| Overall Grade | Pending (= min of Machine and Human letter grades) |
-| User Approved | no |
-| Last Run | 2026-05-28T12:43:00Z |
-| Trigger Reason | initial (first /aid-summarize invocation; cycle-1 dogfood) |
-| Output | `.aid/knowledge/knowledge-summary.html` |
-| Output Size | 3.24 MB (3,394,537 bytes; 5,304 lines) |
-| Mermaid Version | 11.15.0 |
-| Mermaid Fetched At | 2026-05-28T12:30:00Z |
-| Mermaid Cached | `.aid/knowledge/.cache/mermaid.min.js` (sha256: 70137e77bb273bb2ef972b86e8b0400cca8be53cb25bfc45911a186dc98665de) |
-| Last Reviewed KB Date | 2026-05-28 (cycle-10 — A+ approved) |
-| Last Summary Date | N/A (first run) |
-| Writeback Status | pending (will be set by WRITEBACK state after APPROVAL) |
+> Format: key-value (one `**Field:**` per line) per `references/state-generate.md` spec.
+> Read by 5 scripts under `.claude/scripts/summarize/` (run-validators, stale-check,
+> preflight, spot-check-facts, writeback-state) — do NOT convert to a table.
+
+**Profile:** agentic-pipeline
+**Profile Source:** auto-detected (cycle-1 /aid-summarize PROFILE state)
+**Profile Confidence:** high (score 15; second-place cli scored 6)
+**Theme:** default
+**Minimum Grade:** A
+**Minimum Grade Source:** `.aid/settings.yml` `review.minimum_grade` (no per-skill override)
+**Machine Grade:** A+
+**Machine Grade Source:** `run-validators.sh` AUTO_POOL (D1/D2/L1/L2/H1/A1-5/C1-2/S2 = 73 pts; 73/73 perfect; diagram count 5/5 matches agentic-pipeline target)
+**Human Grade:** Pending (run `manual-checklist.sh` before APPROVAL)
+**Human Grade Source:** `manual-checklist.sh` MANUAL_POOL (K1+K2+V1, 30 pts)
+**Overall Grade:** Pending (= min of Machine and Human letter grades)
+**User Approved:** no
+**Last Run:** 2026-05-28T12:43:00Z
+**Trigger Reason:** initial (first /aid-summarize invocation; cycle-1 dogfood)
+**Output:** `.aid/knowledge/knowledge-summary.html`
+**Output Size:** 3.24 MB (3,394,537 bytes; 5,304 lines)
+**Mermaid Version:** 11.15.0
+**Mermaid Fetched At:** 2026-05-28T12:30:00Z
+**Mermaid Cached:** `.aid/knowledge/.cache/mermaid.min.js` (sha256: 70137e77bb273bb2ef972b86e8b0400cca8be53cb25bfc45911a186dc98665de)
+**Last Reviewed KB Date:** 2026-05-28 (cycle-10 — A+ approved)
+**Last Summary Date:** N/A (first run)
+**Writeback Status:** pending (will be set by WRITEBACK state after APPROVAL)
+
+### Findings (last validation — Machine)
+
+Cycle-1 VALIDATE · 2026-05-28 · Auto score 73/73 · Machine Grade A+ · 0 findings.
+
+| ID | Check | Status | Points |
+|----|-------|--------|--------|
+| D1 | Mermaid parse | pass | 20/20 |
+| D2 | Mermaid render | pass | 10/10 |
+| L1 | Anchor links (13/13 resolve) | pass | 5/5 |
+| L2 | Relative .md links (23/23 resolve) | pass | 5/5 |
+| H1 | HTML validity (html-validate: 0 errors) | pass | 5/5 |
+| A1 | Semantic landmarks (6/6) | pass | 5/5 |
+| A2 | ARIA on lightbox | pass | 3/3 |
+| A3 | Focus trap | pass | 5/5 |
+| A4 | Reduced motion | pass | 2/2 |
+| A5 | Visible focus | pass | 3/3 |
+| C1 | Light theme contrast (11/11) | pass | 4/4 |
+| C2 | Dark theme contrast (11/11) | pass | 4/4 |
+| S2 | Offline render (Mermaid inlined) | pass | 2/2 |
+
+Diagram count: 5 / 5 (profile: agentic-pipeline). Ledger: `.aid/.temp/review-pending/summarize.md`.
 
 ## Issues
 

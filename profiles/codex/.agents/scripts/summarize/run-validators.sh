@@ -66,7 +66,9 @@ SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 KB_DIR=".aid/knowledge"
 STATE="$KB_DIR/STATE.md"
 MANUAL_CHECKLIST_FILE="$KB_DIR/.manual-checklist.json"
-SECTION_TEMPLATES_DIR="$SCRIPT_DIR/../section-templates"
+# Section templates live under templates/knowledge-summary/, not next to the scripts.
+# SCRIPT_DIR = .claude/scripts/summarize  →  templates dir is 2 levels up + templates/knowledge-summary/section-templates.
+SECTION_TEMPLATES_DIR="$SCRIPT_DIR/../../templates/knowledge-summary/section-templates"
 
 # ---------------------------------------------------------------------------
 # Resolve active profile and target_diagrams
