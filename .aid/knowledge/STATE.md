@@ -11,6 +11,7 @@ changelog:
   - 2026-05-27: Initial frontmatter added during cycle-2 FIX Phase B (Q22)
   - 2026-05-27: Cycle-3 REVIEW results written (post-cycle-2 FIX validation)
   - 2026-05-27: Cycle-4 REVIEW results written (post-cycle-3 FIX validation)
+  - 2026-05-28: Cycle-6 REVIEW results written (post-cycle-5 FIX validation)
 ---
 
 # Discovery State
@@ -19,7 +20,7 @@ changelog:
 > **Status:** In Progress
 > **Current Grade:** (pending grade.sh)
 > **User Approved:** no
-> **Last KB Review:** 2026-05-27 (cycle-5)
+> **Last KB Review:** 2026-05-28 (cycle-6)
 > **Last Summary:** —
 
 This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary. One STATE.md per project's `.aid/knowledge/` directory. Absorbs what used to be `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`.
@@ -34,36 +35,36 @@ This is the single state file for the **Discovery area** — persistent project 
 
 | Path | Type | Accessible | Notes |
 |------|------|------------|-------|
-| None provided | — | — | No external documentation registered for cycle-1, cycle-2, cycle-3, or cycle-4 |
+| None provided | — | — | No external documentation registered for cycles 1-6 |
 
 ## KB Documents Status
 
 | # | Document | Status | Grade | Last Reviewed | Notes |
 |---|----------|--------|-------|---------------|-------|
-| 1 | project-structure.md | Reviewed | (pending grade.sh) | 2026-05-27 | CLEAN. Folder tree refresh still landed cleanly. |
-| 2 | external-sources.md | Reviewed | (pending grade.sh) | 2026-05-27 | [MINOR] minimal one-sentence body; [MINOR] empty contracts |
-| 3 | architecture.md | Reviewed | (pending grade.sh) | 2026-05-27 | CLEAN apart from [LOW] inline T3 line counts (P1 violation but ACCURATE) |
-| 4 | technology-stack.md | Reviewed | (pending grade.sh) | 2026-05-27 | [HIGH] propagates wrong test counts at lines 120, 124 — total=173 (actual 235); parse-recipe=51 (actual 113). Cycle-4 partial-fix regression |
-| 5 | module-map.md | Reviewed | (pending grade.sh) | 2026-05-27 | CLEAN. No new issues. |
-| 6 | coding-standards.md | Reviewed | (pending grade.sh) | 2026-05-27 | CLEAN. No new issues. |
-| 7 | schemas.md | Reviewed | (pending grade.sh) | 2026-05-27 | CLEAN. No new issues. |
-| 8 | pipeline-contracts.md | Reviewed | (pending grade.sh) | 2026-05-27 | CLEAN. Cycle-4 wrong-line cite at line 312 now references project-structure.md:167. |
-| 9 | integration-map.md | Reviewed | (pending grade.sh) | 2026-05-27 | Cycle-4 16->15 KB residue CLEAN. [LOW] NEW wrong-line cite at 74-75 (project-structure.md:153 is section header, not build-project-index.sh row at 167); [LOW] inline T3 line counts |
-| 10 | domain-glossary.md | Reviewed | (pending grade.sh) | 2026-05-27 | CLEAN apart from [LOW] inline T3 stats block at 364-365 (ACCURATE but P1 violation) |
-| 11 | test-landscape.md | Reviewed | (pending grade.sh) | 2026-05-27 | [HIGH] FACTUAL ERROR persists — "Total: 173" wrong (actual 235); parse-recipe=51 wrong (actual 113); line 88 "19 numbered units" wrong (actual 20). Doc claim line 136 "verified by running each suite end-to-end" is false. |
-| 12 | tech-debt.md | Reviewed | (pending grade.sh) | 2026-05-27 | CLEAN apart from [LOW] inline T3 counts at 209-211 + Metrics section 393-405 |
-| 13 | infrastructure.md | Reviewed | (pending grade.sh) | 2026-05-27 | [LOW] PR merge dates 152-156 (T4 carryover); [LOW] build-pipeline T3 inline line counts (all ACCURATE) |
-| 14 | repo-presentation.md | Reviewed | (pending grade.sh) | 2026-05-27 | CLEAN. Cycle-4 wrong-line cite at line 196 now references project-structure.md:133. |
-| 15 | feature-inventory.md | Reviewed | (pending grade.sh) | 2026-05-27 | [MINOR] intent/legend wording drift (Deferred vs Pending) — propagates to INDEX.md:73 |
+| 1 | project-structure.md | Reviewed | (pending grade.sh) | 2026-05-28 | [HIGH] Lines 183-184 wrong test counts (parse-recipe=38, writeback=39 — actual 113/69). Same cascade root cause as cycle-3/4/5; missed by every prior sweep |
+| 2 | external-sources.md | Reviewed | (pending grade.sh) | 2026-05-28 | [MINOR] one-sentence body; [MINOR] empty contracts (acceptable for no-docs variant) |
+| 3 | architecture.md | Reviewed | (pending grade.sh) | 2026-05-28 | CLEAN. Inline T3 line counts OOS per cycle-6 policy |
+| 4 | technology-stack.md | Reviewed | (pending grade.sh) | 2026-05-28 | CLEAN. Cycle-5 test-count fix landed correctly (235 total, all individual counts correct) |
+| 5 | module-map.md | Reviewed | (pending grade.sh) | 2026-05-28 | CLEAN. All test counts on lines 200, 201, 224, 236-240 match disk |
+| 6 | coding-standards.md | Reviewed | (pending grade.sh) | 2026-05-28 | CLEAN |
+| 7 | schemas.md | Reviewed | (pending grade.sh) | 2026-05-28 | CLEAN. Contracts at line 15 correctly say "15 active primary documents" |
+| 8 | pipeline-contracts.md | Reviewed | (pending grade.sh) | 2026-05-28 | CLEAN |
+| 9 | integration-map.md | Reviewed | (pending grade.sh) | 2026-05-28 | CLEAN. Cycle-4 16->15 KB residue fully cleared. Build-project-index.sh 368 line cite verified correct |
+| 10 | domain-glossary.md | Reviewed | (pending grade.sh) | 2026-05-28 | [HIGH] Line 63 "16 KB doc scaffolds" (actual 15); [MEDIUM] Line 73 "14 active" + "ui-architecture pending replacement" (actual 15 + replacement already exists) |
+| 11 | test-landscape.md | Reviewed | (pending grade.sh) | 2026-05-28 | CLEAN. Cycle-5 fix landed: 235 total, parse=113, writeback=69, all summary lines correct. Inline T3 OOS per cycle-6 policy |
+| 12 | tech-debt.md | Reviewed | (pending grade.sh) | 2026-05-28 | [LOW] Line 406 open-PRs snapshot stale (self-acknowledged). Inline T3 OOS per cycle-6 |
+| 13 | infrastructure.md | Reviewed | (pending grade.sh) | 2026-05-28 | [LOW] Line 158 branch protection "inferred unknown" (carryover). Build-pipeline T3 line counts OOS per cycle-6 |
+| 14 | repo-presentation.md | Reviewed | (pending grade.sh) | 2026-05-28 | CLEAN |
+| 15 | feature-inventory.md | Reviewed | (pending grade.sh) | 2026-05-28 | [MINOR] legend lists unused glyphs (❌/🚧); [MINOR] intent vs body enum drift |
 
 **Meta-documents:**
 
 | Document | Status | Grade | Notes |
 |----------|--------|-------|-------|
-| INDEX.md | Reviewed | (pending grade.sh) | [MINOR] feature-inventory entry wording drift (propagated from source doc) |
-| README.md | Reviewed | (pending grade.sh) | [HIGH] Lines 36/64 propagate wrong "173 total tests" / "parse=51" from test-landscape (actual 235/113). Cycle-4 revision-history row 64 records the WRONG fix as if correct. |
+| INDEX.md | Reviewed | (pending grade.sh) | CLEAN. Auto-generated 2026-05-28T03:45:41Z; matches per-doc intent fields |
+| README.md | Reviewed | (pending grade.sh) | [MEDIUM] Lines 16-17 banner staleness (says cycle-3; actual cycle-6). Revision-history table 1-13 correctly preserves history |
 | STATE.md (this file) | Reviewed | (pending grade.sh) | CLEAN. FM present; Q&A append-only narrative exempt per rubric |
-| metrics.md (generated) | Reviewed | (pending grade.sh) | [LOW] glossary term count 172 vs disk 195; [LOW] feature-inventory Shipped=12 vs body=11; [LOW] minor staleness (README.md=64 lines vs metrics=62) |
+| metrics.md (generated) | Reviewed | (pending grade.sh) | [LOW] Line 76 glossary term count 172 (actual 195 — build-metrics regex undercount, acknowledged in glossary footnote); [LOW] Lines 82-83 feature-inventory Shipped=12 (actual 11 — build-script over-count) |
 
 ## Knowledge Summary Status
 
@@ -83,148 +84,96 @@ This is the single state file for the **Discovery area** — persistent project 
 
 ## Issues
 
-> Issues found during cycle-5 REVIEW state. Severity tags drive grade.sh.
+> Issues found during cycle-6 REVIEW state. Severity tags drive grade.sh.
 > Full per-doc breakdown in `.aid/.temp/review-pending/discovery.md`.
-> Cycle-5 trajectory: cycle-1 E+ -> cycle-2 E- -> cycle-3 D -> cycle-4 pending
-> -> cycle-5 pending. Cycle-4 FIX partial-land: 4 of 6 items CLEAN; 2 of 6
-> (test-count cascade) regressed via fixer-reviewer grep-pattern mismatch
-> (wrote 173/51 instead of 235/113). KB now contains an internal contradiction:
-> tech-debt.md:210 has parse-recipe=113 (CORRECT); test-landscape +
-> technology-stack + README all say 51 (WRONG). Direct verification this cycle:
-> running each suite produced writeback=69, parse-recipe=113, compute=17,
-> delivery-gate=18, read-setting=18, TOTAL=235.
+> Cycle-6 trajectory: cycle-1 E+ -> cycle-2 E- -> cycle-3 D -> cycle-4 pending
+> -> cycle-5 pending -> cycle-6 pending. Cycle-5 FIX test-count cascade landed
+> CLEANLY in test-landscape + technology-stack + module-map + README +
+> tech-debt L1. Cycle-6 NEW residue: (a) project-structure.md:183-184 retains
+> wrong test counts (missed by every prior sweep); (b) domain-glossary.md:63
+> + :73 retain 16/14 doc-count residue. Both mechanically resolvable.
 
-### test-landscape.md (HIGH)
-- [HIGH] Lines 127-134 "Total test count: 130" is WRONG. Actual = 235 (verified by running all 5 suites this cycle). Per-suite: writeback=69 (claimed 39), parse-recipe=113 (claimed 38), compute-block-radius=17 (claimed 17 ✓), delivery-gate=18 (claimed 18 ✓), read-setting=18 (claimed 18 ✓). The doc explicitly claims (line 136) "authoritative counts verified by orchestrator running each suite (cycle-3)" — that claim is false. FM contract at line 12 says "5 test suites under tests/canonical/, no skill-level tests" — that part is correct.
+### project-structure.md (HIGH)
+- [HIGH] Lines 183-184: "Test files" table rows have wrong test counts. Line 183 says "38 tests for parse-recipe.sh" (actual 113 per `Tests passed: 113`). Line 184 says "39 tests for writeback-task-status.sh" (actual 69 per `Tests passed: 69`). Same factual error as the cycle-3/4/5 cascade — missed by every prior sweep.
 
-### technology-stack.md (HIGH, propagated)
-- [HIGH] Lines 120-125 Lint Commands section propagates the wrong per-suite test counts (39 writeback, 38 parse-recipe) — same factual error as test-landscape #001. Block claims "5 suites, 130 tests total" — actual 235.
+### domain-glossary.md (HIGH + MEDIUM)
+- [HIGH] Line 63: aid-config row says "Creates ... 16 KB doc scaffolds ..." — actual is 15 primary docs post-Q3 carve-out (cycle-1). Other docs with this residue were swept in cycle-3/4; this one was missed.
+- [MEDIUM] Line 73: Knowledge Base definition says "14 active standard markdown documents" (actual 15) AND "ui-architecture pending repo-presentation.md replacement" (actual: replacement landed cycle-1 FIX Phase B; repo-presentation.md exists at 305 lines).
 
-### README.md (HIGH, propagated)
-- [HIGH] Lines 36 + 62 propagate the wrong "130 total tests" claim from test-landscape #001. Cycle-3 revision-history row 9 specifically says "test-landscape.md corrected to 130 total tests" — that correction was wrong.
-- [LOW] Line 27: external-sources.md listed as "15 lines" — actual 16 lines (per metrics.md and `wc -l`). Cosmetic drift.
+### README.md (MEDIUM)
+- [MEDIUM] Lines 16-17: Top banner says "Discovery cycle: 3 (post-FIX)" and "Last KB review: 2026-05-27 (cycle-3 REVIEW complete · post-FIX cycle-4 pending)". Stale — actual current cycle = 6. Revision-history table (lines 54-66) correctly tracks all cycles; only the banner is stale.
 
-### integration-map.md (MEDIUM)
-- [MEDIUM] Lines 324, 325, 340: three places still say "all 16 KB docs" / "16 KB docs" / "map of all 16 KB". Actual = 15 primary KB docs (post-Q3 carve-out). Cycle-3 FIX caught pipeline-contracts.md:56 but missed integration-map.md.
-- [LOW] Lines 67, 183, 185-194: inline T3 line counts (project-index 1148, run_generator 87, render-script counts) — all ACCURATE.
-
-### repo-presentation.md (MEDIUM)
-- [MEDIUM] Lines 195-196: "full document is 1,070 lines per project-structure.md:57" — line 57 is "canonical/" header, NOT the 1,070 claim. Actual cite-targets are line 73, 133, or 302. Value correct, cited line wrong.
-- [MINOR] Line 202: "Version: 3.1 — May 2026" — T4 inline source-version anchor (acceptable per rubric exception).
-
-### pipeline-contracts.md (MEDIUM)
-- [MEDIUM] Lines 311-312: "build-project-index.sh (368 lines per project-structure.md:153)" — line 153 is the section header "### Largest helper scripts", not the build-project-index.sh row at line 167. Wrong-line cite. Value (368) correct.
-
-### tech-debt.md (LOW)
-- [LOW] Lines 57, 209-212: L1 evidence inlines T3 line counts (methodology 1,070, parse-recipe 1,002, writeback 627, state-execute 629). All accurate.
-- [LOW] Lines 393-405: Metrics section inlines T3 metrics (TODO/FIXME count 9, files >500 lines 4, files >1000 2, test-to-code ratio ~1.29x). All accurate but should defer to metrics.md.
-- [MINOR] H5 location field: "verify-claims" reference acceptable historical scope marker; could clarify "verify-claims (deleted, see H6)".
-
-### architecture.md (LOW)
-- [LOW] Lines 127, 136: "Total skill body lines: 2,242" — accurate; inline T3 P1 violation.
-
-### infrastructure.md (LOW)
-- [LOW] Lines 152-156: "Recent merge history" PR dates inline (T4 carryover from cycle-3; possibly load-bearing for Source Control narrative).
-- [LOW] Lines 89-100: build pipeline table inlines T3 line counts x 10 rows — all ACCURATE; P1 violation.
-- [MINOR] Line 158: "Branch protection on master: inferred unknown" — acceptable inference flag.
-
-### technology-stack.md (LOW additional)
-- [LOW] Inline T3 line counts in Languages + Build System + Dev Tools tables — all ACCURATE; P1 violations.
-
-### domain-glossary.md (LOW)
-- [LOW] Lines 77, 364, 365: inline T3 line counts (project-index 1148, glossary stats block) — all accurate.
-
-### feature-inventory.md (LOW)
-- [LOW] Intent says "(Shipped / Partial / Deferred)" — legend says "Shipped / Partial / Pending / In Progress" — wording drift.
-- [MINOR] Empty contracts.
-- [MINOR] Changelog entry T4 (exempt per rubric P6).
-
-### INDEX.md (LOW)
-- [LOW] Line 73: feature-inventory entry wording drift (Deferred vs Pending/In Progress) — propagated from feature-inventory.md intent.
-- [LOW] Lines 27-33: cosmetic self-entry (build-index.sh includes own output).
-
-### metrics.md (LOW, generated/build-verify)
-- [LOW] Line 76: Term count 172 vs disk 195 (build script regex undercounts).
+### metrics.md (LOW, generated)
+- [LOW] Line 76: Term count 172 vs disk 195 (build-metrics.sh regex undercounts; acknowledged in domain-glossary.md:364).
 - [LOW] Lines 82-83: Feature inventory "Shipped=12, Partial=1" — body has 11 emoji rows only; build script over-counts stray glyphs.
 
+### tech-debt.md (LOW)
+- [LOW] Line 406: open-PRs snapshot stale (self-acknowledged; PR #17 has merged since the comment was written).
+
+### infrastructure.md (LOW)
+- [LOW] Line 158: "Branch protection on master: inferred unknown" — honest unknown with ⚠️ flag. Could be resolved by querying `gh api`. Carryover.
+
+### feature-inventory.md (MINOR)
+- [MINOR] Line 17: legend lists "❌ Pending · 🚧 In Progress" glyphs not used in body.
+- [MINOR] Intent says "(Shipped / Partial / Deferred)"; legend says "(Shipped / Partial / Pending / In Progress)"; body uses ✅ only — 4-way enum drift.
+
 ### external-sources.md (MINOR)
-- [MINOR] One-sentence body unchanged (acceptable).
+- [MINOR] One-sentence body (acceptable for no-docs variant).
 - [MINOR] Empty contracts (cosmetic).
 
-### project-structure.md (CLEAN)
-- (no issues — folder tree refresh landed cleanly)
-
-### coding-standards.md (CLEAN)
-- (no issues — tests/skills/ cite fixed)
-
-### module-map.md (CLEAN)
-- (no issues — tests/skills/ cite fixed)
-
-### schemas.md (CLEAN)
-- (no residual issues)
-
-### STATE.md (CLEAN — meta, narrative exempt)
-- (structurally sound; Q&A append-only narrative exempt per rubric)
+### CLEAN documents (cycle-6)
+- architecture.md, technology-stack.md, module-map.md, coding-standards.md, schemas.md, pipeline-contracts.md, integration-map.md, test-landscape.md, repo-presentation.md, INDEX.md, STATE.md — no in-scope issues this cycle.
 
 ## Cross-Cutting Concerns
 
-- **CC1 — CLEAN [resolved cycle-3 verification]:** CLAUDE.md cite cascade fully resolved.
-- **CC2 — CLEAN [resolved cycle-3 verification]:** verify-claims.sh deletion cascade fully resolved.
-- **CC3 — CLEAN [resolved cycle-4 verification]:** tests/skills/ cites fully resolved in cycle-3 FIX (coding-standards.md:345 + module-map.md:281 both correctly reference deletion now).
-- **CC4 — CLEAN [resolved cycle-4 verification]:** project-structure.md folder tree block fully refreshed in cycle-3 FIX.
-- **CC5 — PARTIALLY RESOLVED:** tech-debt.md vs metrics.md severity self-count divergence now has a counting-methodology footnote at tech-debt.md:36 explaining the difference. Acceptable.
-- **CC6 — CLEAN [resolved cycle-4 verification]:** methodology line count drift (1,071 -> 1,070) fully eliminated from primary docs. 11 cites verified correct.
-- **CC7 — CLEAN [resolved cycle-4 verification]:** run_generator.py line count drift (86 -> 87) fully eliminated from primary docs. 11 cites verified correct.
-- **CC8 — CLEAN [resolved cycle-4 verification]:** README=374 stale cite resolved (now 388 across project-structure.md + repo-presentation.md).
-- **CC9 [LOW, carryover]:** Widespread P1 T3 inline violations (line counts inlined throughout primary docs). Most are ACCURATE against disk but principle-violating per tier-model.md. Should defer to metrics.md only. Status quo accepted as low-severity P1 mass-violation.
-- **CC10 [NEW, HIGH]:** test-landscape.md "Total: 130 tests" is a factual error (actual 235 by direct measurement). Propagates to technology-stack.md Lint Commands (lines 120-125) + README.md revision history (lines 36, 62). The cycle-3 FIX claim of "verified by running each suite" was itself unverified. Cascade across 3 docs.
-- **CC11 [NEW, MEDIUM]:** integration-map.md retains 3 stale "16 KB docs" references (lines 324, 325, 340). Sweep coverage gap from cycle-3 FIX (pipeline-contracts.md:56 was fixed; integration-map.md was missed). 15 primary docs is correct count post-Q3.
-- **CC12 [NEW, MEDIUM]:** Two new wrong-line cites surfaced: repo-presentation.md:196 cites project-structure.md:57 (wrong; should be 73, 133, or 302); pipeline-contracts.md:311-312 cites project-structure.md:153 (wrong; should be 167). Values correct in both cases, but cite-stability discipline broken.
+- **CC1-CC8 — CLEAN [carried from cycle-5].** Historical cascades resolved.
+- **CC10 (cycle-5 test-count cascade) — RESOLVED in 4 of 5 places**: test-landscape ✅, technology-stack ✅, README revision history ✅ (preserves historical narrative correctly), module-map ✅, tech-debt L1 ✅. **5th place (project-structure.md:183-184) MISSED** — re-flagged as cycle-6 NEW HIGH.
+- **CC11 (cycle-5 16-doc residue) — PARTIALLY RESOLVED**: integration-map cleared, pipeline-contracts cleared. **domain-glossary.md:63 + :73 MISSED** — re-flagged as cycle-6 NEW HIGH + MEDIUM.
+- **CC12 (cycle-5 wrong-line cites) — CLEAN**: repo-presentation.md:196 fixed; pipeline-contracts.md:312 fixed.
+- **CC13 [NEW, cycle-6]**: Two correctness errors slipped through 3 successive FIX sweeps. Pattern: orchestrator's grep-pattern for "cascade sweep" missed:
+  (a) project-structure.md test-file rows (the table cell format `| ... | 38 tests for parse-recipe |` may not match the simple `parse-recipe.sh.*38` pattern used in sweep);
+  (b) domain-glossary.md "16 KB doc scaffolds" string variant (different from "16 KB docs" residue swept in cycle-4).
+  **Recommendation:** cycle-6 FIX should grep for the broader patterns and verify across ALL 18 KB docs, not just the docs flagged by the cycle-5 ledger.
 
 ## Verification Spot-Checks
 
-> 32 spot-checks performed; 27 verified-true, 5 verified-false. Full list with
+> 31 spot-checks performed; 26 verified-true, 5 verified-false. Full list with
 > evidence in `.aid/.temp/review-pending/discovery.md` § Verification Spot-Checks.
-> 12 version verifications performed (well above 5-minimum).
+> 7 version/count verifications (above 5-minimum).
 > Failed checks excerpted below:
 
 | # | Claim | Doc | Verified | Evidence |
 |---|-------|-----|----------|----------|
-| 9 | test-landscape claims 130 total tests | test-landscape.md:134 | NO | actual sum verified by running all 5 suites = 235 |
-| 10 | writeback-task-status.sh = 39 tests | test-landscape.md:71/130, technology-stack.md:122 | NO | actual: "Tests passed: 69" |
-| 11 | parse-recipe.sh = 38 tests | test-landscape.md:87/131, technology-stack.md:125 | NO | actual: "Tests passed: 113" |
-| 17 | 16 KB docs (residue check) | integration-map.md:324/325/340 | RESIDUE | "16 KB" still cited; actual 15 primary |
-| -- | (Verification of cycle-3 fixes) | many | YES (clean) | 1,071->1,070 (10 cites), 86->87 (11 cites), 374->388 (2 cites), tests/skills/ (2 cites), folder tree refresh — all landed |
+| 9 | parse-recipe = 38 tests | project-structure.md:183 | NO | actual: "Tests passed: 113" |
+| 10 | writeback = 39 tests | project-structure.md:184 | NO | actual: "Tests passed: 69" |
+| 27 | aid-config creates 16 KB doc scaffolds | domain-glossary.md:63 | NO | actual: 15 primary docs post-Q3 |
+| 28 | KB has 14 active standard markdown | domain-glossary.md:73 | NO | actual: 15 primary per coding-standards.md:444, schemas.md:15, INDEX.md, README.md |
+| 29 | ui-architecture pending repo-presentation.md replacement | domain-glossary.md:73 | NO | actual: repo-presentation.md exists at 305 lines (landed cycle-1 FIX Phase B) |
+| 30 | Discovery cycle banner reflects current cycle | README.md:16 | NO | stale "cycle 3" vs actual 6 |
+| -- | Cycle-5 FIX landed (test counts 235/113/69/17/18 across 5 docs) | many | YES | test-landscape, technology-stack, module-map, README revision-history, tech-debt L1 all match disk |
 
-Verified-true sample:
-- CLAUDE.md = 25 lines ✓
-- README.md = 388 lines (post-fix) ✓
-- methodology = 1,070 (post-fix, verified 11 cites) ✓
-- run_generator.py = 87 (post-fix, verified 11 cites) ✓
-- tests/canonical/ has 5 suites ✓
-- tests/skills/ does not exist + cites correctly historical ✓
+Verified-true sample (subset of 26):
+- All 5 test suite counts via direct run ✓ (writeback=69, parse=113, compute=17, delivery=18, read=18; total=235)
+- methodology = 1,070 ✓ (11 cites verified clean)
+- run_generator = 87 ✓ (11 cites verified clean)
+- CLAUDE.md = 25 ✓
+- README.md (root) = 388 ✓ (project-structure + repo-presentation cites match)
+- 22 canonical agents ✓
+- 10 user-facing skills + 1 maintainer (aid-generate) ✓
+- 22 Codex agent TOMLs ✓
+- 5 recipes ✓
 - KB has 15 primary + 3 meta = 18 docs ✓
-- Skill body sum = 2,242 ✓
-- discovery-reviewer.md = 387 ✓
-- build-project-index.sh = 368 ✓
-- grade.sh = 141 ✓
-- recipes = 5 ✓
-- settings.yml = 81 ✓
-- EMISSION-MANIFEST = 152 ✓
-- recipes/README = 478 ✓
-- compute-block-radius.sh = 17 tests ✓
-- delivery-gate-aggregate.sh = 18 tests ✓
-- read-setting.sh = 18 tests ✓
-- project-index.md = 1,148 ✓
+- build-project-index.sh = 368, grade.sh = 141, EMISSION-MANIFEST = 152 ✓
+- parse-recipe.sh = 540, writeback-task-status.sh = 627, state-execute.md = 629 ✓
+- settings.yml = 81, recipes/README = 478 ✓
 - INDEX.md FM + AUTO-GEN marker ✓
 - metrics.md FM + AUTO-GEN marker ✓
-- Glossary term count = 195 (direct) ✓
-- Feature-inventory uses emoji checkmark ✓
 
 ## Q&A (Pending)
 
-> Open questions from cycle-1 (Q1-Q17), cycle-2 REVIEW (Q18-Q22). Cycle-3 + cycle-4 added
-> no new Q&A — all findings mechanically resolvable from disk; no human input needed.
+> Open questions from cycle-1 (Q1-Q17), cycle-2 REVIEW (Q18-Q22). Cycles 3, 4,
+> 5, 6 added no new Q&A — all findings mechanically resolvable from disk; no
+> human input needed.
 
 ### Q1
 - **Category:** Documentation / Project-State
@@ -417,6 +366,7 @@ Verified-true sample:
 | 3 | 2026-05-27 | D | /aid-discover (cycle-3) | Cycle-3 REVIEW. 0 [CRITICAL], 5 [HIGH], 14 [MEDIUM], 16 [LOW], 7 [MINOR]. Grade UP 3 steps from cycle-2 (E- -> D). Two CASCADE failures from cycle-2 are CLEAN: CC1 CLAUDE.md cite cascade fully resolved (only valid cites remain); CC2 verify-claims.sh fully resolved (no live cites, only correct narrative). NEW residue findings: (a) project-structure.md folder tree block (lines 39-87) is a stale snapshot missed by cycle-2 sweep — 5+ values wrong but CORRECT in same doc elsewhere; (b) 2 surviving stale tests/skills/ cites in coding-standards.md:345 + module-map.md:281; (c) tech-debt severity self-count vs metrics.md still unreconciled (cycle-2 CC8); (d) repo-presentation.md still says README=374; (e) methodology line count drift 1,071 vs 1,070 across 5+ docs; (f) run_generator.py 86 vs 87 across 3+ docs. Widespread P1 T3 inline violations (most ACCURATE but principle-violating). 30 spot-checks (23 true, 7 false). 0 new Q&A — all findings mechanically resolvable. Ledger at `.aid/.temp/review-pending/discovery.md`. |
 | 4 | 2026-05-27 | (pending grade.sh) | /aid-discover (cycle-4) | Cycle-4 REVIEW. 0 [CRITICAL], 3 [HIGH], 3 [MEDIUM], 15 [LOW], 7 [MINOR] = 28 findings. Cycle-3 FIX sweep was largely effective: all 5 cycle-3 HIGHs CLEAN; methodology 1,071->1,070 drift eliminated (10 cites verified); run_generator 86->87 drift eliminated (11 cites verified); README=374 fix landed (2 cites); tests/skills/ stale cites fully resolved; project-structure folder tree refreshed; tech-debt H4 severity reconciled; pipeline-contracts.md:56 16->15 fix landed. NEW issues: (a) test-landscape.md "Total: 130 tests" is WRONG — actual 235 (verified by running each suite this cycle); writeback=39 cited but actual 69; parse-recipe=38 cited but actual 113; propagates to technology-stack.md:120-125 and README.md:36+62 (3-doc cascade, 1 root cause); (b) integration-map.md retains 3 stale "16 KB docs" cites at lines 324/325/340 (cycle-3 sweep coverage gap); (c) repo-presentation.md:196 + pipeline-contracts.md:312 have wrong-line cites (value correct, line wrong). 32 spot-checks (27 true, 5 false) — 12 version verifications performed. 0 new Q&A — all findings mechanically resolvable. Ledger at `.aid/.temp/review-pending/discovery.md`. |
 | 5 | 2026-05-27 | (pending grade.sh) | /aid-discover (cycle-5) | Cycle-5 REVIEW. 0 [CRITICAL], 3 [HIGH], 0 [MEDIUM], 12 [LOW], 4 [MINOR] = 19 findings. Cycle-4 FIX partially landed: 4 of 6 cycle-4 items CLEAN (integration-map 16->15 fully cleared, repo-presentation.md:196 wrong-line fixed, pipeline-contracts.md:312 wrong-line fixed, writeback test count 39->69 correct). 2 of 6 REGRESSED in same root cause: test-landscape "Total" went 130->173 but actual is 235; parse-recipe went 38->51 but actual is 113 (verified by running each suite end-to-end). Cycle-4 fixer used different grep pattern than cycle-4 reviewer; fixer wrote wrong number; cycle-4 reviewer was right (235) but did not catch the wrong-fix at re-review. Internal KB contradiction now exists: tech-debt.md:210 has parse-recipe=113 (CORRECT) but test-landscape + technology-stack + README all say 51 (WRONG). NEW [LOW]: integration-map.md:74-75 wrong-line cite (same pattern as cycle-4 fixed ones). 22 spot-checks (16 true, 6 false) — 6 version verifications. 0 new Q&A — all findings mechanically resolvable. Ledger at `.aid/.temp/review-pending/discovery.md`. |
+| 6 | 2026-05-28 | (pending grade.sh) | /aid-discover (cycle-6) | Cycle-6 REVIEW. 0 [CRITICAL], 2 [HIGH], 2 [MEDIUM], 3 [LOW], 4 [MINOR] = 11 findings. Cycle-5 FIX landed CLEANLY for the main test-count cascade target: test-landscape ✅ (235 total, all 5 individual counts correct), technology-stack ✅, module-map ✅, README revision-history ✅, tech-debt L1 ✅ — all consistent with disk (writeback=69, parse=113, compute=17, delivery=18, read=18 verified by direct run). NEW HIGH residue: (a) project-structure.md:183-184 retains the wrong "38/39 tests" pre-cycle-5 values (missed by every prior sweep — pattern likely didn't match the table-cell format); (b) domain-glossary.md:63 retains "16 KB doc scaffolds" (same character of error as cycle-4's "16 KB docs" residue, different string variant). NEW MEDIUMs: (c) domain-glossary.md:73 KB definition has 2 staleness problems (14 vs 15 + ui-architecture pending status); (d) README.md:16-17 banner staleness (cycle-3 vs actual cycle-6). LOW carryovers: metrics regex undercount (known issue), infrastructure branch-protection unknown (carryover), tech-debt PR snapshot stale (self-acknowledged). 31 spot-checks (26 true, 5 false) — 7 count/version verifications. 0 new Q&A. Ledger at `.aid/.temp/review-pending/discovery.md`. |
 
 ## Summarization History
 
@@ -424,7 +374,7 @@ Verified-true sample:
 
 | # | Date | Grade | Profile | Mermaid | Output | Notes |
 |---|------|-------|---------|---------|--------|-------|
-| 1 | — | — | — | — | — | No summarize run on cycle-1, cycle-2, cycle-3, or cycle-4 (Discovery still in REVIEW) |
+| 1 | — | — | — | — | — | No summarize run on cycles 1-6 (Discovery still in REVIEW) |
 
 ## Calibration Log
 
@@ -443,3 +393,4 @@ Verified-true sample:
 | 2026-05-27 | discovery-reviewer | cycle-3 REVIEW | 15-25m | ~15m | inside band; 30 spot-checks (23 true, 7 false); 0 [CRITICAL] + 5 [HIGH] + 14 [MEDIUM] + 16 [LOW] + 7 [MINOR]; computed grade D per grade.sh (HIGH worst-tier + count 2-5); 0 new Q&A (all findings mechanically resolvable); cycle-2 CC1+CC2 cascades CLEAN; new residue: project-structure.md folder-tree block stale, 2 stale tests/skills/ cites, tech-debt count vs metrics unreconciled, widespread P1 T3 inline violations; ledger at `.aid/.temp/review-pending/discovery.md` |
 | 2026-05-27 | discovery-reviewer | cycle-4 REVIEW | 15-25m | ~12m | inside band; 32 spot-checks (27 true, 5 false) — 12 version verifications; 0 [CRITICAL] + 3 [HIGH] + 3 [MEDIUM] + 15 [LOW] + 7 [MINOR] = 28 findings; grade pending grade.sh (orchestrator will compute); 0 new Q&A — all findings mechanically resolvable; cycle-3 FIX sweep landed ~90% cleanly (all 5 cycle-3 HIGHs CLEAN, 1,071->1,070 + 86->87 + 374->388 drift fully eliminated, tests/skills/ stale cites resolved, folder tree refreshed, H4 severity reconciled). NEW HIGH: test-landscape.md "Total: 130" wrong (actual 235 by direct measurement); propagates to technology-stack.md + README.md. NEW MEDIUMs: integration-map.md "16 KB docs" residue (3 cites); 2 wrong-line cites. ledger at `.aid/.temp/review-pending/discovery.md` |
 | 2026-05-27 | discovery-reviewer | cycle-5 REVIEW | 15-25m | ~15m | inside band; 22 spot-checks (16 true, 6 false) — 6 version verifications; 0 [CRITICAL] + 3 [HIGH] + 0 [MEDIUM] + 12 [LOW] + 4 [MINOR] = 19 findings; grade pending grade.sh; 0 new Q&A; cycle-4 FIX partial-land: 4 of 6 clean, 2 of 6 regressed same root cause (test counts). Direct measurement this cycle by running each suite end-to-end: writeback=69, parse-recipe=113, compute=17, delivery-gate=18, read-setting=18 = TOTAL 235. Cycle-4 FIX wrote 173/51 instead. KB internal contradiction now: tech-debt.md:210 has 113 (right); test-landscape + tech-stack + README have 51 (wrong). Ledger at `.aid/.temp/review-pending/discovery.md` |
+| 2026-05-28 | discovery-reviewer | cycle-6 REVIEW | 15-25m | ~12m | inside band; 31 spot-checks (26 true, 5 false) — 7 count/version verifications; 0 [CRITICAL] + 2 [HIGH] + 2 [MEDIUM] + 3 [LOW] + 4 [MINOR] = 11 findings; grade pending grade.sh; 0 new Q&A — all findings mechanically resolvable; cycle-5 FIX test-count cascade landed CLEANLY in test-landscape + tech-stack + module-map + README revision-history + tech-debt L1 (all consistent with disk: writeback=69, parse=113, compute=17, delivery=18, read=18; total=235). NEW HIGH residue: (a) project-structure.md:183-184 test-file rows still say 38/39 (missed by every prior sweep — pattern likely didn't match table-cell format); (b) domain-glossary.md:63 "16 KB doc scaffolds" residue. NEW MEDIUMs: (c) domain-glossary.md:73 KB definition has 2 staleness items (14 vs 15 + ui-architecture pending status); (d) README.md:16-17 banner staleness (cycle-3 vs actual 6). Ledger at `.aid/.temp/review-pending/discovery.md` |

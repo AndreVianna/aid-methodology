@@ -180,8 +180,8 @@ Each script above has 4 byte-identical copies on disk: the canonical source, the
 
 | Path | Lines | Purpose |
 |------|-------|---------|
-| `tests/canonical/parse-recipe.sh` | 1,002 | Largest test file. 38 tests for `parse-recipe.sh` |
-| `tests/canonical/writeback-task-status.sh` | 535 | 39 tests for `writeback-task-status.sh` |
+| `tests/canonical/parse-recipe.sh` | 1,002 | Largest test file. 113 tests for `parse-recipe.sh` (runtime ~150s — needs timeout ≥180s) |
+| `tests/canonical/writeback-task-status.sh` | 535 | 69 tests for `writeback-task-status.sh` |
 | `tests/canonical/delivery-gate-aggregate.sh` | 535 | 18 tests for the delivery-gate aggregator |
 | `tests/canonical/compute-block-radius.sh` | 345 | 17 tests for BFS block-radius |
 | `tests/canonical/read-setting.sh` | 360 | `read-setting.sh` test suite |
@@ -287,7 +287,7 @@ Lite-path templates at `canonical/recipes/`, replicated into all 3 install trees
 | `delivery-plans/` | 1 | `task-template.md` |
 | `feedback-artifacts/` | 1 | `IMPEDIMENT.md` (116 lines) — escalation contract |
 | `kb-authoring/` | 5 | README, frontmatter-schema, principles, review-rubric, tier-model |
-| `knowledge-base/` | 15 | Templates for 14 active KB docs (pipeline-contracts, architecture, coding-standards, schemas, domain-glossary, external-sources, feature-inventory, infrastructure, integration-map, module-map, project-structure, tech-debt, technology-stack, test-landscape) + README |
+| `knowledge-base/` | 15 | Templates for the 14 standard-set KB docs (pipeline-contracts, architecture, coding-standards, schemas, domain-glossary, external-sources, feature-inventory, infrastructure, integration-map, module-map, project-structure, tech-debt, technology-stack, test-landscape) + README. The repo's 15th active doc — custom `repo-presentation.md` (replaces ui-architecture per Q3) — has no template here; it's a per-project customization, not a standard template (per Q16 methodology-flex tech-debt H5) |
 | `knowledge-summary/` | 19+ | HTML/CSS/JS for offline KB viewer (component-css.css 657 lines, lightbox.js 359 lines, html-skeleton.html, mermaid-init.js, design-tokens, mermaid-examples, prompt, plus 6 section-templates: auto-detect, cli, data-pipeline, library, microservices, web-app + accessibility-checklist + grading-rubric) |
 | `requirements/` | 1 | `requirements-template.md` |
 | `specs/` | 2 | `lite-spec-template.md`, `spec-template.md` |

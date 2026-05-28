@@ -441,7 +441,7 @@ Docs that describe a convention vs. what code actually does:
 |------------|---------------|----------------|-------|
 | Thin-Router SKILL.md ≤~360 lines | `coding-standards.md §7b`; `canonical/skills/*/SKILL.md` structure | YES — all 10 user-facing skills fit under the threshold; the largest is `aid-interview`. Per-file line counts live in `.aid/generated/metrics.md` / `project-index.md` | Confirmed |
 | 22 agents, 3 tiers | `README.md:178-198` | YES — confirmed via 22 `AGENT.md` files with `tier: large|medium|small` frontmatter | Confirmed |
-| 14 active KB docs (was 16) | `canonical/skills/aid-discover/SKILL.md:145-149` | YES — list updated in Q3 FIX (removed: security-model, ui-architecture; renamed: data-model → schemas, api-contracts → pipeline-contracts) | Confirmed |
+| 15 active KB docs (was 16) | `canonical/skills/aid-discover/SKILL.md:145-149` | YES — list updated in Q3 FIX: 14 retained from standard 16 (removed: security-model, ui-architecture; renamed: data-model → schemas, api-contracts → pipeline-contracts) + 1 new custom (repo-presentation, replaces ui-architecture) = 15 | Confirmed |
 | 8-task-type catalog | `canonical/skills/aid-execute/references/state-execute.md:6-16`; `canonical/templates/delivery-plans/task-template.md:3` | YES — both lists match: RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE | Confirmed |
 | 5 grade severity tags | `canonical/agents/reviewer/AGENT.md:54-62`; `canonical/scripts/grade.sh:5-7` | YES — [CRITICAL]/[HIGH]/[MEDIUM]/[LOW]/[MINOR] match in both | Confirmed |
 | 4 lite-path sub-paths | `canonical/templates/work-state-template.md:19`, `canonical/templates/recipe-template.md:90-93` | YES — sub-path enum present in both | Confirmed |

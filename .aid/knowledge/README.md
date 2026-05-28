@@ -13,8 +13,8 @@ changelog:
 # Knowledge Base — AID
 
 > **Project:** AID — AI Integrated Development
-> **Discovery cycle:** 3 (post-FIX)
-> **Last KB review:** 2026-05-27 (cycle-3 REVIEW complete · post-FIX cycle-4 pending)
+> **Discovery cycle:** 6 (post-FIX, awaiting cycle-7 REVIEW)
+> **Last KB review:** 2026-05-28 (cycle-6 REVIEW complete)
 > **Status:** 15 active KB documents (16 originally generated in cycle-1; 2 deleted in Q3 FIX — `security-model.md` merged into `coding-standards.md §11`, `ui-architecture.md` replaced by `repo-presentation.md` per Q3 user-decision; 2 renamed: `data-model.md → schemas.md`, `api-contracts.md → pipeline-contracts.md`).
 
 Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.

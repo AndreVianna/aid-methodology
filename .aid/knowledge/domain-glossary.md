@@ -60,7 +60,7 @@ changelog:
 
 | Term | Skill | Definition | Source |
 |------|-------|------------|--------|
-| **Config** | `aid-config` | Bootstrap skill; runs once before the pipeline. Creates `.aid/settings.yml` + 16 KB doc scaffolds + `AGENTS.md`/`CLAUDE.md` + `INDEX.md` placeholders + `DISCOVERY-STATE.md`. | `docs/glossary.md:23`, `methodology/aid-methodology.md:276-279` |
+| **Config** | `aid-config` | Bootstrap skill; runs once before the pipeline. Creates `.aid/settings.yml` + 15 KB doc scaffolds + `AGENTS.md`/`CLAUDE.md` + `INDEX.md` placeholders + `DISCOVERY-STATE.md`. | `docs/glossary.md:23`, `methodology/aid-methodology.md:276-279` |
 | **Summarize** | `aid-summarize` | Optional read-only skill; generates `knowledge-summary.html` from approved KB. Idempotent. WCAG-AA accessibility-first. | `methodology/aid-methodology.md:278-279`, `canonical/skills/aid-summarize/SKILL.md:1-30` |
 | **Generate** | `aid-generate` | Maintainer-only skill; renders `canonical/` → 3 profile install trees. Wrapped by `run_generator.py`. | `.claude/skills/aid-generate/SKILL.md:1-20` |
 
@@ -70,7 +70,7 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **Knowledge Base / KB** | `.aid/knowledge/` — 14 active standard markdown documents + 3 meta-documents + 1 generated pre-pass (started as 16; security-model merged into coding-standards §11; ui-architecture pending repo-presentation.md replacement). The gravitational center of AID — every phase reads from it; any phase can update it. | `methodology/aid-methodology.md:123-125`, `docs/glossary.md:11` |
+| **Knowledge Base / KB** | `.aid/knowledge/` — 15 active markdown documents (14 from the standard 16-doc set minus security-model + ui-architecture, plus the custom repo-presentation.md replacement) + 2 meta-documents (README, STATE) + 1 generated (INDEX) + 1 generated pre-pass (metrics + project-index in .aid/generated/). The gravitational center of AID — every phase reads from it; any phase can update it. | `methodology/aid-methodology.md:123-125`, `docs/glossary.md:11` |
 | **INDEX.md** | Meta — 2-3 line summary of every KB document; included in every task context for self-serve KB navigation. | `methodology/aid-methodology.md:131`, `methodology/aid-methodology.md:185-221` |
 | **README.md (KB)** | Meta — tracks completeness status (Complete / Partial / Missing) per KB document. | `methodology/aid-methodology.md:132`, `methodology/aid-methodology.md:154-167` |
 | **DISCOVERY-STATE.md** | Meta — discovery grade, Q&A entries, review history. Pre-FR2 name; post-FR2 consolidated into `.aid/knowledge/STATE.md`. | `methodology/aid-methodology.md:133`, `canonical/templates/discovery-state-template.md` |

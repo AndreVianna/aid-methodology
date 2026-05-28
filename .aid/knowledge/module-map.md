@@ -256,7 +256,7 @@ Organized into categories (per project-structure.md:273-282):
 | `delivery-plans/` | 1 | `task-template.md` — the 6-section task contract (Type / Source / Depends on / Scope / Acceptance Criteria) |
 | `feedback-artifacts/` | 1 | `IMPEDIMENT.md` — formal escalation contract for developer↔orchestrator |
 | `kb-authoring/` | 5 | `README.md`, `frontmatter-schema.md`, `principles.md` (P1-P7), `review-rubric.md`, `tier-model.md` (T1-T4) |
-| `knowledge-base/` | 15 | Templates for the 14 active KB documents + README (per `canonical/skills/aid-discover/SKILL.md:145-149` active doc list) |
+| `knowledge-base/` | 15 | Templates for the 14 standard-set KB docs (kept post-Q3 carve-out) + README. Note: this repo also has the custom `repo-presentation.md` (15 active total in `.aid/knowledge/`), but no template exists for it in `canonical/templates/knowledge-base/` since it's a per-project customization, not a standard template (per Q16 methodology-flex tech-debt H5) |
 | `knowledge-summary/` | 19+ | HTML/CSS/JS for the offline `knowledge-summary.html` viewer; `component-css.css` is the largest CSS file in the repo |
 | `requirements/` | 1 | `requirements-template.md` |
 | `specs/` | 2 | `lite-spec-template.md`, `spec-template.md` |
