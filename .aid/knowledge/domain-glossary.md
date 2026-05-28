@@ -62,7 +62,7 @@ changelog:
 |------|-------|------------|--------|
 | **Config** | `aid-config` | Bootstrap skill; runs once before the pipeline. Creates `.aid/settings.yml` + 16 KB doc scaffolds + `AGENTS.md`/`CLAUDE.md` + `INDEX.md` placeholders + `DISCOVERY-STATE.md`. | `docs/glossary.md:23`, `methodology/aid-methodology.md:276-279` |
 | **Summarize** | `aid-summarize` | Optional read-only skill; generates `knowledge-summary.html` from approved KB. Idempotent. WCAG-AA accessibility-first. | `methodology/aid-methodology.md:278-279`, `canonical/skills/aid-summarize/SKILL.md:1-30` |
-| **Generate** | `aid-generate` | Maintainer-only skill; renders `canonical/` → 3 profile install trees. Wrapped by `run_generator.py`. | `CLAUDE.md:28-32` |
+| **Generate** | `aid-generate` | Maintainer-only skill; renders `canonical/` → 3 profile install trees. Wrapped by `run_generator.py`. | `.claude/skills/aid-generate/SKILL.md:1-20` |
 
 ---
 
@@ -73,8 +73,8 @@ changelog:
 | **Knowledge Base / KB** | `.aid/knowledge/` — 14 active standard markdown documents + 3 meta-documents + 1 generated pre-pass (started as 16; security-model merged into coding-standards §11; ui-architecture pending repo-presentation.md replacement). The gravitational center of AID — every phase reads from it; any phase can update it. | `methodology/aid-methodology.md:123-125`, `docs/glossary.md:11` |
 | **INDEX.md** | Meta — 2-3 line summary of every KB document; included in every task context for self-serve KB navigation. | `methodology/aid-methodology.md:131`, `methodology/aid-methodology.md:185-221` |
 | **README.md (KB)** | Meta — tracks completeness status (Complete / Partial / Missing) per KB document. | `methodology/aid-methodology.md:132`, `methodology/aid-methodology.md:154-167` |
-| **DISCOVERY-STATE.md** | Meta — discovery grade, Q&A entries, review history. Pre-FR2 name; post-FR2 consolidated into `.aid/knowledge/STATE.md`. | `methodology/aid-methodology.md:133`, `canonical/scripts/kb/verify-claims.sh:21-25` |
-| **project-index.md** | Generated — file-inventory pre-pass for discovery sub-agents (1,149 lines in this repo). Built by `build-project-index.sh`. | `methodology/aid-methodology.md:134`, `.aid/knowledge/project-structure.md:29` |
+| **DISCOVERY-STATE.md** | Meta — discovery grade, Q&A entries, review history. Pre-FR2 name; post-FR2 consolidated into `.aid/knowledge/STATE.md`. | `methodology/aid-methodology.md:133`, `canonical/templates/discovery-state-template.md` |
+| **project-index.md** | Generated — file-inventory pre-pass for discovery sub-agents (1,148 lines in this repo). Built by `build-project-index.sh`. | `methodology/aid-methodology.md:134`, `project-structure.md` |
 | **14 KB docs (the active set)** | `project-structure.md`, `external-sources.md`, `architecture.md`, `technology-stack.md`, `module-map.md`, `coding-standards.md`, `schemas.md` (was `data-model.md`), `pipeline-contracts.md` (was `api-contracts.md`), `integration-map.md`, `domain-glossary.md`, `test-landscape.md`, `tech-debt.md`, `infrastructure.md`, `feature-inventory.md`. Removed: `security-model.md` (content in `coding-standards.md §11`), `ui-architecture.md` (pending `repo-presentation.md`). | `methodology/aid-methodology.md:136-151` |
 | **Tier 1 / Tier 2 / Tier 3 (context economy)** | Tier 1 = INDEX.md (always loaded). Tier 2 = one KB doc on demand. Tier 3 = exact `path:line` via citation. "RAG by convention" — no embeddings/vector DB. | `methodology/aid-methodology.md:211-219` |
 | **Context Feeding Strategy** | The protocol by which agents are given KB context: always include INDEX.md; orchestrator pre-selects 2-4 relevant KB docs; agent self-serves additional docs via INDEX. | `methodology/aid-methodology.md:179-219` |
@@ -98,7 +98,7 @@ changelog:
 | **known-issues.md** | Living issue log per work; created when the first issue is registered. Read by Plan, Execute, Deploy, Monitor. | `methodology/aid-methodology.md:698` |
 | **MONITOR-STATE.md** | The product-of-Monitor file: last-run log + active findings + resolved findings. | `methodology/aid-methodology.md:50`, `methodology/aid-methodology.md:519-520` |
 | **IMPEDIMENT-task-NNN.md** | Written by `aid-execute` when it discovers an assumption that doesn't hold. Has Type (wrong-assumption / missing-dependency / architecture-conflict / kb-gap), Options, Recommendation. The human decides. | `canonical/templates/feedback-artifacts/IMPEDIMENT.md:1-60`, `methodology/aid-methodology.md:663-680` |
-| **Q&A entry** | Universal loopback artifact appended to a STATE file. Schema: `### IQ{N}: [{Category}: {Impact}]` + Question / Context / Source / Suggested / Status. | `methodology/aid-methodology.md:652-661` |
+| **Q&A entry** | Universal loopback artifact appended to a STATE file. Schema (Style A): `### Q{N}` + sub-bullets `Category`, `Impact`, `Status`, `Context`, `Suggested`, `Answer` (per `coding-standards.md §12`). | `methodology/aid-methodology.md:652-661`, `coding-standards.md §12` |
 | **Revision History / Change Log** | Inline rev-tracking table on every artifact. Distinct from process state. | `methodology/aid-methodology.md:638-648`, `canonical/templates/work-state-template.md:11` |
 
 ---
@@ -122,7 +122,7 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **Lite Path** | Collapsed Interview → Specify → Plan → Detail into a single condensed flow; emits one work-root `SPEC.md` + `tasks/` (no features/, no REQUIREMENTS.md, no PLAN.md). | `canonical/skills/aid-interview/SKILL.md:48-61`, `CLAUDE.md:64-67` |
+| **Lite Path** | Collapsed Interview → Specify → Plan → Detail into a single condensed flow; emits one work-root `SPEC.md` + `tasks/` (no features/, no REQUIREMENTS.md, no PLAN.md). | `canonical/skills/aid-interview/SKILL.md:48-61` |
 | **Full Path** | The standard pipeline — all four design phases run separately, REQUIREMENTS.md + per-feature SPEC.md + PLAN.md + tasks/. | `canonical/templates/work-state-template.md:17-19` |
 | **Triage** | The 2-3 question deterministic routing state inside `aid-interview` (T1 = breadth, T2 = size, T3 = type). Conservative — any "large" signal routes to FULL. | `canonical/skills/aid-interview/references/state-triage.md:1-100` |
 | **workType** | The kebab-normalized type from T3: `bug-fix | small-refactor | single-doc | small-new-feature`. | `canonical/skills/aid-interview/references/state-triage.md:75-81` |
@@ -166,8 +166,8 @@ changelog:
 |------|------------|--------|
 | **Pool Dispatch** | The PD-0..PD-6 model used by `aid-execute` in delivery mode — continuous parallel pool replaces the serial task loop. | `canonical/skills/aid-execute/SKILL.md:193-211` |
 | **MaxConcurrent** | The pool's parallel capacity — sourced from `.aid/settings.yml` `execution.max_parallel_tasks` (default 5). | `canonical/templates/settings.yml:44`, `canonical/skills/aid-execute/SKILL.md:200` |
-| **Wait-for-any-completion** | Pool scheduling primitive — pool waits for any single task to finish before slotting the next. | `CLAUDE.md:60-63` |
-| **Failure Block Radius** | The transitive descendants of a failed task — all are marked Blocked. Computed by `compute-block-radius.sh` via BFS. | `canonical/scripts/execute/compute-block-radius.sh:1-58`, `CLAUDE.md:62` |
+| **Wait-for-any-completion** | Pool scheduling primitive — pool waits for any single task to finish before slotting the next. | `canonical/skills/aid-execute/SKILL.md:193-211` |
+| **Failure Block Radius** | The transitive descendants of a failed task — all are marked Blocked. Computed by `compute-block-radius.sh` via BFS. | `canonical/scripts/execute/compute-block-radius.sh:1-58` |
 | **Graceful Degradation** | When the host doesn't support `run_in_background: true`, pool falls back to MaxConcurrent=1 (sequential). User-visible notice + Calibration Log entry. | `canonical/skills/aid-execute/SKILL.md:198-211` |
 | **Capability Probe (PD-0)** | The early pool step that detects whether the host supports backgrounded dispatch. | `canonical/skills/aid-execute/SKILL.md:194-197` |
 | **EXECUTE-WAVE** | The named state inside `aid-execute` where pool dispatch runs. Includes AC4 Sub-unit Drill-down (re-rendered snapshot after each sub-unit transition). | `canonical/skills/aid-execute/SKILL.md:212-221` |
@@ -192,12 +192,12 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **State Machine (per-skill)** | Every `aid-*` skill exits after one state and re-enters on the next slash-command invocation (no auto-advance per IQ9). Each SKILL.md has a Dispatch table = state machine. | `CLAUDE.md:54-56`, `canonical/skills/aid-discover/SKILL.md:54-59` |
+| **State Machine (per-skill)** | Every `aid-*` skill exits after one state and re-enters on the next slash-command invocation (no auto-advance per IQ9). Each SKILL.md has a Dispatch table = state machine. | `canonical/skills/aid-discover/SKILL.md:54-59`, `coding-standards.md §8d` |
 | **FILESYSTEM IS THE ONLY SOURCE OF TRUTH** | Every state-detection block opens with this — skills never trust conversation memory; always read disk. | `canonical/skills/aid-execute/SKILL.md:112`, `canonical/skills/aid-discover/SKILL.md:128` |
 | **State Entry Line** | The `[State: NAME] — <description>` print + "you are here" ASCII state-map emitted on every state entry. | `canonical/skills/aid-discover/SKILL.md:166-200` |
-| **Dispatch Table** | The canonical state-machine table in every thin-router SKILL.md (State / Detail / Worker / Advance columns). The three Advance forms: Unconditional, Halt, Conditional. | `CLAUDE.md:54-56`, `canonical/skills/aid-execute/SKILL.md:137-148` |
-| **FR2 Area-STATE Consolidation** | The per-work `STATE.md` is the per-area state hub; legacy per-feature `STATE.md` + per-task `STATE.md` files are RETIRED. | `CLAUDE.md:74-76`, `canonical/templates/work-state-template.md:9` |
-| **Thin-Router SKILL.md Convention** | When SKILL.md grows past ~200 lines, extract per-state bodies into `references/state-{name}.md`; keep router as Dispatch table + Pre-flight + State Detection. Caps at ~360 lines. | `CLAUDE.md:48-51, 70-73`, `.aid/knowledge/project-structure.md:228-244` |
+| **Dispatch Table** | The canonical state-machine table in every thin-router SKILL.md (State / Detail / Worker / Advance columns). The three Advance forms: Unconditional, Halt, Conditional. | `canonical/skills/aid-execute/SKILL.md:137-148`, `coding-standards.md §8d` |
+| **FR2 Area-STATE Consolidation** | The per-work `STATE.md` is the per-area state hub; legacy per-feature `STATE.md` + per-task `STATE.md` files are RETIRED. | `coding-standards.md §7e`, `canonical/templates/work-state-template.md:9` |
+| **Thin-Router SKILL.md Convention** | When SKILL.md grows past ~200 lines, extract per-state bodies into `references/state-{name}.md`; keep router as Dispatch table + Pre-flight + State Detection. Caps at ~360 lines. | `coding-standards.md §7b`, `project-structure.md:228-244` |
 
 ---
 
@@ -250,7 +250,7 @@ changelog:
 | **Medium-tier (9 agents)** | orchestrator, researcher, developer, operator, data-engineer, performance, devops, tech-writer, ux-designer. | `.aid/knowledge/project-structure.md:253` |
 | **Small-tier (3 agents)** | simple-extractor, simple-formatter, simple-glob. | `.aid/knowledge/project-structure.md:254` |
 | **Discovery sub-agents (5)** | Scout, Architect, Analyst, Integrator, Quality — orchestrated in parallel by `aid-discover`. Each owns specific KB docs. | `canonical/skills/aid-discover/references/agent-prompts.md:1-143` |
-| **discovery-reviewer** | Grades discovery output adversarially. Largest agent file (402 lines per `.aid/knowledge/project-structure.md:256`). | `.aid/knowledge/project-structure.md:256` |
+| **discovery-reviewer** | Grades discovery output adversarially. Largest agent file (387 lines). | `canonical/agents/discovery-reviewer/AGENT.md` |
 
 ---
 
@@ -258,7 +258,7 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **canonical/** | Single source of truth for all install-tree content. Never edit profile trees directly — edit canonical and run `run_generator.py`. | `CLAUDE.md:50, 70-73`, `.aid/knowledge/project-structure.md:41-48` |
+| **canonical/** | Single source of truth for all install-tree content. Never edit profile trees directly — edit canonical and run `run_generator.py`. | `coding-standards.md §7a`, `project-structure.md:41-48` |
 | **Profile** | A host-tool target spec — `profiles/{claude-code,codex,cursor}.toml`. Defines output_root, frontmatter schema, model tiers, filename_map, capabilities. | `profiles/claude-code.toml:1-65`, `profiles/codex.toml:1-78` |
 | **Install Tree** | One of the per-profile output directories: `profiles/claude-code/.claude/`, `profiles/codex/{.codex,.agents}/`, `profiles/cursor/.cursor/`. | `canonical/EMISSION-MANIFEST.md:14-22` |
 | **Dogfood Tree** | The top-level `.claude/` in this repo — AID applied to itself. Byte-identical body content to the claude-code profile output. NOT subject to KB claims (KB only covers the 4-tree set: canonical + 3 profile trees). | `canonical/skills/aid-discover/SKILL.md:45-47`, `.aid/knowledge/project-structure.md:296-298` |
@@ -295,13 +295,13 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **Single-Branch Work** | For ANY `work-NNN`, commit to ONE persistent branch (off master); no per-task worktrees or branches. Root cause of PR #12 losing 63 commits. | `CLAUDE.md:75-78`, user-memory `feedback_single-branch-work.md` |
+| **Single-Branch Work** | For ANY `work-NNN`, commit to ONE persistent branch (off master); no per-task worktrees or branches. Root cause of PR #12 losing 63 commits. | `coding-standards.md §7f`; `tech-debt.md H1` history |
 | **work-NNN branch convention** | Persistent `work-NNN` branch (off master); PR `work-NNN → master` when ready. | user-memory `project_work-branch-convention.md` |
 | **Pre-flight Cleanup** | Orchestrator-only KB sweep before reviewer dispatch — line-count drift, off-by-1, ghost references, path/citation hygiene. These are housekeeping items; never grade them. | `canonical/skills/aid-discover/SKILL.md:31-52` |
 | **Quadruple Mirror** | Each unique canonical helper script has 4 byte-identical copies: canonical + dogfood `.claude/` + 3 profile trees. Inflates file counts. | `.aid/knowledge/project-structure.md:296` |
 | **kb-overhaul branch** | The current working branch in this repo (per git status). Off master. | git status, `.aid/knowledge/project-structure.md:14` |
-| **Cycle (discovery)** | One full pass through GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL. KB authoring uses cycle numbering (e.g., cycle-25). | recent commit messages e.g. "cycle-25 A+ — Pass-11 verified" |
-| **Pass (discovery cycle internals)** | A sub-iteration inside a cycle (e.g., "Pass-11"). | recent commit messages |
+| **Cycle (discovery)** | One full pass through GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL. KB authoring uses cycle numbering. | `STATE.md ## Review History` |
+| **Pass (discovery cycle internals)** | A sub-iteration inside a cycle. | `STATE.md ## Review History` |
 
 ---
 
@@ -361,6 +361,6 @@ changelog:
 
 ## Glossary Statistics
 
-- **Total terms defined:** ~150 (across 16 categorical groups above)
-- **Primary sources:** `methodology/aid-methodology.md` (1,071 lines), `docs/glossary.md` (76 lines), `CLAUDE.md` (118 lines), 11 canonical SKILL.md files, 22 canonical AGENT.md files, `canonical/EMISSION-MANIFEST.md` (152 lines), `canonical/templates/{settings.yml, work-state-template.md, subagent-heartbeat-protocol.md, long-wait-protocol.md, reviewer-dispatch.md, feedback-artifacts/IMPEDIMENT.md}`, helper scripts under `canonical/scripts/`
+- **Total terms defined:** ~195 (across 16 categorical groups above; per `metrics.md` generated count)
+- **Primary sources:** `methodology/aid-methodology.md` (1,070 lines), `docs/glossary.md` (76 lines), 11 canonical SKILL.md files, 22 canonical AGENT.md files, `canonical/EMISSION-MANIFEST.md` (152 lines), `canonical/templates/{settings.yml, work-state-template.md, subagent-heartbeat-protocol.md, long-wait-protocol.md, reviewer-dispatch.md, feedback-artifacts/IMPEDIMENT.md}`, helper scripts under `canonical/scripts/`
 - **Every entry cites at least one `path:line` source.** ⚠️ Inferred-from-code annotations are explicit where used.

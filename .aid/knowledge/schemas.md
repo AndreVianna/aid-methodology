@@ -77,7 +77,7 @@ the per-skill override → global default → hardcoded `--default` fallback
 **Source of truth:** `canonical/templates/discovery-state-template.md`.
 
 **Purpose:** the per-area state hub for the Discovery area (per FR2 area-state
-consolidation per CLAUDE.md:57-59). Absorbs former `DISCOVERY-STATE.md` +
+consolidation — see `coding-standards.md §7e`). Absorbs former `DISCOVERY-STATE.md` +
 `SUMMARY-STATE.md`.
 
 **Schema (Markdown, per `canonical/templates/discovery-state-template.md:1-89`):**
@@ -86,9 +86,9 @@ consolidation per CLAUDE.md:57-59). Absorbs former `DISCOVERY-STATE.md` +
 |---------|-------|-------------|
 | Top-level metadata (blockquote) | `Source:`, `Status:` (Initial / In Progress / Approved), `Current Grade:`, `User Approved:`, `Last KB Review:`, `Last Summary:` | 1 |
 | `## External Documentation` | Table: `Path | Type | Accessible | Notes` | 1 table |
-| `## KB Documents Status` | Table: `# | Document | Status | Grade | Last Reviewed | Notes` | **Exactly 16 rows** for the 16 standard KB docs (per `canonical/scripts/kb/verify-claims.sh:102-119` STANDARD_KB_FILES array) |
+| `## KB Documents Status` | Table: `# | Document | Status | Grade | Last Reviewed | Notes` | One row per active primary KB doc (currently 15 primary docs per `canonical/skills/aid-discover/SKILL.md:145-149`) |
 | `## Knowledge Summary Status` | Table: `Field | Value` with 10 fields (Profile, Profile Source, Profile Confidence, Theme, Machine Grade, Human Grade, User Approved, Last Run, Output, Mermaid Version, Mermaid Cached) | 1 table |
-| `## Q&A (Pending)` | Free-form block per Q entry: `Q{N}: [{Category}: {Impact}]` with `Question:`, `Context:`, `Suggested:`, `Status:`, `Answer:`, `Applied to:` | 0..N |
+| `## Q&A (Pending)` | One `### Q{N}` block per entry with sub-bullets: `Category`, `Impact`, `Status`, `Context`, `Suggested`, `Answer` (Style A per `coding-standards.md §12`) | 0..N |
 | `## Review History` | Append-only table: `# | Date | Grade | Source | Notes` | 1..N |
 | `## Summarization History` | Append-only table: `# | Date | Grade | Profile | Mermaid | Output | Notes` | 1..N |
 
@@ -154,7 +154,7 @@ delivery gate per `canonical/scripts/grade.sh:5-7`).
 | `source` | enum | YES | `hand-authored` / `generated` (per frontmatter-schema.md:62-65) |
 | `generator` | string | YES iff `source: generated` | Build-script name relative to `canonical/scripts/` (per frontmatter-schema.md:70-74) |
 | `intent` | folded string (YAML `|`) | YES | 1-4 sentences describing what the doc is FOR (per frontmatter-schema.md:76-89) |
-| `contracts` | list of strings | NO (defaults to `[]`) | Each entry is a structural cardinality assertion verified by `verify-claims.sh` (per frontmatter-schema.md:104-127) |
+| `contracts` | list of strings | NO (defaults to `[]`) | Each entry is a structural cardinality assertion validated by the `discovery-reviewer` in REVIEW state (per `canonical/agents/discovery-reviewer/AGENT.md`; spec at frontmatter-schema.md:104-127) |
 | `changelog` | list of dated entries | NO (defaults to `[]`) | Free-form ISO-dated notes; exempt from review (per frontmatter-schema.md:129-147) |
 
 **Parsing rules** (per frontmatter-schema.md:161-169):
@@ -384,7 +384,7 @@ The dataclasses mirror this schema 1:1 in `.claude/skills/aid-generate/scripts/p
 
 **Source of truth:** `canonical/templates/generated-files.txt`.
 
-**Purpose:** registry of every file in `.aid/generated/` with its build command. Consumed by `/aid-discover` FIX state (refresh-all at end of cycle per P3) and by `canonical/scripts/kb/verify-claims.sh` (freshness check).
+**Purpose:** registry of every file in `.aid/generated/` with its build command. Consumed by `/aid-discover` FIX state (refresh-all at end of cycle per P3) and by the `discovery-reviewer` in REVIEW state (freshness check).
 
 **Format** (per `generated-files.txt:3-13`):
 
@@ -411,7 +411,7 @@ This is the closest the project has to a "relationship diagram" — each work it
 erDiagram
     PROJECT ||--|| SETTINGS_YAML : "configures"
     PROJECT ||--|| DISCOVERY_STATE : "tracks"
-    DISCOVERY_STATE ||--o{ KB_DOC : "lists 16 standard"
+    DISCOVERY_STATE ||--o{ KB_DOC : "lists active primary docs"
     PROJECT ||--o{ WORK : "contains"
     WORK ||--|| WORK_STATE : "tracks"
     WORK ||--|| REQUIREMENTS : "produces"
@@ -446,7 +446,7 @@ erDiagram
 | **Migrations** | N/A — no DB. Document schema changes are tracked via the per-doc `changelog:` frontmatter field (per `frontmatter-schema.md:129-147`) + KB doc cycle history in `STATE.md ## Review History`. |
 | **Indexes** | N/A — no DB. The closest analog is `.aid/generated/INDEX.md` — an agent-facing RAG navigation index built by `canonical/scripts/kb/build-index.sh` from each KB doc's `intent:` frontmatter. |
 | **Soft Deletes** | N/A — no DB. The emission-manifest's `removed_dst` set serves a related purpose: only paths previously emitted by the generator are eligible for deletion (per `EMISSION-MANIFEST.md:70-83`); user-created files are NEVER touched. |
-| **Validation** | Three mechanisms: (1) `canonical/scripts/kb/verify-claims.sh` validates KB frontmatter + cited file:line + 16-doc presence + generated-files freshness; (2) `.claude/skills/aid-generate/scripts/profile.py:validate()` validates profile TOML; (3) `parse-recipe.sh --validate` validates recipe front-matter + body. |
+| **Validation** | Three mechanisms: (1) `discovery-reviewer` sub-agent (in `/aid-discover REVIEW`) validates KB frontmatter + cited file:line + doc presence + generated-files freshness; (2) `.claude/skills/aid-generate/scripts/profile.py:validate()` validates profile TOML; (3) `parse-recipe.sh --validate` validates recipe front-matter + body. |
 
 ---
 

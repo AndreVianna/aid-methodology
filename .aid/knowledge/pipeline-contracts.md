@@ -113,7 +113,7 @@ These are the only "endpoints" the user invokes. Each is an AID skill installed 
 
 ### Universal Subagent-Dispatch Brief (the "Reviewer-Dispatch Protocol")
 
-Every skill that dispatches a reviewer subagent MUST pass a brief with EXACTLY 5 sections
+Every skill that dispatches a reviewer subagent MUST pass a brief with EXACTLY 6 sections
 in this order:
 
 1. `ARTIFACTS UNDER REVIEW:` — explicit file list (no wildcards beyond the artifact set)
@@ -292,18 +292,16 @@ The Reviewer agent produces a structured issue list with two-tag classification 
 - **Test suite:** 113 tests at `tests/canonical/parse-recipe.sh`
 - **Source:** `canonical/scripts/interview/parse-recipe.sh:1-100`
 
-### `bash canonical/scripts/kb/verify-claims.sh`
+### KB Citation Validation (`/aid-discover REVIEW`)
 
 - **Purpose:** Validate KB citations against disk (the "anti-drift" pass)
-- **Flags:** `--kb PATH` (default `.aid/knowledge`), `--root PATH` (default `.`),
-  `--format human|tsv`, `--include-state` (also verify citations in `STATE.md`),
-  `--quiet`
-- **Exit codes:** `0` all passed; `1` at least one broken citation or count drift;
-  `2` usage error / KB dir missing (`canonical/scripts/kb/verify-claims.sh:28-32`)
-- **Adopter-aware:** discovers script's own install-tree root so prefix resolution
-  works in `canonical/`, `.claude/scripts/kb/`, `.agents/scripts/kb/`,
-  `.cursor/scripts/kb/` contexts (`canonical/scripts/kb/verify-claims.sh:35-43`)
-- **Source:** `canonical/scripts/kb/verify-claims.sh:1-60`
+- **Mechanism:** The `discovery-reviewer` sub-agent (dispatched in `/aid-discover REVIEW`
+  state) performs frontmatter compliance checks, cited `file:line` existence verification,
+  KB-file presence, and generated-files freshness. This semantic validation replaced
+  the former `verify-claims.sh` script (deleted in cycle-1 per `tech-debt.md H6`).
+- **Agent:** `canonical/agents/discovery-reviewer/AGENT.md`
+- **Output:** ledger at `.aid/.temp/review-pending/discovery.md` with per-finding severity
+  tags; grade computed by `canonical/scripts/grade.sh`
 
 ### `bash canonical/scripts/kb/build-project-index.sh`
 
@@ -478,19 +476,25 @@ Recommendation. The type determines the resolution loop:
 ### Q&A Entry Contract (universal loopback artifact)
 
 Every design-phase loop records the gap as a Q&A entry appended to the relevant phase's
-STATE file. Required schema:
+STATE file. Required schema (Style A per `coding-standards.md §12`):
 
+```markdown
+### Q{N}
+- **Category:** {category}
+- **Impact:** {High|Medium|Low|Required}
+- **Status:** Pending | Answered | Skipped
+- **Context:** {why this question matters}
+- **Suggested:** {best-guess answer if inferrable, or "—"}
 ```
-### IQ{N}: [{Category}: {Impact}]
-**Question:** {what needs to be resolved}
-**Context:** {why — what the calling phase found}
-**Source:** {calling phase, e.g. /aid-plan work-001}
-**Suggested:** {answer if inferrable, or —}
-**Status:** Pending
+
+After user response, append:
+```markdown
+- **Answer:** {actual answer text or decision}
+- **Applied to:** {file path or task-id where the answer was incorporated}
 ```
 
 The next run of the owning phase detects the pending entry and resolves it in Q&A mode.
-- **Source:** `methodology/aid-methodology.md:652-661`
+- **Source:** `coding-standards.md §12`; `methodology/aid-methodology.md:652-661`
 
 ---
 
@@ -569,13 +573,13 @@ connections, no auth tokens stored anywhere in the repo.
 
 ## Discrepancies (doc vs code)
 
-- **`.aid/work-001-aid-lite/test-reports/e2e-*.sh` test runners** — `CLAUDE.md:35-36`
-  references two test runners (35 + 38 tests) that are NOT present in the project
-  index. `.aid/knowledge/project-structure.md:177-178` notes the work-001 directory was
-  apparently retired or never committed to the `kb-overhaul` branch. ⚠️ Contract
-  documented but no script present.
-- **`run_generator.py` references `.aid/work-002-canonical-generator/`** as a verify-report
-  sink (`.aid/knowledge/project-structure.md:312`) — also absent from the project index.
+- **e2e test runners** — Per Q1 resolution (cycle-1): `.aid/work-001-aid-lite/test-reports/`
+  was never a correct home for canonical test scripts; those runners have been removed from
+  documentation. The 5 canonical test suites in `tests/canonical/` are the complete test
+  contract (see `tests/README.md`).
+- **`run_generator.py` verify-report sink** — Per Q2 resolution (cycle-1): `run_generator.py`
+  now passes `report_path=None` and no longer writes to `.aid/work-002-canonical-generator/`.
+  The directory is not required.
 - **`profiles/codex.toml` `hooks`, `stop_hook_autocontinue` capabilities** — both marked
   `TODO: confirm` (`profiles/codex.toml:75, 78`); contract values present but unverified
   against the vendor docs.

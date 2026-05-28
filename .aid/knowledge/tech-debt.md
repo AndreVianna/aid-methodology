@@ -18,7 +18,7 @@ changelog:
 > **Status:** Complete
 > **Last Updated:** 2026-05-27
 
-> This document is a diagnosis, not a sprint plan. Severity tags use the form `[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` so `build-metrics.sh` (see `canonical/templates/knowledge-base/tech-debt.md:19-23`) can tally them.
+> This document is a diagnosis, not a sprint plan. Severity tags use the form `[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` so `build-metrics.sh` (see `canonical/templates/knowledge-base/tech-debt.md:17`) can tally them.
 
 ---
 
@@ -40,16 +40,16 @@ changelog:
 | ID | Type | Description | Location | Risk | Effort | Priority |
 |----|------|-------------|----------|------|--------|----------|
 | C1 | Supply Chain | `fetch-mermaid.sh` fetches `mermaid@latest` from npm registry with no version pin and no SHA verification | `canonical/scripts/summarize/fetch-mermaid.sh:16-18, 41, 59-73` | Critical | S | P1 |
-| H1 | Doc Drift / Untestable Claim | CLAUDE.md cites two e2e test runners in `.aid/work-001-aid-lite/test-reports/` that do not exist on disk on `kb-overhaul` branch; their 35+38 = 73 tests inflate the "297 expected" total | `CLAUDE.md:48-49`; disk: `.aid/work-001-aid-lite/` missing | High | S | P1 |
-| H2 | No CI | Zero pre-merge automation; every test/verify pass is manual | repo-wide; documented at `CLAUDE.md:52` | High | M | P2 |
+| H1 | Doc Drift / Untestable Claim | Older docs cited two e2e test runners in `.aid/work-001-aid-lite/test-reports/` that do not exist on disk; per Q1 resolution (cycle-1) those runners were never correct canonical artifacts and have been removed from documentation | `tests/README.md` (the current contract); disk: `.aid/work-001-aid-lite/` correctly absent | High | S | P1 |
+| H2 | No CI | Zero pre-merge automation; every test/verify pass is manual | repo-wide | High | M | P2 |
 | H3 | Supply Chain (sibling of C1) | No language lock files exist (`package-lock.json`, `requirements.txt`, etc.) — vulnerability scanning is impossible | repo-wide; absence confirmed in `project-structure.md:96` | High | M | P2 |
-| H4 | Crud Outputs | Skills/scripts audit needed: unnecessary write-only outputs (reports/logs/intermediate files) not consumed by any downstream step | `run_generator.py:76,83` (known instance); scope: 10 user-facing skills + 11 generators/builders | High | M | P2 |
+| H4 | Crud Outputs (partially resolved) | Skills/scripts audit needed: unnecessary write-only outputs (reports/logs/intermediate files) not consumed by any downstream step — known instance fixed in cycle-1 (Q2: report_path=None); broader audit remains | scope: 10 user-facing skills + 11 generators/builders | Medium | M | P3 |
 | H5 | Methodology Flexibility | Methodology assumes rigid 16-doc KB set; meta-repos / docs-only / library-only projects need flexibility | methodology spec, aid-discover, verify-claims, canonical/templates/knowledge-base/ | High | L | P2 |
 | H6 | verify-claims.sh deletion follow-up | verify-claims.sh deleted; discovery-reviewer now owns FM+contract verification semantically — reviewer prompt coverage must be confirmed explicitly | cycle-1 inline refactor; canonical/agents/discovery-reviewer/AGENT.md | High | S | P2 |
 | M1 | Doc Drift | `run_generator.py` writes VERIFY-4a/4b reports to `.aid/work-002-canonical-generator/` which does not exist; the script either crashes on first invocation or silently creates the dir without recording its purpose | `run_generator.py:76, 83`; disk: `.aid/work-002-canonical-generator/` missing | Medium | S | P2 |
 | M2 | Doc Drift (RESOLVED) | Project name expansion drift — all four variants now canonicalized to "AI Integrated Development" | resolved 2026-05-27 commit 82a5bd5 | Medium | XS | — |
 | M3 | Gitignore Fragility | `.aid/.temp/` is excluded only by the `*.temp` glob at `.gitignore:21`, not an explicit dir entry — a rename to e.g. `.aid/scratch/` would silently start tracking it | `.gitignore:18-21` | Medium | XS | P3 |
-| M4 | Test Discoverability | No aggregator script: each of the 5 remaining test suites must be invoked manually with the right path; no way to run "all tests" with one command | `CLAUDE.md:42-49` (lists each separately); no `Makefile`/`task`/`npm test` | Medium | S | P3 |
+| M4 | Test Discoverability | No aggregator script: each of the 5 remaining test suites must be invoked manually with the right path; no way to run "all tests" with one command | `tests/README.md` (lists each separately); no `Makefile`/`task`/`npm test` | Medium | S | P3 |
 | M5 | Q&A Schema | Two Q&A entry schemas coexist; canonical decided = Style A but work-state-template.md + methodology spec + aid-interview not yet migrated | `canonical/templates/work-state-template.md`, `methodology/aid-methodology.md`, aid-interview skill | Medium | S | P3 |
 | M6 | Test Refactor | 5 remaining canonical/ test suites need: behavior-named files, shared test-utility extraction, consistent failure messages, optional aggregator | `tests/canonical/*.sh` (5 suites) | Medium | M | P3 |
 | L1 | Source Bloat | 5 files >500 lines under canonical/methodology (largest: `methodology/aid-methodology.md` 1,071, `tests/canonical/parse-recipe.sh` 1,002, `canonical/scripts/execute/writeback-task-status.sh` 627, `canonical/skills/aid-execute/references/state-execute.md` 629) | various | Low | M | P3 |
@@ -83,27 +83,19 @@ changelog:
 
 ---
 
-### [HIGH] H1 — CLAUDE.md cites e2e test runners that do not exist on disk
+### [HIGH] H1 — E2E test runners cited in older docs did not exist on disk (partially resolved)
 
 **Type:** Documentation Drift / Untestable Claim
 **Evidence:**
-- `CLAUDE.md:48-49` instructs maintainers to run:
-  ```
-  bash .aid/work-001-aid-lite/test-reports/e2e-two-tier-runner.sh   # 35 tests
-  bash .aid/work-001-aid-lite/test-reports/e2e-lite-path-runner.sh  # 38 tests
-  ```
-- `ls .aid/work-001-aid-lite/` returns `No such file or directory`.
-- `CLAUDE.md:42` claims "297/297 expected" but the 73 tests from these two runners are included in that total. Net: even a fully-passing local run would report at most 224/297 with no explanation for the missing 73.
-- Likely root cause: PR #17 "remove work" (merged 2026-05-27 per git log) cleaned out the `.aid/work-001-aid-lite/` directory but `CLAUDE.md` was not updated.
+- Older documentation cited `.aid/work-001-aid-lite/test-reports/e2e-two-tier-runner.sh` (35 tests) and `e2e-lite-path-runner.sh` (38 tests) as part of the canonical test suite.
+- Per Q1 resolution (cycle-1): "No canonical file should be in the work-* folder." Those runners were never correctly placed there; they were removed from documentation.
+- Current test contract: 5 canonical suites in `tests/canonical/` (see `tests/README.md`); `.aid/work-001-aid-lite/` is correctly absent.
 
-**Impact:** Confuses new maintainers; makes the test-count claim falsifiable in a misleading way; reduces trust in CLAUDE.md as a source of truth.
+**Impact (historical):** Inflated "297 expected" total by 73 phantom tests. Confusingly misleading to new contributors.
 
-**Fix recipe (estimated S effort):**
-1. Either restore the two runner scripts (preferred if they encode E2E logic worth keeping) OR delete `CLAUDE.md:48-49` and update the count on `CLAUDE.md:42` to `224/224 expected`.
-2. If the runners are restored, ensure their test counts are re-validated (the 35/38 numbers may be stale).
-3. Run the discovery-reviewer (via `/aid-discover REVIEW`) after the edit to catch any other broken citations; `verify-claims.sh` was deleted in cycle-1 (see H6).
+**Remaining action:** If E2E test coverage is wanted in the project, relocate scripts to `tests/canonical/` or `tests/e2e/`. See H2 (no CI) — adding E2E coverage is most impactful once H2 is addressed.
 
-**Owner suggestion:** the maintainer who ran PR #17; the choice between restore-vs-delete is editorial.
+**Owner suggestion:** maintainer.
 
 ---
 
@@ -112,12 +104,11 @@ changelog:
 **Type:** Process / Automation
 **Evidence:**
 - No `.github/`, no `.gitlab-ci.yml`, no `Jenkinsfile`, no `azure-pipelines.yml`, no `.circleci/`, no `.travis.yml`, no `bitbucket-pipelines.yml` anywhere in the repo (confirmed by file-system search at scout time).
-- `CLAUDE.md:52` explicitly acknowledges: *"There is no CI — see `tech-debt.md` H2."* (this is the canonical H2 reference.)
 
 **Impact:** Every quality gate (canonical helper tests, render-determinism, KB claim verification) is human-discretionary. PR reviewers cannot rely on green-build signal. A regression in `parse-recipe.sh` or `writeback-task-status.sh` only surfaces if the maintainer remembers to run the suite locally before merging.
 
 **Fix recipe (estimated M effort):**
-1. Add `.github/workflows/test.yml` that on PR runs (in order): the 5 `tests/canonical/*.sh` suites (6 pre-Q6-cleanup, 3 deleted in cycle-1), `python .claude/skills/aid-generate/scripts/verify_deterministic.py`, and the discovery-reviewer semantic check (verify-claims.sh deleted; see H6).
+1. Add `.github/workflows/test.yml` that on PR runs (in order): the 5 `tests/canonical/*.sh` suites, `python .claude/skills/aid-generate/scripts/verify_deterministic.py`, and the discovery-reviewer semantic check (see H6).
 2. Add a `Makefile` target `make test` that invokes the same list, so local + CI use the same entrypoint (also addresses M4).
 3. Pin GitHub-hosted runner OS (`ubuntu-24.04` not `ubuntu-latest`) for reproducibility.
 4. Cache the `mermaid.min.js` between runs once C1 is fixed (so the registry lookup is bypassed).
@@ -146,23 +137,17 @@ changelog:
 
 ---
 
-### [MEDIUM] M1 — `run_generator.py` writes to `.aid/work-002-canonical-generator/` which does not exist
+### [MEDIUM] M1 — `run_generator.py` wrote to `.aid/work-002-canonical-generator/` — RESOLVED
 
 **Type:** Documentation / Path Drift
-**Evidence:**
-- `run_generator.py:76` and `:83` pass `.aid/work-002-canonical-generator/verify-{4a,4b}-report.json` as the report path to `run_verify()` / `run_advisory()`.
-- `ls .aid/work-002-canonical-generator/` returns `No such file or directory`.
-- The underlying `verify_deterministic.py` / `verify_advisory.py` may auto-create the parent or may fail — not verified in this pass without running the generator.
+**Status:** Resolved in cycle-1 (Q2 resolution): `run_generator.py` now passes `report_path=None` to `run_verify()` / `run_advisory()`. No file writes occur; the directory is not created.
+**Evidence (historical):**
+- `run_generator.py:76` and `:83` previously passed `.aid/work-002-canonical-generator/verify-{4a,4b}-report.json` as report paths. Those JSON files were write-only — no downstream step read them.
+- Surfaced user principle: skills and scripts should not emit files nobody reads (see feedback memory `no-crud-outputs`).
 
-**Impact:** On a fresh clone the first `python run_generator.py` invocation may either crash on missing parent dir, or silently create a stale-named directory the project no longer documents anywhere else. Either way the path string is a debt artifact from a removed work directory.
+**Impact (historical):** On fresh clone, first build would have silently created the directory or failed.
 
-**Fix recipe (estimated S effort):**
-1. Decide canonical report location: `.aid/generated/verify-reports/` is consistent with the existing `.aid/generated/project-index.md` pattern.
-2. Update `run_generator.py:76, 83` to the new path.
-3. Add the parent dir to `.gitignore` if reports shouldn't be committed (probably).
-4. Run `python run_generator.py` once to confirm clean execution.
-
-**Owner suggestion:** maintainer.
+**Owner suggestion:** n/a — resolved.
 
 ---
 
@@ -171,7 +156,7 @@ changelog:
 **Type:** Documentation Drift
 **Status:** Resolved 2026-05-27 (cycle-1 Phase A commit 82a5bd5: acronym canonicalized to "AI Integrated Development" across CLAUDE.md, README, methodology spec, docs/, KB docs)
 **Evidence (historical):**
-- `CLAUDE.md:5` said *"AID (Agentic Implementation Discipline)"*.
+- Older CLAUDE.md text said *"AID (Agentic Implementation Discipline)"*.
 - `.aid/settings.yml:16` said `description: AI Integrated Development`.
 - Per user memory (cross-conversation), the canonical expansion is "AI Integrated Development" — the CLAUDE.md text was stale. A four-way conflict also existed with domain-glossary.md ("AI-Integrated Development", hyphenated) and user memory (formerly "Agent Integrated Development"). See Q11 in STATE.md for full context.
 
@@ -202,15 +187,14 @@ changelog:
 
 **Type:** Developer Experience / Test Discoverability
 **Evidence:**
-- `CLAUDE.md:42-49` lists bash test commands the maintainer is expected to run individually. After Q6-cleanup (cycle-1: 3 test files deleted, 5 remaining), there is still no `make test`, no `npm test`, no `pytest`, no `task test` (no `Makefile` / `package.json` / `pyproject.toml` / `Taskfile.yml` in the repo).
-- A new contributor must read CLAUDE.md to enumerate the suites; missing one means partial coverage.
+- `tests/README.md` lists the 5 bash test commands the maintainer runs individually. After Q6-cleanup (cycle-1: 3 test files deleted, 5 remaining), there is still no `make test`, no `npm test`, no `pytest`, no `task test` (no `Makefile` / `package.json` / `pyproject.toml` / `Taskfile.yml` in the repo).
+- A new contributor must read `tests/README.md` to enumerate the suites; missing one means partial coverage.
 
 **Impact:** Friction; partial test runs; correlates with H2.
 
 **Fix recipe (estimated S effort):**
 1. Add a `Makefile` (or `tests/run-all.sh` aggregator) that invokes every suite in sequence, aggregates PASS/FAIL counts, and exits non-zero on any failure.
-2. Update `CLAUDE.md:42-49` to read `make test` (with the long form as fallback).
-3. Wire the same target into the CI workflow from H2.
+2. Wire the same target into the CI workflow from H2.
 
 **Owner suggestion:** maintainer.
 
@@ -226,7 +210,7 @@ changelog:
 - `canonical/skills/aid-execute/references/state-execute.md` — 629 lines
 - Note: `canonical/scripts/kb/verify-claims.sh` (695 lines, previously listed here) was deleted in cycle-1; its deletion is tracked in H6.
 
-**Impact:** None acute. The Thin-Router convention (`CLAUDE.md:111-113`) says SKILL.md should split past ~200 lines, but the `references/state-*.md` files do not have the same threshold. `state-execute.md` at 629 lines may justify further splitting if reviewers find it hard to navigate.
+**Impact:** None acute. The Thin-Router convention (`coding-standards.md §7b`) says SKILL.md should split past ~200 lines, but the `references/state-*.md` files do not have the same threshold. `state-execute.md` at 629 lines may justify further splitting if reviewers find it hard to navigate.
 
 **Fix recipe (estimated M effort, opportunistic):**
 - For `state-execute.md`: consider sub-splitting (e.g., `state-execute-pool.md`, `state-execute-review.md`) if specific sections grow further.
@@ -260,9 +244,10 @@ changelog:
 
 ---
 
-### [HIGH] H4 — Skills/scripts crud audit (write-only outputs)
+### [MEDIUM] H4 — Skills/scripts crud audit (write-only outputs, partially resolved)
 
 **Type:** Process / Hygiene
+**Status:** Known instance fixed in cycle-1 (Q2 resolution); broader audit remains.
 **Evidence:**
 - `run_generator.py:76,83` (pre-cycle-1): passed `.aid/work-002-canonical-generator/verify-{4a,4b}-report.json` as report paths to `run_verify()` / `run_advisory()`. These JSON files were write-only — no downstream step read them; the script itself uses return values, not the file. Fixed in cycle-1 by passing `report_path=None`.
 - Surfaced user principle: skills and scripts should not emit files nobody reads (see feedback memory `no-crud-outputs`).
@@ -274,7 +259,6 @@ changelog:
 1. Enumerate all file-write calls across 10 user-facing skills + 11 generator/builder scripts.
 2. For each output file: confirm at least one downstream consumer (another script, an agent read call, a committed artifact). If none, remove the write.
 3. Document confirmed output files in `canonical/templates/generated-files.txt` registry.
-4. Update `CLAUDE.md` build/test section to list only files that are consumed.
 
 **Owner suggestion:** maintainer; pick up via `/aid-interview` when prioritized.
 
@@ -285,7 +269,7 @@ changelog:
 **Type:** Methodology / Architecture
 **Evidence:**
 - `methodology/aid-methodology.md` defines a rigid 16-doc KB set.
-- `canonical/scripts/kb/verify-claims.sh` (now deleted; see H6) hard-coded an expected-doc list.
+- `canonical/scripts/kb/verify-claims.sh` (deleted in cycle-1, see H6) hard-coded an expected-doc list.
 - `canonical/templates/knowledge-base/` treats the 16 templates as mandatory.
 - Discovery cycle-1 required a 15-doc carve-out (Q3: 2 renamed, 1 deleted, 1 replaced) for the AID meta-repo itself — the methodology had no facility for this, making the deviation an undocumented one-time exception.
 - Q16 answer: user confirmed this should be a methodology-level change; the canonical 16-doc list should become a configurable default.
@@ -309,17 +293,17 @@ changelog:
 **Evidence:**
 - `canonical/scripts/kb/verify-claims.sh` was deleted during cycle-1 inline refactor (commit c8ef59e). The discovery-reviewer agent now owns frontmatter + contract verification semantically.
 - No explicit follow-up has confirmed that the reviewer's prompt covers all the checks the script performed: FM presence, FM field validity, contract claims, AUTO-GENERATED header presence for generated docs.
-- `CLAUDE.md` build section still references `verify-claims.sh` as a command to run (stale after deletion).
+- The KB body still described verify-claims.sh as live in 18+ places across 6 docs (CC2 cascade); fixed in cycle-2 FIX Phase A.
 
 **Impact:** If the reviewer prompt gaps any check the script used to do, that class of defect will silently go undetected going forward. The transition from script-based to semantic-agent-based verification is incomplete until the coverage is explicitly confirmed.
 
 **Fix recipe (estimated S effort):**
 1. Read `canonical/agents/discovery-reviewer/AGENT.md` and compare its checklist against the former script's check list (FM presence, FM field validity, contract claims, AUTO-GENERATED header).
 2. For any gap: add an explicit check clause to the reviewer prompt.
-3. Update `CLAUDE.md` to remove the `bash canonical/scripts/kb/verify-claims.sh` invocation and replace with the equivalent reviewer dispatch instruction.
+3. KB body references updated in cycle-2 FIX Phase A sweep.
 4. Add a note to `generated-files.txt` registry that the script no longer exists.
 
-**Owner suggestion:** maintainer; priority P2 — complete before cycle-2 REVIEW dispatch.
+**Owner suggestion:** maintainer; priority P2 — cycle-2 FIX Phase A addressed the KB body cascade.
 
 ---
 

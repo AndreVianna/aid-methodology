@@ -67,7 +67,7 @@ changelog:
 ### 2c. Inside Bash
 
 - `UPPER_SNAKE_CASE` for environment-overridable config variables: `STATE_FILE`, `TASKS_DIR`, `DELIVERY_ISSUES_DIR`, `LOCK_DIR`, `LOCK_TIMEOUT` (per `canonical/scripts/execute/writeback-task-status.sh:46-50`).
-- `UPPER_SNAKE_CASE` for argument-bound locals: `KB_DIR`, `ROOT`, `FORMAT`, `SKIP_STATE`, `QUIET` (per `canonical/scripts/kb/verify-claims.sh:44-48`); `SETTINGS_FILE`, `SKILL`, `KEY`, `DPATH`, `DEFAULT` (per `canonical/scripts/config/read-setting.sh:46-51`).
+- `UPPER_SNAKE_CASE` for argument-bound locals: `KB_DIR`, `ROOT`, `FORMAT`, `SKIP_STATE`, `QUIET`; `SETTINGS_FILE`, `SKILL`, `KEY`, `DPATH`, `DEFAULT` (per `canonical/scripts/config/read-setting.sh:46-51`).
 - `lower_snake_case` for shell functions: `usage()`, `die()`, `warn()`, `build_prune_expr()`, `get_mtime()` (per `canonical/scripts/interview/parse-recipe.sh:68-73`, `kb/build-project-index.sh:55,73,75`).
 - Env-prefix convention `AID_*` for env-overridable defaults: `AID_STATE_FILE`, `AID_TASKS_DIR`, `AID_DELIVERY_ISSUES_DIR`, `AID_LOCK_DIR`, `AID_LOCK_TIMEOUT`, `AID_PARSE_RECIPE_LOCK_TIMEOUT` (per `writeback-task-status.sh:46-50`, `parse-recipe.sh:65`).
 
@@ -78,7 +78,7 @@ changelog:
 - **Task types:** UPPERCASE (RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE per `canonical/skills/aid-execute/references/state-execute.md:6-16`, `canonical/templates/delivery-plans/task-template.md:3`).
 - **Severity tags:** UPPERCASE bracketed: `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]` (per `canonical/agents/reviewer/AGENT.md:54-62`, `canonical/scripts/grade.sh:5-7`).
 - **Source tags (for review findings):** UPPERCASE bracketed: `[CODE]`, `[TASK]`, `[SPEC]`, `[KB]`, `[ARCHITECTURE]` (per `canonical/agents/reviewer/AGENT.md:37`).
-- **Work + delivery IDs:** zero-padded 3-digit, kebab-prefixed: `work-001`, `work-002-canonical-generator`, `delivery-001`, `task-001`, `feature-005` (per `canonical/templates/work-state-template.md` and CLAUDE.md:60-67).
+- **Work + delivery IDs:** zero-padded 3-digit, kebab-prefixed: `work-001`, `work-002-canonical-generator`, `delivery-001`, `task-001`, `feature-005` (per `canonical/templates/work-state-template.md`).
 
 ---
 
@@ -131,7 +131,7 @@ review** (per principle P6).
 
 ### 3b. Bash script header
 
-Every helper script under `canonical/scripts/` follows a fixed header pattern (per `canonical/scripts/execute/writeback-task-status.sh:1-50`, `canonical/scripts/kb/verify-claims.sh:1-46`, `canonical/scripts/config/read-setting.sh:1-43`, `canonical/scripts/interview/parse-recipe.sh:1-60`, `canonical/scripts/grade.sh:1-23`):
+Every helper script under `canonical/scripts/` follows a fixed header pattern (per `canonical/scripts/execute/writeback-task-status.sh:1-50`, `canonical/scripts/config/read-setting.sh:1-43`, `canonical/scripts/interview/parse-recipe.sh:1-60`, `canonical/scripts/grade.sh:1-23`):
 
 ```bash
 #!/usr/bin/env bash
@@ -160,10 +160,9 @@ set -euo pipefail
 ```
 
 **Variant:** scripts that intentionally tolerate command failures use
-`set -uo pipefail` (no `-e`) — e.g., `canonical/scripts/kb/verify-claims.sh:33`
-runs many checks and continues past per-check failures; rationale is implicit
-in the script's structure (a single grep miss should not abort the whole
-verification).
+`set -uo pipefail` (no `-e`) — this pattern applies when a script runs many
+checks and must continue past per-check failures; rationale should be documented
+in the script's header comment.
 
 **Variant:** `canonical/scripts/execute/writeback-task-status.sh:41` uses `set
 -u` only (no `-e`, no `-o pipefail`) — because it does mode-dispatch and
@@ -172,8 +171,8 @@ returns specific exit codes per mode failure (codes 1-6 per lines 32-40).
 ### 3c. Bash script help mode
 
 Every script supports `-h | --help` and renders its own header comment by
-piping the file's top block through `sed` (per `canonical/scripts/kb/verify-claims.sh:57-60`,
-`canonical/scripts/execute/writeback-task-status.sh:53-55`, `canonical/scripts/grade.sh:36-39`):
+piping the file's top block through `sed` (per `canonical/scripts/execute/writeback-task-status.sh:53-55`,
+`canonical/scripts/grade.sh:36-39`):
 
 ```bash
 -h|--help)
@@ -188,7 +187,6 @@ The convention is to strip the leading `# ` prefix so the comment block reads as
 
 Every multi-arg script uses the same `while [[ $# -gt 0 ]] / case` pattern (per
 `canonical/scripts/config/read-setting.sh:53-79`,
-`canonical/scripts/kb/verify-claims.sh:50-66`,
 `canonical/scripts/execute/writeback-task-status.sh:71-108`,
 `canonical/scripts/interview/parse-recipe.sh:83-100`,
 `canonical/scripts/kb/build-project-index.sh:26-40`,
@@ -242,7 +240,7 @@ Triple-quoted docstrings are reserved for function + class signatures (per
   ```
 - **Exit codes are documented + meaningful per script** (per the headers cited in §3b). 0 = success; 1 = generic failure; 2 = usage error; 3+ = script-specific failure classes.
 - **Errors go to stderr; results go to stdout** (CONFIRMED per `canonical/scripts/config/read-setting.sh:33-36`).
-- **Trap cleanup** for temp files: `trap 'rm -f "$F1" "$F2"' EXIT` declared right before the first `mktemp`, with all slots pre-initialized to empty strings so the trap is safe to fire at any exit point (per `canonical/scripts/kb/verify-claims.sh:72-83`).
+- **Trap cleanup** for temp files: `trap 'rm -f "$F1" "$F2"' EXIT` declared right before the first `mktemp`, with all slots pre-initialized to empty strings so the trap is safe to fire at any exit point (per `canonical/scripts/interview/parse-recipe.sh:64-66` and `canonical/scripts/execute/writeback-task-status.sh`).
 
 ### 4b. Python
 
@@ -284,7 +282,7 @@ Skills that dispatch subagents arm three L2 timers per dispatch as separate back
 
 ### 5c. Calibration log (always-on)
 
-Every successful dispatch appends a row to `STATE.md ## Calibration Log` with format `| YYYY-MM-DD | <agent> | <task-id/cycle> | <ETA-band> | <actual> | <notes> |` (per `canonical/skills/aid-discover/SKILL.md:103-108`, CLAUDE.md:79-83). Unconditional per work-003 traceability.
+Every successful dispatch appends a row to `STATE.md ## Calibration Log` with format `| YYYY-MM-DD | <agent> | <task-id/cycle> | <ETA-band> | <actual> | <notes> |` (per `canonical/skills/aid-discover/SKILL.md:103-108`). Unconditional per work-003 traceability.
 
 ---
 
@@ -325,7 +323,7 @@ There are no `.env` files, no credential templates, no secrets handling (CONFIRM
 
 ### 7a. Single-source canonical → multi-tree render
 
-**Never edit `profiles/{claude-code,codex,cursor}/` directly** (CONFIRMED per CLAUDE.md:48-50). Edit `canonical/` and run `python run_generator.py`. The render emits byte-identical bodies across:
+**Never edit `profiles/{claude-code,codex,cursor}/` directly** (CONFIRMED per `canonical/EMISSION-MANIFEST.md` §Safety-Boundary Semantics). Edit `canonical/` and run `python run_generator.py`. The render emits byte-identical bodies across:
 
 - `canonical/` (source)
 - `.claude/` (dogfood install)
@@ -333,9 +331,9 @@ There are no `.env` files, no credential templates, no secrets handling (CONFIRM
 - `profiles/codex/.codex/` + `profiles/codex/.agents/` (split layout)
 - `profiles/cursor/.cursor/`
 
-### 7b. Thin-router skill decomposition (CONFIRMED per CLAUDE.md:51-56)
+### 7b. Thin-router skill decomposition (CONFIRMED per `canonical/skills/*/SKILL.md` structure)
 
-When a `SKILL.md` grows past ~200 lines, extract per-state bodies into `references/state-{name}.md`; keep the router as Dispatch table + Pre-flight + State Detection only. Total skill body lines: 2,108 across 10 skills (was 4,467 pre-refactor — 53% reduction) per CLAUDE.md:52-54.
+When a `SKILL.md` grows past ~200 lines, extract per-state bodies into `references/state-{name}.md`; keep the router as Dispatch table + Pre-flight + State Detection only. Total skill body lines: 2,242 across 10 skills (was 4,467 pre-refactor — 53% reduction) per `metrics.md`.
 
 ### 7c. Co-location of state files
 
@@ -346,11 +344,11 @@ State references live alongside their skill: `canonical/skills/aid-discover/refe
 - Helper scripts live under `canonical/scripts/<category>/<script>.sh`. Each script has byte-identical copies in 4 trees (per §7a). Tests live at `tests/canonical/<script-name>.sh`.
 - The two skill-level e2e tests live at `tests/skills/<test-name>.sh`.
 
-### 7e. Area-STATE consolidation (FR2, CONFIRMED per CLAUDE.md:57-59)
+### 7e. Area-STATE consolidation (FR2, CONFIRMED per `canonical/templates/discovery-state-template.md`)
 
 Each `.aid/{work}/STATE.md` is the per-area state hub; legacy per-feature `STATE.md` and per-task `STATE.md` files are retired. The discovery area has its own state at `.aid/knowledge/STATE.md` (per `canonical/templates/discovery-state-template.md:1-10`).
 
-### 7f. Single-branch work (CONFIRMED per CLAUDE.md:60-63)
+### 7f. Single-branch work (CONFIRMED — observed convention; see `tech-debt.md` H1 history)
 
 Commit work-NNN to ONE persistent branch (off master); no per-task worktrees or branches. Worktree sprawl caused PR #12 to lose 63 commits; recovered via PR #13.
 
@@ -374,7 +372,7 @@ Commit work-NNN to ONE persistent branch (off master); no per-task worktrees or 
 - **POSIX-portable**: scripts must run on Linux, macOS (Big Sur+), and Windows Git Bash (per `canonical/scripts/interview/parse-recipe.sh:3-7`). Avoid GNU-only flags.
 - **Platform-detection via `stat --version`** to pick between GNU coreutils and BSD stat (per `canonical/scripts/kb/build-project-index.sh:73-80`).
 - **Sentinel-file locking for parallel-write safety** (per `canonical/scripts/execute/writeback-task-status.sh:8-9`, `canonical/scripts/interview/parse-recipe.sh:34-35`). Uses `set -o noclobber + atomic create + sleep-poll retry` rather than `flock` (not portable to Windows Git Bash).
-- **`mktemp` + EXIT trap** for temp files (per `canonical/scripts/kb/verify-claims.sh:81-85`).
+- **`mktemp` + EXIT trap** for temp files (per `canonical/scripts/interview/parse-recipe.sh:64-66`).
 - **AWK for line-level transforms** instead of `sed` when state is needed (per `canonical/scripts/grade.sh:73-76` — fence-detection awk).
 - **No `realpath` or other GNU-only utilities** observed; portability is preserved.
 
@@ -386,7 +384,7 @@ Commit work-NNN to ONE persistent branch (off master); no per-task worktrees or 
 - **Bold + arrow `→` for state transitions** (e.g., "GENERATE → REVIEW → FIX" per `canonical/skills/aid-discover/SKILL.md:7`).
 - **Bullet style `-` (hyphen)** not `*` (asterisk). Consistent across all KB docs and skill bodies.
 
-### 8d. State machine convention (CONFIRMED per CLAUDE.md:55-56)
+### 8d. State machine convention (CONFIRMED per `canonical/skills/aid-discover/SKILL.md:54-59`)
 
 Each skill state machine is documented as a Dispatch table with these columns: `State | Detail | Worker | Advance` (per `canonical/skills/aid-discover/SKILL.md:213-219`). Advance follows one of three forms:
 
@@ -417,7 +415,7 @@ Seven principles govern all `.aid/knowledge/*.md` authoring:
 - **P1.** No drift-prone information unless it carries semantic value. Three banned classes: (a) cosmetic counting, (b) dates without semantic anchor, (c) other low-value clutter.
 - **P2.** Proper metric: when a numerical fact IS load-bearing, it must (a) serve a concrete purpose, (b) be measured before registering, (c) never be retroactively changed.
 - **P3.** Plan first, change later. Review and fix are SEPARATE phases. Use the `.aid/.temp/review-pending/<skill>.md` ledger pattern.
-- **P4.** Enforce via lint, not convention. `canonical/scripts/kb/verify-claims.sh` is the enforcer.
+- **P4.** Enforce via lint, not convention. The `discovery-reviewer` sub-agent in `/aid-discover REVIEW` state validates KB citations, frontmatter compliance, and contract assertions (see `canonical/agents/discovery-reviewer/AGENT.md`).
 - **P5.** Mark auto-generated / temporary files clearly. Generated files carry HTML comment + `source: generated` frontmatter; temporary files live under `.aid/.temp/` and are never reviewed.
 - **P6.** Per-doc review metadata via frontmatter. The whole frontmatter block is exempt from review.
 - **P7.** Review is read-only on the repo. `/aid-discover` and discovery skills WRITE only to `.aid/knowledge/`, `.aid/generated/`, `.aid/.temp/`.
@@ -441,16 +439,16 @@ Docs that describe a convention vs. what code actually does:
 
 | Convention | Documented at | Code confirms? | Notes |
 |------------|---------------|----------------|-------|
-| Thin-Router SKILL.md ≤~360 lines | CLAUDE.md:51-56 | YES — all 10 user-facing skills fit under the threshold; the largest is `aid-interview`. Per-file line counts live in `.aid/generated/metrics.md` / `project-index.md` | Confirmed |
-| 22 agents, 3 tiers | CLAUDE.md (README.md:178-198) | YES — confirmed via 22 `AGENT.md` files with `tier: large|medium|small` frontmatter | Confirmed |
+| Thin-Router SKILL.md ≤~360 lines | `coding-standards.md §7b`; `canonical/skills/*/SKILL.md` structure | YES — all 10 user-facing skills fit under the threshold; the largest is `aid-interview`. Per-file line counts live in `.aid/generated/metrics.md` / `project-index.md` | Confirmed |
+| 22 agents, 3 tiers | `README.md:178-198` | YES — confirmed via 22 `AGENT.md` files with `tier: large|medium|small` frontmatter | Confirmed |
 | 14 active KB docs (was 16) | `canonical/skills/aid-discover/SKILL.md:145-149` | YES — list updated in Q3 FIX (removed: security-model, ui-architecture; renamed: data-model → schemas, api-contracts → pipeline-contracts) | Confirmed |
 | 8-task-type catalog | `canonical/skills/aid-execute/references/state-execute.md:6-16`; `canonical/templates/delivery-plans/task-template.md:3` | YES — both lists match: RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE | Confirmed |
 | 5 grade severity tags | `canonical/agents/reviewer/AGENT.md:54-62`; `canonical/scripts/grade.sh:5-7` | YES — [CRITICAL]/[HIGH]/[MEDIUM]/[LOW]/[MINOR] match in both | Confirmed |
-| 4 lite-path sub-paths | CLAUDE.md:57-59 (lite-bug-fix/lite-doc/lite-refactor/lite-feature) | YES — sub-path enum present in `canonical/templates/work-state-template.md:19`, `canonical/templates/recipe-template.md:90-93` | Confirmed |
+| 4 lite-path sub-paths | `canonical/templates/work-state-template.md:19`, `canonical/templates/recipe-template.md:90-93` | YES — sub-path enum present in both | Confirmed |
 | Heartbeat interval = 1 minute default | `canonical/templates/settings.yml:50`; `canonical/templates/subagent-heartbeat-protocol.md:21` | YES — both state default 1 minute | Confirmed |
 | Max parallel tasks = 5 default | `canonical/templates/settings.yml:44`; `canonical/skills/aid-execute/references/state-execute.md:49` | YES — both state default 5 | Confirmed |
-| Calibration Log unconditional | CLAUDE.md:79-83; `canonical/skills/aid-discover/SKILL.md:103-108` | Code requires it; CLAUDE.md elevates to "always-on, not subject to judgment" | Confirmed — matches user feedback in MEMORY.md "Traceability unconditional" |
-| Single-branch work | CLAUDE.md:60-63 | (No code enforcement — observed convention only) | Inferred from convention doc; lint does not check |
+| Calibration Log unconditional | `canonical/skills/aid-discover/SKILL.md:103-108` | Code requires it; always-on per work-003 traceability | Confirmed — matches user feedback "Traceability unconditional" |
+| Single-branch work | User memory `feedback_single-branch-work.md`; `tech-debt.md` H1 history | (No code enforcement — observed convention only) | Inferred from convention doc; lint does not check |
 
 ⚠️ Inferred from code — needs confirmation: no static lint rule enforces the
 single-branch work convention or the Thin-Router line ceiling. Both are
@@ -488,7 +486,7 @@ Every canonical helper script under `canonical/scripts/` declares
 as the exemplar). Exceptions are documented in §3b above:
 
 - `set -uo pipefail` (no `-e`) when the script runs many checks and must
-  continue past per-check failures (e.g., `verify-claims.sh:33`).
+  continue past per-check failures (pattern: `canonical/scripts/kb/build-project-index.sh`).
 - `set -u` only (no `-e`, no `-o pipefail`) when the script does explicit
   mode-dispatch with named exit codes (e.g., `writeback-task-status.sh:41`).
 
@@ -542,3 +540,24 @@ After user response, append:
 
 This is the **only canonical schema**. The older Style B (`### IQ{N}: [Category: Impact]`)
 was deprecated in cycle-1 (see tech-debt.md Q15 follow-up).
+
+---
+
+## 13. KB cites to CLAUDE.md / AGENTS.md (banned)
+
+**Knowledge Base documents MUST NOT cite `CLAUDE.md` or `AGENTS.md` by line number or section name.**
+
+These files are agent-context pointers (auto-loaded into every agent task
+context by the host tool). They are NOT a source-of-truth — their content is
+intentionally minimal and may be rewritten without notice. KB cites *to* them
+become stale immediately.
+
+**Allowed direction:** CLAUDE.md / AGENTS.md → KB ("see .aid/knowledge/INDEX.md
+for a map of the Knowledge Base"). **Never** KB → CLAUDE.md / AGENTS.md.
+
+If a fact appears to have CLAUDE.md as its canonical home, the fact belongs in
+a KB doc. Move it there + cite the KB doc.
+
+This rule was added 2026-05-27 (cycle-2 Q18) after CLAUDE.md was collapsed from
+~118 lines to 25 lines, leaving ~40 KB cites pointing past EOF. The rule
+prevents the recurrence — see also tech-debt.md H6 history.

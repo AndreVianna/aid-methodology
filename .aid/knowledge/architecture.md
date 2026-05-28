@@ -36,8 +36,8 @@ host-tool install bundles**. There is no application runtime; the project ships:
    `canonical/templates/knowledge-summary/` for the HTML/CSS/JS bundle).
 
 Evidence:
-- `CLAUDE.md:23-25` — "This repo has no application code — it ships skills, agents,
-  templates, and recipes."
+- `project-structure.md` §Primary Purpose — "This repo has no application code — it ships
+  skills, agents, templates, and recipes."
 - `README.md:5-7` — "It ships as an install bundle for three AI coding tools …".
 - `CONTRIBUTING.md` confirms repo-structure table.
 
@@ -49,13 +49,13 @@ aid-methodology/                    (repo root — branch: kb-overhaul)
 ├── canonical/                      ← SINGLE SOURCE OF TRUTH (renderer input)
 │   ├── agents/                     ← 22 agent dirs (AGENT.md + README.md each)
 │   ├── skills/                     ← 10 skill dirs (Thin-Router SKILL.md + references/)
-│   ├── templates/                  ← 17 KB templates + knowledge-summary/ HTML bundle + …
+│   ├── templates/                  ← 15 KB templates + knowledge-summary/ HTML bundle + …
 │   ├── recipes/                    ← 5 lite-path recipes + README (478 lines)
 │   ├── scripts/                    ← helper scripts grouped by phase
 │   │   ├── config/                 ← read-setting.sh
 │   │   ├── execute/                ← writeback-task-status.sh, compute-block-radius.sh, …
 │   │   ├── interview/              ← parse-recipe.sh
-│   │   ├── kb/                     ← verify-claims.sh, build-project-index.sh, build-index.sh, …
+│   │   ├── kb/                     ← build-project-index.sh, build-index.sh, preflight.sh, …
 │   │   ├── summarize/              ← concatenate.{sh,ps1}, validate-diagrams.mjs, …
 │   │   └── grade.sh                ← deterministic severity→grade scorer (top-level)
 │   ├── rules/                      ← Cursor-only .mdc rule sources
@@ -72,11 +72,11 @@ aid-methodology/                    (repo root — branch: kb-overhaul)
 │   └── skills/aid-generate/        ← maintainer-only generator (NOT in canonical/)
 │       └── scripts/                ← 10 Python files (harness.py, profile.py, render_*.py, …)
 ├── tests/
-│   ├── canonical/                  ← 6 helper-script test suites (pure bash, 297 tests expected)
-│   └── skills/                     ← skill-level e2e suites
+│   ├── canonical/                  ← 5 helper-script test suites (pure bash)
+│   └── README.md                   ← suite inventory + run instructions
 ├── examples/                       ← 3 case studies (brownfield-enterprise, data-pipeline, desktop-app)
 ├── docs/                           ← FAQ (61) + glossary (76)
-├── .aid/                           ← runtime KB scaffold (mostly gitignored)
+├── .aid/                           ← runtime KB scaffold (committed in THIS repo — AID dogfoods itself)
 │   ├── knowledge/                  ← KB output (this discovery's target)
 │   ├── generated/project-index.md  ← built by build-project-index.sh
 │   ├── settings.yml                ← AID runtime config
@@ -87,7 +87,7 @@ aid-methodology/                    (repo root — branch: kb-overhaul)
 ```
 
 Evidence: `project-structure.md:23-71`; `canonical/EMISSION-MANIFEST.md:108-115` (asset-kind
-mapping); `CLAUDE.md:48-55`.
+mapping); `coding-standards.md §7a` (never-edit-profiles rule).
 
 ## Architectural Pattern
 
@@ -110,7 +110,7 @@ Evidence:
 - `.claude/skills/aid-generate/scripts/harness.py:36-46` — manifest sentinel +
   placeholder regex; the manifest is JSONL with a `{"_manifest_version": 1}` first line,
   sorted by `dst` for byte-stable diffs.
-- `CONTRIBUTING.md` (per `CLAUDE.md:104-106`) — "Never edit `profiles/{claude-code,codex,
+- `CONTRIBUTING.md` + `coding-standards.md §7a` — "Never edit `profiles/{claude-code,codex,
   cursor}/` directly — edit canonical/ and run `python run_generator.py`."
 
 ### 2. Thin-Router state machine (per skill)
@@ -122,8 +122,9 @@ detects which state to enter from disk, executes that one state, and exits. No
 auto-advance; the human re-invokes the skill for the next state.
 
 Evidence:
-- `CLAUDE.md:52-55` — "every `aid-*` SKILL.md is a state router (≤~360 lines) … total skill
-  body lines: 2,108 across 10 skills (was 4,467 pre-refactor — 53% reduction)."
+- `coding-standards.md §7b` — "When a SKILL.md grows past ~200 lines, extract per-state
+  bodies into references/state-{name}.md; keep the router as Dispatch table + Pre-flight +
+  State Detection only." Total skill body lines: 2,242 (per `metrics.md`).
 - `.claude/skills/aid-discover/SKILL.md:54-58` — explicit `[GENERATE]→[REVIEW]→[Q-AND-A]
   →[FIX]→[APPROVAL]→[DONE]` machine.
 - `.claude/skills/aid-summarize/SKILL.md:60-99` — explicit `PREFLIGHT→STALE-CHECK→PROFILE
@@ -131,16 +132,8 @@ Evidence:
 - `profiles/claude-code.toml:26-28` — `decomposition = "references"` enforces the
   state-file decomposition at render time.
 
-Skill line counts (canonical, current snapshot from `wc -l`):
-`aid-config 190 · aid-deploy 147 · aid-detail 77 · aid-discover 308 · aid-execute 279 ·
-aid-interview 357 · aid-monitor 224 · aid-plan 208 · aid-specify 207 · aid-summarize 233`
-(sum = 2,230).
-
-⚠️ Inferred from code — needs confirmation: the `CLAUDE.md:55` claim of "2,108 lines total"
-matches the rendered `.claude/skills/*/SKILL.md` set (sum after the most recent render
-pass), not the current canonical sources. The most recent canonical edits to
-`aid-config/SKILL.md` (190 vs rendered 176) have not been re-rendered into the install
-trees.
+Skill line counts (canonical): see `.aid/generated/metrics.md` for the authoritative
+per-skill breakdown (generated by `build-metrics.sh`). Total: 2,242 lines across 10 skills.
 
 ### 3. Three-tier agent dispatch with reviewer-tier-≥-executor invariant
 
@@ -165,9 +158,8 @@ state hub (Discovery's hub is `.aid/knowledge/STATE.md`; per-work hub is
 retired.
 
 Evidence:
-- `CLAUDE.md:108-110` — "Area-STATE consolidation (FR2) … each `.aid/{work}/STATE.md` is
-  the per-area state hub; legacy per-feature `STATE.md` and per-task `STATE.md` files
-  are RETIRED."
+- `coding-standards.md §7e` — "Each `.aid/{work}/STATE.md` is the per-area state hub;
+  legacy per-feature `STATE.md` and per-task `STATE.md` files are retired."
 - `profiles/claude-code.toml:52`, `profiles/codex.toml:65`, `profiles/cursor.toml:51` —
   `reviewer_output_file = "STATE.md"` (was `DISCOVERY-STATE.md` / `DISCOVERY-GRADE.md`
   pre-FR2).
@@ -185,9 +177,9 @@ Evidence:
 | **VERIFY-4a (strict)** | `verify_deterministic.py` | Byte-identical re-render audit + file-presence audit + frontmatter parse | All renderers (re-runs them into a scratch dir) |
 | **VERIFY-4b (advisory)** | `verify_advisory.py` | Non-fatal advisory checks logged separately | `harness`, `profile` |
 | **Manifest safety tests** | `test_manifest_safety.py` | Generator self-tests for the deletion boundary | `harness`, all renderers |
-| **Entry point** | `run_generator.py` | 86-line glue: iterate `profiles/*.toml`, run renderers per profile, deletion pass, then VERIFY-4a + VERIFY-4b | All of the above |
+| **Entry point** | `run_generator.py` | 87-line glue: iterate `profiles/*.toml`, run renderers per profile, deletion pass, then VERIFY-4a + VERIFY-4b | All of the above |
 | **End-user installer** | `setup.sh` (162 lines), `setup.ps1` (157 lines) | Interactive tool-selection menu; copies the selected `profiles/<tool>/` subtree into a target project | None (pure shell / PowerShell, no Python) |
-| **Helper script library** | `canonical/scripts/{config,execute,interview,kb,summarize}/` + top-level `grade.sh` | Runtime helpers used by skill bodies (read-setting, parse-recipe, writeback-task-status, verify-claims, build-project-index, summarize pipeline, …) | bash 4+, occasionally Node 18+ for `.mjs` validators |
+| **Helper script library** | `canonical/scripts/{config,execute,interview,kb,summarize}/` + top-level `grade.sh` | Runtime helpers used by skill bodies (read-setting, parse-recipe, writeback-task-status, build-project-index, summarize pipeline, …) | bash 4+, occasionally Node 18+ for `.mjs` validators |
 | **Per-tool profile config** | `profiles/{claude-code,codex,cursor}.toml` | Per-host conventions: layout, agent frontmatter shape, model tier names, tool-name remapping, filename map, extras | Consumed by `profile.py` |
 | **HTML viewer asset bundle** | `canonical/templates/knowledge-summary/` | The optional offline KB viewer template + JS + CSS + Mermaid init + section profiles — see `canonical/templates/knowledge-summary/` for the bundle details | Inlined Mermaid at render time (fetched by `fetch-mermaid.sh`) |
 
@@ -241,7 +233,7 @@ write profiles/{tool}/emission-manifest.jsonl (sorted by dst, LF-only, binary mo
             ▼
 verify_deterministic.run_verify(repo) ──→ re-render to scratch tmpdir,
                                           filecmp every file, parse every frontmatter
-                                          (writes report to .aid/work-002-canonical-generator/)
+                                          (report_path=None — no file written)
             │
             ▼
 verify_advisory.run_advisory(repo) ──→ non-fatal advisory checks
@@ -291,7 +283,7 @@ mechanism was found in any source file.
 
 | Audience | Entry point | What it does |
 |----------|-------------|--------------|
-| **Maintainer build** | `python run_generator.py` | Renders all 3 install trees from `canonical/`, runs VERIFY-4a (hard) + VERIFY-4b (advisory). Evidence: `run_generator.py:1-86`. |
+| **Maintainer build** | `python run_generator.py` | Renders all 3 install trees from `canonical/`, runs VERIFY-4a (hard) + VERIFY-4b (advisory). Evidence: `run_generator.py:1-87`. |
 | **Maintainer one-tree render** | `python .claude/skills/aid-generate/scripts/render_skills.py --canonical-root . --profile profiles/claude-code.toml --output-root profiles/claude-code/.claude` | Renderers are each runnable standalone with `--canonical-root` / `--profile` / `--output-root`. Evidence: `.claude/skills/aid-generate/scripts/render_skills.py:9-12`. |
 | **Maintainer verify-only** | `python .claude/skills/aid-generate/scripts/verify_deterministic.py` | VERIFY-4a hard gate. Re-renders to scratch tmpdir, byte-compares against committed install trees, parses every frontmatter. Exit code 0 on full pass; 1 on any sub-check failure. Evidence: `verify_deterministic.py:1-15`. |
 | **End-user install (Unix)** | `./setup.sh /path/to/your/project [--force]` | Menu-driven copy of selected profiles into a target project. Evidence: `setup.sh:1-60`. |
@@ -312,23 +304,22 @@ architecture; observed implementation matches with a few caveats worth flagging:
    trees, so it cannot itself be generated from canonical without a chicken-and-egg
    deployment problem."
 
-2. **Skill total line drift.** `CLAUDE.md:55` claims 2,108 total skill-body lines; the
-   current canonical sources (per `wc -l` on this snapshot) sum to 2,230 lines. The
-   delta (~122 lines) is concentrated in `aid-config/SKILL.md` (190 canonical vs 176
-   rendered/.claude/) and reflects edits made after the last render pass.
+2. **Skill total line drift.** The current canonical sources sum to 2,242 lines (per
+   `metrics.md`). The rendered `.claude/skills/*/SKILL.md` set may differ if `canonical/`
+   was edited after the last `python run_generator.py` run; run VERIFY-4a to detect drift.
 
-3. **Two `.aid/work-NNN/` directories referenced by docs but absent from the project
+3. **`.aid/work-NNN/` directories referenced by older docs but absent from the project
    index.**
-   - `CLAUDE.md:35-36` references `.aid/work-001-aid-lite/test-reports/e2e-{two-tier,
-     lite-path}-runner.sh` — not on disk in the project index (per
-     `project-structure.md:178`, `308`).
-   - `run_generator.py:76,83` writes verify reports to
-     `.aid/work-002-canonical-generator/verify-{4a,4b}-report.json` — that directory is
-     also absent from the project index. The script will create it on first run.
+   - Q1 resolution (cycle-1): `.aid/work-001-aid-lite/test-reports/` was never a correct
+     home for canonical test scripts; those runners have been removed from documentation.
+   - Q2 resolution (cycle-1): `run_generator.py` no longer writes verify reports to
+     `.aid/work-002-canonical-generator/`; `report_path=None` was passed to eliminate
+     the stale write.
 
-4. **Generator `run_generator.py` hardcodes paths to a work directory that may not
-   exist** (`run_generator.py:76,83`). This is functional (parent dirs are auto-created
-   by `Path.open`) but ties a maintainer's clean-clone first build to that path.
+4. **Generator `run_generator.py` previously hardcoded paths to a work directory.**
+   Fixed in cycle-1 (Q2 resolution): `run_generator.py` now passes `report_path=None`
+   to `run_verify`/`run_advisory`, so no `.aid/work-002-canonical-generator/` directory
+   is created or required.
 
 5. **Cursor profile uses `Terminal` instead of `Bash`.** The only non-identity tool-name
    remap across all three profiles (`profiles/cursor.toml:42-45`). The renderer applies
@@ -337,7 +328,6 @@ architecture; observed implementation matches with a few caveats worth flagging:
 
 ## Access Limitations
 
-None — all files referenced are readable from the working tree. Two work-directory
-references in source files (`run_generator.py:76,83`; `CLAUDE.md:35-36`) are forward
-references to dirs the build step creates, and are documented in the discrepancy
-section above.
+None — all files referenced are readable from the working tree. The `run_generator.py`
+work-directory write was eliminated in cycle-1 (Q2 resolution), so no directories are
+created as side-effects of the build.

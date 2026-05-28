@@ -280,7 +280,7 @@ Three tool-specific install bundles live in `profiles/`:
 All three profiles contain byte-identical skill and agent bodies — only the wrapper
 format differs per tool (TOML for Codex agents, `.mdc` for Cursor rules, markdown for
 Claude Code). The generator (`run_generator.py`) enforces this byte-identity
-(`CLAUDE.md:48-50`).
+via VERIFY-4a at end of every render (see `architecture.md` byte-identity section).
 
 ### What End Users See After Install
 

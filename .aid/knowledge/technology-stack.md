@@ -85,7 +85,7 @@ no `go.mod`, no `requirements.txt`, no `pom.xml`."
 
 | Tool | Config file location | Purpose |
 |------|----------------------|---------|
-| **`run_generator.py`** | `run_generator.py` (86 lines, repo root) | The build. Iterates `profiles/*.toml`, calls each renderer per profile, performs the pure-mirror deletion pass, writes one emission manifest per profile, then runs VERIFY-4a (hard) and VERIFY-4b (advisory). |
+| **`run_generator.py`** | `run_generator.py` (87 lines, repo root) | The build. Iterates `profiles/*.toml`, calls each renderer per profile, performs the pure-mirror deletion pass, writes one emission manifest per profile, then runs VERIFY-4a (hard) and VERIFY-4b (advisory). |
 | **Per-tool profile TOMLs** | `profiles/claude-code.toml`, `profiles/codex.toml`, `profiles/cursor.toml` | Per-host conventions: `[layout]`, `[agent.frontmatter]`, `[skill.frontmatter]`, `[model_tiers]`, `[tool_names]`, `[filename_map]`, `[extras]`, `[capabilities]`. |
 | **Emission manifest spec** | `canonical/EMISSION-MANIFEST.md` (152 lines) | Authoritative spec for the manifest format (JSONL, LF-only, sentinel first line `{"_manifest_version": 1}`, sorted by `dst`). |
 | **End-user installer** | `setup.sh` (162 lines) / `setup.ps1` (157 lines) | Cross-platform install scripts that copy a built profile tree into a target project (not a build per se — runs after `run_generator.py`). |
@@ -106,7 +106,7 @@ python .claude/skills/aid-generate/scripts/render_skills.py \
 python .claude/skills/aid-generate/scripts/verify_deterministic.py
 ```
 
-Source: `CLAUDE.md:27-32`; `run_generator.py:1-86`.
+Source: `run_generator.py:1-87`.
 
 ### Lint Commands
 
@@ -114,25 +114,27 @@ This repository has **no language linters** (no ESLint, no flake8, no shellcheck
 no `pyproject.toml`). Quality is enforced by:
 
 ```bash
-# KB claim verification (load-bearing — runs against any KB and the citations within)
-bash canonical/scripts/kb/verify-claims.sh
-
 # Rebuild file inventory used by Discovery
-bash canonical/scripts/kb/build-project-index.sh --root . --output .aid/knowledge/project-index.md
+bash canonical/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md
 
-# Canonical helper-script test suites (297/297 expected)
+# Canonical helper-script test suites (5 suites)
 bash tests/canonical/writeback-task-status.sh    # 69 tests
 bash tests/canonical/delivery-gate-aggregate.sh  # 18 tests
 bash tests/canonical/compute-block-radius.sh     # 17 tests
-bash tests/canonical/pool-dispatch.sh            #  7 tests
 bash tests/canonical/parse-recipe.sh             # 113 tests
+bash tests/canonical/read-setting.sh
 ```
+
+**KB claim verification** is performed by the `discovery-reviewer` sub-agent in
+`/aid-discover REVIEW` state (see `canonical/agents/discovery-reviewer/AGENT.md`).
+The former `canonical/scripts/kb/verify-claims.sh` was deleted in cycle-1 (see
+`tech-debt.md H6`).
 
 There is **no auto-fix linter**. Quality gates are the AID skills themselves: `aid-discover`
 adversarial review, `aid-execute` two-tier review per task + per delivery, `aid-deploy`
-verification step (per `CLAUDE.md:43-46`).
+verification step.
 
-Source: `CLAUDE.md:27-42`.
+Source: `project-structure.md §Build Commands`; `tests/README.md`.
 
 ## Development Tools
 
@@ -140,7 +142,6 @@ Source: `CLAUDE.md:27-42`.
 |------|---------|---------|-------------|
 | **Git** | unpinned | VCS — branch `kb-overhaul` per current working tree | `.git/`; `.gitignore` (47 lines, repo root) |
 | **`build-project-index.sh`** | `canonical/scripts/kb/build-project-index.sh` (368 lines) | Pre-builds the file inventory consumed by the 5 discovery sub-agents | — |
-| **`verify-claims.sh`** | `canonical/scripts/kb/verify-claims.sh` (695 lines — the largest source file in the repo) | Validates KB citations (`path:line` references) against actual disk state | — |
 | **`grade.sh`** | `canonical/scripts/grade.sh` (141 lines) | Deterministic severity-tag → letter-grade scorer used by the review state of every skill | — |
 | **`parse-recipe.sh`** | `canonical/scripts/interview/parse-recipe.sh` (540 lines) | Parses recipe `{{slot}}` placeholders; emits lite-path artifacts | — |
 | **`writeback-task-status.sh`** | `canonical/scripts/execute/writeback-task-status.sh` (627 lines) | Updates per-area `STATE.md` after a task completes | — |
@@ -170,12 +171,11 @@ design per `project-structure.md:296`.
 
 | Tool | Version | Purpose | Config / location |
 |------|---------|---------|---------|
-| **Pure bash test suites** | bash 4+ | All tests are plain bash scripts (no pytest, no jest, no junit) | `tests/canonical/*.sh` (6 suites), `tests/skills/*.sh` (2 suites) |
+| **Pure bash test suites** | bash 4+ | All tests are plain bash scripts (no pytest, no jest, no junit) | `tests/canonical/*.sh` (5 suites — see `tests/README.md`) |
 | **Generator self-tests** | Python 3.11+ | Manifest-safety unit tests | `.claude/skills/aid-generate/scripts/test_manifest_safety.py` (254 lines) |
-| **Expected test count** | 297/297 | Per `CLAUDE.md:36` | n/a |
-| **CI** | **None** | No `.github/`, no `.gitlab-ci.yml`, no `Jenkinsfile`, no `azure-pipelines.yml` | Per `CLAUDE.md:44` ("There is no CI — see `tech-debt.md` H2.") |
+| **CI** | **None** | No `.github/`, no `.gitlab-ci.yml`, no `Jenkinsfile`, no `azure-pipelines.yml` | See `tech-debt.md H2` |
 
-Source: `CLAUDE.md:36-42`; `project-structure.md:166-178` + `308`.
+Source: `project-structure.md §Build Commands`; `tests/README.md`.
 
 ## Configuration Files
 

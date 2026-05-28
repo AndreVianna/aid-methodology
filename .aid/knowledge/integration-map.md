@@ -64,8 +64,7 @@ rather than a runtime queue.
 
 ### Discovery `project-index.md` (functions as a cache)
 
-- **Location:** `.aid/generated/project-index.md` (1,149 lines per
-  `.aid/knowledge/project-structure.md:29`)
+- **Location:** `.aid/generated/project-index.md` (1,148 lines)
 - **What is cached:** Full file inventory (path, size, language, mtime, notable annotation)
   for the entire repo — a deterministic pre-pass
 - **Purpose:** All 5 discovery sub-agents read this **instead of** re-scanning the repo
@@ -355,7 +354,7 @@ Every long-running subagent dispatch surfaces L1 + L2 + L3 traceability:
 - **L2** — Three backgrounded `run_in_background: true` Bash timers at `LOW/2`, `LOW`, `1.5×LOW` minutes; each fires an echo even if the subagent completes earlier.
 - **L3** — Pre-created heartbeat file at `.aid/.heartbeat/<agent>-<unix-ts>.txt`; subagent overwrites it every N minutes with `[ISO-8601] STATE | progress | activity (~eta)`.
 
-Always-on per `CLAUDE.md ## Architecture` bullet 7 and user-memory rule
+Always-on per `coding-standards.md §5c` and user-memory rule
 (`feedback_traceability-unconditional.md`): "work-003 traceability is always-on; remove
 ETA/threshold gates; not subject to my judgment."
 
@@ -372,4 +371,4 @@ Source: `canonical/templates/long-wait-protocol.md:1-60`,
 
 - **`infrastructure.md § Source Control` / `infrastructure.md § Deployment` / `infrastructure.md § Project Management`** — referenced as integration contract surfaces by multiple skills (`canonical/skills/aid-execute/SKILL.md:58, 258`, `canonical/skills/aid-deploy/SKILL.md` §PACKAGING, `canonical/skills/aid-monitor/SKILL.md`) but the AID repo itself does not publish a populated `infrastructure.md` for itself (the discovery cycle is filling this gap). ⚠️ Contract-by-convention until populated.
 - **`profiles/codex.toml` `hooks` + `stop_hook_autocontinue` capabilities** — both `false` with `TODO: confirm` comments (`profiles/codex.toml:75, 78`); the documented integration is unverified against the vendor docs.
-- **`.aid/work-001-aid-lite/` + `.aid/work-002-canonical-generator/`** — referenced by `CLAUDE.md:35-36` and `run_generator.py:76, 83` respectively but absent on the `kb-overhaul` branch. ⚠️ Integration sinks documented but missing (per `.aid/knowledge/project-structure.md:310-312`).
+- **`.aid/work-001-aid-lite/` + `.aid/work-002-canonical-generator/`** — Per Q1 and Q2 resolutions (cycle-1): the e2e test runners were never correct canonical artifacts (wrong folder); `run_generator.py` no longer writes to `.aid/work-002-canonical-generator/` (report_path=None). Both directories are correctly absent.

@@ -23,9 +23,9 @@ changelog:
 # Module Map
 
 > Coverage of every "module" in the AID repo. Modules here are NOT application
-> components (there is no application — see CLAUDE.md:23-25 and
-> project-structure.md:18-19); they are the artifact families the renderer ships
-> and the helper code that supports them. All paths are repo-relative.
+> components (there is no application — see project-structure.md §Primary Purpose);
+> they are the artifact families the renderer ships and the helper code that supports
+> them. All paths are repo-relative.
 
 ## Module classes
 
@@ -46,18 +46,18 @@ verified by `.claude/skills/aid-generate/scripts/verify_deterministic.py`.
 
 ## 1. Skills — `canonical/skills/aid-*/`
 
-Eleven `aid-*` skills. Each has a `SKILL.md` Thin-Router (per CLAUDE.md:51-56)
+Eleven `aid-*` skills. Each has a `SKILL.md` Thin-Router (per `coding-standards.md §7b`)
 plus a `references/state-*.md` per state plus topic-specific reference docs.
 
 | Skill | Purpose | SKILL.md (canonical) | Reference files | Notable references |
 |-------|---------|---------------------|-----------------|--------------------|
 | `aid-config` | View/update `.aid/settings.yml` — first-run scaffold + per-key edit | `canonical/skills/aid-config/SKILL.md` | 0 | (single-state; no references/ subdir) |
 | `aid-discover` | Brownfield KB scan — dispatches 5 discovery sub-agents in parallel; state machine GENERATE→REVIEW→Q-AND-A→FIX→APPROVAL→DONE | `canonical/skills/aid-discover/SKILL.md` | 8 | `agent-prompts.md`, `document-expectations.md`, `reviewer-{brief,prompt}.md`, `state-{approval,done,fix,generate,q-and-a,review}.md` |
-| `aid-interview` | Requirements gathering + lite-path triage (LITE-BUG-FIX / LITE-DOC / LITE-REFACTOR / LITE-FEATURE sub-paths) — largest reference set per CLAUDE.md:60-64 | `canonical/skills/aid-interview/SKILL.md` | 19 | `state-triage.md` (largest single state file), `state-condensed-intake.md`, `lite-to-full-escalation.md`, `recipe-to-lite-escalation.md`, `feature-decomposition.md` |
+| `aid-interview` | Requirements gathering + lite-path triage (LITE-BUG-FIX / LITE-DOC / LITE-REFACTOR / LITE-FEATURE sub-paths) — largest reference set | `canonical/skills/aid-interview/SKILL.md` | 19 | `state-triage.md` (largest single state file), `state-condensed-intake.md`, `lite-to-full-escalation.md`, `recipe-to-lite-escalation.md`, `feature-decomposition.md` |
 | `aid-specify` | Per-feature technical spec — state machine INITIALIZE→CONTINUE→REVIEW→DONE plus BLOCKED + SPIKE side states | `canonical/skills/aid-specify/SKILL.md` | 9 | `state-{initialize,continue,review,done,spike,blocked}.md`, `handling-outcomes.md`, `known-issues-scope.md`, `reviewer-brief.md` |
 | `aid-plan` | Sequence features into shippable deliveries | `canonical/skills/aid-plan/SKILL.md` | 3 | `first-run-loop.md`, `review-deliverables.md`, `reviewer-brief.md` |
 | `aid-detail` | Decompose deliveries into PR-sized typed tasks (8-type catalog: RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE per `canonical/skills/aid-execute/references/state-execute.md:6-16`) | `canonical/skills/aid-detail/SKILL.md` | 5 | `task-decomposition.md`, `execution-graph-generation.md`, `first-run.md`, `review.md`, `reviewer-brief.md` |
-| `aid-execute` | Implement + two-tier review (per-task quick-check + per-delivery gate per CLAUDE.md:65-67); parallel pool dispatch with `MaxConcurrent` | `canonical/skills/aid-execute/SKILL.md` | 8 | `state-execute.md` (largest single state file — pool dispatch PD-0..PD-6), `state-delivery-gate.md`, `state-review.md`, `state-{fix,re-run}.md`, `reviewer-{brief,guide}.md`, `task-type-rules.md` |
+| `aid-execute` | Implement + two-tier review (per-task quick-check + per-delivery gate); parallel pool dispatch with `MaxConcurrent` | `canonical/skills/aid-execute/SKILL.md` | 8 | `state-execute.md` (largest single state file — pool dispatch PD-0..PD-6), `state-delivery-gate.md`, `state-review.md`, `state-{fix,re-run}.md`, `reviewer-{brief,guide}.md`, `task-type-rules.md` |
 | `aid-deploy` | Ship a delivery + create PR | `canonical/skills/aid-deploy/SKILL.md` | 5 | `state-{idle,selecting,packaging,verifying,re-run}.md` |
 | `aid-monitor` | Production-finding classification + routing | `canonical/skills/aid-monitor/SKILL.md` | 3 | `state-{observe,classify,route}.md` |
 | `aid-summarize` | Optional offline HTML KB viewer (Mermaid + sectioned per profile) | `canonical/skills/aid-summarize/SKILL.md` | 10 | `state-{preflight,profile,generate,validate,manual-checklist,stale-check,writeback,fix,approval,done}.md` |
@@ -65,11 +65,10 @@ plus a `references/state-*.md` per state plus topic-specific reference docs.
 
 **Test coverage:**
 
-- Skill end-to-end behavior: `tests/skills/lite-subpaths.sh`, `tests/skills/lite-to-full-escalation.sh`.
 - Helper scripts that skills invoke are covered by the per-script test suites in `tests/canonical/` (see §4).
 - No direct unit tests for SKILL.md bodies themselves — they are state-router markdown read by Claude Code / Codex / Cursor at slash-command invocation; behavior is exercised indirectly through skill-level e2e runs.
 
-**Key convention** (per CLAUDE.md:51-56): every `aid-*` SKILL.md is a state
+**Key convention** (per `coding-standards.md §7b`): every `aid-*` SKILL.md is a state
 router (≤~360 lines) that delegates per-state logic to `references/state-*.md`
 files. The Dispatch table is the canonical state machine; advance follows one
 of three forms (Unconditional / Halt / Conditional on a computed criterion).
@@ -168,7 +167,7 @@ Python in the repo.
 
 - `test_manifest_safety.py` covers `EmissionManifest` round-trip + diff edge cases.
 - `verify_deterministic.py` is itself a test — invoked after every render and exits non-zero on drift (per `run_generator.py:75-79`). It exercises the entire renderer chain end-to-end against the committed trees.
-- No standalone Python test runner configured (no `pytest.ini`, per project-structure.md:96). Tests are invoked manually via the commands listed in CLAUDE.md:27-42.
+- No standalone Python test runner configured (no `pytest.ini`, per project-structure.md:96). Tests are invoked manually per `tests/README.md`.
 
 ---
 
@@ -189,7 +188,6 @@ slash-command invocation. Every script has 4 byte-identical copies on disk
 
 | Script | Purpose |
 |--------|---------|
-| `verify-claims.sh` (largest shell file per `.aid/generated/project-index.md:50`) | Validates KB citations against disk: file:line existence, KB-file presence (16 standard primary files per `verify-claims.sh:102-119`), frontmatter compliance, generated-files freshness, count-drift detection |
 | `build-project-index.sh` | Builds `.aid/generated/project-index.md` — used as the pre-pass shared input by the 5 discovery sub-agents |
 | `build-index.sh` | Builds `.aid/generated/INDEX.md` — agent-facing 2-3-line summary per KB doc, composed from each doc's `intent:` frontmatter |
 | `build-metrics.sh` | Builds `.aid/generated/metrics.md` — T3 numeric facts (line counts, file counts, term counts, severity tallies per `canonical/templates/kb-authoring/tier-model.md:42-54`) |
@@ -199,8 +197,8 @@ slash-command invocation. Every script has 4 byte-identical copies on disk
 
 | Script | Purpose |
 |--------|---------|
-| `writeback-task-status.sh` | Row-level write coordination for parallel pool dispatch (FR6) × per-area STATE writes; 4 modes (`--field`, `--findings`, `--block`, `--append-issue`); sentinel-file lock with retry; per CLAUDE.md:30 — 69 tests |
-| `compute-block-radius.sh` | BFS over task dependency graph — computes the failure block radius when a task fails (per CLAUDE.md:32 — 17 tests) |
+| `writeback-task-status.sh` | Row-level write coordination for parallel pool dispatch (FR6) × per-area STATE writes; 4 modes (`--field`, `--findings`, `--block`, `--append-issue`); sentinel-file lock with retry — 69 tests (`tests/canonical/writeback-task-status.sh`) |
+| `compute-block-radius.sh` | BFS over task dependency graph — computes the failure block radius when a task fails — 17 tests (`tests/canonical/compute-block-radius.sh`) |
 | `complexity-score.sh` | Task complexity scoring (drives executor model tier selection) |
 
 ### 4d. `canonical/scripts/summarize/` — offline HTML KB viewer
@@ -223,7 +221,7 @@ slash-command invocation. Every script has 4 byte-identical copies on disk
 
 | Script | Purpose |
 |--------|---------|
-| `parse-recipe.sh` | Parses `canonical/recipes/*.md` recipe files (YAML front-matter + `## spec` / `## tasks` body blocks); 5 modes (`--list`, `--validate`, `--spec`, `--tasks`, `--render`); per CLAUDE.md:34 — 113 tests (largest test file at `tests/canonical/parse-recipe.sh`) |
+| `parse-recipe.sh` | Parses `canonical/recipes/*.md` recipe files (YAML front-matter + `## spec` / `## tasks` body blocks); 5 modes (`--list`, `--validate`, `--spec`, `--tasks`, `--render`) — 113 tests (largest test file at `tests/canonical/parse-recipe.sh`) |
 
 ### 4f. `canonical/scripts/` (root)
 
@@ -231,21 +229,17 @@ slash-command invocation. Every script has 4 byte-identical copies on disk
 |--------|---------|
 | `grade.sh` | Deterministic grading: reads issue list with severity tags ([CRITICAL]/[HIGH]/[MEDIUM]/[LOW]/[MINOR]), applies the universal AID rubric (worst severity dominates, count modifies), prints letter grade. Used by reviewers + delivery gates. `--non-functional` flag forces F. |
 
-**Test coverage:** 6 dedicated test suites under `tests/canonical/`, each invoked manually:
+**Test coverage:** 5 dedicated test suites under `tests/canonical/`, each invoked manually:
 
-| Test file | Asserts (per CLAUDE.md:30-34) |
+| Test file | Asserts |
 |-----------|------|
 | `tests/canonical/parse-recipe.sh` | 113 tests for `parse-recipe.sh` |
 | `tests/canonical/writeback-task-status.sh` | 69 tests for `writeback-task-status.sh` |
 | `tests/canonical/delivery-gate-aggregate.sh` | 18 tests for delivery-gate aggregator |
 | `tests/canonical/compute-block-radius.sh` | 17 tests for BFS block-radius |
-| `tests/canonical/read-setting.sh` | (count not stated in CLAUDE.md; suite exists) |
-| `tests/canonical/pool-dispatch.sh` | 7 tests for parallel pool dispatch |
+| `tests/canonical/read-setting.sh` | settings resolution |
 
-> ⚠️ Inferred from disk — needs confirmation: CLAUDE.md:35-36 references two test
-> runners at `.aid/work-001-aid-lite/test-reports/e2e-{two-tier,lite-path}-runner.sh`
-> (35 + 38 tests). These files are NOT present in the `.aid/generated/project-index.md`
-> snapshot — same caveat raised in project-structure.md:178.
+See `tests/README.md` for the full suite list and run instructions.
 
 ---
 
@@ -262,7 +256,7 @@ Organized into categories (per project-structure.md:273-282):
 | `delivery-plans/` | 1 | `task-template.md` — the 6-section task contract (Type / Source / Depends on / Scope / Acceptance Criteria) |
 | `feedback-artifacts/` | 1 | `IMPEDIMENT.md` — formal escalation contract for developer↔orchestrator |
 | `kb-authoring/` | 5 | `README.md`, `frontmatter-schema.md`, `principles.md` (P1-P7), `review-rubric.md`, `tier-model.md` (T1-T4) |
-| `knowledge-base/` | 17 | Templates for all 16 standard KB documents + README (one per `verify-claims.sh:102-119` `STANDARD_KB_FILES` array) |
+| `knowledge-base/` | 15 | Templates for the 14 active KB documents + README (per `canonical/skills/aid-discover/SKILL.md:145-149` active doc list) |
 | `knowledge-summary/` | 19+ | HTML/CSS/JS for the offline `knowledge-summary.html` viewer; `component-css.css` is the largest CSS file in the repo |
 | `requirements/` | 1 | `requirements-template.md` |
 | `specs/` | 2 | `lite-spec-template.md`, `spec-template.md` |

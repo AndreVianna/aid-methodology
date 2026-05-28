@@ -64,13 +64,13 @@ The closest analog is the **profile-render pipeline** (see Build Pipeline below)
 
 **None.** No Kubernetes, no Nomad, no service mesh — there are no services to orchestrate.
 
-The closest analog is the **AID parallel pool dispatch model** (`CLAUDE.md:71-74`, work-001 feature-009): `aid-execute` runs a PD-0..PD-6 pool with `MaxConcurrent` capacity to dispatch subagents in parallel. This is in-process scheduling within a single AI host invocation, NOT an orchestration platform.
+The closest analog is the **AID parallel pool dispatch model** (work-001 feature-009 — see `canonical/skills/aid-execute/SKILL.md §Pool Dispatch`): `aid-execute` runs a PD-0..PD-6 pool with `MaxConcurrent` capacity to dispatch subagents in parallel. This is in-process scheduling within a single AI host invocation, NOT an orchestration platform.
 
 ---
 
 ## CI / CD Pipeline
 
-**No CI exists.** Documented at `CLAUDE.md:52` and `tech-debt.md` H2. See `test-landscape.md` § CI/CD Integration for the full statement.
+**No CI exists.** See `tech-debt.md H2` and `test-landscape.md § CI/CD Integration` for the full statement.
 
 There is also no **release pipeline** — the project distributes via:
 1. End users cloning the repo and running `setup.sh` / `setup.ps1` against a target directory, OR
@@ -86,7 +86,7 @@ The canonical → 3-profiles render is the **only build artifact pipeline** in t
 
 | Component | Path | Lines | Purpose |
 |-----------|------|-------|---------|
-| Top-level entrypoint | `run_generator.py` | 86 | Loops `profiles/*.toml`, calls each renderer, runs VERIFY-4a/4b |
+| Top-level entrypoint | `run_generator.py` | 87 | Loops `profiles/*.toml`, calls each renderer, runs VERIFY-4a/4b |
 | Profile parser | `.claude/skills/aid-generate/scripts/profile.py` | 550 | Parses TOML, validates schema |
 | Manifest harness | `.claude/skills/aid-generate/scripts/harness.py` | 756 | Emission-manifest implementation; pure-mirror deletion logic |
 | Agent renderer | `.claude/skills/aid-generate/scripts/render_agents.py` | 522 | Renders `canonical/agents/` per profile |
@@ -116,7 +116,7 @@ profiles/*.toml ─┐
    VERIFY-4b (advisory — reports counts only: run_generator.py:82-84)
 ```
 
-⚠️ **Discrepancy with reality:** `run_generator.py:76` writes the VERIFY-4a report to `.aid/work-002-canonical-generator/verify-4a-report.json` — that directory does not exist on disk. See `tech-debt.md` M1.
+**Note (Q2 resolution, cycle-1):** `run_generator.py` previously wrote VERIFY-4a/4b reports to `.aid/work-002-canonical-generator/`. That write was eliminated by passing `report_path=None`; the directory is no longer created or required.
 
 ---
 
@@ -144,9 +144,9 @@ There is **no test for the install flow** — see `tech-debt.md` L2.
 | VCS | Git | `.git/` directory present |
 | Hosting | GitHub | per user memory `reference_repo-push-access.md` (account `AndreVianna`) |
 | Repo URL | `github.com/AndreVianna/aid-methodology` | per user memory |
-| Default branch | `master` | per `CLAUDE.md` gitStatus header |
+| Default branch | `master` | git remote info |
 | Current working branch | `kb-overhaul` | git status at session start |
-| Branch convention | Per-`work-NNN` persistent branch off master; no per-task / per-feature branches | `CLAUDE.md:116-118`; user memory `feedback_single-branch-work.md` |
+| Branch convention | Per-`work-NNN` persistent branch off master; no per-task / per-feature branches | `coding-standards.md §7f`; user memory `feedback_single-branch-work.md` |
 
 Recent merge history (`git log --oneline -20`):
 - PR #17 "remove work" — merged 2026-05-27
@@ -198,7 +198,7 @@ These directories function as "infrastructure" at runtime — they hold ephemera
 | `.aid/templates/` | Runtime template copies | **No** — committed |
 | `.aid/settings.yml` | AID pipeline configuration (single source of truth) | **No** — committed |
 | `.aid/knowledge/.cache/` | Mermaid JS cache (per `fetch-mermaid.sh`) | Yes — `.gitignore:40` |
-| `.claude/worktrees/` | Claude Code worktree state (legacy; per `CLAUDE.md:116-118` worktrees are RETIRED) | Yes — `.gitignore:43` |
+| `.claude/worktrees/` | Claude Code worktree state (legacy; worktrees are RETIRED per `coding-standards.md §7f`) | Yes — `.gitignore:43` |
 | `.claude/settings.local.json` | Per-developer Claude Code overrides | Yes — `.gitignore:44` |
 
 ---
@@ -220,7 +220,7 @@ No other script makes outbound HTTPS. No telemetry, no analytics, no auto-update
 
 **Not applicable.** The repo IS the artifact; GitHub holds the canonical copy. There is no production database to back up. Recovery from a destructive local edit = `git reset` / `git checkout` against `origin/master`.
 
-The relevant historical incident: PR #12 lost 63 commits via worktree sprawl, recovered via PR #13 (per `CLAUDE.md:116-118` and user memory `feedback_single-branch-work.md`). The single-branch-work convention is the operational mitigation; no automated DR exists.
+The relevant historical incident: PR #12 lost 63 commits via worktree sprawl, recovered via PR #13 (per user memory `feedback_single-branch-work.md`). The single-branch-work convention is the operational mitigation; no automated DR exists.
 
 ---
 
@@ -229,8 +229,8 @@ The relevant historical incident: PR #12 lost 63 commits via worktree sprawl, re
 **None at runtime** — there's no service to monitor.
 
 In-loop observability (during an AID skill invocation):
-- **L1 traceability** — `[State: NAME]` markers in every subagent dispatch (per `CLAUDE.md:83-85`).
-- **L2 traceability** — ETA bracket pairs (▶/✓) on long-running dispatches.
+- **L1 traceability** — `[State: NAME]` markers in every subagent dispatch (per `coding-standards.md §5a`).
+- **L2 traceability** — ETA bracket pairs (▶/✓) on long-running dispatches (per `coding-standards.md §5b`).
 - **L3 traceability** — heartbeat files in `.aid/.heartbeat/` updated by every long-running subagent at a configurable interval (default 1 minute per `.aid/settings.yml:50`).
 
-Calibration is logged unconditionally — per `CLAUDE.md:85` and user memory `feedback_traceability-unconditional.md`. This is observability of the *agentic pipeline itself*, not of any deployed system.
+Calibration is logged unconditionally — per `coding-standards.md §5c` and user memory `feedback_traceability-unconditional.md`. This is observability of the *agentic pipeline itself*, not of any deployed system.
