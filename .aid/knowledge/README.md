@@ -2,8 +2,8 @@
 
 > **Project:** AID — AI Integrated Development
 > **Discovery cycle:** 1 (initial post-reset)
-> **Last KB review:** 2026-05-27 (cycle-1 GENERATE)
-> **Status:** 14 active KB documents (16 generated in cycle-1; 2 removed in Q3 FIX — security-model merged into coding-standards, ui-architecture deleted pending repo-presentation.md authoring in Phase B; 2 renamed: data-model → schemas, api-contracts → pipeline-contracts).
+> **Last KB review:** 2026-05-27 (cycle-1 REVIEW · post-FIX awaiting cycle-2)
+> **Status:** 15 active KB documents (16 originally generated in cycle-1; 2 deleted in Q3 FIX — `security-model.md` merged into `coding-standards.md §11`, `ui-architecture.md` replaced by `repo-presentation.md` per Q3 user-decision; 2 renamed: `data-model.md → schemas.md`, `api-contracts.md → pipeline-contracts.md`).
 
 Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.
 
@@ -11,29 +11,36 @@ Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.
 
 | # | Document | Status | Lines | Last Reviewed | Notes |
 |---|----------|--------|-------|---------------|-------|
-| 1 | [project-structure.md](project-structure.md) | Populated | 318 | 2026-05-27 | discovery-scout cycle-1 |
-| 2 | [external-sources.md](external-sources.md) | Populated | 3 | 2026-05-27 | no external docs provided |
-| 3 | [architecture.md](architecture.md) | Populated | 326 | 2026-05-27 | discovery-architect cycle-1 |
-| 4 | [technology-stack.md](technology-stack.md) | Populated | 186 | 2026-05-27 | discovery-architect cycle-1 |
-| 5 | [module-map.md](module-map.md) | Populated | 297 | 2026-05-27 | discovery-analyst cycle-1 |
-| 6 | [coding-standards.md](coding-standards.md) | Populated | 457 | 2026-05-27 | discovery-analyst cycle-1 |
-| 7 | [schemas.md](schemas.md) | Populated | 457 | 2026-05-27 | discovery-analyst cycle-1 (was data-model.md) |
-| 8 | [pipeline-contracts.md](pipeline-contracts.md) | Populated | 566 | 2026-05-27 | discovery-integrator cycle-1 (was api-contracts.md) |
-| 9 | [integration-map.md](integration-map.md) | Populated | 362 | 2026-05-27 | discovery-integrator cycle-1 |
-| 10 | [domain-glossary.md](domain-glossary.md) | Populated | 353 | 2026-05-27 | discovery-integrator cycle-1 — 195 terms |
-| 11 | [test-landscape.md](test-landscape.md) | Populated | 114 | 2026-05-27 | discovery-quality cycle-1 |
-| 12 | ~~security-model.md~~ | Removed | — | 2026-05-27 | Content extracted to coding-standards.md §11 (Q3 FIX) |
-| 13 | [tech-debt.md](tech-debt.md) | Populated | 255 | 2026-05-27 | discovery-quality cycle-1 — 1 Critical |
-| 14 | [infrastructure.md](infrastructure.md) | Populated | 222 | 2026-05-27 | discovery-quality cycle-1 |
-| 15 | ~~ui-architecture.md~~ | Removed | — | 2026-05-27 | Deleted in Q3 FIX; repo-presentation.md authored in Phase B |
-| 16 | [feature-inventory.md](feature-inventory.md) | Template | 25 | 2026-05-27 | orchestrator template-copy; populated during Q&A→FIX |
+| 1 | [project-structure.md](project-structure.md) | Populated | 334 | 2026-05-27 | discovery-scout cycle-1; FM added Phase B |
+| 2 | [external-sources.md](external-sources.md) | Populated | 15 | 2026-05-27 | no external docs provided; FM added Phase B |
+| 3 | [architecture.md](architecture.md) | Populated | 343 | 2026-05-27 | discovery-architect cycle-1; FM added Phase B |
+| 4 | [technology-stack.md](technology-stack.md) | Populated | 203 | 2026-05-27 | discovery-architect cycle-1; FM added Phase B |
+| 5 | [module-map.md](module-map.md) | Populated | 297 | 2026-05-27 | discovery-analyst cycle-1; FM since GENERATE |
+| 6 | [coding-standards.md](coding-standards.md) | Populated | 544 | 2026-05-27 | discovery-analyst cycle-1; +87 lines in FIX Phase A/B (§11 Security-By-Design + §12 Q&A Schema) |
+| 7 | [schemas.md](schemas.md) | Populated | 457 | 2026-05-27 | discovery-analyst cycle-1 (renamed from `data-model.md` in Q3 FIX); FM since GENERATE |
+| 8 | [pipeline-contracts.md](pipeline-contracts.md) | Populated | 581 | 2026-05-27 | discovery-integrator cycle-1 (renamed from `api-contracts.md` in Q3 FIX); FM added Phase B |
+| 9 | [integration-map.md](integration-map.md) | Populated | 375 | 2026-05-27 | discovery-integrator cycle-1; FM added Phase B |
+| 10 | [domain-glossary.md](domain-glossary.md) | Populated | 366 | 2026-05-27 | discovery-integrator cycle-1 — 195 terms; FM added Phase B; acronym variants fixed Phase A |
+| 11 | [test-landscape.md](test-landscape.md) | Populated | 130 | 2026-05-27 | discovery-quality cycle-1; FM added Phase B |
+| 12 | [tech-debt.md](tech-debt.md) | Populated | 421 | 2026-05-27 | discovery-quality cycle-1 + 7 new entries from Q-AND-A in Phase B; M2 marked Resolved |
+| 13 | [infrastructure.md](infrastructure.md) | Populated | 236 | 2026-05-27 | discovery-quality cycle-1; FM added Phase B |
+| 14 | [repo-presentation.md](repo-presentation.md) | Populated | 305 | 2026-05-27 | NEW in Phase B (Q3 replacement for deleted `ui-architecture.md`) — 8 sections covering README, docs/, examples/, methodology spec, blog refs, install surface |
+| 15 | [feature-inventory.md](feature-inventory.md) | Populated | 49 | 2026-05-27 | Phase B (Q13) — 10 user-facing skills + `aid-generate` maintainer-only footnote |
+
+**Removed in cycle-1 FIX Phase A (Q3):**
+- ~~`security-model.md`~~ — content extracted to `coding-standards.md §11 Security-By-Design Conventions` (gitignore policy, shell `set -euo pipefail` discipline, agent-permission allowlist pattern); dedicated security doc is contortion for a non-runtime methodology repo
+- ~~`ui-architecture.md`~~ — content was implementation detail of the KB-viewer (belongs in `aid-summarize` README); replaced by `repo-presentation.md` whose actual scope is the GitHub repo's documentation surface
 
 **Meta-documents:**
 - [STATE.md](STATE.md) — Discovery-area state ledger (Q&A, Review History, Calibration Log)
-- [INDEX.md](INDEX.md) — Auto-generated per-doc summaries (regenerate via `bash .claude/scripts/kb/build-index.sh`)
+- [INDEX.md](INDEX.md) — Auto-generated per-doc summaries (regenerate via `bash canonical/scripts/kb/build-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md`)
 
 ## Revision History
 
 | # | Date | Cycle | Action | Notes |
 |---|------|-------|--------|-------|
-| 1 | 2026-05-27 | cycle-1 | GENERATE complete | All 16 KB docs populated post-`--reset`. Scout 11m17s + 4-parallel wave 14m29s (tail = analyst) = ~25m total. Next: REVIEW. |
+| 1 | 2026-05-27 | cycle-1 | GENERATE complete | All 16 KB docs populated post-`--reset`. Scout 11m17s + 4-parallel wave 14m29s (tail = analyst) = ~25m total. |
+| 2 | 2026-05-27 | cycle-1 | REVIEW complete | discovery-reviewer 11m57s. Grade E+ (35 findings: 0C / 16H / 11M / 11L / 0MIN). 5 new Q&A (Q11-Q15). |
+| 3 | 2026-05-27 | cycle-1 | Q-AND-A complete | 17 entries: 16 Answered + 1 Skipped. Q16/Q17 captured as tech-debt for future `/aid-interview` pickup (no work-NNN reserved per `feedback_no-work-NNN-reservation` memory). |
+| 4 | 2026-05-27 | cycle-1 | FIX Phase A complete | commit 82a5bd5 — cross-file refactors: Q11 acronym, Q2 verify-reports dropped, Q6 3 test deletes + `tests/README.md`, Q12 INDEX single-copy, Q3 rename+delete cascade (50+ files via developer agent, 27m wall). |
+| 5 | 2026-05-27 | cycle-1 | FIX Phase B complete | commit c5a3d3d — per-file content: 12 FM additions, `repo-presentation.md` NEW (306L), `feature-inventory.md` populated, `tech-debt.md` +7 entries, README+CLAUDE small additions, Q15 Style A canonical migration. ~6m wall (6 parallel agents). |
