@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 # fetch-mermaid.sh — test suite for canonical/scripts/summarize/fetch-mermaid.sh
 #
-# Tests three scenarios:
+# Tests four scenarios:
 #   Scenario A: cache-hit verify on tampered file → exit != 0, both cache files deleted,
 #               stderr says "SHA256 mismatch" but does NOT leak the EXPECTED_SHA256 value.
 #   Scenario B: post-download verify (bad blob written by curl stub) → exit != 0,
-#               downloaded artifact deleted.
+#               downloaded artifact deleted.  Stderr must NOT leak EXPECTED_SHA256.
 #   Scenario C: clean fast path with valid cached file → exit 0, both files preserved,
 #               no HTTP call made (curl-spy confirms curl was not invoked).
+#               If local valid cache is absent, downloads a fresh copy from the CDN to
+#               seed the sandbox (keeps assertion always-on).
+#   Scenario D: compute_sha256 "unknown" fallback — both sha256sum and shasum hidden via
+#               PATH-shim.  The script must fail-closed (exit != 0) and must NOT output
+#               the EXPECTED_SHA256 value on stdout or stderr.
 #
 # CRITICAL: EXPECTED_SHA256 is extracted from the script under test at runtime so the
 # test stays in sync with the code — no independent hex copy is hardcoded here.
@@ -229,6 +234,13 @@ SHIM
     else
         fail "B4: stderr missing 'SHA256 mismatch'; got: $stderr"
     fi
+
+    # AC: stderr does NOT contain the raw EXPECTED_SHA256 value (mirrors A5)
+    if echo "$stderr" | grep -qF "$EXPECTED_SHA256"; then
+        fail "B5: stderr leaked EXPECTED_SHA256 value (security guard failed)"
+    else
+        pass "B5: stderr does not contain raw EXPECTED_SHA256 value"
+    fi
 }
 
 # ===========================================================================
@@ -244,13 +256,6 @@ test_scenario_c_clean_fast_path() {
 
     local real_js="$REAL_CACHE/mermaid.min.js"
 
-    if [[ ! -f "$real_js" ]]; then
-        echo "  SKIP: $real_js not present; cannot seed valid cache without network" >&2
-        # Treat as pass (not a test failure — environmental skip)
-        pass "C0: scenario skipped (no local valid cache to seed with)"
-        return
-    fi
-
     local sandbox
     sandbox=$(make_sandbox)
     trap "rm -rf '$sandbox'" RETURN
@@ -258,8 +263,27 @@ test_scenario_c_clean_fast_path() {
     local cache_file="$sandbox/.aid/knowledge/.cache/mermaid.min.js"
     local meta_file="$sandbox/.aid/knowledge/.cache/mermaid.min.js.meta"
 
-    # Seed sandbox with valid file
-    cp "$real_js" "$cache_file"
+    if [[ ! -f "$real_js" ]]; then
+        echo "  INFO: $real_js not present; downloading fresh copy from CDN to seed Scenario C" >&2
+        local pinned_url="https://cdn.jsdelivr.net/npm/mermaid@${LATEST}/dist/mermaid.min.js"
+        if ! curl -sSf --max-time 120 -o "$cache_file" "$pinned_url"; then
+            fail "C0: CDN download failed — cannot seed Scenario C"
+            return
+        fi
+        # Verify the downloaded file matches the pinned SHA so the scenario is meaningful
+        local seed_sha
+        seed_sha=$(sha256sum "$cache_file" 2>/dev/null | cut -d' ' -f1 \
+                   || shasum -a 256 "$cache_file" 2>/dev/null | cut -d' ' -f1 \
+                   || echo "unknown")
+        if [[ "$seed_sha" != "$EXPECTED_SHA256" ]]; then
+            fail "C0: CDN returned unexpected SHA ($seed_sha) — Scenario C seed aborted"
+            rm -f "$cache_file"
+            return
+        fi
+    else
+        # Seed sandbox with valid file from local cache
+        cp "$real_js" "$cache_file"
+    fi
     printf 'version=%s\nsha256=%s\n' "$LATEST" "$EXPECTED_SHA256" > "$meta_file"
 
     # curl-spy shim: records invocation and exits 0
@@ -323,11 +347,88 @@ SHIM
 }
 
 # ===========================================================================
+# Scenario D: compute_sha256 "unknown" fallback — neither sha256sum nor shasum on PATH.
+# Technique: run the SUT inside a subshell with a minimal PATH that contains only a
+# shim directory where both sha256sum and shasum are absent (or replaced by stubs that
+# exit 1 so `command -v` misses them).  The script's compute_sha256() falls through to
+# `echo "unknown"`, which will never equal EXPECTED_SHA256, so the script must
+# fail-closed (exit != 0) and must NOT disclose EXPECTED_SHA256 on stdout or stderr.
+#
+# We also need curl present so the download path can run; we re-use the bad-blob stub
+# from Scenario B (junk download → post-download SHA verify → "unknown" != expected).
+# ===========================================================================
+test_scenario_d_unknown_sha256_fallback() {
+    echo ""
+    echo "=== Scenario D: compute_sha256 'unknown' fallback (no sha256sum/shasum on PATH) ==="
+
+    local sandbox
+    sandbox=$(make_sandbox)
+    trap "rm -rf '$sandbox'" RETURN
+
+    local shim_dir="$sandbox/shims"
+    mkdir -p "$shim_dir"
+
+    # curl shim: writes junk blob so the download path is exercised (same as Scenario B)
+    cat > "$shim_dir/curl" << 'SHIM'
+#!/usr/bin/env bash
+OUTPUT_FILE=""
+while [[ $# -gt 0 ]]; do
+    if [[ "$1" == "-o" ]]; then
+        OUTPUT_FILE="$2"
+        shift 2
+    else
+        shift
+    fi
+done
+if [[ -n "$OUTPUT_FILE" ]]; then
+    printf 'STUBBED BAD BLOB FOR SCENARIO D\n' > "$OUTPUT_FILE"
+fi
+exit 0
+SHIM
+    chmod +x "$shim_dir/curl"
+
+    # Deliberately do NOT place sha256sum or shasum in shim_dir.
+    # The minimal PATH contains only shim_dir + basic POSIX tools (bash, mkdir, etc.)
+    # from standard system locations so the script can start, but sha256sum/shasum
+    # are not available.
+    local stdout stderr exit_code=0
+    local minimal_path="$shim_dir:/usr/bin:/bin"
+    (
+        cd "$sandbox"
+        PATH="$minimal_path" bash "$SUT" >"$sandbox/d_stdout" 2>"$sandbox/d_stderr"
+    ) || exit_code=$?
+    stdout=$(cat "$sandbox/d_stdout")
+    stderr=$(cat "$sandbox/d_stderr")
+
+    # AC: exit != 0 (fails-closed — "unknown" != EXPECTED_SHA256 must trigger rejection)
+    if [[ "$exit_code" -ne 0 ]]; then
+        pass "D1: exit non-zero when sha256sum/shasum unavailable (fails-closed)"
+    else
+        fail "D1: expected non-zero exit with unknown SHA, got 0 (fails-open!)"
+    fi
+
+    # AC: stdout does NOT contain EXPECTED_SHA256 (no info disclosure on stdout)
+    if echo "$stdout" | grep -qF "$EXPECTED_SHA256"; then
+        fail "D2: stdout leaked EXPECTED_SHA256 value with unknown sha fallback"
+    else
+        pass "D2: stdout does not contain raw EXPECTED_SHA256 value"
+    fi
+
+    # AC: stderr does NOT contain EXPECTED_SHA256 (no info disclosure on stderr)
+    if echo "$stderr" | grep -qF "$EXPECTED_SHA256"; then
+        fail "D3: stderr leaked EXPECTED_SHA256 value with unknown sha fallback"
+    else
+        pass "D3: stderr does not contain raw EXPECTED_SHA256 value"
+    fi
+}
+
+# ===========================================================================
 # Run all scenarios
 # ===========================================================================
 test_scenario_a_tampered_cache_hit
 test_scenario_b_tampered_postdownload
 test_scenario_c_clean_fast_path
+test_scenario_d_unknown_sha256_fallback
 
 # ===========================================================================
 # Summary
