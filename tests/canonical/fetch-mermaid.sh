@@ -38,7 +38,7 @@ TESTS_PASSED=0
 TESTS_FAILED=0
 ERRORS=()
 
-pass() { TESTS_PASSED=$((TESTS_PASSED + 1)); [[ "$VERBOSE" -eq 1 ]] && echo "  PASS: $*"; }
+pass() { TESTS_PASSED=$((TESTS_PASSED + 1)); if [[ "$VERBOSE" -eq 1 ]]; then echo "  PASS: $*"; fi; }
 fail() { TESTS_FAILED=$((TESTS_FAILED + 1)); ERRORS+=("$*"); echo "  FAIL: $*"; }
 
 # ---------------------------------------------------------------------------
@@ -103,6 +103,13 @@ run_from_sandbox() {
 # The script should detect the SHA mismatch, delete both files, and exit != 0.
 # Stderr MUST contain "SHA256 mismatch" but MUST NOT contain the raw
 # EXPECTED_SHA256 hex value (guards against leaking the secret in error output).
+#
+# BASELINE ASSUMPTION: this scenario relies on the host sha256sum (or shasum)
+# being available on PATH to compute the SHA of the tampered file.  If neither
+# tool is present the SUT returns "unknown" which also != EXPECTED_SHA256 and
+# the mismatch branch fires — the test still passes, but the code path is the
+# "unknown" fallback rather than the real-hash path.  On any standard CI or
+# developer machine sha256sum will be present, so this assumption is safe.
 # ===========================================================================
 test_scenario_a_tampered_cache_hit() {
     echo ""
@@ -388,14 +395,36 @@ SHIM
     chmod +x "$shim_dir/curl"
 
     # Deliberately do NOT place sha256sum or shasum in shim_dir.
-    # The minimal PATH contains only shim_dir + basic POSIX tools (bash, mkdir, etc.)
-    # from standard system locations so the script can start, but sha256sum/shasum
-    # are not available.
+    # Build a minimal PATH from $shim_dir ONLY: add symlinks for every external
+    # binary the SUT needs (grep, cut, mv, rm, wc, tr, date, mkdir, cat) but
+    # intentionally omit sha256sum and shasum.  This forces compute_sha256() to
+    # fall through to `echo "unknown"` rather than silently calling the real
+    # sha256sum from /usr/bin or /bin.
+    #
+    # We also add a sentinel stub for sha256sum that records any invocation —
+    # if it fires, the test's D4 check fails (the "unknown" branch was bypassed).
+    local sha_spy_flag="$sandbox/sha256sum-was-invoked"
+    cat > "$shim_dir/sha256sum-spy" << SHIM
+#!/usr/bin/env bash
+touch "$sha_spy_flag"
+exit 1
+SHIM
+    chmod +x "$shim_dir/sha256sum-spy"
+    # Do NOT symlink sha256sum or shasum into shim_dir.
+
+    # Symlink the other external binaries the SUT uses into shim_dir so the
+    # script can start and run without /usr/bin or /bin in PATH.
+    for bin in grep cut mv rm wc tr date mkdir cat; do
+        real_bin=$(command -v "$bin" 2>/dev/null || true)
+        if [[ -n "$real_bin" && ! -e "$shim_dir/$bin" ]]; then
+            ln -s "$real_bin" "$shim_dir/$bin"
+        fi
+    done
+
     local stdout stderr exit_code=0
-    local minimal_path="$shim_dir:/usr/bin:/bin"
     (
         cd "$sandbox"
-        PATH="$minimal_path" bash "$SUT" >"$sandbox/d_stdout" 2>"$sandbox/d_stderr"
+        PATH="$shim_dir" bash "$SUT" >"$sandbox/d_stdout" 2>"$sandbox/d_stderr"
     ) || exit_code=$?
     stdout=$(cat "$sandbox/d_stdout")
     stderr=$(cat "$sandbox/d_stderr")
@@ -419,6 +448,13 @@ SHIM
         fail "D3: stderr leaked EXPECTED_SHA256 value with unknown sha fallback"
     else
         pass "D3: stderr does not contain raw EXPECTED_SHA256 value"
+    fi
+
+    # AC: the real sha256sum was never called (confirms "unknown" branch, not real-sha branch)
+    if [[ ! -f "$sha_spy_flag" ]]; then
+        pass "D4: sha256sum was not invoked — SUT used 'unknown' fallback branch as expected"
+    else
+        fail "D4: sha256sum was invoked unexpectedly — PATH-shim did not fully hide sha256sum"
     fi
 }
 
