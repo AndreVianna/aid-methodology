@@ -21,7 +21,8 @@
 | task-001 | Pin Mermaid version + SHA verify on BOTH paths | REFACTOR | 1 | Done | A+ | ~2m53s exec + ~95s review | commit e912f81; 10/10 ACs verified on disk |
 | task-002 | Add tests/canonical/fetch-mermaid.sh | TEST | 2 | Done | A+ (orch-applied cycle 4) | ~15m total across 4 dev cycles + 3 reviewer cycles | commit 13864e3 final; cycle 3 graded B+ (D4 tautology); cycle 4 orchestrator-applied 1-line symlink fix; test still 19/19 pass |
 | task-003 | Close tech-debt.md C1 + bump comment | DOCUMENT | 3 | Done | A+ (narrow-scope) | ~6m | Commit f773152; bump comment propagated; tech-debt.md C1 RESOLVED; Critical=0. **Spec was too narrow — KB cascade-update missing (task-004).** |
-| task-004 | KB cascade-update for C1 closure | DOCUMENT | 4 | In Progress | — | — | Sweep infrastructure.md / integration-map.md / architecture.md / security-model.md / tech-debt H3 for stale fetch-mermaid references |
+| task-004 | KB markdown cascade-update | DOCUMENT | 4 | Done | A+ (self-verified) | ~6m | Commit 183ff7e; 6 KB docs swept; npm/latest claim removed; line numbers updated; H3 reframed. **Spec was STILL too narrow — HTML cascade missed (task-005).** |
+| task-005 | HTML summary cascade-update | DOCUMENT | 5 | Done | A+ (Machine 73/73) | ~5m | C1 moved to RESOLVED in 10-tech-debt.html; Critical count 1→0; H3 wording updated; 09-test-landscape.html updated (5→6 suites, 235→254 assertions, fetch-mermaid row added). Re-assembled HTML; Machine Grade A+ unchanged. |
 
 ## Delivery Gates
 

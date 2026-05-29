@@ -47,7 +47,8 @@ A comment block near the constants documents the manual bump procedure (where to
 | task-001 | REFACTOR | Pin Mermaid version + SHA verify on BOTH cache-hit AND post-download paths |
 | task-002 | TEST | Add tests/canonical/fetch-mermaid.sh covering both verify points + clean fast path |
 | task-003 | DOCUMENT | Close tech-debt.md C1 + add bump-procedure comment in fetch-mermaid.sh |
-| task-004 | DOCUMENT | KB cascade-update for C1 closure (sweep infrastructure/integration-map/architecture/security-model/tech-debt-H3) |
+| task-004 | DOCUMENT | KB markdown cascade-update for C1 closure |
+| task-005 | DOCUMENT | HTML summary cascade-update for C1 closure (summary-src/sections + re-assemble) |
 
 ## Execution Graph
 
@@ -59,6 +60,7 @@ A comment block near the constants documents the manual bump procedure (where to
 | task-002 | task-001 |
 | task-003 | task-001, task-002 |
 | task-004 | task-001, task-003 |
+| task-005 | task-001, task-002, task-003, task-004 |
 
 ### Can Be Done In Parallel
 
@@ -68,6 +70,7 @@ A comment block near the constants documents the manual bump procedure (where to
 | 2 | task-002 |
 | 3 | task-003 |
 | 4 | task-004 |
+| 5 | task-005 |
 
 ## Revision History
 
