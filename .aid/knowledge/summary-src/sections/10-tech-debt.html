@@ -2,14 +2,14 @@
 	<header>
 		<span class="eyebrow">Debt</span>
 		<h2>Tech Debt</h2>
-		<p class="lede">Overall debt level: Medium. The codebase is well-organized (Thin-Router convention, single canonical source, 6-suite test coverage) but operates with zero pre-merge automation and several structural gaps. <strong>Zero Critical items remain</strong> (C1 resolved 2026-05-29); five High items. (per tech-debt.md)</p>
+		<p class="lede">Overall debt level: Medium. The codebase is well-organized (Thin-Router convention, single canonical source, 6-suite test coverage) but operates with zero pre-merge automation and several structural gaps. <strong>Zero Critical items remain.</strong> Five High items. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
 		<div class="card">
 			<div class="kicker">Critical</div>
 			<div class="stat" style="color:var(--ok);">0</div>
-			<div class="stat-sub">C1 resolved</div>
+			<div class="stat-sub">none open</div>
 		</div>
 		<div class="card">
 			<div class="kicker">High</div>
@@ -18,20 +18,14 @@
 		</div>
 		<div class="card">
 			<div class="kicker">Medium</div>
-			<div class="stat" style="color:var(--info);">7</div>
-			<div class="stat-sub">H4, M1–M6 (M2 resolved)</div>
+			<div class="stat" style="color:var(--info);">6</div>
+			<div class="stat-sub">H4, M1, M3, M4, M5, M6</div>
 		</div>
 		<div class="card">
 			<div class="kicker">Low</div>
 			<div class="stat" style="color:var(--text-dim);">5</div>
 			<div class="stat-sub">L1–L5</div>
 		</div>
-	</div>
-
-	<div class="debt-item med">
-		<div class="title">C1 — Mermaid CDN fetch (Resolved)</div>
-		<div class="meta">Type: Supply Chain · Effort: S · Status: Resolved 2026-05-29 (work-001)</div>
-		<p><code>fetch-mermaid.sh</code> is now pinned to <code>mermaid@v11.15.0</code> with an <code>EXPECTED_SHA256</code> constant. SHA verification gates BOTH the cache-hit path AND the post-download path. The <code>.meta</code> file is treated as untrusted — only the SHA comparison is the trust boundary. The npm <code>/mermaid/latest</code> query is removed; <code>LATEST</code> derives from the pinned constant. Test coverage: <code>tests/canonical/fetch-mermaid.sh</code> (19 assertions across 4 scenarios). (per tech-debt.md C1)</p>
 	</div>
 
 	<div class="debt-item high">
@@ -50,12 +44,6 @@
 		<div class="title">H5 — Methodology flexibility</div>
 		<div class="meta">Type: Architecture · Effort: L · Priority: P2</div>
 		<p>Methodology assumes a rigid 16-doc KB set. Meta-repos, docs-only projects, and library-only projects need flexibility to adapt the standard set. (per tech-debt.md H5)</p>
-	</div>
-
-	<div class="debt-item med">
-		<div class="title">M2 — Acronym drift (Resolved)</div>
-		<div class="meta">Type: Doc Drift · Effort: XS · Status: Resolved 2026-05-27</div>
-		<p>All four AID name variants canonicalized to "AI Integrated Development" in commit 82a5bd5. (per tech-debt.md M2)</p>
 	</div>
 
 	<div class="debt-item low">
