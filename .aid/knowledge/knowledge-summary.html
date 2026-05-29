@@ -1371,7 +1371,7 @@ flowchart TB
 	<header>
 		<span class="eyebrow">Debt</span>
 		<h2>Tech Debt</h2>
-		<p class="lede">Overall debt level: Medium. The codebase is well-organized (Thin-Router convention, single canonical source, 7-suite test coverage) but operates with zero pre-merge automation and several structural gaps. <strong>Zero Critical items remain.</strong> Five High items. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
+		<p class="lede">Overall debt level: Medium–High. The codebase is well-organized (Thin-Router convention, single canonical source, 7-suite test coverage) but operates with zero pre-merge automation and several structural gaps. <strong>Zero Critical items remain.</strong> Four High items, four Medium, five Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
@@ -1382,8 +1382,8 @@ flowchart TB
 		</div>
 		<div class="card">
 			<div class="kicker">High</div>
-			<div class="stat" style="color:var(--warn);">5</div>
-			<div class="stat-sub">H1, H2, H3, H5, H6</div>
+			<div class="stat" style="color:var(--warn);">4</div>
+			<div class="stat-sub">H2, H3, H5, H6</div>
 		</div>
 		<div class="card">
 			<div class="kicker">Medium</div>
@@ -1415,10 +1415,64 @@ flowchart TB
 		<p>Methodology assumes a rigid 16-doc KB set. Meta-repos, docs-only projects, and library-only projects need flexibility to adapt the standard set. (per tech-debt.md H5)</p>
 	</div>
 
+	<div class="debt-item high">
+		<div class="title">H6 — verify-claims.sh follow-up</div>
+		<div class="meta">Type: Process / Quality · Effort: S · Priority: P2</div>
+		<p>The deleted <code>verify-claims.sh</code> handed frontmatter + contract verification to the discovery-reviewer agent; its prompt must be confirmed to still cover FM-presence, FM-field-validity, contract claims, and the AUTO-GENERATED header. (per tech-debt.md H6)</p>
+	</div>
+
+	<div class="debt-item med">
+		<div class="title">H4 — Crud-outputs audit (partially resolved)</div>
+		<div class="meta">Type: Process / Hygiene · Effort: M · Priority: P3</div>
+		<p>The known instance is fixed (<code>run_generator.py</code> writes no report file), but a systematic audit of write-only outputs across the 10 skills + 11 generators has not been done. (per tech-debt.md H4)</p>
+	</div>
+
+	<div class="debt-item med">
+		<div class="title">M3 — Gitignore fragility</div>
+		<div class="meta">Type: Config / Hygiene · Effort: XS · Priority: P3</div>
+		<p><code>.aid/.temp/</code> is excluded only by the <code>*.temp</code> glob, not an explicit dir entry — a rename would silently start tracking it. (per tech-debt.md M3)</p>
+	</div>
+
+	<div class="debt-item med">
+		<div class="title">M4 — No test aggregator</div>
+		<div class="meta">Type: Dev Experience · Effort: S · Priority: P3</div>
+		<p>Each of the 7 canonical suites must be invoked manually; no <code>make test</code> / <code>npm test</code> / aggregator. (per tech-debt.md M4)</p>
+	</div>
+
+	<div class="debt-item med">
+		<div class="title">M6 — Test refactor</div>
+		<div class="meta">Type: Test Quality · Effort: M · Priority: P3</div>
+		<p>The 7 suites lack behavior-named files, a shared test-utility module, and consistent failure messages. (per tech-debt.md M6)</p>
+	</div>
+
+	<div class="debt-item low">
+		<div class="title">L1 — Source bloat</div>
+		<div class="meta">Type: Complexity · Effort: M · Priority: P3</div>
+		<p>Four files exceed 500 lines (methodology spec 1,070; <code>parse-recipe.sh</code> 1,002; <code>writeback-task-status.sh</code> 627; <code>state-execute.md</code> 629). (per tech-debt.md L1)</p>
+	</div>
+
+	<div class="debt-item low">
+		<div class="title">L2 — Test-coverage gaps</div>
+		<div class="meta">Type: Test Coverage · Effort: L · Priority: P3</div>
+		<p>No tests for the PowerShell paths (<code>setup.ps1</code>, <code>concatenate.ps1</code>), the <code>.mjs</code> validators, or the <code>setup.sh</code> install flow. (per tech-debt.md L2)</p>
+	</div>
+
+	<div class="debt-item low">
+		<div class="title">L3 — Broad Bash allowlist</div>
+		<div class="meta">Type: Hardening · Effort: XS · Priority: P3</div>
+		<p><code>.claude/settings.json</code> permits unscoped <code>Bash(rm *)</code>, <code>Bash(python *)</code>, <code>Bash(chmod *)</code> — acceptable for a maintainer-trusted dogfood, not for shared use. (per tech-debt.md L3)</p>
+	</div>
+
 	<div class="debt-item low">
 		<div class="title">L4 — No versioning</div>
 		<div class="meta">Type: Process · Effort: S · Priority: P3</div>
 		<p>AID has no VERSION file, no semver. Current position is "continuous master". (per tech-debt.md L4)</p>
+	</div>
+
+	<div class="debt-item low">
+		<div class="title">L5 — Example divergence</div>
+		<div class="meta">Type: Doc Drift · Effort: S · Priority: P3</div>
+		<p>The <code>brownfield-enterprise</code> example references old KB doc names (<code>data-model.md</code>→<code>schemas.md</code>, <code>api-contracts.md</code>→<code>pipeline-contracts.md</code>) and <code>DISCOVERY-STATE.md</code>→<code>.aid/knowledge/STATE.md</code> — an adopter would look for files the tool no longer produces. data-pipeline + desktop-app are clean. (per tech-debt.md L5)</p>
 	</div>
 </section>
 

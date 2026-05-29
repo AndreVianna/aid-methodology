@@ -8,6 +8,8 @@ intent: |
   Read when planning the next refactor cycle or scoping a new work-NNN.
 contracts: []
 changelog:
+  - 2026-05-29: Removed resolved items (C1, M1, M2, M5, M7) from the inventory + detail per the "resolved → drop from the list" policy; closure record retained here in the changelog. Summary table reverted to open-only counts.
+  - 2026-05-29: Closed + removed H1 — the phantom-test doc drift is fully resolved; the optional "add e2e coverage" remainder is a future enhancement gated on H2 (CI), not active debt.
   - 2026-05-29: KB-honesty pass — closed M5 + M7 (verified resolved on disk); completed M2 (normalized the 2 remaining hyphenated .mdc rule files); corrected test-suite count 5→7 and assertion total 235→273 across all current-state docs; corrected L5 staleness (examples are not 3+ months stale); fixed H3 wrong evidence cite; corrected L1 file count 5→4; rebuilt Summary table (added M7, open-only counts)
   - 2026-05-29: Marked C1 resolved (work-001 task-003); decremented Critical count to 0; added bump-procedure comment ref
   - 2026-05-27: Added 7 new entries from cycle-1 Q-AND-A; marked M2 (acronym) resolved
@@ -26,16 +28,16 @@ changelog:
 
 ## Summary
 
-**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 7-suite canonical test suite) but operates with **zero pre-merge automation** and several **structural gaps** surfaced by cycle-1 discovery (methodology rigidity, verify-claims.sh transition incomplete, crud outputs audit pending). There are **zero open Critical** items: the supply-chain risk in `fetch-mermaid.sh` (C1) was resolved in work-001 (task-001 + task-002 + task-003). M2 (acronym drift), M5 (Q&A schema), and M7 (grade.sh over-count) are resolved — M5/M7 verified on disk and closed in the 2026-05-29 honesty pass; M2 finished the same day by normalizing the last 2 hyphenated `.mdc` rule files.
+**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 7-suite canonical test suite) but operates with **zero pre-merge automation** and several **structural gaps** surfaced by cycle-1 discovery (methodology rigidity, verify-claims.sh transition incomplete, crud outputs audit pending). There are **zero open Critical** items. Resolved items are dropped from the inventory below; their closure record (what / when / why) lives in this doc's changelog frontmatter and in git history. As of this writing, C1, H1, M1, M2, M5, and M7 have been closed and removed from the list.
 
-| Severity | Open | Open items | Resolved |
-|----------|------|------------|----------|
-| Critical | 0 | — | C1 |
-| High | 5 | H1, H2, H3, H5, H6 | — |
-| Medium | 4 | H4, M3, M4, M6 | M1, M2, M5, M7 |
-| Low | 5 | L1, L2, L3, L4, L5 | — |
+| Severity | Open | Open items |
+|----------|------|------------|
+| Critical | 0 | — |
+| High | 4 | H2, H3, H5, H6 |
+| Medium | 4 | H4, M3, M4, M6 |
+| Low | 5 | L1, L2, L3, L4, L5 |
 
-> **Counting methodology:** the Open column counts unique **open** debt items (one row per entry, regardless of how many `[HIGH]`/`[MEDIUM]` tags appear in the fix recipe); resolved items are moved to the Resolved column and kept in the detail sections below for history. The generated `metrics.md` (built by `build-metrics.sh`) counts every body-tag occurrence including those inside fix-recipe sub-bullets, producing higher totals. Neither is wrong; they answer different questions. Canonical item count is this table.
+> **Counting methodology:** this table counts unique **open** debt items (one row per entry, regardless of how many `[HIGH]`/`[MEDIUM]` tags appear in the fix recipe). Resolved items are removed from the inventory entirely; their closure record lives in the changelog frontmatter and git history. The generated `metrics.md` (built by `build-metrics.sh`) counts every body-tag occurrence including those inside fix-recipe sub-bullets, producing higher totals. Neither is wrong; they answer different questions. Canonical item count is this table.
 
 ---
 
@@ -43,70 +45,23 @@ changelog:
 
 | ID | Type | Description | Location | Risk | Effort | Priority |
 |----|------|-------------|----------|------|--------|----------|
-| C1 | Supply Chain (RESOLVED) | `fetch-mermaid.sh` pinned to v11.15.0 with SHA verification on both cache-hit and post-download paths | `canonical/scripts/summarize/fetch-mermaid.sh` | Critical | S | — |
-| H1 | Doc Drift / Untestable Claim | Older docs cited two e2e test runners in `.aid/work-001-aid-lite/test-reports/` that do not exist on disk; per Q1 resolution (cycle-1) those runners were never correct canonical artifacts and have been removed from documentation | `tests/README.md` (the current contract); disk: `.aid/work-001-aid-lite/` correctly absent | High | S | P1 |
 | H2 | No CI | Zero pre-merge automation; every test/verify pass is manual | repo-wide | High | M | P2 |
 | H3 | Supply Chain | No language lock files exist (`package-lock.json`, `requirements.txt`, etc.) — vulnerability scanning is impossible. Previously framed as a sibling of C1 (Mermaid pin); C1 is now closed (resolved 2026-05-29). H3's concern — no language lock files for transitive supply-chain scanning — remains open. | repo-wide; absence confirmed by repo-wide search | High | M | P2 |
 | H4 | Crud Outputs (partially resolved) | Skills/scripts audit needed: unnecessary write-only outputs (reports/logs/intermediate files) not consumed by any downstream step — known instance fixed in cycle-1 (Q2: report_path=None); broader audit remains | scope: 10 user-facing skills + 11 generators/builders | Medium | M | P3 |
 | H5 | Methodology Flexibility | Methodology assumes rigid 16-doc KB set; meta-repos / docs-only / library-only projects need flexibility | methodology spec, aid-discover, verify-claims, canonical/templates/knowledge-base/ | High | L | P2 |
 | H6 | verify-claims.sh deletion follow-up | verify-claims.sh deleted; discovery-reviewer now owns FM+contract verification semantically — reviewer prompt coverage must be confirmed explicitly | cycle-1 inline refactor; canonical/agents/discovery-reviewer/AGENT.md | High | S | P2 |
-| M1 | Doc Drift | `run_generator.py` writes VERIFY-4a/4b reports to `.aid/work-002-canonical-generator/` which does not exist; the script either crashes on first invocation or silently creates the dir without recording its purpose | `run_generator.py:76, 83`; disk: `.aid/work-002-canonical-generator/` missing | Medium | S | P2 |
-| M2 | Doc Drift (RESOLVED) | Project name expansion drift — all four variants now canonicalized to "AI Integrated Development" | resolved 2026-05-27 commit 82a5bd5 | Medium | XS | — |
 | M3 | Gitignore Fragility | `.aid/.temp/` is excluded only by the `*.temp` glob at `.gitignore:21`, not an explicit dir entry — a rename to e.g. `.aid/scratch/` would silently start tracking it | `.gitignore:18-21` | Medium | XS | P3 |
 | M4 | Test Discoverability | No aggregator script: each of the 7 test suites must be invoked manually with the right path; no way to run "all tests" with one command | `tests/README.md` (lists each separately); no `Makefile`/`task`/`npm test` | Medium | S | P3 |
-| M5 | Q&A Schema (RESOLVED) | Style A adopted across work-state-template.md, methodology spec, and aid-interview; coding-standards.md §12 documents it as the only canonical schema (Style B deprecated) | resolved 2026-05-29 | Medium | S | — |
 | M6 | Test Refactor | 7 canonical/ test suites need: behavior-named files, shared test-utility extraction, consistent failure messages, optional aggregator | `tests/canonical/*.sh` (7 suites) | Medium | M | P3 |
-| M7 | Helper-script Bug (RESOLVED) | `grade.sh` default path now column-anchored exact-match (only a Severity-column `[TAG]` in a Pending/Recurred row counts); grep-everywhere logic survives only in the deprecated `--from-prose` branch | `canonical/scripts/grade.sh` | Medium | S | — |
 | L1 | Source Bloat | 4 files >500 lines under canonical/methodology (largest: `methodology/aid-methodology.md` 1,070, `tests/canonical/parse-recipe.sh` 1,002, `canonical/scripts/execute/writeback-task-status.sh` 627, `canonical/skills/aid-execute/references/state-execute.md` 629) | various | Low | M | P3 |
 | L2 | Test Coverage Gap | Zero tests for PowerShell paths (`setup.ps1`, `concatenate.ps1`), `.mjs` validators, and the `setup.sh` install flow | `test-landscape.md` Gaps section | Low | L | P3 |
 | L3 | Allowlist Breadth | `.claude/settings.json` Bash allowlist includes broad `Bash(rm *)` and `Bash(python *)` without path scoping | `.claude/settings.json:5-14` | Low | XS | P3 |
 | L4 | Versioning | AID has no version (no VERSION file, no semver); current position is "continuous master" | repo-wide; absence confirmed by project-index | Low | S | P3 |
-| L5 | Examples Staleness | examples/ case studies aging: data-pipeline (2026-03-21) and desktop-app (2026-03-26) ~2 months old; brownfield-enterprise refreshed 2026-05-22 — none is 3+ months stale as of 2026-05-29 | `examples/` directory | Low | M | P3 |
+| L5 | Example Divergence | `examples/brownfield-enterprise/README.md` uses old KB doc names (`data-model.md`→`schemas.md`, `api-contracts.md`→`pipeline-contracts.md`) and `DISCOVERY-STATE.md`→`.aid/knowledge/STATE.md` — an adopter would look for files the tool no longer produces. data-pipeline + desktop-app verified clean | `examples/brownfield-enterprise/README.md:31,32,35,59` | Low | S | P3 |
 
 ---
 
 ## Detailed Debt Items
-
-### [CRITICAL] C1 — Mermaid CDN fetch not version-pinned or SHA-verified
-
-**Type:** Security / Supply Chain
-**Evidence:**
-- `canonical/scripts/summarize/fetch-mermaid.sh:16-18` queries `https://registry.npmjs.org/mermaid/latest` on every invocation, extracting whatever version is current.
-- `canonical/scripts/summarize/fetch-mermaid.sh:41` downloads `https://cdn.jsdelivr.net/npm/mermaid@${LATEST}/dist/mermaid.min.js` — no pin.
-- `canonical/scripts/summarize/fetch-mermaid.sh:59-73` computes sha256 AFTER download and stores it as cache metadata; there is no `EXPECTED_SHA256` constant compared at verification time.
-
-**Impact:** Every end user who runs `/aid-summarize` receives whatever JS the npm registry serves at fetch time. An npm-registry compromise or jsDelivr MITM silently ships compromised JS into the offline KB viewer that the end user opens in their browser. Reproducibility is also broken — diagrams may render differently across runs.
-
-**Fix recipe (estimated S effort):**
-1. Add a constant near the top of the script: `PINNED_VERSION="<chosen-version>"` and `EXPECTED_SHA256="<sha-from-npmjs>"`.
-2. Replace the `curl ... /mermaid/latest | sed ...` block with `LATEST="$PINNED_VERSION"`.
-3. After the download (`mv "$CACHE_FILE.tmp" "$CACHE_FILE"`), compute the SHA, then `[ "$SHA" = "$EXPECTED_SHA256" ] || { echo "SHA mismatch"; rm -f "$CACHE_FILE"; exit 1; }`.
-4. Add a `# Renovate / Dependabot equivalent` comment block describing the manual bump procedure.
-5. Update `tests/canonical/` (or add a new suite) to cover the pin-mismatch path.
-
-**Owner suggestion:** maintainer (single-file change in canonical/, then `python run_generator.py` to propagate to 4 install-tree copies).
-
-**Status:** Resolved 2026-05-29 (commits e912f81 task-001, 7ead158 task-002, 13864e3 task-002 cycle-4, plus this commit task-003).
-
-**Resolution:** Pinned to v11.15.0 with SHA verification on both cache-hit and post-download paths; .meta is treated as untrusted; tests/canonical/fetch-mermaid.sh covers all four paths (cache-hit tamper, post-download tamper, clean fast-path, sha256sum-fallback).
-
----
-
-### [HIGH] H1 — E2E test runners cited in older docs did not exist on disk (partially resolved)
-
-**Type:** Documentation Drift / Untestable Claim
-**Evidence:**
-- Older documentation cited `.aid/work-001-aid-lite/test-reports/e2e-two-tier-runner.sh` (35 tests) and `e2e-lite-path-runner.sh` (38 tests) as part of the canonical test suite.
-- Per Q1 resolution (cycle-1): "No canonical file should be in the work-* folder." Those runners were never correctly placed there; they were removed from documentation.
-- Current test contract: 7 canonical suites in `tests/canonical/` (see `tests/README.md`); `.aid/work-001-aid-lite/` is correctly absent.
-
-**Impact (historical):** Inflated "297 expected" total by 73 phantom tests. Confusingly misleading to new contributors.
-
-**Remaining action:** If E2E test coverage is wanted in the project, relocate scripts to `tests/canonical/` or `tests/e2e/`. See H2 (no CI) — adding E2E coverage is most impactful once H2 is addressed.
-
-**Owner suggestion:** maintainer.
-
----
 
 ### [HIGH] H2 — No CI
 
@@ -120,7 +75,7 @@ changelog:
 1. Add `.github/workflows/test.yml` that on PR runs (in order): the 7 `tests/canonical/*.sh` suites, `python .claude/skills/aid-generate/scripts/verify_deterministic.py`, and the discovery-reviewer semantic check (see H6).
 2. Add a `Makefile` target `make test` that invokes the same list, so local + CI use the same entrypoint (also addresses M4).
 3. Pin GitHub-hosted runner OS (`ubuntu-24.04` not `ubuntu-latest`) for reproducibility.
-4. Cache the `mermaid.min.js` between runs once C1 is fixed (so the registry lookup is bypassed).
+4. Cache the `mermaid.min.js` between runs (the pinned, SHA-verified blob is reproducible — there is no longer a registry lookup to bypass).
 5. Require status check in branch protection on `master`.
 
 **Owner suggestion:** maintainer + devops agent.
@@ -145,37 +100,6 @@ changelog:
 3. Once present, the CI from H2 can wire in `npm audit --audit-level=high` and `pip-audit` automatically.
 
 **Owner suggestion:** maintainer + security agent.
-
----
-
-### [MEDIUM] M1 — `run_generator.py` wrote to `.aid/work-002-canonical-generator/` — RESOLVED
-
-**Type:** Documentation / Path Drift
-**Status:** Resolved in cycle-1 (Q2 resolution): `run_generator.py` now passes `report_path=None` to `run_verify()` / `run_advisory()`. No file writes occur; the directory is not created.
-**Evidence (historical):**
-- `run_generator.py:76` and `:83` previously passed `.aid/work-002-canonical-generator/verify-{4a,4b}-report.json` as report paths. Those JSON files were write-only — no downstream step read them.
-- Surfaced user principle: skills and scripts should not emit files nobody reads (see feedback memory `no-crud-outputs`).
-
-**Impact (historical):** On fresh clone, first build would have silently created the directory or failed.
-
-**Owner suggestion:** n/a — resolved.
-
----
-
-### [MEDIUM] M2 — Project name expansion drift between CLAUDE.md and settings.yml — RESOLVED
-
-**Type:** Documentation Drift
-**Status:** Resolved 2026-05-27 (cycle-1 Phase A commit 82a5bd5: acronym canonicalized to "AI Integrated Development" across CLAUDE.md, README, methodology spec, docs/, KB docs)
-**Evidence (historical):**
-- Older CLAUDE.md text said *"AID (Agentic Implementation Discipline)"*.
-- `.aid/settings.yml:16` said `description: AI Integrated Development`.
-- Per user memory (cross-conversation), the canonical expansion is "AI Integrated Development" — the CLAUDE.md text was stale. A four-way conflict also existed with domain-glossary.md ("AI-Integrated Development", hyphenated) and user memory (formerly "Agent Integrated Development"). See Q11 in STATE.md for full context.
-
-**Impact (historical):** Low practical impact (no code reads either string) but undermined the canonical-source-of-truth convention. Surfaced by cycle-1 REVIEW as CC3.
-
-**Resolution:** Updated CLAUDE.md, domain-glossary.md, methodology spec, README, and all KB docs to use "AI Integrated Development" (no hyphen). Grepped the repo for all four variants and normalized the prose docs in Phase A (commit 82a5bd5). Two Cursor rule files (`canonical/rules/aid-methodology.mdc` + its rendered cursor copy) still carried the hyphenated `AI-Integrated Development`; these were normalized 2026-05-29 in the KB-honesty pass (canonical edited, then `run_generator.py` re-rendered the cursor copy). Repo-wide grep now finds zero `AI-Integrated Development` outside historical evidence lines.
-
-**Owner suggestion:** n/a — resolved.
 
 ---
 
@@ -318,29 +242,6 @@ changelog:
 
 ---
 
-### [MEDIUM] M5 — Q&A schema canonicalization — RESOLVED
-
-**Type:** Documentation / Standards Drift
-**Status:** Resolved 2026-05-29 (verified on disk during the KB-honesty pass).
-**Resolution:** Style A is adopted across all three former targets — `canonical/templates/work-state-template.md` (`### Q{N}` + sub-bullets), `methodology/aid-methodology.md` (Q&A spec, `### Q{N}`), and the aid-interview skill — and `coding-standards.md §12` documents Style A as "the only canonical schema," explicitly noting Style B (`### IQ{N}`) was deprecated in cycle-1. A repo-wide search finds no live `### IQ{N}` headers.
-**Evidence (historical):**
-- Style A: `### Q{N}` header + sub-bullets for Category / Impact / Status / Context / Suggested / Answer. Used in `.aid/knowledge/STATE.md` (this repo's cycle) and in aid-discover output.
-- Style B: `### IQ{N}: [Category: Impact]` inline header followed by Question / Context / Source / Suggested / Status. Used in `methodology/aid-methodology.md` Q&A spec and `canonical/templates/work-state-template.md`.
-- Q15 answer: canonical decided = Style A. Phase B Q15 agent handles part of this migration.
-
-**Impact:** Skills that emit Q&A entries or parse existing ones must handle both schemas, increasing fragility. New contributors will not know which is authoritative. Search/grep tooling that relies on the `### Q{N}` or `### IQ{N}:` pattern will produce inconsistent results.
-
-**Fix recipe (estimated S effort):**
-1. Update `canonical/templates/work-state-template.md` `## Cross-phase Q&A` section to use Style A.
-2. Update `methodology/aid-methodology.md` Q&A spec to use Style A.
-3. Update `aid-interview` skill body + references to emit Style A on Q&A injection from downstream phases.
-4. Document Style A in `coding-standards.md` as the canonical Q&A schema (with an example block).
-5. Confirm any unfinished migration work from Phase B (Q15 agent) and capture remainder here.
-
-**Owner suggestion:** n/a — resolved.
-
----
-
 ### [MEDIUM] M6 — Test refactor toward clean-code patterns
 
 **Type:** Test Quality / Developer Experience
@@ -381,46 +282,25 @@ changelog:
 
 ---
 
-### [LOW] L5 — examples/ staleness
+### [LOW] L5 — examples/ diverge from current methodology conventions
 
-**Type:** Documentation Drift
-**Evidence:**
-- `examples/data-pipeline/` (last commit 2026-03-21) and `examples/desktop-app/` (2026-03-26) date to March 2026; `examples/brownfield-enterprise/` was refreshed 2026-05-22. As of 2026-05-29 the oldest is ~2 months — none is 3+ months stale.
-- File sizes are small (~50-110 lines per case study).
-- Q8 answer: user confirmed accept-stale for now; no refresh blocking this cycle.
+**Type:** Documentation Drift / Example Divergence
+**Evidence (verified 2026-05-29 by content scan, not timestamps):**
+- `examples/brownfield-enterprise/README.md` lists KB documents using **old names**: `data-model.md` (`:31`) and `api-contracts.md` (`:32`). The shipped standard template set (`canonical/templates/knowledge-base/`) uses `schemas.md` and `pipeline-contracts.md`, so an adopter running `aid-discover` today gets the new names and won't find the ones the example shows.
+- The same file uses `DISCOVERY-STATE.md` (`:35`, `:59`); the current convention is the per-area `.aid/knowledge/STATE.md` (the canonical `discovery-state-template.md` states it "absorbs what used to be `DISCOVERY-STATE.md`").
+- `examples/data-pipeline/` and `examples/desktop-app/` were scanned for the same signatures (old doc names, acronym variants, deleted artifacts, stale state vocabulary) and are **clean**.
+- The earlier "3+ months stale" framing was wrong (brownfield was refreshed 2026-05-22) — the issue is content divergence, not age.
 
-**Impact:** Case studies that diverge from current methodology conventions mislead adopters. Risk is proportional to how much the methodology has changed since each example's last touch; currently moderate for the two March-2026 examples (Thin-Router skill convention, Q3's KB-doc renaming, acronym canonicalization are all post-March changes).
-
-**Fix recipe (estimated M effort, deferred):**
-1. After Q3 KB-doc renaming (api-contracts → pipeline-contracts, data-model → schemas, etc.) lands, update any example references to those doc names.
-2. After acronym canonicalization (Q11) propagates, grep examples/ for old variants.
-3. Full refresh: re-run each case study scenario against current methodology spec; update narration.
-4. Add a `<!-- last-validated: YYYY-MM-DD -->` comment to each case study so staleness is visible.
-
-**Owner suggestion:** tech-writer; refresh when the methodology-flexibility refactor (H5) and KB-doc renaming (Q3) are both stable.
-
----
-
-### [MEDIUM] M7 — `grade.sh` over-counts summary-line severity tags — RESOLVED
-
-**Type:** Helper-script Bug
-**Status:** Resolved (verified on disk 2026-05-29) — the default `grade.sh` parse path is now column-anchored exact-match.
-**Resolution:** `canonical/scripts/grade.sh` parses the ledger as a table: it splits each `|`-row, takes the Severity column, and counts a finding only when that column is exactly `[CRITICAL]`/`[HIGH]`/`[MEDIUM]`/`[LOW]`/`[MINOR]` **and** the Status column is `Pending` or `Recurred`. Tags inside Description/Evidence cells or a prose Summary line are ignored (an in-code comment cites the cycle-7 description-text false-positive it fixes). The old grep-everywhere logic survives only behind the deprecated `--from-prose` flag, which also strips fenced/inline code before counting.
-**Evidence (historical):**
-- `canonical/scripts/grade.sh` greps for `\[CRITICAL\]`, `\[HIGH\]`, etc. in the input file
-- Reviewer ledgers often include a Summary section with a literal tag-string like `0 [CRITICAL] / 0 [HIGH] / 0 [MEDIUM] / 2 [LOW] / 3 [MINOR]` to convey counts
-- grade.sh counts each literal `[CRITICAL]`, `[HIGH]`, etc. in that summary string AS IF each were an actual finding marker
-- Result: a ledger with 0 actual CRITICAL findings but with a "0 [CRITICAL]" mention in its summary gets graded as E+ (1 CRITICAL counted) instead of the correct B (only LOW + MINOR remain)
-- Discovered in cycle-7 of cycle-1 Discovery dogfood (2026-05-28): reviewer's summary said "Target HIT (0 HIGH / 0 MEDIUM)" but raw grade.sh returned E+; manual strip of the summary line returned correct B
-
-**Impact:** The deterministic grading contract is broken when the reviewer includes severity tags in summary statements. Two work-arounds today: (a) strip the summary line before piping to grade.sh; (b) instruct reviewers to use a different format ("0/0/0/2/3" instead of "0 [CRITICAL] / 0 [HIGH] / 0 [MEDIUM] / 2 [LOW] / 3 [MINOR]"). Neither is enforced.
+**Impact:** A new adopter following `brownfield-enterprise` looks for `data-model.md` / `api-contracts.md` / `DISCOVERY-STATE.md` — files the current tool no longer produces — undermining the example's value as an onboarding reference.
 
 **Fix recipe (estimated S effort):**
-1. Update `canonical/scripts/grade.sh` to either (a) skip a `## Summary` section by line-range before counting, OR (b) require severity tags to appear at line-start (e.g., `^\s*- \[CRITICAL\]` instead of bare `\[CRITICAL\]` anywhere in line). Approach (b) is simpler and more robust.
-2. Update `canonical/agents/discovery-reviewer/AGENT.md` reviewer-prompt template to instruct: "When summarizing finding counts, do NOT use `[SEVERITY]` tag format inline. Use plain numbers (e.g., `0/0/0/2/3`) or escape the brackets (e.g., `\\[CRITICAL\\]`). The `[SEVERITY]` tag format is reserved for actual finding markers."
-3. Regression test: add a small test to `tests/canonical/` that pipes a summary-only fixture to grade.sh and asserts the correct grade.
+1. In `examples/brownfield-enterprise/README.md`, rename the 4 references: `data-model.md`→`schemas.md`, `api-contracts.md`→`pipeline-contracts.md`, and `DISCOVERY-STATE.md`→`.aid/knowledge/STATE.md`.
+2. Re-scan all three examples after any future KB-doc-set change.
+3. Optionally add a `<!-- last-validated: YYYY-MM-DD -->` marker per case study.
 
-**Owner suggestion:** n/a — resolved (the default path is robust; no workaround needed).
+**Note:** A separate, larger drift exists — the methodology spec (`methodology/aid-methodology.md`) still uses `DISCOVERY-STATE.md` in ~10 places, lagging its own canonical skill/template. Out of L5's scope (examples-only); flagged for a future item.
+
+**Owner suggestion:** tech-writer; the brownfield rename is a quick win, independent of H5.
 
 ---
 
