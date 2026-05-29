@@ -8,6 +8,7 @@ intent: |
   Read when planning the next refactor cycle or scoping a new work-NNN.
 contracts: []
 changelog:
+  - 2026-05-29: Marked C1 resolved (work-001 task-003); decremented Critical count to 0; added bump-procedure comment ref
   - 2026-05-27: Added 7 new entries from cycle-1 Q-AND-A; marked M2 (acronym) resolved
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
 ---
@@ -16,7 +17,7 @@ changelog:
 
 > **Source:** `discovery-quality` (Phase 1), cycle-1
 > **Status:** Complete
-> **Last Updated:** 2026-05-27
+> **Last Updated:** 2026-05-29
 
 > This document is a diagnosis, not a sprint plan. Severity tags use the form `[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` so `build-metrics.sh` (see `canonical/templates/knowledge-base/tech-debt.md:17`) can tally them.
 
@@ -24,11 +25,11 @@ changelog:
 
 ## Summary
 
-**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 5-suite canonical test suite post-cycle-1 cleanup) but operates with **zero pre-merge automation** and several **structural gaps** surfaced by cycle-1 discovery (methodology rigidity, verify-claims.sh transition incomplete, crud outputs audit pending). There is **one Critical** item: the supply-chain risk in `fetch-mermaid.sh` materially affects end users. M2 (acronym drift) was resolved in cycle-1 Phase A.
+**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 5-suite canonical test suite post-cycle-1 cleanup) but operates with **zero pre-merge automation** and several **structural gaps** surfaced by cycle-1 discovery (methodology rigidity, verify-claims.sh transition incomplete, crud outputs audit pending). There are **zero open Critical** items: the supply-chain risk in `fetch-mermaid.sh` (C1) was resolved in work-001 (task-001 + task-002 + task-003). M2 (acronym drift) was resolved in cycle-1 Phase A.
 
 | Severity | Count | Items |
 |----------|-------|-------|
-| Critical | 1 | C1 |
+| Critical | 0 | C1 (resolved) |
 | High | 5 | H1, H2, H3, H5, H6 |
 | Medium | 7 | H4, M1, M2 (resolved), M3, M4, M5, M6 |
 | Low | 5 | L1, L2, L3, L4, L5 |
@@ -41,10 +42,10 @@ changelog:
 
 | ID | Type | Description | Location | Risk | Effort | Priority |
 |----|------|-------------|----------|------|--------|----------|
-| C1 | Supply Chain | `fetch-mermaid.sh` fetches `mermaid@latest` from npm registry with no version pin and no SHA verification | `canonical/scripts/summarize/fetch-mermaid.sh:16-18, 41, 59-73` | Critical | S | P1 |
+| C1 | Supply Chain (RESOLVED) | `fetch-mermaid.sh` pinned to v11.15.0 with SHA verification on both cache-hit and post-download paths | `canonical/scripts/summarize/fetch-mermaid.sh` | Critical | S | — |
 | H1 | Doc Drift / Untestable Claim | Older docs cited two e2e test runners in `.aid/work-001-aid-lite/test-reports/` that do not exist on disk; per Q1 resolution (cycle-1) those runners were never correct canonical artifacts and have been removed from documentation | `tests/README.md` (the current contract); disk: `.aid/work-001-aid-lite/` correctly absent | High | S | P1 |
 | H2 | No CI | Zero pre-merge automation; every test/verify pass is manual | repo-wide | High | M | P2 |
-| H3 | Supply Chain (sibling of C1) | No language lock files exist (`package-lock.json`, `requirements.txt`, etc.) — vulnerability scanning is impossible | repo-wide; absence confirmed in `project-structure.md:96` | High | M | P2 |
+| H3 | Supply Chain | No language lock files exist (`package-lock.json`, `requirements.txt`, etc.) — vulnerability scanning is impossible. Previously framed as a sibling of C1 (Mermaid pin); C1 is now closed (resolved 2026-05-29). H3's concern — no language lock files for transitive supply-chain scanning — remains open. | repo-wide; absence confirmed in `project-structure.md:96` | High | M | P2 |
 | H4 | Crud Outputs (partially resolved) | Skills/scripts audit needed: unnecessary write-only outputs (reports/logs/intermediate files) not consumed by any downstream step — known instance fixed in cycle-1 (Q2: report_path=None); broader audit remains | scope: 10 user-facing skills + 11 generators/builders | Medium | M | P3 |
 | H5 | Methodology Flexibility | Methodology assumes rigid 16-doc KB set; meta-repos / docs-only / library-only projects need flexibility | methodology spec, aid-discover, verify-claims, canonical/templates/knowledge-base/ | High | L | P2 |
 | H6 | verify-claims.sh deletion follow-up | verify-claims.sh deleted; discovery-reviewer now owns FM+contract verification semantically — reviewer prompt coverage must be confirmed explicitly | cycle-1 inline refactor; canonical/agents/discovery-reviewer/AGENT.md | High | S | P2 |
@@ -82,6 +83,10 @@ changelog:
 5. Update `tests/canonical/` (or add a new suite) to cover the pin-mismatch path.
 
 **Owner suggestion:** maintainer (single-file change in canonical/, then `python run_generator.py` to propagate to 4 install-tree copies).
+
+**Status:** Resolved 2026-05-29 (commits e912f81 task-001, 7ead158 task-002, 13864e3 task-002 cycle-4, plus this commit task-003).
+
+**Resolution:** Pinned to v11.15.0 with SHA verification on both cache-hit and post-download paths; .meta is treated as untrusted; tests/canonical/fetch-mermaid.sh covers all four paths (cache-hit tamper, post-download tamper, clean fast-path, sha256sum-fallback).
 
 ---
 
@@ -128,7 +133,9 @@ changelog:
 - No `requirements.txt`, `pyproject.toml`, `Pipfile`, `Pipfile.lock` despite Python 3.11+ being required for the generator (`.claude/skills/aid-generate/scripts/harness.py:15`).
 - No `Cargo.toml`, `go.mod`, `Gemfile.lock`.
 
-**Impact:** Cannot run `npm audit` / `pip-audit` / `dependabot` / `renovate` against this repo. Vulnerability advisories in any transitive dependency (Mermaid included) are invisible. Compounds C1.
+**Note:** Previously framed as a sibling of C1 (Mermaid pin); C1 is now closed (resolved 2026-05-29 — `fetch-mermaid.sh` now downloads a pinned version with SHA verification). H3's concern — no language lock files for transitive supply-chain scanning — remains open independently of C1.
+
+**Impact:** Cannot run `npm audit` / `pip-audit` / `dependabot` / `renovate` against this repo. Vulnerability advisories in any transitive dependency (Mermaid included) are invisible.
 
 **Fix recipe (estimated M effort):**
 1. Add a minimal `package.json` declaring the Mermaid CLI + any dev tooling used by the `.mjs` validators; commit `package-lock.json`.

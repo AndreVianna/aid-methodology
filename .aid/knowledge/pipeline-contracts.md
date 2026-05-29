@@ -329,12 +329,12 @@ The Reviewer agent produces a structured issue list with two-tag classification 
 
 ### `bash canonical/scripts/summarize/fetch-mermaid.sh`
 
-- **Purpose:** Fetches latest Mermaid library from npm + jsdelivr CDN; caches to
-  `.aid/knowledge/.cache/mermaid.min.js`
+- **Purpose:** Fetches the pinned Mermaid library (v11.15.0) from jsdelivr CDN; caches to
+  `.aid/knowledge/.cache/mermaid.min.js`. SHA-verified on both cache-hit and post-download paths.
 - **Output (stdout last line):** `VERSION=x.y.z PATH=.aid/knowledge/.cache/mermaid.min.js SHA256=...`
-- **Cache hit:** Re-uses cache when version unchanged (no download)
+- **Cache hit:** Re-uses cache when version matches `PINNED_VERSION` AND SHA matches `EXPECTED_SHA256`
 - **External dependencies:** `curl`, `sha256sum` or `shasum -a 256`
-- **Source:** `canonical/scripts/summarize/fetch-mermaid.sh:1-78`
+- **Source:** `canonical/scripts/summarize/fetch-mermaid.sh:1-104`
 
 ### `bash canonical/scripts/kb/preflight.sh <knowledge-dir>`
 
@@ -562,8 +562,7 @@ view. Listed here for the contract-side completeness.)
 
 | External service | Purpose | Client | Source |
 |------------------|---------|--------|--------|
-| `https://registry.npmjs.org/mermaid/latest` | Latest Mermaid version metadata | `curl -sSf --max-time 30` | `canonical/scripts/summarize/fetch-mermaid.sh:16-18` |
-| `https://cdn.jsdelivr.net/npm/mermaid@<ver>/dist/mermaid.min.js` | Mermaid library bytes | `curl -sSf --max-time 120` | `canonical/scripts/summarize/fetch-mermaid.sh:41-47` |
+| `https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js` | Mermaid library bytes (pinned version, SHA-verified) | `curl -sSf --max-time 120` | `canonical/scripts/summarize/fetch-mermaid.sh:67-91` |
 | `gh` CLI (GitHub API) | PR creation, issue mgmt | Subprocess (per `CLAUDE.md` PR convention) | `CLAUDE.md` git/PR sections |
 
 No SDKs, no HTTP clients in code beyond `curl` calls in 2 helper scripts. No persistent

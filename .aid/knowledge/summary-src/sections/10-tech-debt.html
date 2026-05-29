@@ -2,14 +2,14 @@
 	<header>
 		<span class="eyebrow">Debt</span>
 		<h2>Tech Debt</h2>
-		<p class="lede">Overall debt level: Medium–High. The codebase is well-organized (Thin-Router convention, single canonical source, 5-suite test coverage) but operates with zero pre-merge automation and several structural gaps. One Critical item, five High items. (per tech-debt.md)</p>
+		<p class="lede">Overall debt level: Medium. The codebase is well-organized (Thin-Router convention, single canonical source, 6-suite test coverage) but operates with zero pre-merge automation and several structural gaps. <strong>Zero Critical items remain.</strong> Five High items. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
 		<div class="card">
 			<div class="kicker">Critical</div>
-			<div class="stat" style="color:var(--err);">1</div>
-			<div class="stat-sub">supply chain (C1)</div>
+			<div class="stat" style="color:var(--ok);">0</div>
+			<div class="stat-sub">none open</div>
 		</div>
 		<div class="card">
 			<div class="kicker">High</div>
@@ -18,20 +18,14 @@
 		</div>
 		<div class="card">
 			<div class="kicker">Medium</div>
-			<div class="stat" style="color:var(--info);">7</div>
-			<div class="stat-sub">H4, M1–M6 (M2 resolved)</div>
+			<div class="stat" style="color:var(--info);">6</div>
+			<div class="stat-sub">H4, M1, M3, M4, M5, M6</div>
 		</div>
 		<div class="card">
 			<div class="kicker">Low</div>
 			<div class="stat" style="color:var(--text-dim);">5</div>
 			<div class="stat-sub">L1–L5</div>
 		</div>
-	</div>
-
-	<div class="debt-item crit">
-		<div class="title">C1 — Mermaid CDN fetch not version-pinned or SHA-verified</div>
-		<div class="meta">Type: Supply Chain · Effort: S · Priority: P1</div>
-		<p><code>fetch-mermaid.sh</code> fetches <code>mermaid@latest</code> from npm registry with no version pin and no SHA verification at download time. SHA is computed after download (not before). An npm-registry compromise would silently ship compromised JS into the offline KB viewer. Fix: pin PINNED_VERSION + EXPECTED_SHA256 constant and verify after download. (per tech-debt.md C1)</p>
 	</div>
 
 	<div class="debt-item high">
@@ -43,19 +37,13 @@
 	<div class="debt-item high">
 		<div class="title">H3 — No language lock files</div>
 		<div class="meta">Type: Supply Chain · Effort: M · Priority: P2</div>
-		<p>No <code>package-lock.json</code>, no <code>requirements.txt</code> — vulnerability scanning is impossible. This is a sibling to C1. (per tech-debt.md H3)</p>
+		<p>No <code>package-lock.json</code>, no <code>requirements.txt</code> — vulnerability scanning is impossible. Previously framed as a sibling of C1; with C1 now resolved (2026-05-29), H3's concern stands independently. (per tech-debt.md H3)</p>
 	</div>
 
 	<div class="debt-item high">
 		<div class="title">H5 — Methodology flexibility</div>
 		<div class="meta">Type: Architecture · Effort: L · Priority: P2</div>
 		<p>Methodology assumes a rigid 16-doc KB set. Meta-repos, docs-only projects, and library-only projects need flexibility to adapt the standard set. (per tech-debt.md H5)</p>
-	</div>
-
-	<div class="debt-item med">
-		<div class="title">M2 — Acronym drift (Resolved)</div>
-		<div class="meta">Type: Doc Drift · Effort: XS · Status: Resolved 2026-05-27</div>
-		<p>All four AID name variants canonicalized to "AI Integrated Development" in commit 82a5bd5. (per tech-debt.md M2)</p>
 	</div>
 
 	<div class="debt-item low">
