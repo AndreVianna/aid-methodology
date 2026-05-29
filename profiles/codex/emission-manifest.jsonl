@@ -19,7 +19,7 @@
 {"dst": ".agents/scripts/summarize/concatenate.ps1", "profile": "codex", "sha256": "21de32ffc7a2da111bb2b2c27b83a1e502ea6689a35676e772936df569349bcb", "src": "canonical/scripts/summarize/concatenate.ps1"}
 {"dst": ".agents/scripts/summarize/concatenate.sh", "profile": "codex", "sha256": "905ab3d51f37cb2ae98ca4de296f697293ec95d51a9f98a3079f3ba649d07046", "src": "canonical/scripts/summarize/concatenate.sh"}
 {"dst": ".agents/scripts/summarize/contrast-check.mjs", "profile": "codex", "sha256": "8bde28f5ef626b8e9964d882b1ccd94b119520e830d51cc0ab9a9279337d4a75", "src": "canonical/scripts/summarize/contrast-check.mjs"}
-{"dst": ".agents/scripts/summarize/fetch-mermaid.sh", "profile": "codex", "sha256": "29762f152ccde2836838f3482bc2068b533a5a570a59d4c054b20e8317cee278", "src": "canonical/scripts/summarize/fetch-mermaid.sh"}
+{"dst": ".agents/scripts/summarize/fetch-mermaid.sh", "profile": "codex", "sha256": "4d65d1a847b8829adc8dc17c18f5ffbf418d75fb2bf523b8a951777a529cd777", "src": "canonical/scripts/summarize/fetch-mermaid.sh"}
 {"dst": ".agents/scripts/summarize/manual-checklist.sh", "profile": "codex", "sha256": "9b7be36ea4e52362cd75b6b87da5999103dbfc022680997f7fd3dadedf8b7bd9", "src": "canonical/scripts/summarize/manual-checklist.sh"}
 {"dst": ".agents/scripts/summarize/preflight.sh", "profile": "codex", "sha256": "3c5e2aa0652081639471f959a1223934a977193ad732f2805279b9c617a11526", "src": "canonical/scripts/summarize/preflight.sh"}
 {"dst": ".agents/scripts/summarize/run-validators.sh", "profile": "codex", "sha256": "eb61230ac86aaf2ae69292b4036ca9dd23319ad70627dc824bd0e984984f1367", "src": "canonical/scripts/summarize/run-validators.sh"}

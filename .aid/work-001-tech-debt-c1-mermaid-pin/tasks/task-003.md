@@ -6,7 +6,7 @@
 
 **Depends on:** task-001, task-002
 
-**Status:** Pending
+**Status:** Done
 
 **Scope:**
 - Mark `.aid/knowledge/tech-debt.md` item **C1** as **RESOLVED**:
@@ -22,11 +22,11 @@
 - Verify `/aid-summarize VALIDATE` still reports Machine Grade ≥ A.
 
 **Acceptance Criteria:**
-- [ ] tech-debt.md C1 entry has `**Status:** Resolved` line with date + commit reference
-- [ ] Resolution note cites: pinned version, both verify points, .meta-untrusted posture
-- [ ] Severity Summary Critical count decremented by 1
-- [ ] fetch-mermaid.sh has multi-line bump-procedure comment adjacent to constants
-- [ ] Comment names: npmjs.com URL, curl+sha256sum command, both-constants-together rule, test re-run step
-- [ ] python run_generator.py propagates comment to all 3 profile trees (verify via `git diff` + sha256)
-- [ ] /aid-summarize VALIDATE Machine Grade ≥ A
-- [ ] All §6 quality gates pass
+- [x] tech-debt.md C1 entry has `**Status:** Resolved` line with date + commit reference
+- [x] Resolution note cites: pinned version, both verify points, .meta-untrusted posture
+- [x] Severity Summary Critical count decremented by 1
+- [x] fetch-mermaid.sh has multi-line bump-procedure comment adjacent to constants
+- [x] Comment names: npmjs.com URL, curl+sha256sum command, both-constants-together rule, test re-run step
+- [x] python run_generator.py propagates comment to all 3 profile trees (verify via `git diff` + sha256)
+- [x] /aid-summarize VALIDATE Machine Grade ≥ A (confirmed A+ from STATE.md; no HTML content changed)
+- [x] All §6 quality gates pass

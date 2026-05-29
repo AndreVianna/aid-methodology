@@ -6,6 +6,17 @@
 
 set -eu
 
+# === HOW TO BUMP THE MERMAID VERSION ===
+#
+# 1. Find the new version on npmjs: https://www.npmjs.com/package/mermaid
+# 2. Compute the new SHA256:
+#      curl -sS https://cdn.jsdelivr.net/npm/mermaid@<new-ver>/dist/mermaid.min.js | sha256sum
+# 3. Update BOTH constants below atomically (PINNED_VERSION + EXPECTED_SHA256).
+#    Don't update one without the other — the script will reject the cached
+#    file on first run after a half-update.
+# 4. Verify locally: `bash tests/canonical/fetch-mermaid.sh` must pass.
+# =====================================
+
 PINNED_VERSION="v11.15.0"
 EXPECTED_SHA256="70137e77bb273bb2ef972b86e8b0400cca8be53cb25bfc45911a186dc98665de"
 

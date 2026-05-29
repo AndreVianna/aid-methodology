@@ -36,9 +36,9 @@ A comment block near the constants documents the manual bump procedure (where to
 - [x] Running the script with a clean, valid cache file leaves it in place and reports SHA match. *(closed by task-001 AC7)*
 - [x] New test in `tests/canonical/` covers BOTH verify points (cache-hit verify on tampered file + post-download verify after a successful download) AND the clean-cache fast path. *(closed by task-002, commits d51389d → 7a7838e → 7ead158)*
 - [x] `canonical/scripts/summarize/fetch-mermaid.sh` is the only canonical script modified for the fix itself; `python run_generator.py` propagates to the 3 profile trees. *(closed by task-001)*
-- [ ] After this lands, `.aid/knowledge/tech-debt.md` item C1 is marked **RESOLVED** with the commit reference. *(task-003)*
-- [ ] All existing tests pass; `/aid-summarize` VALIDATE state still reports Machine Grade ≥ A. *(verify at task-003)*
-- [ ] All §6 quality gates pass (baseline test/lint per REQUIREMENTS.md §6). *(verify at task-003)*
+- [x] After this lands, `.aid/knowledge/tech-debt.md` item C1 is marked **RESOLVED** with the commit reference. *(task-003)*
+- [x] All existing tests pass; `/aid-summarize` VALIDATE state still reports Machine Grade ≥ A. *(verify at task-003; A+ confirmed)*
+- [x] All §6 quality gates pass (baseline test/lint per REQUIREMENTS.md §6). *(verify at task-003)*
 
 ## Tasks
 
