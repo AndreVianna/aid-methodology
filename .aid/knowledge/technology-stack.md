@@ -48,8 +48,8 @@ Django, etc.). The only runtime libraries are:
 
 | Library | Version | Purpose | Source file / evidence |
 |---------|---------|---------|------------------------|
-| **Mermaid** | Fetched dynamically at run time from `registry.npmjs.org/mermaid/latest` | Diagram rendering inside `/aid-summarize`-generated HTML; inlined into the single-file output so the viewer works fully offline | `.claude/skills/aid-summarize/references/state-generate.md:16-29` (fetch-mermaid.sh procedure); `canonical/scripts/summarize/fetch-mermaid.sh:1-77` |
-| **(Implicit) jsdelivr CDN** | n/a — download URL: `https://cdn.jsdelivr.net/npm/mermaid@{ver}/dist/mermaid.min.js` | Source of the Mermaid bundle that gets cached + inlined | `state-generate.md:21` |
+| **Mermaid** | Pinned to v11.15.0 (constant `PINNED_VERSION`); downloaded once from jsdelivr CDN and cached; SHA-verified against `EXPECTED_SHA256` on both cache-hit and post-download paths | Diagram rendering inside `/aid-summarize`-generated HTML; inlined into the single-file output so the viewer works fully offline | `canonical/scripts/summarize/fetch-mermaid.sh:20-21, 52-64, 84-91` |
+| **(Implicit) jsdelivr CDN** | n/a — download URL: `https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js` | Source of the pinned Mermaid bundle that gets cached + inlined | `canonical/scripts/summarize/fetch-mermaid.sh:67` |
 
 Python uses **stdlib only** — `tomllib`, `hashlib`, `json`, `pathlib`, `re`, `dataclasses`,
 `argparse`, `tempfile`, `filecmp`, `sys`. Confirmed by `harness.py:18-25` and the absence

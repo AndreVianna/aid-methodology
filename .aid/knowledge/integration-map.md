@@ -53,14 +53,14 @@ rather than a runtime queue.
 
 - **System:** Plain filesystem (no Redis, no Memcached)
 - **Location:** `.aid/knowledge/.cache/mermaid.min.js` + `mermaid.min.js.meta`
-- **What is cached:** The minified Mermaid library bytes from jsdelivr CDN
-- **Cache key:** npm-registry `latest` version string
+- **What is cached:** The minified Mermaid library bytes from jsdelivr CDN (pinned to v11.15.0)
+- **Cache key:** `PINNED_VERSION` constant (`v11.15.0`); derived via `${PINNED_VERSION#v}` — no npm registry query
 - **Meta file format (KV):** `version=`, `sha256=`, `fetched_at=`, `url=`
-- **Invalidation:** New invocation of `fetch-mermaid.sh` queries npm; cache hit only when
-  cached `version` equals fetched `latest`; otherwise re-downloads and overwrites
+- **Meta trust:** `.meta` is treated as untrusted — version match is necessary but not sufficient; SHA comparison is the actual trust boundary
+- **Invalidation / verify gate:** On cache-hit, `compute_sha256()` is called and compared to `EXPECTED_SHA256`; mismatch deletes cached file + meta + exits non-zero. On post-download, same SHA comparison is applied before accepting the downloaded file.
 - **TTL:** None (version-pinned, not time-pinned)
 - **Atomicity:** `.tmp` file + `mv` to atomically swap
-- **Source:** `canonical/scripts/summarize/fetch-mermaid.sh:9-74`
+- **Source:** `canonical/scripts/summarize/fetch-mermaid.sh:20-21, 35-44, 52-64, 84-91`
 
 ### Discovery `project-index.md` (functions as a cache)
 
@@ -99,8 +99,7 @@ personal credentials and does not register webhooks.
 
 | Service | Purpose | Integration method | Auth / credentials | Source |
 |---------|---------|--------------------|--------------------|--------|
-| **npm registry** (`registry.npmjs.org`) | Mermaid library version discovery | `curl -sSf --max-time 30` against `/mermaid/latest`, regex-extract `"version"` field | None (public read endpoint, no API key) | `canonical/scripts/summarize/fetch-mermaid.sh:16-18` |
-| **jsdelivr CDN** (`cdn.jsdelivr.net`) | Fetch Mermaid library bytes | `curl -sSf --max-time 120` against `/npm/mermaid@<ver>/dist/mermaid.min.js` | None (public CDN, no API key) | `canonical/scripts/summarize/fetch-mermaid.sh:41-47` |
+| **jsdelivr CDN** (`cdn.jsdelivr.net`) | Fetch pinned Mermaid library bytes (mermaid@v11.15.0) | `curl -sSf --max-time 120` against `/npm/mermaid@11.15.0/dist/mermaid.min.js`; download SHA-verified against `EXPECTED_SHA256` constant before accepting | None (public CDN, no API key) | `canonical/scripts/summarize/fetch-mermaid.sh:67-91` |
 | **GitHub** (via `gh` CLI) | PR creation, issue mgmt, repo ops | Subprocess invocation of `gh` (assumed installed by adopter) | `gh auth login` — credential stored by `gh` (out-of-band), never embedded in repo. ⚠️ Maintainer note in user memory: `AndreVianna` account required for AID push access | `CLAUDE.md` PR/git workflow blocks |
 | **Git server (any)** | VCS operations (branch, commit, push) | Inline `git` invocations by `aid-execute` / `aid-deploy` / dev workflow | OS git config / SSH key (out-of-band) | `canonical/skills/aid-execute/SKILL.md:53-71` (branch isolation block) |
 
@@ -111,8 +110,8 @@ git config, OS keyring). No `.env`, no secrets manager, no token file inside the
 
 | Requirement | Purpose | Source |
 |-------------|---------|--------|
-| `curl` | Mermaid fetch | `canonical/scripts/summarize/fetch-mermaid.sh:16, 43` |
-| `sha256sum` OR `shasum -a 256` | Mermaid bytes integrity | `canonical/scripts/summarize/fetch-mermaid.sh:59-64` |
+| `curl` | Mermaid fetch (pinned jsdelivr only) | `canonical/scripts/summarize/fetch-mermaid.sh:69` |
+| `sha256sum` OR `shasum -a 256` | Mermaid bytes integrity (cache-hit + post-download verify) | `canonical/scripts/summarize/fetch-mermaid.sh:37-40, 54-60, 85-91` |
 | `node` (Node 18+) | `validate-diagrams.mjs` | `README.md:326` (per `.aid/knowledge/project-structure.md:318`) |
 | `python3` OR `python` | Recipe slot-fill JSON parse | `canonical/scripts/interview/parse-recipe.sh:38` |
 | `awk`, `sed`, `grep`, `wc`, `find` | Universal helper-script dependencies | every `canonical/scripts/**/*.sh` |

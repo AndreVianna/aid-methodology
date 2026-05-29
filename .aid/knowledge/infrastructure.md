@@ -187,8 +187,8 @@ The `gh` CLI is the maintainer's primary tool for PR creation, issue triage, and
 | Node | 18+ | `aid-summarize` validators (`*.mjs`) + Mermaid CLI | `README.md:326` (per scout) |
 | Git | any modern | VCS | implicit |
 | GitHub CLI (`gh`) | any modern | PR/issue/release operations | user memory; called by AID docs |
-| curl | any modern | `fetch-mermaid.sh` outbound HTTPS | `canonical/scripts/summarize/fetch-mermaid.sh:16, 43` |
-| sha256sum or shasum | any | `fetch-mermaid.sh` cache fingerprint | `canonical/scripts/summarize/fetch-mermaid.sh:59-65` |
+| curl | any modern | `fetch-mermaid.sh` outbound HTTPS (pinned jsdelivr download only) | `canonical/scripts/summarize/fetch-mermaid.sh:69` |
+| sha256sum or shasum | any | `fetch-mermaid.sh` SHA verify (cache-hit + post-download) | `canonical/scripts/summarize/fetch-mermaid.sh:37-40, 54-60, 85-91` |
 | yq (optional) | any | `read-setting.sh` defers to it for complex YAML | `canonical/scripts/config/read-setting.sh:42` |
 
 ---
@@ -205,7 +205,7 @@ These directories function as "infrastructure" at runtime — they hold ephemera
 | `.aid/generated/` | Build outputs the maintainer wants to track (`project-index.md`) | **No** — selectively committed |
 | `.aid/templates/` | Runtime template copies | **No** — committed |
 | `.aid/settings.yml` | AID pipeline configuration (single source of truth) | **No** — committed |
-| `.aid/knowledge/.cache/` | Mermaid JS cache (per `fetch-mermaid.sh`) | Yes — `.gitignore:40` |
+| `.aid/knowledge/.cache/` | Mermaid JS cache (per `fetch-mermaid.sh`; cache file is SHA-verified before use) | Yes — `.gitignore:40` |
 | `.claude/worktrees/` | Claude Code worktree state (legacy; worktrees are RETIRED per `coding-standards.md §7f`) | Yes — `.gitignore:43` |
 | `.claude/settings.local.json` | Per-developer Claude Code overrides | Yes — `.gitignore:44` |
 
@@ -215,12 +215,15 @@ These directories function as "infrastructure" at runtime — they hold ephemera
 
 The **single outbound HTTP call** in the entire codebase is `canonical/scripts/summarize/fetch-mermaid.sh`:
 
-- `https://registry.npmjs.org/mermaid/latest` (line 16) — version lookup
-- `https://cdn.jsdelivr.net/npm/mermaid@<ver>/dist/mermaid.min.js` (line 41) — JS download
+- `https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js` (line 67) — JS download for the pinned version
+
+The npm registry (`registry.npmjs.org/mermaid/latest`) is no longer queried. The version is derived from the `PINNED_VERSION` constant (line 20); `LATEST` is set via `${PINNED_VERSION#v}` (line 30) — no outbound lookup.
+
+The download is SHA-verified against `EXPECTED_SHA256` (line 21) on the post-download path (lines 85–91). The cached file is also SHA-verified before use on the cache-hit path (lines 54–60). A `.meta` file records version metadata but is treated as untrusted — only the SHA comparison is the actual trust boundary.
 
 No other script makes outbound HTTPS. No telemetry, no analytics, no auto-update check.
 
-⚠️ **Security risk:** these calls are unpinned — see `tech-debt.md` C1 for the supply-chain debt item.
+**Supply-chain posture:** C1 (unpinned fetch) is resolved — see `tech-debt.md` C1 (RESOLVED 2026-05-29).
 
 ---
 

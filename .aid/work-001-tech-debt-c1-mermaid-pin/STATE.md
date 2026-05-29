@@ -20,7 +20,8 @@
 |---|------|------|------|--------|--------|---------|-------|
 | task-001 | Pin Mermaid version + SHA verify on BOTH paths | REFACTOR | 1 | Done | A+ | ~2m53s exec + ~95s review | commit e912f81; 10/10 ACs verified on disk |
 | task-002 | Add tests/canonical/fetch-mermaid.sh | TEST | 2 | Done | A+ (orch-applied cycle 4) | ~15m total across 4 dev cycles + 3 reviewer cycles | commit 13864e3 final; cycle 3 graded B+ (D4 tautology); cycle 4 orchestrator-applied 1-line symlink fix; test still 19/19 pass |
-| task-003 | Close tech-debt.md C1 + bump comment | DOCUMENT | 3 | Done | A+ (self-verified) | ~6m | Commit f773152; bump comment propagated; tech-debt.md C1 RESOLVED; Critical=0; tests still 19/19 pass; /aid-summarize VALIDATE A+ unchanged |
+| task-003 | Close tech-debt.md C1 + bump comment | DOCUMENT | 3 | Done | A+ (narrow-scope) | ~6m | Commit f773152; bump comment propagated; tech-debt.md C1 RESOLVED; Critical=0. **Spec was too narrow — KB cascade-update missing (task-004).** |
+| task-004 | KB cascade-update for C1 closure | DOCUMENT | 4 | In Progress | — | — | Sweep infrastructure.md / integration-map.md / architecture.md / security-model.md / tech-debt H3 for stale fetch-mermaid references |
 
 ## Delivery Gates
 
