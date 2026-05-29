@@ -410,7 +410,15 @@ touch "$sha_spy_flag"
 exit 1
 SHIM
     chmod +x "$shim_dir/sha256sum-spy"
-    # Do NOT symlink sha256sum or shasum into shim_dir.
+    # Symlink sha256sum (only) to the spy so D4's `[[ ! -e $sha_spy_flag ]]`
+    # assertion can actually fire. If the SUT's `command -v sha256sum` were to
+    # find it (which it shouldn't — the fallback branch is supposed to fire on
+    # `unknown`), the spy would touch the flag and D4 would fail loudly.
+    # shasum is intentionally NOT symlinked so the SUT's full fallback chain is
+    # exercised: try sha256sum (finds spy → if invoked, flag is touched), then
+    # try shasum (not present), then return "unknown".
+    ln -s sha256sum-spy "$shim_dir/sha256sum"
+    # Do NOT symlink shasum into shim_dir.
 
     # Symlink the other external binaries the SUT uses into shim_dir so the
     # script can start and run without /usr/bin or /bin in PATH.
