@@ -3,7 +3,7 @@
 Unit/integration tests for the canonical helper scripts that AID skills depend on.
 Each suite is a self-contained bash script with its own assertions; run them
 individually as needed. There is intentionally **no aggregator runner** — the
-suite count is small (5), all tests are deterministic, and explicit per-suite
+suite count is small (6), all tests are deterministic, and explicit per-suite
 invocation matches the methodology's preference for explicit over magical.
 
 ## Test suites
@@ -17,6 +17,7 @@ All under `tests/canonical/` (run from repo root):
 | `parse-recipe.sh` | `canonical/scripts/interview/parse-recipe.sh` operating modes (`--list`, `--validate`, `--spec`, `--tasks`, `--render`) + error paths (missing file, malformed front-matter, missing blocks, bad args) |
 | `compute-block-radius.sh` | `canonical/scripts/execute/compute-block-radius.sh` BFS transitive-descendant computation for failure-cascade in pool-dispatch (linear chains, diamonds, fan-outs) |
 | `delivery-gate-aggregate.sh` | `canonical/scripts/execute/aid-execute` delivery-gate aggregation: preserved deferred rows, empty-issues handling, SCORE computation, grade.sh determinism |
+| `fetch-mermaid.sh` | `canonical/scripts/summarize/fetch-mermaid.sh` pin + SHA verify: tampered-cache-hit rejection (Scenario A), post-download bad-blob rejection via curl stub (Scenario B), valid-cache fast path with no HTTP call (Scenario C) |
 
 ## Running
 
