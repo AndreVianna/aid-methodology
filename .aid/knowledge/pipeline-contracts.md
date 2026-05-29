@@ -574,7 +574,7 @@ connections, no auth tokens stored anywhere in the repo.
 
 - **e2e test runners** — Per Q1 resolution (cycle-1): `.aid/work-001-aid-lite/test-reports/`
   was never a correct home for canonical test scripts; those runners have been removed from
-  documentation. The 5 canonical test suites in `tests/canonical/` are the complete test
+  documentation. The 7 canonical test suites in `tests/canonical/` are the complete test
   contract (see `tests/README.md`).
 - **`run_generator.py` verify-report sink** — Per Q2 resolution (cycle-1): `run_generator.py`
   now passes `report_path=None` and no longer writes to `.aid/work-002-canonical-generator/`.

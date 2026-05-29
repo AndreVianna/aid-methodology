@@ -30,7 +30,7 @@ changelog:
 | **Markdown** | CommonMark + GFM tables (assumed; no validator pinned) | 872 files / 97,689 lines (`.aid/generated/project-index.md:19`). All docs, skills, agents, templates, recipes. |
 | **Bash (shell)** | bash 4+ (uses `declare -A` associative arrays, `[[ ]]`, `${var:-}`) | 109 files / 30,887 lines. Example: `setup.sh:27` declares `declare -A selected`. |
 | **Python** | 3.11+ (required for `tomllib` stdlib) | 11 files / 4,232 lines. Pinned by `.claude/skills/aid-generate/scripts/harness.py:15` "Requirements: Python 3.11+ (tomllib is stdlib; no third-party deps)" and `profile.py:12`. |
-| **JavaScript (ES modules + plain)** | ES2020+ (no explicit pin); `.mjs` for ESM scripts | 20 files / 5,685 lines. `canonical/scripts/summarize/validate-diagrams.mjs` (574 lines), `contrast-check.mjs` (151 lines); `canonical/templates/knowledge-summary/lightbox.js` (359 lines), `mermaid-init.js` (53 lines). |
+| **JavaScript (ES modules + plain)** | ES2020+ (no explicit pin); `.mjs` for ESM scripts | 20 files / 5,685 lines. `canonical/scripts/summarize/validate-diagrams.mjs` (577 lines), `contrast-check.mjs` (151 lines); `canonical/templates/knowledge-summary/lightbox.js` (359 lines), `mermaid-init.js` (53 lines). |
 | **PowerShell** | 5.1+ | 6 files / 337 lines. `setup.ps1`, `canonical/scripts/summarize/concatenate.ps1`. Version requirement from `README.md:325`. |
 | **CSS** | CSS3 (custom properties, `:focus-visible`, `@media (forced-colors)`, `@media (prefers-reduced-motion)`) | 5 files / 3,285 lines. Single canonical source `canonical/templates/knowledge-summary/component-css.css` (657 lines) × 4 mirrors (canonical + .claude + 3 profile trees). |
 | **HTML** | HTML5 (semantic landmarks: `<header role="banner">`, `<main>`, `<nav>`, `<footer>`) | 5 files / 505 lines. `canonical/templates/knowledge-summary/html-skeleton.html` (101 lines) + 4 mirrors. |
@@ -65,10 +65,11 @@ level (verified absent in `.aid/generated/project-index.md`).
 | Tool | Version | Lock file |
 |------|---------|-----------|
 | **None for application code** | — | — |
-| **Implicit: npm registry HTTP API** (used only by `/aid-summarize` to discover the latest Mermaid version) | n/a | No `package-lock.json`, no `package.json` anywhere. Mermaid version metadata is cached at `.aid/knowledge/.cache/mermaid.min.js.meta` (per `state-generate.md:21-22`). |
+| **Implicit: jsDelivr CDN (pinned)** (used only by `/aid-summarize` to download the **pinned** Mermaid release `v11.15.0`, SHA-256-verified; the prior npm-registry "discover latest" call was removed when C1 was resolved 2026-05-29) | n/a | No `package-lock.json`, no `package.json` anywhere. The SHA-verified library is cached at `.aid/knowledge/.cache/mermaid.min.js` (per `canonical/scripts/summarize/fetch-mermaid.sh`). |
 
-Per `project-structure.md:96-97`: "no `package.json`, no `pyproject.toml`, no `Cargo.toml`,
-no `go.mod`, no `requirements.txt`, no `pom.xml`."
+Confirmed by repo-wide search: no `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`,
+`requirements.txt`, or `pom.xml` anywhere in the repo (project-structure.md §6 attests the
+absence of `package.json`-style config).
 
 ## Runtime
 
@@ -117,12 +118,14 @@ no `pyproject.toml`). Quality is enforced by:
 # Rebuild file inventory used by Discovery
 bash canonical/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md
 
-# Canonical helper-script test suites (5 suites, 235 tests total)
+# Canonical helper-script test suites (7 suites, 273 tests total)
 bash tests/canonical/writeback-task-status.sh    # 69 tests
 bash tests/canonical/delivery-gate-aggregate.sh  # 18 tests
 bash tests/canonical/compute-block-radius.sh     # 17 tests
 bash tests/canonical/parse-recipe.sh             # 113 tests (runtime ~150s — needs timeout ≥180s)
 bash tests/canonical/read-setting.sh             # 18 tests
+bash tests/canonical/fetch-mermaid.sh            # 19 tests
+bash tests/canonical/grade.sh                    # 19 tests
 ```
 
 **KB claim verification** is performed by the `discovery-reviewer` sub-agent in
@@ -142,13 +145,13 @@ Source: `project-structure.md §Build Commands`; `tests/README.md`.
 |------|---------|---------|-------------|
 | **Git** | unpinned | VCS — branch `kb-overhaul` per current working tree | `.git/`; `.gitignore` (47 lines, repo root) |
 | **`build-project-index.sh`** | `canonical/scripts/kb/build-project-index.sh` (368 lines) | Pre-builds the file inventory consumed by the 5 discovery sub-agents | — |
-| **`grade.sh`** | `canonical/scripts/grade.sh` (141 lines) | Deterministic severity-tag → letter-grade scorer used by the review state of every skill | — |
+| **`grade.sh`** | `canonical/scripts/grade.sh` (266 lines) | Deterministic severity-tag → letter-grade scorer used by the review state of every skill | — |
 | **`parse-recipe.sh`** | `canonical/scripts/interview/parse-recipe.sh` (540 lines) | Parses recipe `{{slot}}` placeholders; emits lite-path artifacts | — |
 | **`writeback-task-status.sh`** | `canonical/scripts/execute/writeback-task-status.sh` (627 lines) | Updates per-area `STATE.md` after a task completes | — |
 | **`compute-block-radius.sh`** | `canonical/scripts/execute/compute-block-radius.sh` (293 lines) | BFS over the task dependency graph to compute failure block radius (pool dispatch) | — |
 | **`read-setting.sh`** | `canonical/scripts/config/read-setting.sh` (263 lines) | Reads a dotted-path key from `.aid/settings.yml` with default fallback | — |
-| **`fetch-mermaid.sh`** | `canonical/scripts/summarize/fetch-mermaid.sh` (77 lines) | Discovers + caches the latest Mermaid release for offline inlining | — |
-| **`validate-diagrams.mjs`** | `canonical/scripts/summarize/validate-diagrams.mjs` (574 lines) | Mermaid syntax validation for the generated HTML | — |
+| **`fetch-mermaid.sh`** | `canonical/scripts/summarize/fetch-mermaid.sh` (103 lines) | Downloads + caches the pinned Mermaid release (`v11.15.0`, SHA-256-verified) for offline inlining | — |
+| **`validate-diagrams.mjs`** | `canonical/scripts/summarize/validate-diagrams.mjs` (577 lines) | Mermaid syntax validation for the generated HTML | — |
 | **`contrast-check.mjs`** | `canonical/scripts/summarize/contrast-check.mjs` (151 lines) | WCAG AA color-contrast audit on the design tokens; runs against both light + dark themes | — |
 | **`validate-html-output.sh`** | `canonical/scripts/summarize/validate-html-output.sh` (321 lines) | HTML output validation for `/aid-summarize` | — |
 | **`run-validators.sh`** | `canonical/scripts/summarize/run-validators.sh` (518 lines) | Aggregates the summarize-phase validators into a single Machine-Grade score | — |
@@ -171,7 +174,7 @@ design per `project-structure.md:296`.
 
 | Tool | Version | Purpose | Config / location |
 |------|---------|---------|---------|
-| **Pure bash test suites** | bash 4+ | All tests are plain bash scripts (no pytest, no jest, no junit) | `tests/canonical/*.sh` (5 suites — see `tests/README.md`) |
+| **Pure bash test suites** | bash 4+ | All tests are plain bash scripts (no pytest, no jest, no junit) | `tests/canonical/*.sh` (7 suites — see `tests/README.md`) |
 | **Generator self-tests** | Python 3.11+ | Manifest-safety unit tests | `.claude/skills/aid-generate/scripts/test_manifest_safety.py` (254 lines) |
 | **CI** | **None** | No `.github/`, no `.gitlab-ci.yml`, no `Jenkinsfile`, no `azure-pipelines.yml` | See `tech-debt.md H2` |
 

@@ -2,7 +2,7 @@
 description: "AID methodology workflow and Knowledge Base integration"
 alwaysApply: true
 ---
-This project uses the AI-Integrated Development (AID) methodology.
+This project uses the AI Integrated Development (AID) methodology.
 
 ## Knowledge Base
 - Read `.aid/knowledge/INDEX.md` for a map of all project documentation

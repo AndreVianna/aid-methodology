@@ -229,7 +229,7 @@ The build commands:
 | `python run_generator.py` | Re-generate all 3 install trees from `canonical/` (maintainer-only) |
 | `python .claude/skills/aid-generate/scripts/verify_deterministic.py` | Verify render is byte-correct + complete |
 | `bash canonical/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md` | Rebuild file inventory |
-| `bash tests/canonical/*.sh` | Run canonical helper test suites (5 suites — see `tests/README.md`) |
+| `bash tests/canonical/*.sh` | Run canonical helper test suites (7 suites — see `tests/README.md`) |
 
 **KB claim validation** is performed by the `discovery-reviewer` sub-agent in `/aid-discover REVIEW`.
 
@@ -315,7 +315,7 @@ Lite-path templates at `canonical/recipes/`, replicated into all 3 install trees
 
 5. **`canonical/scripts/` was newly reorganized.** Git status shows many recent renames from `canonical/templates/scripts/` and `canonical/skills/*/scripts/` into the consolidated `canonical/scripts/{config,execute,interview,kb,summarize}/` hierarchy.
 
-6. **`tests/canonical/` is the official test directory.** No `pytest.ini`, no `package.json`-style test config; tests are pure bash scripts; 5 suites (see `tests/README.md`). The `tests/skills/` directory and `tests/canonical/pool-dispatch.sh` were deleted in cycle-1 per Q6 resolution.
+6. **`tests/canonical/` is the official test directory.** No `pytest.ini`, no `package.json`-style test config; tests are pure bash scripts; 7 suites (see `tests/README.md`). The `tests/skills/` directory and `tests/canonical/pool-dispatch.sh` were deleted in cycle-1 per Q6 resolution.
 
 7. **No CI.** See `tech-debt.md H2`. No `.github/`, no `.gitlab-ci.yml`, no `Jenkinsfile`, no `azure-pipelines.yml` in the project index.
 

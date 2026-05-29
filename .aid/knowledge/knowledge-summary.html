@@ -678,7 +678,7 @@ details.accord > summary:focus-visible,
 		<span class="badge badge-primary">10 Skills</span>
 		<span class="badge badge-accent">22 Agents</span>
 		<span class="badge badge-info">3 Install Trees</span>
-		<span class="badge badge-ok">235 Tests</span>
+		<span class="badge badge-ok">273 Tests</span>
 		<span class="badge badge-purple">15 KB Docs</span>
 		<span class="badge">Methodology v3.1</span>
 	</div>
@@ -1209,7 +1209,7 @@ flowchart LR
 		<div class="card">
 			<div class="kicker">Grade computation</div>
 			<h3>grade.sh — deterministic</h3>
-			<p><code>canonical/scripts/grade.sh</code> (141 lines) converts an issue list with severity tags into a letter grade (A+ through F). The <code>--non-functional</code> flag forces F. The grade is computed by the script, never by the reviewing agent, making it tamper-resistant. (per module-map.md §4f)</p>
+			<p><code>canonical/scripts/grade.sh</code> (266 lines) converts an issue list with severity tags into a letter grade (A+ through F). The <code>--non-functional</code> flag forces F. The grade is computed by the script, never by the reviewing agent, making it tamper-resistant. (per module-map.md §4f)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">14 coding conventions</div>
@@ -1301,7 +1301,7 @@ flowchart TB
 	<header>
 		<span class="eyebrow">Tests</span>
 		<h2>Test Landscape</h2>
-		<p class="lede">5 unit/integration test suites under <code>tests/canonical/</code>, all deterministic Bash. 235 total assertions covering the canonical helper scripts that AID skills depend on. No CI — tests are run manually before merging. (per test-landscape.md)</p>
+		<p class="lede">7 unit/integration test suites under <code>tests/canonical/</code>, all deterministic Bash. 273 total assertions covering the canonical helper scripts that AID skills depend on. No CI — tests are run manually before merging. (per test-landscape.md)</p>
 	</header>
 
 	<div class="tbl-wrap">
@@ -1344,10 +1344,16 @@ flowchart TB
 					<td><strong>19</strong></td>
 					<td>4 scenarios — cache-hit tamper, post-download tamper (curl PATH-shim), clean fast path (curl-not-invoked), <code>compute_sha256</code> "unknown" fallback (sha256sum-spy via symlink). Closes tech-debt C1 (added 2026-05-29)</td>
 				</tr>
+				<tr>
+					<td><code>grade.sh</code></td>
+					<td><code>canonical/scripts/grade.sh</code></td>
+					<td><strong>19</strong></td>
+					<td>Severity-tag → letter-grade scorer: per-band letter+modifier, column-anchored counting (only Severity-column <code>[TAG]</code> in Pending/Recurred rows; ignores Description/Evidence/Summary text), <code>--non-functional</code> forces F, deprecated <code>--from-prose</code> path. Regression suite for the M7 fix (2026-05-29)</td>
+				</tr>
 				<tr style="font-weight:600;">
 					<td>Total</td>
 					<td></td>
-					<td><strong>254</strong></td>
+					<td><strong>273</strong></td>
 					<td>All suites are self-reporting; count method is each suite's own summary line — not grep of PASS markers</td>
 				</tr>
 			</tbody>
@@ -1365,7 +1371,7 @@ flowchart TB
 	<header>
 		<span class="eyebrow">Debt</span>
 		<h2>Tech Debt</h2>
-		<p class="lede">Overall debt level: Medium. The codebase is well-organized (Thin-Router convention, single canonical source, 6-suite test coverage) but operates with zero pre-merge automation and several structural gaps. <strong>Zero Critical items remain.</strong> Five High items. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
+		<p class="lede">Overall debt level: Medium. The codebase is well-organized (Thin-Router convention, single canonical source, 7-suite test coverage) but operates with zero pre-merge automation and several structural gaps. <strong>Zero Critical items remain.</strong> Five High items. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
@@ -1381,8 +1387,8 @@ flowchart TB
 		</div>
 		<div class="card">
 			<div class="kicker">Medium</div>
-			<div class="stat" style="color:var(--info);">6</div>
-			<div class="stat-sub">H4, M1, M3, M4, M5, M6</div>
+			<div class="stat" style="color:var(--info);">4</div>
+			<div class="stat-sub">H4, M3, M4, M6</div>
 		</div>
 		<div class="card">
 			<div class="kicker">Low</div>
@@ -1443,7 +1449,7 @@ flowchart TB
 		<div class="card">
 			<div class="kicker">examples/ folder</div>
 			<h3>Case studies (3)</h3>
-			<p>Three real-world proof-of-concept case studies: <code>brownfield-enterprise/</code> (discovery report + architecture KB), <code>data-pipeline/</code> (multi-agent pipeline architecture), <code>desktop-app/</code> (greenfield delivery plan + task spec). Note: examples are 3+ months stale as of the KB snapshot — see tech-debt L5. (per project-structure.md §Examples)</p>
+			<p>Three real-world proof-of-concept case studies: <code>brownfield-enterprise/</code> (discovery report + architecture KB), <code>data-pipeline/</code> (multi-agent pipeline architecture), <code>desktop-app/</code> (greenfield delivery plan + task spec). Note: the two March-2026 examples (data-pipeline, desktop-app) are ~2 months old; brownfield-enterprise was refreshed 2026-05-22 — none is 3+ months stale (see tech-debt L5). (per project-structure.md §Examples)</p>
 		</div>
 	</div>
 

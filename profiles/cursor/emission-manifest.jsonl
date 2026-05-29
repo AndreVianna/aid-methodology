@@ -27,7 +27,7 @@
 {"dst": ".cursor/recipes/bug-fix.md", "profile": "cursor", "sha256": "0115e2eed997abb3f865f47d45292901fa92811e5f6bb95546c16af2a57b2308", "src": "canonical/recipes/bug-fix.md"}
 {"dst": ".cursor/recipes/method-refactor.md", "profile": "cursor", "sha256": "15f1e0686a7c5e25542cedf5454dec12dceaf09a748b7d9bc105d3de1fc8dd26", "src": "canonical/recipes/method-refactor.md"}
 {"dst": ".cursor/recipes/write-release-note.md", "profile": "cursor", "sha256": "92e2fe8b6d4b2060f56eb7f5f321ab8fe73a95997ae8b5526ed33236fda9b4a3", "src": "canonical/recipes/write-release-note.md"}
-{"dst": ".cursor/rules/aid-methodology.mdc", "profile": "cursor", "sha256": "efc9c77b128bf5c09c01f65bfcb2f596ab60fb9881ae2ec45adb56f856375c53", "src": "canonical/rules/aid-methodology.mdc"}
+{"dst": ".cursor/rules/aid-methodology.mdc", "profile": "cursor", "sha256": "6ea97db1c0f8a897fb9b1afa6a91b5bfbb5b7cdcd467849fbe2b7eb966e7918c", "src": "canonical/rules/aid-methodology.mdc"}
 {"dst": ".cursor/rules/aid-review.mdc", "profile": "cursor", "sha256": "dd8784fc66b2b2b3b5f9c488a9235777b47b9b667673b05686cead8ce31e2d9b", "src": "canonical/rules/aid-review.mdc"}
 {"dst": ".cursor/scripts/config/read-setting.sh", "profile": "cursor", "sha256": "f7418a0fcb09bdcb606de6f79fec1d6596964bd1da75ccb215e62a7d757403b6", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".cursor/scripts/execute/complexity-score.sh", "profile": "cursor", "sha256": "d74d184c82618d68168ee3669b0e7feac63dd9272f21e1de8b2c07685d904401", "src": "canonical/scripts/execute/complexity-score.sh"}

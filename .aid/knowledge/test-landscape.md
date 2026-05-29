@@ -3,16 +3,17 @@ kb-category: primary
 source: hand-authored
 intent: |
   Inventory of test suites that protect the canonical bash helper scripts AID
-  skills depend on. 5 unit/integration suites under tests/canonical/, all
+  skills depend on. 7 unit/integration suites under tests/canonical/, all
   deterministic bash. NO methodology/orchestration/E2E tests — those don't
   exist and aren't needed (the methodology is exercised by dogfooding, the
   renderer has its own VERIFY-4a gate). Read this to understand what changes
   to canonical/scripts/ are guarded by tests vs require manual verification.
 contracts:
-  - "5 test suites under tests/canonical/, no skill-level tests"
+  - "7 test suites under tests/canonical/, no skill-level tests"
   - "All suites are bash (POSIX); require Git Bash on Windows"
   - "No aggregator script (per Q6 cycle-1 decision); explicit per-suite invocation"
 changelog:
+  - 2026-05-29: Corrected count 5→7 suites / 235→273 assertions — added the fetch-mermaid.sh and grade.sh sections (both existed on disk but were missing from this inventory); fixed validate-diagrams.mjs line count 574→577
   - 2026-05-27: Initial generation by discovery-quality (cycle-1)
   - 2026-05-27: Full rewrite during cycle-2 FIX Phase B for accurate post-Q6-cleanup state (Q20)
 ---
@@ -37,7 +38,7 @@ What is NOT tested here:
 
 ---
 
-## Suites (5)
+## Suites (7)
 
 All suites live under `tests/canonical/` and target scripts under `canonical/scripts/`.
 
@@ -120,6 +121,32 @@ Covers:
 6 numbered scenarios; **18 assertions**.
 File: `tests/canonical/delivery-gate-aggregate.sh` (~535 lines)
 
+### fetch-mermaid.sh
+
+**Target:** `canonical/scripts/summarize/fetch-mermaid.sh`
+
+Covers the C1 supply-chain pin + SHA-verification (added 2026-05-29):
+- Tampered cache-hit rejection (Scenario A) — a corrupted cached blob fails the SHA check
+- Post-download bad-blob rejection (Scenario B) — via a `curl` PATH-shim returning a tampered payload
+- Valid-cache fast path (Scenario C) — no HTTP call is made when the cache is present and valid
+- `compute_sha256` "unknown" fallback (Scenario D) — fails closed when neither `sha256sum` nor `shasum` is on PATH (sha256sum-spy via symlink)
+
+4 scenarios; **19 assertions** (script prints "Tests passed: 19" then "All tests passed.").
+File: `tests/canonical/fetch-mermaid.sh` (~494 lines)
+
+### grade.sh
+
+**Target:** `canonical/scripts/grade.sh`
+
+Regression suite for the M7 column-anchored rewrite of the severity-tag → letter-grade scorer:
+- Each severity band maps to the correct letter + count modifier
+- Only Severity-column `[TAG]` values in `Pending`/`Recurred` rows are counted (tags in Description/Evidence cells and prose Summary lines are ignored — the cycle-7 false-positive guard)
+- `--non-functional` forces F; empty / zero-finding ledger → A+
+- Deprecated `--from-prose` path still parses (with fenced / inline-code stripping)
+
+**19 assertions** (script prints "Tests passed: 19" then "All tests passed.").
+File: `tests/canonical/grade.sh` (~353 lines)
+
 ---
 
 ## Total test count
@@ -131,7 +158,9 @@ File: `tests/canonical/delivery-gate-aggregate.sh` (~535 lines)
 | `parse-recipe.sh` | 113 | `Tests passed: 113 / All tests passed.` |
 | `compute-block-radius.sh` | 17 | `Results: 17 passed, 0 failed` |
 | `delivery-gate-aggregate.sh` | 18 | `Results: 18 passed, 0 failed` |
-| **Total** | **235** | (sum of self-reported summary lines) |
+| `fetch-mermaid.sh` | 19 | `Tests passed: 19 / All tests passed.` |
+| `grade.sh` | 19 | `Tests passed: 19 / All tests passed.` |
+| **Total** | **273** | (sum of self-reported summary lines) |
 
 Count method: each suite's own self-reported summary line is authoritative. Verified end-to-end (cycle-5, 2026-05-27): run each suite with timeout ≥180s (parse-recipe takes ~150s), then read the script's own "Tests passed: N" / "Results: N passed" line. Do NOT count `PASS:` markers via grep — different suites use different formats and you may undercount if a suite hangs or is timed-out before completion. Recount after any test addition.
 
@@ -146,11 +175,13 @@ bash tests/canonical/writeback-task-status.sh
 bash tests/canonical/parse-recipe.sh
 bash tests/canonical/compute-block-radius.sh
 bash tests/canonical/delivery-gate-aggregate.sh
+bash tests/canonical/fetch-mermaid.sh
+bash tests/canonical/grade.sh
 
 # Verbose output
 bash tests/canonical/read-setting.sh --verbose
 
-# Run all 5 in sequence (no aggregator — per Q6 cycle-1 decision)
+# Run all 7 in sequence (no aggregator — per Q6 cycle-1 decision)
 for f in tests/canonical/*.sh; do echo "=== $f ==="; bash "$f" || break; done
 ```
 
@@ -171,7 +202,7 @@ for the formal debt item.
   unknown; test-line-to-source-line ratio is the only proxy.
 - **No tests for PowerShell variants** — `canonical/scripts/summarize/concatenate.ps1`
   and mirror install-tree copies are untested.
-- **No tests for `.mjs` validators** — `validate-diagrams.mjs` (574 lines) and
+- **No tests for `.mjs` validators** — `validate-diagrams.mjs` (577 lines) and
   `contrast-check.mjs` (151 lines) have no Node test harness.
 - **No tests for `setup.sh` / `setup.ps1`** — the end-user install flow is untested.
 - **bats migration** — the inline `PASS=0` / `FAIL=0` counter pattern works but

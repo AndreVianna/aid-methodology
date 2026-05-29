@@ -3,7 +3,7 @@
 Unit/integration tests for the canonical helper scripts that AID skills depend on.
 Each suite is a self-contained bash script with its own assertions; run them
 individually as needed. There is intentionally **no aggregator runner** — the
-suite count is small (6), all tests are deterministic, and explicit per-suite
+suite count is small (7), all tests are deterministic, and explicit per-suite
 invocation matches the methodology's preference for explicit over magical.
 
 ## Test suites
@@ -18,6 +18,7 @@ All under `tests/canonical/` (run from repo root):
 | `compute-block-radius.sh` | `canonical/scripts/execute/compute-block-radius.sh` BFS transitive-descendant computation for failure-cascade in pool-dispatch (linear chains, diamonds, fan-outs) |
 | `delivery-gate-aggregate.sh` | `canonical/scripts/execute/aid-execute` delivery-gate aggregation: preserved deferred rows, empty-issues handling, SCORE computation, grade.sh determinism |
 | `fetch-mermaid.sh` | `canonical/scripts/summarize/fetch-mermaid.sh` pin + SHA verify: tampered-cache-hit rejection (Scenario A), post-download bad-blob rejection via curl stub (Scenario B), valid-cache fast path with no HTTP call (Scenario C), compute_sha256 unknown-fallback fails-closed when no sha256sum/shasum on PATH (Scenario D) |
+| `grade.sh` | `canonical/scripts/grade.sh` deterministic severity-tag → letter-grade scorer: per-band letter + count modifier, column-anchored counting (only a Severity-column `[TAG]` in a `Pending`/`Recurred` row counts; Description/Evidence/Summary text ignored — the cycle-7 false-positive guard), `--non-functional` forces F, deprecated `--from-prose` path |
 
 ## Running
 
@@ -28,7 +29,7 @@ bash tests/canonical/read-setting.sh
 # Verbose
 bash tests/canonical/read-setting.sh --verbose
 
-# Run all 6 (no aggregator; just chain them)
+# Run all 7 (no aggregator; just chain them)
 for f in tests/canonical/*.sh; do echo "=== $f ==="; bash "$f" || break; done
 ```
 

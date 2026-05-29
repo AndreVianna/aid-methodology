@@ -159,7 +159,7 @@ Python in the repo.
 **Dependencies:**
 
 - Python 3.11+ (stdlib `tomllib` per `.claude/skills/aid-generate/scripts/profile.py:12`).
-- No third-party packages (no `requirements.txt`, no `pyproject.toml`; confirmed via project-structure.md:96).
+- No third-party packages (no `requirements.txt`, no `pyproject.toml`; confirmed by repo-wide search).
 - `harness.py` is imported by every `render_*.py` via `sys.path.insert(0, str(_SCRIPT_DIR))` (per `render_agents.py:24`, `render_skills.py:21-24`).
 - `run_generator.py:7` inserts `.claude/skills/aid-generate/scripts` on the Python path and imports the renderers directly.
 
@@ -167,7 +167,7 @@ Python in the repo.
 
 - `test_manifest_safety.py` covers `EmissionManifest` round-trip + diff edge cases.
 - `verify_deterministic.py` is itself a test — invoked after every render and exits non-zero on drift (per `run_generator.py:75-79`). It exercises the entire renderer chain end-to-end against the committed trees.
-- No standalone Python test runner configured (no `pytest.ini`, per project-structure.md:96). Tests are invoked manually per `tests/README.md`.
+- No standalone Python test runner configured (no `pytest.ini`, per project-structure.md §6). Tests are invoked manually per `tests/README.md`.
 
 ---
 
