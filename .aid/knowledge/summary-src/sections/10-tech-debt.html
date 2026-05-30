@@ -2,7 +2,7 @@
 	<header>
 		<span class="eyebrow">Debt</span>
 		<h2>Tech Debt</h2>
-		<p class="lede">Overall debt level: Medium–High. The codebase is well-organized (Thin-Router convention, single canonical source, 7-suite test coverage) and now has enforced pre-merge CI (required status checks on master) but still carries several structural gaps. <strong>Zero Critical items remain.</strong> Three High items, three Medium, five Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
+		<p class="lede">Overall debt level: Medium–High. The codebase is well-organized (Thin-Router convention, single canonical source, 7-suite test coverage) and now has enforced pre-merge CI (required status checks on master) but still carries several structural gaps. <strong>Zero Critical items remain.</strong> Two High items, three Medium, five Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
@@ -13,8 +13,8 @@
 		</div>
 		<div class="card">
 			<div class="kicker">High</div>
-			<div class="stat" style="color:var(--warn);">3</div>
-			<div class="stat-sub">H3, H5, H6</div>
+			<div class="stat" style="color:var(--warn);">2</div>
+			<div class="stat-sub">H5, H6</div>
 		</div>
 		<div class="card">
 			<div class="kicker">Medium</div>
@@ -26,12 +26,6 @@
 			<div class="stat" style="color:var(--text-dim);">5</div>
 			<div class="stat-sub">L1–L5</div>
 		</div>
-	</div>
-
-	<div class="debt-item high">
-		<div class="title">H3 — No language lock files</div>
-		<div class="meta">Type: Supply Chain · Effort: M · Priority: P2</div>
-		<p>No <code>package-lock.json</code>, no <code>requirements.txt</code> — vulnerability scanning is impossible. Previously framed as a sibling of C1; with C1 now resolved (2026-05-29), H3's concern stands independently. (per tech-debt.md H3)</p>
 	</div>
 
 	<div class="debt-item high">

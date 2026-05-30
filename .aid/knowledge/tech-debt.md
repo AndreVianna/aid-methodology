@@ -8,6 +8,7 @@ intent: |
   Read when planning the next refactor cycle or scoping a new work-NNN.
 contracts: []
 changelog:
+  - 2026-05-29: H3 RESOLVED + removed as Not Applicable — a 4-facet dependency-surface audit confirmed the repo is dependency-free by design: ZERO third-party Python deps (stdlib-only), ZERO npm deps (no package.json; the sole external library, Mermaid v11.15.0, is a SHA-256-pinned standalone download — stronger than `npm audit`). Language lock files would lock empty trees (security theater) and `pip-audit`/`npm audit` would find nothing to scan, so H3's "vuln-scanning impossible" premise is moot. High 3→2. The one genuinely-real residual the audit surfaced — 3 first-party GitHub Actions pinned by mutable tag, no dependabot — is Low (first-party `actions/*` + least-privilege `contents: read`) and is an optional hardening, not tracked debt.
   - 2026-05-29: Removed resolved items (C1, M1, M2, M5, M7) from the inventory + detail per the "resolved → drop from the list" policy; closure record retained here in the changelog. Summary table reverted to open-only counts.
   - 2026-05-29: Closed + removed H1 — the phantom-test doc drift is fully resolved; the optional "add e2e coverage" remainder is a future enhancement gated on H2 (CI), not active debt.
   - 2026-05-29: H2 RESOLVED + removed — CI is now enforced (branch protection on `master` requires all 4 checks; verified via `gh api`). Flipped the "advisory / branch-protection-pending" wording to "enforced" across infrastructure, project-structure, technology-stack, test-landscape, and the HTML summary. High 4→3.
@@ -30,12 +31,12 @@ changelog:
 
 ## Summary
 
-**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 7-suite canonical test suite) and now has **enforced pre-merge CI** (required status checks on `master`, 2026-05-29), but still carries several **structural gaps** surfaced by cycle-1 discovery (methodology rigidity, verify-claims.sh transition incomplete, crud outputs audit pending). There are **zero open Critical** items. Resolved items are dropped from the inventory below; their closure record (what / when / why) lives in this doc's changelog frontmatter and in git history. As of this writing, C1, H1, H2, M1, M2, M3, M5, and M7 have been closed and removed from the list.
+**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 7-suite canonical test suite) and now has **enforced pre-merge CI** (required status checks on `master`, 2026-05-29), but still carries several **structural gaps** surfaced by cycle-1 discovery (methodology rigidity, verify-claims.sh transition incomplete, crud outputs audit pending). There are **zero open Critical** items. Resolved items are dropped from the inventory below; their closure record (what / when / why) lives in this doc's changelog frontmatter and in git history. As of this writing, C1, H1, H2, H3, M1, M2, M3, M5, and M7 have been closed and removed from the list.
 
 | Severity | Open | Open items |
 |----------|------|------------|
 | Critical | 0 | — |
-| High | 3 | H3, H5, H6 |
+| High | 2 | H5, H6 |
 | Medium | 3 | H4, M4, M6 |
 | Low | 5 | L1, L2, L3, L4, L5 |
 
@@ -47,7 +48,6 @@ changelog:
 
 | ID | Type | Description | Location | Risk | Effort | Priority |
 |----|------|-------------|----------|------|--------|----------|
-| H3 | Supply Chain | No language lock files exist (`package-lock.json`, `requirements.txt`, etc.) — vulnerability scanning is impossible. Previously framed as a sibling of C1 (Mermaid pin); C1 is now closed (resolved 2026-05-29). H3's concern — no language lock files for transitive supply-chain scanning — remains open. | repo-wide; absence confirmed by repo-wide search | High | M | P2 |
 | H4 | Crud Outputs (partially resolved) | Skills/scripts audit needed: unnecessary write-only outputs (reports/logs/intermediate files) not consumed by any downstream step — known instance fixed in cycle-1 (Q2: report_path=None); broader audit remains | scope: 10 user-facing skills + 11 generators/builders | Medium | M | P3 |
 | H5 | Methodology Flexibility | Methodology assumes rigid 16-doc KB set; meta-repos / docs-only / library-only projects need flexibility | methodology spec, aid-discover, verify-claims, canonical/templates/knowledge-base/ | High | L | P2 |
 | H6 | verify-claims.sh deletion follow-up | verify-claims.sh deleted; discovery-reviewer now owns FM+contract verification semantically — reviewer prompt coverage must be confirmed explicitly | cycle-1 inline refactor; canonical/agents/discovery-reviewer/AGENT.md | High | S | P2 |
@@ -62,27 +62,6 @@ changelog:
 ---
 
 ## Detailed Debt Items
-
-### [HIGH] H3 — No language lock files; supply-chain vulnerability scan impossible
-
-**Type:** Security / Supply Chain
-**Evidence:**
-- No `package.json` / `package-lock.json` despite Node 18+ being required for `aid-summarize` validators (absence confirmed by repo-wide search).
-- No `requirements.txt`, `pyproject.toml`, `Pipfile`, `Pipfile.lock` despite Python 3.11+ being required for the generator (`.claude/skills/aid-generate/scripts/harness.py:15`).
-- No `Cargo.toml`, `go.mod`, `Gemfile.lock`.
-
-**Note:** Previously framed as a sibling of C1 (Mermaid pin); C1 is now closed (resolved 2026-05-29 — `fetch-mermaid.sh` now downloads a pinned version with SHA verification). H3's concern — no language lock files for transitive supply-chain scanning — remains open independently of C1.
-
-**Impact:** Cannot run `npm audit` / `pip-audit` / `dependabot` / `renovate` against this repo. Vulnerability advisories in any transitive dependency (Mermaid included) are invisible.
-
-**Fix recipe (estimated M effort):**
-1. Add a minimal `package.json` declaring the Mermaid CLI + any dev tooling used by the `.mjs` validators; commit `package-lock.json`.
-2. Add a `requirements.txt` (or `pyproject.toml`) listing Python's `tomllib` is stdlib — but if any future dep is added, capture it here.
-3. Once present, the CI workflow (`.github/workflows/test.yml`) can wire in `npm audit --audit-level=high` and `pip-audit` automatically.
-
-**Owner suggestion:** maintainer + security agent.
-
----
 
 ### [MEDIUM] M4 — No aggregator script for test suites
 
