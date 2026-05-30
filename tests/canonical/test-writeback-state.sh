@@ -29,53 +29,7 @@ SCRIPT="${SCRIPT_DIR}/../../canonical/scripts/execute/writeback-state.sh"
 VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
-PASS=0
-FAIL=0
-ERRORS=()
-
-# ---------------------------------------------------------------------------
-log()  { [[ "$VERBOSE" -eq 1 ]] && echo "[LOG] $*" || true; }
-pass() { PASS=$((PASS + 1)); echo "  PASS: $*"; }
-fail() { FAIL=$((FAIL + 1)); ERRORS+=("$*"); echo "  FAIL: $*"; }
-
-assert_file_contains() {
-    local file="$1" pattern="$2" label="$3"
-    if grep -qF "$pattern" "$file" 2>/dev/null; then
-        pass "$label"
-    else
-        fail "$label — pattern not found: '$pattern' in $file"
-        [[ "$VERBOSE" -eq 1 ]] && echo "---FILE---" && cat "$file" && echo "---END---"
-    fi
-}
-
-assert_file_not_contains() {
-    local file="$1" pattern="$2" label="$3"
-    if ! grep -qF "$pattern" "$file" 2>/dev/null; then
-        pass "$label"
-    else
-        fail "$label — unexpected pattern found: '$pattern' in $file"
-    fi
-}
-
-assert_exit_nonzero() {
-    local code="$1" label="$2"
-    if [[ "$code" -ne 0 ]]; then
-        pass "$label (exit $code)"
-    else
-        fail "$label — expected non-zero exit, got 0"
-    fi
-}
-
-assert_line_count() {
-    local file="$1" expected="$2" label="$3"
-    local actual
-    actual=$(wc -l < "$file" | tr -d ' ')
-    if [[ "$actual" -eq "$expected" ]]; then
-        pass "$label (line count $actual)"
-    else
-        fail "$label — expected $expected lines, got $actual"
-    fi
-}
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 
 # ---------------------------------------------------------------------------
 # Setup: create a temporary workspace
@@ -519,17 +473,5 @@ fi
 
 # ---------------------------------------------------------------------------
 echo ""
-echo "=== Summary ==="
-echo "  Tests passed: $PASS"
-echo "  Tests failed: $FAIL"
-if [[ $FAIL -gt 0 ]]; then
-    echo ""
-    echo "Failed tests:"
-    for e in "${ERRORS[@]}"; do
-        echo "  - $e"
-    done
-    exit 1
-fi
-echo ""
-echo "All tests passed."
-exit 0
+test_summary
+exit $?

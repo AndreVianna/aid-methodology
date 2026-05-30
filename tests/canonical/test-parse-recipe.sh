@@ -42,91 +42,7 @@ SCRIPT="${SCRIPT_DIR}/../../canonical/scripts/interview/parse-recipe.sh"
 VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
-PASS=0
-FAIL=0
-ERRORS=()
-
-# ---------------------------------------------------------------------------
-log()  { [[ "$VERBOSE" -eq 1 ]] && echo "[LOG] $*" || true; }
-pass() { PASS=$((PASS + 1)); echo "  PASS: $*"; }
-fail() { FAIL=$((FAIL + 1)); ERRORS+=("$*"); echo "  FAIL: $*"; }
-
-assert_output_contains() {
-    local output="$1" pattern="$2" label="$3"
-    if echo "$output" | grep -qF "$pattern"; then
-        pass "$label"
-    else
-        fail "$label — pattern not found: '$pattern'"
-        [[ "$VERBOSE" -eq 1 ]] && echo "---OUTPUT---" && echo "$output" && echo "---END---"
-    fi
-}
-
-assert_output_not_contains() {
-    local output="$1" pattern="$2" label="$3"
-    if ! echo "$output" | grep -qF "$pattern"; then
-        pass "$label"
-    else
-        fail "$label — unexpected pattern found: '$pattern'"
-    fi
-}
-
-assert_file_contains() {
-    local file="$1" pattern="$2" label="$3"
-    if grep -qF "$pattern" "$file" 2>/dev/null; then
-        pass "$label"
-    else
-        fail "$label — pattern not found: '$pattern' in $file"
-        [[ "$VERBOSE" -eq 1 ]] && echo "---FILE---" && cat "$file" && echo "---END---"
-    fi
-}
-
-assert_file_not_contains() {
-    local file="$1" pattern="$2" label="$3"
-    if ! grep -qF "$pattern" "$file" 2>/dev/null; then
-        pass "$label"
-    else
-        fail "$label — unexpected pattern found: '$pattern' in $file"
-    fi
-
-}
-
-assert_file_exists() {
-    local file="$1" label="$2"
-    if [[ -f "$file" ]]; then
-        pass "$label"
-    else
-        fail "$label — file does not exist: $file"
-    fi
-}
-
-assert_exit_zero() {
-    local code="$1" label="$2"
-    if [[ "$code" -eq 0 ]]; then
-        pass "$label (exit 0)"
-    else
-        fail "$label — expected exit 0, got $code"
-    fi
-}
-
-assert_exit_nonzero() {
-    local code="$1" label="$2"
-    if [[ "$code" -ne 0 ]]; then
-        pass "$label (exit $code)"
-    else
-        fail "$label — expected non-zero exit, got 0"
-    fi
-}
-
-assert_line_exact() {
-    local output="$1" lineno="$2" expected="$3" label="$4"
-    local actual
-    actual=$(echo "$output" | sed -n "${lineno}p")
-    if [[ "$actual" == "$expected" ]]; then
-        pass "$label"
-    else
-        fail "$label — line $lineno: expected '$expected' got '$actual'"
-    fi
-}
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 
 # ---------------------------------------------------------------------------
 # Setup: temporary workspace + fixture recipe files
@@ -986,17 +902,5 @@ assert_output_contains "$u20_star_out" "OK: all checks passed" "--validate quote
 
 rm -f "$UNIT20_STAR_FILE"
 
-echo "=== Summary ==="
-echo "  Tests passed: $PASS"
-echo "  Tests failed: $FAIL"
-if [[ $FAIL -gt 0 ]]; then
-    echo ""
-    echo "Failed tests:"
-    for e in "${ERRORS[@]}"; do
-        echo "  - $e"
-    done
-    exit 1
-fi
-echo ""
-echo "All tests passed."
-exit 0
+test_summary
+exit $?
