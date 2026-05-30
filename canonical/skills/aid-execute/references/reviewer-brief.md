@@ -43,9 +43,10 @@ OUT OF SCOPE (do NOT grade against):
   - Tasks marked Done in prior cycles unless this task explicitly modified them
 
 OUT-OF-SCOPE FINDINGS POLICY:
-  Log to `## Out-of-Scope Observations` in the task row's review history. Do NOT
-  count toward severity totals or the grade. Tag with the routing destination
-  (KB, SPEC, TASK) so the orchestrator can write the loopback Q&A.
+  Log OOS findings as Status: OOS rows in the same ledger table (per-delivery), or
+  in the task row's review history (per-task). Do NOT count toward severity totals
+  or the grade. Note the routing destination (KB, SPEC, TASK) in Description/Evidence
+  so the orchestrator can write the loopback Q&A.
 
 DELIVERABLES:
   - Findings format: severity-tagged + source-tagged list (CODE | TASK | SPEC | KB)

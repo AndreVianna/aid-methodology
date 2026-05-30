@@ -130,7 +130,7 @@ The Knowledge Base (`.aid/knowledge/`) is the gravitational center of the entire
 .aid/knowledge/
 ├── INDEX.md               # Meta: 2-3 line summary of every KB document (the navigation map)
 ├── README.md              # Meta: completeness status per document
-├── DISCOVERY-STATE.md     # Meta: discovery grade, Q&A entries, review history
+├── STATE.md               # Meta: discovery-area state — grade, Q&A entries, review & summarization history
 ├── project-index.md       # Generated: a file-inventory pre-pass for the discovery sub-agents
 │
 ├── project-structure.md   # Repository layout and file inventory
@@ -263,7 +263,7 @@ Generation opens with a fast, deterministic pre-pass that writes `.aid/knowledge
 10. **Gap identification** — What we couldn't determine from code alone → feeds into Interview.
 11. **INDEX generation** — The orchestrator assembles `.aid/knowledge/INDEX.md` with a 2-3 line summary of every KB document produced. This lightweight index is included in every task context so agents know what's available and can self-serve additional context on demand. See [Context Feeding Strategy](#context-feeding-strategy).
 
-**Output:** `.aid/knowledge/` — the project's Knowledge Base: all 14 standard documents, the generated `project-index.md` pre-pass, the `INDEX.md` and `README.md` meta-documents, and the grade and Q&A recorded into `DISCOVERY-STATE.md`. `feature-inventory.md` is scaffolded during the run and completed later, in the Q&A → fix cycle.
+**Output:** `.aid/knowledge/` — the project's Knowledge Base: all 14 standard documents, the generated `project-index.md` pre-pass, the `INDEX.md` and `README.md` meta-documents, and the grade and Q&A recorded into the discovery-area `STATE.md` (at `.aid/knowledge/STATE.md`). `feature-inventory.md` is scaffolded during the run and completed later, in the Q&A → fix cycle.
 
 **When to skip:** Pure greenfield projects with no existing code. Interview and Specify populate a minimal KB instead.
 
@@ -296,7 +296,7 @@ Two skills sit in the Prepare group but are **not numbered phases**:
 .aid/
   knowledge/                    ← shared KB (from Discovery)
   work-001-user-auth/           ← one work per interview
-    INTERVIEW-STATE.md          ← process tracking (section status, Q&A, grade)
+    STATE.md                    ← work-area state — process tracking (section status, Q&A, grade)
     REQUIREMENTS.md             ← product (stakeholder requirements)
     features/
       feature-001-login/
@@ -485,14 +485,14 @@ an `IMPEDIMENT-task-NNN.md` rather than silently working around the problem.
 2. **Final verification:** Full build + complete test suite + lint/format check. Zero failures, zero warnings.
 3. **Package record:** Write `package-NNN-{slug}.md` — deliveries included, verification results, environment, and release notes.
 4. **Packaging:** Produce the release artifact prescribed by `infrastructure.md` § Deployment — a pull request, a container image, a published package, an installer, or a static-site deploy.
-5. **Documentation routing:** Route any KB-affecting discoveries to Discovery as `DISCOVERY-STATE.md` Q&A entries — Deploy never edits KB documents directly.
+5. **Documentation routing:** Route any KB-affecting discoveries to Discovery as Q&A entries in the discovery-area `STATE.md` (`.aid/knowledge/STATE.md`) — Deploy never edits KB documents directly.
 6. **Artifact status update:** Mark the package's deliveries and their tasks `Shipped`.
 
 **Output:**
 - `package-NNN-{slug}.md` — the release package record, one per shipped package.
 - `DEPLOYMENT-STATE.md` — updated to Done with a History entry.
 - The release artifact prescribed by the project's infrastructure — a pull request, container image, published package, installer, or static-site deploy.
-- KB-affecting discoveries routed to Discovery via `DISCOVERY-STATE.md` Q&A; `PLAN.md` deliveries marked shipped.
+- KB-affecting discoveries routed to Discovery via the discovery-area `STATE.md` Q&A; `PLAN.md` deliveries marked shipped.
 
 #### Phase 8: Monitor (`aid-monitor`)
 
@@ -565,19 +565,19 @@ These are AID's principal, named feedback loops. Each phase's entry in §3 also 
 
 **Trigger:** During the interview, a human's answer reveals the KB is wrong or incomplete.
 
-**Protocol:** Interview writes a Q&A entry to `DISCOVERY-STATE.md` → targeted discovery on the specific area → KB updated → interview resumes with corrected understanding.
+**Protocol:** Interview writes a Q&A entry to the discovery-area `STATE.md` (`.aid/knowledge/STATE.md`) → targeted discovery on the specific area → KB updated → interview resumes with corrected understanding.
 
 #### Loop 2: Specify → Discovery
 
 **Trigger:** Writing the spec exposes insufficient understanding of a subsystem.
 
-**Protocol:** Specify pauses → writes a Q&A entry to `DISCOVERY-STATE.md` → targeted discovery → KB updated → specify resumes.
+**Protocol:** Specify pauses → writes a Q&A entry to the discovery-area `STATE.md` (`.aid/knowledge/STATE.md`) → targeted discovery → KB updated → specify resumes.
 
 #### Loop 3: Plan → Discovery
 
 **Trigger:** Planning reveals that the codebase is more complex than the KB captured.
 
-**Protocol:** Plan writes a Q&A entry to `DISCOVERY-STATE.md` → targeted discovery → KB updated → planning resumes.
+**Protocol:** Plan writes a Q&A entry to the discovery-area `STATE.md` (`.aid/knowledge/STATE.md`) → targeted discovery → KB updated → planning resumes.
 
 #### Loop 4: Plan → Specify
 
@@ -621,7 +621,7 @@ These are AID's principal, named feedback loops. Each phase's entry in §3 also 
 
 **Trigger:** Monitor classifies a finding as Change Request.
 
-**Protocol:** Monitor writes Q&A entry to DISCOVERY-STATE.md → new cycle starts at aid-discover (or aid-interview for greenfield) → full pipeline.
+**Protocol:** Monitor writes Q&A entry to the discovery-area `STATE.md` (`.aid/knowledge/STATE.md`) → new cycle starts at aid-discover (or aid-interview for greenfield) → full pipeline.
 
 #### Cross-Cutting Loop (11)
 
@@ -647,7 +647,7 @@ Every change to an upstream artifact is tracked inside the artifact itself — a
 
 ### Feedback Loop Artifacts
 
-The design-phase loops record the gap as a **Q&A entry appended to the relevant phase's STATE file** — `DISCOVERY-STATE.md` for a KB gap, the work's `INTERVIEW-STATE.md` for a requirements gap, a feature's `STATE.md` for a spec gap. The next run of the owning phase detects the pending entry and resolves it in its Q&A mode:
+The design-phase loops record the gap as a **Q&A entry appended to the relevant area's `STATE.md`** — the discovery-area `STATE.md` (`.aid/knowledge/STATE.md`) for a KB gap, the work-area `STATE.md` for a requirements gap, a feature's `STATE.md` for a spec gap. The next run of the owning phase detects the pending entry and resolves it in its Q&A mode:
 
 ```markdown
 ### Q{N}
@@ -688,10 +688,10 @@ wrong-assumption | missing-dependency | architecture-conflict | kb-gap
 |----------|----------|------------|-------------|-----------|
 | Knowledge Base (14 docs) | `.aid/knowledge/` | Discover | All phases | Living — updated throughout project |
 | INDEX.md | `.aid/knowledge/` | Init, Discover, Interview | All phases | Seeded at init; regenerated by Discovery; maintained by Interview |
-| DISCOVERY-STATE.md | `.aid/knowledge/` | Init, Discover | Discover (resume), all phases | Living — grade and review history; any phase appends Q&A entries |
+| STATE.md (discovery area) | `.aid/knowledge/` | Init, Discover, Summarize | Discover (resume), all phases | Living — grade, review & summarization history; any phase appends Q&A entries |
 | project-index.md | `.aid/knowledge/` | Discover (pre-pass) | Discovery sub-agents | Regenerated each discovery run |
 | REQUIREMENTS.md | `.aid/{work}/` | Interview | Specify, Plan | Frozen after approval (rev-tracked) |
-| INTERVIEW-STATE.md | `.aid/{work}/` | Interview | Interview (resume) | Process tracking |
+| STATE.md (work area) | `.aid/{work}/` | Interview | Interview (resume) | Process tracking |
 | Feature SPEC.md | `.aid/{work}/features/{feature}/` | Interview + Specify | Plan, Detail, Execute | Living — Interview writes requirements side, Specify adds technical spec |
 | Feature STATE.md | `.aid/{work}/features/{feature}/` | Specify | Specify (resume) | Process tracking |
 | known-issues.md | `.aid/{work}/` | Specify (Monitor updates) | Plan, Execute, Deploy, Monitor | Living — created when the first issue is registered |

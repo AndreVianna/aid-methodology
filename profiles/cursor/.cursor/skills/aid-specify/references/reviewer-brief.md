@@ -33,9 +33,10 @@ OUT OF SCOPE (do NOT grade against):
   - REQUIREMENTS.md content (route findings to /aid-interview Q&A)
 
 OUT-OF-SCOPE FINDINGS POLICY:
-  Log to `## Out-of-Scope Observations` in `.aid/.temp/review-pending/specify-{feature}.md`.
-  Do NOT count toward severity totals or grade. Tag with the routing destination
-  so the orchestrator can write the cross-phase Q&A entry.
+  Log OOS findings as Status: OOS rows in the same ledger table at
+  `.aid/.temp/review-pending/specify-{feature}.md`. Do NOT count toward severity
+  totals or grade. Note the routing destination (CODE | SPEC | KB | REQUIREMENTS)
+  in Description/Evidence so the orchestrator can write the cross-phase Q&A entry.
 
 DELIVERABLES:
   - Findings format: severity-tagged + source-tagged (CODE | SPEC | KB | REQUIREMENTS)

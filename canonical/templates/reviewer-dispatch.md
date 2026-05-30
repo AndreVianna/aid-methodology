@@ -34,8 +34,10 @@ OUT OF SCOPE (do not grade against):
   - (explicit exclusions: adjacent artifacts, downstream phases, hypothetical uses)
 
 OUT-OF-SCOPE FINDINGS POLICY:
-  Log to `## Out-of-Scope Observations` in the ledger. Do NOT include in severity
-  counts. Do NOT affect the grade.
+  Log OOS findings as rows with Status: OOS in the same ledger table. Record the
+  routing destination (which upstream phase/skill the observation belongs to) in
+  the Description/Evidence text. OOS rows do NOT count toward severity totals and
+  do NOT affect the grade.
 
 DELIVERABLES:
   - Findings ledger at `.aid/.temp/review-pending/<scope>.md` per
@@ -47,8 +49,9 @@ DELIVERABLES:
   - For existing rows from prior cycles: update Status only (Fixed if resolved, Recurred if regressed)
   - Do NOT include severity tag-strings in narrative or summary text
     (qualitative summary goes in the agent return message, not the ledger file)
-  - OOS observations: log to `## Out-of-Scope Observations` section in the return message
-    (NOT in the ledger table — they do not count toward grade)
+  - OOS observations: append as Status: OOS rows in the same ledger table, with
+    the routing destination noted in Description/Evidence (they do not count
+    toward the grade)
 ```
 
 Each section is mandatory. Empty content is allowed (e.g.,
@@ -148,13 +151,15 @@ review types live in per-skill brief templates (see §Brief generation).
 
 **Always identical across all dispatches** (do not customize per dispatch):
 
-> Reviewer logs OOS findings to `## Out-of-Scope Observations` in the ledger.
-> They do NOT count toward severity totals or the grade. Human (or skill
-> orchestrator) decides downstream what to do with them.
+> Reviewer logs OOS findings as rows with Status: OOS in the same ledger table.
+> Each OOS row names its routing destination (the upstream phase/skill the
+> observation belongs to) in the Description/Evidence text. OOS rows do NOT count
+> toward severity totals or the grade. The human (or skill orchestrator) reads
+> the Status: OOS rows and decides downstream what to do with them.
 
-OOS observations preserve the reviewer's insight without biasing the canonical
-grade. An empty OOS section is normal and signals "reviewer found nothing
-worth flagging outside scope".
+OOS rows preserve the reviewer's insight without biasing the canonical grade.
+Having no OOS rows is normal and signals "reviewer found nothing worth flagging
+outside scope".
 
 ### DELIVERABLES
 
@@ -164,7 +169,7 @@ The expected output. Always:
   P3 — temp-file ledger pattern at `.aid/.temp/review-pending/<dispatcher>.md`
 - **Severity scale** per the named RUBRIC (or inline if no rubric)
 - **Grade** computed per `canonical/templates/grading-rubric.md`
-- **OOS section** as defined in OOS POLICY above
+- **OOS rows** (Status: OOS, with routing destination) as defined in OOS POLICY above
 
 ## Brief generation
 
@@ -256,7 +261,8 @@ OUT OF SCOPE (do not grade against):
   - Adopter-specific KB document counts, naming, or extensions
 
 OUT-OF-SCOPE FINDINGS POLICY:
-  Log to `## Out-of-Scope Observations` section. Exclude from severity totals
+  Log OOS findings as Status: OOS rows in the same ledger table, naming the
+  routing destination in Description/Evidence. Exclude from severity totals
   and grade.
 
 DELIVERABLES:
@@ -265,7 +271,7 @@ DELIVERABLES:
   - Severity tags bracketed: [CRITICAL] / [HIGH] / [MEDIUM] / [LOW] / [MINOR]
   - Status enum: Pending / Fixed / Recurred / Accepted / OOS / Invalid
   - Grade computed by orchestrator via: grade.sh .aid/.temp/review-pending/phase-a-foundation-v2.md
-  - OOS observations: return-message only, NOT in the ledger table
+  - OOS observations: Status: OOS rows in the same ledger table (with routing destination)
 ```
 
 ## When this protocol changes

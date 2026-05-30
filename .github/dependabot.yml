@@ -1,0 +1,15 @@
+# Keeps the SHA-pinned GitHub Actions in .github/workflows/ current.
+# Actions are pinned to immutable commit SHAs (with a `# vN` comment) for
+# supply-chain safety; dependabot opens weekly PRs that bump those pins.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

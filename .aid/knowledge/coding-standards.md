@@ -250,9 +250,9 @@ Triple-quoted docstrings are reserved for function + class signatures (per
 
 ### 4c. Markdown / KB docs
 
-- **Findings carry severity + source tags** (per `canonical/agents/reviewer/AGENT.md` `## Output contract`):
+- **Findings are logged as rows in the 7-column reviewer ledger** (per `canonical/agents/reviewer/AGENT.md` `## Output contract` and `canonical/templates/reviewer-ledger-schema.md`) — one markdown table, no narrative sections; out-of-scope findings are `Status: OOS` rows, not a separate section:
   ```
-  [SEVERITY] [SOURCE] Description | File:Line | Criterion violated
+  | # | Severity | Status | Doc | Line | Description | Evidence |
   ```
 - **Impediments are formal artifacts** at `.aid/{work}/task-NNN/IMPEDIMENT.md` (per `canonical/templates/feedback-artifacts/IMPEDIMENT.md` `# Impediment — task-NNN`). Four types: `wrong-assumption`, `missing-dependency`, `architecture-conflict`, `kb-gap` (per `IMPEDIMENT.md` `## Type`).
 
