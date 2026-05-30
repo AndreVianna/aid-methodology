@@ -298,7 +298,7 @@ The Reviewer agent produces a structured issue list with two-tag classification 
 - **Mechanism:** The `discovery-reviewer` sub-agent (dispatched in `/aid-discover REVIEW`
   state) performs frontmatter compliance checks, cited `file:line` existence verification,
   KB-file presence, and generated-files freshness. This semantic validation replaced
-  the former `verify-claims.sh` script (deleted in cycle-1 per `tech-debt.md H6`).
+  the former `verify-claims.sh` script (deleted in cycle-1; closure recorded in `tech-debt.md` changelog).
 - **Agent:** `canonical/agents/discovery-reviewer/AGENT.md`
 - **Output:** ledger at `.aid/.temp/review-pending/discovery.md` with per-finding severity
   tags; grade computed by `canonical/scripts/grade.sh`

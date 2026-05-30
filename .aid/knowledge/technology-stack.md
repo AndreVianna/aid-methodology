@@ -130,8 +130,8 @@ bash tests/canonical/test-grade.sh                    # 19 tests
 
 **KB claim verification** is performed by the `discovery-reviewer` sub-agent in
 `/aid-discover REVIEW` state (see `canonical/agents/discovery-reviewer/AGENT.md`).
-The former `canonical/scripts/kb/verify-claims.sh` was deleted in cycle-1 (see
-`tech-debt.md H6`).
+The former `canonical/scripts/kb/verify-claims.sh` was deleted in cycle-1 (closure
+recorded in `tech-debt.md` changelog).
 
 There is **no auto-fix linter**. Quality gates are the AID skills themselves: `aid-discover`
 adversarial review, `aid-execute` two-tier review per task + per delivery, `aid-deploy`
