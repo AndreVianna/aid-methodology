@@ -223,8 +223,8 @@ The remainder of the skeleton after the Mermaid library script tag:
 ### Step 9 — Concatenate
 
 Use the platform-appropriate concat script:
-- POSIX: `canonical/scripts/summarize/concatenate.sh part1.html mermaid.min.js part2.html OUTPUT`
-- Windows: `canonical/scripts/summarize/concatenate.ps1 -Part1 ... -Mermaid ... -Part2 ... -Output ...`
+- POSIX: `canonical/scripts/summarize/assemble-3part.sh part1.html mermaid.min.js part2.html OUTPUT`
+- Windows: `canonical/scripts/summarize/assemble-3part.ps1 -Part1 ... -Mermaid ... -Part2 ... -Output ...`
 
 Output: `.aid/knowledge/knowledge-summary.html`.
 

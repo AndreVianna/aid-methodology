@@ -221,7 +221,7 @@ See `.cursor/templates/knowledge-summary/grading-rubric.md` for the complete rub
 - `.cursor/templates/knowledge-summary/accessibility-checklist.md` — WCAG AA targets, focus trap pattern
 - `.cursor/templates/knowledge-summary/grading-rubric.md` — two-grade rubric (Machine + Human), per-profile diagram counts
 - `.cursor/templates/knowledge-summary/html-skeleton.html` — doctype, head, semantic landmarks, noscript
-- `.cursor/scripts/summarize/run-validators.sh` — orchestrates AUTO_POOL checks, reads `.manual-checklist.json` for MANUAL_POOL, prints Machine + Human + Overall grades
+- `.cursor/scripts/summarize/grade-summary.sh` — orchestrates AUTO_POOL checks, reads `.manual-checklist.json` for MANUAL_POOL, prints Machine + Human + Overall grades
 - `.cursor/scripts/summarize/manual-checklist.sh` — validates / scores the MANUAL_POOL result file (`--input PATH` headless mode; `--interactive` for raw-terminal use)
 - `.cursor/scripts/summarize/spot-check-facts.sh` — extracts HTML claims, grep-matches against source KB, writes `.spot-check-facts.txt` (aids the user's K2 judgment)
 

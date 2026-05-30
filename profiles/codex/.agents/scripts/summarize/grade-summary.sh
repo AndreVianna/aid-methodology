@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# run-validators.sh — orchestrator for /aid-summarize VALIDATE state.
+# grade-summary.sh — orchestrator for /aid-summarize VALIDATE state.
 # (Renamed from knowledge-summary/scripts/grade.sh in 2026-05-26 script
 #  consolidation; the universal grade computation lives at canonical/scripts/grade.sh.)
 # Runs all automated checks and emits a structured two-grade report.
 #
 # Usage:
-#   run-validators.sh <html-file> [--fast]
+#   grade-summary.sh <html-file> [--fast]
 #
 # Flags:
 #   --fast    Pass --fast to validate-diagrams.mjs (skip render; for development).
@@ -58,7 +58,7 @@ for arg in "$@"; do
 done
 
 if [ -z "$HTML" ] || [ ! -f "$HTML" ]; then
-    echo "❌ Usage: run-validators.sh <html-file> [--fast]" >&2
+    echo "❌ Usage: grade-summary.sh <html-file> [--fast]" >&2
     exit 2
 fi
 
@@ -485,7 +485,7 @@ if [ "$MANUAL_RUN" -eq 1 ]; then
 else
     echo "  ⚠️  manual-checklist.sh not yet run."
     echo "     Run: bash .agents/scripts/summarize/manual-checklist.sh --html $HTML"
-    echo "     Then re-run run-validators.sh to see your Human Grade."
+    echo "     Then re-run grade-summary.sh to see your Human Grade."
 fi
 
 printf "  Manual score: %d / %d\n" "$MANUAL_EARNED" "$MANUAL_MAX"

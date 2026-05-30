@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# concatenate.sh — assemble final knowledge-summary.html from parts.
-# Usage: concatenate.sh PART1 MERMAID_LIB PART2 OUTPUT
+# assemble-3part.sh — assemble final knowledge-summary.html from parts.
+# Usage: assemble-3part.sh PART1 MERMAID_LIB PART2 OUTPUT
 set -eu
 
 PART1="$1"
