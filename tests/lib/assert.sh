@@ -11,7 +11,8 @@
 #              fail "<name> — why"    (counts; ALWAYS printed; recorded in ERRORS)
 #   asserts  : assert_eq, assert_output_contains, assert_output_not_contains,
 #              assert_file_contains, assert_file_not_contains, assert_file_exists,
-#              assert_exit_zero, assert_exit_nonzero, assert_line_exact, assert_line_count
+#              assert_dir_exists, assert_exit_zero, assert_exit_nonzero, assert_exit_eq,
+#              assert_line_exact, assert_line_count
 #   summary  : test_summary           (prints totals + failures; returns 1 if any failed)
 #
 # Convention for a consistent failure line: pass the assertion name PLUS the reason in a
@@ -98,6 +99,24 @@ assert_exit_nonzero() {
         pass "$label (exit $code)"
     else
         fail "$label — expected non-zero exit, got 0"
+    fi
+}
+
+assert_exit_eq() {
+    local code="$1" expected="$2" label="$3"
+    if [[ "$code" -eq "$expected" ]]; then
+        pass "$label (exit $expected)"
+    else
+        fail "$label — expected exit $expected, got $code"
+    fi
+}
+
+assert_dir_exists() {
+    local dir="$1" label="$2"
+    if [[ -d "$dir" ]]; then
+        pass "$label"
+    else
+        fail "$label — directory does not exist: $dir"
     fi
 }
 

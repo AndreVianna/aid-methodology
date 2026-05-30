@@ -4,7 +4,7 @@ name: CI
 # under profiles/{claude-code,codex,cursor}/, generated from canonical/ by
 # run_generator.py. CI therefore protects, in priority order:
 #   1. that committed profiles/ stays in sync with canonical/  (the core invariant)
-#   2. the runtime helper scripts adopters depend on            (the 7 bash suites)
+#   2. the runtime helper scripts adopters depend on            (the bash + node suites)
 #   3. the generator/build system itself                        (self-tests)
 #   4. cheap repo/KB hygiene                                    (CRLF, gitignore, INDEX)
 # Prompt-driven skills, the discovery-reviewer semantic review, and aid-summarize's
@@ -42,10 +42,16 @@ jobs:
           fi
 
   canonical-tests:
-    name: canonical helper suites (7 bash suites)
+    name: canonical helper suites (bash + node)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        # The .mjs summarize-validator suites (validate-diagrams, contrast-check)
+        # shell out to `node`; pin it so the suites gate reliably rather than
+        # depending on whatever the runner image happens to ship.
+        with:
+          node-version: '20'
       - name: Cache the pinned Mermaid library
         uses: actions/cache@v4
         with:
@@ -57,6 +63,16 @@ jobs:
         # Committed 100644 (the repo is authored on Windows); several suites invoke
         # their SUT directly (e.g. "$WRITEBACK"), which needs the exec bit on Linux.
         run: find canonical/scripts tests/canonical -name '*.sh' -exec chmod +x {} +
+      - name: Assert test runtimes present (node + pwsh)
+        shell: bash
+        # The .mjs and *-ps1 suites skip (exit 0) if their runtime is missing — good for
+        # local dev portability, but in CI a silent skip would be a false green. node is
+        # pinned above; pwsh ships in the ubuntu image. Fail loudly here if either is gone
+        # so the node/PowerShell coverage can never be silently bypassed.
+        run: |
+          command -v node >/dev/null || { echo "::error::node missing — .mjs suites would skip"; exit 1; }
+          command -v pwsh >/dev/null || { echo "::error::pwsh missing — PowerShell suites would skip"; exit 1; }
+          echo "node $(node --version) | $(pwsh --version)"
       - name: Run all canonical suites
         shell: bash
         # Single entrypoint shared with local dev (`bash tests/run-all.sh`); discovers
