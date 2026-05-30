@@ -26,14 +26,10 @@ set -u
 VERBOSE=0
 [[ "${1:-}" == "--verbose" ]] && VERBOSE=1
 
-PASS=0
-FAIL=0
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SUT="${SCRIPT_DIR}/../../canonical/scripts/config/read-setting.sh"
 
-log()  { [[ "$VERBOSE" -eq 1 ]] && echo "$*"; }
-pass() { PASS=$((PASS + 1)); echo "  PASS: $1"; }
-fail() { FAIL=$((FAIL + 1)); echo "  FAIL: $1"; [[ "$VERBOSE" -eq 1 ]] && echo "        $2"; }
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 
 # ---------------------------------------------------------------------------
 # Fixture builders
@@ -350,11 +346,5 @@ fi
 # ---------------------------------------------------------------------------
 
 echo
-echo "== Summary =="
-echo "  Passed: $PASS"
-echo "  Failed: $FAIL"
-
-if [[ $FAIL -gt 0 ]]; then
-    exit 1
-fi
-exit 0
+test_summary
+exit $?

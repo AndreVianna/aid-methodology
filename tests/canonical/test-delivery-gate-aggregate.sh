@@ -25,8 +25,6 @@ set -u
 VERBOSE=0
 [[ "${1:-}" == "--verbose" ]] && VERBOSE=1
 
-PASS=0
-FAIL=0
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # SUTs moved in 2026-05-26 consolidation
 WRITEBACK="${SCRIPT_DIR}/../../canonical/scripts/execute/writeback-state.sh"
@@ -36,9 +34,7 @@ GRADE="${SCRIPT_DIR}/../../canonical/scripts/grade.sh"
 # Helpers
 # ---------------------------------------------------------------------------
 
-log() { [[ "$VERBOSE" -eq 1 ]] && echo "$*"; }
-pass() { PASS=$((PASS + 1)); echo "  PASS: $1"; }
-fail() { FAIL=$((FAIL + 1)); echo "  FAIL: $1"; [[ "$VERBOSE" -eq 1 ]] && echo "        $2"; }
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 
 # Create a temporary test workspace
 make_workspace() {
@@ -528,9 +524,5 @@ run_test_6
 run_test_7
 
 echo ""
-echo "Results: $PASS passed, $FAIL failed"
-
-if [[ "$FAIL" -gt 0 ]]; then
-    exit 1
-fi
-exit 0
+test_summary
+exit $?

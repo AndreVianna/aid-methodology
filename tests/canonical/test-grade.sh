@@ -19,12 +19,7 @@ GRADE_SH="${SCRIPT_DIR}/../../canonical/scripts/grade.sh"
 VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
-PASS=0
-FAIL=0
-ERRORS=()
-
-pass() { PASS=$((PASS + 1)); [[ "$VERBOSE" -eq 1 ]] && echo "  PASS: $*"; }
-fail() { FAIL=$((FAIL + 1)); ERRORS+=("$*"); echo "  FAIL: $*"; }
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 
 assert_grade() {
   local label="$1"
@@ -337,17 +332,5 @@ assert_grade "T16 extra table with tag-like cells: only Pending rows counted" "A
 
 # ---------------------------------------------------------------------------
 echo ""
-echo "=== Summary ==="
-echo "  Tests passed: $PASS"
-echo "  Tests failed: $FAIL"
-if [[ $FAIL -gt 0 ]]; then
-    echo ""
-    echo "Failed tests:"
-    for e in "${ERRORS[@]}"; do
-        echo "  - $e"
-    done
-    exit 1
-fi
-echo ""
-echo "All tests passed."
-exit 0
+test_summary
+exit $?

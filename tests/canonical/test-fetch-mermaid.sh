@@ -34,12 +34,7 @@ REAL_CACHE="$REPO_ROOT/.aid/knowledge/.cache"
 VERBOSE=0
 [[ "${1:-}" == "--verbose" ]] && VERBOSE=1
 
-TESTS_PASSED=0
-TESTS_FAILED=0
-ERRORS=()
-
-pass() { TESTS_PASSED=$((TESTS_PASSED + 1)); if [[ "$VERBOSE" -eq 1 ]]; then echo "  PASS: $*"; fi; }
-fail() { TESTS_FAILED=$((TESTS_FAILED + 1)); ERRORS+=("$*"); echo "  FAIL: $*"; }
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 
 # ---------------------------------------------------------------------------
 # Extract EXPECTED_SHA256 from the script under test at runtime.
@@ -478,17 +473,5 @@ test_scenario_d_unknown_sha256_fallback
 # Summary
 # ===========================================================================
 echo ""
-echo "=== Summary ==="
-echo "  Tests passed: $TESTS_PASSED"
-echo "  Tests failed: $TESTS_FAILED"
-if [[ $TESTS_FAILED -gt 0 ]]; then
-    echo ""
-    echo "Failed tests:"
-    for e in "${ERRORS[@]}"; do
-        echo "  - $e"
-    done
-    exit 1
-fi
-echo ""
-echo "All tests passed."
-exit 0
+test_summary
+exit $?
