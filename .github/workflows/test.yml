@@ -81,7 +81,7 @@ jobs:
         run: |
           python .claude/skills/aid-generate/scripts/render_lib.py --self-test
           python .claude/skills/aid-generate/scripts/test_manifest_safety.py --self-test
-          python .claude/skills/aid-generate/scripts/render_scripts.py --self-test --canonical-root .
+          python .claude/skills/aid-generate/scripts/render_canonical_scripts.py --self-test --canonical-root .
           python .claude/skills/aid-generate/scripts/verify_deterministic.py --self-test --canonical-root .
 
   kb-hygiene:

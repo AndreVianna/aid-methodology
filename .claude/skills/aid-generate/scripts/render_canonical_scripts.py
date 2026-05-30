@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# render_scripts.py — AID canonical-generator scripts renderer (F1 fix)
+# render_canonical_scripts.py — AID canonical-generator scripts renderer
 #
 # Purpose:
 #   Copy the entire canonical/scripts/ subtree into the profile's scripts
@@ -19,8 +19,8 @@
 #   Cursor:      profiles/cursor/.cursor/scripts/...
 #
 # Usage:
-#   python render_scripts.py --canonical-root <repo-root> --profile <profile.toml> --output-root <dest>
-#   python render_scripts.py --self-test --canonical-root <repo-root>
+#   python render_canonical_scripts.py --canonical-root <repo-root> --profile <profile.toml> --output-root <dest>
+#   python render_canonical_scripts.py --self-test --canonical-root <repo-root>
 #
 # Requirements: Python 3.11+
 from __future__ import annotations
@@ -62,7 +62,7 @@ def _scripts_output_root(profile: Profile, output_base: Path) -> Path:
     return output_base / profile.layout.assets_root / profile.layout.scripts_dir  # type: ignore[operator]
 
 
-def render_scripts(
+def render_canonical_scripts(
     canonical_root: str | Path,
     profile: Profile,
     manifest: EmissionManifest,
@@ -137,8 +137,8 @@ def render_scripts(
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        prog="render_scripts.py",
-        description="Render canonical/scripts/ into per-tool install trees (F1 fix).",
+        prog="render_canonical_scripts.py",
+        description="Render canonical/scripts/ into per-tool install trees.",
     )
     parser.add_argument("--canonical-root", required=True, metavar="PATH")
     parser.add_argument("--profile", metavar="PATH", help="Required unless --self-test")
@@ -161,7 +161,7 @@ def main() -> int:
         return 1
 
     manifest = EmissionManifest(profile_name=profile.name)
-    paths = render_scripts(args.canonical_root, profile, manifest, args.output_root)
+    paths = render_canonical_scripts(args.canonical_root, profile, manifest, args.output_root)
 
     print(f"Rendered {len(paths)} script files for profile {profile.name!r}")
 
@@ -190,8 +190,8 @@ def _self_test(canonical_root_arg: str) -> int:
             m1 = EmissionManifest(profile_name=profile.name)
             m2 = EmissionManifest(profile_name=profile.name)
 
-            paths1 = render_scripts(canonical_root, profile, m1, tmp1)
-            paths2 = render_scripts(canonical_root, profile, m2, tmp2)
+            paths1 = render_canonical_scripts(canonical_root, profile, m1, tmp1)
+            paths2 = render_canonical_scripts(canonical_root, profile, m2, tmp2)
 
             if len(paths1) != len(paths2):
                 failures.append(
@@ -216,7 +216,7 @@ def _self_test(canonical_root_arg: str) -> int:
             print(f"  - {f}", file=sys.stderr)
         return 1
 
-    print("\nOK: render_scripts self-test passed")
+    print("\nOK: render_canonical_scripts self-test passed")
     return 0
 
 

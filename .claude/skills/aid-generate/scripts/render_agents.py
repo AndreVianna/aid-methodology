@@ -249,7 +249,7 @@ def _render_agent_for_profile(
 
     # Apply filename substitution to body, then install-path rewrite.
     # Policy: every text-emitting renderer (render_skills, render_templates,
-    # render_scripts, render_agents, render_recipes) MUST apply BOTH
+    # render_canonical_scripts, render_agents, render_recipes) MUST apply BOTH
     # substitute_filenames AND rewrite_install_paths in that order. Any
     # canonical/{scripts,templates,skills,agents,rules,recipes}/ reference in
     # a body becomes <install_root>/<dir>/ in the rendered output so adopter
