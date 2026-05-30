@@ -558,7 +558,7 @@ a KB doc. Move it there + cite the KB doc.
 
 This rule was added 2026-05-27 (cycle-2 Q18) after CLAUDE.md was collapsed from
 ~118 lines to 25 lines, leaving ~40 KB cites pointing past EOF. The rule
-prevents the recurrence — see also tech-debt.md H6 history.
+prevents the recurrence — see also `tech-debt.md` changelog.
 
 ## 14. Machine-parsed values must be text, glyphs are display-only
 

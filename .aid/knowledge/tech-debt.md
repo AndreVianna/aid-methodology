@@ -8,6 +8,7 @@ intent: |
   Read when planning the next refactor cycle or scoping a new work-NNN.
 contracts: []
 changelog:
+  - 2026-05-30: H6 RESOLVED + removed — an adversarial audit confirmed the discovery-reviewer prompt already covers verify-claims.sh's former semantic duties (FM presence/validity, contract claims, AUTO-GENERATED header, and intra-file contradiction). The one real gap it surfaced was that volatile `file:LINE` citations were being stored + verified instead of durable grep-recoverable anchors. Fixed by adding P1(d) Positional-citations + P8 Rigor-follows-value to kb-authoring principles, aligning the discovery-* prompts + review rubric, and (P1(a) follow-up) purging volatile inline counts from the KB doc templates. Shipped via PRs #22/#23/#24. High 2→1.
   - 2026-05-29: H3 RESOLVED + removed as Not Applicable — a 4-facet dependency-surface audit confirmed the repo is dependency-free by design: ZERO third-party Python deps (stdlib-only), ZERO npm deps (no package.json; the sole external library, Mermaid v11.15.0, is a SHA-256-pinned standalone download — stronger than `npm audit`). Language lock files would lock empty trees (security theater) and `pip-audit`/`npm audit` would find nothing to scan, so H3's "vuln-scanning impossible" premise is moot. High 3→2. The one genuinely-real residual the audit surfaced — 3 first-party GitHub Actions pinned by mutable tag, no dependabot — is Low (first-party `actions/*` + least-privilege `contents: read`) and is an optional hardening, not tracked debt.
   - 2026-05-29: Removed resolved items (C1, M1, M2, M5, M7) from the inventory + detail per the "resolved → drop from the list" policy; closure record retained here in the changelog. Summary table reverted to open-only counts.
   - 2026-05-29: Closed + removed H1 — the phantom-test doc drift is fully resolved; the optional "add e2e coverage" remainder is a future enhancement gated on H2 (CI), not active debt.
@@ -31,12 +32,12 @@ changelog:
 
 ## Summary
 
-**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 7-suite canonical test suite) and now has **enforced pre-merge CI** (required status checks on `master`, 2026-05-29), but still carries several **structural gaps** surfaced by cycle-1 discovery (methodology rigidity, verify-claims.sh transition incomplete, crud outputs audit pending). There are **zero open Critical** items. Resolved items are dropped from the inventory below; their closure record (what / when / why) lives in this doc's changelog frontmatter and in git history. As of this writing, C1, H1, H2, H3, M1, M2, M3, M5, and M7 have been closed and removed from the list.
+**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 7-suite canonical test suite) and now has **enforced pre-merge CI** (required status checks on `master`, 2026-05-29), but still carries several **structural gaps** surfaced by cycle-1 discovery (methodology rigidity and crud-outputs audit pending). There are **zero open Critical** items. Resolved items are dropped from the inventory below; their closure record (what / when / why) lives in this doc's changelog frontmatter and in git history. As of this writing, C1, H1, H2, H3, H6, M1, M2, M3, M5, and M7 have been closed and removed from the list.
 
 | Severity | Open | Open items |
 |----------|------|------------|
 | Critical | 0 | — |
-| High | 2 | H5, H6 |
+| High | 1 | H5 |
 | Medium | 3 | H4, M4, M6 |
 | Low | 5 | L1, L2, L3, L4, L5 |
 
@@ -50,7 +51,6 @@ changelog:
 |----|------|-------------|----------|------|--------|----------|
 | H4 | Crud Outputs (partially resolved) | Skills/scripts audit needed: unnecessary write-only outputs (reports/logs/intermediate files) not consumed by any downstream step — known instance fixed in cycle-1 (Q2: report_path=None); broader audit remains | scope: 10 user-facing skills + 11 generators/builders | Medium | M | P3 |
 | H5 | Methodology Flexibility | Methodology assumes rigid 16-doc KB set; meta-repos / docs-only / library-only projects need flexibility | methodology spec, aid-discover, verify-claims, canonical/templates/knowledge-base/ | High | L | P2 |
-| H6 | verify-claims.sh deletion follow-up | verify-claims.sh deleted; discovery-reviewer now owns FM+contract verification semantically — reviewer prompt coverage must be confirmed explicitly | cycle-1 inline refactor; canonical/agents/discovery-reviewer/AGENT.md | High | S | P2 |
 | M4 | Test Discoverability | No aggregator script: each of the 7 test suites must be invoked manually with the right path; no way to run "all tests" with one command | `tests/README.md` (lists each separately); no `Makefile`/`task`/`npm test` | Medium | S | P3 |
 | M6 | Test Refactor | 7 canonical/ test suites need: behavior-named files, shared test-utility extraction, consistent failure messages, optional aggregator | `tests/canonical/*.sh` (7 suites) | Medium | M | P3 |
 | L1 | Source Bloat | 4 files >500 lines under canonical/methodology (largest: `methodology/aid-methodology.md` 1,070, `tests/canonical/test-parse-recipe.sh` 1,002, `canonical/scripts/execute/writeback-task-status.sh` 627, `canonical/skills/aid-execute/references/state-execute.md` 629) | various | Low | M | P3 |
@@ -88,7 +88,7 @@ changelog:
 - `tests/canonical/test-parse-recipe.sh` — 1,002 lines (113 tests; test-file size is justified)
 - `canonical/scripts/execute/writeback-task-status.sh` — 627 lines (already tested by 69-test suite)
 - `canonical/skills/aid-execute/references/state-execute.md` — 629 lines
-- Note: `canonical/scripts/kb/verify-claims.sh` (695 lines, previously listed here) was deleted in cycle-1; its deletion is tracked in H6.
+- Note: `canonical/scripts/kb/verify-claims.sh` (695 lines, previously listed here) was deleted in cycle-1; its retirement is recorded in this doc's changelog.
 
 **Impact:** None acute. The Thin-Router convention (`coding-standards.md §7b`) says SKILL.md should split past ~200 lines, but the `references/state-*.md` files do not have the same threshold. `state-execute.md` at 629 lines may justify further splitting if reviewers find it hard to navigate.
 
@@ -149,7 +149,7 @@ changelog:
 **Type:** Methodology / Architecture
 **Evidence:**
 - `methodology/aid-methodology.md` defines a rigid 16-doc KB set.
-- `canonical/scripts/kb/verify-claims.sh` (deleted in cycle-1, see H6) hard-coded an expected-doc list.
+- `canonical/scripts/kb/verify-claims.sh` (deleted in cycle-1) hard-coded an expected-doc list.
 - `canonical/templates/knowledge-base/` treats the 16 templates as mandatory.
 - Discovery cycle-1 required a 15-doc carve-out (Q3: 2 renamed, 1 deleted, 1 replaced) for the AID meta-repo itself — the methodology had no facility for this, making the deviation an undocumented one-time exception.
 - Q16 answer: user confirmed this should be a methodology-level change; the canonical 16-doc list should become a configurable default.
@@ -164,26 +164,6 @@ changelog:
 5. Validate the AID repo's cycle-1 15-doc carve-out as the first real-world test of the flexibility mechanism.
 
 **Owner suggestion:** maintainer; pick up via `/aid-interview` when prioritized (do NOT assign a work-NNN number here — Discovery defers that).
-
----
-
-### [HIGH] H6 — verify-claims.sh deletion follow-up
-
-**Type:** Process / Quality
-**Evidence:**
-- `canonical/scripts/kb/verify-claims.sh` was deleted during cycle-1 inline refactor (commit c8ef59e). The discovery-reviewer agent now owns frontmatter + contract verification semantically.
-- No explicit follow-up has confirmed that the reviewer's prompt covers all the checks the script performed: FM presence, FM field validity, contract claims, AUTO-GENERATED header presence for generated docs.
-- The KB body still described verify-claims.sh as live in 18+ places across 6 docs (CC2 cascade); fixed in cycle-2 FIX Phase A.
-
-**Impact:** If the reviewer prompt gaps any check the script used to do, that class of defect will silently go undetected going forward. The transition from script-based to semantic-agent-based verification is incomplete until the coverage is explicitly confirmed.
-
-**Fix recipe (estimated S effort):**
-1. Read `canonical/agents/discovery-reviewer/AGENT.md` and compare its checklist against the former script's check list (FM presence, FM field validity, contract claims, AUTO-GENERATED header).
-2. For any gap: add an explicit check clause to the reviewer prompt.
-3. KB body references updated in cycle-2 FIX Phase A sweep.
-4. Add a note to `generated-files.txt` registry that the script no longer exists.
-
-**Owner suggestion:** maintainer; priority P2 — cycle-2 FIX Phase A addressed the KB body cascade.
 
 ---
 
@@ -262,5 +242,4 @@ changelog:
 - **Files > 500 lines:** 4 (listed in L1; verify-claims.sh removed from list post-deletion)
 - **Files > 1,000 lines:** 2 (`methodology/aid-methodology.md`, `tests/canonical/test-parse-recipe.sh`)
 - **Test-to-code ratio (helper-script subset):** ⚠️ **Inferred from file counts.** There are now 7 canonical helper suites (the original 5 plus `fetch-mermaid.sh` and `grade.sh`). Lines-of-test for all 7 suites sum to **3,625 lines** (`wc -l tests/canonical/*.sh`) against ~2,500 lines of canonical helper code — ratio **≈ 1.45×**. Healthy for shell helpers.
-- **Open PRs:** 0 (the previously-cited PR #16 "aid-config simplification" merged 2026-05-27 per `git log --oneline -20`). Note: the dispatcher's note referenced PR #16 as "yet to merge" — this is stale relative to the current commit history.
-- **Branches behind master:** current branch is `kb-overhaul`; recent merges suggest active KB work.
+- **Open PRs:** 0 — the H6 durable-anchor / P1(a) count-purge / script-rename stack (PRs #22, #23, #24) merged to `master` on 2026-05-30.

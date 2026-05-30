@@ -1371,7 +1371,7 @@ flowchart TB
 	<header>
 		<span class="eyebrow">Debt</span>
 		<h2>Tech Debt</h2>
-		<p class="lede">Overall debt level: Medium–High. The codebase is well-organized (Thin-Router convention, single canonical source, 7-suite test coverage) and now has enforced pre-merge CI (required status checks on master) but still carries several structural gaps. <strong>Zero Critical items remain.</strong> Two High items, three Medium, five Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
+		<p class="lede">Overall debt level: Medium–High. The codebase is well-organized (Thin-Router convention, single canonical source, 7-suite test coverage) and now has enforced pre-merge CI (required status checks on master) but still carries several structural gaps. <strong>Zero Critical items remain.</strong> One High item, three Medium, five Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
@@ -1382,8 +1382,8 @@ flowchart TB
 		</div>
 		<div class="card">
 			<div class="kicker">High</div>
-			<div class="stat" style="color:var(--warn);">2</div>
-			<div class="stat-sub">H5, H6</div>
+			<div class="stat" style="color:var(--warn);">1</div>
+			<div class="stat-sub">H5</div>
 		</div>
 		<div class="card">
 			<div class="kicker">Medium</div>
@@ -1401,12 +1401,6 @@ flowchart TB
 		<div class="title">H5 — Methodology flexibility</div>
 		<div class="meta">Type: Architecture · Effort: L · Priority: P2</div>
 		<p>Methodology assumes a rigid 16-doc KB set. Meta-repos, docs-only projects, and library-only projects need flexibility to adapt the standard set. (per tech-debt.md H5)</p>
-	</div>
-
-	<div class="debt-item high">
-		<div class="title">H6 — verify-claims.sh follow-up</div>
-		<div class="meta">Type: Process / Quality · Effort: S · Priority: P2</div>
-		<p>The deleted <code>verify-claims.sh</code> handed frontmatter + contract verification to the discovery-reviewer agent; its prompt must be confirmed to still cover FM-presence, FM-field-validity, contract claims, and the AUTO-GENERATED header. (per tech-debt.md H6)</p>
 	</div>
 
 	<div class="debt-item med">
