@@ -1407,7 +1407,7 @@ flowchart TB
 	<header>
 		<span class="eyebrow">Debt</span>
 		<h2>Tech Debt</h2>
-		<p class="lede">Overall debt level: Medium–High. The codebase is well-organized (Thin-Router convention, single canonical source, 13-suite test coverage) and now has enforced pre-merge CI (required status checks on master) but still carries several structural gaps. <strong>Zero Critical items remain.</strong> One High item, one Medium, four Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
+		<p class="lede">Overall debt level: Medium–High. The codebase is well-organized (Thin-Router convention, single canonical source, 13-suite test coverage) and now has enforced pre-merge CI (required status checks on master) but still carries a structural gap (methodology rigidity). <strong>Zero Critical items remain.</strong> One High item, two Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
@@ -1423,13 +1423,13 @@ flowchart TB
 		</div>
 		<div class="card">
 			<div class="kicker">Medium</div>
-			<div class="stat" style="color:var(--info);">1</div>
-			<div class="stat-sub">H4</div>
+			<div class="stat" style="color:var(--info);">0</div>
+			<div class="stat-sub">none open</div>
 		</div>
 		<div class="card">
 			<div class="kicker">Low</div>
-			<div class="stat" style="color:var(--text-dim);">4</div>
-			<div class="stat-sub">L1, L3, L4, L5</div>
+			<div class="stat" style="color:var(--text-dim);">2</div>
+			<div class="stat-sub">L1, L4</div>
 		</div>
 	</div>
 
@@ -1439,22 +1439,10 @@ flowchart TB
 		<p>Methodology assumes a rigid 16-doc KB set. Meta-repos, docs-only projects, and library-only projects need flexibility to adapt the standard set. (per tech-debt.md H5)</p>
 	</div>
 
-	<div class="debt-item med">
-		<div class="title">H4 — Crud-outputs audit (partially resolved)</div>
-		<div class="meta">Type: Process / Hygiene · Effort: M · Priority: P3</div>
-		<p>The known instance is fixed (<code>run_generator.py</code> writes no report file), but a systematic audit of write-only outputs across the 10 skills + 11 generators has not been done. (per tech-debt.md H4)</p>
-	</div>
-
 	<div class="debt-item low">
 		<div class="title">L1 — Source bloat</div>
 		<div class="meta">Type: Complexity · Effort: M · Priority: P3</div>
 		<p>Roughly ten files exceed 500 lines (largest: methodology spec 1,070; <code>test-parse-recipe.sh</code> 906; <code>state-execute.md</code> 629; <code>writeback-state.sh</code> 627). (per tech-debt.md L1)</p>
-	</div>
-
-	<div class="debt-item low">
-		<div class="title">L3 — Broad Bash allowlist</div>
-		<div class="meta">Type: Hardening · Effort: XS · Priority: P3</div>
-		<p><code>.claude/settings.json</code> permits unscoped <code>Bash(rm *)</code>, <code>Bash(python *)</code>, <code>Bash(chmod *)</code> — acceptable for a maintainer-trusted dogfood, not for shared use. (per tech-debt.md L3)</p>
 	</div>
 
 	<div class="debt-item low">
@@ -1463,11 +1451,6 @@ flowchart TB
 		<p>AID has no VERSION file, no semver. Current position is "continuous master". (per tech-debt.md L4)</p>
 	</div>
 
-	<div class="debt-item low">
-		<div class="title">L5 — Example divergence</div>
-		<div class="meta">Type: Doc Drift · Effort: S · Priority: P3</div>
-		<p>The <code>brownfield-enterprise</code> example references old KB doc names (<code>data-model.md</code>→<code>schemas.md</code>, <code>api-contracts.md</code>→<code>pipeline-contracts.md</code>) and <code>DISCOVERY-STATE.md</code>→<code>.aid/knowledge/STATE.md</code> — an adopter would look for files the tool no longer produces. data-pipeline + desktop-app are clean. (per tech-debt.md L5)</p>
-	</div>
 </section>
 
 <!-- ===== SECTION 11: Documentation Surface ===== -->

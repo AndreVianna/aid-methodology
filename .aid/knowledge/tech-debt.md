@@ -8,6 +8,7 @@ intent: |
   Read when planning the next refactor cycle or scoping a new work-NNN.
 contracts: []
 changelog:
+  - 2026-05-30: H4, L3, L5 RESOLVED + removed. H4 (crud-outputs audit) — completed the systematic audit across all 10 user-facing skills, the 11 generator/builder scripts, and every `canonical/scripts/` helper (a 3-way file-write sweep): ZERO write-only outputs found — every persisted file is consumed by a downstream reader, is the phase's deliverable, or is self-consumed scratch (mktemp/lock); the cycle-1 `run_generator.py` verify-report fix confirmed still in place (pipeline passes `report_path=None`); `generated-files.txt` registry confirmed correct/complete. No code change needed — audit clean. L3 (broad Bash allowlist) — ACCEPTED: the unscoped `Bash(rm *)`/`Bash(python *)`/`Bash(chmod *)` in `.claude/settings.json` are appropriate for this maintainer-trusted dogfood (defense-in-depth via the per-agent `tools:` allowlist); scoping them would only add friction to the maintainer's own sessions. Revisit only if AID ships a shared/CI-managed instance. L5 (example divergence) — fixed `examples/brownfield-enterprise/README.md` doc names (data-model.md→schemas.md, api-contracts.md→pipeline-contracts.md, DISCOVERY-STATE.md→.aid/knowledge/STATE.md). Medium 1→0, Low 4→2; 3 open items remain (H5, L1, L4).
   - 2026-05-30: M4, M6, L2 RESOLVED + removed — the test-suite debt is closed. M4 (no aggregator): added `tests/run-all.sh`, the single glob-discovering entrypoint shared by CI + local dev. M6 (test refactor): extracted shared `tests/lib/assert.sh`, behavior-named the suites (`test-` prefix), standardized failure messages, and migrated every suite to the shared lib. L2 (coverage gaps): added Node suites for the `.mjs` validators (validate-diagrams, contrast-check), a `setup.sh` install-flow suite, bash + PowerShell suites for `assemble-3part`, and a pre-install suite for `setup.ps1`, all gated in CI (node pinned; pwsh asserted present). Shipped via PRs #26/#27. Medium 3→1, Low 5→4. (Descriptive test-suite metrics in this doc — suite count, LOC ratio, Open-PRs note — are stale and refresh on the next /aid-discover cycle.)
   - 2026-05-30: H6 RESOLVED + removed — an adversarial audit confirmed the discovery-reviewer prompt already covers verify-claims.sh's former semantic duties (FM presence/validity, contract claims, AUTO-GENERATED header, and intra-file contradiction). The one real gap it surfaced was that volatile `file:LINE` citations were being stored + verified instead of durable grep-recoverable anchors. Fixed by adding P1(d) Positional-citations + P8 Rigor-follows-value to kb-authoring principles, aligning the discovery-* prompts + review rubric, and (P1(a) follow-up) purging volatile inline counts from the KB doc templates. Shipped via PRs #22/#23/#24. High 2→1.
   - 2026-05-29: H3 RESOLVED + removed as Not Applicable — a 4-facet dependency-surface audit confirmed the repo is dependency-free by design: ZERO third-party Python deps (stdlib-only), ZERO npm deps (no package.json; the sole external library, Mermaid v11.15.0, is a SHA-256-pinned standalone download — stronger than `npm audit`). Language lock files would lock empty trees (security theater) and `pip-audit`/`npm audit` would find nothing to scan, so H3's "vuln-scanning impossible" premise is moot. High 3→2. The one genuinely-real residual the audit surfaced — 3 first-party GitHub Actions pinned by mutable tag, no dependabot — is Low (first-party `actions/*` + least-privilege `contents: read`) and is an optional hardening, not tracked debt.
@@ -33,14 +34,14 @@ changelog:
 
 ## Summary
 
-**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 13-suite canonical test suite) and now has **enforced pre-merge CI** (required status checks on `master`, 2026-05-29), but still carries several **structural gaps** surfaced by cycle-1 discovery (methodology rigidity and crud-outputs audit pending). There are **zero open Critical** items. Resolved items are dropped from the inventory below; their closure record (what / when / why) lives in this doc's changelog frontmatter and in git history. As of this writing, C1, H1, H2, H3, H6, M1, M2, M3, M4, M5, M6, M7, and L2 have been closed and removed from the list.
+**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 13-suite canonical test suite) and now has **enforced pre-merge CI** (required status checks on `master`, 2026-05-29), but still carries a **structural gap** surfaced by cycle-1 discovery (methodology rigidity — H5 — pending). There are **zero open Critical** items. Resolved items are dropped from the inventory below; their closure record (what / when / why) lives in this doc's changelog frontmatter and in git history. As of this writing, C1, H1, H2, H3, H4, H6, M1, M2, M3, M4, M5, M6, M7, L2, L3, and L5 have been closed and removed from the list.
 
 | Severity | Open | Open items |
 |----------|------|------------|
 | Critical | 0 | — |
 | High | 1 | H5 |
-| Medium | 1 | H4 |
-| Low | 4 | L1, L3, L4, L5 |
+| Medium | 0 | — |
+| Low | 2 | L1, L4 |
 
 > **Counting methodology:** this table counts unique **open** debt items (one row per entry, regardless of how many `[HIGH]`/`[MEDIUM]` tags appear in the fix recipe). Resolved items are removed from the inventory entirely; their closure record lives in the changelog frontmatter and git history. The generated `metrics.md` (built by `build-metrics.sh`) counts every body-tag occurrence including those inside fix-recipe sub-bullets, producing higher totals. Neither is wrong; they answer different questions. Canonical item count is this table.
 
@@ -50,12 +51,9 @@ changelog:
 
 | ID | Type | Description | Location | Risk | Effort | Priority |
 |----|------|-------------|----------|------|--------|----------|
-| H4 | Crud Outputs (partially resolved) | Skills/scripts audit needed: unnecessary write-only outputs (reports/logs/intermediate files) not consumed by any downstream step — known instance fixed in cycle-1 (Q2: report_path=None); broader audit remains | scope: 10 user-facing skills + 11 generators/builders | Medium | M | P3 |
 | H5 | Methodology Flexibility | Methodology assumes rigid 16-doc KB set; meta-repos / docs-only / library-only projects need flexibility | methodology spec, aid-discover, canonical/templates/knowledge-base/ | High | L | P2 |
 | L1 | Source Bloat | ~10 files >500 lines under canonical/methodology/tests (largest: `methodology/aid-methodology.md` ~1,070, `tests/canonical/test-parse-recipe.sh`, `canonical/skills/aid-execute/references/state-execute.md`, `canonical/scripts/execute/writeback-state.sh`) | various | Low | M | P3 |
-| L3 | Allowlist Breadth | `.claude/settings.json` Bash allowlist includes broad `Bash(rm *)` and `Bash(python *)` without path scoping | `.claude/settings.json` `permissions.allow` (`Bash(rm *)`, `Bash(python *)`, `Bash(chmod *)`) | Low | XS | P3 |
 | L4 | Versioning | AID has no version (no VERSION file, no semver); current position is "continuous master" | repo-wide; absence confirmed by project-index | Low | S | P3 |
-| L5 | Example Divergence | `examples/brownfield-enterprise/README.md` uses old KB doc names (`data-model.md`→`schemas.md`, `api-contracts.md`→`pipeline-contracts.md`) and `DISCOVERY-STATE.md`→`.aid/knowledge/STATE.md` — an adopter would look for files the tool no longer produces. data-pipeline + desktop-app verified clean | `examples/brownfield-enterprise/README.md` (rows citing `data-model.md`, `api-contracts.md`, `DISCOVERY-STATE.md`) | Low | S | P3 |
 
 ---
 
@@ -79,39 +77,6 @@ changelog:
 - For the shell scripts: extract self-contained functions into `lib/` files; verify behavior unchanged via the existing test suites.
 
 **Owner suggestion:** address opportunistically during feature work in those files.
-
----
-
-### [LOW] L3 — `.claude/settings.json` Bash allowlist is broad
-
-**Type:** Configuration / Hardening
-**Evidence:** the `permissions.allow` array in `.claude/settings.json` permits `Bash(rm *)`, `Bash(python *)`, and `Bash(chmod *)` without path scoping.
-
-**Impact:** Acceptable for a maintainer-trusted dogfood environment; would not be acceptable in a multi-tenant setting. Low priority because every Bash invocation by an agent goes through the per-agent `tools:` allowlist first.
-
-**Fix recipe (estimated XS effort, optional):** narrow `Bash(rm *)` to `Bash(rm -rf .aid/.temp/*)` and similar; or accept and document the rationale ("maintainer-trusted scope").
-
-**Owner suggestion:** maintainer; address if the project ever ships a shared/CI-runner-managed instance.
-
----
-
-### [MEDIUM] H4 — Skills/scripts crud audit (write-only outputs, partially resolved)
-
-**Type:** Process / Hygiene
-**Status:** Known instance fixed in cycle-1 (Q2 resolution); broader audit remains.
-**Evidence:**
-- `run_generator.py:76,83` (pre-cycle-1): passed `.aid/work-002-canonical-generator/verify-{4a,4b}-report.json` as report paths to `run_verify()` / `run_advisory()`. These JSON files were write-only — no downstream step read them; the script itself uses return values, not the file. Fixed in cycle-1 by passing `report_path=None`.
-- Surfaced user principle: skills and scripts should not emit files nobody reads (see feedback memory `no-crud-outputs`).
-- The known instance has been fixed; a systematic audit has not been done.
-
-**Impact:** Write-only outputs create maintenance confusion (which files are authoritative?), bloat the `.aid/` tree, and can silently break when parent directories are missing. Any skill that writes to `.aid/.temp/` or `.aid/generated/` without a downstream reader is waste.
-
-**Fix recipe (estimated M effort):**
-1. Enumerate all file-write calls across 10 user-facing skills + 11 generator/builder scripts.
-2. For each output file: confirm at least one downstream consumer (another script, an agent read call, a committed artifact). If none, remove the write.
-3. Document confirmed output files in `canonical/templates/generated-files.txt` registry.
-
-**Owner suggestion:** maintainer; pick up via `/aid-interview` when prioritized.
 
 ---
 
@@ -155,28 +120,6 @@ changelog:
 4. Revisit when the methodology-flexibility refactor (H5) lands — that is the natural semver-bump point.
 
 **Owner suggestion:** maintainer; revisit after H5 is resolved.
-
----
-
-### [LOW] L5 — examples/ diverge from current methodology conventions
-
-**Type:** Documentation Drift / Example Divergence
-**Evidence (verified 2026-05-29 by content scan, not timestamps):**
-- `examples/brownfield-enterprise/README.md` lists KB documents using **old names**: its status table has rows for `data-model.md` and `api-contracts.md`. The shipped standard template set (`canonical/templates/knowledge-base/`) uses `schemas.md` and `pipeline-contracts.md`, so an adopter running `aid-discover` today gets the new names and won't find the ones the example shows.
-- The same file uses `DISCOVERY-STATE.md` (in the status table and in the "Open questions are valuable artifacts" lesson); the current convention is the per-area `.aid/knowledge/STATE.md` (the canonical `discovery-state-template.md` states it "absorbs what used to be `DISCOVERY-STATE.md`").
-- `examples/data-pipeline/` and `examples/desktop-app/` were scanned for the same signatures (old doc names, acronym variants, deleted artifacts, stale state vocabulary) and are **clean**.
-- The earlier "3+ months stale" framing was wrong (brownfield was refreshed 2026-05-22) — the issue is content divergence, not age.
-
-**Impact:** A new adopter following `brownfield-enterprise` looks for `data-model.md` / `api-contracts.md` / `DISCOVERY-STATE.md` — files the current tool no longer produces — undermining the example's value as an onboarding reference.
-
-**Fix recipe (estimated S effort):**
-1. In `examples/brownfield-enterprise/README.md`, rename the 4 references: `data-model.md`→`schemas.md`, `api-contracts.md`→`pipeline-contracts.md`, and `DISCOVERY-STATE.md`→`.aid/knowledge/STATE.md`.
-2. Re-scan all three examples after any future KB-doc-set change.
-3. Optionally add a `<!-- last-validated: YYYY-MM-DD -->` marker per case study.
-
-**Note:** A separate, larger drift exists — the methodology spec (`methodology/aid-methodology.md`) still uses `DISCOVERY-STATE.md` in ~10 places, lagging its own canonical skill/template. Out of L5's scope (examples-only); flagged for a future item.
-
-**Owner suggestion:** tech-writer; the brownfield rename is a quick win, independent of H5.
 
 ---
 

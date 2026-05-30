@@ -28,11 +28,11 @@ The AI agent systematically explored the repository structure, build system, and
 | module-map.md | ✅ Complete | ~200 bundles categorized |
 | technology-stack.md | ✅ Complete | Java 17, OSGi, Tycho, Hibernate, ES 5.x |
 | tech-debt.md | ✅ Complete | ES client 7+ years outdated, Jest abandoned |
-| data-model.md | ⚠️ Partial | JPA entities mapped, some relationships inferred |
-| api-contracts.md | ⚠️ Partial | REST endpoints found, no formal contract docs |
+| schemas.md | ⚠️ Partial | JPA entities mapped, some relationships inferred |
+| pipeline-contracts.md | ⚠️ Partial | REST endpoints found, no formal contract docs |
 | integration-map.md | ✅ Complete | Federated search fan-out to remote nodes |
 | domain-glossary.md | ⚠️ Partial | Domain terms extracted from code |
-| DISCOVERY-STATE.md (Q&A) | ✅ Complete | 8 questions requiring human input |
+| .aid/knowledge/STATE.md (Q&A) | ✅ Complete | 8 questions requiring human input |
 
 ### 2. Interview (aid-interview)
 
@@ -56,5 +56,5 @@ With the KB in place, PR review comments were addressed in a single session:
 ## Lessons Learned
 
 1. **Discovery pays for itself immediately.** The KB made every subsequent task faster — PR reviews referenced architecture.md, implementation followed coding-standards.md.
-2. **Open questions are valuable artifacts.** The 8 questions in DISCOVERY-STATE.md's Q&A surfaced assumptions that would have become bugs.
+2. **Open questions are valuable artifacts.** The 8 questions in `.aid/knowledge/STATE.md`'s Q&A surfaced assumptions that would have become bugs.
 3. **Partial KB documents are fine.** Not every document needs to be complete. Mark gaps, fill them as you go.
