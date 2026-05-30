@@ -271,9 +271,24 @@ def _self_test(canonical_root_arg: str) -> int:
     """
     failures: list[str] = []
 
-    # Test 1: all pending → all skipped
+    # Test 1: all pending → all skipped (hermetic fixture, not the live external-sources.md)
     print("Self-test 1: all URLs pending -- skipped_count == 8...")
-    report = run_advisory(canonical_root_arg)
+    import tempfile
+    with tempfile.TemporaryDirectory() as _td:
+        _src = Path(_td) / ".aid" / "knowledge"
+        _src.mkdir(parents=True)
+        _rows = "\n".join(
+            f"| {i} | Source {i} | web | https://example.com/{i} | global | ⚠️ Pending fetch |"
+            for i in range(1, 9)
+        )
+        (_src / "external-sources.md").write_text(
+            "# External Sources\n\n"
+            "| # | Source | Type | URL | Scope | Accessible |\n"
+            "|---|---|---|---|---|---|\n"
+            f"{_rows}\n",
+            encoding="utf-8",
+        )
+        report = run_advisory(str(_td))
     if report["skipped_count"] != 8:
         failures.append(
             f"Test 1 FAIL: expected skipped_count=8, got {report['skipped_count']}"

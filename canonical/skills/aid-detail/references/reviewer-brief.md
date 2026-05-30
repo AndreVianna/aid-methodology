@@ -41,9 +41,9 @@ OUT OF SCOPE (do NOT grade against):
   - Tasks belonging to other deliveries (at per-deliverable scope)
 
 OUT-OF-SCOPE FINDINGS POLICY:
-  Log to `## Out-of-Scope Observations` in `.aid/.temp/review-pending/detail-{work}.md`.
-  Do NOT count toward severity totals or grade. Tag with routing destination
-  (PLAN | SPEC | KB).
+  Log OOS findings as Status: OOS rows in the same ledger table at
+  `.aid/.temp/review-pending/detail-{work}.md`. Do NOT count toward severity totals
+  or grade. Note the routing destination (PLAN | SPEC | KB) in Description/Evidence.
 
 DELIVERABLES:
   - Findings format: severity-tagged + source-tagged (TASK | PLAN | SPEC | KB)

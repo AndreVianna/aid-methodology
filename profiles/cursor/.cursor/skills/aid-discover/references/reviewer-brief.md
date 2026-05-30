@@ -33,8 +33,9 @@ OUT OF SCOPE (do NOT grade against):
   - Hypothetical future KB extensions
 
 OUT-OF-SCOPE FINDINGS POLICY:
-  Log to `## Out-of-Scope Observations` in the ledger. Do NOT count toward
-  severity totals or the grade.
+  Log OOS findings as Status: OOS rows in the same ledger table. Note the routing
+  destination (the upstream skill the observation belongs to) in Description/Evidence.
+  Do NOT count toward severity totals or the grade.
 
 DELIVERABLES:
   - Findings format: per .cursor/templates/kb-authoring/principles.md P3 temp-ledger
