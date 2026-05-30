@@ -222,7 +222,7 @@ ARTIFACTS UNDER REVIEW:
   - .claude/templates/reviewer-dispatch.md  (this doc, newly authored)
   - .claude/templates/generated-files.txt
   - .claude/scripts/kb/build-metrics.sh
-  - .claude/scripts/kb/build-index.sh
+  - .claude/scripts/kb/build-kb-index.sh
   - .claude/templates/knowledge-base/*.md  (17 templates with prepended frontmatter)
 
 CONTEXT:

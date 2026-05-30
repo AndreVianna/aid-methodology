@@ -222,7 +222,7 @@ ARTIFACTS UNDER REVIEW:
   - .agents/templates/reviewer-dispatch.md  (this doc, newly authored)
   - .agents/templates/generated-files.txt
   - .agents/scripts/kb/build-metrics.sh
-  - .agents/scripts/kb/build-index.sh
+  - .agents/scripts/kb/build-kb-index.sh
   - .agents/templates/knowledge-base/*.md  (17 templates with prepended frontmatter)
 
 CONTEXT:

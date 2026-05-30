@@ -33,7 +33,7 @@
 {"dst": ".claude/scripts/execute/writeback-task-status.sh", "profile": "claude-code", "sha256": "a2dbf3f292eac91eaf66b8871fc97349de4ec69371321d997088c781f769af02", "src": "canonical/scripts/execute/writeback-task-status.sh"}
 {"dst": ".claude/scripts/grade.sh", "profile": "claude-code", "sha256": "4984ef7486d0c66dc593db1e714db69b85e3a6aac636e68a4fc1b757aaced8c9", "src": "canonical/scripts/grade.sh"}
 {"dst": ".claude/scripts/interview/parse-recipe.sh", "profile": "claude-code", "sha256": "b6f8f4ff474e18ce9d4dc9d44291efa95f1de7942a209e94b0ddaa37b35a6a3d", "src": "canonical/scripts/interview/parse-recipe.sh"}
-{"dst": ".claude/scripts/kb/build-index.sh", "profile": "claude-code", "sha256": "853aa03c28dac3ddd12275c65cce8beb69a9ce3fdd5f6300d720d58e5e7ac3ac", "src": "canonical/scripts/kb/build-index.sh"}
+{"dst": ".claude/scripts/kb/build-kb-index.sh", "profile": "claude-code", "sha256": "cad011cc58c00f5b3f67b6bc167e7dd1a4d64bc878ad613978a3d8a8b19c9d47", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".claude/scripts/kb/build-metrics.sh", "profile": "claude-code", "sha256": "ed532d0a38b57076e67675cfa9944473d2c9f8510f98f565da09a58cf77e9dc0", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".claude/scripts/kb/build-project-index.sh", "profile": "claude-code", "sha256": "000c8f16eb56fd7876ad5ffa22a36119cb435cdd048126a80d1c691a68424673", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".claude/scripts/kb/discover-preflight.sh", "profile": "claude-code", "sha256": "ab7289ebd91e3b64808df8d7a916202fd7148090a48f8aeec07ea444b39cbd52", "src": "canonical/scripts/kb/discover-preflight.sh"}
@@ -141,14 +141,14 @@
 {"dst": ".claude/templates/feature-inventory.md", "profile": "claude-code", "sha256": "1866cfe95be8ac1d1a5b1e6e5b003c95093e659fc3362fd0bf8943ed5c81956f", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".claude/templates/feature.md", "profile": "claude-code", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
 {"dst": ".claude/templates/feedback-artifacts/IMPEDIMENT.md", "profile": "claude-code", "sha256": "9128ca3631209d6094808c2a3232958605a45aec118fc651bf5b9c3c00e5e96b", "src": "canonical/templates/feedback-artifacts/IMPEDIMENT.md"}
-{"dst": ".claude/templates/generated-files.txt", "profile": "claude-code", "sha256": "8acb00afa18ce4438ef6354aa2d0b3279ac6cad7c52e01a8a2fdd03e73e92460", "src": "canonical/templates/generated-files.txt"}
+{"dst": ".claude/templates/generated-files.txt", "profile": "claude-code", "sha256": "0613b6dc17eb3fd64c34f1e3747270370fdfd85c684188051621609439109eea", "src": "canonical/templates/generated-files.txt"}
 {"dst": ".claude/templates/grading-rubric.md", "profile": "claude-code", "sha256": "4c7c135f1ac7e5e2e9259aa8e6a7ba9aedd49bce86ce8823b33f424e09d21ab0", "src": "canonical/templates/grading-rubric.md"}
-{"dst": ".claude/templates/kb-authoring/README.md", "profile": "claude-code", "sha256": "a6f83a8bd72694bc44dfa44bc9d734f5aede7e12d619548bab7d954b36ab6d95", "src": "canonical/templates/kb-authoring/README.md"}
-{"dst": ".claude/templates/kb-authoring/frontmatter-schema.md", "profile": "claude-code", "sha256": "c3eda856c2a14a305dc680b2ba25f6ec3cd146b23963113ea08d71693f0628ef", "src": "canonical/templates/kb-authoring/frontmatter-schema.md"}
-{"dst": ".claude/templates/kb-authoring/principles.md", "profile": "claude-code", "sha256": "6d31ec67c4fbe4c3c03fd25f846d13381b6bdb648fdbae9e649c650b61226dea", "src": "canonical/templates/kb-authoring/principles.md"}
+{"dst": ".claude/templates/kb-authoring/README.md", "profile": "claude-code", "sha256": "c678d82ab3c19f36949a5234fa0b082e8ed428c5c1ee1cf1b108388f4ea742c0", "src": "canonical/templates/kb-authoring/README.md"}
+{"dst": ".claude/templates/kb-authoring/frontmatter-schema.md", "profile": "claude-code", "sha256": "fd24f619f779051d4510c1b79bbec963459a8055491031c5d533e89d1e3f7af7", "src": "canonical/templates/kb-authoring/frontmatter-schema.md"}
+{"dst": ".claude/templates/kb-authoring/principles.md", "profile": "claude-code", "sha256": "e24547c7a8c7d0df5fec4179f2335b17ed8f190795303314deb970b9a6076a9a", "src": "canonical/templates/kb-authoring/principles.md"}
 {"dst": ".claude/templates/kb-authoring/review-rubric.md", "profile": "claude-code", "sha256": "46486a5b163d864ccbc15b77500d8d28b78e49fe3e8c3c264b0ba4c42734f9f7", "src": "canonical/templates/kb-authoring/review-rubric.md"}
 {"dst": ".claude/templates/kb-authoring/tier-model.md", "profile": "claude-code", "sha256": "3bbc623a394115c19910d1812d1826c77ce8b36bc2886df89c72c6a4d2bdc5e6", "src": "canonical/templates/kb-authoring/tier-model.md"}
-{"dst": ".claude/templates/knowledge-base/README.md", "profile": "claude-code", "sha256": "f5a395e6f9f6eee8df4a6ae34c6be6c3d74e3fc50c3def128c145c83a9a80226", "src": "canonical/templates/knowledge-base/README.md"}
+{"dst": ".claude/templates/knowledge-base/README.md", "profile": "claude-code", "sha256": "536a4234dd787094faca3903560c0789046dc8cb54a98de7688a8d07236f29b8", "src": "canonical/templates/knowledge-base/README.md"}
 {"dst": ".claude/templates/knowledge-base/architecture.md", "profile": "claude-code", "sha256": "6cfd7afa50534bce3d7e33d83c91836acccd56a183735a660d2db0a2db4d4af8", "src": "canonical/templates/knowledge-base/architecture.md"}
 {"dst": ".claude/templates/knowledge-base/coding-standards.md", "profile": "claude-code", "sha256": "9e5a7571347b8419d71caff0c59b004d278b2a593a527db54815b1ff1a8ab949", "src": "canonical/templates/knowledge-base/coding-standards.md"}
 {"dst": ".claude/templates/knowledge-base/domain-glossary.md", "profile": "claude-code", "sha256": "64f1bfbe0721a87e706db0d308932511b0dc16998795ef2205d67bbf9a10f0ee", "src": "canonical/templates/knowledge-base/domain-glossary.md"}
@@ -185,7 +185,7 @@
 {"dst": ".claude/templates/recipe-template.md", "profile": "claude-code", "sha256": "6bf8ddc509a0c083211b37f9a832abf46af9289d7804e76415782637340bbfbf", "src": "canonical/templates/recipe-template.md"}
 {"dst": ".claude/templates/requirements.md", "profile": "claude-code", "sha256": "c2b5e54c627a81c3edd71273d80eba157853e4a3128512792cf0f478f68909c3", "src": "canonical/templates/requirements.md"}
 {"dst": ".claude/templates/requirements/requirements-template.md", "profile": "claude-code", "sha256": "1a1ae36c8342e45c94edcf87b9b2263ff706e2e8866193e31fd07b4004343ce1", "src": "canonical/templates/requirements/requirements-template.md"}
-{"dst": ".claude/templates/reviewer-dispatch.md", "profile": "claude-code", "sha256": "1c9b8ca966794e0bdc56713817e76817461e86939ae076d4f9d2b58f379b55d4", "src": "canonical/templates/reviewer-dispatch.md"}
+{"dst": ".claude/templates/reviewer-dispatch.md", "profile": "claude-code", "sha256": "162d075fd8dbf2d1048e66569f705921346c0b2a4ac7ca106d4802f09df5ba59", "src": "canonical/templates/reviewer-dispatch.md"}
 {"dst": ".claude/templates/reviewer-ledger-schema.md", "profile": "claude-code", "sha256": "d57e9ed73662b5dd778bf91f100982f4cc5cb4cd8e6c95576ce8441b517afb5b", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".claude/templates/rough-time-hints.md", "profile": "claude-code", "sha256": "558cd7a5230aafa3a8f6bf6357fd95c4717c2d5ec1cd5e6e44dac02b6ce5b2bb", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".claude/templates/self-review-protocol.md", "profile": "claude-code", "sha256": "1264f380ad5752ff5586af59bec6282d17377dc40eeef15f74cabe72ab35cc2c", "src": "canonical/templates/self-review-protocol.md"}
