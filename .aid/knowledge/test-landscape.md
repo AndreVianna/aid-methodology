@@ -54,7 +54,7 @@ Covers the three-tier settings-resolution model:
 - Error exits (bad `--path` format, unknown flag, missing paired args)
 
 11 numbered scenarios; **18 assertions** (some scenarios contain multiple asserts).
-File: `tests/canonical/read-setting.sh` (~360 lines)
+File: `tests/canonical/test-read-setting.sh` (~360 lines)
 
 ### writeback-task-status.sh
 
@@ -70,7 +70,7 @@ Covers all 4 argument modes plus safety:
 - Error paths (missing args, invalid task-id, lock timeout, missing lock dir)
 
 7 numbered units; **69 assertions** (script prints "Tests passed: 69" then "All tests passed." in summary).
-File: `tests/canonical/writeback-task-status.sh` (~535 lines)
+File: `tests/canonical/test-writeback-task-status.sh` (~535 lines)
 
 ### parse-recipe.sh
 
@@ -86,7 +86,7 @@ Covers all operating modes and error paths:
 - Units 15–19: validates each of the 5 seed recipes in `canonical/recipes/` (dogfood)
 
 19 numbered units; **113 assertions** (script prints "Tests passed: 113" then "All tests passed." in summary). **Runtime note:** this suite takes ~150 s; do not impose timeouts under 180 s.
-File: `tests/canonical/parse-recipe.sh` (~1,002 lines — the largest suite)
+File: `tests/canonical/test-parse-recipe.sh` (~1,002 lines — the largest suite)
 
 ### compute-block-radius.sh
 
@@ -103,7 +103,7 @@ Covers BFS transitive-descendant computation used by the pool-dispatch failure c
 - Stability check: `state-execute.md` degradation-notice format
 
 17 numbered tests (T01–T17).
-File: `tests/canonical/compute-block-radius.sh` (~345 lines)
+File: `tests/canonical/test-compute-block-radius.sh` (~345 lines)
 
 ### delivery-gate-aggregate.sh
 
@@ -119,7 +119,7 @@ Covers:
 - FR6 interlock (gate must not fire while any task has status Failed or Blocked)
 
 6 numbered scenarios; **18 assertions**.
-File: `tests/canonical/delivery-gate-aggregate.sh` (~535 lines)
+File: `tests/canonical/test-delivery-gate-aggregate.sh` (~535 lines)
 
 ### fetch-mermaid.sh
 
@@ -132,7 +132,7 @@ Covers the C1 supply-chain pin + SHA-verification (added 2026-05-29):
 - `compute_sha256` "unknown" fallback (Scenario D) — fails closed when neither `sha256sum` nor `shasum` is on PATH (sha256sum-spy via symlink)
 
 4 scenarios; **19 assertions** (script prints "Tests passed: 19" then "All tests passed.").
-File: `tests/canonical/fetch-mermaid.sh` (~494 lines)
+File: `tests/canonical/test-fetch-mermaid.sh` (~494 lines)
 
 ### grade.sh
 
@@ -145,7 +145,7 @@ Regression suite for the M7 column-anchored rewrite of the severity-tag → lett
 - Deprecated `--from-prose` path still parses (with fenced / inline-code stripping)
 
 **19 assertions** (script prints "Tests passed: 19" then "All tests passed.").
-File: `tests/canonical/grade.sh` (~353 lines)
+File: `tests/canonical/test-grade.sh` (~353 lines)
 
 ---
 
@@ -170,16 +170,16 @@ Count method: each suite's own self-reported summary line is authoritative. Veri
 
 ```bash
 # Individual suites (from repo root — Git Bash on Windows)
-bash tests/canonical/read-setting.sh
-bash tests/canonical/writeback-task-status.sh
-bash tests/canonical/parse-recipe.sh
-bash tests/canonical/compute-block-radius.sh
-bash tests/canonical/delivery-gate-aggregate.sh
-bash tests/canonical/fetch-mermaid.sh
-bash tests/canonical/grade.sh
+bash tests/canonical/test-read-setting.sh
+bash tests/canonical/test-writeback-task-status.sh
+bash tests/canonical/test-parse-recipe.sh
+bash tests/canonical/test-compute-block-radius.sh
+bash tests/canonical/test-delivery-gate-aggregate.sh
+bash tests/canonical/test-fetch-mermaid.sh
+bash tests/canonical/test-grade.sh
 
 # Verbose output
-bash tests/canonical/read-setting.sh --verbose
+bash tests/canonical/test-read-setting.sh --verbose
 
 # Run all 7 in sequence (no aggregator — per Q6 cycle-1 decision)
 for f in tests/canonical/*.sh; do echo "=== $f ==="; bash "$f" || break; done

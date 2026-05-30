@@ -119,13 +119,13 @@ no `pyproject.toml`). Quality is enforced by:
 bash canonical/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md
 
 # Canonical helper-script test suites (7 suites, 273 tests total)
-bash tests/canonical/writeback-task-status.sh    # 69 tests
-bash tests/canonical/delivery-gate-aggregate.sh  # 18 tests
-bash tests/canonical/compute-block-radius.sh     # 17 tests
-bash tests/canonical/parse-recipe.sh             # 113 tests (runtime ~150s — needs timeout ≥180s)
-bash tests/canonical/read-setting.sh             # 18 tests
-bash tests/canonical/fetch-mermaid.sh            # 19 tests
-bash tests/canonical/grade.sh                    # 19 tests
+bash tests/canonical/test-writeback-task-status.sh    # 69 tests
+bash tests/canonical/test-delivery-gate-aggregate.sh  # 18 tests
+bash tests/canonical/test-compute-block-radius.sh     # 17 tests
+bash tests/canonical/test-parse-recipe.sh             # 113 tests (runtime ~150s — needs timeout ≥180s)
+bash tests/canonical/test-read-setting.sh             # 18 tests
+bash tests/canonical/test-fetch-mermaid.sh            # 19 tests
+bash tests/canonical/test-grade.sh                    # 19 tests
 ```
 
 **KB claim verification** is performed by the `discovery-reviewer` sub-agent in

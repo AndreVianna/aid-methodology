@@ -242,7 +242,7 @@ The Reviewer agent produces a structured issue list with two-tag classification 
 - **Exit codes:** `0` success; `1` STATE missing; `2` lock contention timeout;
   `3` empty/unverifiable; `4` invalid arg; `5` missing required arg; `6` malformed
   STATE.md (`canonical/scripts/execute/writeback-task-status.sh:32-39`)
-- **Test suite:** 69 tests at `tests/canonical/writeback-task-status.sh`
+- **Test suite:** 69 tests at `tests/canonical/test-writeback-task-status.sh`
 - **Source:** `canonical/scripts/execute/writeback-task-status.sh:1-100`
 
 ### `bash canonical/scripts/execute/compute-block-radius.sh`
@@ -257,7 +257,7 @@ The Reviewer agent produces a structured issue list with two-tag classification 
 - **Exit codes:** `0` success; `1` arg missing / file not found; `2` failed task not in
   graph (warn, succeed with empty); `4` invalid arg value; `5` missing required arg
 - **Algorithm:** BFS with visited-set; AND-only dependency edges (no alternative paths)
-- **Test suite:** 17 tests at `tests/canonical/compute-block-radius.sh`
+- **Test suite:** 17 tests at `tests/canonical/test-compute-block-radius.sh`
 - **Source:** `canonical/scripts/execute/compute-block-radius.sh:1-80`
 
 ### `bash canonical/scripts/execute/complexity-score.sh`
@@ -289,7 +289,7 @@ The Reviewer agent produces a structured issue list with two-tag classification 
   failed; `7` render write error; `8` lock contention timeout
 - **Slot lexical rule:** `[a-z][a-z0-9-]*` (no underscores, uppercase, dots, spaces)
 - **JSON parser dep:** `python3` or `python` (no jq required)
-- **Test suite:** 113 tests at `tests/canonical/parse-recipe.sh`
+- **Test suite:** 113 tests at `tests/canonical/test-parse-recipe.sh`
 - **Source:** `canonical/scripts/interview/parse-recipe.sh:1-100`
 
 ### KB Citation Validation (`/aid-discover REVIEW`)

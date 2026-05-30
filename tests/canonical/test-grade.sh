@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# grade.sh — regression test suite for canonical/scripts/grade.sh
+# test-grade.sh — regression test suite for canonical/scripts/grade.sh
 #
 # Verifies schema-table parsing (new default), --from-prose legacy behavior,
 # and the cycle-7 bug regression (severity tags in Description are NOT counted).
 #
 # Usage:
-#   tests/canonical/grade.sh [-v | --verbose]
+#   tests/canonical/test-grade.sh [-v | --verbose]
 #
 # Exit codes:
 #   0 — all tests passed

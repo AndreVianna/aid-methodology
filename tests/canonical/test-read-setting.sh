@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# read-setting.sh — Unit tests for canonical/scripts/config/read-setting.sh.
+# test-read-setting.sh — Unit tests for canonical/scripts/config/read-setting.sh.
 #
 # Tests cover the three-tier resolution model:
 #   1. Per-skill override (e.g., discover.minimum_grade) wins over global

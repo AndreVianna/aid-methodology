@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# fetch-mermaid.sh — test suite for canonical/scripts/summarize/fetch-mermaid.sh
+# test-fetch-mermaid.sh — test suite for canonical/scripts/summarize/fetch-mermaid.sh
 #
 # Tests four scenarios:
 #   Scenario A: cache-hit verify on tampered file → exit != 0, both cache files deleted,
@@ -18,7 +18,7 @@
 # test stays in sync with the code — no independent hex copy is hardcoded here.
 #
 # Usage:
-#   tests/canonical/fetch-mermaid.sh [--verbose]
+#   tests/canonical/test-fetch-mermaid.sh [--verbose]
 #
 # Exit codes:
 #   0 — all tests passed

@@ -14,7 +14,7 @@ set -eu
 # 3. Update BOTH constants below atomically (PINNED_VERSION + EXPECTED_SHA256).
 #    Don't update one without the other — the script will reject the cached
 #    file on first run after a half-update.
-# 4. Verify locally: `bash tests/canonical/fetch-mermaid.sh` must pass.
+# 4. Verify locally: `bash tests/canonical/test-fetch-mermaid.sh` must pass.
 # =====================================
 
 PINNED_VERSION="v11.15.0"
