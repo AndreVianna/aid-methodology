@@ -4,7 +4,7 @@ name: CI
 # under profiles/{claude-code,codex,cursor}/, generated from canonical/ by
 # run_generator.py. CI therefore protects, in priority order:
 #   1. that committed profiles/ stays in sync with canonical/  (the core invariant)
-#   2. the runtime helper scripts adopters depend on            (the 7 bash suites)
+#   2. the runtime helper scripts adopters depend on            (the bash + node suites)
 #   3. the generator/build system itself                        (self-tests)
 #   4. cheap repo/KB hygiene                                    (CRLF, gitignore, INDEX)
 # Prompt-driven skills, the discovery-reviewer semantic review, and aid-summarize's
@@ -42,10 +42,16 @@ jobs:
           fi
 
   canonical-tests:
-    name: canonical helper suites (7 bash suites)
+    name: canonical helper suites (bash + node)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        # The .mjs summarize-validator suites (validate-diagrams, contrast-check)
+        # shell out to `node`; pin it so the suites gate reliably rather than
+        # depending on whatever the runner image happens to ship.
+        with:
+          node-version: '20'
       - name: Cache the pinned Mermaid library
         uses: actions/cache@v4
         with:

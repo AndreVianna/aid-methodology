@@ -19,6 +19,9 @@ All under `tests/canonical/` (run from repo root):
 | `test-delivery-gate-aggregate.sh` | `canonical/scripts/execute/aid-execute` delivery-gate aggregation: preserved deferred rows, empty-issues handling, SCORE computation, grade.sh determinism |
 | `test-fetch-mermaid.sh` | `canonical/scripts/summarize/fetch-mermaid.sh` pin + SHA verify: tampered-cache-hit rejection (Scenario A), post-download bad-blob rejection via curl stub (Scenario B), valid-cache fast path with no HTTP call (Scenario C), compute_sha256 unknown-fallback fails-closed when no sha256sum/shasum on PATH (Scenario D) |
 | `test-grade.sh` | `canonical/scripts/grade.sh` deterministic severity-tag → letter-grade scorer: per-band letter + count modifier, column-anchored counting (only a Severity-column `[TAG]` in a `Pending`/`Recurred` row counts; Description/Evidence/Summary text ignored — the cycle-7 false-positive guard), `--non-functional` forces F, deprecated `--from-prose` path |
+| `test-validate-diagrams.sh` | `canonical/scripts/summarize/validate-diagrams.mjs` (Node) D1 regex sanity + invocation paths via `--fast`: no-args/`--help`/missing-file → exit 2, zero-diagram warn-pass, valid `<pre>`/`<div>` diagrams, and D1 failures (directive-only, unrecognized type, empty block, mixed). D2 render is not hermetic (needs jsdom/mermaid-cli) and is out of scope. **Needs `node`.** |
+| `test-contrast-check.sh` | `canonical/scripts/summarize/contrast-check.mjs` (Node) WCAG AA contrast: usage exit 2, missing-file non-zero, hex-6/hex-3/`rgb()` parse paths, low-contrast fail, unresolvable-vars skipped-not-failed, dark-theme override extraction, and an integration check that the shipped `knowledge-summary.html` passes. **Needs `node`.** |
+| `test-setup.sh` | `setup.sh` installer: arg/precondition errors, interactive menu logic (Done/toggle/invalid), per-tool installs (Claude Code/Codex/Cursor), multi-tool install, idempotent re-install (“Up to date”), and `--force` overwrite. Menu driven via piped stdin; only fresh/identical/`--force` paths (never the `/dev/tty` prompt). |
 
 ## Running
 
@@ -32,7 +35,9 @@ bash tests/canonical/test-read-setting.sh
 bash tests/canonical/test-read-setting.sh --verbose
 ```
 
-On Windows, run from Git Bash (these are POSIX bash scripts).
+On Windows, run from Git Bash (these are POSIX bash scripts). The two `.mjs`
+validator suites also require `node` on PATH; they skip (exit 0 with a `SKIP:`
+notice) if Node is unavailable, so a host without Node still runs the rest.
 
 ## What's NOT tested
 
