@@ -70,7 +70,7 @@ The closest analog is the **AID parallel pool dispatch model** (work-001 feature
 
 ## CI / CD Pipeline
 
-**CI is advisory** — `.github/workflows/test.yml` (added 2026-05-29) runs render-drift + the 7 suites + generator self-tests + hygiene on every PR/push, but is not yet a required check (branch protection pending). See `tech-debt.md H2` and `test-landscape.md`.
+**CI is enforced** — `.github/workflows/test.yml` (added 2026-05-29) runs render-drift + the 7 suites + generator self-tests + hygiene on every PR/push and is a required status check for merging to `master` (branch protection enabled 2026-05-29). See `test-landscape.md`.
 
 There is also no **release pipeline** — the project distributes via:
 1. End users cloning the repo and running `setup.sh` / `setup.ps1` against a target directory, OR
