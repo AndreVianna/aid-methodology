@@ -17,7 +17,7 @@
 #   1  one or more tests failed
 #
 # Dependencies:
-#   - writeback-task-status.sh (must be in PATH or same directory)
+#   - writeback-state.sh (must be in PATH or same directory)
 #   - grade.sh                 (must be in PATH or same directory)
 
 set -u
@@ -29,7 +29,7 @@ PASS=0
 FAIL=0
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # SUTs moved in 2026-05-26 consolidation
-WRITEBACK="${SCRIPT_DIR}/../../canonical/scripts/execute/writeback-task-status.sh"
+WRITEBACK="${SCRIPT_DIR}/../../canonical/scripts/execute/writeback-state.sh"
 GRADE="${SCRIPT_DIR}/../../canonical/scripts/grade.sh"
 
 # ---------------------------------------------------------------------------
@@ -430,7 +430,7 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# Test 7: RECORD — writeback-task-status.sh --delivery-id --block writes
+# Test 7: RECORD — writeback-state.sh --delivery-id --block writes
 #          the ## Delivery Gates block correctly
 # ---------------------------------------------------------------------------
 run_test_7() {
@@ -469,14 +469,14 @@ EOF
     local rc=$?
 
     # Per feature-004 Alignment Update + wave-7+8 fix-batch, the canonical
-    # target for writeback-task-status.sh --delivery-id --block is work STATE.md
+    # target for writeback-state.sh --delivery-id --block is work STATE.md
     # ## Delivery Gates section (NOT the task file). Test 7b/7c assert that.
 
     # Helper should exit 0
     if [[ "$rc" -eq 0 ]]; then
-        pass "Test 7a: writeback-task-status.sh --delivery-id --block exits 0"
+        pass "Test 7a: writeback-state.sh --delivery-id --block exits 0"
     else
-        fail "Test 7a: writeback-task-status.sh --delivery-id --block exits 0" \
+        fail "Test 7a: writeback-state.sh --delivery-id --block exits 0" \
              "Helper exited with code $rc"
     fi
 
@@ -505,7 +505,7 @@ EOF
 
 # Verify required scripts exist
 if [[ ! -x "$WRITEBACK" ]]; then
-    echo "ERROR: writeback-task-status.sh not found or not executable at: $WRITEBACK" >&2
+    echo "ERROR: writeback-state.sh not found or not executable at: $WRITEBACK" >&2
     echo "       Ensure it exists and is executable (chmod +x)." >&2
     exit 1
 fi

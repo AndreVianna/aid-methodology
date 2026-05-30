@@ -81,7 +81,7 @@ For each `[HIGH]` finding:
 
 1. Mark the finding as `Deferred-to-gate` in the quick-check findings block.
 2. Write a deferred-issue row to the delivery's issue log using
-   `writeback-task-status.sh --delivery-id NNN --append-issue ROW` where `ROW`
+   `writeback-state.sh --delivery-id NNN --append-issue ROW` where `ROW`
    is a pipe-delimited markdown table row:
 
    ```
@@ -101,7 +101,7 @@ After triage, write the quick-check findings block to the work `STATE.md`
 `## Quick Check Findings` section via the helper:
 
 ```bash
-writeback-task-status.sh --task-id NNN --findings "BLOCK"
+writeback-state.sh --task-id NNN --findings "BLOCK"
 ```
 
 Where `BLOCK` is the findings text in this format:

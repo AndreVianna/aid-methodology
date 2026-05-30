@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# writeback-task-status.sh — row-level write coordination for FR6 parallel pool
+# writeback-state.sh — row-level write coordination for FR6 parallel pool
 # × per-area STATE writes in AID aid-execute.
 #
 # Provides 4 safe write modes for the work STATE.md Tasks Status section and
@@ -8,26 +8,26 @@
 # parallel tasks dispatch reviewers concurrently.
 #
 # Usage:
-#   writeback-task-status.sh --task-id NNN --field FIELD --value VALUE
+#   writeback-state.sh --task-id NNN --field FIELD --value VALUE
 #       Update a single named field in the task row inside ## Tasks Status.
 #       Fields: Status | Review | Elapsed | Notes | Wave | Type
 #
-#   writeback-task-status.sh --task-id NNN --findings BLOCK
+#   writeback-state.sh --task-id NNN --findings BLOCK
 #       Write/replace the ### task-NNN block under ## Quick Check Findings
 #       in the work STATE.md (per work-003 FR2 per-area STATE rule). BLOCK is
 #       the multi-line findings text. task-NNN.md is NOT modified.
 #
-#   writeback-task-status.sh --delivery-id NNN --block MARKDOWN_BLOCK
+#   writeback-state.sh --delivery-id NNN --block MARKDOWN_BLOCK
 #       Write/replace the ### delivery-NNN block under ## Delivery Gates in the
 #       work STATE.md (per feature-004 Alignment Update — see SPEC §Alignment Update; line cites in body are known-stale).
 #       MARKDOWN_BLOCK is the full block text. STATE.md is the canonical target;
 #       task files are NOT modified by this mode.
 #
-#   writeback-task-status.sh --delivery-id NNN --append-issue ROW
+#   writeback-state.sh --delivery-id NNN --append-issue ROW
 #       Append a single issue row to the delivery's delivery-NNN-issues.md.
 #       ROW must be a valid markdown table row (pipe-delimited).
 #
-#   writeback-task-status.sh -h | --help
+#   writeback-state.sh -h | --help
 #
 # Exit codes:
 #   0  success
@@ -54,7 +54,7 @@ usage() {
     sed -n '2,36p' "$0" | sed 's/^# \{0,1\}//'
 }
 
-die() { echo "ERROR: writeback-task-status.sh: $*" >&2; exit "${2:-1}"; }
+die() { echo "ERROR: writeback-state.sh: $*" >&2; exit "${2:-1}"; }
 
 # ---------------------------------------------------------------------------
 # Argument parsing
@@ -135,7 +135,7 @@ fi
 # ---------------------------------------------------------------------------
 # Lock helpers
 # ---------------------------------------------------------------------------
-LOCK_FILE="${LOCK_DIR}/.writeback-task-status.lock"
+LOCK_FILE="${LOCK_DIR}/.writeback-state.lock"
 LOCK_ACQUIRED=0
 
 acquire_lock() {

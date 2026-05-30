@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# test-writeback-task-status.sh — smoke-test harness for writeback-task-status.sh
+# test-writeback-state.sh — smoke-test harness for writeback-state.sh
 #
 # Tests all 4 arg modes and lock-contention safety.
 #
 # Usage:
-#   test-writeback-task-status.sh [-v | --verbose]
+#   test-writeback-state.sh [-v | --verbose]
 #
 # Test scenarios:
 #   Unit 1: --task-id --field --value  (single-field row update)
@@ -24,7 +24,7 @@ set -u
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # SUT moved to canonical/scripts/execute/ in 2026-05-26 consolidation
-SCRIPT="${SCRIPT_DIR}/../../canonical/scripts/execute/writeback-task-status.sh"
+SCRIPT="${SCRIPT_DIR}/../../canonical/scripts/execute/writeback-state.sh"
 
 VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
@@ -83,7 +83,7 @@ assert_line_count() {
 TMPDIR_BASE=$(mktemp -d)
 trap 'rm -rf "$TMPDIR_BASE"' EXIT
 
-# Shared env vars that writeback-task-status.sh honours
+# Shared env vars that writeback-state.sh honours
 WORK_DIR="${TMPDIR_BASE}/work"
 TASKS_DIR="${WORK_DIR}/tasks"
 mkdir -p "$TASKS_DIR"
@@ -359,7 +359,7 @@ cat > "$AID_STATE_FILE" <<'STATEOF2'
 STATEOF2
 
 # Remove stale lock if any
-rm -f "${WORK_DIR}/.writeback-task-status.lock"
+rm -f "${WORK_DIR}/.writeback-state.lock"
 
 # Launch 5 concurrent writers
 (
@@ -434,7 +434,7 @@ bash "$SCRIPT" --delivery-id 1 --append-issue "not a table row" 2>/dev/null || c
 assert_exit_nonzero "$code" "invalid issue row format → exit 4"
 
 # 7h: Lock held — simulate contention timeout
-LOCK_FILE="${WORK_DIR}/.writeback-task-status.lock"
+LOCK_FILE="${WORK_DIR}/.writeback-state.lock"
 echo "99999" > "$LOCK_FILE"
 code=0
 AID_LOCK_TIMEOUT=2 bash "$SCRIPT" --task-id 1 --field Status --value x 2>/dev/null || code=$?
