@@ -77,7 +77,7 @@ for the full protocol.
 
 ## Key Constraints
 - **Write ONLY to `.aid/knowledge/` directory.** Never touch source code.
-- **Cite evidence for every finding.** File path + line number where possible.
+- **Cite evidence for every finding.** File path + a grep-recoverable symbol/heading — never a bare line number (durable anchor; see kb-authoring principles P1(d)).
 - **Classify tech debt with risk ratings:** Critical / High / Medium / Low
 - **Bash is READ-ONLY.** Permitted commands: `find`, `tree`, `wc`, `rg`, `cat`, `head`, `tail`
 - **Mark inferred information** with ⚠️ Inferred from code — needs confirmation
@@ -132,7 +132,7 @@ for the full protocol.
 ## Debt Items
 
 ### [Critical] {Item title}
-- **Evidence:** {file path, line numbers or counts}
+- **Evidence:** {file path + symbol/heading anchor}
 - **Impact:** {what breaks or degrades if unaddressed}
 - **Effort:** {rough estimate to fix}
 

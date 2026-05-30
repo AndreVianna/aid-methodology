@@ -136,7 +136,7 @@ for the full protocol.
 
 | Term | Definition (inferred from usage) | Source |
 |------|----------------------------------|--------|
-| {term} | {what it means based on how it's used in code} | {file:line} |
+| {term} | {what it means based on how it's used in code} | {file path + symbol} |
 ```
 
 ## When to Escalate

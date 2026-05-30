@@ -76,7 +76,7 @@ for the full protocol.
 
 ## Key Constraints
 - **Write ONLY to `.aid/knowledge/` directory.** Never touch source code.
-- **Cite evidence for every infrastructure finding.** File path + line.
+- **Cite evidence for every infrastructure finding.** File path + a grep-recoverable symbol/heading — never a bare line number (durable anchor; see kb-authoring principles P1(d)).
 - **STATE.md `## Q&A (Pending)` must be comprehensive.** It is better to over-document uncertainty than to leave it implicit.
 - **Bash is READ-ONLY.** Permitted commands: `find`, `tree`, `wc`, `rg`, `cat`, `head`, `tail`
 - **Mark inferred information** with ⚠️ Inferred from code — needs confirmation

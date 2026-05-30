@@ -202,7 +202,7 @@ When triggered by a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT.md f
 ## Quality Checklist
 
 - [ ] Every KB document has a clear scope — no overlap between documents.
-- [ ] Claims are grounded in code evidence (file paths, line numbers, grep results).
+- [ ] Claims are grounded in code evidence (file paths + grep-recoverable symbol/heading anchors, not bare line numbers).
 - [ ] Inferred information is marked as inferred (e.g., "⚠️ Inferred from code — needs confirmation").
 - [ ] `.aid/knowledge/STATE.md` Q&A section captures everything that requires human input with structured entries.
 - [ ] `README.md` accurately reflects completeness status.

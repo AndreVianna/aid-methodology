@@ -9,7 +9,7 @@ The Reviewer reads the Knowledge Base on disk and grades it against reality. The
 ## What It Does
 
 1. **Reads every populated KB document** — all 16 plus INDEX, README, CLAUDE.md placeholders.
-2. **Cross-references claims against the codebase** — spot-checks file paths, line numbers, version pins, schema claims.
+2. **Cross-references claims against the codebase** — spot-checks file paths, symbol/heading anchors, version pins, schema claims.
 3. **Identifies severity-tagged issues** — CRITICAL / HIGH / MEDIUM / MINOR.
 4. **Performs verification spot-checks** — minimum 10 per review pass.
 5. **Computes per-document grades and overall grade** — using the rubric in `grading-rubric.md`.

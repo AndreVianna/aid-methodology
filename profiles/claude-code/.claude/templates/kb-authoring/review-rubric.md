@@ -43,8 +43,12 @@ The bulk of the review effort.
    inline is a finding. Severity: MINOR per occurrence, MEDIUM if widespread.
    *Exception:* T4 markers that are LOAD-BEARING semantic anchors (e.g.,
    "post-FR2 retirement") are allowed — judgment call.
-8. **Citations resolve** — every `file.ext:LINE` cite must resolve to existing file
-   and valid line. Broken cite = HIGH if widespread, MEDIUM otherwise.
+8. **Citations are durable + resolve** — every cited file must exist, and any anchor
+   (symbol / heading / unique string) must be findable in it. **Do NOT verify line
+   numbers:** a bare `file.ext:LINE` cite is a P1(d) volatile pointer — flag it for
+   replacement with a grep-recoverable anchor rather than checking whether the line is
+   still correct. Cite to a missing file or unfindable anchor = HIGH if widespread,
+   MEDIUM otherwise.
 9. **Cross-doc consistency** — claims that overlap with other primary docs must agree.
    Contradiction across docs = HIGH.
 10. **Q-ID / H-ID references resolve** — every `Q##` / `H##` mentioned must exist in
@@ -196,6 +200,6 @@ emission MUST prefix the appropriate severity tag — never emit a bare
 
 ## See also
 
-- [principles.md](principles.md) — the 7 principles, especially P3 (temp ledger), P4 (lint enforcement), P7 (read-only on repo)
+- [principles.md](principles.md) — the 8 principles, especially P3 (temp ledger), P4 (lint enforcement), P7 (read-only on repo)
 - [tier-model.md](tier-model.md) — T1-T4 stability tiers referenced throughout the rubric
 - [frontmatter-schema.md](frontmatter-schema.md) — `kb-category`, `source`, `contracts` fields the rubric reads
