@@ -13,6 +13,7 @@ changelog:
   - 2026-05-27: Cycle-4 REVIEW results written (post-cycle-3 FIX validation)
   - 2026-05-28: Cycle-6 REVIEW results written (post-cycle-5 FIX validation)
   - 2026-05-28: Cycle-7 REVIEW results written (post-cycle-6 FIX validation)
+  - 2026-05-30: Dogfood refresh (post-#22–#28) — orchestrator cleanup sweep across the KB: applied the #24 script renames (writeback-state, build-kb-index, grade-summary, assemble-3part, discover/summarize-preflight, render_lib, render_canonical_scripts, aid_profile) + the `test-` suite prefix; VERIFY-4a/4b → VERIFY (deterministic)/(advisory); corrected test counts to 13 suites (run-all.sh aggregator + lib/assert.sh); migrated ~709 volatile `file:LINE` citations to durable grep-recoverable anchors (P1(d)); rewrote test-landscape.md to the 13-suite reality (de-inverted the coverage-gaps section); fixed the tech-debt ghost ref + PR-stack metric; rebuilt knowledge-summary.html and re-validated via the .mjs suites. KB-only; no canonical/ or profiles/ change.
 ---
 
 # Discovery State
@@ -22,7 +23,7 @@ changelog:
 > **Current Grade:** A+ (computed by grade.sh on cycle-10 ledger; 0 CRITICAL / 0 HIGH / 0 MEDIUM / 0 LOW / 0 MINOR; 14 rows total = 12 Fixed + 2 Accepted; grade.sh M7 bug fixed by schema rollout commit bf4e814 — schema-table parsing eliminates the summary-line over-count)
 > **User Approved:** yes (2026-05-28, cycle-10 — grade A+; user approved + push-to-remote authorized)
 > **Last KB Review:** 2026-05-28 (cycle-10 — convergence; ready for User Approval)
-> **Last Summary:** —
+> **Last Summary:** 2026-05-30 (dogfood refresh — knowledge-summary.html rebuilt from refreshed summary-src; validated via validate-diagrams.mjs + contrast-check.mjs)
 
 This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary. One STATE.md per project's `.aid/knowledge/` directory. Absorbs what used to be `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`.
 
@@ -70,8 +71,8 @@ This is the single state file for the **Discovery area** — persistent project 
 ## Knowledge Summary Status
 
 > Format: key-value (one `**Field:**` per line) per `references/state-generate.md` spec.
-> Read by 5 scripts under `.claude/scripts/summarize/` (run-validators, stale-check,
-> preflight, spot-check-facts, writeback-state) — do NOT convert to a table.
+> Read by 5 scripts under `.claude/scripts/summarize/` (grade-summary, stale-check,
+> summarize-preflight, spot-check-facts, writeback-state) — do NOT convert to a table.
 
 **Profile:** agentic-pipeline
 **Profile Source:** auto-detected (cycle-1 /aid-summarize PROFILE state)
@@ -80,7 +81,7 @@ This is the single state file for the **Discovery area** — persistent project 
 **Minimum Grade:** A
 **Minimum Grade Source:** `.aid/settings.yml` `review.minimum_grade` (no per-skill override)
 **Machine Grade:** A+
-**Machine Grade Source:** `run-validators.sh` AUTO_POOL (D1/D2/L1/L2/H1/A1-5/C1-2/S2 = 73 pts; 73/73 perfect; diagram count 5/5 matches agentic-pipeline target)
+**Machine Grade Source:** `grade-summary.sh` AUTO_POOL (D1/D2/L1/L2/H1/A1-5/C1-2/S2 = 73 pts; 73/73 perfect; diagram count 5/5 matches agentic-pipeline target)
 **Human Grade:** A+
 **Human Grade Source:** `manual-checklist.sh` MANUAL_POOL (K1=10/10, K2=15/15, V1=5/5; 30/30 perfect; checklist 2026-05-28T18:13:07Z)
 **Overall Grade:** A+ (= min of Machine=A+, Human=A+)
@@ -374,7 +375,7 @@ Verified-true sample full list (30 checks) in `.aid/.temp/review-pending/discove
 - **Impact:** Medium
 - **Status:** Answered
 - **Context:** README.md and STATE.md (the 2 hand-authored meta docs in `.aid/knowledge/`) have no YAML frontmatter. Per rubric §Spot-Check Snapshot check 1, meta docs should declare `kb-category: meta`. INDEX.md correctly shows them as "*(no intent: declared)*" — INDEX is faithfully reporting the gap, not introducing it. Q14 (cycle-1) added FM to 12 primary docs but skipped meta docs.
-- **Suggested:** Add minimal FM to README.md (`kb-category: meta`, `source: hand-authored`, `intent:` brief) and STATE.md (same). Once added, INDEX.md will pick up the intents on next build-index.sh run.
+- **Suggested:** Add minimal FM to README.md (`kb-category: meta`, `source: hand-authored`, `intent:` brief) and STATE.md (same). Once added, INDEX.md will pick up the intents on next build-kb-index.sh run.
 - **Answer:** Auto-resolved in Q-AND-A Step 1 — accept Suggested. FIX action: add `kb-category: meta, source: hand-authored, intent: …` frontmatter to .aid/knowledge/README.md and .aid/knowledge/STATE.md. Regenerate INDEX.md after to pick up the intents.
 
 ## Review History

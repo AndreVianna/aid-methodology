@@ -13,7 +13,7 @@ intent: |
 contracts:
   - "10 user-facing aid-* skills + 1 maintainer-only aid-generate skill = 11 total"
   - "22 agents under canonical/agents/ (10 large / 9 medium / 3 small)"
-  - "5 renderer Python files under .claude/skills/aid-generate/scripts/ (render_agents, render_skills, render_templates, render_scripts, render_recipes) + harness + profile + verify_deterministic + verify_advisory + test_manifest_safety = 10 files under scripts/, plus run_generator.py at the repo root"
+  - "5 renderer Python files under .claude/skills/aid-generate/scripts/ (render_agents, render_skills, render_templates, render_canonical_scripts, render_recipes) + render_lib + aid_profile + verify_deterministic + verify_advisory + test_manifest_safety = 10 files under scripts/, plus run_generator.py at the repo root"
   - "5 script categories under canonical/scripts/ (config, kb, execute, summarize, interview) + grade.sh at the category root"
   - "Every canonical helper script has 4 byte-identical copies on disk (canonical + .claude + 3 profile trees)"
 changelog:
@@ -56,12 +56,12 @@ plus a `references/state-*.md` per state plus topic-specific reference docs.
 | `aid-interview` | Requirements gathering + lite-path triage (LITE-BUG-FIX / LITE-DOC / LITE-REFACTOR / LITE-FEATURE sub-paths) — largest reference set | `canonical/skills/aid-interview/SKILL.md` | 19 | `state-triage.md` (largest single state file), `state-condensed-intake.md`, `lite-to-full-escalation.md`, `recipe-to-lite-escalation.md`, `feature-decomposition.md` |
 | `aid-specify` | Per-feature technical spec — state machine INITIALIZE→CONTINUE→REVIEW→DONE plus BLOCKED + SPIKE side states | `canonical/skills/aid-specify/SKILL.md` | 9 | `state-{initialize,continue,review,done,spike,blocked}.md`, `handling-outcomes.md`, `known-issues-scope.md`, `reviewer-brief.md` |
 | `aid-plan` | Sequence features into shippable deliveries | `canonical/skills/aid-plan/SKILL.md` | 3 | `first-run-loop.md`, `review-deliverables.md`, `reviewer-brief.md` |
-| `aid-detail` | Decompose deliveries into PR-sized typed tasks (8-type catalog: RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE per `canonical/skills/aid-execute/references/state-execute.md:6-16`) | `canonical/skills/aid-detail/SKILL.md` | 5 | `task-decomposition.md`, `execution-graph-generation.md`, `first-run.md`, `review.md`, `reviewer-brief.md` |
+| `aid-detail` | Decompose deliveries into PR-sized typed tasks (8-type catalog: RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE per `canonical/skills/aid-execute/references/state-execute.md` `## Task Types`) | `canonical/skills/aid-detail/SKILL.md` | 5 | `task-decomposition.md`, `execution-graph-generation.md`, `first-run.md`, `review.md`, `reviewer-brief.md` |
 | `aid-execute` | Implement + two-tier review (per-task quick-check + per-delivery gate); parallel pool dispatch with `MaxConcurrent` | `canonical/skills/aid-execute/SKILL.md` | 8 | `state-execute.md` (largest single state file — pool dispatch PD-0..PD-6), `state-delivery-gate.md`, `state-review.md`, `state-{fix,re-run}.md`, `reviewer-{brief,guide}.md`, `task-type-rules.md` |
 | `aid-deploy` | Ship a delivery + create PR | `canonical/skills/aid-deploy/SKILL.md` | 5 | `state-{idle,selecting,packaging,verifying,re-run}.md` |
 | `aid-monitor` | Production-finding classification + routing | `canonical/skills/aid-monitor/SKILL.md` | 3 | `state-{observe,classify,route}.md` |
 | `aid-summarize` | Optional offline HTML KB viewer (Mermaid + sectioned per profile) | `canonical/skills/aid-summarize/SKILL.md` | 10 | `state-{preflight,profile,generate,validate,manual-checklist,stale-check,writeback,fix,approval,done}.md` |
-| `aid-generate` (maintainer-only) | Render canonical/ → 3 install trees; LOAD → VALIDATE → RENDER → VERIFY → REPORT | `.claude/skills/aid-generate/SKILL.md` (NOT in `canonical/skills/` — see `.claude/skills/aid-generate/SKILL.md:13` for the chicken-and-egg justification) | n/a — uses `scripts/*.py` instead | (renderer Python files — see §3) |
+| `aid-generate` (maintainer-only) | Render canonical/ → 3 install trees; LOAD → VALIDATE → RENDER → VERIFY → REPORT | `.claude/skills/aid-generate/SKILL.md` (NOT in `canonical/skills/` — see `.claude/skills/aid-generate/SKILL.md` `chicken-and-egg deployment problem` for the justification) | n/a — uses `scripts/*.py` instead | (renderer Python files — see §3) |
 
 **Test coverage:**
 
@@ -94,7 +94,7 @@ Three tiers, per the `tier:` frontmatter field:
 | `discovery-analyst` | Modules, coding conventions, data schemas → `module-map.md`, `coding-standards.md`, `schemas.md` (was `data-model.md`) | `canonical/agents/discovery-analyst/AGENT.md` |
 | `discovery-integrator` | Pipelines, integrations, domain glossary → `pipeline-contracts.md` (was `api-contracts.md`), `integration-map.md`, `domain-glossary.md` | `canonical/agents/discovery-integrator/AGENT.md` |
 | `discovery-quality` | Tests, tech debt, infrastructure assessment → `test-landscape.md`, `tech-debt.md` (security content moved to `coding-standards.md §11`) | `canonical/agents/discovery-quality/AGENT.md` |
-| `discovery-reviewer` | Reviews + grades KB docs; cross-references claims against source. Densest agent contract per project-structure.md:256 | `canonical/agents/discovery-reviewer/AGENT.md` |
+| `discovery-reviewer` | Reviews + grades KB docs; cross-references claims against source. Densest agent contract per `project-structure.md` `discovery sub-agents have the densest contracts` | `canonical/agents/discovery-reviewer/AGENT.md` |
 
 ### 2b. Medium tier (9) — specialists + orchestrator + executors
 
@@ -102,7 +102,7 @@ Three tiers, per the `tier:` frontmatter field:
 |-------|-------------|------|
 | `orchestrator` | Routes work to agents, manages phase transitions with human gates | `canonical/agents/orchestrator/AGENT.md` |
 | `researcher` | Investigates + synthesizes from code/docs/APIs into KB docs | `canonical/agents/researcher/AGENT.md` |
-| `developer` | The ONLY agent authorized to modify production code (per `canonical/agents/developer/AGENT.md:8`) | `canonical/agents/developer/AGENT.md` |
+| `developer` | The ONLY agent authorized to modify production code (per `canonical/agents/developer/AGENT.md` `ONLY agent authorized to modify production source code`) | `canonical/agents/developer/AGENT.md` |
 | `operator` | Deploy, PR creation, release management, KB updates | `canonical/agents/operator/AGENT.md` |
 | `data-engineer` | Schema, migrations, query optimization, ETL | `canonical/agents/data-engineer/AGENT.md` |
 | `performance` | Profiling, load testing, bottleneck analysis | `canonical/agents/performance/AGENT.md` |
@@ -113,8 +113,8 @@ Three tiers, per the `tier:` frontmatter field:
 ### 2c. Small tier (3) — mechanical utility sub-agents (sub-agent-only)
 
 Each is labelled `INTERNAL UTILITY (sub-agent only — do NOT invoke from a skill)`
-in its `description:` frontmatter (per `canonical/agents/simple-extractor/AGENT.md:3`,
-`simple-formatter/AGENT.md:3`, `simple-glob/AGENT.md:3`).
+in its `description:` frontmatter (per `canonical/agents/simple-extractor/AGENT.md` `description:`,
+`simple-formatter/AGENT.md` `description:`, `simple-glob/AGENT.md` `description:`).
 
 | Agent | Purpose | Path |
 |-------|---------|------|
@@ -124,10 +124,10 @@ in its `description:` frontmatter (per `canonical/agents/simple-extractor/AGENT.
 
 **Dependencies (cross-agent):**
 
-- Skills dispatch agents via the host's Agent/Task tool with `subagent_type` matching the `name:` field of `AGENT.md` (per `canonical/skills/aid-discover/SKILL.md:213-219` Dispatch table).
+- Skills dispatch agents via the host's Agent/Task tool with `subagent_type` matching the `name:` field of `AGENT.md` (per `canonical/skills/aid-discover/SKILL.md` `## Dispatch` table).
 - Agents call other agents only indirectly — through a wrapping skill or `orchestrator`. There are no direct agent-to-agent Task tool calls in the canonical bodies.
-- All 5 `discovery-*` sub-agents receive `permissionMode: bypassPermissions` + `background: true` in frontmatter (per `canonical/agents/discovery-analyst/AGENT.md:6-7`, `discovery-architect/AGENT.md:6-7`, etc.). The non-discovery large + medium agents do NOT set those keys.
-- Every agent (except `interviewer` which has read-only tools, and the three small-tier utilities which have a narrower scope) carries `## Heartbeat protocol` + `## Self-review discipline` blocks (per `canonical/agents/architect/AGENT.md:11-60`, `developer/AGENT.md:11-60`, `discovery-analyst/AGENT.md:11-61`). The blocks are byte-identical across agents — they are macro-copied from `canonical/templates/subagent-heartbeat-protocol.md` and `canonical/templates/self-review-protocol.md` at authoring time, NOT inserted by the renderer.
+- All 5 `discovery-*` sub-agents receive `permissionMode: bypassPermissions` + `background: true` in frontmatter (per `canonical/agents/discovery-analyst/AGENT.md` `permissionMode:`, `discovery-architect/AGENT.md` `permissionMode:`, etc.). The non-discovery large + medium agents do NOT set those keys.
+- Every agent (except `interviewer` which has read-only tools, and the three small-tier utilities which have a narrower scope) carries `## Heartbeat protocol` + `## Self-review discipline` blocks (per `canonical/agents/architect/AGENT.md` `## Heartbeat protocol`, `developer/AGENT.md` `## Heartbeat protocol`, `discovery-analyst/AGENT.md` `## Heartbeat protocol`). The blocks are byte-identical across agents — they are macro-copied from `canonical/templates/subagent-heartbeat-protocol.md` and `canonical/templates/self-review-protocol.md` at authoring time, NOT inserted by the renderer.
 
 **Test coverage:** none direct. Agent contracts are exercised through skill-level e2e tests and via the canonical helper test suites (§4).
 
@@ -137,36 +137,36 @@ in its `description:` frontmatter (per `canonical/agents/simple-extractor/AGENT.
 
 The generator lives in `.claude/skills/aid-generate/scripts/`, NOT in
 `canonical/skills/`, because it CANNOT be regenerated from itself
-(chicken-and-egg per `.claude/skills/aid-generate/SKILL.md:13`). It is the only
+(chicken-and-egg per `.claude/skills/aid-generate/SKILL.md` `chicken-and-egg deployment problem`). It is the only
 Python in the repo.
 
 **Path:** `.claude/skills/aid-generate/scripts/*.py` (10 files) + `run_generator.py` (repo root wrapper).
 
 | File | Purpose | Key entry points |
 |------|---------|------------------|
-| `harness.py` | Shared utilities — `read_canonical_file`, `write_output_file`, `substitute_filenames`, `rewrite_install_paths`, `sha256_hex`, `EmissionManifest` (JSONL writer per `canonical/EMISSION-MANIFEST.md`) | `EmissionManifest.{add,diff,load,write}`, `sha256_hex`, regex constants `_PLACEHOLDER_RE`, `_CANONICAL_PATH_RE` |
-| `profile.py` | Loads + validates a per-tool profile TOML; dataclasses `Profile`, `LayoutConfig`, `FrontmatterConfig`, `AgentConfig`, `SkillConfig`, `ModelTierSimple`, `ModelTierDetailed` | `load_profile(path)`, `validate(profile)` |
-| `render_agents.py` | Renders `canonical/agents/<name>/AGENT.md` per profile (markdown OR TOML output depending on `agent.format` per `canonical/EMISSION-MANIFEST.md:113`) | `render_agents(repo, profile, manifest, repo_root)`, `_parse_frontmatter` |
+| `render_lib.py` | Shared utilities — `read_canonical_file`, `write_output_file`, `substitute_filenames`, `rewrite_install_paths`, `sha256_hex`, `EmissionManifest` (JSONL writer per `canonical/EMISSION-MANIFEST.md`) | `EmissionManifest.{add,diff,load,write}`, `sha256_hex`, regex constants `_PLACEHOLDER_RE`, `_CANONICAL_PATH_RE` |
+| `aid_profile.py` | Loads + validates a per-tool profile TOML; dataclasses `Profile`, `LayoutConfig`, `FrontmatterConfig`, `AgentConfig`, `SkillConfig`, `ModelTierSimple`, `ModelTierDetailed` | `load_profile(path)`, `validate(profile)` |
+| `render_agents.py` | Renders `canonical/agents/<name>/AGENT.md` per profile (markdown OR TOML output depending on `agent.format` per `canonical/EMISSION-MANIFEST.md` `## Asset Kinds`) | `render_agents(repo, profile, manifest, repo_root)`, `_parse_frontmatter` |
 | `render_skills.py` | Renders `canonical/skills/aid-*/SKILL.md` + `references/*.md` per profile; preserves frontmatter formatting verbatim (folded `description:` blocks) | `render_skills(...)`, `_split_frontmatter_raw`, `_rewrite_skill_frontmatter` |
 | `render_templates.py` | Renders `canonical/templates/` per profile (passthrough with path rewriting) | `render_templates(...)` |
-| `render_scripts.py` | Renders `canonical/scripts/` (Bash + JS + PS1) per profile; preserves shebang + line endings | `render_scripts(...)` |
-| `render_recipes.py` | Renders `canonical/recipes/` (passthrough, no frontmatter injection, no slot resolution at render time per `canonical/EMISSION-MANIFEST.md:117-125`) | `render_recipes(...)` |
-| `verify_deterministic.py` | VERIFY-4a (strict) — re-renders to a scratch dir, compares byte-by-byte against committed install trees; non-zero exit if any drift | `run_verify(repo_root, report_path)` |
-| `verify_advisory.py` | VERIFY-4b (advisory) — additional checks (frontmatter shape, install-path rewrites, etc.) | `run_advisory(repo_root, report_path)` |
+| `render_canonical_scripts.py` | Renders `canonical/scripts/` (Bash + JS + PS1) per profile; preserves shebang + line endings | `render_canonical_scripts(...)` |
+| `render_recipes.py` | Renders `canonical/recipes/` (passthrough, no frontmatter injection, no slot resolution at render time per `canonical/EMISSION-MANIFEST.md` `### Recipes asset kind`) | `render_recipes(...)` |
+| `verify_deterministic.py` | VERIFY (deterministic) — strict; re-renders to a scratch dir, compares byte-by-byte against committed install trees; non-zero exit if any drift | `run_verify(repo_root, report_path)` |
+| `verify_advisory.py` | VERIFY (advisory) — additional checks (frontmatter shape, install-path rewrites, etc.) | `run_advisory(repo_root, report_path)` |
 | `test_manifest_safety.py` | Self-tests for the EmissionManifest deletion logic | (pytest-style; run standalone) |
-| `run_generator.py` (repo root) | Live generator entrypoint — loads every `profiles/*.toml`, calls renderers in sequence, performs deletion pass via `EmissionManifest.diff`, writes manifest, runs VERIFY-4a + VERIFY-4b | `for profile_path in sorted(profiles_dir.glob('*.toml'))` (line 24) |
+| `run_generator.py` (repo root) | Live generator entrypoint — loads every `profiles/*.toml`, calls renderers in sequence, performs deletion pass via `EmissionManifest.diff`, writes manifest, runs VERIFY (deterministic) + VERIFY (advisory) | `for profile_path in sorted(profiles_dir.glob('*.toml'))` |
 
 **Dependencies:**
 
-- Python 3.11+ (stdlib `tomllib` per `.claude/skills/aid-generate/scripts/profile.py:12`).
+- Python 3.11+ (stdlib `tomllib` per `.claude/skills/aid-generate/scripts/aid_profile.py` `Requirements: Python 3.11+`).
 - No third-party packages (no `requirements.txt`, no `pyproject.toml`; confirmed by repo-wide search).
-- `harness.py` is imported by every `render_*.py` via `sys.path.insert(0, str(_SCRIPT_DIR))` (per `render_agents.py:24`, `render_skills.py:21-24`).
-- `run_generator.py:7` inserts `.claude/skills/aid-generate/scripts` on the Python path and imports the renderers directly.
+- `render_lib.py` is imported by every `render_*.py` via `sys.path.insert(0, str(_SCRIPT_DIR))` (per `render_agents.py` `sys.path.insert`, `render_skills.py` `sys.path.insert`).
+- `run_generator.py` `sys.path.insert` inserts `.claude/skills/aid-generate/scripts` on the Python path and imports the renderers directly.
 
 **Test coverage:**
 
 - `test_manifest_safety.py` covers `EmissionManifest` round-trip + diff edge cases.
-- `verify_deterministic.py` is itself a test — invoked after every render and exits non-zero on drift (per `run_generator.py:75-79`). It exercises the entire renderer chain end-to-end against the committed trees.
+- `verify_deterministic.py` is itself a test — invoked after every render and exits non-zero on drift (per `run_generator.py` `run_verify`). It exercises the entire renderer chain end-to-end against the committed trees.
 - No standalone Python test runner configured (no `pytest.ini`, per project-structure.md §6). Tests are invoked manually per `tests/README.md`.
 
 ---
@@ -189,39 +189,39 @@ slash-command invocation. Every script has 4 byte-identical copies on disk
 | Script | Purpose |
 |--------|---------|
 | `build-project-index.sh` | Builds `.aid/generated/project-index.md` — used as the pre-pass shared input by the 5 discovery sub-agents |
-| `build-index.sh` | Builds `.aid/knowledge/INDEX.md` — agent-facing 2-3-line summary per KB doc, composed from each doc's `intent:` frontmatter (per Q12 resolution cycle-1: moved from `.aid/generated/` to `.aid/knowledge/`) |
-| `build-metrics.sh` | Builds `.aid/generated/metrics.md` — T3 numeric facts (line counts, file counts, term counts, severity tallies per `canonical/templates/kb-authoring/tier-model.md:42-54`) |
-| `preflight.sh` | Pre-flight checks for `aid-discover` (verifies `.aid/knowledge/STATE.md` exists + not in Plan Mode) |
+| `build-kb-index.sh` | Builds `.aid/knowledge/INDEX.md` — agent-facing 2-3-line summary per KB doc, composed from each doc's `intent:` frontmatter (per Q12 resolution cycle-1: moved from `.aid/generated/` to `.aid/knowledge/`) |
+| `build-metrics.sh` | Builds `.aid/generated/metrics.md` — T3 numeric facts (line counts, file counts, term counts, severity tallies per `canonical/templates/kb-authoring/tier-model.md` `### T3 — Metric`) |
+| `discover-preflight.sh` | Pre-flight checks for `aid-discover` (verifies `.aid/knowledge/STATE.md` exists + not in Plan Mode) |
 
 ### 4c. `canonical/scripts/execute/` — task execution + parallel pool
 
 | Script | Purpose |
 |--------|---------|
-| `writeback-task-status.sh` | Row-level write coordination for parallel pool dispatch (FR6) × per-area STATE writes; 4 modes (`--field`, `--findings`, `--block`, `--append-issue`); sentinel-file lock with retry — 69 tests (`tests/canonical/test-writeback-task-status.sh`) |
-| `compute-block-radius.sh` | BFS over task dependency graph — computes the failure block radius when a task fails — 17 tests (`tests/canonical/test-compute-block-radius.sh`) |
+| `writeback-state.sh` | Row-level write coordination for parallel pool dispatch (FR6) × per-area STATE writes; 4 modes (`--field`, `--findings`, `--block`, `--append-issue`); sentinel-file lock with retry — covered by `tests/canonical/test-writeback-state.sh` |
+| `compute-block-radius.sh` | BFS over task dependency graph — computes the failure block radius when a task fails — covered by `tests/canonical/test-compute-block-radius.sh` |
 | `complexity-score.sh` | Task complexity scoring (drives executor model tier selection) |
 
 ### 4d. `canonical/scripts/summarize/` — offline HTML KB viewer
 
 | Script | Purpose |
 |--------|---------|
-| `validate-diagrams.mjs` | Mermaid diagram validation (largest JS file per `.aid/generated/project-index.md:57`) |
-| `run-validators.sh` | Aggregates summarize-phase validators |
+| `validate-diagrams.mjs` | Mermaid diagram validation (largest JS file per `.aid/generated/project-index.md` `## Top 20 Largest Source Files`) |
+| `grade-summary.sh` | Aggregates summarize-phase validators |
 | `validate-html-output.sh` | HTML output validation |
 | `manual-checklist.sh` | Manual verification prompts |
 | `spot-check-facts.sh` | Spot-checks KB facts against source files |
 | `writeback-state.sh` | Writes summarize-phase state back to `.aid/knowledge/STATE.md` |
 | `contrast-check.mjs` | WCAG AA contrast ratio checker (Node) |
 | `stale-check.sh` | Detects stale KB sections |
-| `preflight.sh` | Summarize preflight |
+| `summarize-preflight.sh` | Summarize preflight |
 | `fetch-mermaid.sh` | Fetches Mermaid CLI assets |
-| `concatenate.ps1` / `concatenate.sh` | Per-host concatenation helpers (PowerShell for Windows, Bash elsewhere) |
+| `assemble-3part.ps1` / `assemble-3part.sh` | Per-host concatenation helpers (PowerShell for Windows, Bash elsewhere) |
 
 ### 4e. `canonical/scripts/interview/` — lite-path recipes
 
 | Script | Purpose |
 |--------|---------|
-| `parse-recipe.sh` | Parses `canonical/recipes/*.md` recipe files (YAML front-matter + `## spec` / `## tasks` body blocks); 5 modes (`--list`, `--validate`, `--spec`, `--tasks`, `--render`) — 113 tests (largest test file at `tests/canonical/test-parse-recipe.sh`) |
+| `parse-recipe.sh` | Parses `canonical/recipes/*.md` recipe files (YAML front-matter + `## spec` / `## tasks` body blocks); 5 modes (`--list`, `--validate`, `--spec`, `--tasks`, `--render`) — covered by `tests/canonical/test-parse-recipe.sh` (largest test file) |
 
 ### 4f. `canonical/scripts/` (root)
 
@@ -229,15 +229,25 @@ slash-command invocation. Every script has 4 byte-identical copies on disk
 |--------|---------|
 | `grade.sh` | Deterministic grading: reads issue list with severity tags ([CRITICAL]/[HIGH]/[MEDIUM]/[LOW]/[MINOR]), applies the universal AID rubric (worst severity dominates, count modifies), prints letter grade. Used by reviewers + delivery gates. `--non-functional` flag forces F. |
 
-**Test coverage:** 5 dedicated test suites under `tests/canonical/`, each invoked manually:
+**Test coverage:** 13 dedicated test suites under `tests/canonical/`, each invoked
+manually or as a batch via `tests/run-all.sh`. Suites share helpers from
+`tests/lib/assert.sh`.
 
-| Test file | Asserts |
+| Test file | Covers |
 |-----------|------|
-| `tests/canonical/test-parse-recipe.sh` | 113 tests for `parse-recipe.sh` |
-| `tests/canonical/test-writeback-task-status.sh` | 69 tests for `writeback-task-status.sh` |
-| `tests/canonical/test-delivery-gate-aggregate.sh` | 18 tests for delivery-gate aggregator |
-| `tests/canonical/test-compute-block-radius.sh` | 17 tests for BFS block-radius |
-| `tests/canonical/test-read-setting.sh` | settings resolution |
+| `tests/canonical/test-parse-recipe.sh` | `parse-recipe.sh` (largest suite) |
+| `tests/canonical/test-writeback-state.sh` | `writeback-state.sh` 4 arg modes + lock-contention safety |
+| `tests/canonical/test-delivery-gate-aggregate.sh` | delivery-gate aggregation |
+| `tests/canonical/test-compute-block-radius.sh` | BFS block-radius |
+| `tests/canonical/test-read-setting.sh` | settings 3-tier resolution |
+| `tests/canonical/test-grade.sh` | `grade.sh` severity-tag → letter-grade scorer |
+| `tests/canonical/test-fetch-mermaid.sh` | `fetch-mermaid.sh` pin + SHA verify |
+| `tests/canonical/test-validate-diagrams.sh` | `validate-diagrams.mjs` (Node) |
+| `tests/canonical/test-contrast-check.sh` | `contrast-check.mjs` WCAG AA contrast (Node) |
+| `tests/canonical/test-assemble-3part.sh` | `assemble-3part.sh` byte-concat |
+| `tests/canonical/test-assemble-3part-ps1.sh` | `assemble-3part.ps1` mirror (PowerShell) |
+| `tests/canonical/test-setup.sh` | `setup.sh` installer |
+| `tests/canonical/test-setup-ps1.sh` | `setup.ps1` pre-install logic (PowerShell) |
 
 See `tests/README.md` for the full suite list and run instructions.
 
@@ -249,7 +259,7 @@ Content fixtures consumed by skills + agents at runtime. The renderer copies the
 
 ### 5a. Templates — `canonical/templates/`
 
-Organized into categories (per project-structure.md:273-282):
+Organized into categories (per `project-structure.md` `## Templates (categories under \`canonical/templates/\`)`):
 
 | Subdirectory | Files | Notable contents |
 |--------------|-------|------------------|
@@ -265,7 +275,7 @@ Organized into categories (per project-structure.md:273-282):
 ### 5b. Recipes — `canonical/recipes/`
 
 5 pre-filled lite-path templates with YAML front-matter + `{{slot}}`
-placeholders (per `canonical/templates/recipe-template.md:97-100`).
+placeholders (per `canonical/templates/recipe-template.md` `## Slot syntax`).
 
 | Recipe | Path |
 |--------|------|
@@ -284,8 +294,8 @@ Consumed by `canonical/scripts/interview/parse-recipe.sh` during `/aid-interview
 
 ## Cross-cutting dependencies
 
-- **Skills → agents:** every multi-state skill dispatches one or more agents via the host's Agent/Task tool (per `canonical/skills/aid-discover/SKILL.md:213-219` Dispatch table; per `canonical/skills/aid-execute/references/state-execute.md:22-31` Agent Selection table mapping the 8 task types to executors).
-- **Skills → scripts:** skills invoke helper scripts via Bash. Examples: `canonical/skills/aid-discover/SKILL.md:22` (`preflight.sh`), `aid-discover/SKILL.md:83` (`read-setting.sh`), `aid-execute/references/state-delivery-gate.md` (`grade.sh`, `writeback-task-status.sh`).
+- **Skills → agents:** every multi-state skill dispatches one or more agents via the host's Agent/Task tool (per `canonical/skills/aid-discover/SKILL.md` `## Dispatch` table; per `canonical/skills/aid-execute/references/state-execute.md` `## Agent Selection` table mapping the 8 task types to executors).
+- **Skills → scripts:** skills invoke helper scripts via Bash. Examples: `canonical/skills/aid-discover/SKILL.md` `discover-preflight.sh`, `aid-discover/SKILL.md` `read-setting.sh`, `aid-execute/references/state-delivery-gate.md` (`grade.sh`, `writeback-state.sh`).
 - **Agents → scripts:** agents invoke scripts indirectly (a skill dispatches the agent with a prompt containing the script call). No agent invokes a script except via its own Bash tool when authorized in its `tools:` frontmatter.
-- **Renderer → everything:** the renderer reads `canonical/{agents,skills,templates,recipes,scripts}/`, applies the profile's transforms, writes into `profiles/{name}/<install_root>/`, and records every emission in `<install_root>/emission-manifest.jsonl`. The manifest is the SAFETY boundary for the next run's deletion pass (per `canonical/EMISSION-MANIFEST.md:70-83`).
-- **Verify → renderer:** `run_generator.py:75-83` calls `verify_deterministic.py` (strict) then `verify_advisory.py` (advisory) after every render. VERIFY-4a re-runs the renderer to a scratch directory and compares byte-by-byte; any drift exits non-zero.
+- **Renderer → everything:** the renderer reads `canonical/{agents,skills,templates,recipes,scripts}/`, applies the profile's transforms, writes into `profiles/{name}/<install_root>/`, and records every emission in `<install_root>/emission-manifest.jsonl`. The manifest is the SAFETY boundary for the next run's deletion pass (per `canonical/EMISSION-MANIFEST.md` `## Safety-Boundary Semantics`).
+- **Verify → renderer:** `run_generator.py` (`run_verify` / `run_advisory`) calls `verify_deterministic.py` (strict) then `verify_advisory.py` (advisory) after every render. VERIFY (deterministic) re-runs the renderer to a scratch directory and compares byte-by-byte; any drift exits non-zero.

@@ -45,7 +45,7 @@ Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.
 
 **Meta-documents:**
 - [STATE.md](STATE.md) — Discovery-area state ledger (Q&A, Review History, Calibration Log)
-- [INDEX.md](INDEX.md) — Auto-generated per-doc summaries (regenerate via `bash canonical/scripts/kb/build-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md`)
+- [INDEX.md](INDEX.md) — Auto-generated per-doc summaries (regenerate via `bash canonical/scripts/kb/build-kb-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md`)
 
 ## Revision History
 

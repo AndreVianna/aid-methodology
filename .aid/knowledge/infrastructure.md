@@ -70,7 +70,7 @@ The closest analog is the **AID parallel pool dispatch model** (work-001 feature
 
 ## CI / CD Pipeline
 
-**CI is enforced** — `.github/workflows/test.yml` (added 2026-05-29) runs render-drift + the 7 suites + generator self-tests + hygiene on every PR/push and is a required status check for merging to `master` (branch protection enabled 2026-05-29). See `test-landscape.md`.
+**CI is enforced** — `.github/workflows/test.yml` (added 2026-05-29) runs render-drift + the 13 canonical suites + generator self-tests + hygiene on every PR/push and is a required status check for merging to `master` (branch protection enabled 2026-05-29). The suite job invokes `tests/run-all.sh`, which discovers suites by glob (`tests/canonical/test-*.sh`), so the count is not hard-coded. See `test-landscape.md`.
 
 There is also no **release pipeline** — the project distributes via:
 1. End users cloning the repo and running `setup.sh` / `setup.ps1` against a target directory, OR
@@ -86,19 +86,19 @@ The canonical → 3-profiles render is the **only build artifact pipeline** in t
 
 | Component | Path | Lines | Purpose |
 |-----------|------|-------|---------|
-| Top-level entrypoint | `run_generator.py` | 87 | Loops `profiles/*.toml`, calls each renderer, runs VERIFY-4a/4b |
-| Profile parser | `.claude/skills/aid-generate/scripts/profile.py` | 550 | Parses TOML, validates schema |
-| Manifest harness | `.claude/skills/aid-generate/scripts/harness.py` | 756 | Emission-manifest implementation; pure-mirror deletion logic |
+| Top-level entrypoint | `run_generator.py` | 87 | Loops `profiles/*.toml`, calls each renderer, runs VERIFY (deterministic) + VERIFY (advisory) |
+| Profile parser | `.claude/skills/aid-generate/scripts/aid_profile.py` | 550 | Parses TOML, validates schema |
+| Manifest harness | `.claude/skills/aid-generate/scripts/render_lib.py` | 756 | Emission-manifest implementation; pure-mirror deletion logic |
 | Agent renderer | `.claude/skills/aid-generate/scripts/render_agents.py` | 522 | Renders `canonical/agents/` per profile |
 | Skill renderer | `.claude/skills/aid-generate/scripts/render_skills.py` | 469 | Renders `canonical/skills/` per profile (Thin-Router + references/) |
 | Recipe renderer | `.claude/skills/aid-generate/scripts/render_recipes.py` | 261 | Renders `canonical/recipes/` (passthrough) |
-| Script renderer | `.claude/skills/aid-generate/scripts/render_scripts.py` | 224 | Renders `canonical/scripts/` per profile |
+| Script renderer | `.claude/skills/aid-generate/scripts/render_canonical_scripts.py` | 224 | Renders `canonical/scripts/` per profile |
 | Template renderer | `.claude/skills/aid-generate/scripts/render_templates.py` | 252 | Renders `canonical/templates/` per profile |
-| Strict verifier | `.claude/skills/aid-generate/scripts/verify_deterministic.py` | 515 | VERIFY-4a — re-run byte-identical guarantee |
-| Advisory verifier | `.claude/skills/aid-generate/scripts/verify_advisory.py` | 343 | VERIFY-4b — advisory checks |
+| Strict verifier | `.claude/skills/aid-generate/scripts/verify_deterministic.py` | 515 | VERIFY (deterministic) — re-run byte-identical guarantee |
+| Advisory verifier | `.claude/skills/aid-generate/scripts/verify_advisory.py` | 343 | VERIFY (advisory) — advisory checks |
 | Generator self-tests | `.claude/skills/aid-generate/scripts/test_manifest_safety.py` | 254 | Internal correctness tests |
 
-Pipeline flow (per `run_generator.py:24-87`):
+Pipeline flow (per `run_generator.py`, the `for profile_path in sorted(profiles_dir.glob('*.toml'))` loop):
 
 ```
 profiles/*.toml ─┐
@@ -111,12 +111,12 @@ profiles/*.toml ─┐
                  ▼
        write emission-manifest.jsonl
                  ▼
-   VERIFY-4a (strict — must pass, exits 1 on failure: run_generator.py:78-80)
+   VERIFY (deterministic) (strict — must pass, exits 1 on failure: `run_generator.py` `run_verify` call)
                  ▼
-   VERIFY-4b (advisory — reports counts only: run_generator.py:82-84)
+   VERIFY (advisory) (advisory — reports counts only: `run_generator.py` `run_advisory` call)
 ```
 
-**Note (Q2 resolution, cycle-1):** `run_generator.py` previously wrote VERIFY-4a/4b reports to `.aid/work-002-canonical-generator/`. That write was eliminated by passing `report_path=None`; the directory is no longer created or required.
+**Note (Q2 resolution, cycle-1):** `run_generator.py` previously wrote VERIFY (deterministic) / VERIFY (advisory) reports to `.aid/work-002-canonical-generator/`. That write was eliminated by passing `report_path=None`; the directory is no longer created or required.
 
 ---
 
@@ -129,7 +129,7 @@ The **`setup.sh` / `setup.ps1` pair** is the end-user-facing install entrypoint.
 | Bash installer | `setup.sh` | 162 | macOS, Linux, WSL |
 | PowerShell installer | `setup.ps1` | 157 | Windows |
 
-Both scripts accept a target directory and an interactive menu (1 = Claude Code, 2 = Codex, 3 = Cursor; multi-select). They copy the matching `profiles/<tool>/` tree into the target. See `setup.sh:7-37` and `setup.ps1:1-40` for the argument-parsing and menu-state code.
+Both scripts accept a target directory and an interactive menu (1 = Claude Code, 2 = Codex, 3 = Cursor; multi-select). They copy the matching `profiles/<tool>/` tree into the target. See `setup.sh` `tool_name()` / `print_menu()` and `setup.ps1` `Get-ToolName` / `Show-Menu` for the argument-parsing and menu-state code.
 
 The install flow is covered by `tests/canonical/test-setup.sh`; `test-setup-ps1.sh` exercises `setup.ps1`'s platform-independent pre-install logic (its Windows-only file copy is not run on Linux CI).
 
@@ -181,15 +181,15 @@ The `gh` CLI is the maintainer's primary tool for PR creation, issue triage, and
 
 | Tool | Version | Used for | Evidence |
 |------|---------|----------|----------|
-| Python | 3.11+ (stdlib `tomllib`) | Generator pipeline | `.claude/skills/aid-generate/scripts/harness.py:15` |
+| Python | 3.11+ (stdlib `tomllib`) | Generator pipeline | `.claude/skills/aid-generate/scripts/render_lib.py` `Requirements: Python 3.11+` |
 | Bash | POSIX-compatible | All `canonical/scripts/` + `tests/canonical/` + `setup.sh` | `#!/usr/bin/env bash` at top of every script |
-| PowerShell | 5.1+ | `setup.ps1` + `concatenate.ps1` | `setup.ps1:1` (`#Requires -Version 5.1`) |
-| Node | 18+ | `aid-summarize` validators (`*.mjs`) + Mermaid CLI | `README.md:326` (per scout) |
+| PowerShell | 5.1+ | `setup.ps1` + `assemble-3part.ps1` | `setup.ps1` `#Requires -Version 5.1` |
+| Node | 18+ | `aid-summarize` validators (`*.mjs`) + Mermaid CLI | `README.md` `Node 18+` requirements bullet (per scout) |
 | Git | any modern | VCS | implicit |
 | GitHub CLI (`gh`) | any modern | PR/issue/release operations | user memory; called by AID docs |
-| curl | any modern | `fetch-mermaid.sh` outbound HTTPS (pinned jsdelivr download only) | `canonical/scripts/summarize/fetch-mermaid.sh:69` |
-| sha256sum or shasum | any | `fetch-mermaid.sh` SHA verify (cache-hit + post-download) | `canonical/scripts/summarize/fetch-mermaid.sh:37-40, 54-60, 85-91` |
-| yq (optional) | any | `read-setting.sh` defers to it for complex YAML | `canonical/scripts/config/read-setting.sh:42` |
+| curl | any modern | `fetch-mermaid.sh` outbound HTTPS (pinned jsdelivr download only) | `canonical/scripts/summarize/fetch-mermaid.sh` `curl -sSf --max-time 120` |
+| sha256sum or shasum | any | `fetch-mermaid.sh` SHA verify (cache-hit + post-download) | `canonical/scripts/summarize/fetch-mermaid.sh` `compute_sha256()` + the two `EXPECTED_SHA256` mismatch guards |
+| yq (optional) | any | `read-setting.sh` defers to it for complex YAML | `canonical/scripts/config/read-setting.sh` `install yq and the script will defer to it` |
 
 ---
 
@@ -200,14 +200,14 @@ These directories function as "infrastructure" at runtime — they hold ephemera
 | Path | Purpose | Gitignored? |
 |------|---------|-------------|
 | `.aid/knowledge/` | Knowledge Base output (this scout's target) | **No** — KB is committed |
-| `.aid/.heartbeat/` | Per-subagent heartbeat files (visibility patch L3) | Yes — `.gitignore:46-47` (explicit) |
+| `.aid/.heartbeat/` | Per-subagent heartbeat files (visibility patch L3) | Yes — `.gitignore` `.aid/.heartbeat/` entry (explicit) |
 | `.aid/.temp/` | Scratch | Yes — explicit `.gitignore` entry (`.aid/.temp/`) |
 | `.aid/generated/` | Build outputs the maintainer wants to track (`project-index.md`) | **No** — selectively committed |
 | `.aid/templates/` | Runtime template copies | **No** — committed |
 | `.aid/settings.yml` | AID pipeline configuration (single source of truth) | **No** — committed |
-| `.aid/knowledge/.cache/` | Mermaid JS cache (per `fetch-mermaid.sh`; cache file is SHA-verified before use) | Yes — `.gitignore:40` |
-| `.claude/worktrees/` | Claude Code worktree state (legacy; worktrees are RETIRED per `coding-standards.md §7f`) | Yes — `.gitignore:43` |
-| `.claude/settings.local.json` | Per-developer Claude Code overrides | Yes — `.gitignore:44` |
+| `.aid/knowledge/.cache/` | Mermaid JS cache (per `fetch-mermaid.sh`; cache file is SHA-verified before use) | Yes — `.gitignore` `.aid/knowledge/.cache/` entry |
+| `.claude/worktrees/` | Claude Code worktree state (legacy; worktrees are RETIRED per `coding-standards.md §7f`) | Yes — `.gitignore` `.claude/worktrees/` entry |
+| `.claude/settings.local.json` | Per-developer Claude Code overrides | Yes — `.gitignore` `.claude/settings.local.json` entry |
 
 ---
 
@@ -215,11 +215,11 @@ These directories function as "infrastructure" at runtime — they hold ephemera
 
 The **single outbound HTTP call** in the entire codebase is `canonical/scripts/summarize/fetch-mermaid.sh`:
 
-- `https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js` (line 67) — JS download for the pinned version
+- `https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js` (the `URL=` assignment) — JS download for the pinned version
 
-The npm registry (`registry.npmjs.org/mermaid/latest`) is no longer queried. The version is derived from the `PINNED_VERSION` constant (line 20); `LATEST` is set via `${PINNED_VERSION#v}` (line 30) — no outbound lookup.
+The npm registry (`registry.npmjs.org/mermaid/latest`) is no longer queried. The version is derived from the `PINNED_VERSION` constant; `LATEST` is set via `${PINNED_VERSION#v}` — no outbound lookup.
 
-The download is SHA-verified against `EXPECTED_SHA256` (line 21) on the post-download path (lines 85–91). The cached file is also SHA-verified before use on the cache-hit path (lines 54–60). A `.meta` file records version metadata but is treated as untrusted — only the SHA comparison is the actual trust boundary.
+The download is SHA-verified against the `EXPECTED_SHA256` constant on the post-download path (the second `EXPECTED_SHA256` mismatch guard, just before the `# Write meta` block). The cached file is also SHA-verified before use on the cache-hit path (the first `EXPECTED_SHA256` mismatch guard, inside the cache-hit branch). A `.meta` file records version metadata but is treated as untrusted — only the SHA comparison is the actual trust boundary.
 
 No other script makes outbound HTTPS. No telemetry, no analytics, no auto-update check.
 
@@ -242,6 +242,6 @@ The relevant historical incident: PR #12 lost 63 commits via worktree sprawl, re
 In-loop observability (during an AID skill invocation):
 - **L1 traceability** — `[State: NAME]` markers in every subagent dispatch (per `coding-standards.md §5a`).
 - **L2 traceability** — ETA bracket pairs (▶/✓) on long-running dispatches (per `coding-standards.md §5b`).
-- **L3 traceability** — heartbeat files in `.aid/.heartbeat/` updated by every long-running subagent at a configurable interval (default 1 minute per `.aid/settings.yml:50`).
+- **L3 traceability** — heartbeat files in `.aid/.heartbeat/` updated by every long-running subagent at a configurable interval (default 1 minute per `.aid/settings.yml` `heartbeat_interval`).
 
 Calibration is logged unconditionally — per `coding-standards.md §5c` and user memory `feedback_traceability-unconditional.md`. This is observability of the *agentic pipeline itself*, not of any deployed system.

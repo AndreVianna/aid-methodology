@@ -29,9 +29,9 @@ changelog:
 |--------|-------|----------|
 | Repo root | `C:\Projects\Personal\AID` | working directory |
 | VCS | Git, branch `kb-overhaul` | `.git/` directory, git status |
-| Total files | 1,077 | `.aid/generated/project-index.md:10` |
-| Total lines | 148,068 | `.aid/generated/project-index.md:11` |
-| Primary purpose | Methodology spec + multi-tool install bundles | `README.md:5-7` |
+| Total files | 1,077 | `.aid/generated/project-index.md` `Total files` row |
+| Total lines | 148,068 | `.aid/generated/project-index.md` `Total lines` row |
+| Primary purpose | Methodology spec + multi-tool install bundles | `README.md` `the methodology for the rest of the lifecycle` |
 | Application code | **None** — ships docs, skills, agents, templates, scripts | `README.md §Overview`; `architecture.md §Project Type` |
 
 ## Top-Level Directory Tree (depth 3)
@@ -39,7 +39,7 @@ changelog:
 ```
 aid-methodology/                       (repo root)
 ├── .aid/                              ← runtime KB scaffold (gitignored except .heartbeat)
-│   ├── .heartbeat/                    ← ephemeral subagent heartbeat files (gitignored, .gitignore:47)
+│   ├── .heartbeat/                    ← ephemeral subagent heartbeat files (gitignored, `.gitignore` `.aid/.heartbeat/`)
 │   ├── .temp/                         ← scratch
 │   ├── generated/
 │   │   └── project-index.md           ← pre-built file inventory, 1148 lines (built by build-project-index.sh)
@@ -75,7 +75,9 @@ aid-methodology/                       (repo root)
 ├── examples/                          ← case studies (brownfield-enterprise, data-pipeline, desktop-app)
 ├── docs/                              ← FAQ + glossary
 ├── tests/
-│   └── canonical/                     ← 5 helper-script test suites (parse-recipe, writeback-task-status, ...)
+│   ├── canonical/                     ← 13 helper-script test suites (parse-recipe, writeback-state, ...)
+│   ├── lib/                            ← shared test helpers (assert.sh)
+│   └── run-all.sh                      ← runs every canonical suite
 ├── README.md                          ← project pitch (388 lines)
 ├── CLAUDE.md                          ← Claude Code project-context (25 lines, dogfood)
 ├── CONTRIBUTING.md                    ← contribution guide (129 lines)
@@ -92,16 +94,16 @@ aid-methodology/                       (repo root)
 | Markdown | 872 | 97,689 | All docs, skills, agents, templates, recipes |
 | Shell | 109 | 30,887 | `canonical/scripts/` + 3 install-tree mirrors + `tests/canonical/` + `setup.sh` |
 | JavaScript | 20 | 5,685 | `canonical/templates/knowledge-summary/lightbox.js`, `mermaid-init.js`, `canonical/scripts/summarize/{validate-diagrams,contrast-check}.mjs` + 3 install-tree mirrors |
-| Python | 11 | 4,232 | `.claude/skills/aid-generate/scripts/{harness,profile,render_*,verify_*,test_manifest_safety}.py` + `run_generator.py` |
+| Python | 11 | 4,232 | `.claude/skills/aid-generate/scripts/{render_lib,aid_profile,render_*,verify_*,test_manifest_safety}.py` + `run_generator.py` |
 | CSS | 5 | 3,285 | `canonical/templates/knowledge-summary/component-css.css` (657 lines) + 4 mirrors |
 | TOML | 25 | 2,888 | 3 profile `*.toml` files + 22 Codex agent `.toml` files (`profiles/codex/.codex/agents/*.toml`) |
 | HTML | 5 | 505 | `canonical/templates/knowledge-summary/html-skeleton.html` (101 lines) + 4 mirrors |
 | YAML | 5 | 405 | `canonical/templates/settings.yml` (81 lines) + 4 mirrors |
-| PowerShell | 6 | 337 | `setup.ps1` + `canonical/scripts/summarize/concatenate.ps1` + 4 install-tree mirrors |
+| PowerShell | 6 | 337 | `setup.ps1` + `canonical/scripts/summarize/assemble-3part.ps1` + 4 install-tree mirrors |
 | JSON | 2 | 28 | `.claude/settings.json` (15 lines), `.claude/settings.local.json` (13 lines) |
 | Other | 17 | 2,127 | `LICENSE`, `.gitignore`, `*.mdc` cursor rules, `generated-files.txt`, `emission-manifest.jsonl`, `methodology/images/*.png` |
 
-Source: `.aid/generated/project-index.md:17-29` (Language Breakdown table).
+Source: `.aid/generated/project-index.md` `## Language Breakdown` (Language Breakdown table).
 
 ## Languages NOT Present
 
@@ -117,14 +119,14 @@ Source: `.aid/generated/project-index.md:17-29` (Language Breakdown table).
 
 | File | Lines | Purpose | Evidence |
 |------|-------|---------|----------|
-| `README.md` | 388 | Project pitch, pipeline diagram, KB description, install instructions | `README.md:1-388` |
-| `CLAUDE.md` | 25 | Dogfood Claude Code project context — minimal pointer to KB | `CLAUDE.md:1-25` |
-| `CONTRIBUTING.md` | 129 | Repo structure table, contribution rules, style guide | `CONTRIBUTING.md:1-129` |
+| `README.md` | 388 | Project pitch, pipeline diagram, KB description, install instructions | `README.md` `# AID — AI Integrated Development` |
+| `CLAUDE.md` | 25 | Dogfood Claude Code project context — minimal pointer to KB | `CLAUDE.md` `# CLAUDE.md` |
+| `CONTRIBUTING.md` | 129 | Repo structure table, contribution rules, style guide | `CONTRIBUTING.md` `# Contributing to AID` |
 | `LICENSE` | 21 | MIT license | `LICENSE` |
-| `run_generator.py` | 87 | Top-level generator entrypoint — loads every `profiles/*.toml`, calls renderers, runs VERIFY-4a (strict) + VERIFY-4b (advisory) | `run_generator.py:1-87` |
+| `run_generator.py` | 87 | Top-level generator entrypoint — loads every `profiles/*.toml`, calls renderers, runs VERIFY (deterministic, strict) + VERIFY (advisory) | `run_generator.py` `Running VERIFY (deterministic)...` |
 | `setup.sh` | 162 | Bash end-user installer (target: real projects, not maintainer) | `setup.sh` |
 | `setup.ps1` | 157 | PowerShell end-user installer | `setup.ps1` |
-| `.gitignore` | 47 | Excludes Python/Node caches, IDE, `.aid/knowledge/.cache/`, `.claude/worktrees/`, `.aid/.heartbeat/` | `.gitignore:1-47` |
+| `.gitignore` | 47 | Excludes Python/Node caches, IDE, `.aid/knowledge/.cache/`, `.claude/worktrees/`, `.aid/.heartbeat/` | `.gitignore` `.aid/.heartbeat/` |
 
 ### Methodology spec
 
@@ -138,34 +140,34 @@ Source: `.aid/generated/project-index.md:17-29` (Language Breakdown table).
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `harness.py` | 756 | Largest source file. Emission-manifest implementation + pure-mirror deletion logic |
-| `profile.py` | 550 | Parses `profiles/*.toml`, validates against schema |
+| `render_lib.py` | 756 | Largest source file. Emission-manifest implementation + pure-mirror deletion logic |
+| `aid_profile.py` | 550 | Parses `profiles/*.toml`, validates against schema |
 | `render_agents.py` | 522 | Renders `canonical/agents/` per profile |
 | `render_skills.py` | 469 | Renders `canonical/skills/` per profile (Thin-Router + references/) |
 | `render_recipes.py` | 261 | Renders `canonical/recipes/` (passthrough) |
-| `render_scripts.py` | 224 | Renders `canonical/scripts/` per profile |
+| `render_canonical_scripts.py` | 224 | Renders `canonical/scripts/` per profile |
 | `render_templates.py` | 252 | Renders `canonical/templates/` per profile |
-| `verify_deterministic.py` | 515 | VERIFY-4a — byte-identical re-run guarantee |
-| `verify_advisory.py` | 343 | VERIFY-4b — advisory checks |
+| `verify_deterministic.py` | 515 | VERIFY (deterministic) — byte-identical re-run guarantee |
+| `verify_advisory.py` | 343 | VERIFY (advisory) — advisory checks |
 | `test_manifest_safety.py` | 254 | Generator self-tests |
 
 ### Largest helper scripts (canonical, with 4 mirror copies each)
 
 | Canonical path | Lines | Purpose |
 |----------------|-------|---------|
-| `canonical/scripts/execute/writeback-task-status.sh` | 627 | Updates STATE.md after task completion |
-| `canonical/scripts/summarize/validate-diagrams.mjs` | 574 | Mermaid diagram validation |
-| `canonical/scripts/summarize/run-validators.sh` | 518 | Aggregates summarize-phase validators |
+| `canonical/scripts/execute/writeback-state.sh` | 627 | Updates STATE.md after task completion |
+| `canonical/scripts/summarize/validate-diagrams.mjs` | 577 | Mermaid diagram validation |
+| `canonical/scripts/summarize/grade-summary.sh` | 520 | Aggregates summarize-phase validators |
 | `canonical/scripts/interview/parse-recipe.sh` | 540 | Parses recipe `{{slot}}` placeholders + emits lite-path artifacts |
 | `canonical/scripts/summarize/validate-html-output.sh` | 321 | HTML output validation |
 | `canonical/scripts/execute/compute-block-radius.sh` | 293 | BFS over task dependency graph (failure block radius) |
 | `canonical/scripts/summarize/manual-checklist.sh` | 269 | Manual verification prompts |
 | `canonical/scripts/config/read-setting.sh` | 263 | Reads `.aid/settings.yml` keys |
 | `canonical/scripts/execute/complexity-score.sh` | 209 | Task complexity scoring |
-| `canonical/scripts/kb/build-metrics.sh` | 213 | KB doc-size metrics |
-| `canonical/scripts/kb/build-index.sh` | 203 | Builds `.aid/knowledge/INDEX.md` |
+| `canonical/scripts/kb/build-metrics.sh` | 218 | KB doc-size metrics |
+| `canonical/scripts/kb/build-kb-index.sh` | 203 | Builds `.aid/knowledge/INDEX.md` |
 | `canonical/scripts/kb/build-project-index.sh` | 368 | Builds `.aid/generated/project-index.md` (this scout input) |
-| `canonical/scripts/grade.sh` | 141 | Deterministic grading function (severity → letter grade) |
+| `canonical/scripts/grade.sh` | 266 | Deterministic grading function (severity → letter grade) |
 | `canonical/scripts/summarize/spot-check-facts.sh` | 176 | Spot-checks KB facts against source |
 | `canonical/scripts/summarize/writeback-state.sh` | 173 | Writes summarize-phase state back |
 | `canonical/scripts/summarize/contrast-check.mjs` | 151 | Color-contrast accessibility checker |
@@ -178,14 +180,18 @@ Each script above has 4 byte-identical copies on disk: the canonical source, the
 
 ### Test files
 
+There are **13** canonical test suites under `tests/canonical/`, each a self-contained bash script with its own assertions, plus the aggregator `tests/run-all.sh` (globs `test-*.sh`) and shared helpers in `tests/lib/assert.sh`. Largest suites:
+
 | Path | Lines | Purpose |
 |------|-------|---------|
-| `tests/canonical/test-parse-recipe.sh` | 1,002 | Largest test file. 113 tests for `parse-recipe.sh` (runtime ~150s — needs timeout ≥180s) |
-| `tests/canonical/test-writeback-task-status.sh` | 535 | 69 tests for `writeback-task-status.sh` |
-| `tests/canonical/test-delivery-gate-aggregate.sh` | 535 | 18 tests for the delivery-gate aggregator |
-| `tests/canonical/test-compute-block-radius.sh` | 345 | 17 tests for BFS block-radius |
-| `tests/canonical/test-read-setting.sh` | 360 | `read-setting.sh` test suite |
+| `tests/canonical/test-parse-recipe.sh` | 906 | Largest test file. Covers `parse-recipe.sh` operating modes + error paths (runtime is the longest of the suites — give it a generous timeout) |
+| `tests/canonical/test-delivery-gate-aggregate.sh` | 528 | Delivery-gate aggregator (`aid-execute` gate: deferred rows, SCORE, `grade.sh` determinism) |
+| `tests/canonical/test-writeback-state.sh` | 477 | `writeback-state.sh` arg modes + lock-contention safety |
+| `tests/canonical/test-read-setting.sh` | 350 | `read-setting.sh` 3-tier resolution + `--path` lookups |
+| `tests/canonical/test-compute-block-radius.sh` | 305 | BFS transitive-descendant block-radius |
 | `tests/README.md` | — | Suite inventory + run instructions |
+
+Remaining suites (smaller): `test-grade.sh`, `test-fetch-mermaid.sh`, `test-validate-diagrams.sh` (needs `node`), `test-contrast-check.sh` (needs `node`), `test-assemble-3part.sh`, `test-assemble-3part-ps1.sh` (needs `pwsh`), `test-setup.sh`, `test-setup-ps1.sh` (needs `pwsh`).
 
 Tests `tests/skills/` (skill-level e2e) and `tests/canonical/pool-dispatch.sh` were deleted in cycle-1 per Q6 resolution. See `tests/README.md` for the current suite list.
 
@@ -208,11 +214,11 @@ Tests `tests/skills/` (skill-level e2e) and `tests/canonical/pool-dispatch.sh` w
 
 | File | Type | Purpose | Evidence |
 |------|------|---------|----------|
-| `profiles/claude-code.toml` | TOML profile | Generator config: output_root, frontmatter schema, model tiers, filename_map, capabilities | `profiles/claude-code.toml:1-65` |
-| `profiles/codex.toml` | TOML profile | Same — Codex CLI (split-root: `.codex/agents/` for TOML, `.agents/{skills,scripts,recipes,templates}` for markdown) | `profiles/codex.toml`, `CONTRIBUTING.md:14-18` |
+| `profiles/claude-code.toml` | TOML profile | Generator config: output_root, frontmatter schema, model tiers, filename_map, capabilities | `profiles/claude-code.toml` `[layout]` |
+| `profiles/codex.toml` | TOML profile | Same — Codex CLI (split-root: `.codex/agents/` for TOML, `.agents/{skills,scripts,recipes,templates}` for markdown) | `profiles/codex.toml`, `CONTRIBUTING.md` `## Repository Structure` |
 | `profiles/cursor.toml` | TOML profile | Same — Cursor IDE (`.cursor/`, `.mdc` rule files) | `profiles/cursor.toml` |
 | `.claude/settings.json` | JSON | Claude Code permission config (15 lines) | `.claude/settings.json` |
-| `.claude/settings.local.json` | JSON | Personal Claude Code overrides (13 lines, gitignored per `.gitignore:44`) | `.claude/settings.local.json` |
+| `.claude/settings.local.json` | JSON | Personal Claude Code overrides (13 lines, gitignored per `.gitignore` `.claude/settings.local.json`) | `.claude/settings.local.json` |
 | `.aid/settings.yml` | YAML | Runtime AID settings (mirrors `canonical/templates/settings.yml`) | `.aid/settings.yml` |
 | `canonical/templates/settings.yml` | YAML | Settings template (81 lines) shipped via render | `canonical/templates/settings.yml` |
 
@@ -229,7 +235,7 @@ The build commands:
 | `python run_generator.py` | Re-generate all 3 install trees from `canonical/` (maintainer-only) |
 | `python .claude/skills/aid-generate/scripts/verify_deterministic.py` | Verify render is byte-correct + complete |
 | `bash canonical/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md` | Rebuild file inventory |
-| `bash tests/canonical/*.sh` | Run canonical helper test suites (7 suites — see `tests/README.md`) |
+| `bash tests/run-all.sh` | Run all canonical helper test suites (13 suites — aggregator globs `tests/canonical/test-*.sh`; see `tests/README.md`) |
 
 **KB claim validation** is performed by the `discovery-reviewer` sub-agent in `/aid-discover REVIEW`.
 
@@ -257,7 +263,7 @@ Total skill body lines: 2,242 across 10 skills (per `metrics.md`).
 
 ## Agents (22)
 
-Installed at `.claude/agents/`. Three tiers (per `README.md:178-198`):
+Installed at `.claude/agents/`. Three tiers (per `README.md` `## The Agent Model — three tiers`):
 
 | Tier | Count | Names |
 |------|-------|-------|
@@ -297,7 +303,7 @@ Lite-path templates at `canonical/recipes/`, replicated into all 3 install trees
 
 | Audience | Entry point | Where it goes |
 |----------|-------------|---------------|
-| Maintainer build | `python run_generator.py` | Renders all 3 install trees + runs VERIFY-4a/4b |
+| Maintainer build | `python run_generator.py` | Renders all 3 install trees + runs VERIFY (deterministic) / VERIFY (advisory) |
 | End-user install | `./setup.sh` (Unix) / `.\setup.ps1` (Windows) | Installs selected profile(s) into a target project |
 | Methodology reader | `methodology/aid-methodology.md` (1,070 lines) | The complete spec |
 | First-time AI agent reader | `CLAUDE.md` (dogfood) or `AGENTS.md` (per profile) | Project context, KB pointers |
@@ -309,20 +315,20 @@ Lite-path templates at `canonical/recipes/`, replicated into all 3 install trees
 
 2. **Dogfood `.claude/` tree.** Unique among AID-using projects: this repo applies AID to itself. The top-level `.claude/` is functionally identical to `profiles/claude-code/.claude/` (the install bundle) but is the one the dev environment actually uses.
 
-3. **Split Codex layout.** `profiles/codex/.codex/agents/` holds TOML agent definitions; `profiles/codex/.agents/{skills,scripts,recipes,templates}/` holds the markdown bodies. A single `profiles/codex/emission-manifest.jsonl` covers both roots (per `canonical/EMISSION-MANIFEST.md:20-27`).
+3. **Split Codex layout.** `profiles/codex/.codex/agents/` holds TOML agent definitions; `profiles/codex/.agents/{skills,scripts,recipes,templates}/` holds the markdown bodies. A single `profiles/codex/emission-manifest.jsonl` covers both roots (per `canonical/EMISSION-MANIFEST.md` `## Filename and Location`).
 
-4. **Generator lives in `.claude/skills/aid-generate/`, not in repo root.** It is a skill that ships with itself; `run_generator.py` is a tiny wrapper that imports its scripts (`run_generator.py:7-15`).
+4. **Generator lives in `.claude/skills/aid-generate/`, not in repo root.** It is a skill that ships with itself; `run_generator.py` is a tiny wrapper that imports its scripts (`run_generator.py` `sys.path.insert(0, '.claude/skills/aid-generate/scripts')`).
 
 5. **`canonical/scripts/` was newly reorganized.** Git status shows many recent renames from `canonical/templates/scripts/` and `canonical/skills/*/scripts/` into the consolidated `canonical/scripts/{config,execute,interview,kb,summarize}/` hierarchy.
 
-6. **`tests/canonical/` is the official test directory.** No `pytest.ini`, no `package.json`-style test config; tests are pure bash scripts; 7 suites (see `tests/README.md`). The `tests/skills/` directory and `tests/canonical/pool-dispatch.sh` were deleted in cycle-1 per Q6 resolution.
+6. **`tests/canonical/` is the official test directory.** No `pytest.ini`, no `package.json`-style test config; tests are pure bash scripts; 13 suites run via the `tests/run-all.sh` aggregator (shared helpers in `tests/lib/assert.sh`; see `tests/README.md`). The `tests/skills/` directory and `tests/canonical/pool-dispatch.sh` were deleted in cycle-1 per Q6 resolution.
 
 7. **CI is enforced.** `.github/workflows/test.yml` (added 2026-05-29) runs on PR/push and is a required status check on `master`; no other CI system (`.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`).
 
 8. **`.aid/work-001-aid-lite/` and `.aid/work-002-canonical-generator/`** are correctly absent — per Q1 and Q2 resolutions (cycle-1): those directories were never correct canonical homes. See `tech-debt.md H1` and `M1` for history.
 
-10. **`canonical/rules/` (2 .mdc files)** appears to exist only as a staging area; the rendered copies land in `profiles/cursor/.cursor/rules/`. There is no `.claude/rules/` equivalent (Claude Code uses inline `CLAUDE.md` for rules — see `profiles/claude-code.toml:55-57`).
+10. **`canonical/rules/` (2 .mdc files)** appears to exist only as a staging area; the rendered copies land in `profiles/cursor/.cursor/rules/`. There is no `.claude/rules/` equivalent (Claude Code uses inline `CLAUDE.md` for rules — see `profiles/claude-code.toml` `[extras]`).
 
 11. **Knowledge-summary asset bundle is the heaviest static-resource cluster.** A single template subdirectory (`canonical/templates/knowledge-summary/`) holds 657-line CSS, 359-line JS, 101-line HTML, 6 section-template variants, and an accessibility checklist — atypical for a methodology repo and reflects the optional `aid-summarize` offline viewer feature.
 
-12. **No `node_modules/` despite Node 18+ being a runtime requirement.** Per `README.md:326`, Node is only used by `aid-summarize` for diagram validation; presumably end users install Mermaid CLI ad-hoc. No `package.json` exists at any level.
+12. **No `node_modules/` despite Node 18+ being a runtime requirement.** Per `README.md` `**Node 18+** is optional`, Node is only used by `aid-summarize` for diagram validation; presumably end users install Mermaid CLI ad-hoc. No `package.json` exists at any level.

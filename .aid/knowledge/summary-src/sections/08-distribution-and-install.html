@@ -33,7 +33,7 @@ flowchart TB
 
     ADOPTER["Any adopter repo<br/>.claude/ or .codex/+.agents/ or .cursor/"]:::adopter
 
-    VFY["verify_deterministic.py<br/>VERIFY-4a hard gate<br/>byte-identical re-render"]:::verify
+    VFY["verify_deterministic.py<br/>VERIFY (deterministic) hard gate<br/>byte-identical re-render"]:::verify
 
     SRC --> GEN
     P1 --> GEN
@@ -47,14 +47,14 @@ flowchart TB
     T2 -.->|setup.sh| ADOPTER
     T3 -.->|setup.sh| ADOPTER
 		</div>
-		<p class="caption">Fig 3 — Canonical-to-3-install-trees pipeline: one canonical source, three profile TOML configs, five renderers per profile, VERIFY-4a hard gate. Adopters install by running setup.sh / setup.ps1, which copies the selected profile tree into their repo. (per architecture.md, infrastructure.md)</p>
+		<p class="caption">Fig 3 — Canonical-to-3-install-trees pipeline: one canonical source, three profile TOML configs, five renderers per profile, VERIFY (deterministic) hard gate. Adopters install by running setup.sh / setup.ps1, which copies the selected profile tree into their repo. (per architecture.md, infrastructure.md)</p>
 	</div>
 
 	<div class="grid g3">
 		<div class="card">
 			<div class="kicker">Generator</div>
 			<h3><code>run_generator.py</code></h3>
-			<p>87-line orchestrator. Loads every <code>profiles/*.toml</code>, calls <code>render_agents</code>, <code>render_skills</code>, <code>render_templates</code>, <code>render_scripts</code>, <code>render_recipes</code> per profile, performs deletion pass via emission manifest diff, then runs VERIFY-4a (hard) and VERIFY-4b (advisory). Python 3.11+ stdlib only. (per module-map.md §3)</p>
+			<p>87-line orchestrator. Loads every <code>profiles/*.toml</code>, calls <code>render_agents</code>, <code>render_skills</code>, <code>render_templates</code>, <code>render_canonical_scripts</code>, <code>render_recipes</code> per profile, performs deletion pass via emission manifest diff, then runs VERIFY (deterministic) (hard) and VERIFY (advisory). Python 3.11+ stdlib only. (per module-map.md §3)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">End-user install</div>

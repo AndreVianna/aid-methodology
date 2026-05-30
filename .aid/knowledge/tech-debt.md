@@ -27,13 +27,13 @@ changelog:
 > **Status:** Complete
 > **Last Updated:** 2026-05-29
 
-> This document is a diagnosis, not a sprint plan. Severity tags use the form `[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` so `build-metrics.sh` (see `canonical/templates/knowledge-base/tech-debt.md:17`) can tally them.
+> This document is a diagnosis, not a sprint plan. Severity tags use the form `[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` so `build-metrics.sh` (see the "Severity tag convention" note in `canonical/templates/knowledge-base/tech-debt.md`) can tally them.
 
 ---
 
 ## Summary
 
-**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 7-suite canonical test suite) and now has **enforced pre-merge CI** (required status checks on `master`, 2026-05-29), but still carries several **structural gaps** surfaced by cycle-1 discovery (methodology rigidity and crud-outputs audit pending). There are **zero open Critical** items. Resolved items are dropped from the inventory below; their closure record (what / when / why) lives in this doc's changelog frontmatter and in git history. As of this writing, C1, H1, H2, H3, H6, M1, M2, M3, M4, M5, M6, M7, and L2 have been closed and removed from the list.
+**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 13-suite canonical test suite) and now has **enforced pre-merge CI** (required status checks on `master`, 2026-05-29), but still carries several **structural gaps** surfaced by cycle-1 discovery (methodology rigidity and crud-outputs audit pending). There are **zero open Critical** items. Resolved items are dropped from the inventory below; their closure record (what / when / why) lives in this doc's changelog frontmatter and in git history. As of this writing, C1, H1, H2, H3, H6, M1, M2, M3, M4, M5, M6, M7, and L2 have been closed and removed from the list.
 
 | Severity | Open | Open items |
 |----------|------|------------|
@@ -51,25 +51,26 @@ changelog:
 | ID | Type | Description | Location | Risk | Effort | Priority |
 |----|------|-------------|----------|------|--------|----------|
 | H4 | Crud Outputs (partially resolved) | Skills/scripts audit needed: unnecessary write-only outputs (reports/logs/intermediate files) not consumed by any downstream step — known instance fixed in cycle-1 (Q2: report_path=None); broader audit remains | scope: 10 user-facing skills + 11 generators/builders | Medium | M | P3 |
-| H5 | Methodology Flexibility | Methodology assumes rigid 16-doc KB set; meta-repos / docs-only / library-only projects need flexibility | methodology spec, aid-discover, verify-claims, canonical/templates/knowledge-base/ | High | L | P2 |
-| L1 | Source Bloat | 4 files >500 lines under canonical/methodology (largest: `methodology/aid-methodology.md` 1,070, `tests/canonical/test-parse-recipe.sh` 1,002, `canonical/scripts/execute/writeback-task-status.sh` 627, `canonical/skills/aid-execute/references/state-execute.md` 629) | various | Low | M | P3 |
-| L3 | Allowlist Breadth | `.claude/settings.json` Bash allowlist includes broad `Bash(rm *)` and `Bash(python *)` without path scoping | `.claude/settings.json:5-14` | Low | XS | P3 |
+| H5 | Methodology Flexibility | Methodology assumes rigid 16-doc KB set; meta-repos / docs-only / library-only projects need flexibility | methodology spec, aid-discover, canonical/templates/knowledge-base/ | High | L | P2 |
+| L1 | Source Bloat | ~10 files >500 lines under canonical/methodology/tests (largest: `methodology/aid-methodology.md` ~1,070, `tests/canonical/test-parse-recipe.sh`, `canonical/skills/aid-execute/references/state-execute.md`, `canonical/scripts/execute/writeback-state.sh`) | various | Low | M | P3 |
+| L3 | Allowlist Breadth | `.claude/settings.json` Bash allowlist includes broad `Bash(rm *)` and `Bash(python *)` without path scoping | `.claude/settings.json` `permissions.allow` (`Bash(rm *)`, `Bash(python *)`, `Bash(chmod *)`) | Low | XS | P3 |
 | L4 | Versioning | AID has no version (no VERSION file, no semver); current position is "continuous master" | repo-wide; absence confirmed by project-index | Low | S | P3 |
-| L5 | Example Divergence | `examples/brownfield-enterprise/README.md` uses old KB doc names (`data-model.md`→`schemas.md`, `api-contracts.md`→`pipeline-contracts.md`) and `DISCOVERY-STATE.md`→`.aid/knowledge/STATE.md` — an adopter would look for files the tool no longer produces. data-pipeline + desktop-app verified clean | `examples/brownfield-enterprise/README.md:31,32,35,59` | Low | S | P3 |
+| L5 | Example Divergence | `examples/brownfield-enterprise/README.md` uses old KB doc names (`data-model.md`→`schemas.md`, `api-contracts.md`→`pipeline-contracts.md`) and `DISCOVERY-STATE.md`→`.aid/knowledge/STATE.md` — an adopter would look for files the tool no longer produces. data-pipeline + desktop-app verified clean | `examples/brownfield-enterprise/README.md` (rows citing `data-model.md`, `api-contracts.md`, `DISCOVERY-STATE.md`) | Low | S | P3 |
 
 ---
 
 ## Detailed Debt Items
 
-### [LOW] L1 — Four files exceed 500 lines (one exceeds 1,000)
+### [LOW] L1 — Roughly ten files exceed 500 lines (one exceeds 1,000)
 
 **Type:** Source Size / Complexity
-**Evidence (from `wc -l` over `canonical/`, `methodology/`, `tests/`):**
-- `methodology/aid-methodology.md` — 1,070 lines (the load-bearing spec; legitimately large)
-- `tests/canonical/test-parse-recipe.sh` — 1,002 lines (113 tests; test-file size is justified)
-- `canonical/scripts/execute/writeback-task-status.sh` — 627 lines (already tested by 69-test suite)
-- `canonical/skills/aid-execute/references/state-execute.md` — 629 lines
-- Note: `canonical/scripts/kb/verify-claims.sh` (695 lines, previously listed here) was deleted in cycle-1; its retirement is recorded in this doc's changelog.
+**Evidence (from `wc -l` over `canonical/`, `methodology/`, `tests/`; recover the current set with `find canonical methodology tests -type f \( -name '*.sh' -o -name '*.md' -o -name '*.py' -o -name '*.mjs' \) -exec wc -l {} + | awk '$1>500 && $2!="total"'`):**
+- `methodology/aid-methodology.md` — the load-bearing spec, ~1,070 lines and the only file over 1,000; legitimately large.
+- `tests/canonical/test-parse-recipe.sh` — the largest test suite; test-file size is justified.
+- `canonical/skills/aid-execute/references/state-execute.md` — the largest reference doc.
+- `canonical/scripts/execute/writeback-state.sh` — already tested by its dedicated suite.
+- Several others now also cross the 500-line line (e.g. `canonical/scripts/summarize/validate-diagrams.mjs`, `canonical/scripts/interview/parse-recipe.sh`, `canonical/skills/aid-interview/references/state-condensed-intake.md`, `tests/canonical/test-delivery-gate-aggregate.sh`, `canonical/scripts/summarize/grade-summary.sh`, `canonical/skills/aid-interview/references/state-triage.md`); run the command above for the live list.
+- Note: `canonical/scripts/kb/verify-claims.sh` (previously listed here) was deleted in cycle-1; its retirement is recorded in this doc's changelog.
 
 **Impact:** None acute. The Thin-Router convention (`coding-standards.md §7b`) says SKILL.md should split past ~200 lines, but the `references/state-*.md` files do not have the same threshold. `state-execute.md` at 629 lines may justify further splitting if reviewers find it hard to navigate.
 
@@ -84,7 +85,7 @@ changelog:
 ### [LOW] L3 — `.claude/settings.json` Bash allowlist is broad
 
 **Type:** Configuration / Hardening
-**Evidence:** `.claude/settings.json:5-14` permits `Bash(rm *)`, `Bash(python *)`, `Bash(chmod *)` without path scoping.
+**Evidence:** the `permissions.allow` array in `.claude/settings.json` permits `Bash(rm *)`, `Bash(python *)`, and `Bash(chmod *)` without path scoping.
 
 **Impact:** Acceptable for a maintainer-trusted dogfood environment; would not be acceptable in a multi-tenant setting. Low priority because every Bash invocation by an agent goes through the per-agent `tools:` allowlist first.
 
@@ -161,8 +162,8 @@ changelog:
 
 **Type:** Documentation Drift / Example Divergence
 **Evidence (verified 2026-05-29 by content scan, not timestamps):**
-- `examples/brownfield-enterprise/README.md` lists KB documents using **old names**: `data-model.md` (`:31`) and `api-contracts.md` (`:32`). The shipped standard template set (`canonical/templates/knowledge-base/`) uses `schemas.md` and `pipeline-contracts.md`, so an adopter running `aid-discover` today gets the new names and won't find the ones the example shows.
-- The same file uses `DISCOVERY-STATE.md` (`:35`, `:59`); the current convention is the per-area `.aid/knowledge/STATE.md` (the canonical `discovery-state-template.md` states it "absorbs what used to be `DISCOVERY-STATE.md`").
+- `examples/brownfield-enterprise/README.md` lists KB documents using **old names**: its status table has rows for `data-model.md` and `api-contracts.md`. The shipped standard template set (`canonical/templates/knowledge-base/`) uses `schemas.md` and `pipeline-contracts.md`, so an adopter running `aid-discover` today gets the new names and won't find the ones the example shows.
+- The same file uses `DISCOVERY-STATE.md` (in the status table and in the "Open questions are valuable artifacts" lesson); the current convention is the per-area `.aid/knowledge/STATE.md` (the canonical `discovery-state-template.md` states it "absorbs what used to be `DISCOVERY-STATE.md`").
 - `examples/data-pipeline/` and `examples/desktop-app/` were scanned for the same signatures (old doc names, acronym variants, deleted artifacts, stale state vocabulary) and are **clean**.
 - The earlier "3+ months stale" framing was wrong (brownfield was refreshed 2026-05-22) — the issue is content divergence, not age.
 
@@ -189,7 +190,7 @@ changelog:
   - `canonical/skills/aid-discover/README.md` (3)
   - `canonical/templates/knowledge-base/tech-debt.md` (1)
   - These are all *template-explanatory* mentions (e.g., "fill in TODO sections"), not unresolved code TODOs. Net **0 unresolved code TODOs**.
-- **Files > 500 lines:** 4 (listed in L1; verify-claims.sh removed from list post-deletion)
-- **Files > 1,000 lines:** 2 (`methodology/aid-methodology.md`, `tests/canonical/test-parse-recipe.sh`)
-- **Test-to-code ratio (helper-script subset):** ⚠️ **Inferred from file counts.** There are now 7 canonical helper suites (the original 5 plus `fetch-mermaid.sh` and `grade.sh`). Lines-of-test for all 7 suites sum to **3,625 lines** (`wc -l tests/canonical/*.sh`) against ~2,500 lines of canonical helper code — ratio **≈ 1.45×**. Healthy for shell helpers.
-- **Open PRs:** 0 — the H6 durable-anchor / P1(a) count-purge / script-rename stack (PRs #22, #23, #24) merged to `master` on 2026-05-30.
+- **Files > 500 lines:** ~10 (representative cases listed in L1; `writeback-state.sh` is one)
+- **Files > 1,000 lines:** 1 (`methodology/aid-methodology.md`)
+- **Test-to-code ratio (helper-script subset):** ⚠️ **Inferred from file counts.** There are now **13** canonical suites under `tests/canonical/`, plus the shared `tests/lib/assert.sh` lib and the `tests/run-all.sh` glob-discovering aggregator. Lines-of-test across `tests/canonical/*.sh`, `tests/lib/*.sh`, and `tests/run-all.sh` sum to **4,162 lines** (`wc -l tests/canonical/*.sh tests/lib/*.sh tests/run-all.sh`). The suite count comfortably exceeds the helper-script count, so test coverage remains healthy for shell helpers (per-script LOC ratios drift with refactors and are not pinned here).
+- **Open PRs:** 0 — the H6 durable-anchor / P1(a) count-purge / script-rename stack plus the M4/M6/L2 test-suite work (PRs #22 through #28, which also closed H6, M4, M6, and L2) merged to `master` on 2026-05-30.

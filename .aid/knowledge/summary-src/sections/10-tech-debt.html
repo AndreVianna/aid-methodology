@@ -2,7 +2,7 @@
 	<header>
 		<span class="eyebrow">Debt</span>
 		<h2>Tech Debt</h2>
-		<p class="lede">Overall debt level: Medium–High. The codebase is well-organized (Thin-Router convention, single canonical source, 7-suite test coverage) and now has enforced pre-merge CI (required status checks on master) but still carries several structural gaps. <strong>Zero Critical items remain.</strong> One High item, one Medium, four Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
+		<p class="lede">Overall debt level: Medium–High. The codebase is well-organized (Thin-Router convention, single canonical source, 13-suite test coverage) and now has enforced pre-merge CI (required status checks on master) but still carries several structural gaps. <strong>Zero Critical items remain.</strong> One High item, one Medium, four Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
@@ -43,7 +43,7 @@
 	<div class="debt-item low">
 		<div class="title">L1 — Source bloat</div>
 		<div class="meta">Type: Complexity · Effort: M · Priority: P3</div>
-		<p>Four files exceed 500 lines (methodology spec 1,070; <code>parse-recipe.sh</code> 1,002; <code>writeback-task-status.sh</code> 627; <code>state-execute.md</code> 629). (per tech-debt.md L1)</p>
+		<p>Roughly ten files exceed 500 lines (largest: methodology spec 1,070; <code>test-parse-recipe.sh</code> 906; <code>state-execute.md</code> 629; <code>writeback-state.sh</code> 627). (per tech-debt.md L1)</p>
 	</div>
 
 	<div class="debt-item low">

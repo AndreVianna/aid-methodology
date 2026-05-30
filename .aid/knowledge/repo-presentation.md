@@ -41,37 +41,37 @@ reader experiences it.
 
 ## README.md (root)
 
-Source: `README.md:1-388` (388 lines)
+Source: `README.md` (the root pitch document)
 
 The README is the primary pitch document. It is structured as a progressive disclosure:
-hook first, proof second, how-to last. Its table of contents (`README.md:9-19`) lists
-eight sections:
+hook first, proof second, how-to last. Its table of contents (`README.md` `## Contents`) lists
+the major sections:
 
-| Section | Location | Purpose |
-|---------|----------|---------|
-| **What is AID?** | `README.md:23-38` | Core philosophy in three convictions; Iron Man collaboration image |
-| **Why AID? — the failure modes it removes** | `README.md:41-54` | Six-row table mapping failure modes to structural fixes (hallucination, drift, overengineering, etc.) |
-| **The Pipeline** | `README.md:59-108` | Mermaid flowchart + table of all 10 skills, groups, and outputs |
-| **The Knowledge Base** | `README.md:112-171` | KB structure, 14-document fixed shape, 3-tier context economy diagram |
-| **The Agent Model** | `README.md:175-237` | Three-tier agent diagram (Large/Medium/Small), provider-agnostic tier table, skill→agent dispatch |
-| **Feedback Loops** | `README.md:241-253` | 11 formal loops described; key loops called out (Any phase → Discovery, Execute → IMPEDIMENT, Monitor → Execute, Monitor → Discover) |
-| **AID vs. SDD** | `README.md:256-271` | Eight-row comparison table; framing quote |
-| **Using AID in your own project** | `README.md:275-336` | Install instructions (git clone + setup.sh/setup.ps1), slash command list, what gets installed, runtime requirements, incremental adoption |
-| **Repository structure** | `README.md:340-370` | Directory tree + navigation table (where to go to read methodology, skills, agents, examples) |
-| **Contributing / License** | `README.md:378-388` | Links to CONTRIBUTING.md, MIT license; closing tagline with blog link |
+| Section | Anchor | Purpose |
+|---------|--------|---------|
+| **What is AID?** | `README.md` `## What is AID?` | Core philosophy in three convictions; Iron Man collaboration image |
+| **Why AID? — the failure modes it removes** | `README.md` `## Why AID? — the failure modes it removes` | Failure-mode table mapping failure modes to structural fixes (knowledge gaps, hallucination, drift, overengineering, etc.) |
+| **The Pipeline** | `README.md` `## The Pipeline` | Mermaid flowchart + table of all 10 skills, groups, and outputs |
+| **The Knowledge Base** | `README.md` `## The Knowledge Base — the gravitational center` | KB structure, 14-standard-document fixed shape, 3-tier context economy diagram |
+| **The Agent Model** | `README.md` `## The Agent Model — three tiers` | Three-tier agent diagram (Large/Medium/Small), provider-agnostic tier table, skill→agent dispatch |
+| **Feedback Loops** | `README.md` `## Feedback Loops` | 11 formal loops described; key loops called out (Any phase → Discovery, Execute → IMPEDIMENT, Monitor → Execute, Monitor → Discover) |
+| **AID vs. SDD** | `README.md` `## AID vs. SDD` | Comparison table; framing quote |
+| **Using AID in your own project** | `README.md` `## Using AID in your own project` | Install instructions (git clone + setup.sh/setup.ps1), slash command list, what gets installed, runtime requirements, incremental adoption |
+| **Repository structure** | `README.md` `## Repository structure` | Directory tree + navigation table (where to go to read methodology, skills, agents, examples) |
+| **Contributing / License** | `README.md` `## Contributing` / `## License` | Links to CONTRIBUTING.md, MIT license; closing tagline with blog link |
 
 The README deliberately does not reproduce the full methodology — it links to
 `methodology/aid-methodology.md` for depth. Its job is to orient a first-time reader
 in under 20 minutes and give them one clear action: install and run `/aid-config`.
 
-The footer (`README.md:388`) carries the external blog link:
+The footer (`README.md`, closing `*Read the full methodology:*` line) carries the external blog link:
 `https://casuloailabs.com/blog/aid-methodology/`
 
 ---
 
 ## docs/
 
-Source: `docs/faq.md` (61 lines), `docs/glossary.md` (76 lines)
+Source: `docs/faq.md`, `docs/glossary.md`
 
 The `docs/` folder contains two reference documents intended for ongoing use, not
 initial orientation. Readers who have already installed AID and are working with
@@ -79,35 +79,36 @@ it are the primary audience.
 
 ### docs/faq.md
 
-`docs/faq.md:1-61` — 61 lines, three sections (General, Adoption, Technical):
+`docs/faq.md` — three sections (General, Adoption, Technical):
 
-- **General** (`faq.md:3-21`): What AID stands for, how it differs from SDD, whether
+- **General** (`docs/faq.md` `## General`): What AID stands for, how it differs from SDD, whether
   all 8 phases are required, and how to start a new project.
-- **Adoption** (`faq.md:25-39`): Compatible AI tools (Claude Code, Codex CLI, Cursor,
+- **Adoption** (`docs/faq.md` `## Adoption`): Compatible AI tools (Claude Code, Codex CLI, Cursor,
   Copilot, Windsurf, Aider, custom agents), how to load skills as system context, team
   use, and adoption timeline.
-- **Technical** (`faq.md:41-61`): What the Knowledge Base is, what feedback loops are,
+- **Technical** (`docs/faq.md` `## Technical`): What the Knowledge Base is, what feedback loops are,
   what the Grade A gate means (including a note that the "five checks" are specific to
   the data-pipeline case study, not universal), and how to handle the "spec was wrong"
   problem via IMPEDIMENT.md.
 
-The FAQ references `README.md#aid-vs-sdd` and `methodology/aid-methodology.md#4-feedback-loops`
-for deeper reading (`faq.md:9`, `faq.md:47`).
+The FAQ references `README.md#aid-vs-sdd` (`docs/faq.md` `[comparison table]`) and
+`methodology/aid-methodology.md#4-feedback-loops` (`docs/faq.md` `[methodology document]`)
+for deeper reading.
 
 ### docs/glossary.md
 
-`docs/glossary.md:1-77` — 76 lines, four sections (Core Concepts, Setup, Phases,
+`docs/glossary.md` — six sections (Core Concepts, Setup, Phases,
 Artifacts, Groups, Related Terms):
 
-- **Core Concepts** (`glossary.md:7-18`): AID, Knowledge Base, Feedback Loop, Phase Gate,
+- **Core Concepts** (`docs/glossary.md` `## Core Concepts`): AID, Knowledge Base, Feedback Loop, Phase Gate,
   Iron Man Model.
-- **Setup** (`glossary.md:20-23`): `aid-config` bootstrapping step.
-- **Phases** (`glossary.md:25-37`): All 8 phases in a table with group membership and
+- **Setup** (`docs/glossary.md` `## Setup`): `aid-config` bootstrapping step.
+- **Phases** (`docs/glossary.md` `## Phases`): All 8 phases in a table with group membership and
   primary output artifact.
-- **Artifacts** (`glossary.md:41-52`): SPEC.md, Q&A entry, IMPEDIMENT.md,
+- **Artifacts** (`docs/glossary.md` `## Artifacts`): SPEC.md, Q&A entry, IMPEDIMENT.md,
   MONITOR-STATE.md, Grading (A+ to F).
-- **Groups** (`glossary.md:54-65`): All 5 groups with phases and focus.
-- **Related Terms** (`glossary.md:67-77`): SDD, Brownfield, Greenfield, Determinism Test.
+- **Groups** (`docs/glossary.md` `## Groups`): All 5 groups with phases and focus.
+- **Related Terms** (`docs/glossary.md` `## Related Terms`): SDD, Brownfield, Greenfield, Determinism Test.
 
 The glossary is the canonical term-definition authority for the repo. When a term is
 used in the methodology or skills, its definition lives here.
@@ -116,7 +117,7 @@ used in the methodology or skills, its definition lives here.
 
 ## examples/
 
-Source: `examples/README.md:1-28`, plus per-case-study READMEs.
+Source: `examples/README.md`, plus per-case-study READMEs.
 
 The `examples/` directory contains three anonymized real-world case studies. The
 index (`examples/README.md`) introduces all three with a one-paragraph summary and
@@ -124,18 +125,18 @@ key takeaway per case. Detailed files live within each case study subdirectory.
 
 ### examples/brownfield-enterprise/
 
-`examples/brownfield-enterprise/README.md:1-61`
+`examples/brownfield-enterprise/README.md`
 
 - **Scenario:** A 21GB Java/OSGi enterprise monorepo with ~200 OSGi plugin bundles,
   Eclipse Tycho/Maven build, Hibernate + Elasticsearch, React (Aura) frontend, no
-  documentation, no architect available. (`brownfield-enterprise/README.md:5-13`)
+  documentation, no architect available. (`examples/brownfield-enterprise/README.md` `## Context`)
 - **Goal:** Understand the system well enough to review PRs and implement features
   within days, not weeks.
 - **Phases applied:** Discovery (4-hour AI session vs. estimated 2-3 weeks manual),
   Interview (gap-filling via targeted questions), Execute + Review (14 PR issues
-  across 18 files, fixed in one session). (`brownfield-enterprise/README.md:17-49`)
+  across 18 files, fixed in one session). (`examples/brownfield-enterprise/README.md` `## AID Phases Applied`)
 - **KB documents produced:** 9 documents, ranging from Complete to Partial.
-  (`brownfield-enterprise/README.md:26-35`)
+  (`examples/brownfield-enterprise/README.md` `**KB Documents Produced:**`)
 - **Supporting files:** `discovery-report.md` (architecture analysis) and
   `knowledge-base/architecture.md` (sample KB document).
 - **Key takeaway:** Discovery pays for itself immediately; partial KB documents
@@ -143,12 +144,12 @@ key takeaway per case. Detailed files live within each case study subdirectory.
 
 ### examples/data-pipeline/
 
-`examples/data-pipeline/README.md:1-79`
+`examples/data-pipeline/README.md`
 
 - **Scenario:** Multi-brand e-commerce analytics pipeline — 3 brands, 5 data sources
   (Shopify, Meta Ads, Google Ads, Klaviyo, GA4), 12 specialist AI agents,
   automated weekly reports delivered as HTML email.
-  (`data-pipeline/README.md:5-12`)
+  (`examples/data-pipeline/README.md` `## Context`)
 - **Goal:** Automated weekly performance reports validated against source data at 1%
   tolerance.
 - **Phases applied:** Full lifecycle including Monitor→Execute bug-fix path.
@@ -156,30 +157,30 @@ key takeaway per case. Detailed files live within each case study subdirectory.
   with a Grade A quality gate per report.
 - **Bug-fix in action:** Timezone mismatch (UTC vs. Australia/Sydney) + wrong Klaviyo
   metric + stale cache — three root-cause issues identified and fixed via
-  Track→Triage→Implement. (`data-pipeline/README.md:54-67`)
+  Track→Triage→Implement. (`examples/data-pipeline/README.md` `### Track→Triage→Implement in Action`)
 - **Supporting files:** `pipeline-architecture.md` (detailed pipeline flow).
 - **Key takeaway:** Grade A validation catches LLM hallucination in numeric outputs;
   formal triage identifies multiple concurrent root causes instead of treating them
   as one vague bug.
 
-  ⚠️ The FAQ (`faq.md:52`) notes that the "five checks" (SOURCE_MATCH, TRACEABILITY,
-  CONSISTENCY, COMPLETENESS, NO_ZEROS) are specific to this case study and are not
-  universal AID quality gates. The methodology's Grade A gate is defined per project
-  in SPEC.md.
+  ⚠️ The FAQ (`docs/faq.md` `### What's the Grade A gate?`) notes that the "five checks"
+  (SOURCE_MATCH, TRACEABILITY, CONSISTENCY, COMPLETENESS, NO_ZEROS) are specific to this
+  case study and are not universal AID quality gates. The methodology's Grade A gate is
+  defined per project in SPEC.md.
 
 ### examples/desktop-app/
 
-`examples/desktop-app/README.md:1-57`
+`examples/desktop-app/README.md`
 
 - **Scenario:** Windows desktop transcription app using .NET 10/C#/Avalonia UI/MVVM,
   Whisper (local speech-to-text), Phi-3 (AI correction), sherpa-onnx (diarization),
-  SQLite. (`desktop-app/README.md:5-12`)
+  SQLite. (`examples/desktop-app/README.md` `## Context`)
 - **Goal:** Ship incremental deliveries, each self-contained and fully tested.
 - **Phases applied:** Plan→Detail→Implement→Review→Test→Deploy cycle repeated across
   5 deliveries (2a–2e), growing from 0 to 1,184 tests.
-  (`desktop-app/README.md:22-27`)
+  (`examples/desktop-app/README.md` `### Delivery Structure`)
 - **Three-tier E2E testing:** Mock (CI-safe, ~80 tests), Integration (real data
-  services, ~67 tests), Full (requires hardware). (`desktop-app/README.md:43-46`)
+  services, ~67 tests), Full (requires hardware). (`examples/desktop-app/README.md` `### Quality Gates`)
 - **Supporting files:** `delivery-plan.md` (Delivery 2d example),
   `task-spec.md` (File Import feature task spec).
 - **Key takeaway:** Task specs are the real unit of work; three-tier testing catches
@@ -192,16 +193,16 @@ key takeaway per case. Detailed files live within each case study subdirectory.
 
 ## methodology/aid-methodology.md
 
-Source: `methodology/aid-methodology.md:1-200` (first 200 lines read; full document
-is 1,070 lines per `project-structure.md:133`)
+Source: `methodology/aid-methodology.md` (full document is 1,070 lines per
+`project-structure.md` `| `methodology/aid-methodology.md` |`)
 
 The methodology specification is the load-bearing intellectual artifact of the repo.
 Every skill, agent, and template is derived from it. It is the authoritative definition
 of how AID works.
 
-**Version:** 3.1 — May 2026 (`methodology/aid-methodology.md:4`)
+**Version:** 3.1 — May 2026 (`methodology/aid-methodology.md` `*Version 3.1 — May 2026*`)
 
-**Structure:** Nine sections (`methodology/aid-methodology.md:36-46`):
+**Structure:** Nine sections (`methodology/aid-methodology.md` `## Table of Contents`):
 
 | # | Section | Scope |
 |---|---------|-------|
@@ -216,9 +217,10 @@ of how AID works.
 | 9 | Adoption Guide | Incremental adoption, team use, common entry points |
 
 The methodology document is explicitly flagged as a ~40-minute read in the README's
-repository structure section (`README.md:344`). Two supporting images live alongside
+repository structure section (`README.md` `## Repository structure`). Two supporting images live alongside
 it in `methodology/images/`: `2-comparison.png` (SDD vs. AID comparison diagram) and
-`3-ironman.png` (Human-AI collaboration model, referenced inline at `README.md:35`).
+`3-ironman.png` (Human-AI collaboration model, referenced inline at
+`README.md` `![Human-AI collaboration model](methodology/images/3-ironman.png)`).
 
 The methodology document is not regenerated by the build system — it is hand-authored
 and lives at a fixed path. It is the upstream source that informs all generated
@@ -228,7 +230,7 @@ artifacts but is not itself produced by any generator.
 
 ## External References
 
-The README footer (`README.md:388`) links to a blog post:
+The README footer (`README.md`, closing `*Read the full methodology:*` line) links to a blog post:
 
 > `https://casuloailabs.com/blog/aid-methodology/`
 
@@ -240,14 +242,16 @@ No other external links are cited in the README. The FAQ and glossary contain on
 internal cross-references (to `README.md` sections and `methodology/aid-methodology.md`).
 
 ⚠️ The blog post content has not been verified against the current repo state (as of
-this KB document authoring). The URL is confirmed from `README.md:388`; content
+this KB document authoring). The URL is confirmed from `README.md` (closing
+`*Read the full methodology:*` line); content
 accuracy relative to the v3.1 methodology spec is not verified here.
 
 ---
 
 ## Cross-Tool Installation Surface
 
-Source: `README.md:279-336`, `setup.sh:1-60`, `project-structure.md:49-56`
+Source: `README.md` `## Using AID in your own project`, `setup.sh`,
+`project-structure.md` `├── profiles/`
 
 ### Install Scripts
 
@@ -259,11 +263,11 @@ Users install AID into their own projects via two cross-platform scripts at the 
 | `setup.ps1` | PowerShell 5.1+ (Windows) | 157 | Same menu and behavior in PowerShell |
 
 Both scripts accept `<target-directory>` as a positional argument and an optional
-`--force` flag to overwrite without prompts (`README.md:290-293`). Re-running is safe:
-identical files are skipped; changed files prompt before overwriting.
+`--force` flag to overwrite without prompts (`README.md` `**Re-running is safe:**`).
+Re-running is safe: identical files are skipped; changed files prompt before overwriting.
 
 Manual installation is also documented: copy the relevant profile directory directly
-into the project root (`README.md:294-296`).
+into the project root (`README.md` `Prefer to install by hand?`).
 
 ### Profile Install Trees
 
@@ -275,12 +279,13 @@ Three tool-specific install bundles live in `profiles/`:
 | **Codex CLI** | `profiles/codex/` | Split layout: `.codex/agents/` (TOML agent definitions) + `.agents/` (skills, scripts, recipes, templates); plus `AGENTS.md` at project root |
 | **Cursor** | `profiles/cursor/` | `.cursor/` directory with `.mdc` rule files; plus `AGENTS.md` at project root |
 
-(`project-structure.md:49-56`, `README.md:318-320`)
+(`project-structure.md` `├── profiles/`, `README.md` `### 3. What gets installed`)
 
 All three profiles contain byte-identical skill and agent bodies — only the wrapper
 format differs per tool (TOML for Codex agents, `.mdc` for Cursor rules, markdown for
 Claude Code). The generator (`run_generator.py`) enforces this byte-identity
-via VERIFY-4a at end of every render (see `architecture.md` byte-identity section).
+via VERIFY (deterministic) at end of every render (see `architecture.md`
+`verify_deterministic.py` for the gate).
 
 ### What End Users See After Install
 
@@ -289,13 +294,14 @@ After running `setup.sh` or `setup.ps1`, the target project gains:
 - The tool-appropriate hidden directory (`.claude/`, `.codex/`+`.agents/`, or `.cursor/`)
   containing all 10 skills, 22 agents, 5 recipes, templates, and helper scripts.
 - A `CLAUDE.md` or `AGENTS.md` at the project root with placeholders that
-  `/aid-config` and `/aid-discover` populate. (`README.md:318-320`)
+  `/aid-config` and `/aid-discover` populate. (`README.md` `### 3. What gets installed`)
 - `.aid/` appended to the project's `.gitignore` — the Knowledge Base stays out of
-  git by default; users remove the entry to commit it. (`README.md:321`)
+  git by default; users remove the entry to commit it.
+  (`README.md` ``.aid/` appended to your project's `.gitignore``)
 
 ### Runtime Requirements
 
-(`README.md:322-326`)
+(`README.md` `### Runtime requirements`)
 
 - One or more host AI tools: Claude Code, OpenAI Codex CLI, or Cursor.
 - Bash (or git-bash on Windows) for scripts; PowerShell 5.1+ for `setup.ps1`.
