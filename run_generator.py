@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Live generator run for task-027 cutover."""
+"""Live generator run: render all profiles from canonical, then verify."""
 import sys
 import json
 from pathlib import Path
 
 sys.path.insert(0, '.claude/skills/aid-generate/scripts')
 from aid_profile import load_profile, validate
-from harness import EmissionManifest
+from render_lib import EmissionManifest
 from render_agents import render_agents
 from render_skills import render_skills
 from render_templates import render_templates
-from render_scripts import render_scripts
+from render_canonical_scripts import render_canonical_scripts
 from render_recipes import render_recipes
 from verify_deterministic import run_verify
 from verify_advisory import run_advisory
@@ -41,7 +41,7 @@ for profile_path in sorted(profiles_dir.glob('*.toml')):
     render_agents(repo, profile, manifest, repo)
     render_skills(repo, profile, manifest, repo)
     render_templates(repo, profile, manifest, repo)
-    render_scripts(repo, profile, manifest, repo)
+    render_canonical_scripts(repo, profile, manifest, repo)
     render_recipes(repo, profile, manifest, repo)
 
     # Deletion pass
@@ -72,16 +72,16 @@ for profile_path in sorted(profiles_dir.glob('*.toml')):
     print(f"  Emitted: {emitted} files, Deleted: {len(deleted)}, Manifest: {manifest_path}")
 
 print(f"\nTotal: {total_emitted} files emitted, {total_deleted} deleted")
-print("\nRunning VERIFY-4a...")
+print("\nRunning VERIFY (deterministic)...")
 passed, _report = run_verify(str(repo))
 if not passed:
-    print("VERIFY-4a FAILED", file=sys.stderr)
-    print("  (re-run with `python -m verify_deterministic --canonical-root . --report-path /tmp/verify-4a.json` for details)", file=sys.stderr)
+    print("VERIFY (deterministic) FAILED", file=sys.stderr)
+    print("  (re-run with `python -m verify_deterministic --canonical-root . --report-path /tmp/verify-deterministic.json` for details)", file=sys.stderr)
     sys.exit(1)
-print("VERIFY-4a: PASS")
+print("VERIFY (deterministic): PASS")
 
-print("\nRunning VERIFY-4b...")
-report_4b = run_advisory(str(repo))
-print(f"VERIFY-4b: skipped={report_4b['skipped_count']} checked={report_4b['checked_count']}")
+print("\nRunning VERIFY (advisory)...")
+report_advisory = run_advisory(str(repo))
+print(f"VERIFY (advisory): skipped={report_advisory['skipped_count']} checked={report_advisory['checked_count']}")
 
 print("\nDone. Install trees updated.")

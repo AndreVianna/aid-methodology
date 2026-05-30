@@ -79,9 +79,9 @@ jobs:
           python-version: '3.11'
       - name: harness + manifest-safety + render + verify self-tests
         run: |
-          python .claude/skills/aid-generate/scripts/harness.py --self-test
+          python .claude/skills/aid-generate/scripts/render_lib.py --self-test
           python .claude/skills/aid-generate/scripts/test_manifest_safety.py --self-test
-          python .claude/skills/aid-generate/scripts/render_scripts.py --self-test --canonical-root .
+          python .claude/skills/aid-generate/scripts/render_canonical_scripts.py --self-test --canonical-root .
           python .claude/skills/aid-generate/scripts/verify_deterministic.py --self-test --canonical-root .
 
   kb-hygiene:
@@ -105,9 +105,9 @@ jobs:
       - name: INDEX.md is fresh (regenerate + diff, timestamps filtered)
         shell: bash
         run: |
-          bash canonical/scripts/kb/build-index.sh --root .aid/knowledge --output /tmp/INDEX.regen.md
+          bash canonical/scripts/kb/build-kb-index.sh --root .aid/knowledge --output /tmp/INDEX.regen.md
           filt='AUTO-GENERATED|Generated at:|: Generated$'
           if ! diff <(grep -vE "$filt" .aid/knowledge/INDEX.md) <(grep -vE "$filt" /tmp/INDEX.regen.md); then
-            echo "::error::INDEX.md is stale — run build-index.sh and commit"
+            echo "::error::INDEX.md is stale — run build-kb-index.sh and commit"
             exit 1
           fi

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# render_templates.py — AID canonical-generator template renderer (task-021)
+# render_templates.py — AID canonical-generator template renderer
 #
 # Purpose:
 #   Copy the entire canonical/templates/ subtree into the profile's templates
@@ -27,7 +27,7 @@ if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
 from aid_profile import load_profile, validate, Profile  # noqa: E402
-from harness import (  # noqa: E402
+from render_lib import (  # noqa: E402
     substitute_filenames,
     rewrite_install_paths,
     sha256_hex,
@@ -114,7 +114,7 @@ def render_templates(
                 # every text-emitting renderer applies substitute_filenames THEN
                 # rewrite_install_paths so adopter projects (no canonical/ at root)
                 # can resolve canonical/{scripts,templates,...}/ references.
-                # See harness.py rewrite_install_paths docstring.
+                # See render_lib.py rewrite_install_paths docstring.
                 content = substitute_filenames(raw, profile.filename_map)
                 content = rewrite_install_paths(content, profile.layout.install_root())
                 encoded = content.encode("utf-8")

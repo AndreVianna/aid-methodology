@@ -162,7 +162,7 @@ While `|in-flight| < MaxConcurrent` and the ready set is non-empty:
 
 5. Update work `STATE.md` row Status to `In Progress` via:
    ```
-   writeback-task-status.sh --task-id NNN --field Status --value "In Progress"
+   writeback-state.sh --task-id NNN --field Status --value "In Progress"
    ```
 
 6. Pre-create heartbeat file: `.aid/.heartbeat/<executor>-<unix-ts>.txt`
@@ -227,7 +227,7 @@ Remove `task-{NNN}` from the in-flight set.
 
 2. **Update STATUS to Done:**
    ```bash
-   writeback-task-status.sh --task-id NNN --field Status --value "Done"
+   writeback-state.sh --task-id NNN --field Status --value "Done"
    ```
    _(The per-task full pipeline EXECUTE → QUICK CHECK → REVIEW ran inside the
    dispatched sub-agent; by the time DONE is reported, the sub-agent has already
@@ -253,7 +253,7 @@ Remove `task-{NNN}` from the in-flight set.
 
 2. Update status:
    ```bash
-   writeback-task-status.sh --task-id NNN --field Status --value "Failed"
+   writeback-state.sh --task-id NNN --field Status --value "Failed"
    ```
 
 3. Emit `[pool] ✗ task-{NNN} FAILED — computing failure-block-radius`.
@@ -308,8 +308,8 @@ Remove `task-{NNN}` from the in-flight set.
 
    - Mark it Blocked via:
      ```bash
-     writeback-task-status.sh --task-id B --field Status --value "Blocked"
-     writeback-task-status.sh --task-id B --field Notes \
+     writeback-state.sh --task-id B --field Status --value "Blocked"
+     writeback-state.sh --task-id B --field Notes \
        --value "Blocked: transitive dependency on failed task-{NNN}"
      ```
    - Remove `B` from the ready set if present (blocked tasks are never dispatched).

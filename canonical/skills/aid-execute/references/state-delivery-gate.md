@@ -56,14 +56,14 @@ from SPEC Data Model "Parallel-write coordination").**
 2. **Check whether `delivery-NNN-issues.md` exists** at
    `.aid/{work}/delivery-NNN-issues.md`.
    - If it exists (written incrementally by quick-check via
-     `writeback-task-status.sh --delivery-id NNN --append-issue ROW`):
+     `writeback-state.sh --delivery-id NNN --append-issue ROW`):
      read the file; it already contains all deferred `[HIGH]` rows.
    - If it does not exist: no deferred `[HIGH]` issues were logged
      (all quick checks reported clean or only `[CRITICAL]` fixed on spot).
      Create an empty log via:
 
      ```bash
-     writeback-task-status.sh --delivery-id NNN --append-issue \
+     writeback-state.sh --delivery-id NNN --append-issue \
        "| (none) | — | No deferred [HIGH] issues from quick checks | Resolved |"
      ```
 
@@ -352,10 +352,10 @@ Compose the final gate block:
 Use the writeback helper:
 
 ```bash
-writeback-task-status.sh --delivery-id NNN --block "BLOCK"
+writeback-state.sh --delivery-id NNN --block "BLOCK"
 ```
 
-> **Helper target:** `writeback-task-status.sh --delivery-id NNN --block BLOCK`
+> **Helper target:** `writeback-state.sh --delivery-id NNN --block BLOCK`
 > writes the `### delivery-NNN` block under `## Delivery Gates` in the work
 > `STATE.md`. Task files are not modified. This is the canonical write target
 > per feature-004 Alignment Update and SPEC L240-260.
@@ -375,7 +375,7 @@ Update the file directly (no helper needed — single writer by construction).
 Update the `## Plan / Deliveries` row for this delivery:
 
 ```bash
-writeback-task-status.sh --task-id NNN --field Status --value "Done"
+writeback-state.sh --task-id NNN --field Status --value "Done"
 ```
 
 _(Uses the delivery's gate-record task id to mark the delivery row done.)_
@@ -414,10 +414,10 @@ delivery-NNN  ·  {N} tasks  ·  gate grade {grade}  ·  Done at {timestamp}
 ## Unit Tests for the AGGREGATE + Grade + Loopback Logic
 
 These tests verify the delivery-gate logic in isolation, without dispatching
-actual reviewer sub-agents. They use the `writeback-task-status.sh` helper
+actual reviewer sub-agents. They use the `writeback-state.sh` helper
 with test fixtures.
 
-Test harness: `tests/canonical/delivery-gate-aggregate.sh`
+Test harness: `tests/canonical/test-delivery-gate-aggregate.sh`
 
 See that file for the 6 test scenarios covering:
 1. AGGREGATE with existing `delivery-NNN-issues.md` (rows preserved)

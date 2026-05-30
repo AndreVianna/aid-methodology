@@ -222,7 +222,7 @@ ARTIFACTS UNDER REVIEW:
   - canonical/templates/reviewer-dispatch.md  (this doc, newly authored)
   - canonical/templates/generated-files.txt
   - canonical/scripts/kb/build-metrics.sh
-  - canonical/scripts/kb/build-index.sh
+  - canonical/scripts/kb/build-kb-index.sh
   - canonical/templates/knowledge-base/*.md  (17 templates with prepended frontmatter)
 
 CONTEXT:

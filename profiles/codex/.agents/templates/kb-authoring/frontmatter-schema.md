@@ -33,7 +33,7 @@ For generated docs:
 ---
 kb-category: primary       # or meta, depending on the doc's role
 source: generated
-generator: build-index.sh
+generator: build-kb-index.sh
 intent: |
   ...
 contracts: []
@@ -56,7 +56,7 @@ Per-document classification. Determines which review rubric applies.
 
 See [review-rubric.md](review-rubric.md) for per-category rubric details.
 
-**INDEX.md is `primary` + `source: generated`** — it carries load-bearing RAG-navigation knowledge (agents depend on it) but the file is produced by `build-index.sh` from each KB doc's `intent:` field. The combination routes to the "Full Primary + Build-Verify" rubric (see [review-rubric.md](review-rubric.md)) — both content correctness AND generator freshness are checked.
+**INDEX.md is `primary` + `source: generated`** — it carries load-bearing RAG-navigation knowledge (agents depend on it) but the file is produced by `build-kb-index.sh` from each KB doc's `intent:` field. The combination routes to the "Full Primary + Build-Verify" rubric (see [review-rubric.md](review-rubric.md)) — both content correctness AND generator freshness are checked.
 
 ### `source:` (required)
 
@@ -72,7 +72,7 @@ Production mode.
 Name of the build script (relative to `.agents/scripts/` or as a
 project-relative path). Listed in `.agents/templates/generated-files.txt` registry.
 
-Examples: `build-index.sh`, `build-metrics.sh`, `build-project-index.sh`.
+Examples: `build-kb-index.sh`, `build-metrics.sh`, `build-project-index.sh`.
 
 ### `intent:` (required)
 

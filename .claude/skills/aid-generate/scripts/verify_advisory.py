@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# verify_advisory.py — AID generator VERIFY-4b advisory conformance layer (task-024)
+# verify_advisory.py — AID generator advisory verify conformance layer
 #
 # Purpose:
 #   Non-blocking advisory check. For each vendor URL in external-sources.md:
@@ -140,14 +140,14 @@ def run_advisory(
     timeout: int = 5,
 ) -> dict[str, Any]:
     """
-    Run the VERIFY-4b advisory conformance layer.
+    Run the VERIFY (advisory) advisory conformance layer.
 
     Always returns a report dict (never raises for network errors).
     """
     canonical_root = Path(canonical_root)
     sources_md = canonical_root / ".aid" / "knowledge" / "external-sources.md"
 
-    print("VERIFY-4b: Running advisory conformance layer...")
+    print("VERIFY (advisory): Running advisory conformance layer...")
 
     # Load URL list
     try:
@@ -207,7 +207,7 @@ def run_advisory(
         "total_urls": len(entries),
         "results": results,
         "note": (
-            f"VERIFY-4b is advisory only — never blocks the run. "
+            f"VERIFY (advisory) is advisory only — never blocks the run. "
             f"{skipped_count} URL(s) skipped (pending fetch or unreachable). "
             f"Once external-sources.md URLs are fetched, conformance checks will activate."
         ),
@@ -230,7 +230,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         prog="verify_advisory.py",
         description=(
-            "VERIFY-4b: advisory conformance layer. "
+            "VERIFY (advisory): advisory conformance layer. "
             "Non-blocking — always exits 0. "
             "Skips URLs marked as pending fetch; runs conformance stub for fetched URLs."
         ),
@@ -239,7 +239,7 @@ def main() -> int:
     parser.add_argument(
         "--report-path",
         metavar="PATH",
-        default=".aid/work-002-canonical-generator/verify-4b-report.json",
+        default=".aid/work-002-canonical-generator/verify-advisory-report.json",
         help="Where to write the JSON report",
     )
     parser.add_argument(
@@ -257,9 +257,9 @@ def main() -> int:
 
     report = run_advisory(args.canonical_root, args.report_path, timeout=args.timeout)
 
-    print(f"\nVERIFY-4b: skipped={report['skipped_count']} checked={report['checked_count']} "
+    print(f"\nVERIFY (advisory): skipped={report['skipped_count']} checked={report['checked_count']} "
           f"warnings={report['warning_count']}")
-    print("VERIFY-4b: DONE (advisory layer — result is informational only)")
+    print("VERIFY (advisory): DONE (advisory layer — result is informational only)")
     return 0  # Always 0
 
 
@@ -335,7 +335,7 @@ def _self_test(canonical_root_arg: str) -> int:
             print(f"  - {f}", file=sys.stderr)
         return 1
 
-    print("\nOK: all VERIFY-4b self-tests passed")
+    print("\nOK: all VERIFY (advisory) self-tests passed")
     return 0  # Advisory: always 0 even in self-test context
 
 

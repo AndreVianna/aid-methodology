@@ -197,8 +197,8 @@ slash-command invocation. Every script has 4 byte-identical copies on disk
 
 | Script | Purpose |
 |--------|---------|
-| `writeback-task-status.sh` | Row-level write coordination for parallel pool dispatch (FR6) × per-area STATE writes; 4 modes (`--field`, `--findings`, `--block`, `--append-issue`); sentinel-file lock with retry — 69 tests (`tests/canonical/writeback-task-status.sh`) |
-| `compute-block-radius.sh` | BFS over task dependency graph — computes the failure block radius when a task fails — 17 tests (`tests/canonical/compute-block-radius.sh`) |
+| `writeback-task-status.sh` | Row-level write coordination for parallel pool dispatch (FR6) × per-area STATE writes; 4 modes (`--field`, `--findings`, `--block`, `--append-issue`); sentinel-file lock with retry — 69 tests (`tests/canonical/test-writeback-task-status.sh`) |
+| `compute-block-radius.sh` | BFS over task dependency graph — computes the failure block radius when a task fails — 17 tests (`tests/canonical/test-compute-block-radius.sh`) |
 | `complexity-score.sh` | Task complexity scoring (drives executor model tier selection) |
 
 ### 4d. `canonical/scripts/summarize/` — offline HTML KB viewer
@@ -221,7 +221,7 @@ slash-command invocation. Every script has 4 byte-identical copies on disk
 
 | Script | Purpose |
 |--------|---------|
-| `parse-recipe.sh` | Parses `canonical/recipes/*.md` recipe files (YAML front-matter + `## spec` / `## tasks` body blocks); 5 modes (`--list`, `--validate`, `--spec`, `--tasks`, `--render`) — 113 tests (largest test file at `tests/canonical/parse-recipe.sh`) |
+| `parse-recipe.sh` | Parses `canonical/recipes/*.md` recipe files (YAML front-matter + `## spec` / `## tasks` body blocks); 5 modes (`--list`, `--validate`, `--spec`, `--tasks`, `--render`) — 113 tests (largest test file at `tests/canonical/test-parse-recipe.sh`) |
 
 ### 4f. `canonical/scripts/` (root)
 
@@ -233,11 +233,11 @@ slash-command invocation. Every script has 4 byte-identical copies on disk
 
 | Test file | Asserts |
 |-----------|------|
-| `tests/canonical/parse-recipe.sh` | 113 tests for `parse-recipe.sh` |
-| `tests/canonical/writeback-task-status.sh` | 69 tests for `writeback-task-status.sh` |
-| `tests/canonical/delivery-gate-aggregate.sh` | 18 tests for delivery-gate aggregator |
-| `tests/canonical/compute-block-radius.sh` | 17 tests for BFS block-radius |
-| `tests/canonical/read-setting.sh` | settings resolution |
+| `tests/canonical/test-parse-recipe.sh` | 113 tests for `parse-recipe.sh` |
+| `tests/canonical/test-writeback-task-status.sh` | 69 tests for `writeback-task-status.sh` |
+| `tests/canonical/test-delivery-gate-aggregate.sh` | 18 tests for delivery-gate aggregator |
+| `tests/canonical/test-compute-block-radius.sh` | 17 tests for BFS block-radius |
+| `tests/canonical/test-read-setting.sh` | settings resolution |
 
 See `tests/README.md` for the full suite list and run instructions.
 
@@ -278,7 +278,7 @@ placeholders (per `canonical/templates/recipe-template.md:97-100`).
 
 Consumed by `canonical/scripts/interview/parse-recipe.sh` during `/aid-interview` TRIAGE → recipe-offer.
 
-**Test coverage:** indirect — recipe behavior is exercised by `tests/canonical/parse-recipe.sh`. (`tests/skills/lite-subpaths.sh` was deleted in cycle-1 per Q6.)
+**Test coverage:** indirect — recipe behavior is exercised by `tests/canonical/test-parse-recipe.sh`. (`tests/skills/lite-subpaths.sh` was deleted in cycle-1 per Q6.)
 
 ---
 

@@ -68,7 +68,7 @@ changelog:
 - **`/aid-config`** — scaffolds new KB docs with frontmatter from [frontmatter-schema.md](frontmatter-schema.md) seed
 - **`/aid-summarize`** — extracts `intent:` field from each doc to populate section descriptions in `knowledge-summary.html`
 - **`discovery-reviewer`** — validates frontmatter compliance; spot-checks `contracts:` against disk; flags inline T3/T4 markers in primary-category docs (REVIEW state of `/aid-discover`)
-- **`build-index.sh`** — composes `INDEX.md` from each doc's `intent:` + `kb-category:` + path
+- **`build-kb-index.sh`** — composes `INDEX.md` from each doc's `intent:` + `kb-category:` + path
 - **`build-metrics.sh`** — produces `metrics.md` with all numeric facts (T3) the project tracks
 - **`build-project-index.sh`** — produces `.aid/generated/project-index.md`, a build-time inventory of repository files (used by `/aid-discover` Step 0c). Classified `meta + source: generated` → Build-Verify Only.
 
@@ -85,7 +85,7 @@ extend the canonical rubric with project-specific lint rules. See
 
 - `.cursor/agents/discovery-reviewer/AGENT.md` — adversarial review (semantic + frontmatter + spot-check; the sole KB-quality enforcer)
 - `.cursor/scripts/kb/build-metrics.sh` — T3 fact generator
-- `.cursor/scripts/kb/build-index.sh` — INDEX.md generator
+- `.cursor/scripts/kb/build-kb-index.sh` — INDEX.md generator
 - `.cursor/scripts/kb/build-project-index.sh` — project-index.md generator
 - `.cursor/templates/generated-files.txt` — registry of all generated files + build commands
 - `.cursor/templates/knowledge-base/*.md` — KB doc templates pre-filled with frontmatter

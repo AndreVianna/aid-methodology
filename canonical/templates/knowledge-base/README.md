@@ -14,7 +14,7 @@ The Knowledge Base (`.aid/knowledge/`) is the gravitational center of every AID 
 
 ## Documents
 
-> **Note:** `INDEX.md` is auto-generated at `.aid/knowledge/INDEX.md` by `build-index.sh` from each KB doc's `intent:` frontmatter field. There is no template for it here — adopters should not hand-author it.
+> **Note:** `INDEX.md` is auto-generated at `.aid/knowledge/INDEX.md` by `build-kb-index.sh` from each KB doc's `intent:` frontmatter field. There is no template for it here — adopters should not hand-author it.
 
 | Template | Purpose | Source |
 |----------|---------|--------|

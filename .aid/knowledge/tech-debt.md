@@ -53,7 +53,7 @@ changelog:
 | H6 | verify-claims.sh deletion follow-up | verify-claims.sh deleted; discovery-reviewer now owns FM+contract verification semantically — reviewer prompt coverage must be confirmed explicitly | cycle-1 inline refactor; canonical/agents/discovery-reviewer/AGENT.md | High | S | P2 |
 | M4 | Test Discoverability | No aggregator script: each of the 7 test suites must be invoked manually with the right path; no way to run "all tests" with one command | `tests/README.md` (lists each separately); no `Makefile`/`task`/`npm test` | Medium | S | P3 |
 | M6 | Test Refactor | 7 canonical/ test suites need: behavior-named files, shared test-utility extraction, consistent failure messages, optional aggregator | `tests/canonical/*.sh` (7 suites) | Medium | M | P3 |
-| L1 | Source Bloat | 4 files >500 lines under canonical/methodology (largest: `methodology/aid-methodology.md` 1,070, `tests/canonical/parse-recipe.sh` 1,002, `canonical/scripts/execute/writeback-task-status.sh` 627, `canonical/skills/aid-execute/references/state-execute.md` 629) | various | Low | M | P3 |
+| L1 | Source Bloat | 4 files >500 lines under canonical/methodology (largest: `methodology/aid-methodology.md` 1,070, `tests/canonical/test-parse-recipe.sh` 1,002, `canonical/scripts/execute/writeback-task-status.sh` 627, `canonical/skills/aid-execute/references/state-execute.md` 629) | various | Low | M | P3 |
 | L2 | Test Coverage Gap | Zero tests for PowerShell paths (`setup.ps1`, `concatenate.ps1`), `.mjs` validators, and the `setup.sh` install flow | `test-landscape.md` Gaps section | Low | L | P3 |
 | L3 | Allowlist Breadth | `.claude/settings.json` Bash allowlist includes broad `Bash(rm *)` and `Bash(python *)` without path scoping | `.claude/settings.json:5-14` | Low | XS | P3 |
 | L4 | Versioning | AID has no version (no VERSION file, no semver); current position is "continuous master" | repo-wide; absence confirmed by project-index | Low | S | P3 |
@@ -85,7 +85,7 @@ changelog:
 **Type:** Source Size / Complexity
 **Evidence (from `wc -l` over `canonical/`, `methodology/`, `tests/`):**
 - `methodology/aid-methodology.md` — 1,070 lines (the load-bearing spec; legitimately large)
-- `tests/canonical/parse-recipe.sh` — 1,002 lines (113 tests; test-file size is justified)
+- `tests/canonical/test-parse-recipe.sh` — 1,002 lines (113 tests; test-file size is justified)
 - `canonical/scripts/execute/writeback-task-status.sh` — 627 lines (already tested by 69-test suite)
 - `canonical/skills/aid-execute/references/state-execute.md` — 629 lines
 - Note: `canonical/scripts/kb/verify-claims.sh` (695 lines, previously listed here) was deleted in cycle-1; its deletion is tracked in H6.
@@ -260,7 +260,7 @@ changelog:
   - `canonical/templates/knowledge-base/tech-debt.md` (1)
   - These are all *template-explanatory* mentions (e.g., "fill in TODO sections"), not unresolved code TODOs. Net **0 unresolved code TODOs**.
 - **Files > 500 lines:** 4 (listed in L1; verify-claims.sh removed from list post-deletion)
-- **Files > 1,000 lines:** 2 (`methodology/aid-methodology.md`, `tests/canonical/parse-recipe.sh`)
+- **Files > 1,000 lines:** 2 (`methodology/aid-methodology.md`, `tests/canonical/test-parse-recipe.sh`)
 - **Test-to-code ratio (helper-script subset):** ⚠️ **Inferred from file counts.** There are now 7 canonical helper suites (the original 5 plus `fetch-mermaid.sh` and `grade.sh`). Lines-of-test for all 7 suites sum to **3,625 lines** (`wc -l tests/canonical/*.sh`) against ~2,500 lines of canonical helper code — ratio **≈ 1.45×**. Healthy for shell helpers.
 - **Open PRs:** 0 (the previously-cited PR #16 "aid-config simplification" merged 2026-05-27 per `git log --oneline -20`). Note: the dispatcher's note referenced PR #16 as "yet to merge" — this is stale relative to the current commit history.
 - **Branches behind master:** current branch is `kb-overhaul`; recent merges suggest active KB work.

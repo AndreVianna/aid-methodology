@@ -170,9 +170,9 @@ Source: `.aid/generated/project-index.md:17-29` (Language Breakdown table).
 | `canonical/scripts/summarize/writeback-state.sh` | 173 | Writes summarize-phase state back |
 | `canonical/scripts/summarize/contrast-check.mjs` | 151 | Color-contrast accessibility checker |
 | `canonical/scripts/summarize/stale-check.sh` | 107 | Detects stale KB sections |
-| `canonical/scripts/summarize/preflight.sh` | 101 | Summarize preflight check |
+| `canonical/scripts/summarize/summarize-preflight.sh` | 101 | Summarize preflight check |
 | `canonical/scripts/summarize/fetch-mermaid.sh` | 77 | Fetches Mermaid CLI assets |
-| `canonical/scripts/kb/preflight.sh` | 46 | KB pipeline preflight |
+| `canonical/scripts/kb/discover-preflight.sh` | 46 | KB pipeline preflight |
 
 Each script above has 4 byte-identical copies on disk: the canonical source, the dogfood `.claude/scripts/` copy, plus copies in each of the 3 profile install trees.
 
@@ -180,11 +180,11 @@ Each script above has 4 byte-identical copies on disk: the canonical source, the
 
 | Path | Lines | Purpose |
 |------|-------|---------|
-| `tests/canonical/parse-recipe.sh` | 1,002 | Largest test file. 113 tests for `parse-recipe.sh` (runtime ~150s — needs timeout ≥180s) |
-| `tests/canonical/writeback-task-status.sh` | 535 | 69 tests for `writeback-task-status.sh` |
-| `tests/canonical/delivery-gate-aggregate.sh` | 535 | 18 tests for the delivery-gate aggregator |
-| `tests/canonical/compute-block-radius.sh` | 345 | 17 tests for BFS block-radius |
-| `tests/canonical/read-setting.sh` | 360 | `read-setting.sh` test suite |
+| `tests/canonical/test-parse-recipe.sh` | 1,002 | Largest test file. 113 tests for `parse-recipe.sh` (runtime ~150s — needs timeout ≥180s) |
+| `tests/canonical/test-writeback-task-status.sh` | 535 | 69 tests for `writeback-task-status.sh` |
+| `tests/canonical/test-delivery-gate-aggregate.sh` | 535 | 18 tests for the delivery-gate aggregator |
+| `tests/canonical/test-compute-block-radius.sh` | 345 | 17 tests for BFS block-radius |
+| `tests/canonical/test-read-setting.sh` | 360 | `read-setting.sh` test suite |
 | `tests/README.md` | — | Suite inventory + run instructions |
 
 Tests `tests/skills/` (skill-level e2e) and `tests/canonical/pool-dispatch.sh` were deleted in cycle-1 per Q6 resolution. See `tests/README.md` for the current suite list.

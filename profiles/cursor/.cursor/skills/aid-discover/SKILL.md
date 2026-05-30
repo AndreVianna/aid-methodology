@@ -19,7 +19,7 @@ Includes a built-in quality gate that reviews, grades, and fixes KB documents.
 
 ## ⚠️ Pre-flight Checks
 
-Run `bash .cursor/scripts/kb/preflight.sh .aid/knowledge/` to verify:
+Run `bash .cursor/scripts/kb/discover-preflight.sh .aid/knowledge/` to verify:
 1. `.aid/knowledge/STATE.md` exists (init has run)
 2. Not in Plan Mode (subagents need write access)
 

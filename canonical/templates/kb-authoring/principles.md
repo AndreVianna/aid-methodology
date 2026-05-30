@@ -102,7 +102,7 @@ Two kinds of non-curated files exist:
   registered scripts. Each file MUST carry an HTML-style comment at the top:
 
   ```html
-  <!-- AUTO-GENERATED 2026-05-27T12:34:56Z by build-index.sh — DO NOT EDIT — regenerate with `bash canonical/scripts/kb/build-index.sh` -->
+  <!-- AUTO-GENERATED 2026-05-27T12:34:56Z by build-kb-index.sh — DO NOT EDIT — regenerate with `bash canonical/scripts/kb/build-kb-index.sh` -->
   ```
 
   The `source: generated` + `generator: <script>` frontmatter fields also declare this.

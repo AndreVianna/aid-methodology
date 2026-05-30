@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# test_manifest_safety.py — EmissionManifest safety-boundary tests (task-022)
+# test_manifest_safety.py — EmissionManifest safety-boundary tests
 #
 # Purpose:
 #   Validates the two safety-boundary invariants of the emission manifest:
@@ -22,14 +22,14 @@ import tempfile
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Add script directory to sys.path so harness / profile can be imported
+# Add script directory to sys.path so render_lib / aid_profile can be imported
 # directly (maintainer-tooling; no package install needed)
 # ---------------------------------------------------------------------------
 _SCRIPT_DIR = Path(__file__).parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
-from harness import EmissionManifest, sha256_hex  # noqa: E402
+from render_lib import EmissionManifest, sha256_hex  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -216,7 +216,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         prog="test_manifest_safety.py",
         description=(
-            "EmissionManifest safety-boundary tests (task-022). "
+            "EmissionManifest safety-boundary tests. "
             "Verifies that the deletion pass never touches user-created files "
             "and correctly cascades canonical removals to install-tree deletions."
         ),

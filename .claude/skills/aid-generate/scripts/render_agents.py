@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# render_agents.py — AID canonical-generator agent renderer (task-019)
+# render_agents.py — AID canonical-generator agent renderer
 #
 # Purpose:
 #   Render canonical/agents/<name>/AGENT.md into per-tool install trees using the
@@ -25,7 +25,7 @@ if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
 from aid_profile import load_profile, validate, Profile, ModelTierSimple, ModelTierDetailed  # noqa: E402
-from harness import (  # noqa: E402
+from render_lib import (  # noqa: E402
     read_canonical_file,
     write_output_file,
     substitute_filenames,
@@ -249,12 +249,12 @@ def _render_agent_for_profile(
 
     # Apply filename substitution to body, then install-path rewrite.
     # Policy: every text-emitting renderer (render_skills, render_templates,
-    # render_scripts, render_agents, render_recipes) MUST apply BOTH
+    # render_canonical_scripts, render_agents, render_recipes) MUST apply BOTH
     # substitute_filenames AND rewrite_install_paths in that order. Any
     # canonical/{scripts,templates,skills,agents,rules,recipes}/ reference in
     # a body becomes <install_root>/<dir>/ in the rendered output so adopter
     # projects (which have no canonical/ at root) can resolve the paths.
-    # Adding a new renderer? Apply both. (See harness.py rewrite_install_paths
+    # Adding a new renderer? Apply both. (See render_lib.py rewrite_install_paths
     # docstring.)
     body = substitute_filenames(body, profile.filename_map)
     body = rewrite_install_paths(body, profile.layout.install_root())

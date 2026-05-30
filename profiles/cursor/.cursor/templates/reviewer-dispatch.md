@@ -222,7 +222,7 @@ ARTIFACTS UNDER REVIEW:
   - .cursor/templates/reviewer-dispatch.md  (this doc, newly authored)
   - .cursor/templates/generated-files.txt
   - .cursor/scripts/kb/build-metrics.sh
-  - .cursor/scripts/kb/build-index.sh
+  - .cursor/scripts/kb/build-kb-index.sh
   - .cursor/templates/knowledge-base/*.md  (17 templates with prepended frontmatter)
 
 CONTEXT:
