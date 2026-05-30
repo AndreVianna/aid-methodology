@@ -21,26 +21,25 @@ changelog:
 | Property | Value |
 |----------|-------|
 | **Root directory** | {path} |
-| **Total files** | {count} |
-| **Primary language(s)** | {languages with approximate %} |
+| **Primary language(s)** | {languages, most-used first} |
 | **Build system** | {npm/maven/dotnet/cargo/etc.} |
 
 ---
 
 ## Directory Tree
 
-> Top 3-4 levels with annotations. Include file counts per major directory.
+> Top 3-4 levels with annotations. Describe each major directory's purpose (file counts drift — let the reader run `find`).
 
 ```
 project-root/
-├── src/                    # ({N} files) Main source code
-│   ├── {module-a}/         # ({N} files) {purpose}
-│   ├── {module-b}/         # ({N} files) {purpose}
-│   └── {shared}/           # ({N} files) {purpose}
-├── tests/                  # ({N} files) Test suites
-├── docs/                   # ({N} files) Documentation
-├── {config-dir}/           # ({N} files) Configuration
-└── {other}/                # ({N} files) {purpose}
+├── src/                    # Main source code
+│   ├── {module-a}/         # {purpose}
+│   ├── {module-b}/         # {purpose}
+│   └── {shared}/           # {purpose}
+├── tests/                  # Test suites
+├── docs/                   # Documentation
+├── {config-dir}/           # Configuration
+└── {other}/                # {purpose}
 ```
 
 ---

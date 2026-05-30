@@ -45,9 +45,8 @@ changelog:
 
 | Module | Unit Tests | Integration Tests | E2E | Overall |
 |--------|-----------|------------------|-----|---------|
-| {module} | {%} | {%} | {covered / not} | {%} |
+| {module} | {✅ / ⚠️ / ❌} | {✅ / ⚠️ / ❌} | {covered / not} | {✅ / ⚠️ / ❌} |
 
-**Total coverage:** {overall %}
 **Coverage target:** {target % or "not defined"}
 **Coverage enforcement:** {CI fails below X% / advisory only / not enforced}
 
@@ -55,27 +54,27 @@ changelog:
 
 ## Test Types Present
 
-| Type | Present | Volume | Notes |
-|------|---------|--------|-------|
-| Unit | {✅ / ❌} | {~n tests} | {fast / slow, any issues?} |
-| Integration | {✅ / ❌} | {~n tests} | {requires Docker / requires DB / other} |
-| E2E | {✅ / ❌} | {~n tests} | {Playwright / Cypress / manual / other} |
-| Performance | {✅ / ❌} | {~n tests} | {k6 / JMeter / other} |
-| Contract | {✅ / ❌} | {~n tests} | {Pact / other} |
-| Snapshot | {✅ / ❌} | {~n tests} | {for UI / serialization} |
+| Type | Present | Notes |
+|------|---------|-------|
+| Unit | {✅ / ❌} | {fast / slow, any issues?} |
+| Integration | {✅ / ❌} | {requires Docker / requires DB / other} |
+| E2E | {✅ / ❌} | {Playwright / Cypress / manual / other} |
+| Performance | {✅ / ❌} | {k6 / JMeter / other} |
+| Contract | {✅ / ❌} | {Pact / other} |
+| Snapshot | {✅ / ❌} | {for UI / serialization} |
 
 ---
 
 ## CI/CD Pipeline
 
-| Stage | Tool | Trigger | Duration (approx.) |
-|-------|------|---------|---------------------|
-| {Build} | {GitHub Actions / Azure DevOps / Jenkins} | {PR / push to main} | {~Xs} |
-| {Unit Tests} | {same} | {PR / push} | {~Xs} |
-| {Integration Tests} | {same} | {PR / merge} | {~Xs} |
-| {E2E Tests} | {same} | {merge to main / deploy} | {~Xs} |
-| {Deploy Staging} | {same} | {merge to main} | {~Xs} |
-| {Deploy Production} | {same} | {manual approval} | {~Xs} |
+| Stage | Tool | Trigger |
+|-------|------|---------|
+| {Build} | {GitHub Actions / Azure DevOps / Jenkins} | {PR / push to main} |
+| {Unit Tests} | {same} | {PR / push} |
+| {Integration Tests} | {same} | {PR / merge} |
+| {E2E Tests} | {same} | {merge to main / deploy} |
+| {Deploy Staging} | {same} | {merge to main} |
+| {Deploy Production} | {same} | {manual approval} |
 
 **Pipeline config location:** {path/to/.github/workflows/ or azure-pipelines.yml}
 

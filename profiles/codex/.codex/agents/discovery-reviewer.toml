@@ -232,7 +232,7 @@ product names with explanations.
 **Red flags**: Generic programming terms. Missing project-specific vocabulary.
 
 ### test-landscape.md
-Must have: frameworks, test types, coverage metrics/goals, CI integration, which modules
+Must have: frameworks, test types, coverage target/enforcement (if defined), CI integration, which modules
 have real tests vs placeholders, test gaps with severity.
 Must have: **Test Commands** section with exact commands to run all unit tests, per-module
 tests, and coverage reports. These are critical for aid-execute — agents need runnable

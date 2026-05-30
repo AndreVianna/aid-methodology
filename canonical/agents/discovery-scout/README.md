@@ -8,7 +8,7 @@ The Scout is the pre-pass. It maps the territory before the specialized analysts
 
 ## What It Does
 
-1. **Maps project structure** — folder layout, file counts by language, entry points, monorepo vs single-package.
+1. **Maps project structure** — folder layout, languages used, entry points, monorepo vs single-package.
 2. **Catalogs deployment infrastructure** — CI/CD pipelines, Docker, IaC (Terraform, Pulumi, CDK), environment configs, monitoring setup.
 3. **Reads external documentation** — paths registered during `aid-config` (architecture docs, wikis, design PDFs).
 4. **Surfaces unknowns** — what the code cannot tell us. Open questions are written to `.aid/knowledge/STATE.md` `## Q&A (Pending)` section for human resolution.

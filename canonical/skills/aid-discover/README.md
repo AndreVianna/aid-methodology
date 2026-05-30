@@ -120,7 +120,7 @@ Record in `.aid/knowledge/pipeline-contracts.md` and `.aid/knowledge/integration
 
 - Test frameworks in use.
 - Test types present (unit, integration, E2E, performance).
-- Coverage metrics (if CI reports exist).
+- Coverage target/enforcement (if CI reports exist).
 - CI/CD pipeline description.
 
 Record in `.aid/knowledge/test-landscape.md`.
