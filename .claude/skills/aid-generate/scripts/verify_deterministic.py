@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# verify_deterministic.py — AID generator VERIFY-4a deterministic hard gate (task-023)
+# verify_deterministic.py — AID generator deterministic verify hard gate
 #
 # Purpose:
 #   Three sub-checks that MUST all pass before a render run is considered valid:
@@ -257,7 +257,7 @@ def _check_frontmatter_parse(canonical_root: Path, profiles: list[Profile]) -> d
     """
     Render into a temp dir; for every *.md, parse frontmatter.
     For every *.toml, load with tomllib.
-    Any parse failure is a VERIFY-4a fail.
+    Any parse failure is a VERIFY (deterministic) fail.
     """
     offenders: list[str] = []
 
@@ -314,7 +314,7 @@ def run_verify(
     report_path: str | Path | None = None,
 ) -> tuple[bool, dict[str, Any]]:
     """
-    Run all three VERIFY-4a sub-checks.
+    Run all three VERIFY (deterministic) sub-checks.
 
     Returns
     -------
@@ -324,7 +324,7 @@ def run_verify(
     canonical_root = Path(canonical_root)
     profiles = _load_profiles(canonical_root)
 
-    print("VERIFY-4a: Running deterministic hard gate...")
+    print("VERIFY (deterministic): Running deterministic hard gate...")
     print(f"  Profiles: {[p.name for p in profiles]}")
 
     results: list[dict[str, Any]] = []
@@ -378,7 +378,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         prog="verify_deterministic.py",
         description=(
-            "VERIFY-4a: deterministic hard gate. "
+            "VERIFY (deterministic): deterministic hard gate. "
             "Runs byte-identical re-render, file-presence audit, and frontmatter parse. "
             "Exit 0 = all pass; exit 1 = any failure."
         ),
@@ -387,8 +387,8 @@ def main() -> int:
     parser.add_argument(
         "--report-path",
         metavar="PATH",
-        default=".aid/work-002-canonical-generator/verify-4a-report.json",
-        help="Where to write the JSON report (default: .aid/work-002-canonical-generator/verify-4a-report.json)",
+        default=".aid/work-002-canonical-generator/verify-deterministic-report.json",
+        help="Where to write the JSON report (default: .aid/work-002-canonical-generator/verify-deterministic-report.json)",
     )
     parser.add_argument("--self-test", action="store_true", help="Run failure-mode smoke tests")
     args = parser.parse_args()
@@ -399,10 +399,10 @@ def main() -> int:
     passed, report = run_verify(args.canonical_root, args.report_path)
 
     if passed:
-        print("\nVERIFY-4a: ALL CHECKS PASSED")
+        print("\nVERIFY (deterministic): ALL CHECKS PASSED")
         return 0
     else:
-        print("\nVERIFY-4a: FAILED", file=sys.stderr)
+        print("\nVERIFY (deterministic): FAILED", file=sys.stderr)
         for check in report["checks"]:
             if not check["passed"]:
                 print(f"  FAIL: {check['name']}", file=sys.stderr)
@@ -507,7 +507,7 @@ def _self_test(canonical_root_arg: str) -> int:
             print(f"  - {f}", file=sys.stderr)
         return 1
 
-    print("\nOK: all VERIFY-4a self-tests passed (3 smoke tests)")
+    print("\nOK: all VERIFY (deterministic) self-tests passed (3 smoke tests)")
     return 0
 
 

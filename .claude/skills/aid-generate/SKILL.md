@@ -73,7 +73,7 @@ Print: `[State: LOAD]`
 For each profile in `SELECTED_PROFILES`, load and validate the profile TOML:
 
 ```bash
-python .claude/skills/aid-generate/scripts/profile.py --profile profiles/{tool}.toml
+python .claude/skills/aid-generate/scripts/aid_profile.py --profile profiles/{tool}.toml
 ```
 
 Expected output: `OK: profiles/{tool}.toml — profile '{tool}' is valid`
@@ -177,30 +177,30 @@ Print: `[State: VERIFY]`
 
 ## Mode: VERIFY
 
-### VERIFY-4a (hard gate)
+### VERIFY (deterministic) (hard gate)
 
 Run the deterministic gate:
 
 ```bash
 python .claude/skills/aid-generate/scripts/verify_deterministic.py \
   --canonical-root . \
-  --report-path .aid/work-002-canonical-generator/verify-4a-report.json
+  --report-path .aid/work-002-canonical-generator/verify-deterministic-report.json
 ```
 
-If the exit code is non-zero: **abort**. Print the verify-4a-report.json offenders.
+If the exit code is non-zero: **abort**. Print the verify-deterministic-report.json offenders.
 Do not proceed to REPORT.
 
 In dry-run mode: skip the in-tree write of the manifest and run verify against the
 scratch directory instead of the live install trees.
 
-### VERIFY-4b (advisory)
+### VERIFY (advisory) (advisory)
 
 Run the advisory conformance check:
 
 ```bash
 python .claude/skills/aid-generate/scripts/verify_advisory.py \
   --canonical-root . \
-  --report-path .aid/work-002-canonical-generator/verify-4b-report.json
+  --report-path .aid/work-002-canonical-generator/verify-advisory-report.json
 ```
 
 Always exits 0. Capture `skipped_count` and `warning_count` from the JSON report for REPORT.
@@ -232,8 +232,8 @@ Per-profile summary:
     Files deleted: {n}
     Manifest:      cursor/emission-manifest.jsonl
 
-VERIFY-4a: PASS
-VERIFY-4b: skipped_count={n} (URLs pending fetch) | warning_count={n}
+VERIFY (deterministic): PASS
+VERIFY (advisory): skipped_count={n} (URLs pending fetch) | warning_count={n}
 
 Git diff:
 [output of: git diff --stat -- claude-code/ codex/ cursor/]
@@ -255,7 +255,7 @@ Before calling the run complete, confirm:
 - [ ] `canonical/` completeness verified: 10 skills, 22 agents, non-empty templates
 - [ ] All three renderers completed without errors
 - [ ] `emission-manifest.jsonl` written for each rendered profile
-- [ ] VERIFY-4a: byte-identical re-render PASS, presence audit PASS, frontmatter parse PASS
-- [ ] VERIFY-4b: `skipped_count` surfaced in REPORT (currently 8 — all URLs pending fetch)
+- [ ] VERIFY (deterministic): byte-identical re-render PASS, presence audit PASS, frontmatter parse PASS
+- [ ] VERIFY (advisory): `skipped_count` surfaced in REPORT (currently 8 — all URLs pending fetch)
 - [ ] REPORT printed to stdout
 - [ ] In live mode: `git diff --stat` shows only install-tree paths (no canonical/ changes)

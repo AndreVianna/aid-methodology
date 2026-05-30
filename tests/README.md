@@ -38,7 +38,7 @@ On Windows, run from Git Bash (these are POSIX bash scripts).
 ## What's NOT tested
 
 - The orchestration skills themselves (`/aid-discover`, `/aid-execute`, etc.) are prompt-driven and hard to test without an AI host; the `discovery-reviewer` sub-agent provides the closest thing to integration verification by adversarially grading KB output each cycle.
-- The renderer (`run_generator.py`) — its own VERIFY-4a check runs at end of every render and exits 1 on failure.
+- The renderer (`run_generator.py`) — its own deterministic verify check runs at end of every render and exits 1 on failure.
 - Sub-agent definitions — see `canonical/agents/*/AGENT.md`.
 - Cross-tool consistency (Cursor vs Claude Code vs Codex) — covered by the renderer's byte-identity assertion across the 3 profiles.
 - End-to-end pipeline behavior (Discover → Interview → Specify → Plan → Detail → Execute → Deploy → Monitor) — exercised by dogfooding (this repo IS the test suite for the methodology) rather than scripted E2E tests.

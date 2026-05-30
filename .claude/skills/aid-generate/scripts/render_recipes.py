@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# render_recipes.py — AID canonical-generator recipe renderer (task-024 back-port)
+# render_recipes.py — AID canonical-generator recipe renderer
 #
 # Purpose:
 #   Copy the entire canonical/recipes/ subtree into the profile's recipes

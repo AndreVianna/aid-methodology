@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-# profile.py — AID canonical-generator profile parser
+# aid_profile.py — AID canonical-generator profile parser
 #
 # Purpose:
 #   Load a per-tool profile TOML and expose it as a typed Profile dataclass.
 #   Run `validate(profile)` to surface schema problems before rendering begins.
 #
 # Usage:
-#   python profile.py --profile profiles/claude-code.toml
+#   python aid_profile.py --profile profiles/claude-code.toml
 #   python -c "from aid_profile import load_profile, validate; p = load_profile('profiles/claude-code.toml'); print(validate(p))"
 #
 # Requirements: Python 3.11+ (tomllib is stdlib from 3.11)
@@ -454,7 +454,7 @@ def validate(profile: Profile) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        prog="profile.py",
+        prog="aid_profile.py",
         description=(
             "Load and validate an AID generator profile TOML. "
             "Exits 0 if valid, 1 if validation errors are found."
