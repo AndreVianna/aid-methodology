@@ -63,6 +63,16 @@ jobs:
         # Committed 100644 (the repo is authored on Windows); several suites invoke
         # their SUT directly (e.g. "$WRITEBACK"), which needs the exec bit on Linux.
         run: find canonical/scripts tests/canonical -name '*.sh' -exec chmod +x {} +
+      - name: Assert test runtimes present (node + pwsh)
+        shell: bash
+        # The .mjs and *-ps1 suites skip (exit 0) if their runtime is missing — good for
+        # local dev portability, but in CI a silent skip would be a false green. node is
+        # pinned above; pwsh ships in the ubuntu image. Fail loudly here if either is gone
+        # so the node/PowerShell coverage can never be silently bypassed.
+        run: |
+          command -v node >/dev/null || { echo "::error::node missing — .mjs suites would skip"; exit 1; }
+          command -v pwsh >/dev/null || { echo "::error::pwsh missing — PowerShell suites would skip"; exit 1; }
+          echo "node $(node --version) | $(pwsh --version)"
       - name: Run all canonical suites
         shell: bash
         # Single entrypoint shared with local dev (`bash tests/run-all.sh`); discovers
