@@ -70,7 +70,7 @@ The closest analog is the **AID parallel pool dispatch model** (work-001 feature
 
 ## CI / CD Pipeline
 
-**No CI exists.** See `tech-debt.md H2` and `test-landscape.md § CI/CD Integration` for the full statement.
+**CI is advisory** — `.github/workflows/test.yml` (added 2026-05-29) runs render-drift + the 7 suites + generator self-tests + hygiene on every PR/push, but is not yet a required check (branch protection pending). See `tech-debt.md H2` and `test-landscape.md`.
 
 There is also no **release pipeline** — the project distributes via:
 1. End users cloning the repo and running `setup.sh` / `setup.ps1` against a target directory, OR
@@ -201,7 +201,7 @@ These directories function as "infrastructure" at runtime — they hold ephemera
 |------|---------|-------------|
 | `.aid/knowledge/` | Knowledge Base output (this scout's target) | **No** — KB is committed |
 | `.aid/.heartbeat/` | Per-subagent heartbeat files (visibility patch L3) | Yes — `.gitignore:46-47` (explicit) |
-| `.aid/.temp/` | Scratch | Yes — `.gitignore:21` (via `*.temp` glob — fragile per `tech-debt.md` M3) |
+| `.aid/.temp/` | Scratch | Yes — explicit `.gitignore` entry (`.aid/.temp/`) |
 | `.aid/generated/` | Build outputs the maintainer wants to track (`project-index.md`) | **No** — selectively committed |
 | `.aid/templates/` | Runtime template copies | **No** — committed |
 | `.aid/settings.yml` | AID pipeline configuration (single source of truth) | **No** — committed |

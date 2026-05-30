@@ -1301,7 +1301,7 @@ flowchart TB
 	<header>
 		<span class="eyebrow">Tests</span>
 		<h2>Test Landscape</h2>
-		<p class="lede">7 unit/integration test suites under <code>tests/canonical/</code>, all deterministic Bash. 273 total assertions covering the canonical helper scripts that AID skills depend on. No CI — tests are run manually before merging. (per test-landscape.md)</p>
+		<p class="lede">7 unit/integration test suites under <code>tests/canonical/</code>, all deterministic Bash. 273 total assertions covering the canonical helper scripts that AID skills depend on. CI runs the suites on PR/push (`.github/workflows/test.yml`) but is advisory — not yet a required check. (per test-landscape.md)</p>
 	</header>
 
 	<div class="tbl-wrap">
@@ -1362,7 +1362,7 @@ flowchart TB
 
 	<div class="callout warn" style="margin-top:1rem;">
 		<h4>Coverage gaps</h4>
-		<p>No tests for PowerShell paths (<code>setup.ps1</code>, <code>concatenate.ps1</code>), <code>.mjs</code> validators, or the <code>setup.sh</code> install flow. No CI (see tech-debt H2). No skill-level e2e tests — skills are verified by dogfooding. (per test-landscape.md §Coverage gaps)</p>
+		<p>No tests for PowerShell paths (<code>setup.ps1</code>, <code>concatenate.ps1</code>), <code>.mjs</code> validators, or the <code>setup.sh</code> install flow. CI is advisory, not yet enforced (see tech-debt H2). No skill-level e2e tests — skills are verified by dogfooding. (per test-landscape.md §Coverage gaps)</p>
 	</div>
 </section>
 
@@ -1371,7 +1371,7 @@ flowchart TB
 	<header>
 		<span class="eyebrow">Debt</span>
 		<h2>Tech Debt</h2>
-		<p class="lede">Overall debt level: Medium–High. The codebase is well-organized (Thin-Router convention, single canonical source, 7-suite test coverage) but operates with zero pre-merge automation and several structural gaps. <strong>Zero Critical items remain.</strong> Four High items, four Medium, five Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
+		<p class="lede">Overall debt level: Medium–High. The codebase is well-organized (Thin-Router convention, single canonical source, 7-suite test coverage) but operates with only advisory (non-blocking) CI and several structural gaps. <strong>Zero Critical items remain.</strong> Four High items, three Medium, five Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
@@ -1387,8 +1387,8 @@ flowchart TB
 		</div>
 		<div class="card">
 			<div class="kicker">Medium</div>
-			<div class="stat" style="color:var(--info);">4</div>
-			<div class="stat-sub">H4, M3, M4, M6</div>
+			<div class="stat" style="color:var(--info);">3</div>
+			<div class="stat-sub">H4, M4, M6</div>
 		</div>
 		<div class="card">
 			<div class="kicker">Low</div>
@@ -1398,9 +1398,9 @@ flowchart TB
 	</div>
 
 	<div class="debt-item high">
-		<div class="title">H2 — No CI</div>
+		<div class="title">H2 — CI present but not enforced</div>
 		<div class="meta">Type: Process · Effort: M · Priority: P2</div>
-		<p>Zero pre-merge automation. Every test/verify pass is manual. No <code>.github/</code>, no <code>.gitlab-ci.yml</code>, no <code>Jenkinsfile</code>. Quality gates are the AID skills themselves, exercised by dogfooding. (per tech-debt.md H2)</p>
+		<p>CI added 2026-05-29 (<code>.github/workflows/test.yml</code>): render-drift + the 7 suites + generator self-tests run on every PR/push, but it is not yet a <em>required</em> check, so a maintainer can still merge red. Branch protection pending. (per tech-debt.md H2)</p>
 	</div>
 
 	<div class="debt-item high">
@@ -1425,12 +1425,6 @@ flowchart TB
 		<div class="title">H4 — Crud-outputs audit (partially resolved)</div>
 		<div class="meta">Type: Process / Hygiene · Effort: M · Priority: P3</div>
 		<p>The known instance is fixed (<code>run_generator.py</code> writes no report file), but a systematic audit of write-only outputs across the 10 skills + 11 generators has not been done. (per tech-debt.md H4)</p>
-	</div>
-
-	<div class="debt-item med">
-		<div class="title">M3 — Gitignore fragility</div>
-		<div class="meta">Type: Config / Hygiene · Effort: XS · Priority: P3</div>
-		<p><code>.aid/.temp/</code> is excluded only by the <code>*.temp</code> glob, not an explicit dir entry — a rename would silently start tracking it. (per tech-debt.md M3)</p>
 	</div>
 
 	<div class="debt-item med">

@@ -1,0 +1,107 @@
+name: CI
+
+# AID is not a typical app: the shippable product is the rendered install trees
+# under profiles/{claude-code,codex,cursor}/, generated from canonical/ by
+# run_generator.py. CI therefore protects, in priority order:
+#   1. that committed profiles/ stays in sync with canonical/  (the core invariant)
+#   2. the runtime helper scripts adopters depend on            (the 7 bash suites)
+#   3. the generator/build system itself                        (self-tests)
+#   4. cheap repo/KB hygiene                                    (CRLF, gitignore, INDEX)
+# Prompt-driven skills, the discovery-reviewer semantic review, and aid-summarize's
+# V1 human visual gate require an AI host + human and are NOT gated here (dogfooding).
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render-drift:
+    name: render-drift (profiles in sync with canonical)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Regenerate install trees from canonical/
+        run: python run_generator.py
+      - name: Assert profiles/ has no uncommitted render drift
+        shell: bash
+        run: |
+          if ! git diff --exit-code -- profiles/; then
+            echo "::error::profiles/ is out of sync with canonical/. Run 'python run_generator.py' and commit the result."
+            exit 1
+          fi
+
+  canonical-tests:
+    name: canonical helper suites (7 bash suites)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache the pinned Mermaid library
+        uses: actions/cache@v4
+        with:
+          path: .aid/knowledge/.cache/mermaid.min.js
+          key: mermaid-v11.15.0
+      - name: Pre-seed pinned Mermaid (SHA-verified; hermetic after first run)
+        run: bash canonical/scripts/summarize/fetch-mermaid.sh
+      - name: Run all canonical suites
+        shell: bash
+        run: |
+          set -uo pipefail
+          fail=0
+          for f in tests/canonical/*.sh; do
+            echo "::group::$f"
+            timeout 300 bash "$f" || { echo "::error::suite failed: $f"; fail=1; }
+            echo "::endgroup::"
+          done
+          exit $fail
+
+  generator-selftests:
+    name: generator unit self-tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: harness + manifest-safety + render + verify self-tests
+        run: |
+          python .claude/skills/aid-generate/scripts/harness.py --self-test
+          python .claude/skills/aid-generate/scripts/test_manifest_safety.py --self-test
+          python .claude/skills/aid-generate/scripts/render_scripts.py --self-test --canonical-root .
+          python .claude/skills/aid-generate/scripts/verify_deterministic.py --self-test --canonical-root .
+
+  kb-hygiene:
+    name: KB + repo hygiene
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: No CRLF in committed shell scripts
+        shell: bash
+        run: |
+          if git ls-files --eol -- '*.sh' | grep -qE 'i/(crlf|mixed)'; then
+            git ls-files --eol -- '*.sh' | grep -E 'i/(crlf|mixed)'
+            echo "::error::CRLF committed in .sh files — must be LF (see .gitattributes)"
+            exit 1
+          fi
+      - name: .aid/.temp/ is gitignored and untracked
+        shell: bash
+        run: |
+          git check-ignore -q .aid/.temp/probe || { echo "::error::.aid/.temp/ not gitignored"; exit 1; }
+          [ -z "$(git ls-files .aid/.temp/)" ] || { echo "::error::tracked files under .aid/.temp/"; exit 1; }
+      - name: INDEX.md is fresh (regenerate + diff, timestamps filtered)
+        shell: bash
+        run: |
+          bash canonical/scripts/kb/build-index.sh --root .aid/knowledge --output /tmp/INDEX.regen.md
+          filt='AUTO-GENERATED|Generated at:|: Generated$'
+          if ! diff <(grep -vE "$filt" .aid/knowledge/INDEX.md) <(grep -vE "$filt" /tmp/INDEX.regen.md); then
+            echo "::error::INDEX.md is stale — run build-index.sh and commit"
+            exit 1
+          fi

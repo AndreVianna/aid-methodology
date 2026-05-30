@@ -190,14 +190,14 @@ for f in tests/canonical/*.sh; do echo "=== $f ==="; bash "$f" || break; done
 Exit code: `0` = all passed, `1` = one or more failures. Each suite prints a
 `PASS`/`FAIL` line per assertion and a summary at the end.
 
-There is no CI. Maintainer runs suites manually before merging. See `tech-debt.md H2`
+CI is advisory: `.github/workflows/test.yml` (added 2026-05-29) runs the suites on every PR/push but is not yet a required check, so a maintainer can still merge before it is green. See `tech-debt.md H2`
 for the formal debt item.
 
 ---
 
 ## Coverage gaps and roadmap
 
-- **No CI** — tests only run when someone runs them manually. See `tech-debt.md H2`.
+- **CI advisory, not enforced** — `.github/workflows/test.yml` runs the suites on PR/push, but it is not yet a required status check (branch protection pending). See `tech-debt.md H2`.
 - **No coverage measurement** — statement/branch coverage of the canonical helpers is
   unknown; test-line-to-source-line ratio is the only proxy.
 - **No tests for PowerShell variants** — `canonical/scripts/summarize/concatenate.ps1`

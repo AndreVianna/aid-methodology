@@ -176,7 +176,7 @@ design per `project-structure.md:296`.
 |------|---------|---------|---------|
 | **Pure bash test suites** | bash 4+ | All tests are plain bash scripts (no pytest, no jest, no junit) | `tests/canonical/*.sh` (7 suites — see `tests/README.md`) |
 | **Generator self-tests** | Python 3.11+ | Manifest-safety unit tests | `.claude/skills/aid-generate/scripts/test_manifest_safety.py` (254 lines) |
-| **CI** | **None** | No `.github/`, no `.gitlab-ci.yml`, no `Jenkinsfile`, no `azure-pipelines.yml` | See `tech-debt.md H2` |
+| **CI** | **GitHub Actions (advisory)** | `.github/workflows/test.yml` runs render-drift + 7 suites + generator self-tests + hygiene on PR/push; not yet a required check | See `tech-debt.md H2` |
 
 Source: `project-structure.md §Build Commands`; `tests/README.md`.
 

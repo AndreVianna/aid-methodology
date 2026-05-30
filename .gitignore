@@ -45,3 +45,7 @@ desktop.ini
 
 # Subagent heartbeat files (ephemeral runtime artifacts; visibility-patch L3)
 .aid/.heartbeat/
+
+# Transient AID lifecycle scratch + review-pending ledgers (explicit dir entry,
+# not just the *.temp glob above — resilient to a future rename)
+.aid/.temp/

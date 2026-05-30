@@ -1,0 +1,10 @@
+# Line-ending policy.
+#
+# AID ships POSIX shell scripts that adopters run via bash, and run_generator.py
+# always writes LF. Forcing LF for shell/JS/Python text prevents a contributor
+# whose git core.autocrlf=true (this repo is authored on Windows) from committing
+# CRLF that would break `#!/usr/bin/env bash` on Linux/macOS adopters — and would
+# break the byte-exact render-drift CI gate.
+*.sh   text eol=lf
+*.mjs  text eol=lf
+*.py   text eol=lf

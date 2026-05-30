@@ -469,10 +469,8 @@ The following paths MUST remain gitignored (per `.gitignore:18-47`):
 - `.aid/.heartbeat/` — ephemeral per-subagent heartbeat files; accumulate and
   pollute history. Confirmed gitignored at `.gitignore:46-47`; `git check-ignore
   -v .aid/.heartbeat/` returns line 47.
-- `*.temp` — catches `.aid/.temp/` via glob. ⚠️ This is **indirect** — if the
-  temp directory is ever renamed (e.g., to `.aid/scratch/`), it would silently
-  become tracked. An explicit `.aid/.temp/` entry is preferable (see
-  `tech-debt.md` M3).
+- `.aid/.temp/` — excluded by an explicit `.gitignore` directory entry
+  (rename-resilient), in addition to the `*.temp` glob that also matches it.
 - `.aid/knowledge/.cache/` — KB build cache; must not be tracked.
 - IDE/editor files (`.idea/`, `.vscode/`, `*.iml`, etc.) — per `.gitignore:18-30`.
 - `.claude/settings.local.json` — per-developer Claude Code overrides; excluded

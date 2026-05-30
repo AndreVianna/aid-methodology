@@ -317,7 +317,7 @@ Lite-path templates at `canonical/recipes/`, replicated into all 3 install trees
 
 6. **`tests/canonical/` is the official test directory.** No `pytest.ini`, no `package.json`-style test config; tests are pure bash scripts; 7 suites (see `tests/README.md`). The `tests/skills/` directory and `tests/canonical/pool-dispatch.sh` were deleted in cycle-1 per Q6 resolution.
 
-7. **No CI.** See `tech-debt.md H2`. No `.github/`, no `.gitlab-ci.yml`, no `Jenkinsfile`, no `azure-pipelines.yml` in the project index.
+7. **CI is advisory, not enforced.** `.github/workflows/test.yml` (added 2026-05-29) runs on PR/push but is not yet a required check; no other CI system (`.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`). See `tech-debt.md H2`.
 
 8. **`.aid/work-001-aid-lite/` and `.aid/work-002-canonical-generator/`** are correctly absent — per Q1 and Q2 resolutions (cycle-1): those directories were never correct canonical homes. See `tech-debt.md H1` and `M1` for history.
 

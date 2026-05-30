@@ -10,6 +10,7 @@ contracts: []
 changelog:
   - 2026-05-29: Removed resolved items (C1, M1, M2, M5, M7) from the inventory + detail per the "resolved → drop from the list" policy; closure record retained here in the changelog. Summary table reverted to open-only counts.
   - 2026-05-29: Closed + removed H1 — the phantom-test doc drift is fully resolved; the optional "add e2e coverage" remainder is a future enhancement gated on H2 (CI), not active debt.
+  - 2026-05-29: Added CI (`.github/workflows/test.yml` + `.gitattributes`) and an explicit `.aid/.temp/` gitignore entry — the latter resolves M3 (removed from the list). Rewrote H2's fix recipe to the studied design (render-drift keystone gate; dropped the headless-impossible discovery-reviewer step). H2 stays open pending CI activation + branch protection.
   - 2026-05-29: KB-honesty pass — closed M5 + M7 (verified resolved on disk); completed M2 (normalized the 2 remaining hyphenated .mdc rule files); corrected test-suite count 5→7 and assertion total 235→273 across all current-state docs; corrected L5 staleness (examples are not 3+ months stale); fixed H3 wrong evidence cite; corrected L1 file count 5→4; rebuilt Summary table (added M7, open-only counts)
   - 2026-05-29: Marked C1 resolved (work-001 task-003); decremented Critical count to 0; added bump-procedure comment ref
   - 2026-05-27: Added 7 new entries from cycle-1 Q-AND-A; marked M2 (acronym) resolved
@@ -28,13 +29,13 @@ changelog:
 
 ## Summary
 
-**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 7-suite canonical test suite) but operates with **zero pre-merge automation** and several **structural gaps** surfaced by cycle-1 discovery (methodology rigidity, verify-claims.sh transition incomplete, crud outputs audit pending). There are **zero open Critical** items. Resolved items are dropped from the inventory below; their closure record (what / when / why) lives in this doc's changelog frontmatter and in git history. As of this writing, C1, H1, M1, M2, M5, and M7 have been closed and removed from the list.
+**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 7-suite canonical test suite) but operates with **only advisory (non-blocking) CI** and several **structural gaps** surfaced by cycle-1 discovery (methodology rigidity, verify-claims.sh transition incomplete, crud outputs audit pending). There are **zero open Critical** items. Resolved items are dropped from the inventory below; their closure record (what / when / why) lives in this doc's changelog frontmatter and in git history. As of this writing, C1, H1, M1, M2, M3, M5, and M7 have been closed and removed from the list.
 
 | Severity | Open | Open items |
 |----------|------|------------|
 | Critical | 0 | — |
 | High | 4 | H2, H3, H5, H6 |
-| Medium | 4 | H4, M3, M4, M6 |
+| Medium | 3 | H4, M4, M6 |
 | Low | 5 | L1, L2, L3, L4, L5 |
 
 > **Counting methodology:** this table counts unique **open** debt items (one row per entry, regardless of how many `[HIGH]`/`[MEDIUM]` tags appear in the fix recipe). Resolved items are removed from the inventory entirely; their closure record lives in the changelog frontmatter and git history. The generated `metrics.md` (built by `build-metrics.sh`) counts every body-tag occurrence including those inside fix-recipe sub-bullets, producing higher totals. Neither is wrong; they answer different questions. Canonical item count is this table.
@@ -45,12 +46,11 @@ changelog:
 
 | ID | Type | Description | Location | Risk | Effort | Priority |
 |----|------|-------------|----------|------|--------|----------|
-| H2 | No CI | Zero pre-merge automation; every test/verify pass is manual | repo-wide | High | M | P2 |
+| H2 | CI not enforced | CI added (advisory, `.github/workflows/test.yml`) runs on PR/push but is not yet a required check — a maintainer can still merge red; branch protection pending | repo-wide | High | M | P2 |
 | H3 | Supply Chain | No language lock files exist (`package-lock.json`, `requirements.txt`, etc.) — vulnerability scanning is impossible. Previously framed as a sibling of C1 (Mermaid pin); C1 is now closed (resolved 2026-05-29). H3's concern — no language lock files for transitive supply-chain scanning — remains open. | repo-wide; absence confirmed by repo-wide search | High | M | P2 |
 | H4 | Crud Outputs (partially resolved) | Skills/scripts audit needed: unnecessary write-only outputs (reports/logs/intermediate files) not consumed by any downstream step — known instance fixed in cycle-1 (Q2: report_path=None); broader audit remains | scope: 10 user-facing skills + 11 generators/builders | Medium | M | P3 |
 | H5 | Methodology Flexibility | Methodology assumes rigid 16-doc KB set; meta-repos / docs-only / library-only projects need flexibility | methodology spec, aid-discover, verify-claims, canonical/templates/knowledge-base/ | High | L | P2 |
 | H6 | verify-claims.sh deletion follow-up | verify-claims.sh deleted; discovery-reviewer now owns FM+contract verification semantically — reviewer prompt coverage must be confirmed explicitly | cycle-1 inline refactor; canonical/agents/discovery-reviewer/AGENT.md | High | S | P2 |
-| M3 | Gitignore Fragility | `.aid/.temp/` is excluded only by the `*.temp` glob at `.gitignore:21`, not an explicit dir entry — a rename to e.g. `.aid/scratch/` would silently start tracking it | `.gitignore:18-21` | Medium | XS | P3 |
 | M4 | Test Discoverability | No aggregator script: each of the 7 test suites must be invoked manually with the right path; no way to run "all tests" with one command | `tests/README.md` (lists each separately); no `Makefile`/`task`/`npm test` | Medium | S | P3 |
 | M6 | Test Refactor | 7 canonical/ test suites need: behavior-named files, shared test-utility extraction, consistent failure messages, optional aggregator | `tests/canonical/*.sh` (7 suites) | Medium | M | P3 |
 | L1 | Source Bloat | 4 files >500 lines under canonical/methodology (largest: `methodology/aid-methodology.md` 1,070, `tests/canonical/parse-recipe.sh` 1,002, `canonical/scripts/execute/writeback-task-status.sh` 627, `canonical/skills/aid-execute/references/state-execute.md` 629) | various | Low | M | P3 |
@@ -63,20 +63,25 @@ changelog:
 
 ## Detailed Debt Items
 
-### [HIGH] H2 — No CI
+### [HIGH] H2 — CI present but not enforced
 
 **Type:** Process / Automation
 **Evidence:**
-- No `.github/`, no `.gitlab-ci.yml`, no `Jenkinsfile`, no `azure-pipelines.yml`, no `.circleci/`, no `.travis.yml`, no `bitbucket-pipelines.yml` anywhere in the repo (confirmed by file-system search at scout time).
+- At scout time there was no CI of any kind (no `.github/`, `.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`, `.circleci/`, `.travis.yml`, `bitbucket-pipelines.yml`). A `.github/workflows/test.yml` was added 2026-05-29 (see **Status**); CI now runs but is not yet a *required* check, so gates remain advisory until branch protection is enabled.
 
-**Impact:** Every quality gate (canonical helper tests, render-determinism, KB claim verification) is human-discretionary. PR reviewers cannot rely on green-build signal. A regression in `parse-recipe.sh` or `writeback-task-status.sh` only surfaces if the maintainer remembers to run the suite locally before merging.
+**Impact:** CI now runs the machine-checkable gates (render-drift, the 7 suites, generator self-tests, hygiene) automatically on every PR/push, but because it is not yet a *required* status check, a maintainer can still merge a red build. Until branch protection requires the checks, the green-build signal is informational, not blocking.
 
-**Fix recipe (estimated M effort):**
-1. Add `.github/workflows/test.yml` that on PR runs (in order): the 7 `tests/canonical/*.sh` suites, `python .claude/skills/aid-generate/scripts/verify_deterministic.py`, and the discovery-reviewer semantic check (see H6).
-2. Add a `Makefile` target `make test` that invokes the same list, so local + CI use the same entrypoint (also addresses M4).
-3. Pin GitHub-hosted runner OS (`ubuntu-24.04` not `ubuntu-latest`) for reproducibility.
-4. Cache the `mermaid.min.js` between runs (the pinned, SHA-verified blob is reproducible — there is no longer a registry lookup to bypass).
-5. Require status check in branch protection on `master`.
+**Fix recipe (estimated M effort)** — tailored to this repo (the product is the *rendered* `profiles/` trees, not the code). See `.github/workflows/test.yml`:
+1. **render-drift gate (keystone):** `python run_generator.py && git diff --exit-code -- profiles/`. The one check that enforces the core invariant — committed `profiles/` stays in sync with `canonical/`. NOTE: `verify_deterministic.py` (VERIFY-4a) does NOT catch this — it only compares temp-render to temp-render, never against the committed tree. Scope to `profiles/` (the repo-root dogfood `.claude/` is not a render output).
+2. **canonical helper suites:** loop the 7 `tests/canonical/*.sh` (parse-recipe needs a ≥180s timeout; pre-seed/cache the pinned `mermaid.min.js` so `fetch-mermaid.sh` skips the CDN).
+3. **generator self-tests:** `harness.py`, `test_manifest_safety.py`, `render_scripts.py`, `verify_deterministic.py` each `--self-test` (covers the deletion-safety boundary + the scripts subtree VERIFY-4a skips). Do NOT wire `verify_advisory.py` (stale `--self-test` assertion; normal mode makes live network HEAD requests).
+4. **hygiene guards:** no CRLF in committed `*.sh` (a `.gitattributes` `*.sh text eol=lf` locks it in); `.aid/.temp/` gitignored + untracked; `INDEX.md` fresh (regenerate + diff, 3 timestamp lines filtered).
+5. Pin `ubuntu-24.04`; Python 3.11+ via `actions/setup-python`, no `pip install` (stdlib only).
+6. Enable branch protection on `master` requiring the checks (manual GitHub settings step).
+
+**Not CI-gateable (need an AI host / human):** the 10 prompt-driven skills, the discovery-reviewer semantic review, aid-summarize's V1 visual gate, and the E2E pipeline — exercised by dogfooding. A `Makefile` / `tests/run-all.sh` aggregator (see M4) would give local + CI a shared entrypoint.
+
+**Status:** Workflow drafted 2026-05-29 (`.github/workflows/test.yml` + `.gitattributes`); all four jobs verified green locally (render-drift clean, 7 suites pass, 4 self-tests pass, hygiene guards pass). Remaining to close H2: confirm the workflow runs green on GitHub Actions, then enable the required-status-check branch protection on `master`.
 
 **Owner suggestion:** maintainer + devops agent.
 
@@ -100,21 +105,6 @@ changelog:
 3. Once present, the CI from H2 can wire in `npm audit --audit-level=high` and `pip-audit` automatically.
 
 **Owner suggestion:** maintainer + security agent.
-
----
-
-### [MEDIUM] M3 — `.aid/.temp/` gitignore is glob-fragile
-
-**Type:** Configuration / Hygiene
-**Evidence:**
-- `.gitignore:18-21` excludes `*.temp` as a global glob; `.aid/.temp/` matches by virtue of the suffix.
-- `.gitignore:46-47` explicitly excludes `.aid/.heartbeat/`. The asymmetry is suspicious — heartbeat is treated as a first-class dir but temp is not.
-
-**Impact:** If the `.aid/.temp/` directory is ever renamed (e.g., to `.aid/scratch/`, `.aid/workdir/`), files inside will silently begin being tracked by git. A noisy commit will eventually catch it but only after damage.
-
-**Fix recipe (estimated XS effort):** Add an explicit line `.aid/.temp/` to `.gitignore` (modeled on line 47). Optionally remove the `*.temp` glob if no other use exists.
-
-**Owner suggestion:** any contributor; one-line edit.
 
 ---
 
