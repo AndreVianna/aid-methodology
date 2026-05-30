@@ -2,7 +2,7 @@
 	<header>
 		<span class="eyebrow">Debt</span>
 		<h2>Tech Debt</h2>
-		<p class="lede">Overall debt level: Medium–High. The codebase is well-organized (Thin-Router convention, single canonical source, 7-suite test coverage) and now has enforced pre-merge CI (required status checks on master) but still carries several structural gaps. <strong>Zero Critical items remain.</strong> One High item, three Medium, five Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
+		<p class="lede">Overall debt level: Medium–High. The codebase is well-organized (Thin-Router convention, single canonical source, 7-suite test coverage) and now has enforced pre-merge CI (required status checks on master) but still carries several structural gaps. <strong>Zero Critical items remain.</strong> One High item, one Medium, four Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
@@ -18,13 +18,13 @@
 		</div>
 		<div class="card">
 			<div class="kicker">Medium</div>
-			<div class="stat" style="color:var(--info);">3</div>
-			<div class="stat-sub">H4, M4, M6</div>
+			<div class="stat" style="color:var(--info);">1</div>
+			<div class="stat-sub">H4</div>
 		</div>
 		<div class="card">
 			<div class="kicker">Low</div>
-			<div class="stat" style="color:var(--text-dim);">5</div>
-			<div class="stat-sub">L1–L5</div>
+			<div class="stat" style="color:var(--text-dim);">4</div>
+			<div class="stat-sub">L1, L3, L4, L5</div>
 		</div>
 	</div>
 
@@ -40,28 +40,10 @@
 		<p>The known instance is fixed (<code>run_generator.py</code> writes no report file), but a systematic audit of write-only outputs across the 10 skills + 11 generators has not been done. (per tech-debt.md H4)</p>
 	</div>
 
-	<div class="debt-item med">
-		<div class="title">M4 — No test aggregator</div>
-		<div class="meta">Type: Dev Experience · Effort: S · Priority: P3</div>
-		<p>Each of the 7 canonical suites must be invoked manually; no <code>make test</code> / <code>npm test</code> / aggregator. (per tech-debt.md M4)</p>
-	</div>
-
-	<div class="debt-item med">
-		<div class="title">M6 — Test refactor</div>
-		<div class="meta">Type: Test Quality · Effort: M · Priority: P3</div>
-		<p>The 7 suites lack behavior-named files, a shared test-utility module, and consistent failure messages. (per tech-debt.md M6)</p>
-	</div>
-
 	<div class="debt-item low">
 		<div class="title">L1 — Source bloat</div>
 		<div class="meta">Type: Complexity · Effort: M · Priority: P3</div>
 		<p>Four files exceed 500 lines (methodology spec 1,070; <code>parse-recipe.sh</code> 1,002; <code>writeback-task-status.sh</code> 627; <code>state-execute.md</code> 629). (per tech-debt.md L1)</p>
-	</div>
-
-	<div class="debt-item low">
-		<div class="title">L2 — Test-coverage gaps</div>
-		<div class="meta">Type: Test Coverage · Effort: L · Priority: P3</div>
-		<p>No tests for the PowerShell paths (<code>setup.ps1</code>, <code>concatenate.ps1</code>), the <code>.mjs</code> validators, or the <code>setup.sh</code> install flow. (per tech-debt.md L2)</p>
 	</div>
 
 	<div class="debt-item low">

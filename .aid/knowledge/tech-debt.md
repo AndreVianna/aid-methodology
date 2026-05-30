@@ -8,6 +8,7 @@ intent: |
   Read when planning the next refactor cycle or scoping a new work-NNN.
 contracts: []
 changelog:
+  - 2026-05-30: M4, M6, L2 RESOLVED + removed — the test-suite debt is closed. M4 (no aggregator): added `tests/run-all.sh`, the single glob-discovering entrypoint shared by CI + local dev. M6 (test refactor): extracted shared `tests/lib/assert.sh`, behavior-named the suites (`test-` prefix), standardized failure messages, and migrated every suite to the shared lib. L2 (coverage gaps): added Node suites for the `.mjs` validators (validate-diagrams, contrast-check), a `setup.sh` install-flow suite, bash + PowerShell suites for `assemble-3part`, and a pre-install suite for `setup.ps1`, all gated in CI (node pinned; pwsh asserted present). Shipped via PRs #26/#27. Medium 3→1, Low 5→4. (Descriptive test-suite metrics in this doc — suite count, LOC ratio, Open-PRs note — are stale and refresh on the next /aid-discover cycle.)
   - 2026-05-30: H6 RESOLVED + removed — an adversarial audit confirmed the discovery-reviewer prompt already covers verify-claims.sh's former semantic duties (FM presence/validity, contract claims, AUTO-GENERATED header, and intra-file contradiction). The one real gap it surfaced was that volatile `file:LINE` citations were being stored + verified instead of durable grep-recoverable anchors. Fixed by adding P1(d) Positional-citations + P8 Rigor-follows-value to kb-authoring principles, aligning the discovery-* prompts + review rubric, and (P1(a) follow-up) purging volatile inline counts from the KB doc templates. Shipped via PRs #22/#23/#24. High 2→1.
   - 2026-05-29: H3 RESOLVED + removed as Not Applicable — a 4-facet dependency-surface audit confirmed the repo is dependency-free by design: ZERO third-party Python deps (stdlib-only), ZERO npm deps (no package.json; the sole external library, Mermaid v11.15.0, is a SHA-256-pinned standalone download — stronger than `npm audit`). Language lock files would lock empty trees (security theater) and `pip-audit`/`npm audit` would find nothing to scan, so H3's "vuln-scanning impossible" premise is moot. High 3→2. The one genuinely-real residual the audit surfaced — 3 first-party GitHub Actions pinned by mutable tag, no dependabot — is Low (first-party `actions/*` + least-privilege `contents: read`) and is an optional hardening, not tracked debt.
   - 2026-05-29: Removed resolved items (C1, M1, M2, M5, M7) from the inventory + detail per the "resolved → drop from the list" policy; closure record retained here in the changelog. Summary table reverted to open-only counts.
@@ -32,14 +33,14 @@ changelog:
 
 ## Summary
 
-**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 7-suite canonical test suite) and now has **enforced pre-merge CI** (required status checks on `master`, 2026-05-29), but still carries several **structural gaps** surfaced by cycle-1 discovery (methodology rigidity and crud-outputs audit pending). There are **zero open Critical** items. Resolved items are dropped from the inventory below; their closure record (what / when / why) lives in this doc's changelog frontmatter and in git history. As of this writing, C1, H1, H2, H3, H6, M1, M2, M3, M5, and M7 have been closed and removed from the list.
+**Overall debt level: Medium–High**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 7-suite canonical test suite) and now has **enforced pre-merge CI** (required status checks on `master`, 2026-05-29), but still carries several **structural gaps** surfaced by cycle-1 discovery (methodology rigidity and crud-outputs audit pending). There are **zero open Critical** items. Resolved items are dropped from the inventory below; their closure record (what / when / why) lives in this doc's changelog frontmatter and in git history. As of this writing, C1, H1, H2, H3, H6, M1, M2, M3, M4, M5, M6, M7, and L2 have been closed and removed from the list.
 
 | Severity | Open | Open items |
 |----------|------|------------|
 | Critical | 0 | — |
 | High | 1 | H5 |
-| Medium | 3 | H4, M4, M6 |
-| Low | 5 | L1, L2, L3, L4, L5 |
+| Medium | 1 | H4 |
+| Low | 4 | L1, L3, L4, L5 |
 
 > **Counting methodology:** this table counts unique **open** debt items (one row per entry, regardless of how many `[HIGH]`/`[MEDIUM]` tags appear in the fix recipe). Resolved items are removed from the inventory entirely; their closure record lives in the changelog frontmatter and git history. The generated `metrics.md` (built by `build-metrics.sh`) counts every body-tag occurrence including those inside fix-recipe sub-bullets, producing higher totals. Neither is wrong; they answer different questions. Canonical item count is this table.
 
@@ -51,10 +52,7 @@ changelog:
 |----|------|-------------|----------|------|--------|----------|
 | H4 | Crud Outputs (partially resolved) | Skills/scripts audit needed: unnecessary write-only outputs (reports/logs/intermediate files) not consumed by any downstream step — known instance fixed in cycle-1 (Q2: report_path=None); broader audit remains | scope: 10 user-facing skills + 11 generators/builders | Medium | M | P3 |
 | H5 | Methodology Flexibility | Methodology assumes rigid 16-doc KB set; meta-repos / docs-only / library-only projects need flexibility | methodology spec, aid-discover, verify-claims, canonical/templates/knowledge-base/ | High | L | P2 |
-| M4 | Test Discoverability | No aggregator script: each of the 7 test suites must be invoked manually with the right path; no way to run "all tests" with one command | `tests/README.md` (lists each separately); no `Makefile`/`task`/`npm test` | Medium | S | P3 |
-| M6 | Test Refactor | 7 canonical/ test suites need: behavior-named files, shared test-utility extraction, consistent failure messages, optional aggregator | `tests/canonical/*.sh` (7 suites) | Medium | M | P3 |
 | L1 | Source Bloat | 4 files >500 lines under canonical/methodology (largest: `methodology/aid-methodology.md` 1,070, `tests/canonical/test-parse-recipe.sh` 1,002, `canonical/scripts/execute/writeback-task-status.sh` 627, `canonical/skills/aid-execute/references/state-execute.md` 629) | various | Low | M | P3 |
-| L2 | Test Coverage Gap | Zero tests for PowerShell paths (`setup.ps1`, `concatenate.ps1`), `.mjs` validators, and the `setup.sh` install flow | `test-landscape.md` Gaps section | Low | L | P3 |
 | L3 | Allowlist Breadth | `.claude/settings.json` Bash allowlist includes broad `Bash(rm *)` and `Bash(python *)` without path scoping | `.claude/settings.json:5-14` | Low | XS | P3 |
 | L4 | Versioning | AID has no version (no VERSION file, no semver); current position is "continuous master" | repo-wide; absence confirmed by project-index | Low | S | P3 |
 | L5 | Example Divergence | `examples/brownfield-enterprise/README.md` uses old KB doc names (`data-model.md`→`schemas.md`, `api-contracts.md`→`pipeline-contracts.md`) and `DISCOVERY-STATE.md`→`.aid/knowledge/STATE.md` — an adopter would look for files the tool no longer produces. data-pipeline + desktop-app verified clean | `examples/brownfield-enterprise/README.md:31,32,35,59` | Low | S | P3 |
@@ -62,23 +60,6 @@ changelog:
 ---
 
 ## Detailed Debt Items
-
-### [MEDIUM] M4 — No aggregator script for test suites
-
-**Type:** Developer Experience / Test Discoverability
-**Evidence:**
-- `tests/README.md` lists the 7 bash test commands the maintainer runs individually. After the cycle-1 Q6-cleanup (3 test files deleted, 5 remaining), the suite later grew to 7 (`fetch-mermaid.sh` + `grade.sh` added); there is still no `make test`, no `npm test`, no `pytest`, no `task test` (no `Makefile` / `package.json` / `pyproject.toml` / `Taskfile.yml` in the repo).
-- A new contributor must read `tests/README.md` to enumerate the suites; missing one means partial coverage.
-
-**Impact:** Friction; partial test runs. The CI workflow now runs all 7 suites, but there is still no single local `make test` entrypoint a contributor can run before pushing.
-
-**Fix recipe (estimated S effort):**
-1. Add a `Makefile` (or `tests/run-all.sh` aggregator) that invokes every suite in sequence, aggregates PASS/FAIL counts, and exits non-zero on any failure.
-2. Wire the same target into the CI workflow (`.github/workflows/test.yml`).
-
-**Owner suggestion:** maintainer.
-
----
 
 ### [LOW] L1 — Four files exceed 500 lines (one exceeds 1,000)
 
@@ -97,17 +78,6 @@ changelog:
 - For the shell scripts: extract self-contained functions into `lib/` files; verify behavior unchanged via the existing test suites.
 
 **Owner suggestion:** address opportunistically during feature work in those files.
-
----
-
-### [LOW] L2 — Test-coverage gaps for PowerShell, `.mjs`, and install flow
-
-**Type:** Test Coverage
-**Evidence:** see `test-landscape.md` Gaps section.
-
-**Fix recipe (estimated L effort):** Add `tests/pwsh/` for PowerShell scripts (use Pester or a parallel `pass`/`fail` counter pattern), a `tests/mjs/` directory using `node --test`, and a smoke test for `setup.sh` install into a tmpdir.
-
-**Owner suggestion:** maintainer or devops agent.
 
 ---
 
@@ -164,26 +134,6 @@ changelog:
 5. Validate the AID repo's cycle-1 15-doc carve-out as the first real-world test of the flexibility mechanism.
 
 **Owner suggestion:** maintainer; pick up via `/aid-interview` when prioritized (do NOT assign a work-NNN number here — Discovery defers that).
-
----
-
-### [MEDIUM] M6 — Test refactor toward clean-code patterns
-
-**Type:** Test Quality / Developer Experience
-**Evidence:**
-- Phase A (cycle-1) deleted 3 stale test files (`tests/skills/lite-subpaths.sh`, `tests/skills/lite-to-full-escalation.sh`, `tests/canonical/pool-dispatch.sh`) per Q6 answer.
-- 7 canonical/ suites are functionally sound but do not follow consistent conventions: file names describe the script under test, not the behavior being asserted; no shared test-utility module; assertion patterns vary across suites; failure messages are inconsistent.
-- Q17 answer: user confirmed refactor should be a separate work-NNN, not inline to cycle-1 FIX.
-
-**Impact:** Higher friction for contributors adding new test cases; harder to diagnose failures (inconsistent output format); test names that describe scripts-under-test rather than behaviors go stale when the script is renamed.
-
-**Fix recipe (estimated M effort):**
-1. Rename convention: adopt `<behavior-under-test>_test.sh` (e.g., `recipe-slot-extraction_test.sh`) or migrate to Bash Automated Testing System (bats).
-2. Extract shared test utilities into `tests/lib/assert.sh` (pass/fail counters, assertion helpers, setup/teardown).
-3. Standardize failure messages: every failing assertion should emit `FAIL: <test-name> — expected X got Y`.
-4. Optionally add an aggregator `tests/run-all.sh` once all suites share the same output format.
-
-**Owner suggestion:** maintainer; pick up via `/aid-interview` when prioritized (do NOT assign a work-NNN here — Discovery defers that).
 
 ---
 
