@@ -2,60 +2,96 @@
 	<header>
 		<span class="eyebrow">Tests</span>
 		<h2>Test Landscape</h2>
-		<p class="lede">7 unit/integration test suites under <code>tests/canonical/</code>, all deterministic Bash. 273 total assertions covering the canonical helper scripts that AID skills depend on. CI runs the suites on PR/push (`.github/workflows/test.yml`) and is a required status check on master. (per test-landscape.md)</p>
+		<p class="lede">13 unit/integration test suites under <code>tests/canonical/</code>, glob-discovered and run by the <code>tests/run-all.sh</code> aggregator, all sharing the <code>tests/lib/assert.sh</code> assertion library. Most are pure Bash; two shell out to <code>node</code> (the <code>.mjs</code> validators) and two to <code>pwsh</code> (the PowerShell mirrors), each skipping if its runtime is absent. They cover the canonical helper scripts that AID skills depend on. CI runs the suites on PR/push (`.github/workflows/test.yml`), pins <code>node</code> + asserts <code>pwsh</code> present, and is a required status check on master. (per test-landscape.md)</p>
 	</header>
 
 	<div class="tbl-wrap">
 		<table class="tbl">
-			<thead><tr><th>Suite</th><th>Target</th><th>Assertions</th><th>Notable coverage</th></tr></thead>
+			<thead><tr><th>Suite</th><th>Target</th><th>Runtime</th><th>Notable coverage</th></tr></thead>
 			<tbody>
 				<tr>
-					<td><code>read-setting.sh</code></td>
+					<td><code>test-read-setting.sh</code></td>
 					<td><code>canonical/scripts/config/read-setting.sh</code></td>
-					<td><strong>18</strong></td>
-					<td>Three-tier settings resolution (per-skill override → global → default), <code>--path</code> mode, missing file, comment/quote stripping</td>
+					<td>bash</td>
+					<td>Three-tier settings resolution (per-skill override → global → default), <code>--path</code> mode, missing file with/without <code>--default</code>, comment/quote stripping, error exits</td>
 				</tr>
 				<tr>
-					<td><code>writeback-task-status.sh</code></td>
-					<td><code>canonical/scripts/execute/writeback-task-status.sh</code></td>
-					<td><strong>69</strong></td>
-					<td>All 4 modes (--field, --findings, --block, --append-issue), idempotency, concurrent lock contention (5 parallel writers), error paths</td>
+					<td><code>test-writeback-state.sh</code></td>
+					<td><code>canonical/scripts/execute/writeback-state.sh</code></td>
+					<td>bash</td>
+					<td>All 4 arg modes (--field, --findings, --block, --append-issue), idempotency, concurrent lock contention (parallel writers), error paths</td>
 				</tr>
 				<tr>
-					<td><code>parse-recipe.sh</code></td>
+					<td><code>test-parse-recipe.sh</code></td>
 					<td><code>canonical/scripts/interview/parse-recipe.sh</code></td>
-					<td><strong>113</strong></td>
-					<td>All 5 modes (--list, --validate, --spec, --tasks, --render), slot substitution, escape rewrite, lock lifecycle, all 5 seed recipes (dogfood). Runtime ~150 s — timeout must be &gt;=180 s</td>
+					<td>bash</td>
+					<td>All 5 modes (--list, --validate, --spec, --tasks, --render), slot substitution, escape rewrite, lock lifecycle, seed recipes (dogfood). Slowest suite (~150 s) — timeout must be &gt;=180 s standalone</td>
 				</tr>
 				<tr>
-					<td><code>compute-block-radius.sh</code></td>
+					<td><code>test-compute-block-radius.sh</code></td>
 					<td><code>canonical/scripts/execute/compute-block-radius.sh</code></td>
-					<td><strong>17</strong></td>
-					<td>BFS transitive-descendant computation: linear chain, diamond, fan-out, unrelated chain, no-dependents, multi-root fan, end-to-end with --plan-file</td>
+					<td>bash</td>
+					<td>BFS transitive-descendant computation: linear chain, diamond, fan-out, unrelated chain, leaf-node, multi-root fan, end-to-end with --plan-file, error exits</td>
 				</tr>
 				<tr>
-					<td><code>delivery-gate-aggregate.sh</code></td>
-					<td>Delivery-gate logic in aid-execute</td>
-					<td><strong>18</strong></td>
+					<td><code>test-delivery-gate-aggregate.sh</code></td>
+					<td>Delivery-gate logic in <code>aid-execute</code></td>
+					<td>bash</td>
 					<td>AGGREGATE, SCORE, grade.sh determinism, loopback guard, FR6 interlock (gate must not fire while any task is Failed or Blocked)</td>
 				</tr>
 				<tr>
-					<td><code>fetch-mermaid.sh</code></td>
+					<td><code>test-fetch-mermaid.sh</code></td>
 					<td><code>canonical/scripts/summarize/fetch-mermaid.sh</code></td>
-					<td><strong>19</strong></td>
-					<td>4 scenarios — cache-hit tamper, post-download tamper (curl PATH-shim), clean fast path (curl-not-invoked), <code>compute_sha256</code> "unknown" fallback (sha256sum-spy via symlink). Closes tech-debt C1 (added 2026-05-29)</td>
+					<td>bash</td>
+					<td>4 scenarios — cache-hit tamper, post-download tamper (curl PATH-shim), clean fast path (curl-not-invoked), <code>compute_sha256</code> unknown-fallback fails-closed</td>
 				</tr>
 				<tr>
-					<td><code>grade.sh</code></td>
+					<td><code>test-grade.sh</code></td>
 					<td><code>canonical/scripts/grade.sh</code></td>
-					<td><strong>19</strong></td>
-					<td>Severity-tag → letter-grade scorer: per-band letter+modifier, column-anchored counting (only Severity-column <code>[TAG]</code> in Pending/Recurred rows; ignores Description/Evidence/Summary text), <code>--non-functional</code> forces F, deprecated <code>--from-prose</code> path. Regression suite for the M7 fix (2026-05-29)</td>
+					<td>bash</td>
+					<td>Severity-tag → letter-grade scorer: per-band letter+modifier, column-anchored counting (only Severity-column <code>[TAG]</code> in Pending/Recurred rows; ignores Description/Evidence/Summary text), <code>--non-functional</code> forces F, deprecated <code>--from-prose</code> path</td>
+				</tr>
+				<tr>
+					<td><code>test-validate-diagrams.sh</code></td>
+					<td><code>canonical/scripts/summarize/validate-diagrams.mjs</code></td>
+					<td>node</td>
+					<td>D1 regex sanity + invocation paths via <code>--fast</code>: no-args/--help/missing-file → exit 2, zero-diagram warn-pass, valid <code>&lt;pre&gt;</code>/<code>&lt;div&gt;</code> diagrams, D1 failures. Skips if <code>node</code> absent</td>
+				</tr>
+				<tr>
+					<td><code>test-contrast-check.sh</code></td>
+					<td><code>canonical/scripts/summarize/contrast-check.mjs</code></td>
+					<td>node</td>
+					<td>WCAG AA contrast: usage exit 2, missing-file non-zero, hex-6/hex-3/<code>rgb()</code> parse paths, low-contrast fail, dark-theme override, shipped <code>knowledge-summary.html</code> passes. Skips if <code>node</code> absent</td>
+				</tr>
+				<tr>
+					<td><code>test-setup.sh</code></td>
+					<td><code>setup.sh</code> (end-user installer)</td>
+					<td>bash</td>
+					<td>Arg/precondition errors, interactive menu logic (Done/toggle/invalid), per-tool installs (Claude Code/Codex/Cursor), multi-tool install, idempotent re-install, <code>--force</code> overwrite</td>
+				</tr>
+				<tr>
+					<td><code>test-assemble-3part.sh</code></td>
+					<td><code>canonical/scripts/summarize/assemble-3part.sh</code></td>
+					<td>bash</td>
+					<td>Byte-concat of PART1 + MERMAID + PART2 → OUTPUT: arg/input validation (missing/empty → exit 1), auto-created nested output dir, byte-exact concatenation + ordering</td>
+				</tr>
+				<tr>
+					<td><code>test-assemble-3part-ps1.sh</code></td>
+					<td><code>canonical/scripts/summarize/assemble-3part.ps1</code></td>
+					<td>pwsh</td>
+					<td>Same contract as the <code>.sh</code> oracle, run under <code>pwsh</code>. Cross-platform (explicit paths + byte I/O), runs fully on Linux CI once <code>pwsh</code> is present. Skips if <code>pwsh</code> absent</td>
+				</tr>
+				<tr>
+					<td><code>test-setup-ps1.sh</code></td>
+					<td><code>setup.ps1</code> (Windows-host installer)</td>
+					<td>pwsh</td>
+					<td>Platform-independent pre-install logic under <code>pwsh</code> on Linux: target validation + selection-menu loop (backslash-path copy is Windows-only). Skips if <code>pwsh</code> absent</td>
 				</tr>
 				<tr style="font-weight:600;">
-					<td>Total</td>
+					<td>13 suites</td>
 					<td></td>
-					<td><strong>273</strong></td>
-					<td>All suites are self-reporting; count method is each suite's own summary line — not grep of PASS markers</td>
+					<td>bash / node / pwsh</td>
+					<td>All self-reporting via the shared <code>tests/lib/assert.sh</code> <code>test_summary</code> (<code>Tests passed: N</code> / <code>Tests failed: M</code>); aggregated by <code>tests/run-all.sh</code>, which exits non-zero if any suite fails</td>
 				</tr>
 			</tbody>
 		</table>
@@ -63,7 +99,7 @@
 
 	<div class="callout warn" style="margin-top:1rem;">
 		<h4>Coverage gaps</h4>
-		<p>No tests for PowerShell paths (<code>setup.ps1</code>, <code>concatenate.ps1</code>), <code>.mjs</code> validators, or the <code>setup.sh</code> install flow. CI is enforced — a required status check on master. No skill-level e2e tests — skills are verified by dogfooding. (per test-landscape.md §Coverage gaps)</p>
+		<p>The <code>.mjs</code> validators, the PowerShell mirrors, and the <code>setup.*</code> install flow are now covered (CI asserts <code>node</code> + <code>pwsh</code> present so those suites can never silently skip). The genuinely untested surface is the prompt-driven orchestration layer: the <code>/aid-*</code> skills (verified by dogfooding; the <code>discovery-reviewer</code> sub-agent is the closest adversarial integration check), the renderer (covered by its own VERIFY (deterministic) gate, not <code>tests/canonical/</code>), and the end-to-end pipeline. There is no statement/branch coverage measurement. (per test-landscape.md §Coverage gaps and roadmap)</p>
 	</div>
 </section>
 

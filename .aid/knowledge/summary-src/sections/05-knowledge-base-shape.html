@@ -34,7 +34,7 @@ erDiagram
     }
     INDEX {
         string path ".aid/knowledge/INDEX.md"
-        string generator "build-index.sh"
+        string generator "build-kb-index.sh"
         string source "generated"
     }
     STATE {
@@ -42,7 +42,7 @@ erDiagram
         string sections "KB Documents Status table"
     }
     GeneratedDoc {
-        string generator "build-project-index.sh or build-index.sh"
+        string generator "build-project-index.sh or build-kb-index.sh"
     }
 		</div>
 		<p class="caption">Fig 4 — Knowledge Base document schema: 15 primary docs + 2 meta docs (INDEX.md, STATE.md). Each primary doc has a YAML frontmatter with kb-category, source, intent, contracts, changelog. (per schemas.md)</p>

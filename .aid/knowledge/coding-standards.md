@@ -13,8 +13,8 @@ intent: |
   canonical/templates/kb-authoring/review-rubric.md).
 contracts:
   - "Every aid-* SKILL.md begins with a YAML frontmatter block containing name, description, allowed-tools (and optionally argument-hint)"
-  - "Every canonical AGENT.md begins with a YAML frontmatter block containing at minimum name, description, tier, tools (per canonical/agents/architect/AGENT.md:1-6)"
-  - "Every KB doc begins with a YAML frontmatter block containing kb-category, source, intent (per canonical/templates/kb-authoring/frontmatter-schema.md:46-89)"
+  - "Every canonical AGENT.md begins with a YAML frontmatter block containing at minimum name, description, tier, tools (per `canonical/agents/architect/AGENT.md` frontmatter block)"
+  - "Every KB doc begins with a YAML frontmatter block containing kb-category, source, intent (per `canonical/templates/kb-authoring/frontmatter-schema.md` `## Field reference`)"
   - "Every helper script declares set -euo pipefail (or set -uo pipefail with documented rationale)"
   - "Every helper script supports -h | --help that prints its own header comment via sed"
 changelog:
@@ -37,9 +37,9 @@ changelog:
 | Python 3.11+ | `.claude/skills/aid-generate/scripts/*.py` + `run_generator.py` | PEP 8 + `from __future__ import annotations`, type hints, `@dataclass`, `Path` over `os.path`, stdlib-only |
 | Bash | `canonical/scripts/**/*.sh` + `setup.sh` + `tests/**/*.sh` | `#!/usr/bin/env bash` + `set -euo pipefail` (rare `set -uo pipefail` with rationale), POSIX-portable, 4-space indent inside `case`, sentinel-file locks for parallel-write safety |
 | JavaScript (ESM) | `canonical/scripts/summarize/{validate-diagrams,contrast-check}.mjs` + `canonical/templates/knowledge-summary/{lightbox,mermaid-init}.js` | `#!/usr/bin/env node` for CLI scripts, `import` syntax, top-level `await`, Node stdlib only |
-| PowerShell | `setup.ps1` + `canonical/scripts/summarize/concatenate.ps1` | Windows-host installer + concatenation helper; explicit `param()` blocks |
+| PowerShell | `setup.ps1` + `canonical/scripts/summarize/assemble-3part.ps1` | Windows-host installer + concatenation helper; explicit `param()` blocks |
 | Markdown | All skill bodies, agent bodies, templates, KB docs | YAML frontmatter delimited by `---`; GitHub-flavored tables; fenced code blocks with language identifiers |
-| YAML | `canonical/templates/settings.yml` + `.aid/settings.yml` | YAML 1.2 (per `canonical/templates/settings.yml:8`); commented blocks above each section |
+| YAML | `canonical/templates/settings.yml` + `.aid/settings.yml` | YAML 1.2 (per `canonical/templates/settings.yml` `# Format: YAML 1.2.`); commented blocks above each section |
 | TOML | `profiles/*.toml` + `profiles/codex/.codex/agents/*.toml` | TOML 1.0; sectioned with comments above each `[section]` |
 
 ---
@@ -51,7 +51,7 @@ changelog:
 - **All `aid-*` skill directories are kebab-case** with the `aid-` prefix: `aid-config`, `aid-discover`, `aid-execute`, etc. (per `canonical/skills/`).
 - **All agent directories are kebab-case**, single-word or compound: `architect`, `developer`, `discovery-analyst`, `simple-extractor` (per `canonical/agents/`).
 - **Skill state files are `state-<state-name>.md`** — lowercase kebab-case state name, e.g., `state-generate.md`, `state-q-and-a.md`, `state-delivery-gate.md` (per `canonical/skills/aid-discover/references/`).
-- **Helper scripts are kebab-case verb-noun** with `.sh` (or `.mjs` / `.ps1`) extension: `read-setting.sh`, `build-project-index.sh`, `compute-block-radius.sh`, `writeback-task-status.sh`, `validate-diagrams.mjs`, `contrast-check.mjs`.
+- **Helper scripts are kebab-case verb-noun** with `.sh` (or `.mjs` / `.ps1`) extension: `read-setting.sh`, `build-project-index.sh`, `compute-block-radius.sh`, `writeback-state.sh`, `validate-diagrams.mjs`, `contrast-check.mjs`.
 - **Python files are snake_case** with `.py` extension: `render_agents.py`, `verify_deterministic.py`, `test_manifest_safety.py`, `run_generator.py`.
 - **Templates are kebab-case** with `.md` extension: `task-template.md`, `discovery-state-template.md`, `recipe-template.md`, `subagent-heartbeat-protocol.md`.
 - **Capitalized markdown filenames** are reserved for project-root files (`CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `LICENSE`) and for inside-work artifacts (`SPEC.md`, `PLAN.md`, `REQUIREMENTS.md`, `STATE.md`, `INDEX.md`, `AGENT.md`, `SKILL.md`, `IMPEDIMENT.md`, `EMISSION-MANIFEST.md`).
@@ -59,36 +59,36 @@ changelog:
 
 ### 2b. Inside Python
 
-- `snake_case` for functions, methods, module-level variables (per `.claude/skills/aid-generate/scripts/harness.py:67` `sha256_hex`, `:88` `substitute_filenames`).
-- `PascalCase` for dataclasses (per `profile.py:28-29` `LayoutConfig`, `:108-109` `FrontmatterConfig`).
-- `_LEADING_UNDERSCORE` for module-private constants + helpers (per `harness.py:36` `_MANIFEST_VERSION`, `:48` `_PLACEHOLDER_RE`, `:57` `_CANONICAL_PATH_DIRS`).
+- `snake_case` for functions, methods, module-level variables (per `.claude/skills/aid-generate/scripts/render_lib.py` `sha256_hex`, `substitute_filenames`).
+- `PascalCase` for dataclasses (per `aid_profile.py` `LayoutConfig`, `FrontmatterConfig`).
+- `_LEADING_UNDERSCORE` for module-private constants + helpers (per `render_lib.py` `_MANIFEST_VERSION`, `_PLACEHOLDER_RE`, `_CANONICAL_PATH_DIRS`).
 - `SCREAMING_SNAKE` reserved for top-level constants when not module-private — none observed; the renderer uses `_LEADING_UNDERSCORE` exclusively.
 
 ### 2c. Inside Bash
 
-- `UPPER_SNAKE_CASE` for environment-overridable config variables: `STATE_FILE`, `TASKS_DIR`, `DELIVERY_ISSUES_DIR`, `LOCK_DIR`, `LOCK_TIMEOUT` (per `canonical/scripts/execute/writeback-task-status.sh:46-50`).
-- `UPPER_SNAKE_CASE` for argument-bound locals: `KB_DIR`, `ROOT`, `FORMAT`, `SKIP_STATE`, `QUIET`; `SETTINGS_FILE`, `SKILL`, `KEY`, `DPATH`, `DEFAULT` (per `canonical/scripts/config/read-setting.sh:46-51`).
-- `lower_snake_case` for shell functions: `usage()`, `die()`, `warn()`, `build_prune_expr()`, `get_mtime()` (per `canonical/scripts/interview/parse-recipe.sh:68-73`, `kb/build-project-index.sh:55,73,75`).
-- Env-prefix convention `AID_*` for env-overridable defaults: `AID_STATE_FILE`, `AID_TASKS_DIR`, `AID_DELIVERY_ISSUES_DIR`, `AID_LOCK_DIR`, `AID_LOCK_TIMEOUT`, `AID_PARSE_RECIPE_LOCK_TIMEOUT` (per `writeback-task-status.sh:46-50`, `parse-recipe.sh:65`).
+- `UPPER_SNAKE_CASE` for environment-overridable config variables: `STATE_FILE`, `TASKS_DIR`, `DELIVERY_ISSUES_DIR`, `LOCK_DIR`, `LOCK_TIMEOUT` (per `canonical/scripts/execute/writeback-state.sh` `STATE_FILE="${AID_STATE_FILE`).
+- `UPPER_SNAKE_CASE` for argument-bound locals: `KB_DIR`, `ROOT`, `FORMAT`, `SKIP_STATE`, `QUIET`; `SETTINGS_FILE`, `SKILL`, `KEY`, `DPATH`, `DEFAULT` (per `canonical/scripts/config/read-setting.sh` `SETTINGS_FILE=".aid/settings.yml"`).
+- `lower_snake_case` for shell functions: `usage()`, `die()`, `warn()`, `build_prune_expr()`, `get_mtime()` (per `canonical/scripts/interview/parse-recipe.sh` `usage()`/`die()`/`warn()`, `kb/build-project-index.sh` `build_prune_expr()`/`get_mtime()`).
+- Env-prefix convention `AID_*` for env-overridable defaults: `AID_STATE_FILE`, `AID_TASKS_DIR`, `AID_DELIVERY_ISSUES_DIR`, `AID_LOCK_DIR`, `AID_LOCK_TIMEOUT`, `AID_PARSE_RECIPE_LOCK_TIMEOUT` (per `writeback-state.sh` `STATE_FILE="${AID_STATE_FILE`, `parse-recipe.sh` `AID_PARSE_RECIPE_LOCK_TIMEOUT`).
 
 ### 2d. Inside Markdown (skill + agent + KB bodies)
 
 - **Sections:** `## Title Case` for top-level inside a doc; `### Title Case` for sub-sections.
-- **States in skill bodies:** UPPERCASE in narrative text (e.g., "State machine: GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE" per `canonical/skills/aid-discover/SKILL.md:7`), kebab-lowercase in filenames (`state-q-and-a.md`).
-- **Task types:** UPPERCASE (RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE per `canonical/skills/aid-execute/references/state-execute.md:6-16`, `canonical/templates/delivery-plans/task-template.md:3`).
-- **Severity tags:** UPPERCASE bracketed: `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]` (per `canonical/agents/reviewer/AGENT.md:54-62`, `canonical/scripts/grade.sh:5-7`).
-- **Source tags (for review findings):** UPPERCASE bracketed: `[CODE]`, `[TASK]`, `[SPEC]`, `[KB]`, `[ARCHITECTURE]` (per `canonical/agents/reviewer/AGENT.md:37`).
+- **States in skill bodies:** UPPERCASE in narrative text (e.g., "State machine: GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE" per `canonical/skills/aid-discover/SKILL.md` `State-machine: GENERATE → REVIEW`), kebab-lowercase in filenames (`state-q-and-a.md`).
+- **Task types:** UPPERCASE (RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE per `canonical/skills/aid-execute/references/state-execute.md` `## Task Types`, `canonical/templates/delivery-plans/task-template.md` `**Type:**`).
+- **Severity tags:** UPPERCASE bracketed: `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]` (per `canonical/agents/reviewer/AGENT.md` `## Severity Classification`, `canonical/scripts/grade.sh` `count_prose_tag CRITICAL`).
+- **Source tags (for review findings):** UPPERCASE bracketed: `[CODE]`, `[TASK]`, `[SPEC]`, `[KB]`, `[ARCHITECTURE]` (per `canonical/agents/reviewer/AGENT.md` `Tag every issue by source`).
 - **Work + delivery IDs:** zero-padded 3-digit, kebab-prefixed: `work-001`, `work-002-canonical-generator`, `delivery-001`, `task-001`, `feature-005` (per `canonical/templates/work-state-template.md`).
 
 ---
 
 ## 3. File-Level Conventions
 
-### 3a. Frontmatter (CONFIRMED for KB docs per `canonical/templates/kb-authoring/frontmatter-schema.md:6-7`)
+### 3a. Frontmatter (CONFIRMED for KB docs per `canonical/templates/kb-authoring/frontmatter-schema.md` `the entire frontmatter block is exempt from review`)
 
 Every authored markdown artifact begins with a YAML frontmatter block delimited by `---` markers. There are three frontmatter shapes:
 
-**KB doc frontmatter** (per `canonical/templates/kb-authoring/frontmatter-schema.md:14-26`):
+**KB doc frontmatter** (per `canonical/templates/kb-authoring/frontmatter-schema.md` `## Canonical schema`):
 ```yaml
 ---
 kb-category: primary | meta | extension
@@ -103,7 +103,7 @@ changelog:
 ---
 ```
 
-**Agent frontmatter** (per `canonical/agents/architect/AGENT.md:1-6`):
+**Agent frontmatter** (per `canonical/agents/architect/AGENT.md` frontmatter block):
 ```yaml
 ---
 name: <agent-name>
@@ -115,7 +115,7 @@ background: true                     # optional — set on discovery-* sub-agent
 ---
 ```
 
-**Skill frontmatter** (per `canonical/skills/aid-discover/SKILL.md:1-10`):
+**Skill frontmatter** (per `canonical/skills/aid-discover/SKILL.md` `name: aid-discover` frontmatter block):
 ```yaml
 ---
 name: aid-<skill>
@@ -126,12 +126,12 @@ argument-hint: "[--flag] description of flag"
 ---
 ```
 
-Per `frontmatter-schema.md:7`, **the entire KB frontmatter block is exempt from
+Per `frontmatter-schema.md` `the entire frontmatter block is exempt from review`, **the entire KB frontmatter block is exempt from
 review** (per principle P6).
 
 ### 3b. Bash script header
 
-Every helper script under `canonical/scripts/` follows a fixed header pattern (per `canonical/scripts/execute/writeback-task-status.sh:1-50`, `canonical/scripts/config/read-setting.sh:1-43`, `canonical/scripts/interview/parse-recipe.sh:1-60`, `canonical/scripts/grade.sh:1-23`):
+Every helper script under `canonical/scripts/` follows a fixed header pattern (per `canonical/scripts/execute/writeback-state.sh` header comment, `canonical/scripts/config/read-setting.sh` header comment, `canonical/scripts/interview/parse-recipe.sh` header comment, `canonical/scripts/grade.sh` header comment):
 
 ```bash
 #!/usr/bin/env bash
@@ -164,15 +164,15 @@ set -euo pipefail
 checks and must continue past per-check failures; rationale should be documented
 in the script's header comment.
 
-**Variant:** `canonical/scripts/execute/writeback-task-status.sh:41` uses `set
+**Variant:** `canonical/scripts/execute/writeback-state.sh` (`set -u` line) uses `set
 -u` only (no `-e`, no `-o pipefail`) — because it does mode-dispatch and
-returns specific exit codes per mode failure (codes 1-6 per lines 32-40).
+returns specific exit codes per mode failure (codes 1-6 per its `# Exit codes:` header block).
 
 ### 3c. Bash script help mode
 
 Every script supports `-h | --help` and renders its own header comment by
-piping the file's top block through `sed` (per `canonical/scripts/execute/writeback-task-status.sh:53-55`,
-`canonical/scripts/grade.sh:36-39`):
+piping the file's top block through `sed` (per `canonical/scripts/execute/writeback-state.sh` `usage()`,
+`canonical/scripts/grade.sh` `-h|--help`):
 
 ```bash
 -h|--help)
@@ -186,11 +186,11 @@ The convention is to strip the leading `# ` prefix so the comment block reads as
 ### 3d. Bash argument parsing
 
 Every multi-arg script uses the same `while [[ $# -gt 0 ]] / case` pattern (per
-`canonical/scripts/config/read-setting.sh:53-79`,
-`canonical/scripts/execute/writeback-task-status.sh:71-108`,
-`canonical/scripts/interview/parse-recipe.sh:83-100`,
-`canonical/scripts/kb/build-project-index.sh:26-40`,
-`canonical/scripts/grade.sh:26-49`):
+`canonical/scripts/config/read-setting.sh` `while [[ $# -gt 0 ]]`,
+`canonical/scripts/execute/writeback-state.sh` `while [[ $# -gt 0 ]]`,
+`canonical/scripts/interview/parse-recipe.sh` `while [[ $# -gt 0 ]]`,
+`canonical/scripts/kb/build-project-index.sh` `while [[ $# -gt 0 ]]`,
+`canonical/scripts/grade.sh` `while [[ $# -gt 0 ]]`):
 
 ```bash
 while [[ $# -gt 0 ]]; do
@@ -207,7 +207,7 @@ done
 
 ### 3e. Python script header
 
-Every Python file starts with a shebang + module docstring-style comment + `from __future__ import annotations` (per `.claude/skills/aid-generate/scripts/harness.py:1-16`, `profile.py:1-13`, `render_agents.py:1-14`, `render_skills.py:1-14`):
+Every Python file starts with a shebang + module docstring-style comment + `from __future__ import annotations` (per `.claude/skills/aid-generate/scripts/render_lib.py` header comment, `aid_profile.py` header comment, `render_agents.py` header comment, `render_skills.py` header comment):
 
 ```python
 #!/usr/bin/env python3
@@ -225,7 +225,7 @@ from __future__ import annotations
 
 Note: comment block instead of triple-quoted docstring for the file header.
 Triple-quoted docstrings are reserved for function + class signatures (per
-`harness.py:67-81` `sha256_hex` docstring).
+`render_lib.py` `def sha256_hex` docstring).
 
 ---
 
@@ -233,28 +233,28 @@ Triple-quoted docstrings are reserved for function + class signatures (per
 
 ### 4a. Bash
 
-- **`die() / warn()` pattern** (per `canonical/scripts/interview/parse-recipe.sh:72-73`, `canonical/scripts/execute/writeback-task-status.sh:57`):
+- **`die() / warn()` pattern** (per `canonical/scripts/interview/parse-recipe.sh` `die()`/`warn()`, `canonical/scripts/execute/writeback-state.sh` `die()`):
   ```bash
   die()  { echo "ERROR: <script>: $*" >&2; exit "${2:-1}"; }
   warn() { echo "WARN: <script>: $*" >&2; }
   ```
 - **Exit codes are documented + meaningful per script** (per the headers cited in §3b). 0 = success; 1 = generic failure; 2 = usage error; 3+ = script-specific failure classes.
-- **Errors go to stderr; results go to stdout** (CONFIRMED per `canonical/scripts/config/read-setting.sh:33-36`).
-- **Trap cleanup** for temp files: `trap 'rm -f "$F1" "$F2"' EXIT` declared right before the first `mktemp`, with all slots pre-initialized to empty strings so the trap is safe to fire at any exit point (per `canonical/scripts/interview/parse-recipe.sh:64-66` and `canonical/scripts/execute/writeback-task-status.sh`).
+- **Errors go to stderr; results go to stdout** (CONFIRMED per `canonical/scripts/config/read-setting.sh` `# Output:` header block).
+- **Trap cleanup** for temp files: `trap 'rm -f "$F1" "$F2"' EXIT` declared right before the first `mktemp`, with all slots pre-initialized to empty strings so the trap is safe to fire at any exit point (per `canonical/scripts/interview/parse-recipe.sh` `trap 'release_lock' EXIT` and `canonical/scripts/execute/writeback-state.sh`).
 
 ### 4b. Python
 
-- **Renderer raises `ValueError`** for misconfigured profiles (per `.claude/skills/aid-generate/scripts/profile.py:72-74`, `:101-104`). The validator helper `validate(profile)` returns a list of errors instead of raising — the caller decides whether to abort (per `run_generator.py:26-29`).
-- **No bare `except:` clauses observed** — all caught exceptions are scoped (e.g., `except OSError:` per `run_generator.py:63` for `parent.rmdir()` during tree pruning).
-- **`sys.exit(1)` on render failure with stderr message** (per `run_generator.py:28-29`, `:78-79`). No traceback suppression.
+- **Renderer raises `ValueError`** for misconfigured profiles (per `.claude/skills/aid-generate/scripts/aid_profile.py` `raise ValueError`). The validator helper `validate(profile)` returns a list of errors instead of raising — the caller decides whether to abort (per `run_generator.py` `errors = validate(profile)`).
+- **No bare `except:` clauses observed** — all caught exceptions are scoped (e.g., `except OSError:` per `run_generator.py` `except OSError:` for `parent.rmdir()` during tree pruning).
+- **`sys.exit(1)` on render failure with stderr message** (per `run_generator.py` `errors = validate(profile)` and `VERIFY (deterministic) FAILED`). No traceback suppression.
 
 ### 4c. Markdown / KB docs
 
-- **Findings carry severity + source tags** (per `canonical/agents/reviewer/AGENT.md:64-69`):
+- **Findings carry severity + source tags** (per `canonical/agents/reviewer/AGENT.md` `## Output contract`):
   ```
   [SEVERITY] [SOURCE] Description | File:Line | Criterion violated
   ```
-- **Impediments are formal artifacts** at `.aid/{work}/task-NNN/IMPEDIMENT.md` (per `canonical/templates/feedback-artifacts/IMPEDIMENT.md:1-9`). Four types: `wrong-assumption`, `missing-dependency`, `architecture-conflict`, `kb-gap` (per `IMPEDIMENT.md:20-23`).
+- **Impediments are formal artifacts** at `.aid/{work}/task-NNN/IMPEDIMENT.md` (per `canonical/templates/feedback-artifacts/IMPEDIMENT.md` `# Impediment — task-NNN`). Four types: `wrong-assumption`, `missing-dependency`, `architecture-conflict`, `kb-gap` (per `IMPEDIMENT.md` `## Type`).
 
 ---
 
@@ -264,13 +264,13 @@ The AID repo has no application logging (no application code). Two related conve
 
 ### 5a. Subagent heartbeat (L3)
 
-Every long-running subagent dispatch writes a single-line progress note to a per-dispatch file under `.aid/.heartbeat/<agent>-<unix-ts>.txt` (per `canonical/templates/subagent-heartbeat-protocol.md:1-12`, `canonical/agents/discovery-analyst/AGENT.md:11-34`). The line format is:
+Every long-running subagent dispatch writes a single-line progress note to a per-dispatch file under `.aid/.heartbeat/<agent>-<unix-ts>.txt` (per `canonical/templates/subagent-heartbeat-protocol.md` `# Subagent Heartbeat Protocol`, `canonical/agents/discovery-analyst/AGENT.md` `## Heartbeat protocol`). The line format is:
 
 ```
 [YYYY-MM-DDTHH:MM:SSZ] <STATE> | <progress> | <activity> (~<eta-remaining>)
 ```
 
-Conventions (per `canonical/agents/architect/AGENT.md:17-30`):
+Conventions (per `canonical/agents/architect/AGENT.md` `## Heartbeat protocol`):
 - Use `>` (overwrite), never `>>` (append).
 - Activity must change between updates — repetition signals "stuck" to the orchestrator.
 - Use `unknown` if eta-remaining cannot be predicted.
@@ -278,11 +278,11 @@ Conventions (per `canonical/agents/architect/AGENT.md:17-30`):
 
 ### 5b. Long-wait L2 timers (orchestrator-side)
 
-Skills that dispatch subagents arm three L2 timers per dispatch as separate background Bash calls, each on its own `run_in_background: true` task — never chained with `&` inside a single wrapper (per `canonical/skills/aid-discover/SKILL.md:89-93`). The three timers fire at `LOW/2`, `LOW`, and `1.5×LOW` of the rough-time estimate, allowing the user to see mid-wait progress instead of going silent for 10-25 minutes.
+Skills that dispatch subagents arm three L2 timers per dispatch as separate background Bash calls, each on its own `run_in_background: true` task — never chained with `&` inside a single wrapper (per `canonical/skills/aid-discover/SKILL.md` `Arm 3 L2 timers as SEPARATE background dispatches`). The three timers fire at `LOW/2`, `LOW`, and `1.5×LOW` of the rough-time estimate, allowing the user to see mid-wait progress instead of going silent for 10-25 minutes.
 
 ### 5c. Calibration log (always-on)
 
-Every successful dispatch appends a row to `STATE.md ## Calibration Log` with format `| YYYY-MM-DD | <agent> | <task-id/cycle> | <ETA-band> | <actual> | <notes> |` (per `canonical/skills/aid-discover/SKILL.md:103-108`). Unconditional per work-003 traceability.
+Every successful dispatch appends a row to `STATE.md ## Calibration Log` with format `| YYYY-MM-DD | <agent> | <task-id/cycle> | <ETA-band> | <actual> | <notes> |` (per `canonical/skills/aid-discover/SKILL.md` `STATE.md ## Calibration Log`). Unconditional per work-003 traceability.
 
 ---
 
@@ -290,7 +290,7 @@ Every successful dispatch appends a row to `STATE.md ## Calibration Log` with fo
 
 ### 6a. Single source of truth: `.aid/settings.yml`
 
-All AID runtime settings live in `.aid/settings.yml` (per `canonical/templates/settings.yml:1-9`). The file is YAML 1.2 with these sections:
+All AID runtime settings live in `.aid/settings.yml` (per `canonical/templates/settings.yml` `# Format: YAML 1.2.`). The file is YAML 1.2 with these sections:
 
 - `project:` — `name`, `description`, `type` (brownfield/greenfield)
 - `tools:` — `installed:` list (claude-code/codex/cursor)
@@ -301,7 +301,7 @@ All AID runtime settings live in `.aid/settings.yml` (per `canonical/templates/s
 
 ### 6b. Settings resolution
 
-Skills read settings via `bash canonical/scripts/config/read-setting.sh`, which implements per-skill override resolution: per-skill key (e.g., `discover.minimum_grade`) → global category default (`review.minimum_grade`) → hardcoded fallback supplied via `--default` (per `canonical/scripts/config/read-setting.sh:4-17`). Two invocation modes:
+Skills read settings via `bash canonical/scripts/config/read-setting.sh`, which implements per-skill override resolution: per-skill key (e.g., `discover.minimum_grade`) → global category default (`review.minimum_grade`) → hardcoded fallback supplied via `--default` (per `canonical/scripts/config/read-setting.sh` `Implements the canonical resolution order:`). Two invocation modes:
 
 - `--skill <name> --key <key>` (override-aware) — for grade-style resolution.
 - `--path <a.b.c>` (direct dotted-path) — for non-overridable keys like `execution.max_parallel_tasks`.
@@ -309,13 +309,13 @@ Skills read settings via `bash canonical/scripts/config/read-setting.sh`, which 
 ### 6c. Hard-coded defaults
 
 When `.aid/settings.yml` is absent, callers fall back to `--default` values:
-- `traceability.heartbeat_interval` → `1` (minute) per `canonical/templates/subagent-heartbeat-protocol.md:21`.
-- `execution.max_parallel_tasks` → `5` per `canonical/skills/aid-execute/references/state-execute.md:49`.
-- `review.minimum_grade` → `A` per `canonical/templates/settings.yml:38`.
+- `traceability.heartbeat_interval` → `1` (minute) per `canonical/templates/subagent-heartbeat-protocol.md` `Default value = **1 minute**`.
+- `execution.max_parallel_tasks` → `5` per `canonical/skills/aid-execute/references/state-execute.md` `execution.max_parallel_tasks --default 5`.
+- `review.minimum_grade` → `A` per `canonical/templates/settings.yml` `minimum_grade: A`.
 
 ### 6d. No secrets in repo
 
-There are no `.env` files, no credential templates, no secrets handling (CONFIRMED — repo has no application code and no integration with external services). The only `JSON` configs are Claude-Code permission scopes (`.claude/settings.json`; `.claude/settings.local.json` (gitignored per `.gitignore:44`)).
+There are no `.env` files, no credential templates, no secrets handling (CONFIRMED — repo has no application code and no integration with external services). The only `JSON` configs are Claude-Code permission scopes (`.claude/settings.json`; `.claude/settings.local.json` (gitignored per `.gitignore` `.claude/settings.local.json`)).
 
 ---
 
@@ -333,7 +333,7 @@ There are no `.env` files, no credential templates, no secrets handling (CONFIRM
 
 ### 7b. Thin-router skill decomposition (CONFIRMED per `canonical/skills/*/SKILL.md` structure)
 
-When a `SKILL.md` grows past ~200 lines, extract per-state bodies into `references/state-{name}.md`; keep the router as Dispatch table + Pre-flight + State Detection only. Total skill body lines: 2,242 across 10 skills (was 4,467 pre-refactor — 53% reduction) per `metrics.md`.
+When a `SKILL.md` grows past ~200 lines, extract per-state bodies into `references/state-{name}.md`; keep the router as Dispatch table + Pre-flight + State Detection only. Skill-body line totals (and the pre-refactor reduction) are T3 metrics — see `.aid/generated/metrics.md` for current per-file counts.
 
 ### 7c. Co-location of state files
 
@@ -341,12 +341,12 @@ State references live alongside their skill: `canonical/skills/aid-discover/refe
 
 ### 7d. Per-script + per-test colocation
 
-- Helper scripts live under `canonical/scripts/<category>/<script>.sh`. Each script has byte-identical copies in 4 trees (per §7a). Tests live at `tests/canonical/<script-name>.sh`.
-- The `tests/skills/` directory was deleted in cycle-1 (Q6 resolution). No skill-level e2e tests exist; the 7 canonical/ suites are the complete test inventory.
+- Helper scripts live under `canonical/scripts/<category>/<script>.sh`. Each script has byte-identical copies in 4 trees (per §7a). Tests live at `tests/canonical/test-<script-name>.sh` and are run via `tests/run-all.sh` (shared helpers in `tests/lib/assert.sh`).
+- The `tests/skills/` directory was deleted in cycle-1 (Q6 resolution). No skill-level e2e tests exist; the 13 `tests/canonical/` suites are the complete test inventory.
 
 ### 7e. Area-STATE consolidation (FR2, CONFIRMED per `canonical/templates/discovery-state-template.md`)
 
-Each `.aid/{work}/STATE.md` is the per-area state hub; legacy per-feature `STATE.md` and per-task `STATE.md` files are retired. The discovery area has its own state at `.aid/knowledge/STATE.md` (per `canonical/templates/discovery-state-template.md:1-10`).
+Each `.aid/{work}/STATE.md` is the per-area state hub; legacy per-feature `STATE.md` and per-task `STATE.md` files are retired. The discovery area has its own state at `.aid/knowledge/STATE.md` (per `canonical/templates/discovery-state-template.md` `# Discovery State`).
 
 ### 7f. Single-branch work (CONFIRMED — observed convention; see `tech-debt.md` H1 history)
 
@@ -358,35 +358,35 @@ Commit work-NNN to ONE persistent branch (off master); no per-task worktrees or 
 
 ### 8a. Python
 
-- **`pathlib.Path` over `os.path`** (per `.claude/skills/aid-generate/scripts/harness.py:24`, `profile.py:20`, `render_agents.py:20`).
-- **`@dataclass` for value objects** (per `profile.py:28,108,118` `LayoutConfig`, `FrontmatterConfig`, `AgentConfig`).
-- **`tomllib` stdlib for TOML parsing** (per `profile.py:18`) — no third-party `toml` package.
-- **`hashlib.sha256` for content fingerprints** (per `harness.py:67-81`) — used for `EmissionManifest` sha256 field.
-- **Type hints throughout** (per `harness.py:67` `def sha256_hex(data: bytes) -> str`, `:88` `def substitute_filenames(body: str, filename_map: dict[str, str]) -> str`).
-- **PEP 604 union syntax** (`X | None` not `Optional[X]`) per `profile.py:30-32,46`.
-- **`TYPE_CHECKING` guard** for type-only imports (per `harness.py:25-28`).
-- **Compiled regex constants at module scope** with leading-underscore name (per `harness.py:48-50` `_PLACEHOLDER_RE`, `:58-60` `_CANONICAL_PATH_RE`).
+- **`pathlib.Path` over `os.path`** (per `.claude/skills/aid-generate/scripts/render_lib.py` `from pathlib import Path`, `aid_profile.py` `from pathlib import Path`, `render_agents.py` `from pathlib import Path`).
+- **`@dataclass` for value objects** (per `aid_profile.py` `class LayoutConfig`, `class FrontmatterConfig`, `class AgentConfig`).
+- **`tomllib` stdlib for TOML parsing** (per `aid_profile.py` `import tomllib`) — no third-party `toml` package.
+- **`hashlib.sha256` for content fingerprints** (per `render_lib.py` `def sha256_hex`) — used for `EmissionManifest` sha256 field.
+- **Type hints throughout** (per `render_lib.py` `def sha256_hex(data: bytes) -> str`, `def substitute_filenames(body: str, filename_map: dict[str, str]) -> str`).
+- **PEP 604 union syntax** (`X | None` not `Optional[X]`) per `aid_profile.py` `str | None`.
+- **`TYPE_CHECKING` guard** for type-only imports (per `render_lib.py` `if TYPE_CHECKING:`).
+- **Compiled regex constants at module scope** with leading-underscore name (per `render_lib.py` `_PLACEHOLDER_RE`, `_CANONICAL_PATH_RE`).
 
 ### 8b. Bash
 
-- **POSIX-portable**: scripts must run on Linux, macOS (Big Sur+), and Windows Git Bash (per `canonical/scripts/interview/parse-recipe.sh:3-7`). Avoid GNU-only flags.
-- **Platform-detection via `stat --version`** to pick between GNU coreutils and BSD stat (per `canonical/scripts/kb/build-project-index.sh:73-80`).
-- **Sentinel-file locking for parallel-write safety** (per `canonical/scripts/execute/writeback-task-status.sh:8-9`, `canonical/scripts/interview/parse-recipe.sh:34-35`). Uses `set -o noclobber + atomic create + sleep-poll retry` rather than `flock` (not portable to Windows Git Bash).
-- **`mktemp` + EXIT trap** for temp files (per `canonical/scripts/interview/parse-recipe.sh:64-66`).
-- **AWK for line-level transforms** instead of `sed` when state is needed (per `canonical/scripts/grade.sh:73-76` — fence-detection awk).
+- **POSIX-portable**: scripts must run on Linux, macOS (Big Sur+), and Windows Git Bash (per `canonical/scripts/interview/parse-recipe.sh` `# Portability: POSIX-portable`). Avoid GNU-only flags.
+- **Platform-detection via `stat --version`** to pick between GNU coreutils and BSD stat (per `canonical/scripts/kb/build-project-index.sh` `if stat --version`).
+- **Sentinel-file locking for parallel-write safety** (per `canonical/scripts/execute/writeback-state.sh` `acquire_lock()`, `canonical/scripts/interview/parse-recipe.sh` `acquire_lock()`). Uses `set -o noclobber + atomic create + sleep-poll retry` rather than `flock` (not portable to Windows Git Bash).
+- **`mktemp` + EXIT trap** for temp files (per `canonical/scripts/interview/parse-recipe.sh` `trap 'release_lock' EXIT`).
+- **AWK for line-level transforms** instead of `sed` when state is needed (per `canonical/scripts/grade.sh` `in_fence = !in_fence` — fence-detection awk).
 - **No `realpath` or other GNU-only utilities** observed; portability is preserved.
 
 ### 8c. Markdown
 
 - **GitHub-flavored tables** (`| col | col |` with `|---|---|` separator) — universally used for structured data (per any `.md` in the repo).
-- **Fenced code blocks with language identifier** (e.g., ` ```bash`, ` ```yaml`, ` ```python`) per `canonical/agents/architect/AGENT.md:17-25`.
+- **Fenced code blocks with language identifier** (e.g., ` ```bash`, ` ```yaml`, ` ```python`) per `canonical/agents/architect/AGENT.md` `## Heartbeat protocol`.
 - **One-sentence-per-line is NOT used** — prose flows naturally; bullets are used where a list is semantically correct.
-- **Bold + arrow `→` for state transitions** (e.g., "GENERATE → REVIEW → FIX" per `canonical/skills/aid-discover/SKILL.md:7`).
+- **Bold + arrow `→` for state transitions** (e.g., "GENERATE → REVIEW → FIX" per `canonical/skills/aid-discover/SKILL.md` `State-machine: GENERATE → REVIEW`).
 - **Bullet style `-` (hyphen)** not `*` (asterisk). Consistent across all KB docs and skill bodies.
 
-### 8d. State machine convention (CONFIRMED per `canonical/skills/aid-discover/SKILL.md:54-59`)
+### 8d. State machine convention (CONFIRMED per `canonical/skills/aid-discover/SKILL.md` `**State machine for this skill:**`)
 
-Each skill state machine is documented as a Dispatch table with these columns: `State | Detail | Worker | Advance` (per `canonical/skills/aid-discover/SKILL.md:213-219`). Advance follows one of three forms:
+Each skill state machine is documented as a Dispatch table with these columns: `State | Detail | Worker | Advance` (per `canonical/skills/aid-discover/SKILL.md` `## Dispatch`). Advance follows one of three forms:
 
 - **Unconditional** — always advance to the next state on exit.
 - **Halt** — the state ends the run (terminal state).
@@ -440,14 +440,14 @@ Docs that describe a convention vs. what code actually does:
 | Convention | Documented at | Code confirms? | Notes |
 |------------|---------------|----------------|-------|
 | Thin-Router SKILL.md ≤~360 lines | `coding-standards.md §7b`; `canonical/skills/*/SKILL.md` structure | YES — all 10 user-facing skills fit under the threshold; the largest is `aid-interview`. Per-file line counts live in `.aid/generated/metrics.md` / `project-index.md` | Confirmed |
-| 22 agents, 3 tiers | `README.md:178-198` | YES — confirmed via 22 `AGENT.md` files with `tier: large|medium|small` frontmatter | Confirmed |
-| 15 active KB docs (was 16) | `canonical/skills/aid-discover/SKILL.md:145-149` | YES — list updated in Q3 FIX: 14 retained from standard 16 (removed: security-model, ui-architecture; renamed: data-model → schemas, api-contracts → pipeline-contracts) + 1 new custom (repo-presentation, replaces ui-architecture) = 15 | Confirmed |
-| 8-task-type catalog | `canonical/skills/aid-execute/references/state-execute.md:6-16`; `canonical/templates/delivery-plans/task-template.md:3` | YES — both lists match: RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE | Confirmed |
-| 5 grade severity tags | `canonical/agents/reviewer/AGENT.md:54-62`; `canonical/scripts/grade.sh:5-7` | YES — [CRITICAL]/[HIGH]/[MEDIUM]/[LOW]/[MINOR] match in both | Confirmed |
-| 4 lite-path sub-paths | `canonical/templates/work-state-template.md:19`, `canonical/templates/recipe-template.md:90-93` | YES — sub-path enum present in both | Confirmed |
-| Heartbeat interval = 1 minute default | `canonical/templates/settings.yml:50`; `canonical/templates/subagent-heartbeat-protocol.md:21` | YES — both state default 1 minute | Confirmed |
-| Max parallel tasks = 5 default | `canonical/templates/settings.yml:44`; `canonical/skills/aid-execute/references/state-execute.md:49` | YES — both state default 5 | Confirmed |
-| Calibration Log unconditional | `canonical/skills/aid-discover/SKILL.md:103-108` | Code requires it; always-on per work-003 traceability | Confirmed — matches user feedback "Traceability unconditional" |
+| 22 agents, 3 tiers | `README.md` `## The Agent Model — three tiers` | YES — confirmed via 22 `AGENT.md` files with `tier: large|medium|small` frontmatter | Confirmed |
+| Active KB docs | `canonical/skills/aid-discover/SKILL.md` `the 14 expected documents` | YES — the expected-document list in the cited skill is the source of truth (currently 14 standard docs); history: Q3 FIX removed security-model + ui-architecture, renamed data-model → schemas and api-contracts → pipeline-contracts | Confirmed |
+| 8-task-type catalog | `canonical/skills/aid-execute/references/state-execute.md` `## Task Types`; `canonical/templates/delivery-plans/task-template.md` `**Type:**` | YES — both lists match: RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE | Confirmed |
+| 5 grade severity tags | `canonical/agents/reviewer/AGENT.md` `## Severity Classification`; `canonical/scripts/grade.sh` `count_prose_tag CRITICAL` | YES — [CRITICAL]/[HIGH]/[MEDIUM]/[LOW]/[MINOR] match in both | Confirmed |
+| 4 lite-path sub-paths | `canonical/templates/work-state-template.md` `**Sub-path:**`, `canonical/templates/recipe-template.md` ``Valid `applies-to` values`` | YES — sub-path enum present in both | Confirmed |
+| Heartbeat interval = 1 minute default | `canonical/templates/settings.yml` `heartbeat_interval: 1`; `canonical/templates/subagent-heartbeat-protocol.md` `Default value = **1 minute**` | YES — both state default 1 minute | Confirmed |
+| Max parallel tasks = 5 default | `canonical/templates/settings.yml` `max_parallel_tasks: 5`; `canonical/skills/aid-execute/references/state-execute.md` `execution.max_parallel_tasks --default 5` | YES — both state default 5 | Confirmed |
+| Calibration Log unconditional | `canonical/skills/aid-discover/SKILL.md` `STATE.md ## Calibration Log` | Code requires it; always-on per work-003 traceability | Confirmed — matches user feedback "Traceability unconditional" |
 | Single-branch work | User memory `feedback_single-branch-work.md`; `tech-debt.md` H1 history | (No code enforcement — observed convention only) | Inferred from convention doc; lint does not check |
 
 ⚠️ Inferred from code — needs confirmation: no static lint rule enforces the
@@ -464,29 +464,29 @@ committed, how shell scripts handle input, and what tools each agent may invoke.
 
 ### 11a. `.gitignore` exclusion policy (CONFIRMED)
 
-The following paths MUST remain gitignored (per `.gitignore:18-47`):
+The following paths MUST remain gitignored (per `.gitignore`):
 
 - `.aid/.heartbeat/` — ephemeral per-subagent heartbeat files; accumulate and
-  pollute history. Confirmed gitignored at `.gitignore:46-47`; `git check-ignore
-  -v .aid/.heartbeat/` returns line 47.
-- `.aid/.temp/` — excluded by an explicit `.gitignore` directory entry
+  pollute history. Confirmed gitignored at `.gitignore` `.aid/.heartbeat/`;
+  `git check-ignore -v .aid/.heartbeat/` resolves to that entry.
+- `.aid/.temp/` — excluded by an explicit `.gitignore` directory entry `.aid/.temp/`
   (rename-resilient), in addition to the `*.temp` glob that also matches it.
-- `.aid/knowledge/.cache/` — KB build cache; must not be tracked.
-- IDE/editor files (`.idea/`, `.vscode/`, `*.iml`, etc.) — per `.gitignore:18-30`.
+- `.aid/knowledge/.cache/` — KB build cache; must not be tracked (per `.gitignore` `.aid/knowledge/.cache/`).
+- IDE/editor files (`.idea/`, `.vscode/`, `*.iml`, etc.) — per `.gitignore` `.vscode/` / `.idea/`.
 - `.claude/settings.local.json` — per-developer Claude Code overrides; excluded
-  at `.gitignore:44`. Not a credentials file (the repo has no credentials) but
+  at `.gitignore` `.claude/settings.local.json`. Not a credentials file (the repo has no credentials) but
   excluded to prevent accidental personal-preference commits.
 
 ### 11b. Shell script safety discipline (CONFIRMED)
 
 Every canonical helper script under `canonical/scripts/` declares
-`set -euo pipefail` at the top (per `canonical/scripts/config/read-setting.sh:44`
+`set -euo pipefail` at the top (per `canonical/scripts/config/read-setting.sh` `set -euo pipefail`
 as the exemplar). Exceptions are documented in §3b above:
 
 - `set -uo pipefail` (no `-e`) when the script runs many checks and must
   continue past per-check failures (pattern: `canonical/scripts/kb/build-project-index.sh`).
 - `set -u` only (no `-e`, no `-o pipefail`) when the script does explicit
-  mode-dispatch with named exit codes (e.g., `writeback-task-status.sh:41`).
+  mode-dispatch with named exit codes (e.g., `writeback-state.sh` `set -u`).
 
 The principle: **fail fast by default**; deviate only with a documented rationale
 embedded in the script's header or inline comment.
