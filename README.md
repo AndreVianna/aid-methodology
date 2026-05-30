@@ -340,14 +340,17 @@ You don't need the whole pipeline on day one. Common entry points:
 
 ## Versioning
 
-AID has **no version** yet. It is methodology-in-development; the canonical
-position is "continuous master". To get the latest changes:
+AID is at **`0.1.0-dev`** (see the [`VERSION`](VERSION) file) — a pre-release
+marker, not a stable release. The canonical position is **"continuous master"**:
+there is no formal semver release cadence yet.
 
-- Install via `setup.sh` (or `setup.ps1` on Windows) pulls the current `master`
-- Re-run `setup.sh` (or `setup.ps1`) to pick up updates
+- Install via `setup.sh` (or `setup.ps1` on Windows) — it installs the current
+  `master` and prints the installed version on completion.
+- Re-run `setup.sh` (or `setup.ps1`) to pick up updates.
 
-Formal versioning (semver, VERSION file, releases) will be added when AID
-stabilizes enough to warrant it.
+A formal version bump (with a release/changelog cadence) will be introduced when
+the methodology stabilizes — the methodology-flexibility work is the natural
+first-version point.
 
 ---
 

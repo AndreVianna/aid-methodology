@@ -215,12 +215,12 @@ other than one task in flight at a time (sequential execution).
 
 When executing a delivery wave, render a sub-unit snapshot after each sub-unit transition.
 
-> **Authoritative spec:** `references/state-execute.md § EXECUTE-WAVE Drill-down`
+> **Authoritative spec:** `references/state-execute-drilldown.md`
 > contains the full snapshot format, status-icon vocabulary, re-render trigger
 > rules (1-second coalescing), serial-task fallback semantics, and failure
 > tolerance. This SKILL.md section is a brief router-level pointer; do not
-> duplicate the spec here — read it from state-execute.md so the two stay in
-> sync.
+> duplicate the spec here — read it from state-execute-drilldown.md so the two
+> stay in sync.
 
 ## Impediments
 

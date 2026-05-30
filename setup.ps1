@@ -150,6 +150,8 @@ if ($selected[3]) {
 
 Write-Host ""
 Write-Host "Done. Files installed into: $Target"
+$aidVersion = if (Test-Path (Join-Path $ScriptDir 'VERSION')) { (Get-Content -LiteralPath (Join-Path $ScriptDir 'VERSION') -Raw).Trim() } else { '(unknown)' }
+Write-Host "Installed AID version: $aidVersion"
 Write-Host ""
 Write-Host "Next steps:"
 Write-Host "  1. Run /aid-config to scaffold the Knowledge Base structure and project placeholders."

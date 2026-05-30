@@ -155,6 +155,7 @@ fi
 
 echo ""
 echo "Done. Files installed into: $TARGET"
+echo "Installed AID version: $(cat "$SCRIPT_DIR/VERSION" 2>/dev/null || echo "(unknown)")"
 echo ""
 echo "Next steps:"
 echo "  1. Run /aid-config to scaffold the Knowledge Base structure and project placeholders."

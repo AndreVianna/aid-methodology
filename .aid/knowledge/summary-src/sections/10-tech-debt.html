@@ -2,7 +2,7 @@
 	<header>
 		<span class="eyebrow">Debt</span>
 		<h2>Tech Debt</h2>
-		<p class="lede">Overall debt level: Medium–High. The codebase is well-organized (Thin-Router convention, single canonical source, 13-suite test coverage) and now has enforced pre-merge CI (required status checks on master) but still carries a structural gap (methodology rigidity). <strong>Zero Critical items remain.</strong> One High item, two Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
+		<p class="lede">Overall debt level: Low–Medium. The codebase is well-organized (Thin-Router convention, single canonical source, 13-suite test coverage) and now has enforced pre-merge CI (required status checks on master) but is now down to a single open item (methodology rigidity). <strong>Zero Critical items remain.</strong> One High item; zero Medium, zero Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
@@ -23,8 +23,8 @@
 		</div>
 		<div class="card">
 			<div class="kicker">Low</div>
-			<div class="stat" style="color:var(--text-dim);">2</div>
-			<div class="stat-sub">L1, L4</div>
+			<div class="stat" style="color:var(--text-dim);">0</div>
+			<div class="stat-sub">none open</div>
 		</div>
 	</div>
 
@@ -32,18 +32,6 @@
 		<div class="title">H5 — Methodology flexibility</div>
 		<div class="meta">Type: Architecture · Effort: L · Priority: P2</div>
 		<p>Methodology assumes a rigid 16-doc KB set. Meta-repos, docs-only projects, and library-only projects need flexibility to adapt the standard set. (per tech-debt.md H5)</p>
-	</div>
-
-	<div class="debt-item low">
-		<div class="title">L1 — Source bloat</div>
-		<div class="meta">Type: Complexity · Effort: M · Priority: P3</div>
-		<p>Roughly ten files exceed 500 lines (largest: methodology spec 1,070; <code>test-parse-recipe.sh</code> 906; <code>state-execute.md</code> 629; <code>writeback-state.sh</code> 627). (per tech-debt.md L1)</p>
-	</div>
-
-	<div class="debt-item low">
-		<div class="title">L4 — No versioning</div>
-		<div class="meta">Type: Process · Effort: S · Priority: P3</div>
-		<p>AID has no VERSION file, no semver. Current position is "continuous master". (per tech-debt.md L4)</p>
 	</div>
 
 </section>
