@@ -131,7 +131,7 @@ The **`setup.sh` / `setup.ps1` pair** is the end-user-facing install entrypoint.
 
 Both scripts accept a target directory and an interactive menu (1 = Claude Code, 2 = Codex, 3 = Cursor; multi-select). They copy the matching `profiles/<tool>/` tree into the target. See `setup.sh:7-37` and `setup.ps1:1-40` for the argument-parsing and menu-state code.
 
-There is **no test for the install flow** — see `tech-debt.md` L2.
+The install flow is covered by `tests/canonical/test-setup.sh`; `test-setup-ps1.sh` exercises `setup.ps1`'s platform-independent pre-install logic (its Windows-only file copy is not run on Linux CI).
 
 ---
 
