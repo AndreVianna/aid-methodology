@@ -29,6 +29,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Ignore exec-bit changes (repo is maintained with core.fileMode=false)
+        run: git config core.fileMode false
       - name: Regenerate install trees from canonical/
         run: python run_generator.py
       - name: Assert profiles/ has no uncommitted render drift
@@ -51,6 +53,10 @@ jobs:
           key: mermaid-v11.15.0
       - name: Pre-seed pinned Mermaid (SHA-verified; hermetic after first run)
         run: bash canonical/scripts/summarize/fetch-mermaid.sh
+      - name: Make helper + test scripts executable
+        # Committed 100644 (the repo is authored on Windows); several suites invoke
+        # their SUT directly (e.g. "$WRITEBACK"), which needs the exec bit on Linux.
+        run: find canonical/scripts tests/canonical -name '*.sh' -exec chmod +x {} +
       - name: Run all canonical suites
         shell: bash
         run: |

@@ -8,3 +8,7 @@
 *.sh   text eol=lf
 *.mjs  text eol=lf
 *.py   text eol=lf
+# Markdown must be LF too: build-index.sh's awk frontmatter parser chokes on
+# CRLF on Linux (intent: blocks parse as "no intent declared"), which broke the
+# kb-hygiene CI check.
+*.md   text eol=lf

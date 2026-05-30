@@ -81,7 +81,7 @@ changelog:
 
 **Not CI-gateable (need an AI host / human):** the 10 prompt-driven skills, the discovery-reviewer semantic review, aid-summarize's V1 visual gate, and the E2E pipeline — exercised by dogfooding. A `Makefile` / `tests/run-all.sh` aggregator (see M4) would give local + CI a shared entrypoint.
 
-**Status:** Workflow drafted 2026-05-29 (`.github/workflows/test.yml` + `.gitattributes`); all four jobs verified green locally (render-drift clean, 7 suites pass, 4 self-tests pass, hygiene guards pass). Remaining to close H2: confirm the workflow runs green on GitHub Actions, then enable the required-status-check branch protection on `master`.
+**Status:** Workflow added 2026-05-29 (`.github/workflows/test.yml` + `.gitattributes`). The first GitHub Actions run surfaced 3 latent cross-platform issues the Windows-only history had hidden: (1) exec-bit mode diffs — `render_scripts.py` chmods `.sh` +x and the runner's `core.fileMode=true` flags `100644→100755`; (2) several suites invoke their SUT directly (`"$WRITEBACK"`), which needs the exec bit on a clean Linux checkout; (3) 4 `.md`/config files were committed with CRLF, which broke `build-index.sh`'s awk on Linux. All fixed (CI sets `core.fileMode=false` + `chmod +x` the scripts; the `.md` were normalized to LF and locked via `.gitattributes`). Remaining to close H2: confirm the post-fix run is green on GitHub, then enable required-status-check branch protection on `master`.
 
 **Owner suggestion:** maintainer + devops agent.
 
