@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# render_skills.py — AID canonical-generator skill renderer (task-020)
+# render_skills.py — AID canonical-generator skill renderer
 #
 # Purpose:
 #   Render canonical/skills/aid-{name}/ into per-tool install trees using the

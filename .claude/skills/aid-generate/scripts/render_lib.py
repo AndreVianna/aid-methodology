@@ -50,7 +50,7 @@ _PLACEHOLDER_RE = re.compile(
 )
 
 # Regex matching canonical/* path references that must be rewritten to the
-# install-tree path during render (F1 fix). Uses a word boundary so substrings
+# install-tree path during render. Uses a word boundary so substrings
 # like "foocanonical/..." don't match; constrains the second segment to the
 # known canonical subdirectories so unrelated paths (e.g., "canonical/work-NNN")
 # pass through untouched.
@@ -119,7 +119,7 @@ def substitute_filenames(body: str, filename_map: dict[str, str]) -> str:
 
 
 # ---------------------------------------------------------------------------
-# rewrite_install_paths (F1 fix)
+# rewrite_install_paths
 # ---------------------------------------------------------------------------
 
 def rewrite_install_paths(body: str, install_root: str) -> str:

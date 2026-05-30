@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# render_templates.py — AID canonical-generator template renderer (task-021)
+# render_templates.py — AID canonical-generator template renderer
 #
 # Purpose:
 #   Copy the entire canonical/templates/ subtree into the profile's templates

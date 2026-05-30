@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# render_agents.py — AID canonical-generator agent renderer (task-019)
+# render_agents.py — AID canonical-generator agent renderer
 #
 # Purpose:
 #   Render canonical/agents/<name>/AGENT.md into per-tool install trees using the

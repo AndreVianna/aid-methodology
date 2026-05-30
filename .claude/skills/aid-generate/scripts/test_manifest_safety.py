@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# test_manifest_safety.py — EmissionManifest safety-boundary tests (task-022)
+# test_manifest_safety.py — EmissionManifest safety-boundary tests
 #
 # Purpose:
 #   Validates the two safety-boundary invariants of the emission manifest:
@@ -216,7 +216,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         prog="test_manifest_safety.py",
         description=(
-            "EmissionManifest safety-boundary tests (task-022). "
+            "EmissionManifest safety-boundary tests. "
             "Verifies that the deletion pass never touches user-created files "
             "and correctly cascades canonical removals to install-tree deletions."
         ),
