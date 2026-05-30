@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# harness.py — AID canonical-generator shared renderer helpers
+# render_lib.py — AID canonical-generator shared renderer helpers
 #
 # Purpose:
 #   Shared utilities used by every renderer (tasks 019-021):
@@ -9,7 +9,7 @@
 #   - EmissionManifest (JSONL write with sentinel, sorted by dst, LF-only, binary mode)
 #
 # Usage:
-#   python harness.py --help
+#   python render_lib.py --help
 #   (Imported by renderers; also runnable standalone as a self-test)
 #
 # Requirements: Python 3.11+ (tomllib is stdlib; no third-party deps)
@@ -302,7 +302,7 @@ class EmissionManifest:
         Accepts either *content* (raw bytes; SHA-256 is computed internally)
         or a pre-computed *sha256* hex string.  Exactly one of the two must
         be provided.  Renderers (tasks 019-021) pass ``content=`` so the
-        manifest computes the digest; the harness ``write_output_file()``
+        manifest computes the digest; the render_lib ``write_output_file()``
         helper passes ``sha256=`` because it has already encoded the bytes.
 
         Parameters
@@ -448,10 +448,10 @@ class EmissionManifest:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        prog="harness.py",
+        prog="render_lib.py",
         description=(
-            "AID generator harness — shared renderer helpers. "
-            "Run with --self-test to verify harness correctness."
+            "AID generator render library — shared renderer helpers. "
+            "Run with --self-test to verify render-lib correctness."
         ),
     )
     parser.add_argument(

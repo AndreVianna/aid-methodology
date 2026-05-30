@@ -34,7 +34,7 @@ if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
 from aid_profile import load_profile, validate, Profile  # noqa: E402
-from harness import (  # noqa: E402
+from render_lib import (  # noqa: E402
     substitute_filenames,
     rewrite_install_paths,
     sha256_hex,
@@ -101,7 +101,7 @@ def render_scripts(
                 # Renderer policy (also in render_agents/recipes/templates/skills):
                 # every text-emitting renderer applies substitute_filenames THEN
                 # rewrite_install_paths so adopter projects can resolve
-                # canonical/{scripts,templates,...}/ references. See harness.py
+                # canonical/{scripts,templates,...}/ references. See render_lib.py
                 # rewrite_install_paths docstring for the comment-skip rule.
                 content = substitute_filenames(raw, profile.filename_map)
                 content = rewrite_install_paths(content, install_root)

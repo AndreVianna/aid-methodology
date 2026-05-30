@@ -29,7 +29,7 @@ if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
 from aid_profile import load_profile, validate as validate_profile, Profile  # noqa: E402
-from harness import EmissionManifest  # noqa: E402
+from render_lib import EmissionManifest  # noqa: E402
 from render_agents import render_agents  # noqa: E402
 from render_skills import render_skills  # noqa: E402
 from render_templates import render_templates  # noqa: E402

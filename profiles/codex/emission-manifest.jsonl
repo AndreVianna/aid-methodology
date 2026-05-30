@@ -119,7 +119,7 @@
 {"dst": ".agents/templates/feature-inventory.md", "profile": "codex", "sha256": "1866cfe95be8ac1d1a5b1e6e5b003c95093e659fc3362fd0bf8943ed5c81956f", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".agents/templates/feature.md", "profile": "codex", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
 {"dst": ".agents/templates/feedback-artifacts/IMPEDIMENT.md", "profile": "codex", "sha256": "9128ca3631209d6094808c2a3232958605a45aec118fc651bf5b9c3c00e5e96b", "src": "canonical/templates/feedback-artifacts/IMPEDIMENT.md"}
-{"dst": ".agents/templates/generated-files.txt", "profile": "codex", "sha256": "1657c74295ccb16f5877d000b86aac443cd1947caff5b9fc3434ed9b0936f1c0", "src": "canonical/templates/generated-files.txt"}
+{"dst": ".agents/templates/generated-files.txt", "profile": "codex", "sha256": "3c534401aee77f86c746e9c7f846a45c9e3280f8e40e355d6802af4b91d055ce", "src": "canonical/templates/generated-files.txt"}
 {"dst": ".agents/templates/grading-rubric.md", "profile": "codex", "sha256": "5a25bb500968328bdd53b6cc39169de7b9a3e9bc430a7354440240f6d6dc4656", "src": "canonical/templates/grading-rubric.md"}
 {"dst": ".agents/templates/kb-authoring/README.md", "profile": "codex", "sha256": "87578cae098ed119b961754798ad84ea17e5bf4c2fa168cba129fc320bddd9bf", "src": "canonical/templates/kb-authoring/README.md"}
 {"dst": ".agents/templates/kb-authoring/frontmatter-schema.md", "profile": "codex", "sha256": "26348224792b0cf9807374be4e10436a7bd6b3555e572b6faacf1e58d3a0b67a", "src": "canonical/templates/kb-authoring/frontmatter-schema.md"}

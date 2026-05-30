@@ -22,14 +22,14 @@ import tempfile
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Add script directory to sys.path so harness / profile can be imported
+# Add script directory to sys.path so render_lib / aid_profile can be imported
 # directly (maintainer-tooling; no package install needed)
 # ---------------------------------------------------------------------------
 _SCRIPT_DIR = Path(__file__).parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
-from harness import EmissionManifest, sha256_hex  # noqa: E402
+from render_lib import EmissionManifest, sha256_hex  # noqa: E402
 
 
 # ---------------------------------------------------------------------------

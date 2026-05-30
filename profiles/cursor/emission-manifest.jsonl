@@ -143,7 +143,7 @@
 {"dst": ".cursor/templates/feature-inventory.md", "profile": "cursor", "sha256": "1866cfe95be8ac1d1a5b1e6e5b003c95093e659fc3362fd0bf8943ed5c81956f", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".cursor/templates/feature.md", "profile": "cursor", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
 {"dst": ".cursor/templates/feedback-artifacts/IMPEDIMENT.md", "profile": "cursor", "sha256": "9128ca3631209d6094808c2a3232958605a45aec118fc651bf5b9c3c00e5e96b", "src": "canonical/templates/feedback-artifacts/IMPEDIMENT.md"}
-{"dst": ".cursor/templates/generated-files.txt", "profile": "cursor", "sha256": "a35857f9bcb0cba9c57f527a3232d6a955267069c03c5386e7e4cc35180ce18e", "src": "canonical/templates/generated-files.txt"}
+{"dst": ".cursor/templates/generated-files.txt", "profile": "cursor", "sha256": "fe64f49ad71de21a66135efb8a329c0309ea7db056b52e916284412adf844d13", "src": "canonical/templates/generated-files.txt"}
 {"dst": ".cursor/templates/grading-rubric.md", "profile": "cursor", "sha256": "7b9bfadba00e196c180cbb6a552ae99ae116ec452f310151d4e8c9b7caf16f9e", "src": "canonical/templates/grading-rubric.md"}
 {"dst": ".cursor/templates/kb-authoring/README.md", "profile": "cursor", "sha256": "f462f947c773e03eba00795722ca8e26ee436fcd063bd19cbc0ddf626886f6da", "src": "canonical/templates/kb-authoring/README.md"}
 {"dst": ".cursor/templates/kb-authoring/frontmatter-schema.md", "profile": "cursor", "sha256": "3441e54ccc026c6fe73e6ade677e72b70492da4881a3ea85a5b96412f34b06a3", "src": "canonical/templates/kb-authoring/frontmatter-schema.md"}
