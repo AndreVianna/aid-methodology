@@ -1,10 +1,10 @@
 # Tests
 
 Unit/integration tests for the canonical helper scripts that AID skills depend on.
-Each suite is a self-contained bash script with its own assertions; run them
-individually as needed. There is intentionally **no aggregator runner** — the
-suite count is small (7), all tests are deterministic, and explicit per-suite
-invocation matches the methodology's preference for explicit over magical.
+Each suite is a self-contained bash script with its own assertions. Run the whole
+set with the aggregator — `bash tests/run-all.sh` — the single entrypoint shared by
+CI and local development; or run any suite individually. Adding a suite needs no
+runner edit: `run-all.sh` discovers `tests/canonical/test-*.sh` by glob.
 
 ## Test suites
 
@@ -23,14 +23,13 @@ All under `tests/canonical/` (run from repo root):
 ## Running
 
 ```bash
+# Run every suite (aggregates PASS/FAIL, exits non-zero on any failure)
+bash tests/run-all.sh
+bash tests/run-all.sh -v          # verbose — pass through to each suite
+
 # Run one suite
 bash tests/canonical/test-read-setting.sh
-
-# Verbose
 bash tests/canonical/test-read-setting.sh --verbose
-
-# Run all 7 (no aggregator; just chain them)
-for f in tests/canonical/*.sh; do echo "=== $f ==="; bash "$f" || break; done
 ```
 
 On Windows, run from Git Bash (these are POSIX bash scripts).

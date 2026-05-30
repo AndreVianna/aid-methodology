@@ -59,15 +59,9 @@ jobs:
         run: find canonical/scripts tests/canonical -name '*.sh' -exec chmod +x {} +
       - name: Run all canonical suites
         shell: bash
-        run: |
-          set -uo pipefail
-          fail=0
-          for f in tests/canonical/*.sh; do
-            echo "::group::$f"
-            timeout 300 bash "$f" || { echo "::error::suite failed: $f"; fail=1; }
-            echo "::endgroup::"
-          done
-          exit $fail
+        # Single entrypoint shared with local dev (`bash tests/run-all.sh`); discovers
+        # suites by glob, runs each under timeout 300, emits ::group::/::error:: under CI.
+        run: bash tests/run-all.sh
 
   generator-selftests:
     name: generator unit self-tests
