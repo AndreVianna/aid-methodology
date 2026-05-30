@@ -170,9 +170,9 @@ Source: `.aid/generated/project-index.md:17-29` (Language Breakdown table).
 | `canonical/scripts/summarize/writeback-state.sh` | 173 | Writes summarize-phase state back |
 | `canonical/scripts/summarize/contrast-check.mjs` | 151 | Color-contrast accessibility checker |
 | `canonical/scripts/summarize/stale-check.sh` | 107 | Detects stale KB sections |
-| `canonical/scripts/summarize/preflight.sh` | 101 | Summarize preflight check |
+| `canonical/scripts/summarize/summarize-preflight.sh` | 101 | Summarize preflight check |
 | `canonical/scripts/summarize/fetch-mermaid.sh` | 77 | Fetches Mermaid CLI assets |
-| `canonical/scripts/kb/preflight.sh` | 46 | KB pipeline preflight |
+| `canonical/scripts/kb/discover-preflight.sh` | 46 | KB pipeline preflight |
 
 Each script above has 4 byte-identical copies on disk: the canonical source, the dogfood `.claude/scripts/` copy, plus copies in each of the 3 profile install trees.
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# preflight.sh — verifies /aid-summarize prerequisites.
-# (Renamed from check-preflight.sh in 2026-05-26 script consolidation.)
-# Usage: preflight.sh [--cdn-mermaid]
+# summarize-preflight.sh — verifies /aid-summarize prerequisites.
+# Usage: summarize-preflight.sh [--cdn-mermaid]
 # Exits 0 on success, non-zero on any failure with a clear message.
 
 set -u

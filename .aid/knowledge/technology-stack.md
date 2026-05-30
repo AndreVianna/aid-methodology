@@ -159,8 +159,8 @@ Source: `project-structure.md §Build Commands`; `tests/README.md`.
 | **`spot-check-facts.sh`** | `canonical/scripts/summarize/spot-check-facts.sh` (176 lines) | Spot-checks KB facts against source citations | — |
 | **`stale-check.sh`** | `canonical/scripts/summarize/stale-check.sh` (107 lines) | Detects stale KB sections | — |
 | **`concatenate.sh` / `concatenate.ps1`** | 23 / 36 lines respectively | Assembles the final single-file `knowledge-summary.html` by concatenating `part1.html` + cached Mermaid + `part2.html` (PowerShell version uses byte-level concat to avoid CRLF interpretation, see `concatenate.ps1:29-32`) | — |
-| **`preflight.sh` (KB)** | `canonical/scripts/kb/preflight.sh` (46 lines) | Verifies `.aid/knowledge/STATE.md` exists + not in Plan Mode before any `/aid-discover` state | — |
-| **`preflight.sh` (summarize)** | `canonical/scripts/summarize/preflight.sh` (101 lines) | Verifies KB is User-Approved before `/aid-summarize` runs | — |
+| **`preflight.sh` (KB)** | `canonical/scripts/kb/discover-preflight.sh` (46 lines) | Verifies `.aid/knowledge/STATE.md` exists + not in Plan Mode before any `/aid-discover` state | — |
+| **`preflight.sh` (summarize)** | `canonical/scripts/summarize/summarize-preflight.sh` (101 lines) | Verifies KB is User-Approved before `/aid-summarize` runs | — |
 | **`build-index.sh`** | `canonical/scripts/kb/build-index.sh` (203 lines) | Builds `.aid/knowledge/INDEX.md` from KB sources | — |
 | **`build-metrics.sh`** | `canonical/scripts/kb/build-metrics.sh` (213 lines) | KB doc-size metrics | — |
 | **`writeback-state.sh`** | `canonical/scripts/summarize/writeback-state.sh` (173 lines) | Writes summarize-phase state back to `.aid/knowledge/STATE.md` | — |

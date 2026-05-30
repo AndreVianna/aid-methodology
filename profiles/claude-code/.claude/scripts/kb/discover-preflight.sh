@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# preflight.sh — pre-flight checks for /aid-discover.
-# (Renamed from check-preflight.sh in 2026-05-26 script consolidation.)
+# discover-preflight.sh — pre-flight checks for /aid-discover.
 #
-# Usage: preflight.sh [knowledge-dir]
-# Example: preflight.sh .aid/knowledge/
+# Usage: discover-preflight.sh [knowledge-dir]
+# Example: discover-preflight.sh .aid/knowledge/
 #
 # Checks:
 #   1. STATE.md exists (init has run)

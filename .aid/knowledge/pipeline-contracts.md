@@ -336,11 +336,11 @@ The Reviewer agent produces a structured issue list with two-tag classification 
 - **External dependencies:** `curl`, `sha256sum` or `shasum -a 256`
 - **Source:** `canonical/scripts/summarize/fetch-mermaid.sh:1-104`
 
-### `bash canonical/scripts/kb/preflight.sh <knowledge-dir>`
+### `bash canonical/scripts/kb/discover-preflight.sh <knowledge-dir>`
 
 - **Purpose:** Discovery pre-flight gate — verifies (1) `STATE.md` exists (init has run),
   (2) not in Plan Mode
-- **Source:** `canonical/scripts/kb/preflight.sh:1-46`
+- **Source:** `canonical/scripts/kb/discover-preflight.sh:1-46`
 
 ### `node canonical/scripts/summarize/validate-diagrams.mjs <html-file> [--fast]`
 

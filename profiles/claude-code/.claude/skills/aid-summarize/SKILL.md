@@ -32,7 +32,7 @@ summarization.
 
 ## ⚠️ Pre-flight Checks
 
-Run `.claude/scripts/summarize/preflight.sh` before any state. It verifies:
+Run `.claude/scripts/summarize/summarize-preflight.sh` before any state. It verifies:
 
 1. `.aid/knowledge/STATE.md` exists.
 2. `**User Approved:** yes` is present in `.aid/knowledge/STATE.md`.
