@@ -88,13 +88,13 @@ for the full protocol.
 {framework name: version, config file location}
 
 ## Test Types Found
-- **Unit tests:** {location pattern, count estimate}
-- **Integration tests:** {location pattern, count estimate}
-- **E2E tests:** {location pattern, count estimate}
+- **Unit tests:** {location pattern}
+- **Integration tests:** {location pattern}
+- **E2E tests:** {location pattern}
 - **Other:** {snapshot, contract, performance — if found}
 
 ## Coverage
-{coverage tool, config, last known coverage % if in config/CI, source}
+{coverage tool, config, coverage target/enforcement if defined, source}
 
 ## Test Commands
 ```bash
@@ -141,11 +141,10 @@ for the full protocol.
 ### [Low] {Item title}
 ...
 
-## Metrics
-- TODO/FIXME count: {n} (source: `rg "TODO|FIXME"`)
-- Files > 500 lines: {list}
-- Files > 1000 lines: {list}
-- Test-to-code ratio: ⚠️ Inferred from file counts
+## Signals
+- TODO/FIXME markers: {present / none} — current count via `rg "TODO|FIXME" | wc -l`
+- Large files (recompute with `wc -l`): {list paths over the team's size threshold}
+- Test presence: {well-tested / partial / sparse — qualitative, not a stored ratio}
 ```
 
 ## Risk Rating Guide

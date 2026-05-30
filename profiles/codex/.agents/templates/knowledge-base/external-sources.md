@@ -29,10 +29,10 @@ or add paths during Q&A.
 
 {If external sources were provided:}
 
-| # | Path | Type | Accessible | Files | Key Content |
-|---|------|------|------------|-------|-------------|
-| 1 | {/path/to/docs} | {directory} | {✅/❌} | {N} | {Brief inventory of what's there} |
-| 2 | {/path/to/spec.pdf} | {file} | {✅/❌} | 1 | {What the doc covers} |
+| # | Path | Type | Accessible | Key Content |
+|---|------|------|------------|-------------|
+| 1 | {/path/to/docs} | {directory} | {✅/❌} | {Brief inventory of what's there} |
+| 2 | {/path/to/spec.pdf} | {file} | {✅/❌} | {What the doc covers} |
 
 ---
 

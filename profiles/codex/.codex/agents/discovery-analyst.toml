@@ -58,7 +58,7 @@ for the full protocol.
 
 
 ## What You Do
-- Map every module: purpose, dependencies, size (lines/files), test coverage estimate
+- Map every module: purpose, dependencies, relative size, test coverage
 - Mine coding conventions from actual code (not docs): naming, error handling, logging, config patterns, file organization
 - Extract data models: schema definitions, entity relationships, migrations, indexes, validation rules
 - Produce `.aid/knowledge/module-map.md`, `.aid/knowledge/coding-standards.md`, `.aid/knowledge/schemas.md`
@@ -86,7 +86,7 @@ for the full protocol.
 ## {Module Name}
 - **Path:** {directory path}
 - **Purpose:** {what this module does}
-- **Size:** {file count, approximate line count}
+- **Size:** {relative size: small / medium / large}
 - **Dependencies:** {internal modules it imports, external packages}
 - **Test Coverage:** {test files found, coverage if available} ⚠️ Inferred if estimated
 - **Key Files:** {most important files with one-line descriptions}

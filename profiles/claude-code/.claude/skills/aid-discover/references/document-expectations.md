@@ -5,12 +5,12 @@ These define what the reviewer (and FIX mode) should look for in each document.
 ---
 
 ### project-structure.md
-Must have: directory tree (top 3-4 levels with annotations), file counts per major directory,
-key files and their purpose (entry points, build files, configs, tests), detected languages
-and frameworks, documentation files found in the repository. This is an inventory/map — not
-deep analysis. Other agents use this to know WHERE to look.
-**Red flags**: Too shallow (just a tree dump without annotations). Missing file counts.
-Too deep (analyzing patterns instead of mapping structure). Missing key build/config files.
+Must have: directory tree (top 3-4 levels with annotations), a purpose annotation for each
+major directory, key files and their purpose (entry points, build files, configs, tests),
+detected languages and frameworks, documentation files found in the repository. This is an
+inventory/map — not deep analysis. Other agents use this to know WHERE to look.
+**Red flags**: Too shallow (just a tree dump without annotations). Missing directory-purpose
+annotations. Too deep (analyzing patterns instead of mapping structure). Missing key build/config files.
 
 ### architecture.md
 Must have: project type, folder structure (annotated), architectural patterns with evidence,
@@ -56,7 +56,7 @@ product names with explanations.
 **Red flags**: Generic programming terms. Missing project-specific vocabulary.
 
 ### test-landscape.md
-Must have: frameworks, test types, coverage metrics/goals, CI integration, which modules
+Must have: frameworks, test types, coverage target/enforcement (if defined), CI integration, which modules
 have real tests vs placeholders, test gaps with severity.
 Must have: **Test Commands** section with exact commands to run all unit tests, per-module
 tests, and coverage reports. These are critical for aid-execute — agents need runnable

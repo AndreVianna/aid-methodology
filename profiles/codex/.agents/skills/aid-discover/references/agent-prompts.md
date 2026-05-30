@@ -14,7 +14,7 @@ and passes it as the prompt to each subagent.
 > Map the repository structure — directory tree (top 3-4 levels), key files and their purpose,
 > detected languages and frameworks, build system files, entry points, test directories,
 > configuration files, and documentation files. This is an inventory, not deep analysis.
-> Include file counts per major directory and note any unusual structure.
+> Annotate each major directory with its purpose (file counts drift — let readers run `find`) and note any unusual structure.
 >
 > **.aid/knowledge/external-sources.md:**
 > {If external docs were provided: "The user provided additional documentation outside the repository: {paths}. Read ALL of these thoroughly. For each source, document: path, type (file/directory), content inventory (list every significant document with topic and key findings), and discrepancies between documentation and code. This is critical — other agents will use this document to find information that is NOT in the code."}
