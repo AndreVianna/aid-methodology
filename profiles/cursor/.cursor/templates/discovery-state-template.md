@@ -65,7 +65,7 @@ This is the single state file for the **Discovery area** — persistent project 
 - **Category:** {category, e.g., Architecture, Security, UX}
 - **Impact:** {High|Medium|Low|Required}
 - **Status:** Pending | Answered | Skipped
-- **Context:** {why this matters; what the downstream phase observed; cite relevant file:line if applicable}
+- **Context:** {why this matters; what the downstream phase observed; cite a durable anchor (file + symbol) if applicable}
 - **Suggested:** {answer if inferrable, or —}
 - **Answer:** {filled when status is Answered}
 - **Applied to:** {KB doc(s) the answer was applied to}

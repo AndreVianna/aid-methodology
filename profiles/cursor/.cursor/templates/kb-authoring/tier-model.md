@@ -119,9 +119,15 @@ determines tier allowances and review rubric (see [review-rubric.md](review-rubr
 - **Mermaid diagram structure** — T1 Concept (the relationships shown). Diagram-level
   metric annotations (e.g., "5 nodes, 2.4 MB inlined") in figcaptions are T3 and
   should be cut.
+- **"see `parse.sh:412`"** — the `:412` suffix is a positional pointer that rots on the
+  next edit (as volatile as a T3 metric, though it is a citation, not a measurement).
+  Cite a durable anchor — `parse.sh` plus the function/heading name — not the line number.
+  Unlike T3 counts (build-script-owned, never reviewed), a stray `:LINE` cite IS the
+  reviewer's business — governed by [principles.md](principles.md) P1(d) and flagged for
+  replacement under review-rubric.md check #8.
 
 ## See also
 
-- [principles.md](principles.md) — the 7 principles, including P1 (no drift-prone) and P2 (proper metric)
+- [principles.md](principles.md) — the 8 principles, including P1 (no drift-prone) and P2 (proper metric)
 - [frontmatter-schema.md](frontmatter-schema.md) — `contracts:` field where T2 claims are declared
 - [review-rubric.md](review-rubric.md) — how the reviewer applies the tier model per kb-category

@@ -44,5 +44,5 @@ Read, Glob, Grep, Bash, Write. Runs with `permissionMode: bypassPermissions` (ba
 ## Key Behaviors
 
 - **Code over docs.** Conventions come from `grep`/`Glob` over real code, not from CONTRIBUTING.md. The two often disagree; the code wins.
-- **Path-cited.** Every convention claim cites file:line evidence.
+- **Path-cited.** Every convention claim cites a durable anchor — file path + grep-recoverable symbol/heading, never a bare line number.
 - **Volume-tolerant.** May delegate mechanical extraction to `simple-extractor` for large codebases; synthesis stays at the Analyst tier.
