@@ -2,7 +2,7 @@
 	<header>
 		<span class="eyebrow">Debt</span>
 		<h2>Tech Debt</h2>
-		<p class="lede">Overall debt level: Low–Medium. The codebase is well-organized (Thin-Router convention, single canonical source, 13-suite test coverage) and now has enforced pre-merge CI (required status checks on master) but is now down to a single open item (methodology rigidity). <strong>Zero Critical items remain.</strong> One High item; zero Medium, zero Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
+		<p class="lede">Overall debt level: Low. The codebase is well-organized (Thin-Router convention, single canonical source, 18-suite test coverage) and has enforced pre-merge CI (required status checks on master). The inventory is now effectively empty: <strong>zero Critical, zero High, zero Medium</strong>; a single Low item (L6) remains — stale fixed-doc-count prose left outside the de-hardcode scope. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
@@ -13,8 +13,8 @@
 		</div>
 		<div class="card">
 			<div class="kicker">High</div>
-			<div class="stat" style="color:var(--warn);">1</div>
-			<div class="stat-sub">H5</div>
+			<div class="stat" style="color:var(--ok);">0</div>
+			<div class="stat-sub">none open</div>
 		</div>
 		<div class="card">
 			<div class="kicker">Medium</div>
@@ -23,15 +23,20 @@
 		</div>
 		<div class="card">
 			<div class="kicker">Low</div>
-			<div class="stat" style="color:var(--text-dim);">0</div>
-			<div class="stat-sub">none open</div>
+			<div class="stat" style="color:var(--text-dim);">1</div>
+			<div class="stat-sub">L6</div>
 		</div>
 	</div>
 
-	<div class="debt-item high">
-		<div class="title">H5 — Methodology flexibility</div>
-		<div class="meta">Type: Architecture · Effort: L · Priority: P2</div>
-		<p>Methodology assumes a rigid 16-doc KB set. Meta-repos, docs-only projects, and library-only projects need flexibility to adapt the standard set. (per tech-debt.md H5)</p>
+	<div class="callout ok">
+		<h4>H5 resolved — methodology flexibility shipped</h4>
+		<p>The former High item H5 (methodology assumed a rigid fixed-doc KB set) is <strong>RESOLVED</strong>. Delivery-002 of work-001 added the <code>discovery.doc_set</code> declared doc-set, a propose&rarr;confirm GENERATE checkpoint with data-driven dispatch, a <code>doc-set-resolve.md</code> shared snippet, de-hardcoded the doc-count/doc-list literals, and added 3 canonical doc-set test suites. The AID repo's own carve-out is now modeled cleanly as a declared set. (per tech-debt.md changelog 2026-05-31)</p>
+	</div>
+
+	<div class="debt-item low">
+		<div class="title">L6 — FR-P0-4 residual fixed-doc-count literals</div>
+		<div class="meta">Type: Methodology / consistency · Effort: S · Priority: P3</div>
+		<p>Shipped behavior is correct (the doc-set is declared/variable), but a few reviewer/README sites outside the de-hardcode scope still phrase the doc-set as a fixed "14"/"16" set — stale prose to tidy, no behavior impact. (per tech-debt.md L6)</p>
 	</div>
 
 </section>

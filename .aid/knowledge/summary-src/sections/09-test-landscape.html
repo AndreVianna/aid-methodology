@@ -2,7 +2,7 @@
 	<header>
 		<span class="eyebrow">Tests</span>
 		<h2>Test Landscape</h2>
-		<p class="lede">13 unit/integration test suites under <code>tests/canonical/</code>, glob-discovered and run by the <code>tests/run-all.sh</code> aggregator, all sharing the <code>tests/lib/assert.sh</code> assertion library. Most are pure Bash; two shell out to <code>node</code> (the <code>.mjs</code> validators) and two to <code>pwsh</code> (the PowerShell mirrors), each skipping if its runtime is absent. They cover the canonical helper scripts that AID skills depend on. CI runs the suites on PR/push (`.github/workflows/test.yml`), pins <code>node</code> + asserts <code>pwsh</code> present, and is a required status check on master. (per test-landscape.md)</p>
+		<p class="lede">18 unit/integration test suites under <code>tests/canonical/</code>, glob-discovered and run by the <code>tests/run-all.sh</code> aggregator, all sharing the <code>tests/lib/assert.sh</code> assertion library. Most are pure Bash; two shell out to <code>node</code> (the <code>.mjs</code> validators) and two to <code>pwsh</code> (the PowerShell mirrors), each skipping if its runtime is absent. They cover the canonical helper scripts that AID skills depend on, plus discovery doc-ownership and the declared doc-set resolve/dispatch logic. CI runs the suites on PR/push (`.github/workflows/test.yml`), pins <code>node</code> + asserts <code>pwsh</code> present, and is a required status check on master. (per test-landscape.md)</p>
 	</header>
 
 	<div class="tbl-wrap">
@@ -87,8 +87,38 @@
 					<td>pwsh</td>
 					<td>Platform-independent pre-install logic under <code>pwsh</code> on Linux: target validation + selection-menu loop (backslash-path copy is Windows-only). Skips if <code>pwsh</code> absent</td>
 				</tr>
+				<tr>
+					<td><code>test-discovery-doc-ownership.sh</code></td>
+					<td><code>discovery-scout</code>/<code>discovery-quality</code> AGENT.md + <code>aid-discover/state-generate.md</code></td>
+					<td>bash</td>
+					<td>Discovery doc-ownership consistency: exactly one agent "produces" each standard KB doc; each agent's Produce line + What-You-Don't-Do agrees with the dispatch table (scout owns project-structure + external-sources, NOT infrastructure; quality owns infrastructure + test-landscape + tech-debt). 14 checks</td>
+				</tr>
+				<tr>
+					<td><code>test-expectations-single-source.sh</code></td>
+					<td><code>aid-discover/document-expectations.md</code> + discovery-reviewer/reviewer-prompt/state-review/state-fix</td>
+					<td>bash</td>
+					<td>Single-source invariant for per-doc expectations: <code>document-expectations.md</code> is the sole file with per-doc <code>### *.md</code> blocks; reviewer AGENT.md has none; <code>{{DOCUMENT_EXPECTATIONS}}</code> placeholder present + merge completeness. 9 checks</td>
+				</tr>
+				<tr>
+					<td><code>test-doc-set-read.sh</code></td>
+					<td><code>aid-discover/doc-set-resolve.md</code> (<code>resolve_doc_set</code>/<code>synth_default_seed</code> + 4 accessors)</td>
+					<td>bash</td>
+					<td>Core doc-set resolve/accessor logic: unset → default seed; declared set → exact filename/owner/presence rows; all 4 accessors; comment stripping; comma-in-<code>when</code> shred behavior; unknown owner → discovery-architect; bash+awk-only. 15 checks</td>
+				</tr>
+				<tr>
+					<td><code>test-doc-set-mapping.sh</code></td>
+					<td><code>doc-set-resolve.md</code> + dispatch mapping in <code>state-generate.md</code></td>
+					<td>bash</td>
+					<td>Mapping-honors-declared-set invariant: no-hang-on-omission, dispatch-on-addition, carve-out-as-config (renamed docs pipeline-contracts/schemas/repo-presentation; old names excluded), non-software fixture with user edits honored verbatim. 15 checks</td>
+				</tr>
+				<tr>
+					<td><code>test-doc-set-propose-confirm.sh</code></td>
+					<td><code>doc-set-resolve.md</code> + <code>state-generate.md</code> §Step 0d</td>
+					<td>bash</td>
+					<td>Propose&rarr;confirm flow (SPEC feature-004 §3.1/§4): default path (accepting default is a no-op — no <code>discovery.doc_set</code> written); user-edit path (omission + addition honored verbatim; counts match). 9 checks</td>
+				</tr>
 				<tr style="font-weight:600;">
-					<td>13 suites</td>
+					<td>18 suites</td>
 					<td></td>
 					<td>bash / node / pwsh</td>
 					<td>All self-reporting via the shared <code>tests/lib/assert.sh</code> <code>test_summary</code> (<code>Tests passed: N</code> / <code>Tests failed: M</code>); aggregated by <code>tests/run-all.sh</code>, which exits non-zero if any suite fails</td>

@@ -24,14 +24,14 @@
 		<div class="card plugin">
 			<div class="kicker">Phase 2 — Discovery</div>
 			<div class="plugin-name">/aid-discover</div>
-			<div class="plugin-body">Brownfield project discovery with built-in quality gate. Dispatches 5 specialist sub-agents in parallel to generate 15 KB documents, then reviews, collects user input, fixes issues, and gets approval.</div>
+			<div class="plugin-body">Brownfield project discovery with built-in quality gate. GENERATE resolves a declared KB doc-set from <code>discovery.doc_set</code> (or synthesizes a default seed), runs a propose&rarr;confirm checkpoint, then dispatches discovery sub-agents data-driven from the confirmed set; it then reviews, collects user input, fixes issues, and gets approval.</div>
 			<div class="plugin-stats">
 				<span class="badge badge-ok">Shipped</span>
 				<span class="badge">8 reference files</span>
 			</div>
 			<dl>
 				<dt>States</dt><dd>GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE</dd>
-				<dt>Key outputs</dt><dd><code>.aid/knowledge/*.md</code> (15 KB docs)</dd>
+				<dt>Key outputs</dt><dd><code>.aid/knowledge/*.md</code> (the declared/derived KB doc-set)</dd>
 				<dt>Agents</dt><dd>5 discovery-* sub-agents + discovery-reviewer</dd>
 			</dl>
 		</div>
