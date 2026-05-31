@@ -182,9 +182,9 @@
 {"dst": ".codex/agents/discovery-analyst.toml", "profile": "codex", "sha256": "01505cb06ee8c6e5f3bb6b311e168aa0244e050dc64454f8ac6953786e57b70a", "src": "canonical/agents/discovery-analyst/AGENT.md"}
 {"dst": ".codex/agents/discovery-architect.toml", "profile": "codex", "sha256": "e0c912e3fccf63868464aca27fd8bd05a2bee73880bb96510e380bb464b1575f", "src": "canonical/agents/discovery-architect/AGENT.md"}
 {"dst": ".codex/agents/discovery-integrator.toml", "profile": "codex", "sha256": "d4be19a58bc6b0a7fe6c98776e1fe2425bafbde3aa2839e43c9a49eb9495b37d", "src": "canonical/agents/discovery-integrator/AGENT.md"}
-{"dst": ".codex/agents/discovery-quality.toml", "profile": "codex", "sha256": "85b6e1f5e7b9ea81fce0a60c942daf95f02eb7bd7c220092f2deaa33f3aeb654", "src": "canonical/agents/discovery-quality/AGENT.md"}
+{"dst": ".codex/agents/discovery-quality.toml", "profile": "codex", "sha256": "ea94846619920fbe9db512274588a99e5ab931736d80511af0acf4687729f474", "src": "canonical/agents/discovery-quality/AGENT.md"}
 {"dst": ".codex/agents/discovery-reviewer.toml", "profile": "codex", "sha256": "5512aac6147022af303c7c5bec9903c00d883f59beee1b285f798f1810d22822", "src": "canonical/agents/discovery-reviewer/AGENT.md"}
-{"dst": ".codex/agents/discovery-scout.toml", "profile": "codex", "sha256": "760343001adc36580d3855a1f7ff582475b544f144dc2b3502c1b58664f99032", "src": "canonical/agents/discovery-scout/AGENT.md"}
+{"dst": ".codex/agents/discovery-scout.toml", "profile": "codex", "sha256": "52bbc761b0286952218d325c22874171f72123deb1005a51c284c83aef5f7631", "src": "canonical/agents/discovery-scout/AGENT.md"}
 {"dst": ".codex/agents/interviewer.toml", "profile": "codex", "sha256": "f58875ac042e5f8192c3b20496fe90cf3baedce2a320034059b006eaf977f5a2", "src": "canonical/agents/interviewer/AGENT.md"}
 {"dst": ".codex/agents/operator.toml", "profile": "codex", "sha256": "1f3e11b5b2ef1286c1046451c48c07eafea5a341b9619b2401901c87051af4f3", "src": "canonical/agents/operator/AGENT.md"}
 {"dst": ".codex/agents/orchestrator.toml", "profile": "codex", "sha256": "dd47e0ae4b9b2d5a80f1556515efe14600e8eb923005fc04f0beafbce001d070", "src": "canonical/agents/orchestrator/AGENT.md"}

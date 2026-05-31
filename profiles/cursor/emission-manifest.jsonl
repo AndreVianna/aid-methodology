@@ -6,9 +6,9 @@
 {"dst": ".cursor/agents/discovery-analyst.md", "profile": "cursor", "sha256": "536c4bd820393b22d162368c32ed46a4e9a456b6bf28e62f8c0448a5391e4a97", "src": "canonical/agents/discovery-analyst/AGENT.md"}
 {"dst": ".cursor/agents/discovery-architect.md", "profile": "cursor", "sha256": "c3dc72ede43ecff2eb171e13a41bfb5c3c5b8d55d73980dfdaa87f5a23f5adb0", "src": "canonical/agents/discovery-architect/AGENT.md"}
 {"dst": ".cursor/agents/discovery-integrator.md", "profile": "cursor", "sha256": "29a624384d233207429d9b9602ba454a497679710708615c87d54b8c4fed0a89", "src": "canonical/agents/discovery-integrator/AGENT.md"}
-{"dst": ".cursor/agents/discovery-quality.md", "profile": "cursor", "sha256": "e2bcc879f5fe47c98424bf8c661f33ad2e58521a25e63916e657be1549a26889", "src": "canonical/agents/discovery-quality/AGENT.md"}
+{"dst": ".cursor/agents/discovery-quality.md", "profile": "cursor", "sha256": "58a09e58a87550c7b5d52af52bc94722c918730cacd80ed72a218809c25f70d0", "src": "canonical/agents/discovery-quality/AGENT.md"}
 {"dst": ".cursor/agents/discovery-reviewer.md", "profile": "cursor", "sha256": "be2c3e755d4ebe04f48435bc7549b9bb96a63a5db36b1339a18d0db0aa08311a", "src": "canonical/agents/discovery-reviewer/AGENT.md"}
-{"dst": ".cursor/agents/discovery-scout.md", "profile": "cursor", "sha256": "a92bc9a215a7c215d959f2165658ea348fc41023c502086f53c0b3f12dd5b65e", "src": "canonical/agents/discovery-scout/AGENT.md"}
+{"dst": ".cursor/agents/discovery-scout.md", "profile": "cursor", "sha256": "a1ee8a4e86cacabb2b78196dda5ca3471f53c58724590677f1ce9fdcd4a09ec7", "src": "canonical/agents/discovery-scout/AGENT.md"}
 {"dst": ".cursor/agents/interviewer.md", "profile": "cursor", "sha256": "3a78ee4337eda48fcb7758788a2dadcc1e5fe82033b38b764f158493b010d183", "src": "canonical/agents/interviewer/AGENT.md"}
 {"dst": ".cursor/agents/operator.md", "profile": "cursor", "sha256": "a7515383736f93e0daca7ac560226b90e85ef772638f00370aff036756722cdc", "src": "canonical/agents/operator/AGENT.md"}
 {"dst": ".cursor/agents/orchestrator.md", "profile": "cursor", "sha256": "528317c08b5838c2a6ac4c4fabbce1017932ae84754eafad4ff42fdf2d17078e", "src": "canonical/agents/orchestrator/AGENT.md"}

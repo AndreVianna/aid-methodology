@@ -6,9 +6,9 @@
 {"dst": ".claude/agents/discovery-analyst.md", "profile": "claude-code", "sha256": "31acfcc9f62f07af88a0dc88e4bc907fea219b0ca5b453ab64fc6602394c9789", "src": "canonical/agents/discovery-analyst/AGENT.md"}
 {"dst": ".claude/agents/discovery-architect.md", "profile": "claude-code", "sha256": "24dd758da760ce339e408b9d8060c1e5cfe58f6d517f7eb0f63f607ae8423430", "src": "canonical/agents/discovery-architect/AGENT.md"}
 {"dst": ".claude/agents/discovery-integrator.md", "profile": "claude-code", "sha256": "57b0969d823fa2c0935bf22492a7508fde71604c54d5454a7878ce170ed8e68f", "src": "canonical/agents/discovery-integrator/AGENT.md"}
-{"dst": ".claude/agents/discovery-quality.md", "profile": "claude-code", "sha256": "c9431c78d0633923445122ea85cedbb91e284adc37000d497cfbaf425eedf56f", "src": "canonical/agents/discovery-quality/AGENT.md"}
+{"dst": ".claude/agents/discovery-quality.md", "profile": "claude-code", "sha256": "59761c531e8f3c52e7af7ed25226dd4e8b9b59f5bad0ef63deb3dd78d447eb4a", "src": "canonical/agents/discovery-quality/AGENT.md"}
 {"dst": ".claude/agents/discovery-reviewer.md", "profile": "claude-code", "sha256": "3647eb4f6b655153454b5773681f6ac0163d1999bca021ee93aadade1f32116e", "src": "canonical/agents/discovery-reviewer/AGENT.md"}
-{"dst": ".claude/agents/discovery-scout.md", "profile": "claude-code", "sha256": "98f17d39d1adad31fbd215dd8ac598e0cb1e80d195843f323bf3600a32f59c90", "src": "canonical/agents/discovery-scout/AGENT.md"}
+{"dst": ".claude/agents/discovery-scout.md", "profile": "claude-code", "sha256": "ade97d298061ac00c1146306525aeb703ea4ef8b6bcbe5cb219de385dd0a232b", "src": "canonical/agents/discovery-scout/AGENT.md"}
 {"dst": ".claude/agents/interviewer.md", "profile": "claude-code", "sha256": "a891df9c7e443dd6c461c2a2a0aac4418fb7c391580fa477774808daadc97ee0", "src": "canonical/agents/interviewer/AGENT.md"}
 {"dst": ".claude/agents/operator.md", "profile": "claude-code", "sha256": "9b973ed51164d6a61e4c5e42afd5ead91a0b20808d89cb4d829861305e9511f1", "src": "canonical/agents/operator/AGENT.md"}
 {"dst": ".claude/agents/orchestrator.md", "profile": "claude-code", "sha256": "2fcd56068aec2c43007ccb2144f3cc3a96ebc7f9db8bb0e5280c3916a6179e1d", "src": "canonical/agents/orchestrator/AGENT.md"}
