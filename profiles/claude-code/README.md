@@ -48,10 +48,10 @@ This gives you:
 
 | Agent | File | Model | Outputs |
 |-------|------|-------|---------|
-| discovery-architect | `.claude/agents/discovery-architect.md` | opus | architecture.md, technology-stack.md, ui-architecture.md |
-| discovery-analyst | `.claude/agents/discovery-analyst.md` | opus | module-map.md, coding-standards.md, data-model.md |
-| discovery-integrator | `.claude/agents/discovery-integrator.md` | opus | api-contracts.md, integration-map.md, domain-glossary.md |
-| discovery-quality | `.claude/agents/discovery-quality.md` | opus | test-landscape.md, security-model.md, tech-debt.md |
+| discovery-architect | `.claude/agents/discovery-architect.md` | opus | architecture.md, technology-stack.md |
+| discovery-analyst | `.claude/agents/discovery-analyst.md` | opus | module-map.md, coding-standards.md, schemas.md |
+| discovery-integrator | `.claude/agents/discovery-integrator.md` | opus | pipeline-contracts.md, integration-map.md, domain-glossary.md |
+| discovery-quality | `.claude/agents/discovery-quality.md` | opus | test-landscape.md, tech-debt.md, infrastructure.md |
 | discovery-scout | `.claude/agents/discovery-scout.md` | opus | project-structure.md, external-sources.md |
 | discovery-reviewer | `.claude/agents/discovery-reviewer.md` | opus | `.aid/knowledge/STATE.md` (KB grading; per FR2) |
 

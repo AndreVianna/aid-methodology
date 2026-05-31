@@ -173,7 +173,6 @@
 {"dst": ".agents/templates/specs/spec-template.md", "profile": "codex", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".agents/templates/state-machine-chaining.md", "profile": "codex", "sha256": "128feca0f90a6b52226df1bd3527185cd25ed404a94f9880795c69d5865256a9", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".agents/templates/subagent-heartbeat-protocol.md", "profile": "codex", "sha256": "01f50bf8ce412df49d7763c278ff4fdeb85ba1fcda19e5a1ff694f0fda633320", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
-{"dst": ".agents/templates/ui-architecture.md", "profile": "codex", "sha256": "eb3ee918a84233881fad358463eb1ca47c453a98d507989d436c08ff3e3224fb", "src": "canonical/templates/ui-architecture.md"}
 {"dst": ".agents/templates/work-state-template.md", "profile": "codex", "sha256": "af6786ba09b901c7fec531efcec798c33d3c89d3a10d30aea1e8671533058c6b", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".codex/agents/architect.toml", "profile": "codex", "sha256": "491660578e798bd66215795a586c068846945dd7f288b6317a464bc10d6e5e96", "src": "canonical/agents/architect/AGENT.md"}
 {"dst": ".codex/agents/data-engineer.toml", "profile": "codex", "sha256": "47b548b03d0e246ff8d335aea294db1469bab17e62dd10713d10a6874a28da88", "src": "canonical/agents/data-engineer/AGENT.md"}

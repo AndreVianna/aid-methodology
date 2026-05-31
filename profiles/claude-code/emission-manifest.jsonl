@@ -195,5 +195,4 @@
 {"dst": ".claude/templates/specs/spec-template.md", "profile": "claude-code", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".claude/templates/state-machine-chaining.md", "profile": "claude-code", "sha256": "a7f6a3dedff35e4f9125bfafe4f606e458f8e5c7d1e0b47d0abbfb0cf960b965", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".claude/templates/subagent-heartbeat-protocol.md", "profile": "claude-code", "sha256": "3ad858b3ca274528e848edae82cbece2ff068f6129917508bd67e5ad07332f43", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
-{"dst": ".claude/templates/ui-architecture.md", "profile": "claude-code", "sha256": "eb3ee918a84233881fad358463eb1ca47c453a98d507989d436c08ff3e3224fb", "src": "canonical/templates/ui-architecture.md"}
 {"dst": ".claude/templates/work-state-template.md", "profile": "claude-code", "sha256": "0ca2d3283ed29b0821db7cd4c4dd989ad453e47fa0f06d6df089644757b6fca7", "src": "canonical/templates/work-state-template.md"}
