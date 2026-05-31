@@ -200,6 +200,6 @@ emission MUST prefix the appropriate severity tag — never emit a bare
 
 ## See also
 
-- [principles.md](principles.md) — the 8 principles, especially P3 (temp ledger), P4 (lint enforcement), P7 (read-only on repo)
+- [principles.md](principles.md) — the 9 principles, especially P3 (temp ledger), P4 (lint enforcement), P7 (read-only on repo), P9 (resolved items leave no trace)
 - [tier-model.md](tier-model.md) — T1-T4 stability tiers referenced throughout the rubric
 - [frontmatter-schema.md](frontmatter-schema.md) — `kb-category`, `source`, `contracts` fields the rubric reads

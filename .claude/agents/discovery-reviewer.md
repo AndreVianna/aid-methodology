@@ -99,7 +99,7 @@ For each document:
 
 ### 1. Completeness Check
 - Does the document cover what its title promises?
-- Compare against the expected content (see Document Expectations below)
+- Compare against the expected content (see the Document Expectations provided in your dispatch prompt)
 - Flag missing sections
 
 ### 2. Accuracy Spot-Check (AGGRESSIVE — This Is The Most Important Step)
@@ -192,99 +192,11 @@ A generous review is worse than useless — it lets bad docs through the quality
 
 ## Document Expectations
 
-### architecture.md
-Must have: project type, folder structure (annotated), architectural patterns with evidence,
-module boundaries, data flow (entry→processing→persistence), DI registration, entry points.
-**Red flags**: Generic descriptions without file paths. Missing data flow.
-
-### technology-stack.md
-Must have: languages with versions, frameworks with versions (from actual config files),
-databases, package managers, build tools, runtime, dev tooling.
-Must have: **Build Commands** section with exact build command(s), **Lint Commands** section
-with exact lint command(s). These are critical for aid-execute — agents need runnable
-commands, not just tool names.
-**Red flags**: "⚠️ Version TBD" on things extractable from pom.xml/package.json/manifests.
-Missing or vague Build/Lint Commands (e.g., just "Maven" without `mvn clean package`).
-
-### module-map.md
-Must have: every module listed with purpose, key classes, dependencies between modules.
-**Red flags**: Module listed without purpose explanation. Missing dependency relationships.
-
-### coding-standards.md
-Must have: naming conventions (with examples from code), file layout, DI patterns, error
-handling, logging patterns, test patterns.
-**Red flags**: Generic advice instead of project-specific conventions.
-
-### schemas.md
-Must have: entity hierarchy, relationships (1:N, M:N), base classes, key entities with
-purpose, database config, migration strategy.
-**Red flags**: Entity list without relationships. Missing how entities connect to each other.
-
-### pipeline-contracts.md
-Must have: pipeline/API style, actual endpoint paths/URLs (not just class names), auth mechanism,
-request/response formats, error patterns.
-**Red flags**: Lists action classes without URLs. Missing how to actually call the pipeline/API.
-
-### integration-map.md
-Must have: external systems with connection details, protocols, config locations, error
-handling, retry patterns. NOT just a module list.
-**Red flags**: Same content as module-map.md. Missing connection details.
-
-### domain-glossary.md
-Must have: business-specific terms, technical terms unique to this project, abbreviations,
-product names with explanations.
-**Red flags**: Generic programming terms. Missing project-specific vocabulary.
-
-### test-landscape.md
-Must have: frameworks, test types, coverage target/enforcement (if defined), CI integration, which modules
-have real tests vs placeholders, test gaps with severity.
-Must have: **Test Commands** section with exact commands to run all unit tests, per-module
-tests, and coverage reports. These are critical for aid-execute — agents need runnable
-commands, not just framework names.
-**Red flags**: Too short. Missing per-module coverage assessment. Missing or vague Test
-Commands (e.g., just "JUnit" without `mvn test`).
-
-### tech-debt.md
-Must have: categorized by severity (Critical/High/Medium/Low), each with location, risk,
-and notes. Observations about overall health.
-**Red flags**: Missing severity classification. No actionable locations.
-
-### infrastructure.md
-Must have: Source Control section (VCS type, hosting, branch/commit commands), CI/CD pipeline
-details, container config, Deployment section (build output type, packaging, publishing target,
-versioning scheme, release process), Project Management section (tool or "none", access method,
-entity mapping if applicable), artifact repos, runtime config, monitoring, environments.
-**Red flags**: Lists tools without explaining how they're configured or connected. Missing Source
-Control section or assuming Git without verifying. Missing Deployment section. Project Management
-section absent (should explicitly say "none" if no tool is used).
-
-### feature-inventory.md
-Must list ALL features identified by the user. Each feature has description, status, modules,
-endpoints, data entities. Red flag: features without module mapping, features with placeholder
-descriptions, features obviously missing from user's original list.
-
-### STATE.md
-Must have: questions in structured Q&A format — each with unique ID (Q{N}), category tag,
-impact level (High/Medium/Low), status (Pending/Answered/Skipped), context explaining why
-the question matters, and suggested answer when inferrable from code patterns.
-Questions should be specific and answerable. Must capture EVERYTHING that code analysis
-alone cannot determine. Questions ordered by impact (High first).
-**Red flags**: Too few questions. Generic questions that could apply to any project. Missing
-impact classification. Missing context field. Vague questions without actionable specificity.
-Questions that ARE answerable from code (should have been resolved during generation).
-
-### INDEX.md
-Must have: accurate 2-3 line summary per document. Summaries must reflect actual content.
-**Red flags**: Generic summaries. Summaries that don't match document content.
-
-### README.md
-Must have: completeness table, revision history.
-**Red flags**: Missing gap acknowledgment.
-
-### CLAUDE.md
-Must have: accurate project description, project overview, real build/test commands,
-conventions from code, architecture summary, KB reference. No remaining `(pending discovery)` placeholders.
-**Red flags**: Placeholder text still present. Commands that wouldn't actually work. Missing key gotchas for agents.
+The per-document "Must have / Red flags" criteria are NOT restated here — they live in a single
+canonical source, `aid-discover/references/document-expectations.md`, so authoring agents and this
+reviewer evaluate against identical content. The REVIEW-state dispatch includes that file's contents
+in your prompt (see the discovery skill's reviewer-prompt). Use those expectations for the
+Completeness Check (step 1) and Depth/Usefulness assessment.
 
 ## Meta-Document Consistency (MANDATORY)
 

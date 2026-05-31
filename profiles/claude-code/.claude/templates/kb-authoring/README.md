@@ -15,7 +15,7 @@
 
 ## Quick reference
 
-**The 8 principles** (full text in [principles.md](principles.md)):
+**The 9 principles** (full text in [principles.md](principles.md)):
 
 1. **No drift-prone information** unless it carries semantic value
 2. **Proper metric** — relevant, measured, never retroactively changed
@@ -25,6 +25,7 @@
 6. **Per-doc review metadata via frontmatter** — exempt from review
 7. **Review is read-only on the repo** — discovery WRITES only to `.aid/knowledge/`
 8. **Rigor follows value** — verify the load-bearing core with maximum rigor; scaffolding (frontmatter/changelog) gets present-and-parseable checks only
+9. **Resolved items leave no trace** — record current state only; a resolved item is removed entirely (inventory, detail, roll-call, changelog), git history is the audit trail
 
 **The 4 fact tiers** (full text in [tier-model.md](tier-model.md)):
 
