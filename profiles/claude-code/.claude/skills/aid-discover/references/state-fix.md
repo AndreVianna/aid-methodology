@@ -105,7 +105,10 @@ Print: `[Fix] Verifying 4 meta-documents...`
 
 Print: `[Fix 2/3] Re-reviewing after fixes...`
 
-Read `references/reviewer-prompt.md` for the full prompt. Same contamination prevention rules as REVIEW mode.
+Read `references/reviewer-prompt.md` for the full prompt. Before dispatch, read `references/document-expectations.md` and substitute its full contents for
+the `{{DOCUMENT_EXPECTATIONS}}` placeholder in the appended `reviewer-prompt.md` body — identical
+to REVIEW Step 1. This guarantees the FIX-mode re-review sub-agent evaluates against the canonical
+expectations even though it cannot resolve the file path on its own. Same contamination prevention rules as REVIEW mode.
 
 ▶ discovery-reviewer starting (~2–3 min)
 Wait for completion.

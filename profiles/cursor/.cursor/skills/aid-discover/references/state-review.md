@@ -14,6 +14,10 @@ Print: `[Review 1/2] Reviewing Knowledge Base quality...`
 2. Append the rubric-detail body from `references/reviewer-prompt.md` — that
    file contains the per-claim verification checklist + spot-check minimums
    that go beyond the universal rubric pointer in the brief.
+   Before dispatch, read `references/document-expectations.md` and substitute its full contents for
+   the `{{DOCUMENT_EXPECTATIONS}}` placeholder in the appended `reviewer-prompt.md` body. This
+   guarantees the background sub-agent evaluates against the canonical expectations even though it
+   cannot resolve the file path on its own.
 3. Include in the prompt:
    - **Ledger lifecycle:** "Read the existing `.aid/.temp/review-pending/discovery.md`
      if it exists. For each existing row: verify on disk, update Status if needed
