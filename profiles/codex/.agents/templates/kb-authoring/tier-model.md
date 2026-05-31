@@ -128,6 +128,6 @@ determines tier allowances and review rubric (see [review-rubric.md](review-rubr
 
 ## See also
 
-- [principles.md](principles.md) — the 8 principles, including P1 (no drift-prone) and P2 (proper metric)
+- [principles.md](principles.md) — the 9 principles, including P1 (no drift-prone), P2 (proper metric), and P9 (resolved items leave no trace)
 - [frontmatter-schema.md](frontmatter-schema.md) — `contracts:` field where T2 claims are declared
 - [review-rubric.md](review-rubric.md) — how the reviewer applies the tier model per kb-category

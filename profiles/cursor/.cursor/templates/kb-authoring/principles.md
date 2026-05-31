@@ -178,6 +178,20 @@ claims a downstream execution agent actually depends on.
 
 ---
 
+## P9. Resolved items leave no trace
+
+A KB doc records **current state only**. When a tracked item is resolved — a `tech-debt.md`
+entry fixed, a Q&A answered, an open question closed — its record is removed **entirely**
+from the doc: the inventory row, the detailed entry, any "closed items" roll-call, and any
+closure prose in the frontmatter `changelog:`. Do **not** retain a closure record in the doc
+("kept for history"); that clutter misleads readers into thinking a closed item is still
+live, and it drifts. **git history (and the originating work's artifacts) is the only retained
+audit trail.** This applies most visibly to `tech-debt.md` (open debt only) but holds for any
+doc that tracks a working set. A resolved item still visible anywhere in the doc — or in a
+generated view of it (e.g. `knowledge-summary.html`) — is a defect.
+
+---
+
 ## How the principles interact
 
 - **P1 + P6** — frontmatter exemption gives docs a place to carry historical / metric /

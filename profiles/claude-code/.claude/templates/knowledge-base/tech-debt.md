@@ -16,6 +16,12 @@ changelog:
 
 > This document is a diagnosis, not a sprint plan. It identifies what exists so that agents don't create more of it, and so the team can make informed decisions about what to address and when.
 
+> **Resolved items leave no trace (kb-authoring P9).** This doc lists **only currently open
+> debt**. When an item is resolved, remove it **entirely** — its inventory row, its detailed
+> entry, any roll-call/"closed items" mention, and any closure prose in the frontmatter
+> `changelog:`. Do **not** keep a closure record here. **git history is the only retained audit
+> trail.** A resolved item reappearing anywhere in this doc is a defect.
+
 > **Severity tag convention** (used by `build-metrics.sh` for the severity tally):
 > Per-item severity headers should follow the form `### [HIGH] H1 — Title` /
 > `### [MEDIUM] M1 — Title` / `### [LOW] L1 — Title`, OR table rows with the
