@@ -72,7 +72,7 @@ aid-methodology/                    (repo root — branch: kb-overhaul)
 │   └── skills/aid-generate/        ← maintainer-only generator (NOT in canonical/)
 │       └── scripts/                ← 10 Python files (render_lib.py, aid_profile.py, render_*.py, …)
 ├── tests/
-│   ├── canonical/                  ← 13 helper-script test suites (test-*.sh, bash)
+│   ├── canonical/                  ← currently 15 helper-script test suites (test-*.sh, bash)
 │   ├── lib/assert.sh               ← shared assertion helpers
 │   ├── run-all.sh                  ← single aggregator entrypoint (globs test-*.sh)
 │   └── README.md                   ← suite inventory + run instructions

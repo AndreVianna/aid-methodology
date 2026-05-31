@@ -118,7 +118,7 @@ no `pyproject.toml`). Quality is enforced by:
 # Rebuild file inventory used by Discovery
 bash canonical/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md
 
-# Canonical helper-script test suites (13 suites) — run all via the aggregator
+# Canonical helper-script test suites (currently 15 suites) — run all via the aggregator
 bash tests/run-all.sh                                 # discovers tests/canonical/test-*.sh by glob
 
 # Or run an individual suite
@@ -177,9 +177,9 @@ design per `project-structure.md` "Quadruple mirror" (`## Unusual Structure Note
 
 | Tool | Version | Purpose | Config / location |
 |------|---------|---------|---------|
-| **Pure bash test suites** | bash 4+ | All tests are plain bash scripts (no pytest, no jest, no junit); aggregated by `tests/run-all.sh` + shared `tests/lib/assert.sh` | `tests/canonical/test-*.sh` (13 suites — see `tests/README.md`) |
+| **Pure bash test suites** | bash 4+ | All tests are plain bash scripts (no pytest, no jest, no junit); aggregated by `tests/run-all.sh` + shared `tests/lib/assert.sh` | `tests/canonical/test-*.sh` (currently 15 suites — see `tests/README.md`) |
 | **Generator self-tests** | Python 3.11+ | Manifest-safety unit tests | `.claude/skills/aid-generate/scripts/test_manifest_safety.py` (254 lines) |
-| **CI** | **GitHub Actions (enforced)** | `.github/workflows/test.yml` runs render-drift + all 13 suites (via `tests/run-all.sh`) + generator self-tests + hygiene on PR/push; required status check on `master` | See `test-landscape.md` |
+| **CI** | **GitHub Actions (enforced)** | `.github/workflows/test.yml` runs render-drift + all canonical suites (via `tests/run-all.sh`) + generator self-tests + hygiene on PR/push; required status check on `master` | See `test-landscape.md` |
 
 Source: `project-structure.md` `## Build & Test System`; `tests/README.md`.
 

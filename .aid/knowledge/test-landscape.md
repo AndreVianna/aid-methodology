@@ -3,7 +3,7 @@ kb-category: primary
 source: hand-authored
 intent: |
   Inventory of test suites that protect the canonical helper scripts AID skills
-  depend on. 13 unit/integration suites under tests/canonical/, discovered by
+  depend on. Currently 15 unit/integration suites under tests/canonical/, discovered by
   glob and run by the tests/run-all.sh aggregator. Most are pure bash (POSIX);
   two shell out to node (.mjs validators) and two to pwsh (PowerShell mirrors),
   each skipping if its runtime is absent. All suites source the shared
@@ -13,11 +13,12 @@ intent: |
   understand what changes to canonical/scripts/ are guarded by tests vs require
   manual verification.
 contracts:
-  - "13 test suites under tests/canonical/, no skill-level tests"
+  - "currently 15 test suites under tests/canonical/ (glob-discovered; recount with ls tests/canonical/test-*.sh | wc -l), no skill-level tests"
   - "tests/run-all.sh is the single aggregator (glob-discovers tests/canonical/test-*.sh)"
   - "All suites source tests/lib/assert.sh (shared counters + asserts + test_summary)"
   - "Most suites are pure bash (POSIX, Git Bash on Windows); 2 need node, 2 need pwsh — each skips if absent"
 changelog:
+  - 2026-05-31: delivery-001 — added test-discovery-doc-ownership.sh and test-expectations-single-source.sh; updated suite count 13→15 (stated as "currently N", not a hardcoded invariant); updated Suites section header accordingly.
   - 2026-05-30: Substantive refresh to current truth — 7→13 suites; documented the tests/run-all.sh aggregator (replaces the old "no aggregator, per-suite loop" claim) and tests/lib/assert.sh shared library; inverted the gaps section (the .mjs validators, PowerShell mirrors, and setup install flow are now COVERED, not gaps); recorded the node/pwsh-skip model; applied script renames (writeback-task-status→writeback-state, concatenate→assemble-3part, build-index→build-kb-index, harness.py→render_lib.py, VERIFY-4a/4b→VERIFY (deterministic)/(advisory)); converted bare line-number citations to durable anchors. Dropped invented per-suite assertion numbers in favor of qualitative coverage (suites now share one summary format and the README does not commit to counts).
   - 2026-05-29: Corrected count 5→7 suites / 235→273 assertions — added the fetch-mermaid.sh and grade.sh sections (both existed on disk but were missing from this inventory); fixed validate-diagrams.mjs line count 574→577
   - 2026-05-27: Initial generation by discovery-quality (cycle-1)
@@ -110,12 +111,12 @@ either is missing so the node/PowerShell coverage can never be silently bypassed
 
 ---
 
-## Suites (13)
+## Suites (currently 15)
 
 All suites live under `tests/canonical/` and target scripts under `canonical/scripts/`
-(or the top-level `setup.*` installers). Coverage is described qualitatively — suites
-share one `test_summary` format and the suite inventory in `tests/README.md` does not
-commit to per-suite assertion counts.
+(or the top-level `setup.*` installers, or the canonical agent/skill source files).
+Coverage is described qualitatively — suites share one `test_summary` format and the
+suite inventory in `tests/README.md` does not commit to per-suite assertion counts.
 
 ### test-read-setting.sh
 
@@ -246,6 +247,33 @@ byte I/O), so it runs fully on the Linux CI runner once `pwsh` is present.
 Only its platform-independent pre-install logic is exercised under `pwsh` on Linux:
 target validation + the selection-menu loop. The backslash-path file copy is
 Windows-only; the actual install coverage lives in `test-setup.sh`.
+
+### test-discovery-doc-ownership.sh
+
+**Target:** `canonical/agents/discovery-scout/AGENT.md`, `canonical/agents/discovery-quality/AGENT.md`,
+`canonical/skills/aid-discover/references/state-generate.md`.
+
+Regression guard for discovery doc-ownership consistency. Verifies that exactly one
+discovery agent "produces" each standard KB doc and that every agent's self-understanding
+(Produce line + What-You-Don't-Do) agrees with the dispatch table in `state-generate.md`.
+Key invariants: scout Produce line names `project-structure.md` and `external-sources.md`
+(NOT `infrastructure.md`); quality Produce line names `infrastructure.md`, `test-landscape.md`,
+and `tech-debt.md`; the dispatch table's `[5/5]` row assigns `infrastructure.md` to
+`discovery-quality`. 14 checks (T01–T14).
+
+### test-expectations-single-source.sh
+
+**Target:** `canonical/skills/aid-discover/references/document-expectations.md`,
+`canonical/agents/discovery-reviewer/AGENT.md`, `canonical/skills/aid-discover/references/reviewer-prompt.md`,
+`canonical/skills/aid-discover/references/state-review.md`, `canonical/skills/aid-discover/references/state-fix.md`.
+
+Guards the single-source invariant for per-doc expectations: `document-expectations.md`
+is the sole file with per-doc `### *.md` blocks; `discovery-reviewer/AGENT.md` has zero
+such blocks. Also guards reviewer-has-access invariant: the `{{DOCUMENT_EXPECTATIONS}}`
+placeholder is present in `reviewer-prompt.md`, and `document-expectations.md` is named
+in both `state-review.md` and `state-fix.md`. Verifies merge completeness (the file is
+a superset containing `{reviewer_output_file}`, `project-structure.md`, and
+`external-sources.md` blocks). 9 checks (T01–T09).
 
 ---
 

@@ -17,6 +17,7 @@ contracts:
   - "5 script categories under canonical/scripts/ (config, kb, execute, summarize, interview) + grade.sh at the category root"
   - "Every canonical helper script has 4 byte-identical copies on disk (canonical + .claude + 3 profile trees)"
 changelog:
+  - 2026-05-31: delivery-001 — reconciled discovery-agent ownership: scout now owns project-structure.md + external-sources.md (not infrastructure.md); quality now owns test-landscape.md + tech-debt.md + infrastructure.md. Added note that document-expectations.md is the single per-doc expectations source loaded by the reviewer at REVIEW and FIX dispatch.
   - 2026-05-27: Initial generation by discovery-analyst (cycle-1)
 ---
 
@@ -73,6 +74,14 @@ router (≤~360 lines) that delegates per-state logic to `references/state-*.md`
 files. The Dispatch table is the canonical state machine; advance follows one
 of three forms (Unconditional / Halt / Conditional on a computed criterion).
 
+**`document-expectations.md` — single per-doc expectations source:** The file
+`canonical/skills/aid-discover/references/document-expectations.md` is the sole
+authoritative specification of what the `discovery-reviewer` must look for in each
+KB doc. The reviewer loads it at dispatch time in both REVIEW state (`state-review.md`)
+and FIX state (`state-fix.md`) via the `{{DOCUMENT_EXPECTATIONS}}` placeholder in
+`reviewer-prompt.md`. No per-doc expectation blocks live in `discovery-reviewer/AGENT.md`
+or in any other file — all are consolidated in this single reference.
+
 ---
 
 ## 2. Agents — `canonical/agents/<name>/`
@@ -89,11 +98,11 @@ Three tiers, per the `tier:` frontmatter field:
 | `reviewer` | Adversarial quality evaluator. Produces a structured issue list; grade is computed by `canonical/scripts/grade.sh`, NOT by the agent | `canonical/agents/reviewer/AGENT.md` |
 | `interviewer` | One-question-at-a-time adaptive dialogue with stakeholders → REQUIREMENTS.md | `canonical/agents/interviewer/AGENT.md` |
 | `security` | Threat modeling, OWASP, auth patterns, secrets, SSRF/injection/XSS | `canonical/agents/security/AGENT.md` |
-| `discovery-scout` | Maps deployment infrastructure + project structure → `infrastructure.md`, `project-structure.md` | `canonical/agents/discovery-scout/AGENT.md` |
+| `discovery-scout` | Maps repository structure and ingests external documentation → `project-structure.md`, `external-sources.md` | `canonical/agents/discovery-scout/AGENT.md` |
 | `discovery-architect` | Codebase structure, patterns, tech stack → `architecture.md`, `technology-stack.md` | `canonical/agents/discovery-architect/AGENT.md` |
 | `discovery-analyst` | Modules, coding conventions, data schemas → `module-map.md`, `coding-standards.md`, `schemas.md` (was `data-model.md`) | `canonical/agents/discovery-analyst/AGENT.md` |
 | `discovery-integrator` | Pipelines, integrations, domain glossary → `pipeline-contracts.md` (was `api-contracts.md`), `integration-map.md`, `domain-glossary.md` | `canonical/agents/discovery-integrator/AGENT.md` |
-| `discovery-quality` | Tests, tech debt, infrastructure assessment → `test-landscape.md`, `tech-debt.md` (security content moved to `coding-standards.md §11`) | `canonical/agents/discovery-quality/AGENT.md` |
+| `discovery-quality` | Tests, tech debt, and infrastructure assessment → `test-landscape.md`, `tech-debt.md`, `infrastructure.md` (security content moved to `coding-standards.md §11`) | `canonical/agents/discovery-quality/AGENT.md` |
 | `discovery-reviewer` | Reviews + grades KB docs; cross-references claims against source. Densest agent contract per `project-structure.md` `discovery sub-agents have the densest contracts` | `canonical/agents/discovery-reviewer/AGENT.md` |
 
 ### 2b. Medium tier (9) — specialists + orchestrator + executors
@@ -229,7 +238,7 @@ slash-command invocation. Every script has 4 byte-identical copies on disk
 |--------|---------|
 | `grade.sh` | Deterministic grading: reads issue list with severity tags ([CRITICAL]/[HIGH]/[MEDIUM]/[LOW]/[MINOR]), applies the universal AID rubric (worst severity dominates, count modifies), prints letter grade. Used by reviewers + delivery gates. `--non-functional` flag forces F. |
 
-**Test coverage:** 13 dedicated test suites under `tests/canonical/`, each invoked
+**Test coverage:** currently 15 dedicated test suites under `tests/canonical/`, each invoked
 manually or as a batch via `tests/run-all.sh`. Suites share helpers from
 `tests/lib/assert.sh`.
 
@@ -248,6 +257,8 @@ manually or as a batch via `tests/run-all.sh`. Suites share helpers from
 | `tests/canonical/test-assemble-3part-ps1.sh` | `assemble-3part.ps1` mirror (PowerShell) |
 | `tests/canonical/test-setup.sh` | `setup.sh` installer |
 | `tests/canonical/test-setup-ps1.sh` | `setup.ps1` pre-install logic (PowerShell) |
+| `tests/canonical/test-discovery-doc-ownership.sh` | discovery agent doc-ownership consistency (scout vs quality) |
+| `tests/canonical/test-expectations-single-source.sh` | `document-expectations.md` single-source + reviewer-has-access invariants |
 
 See `tests/README.md` for the full suite list and run instructions.
 

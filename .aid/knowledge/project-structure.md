@@ -75,7 +75,7 @@ aid-methodology/                       (repo root)
 ├── examples/                          ← case studies (brownfield-enterprise, data-pipeline, desktop-app)
 ├── docs/                              ← FAQ + glossary
 ├── tests/
-│   ├── canonical/                     ← 13 helper-script test suites (parse-recipe, writeback-state, ...)
+│   ├── canonical/                     ← currently 15 helper-script test suites (parse-recipe, writeback-state, ...)
 │   ├── lib/                            ← shared test helpers (assert.sh)
 │   └── run-all.sh                      ← runs every canonical suite
 ├── README.md                          ← project pitch (388 lines)
@@ -235,7 +235,7 @@ The build commands:
 | `python run_generator.py` | Re-generate all 3 install trees from `canonical/` (maintainer-only) |
 | `python .claude/skills/aid-generate/scripts/verify_deterministic.py` | Verify render is byte-correct + complete |
 | `bash canonical/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md` | Rebuild file inventory |
-| `bash tests/run-all.sh` | Run all canonical helper test suites (13 suites — aggregator globs `tests/canonical/test-*.sh`; see `tests/README.md`) |
+| `bash tests/run-all.sh` | Run all canonical helper test suites (currently 15 suites — aggregator globs `tests/canonical/test-*.sh`; see `tests/README.md`) |
 
 **KB claim validation** is performed by the `discovery-reviewer` sub-agent in `/aid-discover REVIEW`.
 
@@ -321,7 +321,7 @@ Lite-path templates at `canonical/recipes/`, replicated into all 3 install trees
 
 5. **`canonical/scripts/` was newly reorganized.** Git status shows many recent renames from `canonical/templates/scripts/` and `canonical/skills/*/scripts/` into the consolidated `canonical/scripts/{config,execute,interview,kb,summarize}/` hierarchy.
 
-6. **`tests/canonical/` is the official test directory.** No `pytest.ini`, no `package.json`-style test config; tests are pure bash scripts; 13 suites run via the `tests/run-all.sh` aggregator (shared helpers in `tests/lib/assert.sh`; see `tests/README.md`). The `tests/skills/` directory and `tests/canonical/pool-dispatch.sh` were deleted in cycle-1 per Q6 resolution.
+6. **`tests/canonical/` is the official test directory.** No `pytest.ini`, no `package.json`-style test config; tests are pure bash scripts; currently 15 suites run via the `tests/run-all.sh` aggregator (shared helpers in `tests/lib/assert.sh`; see `tests/README.md`). The `tests/skills/` directory and `tests/canonical/pool-dispatch.sh` were deleted in cycle-1 per Q6 resolution.
 
 7. **CI is enforced.** `.github/workflows/test.yml` (added 2026-05-29) runs on PR/push and is a required status check on `master`; no other CI system (`.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`).
 
