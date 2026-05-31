@@ -52,8 +52,8 @@ card if applicable. Add a short "What this is" callout.
 Implementation reality, Technology choices, DI/wiring style).
 
 ### §3 Modules / Plugins
-Card per module showing: purpose, file counts, key entities, exported API status,
-test counts. Use `card.plugin` style with `<dl>` metadata.
+Card per module showing: purpose, relative size, key entities, exported API status,
+test presence. Use `card.plugin` style with `<dl>` metadata.
 
 ### §4 Data Model
 ER diagram + a full entity table with columns: Plugin, Entity, Mapping

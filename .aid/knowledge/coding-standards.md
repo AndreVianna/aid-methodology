@@ -18,6 +18,7 @@ contracts:
   - "Every helper script declares set -euo pipefail (or set -uo pipefail with documented rationale)"
   - "Every helper script supports -h | --help that prints its own header comment via sed"
 changelog:
+  - 2026-05-31: delivery-002 — added pipe-delimited-list-in-settings convention note to §6a (discovery.doc_set uses this pattern)
   - 2026-05-27: Initial generation by discovery-analyst (cycle-1)
 ---
 
@@ -298,6 +299,18 @@ All AID runtime settings live in `.aid/settings.yml` (per `canonical/templates/s
 - `execution:` — `max_parallel_tasks:` (parallel pool capacity)
 - `traceability:` — `heartbeat_interval:` (minutes; 0 = disabled)
 - Optional per-skill overrides: `discover:`, `summary:`, `interview:`, `specify:`, `plan:`, `detail:`, `execute:`, `deploy:`, `monitor:` — each may set `minimum_grade:`
+- Optional `discovery:` — `doc_set:` block-list (see below)
+
+**Pipe-delimited scalar lists in settings.yml:** When a settings section needs a list of
+structured records (not just plain scalars), AID uses a **YAML block-list of pipe-delimited
+strings** — each list item is a single YAML scalar with fields separated by `|`.
+Example: `discovery.doc_set` — each item is `filename|owner|presence[:when]`.
+
+Rules for this convention (per `canonical/skills/aid-discover/references/doc-set-resolve.md` `### Delimiter constraint`):
+- Field values MUST NOT contain a comma — `read-setting.sh`'s `lookup_list` comma-joins all items into one string, then callers split on `,` to recover individual items; a comma inside a value shreds the record.
+- The `|` field separator is safe because standard field values (filenames, agent names, `required`/`conditional`) never contain `|`.
+- Free-text `when` suffix: list-like enumerations must use `;` or `/`, never `,` (e.g., `conditional:has CI; CD; or deploy config`).
+- Inline `# comment` on an item line is stripped at read time; full-line comments between items TERMINATE list accumulation early — place them only after the last item.
 
 ### 6b. Settings resolution
 
@@ -441,7 +454,7 @@ Docs that describe a convention vs. what code actually does:
 |------------|---------------|----------------|-------|
 | Thin-Router SKILL.md ≤~360 lines | `coding-standards.md §7b`; `canonical/skills/*/SKILL.md` structure | YES — all 10 user-facing skills fit under the threshold; the largest is `aid-interview`. Per-file line counts live in `.aid/generated/metrics.md` / `project-index.md` | Confirmed |
 | 22 agents, 3 tiers | `README.md` `## The Agent Model — three tiers` | YES — confirmed via 22 `AGENT.md` files with `tier: large|medium|small` frontmatter | Confirmed |
-| Active KB docs | `canonical/skills/aid-discover/SKILL.md` `the 14 expected documents` | YES — the expected-document list in the cited skill is the source of truth (currently 14 standard docs); history: Q3 FIX removed security-model + ui-architecture, renamed data-model → schemas and api-contracts → pipeline-contracts | Confirmed |
+| Active KB docs | `canonical/skills/aid-discover/references/doc-set-resolve.md` `## synth_default_seed` | YES — the default seed is now data-driven from `canonical/templates/knowledge-base/*.md` via `synth_default_seed`; count varies by project (delivery-002 resolved H5; hardcoded 14-doc list removed from SKILL.md) | Confirmed |
 | 8-task-type catalog | `canonical/skills/aid-execute/references/state-execute.md` `## Task Types`; `canonical/templates/delivery-plans/task-template.md` `**Type:**` | YES — both lists match: RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE | Confirmed |
 | 5 grade severity tags | `canonical/agents/reviewer/AGENT.md` `## Severity Classification`; `canonical/scripts/grade.sh` `count_prose_tag CRITICAL` | YES — [CRITICAL]/[HIGH]/[MEDIUM]/[LOW]/[MINOR] match in both | Confirmed |
 | 4 lite-path sub-paths | `canonical/templates/work-state-template.md` `**Sub-path:**`, `canonical/templates/recipe-template.md` ``Valid `applies-to` values`` | YES — sub-path enum present in both | Confirmed |

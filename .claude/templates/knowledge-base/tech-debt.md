@@ -66,13 +66,12 @@ changelog:
 
 ## Complexity Hotspots
 
-> Files/classes with cyclomatic complexity above threshold. These are where bugs hide.
+> Files/classes that concentrate complexity — where bugs hide. Name the file and WHY it's
+> complex; precise scores / line counts drift, so let the reader measure on demand.
 
-| File | Complexity | Size (lines) | Last Modified | Notes |
-|------|-----------|-------------|---------------|-------|
-| {path/to/file} | {n} | {n} | {date} | {why it's complex} |
-
-**Threshold used:** {e.g., cyclomatic complexity > 15 flagged}
+| File | Why complex | Notes |
+|------|-------------|-------|
+| {path/to/file} | {deep nesting / long methods / many responsibilities / high fan-in} | {notes} |
 
 ---
 
@@ -80,9 +79,9 @@ changelog:
 
 > Modules and functions that lack meaningful tests — concentrated risk.
 
-| Module / Function | Current Coverage | Type Missing | Business Risk |
-|------------------|-----------------|--------------|---------------|
-| {module} | {%} | {unit / integration / E2E} | {what breaks if this fails} |
+| Module / Function | Coverage | Type Missing | Business Risk |
+|------------------|----------|--------------|---------------|
+| {module} | {✅ good / ⚠️ partial / ❌ none} | {unit / integration / E2E} | {what breaks if this fails} |
 
 ---
 
@@ -111,9 +110,9 @@ changelog:
 
 > Significant duplicated logic that should be consolidated.
 
-| Area | Copies | Location | Risk if Not Consolidated |
-|------|--------|----------|--------------------------|
-| {e.g., Email validation logic} | 4 | {list files} | {Inconsistent validation behavior} |
+| Area | Location | Risk if Not Consolidated |
+|------|----------|--------------------------|
+| {e.g., Email validation logic} | {list files where it's duplicated} | {Inconsistent validation behavior} |
 
 ---
 

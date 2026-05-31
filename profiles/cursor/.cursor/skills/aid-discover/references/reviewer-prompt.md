@@ -10,6 +10,15 @@ evaluate the KB purely on what's on disk — as if a stranger wrote it.
 
 ## Prompt
 
+> **Document Expectations (authoritative):** The per-doc "Must have / Red flags" criteria are the
+> single canonical set in aid-discover/references/document-expectations.md. The dispatcher inlines
+> that file's full contents below this line at review time; evaluate Completeness (step 2) and
+> Depth/Usefulness (steps 4–5) against exactly those criteria — do not improvise alternatives.
+>
+> --- BEGIN DOCUMENT EXPECTATIONS ---
+> {{DOCUMENT_EXPECTATIONS}}
+> --- END DOCUMENT EXPECTATIONS ---
+
 > Review every document in .aid/knowledge/ for quality. Be AGGRESSIVE — a lenient review is worse
 > than useless because it lets bad docs through the quality gate.
 >

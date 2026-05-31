@@ -8,14 +8,14 @@
 
 | File | Purpose |
 |------|---------|
-| [principles.md](principles.md) | The 7 normative principles for KB authoring + review |
+| [principles.md](principles.md) | The 8 normative principles for KB authoring + review |
 | [tier-model.md](tier-model.md) | T1-T4 fact stability tiers used inside KB docs |
 | [frontmatter-schema.md](frontmatter-schema.md) | YAML frontmatter spec for every KB doc |
 | [review-rubric.md](review-rubric.md) | Per-`kb-category` review treatment + temp-ledger format |
 
 ## Quick reference
 
-**The 7 principles** (full text in [principles.md](principles.md)):
+**The 8 principles** (full text in [principles.md](principles.md)):
 
 1. **No drift-prone information** unless it carries semantic value
 2. **Proper metric** — relevant, measured, never retroactively changed
@@ -24,6 +24,7 @@
 5. **Mark auto-generated / temporary files clearly** — directory + frontmatter
 6. **Per-doc review metadata via frontmatter** — exempt from review
 7. **Review is read-only on the repo** — discovery WRITES only to `.aid/knowledge/`
+8. **Rigor follows value** — verify the load-bearing core with maximum rigor; scaffolding (frontmatter/changelog) gets present-and-parseable checks only
 
 **The 4 fact tiers** (full text in [tier-model.md](tier-model.md)):
 
@@ -67,7 +68,7 @@ changelog:
 - **`/aid-config`** — scaffolds new KB docs with frontmatter from [frontmatter-schema.md](frontmatter-schema.md) seed
 - **`/aid-summarize`** — extracts `intent:` field from each doc to populate section descriptions in `knowledge-summary.html`
 - **`discovery-reviewer`** — validates frontmatter compliance; spot-checks `contracts:` against disk; flags inline T3/T4 markers in primary-category docs (REVIEW state of `/aid-discover`)
-- **`build-index.sh`** — composes `INDEX.md` from each doc's `intent:` + `kb-category:` + path
+- **`build-kb-index.sh`** — composes `INDEX.md` from each doc's `intent:` + `kb-category:` + path
 - **`build-metrics.sh`** — produces `metrics.md` with all numeric facts (T3) the project tracks
 - **`build-project-index.sh`** — produces `.aid/generated/project-index.md`, a build-time inventory of repository files (used by `/aid-discover` Step 0c). Classified `meta + source: generated` → Build-Verify Only.
 
@@ -84,7 +85,7 @@ extend the canonical rubric with project-specific lint rules. See
 
 - `.claude/agents/discovery-reviewer/AGENT.md` — adversarial review (semantic + frontmatter + spot-check; the sole KB-quality enforcer)
 - `.claude/scripts/kb/build-metrics.sh` — T3 fact generator
-- `.claude/scripts/kb/build-index.sh` — INDEX.md generator
+- `.claude/scripts/kb/build-kb-index.sh` — INDEX.md generator
 - `.claude/scripts/kb/build-project-index.sh` — project-index.md generator
 - `.claude/templates/generated-files.txt` — registry of all generated files + build commands
 - `.claude/templates/knowledge-base/*.md` — KB doc templates pre-filled with frontmatter

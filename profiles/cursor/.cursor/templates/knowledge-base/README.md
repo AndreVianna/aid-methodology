@@ -70,7 +70,7 @@ The KB root `README.md` tracks completeness across all documents:
 
 - **Simple CLI tool:** 4-5 documents (project-structure, architecture, technology-stack, coding-standards)
 - **Greenfield project:** Start with project-structure, technology-stack, coding-standards, domain-glossary — populated from interview
-- **Enterprise monorepo:** All 14 documents, possibly more
+- **Enterprise monorepo:** All standard-seed documents, possibly more
 - **Data pipeline:** Focus on schemas, integration-map, pipeline-contracts, domain-glossary
 
 The Discovery phase assesses the project and generates what's relevant. Don't create documents for things that don't exist.

@@ -51,10 +51,10 @@ All Discovery sub-agents run at the Large tier — Discovery is foundational and
 
 | Agent | File | Model | Outputs |
 |-------|------|-------|---------|
-| discovery-architect | `.cursor/agents/discovery-architect.md` | opus | architecture.md, technology-stack.md, ui-architecture.md |
-| discovery-analyst | `.cursor/agents/discovery-analyst.md` | opus | module-map.md, coding-standards.md, data-model.md |
-| discovery-integrator | `.cursor/agents/discovery-integrator.md` | opus | api-contracts.md, integration-map.md, domain-glossary.md |
-| discovery-quality | `.cursor/agents/discovery-quality.md` | opus | test-landscape.md, security-model.md, tech-debt.md |
+| discovery-architect | `.cursor/agents/discovery-architect.md` | opus | architecture.md, technology-stack.md |
+| discovery-analyst | `.cursor/agents/discovery-analyst.md` | opus | module-map.md, coding-standards.md, schemas.md |
+| discovery-integrator | `.cursor/agents/discovery-integrator.md` | opus | pipeline-contracts.md, integration-map.md, domain-glossary.md |
+| discovery-quality | `.cursor/agents/discovery-quality.md` | opus | test-landscape.md, tech-debt.md, infrastructure.md |
 | discovery-scout | `.cursor/agents/discovery-scout.md` | opus | project-structure.md, external-sources.md |
 | discovery-reviewer | `.cursor/agents/discovery-reviewer.md` | opus | `.aid/knowledge/STATE.md` (KB grading; per FR2) |
 

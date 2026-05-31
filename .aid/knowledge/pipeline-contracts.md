@@ -10,7 +10,9 @@ intent: |
   boundary expects and emits.
 contracts:
   - "10 skill slash-command contracts documented (aid-config through aid-monitor)"
+  - "discovery.doc_set in settings.yml: declared-set → dispatch mapping honors the set (no-hang on omission; dispatch on addition)"
 changelog:
+  - 2026-05-31: delivery-002 — added discovery.doc_set to settings read contract; added declared-set → dispatch contract section
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
 ---
 # Pipeline Contracts
@@ -372,10 +374,35 @@ The Reviewer agent produces a structured issue list with two-tag classification 
 | `execution.max_parallel_tasks` | integer | `5` | Parallel pool capacity | `aid-execute` PD-0..PD-6 |
 | `traceability.heartbeat_interval` | integer min | `1` (0 disables) | L3 heartbeat cadence | Every dispatcher (always) |
 | `<skill>.minimum_grade` | grade | inherits `review.minimum_grade` | Per-skill override | The named skill |
+| `discovery.doc_set` | YAML block-list of pipe-delimited strings | absent (→ default seed) | Declared KB doc-set for this project; each item `filename\|owner\|presence[:when]` | `aid-discover` GENERATE + REVIEW states |
 
 **Resolution order** (skill mode): per-skill override → `review.<key>` → script `--default`
 → exit 1. (`canonical/scripts/config/read-setting.sh` comment `# Skill mode: try per-skill override; fall back to review.<key>`)
 **Source of truth:** `canonical/templates/settings.yml`
+
+### Declared-Set → Dispatch Contract (`discovery.doc_set` → sub-agent dispatch)
+
+**Source:** `canonical/skills/aid-discover/references/state-generate.md` `### Steps 2-5: Dispatch 4 Subagents in Parallel (data-driven from declared set)` + `canonical/skills/aid-discover/references/doc-set-resolve.md`.
+
+The discover orchestrator resolves the active doc-set at GENERATE Step 0 and uses it
+data-driven for every dispatch decision in Steps 2–5:
+
+| Rule | Behavior |
+|------|----------|
+| **Mapping honors the set** | Each agent's target list = filenames where `owner = <agent>` in the declared set, intersected with missing-on-disk |
+| **No-hang on omission** | If a doc is absent from the declared set, the owning agent's target list may be empty → that agent is NOT dispatched (no hang, no error) |
+| **Dispatch on addition** | A custom doc added to the declared set with an owner → included in that agent's target list → agent dispatched for it |
+| **Unknown owner fallback** | Unknown owner value → routed to `discovery-architect` with a non-fatal warning (FR-P1-5) |
+| **Default seed (backward compat)** | If `discovery.doc_set` is absent/empty in settings.yml, `synth_default_seed` synthesizes the set from `canonical/templates/knowledge-base/*.md` using the §2.2 ownership map — no change to prior behavior |
+| **Verify** | After dispatch, cross-check `count == size(list-filenames)` against the accessor, not a literal integer |
+
+**Accessor functions** (pure bash+awk, inlined from `doc-set-resolve.md`):
+
+| Accessor | Returns |
+|----------|---------|
+| `resolve_doc_set "$raw" \| cut -f1` | All filenames in the declared set (list-filenames) |
+| `resolve_doc_set "$raw" \| awk -F'\t' -v f="$fn" '$1==f{print $2}'` | Owner of a specific filename |
+| `resolve_doc_set "$raw" \| awk -F'\t' -v a="$agent" '$2==a{print $1}'` | All filenames assigned to a given agent |
 
 ---
 
@@ -579,8 +606,8 @@ connections, no auth tokens stored anywhere in the repo.
 
 - **e2e test runners** — Per Q1 resolution (cycle-1): `.aid/work-001-aid-lite/test-reports/`
   was never a correct home for canonical test scripts; those runners have been removed from
-  documentation. The 13 canonical test suites in `tests/canonical/` (run via
-  `tests/run-all.sh`) are the complete test contract (see `tests/README.md`).
+  documentation. The canonical test suites in `tests/canonical/` (run via
+  `tests/run-all.sh`) are the complete test contract; recount with `ls tests/canonical/test-*.sh | wc -l` (see `tests/README.md`).
 - **`run_generator.py` verify-report sink** — Per Q2 resolution (cycle-1): `run_generator.py`
   now passes `report_path=None` and no longer writes to `.aid/work-002-canonical-generator/`.
   The directory is not required.

@@ -19,7 +19,7 @@ Includes a built-in quality gate that reviews, grades, and fixes KB documents.
 
 ## ⚠️ Pre-flight Checks
 
-Run `bash .claude/scripts/kb/preflight.sh .aid/knowledge/` to verify:
+Run `bash .claude/scripts/kb/discover-preflight.sh .aid/knowledge/` to verify:
 1. `.aid/knowledge/STATE.md` exists (init has run)
 2. Not in Plan Mode (subagents need write access)
 
@@ -34,13 +34,12 @@ If Check 2 fails: Tell user to press `Shift+Tab` to exit Plan Mode, then re-run.
 
 **Sweep categories (auto-correct silently):**
 
-- **Line-count drift** — `wc -l` every cited file (SKILL.md, AGENT.md, scripts, templates, methodology) and replace stale citations with disk truth.
-- **Off-by-1 drift** — small numerical changes in file sizes / counts that the prior cycle missed.
+- **Volatile-citation drift** — replace any bare `file:LINE` citation or inline line-count with a durable anchor (file path + grep-recoverable symbol/heading), per kb-authoring P1(d). Durable anchors don't rot, so this sweep shrinks every cycle.
 - **Aggregate counts** — per-skill or per-tree file/script/reference totals computed from current disk state (`find ... | wc -l`).
-- **Path & citation hygiene** — bare citations missing skill prefix (`SKILL.md:NNN` → `.claude/skills/<skill>/SKILL.md:NNN`); out-of-range line cites (line numbers that no longer exist after a file shrunk); broken `path:line` references.
+- **Path & citation hygiene** — bare citations missing skill prefix (`SKILL.md` → `.claude/skills/<skill>/SKILL.md`); references to files that no longer exist.
 - **Math** — verify any `%` calculations using real values (e.g., "X% over Y" assertions). If the underlying numbers changed, recompute.
 - **Ghost references** — once confirmed a file/feature was removed, delete references to it (don't leave "(retired)" or "(see below)" stubs in current-state docs; historical change-log entries are fine).
-- **Meta-doc counting** — `INDEX.md` / `README.md` per-doc line counts, feature counts, file-type tallies (same nature as line-count drift).
+- **Meta-doc counting** — `INDEX.md` / `README.md` feature counts and file-type tallies (line counts are not stored — see Volatile-citation drift above).
 
 **Out of KB scope — never check, never claim:**
 
@@ -229,8 +228,8 @@ aid-discover  ▸ you are here
 > **semantic quality** — missing post-merge content, internal contradictions,
 > factual claims that would mislead a downstream phase (architecture,
 > module-map, coding-standards weighted highest). **Mechanical drift is OUT
-> of scope** — line counts, off-by-1, aggregate counts, bare-cite resolver
-> edge cases, math arithmetic, ghost references, meta-doc counting are
+> of scope** — volatile-citation drift, aggregate counts, path/citation
+> hygiene, math arithmetic, ghost references, meta-doc counting are
 > orchestrator-side **Pre-flight Cleanup** (above), swept BEFORE the
 > reviewer is dispatched. The reviewer should never need to flag mechanical
 > drift as a finding; if it does, the pre-flight sweep was incomplete.
@@ -285,7 +284,7 @@ When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-disco
 ## Quality Checklist
 
 - [ ] No overlap between KB documents
-- [ ] Claims grounded in code evidence (file paths, line numbers)
+- [ ] Claims grounded in code evidence (file paths + grep-recoverable symbol/heading anchors, not bare line numbers)
 - [ ] Inferred info marked with ⚠️
 - [ ] `.aid/knowledge/STATE.md` Q&A captures everything needing human input
 - [ ] external-sources.md documents all sources (or states none provided)

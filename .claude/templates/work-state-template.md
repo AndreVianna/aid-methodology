@@ -119,7 +119,7 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 
 ## Quick Check Findings
 
-> One block per task, keyed by task-id. Written by `writeback-task-status.sh --findings` during the per-task quick-check step of `aid-execute`. Records the reviewer tier used and all [HIGH] / [CRITICAL] findings for that task. [CRITICAL] findings trigger an immediate fix-on-spot; [HIGH] findings are deferred to the delivery gate via `delivery-NNN-issues.md`. No grade is recorded here — grading is per-delivery, not per-task.
+> One block per task, keyed by task-id. Written by `writeback-state.sh --findings` during the per-task quick-check step of `aid-execute`. Records the reviewer tier used and all [HIGH] / [CRITICAL] findings for that task. [CRITICAL] findings trigger an immediate fix-on-spot; [HIGH] findings are deferred to the delivery gate via `delivery-NNN-issues.md`. No grade is recorded here — grading is per-delivery, not per-task.
 
 ### task-NNN
 

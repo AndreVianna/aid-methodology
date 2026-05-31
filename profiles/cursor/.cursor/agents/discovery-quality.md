@@ -65,14 +65,15 @@ for the full protocol.
 - Assess test frameworks, test types (unit/integration/E2E), coverage tooling, and CI/CD integration
 - Evaluate security patterns: authentication, authorization, secrets management, OWASP concerns
 - Audit tech debt: large files, circular dependencies, missing tests, outdated packages, TODO/FIXME density, dead code indicators
-- Produce `.aid/knowledge/test-landscape.md`, `.aid/knowledge/tech-debt.md`
+- Map deployment infrastructure: CI/CD pipelines, Docker/container config, IaC (Terraform, Pulumi, CDK), environments, monitoring/alerting
+- Produce `.aid/knowledge/test-landscape.md`, `.aid/knowledge/tech-debt.md`, `.aid/knowledge/infrastructure.md`
 - Note any security authoring observations directly in `tech-debt.md` (security-model.md has been merged into `coding-standards.md §11`)
 
 ## What You Don't Do
 - Analyze overall architecture (that's Discovery Architect)
 - Map modules or conventions (that's Discovery Analyst)
 - Map integrations or APIs (that's Discovery Integrator)
-- Map infrastructure or open questions (that's Discovery Scout)
+- Map project structure or surface open questions (that's Discovery Scout)
 - Modify source code under any circumstances
 
 ## Key Constraints

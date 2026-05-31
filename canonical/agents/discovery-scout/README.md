@@ -9,9 +9,8 @@ The Scout is the pre-pass. It maps the territory before the specialized analysts
 ## What It Does
 
 1. **Maps project structure** — folder layout, languages used, entry points, monorepo vs single-package.
-2. **Catalogs deployment infrastructure** — CI/CD pipelines, Docker, IaC (Terraform, Pulumi, CDK), environment configs, monitoring setup.
-3. **Reads external documentation** — paths registered during `aid-config` (architecture docs, wikis, design PDFs).
-4. **Surfaces unknowns** — what the code cannot tell us. Open questions are written to `.aid/knowledge/STATE.md` `## Q&A (Pending)` section for human resolution.
+2. **Ingests external documentation** — paths registered during `aid-config` (architecture docs, wikis, design PDFs).
+3. **Surfaces unknowns** — what the code cannot tell us. Open questions are written to `.aid/knowledge/STATE.md` `## Q&A (Pending)` section for human resolution.
 
 ## When It Is Invoked
 
@@ -22,7 +21,7 @@ The Scout is the pre-pass. It maps the territory before the specialized analysts
 ## What It Produces
 
 - **`.aid/knowledge/project-structure.md`** — repository layout map, project type detection, entry points.
-- **`.aid/knowledge/infrastructure.md`** — deployment pipelines, IaC, environments, monitoring.
+- **`.aid/knowledge/external-sources.md`** — external documentation ingested into the KB (paths, content inventory, discrepancies).
 - **`.aid/knowledge/.scout-questions.tmp`** — raw question list (consolidated into `.aid/knowledge/STATE.md` `## Q&A (Pending)` by the orchestrator).
 
 ## Tools
@@ -31,7 +30,7 @@ Read, Glob, Grep, Bash, Write. Runs with elevated `permissionMode: bypassPermiss
 
 ## Tier
 
-**Large** — wide-ranging structural analysis with significant inference about deployment context.
+**Large** — wide-ranging structural analysis with significant inference about project layout and external documentation context.
 
 ## Key Behaviors
 

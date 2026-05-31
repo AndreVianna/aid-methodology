@@ -83,6 +83,16 @@ Must list ALL features identified by the user. Each feature has description, sta
 endpoints, data entities. Red flag: features without module mapping, features with placeholder
 descriptions, features obviously missing from user's original list.
 
+### {reviewer_output_file}
+Must have: questions in structured Q&A format — each with unique ID (Q{N}), category tag,
+impact level (High/Medium/Low), status (Pending/Answered/Skipped), context explaining why
+the question matters, and suggested answer when inferrable from code patterns.
+Questions should be specific and answerable. Must capture EVERYTHING that code analysis
+alone cannot determine. Questions ordered by impact (High first).
+**Red flags**: Too few questions. Generic questions that could apply to any project. Missing
+impact classification. Missing context field. Vague questions without actionable specificity.
+Questions that ARE answerable from code (should have been resolved during generation).
+
 ### external-sources.md
 Must have: list of all external documentation sources provided by the user (if any), with
 path, type (file/directory), date provided, accessibility status, and summary of key content.
@@ -104,3 +114,13 @@ Must have: accurate project description, project overview, real build/test comma
 conventions from code, architecture summary, KB reference. No remaining `(pending discovery)` placeholders.
 
 **Red flags**: Placeholder text still present. Commands that wouldn't actually work. Missing key gotchas for agents.
+
+### repo-presentation.md
+Must have: purpose and scope of this repository, intended audience, how to navigate the
+codebase (key directories and their roles), contribution guidelines or workflow conventions,
+any project-specific conventions that don't fit elsewhere (e.g., naming norms, branching
+strategy, release process overview). Oriented toward someone new to the repo — not toward
+architecture or code patterns (those belong in architecture.md and coding-standards.md).
+**Red flags**: Duplicates architecture.md content (architectural patterns belong there). Missing
+audience / navigation guidance. Placeholder or template text still present. Focuses on code
+conventions instead of repository presentation (those belong in coding-standards.md).

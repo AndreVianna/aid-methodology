@@ -5,14 +5,17 @@ intent: |
   Architectural map of the AID-methodology repository: the canonical→render→install pipeline
   that emits one canonical source into three byte-identical host-tool install trees (Claude Code,
   Codex, Cursor), the phase-to-skill mapping across 8 pipeline phases, the agent-tier model
-  (Opus/Sonnet/Haiku), the Thin-Router SKILL.md pattern, and the two-tier review + parallel
-  pool dispatch execution model. Read this to understand how the methodology pieces hang together;
-  for raw file inventory see project-structure.md.
+  (Opus/Sonnet/Haiku), the Thin-Router SKILL.md pattern, the two-tier review + parallel
+  pool dispatch execution model, and the declared-doc-set mechanism that makes the discovery
+  KB doc-set project-configurable (varies by project; default seed as fallback). Read this
+  to understand how the methodology pieces hang together; for raw file inventory see
+  project-structure.md.
 contracts:
   - "10 AID skills listed in Dispatch table"
   - "22 specialist agents across 3 tiers (10 Opus, 9 Sonnet, 3 Haiku)"
   - "3 rendered install trees: claude-code, codex, cursor"
 changelog:
+  - 2026-05-31: delivery-002 — added declared-doc-set mechanism: Step 0d propose→confirm, data-driven dispatch, de-hardcoded doc-set (varies by project)
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
 ---
 # Architecture
@@ -72,7 +75,7 @@ aid-methodology/                    (repo root — branch: kb-overhaul)
 │   └── skills/aid-generate/        ← maintainer-only generator (NOT in canonical/)
 │       └── scripts/                ← 10 Python files (render_lib.py, aid_profile.py, render_*.py, …)
 ├── tests/
-│   ├── canonical/                  ← 13 helper-script test suites (test-*.sh, bash)
+│   ├── canonical/                  ← currently 18 helper-script test suites (test-*.sh, bash)
 │   ├── lib/assert.sh               ← shared assertion helpers
 │   ├── run-all.sh                  ← single aggregator entrypoint (globs test-*.sh)
 │   └── README.md                   ← suite inventory + run instructions
@@ -264,6 +267,41 @@ Evidence: `.claude/skills/aid-discover/SKILL.md` `State machine for this skill`;
 `.claude/skills/aid-summarize/SKILL.md` `## State Detection`;
 `canonical/templates/settings.yml` `execution.max_parallel_tasks`,
 `traceability.heartbeat_interval` (runtime knobs).
+
+### Discovery run-time flow detail (`/aid-discover` GENERATE state)
+
+The discovery GENERATE state follows a richer sequence that includes a **declared-doc-set
+resolve** and a **propose→confirm checkpoint** before dispatching sub-agents:
+
+```
+Step 0:  Resolve declared doc-set from .aid/settings.yml discovery.doc_set
+         (if absent → synthesize default seed from canonical/templates/knowledge-base/ templates)
+Step 0b: Read external-docs paths from STATE.md ## External Documentation
+Step 0c: Build project index pre-pass (build-project-index.sh → .aid/generated/project-index.md)
+Step 0d: Propose→confirm (PAUSE-FOR-USER-DECISION):
+         – Infer proposed set as diff-against-default-seed from project-index.md file inventory
+         – Present diff to user; await confirm or user-provided edits
+         – On confirm: write confirmed set to .aid/settings.yml (no-op if equals default seed)
+         – Chain → Step 1 with the confirmed set driving dispatch
+Step 1:  discovery-scout (alone, sequential) → project-structure.md, external-sources.md
+Steps 2-5: 4 agents dispatched in parallel (data-driven from declared set):
+         – Each agent's target list = owns-<agent> ∩ missing-on-disk
+         – Empty target list → agent NOT dispatched (no-hang on omission)
+         – Added custom doc → appended to owner's prompt (dispatch on addition)
+Step 6:  Orchestrator generates README.md, INDEX.md, feature-inventory.md
+Step 6b: Update STATE.md Q&A
+Step 7:  Update project-context file ({project_context_file})
+Step 8:  Wrap-up → chain → REVIEW
+```
+
+The doc-set size (N) is thus **variable per project** — it equals the declared set in
+`.aid/settings.yml` (or the default seed if the section is absent). No literal count is
+hardcoded in the dispatch logic.
+
+Evidence:
+- `canonical/skills/aid-discover/references/state-generate.md` `### Step 0d: Propose & Confirm Doc-Set`
+- `canonical/skills/aid-discover/references/doc-set-resolve.md` `## resolve_doc_set` + `## synth_default_seed`
+- `canonical/skills/aid-discover/references/state-generate.md` `### Steps 2-5: Dispatch 4 Subagents in Parallel (data-driven from declared set)`
 
 ## Dependency Injection
 
