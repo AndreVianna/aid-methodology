@@ -41,6 +41,7 @@ desktop.ini
 
 # Claude Code files
 .claude/worktrees/
+.claude/projects/
 .claude/settings.local.json
 
 # Subagent heartbeat files (ephemeral runtime artifacts; visibility-patch L3)
