@@ -124,7 +124,7 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 
 | Delivery | State | PR | KB Updated | Tag | Notes |
 |----------|-------|----|-----------|----|----|
-| _none yet_ | | | | | |
+| delivery-001 + delivery-002 | PR open | #34 | yes (in-branch) | — | aid/work-001-adaptive-kb → master; gates A+/A+; task-014 summary deferred; setup.sh refresh post-merge |
 
 ## Cross-phase Q&A (Pending)
 
