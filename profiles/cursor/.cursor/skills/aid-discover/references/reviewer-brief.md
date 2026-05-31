@@ -23,7 +23,7 @@ RUBRIC: kb-authoring/review-rubric.md (route by each doc's kb-category + source)
   - primary + generated            → Full Primary + Build-Verify (e.g., INDEX.md)
   - meta + hand-authored           → Spot-Check Snapshot only
   - meta + generated               → Build-Verify Only (e.g., metrics.md, project-index.md)
-  - extension + hand-authored      → Extension-Scope (flagged outside canonical 16)
+  - extension + hand-authored      → Extension-Scope (flagged outside the declared doc-set)
   - extension + generated          → Extension Build-Verify
 
 OUT OF SCOPE (do NOT grade against):

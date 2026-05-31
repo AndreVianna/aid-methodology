@@ -165,7 +165,7 @@ Create `.aid/knowledge/README.md` with completeness tracking:
 
 ## Output
 
-A `.aid/knowledge/` directory containing the relevant subset of these 16 documents (plus a README.md index and `.aid/knowledge/STATE.md`):
+A `.aid/knowledge/` directory containing the project's declared doc-set (the standard default set for software projects, adjustable per project; plus a README.md index and `.aid/knowledge/STATE.md`):
 
 | Document | Always? | Description |
 |----------|---------|-------------|

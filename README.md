@@ -112,7 +112,7 @@ flowchart TB
 
 ## The Knowledge Base — the gravitational center
 
-The KB is the central artifact AID is built around. Not the spec, not the code — the **accumulated living understanding** of the project. Every phase reads it; every phase may revise it. It has a **fixed shape** — 14 standard documents enforced by tooling — so downstream skills always know exactly where to look.
+The KB is the central artifact AID is built around. Not the spec, not the code — the **accumulated living understanding** of the project. Every phase reads it; every phase may revise it. Its doc-set is **declared per project** — a standard default set for software projects, adjustable to whatever the project actually is — so downstream skills always know exactly where to look.
 
 ```mermaid
 graph TD
@@ -142,7 +142,7 @@ graph TD
     Standard --> S6["feature-inventory<br/>orchestrator"]:::std
 ```
 
-The 14 standard documents are produced by six discovery sub-agents grouped by domain. Because the shape is fixed, an agent looking for data schemas always reads `schemas.md`; looking for debt, always `tech-debt.md` — navigation is by **convention, not search**.
+The declared doc-set is produced by six discovery sub-agents grouped by domain. Because the set is declared (not ad-hoc), an agent looking for data schemas always reads `schemas.md`; looking for debt, always `tech-debt.md` — navigation is by **convention, not search**.
 
 ### Progressive disclosure — the 3-tier context economy
 
@@ -157,7 +157,7 @@ flowchart TB
 
     Agent["Agent task context<br/>kept lean — pays only for what the task needs"]:::ctx
     T1["Tier 1 · always loaded<br/>INDEX.md — 2-3 line summary of every KB doc<br/>~200-500 tokens"]:::t1
-    T2["Tier 2 · loaded on demand<br/>one specific KB document<br/>fixed shape — navigate by convention, no search"]:::t2
+    T2["Tier 2 · loaded on demand<br/>one specific KB document<br/>declared set — navigate by convention, no search"]:::t2
     T3["Tier 3 · pinpointed<br/>exact file + line via inline path:line citation<br/>never bulk-loaded"]:::t3
 
     Agent --> T1

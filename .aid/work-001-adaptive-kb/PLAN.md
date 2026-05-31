@@ -1,7 +1,7 @@
 # Plan — work-001-adaptive-kb (Adaptive, Project-Shaped KB)
 
 > Sequences the 4 Ready feature SPECs into deliverables. Scope is P0 (correctness) + lean P1
-> (declared doc-set); P2 split to work-002, P3 deferred, P4 dropped (REQUIREMENTS §4).
+> (declared doc-set); P2 dropped (out of scope), P3 deferred, P4 dropped (REQUIREMENTS §4).
 
 ## Deliverables
 
@@ -101,6 +101,6 @@ Edges: 007→008 · {007,008}→009 · 008→010 · {010,003}→011 · {010,011}
 
 ## Deferred
 
-*None — all 4 Ready features are assigned. P2 (heterogeneous sources) is split to a future
-work-002, P3 (retrieval upgrades) deferred, P4 (vector/RAG/MCP) dropped — per REQUIREMENTS §4,
+*None — all 4 Ready features are assigned. P2 (heterogeneous sources) is dropped (out of
+scope), P3 (retrieval upgrades) deferred, P4 (vector/RAG/MCP) dropped — per REQUIREMENTS §4,
 out of scope for this work, not deferred features within it.*

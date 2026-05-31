@@ -39,6 +39,10 @@ desktop.ini
 # Generated knowledge-summary cache
 .aid/knowledge/.cache/
 
+# Transient /aid-summarize review artifacts (regenerated each run)
+.aid/knowledge/.manual-checklist.json
+.aid/knowledge/.spot-check-facts.txt
+
 # Claude Code files
 .claude/worktrees/
 .claude/projects/
