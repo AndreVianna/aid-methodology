@@ -1,7 +1,7 @@
 # Work State — work-001-adaptive-kb
 
-> **Status:** Specifying (all feature specs Ready)
-> **Phase:** Specify
+> **Status:** Executed (delivery-001 + delivery-002 gated A+; task-014 summary deferred to user)
+> **Phase:** Execute
 > **Minimum Grade:** {resolved at runtime by `bash .claude/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-05-30
 > **User Approved:** yes
@@ -95,7 +95,7 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
 | delivery-001 | Done (gate A+) | 6/6 (001–006) | P0 Correctness Baseline — F1+F2+F3 + KB-register. Gate A+ 2026-05-31. |
-| delivery-002 | Detailed | 8 (007–014) | Declared, Project-Shaped Doc-Set — F4 (core→derivation) + KB-register + summary. Depends: delivery-001. Must |
+| delivery-002 | Done (gate A+) | 7/8 (007–013; 014 deferred) | Declared, Project-Shaped Doc-Set — F4 + KB-register. Gate A+ 2026-05-31. task-014 summary deferred to interactive /aid-summarize. |
 
 ## Tasks Status
 
@@ -109,14 +109,14 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 | 004 | Expectations single-source suite | TEST | d1-B | Done | — | — | F2; deps 003 |
 | 005 | Remove orphan stub + correct READMEs | IMPLEMENT | d1-A | Done | — | — | F3; deps — |
 | 006 | Register delivery-001 in KB | DOCUMENT | d1-C | Done | — | — | deps 002,004,005 |
-| 007 | Declared-set read-path + default seed | IMPLEMENT | d2-1 | Pending | — | — | F4 core; deps 001,003,005 |
-| 008 | De-hardcode 14/16 + data-driven mapping | IMPLEMENT | d2-2 | Pending | — | — | F4 core; deps 007 (008a/008b fallback) |
-| 009 | CORE suites: read/resolve + mapping | TEST | d2-3 | Pending | — | — | F4 core; deps 007,008 |
-| 010 | Propose→confirm flow (Step 0d) | IMPLEMENT | d2-3 | Pending | — | — | F4 deriv; deps 008 (∥ 009) |
-| 011 | Custom-doc ownership + expectations entry | IMPLEMENT | d2-4 | Pending | — | — | F4 deriv; deps 010,003 |
-| 012 | DERIVATION suite: propose→confirm | TEST | d2-5 | Pending | — | — | F4 deriv; deps 010,011 |
-| 013 | Register delivery-002 in KB + H5 resolved | DOCUMENT | d2-6 | Pending | — | — | deps 009,012 |
-| 014 | Regenerate knowledge-summary.html | DOCUMENT | d2-7 | Pending | — | — | /aid-summarize; deps 013 |
+| 007 | Declared-set read-path + default seed | IMPLEMENT | d2-1 | Done | — | — | F4 core; deps 001,003,005 |
+| 008 | De-hardcode 14/16 + data-driven mapping | IMPLEMENT | d2-2 | Done | — | — | F4 core; deps 007 (008a/008b fallback) |
+| 009 | CORE suites: read/resolve + mapping | TEST | d2-3 | Done | — | — | F4 core; deps 007,008 |
+| 010 | Propose→confirm flow (Step 0d) | IMPLEMENT | d2-3 | Done | — | — | F4 deriv; deps 008 (∥ 009) |
+| 011 | Custom-doc ownership + expectations entry | IMPLEMENT | d2-4 | Done | — | — | F4 deriv; deps 010,003 |
+| 012 | DERIVATION suite: propose→confirm | TEST | d2-5 | Done | — | — | F4 deriv; deps 010,011 |
+| 013 | Register delivery-002 in KB + H5 resolved | DOCUMENT | d2-6 | Done | — | — | deps 009,012 |
+| 014 | Regenerate knowledge-summary.html | DOCUMENT | d2-7 | Deferred | — | — | DEFERRED to user's interactive /aid-summarize run (mandatory human visual gate V1); KB source already updated |
 
 ## Deploy Status
 
@@ -176,4 +176,5 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 | 2026-05-31 | /aid-specify all 4 features | A/A/A/A+ | Each spec'd + reviewed to the A gate. F1 E→A, F2 D+→A, F3 A, F4 C+→A+ (storage form decided: pipe-delimited discovery.doc_set in settings.yml). All Ready — next: /aid-plan |
 | 2026-05-31 | /aid-plan | A | 2 deliverables (user kept F4 whole): D1 P0 baseline (F1+F2+F3) → D2 declared doc-set (F4). PLAN.md written, reviewed A. Next: /aid-detail |
 | 2026-05-31 | /aid-execute delivery-001 | A+ | Tasks 001–006 executed + committed; delivery gate A+ (15 suites green, render-drift clean). Branch aid/work-001-adaptive-kb |
+| 2026-05-31 | /aid-execute delivery-002 | A+ | Tasks 007–013 executed + committed; delivery gate A+ (18 suites green, idempotent render). task-014 (summary) deferred to user's /aid-summarize (human visual gate). Logged L6 FR-P0-4 residual. PR pending |
 | 2026-05-31 | /aid-detail | A | 14 tasks (11 IMPL/TEST + 3 DOCUMENT for KB+summary, added at user request). Execution graphs written to PLAN.md. Reviewed A. Next: /aid-execute |
