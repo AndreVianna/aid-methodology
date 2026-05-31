@@ -50,6 +50,99 @@ This is a deterministic shell script — no LLM dispatch. It runs fast (typicall
 
 If the index fails (e.g., empty repo, permission errors): log a warning and continue. Sub-agents will fall back to direct enumeration.
 
+### Step 0d: Propose & Confirm Doc-Set
+
+**PAUSE-FOR-USER-DECISION** (contracted checkpoint per SPEC feature-004 §3.1 and
+`.claude/templates/state-machine-chaining.md`).
+
+#### Idempotent re-entry
+
+Check whether `.aid/settings.yml` already carries a `discovery.doc_set` section from a prior run:
+
+```bash
+raw="$(bash .claude/scripts/config/read-setting.sh \
+        --path discovery.doc_set 2>/dev/null || true)"
+```
+
+- **Prior set exists (`raw` non-empty):** Skip the inference step below — show the existing set as a diff against the default seed and ask the user to confirm or edit it. This is idempotent re-entry.
+- **No prior set (`raw` empty):** Proceed to the inference step.
+
+#### Inference step (first run only)
+
+Read `.aid/generated/project-index.md` — a **file inventory** (paths, sizes, languages, directory tree) built in Step 0c. This is NOT a project-type label. Use it to **infer** a proposed doc-set as: default seed + deltas (add / remove / rename / repurpose).
+
+Inference heuristics (agent judgment — not a classifier, no seed-files, no archetype fixtures):
+
+- **No test directories and no test-framework config** (e.g., no `package.json`/`pytest.ini`/`*.test.*`) → propose marking `test-landscape.md` as `conditional` or dropping it from the required set.
+- **No external service integrations, no API surface** → propose `integration-map.md` as `conditional`.
+- **Docs-only or research tree** (no source files, only `.md`/text) → propose a research-oriented set: drop `technology-stack.md`, `schemas.md`, `coding-standards.md`; add any project-specific docs evident from the file tree.
+- **Non-trivial CI/CD configuration present** → ensure `infrastructure.md` is `required`.
+- **Custom doc evident in the tree** (e.g., a docs sub-directory with a non-standard name) → propose adding it with an appropriate existing agent as owner.
+- **When uncertain, prefer the default seed.** The user-confirm step is the safety net; a conservative proposal is always acceptable.
+
+The inferred deltas are expressed relative to the default seed (as defined by `synth_default_seed`). No static pick-list, no archetype taxonomy.
+
+#### Present the proposal
+
+Display the proposed doc-set as a **diff against the default seed**:
+
+```
+Proposed doc-set (diff vs. default seed)
+─────────────────────────────────────────
+  (no change)  architecture.md           discovery-architect    required
+  (no change)  technology-stack.md       discovery-architect    required
+  (no change)  module-map.md             discovery-analyst      required
+  ...
+- (drop)       test-landscape.md         discovery-quality      required
++ (add)        research-notes.md         discovery-analyst      required
+```
+
+(Omit unchanged lines if the list is long; a summary line "N unchanged" is acceptable.)
+
+Then ask the user to confirm or edit:
+
+> **Doc-set proposal ready.** Review the diff above.
+> - Type **`confirm`** (or press Enter) to accept as proposed.
+> - Or provide edits in the pipe-delimited format: `filename|owner|presence[:when]` — one entry per line — and the confirmed set will be written to `.aid/settings.yml`.
+
+**This is a genuine PAUSE-FOR-USER-DECISION.** Stop here after presenting the proposal.
+
+**Advance:** Stop here (contracted checkpoint per SPEC feature-004 §3.1 and
+`.claude/templates/state-machine-chaining.md`). Re-run `/aid-discover` after confirming the
+proposed doc-set to continue to [State: GENERATE — Step 1].
+
+#### On confirm (resume path)
+
+When the user re-runs `/aid-discover` and the session resumes after the pause:
+
+1. Read the user's response:
+   - **`confirm` or default (no change to proposal):** If the proposal equals the default seed, **write nothing** to `.aid/settings.yml` (absent section ⇒ default seed — AC: accepting default writes nothing). If the proposal differs from the default, write the confirmed set to `.aid/settings.yml` as described below.
+   - **User-provided edits:** Accept the edits verbatim; write the resulting set to `.aid/settings.yml`.
+
+2. Write/update `discovery.doc_set` in `.aid/settings.yml` (only when the confirmed set differs from the default):
+
+   ```yaml
+   discovery:
+     doc_set:
+       - architecture.md|discovery-architect|required
+       - technology-stack.md|discovery-architect|required
+       # ... one entry per line: filename|owner|presence[:when]
+       # (inline comments are stripped by read-setting.sh:197 — safe)
+   ```
+
+   Write is idempotent: if the section already exists (re-entry), overwrite it with the confirmed set.
+
+3. Re-resolve `raw` from the (now-updated) `.aid/settings.yml`:
+
+   ```bash
+   raw="$(bash .claude/scripts/config/read-setting.sh \
+           --path discovery.doc_set 2>/dev/null || true)"
+   declared_filenames="$(resolve_doc_set "$raw" | cut -f1)"
+   N="$(echo "$declared_filenames" | grep -c .)"
+   ```
+
+4. **CHAIN → Step 1** with the confirmed set driving the data-driven dispatch (Steps 2-5 §2.5).
+
 ## Step 1: Pre-scan (discovery-scout) — ALWAYS runs first, ALONE
 
 Produces `project-structure.md` and `external-sources.md` — foundation for all other agents.
