@@ -61,7 +61,7 @@ evaluate the KB purely on what's on disk — as if a stranger wrote it.
 >      generic statements that could apply to any project?
 >
 > 6. **Meta-document integrity** — INDEX.md, README.md, and AGENTS.md are
->    derived from the 16 primary documents.
+>    derived from the project's declared primary doc-set.
 >    - Do their summaries and values accurately reflect the current primary doc content?
 >    - Is placeholder text or template markers still present?
 >    - Are questions marked Pending in the Q&A section of STATE.md actually still unanswerable from the repository?

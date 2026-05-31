@@ -1469,7 +1469,7 @@ flowchart TB
 	<header>
 		<span class="eyebrow">Debt</span>
 		<h2>Tech Debt</h2>
-		<p class="lede">Overall debt level: Low. The codebase is well-organized (Thin-Router convention, single canonical source, 18-suite test coverage) and has enforced pre-merge CI (required status checks on master). The inventory is now effectively empty: <strong>zero Critical, zero High, zero Medium</strong>; a single Low item (L6) remains — stale fixed-doc-count prose left outside the de-hardcode scope. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
+		<p class="lede">Overall debt level: Low. The codebase is well-organized (Thin-Router convention, single canonical source, 18-suite test coverage) and has enforced pre-merge CI (required status checks on master). The inventory is now <strong>empty — zero Critical, zero High, zero Medium, zero Low</strong>. (per tech-debt.md — resolved items are pruned from this doc entirely once closed; git history is the audit trail, per kb-authoring P9)</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
@@ -1490,15 +1490,9 @@ flowchart TB
 		</div>
 		<div class="card">
 			<div class="kicker">Low</div>
-			<div class="stat" style="color:var(--text-dim);">1</div>
-			<div class="stat-sub">L6</div>
+			<div class="stat" style="color:var(--ok);">0</div>
+			<div class="stat-sub">none open</div>
 		</div>
-	</div>
-
-	<div class="debt-item low">
-		<div class="title">L6 — FR-P0-4 residual fixed-doc-count literals</div>
-		<div class="meta">Type: Methodology / consistency · Effort: S · Priority: P3</div>
-		<p>Shipped behavior is correct (the doc-set is declared/variable), but a few reviewer/README sites outside the de-hardcode scope still phrase the doc-set as a fixed "14"/"16" set — stale prose to tidy, no behavior impact. (per tech-debt.md L6)</p>
 	</div>
 
 </section>
@@ -1515,7 +1509,7 @@ flowchart TB
 		<div class="card">
 			<div class="kicker">README.md — 388 lines</div>
 			<h3>Primary pitch document</h3>
-			<p>Eight sections with progressive disclosure: What is AID, Why AID (failure modes it removes), The Pipeline (Mermaid flowchart + 10 skills), The Knowledge Base (now a declared/derived doc-set — the README's "fixed shape" pitch is stale prose tracked as tech-debt L6), The Agent Model (3-tier diagram), Feedback Loops (11 formal loops), AID vs. SDD (8-row comparison), Using AID in your project (install instructions). (per repo-presentation.md, tech-debt.md L6)</p>
+			<p>Eight sections with progressive disclosure: What is AID, Why AID (failure modes it removes), The Pipeline (Mermaid flowchart + 10 skills), The Knowledge Base (now a declared/derived doc-set), The Agent Model (3-tier diagram), Feedback Loops (11 formal loops), AID vs. SDD (8-row comparison), Using AID in your project (install instructions). (per repo-presentation.md)
 		</div>
 		<div class="card">
 			<div class="kicker">methodology/aid-methodology.md — 1,070 lines</div>

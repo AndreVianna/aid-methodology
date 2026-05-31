@@ -45,7 +45,7 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 | Date | Event | Notes |
 |------|-------|-------|
 | 2026-05-30 | Interview complete — approved | All 10 sections Complete; Q1–Q8 resolved; P4 dropped; H5 forward-pointer added to KB tech-debt.md |
-| 2026-05-30 | Re-scoped (over-scope analysis) | Independent adversarial review → trimmed to P0 + lean P1; dropped registry-file/parser, archetype classifier, new agent; P2 split to future work-002, P3 deferred |
+| 2026-05-30 | Re-scoped (over-scope analysis) | Independent adversarial review → trimmed to P0 + lean P1; dropped registry-file/parser, archetype classifier, new agent; P2 dropped (out of scope), P3 deferred |
 | 2026-05-30 | Feature Decomposition | 4 features created (001–003 P0, 004 lean P1); full FR coverage |
 | 2026-05-30 | Cross-Reference (reviewer) | Grade B→A+ after fixes. All 7 codebase claims CONFIRMED, none refuted. 5 precision findings fixed in artifacts; 1 OOS (doc-count drift) routed to /aid-discover |
 | 2026-05-30 | Cross-Reference re-run (reviewer) | Fresh pass A+. All 4 fixes HOLD (verified against codebase); no new findings; decomposition still complete + clean |

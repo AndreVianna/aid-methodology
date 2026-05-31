@@ -4,8 +4,8 @@
 
 > **Note:** the 2026-05-30 rows for Q1–Q8 record the *original* design decisions. Several were
 > **superseded by the same-day RE-SCOPED row** (dropped: dedicated `.aid/doc-set.yml`+parser,
-> archetype classifier, `discovery-generalist`, INDEX section-nesting; split: P2 sources →
-> work-002; deferred: P3). The current design is the post-re-scope state in §§1–10.
+> archetype classifier, `discovery-generalist`, INDEX section-nesting; dropped: P2 sources
+> (out of scope); deferred: P3). The current design is the post-re-scope state in §§1–10.
 
 | Date | Change | Source |
 |------|--------|--------|
@@ -21,8 +21,9 @@
 | 2026-05-30 | Q8 resolved: P0 standalone first → P1 → P2 → P3; deliverable breakdown deferred to /aid-plan. All 8 open questions resolved | /aid-interview |
 | 2026-05-30 | Interview complete — approved | /aid-interview |
 | 2026-05-30 | Cross-reference (reviewer) A+: all codebase claims confirmed; fixed §3 "6+ files"→"several files" + two-source expectations (#4), and §4/FR-P1-3 project-index.md as file-inventory-requiring-inference (#5) | /aid-interview (cross-reference) |
+| 2026-05-31 | work-002 eliminated — P2 (heterogeneous sources) dropped entirely (out of scope), not a planned future work (user decision). L6 resolved + removed per kb-authoring P9. | user + /aid-execute |
 | 2026-05-31 | Full independent review (grade D→fixes): added **FR-P0-4** (reconcile 14-vs-16 doc-count drift + pin canonical default set, enumerated in §8) addressing the HIGH undefined-standard-set finding; §3 ownership spread "~12 locations"; FR-P1-6 retargeted at the agent-to-file mapping (gate already soft); AC4 reworded to a mechanical invariant; FR-P1-3 user-confirm-as-safety-net; suite-count wording de-pinned; clarified change-log supersession. Feature SPECs: F1 +external-sources strand; F2 canonical-source + reviewer-loads-file; F4 atomic ACs + /aid-plan split note; tech-debt H5 note refreshed | /aid-interview (full review) |
-| 2026-05-30 | **RE-SCOPED after over-scope analysis** (independent adversarial review + user decision): trimmed to P0 + lean P1. Dropped the dedicated `.aid/doc-set.yml`+parser, archetype classifier/seeds/fixtures, and the mandated new `discovery-generalist` agent. **P2 (heterogeneous sources) split to a future work-002; P3 (section-index, runtime retrieval surface, freshness guard) deferred.** Rationale: much of the intended flexibility already exists unenforced (`extension` kb-category, list-valued settings, "not every doc required" doctrine); H5 is one non-urgent High item and the original cure was heavier than the disease. | /aid-interview |
+| 2026-05-30 | **RE-SCOPED after over-scope analysis** (independent adversarial review + user decision): trimmed to P0 + lean P1. Dropped the dedicated `.aid/doc-set.yml`+parser, archetype classifier/seeds/fixtures, and the mandated new `discovery-generalist` agent. **P2 (heterogeneous sources) dropped (out of scope, not a planned future work); P3 (section-index, runtime retrieval surface, freshness guard) deferred.** Rationale: much of the intended flexibility already exists unenforced (`extension` kb-category, list-valued settings, "not every doc required" doctrine); H5 is one non-urgent High item and the original cure was heavier than the disease. | /aid-interview |
 
 ## 1. Objective
 
@@ -35,8 +36,8 @@ exception.
 
 > **Scope note (post re-scope):** the broader original vision also included referencing
 > arbitrary raw sources (PDFs/spreadsheets/data) and section-granular retrieval upgrades. Those
-> are **real and intent-aligned but orthogonal to doc-set rigidity (H5)** and have been split
-> out — heterogeneous sources to a **future work-002**, retrieval upgrades **deferred** — so
+> are **real and intent-aligned but orthogonal to doc-set rigidity (H5)** and are out of
+> scope here — heterogeneous sources **dropped**, retrieval upgrades **deferred** — so
 > this work stays the smallest proportionate fix for H5. See §4 Out of Scope.
 
 ## 2. Problem Statement
@@ -120,7 +121,7 @@ exception.
 
 ### Out of Scope
 
-- **P2 — Heterogeneous (non-code) sources** → **split to a future work-002.** Real and
+- **P2 — Heterogeneous (non-code) sources** → **dropped (out of scope).** Real and
   intent-aligned (referencing PDFs/spreadsheets/data via durable anchors, host-native
   extract-on-read, source-synthesis doc) but orthogonal to doc-set rigidity; bundling it
   inflates this work.
@@ -277,6 +278,6 @@ Phasing (to be finalized in `/aid-plan`):
 2. **P1 (lean)** declared doc-set + propose/confirm + custom-doc ownership, validated on this
    repo's carve-out and one non-software fixture.
 
-*(P2 split to a future work-002; P3 deferred; P4 dropped — see §4 Out of Scope.)*
+*(P2 dropped (out of scope); P3 deferred; P4 dropped — see §4 Out of Scope.)*
 
 **Detailed deliverable/task breakdown is deferred to `/aid-plan`.**
