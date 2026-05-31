@@ -94,7 +94,7 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| delivery-001 | Detailed | 6 (001–006) | P0 Correctness Baseline — F1+F2+F3 + KB-register. Depends: —. Must |
+| delivery-001 | Done (gate A+) | 6/6 (001–006) | P0 Correctness Baseline — F1+F2+F3 + KB-register. Gate A+ 2026-05-31. |
 | delivery-002 | Detailed | 8 (007–014) | Declared, Project-Shaped Doc-Set — F4 (core→derivation) + KB-register + summary. Depends: delivery-001. Must |
 
 ## Tasks Status
@@ -103,12 +103,12 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|
-| 001 | Reconcile scout/quality ownership | IMPLEMENT | d1-A | Pending | — | — | F1; deps — |
-| 002 | Ownership-consistency suite | TEST | d1-B | Pending | — | — | F1; deps 001 |
-| 003 | Consolidate expectations + wire reviewer (REVIEW+FIX) | IMPLEMENT | d1-A | Pending | — | — | F2; deps — |
-| 004 | Expectations single-source suite | TEST | d1-B | Pending | — | — | F2; deps 003 |
-| 005 | Remove orphan stub + correct READMEs | IMPLEMENT | d1-A | Pending | — | — | F3; deps — |
-| 006 | Register delivery-001 in KB | DOCUMENT | d1-C | Pending | — | — | deps 002,004,005 |
+| 001 | Reconcile scout/quality ownership | IMPLEMENT | d1-A | Done | — | — | F1; deps — |
+| 002 | Ownership-consistency suite | TEST | d1-B | Done | — | — | F1; deps 001 |
+| 003 | Consolidate expectations + wire reviewer (REVIEW+FIX) | IMPLEMENT | d1-A | Done | — | — | F2; deps — |
+| 004 | Expectations single-source suite | TEST | d1-B | Done | — | — | F2; deps 003 |
+| 005 | Remove orphan stub + correct READMEs | IMPLEMENT | d1-A | Done | — | — | F3; deps — |
+| 006 | Register delivery-001 in KB | DOCUMENT | d1-C | Done | — | — | deps 002,004,005 |
 | 007 | Declared-set read-path + default seed | IMPLEMENT | d2-1 | Pending | — | — | F4 core; deps 001,003,005 |
 | 008 | De-hardcode 14/16 + data-driven mapping | IMPLEMENT | d2-2 | Pending | — | — | F4 core; deps 007 (008a/008b fallback) |
 | 009 | CORE suites: read/resolve + mapping | TEST | d2-3 | Pending | — | — | F4 core; deps 007,008 |
@@ -175,4 +175,5 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 | 2026-05-31 | Cross-reference ×2 + full independent review | A+ | All validated A+; FR-P0-4 added (no fixed doc-count); interview pipeline DONE — ready for /aid-specify |
 | 2026-05-31 | /aid-specify all 4 features | A/A/A/A+ | Each spec'd + reviewed to the A gate. F1 E→A, F2 D+→A, F3 A, F4 C+→A+ (storage form decided: pipe-delimited discovery.doc_set in settings.yml). All Ready — next: /aid-plan |
 | 2026-05-31 | /aid-plan | A | 2 deliverables (user kept F4 whole): D1 P0 baseline (F1+F2+F3) → D2 declared doc-set (F4). PLAN.md written, reviewed A. Next: /aid-detail |
+| 2026-05-31 | /aid-execute delivery-001 | A+ | Tasks 001–006 executed + committed; delivery gate A+ (15 suites green, render-drift clean). Branch aid/work-001-adaptive-kb |
 | 2026-05-31 | /aid-detail | A | 14 tasks (11 IMPL/TEST + 3 DOCUMENT for KB+summary, added at user request). Execution graphs written to PLAN.md. Reviewed A. Next: /aid-execute |
