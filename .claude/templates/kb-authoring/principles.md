@@ -10,7 +10,7 @@ knowledge value — and keep the information that's actually load-bearing.
 
 ## P1. No drift-prone information unless it carries semantic value
 
-Three classes of content are commonly inlined into KB docs but rarely carry value:
+Four classes of content are commonly inlined into KB docs but rarely carry value:
 
 - **(a) Cosmetic counting** — line counts, byte counts, method counts, "this file has
   N functions". The number drifts every commit; the reader can run `wc -l` themselves.
@@ -24,6 +24,13 @@ Three classes of content are commonly inlined into KB docs but rarely carry valu
   (e.g., "post-FR2 retirement, 2026-05") — even then, justify case-by-case.
 - **(c) Other low-value clutter** — requires judgment. When unclear whether something is
   load-bearing, ask the user. Default to removal.
+- **(d) Positional citations** — a bare `file.ext:LINE` line number is drift-prone (the
+  line moves on the next edit above it) and carries nothing a `grep` can't recover. Cite
+  the **durable anchor** instead: the file path plus a grep-recoverable symbol, heading,
+  or unique string (e.g., `auth.ts` → `verifyToken`) — never a bare line number. The fact
+  worth storing is that the symbol EXISTS in that file; a consuming agent greps the anchor
+  to find its current location. **Bare line numbers banned from primary docs.** (Line
+  *counts* are (a); this is the *pointer* form of the same drift class.)
 
 ## P2. Proper metric
 
@@ -95,7 +102,7 @@ Two kinds of non-curated files exist:
   registered scripts. Each file MUST carry an HTML-style comment at the top:
 
   ```html
-  <!-- AUTO-GENERATED 2026-05-27T12:34:56Z by build-index.sh — DO NOT EDIT — regenerate with `bash .claude/scripts/kb/build-index.sh` -->
+  <!-- AUTO-GENERATED 2026-05-27T12:34:56Z by build-kb-index.sh — DO NOT EDIT — regenerate with `bash .claude/scripts/kb/build-kb-index.sh` -->
   ```
 
   The `source: generated` + `generator: <script>` frontmatter fields also declare this.
@@ -159,6 +166,16 @@ Exception: the one-time KB-format migration (when these principles are first app
 to an existing project) is a separate operation — not a review. It may touch KB doc
 content liberally because the act of migration is structural, not corrective.
 
+## P8. Rigor follows value — verify the core, not the scaffolding
+
+A KB doc is not uniform. Most of its truth-and-intent value lives in a small core of
+load-bearing claims (T1 Concept + T2 Structure); the rest is scaffolding — frontmatter,
+`changelog:`, navigation, decorative prose. The reviewer's (and author's) **first job on
+each file is to locate that valuable core and spend maximum rigor THERE.** Scaffolding
+gets light-touch: frontmatter and `changelog:` are present-and-parseable checks only
+(per P6), never deep-verified. Effort spent verifying metadata is effort stolen from the
+claims a downstream execution agent actually depends on.
+
 ---
 
 ## How the principles interact
@@ -170,6 +187,9 @@ content liberally because the act of migration is structural, not corrective.
   disk truth; inlined "proper metrics" are still drift-prone.
 - **P3 + P5** — the temp ledger pattern is itself a temporary file convention.
 - **P4 + P6** — the lint enforces what the frontmatter declares.
+- **P6 + P8** — frontmatter exemption is a special case of the general rule: rigor follows
+  value; scaffolding (frontmatter, `changelog:`) gets present-and-parseable checks, while
+  the load-bearing core gets full review.
 - **P7 + P3** — review is observation only; the temp ledger is the action queue, but
   it acts on the KB, never on the repo.
 

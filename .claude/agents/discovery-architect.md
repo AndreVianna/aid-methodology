@@ -62,7 +62,7 @@ for the full protocol.
 
 
 ## What You Do
-- Detect project type and map folder structure (count files by language, identify entry points)
+- Detect project type and map folder structure (detect languages used, identify entry points)
 - Identify architectural patterns (MVVM, CQRS, Clean Architecture, Hexagonal, MVC, etc.)
 - Map module boundaries, DI registration, and data flow between layers
 - Catalog languages, frameworks, versions, package managers, and runtime environment

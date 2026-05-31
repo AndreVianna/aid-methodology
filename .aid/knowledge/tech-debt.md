@@ -60,6 +60,8 @@ changelog:
 
 ### [HIGH] H5 — Methodology flexibility for KB doc-set
 
+> **Resolution in progress:** `work-001-adaptive-kb` now carries the resolution (requirements approved 2026-05-30, re-scoped same day). The fix recipe below is superseded by that work's REQUIREMENTS.md, whose **re-scoped** plan is: P0 correctness fixes (reconcile scout/quality ownership, consolidate per-doc expectations, remove the orphan `ui-architecture` stub, reconcile the 14-vs-16 doc-count drift + enumerate the canonical default set) + a **lean P1** (a declared `{filename, owner, presence}` doc-set the discovery mapping honors, default = the canonical standard set, with discovery proposing the set and the user confirming; custom docs owned by existing agents). **Dropped/split** from the original idea: the dedicated `.aid/doc-set.yml`+parser, the archetype classifier, a new `discovery-generalist` agent, and INDEX section-nesting; heterogeneous non-code sources split to a future work-002; retrieval upgrades deferred; vector/RAG/MCP dropped as a non-goal.
+
 **Type:** Methodology / Architecture
 **Evidence:**
 - `methodology/aid-methodology.md` defines a rigid 16-doc KB set.

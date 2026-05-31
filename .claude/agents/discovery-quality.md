@@ -77,7 +77,7 @@ for the full protocol.
 
 ## Key Constraints
 - **Write ONLY to `.aid/knowledge/` directory.** Never touch source code.
-- **Cite evidence for every finding.** File path + line number where possible.
+- **Cite evidence for every finding.** File path + a grep-recoverable symbol/heading — never a bare line number (durable anchor; see kb-authoring principles P1(d)).
 - **Classify tech debt with risk ratings:** Critical / High / Medium / Low
 - **Bash is READ-ONLY.** Permitted commands: `find`, `tree`, `wc`, `rg`, `cat`, `head`, `tail`
 - **Mark inferred information** with ⚠️ Inferred from code — needs confirmation
@@ -92,13 +92,13 @@ for the full protocol.
 {framework name: version, config file location}
 
 ## Test Types Found
-- **Unit tests:** {location pattern, count estimate}
-- **Integration tests:** {location pattern, count estimate}
-- **E2E tests:** {location pattern, count estimate}
+- **Unit tests:** {location pattern}
+- **Integration tests:** {location pattern}
+- **E2E tests:** {location pattern}
 - **Other:** {snapshot, contract, performance — if found}
 
 ## Coverage
-{coverage tool, config, last known coverage % if in config/CI, source}
+{coverage tool, config, coverage target/enforcement if defined, source}
 
 ## Test Commands
 ```bash
@@ -132,7 +132,7 @@ for the full protocol.
 ## Debt Items
 
 ### [Critical] {Item title}
-- **Evidence:** {file path, line numbers or counts}
+- **Evidence:** {file path + symbol/heading anchor}
 - **Impact:** {what breaks or degrades if unaddressed}
 - **Effort:** {rough estimate to fix}
 
@@ -145,11 +145,10 @@ for the full protocol.
 ### [Low] {Item title}
 ...
 
-## Metrics
-- TODO/FIXME count: {n} (source: `rg "TODO|FIXME"`)
-- Files > 500 lines: {list}
-- Files > 1000 lines: {list}
-- Test-to-code ratio: ⚠️ Inferred from file counts
+## Signals
+- TODO/FIXME markers: {present / none} — current count via `rg "TODO|FIXME" | wc -l`
+- Large files (recompute with `wc -l`): {list paths over the team's size threshold}
+- Test presence: {well-tested / partial / sparse — qualitative, not a stored ratio}
 ```
 
 ## Risk Rating Guide

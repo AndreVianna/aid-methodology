@@ -234,7 +234,7 @@ count_task_headings() {
 }
 
 # ---------------------------------------------------------------------------
-# Lock helpers (sentinel-file pattern, matching writeback-task-status.sh)
+# Lock helpers (sentinel-file pattern, matching writeback-state.sh)
 # ---------------------------------------------------------------------------
 LOCK_FILE=""
 LOCK_ACQUIRED=0
