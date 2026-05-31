@@ -1,6 +1,6 @@
 # State: REVIEW
 
-REVIEW grades all 16 KB documents for accuracy, completeness, and evidence quality; it is selected when all 16 documents are populated and no grade has been assigned yet.
+REVIEW grades all declared KB documents for accuracy, completeness, and evidence quality; it is selected when all declared docs are populated and no grade has been assigned yet.
 
 ### Step 1: Dispatch the Reviewer
 
@@ -8,9 +8,11 @@ Print: `[Review 1/2] Reviewing Knowledge Base quality...`
 
 **Dispatch package:**
 1. Render the universal 5-section brief from `references/reviewer-brief.md`,
-   substituting `{{ARTIFACTS}}` (the list of 16 KB doc paths under review for
-   this cycle) and `{{CONTEXT}}` (descriptive-only — no downstream phase
-   references; see the brief's CONTEXT discipline rule).
+   substituting `{{ARTIFACTS}}` (the list of declared KB doc paths under review
+   for this cycle — resolved via `read-setting.sh --path discovery.doc_set` →
+   list-filenames accessor, `references/doc-set-resolve.md` §2.1; default seed
+   when the section is unset) and `{{CONTEXT}}` (descriptive-only — no
+   downstream phase references; see the brief's CONTEXT discipline rule).
 2. Append the rubric-detail body from `references/reviewer-prompt.md` — that
    file contains the per-claim verification checklist + spot-check minimums
    that go beyond the universal rubric pointer in the brief.

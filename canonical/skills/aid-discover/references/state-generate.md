@@ -1,12 +1,26 @@
 # State: GENERATE
 
-GENERATE generates KB documents that are missing or still at "Pending" status; it is selected when any of the 16 expected KB documents are absent or contain only the init template placeholder.
+GENERATE generates KB documents that are missing or still at "Pending" status; it is selected when any declared KB document is absent or contains only the init template placeholder.
+
+> **Shared snippet:** The `synth_default_seed` and `resolve_doc_set` bash functions used
+> throughout this state are defined in `references/doc-set-resolve.md`. Inline them into
+> any bash context that needs them; they are the shared accessor for the declared doc-set.
+> `REPO` must be set to the repository root (e.g. `REPO="$(pwd)"`) before calling.
 
 ### Step 0: Check Existing KB
 
+Resolve the declared doc-set (see `references/doc-set-resolve.md`):
+```bash
+raw="$(bash canonical/scripts/config/read-setting.sh \
+        --path discovery.doc_set 2>/dev/null || true)"
+# N = number of declared docs (default seed when section unset)
+declared_filenames="$(resolve_doc_set "$raw" | cut -f1)"
+N="$(echo "$declared_filenames" | grep -c .)"
+```
+
 Scan `.aid/knowledge/` — files with only init template (`❌ Pending`) are treated as MISSING.
-Print: `[0/16] Checking existing KB...`
-If ALL 16 have real content and no `--reset`, skip to Step 6.
+Print: `[0/N] Checking existing KB...` (where N = declared-set size at runtime)
+If ALL declared docs have real content and no `--reset`, skip to Step 6.
 
 ### Step 0b: Read External Documentation Paths
 
@@ -50,9 +64,35 @@ external docs placeholder with actual paths (or the "no docs" variant).
 Wait for completion. Verify both files exist. Re-dispatch if missing.
 ✓ discovery-scout done (record actual time) — or ✗ discovery-scout failed: {reason}
 
-### Steps 2-5: Dispatch 4 Subagents in Parallel
+### Steps 2-5: Dispatch 4 Subagents in Parallel (data-driven from declared set)
 
-**Only after Step 1 completes.** Dispatch with `background: true`. Only dispatch agents whose target files are missing.
+**Only after Step 1 completes.** Dispatch with `background: true`.
+
+**Compute each agent's target list from the declared set** (§2.5 mapping-honors-declared-set):
+
+```bash
+# owns-<agent>: filenames assigned to this agent in the declared set
+# ∩ missing-on-disk: only dispatch for docs not already on disk with real content
+for agent in discovery-architect discovery-analyst discovery-integrator discovery-quality; do
+  owns="$(resolve_doc_set "$raw" | awk -F'\t' -v a="$agent" '$2==a{print $1}')"
+  # Intersect with missing-on-disk (files absent or containing only "❌ Pending")
+  targets=""
+  while IFS= read -r fn; do
+    [ -z "$fn" ] && continue
+    f=".aid/knowledge/$fn"
+    if [ ! -f "$f" ] || grep -q '❌ Pending' "$f" 2>/dev/null; then
+      targets="${targets:+$targets }$fn"
+    fi
+  done <<<"$owns"
+  # If the computed list is empty, do NOT dispatch this agent (no-hang on omission).
+  # If non-empty, include it in the parallel dispatch with its target list.
+  eval "targets_${agent//-/_}=\"$targets\""
+done
+```
+
+- An agent whose computed list is **empty is NOT dispatched** (no hang on an intentionally-omitted doc — FR-P1-6).
+- An **added** doc whose `owner` is some agent is included in that agent's list (dispatch on addition — FR-P1-6).
+- A custom doc owned by the architect fallback rides on the `discovery-architect` dispatch.
 
 **Every agent receives the foundation reference block** (appended to prompt):
 ```
@@ -62,16 +102,21 @@ REFERENCE DOCUMENTS (read these FIRST before analyzing):
 - .aid/knowledge/external-sources.md — external documentation inventory and findings
 ```
 
-**Sub-agents may delegate mechanical work** to the Small-tier utility agents (`simple-extractor`, `simple-glob`, `simple-formatter`) for high-volume extraction or templating. The synthesis stays at the sub-agent's tier; only the grunt work delegates. See `agents/simple-*/README.md` for the caller contract.
+In the agent prompt, include the computed target file list (from `targets_<agent>` above) and
+the prompt section from `references/agent-prompts.md`:
 
-| Step | Agent | Target Files | Prompt Section |
-|------|-------|-------------|----------------|
+| Step | Agent | Default-seed target files (illustrative — actual targets from declared set) | Prompt Section |
+|------|-------|----------------------------------------------------------------------------|----------------|
 | [2/5] | discovery-architect | architecture.md, technology-stack.md | `references/agent-prompts.md` → `## Architect` |
 | [3/5] | discovery-analyst | module-map.md, coding-standards.md, schemas.md | `references/agent-prompts.md` → `## Analyst` |
 | [4/5] | discovery-integrator | pipeline-contracts.md, integration-map.md, domain-glossary.md | `references/agent-prompts.md` → `## Integrator` |
 | [5/5] | discovery-quality | test-landscape.md, tech-debt.md, infrastructure.md | `references/agent-prompts.md` → `## Quality` |
 
-Before dispatching, print the AC4 sub-unit snapshot header for the GENERATE state:
+The actual target files for each agent are derived at runtime from the declared set, not hard-coded above.
+
+**Sub-agents may delegate mechanical work** to the Small-tier utility agents (`simple-extractor`, `simple-glob`, `simple-formatter`) for high-volume extraction or templating. The synthesis stays at the sub-agent's tier; only the grunt work delegates. See `agents/simple-*/README.md` for the caller contract.
+
+Before dispatching, print the AC4 sub-unit snapshot header for the GENERATE state (listing only agents with a non-empty target list):
 ```
 GENERATE  Wave 1 of 1 · 0/4 done
   (queued) discovery-architect  ~3–5 min
@@ -115,11 +160,23 @@ GENERATE  Wave 1 of 1 · 4/4 done
 
 **Only proceed when ALL dispatched agents have reported completion.**
 
-### Verify All 16 Files
+### Verify All Declared Files
 
-Run `ls .aid/knowledge/*.md 2>/dev/null | wc -l` and confirm count == 16 (or whatever the project's declared kb-doc-set size is). Cross-check filenames against the agent-to-file mapping below.
+Run the following to confirm all declared docs are present:
+```bash
+# list-filenames accessor: all filenames in the declared set
+declared_filenames="$(resolve_doc_set "$raw" | cut -f1)"
+N="$(echo "$declared_filenames" | grep -c .)"
+actual="$(ls .aid/knowledge/*.md 2>/dev/null | xargs -I{} basename {} | sort)"
+# Cross-check: confirm count == N and each declared filename is on disk
+echo "$declared_filenames" | sort | diff - <(echo "$actual" | grep -Ff <(echo "$declared_filenames" | sort))
+```
 
-**If any missing:** Re-dispatch ONLY the responsible agent per the mapping in the **Targeted Discovery** section of `SKILL.md`. Wait, verify again. Repeat until all expected files exist.
+Confirm `count == size(list-filenames)` (not a literal) and cross-check names against the
+`list-filenames` accessor — an omission lowers the target, an addition raises it; neither stalls.
+
+**If any missing:** Re-dispatch ONLY the responsible agent per the `owns-<agent>` accessor and
+the **Targeted Discovery** section of `SKILL.md`. Wait, verify again. Repeat until all declared files exist.
 
 Semantic verification of the docs (frontmatter compliance, contract claims, cross-doc consistency, spot-checks against source) happens in the **REVIEW** state, dispatched as the `discovery-reviewer` sub-agent — not as a separate shell script.
 
@@ -128,10 +185,10 @@ Semantic verification of the docs (frontmatter compliance, contract claims, cros
 The orchestrator generates these directly — they require reading across all KB documents.
 
 **.aid/knowledge/README.md** — completeness tracking table and revision history:
-- Table with all 16 documents, status, and notes
+- Table with all declared documents, status, and notes
 - Revision history table with dates and update descriptions
 
-**.aid/knowledge/INDEX.md** — 2-3 line summary of every KB document for agent self-service.
+**.aid/knowledge/INDEX.md** — 2-3 line summary of every declared KB document for agent self-service.
 Regenerate on every discovery run.
 
 **.aid/knowledge/feature-inventory.md** — copy template from `../../templates/feature-inventory.md`.
@@ -173,9 +230,9 @@ Keep the comment markers for future re-discoveries.
 
 ### Step 8: Final Wrap-up
 
-Print: `[16/16] Generation complete — Knowledge Base ready. Run /aid-discover again to review.`
+Print: `[N/N] Generation complete — Knowledge Base ready. Run /aid-discover again to review.` (where N = declared-set size)
 
-(File-presence was confirmed in the **Verify All 16 Files** step above; semantic quality is the **REVIEW** state's job — no additional pre-REVIEW check needed.)
+(File-presence was confirmed in the **Verify All Declared Files** step above; semantic quality is the **REVIEW** state's job — no additional pre-REVIEW check needed.)
 
 Print: `[State: GENERATE] complete.`
 
