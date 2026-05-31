@@ -75,7 +75,7 @@ aid-methodology/                       (repo root)
 ├── examples/                          ← case studies (brownfield-enterprise, data-pipeline, desktop-app)
 ├── docs/                              ← FAQ + glossary
 ├── tests/
-│   ├── canonical/                     ← currently 15 helper-script test suites (parse-recipe, writeback-state, ...)
+│   ├── canonical/                     ← currently 18 helper-script test suites (parse-recipe, writeback-state, ...)
 │   ├── lib/                            ← shared test helpers (assert.sh)
 │   └── run-all.sh                      ← runs every canonical suite
 ├── README.md                          ← project pitch (388 lines)
@@ -235,7 +235,7 @@ The build commands:
 | `python run_generator.py` | Re-generate all 3 install trees from `canonical/` (maintainer-only) |
 | `python .claude/skills/aid-generate/scripts/verify_deterministic.py` | Verify render is byte-correct + complete |
 | `bash canonical/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md` | Rebuild file inventory |
-| `bash tests/run-all.sh` | Run all canonical helper test suites (currently 15 suites — aggregator globs `tests/canonical/test-*.sh`; see `tests/README.md`) |
+| `bash tests/run-all.sh` | Run all canonical helper test suites (currently 18 suites — aggregator globs `tests/canonical/test-*.sh`; see `tests/README.md`) |
 
 **KB claim validation** is performed by the `discovery-reviewer` sub-agent in `/aid-discover REVIEW`.
 
@@ -293,7 +293,7 @@ Lite-path templates at `canonical/recipes/`, replicated into all 3 install trees
 | `delivery-plans/` | 1 | `task-template.md` |
 | `feedback-artifacts/` | 1 | `IMPEDIMENT.md` (116 lines) — escalation contract |
 | `kb-authoring/` | 5 | README, frontmatter-schema, principles, review-rubric, tier-model |
-| `knowledge-base/` | 15 | Templates for the 14 standard-set KB docs (pipeline-contracts, architecture, coding-standards, schemas, domain-glossary, external-sources, feature-inventory, infrastructure, integration-map, module-map, project-structure, tech-debt, technology-stack, test-landscape) + README. The repo's 15th active doc — custom `repo-presentation.md` (replaces ui-architecture per Q3) — has no template here; it's a per-project customization, not a standard template (per Q16 methodology-flex tech-debt H5) |
+| `knowledge-base/` | 15 | Templates for the 14 standard-set KB docs (pipeline-contracts, architecture, coding-standards, schemas, domain-glossary, external-sources, feature-inventory, infrastructure, integration-map, module-map, project-structure, tech-debt, technology-stack, test-landscape) + README. These templates form the default seed synthesized by `synth_default_seed` (delivery-002 resolved H5: doc-set is now project-configurable). This repo's custom `repo-presentation.md` has no template here — it is declared via `discovery.doc_set` as a per-project addition. |
 | `knowledge-summary/` | 19+ | HTML/CSS/JS for offline KB viewer (component-css.css 657 lines, lightbox.js 359 lines, html-skeleton.html, mermaid-init.js, design-tokens, mermaid-examples, prompt, plus 6 section-templates: auto-detect, cli, data-pipeline, library, microservices, web-app + accessibility-checklist + grading-rubric) |
 | `requirements/` | 1 | `requirements-template.md` |
 | `specs/` | 2 | `lite-spec-template.md`, `spec-template.md` |
@@ -321,7 +321,7 @@ Lite-path templates at `canonical/recipes/`, replicated into all 3 install trees
 
 5. **`canonical/scripts/` was newly reorganized.** Git status shows many recent renames from `canonical/templates/scripts/` and `canonical/skills/*/scripts/` into the consolidated `canonical/scripts/{config,execute,interview,kb,summarize}/` hierarchy.
 
-6. **`tests/canonical/` is the official test directory.** No `pytest.ini`, no `package.json`-style test config; tests are pure bash scripts; currently 15 suites run via the `tests/run-all.sh` aggregator (shared helpers in `tests/lib/assert.sh`; see `tests/README.md`). The `tests/skills/` directory and `tests/canonical/pool-dispatch.sh` were deleted in cycle-1 per Q6 resolution.
+6. **`tests/canonical/` is the official test directory.** No `pytest.ini`, no `package.json`-style test config; tests are pure bash scripts; currently 18 suites run via the `tests/run-all.sh` aggregator (shared helpers in `tests/lib/assert.sh`; recount with `ls tests/canonical/test-*.sh | wc -l`; see `tests/README.md`). The `tests/skills/` directory and `tests/canonical/pool-dispatch.sh` were deleted in cycle-1 per Q6 resolution.
 
 7. **CI is enforced.** `.github/workflows/test.yml` (added 2026-05-29) runs on PR/push and is a required status check on `master`; no other CI system (`.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`).
 

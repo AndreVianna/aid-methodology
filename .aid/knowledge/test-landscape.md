@@ -3,7 +3,7 @@ kb-category: primary
 source: hand-authored
 intent: |
   Inventory of test suites that protect the canonical helper scripts AID skills
-  depend on. Currently 15 unit/integration suites under tests/canonical/, discovered by
+  depend on. Currently 18 unit/integration suites under tests/canonical/, discovered by
   glob and run by the tests/run-all.sh aggregator. Most are pure bash (POSIX);
   two shell out to node (.mjs validators) and two to pwsh (PowerShell mirrors),
   each skipping if its runtime is absent. All suites source the shared
@@ -13,11 +13,12 @@ intent: |
   understand what changes to canonical/scripts/ are guarded by tests vs require
   manual verification.
 contracts:
-  - "currently 15 test suites under tests/canonical/ (glob-discovered; recount with ls tests/canonical/test-*.sh | wc -l), no skill-level tests"
+  - "currently 18 test suites under tests/canonical/ (glob-discovered; recount with ls tests/canonical/test-*.sh | wc -l), no skill-level tests"
   - "tests/run-all.sh is the single aggregator (glob-discovers tests/canonical/test-*.sh)"
   - "All suites source tests/lib/assert.sh (shared counters + asserts + test_summary)"
   - "Most suites are pure bash (POSIX, Git Bash on Windows); 2 need node, 2 need pwsh — each skips if absent"
 changelog:
+  - 2026-05-31: delivery-002 — added 3 F4 doc-set suites (test-doc-set-read.sh, test-doc-set-mapping.sh, test-doc-set-propose-confirm.sh); updated suite count 15→18
   - 2026-05-31: delivery-001 — added test-discovery-doc-ownership.sh and test-expectations-single-source.sh; updated suite count 13→15 (stated as "currently N", not a hardcoded invariant); updated Suites section header accordingly.
   - 2026-05-30: Substantive refresh to current truth — 7→13 suites; documented the tests/run-all.sh aggregator (replaces the old "no aggregator, per-suite loop" claim) and tests/lib/assert.sh shared library; inverted the gaps section (the .mjs validators, PowerShell mirrors, and setup install flow are now COVERED, not gaps); recorded the node/pwsh-skip model; applied script renames (writeback-task-status→writeback-state, concatenate→assemble-3part, build-index→build-kb-index, harness.py→render_lib.py, VERIFY-4a/4b→VERIFY (deterministic)/(advisory)); converted bare line-number citations to durable anchors. Dropped invented per-suite assertion numbers in favor of qualitative coverage (suites now share one summary format and the README does not commit to counts).
   - 2026-05-29: Corrected count 5→7 suites / 235→273 assertions — added the fetch-mermaid.sh and grade.sh sections (both existed on disk but were missing from this inventory); fixed validate-diagrams.mjs line count 574→577
@@ -111,7 +112,7 @@ either is missing so the node/PowerShell coverage can never be silently bypassed
 
 ---
 
-## Suites (currently 15)
+## Suites (currently 18)
 
 All suites live under `tests/canonical/` and target scripts under `canonical/scripts/`
 (or the top-level `setup.*` installers, or the canonical agent/skill source files).
@@ -274,6 +275,46 @@ placeholder is present in `reviewer-prompt.md`, and `document-expectations.md` i
 in both `state-review.md` and `state-fix.md`. Verifies merge completeness (the file is
 a superset containing `{reviewer_output_file}`, `project-structure.md`, and
 `external-sources.md` blocks). 9 checks (T01–T09).
+
+### test-doc-set-read.sh
+
+**Target:** `canonical/skills/aid-discover/references/doc-set-resolve.md` (the
+`resolve_doc_set` / `synth_default_seed` functions + all 4 accessors)
+
+Covers the core doc-set resolve/accessor logic: unset `discovery.doc_set` → default seed
+synthesized from templates; declared set → exact filename/owner/presence rows; all 4
+accessors (`list-filenames`, `owner-of`, `owns-<agent>`, full TSV); inline `#` comment
+stripping; comma-in-`when` shred behavior (fragment 1 survives as valid record; fragments
+2+ with no pipe are warned and skipped); unknown owner → routes to `discovery-architect`
+with a non-fatal warning; no `category` or `expectations` fields in any output; and the
+dependency-free constraint (only bash+awk). 15 checks (T01–T15).
+
+### test-doc-set-mapping.sh
+
+**Target:** `canonical/skills/aid-discover/references/doc-set-resolve.md` + dispatch
+mapping logic in `canonical/skills/aid-discover/references/state-generate.md`
+
+Mechanical set-difference checks for the mapping-honors-declared-set invariant.
+Covers: no-hang-on-omission (omitted doc excluded from owning agent's target list; declared
+count lowers by 1); dispatch-on-addition (added doc in declared set → appears in owning
+agent's list; count rises); carve-out-as-config (§1.4 fixture contains the renamed docs
+`pipeline-contracts.md`, `schemas.md`, `repo-presentation.md` and excludes the old names
+`api-contracts.md`, `data-model.md`, `ui-architecture.md`, `security-model.md`); and
+non-software fixture (omission + custom addition vs default seed; user edits honored
+verbatim). 15 checks (T01–T15).
+
+### test-doc-set-propose-confirm.sh
+
+**Target:** `canonical/skills/aid-discover/references/doc-set-resolve.md` +
+`canonical/skills/aid-discover/references/state-generate.md` `### Step 0d`
+
+Covers the propose→confirm flow behaviors per SPEC feature-004 §3.1 and §4:
+default path (unset `discovery.doc_set` → resolved set equals default seed; accepting
+default is a no-op — settings file remains without a `discovery.doc_set` section after
+confirm); user-edit path (fixture with omission + addition → resolved set honors both
+verbatim; count matches fixture entry count; omitted doc absent; added doc present).
+Does not duplicate carve-out or non-software set-difference tests (those live in
+`test-doc-set-mapping.sh`). 9 checks (T01–T09).
 
 ---
 

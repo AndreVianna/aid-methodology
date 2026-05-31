@@ -11,13 +11,14 @@ intent: |
   any of the above structured documents. NOT a module map (see module-map.md)
   and NOT a coding-conventions reference (see coding-standards.md).
 contracts:
-  - "Settings file = .aid/settings.yml, YAML 1.2, with 5 mandatory top-level sections (project, tools, review, execution, traceability)"
-  - "Discovery KB has 15 active primary documents post-cycle-1 Q3 carve-out (14 from the standard 16-doc set minus security-model and ui-architecture, plus repo-presentation custom doc)"
+  - "Settings file = .aid/settings.yml, YAML 1.2, with 5 mandatory top-level sections (project, tools, review, execution, traceability) plus optional discovery section"
+  - "discovery.doc_set is a YAML block-list of pipe-delimited scalars (filename|owner|presence[:when]); absent section means use default seed"
   - "Emission manifest is JSON-Lines (.jsonl) with 4-key record schema (profile, src, dst, sha256) + 1-key sentinel object {_manifest_version: 1}"
   - "Frontmatter schema for KB docs requires kb-category + source + intent; generator required iff source=generated"
   - "Recipe slot syntax: {{slot-name}} where slot-name matches POSIX ERE [a-z][a-z0-9-]*"
   - "Task templates have 6 sections: title heading, Type, Source, Depends on, Scope, Acceptance Criteria"
 changelog:
+  - 2026-05-31: delivery-002 — added §2a discovery.doc_set sub-section; updated settings contract to reflect the optional discovery section
   - 2026-05-27: Initial generation by discovery-analyst (cycle-1)
 ---
 
@@ -70,6 +71,49 @@ A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, E+, E, E-, F
 the per-skill override → global default → hardcoded `--default` fallback
 (per its header comment `read-setting.sh` "canonical resolution order").
 
+### 2a. `discovery.doc_set` — Declared KB Doc-Set
+
+**Source of truth:** `canonical/skills/aid-discover/references/doc-set-resolve.md`.
+
+**Purpose:** declares which KB documents are in scope for this project's discovery run,
+who owns each, and whether each is required or conditional. Absent → the default seed is
+synthesized from `canonical/templates/knowledge-base/*.md` by `synth_default_seed`.
+
+**Schema (YAML block-list inside the `discovery:` section of `.aid/settings.yml`):**
+
+```yaml
+discovery:
+  doc_set:
+    - architecture.md|discovery-architect|required
+    - infrastructure.md|discovery-quality|conditional:has CI/CD or deployment config
+    # each item: filename | owner | presence[:when]
+```
+
+**Field grammar** (per `canonical/skills/aid-discover/references/doc-set-resolve.md` `### Field grammar`):
+
+| Field | Constraints | Purpose |
+|-------|-------------|---------|
+| `filename` | basename under `.aid/knowledge/`; no path separator | Joins to doc frontmatter `kb-category:` and to `document-expectations.md` `### <filename>` |
+| `owner` | one of `discovery-scout`, `discovery-architect`, `discovery-analyst`, `discovery-integrator`, `discovery-quality`, `orchestrator` | Determines which agent produces this doc |
+| `presence` | `required` or `conditional`; MAY carry `:<when>` suffix | `<when>` is a human display hint — not machine-evaluated; the user-confirm step is the gate |
+
+**Delimiter constraint:** No field value may contain a comma. `read-setting.sh`'s
+`lookup_list` round-trips items through comma-join/comma-split; a comma inside a field
+value (including the `<when>` hint) shreds the record into spurious fragments. Rephrase
+any list-like `when` with `;` or `/` (e.g., `conditional:has CI; CD; or deploy config`).
+
+**When the section is absent or empty:** `resolve_doc_set` delegates to
+`synth_default_seed`, which enumerates `canonical/templates/knowledge-base/*.md` and
+applies the §2.2 ownership map (single source of truth — edit the map to change defaults).
+This is backward-compatible: an unmodified settings.yml runs discovery with the canonical
+standard doc-set.
+
+**Accepting the default during propose→confirm writes nothing to settings.yml** — the
+absent-section-means-default-seed invariant is preserved (per `state-generate.md`
+`### On confirm (resume path)`).
+
+**Source:** `canonical/skills/aid-discover/references/doc-set-resolve.md` `## Schema: discovery.doc_set in .aid/settings.yml`
+
 ---
 
 ## 3. Discovery State — `.aid/knowledge/STATE.md`
@@ -86,17 +130,21 @@ consolidation — see `coding-standards.md §7e`). Absorbs former `DISCOVERY-STA
 |---------|-------|-------------|
 | Top-level metadata (blockquote) | `Source:`, `Status:` (Initial / In Progress / Approved), `Current Grade:`, `User Approved:`, `Last KB Review:`, `Last Summary:` | 1 |
 | `## External Documentation` | Table: `Path | Type | Accessible | Notes` | 1 table |
-| `## KB Documents Status` | Table: `# | Document | Status | Grade | Last Reviewed | Notes` | One row per active primary KB doc (currently 15 primary docs; canonical enumeration per `canonical/skills/aid-discover/SKILL.md` **Detection logic** list) |
+| `## KB Documents Status` | Table: `# | Document | Status | Grade | Last Reviewed | Notes` | One row per active primary KB doc (count varies by project — equals the declared doc-set; default seed = templates in `canonical/templates/knowledge-base/`; resolved by `state-generate.md` Step 0) |
 | `## Knowledge Summary Status` | Table: `Field | Value` with 10 fields (Profile, Profile Source, Profile Confidence, Theme, Machine Grade, Human Grade, User Approved, Last Run, Output, Mermaid Version, Mermaid Cached) | 1 table |
 | `## Q&A (Pending)` | One `### Q{N}` block per entry with sub-bullets: `Category`, `Impact`, `Status`, `Context`, `Suggested`, `Answer` (Style A per `coding-standards.md §12`) | 0..N |
 | `## Review History` | Append-only table: `# | Date | Grade | Source | Notes` | 1..N |
 | `## Summarization History` | Append-only table: `# | Date | Grade | Profile | Mermaid | Output | Notes` | 1..N |
 
-**15 active KB documents** (post-Q3 FIX):
+**Active KB documents** — count varies by project. The canonical default seed (when
+`discovery.doc_set` is absent from `.aid/settings.yml`) is derived from
+`canonical/templates/knowledge-base/*.md`; for this repo (post-Q3 FIX) that yields:
 project-structure, external-sources, architecture, technology-stack, module-map,
-coding-standards, schemas (was data-model), pipeline-contracts (was api-contracts), integration-map, domain-glossary,
-test-landscape, tech-debt, infrastructure, repo-presentation,
-feature-inventory.
+coding-standards, schemas (was data-model), pipeline-contracts (was api-contracts),
+integration-map, domain-glossary, test-landscape, tech-debt, infrastructure,
+feature-inventory — plus the repo-specific custom doc `repo-presentation`.
+The actual active set for any given project is whatever was confirmed in Step 0d
+(propose→confirm) of the most recent GENERATE run.
 
 ---
 

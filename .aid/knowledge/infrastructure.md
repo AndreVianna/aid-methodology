@@ -70,7 +70,7 @@ The closest analog is the **AID parallel pool dispatch model** (work-001 feature
 
 ## CI / CD Pipeline
 
-**CI is enforced** — `.github/workflows/test.yml` (added 2026-05-29) runs render-drift + the 13 canonical suites + generator self-tests + hygiene on every PR/push and is a required status check for merging to `master` (branch protection enabled 2026-05-29). The suite job invokes `tests/run-all.sh`, which discovers suites by glob (`tests/canonical/test-*.sh`), so the count is not hard-coded. See `test-landscape.md`.
+**CI is enforced** — `.github/workflows/test.yml` (added 2026-05-29) runs render-drift + canonical suites + generator self-tests + hygiene on every PR/push and is a required status check for merging to `master` (branch protection enabled 2026-05-29). The suite job invokes `tests/run-all.sh`, which discovers suites by glob (`tests/canonical/test-*.sh`), so the count is not hard-coded (currently 18; see `test-landscape.md`).
 
 There is also no **release pipeline** — the project distributes via:
 1. End users cloning the repo and running `setup.sh` / `setup.ps1` against a target directory, OR

@@ -238,8 +238,8 @@ slash-command invocation. Every script has 4 byte-identical copies on disk
 |--------|---------|
 | `grade.sh` | Deterministic grading: reads issue list with severity tags ([CRITICAL]/[HIGH]/[MEDIUM]/[LOW]/[MINOR]), applies the universal AID rubric (worst severity dominates, count modifies), prints letter grade. Used by reviewers + delivery gates. `--non-functional` flag forces F. |
 
-**Test coverage:** currently 15 dedicated test suites under `tests/canonical/`, each invoked
-manually or as a batch via `tests/run-all.sh`. Suites share helpers from
+**Test coverage:** currently 18 dedicated test suites under `tests/canonical/`, each invoked
+manually or as a batch via `tests/run-all.sh` (recount with `ls tests/canonical/test-*.sh | wc -l`). Suites share helpers from
 `tests/lib/assert.sh`.
 
 | Test file | Covers |
@@ -277,7 +277,7 @@ Organized into categories (per `project-structure.md` `## Templates (categories 
 | `delivery-plans/` | 1 | `task-template.md` — the 6-section task contract (Type / Source / Depends on / Scope / Acceptance Criteria) |
 | `feedback-artifacts/` | 1 | `IMPEDIMENT.md` — formal escalation contract for developer↔orchestrator |
 | `kb-authoring/` | 5 | `README.md`, `frontmatter-schema.md`, `principles.md` (P1-P7), `review-rubric.md`, `tier-model.md` (T1-T4) |
-| `knowledge-base/` | 15 | Templates for the 14 standard-set KB docs (kept post-Q3 carve-out) + README. Note: this repo also has the custom `repo-presentation.md` (15 active total in `.aid/knowledge/`), but no template exists for it in `canonical/templates/knowledge-base/` since it's a per-project customization, not a standard template (per Q16 methodology-flex tech-debt H5) |
+| `knowledge-base/` | 15 | Templates for the 14 standard-set KB docs (kept post-Q3 carve-out) + README. These templates form the default seed for `synth_default_seed` (delivery-002: doc-set-resolve.md §2.2 ownership map). This repo also uses the custom `repo-presentation.md` — no template exists for it in `canonical/templates/knowledge-base/` since it's a per-project customization declared via `discovery.doc_set` (per delivery-002, which resolved H5). |
 | `knowledge-summary/` | 19+ | HTML/CSS/JS for the offline `knowledge-summary.html` viewer; `component-css.css` is the largest CSS file in the repo |
 | `requirements/` | 1 | `requirements-template.md` |
 | `specs/` | 2 | `lite-spec-template.md`, `spec-template.md` |
