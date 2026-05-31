@@ -141,14 +141,12 @@ State 6: GRADE file, grade >= min, user-approved        → DONE
 
 **Detection logic:**
 
-1. Check `.aid/knowledge/` for the 14 expected documents:
-   `project-structure.md`, `external-sources.md`, `architecture.md`, `technology-stack.md`,
-   `module-map.md`, `coding-standards.md`, `schemas.md`, `pipeline-contracts.md`,
-   `integration-map.md`, `domain-glossary.md`, `test-landscape.md`,
-   `tech-debt.md`, `infrastructure.md`, `feature-inventory.md`
+1. Check `.aid/knowledge/` for the documents in the project's declared doc-set
+   (read via `read-setting.sh --path discovery.doc_set` → list-filenames accessor,
+   `references/doc-set-resolve.md` §2.1; default seed when the section is unset).
 2. A document is "populated" only if it contains real content (files with only `❌ Pending` = missing). If any are missing → **GENERATE**
-3. If all 14 populated and `.aid/knowledge/STATE.md` has `**Grade:** Pending` or `Not Started` → **REVIEW**
-4. If all 14 populated but no `.aid/knowledge/STATE.md` → **REVIEW** (legacy)
+3. If all declared docs populated and `.aid/knowledge/STATE.md` has `**Grade:** Pending` or `Not Started` → **REVIEW**
+4. If all declared docs populated but no `.aid/knowledge/STATE.md` → **REVIEW** (legacy)
 5. If `.aid/knowledge/STATE.md` exists with a grade:
    - Read current/minimum grade; if `--grade` provided, update minimum
    - Read `## Q&A (Pending)` section of `.aid/knowledge/STATE.md` for `**Status:** Pending` entries
@@ -262,9 +260,21 @@ When a state completes, route by its `**Advance:**` type (per [`state-machine-ch
 When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-discovery:
 
 1. Read the Q&A entry in STATE.md `## Q&A (Pending)` or the IMPEDIMENT to understand what's missing
-2. Identify which subagent owns the documents per this mapping:
+2. Identify which subagent owns the document using the `owns-<agent>` accessor
+   from the project's declared doc-set (`references/doc-set-resolve.md` §2.1):
 
-   | Sub-agent | KB documents |
+   ```bash
+   raw="$(bash .claude/scripts/config/read-setting.sh \
+           --path discovery.doc_set 2>/dev/null || true)"
+   # owns-<agent>: which files does a given agent own in THIS project?
+   resolve_doc_set "$raw" | awk -F'\t' -v a="<agent-name>" '$2==a{print $1}'
+   ```
+
+   The declared set is the single authority on ownership. For the default seed
+   (no `discovery.doc_set` override), the ownership resolves as follows
+   (illustrative — actual ownership is always driven by the declared set):
+
+   | Sub-agent | Default-seed KB documents |
    |---|---|
    | `discovery-scout` | project-structure.md, external-sources.md |
    | `discovery-architect` | architecture.md, technology-stack.md |
@@ -319,4 +329,4 @@ count double (referenced most by downstream phases).
 ## Document Expectations
 
 Read `references/document-expectations.md` for the full expectations per document,
-including "Must have" and "Red flags" for each of the 16 KB documents plus meta-documents.
+including "Must have" and "Red flags" for each declared KB document plus meta-documents.

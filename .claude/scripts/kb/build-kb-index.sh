@@ -166,7 +166,7 @@ EOF
                     case "$category" in
                         primary)   echo "## Primary — load-bearing knowledge" ;;
                         meta)      echo "## Meta — process / ledger (review-exempt)" ;;
-                        extension) echo "## Extension — project-specific (outside canonical 16)" ;;
+                        extension) echo "## Extension — project-specific (outside the declared default seed)" ;;
                     esac
                     echo ""
                     emitted_header=1
