@@ -678,7 +678,7 @@ details.accord > summary:focus-visible,
 		<span class="badge badge-primary">10 Skills</span>
 		<span class="badge badge-accent">22 Agents</span>
 		<span class="badge badge-info">3 Install Trees</span>
-		<span class="badge badge-ok">13 Test Suites</span>
+		<span class="badge badge-ok">18 Test Suites</span>
 		<span class="badge badge-purple">15 KB Docs</span>
 		<span class="badge">Methodology v3.1</span>
 	</div>
@@ -834,14 +834,14 @@ flowchart LR
 		<div class="card plugin">
 			<div class="kicker">Phase 2 — Discovery</div>
 			<div class="plugin-name">/aid-discover</div>
-			<div class="plugin-body">Brownfield project discovery with built-in quality gate. Dispatches 5 specialist sub-agents in parallel to generate 15 KB documents, then reviews, collects user input, fixes issues, and gets approval.</div>
+			<div class="plugin-body">Brownfield project discovery with built-in quality gate. GENERATE resolves a declared KB doc-set from <code>discovery.doc_set</code> (or synthesizes a default seed), runs a propose&rarr;confirm checkpoint, then dispatches discovery sub-agents data-driven from the confirmed set; it then reviews, collects user input, fixes issues, and gets approval.</div>
 			<div class="plugin-stats">
 				<span class="badge badge-ok">Shipped</span>
 				<span class="badge">8 reference files</span>
 			</div>
 			<dl>
 				<dt>States</dt><dd>GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE</dd>
-				<dt>Key outputs</dt><dd><code>.aid/knowledge/*.md</code> (15 KB docs)</dd>
+				<dt>Key outputs</dt><dd><code>.aid/knowledge/*.md</code> (the declared/derived KB doc-set)</dd>
 				<dt>Agents</dt><dd>5 discovery-* sub-agents + discovery-reviewer</dd>
 			</dl>
 		</div>
@@ -1044,12 +1044,14 @@ graph TD
 	<header>
 		<span class="eyebrow">Data Model</span>
 		<h2>Knowledge Base Shape</h2>
-		<p class="lede">AID has no database. The Knowledge Base is 15 primary Markdown documents under <code>.aid/knowledge/</code>, each with a YAML frontmatter block (kb-category, source, intent, contracts, changelog). The INDEX.md is auto-generated from each doc's <code>intent:</code> field. (per schemas.md)</p>
+		<p class="lede">AID has no database. The Knowledge Base is a set of primary Markdown documents under <code>.aid/knowledge/</code>, each with a YAML frontmatter block (kb-category, source, intent, contracts, changelog). The active doc-set is <strong>declared/derived per project</strong> — not a fixed standard set — through the optional <code>discovery.doc_set</code> block in <code>.aid/settings.yml</code>; when that block is absent, a default seed is synthesized from the canonical KB templates. The INDEX.md is auto-generated from each doc's <code>intent:</code> field. (per schemas.md §2a, architecture.md)</p>
 	</header>
 
 	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 4: Knowledge Base document schema — click or press Enter to expand">
 		<div class="mermaid">
 erDiagram
+    DocSet ||--o{ DocSetEntry : "declares 0 or more"
+    DocSetEntry ||--|| KBDoc : "scopes one"
     KBDoc ||--|| Frontmatter : "has exactly one"
     KBDoc ||--o{ Contract : "declares 0 or more"
     KBDoc }|--|| Category : "belongs to one"
@@ -1057,6 +1059,16 @@ erDiagram
     STATE ||--o{ KBDoc : "tracks status of each"
     GeneratedDoc ||--|| KBDoc : "is a kind of (source=generated)"
 
+    DocSet {
+        string source "discovery.doc_set in settings.yml"
+        string fallback "default seed from canonical templates"
+        string confirmed "Step 0d propose-then-confirm"
+    }
+    DocSetEntry {
+        string filename "basename under .aid/knowledge"
+        string owner "which discovery agent produces it"
+        string presence "required or conditional"
+    }
     KBDoc {
         string name "e.g. architecture.md"
         string source "hand-authored or generated"
@@ -1087,12 +1099,17 @@ erDiagram
         string generator "build-project-index.sh or build-kb-index.sh"
     }
 		</div>
-		<p class="caption">Fig 4 — Knowledge Base document schema: 15 primary docs + 2 meta docs (INDEX.md, STATE.md). Each primary doc has a YAML frontmatter with kb-category, source, intent, contracts, changelog. (per schemas.md)</p>
+		<p class="caption">Fig 4 — Knowledge Base document schema: a per-project declared doc-set (discovery.doc_set, or a synthesized default seed) scopes which primary KBDocs exist; each primary doc has a YAML frontmatter (kb-category, source, intent, contracts, changelog). Meta docs INDEX.md + STATE.md sit alongside. (per schemas.md §2a, §3)</p>
 	</div>
 
 	<div class="callout">
-		<h4>15 active primary KB documents (post-cycle-1 Q3)</h4>
-		<p>project-structure, external-sources, architecture, technology-stack, module-map, coding-standards, schemas, pipeline-contracts, integration-map, domain-glossary, test-landscape, tech-debt, infrastructure, repo-presentation, feature-inventory. The standard 16-doc set was trimmed (security-model and ui-architecture removed; data-model renamed to schemas; api-contracts renamed to pipeline-contracts; repo-presentation added as custom). (per schemas.md §3)</p>
+		<h4>Declared / derived doc-set (not a fixed standard set)</h4>
+		<p>Which KB documents are in scope is <strong>declared per project</strong> via the optional <code>discovery.doc_set</code> block in <code>.aid/settings.yml</code> — a YAML block-list of pipe-delimited <code>filename|owner|presence[:when]</code> items. When the block is absent, <code>synth_default_seed</code> derives a default seed by enumerating the canonical KB templates. The doc-set size is variable per project; no fixed count is hardcoded in the dispatch logic. (per schemas.md §2a, architecture.md §Discovery run-time flow detail)</p>
+	</div>
+
+	<div class="callout ok">
+		<h4>This repo's active doc-set</h4>
+		<p>For the AID repo itself the confirmed set is the 15 hand-authored primary docs — architecture, project-structure, technology-stack, module-map, coding-standards, schemas, pipeline-contracts, integration-map, domain-glossary, test-landscape, tech-debt, infrastructure, feature-inventory, external-sources, plus the repo-specific custom <code>repo-presentation</code> — modeled cleanly as a declared carve-out rather than a fixed list (data-model → schemas, api-contracts → pipeline-contracts; security-model and ui-architecture not in scope). The generated <code>INDEX.md</code> indexes these alongside the two meta docs (INDEX.md, STATE.md). (per schemas.md §3, INDEX.md)</p>
 	</div>
 
 	<h3>Fact stability tiers (T1–T4)</h3>
@@ -1124,7 +1141,7 @@ erDiagram
 			<thead><tr><th>Skill</th><th>Signature</th><th>States</th><th>Side effects</th></tr></thead>
 			<tbody>
 				<tr><td><code>/aid-config</code></td><td><code>[dotted.key]</code></td><td>Single-state</td><td>Creates/updates <code>.aid/settings.yml</code></td></tr>
-				<tr><td><code>/aid-discover</code></td><td><code>[--grade A] [--reset]</code></td><td>GENERATE→REVIEW→Q-AND-A→FIX→APPROVAL→DONE</td><td>Writes 15 KB docs + STATE.md + INDEX.md</td></tr>
+				<tr><td><code>/aid-discover</code></td><td><code>[--grade A] [--reset]</code></td><td>GENERATE→REVIEW→Q-AND-A→FIX→APPROVAL→DONE</td><td>Writes the declared/derived KB doc-set + STATE.md + INDEX.md</td></tr>
 				<tr><td><code>/aid-interview</code></td><td><code>[work-NNN] [--reset] [--features]</code></td><td>FIRST-RUN→Q-AND-A→TRIAGE→{full or lite}</td><td>Writes REQUIREMENTS.md + feature files</td></tr>
 				<tr><td><code>/aid-specify</code></td><td><code>[work-NNN/feature-NNN] [--reset]</code></td><td>INITIALIZE→CONTINUE→REVIEW→DONE</td><td>Writes SPEC.md per feature</td></tr>
 				<tr><td><code>/aid-plan</code></td><td><code>[work-NNN] [--reset]</code></td><td>FIRST-RUN→REVIEW→DONE</td><td>Writes PLAN.md</td></tr>
@@ -1142,7 +1159,7 @@ erDiagram
 		<div class="card">
 			<div class="kicker">settings.yml</div>
 			<h3>Runtime configuration</h3>
-			<p>YAML 1.2, 5 mandatory top-level sections: <code>project</code>, <code>tools</code>, <code>review</code>, <code>execution</code>, <code>traceability</code>. Per-skill <code>minimum_grade</code> overrides fall back to global <code>review.minimum_grade</code> then the hardcoded default (A). (per schemas.md §2)</p>
+			<p>YAML 1.2, 5 mandatory top-level sections: <code>project</code>, <code>tools</code>, <code>review</code>, <code>execution</code>, <code>traceability</code>, plus an optional <code>discovery</code> section carrying the <code>doc_set</code> declared doc-set. Per-skill <code>minimum_grade</code> overrides fall back to global <code>review.minimum_grade</code> then the hardcoded default (A). (per schemas.md §2, §2a)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">emission-manifest.jsonl</div>
@@ -1158,6 +1175,21 @@ erDiagram
 			<div class="kicker">Heartbeat files</div>
 			<h3>L3 subagent visibility</h3>
 			<p>Single-line files at <code>.aid/.heartbeat/{agent}-{unix-ts}.txt</code>. Format: <code>[YYYY-MM-DDTHH:MM:SSZ] STATE | progress | activity (~eta)</code>. Written with <code>&gt;</code> (overwrite), never <code>&gt;&gt;</code>. Activity must change between writes. (per coding-standards.md §5a)</p>
+		</div>
+	</div>
+
+	<h3 style="margin-top:1.5rem;">Declared-set &rarr; dispatch contract</h3>
+	<p>The discover orchestrator resolves the active doc-set at GENERATE Step 0 and a propose&rarr;confirm checkpoint (Step 0d), then uses it to drive sub-agent dispatch data-driven from the confirmed set rather than from a hardcoded list. (per pipeline-contracts.md §Declared-Set &rarr; Dispatch Contract, architecture.md)</p>
+	<div class="grid g2">
+		<div class="card">
+			<div class="kicker">Mapping honors the set</div>
+			<h3>Data-driven target lists</h3>
+			<p>Each agent's target list = filenames where <code>owner = &lt;agent&gt;</code> in the declared set, intersected with missing-on-disk. The propose&rarr;confirm step (Step 0d) presents the inferred set as a diff against the default seed and waits for the user to confirm or edit before dispatch. (per pipeline-contracts.md, architecture.md §Step 0d)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">Omission / addition / default</div>
+			<h3>No-hang, dispatch-on-add, backward-compatible</h3>
+			<p><strong>No-hang on omission:</strong> a doc absent from the declared set yields an empty target list, so its owning agent is simply not dispatched. <strong>Dispatch on addition:</strong> a custom doc with an owner is appended to that agent's list. <strong>Default seed:</strong> an absent/empty <code>discovery.doc_set</code> falls back to <code>synth_default_seed</code> — prior behavior, unchanged. (per pipeline-contracts.md)</p>
 		</div>
 	</div>
 </section>
@@ -1301,7 +1333,7 @@ flowchart TB
 	<header>
 		<span class="eyebrow">Tests</span>
 		<h2>Test Landscape</h2>
-		<p class="lede">13 unit/integration test suites under <code>tests/canonical/</code>, glob-discovered and run by the <code>tests/run-all.sh</code> aggregator, all sharing the <code>tests/lib/assert.sh</code> assertion library. Most are pure Bash; two shell out to <code>node</code> (the <code>.mjs</code> validators) and two to <code>pwsh</code> (the PowerShell mirrors), each skipping if its runtime is absent. They cover the canonical helper scripts that AID skills depend on. CI runs the suites on PR/push (`.github/workflows/test.yml`), pins <code>node</code> + asserts <code>pwsh</code> present, and is a required status check on master. (per test-landscape.md)</p>
+		<p class="lede">18 unit/integration test suites under <code>tests/canonical/</code>, glob-discovered and run by the <code>tests/run-all.sh</code> aggregator, all sharing the <code>tests/lib/assert.sh</code> assertion library. Most are pure Bash; two shell out to <code>node</code> (the <code>.mjs</code> validators) and two to <code>pwsh</code> (the PowerShell mirrors), each skipping if its runtime is absent. They cover the canonical helper scripts that AID skills depend on, plus discovery doc-ownership and the declared doc-set resolve/dispatch logic. CI runs the suites on PR/push (`.github/workflows/test.yml`), pins <code>node</code> + asserts <code>pwsh</code> present, and is a required status check on master. (per test-landscape.md)</p>
 	</header>
 
 	<div class="tbl-wrap">
@@ -1386,8 +1418,38 @@ flowchart TB
 					<td>pwsh</td>
 					<td>Platform-independent pre-install logic under <code>pwsh</code> on Linux: target validation + selection-menu loop (backslash-path copy is Windows-only). Skips if <code>pwsh</code> absent</td>
 				</tr>
+				<tr>
+					<td><code>test-discovery-doc-ownership.sh</code></td>
+					<td><code>discovery-scout</code>/<code>discovery-quality</code> AGENT.md + <code>aid-discover/state-generate.md</code></td>
+					<td>bash</td>
+					<td>Discovery doc-ownership consistency: exactly one agent "produces" each standard KB doc; each agent's Produce line + What-You-Don't-Do agrees with the dispatch table (scout owns project-structure + external-sources, NOT infrastructure; quality owns infrastructure + test-landscape + tech-debt). 14 checks</td>
+				</tr>
+				<tr>
+					<td><code>test-expectations-single-source.sh</code></td>
+					<td><code>aid-discover/document-expectations.md</code> + discovery-reviewer/reviewer-prompt/state-review/state-fix</td>
+					<td>bash</td>
+					<td>Single-source invariant for per-doc expectations: <code>document-expectations.md</code> is the sole file with per-doc <code>### *.md</code> blocks; reviewer AGENT.md has none; <code>{{DOCUMENT_EXPECTATIONS}}</code> placeholder present + merge completeness. 9 checks</td>
+				</tr>
+				<tr>
+					<td><code>test-doc-set-read.sh</code></td>
+					<td><code>aid-discover/doc-set-resolve.md</code> (<code>resolve_doc_set</code>/<code>synth_default_seed</code> + 4 accessors)</td>
+					<td>bash</td>
+					<td>Core doc-set resolve/accessor logic: unset → default seed; declared set → exact filename/owner/presence rows; all 4 accessors; comment stripping; comma-in-<code>when</code> shred behavior; unknown owner → discovery-architect; bash+awk-only. 15 checks</td>
+				</tr>
+				<tr>
+					<td><code>test-doc-set-mapping.sh</code></td>
+					<td><code>doc-set-resolve.md</code> + dispatch mapping in <code>state-generate.md</code></td>
+					<td>bash</td>
+					<td>Mapping-honors-declared-set invariant: no-hang-on-omission, dispatch-on-addition, carve-out-as-config (renamed docs pipeline-contracts/schemas/repo-presentation; old names excluded), non-software fixture with user edits honored verbatim. 15 checks</td>
+				</tr>
+				<tr>
+					<td><code>test-doc-set-propose-confirm.sh</code></td>
+					<td><code>doc-set-resolve.md</code> + <code>state-generate.md</code> §Step 0d</td>
+					<td>bash</td>
+					<td>Propose&rarr;confirm flow (SPEC feature-004 §3.1/§4): default path (accepting default is a no-op — no <code>discovery.doc_set</code> written); user-edit path (omission + addition honored verbatim; counts match). 9 checks</td>
+				</tr>
 				<tr style="font-weight:600;">
-					<td>13 suites</td>
+					<td>18 suites</td>
 					<td></td>
 					<td>bash / node / pwsh</td>
 					<td>All self-reporting via the shared <code>tests/lib/assert.sh</code> <code>test_summary</code> (<code>Tests passed: N</code> / <code>Tests failed: M</code>); aggregated by <code>tests/run-all.sh</code>, which exits non-zero if any suite fails</td>
@@ -1407,7 +1469,7 @@ flowchart TB
 	<header>
 		<span class="eyebrow">Debt</span>
 		<h2>Tech Debt</h2>
-		<p class="lede">Overall debt level: Low–Medium. The codebase is well-organized (Thin-Router convention, single canonical source, 13-suite test coverage) and now has enforced pre-merge CI (required status checks on master) but is now down to a single open item (methodology rigidity). <strong>Zero Critical items remain.</strong> One High item; zero Medium, zero Low. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
+		<p class="lede">Overall debt level: Low. The codebase is well-organized (Thin-Router convention, single canonical source, 18-suite test coverage) and has enforced pre-merge CI (required status checks on master). The inventory is now effectively empty: <strong>zero Critical, zero High, zero Medium</strong>; a single Low item (L6) remains — stale fixed-doc-count prose left outside the de-hardcode scope. (per tech-debt.md — resolved items are pruned from this view; see tech-debt.md history for the audit trail)</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
@@ -1418,8 +1480,8 @@ flowchart TB
 		</div>
 		<div class="card">
 			<div class="kicker">High</div>
-			<div class="stat" style="color:var(--warn);">1</div>
-			<div class="stat-sub">H5</div>
+			<div class="stat" style="color:var(--ok);">0</div>
+			<div class="stat-sub">none open</div>
 		</div>
 		<div class="card">
 			<div class="kicker">Medium</div>
@@ -1428,15 +1490,15 @@ flowchart TB
 		</div>
 		<div class="card">
 			<div class="kicker">Low</div>
-			<div class="stat" style="color:var(--text-dim);">0</div>
-			<div class="stat-sub">none open</div>
+			<div class="stat" style="color:var(--text-dim);">1</div>
+			<div class="stat-sub">L6</div>
 		</div>
 	</div>
 
-	<div class="debt-item high">
-		<div class="title">H5 — Methodology flexibility</div>
-		<div class="meta">Type: Architecture · Effort: L · Priority: P2</div>
-		<p>Methodology assumes a rigid 16-doc KB set. Meta-repos, docs-only projects, and library-only projects need flexibility to adapt the standard set. (per tech-debt.md H5)</p>
+	<div class="debt-item low">
+		<div class="title">L6 — FR-P0-4 residual fixed-doc-count literals</div>
+		<div class="meta">Type: Methodology / consistency · Effort: S · Priority: P3</div>
+		<p>Shipped behavior is correct (the doc-set is declared/variable), but a few reviewer/README sites outside the de-hardcode scope still phrase the doc-set as a fixed "14"/"16" set — stale prose to tidy, no behavior impact. (per tech-debt.md L6)</p>
 	</div>
 
 </section>
@@ -1453,7 +1515,7 @@ flowchart TB
 		<div class="card">
 			<div class="kicker">README.md — 388 lines</div>
 			<h3>Primary pitch document</h3>
-			<p>Eight sections with progressive disclosure: What is AID, Why AID (failure modes it removes), The Pipeline (Mermaid flowchart + 10 skills), The Knowledge Base (14-doc fixed shape), The Agent Model (3-tier diagram), Feedback Loops (11 formal loops), AID vs. SDD (8-row comparison), Using AID in your project (install instructions). (per repo-presentation.md)</p>
+			<p>Eight sections with progressive disclosure: What is AID, Why AID (failure modes it removes), The Pipeline (Mermaid flowchart + 10 skills), The Knowledge Base (now a declared/derived doc-set — the README's "fixed shape" pitch is stale prose tracked as tech-debt L6), The Agent Model (3-tier diagram), Feedback Loops (11 formal loops), AID vs. SDD (8-row comparison), Using AID in your project (install instructions). (per repo-presentation.md, tech-debt.md L6)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">methodology/aid-methodology.md — 1,070 lines</div>
@@ -1483,10 +1545,10 @@ flowchart TB
 	<header>
 		<span class="eyebrow">Index</span>
 		<h2>Knowledge Base Index</h2>
-		<p class="lede">All 15 primary and 2 meta KB documents under <code>.aid/knowledge/</code>. Auto-indexed from each document's <code>intent:</code> frontmatter field by <code>build-kb-index.sh</code>. (per INDEX.md)</p>
+		<p class="lede">The KB documents under <code>.aid/knowledge/</code>, auto-indexed from each document's <code>intent:</code> frontmatter field by <code>build-kb-index.sh</code>. The active set is the declared/derived doc-set for this project (see §5); for the AID repo it resolves to 15 hand-authored primary docs plus the generated <code>INDEX.md</code>, alongside the two meta docs (<code>README.md</code>, <code>STATE.md</code>). (per INDEX.md)</p>
 	</header>
 
-	<h3>Primary documents (15)</h3>
+	<h3>Primary documents — 15 hand-authored + 1 generated</h3>
 	<div class="toc-grid" style="margin-bottom:1.5rem;">
 		<a href="./../knowledge/architecture.md" class="toc-link"><span class="n">P01</span><span class="t">architecture.md</span></a>
 		<a href="./../knowledge/project-structure.md" class="toc-link"><span class="n">P02</span><span class="t">project-structure.md</span></a>
@@ -1503,11 +1565,12 @@ flowchart TB
 		<a href="./../knowledge/repo-presentation.md" class="toc-link"><span class="n">P13</span><span class="t">repo-presentation.md</span></a>
 		<a href="./../knowledge/feature-inventory.md" class="toc-link"><span class="n">P14</span><span class="t">feature-inventory.md</span></a>
 		<a href="./../knowledge/external-sources.md" class="toc-link"><span class="n">P15</span><span class="t">external-sources.md</span></a>
+		<a href="./../knowledge/INDEX.md" class="toc-link"><span class="n">P16</span><span class="t">INDEX.md (generated — RAG map)</span></a>
 	</div>
 
 	<h3>Meta documents (2)</h3>
 	<div class="toc-grid">
-		<a href="./../knowledge/INDEX.md" class="toc-link"><span class="n">M01</span><span class="t">INDEX.md — RAG navigation map</span></a>
+		<a href="./../knowledge/README.md" class="toc-link"><span class="n">M01</span><span class="t">README.md — KB completeness tracking</span></a>
 		<a href="./../knowledge/STATE.md" class="toc-link"><span class="n">M02</span><span class="t">STATE.md — discovery state hub</span></a>
 	</div>
 
@@ -1536,7 +1599,7 @@ flowchart TB
 </div>
 
 <footer>
-	<p>Generated from <code>.aid/knowledge/</code> on 2026-05-28 ·
+	<p>Generated from <code>.aid/knowledge/</code> on 2026-05-31 ·
 	   Re-run <code>/aid-summarize</code> when the Knowledge Base changes.<br>
 	   Diagrams: <a href="https://mermaid.js.org">Mermaid</a> (inlined for offline use).
 	   Styled with system fonts and CSS variables — no external assets.</p>

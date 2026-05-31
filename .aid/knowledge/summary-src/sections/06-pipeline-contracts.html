@@ -11,7 +11,7 @@
 			<thead><tr><th>Skill</th><th>Signature</th><th>States</th><th>Side effects</th></tr></thead>
 			<tbody>
 				<tr><td><code>/aid-config</code></td><td><code>[dotted.key]</code></td><td>Single-state</td><td>Creates/updates <code>.aid/settings.yml</code></td></tr>
-				<tr><td><code>/aid-discover</code></td><td><code>[--grade A] [--reset]</code></td><td>GENERATE→REVIEW→Q-AND-A→FIX→APPROVAL→DONE</td><td>Writes 15 KB docs + STATE.md + INDEX.md</td></tr>
+				<tr><td><code>/aid-discover</code></td><td><code>[--grade A] [--reset]</code></td><td>GENERATE→REVIEW→Q-AND-A→FIX→APPROVAL→DONE</td><td>Writes the declared/derived KB doc-set + STATE.md + INDEX.md</td></tr>
 				<tr><td><code>/aid-interview</code></td><td><code>[work-NNN] [--reset] [--features]</code></td><td>FIRST-RUN→Q-AND-A→TRIAGE→{full or lite}</td><td>Writes REQUIREMENTS.md + feature files</td></tr>
 				<tr><td><code>/aid-specify</code></td><td><code>[work-NNN/feature-NNN] [--reset]</code></td><td>INITIALIZE→CONTINUE→REVIEW→DONE</td><td>Writes SPEC.md per feature</td></tr>
 				<tr><td><code>/aid-plan</code></td><td><code>[work-NNN] [--reset]</code></td><td>FIRST-RUN→REVIEW→DONE</td><td>Writes PLAN.md</td></tr>
@@ -29,7 +29,7 @@
 		<div class="card">
 			<div class="kicker">settings.yml</div>
 			<h3>Runtime configuration</h3>
-			<p>YAML 1.2, 5 mandatory top-level sections: <code>project</code>, <code>tools</code>, <code>review</code>, <code>execution</code>, <code>traceability</code>. Per-skill <code>minimum_grade</code> overrides fall back to global <code>review.minimum_grade</code> then the hardcoded default (A). (per schemas.md §2)</p>
+			<p>YAML 1.2, 5 mandatory top-level sections: <code>project</code>, <code>tools</code>, <code>review</code>, <code>execution</code>, <code>traceability</code>, plus an optional <code>discovery</code> section carrying the <code>doc_set</code> declared doc-set. Per-skill <code>minimum_grade</code> overrides fall back to global <code>review.minimum_grade</code> then the hardcoded default (A). (per schemas.md §2, §2a)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">emission-manifest.jsonl</div>
@@ -45,6 +45,21 @@
 			<div class="kicker">Heartbeat files</div>
 			<h3>L3 subagent visibility</h3>
 			<p>Single-line files at <code>.aid/.heartbeat/{agent}-{unix-ts}.txt</code>. Format: <code>[YYYY-MM-DDTHH:MM:SSZ] STATE | progress | activity (~eta)</code>. Written with <code>&gt;</code> (overwrite), never <code>&gt;&gt;</code>. Activity must change between writes. (per coding-standards.md §5a)</p>
+		</div>
+	</div>
+
+	<h3 style="margin-top:1.5rem;">Declared-set &rarr; dispatch contract</h3>
+	<p>The discover orchestrator resolves the active doc-set at GENERATE Step 0 and a propose&rarr;confirm checkpoint (Step 0d), then uses it to drive sub-agent dispatch data-driven from the confirmed set rather than from a hardcoded list. (per pipeline-contracts.md §Declared-Set &rarr; Dispatch Contract, architecture.md)</p>
+	<div class="grid g2">
+		<div class="card">
+			<div class="kicker">Mapping honors the set</div>
+			<h3>Data-driven target lists</h3>
+			<p>Each agent's target list = filenames where <code>owner = &lt;agent&gt;</code> in the declared set, intersected with missing-on-disk. The propose&rarr;confirm step (Step 0d) presents the inferred set as a diff against the default seed and waits for the user to confirm or edit before dispatch. (per pipeline-contracts.md, architecture.md §Step 0d)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">Omission / addition / default</div>
+			<h3>No-hang, dispatch-on-add, backward-compatible</h3>
+			<p><strong>No-hang on omission:</strong> a doc absent from the declared set yields an empty target list, so its owning agent is simply not dispatched. <strong>Dispatch on addition:</strong> a custom doc with an owner is appended to that agent's list. <strong>Default seed:</strong> an absent/empty <code>discovery.doc_set</code> falls back to <code>synth_default_seed</code> — prior behavior, unchanged. (per pipeline-contracts.md)</p>
 		</div>
 	</div>
 </section>
