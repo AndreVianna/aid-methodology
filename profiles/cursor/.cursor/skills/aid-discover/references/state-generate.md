@@ -187,6 +187,22 @@ done
 - An **added** doc whose `owner` is some agent is included in that agent's list (dispatch on addition — FR-P1-6).
 - A custom doc owned by the architect fallback rides on the `discovery-architect` dispatch.
 
+**Custom-doc prompt extension (§2.6):** After computing each agent's target list, identify any
+**custom docs** — filenames that are in the target list but do NOT appear in the default seed
+(i.e., not synthesized from `.cursor/templates/knowledge-base/*.md` by `synth_default_seed`).
+For each such custom doc, **append** the following line to that agent's base prompt (from
+`references/agent-prompts.md`) before dispatching:
+
+```
+Also produce .aid/knowledge/<filename> per its expectations entry in
+references/document-expectations.md (keyed by ### <filename>).
+```
+
+Append one such line per custom doc in the agent's target list. The base prompt text is
+unchanged; this is a runtime-only extension. Owner resolution: use the `owner-of <filename>`
+accessor; unknown owners fall back to `discovery-architect` (FR-P1-5 — no new agent).
+See `references/agent-prompts.md` § "Custom-Doc Runtime Extension" for the full protocol.
+
 **Every agent receives the foundation reference block** (appended to prompt):
 ```
 REFERENCE DOCUMENTS (read these FIRST before analyzing):

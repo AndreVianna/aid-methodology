@@ -114,3 +114,13 @@ Must have: accurate project description, project overview, real build/test comma
 conventions from code, architecture summary, KB reference. No remaining `(pending discovery)` placeholders.
 
 **Red flags**: Placeholder text still present. Commands that wouldn't actually work. Missing key gotchas for agents.
+
+### repo-presentation.md
+Must have: purpose and scope of this repository, intended audience, how to navigate the
+codebase (key directories and their roles), contribution guidelines or workflow conventions,
+any project-specific conventions that don't fit elsewhere (e.g., naming norms, branching
+strategy, release process overview). Oriented toward someone new to the repo — not toward
+architecture or code patterns (those belong in architecture.md and coding-standards.md).
+**Red flags**: Duplicates architecture.md content (architectural patterns belong there). Missing
+audience / navigation guidance. Placeholder or template text still present. Focuses on code
+conventions instead of repository presentation (those belong in coding-standards.md).

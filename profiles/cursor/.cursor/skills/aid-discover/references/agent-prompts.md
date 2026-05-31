@@ -5,6 +5,34 @@ and passes it as the prompt to each subagent.
 
 ---
 
+## Custom-Doc Runtime Extension (§2.6)
+
+When an agent's target list (computed from the declared doc-set via the `owns-<agent>`
+accessor — see `references/doc-set-resolve.md`) contains a **custom doc** (a filename with
+no canonical template, i.e., not in the default seed synthesized from
+`.cursor/templates/knowledge-base/*.md`), the orchestrator **extends that agent's base
+prompt at runtime** by appending the following line after the base prompt text:
+
+> Also produce `.aid/knowledge/<filename>` per its expectations entry in
+> `references/document-expectations.md` (keyed by `### <filename>`).
+
+This extension is appended once per custom doc in the agent's target list. The base prompt
+text (the sections below) is never modified — the extension is a runtime-only append.
+
+**Owner resolution:** the owning agent for a custom doc is resolved via the
+`owner-of <filename>` accessor (`resolve_doc_set "$raw" | awk -F'\t' -v f="$fn" '$1==f{print $2}'`).
+If the declared `owner` is one of the 5 discovery agents, the extension is appended to that
+agent's prompt. If the `owner` field does not match any of the 5 agents (unknown owner), the
+`resolve_doc_set` function routes to **`discovery-architect`** as the generalist fallback
+(FR-P1-5 — no new agent). The architect base prompt is then extended as above.
+
+**REVIEW path:** because a custom doc appears in the `list-filenames` accessor output (it is
+in the declared set), the REVIEW state's artifact list includes it and the `discovery-reviewer`
+grades it against its `document-expectations.md` entry (keyed by `### <filename>`). This
+closes the generated AND reviewed loop end-to-end (§3.3).
+
+---
+
 ## Scout
 
 > Analyze this project's repository structure and any external documentation to produce TWO
