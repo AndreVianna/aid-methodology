@@ -265,8 +265,19 @@ def _render_cursor_extras(
     output_base: Path,
 ) -> list[Path]:
     """
-    Render Cursor-specific .mdc rule files from canonical/rules/ into
-    cursor/.cursor/rules/.
+    Render rule files from canonical/rules/ into the profile's rules_dir.
+
+    Originally Cursor-specific (.mdc rules into .cursor/rules/); extended by
+    task-012 (feature-003-antigravity) to support an optional output_filename
+    override on each RuleEntry so the source filename (.mdc) can differ from the
+    output filename (.md) — needed because Antigravity uses .md (Q-I) while the
+    canonical source is .mdc.
+
+    When rule.output_filename is set, the source is read by rule.filename and
+    written to rule.output_filename; otherwise (default None) the source filename
+    is used for both reading and writing, preserving cursor's byte-identical
+    verbatim copy (no behavior change for any profile that leaves output_filename
+    unset).
 
     Only called when profile.extras.rules is non-empty.
     Rules are carried verbatim (no substitution — they do not mention per-tool filenames).
@@ -282,10 +293,13 @@ def _render_cursor_extras(
         src_path = rules_src_dir / rule.filename
         if not src_path.exists():
             raise FileNotFoundError(
-                f"Cursor rule {rule.filename!r} declared in profile but not found at {src_path}"
+                f"Rule {rule.filename!r} declared in profile but not found at {src_path}"
             )
         encoded = src_path.read_bytes()
-        out_path = rules_out_dir / rule.filename
+        # Use output_filename when set (task-012 / Q-I: .mdc source → .md output for
+        # Antigravity); fall back to rule.filename so cursor is byte-identical.
+        out_name = rule.output_filename if rule.output_filename is not None else rule.filename
+        out_path = rules_out_dir / out_name
         _write(out_path, encoded)
         _record(manifest, profile, encoded, src_path, out_path, output_base, canonical_root)
         out_paths.append(out_path)

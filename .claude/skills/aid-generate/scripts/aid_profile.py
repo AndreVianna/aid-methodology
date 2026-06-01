@@ -143,11 +143,17 @@ class ModelTierDetailed:
 
 @dataclass
 class RuleEntry:
-    """One [[extras.rules]] entry (Cursor-specific)."""
+    """One [[extras.rules]] entry (Cursor/Antigravity)."""
     filename: str
     always_apply: bool
     description: str = ""
     globs: list[str] = field(default_factory=list)
+    # Optional output filename override (task-012 / feature-003-antigravity / Q-I):
+    # When set, _render_cursor_extras writes the source (rule.filename) to the
+    # output path named rule.output_filename — enabling .mdc → .md renames for
+    # Antigravity (Q-I: Antigravity uses .md, not .mdc; source stays .mdc).
+    # Default None → source name preserved, so cursor is byte-identical.
+    output_filename: str | None = None
 
 
 @dataclass
@@ -263,6 +269,7 @@ def _parse_extras(raw: dict[str, Any]) -> ExtrasConfig:
             always_apply=r.get("always_apply", False),
             description=r.get("description", ""),
             globs=r.get("globs", []),
+            output_filename=r.get("output_filename"),  # None when absent → cursor byte-identical
         )
         for r in rules_raw
     ]
@@ -339,7 +346,13 @@ _KNOWN_TIERS = {"large", "medium", "small"}
 #   E3 (MCP table / mcp-config.json) is NOT added — AID ships no MCP servers;
 #   grep -ri mcp canonical/ profiles/*.toml returns zero matches (FR1 Q-B ruling).
 #   Both omissions are intentional and sourced to provider-mapping.md Q-A / Q-B.
-_KNOWN_AGENT_FORMATS = {"markdown", "toml", "copilot-agent"}
+# "antigravity-rule" added by task-012 (feature-003-antigravity / delivery-003):
+#   Registers the sub-agents→.agent/rules/ reshape format so the validator accepts
+#   `[agent].format = "antigravity-rule"` in profiles/antigravity.toml.
+#   This reuses feature-002's E1 new-agent-format-branch mechanism; it is a second
+#   branch on the same dispatch (NOT a reuse of copilot-agent output, NOT the deleted
+#   E2). Source: SPEC §"Renderer Increment" + provider-mapping.md Q-D.
+_KNOWN_AGENT_FORMATS = {"markdown", "toml", "copilot-agent", "antigravity-rule"}
 
 _KNOWN_DECOMPOSITIONS = {"references"}
 
