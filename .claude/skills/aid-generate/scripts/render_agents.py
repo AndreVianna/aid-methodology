@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import tomllib
 from pathlib import Path
@@ -126,6 +127,137 @@ def _build_frontmatter_md(fields: dict[str, Any]) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Constants for _yaml_scalar quoting decisions (module-level for efficiency)
+# ---------------------------------------------------------------------------
+
+# Characters that make a YAML plain scalar unsafe regardless of position.
+# Kept as the original indicator set so existing emitted output stays byte-identical.
+_YAML_UNSAFE_ANYWHERE: frozenset[str] = frozenset(
+    [':', '"', "'", '{', '}', '[', ']', '#', '&', '*', '!', '|', '>', '%']
+)
+
+# Characters that are only unsafe as the FIRST character of a plain scalar.
+# '@' and '`' are reserved/forbidden as YAML 1.1 first chars; '-' and '?' start
+# sequences/mapping-keys when followed by whitespace (triggering parse errors).
+_YAML_UNSAFE_FIRST: frozenset[str] = frozenset(['-', '?', '@', '`'])
+
+# Bare words that YAML 1.1 resolves to non-string types (null, bool).
+_YAML_BOOL_NULL_WORDS: frozenset[str] = frozenset([
+    'null', 'Null', 'NULL', '~',
+    'true', 'True', 'TRUE',
+    'false', 'False', 'FALSE',
+    'yes', 'Yes', 'YES',
+    'no', 'No', 'NO',
+    'on', 'On', 'ON',
+    'off', 'Off', 'OFF',
+])
+
+# Pattern matching int / float / hex / octal / infinity / NaN literals that
+# YAML 1.1 would coerce to numeric types.
+_YAML_NUMBER_RE: re.Pattern[str] = re.compile(
+    r'^[-+]?(\d+\.?\d*|\d*\.\d+)([eE][-+]?\d+)?$'
+    r'|^0x[0-9a-fA-F]+$'
+    r'|^0o[0-7]+$'
+    r'|^\.inf$|^-\.inf$|^\.nan$',
+    re.IGNORECASE,
+)
+
+
+def _yaml_scalar(val: str) -> str:
+    """
+    Serialize a string scalar for Copilot-safe YAML frontmatter.
+
+    Returns the value in plain (unquoted) form only when it is unambiguously
+    safe as a YAML 1.1 plain scalar.  Otherwise double-quotes the value and
+    escapes backslashes, double-quotes, and ASCII control characters.
+
+    A value is considered unsafe (and therefore quoted) if any of the following
+    hold:
+
+    * The string is empty.
+    * It has leading or trailing whitespace.
+    * It contains any YAML indicator/special character that is problematic
+      anywhere in a plain scalar: ``:  "  '  {  }  [  ]  #  &  *  !  |  >  %``
+    * Its first character is one of the chars unsafe only at position 0:
+      ``-  ?  @  ` ``
+    * It contains ASCII control characters (U+0000–U+001F or U+007F), including
+      tab and newline.
+    * It is a bare YAML-resolved word (``null``, ``true``, ``false``, ``yes``,
+      ``no``, ``on``, ``off``, and their case variants, plus ``~``).
+    * It looks like a YAML numeric literal (integer, float, hex, octal,
+      ``.inf``, ``-.inf``, ``.nan``).
+    * It ends with ``:`` (trailing colon is a mapping-key indicator).
+
+    The conservative "quote unless clearly plain-safe" approach means new
+    description edge-cases never silently produce invalid or mistyped YAML.
+    The renderer stays stdlib-only (no ``import yaml``).
+    """
+    needs_quote = (
+        not val
+        or val != val.strip()
+        or any(c in val for c in _YAML_UNSAFE_ANYWHERE)
+        or val[0] in _YAML_UNSAFE_FIRST
+        or any(ord(c) < 0x20 or ord(c) == 0x7F for c in val)
+        or val in _YAML_BOOL_NULL_WORDS
+        or bool(_YAML_NUMBER_RE.match(val))
+        or val.endswith(':')
+    )
+    if needs_quote:
+        escaped = val.replace('\\', '\\\\').replace('"', '\\"')
+        escaped = escaped.replace('\t', '\\t').replace('\n', '\\n').replace('\r', '\\r')
+        return f'"{escaped}"'
+    return val
+
+
+def _build_frontmatter_md_copilot(fields: dict[str, Any]) -> str:
+    """
+    Serialize a Copilot ``.agent.md`` frontmatter block (``---`` delimited).
+
+    Differences from ``_build_frontmatter_md``:
+    - A ``list`` value for a key is serialized as a YAML block sequence
+      (one ``- item`` line per element).  An empty list emits ``key: []``
+      (flow form; no dangling key without a value).
+    - Scalar quoting uses ``_yaml_scalar``, identical to the existing str-branch
+      quoting rules.
+    - Bool values use the same ``true``/``false`` lowercased form.
+
+    This function is introduced by task-006 (feature-002 E1) as the format-branch
+    serializer for ``"copilot-agent"``-format agents.  A future agent-format value
+    (feature-003 ``"antigravity-rule"``) reuses the same per-format-branch
+    mechanism (add a new format branch in ``_render_agent_for_profile`` with its
+    own serializer).
+
+    Parameters
+    ----------
+    fields : dict[str, Any]
+        Ordered mapping of frontmatter key → value.  Keys are emitted in
+        iteration order (Python 3.7+ dict ordering).
+
+    Returns
+    -------
+    str
+        ``---`` … ``---`` delimited YAML frontmatter block, LF-terminated.
+    """
+    lines = ["---"]
+    for key, val in fields.items():
+        if isinstance(val, bool):
+            lines.append(f"{key}: {'true' if val else 'false'}")
+        elif isinstance(val, list):
+            if not val:
+                lines.append(f"{key}: []")
+            else:
+                lines.append(f"{key}:")
+                for item in val:
+                    lines.append(f"  - {_yaml_scalar(str(item))}")
+        elif isinstance(val, str):
+            lines.append(f"{key}: {_yaml_scalar(val)}")
+        else:
+            lines.append(f"{key}: {val}")
+    lines.append("---")
+    return "\n".join(lines) + "\n"
+
+
+# ---------------------------------------------------------------------------
 # Model tier resolution
 # ---------------------------------------------------------------------------
 
@@ -171,6 +303,29 @@ def _remap_tools(tools_str: str, tool_names: dict[str, str]) -> str:
     parts = [t.strip() for t in tools_str.split(",")]
     remapped = [tool_names.get(t, t) for t in parts]
     return ", ".join(remapped)
+
+
+def _remap_tools_list(tools_str: str, tool_names: dict[str, str]) -> list[str]:
+    """
+    Apply tool_names remapping to a comma-separated tools string, returning a list.
+
+    Like _remap_tools but returns a list of individual tool name strings rather
+    than a comma-joined string.  Used by the copilot-agent emitter to build a
+    list value for YAML block-sequence serialization.
+
+    Examples
+    --------
+    >>> _remap_tools_list("Read, Glob, Bash, Write", {"Bash": "shell"})
+    ['Read', 'Glob', 'shell', 'Write']
+    >>> _remap_tools_list("", {})
+    []
+    """
+    if not tools_str.strip():
+        return []
+    parts = [t.strip() for t in tools_str.split(",") if t.strip()]
+    if not tool_names:
+        return parts
+    return [tool_names.get(t, t) for t in parts]
 
 
 # ---------------------------------------------------------------------------
@@ -273,6 +428,38 @@ def _render_agent_for_profile(
         out_name = f"{agent_name}.toml"
         agents_root = Path(profile.layout.agents_root)  # type: ignore[arg-type]
         out_path = output_base / agents_root / profile.layout.agents_dir / out_name
+    elif profile.agent.format == "copilot-agent":
+        # GitHub Copilot CLI: emit .agent.md with Copilot YAML frontmatter (E1, task-006).
+        #
+        # Frontmatter field set: name, description, tools, model (in that order) per FR1 Q-A.
+        # - name / description: pass-through (with substitute_filenames + rewrite_install_paths
+        #   already applied to description above, same as the markdown/toml branches).
+        # - tools: remapped via [tool_names] (Bash→shell per Q-F), emitted as a YAML sequence.
+        # - model: resolved via _resolve_model(tier) from [model_tiers].
+        # Optional Copilot fields (target / user-invocable / disable-model-invocation /
+        # mcp-servers / metadata) are omitted — AID has no per-agent source for them and
+        # the agent defaults are correct (FR1 Q-A).  No MCP field is emitted (E3 dropped, Q-B).
+        #
+        # The .agent.md suffix is a property of this branch — NOT a data-driven agent_suffix key
+        # (confirmed: no such key exists in the Profile schema, per task-005 / SPEC §E1).
+        model = _resolve_model(profile, tier)
+        remapped_tools_list = _remap_tools_list(tools_str, profile.tool_names)
+
+        # Build the ordered frontmatter dict: exactly name, description, tools, model.
+        copilot_fm: dict[str, Any] = {
+            "name": agent_name,
+            "description": description,
+            "tools": remapped_tools_list,
+            "model": model,
+        }
+
+        fm_block = _build_frontmatter_md_copilot(copilot_fm)
+        content = fm_block + body
+
+        # Suffix is .agent.md — a property of the copilot-agent format branch.
+        out_name = f"{agent_name}.agent.md"
+        output_root = Path(profile.layout.output_root)  # type: ignore[arg-type]
+        out_path = output_base / output_root / profile.layout.agents_dir / out_name
     else:
         # Markdown (Claude Code or Cursor)
         model = _resolve_model(profile, tier)
