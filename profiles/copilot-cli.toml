@@ -1,0 +1,64 @@
+# Profile: GitHub Copilot CLI
+# Encodes the Copilot CLI host tool's install conventions (REQUIREMENTS §2; FR1 mapping
+# provider-mapping.md — Copilot column).
+
+[layout]
+output_root          = "profiles/copilot-cli/.github"   # install_root() basename = ".github"
+agents_dir           = "agents"                          # → .github/agents/*.agent.md (sub-agents, E1)
+skills_dir           = "skills"                          # → .github/skills/<slug>/SKILL.md (native Agent Skills; Q-A/Q-C) — drives existing render_skills folder pass
+templates_dir        = "templates"                       # bare name → .github/templates/ (matches rewrite-link; Q-C)
+scripts_dir          = "scripts"                         # bare name → .github/scripts/ (matches rewrite-link; Q-C)
+# recipes_dir intentionally unset → defaults to "recipes" (aid_profile.py:40), so recipes emit at
+#   .github/recipes/ as [data] (Q-C/mapping row). render_recipes runs UNCONDITIONALLY for every
+#   profile (run_generator.py:45) — there is no per-profile pass-selection mechanism — so recipes
+#   emit exactly like the 3 existing profiles (cursor/.cursor/recipes, etc.), no engine change.
+project_context_file = "AGENTS.md"                      # token value; the AGENTS.md doc itself is profile-local committed data (Q-J), not emitted
+
+[agent]
+# E1: new agent-format value (Q-A); binds .agent.md suffix + Copilot frontmatter
+format = "copilot-agent"
+
+[agent.frontmatter]
+# Copilot emits exactly name/description/tools/model (Q-A). Optional Copilot fields
+# (target/user-invocable/disable-model-invocation/mcp-servers/metadata) are omitted — AID has no
+# per-agent source for them; agent defaults are correct.
+required = ["name", "description", "tools", "model"]
+optional = []
+
+[skill]
+# Skills are native Copilot Agent Skills, emitted as folders by the existing render_skills pass (Q-A).
+decomposition = "references"
+# No emit_as knob — skills are native Agent Skills, emitted as folders by the existing pass (Q-A).
+
+[skill.frontmatter]
+required = ["name", "description", "allowed-tools"]
+optional = ["argument-hint"]
+
+[model_tiers]
+# Simple form (Q-E); Copilot model selection is a plain string scalar.
+# Slug spelling is docs-only-noted (provider-mapping.md §0 / Q-E): model identities
+# (Opus 4.8 / Sonnet 4.6 / Haiku 4.5) are LIVE-confirmed; exact model: field tokenization
+# confirmed as lowercase-dotted slug per GitHub's documented model-id convention.
+large  = "claude-opus-4.8"
+medium = "claude-sonnet-4.6"
+small  = "claude-haiku-4.5"
+
+[tool_names]
+# Q-F: Bash→shell only; Read/Glob/Grep/Write/Edit pass through (no documented Copilot rename).
+Bash = "shell"
+
+[filename_map]
+# 3 keys required by validator (aid_profile.py _CANONICAL_FILENAME_MAP_KEYS).
+project_context_file = "AGENTS.md"
+reviewer_output_file = "STATE.md"
+open_questions_file  = "additional-info.md"
+
+# No [mcp] table — MCP is [omit] (Q-B): repo ships no MCP servers (zero `mcp` matches in
+# canonical/ + profiles/*.toml). No mcp-config.json is emitted.
+
+[capabilities]
+# Q-G: all 4 flags sourced from provider-mapping.md Q-G / FR1 crosswalk row 7.
+hooks                  = true   # First-class hooks (.github/hooks/*.json); agentStop/Stop/subagentStop events
+skill_chaining         = true   # Skills exist (A.2); agents orchestrate skills; multiple composable
+background_execution   = true   # /delegate (async → branch+PR), /tasks, ctrl+x→b, /resume
+stop_hook_autocontinue = true   # agentStop/Stop hook can "block" and force continuation
