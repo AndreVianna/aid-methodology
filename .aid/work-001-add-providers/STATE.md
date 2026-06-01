@@ -1,6 +1,6 @@
 # Work State — work-001-add-providers
 
-> **Status:** Executing — delivery-001 DONE (gate A); FR1 loopback COMPLETE; **delivery-002 DONE (gate A+)** on branch `aid/delivery-002`; PAUSED for PR decision before deliveries 003/004
+> **Status:** Executing — delivery-001 DONE (gate A); FR1 loopback COMPLETE; **delivery-002 MERGED (PR #42, gate A+)**; **delivery-003 in progress** on branch `aid/delivery-003`; delivery-004 pending
 > **Phase:** Execute
 > **Minimum Grade:** {resolved at runtime by `bash .claude/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-05-31
@@ -79,9 +79,9 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 | # | Feature | Spec Status | Spec Grade | Q&A Count | Notes |
 |---|---------|-------------|------------|-----------|-------|
 | 001 | provider-research | Ready | A+ | 0 | FR1; RESEARCH; gates F2/F3/F4. Tech Spec adds an explicit FR1 Deliverable Contract (every `[FR1-owned]` value downstream depends on) + disposition tags `[data]`/`[transform:engine]`/`[omit]`. Key questions Q-A..Q-I |
-| 002 | copilot-cli | Ready | A+ | 0 | FR2; profile + narrow renderer extension (E1 `.agent.md` emitter incl. required YAML-list serializer; E2 cross-kind skills→agent via `[skill].emit_as`; E3 conditional MCP). Surfaced a real gap: NO render pass emits the repo-root context file today (`profiles/*/AGENTS.md` are hand-committed, absent from manifests) → narrow fix specified |
-| 003 | antigravity | Ready | A+ | 0 | FR3; cursor-modeled. Both branches specced: (a) pure-data, (b) cross-kind. Re-scoped: skills→flat-workflows reuses F2 E2; sub-agents→`.agent/rules/` is NET-NEW engine work (not F2 reuse). Cross-kind ruling → FR1 Q-D |
-| 004 | setup-and-nonregression | Ready | A+ | 0 | FR4+FR5; setup.sh/ps1 menu+copy extension + 5-profile render-drift gate (auto-discovery, no gate-code edit). AGENTS.md multi-install collision → **Option A** (single canonical file, last-installed/block-order wins + pre-copy warning; collision already exists today for codex/cursor). Option B section-merge deferred/ratifiable |
+| 002 | copilot-cli | **Built+merged (PR #42)** | A+ | 0 | FR2; **post-FR1-loopback = E1-only** (`copilot-agent` `.agent.md` emitter + YAML serializer). E2 (skills cross-kind) + E3 (MCP) DROPPED — Copilot skills are native Agent Skills `[data]`, MCP `[omit]`. Context file = profile-local committed AGENTS.md (Q-J). Implemented in delivery-002, gate A+ |
+| 003 | antigravity | Ready (re-gated post-loopback) | A+ | 0 | FR3; cursor-modeled. **post-FR1-loopback:** skills→`.agent/skills/` native `[data]`; sub-agents→`.agent/rules/*.md` via NEW `antigravity-rule` `agent.format` reusing F2's E1 format-branch mechanism + a `RuleEntry.output_filename` touch; `.md` rules (not `.mdc`), `AGENTS.md` context (Q-H/Q-I). Executing in delivery-003 |
+| 004 | setup-and-nonregression | Ready (re-gated post-loopback) | A | 0 | FR4+FR5; setup.sh/ps1 menu+copy + 5-profile render-drift gate (auto-discovery). **post-FR1-loopback:** tree shapes corrected (native skills homes; NO mcp-config.json). AGENTS.md collision → **Option A** (last-installed/block-order wins + warning). Collision + gate logic unchanged |
 
 ## Plan / Deliveries
 
@@ -89,10 +89,10 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| delivery-001: Provider research & mapping | Planned | — | feature-001. Depends on: —. Must. Standalone findings doc; crosses off every `[FR1-owned]` value + Q-A..Q-J rulings; resolves the F003→F002 edge before profile work |
-| delivery-002: GitHub Copilot CLI profile | Planned | — | feature-002. Depends on: delivery-001. Must. `profiles/copilot-cli.toml` + narrow renderer ext (E1/E2/E3) + profile-local AGENTS.md; render-drift clean, existing 3 byte-identical |
-| delivery-003: Google Antigravity profile | Planned | — | feature-003. Depends on: delivery-001, delivery-002 (unconditional safe-superset edge). Must. `profiles/antigravity.toml` (cursor-modeled) + profile-local context file |
-| delivery-004: Setup options & all-5 non-regression | Planned | — | feature-004. Depends on: delivery-002, delivery-003. Must. setup.sh/ps1 menu+copy (Option A collision) + finalized 5-profile render-drift gate |
+| delivery-001: Provider research & mapping | **Done (gate A)** | 001-004 | feature-001. research/provider-mapping.md; all Q-A..Q-J ruled; surfaced the Copilot-native-skills finding → FR1 loopback |
+| delivery-002: GitHub Copilot CLI profile | **Done (gate A+), MERGED PR #42** | 005,006,009,010 | feature-002. `profiles/copilot-cli.toml` + E1-only renderer ext + profile-local AGENTS.md; 198-file tree (native skills, no MCP); existing 3 byte-identical |
+| delivery-003: Google Antigravity profile | **In progress** (branch aid/delivery-003) | 011,012,014 | feature-003. `profiles/antigravity.toml` + `antigravity-rule` format engine (reuses E1) + profile-local AGENTS.md. Depends on delivery-002 (merged) |
+| delivery-004: Setup options & all-5 non-regression | Pending | 015,016,017 | feature-004. Depends on: delivery-002, delivery-003. setup.sh/ps1 menu+copy (Option A collision) + finalized 5-profile render-drift gate |
 
 ## Tasks Status
 
@@ -124,7 +124,7 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 
 | Delivery | State | PR | KB Updated | Tag | Notes |
 |----------|-------|----|-----------|----|----|
-| _none yet_ | | | | | |
+| delivery-002 | Merged to master | #42 | no | — | aid/delivery-002 → master (merge commit 105e614); gate A+; admin-merged with user authorization (CI green, review-required gate bypassed) |
 
 ## Cross-phase Q&A (Pending)
 
@@ -228,3 +228,4 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 | 2026-05-31 | delivery-001 (RESEARCH) → DONE | A | tasks 001-004 executed (own-implementation, docs-only). research/provider-mapping.md gate A. **Material finding:** Copilot CLI now has native Agent Skills (2025-12-18) → E2 obsolete; Q-B MCP [omit] → E3 not built. Loopback Q2 raised (revise feature-002 SPEC + REQUIREMENTS §2 before delivery-002). PAUSED for user review per request |
 | 2026-05-31 | FR1 loopback (user: full) → COMPLETE | A+/A | REQUIREMENTS §2 corrected (Copilot has native skills; mismatch narrowed). feature-002 re-spec A+ (E1-only; drop E2/E3; skills native [data]); feature-003 re-spec A+ (skills→.agent/skills [data]; sub-agents→.agent/rules via new `antigravity-rule` format reusing E1 mechanism; .md/AGENTS.md); feature-004 A (tree shapes; collision+gate intact). Re-detail A+ (delivery-002→4 tasks, delivery-003→3 tasks; removed 007/008/013; graphs rebuilt acyclic). Renderer extension now E1 + antigravity-rule only. Ready to resume execution at delivery-002 |
 | 2026-06-01 | delivery-002 (Copilot CLI profile) → DONE | A+ | tasks 005/006/009/010 executed on branch `aid/delivery-002` (5 commits). E1 `.agent.md` emitter + `copilot-agent` format + robust YAML serializer; `profiles/copilot-cli.toml` + profile-local AGENTS.md; 198-file Copilot tree (native skills, no MCP). Gate A+ after 3 fixes (real-yaml test, hardened _yaml_scalar, CI-wired self-test). Existing 3 byte-identical; all suites green. PAUSED before PR/merge + deliveries 003/004 |
+| 2026-06-01 | delivery-002 → MERGED (PR #42) | — | User reviewed + authorized merge. Admin-merged (CI 5/5 green; review-required protection bypassed per explicit user authorization). master → 105e614. Branch deleted. STATE Features/Plan tables reconciled to post-loopback reality. Starting delivery-003 (Antigravity) on branch aid/delivery-003 |
