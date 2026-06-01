@@ -257,6 +257,60 @@ def _build_frontmatter_md_copilot(fields: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _build_frontmatter_md_antigravity(fields: dict[str, Any]) -> str:
+    """
+    Serialize an Antigravity ``.agent/rules/*.md`` frontmatter block
+    (``---`` delimited).
+
+    Antigravity rule frontmatter shape (SPEC §"Renderer Increment" + §B.1 +
+    provider-mapping.md Q-I / Q-D):
+
+    * ``trigger: always_on``  — for always-loaded sub-agent personas (all 22
+      AID sub-agents; sub-agent personas map to ``always_on`` per SPEC).
+    * ``trigger: glob``       — for glob-triggered rules (with ``globs:`` key).
+    * ``trigger: model_decision`` — for model-decision rules.
+    * ``trigger: manual``     — for manual rules.
+    * ``description:``        — from the canonical AGENT ``description`` field.
+    * ``globs:``              — only present when trigger is ``glob``; emitted as
+      a YAML block sequence (one ``- item`` per glob) or ``[]`` for empty.
+
+    Scalar quoting uses ``_yaml_scalar``, identical to the copilot-agent branch.
+    List values use the same YAML block-sequence form as ``_build_frontmatter_md_copilot``.
+    This function is introduced by task-012 (feature-003-antigravity / delivery-003)
+    as the format-branch serializer for ``"antigravity-rule"``-format agents.
+    It does NOT reuse E1's Copilot output shape; it produces a different
+    (rule-shaped) frontmatter.
+
+    Parameters
+    ----------
+    fields : dict[str, Any]
+        Ordered mapping of frontmatter key → value.  Keys are emitted in
+        iteration order (Python 3.7+ dict ordering).
+
+    Returns
+    -------
+    str
+        ``---`` … ``---`` delimited YAML frontmatter block, LF-terminated.
+    """
+    lines = ["---"]
+    for key, val in fields.items():
+        if isinstance(val, bool):
+            lines.append(f"{key}: {'true' if val else 'false'}")
+        elif isinstance(val, list):
+            if not val:
+                lines.append(f"{key}: []")
+            else:
+                lines.append(f"{key}:")
+                for item in val:
+                    lines.append(f"  - {_yaml_scalar(str(item))}")
+        elif isinstance(val, str):
+            lines.append(f"{key}: {_yaml_scalar(val)}")
+        else:
+            lines.append(f"{key}: {val}")
+    lines.append("---")
+    return "\n".join(lines) + "\n"
+
+
 # ---------------------------------------------------------------------------
 # Model tier resolution
 # ---------------------------------------------------------------------------
@@ -458,6 +512,47 @@ def _render_agent_for_profile(
 
         # Suffix is .agent.md — a property of the copilot-agent format branch.
         out_name = f"{agent_name}.agent.md"
+        output_root = Path(profile.layout.output_root)  # type: ignore[arg-type]
+        out_path = output_base / output_root / profile.layout.agents_dir / out_name
+    elif profile.agent.format == "antigravity-rule":
+        # Google Antigravity: emit .agent/rules/<name>.md with rule-shaped frontmatter
+        # (task-012 / feature-003-antigravity / delivery-003).
+        #
+        # Reshape: the canonical AGENT frontmatter (name/description/tools/model) is
+        # dropped/replaced by rule frontmatter (trigger/description[/globs]) per:
+        #   - SPEC §"Renderer Increment": "drops/replaces AGENT name/description/tools/model
+        #     set with rule frontmatter (trigger:/description/globs)"
+        #   - SPEC §B.1 + provider-mapping.md Q-D: "Antigravity rules carry no tools/model
+        #     frontmatter"
+        #   - SPEC §"Renderer Increment": "AID's always-loaded sub-agent personas map to
+        #     trigger: always_on"
+        #
+        # Field mapping (source: SPEC §"Renderer Increment" / provider-mapping.md Q-D):
+        #   trigger:     → always "always_on" (all 22 AID sub-agents are always-loaded
+        #                  personas; SPEC: "AID's always-loaded sub-agent personas map to
+        #                  trigger: always_on")
+        #   description: → canonical AGENT description (pass-through, already rewritten above)
+        #   globs:       → NOT emitted for always_on triggers (no globs needed / present)
+        #
+        # tools / model are intentionally DROPPED — Antigravity rules have no tools/model
+        # frontmatter (§B.1). name is also dropped (not a rule frontmatter key).
+        #
+        # Output suffix is .md (Q-I: Antigravity uses .md, not .mdc or .agent.md).
+        # Output path is under agents_dir (= "rules" in antigravity.toml → .agent/rules/).
+        # This is NOT a reuse of E1's copilot-agent output — it is a DIFFERENT, rule-shaped
+        # frontmatter on top of E1's format-branch dispatch machinery.
+
+        # Rule frontmatter dict: trigger + description only (always_on → no globs needed).
+        antigravity_fm: dict[str, Any] = {
+            "trigger": "always_on",
+            "description": description,
+        }
+
+        fm_block = _build_frontmatter_md_antigravity(antigravity_fm)
+        content = fm_block + body
+
+        # Suffix is .md — a property of the antigravity-rule format branch (Q-I).
+        out_name = f"{agent_name}.md"
         output_root = Path(profile.layout.output_root)  # type: ignore[arg-type]
         out_path = output_base / output_root / profile.layout.agents_dir / out_name
     else:

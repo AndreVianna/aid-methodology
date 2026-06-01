@@ -143,17 +143,35 @@ class ModelTierDetailed:
 
 @dataclass
 class RuleEntry:
-    """One [[extras.rules]] entry (Cursor-specific)."""
+    """One [[extras.rules]] entry (Cursor/Antigravity)."""
     filename: str
     always_apply: bool
     description: str = ""
     globs: list[str] = field(default_factory=list)
+    # Optional output filename override (task-012 / feature-003-antigravity / Q-I):
+    # When set, _render_cursor_extras writes the source (rule.filename) to the
+    # output path named rule.output_filename — enabling .mdc → .md renames for
+    # Antigravity (Q-I: Antigravity uses .md, not .mdc; source stays .mdc).
+    # Default None → source name preserved, so cursor is byte-identical.
+    output_filename: str | None = None
 
 
 @dataclass
 class ExtrasConfig:
     """[extras] table."""
     rules: list[RuleEntry] = field(default_factory=list)
+    # Optional frontmatter dialect for extras.rules emission (task-012 / delivery-003 gate):
+    # - None (default) → verbatim source copy; the source .mdc frontmatter is carried
+    #   through unchanged.  This preserves cursor's byte-identical behavior: cursor.toml
+    #   has no [extras] rules_frontmatter key → defaults to None → verbatim path.
+    # - "trigger" → Antigravity dialect: the source frontmatter is stripped and
+    #   regenerated from RuleEntry fields using trigger:/description/globs keys:
+    #     always_apply=True  → trigger: always_on
+    #     always_apply=False → trigger: glob (+ globs block-sequence)
+    #   The rule BODY (after the source frontmatter) is preserved unchanged.
+    # Do NOT key this off [agent].format — extras-rules emission is separate from agent
+    # emission and must remain decoupled (per delivery-003 task contract).
+    rules_frontmatter: str | None = None
 
 
 @dataclass
@@ -263,10 +281,14 @@ def _parse_extras(raw: dict[str, Any]) -> ExtrasConfig:
             always_apply=r.get("always_apply", False),
             description=r.get("description", ""),
             globs=r.get("globs", []),
+            output_filename=r.get("output_filename"),  # None when absent → cursor byte-identical
         )
         for r in rules_raw
     ]
-    return ExtrasConfig(rules=rules)
+    return ExtrasConfig(
+        rules=rules,
+        rules_frontmatter=raw.get("rules_frontmatter"),  # None when absent → verbatim (cursor)
+    )
 
 
 def _parse_capabilities(raw: dict[str, Any]) -> CapabilitiesConfig:
@@ -339,7 +361,13 @@ _KNOWN_TIERS = {"large", "medium", "small"}
 #   E3 (MCP table / mcp-config.json) is NOT added — AID ships no MCP servers;
 #   grep -ri mcp canonical/ profiles/*.toml returns zero matches (FR1 Q-B ruling).
 #   Both omissions are intentional and sourced to provider-mapping.md Q-A / Q-B.
-_KNOWN_AGENT_FORMATS = {"markdown", "toml", "copilot-agent"}
+# "antigravity-rule" added by task-012 (feature-003-antigravity / delivery-003):
+#   Registers the sub-agents→.agent/rules/ reshape format so the validator accepts
+#   `[agent].format = "antigravity-rule"` in profiles/antigravity.toml.
+#   This reuses feature-002's E1 new-agent-format-branch mechanism; it is a second
+#   branch on the same dispatch (NOT a reuse of copilot-agent output, NOT the deleted
+#   E2). Source: SPEC §"Renderer Increment" + provider-mapping.md Q-D.
+_KNOWN_AGENT_FORMATS = {"markdown", "toml", "copilot-agent", "antigravity-rule"}
 
 _KNOWN_DECOMPOSITIONS = {"references"}
 

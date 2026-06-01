@@ -21,7 +21,7 @@ _SCRIPT_DIR = Path(__file__).parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
-from aid_profile import load_profile, validate, Profile  # noqa: E402
+from aid_profile import load_profile, validate, Profile, RuleEntry  # noqa: E402
 from render_lib import (  # noqa: E402
     read_canonical_file,
     substitute_filenames,
@@ -29,6 +29,7 @@ from render_lib import (  # noqa: E402
     sha256_hex,
     EmissionManifest,
 )
+from render_agents import _yaml_scalar  # noqa: E402 — reuse stdlib-only YAML scalar serializer
 
 
 # ---------------------------------------------------------------------------
@@ -117,6 +118,83 @@ def _remap_tools(tools_str: str, tool_names: dict[str, str]) -> str:
         return tools_str
     parts = [t.strip() for t in tools_str.split(",")]
     return ", ".join(tool_names.get(t, t) for t in parts)
+
+
+# ---------------------------------------------------------------------------
+# Antigravity trigger-dialect frontmatter helpers (delivery-003 / Fix #1)
+# ---------------------------------------------------------------------------
+
+def _split_rule_body(text: str) -> tuple[str, str]:
+    """
+    Split a rule source file (e.g. a .mdc) into its YAML frontmatter block and body.
+
+    Returns (fm_block, body) where:
+    - fm_block is the full ``---`` … ``---`` delimited frontmatter block (including
+      the delimiters and a trailing newline), or the empty string if no frontmatter
+      is found.
+    - body is everything after the closing ``---`` (preserving the leading newline
+      that follows the closing delimiter in typical rule files).
+
+    If no frontmatter is found, returns ("", text) — the caller treats the whole
+    file as body.
+    """
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        return "", text
+
+    end_idx = None
+    for i, line in enumerate(lines[1:], start=1):
+        if line.strip() == "---":
+            end_idx = i
+            break
+
+    if end_idx is None:
+        return "", text
+
+    fm_block = "".join(lines[0:end_idx + 1])
+    body = "".join(lines[end_idx + 1:])
+    return fm_block, body
+
+
+def _build_trigger_frontmatter(rule: RuleEntry) -> str:
+    """
+    Build Antigravity ``trigger:``-dialect frontmatter from a RuleEntry.
+
+    Mapping (per SPEC §Mapping / Q-I + antigravity.toml inline comments):
+    - ``always_apply=True``  → ``trigger: always_on`` (no globs emitted)
+    - ``always_apply=False`` → ``trigger: glob`` + ``globs:`` block-sequence
+      (or ``globs: []`` if the list is empty)
+    - ``description``        → carried through with ``_yaml_scalar`` quoting.
+
+    Uses the existing ``_yaml_scalar`` serializer (imported from render_agents.py)
+    so the quoting rules are identical to the copilot-agent and antigravity-rule
+    agent-format branches — stdlib-only, no ``import yaml``.
+
+    Returns a ``---`` … ``---`` delimited YAML frontmatter block, LF-terminated.
+    """
+    lines = ["---"]
+
+    # trigger
+    if rule.always_apply:
+        lines.append("trigger: always_on")
+    else:
+        lines.append("trigger: glob")
+
+    # description (use _yaml_scalar for safe quoting)
+    if rule.description:
+        lines.append(f"description: {_yaml_scalar(rule.description)}")
+
+    # globs — only for glob triggers
+    if not rule.always_apply:
+        if not rule.globs:
+            lines.append("globs: []")
+        else:
+            lines.append("globs:")
+            for g in rule.globs:
+                lines.append(f"  - {_yaml_scalar(g)}")
+
+    lines.append("---")
+    return "\n".join(lines) + "\n"
 
 
 # ---------------------------------------------------------------------------
@@ -265,11 +343,29 @@ def _render_cursor_extras(
     output_base: Path,
 ) -> list[Path]:
     """
-    Render Cursor-specific .mdc rule files from canonical/rules/ into
-    cursor/.cursor/rules/.
+    Render rule files from canonical/rules/ into the profile's rules_dir.
+
+    Originally Cursor-specific (.mdc rules into .cursor/rules/); extended by
+    task-012 (feature-003-antigravity) to support:
+    1. An optional output_filename override on each RuleEntry so the source
+       filename (.mdc) can differ from the output filename (.md) — needed because
+       Antigravity uses .md (Q-I) while the canonical source is .mdc.
+    2. A gated frontmatter-dialect translation (delivery-003 / Fix #1):
+       when profile.extras.rules_frontmatter == "trigger", the source .mdc
+       frontmatter is stripped and regenerated from RuleEntry fields using
+       Antigravity trigger:/description/globs keys.  The rule BODY (after the
+       source frontmatter) is preserved unchanged.  When rules_frontmatter is
+       None (the default), the source bytes are copied verbatim — preserving
+       cursor's byte-identical behavior (cursor.toml has no rules_frontmatter key).
+
+    Gate mechanism: ``[extras] rules_frontmatter = "trigger"`` in the profile TOML.
+    Rationale: the gate lives on ``[extras]`` (where rules live), decoupled from
+    ``[agent].format`` (extras-rules emission and agent emission are separate paths
+    per delivery-003 task contract).  Default None → verbatim path → no behavior
+    change for any profile that omits this key (cursor, claude-code, codex, copilot-cli
+    all byte-identical after this change).
 
     Only called when profile.extras.rules is non-empty.
-    Rules are carried verbatim (no substitution — they do not mention per-tool filenames).
     """
     if not profile.extras.rules:
         return []
@@ -277,15 +373,36 @@ def _render_cursor_extras(
     rules_src_dir = canonical_root / "canonical" / "rules"
     rules_out_dir = output_base / profile.layout.output_root / profile.layout.rules_dir  # type: ignore[operator]
 
+    use_trigger_dialect = (profile.extras.rules_frontmatter == "trigger")
+
     out_paths: list[Path] = []
     for rule in profile.extras.rules:
         src_path = rules_src_dir / rule.filename
         if not src_path.exists():
             raise FileNotFoundError(
-                f"Cursor rule {rule.filename!r} declared in profile but not found at {src_path}"
+                f"Rule {rule.filename!r} declared in profile but not found at {src_path}"
             )
-        encoded = src_path.read_bytes()
-        out_path = rules_out_dir / rule.filename
+
+        if use_trigger_dialect:
+            # Gated path (delivery-003 / Fix #1): strip the source .mdc frontmatter
+            # and regenerate it using Antigravity trigger: dialect from RuleEntry fields.
+            # Body is preserved unchanged (no substitution — rule bodies do not reference
+            # per-tool filenames, consistent with the verbatim path below).
+            src_text = src_path.read_text(encoding="utf-8")
+            _fm_block, body = _split_rule_body(src_text)
+            new_fm = _build_trigger_frontmatter(rule)
+            content = new_fm + body
+            encoded = content.encode("utf-8")
+        else:
+            # Verbatim path (default): copy source bytes unchanged.
+            # Cursor and all other profiles that leave rules_frontmatter unset
+            # take this path — byte-identical to before this change.
+            encoded = src_path.read_bytes()
+
+        # Use output_filename when set (task-012 / Q-I: .mdc source → .md output for
+        # Antigravity); fall back to rule.filename so cursor is byte-identical.
+        out_name = rule.output_filename if rule.output_filename is not None else rule.filename
+        out_path = rules_out_dir / out_name
         _write(out_path, encoded)
         _record(manifest, profile, encoded, src_path, out_path, output_base, canonical_root)
         out_paths.append(out_path)

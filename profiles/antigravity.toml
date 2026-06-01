@@ -1,0 +1,107 @@
+# Profile: Google Antigravity (Windsurf lineage; VS Code-fork like Cursor)
+# Encodes the Antigravity host tool's install conventions (REQUIREMENTS §2; FR1 mapping
+# provider-mapping.md — Antigravity column). Modeled on profiles/cursor.toml.
+
+[layout]
+output_root          = "profiles/antigravity/.agent"   # install_root() basename = ".agent" (§B.7: .agent singular; plural .agents/ is a tutorial variation)
+agents_dir           = "rules"                          # sub-agents reshaped → .agent/rules/*.md (Q-D; engine increment). Shares rules_dir — disjoint stems (persona vs aid- prefix), no collision.
+skills_dir           = "skills"                          # skills → .agent/skills/<slug>/ folders (native Skills primitive, Q-D/§B.4; existing render_skills pass, [data])
+templates_dir        = "templates"                       # bare name → .agent/templates/ (Q-C; matches rewrite_install_paths)
+# scripts_dir intentionally unset → schema default "scripts" → .agent/scripts/ (bare name keeps body-link rewrite in agreement; Q-C)
+recipes_dir          = "recipes"                          # bare name → .agent/recipes/ (always emitted; render_recipes runs unconditionally)
+rules_dir            = "rules"                            # .agent/rules/ — target of [[extras.rules]] methodology .md rules; same dir as agents_dir (Q-D: sub-agents live as rules)
+project_context_file = "AGENTS.md"                       # AGENTS.md (Q-H, single cross-tool pick). NB: a filename-substitution token only; the AGENTS.md doc itself is a profile-local committed file, NOT emitted — see Context-file convention (Q-J).
+
+[agent]
+# Antigravity sub-agents reshape into .agent/rules/*.md with trigger:-style frontmatter (Q-D).
+# New agent-format value reusing feature-002's E1 new-agent-format-branch mechanism (NOT E1's
+# copilot-agent output, NOT the deleted E2). Requires _KNOWN_AGENT_FORMATS widening (task-012).
+format = "antigravity-rule"
+
+[agent.frontmatter]
+# Antigravity rule frontmatter is trigger:/description/globs (§B.1) — NOT name/description/tools/model.
+# The reshape is performed by the antigravity-rule format branch (engine, task-012); these lists are
+# parsed-but-dead-for-emission (provider-mapping.md "agent-frontmatter rule") and do NOT drive the
+# reshape. Values kept structurally valid and documentary only.
+required = ["trigger", "description"]
+optional = ["globs"]
+
+[skill]
+# Skills are native .agent/skills/ folders via the existing render_skills pass (Q-D/§B.4). [data].
+decomposition = "references"
+# No emit_as knob — skills are native .agent/skills/<slug>/SKILL.md folders.
+
+[skill.frontmatter]
+# Antigravity/AID-native SKILL.md required pair is name+description (Q-D/§B.4); optional extras below.
+# These lists are dead-for-emission for skills (render_skills preserves canonical frontmatter verbatim)
+# but kept consistent with the stated native shape.
+required = ["name", "description"]
+optional = ["allowed-tools", "argument-hint"]
+
+[model_tiers.large]
+# Detailed form (Q-E); Gemini-3 lineage. Exact id/effort tokenization is docs-only-noted (Q-E):
+# docs expose display names ("Gemini 3 Pro (high)") rather than model-id token pairs; confirm
+# gemini-3-pro + reasoning_effort="high" vs a fused id before pinning literals.
+model            = "gemini-3-pro"
+reasoning_effort = "high"
+
+[model_tiers.medium]
+model            = "gemini-3-pro"
+reasoning_effort = "low"
+
+[model_tiers.small]
+# gemini-3-flash has no documented effort variant; "low" is a non-empty placeholder so
+# ModelTierDetailed.reasoning_effort passes the validator (aid_profile.py:426-434). Confirm with Q-E tokenization.
+model            = "gemini-3-flash"
+reasoning_effort = "low"
+
+[tool_names]
+# Q-F: empty map — identity passthrough (no published Antigravity tool-token map; docs-only-noted).
+
+[filename_map]
+# 3 keys required by validator (aid_profile.py _CANONICAL_FILENAME_MAP_KEYS).
+project_context_file = "AGENTS.md"    # Q-H
+reviewer_output_file = "STATE.md"
+open_questions_file  = "additional-info.md"
+
+# No [mcp] table — MCP is [omit] for all profiles: AID ships no MCP servers
+# (zero `mcp` matches in canonical/ + profiles/*.toml; FR1 Q-B).
+
+# [extras] — reuse the cursor _render_cursor_extras path to place AID's methodology rules
+# into .agent/rules/. Q-I: Antigravity rules are .md (NOT .mdc) with trigger: frontmatter.
+# Because the canonical sources are .mdc, output_filename must differ from the source name —
+# RuleEntry.output_filename (task-012 / aid_profile.py) handles this; cursor leaves it unset →
+# source name preserved, so cursor is byte-identical.
+#
+# rules_frontmatter = "trigger": delivery-003 gate — when set, _render_cursor_extras strips the
+# source .mdc frontmatter and regenerates it from RuleEntry fields using trigger:/description/globs
+# keys (always_apply=true→trigger: always_on; always_apply=false→trigger: glob + globs).
+# Default None (cursor has no [extras] rules_frontmatter) → verbatim source copy → cursor
+# byte-identical. This gate is DECOUPLED from [agent].format (extras-rules and agent emission
+# are separate paths). Source: delivery-003 task §Fix#1.
+[extras]
+rules_frontmatter = "trigger"
+
+# Per-rule literals match disk truth (read canonical/rules/aid-methodology.mdc + aid-review.mdc):
+#   aid-methodology.mdc: alwaysApply: true, no globs  → always_apply=true, globs=[]
+#   aid-review.mdc:      alwaysApply: false, globs: "**/*.{java,py,ts,js,cs,go,rs}"
+[[extras.rules]]
+filename        = "aid-methodology.mdc"     # canonical source (canonical/rules/)
+output_filename = "aid-methodology.md"      # Q-I: .md output (cursor omits → source name preserved)
+description     = "AID methodology workflow and Knowledge Base integration"
+always_apply    = true                      # disk: alwaysApply: true → trigger: always_on
+globs           = []                        # disk: no globs on aid-methodology.mdc
+
+[[extras.rules]]
+filename        = "aid-review.mdc"          # canonical source
+output_filename = "aid-review.md"           # Q-I: .md output
+description     = "Code review standards for AID methodology"
+always_apply    = false                     # disk: alwaysApply: false → trigger: glob
+globs           = ["**/*.{java,py,ts,js,cs,go,rs}"]  # disk: aid-review.mdc globs preserved
+
+[capabilities]
+# Q-G: all 4 flags sourced from provider-mapping.md Q-G / FR1 crosswalk row 8.
+hooks                  = true    # Hooks defined as JSON; intercept before-tool-call / after-file-edit / on-session-start
+skill_chaining         = true    # Workflows can call other workflows; Skills invocable by the agent
+background_execution   = true    # CLI / Agent Manager dispatch async background subagents
+stop_hook_autocontinue = false   # No documented stop-hook auto-continue loop (GAP→lean false; matches cursor)
