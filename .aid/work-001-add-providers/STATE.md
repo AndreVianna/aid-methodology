@@ -125,7 +125,7 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 | Delivery | State | PR | KB Updated | Tag | Notes |
 |----------|-------|----|-----------|----|----|
 | delivery-002 | Merged to master | #42 | no | — | aid/delivery-002 → master (merge commit 105e614); gate A+; admin-merged with user authorization (CI green, review-required gate bypassed) |
-| delivery-003 | PR open (awaiting review/merge) | (created below) | no | — | aid/delivery-003 → master; gate A+; NOT merged (user reviews/merges); delivery-004 branches after this merges |
+| delivery-003 | PR open (awaiting review/merge) | #43 | no | — | aid/delivery-003 → master; gate A+; NOT merged (user reviews/merges); delivery-004 branches after this merges |
 
 ## Cross-phase Q&A (Pending)
 
