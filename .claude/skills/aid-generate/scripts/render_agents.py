@@ -125,6 +125,71 @@ def _build_frontmatter_md(fields: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _yaml_scalar(val: str) -> str:
+    """
+    Serialize a string scalar for Copilot-safe YAML frontmatter.
+
+    Double-quotes the value and escapes inner double-quotes if the value
+    contains any YAML-special character.  Plain (unquoted) form used when safe.
+
+    This is the same quoting rule as the ``str`` branch of
+    ``_build_frontmatter_md`` but factored out so ``_build_frontmatter_md_copilot``
+    can call it for individual scalar fields.
+    """
+    if any(c in val for c in (':', '"', "'", '{', '}', '[', ']', '#', '&', '*', '!', '|', '>', '%')):
+        escaped = val.replace('\\', '\\\\').replace('"', '\\"')
+        return f'"{escaped}"'
+    return val
+
+
+def _build_frontmatter_md_copilot(fields: dict[str, Any]) -> str:
+    """
+    Serialize a Copilot ``.agent.md`` frontmatter block (``---`` delimited).
+
+    Differences from ``_build_frontmatter_md``:
+    - A ``list`` value for a key is serialized as a YAML block sequence
+      (one ``- item`` line per element).  An empty list emits ``key: []``
+      (flow form; no dangling key without a value).
+    - Scalar quoting uses ``_yaml_scalar``, identical to the existing str-branch
+      quoting rules.
+    - Bool values use the same ``true``/``false`` lowercased form.
+
+    This function is introduced by task-006 (feature-002 E1) as the format-branch
+    serializer for ``"copilot-agent"``-format agents.  A future agent-format value
+    (feature-003 ``"antigravity-rule"``) reuses the same per-format-branch
+    mechanism (add a new format branch in ``_render_agent_for_profile`` with its
+    own serializer).
+
+    Parameters
+    ----------
+    fields : dict[str, Any]
+        Ordered mapping of frontmatter key → value.  Keys are emitted in
+        iteration order (Python 3.7+ dict ordering).
+
+    Returns
+    -------
+    str
+        ``---`` … ``---`` delimited YAML frontmatter block, LF-terminated.
+    """
+    lines = ["---"]
+    for key, val in fields.items():
+        if isinstance(val, bool):
+            lines.append(f"{key}: {'true' if val else 'false'}")
+        elif isinstance(val, list):
+            if not val:
+                lines.append(f"{key}: []")
+            else:
+                lines.append(f"{key}:")
+                for item in val:
+                    lines.append(f"  - {_yaml_scalar(str(item))}")
+        elif isinstance(val, str):
+            lines.append(f"{key}: {_yaml_scalar(val)}")
+        else:
+            lines.append(f"{key}: {val}")
+    lines.append("---")
+    return "\n".join(lines) + "\n"
+
+
 # ---------------------------------------------------------------------------
 # Model tier resolution
 # ---------------------------------------------------------------------------
@@ -171,6 +236,29 @@ def _remap_tools(tools_str: str, tool_names: dict[str, str]) -> str:
     parts = [t.strip() for t in tools_str.split(",")]
     remapped = [tool_names.get(t, t) for t in parts]
     return ", ".join(remapped)
+
+
+def _remap_tools_list(tools_str: str, tool_names: dict[str, str]) -> list[str]:
+    """
+    Apply tool_names remapping to a comma-separated tools string, returning a list.
+
+    Like _remap_tools but returns a list of individual tool name strings rather
+    than a comma-joined string.  Used by the copilot-agent emitter to build a
+    list value for YAML block-sequence serialization.
+
+    Examples
+    --------
+    >>> _remap_tools_list("Read, Glob, Bash, Write", {"Bash": "shell"})
+    ['Read', 'Glob', 'shell', 'Write']
+    >>> _remap_tools_list("", {})
+    []
+    """
+    if not tools_str.strip():
+        return []
+    parts = [t.strip() for t in tools_str.split(",") if t.strip()]
+    if not tool_names:
+        return parts
+    return [tool_names.get(t, t) for t in parts]
 
 
 # ---------------------------------------------------------------------------
@@ -273,6 +361,38 @@ def _render_agent_for_profile(
         out_name = f"{agent_name}.toml"
         agents_root = Path(profile.layout.agents_root)  # type: ignore[arg-type]
         out_path = output_base / agents_root / profile.layout.agents_dir / out_name
+    elif profile.agent.format == "copilot-agent":
+        # GitHub Copilot CLI: emit .agent.md with Copilot YAML frontmatter (E1, task-006).
+        #
+        # Frontmatter field set: name, description, tools, model (in that order) per FR1 Q-A.
+        # - name / description: pass-through (with substitute_filenames + rewrite_install_paths
+        #   already applied to description above, same as the markdown/toml branches).
+        # - tools: remapped via [tool_names] (Bash→shell per Q-F), emitted as a YAML sequence.
+        # - model: resolved via _resolve_model(tier) from [model_tiers].
+        # Optional Copilot fields (target / user-invocable / disable-model-invocation /
+        # mcp-servers / metadata) are omitted — AID has no per-agent source for them and
+        # the agent defaults are correct (FR1 Q-A).  No MCP field is emitted (E3 dropped, Q-B).
+        #
+        # The .agent.md suffix is a property of this branch — NOT a data-driven agent_suffix key
+        # (confirmed: no such key exists in the Profile schema, per task-005 / SPEC §E1).
+        model = _resolve_model(profile, tier)
+        remapped_tools_list = _remap_tools_list(tools_str, profile.tool_names)
+
+        # Build the ordered frontmatter dict: exactly name, description, tools, model.
+        copilot_fm: dict[str, Any] = {
+            "name": agent_name,
+            "description": description,
+            "tools": remapped_tools_list,
+            "model": model,
+        }
+
+        fm_block = _build_frontmatter_md_copilot(copilot_fm)
+        content = fm_block + body
+
+        # Suffix is .agent.md — a property of the copilot-agent format branch.
+        out_name = f"{agent_name}.agent.md"
+        output_root = Path(profile.layout.output_root)  # type: ignore[arg-type]
+        out_path = output_base / output_root / profile.layout.agents_dir / out_name
     else:
         # Markdown (Claude Code or Cursor)
         model = _resolve_model(profile, tier)

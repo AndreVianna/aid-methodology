@@ -331,7 +331,15 @@ _CANONICAL_FILENAME_MAP_KEYS = {
 
 _KNOWN_TIERS = {"large", "medium", "small"}
 
-_KNOWN_AGENT_FORMATS = {"markdown", "toml"}
+# "copilot-agent" added by task-005 (feature-002-copilot-cli / delivery-002):
+#   Registers the E1 agent-format value so the validator accepts
+#   `[agent].format = "copilot-agent"` in profiles/copilot-cli.toml.
+#   E2 ([skill].emit_as knob) is NOT added — skills are native Agent Skills,
+#   emitted as folders by the existing render_skills pass (FR1 Q-A ruling).
+#   E3 (MCP table / mcp-config.json) is NOT added — AID ships no MCP servers;
+#   grep -ri mcp canonical/ profiles/*.toml returns zero matches (FR1 Q-B ruling).
+#   Both omissions are intentional and sourced to provider-mapping.md Q-A / Q-B.
+_KNOWN_AGENT_FORMATS = {"markdown", "toml", "copilot-agent"}
 
 _KNOWN_DECOMPOSITIONS = {"references"}
 
