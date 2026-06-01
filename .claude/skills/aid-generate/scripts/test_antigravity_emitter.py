@@ -18,6 +18,9 @@
 #  11. "antigravity-rule" is accepted by aid_profile.validate().
 #  12. An unknown agent.format value is rejected with a clear message.
 #  13. The 3 existing profiles (claude-code, codex, cursor) + copilot-cli still validate clean.
+#  14. [delivery-003 Fix #1 gate] extras.rules methodology files emit trigger: frontmatter (not
+#      alwaysApply:): aid-methodology.md → trigger: always_on; aid-review.md → trigger: glob +
+#      globs; cursor .mdc rules remain verbatim (gated change does not bleed).
 #
 # Usage:
 #   python test_antigravity_emitter.py --self-test [--canonical-root PATH]
@@ -67,7 +70,7 @@ from render_agents import (  # noqa: E402
     _yaml_scalar,
     render_agents,
 )
-from render_skills import render_skills, _render_cursor_extras  # noqa: E402
+from render_skills import render_skills, _render_cursor_extras, _build_trigger_frontmatter  # noqa: E402
 from render_lib import EmissionManifest  # noqa: E402
 
 
@@ -847,6 +850,191 @@ def test_cursor_skills_render_unchanged(canonical_root: Path) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
+# Test 13: Methodology extras.rules emit trigger: frontmatter (not alwaysApply:)
+#          — delivery-003 Fix #1 gate assertion
+# ---------------------------------------------------------------------------
+
+def test_methodology_rules_trigger_frontmatter(canonical_root: Path) -> list[str]:
+    """
+    The two methodology extras.rules (aid-methodology.md, aid-review.md) emitted
+    by the antigravity profile carry Antigravity trigger: frontmatter — NOT Cursor's
+    alwaysApply: / globs: frontmatter.
+
+    Specifically:
+    - aid-methodology.md: trigger: always_on, description present, NO alwaysApply:
+    - aid-review.md:      trigger: glob, globs: block sequence present, NO alwaysApply:
+
+    Also verifies that the cursor profile's .mdc rule files are byte-identical to
+    their canonical sources (verbatim path unaffected — gated change does NOT bleed
+    into the cursor output).
+    """
+    failures: list[str] = []
+
+    profiles_dir = canonical_root / "profiles"
+    profile_path = profiles_dir / "antigravity.toml"
+    if not profile_path.exists():
+        failures.append("test_methodology_rules_trigger_frontmatter: antigravity.toml not found")
+        return failures
+
+    profile = load_profile(str(profile_path))
+    errs = validate(profile)
+    if errs:
+        failures.append(
+            f"test_methodology_rules_trigger_frontmatter: antigravity.toml validation errors: {errs}"
+        )
+        return failures
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        manifest = EmissionManifest(profile_name="antigravity")
+        paths = render_skills(canonical_root, profile, manifest, tmpdir)
+
+        # Find the two methodology rule outputs
+        rule_paths = {p.name: p for p in paths if p.name in ("aid-methodology.md", "aid-review.md")}
+
+        if "aid-methodology.md" not in rule_paths:
+            failures.append(
+                "test_methodology_rules_trigger_frontmatter: aid-methodology.md not emitted"
+            )
+        else:
+            content = rule_paths["aid-methodology.md"].read_text(encoding="utf-8")
+            parsed = _yaml_load_frontmatter_simple(content)
+
+            # Must have trigger: always_on
+            if parsed.get("trigger") != "always_on":
+                failures.append(
+                    f"test_methodology_rules_trigger_frontmatter: aid-methodology.md: "
+                    f"trigger != 'always_on': {parsed.get('trigger')!r}"
+                )
+
+            # Must NOT have alwaysApply:
+            for line in content.splitlines():
+                if line.startswith("alwaysApply:"):
+                    failures.append(
+                        "test_methodology_rules_trigger_frontmatter: aid-methodology.md: "
+                        "found forbidden 'alwaysApply:' key"
+                    )
+
+            # description must be present
+            if not isinstance(parsed.get("description"), str) or not parsed.get("description"):
+                failures.append(
+                    f"test_methodology_rules_trigger_frontmatter: aid-methodology.md: "
+                    f"description missing or empty: {parsed.get('description')!r}"
+                )
+
+            # PyYAML round-trip (frontmatter block only, not the full file)
+            if _YAML_REAL_AVAILABLE:
+                lines = content.splitlines()
+                fm_lines = []
+                if lines and lines[0].strip() == "---":
+                    for lx in lines[1:]:
+                        if lx.strip() == "---":
+                            break
+                        fm_lines.append(lx)
+                fm_only = "\n".join(fm_lines)
+                try:
+                    real = _real_yaml_load("---\n" + fm_only + "\n---\n")
+                    if real.get("trigger") != "always_on":
+                        failures.append(
+                            f"test_methodology_rules_trigger_frontmatter: aid-methodology.md: "
+                            f"yaml.safe_load trigger != 'always_on': {real.get('trigger')!r}"
+                        )
+                except Exception as exc:
+                    failures.append(
+                        f"test_methodology_rules_trigger_frontmatter: aid-methodology.md: "
+                        f"yaml.safe_load failed: {exc}"
+                    )
+
+        if "aid-review.md" not in rule_paths:
+            failures.append(
+                "test_methodology_rules_trigger_frontmatter: aid-review.md not emitted"
+            )
+        else:
+            content = rule_paths["aid-review.md"].read_text(encoding="utf-8")
+            parsed = _yaml_load_frontmatter_simple(content)
+
+            # Must have trigger: glob
+            if parsed.get("trigger") != "glob":
+                failures.append(
+                    f"test_methodology_rules_trigger_frontmatter: aid-review.md: "
+                    f"trigger != 'glob': {parsed.get('trigger')!r}"
+                )
+
+            # Must NOT have alwaysApply:
+            for line in content.splitlines():
+                if line.startswith("alwaysApply:"):
+                    failures.append(
+                        "test_methodology_rules_trigger_frontmatter: aid-review.md: "
+                        "found forbidden 'alwaysApply:' key"
+                    )
+
+            # globs must be present and non-empty
+            globs = parsed.get("globs")
+            if not isinstance(globs, list) or not globs:
+                failures.append(
+                    f"test_methodology_rules_trigger_frontmatter: aid-review.md: "
+                    f"globs missing or empty: {globs!r}"
+                )
+
+            # description must be present
+            if not isinstance(parsed.get("description"), str) or not parsed.get("description"):
+                failures.append(
+                    f"test_methodology_rules_trigger_frontmatter: aid-review.md: "
+                    f"description missing or empty: {parsed.get('description')!r}"
+                )
+
+            # PyYAML round-trip (frontmatter block only, not the full file)
+            if _YAML_REAL_AVAILABLE:
+                lines = content.splitlines()
+                fm_lines = []
+                if lines and lines[0].strip() == "---":
+                    for lx in lines[1:]:
+                        if lx.strip() == "---":
+                            break
+                        fm_lines.append(lx)
+                fm_only = "\n".join(fm_lines)
+                try:
+                    real = _real_yaml_load("---\n" + fm_only + "\n---\n")
+                    if real.get("trigger") != "glob":
+                        failures.append(
+                            f"test_methodology_rules_trigger_frontmatter: aid-review.md: "
+                            f"yaml.safe_load trigger != 'glob': {real.get('trigger')!r}"
+                        )
+                    if not isinstance(real.get("globs"), list) or not real.get("globs"):
+                        failures.append(
+                            f"test_methodology_rules_trigger_frontmatter: aid-review.md: "
+                            f"yaml.safe_load globs missing or empty: {real.get('globs')!r}"
+                        )
+                except Exception as exc:
+                    failures.append(
+                        f"test_methodology_rules_trigger_frontmatter: aid-review.md: "
+                        f"yaml.safe_load failed: {exc}"
+                    )
+
+    # --- Gate: cursor .mdc rules must be verbatim (gated change does not bleed) ---
+    cursor_path = profiles_dir / "cursor.toml"
+    if cursor_path.exists():
+        cursor_profile = load_profile(str(cursor_path))
+        errs = validate(cursor_profile)
+        if not errs:
+            rules_src_dir = canonical_root / "canonical" / "rules"
+            with tempfile.TemporaryDirectory() as tmpdir:
+                manifest = EmissionManifest(profile_name="cursor")
+                paths = render_skills(canonical_root, cursor_profile, manifest, tmpdir)
+                for p in paths:
+                    if p.suffix == ".mdc":
+                        src_bytes = (rules_src_dir / p.name).read_bytes()
+                        out_bytes = p.read_bytes()
+                        if src_bytes != out_bytes:
+                            failures.append(
+                                f"test_methodology_rules_trigger_frontmatter: cursor rule "
+                                f"{p.name} not byte-identical to canonical source — "
+                                f"gated change bled into cursor output"
+                            )
+
+    return failures
+
+
+# ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
 
@@ -900,6 +1088,10 @@ def main() -> int:
         ("validate_accepts_antigravity_rule", lambda: test_validate_accepts_antigravity_rule(canonical_root)),
         ("existing_profiles_validate_clean", lambda: test_existing_profiles_validate_clean(canonical_root)),
         ("cursor_skills_render_unchanged", lambda: test_cursor_skills_render_unchanged(canonical_root)),
+        (
+            "methodology_rules_trigger_frontmatter",
+            lambda: test_methodology_rules_trigger_frontmatter(canonical_root),
+        ),
     ]
 
     for name, fn in tests_unit:

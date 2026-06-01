@@ -1,6 +1,6 @@
 ---
-description: "AID methodology workflow and Knowledge Base integration"
-alwaysApply: true
+trigger: always_on
+description: AID methodology workflow and Knowledge Base integration
 ---
 This project uses the AI Integrated Development (AID) methodology.
 

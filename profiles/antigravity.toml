@@ -67,12 +67,21 @@ open_questions_file  = "additional-info.md"
 # No [mcp] table — MCP is [omit] for all profiles: AID ships no MCP servers
 # (zero `mcp` matches in canonical/ + profiles/*.toml; FR1 Q-B).
 
-# [[extras.rules]] — reuse the cursor _render_cursor_extras path to place AID's methodology rules
+# [extras] — reuse the cursor _render_cursor_extras path to place AID's methodology rules
 # into .agent/rules/. Q-I: Antigravity rules are .md (NOT .mdc) with trigger: frontmatter.
 # Because the canonical sources are .mdc, output_filename must differ from the source name —
 # RuleEntry.output_filename (task-012 / aid_profile.py) handles this; cursor leaves it unset →
 # source name preserved, so cursor is byte-identical.
 #
+# rules_frontmatter = "trigger": delivery-003 gate — when set, _render_cursor_extras strips the
+# source .mdc frontmatter and regenerates it from RuleEntry fields using trigger:/description/globs
+# keys (always_apply=true→trigger: always_on; always_apply=false→trigger: glob + globs).
+# Default None (cursor has no [extras] rules_frontmatter) → verbatim source copy → cursor
+# byte-identical. This gate is DECOUPLED from [agent].format (extras-rules and agent emission
+# are separate paths). Source: delivery-003 task §Fix#1.
+[extras]
+rules_frontmatter = "trigger"
+
 # Per-rule literals match disk truth (read canonical/rules/aid-methodology.mdc + aid-review.mdc):
 #   aid-methodology.mdc: alwaysApply: true, no globs  → always_apply=true, globs=[]
 #   aid-review.mdc:      alwaysApply: false, globs: "**/*.{java,py,ts,js,cs,go,rs}"

@@ -1,7 +1,8 @@
 ---
-description: "Code review standards for AID methodology"
-globs: "**/*.{java,py,ts,js,cs,go,rs}"
-alwaysApply: false
+trigger: glob
+description: Code review standards for AID methodology
+globs:
+  - "**/*.{java,py,ts,js,cs,go,rs}"
 ---
 When reviewing code:
 1. Check against task acceptance criteria

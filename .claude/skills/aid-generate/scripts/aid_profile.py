@@ -160,6 +160,18 @@ class RuleEntry:
 class ExtrasConfig:
     """[extras] table."""
     rules: list[RuleEntry] = field(default_factory=list)
+    # Optional frontmatter dialect for extras.rules emission (task-012 / delivery-003 gate):
+    # - None (default) → verbatim source copy; the source .mdc frontmatter is carried
+    #   through unchanged.  This preserves cursor's byte-identical behavior: cursor.toml
+    #   has no [extras] rules_frontmatter key → defaults to None → verbatim path.
+    # - "trigger" → Antigravity dialect: the source frontmatter is stripped and
+    #   regenerated from RuleEntry fields using trigger:/description/globs keys:
+    #     always_apply=True  → trigger: always_on
+    #     always_apply=False → trigger: glob (+ globs block-sequence)
+    #   The rule BODY (after the source frontmatter) is preserved unchanged.
+    # Do NOT key this off [agent].format — extras-rules emission is separate from agent
+    # emission and must remain decoupled (per delivery-003 task contract).
+    rules_frontmatter: str | None = None
 
 
 @dataclass
@@ -273,7 +285,10 @@ def _parse_extras(raw: dict[str, Any]) -> ExtrasConfig:
         )
         for r in rules_raw
     ]
-    return ExtrasConfig(rules=rules)
+    return ExtrasConfig(
+        rules=rules,
+        rules_frontmatter=raw.get("rules_frontmatter"),  # None when absent → verbatim (cursor)
+    )
 
 
 def _parse_capabilities(raw: dict[str, Any]) -> CapabilitiesConfig:
