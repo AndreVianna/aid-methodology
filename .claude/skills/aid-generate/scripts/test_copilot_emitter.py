@@ -26,6 +26,18 @@ import tempfile
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
+# Optional PyYAML import — test-time only; the RENDERER must NOT import yaml.
+# The real yaml.safe_load round-trip (SPEC Test Plan #2) runs when available;
+# falls back to a strict stdlib structural check with a LOUD skip notice.
+# ---------------------------------------------------------------------------
+try:
+    import yaml as _yaml_lib  # noqa: F401 — kept as module reference
+    _YAML_REAL_AVAILABLE = True
+except ImportError:
+    _yaml_lib = None  # type: ignore[assignment]
+    _YAML_REAL_AVAILABLE = False
+
+# ---------------------------------------------------------------------------
 # Add script directory to sys.path so modules can be imported directly
 # ---------------------------------------------------------------------------
 _SCRIPT_DIR = Path(__file__).parent
@@ -124,6 +136,57 @@ def _unescape_yaml_scalar(val: str) -> str:
         inner = inner.replace('\\"', '"').replace('\\\\', '\\')
         return inner
     return val
+
+
+def _real_yaml_load_frontmatter(fm_block: str) -> dict:
+    """
+    Parse a ``---`` delimited YAML frontmatter block using ``yaml.safe_load``
+    (PyYAML).  Raises ``RuntimeError`` if PyYAML is not available.
+    Only used inside tests; the renderer itself never imports yaml.
+
+    The ``---`` delimiters are stripped before calling ``yaml.safe_load``
+    because ``---`` acts as a YAML document-start marker; a second ``---``
+    would start a new document and make ``safe_load`` raise.
+    """
+    if not _YAML_REAL_AVAILABLE:
+        raise RuntimeError("PyYAML not available")
+    lines = fm_block.strip().splitlines()
+    # Strip leading and trailing --- delimiters
+    if lines and lines[0].strip() == "---":
+        lines = lines[1:]
+    if lines and lines[-1].strip() == "---":
+        lines = lines[:-1]
+    interior = "\n".join(lines)
+    parsed = _yaml_lib.safe_load(interior)  # type: ignore[union-attr]
+    if not isinstance(parsed, dict):
+        raise ValueError(f"YAML frontmatter did not parse to a dict: {parsed!r}")
+    return parsed
+
+
+def _stdlib_strict_check_frontmatter(fm_block: str) -> list[str]:
+    """
+    Strict stdlib structural check used as fallback when PyYAML is not available.
+
+    Verifies:
+    - Exactly two ``---`` delimiter lines.
+    - Every non-blank interior line either starts with a known key or is a
+      block-sequence item (``  - ``).
+    - No Python-repr artifacts (``['`` or ``{'``).
+    - The ``tools:`` value is not a comma-separated scalar line.
+    """
+    failures: list[str] = []
+    lines = fm_block.strip().splitlines()
+    if len(lines) < 2 or lines[0].strip() != "---" or lines[-1].strip() != "---":
+        failures.append(f"stdlib_check: frontmatter not properly delimited:\n{fm_block}")
+        return failures
+    for line in lines[1:-1]:
+        if not line.strip():
+            continue
+        if "['".replace("'", "") in line or "{'" in line:
+            failures.append(f"stdlib_check: Python repr artifact in line: {line!r}")
+        if line.startswith("tools:") and "," in line and not line.strip().endswith("[]"):
+            failures.append(f"stdlib_check: tools line looks like a comma-scalar: {line!r}")
+    return failures
 
 
 # ---------------------------------------------------------------------------
@@ -458,17 +521,31 @@ def test_copilot_agent_output_suffix(canonical_root: Path) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# Test 7: Frontmatter round-trip (all emitted blocks parse correctly)
+# Test 7: Frontmatter round-trip — real yaml.safe_load (SPEC Test Plan #2)
 # ---------------------------------------------------------------------------
 
 def test_frontmatter_round_trip(canonical_root: Path) -> list[str]:
     """
     Every .agent.md emitted by render_agents for the copilot-agent profile must
-    have a frontmatter block that round-trips through the YAML parser with
-    tools as a list and description unchanged.
+    have a frontmatter block that round-trips through a REAL ``yaml.safe_load``
+    parse (SPEC Test Plan #2) with tools as a list and description unchanged.
+
+    When PyYAML is available (``_YAML_REAL_AVAILABLE``):
+      - Each emitted frontmatter block is parsed with ``yaml.safe_load``.
+      - ``tools`` must be a Python ``list``; ``description`` must be a ``str``.
+      - An adversarial set of synthetic descriptions exercising all
+        ``_yaml_scalar`` edge-cases is round-tripped through
+        ``_build_frontmatter_md_copilot`` → ``yaml.safe_load`` → value equality.
+
+    When PyYAML is NOT available:
+      - A LOUD skip notice is printed to stderr (NOT a silent pass).
+      - A stricter stdlib structural check is run instead (no silent bypass).
     """
     failures: list[str] = []
 
+    # -----------------------------------------------------------------------
+    # Part A: round-trip all emitted .agent.md files
+    # -----------------------------------------------------------------------
     with tempfile.TemporaryDirectory() as tmpdir:
         output_root = str(Path(tmpdir) / "profiles" / "copilot-cli" / ".github")
         profile = _make_minimal_copilot_profile(output_root)
@@ -498,28 +575,140 @@ def test_frontmatter_round_trip(canonical_root: Path) -> list[str]:
                 continue
 
             fm_block = "\n".join(lines[:end + 1])
-            parsed = _yaml_load_frontmatter(fm_block)
 
-            # tools must parse as a list
+            if _YAML_REAL_AVAILABLE:
+                # Strong SPEC-sanctioned check: real yaml.safe_load
+                try:
+                    parsed = _real_yaml_load_frontmatter(fm_block)
+                except Exception as exc:
+                    failures.append(
+                        f"test_frontmatter_round_trip: {p.name}: yaml.safe_load failed: {exc}\n"
+                        f"  fm block:\n{fm_block}"
+                    )
+                    continue
+
+                # tools must parse as a list (not a string)
+                tools_val = parsed.get("tools")
+                if not isinstance(tools_val, list):
+                    failures.append(
+                        f"test_frontmatter_round_trip: {p.name}: tools not a list "
+                        f"(yaml.safe_load): {tools_val!r}\n  fm block:\n{fm_block}"
+                    )
+
+                # description must be present and a string
+                desc_val = parsed.get("description")
+                if not isinstance(desc_val, str):
+                    failures.append(
+                        f"test_frontmatter_round_trip: {p.name}: description not a string "
+                        f"(yaml.safe_load): {desc_val!r}"
+                    )
+
+                # model must be present and non-empty
+                model_val = parsed.get("model")
+                if not model_val:
+                    failures.append(
+                        f"test_frontmatter_round_trip: {p.name}: model missing or empty "
+                        f"(yaml.safe_load)"
+                    )
+            else:
+                # Fallback: strict stdlib structural check + hand-rolled parse
+                print(
+                    "  SKIP NOTICE [test_frontmatter_round_trip]: PyYAML not available — "
+                    "running strict stdlib check instead of real yaml.safe_load. "
+                    "Install PyYAML to run the full SPEC Test Plan #2 validation.",
+                    file=sys.stderr,
+                )
+                struct_failures = _stdlib_strict_check_frontmatter(fm_block)
+                failures.extend(struct_failures)
+
+                # Also run hand-rolled parser for structural sanity
+                parsed = _yaml_load_frontmatter(fm_block)
+                tools_val = parsed.get("tools")
+                if not isinstance(tools_val, list):
+                    failures.append(
+                        f"test_frontmatter_round_trip: {p.name}: tools not a list "
+                        f"(stdlib fallback): {tools_val!r}"
+                    )
+                desc_val = parsed.get("description")
+                if not isinstance(desc_val, str):
+                    failures.append(
+                        f"test_frontmatter_round_trip: {p.name}: description not a string "
+                        f"(stdlib fallback): {desc_val!r}"
+                    )
+
+    # -----------------------------------------------------------------------
+    # Part B: adversarial _yaml_scalar edge-case round-trips (Fix #1 guard)
+    # Exercises every gap identified in the delivery-002 gate review:
+    # leading @, -, ?, backtick; null/yes/no/on/off/true/false/12345;
+    # leading/trailing whitespace, tab, newline, colon-space, trailing colon.
+    # -----------------------------------------------------------------------
+    adversarial_descriptions = [
+        "@mention and something",           # leading @
+        "- dash leading",                   # leading - (sequence indicator)
+        "? question leading",               # leading ? (mapping-key indicator)
+        "`backtick",                        # leading backtick
+        "  leading whitespace",             # leading space
+        "trailing whitespace   ",           # trailing space
+        "has\ttab",                         # ASCII tab (control char)
+        "has\nnewline",                     # embedded newline
+        "null",                             # YAML null
+        "yes",                              # YAML bool alt
+        "no",                               # YAML bool alt
+        "on",                               # YAML bool alt
+        "off",                              # YAML bool alt
+        "true",                             # YAML bool
+        "false",                            # YAML bool
+        "12345",                            # integer-looking
+        "1.5",                              # float-looking
+        "Design agent: does things",        # colon-space (existing trigger)
+        "trailing colon:",                  # trailing colon
+        "has #comment",                     # space-hash
+        'embedded "quotes"',                # embedded double-quote
+        "backslash\\path",                  # embedded backslash
+        "plain safe string",                # must remain UNquoted
+    ]
+
+    for adv_desc in adversarial_descriptions:
+        fields = {
+            "name": "test-agent",
+            "description": adv_desc,
+            "tools": ["Read"],
+            "model": "claude-sonnet-4.6",
+        }
+        fm = _build_frontmatter_md_copilot(fields)
+
+        if _YAML_REAL_AVAILABLE:
+            try:
+                parsed = _real_yaml_load_frontmatter(fm)
+            except Exception as exc:
+                failures.append(
+                    f"test_frontmatter_round_trip [adversarial]: "
+                    f"yaml.safe_load failed for desc={adv_desc!r}: {exc}\n"
+                    f"  fm:\n{fm}"
+                )
+                continue
+
+            rt_desc = parsed.get("description")
+            if rt_desc != adv_desc:
+                failures.append(
+                    f"test_frontmatter_round_trip [adversarial]: round-trip mismatch "
+                    f"for desc={adv_desc!r}:\n"
+                    f"  got:  {rt_desc!r}\n"
+                    f"  fm:\n{fm}"
+                )
             tools_val = parsed.get("tools")
             if not isinstance(tools_val, list):
                 failures.append(
-                    f"test_frontmatter_round_trip: {p.name}: tools not a list: {tools_val!r}\n"
-                    f"  fm block:\n{fm_block}"
+                    f"test_frontmatter_round_trip [adversarial]: tools not a list "
+                    f"for desc={adv_desc!r}: {tools_val!r}"
                 )
-
-            # description must be present and a string
-            desc_val = parsed.get("description")
-            if not isinstance(desc_val, str):
+        else:
+            # Strict stdlib structural check for adversarial cases
+            struct_failures = _stdlib_strict_check_frontmatter(fm)
+            for sf in struct_failures:
                 failures.append(
-                    f"test_frontmatter_round_trip: {p.name}: description not a string: {desc_val!r}"
-                )
-
-            # model must be present and non-empty
-            model_val = parsed.get("model")
-            if not model_val:
-                failures.append(
-                    f"test_frontmatter_round_trip: {p.name}: model missing or empty"
+                    f"test_frontmatter_round_trip [adversarial/stdlib]: "
+                    f"desc={adv_desc!r}: {sf}"
                 )
 
     return failures

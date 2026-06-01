@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import tomllib
 from pathlib import Path
@@ -125,19 +126,85 @@ def _build_frontmatter_md(fields: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+# ---------------------------------------------------------------------------
+# Constants for _yaml_scalar quoting decisions (module-level for efficiency)
+# ---------------------------------------------------------------------------
+
+# Characters that make a YAML plain scalar unsafe regardless of position.
+# Kept as the original indicator set so existing emitted output stays byte-identical.
+_YAML_UNSAFE_ANYWHERE: frozenset[str] = frozenset(
+    [':', '"', "'", '{', '}', '[', ']', '#', '&', '*', '!', '|', '>', '%']
+)
+
+# Characters that are only unsafe as the FIRST character of a plain scalar.
+# '@' and '`' are reserved/forbidden as YAML 1.1 first chars; '-' and '?' start
+# sequences/mapping-keys when followed by whitespace (triggering parse errors).
+_YAML_UNSAFE_FIRST: frozenset[str] = frozenset(['-', '?', '@', '`'])
+
+# Bare words that YAML 1.1 resolves to non-string types (null, bool).
+_YAML_BOOL_NULL_WORDS: frozenset[str] = frozenset([
+    'null', 'Null', 'NULL', '~',
+    'true', 'True', 'TRUE',
+    'false', 'False', 'FALSE',
+    'yes', 'Yes', 'YES',
+    'no', 'No', 'NO',
+    'on', 'On', 'ON',
+    'off', 'Off', 'OFF',
+])
+
+# Pattern matching int / float / hex / octal / infinity / NaN literals that
+# YAML 1.1 would coerce to numeric types.
+_YAML_NUMBER_RE: re.Pattern[str] = re.compile(
+    r'^[-+]?(\d+\.?\d*|\d*\.\d+)([eE][-+]?\d+)?$'
+    r'|^0x[0-9a-fA-F]+$'
+    r'|^0o[0-7]+$'
+    r'|^\.inf$|^-\.inf$|^\.nan$',
+    re.IGNORECASE,
+)
+
+
 def _yaml_scalar(val: str) -> str:
     """
     Serialize a string scalar for Copilot-safe YAML frontmatter.
 
-    Double-quotes the value and escapes inner double-quotes if the value
-    contains any YAML-special character.  Plain (unquoted) form used when safe.
+    Returns the value in plain (unquoted) form only when it is unambiguously
+    safe as a YAML 1.1 plain scalar.  Otherwise double-quotes the value and
+    escapes backslashes, double-quotes, and ASCII control characters.
 
-    This is the same quoting rule as the ``str`` branch of
-    ``_build_frontmatter_md`` but factored out so ``_build_frontmatter_md_copilot``
-    can call it for individual scalar fields.
+    A value is considered unsafe (and therefore quoted) if any of the following
+    hold:
+
+    * The string is empty.
+    * It has leading or trailing whitespace.
+    * It contains any YAML indicator/special character that is problematic
+      anywhere in a plain scalar: ``:  "  '  {  }  [  ]  #  &  *  !  |  >  %``
+    * Its first character is one of the chars unsafe only at position 0:
+      ``-  ?  @  ` ``
+    * It contains ASCII control characters (U+0000–U+001F or U+007F), including
+      tab and newline.
+    * It is a bare YAML-resolved word (``null``, ``true``, ``false``, ``yes``,
+      ``no``, ``on``, ``off``, and their case variants, plus ``~``).
+    * It looks like a YAML numeric literal (integer, float, hex, octal,
+      ``.inf``, ``-.inf``, ``.nan``).
+    * It ends with ``:`` (trailing colon is a mapping-key indicator).
+
+    The conservative "quote unless clearly plain-safe" approach means new
+    description edge-cases never silently produce invalid or mistyped YAML.
+    The renderer stays stdlib-only (no ``import yaml``).
     """
-    if any(c in val for c in (':', '"', "'", '{', '}', '[', ']', '#', '&', '*', '!', '|', '>', '%')):
+    needs_quote = (
+        not val
+        or val != val.strip()
+        or any(c in val for c in _YAML_UNSAFE_ANYWHERE)
+        or val[0] in _YAML_UNSAFE_FIRST
+        or any(ord(c) < 0x20 or ord(c) == 0x7F for c in val)
+        or val in _YAML_BOOL_NULL_WORDS
+        or bool(_YAML_NUMBER_RE.match(val))
+        or val.endswith(':')
+    )
+    if needs_quote:
         escaped = val.replace('\\', '\\\\').replace('"', '\\"')
+        escaped = escaped.replace('\t', '\\t').replace('\n', '\\n').replace('\r', '\\r')
         return f'"{escaped}"'
     return val
 
