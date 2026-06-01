@@ -21,13 +21,15 @@ if (-not (Test-Path -Path $TargetDirectory -PathType Container)) {
 $Target = (Resolve-Path $TargetDirectory).Path
 
 # Menu state
-$selected = @{ 1 = $false; 2 = $false; 3 = $false }
+$selected = @{ 1 = $false; 2 = $false; 3 = $false; 4 = $false; 5 = $false }
 
 function Get-ToolName($id) {
     switch ($id) {
         1 { return "Claude Code" }
         2 { return "Codex" }
         3 { return "Cursor" }
+        4 { return "GitHub Copilot CLI" }
+        5 { return "Antigravity" }
     }
 }
 
@@ -35,11 +37,11 @@ function Show-Menu {
     Write-Host ""
     Write-Host "Select tools to install into: $Target"
     Write-Host ""
-    foreach ($i in 1, 2, 3) {
+    foreach ($i in 1, 2, 3, 4, 5) {
         $mark = if ($selected[$i]) { "x" } else { " " }
         Write-Host ("  [{0}] [{1}] {2}" -f $i, $mark, (Get-ToolName $i))
     }
-    Write-Host "  [4] Done"
+    Write-Host "  [6] Done"
     Write-Host ""
 }
 
@@ -47,14 +49,14 @@ while ($true) {
     Show-Menu
     $choice = Read-Host "Selection"
     switch ($choice) {
-        { $_ -in '1','2','3' } {
+        { $_ -in '1','2','3','4','5' } {
             $k = [int]$choice
             $selected[$k] = -not $selected[$k]
         }
-        '4' { break }
-        default { Write-Host "Invalid choice. Enter 1, 2, 3, or 4." }
+        '6' { break }
+        default { Write-Host "Invalid choice. Enter 1-6." }
     }
-    if ($choice -eq '4') { break }
+    if ($choice -eq '6') { break }
 }
 
 $any = ($selected.Values | Where-Object { $_ }) -ne $null
@@ -83,6 +85,9 @@ function Copy-Item-Safe {
         if ($Force) {
             Copy-Item -Path $Src -Destination $Dst -Force
             Write-Host "  Updated: $Dst"
+        } elseif ($script:AgentsCollision -eq $true -and (Split-Path -Leaf $Dst) -eq 'AGENTS.md') {
+            Copy-Item -Path $Src -Destination $Dst -Force
+            Write-Host "  Updated: $Dst (AGENTS.md last-writer-wins — collision resolved non-interactively)"
         } else {
             $answer = Read-Host "Overwrite '$Dst'? (files differ) [y/N]"
             if ($answer -match '^[yY]') {
@@ -122,9 +127,30 @@ function Copy-Dir-Safe {
     }
 }
 
+$script:AgentsCollision = $false
+
 Write-Host ""
 Write-Host "Installing selected tools..."
 Write-Host ""
+
+# AGENTS.md collision pre-copy block (Option A):
+# Codex (2), Cursor (3), Copilot CLI (4), and Antigravity (5) all write a root AGENTS.md.
+# When >=2 are selected, set AgentsCollision=$true and warn once; the last-installed (highest-
+# numbered selected writer, fixed by per-tool block order) wins — no interactive prompt.
+$_agentsWriters = @()
+foreach ($_i in 2, 3, 4, 5) {
+    if ($selected[$_i]) { $_agentsWriters += (Get-ToolName $_i) }
+}
+if ($_agentsWriters.Count -ge 2) {
+    $script:AgentsCollision = $true
+    # Survivor = highest-numbered selected AGENTS.md-writing tool (fixed block order)
+    $_survivor = ""
+    foreach ($_i in 2, 3, 4, 5) {
+        if ($selected[$_i]) { $_survivor = Get-ToolName $_i }
+    }
+    $_writersList = $_agentsWriters -join ', '
+    Write-Host "Note: ${_writersList} all install a shared AGENTS.md; the last-installed tool's version wins — survivor is decided by fixed per-tool install order (highest-numbered selected tool), not the order you toggled them (others are not preserved): ${_survivor} wins."
+}
 
 # Claude Code — uses CLAUDE.md only (no AGENTS.md)
 if ($selected[1]) {
@@ -146,6 +172,20 @@ if ($selected[3]) {
     Write-Host "--- Cursor ---"
     Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "profiles\cursor\.cursor") -DstDir (Join-Path $Target ".cursor")
     Copy-Item-Safe -Src (Join-Path $ScriptDir "profiles\cursor\AGENTS.md") -Dst (Join-Path $Target "AGENTS.md")
+}
+
+# GitHub Copilot CLI — uses .github subtree + root AGENTS.md (no mcp-config.json)
+if ($selected[4]) {
+    Write-Host "--- GitHub Copilot CLI ---"
+    Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "profiles\copilot-cli\.github") -DstDir (Join-Path $Target ".github")
+    Copy-Item-Safe -Src (Join-Path $ScriptDir "profiles\copilot-cli\AGENTS.md") -Dst (Join-Path $Target "AGENTS.md")
+}
+
+# Antigravity — uses .agent subtree + root AGENTS.md
+if ($selected[5]) {
+    Write-Host "--- Antigravity ---"
+    Copy-Dir-Safe -SrcDir (Join-Path $ScriptDir "profiles\antigravity\.agent") -DstDir (Join-Path $Target ".agent")
+    Copy-Item-Safe -Src (Join-Path $ScriptDir "profiles\antigravity\AGENTS.md") -Dst (Join-Path $Target "AGENTS.md")
 }
 
 Write-Host ""
