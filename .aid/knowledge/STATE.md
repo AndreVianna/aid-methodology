@@ -19,10 +19,10 @@ changelog:
 # Discovery State
 
 > **Source:** aid-config (creates) · aid-discover + aid-summarize (update)
-> **Status:** Re-review (post work-001-add-providers merge — KB drifted from code)
-> **Current Grade:** Pending (reset 2026-06-01 — prior A+/approval invalidated: PRs #42/#43/#44 added 2 render profiles (copilot-cli, antigravity) + renderer formats `copilot-agent`/`antigravity-rule` + `RuleEntry.output_filename` + `ExtrasConfig.rules_frontmatter` + setup menu 4/5/6 + Option-A collision + 2 new emitter test suites; the KB still describes the pre-merge 3-profile system)
-> **User Approved:** no (re-review triggered by merged work-001; prior 2026-05-28 approval was for the pre-merge KB)
-> **Last KB Review:** 2026-05-28 (cycle-10 — pre-merge; superseded by the 2026-06-01 post-merge re-review)
+> **Status:** Reviewed — cycle-9 post-merge re-review complete; **awaiting user approval**
+> **Current Grade:** A+ (cycle-9 recheck 2026-06-01 — grade.sh on `discover-kb-postmerge-recheck.md`: 0 CRITICAL/HIGH/MEDIUM/LOW/MINOR; all 35 post-merge drift findings resolved + 2 recheck nits fixed; KB now describes the current 5-profile reality)
+> **User Approved:** no (cycle-9 post-merge refresh on branch aid/kb-refresh-work-001 — awaiting approval; then /aid-summarize)
+> **Last KB Review:** 2026-06-01 (cycle-9 post-merge re-review — A+ after FIX; pre-merge cycle-10 superseded)
 > **Last Summary:** 2026-05-30 (dogfood refresh — knowledge-summary.html rebuilt from refreshed summary-src; validated via validate-diagrams.mjs + contrast-check.mjs)
 
 This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary. One STATE.md per project's `.aid/knowledge/` directory. Absorbs what used to be `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`.

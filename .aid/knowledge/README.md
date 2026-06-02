@@ -24,7 +24,7 @@ Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.
 
 | # | Document | Status | Lines | Last Reviewed | Notes |
 |---|----------|--------|-------|---------------|-------|
-| 1 | [project-structure.md](project-structure.md) | Populated | 352 | 2026-06-01 | discovery-scout; cycle-9 post-merge update (5 profiles, 7-copy mirror, 18 suites, regenerated global snapshot 1,518/209,599) |
+| 1 | [project-structure.md](project-structure.md) | Populated | 351 | 2026-06-01 | discovery-scout; cycle-9 post-merge update (5 profiles, 7-copy mirror, 18 suites, regenerated global snapshot 1,518/209,599) |
 | 2 | [external-sources.md](external-sources.md) | Populated | 15 | 2026-05-28 | no external docs provided; unchanged in cycle-9 (vendor convs were feature inputs, not discovery sources) |
 | 3 | [architecture.md](architecture.md) | Populated | 394 | 2026-06-01 | discovery-architect; cycle-9 post-merge update (5 install trees, 4 agent formats, Option-A collision, two Bash remaps) |
 | 4 | [technology-stack.md](technology-stack.md) | Populated | 215 | 2026-06-01 | discovery-architect; cycle-9 post-merge update (12 .py, 27 TOML, 5 host tools, 2 new profile configs) |

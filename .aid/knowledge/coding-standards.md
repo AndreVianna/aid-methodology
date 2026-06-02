@@ -337,15 +337,15 @@ There are no `.env` files, no credential templates, no secrets handling (CONFIRM
 
 ### 7a. Single-source canonical → multi-tree render
 
-**Never edit `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/` directly** (CONFIRMED per `canonical/EMISSION-MANIFEST.md` §Safety-Boundary Semantics). Edit `canonical/` and run `python run_generator.py`. The render emits byte-identical bodies across:
+**Never edit `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/` directly** (CONFIRMED per `canonical/EMISSION-MANIFEST.md` §Safety-Boundary Semantics). Edit `canonical/` and run `python run_generator.py`. The render reads `canonical/` (the source) and emits byte-identical bodies into the **5 profile trees**:
 
-- `canonical/` (source)
-- `.claude/` (dogfood install)
 - `profiles/claude-code/.claude/`
 - `profiles/codex/.codex/` + `profiles/codex/.agents/` (split layout)
 - `profiles/cursor/.cursor/`
 - `profiles/copilot-cli/.github/`
 - `profiles/antigravity/.agent/`
+
+The byte-identity invariant the generator enforces spans **6 trees** (`canonical/` source + the 5 profile trees). The repo-root `.claude/` (dogfood install) carries the same byte-identical bodies but is **hand-maintained — NOT written by `run_generator.py`** (per the dogfood-is-hand-editable policy); counting it gives **7 physical copies** on disk.
 
 ### 7b. Thin-router skill decomposition (CONFIRMED per `canonical/skills/*/SKILL.md` structure)
 
@@ -357,7 +357,7 @@ State references live alongside their skill: `canonical/skills/aid-discover/refe
 
 ### 7d. Per-script + per-test colocation
 
-- Helper scripts live under `canonical/scripts/<category>/<script>.sh`. Each script has byte-identical copies in 7 trees (per §7a: canonical + `.claude/` dogfood + 5 profile trees). Tests live at `tests/canonical/test-<script-name>.sh` and are run via `tests/run-all.sh` (shared helpers in `tests/lib/assert.sh`).
+- Helper scripts live under `canonical/scripts/<category>/<script>.sh`. Each script has byte-identical copies in 7 physical locations (per §7a: the 6-tree render invariant — `canonical/` + 5 profile trees — plus the hand-maintained `.claude/` dogfood). Tests live at `tests/canonical/test-<script-name>.sh` and are run via `tests/run-all.sh` (shared helpers in `tests/lib/assert.sh`).
 - The `tests/skills/` directory was deleted in cycle-1 (Q6 resolution). No skill-level e2e tests exist; the `tests/canonical/` suites are the complete test inventory (recount with `ls tests/canonical/test-*.sh | wc -l`; see `module-map.md §4`).
 
 ### 7e. Area-STATE consolidation (FR2, CONFIRMED per `canonical/templates/discovery-state-template.md`)
