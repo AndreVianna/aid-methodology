@@ -6,6 +6,7 @@
 |------|--------|--------|
 | 2026-06-02 | Feature identified from REQUIREMENTS.md §5 (FR5–FR7), §7 (C1, C3) | /aid-interview |
 | 2026-06-02 | Technical Specification authored (state machine, run-state contract, resume detection, VC boundary, distribution, tests) | /aid-specify |
+| 2026-06-02 | Added incremental-delivery stub-no-op contract (skeleton stages whose feature isn't yet built record `skipped` + CHAIN to DONE) — enables standalone incremental deliveries per /aid-plan | /aid-plan (review) |
 
 ## Source
 
@@ -197,6 +198,22 @@ transitions on success are **CHAIN** (the gate is a programmatic check on the
 chaining PREFLIGHT→…→DONE). A **stalled gate** is **PAUSE-FOR-USER-ACTION** (the user must do
 work outside the chat: approve the KB, fix the summary, or grant offline permission), so the
 skill prints the resume command and exits. DONE and PREFLIGHT-fail are **HALT**.
+
+#### Incremental-delivery stub no-op (skeleton contract; enables standalone deliveries)
+
+The skeleton ships the **full** PREFLIGHT→KB-DELTA→SUMMARY-DELTA→CLEANUP→DONE machine, but a
+stage whose owning feature (003/004) is **not yet implemented in the current delivery** ships
+as an **inert no-op stub**: its default `references/state-<stage>.md` body writes
+`**<X> Stage:** skipped` + `**Stage Status:** skipped` to `## Housekeep Status` and **CHAINs
+straight onward** (to the next stage, ultimately DONE) without doing any work or pausing. A
+later delivery replaces the stub body with the feature's real logic. This is what makes an
+**incremental delivery standalone-functional**: e.g., when only KB-DELTA is implemented
+(delivery-001), KB-DELTA runs for real, then the SUMMARY-DELTA and CLEANUP stubs each record
+`skipped` and CHAIN through to DONE, so the run terminates cleanly as a complete KB-refresh
+tool. The stub no-op is a skeleton responsibility (this feature), distinct from a *runtime*
+`skipped` (e.g. summary already current) which a fully-implemented stage decides for itself.
+`--cleanup-only` is only offered once the CLEANUP body is real (its delivery); until then the
+flag is absent from the arg grammar.
 
 > Reference patterns to mirror verbatim in tone: the `## Dispatch` advance-routing block and
 > the chaining citation line in both `canonical/skills/aid-discover/SKILL.md § Dispatch` and

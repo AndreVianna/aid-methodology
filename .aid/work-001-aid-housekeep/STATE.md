@@ -1,7 +1,7 @@
 # Work State — work-001-aid-housekeep
 
 > **Status:** Interview Complete | Specifying | Planning | Detailing | Executing | Deployed
-> **Phase:** Specify — complete (all 4 feature SPECs Ready; next: /aid-plan)
+> **Phase:** Detail — complete (16 tasks across 3 deliveries; all A+; next: /aid-execute)
 > **Minimum Grade:** {resolved at runtime by `bash .claude/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-06-02
 > **User Approved:** no
@@ -61,7 +61,9 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| _none yet_ | | | |
+| delivery-001 | Detailed (A+) | 11 (task-001..011) | KB Delta Refresh MVP — feature-001 + feature-002 (incl. D1 edit). Foundation. KB-DELTA functional; summary/cleanup ship as stub no-ops. |
+| delivery-002 | Detailed (A+) | 1 (task-012) | Summary Reconciliation — feature-003. Depends on delivery-001. |
+| delivery-003 | Detailed (A+) | 4 (task-013..016) | .aid/ Cleanup — feature-004; enables --cleanup-only. Depends on delivery-001. |
 
 ## Tasks Status
 
@@ -69,7 +71,22 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|
-| _none yet_ | | | | | | | |
+| 001 | housekeep-state.sh + `## Housekeep Status` template | IMPLEMENT | 1 | Pending | — | — | delivery-001 (f001) |
+| 002 | branch-commit.sh | IMPLEMENT | 1 | Pending | — | — | delivery-001 (f001) |
+| 003 | parse-args.sh | IMPLEMENT | 1 | Pending | — | — | delivery-001 (f001) |
+| 004 | thin-router SKILL.md + PREFLIGHT/DONE | IMPLEMENT | 2 | Pending | — | — | delivery-001 (f001); ←001,002,003 |
+| 005 | stub no-op summary/cleanup bodies | IMPLEMENT | 3 | Pending | — | — | delivery-001 (f001); ←001,004 |
+| 006 | detect-delta.sh | IMPLEMENT | 2 | Pending | — | — | delivery-001 (f002); ←001 |
+| 007 | scope-delta.sh | IMPLEMENT | 2 | Pending | — | — | delivery-001 (f002); ←001 |
+| 008 | D1 edit — Approved-At-Commit writeback in /aid-discover | IMPLEMENT | 1 | Pending | — | — | delivery-001 (f002) |
+| 009 | state-kb-delta.md body | IMPLEMENT | 4 | Pending | — | — | delivery-001 (f002); ←004,005,006,007,008 |
+| 010 | integration TEST (KB-DELTA→stubs→DONE) | TEST | 5 | Pending | — | — | delivery-001 (f001+f002); ←009 |
+| 011 | distribution/render-verify + run-all TEST | TEST | 6 | Pending | — | — | delivery-001 (f001); ←001..010 |
+| 012 | state-summary-delta.md body (replaces stub) | IMPLEMENT | 5 | Pending | — | — | delivery-002 (f003); ←001,002,004,005,009 |
+| 013 | cleanup-classify.sh + classification suites | IMPLEMENT | 1 | Pending | — | — | delivery-003 (f004) |
+| 014 | --cleanup-only enablement in parse-args + routing | IMPLEMENT | 2 | Pending | — | — | delivery-003 (f004); ←003 |
+| 015 | state-cleanup.md body (replaces stub) | IMPLEMENT | 3 | Pending | — | — | delivery-003 (f004); ←001,002,004,005,013,014 |
+| 016 | integration TEST (full seq + --cleanup-only) | TEST | 4 | Pending | — | — | delivery-003 (f004); ←010,013,014,015 |
 
 ## Deploy Status
 
@@ -126,3 +143,5 @@ _none yet_
 | 2026-06-02 | Feature Decomposition | — | 4 features created (slim set, user-approved). Awaiting CROSS-REFERENCE. |
 | 2026-06-02 | Cross-Reference | A | Grade A; all integration claims verified; Q1 (Medium) resolved → (a) synthesized Q&A re-entry, applied to feature-002. Interview cycle complete. |
 | 2026-06-02 | Specify (all 4 features) | A→A+ | /aid-specify on aid/work-001-aid-housekeep branch. f001 A; f002 C+→A+ (FIX); f003 A; f004 C+→A+ (FIX). Each passed the A gate before the next. All feature SPECs Ready. Next: /aid-plan. |
+| 2026-06-02 | Plan | A+ | /aid-plan: 3 deliveries (d1 KB-refresh MVP=f001+f002, d2 summary=f003, d3 cleanup=f004). Review C+→A+ (FIX: pinned the incremental-delivery stub-no-op contract to feature-001; aligned PLAN wording). PLAN.md written. Next: /aid-detail. |
+| 2026-06-02 | Detail | A+ | /aid-detail: 16 tasks. d1=11 (C→A+ FIX: task-008 REFACTOR→IMPLEMENT + criteria; task-011 dep gap), d2=1 (A+ clean), d3=4 (B+→A+ FIX: task-016 dep decl). Execution graphs written to PLAN.md per delivery. Next: /aid-execute. |
