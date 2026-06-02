@@ -8,6 +8,7 @@ intent: |
   Read when planning the next refactor cycle or scoping a new work-NNN.
 contracts: []
 changelog:
+  - 2026-06-01: post-merge work-001-add-providers (PRs #42/#43/#44) — recorded 4 open LOW residuals introduced by the 5-profile expansion (Copilot model-slug not live-tool-verified; Antigravity model-id tokenization inferred from display names; empty Antigravity [tool_names] identity-passthrough; ps1 setup parity pwsh-skips in CI). Per STATE.md Q23-Q25 these are Answered docs-only-noted residuals — appropriate to record as OPEN debt.
   - 2026-05-31: Inventory current — 0 open items. Per the documentation rule (kb-authoring P9), resolved tech-debt records are removed from this doc entirely once closed; git history is the audit trail.
 ---
 
@@ -15,7 +16,7 @@ changelog:
 
 > **Source:** `discovery-quality` (Phase 1), cycle-1
 > **Status:** Complete
-> **Last Updated:** 2026-05-31
+> **Last Updated:** 2026-06-01
 
 > This document is a diagnosis, not a sprint plan. Severity tags use the form `[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` so `build-metrics.sh` (see the "Severity tag convention" note in `canonical/templates/knowledge-base/tech-debt.md`) can tally them.
 
@@ -23,14 +24,14 @@ changelog:
 
 ## Summary
 
-**Overall debt level: Low**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 18-suite canonical test suite) and has **enforced pre-merge CI** (required status checks on `master`, 2026-05-29); the inventory is **empty** — zero open Critical, High, Medium, or Low items. Resolved items are removed from this doc entirely once closed — git history is the only retained record.
+**Overall debt level: Low**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 18-suite canonical test suite) and has **enforced pre-merge CI** (required status checks on `master`, 2026-05-29). The only open items are **4 LOW docs-only-noted residuals** from the work-001 5-profile expansion (PRs #42/#43/#44) — provider-mapping inferences and one CI-skip parity gap, none blocking. Resolved items are removed from this doc entirely once closed — git history is the only retained record.
 
 | Severity | Open | Open items |
 |----------|------|------------|
 | Critical | 0 | — |
 | High | 0 | — |
 | Medium | 0 | — |
-| Low | 0 | — |
+| Low | 4 | Copilot model-slug not live-tool-verified; Antigravity model-id tokenization inferred; empty Antigravity `[tool_names]` passthrough; ps1 setup parity pwsh-skips in CI |
 
 > **Counting methodology:** this table counts unique **open** debt items (one row per entry, regardless of how many `[HIGH]`/`[MEDIUM]` tags appear in the fix recipe). Resolved items are removed from this doc entirely once closed; git history is the only retained record. The generated `metrics.md` (built by `build-metrics.sh`) counts every body-tag occurrence including those inside fix-recipe sub-bullets, producing higher totals. Neither is wrong; they answer different questions. Canonical item count is this table.
 
@@ -38,7 +39,31 @@ changelog:
 
 ## Debt Inventory
 
-*(No open items.)*
+> All four items below were introduced by the work-001-add-providers merge (PRs #42/#43/#44) and recorded as **docs-only-noted** residuals at merge time (per `STATE.md` Q23-Q25, now Answered). They are LOW because each ships a defensible, working default; the cost is future-confirmation, not current breakage.
+
+### [LOW] Copilot `model:` slug spelling not live-tool-verified
+
+- **Evidence:** `profiles/copilot-cli.toml` `[model_tiers]` block (the `large = "claude-opus-4.8"` / `medium = "claude-sonnet-4.6"` / `small = "claude-haiku-4.5"` lines + the preceding `# Slug spelling is docs-only-noted` comment). ⚠️ Inferred from GitHub's documented model-id convention — needs confirmation against the live Copilot CLI.
+- **Impact:** The model *identities* (Opus 4.8 / Sonnet 4.6 / Haiku 4.5) are live-confirmed, but the exact `model:` field tokenization (lowercase-dotted slug) is asserted from GitHub's published convention, not exercised against the running tool. If Copilot expects a different slug form, the emitted Copilot agent frontmatter would name a model the tool does not resolve.
+- **Effort:** ~15 min — run one Copilot CLI agent invocation and compare the accepted `model:` slug to the emitted values.
+
+### [LOW] Antigravity model-id tokenization inferred from display names
+
+- **Evidence:** `profiles/antigravity.toml` `[model_tiers.large]` / `[model_tiers.medium]` / `[model_tiers.small]` (`model = "gemini-3-pro"` + `reasoning_effort = "high"/"low"`, `model = "gemini-3-flash"`) + the `# Exact id/effort tokenization is docs-only-noted` and `# gemini-3-flash has no documented effort variant` comments. ⚠️ Inferred from vendor display names ("Gemini 3 Pro (high)") — needs confirmation.
+- **Impact:** Antigravity docs expose display names rather than model-id token pairs, so the split into `model` + `reasoning_effort` (and the `gemini-3-flash` "low" placeholder) is a best-guess mapping. A mismatch with Antigravity's actual id/effort tokenization would emit rule frontmatter naming an unresolvable model.
+- **Effort:** ~15 min — confirm the id/effort token form against Antigravity once a model-id convention is published or observable.
+
+### [LOW] Empty Antigravity `[tool_names]` identity-passthrough
+
+- **Evidence:** `profiles/antigravity.toml` `[tool_names]` block (empty map + the `# Q-F: empty map — identity passthrough (no published Antigravity tool-token map; docs-only-noted)` comment).
+- **Impact:** With no published Antigravity tool-token map, canonical tool names pass through unchanged. If Antigravity later publishes a tool-token convention (renames like Copilot's `Bash → shell`), the emitted rules would use canonical names the tool does not recognize. Benign today (identity is a safe default); revisit if/when a vendor convention appears.
+- **Effort:** ~10 min to populate the map once a vendor tool-token convention is published.
+
+### [LOW] ps1 setup parity (SPS05-08) pwsh-skips in CI — code-read, not CI-executed
+
+- **Evidence:** `tests/canonical/test-setup-ps1.sh` (the `command -v pwsh` guard → `SKIP: pwsh not found` exit-0 branch; new cases SPS05-08 for menu options 4-6 + collision parity). Established repo contract: the `*-ps1.sh` suites skip when `pwsh` is absent.
+- **Impact:** `setup.ps1`'s 5-tool menu + Option-A collision parity (SPS05-08) is verified by code-read against the bash oracle, but only **CI-executed when a `pwsh` runtime is present**. The `canonical-tests` CI job does assert `pwsh` is present (so it runs there), but a contributor on a `pwsh`-less host silently skips ps1 parity — `setup.ps1` regressions on the new menu/collision logic could land uncaught locally. This is the established node/pwsh-skip model, not a new defect; recorded for visibility.
+- **Effort:** N/A as a code change (the skip is intentional). Mitigation is the existing CI `pwsh`-present assertion; ensure local pre-push runs on a `pwsh`-equipped host for ps1 changes.
 
 ---
 

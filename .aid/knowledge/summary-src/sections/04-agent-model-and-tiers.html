@@ -15,7 +15,7 @@ graph TD
 
     SKILL["aid-* skill<br/>(Thin-Router SKILL.md)"]:::skill
 
-    subgraph Large["Large Tier (Opus / GPT-5.5 high) — 10 agents"]
+    subgraph Large["Large Tier (Opus / GPT-5.5 / Gemini-3, high) — 10 agents"]
         A1["architect"]:::large
         A2["reviewer"]:::large
         A3["interviewer"]:::large
@@ -28,7 +28,7 @@ graph TD
         A10["discovery-reviewer"]:::large
     end
 
-    subgraph Medium["Medium Tier (Sonnet / GPT-5.4 medium) — 9 agents"]
+    subgraph Medium["Medium Tier (Sonnet / GPT-5.4 / Gemini-3, medium) — 9 agents"]
         B1["orchestrator"]:::medium
         B2["researcher"]:::medium
         B3["developer"]:::medium
@@ -40,7 +40,7 @@ graph TD
         B9["ux-designer"]:::medium
     end
 
-    subgraph Small["Small Tier (Haiku / GPT-5.4-mini) — 3 agents"]
+    subgraph Small["Small Tier (Haiku / GPT-5.4-mini / Gemini-3, low) — 3 agents"]
         C1["simple-extractor"]:::small
         C2["simple-formatter"]:::small
         C3["simple-glob"]:::small

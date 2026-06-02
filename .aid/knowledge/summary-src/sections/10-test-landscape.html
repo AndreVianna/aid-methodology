@@ -1,4 +1,4 @@
-<section class="sec" id="s9" data-title="Test Landscape">
+<section class="sec" id="s10" data-title="Test Landscape">
 	<header>
 		<span class="eyebrow">Tests</span>
 		<h2>Test Landscape</h2>
@@ -67,7 +67,7 @@
 					<td><code>test-setup.sh</code></td>
 					<td><code>setup.sh</code> (end-user installer)</td>
 					<td>bash</td>
-					<td>Arg/precondition errors, interactive menu logic (Done/toggle/invalid), per-tool installs (Claude Code/Codex/Cursor), multi-tool install, idempotent re-install, <code>--force</code> overwrite</td>
+					<td>Arg/precondition errors, interactive 5-tool menu logic (Done/toggle/invalid), per-tool installs (Claude Code/Codex/Cursor/Copilot CLI/Antigravity), multi-tool install, idempotent re-install, <code>--force</code> overwrite, and the Option-A AGENTS.md last-writer-wins collision (cases SU12-17/SU16b)</td>
 				</tr>
 				<tr>
 					<td><code>test-assemble-3part.sh</code></td>
@@ -85,7 +85,7 @@
 					<td><code>test-setup-ps1.sh</code></td>
 					<td><code>setup.ps1</code> (Windows-host installer)</td>
 					<td>pwsh</td>
-					<td>Platform-independent pre-install logic under <code>pwsh</code> on Linux: target validation + selection-menu loop (backslash-path copy is Windows-only). Skips if <code>pwsh</code> absent</td>
+					<td>Platform-independent pre-install logic under <code>pwsh</code> on Linux: target validation + selection-menu/collision parity (backslash-path copy is Windows-only; cases SPS05-08). Skips if <code>pwsh</code> absent</td>
 				</tr>
 				<tr>
 					<td><code>test-discovery-doc-ownership.sh</code></td>
@@ -129,8 +129,8 @@
 
 	<div class="callout warn" style="margin-top:1rem;">
 		<h4>Coverage gaps</h4>
-		<p>The <code>.mjs</code> validators, the PowerShell mirrors, and the <code>setup.*</code> install flow are now covered (CI asserts <code>node</code> + <code>pwsh</code> present so those suites can never silently skip). The genuinely untested surface is the prompt-driven orchestration layer: the <code>/aid-*</code> skills (verified by dogfooding; the <code>discovery-reviewer</code> sub-agent is the closest adversarial integration check), the renderer (covered by its own VERIFY (deterministic) gate, not <code>tests/canonical/</code>), and the end-to-end pipeline. There is no statement/branch coverage measurement. (per test-landscape.md §Coverage gaps and roadmap)</p>
+		<p>The <code>.mjs</code> validators, the PowerShell mirrors, and the <code>setup.*</code> install flow are now covered (CI asserts <code>node</code> + <code>pwsh</code> present so those suites can never silently skip). The two new agent-format emitters carry their own generator self-tests run by the CI <code>generator-selftests</code> job (<code>test_copilot_emitter.py</code> — Copilot real-YAML round-trip; <code>test_antigravity_emitter.py</code> — Antigravity rule reshape), alongside <code>test_manifest_safety.py</code> — these live under <code>.claude/skills/aid-generate/scripts/</code>, not <code>tests/canonical/</code>. The genuinely untested surface is the prompt-driven orchestration layer: the <code>/aid-*</code> skills (verified by dogfooding; the <code>discovery-reviewer</code> sub-agent is the closest adversarial integration check), the renderer (covered by its own VERIFY (deterministic) byte-identity gate across the 5 profiles, not <code>tests/canonical/</code>), and the end-to-end pipeline. There is no statement/branch coverage measurement. (per test-landscape.md §Coverage gaps and roadmap)</p>
 	</div>
 </section>
 
-<!-- ===== SECTION 10: Tech Debt ===== -->
+<!-- ===== SECTION 11: Tech Debt ===== -->

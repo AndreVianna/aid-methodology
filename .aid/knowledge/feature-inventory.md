@@ -36,7 +36,7 @@ changelog:
 
 | # | Skill | Status | Description | Source |
 |---|-------|--------|-------------|--------|
-| - | `/aid-generate` | Shipped | Regenerates the three install trees (claude-code, codex, cursor) from `canonical/` and `profiles/`. Not shipped to end users via `setup.sh`; lives only at `.claude/skills/aid-generate/` to avoid a chicken-and-egg deployment problem. | `.claude/skills/aid-generate/SKILL.md` |
+| - | `/aid-generate` | Shipped | Regenerates the five install trees (claude-code, codex, cursor, copilot-cli, antigravity) from `canonical/` and `profiles/`. Not shipped to end users via `setup.sh`; lives only at `.claude/skills/aid-generate/` to avoid a chicken-and-egg deployment problem. | `.claude/skills/aid-generate/SKILL.md` |
 
 ## Engineering features (referenced for historical context)
 

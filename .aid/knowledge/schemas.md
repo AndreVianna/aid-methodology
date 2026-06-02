@@ -18,6 +18,7 @@ contracts:
   - "Recipe slot syntax: {{slot-name}} where slot-name matches POSIX ERE [a-z][a-z0-9-]*"
   - "Task templates have 6 sections: title heading, Type, Source, Depends on, Scope, Acceptance Criteria"
 changelog:
+  - 2026-06-01: work-001-add-providers (PRs #42/#43/#44) — render profiles grew 3→5 (added copilot-cli + antigravity). Updated §8 emission-manifest profile enum + manifest-location table (5 profiles); §9 profile-TOML schema ([agent].format now 4 values; [layout] output_root covers .github/.agent roots; [extras] gained rules_frontmatter + per-rule output_filename); RuleEntry/ExtrasConfig dataclass additions documented.
   - 2026-05-31: delivery-002 — added §2a discovery.doc_set sub-section; updated settings contract to reflect the optional discovery section
   - 2026-05-27: Initial generation by discovery-analyst (cycle-1)
 ---
@@ -43,7 +44,7 @@ changelog:
 
 ## 2. Settings — `.aid/settings.yml`
 
-**Source of truth:** `canonical/templates/settings.yml` → rendered identically into all 3 install trees and copied to `.aid/settings.yml` by `/aid-config` on first run.
+**Source of truth:** `canonical/templates/settings.yml` → rendered identically into all 5 install trees and copied to `.aid/settings.yml` by `/aid-config` on first run.
 
 **Schema (YAML 1.2, per `canonical/templates/settings.yml` header `# .aid/settings.yml — AID pipeline configuration`):**
 
@@ -52,7 +53,7 @@ changelog:
 | `project.name` | string | `<project-name>` | Set during `/aid-config` INIT |
 | `project.description` | string | `<project-description>` | Sole source of truth (not duplicated in CLAUDE.md/AGENTS.md per `settings.yml` `description:` comment "sole source of truth") |
 | `project.type` | enum `brownfield`|`greenfield` | `brownfield` | Project class |
-| `tools.installed` | list of strings | `[claude-code]` | Which install trees are active; valid values: `claude-code`, `codex`, `cursor` |
+| `tools.installed` | list of strings | `[claude-code]` | Which install trees are active; valid values are the profile names (one per `profiles/*.toml`): `claude-code`, `codex`, `cursor`, `copilot-cli`, `antigravity`. (The `canonical/templates/settings.yml` `installed:` block only shows `claude-code`/`codex`/`cursor` as commented examples; the `setup.sh` install menu offers all 5 — see `setup.sh` options 1-5.) |
 | `review.minimum_grade` | grade string | `A` | Quality bar for every skill's REVIEW state |
 | `execution.max_parallel_tasks` | int | `5` | Parallel pool dispatch capacity (FR6 / work-001 feature-009) |
 | `traceability.heartbeat_interval` | int (minutes) | `1` | L3 heartbeat interval; `0` disables heartbeat entirely |
@@ -261,7 +262,7 @@ delivery gate per `canonical/scripts/grade.sh` header comment on Severity/Status
 - `medium` → `sonnet`
 - `small` → `haiku`
 
-Codex uses a `[model_tiers.<tier>]` sub-table with `model` + `reasoning_effort` fields (per `.claude/skills/aid-generate/scripts/aid_profile.py` `class ModelTierDetailed`).
+Codex + Antigravity use a `[model_tiers.<tier>]` sub-table with `model` + `reasoning_effort` fields (per `.claude/skills/aid-generate/scripts/aid_profile.py` `class ModelTierDetailed`; `profiles/antigravity.toml` `[model_tiers.large]`); Claude Code, Cursor + Copilot CLI use the simple string form (`ModelTierSimple`; per `profiles/copilot-cli.toml` `[model_tiers]`).
 
 ---
 
@@ -284,7 +285,7 @@ Codex uses a `[model_tiers.<tier>]` sub-table with `model` + `reasoning_effort` 
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `profile` | string | Profile name — one of `claude-code`, `codex`, `cursor` (per `EMISSION-MANIFEST.md` `## Record Schema`) |
+| `profile` | string | Profile name — equals the profile-TOML stem; one of `claude-code`, `codex`, `cursor`, `copilot-cli`, `antigravity` (verify against the `profile` field of each `profiles/*/emission-manifest.jsonl`; per `EMISSION-MANIFEST.md` `## Record Schema`, which still illustrates with the original 3) |
 | `src` | string | Repo-relative path inside `canonical/` |
 | `dst` | string | Path inside the install tree, relative to the manifest's directory |
 | `sha256` | string | Lowercase hex SHA-256 of the rendered file's bytes |
@@ -298,6 +299,10 @@ Codex uses a `[model_tiers.<tier>]` sub-table with `model` + `reasoning_effort` 
 | `claude-code` | `profiles/claude-code/emission-manifest.jsonl` |
 | `codex` | `profiles/codex/emission-manifest.jsonl` (covers BOTH `.codex/` and `.agents/` split roots) |
 | `cursor` | `profiles/cursor/emission-manifest.jsonl` |
+| `copilot-cli` | `profiles/copilot-cli/emission-manifest.jsonl` (single `.github/` root) |
+| `antigravity` | `profiles/antigravity/emission-manifest.jsonl` (single `.agent/` root) |
+
+⚠️ The location table in `canonical/EMISSION-MANIFEST.md` (`## Filename and Location`) still lists only the original 3 profiles; the 2 new manifests exist on disk and follow the same deepest-common-parent rule. The renderer derives the path from `LayoutConfig.common_parent()` (per `.claude/skills/aid-generate/scripts/aid_profile.py`), so the rule generalizes regardless of the doc's example set.
 
 **Safety-boundary algorithm** (per `EMISSION-MANIFEST.md` `## Safety-Boundary Semantics`):
 
@@ -313,24 +318,41 @@ Files **outside** any manifest are NEVER touched.
 
 ## 9. Profile TOML — `profiles/*.toml`
 
-**Source of truth:** `profiles/claude-code.toml`, `profiles/codex.toml`, `profiles/cursor.toml`.
+**Source of truth:** `profiles/claude-code.toml`, `profiles/codex.toml`, `profiles/cursor.toml`, `profiles/copilot-cli.toml`, `profiles/antigravity.toml` (5 profiles).
 
 **Schema (TOML 1.0, parsed by `.claude/skills/aid-generate/scripts/aid_profile.py` `_parse_layout` etc.):**
 
 | Section | Keys | Purpose |
 |---------|------|---------|
-| `[layout]` | `output_root` (single-root tools), `agents_root` + `assets_root` (split-root Codex), `agents_dir`, `skills_dir`, `templates_dir`, `recipes_dir`, `scripts_dir`, `rules_dir` (Cursor only), `project_context_file` | Where rendered files go |
-| `[agent]` | `format` ∈ {`markdown`, `toml`} | Per-tool agent output format |
+| `[layout]` | `output_root` (single-root tools — `.claude` / `.cursor` / `.github` (Copilot CLI, per `profiles/copilot-cli.toml` `[layout]`) / `.agent` (Antigravity, per `profiles/antigravity.toml` `[layout]`)), `agents_root` + `assets_root` (split-root Codex), `agents_dir`, `skills_dir`, `templates_dir`, `recipes_dir`, `scripts_dir`, `rules_dir` (Cursor + Antigravity), `project_context_file` | Where rendered files go |
+| `[agent]` | `format` ∈ {`markdown`, `toml`, `copilot-agent`, `antigravity-rule`} (the `_KNOWN_AGENT_FORMATS` set in `aid_profile.py`); validated by `validate()` | Per-tool agent output format |
 | `[agent.frontmatter]` | `required` list, `optional` list, `claude_code_optional` list | Which frontmatter keys are required/optional in agent output |
 | `[skill]` | `decomposition` (always `"references"` per Decision F per `aid_profile.py` `decomposition` field) | Skill body decomposition strategy |
 | `[skill.frontmatter]` | `required` list, `optional` list, `claude_code_optional` list | Same as agent frontmatter |
-| `[model_tiers]` | `large`, `medium`, `small` — string OR sub-table | Tier-to-model mapping |
-| `[tool_names]` | flat map, e.g., `Read = "read_file"` | Per-tool tool-name remapping (identity for Claude Code per `claude-code.toml` `[tool_names]`) |
+| `[model_tiers]` | `large`, `medium`, `small` — string (`ModelTierSimple`: Claude Code / Cursor / Copilot CLI) OR sub-table (`ModelTierDetailed` with `model` + `reasoning_effort`: Codex / Antigravity) | Tier-to-model mapping |
+| `[tool_names]` | flat map, e.g., `Read = "read_file"` (identity for Claude Code per `claude-code.toml` `[tool_names]`; empty map → identity passthrough, e.g., Antigravity per `profiles/antigravity.toml` `[tool_names]`) | Per-tool tool-name remapping |
 | `[filename_map]` | `project_context_file`, `reviewer_output_file`, `open_questions_file` | Per-tool placeholder substitutions for `{project_context_file}` etc. |
-| `[extras]` | varies; for Cursor includes `[[extras.rules]]` array of `{filename, always_apply, description, globs}` | Tool-specific extras |
+| `[extras]` | `rules_frontmatter` (string\|None — e.g., `"trigger"` for Antigravity, controlling extras-rules frontmatter dialect; absent → verbatim source copy, e.g., Cursor) + `[[extras.rules]]` array of `{filename, always_apply, description, globs, output_filename?}` | Tool-specific extras (methodology rule files placed via `render_skills._render_cursor_extras`) |
 | `[capabilities]` | `hooks`, `skill_chaining`, `background_execution`, `stop_hook_autocontinue` (booleans) | Tool capabilities (verified against host docs) |
 
-The dataclasses mirror this schema 1:1 in `.claude/skills/aid-generate/scripts/aid_profile.py` (the `@dataclass` block from `class LayoutConfig` onward).
+The dataclasses mirror this schema 1:1 in `.claude/skills/aid-generate/scripts/aid_profile.py` (the `@dataclass` block from `class LayoutConfig` onward — `LayoutConfig`, `FrontmatterConfig`, `AgentConfig`, `SkillConfig`, `ModelTierSimple`, `ModelTierDetailed`, `RuleEntry`, `ExtrasConfig`, `CapabilitiesConfig`, `Profile`).
+
+**`[[extras.rules]]` → `RuleEntry`** (per `aid_profile.py` `class RuleEntry`):
+
+| Key | Type | Default | Purpose |
+|-----|------|---------|---------|
+| `filename` | string | (required) | Canonical source name under `canonical/rules/` (e.g., `aid-methodology.mdc`) |
+| `always_apply` | bool | `false` | `true` → `trigger: always_on`; `false` → `trigger: glob` (when trigger-dialect is active) |
+| `description` | string | `""` | Rule description carried into regenerated frontmatter |
+| `globs` | list of strings | `[]` | Glob patterns for `trigger: glob` rules |
+| `output_filename` | string \| None | `None` | Optional output-name override — when set, source is written to this name (enables `.mdc → .md` rename for Antigravity per `profiles/antigravity.toml` `[[extras.rules]]`); `None` → source name preserved, so Cursor stays byte-identical |
+
+**`[extras]` → `ExtrasConfig`** (per `aid_profile.py` `class ExtrasConfig`):
+
+| Key | Type | Default | Purpose |
+|-----|------|---------|---------|
+| `rules` | list of `RuleEntry` | `[]` | Methodology rule files to emit into the rules dir |
+| `rules_frontmatter` | string \| None | `None` | Frontmatter dialect for extras-rules emission. `None` → verbatim source copy (Cursor byte-identical path). `"trigger"` → Antigravity dialect: strip source `.mdc` frontmatter, regenerate from `RuleEntry` fields using `trigger:`/`description`/`globs` keys (`always_apply=true` → `trigger: always_on`; `always_apply=false` → `trigger: glob` + globs). DECOUPLED from `[agent].format` (extras-rules + agent emission are separate paths per delivery-003). |
 
 ---
 
@@ -445,7 +467,7 @@ The dataclasses mirror this schema 1:1 in `.claude/skills/aid-generate/scripts/a
 - Comments (lines starting with `#`) and blank lines are ignored.
 - Order matters: scripts are executed top-to-bottom; list dependencies first.
 
-**Path-rewriting convention** (per `generated-files.txt` `# PATH CONVENTION:` comment): build commands cite repo-root paths under `canonical/`. The renderer (`run_generator.py` + `rewrite_install_paths` in `render_lib.py`) rewrites those at render time to each profile's install-tree root (`.claude` for Claude Code, `.agents` for Codex assets, `.cursor` for Cursor). Comment blocks at the top of the file are skipped by the rewriter so the prose survives intact in profile renders.
+**Path-rewriting convention** (per `generated-files.txt` `# PATH CONVENTION:` comment): build commands cite repo-root paths under `canonical/`. The renderer (`run_generator.py` + `rewrite_install_paths` in `render_lib.py`) rewrites those at render time to each profile's install-tree root (`.claude` for Claude Code, `.agents` for Codex assets, `.cursor` for Cursor, `.github` for Copilot CLI, `.agent` for Antigravity). Comment blocks at the top of the file are skipped by the rewriter so the prose survives intact in profile renders.
 
 **Currently registered** (per `generated-files.txt` entry rows): `.aid/generated/project-index.md` (`build-project-index.sh`), `.aid/generated/metrics.md` (`build-metrics.sh`), `.aid/knowledge/INDEX.md` (`build-kb-index.sh`). Note: INDEX.md lives under `.aid/knowledge/`, not `.aid/generated/` — per Q12 resolution (cycle-1) it was moved to sit alongside the KB docs it indexes.
 
@@ -494,7 +516,7 @@ erDiagram
 | **Migrations** | N/A — no DB. Document schema changes are tracked via the per-doc `changelog:` frontmatter field (per `frontmatter-schema.md` `### \`changelog:\``) + KB doc cycle history in `STATE.md ## Review History`. |
 | **Indexes** | N/A — no DB. The closest analog is `.aid/knowledge/INDEX.md` — an agent-facing RAG navigation index built by `canonical/scripts/kb/build-kb-index.sh` from each KB doc's `intent:` frontmatter. |
 | **Soft Deletes** | N/A — no DB. The emission-manifest's `removed_dst` set serves a related purpose: only paths previously emitted by the generator are eligible for deletion (per `EMISSION-MANIFEST.md` `## Safety-Boundary Semantics`); user-created files are NEVER touched. |
-| **Validation** | Three mechanisms: (1) `discovery-reviewer` sub-agent (in `/aid-discover REVIEW`) validates KB frontmatter + cited durable anchors + doc presence + generated-files freshness; (2) `.claude/skills/aid-generate/scripts/aid_profile.py` `validate()` validates profile TOML; (3) `parse-recipe.sh --validate` validates recipe front-matter + body. |
+| **Validation** | Three mechanisms: (1) `discovery-reviewer` sub-agent (in `/aid-discover REVIEW`) validates KB frontmatter + cited durable anchors + doc presence + generated-files freshness; (2) `.claude/skills/aid-generate/scripts/aid_profile.py` `validate()` validates profile TOML (incl. `[agent].format ∈ _KNOWN_AGENT_FORMATS`); (3) `parse-recipe.sh --validate` validates recipe front-matter + body. |
 
 ---
 
@@ -502,4 +524,4 @@ erDiagram
 
 T3 numeric volume facts (file counts + line counts per language and per category) live in `.aid/generated/project-index.md` and `.aid/generated/metrics.md`. They are intentionally not duplicated here — those generated files are regenerated from disk on every discovery cycle so any inline copy would drift.
 
-**Volume shape note (T1):** every canonical asset is multiplied ~4x by the renderer (canonical + 3 install trees + dogfood `.claude/`), so the headline file count overstates unique content by roughly 4x (per project-structure.md `## Unusual Structure Notes`, "Quadruple mirror" note).
+**Volume shape note (T1):** every canonical asset is multiplied by the renderer across canonical + 5 install trees + the dogfood `.claude/`, so the headline file count overstates unique content by roughly that multiplier (per project-structure.md `## Unusual Structure Notes` mirror note).

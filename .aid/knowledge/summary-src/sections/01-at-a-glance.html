@@ -2,15 +2,15 @@
 	<header>
 		<span class="eyebrow">Overview</span>
 		<h2>At a Glance</h2>
-		<p class="lede">AID (AI Integrated Development) is a methodology specification and multi-tool distribution that ships skills, agents, templates, and recipes into three host-tool install trees from a single canonical source.</p>
+		<p class="lede">AID (AI Integrated Development) is a methodology specification and multi-tool distribution that ships skills, agents, templates, and recipes into five host-tool install trees from a single canonical source.</p>
 	</header>
 
 	<div class="grid g4">
 		<div class="card">
 			<div class="kicker">Repository</div>
-			<div class="stat">1,077</div>
+			<div class="stat">1,518</div>
 			<div class="stat-sub">total files</div>
-			<div class="meta">148,068 lines — snapshot 2026-05-27<br>(per project-structure.md)</div>
+			<div class="meta">209,599 lines — snapshot 2026-06-01<br>(per project-structure.md)</div>
 		</div>
 		<div class="card">
 			<div class="kicker">Skills</div>
@@ -24,11 +24,11 @@
 			<div class="stat-sub">specialist agents, 3 tiers</div>
 			<div class="meta">10 Large · 9 Medium · 3 Small<br>(per architecture.md)</div>
 		</div>
-		<div class="card">
+		<div class="card card-primary">
 			<div class="kicker">Install Trees</div>
-			<div class="stat">3</div>
+			<div class="stat">5</div>
 			<div class="stat-sub">supported host tools</div>
-			<div class="meta">Claude Code · Codex CLI · Cursor<br>(per architecture.md)</div>
+			<div class="meta">Claude Code · Codex · Cursor · Copilot CLI · Antigravity<br>(per architecture.md)</div>
 		</div>
 	</div>
 
@@ -36,12 +36,12 @@
 		<div class="card">
 			<div class="kicker">Languages</div>
 			<h3>Polyglot Toolchain</h3>
-			<p>Markdown (872 files), Bash (109 files), Python 3.11+ (stdlib only), JavaScript/ESM, PowerShell 5.1+, CSS3, HTML5, TOML, YAML. No application frameworks — single runtime library is Mermaid, fetched dynamically. (per technology-stack.md)</p>
+			<p>Markdown, Bash (177 .sh files), Python 3.11+ (stdlib only), JavaScript/ESM, PowerShell 5.1+, CSS3, HTML5, TOML, YAML. No application frameworks — single runtime library is Mermaid, fetched dynamically. (per technology-stack.md, project-structure.md)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">Architecture</div>
 			<h3>Single-Source Compilation</h3>
-			<p>One canonical source (<code>canonical/</code>) is rendered by <code>run_generator.py</code> into three byte-identical install trees. Never edit the profile trees directly — edit <code>canonical/</code> and re-run the generator. (per architecture.md)</p>
+			<p>One canonical source (<code>canonical/</code>) is rendered by <code>run_generator.py</code> into five byte-identical install trees — the enforced render invariant spans 6 trees (<code>canonical/</code> + 5 profiles). Never edit the profile trees directly — edit <code>canonical/</code> and re-run the generator. (A 7th on-disk copy, the repo's own hand-maintained dogfood <code>.claude/</code>, sits outside this render set — internal tooling, see §14.) (per architecture.md, project-structure.md)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">No Application Code</div>

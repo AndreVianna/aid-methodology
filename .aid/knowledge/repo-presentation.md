@@ -12,6 +12,7 @@ intent: |
 contracts: []
 changelog:
   - 2026-05-27: Initial authoring during cycle-1 FIX Phase B (replaces deleted ui-architecture.md per Q3)
+  - 2026-06-01: Post-merge update for work-001-add-providers (PRs #42/#43/#44) — install surface 3 profiles → 5 (added GitHub Copilot CLI + Antigravity); Option-A AGENTS.md collision handler documented; setup.sh/ps1 line counts refreshed (210/199).
 ---
 
 # Repo Presentation
@@ -28,7 +29,7 @@ The user-facing surface has five layers: the root `README.md` (the pitch and ent
 point), the `docs/` folder (reference material for ongoing use), the `examples/`
 folder (proof-of-concept case studies), the `methodology/aid-methodology.md`
 specification (the load-bearing intellectual artifact), and the install scripts
-(`setup.sh` / `setup.ps1`) plus the three profile install trees. These layers are
+(`setup.sh` / `setup.ps1`) plus the five profile install trees. These layers are
 designed to serve different readers at different stages: a skeptic scanning the README,
 a practitioner using the glossary, a potential adopter reading a case study, a deep
 reader working through the methodology, and a first-time installer running the script.
@@ -259,8 +260,8 @@ Users install AID into their own projects via two cross-platform scripts at the 
 
 | Script | Platform | Lines | Behavior |
 |--------|----------|-------|----------|
-| `setup.sh` | Bash (Linux/macOS/git-bash) | 162 | Interactive menu: select Claude Code, Codex, Cursor; installs selected profiles into target directory |
-| `setup.ps1` | PowerShell 5.1+ (Windows) | 157 | Same menu and behavior in PowerShell |
+| `setup.sh` | Bash (Linux/macOS/git-bash) | 210 | Interactive menu: select Claude Code (1), Codex (2), Cursor (3), GitHub Copilot CLI (4), Antigravity (5), Done (6); installs selected profiles into target directory (`setup.sh` `tool_name()`, `print_menu()`) |
+| `setup.ps1` | PowerShell 5.1+ (Windows) | 199 | Same 5-tool menu and behavior in PowerShell |
 
 Both scripts accept `<target-directory>` as a positional argument and an optional
 `--force` flag to overwrite without prompts (`README.md` `**Re-running is safe:**`).
@@ -271,28 +272,37 @@ into the project root (`README.md` `Prefer to install by hand?`).
 
 ### Profile Install Trees
 
-Three tool-specific install bundles live in `profiles/`:
+Five tool-specific install bundles live in `profiles/` (`ls profiles/*.toml | wc -l` = 5):
 
 | Profile | Install root | What users see |
 |---------|-------------|----------------|
 | **Claude Code** | `profiles/claude-code/` | `.claude/` directory containing `skills/`, `agents/`, `templates/`, `recipes/`, `scripts/`; plus `CLAUDE.md` at project root |
 | **Codex CLI** | `profiles/codex/` | Split layout: `.codex/agents/` (TOML agent definitions) + `.agents/` (skills, scripts, recipes, templates); plus `AGENTS.md` at project root |
 | **Cursor** | `profiles/cursor/` | `.cursor/` directory with `.mdc` rule files; plus `AGENTS.md` at project root |
+| **GitHub Copilot CLI** | `profiles/copilot-cli/` | `.github/` directory (`output_root` `.github`) with `agents/*.agent.md` (copilot-agent format), `skills/`, `scripts/`, `recipes/`, `templates/`; plus `AGENTS.md` at project root |
+| **Antigravity** | `profiles/antigravity/` | `.agent/` directory (`output_root` `.agent`) with sub-agents reshaped into `rules/*.md` (antigravity-rule format, `trigger:`-style frontmatter), plus `skills/`, `scripts/`, `recipes/`, `templates/`; plus `AGENTS.md` at project root |
 
 (`project-structure.md` `├── profiles/`, `README.md` `### 3. What gets installed`)
 
-All three profiles contain byte-identical skill and agent bodies — only the wrapper
-format differs per tool (TOML for Codex agents, `.mdc` for Cursor rules, markdown for
-Claude Code). The generator (`run_generator.py`) enforces this byte-identity
-via VERIFY (deterministic) at end of every render (see `architecture.md`
-`verify_deterministic.py` for the gate).
+All five profiles contain byte-identical skill and agent bodies — only the wrapper
+format differs per tool (markdown for Claude Code, TOML for Codex agents, `.mdc` for
+Cursor rules, `.agent.md` copilot-agent frontmatter for Copilot CLI, and
+`antigravity-rule` `trigger:`-style rule frontmatter for Antigravity; the four
+agent-format values are listed in `aid_profile.py` `_KNOWN_AGENT_FORMATS`). The
+generator (`run_generator.py`) enforces this byte-identity via VERIFY (deterministic)
+at end of every render (see `architecture.md` `verify_deterministic.py` for the gate).
 
 ### What End Users See After Install
 
 After running `setup.sh` or `setup.ps1`, the target project gains:
 
-- The tool-appropriate hidden directory (`.claude/`, `.codex/`+`.agents/`, or `.cursor/`)
+- The tool-appropriate hidden directory (`.claude/`, `.codex/`+`.agents/`, `.cursor/`,
+  `.github/` for Copilot CLI, or `.agent/` for Antigravity)
   containing all 10 skills, 22 agents, 5 recipes, templates, and helper scripts.
+- ⚠️ **AGENTS.md collision (Option A):** Codex, Cursor, Copilot CLI, and Antigravity all
+  write a root `AGENTS.md`. When ≥2 of these are selected, `setup.sh`/`setup.ps1` warn
+  once and the highest-numbered selected writer wins — no interactive prompt
+  (`setup.sh` `AGENTS.md collision pre-copy block (Option A)`).
 - A `CLAUDE.md` or `AGENTS.md` at the project root with placeholders that
   `/aid-config` and `/aid-discover` populate. (`README.md` `### 3. What gets installed`)
 - `.aid/` appended to the project's `.gitignore` — the Knowledge Base stays out of
@@ -303,7 +313,7 @@ After running `setup.sh` or `setup.ps1`, the target project gains:
 
 (`README.md` `### Runtime requirements`)
 
-- One or more host AI tools: Claude Code, OpenAI Codex CLI, or Cursor.
+- One or more host AI tools: Claude Code, OpenAI Codex CLI, Cursor, GitHub Copilot CLI, or Antigravity.
 - Bash (or git-bash on Windows) for scripts; PowerShell 5.1+ for `setup.ps1`.
 - Git.
 - Node 18+ is optional — only `/aid-summarize` uses it for diagram validation.

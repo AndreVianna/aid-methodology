@@ -1,0 +1,52 @@
+<section class="sec" id="s9" data-title="Render Profiles">
+	<header>
+		<span class="eyebrow">Build &amp; Install</span>
+		<h2>Render Profiles</h2>
+		<p class="lede">Each supported host tool is encoded as one <code>profiles/&lt;tool&gt;.toml</code> profile consumed by <code>run_generator.py</code>. A profile pins the install root, the per-tool agent format, the root context file, and any tool-specific layout (split roots, rule files, tool-name remaps). One card per profile below — every value is the profile's verified <code>output_root</code>, <code>project_context_file</code>, and <code>[agent].format</code>. (per architecture.md, integration-map.md, pipeline-contracts.md)</p>
+	</header>
+
+	<div class="grid g1">
+		<div class="card">
+			<div class="kicker">Markdown agents · single root</div>
+			<h3>Claude Code</h3>
+			<p>Anthropic Claude Code — installs a single <code>.claude/</code> tree with markdown-format agents.</p>
+			<p><strong>Install root:</strong> <code>.claude/</code> (<code>agents</code>, <code>skills</code>, <code>templates</code>, <code>recipes</code>, <code>scripts</code>).<br>
+			<strong>Context file:</strong> root <code>CLAUDE.md</code>.<br>
+			<strong>Agent format:</strong> <code>markdown</code> (YAML frontmatter). No tool-name remap — abstract names pass through. (per <code>profiles/claude-code.toml</code>)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">Split-root layout</div>
+			<h3>Codex CLI</h3>
+			<p>OpenAI Codex CLI — the only profile with a two-root split layout.</p>
+			<p><strong>Install root:</strong> <code>.codex/</code> (agents) + <code>.agents/</code> (skills, templates).<br>
+			<strong>Context file:</strong> root <code>AGENTS.md</code>.<br>
+			<strong>Agent format:</strong> <code>toml</code> — agents are TOML files; tools declared inline in <code>developer_instructions</code> prose, not a tool list. (per <code>profiles/codex.toml</code>)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">IDE + .mdc rules</div>
+			<h3>Cursor</h3>
+			<p>Cursor IDE — adds always-on <code>.mdc</code> methodology rules alongside skills.</p>
+			<p><strong>Install root:</strong> <code>.cursor/</code> (rules via <code>[[extras.rules]]</code> <code>.mdc</code>, skills, agents, templates).<br>
+			<strong>Context file:</strong> root <code>AGENTS.md</code>.<br>
+			<strong>Agent format:</strong> <code>markdown</code>. Tool remap: <code>Bash → Terminal</code> (the only non-identity tool map across all profiles). (per <code>profiles/cursor.toml</code>)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">Native Agent Skills · no MCP</div>
+			<h3>GitHub Copilot CLI</h3>
+			<p>GitHub Copilot CLI — native Agent Skills under the <code>.github/</code> tree.</p>
+			<p><strong>Install root:</strong> <code>.github/</code> (<code>agents/*.agent.md</code>, native <code>skills/&lt;slug&gt;/SKILL.md</code>, scripts, templates, recipes).<br>
+			<strong>Context file:</strong> root <code>AGENTS.md</code>.<br>
+			<strong>Agent format:</strong> <code>copilot-agent</code>. Tool remap: <code>Bash → shell</code>. No MCP servers emitted. (per <code>profiles/copilot-cli.toml</code>)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">Trigger-frontmatter rules</div>
+			<h3>Google Antigravity</h3>
+			<p>Google Antigravity (Windsurf lineage) — sub-agents reshape into <code>.md</code> rule files with <code>trigger:</code> frontmatter.</p>
+			<p><strong>Install root:</strong> <code>.agent/</code> (<code>rules/*.md</code> with <code>trigger:</code> frontmatter, native <code>skills/&lt;slug&gt;/SKILL.md</code>, scripts, templates, recipes).<br>
+			<strong>Context file:</strong> root <code>AGENTS.md</code>.<br>
+			<strong>Agent format:</strong> <code>antigravity-rule</code>. Methodology rules emit via <code>RuleEntry.output_filename</code> as <code>.md</code> (not <code>.mdc</code>). (per <code>profiles/antigravity.toml</code>)</p>
+		</div>
+	</div>
+</section>
+
+<!-- ===== SECTION 10: Test Landscape ===== -->

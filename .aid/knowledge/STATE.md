@@ -19,10 +19,10 @@ changelog:
 # Discovery State
 
 > **Source:** aid-config (creates) · aid-discover + aid-summarize (update)
-> **Status:** Approved
-> **Current Grade:** A+ (computed by grade.sh on cycle-10 ledger; 0 CRITICAL / 0 HIGH / 0 MEDIUM / 0 LOW / 0 MINOR; 14 rows total = 12 Fixed + 2 Accepted; grade.sh M7 bug fixed by schema rollout commit bf4e814 — schema-table parsing eliminates the summary-line over-count)
-> **User Approved:** yes (2026-05-28, cycle-10 — grade A+; user approved + push-to-remote authorized)
-> **Last KB Review:** 2026-05-28 (cycle-10 — convergence; ready for User Approval)
+> **Status:** Approved — cycle-9 post-merge re-review complete (A+); KB ready
+> **Current Grade:** A+ (cycle-9 recheck 2026-06-01 — grade.sh on `discover-kb-postmerge-recheck.md`: 0 CRITICAL/HIGH/MEDIUM/LOW/MINOR; all 35 post-merge drift findings resolved + 2 recheck nits fixed; KB now describes the current 5-profile reality)
+> **User Approved:** yes (2026-06-01, cycle-9 — user approved the post-merge KB refresh by proceeding to /aid-summarize; on branch aid/kb-refresh-work-001)
+> **Last KB Review:** 2026-06-01 (cycle-9 post-merge re-review — A+ after FIX; pre-merge cycle-10 superseded)
 > **Last Summary:** 2026-05-30 (dogfood refresh — knowledge-summary.html rebuilt from refreshed summary-src; validated via validate-diagrams.mjs + contrast-check.mjs)
 
 This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary. One STATE.md per project's `.aid/knowledge/` directory. Absorbs what used to be `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`.
@@ -81,20 +81,20 @@ This is the single state file for the **Discovery area** — persistent project 
 **Minimum Grade:** A
 **Minimum Grade Source:** `.aid/settings.yml` `review.minimum_grade` (no per-skill override)
 **Machine Grade:** A+
-**Machine Grade Source:** `grade-summary.sh` AUTO_POOL (D1/D2/L1/L2/H1/A1-5/C1-2/S2 = 73 pts) — A+ established at GENERATE (validate-diagrams D1 parse + D2 render via jsdom); D1 parse re-verified locally 2026-05-31; D2 render not re-runnable in the offline sandbox (jsdom lacks getBBox / mmdc unfetchable), diagrams diff-unchanged since the GENERATE-validated build; diagram count 5/5 matches agentic-pipeline target
+**Machine Grade Source:** `grade-summary.sh` AUTO_POOL (D1/D2/L1/L2/H1/A1-5/C1-2/S2 = 73 pts) — cycle-9 regen 2026-06-01: D1 parse PASS 5/5 (re-verified) + L1/L2/H1/A1-5/C1-2/S2 all green; D2 render not machine-runnable in this sandbox (jsdom lacks getBBox / headless Chromium can't launch — missing libnspr4.so), so D2 is accepted-environmental and its render verification is delegated to the V1 human visual gate (user-confirmed 2026-06-01); diagram count 5/5 matches agentic-pipeline target
 **Human Grade:** A+
-**Human Grade Source:** `manual-checklist.sh` MANUAL_POOL (K1=10/10, K2=15/15, V1=5/5; 30/30 perfect; checklist 2026-05-31)
+**Human Grade Source:** MANUAL_POOL — K1 (KB-completeness) pass + K2 (fact-grounding) pass (spot-check-facts 10/10 claims grounded, 0 MISS) + V1 (human visual gate) **PASS — user-approved 2026-06-01** (all 5 diagrams render incl. the rebuilt Fig 3; theme/lightbox verified). V1 is the compensating control for the sandbox-unverifiable D2 render.
 **Overall Grade:** A+ (= min of Machine=A+, Human=A+)
-**User Approved:** yes (2026-05-31 — work-001 regen; Overall Grade A+; visual gate approved)
-**Last Run:** 2026-05-31
-**Trigger Reason:** regeneration — KB updated by work-001 (adaptive declared doc-set; H5 resolved + tech-debt resolved-records scrub)
+**User Approved:** yes (2026-06-01 — cycle-9 post-merge regen; Overall A+; V1 visual gate approved)
+**Last Run:** 2026-06-01
+**Trigger Reason:** regeneration — KB cycle-9 post-merge refresh (work-001-add-providers 3→5 profiles); + V1-feedback iterations: dedicated §09 Render Profiles (5 peer cards, one-per-line), dedicated §14 Dogfooding (internal, de-conflated from the methodology), clean sequential section numbering
 **Output:** `.aid/knowledge/knowledge-summary.html`
-**Output Size:** 3.40 MB (3,403,878 bytes; 5,389 lines)
+**Output Size:** 3.41 MB (3,414,914 bytes; 5,507 lines)
 **Mermaid Version:** 11.15.0
 **Mermaid Fetched At:** 2026-05-28T12:30:00Z
 **Mermaid Cached:** `.aid/knowledge/.cache/mermaid.min.js` (sha256: 70137e77bb273bb2ef972b86e8b0400cca8be53cb25bfc45911a186dc98665de)
-**Last Reviewed KB Date:** 2026-05-31 (work-001 KB updates: declared doc-set + tech-debt scrub)
-**Last Summary Date:** 2026-05-31
+**Last Reviewed KB Date:** 2026-06-01 (cycle-9 post-merge KB refresh — 3→5 profiles)
+**Last Summary Date:** 2026-06-01
 **Writeback Status:** ok (entry #3 appended 2026-05-31 by writeback-state.sh)
 
 ### Findings (last validation)
@@ -404,6 +404,8 @@ Verified-true sample full list (30 checks) in `.aid/.temp/review-pending/discove
 
 | 3 | 2026-05-31 | A+ | agentic-pipeline | 11.15.0 | knowledge-summary.html (3403878) | Regenerated for work-001 adaptive doc-set + tech-debt scrub. Machine A+ (D1 parse verified locally via jsdom; D2 render validated at GENERATE; offline sandbox cannot re-run the Mermaid renderer, diagrams diff-unchanged since). Human A+ 30/30 — user-approved visual gate (V1), K1 full coverage, K2 spot-check 10/10. |
 
+| 4 | 2026-06-01 | A+ | agentic-pipeline | 11.15.0 | knowledge-summary.html (3,414,914 bytes; 5,507 lines) | cycle-9 post-merge regen (work-001-add-providers 3→5 profiles). Added dedicated §09 Render Profiles (5 equal peer cards, one-per-line) + §14 Dogfooding (internal, de-conflated from the methodology); clean sequential section numbering 1-14. Machine A+ (D1 parse 5/5 + all other AUTO_POOL green; D2 render sandbox-unverifiable here — jsdom getBBox / no Chromium — accepted-environmental, render delegated to V1). Human A+ — K1 pass, K2 spot-check 10/10, **V1 user-approved 2026-06-01** (diagrams render incl. rebuilt Fig 3). |
+
 ## Calibration Log
 
 > Work-003 traceability: one row per dispatched sub-agent. Append-only. Format: `| date | agent | cycle | ETA band | actual | notes |`
@@ -423,3 +425,23 @@ Verified-true sample full list (30 checks) in `.aid/.temp/review-pending/discove
 | 2026-05-27 | discovery-reviewer | cycle-5 REVIEW | 15-25m | ~15m | inside band; 22 spot-checks (16 true, 6 false) — 6 version verifications; 0 [CRITICAL] + 3 [HIGH] + 0 [MEDIUM] + 12 [LOW] + 4 [MINOR] = 19 findings; grade pending grade.sh; 0 new Q&A; cycle-4 FIX partial-land: 4 of 6 clean, 2 of 6 regressed same root cause (test counts). Direct measurement this cycle by running each suite end-to-end: writeback=69, parse-recipe=113, compute=17, delivery-gate=18, read-setting=18 = TOTAL 235. Cycle-4 FIX wrote 173/51 instead. KB internal contradiction now: tech-debt.md:210 has 113 (right); test-landscape + tech-stack + README have 51 (wrong). Ledger at `.aid/.temp/review-pending/discovery.md` |
 | 2026-05-28 | discovery-reviewer | cycle-6 REVIEW | 15-25m | ~12m | inside band; 31 spot-checks (26 true, 5 false) — 7 count/version verifications; 0 [CRITICAL] + 2 [HIGH] + 2 [MEDIUM] + 3 [LOW] + 4 [MINOR] = 11 findings; grade pending grade.sh; 0 new Q&A — all findings mechanically resolvable; cycle-5 FIX test-count cascade landed CLEANLY in test-landscape + tech-stack + module-map + README revision-history + tech-debt L1 (all consistent with disk: writeback=69, parse=113, compute=17, delivery=18, read=18; total=235). NEW HIGH residue: (a) project-structure.md:183-184 test-file rows still say 38/39 (missed by every prior sweep — pattern likely didn't match table-cell format); (b) domain-glossary.md:63 "16 KB doc scaffolds" residue. NEW MEDIUMs: (c) domain-glossary.md:73 KB definition has 2 staleness items (14 vs 15 + ui-architecture pending status); (d) README.md:16-17 banner staleness (cycle-3 vs actual 6). Ledger at `.aid/.temp/review-pending/discovery.md` |
 | 2026-05-28 | discovery-reviewer | cycle-7 REVIEW | 15-25m | ~15m | inside band; 30 spot-checks (30 true, 0 false) — 12 count/version verifications with computed-from-disk evidence; 0 [CRITICAL] + 0 [HIGH] + 0 [MEDIUM] + 2 [LOW] + 3 [MINOR] = 5 in-scope findings; grade pending grade.sh; 0 new Q&A — no new gaps requiring human input; **0 HIGH / 0 MEDIUM target HIT**. Cycle-6 FIX landed CLEANLY for ALL 4 reviewer-flagged findings: (a) project-structure.md:183-184 test counts 38/39 → 113/69 verified disk; (b) domain-glossary.md:63 "16 KB doc scaffolds" → "15" verified disk; (c) domain-glossary.md:73 staleness corrected (now 15 active markdown documents + repo-presentation present); (d) README.md:16-17 banner now reads "cycle 6 (post-FIX, awaiting cycle-7 REVIEW)". CC10 (test-count cascade) + CC11 (16-doc residue) BOTH fully cleared. Remaining LOWs/MINORs are known carryovers (tech-debt L406 self-acknowledged stale PR snapshot, infrastructure L158 branch-protection inferred-unknown with flag, metrics.md generated regex undercount, feature-inventory legend glyph cosmetic, external-sources brevity acceptable for no-docs variant). Test counts re-verified by running 4 of 5 suites directly: writeback=69, compute=17, delivery=18, read=18 (parse-recipe=113 per definitive cycle-5/6 verification, suite takes ~150s). 18-doc cardinality (15 primary + 3 meta) consistent across INDEX, README, schemas, coding-standards. Ledger at `.aid/.temp/review-pending/discovery.md` |
+
+## Discovery — Review Cycle 1
+
+### Q23: [Integration: Medium] Is the Copilot CLI agent-frontmatter `model:` slug spelling vendor-confirmed?
+**Status:** Answered (2026-06-01 — applied suggested; not Required, no code change)
+**Context:** `profiles/copilot-cli.toml` notes model identities (Opus 4.8 / Sonnet 4.6 / Haiku 4.5) are LIVE-confirmed but the exact `model:` field tokenization is "docs-only-noted" / inferred from GitHub's documented model-id convention. Code ships a value but flags it unverified against the live Copilot CLI. KB tech-debt.md currently records 0 open items and does not capture this residual.
+**Suggested:** Record as a LOW tech-debt residual until the maintainer confirms the exact Copilot model-id slug spelling against the live tool.
+**Answer:** Not vendor-confirmed (docs-only-noted during work-001). Record in tech-debt.md as a LOW residual; maintainer can confirm the slug against the live Copilot CLI anytime. Not blocking.
+
+### Q24: [Integration: Medium] Is the Antigravity `model:` id tokenization (gemini-3-pro / gemini-3-flash) vendor-confirmed?
+**Status:** Answered (2026-06-01 — applied suggested; not Required, no code change)
+**Context:** `profiles/antigravity.toml` notes Antigravity docs expose display names ("Gemini 3 Pro (high)") rather than model-id token pairs and asks to "confirm" the actual `model:` slug. Shipped values are inferred. Not captured in tech-debt.md.
+**Suggested:** Record as a LOW tech-debt residual pending confirmation of the Antigravity model-id token from vendor docs.
+**Answer:** Not vendor-confirmed (docs-only-noted). Record in tech-debt.md as a LOW residual pending vendor model-id confirmation. Not blocking.
+
+### Q25: [Integration: Low] Is the empty Antigravity `[tool_names]` identity-passthrough the intended final mapping?
+**Status:** Answered (2026-06-01 — applied suggested; not Required)
+**Context:** `profiles/antigravity.toml` ships an empty `[tool_names]` map (identity passthrough) with comment "no published Antigravity tool-token map; docs-only-noted." If Antigravity later publishes a tool-name convention this will need a remap (cf. Cursor's `Bash = "Terminal"`, Copilot's `Bash = "shell"`).
+**Suggested:** Confirm whether Antigravity tool names match AID's canonical set verbatim; if not, populate `[tool_names]`. Track as LOW tech-debt until then.
+**Answer:** Empty identity-passthrough is the intended mapping until Antigravity publishes a tool-token convention. Record in tech-debt.md as a LOW residual to revisit if/when such a convention appears.
