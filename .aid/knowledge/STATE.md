@@ -19,9 +19,9 @@ changelog:
 # Discovery State
 
 > **Source:** aid-config (creates) · aid-discover + aid-summarize (update)
-> **Status:** Reviewed — cycle-9 post-merge re-review complete; **awaiting user approval**
+> **Status:** Approved — cycle-9 post-merge re-review complete (A+); KB ready
 > **Current Grade:** A+ (cycle-9 recheck 2026-06-01 — grade.sh on `discover-kb-postmerge-recheck.md`: 0 CRITICAL/HIGH/MEDIUM/LOW/MINOR; all 35 post-merge drift findings resolved + 2 recheck nits fixed; KB now describes the current 5-profile reality)
-> **User Approved:** no (cycle-9 post-merge refresh on branch aid/kb-refresh-work-001 — awaiting approval; then /aid-summarize)
+> **User Approved:** yes (2026-06-01, cycle-9 — user approved the post-merge KB refresh by proceeding to /aid-summarize; on branch aid/kb-refresh-work-001)
 > **Last KB Review:** 2026-06-01 (cycle-9 post-merge re-review — A+ after FIX; pre-merge cycle-10 superseded)
 > **Last Summary:** 2026-05-30 (dogfood refresh — knowledge-summary.html rebuilt from refreshed summary-src; validated via validate-diagrams.mjs + contrast-check.mjs)
 

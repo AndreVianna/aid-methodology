@@ -708,15 +708,15 @@ details.accord > summary:focus-visible,
 	<header>
 		<span class="eyebrow">Overview</span>
 		<h2>At a Glance</h2>
-		<p class="lede">AID (AI Integrated Development) is a methodology specification and multi-tool distribution that ships skills, agents, templates, and recipes into three host-tool install trees from a single canonical source.</p>
+		<p class="lede">AID (AI Integrated Development) is a methodology specification and multi-tool distribution that ships skills, agents, templates, and recipes into five host-tool install trees from a single canonical source.</p>
 	</header>
 
 	<div class="grid g4">
 		<div class="card">
 			<div class="kicker">Repository</div>
-			<div class="stat">1,077</div>
+			<div class="stat">1,518</div>
 			<div class="stat-sub">total files</div>
-			<div class="meta">148,068 lines — snapshot 2026-05-27<br>(per project-structure.md)</div>
+			<div class="meta">209,599 lines — snapshot 2026-06-01<br>(per project-structure.md)</div>
 		</div>
 		<div class="card">
 			<div class="kicker">Skills</div>
@@ -730,11 +730,11 @@ details.accord > summary:focus-visible,
 			<div class="stat-sub">specialist agents, 3 tiers</div>
 			<div class="meta">10 Large · 9 Medium · 3 Small<br>(per architecture.md)</div>
 		</div>
-		<div class="card">
+		<div class="card card-primary">
 			<div class="kicker">Install Trees</div>
-			<div class="stat">3</div>
+			<div class="stat">5</div>
 			<div class="stat-sub">supported host tools</div>
-			<div class="meta">Claude Code · Codex CLI · Cursor<br>(per architecture.md)</div>
+			<div class="meta">Claude Code · Codex · Cursor · Copilot CLI · Antigravity<br>(per architecture.md)</div>
 		</div>
 	</div>
 
@@ -742,12 +742,12 @@ details.accord > summary:focus-visible,
 		<div class="card">
 			<div class="kicker">Languages</div>
 			<h3>Polyglot Toolchain</h3>
-			<p>Markdown (872 files), Bash (109 files), Python 3.11+ (stdlib only), JavaScript/ESM, PowerShell 5.1+, CSS3, HTML5, TOML, YAML. No application frameworks — single runtime library is Mermaid, fetched dynamically. (per technology-stack.md)</p>
+			<p>Markdown, Bash (177 .sh files), Python 3.11+ (stdlib only), JavaScript/ESM, PowerShell 5.1+, CSS3, HTML5, TOML, YAML. No application frameworks — single runtime library is Mermaid, fetched dynamically. (per technology-stack.md, project-structure.md)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">Architecture</div>
 			<h3>Single-Source Compilation</h3>
-			<p>One canonical source (<code>canonical/</code>) is rendered by <code>run_generator.py</code> into three byte-identical install trees. Never edit the profile trees directly — edit <code>canonical/</code> and re-run the generator. (per architecture.md)</p>
+			<p>One canonical source (<code>canonical/</code>) is rendered by <code>run_generator.py</code> into five byte-identical install trees (7 on-disk copies counting the dogfood <code>.claude/</code>). Never edit the profile trees directly — edit <code>canonical/</code> and re-run the generator. (per architecture.md, project-structure.md)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">No Application Code</div>
@@ -977,7 +977,7 @@ graph TD
 
     SKILL["aid-* skill<br/>(Thin-Router SKILL.md)"]:::skill
 
-    subgraph Large["Large Tier (Opus / GPT-5.5 high) — 10 agents"]
+    subgraph Large["Large Tier (Opus / GPT-5.5 / Gemini-3, high) — 10 agents"]
         A1["architect"]:::large
         A2["reviewer"]:::large
         A3["interviewer"]:::large
@@ -990,7 +990,7 @@ graph TD
         A10["discovery-reviewer"]:::large
     end
 
-    subgraph Medium["Medium Tier (Sonnet / GPT-5.4 medium) — 9 agents"]
+    subgraph Medium["Medium Tier (Sonnet / GPT-5.4 / Gemini-3, medium) — 9 agents"]
         B1["orchestrator"]:::medium
         B2["researcher"]:::medium
         B3["developer"]:::medium
@@ -1002,7 +1002,7 @@ graph TD
         B9["ux-designer"]:::medium
     end
 
-    subgraph Small["Small Tier (Haiku / GPT-5.4-mini) — 3 agents"]
+    subgraph Small["Small Tier (Haiku / GPT-5.4-mini / Gemini-3, low) — 3 agents"]
         C1["simple-extractor"]:::small
         C2["simple-formatter"]:::small
         C3["simple-glob"]:::small
@@ -1132,7 +1132,7 @@ erDiagram
 	<header>
 		<span class="eyebrow">Interfaces</span>
 		<h2>Pipeline Contracts</h2>
-		<p class="lede">AID ships no HTTP services or RPC endpoints. Contracts here means: skill slash-command signatures and state-machine contracts, script CLI signatures and exit codes, file-format contracts, subagent dispatch conventions, and the canonical-to-3-profile renderer contract. (per pipeline-contracts.md)</p>
+		<p class="lede">AID ships no HTTP services or RPC endpoints. Contracts here means: skill slash-command signatures and state-machine contracts, script CLI signatures and exit codes, file-format contracts, subagent dispatch conventions, and the canonical-to-5-profile renderer contract. (per pipeline-contracts.md)</p>
 	</header>
 
 	<h3>Slash-command contracts (10 skills)</h3>
@@ -1164,7 +1164,7 @@ erDiagram
 		<div class="card">
 			<div class="kicker">emission-manifest.jsonl</div>
 			<h3>Deletion-safety boundary</h3>
-			<p>JSON Lines, LF-only. Sentinel first line <code>{"_manifest_version": 1}</code>. Four-key record schema: <code>profile</code>, <code>src</code>, <code>dst</code>, <code>sha256</code>. Sorted by <code>dst</code> for byte-stable diffs. Only files in the manifest are eligible for deletion on the next render pass. (per schemas.md)</p>
+			<p>JSON Lines, LF-only. Sentinel first line <code>{"_manifest_version": 1}</code>. Four-key record schema: <code>profile</code>, <code>src</code>, <code>dst</code>, <code>sha256</code>. The <code>profile</code> value is one of the 5 profile stems (claude-code, codex, cursor, copilot-cli, antigravity) — one manifest per profile. Sorted by <code>dst</code> for byte-stable diffs. Only files in the manifest are eligible for deletion on the next render pass. (per schemas.md §8)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">STATE.md</div>
@@ -1175,6 +1175,11 @@ erDiagram
 			<div class="kicker">Heartbeat files</div>
 			<h3>L3 subagent visibility</h3>
 			<p>Single-line files at <code>.aid/.heartbeat/{agent}-{unix-ts}.txt</code>. Format: <code>[YYYY-MM-DDTHH:MM:SSZ] STATE | progress | activity (~eta)</code>. Written with <code>&gt;</code> (overwrite), never <code>&gt;&gt;</code>. Activity must change between writes. (per coding-standards.md §5a)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">profiles/*.toml</div>
+			<h3>Per-tool render contract (5)</h3>
+			<p>TOML 1.0, parsed by <code>aid_profile.py</code> into the <code>Profile</code> dataclass. <code>[agent].format</code> ∈ {<code>markdown</code>, <code>toml</code>, <code>copilot-agent</code>, <code>antigravity-rule</code>} (the <code>_KNOWN_AGENT_FORMATS</code> set). <code>[extras]</code> gained <code>rules_frontmatter</code> (string | None — <code>"trigger"</code> for Antigravity's <code>.agent/rules</code> dialect; None → verbatim copy, keeping Cursor byte-identical) and each <code>[[extras.rules]]</code> → <code>RuleEntry</code> gained <code>output_filename</code> (optional name override enabling the <code>.mdc → .md</code> rename for Antigravity; None → source name preserved). (per schemas.md §9, module-map.md)</p>
 		</div>
 	</div>
 
@@ -1256,10 +1261,10 @@ flowchart LR
 	<header>
 		<span class="eyebrow">Build &amp; Install</span>
 		<h2>Distribution / Install</h2>
-		<p class="lede">Single-source canonical directory renders into three byte-identical host-tool install trees via <code>run_generator.py</code>. End users install by running <code>setup.sh</code> or <code>setup.ps1</code>, which copies the selected profile tree into their project. (per infrastructure.md, repo-presentation.md)</p>
+		<p class="lede">Single-source canonical directory renders into five byte-identical host-tool install trees via <code>run_generator.py</code>. End users install by running <code>setup.sh</code> or <code>setup.ps1</code>, which copies the selected profile tree into their project. (per infrastructure.md, repo-presentation.md)</p>
 	</header>
 
-	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 3: Canonical source to three install trees plus setup.sh to any adopter repo — click or press Enter to expand">
+	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 3: Canonical source to five install trees plus setup.sh to any adopter repo — click or press Enter to expand">
 		<div class="mermaid">
 flowchart TB
     classDef src     fill:#0B1F3A,stroke:#00A3A1,color:#fff,stroke-width:2px;
@@ -1271,21 +1276,25 @@ flowchart TB
 
     SRC["canonical/<br/>agents, skills, templates,<br/>scripts, recipes"]:::src
 
-    GEN["run_generator.py<br/>87 lines — loads *.toml profiles<br/>calls 5 renderers per profile"]:::render
+    GEN["run_generator.py<br/>87 lines — loads 5 *.toml profiles<br/>calls 5 renderers per profile"]:::render
 
-    subgraph Profiles["Profile TOML configs"]
-        P1["claude-code.toml<br/>64 lines"]:::profile
-        P2["codex.toml<br/>78 lines"]:::profile
-        P3["cursor.toml<br/>75 lines"]:::profile
+    subgraph Profiles["Profile TOML configs (5)"]
+        P1["claude-code.toml<br/>format markdown"]:::profile
+        P2["codex.toml<br/>format toml"]:::profile
+        P3["cursor.toml<br/>format markdown + rules"]:::profile
+        P4["copilot-cli.toml<br/>format copilot-agent"]:::profile
+        P5["antigravity.toml<br/>format antigravity-rule"]:::profile
     end
 
-    subgraph Trees["Install trees (byte-identical output)"]
+    subgraph Trees["Install trees (5, byte-identical output)"]
         T1["profiles/claude-code/<br/>.claude/"]:::install
         T2["profiles/codex/<br/>.codex/ + .agents/"]:::install
         T3["profiles/cursor/<br/>.cursor/"]:::install
+        T4["profiles/copilot-cli/<br/>.github/ + AGENTS.md"]:::install
+        T5["profiles/antigravity/<br/>.agent/ + AGENTS.md"]:::install
     end
 
-    ADOPTER["Any adopter repo<br/>.claude/ or .codex/+.agents/ or .cursor/"]:::adopter
+    ADOPTER["Any adopter repo<br/>.claude/ | .codex/+.agents/ | .cursor/<br/>| .github/ | .agent/"]:::adopter
 
     VFY["verify_deterministic.py<br/>VERIFY (deterministic) hard gate<br/>byte-identical re-render"]:::verify
 
@@ -1293,38 +1302,49 @@ flowchart TB
     P1 --> GEN
     P2 --> GEN
     P3 --> GEN
+    P4 --> GEN
+    P5 --> GEN
     GEN --> T1
     GEN --> T2
     GEN --> T3
+    GEN --> T4
+    GEN --> T5
     GEN --> VFY
     T1 -.->|setup.sh| ADOPTER
     T2 -.->|setup.sh| ADOPTER
     T3 -.->|setup.sh| ADOPTER
+    T4 -.->|setup.sh| ADOPTER
+    T5 -.->|setup.sh| ADOPTER
 		</div>
-		<p class="caption">Fig 3 — Canonical-to-3-install-trees pipeline: one canonical source, three profile TOML configs, five renderers per profile, VERIFY (deterministic) hard gate. Adopters install by running setup.sh / setup.ps1, which copies the selected profile tree into their repo. (per architecture.md, infrastructure.md)</p>
+		<p class="caption">Fig 3 — Canonical-to-5-install-trees pipeline: one canonical source, five profile TOML configs (claude-code, codex, cursor, copilot-cli, antigravity), five renderers per profile, VERIFY (deterministic) hard gate. Adopters install by running setup.sh / setup.ps1, which copies the selected profile tree into their repo. (per architecture.md, infrastructure.md)</p>
 	</div>
 
 	<div class="grid g3">
 		<div class="card">
 			<div class="kicker">Generator</div>
 			<h3><code>run_generator.py</code></h3>
-			<p>87-line orchestrator. Loads every <code>profiles/*.toml</code>, calls <code>render_agents</code>, <code>render_skills</code>, <code>render_templates</code>, <code>render_canonical_scripts</code>, <code>render_recipes</code> per profile, performs deletion pass via emission manifest diff, then runs VERIFY (deterministic) (hard) and VERIFY (advisory). Python 3.11+ stdlib only. (per module-map.md §3)</p>
+			<p>87-line orchestrator. Loops all 5 <code>profiles/*.toml</code>, calls <code>render_agents</code>, <code>render_skills</code>, <code>render_templates</code>, <code>render_canonical_scripts</code>, <code>render_recipes</code> per profile, performs deletion pass via emission manifest diff, then runs VERIFY (deterministic) (hard) and VERIFY (advisory). Python 3.11+ stdlib only. (per module-map.md §3, infrastructure.md)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">End-user install</div>
 			<h3><code>setup.sh</code> / <code>setup.ps1</code></h3>
-			<p>Interactive tool-selection menu (Claude Code / Codex / Cursor). Copies the selected profile tree into the user's project root. Existing identical files are skipped; differing files prompt unless <code>--force</code> is passed. Bash 4+ (Linux/macOS/Git Bash) or PowerShell 5.1+ (Windows). (per infrastructure.md)</p>
+			<p>Interactive multi-select menu — <code>[1] Claude Code [2] Codex [3] Cursor [4] GitHub Copilot CLI [5] Antigravity [6] Done</code>. Copies each selected profile tree into the user's project root. Existing identical files are skipped; differing files prompt unless <code>--force</code> is passed. Bash 4+ (Linux/macOS/Git Bash) or PowerShell 5.1+ (Windows). (per infrastructure.md)</p>
 		</div>
 		<div class="card">
-			<div class="kicker">Codex split layout</div>
-			<h3>Split-root exception</h3>
-			<p>Codex CLI uses a split layout: <code>profiles/codex/.codex/agents/</code> holds TOML agent definitions; <code>profiles/codex/.agents/{skills,scripts,recipes,templates}/</code> holds markdown bodies. A single <code>emission-manifest.jsonl</code> covers both roots. This is the only profile that differs in structure from Claude Code and Cursor. (per project-structure.md §Unusual Structure)</p>
+			<div class="kicker">4 agent formats / split roots</div>
+			<h3>Per-tool layouts</h3>
+			<p><code>render_agents</code> emits one of 4 formats per <code>[agent].format</code>: <code>markdown</code> (Claude Code, Cursor), <code>toml</code> (Codex split layout — <code>.codex/agents/</code> + <code>.agents/</code>), <code>copilot-agent</code> (Copilot CLI native Agent Skills under <code>.github/</code>), and <code>antigravity-rule</code> (Antigravity <code>.agent/rules</code> reshape). Cursor + Copilot CLI also remap the <code>Bash</code> tool name (Terminal / shell); MCP-style tools are omitted on hosts that lack them. (per architecture.md, schemas.md §7, §9)</p>
 		</div>
+	</div>
+
+	<div class="callout">
+		<h4>Option-A AGENTS.md collision handler</h4>
+		<p>Four of the five tools — Codex, Cursor, Copilot CLI, Antigravity — write a root <code>AGENTS.md</code> (Claude Code uses <code>CLAUDE.md</code> only). When ≥2 AGENTS.md-writing tools are selected, <code>setup.sh</code> sets <code>AGENTS_COLLISION=1</code>, warns once, and resolves <strong>non-interactively</strong> with last-installed-wins — the survivor is the highest-numbered selected tool's install block (fixed per-tool order). The handler is gated: it only fires when <code>AGENTS_COLLISION=1</code> and the destination basename is <code>AGENTS.md</code>, so a single-writer install never triggers auto-overwrite. (per infrastructure.md §Install Pipeline, architecture.md §Install-time data flow)</p>
 	</div>
 
 	<div class="callout warn">
 		<h4>Never edit profile trees directly</h4>
-		<p>Files under <code>profiles/{claude-code,codex,cursor}/</code> are generator output. Edits are silently overwritten on the next <code>python run_generator.py</code> run. Always edit <code>canonical/</code> and re-run the generator. The emission manifest is the safety boundary — only previously-emitted files are eligible for deletion. (per coding-standards.md §7a)</p>
+		<p>Files under <code>profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/</code> are generator output. Edits are silently overwritten on the next <code>python run_generator.py</code> run. Always edit <code>canonical/</code> and re-run the generator. The emission manifest is the safety boundary — only previously-emitted files are eligible for deletion. (per coding-standards.md §7a)</p>
 	</div>
 </section>
 
@@ -1398,7 +1418,7 @@ flowchart TB
 					<td><code>test-setup.sh</code></td>
 					<td><code>setup.sh</code> (end-user installer)</td>
 					<td>bash</td>
-					<td>Arg/precondition errors, interactive menu logic (Done/toggle/invalid), per-tool installs (Claude Code/Codex/Cursor), multi-tool install, idempotent re-install, <code>--force</code> overwrite</td>
+					<td>Arg/precondition errors, interactive 5-tool menu logic (Done/toggle/invalid), per-tool installs (Claude Code/Codex/Cursor/Copilot CLI/Antigravity), multi-tool install, idempotent re-install, <code>--force</code> overwrite, and the Option-A AGENTS.md last-writer-wins collision (cases SU12-17/SU16b)</td>
 				</tr>
 				<tr>
 					<td><code>test-assemble-3part.sh</code></td>
@@ -1416,7 +1436,7 @@ flowchart TB
 					<td><code>test-setup-ps1.sh</code></td>
 					<td><code>setup.ps1</code> (Windows-host installer)</td>
 					<td>pwsh</td>
-					<td>Platform-independent pre-install logic under <code>pwsh</code> on Linux: target validation + selection-menu loop (backslash-path copy is Windows-only). Skips if <code>pwsh</code> absent</td>
+					<td>Platform-independent pre-install logic under <code>pwsh</code> on Linux: target validation + selection-menu/collision parity (backslash-path copy is Windows-only; cases SPS05-08). Skips if <code>pwsh</code> absent</td>
 				</tr>
 				<tr>
 					<td><code>test-discovery-doc-ownership.sh</code></td>
@@ -1460,7 +1480,7 @@ flowchart TB
 
 	<div class="callout warn" style="margin-top:1rem;">
 		<h4>Coverage gaps</h4>
-		<p>The <code>.mjs</code> validators, the PowerShell mirrors, and the <code>setup.*</code> install flow are now covered (CI asserts <code>node</code> + <code>pwsh</code> present so those suites can never silently skip). The genuinely untested surface is the prompt-driven orchestration layer: the <code>/aid-*</code> skills (verified by dogfooding; the <code>discovery-reviewer</code> sub-agent is the closest adversarial integration check), the renderer (covered by its own VERIFY (deterministic) gate, not <code>tests/canonical/</code>), and the end-to-end pipeline. There is no statement/branch coverage measurement. (per test-landscape.md §Coverage gaps and roadmap)</p>
+		<p>The <code>.mjs</code> validators, the PowerShell mirrors, and the <code>setup.*</code> install flow are now covered (CI asserts <code>node</code> + <code>pwsh</code> present so those suites can never silently skip). The two new agent-format emitters carry their own generator self-tests run by the CI <code>generator-selftests</code> job (<code>test_copilot_emitter.py</code> — Copilot real-YAML round-trip; <code>test_antigravity_emitter.py</code> — Antigravity rule reshape), alongside <code>test_manifest_safety.py</code> — these live under <code>.claude/skills/aid-generate/scripts/</code>, not <code>tests/canonical/</code>. The genuinely untested surface is the prompt-driven orchestration layer: the <code>/aid-*</code> skills (verified by dogfooding; the <code>discovery-reviewer</code> sub-agent is the closest adversarial integration check), the renderer (covered by its own VERIFY (deterministic) byte-identity gate across the 5 profiles, not <code>tests/canonical/</code>), and the end-to-end pipeline. There is no statement/branch coverage measurement. (per test-landscape.md §Coverage gaps and roadmap)</p>
 	</div>
 </section>
 

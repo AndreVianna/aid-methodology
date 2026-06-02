@@ -2,10 +2,10 @@
 	<header>
 		<span class="eyebrow">Build &amp; Install</span>
 		<h2>Distribution / Install</h2>
-		<p class="lede">Single-source canonical directory renders into three byte-identical host-tool install trees via <code>run_generator.py</code>. End users install by running <code>setup.sh</code> or <code>setup.ps1</code>, which copies the selected profile tree into their project. (per infrastructure.md, repo-presentation.md)</p>
+		<p class="lede">Single-source canonical directory renders into five byte-identical host-tool install trees via <code>run_generator.py</code>. End users install by running <code>setup.sh</code> or <code>setup.ps1</code>, which copies the selected profile tree into their project. (per infrastructure.md, repo-presentation.md)</p>
 	</header>
 
-	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 3: Canonical source to three install trees plus setup.sh to any adopter repo — click or press Enter to expand">
+	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 3: Canonical source to five install trees plus setup.sh to any adopter repo — click or press Enter to expand">
 		<div class="mermaid">
 flowchart TB
     classDef src     fill:#0B1F3A,stroke:#00A3A1,color:#fff,stroke-width:2px;
@@ -17,21 +17,25 @@ flowchart TB
 
     SRC["canonical/<br/>agents, skills, templates,<br/>scripts, recipes"]:::src
 
-    GEN["run_generator.py<br/>87 lines — loads *.toml profiles<br/>calls 5 renderers per profile"]:::render
+    GEN["run_generator.py<br/>87 lines — loads 5 *.toml profiles<br/>calls 5 renderers per profile"]:::render
 
-    subgraph Profiles["Profile TOML configs"]
-        P1["claude-code.toml<br/>64 lines"]:::profile
-        P2["codex.toml<br/>78 lines"]:::profile
-        P3["cursor.toml<br/>75 lines"]:::profile
+    subgraph Profiles["Profile TOML configs (5)"]
+        P1["claude-code.toml<br/>format markdown"]:::profile
+        P2["codex.toml<br/>format toml"]:::profile
+        P3["cursor.toml<br/>format markdown + rules"]:::profile
+        P4["copilot-cli.toml<br/>format copilot-agent"]:::profile
+        P5["antigravity.toml<br/>format antigravity-rule"]:::profile
     end
 
-    subgraph Trees["Install trees (byte-identical output)"]
+    subgraph Trees["Install trees (5, byte-identical output)"]
         T1["profiles/claude-code/<br/>.claude/"]:::install
         T2["profiles/codex/<br/>.codex/ + .agents/"]:::install
         T3["profiles/cursor/<br/>.cursor/"]:::install
+        T4["profiles/copilot-cli/<br/>.github/ + AGENTS.md"]:::install
+        T5["profiles/antigravity/<br/>.agent/ + AGENTS.md"]:::install
     end
 
-    ADOPTER["Any adopter repo<br/>.claude/ or .codex/+.agents/ or .cursor/"]:::adopter
+    ADOPTER["Any adopter repo<br/>.claude/ | .codex/+.agents/ | .cursor/<br/>| .github/ | .agent/"]:::adopter
 
     VFY["verify_deterministic.py<br/>VERIFY (deterministic) hard gate<br/>byte-identical re-render"]:::verify
 
@@ -39,38 +43,49 @@ flowchart TB
     P1 --> GEN
     P2 --> GEN
     P3 --> GEN
+    P4 --> GEN
+    P5 --> GEN
     GEN --> T1
     GEN --> T2
     GEN --> T3
+    GEN --> T4
+    GEN --> T5
     GEN --> VFY
     T1 -.->|setup.sh| ADOPTER
     T2 -.->|setup.sh| ADOPTER
     T3 -.->|setup.sh| ADOPTER
+    T4 -.->|setup.sh| ADOPTER
+    T5 -.->|setup.sh| ADOPTER
 		</div>
-		<p class="caption">Fig 3 — Canonical-to-3-install-trees pipeline: one canonical source, three profile TOML configs, five renderers per profile, VERIFY (deterministic) hard gate. Adopters install by running setup.sh / setup.ps1, which copies the selected profile tree into their repo. (per architecture.md, infrastructure.md)</p>
+		<p class="caption">Fig 3 — Canonical-to-5-install-trees pipeline: one canonical source, five profile TOML configs (claude-code, codex, cursor, copilot-cli, antigravity), five renderers per profile, VERIFY (deterministic) hard gate. Adopters install by running setup.sh / setup.ps1, which copies the selected profile tree into their repo. (per architecture.md, infrastructure.md)</p>
 	</div>
 
 	<div class="grid g3">
 		<div class="card">
 			<div class="kicker">Generator</div>
 			<h3><code>run_generator.py</code></h3>
-			<p>87-line orchestrator. Loads every <code>profiles/*.toml</code>, calls <code>render_agents</code>, <code>render_skills</code>, <code>render_templates</code>, <code>render_canonical_scripts</code>, <code>render_recipes</code> per profile, performs deletion pass via emission manifest diff, then runs VERIFY (deterministic) (hard) and VERIFY (advisory). Python 3.11+ stdlib only. (per module-map.md §3)</p>
+			<p>87-line orchestrator. Loops all 5 <code>profiles/*.toml</code>, calls <code>render_agents</code>, <code>render_skills</code>, <code>render_templates</code>, <code>render_canonical_scripts</code>, <code>render_recipes</code> per profile, performs deletion pass via emission manifest diff, then runs VERIFY (deterministic) (hard) and VERIFY (advisory). Python 3.11+ stdlib only. (per module-map.md §3, infrastructure.md)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">End-user install</div>
 			<h3><code>setup.sh</code> / <code>setup.ps1</code></h3>
-			<p>Interactive tool-selection menu (Claude Code / Codex / Cursor). Copies the selected profile tree into the user's project root. Existing identical files are skipped; differing files prompt unless <code>--force</code> is passed. Bash 4+ (Linux/macOS/Git Bash) or PowerShell 5.1+ (Windows). (per infrastructure.md)</p>
+			<p>Interactive multi-select menu — <code>[1] Claude Code [2] Codex [3] Cursor [4] GitHub Copilot CLI [5] Antigravity [6] Done</code>. Copies each selected profile tree into the user's project root. Existing identical files are skipped; differing files prompt unless <code>--force</code> is passed. Bash 4+ (Linux/macOS/Git Bash) or PowerShell 5.1+ (Windows). (per infrastructure.md)</p>
 		</div>
 		<div class="card">
-			<div class="kicker">Codex split layout</div>
-			<h3>Split-root exception</h3>
-			<p>Codex CLI uses a split layout: <code>profiles/codex/.codex/agents/</code> holds TOML agent definitions; <code>profiles/codex/.agents/{skills,scripts,recipes,templates}/</code> holds markdown bodies. A single <code>emission-manifest.jsonl</code> covers both roots. This is the only profile that differs in structure from Claude Code and Cursor. (per project-structure.md §Unusual Structure)</p>
+			<div class="kicker">4 agent formats / split roots</div>
+			<h3>Per-tool layouts</h3>
+			<p><code>render_agents</code> emits one of 4 formats per <code>[agent].format</code>: <code>markdown</code> (Claude Code, Cursor), <code>toml</code> (Codex split layout — <code>.codex/agents/</code> + <code>.agents/</code>), <code>copilot-agent</code> (Copilot CLI native Agent Skills under <code>.github/</code>), and <code>antigravity-rule</code> (Antigravity <code>.agent/rules</code> reshape). Cursor + Copilot CLI also remap the <code>Bash</code> tool name (Terminal / shell); MCP-style tools are omitted on hosts that lack them. (per architecture.md, schemas.md §7, §9)</p>
 		</div>
+	</div>
+
+	<div class="callout">
+		<h4>Option-A AGENTS.md collision handler</h4>
+		<p>Four of the five tools — Codex, Cursor, Copilot CLI, Antigravity — write a root <code>AGENTS.md</code> (Claude Code uses <code>CLAUDE.md</code> only). When ≥2 AGENTS.md-writing tools are selected, <code>setup.sh</code> sets <code>AGENTS_COLLISION=1</code>, warns once, and resolves <strong>non-interactively</strong> with last-installed-wins — the survivor is the highest-numbered selected tool's install block (fixed per-tool order). The handler is gated: it only fires when <code>AGENTS_COLLISION=1</code> and the destination basename is <code>AGENTS.md</code>, so a single-writer install never triggers auto-overwrite. (per infrastructure.md §Install Pipeline, architecture.md §Install-time data flow)</p>
 	</div>
 
 	<div class="callout warn">
 		<h4>Never edit profile trees directly</h4>
-		<p>Files under <code>profiles/{claude-code,codex,cursor}/</code> are generator output. Edits are silently overwritten on the next <code>python run_generator.py</code> run. Always edit <code>canonical/</code> and re-run the generator. The emission manifest is the safety boundary — only previously-emitted files are eligible for deletion. (per coding-standards.md §7a)</p>
+		<p>Files under <code>profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/</code> are generator output. Edits are silently overwritten on the next <code>python run_generator.py</code> run. Always edit <code>canonical/</code> and re-run the generator. The emission manifest is the safety boundary — only previously-emitted files are eligible for deletion. (per coding-standards.md §7a)</p>
 	</div>
 </section>
 

@@ -2,7 +2,7 @@
 	<header>
 		<span class="eyebrow">Interfaces</span>
 		<h2>Pipeline Contracts</h2>
-		<p class="lede">AID ships no HTTP services or RPC endpoints. Contracts here means: skill slash-command signatures and state-machine contracts, script CLI signatures and exit codes, file-format contracts, subagent dispatch conventions, and the canonical-to-3-profile renderer contract. (per pipeline-contracts.md)</p>
+		<p class="lede">AID ships no HTTP services or RPC endpoints. Contracts here means: skill slash-command signatures and state-machine contracts, script CLI signatures and exit codes, file-format contracts, subagent dispatch conventions, and the canonical-to-5-profile renderer contract. (per pipeline-contracts.md)</p>
 	</header>
 
 	<h3>Slash-command contracts (10 skills)</h3>
@@ -34,7 +34,7 @@
 		<div class="card">
 			<div class="kicker">emission-manifest.jsonl</div>
 			<h3>Deletion-safety boundary</h3>
-			<p>JSON Lines, LF-only. Sentinel first line <code>{"_manifest_version": 1}</code>. Four-key record schema: <code>profile</code>, <code>src</code>, <code>dst</code>, <code>sha256</code>. Sorted by <code>dst</code> for byte-stable diffs. Only files in the manifest are eligible for deletion on the next render pass. (per schemas.md)</p>
+			<p>JSON Lines, LF-only. Sentinel first line <code>{"_manifest_version": 1}</code>. Four-key record schema: <code>profile</code>, <code>src</code>, <code>dst</code>, <code>sha256</code>. The <code>profile</code> value is one of the 5 profile stems (claude-code, codex, cursor, copilot-cli, antigravity) — one manifest per profile. Sorted by <code>dst</code> for byte-stable diffs. Only files in the manifest are eligible for deletion on the next render pass. (per schemas.md §8)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">STATE.md</div>
@@ -45,6 +45,11 @@
 			<div class="kicker">Heartbeat files</div>
 			<h3>L3 subagent visibility</h3>
 			<p>Single-line files at <code>.aid/.heartbeat/{agent}-{unix-ts}.txt</code>. Format: <code>[YYYY-MM-DDTHH:MM:SSZ] STATE | progress | activity (~eta)</code>. Written with <code>&gt;</code> (overwrite), never <code>&gt;&gt;</code>. Activity must change between writes. (per coding-standards.md §5a)</p>
+		</div>
+		<div class="card">
+			<div class="kicker">profiles/*.toml</div>
+			<h3>Per-tool render contract (5)</h3>
+			<p>TOML 1.0, parsed by <code>aid_profile.py</code> into the <code>Profile</code> dataclass. <code>[agent].format</code> ∈ {<code>markdown</code>, <code>toml</code>, <code>copilot-agent</code>, <code>antigravity-rule</code>} (the <code>_KNOWN_AGENT_FORMATS</code> set). <code>[extras]</code> gained <code>rules_frontmatter</code> (string | None — <code>"trigger"</code> for Antigravity's <code>.agent/rules</code> dialect; None → verbatim copy, keeping Cursor byte-identical) and each <code>[[extras.rules]]</code> → <code>RuleEntry</code> gained <code>output_filename</code> (optional name override enabling the <code>.mdc → .md</code> rename for Antigravity; None → source name preserved). (per schemas.md §9, module-map.md)</p>
 		</div>
 	</div>
 
