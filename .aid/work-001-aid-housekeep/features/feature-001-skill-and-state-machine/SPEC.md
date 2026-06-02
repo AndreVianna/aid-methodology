@@ -7,6 +7,7 @@
 | 2026-06-02 | Feature identified from REQUIREMENTS.md §5 (FR5–FR7), §7 (C1, C3) | /aid-interview |
 | 2026-06-02 | Technical Specification authored (state machine, run-state contract, resume detection, VC boundary, distribution, tests) | /aid-specify |
 | 2026-06-02 | Added incremental-delivery stub-no-op contract (skeleton stages whose feature isn't yet built record `skipped` + CHAIN to DONE) — enables standalone incremental deliveries per /aid-plan | /aid-plan (review) |
+| 2026-06-02 | Simplification: dropped the dedicated `parse-args.sh` script + its `test-housekeep-parse-args.sh` suite (over-engineering — no AID skill ships a CLI arg-parser). Arguments are now handled in `SKILL.md` `## Arguments` + State Detection prose (no dedicated arg-parse script), consistent with the other five skills. The `--grade` / `--cleanup-only` / no-args grammar moves into the SKILL.md router. | /aid-plan (restructure) |
 
 ## Source
 
@@ -275,7 +276,9 @@ AID has no application layers; "components" here are the skill's files
   matches `canonical/skills/aid-discover/SKILL.md` (`Read, Glob, Grep, Bash, Write, Edit, Agent`).
   Sections: `## Arguments`, `## Dispatch Protocol (L1+L2+L3)`, `## State Detection`
   (the re-entry table above + state-entry banners), `## Dispatch` (table below), and a
-  state-machine-chaining citation line.
+  state-machine-chaining citation line. **Argument handling lives in the `## Arguments` table +
+  State Detection prose (no dedicated arg-parse script)**, consistent with the other five skills
+  — see Invocation / CLI.
 - `canonical/skills/aid-housekeep/references/state-preflight.md` — PREFLIGHT body (this feature).
 - `canonical/skills/aid-housekeep/references/state-done.md` — DONE body (this feature).
 - `canonical/skills/aid-housekeep/references/state-kb-delta.md` — KB-DELTA **router stub +
@@ -284,7 +287,6 @@ AID has no application layers; "components" here are the skill's files
   interface; body by feature-003.
 - `canonical/skills/aid-housekeep/references/state-cleanup.md` — CLEANUP stub + interface;
   body by feature-004.
-- `canonical/scripts/housekeep/parse-args.sh` — arg grammar parser (see Invocation/CLI).
 - `canonical/scripts/housekeep/housekeep-state.sh` — read/write the `## Housekeep Status`
   block and resolve the resume target (the deterministic State-Detection logic, scriptable
   for testing). Mirrors the role of `canonical/scripts/summarize/stale-check.sh` as a
@@ -310,8 +312,10 @@ their logic (per NFR5; see Testing).
 
 ### Invocation / CLI
 
-Arg grammar (`canonical/scripts/housekeep/parse-args.sh`), in the `## Arguments` table style
-of the sibling skills:
+Arg grammar handled in `SKILL.md`'s `## Arguments` table + State Detection prose (no dedicated
+arg-parse script — consistent with the other five skills, which all route args via the prose
+`## Arguments` table + State Detection rather than a CLI parser), in the `## Arguments` table
+style of the sibling skills:
 
 | Argument | Effect |
 |----------|--------|
@@ -377,8 +381,6 @@ A canonical suite under `tests/canonical/`, auto-discovered by the
 discovers suites by glob, sources `tests/lib/assert.sh`, runs each under `timeout 300`).
 This feature owns the deterministic-logic suites for the **skeleton**:
 
-- `tests/canonical/test-housekeep-parse-args.sh` — arg grammar (no-args, `--cleanup-only`,
-  `--grade`, unknown flag → exit 2), mirroring `tests/canonical/test-read-setting.sh` style.
 - `tests/canonical/test-housekeep-state.sh` — `housekeep-state.sh` round-trip: write a
   `## Housekeep Status` block, read it back, and assert the resume target for each of the 6
   re-entry rows (the resume-detection contract is the highest-value thing to test for AC9).

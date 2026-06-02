@@ -1,49 +1,41 @@
-# task-004: `aid-housekeep` thin-router SKILL.md + PREFLIGHT/DONE bodies
+# task-004: `detect-delta.sh` — SHA-anchored delta detection engine
 
 **Type:** IMPLEMENT
 
-**Source:** feature-001-skill-and-state-machine → delivery-001
+**Source:** feature-002-kb-delta-refresh → delivery-001
 
-**Depends on:** task-001, task-002, task-003
+**Depends on:** task-001
 
 **Scope:**
-- Author `canonical/skills/aid-housekeep/SKILL.md` as a thin-router mirroring
-  `canonical/skills/aid-discover/SKILL.md` and `canonical/skills/aid-summarize/SKILL.md`
-  (feature-001 SPEC § Layers & Components, § Technical Specification intro). Frontmatter shape
-  per `aid-summarize/SKILL.md` lines 1–14 (`name`, folded `description` naming the state
-  machine, `allowed-tools`, `argument-hint`); `allowed-tools` set =
-  `Read, Glob, Grep, Bash, Write, Edit, Agent` (matches `aid-discover`, since KB-DELTA
-  dispatches sub-agents).
-- Sections: `## Arguments` (the CLI table, minus `--cleanup-only` for delivery-001),
-  `## Dispatch Protocol (L1+L2+L3)` (same block as `aid-discover/SKILL.md` — heartbeat
-  pre-create via `read-setting.sh --path traceability.heartbeat_interval --default 1`, three
-  armed L2 timers as separate background dispatches, Calibration-Log writeback; feature-001
-  SPEC § Traceability), `## State Detection` (the six-row re-entry table + state-entry banners),
-  `## Dispatch` (the five-row state→worker→advance table in feature-001 SPEC § Layers &
-  Components), and a `canonical/templates/state-machine-chaining.md` citation line.
-- Author `canonical/skills/aid-housekeep/references/state-preflight.md` (PREFLIGHT body):
-  synchronous gate verifying `.aid/` present, not in Plan Mode, git repo present/clean enough
-  to branch; on failure exit non-zero with an actionable message and **create no state** —
-  mirror `aid-summarize/references/state-preflight.md` (feature-001 SPEC § Feature Flow
-  PREFLIGHT).
-- Author `canonical/skills/aid-housekeep/references/state-done.md` (DONE body): print closing
-  summary (branch name, per-stage commits, "user pushes / opens PR" reminder per C3), HALT
-  (feature-001 SPEC § Feature Flow DONE).
-- Wire State Detection / Dispatch to call `housekeep-state.sh` (resume target),
-  `parse-args.sh` (arg routing), and `branch-commit.sh` (commit target), and to route
-  CHAIN/PAUSE-FOR-USER-ACTION/HALT advances per
-  `canonical/templates/state-machine-chaining.md` (feature-001 SPEC § "Advance types").
+- Implement `canonical/scripts/housekeep/detect-delta.sh` (feature-002 SPEC § Detection Engine,
+  § Components / Scripts). Pure git + grep; no `yq`/`python` dependency.
+- CLI: `detect-delta.sh [--state-file <path>] [--offline-ok]` (default `--state-file
+  .aid/knowledge/STATE.md`). Behavior in order (feature-002 SPEC § Detection Engine "Behavior"):
+  1. Read baseline SHA via `grep -m1 '\*\*Approved-At-Commit:\*\*'`; if absent → bootstrap mode.
+  2. Online-first `git fetch origin master 2>/dev/null`; on success resolve compare ref via
+     `git rev-parse origin/master`.
+  3. Offline gate (C2/AC3): fetch non-zero WITHOUT `--offline-ok` → print offline-permission
+     prompt to stderr and **exit 3** (no diff); WITH `--offline-ok` → compare against local
+     `master` (`git rev-parse master`). Script never prompts interactively.
+  4. Delta: `git diff --name-only <baseline-sha>..<compare-ref>` (changed paths, one per line
+     to stdout) + `git log --oneline <baseline-sha>..<compare-ref>` (human commit list). Exit
+     **0** if paths exist, **10** if range empty.
+  5. Bootstrap (AC2): no baseline → read date from `**Last KB Review:**` (fallback
+     `**User Approved:** yes (YYYY-MM-DD…)`), then `git log --since=<date> --name-only
+     --pretty=format: <compare-ref>` (still online-first / offline-gated); same path list +
+     exit 0/10.
+- Exit-code contract: `0` delta · `10` no delta · `3` fetch failed without `--offline-ok` ·
+  `2` arg/usage error (feature-002 SPEC § Detection Engine "Exit-code contract").
 
 **Acceptance Criteria:**
-- [ ] `SKILL.md` carries the required frontmatter, the `## Dispatch Protocol (L1+L2+L3)` block
-  matching `aid-discover/SKILL.md`, the six-row State Detection re-entry table, the five-row
-  Dispatch table, and the state-machine-chaining citation line; `--cleanup-only` is absent from
-  `## Arguments`.
-- [ ] PREFLIGHT exits non-zero with an actionable message and writes no `## Housekeep Status`
-  state on failure; on success it CHAINs to KB-DELTA.
-- [ ] DONE prints branch + per-stage commit summary and the "user pushes / opens PR" reminder,
-  then HALTs.
-- [ ] Resume routing: a re-run reads `## Housekeep Status` via `housekeep-state.sh` and resumes
-  at the first non-`passed`/non-`skipped` stage (AC9); a fully-`DONE` run reports "nothing to
-  resume".
-- [ ] All §6 quality gates pass; build/render passes; all existing tests pass.
+- [ ] SHA-anchored range produces the correct changed-path set (AC1).
+- [ ] Empty range → exit 10 (AC5).
+- [ ] Missing `**Approved-At-Commit:**` → bootstrap date path (AC2).
+- [ ] Simulated fetch failure without `--offline-ok` → exit 3 and no diff (AC3); with
+  `--offline-ok` → diffs against local `master`.
+- [ ] Arg/usage error → exit 2.
+- [ ] A canonical unit suite `tests/canonical/test-housekeep-detect-delta.sh` (auto-discovered
+  by the `tests/canonical/test-*.sh` glob, sourcing `tests/lib/assert.sh`) drives the above
+  against a throwaway fixtured git repo with a bare-clone `origin` (feature-002 SPEC § Testing
+  `test-housekeep-detect-delta.sh`).
+- [ ] All §6 quality gates pass (NFR3/NFR5); build/render passes; all existing tests pass.

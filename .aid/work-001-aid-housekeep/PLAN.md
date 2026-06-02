@@ -29,20 +29,17 @@
 |------|-----------|
 | task-001 | — |
 | task-002 | — |
-| task-003 | — |
-| task-004 | task-001, task-002, task-003 |
-| task-005 | task-001, task-004 |
-| task-006 | task-001 |
-| task-007 | task-001 |
-| task-008 | — |
-| task-009 | task-004, task-005, task-006, task-007, task-008 |
-| task-010 | task-001, task-002, task-005, task-006, task-007, task-009 |
-| task-011 | task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010 |
+| task-003 | task-001, task-002 |
+| task-004 | task-001 |
+| task-005 | task-001 |
+| task-006 | — |
+| task-007 | task-003, task-004, task-005, task-006 |
+| task-008 | task-001, task-002, task-003, task-004, task-005, task-006, task-007 |
 
 | Can Be Done In Parallel |
 |------------------------|
-| task-001, task-002, task-003, task-008 |
-| task-004, task-006, task-007 |
+| task-001, task-002, task-006 |
+| task-003, task-004, task-005 |
 
 ### delivery-002: Summary Reconciliation
 - **What it delivers:** Inserts the `SUMMARY-DELTA` stage between the KB gate and `DONE`. After
@@ -57,7 +54,7 @@
 
 | Task | Depends On |
 |------|-----------|
-| task-012 | task-001, task-002, task-004, task-005, task-009 |
+| task-009 | task-001, task-002, task-003, task-007 |
 
 | Can Be Done In Parallel |
 |------------------------|
@@ -81,19 +78,19 @@
 
 | Task | Depends On |
 |------|-----------|
-| task-013 | — |
-| task-014 | task-003 |
-| task-015 | task-001, task-002, task-004, task-005, task-013, task-014 |
-| task-016 | task-001, task-002, task-010, task-013, task-014, task-015 |
+| task-010 | — |
+| task-011 | task-003 |
+| task-012 | task-001, task-002, task-003, task-010, task-011 |
+| task-013 | task-001, task-002, task-008, task-010, task-011, task-012 |
 
 | Can Be Done In Parallel |
 |------------------------|
-| task-013, task-014 |
+| task-010, task-011 |
 
 ## Cross-Cutting Risks
 
 | # | Risk | Impact | Mitigation |
 |---|------|--------|------------|
 | 1 | delivery-001 modifies an **existing** skill (`/aid-discover`'s `state-approval.md` — the D1 `Approved-At-Commit:` writeback). A regression could break the discover approval flow that the rest of the pipeline depends on. | H | The edit is specified as idempotent + back-compatible (older KBs lack the field until next approval → AC2 bootstrap). Guarded by CI render-drift + the `/aid-discover` self-tests; verify the discover flow after the edit. |
-| 2 | **Incremental state-machine wiring** across deliveries: delivery-001 ships the full machine with KB-DELTA functional and SUMMARY-DELTA/CLEANUP as **stub no-ops**; deliveries 002/003 each replace a stub with real logic. Each replacement must preserve the halt/resume + hard-gate contract (feature-001's `## Housekeep Status` resume table), and the stub no-ops themselves must record `skipped` + CHAIN cleanly so delivery-001 terminates at DONE. | M | feature-001's state-detection/resume table + the explicit **incremental-delivery stub-no-op contract** (feature-001 SPEC § "Incremental-delivery stub no-op") are the single source of truth; each delivery adds/replaces a stage body + its gate predecessor check and re-runs feature-001's skeleton suites (state/resume, branch-commit) plus its own stage suite. |
-| 3 | All three stages share feature-001's `branch-commit.sh` + `housekeep-state.sh` helpers (shipped in delivery-001). A bug there affects every stage. | M | These helpers are delivery-001's tested deterministic core (skeleton suites: parse-args, state/resume, branch-commit) — landed and green before any stage logic builds on them. |
+| 2 | **Incremental state-machine wiring** across deliveries: delivery-001 ships the full machine with KB-DELTA functional and SUMMARY-DELTA/CLEANUP as **stub no-ops**; deliveries 002/003 each replace a stub with real logic. Each replacement must preserve the halt/resume + hard-gate contract (feature-001's `## Housekeep Status` resume table), and the stub no-ops themselves must record `skipped` + CHAIN cleanly so delivery-001 terminates at DONE. | M | feature-001's state-detection/resume table + the explicit **incremental-delivery stub-no-op contract** (feature-001 SPEC § "Incremental-delivery stub no-op") are the single source of truth; each delivery adds/replaces a stage body + its gate predecessor check and re-runs feature-001's skeleton suites (state/resume, branch-commit) plus its own stage suite. (Args are handled in `SKILL.md` `## Arguments` + State Detection prose — no dedicated arg-parse script or suite.) |
+| 3 | All three stages share feature-001's `branch-commit.sh` + `housekeep-state.sh` helpers (shipped in delivery-001). A bug there affects every stage. | M | These helpers are delivery-001's tested deterministic core (skeleton suites: state/resume, branch-commit) — landed and green before any stage logic builds on them. |

@@ -1,36 +1,78 @@
-# task-008: D1 edit — `Approved-At-Commit:` writeback in `/aid-discover` approval
+# task-008: Integration TEST — cross-stage state machine + distribution/render + run-all discovery
 
-**Type:** IMPLEMENT
+**Type:** TEST
 
-**Source:** feature-002-kb-delta-refresh → delivery-001
+**Source:** feature-001-skill-and-state-machine + feature-002-kb-delta-refresh → delivery-001
 
-**Depends on:** —
+**Depends on:** task-001, task-002, task-003, task-004, task-005, task-006, task-007
 
 **Scope:**
-- Edit `canonical/skills/aid-discover/references/state-approval.md` Step 3, the
-  `**[1] Approved:**` bullet (currently `state-approval.md:23`) to **also** record
-  `**Approved-At-Commit:**` going forward (dependency D1; feature-002 SPEC § "Approval Baseline
-  Writeback — this feature's own + the D1 edit", § Components / Scripts "Edited by THIS
-  feature").
-- Add the single line specified verbatim in feature-002 SPEC: `Also set
-  **Approved-At-Commit:** to the approved commit SHA (git rev-parse HEAD) — replace the line if
-  present, else insert after **Last KB Review:** (idempotent; back-compatible — older KBs simply
-  lack the line until the next approval, which is the AC2 bootstrap path).`
-- The field joins the existing approval anchors in the `### Discovery State` header block of
-  `.aid/knowledge/STATE.md` as a `> **Field:** value` blockquote line, matching its siblings
-  `> **User Approved:**` / `> **Last KB Review:**` (feature-002 SPEC § "S-1. Approval baseline").
-- This is a body-text edit to an existing rendered skill; the renderer re-emits it to all 5
-  profiles automatically (no renderer edit). No new design — the line is dictated by the SPEC.
+
+### (a) Cross-stage integration — KB-DELTA → stub-no-ops → DONE
+- Author a canonical integration suite (e.g. `tests/canonical/test-housekeep-flow.sh`,
+  auto-discovered by the `tests/canonical/test-*.sh` glob in `tests/run-all.sh`, sourcing
+  `tests/lib/assert.sh`, runs under `timeout 300`) that exercises the **deterministic state
+  transitions** of the delivery-001 state machine over a throwaway fixtured repo + `STATE.md`,
+  driving the housekeep scripts (`housekeep-state.sh`, `branch-commit.sh`, `detect-delta.sh`,
+  `scope-delta.sh`) — not the LLM prose bodies.
+- Cover the delivery-001 end-to-end wiring contract from PLAN.md (Risk #2) and feature-001 SPEC
+  § "Incremental-delivery stub no-op": with KB-DELTA functional, after KB-DELTA reaches
+  `passed`/`skipped`, the **SUMMARY-DELTA and CLEANUP stub no-ops each record `skipped` and
+  CHAIN through to DONE**, so a KB-refresh run terminates cleanly at `**State:** DONE`.
+- Cover the gate/resume contract (AC9): a `stalled` KB-DELTA halts and a re-run resumes at
+  KB-DELTA (re-entry row 3); a fully-`passed`/`skipped` machine reports "nothing to resume"
+  (re-entry row 6, NFR2 idempotent no-op).
+- Assert the hard-gate ledger (C1): SUMMARY-DELTA's stub does not "run" until `**KB Stage:**`
+  reads `passed`/`skipped`; CLEANUP's stub does not "run" until `**Summary Stage:**` reads
+  `passed`/`skipped`.
+- **Forward-compat note (delivery-002):** this suite is the home for the SUMMARY-DELTA
+  stub→real-body swap assertion. Per feature-003 SPEC § Testing, feature-003 ships **no new
+  dedicated suite** (its staleness/grade logic is covered by `/aid-summarize`'s own suites and its
+  gate-field write by `test-housekeep-state.sh`). When task-009 replaces the stub, this suite's
+  state-transition coverage must still hold: a fully-`passed`/`skipped` machine still terminates at
+  `**State:** DONE`, and the C1 hard-gate ledger (SUMMARY-DELTA gated on `**KB Stage:**`,
+  CLEANUP gated on `**Summary Stage:**`) is unchanged — assert these against the deterministic
+  `housekeep-state.sh` gate-ledger transitions, not the `/aid-summarize` delegation prose.
+
+### (b) Distribution / render to 5 profiles + run-all discovery (AC11, NFR4)
+- Verify the distribution contract (AC11; feature-001 SPEC § Distribution) with **no renderer
+  edit**: running `.claude/skills/aid-generate/scripts/render_skills.py` discovers the new
+  `canonical/skills/aid-housekeep/` folder via its `skill_dirs = sorted(...)` glob and emits
+  `SKILL.md` + `references/*.md` + `scripts/*.sh` into all 5 install profiles (claude-code,
+  codex, cursor, copilot-cli, antigravity under `profiles/*.toml`).
+- Run the renderer determinism self-test (`render_skills.py --self-test`) and confirm it
+  exercises the new folder and passes (byte-identical render across profiles).
+- Confirm the D1-edited `aid-discover/references/state-approval.md` (task-006) re-renders cleanly
+  to all 5 profiles (CI render-drift gate; cross-cutting Risk #1).
+- Confirm `/aid-housekeep` is **absent from the mandatory pipeline flow** — it is NOT inserted
+  into the phase-to-skill mapping in `.aid/knowledge/architecture.md` and no phase-gate
+  references it (optional/on-demand like `/aid-summarize`).
+- Confirm the delivery-001 housekeep suites are picked up by the `tests/canonical/test-*.sh`
+  glob and run green under `tests/run-all.sh` (no edit to `run-all.sh`; NFR4 "wired into
+  run-all.sh"). After the `parse-args.sh` drop (args handled in `SKILL.md` prose, no dedicated
+  arg-parse suite), the suite list is the **5** suites: `test-housekeep-state.sh`,
+  `test-housekeep-branch-commit.sh`, `test-housekeep-detect-delta.sh`,
+  `test-housekeep-scope-delta.sh`, and this integration suite (5 suites, NOT 6 — the
+  `test-housekeep-parse-args.sh` suite is removed).
 
 **Acceptance Criteria:**
-- [ ] `state-approval.md` Step 3 `**[1] Approved:**` bullet records `**Approved-At-Commit:**` =
-  `git rev-parse HEAD` as a new behavior of the discover approval path, idempotently (replace
-  the line if present, else insert after `**Last KB Review:**`).
-- [ ] A unit/self-test asserts the writeback's idempotency (running it twice yields one
-  `**Approved-At-Commit:**` line; insert-after-`**Last KB Review:**` when absent; replace-in-place
-  when present).
-- [ ] Back-compatible: a KB lacking the field is unaffected until the next approval (the AC2
-  bootstrap path); the rest of the discover approval flow behaves as before.
-- [ ] The `/aid-discover` self-tests / approval flow remain green after the edit (cross-cutting
-  Risk #1 mitigation).
-- [ ] All §6 quality gates pass; build/render passes (CI render-drift); all existing tests pass.
+- [ ] Deterministic, with clean setup/teardown (throwaway repo + STATE fixture), CI-wired via
+  the existing `test-*.sh` glob (no edit to `run-all.sh`).
+- [ ] Asserts a no-delta KB-DELTA → `skipped` → SUMMARY-DELTA stub `skipped` → CLEANUP stub
+  `skipped` → `**State:** DONE` (clean termination of the delivery-001 KB-refresh run).
+- [ ] Asserts a stalled KB-DELTA halts and a re-run resumes at KB-DELTA (not job 1) — AC9.
+- [ ] Asserts the hard-gate ledger ordering (C1): no downstream stub advances before its
+  upstream `**X Stage:**` reads `passed`/`skipped`.
+- [ ] Asserts a fully-resolved run reports "nothing to resume" (re-entry row 6 — NFR2).
+- [ ] `render_skills.py` (and `--self-test`) emit `aid-housekeep` SKILL.md + references + scripts
+  to all 5 profiles with no renderer source edit, byte-identical across profiles.
+- [ ] The D1-edited `aid-discover` approval body (task-006) renders to all 5 profiles with no
+  render drift.
+- [ ] `/aid-housekeep` does not appear in the mandatory phase-to-skill pipeline mapping
+  (architecture.md) and no phase-gate references it (AC11).
+- [ ] `tests/run-all.sh` discovers and passes the 5 delivery-001 housekeep canonical suites
+  (`test-housekeep-state`, `test-housekeep-branch-commit`, `test-housekeep-detect-delta`,
+  `test-housekeep-scope-delta`, + this integration suite — NOT a parse-args suite) via the
+  existing glob (NFR4/NFR5) with no `run-all.sh` edit.
+- [ ] All §6 quality gates pass; covers the source ACs (AC9, C1, NFR2, stub-no-op contract,
+  AC11, NFR4).

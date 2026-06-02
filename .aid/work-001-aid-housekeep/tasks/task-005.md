@@ -1,33 +1,39 @@
-# task-005: Stub-no-op bodies — `state-summary-delta.md` + `state-cleanup.md`
+# task-005: `scope-delta.sh` — path→doc scoping map + owner resolution
 
 **Type:** IMPLEMENT
 
-**Source:** feature-001-skill-and-state-machine → delivery-001
+**Source:** feature-002-kb-delta-refresh → delivery-001
 
-**Depends on:** task-001, task-004
+**Depends on:** task-001
 
 **Scope:**
-- Author `canonical/skills/aid-housekeep/references/state-summary-delta.md` and
-  `canonical/skills/aid-housekeep/references/state-cleanup.md` as **inert stub no-op bodies**
-  per feature-001 SPEC § "Incremental-delivery stub no-op (skeleton contract)".
-- Each stub body: writes `**Stage Status:** skipped` and its own `**<X> Stage:** skipped`
-  (`**Summary Stage:** skipped` / `**Cleanup Stage:** skipped`) to `## Housekeep Status` via
-  `housekeep-state.sh`, does **no work**, does **not pause**, makes **no commit**, and **CHAINs
-  straight onward** (SUMMARY-DELTA → CLEANUP → DONE), so a KB-refresh run terminates cleanly at
-  DONE.
-- The stubs are distinct from a runtime `skipped` (a real, fully-implemented stage deciding to
-  skip): note in the body that a later delivery replaces the stub with the feature's real
-  logic (003 = summary, 004 = cleanup).
-- These bodies fill the feature-001 SPEC § Layers & Components stub slots; the substantive
-  bodies are owned by feature-003 / feature-004 in later deliveries.
+- Implement `canonical/scripts/housekeep/scope-delta.sh` (feature-002 SPEC § "Path→Doc Scoping
+  Map", § "Resolution algorithm", § Components / Scripts). Pure bash; no `yq`/`python`.
+- Embed the **path-prefix→docs table** verbatim from feature-002 SPEC § Path→Doc Scoping Map
+  (all 13 rows, including `.aid/knowledge/**` → **skip** and *anything unmapped* → **flag for
+  user**), resolved by longest-prefix match. This map is **distinct from** `aid-discover`'s
+  filename→owner map in `doc-set-resolve.md` and must not be conflated (Q1 naming).
+- Resolution algorithm: read changed paths on stdin → longest-prefix match → union into the
+  affected-doc set → resolve each affected doc to its owning discovery agent via
+  `aid-discover`'s **existing** `owner-of <filename>` accessor (`references/doc-set-resolve.md`,
+  sourced over `read-setting.sh --path discovery.doc_set`). Handle the two no-dispatch cases
+  per feature-002 SPEC § Resolution algorithm step 4: **owner = `orchestrator`** and **owner
+  resolves to empty** (doc not in active doc-set) — both surfaced as "no owning sub-agent —
+  flagged for orchestrator/manual refresh" and routed to orchestrator regeneration, keeping the
+  algorithm total over any doc-set. Emit deduped **affected docs** and **owning agents** lists
+  on stdout; print `UNMAPPED` to stderr.
 
 **Acceptance Criteria:**
-- [ ] `state-summary-delta.md` writes `**Summary Stage:** skipped` + `**Stage Status:**
-  skipped` and CHAINs to CLEANUP with no work, no pause, no commit.
-- [ ] `state-cleanup.md` writes `**Cleanup Stage:** skipped` + `**Stage Status:** skipped` and
-  CHAINs to DONE with no work, no pause, no commit.
-- [ ] Each body explicitly documents that it is a stub no-op to be replaced by its owning
-  feature in a later delivery (no new design — verbatim per the stub-no-op contract).
-- [ ] Both bodies write only through `housekeep-state.sh` (never hand-edit `## Housekeep
-  Status`).
-- [ ] All §6 quality gates pass; build/render passes; all existing tests pass.
+- [ ] Each path-prefix row resolves to the expected doc set under longest-prefix match.
+- [ ] `.aid/knowledge/**` paths → skip; an unmapped path → flagged on stderr (not silently
+  dropped) — NFR3 transparency.
+- [ ] doc→owner resolution matches `owner-of` for the default seed; `orchestrator`-owned and
+  empty-owner docs are routed to orchestrator regeneration (no sub-agent dispatch), keeping
+  resolution total.
+- [ ] An empty affected-doc set after mapping (all changed paths were KB self-edits) is
+  surfaced as a no-delta/skip signal for the body.
+- [ ] A canonical unit suite `tests/canonical/test-housekeep-scope-delta.sh` (auto-discovered by
+  the `tests/canonical/test-*.sh` glob, sourcing `tests/lib/assert.sh`) drives fixtured
+  changed-path lists, mirroring `tests/canonical/test-doc-set-mapping.sh` /
+  `test-discovery-doc-ownership.sh` (feature-002 SPEC § Testing `test-housekeep-scope-delta.sh`).
+- [ ] All §6 quality gates pass (NFR3/NFR5); build/render passes; all existing tests pass.

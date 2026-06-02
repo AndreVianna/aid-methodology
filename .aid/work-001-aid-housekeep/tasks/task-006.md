@@ -1,41 +1,36 @@
-# task-006: `detect-delta.sh` — SHA-anchored delta detection engine
+# task-006: D1 edit — `Approved-At-Commit:` writeback in `/aid-discover` approval
 
 **Type:** IMPLEMENT
 
 **Source:** feature-002-kb-delta-refresh → delivery-001
 
-**Depends on:** task-001
+**Depends on:** —
 
 **Scope:**
-- Implement `canonical/scripts/housekeep/detect-delta.sh` (feature-002 SPEC § Detection Engine,
-  § Components / Scripts). Pure git + grep; no `yq`/`python` dependency.
-- CLI: `detect-delta.sh [--state-file <path>] [--offline-ok]` (default `--state-file
-  .aid/knowledge/STATE.md`). Behavior in order (feature-002 SPEC § Detection Engine "Behavior"):
-  1. Read baseline SHA via `grep -m1 '\*\*Approved-At-Commit:\*\*'`; if absent → bootstrap mode.
-  2. Online-first `git fetch origin master 2>/dev/null`; on success resolve compare ref via
-     `git rev-parse origin/master`.
-  3. Offline gate (C2/AC3): fetch non-zero WITHOUT `--offline-ok` → print offline-permission
-     prompt to stderr and **exit 3** (no diff); WITH `--offline-ok` → compare against local
-     `master` (`git rev-parse master`). Script never prompts interactively.
-  4. Delta: `git diff --name-only <baseline-sha>..<compare-ref>` (changed paths, one per line
-     to stdout) + `git log --oneline <baseline-sha>..<compare-ref>` (human commit list). Exit
-     **0** if paths exist, **10** if range empty.
-  5. Bootstrap (AC2): no baseline → read date from `**Last KB Review:**` (fallback
-     `**User Approved:** yes (YYYY-MM-DD…)`), then `git log --since=<date> --name-only
-     --pretty=format: <compare-ref>` (still online-first / offline-gated); same path list +
-     exit 0/10.
-- Exit-code contract: `0` delta · `10` no delta · `3` fetch failed without `--offline-ok` ·
-  `2` arg/usage error (feature-002 SPEC § Detection Engine "Exit-code contract").
+- Edit `canonical/skills/aid-discover/references/state-approval.md` Step 3, the
+  `**[1] Approved:**` bullet (currently `state-approval.md:23`) to **also** record
+  `**Approved-At-Commit:**` going forward (dependency D1; feature-002 SPEC § "Approval Baseline
+  Writeback — this feature's own + the D1 edit", § Components / Scripts "Edited by THIS
+  feature").
+- Add the single line specified verbatim in feature-002 SPEC: `Also set
+  **Approved-At-Commit:** to the approved commit SHA (git rev-parse HEAD) — replace the line if
+  present, else insert after **Last KB Review:** (idempotent; back-compatible — older KBs simply
+  lack the line until the next approval, which is the AC2 bootstrap path).`
+- The field joins the existing approval anchors in the `### Discovery State` header block of
+  `.aid/knowledge/STATE.md` as a `> **Field:** value` blockquote line, matching its siblings
+  `> **User Approved:**` / `> **Last KB Review:**` (feature-002 SPEC § "S-1. Approval baseline").
+- This is a body-text edit to an existing rendered skill; the renderer re-emits it to all 5
+  profiles automatically (no renderer edit). No new design — the line is dictated by the SPEC.
 
 **Acceptance Criteria:**
-- [ ] SHA-anchored range produces the correct changed-path set (AC1).
-- [ ] Empty range → exit 10 (AC5).
-- [ ] Missing `**Approved-At-Commit:**` → bootstrap date path (AC2).
-- [ ] Simulated fetch failure without `--offline-ok` → exit 3 and no diff (AC3); with
-  `--offline-ok` → diffs against local `master`.
-- [ ] Arg/usage error → exit 2.
-- [ ] A canonical unit suite `tests/canonical/test-housekeep-detect-delta.sh` (auto-discovered
-  by the `tests/canonical/test-*.sh` glob, sourcing `tests/lib/assert.sh`) drives the above
-  against a throwaway fixtured git repo with a bare-clone `origin` (feature-002 SPEC § Testing
-  `test-housekeep-detect-delta.sh`).
-- [ ] All §6 quality gates pass (NFR3/NFR5); build/render passes; all existing tests pass.
+- [ ] `state-approval.md` Step 3 `**[1] Approved:**` bullet records `**Approved-At-Commit:**` =
+  `git rev-parse HEAD` as a new behavior of the discover approval path, idempotently (replace
+  the line if present, else insert after `**Last KB Review:**`).
+- [ ] A unit/self-test asserts the writeback's idempotency (running it twice yields one
+  `**Approved-At-Commit:**` line; insert-after-`**Last KB Review:**` when absent; replace-in-place
+  when present).
+- [ ] Back-compatible: a KB lacking the field is unaffected until the next approval (the AC2
+  bootstrap path); the rest of the discover approval flow behaves as before.
+- [ ] The `/aid-discover` self-tests / approval flow remain green after the edit (cross-cutting
+  Risk #1 mitigation).
+- [ ] All §6 quality gates pass; build/render passes (CI render-drift); all existing tests pass.
