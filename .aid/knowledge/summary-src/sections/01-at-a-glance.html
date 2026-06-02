@@ -41,7 +41,7 @@
 		<div class="card">
 			<div class="kicker">Architecture</div>
 			<h3>Single-Source Compilation</h3>
-			<p>One canonical source (<code>canonical/</code>) is rendered by <code>run_generator.py</code> into five byte-identical install trees (7 on-disk copies counting the dogfood <code>.claude/</code>). Never edit the profile trees directly — edit <code>canonical/</code> and re-run the generator. (per architecture.md, project-structure.md)</p>
+			<p>One canonical source (<code>canonical/</code>) is rendered by <code>run_generator.py</code> into five byte-identical install trees — the enforced render invariant spans 6 trees (<code>canonical/</code> + 5 profiles). Never edit the profile trees directly — edit <code>canonical/</code> and re-run the generator. (A 7th on-disk copy, the repo's own hand-maintained dogfood <code>.claude/</code>, sits outside this render set — internal tooling, see §14.) (per architecture.md, project-structure.md)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">No Application Code</div>
