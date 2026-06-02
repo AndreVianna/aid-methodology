@@ -13,6 +13,7 @@ contracts:
   - "No third-party Python packages (stdlib only)"
   - "No npm package.json at any level"
 changelog:
+  - 2026-06-01: post-merge update for work-001-add-providers (PRs #42/#43/#44) — generator Python files 11→12 (added test_copilot_emitter.py + test_antigravity_emitter.py); TOML config files 3→5 profiles (added copilot-cli + antigravity); byte-identical mirror count canonical+.claude+3 → canonical+.claude+5 profiles
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
 ---
 # Technology Stack
@@ -29,12 +30,12 @@ changelog:
 |----------|---------|------------------------|
 | **Markdown** | CommonMark + GFM tables (assumed; no validator pinned) | 872 files / 97,689 lines (`.aid/generated/project-index.md` `## Language Breakdown`). All docs, skills, agents, templates, recipes. |
 | **Bash (shell)** | bash 4+ (uses `declare -A` associative arrays, `[[ ]]`, `${var:-}`) | 109 files / 30,887 lines. Example: `setup.sh` `declare -A selected`. |
-| **Python** | 3.11+ (required for `tomllib` stdlib) | 11 files / 4,232 lines. Pinned by `.claude/skills/aid-generate/scripts/render_lib.py` "Requirements: Python 3.11+ (tomllib is stdlib; no third-party deps)" and `aid_profile.py` "Requirements: Python 3.11+ (tomllib is stdlib from 3.11)". |
+| **Python** | 3.11+ (required for `tomllib` stdlib) | 12 files / 6,728 lines (incl. `test_copilot_emitter.py` + `test_antigravity_emitter.py` added by work-001). Pinned by `.claude/skills/aid-generate/scripts/render_lib.py` "Requirements: Python 3.11+ (tomllib is stdlib; no third-party deps)" and `aid_profile.py` "Requirements: Python 3.11+ (tomllib is stdlib from 3.11)". |
 | **JavaScript (ES modules + plain)** | ES2020+ (no explicit pin); `.mjs` for ESM scripts | 20 files / 5,685 lines. `canonical/scripts/summarize/validate-diagrams.mjs` (577 lines), `contrast-check.mjs` (151 lines); `canonical/templates/knowledge-summary/lightbox.js` (359 lines), `mermaid-init.js` (53 lines). |
 | **PowerShell** | 5.1+ | 6 files / 337 lines. `setup.ps1`, `canonical/scripts/summarize/assemble-3part.ps1`. Version requirement from `README.md` `### Runtime requirements`. |
-| **CSS** | CSS3 (custom properties, `:focus-visible`, `@media (forced-colors)`, `@media (prefers-reduced-motion)`) | 5 files / 3,285 lines. Single canonical source `canonical/templates/knowledge-summary/component-css.css` (657 lines) × 4 mirrors (canonical + .claude + 3 profile trees). |
-| **HTML** | HTML5 (semantic landmarks: `<header role="banner">`, `<main>`, `<nav>`, `<footer>`) | 5 files / 505 lines. `canonical/templates/knowledge-summary/html-skeleton.html` (101 lines) + 4 mirrors. |
-| **TOML** | TOML 1.0 (Python `tomllib` parser implies 1.0) | 25 files / 2,888 lines. 3 profile config files + 22 Codex agent definitions (`profiles/codex/.codex/agents/*.toml`). |
+| **CSS** | CSS3 (custom properties, `:focus-visible`, `@media (forced-colors)`, `@media (prefers-reduced-motion)`) | Single canonical source `canonical/templates/knowledge-summary/component-css.css` (657 lines) rendered into the render-target trees: canonical + `.claude` dogfood + 5 profile trees = **7 copies** on disk (a runtime `.aid/templates/` copy makes 8 total). ⚠️ Project-index leading count (`5 files / 3,285 lines`) predates the work-001 merge — orchestrator regenerates `project-index.md`. |
+| **HTML** | HTML5 (semantic landmarks: `<header role="banner">`, `<main>`, `<nav>`, `<footer>`) | `canonical/templates/knowledge-summary/html-skeleton.html` (101 lines) rendered into canonical + `.claude` dogfood + 5 profile trees = **7 copies** on disk (a runtime `.aid/templates/` copy makes 8). ⚠️ Project-index leading count (`5 files / 505 lines`) predates the work-001 merge — orchestrator regenerates `project-index.md`. |
+| **TOML** | TOML 1.0 (Python `tomllib` parser implies 1.0) | 27 files / 2,822 lines. 5 profile config files (`profiles/*.toml`) + 22 Codex agent definitions (`profiles/codex/.codex/agents/*.toml`). |
 | **YAML** | YAML 1.2 (per `canonical/templates/settings.yml` "Format: YAML 1.2.") | 5 files / 405 lines. `canonical/templates/settings.yml` (81 lines) + 4 mirrors. Also used as Markdown frontmatter throughout. |
 | **JSON** | RFC 8259 (Claude Code uses standard JSON) | 2 files / 28 lines. `.claude/settings.json` (15 lines), `.claude/settings.local.json` (13 lines). |
 | **JSON Lines** | Per `canonical/EMISSION-MANIFEST.md` `## Line-Ending and Trailing-Newline Rule` — LF-only, one record per line | Used by `profiles/{tool}/emission-manifest.jsonl`. |
@@ -80,21 +81,21 @@ absence of `package.json`-style config).
 | **PowerShell** | 5.1+ | `README.md` `### Runtime requirements` explicit pin: "PowerShell 5.1+ for setup.ps1". |
 | **Node.js** | 18+ (optional — only for `/aid-summarize` diagram validators) | `README.md` `### Runtime requirements`: "Node 18+ is optional — only `/aid-summarize` uses it, for diagram validation." `.mjs` files imply ESM support (Node 14+ minimum). |
 | **Git** | unpinned (any modern version) | `README.md` `### Runtime requirements`: "Git" listed as a runtime requirement; `.claude/skills/aid-generate/SKILL.md` "git working tree" Pre-flight runs `git rev-parse --git-dir`. |
-| **One of: Claude Code / OpenAI Codex CLI / Cursor IDE** | unpinned (host-tool-specific) | `README.md` `### Runtime requirements`: "One or more host AI tools." End-user runtime; required to invoke the slash commands. |
+| **One of: Claude Code / OpenAI Codex CLI / Cursor IDE / GitHub Copilot CLI / Antigravity** | unpinned (host-tool-specific) | `README.md` `### Runtime requirements`: "One or more host AI tools." End-user runtime; required to invoke the slash commands. The 5 install profiles map 1:1 to these host tools (`profiles/*.toml`). |
 
 ## Build System
 
 | Tool | Config file location | Purpose |
 |------|----------------------|---------|
-| **`run_generator.py`** | `run_generator.py` (87 lines, repo root) | The build. Iterates `profiles/*.toml`, calls each renderer per profile, performs the pure-mirror deletion pass, writes one emission manifest per profile, then runs VERIFY (deterministic) (hard) and VERIFY (advisory) (advisory). |
-| **Per-tool profile TOMLs** | `profiles/claude-code.toml`, `profiles/codex.toml`, `profiles/cursor.toml` | Per-host conventions: `[layout]`, `[agent.frontmatter]`, `[skill.frontmatter]`, `[model_tiers]`, `[tool_names]`, `[filename_map]`, `[extras]`, `[capabilities]`. |
+| **`run_generator.py`** | `run_generator.py` (87 lines, repo root) | The build. Iterates `profiles/*.toml` (5 profiles), calls each renderer per profile, performs the pure-mirror deletion pass, writes one emission manifest per profile, then runs VERIFY (deterministic) (hard) and VERIFY (advisory) (advisory). |
+| **Per-tool profile TOMLs** | `profiles/claude-code.toml`, `profiles/codex.toml`, `profiles/cursor.toml`, `profiles/copilot-cli.toml`, `profiles/antigravity.toml` (5) | Per-host conventions: `[layout]`, `[agent.frontmatter]` (incl. `format` ∈ markdown/toml/copilot-agent/antigravity-rule), `[skill.frontmatter]`, `[model_tiers]`, `[tool_names]`, `[filename_map]`, `[extras]` (incl. `rules_frontmatter` + per-rule `output_filename`), `[capabilities]`. |
 | **Emission manifest spec** | `canonical/EMISSION-MANIFEST.md` (152 lines) | Authoritative spec for the manifest format (JSONL, LF-only, sentinel first line `{"_manifest_version": 1}`, sorted by `dst`). |
 | **End-user installer** | `setup.sh` (162 lines) / `setup.ps1` (157 lines) | Cross-platform install scripts that copy a built profile tree into a target project (not a build per se — runs after `run_generator.py`). |
 
 ### Build Commands
 
 ```bash
-# Full build (renders canonical → all 3 install trees + runs VERIFY (deterministic)/(advisory))
+# Full build (renders canonical → all 5 install trees + runs VERIFY (deterministic)/(advisory))
 python run_generator.py
 
 # Build one tree only (rare)
@@ -169,9 +170,12 @@ Source: `project-structure.md` `## Build & Test System`; `tests/README.md`.
 | **`writeback-state.sh`** | `canonical/scripts/summarize/writeback-state.sh` (173 lines) | Writes summarize-phase state back to `.aid/knowledge/STATE.md` | — |
 | **`complexity-score.sh`** | `canonical/scripts/execute/complexity-score.sh` (209 lines) | Task complexity scoring used by `/aid-execute` | — |
 
-Each script above has **four byte-identical copies** on disk (canonical + dogfood `.claude/`
-+ 3 profile trees) — the count discrepancy (109 shell files but ~21 unique scripts) is by
-design per `project-structure.md` "Quadruple mirror" (`## Unusual Structure Notes`).
+Each script above has **seven byte-identical copies** on disk (canonical + dogfood `.claude/`
++ 5 profile trees: claude-code, codex, cursor, copilot-cli, antigravity) — the high shell-file
+count relative to the ~21 unique scripts is by design (per-tool mirroring); see
+`project-structure.md` `## Unusual Structure Notes` "mirror" note. ⚠️ The shell-file total in
+`project-index.md` predates the work-001 merge (2 new profile trees add copies) — orchestrator
+regenerates that index.
 
 ## Testing Infrastructure
 
@@ -190,6 +194,8 @@ Source: `project-structure.md` `## Build & Test System`; `tests/README.md`.
 | `profiles/claude-code.toml` | TOML | Claude Code host conventions (64 lines) |
 | `profiles/codex.toml` | TOML | Codex CLI host conventions (78 lines — split-root layout) |
 | `profiles/cursor.toml` | TOML | Cursor IDE host conventions (75 lines — adds `[extras.rules]` for `.mdc` files) |
+| `profiles/copilot-cli.toml` | TOML | GitHub Copilot CLI host conventions (64 lines — `output_root .github`, `[agent].format = copilot-agent`, `Bash → shell` remap) |
+| `profiles/antigravity.toml` | TOML | Antigravity host conventions (107 lines — `output_root .agent`, `[agent].format = antigravity-rule`, `[model_tiers.large/medium/small]` detailed Gemini-3 form, empty `[tool_names]`) |
 | `.claude/settings.json` | JSON | Claude Code permission allow-list (15 lines) |
 | `.claude/settings.local.json` | JSON | Personal Claude Code overrides (13 lines, gitignored per `.gitignore` `.claude/settings.local.json`) |
 | `.aid/settings.yml` | YAML 1.2 | AID runtime config — project identity, review minimum_grade, parallelism, heartbeat interval, per-skill overrides |

@@ -5,11 +5,12 @@ intent: |
   Describes the hosting, runtime, build pipeline, and dev tooling for the AID-methodology
   repo. There is no conventional runtime infrastructure (no Docker, no cloud, no Terraform).
   "Infrastructure" here means: install scripts (setup.sh / setup.ps1) that put AID into a
-  target project, the canonical→3-profiles render pipeline driven by run_generator.py, and
+  target project, the canonical→5-profiles render pipeline driven by run_generator.py, and
   the local-filesystem conventions for runtime state. Read this to understand how AID is
   built, installed, and operated on a local workstation.
 contracts: []
 changelog:
+  - 2026-06-01: post-merge work-001-add-providers (PRs #42/#43/#44) — canonical render pipeline 3→5 profiles (added copilot-cli + antigravity); setup menu now 5 tools + Done=6 (4=GitHub Copilot CLI, 5=Antigravity) with the Option-A AGENTS.md last-installed-wins non-interactive collision handler; build-pipeline component table gained the 2 new emitter self-tests (test_copilot_emitter.py, test_antigravity_emitter.py) now wired into the CI generator-selftests step. Verified profiles=5 (`ls profiles/*.toml`), setup.sh menu options 1-5 + `[6] Done`.
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
 ---
 # Infrastructure
@@ -17,18 +18,18 @@ changelog:
 > **Source:** `discovery-quality` (Phase 1), cycle-1
 > **Status:** Complete
 > **Last Updated:** 2026-05-27
-> **Scope:** This repo ships a methodology + a multi-tool distribution. There is **no runtime infrastructure** in the conventional sense — no Docker, no Terraform, no Kubernetes, no cloud account, no managed services. "Infrastructure" here means: the install scripts that put AID into a target project, the canonical → 3-profiles render pipeline, the supporting toolchain (git, gh, python, bash), and the local-filesystem conventions for runtime state.
+> **Scope:** This repo ships a methodology + a multi-tool distribution. There is **no runtime infrastructure** in the conventional sense — no Docker, no Terraform, no Kubernetes, no cloud account, no managed services. "Infrastructure" here means: the install scripts that put AID into a target project, the canonical → 5-profiles render pipeline, the supporting toolchain (git, gh, python, bash), and the local-filesystem conventions for runtime state.
 
 ---
 
 ## Hosting & Runtime Environment
 
-**Local-only.** AID runs on the maintainer's or end user's workstation, inside whichever AI host tool they have installed (Claude Code / Codex CLI / Cursor IDE). There is no server, no daemon, no port, no cloud presence owned by this project.
+**Local-only.** AID runs on the maintainer's or end user's workstation, inside whichever AI host tool they have installed (Claude Code / Codex CLI / Cursor IDE / GitHub Copilot CLI / Antigravity). There is no server, no daemon, no port, no cloud presence owned by this project.
 
 | Environment | Where it runs | Operated by |
 |-------------|---------------|-------------|
 | Maintainer build | Local workstation (Windows, macOS, Linux) | The maintainer |
-| End-user runtime | Local workstation, inside Claude Code / Codex / Cursor host | The end user |
+| End-user runtime | Local workstation, inside Claude Code / Codex / Cursor / Copilot CLI / Antigravity host | The end user |
 | GitHub repo | `github.com/AndreVianna/aid-methodology` | GitHub (managed by AndreVianna account; see user memory `reference_repo-push-access.md`) |
 
 No NAT, no VPN, no firewall rule lives in this repo. No production environment exists.
@@ -70,7 +71,7 @@ The closest analog is the **AID parallel pool dispatch model** (work-001 feature
 
 ## CI / CD Pipeline
 
-**CI is enforced** — `.github/workflows/test.yml` (added 2026-05-29) runs render-drift + canonical suites + generator self-tests + hygiene on every PR/push and is a required status check for merging to `master` (branch protection enabled 2026-05-29). The suite job invokes `tests/run-all.sh`, which discovers suites by glob (`tests/canonical/test-*.sh`), so the count is not hard-coded (currently 18; see `test-landscape.md`).
+**CI is enforced** — `.github/workflows/test.yml` (added 2026-05-29) runs render-drift + canonical suites + generator self-tests + hygiene on every PR/push and is a required status check for merging to `master` (branch protection enabled 2026-05-29). The suite job invokes `tests/run-all.sh`, which discovers suites by glob (`tests/canonical/test-*.sh`), so the count is not hard-coded (currently 18; see `test-landscape.md`). The `generator-selftests` job additionally runs three Python generator self-tests with `--self-test` (`.github/workflows/test.yml`): `test_manifest_safety.py`, plus the two new emitter tests `test_copilot_emitter.py` (Copilot real-YAML round-trip) and `test_antigravity_emitter.py` (Antigravity rule reshape).
 
 There is also no **release pipeline** — the project distributes via:
 1. End users cloning the repo and running `setup.sh` / `setup.ps1` against a target directory, OR
@@ -82,11 +83,11 @@ There is no published package on npm, PyPI, Homebrew, Chocolatey, or any other p
 
 ## Build Pipeline (the "infrastructure" of this repo)
 
-The canonical → 3-profiles render is the **only build artifact pipeline** in the codebase. It is fully local, fully deterministic, and has no external dependencies beyond Python 3.11+.
+The canonical → 5-profiles render is the **only build artifact pipeline** in the codebase (the 5 profiles: claude-code, codex, cursor, copilot-cli, antigravity — `ls profiles/*.toml`). It is fully local, fully deterministic, and has no external dependencies beyond Python 3.11+.
 
 | Component | Path | Lines | Purpose |
 |-----------|------|-------|---------|
-| Top-level entrypoint | `run_generator.py` | 87 | Loops `profiles/*.toml`, calls each renderer, runs VERIFY (deterministic) + VERIFY (advisory) |
+| Top-level entrypoint | `run_generator.py` | 87 | Loops `profiles/*.toml` (5 profiles: claude-code, codex, cursor, copilot-cli, antigravity), calls each renderer, runs VERIFY (deterministic) + VERIFY (advisory) |
 | Profile parser | `.claude/skills/aid-generate/scripts/aid_profile.py` | 550 | Parses TOML, validates schema |
 | Manifest harness | `.claude/skills/aid-generate/scripts/render_lib.py` | 756 | Emission-manifest implementation; pure-mirror deletion logic |
 | Agent renderer | `.claude/skills/aid-generate/scripts/render_agents.py` | 522 | Renders `canonical/agents/` per profile |
@@ -96,7 +97,9 @@ The canonical → 3-profiles render is the **only build artifact pipeline** in t
 | Template renderer | `.claude/skills/aid-generate/scripts/render_templates.py` | 252 | Renders `canonical/templates/` per profile |
 | Strict verifier | `.claude/skills/aid-generate/scripts/verify_deterministic.py` | 515 | VERIFY (deterministic) — re-run byte-identical guarantee |
 | Advisory verifier | `.claude/skills/aid-generate/scripts/verify_advisory.py` | 343 | VERIFY (advisory) — advisory checks |
-| Generator self-tests | `.claude/skills/aid-generate/scripts/test_manifest_safety.py` | 254 | Internal correctness tests |
+| Generator self-tests | `.claude/skills/aid-generate/scripts/test_manifest_safety.py` | 254 | Internal correctness tests (pure-mirror deletion safety) |
+| Copilot emitter self-test | `.claude/skills/aid-generate/scripts/test_copilot_emitter.py` | — | Copilot agent-format emitter — real-YAML round-trip (CI `generator-selftests`, `--self-test`) |
+| Antigravity emitter self-test | `.claude/skills/aid-generate/scripts/test_antigravity_emitter.py` | — | Antigravity rule-format reshape (CI `generator-selftests`, `--self-test`) |
 
 Pipeline flow (per `run_generator.py`, the `for profile_path in sorted(profiles_dir.glob('*.toml'))` loop):
 
@@ -129,9 +132,11 @@ The **`setup.sh` / `setup.ps1` pair** is the end-user-facing install entrypoint.
 | Bash installer | `setup.sh` | 162 | macOS, Linux, WSL |
 | PowerShell installer | `setup.ps1` | 157 | Windows |
 
-Both scripts accept a target directory and an interactive menu (1 = Claude Code, 2 = Codex, 3 = Cursor; multi-select). They copy the matching `profiles/<tool>/` tree into the target. See `setup.sh` `tool_name()` / `print_menu()` and `setup.ps1` `Get-ToolName` / `Show-Menu` for the argument-parsing and menu-state code.
+Both scripts accept a target directory and an interactive menu with **5 tool options + Done**: `1 = Claude Code`, `2 = Codex`, `3 = Cursor`, `4 = GitHub Copilot CLI`, `5 = Antigravity`, `[6] Done` (multi-select). They copy the matching `profiles/<tool>/` tree into the target — Copilot installs a `.github/` subtree + root `AGENTS.md`, Antigravity installs a `.agent/` subtree (`.agent/skills`, `.agent/rules`) + root `AGENTS.md`. See `setup.sh` `tool_name()` / `print_menu()` and `setup.ps1` `Get-ToolName` / `Show-Menu` for the argument-parsing and menu-state code.
 
-The install flow is covered by `tests/canonical/test-setup.sh`; `test-setup-ps1.sh` exercises `setup.ps1`'s platform-independent pre-install logic (its Windows-only file copy is not run on Linux CI).
+**Option-A AGENTS.md multi-install collision handler.** Four of the five tools (Codex, Cursor, Copilot CLI, Antigravity) write a root `AGENTS.md`; Claude Code uses `CLAUDE.md` only. When **≥2** AGENTS.md-writing tools are selected, `setup.sh` sets `AGENTS_COLLISION=1`, warns once (`Note: … all install a shared AGENTS.md; the last-installed tool's version wins …`), and resolves **non-interactively** with **last-installed-wins** — the survivor is the highest-numbered selected tool's per-tool install block (fixed order, not toggle order), reported as `Updated: … (AGENTS.md last-writer-wins …)`. The handler is **gated**: it fires only when `AGENTS_COLLISION=1` and the destination basename is `AGENTS.md` (see `setup.sh` the `AGENTS_COLLISION` block + the `_survivor` / `last-writer-wins` lines), so a single-AGENTS.md-writer install never triggers the auto-overwrite branch.
+
+The install flow (incl. the new Copilot/Antigravity installs and the Option-A collision) is covered by `tests/canonical/test-setup.sh` (cases SU12-17/SU16b); `test-setup-ps1.sh` exercises `setup.ps1`'s platform-independent pre-install logic + menu/collision parity (cases SPS05-08) and **SKIPs (exit 0) when `pwsh` is absent** per the established repo contract (its Windows-only backslash-path file copy is not run on Linux CI). The CI `canonical-tests` job asserts `pwsh` IS present, so the skip cannot silently fire there.
 
 ---
 

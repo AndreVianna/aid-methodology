@@ -9,6 +9,7 @@ intent: |
   and rubric tiers. Read this when any AID term is unfamiliar.
 contracts: []
 changelog:
+  - 2026-06-01: work-001-add-providers merge (PRs #42/#43/#44) — profile count 3→5; updated Generate/Profile/Install Tree/Dogfood Tree/Quadruple Mirror terms to 5-profile reality; added copilot-agent format, antigravity-rule format, native Agent Skills mapping, rules_frontmatter trigger-dialect, Option-A AGENTS.md collision
   - 2026-05-31: delivery-002 — added three terms: "declared doc-set", "default seed set", "doc-set derivation (propose→confirm)"
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
 ---
@@ -65,7 +66,7 @@ changelog:
 |------|-------|------------|--------|
 | **Config** | `aid-config` | Bootstrap skill; runs once before the pipeline. Creates `.aid/settings.yml` + KB doc scaffolds (from the default seed set templates) + `AGENTS.md`/`CLAUDE.md` + `INDEX.md` placeholders + `DISCOVERY-STATE.md`. The exact scaffold count matches the default seed (varies if templates are added/removed from `canonical/templates/knowledge-base/`). | `docs/glossary.md` `**aid-config:**`, `methodology/aid-methodology.md` `#### Prepare-Group Skills: \`aid-config\` and \`aid-summarize\`` |
 | **Summarize** | `aid-summarize` | Optional read-only skill; generates `knowledge-summary.html` from approved KB. Idempotent. WCAG-AA accessibility-first. | `methodology/aid-methodology.md` `#### Prepare-Group Skills: \`aid-config\` and \`aid-summarize\``, `canonical/skills/aid-summarize/SKILL.md` `# Knowledge Base Visual Summary` |
-| **Generate** | `aid-generate` | Maintainer-only skill; renders `canonical/` → 3 profile install trees. Wrapped by `run_generator.py`. | `.claude/skills/aid-generate/SKILL.md` `# AID Install-Tree Generator` |
+| **Generate** | `aid-generate` | Maintainer-only skill; renders `canonical/` → 5 profile install trees (claude-code, codex, cursor, copilot-cli, antigravity). Wrapped by `run_generator.py`. | `.claude/skills/aid-generate/SKILL.md` `# AID Install-Tree Generator`, `profiles/*.toml` (5 profiles) |
 
 ---
 
@@ -251,7 +252,7 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **Tier (Large / Medium / Small)** | Model size tier per agent. Maps to Claude (Opus/Sonnet/Haiku), Codex (gpt-5.5/gpt-5.4/gpt-5.4-mini), Cursor. | `profiles/claude-code.toml` `[model_tiers]`, `profiles/codex.toml` `[model_tiers.large]` |
+| **Tier (Large / Medium / Small)** | Model size tier per agent. Maps to Claude (Opus/Sonnet/Haiku), Codex (gpt-5.5/gpt-5.4/gpt-5.4-mini), Cursor, Copilot CLI (claude-opus-4.8/sonnet-4.6/haiku-4.5), Antigravity (gemini-3-pro high/low, gemini-3-flash). | `profiles/claude-code.toml` `[model_tiers]`, `profiles/codex.toml` `[model_tiers.large]`, `profiles/copilot-cli.toml` `[model_tiers]`, `profiles/antigravity.toml` `[model_tiers.large]` |
 | **Large-tier (10 agents)** | architect, reviewer, interviewer, security, discovery-{scout, architect, analyst, integrator, quality, reviewer}. | `.aid/knowledge/project-structure.md` `| Large (Opus / GPT-5.5 high) |` |
 | **Medium-tier (9 agents)** | orchestrator, researcher, developer, operator, data-engineer, performance, devops, tech-writer, ux-designer. | `.aid/knowledge/project-structure.md` `## Agents (22)` |
 | **Small-tier (3 agents)** | simple-extractor, simple-formatter, simple-glob. | `.aid/knowledge/project-structure.md` `| Small (Haiku / GPT-5.4-mini) |` |
@@ -265,9 +266,9 @@ changelog:
 | Term | Definition | Source |
 |------|------------|--------|
 | **canonical/** | Single source of truth for all install-tree content. Never edit profile trees directly — edit canonical and run `run_generator.py`. | `coding-standards.md §7a`, `.aid/knowledge/project-structure.md` `← SINGLE SOURCE OF TRUTH for all install-tree content` |
-| **Profile** | A host-tool target spec — `profiles/{claude-code,codex,cursor}.toml`. Defines output_root, frontmatter schema, model tiers, filename_map, capabilities. | `profiles/claude-code.toml` `[layout]`, `profiles/codex.toml` `[layout]` |
-| **Install Tree** | One of the per-profile output directories: `profiles/claude-code/.claude/`, `profiles/codex/{.codex,.agents}/`, `profiles/cursor/.cursor/`. | `canonical/EMISSION-MANIFEST.md` `## Filename and Location` |
-| **Dogfood Tree** | The top-level `.claude/` in this repo — AID applied to itself. Byte-identical body content to the claude-code profile output. NOT subject to KB claims (KB only covers the 4-tree set: canonical + 3 profile trees). | `canonical/skills/aid-discover/SKILL.md` `this is the **dogfood install**`, `.aid/knowledge/project-structure.md` `**Dogfood \`.claude/\` tree.**` |
+| **Profile** | A host-tool target spec — `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}.toml` (5). Defines output_root, frontmatter schema, model tiers, filename_map, capabilities. | `profiles/claude-code.toml` `[layout]`, `profiles/copilot-cli.toml` `[layout]`, `profiles/antigravity.toml` `[layout]` |
+| **Install Tree** | One of the 5 per-profile output directories: `profiles/claude-code/.claude/`, `profiles/codex/{.codex,.agents}/`, `profiles/cursor/.cursor/`, `profiles/copilot-cli/.github/`, `profiles/antigravity/.agent/`. | `canonical/EMISSION-MANIFEST.md` `## Filename and Location`, `profiles/copilot-cli.toml` `[layout]`, `profiles/antigravity.toml` `[layout]` |
+| **Dogfood Tree** | The top-level `.claude/` in this repo — AID applied to itself. Byte-identical body content to the claude-code profile output. NOT subject to KB claims (KB covers the 6-tree set: canonical + 5 profile trees). | `canonical/skills/aid-discover/SKILL.md` `this is the **dogfood install**`, `.aid/knowledge/project-structure.md` `**Dogfood \`.claude/\` tree.**` |
 | **Emission Manifest** | `{profile}/emission-manifest.jsonl` — the authoritative safety boundary for pure-mirror deletion. JSONL records of (`profile`, `src`, `dst`, `sha256`), sorted by `dst`, LF endings, sentinel first line. | `canonical/EMISSION-MANIFEST.md` `# Emission Manifest — Design Specification` |
 | **Pure-Mirror Deletion** | The generator's safety rule: only files in the previous manifest's `removed_dst` set are deleted; files outside any manifest are NEVER touched. | `canonical/EMISSION-MANIFEST.md` `## Safety-Boundary Semantics` |
 | **Sentinel (manifest)** | The reserved first line `{"_manifest_version": 1}` enabling future schema evolution. | `canonical/EMISSION-MANIFEST.md` `## Versioning Sentinel` |
@@ -278,7 +279,15 @@ changelog:
 | **Filename map** | Per-profile substitution dictionary for canonical placeholders (`project_context_file`, `reviewer_output_file`, `open_questions_file`). | `profiles/claude-code.toml` `[filename_map]`, `profiles/codex.toml` `[filename_map]` |
 | **Asset Kind** | A category of canonical source (agents / skills / templates / recipes / scripts) — each maps to an install-tree sub-directory per profile. | `canonical/EMISSION-MANIFEST.md` `## Asset Kinds` |
 | **Passthrough Renderer** | Renderer that emits files without format conversion or frontmatter injection (e.g., recipes). | `canonical/EMISSION-MANIFEST.md` `passthrough renderer — no` |
-| **setup.sh / setup.ps1** | End-user installers (Bash / PowerShell). Interactive menu to choose tools; diff-aware copy (`new=copy, identical=skip, different=ask`). | `setup.sh` `#!/usr/bin/env bash`, `.aid/knowledge/project-structure.md` `Repo-root entrypoints` |
+| **Agent format** | `[agent].format` value selecting how `render_agents` emits a sub-agent. One of `markdown | toml | copilot-agent | antigravity-rule` (`_KNOWN_AGENT_FORMATS`). | `.claude/skills/aid-generate/scripts/aid_profile.py` `_KNOWN_AGENT_FORMATS` |
+| **`copilot-agent` format** | Copilot CLI agent-format value: emits AID sub-agents as `.github/agents/*.agent.md` with `name/description/tools/model` frontmatter (`Bash`→`shell` via `[tool_names]`). | `profiles/copilot-cli.toml` `format = "copilot-agent"`, `profiles/copilot-cli/.github/agents/architect.agent.md` |
+| **`antigravity-rule` format** | Antigravity agent-format value: reshapes AID sub-agents into `.agent/rules/*.md` with `trigger:`-style frontmatter (personas → `trigger: always_on`). Reuses the new-agent-format branch; NOT copilot-agent output. | `profiles/antigravity.toml` `format = "antigravity-rule"`, `profiles/antigravity/.agent/rules/reviewer.md` |
+| **Native Agent Skills mapping** | For Copilot CLI and Antigravity, AID skills are emitted as the host's **native** skills primitive — folder copies at `.github/skills/<slug>/SKILL.md` (Copilot) / `.agent/skills/<slug>/SKILL.md` (Antigravity) via the existing `render_skills` pass, no `emit_as` knob, preserving canonical frontmatter verbatim ([data]). | `profiles/copilot-cli.toml` `[skill]`, `profiles/antigravity.toml` `[skill]` |
+| **`rules_frontmatter` trigger-dialect** | Gated `[extras] rules_frontmatter = "trigger"` knob (Antigravity): `_render_cursor_extras` strips the source `.mdc` frontmatter and regenerates `trigger:/description/globs` keys from `RuleEntry` fields (`always_apply=true`→`trigger: always_on`; `false`→`trigger: glob` + globs). Default `None` (cursor) → verbatim copy → cursor byte-identical. Decoupled from `[agent].format`. | `profiles/antigravity.toml` `[extras]` `rules_frontmatter = "trigger"`, `.claude/skills/aid-generate/scripts/aid_profile.py` `rules_frontmatter` |
+| **`RuleEntry.output_filename`** | Per-rule `[[extras.rules]] output_filename` enabling a `.mdc`→`.md` rename for methodology rules (Antigravity emits `.md`; cursor leaves it unset → source name preserved → cursor byte-identical). | `profiles/antigravity.toml` `[[extras.rules]]` `output_filename = "aid-methodology.md"`, `.claude/skills/aid-generate/scripts/aid_profile.py` `output_filename` |
+| **MCP omission ([omit])** | All profiles emit no MCP config — no `[mcp]` table in any profile TOML because the repo ships zero MCP servers; Copilot CLI specifically omits `mcp-config.json`. | `profiles/copilot-cli.toml` `No [mcp] table`, `profiles/antigravity.toml` `No [mcp] table` |
+| **Option-A AGENTS.md collision** | `setup.sh`/`setup.ps1` multi-install handler: Codex/Cursor/Copilot CLI/Antigravity all write a root `AGENTS.md`; when ≥2 are selected, `AGENTS_COLLISION=1` triggers a one-time warning and last-installed-wins (survivor = highest-numbered selected AGENTS.md-writing tool by fixed install order, non-interactive). Claude Code uses `CLAUDE.md` and is exempt. | `setup.sh` (the "AGENTS.md collision pre-copy block (Option A)" comment + `AGENTS_COLLISION` survivor block) |
+| **setup.sh / setup.ps1** | End-user installers (Bash / PowerShell). Interactive menu of 5 tools (`[1]`-`[5]`) + `[6]` Done; diff-aware copy (`new=copy, identical=skip, different=ask`); Option-A AGENTS.md collision handler for multi-install. | `setup.sh` `#!/usr/bin/env bash`, `setup.sh` (menu `echo` block + AGENTS.md collision block), `.aid/knowledge/project-structure.md` `Repo-root entrypoints` |
 
 ---
 
@@ -304,7 +313,7 @@ changelog:
 | **Single-Branch Work** | For ANY `work-NNN`, commit to ONE persistent branch (off master); no per-task worktrees or branches. Root cause of PR #12 losing 63 commits. | `coding-standards.md §7f`; `tech-debt.md H1` history |
 | **work-NNN branch convention** | Persistent `work-NNN` branch (off master); PR `work-NNN → master` when ready. | user-memory `project_work-branch-convention.md` |
 | **Pre-flight Cleanup** | Orchestrator-only KB sweep before reviewer dispatch — line-count drift, off-by-1, ghost references, path/citation hygiene. These are housekeeping items; never grade them. | `canonical/skills/aid-discover/SKILL.md` `## ⚠️ Pre-flight Cleanup (orchestrator-only — never grade these)` |
-| **Quadruple Mirror** | Each unique canonical helper script has 4 byte-identical copies: canonical + dogfood `.claude/` + 3 profile trees. Inflates file counts. | `.aid/knowledge/project-structure.md` `**Quadruple mirror.**` |
+| **Quadruple Mirror** | The file-multiplication effect: each unique canonical helper script now has 7 byte-identical copies: canonical + dogfood `.claude/` + 5 profile trees (claude-code, codex, cursor, copilot-cli, antigravity). Inflates file counts. (Name predates the 3→5 profile growth; copy count is now 7, not 4.) | `.aid/knowledge/project-structure.md` `**Quadruple mirror.**`, `profiles/*.toml` (5 profiles) |
 | **kb-overhaul branch** | The working branch in this repo recorded by project-structure.md (per git status). Off master. | git status, `.aid/knowledge/project-structure.md` `| VCS | Git, branch \`kb-overhaul\` |` |
 | **Cycle (discovery)** | One full pass through GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL. KB authoring uses cycle numbering. | `STATE.md ## Review History` |
 | **Pass (discovery cycle internals)** | A sub-iteration inside a cycle. | `STATE.md ## Review History` |
@@ -367,6 +376,6 @@ changelog:
 
 ## Glossary Statistics
 
-- **Total terms defined:** ~195 (across 16 categorical groups above; counted by row audit of this document — `metrics.md` generator undercounts at 172 due to regex mismatch with `✓` status markers)
+- **Total terms defined:** ~204 (across 16 categorical groups above; +9 distribution terms added in the work-001-add-providers update — `copilot-agent`/`antigravity-rule` formats, agent format, native Agent Skills mapping, `rules_frontmatter` trigger-dialect, `RuleEntry.output_filename`, MCP omission, Option-A AGENTS.md collision; counted by row audit of this document)
 - **Primary sources:** `methodology/aid-methodology.md` (1,070 lines), `docs/glossary.md` (76 lines), 10 canonical SKILL.md files, 22 canonical AGENT.md files, `canonical/EMISSION-MANIFEST.md` (152 lines), `canonical/templates/{settings.yml, work-state-template.md, subagent-heartbeat-protocol.md, long-wait-protocol.md, reviewer-dispatch.md, feedback-artifacts/IMPEDIMENT.md}`, helper scripts under `canonical/scripts/`
 - **Every entry cites at least one durable-anchor source** (file path + grep-recoverable symbol/heading/string, no line numbers). ⚠️ Inferred-from-code annotations are explicit where used.

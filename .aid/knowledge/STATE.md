@@ -19,10 +19,10 @@ changelog:
 # Discovery State
 
 > **Source:** aid-config (creates) · aid-discover + aid-summarize (update)
-> **Status:** Approved
-> **Current Grade:** A+ (computed by grade.sh on cycle-10 ledger; 0 CRITICAL / 0 HIGH / 0 MEDIUM / 0 LOW / 0 MINOR; 14 rows total = 12 Fixed + 2 Accepted; grade.sh M7 bug fixed by schema rollout commit bf4e814 — schema-table parsing eliminates the summary-line over-count)
-> **User Approved:** yes (2026-05-28, cycle-10 — grade A+; user approved + push-to-remote authorized)
-> **Last KB Review:** 2026-05-28 (cycle-10 — convergence; ready for User Approval)
+> **Status:** Re-review (post work-001-add-providers merge — KB drifted from code)
+> **Current Grade:** Pending (reset 2026-06-01 — prior A+/approval invalidated: PRs #42/#43/#44 added 2 render profiles (copilot-cli, antigravity) + renderer formats `copilot-agent`/`antigravity-rule` + `RuleEntry.output_filename` + `ExtrasConfig.rules_frontmatter` + setup menu 4/5/6 + Option-A collision + 2 new emitter test suites; the KB still describes the pre-merge 3-profile system)
+> **User Approved:** no (re-review triggered by merged work-001; prior 2026-05-28 approval was for the pre-merge KB)
+> **Last KB Review:** 2026-05-28 (cycle-10 — pre-merge; superseded by the 2026-06-01 post-merge re-review)
 > **Last Summary:** 2026-05-30 (dogfood refresh — knowledge-summary.html rebuilt from refreshed summary-src; validated via validate-diagrams.mjs + contrast-check.mjs)
 
 This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary. One STATE.md per project's `.aid/knowledge/` directory. Absorbs what used to be `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`.
@@ -423,3 +423,23 @@ Verified-true sample full list (30 checks) in `.aid/.temp/review-pending/discove
 | 2026-05-27 | discovery-reviewer | cycle-5 REVIEW | 15-25m | ~15m | inside band; 22 spot-checks (16 true, 6 false) — 6 version verifications; 0 [CRITICAL] + 3 [HIGH] + 0 [MEDIUM] + 12 [LOW] + 4 [MINOR] = 19 findings; grade pending grade.sh; 0 new Q&A; cycle-4 FIX partial-land: 4 of 6 clean, 2 of 6 regressed same root cause (test counts). Direct measurement this cycle by running each suite end-to-end: writeback=69, parse-recipe=113, compute=17, delivery-gate=18, read-setting=18 = TOTAL 235. Cycle-4 FIX wrote 173/51 instead. KB internal contradiction now: tech-debt.md:210 has 113 (right); test-landscape + tech-stack + README have 51 (wrong). Ledger at `.aid/.temp/review-pending/discovery.md` |
 | 2026-05-28 | discovery-reviewer | cycle-6 REVIEW | 15-25m | ~12m | inside band; 31 spot-checks (26 true, 5 false) — 7 count/version verifications; 0 [CRITICAL] + 2 [HIGH] + 2 [MEDIUM] + 3 [LOW] + 4 [MINOR] = 11 findings; grade pending grade.sh; 0 new Q&A — all findings mechanically resolvable; cycle-5 FIX test-count cascade landed CLEANLY in test-landscape + tech-stack + module-map + README revision-history + tech-debt L1 (all consistent with disk: writeback=69, parse=113, compute=17, delivery=18, read=18; total=235). NEW HIGH residue: (a) project-structure.md:183-184 test-file rows still say 38/39 (missed by every prior sweep — pattern likely didn't match table-cell format); (b) domain-glossary.md:63 "16 KB doc scaffolds" residue. NEW MEDIUMs: (c) domain-glossary.md:73 KB definition has 2 staleness items (14 vs 15 + ui-architecture pending status); (d) README.md:16-17 banner staleness (cycle-3 vs actual 6). Ledger at `.aid/.temp/review-pending/discovery.md` |
 | 2026-05-28 | discovery-reviewer | cycle-7 REVIEW | 15-25m | ~15m | inside band; 30 spot-checks (30 true, 0 false) — 12 count/version verifications with computed-from-disk evidence; 0 [CRITICAL] + 0 [HIGH] + 0 [MEDIUM] + 2 [LOW] + 3 [MINOR] = 5 in-scope findings; grade pending grade.sh; 0 new Q&A — no new gaps requiring human input; **0 HIGH / 0 MEDIUM target HIT**. Cycle-6 FIX landed CLEANLY for ALL 4 reviewer-flagged findings: (a) project-structure.md:183-184 test counts 38/39 → 113/69 verified disk; (b) domain-glossary.md:63 "16 KB doc scaffolds" → "15" verified disk; (c) domain-glossary.md:73 staleness corrected (now 15 active markdown documents + repo-presentation present); (d) README.md:16-17 banner now reads "cycle 6 (post-FIX, awaiting cycle-7 REVIEW)". CC10 (test-count cascade) + CC11 (16-doc residue) BOTH fully cleared. Remaining LOWs/MINORs are known carryovers (tech-debt L406 self-acknowledged stale PR snapshot, infrastructure L158 branch-protection inferred-unknown with flag, metrics.md generated regex undercount, feature-inventory legend glyph cosmetic, external-sources brevity acceptable for no-docs variant). Test counts re-verified by running 4 of 5 suites directly: writeback=69, compute=17, delivery=18, read=18 (parse-recipe=113 per definitive cycle-5/6 verification, suite takes ~150s). 18-doc cardinality (15 primary + 3 meta) consistent across INDEX, README, schemas, coding-standards. Ledger at `.aid/.temp/review-pending/discovery.md` |
+
+## Discovery — Review Cycle 1
+
+### Q23: [Integration: Medium] Is the Copilot CLI agent-frontmatter `model:` slug spelling vendor-confirmed?
+**Status:** Answered (2026-06-01 — applied suggested; not Required, no code change)
+**Context:** `profiles/copilot-cli.toml` notes model identities (Opus 4.8 / Sonnet 4.6 / Haiku 4.5) are LIVE-confirmed but the exact `model:` field tokenization is "docs-only-noted" / inferred from GitHub's documented model-id convention. Code ships a value but flags it unverified against the live Copilot CLI. KB tech-debt.md currently records 0 open items and does not capture this residual.
+**Suggested:** Record as a LOW tech-debt residual until the maintainer confirms the exact Copilot model-id slug spelling against the live tool.
+**Answer:** Not vendor-confirmed (docs-only-noted during work-001). Record in tech-debt.md as a LOW residual; maintainer can confirm the slug against the live Copilot CLI anytime. Not blocking.
+
+### Q24: [Integration: Medium] Is the Antigravity `model:` id tokenization (gemini-3-pro / gemini-3-flash) vendor-confirmed?
+**Status:** Answered (2026-06-01 — applied suggested; not Required, no code change)
+**Context:** `profiles/antigravity.toml` notes Antigravity docs expose display names ("Gemini 3 Pro (high)") rather than model-id token pairs and asks to "confirm" the actual `model:` slug. Shipped values are inferred. Not captured in tech-debt.md.
+**Suggested:** Record as a LOW tech-debt residual pending confirmation of the Antigravity model-id token from vendor docs.
+**Answer:** Not vendor-confirmed (docs-only-noted). Record in tech-debt.md as a LOW residual pending vendor model-id confirmation. Not blocking.
+
+### Q25: [Integration: Low] Is the empty Antigravity `[tool_names]` identity-passthrough the intended final mapping?
+**Status:** Answered (2026-06-01 — applied suggested; not Required)
+**Context:** `profiles/antigravity.toml` ships an empty `[tool_names]` map (identity passthrough) with comment "no published Antigravity tool-token map; docs-only-noted." If Antigravity later publishes a tool-name convention this will need a remap (cf. Cursor's `Bash = "Terminal"`, Copilot's `Bash = "shell"`).
+**Suggested:** Confirm whether Antigravity tool names match AID's canonical set verbatim; if not, populate `[tool_names]`. Track as LOW tech-debt until then.
+**Answer:** Empty identity-passthrough is the intended mapping until Antigravity publishes a tool-token convention. Record in tech-debt.md as a LOW residual to revisit if/when such a convention appears.

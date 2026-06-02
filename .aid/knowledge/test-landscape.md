@@ -18,6 +18,7 @@ contracts:
   - "All suites source tests/lib/assert.sh (shared counters + asserts + test_summary)"
   - "Most suites are pure bash (POSIX, Git Bash on Windows); 2 need node, 2 need pwsh — each skips if absent"
 changelog:
+  - 2026-06-01: post-merge work-001-add-providers (PRs #42/#43/#44) — byte-identity assertion 3→5 install-tree profiles (added GitHub Copilot CLI + Antigravity); documented new setup cases (test-setup.sh SU12-17/SU16b; test-setup-ps1.sh SPS05-08, which SKIPs without pwsh per established contract); documented the 2 new generator self-tests (test_copilot_emitter.py, test_antigravity_emitter.py) wired into the CI generator-selftests step. Canonical suite count unchanged at 18 (verified `ls tests/canonical/test-*.sh | wc -l` = 18 on disk — the new setup cases are SU/SPS additions inside the existing test-setup.sh / test-setup-ps1.sh suites, not new suite files).
   - 2026-05-31: delivery-002 — added 3 F4 doc-set suites (test-doc-set-read.sh, test-doc-set-mapping.sh, test-doc-set-propose-confirm.sh); updated suite count 15→18
   - 2026-05-31: delivery-001 — added test-discovery-doc-ownership.sh and test-expectations-single-source.sh; updated suite count 13→15 (stated as "currently N", not a hardcoded invariant); updated Suites section header accordingly.
   - 2026-05-30: Substantive refresh to current truth — 7→13 suites; documented the tests/run-all.sh aggregator (replaces the old "no aggregator, per-suite loop" claim) and tests/lib/assert.sh shared library; inverted the gaps section (the .mjs validators, PowerShell mirrors, and setup install flow are now COVERED, not gaps); recorded the node/pwsh-skip model; applied script renames (writeback-task-status→writeback-state, concatenate→assemble-3part, build-index→build-kb-index, harness.py→render_lib.py, VERIFY-4a/4b→VERIFY (deterministic)/(advisory)); converted bare line-number citations to durable anchors. Dropped invented per-suite assertion numbers in favor of qualitative coverage (suites now share one summary format and the README does not commit to counts).
@@ -40,11 +41,17 @@ What is NOT tested here:
   scripted harness exists or is planned. The `discovery-reviewer` sub-agent acts as the
   closest adversarial integration check each cycle.
 - **Renderer** (`run_generator.py`) — covered by its own VERIFY (deterministic)
-  determinism gate (`verify_deterministic.py`); see `architecture.md`.
+  determinism gate (`verify_deterministic.py`); see `architecture.md`. The renderer also
+  has **generator self-tests** (Python, NOT under `tests/canonical/`) wired into the CI
+  `generator-selftests` job (`.github/workflows/test.yml`, the `--self-test` invocations):
+  `test_manifest_safety.py` (pure-mirror deletion safety),
+  `test_copilot_emitter.py` (Copilot agent-format emitter — real-YAML round-trip),
+  and `test_antigravity_emitter.py` (Antigravity rule-format reshape). All three under
+  `.claude/skills/aid-generate/scripts/`.
 - **Sub-agent definitions** — no test harness; verified by dogfooding. See
   `canonical/agents/*/AGENT.md`.
-- **Cross-tool consistency** (Cursor vs Claude Code vs Codex) — covered by the renderer's
-  byte-identity assertion across the 3 install-tree profiles.
+- **Cross-tool consistency** (Claude Code vs Codex vs Cursor vs Copilot CLI vs Antigravity) —
+  covered by the renderer's byte-identity assertion across the 5 install-tree profiles.
 - **E2E pipeline** (Discover → … → Deploy → Monitor) — exercised by dogfooding this repo,
   not scripted tests.
 
@@ -219,10 +226,21 @@ passes.
 **Target:** `setup.sh` (the end-user installer)
 
 Covers the installer's arg/precondition errors, interactive menu logic (Done / toggle /
-invalid), per-tool installs (Claude Code / Codex / Cursor), multi-tool install,
-idempotent re-install ("Up to date"), and `--force` overwrite. The menu is driven via
-piped stdin; only the fresh / identical / `--force` paths are exercised (never the
-`/dev/tty` prompt).
+invalid), per-tool installs across all **5** menu options (Claude Code=1 / Codex=2 /
+Cursor=3 / GitHub Copilot CLI=4 / Antigravity=5; `[6] Done`), multi-tool install,
+idempotent re-install ("Up to date"), and `--force` overwrite. New-provider cases:
+**SU12** Copilot install (`.github/` tree + root `AGENTS.md`), **SU13** Antigravity
+install (`.agent/skills` + `.agent/rules` + root `AGENTS.md`), **SU14** new-provider
+files byte-identical to their `profiles/<tool>/` sources, **SU15** out-of-range rejected
+(Done is now 6), **SU16** the Option-A AGENTS.md multi-install collision
+(Codex+Copilot → `AGENTS_COLLISION=1`, last-installed/highest-numbered-block wins —
+`GitHub Copilot CLI wins`, resolved non-interactively, installed `AGENTS.md`
+byte-identical to Copilot's source), **SU16b** the guard does NOT fire for a single
+AGENTS.md writer (no false collision), **SU17** new-provider idempotent re-install +
+`--force`. The menu is driven via piped stdin; only the fresh / identical / `--force` /
+non-interactive-collision (`AGENTS_COLLISION`) paths are exercised (never the
+`/dev/tty` prompt). See `setup.sh` `tool_name()` / `print_menu()` and the
+`AGENTS_COLLISION` collision block (the `_survivor` / `last-writer-wins` lines).
 
 ### test-assemble-3part.sh
 
@@ -247,7 +265,15 @@ byte I/O), so it runs fully on the Linux CI runner once `pwsh` is present.
 
 Only its platform-independent pre-install logic is exercised under `pwsh` on Linux:
 target validation + the selection-menu loop. The backslash-path file copy is
-Windows-only; the actual install coverage lives in `test-setup.sh`.
+Windows-only; the actual install coverage lives in `test-setup.sh`. New menu-parity
+cases: **SPS05** menu lists 5 tools + `Done=6` (and names GitHub Copilot CLI +
+Antigravity), **SPS06** toggle a new tool on/off (nothing installed), **SPS07**
+out-of-range rejected with `Done=6`, **SPS08** collision-warning parity (Codex+Copilot →
+`Note:` warning naming the AGENTS.md collision + `GitHub Copilot CLI wins`). This suite
+**SKIPs (exit 0 with a `SKIP:` notice) when `pwsh` is absent** (established repo
+contract; the suite's `command -v pwsh` guard) — so `setup.ps1` menu/collision parity is
+code-read, not CI-executed, unless a `pwsh` runtime is present. CI's `canonical-tests`
+job asserts `pwsh` IS present so this skip cannot silently fire there.
 
 ### test-discovery-doc-ownership.sh
 
@@ -359,10 +385,13 @@ orchestration layer:
   to test without an AI host. The `discovery-reviewer` sub-agent is the closest thing to
   integration verification, adversarially grading KB output each cycle.
 - **The renderer** (`run_generator.py`) — its own VERIFY (deterministic) check runs at
-  the end of every render and exits 1 on failure; not part of `tests/canonical/`.
+  the end of every render and exits 1 on failure; not part of `tests/canonical/`. Its
+  format emitters carry their own generator self-tests run by the CI `generator-selftests`
+  job: `test_manifest_safety.py`, `test_copilot_emitter.py`, `test_antigravity_emitter.py`
+  (all under `.claude/skills/aid-generate/scripts/`, invoked with `--self-test`).
 - **Sub-agent definitions** — see `canonical/agents/*/AGENT.md`; verified by dogfooding.
-- **Cross-tool consistency** (Cursor vs Claude Code vs Codex) — covered by the renderer's
-  byte-identity assertion across the 3 profiles, not by a suite here.
+- **Cross-tool consistency** (Claude Code vs Codex vs Cursor vs Copilot CLI vs Antigravity) —
+  covered by the renderer's byte-identity assertion across the 5 profiles, not by a suite here.
 - **End-to-end pipeline behavior** (Discover → Interview → Specify → Plan → Detail →
   Execute → Deploy → Monitor) — exercised by dogfooding (this repo IS the test suite for
   the methodology) rather than scripted E2E tests.

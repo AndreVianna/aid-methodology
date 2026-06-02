@@ -5,10 +5,11 @@ intent: |
   Maps all external services and integrations the AID repo depends on. Because AID has no
   application runtime, integrations are minimal: the Mermaid library fetched from npm/jsdelivr
   CDN (consumed by aid-summarize), the gh GitHub CLI used in PR-creation workflows, and the
-  multi-tool distribution model that renders canonical source into 3 host-tool install trees.
+  multi-tool distribution model that renders canonical source into 5 host-tool install trees.
   Inter-skill choreography is implemented via filesystem state hand-offs (not a message broker).
 contracts: []
 changelog:
+  - 2026-06-01: work-001-add-providers merge (PRs #42/#43/#44) — distribution now 5 profile trees (added copilot-cli → `.github/`, antigravity → `.agent/`); documented Copilot native Agent Skills + Antigravity rules mapping + Option-A AGENTS.md collision handler
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
 ---
 # Integration Map
@@ -17,7 +18,7 @@ changelog:
 > External integrations are limited to: (1) the Mermaid library + npm registry + jsdelivr
 > CDN consumed by the optional `aid-summarize` skill, (2) the `gh` GitHub CLI used in
 > the PR-creation workflow, and (3) the **multi-tool distribution model** that emits the
-> canonical source into 3 host-tool install trees.
+> canonical source into 5 host-tool install trees.
 >
 > All claims cite `` `file` `anchor` `` (grep-recoverable symbol/heading) against the canonical source.
 
@@ -132,14 +133,15 @@ Each profile TOML declares its host tool's supported capabilities. These are
 **informational** for the renderer / skill author — they do NOT toggle features at
 runtime; the renderer always emits the same canonical content regardless.
 
-| Capability | Claude Code | Codex | Cursor | Notes |
-|------------|-------------|-------|--------|-------|
-| `hooks` | `true` | `false` (⚠️ TODO) | (per cursor.toml) | Pre/post hooks |
-| `skill_chaining` | `true` | `true` | (per cursor.toml) | Skills invoking skills |
-| `background_execution` | `true` | `false` | (per cursor.toml) | `background: true` agents |
-| `stop_hook_autocontinue` | `true` | `false` (⚠️ TODO) | (per cursor.toml) | Stop hook continues |
+| Capability | Claude Code | Codex | Cursor | Copilot CLI | Antigravity | Notes |
+|------------|-------------|-------|--------|-------------|-------------|-------|
+| `hooks` | `true` | `false` (⚠️ TODO) | (per cursor.toml) | `true` | `true` | Pre/post hooks |
+| `skill_chaining` | `true` | `true` | (per cursor.toml) | `true` | `true` | Skills invoking skills |
+| `background_execution` | `true` | `false` | (per cursor.toml) | `true` | `true` | `background: true` agents |
+| `stop_hook_autocontinue` | `true` | `false` (⚠️ TODO) | (per cursor.toml) | `true` | `false` | Stop hook continues |
 
-Source: `profiles/claude-code.toml` `[capabilities]`, `profiles/codex.toml` `[capabilities]`
+Source: `profiles/claude-code.toml` `[capabilities]`, `profiles/codex.toml` `[capabilities]`,
+`profiles/copilot-cli.toml` `[capabilities]`, `profiles/antigravity.toml` `[capabilities]`
 
 ### Per-Skill Grade Overrides (config, not feature flag)
 
@@ -166,7 +168,7 @@ Source: `canonical/skills/aid-execute/SKILL.md` `## Delivery Lifecycle` (`**Grac
 ## Multi-Tool Distribution Integration
 
 This is the integration story unique to the AID repo: **one canonical source emitted into
-three host-tool install trees** plus a dogfood `.claude/` tree the repo uses on itself.
+five host-tool install trees** plus a dogfood `.claude/` tree the repo uses on itself.
 
 ### Architecture
 
@@ -188,14 +190,21 @@ run_generator.py                    ← entrypoint (87 lines)
        ├── render_recipes.py          (261 lines)
        ├── render_canonical_scripts.py (224 lines)
        ├── render_templates.py        (252 lines)
-       ├── verify_deterministic.py    (515 lines — VERIFY (deterministic) byte-identity)
-       ├── verify_advisory.py         (343 lines — VERIFY (advisory) advisory)
-       └── test_manifest_safety.py    (254 lines — generator self-tests)
+       ├── verify_deterministic.py    (VERIFY (deterministic) byte-identity)
+       ├── verify_advisory.py         (VERIFY (advisory) advisory)
+       ├── test_manifest_safety.py    (generator self-test)
+       ├── test_copilot_emitter.py    (Copilot-CLI emitter self-test — CI-wired)
+       └── test_antigravity_emitter.py (Antigravity emitter self-test — CI-wired)
 ```
+
+(12 Python files under `scripts/` + `run_generator.py` = 13 renderer files total;
+ `test_copilot_emitter.py` + `test_antigravity_emitter.py` run as generator self-tests in
+ `.github/workflows/test.yml` `test_copilot_emitter.py --self-test` /
+ `test_antigravity_emitter.py --self-test`.)
 
 Source: `.aid/knowledge/project-structure.md` heading `### Generator (maintainer-only, ...)`
 
-### Output Trees (3 profile install bundles + 1 dogfood)
+### Output Trees (5 profile install bundles + 1 dogfood)
 
 | Tree | Location | Purpose | Frontmatter format |
 |------|----------|---------|-----|
@@ -204,9 +213,40 @@ Source: `.aid/knowledge/project-structure.md` heading `### Generator (maintainer
 | **claude-code** | `profiles/claude-code/.claude/` + repo-root `CLAUDE.md` | Anthropic Claude Code install bundle | Markdown + YAML |
 | **codex** | `profiles/codex/.codex/agents/*.toml` + `profiles/codex/.agents/{skills,scripts,recipes,templates}/*` | OpenAI Codex CLI bundle (split layout) | TOML (agents only) |
 | **cursor** | `profiles/cursor/.cursor/*` + repo-root `AGENTS.md` | Cursor IDE bundle | Markdown + `.mdc` rules |
+| **copilot-cli** | `profiles/copilot-cli/.github/*` (`agents/*.agent.md`, native `skills/<slug>/`, `templates/`, `scripts/`, `recipes/`) + `profiles/copilot-cli/AGENTS.md` | GitHub Copilot CLI bundle | `copilot-agent` (agents); native Agent Skills folders; MCP omitted |
+| **antigravity** | `profiles/antigravity/.agent/*` (`rules/*.md` for sub-agents + methodology, native `skills/<slug>/`, `templates/`, `scripts/`, `recipes/`) + `profiles/antigravity/AGENTS.md` | Google Antigravity bundle | `antigravity-rule` (sub-agents → `trigger:` rules); native Skills folders |
 
 Source: `.aid/knowledge/project-structure.md` `## Top-Level Directory Tree (depth 3)`,
-`canonical/EMISSION-MANIFEST.md` `## Asset Kinds`
+`canonical/EMISSION-MANIFEST.md` `## Asset Kinds`, `profiles/copilot-cli.toml` `[layout]`,
+`profiles/antigravity.toml` `[layout]`
+
+### Copilot CLI mapping (host-tool conventions)
+
+- **Sub-agents** → `.github/agents/*.agent.md` (`[agent].format = "copilot-agent"`;
+  frontmatter `name/description/tools/model`; `Bash`→`shell` via `[tool_names]`).
+- **Skills** → **native Copilot Agent Skills** `.github/skills/<slug>/SKILL.md` (folder copy
+  by the existing `render_skills` pass; no `emit_as` knob).
+- **MCP** → **omitted** — no `[mcp]` table; the repo ships zero MCP servers, so no
+  `mcp-config.json` is emitted.
+- **Context** → profile-local **committed** `AGENTS.md` (filename-map token only; NOT emitted
+  by the renderer).
+- Source: `profiles/copilot-cli.toml` (`[layout]`, `[agent]`, `[skill]`, `[tool_names]`, the
+  "No [mcp] table" comment), `profiles/copilot-cli/.github/agents/architect.agent.md`.
+
+### Antigravity mapping (host-tool conventions)
+
+- **Skills** → native `.agent/skills/<slug>/SKILL.md` folders ([data]).
+- **Sub-agents** → `.agent/rules/*.md` (`[agent].format = "antigravity-rule"`; reshaped to
+  `trigger: always_on` frontmatter).
+- **Methodology rules** → `.agent/rules/*.md` via `RuleEntry.output_filename` (`.md`, NOT
+  `.mdc`) under a gated `[extras] rules_frontmatter = "trigger"` dialect that strips the
+  source `.mdc` frontmatter and regenerates `trigger:/description/globs`
+  (`always_apply=true`→`trigger: always_on`; `false`→`trigger: glob` + globs). DECOUPLED from
+  `[agent].format`. Sub-agent rules and methodology rules share `.agent/rules/` (disjoint
+  stems: persona names vs `aid-` prefix).
+- **Context** → profile-local committed `AGENTS.md`.
+- Source: `profiles/antigravity.toml` (`[layout]`, `[agent]`, `[extras]`, `[[extras.rules]]`),
+  `profiles/antigravity/.agent/rules/reviewer.md`, `profiles/antigravity/.agent/rules/aid-methodology.md`.
 
 ### Codex split-layout exception
 
@@ -223,8 +263,8 @@ Source: `canonical/EMISSION-MANIFEST.md` `## Filename and Location`, `profiles/c
 
 The renderer guarantees that:
 1. `canonical/skills/<skill>/SKILL.md` + `.claude/skills/<skill>/SKILL.md` (dogfood) +
-   `profiles/{claude-code,codex,cursor}/.../<skill>/SKILL.md` are byte-identical in the
-   body portion across all 4 trees (CLAUDE.md `## Architecture` bullet 1)
+   `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/.../<skill>/SKILL.md` are
+   byte-identical in the body portion across all trees (CLAUDE.md `## Architecture` bullet 1)
 2. Re-running `python run_generator.py` on unchanged inputs produces a byte-identical
    install tree AND a byte-identical manifest (the AC2 determinism guarantee)
 3. Only files in the previous manifest's `removed_dst` are deleted; files outside any
@@ -251,10 +291,24 @@ Source: `canonical/EMISSION-MANIFEST.md` `## Safety-Boundary Semantics`
 
 End users install AID into their own projects via:
 - `./setup.sh <target-directory>` (Bash; macOS / Linux / Git Bash) — interactive menu
-  for tool selection (Claude Code / Codex / Cursor), copies the relevant
-  `profiles/<tool>/` tree into the target with diff-aware copy semantics
+  with 5 tool options (`[1]` Claude Code, `[2]` Codex, `[3]` Cursor, `[4]` GitHub Copilot CLI,
+  `[5]` Antigravity) + `[6]` Done; copies the selected `profiles/<tool>/` tree(s) into the
+  target with diff-aware copy semantics
 - `.\setup.ps1 <target-directory>` (PowerShell; Windows) — equivalent
-- Source: `setup.sh` `print_menu()`, `setup.ps1` (per `.aid/knowledge/project-structure.md` `## Key Files and Their Purpose`)
+- Source: `setup.sh` (the menu `echo` block + `[6] Done`), `setup.ps1`
+  (per `.aid/knowledge/project-structure.md` `## Key Files and Their Purpose`)
+
+### Option-A AGENTS.md multi-install collision handler
+
+Codex (2), Cursor (3), Copilot CLI (4), and Antigravity (5) all write a root `AGENTS.md`.
+When ≥2 of these are selected, `setup.sh` sets `AGENTS_COLLISION=1`, prints a one-time
+non-interactive warning, and applies **last-installed-wins**: the survivor is the
+highest-numbered selected AGENTS.md-writing tool (fixed per-tool install order, NOT the
+toggle order). On copy, the survivor's `AGENTS.md` overwrites without prompting
+(`copy_file` AGENTS.md branch: "AGENTS.md last-writer-wins — collision resolved
+non-interactively"). Claude Code (1) uses `CLAUDE.md` only and is exempt.
+- Source: `setup.sh` (the "AGENTS.md collision pre-copy block (Option A)" comment, the
+  `AGENTS_COLLISION` survivor-selection block, and the `copy_file` AGENTS.md branch).
 
 Setup.sh diff handling: `new = copy`, `identical = skip`, `different = ask`
 (or overwrite with `--force`). Source: `setup.sh` `copy_file()`.
@@ -330,7 +384,7 @@ memory:
 | `aid-deploy` | `STATE.md ## Tasks Status` (all Done), `PLAN.md`, infrastructure config | `STATE.md ## Deploy Status`; `packages/package-NNN-{name}.md`; routes KB-affecting findings to `DISCOVERY-STATE.md` Q&A (never writes KB directly) |
 | `aid-monitor` | Telemetry sources, `packages/`, `known-issues.md`, feature SPECs | `MONITOR-STATE.md`; new `tasks/task-NNN.md` (bug path); `DISCOVERY-STATE.md` Q&A (CR path) |
 | `aid-summarize` | Approved `.aid/knowledge/` + `STATE.md ## Knowledge Summary Status` | `.aid/knowledge/knowledge-summary.html`; `STATE.md ## Knowledge Summary Status, ## Summarization History` |
-| `aid-generate` (maintainer) | `canonical/`, `profiles/*.toml`, previous `emission-manifest.jsonl` per profile | `profiles/{claude-code,codex,cursor}/...`, new `emission-manifest.jsonl` per profile, repo-root `CLAUDE.md` / `AGENTS.md` |
+| `aid-generate` (maintainer) | `canonical/`, `profiles/*.toml` (5 profiles), previous `emission-manifest.jsonl` per profile | `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/...`, new `emission-manifest.jsonl` per profile, repo-root `CLAUDE.md` / `AGENTS.md` |
 
 Sources cited inline above per skill SKILL.md.
 

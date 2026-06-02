@@ -3,8 +3,8 @@ kb-category: primary
 source: hand-authored
 intent: |
   Maps the major code/content modules in AID — the 10 user-facing aid-* skills,
-  the 11th maintainer-only aid-generate skill, the 22 agents, the 11 renderer
-  Python files (10 under .claude/skills/aid-generate/scripts/ + run_generator.py),
+  the 11th maintainer-only aid-generate skill, the 22 agents, the 13 renderer
+  Python files (12 under .claude/skills/aid-generate/scripts/ + run_generator.py),
   and the canonical helper scripts under canonical/scripts/{config,kb,execute,summarize,interview}.
   Each entry lists purpose, directory path, dependencies, and associated tests.
   Read this when you need to know what a directory holds and who consumes it.
@@ -13,10 +13,11 @@ intent: |
 contracts:
   - "10 user-facing aid-* skills + 1 maintainer-only aid-generate skill = 11 total"
   - "22 agents under canonical/agents/ (10 large / 9 medium / 3 small)"
-  - "5 renderer Python files under .claude/skills/aid-generate/scripts/ (render_agents, render_skills, render_templates, render_canonical_scripts, render_recipes) + render_lib + aid_profile + verify_deterministic + verify_advisory + test_manifest_safety = 10 files under scripts/, plus run_generator.py at the repo root"
+  - "12 renderer Python files under .claude/skills/aid-generate/scripts/ (render_agents, render_skills, render_templates, render_canonical_scripts, render_recipes) + render_lib + aid_profile + verify_deterministic + verify_advisory + test_manifest_safety + test_copilot_emitter + test_antigravity_emitter, plus run_generator.py at the repo root"
   - "5 script categories under canonical/scripts/ (config, kb, execute, summarize, interview) + grade.sh at the category root"
-  - "Every canonical helper script has 4 byte-identical copies on disk (canonical + .claude + 3 profile trees)"
+  - "Every canonical helper script has 7 byte-identical copies on disk (canonical + .claude dogfood + 5 profile trees)"
 changelog:
+  - 2026-06-01: work-001-add-providers (PRs #42/#43/#44) — render profiles grew 3→5 (added copilot-cli + antigravity); scripts/ grew 10→12 .py (added test_copilot_emitter.py + test_antigravity_emitter.py); render_agents gained copilot-agent + antigravity-rule format branches; helper-script copy set is now canonical + .claude + 5 profile trees.
   - 2026-05-31: delivery-001 — reconciled discovery-agent ownership: scout now owns project-structure.md + external-sources.md (not infrastructure.md); quality now owns test-landscape.md + tech-debt.md + infrastructure.md. Added note that document-expectations.md is the single per-doc expectations source loaded by the reviewer at REVIEW and FIX dispatch.
   - 2026-05-27: Initial generation by discovery-analyst (cycle-1)
 ---
@@ -34,14 +35,15 @@ The repo contains five module classes, each with its own conventions:
 
 1. **Skills** — 10 user-facing + 1 maintainer-only — under `canonical/skills/aid-*/`
 2. **Agents** — 22 specialist agents — under `canonical/agents/<name>/`
-3. **Renderer (Python)** — 10 files under `.claude/skills/aid-generate/scripts/` + `run_generator.py` at the repo root
+3. **Renderer (Python)** — 12 files under `.claude/skills/aid-generate/scripts/` + `run_generator.py` at the repo root
 4. **Helper scripts (Bash + JS + PS1)** — under `canonical/scripts/{config,kb,execute,summarize,interview}/` + `canonical/scripts/grade.sh`
 5. **Templates + Recipes** — content fixtures consumed by skills — under `canonical/templates/` + `canonical/recipes/`
 
-The render pipeline (Module 3) emits Modules 1, 2, 4, 5 into 3 install trees
-(`profiles/{claude-code,codex,cursor}/`) and the dogfood `.claude/` tree.
-Source-of-truth is `canonical/`; every other copy is byte-identical output
-verified by `.claude/skills/aid-generate/scripts/verify_deterministic.py`.
+The render pipeline (Module 3) emits Modules 1, 2, 4, 5 into 5 install trees
+(`profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/`) and the dogfood
+`.claude/` tree. Source-of-truth is `canonical/`; every other copy is
+byte-identical output verified by
+`.claude/skills/aid-generate/scripts/verify_deterministic.py`.
 
 ---
 
@@ -62,7 +64,7 @@ plus a `references/state-*.md` per state plus topic-specific reference docs.
 | `aid-deploy` | Ship a delivery + create PR | `canonical/skills/aid-deploy/SKILL.md` | 5 | `state-{idle,selecting,packaging,verifying,re-run}.md` |
 | `aid-monitor` | Production-finding classification + routing | `canonical/skills/aid-monitor/SKILL.md` | 3 | `state-{observe,classify,route}.md` |
 | `aid-summarize` | Optional offline HTML KB viewer (Mermaid + sectioned per profile) | `canonical/skills/aid-summarize/SKILL.md` | 10 | `state-{preflight,profile,generate,validate,manual-checklist,stale-check,writeback,fix,approval,done}.md` |
-| `aid-generate` (maintainer-only) | Render canonical/ → 3 install trees; LOAD → VALIDATE → RENDER → VERIFY → REPORT | `.claude/skills/aid-generate/SKILL.md` (NOT in `canonical/skills/` — see `.claude/skills/aid-generate/SKILL.md` `chicken-and-egg deployment problem` for the justification) | n/a — uses `scripts/*.py` instead | (renderer Python files — see §3) |
+| `aid-generate` (maintainer-only) | Render canonical/ → 5 install trees; LOAD → VALIDATE → RENDER → VERIFY → REPORT | `.claude/skills/aid-generate/SKILL.md` (NOT in `canonical/skills/` — see `.claude/skills/aid-generate/SKILL.md` `chicken-and-egg deployment problem` for the justification) | n/a — uses `scripts/*.py` instead | (renderer Python files — see §3) |
 
 **Test coverage:**
 
@@ -149,20 +151,22 @@ The generator lives in `.claude/skills/aid-generate/scripts/`, NOT in
 (chicken-and-egg per `.claude/skills/aid-generate/SKILL.md` `chicken-and-egg deployment problem`). It is the only
 Python in the repo.
 
-**Path:** `.claude/skills/aid-generate/scripts/*.py` (10 files) + `run_generator.py` (repo root wrapper).
+**Path:** `.claude/skills/aid-generate/scripts/*.py` (12 files) + `run_generator.py` (repo root wrapper).
 
 | File | Purpose | Key entry points |
 |------|---------|------------------|
 | `render_lib.py` | Shared utilities — `read_canonical_file`, `write_output_file`, `substitute_filenames`, `rewrite_install_paths`, `sha256_hex`, `EmissionManifest` (JSONL writer per `canonical/EMISSION-MANIFEST.md`) | `EmissionManifest.{add,diff,load,write}`, `sha256_hex`, regex constants `_PLACEHOLDER_RE`, `_CANONICAL_PATH_RE` |
-| `aid_profile.py` | Loads + validates a per-tool profile TOML; dataclasses `Profile`, `LayoutConfig`, `FrontmatterConfig`, `AgentConfig`, `SkillConfig`, `ModelTierSimple`, `ModelTierDetailed` | `load_profile(path)`, `validate(profile)` |
-| `render_agents.py` | Renders `canonical/agents/<name>/AGENT.md` per profile (markdown OR TOML output depending on `agent.format` per `canonical/EMISSION-MANIFEST.md` `## Asset Kinds`) | `render_agents(repo, profile, manifest, repo_root)`, `_parse_frontmatter` |
-| `render_skills.py` | Renders `canonical/skills/aid-*/SKILL.md` + `references/*.md` per profile; preserves frontmatter formatting verbatim (folded `description:` blocks) | `render_skills(...)`, `_split_frontmatter_raw`, `_rewrite_skill_frontmatter` |
+| `aid_profile.py` | Loads + validates a per-tool profile TOML; dataclasses `Profile`, `LayoutConfig`, `FrontmatterConfig`, `AgentConfig`, `SkillConfig`, `ModelTierSimple`, `ModelTierDetailed`, `RuleEntry`, `ExtrasConfig`, `CapabilitiesConfig`; `_KNOWN_AGENT_FORMATS = {markdown, toml, copilot-agent, antigravity-rule}` | `load_profile(path)`, `validate(profile)`, `_KNOWN_AGENT_FORMATS` |
+| `render_agents.py` | Renders `canonical/agents/<name>/AGENT.md` per profile; output format branches on `agent.format` — `markdown` / `toml` / `copilot-agent` (`.agent.md` + name/description/tools/model frontmatter) / `antigravity-rule` (`.agent/rules/*.md` with trigger:-style frontmatter) per `canonical/EMISSION-MANIFEST.md` `## Asset Kinds` | `render_agents(repo, profile, manifest, repo_root)`, `_parse_frontmatter`, `_build_frontmatter_md_copilot`, `_build_frontmatter_md_antigravity`, `_yaml_scalar`, `_remap_tools_list` |
+| `render_skills.py` | Renders `canonical/skills/aid-*/SKILL.md` + `references/*.md` per profile; preserves frontmatter formatting verbatim (folded `description:` blocks); `_render_cursor_extras` emits `[[extras.rules]]` honoring per-rule `output_filename` + gated trigger-dialect frontmatter | `render_skills(...)`, `_split_frontmatter_raw`, `_rewrite_skill_frontmatter`, `_render_cursor_extras`, `_split_rule_body`, `_build_trigger_frontmatter` |
 | `render_templates.py` | Renders `canonical/templates/` per profile (passthrough with path rewriting) | `render_templates(...)` |
 | `render_canonical_scripts.py` | Renders `canonical/scripts/` (Bash + JS + PS1) per profile; preserves shebang + line endings | `render_canonical_scripts(...)` |
 | `render_recipes.py` | Renders `canonical/recipes/` (passthrough, no frontmatter injection, no slot resolution at render time per `canonical/EMISSION-MANIFEST.md` `### Recipes asset kind`) | `render_recipes(...)` |
 | `verify_deterministic.py` | VERIFY (deterministic) — strict; re-renders to a scratch dir, compares byte-by-byte against committed install trees; non-zero exit if any drift | `run_verify(repo_root, report_path)` |
 | `verify_advisory.py` | VERIFY (advisory) — additional checks (frontmatter shape, install-path rewrites, etc.) | `run_advisory(repo_root, report_path)` |
 | `test_manifest_safety.py` | Self-tests for the EmissionManifest deletion logic | (pytest-style; run standalone) |
+| `test_copilot_emitter.py` | Self-tests for the `copilot-agent` format branch (`.agent.md` suffix + name/description/tools/model frontmatter); CI-wired in `.github/workflows/test.yml` | (run standalone) |
+| `test_antigravity_emitter.py` | Self-tests for the `antigravity-rule` format branch + the gated trigger-dialect `[[extras.rules]]` emission; CI-wired in `.github/workflows/test.yml` | (run standalone) |
 | `run_generator.py` (repo root) | Live generator entrypoint — loads every `profiles/*.toml`, calls renderers in sequence, performs deletion pass via `EmissionManifest.diff`, writes manifest, runs VERIFY (deterministic) + VERIFY (advisory) | `for profile_path in sorted(profiles_dir.glob('*.toml'))` |
 
 **Dependencies:**
@@ -175,6 +179,7 @@ Python in the repo.
 **Test coverage:**
 
 - `test_manifest_safety.py` covers `EmissionManifest` round-trip + diff edge cases.
+- `test_copilot_emitter.py` + `test_antigravity_emitter.py` are generator self-tests for the two new agent-format branches, run in CI (`.github/workflows/test.yml`).
 - `verify_deterministic.py` is itself a test — invoked after every render and exits non-zero on drift (per `run_generator.py` `run_verify`). It exercises the entire renderer chain end-to-end against the committed trees.
 - No standalone Python test runner configured (no `pytest.ini`, per project-structure.md §6). Tests are invoked manually per `tests/README.md`.
 
@@ -183,8 +188,11 @@ Python in the repo.
 ## 4. Helper scripts — `canonical/scripts/{config,kb,execute,summarize,interview}/` + `grade.sh`
 
 Bash (Shell) + Node (JavaScript) + PowerShell helpers consumed by skills at
-slash-command invocation. Every script has 4 byte-identical copies on disk
-(canonical + `.claude/scripts/` + `profiles/{claude-code,codex,cursor}/.{claude,agents,cursor}/scripts/`)
+slash-command invocation. Every script has 7 byte-identical copies on disk
+(canonical + `.claude/scripts/` dogfood + the 5 profile-tree scripts dirs:
+`profiles/claude-code/.claude/scripts/`, `profiles/codex/.agents/scripts/`,
+`profiles/cursor/.cursor/scripts/`, `profiles/copilot-cli/.github/scripts/`,
+`profiles/antigravity/.agent/scripts/`)
 — verified by `verify_deterministic.py`. Repo totals are recorded in `.aid/generated/project-index.md`.
 
 ### 4a. `canonical/scripts/config/` — settings access
@@ -266,7 +274,7 @@ See `tests/README.md` for the full suite list and run instructions.
 
 ## 5. Templates + Recipes — `canonical/templates/` + `canonical/recipes/`
 
-Content fixtures consumed by skills + agents at runtime. The renderer copies them passthrough (no transform) into all 3 install trees.
+Content fixtures consumed by skills + agents at runtime. The renderer copies them passthrough (no transform) into all 5 install trees.
 
 ### 5a. Templates — `canonical/templates/`
 
