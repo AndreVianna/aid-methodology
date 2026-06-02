@@ -126,7 +126,7 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 |----------|-------|----|-----------|----|----|
 | delivery-002 | Merged to master | #42 | no | — | aid/delivery-002 → master (merge commit 105e614); gate A+; admin-merged with user authorization (CI green, review-required gate bypassed) |
 | delivery-003 | Merged to master | #43 | no | — | aid/delivery-003 → master (merge commit 9c2d673); gate A+; admin-merged with user authorization (CI 5/5 green) |
-| delivery-004 | PR open (awaiting review/merge) | (created below) | no | — | aid/delivery-004 → master; gate A+; NOT merged (user reviews/merges); FINAL delivery → work-001 complete + ready for /aid-deploy on merge |
+| delivery-004 | PR open (awaiting review/merge) | #44 | no | — | aid/delivery-004 → master; gate A+; NOT merged (user reviews/merges); FINAL delivery → work-001 complete + ready for /aid-deploy on merge |
 
 ## Cross-phase Q&A (Pending)
 
