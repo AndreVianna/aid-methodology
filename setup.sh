@@ -159,7 +159,8 @@ if [[ "${#_agents_writers[@]}" -ge 2 ]]; then
       _survivor="$(tool_name $_i)"
     fi
   done
-  _writers_list="$(IFS=', '; echo "${_agents_writers[*]}")"
+  _writers_list=""
+  for _w in "${_agents_writers[@]}"; do _writers_list+="${_writers_list:+, }$_w"; done
   echo "Note: ${_writers_list} all install a shared AGENTS.md; the last-installed tool's version wins — survivor is decided by fixed per-tool install order (highest-numbered selected tool), not the order you toggled them (others are not preserved): ${_survivor} wins."
 fi
 
