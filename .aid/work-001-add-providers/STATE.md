@@ -1,6 +1,6 @@
 # Work State — work-001-add-providers
 
-> **Status:** Executing — delivery-002 MERGED (PR #42); **delivery-003 DONE (gate A+), PR open** on `aid/delivery-003` (awaiting user review/merge — NOT merged); delivery-004 pending (branches after #43 merges)
+> **Status:** Executing — delivery-002 MERGED (#42), delivery-003 MERGED (#43); **delivery-004 DONE (gate A+), PR open** on `aid/delivery-004` (awaiting user review/merge — NOT merged). All 4 deliveries complete → work-001 ready for /aid-deploy once #44 merges.
 > **Phase:** Execute
 > **Minimum Grade:** {resolved at runtime by `bash .claude/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-05-31
@@ -80,8 +80,8 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 |---|---------|-------------|------------|-----------|-------|
 | 001 | provider-research | Ready | A+ | 0 | FR1; RESEARCH; gates F2/F3/F4. Tech Spec adds an explicit FR1 Deliverable Contract (every `[FR1-owned]` value downstream depends on) + disposition tags `[data]`/`[transform:engine]`/`[omit]`. Key questions Q-A..Q-I |
 | 002 | copilot-cli | **Built+merged (PR #42)** | A+ | 0 | FR2; **post-FR1-loopback = E1-only** (`copilot-agent` `.agent.md` emitter + YAML serializer). E2 (skills cross-kind) + E3 (MCP) DROPPED — Copilot skills are native Agent Skills `[data]`, MCP `[omit]`. Context file = profile-local committed AGENTS.md (Q-J). Implemented in delivery-002, gate A+ |
-| 003 | antigravity | Ready (re-gated post-loopback) | A+ | 0 | FR3; cursor-modeled. **post-FR1-loopback:** skills→`.agent/skills/` native `[data]`; sub-agents→`.agent/rules/*.md` via NEW `antigravity-rule` `agent.format` reusing F2's E1 format-branch mechanism + a `RuleEntry.output_filename` touch; `.md` rules (not `.mdc`), `AGENTS.md` context (Q-H/Q-I). Executing in delivery-003 |
-| 004 | setup-and-nonregression | Ready (re-gated post-loopback) | A | 0 | FR4+FR5; setup.sh/ps1 menu+copy + 5-profile render-drift gate (auto-discovery). **post-FR1-loopback:** tree shapes corrected (native skills homes; NO mcp-config.json). AGENTS.md collision → **Option A** (last-installed/block-order wins + warning). Collision + gate logic unchanged |
+| 003 | antigravity | **Built+merged (PR #43)** | A+ | 0 | FR3; cursor-modeled. skills→`.agent/skills/` native `[data]`; sub-agents→`.agent/rules/*.md` via `antigravity-rule` `agent.format` reusing F2's E1 mechanism + `RuleEntry.output_filename` + gated `[extras] rules_frontmatter="trigger"`; `.md`/`AGENTS.md` (Q-H/Q-I). Implemented in delivery-003, gate A+ |
+| 004 | setup-and-nonregression | **Built (PR open), delivery-004 gate A+** | A | 0 | FR4+FR5; setup.sh/ps1 menu+copy (Option A collision, last-installed-wins) + all-5 non-regression gate (NR1-NR5). Tree shapes: native skills homes, NO mcp-config.json. Implemented in delivery-004, gate A+ |
 
 ## Plan / Deliveries
 
@@ -91,8 +91,8 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 |----------|--------|-------|-------|
 | delivery-001: Provider research & mapping | **Done (gate A)** | 001-004 | feature-001. research/provider-mapping.md; all Q-A..Q-J ruled; surfaced the Copilot-native-skills finding → FR1 loopback |
 | delivery-002: GitHub Copilot CLI profile | **Done (gate A+), MERGED PR #42** | 005,006,009,010 | feature-002. `profiles/copilot-cli.toml` + E1-only renderer ext + profile-local AGENTS.md; 198-file tree (native skills, no MCP); existing 3 byte-identical |
-| delivery-003: Google Antigravity profile | **Done (gate A+), PR open** | 011,012,014 | feature-003. `profiles/antigravity.toml` + `antigravity-rule` format engine (reuses E1) + gated trigger-frontmatter + profile-local AGENTS.md; 200-file tree. Depends on delivery-002 (merged) |
-| delivery-004: Setup options & all-5 non-regression | Pending | 015,016,017 | feature-004. Depends on: delivery-002, delivery-003. setup.sh/ps1 menu+copy (Option A collision) + finalized 5-profile render-drift gate |
+| delivery-003: Google Antigravity profile | **Done (gate A+), MERGED PR #43** | 011,012,014 | feature-003. `profiles/antigravity.toml` + `antigravity-rule` format engine (reuses E1) + gated trigger-frontmatter + profile-local AGENTS.md; 200-file tree |
+| delivery-004: Setup options & all-5 non-regression | **Done (gate A+), PR open** | 015,016,017 | feature-004. setup.sh/ps1 menu+copy (Option A collision) + SU12-17/SPS05-08 + all-5 non-regression gate. Final delivery |
 
 ## Tasks Status
 
@@ -111,9 +111,9 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 | 011 | Author profiles/antigravity.toml (cursor-modeled) + profile-local AGENTS.md | IMPLEMENT | 5 | Done | gate A+ | — | delivery-003; commit 5cb6187. Skills native [data]; .md extras.rules; detailed Gemini-3 model; `[extras] rules_frontmatter="trigger"` |
 | 012 | `antigravity-rule` format engine (sub-agents→.agent/rules reshape) + RuleEntry.output_filename | IMPLEMENT | 6 | Done | gate A+ | — | delivery-003; commit 75ba079; +gated trigger-frontmatter (09de2be). Reuses E1 format-branch mechanism |
 | 014 | Render Antigravity tree (200 files) + self-tests, render-drift, existing-4 byte-identical gate | TEST | 7 | Done | gate A+ | — | delivery-003; commit 344a7a0; +CI-wire antigravity test (09de2be) |
-| 015 | Extend setup.sh — menu + copy + AGENTS.md collision (Option A) | IMPLEMENT | 8 | Planned | — | — | delivery-004; deps 004,009,010,011,014; ∥ 016 |
-| 016 | Extend setup.ps1 — one-to-one parity | IMPLEMENT | 8 | Planned | — | — | delivery-004; deps 004,009,010,011,014; ∥ 015 |
-| 017 | Setup tests (SU16/SU16b/SPS08) + all-5 non-regression gate (NR1-NR5) | TEST | 9 | Planned | — | — | delivery-004; deps 010,014,015,016 |
+| 015 | Extend setup.sh — menu + copy + AGENTS.md collision (Option A) | IMPLEMENT | 8 | Done | gate A+ | — | delivery-004; commit 76aa7bf; +separator parity fix (844827a) |
+| 016 | Extend setup.ps1 — one-to-one parity | IMPLEMENT | 8 | Done | gate A+ | — | delivery-004; commit 76aa7bf (authored in lockstep with 015) |
+| 017 | Setup tests (SU12-17/SU16b/SPS05-08) + all-5 non-regression gate (NR1-NR5) | TEST | 9 | Done | gate A+ | — | delivery-004; commit 8ade5a0; test-setup.sh 75/75, NR1-NR5 green, ps1 suite skips (no pwsh, repo contract) |
 
 > **Removed by FR1 loopback (2026-05-31):** task-007 (E2 skills→agent cross-kind) + task-008 (E3 MCP emitter) — Copilot skills are native `[data]`, MCP is `[omit]`; task-013 (skills→flat-workflows R2) — Antigravity skills are native `[data]` (R3 folded into task-012). Numbers 007/008/013 are intentional, auditable gaps; surviving tasks NOT renumbered.
 > **Wave** = topological level (longest path from a root); /aid-execute derives actual ordering + parallelism from the per-delivery Execution Graphs in PLAN.md. The renderer extension is now **E1-only** (Copilot `copilot-agent`) + task-012's `antigravity-rule` format reusing E1's mechanism — no E2/E3/cross-kind-skills engine.
@@ -125,7 +125,8 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 | Delivery | State | PR | KB Updated | Tag | Notes |
 |----------|-------|----|-----------|----|----|
 | delivery-002 | Merged to master | #42 | no | — | aid/delivery-002 → master (merge commit 105e614); gate A+; admin-merged with user authorization (CI green, review-required gate bypassed) |
-| delivery-003 | PR open (awaiting review/merge) | #43 | no | — | aid/delivery-003 → master; gate A+; NOT merged (user reviews/merges); delivery-004 branches after this merges |
+| delivery-003 | Merged to master | #43 | no | — | aid/delivery-003 → master (merge commit 9c2d673); gate A+; admin-merged with user authorization (CI 5/5 green) |
+| delivery-004 | PR open (awaiting review/merge) | #44 | no | — | aid/delivery-004 → master; gate A+; NOT merged (user reviews/merges); FINAL delivery → work-001 complete + ready for /aid-deploy on merge |
 
 ## Cross-phase Q&A (Pending)
 
@@ -198,6 +199,15 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 - **Branch:** `aid/delivery-003` (commits 75ba079, 5cb6187, 344a7a0, 09de2be + STATE)
 - **Outcome:** `antigravity-rule` format (sub-agents→`.agent/rules/*.md` `trigger: always_on`); `RuleEntry.output_filename` + gated trigger-frontmatter for methodology rules; native `.agent/skills/` folders; 200-file tree; existing 4 profiles byte-identical; 18 canonical suites + 13 antigravity + 12 copilot self-tests green. NOT yet merged.
 
+### delivery-004
+
+- **Reviewer Tier:** Large (setup scripts + non-regression gate)
+- **Grade:** A+ (minimum A — passed after fix)
+- **Issue List:** 2 MINOR — [MINOR] sh↔ps1 collision-warning separator (`,` vs `, `) → Fixed (bash now joins with `, `, byte-identical to ps1); [MINOR] ps1 suite SKIPs without pwsh → Accepted (established repo contract; bash suite covers shared behavior in CI).
+- **Ledger:** `.aid/.temp/review-pending/execute-delivery-004-work-001.md`
+- **Branch:** `aid/delivery-004` (commits 76aa7bf, 8ade5a0, 844827a + STATE)
+- **Outcome:** setup.sh + setup.ps1 offer Copilot CLI (4) + Antigravity (5), Done=6, Option-A AGENTS.md collision (last-installed/block-order wins, non-interactive); SU12-17/SU16b + SPS05-08; all-5 non-regression gate (NR1-NR5) green; existing-3 byte-identical; all 5 profiles drift-clean. Reviewer drove the collision himself. NOT yet merged.
+
 ### delivery-NNN
 
 - **Reviewer Tier:** Small | Medium | Large
@@ -240,3 +250,5 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 | 2026-06-01 | delivery-002 (Copilot CLI profile) → DONE | A+ | tasks 005/006/009/010 executed on branch `aid/delivery-002` (5 commits). E1 `.agent.md` emitter + `copilot-agent` format + robust YAML serializer; `profiles/copilot-cli.toml` + profile-local AGENTS.md; 198-file Copilot tree (native skills, no MCP). Gate A+ after 3 fixes (real-yaml test, hardened _yaml_scalar, CI-wired self-test). Existing 3 byte-identical; all suites green. PAUSED before PR/merge + deliveries 003/004 |
 | 2026-06-01 | delivery-002 → MERGED (PR #42) | — | User reviewed + authorized merge. Admin-merged (CI 5/5 green; review-required protection bypassed per explicit user authorization). master → 105e614. Branch deleted. STATE Features/Plan tables reconciled to post-loopback reality. Starting delivery-003 (Antigravity) on branch aid/delivery-003 |
 | 2026-06-01 | delivery-003 (Antigravity profile) → DONE | A+ | tasks 011/012/014 on branch aid/delivery-003 (5 commits). `antigravity-rule` format (sub-agents→.agent/rules trigger:always_on) reusing E1; native skills [data]; `RuleEntry.output_filename` + GATED `[extras] rules_frontmatter="trigger"` (methodology rules get Antigravity trigger: shape; cursor byte-identical). 200-file tree; existing 4 byte-identical; all suites green. Gate A+ after fixing the [HIGH] methodology-frontmatter (dead /aid-plan deferral) + CI-wiring [LOW]. PR open — awaiting user review/merge |
+| 2026-06-01 | delivery-003 → MERGED (PR #43) | — | User authorized. Admin-merged (CI 5/5 green). master → 9c2d673. Branch deleted. delivery-004 branched from master. (Machine rebooted mid-delivery-004; resumed from disk state.) |
+| 2026-06-01 | delivery-004 (Setup + non-regression) → DONE | A+ | tasks 015/016/017 on branch aid/delivery-004 (4 commits). setup.sh + setup.ps1 (lockstep) offer Copilot(4)+Antigravity(5), Done=6, Option-A AGENTS.md collision (last-installed-wins, non-interactive); SU12-17/SU16b + SPS05-08 (75 bash tests; ps1 skips w/o pwsh — repo contract); all-5 non-regression NR1-NR5 green; existing-3 byte-identical. Gate A+ after fixing the sh/ps1 separator MINOR + accepting the pwsh-skip MINOR. **All 4 deliveries complete.** PR open — awaiting user review/merge |
