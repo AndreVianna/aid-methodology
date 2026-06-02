@@ -222,6 +222,7 @@ section.sec.featured > header h2::after {
 	gap: 1rem;
 	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
+.grid.g1 { grid-template-columns: 1fr; }
 .grid.g2 { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
 .grid.g3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .grid.g4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
@@ -560,7 +561,7 @@ footer {
 	.hero h1 { font-size: 1.8rem; }
 	h1 { font-size: 1.6rem; }
 	section.sec > header h2 { font-size: 1.4rem; }
-	.grid, .grid.g2, .grid.g3, .grid.g4 { grid-template-columns: 1fr; }
+	.grid, .grid.g1, .grid.g2, .grid.g3, .grid.g4 { grid-template-columns: 1fr; }
 }
 
 /* ---------- Print ---------- */
@@ -696,11 +697,11 @@ details.accord > summary:focus-visible,
 		<a href="#s6" class="toc-link"><span class="n">06</span><span class="t">Pipeline Contracts</span></a>
 		<a href="#s7" class="toc-link"><span class="n">07</span><span class="t">Authoring &amp; Quality Gates</span></a>
 		<a href="#s8" class="toc-link"><span class="n">08</span><span class="t">Distribution / Install</span></a>
-		<a href="#s8b" class="toc-link"><span class="n">08+</span><span class="t">Render Profiles</span></a>
-		<a href="#s9" class="toc-link"><span class="n">09</span><span class="t">Test Landscape</span></a>
-		<a href="#s10" class="toc-link"><span class="n">10</span><span class="t">Tech Debt</span></a>
-		<a href="#s11" class="toc-link"><span class="n">11</span><span class="t">Documentation Surface</span></a>
-		<a href="#s12" class="toc-link"><span class="n">12</span><span class="t">Knowledge Base Index</span></a>
+		<a href="#s9" class="toc-link"><span class="n">09</span><span class="t">Render Profiles</span></a>
+		<a href="#s10" class="toc-link"><span class="n">10</span><span class="t">Test Landscape</span></a>
+		<a href="#s11" class="toc-link"><span class="n">11</span><span class="t">Tech Debt</span></a>
+		<a href="#s12" class="toc-link"><span class="n">12</span><span class="t">Documentation Surface</span></a>
+		<a href="#s13" class="toc-link"><span class="n">13</span><span class="t">Knowledge Base Index</span></a>
 	</div>
 </nav>
 
@@ -1349,15 +1350,15 @@ flowchart TB
 	</div>
 </section>
 
-<!-- ===== SECTION 9: Test Landscape ===== -->
-<section class="sec" id="s8b" data-title="Render Profiles">
+<!-- ===== SECTION 9: Render Profiles ===== -->
+<section class="sec" id="s9" data-title="Render Profiles">
 	<header>
 		<span class="eyebrow">Build &amp; Install</span>
 		<h2>Render Profiles</h2>
 		<p class="lede">Each supported host tool is encoded as one <code>profiles/&lt;tool&gt;.toml</code> profile consumed by <code>run_generator.py</code>. A profile pins the install root, the per-tool agent format, the root context file, and any tool-specific layout (split roots, rule files, tool-name remaps). One card per profile below — every value is the profile's verified <code>output_root</code>, <code>project_context_file</code>, and <code>[agent].format</code>. (per architecture.md, integration-map.md, pipeline-contracts.md)</p>
 	</header>
 
-	<div class="grid g3">
+	<div class="grid g1">
 		<div class="card card-primary">
 			<div class="kicker">Reference / dogfood layout</div>
 			<h3>Claude Code</h3>
@@ -1401,8 +1402,8 @@ flowchart TB
 	</div>
 </section>
 
-<!-- ===== SECTION 9: Test Landscape ===== -->
-<section class="sec" id="s9" data-title="Test Landscape">
+<!-- ===== SECTION 10: Test Landscape ===== -->
+<section class="sec" id="s10" data-title="Test Landscape">
 	<header>
 		<span class="eyebrow">Tests</span>
 		<h2>Test Landscape</h2>
@@ -1537,8 +1538,8 @@ flowchart TB
 	</div>
 </section>
 
-<!-- ===== SECTION 10: Tech Debt ===== -->
-<section class="sec" id="s10" data-title="Tech Debt">
+<!-- ===== SECTION 11: Tech Debt ===== -->
+<section class="sec" id="s11" data-title="Tech Debt">
 	<header>
 		<span class="eyebrow">Debt</span>
 		<h2>Tech Debt</h2>
@@ -1570,8 +1571,8 @@ flowchart TB
 
 </section>
 
-<!-- ===== SECTION 11: Documentation Surface ===== -->
-<section class="sec" id="s11" data-title="Documentation Surface">
+<!-- ===== SECTION 12: Documentation Surface ===== -->
+<section class="sec" id="s12" data-title="Documentation Surface">
 	<header>
 		<span class="eyebrow">Docs</span>
 		<h2>Documentation Surface</h2>
@@ -1607,8 +1608,8 @@ flowchart TB
 	</div>
 </section>
 
-<!-- ===== SECTION 12: Knowledge Base Index ===== -->
-<section class="sec" id="s12" data-title="Knowledge Base Index">
+<!-- ===== SECTION 13: Knowledge Base Index ===== -->
+<section class="sec" id="s13" data-title="Knowledge Base Index">
 	<header>
 		<span class="eyebrow">Index</span>
 		<h2>Knowledge Base Index</h2>
