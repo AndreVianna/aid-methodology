@@ -18,6 +18,7 @@ contracts:
   - "All suites source tests/lib/assert.sh (shared counters + asserts + test_summary)"
   - "Most suites are pure bash (POSIX, Git Bash on Windows); 2 need node, 2 need pwsh — each skips if absent"
 changelog:
+  - 2026-06-03: housekeep run-state relocation (PR #51) — updated the test-housekeep-state.sh + test-housekeep-workfolder-safety.sh descriptions: run-state now in `.aid/.temp/HOUSEKEEP_STATE_<ts>.md` (absent-file tolerance covered); the work-folder matrix is now informational (every folder offered, user-confirmed; only the current-branch folder hard-skipped — old signals (a)/(c) removed).
   - 2026-06-03: post-merge work-001-aid-housekeep (PR #49) + work-002 canonical bug-fix suites — suite count 18→24 (verified `ls tests/canonical/test-*.sh | wc -l` = 24 on disk). Documented the 5 new housekeep suites (test-housekeep-state.sh, test-housekeep-branch-commit.sh, test-housekeep-classify.sh, test-housekeep-workfolder-safety.sh, test-housekeep-deletion-split.sh) added by the /aid-housekeep skill, which guard the canonical/scripts/housekeep/ helpers (housekeep-state.sh, branch-commit.sh, cleanup-classify.sh). Also documented test-complexity-score.sh (work-002 task-001 four-fix regression suite for canonical/scripts/execute/complexity-score.sh) which was on disk but missing from this inventory. Done via /aid-housekeep targeted re-discovery.
   - 2026-06-01: post-merge work-001-add-providers (PRs #42/#43/#44) — byte-identity assertion 3→5 install-tree profiles (added GitHub Copilot CLI + Antigravity); documented new setup cases (test-setup.sh SU12-17/SU16b; test-setup-ps1.sh SPS05-08, which SKIPs without pwsh per established contract); documented the 2 new generator self-tests (test_copilot_emitter.py, test_antigravity_emitter.py) wired into the CI generator-selftests step. Canonical suite count unchanged at 18 (verified `ls tests/canonical/test-*.sh | wc -l` = 18 on disk — the new setup cases are SU/SPS additions inside the existing test-setup.sh / test-setup-ps1.sh suites, not new suite files).
   - 2026-05-31: delivery-002 — added 3 F4 doc-set suites (test-doc-set-read.sh, test-doc-set-mapping.sh, test-doc-set-propose-confirm.sh); updated suite count 15→18
@@ -303,8 +304,10 @@ job asserts `pwsh` IS present so this skip cannot silently fire there.
 **Target:** `canonical/scripts/housekeep/housekeep-state.sh`
 
 Added by the **/aid-housekeep** skill. Covers the run-state I/O round-trip and the
-`--resume` decision rule against the `## Housekeep Status` section of a STATE.md
-fixture (find the scenarios via the `Unit 1:`–`Unit 20:` header block in the suite):
+`--resume` decision rule against the `## Housekeep Status` section of a run-state
+fixture (the project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md` file; find the scenarios
+via the `Unit 1:`–`Unit 20:` header block in the suite) — including absent-file
+tolerance (read→empty/exit 0; write creates the file):
 `--read` on a file with no section → empty/exit 0; `--write` creates the section + field
 line and is idempotent (replace, no duplicate); independent fields co-exist; all nine
 C-2 fields round-trip write→read; the six `--resume` rows (PREFLIGHT → CLEANUP →
@@ -351,11 +354,14 @@ matrix** using throwaway git repos with a fake `origin/master` and `.aid/work-*/
 fixtures (find the scenarios via the `Unit 1:`–`Unit 10:` header block). Signal (i)
 (merged-to-master) is exercised via the offline `git merge-base --is-ancestor` ancestry
 fallback so the suite runs without network or `gh`; the gh-PR path is guarded by
-`command -v gh` and SKIPs if absent. Matrix: (i)✓(ii)✓ → offered Tier-1
-(gate=offer, default unchecked); (i)✓(ii)✗ → emitted with gate=explicit-confirm;
-(i)✗ (unmerged SHA / no STATE.md / no PR-or-SHA) → **not offered** (conservative fail);
-an active folder is **never offered** — detected via `--active-work`, a non-Deployed
-status (c), the current branch matching (b), or a present `## Housekeep Status` (a).
+`command -v gh` and SKIPs if absent. The (i)/(ii) signals are now **informational
+context only** — they no longer gate whether a folder is offered. **Every** work folder
+is offered (the user has the last word): (i)✓(ii)✓ → main checklist (gate=offer, default
+unchecked); otherwise → gate=explicit-confirm (merged-but-not-concluded, or merge
+unverified — unmerged SHA / no STATE.md / no PR-or-SHA). The single hard skip is the
+work folder of the currently checked-out `aid/work-NNN-*` branch (signal (b)); the
+`--active-work` caller exclusion is still honored. (Former exclusions (a) "carries
+`## Housekeep Status`" and (c) "non-Deployed status" were removed.)
 
 ### test-housekeep-deletion-split.sh
 
