@@ -9,7 +9,7 @@ description: >
   stage on re-invocation. State-machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA →
   CLEANUP → DONE.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit, Agent
-argument-hint: "[--grade X] minimum summary grade  [--cleanup-only] jump straight to CLEANUP (delivery-003+)"
+argument-hint: "[--grade X] minimum summary grade for the SUMMARY-DELTA stage"
 ---
 
 # Knowledge Base Housekeeping

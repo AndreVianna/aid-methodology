@@ -1,7 +1,7 @@
 # Work State — work-001-aid-housekeep
 
 > **Status:** Interview Complete | Specifying | Planning | Detailing | Executing | Deployed
-> **Phase:** Execute — delivery-001 (8 tasks total across 3 deliveries; agent-driven; 001/002 done)
+> **Phase:** Execute — delivery-001 DONE (gate A); next delivery-002 (task-005 summary)
 > **Minimum Grade:** {resolved at runtime by `bash .claude/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-06-02
 > **User Approved:** no
@@ -73,8 +73,8 @@ This is the single state file for **this work** — the full dev lifecycle from 
 |---|------|------|------|--------|--------|---------|-------|
 | 001 | housekeep-state.sh + `## Housekeep Status` template | IMPLEMENT | 1 | Done | Small: clean | — | delivery-001 (f001) |
 | 002 | branch-commit.sh | IMPLEMENT | 1 | Done | Small: clean | — | delivery-001 (f001) |
-| 003 | thin-router SKILL.md + PREFLIGHT/DONE + args prose + stub no-op bodies | IMPLEMENT | 2 | Pending | — | — | delivery-001 (f001); ←001,002. Skeleton drafted on disk, ungated. Args in SKILL.md prose (no parse-args.sh) |
-| 004 | state-kb-delta.md — agent-driven KB reconciliation body | IMPLEMENT | 3 | Pending | — | — | delivery-001 (f002); ←001,002,003. Drafted on disk, ungated; agent inspects repo↔KB (git=hint) |
+| 003 | thin-router SKILL.md + PREFLIGHT/DONE + args prose + stub no-op bodies | IMPLEMENT | 2 | Done | Gate: A | — | delivery-001 (f001); ←001,002. Skeleton drafted on disk, ungated. Args in SKILL.md prose (no parse-args.sh) |
+| 004 | state-kb-delta.md — agent-driven KB reconciliation body | IMPLEMENT | 3 | Done | Gate: A | — | delivery-001 (f002); ←001,002,003. Drafted on disk, ungated; agent inspects repo↔KB (git=hint) |
 | 005 | state-summary-delta.md body (replaces stub) | IMPLEMENT | 4 | Pending | — | — | delivery-002 (f003); ←001,002,003,004 |
 | 006 | cleanup-classify.sh + classification suites | IMPLEMENT | 1 | Pending | — | — | delivery-003 (f004) |
 | 007 | --cleanup-only enablement (SKILL.md prose + routing) | IMPLEMENT | 2 | Pending | — | — | delivery-003 (f004); ←003 |
@@ -116,7 +116,12 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 > One block per delivery from PLAN.md, written by the delivery-gate closing step of `aid-execute`.
 
-_none yet_
+### delivery-001
+- **Reviewer Tier:** Medium
+- **Grade:** A
+- **Issue List:** 1 MINOR (argument-hint advertised `--cleanup-only` before delivery-003 — fixed on the spot)
+- **Timestamp:** 2026-06-02
+- **Notes:** Runnable KB-reconciliation MVP — KB-DELTA agent-driven + functional; SUMMARY-DELTA/CLEANUP inert stub no-ops; terminates at DONE. 21 canonical suites pass; renders clean to all 5 profiles.
 
 ## Quick Check Findings
 
@@ -140,3 +145,4 @@ _none yet_
 | 2026-06-02 | Detail restructure | A+ | User overengineering review → 16→13 tasks: dropped parse-args.sh (args in SKILL.md prose, no AID skill ships a CLI arg-parser; feature-001 SPEC updated); merged stub bodies into router (task-003); merged distribution TEST into integration (task-008). Re-gated A+. Done in worktree `.claude/worktrees/work-001-aid-housekeep`. Next: /aid-execute. |
 | 2026-06-02 | Execute wave-1 + design pivot | — | Wave-1 (old 001/002/006) implemented + quick-checked clean. Then user review during execute → **agent-driven pivot**: KB stage is agent reconciliation (inspect repo↔KB, git=hint), NOT scripts. Dropped detect-delta.sh/scope-delta.sh + D1/Approved-At-Commit (reverted). 13→10 tasks; REQUIREMENTS FR1/FR2 + feature-002 SPEC + state-kb-delta.md rewritten agent-driven. Re-gate pending. |
 | 2026-06-02 | Re-gate (agent-driven pivot) | A+ | Pivot re-gated A+ (executable surface clean; fixed doc-drift: feature-002 AC block + 5 sibling-SPEC cross-refs + changelog marker). Merged origin/master (work-002). Next: finalize task-003/004, build task-005, delivery-001 gate. |
+| 2026-06-02 | Execute delivery-001 + gate | A | All 4 d1 tasks Done; delivery gate A (runnable KB-reconciliation MVP). Dropped both integration tests (10→8). Next: delivery-002 (summary). |
