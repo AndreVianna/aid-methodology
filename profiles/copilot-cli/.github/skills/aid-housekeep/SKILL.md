@@ -45,7 +45,7 @@ Mechanical states auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the run.*
 | `--grade X` | Pass-through to the SUMMARY-DELTA delegation to `/aid-summarize`. Format: `[A-F][-+]?` (e.g., `A`, `A-`, `B+`). Without this, resolved via `bash .github/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A`. |
 
 > **`--cleanup-only` is NOT offered in delivery-001.** The CLEANUP body is a stub
-> no-op until delivery-003 (task-008/task-009). Once the real CLEANUP body ships,
+> no-op until delivery-003 (task-007/task-008). Once the real CLEANUP body ships,
 > `--cleanup-only` will jump straight to CLEANUP (AC10), setting `**Mode:**
 > cleanup-only` and leaving KB/Summary stage rows as `—` (a deliberate
 > cleanup-only run does not violate C1 — REQUIREMENTS.md FR7). Until then,

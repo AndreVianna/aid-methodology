@@ -34,7 +34,6 @@
 | task-002 | — |
 | task-003 | task-001, task-002 |
 | task-004 | task-001, task-002, task-003 |
-| task-005 | task-001, task-002, task-003, task-004 |
 
 | Can Be Done In Parallel |
 |------------------------|
@@ -53,7 +52,7 @@
 
 | Task | Depends On |
 |------|-----------|
-| task-006 | task-001, task-002, task-003, task-004 |
+| task-005 | task-001, task-002, task-003, task-004 |
 
 | Can Be Done In Parallel |
 |------------------------|
@@ -77,19 +76,18 @@
 
 | Task | Depends On |
 |------|-----------|
-| task-007 | — |
-| task-008 | task-003 |
-| task-009 | task-001, task-002, task-003, task-007, task-008 |
-| task-010 | task-001, task-002, task-005, task-007, task-008, task-009 |
+| task-006 | — |
+| task-007 | task-003 |
+| task-008 | task-001, task-002, task-003, task-006, task-007 |
 
 | Can Be Done In Parallel |
 |------------------------|
-| task-007, task-008 |
+| task-006, task-007 |
 
 ## Cross-Cutting Risks
 
 | # | Risk | Impact | Mitigation |
 |---|------|--------|------------|
-| 1 | The KB-DELTA stage is **agent-driven** (LLM judgment, not a deterministic script): the agent decides what has drifted, which docs are affected, and what the correction is. There is no detection/scoping script to unit-test, so a mis-scoped or missed-drift run is a judgment risk, not a code-path bug. (The 2026-06-02 pivot also removed the former `/aid-discover` `Approved-At-Commit:` edit, so delivery-001 no longer modifies any existing skill — that earlier regression risk is gone.) | M | The agent reuses `/aid-discover`'s proven REVIEW→APPROVAL gate (the human approval is the backstop against bad scope), and confirm-and-adjust (NFR3) puts the proposed scope in front of the user before any change. The deterministic transitions the body wires (`**KB Stage:**` gate ledger, resume) are covered by `test-housekeep-state.sh` + the integration suite (task-005); the prose body is verified by the render/self-test gate. No existing skill is edited, so there is no cross-skill regression surface. |
-| 2 | **Incremental state-machine wiring** across deliveries: delivery-001 ships the full machine with KB-DELTA functional and SUMMARY-DELTA/CLEANUP as **stub no-ops**; deliveries 002/003 each replace a stub with real logic. Each replacement must preserve the halt/resume + hard-gate contract (feature-001's `## Housekeep Status` resume table), and the stub no-ops themselves must record `skipped` + CHAIN cleanly so delivery-001 terminates at DONE. | M | feature-001's state-detection/resume table + the explicit **incremental-delivery stub-no-op contract** (feature-001 SPEC § "Incremental-delivery stub no-op") are the single source of truth; each delivery adds/replaces a stage body + its gate predecessor check and re-runs feature-001's skeleton suites (state/resume, branch-commit) plus its own stage suite. (Args are handled in `SKILL.md` `## Arguments` + State Detection prose — no dedicated arg-parse script or suite.) |
+| 1 | The KB-DELTA stage is **agent-driven** (LLM judgment, not a deterministic script): the agent decides what has drifted, which docs are affected, and what the correction is. There is no detection/scoping script to unit-test, so a mis-scoped or missed-drift run is a judgment risk, not a code-path bug. (The 2026-06-02 pivot also removed the former `/aid-discover` `Approved-At-Commit:` edit, so delivery-001 no longer modifies any existing skill — that earlier regression risk is gone.) | M | The agent reuses `/aid-discover`'s proven REVIEW→APPROVAL gate (the human approval is the backstop against bad scope), and confirm-and-adjust (NFR3) puts the proposed scope in front of the user before any change. The deterministic transitions the body wires (`**KB Stage:**` gate ledger, resume) are covered by `test-housekeep-state.sh`; the agent-driven prose body is verified by dogfooding + render-drift CI / generator self-tests (no bespoke integration test — AID has no E2E tier). No existing skill is edited, so there is no cross-skill regression surface. |
+| 2 | **Incremental state-machine wiring** across deliveries: delivery-001 ships the full machine with KB-DELTA functional and SUMMARY-DELTA/CLEANUP as **stub no-ops**; deliveries 002/003 each replace a stub with real logic. Each replacement must preserve the halt/resume + hard-gate contract (feature-001's `## Housekeep Status` resume table), and the stub no-ops themselves must record `skipped` + CHAIN cleanly so delivery-001 terminates at DONE. | M | feature-001's state-detection/resume table + the explicit **incremental-delivery stub-no-op contract** (feature-001 SPEC § "Incremental-delivery stub no-op") are the single source of truth; each delivery adds/replaces a stage body + its gate predecessor check, re-runs feature-001's skeleton suites (state/resume, branch-commit) plus any deterministic-helper suite it owns (delivery-003's cleanup-classify), and is otherwise verified by dogfooding + render-drift CI — there is no bespoke integration test (AID has no E2E tier). (Args are handled in `SKILL.md` `## Arguments` + State Detection prose — no dedicated arg-parse script or suite.) |
 | 3 | All three stages share feature-001's `branch-commit.sh` + `housekeep-state.sh` helpers (shipped in delivery-001). A bug there affects every stage. | M | These helpers are delivery-001's tested deterministic core (skeleton suites: state/resume, branch-commit) — landed and green before any stage logic builds on them. |

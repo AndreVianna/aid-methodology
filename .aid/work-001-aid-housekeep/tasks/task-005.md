@@ -1,78 +1,80 @@
-# task-005: Integration TEST — cross-stage state machine + distribution/render + run-all discovery
+# task-005: Real SUMMARY-DELTA body — `state-summary-delta.md` (replaces the stub)
 
-**Type:** TEST
+**Type:** IMPLEMENT
 
-**Source:** feature-001-skill-and-state-machine + feature-002-kb-delta-refresh → delivery-001
+**Source:** feature-003-summary-delta-refresh → delivery-002
 
 **Depends on:** task-001, task-002, task-003, task-004
 
 **Scope:**
-
-### (a) Cross-stage integration — KB-DELTA → stub-no-ops → DONE
-- Author a canonical integration suite (e.g. `tests/canonical/test-housekeep-flow.sh`,
-  auto-discovered by the `tests/canonical/test-*.sh` glob in `tests/run-all.sh`, sourcing
-  `tests/lib/assert.sh`, runs under `timeout 300`) that exercises the **deterministic state
-  transitions** of the delivery-001 state machine over a throwaway fixtured repo + `STATE.md`,
-  driving the housekeep scripts (`housekeep-state.sh`, `branch-commit.sh`) — **not** the
-  LLM prose bodies, and **not** any detection/scoping script (those were removed in the
-  agent-driven pivot; the KB-DELTA body in task-004 does detection + scoping as agent analysis,
-  so there is no `detect-delta.sh`/`scope-delta.sh` suite to drive).
-- Cover the delivery-001 end-to-end wiring contract from PLAN.md (Risk #2) and feature-001 SPEC
-  § "Incremental-delivery stub no-op": with KB-DELTA functional, after KB-DELTA reaches
-  `passed`/`skipped`, the **SUMMARY-DELTA and CLEANUP stub no-ops each record `skipped` and
-  CHAIN through to DONE**, so a KB-refresh run terminates cleanly at `**State:** DONE`.
-- Cover the gate/resume contract (AC9): a `stalled` KB-DELTA halts and a re-run resumes at
-  KB-DELTA (re-entry row 3); a fully-`passed`/`skipped` machine reports "nothing to resume"
-  (re-entry row 6, NFR2 idempotent no-op).
-- Assert the hard-gate ledger (C1): SUMMARY-DELTA's stub does not "run" until `**KB Stage:**`
-  reads `passed`/`skipped`; CLEANUP's stub does not "run" until `**Summary Stage:**` reads
-  `passed`/`skipped`. Drive these against the deterministic `housekeep-state.sh` gate-ledger
-  transitions, not the prose bodies.
-- **Forward-compat note (delivery-002):** this suite is the home for the SUMMARY-DELTA
-  stub→real-body swap assertion. Per feature-003 SPEC § Testing, feature-003 ships **no new
-  dedicated suite** (its staleness/grade logic is covered by `/aid-summarize`'s own suites and its
-  gate-field write by `test-housekeep-state.sh`). When task-006 replaces the stub, this suite's
-  state-transition coverage must still hold: a fully-`passed`/`skipped` machine still terminates at
-  `**State:** DONE`, and the C1 hard-gate ledger (SUMMARY-DELTA gated on `**KB Stage:**`,
-  CLEANUP gated on `**Summary Stage:**`) is unchanged — assert these against the deterministic
-  `housekeep-state.sh` gate-ledger transitions, not the `/aid-summarize` delegation prose.
-
-### (b) Distribution / render to 5 profiles + run-all discovery (AC11, NFR4)
-- Verify the distribution contract (AC11; feature-001 SPEC § Distribution) with **no renderer
-  edit**: running `.claude/skills/aid-generate/scripts/render_skills.py` discovers the new
-  `canonical/skills/aid-housekeep/` folder via its `skill_dirs = sorted(...)` glob and emits
-  `SKILL.md` + `references/*.md` + `scripts/*.sh` into all 5 install profiles (claude-code,
-  codex, cursor, copilot-cli, antigravity under `profiles/*.toml`).
-- Run the renderer determinism self-test (`render_skills.py --self-test`) and confirm it
-  exercises the new folder and passes (byte-identical render across profiles). This is the
-  verification surface for task-004's LLM-authored `state-kb-delta.md` prose body (no runtime
-  behavioral test of the prose).
-- Confirm `/aid-housekeep` is **absent from the mandatory pipeline flow** — it is NOT inserted
-  into the phase-to-skill mapping in `.aid/knowledge/architecture.md` and no phase-gate
-  references it (optional/on-demand like `/aid-summarize`).
-- Confirm the delivery-001 housekeep suites are picked up by the `tests/canonical/test-*.sh`
-  glob and run green under `tests/run-all.sh` (no edit to `run-all.sh`; NFR4 "wired into
-  run-all.sh"). After the agent-driven pivot dropped the detection/scoping scripts, the
-  delivery-001 housekeep suite list is the **3** suites: `test-housekeep-state.sh`,
-  `test-housekeep-branch-commit.sh`, and this integration suite (no `test-housekeep-detect-delta`,
-  `test-housekeep-scope-delta`, or `test-housekeep-parse-args` suites — those scripts do not exist).
+- **Replace** the delivery-001 stub no-op at
+  `canonical/skills/aid-housekeep/references/state-summary-delta.md` (authored by task-003) with
+  the **real SUMMARY-DELTA body** — short, step-numbered prose in the style of
+  `canonical/skills/aid-summarize/references/state-*.md` (feature-003 SPEC § Feature Flow). This
+  feature ships **no new `canonical/scripts/`** and **no new dedicated test suite** (feature-003
+  SPEC § "No new scripts" + § Testing — justified): it is pure delegation plus a three-way result
+  classification.
+- **Step 0 — C1 guard:** read `**KB Stage:**` from `## Housekeep Status` via feature-001's
+  `canonical/scripts/housekeep/housekeep-state.sh`; if it is not `passed` or `skipped`, refuse to
+  run (defensive restatement of the C1 invariant; the read itself is feature-001's gate, no new
+  gate machinery — feature-003 SPEC § Ordering precondition). Note in the body that
+  `/aid-summarize`'s own `summarize-preflight.sh` (`requires **User Approved:** yes`) is a second,
+  independent confirmation.
+- **Step 1 — state-entry banner:** print the "you are here" map and **warn** the user that a
+  regeneration will require them to open and visually confirm the HTML (the V1 human gate fired by
+  `/aid-summarize`), per NFR3 transparency (feature-003 SPEC § The V1 human gate).
+- **Step 2 — delegate:** invoke `/aid-summarize` with **no staleness flags** (not `--reset`),
+  forwarding **only** the optional `--grade X` the user passed to `/aid-housekeep` (feature-001 §
+  Invocation/CLI pass-through; feature-003 SPEC § The delegation decision). `/aid-summarize` runs
+  its own PREFLIGHT → STALE-CHECK → … → DONE / pauses for V1 verbatim — this body adds no
+  staleness or grading logic and edits nothing in `canonical/skills/aid-summarize/`.
+- **Step 3 — classify the outcome by re-reading the filesystem** (`knowledge-summary.html`,
+  `## Knowledge Summary Status`, `## Summarization History` in `.aid/knowledge/STATE.md` — the
+  "filesystem is the only source of truth" rule), and write `**Summary Stage:**` **only** through
+  `housekeep-state.sh` (never hand-edit `## Housekeep Status`), per the feature-003 SPEC mapping
+  table:
+  - **Regenerated & approved** (new dated `## Summarization History` entry + `**User Approved:**
+    yes`) → `**Summary Stage:** passed`; **commit** the regenerated HTML *and* the `STATE.md`
+    history edit `/aid-summarize` made in a **single** `branch-commit.sh` call (message
+    `chore(housekeep): summary delta refresh [feature-003]`); **CHAIN → CLEANUP**. `passed` also
+    covers the `CURRENT_UNAPPROVED → APPROVAL` sub-path (HTML current but unsigned → approve-only;
+    commit just the `STATE.md` approval edit).
+  - **Already current** (`CURRENT_APPROVED` → DONE-IDEMPOTENT; no new history entry, STATE.md
+    unchanged) → `**Summary Stage:** skipped`; **no commit** (NFR2); **CHAIN → CLEANUP**.
+  - **Below-min grade / V1 visual fail / diagram-parse F / user declined** (no fresh
+    `**User Approved:** yes` after `/aid-summarize` returns) → `**Summary Stage:** stalled`; also
+    write `**Stage Status:** stalled` + `**Stall Reason:**` (e.g. `summary V1 visual gate failed`
+    / `summary grade B < A`); **PAUSE-FOR-USER-ACTION** (feature-001 resume banner; re-run resumes
+    at SUMMARY-DELTA, State Detection row 4).
+- Commit boundary (C3): exactly one commit per stage on the `aid/housekeep-*` branch, **never
+  push**, via feature-001's `branch-commit.sh`; the `skipped`/DONE-IDEMPOTENT path commits nothing.
+  This feature introduces no new commit mechanism (feature-003 SPEC § Commit boundary).
+- **No new design** — every decision (delegation, the mapping table, the C1 guard, the V1
+  handling, the single per-stage commit) is dictated verbatim by feature-003 SPEC; this task only
+  slices it into the body that fills the feature-001 stub slot.
 
 **Acceptance Criteria:**
-- [ ] Deterministic, with clean setup/teardown (throwaway repo + STATE fixture), CI-wired via
-  the existing `test-*.sh` glob (no edit to `run-all.sh`).
-- [ ] Asserts a no-drift KB-DELTA → `skipped` → SUMMARY-DELTA stub `skipped` → CLEANUP stub
-  `skipped` → `**State:** DONE` (clean termination of the delivery-001 KB-refresh run).
-- [ ] Asserts a stalled KB-DELTA halts and a re-run resumes at KB-DELTA (not job 1) — AC9.
-- [ ] Asserts the hard-gate ledger ordering (C1): no downstream stub advances before its
-  upstream `**X Stage:**` reads `passed`/`skipped`.
-- [ ] Asserts a fully-resolved run reports "nothing to resume" (re-entry row 6 — NFR2).
-- [ ] `render_skills.py` (and `--self-test`) emit `aid-housekeep` SKILL.md + references + scripts
-  to all 5 profiles with no renderer source edit, byte-identical across profiles.
-- [ ] `/aid-housekeep` does not appear in the mandatory phase-to-skill pipeline mapping
-  (architecture.md) and no phase-gate references it (AC11).
-- [ ] `tests/run-all.sh` discovers and passes the 3 delivery-001 housekeep canonical suites
-  (`test-housekeep-state`, `test-housekeep-branch-commit`, + this integration suite — and NOT a
-  detect-delta / scope-delta / parse-args suite, which do not exist) via the existing glob
-  (NFR4/NFR5) with no `run-all.sh` edit.
-- [ ] All §6 quality gates pass; covers the source ACs (AC9, C1, NFR2, stub-no-op contract,
-  AC11, NFR4).
+- [ ] `state-summary-delta.md` no longer reads as a stub no-op: it invokes `/aid-summarize` (no
+  staleness flags; forwards only `--grade X` if the user gave one) and classifies the outcome via
+  filesystem reads, with no reimplemented staleness or grading logic and no edit under
+  `canonical/skills/aid-summarize/`.
+- [ ] Step 0 refuses to run unless `**KB Stage:**` reads `passed`/`skipped` (C1), reading it via
+  `housekeep-state.sh`; the state-entry banner warns up front that a regeneration triggers the V1
+  visual check (NFR3).
+- [ ] The three-way result→`**Summary Stage:**` mapping matches the feature-003 SPEC table
+  exactly: regenerated&approved (incl. `CURRENT_UNAPPROVED` approve-only) → `passed` + one
+  `branch-commit.sh` commit + CHAIN→CLEANUP; `CURRENT_APPROVED`/DONE-IDEMPOTENT → `skipped` + no
+  commit + CHAIN→CLEANUP (NFR2/AC6); below-min/V1-fail/declined → `stalled` + `**Stage Status:**
+  stalled` + `**Stall Reason:**` + PAUSE-FOR-USER-ACTION (AC9).
+- [ ] `**Summary Stage:**` is written **only** through `housekeep-state.sh`; the body never
+  hand-edits `## Housekeep Status`.
+- [ ] A `passed` run produces exactly one commit on the `aid/housekeep-*` branch (regenerated HTML
+  + the `STATE.md` history edit, one `branch-commit.sh` call, never push — C3); `skipped` produces
+  none.
+- [ ] The full sequence now terminates `KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE` with
+  SUMMARY-DELTA exercising real logic; the stub→real swap is verified by dogfooding +
+  render-drift CI, with no bespoke integration test (AID has no E2E tier; no new dedicated suite
+  per feature-003 SPEC § Testing).
+- [ ] All §6 quality gates pass; build/render passes (CI render-drift re-emits the body to all 5
+  profiles, no renderer edit); all existing tests pass (`/aid-summarize`'s own suites for
+  staleness/grade + feature-001's `test-housekeep-state.sh` for the gate-field write/resume).

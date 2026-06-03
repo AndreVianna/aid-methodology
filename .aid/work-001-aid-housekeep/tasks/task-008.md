@@ -1,61 +1,90 @@
-# task-008: `--cleanup-only` enablement in SKILL.md `## Arguments` + State Detection routing to CLEANUP
+# task-008: Real CLEANUP body — `state-cleanup.md` (replaces the stub)
 
 **Type:** IMPLEMENT
 
 **Source:** feature-004-aid-cleanup → delivery-003
 
-**Depends on:** task-003
+**Depends on:** task-001, task-002, task-003, task-006, task-007
 
 **Scope:**
-- **Edit** `canonical/skills/aid-housekeep/SKILL.md`'s `## Arguments` table + `## State Detection`
-  routing (the prose argument handling authored by task-003) to **start accepting** the
-  `--cleanup-only` flag. In delivery-001, task-003 deliberately did **not** offer `--cleanup-only`
-  (the `## Arguments` table omitted it and State Detection rejected it) because the CLEANUP body
-  was still a stub no-op; delivery-003 ships the real CLEANUP body, so this flag is now enabled
-  per feature-001 SPEC § Invocation / CLI Arguments (AC10) and feature-004 SPEC §
-  "`--cleanup-only` Entry (AC10)". **This is a prose edit to `SKILL.md`, not a `parse-args.sh`
-  edit** — `/aid-housekeep` handles arguments via the `## Arguments` table + State Detection in
-  `SKILL.md` (consistent with the other five skills), and ships no dedicated CLI arg-parser
-  script.
-- When `--cleanup-only` is given, the `## Arguments` + State Detection prose surfaces
-  **`**Mode:** cleanup-only`** so the skeleton routes PREFLIGHT → **CLEANUP directly**, bypassing
-  KB-DELTA and SUMMARY-DELTA (feature-001 resume/State-Detection table row 2: PREFLIGHT →
-  CLEANUP, `**Mode:** cleanup-only`, KB/Summary rows left `—`). This is the deliberate C1 skip
-  path (feature-001 § Resume — "a deliberate cleanup-only run does not violate C1"); no KB/Summary
-  gate fields are read or required.
-- Wire the State Detection / dispatch routing (feature-001 § Feature Flow / Dispatch + § Resume,
-  State Detection row 2) so that with `**Mode:** cleanup-only` set, the router enters CLEANUP's
-  body (task-009) directly. Do NOT re-implement CLEANUP's body here — only the entry routing in
-  `SKILL.md` prose.
-- The `--cleanup-only` enablement combines with the existing delivery-001 grammar in the
-  `## Arguments` table: *(no args)* = full gated sequence; `--grade X` pass-through unchanged; any
-  unrecognized flag still rejected. The `--grade X` and `--cleanup-only` flags are independent of
-  each other (`--grade` is meaningless in cleanup-only mode since SUMMARY-DELTA is bypassed;
-  document precedence per feature-001 SPEC if it specifies one, else `--grade` is ignored under
-  `--cleanup-only`).
-- **Type rationale (IMPLEMENT, not REFACTOR):** accepting a previously-rejected flag and routing
-  it to a stage is **new accepted behavior** (the rejected → Mode=cleanup-only → CLEANUP path did
-  not exist before), so it carries the IMPLEMENT type-default verification obligation — the
-  delivery-001 lesson (a newly-accepted input is new behavior, not a behavior-preserving
-  refactor). Coverage of the row-2 routing precondition lands in the integration suite (task-010),
-  since the routing now lives in `SKILL.md` prose (no parse-args unit suite).
-- **No new design** — the flag grammar, `**Mode:** cleanup-only`, and the row-2 routing are all
-  dictated verbatim by feature-001 SPEC (§ Invocation/CLI, § Resume) and feature-004 SPEC §
-  "`--cleanup-only` Entry"; this task only enables what those SPECs already define, in `SKILL.md`
-  prose. It supersedes task-003's delivery-001 "do not offer / reject `--cleanup-only`" behavior.
+- **Replace** the delivery-001 stub no-op at
+  `canonical/skills/aid-housekeep/references/state-cleanup.md` (authored by task-003) with the
+  **real CLEANUP body** — step-numbered prose in the style of
+  `canonical/skills/aid-summarize/references/state-*.md` (feature-004 SPEC § Description /
+  Checklist UI). This is the terminal-stage body that plugs into the feature-001 interface; it is
+  reachable BOTH after the SUMMARY-DELTA gate (full sequence) AND directly via `--cleanup-only`
+  (Mode=cleanup-only via task-007).
+- **Step 1 — scan + classify:** invoke `canonical/scripts/housekeep/cleanup-classify.sh`
+  (task-006) to get the candidate list; the body does NOT reimplement scan/tier/matrix/split
+  logic — it consumes the helper's output (the "deterministic logic lives in a tested bash
+  helper" pattern, feature-004 SPEC § Testing).
+- **Step 2 — present the tiered checklist** (feature-004 SPEC § "Checklist UI") via the host
+  `AskUserQuestion` tool (in feature-001 `SKILL.md` `allowed-tools`; precedent
+  `aid-summarize/references/state-manual-checklist.md`), grouped by tier — Tier-0 rows
+  pre-checked `[x] path — reason`, Tier-1/2 rows unchecked `[ ] path — review: reason`, each
+  annotated `(git rm)` / `(untracked)` so the user sees the deletion mechanism (NFR3). Mirror the
+  established propose→confirm interaction of `/aid-discover`'s `state-generate.md`.
+- **Step 3 — per-item confirm (NFR1):** the user toggles items and confirms the final selection;
+  **no item is removed without appearing checked at confirm time.** Each `(i)✓/(ii)✗` work folder
+  (gate=explicit-confirm from task-006) is NOT in the togglable list — it gets its own
+  `AskUserQuestion` prompt that **states the discrepancy** before it may join the deletion set.
+- **Step 4 — apply deletions, tracked/untracked split** (feature-004 SPEC § "Deletion
+  Mechanism", AC8): partition the confirmed set into `to_git_rm[]` / `to_rm[]` using the
+  per-path classification from task-006; `rm -rf` each `to_rm` path and `git rm -r --quiet` each
+  `to_git_rm` path (staging deletions). **No trash directory.**
+- **Step 5 — single commit, never push:** hand off the staged deletions to feature-001's
+  `canonical/scripts/housekeep/branch-commit.sh` for **exactly one** commit on the
+  `aid/housekeep-*` branch (e.g. `chore(housekeep): cleanup stale .aid artifacts [feature-004]`),
+  **never push, never commit to `master`** (C3, NFR1; feature-001 § Git/VC Boundary).
+- **Step 6 — gate output + chain:** write `**Cleanup Stage:** passed` to `## Housekeep Status`
+  **only** through `canonical/scripts/housekeep/housekeep-state.sh` (never hand-edit the block),
+  then CHAIN to DONE (cleanup is the terminal stage; field enum `passed | —`). Per feature-004
+  SPEC § "Gate Output … Cancel-All": `passed` means "the cleanup step RAN to a user-resolved
+  conclusion," not "files were deleted" — so **cancel-all / unchecked-everything → `passed` with
+  NO commit** (nothing staged), and **zero candidates found → `passed` with no commit**. Cancel-all
+  is NOT `stalled` (cleanup always *can* conclude); this keeps a re-run reporting "nothing to
+  resume" (resume table row 6, NFR2).
+- **`--cleanup-only` inputs guard** (feature-004 SPEC § "`--cleanup-only` Entry", AC10): when
+  reached via Mode=cleanup-only, the body MUST NOT read or assume any KB-delta or summary
+  run-state — it reads only the filesystem scan, git, `gh` (signal (i)), and each work folder's
+  own `STATE.md`. It does NOT read any `**Summary Stage:**` field. The C1 predecessor gate is
+  feature-001's (satisfied by the Mode=cleanup-only deliberate-skip path); this body does NOT
+  re-implement the gate.
+- **D2 coordination** (feature-004 SPEC § "D2 Coordination"): the body does NOT touch
+  `run_generator.py` and does NOT re-litigate the already-applied `report_path=None` fix; it only
+  sweeps any *residual* stray `verify-deterministic-report.json` / `verify-advisory-report.json`
+  as S4 Tier-0-safe candidates (complementary to the source fix — no conflict).
+- **No new design** — every step (scan→checklist→per-item confirm→git rm/rm split→single
+  commit→`passed`+CHAIN; cancel-all=passed/no-commit; `--cleanup-only` input boundary; D2
+  non-overlap) is dictated verbatim by feature-004 SPEC; this task slices it into the body that
+  fills the feature-001 stub slot.
 
 **Acceptance Criteria:**
-- [ ] `SKILL.md`'s `## Arguments` table now **offers** `--cleanup-only` (no longer rejected) and
-  State Detection surfaces `**Mode:** cleanup-only`; *(no args)* still yields the full gated
-  sequence and `--grade X` is still accepted/passed through unchanged; any other unrecognized flag
-  is still rejected.
-- [ ] With `**Mode:** cleanup-only`, State Detection routes PREFLIGHT → CLEANUP directly
-  (feature-001 row 2): KB-DELTA and SUMMARY-DELTA are bypassed and their `**KB Stage:**` /
-  `**Summary Stage:**` fields are neither read nor required (no C1 violation — deliberate skip).
-- [ ] The change is a `SKILL.md` prose edit (`## Arguments` + State Detection), not a
-  `parse-args.sh` edit; `/aid-housekeep` ships no dedicated CLI arg-parser script.
-- [ ] The integration suite (task-010) asserts the row-2 routing precondition (Mode=cleanup-only ⇒
-  CLEANUP entry, KB/Summary fields untouched) at the deterministic state-machine layer; the
-  delivery-001 state/resume + branch-commit suites remain green.
-- [ ] All §6 quality gates pass; build/render passes (CI render-drift re-emits the edited
-  `SKILL.md` to all 5 profiles, no renderer edit); all existing tests pass.
+- [ ] `state-cleanup.md` no longer reads as a stub no-op: it invokes `cleanup-classify.sh`
+  (task-006) for candidates, presents the tiered `AskUserQuestion` checklist (Tier-0 pre-checked,
+  Tier-1/2 unchecked, each annotated `(git rm)`/`(untracked)`), and acts only on the final checked
+  set — it reimplements no scan/tier/matrix/split logic.
+- [ ] **AC7** (UI half): safe items are checked and work folders unchecked; only offered folders
+  appear; an (i)✓/(ii)✗ folder triggers its own explicit-confirm `AskUserQuestion` stating the
+  discrepancy before it can be added; the active folder never appears (guaranteed upstream by
+  task-006).
+- [ ] **NFR1:** no candidate is removed without explicit confirmation — the checklist is always
+  shown before any `rm`/`git rm`; an unconfirmed/unchecked item is never deleted.
+- [ ] **AC8:** confirmed tracked items are removed via `git rm -r` (staged, recoverable) and
+  untracked cruft via `rm -rf`, committed in **exactly one** `branch-commit.sh` commit on the
+  `aid/housekeep-*` branch, with **no push and no commit to `master`**.
+- [ ] Gate output matches the SPEC table: ≥1 confirmed item → `**Cleanup Stage:** passed` + one
+  commit + CHAIN→DONE; **cancel-all / unchecked-everything → `passed` with NO commit**; **zero
+  candidates → `passed` with no commit** — all written only via `housekeep-state.sh`; cancel-all
+  is `passed` (never `stalled`).
+- [ ] `--cleanup-only` (Mode=cleanup-only) path reads no KB/summary run-state (no
+  `**Summary Stage:**`); its only inputs are the filesystem scan, git, `gh`, and each work
+  folder's `STATE.md`.
+- [ ] The body does not touch `run_generator.py` (D2 fix untouched) and sweeps only residual
+  stray verify reports as S4 candidates.
+- [ ] The deterministic safety classification this body wires is unit-tested by task-006's
+  cleanup-classify suites; the cross-stage orchestration is verified by dogfooding + render-drift
+  CI — there is no bespoke integration test (AID has no E2E tier, per `test-landscape.md`); the
+  LLM-authored prose body itself has no runtime behavioral test.
+- [ ] All §6 quality gates pass; build/render passes (CI render-drift re-emits the body to all 5
+  profiles, no renderer edit); all existing tests pass.

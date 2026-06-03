@@ -63,9 +63,8 @@
   (feature-001 resume banner; re-run resumes at KB-DELTA via State Detection row 3 — AC9).
 - [ ] No new scripts and no `/aid-discover` edits are introduced; `**KB Stage:**` is written only
   through `housekeep-state.sh` and commits only through `branch-commit.sh`.
-- [ ] The deterministic state transitions this body wires are exercised by the integration TEST
-  (task-005); the LLM-authored prose body itself is verified by the render/self-test gate
-  (task-005), consistent with the no-E2E-tier policy (test-landscape.md) — there is no runtime
-  behavioral test of the prose, and no unit suite for the agent reconciliation (it is analysis,
-  not deterministic logic).
+- [ ] The deterministic state transitions this body wires are verified by dogfooding +
+  render-drift CI / generator self-tests; there is no bespoke integration test (AID has no E2E
+  tier, per test-landscape.md). The LLM-authored prose body has no runtime behavioral test, and
+  the agent reconciliation has no unit suite (it is analysis, not deterministic logic).
 - [ ] All §6 quality gates pass; build/render passes; all existing tests pass.

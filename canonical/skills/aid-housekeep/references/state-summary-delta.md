@@ -2,7 +2,7 @@
 
 > **STUB NO-OP — delivery-001 skeleton.**
 > This file is a placeholder body for the SUMMARY-DELTA stage. It will be
-> replaced by the real body in delivery-002 (task-006 / feature-003).
+> replaced by the real body in delivery-002 (task-005 / feature-003).
 > The stub does NO work, makes NO commit, and does NOT pause. It records
 > `skipped` and CHAINs straight through to CLEANUP so that a delivery-001 run
 > (KB-only) terminates cleanly at DONE.

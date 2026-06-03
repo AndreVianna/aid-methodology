@@ -1,79 +1,86 @@
-# task-006: Real SUMMARY-DELTA body — `state-summary-delta.md` (replaces the stub)
+# task-006: `cleanup-classify.sh` — scan + tiered classification + work-folder safety matrix + tracked/untracked split
 
 **Type:** IMPLEMENT
 
-**Source:** feature-003-summary-delta-refresh → delivery-002
+**Source:** feature-004-aid-cleanup → delivery-003
 
-**Depends on:** task-001, task-002, task-003, task-004
+**Depends on:** —
 
 **Scope:**
-- **Replace** the delivery-001 stub no-op at
-  `canonical/skills/aid-housekeep/references/state-summary-delta.md` (authored by task-003) with
-  the **real SUMMARY-DELTA body** — short, step-numbered prose in the style of
-  `canonical/skills/aid-summarize/references/state-*.md` (feature-003 SPEC § Feature Flow). This
-  feature ships **no new `canonical/scripts/`** and **no new dedicated test suite** (feature-003
-  SPEC § "No new scripts" + § Testing — justified): it is pure delegation plus a three-way result
-  classification.
-- **Step 0 — C1 guard:** read `**KB Stage:**` from `## Housekeep Status` via feature-001's
-  `canonical/scripts/housekeep/housekeep-state.sh`; if it is not `passed` or `skipped`, refuse to
-  run (defensive restatement of the C1 invariant; the read itself is feature-001's gate, no new
-  gate machinery — feature-003 SPEC § Ordering precondition). Note in the body that
-  `/aid-summarize`'s own `summarize-preflight.sh` (`requires **User Approved:** yes`) is a second,
-  independent confirmation.
-- **Step 1 — state-entry banner:** print the "you are here" map and **warn** the user that a
-  regeneration will require them to open and visually confirm the HTML (the V1 human gate fired by
-  `/aid-summarize`), per NFR3 transparency (feature-003 SPEC § The V1 human gate).
-- **Step 2 — delegate:** invoke `/aid-summarize` with **no staleness flags** (not `--reset`),
-  forwarding **only** the optional `--grade X` the user passed to `/aid-housekeep` (feature-001 §
-  Invocation/CLI pass-through; feature-003 SPEC § The delegation decision). `/aid-summarize` runs
-  its own PREFLIGHT → STALE-CHECK → … → DONE / pauses for V1 verbatim — this body adds no
-  staleness or grading logic and edits nothing in `canonical/skills/aid-summarize/`.
-- **Step 3 — classify the outcome by re-reading the filesystem** (`knowledge-summary.html`,
-  `## Knowledge Summary Status`, `## Summarization History` in `.aid/knowledge/STATE.md` — the
-  "filesystem is the only source of truth" rule), and write `**Summary Stage:**` **only** through
-  `housekeep-state.sh` (never hand-edit `## Housekeep Status`), per the feature-003 SPEC mapping
-  table:
-  - **Regenerated & approved** (new dated `## Summarization History` entry + `**User Approved:**
-    yes`) → `**Summary Stage:** passed`; **commit** the regenerated HTML *and* the `STATE.md`
-    history edit `/aid-summarize` made in a **single** `branch-commit.sh` call (message
-    `chore(housekeep): summary delta refresh [feature-003]`); **CHAIN → CLEANUP**. `passed` also
-    covers the `CURRENT_UNAPPROVED → APPROVAL` sub-path (HTML current but unsigned → approve-only;
-    commit just the `STATE.md` approval edit).
-  - **Already current** (`CURRENT_APPROVED` → DONE-IDEMPOTENT; no new history entry, STATE.md
-    unchanged) → `**Summary Stage:** skipped`; **no commit** (NFR2); **CHAIN → CLEANUP**.
-  - **Below-min grade / V1 visual fail / diagram-parse F / user declined** (no fresh
-    `**User Approved:** yes` after `/aid-summarize` returns) → `**Summary Stage:** stalled`; also
-    write `**Stage Status:** stalled` + `**Stall Reason:**` (e.g. `summary V1 visual gate failed`
-    / `summary grade B < A`); **PAUSE-FOR-USER-ACTION** (feature-001 resume banner; re-run resumes
-    at SUMMARY-DELTA, State Detection row 4).
-- Commit boundary (C3): exactly one commit per stage on the `aid/housekeep-*` branch, **never
-  push**, via feature-001's `branch-commit.sh`; the `skipped`/DONE-IDEMPOTENT path commits nothing.
-  This feature introduces no new commit mechanism (feature-003 SPEC § Commit boundary).
-- **No new design** — every decision (delegation, the mapping table, the C1 guard, the V1
-  handling, the single per-stage commit) is dictated verbatim by feature-003 SPEC; this task only
-  slices it into the body that fills the feature-001 stub slot.
+- Implement `canonical/scripts/housekeep/cleanup-classify.sh` (feature-004 SPEC § "Testing —
+  classification + safety test suite": "the scan/classify/matrix/split MUST be implemented as a
+  scriptable helper … sibling to `housekeep-state.sh`/`branch-commit.sh`"), the deterministic
+  scan + classify phase of CLEANUP. Pure logic, no deletions, no UI, no commit — it only **emits
+  the candidate list** the `state-cleanup.md` body (task-008) consumes.
+- **Scan (S1–S6)** — inspect only the fixed conservative `.aid/` roots in feature-004 SPEC §
+  "Scan — the inspected paths": S1 `.aid/.temp/**`, S2 `.aid/.heartbeat/**`, S3
+  `.aid/knowledge/.cache/**` + `.manual-checklist.json` + `.spot-check-facts.txt`, S4 stray
+  `verify-deterministic-report.json` / `verify-advisory-report.json` under `.aid/`, S5
+  unregistered `.aid/generated/**` outputs (a file IS a candidate only if absent from
+  `canonical/templates/generated-files.txt`), S6 `.aid/work-*/` folders (globbed at runtime).
+  NEVER touch `.aid/settings.yml`, `.aid/knowledge/*.md` (live KB), `.aid/templates/`, or
+  anything outside `.aid/`.
+- **Candidate record** — emit one record per candidate `{ path, tier, tracked, default_checked,
+  reason, gate? }` (feature-004 SPEC § "Candidate record") in a stable, parseable line format
+  the body reads.
+- **Tier assignment** (feature-004 SPEC § "Tier assignment"): Tier-0 clearly-safe (S1/S2/S3 +
+  S4 stray reports + S5 unregistered outputs) → `default_checked=true`; Tier-1 work folders that
+  pass the safety matrix → `default_checked=false`, label `review`; Tier-2 loose `.aid/` files
+  matching none of S1–S5 → `default_checked=false`, label `review — confirm intent`; registered
+  `.aid/generated/**` outputs are NOT emitted as candidates.
+- **Work-folder safety matrix (S6)** (feature-004 SPEC § "Work-Folder Safety Rules"): exclude the
+  currently-active folder FIRST (union of checks (a)/(b)/(c) below); then compute signal (i)
+  merged-to-`master` and signal (ii) STATE.md-concluded, and assign per the decision matrix —
+  (i)✓(ii)✓ → offer unchecked (Tier-1); (i)✓(ii)✗ → emit with `gate=explicit-confirm` carrying
+  the discrepancy reason; (i)✗ (incl. every unevaluable case) → NOT emitted; active → NOT emitted.
+  - **Signal (i)** priority order: (1) PR-merge via `gh pr view <N> --json state -q .state`
+    requiring `MERGED` (read the PR number(s) from the folder's `STATE.md ## Deploy Status` `PR`
+    column); guard the `gh` path `command -v gh` and fall back if absent. (2) Ancestry fallback —
+    `git fetch origin` then `git merge-base --is-ancestor <recorded-sha> origin/master`. If
+    neither is evaluable (no PR, no SHA, no `STATE.md`), signal (i) = **unknown → fail** → not
+    offered (conservative default; feature-004 SPEC § Signal (i) blockquote). A `work-*` folder
+    with no `STATE.md` (e.g. a stray `work-002-canonical-generator`) → (i) fail → not offered as a
+    Tier-1 folder (its matching S1–S5 contents may still surface as individual Tier-0/Tier-2 items).
+  - **Signal (ii)** passes iff the folder's `STATE.md` top `> **Status:** Deployed` AND ≥1
+    `## Deploy Status` row is terminal (non-empty `PR` + a merged/Deployed `State`); else fail.
+  - **Active-folder exclusion** (feature-004 SPEC § "currently active work folder", union — offered
+    only if NONE match): (a) the folder whose `STATE.md` carries this run's `## Housekeep Status`
+    block; (b) the folder matching the current branch (`aid/work-<NNN>-*` or no-merged-PR);
+    (c) any folder whose `STATE.md > **Status:**` ≠ `Deployed`.
+- **Tracked/untracked discriminator** (feature-004 SPEC § "Deletion Mechanism") — per candidate
+  path, deterministically classify `tracked` iff `git ls-files --error-unmatch <path>` succeeds
+  (or `git ls-files <path>` non-empty); else `untracked` (`git check-ignore -q <path>` succeeds OR
+  `git ls-files <path>` empty). The discriminator only **classifies**; it does NOT run `git rm`/`rm`
+  (that is task-008's deletion sequence). Computed at scan time, per path.
+- This helper performs **no deletion, no UI, no commit, no push** — it is read-only over the
+  filesystem + git + (optionally) `gh`. Bash style per `.aid/knowledge/coding-standards.md`;
+  sibling to `housekeep-state.sh`/`branch-commit.sh` under `canonical/scripts/housekeep/`.
+- **No new design** — every rule (scan roots, tier table, (i)/(ii) matrix, active-folder union,
+  tracked/untracked test) is dictated verbatim by feature-004 SPEC; this task slices it into the
+  tested helper.
 
 **Acceptance Criteria:**
-- [ ] `state-summary-delta.md` no longer reads as a stub no-op: it invokes `/aid-summarize` (no
-  staleness flags; forwards only `--grade X` if the user gave one) and classifies the outcome via
-  filesystem reads, with no reimplemented staleness or grading logic and no edit under
-  `canonical/skills/aid-summarize/`.
-- [ ] Step 0 refuses to run unless `**KB Stage:**` reads `passed`/`skipped` (C1), reading it via
-  `housekeep-state.sh`; the state-entry banner warns up front that a regeneration triggers the V1
-  visual check (NFR3).
-- [ ] The three-way result→`**Summary Stage:**` mapping matches the feature-003 SPEC table
-  exactly: regenerated&approved (incl. `CURRENT_UNAPPROVED` approve-only) → `passed` + one
-  `branch-commit.sh` commit + CHAIN→CLEANUP; `CURRENT_APPROVED`/DONE-IDEMPOTENT → `skipped` + no
-  commit + CHAIN→CLEANUP (NFR2/AC6); below-min/V1-fail/declined → `stalled` + `**Stage Status:**
-  stalled` + `**Stall Reason:**` + PAUSE-FOR-USER-ACTION (AC9).
-- [ ] `**Summary Stage:**` is written **only** through `housekeep-state.sh`; the body never
-  hand-edits `## Housekeep Status`.
-- [ ] A `passed` run produces exactly one commit on the `aid/housekeep-*` branch (regenerated HTML
-  + the `STATE.md` history edit, one `branch-commit.sh` call, never push — C3); `skipped` produces
-  none.
-- [ ] The full sequence now terminates `KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE` with
-  SUMMARY-DELTA exercising real logic (the swap is asserted by task-005's integration suite — see
-  that task's scope; no new dedicated suite per feature-003 SPEC § Testing).
-- [ ] All §6 quality gates pass; build/render passes (CI render-drift re-emits the body to all 5
-  profiles, no renderer edit); all existing tests pass (`/aid-summarize`'s own suites for
-  staleness/grade + feature-001's `test-housekeep-state.sh` for the gate-field write/resume).
+- [ ] AC7 (classification half): given a fixture `.aid/` tree, Tier-0 items (S1/S2/S3 gitignored
+  scratch, S4 stray reports, S5 unregistered outputs) are emitted `default_checked=true`; work
+  folders and loose hand-authored files are emitted `default_checked=false`; a *registered*
+  `.aid/generated/**` file is NOT emitted.
+- [ ] The (i)/(ii) decision matrix is honored exactly: (i)✓(ii)✓ → offered unchecked (Tier-1);
+  (i)✓(ii)✗ → emitted with `gate=explicit-confirm` + a discrepancy reason; (i)✗ (and every
+  unevaluable/no-`STATE.md` case) → NOT emitted; the currently-active folder → NEVER emitted.
+- [ ] Signal (i) defaults to **fail** (folder not offered) when no PR is recorded, no SHA is
+  recorded, or fetch cannot be evaluated (NFR1 conservative default — cleanup never guesses a
+  folder is mergeable).
+- [ ] The tracked/untracked discriminator classifies a git-tracked path `tracked` (→ later
+  `git rm`) and a gitignored/never-committed path `untracked` (→ later `rm`), computed per path
+  via `git ls-files`/`git check-ignore`; the helper itself runs no `rm`/`git rm` and no `git push`.
+- [ ] The `gh`-PR path is guarded by `command -v gh` and SKIPs gracefully (ancestry fallback)
+  when `gh` is absent (the established node/pwsh-skip model — `test-landscape.md`).
+- [ ] **NFR5 classification suite** (the IMPLEMENT type-default unit tests for this helper) lands
+  here, auto-discovered by the `tests/canonical/test-*.sh` glob in `tests/run-all.sh` (no edit to
+  `run-all.sh`), sourcing `tests/lib/assert.sh`, runs under `timeout 300`:
+  `tests/canonical/test-housekeep-classify.sh` (tier assignment vs fixture tree),
+  `test-housekeep-workfolder-safety.sh` (the four (i)/(ii) matrix rows via the `git
+  merge-base --is-ancestor` ancestry fallback so it runs without network/`gh`; `gh`-path
+  `command -v gh` → SKIP), and `test-housekeep-deletion-split.sh` (tracked→`git rm`,
+  ignored→`rm`, and assert no `git push`/remote interaction) — per feature-004 SPEC § Testing.
+- [ ] All §6 quality gates pass; build/render passes; all existing tests pass.

@@ -152,12 +152,14 @@ drift after merges and to sweep `.aid/` cruft.
   consistent with the other `/aid-*` skills (state-entry banners, halt/resume semantics,
   L1/L2/L3 traceability for any long-running sub-agent dispatch). Authored in `canonical/`
   and rendered into all install profiles.
-- **NFR5 — Tested.** The new **deterministic** logic — the branch/commit safety guard,
-  run-state I/O + the resume-resolution rule, and the cleanup classification + work-folder
-  safety rules — is covered by canonical test suites under `tests/canonical/` (the project
-  convention). The agent-driven KB reconciliation (analysis/judgment) has no unit suite; it is
-  exercised by the integration test (state-machine transitions) + render/self-test, consistent
-  with the no-E2E-tier policy.
+- **NFR5 — Tested.** The new **deterministic** logic — the branch/commit safety guard
+  (`branch-commit`), run-state I/O + the resume-resolution rule (`housekeep-state`), and the
+  cleanup classification + work-folder safety rules (`cleanup-classify`) — has canonical unit
+  suites under `tests/canonical/` (the project convention). The agent-driven prose (the KB
+  reconciliation, the summary delegation, the state-machine flow) has **no unit suite** — it is
+  analysis/judgment, not deterministic logic — and is verified by **dogfooding + the existing
+  render-drift CI / generator self-tests**. There is **no bespoke integration or distribution
+  test** (consistent with AID's no-E2E-tier policy, `test-landscape.md`).
 
 ## 7. Constraints
 

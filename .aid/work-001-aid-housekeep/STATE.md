@@ -1,7 +1,7 @@
 # Work State — work-001-aid-housekeep
 
 > **Status:** Interview Complete | Specifying | Planning | Detailing | Executing | Deployed
-> **Phase:** Detail — complete (13 tasks across 3 deliveries; all A+; next: /aid-execute)
+> **Phase:** Execute — delivery-001 (8 tasks total across 3 deliveries; agent-driven; 001/002 done)
 > **Minimum Grade:** {resolved at runtime by `bash .claude/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-06-02
 > **User Approved:** no
@@ -61,9 +61,9 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| delivery-001 | Detailed (A+, agent-driven) | 5 (task-001..005) | KB Reconciliation MVP — feature-001 + feature-002 (agent-driven; NO D1 edit, NO detect/scope scripts). KB-DELTA functional; summary/cleanup ship as stub no-ops. |
-| delivery-002 | Detailed (A+, agent-driven) | 1 (task-006) | Summary Reconciliation — feature-003. Depends on delivery-001. |
-| delivery-003 | Detailed (A+, agent-driven) | 4 (task-007..010) | .aid/ Cleanup — feature-004; enables --cleanup-only. Depends on delivery-001. |
+| delivery-001 | Detailed (A+, agent-driven) | 4 (task-001..004) | KB Reconciliation MVP — feature-001 + feature-002 (agent-driven; no D1, no detect/scope scripts, no integration/distribution test — AID has no E2E tier). |
+| delivery-002 | Detailed (A+, agent-driven) | 1 (task-005) | Summary Reconciliation — feature-003. Depends on delivery-001. |
+| delivery-003 | Detailed (A+, agent-driven) | 3 (task-006..008) | .aid/ Cleanup — feature-004; enables --cleanup-only. Depends on delivery-001. |
 
 ## Tasks Status
 
@@ -74,13 +74,11 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 001 | housekeep-state.sh + `## Housekeep Status` template | IMPLEMENT | 1 | Done | Small: clean | — | delivery-001 (f001) |
 | 002 | branch-commit.sh | IMPLEMENT | 1 | Done | Small: clean | — | delivery-001 (f001) |
 | 003 | thin-router SKILL.md + PREFLIGHT/DONE + args prose + stub no-op bodies | IMPLEMENT | 2 | Pending | — | — | delivery-001 (f001); ←001,002. Skeleton drafted on disk, ungated. Args in SKILL.md prose (no parse-args.sh) |
-| 004 | state-kb-delta.md — agent-driven KB reconciliation body | IMPLEMENT | 3 | Pending | — | — | delivery-001 (f002); ←001,002,003. Agent inspects repo↔KB (git=hint); no detect/scope scripts |
-| 005 | integration + distribution/render TEST | TEST | 4 | Pending | — | — | delivery-001 (f001+f002); ←001,002,003,004 |
-| 006 | state-summary-delta.md body (replaces stub) | IMPLEMENT | 5 | Pending | — | — | delivery-002 (f003); ←001,002,003,004 |
-| 007 | cleanup-classify.sh + classification suites | IMPLEMENT | 1 | Pending | — | — | delivery-003 (f004) |
-| 008 | --cleanup-only enablement (SKILL.md prose + routing) | IMPLEMENT | 2 | Pending | — | — | delivery-003 (f004); ←003 |
-| 009 | state-cleanup.md body (replaces stub) | IMPLEMENT | 3 | Pending | — | — | delivery-003 (f004); ←001,002,003,007,008 |
-| 010 | integration TEST (full seq + --cleanup-only) | TEST | 4 | Pending | — | — | delivery-003 (f004); ←001,002,005,007,008,009 |
+| 004 | state-kb-delta.md — agent-driven KB reconciliation body | IMPLEMENT | 3 | Pending | — | — | delivery-001 (f002); ←001,002,003. Drafted on disk, ungated; agent inspects repo↔KB (git=hint) |
+| 005 | state-summary-delta.md body (replaces stub) | IMPLEMENT | 4 | Pending | — | — | delivery-002 (f003); ←001,002,003,004 |
+| 006 | cleanup-classify.sh + classification suites | IMPLEMENT | 1 | Pending | — | — | delivery-003 (f004) |
+| 007 | --cleanup-only enablement (SKILL.md prose + routing) | IMPLEMENT | 2 | Pending | — | — | delivery-003 (f004); ←003 |
+| 008 | state-cleanup.md body (replaces stub) | IMPLEMENT | 3 | Pending | — | — | delivery-003 (f004); ←001,002,003,006,007 |
 
 ## Deploy Status
 

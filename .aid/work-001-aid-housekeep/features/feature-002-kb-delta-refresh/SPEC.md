@@ -332,19 +332,19 @@ The KB reconciliation is **agent analysis/judgment** — it has **no unit suite*
 (there is nothing deterministic to assert; per the governing rule, analysis is
 not scripted). NFR5 is satisfied indirectly:
 
-- **Integration test (task-005 / `test-housekeep-flow.sh`)** asserts the
-  **deterministic state-machine transitions** this body wires through
-  `housekeep-state.sh`: no-drift → `**KB Stage:** skipped` → CHAIN; a `stalled`
-  KB-DELTA halts and a re-run resumes at KB-DELTA (re-entry row 3); the hard-gate
-  ledger (SUMMARY-DELTA does not advance until `**KB Stage:**` reads
-  `passed`/`skipped`). It drives the housekeep scripts and the gate-field ledger,
-  **not** the LLM prose body.
-- **Render / self-test gate** (`render_skills.py --self-test`) verifies the prose
-  body renders byte-identically into all 5 install profiles.
+- **Deterministic transitions** this body wires through `housekeep-state.sh`
+  (no-drift → `**KB Stage:** skipped` → CHAIN; a `stalled` KB-DELTA halts and a
+  re-run resumes at KB-DELTA, re-entry row 3; the hard-gate ledger — SUMMARY-DELTA
+  does not advance until `**KB Stage:**` reads `passed`/`skipped`) are covered at
+  the script layer by feature-001's `test-housekeep-state.sh` and verified
+  end-to-end by **dogfooding** the skill. There is **no bespoke integration test**
+  (AID has no E2E tier).
+- **Render-drift CI / generator self-tests** (`render_skills.py --self-test`)
+  verify the prose body renders byte-identically into all 5 install profiles.
 
 This is consistent with the no-E2E-tier policy (`test-landscape.md`): the
 LLM-authored prose body has no runtime behavioral test; only the deterministic
-transitions it wires and its distribution are tested.
+helpers it calls (unit-tested) and its distribution (render-drift CI) are tested.
 
 ### Cross-feature contracts honored
 
