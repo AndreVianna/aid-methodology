@@ -9,9 +9,10 @@ intent: |
   and the canonical→5-profile renderer contract. Read this to understand what each pipeline
   boundary expects and emits.
 contracts:
-  - "10 skill slash-command contracts documented (aid-config through aid-monitor)"
+  - "11 user-facing skill slash-command contracts documented (aid-config through aid-monitor, aid-summarize, plus optional off-pipeline aid-housekeep) + maintainer-only aid-generate"
   - "discovery.doc_set in settings.yml: declared-set → dispatch mapping honors the set (no-hang on omission; dispatch on addition)"
 changelog:
+  - 2026-06-03: aid-housekeep merge (PR #49) — added /aid-housekeep as an optional off-pipeline skill with its consume/produce contracts (the STATE.md Impact:Required Q&A handshake with /aid-discover, the work-area ## Housekeep Status run-state block, the /aid-summarize delegation, the housekeep-state.sh / branch-commit.sh / cleanup-classify.sh CLI contracts); slash-command count 10→11 user-facing
   - 2026-06-01: work-001-add-providers merge (PRs #42/#43/#44) — renderer contract now spans 5 profiles (added copilot-cli + antigravity) and 4 agent formats (markdown/toml/copilot-agent/antigravity-rule); emission-manifest profile enum + manifest-locations updated
   - 2026-05-31: delivery-002 — added discovery.doc_set to settings read contract; added declared-set → dispatch contract section
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
@@ -35,6 +36,13 @@ These are the only "endpoints" the user invokes. Each is an AID skill installed 
 `.claude/skills/<skill>/SKILL.md` (Claude Code), `.codex/agents/*` + `.agents/skills/<skill>/`
 (Codex split layout), `.cursor/skills/<skill>/` (Cursor), `.github/skills/<slug>/SKILL.md`
 (Copilot CLI native Agent Skills), or `.agent/skills/<slug>/SKILL.md` (Antigravity).
+
+There are **11 user-facing skills** (`aid-config` … `aid-monitor`, `aid-summarize`, and the
+optional off-pipeline `aid-housekeep`) plus maintainer-only `aid-generate`. Of these,
+`aid-summarize` and `aid-housekeep` are **non-phase / optional** and `aid-housekeep` is
+additionally **off the mandatory pipeline** (no phase gate references it; invoked on-demand).
+Source: `find canonical/skills -maxdepth 1 -type d`,
+`canonical/skills/aid-housekeep/SKILL.md` (`**Absent from the mandatory pipeline flow.**`).
 
 ### `/aid-config`
 
@@ -114,6 +122,45 @@ These are the only "endpoints" the user invokes. Each is an AID skill installed 
   `Human Grade ≥ minimum` (`canonical/skills/aid-summarize/SKILL.md` frontmatter `APPROVAL requires BOTH grades >= minimum`)
 - **Source:** `canonical/skills/aid-summarize/SKILL.md`
 
+### `/aid-housekeep [--cleanup-only] [--grade X]` (optional — OFF the mandatory pipeline)
+
+- **Type:** Optional, on-demand housekeeping state-machine skill; **not** part of the
+  phase→skill mapping and no phase gate references it (REQUIREMENTS.md FR6). Runs three
+  gated jobs in strict order on a dedicated `aid/housekeep-*` branch; **never pushes**.
+- **States:** `PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE`
+  (`canonical/skills/aid-housekeep/SKILL.md` frontmatter
+  `State-machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA →` + the "you are here" map
+  `[ PREFLIGHT ] → [ KB-DELTA ] → [ SUMMARY-DELTA ] → [ CLEANUP ] → [ DONE ]`)
+- **Request:** `--cleanup-only` jumps straight to CLEANUP (sets `**Mode:** cleanup-only`,
+  bypasses KB+summary); `--grade X` (`[A-F][-+]?`) passes through to the SUMMARY-DELTA
+  delegation to `/aid-summarize` (ignored under `--cleanup-only`). Any other flag → exit
+  non-zero. (`canonical/skills/aid-housekeep/SKILL.md` `## Arguments`,
+  `## State Detection` "Argument pre-check")
+- **Gate ordering (C1):** strict order — SUMMARY-DELTA refuses unless `**KB Stage:**` is
+  `passed`/`skipped`; one commit per stage (C3). Re-entrant: a stalled run resumes at the
+  stalled stage via the six-row resume table (`canonical/skills/aid-housekeep/SKILL.md`
+  `## State Detection`, `references/state-summary-delta.md` `## Step 0 — C1 guard`).
+- **Consumes:**
+  - work-area `STATE.md ## Housekeep Status` run-state block (resume detection), read via
+    `housekeep-state.sh --resume`
+  - `.aid/knowledge/STATE.md` — `**Last KB Review:**` (hint), `**User Approved:**` +
+    `## Summarization History` (read-back)
+  - `git fetch/log/diff` (hint only — no hard offline gate, C2)
+- **Produces:**
+  - work-area `STATE.md ## Housekeep Status` run-state fields (via `housekeep-state.sh --write`)
+  - `.aid/knowledge/STATE.md ## Q&A (Pending)` — synthesizes an `**Impact:** Required`
+    Style-A Q&A entry (`### Q{N}`) that drives `/aid-discover`'s Targeted Discovery
+    re-entry (the handshake; never resolves owners itself)
+    (`references/state-kb-delta.md` `## Step 4 — Synthesize an Impact: Required Q&A entry`)
+  - one commit per stage on an `aid/housekeep-*` branch (via `branch-commit.sh`); CLEANUP
+    deletes only user-confirmed stale `.aid/` artifacts (`git rm`/`rm`)
+- **Delegations:** KB-DELTA → `/aid-discover` (targeted re-entry → REVIEW → Q-AND-A → FIX →
+  APPROVAL); SUMMARY-DELTA → `/aid-summarize` (with optional `--grade X`, no other flags);
+  both run unmodified. (`references/state-kb-delta.md` `## Step 4`,
+  `references/state-summary-delta.md` `## Step 2 — Delegate to /aid-summarize`)
+- **Source:** `canonical/skills/aid-housekeep/SKILL.md`,
+  `canonical/skills/aid-housekeep/references/{state-preflight,state-kb-delta,state-summary-delta,state-cleanup,state-done}.md`
+
 ---
 
 ## Internal API — Skill → Subagent Dispatch Contract
@@ -151,6 +198,10 @@ Every long-running subagent dispatch MUST:
 5. **On completion:** emit `✓ <agent> done in <actual>`, append a row to the work
    `STATE.md ## Calibration Log`, update `## Dispatches` sub-column, delete heartbeat file
    (`canonical/skills/aid-discover/SKILL.md` `## Dispatch Protocol`)
+
+`aid-housekeep` carries the same L1+L2+L3 contract for its KB-DELTA sub-agent dispatches
+(`canonical/skills/aid-housekeep/SKILL.md`
+`## Dispatch Protocol (L1+L2+L3 subagent visibility, subagent-visibility-patch)`).
 
 **Configuration knob:** `traceability.heartbeat_interval` (integer minutes; default `1`;
 `0` disables) in `.aid/settings.yml`, resolved by
@@ -216,7 +267,8 @@ The Reviewer agent produces a structured issue list with two-tag classification 
   this script — never read settings.yml directly. Example callers:
   `canonical/skills/aid-execute/SKILL.md` `### Check 3: Read Minimum Grade` (`--skill execute --key minimum_grade --default A`),
   `canonical/skills/aid-discover/SKILL.md` `## Dispatch Protocol` (`--path traceability.heartbeat_interval`),
-  `canonical/skills/aid-summarize/SKILL.md` `## Arguments` (`--skill summary --key minimum_grade`).
+  `canonical/skills/aid-summarize/SKILL.md` `## Arguments` (`--skill summary --key minimum_grade`),
+  `canonical/skills/aid-housekeep/SKILL.md` `## Arguments` (`--skill summary --key minimum_grade --default A` for the SUMMARY-DELTA grade resolution).
 
 ### `bash canonical/scripts/grade.sh`
 
@@ -280,25 +332,60 @@ The Reviewer agent produces a structured issue list with two-tag classification 
   via `$AID_KB_STATE`
 - **Source:** `canonical/scripts/execute/complexity-score.sh`
 
-### `bash canonical/scripts/interview/parse-recipe.sh`
+### `bash canonical/scripts/housekeep/housekeep-state.sh` (optional — /aid-housekeep)
 
-- **Purpose:** Recipe parser for FR8 lite-path slot-fill
-- **5 modes:**
-  - `--list RECIPE_FILE` — emit unique slot names (one per line, order of first appearance)
-  - `--validate RECIPE_FILE` — compare front-matter `slot-count`/`task-count` against
-    actual body counts; warns (exit 0) on mismatch
-  - `--render --recipe RECIPE_FILE --slots-json SLOTS_JSON_FILE --work-dir WORK_DIR` —
-    substitute `{{slot-name}}` tokens, apply `{!{ → {{` escape, emit `SPEC.md` +
-    `tasks/task-NNN.md` files (sentinel lock to coordinate concurrent writes)
-  - `--spec RECIPE_FILE` — emit raw `## spec` block content
-  - `--tasks RECIPE_FILE` — emit raw `## tasks` block content
-- **Exit codes:** `0` success; `1` file missing; `2` malformed front-matter; `3` missing
-  required body block; `4` invalid arg; `5` missing required arg; `6` work dir creation
-  failed; `7` render write error; `8` lock contention timeout
-- **Slot lexical rule:** `[a-z][a-z0-9-]*` (no underscores, uppercase, dots, spaces)
-- **JSON parser dep:** `python3` or `python` (no jq required)
-- **Test suite:** 113 tests at `tests/canonical/test-parse-recipe.sh`
-- **Source:** `canonical/scripts/interview/parse-recipe.sh`
+- **Purpose:** Deterministic read/write of the nine `**Field:** value` lines inside the
+  work-area `STATE.md ## Housekeep Status` block, and resolution of the `/aid-housekeep`
+  resume target (the six-row re-entry table). No yq/python dependency (bash + grep/sed/awk).
+- **3 modes:**
+  - `--state FILE --write --field FIELD --value VALUE` — write/replace a `**FIELD:**` line
+    (creates `## Housekeep Status` if absent; idempotent)
+  - `--state FILE --read --field FIELD` — print the current value (empty line if absent;
+    exit 0 even when section/field absent)
+  - `--state FILE --resume [--cleanup-only]` — print one of
+    `PREFLIGHT | KB-DELTA | SUMMARY-DELTA | CLEANUP | DONE` per the six-row resume table
+    (`--cleanup-only` consulted only when no section exists)
+- **Valid fields:** `State`, `Stage Status`, `Branch`, `Mode`, `Stall Reason`, `Last Run`,
+  `KB Stage`, `Summary Stage`, `Cleanup Stage` (`VALID_FIELDS` array)
+- **Exit codes:** `0` success; `1` STATE.md not found/unreadable; `2` argument error
+  (unknown flag, missing value, incompatible flags); `3` write verification failed
+  (`canonical/scripts/housekeep/housekeep-state.sh` header comment `# Exit codes:`)
+- **Source:** `canonical/scripts/housekeep/housekeep-state.sh`
+
+### `bash canonical/scripts/housekeep/branch-commit.sh` (optional — /aid-housekeep)
+
+- **Purpose:** Two operations for `/aid-housekeep`: (1) ensure the `aid/housekeep-<slug>`
+  branch (creates off `master` via `git switch -c`, or reuses an existing
+  `aid/housekeep-*` branch on resume; refuses to operate directly on `master`); (2) make
+  exactly ONE commit with the supplied message and `--add` paths. **Never runs `git push`**
+  (enforced by a self-check that exits 4 if the script ever contains a `git push` call).
+- **Modes:**
+  - `--ensure-branch --slug <slug>` — ensure/switch to `aid/housekeep-<slug>`
+  - `--commit --message <msg> [--add <path> ...]` — stage listed paths (or `--add-all`)
+    and make one commit
+  - combined `--ensure-branch ... --commit ...`
+- **Exit codes:** `0` success; `1` git error; `2` argument error; `3` refused (current
+  branch is master and `--ensure-branch` not requested); `4` refused (script contains
+  `git push` — safety self-check) (`canonical/scripts/housekeep/branch-commit.sh` header
+  comment `# Exit codes:`)
+- **Source:** `canonical/scripts/housekeep/branch-commit.sh`
+
+### `bash canonical/scripts/housekeep/cleanup-classify.sh` (optional — /aid-housekeep)
+
+- **Purpose:** Deterministic, **read-only** scan+classify phase of the CLEANUP stage —
+  inspects fixed conservative roots S1–S6 under `.aid/` and emits one candidate record per
+  artifact. Performs **no deletion, no commit, no push, no UI** (enforced by a safety
+  self-check that exits 1 if the script ever contains `rm`/`git rm`/`git commit`/`git push`).
+- **Args:** `--root REPO_ROOT [--active-work WORK_FOLDER_NAME ...]` (active-work folders are
+  excluded from S6 results; may be supplied multiple times)
+- **Output (one line per candidate, stdout):**
+  `PATH|TIER|TRACKED|DEFAULT_CHECKED|REASON[|GATE]` where `TIER`∈{0,1,2}, `TRACKED`∈
+  {tracked,untracked}, `DEFAULT_CHECKED`∈{true,false}, `GATE` (Tier-1 only) ∈
+  {offer, explicit-confirm:<reason>}
+- **Exit codes:** `0` success (list may be empty); `1` REPO_ROOT not found or `.aid/`
+  absent; `2` argument error (`canonical/scripts/housekeep/cleanup-classify.sh` header
+  comment `# Exit codes:`)
+- **Source:** `canonical/scripts/housekeep/cleanup-classify.sh`
 
 ### KB Citation Validation (`/aid-discover REVIEW`)
 
@@ -377,6 +464,11 @@ The Reviewer agent produces a structured issue list with two-tag classification 
 | `traceability.heartbeat_interval` | integer min | `1` (0 disables) | L3 heartbeat cadence | Every dispatcher (always) |
 | `<skill>.minimum_grade` | grade | inherits `review.minimum_grade` | Per-skill override | The named skill |
 | `discovery.doc_set` | YAML block-list of pipe-delimited strings | absent (→ default seed) | Declared KB doc-set for this project; each item `filename\|owner\|presence[:when]` | `aid-discover` GENERATE + REVIEW states |
+
+> `aid-housekeep` reads `summary.minimum_grade` / `review.minimum_grade` (skill-mode
+> `--skill summary`) for SUMMARY-DELTA and `traceability.heartbeat_interval` (path-mode) for
+> its KB-DELTA dispatches — no new settings keys are introduced.
+> (`canonical/skills/aid-housekeep/SKILL.md` `## Arguments`, `## Dispatch Protocol`)
 
 **Resolution order** (skill mode): per-skill override → `review.<key>` → script `--default`
 → exit 1. (`canonical/scripts/config/read-setting.sh` comment `# Skill mode: try per-skill override; fall back to review.<key>`)
@@ -465,17 +557,36 @@ A single STATE file per `.aid/work-NNN-{name}/` directory absorbs what used to b
 | `## Delivery Gates` | reviewer (per-delivery) | `aid-deploy` | `canonical/scripts/execute/writeback-state.sh` comment `# Write/replace the ### delivery-NNN block under ## Delivery Gates` |
 | `## Deploy Status` | `aid-deploy` | `aid-monitor` | `canonical/templates/work-state-template.md` `## Deploy Status` |
 | `## Cross-phase Q&A (Pending)` | All phases (loopback writers) | Owning phase's Q&A state | `canonical/templates/work-state-template.md` `## Cross-phase Q&A (Pending)` |
+| `## Housekeep Status` | `aid-housekeep` (via `housekeep-state.sh`) | `aid-housekeep` resume detection (`housekeep-state.sh --resume`) | `canonical/templates/work-state-template.md` `## Housekeep Status`, `canonical/scripts/housekeep/housekeep-state.sh` |
 | `## Calibration Log` | Every dispatcher (always-on, work-003) | Operator review | `canonical/skills/aid-discover/SKILL.md` `## Dispatch Protocol` |
+
+#### `## Housekeep Status` Run-State Block (key-value contract)
+
+- **Shape:** key-value, one `**Field:** value` line per field (NOT a table — the
+  `**Field:** value` shape is grep-recoverable). Read/written ONLY by `housekeep-state.sh`
+  (skill bodies never hand-edit it).
+- **Nine fields:** `**State:**`, `**Stage Status:**`, `**Branch:**`, `**Mode:**`,
+  `**Stall Reason:**`, `**Last Run:**`, `**KB Stage:**`, `**Summary Stage:**`,
+  `**Cleanup Stage:**`
+- **Stage-gate values:** each of `KB Stage`/`Summary Stage`/`Cleanup Stage` ∈
+  `passed | skipped | stalled | running | —`; resume routes to the first incomplete stage
+  (six-row resume table). `**Mode:**` ∈ `full | cleanup-only`.
+- **Source:** `canonical/templates/work-state-template.md` `## Housekeep Status`
+  (the `> Format: key-value` note + the nine `**Field:** —` template lines),
+  `canonical/scripts/housekeep/housekeep-state.sh` (`VALID_FIELDS`, `mode_resume()`)
 
 ### Knowledge-Base `STATE.md` (`.aid/knowledge/STATE.md`)
 
 Equivalent area-STATE for the Discovery area:
-- `## Q&A (Pending)` — questions raised by downstream phases targeting the KB
+- `## Q&A (Pending)` — questions raised by downstream phases targeting the KB (also the
+  carrier `aid-housekeep` KB-DELTA writes its synthesized `**Impact:** Required` entry into)
 - `## Review History` — discover-cycle grades with timestamps
 - `## Knowledge Summary Status` (FR2 home for `aid-summarize` profile + last-run state)
-- `**User Approved:** yes | no` — the discovery approval gate
+- `**User Approved:** yes | no` — the discovery approval gate (read back by
+  `aid-housekeep` KB-DELTA Step 5 and required by `aid-summarize` preflight)
 - **Source:** `canonical/skills/aid-discover/SKILL.md` `## State Detection`,
-  `canonical/scripts/summarize/grade-summary.sh` (`## Knowledge Summary Status` profile resolution)
+  `canonical/scripts/summarize/grade-summary.sh` (`## Knowledge Summary Status` profile resolution),
+  `canonical/skills/aid-housekeep/references/state-kb-delta.md` `## Step 4` / `## Step 5`
 
 ### Recipe File Front-matter Contract
 
@@ -530,7 +641,11 @@ After user response, append:
 ```
 
 The next run of the owning phase detects the pending entry and resolves it in Q&A mode.
-- **Source:** `coding-standards.md §12`; `methodology/aid-methodology.md` `### Feedback Loop Artifacts`
+`aid-housekeep` KB-DELTA writes exactly such an entry with `**Impact:** Required` (and
+`**Category:** Housekeep / KB Delta Refresh`) into `.aid/knowledge/STATE.md ## Q&A
+(Pending)` to force `/aid-discover` into targeted re-entry regardless of current grade.
+- **Source:** `coding-standards.md §12`; `methodology/aid-methodology.md` `### Feedback Loop Artifacts`;
+  `canonical/skills/aid-housekeep/references/state-kb-delta.md` `## Step 4 — Synthesize an Impact: Required Q&A entry + invoke /aid-discover`
 
 ---
 

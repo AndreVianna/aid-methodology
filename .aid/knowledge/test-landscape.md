@@ -3,7 +3,7 @@ kb-category: primary
 source: hand-authored
 intent: |
   Inventory of test suites that protect the canonical helper scripts AID skills
-  depend on. Currently 18 unit/integration suites under tests/canonical/, discovered by
+  depend on. Currently 24 unit/integration suites under tests/canonical/, discovered by
   glob and run by the tests/run-all.sh aggregator. Most are pure bash (POSIX);
   two shell out to node (.mjs validators) and two to pwsh (PowerShell mirrors),
   each skipping if its runtime is absent. All suites source the shared
@@ -13,11 +13,12 @@ intent: |
   understand what changes to canonical/scripts/ are guarded by tests vs require
   manual verification.
 contracts:
-  - "currently 18 test suites under tests/canonical/ (glob-discovered; recount with ls tests/canonical/test-*.sh | wc -l), no skill-level tests"
+  - "currently 24 test suites under tests/canonical/ (glob-discovered; recount with ls tests/canonical/test-*.sh | wc -l), no skill-level tests"
   - "tests/run-all.sh is the single aggregator (glob-discovers tests/canonical/test-*.sh)"
   - "All suites source tests/lib/assert.sh (shared counters + asserts + test_summary)"
   - "Most suites are pure bash (POSIX, Git Bash on Windows); 2 need node, 2 need pwsh — each skips if absent"
 changelog:
+  - 2026-06-03: post-merge work-001-aid-housekeep (PR #49) + work-002 canonical bug-fix suites — suite count 18→24 (verified `ls tests/canonical/test-*.sh | wc -l` = 24 on disk). Documented the 5 new housekeep suites (test-housekeep-state.sh, test-housekeep-branch-commit.sh, test-housekeep-classify.sh, test-housekeep-workfolder-safety.sh, test-housekeep-deletion-split.sh) added by the /aid-housekeep skill, which guard the canonical/scripts/housekeep/ helpers (housekeep-state.sh, branch-commit.sh, cleanup-classify.sh). Also documented test-complexity-score.sh (work-002 task-001 four-fix regression suite for canonical/scripts/execute/complexity-score.sh) which was on disk but missing from this inventory. Done via /aid-housekeep targeted re-discovery.
   - 2026-06-01: post-merge work-001-add-providers (PRs #42/#43/#44) — byte-identity assertion 3→5 install-tree profiles (added GitHub Copilot CLI + Antigravity); documented new setup cases (test-setup.sh SU12-17/SU16b; test-setup-ps1.sh SPS05-08, which SKIPs without pwsh per established contract); documented the 2 new generator self-tests (test_copilot_emitter.py, test_antigravity_emitter.py) wired into the CI generator-selftests step. Canonical suite count unchanged at 18 (verified `ls tests/canonical/test-*.sh | wc -l` = 18 on disk — the new setup cases are SU/SPS additions inside the existing test-setup.sh / test-setup-ps1.sh suites, not new suite files).
   - 2026-05-31: delivery-002 — added 3 F4 doc-set suites (test-doc-set-read.sh, test-doc-set-mapping.sh, test-doc-set-propose-confirm.sh); updated suite count 15→18
   - 2026-05-31: delivery-001 — added test-discovery-doc-ownership.sh and test-expectations-single-source.sh; updated suite count 13→15 (stated as "currently N", not a hardcoded invariant); updated Suites section header accordingly.
@@ -32,7 +33,8 @@ changelog:
 
 These tests cover the **canonical helper scripts** only — the small utilities that
 AID skills invoke at runtime (writeback, BFS compute, recipe parsing, severity
-grading, diagram/contrast validation, 3-part assembly, the end-user installer, etc.).
+grading, diagram/contrast validation, 3-part assembly, the end-user installer, the
+/aid-housekeep helpers, etc.).
 Most are pure bash; a few shell out to `node` or `pwsh` to exercise the `.mjs`
 validators and the PowerShell mirror scripts.
 
@@ -113,13 +115,17 @@ missing one still runs the rest:
 - **`pwsh`** — `test-assemble-3part-ps1.sh`, `test-setup-ps1.sh` (the PowerShell
   mirrors).
 
+(One additional optional-runtime guard exists in `test-housekeep-workfolder-safety.sh`,
+which SKIPs the gh-PR-merge path when `gh` is absent and otherwise exercises the
+offline `git merge-base --is-ancestor` ancestry fallback.)
+
 CI does **not** tolerate a silent skip: the `canonical-tests` job pins `node` (v20)
 and asserts both `node` and `pwsh` are present before running, failing loudly if
 either is missing so the node/PowerShell coverage can never be silently bypassed.
 
 ---
 
-## Suites (currently 18)
+## Suites (currently 24)
 
 All suites live under `tests/canonical/` and target scripts under `canonical/scripts/`
 (or the top-level `setup.*` installers, or the canonical agent/skill source files).
@@ -158,6 +164,23 @@ paths (missing file, malformed front-matter, missing blocks, bad args). Also val
 each of the seed recipes in `canonical/recipes/` (dogfood). **Runtime note:** this is
 the largest/slowest suite (~150 s); `run-all.sh`'s `timeout 300` covers it — do not
 impose timeouts under 180 s when running it standalone.
+
+### test-complexity-score.sh
+
+**Target:** `canonical/scripts/execute/complexity-score.sh`
+
+Regression suite added by **work-002 task-001** for the four correctness fixes in the
+delivery-complexity scorer (find each via the `# A1`/`# A2`/`# A3`/`# A4` headers in
+the suite):
+- **A1 — Type matching:** both `**Type:**` (bold task-template form) and `- Type:`
+  (flat recipe form) score risk.
+- **A2 — portable awk:** extraction works under `mawk` (no gawk 3-arg `match`);
+  leading-zero delivery-id matching is numeric (`003` == `3`).
+- **A3 — lite/recipe specs:** a top-level `## Execution Graph` (no delivery wrapper)
+  parses with `--delivery-id` not required and the `## Tasks` table not swallowed;
+  a multi-delivery PLAN still scopes per delivery and requires `--delivery-id`.
+- **A4 — cycle guard:** a cyclic / self-looping `Depends On` table terminates with
+  exit 0; `— (none)` / `(none)` are treated as no-deps (lite-spec template form).
 
 ### test-compute-block-radius.sh
 
@@ -275,6 +298,79 @@ contract; the suite's `command -v pwsh` guard) — so `setup.ps1` menu/collision
 code-read, not CI-executed, unless a `pwsh` runtime is present. CI's `canonical-tests`
 job asserts `pwsh` IS present so this skip cannot silently fire there.
 
+### test-housekeep-state.sh
+
+**Target:** `canonical/scripts/housekeep/housekeep-state.sh`
+
+Added by the **/aid-housekeep** skill. Covers the run-state I/O round-trip and the
+`--resume` decision rule against the `## Housekeep Status` section of a STATE.md
+fixture (find the scenarios via the `Unit 1:`–`Unit 20:` header block in the suite):
+`--read` on a file with no section → empty/exit 0; `--write` creates the section + field
+line and is idempotent (replace, no duplicate); independent fields co-exist; all nine
+C-2 fields round-trip write→read; the six `--resume` rows (PREFLIGHT → CLEANUP →
+KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE) keyed on the KB/Summary/Cleanup stage
+markers (stalled/running/`—`/passed/skipped); and error paths (missing `--state` →
+exit 2, missing `--field` with `--read` → exit 2, missing `--value` with `--write` →
+exit 2, STATE.md not found → exit 1).
+
+### test-housekeep-branch-commit.sh
+
+**Target:** `canonical/scripts/housekeep/branch-commit.sh`
+
+Added by the **/aid-housekeep** skill. Exercises the branch-ensure + per-stage commit
+helper against a throwaway git-repo fixture (`mktemp`, cleaned on exit), asserting the
+**git safety guard** (find the scenarios via the `Unit 1:`–`Unit 9:` header block):
+`--ensure-branch` on `master` creates an `aid/housekeep-<slug>` branch; re-running on an
+existing `aid/housekeep-*` branch reuses it (resume); a non-master / non-housekeep
+branch is **refused (exit 3)**; `--commit` on an `aid/housekeep-*` branch produces
+exactly one commit; `--commit` on `master` without ensure-branch is **refused (exit 3)**;
+the source file contains **no `git push`** (static assertion) and **no remote
+interaction** occurs in any operation; combined `--ensure-branch` + `--commit` in one
+invocation; and argument-validation errors (missing slug / message / etc.).
+
+### test-housekeep-classify.sh
+
+**Target:** `canonical/scripts/housekeep/cleanup-classify.sh`
+
+Added by the **/aid-housekeep** skill. Verifies the scan + classify phase assigns
+**cleanup tiers** correctly against a fixture `.aid/` tree (find the scenarios via the
+`Unit 1:`–`Unit 13:` header block): S1 `.aid/.temp/**`, S2 `.aid/.heartbeat/**`,
+S3 `.aid/knowledge/.cache/**` + `.manual-checklist.json` + `.spot-check-facts.txt`,
+S4 stray `verify-deterministic-report.json` / `verify-advisory-report.json`, and S5
+unregistered `.aid/generated/` output → **Tier-0 checked**; a registered `.aid/generated/`
+output → **not emitted**; a loose hand-authored `.aid/` file → **Tier-2 unchecked**;
+and protected/live files (`.aid/settings.yml`, `.aid/knowledge/*.md`) → **never emitted**;
+empty `.aid/` → zero output lines.
+
+### test-housekeep-workfolder-safety.sh
+
+**Target:** `canonical/scripts/housekeep/cleanup-classify.sh` (work-folder safety rules)
+
+Added by the **/aid-housekeep** skill. Tests the (i)/(ii) **work-folder safety decision
+matrix** using throwaway git repos with a fake `origin/master` and `.aid/work-*/`
+fixtures (find the scenarios via the `Unit 1:`–`Unit 10:` header block). Signal (i)
+(merged-to-master) is exercised via the offline `git merge-base --is-ancestor` ancestry
+fallback so the suite runs without network or `gh`; the gh-PR path is guarded by
+`command -v gh` and SKIPs if absent. Matrix: (i)✓(ii)✓ → offered Tier-1
+(gate=offer, default unchecked); (i)✓(ii)✗ → emitted with gate=explicit-confirm;
+(i)✗ (unmerged SHA / no STATE.md / no PR-or-SHA) → **not offered** (conservative fail);
+an active folder is **never offered** — detected via `--active-work`, a non-Deployed
+status (c), the current branch matching (b), or a present `## Housekeep Status` (a).
+
+### test-housekeep-deletion-split.sh
+
+**Target:** `canonical/scripts/housekeep/cleanup-classify.sh` (tracked/untracked split)
+
+Added by the **/aid-housekeep** skill. Verifies the classify helper discriminates
+**tracked vs untracked** paths via `git ls-files` / `git check-ignore` and re-asserts
+the deletion-safety static guards (find the scenarios via the `Unit 1:`–`Unit 10:`
+header block): a git-tracked path → `tracked`; a gitignored or uncommitted-and-not-ignored
+path → `untracked`; a tracked-but-`.aid/.temp/` file → Tier-0 untracked (gitignore
+precedence); the candidate `tracked` field matches the actual `git ls-files` result; a
+`.aid/work-*/` directory is tracked when committed and untracked when not; and the script
+source contains **no executable `rm`, `git rm`, `git commit`, or `git push`** calls
+(deletion is the skill's job, not the classifier's).
+
 ### test-discovery-doc-ownership.sh
 
 **Target:** `canonical/agents/discovery-scout/AGENT.md`, `canonical/agents/discovery-quality/AGENT.md`,
@@ -378,8 +474,9 @@ The earlier inversion in this doc — which listed the PowerShell mirrors, the `
 validators, and the `setup.*` install flow as *untested* — is **wrong and now fixed**.
 Those are all covered (closed under L2): `test-setup.sh`, `test-setup-ps1.sh`,
 `test-validate-diagrams.sh`, `test-contrast-check.sh`, `test-assemble-3part.sh`,
-`test-assemble-3part-ps1.sh`. The genuinely untested surface is the prompt-driven /
-orchestration layer:
+`test-assemble-3part-ps1.sh`. The `/aid-housekeep` helpers
+(`canonical/scripts/housekeep/`) are likewise covered by the five `test-housekeep-*.sh`
+suites. The genuinely untested surface is the prompt-driven / orchestration layer:
 
 - **Orchestration skills** (`/aid-discover`, `/aid-execute`, …) — prompt-driven and hard
   to test without an AI host. The `discovery-reviewer` sub-agent is the closest thing to

@@ -3,16 +3,18 @@ kb-category: primary
 source: hand-authored
 intent: |
   Concrete inventory of languages, runtimes, libraries, build tools, and dev tooling used
-  by the AID-methodology repository. Covers: Markdown (872 files), Bash (109 files), Python
-  3.11+ (stdlib only, no third-party deps), JavaScript/ES modules (Node built-ins only),
-  PowerShell 5.1+, CSS3, HTML5, TOML 1.0, YAML 1.2, JSON, and JSON Lines. The only runtime
-  library is Mermaid (fetched dynamically from npm/jsdelivr). Read this to understand what
-  toolchain is required to build, run, or contribute to AID.
+  by the AID-methodology repository. Covers: Markdown, Bash, Python 3.11+ (stdlib only,
+  no third-party deps), JavaScript/ES modules (Node built-ins only), PowerShell 5.1+,
+  CSS3, HTML5, TOML 1.0, YAML 1.2, JSON, and JSON Lines. The only runtime library is
+  Mermaid (fetched dynamically from npm/jsdelivr). Read this to understand what toolchain
+  is required to build, run, or contribute to AID. For file and line counts see
+  `.aid/generated/project-index.md` `## Language Breakdown`.
 contracts:
   - "Python 3.11+ required (tomllib stdlib dependency)"
   - "No third-party Python packages (stdlib only)"
   - "No npm package.json at any level"
 changelog:
+  - 2026-06-03: §9a T3-count strip — removed all hardcoded file-count and line-count figures from frontmatter intent, Languages table, Development Tools table, Build System table, Configuration Files table, and Testing Infrastructure; replaced aggregate counts with pointer to `.aid/generated/project-index.md`; removed stale branch name; corrected setup.sh/setup.ps1 T3 references
   - 2026-06-01: post-merge update for work-001-add-providers (PRs #42/#43/#44) — generator Python files 11→12 (added test_copilot_emitter.py + test_antigravity_emitter.py); TOML config files 3→5 profiles (added copilot-cli + antigravity); byte-identical mirror count canonical+.claude+3 → canonical+.claude+5 profiles
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
 ---
@@ -28,19 +30,19 @@ changelog:
 
 | Language | Version | Source file / evidence |
 |----------|---------|------------------------|
-| **Markdown** | CommonMark + GFM tables (assumed; no validator pinned) | 872 files / 97,689 lines (`.aid/generated/project-index.md` `## Language Breakdown`). All docs, skills, agents, templates, recipes. |
-| **Bash (shell)** | bash 4+ (uses `declare -A` associative arrays, `[[ ]]`, `${var:-}`) | 109 files / 30,887 lines. Example: `setup.sh` `declare -A selected`. |
-| **Python** | 3.11+ (required for `tomllib` stdlib) | 12 files / 6,728 lines (incl. `test_copilot_emitter.py` + `test_antigravity_emitter.py` added by work-001). Pinned by `.claude/skills/aid-generate/scripts/render_lib.py` "Requirements: Python 3.11+ (tomllib is stdlib; no third-party deps)" and `aid_profile.py` "Requirements: Python 3.11+ (tomllib is stdlib from 3.11)". |
-| **JavaScript (ES modules + plain)** | ES2020+ (no explicit pin); `.mjs` for ESM scripts | 20 files / 5,685 lines. `canonical/scripts/summarize/validate-diagrams.mjs` (577 lines), `contrast-check.mjs` (151 lines); `canonical/templates/knowledge-summary/lightbox.js` (359 lines), `mermaid-init.js` (53 lines). |
-| **PowerShell** | 5.1+ | 6 files / 337 lines. `setup.ps1`, `canonical/scripts/summarize/assemble-3part.ps1`. Version requirement from `README.md` `### Runtime requirements`. |
-| **CSS** | CSS3 (custom properties, `:focus-visible`, `@media (forced-colors)`, `@media (prefers-reduced-motion)`) | Single canonical source `canonical/templates/knowledge-summary/component-css.css` (657 lines) rendered into the render-target trees: canonical + `.claude` dogfood + 5 profile trees = **7 copies** on disk (a runtime `.aid/templates/` copy makes 8 total). ⚠️ Project-index leading count (`5 files / 3,285 lines`) predates the work-001 merge — orchestrator regenerates `project-index.md`. |
-| **HTML** | HTML5 (semantic landmarks: `<header role="banner">`, `<main>`, `<nav>`, `<footer>`) | `canonical/templates/knowledge-summary/html-skeleton.html` (101 lines) rendered into canonical + `.claude` dogfood + 5 profile trees = **7 copies** on disk (a runtime `.aid/templates/` copy makes 8). ⚠️ Project-index leading count (`5 files / 505 lines`) predates the work-001 merge — orchestrator regenerates `project-index.md`. |
-| **TOML** | TOML 1.0 (Python `tomllib` parser implies 1.0) | 27 files / 2,822 lines. 5 profile config files (`profiles/*.toml`) + 22 Codex agent definitions (`profiles/codex/.codex/agents/*.toml`). |
-| **YAML** | YAML 1.2 (per `canonical/templates/settings.yml` "Format: YAML 1.2.") | 5 files / 405 lines. `canonical/templates/settings.yml` (81 lines) + 4 mirrors. Also used as Markdown frontmatter throughout. |
-| **JSON** | RFC 8259 (Claude Code uses standard JSON) | 2 files / 28 lines. `.claude/settings.json` (15 lines), `.claude/settings.local.json` (13 lines). |
+| **Markdown** | CommonMark + GFM tables (assumed; no validator pinned) | All docs, skills, agents, templates, recipes. For counts see `.aid/generated/project-index.md` `## Language Breakdown`. |
+| **Bash (shell)** | bash 4+ (uses `declare -A` associative arrays, `[[ ]]`, `${var:-}`) | Example: `setup.sh` `declare -A selected`. |
+| **Python** | 3.11+ (required for `tomllib` stdlib) | Includes `test_copilot_emitter.py` and `test_antigravity_emitter.py` (added by work-001). Pinned by `.claude/skills/aid-generate/scripts/render_lib.py` "Requirements: Python 3.11+ (tomllib is stdlib; no third-party deps)" and `aid_profile.py` "Requirements: Python 3.11+ (tomllib is stdlib from 3.11)". |
+| **JavaScript (ES modules + plain)** | ES2020+ (no explicit pin); `.mjs` for ESM scripts | `canonical/scripts/summarize/validate-diagrams.mjs`, `contrast-check.mjs`; `canonical/templates/knowledge-summary/lightbox.js`, `mermaid-init.js`. |
+| **PowerShell** | 5.1+ | `setup.ps1`, `canonical/scripts/summarize/assemble-3part.ps1`. Version requirement from `README.md` `### Runtime requirements`. |
+| **CSS** | CSS3 (custom properties, `:focus-visible`, `@media (forced-colors)`, `@media (prefers-reduced-motion)`) | Single canonical source `canonical/templates/knowledge-summary/component-css.css` rendered into the render-target trees: canonical + `.claude` dogfood + 5 profile trees = **7 copies** on disk (a runtime `.aid/templates/` copy makes 8 total). |
+| **HTML** | HTML5 (semantic landmarks: `<header role="banner">`, `<main>`, `<nav>`, `<footer>`) | `canonical/templates/knowledge-summary/html-skeleton.html` rendered into canonical + `.claude` dogfood + 5 profile trees = **7 copies** on disk (a runtime `.aid/templates/` copy makes 8). |
+| **TOML** | TOML 1.0 (Python `tomllib` parser implies 1.0) | 5 profile config files (`profiles/*.toml`) + 22 Codex agent definitions (`profiles/codex/.codex/agents/*.toml`). |
+| **YAML** | YAML 1.2 (per `canonical/templates/settings.yml` "Format: YAML 1.2.") | `canonical/templates/settings.yml` + mirrors. Also used as Markdown frontmatter throughout. |
+| **JSON** | RFC 8259 (Claude Code uses standard JSON) | `.claude/settings.json`, `.claude/settings.local.json`. |
 | **JSON Lines** | Per `canonical/EMISSION-MANIFEST.md` `## Line-Ending and Trailing-Newline Rule` — LF-only, one record per line | Used by `profiles/{tool}/emission-manifest.jsonl`. |
 
-Language source: `.aid/generated/project-index.md` `## Language Breakdown`.
+File and line counts for all languages live in `.aid/generated/project-index.md` `## Language Breakdown` (regenerated by `build-project-index.sh`). Do not hand-maintain counts in this document.
 
 ## Frameworks & Libraries
 
@@ -87,10 +89,10 @@ absence of `package.json`-style config).
 
 | Tool | Config file location | Purpose |
 |------|----------------------|---------|
-| **`run_generator.py`** | `run_generator.py` (87 lines, repo root) | The build. Iterates `profiles/*.toml` (5 profiles), calls each renderer per profile, performs the pure-mirror deletion pass, writes one emission manifest per profile, then runs VERIFY (deterministic) (hard) and VERIFY (advisory) (advisory). |
-| **Per-tool profile TOMLs** | `profiles/claude-code.toml`, `profiles/codex.toml`, `profiles/cursor.toml`, `profiles/copilot-cli.toml`, `profiles/antigravity.toml` (5) | Per-host conventions: `[layout]`, `[agent.frontmatter]` (incl. `format` ∈ markdown/toml/copilot-agent/antigravity-rule), `[skill.frontmatter]`, `[model_tiers]`, `[tool_names]`, `[filename_map]`, `[extras]` (incl. `rules_frontmatter` + per-rule `output_filename`), `[capabilities]`. |
-| **Emission manifest spec** | `canonical/EMISSION-MANIFEST.md` (152 lines) | Authoritative spec for the manifest format (JSONL, LF-only, sentinel first line `{"_manifest_version": 1}`, sorted by `dst`). |
-| **End-user installer** | `setup.sh` (162 lines) / `setup.ps1` (157 lines) | Cross-platform install scripts that copy a built profile tree into a target project (not a build per se — runs after `run_generator.py`). |
+| **`run_generator.py`** | `run_generator.py` (repo root) | The build. Iterates `profiles/*.toml` (5 profiles), calls each renderer per profile, performs the pure-mirror deletion pass, writes one emission manifest per profile, then runs VERIFY (deterministic) (hard) and VERIFY (advisory) (advisory). |
+| **Per-tool profile TOMLs** | `profiles/claude-code.toml`, `profiles/codex.toml`, `profiles/cursor.toml`, `profiles/copilot-cli.toml`, `profiles/antigravity.toml` (5 profiles) | Per-host conventions: `[layout]`, `[agent.frontmatter]` (incl. `format` ∈ markdown/toml/copilot-agent/antigravity-rule), `[skill.frontmatter]`, `[model_tiers]`, `[tool_names]`, `[filename_map]`, `[extras]` (incl. `rules_frontmatter` + per-rule `output_filename`), `[capabilities]`. |
+| **Emission manifest spec** | `canonical/EMISSION-MANIFEST.md` | Authoritative spec for the manifest format (JSONL, LF-only, sentinel first line `{"_manifest_version": 1}`, sorted by `dst`). |
+| **End-user installer** | `setup.sh` / `setup.ps1` | Cross-platform install scripts that copy a built profile tree into a target project (not a build per se — runs after `run_generator.py`). |
 
 ### Build Commands
 
@@ -119,7 +121,7 @@ no `pyproject.toml`). Quality is enforced by:
 # Rebuild file inventory used by Discovery
 bash canonical/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md
 
-# Canonical helper-script test suites (currently 18 suites) — run all via the aggregator
+# Canonical helper-script test suites (currently 24 suites) — run all via the aggregator
 bash tests/run-all.sh                                 # discovers tests/canonical/test-*.sh by glob
 
 # Or run an individual suite
@@ -147,42 +149,41 @@ Source: `project-structure.md` `## Build & Test System`; `tests/README.md`.
 
 | Tool | Version | Purpose | Config file |
 |------|---------|---------|-------------|
-| **Git** | unpinned | VCS — branch `kb-overhaul` per current working tree | `.git/`; `.gitignore` (51 lines, repo root) |
-| **`build-project-index.sh`** | `canonical/scripts/kb/build-project-index.sh` (368 lines) | Pre-builds the file inventory consumed by the 5 discovery sub-agents | — |
-| **`grade.sh`** | `canonical/scripts/grade.sh` (266 lines) | Deterministic severity-tag → letter-grade scorer used by the review state of every skill | — |
-| **`parse-recipe.sh`** | `canonical/scripts/interview/parse-recipe.sh` (540 lines) | Parses recipe `{{slot}}` placeholders; emits lite-path artifacts | — |
-| **`writeback-state.sh`** | `canonical/scripts/execute/writeback-state.sh` (627 lines) | Updates per-area `STATE.md` after a task completes | — |
-| **`compute-block-radius.sh`** | `canonical/scripts/execute/compute-block-radius.sh` (293 lines) | BFS over the task dependency graph to compute failure block radius (pool dispatch) | — |
-| **`read-setting.sh`** | `canonical/scripts/config/read-setting.sh` (263 lines) | Reads a dotted-path key from `.aid/settings.yml` with default fallback | — |
-| **`fetch-mermaid.sh`** | `canonical/scripts/summarize/fetch-mermaid.sh` (103 lines) | Downloads + caches the pinned Mermaid release (`v11.15.0`, SHA-256-verified) for offline inlining | — |
-| **`validate-diagrams.mjs`** | `canonical/scripts/summarize/validate-diagrams.mjs` (577 lines) | Mermaid syntax validation for the generated HTML | — |
-| **`contrast-check.mjs`** | `canonical/scripts/summarize/contrast-check.mjs` (151 lines) | WCAG AA color-contrast audit on the design tokens; runs against both light + dark themes | — |
-| **`validate-html-output.sh`** | `canonical/scripts/summarize/validate-html-output.sh` (321 lines) | HTML output validation for `/aid-summarize` | — |
-| **`grade-summary.sh`** | `canonical/scripts/summarize/grade-summary.sh` (520 lines) | Aggregates the summarize-phase validators into a single Machine-Grade score | — |
-| **`manual-checklist.sh`** | `canonical/scripts/summarize/manual-checklist.sh` (269 lines) | Drives the K1/K2/V1 interactive Human-Grade checklist for `/aid-summarize` | — |
-| **`spot-check-facts.sh`** | `canonical/scripts/summarize/spot-check-facts.sh` (176 lines) | Spot-checks KB facts against source citations | — |
-| **`stale-check.sh`** | `canonical/scripts/summarize/stale-check.sh` (107 lines) | Detects stale KB sections | — |
-| **`assemble-3part.sh` / `assemble-3part.ps1`** | 23 / 36 lines respectively | Assembles the final single-file `knowledge-summary.html` by concatenating `part1.html` + cached Mermaid + `part2.html` (PowerShell version uses byte-level concat to avoid CRLF interpretation, see `assemble-3part.ps1` `# Use byte-level concat`) | — |
-| **`discover-preflight.sh`** | `canonical/scripts/kb/discover-preflight.sh` (45 lines) | Verifies `.aid/knowledge/STATE.md` exists + not in Plan Mode before any `/aid-discover` state | — |
-| **`summarize-preflight.sh`** | `canonical/scripts/summarize/summarize-preflight.sh` (103 lines) | Verifies KB is User-Approved before `/aid-summarize` runs | — |
-| **`build-kb-index.sh`** | `canonical/scripts/kb/build-kb-index.sh` (203 lines) | Builds `.aid/knowledge/INDEX.md` from KB sources | — |
-| **`build-metrics.sh`** | `canonical/scripts/kb/build-metrics.sh` (218 lines) | KB doc-size metrics | — |
-| **`writeback-state.sh`** | `canonical/scripts/summarize/writeback-state.sh` (173 lines) | Writes summarize-phase state back to `.aid/knowledge/STATE.md` | — |
-| **`complexity-score.sh`** | `canonical/scripts/execute/complexity-score.sh` (209 lines) | Task complexity scoring used by `/aid-execute` | — |
+| **Git** | unpinned | VCS — working branch is the current working branch (`git branch --show-current`) | `.git/`; `.gitignore` (repo root) |
+| **`build-project-index.sh`** | `canonical/scripts/kb/build-project-index.sh` | Pre-builds the file inventory consumed by the 5 discovery sub-agents | — |
+| **`grade.sh`** | `canonical/scripts/grade.sh` | Deterministic severity-tag → letter-grade scorer used by the review state of every skill | — |
+| **`parse-recipe.sh`** | `canonical/scripts/interview/parse-recipe.sh` | Parses recipe `{{slot}}` placeholders; emits lite-path artifacts | — |
+| **`writeback-state.sh`** | `canonical/scripts/execute/writeback-state.sh` | Updates per-area `STATE.md` after a task completes | — |
+| **`compute-block-radius.sh`** | `canonical/scripts/execute/compute-block-radius.sh` | BFS over the task dependency graph to compute failure block radius (pool dispatch) | — |
+| **`read-setting.sh`** | `canonical/scripts/config/read-setting.sh` | Reads a dotted-path key from `.aid/settings.yml` with default fallback | — |
+| **`fetch-mermaid.sh`** | `canonical/scripts/summarize/fetch-mermaid.sh` | Downloads + caches the pinned Mermaid release (`v11.15.0`, SHA-256-verified) for offline inlining | — |
+| **`validate-diagrams.mjs`** | `canonical/scripts/summarize/validate-diagrams.mjs` | Mermaid syntax validation for the generated HTML | — |
+| **`contrast-check.mjs`** | `canonical/scripts/summarize/contrast-check.mjs` | WCAG AA color-contrast audit on the design tokens; runs against both light + dark themes | — |
+| **`validate-html-output.sh`** | `canonical/scripts/summarize/validate-html-output.sh` | HTML output validation for `/aid-summarize` | — |
+| **`grade-summary.sh`** | `canonical/scripts/summarize/grade-summary.sh` | Aggregates the summarize-phase validators into a single Machine-Grade score | — |
+| **`manual-checklist.sh`** | `canonical/scripts/summarize/manual-checklist.sh` | Drives the K1/K2/V1 interactive Human-Grade checklist for `/aid-summarize` | — |
+| **`spot-check-facts.sh`** | `canonical/scripts/summarize/spot-check-facts.sh` | Spot-checks KB facts against source citations | — |
+| **`stale-check.sh`** | `canonical/scripts/summarize/stale-check.sh` | Detects stale KB sections | — |
+| **`assemble-3part.sh` / `assemble-3part.ps1`** | `canonical/scripts/summarize/assemble-3part.sh` / `assemble-3part.ps1` | Assembles the final single-file `knowledge-summary.html` by concatenating `part1.html` + cached Mermaid + `part2.html` (PowerShell version uses byte-level concat to avoid CRLF interpretation, see `assemble-3part.ps1` `# Use byte-level concat`) | — |
+| **`discover-preflight.sh`** | `canonical/scripts/kb/discover-preflight.sh` | Verifies `.aid/knowledge/STATE.md` exists + not in Plan Mode before any `/aid-discover` state | — |
+| **`summarize-preflight.sh`** | `canonical/scripts/summarize/summarize-preflight.sh` | Verifies KB is User-Approved before `/aid-summarize` runs | — |
+| **`build-kb-index.sh`** | `canonical/scripts/kb/build-kb-index.sh` | Builds `.aid/knowledge/INDEX.md` from KB sources | — |
+| **`build-metrics.sh`** | `canonical/scripts/kb/build-metrics.sh` | KB doc-size metrics | — |
+| **`writeback-state.sh`** | `canonical/scripts/summarize/writeback-state.sh` | Writes summarize-phase state back to `.aid/knowledge/STATE.md` | — |
+| **`complexity-score.sh`** | `canonical/scripts/execute/complexity-score.sh` | Task complexity scoring used by `/aid-execute` | — |
 
 Each script above has **seven byte-identical copies** on disk (canonical + dogfood `.claude/`
 + 5 profile trees: claude-code, codex, cursor, copilot-cli, antigravity) — the high shell-file
-count relative to the ~21 unique scripts is by design (per-tool mirroring); see
-`project-structure.md` `## Unusual Structure Notes` "mirror" note. ⚠️ The shell-file total in
-`project-index.md` predates the work-001 merge (2 new profile trees add copies) — orchestrator
-regenerates that index.
+count relative to the unique script count is by design (per-tool mirroring); see
+`project-structure.md` `## Unusual Structure Notes` "mirror" note. For current shell-file totals
+see `.aid/generated/project-index.md` `## Language Breakdown`.
 
 ## Testing Infrastructure
 
 | Tool | Version | Purpose | Config / location |
 |------|---------|---------|---------|
-| **Pure bash test suites** | bash 4+ | All tests are plain bash scripts (no pytest, no jest, no junit); aggregated by `tests/run-all.sh` + shared `tests/lib/assert.sh` | `tests/canonical/test-*.sh` (currently 18 suites — see `tests/README.md`) |
-| **Generator self-tests** | Python 3.11+ | Manifest-safety unit tests | `.claude/skills/aid-generate/scripts/test_manifest_safety.py` (254 lines) |
+| **Pure bash test suites** | bash 4+ | All tests are plain bash scripts (no pytest, no jest, no junit); aggregated by `tests/run-all.sh` + shared `tests/lib/assert.sh` | `tests/canonical/test-*.sh` (currently 24 suites — see `tests/README.md`) |
+| **Generator self-tests** | Python 3.11+ | Manifest-safety unit tests | `.claude/skills/aid-generate/scripts/test_manifest_safety.py` |
 | **CI** | **GitHub Actions (enforced)** | `.github/workflows/test.yml` runs render-drift + all canonical suites (via `tests/run-all.sh`) + generator self-tests + hygiene on PR/push; required status check on `master` | See `test-landscape.md` |
 
 Source: `project-structure.md` `## Build & Test System`; `tests/README.md`.
@@ -191,16 +192,16 @@ Source: `project-structure.md` `## Build & Test System`; `tests/README.md`.
 
 | File | Format | Purpose |
 |------|--------|---------|
-| `profiles/claude-code.toml` | TOML | Claude Code host conventions (64 lines) |
-| `profiles/codex.toml` | TOML | Codex CLI host conventions (78 lines — split-root layout) |
-| `profiles/cursor.toml` | TOML | Cursor IDE host conventions (75 lines — adds `[extras.rules]` for `.mdc` files) |
-| `profiles/copilot-cli.toml` | TOML | GitHub Copilot CLI host conventions (64 lines — `output_root .github`, `[agent].format = copilot-agent`, `Bash → shell` remap) |
-| `profiles/antigravity.toml` | TOML | Antigravity host conventions (107 lines — `output_root .agent`, `[agent].format = antigravity-rule`, `[model_tiers.large/medium/small]` detailed Gemini-3 form, empty `[tool_names]`) |
-| `.claude/settings.json` | JSON | Claude Code permission allow-list (15 lines) |
-| `.claude/settings.local.json` | JSON | Personal Claude Code overrides (13 lines, gitignored per `.gitignore` `.claude/settings.local.json`) |
+| `profiles/claude-code.toml` | TOML | Claude Code host conventions |
+| `profiles/codex.toml` | TOML | Codex CLI host conventions (split-root layout) |
+| `profiles/cursor.toml` | TOML | Cursor IDE host conventions (adds `[extras.rules]` for `.mdc` files) |
+| `profiles/copilot-cli.toml` | TOML | GitHub Copilot CLI host conventions (`output_root .github`, `[agent].format = copilot-agent`, `Bash → shell` remap) |
+| `profiles/antigravity.toml` | TOML | Antigravity host conventions (`output_root .agent`, `[agent].format = antigravity-rule`, `[model_tiers.large/medium/small]` detailed Gemini-3 form, empty `[tool_names]`) |
+| `.claude/settings.json` | JSON | Claude Code permission allow-list |
+| `.claude/settings.local.json` | JSON | Personal Claude Code overrides (gitignored per `.gitignore` `.claude/settings.local.json`) |
 | `.aid/settings.yml` | YAML 1.2 | AID runtime config — project identity, review minimum_grade, parallelism, heartbeat interval, per-skill overrides |
-| `canonical/templates/settings.yml` | YAML 1.2 | Settings template (81 lines) shipped via render |
-| `.gitignore` | gitignore patterns | 51 lines — excludes Python/Node caches, IDE files, `.aid/knowledge/.cache/`, `.claude/worktrees/`, `.aid/.heartbeat/` |
+| `canonical/templates/settings.yml` | YAML 1.2 | Settings template shipped via render |
+| `.gitignore` | gitignore patterns | Excludes Python/Node caches, IDE files, `.aid/knowledge/.cache/`, `.claude/worktrees/`, `.aid/.heartbeat/` |
 
 ## Languages NOT Present
 

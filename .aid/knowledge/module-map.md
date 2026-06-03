@@ -2,21 +2,22 @@
 kb-category: primary
 source: hand-authored
 intent: |
-  Maps the major code/content modules in AID — the 10 user-facing aid-* skills,
-  the 11th maintainer-only aid-generate skill, the 22 agents, the 13 renderer
+  Maps the major code/content modules in AID — the 11 user-facing aid-* skills,
+  the 12th maintainer-only aid-generate skill, the 22 agents, the 13 renderer
   Python files (12 under .claude/skills/aid-generate/scripts/ + run_generator.py),
-  and the canonical helper scripts under canonical/scripts/{config,kb,execute,summarize,interview}.
+  and the canonical helper scripts under canonical/scripts/{config,kb,execute,summarize,interview,housekeep}.
   Each entry lists purpose, directory path, dependencies, and associated tests.
   Read this when you need to know what a directory holds and who consumes it.
   NOT a tech-stack overview (see architecture.md) and NOT a per-script API
   reference (see the script's own header comment block).
 contracts:
-  - "10 user-facing aid-* skills + 1 maintainer-only aid-generate skill = 11 total"
+  - "11 user-facing aid-* skills + 1 maintainer-only aid-generate skill = 12 total"
   - "22 agents under canonical/agents/ (10 large / 9 medium / 3 small)"
   - "12 renderer Python files under .claude/skills/aid-generate/scripts/ (render_agents, render_skills, render_templates, render_canonical_scripts, render_recipes) + render_lib + aid_profile + verify_deterministic + verify_advisory + test_manifest_safety + test_copilot_emitter + test_antigravity_emitter, plus run_generator.py at the repo root"
-  - "5 script categories under canonical/scripts/ (config, kb, execute, summarize, interview) + grade.sh at the category root"
+  - "6 script categories under canonical/scripts/ (config, kb, execute, summarize, interview, housekeep) + grade.sh at the category root"
   - "Every canonical helper script has 7 byte-identical copies on disk (canonical + .claude dogfood + 5 profile trees)"
 changelog:
+  - 2026-06-03: aid/housekeep-2026-06-03 (PR #49) — added the optional aid-housekeep skill (11→12 total skills; 11 user-facing canonical + aid-generate maintainer-only) and the canonical/scripts/housekeep/ category (5→6 script categories): housekeep-state.sh, branch-commit.sh, cleanup-classify.sh.
   - 2026-06-01: work-001-add-providers (PRs #42/#43/#44) — render profiles grew 3→5 (added copilot-cli + antigravity); scripts/ grew 10→12 .py (added test_copilot_emitter.py + test_antigravity_emitter.py); render_agents gained copilot-agent + antigravity-rule format branches; helper-script copy set is now canonical + .claude + 5 profile trees.
   - 2026-05-31: delivery-001 — reconciled discovery-agent ownership: scout now owns project-structure.md + external-sources.md (not infrastructure.md); quality now owns test-landscape.md + tech-debt.md + infrastructure.md. Added note that document-expectations.md is the single per-doc expectations source loaded by the reviewer at REVIEW and FIX dispatch.
   - 2026-05-27: Initial generation by discovery-analyst (cycle-1)
@@ -33,10 +34,10 @@ changelog:
 
 The repo contains five module classes, each with its own conventions:
 
-1. **Skills** — 10 user-facing + 1 maintainer-only — under `canonical/skills/aid-*/`
+1. **Skills** — 11 user-facing + 1 maintainer-only — under `canonical/skills/aid-*/`
 2. **Agents** — 22 specialist agents — under `canonical/agents/<name>/`
 3. **Renderer (Python)** — 12 files under `.claude/skills/aid-generate/scripts/` + `run_generator.py` at the repo root
-4. **Helper scripts (Bash + JS + PS1)** — under `canonical/scripts/{config,kb,execute,summarize,interview}/` + `canonical/scripts/grade.sh`
+4. **Helper scripts (Bash + JS + PS1)** — under `canonical/scripts/{config,kb,execute,summarize,interview,housekeep}/` + `canonical/scripts/grade.sh`
 5. **Templates + Recipes** — content fixtures consumed by skills — under `canonical/templates/` + `canonical/recipes/`
 
 The render pipeline (Module 3) emits Modules 1, 2, 4, 5 into 5 install trees
@@ -49,7 +50,9 @@ byte-identical output verified by
 
 ## 1. Skills — `canonical/skills/aid-*/`
 
-Eleven `aid-*` skills. Each has a `SKILL.md` Thin-Router (per `coding-standards.md §7b`)
+Eleven user-facing `aid-*` skills (`ls -d canonical/skills/*/` = 11) plus the
+maintainer-only `aid-generate` (`.claude/`-only, NOT in `canonical/skills/`) = 12
+total. Each has a `SKILL.md` Thin-Router (per `coding-standards.md §7b`)
 plus a `references/state-*.md` per state plus topic-specific reference docs.
 
 | Skill | Purpose | SKILL.md (canonical) | Reference files | Notable references |
@@ -63,6 +66,7 @@ plus a `references/state-*.md` per state plus topic-specific reference docs.
 | `aid-execute` | Implement + two-tier review (per-task quick-check + per-delivery gate); parallel pool dispatch with `MaxConcurrent` | `canonical/skills/aid-execute/SKILL.md` | 8 | `state-execute.md` (largest single state file — pool dispatch PD-0..PD-6), `state-delivery-gate.md`, `state-review.md`, `state-{fix,re-run}.md`, `reviewer-{brief,guide}.md`, `task-type-rules.md` |
 | `aid-deploy` | Ship a delivery + create PR | `canonical/skills/aid-deploy/SKILL.md` | 5 | `state-{idle,selecting,packaging,verifying,re-run}.md` |
 | `aid-monitor` | Production-finding classification + routing | `canonical/skills/aid-monitor/SKILL.md` | 3 | `state-{observe,classify,route}.md` |
+| `aid-housekeep` | Optional on-demand housekeeping skill — runs three gated jobs in strict order on an `aid/housekeep-*` branch, one commit per stage, never pushes; re-entrant (a stalled run resumes at the stalled stage). State machine PREFLIGHT→KB-DELTA→SUMMARY-DELTA→CLEANUP→DONE (per `canonical/skills/aid-housekeep/SKILL.md` `description:`). NOT inserted into the mandatory phase-to-skill pipeline. | `canonical/skills/aid-housekeep/SKILL.md` | 5 | `state-{preflight,kb-delta,summary-delta,cleanup,done}.md` |
 | `aid-summarize` | Optional offline HTML KB viewer (Mermaid + sectioned per profile) | `canonical/skills/aid-summarize/SKILL.md` | 10 | `state-{preflight,profile,generate,validate,manual-checklist,stale-check,writeback,fix,approval,done}.md` |
 | `aid-generate` (maintainer-only) | Render canonical/ → 5 install trees; LOAD → VALIDATE → RENDER → VERIFY → REPORT | `.claude/skills/aid-generate/SKILL.md` (NOT in `canonical/skills/` — see `.claude/skills/aid-generate/SKILL.md` `chicken-and-egg deployment problem` for the justification) | n/a — uses `scripts/*.py` instead | (renderer Python files — see §3) |
 
@@ -185,7 +189,7 @@ Python in the repo.
 
 ---
 
-## 4. Helper scripts — `canonical/scripts/{config,kb,execute,summarize,interview}/` + `grade.sh`
+## 4. Helper scripts — `canonical/scripts/{config,kb,execute,summarize,interview,housekeep}/` + `grade.sh`
 
 Bash (Shell) + Node (JavaScript) + PowerShell helpers consumed by skills at
 slash-command invocation. Every script has 7 byte-identical copies on disk
@@ -240,13 +244,27 @@ slash-command invocation. Every script has 7 byte-identical copies on disk
 |--------|---------|
 | `parse-recipe.sh` | Parses `canonical/recipes/*.md` recipe files (YAML front-matter + `## spec` / `## tasks` body blocks); 5 modes (`--list`, `--validate`, `--spec`, `--tasks`, `--render`) — covered by `tests/canonical/test-parse-recipe.sh` (largest test file) |
 
-### 4f. `canonical/scripts/` (root)
+### 4f. `canonical/scripts/housekeep/` — `/aid-housekeep` stage helpers
+
+Three deterministic, dependency-free (bash + grep/sed/awk only) helpers backing
+the optional `aid-housekeep` skill (see §1). All are read-only or git-safe:
+`branch-commit.sh` and `cleanup-classify.sh` each carry a self-check that aborts
+if their own source ever contained a `git push` (and, for `cleanup-classify.sh`,
+any `rm`/`git rm`/`git commit`) call.
+
+| Script | Purpose | Key flags |
+|--------|---------|-----------|
+| `housekeep-state.sh` | Deterministic field I/O for the `## Housekeep Status` block of a work-area STATE.md (9 valid fields: State, Stage Status, Branch, Mode, Stall Reason, Last Run, KB Stage, Summary Stage, Cleanup Stage), plus `--resume` resolution implementing the 6-row resume-detection table (per `canonical/scripts/housekeep/housekeep-state.sh` `six-row re-entry table`): no section→PREFLIGHT (or CLEANUP with `--cleanup-only`); KB not passed/skipped→KB-DELTA; KB done + Summary not done→SUMMARY-DELTA; KB+Summary done + Cleanup not passed→CLEANUP; all done + State=DONE→DONE | `--state FILE --write --field F --value V`, `--read --field F`, `--resume [--cleanup-only]` |
+| `branch-commit.sh` | Deterministic git branch/commit safety guard — `--ensure-branch` creates/switches `aid/housekeep-<slug>` off master (or reuses an existing `aid/housekeep-*` branch on resume; refuses any other non-master branch, exit 3); `--commit` stages + makes exactly ONE commit. Refuses to commit while on `master` (exit 3). NEVER runs `git push` (self-check exit 4 if its source ever contains one). | `--ensure-branch --slug S`, `--commit --message M [--add PATH ...] [--add-all]` |
+| `cleanup-classify.sh` | Read-only scan + classify of stale `.aid/` artifacts across roots S1–S6 (.temp, .heartbeat, KB cache/scratch, stray verify reports, unregistered generated outputs, work-* folders) + Tier-2 loose `.aid/` files. Emits pipe-delimited `PATH\|TIER\|TRACKED\|DEFAULT_CHECKED\|REASON[\|GATE]` candidates; performs NO deletion/commit/push. Work-folder safety matrix: a `work-*/` folder is only offered when signal(i) merged-to-master AND signal(ii) STATE concluded both pass; active folders (current branch, unconcluded STATE, or carrying `## Housekeep Status`) are never offered; `settings.yml` is never touched. | `--root REPO_ROOT [--active-work FOLDER ...]` |
+
+### 4g. `canonical/scripts/` (root)
 
 | Script | Purpose |
 |--------|---------|
 | `grade.sh` | Deterministic grading: reads issue list with severity tags ([CRITICAL]/[HIGH]/[MEDIUM]/[LOW]/[MINOR]), applies the universal AID rubric (worst severity dominates, count modifies), prints letter grade. Used by reviewers + delivery gates. `--non-functional` flag forces F. |
 
-**Test coverage:** currently 18 dedicated test suites under `tests/canonical/`, each invoked
+**Test coverage:** currently 24 dedicated test suites under `tests/canonical/`, each invoked
 manually or as a batch via `tests/run-all.sh` (recount with `ls tests/canonical/test-*.sh | wc -l`). Suites share helpers from
 `tests/lib/assert.sh`.
 
@@ -314,7 +332,7 @@ Consumed by `canonical/scripts/interview/parse-recipe.sh` during `/aid-interview
 ## Cross-cutting dependencies
 
 - **Skills → agents:** every multi-state skill dispatches one or more agents via the host's Agent/Task tool (per `canonical/skills/aid-discover/SKILL.md` `## Dispatch` table; per `canonical/skills/aid-execute/references/state-execute.md` `## Agent Selection` table mapping the 8 task types to executors).
-- **Skills → scripts:** skills invoke helper scripts via Bash. Examples: `canonical/skills/aid-discover/SKILL.md` `discover-preflight.sh`, `aid-discover/SKILL.md` `read-setting.sh`, `aid-execute/references/state-delivery-gate.md` (`grade.sh`, `writeback-state.sh`).
+- **Skills → scripts:** skills invoke helper scripts via Bash. Examples: `canonical/skills/aid-discover/SKILL.md` `discover-preflight.sh`, `aid-discover/SKILL.md` `read-setting.sh`, `aid-execute/references/state-delivery-gate.md` (`grade.sh`, `writeback-state.sh`); `aid-housekeep/SKILL.md` (`housekeep-state.sh`, `branch-commit.sh`, `cleanup-classify.sh`).
 - **Agents → scripts:** agents invoke scripts indirectly (a skill dispatches the agent with a prompt containing the script call). No agent invokes a script except via its own Bash tool when authorized in its `tools:` frontmatter.
 - **Renderer → everything:** the renderer reads `canonical/{agents,skills,templates,recipes,scripts}/`, applies the profile's transforms, writes into `profiles/{name}/<install_root>/`, and records every emission in `<install_root>/emission-manifest.jsonl`. The manifest is the SAFETY boundary for the next run's deletion pass (per `canonical/EMISSION-MANIFEST.md` `## Safety-Boundary Semantics`).
 - **Verify → renderer:** `run_generator.py` (`run_verify` / `run_advisory`) calls `verify_deterministic.py` (strict) then `verify_advisory.py` (advisory) after every render. VERIFY (deterministic) re-runs the renderer to a scratch directory and compares byte-by-byte; any drift exits non-zero.
