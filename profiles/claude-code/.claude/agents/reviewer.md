@@ -71,7 +71,7 @@ Columns: `# | Severity | Status | Doc | Line | Description | Evidence`
 
 See schema doc for: severity enum, status enum, status lifecycle across cycles, pipe-character escape, authoring rules.
 
-**You append rows; you do NOT renumber existing rows.** On subsequent cycles, you may update an existing row's Status (Pending→Fixed, Fixed→Recurred), but never its Severity or Description.
+**You append rows; you do NOT renumber existing rows.** On subsequent cycles, you may update an existing row's Status (Pending→Fixed, Fixed→Recurred), but never its Severity or Description. "Append" is logical, not a file mode: you rewrite the whole file each cycle (see **File Writing** below), so the rewritten table must carry forward every prior row plus the new ones.
 
 Example ledger file (the entire file — no other content):
 
@@ -80,6 +80,28 @@ Example ledger file (the entire file — no other content):
 |---|---|---|---|---|---|---|
 | 1 | [HIGH] | Pending | foo.md | 42 | claim Y is wrong: doc says N, actual is M | `wc -l foo.md = 42` (doc claims 43) |
 | 2 | [MINOR] | Pending | bar.md | — | formatting nit in header | heading uses `#` where `##` is expected |
+```
+
+## ⚠️ File Writing
+
+**Do NOT use the Write tool to create the ledger — it has a known bug in background subagents**
+(and this agent is not granted Write). Use Bash with a heredoc instead.
+
+**`cat >` overwrites the whole file, so the heredoc body MUST be the COMPLETE ledger** — the
+header row, plus EVERY prior row (with its Status updated for this cycle), plus the new rows.
+Writing only the new rows truncates all prior findings. Do **NOT** use `cat >>` (append) for the
+ledger: it duplicates the header row and cannot update a prior row's Status, which corrupts the
+table the grade is computed from. (Read the existing ledger first, then re-emit the full table.)
+
+```bash
+# Cycle-2 example: row 1 carried forward (Pending→Fixed this cycle), row 2 is the new
+# finding. The heredoc holds the ENTIRE table, not just the new row.
+cat > .aid/.temp/review-pending/<scope>.md << 'LEDGEREOF'
+| # | Severity | Status | Doc | Line | Description | Evidence |
+|---|---|---|---|---|---|---|
+| 1 | [HIGH] | Fixed | foo.md | 42 | claim Y is wrong: doc says N, actual is M | cycle-2 FIX corrected foo.md to M |
+| 2 | [MINOR] | Pending | bar.md | — | formatting nit in header | heading uses `#` where `##` is expected |
+LEDGEREOF
 ```
 
 Review outcomes and test results are recorded in the work `STATE.md` `## Tasks Status` row for the task (per FR2 §1A; pre-FR2 this lived in a per-task `task-NNN-STATE.md`).

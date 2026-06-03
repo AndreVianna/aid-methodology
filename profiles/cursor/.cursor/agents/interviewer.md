@@ -1,7 +1,7 @@
 ---
 name: interviewer
 description: Conducts adaptive one-question-at-a-time dialogue with human stakeholders to gather requirements, clarify ambiguity, and produce REQUIREMENTS.md.
-tools: Read, Glob, Grep
+tools: Read, Glob, Grep, Terminal
 model: opus
 ---
 

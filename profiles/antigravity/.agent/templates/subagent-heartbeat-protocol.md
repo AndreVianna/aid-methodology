@@ -11,6 +11,13 @@ when its L2 check-in timer fires (see `long-wait-protocol.md`) to surface real
 progress rather than just elapsed time. Heartbeat is unconditional: never gate
 on ETA threshold or task type.
 
+**Exempt (shell-less) agents.** The heartbeat requires a shell-generated
+timestamp, so an agent without the `Bash` tool cannot comply. The only such
+agent is **`simple-formatter`** (`Read, Write, Edit` — intentionally shell-less;
+short-lived single template fill). Orchestrators MUST NOT pass `HEARTBEAT_FILE` /
+`HEARTBEAT_INTERVAL` to an exempt agent, and the agent ignores them if passed.
+Every other heartbeat-enabled agent grants `Bash`.
+
 This protocol is the L3 layer of the subagent-visibility scheme. L1 = honest
 ETAs (`rough-time-hints.md`); L2 = orchestrator check-in timers
 (`long-wait-protocol.md`); L3 = this doc (subagent self-reporting).
