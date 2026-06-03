@@ -31,7 +31,7 @@
     resolved otherwise via `read-setting.sh --skill summary --key minimum_grade --default A`.
   - `--cleanup-only` is **absent / REJECTED** in delivery-001 (feature-001 SPEC § "Incremental-
     delivery stub no-op": the CLEANUP body is still a stub no-op, so the flag arrives with the
-    delivery that ships the real CLEANUP body — task-011/task-012, delivery-003). The
+    delivery that ships the real CLEANUP body — task-008/task-009, delivery-003). The
     `## Arguments` table does not offer it and State Detection does not route it.
   - The skeleton does **not** parse `--fetch`/offline (that boundary lives in feature-002's body
     — feature-001 SPEC § "`--fetch` / offline").
@@ -55,7 +55,7 @@
   `housekeep-state.sh`, does **no work**, does **not pause**, makes **no commit**, and **CHAINs
   straight onward** (SUMMARY-DELTA → CLEANUP → DONE), so a KB-refresh run terminates cleanly at
   DONE. Each body explicitly documents it is a stub no-op to be replaced by its owning feature
-  in a later delivery (003 = summary → task-009; 004 = cleanup → task-012); the stub is distinct
+  in a later delivery (002 = summary → task-006; 003 = cleanup → task-009); the stub is distinct
   from a *runtime* `skipped` (a real, fully-implemented stage deciding to skip).
 - Wire State Detection / Dispatch to call `housekeep-state.sh` (resume target) and
   `branch-commit.sh` (commit target), to route argument handling in prose (no `parse-args.sh`),
@@ -81,6 +81,6 @@
   and CHAINs to CLEANUP with no work, no pause, no commit; `state-cleanup.md` writes
   `**Cleanup Stage:** skipped` + `**Stage Status:** skipped` and CHAINs to DONE with no work, no
   pause, no commit. Each documents it is a stub no-op to be replaced by its owning feature
-  (summary → task-009, cleanup → task-012). Both bodies write only through `housekeep-state.sh`
+  (summary → task-006, cleanup → task-009). Both bodies write only through `housekeep-state.sh`
   (never hand-edit `## Housekeep Status`).
 - [ ] All §6 quality gates pass; build/render passes; all existing tests pass.

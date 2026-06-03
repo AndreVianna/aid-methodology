@@ -1,86 +1,59 @@
-# task-010: `cleanup-classify.sh` — scan + tiered classification + work-folder safety matrix + tracked/untracked split
+# task-010: Cross-stage integration TEST — full `KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE` + `--cleanup-only` entry
 
-**Type:** IMPLEMENT
+**Type:** TEST
 
 **Source:** feature-004-aid-cleanup → delivery-003
 
-**Depends on:** —
+**Depends on:** task-001, task-002, task-005, task-007, task-008, task-009
 
 **Scope:**
-- Implement `canonical/scripts/housekeep/cleanup-classify.sh` (feature-004 SPEC § "Testing —
-  classification + safety test suite": "the scan/classify/matrix/split MUST be implemented as a
-  scriptable helper … sibling to `housekeep-state.sh`/`branch-commit.sh`"), the deterministic
-  scan + classify phase of CLEANUP. Pure logic, no deletions, no UI, no commit — it only **emits
-  the candidate list** the `state-cleanup.md` body (task-012) consumes.
-- **Scan (S1–S6)** — inspect only the fixed conservative `.aid/` roots in feature-004 SPEC §
-  "Scan — the inspected paths": S1 `.aid/.temp/**`, S2 `.aid/.heartbeat/**`, S3
-  `.aid/knowledge/.cache/**` + `.manual-checklist.json` + `.spot-check-facts.txt`, S4 stray
-  `verify-deterministic-report.json` / `verify-advisory-report.json` under `.aid/`, S5
-  unregistered `.aid/generated/**` outputs (a file IS a candidate only if absent from
-  `canonical/templates/generated-files.txt`), S6 `.aid/work-*/` folders (globbed at runtime).
-  NEVER touch `.aid/settings.yml`, `.aid/knowledge/*.md` (live KB), `.aid/templates/`, or
-  anything outside `.aid/`.
-- **Candidate record** — emit one record per candidate `{ path, tier, tracked, default_checked,
-  reason, gate? }` (feature-004 SPEC § "Candidate record") in a stable, parseable line format
-  the body reads.
-- **Tier assignment** (feature-004 SPEC § "Tier assignment"): Tier-0 clearly-safe (S1/S2/S3 +
-  S4 stray reports + S5 unregistered outputs) → `default_checked=true`; Tier-1 work folders that
-  pass the safety matrix → `default_checked=false`, label `review`; Tier-2 loose `.aid/` files
-  matching none of S1–S5 → `default_checked=false`, label `review — confirm intent`; registered
-  `.aid/generated/**` outputs are NOT emitted as candidates.
-- **Work-folder safety matrix (S6)** (feature-004 SPEC § "Work-Folder Safety Rules"): exclude the
-  currently-active folder FIRST (union of checks (a)/(b)/(c) below); then compute signal (i)
-  merged-to-`master` and signal (ii) STATE.md-concluded, and assign per the decision matrix —
-  (i)✓(ii)✓ → offer unchecked (Tier-1); (i)✓(ii)✗ → emit with `gate=explicit-confirm` carrying
-  the discrepancy reason; (i)✗ (incl. every unevaluable case) → NOT emitted; active → NOT emitted.
-  - **Signal (i)** priority order: (1) PR-merge via `gh pr view <N> --json state -q .state`
-    requiring `MERGED` (read the PR number(s) from the folder's `STATE.md ## Deploy Status` `PR`
-    column); guard the `gh` path `command -v gh` and fall back if absent. (2) Ancestry fallback —
-    `git fetch origin` then `git merge-base --is-ancestor <recorded-sha> origin/master`. If
-    neither is evaluable (no PR, no SHA, no `STATE.md`), signal (i) = **unknown → fail** → not
-    offered (conservative default; feature-004 SPEC § Signal (i) blockquote). A `work-*` folder
-    with no `STATE.md` (e.g. a stray `work-002-canonical-generator`) → (i) fail → not offered as a
-    Tier-1 folder (its matching S1–S5 contents may still surface as individual Tier-0/Tier-2 items).
-  - **Signal (ii)** passes iff the folder's `STATE.md` top `> **Status:** Deployed` AND ≥1
-    `## Deploy Status` row is terminal (non-empty `PR` + a merged/Deployed `State`); else fail.
-  - **Active-folder exclusion** (feature-004 SPEC § "currently active work folder", union — offered
-    only if NONE match): (a) the folder whose `STATE.md` carries this run's `## Housekeep Status`
-    block; (b) the folder matching the current branch (`aid/work-<NNN>-*` or no-merged-PR);
-    (c) any folder whose `STATE.md > **Status:**` ≠ `Deployed`.
-- **Tracked/untracked discriminator** (feature-004 SPEC § "Deletion Mechanism") — per candidate
-  path, deterministically classify `tracked` iff `git ls-files --error-unmatch <path>` succeeds
-  (or `git ls-files <path>` non-empty); else `untracked` (`git check-ignore -q <path>` succeeds OR
-  `git ls-files <path>` empty). The discriminator only **classifies**; it does NOT run `git rm`/`rm`
-  (that is task-012's deletion sequence). Computed at scan time, per path.
-- This helper performs **no deletion, no UI, no commit, no push** — it is read-only over the
-  filesystem + git + (optionally) `gh`. Bash style per `.aid/knowledge/coding-standards.md`;
-  sibling to `housekeep-state.sh`/`branch-commit.sh` under `canonical/scripts/housekeep/`.
-- **No new design** — every rule (scan roots, tier table, (i)/(ii) matrix, active-folder union,
-  tracked/untracked test) is dictated verbatim by feature-004 SPEC; this task slices it into the
-  tested helper.
+- **Extend** the delivery-001 integration suite `tests/canonical/test-housekeep-flow.sh`
+  (task-005, auto-discovered by the `tests/canonical/test-*.sh` glob, sourcing
+  `tests/lib/assert.sh`, runs under `timeout 300`) with the delivery-003 cross-stage wiring —
+  the **deterministic state transitions** over a throwaway fixtured repo + `STATE.md`, driving
+  the housekeep scripts (`housekeep-state.sh`, `branch-commit.sh`, `cleanup-classify.sh`) and the
+  `SKILL.md` `## State Detection` routing (the `--cleanup-only` row-2 mapping authored in prose by
+  task-008), NOT the LLM prose bodies.
+- **Stub→real-body swap (CLEANUP):** assert the full sequence now terminates
+  `KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE` with CLEANUP exercising real logic (the
+  delivery-001 stub `**Cleanup Stage:** skipped` is replaced by task-009's `passed`). With the
+  upstream gates satisfied (`**KB Stage:**` and `**Summary Stage:**` reading `passed`/`skipped`),
+  after a user-resolved cleanup the machine writes `**Cleanup Stage:** passed` and reaches
+  `**State:** DONE`. This is the delivery-003 analogue of task-005's delivery-002 forward-compat
+  note (the SUMMARY-DELTA swap); the C1 hard-gate ledger (CLEANUP gated on `**Summary Stage:**`)
+  must still hold against the deterministic `housekeep-state.sh` gate-ledger transitions.
+- **`--cleanup-only` entry (AC10, feature-001 row 2):** assert that the `SKILL.md` `## Arguments`
+  + State Detection routing (task-008) surfaces `**Mode:** cleanup-only` and routes PREFLIGHT →
+  CLEANUP directly — KB-DELTA and SUMMARY-DELTA are bypassed, their gate fields neither read nor
+  required, and the run still terminates at `**State:** DONE` writing `**Cleanup Stage:** passed`.
+  This exercises a brand-new entry mode that did not exist in delivery-001/002.
+- **Cancel-all / no-op gate (NFR1/NFR2):** assert a cleanup where the user confirms zero items
+  (or the scan finds zero candidates) writes `**Cleanup Stage:** passed` with **no commit**, is
+  NOT `stalled`, and a re-run reports "nothing to resume" (resume table row 6 — idempotent no-op).
+- **AC8 commit boundary (deterministic half):** assert that a cleanup deleting ≥1 confirmed
+  tracked + untracked path produces **exactly one** commit on the `aid/housekeep-*` branch via
+  `branch-commit.sh`, with **no `git push` / no remote interaction and no commit to `master`**.
+- **Coverage boundary (no double-ownership):** this suite owns only the **cross-stage state
+  transitions + entry-mode wiring + commit/no-commit gate**. It does NOT re-own the
+  tier-assignment / (i)/(ii) safety-matrix / tracked-untracked unit assertions — those live with
+  `cleanup-classify.sh` in task-007 (`test-housekeep-classify.sh`,
+  `test-housekeep-workfolder-safety.sh`, `test-housekeep-deletion-split.sh`).
 
 **Acceptance Criteria:**
-- [ ] AC7 (classification half): given a fixture `.aid/` tree, Tier-0 items (S1/S2/S3 gitignored
-  scratch, S4 stray reports, S5 unregistered outputs) are emitted `default_checked=true`; work
-  folders and loose hand-authored files are emitted `default_checked=false`; a *registered*
-  `.aid/generated/**` file is NOT emitted.
-- [ ] The (i)/(ii) decision matrix is honored exactly: (i)✓(ii)✓ → offered unchecked (Tier-1);
-  (i)✓(ii)✗ → emitted with `gate=explicit-confirm` + a discrepancy reason; (i)✗ (and every
-  unevaluable/no-`STATE.md` case) → NOT emitted; the currently-active folder → NEVER emitted.
-- [ ] Signal (i) defaults to **fail** (folder not offered) when no PR is recorded, no SHA is
-  recorded, or fetch cannot be evaluated (NFR1 conservative default — cleanup never guesses a
-  folder is mergeable).
-- [ ] The tracked/untracked discriminator classifies a git-tracked path `tracked` (→ later
-  `git rm`) and a gitignored/never-committed path `untracked` (→ later `rm`), computed per path
-  via `git ls-files`/`git check-ignore`; the helper itself runs no `rm`/`git rm` and no `git push`.
-- [ ] The `gh`-PR path is guarded by `command -v gh` and SKIPs gracefully (ancestry fallback)
-  when `gh` is absent (the established node/pwsh-skip model — `test-landscape.md`).
-- [ ] **NFR5 classification suite** (the IMPLEMENT type-default unit tests for this helper) lands
-  here, auto-discovered by the `tests/canonical/test-*.sh` glob in `tests/run-all.sh` (no edit to
-  `run-all.sh`), sourcing `tests/lib/assert.sh`, runs under `timeout 300`:
-  `tests/canonical/test-housekeep-classify.sh` (tier assignment vs fixture tree),
-  `test-housekeep-workfolder-safety.sh` (the four (i)/(ii) matrix rows via the `git
-  merge-base --is-ancestor` ancestry fallback so it runs without network/`gh`; `gh`-path
-  `command -v gh` → SKIP), and `test-housekeep-deletion-split.sh` (tracked→`git rm`,
-  ignored→`rm`, and assert no `git push`/remote interaction) — per feature-004 SPEC § Testing.
-- [ ] All §6 quality gates pass; build/render passes; all existing tests pass.
+- [ ] Deterministic, with clean setup/teardown (throwaway repo + STATE fixture), CI-wired via the
+  existing `tests/canonical/test-*.sh` glob (no edit to `run-all.sh`).
+- [ ] Asserts the full sequence `KB-DELTA → SUMMARY-DELTA → CLEANUP (passed) → **State:** DONE`
+  with CLEANUP exercising real logic (stub→real swap), and the C1 hard-gate ledger (CLEANUP does
+  not advance until `**Summary Stage:**` reads `passed`/`skipped`) unchanged.
+- [ ] Asserts `--cleanup-only` surfaces `**Mode:** cleanup-only` via the `SKILL.md` State
+  Detection routing (task-008), routes PREFLIGHT → CLEANUP directly (KB/Summary fields untouched,
+  no C1 violation), and terminates at `**State:** DONE` with `**Cleanup Stage:** passed`.
+- [ ] Asserts cancel-all / zero-candidate cleanup → `**Cleanup Stage:** passed` with **no commit**
+  (not `stalled`), and a re-run reports "nothing to resume" (resume row 6, NFR2).
+- [ ] Asserts a ≥1-item cleanup makes **exactly one** commit on `aid/housekeep-*` (tracked via
+  `git rm`, untracked via `rm`), with **no `git push` / no remote write and no `master` commit**
+  (AC8).
+- [ ] Does NOT duplicate task-007's classification/matrix/split unit assertions (those remain the
+  sole property of `cleanup-classify.sh`'s suites).
+- [ ] All §6 quality gates pass; covers the source ACs (AC7 UI-transition surface, AC8 commit
+  boundary, NFR1/NFR2 cancel-all, AC10 `--cleanup-only`, C1 gate ledger).

@@ -61,9 +61,9 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| delivery-001 | Detailed (A+) | 8 (task-001..008) | KB Delta Refresh MVP — feature-001 + feature-002 (incl. D1 edit). Foundation. KB-DELTA functional; summary/cleanup ship as stub no-ops. |
-| delivery-002 | Detailed (A+) | 1 (task-009) | Summary Reconciliation — feature-003. Depends on delivery-001. |
-| delivery-003 | Detailed (A+) | 4 (task-010..013) | .aid/ Cleanup — feature-004; enables --cleanup-only. Depends on delivery-001. |
+| delivery-001 | Detailed (re-gate pending) | 5 (task-001..005) | KB Reconciliation MVP — feature-001 + feature-002 (agent-driven; NO D1 edit, NO detect/scope scripts). KB-DELTA functional; summary/cleanup ship as stub no-ops. |
+| delivery-002 | Detailed (re-gate pending) | 1 (task-006) | Summary Reconciliation — feature-003. Depends on delivery-001. |
+| delivery-003 | Detailed (re-gate pending) | 4 (task-007..010) | .aid/ Cleanup — feature-004; enables --cleanup-only. Depends on delivery-001. |
 
 ## Tasks Status
 
@@ -73,17 +73,14 @@ This is the single state file for **this work** — the full dev lifecycle from 
 |---|------|------|------|--------|--------|---------|-------|
 | 001 | housekeep-state.sh + `## Housekeep Status` template | IMPLEMENT | 1 | Done | Small: clean | — | delivery-001 (f001) |
 | 002 | branch-commit.sh | IMPLEMENT | 1 | Done | Small: clean | — | delivery-001 (f001) |
-| 003 | thin-router SKILL.md + PREFLIGHT/DONE + args prose + stub no-op bodies | IMPLEMENT | 2 | Pending | — | — | delivery-001 (f001); ←001,002. Absorbs old args(003)+stubs(005); args in SKILL.md prose (no parse-args.sh) |
-| 004 | detect-delta.sh | IMPLEMENT | 2 | Pending | — | — | delivery-001 (f002); ←001 |
-| 005 | scope-delta.sh | IMPLEMENT | 2 | Pending | — | — | delivery-001 (f002); ←001 |
-| 006 | D1 edit — Approved-At-Commit writeback in /aid-discover | IMPLEMENT | 1 | Done | Small: clean | — | delivery-001 (f002) |
-| 007 | state-kb-delta.md body | IMPLEMENT | 3 | Pending | — | — | delivery-001 (f002); ←003,004,005,006 |
-| 008 | integration + distribution/render TEST | TEST | 4 | Pending | — | — | delivery-001 (f001+f002); ←001..007. Absorbs old integration(010)+distribution(011) |
-| 009 | state-summary-delta.md body (replaces stub) | IMPLEMENT | 5 | Pending | — | — | delivery-002 (f003); ←001,002,003,007 |
-| 010 | cleanup-classify.sh + classification suites | IMPLEMENT | 1 | Pending | — | — | delivery-003 (f004) |
-| 011 | --cleanup-only enablement (SKILL.md prose + routing) | IMPLEMENT | 2 | Pending | — | — | delivery-003 (f004); ←003 |
-| 012 | state-cleanup.md body (replaces stub) | IMPLEMENT | 3 | Pending | — | — | delivery-003 (f004); ←001,002,003,010,011 |
-| 013 | integration TEST (full seq + --cleanup-only) | TEST | 4 | Pending | — | — | delivery-003 (f004); ←001,002,008,010,011,012 |
+| 003 | thin-router SKILL.md + PREFLIGHT/DONE + args prose + stub no-op bodies | IMPLEMENT | 2 | Pending | — | — | delivery-001 (f001); ←001,002. Skeleton drafted on disk, ungated. Args in SKILL.md prose (no parse-args.sh) |
+| 004 | state-kb-delta.md — agent-driven KB reconciliation body | IMPLEMENT | 3 | Pending | — | — | delivery-001 (f002); ←001,002,003. Agent inspects repo↔KB (git=hint); no detect/scope scripts |
+| 005 | integration + distribution/render TEST | TEST | 4 | Pending | — | — | delivery-001 (f001+f002); ←001,002,003,004 |
+| 006 | state-summary-delta.md body (replaces stub) | IMPLEMENT | 5 | Pending | — | — | delivery-002 (f003); ←001,002,003,004 |
+| 007 | cleanup-classify.sh + classification suites | IMPLEMENT | 1 | Pending | — | — | delivery-003 (f004) |
+| 008 | --cleanup-only enablement (SKILL.md prose + routing) | IMPLEMENT | 2 | Pending | — | — | delivery-003 (f004); ←003 |
+| 009 | state-cleanup.md body (replaces stub) | IMPLEMENT | 3 | Pending | — | — | delivery-003 (f004); ←001,002,003,007,008 |
+| 010 | integration TEST (full seq + --cleanup-only) | TEST | 4 | Pending | — | — | delivery-003 (f004); ←001,002,005,007,008,009 |
 
 ## Deploy Status
 
@@ -143,3 +140,4 @@ _none yet_
 | 2026-06-02 | Plan | A+ | /aid-plan: 3 deliveries (d1 KB-refresh MVP=f001+f002, d2 summary=f003, d3 cleanup=f004). Review C+→A+ (FIX: pinned the incremental-delivery stub-no-op contract to feature-001; aligned PLAN wording). PLAN.md written. Next: /aid-detail. |
 | 2026-06-02 | Detail | A+ | /aid-detail: 16 tasks. d1=11 (C→A+ FIX: task-008 REFACTOR→IMPLEMENT + criteria; task-011 dep gap), d2=1 (A+ clean), d3=4 (B+→A+ FIX: task-016 dep decl). Execution graphs written to PLAN.md per delivery. |
 | 2026-06-02 | Detail restructure | A+ | User overengineering review → 16→13 tasks: dropped parse-args.sh (args in SKILL.md prose, no AID skill ships a CLI arg-parser; feature-001 SPEC updated); merged stub bodies into router (task-003); merged distribution TEST into integration (task-008). Re-gated A+. Done in worktree `.claude/worktrees/work-001-aid-housekeep`. Next: /aid-execute. |
+| 2026-06-02 | Execute wave-1 + design pivot | — | Wave-1 (old 001/002/006) implemented + quick-checked clean. Then user review during execute → **agent-driven pivot**: KB stage is agent reconciliation (inspect repo↔KB, git=hint), NOT scripts. Dropped detect-delta.sh/scope-delta.sh + D1/Approved-At-Commit (reverted). 13→10 tasks; REQUIREMENTS FR1/FR2 + feature-002 SPEC + state-kb-delta.md rewritten agent-driven. Re-gate pending. |

@@ -8,6 +8,7 @@
 | 2026-06-02 | All 10 sections captured (FR1–FR7, NFR1–5, C1–3, D1–2, AC1–11); Priority=Immediate | /aid-interview CONTINUE |
 | 2026-06-02 | Interview complete — approved | /aid-interview |
 | 2026-06-02 | Cross-reference complete (Grade A); Q1 resolved & applied to feature-002 | /aid-interview |
+| 2026-06-02 | Design pivot (user review during /aid-execute): FR1/FR2 reframed to agent-driven KB reconciliation (inspect repo content vs KB; git = hint, not boundary). Dropped SHA-anchoring, path→doc map, Approved-At-Commit + D1, detect-delta/scope-delta scripts. C2/NFR5/AC1–5/§8-D1 updated. Rule: scripts only for deterministic / eliminate-subjectivity work; analysis→agent. | /aid-execute (loopback) |
 
 ## 1. Objective
 
@@ -46,7 +47,8 @@ drift after merges and to sweep `.aid/` cruft.
 ### In Scope
 
 - A new optional skill `/aid-housekeep` with the three capabilities above.
-- Git-history-based delta detection against the KB's last-approved baseline.
+- Agent-driven KB reconciliation: the agent inspects actual repo content (code/data/docs)
+  against the KB to find and correct drift, with git history as an optional hint (not a boundary).
 - Incremental KB update + re-approval (a "lite" cousin of `/aid-discover`, not a full re-discovery).
 - Conditional summary regeneration gated on whether the delta affects the summary.
 - A user-confirmed, checklist-driven `.aid/` cleanup.
@@ -63,39 +65,31 @@ drift after merges and to sweep `.aid/` cruft.
 
 ## 5. Functional Requirements
 
-> Design model chosen at interview: **(c) hybrid** — `/aid-housekeep` owns a lightweight
-> delta-scoping layer of its own, but **delegates the heavy, gated work** to the existing
-> skills (KB review/approval to `/aid-discover`; summary staleness/regeneration to
-> `/aid-summarize`). It does not duplicate their review/approval or staleness logic.
+> Design model (revised 2026-06-02 after user review): `/aid-housekeep` is **agent-driven**.
+> The KB stage is a lightweight, drift-focused **re-discovery** — the agent reasons about what
+> has drifted and plans the fix; it does NOT encode that judgment in scripts. It **delegates**
+> the gated heavy lifting to the existing skills (KB review/approval to `/aid-discover`; summary
+> staleness/regeneration to `/aid-summarize`) and does not duplicate their logic. Scripts are
+> reserved for deterministic work or where we want to eliminate the subjectivity of an analysis
+> (the branch/commit safety guard, run-state I/O, the cleanup safety classification); anything
+> needing analysis, understanding, or planning is the agent's job.
 
-- **FR1 — Delta detection (SHA-anchored, date fallback).** Anchor "since the KB was last
-  approved" on a recorded **commit SHA**:
-  - On KB approval, persist the `master` commit SHA to a new `Approved-At-Commit:` field
-    in `knowledge/STATE.md`. Housekeep writes it after its own approval; `/aid-discover`'s
-    approval writeback should set it going forward (dependency — see §8).
-  - **Online-first:** `git fetch origin` first, then compute the delta as
-    `git log/diff <approved-sha>..origin/master` (so merges/pushes the user hasn't pulled
-    are still caught). If the fetch **fails** (no network), do **not** silently fall back —
-    **halt and request explicit user permission** to proceed offline against local
-    `master`; only then diff `<approved-sha>..master`.
-  - **Bootstrap fallback:** when no `Approved-At-Commit:` exists yet (first run / legacy
-    KB), fall back to the existing approval **date** (`Last KB Review` / `User Approved`)
-    via `git log --since=<date> origin/master`, and record a SHA at the next approval so
-    subsequent runs use the precise path.
-  - Scope the delta to decide which KB areas (discovery sub-agents / KB docs) are
-    potentially affected.
-- **FR2 — KB refresh (auto-scoped, delegated, gated).** If a delta exists:
-  - **Auto-map** the changed file paths to the KB docs/sub-agents they affect, using the
-    declared doc-set ownership map (e.g., `canonical/skills/**` → architecture + module-map
-    + feature-inventory; `tests/**` → test-landscape; `profiles/**` → architecture +
-    pipeline-contracts; etc.). This path→doc mapping is the **new "delta-scoping" logic the
-    skill owns**.
-  - **Confirm-and-adjust:** show the user the proposed refresh scope (which docs /
-    sub-agents will run) and let them adjust before dispatch.
-  - **Dispatch targeted re-discovery:** run only the in-scope discovery sub-agents on the
-    delta via `/aid-discover`'s existing targeted re-discovery path, then route through its
-    REVIEW → (Q&A/FIX) → APPROVAL gate, ending in a fresh `**User Approved:** yes`.
-  - Own the delta-scoping; reuse the review/approval gate (no duplication).
+- **FR1 — KB reconciliation (agent-driven; git is a hint, not a boundary).** The KB stage is a
+  drift-focused re-discovery: the agent **autonomously inspects the actual repo content**
+  (codebase + data + documentation) and reconciles it against the KB's claims, finding
+  discrepancies — including drift a purely git-scoped pass would miss (e.g. KB claims that were
+  subtly wrong all along). Git history is an **optional hint** to focus attention first: the
+  agent may run `git log/diff` since the last recorded KB review (`Last KB Review` date, already
+  in `knowledge/STATE.md`) to see what changed recently, but it is **not limited to the git
+  delta**. There is **no SHA-anchored detection script, no `Approved-At-Commit` field, and no
+  path→doc mapping table** — detecting and scoping drift is analysis/understanding the agent
+  performs, not deterministic logic to encode.
+- **FR2 — Scoped refresh + re-approval (delegated, gated).** The agent proposes the set of
+  affected KB docs/areas and the corrections it found, **shows them for confirm-and-adjust**,
+  then drives `/aid-discover`'s existing **targeted re-discovery** + REVIEW → (Q&A/FIX) →
+  APPROVAL gate to a fresh `**User Approved:** yes`. The agent reuses the review/approval gate;
+  it does not duplicate it. (It may synthesize an `Impact: Required` Q&A entry in
+  `knowledge/STATE.md` naming the affected docs to drive `/aid-discover`'s re-entry — Q1, 2026-06-02.)
 - **FR3 — Summary refresh (delegated, coarse staleness).** Once the KB is current &
   approved, reconcile `knowledge-summary.html` by delegating to `/aid-summarize`. Use its
   existing **STALE-CHECK** (date-based: any KB approval newer than the last summary →
@@ -158,17 +152,22 @@ drift after merges and to sweep `.aid/` cruft.
   consistent with the other `/aid-*` skills (state-entry banners, halt/resume semantics,
   L1/L2/L3 traceability for any long-running sub-agent dispatch). Authored in `canonical/`
   and rendered into all install profiles.
-- **NFR5 — Tested.** The new deterministic logic — delta detection, path→KB-doc mapping,
-  cleanup classification, and work-folder safety rules — is covered by a canonical test
-  suite under `tests/canonical/` (the project convention).
+- **NFR5 — Tested.** The new **deterministic** logic — the branch/commit safety guard,
+  run-state I/O + the resume-resolution rule, and the cleanup classification + work-folder
+  safety rules — is covered by canonical test suites under `tests/canonical/` (the project
+  convention). The agent-driven KB reconciliation (analysis/judgment) has no unit suite; it is
+  exercised by the integration test (state-machine transitions) + render/self-test, consistent
+  with the no-E2E-tier policy.
 
 ## 7. Constraints
 
 - **C1 — Ordering is mandatory.** KB → summary → cleanup, gated. No stage may run before
   the previous stage has reached its passing/approved state.
-- **C2 — Online-first, permissioned offline.** Default operation assumes network access
-  (`git fetch origin`). On fetch failure, the skill must request explicit user permission
-  before operating offline against local `master`. No silent offline fallback.
+- **C2 — Git is a hint, handled conversationally.** When the agent uses git history to focus
+  the reconciliation, it prefers up-to-date remote state (it may `git fetch`); if the network
+  is unavailable it says so and proceeds from local state / broader content inspection — the
+  reconciliation is not bounded by git, so there is no hard online-only gate. (Down-graded from
+  the former SHA-anchored "online-first/permissioned-offline" rule, 2026-06-02.)
 - **C3 — Auto-commit on a dedicated branch; never push.** The skill works on an
   `aid/housekeep-*` branch (creating it if needed — never operating directly on `master`)
   and **commits each stage as it completes** (KB refresh, summary refresh, cleanup → one
@@ -178,10 +177,9 @@ drift after merges and to sweep `.aid/` cruft.
 
 ## 8. Assumptions & Dependencies
 
-- **D1 — Approval writeback records the SHA.** FR1's precise path depends on
-  `Approved-At-Commit:` being written at KB approval. `/aid-housekeep` writes it after its
-  own approval; ideally `/aid-discover`'s APPROVAL/WRITEBACK is also updated to set it
-  (otherwise housekeep stays on the date fallback after a plain `/aid-discover` approval).
+- **D1 — REMOVED (2026-06-02).** Formerly "approval writeback records the SHA." Dropped with
+  the SHA-anchoring redesign — the agent uses the existing `Last KB Review` date as a hint;
+  no `Approved-At-Commit:` field, no `/aid-discover` writeback edit needed.
 - **D2 — Overlap with known crud fix.** The recurring `verify-deterministic-report.json`
   in the `work-*` namespace already has a recorded KB Q&A resolution (change
   `run_generator.py` to pass `report_path=None`). The cleanup job (FR4) should coordinate
@@ -189,18 +187,19 @@ drift after merges and to sweep `.aid/` cruft.
 
 ## 9. Acceptance Criteria
 
-- **AC1 — Delta detection (SHA path).** Given a KB approved at commit `X` with merges to
-  `origin/master` since, `/aid-housekeep` fetches, computes `X..origin/master`, and reports
-  the changed paths.
-- **AC2 — Delta detection (bootstrap).** Given no `Approved-At-Commit:` recorded, the skill
-  falls back to the approval date and records a SHA at the next approval.
-- **AC3 — Offline gate.** Given the fetch fails, the skill halts and requests explicit
-  permission before diffing local `master`; without permission it does not proceed.
-- **AC4 — KB scope + refresh.** Given a delta, the skill auto-maps changed paths to owning
-  KB docs/sub-agents, shows the scope for confirm/adjust, dispatches only those sub-agents,
-  and routes through `/aid-discover`'s REVIEW→APPROVAL to a fresh `User Approved: yes`.
-- **AC5 — No-delta no-op.** Given no delta, the KB stage reports "current," dispatches no
-  sub-agents, and advances.
+- **AC1 — KB reconciliation (content-driven).** Given a KB out of sync with the repo, the
+  agent inspects actual repo content (code/data/docs) — using git history since `Last KB Review`
+  as an optional starting hint, not a boundary — and identifies the KB docs/areas that have
+  drifted, including drift not attributable to a recent git change.
+- **AC2 — Scope proposal + confirm.** The agent presents the affected docs + proposed
+  corrections for confirm-and-adjust before any KB change (NFR3 transparency).
+- **AC3 — Delegated re-approval.** The agent drives `/aid-discover`'s targeted re-discovery →
+  REVIEW → (Q&A/FIX) → APPROVAL to a fresh `**User Approved:** yes` (reusing the gate; e.g. via
+  a synthesized `Impact: Required` Q&A entry naming the affected docs).
+- **AC4 — No-drift no-op.** Given the KB already matches the repo, the KB stage reports
+  "current," makes no changes, and advances (NFR2).
+- **AC5 — Offline tolerance.** Given no network, the agent proceeds from local state / content
+  inspection (git fetch is a best-effort hint) — it does not hard-fail.
 - **AC6 — Summary reconciliation.** After KB approval, the summary regenerates iff its
   STALE-CHECK says the KB is newer than the last summary, passing the two-grade gate before
   advancing; otherwise no-op.
