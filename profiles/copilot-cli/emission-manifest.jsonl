@@ -32,6 +32,8 @@
 {"dst": ".github/scripts/execute/compute-block-radius.sh", "profile": "copilot-cli", "sha256": "99a2f1a122378150022a57c99e57d9c629e78459748a52d35c042e6f262e2100", "src": "canonical/scripts/execute/compute-block-radius.sh"}
 {"dst": ".github/scripts/execute/writeback-state.sh", "profile": "copilot-cli", "sha256": "709f3a2cbb0e133ef88ce9487bc7d62084a467b56ac8f06c39787d70d3e73808", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".github/scripts/grade.sh", "profile": "copilot-cli", "sha256": "4984ef7486d0c66dc593db1e714db69b85e3a6aac636e68a4fc1b757aaced8c9", "src": "canonical/scripts/grade.sh"}
+{"dst": ".github/scripts/housekeep/branch-commit.sh", "profile": "copilot-cli", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
+{"dst": ".github/scripts/housekeep/housekeep-state.sh", "profile": "copilot-cli", "sha256": "be0bf32f2d73f1586dfba25a1487191511f08d5b88f58b8a4fda4487a490dd15", "src": "canonical/scripts/housekeep/housekeep-state.sh"}
 {"dst": ".github/scripts/interview/parse-recipe.sh", "profile": "copilot-cli", "sha256": "df1253bac77143c32248cb5b33a3a76755e337ff12ce0bd3659ece120d53aa8d", "src": "canonical/scripts/interview/parse-recipe.sh"}
 {"dst": ".github/scripts/kb/build-kb-index.sh", "profile": "copilot-cli", "sha256": "c566c03fc833a3d98a25035dd3752a2c97fd1e1df3ca1755d0f22e51d13e54fb", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".github/scripts/kb/build-metrics.sh", "profile": "copilot-cli", "sha256": "662cf4bfb25f0280495583247b5932b3971aa61c9ae65cd9389768b676277a12", "src": "canonical/scripts/kb/build-metrics.sh"}
@@ -69,7 +71,7 @@
 {"dst": ".github/skills/aid-discover/references/document-expectations.md", "profile": "copilot-cli", "sha256": "305bb9fe2a2d69f7b2a324914376a2b52eec7f6902b5253979166e9364e41e28", "src": "canonical/skills/aid-discover/references/document-expectations.md"}
 {"dst": ".github/skills/aid-discover/references/reviewer-brief.md", "profile": "copilot-cli", "sha256": "fb8bd48f28c8e0ac35a6c5ec415ce9b865b9d0ffe21c20aee5a23350543887d2", "src": "canonical/skills/aid-discover/references/reviewer-brief.md"}
 {"dst": ".github/skills/aid-discover/references/reviewer-prompt.md", "profile": "copilot-cli", "sha256": "9b01f4ad2b8b5ee4fe4d8b572c0fa5235aa9b9c3d03fd6c341e2c65c827ca717", "src": "canonical/skills/aid-discover/references/reviewer-prompt.md"}
-{"dst": ".github/skills/aid-discover/references/state-approval.md", "profile": "copilot-cli", "sha256": "a4295883942b7686a42143ffa09779b122ff8169654503cb7f2ca6e8f635f436", "src": "canonical/skills/aid-discover/references/state-approval.md"}
+{"dst": ".github/skills/aid-discover/references/state-approval.md", "profile": "copilot-cli", "sha256": "97d5d426447c5c4f056e3e39998542afffe0cd132b1c707c803d037948ffb4a3", "src": "canonical/skills/aid-discover/references/state-approval.md"}
 {"dst": ".github/skills/aid-discover/references/state-done.md", "profile": "copilot-cli", "sha256": "691d00ff8ca2da0ffe39dc63e54f736e669257c6c63265b7627576790cb5d9eb", "src": "canonical/skills/aid-discover/references/state-done.md"}
 {"dst": ".github/skills/aid-discover/references/state-fix.md", "profile": "copilot-cli", "sha256": "2577e4ebec85f4bf25cd4e03559daad9bb3f1b4aef58729faaa7c14efa743817", "src": "canonical/skills/aid-discover/references/state-fix.md"}
 {"dst": ".github/skills/aid-discover/references/state-generate.md", "profile": "copilot-cli", "sha256": "c16ad82a116119017aa103780c193ebf486d0831001b0627943665c764c5d2fc", "src": "canonical/skills/aid-discover/references/state-generate.md"}
@@ -196,4 +198,4 @@
 {"dst": ".github/templates/specs/spec-template.md", "profile": "copilot-cli", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".github/templates/state-machine-chaining.md", "profile": "copilot-cli", "sha256": "d1e6d3bcf2ac61547cb124a8be72ecae0668dc4d29ed0bc4e37318530b62721a", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".github/templates/subagent-heartbeat-protocol.md", "profile": "copilot-cli", "sha256": "2cb360af852a6827cda67ca8745ce16caf45f6ed3672440e54e47a839e8916fc", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
-{"dst": ".github/templates/work-state-template.md", "profile": "copilot-cli", "sha256": "a30e1a51189cffbd0edecc112aa25e5a731deff8d090f719da0d7549140ac630", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".github/templates/work-state-template.md", "profile": "copilot-cli", "sha256": "577b36fa12535022c0f0b41b6d6ff728b2df50a3a5682ac46ef00cc3765d91a8", "src": "canonical/templates/work-state-template.md"}

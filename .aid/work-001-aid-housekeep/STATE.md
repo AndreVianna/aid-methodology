@@ -71,12 +71,12 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|
-| 001 | housekeep-state.sh + `## Housekeep Status` template | IMPLEMENT | 1 | Pending | — | — | delivery-001 (f001) |
-| 002 | branch-commit.sh | IMPLEMENT | 1 | Pending | — | — | delivery-001 (f001) |
+| 001 | housekeep-state.sh + `## Housekeep Status` template | IMPLEMENT | 1 | Done | Small: clean | — | delivery-001 (f001) |
+| 002 | branch-commit.sh | IMPLEMENT | 1 | Done | Small: clean | — | delivery-001 (f001) |
 | 003 | thin-router SKILL.md + PREFLIGHT/DONE + args prose + stub no-op bodies | IMPLEMENT | 2 | Pending | — | — | delivery-001 (f001); ←001,002. Absorbs old args(003)+stubs(005); args in SKILL.md prose (no parse-args.sh) |
 | 004 | detect-delta.sh | IMPLEMENT | 2 | Pending | — | — | delivery-001 (f002); ←001 |
 | 005 | scope-delta.sh | IMPLEMENT | 2 | Pending | — | — | delivery-001 (f002); ←001 |
-| 006 | D1 edit — Approved-At-Commit writeback in /aid-discover | IMPLEMENT | 1 | Pending | — | — | delivery-001 (f002) |
+| 006 | D1 edit — Approved-At-Commit writeback in /aid-discover | IMPLEMENT | 1 | Done | Small: clean | — | delivery-001 (f002) |
 | 007 | state-kb-delta.md body | IMPLEMENT | 3 | Pending | — | — | delivery-001 (f002); ←003,004,005,006 |
 | 008 | integration + distribution/render TEST | TEST | 4 | Pending | — | — | delivery-001 (f001+f002); ←001..007. Absorbs old integration(010)+distribution(011) |
 | 009 | state-summary-delta.md body (replaces stub) | IMPLEMENT | 5 | Pending | — | — | delivery-002 (f003); ←001,002,003,007 |

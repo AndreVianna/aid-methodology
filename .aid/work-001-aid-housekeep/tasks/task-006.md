@@ -26,9 +26,11 @@
 - [ ] `state-approval.md` Step 3 `**[1] Approved:**` bullet records `**Approved-At-Commit:**` =
   `git rev-parse HEAD` as a new behavior of the discover approval path, idempotently (replace
   the line if present, else insert after `**Last KB Review:**`).
-- [ ] A unit/self-test asserts the writeback's idempotency (running it twice yields one
-  `**Approved-At-Commit:**` line; insert-after-`**Last KB Review:**` when absent; replace-in-place
-  when present).
+- [ ] The instruction is present in `state-approval.md` and renders to all 5 profiles; its
+  idempotent insert/replace semantics are exercised end-to-end by the integration test
+  (task-008) reading the field back after an approval. (No dedicated unit test — this is a
+  prose instruction to a prose skill, written the same way as every other `knowledge/STATE.md`
+  field; per `[[prose-over-scripts]]`, AC relaxed from "unit-test the writeback" 2026-06-02.)
 - [ ] Back-compatible: a KB lacking the field is unaffected until the next approval (the AC2
   bootstrap path); the rest of the discover approval flow behaves as before.
 - [ ] The `/aid-discover` self-tests / approval flow remain green after the edit (cross-cutting

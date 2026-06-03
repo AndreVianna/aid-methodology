@@ -21,6 +21,7 @@ Please review .aid/knowledge/ and let us know if there is anything else to consi
 ### Step 3: Process Response
 
 - **[1] Approved:** Add `**User Approved:** yes` to `.aid/knowledge/STATE.md`. Add Review History entry under `## Review History`.
+  Also set `**Approved-At-Commit:**` to the approved commit SHA (`git rev-parse HEAD`) — replace the line if present, else insert after `**Last KB Review:**` (idempotent; back-compatible — older KBs simply lack the line until the next approval, which is the AC2 bootstrap path).
   Print: `✅ Discovery complete. Grade: {grade}. KB approved and ready for the Interview phase.`
 - **[2] Consideration:** Add as new Q&A entry in STATE.md `## Q&A (Pending)` (Category: `User Feedback`, Impact: `High`, Status: `Pending`).
   Print: `[Approval] Consideration recorded as Q{N}. Run /aid-discover again to address it.`

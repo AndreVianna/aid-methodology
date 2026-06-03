@@ -34,6 +34,8 @@
 {"dst": ".cursor/scripts/execute/compute-block-radius.sh", "profile": "cursor", "sha256": "99a2f1a122378150022a57c99e57d9c629e78459748a52d35c042e6f262e2100", "src": "canonical/scripts/execute/compute-block-radius.sh"}
 {"dst": ".cursor/scripts/execute/writeback-state.sh", "profile": "cursor", "sha256": "709f3a2cbb0e133ef88ce9487bc7d62084a467b56ac8f06c39787d70d3e73808", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".cursor/scripts/grade.sh", "profile": "cursor", "sha256": "4984ef7486d0c66dc593db1e714db69b85e3a6aac636e68a4fc1b757aaced8c9", "src": "canonical/scripts/grade.sh"}
+{"dst": ".cursor/scripts/housekeep/branch-commit.sh", "profile": "cursor", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
+{"dst": ".cursor/scripts/housekeep/housekeep-state.sh", "profile": "cursor", "sha256": "be0bf32f2d73f1586dfba25a1487191511f08d5b88f58b8a4fda4487a490dd15", "src": "canonical/scripts/housekeep/housekeep-state.sh"}
 {"dst": ".cursor/scripts/interview/parse-recipe.sh", "profile": "cursor", "sha256": "df1253bac77143c32248cb5b33a3a76755e337ff12ce0bd3659ece120d53aa8d", "src": "canonical/scripts/interview/parse-recipe.sh"}
 {"dst": ".cursor/scripts/kb/build-kb-index.sh", "profile": "cursor", "sha256": "4f6120db48d89f03e50ed40793c3de5e004276ac89d5062888c16f265569a611", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".cursor/scripts/kb/build-metrics.sh", "profile": "cursor", "sha256": "a14d405be2b6fc73f419c5cc098a874e15dfba1f74859a84cf943668d4fafb9f", "src": "canonical/scripts/kb/build-metrics.sh"}
@@ -71,7 +73,7 @@
 {"dst": ".cursor/skills/aid-discover/references/document-expectations.md", "profile": "cursor", "sha256": "305bb9fe2a2d69f7b2a324914376a2b52eec7f6902b5253979166e9364e41e28", "src": "canonical/skills/aid-discover/references/document-expectations.md"}
 {"dst": ".cursor/skills/aid-discover/references/reviewer-brief.md", "profile": "cursor", "sha256": "fbf4cab32fafcc9f871dd59024102dab6877fce28c1b27b85d0556d21325f0e4", "src": "canonical/skills/aid-discover/references/reviewer-brief.md"}
 {"dst": ".cursor/skills/aid-discover/references/reviewer-prompt.md", "profile": "cursor", "sha256": "9b01f4ad2b8b5ee4fe4d8b572c0fa5235aa9b9c3d03fd6c341e2c65c827ca717", "src": "canonical/skills/aid-discover/references/reviewer-prompt.md"}
-{"dst": ".cursor/skills/aid-discover/references/state-approval.md", "profile": "cursor", "sha256": "a4295883942b7686a42143ffa09779b122ff8169654503cb7f2ca6e8f635f436", "src": "canonical/skills/aid-discover/references/state-approval.md"}
+{"dst": ".cursor/skills/aid-discover/references/state-approval.md", "profile": "cursor", "sha256": "97d5d426447c5c4f056e3e39998542afffe0cd132b1c707c803d037948ffb4a3", "src": "canonical/skills/aid-discover/references/state-approval.md"}
 {"dst": ".cursor/skills/aid-discover/references/state-done.md", "profile": "cursor", "sha256": "691d00ff8ca2da0ffe39dc63e54f736e669257c6c63265b7627576790cb5d9eb", "src": "canonical/skills/aid-discover/references/state-done.md"}
 {"dst": ".cursor/skills/aid-discover/references/state-fix.md", "profile": "cursor", "sha256": "bde6f4ad1fc4b48b76d987ecf80765bdc6daae536e5eacecd73bd35a03abdcbc", "src": "canonical/skills/aid-discover/references/state-fix.md"}
 {"dst": ".cursor/skills/aid-discover/references/state-generate.md", "profile": "cursor", "sha256": "516df3d3ae01bdbadbc52c9b640b7f836167ee2c6fca6027843e57ef8a0545f5", "src": "canonical/skills/aid-discover/references/state-generate.md"}
@@ -198,4 +200,4 @@
 {"dst": ".cursor/templates/specs/spec-template.md", "profile": "cursor", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".cursor/templates/state-machine-chaining.md", "profile": "cursor", "sha256": "d7ccac7b41637763d11e5fe87a458bdbc88e92bb365de23cf431d7ad9f5fc66a", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".cursor/templates/subagent-heartbeat-protocol.md", "profile": "cursor", "sha256": "e3490a0df0132c5f2042e70de2755961f0089a10589d5e98fd87b00fe094095b", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
-{"dst": ".cursor/templates/work-state-template.md", "profile": "cursor", "sha256": "cb118e415aa508ff002b50d09cc82758815457eac59cc46f68ffd65020614357", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".cursor/templates/work-state-template.md", "profile": "cursor", "sha256": "3f33a7d69cb821916edaf67a6f414cbc6d97041ddd6e99b528c1dbe722d6fb90", "src": "canonical/templates/work-state-template.md"}
