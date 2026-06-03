@@ -58,7 +58,7 @@ The rest of this document is how each mechanism works.
 
 ## The Pipeline
 
-AID is **10 skills** — one setup skill, eight numbered development phases, one optional skill — organized into **five groups**. The path is linear by default; the feedback loops are the escape hatches that prevent silent workarounds.
+AID is **10 skills** — one setup skill, six numbered development phases, three optional skills (`aid-summarize` plus the two end-of-pipeline Deliver skills) — organized into **five groups**. The development path (Discover → Execute) is linear by default; delivery is optional and runs on demand. The feedback loops are the escape hatches that prevent silent workarounds.
 
 ```mermaid
 flowchart TB
@@ -68,6 +68,7 @@ flowchart TB
     classDef exe fill:#166534,stroke:#166534,color:#ffffff
     classDef del fill:#C2410C,stroke:#C2410C,color:#ffffff
     classDef aux fill:#E5E7EB,stroke:#9CA3AF,color:#1F2937,stroke-dasharray:4 3
+    classDef delopt fill:#C2410C,stroke:#C2410C,color:#ffffff,stroke-dasharray:5 4
 
     subgraph G1[" 1 · Prepare "]
         Init["aid-config<br/>setup · once per project"]:::aux
@@ -86,11 +87,13 @@ flowchart TB
         Exe["6 · aid-execute<br/>8 task types"]:::exe
     end
     subgraph G5[" 5 · Deliver "]
-        Dep["7 · aid-deploy"]:::del
-        Mon["8 · aid-monitor"]:::del
+        Dep["aid-deploy<br/>optional"]:::delopt
+        Mon["aid-monitor<br/>optional"]:::delopt
     end
 
-    Init --> Disc --> Intv --> Spec --> Plan --> Det --> Exe --> Dep --> Mon
+    Init --> Disc --> Intv --> Spec --> Plan --> Det --> Exe
+    Exe -. optional .-> Dep
+    Exe -. optional .-> Mon
 ```
 
 | Group | Phase | Skill | What it produces |
@@ -103,10 +106,10 @@ flowchart TB
 | **3 · Map** | 4 · Plan | `/aid-plan` | `PLAN.md` — features sequenced into shippable deliveries |
 | | 5 · Detail | `/aid-detail` | typed, PR-sized task files with acceptance criteria |
 | **4 · Execute** | 6 · Execute | `/aid-execute` | implemented + reviewed code, looped to a grade |
-| **5 · Deliver** | 7 · Deploy | `/aid-deploy` | a shipped delivery + pull request |
-| | 8 · Monitor | `/aid-monitor` | production findings classified and routed to fixes |
+| **5 · Deliver** | — Deploy | `/aid-deploy` | *(optional)* a shipped delivery + pull request |
+| | — Monitor | `/aid-monitor` | *(optional)* production findings classified and routed to fixes |
 
-`aid-config` (setup) and `aid-summarize` (optional) are skills but **not numbered phases** — hence the dashes. Discovery is brownfield-only; greenfield projects enter at Interview.
+`aid-config` (setup), `aid-summarize`, `aid-deploy`, and `aid-monitor` are skills but **not numbered phases** — hence the dashes. `aid-deploy` and `aid-monitor` are optional, on-demand delivery skills positioned at the end of the pipeline: neither is required to complete a cycle and neither presupposes the other. Discovery is brownfield-only; greenfield projects enter at Interview.
 
 ---
 
@@ -241,7 +244,7 @@ Grading is **deterministic**: the Reviewer never assigns a letter grade — it p
 
 ## Feedback Loops
 
-The pipeline is sequential by default, but real engineering isn't linear. AID defines **eleven formal feedback loops** — eight within development, two connecting production back to development, and one cross-cutting re-entry available from any phase — so any phase can revise an upstream artifact when reality contradicts an assumption.
+The development pipeline (Discover → Execute) is sequential by default; the optional Deliver skills run on demand at the end. But real engineering isn't linear. AID defines **eleven formal feedback loops** — eight within development, two connecting production back to development, and one cross-cutting re-entry available from any phase — so any phase can revise an upstream artifact when reality contradicts an assumption.
 
 Every loop produces a formal record (a Q&A entry in a STATE file, an `IMPEDIMENT` file, or a Monitor finding) with a revision trail. The spec evolves — but **traceably**. You can always answer "why did this change?" with evidence.
 
@@ -307,8 +310,8 @@ Open your AI coding tool in the project and run the skills as slash commands:
 /aid-plan           # sequence features into shippable deliveries
 /aid-detail         # decompose deliveries into typed, PR-sized tasks
 /aid-execute        # implement each task, with the built-in review loop
-/aid-deploy         # package and ship a delivery
-/aid-monitor        # observe production; classify findings; route fixes
+/aid-deploy         # optional — package and ship a delivery
+/aid-monitor        # optional — observe production; classify findings; route fixes
 /aid-summarize      # optional — generate an offline HTML viewer of the KB
 ```
 

@@ -24,6 +24,7 @@ changelog:
 > **User Approved:** yes (2026-06-03, cycle-10 — user approved the /aid-housekeep KB-delta refresh + §9a T3-strip at A+; on branch aid/housekeep-2026-06-03)
 > **Last KB Review:** 2026-06-03 (cycle-10 via /aid-housekeep — A+ after FIX; E→FIX→D→FIX→A+)
 > **Last Summary:** 2026-05-30 (dogfood refresh — knowledge-summary.html rebuilt from refreshed summary-src; validated via validate-diagrams.mjs + contrast-check.mjs)
+> **Methodology v3.2 reconciliation:** 2026-06-03 — aid-deploy/aid-monitor reclassified as optional, on-demand end-of-pipeline Deliver skills (numbered development phases 8→6, Discover→Execute). Spec (`methodology/aid-methodology.md` → v3.2), README, `docs/glossary.md`/`docs/faq.md`, the two canonical skill READMEs, 7 KB docs (architecture, repo-presentation, domain-glossary, integration-map, pipeline-contracts, project-structure, feature-inventory) + INDEX, and the visual summary (Fig 1 pipeline diagram + Phases-&-Skills section) all reconciled. ⚠️ Summary **Fig 1 changed** — V1 human visual gate pending re-confirmation (view the regenerated `knowledge-summary.html` from this PR's branch).
 
 This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary. One STATE.md per project's `.aid/knowledge/` directory. Absorbs what used to be `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`.
 
@@ -83,13 +84,13 @@ This is the single state file for the **Discovery area** — persistent project 
 **Machine Grade:** A+
 **Machine Grade Source:** `grade-summary.sh` AUTO_POOL (D1/D2/L1/L2/H1/A1-5/C1-2/S2 = 73 pts) — cycle-9 regen 2026-06-01: D1 parse PASS 5/5 (re-verified) + L1/L2/H1/A1-5/C1-2/S2 all green; D2 render not machine-runnable in this sandbox (jsdom lacks getBBox / headless Chromium can't launch — missing libnspr4.so), so D2 is accepted-environmental and its render verification is delegated to the V1 human visual gate (user-confirmed 2026-06-01); diagram count 5/5 matches agentic-pipeline target
 **Human Grade:** A+
-**Human Grade Source:** MANUAL_POOL — K1 (KB-completeness) pass + K2 (fact-grounding) pass (spot-check-facts 10/10 claims grounded, 0 MISS) + V1 (human visual gate) **PASS — user-approved 2026-06-03** (cycle-10; Fig 1 updated to place the optional skills at their natural points; theme/lightbox verified). V1 is the compensating control for the sandbox D2 render (this cycle D2 ran via jsdom-fallback regex-only, PASS).
+**Human Grade Source:** MANUAL_POOL — K1 (KB-completeness) pass + K2 (fact-grounding) pass (spot-check-facts 10/10 claims grounded, 0 MISS) + V1 (human visual gate) **PASS — user-approved 2026-06-03** (cycle-10; Fig 1 updated to place the optional skills at their natural points; theme/lightbox verified). V1 is the compensating control for the sandbox D2 render (this cycle D2 ran via jsdom-fallback regex-only, PASS). ⚠️ **V1 pending re-confirmation** for the 2026-06-03 methodology-v3.2 change: Fig 1 now shows aid-deploy/aid-monitor as optional (dashed, non-sequential) and the Phases-&-Skills section was renumbered to six phases — user to re-approve V1 when viewing this PR's regenerated summary.
 **Overall Grade:** A+ (= min of Machine=A+, Human=A+)
 **User Approved:** yes (2026-06-03 — cycle-10 /aid-housekeep summary refresh; Overall A+; V1 visual gate approved)
-**Last Run:** 2026-06-03
-**Trigger Reason:** regeneration — KB cycle-10 /aid-housekeep refresh (new aid-housekeep skill 10→11, suites 18→24, §9a T3-strip); summary updates: +aid-housekeep skill card + contracts row, hero stats refreshed, line-count kickers stripped, Fig 1 pipeline diagram gains the two optional on-demand skills (aid-summarize after Discovery, aid-housekeep after Deploy)
+**Last Run:** 2026-06-03 (methodology-v3.2 reconciliation — assemble.sh rebuild)
+**Trigger Reason:** methodology v3.2 — aid-deploy/aid-monitor reclassified as optional end-of-pipeline Deliver skills (numbered phases 8→6). Summary updates: Fig 1 pipeline diagram (DEP/MON now dashed `:::optional`, edges `EXC -. optional .-> DEP/MON`, no forced `DEP --> MON`), lede + caption reworded, Phases-&-Skills section renumbered (Discover=Phase 1…Execute=Phase 6; Deploy/Monitor kickers → "Optional"). Diagrams re-validated D1/D2 PASS (5/5).
 **Output:** `.aid/knowledge/knowledge-summary.html`
-**Output Size:** 3.41 MB (3,414,914 bytes; 5,507 lines)
+**Output Size:** 3.42 MB (3,415,602 bytes; 5,508 lines)
 **Mermaid Version:** 11.15.0
 **Mermaid Fetched At:** 2026-05-28T12:30:00Z
 **Mermaid Cached:** `.aid/knowledge/.cache/mermaid.min.js` (sha256: 70137e77bb273bb2ef972b86e8b0400cca8be53cb25bfc45911a186dc98665de)

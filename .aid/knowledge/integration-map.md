@@ -9,6 +9,7 @@ intent: |
   Inter-skill choreography is implemented via filesystem state hand-offs (not a message broker).
 contracts: []
 changelog:
+  - 2026-06-03: methodology v3.2 — Phase Sequence diagram + skill-set composition reconciled: numbered phases 8→6 (Discover→Execute); aid-deploy/aid-monitor recast from Phases 7/8 to optional, on-demand end-of-pipeline Deliver skills (not required, not sequential); loops L8–L10 now apply only when those skills are run.
   - 2026-06-03: housekeep run-state relocation (PR #51) — corrected the aid-housekeep State-File R/W row: run-state moved from the work-area STATE.md to the project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`; CLEANUP offers every work folder + stale artifact for user-confirmed deletion.
   - 2026-06-03: aid-housekeep merge (PR #49) — skill enumeration 10→11 user-facing (added optional off-pipeline aid-housekeep) + maintainer-only aid-generate; documented aid-housekeep as a filesystem-state choreography participant (STATE.md Q&A handshake with /aid-discover, work-area ## Housekeep Status run-state block, /aid-summarize delegation)
   - 2026-06-01: work-001-add-providers merge (PRs #42/#43/#44) — distribution now 5 profile trees (added copilot-cli → `.github/`, antigravity → `.agent/`); documented Copilot native Agent Skills + Antigravity rules mapping + Option-A AGENTS.md collision handler
@@ -208,9 +209,11 @@ Source: `.aid/knowledge/project-structure.md` heading `### Generator (maintainer
 
 > **Skill enumeration (post PR #49):** `canonical/skills/` holds **11 user-facing skills**
 > (`aid-config`, `aid-discover`, `aid-interview`, `aid-specify`, `aid-plan`, `aid-detail`,
-> `aid-execute`, `aid-deploy`, `aid-monitor`, `aid-summarize`, plus the **optional
-> off-pipeline** `aid-housekeep`) **+ maintainer-only `aid-generate`**. `aid-housekeep` is
-> NOT in the mandatory phase→skill mapping and no phase gate references it — it is invoked
+> `aid-execute`, plus the **optional** `aid-deploy`, `aid-monitor`, `aid-summarize`, and the
+> **optional off-pipeline** `aid-housekeep`) **+ maintainer-only `aid-generate`**. The six
+> numbered phases are `aid-discover`…`aid-execute`; `aid-deploy`/`aid-monitor` are optional
+> end-of-pipeline Deliver skills, `aid-summarize` is optional, and `aid-housekeep` is
+> additionally off the mandatory pipeline (no phase gate references it) — all invoked
 > on-demand. Source: `find canonical/skills -maxdepth 1 -type d`,
 > `canonical/skills/aid-housekeep/SKILL.md` (`**Absent from the mandatory pipeline flow.**`).
 
@@ -327,7 +330,8 @@ Setup.sh diff handling: `new = copy`, `identical = skip`, `different = ask`
 
 ## Inter-Skill Choreography (Pipeline Integration)
 
-The 8 numbered phases + 2 non-phase Prepare skills + 1 optional off-pipeline skill
+The 6 numbered phases + 2 non-phase Prepare skills (`aid-config`, `aid-summarize`) + 2
+optional Deliver skills (`aid-deploy`, `aid-monitor`) + 1 optional off-pipeline skill
 (`aid-housekeep`) + 1 maintainer skill compose the skill set. Skills hand work to each
 other via **filesystem state**, not direct calls.
 
@@ -346,11 +350,10 @@ aid-plan            ← Phase 4: Map
    ↓
 aid-detail          ← Phase 5: Map
    ↓
-aid-execute         ← Phase 6: Execute
-   ↓
-aid-deploy          ← Phase 7: Deliver
-   ↓
-aid-monitor         ← Phase 8: Deliver
+aid-execute         ← Phase 6: Execute   ← last numbered phase / end of the mandatory pipeline
+   ┊ (optional · on-demand · not required · not sequential)
+aid-deploy          ← optional Deliver skill (end-of-pipeline; not a numbered phase)
+aid-monitor         ← optional Deliver skill (end-of-pipeline; not a numbered phase)
 
 aid-summarize       ← non-phase, optional, runs against approved KB
 aid-housekeep       ← optional, OFF the mandatory pipeline (no phase gate references it);

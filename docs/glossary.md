@@ -6,7 +6,7 @@ Terms and concepts used throughout the AID methodology.
 
 ## Core Concepts
 
-**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 8 phases, 5 groups. Human and AI co-execute every phase.
+**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 development phases, 5 groups; delivery (Deploy, Monitor) and the summary skill are optional. Human and AI co-execute every phase.
 
 **Knowledge Base (KB):** 16 standard markdown documents (plus 3 meta-documents) that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases.
 
@@ -34,8 +34,10 @@ Terms and concepts used throughout the AID methodology.
 | **Plan** | Map | PLAN.md (sequenced deliveries) |
 | **Detail** | Map | Typed task files + execution graph in PLAN.md |
 | **Execute** | Execute | Reviewed, graded code (8 task types, built-in review loop) |
-| **Deploy** | Deliver | Shipped delivery, PR, KB update |
-| **Monitor** | Deliver | MONITOR-STATE.md (BUG → Execute / CR → Discover / Infrastructure / No Action) |
+| **Deploy** *(optional)* | Deliver | Shipped delivery, PR, KB update |
+| **Monitor** *(optional)* | Deliver | MONITOR-STATE.md (BUG → Execute / CR → Discover / Infrastructure / No Action) |
+
+> *Deploy and Monitor are **optional**, on-demand delivery skills positioned at the end of the pipeline — not required, numbered phases. Run them when the project's delivery model calls for them; neither presupposes the other.*
 
 ---
 
@@ -61,7 +63,7 @@ Terms and concepts used throughout the AID methodology.
 | **Define** | Interview, Specify | Define the problem and how to solve it |
 | **Map** | Plan, Detail | From requirements to an executable task list |
 | **Execute** | Execute | Build, review, and test |
-| **Deliver** | Deploy, Monitor | Ship, monitor, and route what breaks |
+| **Deliver** | Deploy, Monitor *(optional)* | Optionally ship, monitor, and route what breaks |
 
 ---
 

@@ -674,12 +674,12 @@ details.accord > summary:focus-visible,
 <!-- Hero -->
 <div class="hero">
 	<h1>AI Integrated Development</h1>
-	<p class="subtitle">Knowledge Base Summary — AI-agent methodology distribution for Claude Code, Codex, Cursor, GitHub Copilot CLI, and Antigravity</p>
+	<p class="subtitle">Knowledge Base Summary — AI-agent methodology distribution for Claude Code, Codex CLI, and Cursor IDE</p>
 	<div class="badges">
-		<span class="badge badge-primary">11 Skills</span>
+		<span class="badge badge-primary">10 Skills</span>
 		<span class="badge badge-accent">22 Agents</span>
-		<span class="badge badge-info">5 Install Trees</span>
-		<span class="badge badge-ok">24 Test Suites</span>
+		<span class="badge badge-info">3 Install Trees</span>
+		<span class="badge badge-ok">18 Test Suites</span>
 		<span class="badge badge-purple">15 KB Docs</span>
 		<span class="badge">Methodology v3.1</span>
 	</div>
@@ -717,9 +717,9 @@ details.accord > summary:focus-visible,
 	<div class="grid g4">
 		<div class="card">
 			<div class="kicker">Repository</div>
-			<div class="stat">1,587</div>
+			<div class="stat">1,518</div>
 			<div class="stat-sub">total files</div>
-			<div class="meta">229,778 lines — snapshot 2026-06-03<br>(per .aid/generated/project-index.md)</div>
+			<div class="meta">209,599 lines — snapshot 2026-06-01<br>(per project-structure.md)</div>
 		</div>
 		<div class="card">
 			<div class="kicker">Skills</div>
@@ -765,10 +765,10 @@ details.accord > summary:focus-visible,
 	<header>
 		<span class="eyebrow">Featured</span>
 		<h2>The Pipeline</h2>
-		<p class="lede">AID defines eight sequential pipeline phases — from brownfield discovery through production monitoring — with explicit human-controlled phase gates and feedback loops. Each phase maps to a slash-command skill. Two optional, on-demand skills sit alongside the flow at their natural points: <code>aid-summarize</code> (after Discovery) and <code>aid-housekeep</code> (after Execute/Deploy). (per architecture.md, repo-presentation.md)</p>
+		<p class="lede">AID defines six sequential development phases — from brownfield discovery through reviewed execution — with explicit human-controlled phase gates and feedback loops. Two optional Deliver skills (Deploy, Monitor) sit at the end of the pipeline, run on demand. Each numbered phase maps to a slash-command skill. (per architecture.md, repo-presentation.md)</p>
 	</header>
 
-	<p>The pipeline is sequential by default: human approval is required to advance between phases. Feedback loops exist as escape hatches — Monitor can route back to Execute or Discover; Execute can issue IMPEDIMENT escalations; any phase can revisit Discovery. The Lite Path shortcut routes small work directly from Interview to task execution, bypassing Specify, Plan, and Detail. (per feature-inventory.md §Engineering features)</p>
+	<p>The development pipeline (Discover → Execute) is sequential by default: human approval is required to advance between phases. The two Deliver skills — Deploy and Monitor — are optional and run on demand at the end; neither is required and neither presupposes the other. Feedback loops exist as escape hatches — Monitor can route back to Execute or Discover; Execute can issue IMPEDIMENT escalations; any phase can revisit Discovery. The Lite Path shortcut routes small work directly from Interview to task execution, bypassing Specify, Plan, and Detail. (per feature-inventory.md §Engineering features)</p>
 
 	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 1: AID phase pipeline — click or press Enter to expand">
 		<div class="mermaid">
@@ -776,7 +776,7 @@ flowchart LR
     classDef phase fill:#0B1F3A,stroke:#00A3A1,color:#fff,stroke-width:2px;
     classDef gate  fill:#007F7D,stroke:#005856,color:#fff,stroke-width:2px;
     classDef lite  fill:#1D4ED8,stroke:#1e40af,color:#fff,stroke-width:2px;
-    classDef opt   fill:#475569,stroke:#94A3B8,color:#fff,stroke-width:2px,stroke-dasharray:5 3;
+    classDef optional fill:#0B1F3A,stroke:#00A3A1,color:#fff,stroke-width:2px,stroke-dasharray:5 4;
 
     CFG["aid-config<br/>Setup"]:::phase
     DSC["aid-discover<br/>Discovery"]:::phase
@@ -785,11 +785,9 @@ flowchart LR
     PLN["aid-plan<br/>Plan"]:::phase
     DTL["aid-detail<br/>Detail"]:::phase
     EXC["aid-execute<br/>Execute"]:::phase
-    DEP["aid-deploy<br/>Deploy"]:::phase
-    MON["aid-monitor<br/>Monitor"]:::phase
+    DEP["aid-deploy<br/>Deploy · optional"]:::optional
+    MON["aid-monitor<br/>Monitor · optional"]:::optional
     LITE["Lite Path<br/>direct to tasks"]:::lite
-    SUM["aid-summarize<br/>KB Viewer (optional)"]:::opt
-    HK["aid-housekeep<br/>Housekeeping (optional)"]:::opt
 
     CFG --> DSC
     DSC --> INT
@@ -799,15 +797,12 @@ flowchart LR
     SPC --> PLN
     PLN --> DTL
     DTL --> EXC
-    EXC --> DEP
-    DEP --> MON
+    EXC -. optional .-> DEP
+    EXC -. optional .-> MON
     MON -. bug found .-> EXC
     MON -. change req .-> DSC
-    DSC -. optional .-> SUM
-    DEP -. optional .-> HK
-    HK -. reconcile KB/summary .-> DSC
 		</div>
-		<p class="caption">Fig 1 — AID phase pipeline: 8 phases (Discover through Monitor), with the Lite Path shortcut for small work. Feedback loops let Monitor re-enter Execute or Discover. Dashed nodes are the two optional on-demand skills — aid-summarize (after Discovery) and aid-housekeep (after Execute/Deploy, reconciling KB + summary drift back into Discovery). (per architecture.md)</p>
+		<p class="caption">Fig 1 — AID pipeline: 6 numbered phases (Discover → Execute) plus the optional end-of-pipeline Deliver skills (Deploy, Monitor, dashed), with the Lite Path shortcut for small work. Feedback loops let Monitor re-enter Execute or Discover. (per architecture.md)</p>
 	</div>
 
 	<div class="callout">
@@ -821,13 +816,13 @@ flowchart LR
 	<header>
 		<span class="eyebrow">Featured</span>
 		<h2>Phases &amp; Skills</h2>
-		<p class="lede">Eleven user-facing slash-command skills (ten mandatory-pipeline + one optional, <code>/aid-housekeep</code>), all Shipped status. Each is a Thin-Router state machine (the SKILL.md router is at most ~360 lines) that delegates per-state logic to <code>references/state-*.md</code> files. (per feature-inventory.md, module-map.md)</p>
+		<p class="lede">Ten user-facing slash-command skills, all Shipped status. Each is a Thin-Router state machine (the SKILL.md router is at most ~360 lines) that delegates per-state logic to <code>references/state-*.md</code> files. (per feature-inventory.md, module-map.md)</p>
 	</header>
 
 	<div class="grid g2">
 
 		<div class="card plugin">
-			<div class="kicker">Phase 1 — Setup</div>
+			<div class="kicker">Setup — Config</div>
 			<div class="plugin-name">/aid-config</div>
 			<div class="plugin-body">View or update AID pipeline settings. Bare invocation shows all values in a table; first run auto-creates <code>.aid/settings.yml</code> from the template. Pass a dotted key to view and update one setting interactively.</div>
 			<div class="plugin-stats">
@@ -841,28 +836,27 @@ flowchart LR
 		</div>
 
 		<div class="card plugin">
-			<div class="kicker">Phase 2 — Discovery</div>
+			<div class="kicker">Phase 1 — Discovery</div>
 			<div class="plugin-name">/aid-discover</div>
 			<div class="plugin-body">Brownfield project discovery with built-in quality gate. GENERATE resolves a declared KB doc-set from <code>discovery.doc_set</code> (or synthesizes a default seed), runs a propose&rarr;confirm checkpoint, then dispatches discovery sub-agents data-driven from the confirmed set; it then reviews, collects user input, fixes issues, and gets approval.</div>
 			<div class="plugin-stats">
 				<span class="badge badge-ok">Shipped</span>
-				<span class="badge">11 reference files</span>
+				<span class="badge">8 reference files</span>
 			</div>
 			<dl>
 				<dt>States</dt><dd>GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE</dd>
 				<dt>Key outputs</dt><dd><code>.aid/knowledge/*.md</code> (the declared/derived KB doc-set)</dd>
 				<dt>Agents</dt><dd>5 discovery-* sub-agents + discovery-reviewer</dd>
-
 			</dl>
 		</div>
 
 		<div class="card plugin">
-			<div class="kicker">Phase 3 — Interview</div>
+			<div class="kicker">Phase 2 — Interview</div>
 			<div class="plugin-name">/aid-interview</div>
 			<div class="plugin-body">Adaptive requirements gathering through conversational interview. Builds REQUIREMENTS.md incrementally; supports a Lite Path for small work (routes to LITE-BUG-FIX / LITE-DOC / LITE-REFACTOR / LITE-FEATURE sub-paths).</div>
 			<div class="plugin-stats">
 				<span class="badge badge-ok">Shipped</span>
-				<span class="badge">20 reference files</span>
+				<span class="badge">19 reference files</span>
 			</div>
 			<dl>
 				<dt>States</dt><dd>FIRST-RUN → Q-AND-A → TRIAGE → {full or lite path}</dd>
@@ -872,7 +866,7 @@ flowchart LR
 		</div>
 
 		<div class="card plugin">
-			<div class="kicker">Phase 4 — Specify</div>
+			<div class="kicker">Phase 3 — Specify</div>
 			<div class="plugin-name">/aid-specify</div>
 			<div class="plugin-body">Technical specification through conversational refinement, one feature at a time. Acts as a tech lead — reads KB, Requirements, and codebase, proposes technical solutions, and builds the spec collaboratively with the developer.</div>
 			<div class="plugin-stats">
@@ -886,7 +880,7 @@ flowchart LR
 		</div>
 
 		<div class="card plugin">
-			<div class="kicker">Phase 5 — Plan</div>
+			<div class="kicker">Phase 4 — Plan</div>
 			<div class="plugin-name">/aid-plan</div>
 			<div class="plugin-body">Sequences feature SPECs into deliverables, each one a functional MVP that builds on the previous. Answers: in what order do we deliver, and does each delivery stand on its own?</div>
 			<div class="plugin-stats">
@@ -900,7 +894,7 @@ flowchart LR
 		</div>
 
 		<div class="card plugin">
-			<div class="kicker">Phase 6 — Detail</div>
+			<div class="kicker">Phase 5 — Detail</div>
 			<div class="plugin-name">/aid-detail</div>
 			<div class="plugin-body">Breaks deliverables into small, dependency-driven, typed tasks — each one a reviewable unit. Detects task types from SPEC signals and builds an execution graph per delivery with explicit dependencies and parallelism.</div>
 			<div class="plugin-stats">
@@ -914,12 +908,12 @@ flowchart LR
 		</div>
 
 		<div class="card plugin">
-			<div class="kicker">Phase 7 — Execute</div>
+			<div class="kicker">Phase 6 — Execute</div>
 			<div class="plugin-name">/aid-execute</div>
 			<div class="plugin-body">Implements tasks with a built-in two-tier review loop. Runs a parallel pool (PD-0..PD-6, default MaxConcurrent=5) with BFS failure-block-radius and graceful degradation. Per-task quick-check plus per-delivery quality gate.</div>
 			<div class="plugin-stats">
 				<span class="badge badge-ok">Shipped</span>
-				<span class="badge">9 reference files</span>
+				<span class="badge">8 reference files</span>
 			</div>
 			<dl>
 				<dt>States</dt><dd>EXECUTE → REVIEW → FIX → DELIVERY-GATE</dd>
@@ -928,9 +922,9 @@ flowchart LR
 		</div>
 
 		<div class="card plugin">
-			<div class="kicker">Phase 8 — Deploy</div>
+			<div class="kicker">Optional — Deploy</div>
 			<div class="plugin-name">/aid-deploy</div>
-			<div class="plugin-body">Packages completed deliveries into a release. Selects eligible deliveries, verifies the combined build, packages according to project infrastructure, generates release notes, and updates artifact statuses.</div>
+			<div class="plugin-body">Optional, on-demand end-of-pipeline Deliver skill (not a numbered phase). Packages completed deliveries into a release. Selects eligible deliveries, verifies the combined build, packages according to project infrastructure, generates release notes, and updates artifact statuses.</div>
 			<div class="plugin-stats">
 				<span class="badge badge-ok">Shipped</span>
 				<span class="badge">5 reference files</span>
@@ -941,9 +935,9 @@ flowchart LR
 		</div>
 
 		<div class="card plugin">
-			<div class="kicker">Phase 9 — Monitor</div>
+			<div class="kicker">Optional — Monitor</div>
 			<div class="plugin-name">/aid-monitor</div>
-			<div class="plugin-body">Observes production, classifies findings, and routes actions. Combines telemetry interpretation with triage — detects anomalies, performs root cause analysis, and routes bugs to aid-execute or change requests to aid-discover.</div>
+			<div class="plugin-body">Optional, on-demand end-of-pipeline Deliver skill (not a numbered phase; independent of /aid-deploy). Observes production, classifies findings, and routes actions. Combines telemetry interpretation with triage — detects anomalies, performs root cause analysis, and routes bugs to aid-execute or change requests to aid-discover.</div>
 			<div class="plugin-stats">
 				<span class="badge badge-ok">Shipped</span>
 				<span class="badge">3 reference files</span>
@@ -963,20 +957,6 @@ flowchart LR
 			</div>
 			<dl>
 				<dt>States</dt><dd>PREFLIGHT → STALE-CHECK → PROFILE → GENERATE → VALIDATE → MANUAL-CHECKLIST → FIX → APPROVAL → WRITEBACK → DONE</dd>
-			</dl>
-		</div>
-
-		<div class="card plugin">
-			<div class="kicker">Optional — Housekeeping</div>
-			<div class="plugin-name">/aid-housekeep</div>
-			<div class="plugin-body">Optional on-demand drift reconciliation. Runs three gated jobs in strict order — KB-DELTA (re-discover KB docs that drifted since the last approval) → SUMMARY-DELTA (regenerate this summary if the KB changed) → CLEANUP (sweep stale <code>.aid/</code> work-area artifacts). Each stage commits on an <code>aid/housekeep-*</code> branch; never pushes. Re-entrant: a stalled run resumes at the stalled stage. Not part of the mandatory pipeline.</div>
-			<div class="plugin-stats">
-				<span class="badge badge-ok">Shipped</span>
-				<span class="badge">5 reference files</span>
-			</div>
-			<dl>
-				<dt>States</dt><dd>PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE</dd>
-				<dt>Key scripts</dt><dd>housekeep-state.sh, branch-commit.sh, cleanup-classify.sh</dd>
 			</dl>
 		</div>
 
@@ -1159,7 +1139,7 @@ erDiagram
 		<p class="lede">AID ships no HTTP services or RPC endpoints. Contracts here means: skill slash-command signatures and state-machine contracts, script CLI signatures and exit codes, file-format contracts, subagent dispatch conventions, and the canonical-to-5-profile renderer contract. (per pipeline-contracts.md)</p>
 	</header>
 
-	<h3>Slash-command contracts (11 skills — 10 pipeline + 1 optional)</h3>
+	<h3>Slash-command contracts (10 skills)</h3>
 	<div class="tbl-wrap">
 		<table class="tbl">
 			<thead><tr><th>Skill</th><th>Signature</th><th>States</th><th>Side effects</th></tr></thead>
@@ -1174,7 +1154,6 @@ erDiagram
 				<tr><td><code>/aid-deploy</code></td><td><code>[work-NNN]</code></td><td>IDLE→SELECTING→VERIFYING→PACKAGING→DONE</td><td>Creates PR; updates delivery statuses</td></tr>
 				<tr><td><code>/aid-monitor</code></td><td><code>[work-NNN] [--since] [--package]</code></td><td>OBSERVE→CLASSIFY→ROUTE→DONE</td><td>Routes findings to execute or discover</td></tr>
 				<tr><td><code>/aid-summarize</code></td><td><code>(no args)</code></td><td>PREFLIGHT→…→APPROVAL→WRITEBACK→DONE</td><td>Writes <code>knowledge-summary.html</code></td></tr>
-					<tr><td><code>/aid-housekeep</code></td><td><code>[--cleanup-only] [--grade X]</code></td><td>PREFLIGHT→KB-DELTA→SUMMARY-DELTA→CLEANUP→DONE</td><td>Reconciles KB + summary, sweeps <code>.aid/</code>; commits per stage on <code>aid/housekeep-*</code> (never pushes)</td></tr>
 			</tbody>
 		</table>
 	</div>
@@ -1271,7 +1250,7 @@ flowchart LR
 		<div class="card">
 			<div class="kicker">Grade computation</div>
 			<h3>grade.sh — deterministic</h3>
-			<p><code>canonical/scripts/grade.sh</code> converts an issue list with severity tags into a letter grade (A+ through F). The <code>--non-functional</code> flag forces F. The grade is computed by the script, never by the reviewing agent, making it tamper-resistant. (per module-map.md)</p>
+			<p><code>canonical/scripts/grade.sh</code> (266 lines) converts an issue list with severity tags into a letter grade (A+ through F). The <code>--non-functional</code> flag forces F. The grade is computed by the script, never by the reviewing agent, making it tamper-resistant. (per module-map.md §4f)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">14 coding conventions</div>
@@ -1546,7 +1525,7 @@ flowchart TB
 					<td>Propose&rarr;confirm flow (SPEC feature-004 §3.1/§4): default path (accepting default is a no-op — no <code>discovery.doc_set</code> written); user-edit path (omission + addition honored verbatim; counts match). 9 checks</td>
 				</tr>
 				<tr style="font-weight:600;">
-					<td>24 suites</td>
+					<td>18 suites</td>
 					<td></td>
 					<td>bash / node / pwsh</td>
 					<td>All self-reporting via the shared <code>tests/lib/assert.sh</code> <code>test_summary</code> (<code>Tests passed: N</code> / <code>Tests failed: M</code>); aggregated by <code>tests/run-all.sh</code>, which exits non-zero if any suite fails</td>
@@ -1604,19 +1583,19 @@ flowchart TB
 
 	<div class="grid g2">
 		<div class="card">
-			<div class="kicker">README.md</div>
+			<div class="kicker">README.md — 388 lines</div>
 			<h3>Primary pitch document</h3>
 			<p>Eight sections with progressive disclosure: What is AID, Why AID (failure modes it removes), The Pipeline (Mermaid flowchart + 10 skills), The Knowledge Base (now a declared/derived doc-set), The Agent Model (3-tier diagram), Feedback Loops (11 formal loops), AID vs. SDD (8-row comparison), Using AID in your project (install instructions). (per repo-presentation.md)
 		</div>
 		<div class="card">
-			<div class="kicker">methodology/aid-methodology.md</div>
+			<div class="kicker">methodology/aid-methodology.md — 1,070 lines</div>
 			<h3>Load-bearing specification</h3>
 			<p>The complete methodology specification, version 3.1. Every skill and agent is derived from this document. It is read by humans, not by skills directly. It defines the phase model, feedback loops, phase gates, the human-AI Director/Orchestrator/Specialist roles, and the work-type taxonomy. (per project-structure.md §Methodology spec)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">docs/ folder</div>
 			<h3>Reference material</h3>
-			<p>Two files: <code>docs/faq.md</code> (frequently asked questions) and <code>docs/glossary.md</code> (term definitions). Supplements the domain-glossary KB doc. (per project-structure.md §Documentation)</p>
+			<p>Two files: <code>docs/faq.md</code> (61 lines — frequently asked questions) and <code>docs/glossary.md</code> (76 lines — term definitions). Supplements the domain-glossary KB doc. (per project-structure.md §Documentation)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">examples/ folder</div>

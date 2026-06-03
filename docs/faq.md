@@ -11,13 +11,13 @@ SDD covers spec→code. AID covers problem→production→maintenance. AID conta
 ### Is this just Waterfall rebranded?
 Yes — and that's the point. Waterfall's phases were sound. Waterfall failed because humans were too slow to execute them with rigor. Agile solved that by dropping the rigor. AI changes the economics: discovery takes hours not weeks, going back costs tokens not sprints. The rigor becomes viable again.
 
-### Do I need all 8 phases?
+### Do I need all six phases?
 No. Use what applies:
 - **Greenfield project with clear requirements?** Skip Discover, start at Interview.
 - **Quick bug fix?** Take the short path: Monitor → Execute → Deploy.
 - **Spike/prototype?** Use Discover → Specify → Execute. Skip planning.
 
-The phases are a menu, not a checklist. But know what you're skipping and why.
+The phases are a menu, not a checklist. The two Deliver skills — `aid-deploy` and `aid-monitor` — are optional and run on demand at the end of the pipeline; many projects ship by other means and never invoke them. But know what you're skipping and why.
 
 ### How do I start a new project?
 Run `/aid-config` first — regardless of whether it's greenfield or brownfield. Init scaffolds the Knowledge Base structure (16 empty templates), creates `AGENTS.md` and `CLAUDE.md` placeholders, and records project metadata. Once init is done, proceed to `/aid-discover` (existing codebase) or `/aid-interview` (new project).

@@ -15,6 +15,7 @@ changelog:
   - 2026-06-01: Post-merge update for work-001-add-providers (PRs #42/#43/#44) — 3 install trees → 5 (added copilot-cli, antigravity); generator scripts 10→12 .py; reconciled canonical-test-suite count to 18; mirror multiplier 4→6 byte-identity trees (7 physical copies incl. dogfood `.claude/`).
   - 2026-06-03: Targeted re-discovery for work-001-aid-housekeep (PR #49) — added optional `aid-housekeep` skill (canonical skill count 10→11), new `canonical/scripts/housekeep/` dir (branch-commit.sh, cleanup-classify.sh, housekeep-state.sh), and 5 new `tests/canonical/test-housekeep-*.sh` suites (canonical-suite count 18→24). aid-generate remains the maintainer-only `.claude/`-only skill (not counted in the canonical 11).
   - 2026-06-03: §9a T3-count strip — removed all hardcoded file/line counts (global snapshot, language breakdown numbers, per-skill SKILL.md line counts, per-script/per-suite line counts, individual file line counts). Replaced global snapshot with pointer to `.aid/generated/project-index.md`. Replaced stale Windows repo-root path and hardcoded branch name with durable references.
+  - 2026-06-03: methodology v3.2 — "In mandatory pipeline" table: aid-deploy/aid-monitor flipped Yes→No (optional); both are now optional, on-demand end-of-pipeline Deliver skills, not numbered phases.
 ---
 # Project Structure
 
@@ -288,8 +289,8 @@ Installed at `.claude/skills/`. Each has a `SKILL.md` Thin-Router (≤~360 lines
 | `aid-plan` | Yes | Sequence features into shippable deliveries |
 | `aid-detail` | Yes | Decompose into PR-sized typed tasks |
 | `aid-execute` | Yes | Implement + two-tier review |
-| `aid-deploy` | Yes | Ship delivery + PR |
-| `aid-monitor` | Yes | Production-finding classification |
+| `aid-deploy` | No (optional) | Optional end-of-pipeline Deliver skill — ship delivery + PR |
+| `aid-monitor` | No (optional) | Optional end-of-pipeline Deliver skill — production-finding classification |
 | `aid-summarize` | No (optional) | Optional offline HTML KB viewer |
 | `aid-housekeep` | No (optional) | Optional work-folder cleanup + KB/summary reconciliation (per-state references) — added PR #49 |
 | `aid-generate` (maintainer-only) | No (maintainer-only) | Render canonical → 5 profile trees (uses `scripts/*.py`, no `references/`) |
