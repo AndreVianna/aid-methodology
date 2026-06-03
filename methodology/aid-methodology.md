@@ -1060,18 +1060,6 @@ flowchart TB
 
 *The six numbered phases (Discover through Execute) form the mandatory sequential pipeline. Deploy and Monitor are optional end-of-pipeline Deliver skills — dashed boxes, dashed arrows — invoked on demand when the project's delivery model requires them. Neither is a forced sequential step after Execute; a project may skip one, both, or use them in any order.*
 
-<!-- TODO(maintainer): regenerate `methodology/images/2-comparison.png`.
-     Content is stale because the current image shows aid-deploy and aid-monitor as solid
-     numbered boxes labeled "Deploy" and "Monitor" in the Deliver group with a solid mandatory
-     arrow Exe → Dep → Mon, implying they are required numbered phases 7 and 8.
-     The correct shape (V3.2) has Deploy and Monitor as OPTIONAL, unnumbered end-of-pipeline
-     Deliver skills — dashed boxes and dashed/optional arrows from Execute to each, matching
-     the Mermaid diagrams above and in §6.
-     The regenerated image should match the §8 Mermaid diagram above: six numbered phases
-     (Init unnumbered, phases 1–6 numbered, Summarize unnumbered optional), with Deploy and
-     Monitor as dashed/optional nodes in the Deliver group with no numbers and dashed arrows
-     from Execute. The SDD vs. AID comparison content on the left side of the image is still
-     accurate and should be preserved. -->
 
 The forward path is the default; the eleven feedback loops (see §6) are the escape hatches. Brownfield projects enter at Discover; greenfield projects skip Discover and enter at Interview. `aid-config` runs once before the pipeline, and `aid-summarize` is an optional read-only viewer of the Knowledge Base. `aid-housekeep` runs off the pipeline entirely, on demand.
 
@@ -1187,7 +1175,52 @@ Both AID and SDD:
 
 ### Where We Diverge
 
-<!-- TODO(maintainer): regenerate `methodology/images/2-comparison.png` — see note in §8. -->
+```mermaid
+flowchart TB
+    classDef sdd  fill:#1E3A8A,stroke:#1E3A8A,color:#ffffff
+    classDef aid  fill:#166534,stroke:#166534,color:#ffffff
+    classDef del  fill:#4B5563,stroke:#4B5563,color:#ffffff,stroke-dasharray:5 5
+    classDef kb   fill:#92400E,stroke:#92400E,color:#ffffff
+
+    subgraph SDD["Spec-Driven Development"]
+        direction TB
+        S1["Write Spec"]:::sdd
+        S2["AI Agent\nimplements code"]:::sdd
+        S3["Human review"]:::sdd
+        S4["Ship"]:::sdd
+        S1 --> S2 --> S3 --> S4
+        S3 -. "re-spec from scratch" .-> S1
+    end
+
+    subgraph AID["AI-Assisted Development"]
+        direction TB
+        A0["aid-config\n(one-time setup)"]:::kb
+        A1["1 · aid-discover\n(brownfield)"]:::aid
+        A2["2 · aid-interview\n(requirements)"]:::aid
+        A3["3 · aid-specify\n(formal spec)"]:::aid
+        A4["4 · aid-plan\n(roadmap)"]:::aid
+        A5["5 · aid-detail\n(task breakdown)"]:::aid
+        A6["6 · aid-execute\n(build + review loop)"]:::aid
+        KB[("Knowledge Base\n(persists across sessions)")]:::kb
+        Dep["aid-deploy\n(optional)"]:::del
+        Mon["aid-monitor\n(optional)"]:::del
+
+        A0 --> A1 --> A2 --> A3 --> A4 --> A5 --> A6
+        A6 -. "on demand" .-> Dep
+        A6 -. "on demand" .-> Mon
+        Mon -. "bug fix" .-> A2
+        Mon -. "change request" .-> A2
+
+        A1 <--> KB
+        A2 <--> KB
+        A3 <--> KB
+        A4 <--> KB
+        A5 <--> KB
+        A6 <--> KB
+    end
+```
+
+*Left: SDD starts from a written spec and loops back to re-spec from scratch on changes. Right: AID begins with Discovery and a persistent Knowledge Base, uses two-level planning, eleven formal feedback loops, and optional Deliver skills (Deploy, Monitor) that feed post-production changes back into the pipeline.*
 
 | Dimension | SDD | AID |
 |-----------|-----|-----|
