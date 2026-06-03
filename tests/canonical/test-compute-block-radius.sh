@@ -300,6 +300,89 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# work-002 task-002 — B1..B5 regression cases
+# ---------------------------------------------------------------------------
+
+# B1: lite/recipe SPEC with a top-level "## Execution Graph" (no #### / no delivery)
+B1_PLAN="${TMPDIR_TESTS}/b1-lite.md"
+cat > "$B1_PLAN" <<'EOF'
+## Execution Graph
+### Task Dependencies
+| Task | Depends On |
+|------|------------|
+| task-001 | — (none) |
+| task-002 | task-001 |
+| task-003 | task-002 |
+EOF
+B1_OUT=$("$SCRIPT" --failed-task 001 --plan-file "$B1_PLAN" 2>/dev/null); B1_RC=$?
+if [[ "$B1_RC" -eq 0 && "$B1_OUT" == "task-002
+task-003" ]]; then
+    pass "B1 lite '## Execution Graph' parses (fail task-001 → task-002,task-003)"
+else
+    fail "B1 lite top-level graph — rc=$B1_RC out='$B1_OUT'"
+fi
+
+# B3: a DECLARED leaf (no deps, no dependents) → empty radius, exit 0, NO warn
+B3_PLAN="${TMPDIR_TESTS}/b3-leaf.md"
+cat > "$B3_PLAN" <<'EOF'
+## Execution Graph
+| Task | Depends On |
+|------|------------|
+| task-001 | — |
+| task-002 | task-001 |
+| task-003 | — |
+EOF
+B3_OUT=$("$SCRIPT" --failed-task 003 --plan-file "$B3_PLAN" 2>"${TMPDIR_TESTS}/b3.err"); B3_RC=$?
+assert_exit_eq "$B3_RC" 0 "B3 declared leaf task exits 0"
+[[ -z "$B3_OUT" ]] && pass "B3 declared leaf → empty radius" || fail "B3 leaf radius not empty — '$B3_OUT'"
+assert_file_not_contains "${TMPDIR_TESTS}/b3.err" "not found" "B3 declared leaf does NOT warn 'not found'"
+
+# B2: a GENUINELY ABSENT task → empty radius, exit 0, WITH warn
+B2_OUT=$("$SCRIPT" --failed-task 099 --plan-file "$B3_PLAN" 2>"${TMPDIR_TESTS}/b2.err"); B2_RC=$?
+assert_exit_eq "$B2_RC" 0 "B2 absent task succeeds with empty set (exit 0, not 2)"
+[[ -z "$B2_OUT" ]] && pass "B2 absent task → empty radius" || fail "B2 absent radius not empty — '$B2_OUT'"
+assert_file_contains "${TMPDIR_TESTS}/b2.err" "not found" "B2 absent task warns to stderr"
+
+# B5: task-001 must NOT prefix-match task-0010 (exact whole-line node match)
+B5_PLAN="${TMPDIR_TESTS}/b5-wide.md"
+cat > "$B5_PLAN" <<'EOF'
+## Execution Graph
+| Task | Depends On |
+|------|------------|
+| task-0010 | — |
+| task-0011 | task-0010 |
+EOF
+"$SCRIPT" --failed-task 1 --plan-file "$B5_PLAN" 2>"${TMPDIR_TESTS}/b5.err" >/dev/null
+assert_file_contains "${TMPDIR_TESTS}/b5.err" "not found" "B5 task-001 not satisfied by task-0010 (no prefix match)"
+
+# B4: multi-delivery scoping — both deliveries declare task-001
+B4_PLAN="${TMPDIR_TESTS}/b4-multi.md"
+cat > "$B4_PLAN" <<'EOF'
+### delivery-001
+#### Execution Graph
+| Task | Depends On |
+|------|------------|
+| task-001 | — |
+| task-002 | task-001 |
+### delivery-002
+#### Execution Graph
+| Task | Depends On |
+|------|------------|
+| task-001 | — |
+| task-002 | task-001 |
+| task-003 | task-002 |
+EOF
+B4_D1=$("$SCRIPT" --failed-task 001 --plan-file "$B4_PLAN" --delivery-id 001 2>/dev/null)
+[[ "$B4_D1" == "task-002" ]] && pass "B4 delivery-001 scoped (fail task-001 → task-002 only, no d2 bleed)" \
+    || fail "B4 delivery-001 scoping — got '$B4_D1' (expected just task-002)"
+B4_D2=$("$SCRIPT" --failed-task 001 --plan-file "$B4_PLAN" --delivery-id 2 2>/dev/null)
+[[ "$B4_D2" == "task-002
+task-003" ]] && pass "B4 delivery-002 scoped via unpadded id (→ task-002,task-003)" \
+    || fail "B4 delivery-002 scoping — got '$B4_D2'"
+"$SCRIPT" --failed-task 001 --plan-file "$B4_PLAN" >/dev/null 2>&1
+assert_exit_eq $? 5 "B4 multi-delivery PLAN without --delivery-id errors (exit 5)"
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 test_summary

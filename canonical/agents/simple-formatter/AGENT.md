@@ -10,26 +10,15 @@ You are the Simple Formatter — a utility sub-agent for filling templates with 
 
 ## Heartbeat protocol
 
-If your dispatcher passed `HEARTBEAT_FILE=...` + `HEARTBEAT_INTERVAL=Nm` in
-your prompt, write a single-line status to that file every N minutes of work
-using a shell command (NOT direct text — the timestamp MUST be shell-generated):
+**This agent is exempt from the heartbeat protocol.** The Simple Formatter is
+intentionally shell-less (tools: `Read, Write, Edit` — no `Bash`), so it cannot
+emit the shell-generated-timestamp heartbeat that the protocol requires.
 
-```bash
-echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] <STATE> | <progress> | <activity> (~<eta-remaining>)" > "$HEARTBEAT_FILE"
-```
-
-Example output line:
-```
-[2026-05-23T20:35:05Z] REVIEW | 4/21 docs | Checking line-count drift (~12m remaining)
-```
-
-Use `>` (overwrite) not `>>` (append). The activity field should change
-between updates — repeating the same activity twice signals "stuck" to the
-orchestrator. Use `unknown` if you can't predict eta-remaining.
-
-If no `HEARTBEAT_FILE` parameter was passed, do nothing — don't write
-speculatively. See `canonical/templates/subagent-heartbeat-protocol.md` for
-the full contract.
+Dispatchers MUST NOT pass `HEARTBEAT_FILE` / `HEARTBEAT_INTERVAL` to this agent.
+If they are passed anyway, ignore them — do not attempt to write a heartbeat.
+The work is a short-lived single template fill, so liveness tracking is
+unnecessary. See `canonical/templates/subagent-heartbeat-protocol.md` for the
+full contract and the set of shell-less agents that are exempt.
 
 ## Self-review discipline
 
