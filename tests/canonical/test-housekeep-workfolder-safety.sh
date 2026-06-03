@@ -10,13 +10,13 @@
 # Test scenarios:
 #   Unit 1:  (i)✓ (ii)✓ → offered Tier-1, gate=offer, default_checked=false
 #   Unit 2:  (i)✓ (ii)✗ → emitted with gate=explicit-confirm, default_checked=false
-#   Unit 3:  (i)✗ (unmerged SHA) → NOT offered (not in output)
-#   Unit 4:  (i) no STATE.md → NOT offered (conservative fail)
-#   Unit 5:  (i) no PR/no SHA in STATE.md → NOT offered (conservative fail)
-#   Unit 6:  Active folder (--active-work) → NEVER offered
-#   Unit 7:  Active folder via (c) non-Deployed status → NEVER offered
-#   Unit 8:  Active folder via (b) current branch matching → NEVER offered
-#   Unit 9:  Active folder via (a) ## Housekeep Status present → NEVER offered
+#   Unit 3:  (i)✗ (unmerged SHA) → offered, gate=explicit-confirm (merge unverified)
+#   Unit 4:  no STATE.md → offered, gate=explicit-confirm (user decides)
+#   Unit 5:  no PR/no SHA in STATE.md → offered, gate=explicit-confirm (merge unverified)
+#   Unit 6:  --active-work caller exclusion → NEVER offered (still honored)
+#   Unit 7:  non-Deployed (Executing) status → offered, explicit-confirm (rule (c) REMOVED)
+#   Unit 8:  current-branch work folder (rule (b)) → NEVER offered (the one hard skip)
+#   Unit 9:  stale ## Housekeep Status block in a work folder → offered (rule (a) REMOVED)
 #   Unit 10: gh absent (SKIP guard) — command -v gh returns nonzero → no gh calls
 #
 # Usage:
@@ -280,7 +280,7 @@ fi
 
 # ===========================================================================
 echo ""
-echo "=== Unit 3: (i)✗ (unmerged SHA) → NOT offered ==="
+echo "=== Unit 3: (i)✗ (unmerged SHA) → still offered (explicit-confirm; merge unverified) ==="
 
 REPO3=$(mktemp -d)
 CLEANUP_DIRS+=("$REPO3")
@@ -300,18 +300,13 @@ make_work_state "$REPO3" "work-097-unmerged" "Deployed" "$SHA3" "merged"
 OUT3=$(run_classify "$REPO3" --active-work "NONE_ACTIVE")
 log "OUT3=$OUT3"
 
-assert_not_candidate() {
-    local output="$1"
-    local path_suffix="$2"
-    local label="$3"
-    if echo "$output" | grep -qF "$path_suffix"; then
-        fail "${label} — unexpected candidate found: '$path_suffix'"
-    else
-        pass "$label"
-    fi
-}
-
-assert_not_candidate "$OUT3" "work-097-unmerged" "U3: unmerged folder not offered"
+# New design: an unmerged folder is NOT silently hidden — it is offered as Tier-1
+# explicit-confirm with the "merge unverified" caveat, so the user decides.
+if echo "$OUT3" | grep -F "work-097-unmerged" | grep -q "|1|.*|explicit-confirm:"; then
+    pass "U3: unmerged folder offered as Tier-1 explicit-confirm (merge unverified; user decides)"
+else
+    fail "U3: unmerged folder NOT offered (should be offered for explicit user confirmation)"
+fi
 
 # ===========================================================================
 echo ""
@@ -330,18 +325,18 @@ echo "some file" > "${REPO4}/.aid/work-096-nostatemd/notes.txt"
 OUT4=$(run_classify "$REPO4" --active-work "NONE_ACTIVE")
 log "OUT4=$OUT4"
 
-# The work FOLDER should not appear as Tier-1 candidate.
-# (Individual files inside may appear as Tier-2 if they're loose, but
-# the folder itself must not be offered wholesale as S6.)
-if echo "$OUT4" | grep -F "work-096-nostatemd" | grep -q "|1|"; then
-    fail "U4: work-096-nostatemd emitted as Tier-1 (should not be offered with no STATE.md)"
+# New design: every work folder is OFFERED (never silently hidden) — "the user has
+# the last word". A folder with no STATE.md → merge unverified → offered as Tier-1
+# explicit-confirm so the user can confirm or decline.
+if echo "$OUT4" | grep -F "work-096-nostatemd" | grep -q "|1|.*|explicit-confirm:"; then
+    pass "U4: work-096-nostatemd offered as Tier-1 explicit-confirm (no STATE.md; user decides)"
 else
-    pass "U4: work-096-nostatemd not offered as Tier-1 (no STATE.md → conservative fail)"
+    fail "U4: work-096-nostatemd NOT offered (should be offered for explicit user confirmation)"
 fi
 
 # ===========================================================================
 echo ""
-echo "=== Unit 5: No PR / no SHA in STATE.md → NOT offered ==="
+echo "=== Unit 5: No PR / no SHA in STATE.md → offered (explicit-confirm) ==="
 
 REPO5=$(mktemp -d)
 CLEANUP_DIRS+=("$REPO5")
@@ -355,10 +350,10 @@ make_work_state "$REPO5" "work-095-nopr" "Deployed" ""
 OUT5=$(run_classify "$REPO5" --active-work "NONE_ACTIVE")
 log "OUT5=$OUT5"
 
-if echo "$OUT5" | grep -F "work-095-nopr" | grep -q "|1|"; then
-    fail "U5: work-095-nopr emitted as Tier-1 (should not be offered with no PR/SHA)"
+if echo "$OUT5" | grep -F "work-095-nopr" | grep -q "|1|.*|explicit-confirm:"; then
+    pass "U5: work-095-nopr offered as Tier-1 explicit-confirm (no PR/SHA → merge unverified; user decides)"
 else
-    pass "U5: work-095-nopr not offered as Tier-1 (no PR/SHA → conservative fail)"
+    fail "U5: work-095-nopr NOT offered (should be offered for explicit user confirmation)"
 fi
 
 # ===========================================================================
@@ -389,7 +384,7 @@ fi
 
 # ===========================================================================
 echo ""
-echo "=== Unit 7: Active folder via (c) non-Deployed STATUS → NEVER offered ==="
+echo "=== Unit 7: non-Deployed (Executing) STATUS → still offered (rule (c) removed) ==="
 
 REPO7=$(mktemp -d)
 CLEANUP_DIRS+=("$REPO7")
@@ -397,16 +392,18 @@ BARE7=$(make_git_repo_with_origin "$REPO7")
 CLEANUP_BARE+=("$BARE7")
 make_aid_dir "$REPO7"
 
-# STATUS is "Executing" → check (c) triggers, folder is active
+# Rule (c) ("Status != Deployed → hide") was REMOVED — the user has the last word.
+# An Executing folder (no PR) → merge unverified → offered as explicit-confirm, with
+# the STATE surfaced in the prompt so the user can decline in-progress work.
 make_work_state "$REPO7" "work-093-executing" "Executing" ""
 
 OUT7=$(run_classify "$REPO7")
 log "OUT7=$OUT7"
 
-if echo "$OUT7" | grep -F "work-093-executing" | grep -q "|1|"; then
-    fail "U7: Executing-status folder emitted as Tier-1 (must be excluded by rule (c))"
+if echo "$OUT7" | grep -F "work-093-executing" | grep -q "|1|.*|explicit-confirm:"; then
+    pass "U7: Executing folder offered as Tier-1 explicit-confirm (rule c removed; user decides)"
 else
-    pass "U7: Executing-status folder not offered as Tier-1 (rule c)"
+    fail "U7: Executing folder NOT offered (should be offered for explicit user confirmation)"
 fi
 
 # ===========================================================================
@@ -440,7 +437,7 @@ fi
 
 # ===========================================================================
 echo ""
-echo "=== Unit 9: Active folder via (a) ## Housekeep Status block → NEVER offered ==="
+echo "=== Unit 9: stale ## Housekeep Status block in a work folder → still offered (rule (a) removed) ==="
 
 REPO9=$(mktemp -d)
 CLEANUP_DIRS+=("$REPO9")
@@ -478,9 +475,9 @@ OUT9=$(run_classify "$REPO9")
 log "OUT9=$OUT9"
 
 if echo "$OUT9" | grep -F "work-091-housekeep" | grep -q "|1|"; then
-    fail "U9: Housekeep-Status folder emitted as Tier-1 (must be excluded by rule (a))"
+    pass "U9: folder with a stale ## Housekeep Status block offered as Tier-1 (rule a removed; user decides)"
 else
-    pass "U9: Housekeep-Status folder not offered as Tier-1 (rule a)"
+    fail "U9: folder NOT offered (rule (a) removal should let it be offered for confirmation)"
 fi
 
 # ===========================================================================

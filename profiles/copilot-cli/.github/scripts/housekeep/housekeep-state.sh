@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 # housekeep-state.sh — read/write individual fields in the ## Housekeep Status
-# block of a work-area STATE.md and resolve the resume target for /aid-housekeep.
+# block of the /aid-housekeep run-state file and resolve the resume target.
+#
+# The run-state file is project-level and transient:
+# `.aid/.temp/HOUSEKEEP_STATE_<YYYYMMDDHHMM>.md` (gitignored; created on a fresh
+# run, removed by the skill's DONE state). It is NOT a work-area STATE.md — the
+# script is location-agnostic and operates on whatever path --state names.
 #
 # Purpose:
 #   Provides deterministic read/write access to the nine `**Field:** value` lines
-#   inside `## Housekeep Status` in a work-area STATE.md. Also resolves the
-#   re-entry target for a resumed /aid-housekeep run by implementing the six-row
-#   resume-detection table (feature-001 SPEC § "Resume detection").
+#   inside `## Housekeep Status` in the run-state file (created on first --write).
+#   Also resolves the re-entry target for a resumed /aid-housekeep run by
+#   implementing the six-row resume-detection table (feature-001 SPEC § "Resume detection").
 #
 #   No yq/python dependency — uses bash + grep/sed/awk only.
 #
@@ -43,7 +48,7 @@ set -euo pipefail
 # Helpers
 # ---------------------------------------------------------------------------
 usage() {
-    sed -n '2,36p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,43p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 die() { echo "ERROR: housekeep-state.sh: $*" >&2; exit "${2:-1}"; }
@@ -109,8 +114,27 @@ if [[ "$MODE" == "read" ]]; then
     [[ -z "$FIELD" ]] && die "--field is required with --read" 2
 fi
 
-# Check file existence for all modes (--write will create the section but needs the file)
-[[ ! -f "$STATE_FILE" ]] && die "STATE.md not found: $STATE_FILE" 1
+# File-existence handling. The state file is the project-level housekeep run-state
+# (.aid/.temp/HOUSEKEEP_STATE_<ts>.md), which does NOT exist on a fresh run:
+#   - write : create the file (+ parent dir) if absent — fresh-run init.
+#   - read  : absent file → print empty value, exit 0.
+#   - resume: absent file → resolve as if no ## Housekeep Status section (row 1/2).
+if [[ ! -f "$STATE_FILE" ]]; then
+    case "$MODE" in
+        write)
+            mkdir -p "$(dirname "$STATE_FILE")" 2>/dev/null || true
+            : > "$STATE_FILE" || die "cannot create STATE file: $STATE_FILE" 1
+            ;;
+        read)
+            echo ""
+            exit 0
+            ;;
+        resume)
+            if [[ "$CLEANUP_ONLY" -eq 1 ]]; then echo "CLEANUP"; else echo "PREFLIGHT"; fi
+            exit 0
+            ;;
+    esac
+fi
 
 # ---------------------------------------------------------------------------
 # Constants
