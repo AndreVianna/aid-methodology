@@ -59,8 +59,9 @@ Must
 - [ ] **NFR4** — Given the skill runs, then `SKILL.md` is a thin-router with state-entry
   banners + "you are here" map consistent with the other `/aid-*` skills, and the new
   `tests/canonical/` suites for housekeep's deterministic logic are wired into `run-all.sh`.
-  (The suites themselves are authored with the features that own the logic — feature-002
-  detection + path→doc map, feature-004 cleanup classification — per NFR5.)
+  (The suites themselves are authored with the features that own the deterministic logic —
+  feature-004 cleanup classification; feature-002's KB reconciliation is agent-driven with no
+  unit suite — per NFR5.)
 
 ---
 
@@ -68,8 +69,8 @@ Must
 
 > Scope note: this feature delivers the **skeleton** — the `/aid-housekeep` thin-router
 > `SKILL.md`, its state-machine wiring, the run-state contract, the gate/commit/resume
-> machinery, argument routing, and distribution. The **stage LOGIC** (KB delta detection +
-> path→doc mapping, summary reconciliation, cleanup classification) is owned by
+> machinery, argument routing, and distribution. The **stage LOGIC** (agent-driven KB
+> reconciliation, summary reconciliation, cleanup classification) is owned by
 > features 002 / 003 / 004, which plug into the contracts defined here. Where a state's
 > body is owned by another feature, this spec defines the *interface* (what the state must
 > read/write, when it passes its gate, what it commits) and marks the body
@@ -142,15 +143,14 @@ only start when the upstream stage's row reads `passed` or `skipped`. They are w
 the stage-owning features (002/003/004); this feature defines the field names and the
 gate-check semantics that read them.
 
-#### C-3. KB approval baseline (cross-feature dependency — NOT this feature's writer)
+#### C-3. KB-DELTA dispatch (cross-feature — NOT this feature's body)
 
-feature-002 introduces `**Approved-At-Commit:**` in `.aid/knowledge/STATE.md` (REQUIREMENTS.md
-FR1 / D1) — the `master` SHA recorded at KB approval, used to compute the delta. **This
-feature does not read or write it.** It is named here only so 002 has a defined home: the
-existing `**User Approved:**` / `**Last KB Review:**` lines at the top of
-`.aid/knowledge/STATE.md` (see `### Discovery State` header block) are the sibling fields it
-joins. The skeleton's KB-DELTA state simply dispatches into feature-002's body and reads back
-its `**KB Stage:**` result.
+The skeleton's KB-DELTA state dispatches into feature-002's **agent-driven** body and reads
+back its `**KB Stage:**` result. (The former `**Approved-At-Commit:**` baseline field + the D1
+edit to `/aid-discover` were **removed in the 2026-06-02 agent-driven pivot** — KB
+reconciliation is now content-driven analysis with git as a hint, so there is no SHA-baseline
+field for any feature to write; the agent uses the existing `**Last KB Review:**` date as a
+soft hint.)
 
 #### C-4. Branch-naming contract
 
@@ -389,9 +389,9 @@ This feature owns the deterministic-logic suites for the **skeleton**:
   `aid/housekeep-*` branch, makes exactly one commit, and never calls `git push` (assert no
   remote interaction).
 
-The **stage-logic** suites (delta detection + path→doc mapping = feature-002; cleanup
-classification + work-folder safety = feature-004) are authored with those features per NFR5,
-not here.
+The **stage-logic** suites (cleanup classification + work-folder safety = feature-004) are
+authored with that feature per NFR5, not here; feature-002's KB reconciliation is agent-driven
+(analysis), so it has no unit suite.
 
 ### Sections marked N/A (this domain)
 
@@ -408,11 +408,12 @@ not here.
 
 ### Cross-feature contracts (what 002 / 003 / 004 plug into)
 
-- **feature-002 (KB delta)** authors the body of `references/state-kb-delta.md`; on exit it
-  MUST write `**KB Stage:** passed|skipped|stalled` in `## Housekeep Status`, reach a fresh
-  `**User Approved:** yes` for the `passed` case, write `**Approved-At-Commit:**` to
-  `.aid/knowledge/STATE.md`, and own the C2 offline-permission gate. It inherits the
-  scaffold's `## Dispatch Protocol (L1+L2+L3)` for its sub-agent dispatch.
+- **feature-002 (KB reconciliation)** authors the body of `references/state-kb-delta.md`
+  (agent-driven — inspect repo↔KB, git as a hint); on exit it MUST write
+  `**KB Stage:** passed|skipped|stalled` in `## Housekeep Status` and reach a fresh
+  `**User Approved:** yes` for the `passed` case (via `/aid-discover`'s gate). It inherits the
+  scaffold's `## Dispatch Protocol (L1+L2+L3)` for its sub-agent dispatch. (No
+  `**Approved-At-Commit:**` write and no hard offline gate — removed in the pivot.)
 - **feature-003 (summary delta)** authors `references/state-summary-delta.md`; writes
   `**Summary Stage:** passed|skipped|stalled`; delegates to `/aid-summarize` STALE-CHECK + gate.
 - **feature-004 (cleanup)** authors `references/state-cleanup.md`; writes `**Cleanup Stage:**

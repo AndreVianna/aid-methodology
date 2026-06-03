@@ -6,7 +6,7 @@
 |------|--------|--------|
 | 2026-06-02 | Feature identified from REQUIREMENTS.md §5 (FR1, FR2), §7 (C2), §8 (D1) | /aid-interview |
 | 2026-06-02 | Q1 resolved: delegation via synthesized Q&A/IMPEDIMENT entry (existing re-entry, not a new entrypoint); naming disambiguated (path→doc scoping map) | /aid-interview (cross-reference) |
-| 2026-06-02 | Technical Specification authored (detect-delta.sh CLI/exit contract, path→doc scoping map, synthesized Q&A delegation, Approved-At-Commit baseline + D1 edit, gate output, offline/bootstrap, tests) | /aid-specify |
+| 2026-06-02 | Technical Specification authored (detect-delta.sh CLI/exit contract, path→doc scoping map, synthesized Q&A delegation, Approved-At-Commit baseline + D1 edit, gate output, offline/bootstrap, tests) — **SUPERSEDED by the 2026-06-02 agent-driven pivot below** | /aid-specify |
 | 2026-06-02 | FIX (review C+→re-gate): no-resolvable-owner branch in scope-delta (MEDIUM); baseline-ref reconciliation origin/master vs HEAD (LOW); Q&A cite 541-546 (LOW); build-project-index path cite (MINOR) | /aid-specify (review) |
 | 2026-06-02 | **Design pivot — agent-driven KB reconciliation.** Technical Specification rewritten: KB detection/scoping is now agent analysis (prose), not deterministic scripts. REMOVED `detect-delta.sh`, `scope-delta.sh`, the path→doc scoping map, the `Approved-At-Commit:` baseline field, and the D1 edit to `/aid-discover`. Git history is an optional hint (C2), not a boundary; no hard offline gate. The synthesized `Impact: Required` Q&A delegation to `/aid-discover`'s targeted re-entry STAYS (gate reuse). Rule: scripts only for deterministic / eliminate-subjectivity work; analysis→agent prose. | /aid-execute (loopback) |
 
@@ -44,12 +44,14 @@ minimal and reuses the proven re-entry rather than adding a new scoped-dispatch 
 
 ## User Stories
 
-- As an AID maintainer, I want the skill to find exactly what changed on `master` since the
-  KB was approved so that I refresh only the affected docs, not everything.
-- As an AID maintainer, I want to see and adjust the proposed refresh scope before anything
-  runs so that I stay in control of what gets re-discovered.
-- As an AID maintainer, I want detection anchored on a commit (not a fuzzy date) so that no
-  change is missed or double-counted.
+- As an AID maintainer, I want the agent to find where the KB has drifted from the **actual
+  repo** (code/data/docs) — not just what git shows — so that stale or subtly-wrong KB claims
+  get corrected, not only the recently-changed ones.
+- As an AID maintainer, I want to see and adjust the proposed refresh scope and corrections
+  before anything runs so that I stay in control of what gets re-discovered.
+- As an AID maintainer, I want the agent to use its judgment over real content (with git
+  history as a hint, not a boundary) so that drift a mechanical path→doc rule would miss is
+  still caught.
 
 ## Priority
 
@@ -57,19 +59,22 @@ Must
 
 ## Acceptance Criteria
 
-- [ ] **AC1** — Given a KB approved at commit `X` with merges to `origin/master` since, when
-  the skill runs, then it fetches and reports the changed paths from `X..origin/master`.
-- [ ] **AC2** — Given no `Approved-At-Commit:` recorded, when the skill runs, then it falls
-  back to the approval date and records a SHA at the next approval.
-- [ ] **AC3** — Given the fetch fails, when the skill runs, then it halts and requests
-  explicit permission before diffing local `master`; without permission it does not proceed.
-- [ ] **AC4** — Given a delta, when the skill scopes it, then it auto-maps changed paths to
-  owning docs/sub-agents, shows the scope for confirm/adjust, dispatches only those
-  sub-agents through `/aid-discover` REVIEW→APPROVAL, ending in `User Approved: yes`.
-- [ ] **AC5** — Given no delta, when the KB stage runs, then it reports "current," dispatches
-  no sub-agents, and advances.
-- [ ] **D1** — Given a KB approval (via `/aid-discover` or housekeep), when the writeback
-  runs, then `Approved-At-Commit:` is set to the current `master` SHA in `knowledge/STATE.md`.
+- [ ] **AC1 — Content-driven reconciliation.** Given a KB out of sync with the repo, when the
+  KB stage runs, then the agent inspects actual repo content (code/data/docs) — using git
+  history since `Last KB Review` as an optional starting hint, not a boundary — and identifies
+  the drifted KB docs/areas, including drift not attributable to a recent git change.
+- [ ] **AC2 — Scope proposal + confirm.** Given identified drift, when before any KB change,
+  then the agent presents the affected docs + proposed corrections for confirm-and-adjust
+  (NFR3 transparency).
+- [ ] **AC3 — Delegated re-approval.** Given a confirmed scope, when the agent applies it, then
+  it drives `/aid-discover`'s targeted re-discovery → REVIEW → (Q&A/FIX) → APPROVAL to a fresh
+  `**User Approved:** yes` (reusing the gate; e.g. via a synthesized `Impact: Required` Q&A
+  entry naming the affected docs). No `/aid-discover` skill edit.
+- [ ] **AC4 — No-drift no-op.** Given the KB already matches the repo, when the KB stage runs,
+  then it reports "current," makes no changes, writes `**KB Stage:** skipped`, and advances (NFR2).
+- [ ] **AC5 — Offline tolerance.** Given no network, when the KB stage runs, then the agent
+  proceeds from local state / content inspection (git fetch is a best-effort hint) — it does
+  not hard-fail.
 
 ---
 

@@ -234,10 +234,9 @@ shared helper.
   reads the `**KB Stage:**` gate) and `canonical/scripts/housekeep/branch-commit.sh`
   (per-stage commit, never push).
 
-**No new scripts (decision + justification).** Unlike feature-002 (which owns
-`detect-delta.sh` / `scope-delta.sh` because its git-delta and path→doc logic is genuinely
-new) and feature-004 (cleanup classification), feature-003 has **no new deterministic
-algorithm**: staleness is `stale-check.sh`, grading is `grade-summary.sh` + `manual-checklist.sh`,
+**No new scripts (decision + justification).** Unlike feature-004 (which owns a
+cleanup-classification script), feature-003 has **no new deterministic algorithm** (and
+neither does feature-002 after its agent-driven pivot — its KB reconciliation is agent prose): staleness is `stale-check.sh`, grading is `grade-summary.sh` + `manual-checklist.sh`,
 gate-writing is feature-001's `housekeep-state.sh`, committing is feature-001's
 `branch-commit.sh`. The only logic added is the three-way result classification, which is a
 handful of filesystem reads in the prose body, not a reusable script. Adding a wrapper script
@@ -248,9 +247,9 @@ zero new `canonical/scripts/`.**
 
 **Decision — no dedicated canonical test suite for this feature; coverage rides on
 `/aid-summarize`'s existing suites — justified.** NFR5 scopes the canonical-suite requirement
-to *"the new deterministic logic — delta detection, path→KB-doc mapping, cleanup
-classification, and work-folder safety rules"* (REQUIREMENTS.md NFR5; feature-001 SPEC §
-Testing lists the owning features as 002 and 004 — feature-003 is **not** named). This feature
+to *"the new deterministic logic — the branch/commit safety guard, run-state I/O + resume,
+and the cleanup classification + work-folder safety rules"* (REQUIREMENTS.md NFR5; feature-001
+SPEC § Testing lists the owning features as 001 and 004 — feature-003 is **not** named). This feature
 adds **none** of those: the deterministic staleness decision is already covered by
 `/aid-summarize`'s own test suite for `stale-check.sh`, and the two-grade gate by its
 `grade-summary.sh`/`manual-checklist.sh` suites (the existing `tests/canonical/test-*.sh`

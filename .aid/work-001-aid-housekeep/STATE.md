@@ -61,9 +61,9 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| delivery-001 | Detailed (re-gate pending) | 5 (task-001..005) | KB Reconciliation MVP — feature-001 + feature-002 (agent-driven; NO D1 edit, NO detect/scope scripts). KB-DELTA functional; summary/cleanup ship as stub no-ops. |
-| delivery-002 | Detailed (re-gate pending) | 1 (task-006) | Summary Reconciliation — feature-003. Depends on delivery-001. |
-| delivery-003 | Detailed (re-gate pending) | 4 (task-007..010) | .aid/ Cleanup — feature-004; enables --cleanup-only. Depends on delivery-001. |
+| delivery-001 | Detailed (A+, agent-driven) | 5 (task-001..005) | KB Reconciliation MVP — feature-001 + feature-002 (agent-driven; NO D1 edit, NO detect/scope scripts). KB-DELTA functional; summary/cleanup ship as stub no-ops. |
+| delivery-002 | Detailed (A+, agent-driven) | 1 (task-006) | Summary Reconciliation — feature-003. Depends on delivery-001. |
+| delivery-003 | Detailed (A+, agent-driven) | 4 (task-007..010) | .aid/ Cleanup — feature-004; enables --cleanup-only. Depends on delivery-001. |
 
 ## Tasks Status
 
@@ -141,3 +141,4 @@ _none yet_
 | 2026-06-02 | Detail | A+ | /aid-detail: 16 tasks. d1=11 (C→A+ FIX: task-008 REFACTOR→IMPLEMENT + criteria; task-011 dep gap), d2=1 (A+ clean), d3=4 (B+→A+ FIX: task-016 dep decl). Execution graphs written to PLAN.md per delivery. |
 | 2026-06-02 | Detail restructure | A+ | User overengineering review → 16→13 tasks: dropped parse-args.sh (args in SKILL.md prose, no AID skill ships a CLI arg-parser; feature-001 SPEC updated); merged stub bodies into router (task-003); merged distribution TEST into integration (task-008). Re-gated A+. Done in worktree `.claude/worktrees/work-001-aid-housekeep`. Next: /aid-execute. |
 | 2026-06-02 | Execute wave-1 + design pivot | — | Wave-1 (old 001/002/006) implemented + quick-checked clean. Then user review during execute → **agent-driven pivot**: KB stage is agent reconciliation (inspect repo↔KB, git=hint), NOT scripts. Dropped detect-delta.sh/scope-delta.sh + D1/Approved-At-Commit (reverted). 13→10 tasks; REQUIREMENTS FR1/FR2 + feature-002 SPEC + state-kb-delta.md rewritten agent-driven. Re-gate pending. |
+| 2026-06-02 | Re-gate (agent-driven pivot) | A+ | Pivot re-gated A+ (executable surface clean; fixed doc-drift: feature-002 AC block + 5 sibling-SPEC cross-refs + changelog marker). Merged origin/master (work-002). Next: finalize task-003/004, build task-005, delivery-001 gate. |

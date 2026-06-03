@@ -317,8 +317,8 @@ When reached via `--cleanup-only` (feature-001 resume table row 2: PREFLIGHT →
 `**Mode:** cleanup-only`, KB/Summary rows left `—`), the CLEANUP body MUST NOT read or assume
 any KB-delta or summary run-state. Its inputs are only: the filesystem scan (S1–S6), git
 (`ls-files`/`check-ignore`/`merge-base`), `gh` (signal (i) PR check), and each work folder's
-own `STATE.md`. It does **not** read `.aid/knowledge/STATE.md` `**Approved-At-Commit:**` (that
-is feature-002's), nor any `**Summary Stage:**` field. The only `## Housekeep Status` field it
+own `STATE.md`. It does **not** read any `**Summary Stage:**` field (nor any
+`**Approved-At-Commit:**` — that field was removed in the agent-driven pivot). The only `## Housekeep Status` field it
 reads is its own gate predecessor check (handled by feature-001's gate logic, which for
 cleanup-only is satisfied by the deliberate Mode=cleanup-only path — feature-001 § Resume,
 "a deliberate cleanup-only run does not violate C1"). This guarantees `--cleanup-only` works on
