@@ -13,6 +13,7 @@ contracts: []
 changelog:
   - 2026-05-27: Initial authoring during cycle-1 FIX Phase B (replaces deleted ui-architecture.md per Q3)
   - 2026-06-01: Post-merge update for work-001-add-providers (PRs #42/#43/#44) — install surface 3 profiles → 5 (added GitHub Copilot CLI + Antigravity); Option-A AGENTS.md collision handler documented; setup.sh/ps1 line counts refreshed (210/199).
+  - 2026-06-03: Post-merge update for work-001-aid-housekeep (PR #49) — total installed skills 10 → 11 (added optional/on-demand aid-housekeep); clarified that README's "## The Pipeline" table still lists 10 pipeline skills only (aid-housekeep is intentionally absent from that table).
 ---
 
 # Repo Presentation
@@ -52,7 +53,7 @@ the major sections:
 |---------|--------|---------|
 | **What is AID?** | `README.md` `## What is AID?` | Core philosophy in three convictions; Iron Man collaboration image |
 | **Why AID? — the failure modes it removes** | `README.md` `## Why AID? — the failure modes it removes` | Failure-mode table mapping failure modes to structural fixes (knowledge gaps, hallucination, drift, overengineering, etc.) |
-| **The Pipeline** | `README.md` `## The Pipeline` | Mermaid flowchart + table of all 10 skills, groups, and outputs |
+| **The Pipeline** | `README.md` `## The Pipeline` | Mermaid flowchart + table of the 10 mandatory-pipeline skills (one setup skill, eight numbered phases, one optional summarize skill), their groups, and outputs. ⚠️ This table covers the *pipeline* skills only — `aid-housekeep` (the 11th installed skill, optional/on-demand) is intentionally NOT in this table because it is not part of the linear pipeline flow. |
 | **The Knowledge Base** | `README.md` `## The Knowledge Base — the gravitational center` | KB structure, 14-standard-document fixed shape, 3-tier context economy diagram |
 | **The Agent Model** | `README.md` `## The Agent Model — three tiers` | Three-tier agent diagram (Large/Medium/Small), provider-agnostic tier table, skill→agent dispatch |
 | **Feedback Loops** | `README.md` `## Feedback Loops` | 11 formal loops described; key loops called out (Any phase → Discovery, Execute → IMPEDIMENT, Monitor → Execute, Monitor → Discover) |
@@ -67,6 +68,27 @@ in under 20 minutes and give them one clear action: install and run `/aid-config
 
 The footer (`README.md`, closing `*Read the full methodology:*` line) carries the external blog link:
 `https://casuloailabs.com/blog/aid-methodology/`
+
+### A note on skill counts (pipeline vs. total installed)
+
+The README's `## The Pipeline` section frames AID as "**10 skills** — one setup skill,
+eight numbered development phases, one optional skill" (`README.md` `## The Pipeline`).
+That "10 skills" count refers to the **mandatory-pipeline skills only** — the ones in
+the Pipeline table and Mermaid flowchart (`aid-config`, the eight numbered phases
+`aid-discover`…`aid-monitor`, plus the optional `aid-summarize`).
+
+The repository actually ships **11 user-facing skills**: those 10 pipeline skills **plus**
+`aid-housekeep` — an optional, on-demand maintenance skill that is deliberately absent from
+the README Pipeline table because it is not part of the linear pipeline flow (see
+`architecture.md` "Skill inventory" + `canonical/skills/aid-housekeep/SKILL.md`,
+"Absent from the mandatory pipeline flow."). A 12th skill, `aid-generate`, is
+maintainer-only and never installed for end users (it lives only in `.claude/skills/`,
+not in `canonical/` — see `architecture.md`). So: **10 pipeline + 1 optional on-demand
+(`aid-housekeep`) = 11 user-facing installed skills; +1 maintainer-only = 12 total.**
+
+⚠️ The README's "10 skills" phrasing is therefore correct *as a description of the
+pipeline*, but the total count of installed skills a user receives is 11. Keep these
+two counts distinct when reconciling.
 
 ---
 
@@ -298,7 +320,10 @@ After running `setup.sh` or `setup.ps1`, the target project gains:
 
 - The tool-appropriate hidden directory (`.claude/`, `.codex/`+`.agents/`, `.cursor/`,
   `.github/` for Copilot CLI, or `.agent/` for Antigravity)
-  containing all 10 skills, 22 agents, 5 recipes, templates, and helper scripts.
+  containing all 11 user-facing skills (the 10 mandatory-pipeline skills + the optional
+  on-demand `aid-housekeep`), 22 agents, 5 recipes, templates, and helper scripts.
+  (The maintainer-only `aid-generate` skill is never installed — it lives only in the
+  source repo's `.claude/skills/`, not in `canonical/`; see `architecture.md`.)
 - ⚠️ **AGENTS.md collision (Option A):** Codex, Cursor, Copilot CLI, and Antigravity all
   write a root `AGENTS.md`. When ≥2 of these are selected, `setup.sh`/`setup.ps1` warn
   once and the highest-numbered selected writer wins — no interactive prompt

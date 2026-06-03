@@ -8,6 +8,7 @@ intent: |
   Read when planning the next refactor cycle or scoping a new work-NNN.
 contracts: []
 changelog:
+  - 2026-06-03: cycle-10 /aid-housekeep refresh — corrected stale "18 canonical suites" → 24 (5 test-housekeep-* added by PR #49) and de-pinned the count per §9a; refreshed Last Updated.
   - 2026-06-01: post-merge work-001-add-providers (PRs #42/#43/#44) — recorded 4 open LOW residuals introduced by the 5-profile expansion (Copilot model-slug not live-tool-verified; Antigravity model-id tokenization inferred from display names; empty Antigravity [tool_names] identity-passthrough; ps1 setup parity pwsh-skips in CI). Per STATE.md Q23-Q25 these are Answered docs-only-noted residuals — appropriate to record as OPEN debt.
   - 2026-05-31: Inventory current — 0 open items. Per the documentation rule (kb-authoring P9), resolved tech-debt records are removed from this doc entirely once closed; git history is the audit trail.
 ---
@@ -16,7 +17,7 @@ changelog:
 
 > **Source:** `discovery-quality` (Phase 1), cycle-1
 > **Status:** Complete
-> **Last Updated:** 2026-06-01
+> **Last Updated:** 2026-06-03
 
 > This document is a diagnosis, not a sprint plan. Severity tags use the form `[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` so `build-metrics.sh` (see the "Severity tag convention" note in `canonical/templates/knowledge-base/tech-debt.md`) can tally them.
 
@@ -24,7 +25,7 @@ changelog:
 
 ## Summary
 
-**Overall debt level: Low**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, 18-suite canonical test suite) and has **enforced pre-merge CI** (required status checks on `master`, 2026-05-29). The only open items are **4 LOW docs-only-noted residuals** from the work-001 5-profile expansion (PRs #42/#43/#44) — provider-mapping inferences and one CI-skip parity gap, none blocking. Resolved items are removed from this doc entirely once closed — git history is the only retained record.
+**Overall debt level: Low**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, a comprehensive canonical test suite) and has **enforced pre-merge CI** (required status checks on `master`, 2026-05-29). The only open items are **4 LOW docs-only-noted residuals** from the work-001 5-profile expansion (PRs #42/#43/#44) — provider-mapping inferences and one CI-skip parity gap, none blocking. Resolved items are removed from this doc entirely once closed — git history is the only retained record.
 
 | Severity | Open | Open items |
 |----------|------|------------|
@@ -70,7 +71,6 @@ changelog:
 ## Metrics
 
 - **TODO/FIXME count:** net **0 unresolved code TODOs** — all occurrences in `canonical/` are template-explanatory mentions ("fill in TODO sections"), not unresolved code TODOs.
-- **Files > 500 lines:** ~9 (the methodology spec, several test suites + helper scripts, and detailed state-reference docs — all appropriately sized for their type)
-- **Files > 1,000 lines:** 1 (`methodology/aid-methodology.md`)
-- **Test-to-code ratio (helper-script subset):** ⚠️ **Inferred from file counts.** There are now **18** canonical suites under `tests/canonical/` (including the 3 F4 doc-set suites from delivery-002), plus the shared `tests/lib/assert.sh` lib and the `tests/run-all.sh` glob-discovering aggregator. The suite count comfortably exceeds the helper-script count, so test coverage remains healthy for shell helpers (per-script LOC ratios drift with refactors and are not pinned here; recount with `ls tests/canonical/test-*.sh | wc -l`).
+- **Large files:** the largest is the methodology spec (`methodology/aid-methodology.md`); a handful of test suites, helper scripts, and detailed state-reference docs exceed 500 lines — all appropriately sized for their type. Exact file-size counts (T3) are not pinned here; see `.aid/generated/project-index.md` (`## Largest Files`).
+- **Test-to-code ratio (helper-script subset):** ⚠️ **Inferred from file counts.** There are now **24** canonical suites under `tests/canonical/` (the 5 `test-housekeep-*` suites were added by PR #49), plus the shared `tests/lib/assert.sh` lib and the `tests/run-all.sh` glob-discovering aggregator. The suite count comfortably exceeds the helper-script count, so test coverage remains healthy for shell helpers (per-script LOC ratios drift with refactors and are not pinned here; recount with `ls tests/canonical/test-*.sh | wc -l`).
 - **Open PRs:** none representing tracked debt.

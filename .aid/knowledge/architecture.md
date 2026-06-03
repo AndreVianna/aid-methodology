@@ -11,10 +11,11 @@ intent: |
   to understand how the methodology pieces hang together; for raw file inventory see
   project-structure.md.
 contracts:
-  - "10 AID skills listed in Dispatch table"
+  - "11 user-facing AID skills (10 mandatory-pipeline + aid-housekeep optional) listed in Dispatch table"
   - "22 specialist agents across 3 tiers (10 Opus, 9 Sonnet, 3 Haiku)"
   - "5 rendered install trees: claude-code, codex, cursor, copilot-cli, antigravity"
 changelog:
+  - 2026-06-03: post-merge update for work-001-aid-housekeep (PR #49) — added aid-housekeep (11th user-facing canonical skill, optional/on-demand, NOT in the mandatory pipeline flow); skill framing 10→11 user-facing / 11→12 total counting aid-generate; canonical SKILL.md body total 2,242→2,498 lines across 11 skills
   - 2026-06-01: post-merge update for work-001-add-providers (PRs #42/#43/#44) — 3→5 render profiles (added copilot-cli + antigravity), 2→4 agent formats (added copilot-agent + antigravity-rule), 10→12 generator Python files, setup menu now 5 tools + Done=6 with Option-A AGENTS.md collision handler
   - 2026-05-31: delivery-002 — added declared-doc-set mechanism: Step 0d propose→confirm, data-driven dispatch, de-hardcoded doc-set (varies by project)
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
@@ -22,7 +23,7 @@ changelog:
 # Architecture
 
 > Architectural map of the AID-methodology repository — how the pieces fit together, what
-> patterns govern them, and how data flows from the single canonical source out to three
+> patterns govern them, and how data flows from the single canonical source out to five
 > tool-specific install trees. For raw inventory see `project-structure.md`; this document
 > describes the *shape*.
 
@@ -33,9 +34,11 @@ single-branch monorepo whose deliverable is **documentation rendered into five
 host-tool install bundles**. There is no application runtime; the project ships:
 
 1. The AID methodology specification (`methodology/aid-methodology.md`, 1,070 lines).
-2. Ten skills + 22 agents + templates + recipes + helper scripts, authored once in
-   `canonical/` and rendered into five byte-identical install trees
-   (`profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/`).
+2. Eleven user-facing skills + 22 agents + templates + recipes + helper scripts, authored
+   once in `canonical/` and rendered into five byte-identical install trees
+   (`profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/`). Of the eleven, ten
+   form the mandatory development pipeline; the eleventh (`aid-housekeep`) is an optional,
+   on-demand maintenance skill not inserted into the pipeline flow.
 3. An optional offline HTML Knowledge Base viewer (the UI surface — see
    `canonical/templates/knowledge-summary/` for the HTML/CSS/JS bundle).
 
@@ -44,17 +47,21 @@ Evidence:
   skills, agents, templates, and recipes."
 - `README.md` opening — "It ships as an install bundle for … AI coding tools" (Claude Code, Codex, Cursor, GitHub Copilot CLI, Antigravity). ⚠️ README count phrasing updated by orchestrator (it lists the tool set verbatim).
 - `CONTRIBUTING.md` confirms repo-structure table.
+- `canonical/skills/aid-housekeep/SKILL.md` frontmatter `name: aid-housekeep` +
+  "Absent from the mandatory pipeline flow." — the 11th canonical (user-facing) skill,
+  optional/on-demand.
 
 ## Folder Structure
 
 ```
-aid-methodology/                    (repo root — branch: kb-overhaul)
+aid-methodology/                    (repo root)
 ├── methodology/                    ← the load-bearing spec (1 .md, 1,070 lines) + images/
 ├── canonical/                      ← SINGLE SOURCE OF TRUTH (renderer input)
 │   ├── agents/                     ← 22 agent dirs (AGENT.md + README.md each)
-│   ├── skills/                     ← 10 skill dirs (Thin-Router SKILL.md + references/)
+│   ├── skills/                     ← 11 skill dirs (Thin-Router SKILL.md + references/);
+│   │                                 10 mandatory-pipeline + aid-housekeep (optional/on-demand)
 │   ├── templates/                  ← 15 KB templates + knowledge-summary/ HTML bundle + …
-│   ├── recipes/                    ← 5 lite-path recipes + README (478 lines)
+│   ├── recipes/                    ← 5 lite-path recipes + README
 │   ├── scripts/                    ← helper scripts grouped by phase
 │   │   ├── config/                 ← read-setting.sh
 │   │   ├── execute/                ← writeback-state.sh, compute-block-radius.sh, …
@@ -63,7 +70,7 @@ aid-methodology/                    (repo root — branch: kb-overhaul)
 │   │   ├── summarize/              ← assemble-3part.{sh,ps1}, validate-diagrams.mjs, …
 │   │   └── grade.sh                ← deterministic severity→grade scorer (top-level)
 │   ├── rules/                      ← Cursor-only .mdc rule sources
-│   └── EMISSION-MANIFEST.md        ← deletion-safety spec (152 lines)
+│   └── EMISSION-MANIFEST.md        ← deletion-safety spec
 ├── profiles/                       ← generator output + per-tool TOML config (5 profiles)
 │   ├── claude-code.toml            ← profile 1 — single output_root layout
 │   ├── claude-code/.claude/        ← rendered tree mirroring canonical/
@@ -82,7 +89,7 @@ aid-methodology/                    (repo root — branch: kb-overhaul)
 │   └── skills/aid-generate/        ← maintainer-only generator (NOT in canonical/)
 │       └── scripts/                ← 12 Python files (render_lib.py, aid_profile.py, render_*.py, test_*_emitter.py, …)
 ├── tests/
-│   ├── canonical/                  ← currently 18 helper-script test suites (test-*.sh, bash)
+│   ├── canonical/                  ← currently 24 helper-script test suites (test-*.sh, bash)
 │   ├── lib/assert.sh               ← shared assertion helpers
 │   ├── run-all.sh                  ← single aggregator entrypoint (globs test-*.sh)
 │   └── README.md                   ← suite inventory + run instructions
@@ -93,8 +100,8 @@ aid-methodology/                    (repo root — branch: kb-overhaul)
 │   ├── generated/project-index.md  ← built by build-project-index.sh
 │   ├── settings.yml                ← AID runtime config
 │   └── .heartbeat/                 ← ephemeral subagent heartbeat files (gitignored)
-├── run_generator.py                ← live entrypoint (87 lines)
-├── setup.sh / setup.ps1            ← end-user installers (162 / 157 lines)
+├── run_generator.py                ← live entrypoint
+├── setup.sh / setup.ps1            ← end-user installers
 └── README.md / CLAUDE.md / CONTRIBUTING.md / LICENSE
 ```
 
@@ -137,16 +144,44 @@ auto-advance; the human re-invokes the skill for the next state.
 Evidence:
 - `coding-standards.md §7b` — "When a SKILL.md grows past ~200 lines, extract per-state
   bodies into references/state-{name}.md; keep the router as Dispatch table + Pre-flight +
-  State Detection only." Total skill body lines: 2,242 (per `metrics.md`).
+  State Detection only." Total canonical SKILL.md body lines: 2,498 (counted from disk:
+  `find canonical/skills -name SKILL.md -exec cat {} + | wc -l`).
 - `.claude/skills/aid-discover/SKILL.md` `State machine for this skill` — explicit
   `[GENERATE]→[REVIEW]→[Q-AND-A]→[FIX]→[APPROVAL]→[DONE]` machine.
 - `.claude/skills/aid-summarize/SKILL.md` `## State Detection` — explicit `PREFLIGHT→
   STALE-CHECK→PROFILE→GENERATE→VALIDATE→MANUAL-CHECKLIST→FIX→APPROVAL→WRITEBACK→DONE` machine.
+- `canonical/skills/aid-housekeep/SKILL.md` `State machine` blockquote — explicit
+  `[ PREFLIGHT ] → [ KB-DELTA ] → [ SUMMARY-DELTA ] → [ CLEANUP ] → [ DONE ]` machine,
+  with per-state bodies in `references/state-{preflight,kb-delta,summary-delta,cleanup,done}.md`.
 - `profiles/claude-code.toml` `decomposition = "references"` enforces the
   state-file decomposition at render time.
 
-Skill line counts (canonical): see `.aid/generated/metrics.md` for the authoritative
-per-skill breakdown (generated by `build-metrics.sh`). Total: 2,242 lines across 10 skills.
+Skill line counts (canonical): `.aid/generated/metrics.md` carries a per-skill breakdown
+generated by `build-metrics.sh`, but ⚠️ it is currently stale — it lists 10 SKILL.md bodies
+summing to 2,242 and predates `aid-housekeep`. The live on-disk total is **2,498 lines
+across 11 canonical skills** (10 mandatory-pipeline + `aid-housekeep`); re-run
+`build-metrics.sh` to refresh `metrics.md`.
+
+#### Skill inventory (canonical/skills/, 11 user-facing skills)
+
+| Skill | Role | In mandatory pipeline? |
+|-------|------|------------------------|
+| `aid-config` | setup / scaffold | yes (Init, not numbered) |
+| `aid-discover` | brownfield discovery → KB | yes (phase 1) |
+| `aid-summarize` | optional KB HTML viewer | yes (Prepare group, not numbered) |
+| `aid-interview` | requirements + SPEC stubs | yes (phase 2) |
+| `aid-specify` | technical specification | yes (phase 3) |
+| `aid-plan` | PLAN.md / deliveries | yes (phase 4) |
+| `aid-detail` | typed PR-sized task files | yes (phase 5) |
+| `aid-execute` | implement + review code | yes (phase 6) |
+| `aid-deploy` | ship delivery + PR | yes (phase 7) |
+| `aid-monitor` | production findings → fixes | yes (phase 8) |
+| `aid-housekeep` | **optional / on-demand** KB + summary + cleanup maintenance | **no — not in the pipeline flow; no phase gate references it** |
+
+`aid-generate` is a **12th skill but maintainer-only**: it lives only at
+`.claude/skills/aid-generate/`, is excluded from `canonical/`, and is not a user-facing
+skill (see "Documentation vs. Implementation Discrepancies" below). Hence: **11 user-facing
+skills + 1 maintainer-only = 12 total.**
 
 ### 3. Three-tier agent dispatch with reviewer-tier-≥-executor invariant
 
@@ -195,7 +230,7 @@ Evidence:
 | **VERIFY (advisory)** | `verify_advisory.py` | Non-fatal advisory checks logged separately | `render_lib`, `aid_profile` |
 | **Generator self-tests** | `test_manifest_safety.py`, `test_copilot_emitter.py`, `test_antigravity_emitter.py` | Manifest-deletion-boundary tests + per-format emitter unit tests for the copilot-agent and antigravity-rule frontmatter builders | `render_lib`, all renderers |
 | **Entry point** | `run_generator.py` | 87-line glue: iterate `profiles/*.toml` (5 profiles), run renderers per profile, deletion pass, then VERIFY (deterministic) + VERIFY (advisory) | All of the above |
-| **End-user installer** | `setup.sh` (162 lines), `setup.ps1` (157 lines) | Interactive tool-selection menu; copies the selected `profiles/<tool>/` subtree into a target project | None (pure shell / PowerShell, no Python) |
+| **End-user installer** | `setup.sh`, `setup.ps1` | Interactive tool-selection menu; copies the selected `profiles/<tool>/` subtree into a target project | None (pure shell / PowerShell, no Python) |
 | **Helper script library** | `canonical/scripts/{config,execute,interview,kb,summarize}/` + top-level `grade.sh` | Runtime helpers used by skill bodies (read-setting, parse-recipe, writeback-state, build-project-index, summarize pipeline, …) | bash 4+, occasionally Node 18+ for `.mjs` validators |
 | **Per-tool profile config** | `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}.toml` (5) | Per-host conventions: layout, agent frontmatter shape + format, model tier names, tool-name remapping, filename map, extras (incl. `rules_frontmatter` + per-rule `output_filename`) | Consumed by `aid_profile.py` |
 | **HTML viewer asset bundle** | `canonical/templates/knowledge-summary/` | The optional offline KB viewer template + JS + CSS + Mermaid init + section profiles — see `canonical/templates/knowledge-summary/` for the bundle details | Inlined Mermaid (pinned v11.15.0, SHA-verified) at render time, fetched by `fetch-mermaid.sh` |
@@ -277,6 +312,13 @@ Slash command → host tool reads the rendered `SKILL.md` from the installed tre
 → executes one state's reference body → optionally dispatches a subagent via the host's
 Agent tool → writes state back to the appropriate `STATE.md` and exits.
 
+`aid-housekeep` is the one exception to "lives only in the pipeline": it is invoked
+on-demand (not as part of the linear phase flow) and drives its own
+`PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE` machine on a dedicated
+`aid/housekeep-*` branch, one commit per stage, never pushing. Evidence:
+`canonical/skills/aid-housekeep/SKILL.md` ("Absent from the mandatory pipeline flow." +
+the `aid/housekeep-*` branch / one-commit-per-stage / never-push contract).
+
 Evidence: `.claude/skills/aid-discover/SKILL.md` `State machine for this skill`;
 `.claude/skills/aid-summarize/SKILL.md` `## State Detection`;
 `canonical/templates/settings.yml` `execution.max_parallel_tasks`,
@@ -346,28 +388,43 @@ mechanism was found in any source file.
 | **Maintainer verify-only** | `python .claude/skills/aid-generate/scripts/verify_deterministic.py` | VERIFY (deterministic) hard gate. Re-renders to scratch tmpdir, byte-compares against committed install trees, parses every frontmatter. Exit code 0 on full pass; 1 on any sub-check failure. Evidence: `verify_deterministic.py` `def run_verify`. |
 | **End-user install (Unix)** | `./setup.sh /path/to/your/project [--force]` | Menu-driven copy of selected profiles into a target project. Evidence: `setup.sh` `print_menu`. |
 | **End-user install (Windows)** | `.\setup.ps1 C:\path\to\your\project` | PowerShell 5.1+ equivalent of `setup.sh`. |
-| **End-user runtime (per skill)** | Slash command `/aid-config`, `/aid-discover`, `/aid-interview`, …, `/aid-summarize` | One per skill (10 slash commands). Each enters at the state detected from disk and exits after one state. |
+| **End-user runtime (pipeline skill)** | Slash command `/aid-config`, `/aid-discover`, `/aid-interview`, …, `/aid-monitor` (+ optional `/aid-summarize`) | Ten mandatory-pipeline slash commands. Each enters at the state detected from disk and exits after one state. |
+| **End-user runtime (on-demand)** | Slash command `/aid-housekeep` | The 11th user-facing skill — optional/on-demand KB + summary + cleanup maintenance, NOT part of the linear pipeline. Evidence: `canonical/skills/aid-housekeep/SKILL.md`. |
 | **First-time AI agent context** | `CLAUDE.md` (Claude Code dogfood) / `AGENTS.md` (Codex, Cursor, Copilot CLI, Antigravity profiles) | Top-level project-context document — describes purpose, KB location, build/test commands, conventions. |
 | **Methodology reader** | `methodology/aid-methodology.md` | The 1,070-line authoritative specification. Read by humans, not by skills directly. |
 
 ## Documentation vs. Implementation Discrepancies
 
-The repository's documentation describes a "10 skills + 11 (counting `aid-generate`)"
-architecture; observed implementation matches with a few caveats worth flagging:
+The repository's documentation describes an "11 user-facing skills + 1 maintainer-only
+(`aid-generate`) = 12 total" architecture; observed implementation matches with a few
+caveats worth flagging:
 
 1. **`aid-generate` is intentionally NOT in `canonical/`.** It lives only at
    `.claude/skills/aid-generate/` and is excluded from the render. `canonical/skills/`
-   contains 10 directories (not 11). Reason per `.claude/skills/aid-generate/SKILL.md`
-   (`Maintainer-only skill` blockquote): "Edits to this skill are made directly to its files.
-   Reason: it generates the install
+   contains 11 directories (the 10 mandatory-pipeline skills + the optional `aid-housekeep`),
+   not 12 — `aid-generate` is the 12th skill and is maintainer-only. Reason per
+   `.claude/skills/aid-generate/SKILL.md` (`Maintainer-only skill` blockquote): "Edits to
+   this skill are made directly to its files. Reason: it generates the install
    trees, so it cannot itself be generated from canonical without a chicken-and-egg
    deployment problem."
 
-2. **Skill total line drift.** The current canonical sources sum to 2,242 lines (per
-   `metrics.md`). The rendered `.claude/skills/*/SKILL.md` set may differ if `canonical/`
-   was edited after the last `python run_generator.py` run; run VERIFY (deterministic) to detect drift.
+2. **`aid-housekeep` is optional / on-demand — NOT part of the mandatory pipeline.**
+   It is the 11th user-facing canonical skill but is deliberately excluded from the
+   phase→skill pipeline mapping; no phase gate references it. It runs three gated jobs in
+   strict order on an `aid/housekeep-*` branch
+   (`PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE`), one commit per stage, and
+   never pushes. Evidence: `canonical/skills/aid-housekeep/SKILL.md`
+   ("Absent from the mandatory pipeline flow.") +
+   `references/state-{preflight,kb-delta,summary-delta,cleanup,done}.md`.
 
-3. **`.aid/work-NNN/` directories referenced by older docs but absent from the project
+3. **Skill total line drift + stale metrics.md.** The current canonical SKILL.md bodies
+   sum to **2,498 lines across 11 skills** (counted from disk). ⚠️ `.aid/generated/metrics.md`
+   is stale — it still reports 2,242 across 10 skills and predates `aid-housekeep`; re-run
+   `build-metrics.sh` to refresh it. The rendered `.claude/skills/*/SKILL.md` set may also
+   differ from canonical if `canonical/` was edited after the last
+   `python run_generator.py` run; run VERIFY (deterministic) to detect drift.
+
+4. **`.aid/work-NNN/` directories referenced by older docs but absent from the project
    index.**
    - Q1 resolution (cycle-1): `.aid/work-001-aid-lite/test-reports/` was never a correct
      home for canonical test scripts; those runners have been removed from documentation.
@@ -375,12 +432,12 @@ architecture; observed implementation matches with a few caveats worth flagging:
      `.aid/work-002-canonical-generator/`; `report_path=None` was passed to eliminate
      the stale write.
 
-4. **Generator `run_generator.py` previously hardcoded paths to a work directory.**
+5. **Generator `run_generator.py` previously hardcoded paths to a work directory.**
    Fixed in cycle-1 (Q2 resolution): `run_generator.py` now passes `report_path=None`
    to `run_verify`/`run_advisory`, so no `.aid/work-002-canonical-generator/` directory
    is created or required.
 
-5. **Two profiles remap the `Bash` tool name.** Cursor maps `Bash = "Terminal"`
+6. **Two profiles remap the `Bash` tool name.** Cursor maps `Bash = "Terminal"`
    (`profiles/cursor.toml` `[tool_names]`) and Copilot CLI maps `Bash = "shell"`
    (`profiles/copilot-cli.toml` `[tool_names]`); Claude Code, Codex, and Antigravity use
    identity passthrough (Antigravity ships an empty `[tool_names]` map — `profiles/antigravity.toml`
