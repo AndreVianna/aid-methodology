@@ -24,8 +24,9 @@ previous run. Always read the actual files on disk.
 
 ## On entry — write run-state + ensure branch
 
-Locate `<STATE_FILE>` as this work's `.aid/work-NNN-*/STATE.md`. Write through
-feature-001's `housekeep-state.sh` (never hand-edit `## Housekeep Status`):
+`<STATE_FILE>` is the project-level run-state file resolved by `SKILL.md § State
+Detection` (`.aid/.temp/HOUSEKEEP_STATE_<ts>.md`; created on first write). Write
+through `housekeep-state.sh` (never hand-edit `## Housekeep Status`):
 
 ```bash
 bash .cursor/scripts/housekeep/housekeep-state.sh \

@@ -247,9 +247,25 @@ out=$(bash "$SUT" --state "$DUMMY_STATE" --read 2>&1) || rc=$?
 assert_exit_eq "${rc:-0}" 2 "T18 missing --field exit 2"
 
 # ---------------------------------------------------------------------------
-echo "--- Unit 19: error — STATE.md file not found → exit 1"
+echo "--- Unit 19: absent run-state file is tolerated (project-level .temp file may not exist yet)"
+# --read on an absent file → empty value, exit 0 (fresh-run friendly).
+rc=0
 out=$(bash "$SUT" --state "/nonexistent/path/STATE.md" --read --field "State" 2>&1) || rc=$?
-assert_exit_eq "${rc:-0}" 1 "T19 nonexistent file exit 1"
+assert_exit_eq "${rc:-0}" 0 "T19a read absent file exit 0"
+assert_eq "$out" "" "T19b read absent file prints empty"
+# --resume on an absent file → PREFLIGHT (row 1) / CLEANUP with --cleanup-only (row 2).
+rc=0
+out=$(bash "$SUT" --state "/nonexistent/path/STATE.md" --resume 2>&1) || rc=$?
+assert_exit_eq "${rc:-0}" 0 "T19c resume absent file exit 0"
+assert_eq "$out" "PREFLIGHT" "T19d resume absent file → PREFLIGHT"
+# --write on an absent file → creates it (+ parent dir) and writes the field.
+T19_DIR=$(mktemp -d)
+T19_SF="$T19_DIR/.aid/.temp/HOUSEKEEP_STATE_209901010000.md"
+rc=0
+bash "$SUT" --state "$T19_SF" --write --field "State" --value "KB-DELTA" >/dev/null 2>&1 || rc=$?
+assert_exit_eq "${rc:-0}" 0 "T19e write creates absent file exit 0"
+assert_eq "$(bash "$SUT" --state "$T19_SF" --read --field "State")" "KB-DELTA" "T19f created file round-trips"
+rm -rf "$T19_DIR"
 
 # ---------------------------------------------------------------------------
 echo "--- Unit 20: error — missing --value with --write → exit 2"

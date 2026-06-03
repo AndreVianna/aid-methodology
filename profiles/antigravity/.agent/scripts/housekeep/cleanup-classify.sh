@@ -104,15 +104,17 @@ done
 AID_DIR="${REPO_ROOT}/.aid"
 
 # ---------------------------------------------------------------------------
-# Active-folder union resolution
+# Active-folder resolution
 # Builds the set of work-folder names that must NEVER be offered.
 #
-# (a) Any folder whose STATE.md carries ## Housekeep Status (the run's context).
-# (b) The folder matching the current branch (aid/work-NNN-* pattern).
-# (c) Any folder whose STATE.md > **Status:** is NOT "Deployed".
+# (caller) Any name passed via --active-work (highest priority).
+# (b)      The folder matching the current branch (aid/work-NNN-* pattern).
 #
-# The caller-supplied --active-work list is added to the exclusion set first
-# so it overrides everything without needing git state.
+# Removed in the run-state-relocation change: the former (a) "STATE.md carries
+# ## Housekeep Status" and (c) "STATE.md Status != Deployed" exclusions. Housekeep
+# run-state now lives in .aid/.temp/HOUSEKEEP_STATE_*.md (not in a work folder), so
+# (a) is obsolete; (c) was over-conservative and is superseded by the (i)/(ii)
+# matrix, which routes merged-but-not-concluded folders to explicit-confirm.
 # ---------------------------------------------------------------------------
 
 # is_active_folder <folder_name>
@@ -126,39 +128,24 @@ is_active_folder() {
         [[ "$af" == "$folder_name" ]] && return 0
     done
 
-    local folder_path="${AID_DIR}/${folder_name}"
-    local state_md="${folder_path}/STATE.md"
-
-    # (a) Contains ## Housekeep Status block (this run's context)
-    if [[ -f "$state_md" ]] && grep -q "^## Housekeep Status" "$state_md" 2>/dev/null; then
-        return 0
-    fi
-
-    # (b) Matches the current branch pattern aid/work-NNN-*
+    # (b) Matches the current branch pattern aid/work-NNN-* — never offer the work
+    # folder whose branch is currently checked out.
+    #
+    # NOTE: the former signal (a) (folder STATE.md carries ## Housekeep Status) and
+    # signal (c) (STATE.md Status != Deployed) were REMOVED. Housekeep run-state no
+    # longer lives in any work folder (it lives in .aid/.temp/HOUSEKEEP_STATE_*.md),
+    # so (a) is obsolete; and (c) was over-conservative — it pre-empted the (i)/(ii)
+    # matrix's own explicit-confirm path, which is exactly how a merged-but-not-
+    # concluded folder should be handled. With (c) gone, such folders reach the
+    # matrix and are surfaced for explicit per-folder confirmation (never deleted
+    # without it).
     local current_branch
     current_branch=$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null) || current_branch=""
     if [[ -n "$current_branch" && "$current_branch" =~ ^aid/work-([0-9]+)-(.+)$ ]]; then
         local branch_num="${BASH_REMATCH[1]}"
-        # Match folder name prefix: work-NNN
         if [[ "$folder_name" =~ ^work-([0-9]+)- ]]; then
             local folder_num="${BASH_REMATCH[1]}"
             [[ "$folder_num" == "$branch_num" ]] && return 0
-        fi
-    fi
-
-    # (c) STATE.md > **Status:** is not "Deployed"
-    if [[ -f "$state_md" ]]; then
-        local status_line
-        status_line=$(grep -m1 '^> \*\*Status:\*\*' "$state_md" 2>/dev/null) || status_line=""
-        if [[ -z "$status_line" ]]; then
-            # No status line → treat as active (conservative)
-            return 0
-        fi
-        # Extract value after "> **Status:** "
-        local status_val
-        status_val=$(echo "$status_line" | sed 's/^> \*\*Status:\*\* *//')
-        if [[ "$status_val" != "Deployed" ]]; then
-            return 0
         fi
     fi
 
@@ -237,6 +224,12 @@ scan_s1() {
 
     while IFS= read -r -d '' path; do
         [[ -e "$path" ]] || continue
+        # Skip /aid-housekeep run-state files — they live in .aid/.temp/ but are
+        # owned by the skill's DONE state (which removes HOUSEKEEP_STATE_*.md at run
+        # end). Never offer the active run's own state file for deletion.
+        case "$(basename "$path")" in
+            HOUSEKEEP_STATE_*.md) continue ;;
+        esac
         local tracked
         tracked=$(classify_tracked "$path")
         emit_candidate "$path" "0" "$tracked" "true" "S1: gitignored temp scratch (.aid/.temp/)"
@@ -516,8 +509,23 @@ compute_signal_ii() {
 }
 
 # ---------------------------------------------------------------------------
+# compute_status_note <folder_name>
+# Print the work's top-level `> **Status:**` value (informational context shown
+# in the explicit-confirm prompt). Never gates; just informs the user.
+# ---------------------------------------------------------------------------
+compute_status_note() {
+    local state_md="${AID_DIR}/$1/STATE.md"
+    [[ -f "$state_md" ]] || { echo "no STATE.md"; return 0; }
+    local s
+    s=$(grep -m1 '^> \*\*Status:\*\*' "$state_md" 2>/dev/null | sed 's/^> \*\*Status:\*\* *//')
+    [[ -n "$s" ]] && echo "$s" || echo "status unknown"
+}
+
+# ---------------------------------------------------------------------------
 # S6: .aid/work-*/ folders
-# Applies work-folder safety matrix (i)/(ii) and active-folder exclusion.
+# Every work folder is offered (never silently hidden); the (i)/(ii) signals are
+# informational context only. The single hard exclusion is the work folder whose
+# branch is currently checked out (is_active_folder). The user confirms each.
 # ---------------------------------------------------------------------------
 scan_s6() {
     local folder_path
@@ -526,13 +534,17 @@ scan_s6() {
         local folder_name
         folder_name=$(basename "$folder_path")
 
-        # Active-folder exclusion: never emit if active
+        # Active-folder exclusion: only the work folder whose branch is currently
+        # checked out is hard-skipped (don't offer to delete your active checkout).
+        # Everything else is ALWAYS offered — "the user has the last word."
         if is_active_folder "$folder_name"; then
-            warn "S6: skipping active folder: $folder_name"
+            warn "S6: skipping active folder (current branch): $folder_name"
             continue
         fi
 
-        # Compute signals
+        # Compute signals — these are now INFORMATIONAL context only; they no
+        # longer GATE whether a folder is offered. Every work folder is surfaced
+        # and the user confirms (or declines) each one. No merge proof is required.
         local sig_i sig_ii
         sig_i=$(compute_signal_i "$folder_name")
         sig_ii=$(compute_signal_ii "$folder_name")
@@ -540,24 +552,26 @@ scan_s6() {
         local tracked
         tracked=$(classify_tracked "$folder_path")
 
-        # Decision matrix
         if [[ "$sig_i" == "pass" && "$sig_ii" == "pass" ]]; then
-            # (i)✓ (ii)✓ → offer unchecked Tier-1
+            # Merged + concluded → clear-cut: offer unchecked in the main checklist.
             emit_candidate "$folder_path" "1" "$tracked" "false" \
                 "S6: work folder merged+concluded" "offer"
 
         elif [[ "$sig_i" == "pass" ]]; then
-            # (i)✓ (ii)✗ → explicit-confirm
+            # Merged but STATE not concluded → explicit per-folder confirm.
             local why="${sig_ii#fail:}"
             emit_candidate "$folder_path" "1" "$tracked" "false" \
                 "S6: work folder merged but STATE not concluded" \
                 "explicit-confirm:${why}"
 
         else
-            # (i)✗ → not offered (conservative)
-            local why="${sig_i#fail:}"
-            warn "S6: not offering $folder_name — signal(i) fail: $why"
-            # Not emitted
+            # Merge could not be auto-verified → STILL offer, via explicit per-folder
+            # confirm (never silently hidden). The user decides with full context.
+            local why_i="${sig_i#fail:}"
+            local why_ii; why_ii="$(compute_status_note "$folder_name")"
+            emit_candidate "$folder_path" "1" "$tracked" "false" \
+                "S6: work folder — merge unverified (${why_i})" \
+                "explicit-confirm:merge could not be auto-verified (${why_i}); STATE: ${why_ii}. Confirm only if this work is finished and its content is safely on master."
         fi
     done
 }

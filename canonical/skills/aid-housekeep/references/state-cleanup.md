@@ -52,19 +52,18 @@ aid-housekeep  ▸ you are here
 ## Step 1 — Run `cleanup-classify.sh` to obtain the candidate list
 
 Determine `REPO_ROOT` (the root of the git repository; the directory containing
-`.aid/`) and resolve the currently-active work folder name from `<STATE_FILE>`'s
-path (the `work-NNN-*` component). Then invoke the classifier:
+`.aid/`) and invoke the classifier. There is **no active work folder to exclude**:
+housekeep run-state lives in `.aid/.temp/HOUSEKEEP_STATE_*.md` (not in a work
+folder), so `--active-work` is not passed. `cleanup-classify.sh` still hard-skips
+the one work folder whose `aid/work-NNN-*` branch is currently checked out, and it
+**offers every other work folder** for the user to confirm or decline (the user has
+the last word — no folder is silently hidden):
 
 ```bash
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
-# Resolve the active work folder name from the STATE_FILE path.
-# e.g. .aid/work-001-aid-housekeep/STATE.md → "work-001-aid-housekeep"
-ACTIVE_WORK=$(basename "$(dirname "<STATE_FILE>")")
-
 CANDIDATES=$(bash canonical/scripts/housekeep/cleanup-classify.sh \
-    --root "$REPO_ROOT" \
-    --active-work "$ACTIVE_WORK")
+    --root "$REPO_ROOT")
 CLASSIFY_EXIT=$?
 ```
 

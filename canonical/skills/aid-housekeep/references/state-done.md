@@ -52,4 +52,21 @@ bash canonical/scripts/housekeep/housekeep-state.sh \
 
 ---
 
+## Clean up the run-state file(s)
+
+The run-state is transient and gitignored — nothing about it is committed. After the
+closing summary has been printed and DONE written, remove the current run-state file
+**and any stale `HOUSEKEEP_STATE_*.md` siblings** left behind by crashed prior runs:
+
+```bash
+rm -f .aid/.temp/HOUSEKEEP_STATE_*.md
+```
+
+After this, `.aid/.temp/` holds no housekeep run-state, so the next `/aid-housekeep`
+invocation starts a fresh run (State Detection row 1). (Writing `State: DONE` above is
+a belt-and-suspenders fallback: if the `rm` ever fails, the leftover file is marked
+DONE and State Detection treats it as stale rather than resuming it.)
+
+---
+
 **Advance:** **HALT**.

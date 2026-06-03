@@ -26,18 +26,30 @@ If `.aid/` is absent, print and exit non-zero:
     Run /aid-config first to initialise the project.
 ```
 
-### Check 2 — Work-area STATE.md can be located
+### Check 2 — Knowledge Base is present
 
-Locate the work-area `STATE.md` for this work. The expected path is
-`.aid/work-NNN-*/STATE.md` (where `NNN` is the active work number). If no
-work-area STATE.md is found, print and exit non-zero:
-```
-⚠️  /aid-housekeep could not locate a work-area STATE.md under .aid/work-*/STATE.md.
-    A work area must exist before running housekeeping.
-    Run /aid-config or /aid-interview to create a work area first.
+`/aid-housekeep` is **project-level maintenance** — it does NOT require any
+work-area folder to exist (its run-state lives in `.aid/.temp/`, not in a work
+folder). It does need a Knowledge Base to reconcile, so verify
+`.aid/knowledge/STATE.md` exists:
+
+```bash
+[ -f ".aid/knowledge/STATE.md" ] || exit 1
 ```
 
-Record the resolved path as `STATE_FILE` for all subsequent states.
+If absent, print and exit non-zero:
+```
+⚠️  /aid-housekeep requires a Knowledge Base (.aid/knowledge/STATE.md).
+    Run /aid-config then /aid-discover to populate the KB first.
+```
+
+The `STATE_FILE` (the project-level run-state file `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`)
+is resolved/created by `SKILL.md § State Detection`, not here — PREFLIGHT must not
+create it. Ensure the `.aid/.temp/` directory exists so later states can write it:
+
+```bash
+mkdir -p .aid/.temp
+```
 
 ### Check 3 — Not in Plan Mode
 

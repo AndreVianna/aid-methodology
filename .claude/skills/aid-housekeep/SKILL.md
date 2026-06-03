@@ -107,9 +107,31 @@ protocol lives in two reference docs; this section is a checklist citing them.
 ⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**
 Do NOT rely on memory from previous runs. ALWAYS read actual files on disk.
 
-Run `bash .claude/scripts/housekeep/housekeep-state.sh --state <STATE_FILE> --resume`
-to resolve the resume target from the `## Housekeep Status` block. Locate `<STATE_FILE>`
-as the work-area `STATE.md` for this work (`.aid/work-NNN-*/STATE.md`).
+Resolve `<STATE_FILE>` to the **project-level housekeep run-state file** under
+`.aid/.temp/` — `/aid-housekeep` is project maintenance, so its run-state does NOT
+live in any work-area `STATE.md`. The file is transient (gitignored, never
+committed/pushed) and is named `HOUSEKEEP_STATE_<YYYYMMDDHHMM>.md`; the DONE state
+removes it (and any stale siblings) at the end of a run.
+
+```bash
+mkdir -p .aid/.temp
+# Reuse the most recent in-progress run-state file; otherwise start a fresh one.
+STATE_FILE=$(ls -1 .aid/.temp/HOUSEKEEP_STATE_*.md 2>/dev/null | sort | tail -1)
+if [ -n "$STATE_FILE" ] && \
+   [ "$(bash .claude/scripts/housekeep/housekeep-state.sh --state "$STATE_FILE" --read --field State)" = "DONE" ]; then
+    STATE_FILE=""   # a leftover DONE file is stale (DONE-cleanup missed it) — start fresh
+fi
+[ -z "$STATE_FILE" ] && STATE_FILE=".aid/.temp/HOUSEKEEP_STATE_$(date +%Y%m%d%H%M).md"
+```
+
+Then resolve the resume target from the `## Housekeep Status` block:
+
+```bash
+bash .claude/scripts/housekeep/housekeep-state.sh --state "$STATE_FILE" --resume
+```
+
+(On a fresh run `$STATE_FILE` does not exist yet; `housekeep-state.sh` creates it on
+the first `--write`, and `--resume`/`--read` treat an absent file as "no section".)
 
 **Argument pre-check (before resume detection):**
 
@@ -144,8 +166,9 @@ as the work-area `STATE.md` for this work (`.aid/work-NNN-*/STATE.md`).
 If row 6 is reached, print:
 ```
 ✅ /aid-housekeep: nothing to resume — the last run completed successfully (DONE).
-   To re-run housekeeping, clear ## Housekeep Status in the work-area STATE.md
-   (or delete the section) and re-invoke /aid-housekeep.
+   The run-state file under .aid/.temp/HOUSEKEEP_STATE_*.md is cleaned at DONE, so a
+   fresh /aid-housekeep simply starts a new run. (Row 6 is reached only if a stale
+   DONE file lingered; deleting .aid/.temp/HOUSEKEEP_STATE_*.md also resets it.)
 ```
 Then HALT.
 
