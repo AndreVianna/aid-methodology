@@ -71,7 +71,7 @@ The closest analog is the **AID parallel pool dispatch model** (work-001 feature
 
 ## CI / CD Pipeline
 
-**CI is enforced** — `.github/workflows/test.yml` (added 2026-05-29) runs render-drift + canonical suites + generator self-tests + hygiene on every PR/push and is a required status check for merging to `master` (branch protection enabled 2026-05-29). The suite job invokes `tests/run-all.sh`, which discovers suites by glob (`tests/canonical/test-*.sh`), so the count is not hard-coded (currently 18; see `test-landscape.md`). The `generator-selftests` job additionally runs three Python generator self-tests with `--self-test` (`.github/workflows/test.yml`): `test_manifest_safety.py`, plus the two new emitter tests `test_copilot_emitter.py` (Copilot real-YAML round-trip) and `test_antigravity_emitter.py` (Antigravity rule reshape).
+**CI is enforced** — `.github/workflows/test.yml` (added 2026-05-29) runs render-drift + canonical suites + generator self-tests + hygiene on every PR/push and is a required status check for merging to `master` (branch protection enabled 2026-05-29). The suite job invokes `tests/run-all.sh`, which discovers suites by glob (`tests/canonical/test-*.sh`), so the count is not hard-coded (currently 24; see `test-landscape.md`). The `generator-selftests` job additionally runs three Python generator self-tests with `--self-test` (`.github/workflows/test.yml`): `test_manifest_safety.py`, plus the two new emitter tests `test_copilot_emitter.py` (Copilot real-YAML round-trip) and `test_antigravity_emitter.py` (Antigravity rule reshape).
 
 There is also no **release pipeline** — the project distributes via:
 1. End users cloning the repo and running `setup.sh` / `setup.ps1` against a target directory, OR
@@ -127,10 +127,10 @@ profiles/*.toml ─┐
 
 The **`setup.sh` / `setup.ps1` pair** is the end-user-facing install entrypoint. It is the "infrastructure" that delivers AID into a new project.
 
-| Script | Path | Lines | Platform |
-|--------|------|-------|----------|
-| Bash installer | `setup.sh` | 162 | macOS, Linux, WSL |
-| PowerShell installer | `setup.ps1` | 157 | Windows |
+| Script | Path | Platform |
+|--------|------|----------|
+| Bash installer | `setup.sh` | macOS, Linux, WSL |
+| PowerShell installer | `setup.ps1` | Windows |
 
 Both scripts accept a target directory and an interactive menu with **5 tool options + Done**: `1 = Claude Code`, `2 = Codex`, `3 = Cursor`, `4 = GitHub Copilot CLI`, `5 = Antigravity`, `[6] Done` (multi-select). They copy the matching `profiles/<tool>/` tree into the target — Copilot installs a `.github/` subtree + root `AGENTS.md`, Antigravity installs a `.agent/` subtree (`.agent/skills`, `.agent/rules`) + root `AGENTS.md`. See `setup.sh` `tool_name()` / `print_menu()` and `setup.ps1` `Get-ToolName` / `Show-Menu` for the argument-parsing and menu-state code.
 
@@ -150,24 +150,19 @@ The install flow (incl. the new Copilot/Antigravity installs and the Option-A co
 | Hosting | GitHub | per user memory `reference_repo-push-access.md` (account `AndreVianna`) |
 | Repo URL | `github.com/AndreVianna/aid-methodology` | per user memory |
 | Default branch | `master` | git remote info |
-| Current working branch | `kb-overhaul` | git status at session start |
+| Current working branch | current working branch — `git branch --show-current` (volatile; not pinned here) | git status |
 | Branch convention | Per-`work-NNN` persistent branch off master; no per-task / per-feature branches | `coding-standards.md §7f`; user memory `feedback_single-branch-work.md` |
 
-Recent merge history (`git log --oneline -20`):
-- PR #17 "remove work" — merged 2026-05-27
-- PR #16 "aid-config: collapse 6-state machine to 2-mode skill" — merged 2026-05-27
-- PR #15 "kb-overhaul Phase A+B" — merged 2026-05-27
-- PR #14 "kb cycle-17 refresh" — merged 2026-05-26
-- PR #13 "RECOVERY: restore lost work-001 implementation" — merged 2026-05-25
+Recent merge history is volatile temporal data (T4) and is not pinned here — read it live with `git log --oneline --merges -20`.
 
-Branch protection on `master` (per `gh api repos/AndreVianna/aid-methodology/branches/master/protection` 2026-05-28):
+Branch protection on `master` (per `gh api repos/AndreVianna/aid-methodology/branches/master/protection`, reconciled 2026-06-03):
 - **Required pull request reviews:** 1 approving review required; stale reviews dismissed on new push; code-owner reviews NOT required; last-push approval NOT required
 - **Required signatures:** disabled
 - **Enforce admins:** disabled (admins can bypass)
 - **Required linear history:** disabled (merge commits allowed)
 - **Force pushes:** blocked
 - **Branch deletion:** blocked
-- **Conversation resolution required before merge:** disabled
+- **Conversation resolution required before merge:** enabled
 - **Branch lock:** disabled
 
 ---

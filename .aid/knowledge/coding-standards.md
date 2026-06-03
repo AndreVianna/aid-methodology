@@ -455,7 +455,7 @@ Docs that describe a convention vs. what code actually does:
 
 | Convention | Documented at | Code confirms? | Notes |
 |------------|---------------|----------------|-------|
-| Thin-Router SKILL.md ≤~360 lines | `coding-standards.md §7b`; `canonical/skills/*/SKILL.md` structure | YES — all 10 user-facing skills fit under the threshold; the largest is `aid-interview`. Per-file line counts live in `.aid/generated/metrics.md` / `project-index.md` | Confirmed |
+| Thin-Router SKILL.md ≤~360 lines | `coding-standards.md §7b`; `canonical/skills/*/SKILL.md` structure | YES — all 11 user-facing skills fit under the threshold; the largest is `aid-interview`. Per-file line counts live in `.aid/generated/metrics.md` / `project-index.md` | Confirmed |
 | 22 agents, 3 tiers | `README.md` `## The Agent Model — three tiers` | YES — confirmed via 22 `AGENT.md` files with `tier: large|medium|small` frontmatter | Confirmed |
 | Active KB docs | `canonical/skills/aid-discover/references/doc-set-resolve.md` `## synth_default_seed` | YES — the default seed is now data-driven from `canonical/templates/knowledge-base/*.md` via `synth_default_seed`; count varies by project (delivery-002 resolved H5; hardcoded 14-doc list removed from SKILL.md) | Confirmed |
 | 8-task-type catalog | `canonical/skills/aid-execute/references/state-execute.md` `## Task Types`; `canonical/templates/delivery-plans/task-template.md` `**Type:**` | YES — both lists match: RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE | Confirmed |

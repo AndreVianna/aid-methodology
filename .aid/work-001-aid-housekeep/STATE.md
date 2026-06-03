@@ -162,3 +162,25 @@ _none yet_
 | 2026-06-02 | Execute delivery-001 + gate | A | All 4 d1 tasks Done; delivery gate A (runnable KB-reconciliation MVP). Dropped both integration tests (10→8). Next: delivery-002 (summary). |
 | 2026-06-03 | Execute delivery-002 + gate | A+ | task-005 summary body (C+→A+: history-table detection fix). |
 | 2026-06-03 | Execute delivery-003 + gate | A+ | tasks 006/007/008 (cleanup). Gate D→A+: deletion safety sound; fixed 2 HIGH branch/interface-lifecycle bugs + MEDIUM/LOW/MINOR. **EXECUTE COMPLETE** — all 8 tasks Done, 3 deliveries gated A/A+, 24 suites pass. Next: /aid-deploy or PR review. |
+
+## Calibration Log
+
+| Date | Agent | Task/Cycle | ETA Band | Actual | Notes |
+|------|-------|-----------|----------|--------|-------|
+| 2026-06-03 | discovery-analyst | KB-delta cycle-10 | 12–18m | 3m40s | targeted re-discovery: module-map.md |
+| 2026-06-03 | discovery-quality | KB-delta cycle-10 | 11–15m | 3m22s | targeted: test-landscape.md |
+| 2026-06-03 | discovery-scout | KB-delta cycle-10 | 9–13m | 4m22s | targeted: project-structure.md |
+| 2026-06-03 | discovery-architect | KB-delta cycle-10 | 8–12m | 5m45s | targeted: architecture.md + repo-presentation.md |
+| 2026-06-03 | discovery-integrator | KB-delta cycle-10 | 12–16m | 12m43s | targeted: integration-map + pipeline-contracts + domain-glossary (3 docs) |
+
+> Targeted re-discovery ran well under the full-discovery ETA bands (these reconcile 1–3 docs each, not the full KB).
+
+## Housekeep Status
+
+**State:** DONE
+**Stage Status:** passed
+**Last Run:** 2026-06-03T14:45:17Z
+**Branch:** aid/housekeep-2026-06-03
+**KB Stage:** passed
+**Summary Stage:** passed
+**Cleanup Stage:** passed

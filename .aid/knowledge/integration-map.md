@@ -9,6 +9,7 @@ intent: |
   Inter-skill choreography is implemented via filesystem state hand-offs (not a message broker).
 contracts: []
 changelog:
+  - 2026-06-03: aid-housekeep merge (PR #49) — skill enumeration 10→11 user-facing (added optional off-pipeline aid-housekeep) + maintainer-only aid-generate; documented aid-housekeep as a filesystem-state choreography participant (STATE.md Q&A handshake with /aid-discover, work-area ## Housekeep Status run-state block, /aid-summarize delegation)
   - 2026-06-01: work-001-add-providers merge (PRs #42/#43/#44) — distribution now 5 profile trees (added copilot-cli → `.github/`, antigravity → `.agent/`); documented Copilot native Agent Skills + Antigravity rules mapping + Option-A AGENTS.md collision handler
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
 ---
@@ -102,7 +103,7 @@ personal credentials and does not register webhooks.
 |---------|---------|--------------------|--------------------|--------|
 | **jsdelivr CDN** (`cdn.jsdelivr.net`) | Fetch pinned Mermaid library bytes (mermaid@v11.15.0) | `curl -sSf --max-time 120` against `/npm/mermaid@11.15.0/dist/mermaid.min.js`; download SHA-verified against `EXPECTED_SHA256` constant before accepting | None (public CDN, no API key) | `canonical/scripts/summarize/fetch-mermaid.sh` (`curl -sSf --max-time 120` download + `# Post-download path: verify SHA` block) |
 | **GitHub** (via `gh` CLI) | PR creation, issue mgmt, repo ops | Subprocess invocation of `gh` (assumed installed by adopter) | `gh auth login` — credential stored by `gh` (out-of-band), never embedded in repo. ⚠️ Maintainer note in user memory: `AndreVianna` account required for AID push access | `CLAUDE.md` PR/git workflow blocks |
-| **Git server (any)** | VCS operations (branch, commit, push) | Inline `git` invocations by `aid-execute` / `aid-deploy` / dev workflow | OS git config / SSH key (out-of-band) | `canonical/skills/aid-execute/SKILL.md` `### Check 5: Branch Isolation` |
+| **Git server (any)** | VCS operations (branch, commit, push) | Inline `git` invocations by `aid-execute` / `aid-deploy` / `aid-housekeep` / dev workflow | OS git config / SSH key (out-of-band) | `canonical/skills/aid-execute/SKILL.md` `### Check 5: Branch Isolation`, `canonical/scripts/housekeep/branch-commit.sh` (`git switch -c`/`git commit`; never `git push`) |
 
 ⚠️ Credentials not visible in code — likely environment-injected (gh CLI auth context,
 git config, OS keyring). No `.env`, no secrets manager, no token file inside the repo.
@@ -175,10 +176,10 @@ five host-tool install trees** plus a dogfood `.claude/` tree the repo uses on i
 ```
 canonical/                          ← single source of truth (maintainer edits here)
   ├── agents/        (22 dirs)
-  ├── skills/        (10 dirs + maintainer-only aid-generate)
+  ├── skills/        (11 user-facing dirs + maintainer-only aid-generate)
   ├── templates/     (knowledge-base, knowledge-summary, kb-authoring, ...)
   ├── recipes/       (5 lite-path templates + README)
-  ├── scripts/       (config/, execute/, interview/, kb/, summarize/, grade.sh)
+  ├── scripts/       (config/, execute/, housekeep/, interview/, kb/, summarize/, grade.sh)
   └── EMISSION-MANIFEST.md          ← safety-boundary spec
 
 run_generator.py                    ← entrypoint (87 lines)
@@ -203,6 +204,14 @@ run_generator.py                    ← entrypoint (87 lines)
  `test_antigravity_emitter.py --self-test`.)
 
 Source: `.aid/knowledge/project-structure.md` heading `### Generator (maintainer-only, ...)`
+
+> **Skill enumeration (post PR #49):** `canonical/skills/` holds **11 user-facing skills**
+> (`aid-config`, `aid-discover`, `aid-interview`, `aid-specify`, `aid-plan`, `aid-detail`,
+> `aid-execute`, `aid-deploy`, `aid-monitor`, `aid-summarize`, plus the **optional
+> off-pipeline** `aid-housekeep`) **+ maintainer-only `aid-generate`**. `aid-housekeep` is
+> NOT in the mandatory phase→skill mapping and no phase gate references it — it is invoked
+> on-demand. Source: `find canonical/skills -maxdepth 1 -type d`,
+> `canonical/skills/aid-housekeep/SKILL.md` (`**Absent from the mandatory pipeline flow.**`).
 
 ### Output Trees (5 profile install bundles + 1 dogfood)
 
@@ -317,8 +326,9 @@ Setup.sh diff handling: `new = copy`, `identical = skip`, `different = ask`
 
 ## Inter-Skill Choreography (Pipeline Integration)
 
-The 8 numbered phases + 2 non-phase Prepare skills + 1 maintainer skill compose a
-pipeline. Skills hand work to each other via **filesystem state**, not direct calls.
+The 8 numbered phases + 2 non-phase Prepare skills + 1 optional off-pipeline skill
+(`aid-housekeep`) + 1 maintainer skill compose the skill set. Skills hand work to each
+other via **filesystem state**, not direct calls.
 
 ### Phase Sequence (linear with feedback loops)
 
@@ -342,12 +352,16 @@ aid-deploy          ← Phase 7: Deliver
 aid-monitor         ← Phase 8: Deliver
 
 aid-summarize       ← non-phase, optional, runs against approved KB
+aid-housekeep       ← optional, OFF the mandatory pipeline (no phase gate references it);
+                       invoked on-demand. Delegates to /aid-discover (KB-DELTA) and
+                       /aid-summarize (SUMMARY-DELTA); never auto-runs.
 aid-generate        ← maintainer-only (canonical → profile trees)
 ```
 
 Source: `methodology/aid-methodology.md` `## 4. Feedback Loops` (the 11 feedback loops Mermaid graph),
 `docs/glossary.md` `## Phases` (phase table),
-`canonical/templates/work-state-template.md` `# Work State`
+`canonical/templates/work-state-template.md` `# Work State`,
+`canonical/skills/aid-housekeep/SKILL.md` (`**Absent from the mandatory pipeline flow.**`)
 
 ### Eleven Feedback Loops (the integration backbone)
 
@@ -367,6 +381,14 @@ Source: `methodology/aid-methodology.md` `## 4. Feedback Loops` (the 11 feedback
 
 Source: `methodology/aid-methodology.md` `### The Eleven Loops`
 
+> **`aid-housekeep` reuses Loop 11 (targeted re-discovery) mechanically, off-pipeline.**
+> Its KB-DELTA stage synthesizes a `**Impact:** Required` Q&A entry into
+> `.aid/knowledge/STATE.md ## Q&A (Pending)` (the same `DISCOVERY-STATE.md` Q&A carrier as
+> L11), then invokes `/aid-discover` to run only the affected sub-agents. `aid-housekeep`
+> is not itself one of the 11 named loops — it is an on-demand driver that triggers L11.
+> Source: `canonical/skills/aid-housekeep/references/state-kb-delta.md`
+> (`### Step 4 — Synthesize an Impact: Required Q&A entry + invoke /aid-discover`).
+
 ### State-File Read/Write Contract Between Skills
 
 Each skill detects state by reading specific sections of `STATE.md` files; never trusts
@@ -384,9 +406,13 @@ memory:
 | `aid-deploy` | `STATE.md ## Tasks Status` (all Done), `PLAN.md`, infrastructure config | `STATE.md ## Deploy Status`; `packages/package-NNN-{name}.md`; routes KB-affecting findings to `DISCOVERY-STATE.md` Q&A (never writes KB directly) |
 | `aid-monitor` | Telemetry sources, `packages/`, `known-issues.md`, feature SPECs | `MONITOR-STATE.md`; new `tasks/task-NNN.md` (bug path); `DISCOVERY-STATE.md` Q&A (CR path) |
 | `aid-summarize` | Approved `.aid/knowledge/` + `STATE.md ## Knowledge Summary Status` | `.aid/knowledge/knowledge-summary.html`; `STATE.md ## Knowledge Summary Status, ## Summarization History` |
+| `aid-housekeep` (optional, off-pipeline) | work-area `STATE.md ## Housekeep Status` (resume state, via `housekeep-state.sh`); `.aid/knowledge/STATE.md` (`**Last KB Review:**`, `**User Approved:**`, `## Summarization History`); `git` log/diff (hint only) | work-area `STATE.md ## Housekeep Status` (run-state fields, via `housekeep-state.sh`); `.aid/knowledge/STATE.md ## Q&A (Pending)` (synthesizes an `**Impact:** Required` entry to drive `/aid-discover`); one commit per stage on an `aid/housekeep-*` branch (via `branch-commit.sh`, never pushes). Delegates KB-DELTA → `/aid-discover`, SUMMARY-DELTA → `/aid-summarize`; CLEANUP deletes confirmed stale `.aid/` artifacts via `cleanup-classify.sh` + `git rm`/`rm` |
 | `aid-generate` (maintainer) | `canonical/`, `profiles/*.toml` (5 profiles), previous `emission-manifest.jsonl` per profile | `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/...`, new `emission-manifest.jsonl` per profile, repo-root `CLAUDE.md` / `AGENTS.md` |
 
-Sources cited inline above per skill SKILL.md.
+Sources cited inline above per skill SKILL.md (`aid-housekeep` row:
+`canonical/skills/aid-housekeep/SKILL.md`, `references/state-kb-delta.md`,
+`references/state-summary-delta.md`, `references/state-cleanup.md`,
+`canonical/scripts/housekeep/{housekeep-state,branch-commit,cleanup-classify}.sh`).
 
 ### Universal context-feeding protocol (KB INDEX)
 
@@ -413,6 +439,10 @@ ETA/threshold gates; not subject to my judgment."
 
 Calibration row appended to work `STATE.md ## Calibration Log` AND `## Dispatches`
 sub-column on every dispatch (unconditional).
+
+`aid-housekeep` inherits this same L1+L2+L3 protocol for its KB-DELTA sub-agent dispatches
+(via `/aid-discover`). Source: `canonical/skills/aid-housekeep/SKILL.md`
+`## Dispatch Protocol (L1+L2+L3 subagent visibility, subagent-visibility-patch)`.
 
 Source: `canonical/templates/long-wait-protocol.md` `# Long-Wait Protocol`,
 `canonical/templates/subagent-heartbeat-protocol.md` `# Subagent Heartbeat Protocol`,

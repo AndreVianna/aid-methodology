@@ -7,6 +7,7 @@ contracts: []
 changelog:
   - 2026-05-26: KB Authoring v2 template seed
   - 2026-05-27: Populated with 10 user-facing skills + 1 maintainer-only skill
+  - 2026-06-03: Added /aid-housekeep (11th user-facing skill) via /aid-housekeep KB-delta refresh
 ---
 
 # Feature Inventory
@@ -17,7 +18,7 @@ changelog:
 **Status values (text-only — machine-parsed):** `Shipped` · `Partial` · `Pending` · `In Progress` · `Deprecated`
 (Decorative glyphs are NOT used here — see `coding-standards.md §14` for the text-for-machine rule.)
 
-## User-facing skills (10)
+## User-facing skills (11)
 
 | # | Skill | Status | Description | Source |
 |---|-------|--------|-------------|--------|
@@ -31,6 +32,7 @@ changelog:
 | 8 | `/aid-deploy` | Shipped | Packages completed deliveries into a release. Selects eligible deliveries, verifies the combined build, packages according to project infrastructure, generates release notes, and updates artifact statuses. | `canonical/skills/aid-deploy/SKILL.md` |
 | 9 | `/aid-monitor` | Shipped | Observes production, classifies findings, and routes actions. Combines telemetry interpretation with triage — detects anomalies, performs root cause analysis, and routes bugs to `aid-execute` or change requests to `aid-discover`. | `canonical/skills/aid-monitor/SKILL.md` |
 | 10 | `/aid-summarize` | Shipped | Generates a single self-contained `knowledge-summary.html` from `.aid/knowledge/`. Inlines Mermaid diagrams for offline use, supports light/dark themes, and enforces a two-grade quality gate (Machine + Human) before writing the final output. | `canonical/skills/aid-summarize/SKILL.md` |
+| 11 | `/aid-housekeep` | Shipped | Optional on-demand housekeeping. Runs three gated jobs in strict order — KB-DELTA (re-discover KB docs that drifted since the last approval) → SUMMARY-DELTA (regenerate the visual summary if the KB changed) → CLEANUP (sweep stale `.aid/` work-area artifacts). Each stage commits on an `aid/housekeep-*` branch; never pushes. Re-entrant: a stalled run resumes at the stalled stage. Not part of the mandatory pipeline. | `canonical/skills/aid-housekeep/SKILL.md` |
 
 ## Maintainer-only skills (1)
 
@@ -40,7 +42,7 @@ changelog:
 
 ## Engineering features (referenced for historical context)
 
-The 10 user-facing skills above are the result of the following engineering work items:
+The 11 user-facing skills above are the result of the following engineering work items:
 
 - **Thin-Router Skills** (work-001 feature-002) — every `aid-*` SKILL.md is a state router (≤~360 lines) that delegates per-state logic to `references/state-*.md` files.
 - **Two-tier review** (work-001 feature-004) — per-task quick-check (Small-tier reviewer, no grade loop) + per-delivery quality gate (full review/fix/review loop with `grade.sh` determinism).
@@ -48,3 +50,4 @@ The 10 user-facing skills above are the result of the following engineering work
 - **Pool dispatch** (work-001 feature-009) — `aid-execute` runs a PD-0..PD-6 pool model with `MaxConcurrent` capacity, wait-for-any-completion, failure-block-radius, and graceful degradation.
 - **Recipes catalog** (work-001 feature-011) — `canonical/recipes/` ships 5 pre-filled lite-path templates with YAML front-matter and `{{slot}}` placeholders.
 - **Always-on traceability** (work-003) — every long-running subagent dispatch surfaces L1 state markers, L2 ETA bracket pairs, and L3 heartbeat files.
+- **Optional housekeeping skill** (work-001-aid-housekeep) — `/aid-housekeep` reconciles drift in three strictly-ordered gated jobs (KB-DELTA → SUMMARY-DELTA → CLEANUP) on an `aid/housekeep-*` branch, backed by deterministic helpers in `canonical/scripts/housekeep/` (run-state I/O + resume rule, branch/commit safety guard, stale-artifact classification).
