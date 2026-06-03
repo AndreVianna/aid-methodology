@@ -3,7 +3,7 @@
 
 # Package & Ship
 
-Final verification, PR creation, delivery summary, and documentation updates. The last development phase before production monitoring.
+Final verification, PR creation, delivery summary, and documentation updates. An optional, on-demand delivery skill — positioned at the end of the pipeline, run after Execute when the project's delivery model calls for it.
 
 ## Core Principle
 
@@ -182,16 +182,16 @@ After the PR is merged:
 - [ ] Revision log entries added for all KB changes.
 - [ ] No unresolved feedback Q&A entries or IMPEDIMENTs blocking this delivery.
 
-## Why This Phase Exists
+## Why This Skill Exists
 
 Deploy is more than `git merge`. It's the moment where implementation becomes official: final verification with a clean build, structured PR with full traceability, KB updates reflecting what was learned during this delivery, and artifact status updates closing the loop on tasks and deliverables.
 
 The delivery summary and KB updates are especially important — they capture the delta between what was planned and what was actually built, keeping the KB current for the next cycle.
 
-## Related Phases
+## Related Skills
 
-- **Previous:** [Execute](../aid-execute/) — all tasks must be complete and reviewed
-- **Next:** [Monitor](../aid-monitor/) — production monitoring begins
+- **Upstream:** [Execute](../aid-execute/) — all tasks must be complete and reviewed
+- **Optional companion:** [Monitor](../aid-monitor/) — optional production monitoring; independent of Deploy
 - **Feedback to:** Any phase if final verification reveals issues
 
 ## See Also

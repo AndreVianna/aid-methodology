@@ -9,6 +9,7 @@ intent: |
   and rubric tiers. Read this when any AID term is unfamiliar.
 contracts: []
 changelog:
+  - 2026-06-03: methodology v3.2 — Deploy/Monitor recast from numbered phases 7/8 to optional end-of-pipeline Deliver skills; AID term updated to "6 numbered development phases"; updated source anchors to the renamed spec headings (`#### Deploy … — optional` / `#### Monitor … — optional`).
   - 2026-06-03: housekeep run-state relocation (PR #51) — corrected the "Housekeep Status" term: the run-state block now lives in the project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md` (transient/gitignored), not a work-area STATE.md.
   - 2026-06-03: aid-housekeep merge (PR #49) — added "Housekeep / KB-drift reconciliation" (the optional off-pipeline /aid-housekeep skill) and "Housekeep Status" (the work-area run-state block) terms; left "Pre-flight Cleanup" (the distinct /aid-discover orchestrator-only KB sweep) unchanged
   - 2026-06-01: work-001-add-providers merge (PRs #42/#43/#44) — profile count 3→5; updated Generate/Profile/Install Tree/Dogfood Tree/Quadruple Mirror terms to 5-profile reality; added copilot-agent format, antigravity-rule format, native Agent Skills mapping, rules_frontmatter trigger-dialect, Option-A AGENTS.md collision
@@ -34,7 +35,7 @@ changelog:
 
 | Term | Definition (inferred from usage) | Source |
 |------|----------------------------------|--------|
-| **AID** | "AI Integrated Development" — a structured methodology for building/maintaining software with AI agents; 8 phases in 5 groups, every phase co-executed by human + AI. | `methodology/aid-methodology.md` `# AID — AI Integrated Development`, `CLAUDE.md` `## Project`, `docs/glossary.md` `**AID (AI Integrated Development):**` |
+| **AID** | "AI Integrated Development" — a structured methodology for building/maintaining software with AI agents; 6 numbered development phases in 5 groups (delivery and summary skills optional), every phase co-executed by human + AI. | `methodology/aid-methodology.md` `# AID — AI Integrated Development`, `CLAUDE.md` `## Project`, `docs/glossary.md` `**AID (AI Integrated Development):**` |
 | **Iron Man Model** | The human-AI collaboration philosophy: AI is the suit (amplifies capability); human is the pilot (sets direction, decisions). Human never leaves the cockpit. | `methodology/aid-methodology.md` `### Human-in-the-Middle`, `docs/glossary.md` `**Iron Man Model:**` |
 | **Director** | Role — the human. Sets direction, makes decisions, reviews artifacts, approves phase transitions. Orchestrates, doesn't code. | `methodology/aid-methodology.md` `### Roles` |
 | **Orchestrator** | Role — an AI agent (or human). Manages the pipeline: spawns agents, routes feedback loops, enforces quality gates, maintains KB. | `methodology/aid-methodology.md` `### Roles` |
@@ -57,8 +58,8 @@ changelog:
 | **Plan** | Map | `aid-plan` | Phase 4 — Sequence features into deliverables, each a functional MVP. Plan answers ONE question: order + standalone-functionality. | `methodology/aid-methodology.md` `#### Phase 4: Plan` |
 | **Detail** | Map | `aid-detail` | Phase 5 — Decompose each deliverable into PR-sized typed tasks. "Ultimate breakdown." | `methodology/aid-methodology.md` `#### Phase 5: Detail` |
 | **Execute** | Execute | `aid-execute` | Phase 6 — Execute a task per its Type; built-in two-tier review (per-task quick-check + per-delivery gate). One branch per delivery. | `methodology/aid-methodology.md` `#### Phase 6: Execute` |
-| **Deploy** | Deliver | `aid-deploy` | Phase 7 — Bundle deliveries into a release; final verification (build + tests + lint); ship per `infrastructure.md § Deployment`. Routes KB-affecting discoveries to Discovery (never edits KB directly). | `methodology/aid-methodology.md` `#### Phase 7: Deploy` |
-| **Monitor** | Deliver | `aid-monitor` | Phase 8 — Observe production; classify findings (BUG/CR/Infra/No Action); route. The short path (BUG → Execute) skips spec/plan. | `methodology/aid-methodology.md` `#### Phase 8: Monitor` |
+| **Deploy** | Deliver | `aid-deploy` | Optional (end-of-pipeline Deliver skill, not a numbered phase) — Bundle deliveries into a release; final verification (build + tests + lint); ship per `infrastructure.md § Deployment`. Routes KB-affecting discoveries to Discovery (never edits KB directly). | `methodology/aid-methodology.md` `#### Deploy (`aid-deploy`) — optional` |
+| **Monitor** | Deliver | `aid-monitor` | Optional (end-of-pipeline Deliver skill, not a numbered phase) — Observe production; classify findings (BUG/CR/Infra/No Action); route. The short path (BUG → Execute) skips spec/plan. | `methodology/aid-methodology.md` `#### Monitor (`aid-monitor`) — optional` |
 
 ---
 
@@ -74,8 +75,10 @@ changelog:
 > **Skill enumeration (post PR #49):** 11 user-facing skills (`aid-config`, `aid-discover`,
 > `aid-interview`, `aid-specify`, `aid-plan`, `aid-detail`, `aid-execute`, `aid-deploy`,
 > `aid-monitor`, `aid-summarize`, `aid-housekeep`) + maintainer-only `aid-generate`. Of these
-> `aid-summarize` and `aid-housekeep` are non-phase/optional; `aid-housekeep` is additionally
-> off the mandatory pipeline. Source: `find canonical/skills -maxdepth 1 -type d`.
+> `aid-summarize`, `aid-deploy`, `aid-monitor`, and `aid-housekeep` are optional, non-required
+> skills (not numbered phases): `aid-deploy`/`aid-monitor` are optional end-of-pipeline Deliver
+> skills, and `aid-housekeep` is additionally off the mandatory pipeline (no phase gate
+> references it). Source: `find canonical/skills -maxdepth 1 -type d`.
 
 ---
 
@@ -106,7 +109,7 @@ changelog:
 | **Feature** | A discrete capability inside a work. Lives at `.aid/{work}/features/feature-NNN-{name}/` with its own `SPEC.md`. Created by `aid-interview` Feature Decomposition state. | `methodology/aid-methodology.md` `#### Phase 2: Interview` |
 | **Delivery / Deliverable** | A subset of features grouped by `aid-plan` such that the group is a standalone-functional MVP. One branch per delivery (`aid/delivery-NNN`). | `methodology/aid-methodology.md` `#### Phase 4: Plan`, `canonical/skills/aid-execute/SKILL.md` `One branch per delivery. All tasks in a delivery share the same branch.` |
 | **Task** | The atomic unit produced by `aid-detail`. `task-NNN.md` — 6 sections (Title, Type, Source, Depends on, Scope, Acceptance Criteria). One task = one agent session = one PR. | `methodology/aid-methodology.md` `#### Phase 5: Detail`, `canonical/skills/aid-execute/SKILL.md` `Read \`task-NNN.md\`. It has 6 sections:` |
-| **Package** | A release artifact bundling one or more completed deliveries. `package-NNN-{name}.md` per shipped package. | `methodology/aid-methodology.md` `#### Phase 7: Deploy` |
+| **Package** | A release artifact bundling one or more completed deliveries. `package-NNN-{name}.md` per shipped package. | `methodology/aid-methodology.md` `#### Deploy (`aid-deploy`) — optional` |
 | **REQUIREMENTS.md** | The product-of-Interview document; one per work (full path only). Frozen after approval (rev-tracked). Holds Objective / Problem / Scope / FRs / NFRs / Constraints / Acceptance / Priority. | `methodology/aid-methodology.md` `### REQUIREMENTS.md Template` |
 | **SPEC.md (per-feature)** | Per-feature spec; requirements side (from Interview) + technical side (from Specify). | `methodology/aid-methodology.md` `### Feature SPEC.md Template` |
 | **SPEC.md (work-root, lite path)** | A single consolidated work-root SPEC.md in lite path (no features/ folder, no REQUIREMENTS.md, no PLAN.md). | `canonical/skills/aid-interview/SKILL.md` `A lite work has **no \`features/\` folder` |
@@ -253,7 +256,7 @@ changelog:
 | **Loop 10 — Monitor→Discover** | Change Request → Q&A → full new cycle. | `methodology/aid-methodology.md` `#### Loop 10: Monitor → Discover (Change Request Path)` |
 | **Loop 11 — Any→Discovery** | Cross-cutting targeted re-discovery — KB is always the return target; "the loop that makes the Knowledge Base the gravitational center." | `methodology/aid-methodology.md` `#### Loop 11: Any Phase → Discovery (Targeted Re-Discovery)` |
 | **Targeted re-discovery** | Re-entry to Discovery that fills a specific gap; never a full redo. Triggered by a Pending Q&A entry with `**Impact:** Required` naming the docs to refresh; also driven on-demand by `/aid-housekeep`'s KB-DELTA stage (off-pipeline). | `methodology/aid-methodology.md` `#### Loop 11: Any Phase → Discovery (Targeted Re-Discovery)`, `canonical/skills/aid-discover/SKILL.md` `## Targeted Discovery (Re-entry)`, `canonical/skills/aid-housekeep/references/state-kb-delta.md` `## Step 4` |
-| **Bug Path (short)** | Monitor → Execute → Deploy. Skips spec/plan because spec is already correct. | `methodology/aid-methodology.md` `### The Two Post-Production Paths`, `methodology/aid-methodology.md` `#### Phase 8: Monitor` |
+| **Bug Path (short)** | Monitor → Execute → Deploy. Skips spec/plan because spec is already correct. | `methodology/aid-methodology.md` `### The Two Post-Production Paths`, `methodology/aid-methodology.md` `#### Monitor (`aid-monitor`) — optional` |
 | **Change Request Path (full cycle)** | Monitor → Discover → ... full pipeline restart. | `methodology/aid-methodology.md` `### The Two Post-Production Paths`, `methodology/aid-methodology.md` `#### Loop 10: Monitor → Discover (Change Request Path)` |
 
 ---

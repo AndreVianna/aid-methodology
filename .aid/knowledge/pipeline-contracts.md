@@ -9,9 +9,10 @@ intent: |
   and the canonical→5-profile renderer contract. Read this to understand what each pipeline
   boundary expects and emits.
 contracts:
-  - "11 user-facing skill slash-command contracts documented (aid-config through aid-monitor, aid-summarize, plus optional off-pipeline aid-housekeep) + maintainer-only aid-generate"
+  - "11 user-facing skill slash-command contracts documented (aid-config + 6 numbered phases aid-discover…aid-execute + optional aid-deploy/aid-monitor/aid-summarize + optional off-pipeline aid-housekeep) + maintainer-only aid-generate"
   - "discovery.doc_set in settings.yml: declared-set → dispatch mapping honors the set (no-hang on omission; dispatch on addition)"
 changelog:
+  - 2026-06-03: methodology v3.2 — aid-deploy/aid-monitor reclassified as optional, on-demand end-of-pipeline Deliver skills (not mandatory phases 7/8); contract list reframed as aid-config + 6 numbered phases + optional deploy/monitor/summarize + off-pipeline housekeep. Per-skill state-machine contracts unchanged.
   - 2026-06-03: housekeep run-state relocation (PR #51) — /aid-housekeep run-state moved out of the work-area STATE.md to the transient project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`; dropped the `## Housekeep Status` work-state-section row; cleanup now offers every work folder for user-confirmed deletion (signals informational).
   - 2026-06-03: aid-housekeep merge (PR #49) — added /aid-housekeep as an optional off-pipeline skill with its consume/produce contracts (the STATE.md Impact:Required Q&A handshake with /aid-discover, the work-area ## Housekeep Status run-state block, the /aid-summarize delegation, the housekeep-state.sh / branch-commit.sh / cleanup-classify.sh CLI contracts); slash-command count 10→11 user-facing
   - 2026-06-01: work-001-add-providers merge (PRs #42/#43/#44) — renderer contract now spans 5 profiles (added copilot-cli + antigravity) and 4 agent formats (markdown/toml/copilot-agent/antigravity-rule); emission-manifest profile enum + manifest-locations updated

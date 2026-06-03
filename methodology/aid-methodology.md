@@ -2,13 +2,13 @@
 
 **A Complete Methodology for AI Integrated Software Development**
 
-*Version 3.1 — May 2026*
+*Version 3.2 — June 2026*
 
 ---
 
 ## Executive Summary
 
-AID (AI Integrated Development) is a structured methodology for building and maintaining software with AI agents. It defines eight development phases — plus a one-time setup step and an optional summary skill — organized into five groups, from problem mapping through production monitoring and issue routing, with formal feedback loops that allow any phase to revise upstream artifacts when reality contradicts assumptions.
+AID (AI Integrated Development) is a structured methodology for building and maintaining software with AI agents. It defines six development phases — plus a one-time setup step and optional delivery and summary skills — organized into five groups, from problem mapping through production monitoring and issue routing, with formal feedback loops that allow any phase to revise upstream artifacts when reality contradicts assumptions.
 
 Each phase is **co-executed by human and AI**. The AI is the Iron Man suit — it amplifies the human's capabilities. The human is the pilot — setting direction, making decisions, approving advancement between phases. The human never leaves the cockpit. This is not "AI executes, human validates." It is "human and AI work together, human drives."
 
@@ -18,7 +18,7 @@ The methodology covers the full lifecycle in five groups:
 - **Define** (2 phases): Gather requirements and formalize the problem statement.
 - **Map** (2 phases): Plan the roadmap and decompose it into executable tasks.
 - **Execute** (1 phase): Build, review, and test — one typed-task phase with a built-in review loop.
-- **Deliver** (2 phases): Ship to production, then monitor and route what breaks.
+- **Deliver** (2 optional skills): Optionally ship to production, then monitor and route what breaks. These end-of-pipeline skills are invoked on demand — neither is required, and neither presupposes the other.
 
 Bugs take a short path back through Execute. Change requests start a new development cycle. Nothing falls on the floor.
 
@@ -226,7 +226,7 @@ The Knowledge Base is institutional memory. It outlives any individual session, 
 
 ## 3. The Phases
 
-AID organizes eight development phases into five groups. The pipeline is linear with feedback loops. The Monitor phase observes production and routes issues back into development through one of two paths:
+AID organizes six development phases into five groups. The six numbered phases (Discover through Execute) form the mandatory, sequential pipeline; the fifth group, Deliver, holds two **optional** end-of-pipeline skills (`aid-deploy`, `aid-monitor`) that are invoked on demand rather than as required, sequential phases. The pipeline is linear with feedback loops. When run, the Monitor skill observes production and routes issues back into development through one of two paths:
 
 - **Bug path (short):** Monitor → Execute → Deploy. Surgical. Monitor identifies the bug, performs root cause analysis, creates a task, and routes to Execute. No re-specification, no re-planning.
 - **Change Request path (full cycle):** Monitor → Discover. The CR routes back to Discovery as a Q&A entry; a large-enough CR spins up a new work and runs the complete cycle from the beginning.
@@ -470,11 +470,13 @@ an `IMPEDIMENT-task-NNN.md` rather than silently working around the problem.
 
 ### Group 5: Deliver
 
-*Ship, monitor, and classify issues.*
+*Optionally ship, monitor, and classify issues.*
+
+The two Deliver-group skills — `aid-deploy` and `aid-monitor` — are **optional, on-demand skills, not numbered pipeline phases.** They are positioned at the end of the pipeline, but neither is required to complete a development cycle and neither is a forced sequential step after Execute: a project may ship by other means, may run monitoring without using `aid-deploy`, or may skip both. Run them when the project's delivery model calls for them. (This mirrors `aid-summarize` — an optional skill in the Prepare group — and `aid-housekeep`, the optional off-pipeline maintenance skill.) The feedback loops they participate in (§4, L8–L10) apply only when these skills are run.
 
 ---
 
-#### Phase 7: Deploy (`aid-deploy`)
+#### Deploy (`aid-deploy`) — optional
 
 **Purpose:** Bundle one or more completed deliveries into a release package, verify it, and ship it to production.
 
@@ -494,7 +496,7 @@ an `IMPEDIMENT-task-NNN.md` rather than silently working around the problem.
 - The release artifact prescribed by the project's infrastructure — a pull request, container image, published package, installer, or static-site deploy.
 - KB-affecting discoveries routed to Discovery via the discovery-area `STATE.md` Q&A; `PLAN.md` deliveries marked shipped.
 
-#### Phase 8: Monitor (`aid-monitor`)
+#### Monitor (`aid-monitor`) — optional
 
 **Purpose:** Observe production, classify findings, and route actions. Combines telemetry interpretation with triage in a single observe → classify → act cycle. Per-work scope.
 
@@ -521,12 +523,13 @@ an `IMPEDIMENT-task-NNN.md` rather than silently working around the problem.
 
 ## 4. Feedback Loops
 
-The pipeline is sequential by default. But real engineering isn't linear. Assumptions break. Gaps appear. Production reveals truths that development couldn't anticipate. AID defines **eleven formal feedback loops** — eight within development, two connecting production back to development, and one cross-cutting re-entry available from any phase.
+The development pipeline (Discover through Execute) is sequential by default; the optional Deliver-group skills (Deploy, Monitor) run on demand at the end. But real engineering isn't linear. Assumptions break. Gaps appear. Production reveals truths that development couldn't anticipate. AID defines **eleven formal feedback loops** — eight within development, two connecting production back to development, and one cross-cutting re-entry available from any phase. The three loops that originate from the optional Deliver skills (L8–L10) apply only when those skills are run.
 
 ```mermaid
 flowchart TB
     classDef phase fill:#0F766E,stroke:#0F766E,color:#ffffff
     classDef kb fill:#1E3A8A,stroke:#1E3A8A,color:#ffffff
+    classDef optional fill:#0F766E,stroke:#0F766E,color:#ffffff,stroke-dasharray:5 4
 
     D["1 · Discover"]:::phase
     I["2 · Interview"]:::phase
@@ -534,10 +537,12 @@ flowchart TB
     P["4 · Plan"]:::phase
     Dt["5 · Detail"]:::phase
     E["6 · Execute"]:::phase
-    Dp["7 · Deploy"]:::phase
-    M["8 · Monitor"]:::phase
+    Dp["Deploy · optional"]:::optional
+    M["Monitor · optional"]:::optional
 
-    D --> I --> S --> P --> Dt --> E --> Dp --> M
+    D --> I --> S --> P --> Dt --> E
+    E -. "optional" .-> Dp
+    E -. "optional" .-> M
 
     I -. "L1" .-> D
     S -. "L2" .-> D
@@ -1046,7 +1051,7 @@ SDD is not wrong. It's incomplete. AID is SDD + Discovery + Feedback Loops + Two
 
 ### Adopting Incrementally
 
-You don't need to use all eight phases from day one — though `/aid-config` always runs once first:
+You don't need to use all six phases from day one — though `/aid-config` always runs once first:
 
 - **Start with Detail + Execute.** If you already have specs, formalize your task decomposition and reviewed execution — Execute codes, reviews, and grades in one loop.
 - **Add Plan.** Separate delivery strategy from tactical decomposition with two-level planning.

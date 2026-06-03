@@ -2,10 +2,10 @@
 	<header>
 		<span class="eyebrow">Featured</span>
 		<h2>The Pipeline</h2>
-		<p class="lede">AID defines eight sequential pipeline phases — from brownfield discovery through production monitoring — with explicit human-controlled phase gates and feedback loops. Each phase maps to a slash-command skill. (per architecture.md, repo-presentation.md)</p>
+		<p class="lede">AID defines six sequential development phases — from brownfield discovery through reviewed execution — with explicit human-controlled phase gates and feedback loops. Two optional Deliver skills (Deploy, Monitor) sit at the end of the pipeline, run on demand. Each numbered phase maps to a slash-command skill. (per architecture.md, repo-presentation.md)</p>
 	</header>
 
-	<p>The pipeline is sequential by default: human approval is required to advance between phases. Feedback loops exist as escape hatches — Monitor can route back to Execute or Discover; Execute can issue IMPEDIMENT escalations; any phase can revisit Discovery. The Lite Path shortcut routes small work directly from Interview to task execution, bypassing Specify, Plan, and Detail. (per feature-inventory.md §Engineering features)</p>
+	<p>The development pipeline (Discover → Execute) is sequential by default: human approval is required to advance between phases. The two Deliver skills — Deploy and Monitor — are optional and run on demand at the end; neither is required and neither presupposes the other. Feedback loops exist as escape hatches — Monitor can route back to Execute or Discover; Execute can issue IMPEDIMENT escalations; any phase can revisit Discovery. The Lite Path shortcut routes small work directly from Interview to task execution, bypassing Specify, Plan, and Detail. (per feature-inventory.md §Engineering features)</p>
 
 	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 1: AID phase pipeline — click or press Enter to expand">
 		<div class="mermaid">
@@ -13,6 +13,7 @@ flowchart LR
     classDef phase fill:#0B1F3A,stroke:#00A3A1,color:#fff,stroke-width:2px;
     classDef gate  fill:#007F7D,stroke:#005856,color:#fff,stroke-width:2px;
     classDef lite  fill:#1D4ED8,stroke:#1e40af,color:#fff,stroke-width:2px;
+    classDef optional fill:#0B1F3A,stroke:#00A3A1,color:#fff,stroke-width:2px,stroke-dasharray:5 4;
 
     CFG["aid-config<br/>Setup"]:::phase
     DSC["aid-discover<br/>Discovery"]:::phase
@@ -21,8 +22,8 @@ flowchart LR
     PLN["aid-plan<br/>Plan"]:::phase
     DTL["aid-detail<br/>Detail"]:::phase
     EXC["aid-execute<br/>Execute"]:::phase
-    DEP["aid-deploy<br/>Deploy"]:::phase
-    MON["aid-monitor<br/>Monitor"]:::phase
+    DEP["aid-deploy<br/>Deploy · optional"]:::optional
+    MON["aid-monitor<br/>Monitor · optional"]:::optional
     LITE["Lite Path<br/>direct to tasks"]:::lite
 
     CFG --> DSC
@@ -33,12 +34,12 @@ flowchart LR
     SPC --> PLN
     PLN --> DTL
     DTL --> EXC
-    EXC --> DEP
-    DEP --> MON
+    EXC -. optional .-> DEP
+    EXC -. optional .-> MON
     MON -. bug found .-> EXC
     MON -. change req .-> DSC
 		</div>
-		<p class="caption">Fig 1 — AID phase pipeline: 8 phases (Discover through Monitor), with the Lite Path shortcut for small work. Feedback loops let Monitor re-enter Execute or Discover. (per architecture.md)</p>
+		<p class="caption">Fig 1 — AID pipeline: 6 numbered phases (Discover → Execute) plus the optional end-of-pipeline Deliver skills (Deploy, Monitor, dashed), with the Lite Path shortcut for small work. Feedback loops let Monitor re-enter Execute or Discover. (per architecture.md)</p>
 	</div>
 
 	<div class="callout">

@@ -1,8 +1,8 @@
 > **Human-facing documentation.** Machine source consumed by `/aid-generate` is [`SKILL.md`](SKILL.md) in this folder.
 
-# aid-monitor — Phase 8: Monitor
+# aid-monitor — Monitor (optional)
 
-Observe production, classify findings, and route actions. Per-work scope.
+Observe production, classify findings, and route actions. Per-work scope. An optional, on-demand delivery skill — run post-deployment, on schedule, or on demand; not a required pipeline phase.
 
 ## What It Does
 

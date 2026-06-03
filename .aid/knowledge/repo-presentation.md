@@ -14,6 +14,7 @@ changelog:
   - 2026-05-27: Initial authoring during cycle-1 FIX Phase B (replaces deleted ui-architecture.md per Q3)
   - 2026-06-01: Post-merge update for work-001-add-providers (PRs #42/#43/#44) — install surface 3 profiles → 5 (added GitHub Copilot CLI + Antigravity); Option-A AGENTS.md collision handler documented; setup.sh/ps1 line counts refreshed (210/199).
   - 2026-06-03: Post-merge update for work-001-aid-housekeep (PR #49) — total installed skills 10 → 11 (added optional/on-demand aid-housekeep); clarified that README's "## The Pipeline" table still lists 10 pipeline skills only (aid-housekeep is intentionally absent from that table).
+  - 2026-06-03: methodology v3.2 — README pipeline framing reconciled: numbered development phases 8 → 6; aid-deploy/aid-monitor recast from numbered phases 7/8 to optional end-of-pipeline Deliver skills; "10 skills" breakdown is now one setup + six numbered phases + three optional skills (summarize, deploy, monitor).
 ---
 
 # Repo Presentation
@@ -53,7 +54,7 @@ the major sections:
 |---------|--------|---------|
 | **What is AID?** | `README.md` `## What is AID?` | Core philosophy in three convictions; Iron Man collaboration image |
 | **Why AID? — the failure modes it removes** | `README.md` `## Why AID? — the failure modes it removes` | Failure-mode table mapping failure modes to structural fixes (knowledge gaps, hallucination, drift, overengineering, etc.) |
-| **The Pipeline** | `README.md` `## The Pipeline` | Mermaid flowchart + table of the 10 mandatory-pipeline skills (one setup skill, eight numbered phases, one optional summarize skill), their groups, and outputs. ⚠️ This table covers the *pipeline* skills only — `aid-housekeep` (the 11th installed skill, optional/on-demand) is intentionally NOT in this table because it is not part of the linear pipeline flow. |
+| **The Pipeline** | `README.md` `## The Pipeline` | Mermaid flowchart + table of the 10 pipeline skills (one setup skill, six numbered phases, three optional skills — `aid-summarize` plus the two end-of-pipeline Deliver skills `aid-deploy`/`aid-monitor`), their groups, and outputs. ⚠️ This table covers the *pipeline* skills only — `aid-housekeep` (the 11th installed skill, optional/on-demand) is intentionally NOT in this table because it is not part of the linear pipeline flow. |
 | **The Knowledge Base** | `README.md` `## The Knowledge Base — the gravitational center` | KB structure, 14-standard-document fixed shape, 3-tier context economy diagram |
 | **The Agent Model** | `README.md` `## The Agent Model — three tiers` | Three-tier agent diagram (Large/Medium/Small), provider-agnostic tier table, skill→agent dispatch |
 | **Feedback Loops** | `README.md` `## Feedback Loops` | 11 formal loops described; key loops called out (Any phase → Discovery, Execute → IMPEDIMENT, Monitor → Execute, Monitor → Discover) |
@@ -72,10 +73,12 @@ The footer (`README.md`, closing `*Read the full methodology:*` line) carries th
 ### A note on skill counts (pipeline vs. total installed)
 
 The README's `## The Pipeline` section frames AID as "**10 skills** — one setup skill,
-eight numbered development phases, one optional skill" (`README.md` `## The Pipeline`).
-That "10 skills" count refers to the **mandatory-pipeline skills only** — the ones in
-the Pipeline table and Mermaid flowchart (`aid-config`, the eight numbered phases
-`aid-discover`…`aid-monitor`, plus the optional `aid-summarize`).
+six numbered development phases, three optional skills" (`README.md` `## The Pipeline`).
+That "10 skills" count refers to the **pipeline-table skills** — the ones in
+the Pipeline table and Mermaid flowchart (`aid-config`, the six numbered phases
+`aid-discover`…`aid-execute`, plus the optional `aid-summarize`, `aid-deploy`, and
+`aid-monitor`). `aid-deploy` and `aid-monitor` are optional, on-demand Deliver skills
+positioned at the end of the pipeline — not required, numbered phases.
 
 The repository actually ships **11 user-facing skills**: those 10 pipeline skills **plus**
 `aid-housekeep` — an optional, on-demand maintenance skill that is deliberately absent from
@@ -105,7 +108,7 @@ it are the primary audience.
 `docs/faq.md` — three sections (General, Adoption, Technical):
 
 - **General** (`docs/faq.md` `## General`): What AID stands for, how it differs from SDD, whether
-  all 8 phases are required, and how to start a new project.
+  all six numbered phases are required, and how to start a new project.
 - **Adoption** (`docs/faq.md` `## Adoption`): Compatible AI tools (Claude Code, Codex CLI, Cursor,
   Copilot, Windsurf, Aider, custom agents), how to load skills as system context, team
   use, and adoption timeline.
@@ -126,8 +129,8 @@ Artifacts, Groups, Related Terms):
 - **Core Concepts** (`docs/glossary.md` `## Core Concepts`): AID, Knowledge Base, Feedback Loop, Phase Gate,
   Iron Man Model.
 - **Setup** (`docs/glossary.md` `## Setup`): `aid-config` bootstrapping step.
-- **Phases** (`docs/glossary.md` `## Phases`): All 8 phases in a table with group membership and
-  primary output artifact.
+- **Phases** (`docs/glossary.md` `## Phases`): The six numbered phases plus the two optional
+  Deliver skills (Deploy, Monitor) in a table with group membership and primary output artifact.
 - **Artifacts** (`docs/glossary.md` `## Artifacts`): SPEC.md, Q&A entry, IMPEDIMENT.md,
   MONITOR-STATE.md, Grading (A+ to F).
 - **Groups** (`docs/glossary.md` `## Groups`): All 5 groups with phases and focus.
@@ -231,7 +234,7 @@ of how AID works.
 |---|---------|-------|
 | 1 | Philosophy | Waterfall rehabilitation, Human-in-the-Middle, three core principles, failure modes table, roles (Director/Orchestrator/Specialist) |
 | 2 | The Knowledge Base | KB structure (14 standard + 3 meta + 1 generated), completeness tracking, context feeding strategy (3-tier economy), INDEX.md mechanism |
-| 3 | The Phases | All 8 phases defined in detail with inputs, outputs, agent assignments |
+| 3 | The Phases | The six numbered phases (plus the two optional Deliver skills) defined in detail with inputs, outputs, agent assignments |
 | 4 | Feedback Loops | 11 formal loops enumerated with trigger conditions and artifacts produced |
 | 5 | Artifacts Reference | Every artifact defined: SPEC.md, STATE files, IMPEDIMENT.md, MONITOR-STATE.md, grading rubric |
 | 6 | The Pipeline | End-to-end pipeline with state machine per skill |
@@ -320,7 +323,7 @@ After running `setup.sh` or `setup.ps1`, the target project gains:
 
 - The tool-appropriate hidden directory (`.claude/`, `.codex/`+`.agents/`, `.cursor/`,
   `.github/` for Copilot CLI, or `.agent/` for Antigravity)
-  containing all 11 user-facing skills (the 10 mandatory-pipeline skills + the optional
+  containing all 11 user-facing skills (the 10 pipeline-table skills + the optional
   on-demand `aid-housekeep`), 22 agents, 5 recipes, templates, and helper scripts.
   (The maintainer-only `aid-generate` skill is never installed — it lives only in the
   source repo's `.claude/skills/`, not in `canonical/`; see `architecture.md`.)
