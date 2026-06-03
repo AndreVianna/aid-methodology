@@ -4,13 +4,14 @@
 
 Most AI-coding workflows treat development as a code-generation problem: write a spec, let the agent implement it, review the output. That framing ignores everything *around* the spec — and that is exactly where AI projects fail. AID is the methodology for the rest of the lifecycle.
 
-It ships as an install bundle for three AI coding tools (Claude Code, OpenAI Codex CLI, Cursor): a **10-skill pipeline**, **22 specialized agents**, formal feedback loops, and a **Knowledge Base** that every phase reads and any phase can revise.
+It ships as an install bundle for **five AI coding tools** (Claude Code, OpenAI Codex CLI, Cursor, GitHub Copilot CLI, Antigravity): an **11-skill pipeline**, **22 specialized agents**, formal feedback loops, and a **Knowledge Base** that every phase reads and any phase can revise.
 
 ## Contents
 
 - [What is AID?](#what-is-aid)
 - [Why AID? — the failure modes it removes](#why-aid--the-failure-modes-it-removes)
 - [The Pipeline](#the-pipeline)
+- [The Lite Path](#the-lite-path)
 - [The Knowledge Base](#the-knowledge-base--the-gravitational-center)
 - [The Agent Model](#the-agent-model--three-tiers)
 - [Feedback Loops](#feedback-loops)
@@ -23,7 +24,7 @@ It ships as an install bundle for three AI coding tools (Claude Code, OpenAI Cod
 
 ## What is AID?
 
-AID (AI Integrated Development) covers the **full lifecycle**: understanding an existing system, gathering requirements, writing grounded specifications, planning and detailing work, building with quality gates, shipping, and monitoring production. **Ten skills, five groups, eleven formal feedback loops.**
+AID (AI Integrated Development) covers the **full lifecycle**: understanding an existing system, gathering requirements, writing grounded specifications, planning and detailing work, building with quality gates, shipping, and monitoring production. **Eleven skills, five groups, eleven formal feedback loops.**
 
 It rests on three convictions:
 
@@ -58,7 +59,7 @@ The rest of this document is how each mechanism works.
 
 ## The Pipeline
 
-AID is **10 skills** — one setup skill, six numbered development phases, three optional skills (`aid-summarize` plus the two end-of-pipeline Deliver skills) — organized into **five groups**. The development path (Discover → Execute) is linear by default; delivery is optional and runs on demand. The feedback loops are the escape hatches that prevent silent workarounds.
+AID is **11 skills** — one setup skill, six numbered development phases, three optional skills (`aid-summarize`, `aid-deploy`, `aid-monitor`), and one on-demand maintenance skill (`aid-housekeep`) — organized into **five groups**. The development path (Discover → Execute) is linear by default; delivery is optional and runs on demand. The feedback loops are the escape hatches that prevent silent workarounds.
 
 ```mermaid
 flowchart TB
@@ -98,18 +99,35 @@ flowchart TB
 
 | Group | Phase | Skill | What it produces |
 |---|---|---|---|
-| **1 · Prepare** | — Init | `/aid-config` | `.aid/` scaffold, KB placeholders, `CLAUDE.md` / `AGENTS.md` |
-| | 1 · Discover | `/aid-discover` | the 16-document Knowledge Base |
+| **1 · Prepare** | — Init | `/aid-config` | `.aid/` scaffold, KB placeholders (14 templates + meta), `CLAUDE.md` / `AGENTS.md` |
+| | 1 · Discover | `/aid-discover` | the 14-document Knowledge Base |
 | | — Summarize | `/aid-summarize` | optional offline HTML viewer of the KB |
-| **2 · Define** | 2 · Interview | `/aid-interview` | `REQUIREMENTS.md` + per-feature `SPEC.md` stubs |
-| | 3 · Specify | `/aid-specify` | the technical specification for each feature |
-| **3 · Map** | 4 · Plan | `/aid-plan` | `PLAN.md` — features sequenced into shippable deliveries |
-| | 5 · Detail | `/aid-detail` | typed, PR-sized task files with acceptance criteria |
+| **2 · Define** | 2 · Interview | `/aid-interview` | `REQUIREMENTS.md` + per-feature `SPEC.md` stubs (full path) OR work-root `SPEC.md` + `tasks/` (lite path) |
+| | 3 · Specify | `/aid-specify` | the technical specification for each feature (full path only) |
+| **3 · Map** | 4 · Plan | `/aid-plan` | `PLAN.md` — features sequenced into shippable deliveries (full path only) |
+| | 5 · Detail | `/aid-detail` | typed, PR-sized task files with acceptance criteria (full path only) |
 | **4 · Execute** | 6 · Execute | `/aid-execute` | implemented + reviewed code, looped to a grade |
 | **5 · Deliver** | — Deploy | `/aid-deploy` | *(optional)* a shipped delivery + pull request |
 | | — Monitor | `/aid-monitor` | *(optional)* production findings classified and routed to fixes |
 
-`aid-config` (setup), `aid-summarize`, `aid-deploy`, and `aid-monitor` are skills but **not numbered phases** — hence the dashes. `aid-deploy` and `aid-monitor` are optional, on-demand delivery skills positioned at the end of the pipeline: neither is required to complete a cycle and neither presupposes the other. Discovery is brownfield-only; greenfield projects enter at Interview.
+`aid-config` (setup), `aid-summarize`, `aid-deploy`, and `aid-monitor` are skills but **not numbered phases** — hence the dashes. `aid-deploy` and `aid-monitor` are optional, on-demand delivery skills positioned at the end of the pipeline: neither is required to complete a cycle and neither presupposes the other. Discovery is brownfield-only; greenfield projects enter at Interview. `aid-housekeep` is an on-demand maintenance skill (off-pipeline) for keeping the Knowledge Base current.
+
+---
+
+## The Lite Path
+
+For small, well-scoped work, AID includes a **lite path** that skips most of the pipeline and gets straight to execution. When you run `/aid-interview`, it begins with a TRIAGE that classifies the work by breadth, size, and type. Small work (≤ 2 features, ≤ a few days, workType: bug-fix / small-refactor / single-doc / small-new-feature) takes the lite path.
+
+**Lite path output:** a work-root `SPEC.md` + `tasks/` directory directly — no `features/` folder, no `REQUIREMENTS.md`, no `PLAN.md`. Then straight to `/aid-execute`.
+
+| workType | Sub-path | Typical output |
+|----------|----------|----------------|
+| `bug-fix` | LITE-BUG-FIX | 1 IMPLEMENT task (fix + regression test) |
+| `small-refactor` | LITE-REFACTOR | 1–3 REFACTOR + TEST tasks |
+| `single-doc` | LITE-DOC | 1 DOCUMENT task |
+| `small-new-feature` | LITE-FEATURE | 1–5 IMPLEMENT + TEST + DOCUMENT tasks |
+
+**Recipes** speed up the lite path further. Five pre-filled templates live at `canonical/recipes/` (bug-fix, method-refactor, add-crud-endpoint, add-unit-test, write-release-note). A recipe is a YAML frontmatter + `## spec` + `## tasks` block with `{{slot}}` placeholders that `parse-recipe.sh` substitutes — eliminating redundant interview for recurring patterns. A lite work can also be escalated to full mid-flight if scope grows.
 
 ---
 
@@ -128,7 +146,7 @@ graph TD
     KB[(".aid/knowledge/<br/>the Knowledge Base")]:::center
 
     Standard["14 standard KB docs<br/>load-bearing for downstream skills"]:::std
-    Meta["3 meta-documents<br/>INDEX · README · DISCOVERY-STATE"]:::meta
+    Meta["3 meta-documents<br/>INDEX · README · STATE"]:::meta
     Gen["1 generated pre-pass<br/>project-index.md"]:::gen
     Ext["KB extensions<br/>optional · project-specific"]:::ext
 
@@ -145,7 +163,7 @@ graph TD
     Standard --> S6["feature-inventory<br/>orchestrator"]:::std
 ```
 
-The declared doc-set is produced by six discovery sub-agents grouped by domain. Because the set is declared (not ad-hoc), an agent looking for data schemas always reads `schemas.md`; looking for debt, always `tech-debt.md` — navigation is by **convention, not search**.
+The declared doc-set is produced by six discovery sub-agents grouped by domain. Because the set is declared (not ad-hoc), an agent looking for data schemas always reads `schemas.md`; looking for debt, always `tech-debt.md` — navigation is by **convention, not search**. The default set of 14 standard documents is configurable via `discovery.doc_set` in `.aid/settings.yml`.
 
 ### Progressive disclosure — the 3-tier context economy
 
@@ -169,7 +187,7 @@ flowchart TB
 ```
 
 - **Tier 1 — `INDEX.md`, always loaded.** Every task prompt carries a 2-3 line summary of every KB doc (~200-500 tokens total). The agent knows what knowledge exists and which file holds it, at negligible cost.
-- **Tier 2 — one KB document, on demand.** From an INDEX entry the agent reads only the single document a task needs. The fixed 16-doc shape makes this deterministic — no search.
+- **Tier 2 — one KB document, on demand.** From an INDEX entry the agent reads only the single document a task needs. The fixed 14-doc shape makes this deterministic — no search.
 - **Tier 3 — exact repo location, via citation.** Every factual claim in a KB doc carries an inline `path:line` citation. The agent jumps straight to the precise file and line — never globbing, never bulk-loading unrelated source.
 
 **Net effect:** retrieval-augmented behavior with no vector database, no embeddings, no chunking — just predictable structure, a navigation index, and mandatory citations.
@@ -178,7 +196,7 @@ flowchart TB
 
 ## The Agent Model — three tiers
 
-Skills are state-machine **orchestrators**; agents are the **workers**. AID defines 22 agents, split into three tiers by cost and capability, applied consistently across all three install bundles.
+Skills are state-machine **orchestrators**; agents are the **workers**. AID defines 22 agents, split into three tiers by cost and capability, applied consistently across all five install bundles.
 
 ```mermaid
 graph TB
@@ -210,11 +228,11 @@ Each tier is a deliberate cost/precision trade-off:
 
 The tiers are **provider-agnostic** — each host tool maps them to a concrete model:
 
-| Tier | Anthropic | OpenAI |
-|------|-----------|--------|
-| **Large** | Claude Opus | GPT-5.5 (high reasoning) |
-| **Medium** | Claude Sonnet | GPT-5.4 (medium reasoning) |
-| **Small** | Claude Haiku | GPT-5.4-mini (low reasoning) |
+| Tier | Claude Code | Codex CLI | Cursor | Copilot CLI | Antigravity |
+|------|-------------|-----------|--------|-------------|-------------|
+| **Large** | Claude Opus | GPT-5.5 (high reasoning) | Claude Opus | claude-opus-4.8 | gemini-3-pro |
+| **Medium** | Claude Sonnet | GPT-5.4 (medium reasoning) | Claude Sonnet | claude-sonnet-4.6 | gemini-3-pro |
+| **Small** | Claude Haiku | GPT-5.4-mini (low reasoning) | Claude Haiku | claude-haiku-4.5 | gemini-3-flash |
 
 ### Skill → agent dispatch
 
@@ -264,7 +282,7 @@ Spec-Driven Development is a good idea. AID contains it and goes further.
 | Dimension | SDD | AID |
 |---|---|---|
 | **Starting point** | You have a spec | You have a problem |
-| **Brownfield support** | Not addressed | First-class Discovery phase + 16-document KB |
+| **Brownfield support** | Not addressed | First-class Discovery phase + 14-document KB |
 | **Spec philosophy** | Spec is the source of truth | Spec is a hypothesis — revised by formal protocol |
 | **Requirements** | Assumed to exist | Adaptive interview, one question at a time |
 | **Planning depth** | A single spec | Two levels: Plan (strategy) → Detail (tactics) |
@@ -294,9 +312,24 @@ cd aid-methodology
 .\setup.ps1 C:\path\to\your\project
 ```
 
-The script shows a menu — select the tools you use (Claude Code, Codex, Cursor) and install. **Re-running is safe:** identical files are skipped, changed files prompt before overwriting. Pass `--force` to overwrite without prompts.
+The script shows a menu — select the tools you use and install. Options are:
 
-Prefer to install by hand? Copy the tool directory into your project root — `profiles/claude-code/.claude/`, `profiles/codex/.codex/` + `profiles/codex/.agents/`, or `profiles/cursor/.cursor/` — and see that tool's [setup guide](profiles/claude-code/README.md).
+1. Claude Code
+2. OpenAI Codex CLI
+3. Cursor
+4. GitHub Copilot CLI
+5. Antigravity
+6. Done
+
+**Re-running is safe:** identical files are skipped, changed files prompt before overwriting. Pass `--force` to overwrite without prompts.
+
+Prefer to install by hand? Copy the tool directory into your project root:
+
+- Claude Code: `profiles/claude-code/.claude/`
+- Codex CLI: `profiles/codex/.codex/` + `profiles/codex/.agents/`
+- Cursor: `profiles/cursor/.cursor/`
+- GitHub Copilot CLI: `profiles/copilot-cli/.github/`
+- Antigravity: `profiles/antigravity/.agent/`
 
 ### 2. Run the pipeline
 
@@ -304,28 +337,34 @@ Open your AI coding tool in the project and run the skills as slash commands:
 
 ```
 /aid-config           # once per project — scaffolds .aid/ and the KB structure
-/aid-discover       # brownfield: analyze the existing code into the KB
-/aid-interview      # greenfield: build REQUIREMENTS.md from a guided dialogue
-/aid-specify        # add the technical spec to each feature
-/aid-plan           # sequence features into shippable deliveries
-/aid-detail         # decompose deliveries into typed, PR-sized tasks
-/aid-execute        # implement each task, with the built-in review loop
-/aid-deploy         # optional — package and ship a delivery
-/aid-monitor        # optional — observe production; classify findings; route fixes
-/aid-summarize      # optional — generate an offline HTML viewer of the KB
+/aid-discover         # brownfield: analyze the existing code into the KB
+/aid-interview        # begin requirements gathering (TRIAGE routes full or lite path)
+/aid-specify          # add the technical spec to each feature (full path only)
+/aid-plan             # sequence features into shippable deliveries (full path only)
+/aid-detail           # decompose deliveries into typed, PR-sized tasks (full path only)
+/aid-execute          # implement each task, with the built-in review loop
+/aid-deploy           # optional — package and ship a delivery
+/aid-monitor          # optional — observe production; classify findings; route fixes
+/aid-summarize        # optional — generate an offline HTML viewer of the KB
+/aid-housekeep        # on-demand — keep the Knowledge Base current (off-pipeline)
 ```
 
-`/aid-config` runs first, always. Then **brownfield** projects run `/aid-discover`; **greenfield** projects start at `/aid-interview`. Every phase is gated — nothing advances without your explicit approval.
+`/aid-config` runs first, always. Then **brownfield** projects run `/aid-discover`; **greenfield** projects start at `/aid-interview`. Every phase is gated — nothing advances without your explicit approval. `/aid-interview` begins with TRIAGE: if the work is small and well-scoped, it routes to the lite path automatically.
 
 ### 3. What gets installed
 
-- `.claude/`, `.codex/` + `.agents/`, or `.cursor/` (depending on the tools you picked) — agents, skills, templates, and scripts.
+- Tool-specific directories (depending on the tools you picked):
+  - `.claude/` — Claude Code
+  - `.codex/` + `.agents/` — Codex CLI
+  - `.cursor/` — Cursor
+  - `.github/` — GitHub Copilot CLI
+  - `.agent/` — Antigravity
 - `CLAUDE.md` or `AGENTS.md` at the project root — the host-tool project-context file, with placeholders that `/aid-config` and `/aid-discover` populate.
 - `.aid/` appended to your project's `.gitignore` — the Knowledge Base stays out of git by default; remove the entry if you want to commit it.
 
 ### Runtime requirements
 
-- One or more host AI tools: **Claude Code**, **OpenAI Codex CLI**, or **Cursor**. Any agent that can read files and write code can use the `skills/` docs as system context.
+- One or more host AI tools: **Claude Code**, **OpenAI Codex CLI**, **Cursor**, **GitHub Copilot CLI**, or **Antigravity**. Any agent that can read files and write code can use the skill docs as system context.
 - **Bash** (or git-bash on Windows) for scripts; **PowerShell 5.1+** for `setup.ps1`.
 - **Git**. **Node 18+** is optional — only `/aid-summarize` uses it, for diagram validation.
 
@@ -361,23 +400,31 @@ first-version point.
 
 ```
 aid-methodology/
-├── methodology/aid-methodology.md   ← the complete methodology spec (~40 min read)
-├── skills/                          ← human-readable docs for all 10 skills
-├── agents/                          ← human-readable docs for all agent roles
-├── templates/                       ← usable templates for every artifact
-├── examples/                        ← anonymized real-world case studies
-├── claude-code/  ·  codex/  ·  cursor/   ← per-tool install bundles
-├── docs/                            ← FAQ and glossary
-├── setup.sh  ·  setup.ps1           ← cross-platform installers
+├── canonical/                           ← single source of truth (never edit profiles/ directly)
+│   ├── skills/                          ← 11 user-facing skills
+│   ├── agents/                          ← 22 agent definitions
+│   ├── templates/                       ← KB templates and document templates
+│   ├── recipes/                         ← 5 lite-path seed recipes
+│   └── scripts/                         ← helper scripts by phase
+├── profiles/                            ← rendered install trees (generated — do not edit)
+│   ├── claude-code/
+│   ├── codex/
+│   ├── cursor/
+│   ├── copilot-cli/
+│   └── antigravity/
+├── methodology/aid-methodology.md       ← the complete methodology spec (~40 min read)
+├── docs/                                ← FAQ and glossary
+├── examples/                            ← worked tutorial examples
+├── setup.sh  ·  setup.ps1              ← cross-platform installers
 └── CONTRIBUTING.md  ·  LICENSE
 ```
 
 | Want to… | Go to |
 |---|---|
 | Read the complete methodology | [`methodology/aid-methodology.md`](methodology/aid-methodology.md) |
-| Understand a skill or phase | [`skills/`](skills/README.md) |
-| Understand an agent role | [`agents/`](agents/README.md) |
-| See AID applied to real projects | [`examples/`](examples/README.md) — a brownfield Java monorepo, a greenfield desktop app, a multi-agent data pipeline |
+| Look up a term | [`docs/glossary.md`](docs/glossary.md) |
+| Answer a how-to question | [`docs/faq.md`](docs/faq.md) |
+| See AID applied step by step | [`examples/`](examples/README.md) — greenfield, brownfield full-path, brownfield lite-path |
 
 ---
 

@@ -51,11 +51,11 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|
 | 001 | Drift audit + IA design | RESEARCH | 1 | Done | A+ | — | Review: D+ (1 HIGH) → fixed 4 → A+ |
-| 002 | README + docs/ — adopter docs | DOCUMENT | 2 | Pending | — | — | — |
-| 003 | methodology/ — the blog | DOCUMENT | 2 | Pending | — | — | — |
-| 004 | examples/ — greenfield | DOCUMENT | 2 | Pending | — | — | — |
-| 005 | examples/ — brownfield full-path | DOCUMENT | 2 | Pending | — | — | — |
-| 006 | examples/ — brownfield lite-path | DOCUMENT | 2 | Pending | — | — | — |
+| 002 | README + docs/ — adopter docs | DOCUMENT | 2 | Done | A+ | — | C+ → fixed 4 → A+ |
+| 003 | methodology/ — the blog | DOCUMENT | 2 | Done | A+ | — | B+ → fixed MINOR; raster LOW Accepted (maintainer hand-off) → A+ |
+| 004 | examples/ — greenfield | DOCUMENT | 2 | Done | A+ | — | D+ → fixed 7 → A+ |
+| 005 | examples/ — brownfield full-path | DOCUMENT | 2 | Done | A+ | — | E+ (1 CRIT) → fixed 9 → A+ |
+| 006 | examples/ — brownfield lite-path | DOCUMENT | 2 | Done | A+ | — | D → fixed 9 → A+ |
 
 ## Cross-phase Q&A (Pending)
 
@@ -86,6 +86,8 @@ _none yet_
 | 2026-06-03 | TASK-BREAKDOWN complete — 6 tasks written | — | /aid-interview TASK-BREAKDOWN (examples split per-example) |
 | 2026-06-03 | LITE-REVIEW complete — Grade: A+ | A+ | /aid-interview LITE-REVIEW (3 findings fixed, 3 accepted) |
 | 2026-06-03 | LITE-DONE — lite path complete; 6 tasks ready | — | /aid-interview LITE-DONE |
+| 2026-06-03 | EXECUTE task-001 — RESEARCH (drift audit + IA) | A+ | /aid-execute (D+ → A+) |
+| 2026-06-03 | EXECUTE Wave 2 (task-002…006) — DOCUMENT, parallel | A+ | /aid-execute; all 5 reached A+; tests/run-all.sh 24/24 green |
 
 ## Scope Notes
 
