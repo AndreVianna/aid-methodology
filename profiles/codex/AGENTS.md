@@ -6,7 +6,7 @@
 
 ## Knowledge Base
 
-his project uses the [AID methodology](https://github.com/AndreVianna/aid-methodology).
+This project uses the [AID methodology](https://github.com/AndreVianna/aid-methodology).
 - Read `.aid/knowledge/INDEX.md`.
 
 ## Review output format (global)

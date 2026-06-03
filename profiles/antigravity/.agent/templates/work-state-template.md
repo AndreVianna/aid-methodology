@@ -128,6 +128,22 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
   - [CRITICAL] {description} — {source-file:line} — Fixed-on-spot
   - [HIGH] {description} — {source-file:line} — Deferred-to-gate
 
+## Housekeep Status
+
+> Format: key-value (one `**Field:**` per line) per feature-001 SPEC § C-2.
+> Read and written by `.agent/scripts/housekeep/housekeep-state.sh`.
+> Do NOT convert to a table — the `**Field:** value` shape is grep-recoverable.
+
+**State:** —
+**Stage Status:** —
+**Branch:** —
+**Mode:** —
+**Stall Reason:** —
+**Last Run:** —
+**KB Stage:** —
+**Summary Stage:** —
+**Cleanup Stage:** —
+
 ## Lifecycle History
 
 > One row per phase transition or gate approval. Append-only audit trail.
