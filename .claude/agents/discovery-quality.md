@@ -152,6 +152,93 @@ for the full protocol.
 - Test presence: {well-tested / partial / sparse — qualitative, not a stored ratio}
 ```
 
+### .aid/knowledge/infrastructure.md
+> Top-level sections mirror `.claude/templates/knowledge-base/infrastructure.md`.
+> Only what is visible in the repo (CI config, Dockerfiles, IaC, manifests) is
+> filled during discovery; deploy/hosting gaps are completed later by aid-interview.
+```markdown
+# Infrastructure
+
+> **Source:** aid-discover (Phase 1) + aid-interview (Phase 2)
+> **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
+> **Last Updated:** {date}
+
+## Hosting
+| Property | Value |
+|----------|-------|
+| **Cloud Provider** | {AWS / Azure / GCP / on-premise / hybrid / ❌ not visible in repo} |
+| **Deployment Model** | {Containers (Kubernetes/ECS) / PaaS / VMs / serverless / other} |
+| **Primary Region** | {e.g., us-east-1 / ⚠️ Inferred} |
+| **Additional Regions** | {if any} |
+
+## Environments
+| Environment | Purpose | URL / Endpoint | Infrastructure |
+|-------------|---------|---------------|----------------|
+| Development | {local / shared dev} | {localhost or URL} | {local / shared cloud} |
+| Staging | {pre-prod validation} | {URL} | {mirror of prod / simplified} |
+| Production | {live} | {URL} | {full spec} |
+
+**Promotion flow:** `Development → Staging → Production`
+
+## Compute
+| Component | Technology | Spec | Scaling |
+|-----------|-----------|------|---------|
+| {Web API} | {App Service / ECS Fargate / K8s pod} | {CPU/RAM} | {manual / auto} |
+| {Workers} | {Functions / queue consumer} | {CPU/RAM} | {n instances} |
+
+## Data Infrastructure
+| Component | Technology | Spec | Backup |
+|-----------|-----------|------|--------|
+| {Primary Database} | {PostgreSQL / SQL Server / MongoDB} | {spec} | {frequency + retention} |
+| {Cache} | {Redis / Memcached} | {RAM} | {persistence?} |
+| {Queue / Object Storage} | {RabbitMQ / Kafka / S3 / Blob} | {spec} | {replication} |
+
+## Networking
+| Property | Value |
+|----------|-------|
+| **VPC / VNet** | {private / public endpoints} |
+| **Load Balancer** | {ALB / App Gateway / nginx / none} |
+| **CDN** | {CloudFront / Azure CDN / none} |
+| **DNS** | {Route 53 / Azure DNS / other} |
+| **TLS termination** | {load balancer / application / both} |
+
+## Deployment Pipeline
+| Stage | Tool | Trigger | Notes |
+|-------|------|---------|-------|
+| {Build} | {GitHub Actions / Azure DevOps} | {on PR / push} | {pipeline file path} |
+| {Test} | {same} | {on PR} | |
+| {Deploy Staging} | {same} | {on merge to main} | {automatic} |
+| {Deploy Production} | {same} | {manual approval / tag} | {requires sign-off} |
+
+**Infrastructure-as-Code:** {Terraform / Bicep / CloudFormation / Pulumi / none — location}
+**Container registry:** {Docker Hub / ECR / ACR / GCR — location}
+
+## Monitoring & Observability
+| Concern | Tool | Configuration |
+|---------|------|---------------|
+| {APM} | {Datadog / New Relic / App Insights} | {agent / SDK} |
+| {Error tracking} | {Sentry / Rollbar} | {DSN in env var} |
+| {Logging} | {ELK / CloudWatch / Seq} | {shipper / SDK} |
+| {Alerting} | {PagerDuty / Slack webhooks} | {escalation policy} |
+
+## Disaster Recovery
+| Property | Value |
+|----------|-------|
+| **RTO / RPO** | {targets, or "not defined"} |
+| **Backup frequency / retention** | {e.g., daily / n days} |
+| **DR runbook** | {location or "not documented"} |
+
+## Known Infrastructure Issues
+| Issue | Severity | Notes |
+|-------|----------|-------|
+| {e.g., No staging environment} | {High} | {risk description} |
+
+## Revision History
+| Rev | Date | Source | Description |
+|-----|------|--------|-------------|
+| 1.0 | {date} | aid-discover + aid-interview | Initial infrastructure mapping |
+```
+
 ## Risk Rating Guide
 - **Critical:** Blocks delivery, causes data loss, or is an active security vulnerability
 - **High:** Significantly increases bug risk or slows development

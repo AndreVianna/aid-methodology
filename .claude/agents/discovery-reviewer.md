@@ -200,7 +200,7 @@ Completeness Check (step 1) and Depth/Usefulness assessment.
 
 ## Meta-Document Consistency (MANDATORY)
 
-These 4 documents are derived from the 16 primary KB docs. **ALWAYS verify them against the primary docs' current content, even if they have no issues of their own.** Review in this order:
+These 4 documents are derived from the 14 primary KB docs. **ALWAYS verify them against the primary docs' current content, even if they have no issues of their own.** Review in this order:
 
 1. **STATE.md** — Are all Pending questions still genuinely unanswerable from code? Did any primary doc already resolve one? A question marked Pending when the answer is in the codebase = [MEDIUM]. Are impact levels reasonable? Is the Q&A format correct (ID, category, impact, status, context, suggested)?
 2. **INDEX.md** — Does every summary match the actual document content? A stale summary (e.g., says "versions TBD" when they've been resolved) = [HIGH].
@@ -226,7 +226,7 @@ Columns: `# | Severity | Status | Doc | Line | Description | Evidence`
 
 See schema doc for: severity enum, status enum, status lifecycle across cycles, pipe-character escape, authoring rules.
 
-**You append rows; you do NOT renumber existing rows.** On subsequent cycles, read the existing ledger first, update Status for rows already there (Pending→Fixed if resolved, Fixed→Recurred if regressed), then append new findings as Pending rows.
+**You append rows; you do NOT renumber existing rows.** On subsequent cycles, read the existing ledger first, update Status for rows already there (Pending→Fixed if resolved, Fixed→Recurred if regressed), then append new findings as Pending rows. "Append" is logical, not a file mode: you rewrite the whole file each cycle (see **File Writing** below), so the rewritten table must carry forward every prior row plus the new ones.
 
 **Additionally**, write answers to new Discovery Q&A entries into `.aid/knowledge/STATE.md` following the section format specified in the "Adding Questions" section above. The Q&A file is separate from the ledger and NOT a schema table.
 
@@ -243,16 +243,29 @@ Example ledger file (`.aid/.temp/review-pending/discovery.md` — the entire fil
 ## ⚠️ File Writing
 
 **Do NOT use the Write tool to create the ledger — it has a known bug in background subagents.**
-Use Bash with heredoc instead:
+Use Bash with a heredoc instead.
+
+**`cat >` overwrites the whole file, so the heredoc body MUST be the COMPLETE ledger** — the
+header row, plus EVERY prior row (with its Status updated for this cycle), plus the new rows.
+Writing only the new rows truncates all prior findings. Do **NOT** use `cat >>` (append) for the
+ledger: it duplicates the header row and cannot update a prior row's Status. (Read the existing
+ledger first, then re-emit the full, updated table.)
+
 ```bash
+# Cycle-2 example: rows 1–2 are carried forward (row 1 Pending→Fixed this cycle, row 2
+# still Pending); row 3 is this cycle's new finding. The heredoc holds the ENTIRE table.
 cat > .aid/.temp/review-pending/discovery.md << 'LEDGEREOF'
 | # | Severity | Status | Doc | Line | Description | Evidence |
 |---|---|---|---|---|---|---|
-| 1 | [HIGH] | Pending | foo.md | 42 | ... | ... |
+| 1 | [HIGH] | Fixed | architecture.md | 42 | module count wrong: doc claims 7, disk shows 9 | cycle-2 FIX corrected the doc to 9 |
+| 2 | [MEDIUM] | Pending | tech-debt.md | 15 | stale reference to deleted script | script removed in commit abc123 |
+| 3 | [MINOR] | Pending | coding-standards.md | — | heading capitalisation inconsistent | `grep "^##" coding-standards.md` shows mixed case |
 LEDGEREOF
 ```
 
-For the Q&A file (`.aid/knowledge/STATE.md`), use the same heredoc pattern:
+The Q&A file (`.aid/knowledge/STATE.md`) is different: it genuinely **accumulates**
+entries, so `cat >>` (append) is correct there — you are adding new Q&A sections, not rewriting a
+single table:
 ```bash
 cat >> .aid/knowledge/STATE.md << 'KBEOF'
 <Q&A entries here>

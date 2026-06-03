@@ -10,6 +10,10 @@
 #   complexity-score.sh --plan-file PATH --delivery-id NNN [--tasks-dir PATH]
 #   complexity-score.sh --graph-file PATH --tasks-dir PATH
 #
+# --delivery-id is REQUIRED for a multi-delivery PLAN.md (### delivery-NNN
+# sections) and scopes extraction to that delivery. For a lite/recipe SPEC with a
+# top-level "## Execution Graph" (no delivery sections), --delivery-id is optional.
+#
 # Outputs (stdout, one per line):
 #   tasks=N
 #   depth=N
@@ -70,24 +74,40 @@ if [[ -n "$PLAN_FILE" && -n "$GRAPH_FILE" ]]; then
     exit 4
 fi
 if [[ -n "$PLAN_FILE" ]]; then
-    [[ -z "$DELIVERY_ID" ]] && { echo "ERROR: --plan-file requires --delivery-id NNN" >&2; exit 4; }
     [[ -f "$PLAN_FILE" ]] || { echo "ERROR: PLAN file not found: $PLAN_FILE" >&2; exit 1; }
-    # Extract this delivery's Execution Graph from the larger PLAN.md
     GRAPH_TMP=$(mktemp)
     trap 'rm -f "$GRAPH_TMP"' EXIT
-    awk -v did="$DELIVERY_ID" '
-        BEGIN { in_section=0; in_graph=0 }
-        /^### delivery-/ {
-            if (match($0, /delivery-([0-9]+)/, m) && m[1] == did) {
-                in_section = 1
-            } else {
+    if grep -qE '^### delivery-' "$PLAN_FILE"; then
+        # Full multi-delivery PLAN.md — extract only the requested delivery's graph.
+        [[ -z "$DELIVERY_ID" ]] && { echo "ERROR: --plan-file with delivery sections requires --delivery-id NNN" >&2; exit 4; }
+        # Portable awk only: 2-arg match() + substr() (no gawk 3-arg capture array),
+        # numeric delivery-id comparison (robust to leading zeros: 003 == 3).
+        awk -v did="$DELIVERY_ID" '
+            BEGIN { in_section=0; in_graph=0 }
+            /^### delivery-/ {
                 in_section = 0
+                if (match($0, /delivery-[0-9]+/)) {
+                    num = substr($0, RSTART, RLENGTH); sub(/delivery-/, "", num)
+                    if (num + 0 == did + 0) in_section = 1
+                }
             }
-        }
-        in_section && /^#### Execution Graph/ { in_graph = 1; next }
-        in_section && in_graph && /^####|^###/ { in_graph = 0; in_section = 0 }
-        in_section && in_graph { print }
-    ' "$PLAN_FILE" > "$GRAPH_TMP"
+            in_section && /^#### Execution Graph/ { in_graph = 1; next }
+            in_section && in_graph && /^####|^###/ { in_graph = 0; in_section = 0 }
+            in_section && in_graph { print }
+        ' "$PLAN_FILE" > "$GRAPH_TMP"
+    else
+        # Lite/recipe SPEC — top-level "## Execution Graph", no delivery wrapper.
+        # --delivery-id is not required for this shape. Capture the Execution Graph
+        # block at ANY heading level, stopping at the next level-1/2 heading so a
+        # preceding/following "## Tasks" table is never swallowed (the level-3
+        # "### Task Dependencies" / "### Can Be Done In Parallel" subheadings stay in).
+        awk '
+            BEGIN { in_graph=0 }
+            /^#+[[:space:]]+Execution Graph[[:space:]]*$/ { in_graph = 1; next }
+            in_graph && /^##?[[:space:]]/ { in_graph = 0 }
+            in_graph { print }
+        ' "$PLAN_FILE" > "$GRAPH_TMP"
+    fi
     GRAPH_FILE="$GRAPH_TMP"
 elif [[ -n "$GRAPH_FILE" ]]; then
     [[ -f "$GRAPH_FILE" ]] || { echo "ERROR: graph file not found: $GRAPH_FILE" >&2; exit 1; }
@@ -109,12 +129,14 @@ while IFS= read -r line; do
         [[ "$task" == "Task" ]] && continue
         [[ "$deps" == "Depends On" ]] && continue
         TASKS+=("$task")
-        # Normalize deps
-        if [[ "$deps" =~ ^[[:space:]]*[—-]+[[:space:]]*$ ]]; then
-            DEPS["$task"]=""
-        else
-            DEPS["$task"]="$deps"
-        fi
+        # Normalize deps — treat em-dash / hyphen / "none" / "(none)" / "— (none)"
+        # as "no dependencies". (The lite-spec template uses the "— (none)" form;
+        # full PLAN.md tables use a bare "—".)
+        dtrim="${deps#"${deps%%[![:space:]]*}"}"; dtrim="${dtrim%"${dtrim##*[![:space:]]}"}"
+        case "${dtrim,,}" in
+            ""|"—"|"-"|"none"|"(none)"|"—(none)"|"— (none)") DEPS["$task"]="" ;;
+            *) DEPS["$task"]="$deps" ;;
+        esac
         parsed_rows=$((parsed_rows + 1))
     fi
 done < "$GRAPH_FILE"
@@ -128,9 +150,21 @@ TASK_COUNT=${#TASKS[@]}
 
 # Compute graph depth — longest path in the DAG (memoized DFS)
 declare -A DEPTH_CACHE
+declare -A DEPTH_VISITING   # cycle guard: tasks currently on the recursion stack
 compute_depth() {
     local t="$1"
     if [[ -n "${DEPTH_CACHE[$t]:-}" ]]; then echo "${DEPTH_CACHE[$t]}"; return; fi
+    # Cycle guard: a task already on the current recursion stack means the
+    # Depends On table has a back-edge. Break it (contribute 0) and warn rather
+    # than recursing until bash aborts. (Each recursive call is a command-
+    # substitution subshell that inherits DEPTH_VISITING, so ancestors on the
+    # current path are visible here.)
+    if [[ -n "${DEPTH_VISITING[$t]:-}" ]]; then
+        echo "WARN: complexity-score.sh: dependency cycle detected at '$t' — breaking cycle" >&2
+        echo 0
+        return
+    fi
+    DEPTH_VISITING["$t"]=1
     local deps_str="${DEPS[$t]:-}"
     if [[ -z "$deps_str" ]]; then
         DEPTH_CACHE["$t"]=0
@@ -165,7 +199,9 @@ if [[ -n "$TASKS_DIR" && -d "$TASKS_DIR" ]]; then
         # Find task file (allow task-NNN.md or task-NNN-*.md)
         f=$(find "$TASKS_DIR" -maxdepth 1 -name "${t}.md" -o -name "${t}-*.md" 2>/dev/null | head -1)
         [[ -z "$f" || ! -f "$f" ]] && continue
-        type_line=$(grep -m1 "^\*\*Type:\*\*" "$f" 2>/dev/null || true)
+        # Match both the bold task-template form (**Type:**) and the flat recipe
+        # form (- Type:); recipe-generated tasks use the latter (see recipes/*.md).
+        type_line=$(grep -m1 -iE '^[[:space:]]*(- )?\*{0,2}Type:' "$f" 2>/dev/null || true)
         case "$type_line" in
             *MIGRATE*|*REFACTOR*) RISK=$((RISK + 2));;
             *IMPLEMENT*|*TEST*)   RISK=$((RISK + 1));;
