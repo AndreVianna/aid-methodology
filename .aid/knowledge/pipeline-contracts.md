@@ -12,6 +12,7 @@ contracts:
   - "11 user-facing skill slash-command contracts documented (aid-config through aid-monitor, aid-summarize, plus optional off-pipeline aid-housekeep) + maintainer-only aid-generate"
   - "discovery.doc_set in settings.yml: declared-set → dispatch mapping honors the set (no-hang on omission; dispatch on addition)"
 changelog:
+  - 2026-06-03: housekeep run-state relocation (PR #51) — /aid-housekeep run-state moved out of the work-area STATE.md to the transient project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`; dropped the `## Housekeep Status` work-state-section row; cleanup now offers every work folder for user-confirmed deletion (signals informational).
   - 2026-06-03: aid-housekeep merge (PR #49) — added /aid-housekeep as an optional off-pipeline skill with its consume/produce contracts (the STATE.md Impact:Required Q&A handshake with /aid-discover, the work-area ## Housekeep Status run-state block, the /aid-summarize delegation, the housekeep-state.sh / branch-commit.sh / cleanup-classify.sh CLI contracts); slash-command count 10→11 user-facing
   - 2026-06-01: work-001-add-providers merge (PRs #42/#43/#44) — renderer contract now spans 5 profiles (added copilot-cli + antigravity) and 4 agent formats (markdown/toml/copilot-agent/antigravity-rule); emission-manifest profile enum + manifest-locations updated
   - 2026-05-31: delivery-002 — added discovery.doc_set to settings read contract; added declared-set → dispatch contract section
@@ -141,13 +142,14 @@ Source: `find canonical/skills -maxdepth 1 -type d`,
   stalled stage via the six-row resume table (`canonical/skills/aid-housekeep/SKILL.md`
   `## State Detection`, `references/state-summary-delta.md` `## Step 0 — C1 guard`).
 - **Consumes:**
-  - work-area `STATE.md ## Housekeep Status` run-state block (resume detection), read via
-    `housekeep-state.sh --resume`
+  - the project-level run-state file `.aid/.temp/HOUSEKEEP_STATE_<YYYYMMDDHHMM>.md`
+    (`## Housekeep Status` block; resume detection), read via `housekeep-state.sh --resume`
   - `.aid/knowledge/STATE.md` — `**Last KB Review:**` (hint), `**User Approved:**` +
     `## Summarization History` (read-back)
   - `git fetch/log/diff` (hint only — no hard offline gate, C2)
 - **Produces:**
-  - work-area `STATE.md ## Housekeep Status` run-state fields (via `housekeep-state.sh --write`)
+  - the project-level run-state file `.aid/.temp/HOUSEKEEP_STATE_<YYYYMMDDHHMM>.md`
+    (`## Housekeep Status` fields, via `housekeep-state.sh --write`; gitignored, removed at DONE)
   - `.aid/knowledge/STATE.md ## Q&A (Pending)` — synthesizes an `**Impact:** Required`
     Style-A Q&A entry (`### Q{N}`) that drives `/aid-discover`'s Targeted Discovery
     re-entry (the handshake; never resolves owners itself)
@@ -335,11 +337,13 @@ The Reviewer agent produces a structured issue list with two-tag classification 
 ### `bash canonical/scripts/housekeep/housekeep-state.sh` (optional — /aid-housekeep)
 
 - **Purpose:** Deterministic read/write of the nine `**Field:** value` lines inside the
-  work-area `STATE.md ## Housekeep Status` block, and resolution of the `/aid-housekeep`
-  resume target (the six-row re-entry table). No yq/python dependency (bash + grep/sed/awk).
+  `## Housekeep Status` block of the project-level run-state file
+  `.aid/.temp/HOUSEKEEP_STATE_<YYYYMMDDHHMM>.md` (NOT a work-area STATE.md), and resolution
+  of the `/aid-housekeep` resume target (the six-row re-entry table). Location-agnostic —
+  operates on whatever path `--state` names. No yq/python dependency (bash + grep/sed/awk).
 - **3 modes:**
   - `--state FILE --write --field FIELD --value VALUE` — write/replace a `**FIELD:**` line
-    (creates `## Housekeep Status` if absent; idempotent)
+    (creates the file + `## Housekeep Status` section if absent; idempotent)
   - `--state FILE --read --field FIELD` — print the current value (empty line if absent;
     exit 0 even when section/field absent)
   - `--state FILE --resume [--cleanup-only]` — print one of
@@ -557,11 +561,17 @@ A single STATE file per `.aid/work-NNN-{name}/` directory absorbs what used to b
 | `## Delivery Gates` | reviewer (per-delivery) | `aid-deploy` | `canonical/scripts/execute/writeback-state.sh` comment `# Write/replace the ### delivery-NNN block under ## Delivery Gates` |
 | `## Deploy Status` | `aid-deploy` | `aid-monitor` | `canonical/templates/work-state-template.md` `## Deploy Status` |
 | `## Cross-phase Q&A (Pending)` | All phases (loopback writers) | Owning phase's Q&A state | `canonical/templates/work-state-template.md` `## Cross-phase Q&A (Pending)` |
-| `## Housekeep Status` | `aid-housekeep` (via `housekeep-state.sh`) | `aid-housekeep` resume detection (`housekeep-state.sh --resume`) | `canonical/templates/work-state-template.md` `## Housekeep Status`, `canonical/scripts/housekeep/housekeep-state.sh` |
 | `## Calibration Log` | Every dispatcher (always-on, work-003) | Operator review | `canonical/skills/aid-discover/SKILL.md` `## Dispatch Protocol` |
+
+> `## Housekeep Status` is NOT a work-area STATE.md section. `/aid-housekeep` keeps its
+> run-state in a transient project-level file (`.aid/.temp/HOUSEKEEP_STATE_<ts>.md`) — see
+> the run-state-block contract below.
 
 #### `## Housekeep Status` Run-State Block (key-value contract)
 
+- **Location:** the project-level run-state file `.aid/.temp/HOUSEKEEP_STATE_<YYYYMMDDHHMM>.md`
+  — gitignored and transient (created on a fresh run, removed at DONE along with any stale
+  siblings). It is NOT a work-area STATE.md; `/aid-housekeep` is project maintenance.
 - **Shape:** key-value, one `**Field:** value` line per field (NOT a table — the
   `**Field:** value` shape is grep-recoverable). Read/written ONLY by `housekeep-state.sh`
   (skill bodies never hand-edit it).
@@ -571,8 +581,9 @@ A single STATE file per `.aid/work-NNN-{name}/` directory absorbs what used to b
 - **Stage-gate values:** each of `KB Stage`/`Summary Stage`/`Cleanup Stage` ∈
   `passed | skipped | stalled | running | —`; resume routes to the first incomplete stage
   (six-row resume table). `**Mode:**` ∈ `full | cleanup-only`.
-- **Source:** `canonical/templates/work-state-template.md` `## Housekeep Status`
-  (the `> Format: key-value` note + the nine `**Field:** —` template lines),
+- **Source:** the run-state file `.aid/.temp/HOUSEKEEP_STATE_<ts>.md` (created by
+  `housekeep-state.sh` on first `--write`; its path is resolved/created by
+  `canonical/skills/aid-housekeep/SKILL.md` `## State Detection`),
   `canonical/scripts/housekeep/housekeep-state.sh` (`VALID_FIELDS`, `mode_resume()`)
 
 ### Knowledge-Base `STATE.md` (`.aid/knowledge/STATE.md`)
