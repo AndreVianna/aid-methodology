@@ -1,7 +1,7 @@
 # Work State — work-002-canonical-bug-fixes
 
-> **Status:** Detailing — complete (lite path; 14 tasks; next: /aid-execute)
-> **Phase:** Detail — complete
+> **Status:** Executed — all 7 tasks complete (lite path; next: PR + merge)
+> **Phase:** Execute — complete
 > **Minimum Grade:** {resolved at runtime by `bash .claude/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-06-02
 > **User Approved:** no
@@ -42,7 +42,7 @@ _none_
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| delivery-001 | Detailed | 7 | Canonical script + agent bug fixes (one task per document); final task regenerates the 3 install trees |
+| delivery-001 | Executed | 7 | Canonical script + agent bug fixes (one task per document); install trees regenerated. All 19 test suites pass; generator VERIFY pass. |
 
 ## Tasks Status
 
@@ -50,13 +50,13 @@ _none_
 
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|
-| 1 | task-001 | IMPLEMENT | 1 | Pending | — | — | complexity-score.sh — A1 Type match, A2 portable awk, A3 lite/recipe graph, A4 cycle guard |
-| 2 | task-002 | IMPLEMENT | 1 | Pending | — | — | compute-block-radius.sh — B1 graph heading, B2 exit-2 contract, B3 leaf radius (+B5), B4 `--delivery-id` |
-| 3 | task-003 | CONFIGURE | 1 | Pending | — | — | D1 heartbeat/Bash (interviewer, tech-writer; exempt simple-formatter) |
-| 4 | task-004 | DOCUMENT | 1 | Pending | — | — | D2 discovery-quality infrastructure.md skeleton |
-| 5 | task-005 | DOCUMENT | 1 | Pending | — | — | D3+D4 discovery-reviewer doc count + ledger complete-table contract |
-| 6 | task-006 | DOCUMENT | 2 | Pending | — | — | D6 reviewer.md File Writing section (mirrors task-005) |
-| 7 | task-007 | CONFIGURE | 3 | Pending | — | — | Regenerate 3 trees + full test suite |
+| 1 | task-001 | IMPLEMENT | 1 | Done | — | — | complexity-score.sh — A1 Type match, A2 portable awk, A3 lite/recipe graph, A4 cycle guard. Commit 506a4e7; +15-case suite. |
+| 2 | task-002 | IMPLEMENT | 1 | Done | — | — | compute-block-radius.sh — B1 graph heading, B2 exit-2 contract, B3 leaf radius (+B5), B4 `--delivery-id`. Commit a04c0a0; suite 17→28. |
+| 3 | task-003 | CONFIGURE | 1 | Done | — | — | D1 heartbeat/Bash (interviewer, tech-writer +Bash; simple-formatter exempt). Commit 38888fc. |
+| 4 | task-004 | DOCUMENT | 1 | Done | — | — | D2 discovery-quality infrastructure.md skeleton (sections match KB template). Commit 6935044. |
+| 5 | task-005 | DOCUMENT | 1 | Done | — | — | D3+D4 discovery-reviewer doc count (→14) + ledger complete-table contract. Commit 13d91ea. |
+| 6 | task-006 | DOCUMENT | 2 | Done | — | — | D6 reviewer.md File Writing section (mirrors task-005). Commit 60154c2. |
+| 7 | task-007 | CONFIGURE | 3 | Done | — | — | Regenerated 5 trees; VERIFY pass; 19 suites pass. Commit fd21bde. |
 
 ## Deploy Status
 
@@ -94,3 +94,4 @@ _none yet_
 | 2026-06-02 | Specify (lite SPEC.md) | — | 13 confirmed-real findings (A1–A4, B1–B4, D1–D4, D6) in scope; A5/C1 false positives + D5 already-handled excluded |
 | 2026-06-02 | Detail | — | 14 tasks (13 fixes + 1 regenerate/verify); same-file edits serialized; 5 waves. |
 | 2026-06-02 | Detail (revised) | — | Merged same-document tasks → 7 (one fix task per document + regenerate); 6 fix tasks parallel, 3 waves. Next: /aid-execute |
+| 2026-06-02 | Execute — all tasks | — | All 7 tasks Done in worktree .claude/worktrees/work-002-canonical-bug-fixes (commits 506a4e7, a04c0a0, 38888fc, 6935044, 13d91ea, 60154c2, fd21bde). 19 test suites pass; generator VERIFY (byte-identical re-render + presence + frontmatter) pass; all 5 install trees regenerated. Next: PR + merge. |
