@@ -1,7 +1,7 @@
 # Work State — work-001-aid-housekeep
 
 > **Status:** Interview Complete | Specifying | Planning | Detailing | Executing | Deployed
-> **Phase:** Execute — delivery-001 DONE (gate A); next delivery-002 (task-005 summary)
+> **Phase:** Execute — delivery-002 DONE (gate A+); next delivery-003 (cleanup)
 > **Minimum Grade:** {resolved at runtime by `bash .claude/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-06-02
 > **User Approved:** no
@@ -75,7 +75,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 002 | branch-commit.sh | IMPLEMENT | 1 | Done | Small: clean | — | delivery-001 (f001) |
 | 003 | thin-router SKILL.md + PREFLIGHT/DONE + args prose + stub no-op bodies | IMPLEMENT | 2 | Done | Gate: A | — | delivery-001 (f001); ←001,002. Skeleton drafted on disk, ungated. Args in SKILL.md prose (no parse-args.sh) |
 | 004 | state-kb-delta.md — agent-driven KB reconciliation body | IMPLEMENT | 3 | Done | Gate: A | — | delivery-001 (f002); ←001,002,003. Drafted on disk, ungated; agent inspects repo↔KB (git=hint) |
-| 005 | state-summary-delta.md body (replaces stub) | IMPLEMENT | 4 | Pending | — | — | delivery-002 (f003); ←001,002,003,004 |
+| 005 | state-summary-delta.md body (replaces stub) | IMPLEMENT | 4 | Done | Gate: A+ | — | delivery-002 (f003); ←001,002,003,004 |
 | 006 | cleanup-classify.sh + classification suites | IMPLEMENT | 1 | Pending | — | — | delivery-003 (f004) |
 | 007 | --cleanup-only enablement (SKILL.md prose + routing) | IMPLEMENT | 2 | Pending | — | — | delivery-003 (f004); ←003 |
 | 008 | state-cleanup.md body (replaces stub) | IMPLEMENT | 3 | Pending | — | — | delivery-003 (f004); ←001,002,003,006,007 |
@@ -122,6 +122,13 @@ This is the single state file for **this work** — the full dev lifecycle from 
 - **Issue List:** 1 MINOR (argument-hint advertised `--cleanup-only` before delivery-003 — fixed on the spot)
 - **Timestamp:** 2026-06-02
 - **Notes:** Runnable KB-reconciliation MVP — KB-DELTA agent-driven + functional; SUMMARY-DELTA/CLEANUP inert stub no-ops; terminates at DONE. 21 canonical suites pass; renders clean to all 5 profiles.
+
+### delivery-002
+- **Reviewer Tier:** Small
+- **Grade:** A+
+- **Issue List:** C+→A+ after FIX — 1 MEDIUM (history-detection snippet greped a bullet vs the pipe-delimited table → would misclassify regenerate as skip; corrected to parse the table) + 1 MINOR (dead var, wired in).
+- **Timestamp:** 2026-06-02
+- **Notes:** task-005 — real SUMMARY-DELTA body (delegates to /aid-summarize; result→Summary Stage mapping; honest V1 human-gate; one commit/stage). No new script/suite.
 
 ## Quick Check Findings
 
