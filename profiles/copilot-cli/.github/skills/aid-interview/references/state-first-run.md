@@ -21,6 +21,22 @@ Copy the template from `../../templates/requirements.md` to
 `.aid/{work}/REQUIREMENTS.md`.
 Add the first Change Log entry: `| {today} | Initial interview started | /aid-interview |`
 
+### 1d. Monitor-routed finding seed (optional)
+
+If this work was opened from an `aid-monitor` finding — a `MONITOR-STATE.md` finding
+routed here per `aid-monitor/references/state-route.md` Step 5 — read that finding and
+use it to seed the intake:
+
+- **BUG finding** → it carries the lite path: TRIAGE settles on `LITE-BUG-FIX`, and the
+  recorded root cause, patch scope, and test requirements pre-fill the reproduction /
+  intended-behavior so the condensed interview is near-complete.
+- **CHANGE REQUEST finding** → seed REQUIREMENTS.md with the desired new/changed behavior
+  and its evidence; TRIAGE then routes by scope as usual.
+
+If there is no Monitor finding (the normal case — a human-initiated interview), skip this
+step. TRIAGE still asks its questions; the seed only pre-fills answers, it never overrides
+the deterministic routing rule.
+
 **Note:** Sections are empty — no placeholder markers. The STATE.md `## Interview Status` tracks
 which sections have been filled.
 

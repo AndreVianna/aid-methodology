@@ -14,7 +14,7 @@ changelog:
   - 2026-05-27: Initial authoring during cycle-1 FIX Phase B (replaces deleted ui-architecture.md per Q3)
   - 2026-06-01: Post-merge update for work-001-add-providers (PRs #42/#43/#44) — install surface 3 profiles → 5 (added GitHub Copilot CLI + Antigravity); Option-A AGENTS.md collision handler documented; setup.sh/ps1 line counts refreshed (210/199).
   - 2026-06-03: Post-merge update for work-001-aid-housekeep (PR #49) — total installed skills 10 → 11 (added optional/on-demand aid-housekeep); clarified that README's "## The Pipeline" table still lists 10 pipeline skills only (aid-housekeep is intentionally absent from that table).
-  - 2026-06-03: methodology v3.2 — README pipeline framing reconciled: numbered development phases 8 → 6; aid-deploy/aid-monitor recast from numbered phases 7/8 to optional end-of-pipeline Deliver skills; "10 skills" breakdown is now one setup + six numbered phases + three optional skills (summarize, deploy, monitor).
+  - 2026-06-03: methodology v3.2 — README pipeline framing reconciled: numbered development phases 8 → 6; aid-deploy/aid-monitor recast from numbered phases 7/8 to optional end-of-pipeline Deliver skills; "10 skills" breakdown is now one setup + six numbered phases + three optional skills (summarize, deploy, monitor); Monitor feedback loops re-pointed to Interview (bugs + CRs).
 ---
 
 # Repo Presentation
@@ -57,7 +57,7 @@ the major sections:
 | **The Pipeline** | `README.md` `## The Pipeline` | Mermaid flowchart + table of the 10 pipeline skills (one setup skill, six numbered phases, three optional skills — `aid-summarize` plus the two end-of-pipeline Deliver skills `aid-deploy`/`aid-monitor`), their groups, and outputs. ⚠️ This table covers the *pipeline* skills only — `aid-housekeep` (the 11th installed skill, optional/on-demand) is intentionally NOT in this table because it is not part of the linear pipeline flow. |
 | **The Knowledge Base** | `README.md` `## The Knowledge Base — the gravitational center` | KB structure, 14-standard-document fixed shape, 3-tier context economy diagram |
 | **The Agent Model** | `README.md` `## The Agent Model — three tiers` | Three-tier agent diagram (Large/Medium/Small), provider-agnostic tier table, skill→agent dispatch |
-| **Feedback Loops** | `README.md` `## Feedback Loops` | 11 formal loops described; key loops called out (Any phase → Discovery, Execute → IMPEDIMENT, Monitor → Execute, Monitor → Discover) |
+| **Feedback Loops** | `README.md` `## Feedback Loops` | 11 formal loops described; key loops called out (Any phase → Discovery, Execute → IMPEDIMENT, Monitor → Interview for both bugs and change requests) |
 | **AID vs. SDD** | `README.md` `## AID vs. SDD` | Comparison table; framing quote |
 | **Using AID in your own project** | `README.md` `## Using AID in your own project` | Install instructions (git clone + setup.sh/setup.ps1), slash command list, what gets installed, runtime requirements, incremental adoption |
 | **Repository structure** | `README.md` `## Repository structure` | Directory tree + navigation table (where to go to read methodology, skills, agents, examples) |
@@ -178,7 +178,7 @@ key takeaway per case. Detailed files live within each case study subdirectory.
   (`examples/data-pipeline/README.md` `## Context`)
 - **Goal:** Automated weekly performance reports validated against source data at 1%
   tolerance.
-- **Phases applied:** Full lifecycle including Monitor→Execute bug-fix path.
+- **Phases applied:** Full lifecycle including the Monitor→Interview bug-fix path.
   A 6-phase pipeline (Pull → Validate → Preprocess → Charts → Agents → Orchestrate)
   with a Grade A quality gate per report.
 - **Bug-fix in action:** Timezone mismatch (UTC vs. Australia/Sydney) + wrong Klaviyo

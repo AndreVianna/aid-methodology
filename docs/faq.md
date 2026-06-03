@@ -14,7 +14,7 @@ Yes — and that's the point. Waterfall's phases were sound. Waterfall failed be
 ### Do I need all six phases?
 No. Use what applies:
 - **Greenfield project with clear requirements?** Skip Discover, start at Interview.
-- **Quick bug fix?** Take the short path: Monitor → Execute → Deploy.
+- **Quick bug fix?** Take the short path: Monitor → Interview (lite bug-fix triage) → Execute.
 - **Spike/prototype?** Use Discover → Specify → Execute. Skip planning.
 
 The phases are a menu, not a checklist. The two Deliver skills — `aid-deploy` and `aid-monitor` — are optional and run on demand at the end of the pipeline; many projects ship by other means and never invoke them. But know what you're skipping and why.
