@@ -83,11 +83,11 @@ This is the single state file for the **Discovery area** — persistent project 
 **Machine Grade:** A+
 **Machine Grade Source:** `grade-summary.sh` AUTO_POOL (D1/D2/L1/L2/H1/A1-5/C1-2/S2 = 73 pts) — cycle-9 regen 2026-06-01: D1 parse PASS 5/5 (re-verified) + L1/L2/H1/A1-5/C1-2/S2 all green; D2 render not machine-runnable in this sandbox (jsdom lacks getBBox / headless Chromium can't launch — missing libnspr4.so), so D2 is accepted-environmental and its render verification is delegated to the V1 human visual gate (user-confirmed 2026-06-01); diagram count 5/5 matches agentic-pipeline target
 **Human Grade:** A+
-**Human Grade Source:** MANUAL_POOL — K1 (KB-completeness) pass + K2 (fact-grounding) pass (spot-check-facts 10/10 claims grounded, 0 MISS) + V1 (human visual gate) **PASS — user-approved 2026-06-01** (all 5 diagrams render incl. the rebuilt Fig 3; theme/lightbox verified). V1 is the compensating control for the sandbox-unverifiable D2 render.
+**Human Grade Source:** MANUAL_POOL — K1 (KB-completeness) pass + K2 (fact-grounding) pass (spot-check-facts 10/10 claims grounded, 0 MISS) + V1 (human visual gate) **PASS — user-approved 2026-06-03** (cycle-10; Fig 1 updated to place the optional skills at their natural points; theme/lightbox verified). V1 is the compensating control for the sandbox D2 render (this cycle D2 ran via jsdom-fallback regex-only, PASS).
 **Overall Grade:** A+ (= min of Machine=A+, Human=A+)
-**User Approved:** yes (2026-06-01 — cycle-9 post-merge regen; Overall A+; V1 visual gate approved)
-**Last Run:** 2026-06-01
-**Trigger Reason:** regeneration — KB cycle-9 post-merge refresh (work-001-add-providers 3→5 profiles); + V1-feedback iterations: dedicated §09 Render Profiles (5 peer cards, one-per-line), dedicated §14 Dogfooding (internal, de-conflated from the methodology), clean sequential section numbering
+**User Approved:** yes (2026-06-03 — cycle-10 /aid-housekeep summary refresh; Overall A+; V1 visual gate approved)
+**Last Run:** 2026-06-03
+**Trigger Reason:** regeneration — KB cycle-10 /aid-housekeep refresh (new aid-housekeep skill 10→11, suites 18→24, §9a T3-strip); summary updates: +aid-housekeep skill card + contracts row, hero stats refreshed, line-count kickers stripped, Fig 1 pipeline diagram gains the two optional on-demand skills (aid-summarize after Discovery, aid-housekeep after Deploy)
 **Output:** `.aid/knowledge/knowledge-summary.html`
 **Output Size:** 3.41 MB (3,414,914 bytes; 5,507 lines)
 **Mermaid Version:** 11.15.0
@@ -415,6 +415,7 @@ Verified-true sample full list (30 checks) in `.aid/.temp/review-pending/discove
 | 3 | 2026-05-31 | A+ | agentic-pipeline | 11.15.0 | knowledge-summary.html (3403878) | Regenerated for work-001 adaptive doc-set + tech-debt scrub. Machine A+ (D1 parse verified locally via jsdom; D2 render validated at GENERATE; offline sandbox cannot re-run the Mermaid renderer, diagrams diff-unchanged since). Human A+ 30/30 — user-approved visual gate (V1), K1 full coverage, K2 spot-check 10/10. |
 
 | 4 | 2026-06-01 | A+ | agentic-pipeline | 11.15.0 | knowledge-summary.html (3,414,914 bytes; 5,507 lines) | cycle-9 post-merge regen (work-001-add-providers 3→5 profiles). Added dedicated §09 Render Profiles (5 equal peer cards, one-per-line) + §14 Dogfooding (internal, de-conflated from the methodology); clean sequential section numbering 1-14. Machine A+ (D1 parse 5/5 + all other AUTO_POOL green; D2 render sandbox-unverifiable here — jsdom getBBox / no Chromium — accepted-environmental, render delegated to V1). Human A+ — K1 pass, K2 spot-check 10/10, **V1 user-approved 2026-06-01** (diagrams render incl. rebuilt Fig 3). |
+| 5 | 2026-06-03 | A+ | agentic-pipeline | 11.15.0 | knowledge-summary.html (3,416,891 bytes; 5,529 lines) | cycle-10 /aid-housekeep SUMMARY-DELTA. Reflected the cycle-10 KB: +/aid-housekeep skill card + Pipeline-Contracts row, hero stats 10→11 skills / 18→24 suites / 3→5 install trees, reference-count badges reconciled, §9a line-count kickers stripped, global snapshot refreshed (1,587 files / 229,778 lines). Fig 1 pipeline diagram gains the two optional on-demand skills (aid-summarize after Discovery; aid-housekeep after Deploy, reconciling KB/summary drift into Discovery) — per V1 review feedback. Machine A+ 73/73 (D1 5/5; D2 jsdom-fallback PASS). Human A+ — K1 pass, K2 10/10, **V1 user-approved 2026-06-03**. |
 
 ## Calibration Log
 
