@@ -9,8 +9,13 @@
 # failed task's output.
 #
 # Usage:
-#   compute-block-radius.sh --failed-task NNN --plan-file PATH
-#       Read the Execution Graph from PATH (PLAN.md or SPEC.md).
+#   compute-block-radius.sh --failed-task NNN --plan-file PATH [--delivery-id NNN]
+#       Read the Execution Graph from PATH (PLAN.md or SPEC.md). The Execution
+#       Graph heading may be at any level (#### in a full PLAN.md, ## in a
+#       lite/recipe SPEC). For a multi-delivery PLAN.md (### delivery-NNN
+#       sections) --delivery-id is REQUIRED and scopes parsing to that delivery
+#       (so colliding per-delivery task IDs don't merge). A lite/recipe SPEC with
+#       no delivery sections needs no --delivery-id.
 #       Print one task-NNN per line to stdout. Exit 0 on success.
 #
 #   compute-block-radius.sh --failed-task NNN --graph-file PATH
@@ -26,11 +31,13 @@
 #   task number ascending. Empty output means the failed task has no dependents.
 #
 # Exit codes:
-#   0  success (block-radius printed to stdout; may be empty)
+#   0  success (block-radius printed to stdout; may be empty). A failed task that
+#      is declared in the graph but has no dependents, AND a failed task that is
+#      genuinely absent from the graph, both succeed with an empty set (the
+#      latter also warns to stderr).
 #   1  required argument missing or file not found
-#   2  failed task not found in graph (warn but succeed with empty set)
 #   4  invalid argument value
-#   5  missing required argument
+#   5  missing required argument (incl. multi-delivery PLAN without --delivery-id)
 #
 # BFS Algorithm:
 #   Input:  failed_id         — task-NNN that failed
@@ -61,7 +68,7 @@ set -u
 
 # ---------------------------------------------------------------------------
 usage() {
-    sed -n '2,58p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,65p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 die() { echo "ERROR: compute-block-radius.sh: $*" >&2; exit "${2:-1}"; }
@@ -73,6 +80,7 @@ warn() { echo "WARN: compute-block-radius.sh: $*" >&2; }
 FAILED_TASK=""
 PLAN_FILE=""
 GRAPH_FILE=""
+DELIVERY_ID=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -91,6 +99,10 @@ while [[ $# -gt 0 ]]; do
         --graph-file)
             [[ $# -lt 2 ]] && die "--graph-file requires a value" 5
             GRAPH_FILE="$2"; shift 2
+            ;;
+        --delivery-id)
+            [[ $# -lt 2 ]] && die "--delivery-id requires a value" 5
+            DELIVERY_ID="$2"; shift 2
             ;;
         *)
             die "unknown argument: $1" 5
@@ -121,65 +133,76 @@ FAILED_TASK_NORM="task-$(printf '%03d' "$((10#${FAILED_TASK_ID}))")"
 # Builds reverse_graph as a TSV file: "dependent TAB dependency"
 # The "| Task | Depends On |" table is the source.
 # ---------------------------------------------------------------------------
-build_reverse_graph_from_plan() {
-    local plan_file="$1"
-    [[ -f "$plan_file" ]] || die "plan/spec file not found: $plan_file" 1
+# The shared awk parser for both edges and declared nodes. Arguments:
+#   did  — delivery id to scope to ("" = parse all Execution Graph blocks, used
+#          for lite/recipe SPECs that have a single top-level graph)
+#   mode — "edges" (emit "dep<TAB>task" reverse edges) or "nodes" (emit each
+#          declared left-column task-NNN, one per line)
+# B1: the Execution Graph header is matched at ANY heading level (#+).
+# B4: when did is set, parsing is gated to the matching "### delivery-NNN" block.
+_parse_graph_awk() {
+    local plan_file="$1" did="$2" mode="$3"
+    awk -v did="$did" -v mode="$mode" '
+        BEGIN { in_scope = (did == "" ? 1 : 0); in_table=0; in_depends=0 }
 
-    # Parse the "| Task | Depends On |" table.
-    # Lines look like:
-    #   | task-001 | — |
-    #   | task-002 | task-001 |
-    #   | task-005 | task-003, task-004 |
-    # Output TSV: dependent<TAB>dependency (one row per dependency edge).
-    awk '
-        BEGIN { in_table=0 }
+        # Delivery-section gating (only when scoping by --delivery-id)
+        /^### delivery-/ {
+            if (did != "") {
+                in_scope = 0; in_table = 0; in_depends = 0
+                if (match($0, /delivery-[0-9]+/)) {
+                    num = substr($0, RSTART, RLENGTH); sub(/delivery-/, "", num)
+                    if (num + 0 == did + 0) in_scope = 1
+                }
+            }
+        }
 
-        # Detect the Execution Graph header (#### Execution Graph)
-        /^####[[:space:]]+Execution Graph/ { in_table=1; next }
+        # Execution Graph header at ANY level (####, ###, ##) — B1
+        in_scope && /^#+[[:space:]]+Execution Graph/ { in_table=1; next }
 
-        # Detect the Depends On table header row
-        in_table && /^\|[[:space:]]*Task[[:space:]]*\|[[:space:]]*Depends[[:space:]]*On/ {
+        # Depends On table header row
+        in_scope && in_table && /^\|[[:space:]]*Task[[:space:]]*\|[[:space:]]*Depends[[:space:]]*On/ {
             in_depends=1; next
         }
 
         # Skip separator row (|---|---|)
-        in_table && in_depends && /^\|[-|[:space:]]+$/ { next }
+        in_scope && in_table && in_depends && /^\|[-|[:space:]]+$/ { next }
 
         # Parse data rows inside the Depends On table
-        in_table && in_depends && /^\|/ {
-            # Check if we hit the second table (Can Be Done In Parallel)
+        in_scope && in_table && in_depends && /^\|/ {
             if ($0 ~ /Can Be Done In Parallel/) { in_depends=0; in_table=0; next }
-            # Also stop at blank line or non-table line
             if ($0 !~ /^\|/) { in_depends=0; next }
 
-            # Extract columns: | task-NNN | dep1, dep2 |
             line = $0
-            # Remove leading/trailing |
             gsub(/^\|/, "", line)
             gsub(/\|$/, "", line)
-            # Split on |
             n = split(line, cols, "|")
             if (n < 2) next
 
             task = cols[1]; deps_str = cols[2]
-            # Trim whitespace
             gsub(/^[[:space:]]+|[[:space:]]+$/, "", task)
             gsub(/^[[:space:]]+|[[:space:]]+$/, "", deps_str)
 
-            # Normalize task name (ensure task-NNN form)
             if (task ~ /^task-[0-9]+/) {
-                # Acceptable — emit reverse edges
-                if (deps_str == "—" || deps_str == "-" || deps_str == "") {
-                    # No dependencies: no reverse edges to emit
+                if (mode == "nodes") {
+                    # Every left-column task is a declared graph node (B3),
+                    # regardless of whether it has edges.
+                    print task
                     next
                 }
-                # Split comma-separated dependencies
+                # mode == "edges": emit reverse edges. Treat em-dash / hyphen /
+                # "none" / "(none)" / "— (none)" (lite-spec form) as no-deps.
+                low = tolower(deps_str)
+                if (deps_str == "—" || deps_str == "-" || deps_str == "" \
+                    || low == "none" || low == "(none)" \
+                    || low == "—(none)" || low == "— (none)") {
+                    next
+                }
                 nd = split(deps_str, dep_list, /,[[:space:]]*/);
                 for (i = 1; i <= nd; i++) {
                     dep = dep_list[i]
                     gsub(/^[[:space:]]+|[[:space:]]+$/, "", dep)
                     if (dep != "" && dep != "—" && dep != "-") {
-                        # Emit: dependency -> task (reverse edge: dep is depended-on by task)
+                        # dependency -> task (reverse edge: dep is depended-on by task)
                         print dep "\t" task
                     }
                 }
@@ -187,11 +210,26 @@ build_reverse_graph_from_plan() {
         }
 
         # Stop scanning after the second table in the Execution Graph block
-        in_table && /^\|[[:space:]]*Can Be Done In Parallel/ { in_table=0; next }
+        in_scope && in_table && /^\|[[:space:]]*Can Be Done In Parallel/ { in_table=0; next }
 
         # A blank line after the table ends the table context
-        in_table && in_depends && /^$/ { in_depends=0 }
+        in_scope && in_table && in_depends && /^$/ { in_depends=0 }
     ' "$plan_file"
+}
+
+# Builds reverse_graph as a TSV file: "dependency<TAB>dependent".
+build_reverse_graph_from_plan() {
+    local plan_file="$1" did="${2:-}"
+    [[ -f "$plan_file" ]] || die "plan/spec file not found: $plan_file" 1
+    _parse_graph_awk "$plan_file" "$did" edges
+}
+
+# Emits every task-NNN declared in the (scoped) Execution Graph, one per line —
+# the authoritative node set, so a declared leaf with no edges is still "found".
+list_graph_nodes_from_plan() {
+    local plan_file="$1" did="${2:-}"
+    [[ -f "$plan_file" ]] || die "plan/spec file not found: $plan_file" 1
+    _parse_graph_awk "$plan_file" "$did" nodes
 }
 
 # ---------------------------------------------------------------------------
@@ -268,17 +306,31 @@ if [[ -n "$PLAN_FILE" ]]; then
     # Parse graph from plan/spec file
     [[ -f "$PLAN_FILE" ]] || die "plan file not found: $PLAN_FILE" 1
 
+    # B4: a multi-delivery PLAN.md must be scoped — otherwise every delivery's
+    # graph merges and colliding per-delivery task IDs contaminate the radius.
+    # A single delivery section (or none, i.e. a lite/recipe SPEC) is unambiguous
+    # and needs no --delivery-id.
+    delivery_count=$(grep -cE '^### delivery-' "$PLAN_FILE")
+    if [[ "$delivery_count" -ge 2 && -z "$DELIVERY_ID" ]]; then
+        die "multi-delivery PLAN ($PLAN_FILE has $delivery_count '### delivery-' sections) requires --delivery-id NNN" 5
+    fi
+
     TMPGRAPH=$(mktemp)
-    trap 'rm -f "$TMPGRAPH"' EXIT
+    TMPNODES=$(mktemp)
+    trap 'rm -f "$TMPGRAPH" "$TMPNODES"' EXIT
 
-    build_reverse_graph_from_plan "$PLAN_FILE" > "$TMPGRAPH"
+    build_reverse_graph_from_plan "$PLAN_FILE" "$DELIVERY_ID" > "$TMPGRAPH"
+    list_graph_nodes_from_plan   "$PLAN_FILE" "$DELIVERY_ID" > "$TMPNODES"
 
-    # Verify the failed task exists in the graph (as a dependency or dependant)
-    if ! grep -q "^${FAILED_TASK_NORM}" "$TMPGRAPH" && \
-       ! grep -q "	${FAILED_TASK_NORM}$" "$TMPGRAPH" && \
-       ! grep -qE "(^|\t)${FAILED_TASK_NORM}(\t|$)" "$TMPGRAPH"; then
+    # B3/B5: existence = the task is a DECLARED node (exact, whole-line match —
+    # so task-001 never matches task-0010), OR it appears in an edge. A declared
+    # leaf with no edges is therefore "found" and yields an empty radius.
+    if ! grep -qxF "$FAILED_TASK_NORM" "$TMPNODES" \
+       && ! awk -F'\t' -v t="$FAILED_TASK_NORM" '$1==t || $2==t {found=1} END{exit !found}' "$TMPGRAPH"; then
+        # B2: a genuinely absent task warns and SUCCEEDS with an empty set (exit 0),
+        # consistent with the --graph-file branch and the documented contract.
         warn "task '${FAILED_TASK_NORM}' not found in Execution Graph of $PLAN_FILE — empty block-radius returned"
-        exit 2
+        exit 0
     fi
 
     bfs_block_radius "$FAILED_TASK_NORM" "$TMPGRAPH"

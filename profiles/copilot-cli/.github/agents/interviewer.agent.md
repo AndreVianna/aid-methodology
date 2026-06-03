@@ -5,6 +5,7 @@ tools:
   - Read
   - Glob
   - Grep
+  - shell
 model: claude-opus-4.8
 ---
 
