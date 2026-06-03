@@ -88,9 +88,9 @@ This is the single state file for the **Discovery area** — persistent project 
 **Overall Grade:** A+ (= min of Machine=A+, Human=A+)
 **User Approved:** yes (2026-06-03 — cycle-10 /aid-housekeep summary refresh; Overall A+; V1 visual gate approved)
 **Last Run:** 2026-06-03 (methodology-v3.2 reconciliation — assemble.sh rebuild)
-**Trigger Reason:** methodology v3.2 — aid-deploy/aid-monitor reclassified as optional end-of-pipeline Deliver skills (numbered phases 8→6). Summary updates: Fig 1 pipeline diagram (DEP/MON now dashed `:::optional`, edges `EXC -. optional .-> DEP/MON`, no forced `DEP --> MON`), lede + caption reworded, Phases-&-Skills section renumbered (Discover=Phase 1…Execute=Phase 6; Deploy/Monitor kickers → "Optional"). Diagrams re-validated D1/D2 PASS (5/5).
+**Trigger Reason:** methodology v3.2 — aid-deploy/aid-monitor reclassified as optional end-of-pipeline Deliver skills (numbered phases 8→6). Summary updates: Fig 1 pipeline diagram (DEP/MON dashed `:::optional`, edges `EXC -. optional .-> DEP/MON`, no forced `DEP --> MON`; restored the dashed `SUM`/`HK` optional nodes that had drifted out of summary-src — `DSC -. optional .-> SUM`, `EXC -. optional .-> HK`, `HK -. reconcile .-> DSC`; Lite Path is now a decision diamond `LITE{"Lite path?"}` branching full/small work; node labels de-duplicated to the bare skill name; bug-found loop re-pointed `MON -. bug found .-> INT`), lede + caption reworded, Phases-&-Skills section renumbered (Discover=Phase 1…Execute=Phase 6; Deploy/Monitor kickers → "Optional"). Diagrams re-validated D1/D2 PASS (5/5).
 **Output:** `.aid/knowledge/knowledge-summary.html`
-**Output Size:** 3.42 MB (3,415,602 bytes; 5,508 lines)
+**Output Size:** 3.42 MB (3,415,956 bytes; 5,513 lines)
 **Mermaid Version:** 11.15.0
 **Mermaid Fetched At:** 2026-05-28T12:30:00Z
 **Mermaid Cached:** `.aid/knowledge/.cache/mermaid.min.js` (sha256: 70137e77bb273bb2ef972b86e8b0400cca8be53cb25bfc45911a186dc98665de)

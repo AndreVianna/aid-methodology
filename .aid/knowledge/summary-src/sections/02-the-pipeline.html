@@ -5,7 +5,7 @@
 		<p class="lede">AID defines six sequential development phases — from brownfield discovery through reviewed execution — with explicit human-controlled phase gates and feedback loops. Two optional Deliver skills (Deploy, Monitor) sit at the end of the pipeline, run on demand. Each numbered phase maps to a slash-command skill. (per architecture.md, repo-presentation.md)</p>
 	</header>
 
-	<p>The development pipeline (Discover → Execute) is sequential by default: human approval is required to advance between phases. The two Deliver skills — Deploy and Monitor — are optional and run on demand at the end; neither is required and neither presupposes the other. Feedback loops exist as escape hatches — Monitor can route back to Execute or Discover; Execute can issue IMPEDIMENT escalations; any phase can revisit Discovery. The Lite Path shortcut routes small work directly from Interview to task execution, bypassing Specify, Plan, and Detail. (per feature-inventory.md §Engineering features)</p>
+	<p>The development pipeline (Discover → Execute) is sequential by default: human approval is required to advance between phases. The optional skills — Deploy and Monitor (end-of-pipeline Deliver), plus the read-only Summarize and the off-pipeline Housekeep — run on demand; none is required and Deploy/Monitor do not presuppose each other. Feedback loops exist as escape hatches — Monitor routes bugs back to Interview (which triages them) and change requests to Discover; Execute can issue IMPEDIMENT escalations; any phase can revisit Discovery. After Interview, a Lite Path decision routes small work directly to task execution, bypassing Specify, Plan, and Detail. (per feature-inventory.md §Engineering features)</p>
 
 	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 1: AID phase pipeline — click or press Enter to expand">
 		<div class="mermaid">
@@ -15,31 +15,36 @@ flowchart LR
     classDef lite  fill:#1D4ED8,stroke:#1e40af,color:#fff,stroke-width:2px;
     classDef optional fill:#0B1F3A,stroke:#00A3A1,color:#fff,stroke-width:2px,stroke-dasharray:5 4;
 
-    CFG["aid-config<br/>Setup"]:::phase
-    DSC["aid-discover<br/>Discovery"]:::phase
-    INT["aid-interview<br/>Interview"]:::phase
-    SPC["aid-specify<br/>Specify"]:::phase
-    PLN["aid-plan<br/>Plan"]:::phase
-    DTL["aid-detail<br/>Detail"]:::phase
-    EXC["aid-execute<br/>Execute"]:::phase
-    DEP["aid-deploy<br/>Deploy · optional"]:::optional
-    MON["aid-monitor<br/>Monitor · optional"]:::optional
-    LITE["Lite Path<br/>direct to tasks"]:::lite
+    CFG["aid-config"]:::phase
+    DSC["aid-discover"]:::phase
+    INT["aid-interview"]:::phase
+    SPC["aid-specify"]:::phase
+    PLN["aid-plan"]:::phase
+    DTL["aid-detail"]:::phase
+    EXC["aid-execute"]:::phase
+    DEP["aid-deploy<br/>optional"]:::optional
+    MON["aid-monitor<br/>optional"]:::optional
+    SUM["aid-summarize<br/>optional"]:::optional
+    HK["aid-housekeep<br/>optional"]:::optional
+    LITE{"Lite path?"}:::lite
 
     CFG --> DSC
     DSC --> INT
-    INT --> SPC
-    INT -. small work .-> LITE
-    LITE --> EXC
+    INT --> LITE
+    LITE -->|full work| SPC
+    LITE -->|small work| EXC
     SPC --> PLN
     PLN --> DTL
     DTL --> EXC
     EXC -. optional .-> DEP
     EXC -. optional .-> MON
-    MON -. bug found .-> EXC
+    MON -. bug found .-> INT
     MON -. change req .-> DSC
+    DSC -. optional .-> SUM
+    EXC -. optional .-> HK
+    HK -. reconcile KB/summary .-> DSC
 		</div>
-		<p class="caption">Fig 1 — AID pipeline: 6 numbered phases (Discover → Execute) plus the optional end-of-pipeline Deliver skills (Deploy, Monitor, dashed), with the Lite Path shortcut for small work. Feedback loops let Monitor re-enter Execute or Discover. (per architecture.md)</p>
+		<p class="caption">Fig 1 — AID pipeline: 6 numbered phases (Discover → Execute, solid) plus four optional skills (dashed) — Deploy &amp; Monitor (end-of-pipeline Deliver), Summarize (after Discovery), and Housekeep (reconciles KB + summary back into Discovery). The Lite path decision (diamond) sends small work straight to Execute. Feedback loops let Monitor route bugs to Interview and change requests to Discovery. (per architecture.md)</p>
 	</div>
 
 	<div class="callout">
