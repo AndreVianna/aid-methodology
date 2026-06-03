@@ -12,7 +12,7 @@ Combines telemetry interpretation with triage into a single observe → classify
 2. **Classify** — BUG (spec right, code wrong) / CR (spec needs change) / INFRASTRUCTURE / NO ACTION
 3. **Analyze** — root cause analysis for bugs (trace → fault → scope → test requirements)
 4. **Propose** — present findings with routing recommendations
-5. **Act** — create tasks for bugs (→ aid-execute), Q&A entries for CRs (→ aid-discover), escalate infra
+5. **Act** — route findings to aid-interview (bugs via the lite bug-fix triage; CRs as new/changed requirements), escalate infra
 
 ## Artifacts
 
@@ -24,7 +24,7 @@ Combines telemetry interpretation with triage into a single observe → classify
 
 | Classification | Route | Path |
 |----------------|-------|------|
-| BUG | aid-execute | Short: new task → execute → deploy |
-| Change Request | aid-discover | Full cycle: Q&A entry → discover → interview → ... |
+| BUG | aid-interview | Short: lite bug-fix triage → task → execute |
+| Change Request | aid-interview | Full cycle: new/changed requirements → specify → plan → ... |
 | Infrastructure | Ops (manual) | Outside AID scope |
 | No Action | Close | Document justification |

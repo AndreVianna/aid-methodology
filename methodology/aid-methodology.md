@@ -20,7 +20,7 @@ The methodology covers the full lifecycle in five groups:
 - **Execute** (1 phase): Build, review, and test — one typed-task phase with a built-in review loop.
 - **Deliver** (2 optional skills): Optionally ship to production, then monitor and route what breaks. These end-of-pipeline skills are invoked on demand — neither is required, and neither presupposes the other.
 
-Bugs take a short path back through Execute. Change requests start a new development cycle. Nothing falls on the floor.
+Bugs and change requests both re-enter through Interview — bugs via its lite bug-fix triage (a short path), change requests as new or changed requirements. Nothing falls on the floor.
 
 The methodology is built on three convictions:
 
@@ -226,10 +226,10 @@ The Knowledge Base is institutional memory. It outlives any individual session, 
 
 ## 3. The Phases
 
-AID organizes six development phases into five groups. The six numbered phases (Discover through Execute) form the mandatory, sequential pipeline; the fifth group, Deliver, holds two **optional** end-of-pipeline skills (`aid-deploy`, `aid-monitor`) that are invoked on demand rather than as required, sequential phases. The pipeline is linear with feedback loops. When run, the Monitor skill observes production and routes issues back into development through one of two paths:
+AID organizes six development phases into five groups. The six numbered phases (Discover through Execute) form the mandatory, sequential pipeline; the fifth group, Deliver, holds two **optional** end-of-pipeline skills (`aid-deploy`, `aid-monitor`) that are invoked on demand rather than as required, sequential phases. The pipeline is linear with feedback loops. When run, the Monitor skill observes production and routes findings back into development — both paths re-enter at Interview:
 
-- **Bug path (short):** Monitor → Execute → Deploy. Surgical. Monitor identifies the bug, performs root cause analysis, creates a task, and routes to Execute. No re-specification, no re-planning.
-- **Change Request path (full cycle):** Monitor → Discover. The CR routes back to Discovery as a Q&A entry; a large-enough CR spins up a new work and runs the complete cycle from the beginning.
+- **Bug path (short):** Monitor → Interview → Execute. Surgical. Monitor identifies the bug and performs root cause analysis, then routes it to Interview's **LITE-BUG-FIX** triage, which turns the diagnosis into task(s); Execute implements. No re-specification, no re-planning.
+- **Change Request path (full cycle):** Monitor → Interview. The CR re-enters as new or changed requirements and runs the pipeline from Interview (Specify → Plan → Detail → Execute); a large-enough CR spins up a new work.
 
 ---
 
@@ -507,13 +507,13 @@ The two Deliver-group skills — `aid-deploy` and `aid-monitor` — are **option
 2. **Classify** — For each finding: BUG (spec right, code wrong), Change Request (spec needs change), Infrastructure (ops), or No Action (false positive).
 3. **Analyze** — Root cause analysis for bugs: trace → fault → scope → test requirements.
 4. **Propose** — Present findings with routing recommendations to the user.
-5. **Act** — Create tasks for bugs (→ aid-execute), Q&A entries for CRs (→ aid-discover), escalate infra.
+5. **Act** — Route findings to `aid-interview` — bugs via its LITE-BUG-FIX triage, change requests as new/changed requirements; escalate infrastructure findings.
 
 **Key distinction:** Monitor *interprets*, it doesn't just collect. A dashboard shows you a spike. Monitor tells you "error rate increased 340% after deploy #47, concentrated in the payment module, affecting ~2,000 users" — and then classifies it as a BUG with root cause analysis and patch scope.
 
 **Bug vs. CR:** If the spec said "do X" and the code doesn't do X — bug. If users now need Y instead of X — CR, even if the code "works."
 
-**The short path:** BUG → new task → aid-execute → aid-deploy. The short path skips specification and planning because the spec is already correct — only the code is wrong.
+**The short path:** BUG → aid-interview (LITE-BUG-FIX triage → task) → aid-execute (→ optional aid-deploy). The short path skips specification and planning because the spec is already correct — only the code is wrong.
 
 **When to trigger:** On deployment, on schedule, on alert threshold, or on-demand.
 
@@ -552,8 +552,8 @@ flowchart TB
     E -. "L6 · impediment" .-> D
     E -. "L7 · review" .-> S
     Dp -. "L8 · verification" .-> E
-    M -. "L9 · bug" .-> E
-    M -. "L10 · change request" .-> D
+    M -. "L9 · bug" .-> I
+    M -. "L10 · change request" .-> I
 
     Any["Any phase"]:::kb -. "L11 · targeted re-discovery" .-> D
 ```
@@ -616,17 +616,17 @@ These are AID's principal, named feedback loops. Each phase's entry in §3 also 
 
 #### Post-Production Loops (9–10)
 
-#### Loop 9: Monitor → Execute (Bug Path)
+#### Loop 9: Monitor → Interview (Bug Path)
 
 **Trigger:** Monitor classifies a finding as BUG.
 
-**Protocol:** Monitor performs root cause analysis, creates a task in `.aid/{work}/tasks/`, routes to aid-execute → aid-deploy. The short path.
+**Protocol:** Monitor performs root cause analysis and routes the bug to aid-interview's **LITE-BUG-FIX** triage, which creates the task(s) in `.aid/{work}/tasks/` → aid-execute (→ optional aid-deploy). The short path.
 
-#### Loop 10: Monitor → Discover (Change Request Path)
+#### Loop 10: Monitor → Interview (Change Request Path)
 
 **Trigger:** Monitor classifies a finding as Change Request.
 
-**Protocol:** Monitor writes Q&A entry to the discovery-area `STATE.md` (`.aid/knowledge/STATE.md`) → new cycle starts at aid-discover (or aid-interview for greenfield) → full pipeline.
+**Protocol:** Monitor routes the change request to aid-interview as new/changed requirements → the pipeline runs from Interview (Specify → Plan → Detail → Execute); a large-enough CR spins up a new work. Targeted discovery is invoked only if the CR exposes a KB gap.
 
 #### Cross-Cutting Loop (11)
 
@@ -870,7 +870,7 @@ There is no standalone review document. The reviewer records each cycle in the t
 **Evidence:** {concrete data — error counts, latency, ticket clusters}
 **Correlation:** {related events — e.g., "error spike 23 min after the package-007-auth deploy"}
 **Root cause:** {for bugs — trace from symptom to the specific fault}
-**Routing:** BUG → aid-execute · Change Request → aid-discover · Infrastructure → ops escalation · No Action → closed with justification
+**Routing:** BUG → aid-interview (LITE-BUG-FIX) · Change Request → aid-interview · Infrastructure → ops escalation · No Action → closed with justification
 
 ## Resolved Findings
 | Finding | Classification | Resolution | Date |
@@ -920,13 +920,13 @@ The forward path is the default; the eleven feedback loops (see §4) are the esc
 
 ### The Two Post-Production Paths
 
-**Bug path (short):** Monitor → Execute → Deploy. Monitor maps the root cause — diagnosis, files to touch, tests to add — and hands it to Execute as a task. No re-specification, no re-planning.
+**Bug path (short):** Monitor → Interview → Execute. Monitor maps the root cause — diagnosis, files to touch, tests to add — and hands it to Interview's LITE-BUG-FIX triage, which creates the task; Execute implements. No re-specification, no re-planning.
 
-**Change Request path (full):** Monitor → Discover. The CR routes back to Discovery as a Q&A entry; when its scope is large enough it spins up a new work — its own requirements, its own spec, its own plan. The full pipeline ensures that changes are understood before they're built.
+**Change Request path (full):** Monitor → Interview. The CR re-enters as new or changed requirements; when its scope is large enough it spins up a new work — its own spec, its own plan. The full pipeline ensures that changes are understood before they're built.
 
 ### Flow Rules
 
-1. **Linear by default.** Discover → Interview → Specify → Plan → Detail → Execute → Deploy → Monitor.
+1. **Linear by default.** Discover → Interview → Specify → Plan → Detail → Execute. Deploy and Monitor are optional end-of-pipeline skills, run on demand.
 2. **Human approves each phase transition.** The pipeline never auto-advances.
 3. **Feedback to KB.** Any phase can trigger targeted discovery. The KB is always the return target.
 4. **Feedback to Spec.** Plan, Detail, and Execute can trigger spec revision.
@@ -934,8 +934,8 @@ The forward path is the default; the eleven feedback loops (see §4) are the esc
 6. **Brownfield starts at Discover** with full KB populated from code.
 7. **Each phase produces persistent artifacts.** Each artifact has a revision history.
 8. **The KB outlives the project.** It's institutional memory for future work.
-9. **Bugs take the short path.** Monitor → Execute → Deploy. No re-specification.
-10. **CRs take the full path.** Monitor routes to Discover. New cycle, new spec, new plan.
+9. **Bugs take the short path.** Monitor → Interview (LITE-BUG-FIX) → Execute. No re-specification.
+10. **CRs take the full path.** Monitor routes to Interview. New/changed requirements, new spec, new plan.
 11. **Monitor runs on demand.** It observes production on deployment, on schedule, or on alert.
 12. **Detail feeds Execute.** Plan feeds Detail. Strategy flows down; tactics flow up when strategy is insufficient.
 
@@ -1014,7 +1014,7 @@ Both AID and SDD:
 | **Agent model** | One agent per spec | Multi-agent orchestration with specialists |
 | **Delivery model** | Spec → code → done | Discover → specify → plan → detail → execute → deploy → monitor |
 | **Memory** | Stateless | Knowledge Base persists across sessions |
-| **Post-delivery** | Not addressed | Monitor → Execute (bugs) / Discover (CRs) |
+| **Post-delivery** | Not addressed | Monitor → Interview (bugs + CRs) |
 | **Scope** | Code generation | Full lifecycle: discovery through production maintenance |
 | **Human role** | Spec writer, reviewer | Co-pilot across all phases |
 

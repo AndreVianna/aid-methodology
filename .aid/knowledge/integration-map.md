@@ -9,7 +9,7 @@ intent: |
   Inter-skill choreography is implemented via filesystem state hand-offs (not a message broker).
 contracts: []
 changelog:
-  - 2026-06-03: methodology v3.2 — Phase Sequence diagram + skill-set composition reconciled: numbered phases 8→6 (Discover→Execute); aid-deploy/aid-monitor recast from Phases 7/8 to optional, on-demand end-of-pipeline Deliver skills (not required, not sequential); loops L8–L10 now apply only when those skills are run.
+  - 2026-06-03: methodology v3.2 — Phase Sequence diagram + skill-set composition reconciled: numbered phases 8→6 (Discover→Execute); aid-deploy/aid-monitor recast from Phases 7/8 to optional, on-demand end-of-pipeline Deliver skills (not required, not sequential); loops L8–L10 now apply only when those skills are run. Production re-entry unified: L9 (bug) and L10 (change request) now route Monitor → Interview (bugs via the LITE-BUG-FIX triage; CRs as new/changed requirements), replacing the prior Monitor→Execute / Monitor→Discover targets.
   - 2026-06-03: housekeep run-state relocation (PR #51) — corrected the aid-housekeep State-File R/W row: run-state moved from the work-area STATE.md to the project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`; CLEANUP offers every work folder + stale artifact for user-confirmed deletion.
   - 2026-06-03: aid-housekeep merge (PR #49) — skill enumeration 10→11 user-facing (added optional off-pipeline aid-housekeep) + maintainer-only aid-generate; documented aid-housekeep as a filesystem-state choreography participant (STATE.md Q&A handshake with /aid-discover, work-area ## Housekeep Status run-state block, /aid-summarize delegation)
   - 2026-06-01: work-001-add-providers merge (PRs #42/#43/#44) — distribution now 5 profile trees (added copilot-cli → `.github/`, antigravity → `.agent/`); documented Copilot native Agent Skills + Antigravity rules mapping + Option-A AGENTS.md collision handler
@@ -379,8 +379,8 @@ Source: `methodology/aid-methodology.md` `## 4. Feedback Loops` (the 11 feedback
 | L6 | Execute → Discovery / Specify / Detail | Assumption broke at impl time | `IMPEDIMENT-task-NNN.md` (typed) |
 | L7 | Execute Review → upstream | Reviewer finds TASK/SPEC/KB issues | Tagged issues in STATE.md |
 | L8 | Deploy → Execute | Deploy verification failed | Re-route to `/aid-execute` |
-| L9 | Monitor → Execute | BUG classification | New `task-NNN.md` |
-| L10 | Monitor → Discover | Change Request classification | `DISCOVERY-STATE.md` Q&A |
+| L9 | Monitor → Interview | BUG classification | New `task-NNN.md` (via Interview LITE-BUG-FIX) |
+| L10 | Monitor → Interview | Change Request classification | New/changed requirements (`REQUIREMENTS.md`) |
 | L11 | Any phase → Discovery | Targeted re-discovery | `DISCOVERY-STATE.md` Q&A |
 
 Source: `methodology/aid-methodology.md` `### The Eleven Loops`
@@ -408,7 +408,7 @@ memory:
 | `aid-detail` | `PLAN.md`, feature SPECs | `tasks/task-NNN.md`; `PLAN.md` ## Execution Graph |
 | `aid-execute` | `task-NNN.md`, `PLAN.md`, feature `SPEC.md`, `known-issues.md`, `INDEX.md`, `STATE.md ## Tasks Status` | `STATE.md ## Tasks Status` (via `writeback-state.sh`), `STATE.md ## Quick Check Findings`, `STATE.md ## Delivery Gates`, `IMPEDIMENT-task-NNN.md`, code |
 | `aid-deploy` | `STATE.md ## Tasks Status` (all Done), `PLAN.md`, infrastructure config | `STATE.md ## Deploy Status`; `packages/package-NNN-{name}.md`; routes KB-affecting findings to `DISCOVERY-STATE.md` Q&A (never writes KB directly) |
-| `aid-monitor` | Telemetry sources, `packages/`, `known-issues.md`, feature SPECs | `MONITOR-STATE.md`; new `tasks/task-NNN.md` (bug path); `DISCOVERY-STATE.md` Q&A (CR path) |
+| `aid-monitor` | Telemetry sources, `packages/`, `known-issues.md`, feature SPECs | `MONITOR-STATE.md`; routes findings to `aid-interview` — bug path → LITE-BUG-FIX → `tasks/task-NNN.md`; CR path → new/changed requirements (`REQUIREMENTS.md`) |
 | `aid-summarize` | Approved `.aid/knowledge/` + `STATE.md ## Knowledge Summary Status` | `.aid/knowledge/knowledge-summary.html`; `STATE.md ## Knowledge Summary Status, ## Summarization History` |
 | `aid-housekeep` (optional, off-pipeline) | project-level run-state file `.aid/.temp/HOUSEKEEP_STATE_<ts>.md` (resume state, via `housekeep-state.sh`); `.aid/knowledge/STATE.md` (`**Last KB Review:**`, `**User Approved:**`, `## Summarization History`); `git` log/diff (hint only) | project-level run-state file `.aid/.temp/HOUSEKEEP_STATE_<ts>.md` (run-state fields, via `housekeep-state.sh`; gitignored, removed at DONE); `.aid/knowledge/STATE.md ## Q&A (Pending)` (synthesizes an `**Impact:** Required` entry to drive `/aid-discover`); one commit per stage on an `aid/housekeep-*` branch (via `branch-commit.sh`, never pushes). Delegates KB-DELTA → `/aid-discover`, SUMMARY-DELTA → `/aid-summarize`; CLEANUP offers every stale `.aid/` artifact + work folder for user-confirmed deletion via `cleanup-classify.sh` + `git rm`/`rm` |
 | `aid-generate` (maintainer) | `canonical/`, `profiles/*.toml` (5 profiles), previous `emission-manifest.jsonl` per profile | `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/...`, new `emission-manifest.jsonl` per profile, repo-root `CLAUDE.md` / `AGENTS.md` |

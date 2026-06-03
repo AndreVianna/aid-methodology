@@ -9,7 +9,7 @@ intent: |
   and rubric tiers. Read this when any AID term is unfamiliar.
 contracts: []
 changelog:
-  - 2026-06-03: methodology v3.2 — Deploy/Monitor recast from numbered phases 7/8 to optional end-of-pipeline Deliver skills; AID term updated to "6 numbered development phases"; updated source anchors to the renamed spec headings (`#### Deploy … — optional` / `#### Monitor … — optional`).
+  - 2026-06-03: methodology v3.2 — Deploy/Monitor recast from numbered phases 7/8 to optional end-of-pipeline Deliver skills; AID term updated to "6 numbered development phases"; updated source anchors to the renamed spec headings (`#### Deploy … — optional` / `#### Monitor … — optional`). Loops 9/10 + Bug/CR Path terms re-pointed Monitor → Interview (bug via LITE-BUG-FIX; CR as new/changed requirements).
   - 2026-06-03: housekeep run-state relocation (PR #51) — corrected the "Housekeep Status" term: the run-state block now lives in the project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md` (transient/gitignored), not a work-area STATE.md.
   - 2026-06-03: aid-housekeep merge (PR #49) — added "Housekeep / KB-drift reconciliation" (the optional off-pipeline /aid-housekeep skill) and "Housekeep Status" (the work-area run-state block) terms; left "Pre-flight Cleanup" (the distinct /aid-discover orchestrator-only KB sweep) unchanged
   - 2026-06-01: work-001-add-providers merge (PRs #42/#43/#44) — profile count 3→5; updated Generate/Profile/Install Tree/Dogfood Tree/Quadruple Mirror terms to 5-profile reality; added copilot-agent format, antigravity-rule format, native Agent Skills mapping, rules_frontmatter trigger-dialect, Option-A AGENTS.md collision
@@ -59,7 +59,7 @@ changelog:
 | **Detail** | Map | `aid-detail` | Phase 5 — Decompose each deliverable into PR-sized typed tasks. "Ultimate breakdown." | `methodology/aid-methodology.md` `#### Phase 5: Detail` |
 | **Execute** | Execute | `aid-execute` | Phase 6 — Execute a task per its Type; built-in two-tier review (per-task quick-check + per-delivery gate). One branch per delivery. | `methodology/aid-methodology.md` `#### Phase 6: Execute` |
 | **Deploy** | Deliver | `aid-deploy` | Optional (end-of-pipeline Deliver skill, not a numbered phase) — Bundle deliveries into a release; final verification (build + tests + lint); ship per `infrastructure.md § Deployment`. Routes KB-affecting discoveries to Discovery (never edits KB directly). | `methodology/aid-methodology.md` `#### Deploy (`aid-deploy`) — optional` |
-| **Monitor** | Deliver | `aid-monitor` | Optional (end-of-pipeline Deliver skill, not a numbered phase) — Observe production; classify findings (BUG/CR/Infra/No Action); route. The short path (BUG → Execute) skips spec/plan. | `methodology/aid-methodology.md` `#### Monitor (`aid-monitor`) — optional` |
+| **Monitor** | Deliver | `aid-monitor` | Optional (end-of-pipeline Deliver skill, not a numbered phase) — Observe production; classify findings (BUG/CR/Infra/No Action); route to Interview. The short path (BUG → Interview LITE-BUG-FIX → Execute) skips spec/plan. | `methodology/aid-methodology.md` `#### Monitor (`aid-monitor`) — optional` |
 
 ---
 
@@ -252,12 +252,12 @@ changelog:
 | **Loop 6 — Execute→Discovery / Specify / Detail** | IMPEDIMENT routed by Type. | `methodology/aid-methodology.md` `#### Loop 6: Execute → Discovery / Specify / Detail` |
 | **Loop 7 — Execute Review→upstream** | CODE auto-fixed; TASK/SPEC/KB issues escalate. | `methodology/aid-methodology.md` `#### Loop 7: Execute Review → Any Upstream Phase` |
 | **Loop 8 — Deploy→Execute** | Deploy verification fails → back to Execute. | `methodology/aid-methodology.md` `#### Loop 8: Deploy → Execute` |
-| **Loop 9 — Monitor→Execute** | BUG classification → new task → Execute → Deploy. The "short path." | `methodology/aid-methodology.md` `#### Loop 9: Monitor → Execute (Bug Path)` |
-| **Loop 10 — Monitor→Discover** | Change Request → Q&A → full new cycle. | `methodology/aid-methodology.md` `#### Loop 10: Monitor → Discover (Change Request Path)` |
+| **Loop 9 — Monitor→Interview** | BUG classification → Interview LITE-BUG-FIX triage → new task → Execute. The "short path." | `methodology/aid-methodology.md` `#### Loop 9: Monitor → Interview (Bug Path)` |
+| **Loop 10 — Monitor→Interview** | Change Request → Interview (new/changed requirements) → full pipeline. | `methodology/aid-methodology.md` `#### Loop 10: Monitor → Interview (Change Request Path)` |
 | **Loop 11 — Any→Discovery** | Cross-cutting targeted re-discovery — KB is always the return target; "the loop that makes the Knowledge Base the gravitational center." | `methodology/aid-methodology.md` `#### Loop 11: Any Phase → Discovery (Targeted Re-Discovery)` |
 | **Targeted re-discovery** | Re-entry to Discovery that fills a specific gap; never a full redo. Triggered by a Pending Q&A entry with `**Impact:** Required` naming the docs to refresh; also driven on-demand by `/aid-housekeep`'s KB-DELTA stage (off-pipeline). | `methodology/aid-methodology.md` `#### Loop 11: Any Phase → Discovery (Targeted Re-Discovery)`, `canonical/skills/aid-discover/SKILL.md` `## Targeted Discovery (Re-entry)`, `canonical/skills/aid-housekeep/references/state-kb-delta.md` `## Step 4` |
-| **Bug Path (short)** | Monitor → Execute → Deploy. Skips spec/plan because spec is already correct. | `methodology/aid-methodology.md` `### The Two Post-Production Paths`, `methodology/aid-methodology.md` `#### Monitor (`aid-monitor`) — optional` |
-| **Change Request Path (full cycle)** | Monitor → Discover → ... full pipeline restart. | `methodology/aid-methodology.md` `### The Two Post-Production Paths`, `methodology/aid-methodology.md` `#### Loop 10: Monitor → Discover (Change Request Path)` |
+| **Bug Path (short)** | Monitor → Interview (LITE-BUG-FIX) → Execute. Skips spec/plan because spec is already correct. | `methodology/aid-methodology.md` `### The Two Post-Production Paths`, `methodology/aid-methodology.md` `#### Monitor (`aid-monitor`) — optional` |
+| **Change Request Path (full cycle)** | Monitor → Interview → ... full pipeline from Interview. | `methodology/aid-methodology.md` `### The Two Post-Production Paths`, `methodology/aid-methodology.md` `#### Loop 10: Monitor → Interview (Change Request Path)` |
 
 ---
 

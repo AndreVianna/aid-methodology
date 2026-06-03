@@ -252,8 +252,8 @@ Key loops:
 
 - **Any phase → Discovery** — a phase finds the KB wrong or incomplete; targeted re-discovery fills the specific gap.
 - **Execute → IMPEDIMENT** — the agent hits an assumption that doesn't hold and escalates explicitly, instead of silently working around it.
-- **Monitor → Execute** — a production bug takes the short path: root-cause, task, fix.
-- **Monitor → Discover** — a change request enters as a new cycle and runs the full pipeline.
+- **Monitor → Interview** — a production bug takes the short path through Interview's lite bug-fix triage into Execute: root-cause, task, fix.
+- **Monitor → Interview** — a change request re-enters as new/changed requirements and runs the pipeline from Interview.
 
 ---
 

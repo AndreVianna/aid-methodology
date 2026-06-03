@@ -35,7 +35,7 @@ Terms and concepts used throughout the AID methodology.
 | **Detail** | Map | Typed task files + execution graph in PLAN.md |
 | **Execute** | Execute | Reviewed, graded code (8 task types, built-in review loop) |
 | **Deploy** *(optional)* | Deliver | Shipped delivery, PR, KB update |
-| **Monitor** *(optional)* | Deliver | MONITOR-STATE.md (BUG → Execute / CR → Discover / Infrastructure / No Action) |
+| **Monitor** *(optional)* | Deliver | MONITOR-STATE.md (BUG → Interview lite bug-fix → Execute / CR → Interview / Infrastructure / No Action) |
 
 > *Deploy and Monitor are **optional**, on-demand delivery skills positioned at the end of the pipeline — not required, numbered phases. Run them when the project's delivery model calls for them; neither presupposes the other.*
 
@@ -49,7 +49,7 @@ Terms and concepts used throughout the AID methodology.
 
 **IMPEDIMENT.md:** Filed when implementation discovers the plan or spec is wrong. Contains: what was assumed, what's true, proposed revision, and impact assessment.
 
-**MONITOR-STATE.md:** Filed when production monitoring identifies an issue. Classifies as BUG (short path → Execute), CR (full cycle → Discover), Infrastructure (ops team), or No Action (monitor only). For bugs, includes root cause analysis, patch scope, and test requirements.
+**MONITOR-STATE.md:** Filed when production monitoring identifies an issue. Classifies as BUG (short path → Interview's lite bug-fix triage → Execute), CR (full cycle → Interview), Infrastructure (ops team), or No Action (monitor only). For bugs, includes root cause analysis, patch scope, and test requirements.
 
 **Grading (A+ to F):** The review phase's quality scale. A+ (exemplary) through F (doesn't build). Evaluates spec compliance, architecture adherence, and convention conformance. Domain-specific quality checks (e.g., data accuracy thresholds) are defined per project in the SPEC.md.
 

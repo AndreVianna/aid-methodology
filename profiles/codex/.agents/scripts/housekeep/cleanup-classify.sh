@@ -378,18 +378,21 @@ compute_signal_i() {
             fi
         done < "$state_md"
 
-        # Check each PR
-        local pn
-        for pn in "${pr_numbers[@]:-}"; do
-            local gh_state
-            gh_state=$(gh pr view "$pn" --json state -q .state 2>/dev/null) || gh_state=""
-            if [[ "$gh_state" == "MERGED" ]]; then
-                echo "pass"
-                return 0
-            fi
-        done
-        # gh available but no MERGED PR found
+        # Check each PR — only when at least one numeric PR was recorded.
+        # Guard against the empty-array case: `"${pr_numbers[@]:-}"` would iterate
+        # once with pn="" and `gh pr view ""` resolves to the AMBIENT repo's
+        # current-branch PR, leaking outer state into the classification.
         if [[ ${#pr_numbers[@]} -gt 0 ]]; then
+            local pn
+            for pn in "${pr_numbers[@]}"; do
+                local gh_state
+                gh_state=$(gh pr view "$pn" --json state -q .state 2>/dev/null) || gh_state=""
+                if [[ "$gh_state" == "MERGED" ]]; then
+                    echo "pass"
+                    return 0
+                fi
+            done
+            # gh available but no MERGED PR found
             echo "fail:gh reports PR not MERGED"
             return 0
         fi
