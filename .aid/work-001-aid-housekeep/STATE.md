@@ -1,7 +1,7 @@
 # Work State — work-001-aid-housekeep
 
 > **Status:** Interview Complete | Specifying | Planning | Detailing | Executing | Deployed
-> **Phase:** Execute — delivery-002 DONE (gate A+); next delivery-003 (cleanup)
+> **Phase:** Execute — COMPLETE (all 3 deliveries gated A/A+; all 8 tasks Done). Next: /aid-deploy or PR review.
 > **Minimum Grade:** {resolved at runtime by `bash .claude/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-06-02
 > **User Approved:** no
@@ -76,9 +76,9 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 003 | thin-router SKILL.md + PREFLIGHT/DONE + args prose + stub no-op bodies | IMPLEMENT | 2 | Done | Gate: A | — | delivery-001 (f001); ←001,002. Skeleton drafted on disk, ungated. Args in SKILL.md prose (no parse-args.sh) |
 | 004 | state-kb-delta.md — agent-driven KB reconciliation body | IMPLEMENT | 3 | Done | Gate: A | — | delivery-001 (f002); ←001,002,003. Drafted on disk, ungated; agent inspects repo↔KB (git=hint) |
 | 005 | state-summary-delta.md body (replaces stub) | IMPLEMENT | 4 | Done | Gate: A+ | — | delivery-002 (f003); ←001,002,003,004 |
-| 006 | cleanup-classify.sh + classification suites | IMPLEMENT | 1 | Pending | — | — | delivery-003 (f004) |
-| 007 | --cleanup-only enablement (SKILL.md prose + routing) | IMPLEMENT | 2 | Pending | — | — | delivery-003 (f004); ←003 |
-| 008 | state-cleanup.md body (replaces stub) | IMPLEMENT | 3 | Pending | — | — | delivery-003 (f004); ←001,002,003,006,007 |
+| 006 | cleanup-classify.sh + classification suites | IMPLEMENT | 1 | Done | Gate: A+ | — | delivery-003 (f004) |
+| 007 | --cleanup-only enablement (SKILL.md prose + routing) | IMPLEMENT | 2 | Done | Gate: A+ | — | delivery-003 (f004); ←003 |
+| 008 | state-cleanup.md body (replaces stub) | IMPLEMENT | 3 | Done | Gate: A+ | — | delivery-003 (f004); ←001,002,003,006,007 |
 
 ## Deploy Status
 
@@ -130,6 +130,13 @@ This is the single state file for **this work** — the full dev lifecycle from 
 - **Timestamp:** 2026-06-02
 - **Notes:** task-005 — real SUMMARY-DELTA body (delegates to /aid-summarize; result→Summary Stage mapping; honest V1 human-gate; one commit/stage). No new script/suite.
 
+### delivery-003
+- **Reviewer Tier:** Large (safety-critical delete-files delivery — adversarial deletion-safety review)
+- **Grade:** A+
+- **Issue List:** D→A+ after FIX. Deletion safety SOUND throughout (no unconfirmed-deletion path; no unmerged/active folder can ever be offered). Fixed: 2 HIGH branch/interface-lifecycle bugs (SKILL.md `--set-mode` → real `--write --field --value`; ensure `aid/housekeep-*` branch BEFORE deletion so cleanup-only never strands rm on master) + 1 MEDIUM (deletion-before-commit-boundary, same fix) + 1 LOW (vacuous test → hard assertion) + 1 MINOR (help-text sed range).
+- **Timestamp:** 2026-06-03
+- **Notes:** task-006 cleanup-classify.sh (read-only scan/classify + 3 safety suites) · task-007 --cleanup-only enablement (SKILL prose) · task-008 state-cleanup.md body (tiered checklist, per-item confirm, git rm/rm, one commit, never push). 24 canonical suites pass; renders clean to 5 profiles.
+
 ## Quick Check Findings
 
 > One block per task, keyed by task-id. Written by `writeback-state.sh --findings` during the per-task quick-check step of `aid-execute`.
@@ -153,3 +160,5 @@ _none yet_
 | 2026-06-02 | Execute wave-1 + design pivot | — | Wave-1 (old 001/002/006) implemented + quick-checked clean. Then user review during execute → **agent-driven pivot**: KB stage is agent reconciliation (inspect repo↔KB, git=hint), NOT scripts. Dropped detect-delta.sh/scope-delta.sh + D1/Approved-At-Commit (reverted). 13→10 tasks; REQUIREMENTS FR1/FR2 + feature-002 SPEC + state-kb-delta.md rewritten agent-driven. Re-gate pending. |
 | 2026-06-02 | Re-gate (agent-driven pivot) | A+ | Pivot re-gated A+ (executable surface clean; fixed doc-drift: feature-002 AC block + 5 sibling-SPEC cross-refs + changelog marker). Merged origin/master (work-002). Next: finalize task-003/004, build task-005, delivery-001 gate. |
 | 2026-06-02 | Execute delivery-001 + gate | A | All 4 d1 tasks Done; delivery gate A (runnable KB-reconciliation MVP). Dropped both integration tests (10→8). Next: delivery-002 (summary). |
+| 2026-06-03 | Execute delivery-002 + gate | A+ | task-005 summary body (C+→A+: history-table detection fix). |
+| 2026-06-03 | Execute delivery-003 + gate | A+ | tasks 006/007/008 (cleanup). Gate D→A+: deletion safety sound; fixed 2 HIGH branch/interface-lifecycle bugs + MEDIUM/LOW/MINOR. **EXECUTE COMPLETE** — all 8 tasks Done, 3 deliveries gated A/A+, 24 suites pass. Next: /aid-deploy or PR review. |

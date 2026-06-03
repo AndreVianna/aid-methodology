@@ -9,7 +9,7 @@ description: >
   stage on re-invocation. State-machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA →
   CLEANUP → DONE.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
-argument-hint: "[--grade X] minimum summary grade for the SUMMARY-DELTA stage"
+argument-hint: "[--cleanup-only] [--grade X] jump to cleanup stage, or set minimum summary grade"
 ---
 
 # Knowledge Base Housekeeping
@@ -42,18 +42,8 @@ Mechanical states auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the run.*
 | Argument | Effect |
 |----------|--------|
 | *(none)* | Full gated sequence: `KB-DELTA → SUMMARY-DELTA → CLEANUP` (FR7 default). |
-| `--grade X` | Pass-through to the SUMMARY-DELTA delegation to `/aid-summarize`. Format: `[A-F][-+]?` (e.g., `A`, `A-`, `B+`). Without this, resolved via `bash canonical/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A`. |
-
-> **`--cleanup-only` is NOT offered in delivery-001.** The CLEANUP body is a stub
-> no-op until delivery-003 (task-007/task-008). Once the real CLEANUP body ships,
-> `--cleanup-only` will jump straight to CLEANUP (AC10), setting `**Mode:**
-> cleanup-only` and leaving KB/Summary stage rows as `—` (a deliberate
-> cleanup-only run does not violate C1 — REQUIREMENTS.md FR7). Until then,
-> passing `--cleanup-only` is an error: exit non-zero with:
-> ```
-> ⚠️  --cleanup-only is not yet available. It will be enabled in delivery-003.
->     Run /aid-housekeep without arguments to execute the full sequence.
-> ```
+| `--cleanup-only` | Jump straight to CLEANUP, skipping KB and summary (AC10). Sets `**Mode:** cleanup-only`. KB/Summary stage rows are left `—` (a deliberate cleanup-only run does not violate C1 — REQUIREMENTS.md FR7). `--grade X` is ignored under `--cleanup-only` (SUMMARY-DELTA is bypassed). |
+| `--grade X` | Pass-through to the SUMMARY-DELTA delegation to `/aid-summarize`. Format: `[A-F][-+]?` (e.g., `A`, `A-`, `B+`). Without this, resolved via `bash canonical/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A`. Ignored when `--cleanup-only` is also given. |
 
 > **`--fetch` / offline:** The online-first / permissioned-offline gate
 > (REQUIREMENTS.md C2, AC3) is feature-002's concern. The skeleton does not parse
@@ -123,20 +113,29 @@ as the work-area `STATE.md` for this work (`.aid/work-NNN-*/STATE.md`).
 
 **Argument pre-check (before resume detection):**
 
-1. If `--cleanup-only` was passed → exit non-zero with the "not yet available" message from `## Arguments`.
-2. If `--grade X` was passed → validate format `[A-F][-+]?`; if invalid, exit non-zero with:
+1. If `--cleanup-only` was passed → set `**Mode:** cleanup-only` via
+   `bash canonical/scripts/housekeep/housekeep-state.sh --state <STATE_FILE> --write --field "Mode" --value "cleanup-only"`.
+   Route PREFLIGHT → CLEANUP directly (row 2 of the resume table). Any `--grade X` value is
+   noted but ignored (SUMMARY-DELTA is bypassed in cleanup-only mode).
+2. If `--grade X` was passed (without `--cleanup-only`) → validate format `[A-F][-+]?`; if
+   invalid, exit non-zero with:
    ```
    ⚠️  --grade value must be a letter A–F with optional +/- suffix (e.g., A, A-, B+).
        Got: <value>
    ```
    If valid, store the grade value for pass-through to SUMMARY-DELTA.
+3. Any other unrecognized flag → exit non-zero with:
+   ```
+   ⚠️  Unknown argument: <flag>
+       Usage: /aid-housekeep [--cleanup-only] [--grade X]
+   ```
 
 **Resume detection (the six-row re-entry table):**
 
 | # | Disk condition (read `## Housekeep Status`) | Resume target |
 |---|---------------------------------------------|---------------|
 | 1 | No `## Housekeep Status` section (fresh run), no `--cleanup-only` | PREFLIGHT → KB-DELTA |
-| 2 | No section, `--cleanup-only` flag | PREFLIGHT → CLEANUP (Mode=cleanup-only) — *rejected in delivery-001* |
+| 2 | No section, `--cleanup-only` flag | PREFLIGHT → CLEANUP (Mode=cleanup-only) |
 | 3 | `**KB Stage:**` is `stalled` / `running` / `—` | resume at **KB-DELTA** |
 | 4 | `**KB Stage:**` passed/skipped AND `**Summary Stage:**` stalled/running/`—` | resume at **SUMMARY-DELTA** |
 | 5 | KB + Summary passed/skipped AND `**Cleanup Stage:**` not passed | resume at **CLEANUP** |
