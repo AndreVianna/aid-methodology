@@ -765,7 +765,7 @@ details.accord > summary:focus-visible,
 	<header>
 		<span class="eyebrow">Featured</span>
 		<h2>The Pipeline</h2>
-		<p class="lede">AID defines eight sequential pipeline phases — from brownfield discovery through production monitoring — with explicit human-controlled phase gates and feedback loops. Each phase maps to a slash-command skill. (per architecture.md, repo-presentation.md)</p>
+		<p class="lede">AID defines eight sequential pipeline phases — from brownfield discovery through production monitoring — with explicit human-controlled phase gates and feedback loops. Each phase maps to a slash-command skill. Two optional, on-demand skills sit alongside the flow at their natural points: <code>aid-summarize</code> (after Discovery) and <code>aid-housekeep</code> (after Execute/Deploy). (per architecture.md, repo-presentation.md)</p>
 	</header>
 
 	<p>The pipeline is sequential by default: human approval is required to advance between phases. Feedback loops exist as escape hatches — Monitor can route back to Execute or Discover; Execute can issue IMPEDIMENT escalations; any phase can revisit Discovery. The Lite Path shortcut routes small work directly from Interview to task execution, bypassing Specify, Plan, and Detail. (per feature-inventory.md §Engineering features)</p>
@@ -776,6 +776,7 @@ flowchart LR
     classDef phase fill:#0B1F3A,stroke:#00A3A1,color:#fff,stroke-width:2px;
     classDef gate  fill:#007F7D,stroke:#005856,color:#fff,stroke-width:2px;
     classDef lite  fill:#1D4ED8,stroke:#1e40af,color:#fff,stroke-width:2px;
+    classDef opt   fill:#475569,stroke:#94A3B8,color:#fff,stroke-width:2px,stroke-dasharray:5 3;
 
     CFG["aid-config<br/>Setup"]:::phase
     DSC["aid-discover<br/>Discovery"]:::phase
@@ -787,6 +788,8 @@ flowchart LR
     DEP["aid-deploy<br/>Deploy"]:::phase
     MON["aid-monitor<br/>Monitor"]:::phase
     LITE["Lite Path<br/>direct to tasks"]:::lite
+    SUM["aid-summarize<br/>KB Viewer (optional)"]:::opt
+    HK["aid-housekeep<br/>Housekeeping (optional)"]:::opt
 
     CFG --> DSC
     DSC --> INT
@@ -800,8 +803,11 @@ flowchart LR
     DEP --> MON
     MON -. bug found .-> EXC
     MON -. change req .-> DSC
+    DSC -. optional .-> SUM
+    DEP -. optional .-> HK
+    HK -. reconcile KB/summary .-> DSC
 		</div>
-		<p class="caption">Fig 1 — AID phase pipeline: 8 phases (Discover through Monitor), with the Lite Path shortcut for small work. Feedback loops let Monitor re-enter Execute or Discover. (per architecture.md)</p>
+		<p class="caption">Fig 1 — AID phase pipeline: 8 phases (Discover through Monitor), with the Lite Path shortcut for small work. Feedback loops let Monitor re-enter Execute or Discover. Dashed nodes are the two optional on-demand skills — aid-summarize (after Discovery) and aid-housekeep (after Execute/Deploy, reconciling KB + summary drift back into Discovery). (per architecture.md)</p>
 	</div>
 
 	<div class="callout">
