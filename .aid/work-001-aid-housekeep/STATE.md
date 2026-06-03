@@ -177,9 +177,9 @@ _none yet_
 
 ## Housekeep Status
 
-**State:** CLEANUP
+**State:** DONE
 **Stage Status:** passed
-**Last Run:** 2026-06-03T14:43:01Z
+**Last Run:** 2026-06-03T14:45:17Z
 **Branch:** aid/housekeep-2026-06-03
 **KB Stage:** passed
 **Summary Stage:** passed
