@@ -177,8 +177,8 @@ _none yet_
 
 ## Housekeep Status
 
-**State:** KB-DELTA
-**Stage Status:** passed
-**Last Run:** 2026-06-03T13:14:57Z
+**State:** SUMMARY-DELTA
+**Stage Status:** running
+**Last Run:** 2026-06-03T14:16:56Z
 **Branch:** aid/housekeep-2026-06-03
 **KB Stage:** passed
