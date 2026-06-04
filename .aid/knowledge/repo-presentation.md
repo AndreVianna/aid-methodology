@@ -324,7 +324,7 @@ After running `setup.sh` or `setup.ps1`, the target project gains:
 - The tool-appropriate hidden directory (`.claude/`, `.codex/`+`.agents/`, `.cursor/`,
   `.github/` for Copilot CLI, or `.agent/` for Antigravity)
   containing all 11 user-facing skills (the 10 pipeline-table skills + the optional
-  on-demand `aid-housekeep`), 22 agents, 5 recipes, templates, and helper scripts.
+  on-demand `aid-housekeep`), 22 agents, 51 recipes, templates, and helper scripts.
   (The maintainer-only `aid-generate` skill is never installed — it lives only in the
   source repo's `.claude/skills/`, not in `canonical/`; see `architecture.md`.)
 - ⚠️ **AGENTS.md collision (Option A):** Codex, Cursor, Copilot CLI, and Antigravity all

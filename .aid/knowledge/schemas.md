@@ -362,12 +362,13 @@ The dataclasses mirror this schema 1:1 in `.claude/skills/aid-generate/scripts/a
 **Source of truth:** `canonical/templates/recipe-template.md` +
 `canonical/scripts/interview/parse-recipe.sh`.
 
-**Front-matter schema (YAML, all fields required per `recipe-template.md` `## YAML front-matter fields (all required)`):**
+**Front-matter schema (YAML, per `recipe-template.md` `## YAML front-matter fields`; the four fields below are required, `summary` is the one optional field):**
 
 | Field | Type | Validation |
 |-------|------|------------|
 | `name` | string (kebab-case) | Must match the file basename without `.md` |
 | `applies-to` | enum | One of `bug-fix`, `new-feature`, `refactor`, or `*` (matches any workType — use sparingly per `recipe-template.md` `## Conventions`) |
+| `summary` | string (one-line) | Optional. One-line recipe description, agent-read; used by TRIAGE for description→recipe matching (per `canonical/recipes/README.md ### YAML Front-Matter` + `recipe-template.md`). NOT validated by `parse-recipe.sh`. |
 | `slot-count` | integer | Count of unique `{{slot-name}}` tokens in body; parser warns on mismatch |
 | `task-count` | integer | Count of `### task-NNN` headings in `## tasks` block; parser warns on mismatch |
 

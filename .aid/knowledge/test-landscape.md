@@ -18,6 +18,7 @@ contracts:
   - "All suites source tests/lib/assert.sh (shared counters + asserts + test_summary)"
   - "Most suites are pure bash (POSIX, Git Bash on Windows); 2 need node, 2 need pwsh — each skips if absent"
 changelog:
+  - 2026-06-03: housekeep KB-delta (Q29) — work-001 (PR #56) expanded the recipe catalog 5→51 and migrated/renamed the old seed recipes; updated the test-parse-recipe.sh description so the dogfood note reflects the migrated catalog (validates the migrated seed basenames fix-application/add-docs/change-member/add-api-endpoint/add-test-coverage as representatives, per the suite's Units 15–19) rather than implying the old 5-recipe seed set. Kept qualitative — no per-suite assertion count added (§9a).
   - 2026-06-03: housekeep run-state relocation (PR #51) — updated the test-housekeep-state.sh + test-housekeep-workfolder-safety.sh descriptions: run-state now in `.aid/.temp/HOUSEKEEP_STATE_<ts>.md` (absent-file tolerance covered); the work-folder matrix is now informational (every folder offered, user-confirmed; only the current-branch folder hard-skipped — old signals (a)/(c) removed).
   - 2026-06-03: post-merge work-001-aid-housekeep (PR #49) + work-002 canonical bug-fix suites — suite count 18→24 (verified `ls tests/canonical/test-*.sh | wc -l` = 24 on disk). Documented the 5 new housekeep suites (test-housekeep-state.sh, test-housekeep-branch-commit.sh, test-housekeep-classify.sh, test-housekeep-workfolder-safety.sh, test-housekeep-deletion-split.sh) added by the /aid-housekeep skill, which guard the canonical/scripts/housekeep/ helpers (housekeep-state.sh, branch-commit.sh, cleanup-classify.sh). Also documented test-complexity-score.sh (work-002 task-001 four-fix regression suite for canonical/scripts/execute/complexity-score.sh) which was on disk but missing from this inventory. Done via /aid-housekeep targeted re-discovery.
   - 2026-06-01: post-merge work-001-add-providers (PRs #42/#43/#44) — byte-identity assertion 3→5 install-tree profiles (added GitHub Copilot CLI + Antigravity); documented new setup cases (test-setup.sh SU12-17/SU16b; test-setup-ps1.sh SPS05-08, which SKIPs without pwsh per established contract); documented the 2 new generator self-tests (test_copilot_emitter.py, test_antigravity_emitter.py) wired into the CI generator-selftests step. Canonical suite count unchanged at 18 (verified `ls tests/canonical/test-*.sh | wc -l` = 18 on disk — the new setup cases are SU/SPS additions inside the existing test-setup.sh / test-setup-ps1.sh suites, not new suite files).
@@ -161,8 +162,12 @@ mode; concurrent lock contention (parallel writers on different rows); and error
 Covers all operating modes (`--list`, `--validate`, `--spec`, `--tasks`, `--render`)
 plus slot substitution, `{!{` escape rewrite, unmatched-slot passthrough, multi-task
 recipe emission, lock-file lifecycle, name-vs-filename mismatch warning, and error
-paths (missing file, malformed front-matter, missing blocks, bad args). Also validates
-each of the seed recipes in `canonical/recipes/` (dogfood). **Runtime note:** this is
+paths (missing file, malformed front-matter, missing blocks, bad args). Also dogfoods
+the shipped recipe catalog in `canonical/recipes/` — after **work-001 (PR #56)**
+grew the catalog from 5 to ~51 recipes and migrated/renamed the old seed set, the
+suite `--validate`s representative migrated recipes (`fix-application`, `add-docs`,
+`change-member`, `add-api-endpoint`, `add-test-coverage` — the Units 15–19 fixtures)
+and asserts each passes all checks. **Runtime note:** this is
 the largest/slowest suite (~150 s); `run-all.sh`'s `timeout 300` covers it — do not
 impose timeouts under 180 s when running it standalone.
 

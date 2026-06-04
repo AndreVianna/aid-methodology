@@ -60,7 +60,7 @@ plus a `references/state-*.md` per state plus topic-specific reference docs.
 |-------|---------|---------------------|-----------------|--------------------|
 | `aid-config` | View/update `.aid/settings.yml` — first-run scaffold + per-key edit | `canonical/skills/aid-config/SKILL.md` | 0 | (single-state; no references/ subdir) |
 | `aid-discover` | Brownfield KB scan — dispatches 5 discovery sub-agents in parallel; state machine GENERATE→REVIEW→Q-AND-A→FIX→APPROVAL→DONE | `canonical/skills/aid-discover/SKILL.md` | 8 | `agent-prompts.md`, `document-expectations.md`, `reviewer-{brief,prompt}.md`, `state-{approval,done,fix,generate,q-and-a,review}.md` |
-| `aid-interview` | Requirements gathering + lite-path triage (LITE-BUG-FIX / LITE-DOC / LITE-REFACTOR / LITE-FEATURE sub-paths) — largest reference set | `canonical/skills/aid-interview/SKILL.md` | 19 | `state-triage.md` (largest single state file), `state-condensed-intake.md`, `lite-to-full-escalation.md`, `recipe-to-lite-escalation.md`, `feature-decomposition.md` |
+| `aid-interview` | Requirements gathering + description-first lite-path triage (work-type inferred from the request description, never shown as a menu; sub-paths LITE-BUG-FIX / LITE-REFACTOR / LITE-FEATURE) — largest reference set | `canonical/skills/aid-interview/SKILL.md` | 19 | `state-triage.md` (largest single state file), `state-condensed-intake.md`, `lite-to-full-escalation.md`, `recipe-to-lite-escalation.md`, `feature-decomposition.md` |
 | `aid-specify` | Per-feature technical spec — state machine INITIALIZE→CONTINUE→REVIEW→DONE plus BLOCKED + SPIKE side states | `canonical/skills/aid-specify/SKILL.md` | 9 | `state-{initialize,continue,review,done,spike,blocked}.md`, `handling-outcomes.md`, `known-issues-scope.md`, `reviewer-brief.md` |
 | `aid-plan` | Sequence features into shippable deliveries | `canonical/skills/aid-plan/SKILL.md` | 3 | `first-run-loop.md`, `review-deliverables.md`, `reviewer-brief.md` |
 | `aid-detail` | Decompose deliveries into PR-sized typed tasks (8-type catalog: RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE per `canonical/skills/aid-execute/references/state-execute.md` `## Task Types`) | `canonical/skills/aid-detail/SKILL.md` | 5 | `task-decomposition.md`, `execution-graph-generation.md`, `first-run.md`, `review.md`, `reviewer-brief.md` |
@@ -312,19 +312,18 @@ Organized into categories (per `project-structure.md` `## Templates (categories 
 
 ### 5b. Recipes — `canonical/recipes/`
 
-5 pre-filled lite-path templates with YAML front-matter + `{{slot}}`
-placeholders (per `canonical/templates/recipe-template.md` `## Slot syntax`).
+**51 recipes** under `canonical/recipes/` — pre-filled lite-path templates with
+YAML front-matter + `{{slot}}` placeholders (per
+`canonical/templates/recipe-template.md` `## Slot syntax`). Named `add-X` /
+`change-X` / `fix-X`: 40 `add`/`change` pairs across 11 target-kind families
+(`applies-to: new-feature` for `add-`, `refactor` for `change-`), 7 `fix-*`
+bug-fix recipes (`applies-to: bug-fix`), 3 refactor-only verbs
+(`improve-performance`, `bump-dependency`, `rename-symbol`), and 1 cross-type
+recipe `add-test-coverage` (`applies-to: *`). See `canonical/recipes/README.md
+## Seed Catalog` for the per-recipe table; `README.md` itself documents the
+catalog and is not a recipe.
 
-| Recipe | Path |
-|--------|------|
-| `add-crud-endpoint.md` | `canonical/recipes/add-crud-endpoint.md` |
-| `add-unit-test.md` | `canonical/recipes/add-unit-test.md` |
-| `bug-fix.md` | `canonical/recipes/bug-fix.md` |
-| `method-refactor.md` | `canonical/recipes/method-refactor.md` |
-| `write-release-note.md` | `canonical/recipes/write-release-note.md` |
-| `README.md` | `canonical/recipes/README.md` — catalog documentation |
-
-Consumed by `canonical/scripts/interview/parse-recipe.sh` during `/aid-interview` TRIAGE → recipe-offer.
+Consumed by `canonical/scripts/interview/parse-recipe.sh` during `/aid-interview` TRIAGE → recipe-offer (description→recipe matching uses each recipe's `summary:` field).
 
 **Test coverage:** indirect — recipe behavior is exercised by `tests/canonical/test-parse-recipe.sh`. (`tests/skills/lite-subpaths.sh` was deleted in cycle-1 per Q6.)
 
