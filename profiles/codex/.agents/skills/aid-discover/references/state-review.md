@@ -27,7 +27,7 @@ Print: `[Review 1/2] Reviewing Knowledge Base quality...`
      as rows with Status: Pending. The ledger is the entire output file — no headers,
      no narrative."
    - **Schema reference:** "Output per `.agents/templates/reviewer-ledger-schema.md`."
-4. Dispatch the **discovery-reviewer** subagent with the combined prompt.
+4. Dispatch the **aid-reviewer** subagent with the combined prompt.
 
 **⚠️ CLEAN CONTEXT:** Do NOT include any info about generation process, which agents ran,
 or prior state. The reviewer evaluates purely on what's on disk.
@@ -37,13 +37,13 @@ or prior state. The reviewer evaluates purely on what's on disk.
 - Do NOT tell the reviewer what was fixed or previous grade
 - Do NOT say "re-review" — reviewer must approach fresh
 
-▶ discovery-reviewer starting (~2–3 min)
+▶ aid-reviewer starting (~2–3 min)
 Wait for completion.
-✓ discovery-reviewer done (record actual time) — or ✗ discovery-reviewer failed: {reason}
+✓ aid-reviewer done (record actual time) — or ✗ aid-reviewer failed: {reason}
 
 ### Step 2: Grade via grade.sh
 
-After the reviewer returns, run grade.sh on the ledger:
+After the aid-reviewer agent returns, run grade.sh on the ledger:
 
 ```bash
 bash .agents/scripts/grade.sh --explain .aid/.temp/review-pending/discovery.md
@@ -53,14 +53,14 @@ The grade is printed to stdout; the `--explain` breakdown goes to stderr.
 
 ### Step 3: Post-Process `.aid/knowledge/STATE.md`
 
-Verify the reviewer's return message (not the ledger file) contains:
+Verify the aid-reviewer agent's return message (not the ledger file) contains:
 - [ ] Overall grade and recommendation
 - [ ] Per-document summaries
 - [ ] Verification spot-checks (minimum 10)
 - [ ] Cross-cutting concerns
 
 Update `.aid/knowledge/STATE.md` `## Review History` with the new entry.
-Record the grade computed by grade.sh, not any grade mentioned in the reviewer's prose.
+Record the grade computed by grade.sh, not any grade mentioned in the aid-reviewer agent's prose.
 
 If `--grade` provided, update `.aid/settings.yml` `discover.minimum_grade` (via `/aid-config` or direct YAML edit). Resolve current minimum via `bash .agents/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`.
 

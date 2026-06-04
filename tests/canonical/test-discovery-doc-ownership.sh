@@ -1,25 +1,23 @@
 #!/usr/bin/env bash
 # test-discovery-doc-ownership.sh — Regression guard for discovery doc-ownership consistency.
 #
-# Invariant: for each standard KB doc, exactly one discovery agent "produces" it, and every
-# agent's self-understanding (AGENT.md Produce line + What-You-Don't-Do) agrees with the
-# authoritative dispatch table in state-generate.md.
+# Invariant: for each standard KB doc, exactly one aid-researcher slot "produces" it, and
+# the ownership table in doc-set-resolve.md agrees with the dispatch table in state-generate.md.
+# (Updated: discovery-* agents merged into parameterized aid-researcher slots per work-001.)
 #
 # Checks:
-#   T01  scout Produce line names project-structure.md
-#   T02  scout Produce line names external-sources.md
-#   T03  scout Produce line does NOT name infrastructure.md
-#   T04  scout What-You-Don't-Do disclaims infrastructure → points to Quality
-#   T05  scout frontmatter description names project-structure.md
-#   T06  scout frontmatter description names external-sources.md
-#   T07  scout frontmatter description does NOT name infrastructure.md
-#   T08  quality Produce line names infrastructure.md
-#   T09  quality Produce line names test-landscape.md
-#   T10  quality Produce line names tech-debt.md
-#   T11  quality What-You-Don't-Do does NOT disclaim infrastructure
-#   T12  dispatch table Step 1 assigns project-structure.md to scout
-#   T13  dispatch table Step 1 assigns external-sources.md to scout
-#   T14  dispatch table [5/5] row assigns infrastructure.md to quality
+#   T01  ownership table assigns project-structure.md to aid-researcher-scout
+#   T02  ownership table assigns external-sources.md to aid-researcher-scout
+#   T03  ownership table does NOT assign infrastructure.md to aid-researcher-scout
+#   T04  ownership table assigns infrastructure.md to aid-researcher-quality
+#   T05  ownership table assigns test-landscape.md to aid-researcher-quality
+#   T06  ownership table assigns tech-debt.md to aid-researcher-quality
+#   T07  dispatch table Step 1 assigns project-structure.md to aid-researcher (pre-scan)
+#   T08  dispatch table Step 1 assigns external-sources.md to aid-researcher (pre-scan)
+#   T09  dispatch table [5/5] row assigns infrastructure.md to aid-researcher (quality doc-set)
+#   T10  no old discovery-* agent names remain in state-generate.md dispatch table
+#   T11  no old discovery-* agent names remain in doc-set-resolve.md ownership table
+#   T12  aid-researcher AGENT.md exists and is not the old per-doc format
 #
 # Usage:
 #   bash test-discovery-doc-ownership.sh [--verbose]
@@ -37,81 +35,75 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../lib/assert.sh"
 
 CANONICAL="${SCRIPT_DIR}/../../canonical"
-SCOUT_AGENT="${CANONICAL}/agents/discovery-scout/AGENT.md"
-QUALITY_AGENT="${CANONICAL}/agents/discovery-quality/AGENT.md"
+DOC_SET_RESOLVE="${CANONICAL}/skills/aid-discover/references/doc-set-resolve.md"
 STATE_GENERATE="${CANONICAL}/skills/aid-discover/references/state-generate.md"
+RESEARCHER_AGENT="${CANONICAL}/agents/aid-researcher/AGENT.md"
 
-# --- Scout AGENT.md checks ---
+# --- Ownership table checks (doc-set-resolve.md) ---
 
-# Extract the Produce line(s) from ## What You Do
-SCOUT_PRODUCE=$(grep -F "Produce \`.aid/knowledge/" "${SCOUT_AGENT}" || true)
+OWNERSHIP_TABLE=$(grep -A2 "| \`" "${DOC_SET_RESOLVE}" | grep "aid-researcher" || true)
 
-assert_output_contains "${SCOUT_PRODUCE}" "project-structure.md" \
-    "T01 scout Produce line includes project-structure.md"
+# T01: project-structure.md → aid-researcher-scout
+ROW_PS=$(grep "project-structure.md" "${DOC_SET_RESOLVE}" || true)
+assert_output_contains "${ROW_PS}" "aid-researcher-scout" \
+    "T01 ownership table assigns project-structure.md to aid-researcher-scout"
 
-assert_output_contains "${SCOUT_PRODUCE}" "external-sources.md" \
-    "T02 scout Produce line includes external-sources.md"
+# T02: external-sources.md → aid-researcher-scout
+ROW_ES=$(grep "external-sources.md" "${DOC_SET_RESOLVE}" || true)
+assert_output_contains "${ROW_ES}" "aid-researcher-scout" \
+    "T02 ownership table assigns external-sources.md to aid-researcher-scout"
 
-assert_output_not_contains "${SCOUT_PRODUCE}" "infrastructure.md" \
-    "T03 scout Produce line does NOT include infrastructure.md"
+# T03: infrastructure.md is NOT assigned to aid-researcher-scout
+ROW_INFRA_SCOUT=$(grep "infrastructure.md" "${DOC_SET_RESOLVE}" | grep "aid-researcher-scout" || true)
+assert_eq "${ROW_INFRA_SCOUT}" "" \
+    "T03 ownership table does NOT assign infrastructure.md to aid-researcher-scout"
 
-# Check What-You-Don't-Do section: must contain "infrastructure" and "Quality"
-# Extract lines in the "## What You Don't Do" to "## Key Constraints" range
-SCOUT_WYNDDO=$(sed -n '/^## What You Don'"'"'t Do/,/^## Key Constraints/p' "${SCOUT_AGENT}")
+# T04: infrastructure.md → aid-researcher-quality
+ROW_INFRA=$(grep "infrastructure.md" "${DOC_SET_RESOLVE}" | grep "aid-researcher-quality" || true)
+assert_output_contains "${ROW_INFRA}" "aid-researcher-quality" \
+    "T04 ownership table assigns infrastructure.md to aid-researcher-quality"
 
-assert_output_contains "${SCOUT_WYNDDO}" "infrastructure" \
-    "T04 scout What-You-Don't-Do contains infrastructure disclaimer"
+# T05: test-landscape.md → aid-researcher-quality
+ROW_TL=$(grep "test-landscape.md" "${DOC_SET_RESOLVE}" | grep "aid-researcher-quality" || true)
+assert_output_contains "${ROW_TL}" "aid-researcher-quality" \
+    "T05 ownership table assigns test-landscape.md to aid-researcher-quality"
 
-INFRA_LINE=$(echo "${SCOUT_WYNDDO}" | grep -i "infrastructure" || true)
-assert_output_contains "${INFRA_LINE}" "Quality" \
-    "T04b scout infrastructure disclaimer targets Discovery Quality"
-
-# Extract frontmatter description (line 3)
-SCOUT_DESC=$(sed -n '3p' "${SCOUT_AGENT}")
-
-assert_output_contains "${SCOUT_DESC}" "project-structure.md" \
-    "T05 scout description includes project-structure.md"
-
-assert_output_contains "${SCOUT_DESC}" "external-sources.md" \
-    "T06 scout description includes external-sources.md"
-
-assert_output_not_contains "${SCOUT_DESC}" "infrastructure.md" \
-    "T07 scout description does NOT include infrastructure.md"
-
-# --- Quality AGENT.md checks ---
-
-QUALITY_PRODUCE=$(grep -F "Produce \`.aid/knowledge/" "${QUALITY_AGENT}" || true)
-
-assert_output_contains "${QUALITY_PRODUCE}" "infrastructure.md" \
-    "T08 quality Produce line includes infrastructure.md"
-
-assert_output_contains "${QUALITY_PRODUCE}" "test-landscape.md" \
-    "T09 quality Produce line includes test-landscape.md"
-
-assert_output_contains "${QUALITY_PRODUCE}" "tech-debt.md" \
-    "T10 quality Produce line includes tech-debt.md"
-
-QUALITY_WYNDDO=$(sed -n '/^## What You Don'"'"'t Do/,/^## Key Constraints/p' "${QUALITY_AGENT}")
-
-assert_output_not_contains "${QUALITY_WYNDDO}" "infrastructure" \
-    "T11 quality What-You-Don't-Do does NOT disclaim infrastructure"
+# T06: tech-debt.md → aid-researcher-quality
+ROW_TD=$(grep "tech-debt.md" "${DOC_SET_RESOLVE}" | grep "aid-researcher-quality" || true)
+assert_output_contains "${ROW_TD}" "aid-researcher-quality" \
+    "T06 ownership table assigns tech-debt.md to aid-researcher-quality"
 
 # --- Dispatch table checks (state-generate.md) ---
 
-# Step 1 text block must mention both docs scout produces
-STEP1_BLOCK=$(sed -n '/^## Step 1:/,/^### Steps 2-5/p' "${STATE_GENERATE}")
-
+# T07: Step 1 text block must mention project-structure.md (pre-scan)
+STEP1_BLOCK=$(sed -n '/^## Step 1:/,/^## Step/p' "${STATE_GENERATE}" | head -20)
 assert_output_contains "${STEP1_BLOCK}" "project-structure.md" \
-    "T12 dispatch Step 1 mentions project-structure.md"
+    "T07 dispatch Step 1 mentions project-structure.md"
 
+# T08: Step 1 text block must mention external-sources.md (pre-scan)
 assert_output_contains "${STEP1_BLOCK}" "external-sources.md" \
-    "T13 dispatch Step 1 mentions external-sources.md"
+    "T08 dispatch Step 1 mentions external-sources.md"
 
-# The dispatch table row for [5/5] / discovery-quality must include infrastructure.md
-ROW_55=$(grep "discovery-quality" "${STATE_GENERATE}" | grep "infrastructure.md" || true)
-
+# T09: The dispatch table row for [5/5] / quality doc-set must include infrastructure.md
+ROW_55=$(grep "\[5/5\]" "${STATE_GENERATE}" | grep "infrastructure.md" || true)
 assert_output_contains "${ROW_55}" "infrastructure.md" \
-    "T14 dispatch table assigns infrastructure.md to discovery-quality"
+    "T09 dispatch table [5/5] row assigns infrastructure.md to quality doc-set"
+
+# T10: No old discovery-* agent names in state-generate.md dispatch table
+OLD_NAMES_SG=$(grep -E '\bdiscovery-(scout|architect|analyst|integrator|quality|reviewer)\b' "${STATE_GENERATE}" || true)
+assert_eq "${OLD_NAMES_SG}" "" \
+    "T10 no old discovery-* agent names in state-generate.md dispatch table"
+
+# T11: No old discovery-* agent names in doc-set-resolve.md ownership table
+OLD_NAMES_DSR=$(grep -E '\bdiscovery-(scout|architect|analyst|integrator|quality|reviewer)\b' "${DOC_SET_RESOLVE}" || true)
+assert_eq "${OLD_NAMES_DSR}" "" \
+    "T11 no old discovery-* agent names in doc-set-resolve.md ownership table"
+
+# T12: aid-researcher AGENT.md exists and uses parameterized description (not per-doc)
+assert_file_exists "${RESEARCHER_AGENT}" "T12 aid-researcher AGENT.md exists"
+RESEARCHER_NAME=$(grep "^name:" "${RESEARCHER_AGENT}" || true)
+assert_output_contains "${RESEARCHER_NAME}" "aid-researcher" \
+    "T12 aid-researcher AGENT.md has name: aid-researcher frontmatter"
 
 # --- Summary ---
 test_summary

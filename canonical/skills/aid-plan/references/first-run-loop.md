@@ -38,7 +38,7 @@ What do you think? We can discuss:
 
 ### Step 3: Discuss
 
-The developer may:
+The user may:
 - **Agree** → write and review
 - **Move feature** → "put feature-004 here instead"
 - **Split** → "too big, separate login from roles"
@@ -54,7 +54,7 @@ For every adjustment:
 
 ### Step 4: Write and Review
 
-When the developer agrees on a deliverable, **IMMEDIATELY write it to the file.**
+When the user agrees on a deliverable, **IMMEDIATELY write it to the file.**
 
 **First deliverable:** Create `.aid/{work}/PLAN.md` with the header and first deliverable:
 ```markdown
@@ -74,7 +74,7 @@ When the developer agrees on a deliverable, **IMMEDIATELY write it to the file.*
 ⚠️ **DO NOT continue to the next deliverable without writing this one first.**
 ⚠️ **DO NOT accumulate multiple deliverables "in your head" — write each one immediately.**
 
-**Agent:** Dispatch with `subagent_type: reviewer` (overriding the default `architect`). The reviewer must run with clean context — it grades against KB/codebase reality without seeing the architect's working notes.
+**Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes.
 
 **Dispatch package:** render `references/reviewer-brief.md` with:
 - `{{SCOPE}}` = `per-deliverable`
@@ -86,16 +86,16 @@ Include in the prompt:
   `.aid/.temp/review-pending/plan.md`. Read the existing file first if it exists.
   Output per `canonical/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
-Print before dispatch: `[Review] Dispatching reviewer for PLAN validation (per-deliverable scope).`
+Print before dispatch: `[Review] Dispatching aid-reviewer for PLAN validation (per-deliverable scope).`
 
-▶ reviewer starting (~1–2 min)
+▶ aid-reviewer starting (~1–2 min)
 After writing, **review immediately:** Does it hold up?
-✓ reviewer done (record actual time) — or ✗ reviewer failed: {reason}
+✓ aid-reviewer done (record actual time) — or ✗ aid-reviewer failed: {reason}
 - All included features' dependencies satisfied by prior deliverables?
 - Actually standalone-functional?
 - Consistent with KB architecture?
 
-After reviewer returns, run grade.sh:
+After aid-reviewer returns, run grade.sh:
 
 ```bash
 bash canonical/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md

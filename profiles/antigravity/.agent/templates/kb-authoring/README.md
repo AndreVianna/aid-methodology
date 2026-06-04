@@ -1,7 +1,7 @@
 # KB Authoring
 
 > Normative specification for authoring `.aid/knowledge/` Knowledge Base documents.
-> Loaded by `aid-discover` (review — via the `discovery-reviewer` sub-agent),
+> Loaded by `aid-discover` (review — via the `aid-reviewer` sub-agent),
 > `aid-config` (scaffold), and `aid-summarize` (render).
 
 ## What's here
@@ -20,7 +20,7 @@
 1. **No drift-prone information** unless it carries semantic value
 2. **Proper metric** — relevant, measured, never retroactively changed
 3. **Plan first, change later** — temp-ledger pattern; auto-gen files refresh last
-4. **Enforce via review, not by mechanical lint** — the `discovery-reviewer` sub-agent is the authority
+4. **Enforce via review, not by mechanical lint** — the `aid-reviewer` sub-agent is the authority
 5. **Mark auto-generated / temporary files clearly** — directory + frontmatter
 6. **Per-doc review metadata via frontmatter** — exempt from review
 7. **Review is read-only on the repo** — discovery WRITES only to `.aid/knowledge/`
@@ -68,7 +68,7 @@ changelog:
 - **`/aid-discover`** — reads each KB doc's frontmatter; picks rubric from [review-rubric.md](review-rubric.md); writes findings to temp ledger per [principles.md](principles.md) P3
 - **`/aid-config`** — scaffolds new KB docs with frontmatter from [frontmatter-schema.md](frontmatter-schema.md) seed
 - **`/aid-summarize`** — extracts `intent:` field from each doc to populate section descriptions in `knowledge-summary.html`
-- **`discovery-reviewer`** — validates frontmatter compliance; spot-checks `contracts:` against disk; flags inline T3/T4 markers in primary-category docs (REVIEW state of `/aid-discover`)
+- **`aid-reviewer`** — validates frontmatter compliance; spot-checks `contracts:` against disk; flags inline T3/T4 markers in primary-category docs (REVIEW state of `/aid-discover`)
 - **`build-kb-index.sh`** — composes `INDEX.md` from each doc's `intent:` + `kb-category:` + path
 - **`build-metrics.sh`** — produces `metrics.md` with all numeric facts (T3) the project tracks
 - **`build-project-index.sh`** — produces `.aid/generated/project-index.md`, a build-time inventory of repository files (used by `/aid-discover` Step 0c). Classified `meta + source: generated` → Build-Verify Only.
@@ -84,7 +84,7 @@ extend the canonical rubric with project-specific lint rules. See
 
 ## See also
 
-- `.agent/agents/discovery-reviewer/AGENT.md` — adversarial review (semantic + frontmatter + spot-check; the sole KB-quality enforcer)
+- `.agent/agents/aid-reviewer/AGENT.md` — adversarial review (semantic + frontmatter + spot-check; the sole KB-quality enforcer)
 - `.agent/scripts/kb/build-metrics.sh` — T3 fact generator
 - `.agent/scripts/kb/build-kb-index.sh` — INDEX.md generator
 - `.agent/scripts/kb/build-project-index.sh` — project-index.md generator

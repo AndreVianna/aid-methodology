@@ -41,7 +41,7 @@ Distinct from `library` (no UI but exports an API; this profile exports *skills 
 
 ### §2 The Pipeline
 
-The defining diagram: a top-to-bottom or left-to-right pipeline of named phases with explicit phase gates (where the human approves transitions) and feedback loops (where downstream phases can revise upstream artifacts). Cite the methodology spec line range (`methodology/*.md:N-M`) for each phase if available. Explain *why* the pipeline is sequential by default, and *which* feedback loops exist as escape hatches.
+The defining diagram: a top-to-bottom or left-to-right pipeline of named phases with explicit phase gates (where the user approves transitions) and feedback loops (where downstream phases can revise upstream artifacts). Cite the methodology spec line range (`methodology/*.md:N-M`) for each phase if available. Explain *why* the pipeline is sequential by default, and *which* feedback loops exist as escape hatches.
 
 ### §3 Phases & Skills
 

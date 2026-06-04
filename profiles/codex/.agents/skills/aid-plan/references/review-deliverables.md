@@ -43,11 +43,11 @@ Include in the prompt:
   Fixed→Recurred if regressed). Append new findings with Status: Pending.
   Output per `.agents/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
-Dispatch the `reviewer` subagent with the rendered brief.
+Dispatch the `aid-reviewer` subagent with the rendered brief.
 
 ### Grade Overall
 
-After reviewer returns, run grade.sh:
+After aid-reviewer returns, run grade.sh:
 
 ```bash
 bash .agents/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md

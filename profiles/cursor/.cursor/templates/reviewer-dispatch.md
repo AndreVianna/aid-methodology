@@ -154,7 +154,7 @@ review types live in per-skill brief templates (see §Brief generation).
 > Reviewer logs OOS findings as rows with Status: OOS in the same ledger table.
 > Each OOS row names its routing destination (the upstream phase/skill the
 > observation belongs to) in the Description/Evidence text. OOS rows do NOT count
-> toward severity totals or the grade. The human (or skill orchestrator) reads
+> toward severity totals or the grade. The user (or skill orchestrator) reads
 > the Status: OOS rows and decides downstream what to do with them.
 
 OOS rows preserve the reviewer's insight without biasing the canonical grade.
@@ -308,4 +308,4 @@ For changes to this doc, append a dated line at the bottom of this section:
 - `.cursor/templates/kb-authoring/review-rubric.md` — KB review rubric definitions
 - `.cursor/templates/grading-rubric.md` — severity → grade computation
 - `.cursor/templates/long-wait-protocol.md` — heartbeat / L2 timer dispatch protocol
-- `.cursor/agents/reviewer/` — the reviewer agent definition
+- `.cursor/agents/aid-reviewer/` — the reviewer agent definition

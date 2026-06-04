@@ -1,6 +1,6 @@
 # Document Expectations
 
-These define what the reviewer (and FIX mode) should look for in each document.
+These define what the aid-reviewer agent (and FIX mode) should look for in each document.
 
 ---
 

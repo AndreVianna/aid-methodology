@@ -106,7 +106,7 @@ Parse the `| Task | Depends On |` table to build the dependency map.
 | Task count | tasks in this delivery (Execution Graph) | +1 per task |
 | Graph depth | longest dependency chain (longest path in DAG) | +1 per edge on the longest chain |
 | Risk-weighted types | each task's `Type` field (`task-NNN.md`) | `MIGRATE`/`REFACTOR` +2; `IMPLEMENT`/`TEST` +1; `RESEARCH`/`DESIGN`/`DOCUMENT`/`CONFIGURE` +0 |
-| Specialist consults | count of: quick-check `[CRITICAL]` fix-on-spot events (from `## Quick Check Findings`) + tasks whose Agent-Selection row triggers a `security` or `performance` consult | +1 each |
+| Specialist consults | count of: quick-check `[CRITICAL]` fix-on-spot events (from `## Quick Check Findings`) + tasks whose Agent-Selection row triggers an `aid-researcher` analysis consult | +1 each |
 
 ### Tier Selection
 
@@ -134,11 +134,11 @@ Gate reviewer tier: {Small | Medium | Large}
 
 ## Step 2: REVIEW (Gate Reviewer — Fresh Issue List)
 
-Dispatch the `reviewer` agent at the **score-selected tier** (Small / Medium /
+Dispatch the `aid-reviewer` agent at the **score-selected tier** (Small / Medium /
 Large). Clean context — reviewer must NOT inherit any executor working notes.
 
 **Before dispatching, print:**
-`[DELIVERY-GATE Step 2] Dispatching reviewer (gate, {tier} tier) → subagent_type=reviewer`
+`[DELIVERY-GATE Step 2] Dispatching aid-reviewer (gate, {tier} tier) → subagent_type=aid-reviewer`
 
 Dispatch metadata is logged via the Calibration Log appendix in the work
 `STATE.md` (per work-003 traceability rule — never optional).
@@ -207,8 +207,8 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
 > **Reviewer ≠ executor invariant:** you are a reviewer. You do NOT fix
 > anything. Only list issues.
 
-▶ reviewer (gate, {tier}) starting (~{ETA from rough-time-hints})
-✓ reviewer (gate) done (record actual time) — or ✗ gate reviewer failed: {reason}
+▶ aid-reviewer (gate, {tier}) starting (~{ETA from rough-time-hints})
+✓ aid-reviewer (gate) done (record actual time) — or ✗ gate reviewer failed: {reason}
 
 **Advance:** **CHAIN** → Step 3 (GRADE).
 
@@ -294,7 +294,7 @@ Recurred rows to the executor agent — cite row numbers in fix commit messages
 (e.g., "fix row #2 (HIGH: missing null check)").
 
 Auto-fix all CODE issues. Dispatch the **executor agent** (same agent type that executed
-the tasks — if mixed, use `developer` as the default). Do NOT dispatch the reviewer —
+the tasks — if mixed, use `aid-developer` as the default). Do NOT dispatch the reviewer —
 reviewer ≠ executor invariant applies here too.
 
 **Executor fixes CODE issues only.** Non-CODE issues (TASK, SPEC, KB) were

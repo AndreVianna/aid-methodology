@@ -16,57 +16,25 @@ cp path/to/aid-methodology/cursor/AGENTS.md   AGENTS.md
 This gives you:
 - `.cursor/rules/` — Always-on rules (methodology workflow, code review standards)
 - `.cursor/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (11 skills: 10 pipeline + 1 optional `aid-summarize`)
-- `.cursor/agents/{name}.md` — Agent definitions (22 agents: 13 base + 6 discovery sub + 3 utility), dispatched via Task tool when available
+- `.cursor/agents/{name}.md` — Agent definitions (9 agents with `aid-` prefix), dispatched via Task tool when available
 - `.cursor/templates/` — Templates and bash scripts (grading rubric, `grade.sh`, `build-project-index.sh`)
 - `AGENTS.md` — Project context for AI agents (edit with your project details)
 
 ## Agents
 
-### Core Agents (always present)
-
 | Agent | File | Model | Specialty |
 |-------|------|-------|-----------|
-| Orchestrator | `.cursor/agents/orchestrator.md` | sonnet | Pipeline coordination, routing, human gates |
-| Researcher | `.cursor/agents/researcher.md` | sonnet | Investigation, KB generation, analysis |
-| Interviewer | `.cursor/agents/interviewer.md` | opus | Adaptive dialogue, requirements gathering |
-| Architect | `.cursor/agents/architect.md` | opus | Design: specs, plans, task decomposition |
-| Developer | `.cursor/agents/developer.md` | sonnet | Code implementation (only code writer) |
-| Reviewer | `.cursor/agents/reviewer.md` | opus | Adversarial issue-finding; grade computed by `grade.sh` |
-| Operator | `.cursor/agents/operator.md` | sonnet | Deployment, PR creation, releases |
+| aid-orchestrator | `.cursor/agents/aid-orchestrator.md` | sonnet | Pipeline coordination, routing, human gates |
+| aid-researcher | `.cursor/agents/aid-researcher.md` | opus | Investigation, KB generation, analysis (parameterized doc-set) |
+| aid-interviewer | `.cursor/agents/aid-interviewer.md` | opus | Adaptive dialogue, requirements gathering |
+| aid-architect | `.cursor/agents/aid-architect.md` | opus | Design: specs, plans, task decomposition |
+| aid-developer | `.cursor/agents/aid-developer.md` | sonnet | Code implementation, data migrations, CI/CD config |
+| aid-reviewer | `.cursor/agents/aid-reviewer.md` | opus | Adversarial issue-finding; grade computed by `grade.sh` |
+| aid-operator | `.cursor/agents/aid-operator.md` | sonnet | Deployment, PR creation, releases |
+| aid-tech-writer | `.cursor/agents/aid-tech-writer.md` | sonnet | User-facing documentation, API docs, changelogs |
+| aid-clerk | `.cursor/agents/aid-clerk.md` | haiku | Mechanical utility: extract, format, or glob (operation parameter) |
 
-### Specialist Agents (invoked ad-hoc)
-
-| Agent | File | Model | Specialty |
-|-------|------|-------|-----------|
-| UX Designer | `.cursor/agents/ux-designer.md` | sonnet | UI/UX, accessibility, user flows |
-| DevOps | `.cursor/agents/devops.md` | sonnet | CI/CD, IaC, containerization |
-| Tech Writer | `.cursor/agents/tech-writer.md` | sonnet | Documentation, API docs, changelogs |
-| Security | `.cursor/agents/security.md` | opus | Threat modeling, OWASP, auth patterns |
-| Data Engineer | `.cursor/agents/data-engineer.md` | sonnet | Schema, migrations, query optimization |
-| Performance | `.cursor/agents/performance.md` | sonnet | Profiling, load testing, caching |
-
-### Discovery Sub-Agents (dispatched by aid-discover)
-
-All Discovery sub-agents run at the Large tier — Discovery is foundational and runs once per project, so the cost case for cheaper tiers doesn't hold.
-
-| Agent | File | Model | Outputs |
-|-------|------|-------|---------|
-| discovery-architect | `.cursor/agents/discovery-architect.md` | opus | architecture.md, technology-stack.md |
-| discovery-analyst | `.cursor/agents/discovery-analyst.md` | opus | module-map.md, coding-standards.md, schemas.md |
-| discovery-integrator | `.cursor/agents/discovery-integrator.md` | opus | pipeline-contracts.md, integration-map.md, domain-glossary.md |
-| discovery-quality | `.cursor/agents/discovery-quality.md` | opus | test-landscape.md, tech-debt.md, infrastructure.md |
-| discovery-scout | `.cursor/agents/discovery-scout.md` | opus | project-structure.md, external-sources.md |
-| discovery-reviewer | `.cursor/agents/discovery-reviewer.md` | opus | `.aid/knowledge/STATE.md` (KB grading; per FR2) |
-
-A bash pre-pass (`templates/scripts/build-project-index.sh`) runs before the 5 sub-agents to emit `project-index.md` — a shared file inventory that eliminates duplicated `find`/`wc` work across agents.
-
-### Utility Sub-Agents (called by Core/Specialist agents)
-
-| Agent | File | Model | Purpose |
-|-------|------|-------|---------|
-| simple-extractor | `.cursor/agents/simple-extractor.md` | haiku | Extract structured items from files (annotations, imports, endpoints) |
-| simple-formatter | `.cursor/agents/simple-formatter.md` | haiku | Fill markdown templates with structured input |
-| simple-glob | `.cursor/agents/simple-glob.md` | haiku | Enumerate files matching glob patterns with metadata |
+`aid-researcher` is dispatched by `aid-discover` with a parameterized doc-set (pre-scan, architecture, analyst, integrator, quality) and by `aid-execute` for RESEARCH-typed tasks. A bash pre-pass (`templates/scripts/build-project-index.sh`) runs before the parameterized dispatches to emit `project-index.md` — a shared file inventory that eliminates duplicated `find`/`wc` work.
 
 ## Skills
 
@@ -86,8 +54,8 @@ A bash pre-pass (`templates/scripts/build-project-index.sh`) runs before the 5 s
 | `aid-summarize` | Optional (post-discovery) | Generate single-file `knowledge-summary.html` from KB |
 
 Notable mechanisms:
-- **aid-execute** picks the executor by task type (RESEARCH→researcher, IMPLEMENT→developer, etc.) and the Reviewer for grading.
-- **aid-discover** runs `build-project-index.sh` as a pre-pass before dispatching the 5 discovery sub-agents in parallel.
+- **aid-execute** picks the executor by task type (RESEARCH→aid-researcher, IMPLEMENT→aid-developer, etc.) and aid-reviewer for grading.
+- **aid-discover** runs `build-project-index.sh` as a pre-pass before dispatching aid-researcher with parameterized doc-sets in parallel.
 
 ### Phase Flow
 
@@ -127,8 +95,8 @@ Skills are loaded automatically when matched by description. Each SKILL.md conta
 ### Agents
 Agent files define specialized roles with constrained tool access and focused system prompts. Dispatched via the Task tool (experimental as of March 2026); falls back to sequential execution if Task tool is unavailable.
 
-### Utility Sub-Agents
-The `simple-*` agents are not invoked at the skill layer. Core/Specialist agents call them internally to offload mechanical work (extraction, formatting, file enumeration) to the Small tier. The caller validates the output.
+### Utility Sub-Agent
+`aid-clerk` is not invoked at the skill layer. Core agents call it internally to offload mechanical work (extraction, template-fill, file enumeration) to the Small tier. The caller passes an `operation:` parameter (extract / format / glob) and validates the output.
 
 ## File Format
 

@@ -184,8 +184,8 @@ canonical/                          ← single source of truth (maintainer edits
   ├── scripts/       (config/, execute/, housekeep/, interview/, kb/, summarize/, grade.sh)
   └── EMISSION-MANIFEST.md          ← safety-boundary spec
 
-run_generator.py                    ← entrypoint (87 lines)
-  └─ .claude/skills/aid-generate/scripts/  ← the actual renderer
+.claude/skills/aid-generate/scripts/  ← the renderer (maintainer-only; not rendered into trees)
+       ├── run_generator.py           ← entrypoint (87 lines; invoke from repo root)
        ├── render_lib.py              (756 lines — emission-manifest + pure-mirror deletion)
        ├── aid_profile.py             (550 lines — parses profiles/*.toml)
        ├── render_agents.py           (522 lines)
@@ -200,7 +200,7 @@ run_generator.py                    ← entrypoint (87 lines)
        └── test_antigravity_emitter.py (Antigravity emitter self-test — CI-wired)
 ```
 
-(12 Python files under `scripts/` + `run_generator.py` = 13 renderer files total;
+(13 Python files under `scripts/`, incl. the `run_generator.py` entrypoint = 13 renderer files total;
  `test_copilot_emitter.py` + `test_antigravity_emitter.py` run as generator self-tests in
  `.github/workflows/test.yml` `test_copilot_emitter.py --self-test` /
  `test_antigravity_emitter.py --self-test`.)
@@ -244,7 +244,7 @@ Source: `.aid/knowledge/project-structure.md` `## Top-Level Directory Tree (dept
 - **Context** → profile-local **committed** `AGENTS.md` (filename-map token only; NOT emitted
   by the renderer).
 - Source: `profiles/copilot-cli.toml` (`[layout]`, `[agent]`, `[skill]`, `[tool_names]`, the
-  "No [mcp] table" comment), `profiles/copilot-cli/.github/agents/architect.agent.md`.
+  "No [mcp] table" comment), `profiles/copilot-cli/.github/agents/aid-architect.agent.md`.
 
 ### Antigravity mapping (host-tool conventions)
 
@@ -256,10 +256,10 @@ Source: `.aid/knowledge/project-structure.md` `## Top-Level Directory Tree (dept
   source `.mdc` frontmatter and regenerates `trigger:/description/globs`
   (`always_apply=true`→`trigger: always_on`; `false`→`trigger: glob` + globs). DECOUPLED from
   `[agent].format`. Sub-agent rules and methodology rules share `.agent/rules/` (disjoint
-  stems: persona names vs `aid-` prefix).
+  stems: `aid-<role>` names for sub-agents vs `aid-methodology` for methodology rules).
 - **Context** → profile-local committed `AGENTS.md`.
 - Source: `profiles/antigravity.toml` (`[layout]`, `[agent]`, `[extras]`, `[[extras.rules]]`),
-  `profiles/antigravity/.agent/rules/reviewer.md`, `profiles/antigravity/.agent/rules/aid-methodology.md`.
+  `profiles/antigravity/.agent/rules/aid-reviewer.md`, `profiles/antigravity/.agent/rules/aid-methodology.md`.
 
 ### Codex split-layout exception
 
@@ -278,7 +278,7 @@ The renderer guarantees that:
 1. `canonical/skills/<skill>/SKILL.md` + `.claude/skills/<skill>/SKILL.md` (dogfood) +
    `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/.../<skill>/SKILL.md` are
    byte-identical in the body portion across all trees (CLAUDE.md `## Architecture` bullet 1)
-2. Re-running `python run_generator.py` on unchanged inputs produces a byte-identical
+2. Re-running `python .claude/skills/aid-generate/scripts/run_generator.py` on unchanged inputs produces a byte-identical
    install tree AND a byte-identical manifest (the AC2 determinism guarantee)
 3. Only files in the previous manifest's `removed_dst` are deleted; files outside any
    manifest are NEVER touched (pure-mirror deletion safety)

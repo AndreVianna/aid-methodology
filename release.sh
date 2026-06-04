@@ -141,17 +141,17 @@ if [[ -z "$PYTHON_CMD" ]]; then
     die "Python not found. Install Python 3.11+ and ensure 'python' or 'python3' is on PATH." 1
 fi
 
-echo "release.sh: verifying render state (${PYTHON_CMD} run_generator.py) ..."
-if ! "${PYTHON_CMD}" run_generator.py; then
+echo "release.sh: verifying render state (${PYTHON_CMD} .claude/skills/aid-generate/scripts/run_generator.py) ..."
+if ! "${PYTHON_CMD}" .claude/skills/aid-generate/scripts/run_generator.py; then
     echo "ERROR: release.sh: run_generator.py failed." >&2
-    echo "profiles/ is out of sync with canonical/. Run 'python run_generator.py' and commit the result." >&2
+    echo "profiles/ is out of sync with canonical/. Run 'python .claude/skills/aid-generate/scripts/run_generator.py' and commit the result." >&2
     exit 1
 fi
 
 echo "release.sh: checking for render drift (git diff -- profiles/) ..."
 if ! git diff --exit-code -- profiles/ >/dev/null 2>&1; then
-    echo "ERROR: release.sh: profiles/ differs from HEAD after running run_generator.py." >&2
-    echo "profiles/ is out of sync with canonical/. Run 'python run_generator.py' and commit the result." >&2
+    echo "ERROR: release.sh: profiles/ differs from HEAD after running .claude/skills/aid-generate/scripts/run_generator.py." >&2
+    echo "profiles/ is out of sync with canonical/. Run 'python .claude/skills/aid-generate/scripts/run_generator.py' and commit the result." >&2
     exit 1
 fi
 

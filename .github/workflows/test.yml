@@ -2,12 +2,12 @@ name: CI
 
 # AID is not a typical app: the shippable product is the rendered install trees
 # under profiles/{claude-code,codex,cursor}/, generated from canonical/ by
-# run_generator.py. CI therefore protects, in priority order:
+# .claude/skills/aid-generate/scripts/run_generator.py. CI therefore protects, in priority order:
 #   1. that committed profiles/ stays in sync with canonical/  (the core invariant)
 #   2. the runtime helper scripts adopters depend on            (the bash + node suites)
 #   3. the generator/build system itself                        (self-tests)
 #   4. cheap repo/KB hygiene                                    (CRLF, gitignore, INDEX)
-# Prompt-driven skills, the discovery-reviewer semantic review, and aid-summarize's
+# Prompt-driven skills, the aid-reviewer semantic review, and aid-summarize's
 # V1 human visual gate require an AI host + human and are NOT gated here (dogfooding).
 
 on:
@@ -32,12 +32,12 @@ jobs:
       - name: Ignore exec-bit changes (repo is maintained with core.fileMode=false)
         run: git config core.fileMode false
       - name: Regenerate install trees from canonical/
-        run: python run_generator.py
+        run: python .claude/skills/aid-generate/scripts/run_generator.py
       - name: Assert profiles/ has no uncommitted render drift
         shell: bash
         run: |
           if ! git diff --exit-code -- profiles/; then
-            echo "::error::profiles/ is out of sync with canonical/. Run 'python run_generator.py' and commit the result."
+            echo "::error::profiles/ is out of sync with canonical/. Run 'python .claude/skills/aid-generate/scripts/run_generator.py' and commit the result."
             exit 1
           fi
 

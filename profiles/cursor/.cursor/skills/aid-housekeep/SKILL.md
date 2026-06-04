@@ -216,12 +216,12 @@ aid-housekeep  ▸ you are here
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
 | PREFLIGHT | `references/state-preflight.md` | inline | CHAIN → KB-DELTA (or CLEANUP if Mode=cleanup-only) |
-| KB-DELTA | `references/state-kb-delta.md` | `architect` (feat-002 dispatches sub-agents via `/aid-discover`) | CHAIN → SUMMARY-DELTA / PAUSE-FOR-USER-ACTION if stalled |
+| KB-DELTA | `references/state-kb-delta.md` | `aid-architect` (feat-002 dispatches sub-agents via `/aid-discover`) | CHAIN → SUMMARY-DELTA / PAUSE-FOR-USER-ACTION if stalled |
 | SUMMARY-DELTA | `references/state-summary-delta.md` | inline (delegates to `/aid-summarize`) | CHAIN → CLEANUP / PAUSE-FOR-USER-ACTION if stalled |
 | CLEANUP | `references/state-cleanup.md` | inline | CHAIN → DONE |
 | DONE | `references/state-done.md` | inline | HALT |
 
-> **KB-DELTA sub-agent dispatch (feature-002).** The `architect` Worker for
+> **KB-DELTA sub-agent dispatch (feature-002).** The `aid-architect` Worker for
 > KB-DELTA detects delta since the last KB approval, scopes/confirms the affected
 > documents, and dispatches targeted re-discovery via `/aid-discover`. The
 > `## Dispatch Protocol (L1+L2+L3)` block above applies to all sub-agent dispatches

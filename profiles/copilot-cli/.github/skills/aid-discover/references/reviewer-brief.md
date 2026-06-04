@@ -1,7 +1,7 @@
 # /aid-discover — Reviewer Dispatch Brief Template
 
 Loaded by `/aid-discover` REVIEW state. Renders the brief that gets passed to
-the `discovery-reviewer` sub-agent. Follows `.github/templates/reviewer-dispatch.md`.
+the `aid-reviewer` sub-agent. Follows `.github/templates/reviewer-dispatch.md`.
 
 `{{ARTIFACTS}}` and `{{CONTEXT}}` are filled at dispatch time. Other sections
 are static per skill.
@@ -72,5 +72,5 @@ Skill body renders this template with:
 time, derive the list from a deterministic source (e.g., `git diff --name-only`
 for PR-level reviews, or the executor's produced-file list for per-task reviews),
 filtered by the OUT OF SCOPE list above. Lists built from memory of what was
-worked on tend to omit incidentally-touched files; the reviewer then can't grade
+worked on tend to omit incidentally-touched files; the aid-reviewer agent then can't grade
 what it doesn't know about.

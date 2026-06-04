@@ -3,7 +3,7 @@ kb-category: primary
 source: hand-authored
 intent: |
   Maps the major code/content modules in AID — the 11 user-facing aid-* skills,
-  the 12th maintainer-only aid-generate skill, the 22 agents, the 13 renderer
+  the 12th maintainer-only aid-generate skill, the 9 agents, the 13 renderer
   Python files (12 under .claude/skills/aid-generate/scripts/ + run_generator.py),
   and the canonical helper scripts under canonical/scripts/{config,kb,execute,summarize,interview,housekeep}.
   Each entry lists purpose, directory path, dependencies, and associated tests.
@@ -12,16 +12,17 @@ intent: |
   reference (see the script's own header comment block).
 contracts:
   - "11 user-facing aid-* skills + 1 maintainer-only aid-generate skill = 12 total"
-  - "22 agents under canonical/agents/ (10 large / 9 medium / 3 small)"
-  - "12 renderer Python files under .claude/skills/aid-generate/scripts/ (render_agents, render_skills, render_templates, render_canonical_scripts, render_recipes) + render_lib + aid_profile + verify_deterministic + verify_advisory + test_manifest_safety + test_copilot_emitter + test_antigravity_emitter, plus run_generator.py at the repo root"
+  - "9 agents under canonical/agents/ (4 large / 4 medium / 1 small)"
+  - "12 renderer Python files under .claude/skills/aid-generate/scripts/ (render_agents, render_skills, render_templates, render_canonical_scripts, render_recipes) + render_lib + aid_profile + verify_deterministic + verify_advisory + test_manifest_safety + test_copilot_emitter + test_antigravity_emitter + run_generator.py (the entrypoint, moved here from repo root by work-001)"
   - "6 script categories under canonical/scripts/ (config, kb, execute, summarize, interview, housekeep) + grade.sh at the category root"
   - "Every canonical helper script has 7 byte-identical copies on disk (canonical + .claude dogfood + 5 profile trees)"
 changelog:
+  - 2026-06-04: work-001-agents-review (task-013) — roster reduced 22→9 agents with aid-* prefix (feature-002); §2 per-tier rosters replaced with new 4/4/1 tier split; boilerplate-presence claim updated to shared-include via canonical/templates/agent-boilerplate.md; all old bare agent names removed.
   - 2026-06-03: housekeep run-state relocation (PR #51) — corrected housekeep-state.sh (run-state now in the project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`, not a work-area STATE.md) and cleanup-classify.sh (every work folder offered, user-confirmed; signals informational; only the current-branch folder hard-skipped).
   - 2026-06-03: aid/housekeep-2026-06-03 (PR #49) — added the optional aid-housekeep skill (11→12 total skills; 11 user-facing canonical + aid-generate maintainer-only) and the canonical/scripts/housekeep/ category (5→6 script categories): housekeep-state.sh, branch-commit.sh, cleanup-classify.sh.
   - 2026-06-01: work-001-add-providers (PRs #42/#43/#44) — render profiles grew 3→5 (added copilot-cli + antigravity); scripts/ grew 10→12 .py (added test_copilot_emitter.py + test_antigravity_emitter.py); render_agents gained copilot-agent + antigravity-rule format branches; helper-script copy set is now canonical + .claude + 5 profile trees.
-  - 2026-05-31: delivery-001 — reconciled discovery-agent ownership: scout now owns project-structure.md + external-sources.md (not infrastructure.md); quality now owns test-landscape.md + tech-debt.md + infrastructure.md. Added note that document-expectations.md is the single per-doc expectations source loaded by the reviewer at REVIEW and FIX dispatch.
-  - 2026-05-27: Initial generation by discovery-analyst (cycle-1)
+  - 2026-05-31: delivery-001 — reconciled discovery-agent ownership in old roster (now absorbed into aid-researcher per migration-map). Added note that document-expectations.md is the single per-doc expectations source loaded by aid-reviewer at REVIEW and FIX dispatch.
+  - 2026-05-27: Initial generation (cycle-1)
 ---
 
 # Module Map
@@ -36,8 +37,8 @@ changelog:
 The repo contains five module classes, each with its own conventions:
 
 1. **Skills** — 11 user-facing + 1 maintainer-only — under `canonical/skills/aid-*/`
-2. **Agents** — 22 specialist agents — under `canonical/agents/<name>/`
-3. **Renderer (Python)** — 12 files under `.claude/skills/aid-generate/scripts/` + `run_generator.py` at the repo root
+2. **Agents** — 9 specialist agents — under `canonical/agents/<name>/`
+3. **Renderer (Python)** — 13 files under `.claude/skills/aid-generate/scripts/` (incl. the `run_generator.py` entrypoint)
 4. **Helper scripts (Bash + JS + PS1)** — under `canonical/scripts/{config,kb,execute,summarize,interview,housekeep}/` + `canonical/scripts/grade.sh`
 5. **Templates + Recipes** — content fixtures consumed by skills — under `canonical/templates/` + `canonical/recipes/`
 
@@ -83,67 +84,50 @@ of three forms (Unconditional / Halt / Conditional on a computed criterion).
 
 **`document-expectations.md` — single per-doc expectations source:** The file
 `canonical/skills/aid-discover/references/document-expectations.md` is the sole
-authoritative specification of what the `discovery-reviewer` must look for in each
-KB doc. The reviewer loads it at dispatch time in both REVIEW state (`state-review.md`)
-and FIX state (`state-fix.md`) via the `{{DOCUMENT_EXPECTATIONS}}` placeholder in
-`reviewer-prompt.md`. No per-doc expectation blocks live in `discovery-reviewer/AGENT.md`
-or in any other file — all are consolidated in this single reference.
+authoritative specification of what `aid-reviewer` must look for in each KB doc
+when dispatched from `aid-discover`. The reviewer loads it at dispatch time in both
+REVIEW state (`state-review.md`) and FIX state (`state-fix.md`) via the
+`{{DOCUMENT_EXPECTATIONS}}` placeholder in `reviewer-prompt.md`. No per-doc expectation
+blocks live in `aid-reviewer/AGENT.md` or in any other file — all are consolidated in
+this single reference.
 
 ---
 
 ## 2. Agents — `canonical/agents/<name>/`
 
-22 specialist agent definitions. Each lives in its own subdirectory containing
+9 specialist agent definitions. Each lives in its own subdirectory containing
 `AGENT.md` (the agent contract) and `README.md` (the human-facing description).
 Three tiers, per the `tier:` frontmatter field:
 
-### 2a. Large tier (10) — heavy-lifting analysts, designers, reviewers, dispatchers
+### 2a. Large tier (4) — heavy-lifting analysts, designers, reviewers
 
 | Agent | Description (from AGENT.md frontmatter) | Path |
 |-------|-----------------------------------------|------|
-| `architect` | Design-thinking specialist — produces SPEC.md, PLAN.md, task-NNN.md decomposition + execution graph | `canonical/agents/architect/AGENT.md` |
-| `reviewer` | Adversarial quality evaluator. Produces a structured issue list; grade is computed by `canonical/scripts/grade.sh`, NOT by the agent | `canonical/agents/reviewer/AGENT.md` |
-| `interviewer` | One-question-at-a-time adaptive dialogue with stakeholders → REQUIREMENTS.md | `canonical/agents/interviewer/AGENT.md` |
-| `security` | Threat modeling, OWASP, auth patterns, secrets, SSRF/injection/XSS | `canonical/agents/security/AGENT.md` |
-| `discovery-scout` | Maps repository structure and ingests external documentation → `project-structure.md`, `external-sources.md` | `canonical/agents/discovery-scout/AGENT.md` |
-| `discovery-architect` | Codebase structure, patterns, tech stack → `architecture.md`, `technology-stack.md` | `canonical/agents/discovery-architect/AGENT.md` |
-| `discovery-analyst` | Modules, coding conventions, data schemas → `module-map.md`, `coding-standards.md`, `schemas.md` (was `data-model.md`) | `canonical/agents/discovery-analyst/AGENT.md` |
-| `discovery-integrator` | Pipelines, integrations, domain glossary → `pipeline-contracts.md` (was `api-contracts.md`), `integration-map.md`, `domain-glossary.md` | `canonical/agents/discovery-integrator/AGENT.md` |
-| `discovery-quality` | Tests, tech debt, and infrastructure assessment → `test-landscape.md`, `tech-debt.md`, `infrastructure.md` (security content moved to `coding-standards.md §11`) | `canonical/agents/discovery-quality/AGENT.md` |
-| `discovery-reviewer` | Reviews + grades KB docs; cross-references claims against source. Densest agent contract per `project-structure.md` `discovery sub-agents have the densest contracts` | `canonical/agents/discovery-reviewer/AGENT.md` |
+| `aid-interviewer` | One-question-at-a-time adaptive dialogue with stakeholders → REQUIREMENTS.md | `canonical/agents/aid-interviewer/AGENT.md` |
+| `aid-architect` | Design-thinking specialist — produces SPEC.md, PLAN.md, task-NNN.md decomposition + execution graph; absorbs DESIGN-typed UX advisory | `canonical/agents/aid-architect/AGENT.md` |
+| `aid-researcher` | Reads and analyzes code/docs/logs/APIs → structured KB / analysis documents (existing-state cataloguing, discovery, dependency mapping, telemetry interpretation) | `canonical/agents/aid-researcher/AGENT.md` |
+| `aid-reviewer` | Adversarial quality evaluator — reviews any artifact (code, tasks, specs, plans, KB docs) against acceptance criteria / rubric; emits the 7-column issue ledger | `canonical/agents/aid-reviewer/AGENT.md` |
 
-### 2b. Medium tier (9) — specialists + orchestrator + executors
+### 2b. Medium tier (4) — executors + release + routing
 
 | Agent | Description | Path |
 |-------|-------------|------|
-| `orchestrator` | Routes work to agents, manages phase transitions with human gates | `canonical/agents/orchestrator/AGENT.md` |
-| `researcher` | Investigates + synthesizes from code/docs/APIs into KB docs | `canonical/agents/researcher/AGENT.md` |
-| `developer` | The ONLY agent authorized to modify production code (per `canonical/agents/developer/AGENT.md` `ONLY agent authorized to modify production source code`) | `canonical/agents/developer/AGENT.md` |
-| `operator` | Deploy, PR creation, release management, KB updates | `canonical/agents/operator/AGENT.md` |
-| `data-engineer` | Schema, migrations, query optimization, ETL | `canonical/agents/data-engineer/AGENT.md` |
-| `performance` | Profiling, load testing, bottleneck analysis | `canonical/agents/performance/AGENT.md` |
-| `devops` | CI/CD, IaC, containerization, deployment | `canonical/agents/devops/AGENT.md` |
-| `tech-writer` | End-user docs, API docs, changelogs, README quality | `canonical/agents/tech-writer/AGENT.md` |
-| `ux-designer` | UI/UX patterns, accessibility (WCAG), user flows | `canonical/agents/ux-designer/AGENT.md` |
+| `aid-developer` | Implements, modifies, refactors, and build-verifies code from task files; raises IMPEDIMENT.md when spec contradicts reality | `canonical/agents/aid-developer/AGENT.md` |
+| `aid-operator` | Runs final release verification, packages artifacts, creates PRs/release notes, manages releases, updates KB on ship | `canonical/agents/aid-operator/AGENT.md` |
+| `aid-orchestrator` | Routes pipeline findings to the next phase/skill, enforces human gates, dispatches with context, manages parallel execution | `canonical/agents/aid-orchestrator/AGENT.md` |
+| `aid-tech-writer` | Authors user-facing documentation — API docs, changelogs, READMEs, release notes, user guides — and reviews docs for quality/accuracy | `canonical/agents/aid-tech-writer/AGENT.md` |
 
-### 2c. Small tier (3) — mechanical utility sub-agents (sub-agent-only)
-
-Each is labelled `INTERNAL UTILITY (sub-agent only — do NOT invoke from a skill)`
-in its `description:` frontmatter (per `canonical/agents/simple-extractor/AGENT.md` `description:`,
-`simple-formatter/AGENT.md` `description:`, `simple-glob/AGENT.md` `description:`).
+### 2c. Small tier (1) — mechanical utility sub-agent (sub-agent-only)
 
 | Agent | Purpose | Path |
 |-------|---------|------|
-| `simple-extractor` | Mechanical extraction with schema-bound output (path + line for every row) | `canonical/agents/simple-extractor/AGENT.md` |
-| `simple-formatter` | Fills templates from structured input → markdown | `canonical/agents/simple-formatter/AGENT.md` |
-| `simple-glob` | Enumerates files matching glob patterns → sorted markdown table (path, size, mtime) | `canonical/agents/simple-glob/AGENT.md` |
+| `aid-clerk` | Performs one mechanical, schema-bounded operation per dispatch — file extraction, template placeholder-fill, or glob enumeration — returning a markdown table/file with path+line evidence | `canonical/agents/aid-clerk/AGENT.md` |
 
 **Dependencies (cross-agent):**
 
 - Skills dispatch agents via the host's Agent/Task tool with `subagent_type` matching the `name:` field of `AGENT.md` (per `canonical/skills/aid-discover/SKILL.md` `## Dispatch` table).
-- Agents call other agents only indirectly — through a wrapping skill or `orchestrator`. There are no direct agent-to-agent Task tool calls in the canonical bodies.
-- All 5 `discovery-*` sub-agents receive `permissionMode: bypassPermissions` + `background: true` in frontmatter (per `canonical/agents/discovery-analyst/AGENT.md` `permissionMode:`, `discovery-architect/AGENT.md` `permissionMode:`, etc.). The non-discovery large + medium agents do NOT set those keys.
-- Every agent (except `interviewer` which has read-only tools, and the three small-tier utilities which have a narrower scope) carries `## Heartbeat protocol` + `## Self-review discipline` blocks (per `canonical/agents/architect/AGENT.md` `## Heartbeat protocol`, `developer/AGENT.md` `## Heartbeat protocol`, `discovery-analyst/AGENT.md` `## Heartbeat protocol`). The blocks are byte-identical across agents — they are macro-copied from `canonical/templates/subagent-heartbeat-protocol.md` and `canonical/templates/self-review-protocol.md` at authoring time, NOT inserted by the renderer.
+- Agents call other agents only indirectly — through a wrapping skill or `aid-orchestrator`. There are no direct agent-to-agent Task tool calls in the canonical bodies.
+- Every agent carries `## Heartbeat protocol` + `## Self-review discipline` blocks via `{{include:agent-boilerplate}}`, which is resolved at render time from `canonical/templates/agent-boilerplate.md`. The two protocol blocks are no longer macro-copied per-agent; they are factored into the shared include and injected by the renderer before the format-branch dispatch. `aid-clerk` (small-tier, mechanical) may omit the blocks per its narrow scope.
 
 **Test coverage:** none direct. Agent contracts are exercised through skill-level e2e tests and via the canonical helper test suites (§4).
 
@@ -156,7 +140,7 @@ The generator lives in `.claude/skills/aid-generate/scripts/`, NOT in
 (chicken-and-egg per `.claude/skills/aid-generate/SKILL.md` `chicken-and-egg deployment problem`). It is the only
 Python in the repo.
 
-**Path:** `.claude/skills/aid-generate/scripts/*.py` (12 files) + `run_generator.py` (repo root wrapper).
+**Path:** `.claude/skills/aid-generate/scripts/*.py` (13 files, incl. the `run_generator.py` entrypoint).
 
 | File | Purpose | Key entry points |
 |------|---------|------------------|
@@ -172,7 +156,7 @@ Python in the repo.
 | `test_manifest_safety.py` | Self-tests for the EmissionManifest deletion logic | (pytest-style; run standalone) |
 | `test_copilot_emitter.py` | Self-tests for the `copilot-agent` format branch (`.agent.md` suffix + name/description/tools/model frontmatter); CI-wired in `.github/workflows/test.yml` | (run standalone) |
 | `test_antigravity_emitter.py` | Self-tests for the `antigravity-rule` format branch + the gated trigger-dialect `[[extras.rules]]` emission; CI-wired in `.github/workflows/test.yml` | (run standalone) |
-| `run_generator.py` (repo root) | Live generator entrypoint — loads every `profiles/*.toml`, calls renderers in sequence, performs deletion pass via `EmissionManifest.diff`, writes manifest, runs VERIFY (deterministic) + VERIFY (advisory) | `for profile_path in sorted(profiles_dir.glob('*.toml'))` |
+| `.claude/skills/aid-generate/scripts/run_generator.py` | Generator entrypoint — loads every `profiles/*.toml`, calls renderers in sequence, performs deletion pass via `EmissionManifest.diff`, writes manifest, runs VERIFY (deterministic) + VERIFY (advisory) | `for profile_path in sorted(profiles_dir.glob('*.toml'))` |
 
 **Dependencies:**
 

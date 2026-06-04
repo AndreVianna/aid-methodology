@@ -17,24 +17,24 @@ Task work is dispatched to the type-appropriate executor agent to produce delive
 
 ## Agent Selection
 
-Each task type dispatches a specific executor agent. The reviewer is always the same role (`reviewer`), separate from the executor for clean context. Specialist consults are dispatched in addition to the reviewer when the task type warrants it.
+Each task type dispatches a specific executor agent. The reviewer is always the same role (`aid-reviewer`), separate from the executor for clean context. Specialist consults are dispatched in addition to the reviewer when the task type warrants it.
 
 | Task Type | Executor | Reviewer | Specialist consult |
 |-----------|----------|----------|---------------------|
-| RESEARCH | `researcher` | `reviewer` | — |
-| DESIGN | `ux-designer` | `reviewer` | — |
-| IMPLEMENT | `developer` | `reviewer` | `security` if task touches auth/PII; `performance` if hot path |
-| TEST | `developer` | `reviewer` | `performance` for load/integration tests |
-| DOCUMENT | `tech-writer` | `reviewer` | — |
-| MIGRATE | `data-engineer` | `reviewer` | `data-engineer` review (different instance than executor) |
-| REFACTOR | `developer` | `reviewer` | — |
-| CONFIGURE | `devops` | `reviewer` | `security` if config touches secrets/auth |
+| RESEARCH | `aid-researcher` | `aid-reviewer` | — |
+| DESIGN | `aid-architect` | `aid-reviewer` | — |
+| IMPLEMENT | `aid-developer` | `aid-reviewer` | `aid-researcher` (analysis) if task touches auth/PII; `aid-researcher` (analysis) if hot path |
+| TEST | `aid-developer` | `aid-reviewer` | `aid-researcher` (analysis) for load/integration tests |
+| DOCUMENT | `aid-tech-writer` | `aid-reviewer` | — |
+| MIGRATE | `aid-developer` | `aid-reviewer` | `aid-developer` review (different instance than executor) |
+| REFACTOR | `aid-developer` | `aid-reviewer` | — |
+| CONFIGURE | `aid-developer` | `aid-reviewer` | `aid-researcher` (analysis) if config touches secrets/auth |
 
 **Reviewer ≠ executor invariant.** Even when a task type uses the same agent role for both execution and consult-review (MIGRATE), they run as separate dispatches with clean context. The reviewer never sees the executor's working notes.
 
 **Model override per task type.** Each executor has a default tier from its agent definition (Developer is Medium tier, etc.). For genuinely complex work — REFACTOR over a tangled module, MIGRATE with edge cases, IMPLEMENT touching critical security paths — the orchestrator may dispatch with an explicit higher-tier model in the Task tool's `model` parameter. This is a runtime decision per dispatch, not a skill configuration.
 
-**Mechanical sub-tasks.** Executors may delegate mechanical work (extraction, file enumeration, template filling) to `simple-extractor`, `simple-glob`, `simple-formatter` — Small-tier utility sub-agents. See `agents/simple-*/README.md` for the caller contract.
+**Mechanical sub-tasks.** Executors may delegate mechanical work (extraction, file enumeration, template filling) to `aid-clerk` (with `operation: extract`, `operation: glob`, or `operation: format` respectively) — Small-tier utility sub-agents. See `agents/aid-clerk/README.md` for the caller contract.
 
 ## EXECUTE-WAVE: Pool Dispatch (delivery-level, FR6)
 
@@ -56,7 +56,7 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
 
    ```
    Agent(
-     subagent_type: simple-extractor,
+     subagent_type: aid-clerk,
      prompt: "Reply with the single word: PROBE_OK. Do nothing else.",
      run_in_background: true
    )
@@ -467,9 +467,9 @@ decision tree — lives in its own reference to keep this state file navigable:
 
 Update work `STATE.md` `## Tasks Status` table: set this task's row Status to `In Progress`.
 
-**Pick the executor by task Type from the Agent Selection table above** (RESEARCH → `researcher`, DESIGN → `ux-designer`, IMPLEMENT/TEST/REFACTOR → `developer`, DOCUMENT → `tech-writer`, MIGRATE → `data-engineer`, CONFIGURE → `devops`).
+**Pick the executor by task Type from the Agent Selection table above** (RESEARCH → `aid-researcher`, DESIGN → `aid-architect`, IMPLEMENT/TEST/REFACTOR → `aid-developer`, DOCUMENT → `aid-tech-writer`, MIGRATE → `aid-developer`, CONFIGURE → `aid-developer`).
 
-Dispatch with the Task tool, setting `subagent_type` explicitly to the chosen executor — this overrides the skill's default `agent: developer` from frontmatter. Example: a DESIGN task dispatches with `subagent_type: ux-designer`; an IMPLEMENT task uses `subagent_type: developer` (matches the default).
+Dispatch with the Task tool, setting `subagent_type` explicitly to the chosen executor — this overrides the skill's default `agent: aid-developer` from frontmatter. Example: a DESIGN task dispatches with `subagent_type: aid-architect`; an IMPLEMENT task uses `subagent_type: aid-developer` (matches the default).
 
 **Before dispatching, print:** `[Step 1] Dispatching {executor} for {Type} task → subagent_type={executor}` (substituting actual values).
 

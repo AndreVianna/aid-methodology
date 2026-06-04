@@ -11,7 +11,7 @@ Each deliverable follows the same cycle:
 
 ```
 1. PROPOSE  → agent proposes task breakdown for a deliverable
-2. DISCUSS  → developer and agent refine (size, scope, sequence, criteria)
+2. DISCUSS  → the user and the agent refine (size, scope, sequence, criteria)
 3. WRITE    → save agreed tasks to files
 4. REVIEW   → grade against SPEC/PLAN — pass? next deliverable. fail? back to 1.
 ```

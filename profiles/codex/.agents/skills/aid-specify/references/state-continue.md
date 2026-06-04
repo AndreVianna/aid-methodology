@@ -37,14 +37,14 @@ Update section status to `In Discussion` in work STATE.md `## Features Status`.
 
 ### 2. Discuss
 
-Free-form conversation. The developer may:
+Free-form conversation. The user may:
 - **Agree** → move to Write
 - **Adjust** → revise proposal, present again
 - **Redirect** → different approach. Adapt.
 - **Ask questions** → answer from KB/codebase. If you don't know, say so.
 - **Raise concerns** → discuss trade-offs with options and pros/cons
 
-Continue until the developer is satisfied.
+Continue until the user is satisfied.
 
 ### 3. Write
 
@@ -58,9 +58,9 @@ When agreed:
 
 ### 4. Review
 
-**Agent:** Dispatch with `subagent_type: reviewer` (overriding the default `architect`). The reviewer must run with clean context — it grades against KB/codebase reality without seeing the architect's working notes. Print before dispatch: `[Review] Dispatching reviewer for SPEC validation.`
+**Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes. Print before dispatch: `[Review] Dispatching aid-reviewer for SPEC validation.`
 
-▶ reviewer starting (~1–2 min)
+▶ aid-reviewer starting (~1–2 min)
 
 Immediately after writing, verify what was written:
 
@@ -68,7 +68,7 @@ Immediately after writing, verify what was written:
 - Does it align with KB reality (architecture, coding standards, existing patterns)?
 - Does it reference real codebase artifacts (not hallucinated paths/classes)?
 - Is it concrete enough for implementation (no vague "appropriate pattern" language)?
-✓ reviewer done (record actual time) — or ✗ reviewer failed: {reason}
+✓ aid-reviewer done (record actual time) — or ✗ aid-reviewer failed: {reason}
 
 **Grade the section** using the universal rubric (`../../../templates/grading-rubric.md`).
 Classify each issue by severity (Minor/Low/Medium/High/Critical). The grade is

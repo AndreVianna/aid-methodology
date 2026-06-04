@@ -596,8 +596,8 @@ def main() -> int:
         m = EmissionManifest(profile_name="claude-code")
         m.add(
             profile="claude-code",
-            src="canonical/agents/architect/AGENT.md",
-            dst=".claude/agents/architect.md",
+            src="canonical/agents/aid-architect/AGENT.md",
+            dst=".claude/agents/aid-architect.md",
             sha256="a" * 64,
         )
         m.add(
@@ -660,8 +660,8 @@ def main() -> int:
     m_orig = EmissionManifest(profile_name="claude-code")
     m_orig.add(
         profile="claude-code",
-        src="canonical/agents/developer/AGENT.md",
-        dst=".claude/agents/developer.md",
+        src="canonical/agents/aid-developer/AGENT.md",
+        dst=".claude/agents/aid-developer.md",
         sha256="e" * 64,
     )
     with tempfile.NamedTemporaryFile(delete=False, suffix=".jsonl") as tmp:
@@ -678,7 +678,7 @@ def main() -> int:
         )
     else:
         rec = m_loaded._records[0]
-        if rec.dst != ".claude/agents/developer.md":
+        if rec.dst != ".claude/agents/aid-developer.md":
             failures.append(f"EmissionManifest.load: dst mismatch: {rec.dst!r}")
         if rec.sha256 != "e" * 64:
             failures.append(f"EmissionManifest.load: sha256 mismatch: {rec.sha256!r}")
@@ -711,8 +711,8 @@ def main() -> int:
     test_bytes = b"hello manifest content"
     m_content.add(
         profile="test",
-        src="canonical/agents/architect/AGENT.md",
-        dst=".claude/agents/architect.md",
+        src="canonical/agents/aid-architect/AGENT.md",
+        dst=".claude/agents/aid-architect.md",
         content=test_bytes,
     )
     expected_digest = sha256_hex(test_bytes)

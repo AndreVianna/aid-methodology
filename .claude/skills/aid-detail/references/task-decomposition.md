@@ -7,9 +7,9 @@ sized, formatted, and quality-gated within a delivery.
 
 ## Agents Involved
 
-- **Default executor:** `architect` (proposes and refines task breakdown grounded in PLAN/SPEC).
-- **Reviewer:** `reviewer` (grades the task list against SPEC/PLAN coherence — runs in clean context).
-- **Specialist consults (optional):** `ux-designer` for DESIGN-typed tasks, `data-engineer` for MIGRATE-typed tasks, `security` for tasks touching auth/PII.
+- **Default executor:** `aid-architect` (proposes and refines task breakdown grounded in PLAN/SPEC).
+- **Reviewer:** `aid-reviewer` (grades the task list against SPEC/PLAN coherence — runs in clean context).
+- **Specialist consults (optional):** `aid-architect` for DESIGN-typed tasks, `aid-developer` for MIGRATE-typed tasks, `aid-researcher` for tasks touching auth/PII.
 
 ## The Loop
 
@@ -17,7 +17,7 @@ Each deliverable follows the same cycle:
 
 ```
 1. PROPOSE  → agent proposes task breakdown for a deliverable
-2. DISCUSS  → developer and agent refine (size, scope, sequence, criteria)
+2. DISCUSS  → the user and the agent refine (size, scope, sequence, criteria)
 3. WRITE    → save agreed tasks to files
 4. REVIEW   → grade tasks against SPEC/PLAN — pass? next deliverable. fail? back to 1.
 ```

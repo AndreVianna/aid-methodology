@@ -26,7 +26,7 @@ changelog:
   - 2026-05-31: delivery-001 — added test-discovery-doc-ownership.sh and test-expectations-single-source.sh; updated suite count 13→15 (stated as "currently N", not a hardcoded invariant); updated Suites section header accordingly.
   - 2026-05-30: Substantive refresh to current truth — 7→13 suites; documented the tests/run-all.sh aggregator (replaces the old "no aggregator, per-suite loop" claim) and tests/lib/assert.sh shared library; inverted the gaps section (the .mjs validators, PowerShell mirrors, and setup install flow are now COVERED, not gaps); recorded the node/pwsh-skip model; applied script renames (writeback-task-status→writeback-state, concatenate→assemble-3part, build-index→build-kb-index, harness.py→render_lib.py, VERIFY-4a/4b→VERIFY (deterministic)/(advisory)); converted bare line-number citations to durable anchors. Dropped invented per-suite assertion numbers in favor of qualitative coverage (suites now share one summary format and the README does not commit to counts).
   - 2026-05-29: Corrected count 5→7 suites / 235→273 assertions — added the fetch-mermaid.sh and grade.sh sections (both existed on disk but were missing from this inventory); fixed validate-diagrams.mjs line count 574→577
-  - 2026-05-27: Initial generation by discovery-quality (cycle-1)
+  - 2026-05-27: Initial generation by aid-researcher (quality doc-set) (cycle-1)
   - 2026-05-27: Full rewrite during cycle-2 FIX Phase B for accurate post-Q6-cleanup state (Q20)
 ---
 # Test Landscape
@@ -42,8 +42,8 @@ validators and the PowerShell mirror scripts.
 
 What is NOT tested here:
 - **Orchestration skills** (`/aid-discover`, `/aid-execute`, …) — prompt-driven; no
-  scripted harness exists or is planned. The `discovery-reviewer` sub-agent acts as the
-  closest adversarial integration check each cycle.
+  scripted harness exists or is planned. `aid-reviewer` dispatched from `/aid-discover`
+  acts as the closest adversarial integration check each cycle.
 - **Renderer** (`run_generator.py`) — covered by its own VERIFY (deterministic)
   determinism gate (`verify_deterministic.py`); see `architecture.md`. The renderer also
   has **generator self-tests** (Python, NOT under `tests/canonical/`) wired into the CI
@@ -384,25 +384,24 @@ source contains **no executable `rm`, `git rm`, `git commit`, or `git push`** ca
 
 ### test-discovery-doc-ownership.sh
 
-**Target:** `canonical/agents/discovery-scout/AGENT.md`, `canonical/agents/discovery-quality/AGENT.md`,
+**Target:** `canonical/agents/aid-researcher/AGENT.md`,
 `canonical/skills/aid-discover/references/state-generate.md`.
 
-Regression guard for discovery doc-ownership consistency. Verifies that exactly one
-discovery agent "produces" each standard KB doc and that every agent's self-understanding
-(Produce line + What-You-Don't-Do) agrees with the dispatch table in `state-generate.md`.
-Key invariants: scout Produce line names `project-structure.md` and `external-sources.md`
-(NOT `infrastructure.md`); quality Produce line names `infrastructure.md`, `test-landscape.md`,
-and `tech-debt.md`; the dispatch table's `[5/5]` row assigns `infrastructure.md` to
-`discovery-quality`. 14 checks (T01–T14).
+Regression guard for discovery doc-ownership consistency. Verifies that `aid-researcher`
+(the consolidated researcher agent replacing the former 5 discovery-* sub-agents) covers
+all standard KB docs, and that the dispatch table in `state-generate.md` routes every doc
+to `aid-researcher`. 14 checks (T01–T14). (NOTE: these checks target the new roster — the
+former per-agent ownership invariants for the pre-work-001 agents are
+superseded by the roster consolidation in work-001-agents-review.)
 
 ### test-expectations-single-source.sh
 
 **Target:** `canonical/skills/aid-discover/references/document-expectations.md`,
-`canonical/agents/discovery-reviewer/AGENT.md`, `canonical/skills/aid-discover/references/reviewer-prompt.md`,
+`canonical/agents/aid-reviewer/AGENT.md`, `canonical/skills/aid-discover/references/reviewer-prompt.md`,
 `canonical/skills/aid-discover/references/state-review.md`, `canonical/skills/aid-discover/references/state-fix.md`.
 
 Guards the single-source invariant for per-doc expectations: `document-expectations.md`
-is the sole file with per-doc `### *.md` blocks; `discovery-reviewer/AGENT.md` has zero
+is the sole file with per-doc `### *.md` blocks; `aid-reviewer/AGENT.md` has zero
 such blocks. Also guards reviewer-has-access invariant: the `{{DOCUMENT_EXPECTATIONS}}`
 placeholder is present in `reviewer-prompt.md`, and `document-expectations.md` is named
 in both `state-review.md` and `state-fix.md`. Verifies merge completeness (the file is
@@ -418,7 +417,7 @@ Covers the core doc-set resolve/accessor logic: unset `discovery.doc_set` → de
 synthesized from templates; declared set → exact filename/owner/presence rows; all 4
 accessors (`list-filenames`, `owner-of`, `owns-<agent>`, full TSV); inline `#` comment
 stripping; comma-in-`when` shred behavior (fragment 1 survives as valid record; fragments
-2+ with no pipe are warned and skipped); unknown owner → routes to `discovery-architect`
+2+ with no pipe are warned and skipped); unknown owner → routes to `aid-researcher`
 with a non-fatal warning; no `category` or `expectations` fields in any output; and the
 dependency-free constraint (only bash+awk). 15 checks (T01–T15).
 
@@ -490,8 +489,8 @@ Those are all covered (closed under L2): `test-setup.sh`, `test-setup-ps1.sh`,
 suites. The genuinely untested surface is the prompt-driven / orchestration layer:
 
 - **Orchestration skills** (`/aid-discover`, `/aid-execute`, …) — prompt-driven and hard
-  to test without an AI host. The `discovery-reviewer` sub-agent is the closest thing to
-  integration verification, adversarially grading KB output each cycle.
+  to test without an AI host. `aid-reviewer` dispatched from `/aid-discover` is the
+  closest thing to integration verification, adversarially grading KB output each cycle.
 - **The renderer** (`run_generator.py`) — its own VERIFY (deterministic) check runs at
   the end of every render and exits 1 on failure; not part of `tests/canonical/`. Its
   format emitters carry their own generator self-tests run by the CI `generator-selftests`

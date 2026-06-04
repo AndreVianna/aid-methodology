@@ -89,7 +89,7 @@ absence of `package.json`-style config).
 
 | Tool | Config file location | Purpose |
 |------|----------------------|---------|
-| **`run_generator.py`** | `run_generator.py` (repo root) | The build. Iterates `profiles/*.toml` (5 profiles), calls each renderer per profile, performs the pure-mirror deletion pass, writes one emission manifest per profile, then runs VERIFY (deterministic) (hard) and VERIFY (advisory) (advisory). |
+| **`run_generator.py`** | `.claude/skills/aid-generate/scripts/run_generator.py` | The build. Iterates `profiles/*.toml` (5 profiles), calls each renderer per profile, performs the pure-mirror deletion pass, writes one emission manifest per profile, then runs VERIFY (deterministic) (hard) and VERIFY (advisory) (advisory). |
 | **Per-tool profile TOMLs** | `profiles/claude-code.toml`, `profiles/codex.toml`, `profiles/cursor.toml`, `profiles/copilot-cli.toml`, `profiles/antigravity.toml` (5 profiles) | Per-host conventions: `[layout]`, `[agent.frontmatter]` (incl. `format` ∈ markdown/toml/copilot-agent/antigravity-rule), `[skill.frontmatter]`, `[model_tiers]`, `[tool_names]`, `[filename_map]`, `[extras]` (incl. `rules_frontmatter` + per-rule `output_filename`), `[capabilities]`. |
 | **Emission manifest spec** | `canonical/EMISSION-MANIFEST.md` | Authoritative spec for the manifest format (JSONL, LF-only, sentinel first line `{"_manifest_version": 1}`, sorted by `dst`). |
 | **End-user installer** | `setup.sh` / `setup.ps1` | Cross-platform install scripts that copy a built profile tree into a target project (not a build per se — runs after `run_generator.py`). |
@@ -98,7 +98,7 @@ absence of `package.json`-style config).
 
 ```bash
 # Full build (renders canonical → all 5 install trees + runs VERIFY (deterministic)/(advisory))
-python run_generator.py
+python .claude/skills/aid-generate/scripts/run_generator.py
 
 # Build one tree only (rare)
 python .claude/skills/aid-generate/scripts/render_skills.py \
@@ -134,8 +134,8 @@ bash tests/canonical/test-fetch-mermaid.sh
 bash tests/canonical/test-grade.sh
 ```
 
-**KB claim verification** is performed by the `discovery-reviewer` sub-agent in
-`/aid-discover REVIEW` state (see `canonical/agents/discovery-reviewer/AGENT.md`).
+**KB claim verification** is performed by `aid-reviewer` dispatched from
+`/aid-discover REVIEW` state (see `canonical/agents/aid-reviewer/AGENT.md`).
 The former `canonical/scripts/kb/verify-claims.sh` was deleted in cycle-1 (closure
 recorded in `tech-debt.md` changelog).
 

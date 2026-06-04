@@ -6,7 +6,7 @@
 >
 > Every AID agent that produces an artifact (code, docs, configs, KB entries,
 > extracted data, rendered output, etc.) follows this protocol. Reviewers
-> (`reviewer`, `discovery-reviewer`) and pure coordinators (`orchestrator`) are
+> (`aid-reviewer`) and pure coordinators (`aid-orchestrator`) are
 > exempt — they don't produce primary artifacts.
 
 ## The posture
@@ -59,10 +59,9 @@ source-side change to produce the intended output.
   own comment" pattern is caught here.
 - Full agent producing a test or script: execute it, read the actual output
   (not just the pass/fail summary).
-- Utility sub-agent (simple-extractor, simple-formatter, simple-glob): read
-  the table/list you emitted. Confirm the schema matches what the caller
-  requested. Spot-check at least one row against the source it was extracted
-  from.
+- Utility sub-agent (`aid-clerk`): read the table/list you emitted. Confirm
+  the schema matches what the caller requested. Spot-check at least one row
+  against the source it was extracted from.
 - Doc change that includes prose ABOUT a transform: render the doc, confirm
   the transform did not mangle the prose.
 

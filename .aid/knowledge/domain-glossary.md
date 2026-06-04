@@ -151,9 +151,9 @@ changelog:
 | **LITE-BUG-FIX** | Sub-path for `bug-fix` workType. Typically 1 IMPLEMENT task (fix + regression test). | `canonical/skills/aid-interview/references/state-task-breakdown.md` `| LITE-BUG-FIX |` |
 | **LITE-REFACTOR** | Sub-path for `refactor` workType. 1–3 REFACTOR + TEST tasks. Documentation/report revision work (`change-docs`/`change-report` recipes) also routes here — the single task is typed DOCUMENT. | `canonical/skills/aid-interview/references/state-task-breakdown.md` `| LITE-REFACTOR |` |
 | **LITE-FEATURE** | Sub-path for `new-feature` workType. 1–5 IMPLEMENT + TEST + DOCUMENT tasks. New documentation/report work (`add-docs`/`add-report` recipes) also routes here — the typical single task is typed DOCUMENT. | `canonical/skills/aid-interview/references/state-task-breakdown.md` `| LITE-FEATURE |` |
-| **CONDENSED-INTAKE (L1)** | Lite-path sub-path-specific slot-fill conversational interview; written by `interviewer`. | `canonical/skills/aid-interview/SKILL.md` `| L1 CONDENSED-INTAKE |` |
-| **TASK-BREAKDOWN (L2)** | Lite-path state — `architect` proposes typed task breakdown directly from work-root SPEC. | `canonical/skills/aid-interview/references/state-task-breakdown.md` `# State: TASK-BREAKDOWN (L2)` |
-| **LITE-REVIEW (L3)** | Lite-path pre-execution gate — `reviewer` adversarially validates the task set against SPEC. | `canonical/skills/aid-interview/SKILL.md` `| L3 LITE-REVIEW |` |
+| **CONDENSED-INTAKE (L1)** | Lite-path sub-path-specific slot-fill conversational interview; written by `aid-interviewer`. | `canonical/skills/aid-interview/SKILL.md` `| L1 CONDENSED-INTAKE |` |
+| **TASK-BREAKDOWN (L2)** | Lite-path state — `aid-architect` proposes typed task breakdown directly from work-root SPEC. | `canonical/skills/aid-interview/references/state-task-breakdown.md` `# State: TASK-BREAKDOWN (L2)` |
+| **LITE-REVIEW (L3)** | Lite-path pre-execution gate — `aid-reviewer` adversarially validates the task set against SPEC. | `canonical/skills/aid-interview/SKILL.md` `| L3 LITE-REVIEW |` |
 | **LITE-DONE (L4)** | Lite-path terminal — hand-off prompt to `/aid-execute`. | `canonical/skills/aid-interview/SKILL.md` `| L4 LITE-DONE |` |
 | **Escalated** | Path state where a work started on lite and was promoted to full mid-flight. `STATE.md ## Escalation Carry` block preserves slot answers + decisions to avoid re-asking. | `canonical/skills/aid-interview/SKILL.md` `\`Path: escalated\` is treated identically to \`Path: full\``, `canonical/templates/work-state-template.md` `## Escalation Carry` |
 
@@ -175,8 +175,8 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **Quick-Check** | Per-task fast review by Small-tier `reviewer`; NO grade loop; HIGH+ findings deferred to delivery gate. | `canonical/skills/aid-execute/SKILL.md` `| REVIEW | \`references/state-review.md\``, `canonical/scripts/execute/writeback-state.sh` `mode_findings()` (Quick Check Findings section) |
-| **Delivery Gate** | Per-delivery full review by `reviewer` (tier = complexity score); full review/fix/review loop with `grade.sh`. | `canonical/skills/aid-execute/SKILL.md` `| DELIVERY-GATE | \`references/state-delivery-gate.md\`` |
+| **Quick-Check** | Per-task fast review by Small-tier `aid-reviewer`; NO grade loop; HIGH+ findings deferred to delivery gate. | `canonical/skills/aid-execute/SKILL.md` `| REVIEW | \`references/state-review.md\``, `canonical/scripts/execute/writeback-state.sh` `mode_findings()` (Quick Check Findings section) |
+| **Delivery Gate** | Per-delivery full review by `aid-reviewer` (tier = complexity score); full review/fix/review loop with `grade.sh`. | `canonical/skills/aid-execute/SKILL.md` `| DELIVERY-GATE | \`references/state-delivery-gate.md\`` |
 | **Complexity Score (Small / Medium / Large)** | Computed by `complexity-score.sh` from task count, depth, risk, consults — selects reviewer tier for the delivery gate. Thresholds: Low=6, High=14 default. | `canonical/scripts/execute/complexity-score.sh` `Default Low Threshold = 6; High Threshold = 14` |
 
 ---
@@ -230,8 +230,8 @@ changelog:
 | **Universal Grading Rubric** | One rubric across the pipeline: severity tags `[CRITICAL] [HIGH] [MEDIUM] [LOW] [MINOR]` → grade computed deterministically by `grade.sh`. Worst severity dominates the letter; count sets modifier. | `methodology/aid-methodology.md` `#### Phase 2: Interview`, `canonical/scripts/grade.sh` `Apply the rubric: worst severity dominates, count determines the modifier.` |
 | **Grade scale** | `A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, E+, E, E-, F`. E band = critical-severity present. F = non-functional. | `canonical/skills/aid-discover/SKILL.md` `**Grade ordering** (highest to lowest):`, `canonical/scripts/grade.sh` `modifier_for_count()`, `canonical/templates/settings.yml` `# Valid grade values: A+, A, A-` |
 | **minimum_grade** | The REVIEW exit criterion (default `A`). Per-skill overrides possible (`<skill>.minimum_grade`). | `canonical/templates/settings.yml` `review:` block + `# Optional per-skill overrides` |
-| **Severity tag** | `[CRITICAL] [HIGH] [MEDIUM] [LOW] [MINOR]` — reviewer assigns; script computes grade. | `canonical/agents/reviewer/AGENT.md` `## Severity Classification` |
-| **Source tag** | `[CODE] [TASK] [SPEC] [KB] [ARCHITECTURE]` — reviewer tags issue origin; drives loopback routing. | `canonical/agents/reviewer/AGENT.md` `## What You Do` |
+| **Severity tag** | `[CRITICAL] [HIGH] [MEDIUM] [LOW] [MINOR]` — reviewer assigns; script computes grade. | `canonical/agents/aid-reviewer/AGENT.md` `## Severity Classification` |
+| **Source tag** | `[CODE] [TASK] [SPEC] [KB] [ARCHITECTURE]` — reviewer tags issue origin; drives loopback routing. | `canonical/agents/aid-reviewer/AGENT.md` `## What You Do` |
 | **Reviewer-Dispatch Protocol** | The 5-section brief contract for every reviewer dispatch: ARTIFACTS UNDER REVIEW / CONTEXT / RUBRIC / OUT OF SCOPE / OUT-OF-SCOPE FINDINGS POLICY / DELIVERABLES. Enforces scope discipline. | `canonical/templates/reviewer-dispatch.md` `## The brief structure` |
 | **CONTEXT discipline** | "CONTEXT describes what the artifact IS. Does NOT describe what downstream consumers do with it." Prevents scope leak in reviewer briefs. | `canonical/templates/reviewer-dispatch.md` `#### CONTEXT discipline (the rule)` |
 | **Out-of-Scope (OOS) findings** | Stray reviewer findings logged as `Status: OOS` rows in the 7-column ledger (not a separate section); excluded from severity counts and grade, with the routing destination noted in Description/Evidence. | `canonical/templates/reviewer-dispatch.md` `OUT-OF-SCOPE FINDINGS POLICY:` |
@@ -268,11 +268,9 @@ changelog:
 | Term | Definition | Source |
 |------|------------|--------|
 | **Tier (Large / Medium / Small)** | Model size tier per agent. Maps to Claude (Opus/Sonnet/Haiku), Codex (gpt-5.5/gpt-5.4/gpt-5.4-mini), Cursor, Copilot CLI (claude-opus-4.8/sonnet-4.6/haiku-4.5), Antigravity (gemini-3-pro high/low, gemini-3-flash). | `profiles/claude-code.toml` `[model_tiers]`, `profiles/codex.toml` `[model_tiers.large]`, `profiles/copilot-cli.toml` `[model_tiers]`, `profiles/antigravity.toml` `[model_tiers.large]` |
-| **Large-tier (10 agents)** | architect, reviewer, interviewer, security, discovery-{scout, architect, analyst, integrator, quality, reviewer}. | `.aid/knowledge/project-structure.md` `| Large (Opus / GPT-5.5 high) |` |
-| **Medium-tier (9 agents)** | orchestrator, researcher, developer, operator, data-engineer, performance, devops, tech-writer, ux-designer. | `.aid/knowledge/project-structure.md` `## Agents (22)` |
-| **Small-tier (3 agents)** | simple-extractor, simple-formatter, simple-glob. | `.aid/knowledge/project-structure.md` `| Small (Haiku / GPT-5.4-mini) |` |
-| **Discovery sub-agents (5)** | Scout, Architect, Analyst, Integrator, Quality — orchestrated in parallel by `aid-discover`. Each owns specific KB docs. | `canonical/skills/aid-discover/references/agent-prompts.md` `# Agent Prompts` |
-| **discovery-reviewer** | Grades discovery output adversarially. The largest agent file in the canonical set. | `canonical/agents/discovery-reviewer/AGENT.md` |
+| **Large-tier (4 agents)** | aid-interviewer, aid-architect, aid-researcher, aid-reviewer. | `.aid/knowledge/architecture.md` `## §3 Three-tier agent dispatch` |
+| **Medium-tier (4 agents)** | aid-developer, aid-operator, aid-orchestrator, aid-tech-writer. | `.aid/knowledge/architecture.md` `## §3 Three-tier agent dispatch` |
+| **Small-tier (1 agent)** | aid-clerk. | `.aid/knowledge/architecture.md` `## §3 Three-tier agent dispatch` |
 
 ---
 
@@ -295,8 +293,8 @@ changelog:
 | **Asset Kind** | A category of canonical source (agents / skills / templates / recipes / scripts) — each maps to an install-tree sub-directory per profile. | `canonical/EMISSION-MANIFEST.md` `## Asset Kinds` |
 | **Passthrough Renderer** | Renderer that emits files without format conversion or frontmatter injection (e.g., recipes). | `canonical/EMISSION-MANIFEST.md` `passthrough renderer — no` |
 | **Agent format** | `[agent].format` value selecting how `render_agents` emits a sub-agent. One of `markdown | toml | copilot-agent | antigravity-rule` (`_KNOWN_AGENT_FORMATS`). | `.claude/skills/aid-generate/scripts/aid_profile.py` `_KNOWN_AGENT_FORMATS` |
-| **`copilot-agent` format** | Copilot CLI agent-format value: emits AID sub-agents as `.github/agents/*.agent.md` with `name/description/tools/model` frontmatter (`Bash`→`shell` via `[tool_names]`). | `profiles/copilot-cli.toml` `format = "copilot-agent"`, `profiles/copilot-cli/.github/agents/architect.agent.md` |
-| **`antigravity-rule` format** | Antigravity agent-format value: reshapes AID sub-agents into `.agent/rules/*.md` with `trigger:`-style frontmatter (personas → `trigger: always_on`). Reuses the new-agent-format branch; NOT copilot-agent output. | `profiles/antigravity.toml` `format = "antigravity-rule"`, `profiles/antigravity/.agent/rules/reviewer.md` |
+| **`copilot-agent` format** | Copilot CLI agent-format value: emits AID sub-agents as `.github/agents/*.agent.md` with `name/description/tools/model` frontmatter (`Bash`→`shell` via `[tool_names]`). | `profiles/copilot-cli.toml` `format = "copilot-agent"`, `profiles/copilot-cli/.github/agents/aid-architect.agent.md` |
+| **`antigravity-rule` format** | Antigravity agent-format value: reshapes AID sub-agents into `.agent/rules/*.md` with `trigger:`-style frontmatter (personas → `trigger: always_on`). Reuses the new-agent-format branch; NOT copilot-agent output. | `profiles/antigravity.toml` `format = "antigravity-rule"`, `profiles/antigravity/.agent/rules/aid-reviewer.md` |
 | **Native Agent Skills mapping** | For Copilot CLI and Antigravity, AID skills are emitted as the host's **native** skills primitive — folder copies at `.github/skills/<slug>/SKILL.md` (Copilot) / `.agent/skills/<slug>/SKILL.md` (Antigravity) via the existing `render_skills` pass, no `emit_as` knob, preserving canonical frontmatter verbatim ([data]). | `profiles/copilot-cli.toml` `[skill]`, `profiles/antigravity.toml` `[skill]` |
 | **`rules_frontmatter` trigger-dialect** | Gated `[extras] rules_frontmatter = "trigger"` knob (Antigravity): `_render_cursor_extras` strips the source `.mdc` frontmatter and regenerates `trigger:/description/globs` keys from `RuleEntry` fields (`always_apply=true`→`trigger: always_on`; `false`→`trigger: glob` + globs). Default `None` (cursor) → verbatim copy → cursor byte-identical. Decoupled from `[agent].format`. | `profiles/antigravity.toml` `[extras]` `rules_frontmatter = "trigger"`, `.claude/skills/aid-generate/scripts/aid_profile.py` `rules_frontmatter` |
 | **`RuleEntry.output_filename`** | Per-rule `[[extras.rules]] output_filename` enabling a `.mdc`→`.md` rename for methodology rules (Antigravity emits `.md`; cursor leaves it unset → source name preserved → cursor byte-identical). | `profiles/antigravity.toml` `[[extras.rules]]` `output_filename = "aid-methodology.md"`, `.claude/skills/aid-generate/scripts/aid_profile.py` `output_filename` |
@@ -351,7 +349,7 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **Adversarial Reviewer** | The reviewer is structurally adversarial to the developer — never grades its own work. Separation prevents bias. | `canonical/agents/reviewer/AGENT.md` `You are adversarial to the Developer by design.`, `methodology/aid-methodology.md` `**Oversights**` row |
+| **Adversarial Reviewer** | `aid-reviewer` is structurally adversarial to the developer — never grades its own work. Separation prevents bias. | `canonical/agents/aid-reviewer/AGENT.md` `You are adversarial to the Developer by design.`, `methodology/aid-methodology.md` `**Oversights**` row |
 | **Clean Context** | The reviewer is dispatched in a clean context (no chat history with the executor) — guarantees independent assessment. | `canonical/skills/aid-execute/SKILL.md` `Grading task output against acceptance criteria with a clean-context reviewer.` |
 | **Hypothesis vs Knowledge (specs)** | "A spec written before implementation is a hypothesis. A spec revised after implementation is knowledge." | `methodology/aid-methodology.md` `**2. Specs Are Living Documents**` |
 | **Spec-as-Hypothesis** | Treats SPEC.md as a living artifact with formal revision protocols — every change is tracked, justified, approved. | `methodology/aid-methodology.md` `**Drift**` row, `methodology/aid-methodology.md` `**2. Specs Are Living Documents**` |

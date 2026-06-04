@@ -65,9 +65,9 @@ Wave ∞ (pool) · {K}/{T} done
 |------|------|--------|------|
 | task-001 | IMPLEMENT | ✓ done    | 4m 12s        |
 | task-002 | RESEARCH  | ● running | 6m 40s (↑ ~8m)|
-|          |           | agent: researcher · heartbeat: RUNNING · elapsed: 6m 40s · ETA: ~8 min |
+|          |           | agent: aid-researcher · heartbeat: RUNNING · elapsed: 6m 40s · ETA: ~8 min |
 | task-003 | DOCUMENT  | ● running | 1m 15s (↑ ~3m)|
-|          |           | agent: tech-writer · heartbeat: REVIEW · elapsed: 1m 15s · ETA: ~3 min |
+|          |           | agent: aid-tech-writer · heartbeat: REVIEW · elapsed: 1m 15s · ETA: ~3 min |
 | task-004 | TEST      | (queued)  | —             |
 | task-005 | IMPLEMENT | ⊘ blocked | —             |
 
@@ -78,7 +78,7 @@ Done: {D}  In-flight: {I}  Queued: {Q}  Blocked: {B}  Failed: {F}
 
 | Field | Source | Format |
 |-------|--------|--------|
-| `agent` | Executor role dispatched for this task (from Agent Selection table) | e.g., `developer`, `researcher` |
+| `agent` | Executor role dispatched for this task (from Agent Selection table) | e.g., `aid-developer`, `aid-researcher` |
 | `heartbeat` | Last state written to `.aid/.heartbeat/<executor>-<ts>.txt` | `EXECUTE` / `REVIEW` / `FIX` / `DONE` / `STALE` / `unknown` |
 | `elapsed` | Wall time since PD-2 dispatched this task | `Xm Ys` (minutes + seconds) |
 | `ETA` | Rough band from `.agents/templates/rough-time-hints.md` for the executor + task type | `~LOW–HIGH min` |

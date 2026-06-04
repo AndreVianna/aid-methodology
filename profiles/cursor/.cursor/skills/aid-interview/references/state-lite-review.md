@@ -4,7 +4,7 @@ Runs after TASK-BREAKDOWN (L2). This is the lite path's single pre-execution
 quality gate — it validates the task set against the work-root `SPEC.md` using
 the universal grading rubric before handing off to `aid-execute`.
 
-**Agent:** Dispatch `reviewer` (override `subagent_type`, clean context). This
+**Agent:** Dispatch `aid-reviewer` (override `subagent_type`, clean context). This
 is adversarial validation, not interview work.
 
 > This gate is *pre-execution* quality of the plan. It is distinct from FR2's
@@ -18,22 +18,22 @@ Read `STATE.md ## Lifecycle History`. If it contains a `LITE-REVIEW complete`
 entry, this state is already done — skip to LITE-DONE.
 
 Print: `[State: LITE-REVIEW] Sub-path: {Sub-path}`
-Print before dispatch: `[State: LITE-REVIEW] Dispatching reviewer for lite-path pre-execution gate.`
+Print before dispatch: `[State: LITE-REVIEW] Dispatching aid-reviewer for lite-path pre-execution gate.`
 
 ---
 
 ## Dispatch
 
-The reviewer writes findings to `.aid/.temp/review-pending/interview-<work>-lite.md`
+The aid-reviewer writes findings to `.aid/.temp/review-pending/interview-<work>-lite.md`
 per `.cursor/templates/reviewer-ledger-schema.md` (ONE markdown table, no narrative).
 
 ```
-▶ reviewer starting
+▶ aid-reviewer starting
 Read `references/state-lite-review.md` for the full review process.
-✓ reviewer done — or ✗ reviewer failed: {reason}
+✓ aid-reviewer done — or ✗ aid-reviewer failed: {reason}
 ```
 
-After reviewer returns, run grade.sh on the ledger:
+After aid-reviewer returns, run grade.sh on the ledger:
 
 ```bash
 bash .cursor/scripts/grade.sh --explain .aid/.temp/review-pending/interview-<work>-lite.md
@@ -41,7 +41,7 @@ bash .cursor/scripts/grade.sh --explain .aid/.temp/review-pending/interview-<wor
 
 ---
 
-## Review process (reviewer)
+## Review process (aid-reviewer)
 
 ### Step 1: Load context
 
@@ -71,7 +71,7 @@ Write findings to `.aid/.temp/review-pending/interview-<work>-lite.md` per
 `.cursor/templates/reviewer-ledger-schema.md`. The table is the entire file content
 — no headers, no narrative. Each issue is one row with Severity and Status: Pending.
 
-The grade is computed by the orchestrator via grade.sh (not assigned by the reviewer
+The grade is computed by the orchestrator via grade.sh (not assigned by the aid-reviewer
 directly).
 
 ### Step 3: Present findings

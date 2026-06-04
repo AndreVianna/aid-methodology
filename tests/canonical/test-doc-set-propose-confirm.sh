@@ -95,7 +95,7 @@ EOF
 
 # Fixture B: settings WITH discovery.doc_set carrying:
 #   - omission of test-landscape.md (a standard doc deliberately dropped)
-#   - addition of research-notes.md (a custom doc owned by discovery-analyst)
+#   - addition of research-notes.md (a custom doc owned by aid-researcher-analyst)
 # This represents a user who confirmed an edited proposal.
 settings_user_edit() {
   cat <<'EOF'
@@ -104,19 +104,19 @@ project:
   type: software
 discovery:
   doc_set:
-    - project-structure.md|discovery-scout|required
-    - external-sources.md|discovery-scout|required
-    - architecture.md|discovery-architect|required
-    - technology-stack.md|discovery-architect|required
-    - module-map.md|discovery-analyst|required
-    - coding-standards.md|discovery-analyst|required
-    - schemas.md|discovery-analyst|required
-    - research-notes.md|discovery-analyst|required
-    - pipeline-contracts.md|discovery-integrator|required
-    - integration-map.md|discovery-integrator|required
-    - domain-glossary.md|discovery-integrator|required
-    - tech-debt.md|discovery-quality|required
-    - infrastructure.md|discovery-quality|required
+    - project-structure.md|aid-researcher-scout|required
+    - external-sources.md|aid-researcher-scout|required
+    - architecture.md|aid-researcher-architecture|required
+    - technology-stack.md|aid-researcher-architecture|required
+    - module-map.md|aid-researcher-analyst|required
+    - coding-standards.md|aid-researcher-analyst|required
+    - schemas.md|aid-researcher-analyst|required
+    - research-notes.md|aid-researcher-analyst|required
+    - pipeline-contracts.md|aid-researcher-integrator|required
+    - integration-map.md|aid-researcher-integrator|required
+    - domain-glossary.md|aid-researcher-integrator|required
+    - tech-debt.md|aid-researcher-quality|required
+    - infrastructure.md|aid-researcher-quality|required
     - feature-inventory.md|orchestrator|required
     - README.md|orchestrator|required
     # (omission: test-landscape.md is absent — not included)

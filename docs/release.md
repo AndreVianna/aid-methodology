@@ -23,7 +23,7 @@ Step-by-step guide for cutting a GitHub Release using `release.sh`. This is the 
 Before running `release.sh`:
 
 - **Clean git worktree.** `git status` must show no modified tracked files. Untracked files are ignored. The script fails at step 1 if tracked files are dirty.
-- **Render-drift clean.** `profiles/` must be up to date with `canonical/`. Run `python run_generator.py` and commit the result if it produces any diff. The script re-runs the generator and fails if it detects drift.
+- **Render-drift clean.** `profiles/` must be up to date with `canonical/`. Run `python .claude/skills/aid-generate/scripts/run_generator.py` and commit the result if it produces any diff. The script re-runs the generator and fails if it detects drift.
 - **`VERSION` file matches your intended release.** The script reads `./VERSION` for the version string. If you want to release at a different version, update `VERSION` and commit it first.
 - **`gh` CLI authenticated.** `gh auth status` must show an authenticated account with write access to the repo. The script calls `gh release create` at the final step.
 - **Tag does not already exist.** The script pre-checks that neither a local git tag `v<VERSION>` nor a GitHub Release with that tag exists. It fails early on a collision.
@@ -33,7 +33,7 @@ Before running `release.sh`:
 git status
 git tag -l "v$(cat VERSION)"          # must print nothing
 gh auth status
-python run_generator.py && git diff --exit-code -- profiles/
+python .claude/skills/aid-generate/scripts/run_generator.py && git diff --exit-code -- profiles/
 ```
 
 ---
@@ -67,7 +67,7 @@ Common failures and their fixes:
 | Failure | Message | Fix |
 |---------|---------|-----|
 | Dirty worktree | `working tree has uncommitted changes` | `git stash` or commit the changes |
-| Render drift | `profiles/ is out of sync with canonical/` | `python run_generator.py && git add profiles/ && git commit -m "..."` |
+| Render drift | `profiles/ is out of sync with canonical/` | `python .claude/skills/aid-generate/scripts/run_generator.py && git add profiles/ && git commit -m "..."` |
 | Version mismatch | `--version X does not match VERSION file (Y)` | Either drop `--version` or update `./VERSION` |
 | Tag already exists | `tag v0.7.0 already exists` | The release was already cut; see [Recovery](#recovery-and-idempotency) |
 

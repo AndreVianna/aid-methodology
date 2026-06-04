@@ -137,11 +137,11 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
 | EXECUTE | `references/state-execute.md` | _(type-specific — see state file; delivery-mode uses pool dispatch PD-0→PD-6)_ | → REVIEW |
-| REVIEW | `references/state-review.md` | `reviewer` (Small tier, quick-check only — no grade loop per FR2) | → DONE |
+| REVIEW | `references/state-review.md` | `aid-reviewer` (Small tier, quick-check only — no grade loop per FR2) | → DONE |
 | FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | → REVIEW |
 | DONE | _(inline — task complete)_ | `inline` | → halt |
 | RE-RUN | `references/state-re-run.md` | `inline` | → halt |
-| DELIVERY-GATE | `references/state-delivery-gate.md` | `reviewer` (tier = complexity score) | → halt (grade ≥ min) / → FIX (grade < min) |
+| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | → halt (grade ≥ min) / → FIX (grade < min) |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
 When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../templates/state-machine-chaining.md)):

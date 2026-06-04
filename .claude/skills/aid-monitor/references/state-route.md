@@ -42,7 +42,7 @@ For each approved finding:
 
 **INFRASTRUCTURE → escalate:**
 - Document in the monitor run summary with recommended ops action
-- Not in AID's scope — human handles this
+- Not in AID's scope — the user handles this
 
 **NO ACTION → close:**
 - Document justification in the monitor run summary → Resolved Findings list

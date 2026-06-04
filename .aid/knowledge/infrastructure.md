@@ -15,7 +15,7 @@ changelog:
 ---
 # Infrastructure
 
-> **Source:** `discovery-quality` (Phase 1), cycle-1
+> **Source:** `aid-researcher` (quality doc-set) (Phase 1), cycle-1
 > **Status:** Complete
 > **Last Updated:** 2026-05-27
 > **Scope:** This repo ships a methodology + a multi-tool distribution. There is **no runtime infrastructure** in the conventional sense — no Docker, no Terraform, no Kubernetes, no cloud account, no managed services. "Infrastructure" here means: the install scripts that put AID into a target project, the canonical → 5-profiles render pipeline, the supporting toolchain (git, gh, python, bash), and the local-filesystem conventions for runtime state.
@@ -87,7 +87,7 @@ The canonical → 5-profiles render is the **only build artifact pipeline** in t
 
 | Component | Path | Lines | Purpose |
 |-----------|------|-------|---------|
-| Top-level entrypoint | `run_generator.py` | 87 | Loops `profiles/*.toml` (5 profiles: claude-code, codex, cursor, copilot-cli, antigravity), calls each renderer, runs VERIFY (deterministic) + VERIFY (advisory) |
+| Generator entrypoint | `.claude/skills/aid-generate/scripts/run_generator.py` | 87 | Loops `profiles/*.toml` (5 profiles: claude-code, codex, cursor, copilot-cli, antigravity), calls each renderer, runs VERIFY (deterministic) + VERIFY (advisory) |
 | Profile parser | `.claude/skills/aid-generate/scripts/aid_profile.py` | 550 | Parses TOML, validates schema |
 | Manifest harness | `.claude/skills/aid-generate/scripts/render_lib.py` | 756 | Emission-manifest implementation; pure-mirror deletion logic |
 | Agent renderer | `.claude/skills/aid-generate/scripts/render_agents.py` | 522 | Renders `canonical/agents/` per profile |
