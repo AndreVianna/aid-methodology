@@ -1,27 +1,46 @@
 # AID Examples
 
-Real-world examples of AID applied to production projects. All identifying details have been anonymized.
+Three tutorial-style worked examples showing AID applied step by step to realistic projects. Each example walks through the relevant pipeline phases, explains the purpose of each step, and shows the key artifacts produced.
 
-## Brownfield Enterprise
+---
 
-**Scenario:** A 21GB Java/OSGi enterprise monorepo — no documentation, no architect available, three days to understand and contribute.
+## Greenfield Project — full path
 
-→ [brownfield-enterprise/](brownfield-enterprise/) — Discovery phase artifacts, Knowledge Base excerpts, and the resulting architecture report.
+**Scenario:** A new project with no existing codebase. Shows how to use AID from scratch: `aid-config` → `aid-interview` (TRIAGE routes to full path) → `aid-specify` → `aid-plan` → `aid-detail` → `aid-execute`.
 
-**Key takeaway:** Discovery on a system this size took one AI-assisted session, not two weeks. The Knowledge Base became the foundation for every subsequent PR review and feature implementation.
+→ [examples/greenfield/](greenfield/)
 
-## Desktop Application
+**Key takeaway:** On a greenfield project you skip Discovery and start at Interview. TRIAGE classifies the work and decides the path. The full path is appropriate when the requirements need fleshing out and the deliveries need formal sequencing.
 
-**Scenario:** A Windows desktop transcription app using .NET/Avalonia/MVVM — greenfield features added in incremental deliveries with full test coverage.
+---
 
-→ [desktop-app/](desktop-app/) — Delivery plan structure, task specs, and the progression from 0 to 1,100+ tests across 6 deliveries.
+## Brownfield Project — full path
 
-**Key takeaway:** The Plan→Detail→Implement→Review→Test cycle produced consistent quality. Each delivery was self-contained, testable, and shippable.
+**Scenario:** An existing codebase with undocumented history. Shows the full AID pipeline: `aid-config` → `aid-discover` (builds the 14-document Knowledge Base) → `aid-interview` → `aid-specify` → `aid-plan` → `aid-detail` → `aid-execute`. Demonstrates how the Knowledge Base drives the spec.
 
-## Data Pipeline
+→ [examples/brownfield-full-path/](brownfield-full-path/)
 
-**Scenario:** A multi-brand e-commerce analytics pipeline with 12 specialist AI agents pulling from 5 data sources, validated against source data at 1% tolerance.
+**Key takeaway:** Discovery turns an unfamiliar codebase into a navigable Knowledge Base in one session. Every downstream spec decision is grounded in KB evidence — not guesswork.
 
-→ [data-pipeline/](data-pipeline/) — Pipeline architecture, agent specialization, quality gates, and the feedback loop that caught data accuracy issues before the client did.
+---
 
-**Key takeaway:** Track→Triage→Implement in action. Production monitoring caught a timezone mismatch and metric selection error. Formal triage led to targeted fixes, not a rebuild.
+## Brownfield Project — lite path
+
+**Scenario:** An existing codebase with a small, well-scoped change. Shows the condensed flow: `aid-interview` → TRIAGE routes to a LITE sub-path → work-root `SPEC.md` + `tasks/` → `aid-execute`. Optionally shows a recipe shortcut for a recurring pattern.
+
+→ [examples/brownfield-lite-path/](brownfield-lite-path/)
+
+**Key takeaway:** For small work, the lite path eliminates the overhead of the full pipeline. TRIAGE handles the routing automatically — you just answer three questions and go straight to execution.
+
+---
+
+## Which example should I read first?
+
+- **New to AID?** Start with the greenfield example — it introduces the pipeline in the simplest context.
+- **Inheriting an existing codebase?** Read the brownfield full-path example — Discovery is the core value proposition for brownfield work.
+- **Fixing a bug or making a small change?** Read the brownfield lite-path example — it shows how to stay lean when the scope is clear.
+
+For background on the methodology and terms used in the examples, see:
+- [docs/glossary.md](../docs/glossary.md) — term definitions
+- [docs/faq.md](../docs/faq.md) — how-to questions
+- [methodology/aid-methodology.md](../methodology/aid-methodology.md) — full methodology reference
