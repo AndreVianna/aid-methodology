@@ -40,6 +40,13 @@
 #   -TargetDirectory <dir> Install root (default: current directory).
 #   -Help                  Print this help and exit 0.
 #
+# Environment variables:
+#   AID_LIB_PATH   — absolute path to AidInstallCore.psm1 to import directly (overrides
+#                    sibling detection and remote fetch; useful for tests and vendored use).
+#   AID_LIB_BASE   — base URL prefix for the remote module fetch when the lib is not beside
+#                    the script (piped/irm|iex case).  Defaults to the raw GitHub URL for
+#                    the master branch.
+#
 # Exit codes:
 #   0   success
 #   1   generic runtime failure
@@ -69,20 +76,31 @@ $ErrorActionPreference = 'Stop'
 
 # ---------------------------------------------------------------------------
 # Locate the directory containing this script.
+# When piped via irm | iex, $MyInvocation.MyCommand.Path is null/empty — guard.
 # ---------------------------------------------------------------------------
 $script:_InstallPs1Path = $MyInvocation.MyCommand.Path
-$ScriptDir = Split-Path -Parent $script:_InstallPs1Path
-$LibDir    = Join-Path $ScriptDir 'lib'
+if ([string]::IsNullOrEmpty($script:_InstallPs1Path)) {
+    $ScriptDir = (Get-Location).Path
+} else {
+    $ScriptDir = Split-Path -Parent $script:_InstallPs1Path
+}
+$LibDir = Join-Path $ScriptDir 'lib'
 
 # ---------------------------------------------------------------------------
 # Usage helper (prints the header block as plain text).
 # ---------------------------------------------------------------------------
 function Show-Usage {
-    # Extract lines 2..49 of this script (the header comment), strip leading '# '.
+    # Extract lines 2..55 of this script (the header comment), strip leading '# '.
     # Use $script:_InstallPs1Path captured at load time to avoid $MyInvocation scoping issues.
+    # When piped ($script:_InstallPs1Path is null), emit a minimal usage stub.
+    if ([string]::IsNullOrEmpty($script:_InstallPs1Path)) {
+        Write-Host "install.ps1 — AID installer bootstrap (PowerShell 5.1+)."
+        Write-Host "Run: irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex"
+        return
+    }
     $lines = Get-Content -LiteralPath $script:_InstallPs1Path -ErrorAction SilentlyContinue
     if ($lines) {
-        $lines[1..48] | ForEach-Object { $_ -replace '^# ?', '' } | Write-Host
+        $lines[1..54] | ForEach-Object { $_ -replace '^# ?', '' } | Write-Host
     }
 }
 
@@ -114,10 +132,36 @@ if ($RemainingArgs -and $RemainingArgs.Count -gt 0) {
 
 # ---------------------------------------------------------------------------
 # Import the shared install core.
+# Resolution order (first match wins):
+#   1. AID_LIB_PATH env var — absolute path to the psm1 file (test override or vendored).
+#   2. Sibling lib/AidInstallCore.psm1 — present when invoked as a local file.
+#   3. Remote fetch from AID_LIB_BASE (or default GitHub raw URL) into a temp dir —
+#      used in the piped (irm|iex) case where no sibling lib is available.
 # ---------------------------------------------------------------------------
-$CoreModule = Join-Path $LibDir 'AidInstallCore.psm1'
-if (-not (Test-Path $CoreModule -PathType Leaf)) {
-    script:Fail "Shared install core not found: $CoreModule" 1
+$script:_AidTmpLibDir = $null
+
+$aidLibPath = $env:AID_LIB_PATH
+if ($aidLibPath) {
+    if (-not (Test-Path $aidLibPath -PathType Leaf)) {
+        script:Fail "AID_LIB_PATH set but file not found: $aidLibPath" 1
+    }
+    $CoreModule = $aidLibPath
+} elseif (Test-Path (Join-Path $LibDir 'AidInstallCore.psm1') -PathType Leaf) {
+    $CoreModule = Join-Path $LibDir 'AidInstallCore.psm1'
+} else {
+    # Remote fetch (piped execution — AID_LIB_BASE or default GitHub raw URL).
+    $aidLibBase = if ($env:AID_LIB_BASE) { $env:AID_LIB_BASE } else { 'https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/lib' }
+    $libUrl = "$aidLibBase/AidInstallCore.psm1"
+    $tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) ("aid-libfetch-" + [System.IO.Path]::GetRandomFileName())
+    New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+    $script:_AidTmpLibDir = $tmpDir
+    $CoreModule = Join-Path $tmpDir 'AidInstallCore.psm1'
+    [Console]::Error.WriteLine("Fetching install core from $libUrl ...")
+    try {
+        Invoke-WebRequest -Uri $libUrl -OutFile $CoreModule -UseBasicParsing -ErrorAction Stop
+    } catch {
+        script:Fail "Failed to fetch install core from $libUrl : $_" 3
+    }
 }
 Import-Module $CoreModule -Force -DisableNameChecking
 
@@ -327,4 +371,7 @@ try {
     }
 } finally {
     Remove-StagingBase
+    if ($script:_AidTmpLibDir -and (Test-Path $script:_AidTmpLibDir -PathType Container)) {
+        Remove-Item -LiteralPath $script:_AidTmpLibDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }

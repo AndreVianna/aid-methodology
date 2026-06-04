@@ -49,11 +49,32 @@
 #   6   uninstall with no manifest (nothing installed)
 
 set -uo pipefail
+# Note: -e (errexit) intentionally omitted — this script is designed for non-interactive
+# piped execution (curl|bash, CI).  Error paths use explicit exit codes and the die()
+# helper so that partial-success cases (exit 5 protect-on-diff) are correctly propagated.
+# Adding -e would cause subshell exit codes (e.g. from _resolve_tools) to terminate the
+# script silently rather than letting the caller inspect and act on them.
+#
+# Environment variables:
+#   AID_LIB_PATH   — absolute path to aid-install-core.sh to source directly (overrides
+#                    sibling detection and remote fetch; useful for tests and vendored use).
+#   AID_LIB_BASE   — base URL prefix for the remote lib fetch when the lib is not beside
+#                    the script (piped/curl|bash case).  Defaults to the raw GitHub URL for
+#                    the master branch.  Example for local test override:
+#                      AID_LIB_BASE=file:///path/to/local/lib install.sh ...
+#                    When AID_LIB_BASE is set, the lib is fetched as:
+#                      ${AID_LIB_BASE}/aid-install-core.sh
 
 # ---------------------------------------------------------------------------
 # Locate repo root (the directory containing this script).
+# When piped via stdin BASH_SOURCE[0] is unset or empty — guard with :-
 # ---------------------------------------------------------------------------
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_SCRIPT_SELF="${BASH_SOURCE[0]:-}"
+if [[ -n "$_SCRIPT_SELF" ]]; then
+    SCRIPT_DIR="$(cd "$(dirname "$_SCRIPT_SELF")" && pwd)"
+else
+    SCRIPT_DIR="$(pwd)"
+fi
 LIB_DIR="${SCRIPT_DIR}/lib"
 
 # ---------------------------------------------------------------------------
@@ -73,12 +94,63 @@ die() {
 
 # ---------------------------------------------------------------------------
 # Source the shared install core.
+# Resolution order (first match wins):
+#   1. AID_LIB_PATH env var — absolute path to the lib file (test override or vendored).
+#   2. Sibling lib/aid-install-core.sh — present when invoked as a local file.
+#   3. Remote fetch from AID_LIB_BASE (or default GitHub raw URL) into a temp dir —
+#      used in the piped (curl|bash) case where no sibling lib is available.
 # ---------------------------------------------------------------------------
-if [[ ! -f "${LIB_DIR}/aid-install-core.sh" ]]; then
-    die "Shared install core not found: ${LIB_DIR}/aid-install-core.sh" 1
-fi
-# shellcheck source=lib/aid-install-core.sh
-source "${LIB_DIR}/aid-install-core.sh"
+_AID_TMPLIB_DIR=""
+
+_source_install_core() {
+    local lib_file
+
+    # 1. Explicit override.
+    if [[ -n "${AID_LIB_PATH:-}" ]]; then
+        if [[ ! -f "$AID_LIB_PATH" ]]; then
+            echo "ERROR: install.sh: AID_LIB_PATH set but file not found: ${AID_LIB_PATH}" >&2
+            exit 1
+        fi
+        lib_file="$AID_LIB_PATH"
+    # 2. Sibling lib.
+    elif [[ -f "${LIB_DIR}/aid-install-core.sh" ]]; then
+        lib_file="${LIB_DIR}/aid-install-core.sh"
+    else
+        # 3. Remote fetch (piped execution).
+        local base_url="${AID_LIB_BASE:-https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/lib}"
+        local lib_url="${base_url}/aid-install-core.sh"
+        _AID_TMPLIB_DIR="$(mktemp -d /tmp/aid-libfetch-XXXXXX)"
+        lib_file="${_AID_TMPLIB_DIR}/aid-install-core.sh"
+        echo "Fetching install core from ${lib_url} ..." >&2
+        if command -v curl >/dev/null 2>&1; then
+            curl -fsSL -o "$lib_file" "$lib_url" || {
+                echo "ERROR: install.sh: failed to fetch install core from ${lib_url}" >&2
+                exit 3
+            }
+        elif command -v wget >/dev/null 2>&1; then
+            wget -qO "$lib_file" "$lib_url" || {
+                echo "ERROR: install.sh: failed to fetch install core from ${lib_url}" >&2
+                exit 3
+            }
+        else
+            echo "ERROR: install.sh: neither curl nor wget found; cannot fetch install core" >&2
+            exit 3
+        fi
+    fi
+
+    # shellcheck source=lib/aid-install-core.sh
+    source "$lib_file"
+}
+
+_source_install_core
+
+# Cleanup temp lib dir on exit (if created).
+_cleanup_tmplib() {
+    if [[ -n "${_AID_TMPLIB_DIR:-}" && -d "${_AID_TMPLIB_DIR}" ]]; then
+        rm -rf "${_AID_TMPLIB_DIR}"
+    fi
+}
+trap '_cleanup_tmplib; _cleanup_staging' EXIT
 
 # ---------------------------------------------------------------------------
 # Argument parsing.
@@ -257,7 +329,8 @@ _cleanup_staging() {
         rm -rf "$STAGING_BASE"
     fi
 }
-trap '_cleanup_staging' EXIT
+# Note: trap for _cleanup_staging is combined with _cleanup_tmplib above (set after
+# sourcing the lib) to avoid overwriting each other.
 
 # get_tarball_for_tool <tool> <version> <from_bundle>
 # Populates STAGING_DIR (per-tool extracted staging dir) and RESOLVED_VERSION.

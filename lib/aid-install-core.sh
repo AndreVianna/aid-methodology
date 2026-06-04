@@ -249,37 +249,38 @@ verify_bundle_checksum() {
 }
 
 # extract_tarball <tarball> <dest_dir>
-# Extracts into dest_dir, stripping one leading component if the tarball has
-# a single top-level wrapper dir (feature-002 contract: flat root expected,
-# but strip one component defensively).
+# Extracts into dest_dir.  feature-002 §S2.3 guarantees a flat-root tarball (no
+# wrapping top-level directory).  Asserts this contract and fails loudly when
+# violated rather than silently stripping components.
 extract_tarball() {
     local tarball="$1" dest_dir="$2"
     mkdir -p "$dest_dir"
 
-    # Detect whether the tarball has a single wrapping directory.
-    local top_entries
-    top_entries="$(tar -tzf "$tarball" 2>/dev/null | sed 's|/.*||' | sort -u | grep -v '^$')" || {
+    # Verify flat-root contract: the first entry must NOT be a bare directory
+    # (i.e. must not be "somedir/" with no slash before the trailing slash at the
+    # very start of the path component, e.g. "topdir/").
+    # Use a temp file to avoid pipefail from SIGPIPE when piping tar -t to head.
+    local _first_member_file
+    _first_member_file="$(mktemp)"
+    tar -tzf "$tarball" > "$_first_member_file" 2>/dev/null
+    local _tar_list_rc=$?
+    local first_member
+    first_member="$(head -1 "$_first_member_file")"
+    rm -f "$_first_member_file"
+
+    if [[ "$_tar_list_rc" -ne 0 && -z "$first_member" ]]; then
         echo "ERROR: aid-install-core: failed to list tarball contents: ${tarball}" >&2
         return 1
-    }
+    fi
 
-    local top_count
-    top_count="$(echo "$top_entries" | wc -l | tr -d ' ')"
-
-    if [[ "$top_count" -eq 1 ]]; then
-        local top_dir
-        top_dir="$(echo "$top_entries" | head -1)"
-        # Check if this single entry is itself a directory (wrapping dir)
-        local first_member
-        first_member="$(tar -tzf "$tarball" 2>/dev/null | head -1)"
-        if [[ "$first_member" == "${top_dir}/" ]]; then
-            # Strip one leading component.
-            tar -xzf "$tarball" -C "$dest_dir" --strip-components=1 || {
-                echo "ERROR: aid-install-core: failed to extract ${tarball}" >&2
-                return 1
-            }
-            return 0
-        fi
+    # A wrapping dir would look like "topdir/" (a single path component ending with /).
+    # Pattern: starts with optional "./" then one path component (no inner slashes) then "/"
+    # at the end of the string (meaning the entire entry IS just "topdir/").
+    # "./topdir/" counts as a wrapping dir; "./.claude/file.md" does not.
+    local _stripped="${first_member#./}"
+    if [[ "$_stripped" =~ ^[^/]+/$ ]]; then
+        echo "ERROR: aid-install-core: tarball has a wrapping top-level directory ('${first_member}') — expected flat-root per feature-002 §S2.3 contract: ${tarball}" >&2
+        return 1
     fi
 
     # Flat tarball (expected feature-002 layout).
@@ -892,8 +893,44 @@ _manifest_write_bash() {
             [[ "$tp_first" -eq 0 ]] && t_paths_json+=$'\n      '
             t_paths_json+="]"
             printf '      "paths": %s,\n' "$t_paths_json"
-            # Re-read root_agent_files for existing tool.
-            local t_raf_json="[]"
+            # Re-read root_agent_files for existing tool using the awk RAF parser.
+            local t_raf_json="["
+            local tr_first=1
+            local -a _t_raf_lines=()
+            while IFS= read -r _t_raf_line; do
+                [[ -n "$_t_raf_line" ]] && _t_raf_lines+=("$_t_raf_line")
+            done < <(awk -v tool="$tid" '
+            BEGIN{in_tool=0;in_raf=0;in_entry=0}
+            /"'"${tid}"'"[[:space:]]*:/{in_tool=1}
+            in_tool && /"root_agent_files"/{in_raf=1}
+            in_raf && /\{/{in_entry=1; cur_path=""; cur_sha=""; cur_status="owned"}
+            in_raf && in_entry && /"path"/{
+                s=$0; gsub(/.*"path"[^:]*:[^"]*"/,"",s); gsub(/".*$/,"",s); cur_path=s
+            }
+            in_raf && in_entry && /"sha256"/{
+                s=$0; gsub(/.*"sha256"[^:]*:[^"]*"/,"",s); gsub(/".*$/,"",s); cur_sha=s
+            }
+            in_raf && in_entry && /"status"/{
+                s=$0; gsub(/.*"status"[^:]*:[^"]*"/,"",s); gsub(/".*$/,"",s); cur_status=s
+            }
+            in_raf && in_entry && /\}/ {
+                if (cur_path!="") print cur_path "|" cur_sha "|" cur_status
+                in_entry=0
+            }
+            in_raf && /\]/{exit}
+            ' "$manifest")
+            for _t_entry in "${_t_raf_lines[@]+"${_t_raf_lines[@]}"}"; do
+                local _t_rpath _t_rsha _t_rstatus
+                IFS='|' read -r _t_rpath _t_rsha _t_rstatus <<< "$_t_entry"
+                [[ "$tr_first" -eq 0 ]] && t_raf_json+=","
+                t_raf_json+=$'\n        '
+                t_raf_json+='{ "path": "'"${_t_rpath}"'", "sha256": "'"${_t_rsha}"'", "status": "'"${_t_rstatus}"'" }'
+                tr_first=0
+            done
+            if [[ "${#_t_raf_lines[@]}" -gt 0 ]]; then
+                t_raf_json+=$'\n      '
+            fi
+            t_raf_json+="]"
             printf '      "root_agent_files": %s\n' "$t_raf_json"
             printf '    }'
             need_comma=1
@@ -995,9 +1032,59 @@ PY
                 printf '    "%s": {\n' "$tid"
                 printf '      "version": "%s",\n' "$t_ver"
                 printf '      "installed_at": "%s",\n' "$t_iat"
-                local t_paths_json="[]"
-                printf '      "paths": %s,\n' "$t_paths_json"
-                printf '      "root_agent_files": []\n'
+                # Re-read paths for this tool.
+                local rm_paths_json="["
+                local rm_tp_first=1
+                while IFS= read -r rm_tp; do
+                    [[ -z "$rm_tp" ]] && continue
+                    [[ "$rm_tp_first" -eq 0 ]] && rm_paths_json+=","
+                    rm_paths_json+=$'\n        "'
+                    rm_paths_json+="$rm_tp"
+                    rm_paths_json+='"'
+                    rm_tp_first=0
+                done < <(manifest_read_tool_paths "$manifest" "$tid")
+                [[ "$rm_tp_first" -eq 0 ]] && rm_paths_json+=$'\n      '
+                rm_paths_json+="]"
+                printf '      "paths": %s,\n' "$rm_paths_json"
+                # Re-read root_agent_files for this tool using the awk RAF parser.
+                local rm_raf_json="["
+                local rm_tr_first=1
+                local -a _rm_raf_lines=()
+                while IFS= read -r _rm_raf_line; do
+                    [[ -n "$_rm_raf_line" ]] && _rm_raf_lines+=("$_rm_raf_line")
+                done < <(awk -v tool="$tid" '
+                BEGIN{in_tool=0;in_raf=0;in_entry=0}
+                /"'"${tid}"'"[[:space:]]*:/{in_tool=1}
+                in_tool && /"root_agent_files"/{in_raf=1}
+                in_raf && /\{/{in_entry=1; cur_path=""; cur_sha=""; cur_status="owned"}
+                in_raf && in_entry && /"path"/{
+                    s=$0; gsub(/.*"path"[^:]*:[^"]*"/,"",s); gsub(/".*$/,"",s); cur_path=s
+                }
+                in_raf && in_entry && /"sha256"/{
+                    s=$0; gsub(/.*"sha256"[^:]*:[^"]*"/,"",s); gsub(/".*$/,"",s); cur_sha=s
+                }
+                in_raf && in_entry && /"status"/{
+                    s=$0; gsub(/.*"status"[^:]*:[^"]*"/,"",s); gsub(/".*$/,"",s); cur_status=s
+                }
+                in_raf && in_entry && /\}/ {
+                    if (cur_path!="") print cur_path "|" cur_sha "|" cur_status
+                    in_entry=0
+                }
+                in_raf && /\]/{exit}
+                ' "$manifest")
+                for _rm_entry in "${_rm_raf_lines[@]+"${_rm_raf_lines[@]}"}"; do
+                    local _rm_rpath _rm_rsha _rm_rstatus
+                    IFS='|' read -r _rm_rpath _rm_rsha _rm_rstatus <<< "$_rm_entry"
+                    [[ "$rm_tr_first" -eq 0 ]] && rm_raf_json+=","
+                    rm_raf_json+=$'\n        '
+                    rm_raf_json+='{ "path": "'"${_rm_rpath}"'", "sha256": "'"${_rm_rsha}"'", "status": "'"${_rm_rstatus}"'" }'
+                    rm_tr_first=0
+                done
+                if [[ "${#_rm_raf_lines[@]}" -gt 0 ]]; then
+                    rm_raf_json+=$'\n      '
+                fi
+                rm_raf_json+="]"
+                printf '      "root_agent_files": %s\n' "$rm_raf_json"
                 printf '    }'
                 need_comma=1
             done

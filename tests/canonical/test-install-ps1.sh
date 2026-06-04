@@ -29,7 +29,15 @@ PROFILES_DIR="${REPO_ROOT}/profiles"
 
 [[ -f "$SUT" ]] || { echo "ERROR: install.ps1 not found at $SUT" >&2; exit 1; }
 
-if ! command -v pwsh >/dev/null 2>&1; then
+# Resolve pwsh the same way as test-install-parity.sh and test-release-install-e2e.sh.
+PWSH=""
+if command -v pwsh >/dev/null 2>&1; then
+    PWSH="pwsh"
+elif [[ -x "/home/andre.vianna/.local/pwsh/pwsh" ]]; then
+    PWSH="/home/andre.vianna/.local/pwsh/pwsh"
+fi
+
+if [[ -z "$PWSH" ]]; then
     echo "SKIP: pwsh not found on PATH — skipping install.ps1 suite (needs PowerShell)."
     exit 0
 fi
@@ -85,7 +93,7 @@ newtarget() { mktemp -d "${TMP}/tgt.XXXXXX"; }
 # Helper: run install.ps1 and capture output + exit code.
 # Usage: run_install [ps1-args...]
 run_install() {
-    OUT=$(pwsh -NoProfile -File "$SUT" "$@" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+    OUT=$("$PWSH" -NoProfile -File "$SUT" "$@" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
 }
 
 # ---------------------------------------------------------------------------

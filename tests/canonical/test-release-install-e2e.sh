@@ -81,8 +81,15 @@ git clone --local --quiet --branch "${WORKTREE_BRANCH}" \
 git -C "${CLONE}" config core.fileMode false
 git -C "${CLONE}" config user.email "test@example.com"
 git -C "${CLONE}" config user.name "Test"
-# Inject release.sh (untracked in the worktree — not in the clone).
+# Inject release.sh from the working tree.  If it is already committed in the
+# clone (part of the worktree branch), use assume-unchanged so git does not
+# treat the injected working copy as a dirty modification — release.sh's own
+# precondition checks (`git diff --quiet` / `git diff --cached --quiet`) must
+# see a clean tree.
 cp "${RELEASE_SH}" "${CLONE}/release.sh"
+if git -C "${CLONE}" ls-files --error-unmatch release.sh >/dev/null 2>&1; then
+    git -C "${CLONE}" update-index --assume-unchanged release.sh 2>/dev/null || true
+fi
 
 STAGE_VERSION="$(tr -d '[:space:]' < "${CLONE}/VERSION")"
 STAGE_DIR="${CLONE}/.aid/.temp/release-${STAGE_VERSION}"

@@ -56,9 +56,11 @@ irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install
 ```bash
 # Bash — pin to a specific release
 curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- --version 0.7.0
+```
 
-# PowerShell
-irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex; .\install.ps1 -Version 0.7.0
+```powershell
+# PowerShell — pin to a specific release
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1))) -Version 0.7.0
 ```
 
 Pinning `--version` is strongly recommended for any automated or reproducible install. Without it the installer resolves the latest GitHub Release, which can change.

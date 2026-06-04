@@ -268,8 +268,9 @@ function Verify-BundleChecksum {
 }
 
 # Extract-Tarball <tarball> <destDir>
-# Extracts into destDir, stripping one leading component if the tarball has
-# a single top-level wrapper dir.  Returns $true on success.
+# Extracts into destDir.  feature-002 §S2.3 guarantees a flat-root tarball.
+# Asserts the flat-root contract and fails loudly when violated.
+# Returns $true on success.
 function Extract-Tarball {
     param([string]$Tarball, [string]$DestDir)
 
@@ -280,29 +281,22 @@ function Extract-Tarball {
     # Try tar.exe first (Windows 10 1803+, also available on Linux/macOS with pwsh).
     $tarExe = (Get-Command 'tar' -ErrorAction SilentlyContinue)
     if ($tarExe) {
-        # Detect whether tarball has a single wrapping directory.
         try {
             $listOutput = @(& tar -tzf $Tarball 2>&1)
             if ($LASTEXITCODE -ne 0) {
                 [Console]::Error.WriteLine("ERROR: AidInstallCore: failed to list tarball contents: $Tarball")
                 return $false
             }
-            # Get unique top-level entries (strip everything after first /).
-            # Force to array with @() to handle single-entry tarballs.
-            $topEntries = @($listOutput | ForEach-Object {
-                if ($_ -match '^([^/]+)') { $matches[1] } else { '' }
-            } | Where-Object { $_ -ne '' } | Sort-Object -Unique)
 
-            $stripArgs = @()
-            if ($topEntries.Count -eq 1) {
-                # Check if the single entry is itself a directory (first member ends with /).
-                $firstMember = $listOutput | Select-Object -First 1
-                if ($firstMember -eq "$($topEntries[0])/") {
-                    $stripArgs = @('--strip-components=1')
-                }
+            # Assert flat-root contract: first entry must not be a bare directory
+            # (pattern: "topdir/" with no sub-separators before the trailing slash).
+            $firstMember = $listOutput | Where-Object { $_ -match '\S' } | Select-Object -First 1
+            if ($firstMember -match '^[^/]+/$') {
+                [Console]::Error.WriteLine("ERROR: AidInstallCore: tarball has a wrapping top-level directory ('$firstMember') — expected flat-root per feature-002 §S2.3 contract: $Tarball")
+                return $false
             }
 
-            & tar -xzf $Tarball -C $DestDir @stripArgs 2>&1 | Out-Null
+            & tar -xzf $Tarball -C $DestDir 2>&1 | Out-Null
             if ($LASTEXITCODE -ne 0) {
                 [Console]::Error.WriteLine("ERROR: AidInstallCore: failed to extract $Tarball")
                 return $false

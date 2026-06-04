@@ -497,4 +497,123 @@ T=$(newtarget)
 run_install --uninstall --tool codex --target "$T"
 assert_exit_eq "$RC" 6 "IN27 uninstall with no manifest → exit 6"
 
+# ---------------------------------------------------------------------------
+# IN28 – Pure-Bash manifest fallback (python3+jq stripped from PATH):
+#         install codex then cursor; both tools' root_agent_files survive.
+#         Guards finding #3.
+# ---------------------------------------------------------------------------
+T=$(newtarget)
+# Force the pure-Bash _manifest_write_bash path by overriding command_v_python3 and
+# command_v_jq to fail.  We cannot simply shadow PATH because /usr/bin contains both
+# bash (needed) and python3.  Instead we write a wrapper script that launches
+# install.sh with aid-install-core.sh modified via an env override to skip python3/jq.
+# The cleanest test-safe approach: source the lib with _AID_FORCE_BASH_MANIFEST=1
+# as a way to bypass the python3 fast-path.  We add that env-gate to the lib.
+#
+# Since modifying the lib for test purposes is invasive, we use a different
+# strategy: create a clean env subshell with a minimal PATH that contains a
+# directory where python3/jq do NOT exist, but where bash IS present.
+# We copy /usr/bin/bash (or use its absolute path) to a writable temp dir.
+_NO_PY_DIR="${TMP}/no-py-bin"
+mkdir -p "$_NO_PY_DIR"
+# Symlink essential tools (all except python3/jq) into a shadow bin.
+for _tool in bash tar gzip gunzip find sort awk sed grep tr wc mktemp date cmp cp mv rm mkdir dirname basename cat printf head tail cut id uname od stat ls sha256sum shasum; do
+    # Use 'which' to find the actual binary (avoids picking up shell function wrappers
+    # that 'command -v' would return, e.g. grep is wrapped by the Claude Code env).
+    _bin="$(which "$_tool" 2>/dev/null || command -v "$_tool" 2>/dev/null)"
+    # Resolve to absolute path if it's relative.
+    if [[ -n "$_bin" && "${_bin:0:1}" != "/" ]]; then
+        _bin="$(type -P "$_tool" 2>/dev/null || true)"
+    fi
+    if [[ -n "$_bin" && -x "$_bin" ]]; then
+        ln -sf "$_bin" "${_NO_PY_DIR}/${_tool}" 2>/dev/null || true
+    fi
+done
+
+_RUN_NO_PYTHON_JQ() {
+    PATH="${_NO_PY_DIR}" bash "$SUT" "$@"
+}
+OUT=$(_RUN_NO_PYTHON_JQ --tool codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "$T" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "IN28 pure-bash fallback: install codex (no python3/jq) → exit 0"
+MANIFEST="${T}/.aid/.aid-manifest.json"
+assert_file_exists "$MANIFEST" "IN28b manifest created by pure-bash writer"
+assert_file_contains "$MANIFEST" '"codex"' "IN28c manifest contains codex"
+assert_file_contains "$MANIFEST" '"sha256"' "IN28d manifest contains sha256 (root_agent_files)"
+assert_file_contains "$MANIFEST" '"status": "owned"' "IN28e root_agent status owned"
+
+# Second tool: cursor — also installs AGENTS.md (triggers protect-on-diff since
+# codex already owns it) but BOTH tools must remain in manifest with their RAF.
+OUT=$(_RUN_NO_PYTHON_JQ --tool cursor \
+    --from-bundle "${FIXTURE_DIR}/aid-cursor-v${VERSION}.tar.gz" \
+    --target "$T" 2>&1); RC=$?
+# exit 5 because codex's AGENTS.md differs from cursor's AGENTS.md → protect-on-diff.
+assert_exit_eq "$RC" 5 "IN28f pure-bash fallback: install cursor (protect-on-diff) → exit 5"
+MANIFEST="${T}/.aid/.aid-manifest.json"
+# Both tools must be listed in the manifest.
+assert_file_contains "$MANIFEST" '"codex"' "IN28g manifest still contains codex after cursor install"
+assert_file_contains "$MANIFEST" '"cursor"' "IN28h manifest contains cursor"
+# Codex's root_agent_files must survive (the bug this guards).
+# Extract the root_agent_files section within the codex block and check for sha256.
+# Use python3 if available, otherwise grep for sha256 in the entire manifest and
+# verify the codex section exists with a non-empty sha256.
+if command -v python3 >/dev/null 2>&1; then
+    _CODEX_SHA="$(python3 - "$MANIFEST" <<'PY'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+    for e in d.get("tools",{}).get("codex",{}).get("root_agent_files",[]):
+        if e.get("sha256"):
+            print(e["sha256"])
+            break
+except Exception:
+    pass
+PY
+)"
+    if [[ -n "$_CODEX_SHA" ]]; then
+        pass "IN28i codex root_agent_files sha256 preserved after cursor install (guards #3)"
+    else
+        fail "IN28i codex root_agent_files sha256 preserved after cursor install (guards #3) — codex RAF sha256 is empty in manifest"
+    fi
+else
+    # Fallback: verify the manifest has both "codex" and "sha256" lines (sha256 is
+    # in the root_agent_files section of the codex block since only codex has RAF entries).
+    if grep -qF '"codex"' "$MANIFEST" && grep -qF '"sha256"' "$MANIFEST"; then
+        pass "IN28i codex root_agent_files sha256 preserved after cursor install (guards #3)"
+    else
+        fail "IN28i codex root_agent_files sha256 preserved after cursor install (guards #3) — codex or sha256 not found in manifest"
+    fi
+fi
+
+# Uninstall safety: both tools' uninstall must work.
+OUT=$(_RUN_NO_PYTHON_JQ --uninstall --tool codex --target "$T" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "IN28j pure-bash: uninstall codex → exit 0"
+assert_eq "$([[ -d "$T/.codex" ]] && echo exists || echo gone)" "gone" "IN28k .codex/ removed"
+# Manifest must still contain cursor.
+assert_file_contains "$MANIFEST" '"cursor"' "IN28l manifest still contains cursor after codex uninstall"
+# Codex gone from manifest — check via grep.
+if ! grep -q '"codex"' "$MANIFEST" 2>/dev/null; then
+    pass "IN28m codex removed from manifest after uninstall"
+else
+    fail "IN28m codex still in manifest after uninstall"
+fi
+
+# ---------------------------------------------------------------------------
+# IN29 – Piped invocation: cat install.sh | bash -s -- ...
+#         AID_LIB_PATH points at the local lib so no network needed.
+#         Guards finding #1.
+# ---------------------------------------------------------------------------
+T=$(newtarget)
+LIB_PATH="${REPO_ROOT}/lib/aid-install-core.sh"
+OUT=$(AID_LIB_PATH="$LIB_PATH" bash -s -- \
+    --tool codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "$T" < "$SUT" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "IN29 piped invocation (cat|bash -s) with AID_LIB_PATH → exit 0"
+assert_dir_exists "$T/.codex" "IN29b .codex/ created via piped invocation"
+assert_file_exists "$T/AGENTS.md" "IN29c AGENTS.md created via piped invocation"
+assert_output_contains "$OUT" "Done." "IN29d piped invocation reports Done."
+assert_file_exists "${T}/.aid/.aid-manifest.json" "IN29e manifest created via piped invocation"
+
 test_summary

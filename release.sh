@@ -221,7 +221,7 @@ build_tarball() {
             local fname
             fname="$(basename "$src_path")"
             if [[ "$fname" == "README.md" || "$fname" == "emission-manifest.jsonl" ]]; then
-                rm -f "$filelist"
+                # Skip this file without touching the accumulated filelist.
                 continue
             fi
             echo "./${root}" >> "$filelist"
@@ -282,10 +282,14 @@ SUMS_FILE="${STAGE_DIR}/SHA256SUMS"
 
 # Compute checksums for all five tarballs, sorted by filename.
 # We cd into the staging dir so filenames in SHA256SUMS are bare (no path prefix).
+# Use a glob array (not ls in command substitution) to avoid SC2046/SC2012.
 (
     cd "${STAGE_DIR}"
-    # Collect tarballs in sorted order.
-    sha256_cmd $(ls aid-*.tar.gz | sort)
+    _tarballs=( aid-*.tar.gz )
+    # Sort the glob results by name.
+    IFS=$'\n' _sorted=( $(printf '%s\n' "${_tarballs[@]}" | sort) )
+    unset IFS
+    sha256_cmd "${_sorted[@]}"
 ) | sort -k2 > "${SUMS_FILE}"
 
 echo "release.sh: SHA256SUMS written:"
@@ -345,10 +349,14 @@ EOF
 fi
 
 # Add assets: tarballs + SHA256SUMS
+# Use a glob array (not ls in command substitution) to avoid SC2046/SC2012.
 ASSETS=()
-while IFS= read -r f; do
-    ASSETS+=("$f")
-done < <(ls "${STAGE_DIR}"/aid-*.tar.gz | sort)
+_gh_tarballs=( "${STAGE_DIR}"/aid-*.tar.gz )
+IFS=$'\n' _gh_sorted=( $(printf '%s\n' "${_gh_tarballs[@]}" | sort) )
+unset IFS
+for _f in "${_gh_sorted[@]}"; do
+    ASSETS+=("$_f")
+done
 ASSETS+=("${SUMS_FILE}")
 
 echo "release.sh: creating GitHub Release ${TAG} ..."

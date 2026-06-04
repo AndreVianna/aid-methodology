@@ -67,8 +67,17 @@ make_clone() {
     # Configure identity so any git operations in the clone succeed.
     git -C "${dest}" config user.email "test@example.com"
     git -C "${dest}" config user.name "Test"
-    # Inject release.sh (untracked in the worktree — not included in the clone).
+    # Inject release.sh from the working tree.  The file may be committed in the
+    # clone (part of the worktree branch) or untracked there.  In either case we
+    # tell git to assume it's unchanged so that neither the post-clone sanity check
+    # (`git diff --quiet`) nor release.sh's own precondition (`git diff --quiet`)
+    # detects it as a modification.
     cp "${SUT}" "${dest}/release.sh"
+    # Tell git to skip worktree tracking for this file (assume-unchanged) so it
+    # does not appear in `git diff` output.
+    if git -C "${dest}" ls-files --error-unmatch release.sh >/dev/null 2>&1; then
+        git -C "${dest}" update-index --assume-unchanged release.sh 2>/dev/null || true
+    fi
 }
 
 # ---------------------------------------------------------------------------
