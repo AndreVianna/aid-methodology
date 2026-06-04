@@ -6,9 +6,9 @@ Terms and concepts used throughout the AID methodology.
 
 ## Core Concepts
 
-**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 development phases, 5 groups; delivery (Deploy, Monitor) and the summary skill are optional. Human and AI co-execute every phase.
+**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 numbered pipeline phases delivered by 11 skills across 5 groups; delivery (Deploy, Monitor) and the summary skill are optional. Human and AI co-execute every phase.
 
-**Knowledge Base (KB):** 16 standard markdown documents (plus 3 meta-documents) that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases.
+**Knowledge Base (KB):** 14 standard markdown documents (plus 3 meta-documents: INDEX, README, STATE) that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases. The default set of 14 is configurable via `discovery.doc_set` in `.aid/settings.yml`.
 
 **Feedback Loop:** A formal pathway for a downstream phase to revise upstream artifacts. Produces a formal record (a Q&A entry in a STATE file, an IMPEDIMENT file, or a MONITOR-STATE finding) with a revision trail.
 
@@ -20,7 +20,7 @@ Terms and concepts used throughout the AID methodology.
 
 ## Setup
 
-**aid-config:** Bootstrapping step that runs before the pipeline begins. Asks greenfield or brownfield, collects project metadata, and scaffolds the `.aid/knowledge/` directory with 16 empty KB document templates. Also creates `AGENTS.md`, `CLAUDE.md`, `DISCOVERY-STATE.md`, `README.md`, and `INDEX.md` placeholders. Not a methodology phase — it prepares the project so Discovery (or Interview) can begin cleanly.
+**aid-config:** Bootstrapping step that runs before the pipeline begins. Asks greenfield or brownfield, collects project metadata, and scaffolds the `.aid/knowledge/` directory with 14 empty KB document templates. Also creates `AGENTS.md`, `CLAUDE.md`, `README.md`, `INDEX.md`, and `STATE.md` placeholders. Not a methodology phase — it prepares the project so Discovery (or Interview) can begin cleanly.
 
 ---
 
@@ -28,30 +28,60 @@ Terms and concepts used throughout the AID methodology.
 
 | Phase | Group | Produces |
 |-------|-------|----------|
-| **Discover** | Prepare | Knowledge Base (16 documents) |
-| **Interview** | Define | REQUIREMENTS.md + per-feature SPEC.md stubs |
-| **Specify** | Define | SPEC.md technical specification |
-| **Plan** | Map | PLAN.md (sequenced deliveries) |
-| **Detail** | Map | Typed task files + execution graph in PLAN.md |
+| **Discover** | Prepare | Knowledge Base (14 standard documents) |
+| **Interview** | Define | Full path: `REQUIREMENTS.md` + per-feature `SPEC.md` stubs. Lite path: work-root `SPEC.md` + `tasks/` directly. |
+| **Specify** | Define | Technical specification added to each feature's `SPEC.md` (full path only) |
+| **Plan** | Map | `PLAN.md` (sequenced deliveries — full path only) |
+| **Detail** | Map | Typed task files + execution graph (full path only) |
 | **Execute** | Execute | Reviewed, graded code (8 task types, built-in review loop) |
 | **Deploy** *(optional)* | Deliver | Shipped delivery, PR, KB update |
-| **Monitor** *(optional)* | Deliver | MONITOR-STATE.md (BUG → Interview lite bug-fix → Execute / CR → Interview / Infrastructure / No Action) |
+| **Monitor** *(optional)* | Deliver | Classified findings routed to fixes (BUG → lite bug-fix → Execute / CR → Interview / Infrastructure / No Action) |
 
 > *Deploy and Monitor are **optional**, on-demand delivery skills positioned at the end of the pipeline — not required, numbered phases. Run them when the project's delivery model calls for them; neither presupposes the other.*
 
 ---
 
+## The Lite Path
+
+**Lite Path:** A condensed workflow for small, well-scoped work. Triggered by `aid-interview`'s TRIAGE state when work breadth ≤ 2 features, size ≤ a few days, and workType is `bug-fix`, `small-refactor`, `single-doc`, or `small-new-feature`. Lite path skips `aid-specify`, `aid-plan`, and `aid-detail` — Interview emits a work-root `SPEC.md` + `tasks/` directly, then routes to `aid-execute`. A lite work can be escalated to full path mid-flight if scope grows.
+
+**TRIAGE:** The opening state of `aid-interview`. Asks three classification questions (T1: breadth, T2: size, T3: workType) and routes to either the full path or a lite sub-path.
+
+**workType:** The classification of work used by TRIAGE. Values: `bug-fix`, `small-refactor`, `single-doc`, `small-new-feature` (route to lite sub-paths); larger or multi-feature work routes to the full path.
+
+**LITE-BUG-FIX:** Lite sub-path for bug fixes. Produces typically 1 IMPLEMENT task (fix + regression test).
+
+**LITE-DOC:** Lite sub-path for single-document work. Produces exactly 1 DOCUMENT task.
+
+**LITE-REFACTOR:** Lite sub-path for small refactors. Produces 1–3 REFACTOR + TEST tasks.
+
+**LITE-FEATURE:** Lite sub-path for small new features. Produces 1–5 IMPLEMENT + TEST + DOCUMENT tasks.
+
+**Recipe:** A pre-filled lite-path template for a recurring work pattern. Five seed recipes ship at `canonical/recipes/`: bug-fix, method-refactor, add-crud-endpoint, add-unit-test, write-release-note. Shape: YAML frontmatter + `## spec` block + `## tasks` block + `{{slot}}` placeholders substituted by `parse-recipe.sh`. Eliminates redundant interview for known patterns.
+
+**Slot:** A `{{placeholder}}` in a recipe that `parse-recipe.sh` substitutes with actual project-specific values before the tasks are executed.
+
+---
+
+## Off-Pipeline Skills
+
+**aid-housekeep:** The 11th user-facing skill. On-demand, off the mandatory pipeline — run it whenever the Knowledge Base needs freshening. State machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE, on an `aid/housekeep-*` branch. Not a numbered development phase.
+
+**aid-summarize:** Optional, idempotent skill that generates `knowledge-summary.html` — an offline HTML viewer of the Knowledge Base. Can be run after any discovery cycle.
+
+---
+
 ## Artifacts
 
-**SPEC.md:** Formal specification grounded in the Knowledge Base. Treated as a hypothesis — refined by evidence from implementation.
+**SPEC.md:** Formal specification grounded in the Knowledge Base. Treated as a hypothesis — refined by evidence from implementation. In the full path, one SPEC.md lives under each feature. In the lite path, a single work-root SPEC.md covers the whole work item.
 
-**Q&A entry:** Appended to a STATE file (`DISCOVERY-STATE.md`, `INTERVIEW-STATE.md`, or a feature's `STATE.md`) when a phase finds the Knowledge Base or an upstream artifact deficient. The owning phase resolves it on its next run — targeted, not a full restart.
+**Q&A entry:** Appended to a STATE file (`.aid/knowledge/STATE.md` for discovery-area, `.aid/{work}/STATE.md` for work-area, or `.aid/{work}/features/{feature}/STATE.md` for feature-level) when a phase finds the Knowledge Base or an upstream artifact deficient. The owning phase resolves it on its next run — targeted, not a full restart.
+
+**STATE.md:** The runtime state ledger for a given area. Post-FR2: discovery-area state lives at `.aid/knowledge/STATE.md`; work-area state at `.aid/{work}/STATE.md`; feature state at `.aid/{work}/features/{feature}/STATE.md`. Holds Q&A history, review history, and calibration log.
 
 **IMPEDIMENT.md:** Filed when implementation discovers the plan or spec is wrong. Contains: what was assumed, what's true, proposed revision, and impact assessment.
 
-**MONITOR-STATE.md:** Filed when production monitoring identifies an issue. Classifies as BUG (short path → Interview's lite bug-fix triage → Execute), CR (full cycle → Interview), Infrastructure (ops team), or No Action (monitor only). For bugs, includes root cause analysis, patch scope, and test requirements.
-
-**Grading (A+ to F):** The review phase's quality scale. A+ (exemplary) through F (doesn't build). Evaluates spec compliance, architecture adherence, and convention conformance. Domain-specific quality checks (e.g., data accuracy thresholds) are defined per project in the SPEC.md.
+**Grading (A+ to F):** The review phase's quality scale. A+ (exemplary) through F (doesn't build). Evaluates spec compliance, architecture adherence, and convention conformance. Domain-specific quality checks are defined per project in SPEC.md.
 
 ---
 
@@ -67,6 +97,28 @@ Terms and concepts used throughout the AID methodology.
 
 ---
 
+## Install Profiles
+
+AID ships install bundles for five host AI tools:
+
+| Profile | Install directory | Context file |
+|---------|-------------------|--------------|
+| **Claude Code** | `.claude/` | `CLAUDE.md` |
+| **Codex CLI** | `.codex/agents/` + `.agents/` | `AGENTS.md` |
+| **Cursor** | `.cursor/` | `AGENTS.md` |
+| **GitHub Copilot CLI** | `.github/` | `AGENTS.md` |
+| **Antigravity** | `.agent/` | `AGENTS.md` |
+
+All five profiles contain byte-identical skill and agent bodies — only the wrapper format differs per tool. The source of truth is `canonical/`; profiles are generated output (never hand-edit them).
+
+---
+
+## Declared Doc-Set
+
+**Declared doc-set:** The KB document set for a project, defined in `.aid/settings.yml` under `discovery.doc_set`. The default seed is 14 standard documents. Because the set is declared (not ad-hoc), downstream skills navigate by convention — an agent looking for schemas always reads `schemas.md`; for tech debt, always `tech-debt.md`.
+
+---
+
 ## Related Terms
 
 **SDD (Spec-Driven Development):** A methodology where specifications drive code generation. AID contains SDD as a subset — the spec-and-build layer — and extends it with discovery, two-level planning, feedback loops, and post-deployment phases.
@@ -76,3 +128,5 @@ Terms and concepts used throughout the AID methodology.
 **Greenfield:** A new project with no existing code. In AID, greenfield projects run Init first, then skip Discovery and start at Interview.
 
 **Determinism Test:** Can you write a complete set of rules to validate the outcome? If yes, automate fully. If no, keep a human in the loop. Used to decide automation depth per phase.
+
+**Canonical:** The `canonical/` directory — the single source of truth for all skill, agent, template, and recipe content. The generator (`run_generator.py`) renders `canonical/` into the five `profiles/` install trees. Never edit `profiles/` directly; edit `canonical/` and re-run the generator.

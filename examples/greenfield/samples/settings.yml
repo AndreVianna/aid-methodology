@@ -1,0 +1,23 @@
+# .aid/settings.yml — sample output from /aid-config
+# This file is illustrative sample output. Actual values are set during /aid-config.
+
+project:
+  name: tasktracker-api
+  description: >
+    REST API for managing tasks with JWT authentication,
+    Postgres persistence, and status-based filtering.
+  created: 2026-06-10
+
+discovery:
+  # doc_set controls which KB documents aid-discover populates.
+  # Default: all 14 standard templates. Override to add or remove docs.
+  doc_set: default
+
+interview:
+  # work_prefix is prepended to each work directory name.
+  work_prefix: work
+
+execute:
+  # minimum_grade sets the floor grade for task approval.
+  # Tasks graded below this require re-implementation.
+  minimum_grade: B  # deliberate override; canonical default is A
