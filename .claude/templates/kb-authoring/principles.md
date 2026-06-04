@@ -75,7 +75,7 @@ registry.
 ## P4. Enforce via review, not by mechanical lint
 
 Convention alone won't survive contributor turnover, but a brittle shell-script
-linter doesn't either. The principles are enforced by the **`discovery-reviewer`
+linter doesn't either. The principles are enforced by the **`aid-reviewer`
 sub-agent** in the REVIEW state:
 
 - The reviewer reads each KB doc, validates its frontmatter against the schema in
