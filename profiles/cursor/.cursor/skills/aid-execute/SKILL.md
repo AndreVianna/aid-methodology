@@ -6,7 +6,7 @@ description: >
   State machine: EXECUTE → REVIEW → FIX → back to REVIEW → DONE when grade ≥ minimum.
   Branch per delivery for isolation.
 allowed-tools: Read, Glob, Grep, Write, Edit, Terminal
-argument-hint: "task-001 (required)  [work-001 if multiple works]"
+argument-hint: "work-001 (if multiple works)  task-001 (required)"
 ---
 
 # Execute Task
@@ -17,10 +17,15 @@ Read the type. Do the work. Review it. Fix it. Ship it.
 
 ### Check 1: Locate Work and Task
 
-1. If work arg provided → use that work directory
-2. If single work exists → auto-select
-3. If multiple works → list them, ask user to choose
-4. Find `task-NNN.md` in `.aid/{work}/tasks/`
+Arguments are positional, **`work-NNN` first then `task-NNN`** — e.g. `/aid-execute work-001 task-001`.
+The work scope leads (consistent with the rest of the `aid-*` family); the task is resolved within it.
+Both arguments are identified by their `work-`/`task-` prefix, so either order still resolves and the
+legacy `/aid-execute task-001 work-001` form remains accepted.
+
+1. If a `work-NNN` arg is provided → use that work directory
+2. Else if a single work exists → auto-select it
+3. Else (multiple works, no work arg) → list them, ask the user to choose
+4. Resolve the `task-NNN` arg → find `task-NNN.md` in `.aid/{work}/tasks/`
 5. Task not found → **STOP.** List available tasks.
 
 ### Check 2: Read Task
