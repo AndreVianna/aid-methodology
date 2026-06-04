@@ -283,9 +283,23 @@ make_clone "${CLONE2}"
 # We must dirty a file that the generator actually regenerates from canonical/,
 # not a hand-authored root file like CLAUDE.md or AGENTS.md (those are not
 # in the emission manifest and the generator does not overwrite them).
-# We pick .claude/agents/architect.md which IS generated from canonical/ and
-# is listed in profiles/claude-code/emission-manifest.jsonl.
-DRIFT_FILE="${CLONE2}/profiles/claude-code/.claude/agents/architect.md"
+# Derive the target dynamically from the live emission manifest (resilient to
+# canonical renames — e.g. master's aid-* agent prefix refactor) by taking the
+# first generated *.md dst under the claude-code profile.
+DRIFT_REL="$(python3 -c "
+import json,sys
+for line in open('${CLONE2}/profiles/claude-code/emission-manifest.jsonl'):
+    line=line.strip()
+    if not line or line.startswith('{\"_'): continue
+    try: r=json.loads(line)
+    except Exception: continue
+    d=r.get('dst','')
+    if d.endswith('.md'): print(d); break
+")"
+if [ -z "${DRIFT_REL}" ]; then
+    echo "SKIP: could not derive a generated .md from emission manifest" >&2
+fi
+DRIFT_FILE="${CLONE2}/profiles/claude-code/${DRIFT_REL}"
 printf '\n<!-- DRIFT TEST LINE -->\n' >> "${DRIFT_FILE}"
 git -C "${CLONE2}" add "${DRIFT_FILE}"
 git -C "${CLONE2}" commit --quiet -m "test: dirty profiles for render-drift gate test"
