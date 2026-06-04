@@ -858,7 +858,7 @@ flowchart LR
 		<div class="card plugin">
 			<div class="kicker">Phase 2 — Interview</div>
 			<div class="plugin-name">/aid-interview</div>
-			<div class="plugin-body">Adaptive requirements gathering through conversational interview. Builds REQUIREMENTS.md incrementally; supports a Lite Path for small work (routes to LITE-BUG-FIX / LITE-DOC / LITE-REFACTOR / LITE-FEATURE sub-paths).</div>
+			<div class="plugin-body">Adaptive requirements gathering through conversational interview. Builds REQUIREMENTS.md incrementally; supports a Lite Path for small work — a description-first TRIAGE infers the work-type (bug-fix / new-feature / refactor) and best-matching recipe from a free-form description, routing to LITE-BUG-FIX / LITE-REFACTOR / LITE-FEATURE sub-paths.</div>
 			<div class="plugin-stats">
 				<span class="badge badge-ok">Shipped</span>
 				<span class="badge">19 reference files</span>
@@ -1437,7 +1437,7 @@ flowchart TB
 					<td><code>test-parse-recipe.sh</code></td>
 					<td><code>canonical/scripts/interview/parse-recipe.sh</code></td>
 					<td>bash</td>
-					<td>All 5 modes (--list, --validate, --spec, --tasks, --render), slot substitution, escape rewrite, lock lifecycle, seed recipes (dogfood). Slowest suite (~150 s) — timeout must be &gt;=180 s standalone</td>
+					<td>All 5 modes (--list, --validate, --spec, --tasks, --render), slot substitution, escape rewrite, lock lifecycle, recipe-catalog validation (dogfood, 51-recipe catalog). Slowest suite (~150 s) — timeout must be &gt;=180 s standalone</td>
 				</tr>
 				<tr>
 					<td><code>test-compute-block-radius.sh</code></td>
