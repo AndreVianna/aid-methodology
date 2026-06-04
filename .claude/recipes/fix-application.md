@@ -1,8 +1,9 @@
 ---
-name: bug-fix
+name: fix-application
 applies-to: bug-fix
 slot-count: 4
 task-count: 1
+summary: Fix a domain/business-logic defect (the broad default) and add a regression test.
 ---
 
 ## spec
@@ -11,7 +12,7 @@ task-count: 1
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `bug-fix` via /aid-interview lite path
+**Source:** recipe `fix-application` via /aid-interview lite path
 **Status:** Active
 
 ## Goal
@@ -48,7 +49,7 @@ Fix the defect described below and confirm the fix with a unit test.
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `bug-fix` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `fix-application` | /aid-interview lite path |
 
 ## tasks
 
