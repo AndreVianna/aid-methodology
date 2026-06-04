@@ -59,6 +59,7 @@ flowchart TB
     Init --> Disc --> Intv --> Spec --> Plan --> Det --> Exe
     Exe -. "on demand" .-> Dep
     Exe -. "on demand" .-> Mon
+    Exe -. "when finished" .-> HK
     Mon -. "bugs → LITE-BUG-FIX" .-> Intv
     Mon -. "change requests" .-> Intv
     HK  -. "targeted KB refresh" .-> Disc
