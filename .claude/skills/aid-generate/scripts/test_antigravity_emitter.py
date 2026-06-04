@@ -289,7 +289,7 @@ def test_antigravity_description_quoting() -> list[str]:
 def test_antigravity_output_suffix(canonical_root: Path) -> list[str]:
     """
     render_agents with format='antigravity-rule' emits .md files, one per canonical agent.
-    File count must equal the number of canonical agents (22).
+    File count must equal the number of canonical agents (9).
     """
     failures: list[str] = []
 
@@ -323,10 +323,11 @@ def test_antigravity_output_suffix(canonical_root: Path) -> list[str]:
                     f"test_antigravity_output_suffix: unexpected .toml file: {p}"
                 )
 
-        # Must emit 22 sub-agents
-        if len(paths) != 22:
+        # Must emit 9 sub-agents (aid-architect, aid-clerk, aid-developer, aid-interviewer,
+        # aid-operator, aid-orchestrator, aid-researcher, aid-reviewer, aid-tech-writer)
+        if len(paths) != 9:
             failures.append(
-                f"test_antigravity_output_suffix: expected 22 agents, got {len(paths)}"
+                f"test_antigravity_output_suffix: expected 9 agents, got {len(paths)}"
             )
 
     return failures

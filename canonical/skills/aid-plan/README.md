@@ -12,7 +12,7 @@ Each deliverable follows the same cycle:
 
 ```
 1. PROPOSE  → agent maps dependencies, proposes deliverable grouping
-2. DISCUSS  → developer negotiates (move, reorder, split, merge, defer)
+2. DISCUSS  → the user negotiates (move, reorder, split, merge, defer)
 3. WRITE    → save agreed deliverable to PLAN.md
 4. REVIEW   → grade against SPECs/KB — pass? next deliverable. fail? back to 1.
 ```

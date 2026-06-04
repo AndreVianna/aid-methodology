@@ -45,7 +45,7 @@ its runtime is absent, so a host missing one still runs the rest. CI provides bo
 
 ## What's NOT tested
 
-- The orchestration skills themselves (`/aid-discover`, `/aid-execute`, etc.) are prompt-driven and hard to test without an AI host; the `discovery-reviewer` sub-agent provides the closest thing to integration verification by adversarially grading KB output each cycle.
+- The orchestration skills themselves (`/aid-discover`, `/aid-execute`, etc.) are prompt-driven and hard to test without an AI host; the `aid-reviewer` sub-agent (dispatched by `/aid-discover REVIEW`) provides the closest thing to integration verification by adversarially grading KB output each cycle.
 - The renderer (`run_generator.py`) — its own deterministic verify check runs at end of every render and exits 1 on failure.
 - Sub-agent definitions — see `canonical/agents/*/AGENT.md`.
 - Cross-tool consistency (Cursor vs Claude Code vs Codex) — covered by the renderer's byte-identity assertion across the 3 profiles.

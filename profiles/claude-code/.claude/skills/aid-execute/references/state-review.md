@@ -15,13 +15,13 @@ A lightweight single-pass reviewer runs **before** the full reviewer to catch
 obvious `[CRITICAL]` and `[HIGH]` issues early. No grade is computed, no loop
 runs — this is a fast filter only.
 
-**Before dispatching, print:** `[Step 1.5] Dispatching reviewer (quick-check, Small tier) for quick-check → subagent_type=reviewer`.
+**Before dispatching, print:** `[Step 1.5] Dispatching aid-reviewer (quick-check, Small tier) for quick-check → subagent_type=aid-reviewer`.
 
 Dispatch metadata is logged via the Calibration Log appendix in STATE.md (per work-003 traceability rule).
 
 ### Quick-Check Dispatch
 
-Dispatch the `reviewer` agent with `subagent_type: reviewer` at **Small tier**
+Dispatch the `aid-reviewer` agent with `subagent_type: aid-reviewer` at **Small tier**
 (cheap, fast).
 
 **Dispatch package:** render `references/reviewer-brief.md` with:
@@ -47,8 +47,8 @@ dispatch.
 > security breach, fundamentally wrong); "major" = `[HIGH]` (blocks
 > functionality, security risk, data integrity concern).
 
-▶ reviewer (quick-check) starting (~1 min)
-✓ reviewer (quick-check) done (record actual time) — or ✗ quick-check failed: {reason}
+▶ aid-reviewer (quick-check) starting (~1 min)
+✓ aid-reviewer (quick-check) done (record actual time) — or ✗ quick-check failed: {reason}
 
 ### Quick-Check Triage (Severity Routing)
 

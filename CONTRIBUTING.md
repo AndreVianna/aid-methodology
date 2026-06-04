@@ -21,8 +21,9 @@ Understanding the structure is key to contributing in the right place:
 | `methodology/` | Humans | Markdown | Core methodology document |
 
 **Important:** To update a skill, agent, or template, edit the canonical source under
-`canonical/` and run `/aid-generate`. The three install trees (`profiles/claude-code/.claude/`,
-`profiles/codex/.codex/` + `profiles/codex/.agents/`, `profiles/cursor/.cursor/`) are **generated artifacts** —
+`canonical/` and run `/aid-generate`. The five install trees (`profiles/claude-code/.claude/`,
+`profiles/codex/.codex/` + `profiles/codex/.agents/`, `profiles/cursor/.cursor/`,
+`profiles/copilot-cli/.github/`, `profiles/antigravity/.agent/`) are **generated artifacts** —
 do not hand-edit them directly. Your changes will be overwritten on the next generator run.
 See `canonical/EMISSION-MANIFEST.md` for the deletion safety boundary and
 `.claude/skills/aid-generate/SKILL.md` for the full generation pipeline.
@@ -47,8 +48,8 @@ separately when methodology content changes.
 ### Agent Improvements
 - Better system prompts, tool constraints, or role definitions
 - New agent roles for specialized workflows
-- **Remember:** Edit `canonical/agents/{name}.md`, then run `/aid-generate`.
-  Also update the human `agents/{name}/README.md` separately.
+- **Remember:** Edit `canonical/agents/aid-{name}/AGENT.md`, then run `/aid-generate`.
+  Also update the human `agents/aid-{name}/README.md` separately.
 
 ### Improved Templates
 - Better KB document templates with more concrete guidance
@@ -108,7 +109,7 @@ separately when methodology content changes.
 - Agent files: YAML frontmatter with `name`, `description`, `tools`, `tier` (abstract)
 - Under 500 lines per skill (AgentSkills best practice)
 - Strip verbose explanations — keep: purpose, inputs, process steps, outputs, checklist
-- Generated install trees (`profiles/claude-code/.claude/`, `codex/`, `profiles/cursor/.cursor/`) are produced by `/aid-generate` — do not edit directly
+- Generated install trees (`profiles/claude-code/.claude/`, `profiles/codex/`, `profiles/cursor/.cursor/`, `profiles/copilot-cli/.github/`, `profiles/antigravity/.agent/`) are produced by `/aid-generate` — do not edit directly
 
 ### General
 - **Tone:** Professional and practical. Opinionated. Methodology from someone who ships.

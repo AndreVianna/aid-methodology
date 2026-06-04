@@ -205,7 +205,7 @@ When the user types a request like "review X for me" directly at the prompt (not
 
 1. Identifies the artifact under review (the X) and chooses a scope slug (e.g., `adhoc-myfile`).
 2. Creates `.aid/.temp/review-pending/adhoc-<slug>.md` if it doesn't exist.
-3. Dispatches a reviewer sub-agent (`reviewer` for general; `discovery-reviewer` for KB-style; etc.) with this schema as the output contract.
+3. Dispatches a reviewer sub-agent (`aid-reviewer`) with this schema as the output contract.
 4. After sub-agent return: runs `grade.sh` on the ledger; reports findings + grade to the user.
 5. Asks the user: "Apply fixes now (Status: Pending → Fixed flow), or leave the ledger for later?"
 6. If the user is done with the ad-hoc review: delete the ledger.
@@ -215,7 +215,7 @@ The `CLAUDE.md` / `AGENTS.md` short rule (always loaded) is the trigger for ad-h
 ## See also
 
 - `.claude/scripts/grade.sh` — the grader that parses this ledger
-- `.claude/agents/reviewer/AGENT.md` and `.claude/agents/discovery-reviewer/AGENT.md` — sub-agent output contracts (reference this schema)
+- `.claude/agents/aid-reviewer/AGENT.md` — sub-agent output contract (references this schema)
 - `.claude/templates/reviewer-dispatch.md` — universal reviewer dispatch brief (references this schema)
 - `CLAUDE.md` / `AGENTS.md` — global short rule (points at this schema)
 - Per-skill `references/state-review.md` and `state-done.md` — lifecycle hooks

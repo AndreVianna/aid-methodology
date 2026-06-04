@@ -86,18 +86,18 @@ settings_omit_test_landscape() {
   cat <<'EOF'
 discovery:
   doc_set:
-    - project-structure.md|discovery-scout|required
-    - external-sources.md|discovery-scout|required
-    - architecture.md|discovery-architect|required
-    - technology-stack.md|discovery-architect|required
-    - module-map.md|discovery-analyst|required
-    - coding-standards.md|discovery-analyst|required
-    - schemas.md|discovery-analyst|required
-    - pipeline-contracts.md|discovery-integrator|required
-    - integration-map.md|discovery-integrator|required
-    - domain-glossary.md|discovery-integrator|required
-    - tech-debt.md|discovery-quality|required
-    - infrastructure.md|discovery-quality|required
+    - project-structure.md|aid-researcher-scout|required
+    - external-sources.md|aid-researcher-scout|required
+    - architecture.md|aid-researcher-architecture|required
+    - technology-stack.md|aid-researcher-architecture|required
+    - module-map.md|aid-researcher-analyst|required
+    - coding-standards.md|aid-researcher-analyst|required
+    - schemas.md|aid-researcher-analyst|required
+    - pipeline-contracts.md|aid-researcher-integrator|required
+    - integration-map.md|aid-researcher-integrator|required
+    - domain-glossary.md|aid-researcher-integrator|required
+    - tech-debt.md|aid-researcher-quality|required
+    - infrastructure.md|aid-researcher-quality|required
     - feature-inventory.md|orchestrator|required
     - README.md|orchestrator|required
 EOF
@@ -109,24 +109,24 @@ settings_add_repo_presentation() {
   cat <<'EOF'
 discovery:
   doc_set:
-    - project-structure.md|discovery-scout|required
-    - external-sources.md|discovery-scout|required
-    - architecture.md|discovery-architect|required
-    - technology-stack.md|discovery-architect|required
-    - repo-presentation.md|discovery-architect|required
-    - module-map.md|discovery-analyst|required
-    - coding-standards.md|discovery-analyst|required
-    - schemas.md|discovery-analyst|required
-    - pipeline-contracts.md|discovery-integrator|required
-    - integration-map.md|discovery-integrator|required
-    - domain-glossary.md|discovery-integrator|required
-    - test-landscape.md|discovery-quality|required
-    - tech-debt.md|discovery-quality|required
-    - infrastructure.md|discovery-quality|required
+    - project-structure.md|aid-researcher-scout|required
+    - external-sources.md|aid-researcher-scout|required
+    - architecture.md|aid-researcher-architecture|required
+    - technology-stack.md|aid-researcher-architecture|required
+    - repo-presentation.md|aid-researcher-architecture|required
+    - module-map.md|aid-researcher-analyst|required
+    - coding-standards.md|aid-researcher-analyst|required
+    - schemas.md|aid-researcher-analyst|required
+    - pipeline-contracts.md|aid-researcher-integrator|required
+    - integration-map.md|aid-researcher-integrator|required
+    - domain-glossary.md|aid-researcher-integrator|required
+    - test-landscape.md|aid-researcher-quality|required
+    - tech-debt.md|aid-researcher-quality|required
+    - infrastructure.md|aid-researcher-quality|required
     - feature-inventory.md|orchestrator|required
     - README.md|orchestrator|required
 EOF
-  # Note: repo-presentation.md added under discovery-architect
+  # Note: repo-presentation.md added under aid-researcher-architecture
 }
 
 # The §1.4 carve-out encoding from SPEC.md
@@ -134,43 +134,43 @@ settings_carveout() {
   cat <<'EOF'
 discovery:
   doc_set:
-    - architecture.md|discovery-architect|required
-    - technology-stack.md|discovery-architect|required
-    - module-map.md|discovery-analyst|required
-    - coding-standards.md|discovery-analyst|required
-    - integration-map.md|discovery-integrator|required
-    - domain-glossary.md|discovery-integrator|required
-    - test-landscape.md|discovery-quality|required
-    - tech-debt.md|discovery-quality|required
-    - infrastructure.md|discovery-quality|required
-    - project-structure.md|discovery-scout|required
-    - external-sources.md|discovery-scout|required
+    - architecture.md|aid-researcher-architecture|required
+    - technology-stack.md|aid-researcher-architecture|required
+    - module-map.md|aid-researcher-analyst|required
+    - coding-standards.md|aid-researcher-analyst|required
+    - integration-map.md|aid-researcher-integrator|required
+    - domain-glossary.md|aid-researcher-integrator|required
+    - test-landscape.md|aid-researcher-quality|required
+    - tech-debt.md|aid-researcher-quality|required
+    - infrastructure.md|aid-researcher-quality|required
+    - project-structure.md|aid-researcher-scout|required
+    - external-sources.md|aid-researcher-scout|required
     - feature-inventory.md|orchestrator|required
-    - schemas.md|discovery-analyst|required
-    - pipeline-contracts.md|discovery-integrator|required
-    - repo-presentation.md|discovery-architect|required
+    - schemas.md|aid-researcher-analyst|required
+    - pipeline-contracts.md|aid-researcher-integrator|required
+    - repo-presentation.md|aid-researcher-architecture|required
     # (drop: security-model.md is simply absent — no entry)
 EOF
 }
 
 # Non-software fixture: a docs-only project
 # Omits: test-landscape.md, schemas.md (software-specific)
-# Adds: research-notes.md (custom, owned by discovery-analyst)
+# Adds: research-notes.md (custom, owned by aid-researcher-analyst)
 settings_non_software() {
   cat <<'EOF'
 discovery:
   doc_set:
-    - project-structure.md|discovery-scout|required
-    - external-sources.md|discovery-scout|required
-    - architecture.md|discovery-architect|required
-    - module-map.md|discovery-analyst|required
-    - coding-standards.md|discovery-analyst|required
-    - research-notes.md|discovery-analyst|required
-    - pipeline-contracts.md|discovery-integrator|required
-    - integration-map.md|discovery-integrator|required
-    - domain-glossary.md|discovery-integrator|required
-    - tech-debt.md|discovery-quality|required
-    - infrastructure.md|discovery-quality|required
+    - project-structure.md|aid-researcher-scout|required
+    - external-sources.md|aid-researcher-scout|required
+    - architecture.md|aid-researcher-architecture|required
+    - module-map.md|aid-researcher-analyst|required
+    - coding-standards.md|aid-researcher-analyst|required
+    - research-notes.md|aid-researcher-analyst|required
+    - pipeline-contracts.md|aid-researcher-integrator|required
+    - integration-map.md|aid-researcher-integrator|required
+    - domain-glossary.md|aid-researcher-integrator|required
+    - tech-debt.md|aid-researcher-quality|required
+    - infrastructure.md|aid-researcher-quality|required
     - feature-inventory.md|orchestrator|required
     - README.md|orchestrator|required
 EOF
@@ -204,7 +204,7 @@ raw=$(read_raw "$fixture")
 tsv=$(REPO="$REPO" resolve_doc_set "$raw" 2>/dev/null)
 
 # T01: quality dispatch list must NOT contain test-landscape.md
-quality_files=$(echo "$tsv" | awk -F'\t' -v a="discovery-quality" '$2==a{print $1}')
+quality_files=$(echo "$tsv" | awk -F'\t' -v a="aid-researcher-quality" '$2==a{print $1}')
 assert_output_not_contains "$quality_files" "test-landscape.md" \
   "T01 omitted test-landscape.md absent from quality dispatch list"
 
@@ -229,7 +229,7 @@ raw=$(read_raw "$fixture")
 tsv=$(REPO="$REPO" resolve_doc_set "$raw" 2>/dev/null)
 
 # T03: architect list contains repo-presentation.md
-arch_files=$(echo "$tsv" | awk -F'\t' -v a="discovery-architect" '$2==a{print $1}')
+arch_files=$(echo "$tsv" | awk -F'\t' -v a="aid-researcher-architecture" '$2==a{print $1}')
 assert_output_contains "$arch_files" "repo-presentation.md" \
   "T03 added repo-presentation.md appears in architect dispatch list"
 
@@ -238,7 +238,7 @@ assert_output_contains "$arch_files" "architecture.md"    "T03 architecture.md s
 assert_output_contains "$arch_files" "technology-stack.md" "T03 technology-stack.md still in architect list"
 
 # T04: architect target count is higher than default
-default_arch=$(echo "$default_tsv" | awk -F'\t' -v a="discovery-architect" '$2==a{print $1}' | grep -c .)
+default_arch=$(echo "$default_tsv" | awk -F'\t' -v a="aid-researcher-architecture" '$2==a{print $1}' | grep -c .)
 added_arch=$(echo "$arch_files" | grep -c .)
 if [[ "$added_arch" -gt "$default_arch" ]]; then
   pass "T04 architect count rose after addition ($default_arch → $added_arch)"

@@ -89,12 +89,12 @@ Display the proposed doc-set as a **diff against the default seed**:
 ```
 Proposed doc-set (diff vs. default seed)
 ─────────────────────────────────────────
-  (no change)  architecture.md           discovery-architect    required
-  (no change)  technology-stack.md       discovery-architect    required
-  (no change)  module-map.md             discovery-analyst      required
+  (no change)  architecture.md           aid-researcher-architecture    required
+  (no change)  technology-stack.md       aid-researcher-architecture    required
+  (no change)  module-map.md             aid-researcher-analyst         required
   ...
-- (drop)       test-landscape.md         discovery-quality      required
-+ (add)        research-notes.md         discovery-analyst      required
+- (drop)       test-landscape.md         aid-researcher-quality         required
++ (add)        research-notes.md         aid-researcher-analyst         required
 ```
 
 (Omit unchanged lines if the list is long; a summary line "N unchanged" is acceptable.)
@@ -124,8 +124,8 @@ When the user re-runs `/aid-discover` and the session resumes after the pause:
    ```yaml
    discovery:
      doc_set:
-       - architecture.md|discovery-architect|required
-       - technology-stack.md|discovery-architect|required
+       - architecture.md|aid-researcher-architecture|required
+       - technology-stack.md|aid-researcher-architecture|required
        # ... one entry per line: filename|owner|presence[:when]
        # (inline comments are stripped by read-setting.sh:197 — safe)
    ```
@@ -143,7 +143,7 @@ When the user re-runs `/aid-discover` and the session resumes after the pause:
 
 4. **CHAIN → Step 1** with the confirmed set driving the data-driven dispatch (Steps 2-5 §2.5).
 
-## Step 1: Pre-scan (discovery-scout) — ALWAYS runs first, ALONE
+## Step 1: Pre-scan (aid-researcher, pre-scan doc-set) — ALWAYS runs first, ALONE
 
 Produces `project-structure.md` and `external-sources.md` — foundation for all other agents.
 **Skip** if both already exist. Otherwise:
@@ -153,9 +153,9 @@ Print: `[1/5] Pre-scan: mapping project structure and external sources...`
 Read `references/agent-prompts.md` section `## Scout` for the full prompt. Substitute the
 external docs placeholder with actual paths (or the "no docs" variant).
 
-▶ discovery-scout starting (~2–4 min)
+▶ aid-researcher (pre-scan) starting (~2–4 min)
 Wait for completion. Verify both files exist. Re-dispatch if missing.
-✓ discovery-scout done (record actual time) — or ✗ discovery-scout failed: {reason}
+✓ aid-researcher (pre-scan) done (record actual time) — or ✗ aid-researcher (pre-scan) failed: {reason}
 
 ### Steps 2-5: Dispatch 4 Subagents in Parallel (data-driven from declared set)
 
@@ -166,8 +166,15 @@ Wait for completion. Verify both files exist. Re-dispatch if missing.
 ```bash
 # owns-<agent>: filenames assigned to this agent in the declared set
 # ∩ missing-on-disk: only dispatch for docs not already on disk with real content
-for agent in discovery-architect discovery-analyst discovery-integrator discovery-quality; do
-  owns="$(resolve_doc_set "$raw" | awk -F'\t' -v a="$agent" '$2==a{print $1}')"
+for agent in aid-researcher-architecture aid-researcher-analyst aid-researcher-integrator aid-researcher-quality; do
+  # Map the parameterized slot name to its doc-set owner key
+  case "$agent" in
+    aid-researcher-architecture) owner_key="aid-researcher-architecture" ;;
+    aid-researcher-analyst)      owner_key="aid-researcher-analyst"      ;;
+    aid-researcher-integrator)   owner_key="aid-researcher-integrator"   ;;
+    aid-researcher-quality)      owner_key="aid-researcher-quality"      ;;
+  esac
+  owns="$(resolve_doc_set "$raw" | awk -F'\t' -v a="$owner_key" '$2==a{print $1}')"
   # Intersect with missing-on-disk (files absent or containing only "❌ Pending")
   targets=""
   while IFS= read -r fn; do
@@ -185,7 +192,7 @@ done
 
 - An agent whose computed list is **empty is NOT dispatched** (no hang on an intentionally-omitted doc — FR-P1-6).
 - An **added** doc whose `owner` is some agent is included in that agent's list (dispatch on addition — FR-P1-6).
-- A custom doc owned by the architect fallback rides on the `discovery-architect` dispatch.
+- A custom doc owned by the fallback rides on the `aid-researcher` (architecture doc-set) dispatch.
 
 **Custom-doc prompt extension (§2.6):** After computing each agent's target list, identify any
 **custom docs** — filenames that are in the target list but do NOT appear in the default seed
@@ -200,7 +207,7 @@ references/document-expectations.md (keyed by ### <filename>).
 
 Append one such line per custom doc in the agent's target list. The base prompt text is
 unchanged; this is a runtime-only extension. Owner resolution: use the `owner-of <filename>`
-accessor; unknown owners fall back to `discovery-architect` (FR-P1-5 — no new agent).
+accessor; unknown owners fall back to the `aid-researcher` (architecture doc-set) slot (FR-P1-5 — no new agent).
 See `references/agent-prompts.md` § "Custom-Doc Runtime Extension" for the full protocol.
 
 **Every agent receives the foundation reference block** (appended to prompt):
@@ -216,30 +223,30 @@ the prompt section from `references/agent-prompts.md`:
 
 | Step | Agent | Default-seed target files (illustrative — actual targets from declared set) | Prompt Section |
 |------|-------|----------------------------------------------------------------------------|----------------|
-| [2/5] | discovery-architect | architecture.md, technology-stack.md | `references/agent-prompts.md` → `## Architect` |
-| [3/5] | discovery-analyst | module-map.md, coding-standards.md, schemas.md | `references/agent-prompts.md` → `## Analyst` |
-| [4/5] | discovery-integrator | pipeline-contracts.md, integration-map.md, domain-glossary.md | `references/agent-prompts.md` → `## Integrator` |
-| [5/5] | discovery-quality | test-landscape.md, tech-debt.md, infrastructure.md | `references/agent-prompts.md` → `## Quality` |
+| [2/5] | `aid-researcher` (architecture doc-set) | architecture.md, technology-stack.md | `references/agent-prompts.md` → `## Architect` |
+| [3/5] | `aid-researcher` (analyst doc-set) | module-map.md, coding-standards.md, schemas.md | `references/agent-prompts.md` → `## Analyst` |
+| [4/5] | `aid-researcher` (integrator doc-set) | pipeline-contracts.md, integration-map.md, domain-glossary.md | `references/agent-prompts.md` → `## Integrator` |
+| [5/5] | `aid-researcher` (quality doc-set) | test-landscape.md, tech-debt.md, infrastructure.md | `references/agent-prompts.md` → `## Quality` |
 
 The actual target files for each agent are derived at runtime from the declared set, not hard-coded above.
 
-**Sub-agents may delegate mechanical work** to the Small-tier utility agents (`simple-extractor`, `simple-glob`, `simple-formatter`) for high-volume extraction or templating. The synthesis stays at the sub-agent's tier; only the grunt work delegates. See `agents/simple-*/README.md` for the caller contract.
+**Sub-agents may delegate mechanical work** to `aid-clerk` (with `operation: extract`, `operation: glob`, or `operation: format` as appropriate) for high-volume extraction or templating. The synthesis stays at the sub-agent's tier; only the grunt work delegates.
 
 Before dispatching, print the AC4 sub-unit snapshot header for the GENERATE state (listing only agents with a non-empty target list):
 ```
 GENERATE  Wave 1 of 1 · 0/4 done
-  (queued) discovery-architect  ~3–5 min
-  (queued) discovery-analyst    ~3–5 min
-  (queued) discovery-integrator ~3–5 min
-  (queued) discovery-quality    ~3–5 min
+  (queued) aid-researcher (architecture doc-set)  ~3–5 min
+  (queued) aid-researcher (analyst doc-set)       ~3–5 min
+  (queued) aid-researcher (integrator doc-set)    ~3–5 min
+  (queued) aid-researcher (quality doc-set)       ~3–5 min
 ```
 
 Print the AC2 bracket-pair before each parallel dispatch:
 ```
-▶ discovery-architect starting (~3–5 min)
-▶ discovery-analyst starting (~3–5 min)
-▶ discovery-integrator starting (~3–5 min)
-▶ discovery-quality starting (~3–5 min)
+▶ aid-researcher (architecture doc-set) starting (~3–5 min)
+▶ aid-researcher (analyst doc-set) starting (~3–5 min)
+▶ aid-researcher (integrator doc-set) starting (~3–5 min)
+▶ aid-researcher (quality doc-set) starting (~3–5 min)
 ```
 
 ### Wait for ALL Agents
@@ -248,12 +255,12 @@ Print the AC2 bracket-pair before each parallel dispatch:
 
 On each agent completion, re-render the AC4 snapshot (coalesce multiple completions within the same second into one render):
 ```
-✓ discovery-architect done in {actual}
+✓ aid-researcher (architecture doc-set) done in {actual}
 GENERATE  Wave 1 of 1 · 1/4 done
-  ✓ discovery-architect  {actual}
-  ● discovery-analyst    {elapsed} / ~3–5 min
-  (queued) discovery-integrator ~3–5 min
-  (queued) discovery-quality    ~3–5 min
+  ✓ aid-researcher (architecture doc-set)  {actual}
+  ● aid-researcher (analyst doc-set)       {elapsed} / ~3–5 min
+  (queued) aid-researcher (integrator doc-set) ~3–5 min
+  (queued) aid-researcher (quality doc-set)    ~3–5 min
 ```
 
 Print each completion with the AC2 bracket close: `✓ {agent} done in {actual time}` (or `✗ {agent} failed: {reason}` on error).
@@ -261,10 +268,10 @@ Print each completion with the AC2 bracket close: `✓ {agent} done in {actual t
 When ALL dispatched agents complete, print the final snapshot:
 ```
 GENERATE  Wave 1 of 1 · 4/4 done
-  ✓ discovery-architect  {actual}
-  ✓ discovery-analyst    {actual}
-  ✓ discovery-integrator {actual}
-  ✓ discovery-quality    {actual}
+  ✓ aid-researcher (architecture doc-set)  {actual}
+  ✓ aid-researcher (analyst doc-set)       {actual}
+  ✓ aid-researcher (integrator doc-set)    {actual}
+  ✓ aid-researcher (quality doc-set)       {actual}
 ```
 
 **Only proceed when ALL dispatched agents have reported completion.**
@@ -287,7 +294,7 @@ Confirm `count == size(list-filenames)` (not a literal) and cross-check names ag
 **If any missing:** Re-dispatch ONLY the responsible agent per the `owns-<agent>` accessor and
 the **Targeted Discovery** section of `SKILL.md`. Wait, verify again. Repeat until all declared files exist.
 
-Semantic verification of the docs (frontmatter compliance, contract claims, cross-doc consistency, spot-checks against source) happens in the **REVIEW** state, dispatched as the `discovery-reviewer` sub-agent — not as a separate shell script.
+Semantic verification of the docs (frontmatter compliance, contract claims, cross-doc consistency, spot-checks against source) happens in the **REVIEW** state, dispatched as the `aid-reviewer` sub-agent — not as a separate shell script.
 
 ### Step 6: Generate README.md and INDEX.md
 

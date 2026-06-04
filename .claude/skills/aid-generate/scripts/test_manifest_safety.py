@@ -95,9 +95,9 @@ def test_user_file_untouched() -> list[str]:
         install_root = Path(tmpdir)
 
         # Create the generator-owned file (in both manifests)
-        gen_file = install_root / ".claude" / "agents" / "architect.md"
+        gen_file = install_root / ".claude" / "agents" / "aid-architect.md"
         gen_file.parent.mkdir(parents=True, exist_ok=True)
-        gen_bytes = b"# architect agent\n"
+        gen_bytes = b"# aid-architect agent\n"
         gen_file.write_bytes(gen_bytes)
 
         # Create the user-owned file (NOT in any manifest)
@@ -108,16 +108,16 @@ def test_user_file_untouched() -> list[str]:
         prev = EmissionManifest(profile_name="claude-code")
         prev.add(
             profile="claude-code",
-            src="canonical/agents/architect/AGENT.md",
-            dst=".claude/agents/architect.md",
+            src="canonical/agents/aid-architect/AGENT.md",
+            dst=".claude/agents/aid-architect.md",
             content=gen_bytes,
         )
 
         curr = EmissionManifest(profile_name="claude-code")
         curr.add(
             profile="claude-code",
-            src="canonical/agents/architect/AGENT.md",
-            dst=".claude/agents/architect.md",
+            src="canonical/agents/aid-architect/AGENT.md",
+            dst=".claude/agents/aid-architect.md",
             content=gen_bytes,
         )
 
@@ -146,10 +146,10 @@ def test_canonical_removal_cascades() -> list[str]:
     Safety boundary test 2: canonical source removed → install-tree file deleted.
 
     Scenario:
-    - Prior manifest records two generator-owned files (architect.md and developer.md).
-    - Current run only emits architect.md (developer.md was removed from canonical/).
-    - After the deletion pass, developer.md in the install tree is deleted.
-    - architect.md is untouched.
+    - Prior manifest records two generator-owned files (aid-architect.md and aid-developer.md).
+    - Current run only emits aid-architect.md (aid-developer.md was removed from canonical/).
+    - After the deletion pass, aid-developer.md in the install tree is deleted.
+    - aid-architect.md is untouched.
     """
     failures: list[str] = []
 
@@ -157,11 +157,11 @@ def test_canonical_removal_cascades() -> list[str]:
         install_root = Path(tmpdir)
 
         # Create both generator-owned files in the install tree
-        arch_bytes = b"# architect agent\n"
-        dev_bytes = b"# developer agent\n"
+        arch_bytes = b"# aid-architect agent\n"
+        dev_bytes = b"# aid-developer agent\n"
 
-        arch_file = install_root / ".claude" / "agents" / "architect.md"
-        dev_file = install_root / ".claude" / "agents" / "developer.md"
+        arch_file = install_root / ".claude" / "agents" / "aid-architect.md"
+        dev_file = install_root / ".claude" / "agents" / "aid-developer.md"
         arch_file.parent.mkdir(parents=True, exist_ok=True)
         arch_file.write_bytes(arch_bytes)
         dev_file.write_bytes(dev_bytes)
@@ -170,23 +170,23 @@ def test_canonical_removal_cascades() -> list[str]:
         prev = EmissionManifest(profile_name="claude-code")
         prev.add(
             profile="claude-code",
-            src="canonical/agents/architect/AGENT.md",
-            dst=".claude/agents/architect.md",
+            src="canonical/agents/aid-architect/AGENT.md",
+            dst=".claude/agents/aid-architect.md",
             content=arch_bytes,
         )
         prev.add(
             profile="claude-code",
-            src="canonical/agents/developer/AGENT.md",
-            dst=".claude/agents/developer.md",
+            src="canonical/agents/aid-developer/AGENT.md",
+            dst=".claude/agents/aid-developer.md",
             content=dev_bytes,
         )
 
-        # Current manifest: only architect.md (developer.md removed from canonical/)
+        # Current manifest: only aid-architect.md (aid-developer.md removed from canonical/)
         curr = EmissionManifest(profile_name="claude-code")
         curr.add(
             profile="claude-code",
-            src="canonical/agents/architect/AGENT.md",
-            dst=".claude/agents/architect.md",
+            src="canonical/agents/aid-architect/AGENT.md",
+            dst=".claude/agents/aid-architect.md",
             content=arch_bytes,
         )
 
@@ -196,13 +196,13 @@ def test_canonical_removal_cascades() -> list[str]:
             failures.append(
                 "Safety test 2 FAILED: install-tree file for removed canonical source still exists"
             )
-        if ".claude/agents/developer.md" not in deleted:
+        if ".claude/agents/aid-developer.md" not in deleted:
             failures.append(
-                f"Safety test 2 FAILED: deletion pass did not delete developer.md; deleted: {deleted}"
+                f"Safety test 2 FAILED: deletion pass did not delete aid-developer.md; deleted: {deleted}"
             )
         if not arch_file.exists():
             failures.append(
-                "Safety test 2 FAILED: architect.md was deleted but should have been kept"
+                "Safety test 2 FAILED: aid-architect.md was deleted but should have been kept"
             )
 
     return failures

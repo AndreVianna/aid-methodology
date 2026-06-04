@@ -21,7 +21,7 @@ changelog:
   - 2026-06-03: work-001 feature-001 — lite work-type enum collapsed 4→3 (single-doc eliminated); Work Type enum updated to {bug-fix, new-feature, refactor}; applies-to enum updated to {bug-fix, new-feature, refactor, *}.
   - 2026-06-01: work-001-add-providers (PRs #42/#43/#44) — render profiles grew 3→5 (added copilot-cli + antigravity). Updated §8 emission-manifest profile enum + manifest-location table (5 profiles); §9 profile-TOML schema ([agent].format now 4 values; [layout] output_root covers .github/.agent roots; [extras] gained rules_frontmatter + per-rule output_filename); RuleEntry/ExtrasConfig dataclass additions documented.
   - 2026-05-31: delivery-002 — added §2a discovery.doc_set sub-section; updated settings contract to reflect the optional discovery section
-  - 2026-05-27: Initial generation by discovery-analyst (cycle-1)
+  - 2026-05-27: Initial generation by aid-researcher (analyst doc-set) (cycle-1)
 ---
 
 # Schemas
@@ -86,8 +86,8 @@ synthesized from `canonical/templates/knowledge-base/*.md` by `synth_default_see
 ```yaml
 discovery:
   doc_set:
-    - architecture.md|discovery-architect|required
-    - infrastructure.md|discovery-quality|conditional:has CI/CD or deployment config
+    - architecture.md|aid-researcher|required
+    - infrastructure.md|aid-researcher|conditional:has CI/CD or deployment config
     # each item: filename | owner | presence[:when]
 ```
 
@@ -96,7 +96,7 @@ discovery:
 | Field | Constraints | Purpose |
 |-------|-------------|---------|
 | `filename` | basename under `.aid/knowledge/`; no path separator | Joins to doc frontmatter `kb-category:` and to `document-expectations.md` `### <filename>` |
-| `owner` | one of `discovery-scout`, `discovery-architect`, `discovery-analyst`, `discovery-integrator`, `discovery-quality`, `orchestrator` | Determines which agent produces this doc |
+| `owner` | `aid-researcher` (all KB analysis docs, replacing the former 5 discovery-* agents) or `aid-orchestrator` (orchestration meta-docs) | Determines which agent produces this doc |
 | `presence` | `required` or `conditional`; MAY carry `:<when>` suffix | `<when>` is a human display hint — not machine-evaluated; the user-confirm step is the gate |
 
 **Delimiter constraint:** No field value may contain a comma. `read-setting.sh`'s
@@ -204,7 +204,7 @@ delivery gate per `canonical/scripts/grade.sh` header comment on Severity/Status
 | `source` | enum | YES | `hand-authored` / `generated` (per frontmatter-schema.md `### \`source:\``) |
 | `generator` | string | YES iff `source: generated` | Build-script name relative to `canonical/scripts/` (per frontmatter-schema.md `### \`generator:\``) |
 | `intent` | folded string (YAML `|`) | YES | 1-4 sentences describing what the doc is FOR (per frontmatter-schema.md `### \`intent:\``) |
-| `contracts` | list of strings | NO (defaults to `[]`) | Each entry is a structural cardinality assertion validated by the `discovery-reviewer` in REVIEW state (per `canonical/agents/discovery-reviewer/AGENT.md`; spec at frontmatter-schema.md `### \`contracts:\``) |
+| `contracts` | list of strings | NO (defaults to `[]`) | Each entry is a structural cardinality assertion validated by `aid-reviewer` in REVIEW state (per `canonical/agents/aid-reviewer/AGENT.md`; spec at frontmatter-schema.md `### \`contracts:\``) |
 | `changelog` | list of dated entries | NO (defaults to `[]`) | Free-form ISO-dated notes; exempt from review (per frontmatter-schema.md `### \`changelog:\``) |
 
 **Parsing rules** (per frontmatter-schema.md `## Parsing rules (for tools)`):
@@ -244,19 +244,19 @@ delivery gate per `canonical/scripts/grade.sh` header comment on Severity/Status
 
 ## 7. Agent Frontmatter
 
-**Source of truth:** `canonical/agents/*/AGENT.md` (22 agents) + `profiles/claude-code.toml` `[agent.frontmatter]`.
+**Source of truth:** `canonical/agents/aid-*/AGENT.md` (9 agents) + `profiles/claude-code.toml` `[agent.frontmatter]`.
 
 **Schema (YAML, per `profiles/claude-code.toml` `[agent.frontmatter]`):**
 
 | Field | Type | Required? | Notes |
 |-------|------|-----------|-------|
 | `name` | string | YES | Kebab-case, matches the directory name; used as `subagent_type` in the host's Task tool call |
-| `description` | string OR folded YAML `>` | YES | One paragraph; for sub-agent-only utilities, must begin with `INTERNAL UTILITY (sub-agent only — do NOT invoke from a skill)` per `canonical/agents/simple-extractor/AGENT.md` `description:` line |
+| `description` | string OR folded YAML `>` | YES | One paragraph; for sub-agent-only utilities, must begin with `INTERNAL UTILITY (sub-agent only — do NOT invoke from a skill)` per `canonical/agents/aid-clerk/AGENT.md` `description:` line |
 | `tier` | enum | YES (canonical) | `large` / `medium` / `small` — maps to `model:` via the profile's `[model_tiers]` table |
 | `tools` | comma-separated string | YES | Subset of `Read, Glob, Grep, Bash, Write, Edit` |
 | `model` | string | YES (rendered output, NOT canonical input) | Derived by the renderer from `tier:` via `[model_tiers]` (per `.claude/skills/aid-generate/scripts/render_agents.py` `_resolve_model`) |
-| `permissionMode` | enum | NO | `bypassPermissions` — set on all 5 `discovery-*` sub-agents (per `canonical/agents/discovery-analyst/AGENT.md` `permissionMode:` line) |
-| `background` | bool | NO | `true` — set on all 5 `discovery-*` sub-agents (per `canonical/agents/discovery-analyst/AGENT.md` `background:` line) |
+| `permissionMode` | enum | NO | `bypassPermissions` — set on `aid-researcher` when dispatched for parallel KB analysis (per the former discovery-* sub-agent pattern; confirm in `canonical/agents/aid-researcher/AGENT.md`) |
+| `background` | bool | NO | `true` — set on `aid-researcher` when dispatched for parallel KB analysis |
 
 **Tier → model mapping** (per `profiles/claude-code.toml` `[model_tiers]`):
 - `large` → `opus`
@@ -456,7 +456,7 @@ The dataclasses mirror this schema 1:1 in `.claude/skills/aid-generate/scripts/a
 
 **Source of truth:** `canonical/templates/generated-files.txt`.
 
-**Purpose:** registry of every file in `.aid/generated/` with its build command. Consumed by `/aid-discover` FIX state (refresh-all at end of cycle per P3) and by the `discovery-reviewer` in REVIEW state (freshness check).
+**Purpose:** registry of every file in `.aid/generated/` with its build command. Consumed by `/aid-discover` FIX state (refresh-all at end of cycle per P3) and by `aid-reviewer` in REVIEW state (freshness check).
 
 **Format** (per `generated-files.txt` header comment `# One line per generated file in .aid/generated/`):
 
@@ -518,7 +518,7 @@ erDiagram
 | **Migrations** | N/A — no DB. Document schema changes are tracked via the per-doc `changelog:` frontmatter field (per `frontmatter-schema.md` `### \`changelog:\``) + KB doc cycle history in `STATE.md ## Review History`. |
 | **Indexes** | N/A — no DB. The closest analog is `.aid/knowledge/INDEX.md` — an agent-facing RAG navigation index built by `canonical/scripts/kb/build-kb-index.sh` from each KB doc's `intent:` frontmatter. |
 | **Soft Deletes** | N/A — no DB. The emission-manifest's `removed_dst` set serves a related purpose: only paths previously emitted by the generator are eligible for deletion (per `EMISSION-MANIFEST.md` `## Safety-Boundary Semantics`); user-created files are NEVER touched. |
-| **Validation** | Three mechanisms: (1) `discovery-reviewer` sub-agent (in `/aid-discover REVIEW`) validates KB frontmatter + cited durable anchors + doc presence + generated-files freshness; (2) `.claude/skills/aid-generate/scripts/aid_profile.py` `validate()` validates profile TOML (incl. `[agent].format ∈ _KNOWN_AGENT_FORMATS`); (3) `parse-recipe.sh --validate` validates recipe front-matter + body. |
+| **Validation** | Three mechanisms: (1) `aid-reviewer` (in `/aid-discover REVIEW`) validates KB frontmatter + cited durable anchors + doc presence + generated-files freshness; (2) `.claude/skills/aid-generate/scripts/aid_profile.py` `validate()` validates profile TOML (incl. `[agent].format ∈ _KNOWN_AGENT_FORMATS`); (3) `parse-recipe.sh --validate` validates recipe front-matter + body. |
 
 ---
 

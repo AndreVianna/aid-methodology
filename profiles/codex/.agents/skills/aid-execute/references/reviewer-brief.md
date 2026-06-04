@@ -1,7 +1,7 @@
 # /aid-execute — Reviewer Dispatch Brief Template
 
 Loaded by `/aid-execute` REVIEW + DELIVERY-GATE states. Renders the brief passed
-to the `reviewer` sub-agent. Follows `.agents/templates/reviewer-dispatch.md`.
+to the `aid-reviewer` sub-agent. Follows `.agents/templates/reviewer-dispatch.md`.
 
 Two dispatch points share this template (`{{MODE}}` distinguishes them):
 

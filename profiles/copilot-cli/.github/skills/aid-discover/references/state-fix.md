@@ -6,7 +6,7 @@ FIX applies Q&A answers and reviewer feedback to bring KB documents up to minimu
 
 Read `.aid/.temp/review-pending/discovery.md`. Filter rows where Status ∈ {`Pending`, `Recurred`} — these are the findings to address. If the file does not exist, there is nothing to fix (advance to REVIEW).
 
-**Do NOT modify the ledger during FIX.** The fixer addresses issues; the reviewer confirms resolution and updates Status. This separation is the reviewer-ledger contract.
+**Do NOT modify the ledger during FIX.** The fixer addresses issues; the aid-reviewer agent confirms resolution and updates Status. This separation is the reviewer-ledger contract.
 
 ### Step 0b: Partition Findings by KB File (Parallel-FIX prep)
 
@@ -24,7 +24,7 @@ Print: `[Fix] {N} documents with Pending/Recurred findings. Dispatching {N} sub-
 
 **Single message, multiple `Agent` tool calls** — all agents run concurrently. For each file with findings:
 
-- **Subagent type**: `tech-writer` for narrative KB docs; `researcher` if depth investigation is needed.
+- **Subagent type**: `aid-tech-writer` for narrative KB docs; `aid-researcher` if depth investigation is needed.
 - **Prompt contents**:
   1. The file path being edited.
   2. The file's COMPLETE finding list (severity-tagged, source-tagged).
@@ -42,8 +42,8 @@ Print: `[Fix] {N} documents with Pending/Recurred findings. Dispatching {N} sub-
 Print before dispatch:
 ```
 [Fix] Dispatching {N} parallel FIX agents:
-  ▶ tech-writer (file: architecture.md, ~{ETA}, heartbeat: ...) starting
-  ▶ tech-writer (file: module-map.md, ~{ETA}, heartbeat: ...) starting
+  ▶ aid-tech-writer (file: architecture.md, ~{ETA}, heartbeat: ...) starting
+  ▶ aid-tech-writer (file: module-map.md, ~{ETA}, heartbeat: ...) starting
   ...
 ```
 
@@ -51,12 +51,12 @@ Print before dispatch:
 
 ### Step 3: Wait for ALL Parallel Agents
 
-Do NOT proceed to Step 4 until every dispatched agent has reported completion. For each completion, surface `✓ tech-writer (file: X) done in {actual}` and append a calibration row.
+Do NOT proceed to Step 4 until every dispatched agent has reported completion. For each completion, surface `✓ aid-tech-writer (file: X) done in {actual}` and append a calibration row.
 
 ### Step 4: Aggregate, Verify, Commit (Sequential — single writer)
 
 After ALL parallel agents return:
-1. **Do NOT modify the ledger** — that is the next reviewer's job. Issues stay Pending until the reviewer verifies and updates Status.
+1. **Do NOT modify the ledger** — that is the next aid-reviewer agent's job. Issues stay Pending until the aid-reviewer agent verifies and updates Status.
 2. Update `**Applied to:**` for each incorporated Q&A answer in `STATE.md ## Q&A`.
 3. **Regenerate all registered generated files (per principles.md P3 — auto-gen-last).** Read `.github/templates/generated-files.txt`. For each non-comment line, parse `output-path|build-command` and execute the build command. This ensures `metrics.md`, `INDEX.md`, `project-index.md` (and any future registered builders) reflect the FINAL post-fix state of the KB:
    ```bash
@@ -101,7 +101,7 @@ Print: `[Fix] Verifying 4 meta-documents...`
 
 ### Step 6: Re-Review (MANDATORY — Do NOT Self-Evaluate)
 
-**Dispatch discovery-reviewer again.** The fixer CANNOT evaluate its own work.
+**Dispatch aid-reviewer again.** The fixer CANNOT evaluate its own work.
 
 Print: `[Fix 2/3] Re-reviewing after fixes...`
 
@@ -110,9 +110,9 @@ the `{{DOCUMENT_EXPECTATIONS}}` placeholder in the appended `reviewer-prompt.md`
 to REVIEW Step 1. This guarantees the FIX-mode re-review sub-agent evaluates against the canonical
 expectations even though it cannot resolve the file path on its own. Same contamination prevention rules as REVIEW mode.
 
-▶ discovery-reviewer starting (~2–3 min)
+▶ aid-reviewer starting (~2–3 min)
 Wait for completion.
-✓ discovery-reviewer done (record actual time) — or ✗ discovery-reviewer failed: {reason}
+✓ aid-reviewer done (record actual time) — or ✗ aid-reviewer failed: {reason}
 
 ### Step 7: Post-Fix Update
 

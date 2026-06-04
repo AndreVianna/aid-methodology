@@ -13,11 +13,11 @@ Referenced from `state-generate.md` and `state-review.md` rather than duplicated
 ```yaml
 discovery:
   doc_set:
-    - architecture.md|discovery-architect|required
-    - schemas.md|discovery-analyst|required
-    - tech-debt.md|discovery-quality|required
-    - infrastructure.md|discovery-quality|conditional:project has deployment/CI configuration
-    - repo-presentation.md|discovery-architect|conditional
+    - architecture.md|aid-researcher-architecture|required
+    - schemas.md|aid-researcher-analyst|required
+    - tech-debt.md|aid-researcher-quality|required
+    - infrastructure.md|aid-researcher-quality|conditional:project has deployment/CI configuration
+    - repo-presentation.md|aid-researcher-architecture|conditional
     # each item: filename | owner | presence(required|conditional[:when])
     # category and expectations are NOT declared here:
     #   - category resolves from the doc's own frontmatter `kb-category:` (build-kb-index.sh)
@@ -29,9 +29,10 @@ discovery:
 
 - **field 1 — `filename`** — basename under `.aid/knowledge/`; the key that joins to frontmatter
   (`kb-category`) and to `document-expectations.md` (`### <filename>`).
-- **field 2 — `owner`** — MUST be one of the 5 existing discovery agents
-  (`discovery-scout|discovery-architect|discovery-analyst|discovery-integrator|discovery-quality`)
-  or `orchestrator` for generated/meta docs (`feature-inventory.md`, `README.md`, `INDEX.md`).
+- **field 2 — `owner`** — MUST be one of the parameterized `aid-researcher` slots
+  (`aid-researcher-scout|aid-researcher-architecture|aid-researcher-analyst|aid-researcher-integrator|aid-researcher-quality`)
+  or `skill-self` for generated/meta docs (`feature-inventory.md`, `README.md`, `INDEX.md`) — meaning
+  the skill itself generates this file, no agent is dispatched.
   No new agent enum value is introduced by this feature.
 - **field 3 — `presence`** — `required` | `conditional`. `conditional` MAY carry a free-text
   `when` after a colon (`conditional:<when>`) — a human hint shown at propose→confirm, not
@@ -71,24 +72,24 @@ set self-describing from the templates that exist on disk.
 
 | Template file | Owner |
 |---|---|
-| `project-structure.md` | `discovery-scout` |
-| `external-sources.md` | `discovery-scout` |
-| `architecture.md` | `discovery-architect` |
-| `technology-stack.md` | `discovery-architect` |
-| `module-map.md` | `discovery-analyst` |
-| `coding-standards.md` | `discovery-analyst` |
-| `schemas.md` | `discovery-analyst` |
-| `pipeline-contracts.md` | `discovery-integrator` |
-| `integration-map.md` | `discovery-integrator` |
-| `domain-glossary.md` | `discovery-integrator` |
-| `test-landscape.md` | `discovery-quality` |
-| `tech-debt.md` | `discovery-quality` |
-| `infrastructure.md` | `discovery-quality` |
-| `feature-inventory.md` | `orchestrator` |
-| `README.md` | `orchestrator` |
+| `project-structure.md` | `aid-researcher-scout` |
+| `external-sources.md` | `aid-researcher-scout` |
+| `architecture.md` | `aid-researcher-architecture` |
+| `technology-stack.md` | `aid-researcher-architecture` |
+| `module-map.md` | `aid-researcher-analyst` |
+| `coding-standards.md` | `aid-researcher-analyst` |
+| `schemas.md` | `aid-researcher-analyst` |
+| `pipeline-contracts.md` | `aid-researcher-integrator` |
+| `integration-map.md` | `aid-researcher-integrator` |
+| `domain-glossary.md` | `aid-researcher-integrator` |
+| `test-landscape.md` | `aid-researcher-quality` |
+| `tech-debt.md` | `aid-researcher-quality` |
+| `infrastructure.md` | `aid-researcher-quality` |
+| `feature-inventory.md` | `skill-self` |
+| `README.md` | `skill-self` |
 
-`INDEX.md` is generated meta-only (not a KB-template artifact); it is owned by `orchestrator`
-and not synthesized from templates.
+`INDEX.md` is generated meta-only (not a KB-template artifact); it is owned by `skill-self`
+and not synthesized from templates. (The `skill-self` owner value denotes the skill itself — not a dispatched agent.)
 
 ```bash
 # synth_default_seed — enumerate canonical/templates/knowledge-base/*.md and emit
@@ -101,21 +102,21 @@ synth_default_seed() {
   # Ownership map: pairs of "filename owner" (no commas, no pipes — safe for IFS split)
   # This is the §2.2 single source; edit here to change the default ownership.
   local -a MAP=(
-    "project-structure.md    discovery-scout"
-    "external-sources.md     discovery-scout"
-    "architecture.md         discovery-architect"
-    "technology-stack.md     discovery-architect"
-    "module-map.md           discovery-analyst"
-    "coding-standards.md     discovery-analyst"
-    "schemas.md              discovery-analyst"
-    "pipeline-contracts.md   discovery-integrator"
-    "integration-map.md      discovery-integrator"
-    "domain-glossary.md      discovery-integrator"
-    "test-landscape.md       discovery-quality"
-    "tech-debt.md            discovery-quality"
-    "infrastructure.md       discovery-quality"
-    "feature-inventory.md    orchestrator"
-    "README.md               orchestrator"
+    "project-structure.md    aid-researcher-scout"
+    "external-sources.md     aid-researcher-scout"
+    "architecture.md         aid-researcher-architecture"
+    "technology-stack.md     aid-researcher-architecture"
+    "module-map.md           aid-researcher-analyst"
+    "coding-standards.md     aid-researcher-analyst"
+    "schemas.md              aid-researcher-analyst"
+    "pipeline-contracts.md   aid-researcher-integrator"
+    "integration-map.md      aid-researcher-integrator"
+    "domain-glossary.md      aid-researcher-integrator"
+    "test-landscape.md       aid-researcher-quality"
+    "tech-debt.md            aid-researcher-quality"
+    "infrastructure.md       aid-researcher-quality"
+    "feature-inventory.md    skill-self"
+    "README.md               skill-self"
   )
   local entry fn owner
   for entry in "${MAP[@]}"; do
@@ -146,7 +147,7 @@ empty (section unset), delegates to `synth_default_seed`.
 #
 # When raw is empty (section unset / exit-1), synthesizes the default seed.
 # Malformed records (missing filename or owner) are warned and skipped.
-# Unknown owners are routed to discovery-architect with a non-fatal warning (FR-P1-5).
+# Unknown owners are routed to aid-researcher-architecture with a non-fatal warning (FR-P1-5).
 resolve_doc_set() {
   local raw="$1" item fn owner pres rest
   # Empty raw → section unset → synthesize default seed (backward-compat, FR-P1-2)
@@ -157,7 +158,7 @@ resolve_doc_set() {
     IFS='|' read -r fn owner pres rest <<<"$item"
     # Malformed-record guard (delimiter constraint, §1.2):
     # A comma in a `when` hint shreds one record across the comma-join/comma-split round-trip:
-    #   fragment 1  (e.g. `infrastructure.md|discovery-quality|conditional:has CI`)
+    #   fragment 1  (e.g. `infrastructure.md|aid-researcher-quality|conditional:has CI`)
     #     → KEEPS its filename+owner → PASSES this guard → resolves to a VALID owner;
     #       its `when` hint is silently truncated (display-only, never machine-evaluated).
     #   fragments 2+ (e.g. `[ CD]`, `[ or deploy config]`)
@@ -171,13 +172,13 @@ resolve_doc_set() {
       continue
     fi
     pres="${pres:-required}"
-    # Owner-enum validation with discovery-architect fallback (FR-P1-5).
+    # Owner-enum validation with aid-researcher-architecture fallback (FR-P1-5).
     case "$owner" in
-      discovery-scout|discovery-architect|discovery-analyst|\
-      discovery-integrator|discovery-quality|orchestrator) ;;
-      *) printf 'warn: unknown owner %s for %s → discovery-architect\n' \
+      aid-researcher-scout|aid-researcher-architecture|aid-researcher-analyst|\
+      aid-researcher-integrator|aid-researcher-quality|skill-self) ;;
+      *) printf 'warn: unknown owner %s for %s → aid-researcher-architecture\n' \
            "$owner" "$fn" >&2
-         owner='discovery-architect' ;;
+         owner='aid-researcher-architecture' ;;
     esac
     printf '%s\t%s\t%s\n' "$fn" "$owner" "$pres"
   done
@@ -239,7 +240,7 @@ tsv="$(resolve_doc_set "$raw")"
 # 3. Use the accessors.
 filenames="$(echo "$tsv" | cut -f1)"
 owner_of_arch="$(echo "$tsv" | awk -F'\t' -v f="architecture.md" '$1==f{print $2}')"
-analyst_files="$(echo "$tsv" | awk -F'\t' -v a="discovery-analyst" '$2==a{print $1}')"
+analyst_files="$(echo "$tsv" | awk -F'\t' -v a="aid-researcher-analyst" '$2==a{print $1}')"
 ```
 
 > **Implementation constraint:** This snippet is pure bash+awk over the existing

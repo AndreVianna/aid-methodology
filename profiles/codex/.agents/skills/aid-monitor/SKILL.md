@@ -16,10 +16,10 @@ Monitor production. Detect what's wrong. Route it to where it gets fixed.
 
 ## Agents Involved
 
-- **Default executor:** `orchestrator` (routes findings; never implements directly).
-- **Telemetry interpretation:** `researcher` (reads logs/metrics, classifies anomalies).
+- **Default executor:** `aid-orchestrator` (routes findings; never implements directly).
+- **Telemetry interpretation:** `aid-researcher` (reads logs/metrics, classifies anomalies).
 - **Routing targets:**
-  - BUG classification → re-enters at `aid-interview` (lite bug-fix triage), which creates the task that `developer` implements via `aid-execute`.
+  - BUG classification → re-enters at `aid-interview` (lite bug-fix triage), which creates the task that `aid-developer` implements via `aid-execute`.
   - Change Request → re-enters at `aid-interview` as new/changed requirements (full lifecycle).
   - Infrastructure → escalated to ops (outside AID scope).
 
@@ -183,9 +183,9 @@ them more informative by adding mid-wait check-ins + structured progress.
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| OBSERVE | `references/state-observe.md` | `researcher` | → CLASSIFY |
-| CLASSIFY | `references/state-classify.md` | `researcher` | → ROUTE |
-| ROUTE | `references/state-route.md` | `orchestrator` | → DONE |
+| OBSERVE | `references/state-observe.md` | `aid-researcher` | → CLASSIFY |
+| CLASSIFY | `references/state-classify.md` | `aid-researcher` | → ROUTE |
+| ROUTE | `references/state-route.md` | `aid-orchestrator` | → DONE |
 | DONE | _(inline — see Re-run below)_ | `inline` | → halt |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.

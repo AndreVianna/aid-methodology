@@ -78,8 +78,8 @@ Source: `find canonical/skills -maxdepth 1 -type d`,
 
 - **Type:** Multi-agent state-machine skill (10+ states across full + lite paths)
 - **States:** `FIRST-RUN → Q-AND-A → TRIAGE → {full: CONTINUE → COMPLETION → FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE | lite: CONDENSED-INTAKE → TASK-BREAKDOWN → LITE-REVIEW → LITE-DONE | escalated: any lite → CONTINUE → ...}` (`canonical/skills/aid-interview/SKILL.md` frontmatter `State machine: FIRST-RUN → Q-AND-A → TRIAGE`)
-- **Agents dispatched:** `interviewer` (States 1–4, TRIAGE, L1), `architect` (State 5, L2),
-  `reviewer` (State 6, L3), inline (L4, State 7) (`canonical/skills/aid-interview/SKILL.md` `## Agents Involved`)
+- **Agents dispatched:** `aid-interviewer` (States 1–4, TRIAGE, L1), `aid-architect` (State 5, L2),
+  `aid-reviewer` (State 6, L3), inline (L4, State 7) (`canonical/skills/aid-interview/SKILL.md` `## Agents Involved`)
 - **Source:** `canonical/skills/aid-interview/SKILL.md`
 
 ### `/aid-specify <work-NNN/feature-NNN> [--reset]`
@@ -214,28 +214,27 @@ Every long-running subagent dispatch MUST:
 
 ### Subagent-Side Heartbeat Block (boilerplate in every AGENT.md)
 
-Every `canonical/agents/<agent>/AGENT.md` contains a `## Heartbeat protocol` section that
-specifies the contract: read `HEARTBEAT_FILE` + `HEARTBEAT_INTERVAL` from prompt, write
+Every `canonical/agents/aid-<name>/AGENT.md` contains a `## Heartbeat protocol` section
+(injected from `canonical/templates/agent-boilerplate.md` via `{{include:agent-boilerplate}}`)
+that specifies the contract: read `HEARTBEAT_FILE` + `HEARTBEAT_INTERVAL` from prompt, write
 shell-generated timestamp via `echo > "$HEARTBEAT_FILE"`, use `|` delimiters, change
-`<activity>` between updates. Example: `canonical/agents/reviewer/AGENT.md` `## Heartbeat protocol`,
-`canonical/agents/architect/AGENT.md` `## Heartbeat protocol`, `canonical/agents/simple-extractor/AGENT.md` `## Heartbeat protocol`.
+`<activity>` between updates. Source: `canonical/templates/agent-boilerplate.md` `## Heartbeat protocol`.
 
 ### Discovery Sub-Agent Prompt Contract (`agent-prompts.md`)
 
-The discover orchestrator passes 5 prose prompts — one per sub-agent — that each declare:
-1. The KB files the sub-agent owns and must write (`.aid/knowledge/<file>.md`)
+The discover orchestrator dispatches `aid-researcher` (Step 1: pre-scan alone; Steps 2–5: multiple
+parameterized dispatches in parallel). Each dispatch prompt declares:
+1. The KB files this dispatch owns and must write (`.aid/knowledge/<file>.md`) — the doc-set
+   is data-driven from `discovery.doc_set` in `.aid/settings.yml` (or the default seed)
 2. Required reference documents to read FIRST (`project-index.md`,
    `project-structure.md`, `external-sources.md`)
 3. The contract phrase "Write only to the .aid/knowledge/ directory."
 
-**Sub-agents:**
-- **Scout** — writes `project-structure.md`, `external-sources.md` + temp `.scout-questions.tmp`
-- **Architect** — writes `architecture.md`, `technology-stack.md`
-- **Analyst** — writes `module-map.md`, `coding-standards.md`, `schemas.md`
-- **Integrator** — writes `pipeline-contracts.md`, `integration-map.md`, `domain-glossary.md`
-- **Quality** — writes `test-landscape.md`, `tech-debt.md`, `infrastructure.md`
+(The former 5 named discovery sub-agents — Scout, Architect, Analyst, Integrator, Quality —
+were consolidated into `aid-researcher` by work-001-agents-review. The doc-set ownership
+assignment (which files each dispatch writes) is now a dispatch parameter, not a per-agent role.)
 
-**Source:** `canonical/skills/aid-discover/references/agent-prompts.md` (`## Scout` through `## Quality`)
+**Source:** `canonical/skills/aid-discover/references/agent-prompts.md`
 
 ### Reviewer Output Contract — Structured Issue List
 
@@ -246,7 +245,7 @@ The Reviewer agent produces a structured issue list with two-tag classification 
 - **Evidence required:** file path, line number, criterion violated
 - **Reviewer does NOT:** fix issues, compute the grade, or open files outside ARTIFACTS
   UNDER REVIEW (except citation resolution)
-- **Source:** `canonical/agents/reviewer/AGENT.md` `## Output contract`, `## What You Don't Do`
+- **Source:** `canonical/agents/aid-reviewer/AGENT.md` `## Output contract`, `## What You Don't Do`
 
 ---
 
@@ -396,11 +395,11 @@ The Reviewer agent produces a structured issue list with two-tag classification 
 ### KB Citation Validation (`/aid-discover REVIEW`)
 
 - **Purpose:** Validate KB citations against disk (the "anti-drift" pass)
-- **Mechanism:** The `discovery-reviewer` sub-agent (dispatched in `/aid-discover REVIEW`
-  state) performs frontmatter compliance checks, cited `file:line` existence verification,
-  KB-file presence, and generated-files freshness. This semantic validation replaced
-  the former `verify-claims.sh` script (deleted in cycle-1; closure recorded in `tech-debt.md` changelog).
-- **Agent:** `canonical/agents/discovery-reviewer/AGENT.md`
+- **Mechanism:** `aid-reviewer` (dispatched in `/aid-discover REVIEW` state) performs
+  frontmatter compliance checks, cited `file:line` existence verification, KB-file
+  presence, and generated-files freshness. This semantic validation replaced the former
+  `verify-claims.sh` script (deleted in cycle-1; closure recorded in `tech-debt.md` changelog).
+- **Agent:** `canonical/agents/aid-reviewer/AGENT.md`
 - **Output:** ledger at `.aid/.temp/review-pending/discovery.md` with per-finding severity
   tags; grade computed by `canonical/scripts/grade.sh`
 
@@ -492,7 +491,7 @@ data-driven for every dispatch decision in Steps 2–5:
 | **Mapping honors the set** | Each agent's target list = filenames where `owner = <agent>` in the declared set, intersected with missing-on-disk |
 | **No-hang on omission** | If a doc is absent from the declared set, the owning agent's target list may be empty → that agent is NOT dispatched (no hang, no error) |
 | **Dispatch on addition** | A custom doc added to the declared set with an owner → included in that agent's target list → agent dispatched for it |
-| **Unknown owner fallback** | Unknown owner value → routed to `discovery-architect` with a non-fatal warning (FR-P1-5) |
+| **Unknown owner fallback** | Unknown owner value → routed to `aid-researcher` with a non-fatal warning (FR-P1-5) |
 | **Default seed (backward compat)** | If `discovery.doc_set` is absent/empty in settings.yml, `synth_default_seed` synthesizes the set from `canonical/templates/knowledge-base/*.md` using the §2.2 ownership map — no change to prior behavior |
 | **Verify** | After dispatch, cross-check `count == size(list-filenames)` against the accessor, not a literal integer |
 

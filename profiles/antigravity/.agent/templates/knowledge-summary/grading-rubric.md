@@ -17,7 +17,7 @@ Every run produces two independent grades:
 
 A+ requires both Machine ≥ 98% (72/73) and Human ≥ 98% (30/30). If
 `manual-checklist.sh` has never run, the Human Grade is absent and Overall is
-reported as **"Pending Human Review"** — APPROVAL is blocked until the human
+reported as **"Pending Human Review"** — APPROVAL is blocked until the user
 grade exists.
 
 > **Pool total = 73 + 30 = 103.** `grade.sh` sums the AUTO_POOL weights at
@@ -30,7 +30,7 @@ grade exists.
 > blocked. Rationale: this whole check exists because automated checks
 > (C1/C2 contrast, D1/D2 diagrams) can ALL pass while a diagram is visually
 > unreadable — e.g. Mermaid node-label colors are not covered by C1/C2.
-> Only a human looking at the rendered output catches that.
+> Only the user looking at the rendered output catches that.
 
 ## Check definitions
 
@@ -38,7 +38,7 @@ grade exists.
 |----|-------|----------------|--------|----------|
 | **K1** | KB completeness | Every populated KB doc that maps to a section is read and reflected | 10 | manual (`manual-checklist.sh`) |
 | **K2** | KB facts grounded | All numeric/named facts in the HTML appear verbatim in source KB | 15 | manual (`manual-checklist.sh`) |
-| **V1** | Human visual gate (mandatory) | A human opens the HTML in a browser and confirms ALL of: every diagram renders (no error blocks); diagram + node text is legible in BOTH light AND dark themes; theme toggle works; lightbox opens / Esc closes / Tab cycles. Pass=5, fail=0. **V1=0 forces Human Grade F.** | 5 | manual (`manual-checklist.sh`) |
+| **V1** | Human visual gate (mandatory) | The user opens the HTML in a browser and confirms ALL of: every diagram renders (no error blocks); diagram + node text is legible in BOTH light AND dark themes; theme toggle works; lightbox opens / Esc closes / Tab cycles. Pass=5, fail=0. **V1=0 forces Human Grade F.** | 5 | manual (`manual-checklist.sh`) |
 | **D1** | Mermaid parse | `mermaid.parse()` succeeds for every block | 20 | `validate-diagrams.mjs` |
 | **D2** | Mermaid render | Each block renders to non-trivial SVG (>500 bytes, contains `<g>` or `<path>`, no `mermaid-error` class) | 10 | `validate-diagrams.mjs` (jsdom + Mermaid render) |
 | **L1** | Anchor links | Every `href="#X"` resolves to in-page `id="X"` | 5 | `validate-html-output.sh` |
@@ -139,7 +139,7 @@ were genuinely unreadable in dark mode (silver text on teal, ~1.2:1). The
 automated contrast checks (C1/C2) only measure the page's CSS theme tokens;
 they do not and cannot measure the colors *inside* a Mermaid-rendered SVG.
 No automated check covers "does the rendered diagram actually look right." V1
-closes that hole: a human must open the file and look, in both themes, before
+closes that hole: the user must open the file and look, in both themes, before
 the summary can be approved.
 
 *Identified during dogfood discovery of AID against itself, 2026-05-21;

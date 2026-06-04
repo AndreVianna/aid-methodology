@@ -132,7 +132,7 @@ emission contract as templates:
 
 ```jsonl
 {"_manifest_version": 1}
-{"profile": "claude-code", "src": "canonical/agents/architect.md", "dst": ".claude/agents/architect.md", "sha256": "a1b2c3d4e5f6..."}
+{"profile": "claude-code", "src": "canonical/agents/aid-architect/AGENT.md", "dst": ".claude/agents/aid-architect.md", "sha256": "a1b2c3d4e5f6..."}
 {"profile": "claude-code", "src": "canonical/recipes/new-feature.md", "dst": ".claude/recipes/new-feature.md", "sha256": "e5f6a1b2c3d4..."}
 {"profile": "claude-code", "src": "canonical/skills/aid-deploy/SKILL.md", "dst": ".claude/skills/aid-deploy/SKILL.md", "sha256": "b2c3d4e5f6a1..."}
 {"profile": "claude-code", "src": "canonical/skills/aid-discover/references/agent-prompts.md", "dst": ".claude/skills/aid-discover/references/agent-prompts.md", "sha256": "c3d4e5f6a1b2..."}
@@ -147,6 +147,6 @@ The five example records cover:
 5. A template
 
 For Codex (split layout), records under `.codex/` and `.agents/` both appear in
-`codex/emission-manifest.jsonl` with `dst` values like `.codex/agents/architect.toml`,
+`codex/emission-manifest.jsonl` with `dst` values like `.codex/agents/aid-architect.toml`,
 `.agents/recipes/new-feature.md`, and `.agents/skills/aid-deploy/SKILL.md` — all
 relative to `codex/`.

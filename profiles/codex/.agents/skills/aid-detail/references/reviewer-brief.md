@@ -1,7 +1,7 @@
 # /aid-detail — Reviewer Dispatch Brief Template
 
 Loaded by `/aid-detail` REVIEW state (per-deliverable in Step 3 of The Loop;
-whole-task-list on re-run). Renders the brief passed to the `reviewer`
+whole-task-list on re-run). Renders the brief passed to the `aid-reviewer`
 sub-agent. Follows `.agents/templates/reviewer-dispatch.md`.
 
 `{{ARTIFACTS}}`, `{{CONTEXT}}`, `{{SCOPE}}` are filled at dispatch time.
@@ -51,7 +51,7 @@ DELIVERABLES:
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
   - Grade: per .agents/scripts/grade.sh; minimum resolved via
     `bash .agents/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`
-  - The reviewer NEVER edits task files — only grades and lists issues
+  - The aid-reviewer NEVER edits task files — only grades and lists issues
 ```
 
 ## Substitution at dispatch time
@@ -65,12 +65,12 @@ DELIVERABLES:
                       feature-NNN-{name}, ...
     (whole-list)      Re-review of all tasks for work-NNN after PLAN/SPEC changes.
   ```
-  Do NOT include the architect's working notes or prior cycle grades.
+  Do NOT include the aid-architect's working notes or prior cycle grades.
 - `{{SCOPE}}` — literal `per-deliverable` or `whole-list`.
 
 **Derive from disk, not memory.** When populating `{{ARTIFACTS}}` at dispatch
 time, derive the list from a deterministic source (e.g., `git diff --name-only`
 for PR-level reviews, or the executor's produced-file list for per-task reviews),
 filtered by the OUT OF SCOPE list above. Lists built from memory of what was
-worked on tend to omit incidentally-touched files; the reviewer then can't grade
+worked on tend to omit incidentally-touched files; the aid-reviewer then can't grade
 what it doesn't know about.
