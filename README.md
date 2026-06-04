@@ -48,6 +48,7 @@ flowchart TB
     Init --> Disc --> Intv --> Spec --> Plan --> Det --> Exe
     Exe -. "on demand" .-> Dep
     Exe -. "on demand" .-> Mon
+    Exe -. "when finished" .-> HK
     HK  -. "targeted KB refresh" .-> Disc
 ```
 
