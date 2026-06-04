@@ -61,31 +61,27 @@ flowchart TB
 
 ## Install
 
-AID is distributed by `git clone`. The setup script copies skills, agents, and templates into your target project in each tool's native format.
+AID is distributed via a one-command installer that fetches and copies the correct profile tree into your project — no full repo clone required.
 
 ```bash
-git clone https://github.com/AndreVianna/aid-methodology.git
-cd aid-methodology
-
-# Linux / macOS / git-bash
-./setup.sh /path/to/your/project
+# Linux / macOS / git-bash (auto-detects your tool, or pass --tool <name>)
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
 
 # Windows (PowerShell 5.1+)
-.\setup.ps1 C:\path\to\your\project
+irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
 ```
 
-The script shows a numbered menu — select the tools you use, then select Done:
+Pass `--tool <name>` to target a specific host tool (one of `claude-code`, `codex`, `cursor`, `copilot-cli`, `antigravity`). Omit it and the installer auto-detects from your project tree.
 
-```
-1. Claude Code
-2. OpenAI Codex CLI
-3. Cursor
-4. GitHub Copilot CLI
-5. Antigravity
-[6] Done
+```bash
+# Explicit tool selection
+bash install.sh --tool claude-code /path/to/your/project
+
+# PowerShell
+.\install.ps1 -Tool ClaudeCode -TargetDirectory C:\path\to\your\project
 ```
 
-Re-running is safe: identical files are skipped, changed files prompt before overwriting. Pass `--force` to overwrite without prompts.
+Re-running is safe: identical files are skipped, changed files that differ are skipped unless you pass `--force`. Root agent files (`CLAUDE.md`/`AGENTS.md`) that you wrote yourself are protected — the installer writes the incoming version as `*.aid-new` for you to review.
 
 > [!NOTE]
 > Prefer to install by hand? Copy the profile directory for each tool you use directly into your project root:
@@ -96,6 +92,8 @@ Re-running is safe: identical files are skipped, changed files prompt before ove
 > - Antigravity: `profiles/antigravity/.agent/`
 
 **Runtime requirements:** one or more of the five supported AI tools · Bash or PowerShell 5.1+ · Git · Node 18+ (optional, only for `/aid-summarize` diagram validation).
+
+[Full install guide — update, uninstall, offline bundles, version pinning, protect-on-diff →](docs/install.md)
 
 ---
 
@@ -352,7 +350,7 @@ All five profiles are generated from the same canonical source at `canonical/` �
 
 AID is at **`0.7.0`** (see [`VERSION`](VERSION)). A versioned-release flow is being introduced; until it ships, `master` remains the canonical source.
 
-- Install via `setup.sh` (or `setup.ps1`) to get current `master`; re-run to pick up updates.
+- Install via `install.sh` (or `install.ps1`) to get current `master`; re-run with `--update` to pick up updates.
 - A formal version bump will be introduced when the methodology stabilizes.
 
 ---
@@ -379,7 +377,8 @@ aid-methodology/
 ├── methodology/aid-methodology.md  ← the complete methodology (~40 min read)
 ├── docs/                           ← glossary and FAQ
 ├── examples/                       ← step-by-step worked tutorial examples
-├── setup.sh  ·  setup.ps1         ← cross-platform installers
+├── install.sh  ·  install.ps1      ← cross-platform installers
+└── lib/                            ← shared install-core library
 └── CONTRIBUTING.md  ·  LICENSE
 ```
 
@@ -391,6 +390,8 @@ aid-methodology/
 | Look up a term | [`docs/glossary.md`](docs/glossary.md) |
 | Answer a how-to question | [`docs/faq.md`](docs/faq.md) |
 | See AID applied step by step | [`examples/`](examples/README.md) — greenfield, brownfield full-path, brownfield lite-path |
+| Full install guide (update, uninstall, offline, version pinning) | [`docs/install.md`](docs/install.md) |
+| Cut a release (maintainer runbook) | [`docs/release.md`](docs/release.md) |
 
 ---
 

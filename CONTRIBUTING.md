@@ -32,7 +32,7 @@ are **not** generated — they remain hand-maintained READMEs and must be update
 separately when methodology content changes.
 
 **End-user installation** (not generator): users install AID into their own projects via
-`./setup.sh` (Bash) or `.\setup.ps1` (PowerShell) — not `/aid-generate`.
+`install.sh` (Bash) or `install.ps1` (PowerShell) — not `/aid-generate`.
 `/aid-generate` is maintainer-only tooling for regenerating the install trees in this repo.
 
 ## What We Accept

@@ -34,17 +34,22 @@ AID ships install bundles for five host tools:
 4. **GitHub Copilot CLI** — installs to `.github/`
 5. **Antigravity** — installs to `.agent/`
 
-The `setup.sh` / `setup.ps1` installer lets you pick any combination. All five install trees are byte-identical in skill and agent content; only the wrapper format differs per tool.
+The `install.sh` / `install.ps1` installer supports all five tools via `--tool`. All five install trees are byte-identical in skill and agent content; only the wrapper format differs per tool.
 
 ### How do I install AID into my project?
-Clone the repo and run the installer:
+Run the one-command installer (no full repo clone required):
 ```bash
-git clone https://github.com/AndreVianna/aid-methodology.git
-cd aid-methodology
-./setup.sh /path/to/your/project   # Linux / macOS / git-bash
-.\setup.ps1 C:\path\to\your\project  # Windows PowerShell
+# Linux / macOS / git-bash — auto-detects your tool
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
+
+# Explicit tool
+bash install.sh --tool claude-code /path/to/your/project
+
+# Windows PowerShell
+irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
+.\install.ps1 -Tool ClaudeCode -TargetDirectory C:\path\to\your\project
 ```
-The installer shows a five-tool menu; pick what you use and enter `6` for Done. Re-running is safe — identical files are skipped; changed files prompt before overwriting.
+Re-running is safe — identical files are skipped; changed files are skipped unless you pass `--force`.
 
 ### How do I use the skills?
 The skills run as slash commands inside your AI coding tool:

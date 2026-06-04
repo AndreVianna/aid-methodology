@@ -56,7 +56,7 @@ depending on which tools you selected at install), and initializes the per-area
 `STATE.md` files.
 
 **What you do:** Create an empty git repository for the project, install AID (via
-`setup.sh` or `setup.ps1`), then run:
+`install.sh` or `install.ps1`), then run:
 
 ```
 /aid-config

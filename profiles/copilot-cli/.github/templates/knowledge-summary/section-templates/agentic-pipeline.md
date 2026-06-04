@@ -65,7 +65,7 @@ The review-grade-fix discipline that makes the pipeline self-correcting: reviewe
 
 ### §8 Distribution / Install
 
-How the project ships to adopters: install script (setup.sh / setup.ps1), supported tool hosts (Claude Code / Codex / Cursor / etc. for AID), what gets copied where, runtime requirements (Node, Python, Git Bash on Windows). If multi-tool, include the canonical → 3-profile distribution model diagram (Fig 3).
+How the project ships to adopters: install script (`install.sh` / `install.ps1` — per-tool, `--tool <name>` or auto-detect), supported tool hosts (Claude Code / Codex / Cursor / etc. for AID), what gets copied where, runtime requirements (Node, Python, Git Bash on Windows). If multi-tool, include the canonical → profile distribution model diagram (Fig 3).
 
 ### §11 Documentation Surface
 

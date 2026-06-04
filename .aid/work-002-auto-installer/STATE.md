@@ -94,16 +94,16 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|
-| 001 | Release-artifact contract & `release.sh` packaging core | IMPLEMENT | d1·W1 | Pending | — | — | delivery-001; deps — |
-| 002 | `release.sh` packaging test suite | TEST | d1·W2 | Pending | — | — | delivery-001; deps 001 |
-| 003 | Bash install core + `install.sh` bootstrap | IMPLEMENT | d1·W2 | Pending | — | — | delivery-001; deps 001 |
-| 004 | Bash installer test suite (`test-install.sh`) | TEST | d1·W3 | Pending | — | — | delivery-001; deps 003 |
-| 005 | PowerShell install core + `install.ps1` bootstrap | IMPLEMENT | d1·W2 | Pending | — | — | delivery-001; deps 001 |
-| 006 | PowerShell installer test suite (`test-install-ps1.sh`) | TEST | d1·W3 | Pending | — | — | delivery-001; deps 005 |
-| 007 | Cross-platform install parity verification (e2e) | TEST | d1·W4 | Pending | — | — | delivery-001; deps 001,004,006 |
-| 008 | Remove `setup.sh`/`setup.ps1` + update all references | REFACTOR | d1·W4 | Pending | — | — | delivery-001; deps 004,006 |
-| 009 | Install/update/uninstall flow docs + first-release runbook | DOCUMENT | d1·W5 | Pending | — | — | delivery-001; deps 006,008 |
-| 010 | First manual release dry-run + d-001 e2e validation | TEST | d1·W5 | Pending | — | — | delivery-001; deps 001,007 |
+| 001 | Release-artifact contract & `release.sh` packaging core | IMPLEMENT | d1·W1 | Done | — | — | delivery-001; deps — |
+| 002 | `release.sh` packaging test suite | TEST | d1·W2 | Done | — | — | delivery-001; deps 001 |
+| 003 | Bash install core + `install.sh` bootstrap | IMPLEMENT | d1·W2 | Done | — | — | delivery-001; deps 001 |
+| 004 | Bash installer test suite (`test-install.sh`) | TEST | d1·W3 | Done | — | — | delivery-001; deps 003 |
+| 005 | PowerShell install core + `install.ps1` bootstrap | IMPLEMENT | d1·W2 | Done | — | — | delivery-001; deps 001 |
+| 006 | PowerShell installer test suite (`test-install-ps1.sh`) | TEST | d1·W3 | Done | — | — | delivery-001; deps 005 |
+| 007 | Cross-platform install parity verification (e2e) | TEST | d1·W4 | Done | — | — | delivery-001; deps 001,004,006 |
+| 008 | Remove `setup.sh`/`setup.ps1` + update all references | REFACTOR | d1·W4 | Done | — | — | delivery-001; deps 004,006 |
+| 009 | Install/update/uninstall flow docs + first-release runbook | DOCUMENT | d1·W5 | Done | — | — | delivery-001; deps 006,008 |
+| 010 | First manual release dry-run + d-001 e2e validation | TEST | d1·W5 | Done | — | — | delivery-001; deps 001,007 |
 | 011 | npm wrapper `@aid/installer` (vendor-and-spawn) | IMPLEMENT | d2·W1 | Pending | — | — | delivery-002; deps 003,005 |
 | 012 | npm wrapper test suite + packaging smoke | TEST | d2·W2 | Pending | — | — | delivery-002; deps 011 |
 | 013 | PyPI wrapper `aid-installer` (vendor-and-spawn) | IMPLEMENT | d3·W1 | Pending | — | — | delivery-003; deps 003,005 |

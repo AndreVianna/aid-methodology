@@ -32,29 +32,26 @@ so the full path is appropriate.
 
 ## Step 0 — Install AID into the project
 
-If AID is not yet installed in OrderFlow, run the setup script from the AID repo root:
+If AID is not yet installed in OrderFlow, run the installer (no full repo clone required):
 
 ```bash
-bash setup.sh
+# Linux / macOS / git-bash — auto-detects your tool, or pass --tool <name>
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
+
+# Explicit tool selection (e.g. Claude Code)
+bash install.sh --tool claude-code /path/to/orderflow
+
+# Windows PowerShell
+irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
+.\install.ps1 -Tool ClaudeCode -TargetDirectory C:\path\to\orderflow
 ```
 
-The interactive menu lists the five supported AI coding tools. Select the tool(s) you
-use and choose **Done**:
-
-```
-AID Setup — select your AI coding tools
-  1) Claude Code
-  2) OpenAI Codex CLI
-  3) Cursor
-  4) GitHub Copilot CLI
-  5) Antigravity
-  6) Done
-```
-
-The installer copies the selected profile(s) into your project. For Claude Code, this
+The installer copies the selected profile into your project. For Claude Code, this
 produces a `.claude/` directory containing skills, agents, and a `CLAUDE.md` context
 file. For other tools the output directory differs (Codex: `.codex/` + `.agents/`;
-Cursor: `.cursor/`; Copilot CLI: `.github/`; Antigravity: `.agent/`).
+Cursor: `.cursor/`; Copilot CLI: `.github/`; Antigravity: `.agent/`). Pass
+`--tool <name>` to target a specific tool; omit it and the installer auto-detects from
+your project tree.
 
 Then run `aid-config` to initialize the AID work area inside OrderFlow:
 
