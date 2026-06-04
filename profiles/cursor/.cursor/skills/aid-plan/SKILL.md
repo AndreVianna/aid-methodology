@@ -27,7 +27,7 @@ Each deliverable follows the same cycle:
 
 ```
 1. PROPOSE  → agent proposes deliverable grouping and sequence
-2. DISCUSS  → developer and agent negotiate (move, reorder, split, merge, defer)
+2. DISCUSS  → the user and the agent negotiate (move, reorder, split, merge, defer)
 3. WRITE    → save agreed deliverable to PLAN.md
 4. REVIEW   → grade against SPECs/KB — pass? next deliverable. fail? back to 1.
 ```
@@ -126,8 +126,8 @@ aid-plan  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| FIRST-RUN | `references/first-run-loop.md` | `architect` | → REVIEW |
-| REVIEW | `references/review-deliverables.md` | `reviewer` | → DONE |
+| FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | → REVIEW |
+| REVIEW | `references/review-deliverables.md` | `aid-reviewer` | → DONE |
 | DONE | _(inline — plan complete; print summary and exit)_ | `inline` | → halt |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.

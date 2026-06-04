@@ -69,8 +69,8 @@ aid-detail  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| FIRST-RUN | `references/first-run.md` | `architect` | `→ REVIEW` |
-| REVIEW | `references/review.md` | `architect` | `→ DONE` |
+| FIRST-RUN | `references/first-run.md` | `aid-architect` | `→ REVIEW` |
+| REVIEW | `references/review.md` | `aid-reviewer` | `→ DONE` |
 | DONE | — | `inline` | `→ halt` |
 
 Load the `Detail` file for the detected state and execute it.

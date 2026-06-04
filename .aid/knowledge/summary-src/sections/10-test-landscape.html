@@ -89,13 +89,13 @@
 				</tr>
 				<tr>
 					<td><code>test-discovery-doc-ownership.sh</code></td>
-					<td><code>discovery-scout</code>/<code>discovery-quality</code> AGENT.md + <code>aid-discover/state-generate.md</code></td>
+					<td><code>aid-researcher</code> AGENT.md + <code>aid-discover/state-generate.md</code></td>
 					<td>bash</td>
-					<td>Discovery doc-ownership consistency: exactly one agent "produces" each standard KB doc; each agent's Produce line + What-You-Don't-Do agrees with the dispatch table (scout owns project-structure + external-sources, NOT infrastructure; quality owns infrastructure + test-landscape + tech-debt). 14 checks</td>
+					<td>Discovery doc-ownership consistency: the doc-set ownership map defines which KB docs each researcher dispatch-slot produces (scout scope: project-structure + external-sources; quality scope: infrastructure + test-landscape + tech-debt). 14 checks</td>
 				</tr>
 				<tr>
 					<td><code>test-expectations-single-source.sh</code></td>
-					<td><code>aid-discover/document-expectations.md</code> + discovery-reviewer/reviewer-prompt/state-review/state-fix</td>
+					<td><code>aid-discover/document-expectations.md</code> + aid-reviewer AGENT.md + state-review/state-fix</td>
 					<td>bash</td>
 					<td>Single-source invariant for per-doc expectations: <code>document-expectations.md</code> is the sole file with per-doc <code>### *.md</code> blocks; reviewer AGENT.md has none; <code>{{DOCUMENT_EXPECTATIONS}}</code> placeholder present + merge completeness. 9 checks</td>
 				</tr>
@@ -103,7 +103,7 @@
 					<td><code>test-doc-set-read.sh</code></td>
 					<td><code>aid-discover/doc-set-resolve.md</code> (<code>resolve_doc_set</code>/<code>synth_default_seed</code> + 4 accessors)</td>
 					<td>bash</td>
-					<td>Core doc-set resolve/accessor logic: unset → default seed; declared set → exact filename/owner/presence rows; all 4 accessors; comment stripping; comma-in-<code>when</code> shred behavior; unknown owner → discovery-architect; bash+awk-only. 15 checks</td>
+					<td>Core doc-set resolve/accessor logic: unset → default seed; declared set → exact filename/owner/presence rows; all 4 accessors; comment stripping; comma-in-<code>when</code> shred behavior; unknown owner → aid-researcher-architecture; bash+awk-only. 15 checks</td>
 				</tr>
 				<tr>
 					<td><code>test-doc-set-mapping.sh</code></td>
@@ -129,7 +129,7 @@
 
 	<div class="callout warn" style="margin-top:1rem;">
 		<h4>Coverage gaps</h4>
-		<p>The <code>.mjs</code> validators, the PowerShell mirrors, and the <code>setup.*</code> install flow are now covered (CI asserts <code>node</code> + <code>pwsh</code> present so those suites can never silently skip). The two new agent-format emitters carry their own generator self-tests run by the CI <code>generator-selftests</code> job (<code>test_copilot_emitter.py</code> — Copilot real-YAML round-trip; <code>test_antigravity_emitter.py</code> — Antigravity rule reshape), alongside <code>test_manifest_safety.py</code> — these live under <code>.claude/skills/aid-generate/scripts/</code>, not <code>tests/canonical/</code>. The genuinely untested surface is the prompt-driven orchestration layer: the <code>/aid-*</code> skills (verified by dogfooding; the <code>discovery-reviewer</code> sub-agent is the closest adversarial integration check), the renderer (covered by its own VERIFY (deterministic) byte-identity gate across the 5 profiles, not <code>tests/canonical/</code>), and the end-to-end pipeline. There is no statement/branch coverage measurement. (per test-landscape.md §Coverage gaps and roadmap)</p>
+		<p>The <code>.mjs</code> validators, the PowerShell mirrors, and the <code>setup.*</code> install flow are now covered (CI asserts <code>node</code> + <code>pwsh</code> present so those suites can never silently skip). The two new agent-format emitters carry their own generator self-tests run by the CI <code>generator-selftests</code> job (<code>test_copilot_emitter.py</code> — Copilot real-YAML round-trip; <code>test_antigravity_emitter.py</code> — Antigravity rule reshape), alongside <code>test_manifest_safety.py</code> — these live under <code>.claude/skills/aid-generate/scripts/</code>, not <code>tests/canonical/</code>. The genuinely untested surface is the prompt-driven orchestration layer: the <code>/aid-*</code> skills (verified by dogfooding; the <code>aid-reviewer</code> sub-agent is the closest adversarial integration check), the renderer (covered by its own VERIFY (deterministic) byte-identity gate across the 5 profiles, not <code>tests/canonical/</code>), and the end-to-end pipeline. There is no statement/branch coverage measurement. (per test-landscape.md §Coverage gaps and roadmap)</p>
 	</div>
 </section>
 

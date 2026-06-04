@@ -13,7 +13,7 @@ on ETA threshold or task type.
 
 **Exempt (shell-less) agents.** The heartbeat requires a shell-generated
 timestamp, so an agent without the `Bash` tool cannot comply. The only such
-agent is **`simple-formatter`** (`Read, Write, Edit` — intentionally shell-less;
+agent is **`aid-clerk`** (`Read, Write, Edit` — intentionally shell-less;
 short-lived single template fill). Orchestrators MUST NOT pass `HEARTBEAT_FILE` /
 `HEARTBEAT_INTERVAL` to an exempt agent, and the agent ignores them if passed.
 Every other heartbeat-enabled agent grants `Bash`.

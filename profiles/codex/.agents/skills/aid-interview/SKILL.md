@@ -18,16 +18,16 @@ aid-interview is **multi-agent** — different states use different agents.
 
 | State | Phase | Agent | Why |
 |-------|-------|-------|-----|
-| 1–4, TRIAGE | Conversational interview + triage | `interviewer` | Empathetic dialogue, deterministic routing |
-| L1 CONDENSED-INTAKE | Lite-path condensed interview | `interviewer` | Sub-path-specific slot-fill dialogue |
-| L2 TASK-BREAKDOWN | Lite-path task design | `architect` | Design work — proposing typed task breakdown |
-| L3 LITE-REVIEW | Lite-path pre-execution gate | `reviewer` | Adversarial validation of task set against SPEC |
+| 1–4, TRIAGE | Conversational interview + triage | `aid-interviewer` | Empathetic dialogue, deterministic routing |
+| L1 CONDENSED-INTAKE | Lite-path condensed interview | `aid-interviewer` | Sub-path-specific slot-fill dialogue |
+| L2 TASK-BREAKDOWN | Lite-path task design | `aid-architect` | Design work — proposing typed task breakdown |
+| L3 LITE-REVIEW | Lite-path pre-execution gate | `aid-reviewer` | Adversarial validation of task set against SPEC |
 | L4 LITE-DONE | Lite-path terminal | (no dispatch) | Hand-off prompt to `/aid-execute` |
-| 5 | Feature Decomposition | `architect` | Design work — breaking requirements into structured features |
-| 6 | Cross-Reference & Refine | `reviewer` | Adversarial validation against KB and codebase |
+| 5 | Feature Decomposition | `aid-architect` | Design work — breaking requirements into structured features |
+| 6 | Cross-Reference & Refine | `aid-reviewer` | Adversarial validation against KB and codebase |
 | 7 | DONE | (no dispatch) | Terminal state, user choice prompt |
 
-The frontmatter default `agent: interviewer` covers States 1–4, TRIAGE, and L1. L2 and 5 dispatch `architect`; L3 and 6 dispatch `reviewer`. L4 and 7 run inline.
+The frontmatter default `agent: aid-interviewer` covers States 1–4, TRIAGE, and L1. L2 and 5 dispatch `aid-architect`; L3 and 6 dispatch `aid-reviewer`. L4 and 7 run inline.
 
 Gather requirements from a human stakeholder through adaptive, one-question-at-a-time
 conversation. Builds REQUIREMENTS.md incrementally — each answer updates the document
@@ -304,17 +304,17 @@ aid-interview  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| FIRST-RUN | `references/state-first-run.md` | `interviewer` | → TRIAGE |
-| Q-AND-A | `references/state-q-and-a.md` | `interviewer` | → TRIAGE |
-| TRIAGE | `references/state-triage.md` | `interviewer` | → CONDENSED-INTAKE (Path: lite) / → CONTINUE (Path: full) |
-| CONDENSED-INTAKE | `references/state-condensed-intake.md` | `interviewer` | → TASK-BREAKDOWN |
-| TASK-BREAKDOWN | `references/state-task-breakdown.md` | `architect` | → LITE-REVIEW |
-| LITE-REVIEW | `references/state-lite-review.md` | `reviewer` | → LITE-DONE (grade ≥ min) / → CONDENSED-INTAKE (grade < min, loopback). User-driven escalate → CONTINUE handled separately via `lite-to-full-escalation.md`. |
+| FIRST-RUN | `references/state-first-run.md` | `aid-interviewer` | → TRIAGE |
+| Q-AND-A | `references/state-q-and-a.md` | `aid-interviewer` | → TRIAGE |
+| TRIAGE | `references/state-triage.md` | `aid-interviewer` | → CONDENSED-INTAKE (Path: lite) / → CONTINUE (Path: full) |
+| CONDENSED-INTAKE | `references/state-condensed-intake.md` | `aid-interviewer` | → TASK-BREAKDOWN |
+| TASK-BREAKDOWN | `references/state-task-breakdown.md` | `aid-architect` | → LITE-REVIEW |
+| LITE-REVIEW | `references/state-lite-review.md` | `aid-reviewer` | → LITE-DONE (grade ≥ min) / → CONDENSED-INTAKE (grade < min, loopback). User-driven escalate → CONTINUE handled separately via `lite-to-full-escalation.md`. |
 | LITE-DONE | `references/state-lite-done.md` | `inline` | → halt |
-| CONTINUE | `references/state-continue.md` | `interviewer` | → COMPLETION |
-| COMPLETION | `references/state-completion.md` | `interviewer` | → FEATURE-DECOMPOSITION |
-| FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `architect` | → CROSS-REFERENCE |
-| CROSS-REFERENCE | `references/state-cross-reference.md` | `reviewer` | → DONE |
+| CONTINUE | `references/state-continue.md` | `aid-interviewer` | → COMPLETION |
+| COMPLETION | `references/state-completion.md` | `aid-interviewer` | → FEATURE-DECOMPOSITION |
+| FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `aid-architect` | → CROSS-REFERENCE |
+| CROSS-REFERENCE | `references/state-cross-reference.md` | `aid-reviewer` | → DONE |
 | DONE | `references/state-done.md` | `inline` | → halt |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.

@@ -13,14 +13,15 @@ intent: |
   canonical/templates/kb-authoring/review-rubric.md).
 contracts:
   - "Every aid-* SKILL.md begins with a YAML frontmatter block containing name, description, allowed-tools (and optionally argument-hint)"
-  - "Every canonical AGENT.md begins with a YAML frontmatter block containing at minimum name, description, tier, tools (per `canonical/agents/architect/AGENT.md` frontmatter block)"
+  - "Every canonical AGENT.md begins with a YAML frontmatter block containing at minimum name, description, tier, tools (per `canonical/agents/aid-architect/AGENT.md` frontmatter block)"
   - "Every KB doc begins with a YAML frontmatter block containing kb-category, source, intent (per `canonical/templates/kb-authoring/frontmatter-schema.md` `## Field reference`)"
   - "Every helper script declares set -euo pipefail (or set -uo pipefail with documented rationale)"
   - "Every helper script supports -h | --help that prints its own header comment via sed"
 changelog:
+  - 2026-06-04: work-001-agents-review (task-013) — §2a agent-dir naming updated to aid-* prefix; §8e agent-authoring updated to shared-include boilerplate (canonical/templates/agent-boilerplate.md via {{include:agent-boilerplate}}); §11c security model updated to new 9-agent roster; §10 convention table updated to 9 agents; old bare agent-name evidence cites replaced with aid-* paths.
   - 2026-06-01: work-001-add-providers (PRs #42/#43/#44) — render profiles grew 3→5; updated §7a multi-tree render set to include copilot-cli (.github) + antigravity (.agent), and §7d helper-script copy count (4→7 trees).
   - 2026-05-31: delivery-002 — added pipe-delimited-list-in-settings convention note to §6a (discovery.doc_set uses this pattern)
-  - 2026-05-27: Initial generation by discovery-analyst (cycle-1)
+  - 2026-05-27: Initial generation (cycle-1)
 ---
 
 # Coding Standards
@@ -51,7 +52,7 @@ changelog:
 ### 2a. File + directory names
 
 - **All `aid-*` skill directories are kebab-case** with the `aid-` prefix: `aid-config`, `aid-discover`, `aid-execute`, etc. (per `canonical/skills/`).
-- **All agent directories are kebab-case**, single-word or compound: `architect`, `developer`, `discovery-analyst`, `simple-extractor` (per `canonical/agents/`).
+- **All agent directories carry the `aid-` prefix**, kebab-case: `aid-architect`, `aid-developer`, `aid-researcher`, `aid-clerk` (per `canonical/agents/` and REQUIREMENTS.md §7 collision-avoidance constraint).
 - **Skill state files are `state-<state-name>.md`** — lowercase kebab-case state name, e.g., `state-generate.md`, `state-q-and-a.md`, `state-delivery-gate.md` (per `canonical/skills/aid-discover/references/`).
 - **Helper scripts are kebab-case verb-noun** with `.sh` (or `.mjs` / `.ps1`) extension: `read-setting.sh`, `build-project-index.sh`, `compute-block-radius.sh`, `writeback-state.sh`, `validate-diagrams.mjs`, `contrast-check.mjs`.
 - **Python files are snake_case** with `.py` extension: `render_agents.py`, `verify_deterministic.py`, `test_manifest_safety.py`, `run_generator.py`.
@@ -78,8 +79,8 @@ changelog:
 - **Sections:** `## Title Case` for top-level inside a doc; `### Title Case` for sub-sections.
 - **States in skill bodies:** UPPERCASE in narrative text (e.g., "State machine: GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE" per `canonical/skills/aid-discover/SKILL.md` `State-machine: GENERATE → REVIEW`), kebab-lowercase in filenames (`state-q-and-a.md`).
 - **Task types:** UPPERCASE (RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE per `canonical/skills/aid-execute/references/state-execute.md` `## Task Types`, `canonical/templates/delivery-plans/task-template.md` `**Type:**`).
-- **Severity tags:** UPPERCASE bracketed: `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]` (per `canonical/agents/reviewer/AGENT.md` `## Severity Classification`, `canonical/scripts/grade.sh` `count_prose_tag CRITICAL`).
-- **Source tags (for review findings):** UPPERCASE bracketed: `[CODE]`, `[TASK]`, `[SPEC]`, `[KB]`, `[ARCHITECTURE]` (per `canonical/agents/reviewer/AGENT.md` `Tag every issue by source`).
+- **Severity tags:** UPPERCASE bracketed: `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]` (per `canonical/agents/aid-reviewer/AGENT.md` `## Severity Classification`, `canonical/scripts/grade.sh` `count_prose_tag CRITICAL`).
+- **Source tags (for review findings):** UPPERCASE bracketed: `[CODE]`, `[TASK]`, `[SPEC]`, `[KB]`, `[ARCHITECTURE]` (per `canonical/agents/aid-reviewer/AGENT.md` `Tag every issue by source`).
 - **Work + delivery IDs:** zero-padded 3-digit, kebab-prefixed: `work-001`, `work-002-canonical-generator`, `delivery-001`, `task-001`, `feature-005` (per `canonical/templates/work-state-template.md`).
 
 ---
@@ -105,7 +106,7 @@ changelog:
 ---
 ```
 
-**Agent frontmatter** (per `canonical/agents/architect/AGENT.md` frontmatter block):
+**Agent frontmatter** (per `canonical/agents/aid-architect/AGENT.md` frontmatter block):
 ```yaml
 ---
 name: <agent-name>
@@ -252,7 +253,7 @@ Triple-quoted docstrings are reserved for function + class signatures (per
 
 ### 4c. Markdown / KB docs
 
-- **Findings are logged as rows in the 7-column reviewer ledger** (per `canonical/agents/reviewer/AGENT.md` `## Output contract` and `canonical/templates/reviewer-ledger-schema.md`) — one markdown table, no narrative sections; out-of-scope findings are `Status: OOS` rows, not a separate section:
+- **Findings are logged as rows in the 7-column reviewer ledger** (per `canonical/agents/aid-reviewer/AGENT.md` `## Output contract` and `canonical/templates/reviewer-ledger-schema.md`) — one markdown table, no narrative sections; out-of-scope findings are `Status: OOS` rows, not a separate section:
   ```
   | # | Severity | Status | Doc | Line | Description | Evidence |
   ```
@@ -266,13 +267,13 @@ The AID repo has no application logging (no application code). Two related conve
 
 ### 5a. Subagent heartbeat (L3)
 
-Every long-running subagent dispatch writes a single-line progress note to a per-dispatch file under `.aid/.heartbeat/<agent>-<unix-ts>.txt` (per `canonical/templates/subagent-heartbeat-protocol.md` `# Subagent Heartbeat Protocol`, `canonical/agents/discovery-analyst/AGENT.md` `## Heartbeat protocol`). The line format is:
+Every long-running subagent dispatch writes a single-line progress note to a per-dispatch file under `.aid/.heartbeat/<agent>-<unix-ts>.txt` (per `canonical/templates/subagent-heartbeat-protocol.md` `# Subagent Heartbeat Protocol`, injected into agents via `canonical/templates/agent-boilerplate.md`). The line format is:
 
 ```
 [YYYY-MM-DDTHH:MM:SSZ] <STATE> | <progress> | <activity> (~<eta-remaining>)
 ```
 
-Conventions (per `canonical/agents/architect/AGENT.md` `## Heartbeat protocol`):
+Conventions (per `canonical/templates/agent-boilerplate.md` `## Heartbeat protocol`):
 - Use `>` (overwrite), never `>>` (append).
 - Activity must change between updates — repetition signals "stuck" to the orchestrator.
 - Use `unknown` if eta-remaining cannot be predicted.
@@ -395,7 +396,7 @@ Commit work-NNN to ONE persistent branch (off master); no per-task worktrees or 
 ### 8c. Markdown
 
 - **GitHub-flavored tables** (`| col | col |` with `|---|---|` separator) — universally used for structured data (per any `.md` in the repo).
-- **Fenced code blocks with language identifier** (e.g., ` ```bash`, ` ```yaml`, ` ```python`) per `canonical/agents/architect/AGENT.md` `## Heartbeat protocol`.
+- **Fenced code blocks with language identifier** (e.g., ` ```bash`, ` ```yaml`, ` ```python`) per `canonical/templates/agent-boilerplate.md` `## Heartbeat protocol`.
 - **One-sentence-per-line is NOT used** — prose flows naturally; bullets are used where a list is semantically correct.
 - **Bold + arrow `→` for state transitions** (e.g., "GENERATE → REVIEW → FIX" per `canonical/skills/aid-discover/SKILL.md` `State-machine: GENERATE → REVIEW`).
 - **Bullet style `-` (hyphen)** not `*` (asterisk). Consistent across all KB docs and skill bodies.
@@ -408,19 +409,18 @@ Each skill state machine is documented as a Dispatch table with these columns: `
 - **Halt** — the state ends the run (terminal state).
 - **Conditional** — advance based on a computed criterion (e.g., grade ≥ minimum → APPROVAL, else → FIX).
 
-### 8e. Agent-authoring (CONFIRMED structure per all 22 `AGENT.md` files)
+### 8e. Agent-authoring (CONFIRMED structure per all 9 `AGENT.md` files)
 
 Every canonical agent body follows this section order:
 
-1. YAML frontmatter (5-7 keys per §3a).
+1. YAML frontmatter (5-7 keys per §3a). Agent `name:` carries the `aid-` prefix (e.g. `aid-architect`).
 2. One-paragraph identity ("You are the X — the Y specialist in the AID pipeline.").
-3. `## Heartbeat protocol` (byte-identical block; absent on simple-* utilities and `interviewer`).
-4. `## Self-review discipline` (byte-identical block; absent on `simple-*` utilities, `interviewer`, `orchestrator`, `reviewer`, `security`, `ux-designer`, `performance`, `devops`, `data-engineer`, `tech-writer`, `researcher` — present on `architect`, `developer`, `discovery-*`, `operator`).
-5. `## What You Do` (bullet list).
-6. `## What You Don't Do` (bullet list).
-7. `## Key Constraints` (bullet list).
-8. `## Output Format` (per agent).
-9. `## When to Escalate` (bullet list).
+3. `{{include:agent-boilerplate}}` — resolved at render time from `canonical/templates/agent-boilerplate.md`, which injects `## Heartbeat protocol` and `## Self-review discipline` into all 9 agents. The two protocol blocks are **NOT** duplicated per-agent; they live once in `canonical/templates/agent-boilerplate.md` and are included via this placeholder. `aid-clerk` (small-tier mechanical) may omit the placeholder per its narrow scope.
+4. `## What You Do` (bullet list).
+5. `## What You Don't Do` (bullet list).
+6. `## Key Constraints` (bullet list).
+7. `## Output Format` (per agent).
+8. `## When to Escalate` (bullet list).
 
 ---
 
@@ -431,7 +431,7 @@ Seven principles govern all `.aid/knowledge/*.md` authoring:
 - **P1.** No drift-prone information unless it carries semantic value. Three banned classes: (a) cosmetic counting, (b) dates without semantic anchor, (c) other low-value clutter.
 - **P2.** Proper metric: when a numerical fact IS load-bearing, it must (a) serve a concrete purpose, (b) be measured before registering, (c) never be retroactively changed.
 - **P3.** Plan first, change later. Review and fix are SEPARATE phases. Use the `.aid/.temp/review-pending/<skill>.md` ledger pattern.
-- **P4.** Enforce via lint, not convention. The `discovery-reviewer` sub-agent in `/aid-discover REVIEW` state validates KB citations, frontmatter compliance, and contract assertions (see `canonical/agents/discovery-reviewer/AGENT.md`).
+- **P4.** Enforce via lint, not convention. `aid-reviewer` (dispatched from `/aid-discover REVIEW` state) validates KB citations, frontmatter compliance, and contract assertions (see `canonical/agents/aid-reviewer/AGENT.md`).
 - **P5.** Mark auto-generated / temporary files clearly. Generated files carry HTML comment + `source: generated` frontmatter; temporary files live under `.aid/.temp/` and are never reviewed.
 - **P6.** Per-doc review metadata via frontmatter. The whole frontmatter block is exempt from review.
 - **P7.** Review is read-only on the repo. `/aid-discover` and discovery skills WRITE only to `.aid/knowledge/`, `.aid/generated/`, `.aid/.temp/`.
@@ -456,10 +456,10 @@ Docs that describe a convention vs. what code actually does:
 | Convention | Documented at | Code confirms? | Notes |
 |------------|---------------|----------------|-------|
 | Thin-Router SKILL.md ≤~360 lines | `coding-standards.md §7b`; `canonical/skills/*/SKILL.md` structure | YES — all 11 user-facing skills fit under the threshold; the largest is `aid-interview`. Per-file line counts live in `.aid/generated/metrics.md` / `project-index.md` | Confirmed |
-| 22 agents, 3 tiers | `README.md` `## The Agent Model — three tiers` | YES — confirmed via 22 `AGENT.md` files with `tier: large|medium|small` frontmatter | Confirmed |
+| 9 agents, 3 tiers (4L/4M/1S) | `README.md` `## The Agent Model — three tiers` | YES — confirmed via 9 `AGENT.md` files under `canonical/agents/aid-*/` with `tier: large|medium|small` frontmatter | Confirmed |
 | Active KB docs | `canonical/skills/aid-discover/references/doc-set-resolve.md` `## synth_default_seed` | YES — the default seed is now data-driven from `canonical/templates/knowledge-base/*.md` via `synth_default_seed`; count varies by project (delivery-002 resolved H5; hardcoded 14-doc list removed from SKILL.md) | Confirmed |
 | 8-task-type catalog | `canonical/skills/aid-execute/references/state-execute.md` `## Task Types`; `canonical/templates/delivery-plans/task-template.md` `**Type:**` | YES — both lists match: RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE | Confirmed |
-| 5 grade severity tags | `canonical/agents/reviewer/AGENT.md` `## Severity Classification`; `canonical/scripts/grade.sh` `count_prose_tag CRITICAL` | YES — [CRITICAL]/[HIGH]/[MEDIUM]/[LOW]/[MINOR] match in both | Confirmed |
+| 5 grade severity tags | `canonical/agents/aid-reviewer/AGENT.md` `## Severity Classification`; `canonical/scripts/grade.sh` `count_prose_tag CRITICAL` | YES — [CRITICAL]/[HIGH]/[MEDIUM]/[LOW]/[MINOR] match in both | Confirmed |
 | 4 lite-path sub-paths | `canonical/templates/work-state-template.md` `**Sub-path:**`, `canonical/templates/recipe-template.md` ``Valid `applies-to` values`` | YES — sub-path enum present in both | Confirmed |
 | Heartbeat interval = 1 minute default | `canonical/templates/settings.yml` `heartbeat_interval: 1`; `canonical/templates/subagent-heartbeat-protocol.md` `Default value = **1 minute**` | YES — both state default 1 minute | Confirmed |
 | Max parallel tasks = 5 default | `canonical/templates/settings.yml` `max_parallel_tasks: 5`; `canonical/skills/aid-execute/references/state-execute.md` `execution.max_parallel_tasks --default 5` | YES — both state default 5 | Confirmed |
@@ -510,24 +510,24 @@ embedded in the script's header or inline comment.
 ### 11c. Agent permission model (security-by-design)
 
 Each agent's tool access is declared in the `tools:` field of its YAML
-frontmatter at `canonical/agents/*/AGENT.md`. The host tool (Claude Code / Codex
+frontmatter at `canonical/agents/aid-*/AGENT.md`. The host tool (Claude Code / Codex
 / Cursor) enforces the allowlist at dispatch time. Key patterns:
 
-- **Discovery sub-agents** (`discovery-scout`, `discovery-analyst`,
-  `discovery-architect`, `discovery-integrator`, `discovery-quality`) share a
-  uniform `Read, Glob, Grep, Bash, Write` allowlist but are constrained by
-  prompt contract to write ONLY into `.aid/knowledge/`.
-- **Audit/review agents** (`security`, `reviewer`, `performance`) omit `Write`
-  and `Edit` — they are read-only assessors.
-- **`interviewer`** is the strictest: `Read, Glob, Grep` only — conversation-
+- **`aid-researcher`** (handles all KB discovery/analysis work previously spread
+  across 5 discovery sub-agents) shares `Read, Glob, Grep, Bash, Write` but is
+  constrained by prompt contract to write ONLY into `.aid/knowledge/`.
+- **`aid-reviewer`** omits `Write` and `Edit` — read-only adversarial assessor.
+- **`aid-interviewer`** is the strictest: `Read, Glob, Grep` only — conversation-
   only, no file writes and no shell execution.
-- **`tech-writer`** has `Write` and `Edit` but no `Bash` — docs-only, no shell.
+- **`aid-tech-writer`** has `Write` and `Edit` but no `Bash` — docs-only, no shell.
+- **`aid-clerk`** (small-tier mechanical) carries a narrower allowlist matching its
+  single-operation scope.
 
-⚠️ The write-scope restriction for discovery agents is enforced by prompt, not
+⚠️ The write-scope restriction for `aid-researcher` is enforced by prompt, not
 by path-scoped `Write` permission. A misbehaving agent COULD write outside
 `.aid/knowledge/`. There is no path-scoping in the `tools:` schema.
 
-See `canonical/agents/*/AGENT.md` `tools:` frontmatter for the per-agent
+See `canonical/agents/aid-*/AGENT.md` `tools:` frontmatter for the per-agent
 allowlist. The full per-agent table is not reproduced here to avoid drift.
 
 ---

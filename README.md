@@ -10,7 +10,7 @@
 
 **A full-lifecycle methodology for building software with AI agents** — from understanding an existing codebase to monitoring it in production.
 
-11-skill pipeline · 22 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
+11-skill pipeline · 9 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
 
 ```mermaid
 flowchart TB
@@ -228,7 +228,7 @@ Net effect: retrieval-augmented behavior with no vector database, no embeddings,
 
 ## The Agent Model
 
-Skills are state-machine orchestrators; agents are the workers. AID defines 22 agents across three tiers.
+Skills are state-machine orchestrators; agents are the workers. AID defines 9 agents across three tiers.
 
 ```mermaid
 flowchart TB
@@ -236,27 +236,23 @@ flowchart TB
     classDef med   fill:#0F766E,stroke:#0F766E,color:#ffffff
     classDef small fill:#E5E7EB,stroke:#9CA3AF,color:#1F2937
 
-    subgraph L["Large tier — 10 · highest-stakes (Opus / GPT-5.5 / Gemini-3 Pro hi)"]
+    subgraph L["Large tier — 4 · highest-stakes (Opus / GPT-5.5 / Gemini-3 Pro hi)"]
         direction LR
-        LA["architect"]:::large
-        LR2["reviewer"]:::large
-        LI["interviewer"]:::large
-        LS["security"]:::large
-        LD["6 × discovery-*"]:::large
+        LI["aid-interviewer"]:::large
+        LA["aid-architect"]:::large
+        LR2["aid-researcher"]:::large
+        LRv["aid-reviewer"]:::large
     end
-    subgraph M["Medium tier — 9 · production workhorses (Sonnet / GPT-5.4 / Gemini-3 Pro lo)"]
+    subgraph M["Medium tier — 4 · production workhorses (Sonnet / GPT-5.4 / Gemini-3 Pro lo)"]
         direction LR
-        MO["orchestrator"]:::med
-        MR["researcher"]:::med
-        MD["developer"]:::med
-        MOps["operator"]:::med
-        MDE["5 × data-engineer · performance<br/>devops · tech-writer · ux-designer"]:::med
+        MD["aid-developer"]:::med
+        MOps["aid-operator"]:::med
+        MO["aid-orchestrator"]:::med
+        MTW["aid-tech-writer"]:::med
     end
-    subgraph S["Small tier — 3 · mechanical (Haiku / GPT-5.4-mini / Gemini-3 Flash)"]
+    subgraph S["Small tier — 1 · mechanical (Haiku / GPT-5.4-mini / Gemini-3 Flash)"]
         direction LR
-        SE["simple-extractor"]:::small
-        SF["simple-formatter"]:::small
-        SG["simple-glob"]:::small
+        SC["aid-clerk"]:::small
     end
     L -. "reviewer tier ≥ executor tier" .-> M -.-> S
 ```
@@ -320,7 +316,7 @@ Spec-Driven Development is a good idea. AID contains it and goes further.
 
 **Claude Code** — installed into `.claude/`:
 - `.claude/skills/` — 11 skill markdown files
-- `.claude/agents/` — 22 agent markdown files
+- `.claude/agents/` — 9 agent markdown files
 - `CLAUDE.md` — project-context file at your project root
 
 **Codex CLI** — installed into `.codex/` + `.agents/`:
@@ -366,7 +362,7 @@ AID is at **`0.1.0-dev`** (see [`VERSION`](VERSION)) — a pre-release marker, n
 aid-methodology/
 ├── canonical/                      ← single source of truth (never edit profiles/ directly)
 │   ├── skills/                     ← 11 user-facing skill definitions
-│   ├── agents/                     ← 22 agent definitions
+│   ├── agents/                     ← 9 agent definitions
 │   ├── templates/                  ← KB templates and document templates
 │   ├── recipes/                    ← 51 lite-path recipes (add-/change-/fix- families)
 │   └── scripts/                    ← helper scripts by phase

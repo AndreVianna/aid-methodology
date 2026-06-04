@@ -1,7 +1,7 @@
 # /aid-specify — Reviewer Dispatch Brief Template
 
 Loaded by `/aid-specify` REVIEW state. Renders the brief passed to the
-`reviewer` sub-agent. Follows `.claude/templates/reviewer-dispatch.md`.
+`aid-reviewer` sub-agent. Follows `.claude/templates/reviewer-dispatch.md`.
 
 `{{ARTIFACTS}}` and `{{CONTEXT}}` are filled at dispatch time.
 
@@ -36,7 +36,7 @@ OUT-OF-SCOPE FINDINGS POLICY:
   Log OOS findings as Status: OOS rows in the same ledger table at
   `.aid/.temp/review-pending/specify-{feature}.md`. Do NOT count toward severity
   totals or grade. Note the routing destination (CODE | SPEC | KB | REQUIREMENTS)
-  in Description/Evidence so the orchestrator can write the cross-phase Q&A entry.
+  in Description/Evidence so the coordinating skill can write the cross-phase Q&A entry.
 
 DELIVERABLES:
   - Findings format: severity-tagged + source-tagged (CODE | SPEC | KB | REQUIREMENTS)
@@ -44,7 +44,7 @@ DELIVERABLES:
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
   - Grade: per .claude/scripts/grade.sh; minimum resolved via
     `bash .claude/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`
-  - The reviewer NEVER edits the SPEC — only grades and lists issues
+  - The aid-reviewer NEVER edits the SPEC — only grades and lists issues
 ```
 
 ## Substitution at dispatch time
@@ -57,12 +57,12 @@ DELIVERABLES:
     in the work STATE.md `## Features Status` row. This is the final review pass
     before the feature is marked Ready.
   ```
-  Do NOT include the architect's working notes, prior REVIEW cycle grades, or
+  Do NOT include the aid-architect's working notes, prior REVIEW cycle grades, or
   references to downstream skills.
 
 **Derive from disk, not memory.** When populating `{{ARTIFACTS}}` at dispatch
 time, derive the list from a deterministic source (e.g., `git diff --name-only`
 for PR-level reviews, or the executor's produced-file list for per-task reviews),
 filtered by the OUT OF SCOPE list above. Lists built from memory of what was
-worked on tend to omit incidentally-touched files; the reviewer then can't grade
+worked on tend to omit incidentally-touched files; the aid-reviewer then can't grade
 what it doesn't know about.

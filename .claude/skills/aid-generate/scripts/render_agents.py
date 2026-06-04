@@ -3,8 +3,8 @@
 #
 # Purpose:
 #   Render canonical/agents/<name>/AGENT.md into per-tool install trees using the
-#   per-tool profile. Supports both markdown (Claude Code, Cursor) and
-#   TOML (Codex) output formats.
+#   per-tool profile. Supports four output formats: markdown (Claude Code, Cursor),
+#   toml (Codex), copilot-agent (GitHub Copilot CLI), and antigravity-rule (Antigravity).
 #
 # Usage:
 #   python render_agents.py --canonical-root <repo-root> --profile <path/to/profile.toml> --output-root <dest>
@@ -222,10 +222,9 @@ def _build_frontmatter_md_copilot(fields: dict[str, Any]) -> str:
     - Bool values use the same ``true``/``false`` lowercased form.
 
     This function is introduced by task-006 (feature-002 E1) as the format-branch
-    serializer for ``"copilot-agent"``-format agents.  A future agent-format value
-    (feature-003 ``"antigravity-rule"``) reuses the same per-format-branch
-    mechanism (add a new format branch in ``_render_agent_for_profile`` with its
-    own serializer).
+    serializer for ``"copilot-agent"``-format agents.  The ``"antigravity-rule"``
+    format branch reuses the same per-format-branch mechanism (each format has its
+    own serializer in ``_render_agent_for_profile``).
 
     Parameters
     ----------
@@ -265,7 +264,7 @@ def _build_frontmatter_md_antigravity(fields: dict[str, Any]) -> str:
     Antigravity rule frontmatter shape (SPEC §"Renderer Increment" + §B.1 +
     provider-mapping.md Q-I / Q-D):
 
-    * ``trigger: always_on``  — for always-loaded sub-agent personas (all 22
+    * ``trigger: always_on``  — for always-loaded sub-agent personas (all 9
       AID sub-agents; sub-agent personas map to ``always_on`` per SPEC).
     * ``trigger: glob``       — for glob-triggered rules (with ``globs:`` key).
     * ``trigger: model_decision`` — for model-decision rules.
@@ -309,6 +308,60 @@ def _build_frontmatter_md_antigravity(fields: dict[str, Any]) -> str:
             lines.append(f"{key}: {val}")
     lines.append("---")
     return "\n".join(lines) + "\n"
+
+
+# ---------------------------------------------------------------------------
+# Include resolver
+# ---------------------------------------------------------------------------
+
+# Regex matching {{include:<name>}} tokens in agent body.  Double-brace syntax is
+# intentionally distinct from single-brace {placeholder} tokens so _resolve_includes
+# never collides with substitute_filenames (which only handles {project_context_file},
+# {reviewer_output_file}, {open_questions_file}).
+_INCLUDE_RE = re.compile(r"\{\{include:([^}]+)\}\}")
+
+
+def _resolve_includes(body: str, canonical_root: Path, install_root: str) -> str:
+    """
+    Expand ``{{include:<name>}}`` tokens in *body* using the matching template file.
+
+    For each token, reads ``canonical/templates/<name>.md`` relative to
+    *canonical_root*, applies ``rewrite_install_paths`` to the template content
+    (so ``canonical/templates/...`` references inside the injected boilerplate are
+    rewritten to the per-profile install root), then replaces the token with the
+    rewritten content.
+
+    This function is called in ``_render_agent_for_profile`` AFTER
+    ``substitute_filenames`` and ``rewrite_install_paths`` have already been applied
+    to the main agent body, ensuring the injected boilerplate paths are also rewritten
+    to the correct per-profile install root (e.g. ``.claude/templates/...`` for
+    claude-code).
+
+    Parameters
+    ----------
+    body : str
+        Agent body text (already processed by substitute_filenames + rewrite_install_paths).
+    canonical_root : Path
+        Repo root (parent of ``canonical/``).
+    install_root : str
+        The profile's install-tree basename (e.g. ``.claude``, ``.agents``).
+        Obtained from ``profile.layout.install_root()``.
+
+    Returns
+    -------
+    str
+        Body with every ``{{include:<name>}}`` token replaced by the rewritten
+        template content.  Unresolvable template names raise ``FileNotFoundError``.
+    """
+    def _replace_include(match: re.Match) -> str:  # type: ignore[type-arg]
+        name = match.group(1).strip()
+        template_path = canonical_root / "canonical" / "templates" / f"{name}.md"
+        template_content = template_path.read_text(encoding="utf-8")
+        # Apply path-rewrite to the injected boilerplate so canonical/templates/...
+        # references inside it become <install_root>/templates/... in the output.
+        return rewrite_install_paths(template_content, install_root)
+
+    return _INCLUDE_RE.sub(_replace_include, body)
 
 
 # ---------------------------------------------------------------------------
@@ -468,6 +521,14 @@ def _render_agent_for_profile(
     body = substitute_filenames(body, profile.filename_map)
     body = rewrite_install_paths(body, profile.layout.install_root())
 
+    # Resolve {{include:<name>}} tokens — expands shared boilerplate from
+    # canonical/templates/<name>.md and applies rewrite_install_paths to the
+    # injected content so canonical/templates/... references in the boilerplate
+    # become <install_root>/templates/... in the rendered output.
+    # Runs AFTER substitute_filenames + rewrite_install_paths on the agent body so
+    # path-rewrite is consistently applied to all text before format dispatch.
+    body = _resolve_includes(body, canonical_root, profile.layout.install_root())
+
     if profile.agent.format == "toml":
         # Codex: emit TOML file
         model = _resolve_model(profile, tier)
@@ -528,7 +589,7 @@ def _render_agent_for_profile(
         #     trigger: always_on"
         #
         # Field mapping (source: SPEC §"Renderer Increment" / provider-mapping.md Q-D):
-        #   trigger:     → always "always_on" (all 22 AID sub-agents are always-loaded
+        #   trigger:     → always "always_on" (all 9 AID sub-agents are always-loaded
         #                  personas; SPEC: "AID's always-loaded sub-agent personas map to
         #                  trigger: always_on")
         #   description: → canonical AGENT description (pass-through, already rewritten above)

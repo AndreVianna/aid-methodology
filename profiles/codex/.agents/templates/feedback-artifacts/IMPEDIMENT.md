@@ -91,7 +91,7 @@
 
 ## Recommendation
 
-{Which option the agent recommends and why — brief rationale, not a decision. The human decides.}
+{Which option the agent recommends and why — brief rationale, not a decision. The user decides.}
 
 ---
 

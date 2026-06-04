@@ -208,18 +208,17 @@ aid-discover  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| GENERATE | `references/state-generate.md` | `architect` | → REVIEW |
-| REVIEW | `references/state-review.md` | `architect` | → Q-AND-A |
+| GENERATE | `references/state-generate.md` | `aid-architect` | → REVIEW |
+| REVIEW | `references/state-review.md` | `aid-architect` | → Q-AND-A |
 | Q-AND-A | `references/state-q-and-a.md` | inline | → FIX |
-| FIX | `references/state-fix.md` | `architect` | → APPROVAL |
+| FIX | `references/state-fix.md` | `aid-architect` | → APPROVAL |
 | APPROVAL | `references/state-approval.md` | inline | → halt |
 | DONE | `references/state-done.md` | inline | → halt |
 
-> **Sub-agent fanout (GENERATE):** The `architect` Worker for GENERATE dispatches
-> discovery sub-agents internally — `discovery-scout` (Step 1, sequential), then
-> `discovery-architect`, `discovery-analyst`, `discovery-integrator`, and
-> `discovery-quality` in parallel (Steps 2–5). The full fanout protocol is
-> documented inside `references/state-generate.md`. The Dispatch Protocol above
+> **Sub-agent fanout (GENERATE):** The `aid-architect` Worker for GENERATE dispatches
+> discovery sub-agents internally — `aid-researcher` (Step 1 pre-scan, sequential), then
+> four `aid-researcher` instances parameterized by doc-set in parallel (Steps 2–5). The full
+> fanout protocol is documented inside `references/state-generate.md`. The Dispatch Protocol above
 > (L1+L2+L3 visibility) applies to all sub-agent dispatches.
 
 > **REVIEW scope (semantic only).** The REVIEW reviewer's job is to grade
@@ -233,9 +232,9 @@ aid-discover  ▸ you are here
 > drift as a finding; if it does, the pre-flight sweep was incomplete.
 
 > **FIX parallelism (parallel-agent dispatch when independent).** The
-> `architect` Worker for FIX **partitions the reviewer's findings by KB
+> `aid-architect` Worker for FIX **partitions the reviewer's findings by KB
 > file** and dispatches **one sub-agent per affected file** (typically
-> `tech-writer` for KB docs, or `researcher` if depth is needed). All agents
+> `aid-tech-writer` for KB docs, or `aid-researcher` if depth is needed). All agents
 > run in **parallel** — single message with multiple `Agent` tool calls.
 > Each agent's prompt contains only that file's finding list and a clear
 > manual-edits directive (no regex scripts — scripts generalize and produce
@@ -276,11 +275,11 @@ When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-disco
 
    | Sub-agent | Default-seed KB documents |
    |---|---|
-   | `discovery-scout` | project-structure.md, external-sources.md |
-   | `discovery-architect` | architecture.md, technology-stack.md |
-   | `discovery-analyst` | module-map.md, coding-standards.md, schemas.md |
-   | `discovery-integrator` | pipeline-contracts.md, integration-map.md, domain-glossary.md |
-   | `discovery-quality` | test-landscape.md, tech-debt.md, infrastructure.md |
+   | `aid-researcher` (pre-scan) | project-structure.md, external-sources.md |
+   | `aid-researcher` (architecture doc-set) | architecture.md, technology-stack.md |
+   | `aid-researcher` (analyst doc-set) | module-map.md, coding-standards.md, schemas.md |
+   | `aid-researcher` (integrator doc-set) | pipeline-contracts.md, integration-map.md, domain-glossary.md |
+   | `aid-researcher` (quality doc-set) | test-landscape.md, tech-debt.md, infrastructure.md |
    | orchestrator (no sub-agent) | feature-inventory.md, README.md, INDEX.md |
 
 3. Dispatch ONLY the relevant subagent

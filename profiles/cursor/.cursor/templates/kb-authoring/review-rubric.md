@@ -181,7 +181,7 @@ Lint discovers this file and merges its rules with the canonical rubric.
 
 ## Lint output → severity mapping
 
-The `discovery-reviewer` sub-agent emits findings in the canonical format
+The `aid-reviewer` sub-agent emits findings in the canonical format
 `[SEVERITY] [TAG] <description>` so the orchestrator and any downstream
 tool can extract severity programmatically without a translation table.
 

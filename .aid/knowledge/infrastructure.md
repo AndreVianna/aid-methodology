@@ -15,7 +15,7 @@ changelog:
 ---
 # Infrastructure
 
-> **Source:** `discovery-quality` (Phase 1), cycle-1
+> **Source:** `aid-researcher` (quality doc-set) (Phase 1), cycle-1
 > **Status:** Complete
 > **Last Updated:** 2026-05-27
 > **Scope:** This repo ships a methodology + a multi-tool distribution. There is **no runtime infrastructure** in the conventional sense — no Docker, no Terraform, no Kubernetes, no cloud account, no managed services. "Infrastructure" here means: the install scripts that put AID into a target project, the canonical → 5-profiles render pipeline, the supporting toolchain (git, gh, python, bash), and the local-filesystem conventions for runtime state.

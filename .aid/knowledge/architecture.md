@@ -12,9 +12,10 @@ intent: |
   project-structure.md.
 contracts:
   - "11 user-facing AID skills (7 core-pipeline: aid-config + 6 numbered phases; 4 optional: aid-summarize, aid-deploy, aid-monitor, aid-housekeep) listed in Dispatch table"
-  - "22 specialist agents across 3 tiers (10 Opus, 9 Sonnet, 3 Haiku)"
+  - "9 specialist agents across 3 tiers (4 large / 4 medium / 1 small)"
   - "5 rendered install trees: claude-code, codex, cursor, copilot-cli, antigravity"
 changelog:
+  - 2026-06-04: work-001-agents-review (task-013) — roster reduced 22→9 agents with aid-* prefix; §3 tier model updated to 4 large / 4 medium / 1 small; counts updated at lines 38, 64; agent canonical paths updated to aid-<name>/ dirs; boilerplate now shared-include via canonical/templates/agent-boilerplate.md.
   - 2026-06-03: methodology v3.2 — aid-deploy and aid-monitor reclassified from mandatory numbered phases (7/8) to OPTIONAL end-of-pipeline Deliver skills; numbered development phases 8→6 (Discover→Execute); skill taxonomy now 7 core-pipeline (aid-config + 6 phases) + 4 optional (aid-summarize, aid-deploy, aid-monitor, aid-housekeep) + maintainer-only aid-generate
   - 2026-06-03: post-merge update for work-001-aid-housekeep (PR #49) — added aid-housekeep (11th user-facing canonical skill, optional/on-demand, NOT in the mandatory pipeline flow); skill framing 10→11 user-facing / 11→12 total counting aid-generate; canonical SKILL.md body total 2,242→2,498 lines across 11 skills
   - 2026-06-01: post-merge update for work-001-add-providers (PRs #42/#43/#44) — 3→5 render profiles (added copilot-cli + antigravity), 2→4 agent formats (added copilot-agent + antigravity-rule), 10→12 generator Python files, setup menu now 5 tools + Done=6 with Option-A AGENTS.md collision handler
@@ -35,7 +36,7 @@ single-branch monorepo whose deliverable is **documentation rendered into five
 host-tool install bundles**. There is no application runtime; the project ships:
 
 1. The AID methodology specification (`methodology/aid-methodology.md`, 1,070 lines).
-2. Eleven user-facing skills + 22 agents + templates + recipes + helper scripts, authored
+2. Eleven user-facing skills + 9 agents + templates + recipes + helper scripts, authored
    once in `canonical/` and rendered into five byte-identical install trees
    (`profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/`). Of the eleven, seven
    form the core development pipeline — `aid-config` (one-time setup) plus the six numbered
@@ -61,7 +62,7 @@ Evidence:
 aid-methodology/                    (repo root)
 ├── methodology/                    ← the load-bearing spec (1 .md, 1,070 lines) + images/
 ├── canonical/                      ← SINGLE SOURCE OF TRUTH (renderer input)
-│   ├── agents/                     ← 22 agent dirs (AGENT.md + README.md each)
+│   ├── agents/                     ← 9 agent dirs (AGENT.md + README.md each)
 │   ├── skills/                     ← 11 skill dirs (Thin-Router SKILL.md + references/);
 │   │                                 7 core-pipeline (aid-config + 6 phases) + 4 optional (summarize, deploy, monitor, housekeep)
 │   ├── templates/                  ← 15 KB templates + knowledge-summary/ HTML bundle + …
@@ -189,13 +190,20 @@ skills + 1 maintainer-only = 12 total.**
 
 ### 3. Three-tier agent dispatch with reviewer-tier-≥-executor invariant
 
-22 specialist agents split across three model tiers (Large / Medium / Small), mapped per
+9 specialist agents split across three model tiers (Large / Medium / Small), mapped per
 profile in `[model_tiers]`. Skills dispatch agents via the host tool's Agent capability;
 the reviewer's tier is always ≥ the executor's so the writer never grades its own work.
+The new roster is: Large (4) — aid-interviewer, aid-architect, aid-researcher, aid-reviewer;
+Medium (4) — aid-developer, aid-operator, aid-orchestrator, aid-tech-writer;
+Small (1) — aid-clerk.
+Each agent file is `canonical/agents/aid-<name>/AGENT.md`; boilerplate sections
+(`## Heartbeat protocol`, `## Self-review discipline`) are now factored into
+`canonical/templates/agent-boilerplate.md` and injected at render time via
+`{{include:agent-boilerplate}}` — not duplicated per-agent.
 
 Evidence:
-- `README.md` `## The Agent Model — three tiers` — three-tier diagram (10 Large, 9 Medium,
-  3 Small).
+- `README.md` `## The Agent Model — three tiers` — three-tier diagram (4 Large, 4 Medium,
+  1 Small).
 - `profiles/claude-code.toml` `[model_tiers]` — `large=opus`, `medium=sonnet`, `small=haiku`.
 - `profiles/codex.toml` `[model_tiers.large]` — split syntax with `reasoning_effort`
   (gpt-5.5 high / gpt-5.4 medium / gpt-5.4-mini low).
@@ -256,7 +264,7 @@ setup.{sh,ps1} ─reads→ profiles/{tool}/ ─copies→ user project
 ### Build-time data flow (maintainer running `python run_generator.py`)
 
 ```
-canonical/agents/architect/AGENT.md
+canonical/agents/aid-architect/AGENT.md
 canonical/skills/aid-discover/SKILL.md + references/state-*.md
 canonical/templates/...                                 ← read once per renderer
 canonical/recipes/*.md
@@ -343,8 +351,8 @@ Step 0d: Propose→confirm (PAUSE-FOR-USER-DECISION):
          – Present diff to user; await confirm or user-provided edits
          – On confirm: write confirmed set to .aid/settings.yml (no-op if equals default seed)
          – Chain → Step 1 with the confirmed set driving dispatch
-Step 1:  discovery-scout (alone, sequential) → project-structure.md, external-sources.md
-Steps 2-5: 4 agents dispatched in parallel (data-driven from declared set):
+Step 1:  aid-researcher (pre-scan, alone, sequential) → project-structure.md, external-sources.md
+Steps 2-5: aid-researcher instances dispatched in parallel (data-driven from declared set):
          – Each agent's target list = owns-<agent> ∩ missing-on-disk
          – Empty target list → agent NOT dispatched (no-hang on omission)
          – Added custom doc → appended to owner's prompt (dispatch on addition)

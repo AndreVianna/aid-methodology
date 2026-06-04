@@ -15,7 +15,7 @@ changelog:
 
 # Tech Debt
 
-> **Source:** `discovery-quality` (Phase 1), cycle-1
+> **Source:** `aid-researcher` (quality doc-set) (Phase 1), cycle-1
 > **Status:** Complete
 > **Last Updated:** 2026-06-03
 

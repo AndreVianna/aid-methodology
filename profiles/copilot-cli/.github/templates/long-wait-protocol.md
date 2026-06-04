@@ -92,18 +92,18 @@ explicit failure), emit:
 …and decide based on context whether to re-dispatch, fall back to manual work,
 or surface to the user.
 
-## Example (from work-003 cycle-12 reviewer dispatch)
+## Example (from work-003 cycle-12 aid-reviewer dispatch)
 
 ```
-[Look up: discovery-reviewer ETA = 18–25 min from rough-time-hints.md]
-▶ discovery-reviewer (cycle-12 confirm A+) starting (~18–25 min) — arming check-ins at 9m, 18m, 27m
+[Look up: aid-reviewer ETA = 18–25 min from rough-time-hints.md]
+▶ aid-reviewer (cycle-12 confirm A+) starting (~18–25 min) — arming check-ins at 9m, 18m, 27m
 
 [9 minutes pass; first timer fires]
-... discovery-reviewer still running (9m elapsed of ~18–25)
+... aid-reviewer still running (9m elapsed of ~18–25)
     [from heartbeat] [2026-05-23T14:32:08Z] REVIEW | 14/21 KB docs reviewed | Reading schemas.md §3 (Mermaid dataflow); cross-checking against current code (~8m remaining)
 
 [14 more minutes pass; subagent notification arrives at 23m30s before second timer fires]
-✓ discovery-reviewer done in 23m30s (estimated 18–25; within band)
+✓ aid-reviewer done in 23m30s (estimated 18–25; within band)
 
 [Subsequent 18m + 27m timers fire harmlessly; orchestrator narration includes them as historical context]
 ```

@@ -3,16 +3,17 @@
 #
 # Invariants:
 #   (1) Single-source invariant — the canary block key "### architecture.md" resolves
-#       only to document-expectations.md; discovery-reviewer/AGENT.md has 0 per-doc
+#       only to document-expectations.md; aid-reviewer/AGENT.md has 0 per-doc
 #       "### *.md" blocks (heading-only pointer is allowed).
+#       (Note: formerly tested discovery-reviewer/AGENT.md; merged into aid-reviewer per work-001.)
 #   (2) Reviewer-has-access invariant — {{DOCUMENT_EXPECTATIONS}} placeholder is present
 #       in reviewer-prompt.md AND document-expectations.md is named (read+substitute wiring)
 #       in BOTH state-review.md and state-fix.md — so a missing FIX-mode wiring fails here.
 #
 # Checks:
 #   T01  canary "### architecture.md" found in document-expectations.md
-#   T02  canary "### architecture.md" NOT found in discovery-reviewer/AGENT.md
-#   T03  discovery-reviewer/AGENT.md has 0 per-doc "### *.md" blocks
+#   T02  canary "### architecture.md" NOT found in aid-reviewer/AGENT.md
+#   T03  aid-reviewer/AGENT.md has 0 per-doc "### *.md" blocks
 #   T04  {{DOCUMENT_EXPECTATIONS}} placeholder present in reviewer-prompt.md
 #   T05  document-expectations.md named in state-review.md (REVIEW dispatch wiring)
 #   T06  document-expectations.md named in state-fix.md (FIX dispatch wiring)
@@ -37,7 +38,7 @@ source "${SCRIPT_DIR}/../lib/assert.sh"
 
 CANONICAL="${SCRIPT_DIR}/../../canonical"
 DOC_EXPECTATIONS="${CANONICAL}/skills/aid-discover/references/document-expectations.md"
-REVIEWER_AGENT="${CANONICAL}/agents/discovery-reviewer/AGENT.md"
+REVIEWER_AGENT="${CANONICAL}/agents/aid-reviewer/AGENT.md"
 REVIEWER_PROMPT="${CANONICAL}/skills/aid-discover/references/reviewer-prompt.md"
 STATE_REVIEW="${CANONICAL}/skills/aid-discover/references/state-review.md"
 STATE_FIX="${CANONICAL}/skills/aid-discover/references/state-fix.md"
@@ -51,20 +52,20 @@ else
     fail "T01 canary '### architecture.md' NOT found in document-expectations.md"
 fi
 
-# T02: canary block key NOT in discovery-reviewer/AGENT.md
+# T02: canary block key NOT in aid-reviewer/AGENT.md
 if ! grep -q '^### architecture.md' "${REVIEWER_AGENT}" 2>/dev/null; then
-    pass "T02 canary '### architecture.md' NOT present in discovery-reviewer/AGENT.md"
+    pass "T02 canary '### architecture.md' NOT present in aid-reviewer/AGENT.md"
 else
-    fail "T02 canary '### architecture.md' found in discovery-reviewer/AGENT.md (per-doc block still present)"
+    fail "T02 canary '### architecture.md' found in aid-reviewer/AGENT.md (per-doc block still present)"
 fi
 
-# T03: discovery-reviewer/AGENT.md has zero per-doc "### *.md" blocks
+# T03: aid-reviewer/AGENT.md has zero per-doc "### *.md" blocks
 PERDOC_COUNT=$(grep -c '^### .*\.md' "${REVIEWER_AGENT}" 2>/dev/null; true)
 PERDOC_COUNT="${PERDOC_COUNT:-0}"
 if [[ "$PERDOC_COUNT" -eq 0 ]]; then
-    pass "T03 discovery-reviewer/AGENT.md has 0 per-doc '### *.md' blocks"
+    pass "T03 aid-reviewer/AGENT.md has 0 per-doc '### *.md' blocks"
 else
-    fail "T03 discovery-reviewer/AGENT.md still has $PERDOC_COUNT per-doc '### *.md' block(s)"
+    fail "T03 aid-reviewer/AGENT.md still has $PERDOC_COUNT per-doc '### *.md' block(s)"
 fi
 
 # --- (2) Reviewer-has-access invariant ---

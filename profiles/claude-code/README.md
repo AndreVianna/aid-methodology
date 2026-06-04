@@ -15,53 +15,23 @@ cp path/to/aid-methodology/claude-code/CLAUDE.md   CLAUDE.md
 
 This gives you:
 - `.claude/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (11 skills: 10 pipeline + 1 optional `aid-summarize`)
-- `.claude/agents/{name}.md` — Agent definitions in Claude Code format (22 agents: 13 base + 6 discovery sub + 3 utility)
+- `.claude/agents/{name}.md` — Agent definitions in Claude Code format (9 agents with `aid-` prefix)
 - `.claude/templates/` — Templates and bash scripts (grading rubric, `grade.sh`, `build-project-index.sh`)
 - `CLAUDE.md` — Claude Code project configuration (edit with your project details)
 
 ## Agents
 
-### Core Agents (always present)
-
 | Agent | File | Model | Specialty |
 |-------|------|-------|-----------|
-| Orchestrator | `.claude/agents/orchestrator.md` | sonnet | Pipeline coordination, routing, human gates |
-| Researcher | `.claude/agents/researcher.md` | sonnet | Investigation, KB generation, analysis |
-| Interviewer | `.claude/agents/interviewer.md` | opus | Adaptive dialogue, requirements gathering |
-| Architect | `.claude/agents/architect.md` | opus | Design: specs, plans, task decomposition |
-| Developer | `.claude/agents/developer.md` | sonnet | Code implementation (only code writer) |
-| Reviewer | `.claude/agents/reviewer.md` | opus | Adversarial issue-finding; grade computed by `grade.sh` |
-| Operator | `.claude/agents/operator.md` | sonnet | Deployment, PR creation, releases |
-
-### Specialist Agents (invoked ad-hoc)
-
-| Agent | File | Model | Specialty |
-|-------|------|-------|-----------|
-| UX Designer | `.claude/agents/ux-designer.md` | sonnet | UI/UX, accessibility, user flows |
-| DevOps | `.claude/agents/devops.md` | sonnet | CI/CD, IaC, containerization |
-| Tech Writer | `.claude/agents/tech-writer.md` | sonnet | Documentation, API docs, changelogs |
-| Security | `.claude/agents/security.md` | opus | Threat modeling, OWASP, auth patterns |
-| Data Engineer | `.claude/agents/data-engineer.md` | sonnet | Schema, migrations, query optimization |
-| Performance | `.claude/agents/performance.md` | sonnet | Profiling, load testing, caching |
-
-### Discovery Sub-Agents (dispatched by aid-discover)
-
-| Agent | File | Model | Outputs |
-|-------|------|-------|---------|
-| discovery-architect | `.claude/agents/discovery-architect.md` | opus | architecture.md, technology-stack.md |
-| discovery-analyst | `.claude/agents/discovery-analyst.md` | opus | module-map.md, coding-standards.md, schemas.md |
-| discovery-integrator | `.claude/agents/discovery-integrator.md` | opus | pipeline-contracts.md, integration-map.md, domain-glossary.md |
-| discovery-quality | `.claude/agents/discovery-quality.md` | opus | test-landscape.md, tech-debt.md, infrastructure.md |
-| discovery-scout | `.claude/agents/discovery-scout.md` | opus | project-structure.md, external-sources.md |
-| discovery-reviewer | `.claude/agents/discovery-reviewer.md` | opus | `.aid/knowledge/STATE.md` (KB grading; per FR2) |
-
-### Utility Sub-Agents (called by Core/Specialist agents)
-
-| Agent | File | Model | Purpose |
-|-------|------|-------|---------|
-| simple-extractor | `.claude/agents/simple-extractor.md` | haiku | Extract structured items from files (annotations, imports, endpoints) |
-| simple-formatter | `.claude/agents/simple-formatter.md` | haiku | Fill markdown templates with structured input |
-| simple-glob | `.claude/agents/simple-glob.md` | haiku | Enumerate files matching glob patterns with metadata |
+| aid-orchestrator | `.claude/agents/aid-orchestrator.md` | sonnet | Pipeline coordination, routing, human gates |
+| aid-researcher | `.claude/agents/aid-researcher.md` | opus | Investigation, KB generation, analysis (parameterized doc-set) |
+| aid-interviewer | `.claude/agents/aid-interviewer.md` | opus | Adaptive dialogue, requirements gathering |
+| aid-architect | `.claude/agents/aid-architect.md` | opus | Design: specs, plans, task decomposition |
+| aid-developer | `.claude/agents/aid-developer.md` | sonnet | Code implementation, data migrations, CI/CD config |
+| aid-reviewer | `.claude/agents/aid-reviewer.md` | opus | Adversarial issue-finding; grade computed by `grade.sh` |
+| aid-operator | `.claude/agents/aid-operator.md` | sonnet | Deployment, PR creation, releases |
+| aid-tech-writer | `.claude/agents/aid-tech-writer.md` | sonnet | User-facing documentation, API docs, changelogs |
+| aid-clerk | `.claude/agents/aid-clerk.md` | haiku | Mechanical utility: extract, format, or glob (operation parameter) |
 
 ## Skills
 
@@ -70,8 +40,8 @@ a single-file visual HTML summary of the Knowledge Base. See
 [`.claude/skills/README.md`](.claude/skills/README.md) for the full list.
 
 Notable mechanisms:
-- **aid-execute** uses an `agents:` selector that picks the executor by task type (RESEARCH→researcher, IMPLEMENT→developer, etc.) and the Reviewer for grading. Grade is computed by `templates/scripts/grade.sh` from the Reviewer's structured issue list.
-- **aid-discover** runs `templates/scripts/build-project-index.sh` as a Step 0c pre-pass before dispatching the 5 discovery sub-agents in parallel — eliminates duplicated file-reading.
+- **aid-execute** uses an `agents:` selector that picks the executor by task type (RESEARCH→aid-researcher, IMPLEMENT→aid-developer, etc.) and aid-reviewer for grading. Grade is computed by `templates/scripts/grade.sh` from the Reviewer's structured issue list.
+- **aid-discover** runs `templates/scripts/build-project-index.sh` as a Step 0c pre-pass before dispatching aid-researcher with parameterized doc-sets in parallel — eliminates duplicated file-reading.
 
 ## Usage
 
@@ -81,8 +51,8 @@ Skills are loaded automatically when matched by description. Each SKILL.md conta
 ### Agents
 Agent files define specialized roles with constrained tool access and focused system prompts. Skills with multiple agent options use an `agents:` block in frontmatter and a selector table in the body.
 
-### Utility Sub-Agents
-The `simple-*` agents are not invoked at the skill layer. Core/Specialist agents call them internally to offload mechanical work (extraction, formatting, file enumeration) to the Small tier. The caller validates the output.
+### Utility Sub-Agent
+`aid-clerk` is not invoked at the skill layer. Core agents call it internally to offload mechanical work (extraction, template-fill, file enumeration) to the Small tier. The caller passes an `operation:` parameter (extract / format / glob) and validates the output.
 
 ## File Format
 

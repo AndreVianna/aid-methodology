@@ -1,6 +1,6 @@
 # Reviewer Prompt
 
-Full prompt for the discovery-reviewer subagent. Used in REVIEW mode Step 1 and FIX mode Step 6 (post-fix re-review).
+Full prompt for the aid-reviewer subagent. Used in REVIEW mode Step 1 and FIX mode Step 6 (post-fix re-review).
 
 **⚠️ CLEAN CONTEXT:** Do NOT include any information about the generation process,
 which agents ran, what was easy or hard, or any prior state. The reviewer must

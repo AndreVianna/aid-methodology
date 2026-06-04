@@ -4,7 +4,7 @@
 
 Technical specification through conversational refinement, one feature at a time.
 
-The agent acts as a tech lead — reads KB, Requirements, codebase, and proposes concrete solutions. The developer validates, redirects, or deepens the discussion. Writes to SPEC.md in the feature folder.
+The agent acts as a tech lead — reads KB, Requirements, codebase, and proposes concrete solutions. The user validates, redirects, or deepens the discussion. Writes to SPEC.md in the feature folder.
 
 ## The Universal Loop
 
@@ -12,7 +12,7 @@ Each technical section follows the same cycle:
 
 ```
 1. PROPOSE  → agent proposes (grounded in KB, codebase, SPEC)
-2. DISCUSS  → developer and agent refine together
+2. DISCUSS  → user and agent refine together
 3. WRITE    → save what was agreed to SPEC.md
 4. REVIEW   → grade against KB/codebase reality — pass? next section. fail? back to 1.
 ```
@@ -49,7 +49,7 @@ Each technical section follows the same cycle:
 3. **Create STATE.md** — tracks section progress
 4. **Run the loop** for each section:
    - **Propose:** concrete solution referencing specific files, classes, patterns
-   - **Discuss:** free-form conversation until developer is satisfied
+   - **Discuss:** free-form conversation until the user is satisfied
    - **Write:** save to SPEC.md, seed empty KB docs (greenfield)
    - **Review:** verify against KB reality and other sections — grade A/B/C
 

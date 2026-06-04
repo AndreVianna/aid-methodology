@@ -2,7 +2,7 @@
 	<header>
 		<span class="eyebrow">Featured</span>
 		<h2>Agent Model &amp; Tiers</h2>
-		<p class="lede">22 specialist agents across three model tiers (Large / Medium / Small). Skills dispatch agents via the host tool's Agent capability. The key invariant: the reviewer's tier is always greater than or equal to the executor's, so a writer never grades its own work. (per architecture.md, module-map.md)</p>
+		<p class="lede">9 specialist agents across three model tiers (Large / Medium / Small). Skills dispatch agents via the host tool's Agent capability. The key invariant: the reviewer's tier is always greater than or equal to the executor's, so a writer never grades its own work. (per architecture.md, module-map.md)</p>
 	</header>
 
 	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 2: Agent dispatch model and tier hierarchy — click or press Enter to expand">
@@ -15,35 +15,22 @@ graph TD
 
     SKILL["aid-* skill<br/>(Thin-Router SKILL.md)"]:::skill
 
-    subgraph Large["Large Tier (Opus / GPT-5.5 / Gemini-3, high) — 10 agents"]
-        A1["architect"]:::large
-        A2["reviewer"]:::large
-        A3["interviewer"]:::large
-        A4["security"]:::large
-        A5["discovery-scout"]:::large
-        A6["discovery-architect"]:::large
-        A7["discovery-analyst"]:::large
-        A8["discovery-integrator"]:::large
-        A9["discovery-quality"]:::large
-        A10["discovery-reviewer"]:::large
+    subgraph Large["Large Tier (Opus / GPT-5.5 / Gemini-3, high) — 4 agents"]
+        A1["aid-interviewer"]:::large
+        A2["aid-architect"]:::large
+        A3["aid-researcher"]:::large
+        A4["aid-reviewer"]:::large
     end
 
-    subgraph Medium["Medium Tier (Sonnet / GPT-5.4 / Gemini-3, medium) — 9 agents"]
-        B1["orchestrator"]:::medium
-        B2["researcher"]:::medium
-        B3["developer"]:::medium
-        B4["operator"]:::medium
-        B5["data-engineer"]:::medium
-        B6["performance"]:::medium
-        B7["devops"]:::medium
-        B8["tech-writer"]:::medium
-        B9["ux-designer"]:::medium
+    subgraph Medium["Medium Tier (Sonnet / GPT-5.4 / Gemini-3, medium) — 4 agents"]
+        B1["aid-developer"]:::medium
+        B2["aid-operator"]:::medium
+        B3["aid-orchestrator"]:::medium
+        B4["aid-tech-writer"]:::medium
     end
 
-    subgraph Small["Small Tier (Haiku / GPT-5.4-mini / Gemini-3, low) — 3 agents"]
-        C1["simple-extractor"]:::small
-        C2["simple-formatter"]:::small
-        C3["simple-glob"]:::small
+    subgraph Small["Small Tier (Haiku / GPT-5.4-mini / Gemini-3, low) — 1 agent"]
+        C1["aid-clerk"]:::small
     end
 
     SKILL --> Large
@@ -55,19 +42,19 @@ graph TD
 
 	<div class="grid g3">
 		<div class="card">
-			<div class="kicker">Large Tier — 10 agents</div>
+			<div class="kicker">Large Tier — 4 agents</div>
 			<h3>Heavy-lifting analysts</h3>
-			<p>Architect, reviewer, interviewer, security, and the five discovery sub-agents (scout, architect, analyst, integrator, quality) plus discovery-reviewer. Discovery sub-agents share <code>permissionMode: bypassPermissions</code> and <code>background: true</code>. (per module-map.md §2a)</p>
+			<p>aid-interviewer, aid-architect, aid-researcher, aid-reviewer. The Researcher consolidates the five former discovery cataloguing agents and the analysis surfaces of security and performance. The Reviewer consolidates the former KB-document review role. (per module-map.md §2a)</p>
 		</div>
 		<div class="card">
-			<div class="kicker">Medium Tier — 9 agents</div>
+			<div class="kicker">Medium Tier — 4 agents</div>
 			<h3>Specialists + executors</h3>
-			<p>Orchestrator, researcher, developer (the ONLY agent authorized to modify production code), operator, data-engineer, performance, devops, tech-writer, ux-designer. The developer agent is the sole production-code writer by explicit contract. (per module-map.md §2b)</p>
+			<p>aid-developer (the ONLY agent authorized to modify production code), aid-operator, aid-orchestrator, aid-tech-writer. The Developer consolidates the former migration-engineering and infra-configure-executor roles. (per module-map.md §2b)</p>
 		</div>
 		<div class="card">
-			<div class="kicker">Small Tier — 3 agents</div>
+			<div class="kicker">Small Tier — 1 agent</div>
 			<h3>Mechanical utilities</h3>
-			<p>simple-extractor, simple-formatter, simple-glob. Labelled <em>INTERNAL UTILITY — sub-agent only, do NOT invoke from a skill</em>. Used for mechanical extraction, template filling, and glob enumeration. (per module-map.md §2c)</p>
+			<p>aid-clerk. Labelled <em>INTERNAL UTILITY — sub-agent only, do NOT invoke from a skill</em>. Consolidates the three former small-tier utility agents (one per operation type: extract, format-fill, glob). Used for mechanical extraction, template filling, and glob enumeration. (per module-map.md §2c)</p>
 		</div>
 	</div>
 

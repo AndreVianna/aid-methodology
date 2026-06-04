@@ -134,8 +134,8 @@ bash tests/canonical/test-fetch-mermaid.sh
 bash tests/canonical/test-grade.sh
 ```
 
-**KB claim verification** is performed by the `discovery-reviewer` sub-agent in
-`/aid-discover REVIEW` state (see `canonical/agents/discovery-reviewer/AGENT.md`).
+**KB claim verification** is performed by `aid-reviewer` dispatched from
+`/aid-discover REVIEW` state (see `canonical/agents/aid-reviewer/AGENT.md`).
 The former `canonical/scripts/kb/verify-claims.sh` was deleted in cycle-1 (closure
 recorded in `tech-debt.md` changelog).
 

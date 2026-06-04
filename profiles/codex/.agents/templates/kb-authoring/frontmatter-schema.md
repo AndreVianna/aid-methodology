@@ -1,7 +1,7 @@
 # KB Authoring — Frontmatter Schema
 
 > YAML frontmatter specification for `.aid/knowledge/*.md` documents.
-> Loaded by `aid-discover` (review classification — the `discovery-reviewer`
+> Loaded by `aid-discover` (review classification — the `aid-reviewer`
 > sub-agent validates compliance semantically), `aid-config` (scaffolding), and
 > `aid-summarize` (section intent extraction).
 
@@ -21,7 +21,7 @@ intent: |
   Drives the reviewer's relevance judgment + the agent's task-routing decision.
 contracts:
   - "Optional list of structural cardinality claims the doc asserts."
-  - "Each entry is spot-checked against disk by the discovery-reviewer in REVIEW state."
+  - "Each entry is spot-checked against disk by the aid-reviewer in REVIEW state."
 changelog:
   - 2026-05-26: Migrated to v2 format (KB Authoring overhaul)
 ---

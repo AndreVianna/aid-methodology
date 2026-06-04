@@ -1,7 +1,7 @@
 # /aid-interview — Reviewer Dispatch Brief Template
 
 Loaded by `/aid-interview` CROSS-REFERENCE state (State 6). Renders the brief
-passed to the `reviewer` sub-agent. Follows `.agent/templates/reviewer-dispatch.md`.
+passed to the `aid-reviewer` sub-agent. Follows `.agent/templates/reviewer-dispatch.md`.
 
 `{{ARTIFACTS}}` and `{{CONTEXT}}` are filled at dispatch time.
 
@@ -52,7 +52,7 @@ DELIVERABLES:
     (the consolidated work STATE.md per FR2 area-STATE consolidation; the
     legacy `INTERVIEW-STATE.md` is RETIRED) so the next `/aid-interview` run
     picks them up in Q&A mode
-  - The reviewer NEVER edits REQUIREMENTS.md or SPEC scaffolds — only grades and lists issues
+  - The aid-reviewer NEVER edits REQUIREMENTS.md or SPEC scaffolds — only grades and lists issues
 ```
 
 ## Substitution at dispatch time
@@ -67,12 +67,12 @@ DELIVERABLES:
     requirements + feature boundaries against the KB and codebase before any
     feature reaches /aid-specify.
   ```
-  Do NOT include interview transcripts, the interviewer's working notes, or
+  Do NOT include interview transcripts, the aid-interviewer's working notes, or
   references to downstream skills.
 
 **Derive from disk, not memory.** When populating `{{ARTIFACTS}}` at dispatch
 time, derive the list from a deterministic source (e.g., `git diff --name-only`
 for PR-level reviews, or the executor's produced-file list for per-task reviews),
 filtered by the OUT OF SCOPE list above. Lists built from memory of what was
-worked on tend to omit incidentally-touched files; the reviewer then can't grade
+worked on tend to omit incidentally-touched files; the aid-reviewer then can't grade
 what it doesn't know about.

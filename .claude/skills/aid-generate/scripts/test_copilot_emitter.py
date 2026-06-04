@@ -201,7 +201,7 @@ def test_tools_yaml_sequence() -> list[str]:
     failures: list[str] = []
 
     fields = {
-        "name": "architect",
+        "name": "aid-architect",
         "description": "A design agent.",
         "tools": ["Read", "shell", "Write"],
         "model": "claude-opus-4.8",
@@ -300,7 +300,7 @@ def test_colon_description_quoted() -> list[str]:
 
     original_desc = "Design agent: transforms requirements into SPEC.md, PLAN.md"
     fields = {
-        "name": "architect",
+        "name": "aid-architect",
         "description": original_desc,
         "tools": ["Read"],
         "model": "claude-opus-4.8",
@@ -849,8 +849,8 @@ def test_yaml_scalar_quoting() -> list[str]:
     failures: list[str] = []
 
     # Plain string — no quoting
-    result = _yaml_scalar("architect")
-    if result != "architect":
+    result = _yaml_scalar("aid-architect")
+    if result != "aid-architect":
         failures.append(f"test_yaml_scalar_quoting: plain scalar should be unquoted: {result!r}")
 
     # String with colon — must be double-quoted
@@ -891,7 +891,7 @@ def test_copilot_frontmatter_field_order() -> list[str]:
     failures: list[str] = []
 
     fields = {
-        "name": "developer",
+        "name": "aid-developer",
         "description": "Developer agent.",
         "tools": ["Read", "shell"],
         "model": "claude-sonnet-4.6",

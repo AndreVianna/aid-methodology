@@ -4,7 +4,7 @@ Runs after CONDENSED-INTAKE (L1). Reads the work-root `SPEC.md` and proposes a
 typed task breakdown, then writes `tasks/task-NNN.md` files and fills the
 `## Tasks` + `## Execution Graph` sections of `SPEC.md`.
 
-**Agent:** Dispatch `architect` (override `subagent_type`). This is design work,
+**Agent:** Dispatch `aid-architect` (override `subagent_type`). This is design work,
 not interview work.
 
 ---
@@ -16,21 +16,21 @@ least one `task-NNN` entry beyond the placeholder), TASK-BREAKDOWN is already
 complete — skip to LITE-REVIEW.
 
 Print: `[State: TASK-BREAKDOWN] Sub-path: {Sub-path}`
-Print before dispatch: `[State: TASK-BREAKDOWN] Dispatching architect for task breakdown.`
+Print before dispatch: `[State: TASK-BREAKDOWN] Dispatching aid-architect for task breakdown.`
 
 ---
 
 ## Dispatch
 
 ```
-▶ architect starting
+▶ aid-architect starting
 Read `references/state-task-breakdown.md` for the full task-breakdown process.
-✓ architect done — or ✗ architect failed: {reason}
+✓ aid-architect done — or ✗ aid-architect failed: {reason}
 ```
 
 ---
 
-## Task-breakdown process (architect)
+## Task-breakdown process (aid-architect)
 
 ### Step 1: Load context
 

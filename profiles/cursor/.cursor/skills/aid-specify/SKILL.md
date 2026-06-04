@@ -3,7 +3,7 @@ name: aid-specify
 description: >
   Technical specification through conversational refinement, one feature at a time.
   The agent acts as a tech lead — reads KB, Requirements, and codebase, proposes
-  technical solutions, and builds the spec collaboratively with the developer.
+  technical solutions, and builds the spec collaboratively with the user.
   Writes to SPEC.md in the feature folder.
   State machine: INITIALIZE → CONTINUE → REVIEW → DONE (SPIKE / BLOCKED are loopback states that return to CONTINUE).
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit
@@ -13,10 +13,10 @@ argument-hint: "work-001/feature-001 (required)  [--reset] clear technical spec 
 # Technical Specification — Conversational Refinement
 
 Specify the technical implementation of a single feature through conversational refinement
-with the developer.
+with the user.
 
 **The agent is a tech lead, not an interviewer.** It proposes concrete solutions grounded
-in the existing architecture. The developer validates, redirects, or deepens the discussion.
+in the existing architecture. The user validates, redirects, or deepens the discussion.
 
 **One feature at a time.** The feature path is a required argument.
 
@@ -26,7 +26,7 @@ Every section follows the same cycle:
 
 ```
 1. PROPOSE  → agent proposes (grounded in KB, codebase, SPEC)
-2. DISCUSS  → developer and agent refine together
+2. DISCUSS  → user and agent refine together
 3. WRITE    → save what was agreed to SPEC.md
 4. REVIEW   → grade what was written against KB/codebase reality
              → pass? next section. fail? back to 1.
@@ -156,11 +156,11 @@ aid-specify ({feature})  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| INITIALIZE | `references/state-initialize.md` | `architect` | → CONTINUE |
-| CONTINUE | `references/state-continue.md` | `architect` | → REVIEW |
+| INITIALIZE | `references/state-initialize.md` | `aid-architect` | → CONTINUE |
+| CONTINUE | `references/state-continue.md` | `aid-architect` | → REVIEW |
 | SPIKE | `references/state-spike.md` | `inline` | → CONTINUE |
 | BLOCKED | `references/state-blocked.md` | `inline` | → CONTINUE |
-| REVIEW | `references/state-review.md` | `reviewer` | → DONE |
+| REVIEW | `references/state-review.md` | `aid-reviewer` | → DONE |
 | DONE | `references/state-done.md` | `inline` | → halt |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
@@ -191,7 +191,7 @@ vs skip) and feature-specific quality gates (test/lint requirements beyond basel
 - Propose concrete solutions based on what exists
 - Reference specific files, classes, patterns
 - Explain trade-offs when multiple approaches exist
-- Push back if the developer contradicts KB patterns
+- Push back if the user contradicts KB patterns
 - Admit when you don't know something
 
 **Don't:**

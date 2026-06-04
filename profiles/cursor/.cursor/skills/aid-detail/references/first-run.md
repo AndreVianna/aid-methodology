@@ -44,7 +44,7 @@ What do you think? We can discuss:
 
 ### Step 2: Discuss
 
-The developer may:
+The user may:
 - **Retype** → "task-002 should be MIGRATE not IMPLEMENT"
 - **Split** → "task-002 is too big, separate the migration from the model"
 - **Merge** → "003 and 004 are tiny, combine them" (only if SAME type)
@@ -67,7 +67,7 @@ Once approved:
    - Scope aligned with what the SPECs actually say?
    - Criteria concrete enough to verify?
 
-**Agent:** Dispatch with `subagent_type: reviewer` (overriding the default `architect`). The reviewer must run with clean context — it grades against KB/codebase reality without seeing the architect's working notes.
+**Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes.
 
 **Dispatch package:** render `references/reviewer-brief.md` with:
 - `{{SCOPE}}` = `per-deliverable`
@@ -79,13 +79,13 @@ Include in the prompt:
   `.aid/.temp/review-pending/detail.md`. Read the existing file first if it exists.
   Output per `.cursor/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
-Print before dispatch: `[Review] Dispatching reviewer for task list validation (per-deliverable scope).`
+Print before dispatch: `[Review] Dispatching aid-reviewer for task list validation (per-deliverable scope).`
 
-▶ reviewer starting (~1–2 min)
+▶ aid-reviewer starting (~1–2 min)
 After writing, **review immediately:** Do the tasks hold up?
-✓ reviewer done (record actual time) — or ✗ reviewer failed: {reason}
+✓ aid-reviewer done (record actual time) — or ✗ aid-reviewer failed: {reason}
 
-After reviewer returns, run grade.sh:
+After aid-reviewer returns, run grade.sh:
 
 ```bash
 bash .cursor/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md

@@ -244,7 +244,7 @@ Source: `.aid/knowledge/project-structure.md` `## Top-Level Directory Tree (dept
 - **Context** → profile-local **committed** `AGENTS.md` (filename-map token only; NOT emitted
   by the renderer).
 - Source: `profiles/copilot-cli.toml` (`[layout]`, `[agent]`, `[skill]`, `[tool_names]`, the
-  "No [mcp] table" comment), `profiles/copilot-cli/.github/agents/architect.agent.md`.
+  "No [mcp] table" comment), `profiles/copilot-cli/.github/agents/aid-architect.agent.md`.
 
 ### Antigravity mapping (host-tool conventions)
 
@@ -256,10 +256,10 @@ Source: `.aid/knowledge/project-structure.md` `## Top-Level Directory Tree (dept
   source `.mdc` frontmatter and regenerates `trigger:/description/globs`
   (`always_apply=true`→`trigger: always_on`; `false`→`trigger: glob` + globs). DECOUPLED from
   `[agent].format`. Sub-agent rules and methodology rules share `.agent/rules/` (disjoint
-  stems: persona names vs `aid-` prefix).
+  stems: `aid-<role>` names for sub-agents vs `aid-methodology` for methodology rules).
 - **Context** → profile-local committed `AGENTS.md`.
 - Source: `profiles/antigravity.toml` (`[layout]`, `[agent]`, `[extras]`, `[[extras.rules]]`),
-  `profiles/antigravity/.agent/rules/reviewer.md`, `profiles/antigravity/.agent/rules/aid-methodology.md`.
+  `profiles/antigravity/.agent/rules/aid-reviewer.md`, `profiles/antigravity/.agent/rules/aid-methodology.md`.
 
 ### Codex split-layout exception
 

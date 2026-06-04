@@ -15,8 +15,8 @@ Package completed deliveries into a release.
 
 ## Agents Involved
 
-- **Default executor:** `operator` (orchestrates the release: verifies build, packages artifacts, updates statuses).
-- **Specialist consults (optional):** `tech-writer` for release notes / changelog, `devops` if CI/CD configuration changes are needed during release, `reviewer` for final pre-release verification.
+- **Default executor:** `aid-operator` (orchestrates the release: verifies build, packages artifacts, updates statuses).
+- **Specialist consults (optional):** `aid-tech-writer` for release notes / changelog, `aid-operator` if CI/CD configuration changes are needed during release, `aid-reviewer` for final pre-release verification.
 
 ## Argument-Hint
 
@@ -121,10 +121,10 @@ dispatch in this skill.
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| IDLE | `references/state-idle.md` | `operator` | → SELECTING |
-| SELECTING | `references/state-selecting.md` | `operator` | → VERIFYING |
-| VERIFYING | `references/state-verifying.md` | `operator` | → PACKAGING |
-| PACKAGING | `references/state-packaging.md` | `operator` | → DONE |
+| IDLE | `references/state-idle.md` | `aid-operator` | → SELECTING |
+| SELECTING | `references/state-selecting.md` | `aid-operator` | → VERIFYING |
+| VERIFYING | `references/state-verifying.md` | `aid-operator` | → PACKAGING |
+| PACKAGING | `references/state-packaging.md` | `aid-operator` | → DONE |
 | DONE | _(inline — terminal)_ | `inline` | → halt |
 | RE-RUN | `references/state-re-run.md` | `inline` | → halt |
 

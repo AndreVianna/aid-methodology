@@ -40,11 +40,11 @@ Include in the prompt:
 - **Schema reference:** "Output per `.cursor/templates/reviewer-ledger-schema.md`.
   The ledger is the entire file — ONE markdown table, no headers, no narrative."
 
-Dispatch the `reviewer` subagent with the rendered brief.
+Dispatch the `aid-reviewer` subagent with the rendered brief.
 
 ### Grade Overall
 
-After the reviewer returns, run grade.sh on the ledger:
+After the aid-reviewer returns, run grade.sh on the ledger:
 
 ```bash
 bash .cursor/scripts/grade.sh --explain .aid/.temp/review-pending/specify-<feature>.md
