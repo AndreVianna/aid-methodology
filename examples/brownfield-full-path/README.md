@@ -90,15 +90,16 @@ rules — derived from the code itself, not from what anyone remembers.
 
 1. Generates a `project-index.md` pre-pass (file tree + line counts per module) so
    downstream agents have a navigational map of the codebase.
-2. Dispatches six specialist sub-agents in parallel — `discovery-scout`,
-   `discovery-architect`, `discovery-analyst`, `discovery-integrator`,
-   `discovery-quality`, `discovery-reviewer` — each reading a different slice of the
-   source code.
-3. Proposes the KB doc-set for this project (Step 0d). Because OrderFlow has a REST
+2. Proposes the KB doc-set for this project (Step 0d). Because OrderFlow has a REST
    API and a PostgreSQL schema, the proposed doc-set includes all 14 standard
    documents. You confirm or adjust the list before agents write.
-4. Each sub-agent writes to a subset of the KB documents. The `discovery-reviewer`
-   grades each document and records open questions in `.aid/knowledge/STATE.md`.
+3. Dispatches `aid-researcher` instances in parallel — one per confirmed doc-set
+   scope — each covering a different slice of the KB documents. A single
+   `aid-researcher` instance handles the pre-scan (project structure and external
+   sources) sequentially first; the remaining instances run in parallel.
+4. Each `aid-researcher` instance writes to its assigned KB documents. After
+   generation, `aid-reviewer` grades each document adversarially and records open
+   questions in `.aid/knowledge/STATE.md`.
 5. Q&A: the skill surfaces questions that require human input — things the code
    cannot answer alone (e.g., "Is the `PENDING` state meant to be re-entrant after
    a payment failure?"). You answer each question; answers are appended to `STATE.md`
@@ -194,7 +195,7 @@ specification for each feature SPEC stub created by Interview.
 
 **What `aid-specify` does:**
 
-For each feature stub in `.aid/work-NNN/features/`, the `architect` agent reads:
+For each feature stub in `.aid/work-NNN/features/`, the `aid-architect` agent reads:
 - The feature's `SPEC.md` stub (business requirements from Interview)
 - The relevant KB documents (especially `architecture.md`, `module-map.md`,
   `domain-glossary.md`, `schemas.md`, and `pipeline-contracts.md`)
@@ -239,7 +240,7 @@ sequences work into PR-sized deliveries, respecting dependencies.
 
 **What `aid-plan` does:**
 
-The `architect` agent reads all feature SPECs and produces `PLAN.md` at
+The `aid-architect` agent reads all feature SPECs and produces `PLAN.md` at
 `.aid/work-NNN/PLAN.md`. It identifies dependencies between features, breaks large
 features into deliveries, and assigns a priority sequence.
 
@@ -271,7 +272,7 @@ each delivery, creating the execution graph.
 
 **What `aid-detail` does:**
 
-For each delivery in `PLAN.md`, the `architect` agent writes one `task-NNN.md` file
+For each delivery in `PLAN.md`, the `aid-architect` agent writes one `task-NNN.md` file
 per unit of work under `.aid/work-NNN/tasks/`. Each task file has:
 
 - A **type** (RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE)
@@ -301,9 +302,10 @@ per unit of work under `.aid/work-NNN/tasks/`. Each task file has:
 | task-010 | DOCUMENT | Update API reference documentation for the three new endpoints |
 
 **Why typed tasks matter:** The task type drives which specialist agent `aid-execute`
-dispatches. IMPLEMENT and TEST tasks both go to the `developer` agent (TEST is a task
-type, not a separate specialist). MIGRATE tasks go to the `data-engineer` agent.
-DOCUMENT tasks go to the `tech-writer` agent. Each agent is optimized for its task type.
+dispatches. IMPLEMENT and TEST tasks both go to the `aid-developer` agent (TEST is a
+task type, not a separate specialist). MIGRATE tasks also go to `aid-developer` (which
+absorbs the former data-engineer role). DOCUMENT tasks go to the `aid-tech-writer`
+agent. Each agent is optimized for its task type.
 
 ---
 
@@ -320,17 +322,18 @@ mandatory two-tier review before moving to the next task.
 
 For each task in the execution graph:
 
-1. The `orchestrator` agent reads the task file and dispatches the appropriate
-   specialist (e.g., `data-engineer` for task-001, `developer` for task-004).
+1. The `aid-orchestrator` agent reads the task file and dispatches the appropriate
+   specialist (e.g., `aid-developer` for task-001 MIGRATE and task-004 IMPLEMENT).
 2. The specialist agent reads the task spec, the relevant KB documents, and the
    feature SPEC, then implements the work.
-3. **Quick-Check** (per task): a Small-tier `reviewer` agent checks the output for
-   HIGH+ issues. There is no grade loop at this stage — findings are recorded and
+3. **Quick-Check** (per task): a Small-tier `aid-reviewer` agent checks the output
+   for HIGH+ issues. There is no grade loop at this stage — findings are recorded and
    deferred to the Delivery Gate.
-4. **Delivery Gate** (per delivery): a `reviewer` whose tier matches the delivery's
-   complexity score (Small/Medium/Large) runs a full review→fix→grade loop. The grade
-   must reach the configured minimum (default: A) before the delivery is marked complete.
-5. On pass, the orchestrator advances to the next task in the graph.
+4. **Delivery Gate** (per delivery): an `aid-reviewer` whose tier matches the
+   delivery's complexity score (Small/Medium/Large) runs a full review→fix→grade loop.
+   The grade must reach the configured minimum (default: A) before the delivery is
+   marked complete.
+5. On pass, `aid-orchestrator` advances to the next task in the graph.
 
 **For OrderFlow's Refund feature, task-001 (MIGRATE) produces:**
 
@@ -351,12 +354,12 @@ CREATE INDEX idx_refunds_order_id ON refunds(order_id);
 CREATE INDEX idx_refunds_status   ON refunds(status);
 ```
 
-The `reviewer` agent checks this against `schemas.md` (UUID primary key pattern
+The `aid-reviewer` agent checks this against `schemas.md` (UUID primary key pattern
 matches existing tables), `coding-standards.md` (column naming in snake_case), and
 the SPEC requirement for idempotency. It grades the migration B+ and marks the task
 done.
 
-**Review gates enforce KB consistency:** If a developer agent had used `INT` for the
+**Review gates enforce KB consistency:** If an `aid-developer` agent had used `INT` for the
 primary key (inconsistent with existing `UUID` usage in `module-map.md`), the
 reviewer would catch it and require correction before the task closes. The KB is the
 reference, not just the task spec.

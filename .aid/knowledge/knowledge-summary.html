@@ -676,10 +676,10 @@ details.accord > summary:focus-visible,
 	<h1>AI Integrated Development</h1>
 	<p class="subtitle">Knowledge Base Summary — AI-agent methodology distribution for Claude Code, Codex CLI, and Cursor IDE</p>
 	<div class="badges">
-		<span class="badge badge-primary">10 Skills</span>
-		<span class="badge badge-accent">22 Agents</span>
-		<span class="badge badge-info">3 Install Trees</span>
-		<span class="badge badge-ok">18 Test Suites</span>
+		<span class="badge badge-primary">11 Skills</span>
+		<span class="badge badge-accent">9 Agents</span>
+		<span class="badge badge-info">5 Install Trees</span>
+		<span class="badge badge-ok">24 Test Suites</span>
 		<span class="badge badge-purple">15 KB Docs</span>
 		<span class="badge">Methodology v3.1</span>
 	</div>
@@ -729,9 +729,9 @@ details.accord > summary:focus-visible,
 		</div>
 		<div class="card">
 			<div class="kicker">Agents</div>
-			<div class="stat">22</div>
+			<div class="stat">9</div>
 			<div class="stat-sub">specialist agents, 3 tiers</div>
-			<div class="meta">10 Large · 9 Medium · 3 Small<br>(per architecture.md)</div>
+			<div class="meta">4 Large · 4 Medium · 1 Small<br>(per architecture.md)</div>
 		</div>
 		<div class="card card-primary">
 			<div class="kicker">Install Trees</div>
@@ -851,7 +851,7 @@ flowchart LR
 			<dl>
 				<dt>States</dt><dd>GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE</dd>
 				<dt>Key outputs</dt><dd><code>.aid/knowledge/*.md</code> (the declared/derived KB doc-set)</dd>
-				<dt>Agents</dt><dd>5 discovery-* sub-agents + discovery-reviewer</dd>
+				<dt>Agents</dt><dd>aid-researcher (pool of researcher instances, one per doc-set scope) + aid-reviewer</dd>
 			</dl>
 		</div>
 
@@ -973,7 +973,7 @@ flowchart LR
 	<header>
 		<span class="eyebrow">Featured</span>
 		<h2>Agent Model &amp; Tiers</h2>
-		<p class="lede">22 specialist agents across three model tiers (Large / Medium / Small). Skills dispatch agents via the host tool's Agent capability. The key invariant: the reviewer's tier is always greater than or equal to the executor's, so a writer never grades its own work. (per architecture.md, module-map.md)</p>
+		<p class="lede">9 specialist agents across three model tiers (Large / Medium / Small). Skills dispatch agents via the host tool's Agent capability. The key invariant: the reviewer's tier is always greater than or equal to the executor's, so a writer never grades its own work. (per architecture.md, module-map.md)</p>
 	</header>
 
 	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 2: Agent dispatch model and tier hierarchy — click or press Enter to expand">
@@ -986,35 +986,22 @@ graph TD
 
     SKILL["aid-* skill<br/>(Thin-Router SKILL.md)"]:::skill
 
-    subgraph Large["Large Tier (Opus / GPT-5.5 / Gemini-3, high) — 10 agents"]
-        A1["architect"]:::large
-        A2["reviewer"]:::large
-        A3["interviewer"]:::large
-        A4["security"]:::large
-        A5["discovery-scout"]:::large
-        A6["discovery-architect"]:::large
-        A7["discovery-analyst"]:::large
-        A8["discovery-integrator"]:::large
-        A9["discovery-quality"]:::large
-        A10["discovery-reviewer"]:::large
+    subgraph Large["Large Tier (Opus / GPT-5.5 / Gemini-3, high) — 4 agents"]
+        A1["aid-interviewer"]:::large
+        A2["aid-architect"]:::large
+        A3["aid-researcher"]:::large
+        A4["aid-reviewer"]:::large
     end
 
-    subgraph Medium["Medium Tier (Sonnet / GPT-5.4 / Gemini-3, medium) — 9 agents"]
-        B1["orchestrator"]:::medium
-        B2["researcher"]:::medium
-        B3["developer"]:::medium
-        B4["operator"]:::medium
-        B5["data-engineer"]:::medium
-        B6["performance"]:::medium
-        B7["devops"]:::medium
-        B8["tech-writer"]:::medium
-        B9["ux-designer"]:::medium
+    subgraph Medium["Medium Tier (Sonnet / GPT-5.4 / Gemini-3, medium) — 4 agents"]
+        B1["aid-developer"]:::medium
+        B2["aid-operator"]:::medium
+        B3["aid-orchestrator"]:::medium
+        B4["aid-tech-writer"]:::medium
     end
 
-    subgraph Small["Small Tier (Haiku / GPT-5.4-mini / Gemini-3, low) — 3 agents"]
-        C1["simple-extractor"]:::small
-        C2["simple-formatter"]:::small
-        C3["simple-glob"]:::small
+    subgraph Small["Small Tier (Haiku / GPT-5.4-mini / Gemini-3, low) — 1 agent"]
+        C1["aid-clerk"]:::small
     end
 
     SKILL --> Large
@@ -1026,19 +1013,19 @@ graph TD
 
 	<div class="grid g3">
 		<div class="card">
-			<div class="kicker">Large Tier — 10 agents</div>
+			<div class="kicker">Large Tier — 4 agents</div>
 			<h3>Heavy-lifting analysts</h3>
-			<p>Architect, reviewer, interviewer, security, and the five discovery sub-agents (scout, architect, analyst, integrator, quality) plus discovery-reviewer. Discovery sub-agents share <code>permissionMode: bypassPermissions</code> and <code>background: true</code>. (per module-map.md §2a)</p>
+			<p>aid-interviewer, aid-architect, aid-researcher, aid-reviewer. The Researcher consolidates the five former discovery cataloguing agents and the analysis surfaces of security and performance. The Reviewer consolidates the former KB-document review role. (per module-map.md §2a)</p>
 		</div>
 		<div class="card">
-			<div class="kicker">Medium Tier — 9 agents</div>
+			<div class="kicker">Medium Tier — 4 agents</div>
 			<h3>Specialists + executors</h3>
-			<p>Orchestrator, researcher, developer (the ONLY agent authorized to modify production code), operator, data-engineer, performance, devops, tech-writer, ux-designer. The developer agent is the sole production-code writer by explicit contract. (per module-map.md §2b)</p>
+			<p>aid-developer (the ONLY agent authorized to modify production code), aid-operator, aid-orchestrator, aid-tech-writer. The Developer consolidates the former migration-engineering and infra-configure-executor roles. (per module-map.md §2b)</p>
 		</div>
 		<div class="card">
-			<div class="kicker">Small Tier — 3 agents</div>
+			<div class="kicker">Small Tier — 1 agent</div>
 			<h3>Mechanical utilities</h3>
-			<p>simple-extractor, simple-formatter, simple-glob. Labelled <em>INTERNAL UTILITY — sub-agent only, do NOT invoke from a skill</em>. Used for mechanical extraction, template filling, and glob enumeration. (per module-map.md §2c)</p>
+			<p>aid-clerk. Labelled <em>INTERNAL UTILITY — sub-agent only, do NOT invoke from a skill</em>. Consolidates the three former small-tier utility agents (one per operation type: extract, format-fill, glob). Used for mechanical extraction, template filling, and glob enumeration. (per module-map.md §2c)</p>
 		</div>
 	</div>
 
@@ -1144,7 +1131,7 @@ erDiagram
 		<p class="lede">AID ships no HTTP services or RPC endpoints. Contracts here means: skill slash-command signatures and state-machine contracts, script CLI signatures and exit codes, file-format contracts, subagent dispatch conventions, and the canonical-to-5-profile renderer contract. (per pipeline-contracts.md)</p>
 	</header>
 
-	<h3>Slash-command contracts (10 skills)</h3>
+	<h3>Slash-command contracts (11 skills)</h3>
 	<div class="tbl-wrap">
 		<table class="tbl">
 			<thead><tr><th>Skill</th><th>Signature</th><th>States</th><th>Side effects</th></tr></thead>
@@ -1353,7 +1340,7 @@ flowchart TB
 
 	<div class="callout warn">
 		<h4>Never edit profile trees directly</h4>
-		<p>Files under <code>profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/</code> are generator output. Edits are silently overwritten on the next <code>python run_generator.py</code> run. Always edit <code>canonical/</code> and re-run the generator. The emission manifest is the safety boundary — only previously-emitted files are eligible for deletion. (per coding-standards.md §7a)</p>
+		<p>Files under <code>profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/</code> are generator output. Edits are silently overwritten on the next <code>python .claude/skills/aid-generate/scripts/run_generator.py</code> run. Always edit <code>canonical/</code> and re-run the generator. The emission manifest is the safety boundary — only previously-emitted files are eligible for deletion. (per coding-standards.md §7a)</p>
 	</div>
 </section>
 
@@ -1501,13 +1488,13 @@ flowchart TB
 				</tr>
 				<tr>
 					<td><code>test-discovery-doc-ownership.sh</code></td>
-					<td><code>discovery-scout</code>/<code>discovery-quality</code> AGENT.md + <code>aid-discover/state-generate.md</code></td>
+					<td><code>aid-researcher</code> AGENT.md + <code>aid-discover/state-generate.md</code></td>
 					<td>bash</td>
-					<td>Discovery doc-ownership consistency: exactly one agent "produces" each standard KB doc; each agent's Produce line + What-You-Don't-Do agrees with the dispatch table (scout owns project-structure + external-sources, NOT infrastructure; quality owns infrastructure + test-landscape + tech-debt). 14 checks</td>
+					<td>Discovery doc-ownership consistency: the doc-set ownership map defines which KB docs each researcher dispatch-slot produces (scout scope: project-structure + external-sources; quality scope: infrastructure + test-landscape + tech-debt). 14 checks</td>
 				</tr>
 				<tr>
 					<td><code>test-expectations-single-source.sh</code></td>
-					<td><code>aid-discover/document-expectations.md</code> + discovery-reviewer/reviewer-prompt/state-review/state-fix</td>
+					<td><code>aid-discover/document-expectations.md</code> + aid-reviewer AGENT.md + state-review/state-fix</td>
 					<td>bash</td>
 					<td>Single-source invariant for per-doc expectations: <code>document-expectations.md</code> is the sole file with per-doc <code>### *.md</code> blocks; reviewer AGENT.md has none; <code>{{DOCUMENT_EXPECTATIONS}}</code> placeholder present + merge completeness. 9 checks</td>
 				</tr>
@@ -1515,7 +1502,7 @@ flowchart TB
 					<td><code>test-doc-set-read.sh</code></td>
 					<td><code>aid-discover/doc-set-resolve.md</code> (<code>resolve_doc_set</code>/<code>synth_default_seed</code> + 4 accessors)</td>
 					<td>bash</td>
-					<td>Core doc-set resolve/accessor logic: unset → default seed; declared set → exact filename/owner/presence rows; all 4 accessors; comment stripping; comma-in-<code>when</code> shred behavior; unknown owner → discovery-architect; bash+awk-only. 15 checks</td>
+					<td>Core doc-set resolve/accessor logic: unset → default seed; declared set → exact filename/owner/presence rows; all 4 accessors; comment stripping; comma-in-<code>when</code> shred behavior; unknown owner → aid-researcher-architecture; bash+awk-only. 15 checks</td>
 				</tr>
 				<tr>
 					<td><code>test-doc-set-mapping.sh</code></td>
@@ -1541,7 +1528,7 @@ flowchart TB
 
 	<div class="callout warn" style="margin-top:1rem;">
 		<h4>Coverage gaps</h4>
-		<p>The <code>.mjs</code> validators, the PowerShell mirrors, and the <code>setup.*</code> install flow are now covered (CI asserts <code>node</code> + <code>pwsh</code> present so those suites can never silently skip). The two new agent-format emitters carry their own generator self-tests run by the CI <code>generator-selftests</code> job (<code>test_copilot_emitter.py</code> — Copilot real-YAML round-trip; <code>test_antigravity_emitter.py</code> — Antigravity rule reshape), alongside <code>test_manifest_safety.py</code> — these live under <code>.claude/skills/aid-generate/scripts/</code>, not <code>tests/canonical/</code>. The genuinely untested surface is the prompt-driven orchestration layer: the <code>/aid-*</code> skills (verified by dogfooding; the <code>discovery-reviewer</code> sub-agent is the closest adversarial integration check), the renderer (covered by its own VERIFY (deterministic) byte-identity gate across the 5 profiles, not <code>tests/canonical/</code>), and the end-to-end pipeline. There is no statement/branch coverage measurement. (per test-landscape.md §Coverage gaps and roadmap)</p>
+		<p>The <code>.mjs</code> validators, the PowerShell mirrors, and the <code>setup.*</code> install flow are now covered (CI asserts <code>node</code> + <code>pwsh</code> present so those suites can never silently skip). The two new agent-format emitters carry their own generator self-tests run by the CI <code>generator-selftests</code> job (<code>test_copilot_emitter.py</code> — Copilot real-YAML round-trip; <code>test_antigravity_emitter.py</code> — Antigravity rule reshape), alongside <code>test_manifest_safety.py</code> — these live under <code>.claude/skills/aid-generate/scripts/</code>, not <code>tests/canonical/</code>. The genuinely untested surface is the prompt-driven orchestration layer: the <code>/aid-*</code> skills (verified by dogfooding; the <code>aid-reviewer</code> sub-agent is the closest adversarial integration check), the renderer (covered by its own VERIFY (deterministic) byte-identity gate across the 5 profiles, not <code>tests/canonical/</code>), and the end-to-end pipeline. There is no statement/branch coverage measurement. (per test-landscape.md §Coverage gaps and roadmap)</p>
 	</div>
 </section>
 
@@ -1590,7 +1577,7 @@ flowchart TB
 		<div class="card">
 			<div class="kicker">README.md — 388 lines</div>
 			<h3>Primary pitch document</h3>
-			<p>Eight sections with progressive disclosure: What is AID, Why AID (failure modes it removes), The Pipeline (Mermaid flowchart + 10 skills), The Knowledge Base (now a declared/derived doc-set), The Agent Model (3-tier diagram), Feedback Loops (11 formal loops), AID vs. SDD (8-row comparison), Using AID in your project (install instructions). (per repo-presentation.md)
+			<p>Eight sections with progressive disclosure: What is AID, Why AID (failure modes it removes), The Pipeline (Mermaid flowchart + 11 skills), The Knowledge Base (now a declared/derived doc-set), The Agent Model (3-tier diagram), Feedback Loops (11 formal loops), AID vs. SDD (8-row comparison), Using AID in your project (install instructions). (per repo-presentation.md)
 		</div>
 		<div class="card">
 			<div class="kicker">methodology/aid-methodology.md — 1,070 lines</div>
@@ -1685,7 +1672,7 @@ flowchart TB
 		<div class="card">
 			<div class="kicker">Skills &amp; agents</div>
 			<p><code>.claude/skills/</code> — the <code>/aid-*</code> thin-router skills.<br>
-			<code>.claude/agents/</code> — the 22 specialist sub-agents (3 tiers).</p>
+			<code>.claude/agents/</code> — the 9 specialist sub-agents (3 tiers).</p>
 		</div>
 		<div class="card">
 			<div class="kicker">Templates &amp; scripts</div>

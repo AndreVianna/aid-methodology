@@ -394,9 +394,9 @@ Before dispatching sub-agents, Discover runs the **declared doc-set propose→co
 
 Discover then dispatches its sub-agents:
 
-- **discovery-scout** (alone, sequential): Maps project structure, detects project type, writes `project-structure.md` and `external-sources.md`.
-- **discovery-architect, discovery-analyst, discovery-integrator, discovery-quality** (in parallel): Cover the remaining KB documents divided by ownership — architecture and patterns, data models and standards, integrations, tests and debt.
-- **discovery-reviewer** (after generation): Grades the result adversarially against the universal rubric. The generation agents never grade their own work.
+- **`aid-researcher`** (pre-scan, alone, sequential): Writes `project-structure.md` and `external-sources.md` from the project index.
+- **`aid-researcher` instances** (in parallel, one per confirmed doc-set scope): Cover the remaining KB documents. Each instance's target list is drawn from the confirmed doc-set; an instance is not dispatched if its target list is empty. This pool of `aid-researcher` instances replaces the former five separate discovery-* agents (discovery-scout, discovery-architect, discovery-analyst, discovery-integrator, discovery-quality).
+- **`aid-reviewer`** (after generation): Grades the result adversarially against the universal rubric. KB-doc review is a dispatch parameter — the generation agents never grade their own work.
 
 Across the run, discovery covers:
 
@@ -547,8 +547,8 @@ No `features/` folder. No `REQUIREMENTS.md`. No `PLAN.md`. One work-root `SPEC.m
 **The lite-path states:**
 
 - **CONDENSED-INTAKE** — a conversational slot-fill that produces the work-root SPEC.md. No deep multi-question interview; just the fields the task type needs.
-- **TASK-BREAKDOWN** — an architect agent proposes the typed task set directly from the SPEC. No separate Plan or Detail phases required.
-- **LITE-REVIEW** — a reviewer adversarially validates the task set. Same rubric as the full path; same adversarial separation (reviewer ≠ proposer).
+- **TASK-BREAKDOWN** — an `aid-architect` agent proposes the typed task set directly from the SPEC. No separate Plan or Detail phases required.
+- **LITE-REVIEW** — an `aid-reviewer` adversarially validates the task set. Same rubric as the full path; same adversarial separation (reviewer ≠ proposer).
 - **LITE-DONE** — terminal state; provides the hand-off prompt to `/aid-execute`.
 
 ##### Recipes
@@ -767,49 +767,36 @@ flowchart TB
     classDef med   fill:#0F766E,stroke:#0F766E,color:#ffffff
     classDef small fill:#E5E7EB,stroke:#9CA3AF,color:#1F2937
 
-    subgraph L["Large tier — 10 · highest-stakes (Opus / GPT-5.5 / Gemini-3 Pro hi)"]
+    subgraph L["Large tier — 4 · highest-stakes (Opus / GPT-5.5 / Gemini-3 Pro hi)"]
         direction LR
-        LA["architect"]:::large
-        LR2["reviewer"]:::large
-        LI["interviewer"]:::large
-        LS["security"]:::large
-        LD1["discovery-scout"]:::large
-        LD2["discovery-architect"]:::large
-        LD3["discovery-analyst"]:::large
-        LD4["discovery-integrator"]:::large
-        LD5["discovery-quality"]:::large
-        LD6["discovery-reviewer"]:::large
+        LA["aid-interviewer"]:::large
+        LB["aid-architect"]:::large
+        LC["aid-researcher"]:::large
+        LD["aid-reviewer"]:::large
     end
-    subgraph M["Medium tier — 9 · production workhorses (Sonnet / GPT-5.4 / Gemini-3 Pro lo)"]
+    subgraph M["Medium tier — 4 · production workhorses (Sonnet / GPT-5.4 / Gemini-3 Pro lo)"]
         direction LR
-        MO["orchestrator"]:::med
-        MR["researcher"]:::med
-        MD["developer"]:::med
-        MOps["operator"]:::med
-        MDE["data-engineer"]:::med
-        MP["performance"]:::med
-        MDV["devops"]:::med
-        MTW["tech-writer"]:::med
-        MUX["ux-designer"]:::med
+        MA["aid-developer"]:::med
+        MB["aid-operator"]:::med
+        MC["aid-orchestrator"]:::med
+        MD["aid-tech-writer"]:::med
     end
-    subgraph S["Small tier — 3 · mechanical (Haiku / GPT-5.4-mini / Gemini-3 Flash)"]
+    subgraph S["Small tier — 1 · mechanical (Haiku / GPT-5.4-mini / Gemini-3 Flash)"]
         direction LR
-        SE["simple-extractor"]:::small
-        SF["simple-formatter"]:::small
-        SG["simple-glob"]:::small
+        SA["aid-clerk"]:::small
     end
     L -. "reviewer tier ≥ executor tier" .-> M -.-> S
 ```
 
-*22 specialist agents across three model tiers. The reviewer's tier is always ≥ the executor's tier — the agent that writes never grades its own work.*
+*9 specialist agents across three model tiers. The reviewer's tier is always ≥ the executor's tier — the agent that writes never grades its own work.*
 
-AID dispatches 22 specialist agents across three model tiers. The key design invariant: **the reviewer's tier is always ≥ the executor's tier.** The agent that writes never grades its own work.
+AID dispatches 9 specialist agents across three model tiers. The key design invariant: **the reviewer's tier is always ≥ the executor's tier.** The agent that writes never grades its own work.
 
 ### The Three Tiers
 
-- **Large (10 agents):** architect, reviewer, interviewer, security; and the six discovery sub-agents (discovery-scout, discovery-architect, discovery-analyst, discovery-integrator, discovery-quality, discovery-reviewer). Large agents handle the highest-stakes work — architectural decisions, adversarial review, requirements gathering, security analysis, and the entire discovery sub-system.
-- **Medium (9 agents):** orchestrator, researcher, developer, operator, data-engineer, performance, devops, tech-writer, ux-designer. The production workhorses — they implement, research, design, and orchestrate within a delivery.
-- **Small (3 agents):** simple-extractor, simple-formatter, simple-glob. Deterministic, fast, low-cost. Used for mechanical tasks (extracting structured data, formatting output, globbing files) where Large-tier reasoning is unnecessary overhead.
+- **Large (4 agents):** `aid-interviewer`, `aid-architect`, `aid-researcher`, `aid-reviewer`. Large agents handle the highest-stakes work — requirements gathering, architectural decisions, brownfield discovery (KB authoring, replacing the former five discovery-* agents), and adversarial review.
+- **Medium (4 agents):** `aid-developer`, `aid-operator`, `aid-orchestrator`, `aid-tech-writer`. The production workhorses — they implement, operate releases, route pipeline findings, and author user-facing documentation. `aid-developer` absorbs former data-engineer and devops roles; `aid-architect` absorbs former ux-designer advisory work.
+- **Small (1 agent):** `aid-clerk`. Deterministic, fast, low-cost. One parameterized utility dispatched for mechanical operations (extract / format / glob) where Large-tier reasoning is unnecessary overhead.
 
 The tier colors in the diagram intentionally echo pipeline group colors — Large tier uses Prepare navy (`#1E3A8A`) because Large agents handle high-stakes judgment (like Discovery); Medium uses Map teal (`#0F766E`) because Medium agents handle operational execution (like Map/Execute). This is semantic overlap by design.
 
@@ -829,7 +816,7 @@ The tier→model mapping is declared per profile in `profiles/{tool}.toml` and r
 
 The four agent formats emitted by the generator correspond to the four ways host tools represent sub-agents:
 
-- **markdown** — Claude Code and Cursor: the canonical source is `AGENT.md`, rendered into the install tree as lowercase per-role files (`developer.md`, `architect.md`, etc.) with markdown frontmatter.
+- **markdown** — Claude Code and Cursor: the canonical source is `AGENT.md`, rendered into the install tree as `aid-`-prefixed files (`aid-developer.md`, `aid-architect.md`, etc.) with markdown frontmatter.
 - **toml** — Codex: `.codex/agents/*.toml` files.
 - **copilot-agent** — GitHub Copilot CLI: `.github/agents/*.agent.md` with `name/description/tools/model` frontmatter.
 - **antigravity-rule** — Antigravity: `.agent/rules/*.md` with `trigger:`-style frontmatter (personas → `trigger: always_on`).
@@ -851,7 +838,7 @@ AID ships as five rendered install trees. The single canonical source (`canonica
 ```
 canonical/  (single source of truth — never edit profiles/ directly)
   ├── skills/        (11 user-facing skills)
-  ├── agents/        (22 agents)
+  ├── agents/        (9 agents)
   ├── templates/     (KB templates, document templates)
   ├── recipes/       (51 lite-path recipes — add-/change-/fix- families)
   └── scripts/       (helper scripts by phase)
@@ -1337,7 +1324,7 @@ flowchart TB
 | **Feedback loops** | Rebuild spec from scratch | Eleven formal loops (8 development + 2 post-production + 1 cross-cutting) |
 | **Testing** | Not addressed as separate phase | TEST is a first-class task type inside Execute; Deploy runs a full final-verification gate |
 | **Quality gates** | Generic conformance tests | One universal severity rubric (deterministic — computed, not judged) plus project-defined quality checks |
-| **Agent model** | One agent per spec | 22 specialist agents across 3 tiers; reviewer tier ≥ executor tier invariant |
+| **Agent model** | One agent per spec | 9 specialist agents across 3 tiers; reviewer tier ≥ executor tier invariant |
 | **Delivery model** | Spec → code → done | Discover → specify → plan → detail → execute → optional deploy/monitor |
 | **Memory** | Stateless | Knowledge Base persists across sessions |
 | **Post-delivery** | Not addressed | Monitor → Interview (bugs via LITE-BUG-FIX + CRs) |
