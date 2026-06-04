@@ -175,7 +175,7 @@ AID is not a silver bullet. It is a deliberate trade-off.
 | Teams new to AI-assisted development who need process guardrails to avoid the failure modes listed above | — |
 | Situations where "move fast and break things" has already produced a pile of broken things | — |
 
-**The routing insight:** AID does not make you weigh the cost of its full pipeline against the value of a change. That weighing is automated. TRIAGE — the opening state of every `/aid-interview` — routes work to the correct path from the first question. Small work takes the lite path by default. The full pipeline runs only when scope warrants it. You don't configure this; you answer T1, T2, and T3 and the methodology routes you.
+**The routing insight:** AID does not make you weigh the cost of its full pipeline against the value of a change. That weighing is automated. TRIAGE — the opening state of every `/aid-interview` — routes work to the correct path from the first question. Small work takes the lite path by default. The full pipeline runs only when scope warrants it. You don't configure this; you describe the work in your own words and the methodology routes you.
 
 **The honest cost:** AID adds process on the full path. Discovery takes time. Interview takes time. Specify, Plan, and Detail add overhead before a single line of code is written. The payoff is that what gets written is the *right* code, grounded in real understanding, with a spec that won't surprise you mid-implementation. The cost is real; so is the payoff. For small work, TRIAGE ensures the cost is commensurate with scope.
 
@@ -436,7 +436,7 @@ Across the run, discovery covers:
 
 ##### TRIAGE Routing
 
-Every interview begins with TRIAGE — a deterministic routing step that runs before any requirements gathering. TRIAGE asks three questions and routes the work to the full path or the lite path based on the answers.
+Every interview begins with TRIAGE — a routing step that runs before any requirements gathering. TRIAGE is **description-first**: you describe the work in your own words, and the agent infers two things — the internal *work-type* and the single best-matching *recipe* — then confirms both in one turn before routing.
 
 ```mermaid
 flowchart LR
@@ -444,7 +444,7 @@ flowchart LR
     classDef exe   fill:#166534,stroke:#166534,color:#ffffff
     classDef lite  fill:#92400E,stroke:#92400E,color:#ffffff
 
-    Triage["aid-interview · TRIAGE<br/>T1 breadth · T2 task-count · T3 type"]:::def
+    Triage["aid-interview · TRIAGE<br/>describe the work → infer type + recipe → confirm"]:::def
 
     subgraph FullPath[" Full path "]
         direction LR
@@ -461,24 +461,27 @@ flowchart LR
     end
     Exec["aid-execute"]:::exe
 
-    Triage -- "ANY large signal:<br/>T1 = multiple · T2 = many (6+)<br/>· T3 = new feature/system" --> F1
+    Triage -- "no confident match:<br/>multi-target / broad scope / ambiguous" --> F1
     F1 --> F2 --> F3 --> F4 --> Exec
-    Triage -- "ALL small:<br/>T1 none/one-small · T2 a few (≤5)<br/>· T3 bug-fix / refactor / doc" --> L1
+    Triage -- "confident single-recipe match:<br/>small, single-target work" --> L1
     L1 --> L2 --> L3 --> Exec
     L3 -. "escalate if scope grows" .-> F1
 ```
 
-*TRIAGE routes at the start of every interview. Any 'large' signal on T1, T2, or T3 routes to full path. All three 'small' signals route to lite path automatically. A lite work can escalate to full mid-flight if scope grows (`Path: escalated` in STATE.md).*
+*TRIAGE routes at the start of every interview. You describe the work; the agent infers the work-type and best recipe and confirms. A confident, single-target match routes to the lite path; an ambiguous, multi-target, or broad-scope description routes to the full path. A lite work can escalate to full mid-flight if scope grows (`Path: escalated` in STATE.md).*
 
-| **Question** | Signal → Lite | Signal → Full |
-|-------------|--------------|---------------|
-| **T1: Breadth** — how many features does this touch? | ≤ 2 features | > 2 features |
-| **T2: Task count** — how many distinct tasks does this require? | A few (≤ ~5) | Many (6+) |
-| **T3: Type** — what kind of work? | bug-fix, small-refactor, single-doc, small-new-feature | Anything else |
+**How the inference works:**
 
-The router is conservative. Any "large" signal on any question routes to full path. All three signals must be "small" to route to lite.
+| **Step** | What happens |
+|----------|--------------|
+| **1. Describe** | You write what you want to do, in plain language ("fix the login crash on special characters", "add a `/orders` API endpoint", "rename `OrderSvc` everywhere"). |
+| **2. Infer type** | The agent classifies the work into one of three internal work-types — `bug-fix`, `new-feature`, or `refactor`. You never pick this from a menu. |
+| **3. Match recipe** | The agent scans the recipe catalog, reading each recipe's one-line `summary:`, and picks the best match within the inferred type (or a cross-type `*` recipe). |
+| **4. Confirm** | You accept the inferred type + recipe, pick a different recipe, or reject — all on one turn. |
 
-The lite path is not a cost mitigation you weigh — it is the default path for small work. TRIAGE automates the proportionality decision. Most individual tasks (bug fixes, small refactors, single-doc updates, small features) route to the lite path without any deliberate choice on the user's part.
+The router is conservative: only a confident, single-recipe match routes to lite. Anything ambiguous, multi-target, or broad routes to the full path. (The old `single-doc` work-type is gone — documentation and report work is now `new-feature` when you're adding a document and `refactor` when you're changing one.)
+
+The lite path is not a cost mitigation you weigh — it is the default path for small work. TRIAGE automates the proportionality decision. Most individual tasks (bug fixes, refactors, doc updates, small features) route to the lite path without any deliberate choice on the user's part.
 
 ##### Full Path
 
@@ -533,14 +536,13 @@ After TRIAGE routes to lite, the interview shifts to a condensed, efficient flow
 
 No `features/` folder. No `REQUIREMENTS.md`. No `PLAN.md`. One work-root `SPEC.md` holds the consolidated requirements and technical context.
 
-**The four lite sub-paths:**
+**The three lite sub-paths:** the inferred work-type maps to a sub-path. Documentation and report work is not a separate type — adding a document is a `new-feature`, changing one is a `refactor`.
 
-| **workType** | Sub-path | Typical task set |
+| **work-type (inferred)** | Sub-path | Typical task set |
 |-------------|----------|-----------------|
 | `bug-fix` | LITE-BUG-FIX | 1 IMPLEMENT task (fix + regression test) |
-| `small-refactor` | LITE-REFACTOR | 1–3 REFACTOR + TEST tasks |
-| `single-doc` | LITE-DOC | Exactly 1 DOCUMENT task |
-| `small-new-feature` | LITE-FEATURE | 1–5 IMPLEMENT + TEST + DOCUMENT tasks |
+| `refactor` | LITE-REFACTOR | 1–3 REFACTOR + TEST tasks (incl. changing existing docs/reports) |
+| `new-feature` | LITE-FEATURE | 1–5 IMPLEMENT + TEST + DOCUMENT tasks (incl. adding new docs/reports) |
 
 **The lite-path states:**
 
@@ -551,19 +553,21 @@ No `features/` folder. No `REQUIREMENTS.md`. No `PLAN.md`. One work-root `SPEC.m
 
 ##### Recipes
 
-For recurring patterns — the same kind of change you make repeatedly to the same kind of project — AID ships seed **recipes** at `canonical/recipes/`:
+For recurring patterns — the same kind of change you make repeatedly to the same kind of project — AID ships a **catalog of 51 recipes** at `canonical/recipes/`. Recipes are named by the change they make, so the name tells you what they do:
 
-| **Recipe** | Applies to |
-|------------|-----------|
-| `bug-fix.md` | bug-fix workType |
-| `method-refactor.md` | small-refactor workType |
-| `add-crud-endpoint.md` | small-new-feature workType |
-| `add-unit-test.md` | small-new-feature workType |
-| `write-release-note.md` | any workType |
+| **Group** | **Naming** | **Examples** | **Count** |
+|-----------|-----------|--------------|-----------|
+| Add a thing (`new-feature`) | `add-X` | `add-api-endpoint`, `add-ui-component`, `add-entity`, `add-job`, `add-docs`, `add-report` | 20 |
+| Change a thing (`refactor`) | `change-X` | `change-api-endpoint`, `change-ui-component`, `change-schema`, `change-job`, `change-docs` | 20 |
+| Fix a thing (`bug-fix`) | `fix-X` | `fix-application`, `fix-api`, `fix-ui`, `fix-regression`, `fix-security` | 7 |
+| Refactor-only | (verb) | `improve-performance`, `bump-dependency`, `rename-symbol` | 3 |
+| Cross-type (`*`) | — | `add-test-coverage` | 1 |
 
-A recipe is a pre-filled template: YAML frontmatter + a `## spec` block + a `## tasks` block + `{{slot}}` placeholders. The placeholders are substituted at render time by `canonical/scripts/interview/parse-recipe.sh`. Using a recipe eliminates the conversational interview for a known pattern — you fill the slots, the recipe produces the SPEC.md and task set directly.
+The 40 `add-`/`change-` recipes span eleven target-kind families (objects/models, API, UI, CLI, DB/storage, config/flags, jobs, messaging, rules, docs/reports, integrations), mostly as matched `add-`/`change-` pairs — with a few naming exceptions where the two sides read more naturally apart (e.g. `add-entity` / `change-schema`).
 
-Recipes are a shortcut, not a bypass. The task set a recipe produces is the same structured, typed, reviewed artifact that the full interview would produce. The difference is speed for patterns you know well enough to template.
+Each recipe carries a one-line **`summary:`** in its YAML frontmatter — that is what TRIAGE reads to match your free-form description to the right recipe. The body is a pre-filled template: frontmatter (`name`, `applies-to` ∈ `{bug-fix, new-feature, refactor, *}`, `slot-count`, `task-count`, `summary`) + a `## spec` block + a `## tasks` block + `{{slot}}` placeholders. The placeholders are substituted at render time by `canonical/scripts/interview/parse-recipe.sh`. Using a recipe eliminates the conversational interview for a known pattern — you confirm the match, fill the slots, and the recipe produces the `SPEC.md` and task set directly.
+
+Recipes are a shortcut, not a bypass. The task set a recipe produces is the same structured, typed, reviewed artifact that the full interview would produce. The difference is speed for patterns you know well enough to template. (The catalog is authored breadth-first; over time, similar `add-`/`change-` pairs may be consolidated.)
 
 ##### Escalation
 
@@ -849,7 +853,7 @@ canonical/  (single source of truth — never edit profiles/ directly)
   ├── skills/        (11 user-facing skills)
   ├── agents/        (22 agents)
   ├── templates/     (KB templates, document templates)
-  ├── recipes/       (5 lite-path seed recipes)
+  ├── recipes/       (51 lite-path recipes — add-/change-/fix- families)
   └── scripts/       (helper scripts by phase)
         │
         ▼  python run_generator.py
@@ -1374,15 +1378,15 @@ SDD is not wrong. It is incomplete. AID is SDD + Discovery + Feedback Loops + Tw
 
 ### Using the Lite Path and Recipes
 
-For small, well-scoped changes — bug fixes, single-doc updates, small refactors, small new features:
+For small, well-scoped changes — bug fixes, doc updates, refactors, small new features:
 
-1. Run `/aid-interview`. TRIAGE asks 2-3 questions and routes to the appropriate LITE sub-path.
+1. Run `/aid-interview`. Describe the work in your own words; TRIAGE infers the work-type and the best-matching recipe and confirms, then routes to the appropriate LITE sub-path.
 2. The condensed interview produces a work-root SPEC.md and task(s) directly.
 3. Run `/aid-execute`.
 
 For recurring patterns:
 
-1. Identify which seed recipe matches the pattern (`bug-fix`, `method-refactor`, `add-crud-endpoint`, `add-unit-test`, or `write-release-note`).
+1. Describe the work; TRIAGE matches it to a recipe by reading each recipe's `summary:` (e.g. `add-api-endpoint`, `change-ui-component`, `fix-regression`). Confirm the match or pick a different recipe.
 2. Fill the recipe's `{{slot}}` placeholders.
 3. `parse-recipe.sh` produces the SPEC.md and task(s). Run `/aid-execute`.
 

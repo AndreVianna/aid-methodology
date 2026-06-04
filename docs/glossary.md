@@ -43,21 +43,21 @@ Terms and concepts used throughout the AID methodology.
 
 ## The Lite Path
 
-**Lite Path:** A condensed workflow for small, well-scoped work. Triggered by `aid-interview`'s TRIAGE state when work breadth ≤ 2 features, size ≤ a few days, and workType is `bug-fix`, `small-refactor`, `single-doc`, or `small-new-feature`. Lite path skips `aid-specify`, `aid-plan`, and `aid-detail` — Interview emits a work-root `SPEC.md` + `tasks/` directly, then routes to `aid-execute`. A lite work can be escalated to full path mid-flight if scope grows.
+**Lite Path:** A condensed workflow for small, well-scoped work. Triggered by `aid-interview`'s TRIAGE state when your description yields a confident, single-target work-type and recipe match. Lite path skips `aid-specify`, `aid-plan`, and `aid-detail` — Interview emits a work-root `SPEC.md` + `tasks/` directly, then routes to `aid-execute`. A lite work can be escalated to full path mid-flight if scope grows.
 
-**TRIAGE:** The opening state of `aid-interview`. Asks three classification questions (T1: breadth, T2: size, T3: workType) and routes to either the full path or a lite sub-path.
+**TRIAGE:** The opening state of `aid-interview`. Description-first: you describe the work in your own words, and the agent infers the work-type and the best-matching recipe (by reading each recipe's `summary:`), confirms in one turn, then routes — a confident single-target match to a lite sub-path, anything ambiguous/multi-target/broad to the full path.
 
-**workType:** The classification of work used by TRIAGE. Values: `bug-fix`, `small-refactor`, `single-doc`, `small-new-feature` (route to lite sub-paths); larger or multi-feature work routes to the full path.
+**workType:** The internal classification of work, inferred by TRIAGE (never picked from a menu). Three values: `bug-fix`, `new-feature`, `refactor`. There is no separate document type — adding a document is a `new-feature`, changing one is a `refactor`.
 
-**LITE-BUG-FIX:** Lite sub-path for bug fixes. Produces typically 1 IMPLEMENT task (fix + regression test).
+**LITE-BUG-FIX:** Lite sub-path for bug fixes (`bug-fix`). Produces typically 1 IMPLEMENT task (fix + regression test).
 
-**LITE-DOC:** Lite sub-path for single-document work. Produces exactly 1 DOCUMENT task.
+**LITE-REFACTOR:** Lite sub-path for changing existing behavior (`refactor`, incl. changing docs/reports). Produces 1–3 REFACTOR + TEST tasks.
 
-**LITE-REFACTOR:** Lite sub-path for small refactors. Produces 1–3 REFACTOR + TEST tasks.
+**LITE-FEATURE:** Lite sub-path for adding new functionality (`new-feature`, incl. adding docs/reports). Produces 1–5 IMPLEMENT + TEST + DOCUMENT tasks.
 
-**LITE-FEATURE:** Lite sub-path for small new features. Produces 1–5 IMPLEMENT + TEST + DOCUMENT tasks.
+**Recipe:** A pre-filled lite-path template for a recurring work pattern. The catalog ships **51 recipes** at `canonical/recipes/`, named by the change they make — `add-X` / `change-X` / `fix-X` across target-kind families (e.g. `add-api-endpoint`, `change-ui-component`, `fix-regression`), plus refactor-only verbs (`improve-performance`, `bump-dependency`, `rename-symbol`) and one cross-type recipe (`add-test-coverage`). Shape: YAML frontmatter (incl. a one-line `summary:` TRIAGE matches against, and `applies-to` ∈ `{bug-fix, new-feature, refactor, *}`) + `## spec` block + `## tasks` block + `{{slot}}` placeholders substituted by `parse-recipe.sh`. Eliminates redundant interview for known patterns.
 
-**Recipe:** A pre-filled lite-path template for a recurring work pattern. Five seed recipes ship at `canonical/recipes/`: bug-fix, method-refactor, add-crud-endpoint, add-unit-test, write-release-note. Shape: YAML frontmatter + `## spec` block + `## tasks` block + `{{slot}}` placeholders substituted by `parse-recipe.sh`. Eliminates redundant interview for known patterns.
+**summary (recipe field):** A one-line description in a recipe's YAML frontmatter. TRIAGE reads it to match a free-form work description to the right recipe.
 
 **Slot:** A `{{placeholder}}` in a recipe that `parse-recipe.sh` substitutes with actual project-specific values before the tasks are executed.
 
