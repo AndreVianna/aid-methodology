@@ -88,6 +88,7 @@ _none yet_
 | 2026-06-03 | LITE-DONE — lite path complete; 6 tasks ready | — | /aid-interview LITE-DONE |
 | 2026-06-03 | EXECUTE task-001 — RESEARCH (drift audit + IA) | A+ | /aid-execute (D+ → A+) |
 | 2026-06-03 | EXECUTE Wave 2 (task-002…006) — DOCUMENT, parallel | A+ | /aid-execute; all 5 reached A+; tests/run-all.sh 24/24 green |
+| 2026-06-03 | REWORK — README + methodology visual-first restructure (user feedback: docs under-restructured) | A+ | ux-designer visual-restructure spec → install-first README + visual-first methodology + 6 vetted framing fixes; purpose-driven review gates (IA/brevity/visual/tone/framing) both A+; 24/24 tests green |
 
 ## Scope Notes
 
