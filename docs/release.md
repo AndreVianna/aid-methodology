@@ -48,9 +48,14 @@ A single run produces the following artifacts under `.aid/.temp/release-<VERSION
   - `aid-cursor-v<VERSION>.tar.gz`
   - `aid-copilot-cli-v<VERSION>.tar.gz`
   - `aid-antigravity-v<VERSION>.tar.gz`
-- **`SHA256SUMS`** — one `<64-hex>  <filename>` line per tarball, sorted by filename.
+- **Two installer lib files** — the shared install-core libraries used by the bootstrap installers:
+  - `aid-install-core.sh` — Bash install-core library sourced by `install.sh` in piped mode.
+  - `AidInstallCore.psm1` — PowerShell install-core module imported by `install.ps1` in piped mode.
+- **`SHA256SUMS`** — one `<64-hex>  <filename>` line per artifact (5 tarballs + 2 libs = 7 lines total), sorted by filename.
 
-These six files become the GitHub Release assets. Each tarball contains exactly the install-relevant files for that tool (the tool's dot directory tree and its root agent file — no `README.md`, no internal build manifests). The tarball layout is flat/root-relative — `tar -xzf` into a temp directory yields the files as they land in the target repo, with no wrapping directory to strip.
+These eight files become the GitHub Release assets. The lib files are included so that the bootstrap installers can pin and verify them from the same immutable release tag — see [Trust model for online installs](install.md#trust-model-for-online-installs) in the install guide.
+
+Each tarball contains exactly the install-relevant files for that tool (the tool's dot directory tree and its root agent file — no `README.md`, no internal build manifests). The tarball layout is flat/root-relative — `tar -xzf` into a temp directory yields the files as they land in the target repo, with no wrapping directory to strip.
 
 ---
 
@@ -108,13 +113,13 @@ After a successful dry run, inspect the staged artifacts before publishing:
 ls -lh .aid/.temp/release-0.7.0/
 ```
 
-Verify the five tarballs and `SHA256SUMS` are present. Spot-check a tarball's contents:
+Verify the five tarballs, two lib files, and `SHA256SUMS` (7 entries total) are present. Spot-check a tarball's contents:
 
 ```bash
 # Confirm the tarball is flat (no wrapping directory) and contains expected paths
 tar -tzf .aid/.temp/release-0.7.0/aid-claude-code-v0.7.0.tar.gz | head -20
 
-# Confirm SHA256SUMS passes self-check
+# Confirm SHA256SUMS passes self-check (covers all 7 files: 5 tarballs + 2 libs)
 cd .aid/.temp/release-0.7.0/
 sha256sum --check SHA256SUMS        # Linux
 shasum -a 256 -c SHA256SUMS         # macOS
@@ -151,6 +156,8 @@ gh release create "v0.7.0" --title "AID v0.7.0" --draft \
   aid-codex-v0.7.0.tar.gz \
   aid-copilot-cli-v0.7.0.tar.gz \
   aid-cursor-v0.7.0.tar.gz \
+  aid-install-core.sh \
+  AidInstallCore.psm1 \
   SHA256SUMS
 ```
 
@@ -171,7 +178,7 @@ Without `--notes-file` the script generates a stub. You can also edit the notes 
 Open the draft release on the GitHub web UI (the `gh release create` output prints the URL). Verify:
 
 - Title: `AID v0.7.0`
-- All six assets are attached (five tarballs + `SHA256SUMS`)
+- All eight assets are attached (five tarballs + two lib files + `SHA256SUMS`)
 - Release notes are correct
 - Tag: `v0.7.0` pointing at the expected commit
 

@@ -59,11 +59,27 @@ set -uo pipefail
 #   AID_LIB_PATH   — absolute path to aid-install-core.sh to source directly (overrides
 #                    sibling detection and remote fetch; useful for tests and vendored use).
 #   AID_LIB_BASE   — base URL prefix for the remote lib fetch when the lib is not beside
-#                    the script (piped/curl|bash case).  Defaults to the raw GitHub URL for
-#                    the master branch.  Example for local test override:
-#                      AID_LIB_BASE=file:///path/to/local/lib install.sh ...
+#                    the script (piped/curl|bash case).  Defaults to the raw GitHub raw URL
+#                    for the resolved release tag.  Example for local test override:
+#                      AID_LIB_BASE=http://localhost:8000/lib install.sh ...
 #                    When AID_LIB_BASE is set, the lib is fetched as:
 #                      ${AID_LIB_BASE}/aid-install-core.sh
+#                    When AID_LIB_BASE is set, SHA256SUMS is fetched from the same base dir
+#                    as SHA256SUMS (i.e. one directory up from lib/):
+#                      <parent-of-AID_LIB_BASE>/SHA256SUMS
+#                    or AID_SUMS_URL may be set to override the checksum URL directly.
+#   AID_SUMS_URL   — override URL for SHA256SUMS used during lib checksum verification.
+#                    Useful for tests.  When unset, derived from the release tag URL.
+#   AID_INSECURE_SKIP_LIB_VERIFY — set to '1' to skip lib checksum verification for the
+#                    remote-fetch path.  INSECURE — for restricted test environments only.
+#                    Default is fail-closed: SHA256SUMS must be fetchable and the hash must
+#                    match.  Do not set in production.
+#
+# Trust model: curl|bash trusts the GitHub repo at the resolved pinned tag (fail-closed:
+#   SHA256SUMS must be fetchable and hash must match before the lib is sourced; exit 3 if
+#   SHA256SUMS unreachable or entry missing; exit 4 on mismatch).  Offline --from-bundle
+#   installs remain the recommended verify-before-install path for air-gapped and
+#   high-security adopters.
 
 # ---------------------------------------------------------------------------
 # Locate repo root (the directory containing this script).
@@ -79,9 +95,36 @@ LIB_DIR="${SCRIPT_DIR}/lib"
 
 # ---------------------------------------------------------------------------
 # Usage helper (prints the header block as plain text).
+# Fix #11: when $0 is not a readable file (piped via curl|bash), print a
+# concise stub so that --help and early error exits never emit
+# "sed: can't read bash".  When $0 IS a readable file keep the sed path.
 # ---------------------------------------------------------------------------
 usage() {
-    sed -n '2,49p' "$0" | sed 's/^# \{0,1\}//'
+    if [[ ! -r "$0" ]]; then
+        # Piped execution — print a minimal stub mirroring install.ps1's Show-Usage stub.
+        printf 'install.sh — AID installer bootstrap (Bash 4+).\n'
+        printf '\n'
+        printf 'Usage:\n'
+        printf '  bash install.sh [--tool <name>[,...]] [--version <v>] [--from-bundle <path>]\n'
+        printf '                  [--force] [--target <dir>] [<target-dir>]\n'
+        printf '  bash install.sh --update  [...flags...]\n'
+        printf '  bash install.sh --uninstall [--tool <name>[,...]] [--target <dir>]\n'
+        printf '  bash install.sh -h | --help\n'
+        printf '\n'
+        printf 'Key flags:\n'
+        printf '  --tool <name>[,...]  Tool id: claude-code, codex, cursor, copilot-cli, antigravity\n'
+        printf '  --version <v>        Pin to release version (e.g. 0.7.0)\n'
+        printf '  --from-bundle <path> Offline install from pre-downloaded tarball\n'
+        printf '  --force              Overwrite differing files including root agent files\n'
+        printf '  --target <dir>       Install root (default: current directory)\n'
+        printf '\n'
+        printf 'Exit codes: 0 success, 1 failure, 2 usage error, 3 network error,\n'
+        printf '            4 checksum mismatch, 5 protect-on-diff blocked, 6 no manifest\n'
+        printf '\n'
+        printf 'Full docs: https://github.com/AndreVianna/aid-methodology/blob/master/docs/install.md\n'
+    else
+        sed -n '2,49p' "$0" | sed 's/^# \{0,1\}//'
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -93,14 +136,43 @@ die() {
 }
 
 # ---------------------------------------------------------------------------
+# Cleanup helpers — defined BEFORE the EXIT trap (fix #13).
+# ---------------------------------------------------------------------------
+_AID_TMPLIB_DIR=""
+
+_cleanup_tmplib() {
+    if [[ -n "${_AID_TMPLIB_DIR:-}" && -d "${_AID_TMPLIB_DIR}" ]]; then
+        rm -rf "${_AID_TMPLIB_DIR}"
+    fi
+}
+
+# _cleanup_staging is defined later (after STAGING_BASE is declared), but the
+# function definition itself must exist before the trap fires.  We pre-define
+# a placeholder here; the real body is set below.
+STAGING_BASE=""
+_cleanup_staging() {
+    if [[ -n "$STAGING_BASE" && -d "$STAGING_BASE" ]]; then
+        rm -rf "$STAGING_BASE"
+    fi
+}
+
+# Register the EXIT trap NOW — both cleanup functions are already defined.
+trap '_cleanup_tmplib; _cleanup_staging' EXIT
+
+# ---------------------------------------------------------------------------
 # Source the shared install core.
 # Resolution order (first match wins):
 #   1. AID_LIB_PATH env var — absolute path to the lib file (test override or vendored).
 #   2. Sibling lib/aid-install-core.sh — present when invoked as a local file.
-#   3. Remote fetch from AID_LIB_BASE (or default GitHub raw URL) into a temp dir —
-#      used in the piped (curl|bash) case where no sibling lib is available.
+#   3. Remote fetch (piped execution) — fix #12:
+#      a. Resolve the release version (from --version flag or GitHub API latest).
+#      b. Fetch the lib from the IMMUTABLE release tag raw URL (not master).
+#      c. Fetch SHA256SUMS from the same release tag.
+#      d. Verify the lib's sha256 against SHA256SUMS — exit 4 on mismatch.
+#      e. Source the verified lib.
+#      AID_LIB_BASE / AID_SUMS_URL env overrides allow hermetic tests without
+#      any network access.
 # ---------------------------------------------------------------------------
-_AID_TMPLIB_DIR=""
 
 _source_install_core() {
     local lib_file
@@ -116,25 +188,139 @@ _source_install_core() {
     elif [[ -f "${LIB_DIR}/aid-install-core.sh" ]]; then
         lib_file="${LIB_DIR}/aid-install-core.sh"
     else
-        # 3. Remote fetch (piped execution).
-        local base_url="${AID_LIB_BASE:-https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/lib}"
-        local lib_url="${base_url}/aid-install-core.sh"
+        # 3. Remote fetch with pinned tag + checksum verification (fix #12).
         _AID_TMPLIB_DIR="$(mktemp -d /tmp/aid-libfetch-XXXXXX)"
         lib_file="${_AID_TMPLIB_DIR}/aid-install-core.sh"
-        echo "Fetching install core from ${lib_url} ..." >&2
+
+        # Determine the version to pin.  Resolution order:
+        #   1. AID_LIB_VERSION env var (test/override: avoids API call without
+        #      requiring --version which is mutually exclusive with --from-bundle).
+        #   2. --version / -Version flag from $@ (quick scan without full parse).
+        #   3. GitHub API latest (requires network).
+        local _pin_ver="${AID_LIB_VERSION:-}"
+        if [[ -n "$_pin_ver" ]]; then
+            _pin_ver="${_pin_ver#v}"
+        else
+            local _scan_arg
+            local _next_is_ver=0
+            for _scan_arg in "$@"; do
+                if [[ "$_next_is_ver" -eq 1 ]]; then
+                    _pin_ver="${_scan_arg#v}"
+                    break
+                fi
+                if [[ "$_scan_arg" == "--version" || "$_scan_arg" == "-Version" ]]; then
+                    _next_is_ver=1
+                fi
+            done
+        fi
+
+        local _resolved_ver=""
+        if [[ -n "$_pin_ver" ]]; then
+            _resolved_ver="$_pin_ver"
+        else
+            # Resolve latest from GitHub API.
+            local _api_url="https://api.github.com/repos/AndreVianna/aid-methodology/releases/latest"
+            local _curl_args=(-fsSL)
+            local _token="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
+            if [[ -n "$_token" ]]; then
+                _curl_args+=(-H "Authorization: Bearer ${_token}")
+            fi
+            local _api_resp=""
+            if command -v curl >/dev/null 2>&1; then
+                _api_resp="$(curl "${_curl_args[@]}" "$_api_url" 2>/dev/null)" || true
+            fi
+            _resolved_ver="$(echo "$_api_resp" | grep '"tag_name"' | head -1 \
+                | sed 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')"
+            _resolved_ver="${_resolved_ver#v}"
+            if [[ -z "$_resolved_ver" ]]; then
+                echo "ERROR: install.sh: failed to resolve latest release version from ${_api_url}" >&2
+                exit 3
+            fi
+        fi
+
+        # Build URLs.  AID_LIB_BASE overrides the lib base URL (for tests).
+        # AID_SUMS_URL overrides the SHA256SUMS URL (for tests).
+        local _default_lib_base="https://raw.githubusercontent.com/AndreVianna/aid-methodology/v${_resolved_ver}/lib"
+        local _base_url="${AID_LIB_BASE:-${_default_lib_base}}"
+        local _lib_url="${_base_url}/aid-install-core.sh"
+
+        # SHA256SUMS sits at the release root (one dir up from lib/).
+        # When AID_LIB_BASE is overridden (test), derive sums URL from its parent dir
+        # unless AID_SUMS_URL is set directly.
+        local _default_sums_url="https://github.com/AndreVianna/aid-methodology/releases/download/v${_resolved_ver}/SHA256SUMS"
+        local _sums_url="${AID_SUMS_URL:-}"
+        if [[ -z "$_sums_url" ]]; then
+            if [[ -n "${AID_LIB_BASE:-}" ]]; then
+                # Derive sums URL from parent directory of AID_LIB_BASE.
+                local _parent_base
+                _parent_base="${AID_LIB_BASE%/lib}"
+                _parent_base="${_parent_base%/lib/}"
+                _sums_url="${_parent_base}/SHA256SUMS"
+            else
+                _sums_url="$_default_sums_url"
+            fi
+        fi
+
+        echo "Fetching install core from ${_lib_url} ..." >&2
         if command -v curl >/dev/null 2>&1; then
-            curl -fsSL -o "$lib_file" "$lib_url" || {
-                echo "ERROR: install.sh: failed to fetch install core from ${lib_url}" >&2
+            curl -fsSL -o "$lib_file" "$_lib_url" || {
+                echo "ERROR: install.sh: failed to fetch install core from ${_lib_url}" >&2
                 exit 3
             }
         elif command -v wget >/dev/null 2>&1; then
-            wget -qO "$lib_file" "$lib_url" || {
-                echo "ERROR: install.sh: failed to fetch install core from ${lib_url}" >&2
+            wget -qO "$lib_file" "$_lib_url" || {
+                echo "ERROR: install.sh: failed to fetch install core from ${_lib_url}" >&2
                 exit 3
             }
         else
             echo "ERROR: install.sh: neither curl nor wget found; cannot fetch install core" >&2
             exit 3
+        fi
+
+        # Verify checksum (fix #12, fix #14: fail-closed).
+        # AID_INSECURE_SKIP_LIB_VERIFY=1 is an explicit opt-out — must be deliberately set.
+        # Default: fail closed if SHA256SUMS is unreachable OR entry is missing OR hash mismatches.
+        if [[ "${AID_INSECURE_SKIP_LIB_VERIFY:-0}" == "1" ]]; then
+            echo "WARN: install.sh: AID_INSECURE_SKIP_LIB_VERIFY=1 set — skipping lib checksum verification (INSECURE)" >&2
+        else
+            local _sums_file="${_AID_TMPLIB_DIR}/SHA256SUMS"
+            echo "Fetching SHA256SUMS from ${_sums_url} ..." >&2
+            local _sums_ok=0
+            if command -v curl >/dev/null 2>&1; then
+                curl -fsSL -o "$_sums_file" "$_sums_url" 2>/dev/null && _sums_ok=1 || _sums_ok=0
+            elif command -v wget >/dev/null 2>&1; then
+                wget -qO "$_sums_file" "$_sums_url" 2>/dev/null && _sums_ok=1 || _sums_ok=0
+            fi
+
+            if [[ "$_sums_ok" -ne 1 || ! -f "$_sums_file" ]]; then
+                echo "ERROR: install.sh: could not fetch SHA256SUMS from ${_sums_url}; refusing to source unverified lib (fail-closed)" >&2
+                echo "ERROR: install.sh: set AID_INSECURE_SKIP_LIB_VERIFY=1 to bypass (insecure)" >&2
+                exit 3
+            fi
+
+            # Verify the lib's sha256 against the entry in SHA256SUMS.
+            local _lib_sha=""
+            if command -v sha256sum >/dev/null 2>&1; then
+                _lib_sha="$(sha256sum "$lib_file" | awk '{print $1}')"
+            elif command -v shasum >/dev/null 2>&1; then
+                _lib_sha="$(shasum -a 256 "$lib_file" | awk '{print $1}')"
+            fi
+            if [[ -z "$_lib_sha" ]]; then
+                echo "ERROR: install.sh: could not compute sha256 of fetched lib (no sha256sum/shasum); refusing to source unverified lib" >&2
+                exit 3
+            fi
+            local _expected_sha
+            _expected_sha="$(grep '[[:space:]]aid-install-core\.sh$' "$_sums_file" | awk '{print $1}')"
+            if [[ -z "$_expected_sha" ]]; then
+                echo "ERROR: install.sh: aid-install-core.sh not found in SHA256SUMS from ${_sums_url}; refusing to source unverified lib (fail-closed)" >&2
+                echo "ERROR: install.sh: set AID_INSECURE_SKIP_LIB_VERIFY=1 to bypass (insecure)" >&2
+                exit 3
+            elif [[ "$_lib_sha" != "$_expected_sha" ]]; then
+                echo "ERROR: install.sh: checksum mismatch for aid-install-core.sh: expected ${_expected_sha}, got ${_lib_sha}" >&2
+                exit 4
+            else
+                echo "Checksum OK: aid-install-core.sh" >&2
+            fi
         fi
     fi
 
@@ -142,15 +328,20 @@ _source_install_core() {
     source "$lib_file"
 }
 
-_source_install_core
-
-# Cleanup temp lib dir on exit (if created).
-_cleanup_tmplib() {
-    if [[ -n "${_AID_TMPLIB_DIR:-}" && -d "${_AID_TMPLIB_DIR}" ]]; then
-        rm -rf "${_AID_TMPLIB_DIR}"
+# ---------------------------------------------------------------------------
+# Early --help check (before lib source): print usage and exit immediately.
+# This avoids attempting network resolution when the user only wants help.
+# ---------------------------------------------------------------------------
+for _early_arg in "$@"; do
+    if [[ "$_early_arg" == "-h" || "$_early_arg" == "--help" ]]; then
+        usage
+        exit 0
     fi
-}
-trap '_cleanup_tmplib; _cleanup_staging' EXIT
+    # Stop at '--' (end of flags).
+    [[ "$_early_arg" == "--" ]] && break
+done
+
+_source_install_core "$@"
 
 # ---------------------------------------------------------------------------
 # Argument parsing.
@@ -323,14 +514,9 @@ PY
 # ---------------------------------------------------------------------------
 # Staging area management.
 # ---------------------------------------------------------------------------
-STAGING_BASE=""
-_cleanup_staging() {
-    if [[ -n "$STAGING_BASE" && -d "$STAGING_BASE" ]]; then
-        rm -rf "$STAGING_BASE"
-    fi
-}
-# Note: trap for _cleanup_staging is combined with _cleanup_tmplib above (set after
-# sourcing the lib) to avoid overwriting each other.
+# Note: _cleanup_staging and _cleanup_tmplib are defined and the EXIT trap is
+# registered earlier in the file (before _source_install_core) so that any
+# exit between the function defs and here is still handled correctly (fix #13).
 
 # get_tarball_for_tool <tool> <version> <from_bundle>
 # Populates STAGING_DIR (per-tool extracted staging dir) and RESOLVED_VERSION.

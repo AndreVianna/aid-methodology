@@ -276,11 +276,20 @@ build_tarball "antigravity" "profiles/antigravity" ".agent" "AGENTS.md"
 # Step 5: Emit SHA256SUMS
 # ---------------------------------------------------------------------------
 
+echo "release.sh: copying installer libs into staging dir ..."
+
+# Copy the two lib files into the staging directory so they become release assets
+# and their checksums can be included in SHA256SUMS.  The bootstrap installers
+# (install.sh / install.ps1) fetch these libs from the pinned release tag and
+# verify them against this SHA256SUMS before sourcing/importing.
+cp "${REPO_ROOT}/lib/aid-install-core.sh" "${STAGE_DIR}/aid-install-core.sh"
+cp "${REPO_ROOT}/lib/AidInstallCore.psm1" "${STAGE_DIR}/AidInstallCore.psm1"
+
 echo "release.sh: generating SHA256SUMS ..."
 
 SUMS_FILE="${STAGE_DIR}/SHA256SUMS"
 
-# Compute checksums for all five tarballs, sorted by filename.
+# Compute checksums for all five tarballs + the two lib files, sorted by filename.
 # We cd into the staging dir so filenames in SHA256SUMS are bare (no path prefix).
 # Use a glob array (not ls in command substitution) to avoid SC2046/SC2012.
 (
@@ -289,7 +298,7 @@ SUMS_FILE="${STAGE_DIR}/SHA256SUMS"
     # Sort the glob results by name.
     IFS=$'\n' _sorted=( $(printf '%s\n' "${_tarballs[@]}" | sort) )
     unset IFS
-    sha256_cmd "${_sorted[@]}"
+    sha256_cmd "${_sorted[@]}" aid-install-core.sh AidInstallCore.psm1
 ) | sort -k2 > "${SUMS_FILE}"
 
 echo "release.sh: SHA256SUMS written:"
@@ -348,7 +357,7 @@ EOF
     GH_ARGS+=(--notes-file "${STUB_NOTES}")
 fi
 
-# Add assets: tarballs + SHA256SUMS
+# Add assets: tarballs + lib files + SHA256SUMS
 # Use a glob array (not ls in command substitution) to avoid SC2046/SC2012.
 ASSETS=()
 _gh_tarballs=( "${STAGE_DIR}"/aid-*.tar.gz )
@@ -357,6 +366,8 @@ unset IFS
 for _f in "${_gh_sorted[@]}"; do
     ASSETS+=("$_f")
 done
+ASSETS+=("${STAGE_DIR}/aid-install-core.sh")
+ASSETS+=("${STAGE_DIR}/AidInstallCore.psm1")
 ASSETS+=("${SUMS_FILE}")
 
 echo "release.sh: creating GitHub Release ${TAG} ..."

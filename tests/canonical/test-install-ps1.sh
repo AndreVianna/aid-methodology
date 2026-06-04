@@ -513,4 +513,164 @@ T=$(newtarget)
 run_install -Uninstall -Tool codex -TargetDirectory "$T"
 assert_exit_eq "$RC" 6 "IN27 uninstall with no manifest → exit 6"
 
+# ---------------------------------------------------------------------------
+# IN31 – PS1 lib checksum verification via http:// (fix #15).
+#
+# Invoke-WebRequest rejects file:// URIs, so we spin up a tiny python3 HTTP
+# server in a temp dir and serve the lib + SHA256SUMS over http://127.0.0.1.
+# Skip cleanly if python3 is absent.
+#
+# Three cases:
+#   IN31   correct lib + valid SHA256SUMS → exit 0
+#   IN31c  tampered lib + SHA256SUMS with REAL hash → exit 4
+#   IN32   missing SHA256SUMS (404) → fail-closed non-zero (guards #14 on ps1 side)
+#   IN32c  AID_INSECURE_SKIP_LIB_VERIFY=1 → bypass (explicit opt-out)
+# ---------------------------------------------------------------------------
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "SKIP: python3 not found — skipping ps1 checksum http:// tests (IN31/IN32)."
+else
+    # Find a free port (try from 18900 upward).
+    _find_free_port() {
+        local port=18900
+        while ss -tlnH "sport = :$port" 2>/dev/null | grep -q .; do
+            port=$((port + 1))
+        done
+        echo "$port"
+    }
+
+    # Spin up a python3 HTTP server serving a directory on a given port.
+    # Usage: _start_http_server <dir> <port>
+    # Sets _HTTP_SERVER_PID.
+    _HTTP_SERVER_PID=""
+    _start_http_server() {
+        local dir="$1" port="$2"
+        python3 -m http.server "$port" --directory "$dir" >/dev/null 2>&1 &
+        _HTTP_SERVER_PID=$!
+        # Wait up to 2 seconds for the server to be ready.
+        local waited=0
+        while ! curl -s --max-time 1 "http://127.0.0.1:${port}/" >/dev/null 2>&1; do
+            sleep 0.1
+            waited=$((waited + 1))
+            if [[ "$waited" -ge 20 ]]; then
+                echo "WARN: http server did not start on port $port" >&2
+                break
+            fi
+        done
+    }
+
+    _stop_http_server() {
+        if [[ -n "${_HTTP_SERVER_PID:-}" ]]; then
+            kill "$_HTTP_SERVER_PID" 2>/dev/null || true
+            wait "$_HTTP_SERVER_PID" 2>/dev/null || true
+            _HTTP_SERVER_PID=""
+        fi
+    }
+
+    # Prepare serve directories.
+    _PS1_LIB_SRC="${REPO_ROOT}/lib/AidInstallCore.psm1"
+    _LIB_SHA256_PS1=$(sha256sum "$_PS1_LIB_SRC" | awk '{print $1}')
+
+    # Copy install.ps1 to a temp dir that has NO sibling lib/ so that
+    # $ScriptDir does not point to a dir containing lib/AidInstallCore.psm1.
+    # This forces the remote-fetch (path 3) code to run.
+    # (Analogous to how the bash tests use `bash -s -- < $SUT`.)
+    _PS1_RUN_DIR="${TMP}/ps1-run-in-dir"
+    mkdir -p "$_PS1_RUN_DIR"
+    _PS1_COPY="${_PS1_RUN_DIR}/install.ps1"
+    cp "$SUT" "$_PS1_COPY"
+
+    # --- IN31: correct lib + valid SHA256SUMS ---
+    _SERVE_GOOD="${TMP}/ps1-serve-good"
+    mkdir -p "${_SERVE_GOOD}/lib"
+    cp "$_PS1_LIB_SRC" "${_SERVE_GOOD}/lib/AidInstallCore.psm1"
+    printf '%s  AidInstallCore.psm1\n' "$_LIB_SHA256_PS1" > "${_SERVE_GOOD}/SHA256SUMS"
+
+    _PORT_GOOD=$(_find_free_port)
+    _start_http_server "${_SERVE_GOOD}" "$_PORT_GOOD"
+
+    T=$(newtarget)
+    OUT=$(env \
+        "AID_LIB_VERSION=${VERSION}" \
+        "AID_LIB_BASE=http://127.0.0.1:${_PORT_GOOD}/lib" \
+        "AID_SUMS_URL=http://127.0.0.1:${_PORT_GOOD}/SHA256SUMS" \
+        "$PWSH" -NoProfile -File "$_PS1_COPY" \
+            -Tool codex \
+            -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+            -TargetDirectory "$T" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+    assert_exit_eq "$RC" 0 "IN31 ps1 correct checksum (http://) → exit 0"
+    assert_output_contains "$OUT" "Checksum OK" "IN31b ps1 checksum verification success reported"
+
+    _stop_http_server
+
+    # --- IN31c: tampered lib (REAL hash in SHA256SUMS) → exit 4 ---
+    _SERVE_TAMPER="${TMP}/ps1-serve-tamper"
+    mkdir -p "${_SERVE_TAMPER}/lib"
+    cp "$_PS1_LIB_SRC" "${_SERVE_TAMPER}/lib/AidInstallCore.psm1"
+    printf '\n# TAMPER\n' >> "${_SERVE_TAMPER}/lib/AidInstallCore.psm1"
+    # SHA256SUMS still has ORIGINAL (real) hash → mismatch.
+    printf '%s  AidInstallCore.psm1\n' "$_LIB_SHA256_PS1" > "${_SERVE_TAMPER}/SHA256SUMS"
+
+    _PORT_TAMPER=$(_find_free_port)
+    _start_http_server "${_SERVE_TAMPER}" "$_PORT_TAMPER"
+
+    T=$(newtarget)
+    OUT=$(env \
+        "AID_LIB_VERSION=${VERSION}" \
+        "AID_LIB_BASE=http://127.0.0.1:${_PORT_TAMPER}/lib" \
+        "AID_SUMS_URL=http://127.0.0.1:${_PORT_TAMPER}/SHA256SUMS" \
+        "$PWSH" -NoProfile -File "$_PS1_COPY" \
+            -Tool codex \
+            -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+            -TargetDirectory "$T" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+    assert_exit_eq "$RC" 4 "IN31c ps1 tampered lib → exit 4 (checksum mismatch)"
+    assert_output_contains "$OUT" "checksum mismatch" "IN31d ps1 tampered lib error mentions checksum mismatch"
+
+    _stop_http_server
+
+    # ---------------------------------------------------------------------------
+    # IN32 – Missing SHA256SUMS (404) → fail-closed non-zero.
+    #         Guards finding #14 on the ps1 side.
+    # ---------------------------------------------------------------------------
+    _SERVE_NOSUMS="${TMP}/ps1-serve-nosums"
+    mkdir -p "${_SERVE_NOSUMS}/lib"
+    cp "$_PS1_LIB_SRC" "${_SERVE_NOSUMS}/lib/AidInstallCore.psm1"
+    # Deliberately do NOT create SHA256SUMS — 404 when fetched.
+
+    _PORT_NOSUMS=$(_find_free_port)
+    _start_http_server "${_SERVE_NOSUMS}" "$_PORT_NOSUMS"
+
+    T=$(newtarget)
+    OUT=$(env \
+        "AID_LIB_VERSION=${VERSION}" \
+        "AID_LIB_BASE=http://127.0.0.1:${_PORT_NOSUMS}/lib" \
+        "AID_SUMS_URL=http://127.0.0.1:${_PORT_NOSUMS}/SHA256SUMS" \
+        "$PWSH" -NoProfile -File "$_PS1_COPY" \
+            -Tool codex \
+            -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+            -TargetDirectory "$T" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+    assert_exit_ne "$RC" 0 "IN32 ps1 missing SHA256SUMS → fail-closed non-zero"
+    assert_output_contains "$OUT" "fail-closed" "IN32b ps1 missing SHA256SUMS → 'fail-closed' in error"
+
+    _stop_http_server
+
+    # IN32c – AID_INSECURE_SKIP_LIB_VERIFY=1 → bypass (explicit opt-out).
+    _PORT_NOSUMS2=$(_find_free_port)
+    _start_http_server "${_SERVE_NOSUMS}" "$_PORT_NOSUMS2"
+
+    T=$(newtarget)
+    OUT=$(env \
+        "AID_LIB_VERSION=${VERSION}" \
+        "AID_LIB_BASE=http://127.0.0.1:${_PORT_NOSUMS2}/lib" \
+        "AID_SUMS_URL=http://127.0.0.1:${_PORT_NOSUMS2}/SHA256SUMS" \
+        "AID_INSECURE_SKIP_LIB_VERIFY=1" \
+        "$PWSH" -NoProfile -File "$_PS1_COPY" \
+            -Tool codex \
+            -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+            -TargetDirectory "$T" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+    assert_exit_eq "$RC" 0 "IN32c ps1 AID_INSECURE_SKIP_LIB_VERIFY=1 → bypass succeeds (explicit opt-out)"
+    assert_output_contains "$OUT" "INSECURE" "IN32d ps1 insecure bypass emits loud warning"
+
+    _stop_http_server
+fi  # end python3 check for IN31/IN32 tests
+
 test_summary

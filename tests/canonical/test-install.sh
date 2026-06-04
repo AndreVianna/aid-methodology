@@ -616,4 +616,140 @@ assert_file_exists "$T/AGENTS.md" "IN29c AGENTS.md created via piped invocation"
 assert_output_contains "$OUT" "Done." "IN29d piped invocation reports Done."
 assert_file_exists "${T}/.aid/.aid-manifest.json" "IN29e manifest created via piped invocation"
 
+# ---------------------------------------------------------------------------
+# IN30 – Piped --help: AID_LIB_PATH set to avoid network; $0 is 'bash' (not a
+#         readable file), so usage() must print the stub (fix #11).
+#         Guards finding #11.
+# ---------------------------------------------------------------------------
+LIB_PATH="${REPO_ROOT}/lib/aid-install-core.sh"
+
+OUT=$(AID_LIB_PATH="$LIB_PATH" bash -s -- --help < "$SUT" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "IN30 piped --help exits 0"
+assert_output_contains "$OUT" "install.sh" "IN30b piped --help output contains 'install.sh'"
+assert_output_contains "$OUT" "Usage" "IN30c piped --help output contains 'Usage'"
+assert_output_contains "$OUT" "tool" "IN30d piped --help output mentions '--tool'"
+# Must NOT contain 'sed: can't read bash'
+assert_output_not_contains "$OUT" "can't read" "IN30e piped --help has no sed error"
+
+# IN30f – Piped bad flag: prints stub + error, exits 2.
+OUT=$(AID_LIB_PATH="$LIB_PATH" bash -s -- --badflag-xyz < "$SUT" 2>&1); RC=$?
+assert_exit_eq "$RC" 2 "IN30f piped bad flag exits 2"
+assert_output_not_contains "$OUT" "can't read" "IN30g piped bad flag: no sed error"
+
+# ---------------------------------------------------------------------------
+# IN31 – Lib checksum verification: AID_LIB_BASE + AID_SUMS_URL local overrides.
+#         Simulate the piped (no sibling lib) path using local file:// URLs for
+#         the lib and SHA256SUMS so no real network is needed.
+#         Guards finding #12.
+#
+# Key: run the piped invocation from a temp directory that has NO lib/ subdir,
+# so the script cannot find the sibling lib (path 2) and must use path 3 (remote
+# fetch with AID_LIB_BASE override).  AID_LIB_PATH must also be unset.
+# ---------------------------------------------------------------------------
+_LIB_SERVE_DIR="${TMP}/libserve"
+mkdir -p "${_LIB_SERVE_DIR}/lib"
+cp "${REPO_ROOT}/lib/aid-install-core.sh" "${_LIB_SERVE_DIR}/lib/aid-install-core.sh"
+
+# Compute the correct sha256 for SHA256SUMS.
+_LIB_SHA256=$(sha256sum "${_LIB_SERVE_DIR}/lib/aid-install-core.sh" | awk '{print $1}')
+printf '%s  aid-install-core.sh\n' "$_LIB_SHA256" > "${_LIB_SERVE_DIR}/SHA256SUMS"
+
+# Run from a temp dir so there is no sibling lib/ dir that would short-circuit to path 2.
+_RUN_IN_DIR="${TMP}/run-in-dir"
+mkdir -p "${_RUN_IN_DIR}"
+
+T=$(newtarget)
+# Note: AID_LIB_VERSION avoids the GitHub API call for version resolution
+# (--version is mutually exclusive with --from-bundle in the main arg parser).
+OUT=$(cd "${_RUN_IN_DIR}" && \
+      AID_LIB_VERSION="${VERSION}" \
+      AID_LIB_BASE="file://${_LIB_SERVE_DIR}/lib" \
+      AID_SUMS_URL="file://${_LIB_SERVE_DIR}/SHA256SUMS" \
+      bash -s -- \
+        --tool codex \
+        --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+        --target "$T" < "$SUT" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "IN31 piped with correct checksum → exit 0"
+assert_output_contains "$OUT" "Checksum OK" "IN31b checksum verification success reported"
+
+# IN31c – Tampered lib: SHA256SUMS has the REAL hash but we serve a TAMPERED lib.
+_TAMPER_DIR="${TMP}/libtamper"
+mkdir -p "${_TAMPER_DIR}/lib"
+cp "${REPO_ROOT}/lib/aid-install-core.sh" "${_TAMPER_DIR}/lib/aid-install-core.sh"
+printf '\n# TAMPER\n' >> "${_TAMPER_DIR}/lib/aid-install-core.sh"
+# SHA256SUMS still has the ORIGINAL (non-tampered) hash.
+printf '%s  aid-install-core.sh\n' "$_LIB_SHA256" > "${_TAMPER_DIR}/SHA256SUMS"
+
+T=$(newtarget)
+OUT=$(cd "${_RUN_IN_DIR}" && \
+      AID_LIB_VERSION="${VERSION}" \
+      AID_LIB_BASE="file://${_TAMPER_DIR}/lib" \
+      AID_SUMS_URL="file://${_TAMPER_DIR}/SHA256SUMS" \
+      bash -s -- \
+        --tool codex \
+        --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+        --target "$T" < "$SUT" 2>&1); RC=$?
+assert_exit_eq "$RC" 4 "IN31c tampered lib → exit 4 (checksum mismatch)"
+assert_output_contains "$OUT" "checksum mismatch" "IN31d tampered lib error mentions checksum mismatch"
+
+# IN31e – PWNED-prevention: tampered lib with echo PWNED injection must NOT execute.
+# The lib in _TAMPER_DIR contains '# TAMPER' appended; if the installer were to source
+# it despite the mismatch it would exit 0 (or run arbitrary code). We verify it aborts
+# before sourcing by checking the PWNED string never appears and exit is non-zero.
+_PWNED_DIR="${TMP}/libpwned"
+mkdir -p "${_PWNED_DIR}/lib"
+printf '#!/usr/bin/env bash\necho PWNED\n' > "${_PWNED_DIR}/lib/aid-install-core.sh"
+# SHA256SUMS has the ORIGINAL (real) hash — mismatch since we replaced the lib.
+printf '%s  aid-install-core.sh\n' "$_LIB_SHA256" > "${_PWNED_DIR}/SHA256SUMS"
+
+T=$(newtarget)
+OUT=$(cd "${_RUN_IN_DIR}" && \
+      AID_LIB_VERSION="${VERSION}" \
+      AID_LIB_BASE="file://${_PWNED_DIR}/lib" \
+      AID_SUMS_URL="file://${_PWNED_DIR}/SHA256SUMS" \
+      bash -s -- \
+        --tool codex \
+        --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+        --target "$T" < "$SUT" 2>&1); RC=$?
+assert_exit_ne "$RC" 0 "IN31e PWNED lib → must NOT exit 0 (abort before source)"
+assert_output_not_contains "$OUT" "PWNED" "IN31f PWNED lib → 'PWNED' must NOT appear in output (abort before source)"
+assert_output_contains "$OUT" "checksum mismatch" "IN31g PWNED lib → checksum mismatch error reported"
+
+# ---------------------------------------------------------------------------
+# IN32 – Missing SHA256SUMS → fail-closed (non-zero, lib NOT sourced).
+#         Guards finding #14: when SHA256SUMS cannot be fetched the remote-fetch
+#         path must refuse to source the lib (exit 3), not silently proceed.
+# ---------------------------------------------------------------------------
+_NOSUMS_DIR="${TMP}/libnosums"
+mkdir -p "${_NOSUMS_DIR}/lib"
+cp "${REPO_ROOT}/lib/aid-install-core.sh" "${_NOSUMS_DIR}/lib/aid-install-core.sh"
+# Deliberately do NOT create SHA256SUMS in _NOSUMS_DIR.
+# AID_SUMS_URL points to a non-existent file → fetch fails.
+
+T=$(newtarget)
+OUT=$(cd "${_RUN_IN_DIR}" && \
+      AID_LIB_VERSION="${VERSION}" \
+      AID_LIB_BASE="file://${_NOSUMS_DIR}/lib" \
+      AID_SUMS_URL="file://${_NOSUMS_DIR}/SHA256SUMS" \
+      bash -s -- \
+        --tool codex \
+        --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+        --target "$T" < "$SUT" 2>&1); RC=$?
+assert_exit_ne "$RC" 0 "IN32 missing SHA256SUMS → fail-closed non-zero (lib NOT sourced)"
+assert_output_contains "$OUT" "fail-closed" "IN32b missing SHA256SUMS → 'fail-closed' mentioned in error"
+
+# IN32c – AID_INSECURE_SKIP_LIB_VERIFY=1 must be the explicit opt-out only.
+T=$(newtarget)
+OUT=$(cd "${_RUN_IN_DIR}" && \
+      AID_LIB_VERSION="${VERSION}" \
+      AID_LIB_BASE="file://${_NOSUMS_DIR}/lib" \
+      AID_SUMS_URL="file://${_NOSUMS_DIR}/SHA256SUMS" \
+      AID_INSECURE_SKIP_LIB_VERIFY=1 \
+      bash -s -- \
+        --tool codex \
+        --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+        --target "$T" < "$SUT" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "IN32c AID_INSECURE_SKIP_LIB_VERIFY=1 → bypass succeeds (explicit opt-out)"
+assert_output_contains "$OUT" "INSECURE" "IN32d insecure bypass emits loud warning"
+
 test_summary

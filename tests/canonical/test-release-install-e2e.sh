@@ -111,8 +111,16 @@ for _t in "${TOOLS[@]}"; do
         "E2E01c aid-${_t}-v${STAGE_VERSION}.tar.gz staged"
 done
 
+# Lib files must also be staged (fix #12 — release assets for bootstrap verification).
+assert_file_exists "${STAGE_DIR}/aid-install-core.sh"  "E2E01d aid-install-core.sh staged"
+assert_file_exists "${STAGE_DIR}/AidInstallCore.psm1"  "E2E01e AidInstallCore.psm1 staged"
+
 SUMS_FILE="${STAGE_DIR}/SHA256SUMS"
-assert_file_exists "${SUMS_FILE}" "E2E01d SHA256SUMS staged"
+assert_file_exists "${SUMS_FILE}" "E2E01f SHA256SUMS staged"
+
+# SHA256SUMS must cover all 7 assets (5 tarballs + 2 libs).
+SUMS_LINE_COUNT=$(wc -l < "${SUMS_FILE}" | tr -d ' ')
+assert_eq "${SUMS_LINE_COUNT}" "7" "E2E01g SHA256SUMS has 7 entries (5 tarballs + 2 libs)"
 
 # ---------------------------------------------------------------------------
 # E2E02 — Independent sha256sum -c verification.

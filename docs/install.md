@@ -65,6 +65,23 @@ curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/
 
 Pinning `--version` is strongly recommended for any automated or reproducible install. Without it the installer resolves the latest GitHub Release, which can change.
 
+### Trust model for online installs
+
+When running via `curl|bash` or `irm|iex`, the bootstrap installer:
+
+1. **Pins the lib to an immutable release tag.** The shared install-core library (`lib/aid-install-core.sh` / `lib/AidInstallCore.psm1`) is fetched from the release tag `v<VERSION>` (not the mutable `master` branch). When `--version` is given, that exact version is used; otherwise the latest release is resolved first, then the lib is fetched from that tag.
+2. **Verifies the lib's checksum before sourcing it — fails closed.** The installer fetches `SHA256SUMS` from the same release tag and verifies the lib's SHA-256 before sourcing/importing it:
+   - **Checksum mismatch** → aborts with exit 4.
+   - **SHA256SUMS cannot be fetched** (404, network error, or MITM dropping the request) → aborts with exit 3; the lib is **not** sourced.
+   - **Entry for the lib missing from SHA256SUMS** → aborts with exit 3; the lib is **not** sourced.
+   - Only when SHA256SUMS is fetched successfully and the hash matches does the install proceed.
+
+   The only way to skip verification is to set `AID_INSECURE_SKIP_LIB_VERIFY=1` explicitly — this is a deliberate, loud insecure override intended for restricted test environments only. Do not set it in production.
+
+3. **Offline `--from-bundle` remains the strongest path.** No network is used at all; you verify the tarball yourself before running the installer. Recommended for air-gapped or high-security environments.
+
+A pinned install (`--version 0.7.0`) with online channels is reproducible and tamper-detectable: the lib is fetched from an immutable tag URL and its SHA-256 is verified against the signed release artifact before any code runs. An unpinned install resolves the latest release version first, then applies the same verification.
+
 ---
 
 ## Tool selection and auto-detect
@@ -188,10 +205,13 @@ bash install.sh --tool codex,cursor --from-bundle ./bundles/
 
 ### Checksum verification behavior
 
-- If a `SHA256SUMS` file is present beside the bundle (`--from-bundle <path>` → `SHA256SUMS` in the same directory), the installer verifies automatically.
+For `--from-bundle` (offline) installs:
+
+- If a `SHA256SUMS` file is present beside the bundle (`--from-bundle <path>` → `SHA256SUMS` in the same directory), the installer verifies the tarball's SHA-256 automatically.
 - A checksum mismatch aborts with exit 4.
-- No `SHA256SUMS` present → a warning is emitted and the install continues (older releases may not have checksums).
-- Online installs always fetch and verify `SHA256SUMS` from the same release.
+- No `SHA256SUMS` present beside the bundle → a warning is emitted and the install continues (the tarball itself is not the remotely-fetched lib; you chose and supplied it).
+
+For online (`curl|bash` / `irm|iex`) installs, the verification is **fail-closed** — see [Trust model for online installs](#trust-model-for-online-installs) above.
 
 ---
 

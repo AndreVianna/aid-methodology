@@ -45,7 +45,20 @@
 #                    sibling detection and remote fetch; useful for tests and vendored use).
 #   AID_LIB_BASE   — base URL prefix for the remote module fetch when the lib is not beside
 #                    the script (piped/irm|iex case).  Defaults to the raw GitHub URL for
-#                    the master branch.
+#                    the resolved release tag.  When set, SHA256SUMS is fetched from the
+#                    parent directory of AID_LIB_BASE (one dir up from lib/).
+#   AID_SUMS_URL   — override URL for SHA256SUMS used during lib checksum verification.
+#                    Useful for tests.  When unset, derived from the release tag URL.
+#   AID_INSECURE_SKIP_LIB_VERIFY — set to '1' to skip lib checksum verification for the
+#                    remote-fetch path.  INSECURE — for restricted test environments only.
+#                    Default is fail-closed: SHA256SUMS must be fetchable and the hash must
+#                    match.  Do not set in production.
+#
+# Trust model: irm|iex trusts the GitHub repo at the resolved pinned tag (fail-closed:
+#   SHA256SUMS must be fetchable and hash must match before the lib is imported; exit 3 if
+#   SHA256SUMS unreachable or entry missing; exit 4 on mismatch).  Offline -FromBundle
+#   installs remain the recommended verify-before-install path for air-gapped and
+#   high-security adopters.
 #
 # Exit codes:
 #   0   success
@@ -90,17 +103,36 @@ $LibDir = Join-Path $ScriptDir 'lib'
 # Usage helper (prints the header block as plain text).
 # ---------------------------------------------------------------------------
 function Show-Usage {
-    # Extract lines 2..55 of this script (the header comment), strip leading '# '.
+    # Extract lines 2..61 of this script (the header comment), strip leading '# '.
     # Use $script:_InstallPs1Path captured at load time to avoid $MyInvocation scoping issues.
-    # When piped ($script:_InstallPs1Path is null), emit a minimal usage stub.
+    # When piped ($script:_InstallPs1Path is null), emit a minimal usage stub (FR9 parity
+    # with install.sh piped-stub).
     if ([string]::IsNullOrEmpty($script:_InstallPs1Path)) {
         Write-Host "install.ps1 — AID installer bootstrap (PowerShell 5.1+)."
-        Write-Host "Run: irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex"
+        Write-Host ""
+        Write-Host "Usage:"
+        Write-Host "  .\install.ps1 [-Tool <name>[,...]] [-Version <v>] [-FromBundle <path>]"
+        Write-Host "                [-Force] [-TargetDirectory <dir>]"
+        Write-Host "  .\install.ps1 -Update  [...params...]"
+        Write-Host "  .\install.ps1 -Uninstall [-Tool <name>[,...]] [-TargetDirectory <dir>]"
+        Write-Host "  .\install.ps1 -Help"
+        Write-Host ""
+        Write-Host "Key parameters:"
+        Write-Host "  -Tool <name>[,...]      Tool id: claude-code, codex, cursor, copilot-cli, antigravity"
+        Write-Host "  -Version <v>            Pin to release version (e.g. 0.7.0)"
+        Write-Host "  -FromBundle <path>      Offline install from pre-downloaded tarball"
+        Write-Host "  -Force                  Overwrite differing files including root agent files"
+        Write-Host "  -TargetDirectory <dir>  Install root (default: current directory)"
+        Write-Host ""
+        Write-Host "Exit codes: 0 success, 1 failure, 2 usage error, 3 network error,"
+        Write-Host "            4 checksum mismatch, 5 protect-on-diff blocked, 6 no manifest"
+        Write-Host ""
+        Write-Host "Full docs: https://github.com/AndreVianna/aid-methodology/blob/master/docs/install.md"
         return
     }
     $lines = Get-Content -LiteralPath $script:_InstallPs1Path -ErrorAction SilentlyContinue
     if ($lines) {
-        $lines[1..54] | ForEach-Object { $_ -replace '^# ?', '' } | Write-Host
+        $lines[1..60] | ForEach-Object { $_ -replace '^# ?', '' } | Write-Host
     }
 }
 
@@ -135,8 +167,13 @@ if ($RemainingArgs -and $RemainingArgs.Count -gt 0) {
 # Resolution order (first match wins):
 #   1. AID_LIB_PATH env var — absolute path to the psm1 file (test override or vendored).
 #   2. Sibling lib/AidInstallCore.psm1 — present when invoked as a local file.
-#   3. Remote fetch from AID_LIB_BASE (or default GitHub raw URL) into a temp dir —
-#      used in the piped (irm|iex) case where no sibling lib is available.
+#   3. Remote fetch (piped execution) — fix #12:
+#      a. Resolve the release version (from -Version flag or GitHub API latest).
+#      b. Fetch the lib from the IMMUTABLE release tag raw URL (not master).
+#      c. Fetch SHA256SUMS from the same release tag.
+#      d. Verify the lib's sha256 against SHA256SUMS — exit 4 on mismatch.
+#      e. Import the verified module.
+#      AID_LIB_BASE / AID_SUMS_URL env overrides allow hermetic tests without network.
 # ---------------------------------------------------------------------------
 $script:_AidTmpLibDir = $null
 
@@ -149,18 +186,101 @@ if ($aidLibPath) {
 } elseif (Test-Path (Join-Path $LibDir 'AidInstallCore.psm1') -PathType Leaf) {
     $CoreModule = Join-Path $LibDir 'AidInstallCore.psm1'
 } else {
-    # Remote fetch (piped execution — AID_LIB_BASE or default GitHub raw URL).
-    $aidLibBase = if ($env:AID_LIB_BASE) { $env:AID_LIB_BASE } else { 'https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/lib' }
-    $libUrl = "$aidLibBase/AidInstallCore.psm1"
+    # Remote fetch with pinned tag + checksum verification (fix #12).
     $tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) ("aid-libfetch-" + [System.IO.Path]::GetRandomFileName())
     New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
     $script:_AidTmpLibDir = $tmpDir
     $CoreModule = Join-Path $tmpDir 'AidInstallCore.psm1'
+
+    # Resolve version to pin.  Resolution order:
+    #   1. AID_LIB_VERSION env var (test/override; avoids API call).
+    #   2. -Version flag.
+    #   3. GitHub API latest.
+    $resolvedVer = ''
+    if ($env:AID_LIB_VERSION) { $resolvedVer = $env:AID_LIB_VERSION -replace '^v', '' }
+    elseif ($Version)          { $resolvedVer = $Version -replace '^v', '' }
+    if (-not $resolvedVer) {
+        $apiUrl = 'https://api.github.com/repos/AndreVianna/aid-methodology/releases/latest'
+        $headers = @{}
+        $token = if ($env:GITHUB_TOKEN) { $env:GITHUB_TOKEN } elseif ($env:GH_TOKEN) { $env:GH_TOKEN } else { '' }
+        if ($token) { $headers['Authorization'] = "Bearer $token" }
+        try {
+            $apiResp = Invoke-RestMethod -Uri $apiUrl -Headers $headers -Method Get -ErrorAction Stop
+            $resolvedVer = ($apiResp.tag_name -replace '^v', '')
+        } catch {
+            script:Fail "Failed to resolve latest release version from $apiUrl : $_" 3
+        }
+        if (-not $resolvedVer) {
+            script:Fail "Could not parse tag_name from GitHub API response for $apiUrl" 3
+        }
+    }
+
+    # Build lib URL: raw GitHub at pinned tag (not master).
+    $defaultLibBase = "https://raw.githubusercontent.com/AndreVianna/aid-methodology/v$resolvedVer/lib"
+    $aidLibBase = if ($env:AID_LIB_BASE) { $env:AID_LIB_BASE } else { $defaultLibBase }
+    $libUrl = "$aidLibBase/AidInstallCore.psm1"
+
+    # SHA256SUMS URL: from the release assets (same tag).
+    $defaultSumsUrl = "https://github.com/AndreVianna/aid-methodology/releases/download/v$resolvedVer/SHA256SUMS"
+    $sumsUrl = if ($env:AID_SUMS_URL) {
+        $env:AID_SUMS_URL
+    } elseif ($env:AID_LIB_BASE) {
+        # Derive from parent directory of AID_LIB_BASE (strip trailing /lib or /lib/).
+        $parentBase = $env:AID_LIB_BASE -replace '/lib/?$', ''
+        "$parentBase/SHA256SUMS"
+    } else {
+        $defaultSumsUrl
+    }
+
     [Console]::Error.WriteLine("Fetching install core from $libUrl ...")
     try {
         Invoke-WebRequest -Uri $libUrl -OutFile $CoreModule -UseBasicParsing -ErrorAction Stop
     } catch {
         script:Fail "Failed to fetch install core from $libUrl : $_" 3
+    }
+
+    # Verify checksum (fix #12, fix #14: fail-closed).
+    # AID_INSECURE_SKIP_LIB_VERIFY=1 is an explicit opt-out — must be deliberately set.
+    # Default: fail closed if SHA256SUMS is unreachable OR entry is missing OR hash mismatches.
+    if ($env:AID_INSECURE_SKIP_LIB_VERIFY -eq '1') {
+        [Console]::Error.WriteLine("WARN: install.ps1: AID_INSECURE_SKIP_LIB_VERIFY=1 set — skipping lib checksum verification (INSECURE)")
+    } else {
+        $sumsFile = Join-Path $tmpDir 'SHA256SUMS'
+        $sumsOk = $false
+        try {
+            [Console]::Error.WriteLine("Fetching SHA256SUMS from $sumsUrl ...")
+            Invoke-WebRequest -Uri $sumsUrl -OutFile $sumsFile -UseBasicParsing -ErrorAction Stop
+            $sumsOk = $true
+        } catch {
+            [Console]::Error.WriteLine("ERROR: install.ps1: could not fetch SHA256SUMS from $sumsUrl; refusing to import unverified lib (fail-closed)")
+            [Console]::Error.WriteLine("ERROR: install.ps1: set AID_INSECURE_SKIP_LIB_VERIFY=1 to bypass (insecure)")
+            exit 3
+        }
+
+        if (-not $sumsOk -or -not (Test-Path $sumsFile -PathType Leaf)) {
+            [Console]::Error.WriteLine("ERROR: install.ps1: could not fetch SHA256SUMS from $sumsUrl; refusing to import unverified lib (fail-closed)")
+            [Console]::Error.WriteLine("ERROR: install.ps1: set AID_INSECURE_SKIP_LIB_VERIFY=1 to bypass (insecure)")
+            exit 3
+        }
+
+        $libHash = (Get-FileHash -LiteralPath $CoreModule -Algorithm SHA256).Hash.ToLower()
+        $expectedHash = ''
+        foreach ($line in [System.IO.File]::ReadAllLines($sumsFile)) {
+            if ($line -match '^\s*([0-9a-fA-F]{64})\s+[* ]?AidInstallCore\.psm1$') {
+                $expectedHash = $matches[1].ToLower()
+                break
+            }
+        }
+        if (-not $expectedHash) {
+            [Console]::Error.WriteLine("ERROR: install.ps1: AidInstallCore.psm1 not found in SHA256SUMS from $sumsUrl; refusing to import unverified lib (fail-closed)")
+            [Console]::Error.WriteLine("ERROR: install.ps1: set AID_INSECURE_SKIP_LIB_VERIFY=1 to bypass (insecure)")
+            exit 3
+        } elseif ($libHash -ne $expectedHash) {
+            [Console]::Error.WriteLine("ERROR: install.ps1: checksum mismatch for AidInstallCore.psm1: expected $expectedHash, got $libHash")
+            exit 4
+        } else {
+            [Console]::Error.WriteLine("Checksum OK: AidInstallCore.psm1")
+        }
     }
 }
 Import-Module $CoreModule -Force -DisableNameChecking

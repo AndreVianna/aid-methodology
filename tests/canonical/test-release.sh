@@ -220,7 +220,7 @@ assert_output_not_contains "${LISTING}" "aid-antigravity/" \
 # ---------------------------------------------------------------------------
 # RL04: SHA256SUMS format
 #   - File exists
-#   - Exactly 5 lines (one per tarball)
+#   - Exactly 7 lines (5 tarballs + 2 lib files: aid-install-core.sh + AidInstallCore.psm1)
 #   - Each line matches <64-hex>  <filename> (two spaces)
 #   - Filenames are bare (no path prefix)
 #   - No self-reference (SHA256SUMS itself) and no sig line
@@ -229,12 +229,12 @@ assert_output_not_contains "${LISTING}" "aid-antigravity/" \
 # ---------------------------------------------------------------------------
 SUMS_FILE="${STAGE_DIR}/SHA256SUMS"
 assert_file_exists "${SUMS_FILE}" "RL04 SHA256SUMS file exists"
-assert_line_count "${SUMS_FILE}" 5 "RL04 SHA256SUMS has exactly 5 lines"
+assert_line_count "${SUMS_FILE}" 7 "RL04 SHA256SUMS has exactly 7 lines (5 tarballs + 2 libs)"
 
 # Validate each line matches the two-space format: <64-hex>  <filename>
 LINE_CHECK_PASS=1
 while IFS= read -r line; do
-    if ! echo "${line}" | grep -qE '^[0-9a-f]{64}  aid-[^ ]+\.tar\.gz$'; then
+    if ! echo "${line}" | grep -qE '^[0-9a-f]{64}  [^ ]+$'; then
         LINE_CHECK_PASS=0
         break
     fi
@@ -242,8 +242,14 @@ done < "${SUMS_FILE}"
 if [[ "$LINE_CHECK_PASS" -eq 1 ]]; then
     pass "RL04 all SHA256SUMS lines match <64-hex>  <filename> format"
 else
-    fail "RL04 SHA256SUMS line format — at least one line does not match '<64-hex>  aid-*.tar.gz'"
+    fail "RL04 SHA256SUMS line format — at least one line does not match '<64-hex>  <filename>'"
 fi
+
+# Lib files must be present in SHA256SUMS.
+assert_file_contains "${SUMS_FILE}" "aid-install-core.sh" \
+    "RL04 SHA256SUMS contains aid-install-core.sh entry"
+assert_file_contains "${SUMS_FILE}" "AidInstallCore.psm1" \
+    "RL04 SHA256SUMS contains AidInstallCore.psm1 entry"
 
 # No self-reference and no sig line
 assert_file_not_contains "${SUMS_FILE}" "SHA256SUMS" \
@@ -273,6 +279,16 @@ for tool in "${TOOLS[@]}"; do
     RECORDED_HEX=$(grep " ${FNAME}$" "${SUMS_FILE}" | awk '{print $1}')
     assert_eq "${INDEP_HEX}" "${RECORDED_HEX}" \
         "RL05 checksum correctness for aid-${tool}-v${STAGE_VERSION}.tar.gz"
+done
+
+# Also verify lib files' checksums.
+for libname in "aid-install-core.sh" "AidInstallCore.psm1"; do
+    libfile="${STAGE_DIR}/${libname}"
+    assert_file_exists "${libfile}" "RL05b lib file staged: ${libname}"
+    INDEP_HEX=$(sha256sum "${libfile}" | awk '{print $1}')
+    RECORDED_HEX=$(grep " ${libname}$" "${SUMS_FILE}" | awk '{print $1}')
+    assert_eq "${INDEP_HEX}" "${RECORDED_HEX}" \
+        "RL05b checksum correctness for ${libname}"
 done
 
 # ---------------------------------------------------------------------------

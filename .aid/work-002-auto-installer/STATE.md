@@ -81,7 +81,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| delivery-001 | Detailed (A+) | 001–010 (10) | Foundation install; curl + offline tar; Must |
+| delivery-001 | Done — gate A | 001–010 (10) | Foundation install; curl + offline tar; Must |
 | delivery-002 | Detailed (A+) | 011–012 (2) | npm channel; depends on d-001; Must |
 | delivery-003 | Detailed (A+) | 013–015 (3) | PyPI channel; depends on d-001; CasuloAI org blocker; Must |
 | delivery-004 | Detailed (A+) | 016–017 (2) | CI release automation; depends on d-001/002/003; Should |
@@ -136,6 +136,16 @@ This is the single state file for **this work** — the full dev lifecycle from 
 - **Issue List:** none open (5 Fixed, 1 Accepted — task-002 five-deliverable bundle, by-design for LITE-FEATURE)
 - **Ledger:** `.aid/.temp/review-pending/interview-work-002-auto-installer-lite.md`
 - **Timestamp:** 2026-06-04
+
+
+### delivery-001 (EXECUTE delivery-gate)
+
+- **Reviewer Tier:** Large
+- **Complexity Score:** 26
+- **Grade:** A
+- **Cycles:** 4 (E → D → D+ → A)
+- **Timestamp:** 2026-06-04T00:00:00Z
+- **Issue List:** 16 findings Fixed across 4 cycles (2 CRITICAL broken one-liners, 1 CRITICAL PS multi-tool crash fixed-on-spot, 2 HIGH manifest-data-loss + fail-open lib verification, plus MEDIUM/LOW); 2 open MINOR (SHA256SUMS-matcher regex parity nit (fail-closed-safe); IN10b test-resource flake under parallel HTTP-server tests).
 
 ## Cross-phase Q&A (Pending)
 
