@@ -1,7 +1,7 @@
 # AID — AI Integrated Development
 
 ![License](https://img.shields.io/github/license/AndreVianna/aid-methodology)
-![Version](https://img.shields.io/badge/version-0.1.0--dev-blue)
+![Version](https://img.shields.io/badge/version-0.7.0-blue)
 ![Claude Code](https://img.shields.io/badge/Claude_Code-supported-8B5CF6)
 ![Codex CLI](https://img.shields.io/badge/Codex_CLI-supported-10B981)
 ![Cursor](https://img.shields.io/badge/Cursor-supported-3B82F6)
@@ -350,7 +350,7 @@ All five profiles are generated from the same canonical source at `canonical/` �
 
 ## Versioning
 
-AID is at **`0.1.0-dev`** (see [`VERSION`](VERSION)) — a pre-release marker, not a stable release. The canonical position is **"continuous master"**: there is no formal semver release cadence yet.
+AID is at **`0.7.0`** (see [`VERSION`](VERSION)). A versioned-release flow is being introduced; until it ships, `master` remains the canonical source.
 
 - Install via `setup.sh` (or `setup.ps1`) to get current `master`; re-run to pick up updates.
 - A formal version bump will be introduced when the methodology stabilizes.
