@@ -13,7 +13,7 @@ intent: |
 contracts:
   - "11 user-facing aid-* skills + 1 maintainer-only aid-generate skill = 12 total"
   - "9 agents under canonical/agents/ (4 large / 4 medium / 1 small)"
-  - "12 renderer Python files under .claude/skills/aid-generate/scripts/ (render_agents, render_skills, render_templates, render_canonical_scripts, render_recipes) + render_lib + aid_profile + verify_deterministic + verify_advisory + test_manifest_safety + test_copilot_emitter + test_antigravity_emitter, plus run_generator.py at the repo root"
+  - "12 renderer Python files under .claude/skills/aid-generate/scripts/ (render_agents, render_skills, render_templates, render_canonical_scripts, render_recipes) + render_lib + aid_profile + verify_deterministic + verify_advisory + test_manifest_safety + test_copilot_emitter + test_antigravity_emitter + run_generator.py (the entrypoint, moved here from repo root by work-001)"
   - "6 script categories under canonical/scripts/ (config, kb, execute, summarize, interview, housekeep) + grade.sh at the category root"
   - "Every canonical helper script has 7 byte-identical copies on disk (canonical + .claude dogfood + 5 profile trees)"
 changelog:
@@ -38,7 +38,7 @@ The repo contains five module classes, each with its own conventions:
 
 1. **Skills** — 11 user-facing + 1 maintainer-only — under `canonical/skills/aid-*/`
 2. **Agents** — 9 specialist agents — under `canonical/agents/<name>/`
-3. **Renderer (Python)** — 12 files under `.claude/skills/aid-generate/scripts/` + `run_generator.py` at the repo root
+3. **Renderer (Python)** — 13 files under `.claude/skills/aid-generate/scripts/` (incl. the `run_generator.py` entrypoint)
 4. **Helper scripts (Bash + JS + PS1)** — under `canonical/scripts/{config,kb,execute,summarize,interview,housekeep}/` + `canonical/scripts/grade.sh`
 5. **Templates + Recipes** — content fixtures consumed by skills — under `canonical/templates/` + `canonical/recipes/`
 
@@ -140,7 +140,7 @@ The generator lives in `.claude/skills/aid-generate/scripts/`, NOT in
 (chicken-and-egg per `.claude/skills/aid-generate/SKILL.md` `chicken-and-egg deployment problem`). It is the only
 Python in the repo.
 
-**Path:** `.claude/skills/aid-generate/scripts/*.py` (12 files) + `run_generator.py` (repo root wrapper).
+**Path:** `.claude/skills/aid-generate/scripts/*.py` (13 files, incl. the `run_generator.py` entrypoint).
 
 | File | Purpose | Key entry points |
 |------|---------|------------------|
@@ -156,7 +156,7 @@ Python in the repo.
 | `test_manifest_safety.py` | Self-tests for the EmissionManifest deletion logic | (pytest-style; run standalone) |
 | `test_copilot_emitter.py` | Self-tests for the `copilot-agent` format branch (`.agent.md` suffix + name/description/tools/model frontmatter); CI-wired in `.github/workflows/test.yml` | (run standalone) |
 | `test_antigravity_emitter.py` | Self-tests for the `antigravity-rule` format branch + the gated trigger-dialect `[[extras.rules]]` emission; CI-wired in `.github/workflows/test.yml` | (run standalone) |
-| `run_generator.py` (repo root) | Live generator entrypoint — loads every `profiles/*.toml`, calls renderers in sequence, performs deletion pass via `EmissionManifest.diff`, writes manifest, runs VERIFY (deterministic) + VERIFY (advisory) | `for profile_path in sorted(profiles_dir.glob('*.toml'))` |
+| `.claude/skills/aid-generate/scripts/run_generator.py` | Generator entrypoint — loads every `profiles/*.toml`, calls renderers in sequence, performs deletion pass via `EmissionManifest.diff`, writes manifest, runs VERIFY (deterministic) + VERIFY (advisory) | `for profile_path in sorted(profiles_dir.glob('*.toml'))` |
 
 **Dependencies:**
 

@@ -97,9 +97,11 @@ aid-methodology/                       (repo root)
 ├── CLAUDE.md                          ← Claude Code project-context (dogfood)
 ├── CONTRIBUTING.md                    ← contribution guide
 ├── LICENSE                            ← MIT
-├── run_generator.py                   ← live generator entrypoint
 ├── setup.sh                           ← end-user installer (Bash)
 └── setup.ps1                          ← end-user installer (PowerShell)
+
+(The generator entrypoint `run_generator.py` lives with its render engine at
+`.claude/skills/aid-generate/scripts/run_generator.py` — maintainer-only, not rendered.)
 ```
 
 ## Detected Languages
@@ -113,9 +115,9 @@ Languages present (where, not counts):
 | Markdown | All docs, skills, agents, templates, recipes |
 | Shell | `canonical/scripts/` + 5 install-tree mirrors + `tests/canonical/` + `setup.sh` |
 | JavaScript | `canonical/templates/knowledge-summary/lightbox.js`, `mermaid-init.js`, `canonical/scripts/summarize/{validate-diagrams,contrast-check}.mjs` + 5 install-tree mirrors |
-| Python | `.claude/skills/aid-generate/scripts/*.py` (12 files incl. the two generator self-tests `test_copilot_emitter.py` + `test_antigravity_emitter.py`) + `run_generator.py` |
+| Python | `.claude/skills/aid-generate/scripts/*.py` (13 files: the renderers/verifiers, the two generator self-tests `test_copilot_emitter.py` + `test_antigravity_emitter.py`, and the `run_generator.py` entrypoint) |
 | CSS | `canonical/templates/knowledge-summary/component-css.css` + 6 mirrors (.claude + 5 profile trees) |
-| TOML | 5 profile `*.toml` files (`profiles/*.toml`) + 22 Codex agent `.toml` files (`profiles/codex/.codex/agents/*.toml`) |
+| TOML | 5 profile `*.toml` files (`profiles/*.toml`) + 9 Codex agent `.toml` files (`profiles/codex/.codex/agents/*.toml`) |
 | HTML | `canonical/templates/knowledge-summary/html-skeleton.html` + 6 mirrors |
 | YAML | `canonical/templates/settings.yml` + 6 mirrors |
 | PowerShell | `setup.ps1` + `canonical/scripts/summarize/assemble-3part.ps1` + 6 install-tree mirrors |
@@ -140,7 +142,7 @@ Languages present (where, not counts):
 | `CLAUDE.md` | Dogfood Claude Code project context — minimal pointer to KB | `CLAUDE.md` `# CLAUDE.md` |
 | `CONTRIBUTING.md` | Repo structure table, contribution rules, style guide | `CONTRIBUTING.md` `# Contributing to AID` |
 | `LICENSE` | MIT license | `LICENSE` |
-| `run_generator.py` | Top-level generator entrypoint — loads every `profiles/*.toml` (5 profiles), calls renderers, runs VERIFY (deterministic, strict) + VERIFY (advisory) | `run_generator.py` `Running VERIFY (deterministic)...` |
+| `.claude/skills/aid-generate/scripts/run_generator.py` | Generator entrypoint (lives with its render engine) — loads every `profiles/*.toml` (5 profiles), calls renderers, runs VERIFY (deterministic, strict) + VERIFY (advisory) | `run_generator.py` `Running VERIFY (deterministic)...` |
 | `setup.sh` | Bash end-user installer (target: real projects, not maintainer); interactive 5-tool menu (`setup.sh` `tool_name()`) + Option-A AGENTS.md collision handler (`setup.sh` `AGENTS.md collision pre-copy block`) | `setup.sh` |
 | `setup.ps1` | PowerShell end-user installer (same 5-tool menu + collision behavior) | `setup.ps1` |
 | `.gitignore` | Excludes Python/Node caches, IDE, `.aid/knowledge/.cache/`, `.claude/worktrees/`, `.aid/.heartbeat/` | `.gitignore` `.aid/.heartbeat/` |
@@ -155,7 +157,7 @@ Languages present (where, not counts):
 
 ### Generator (maintainer-only, lives in `.claude/skills/aid-generate/scripts/`)
 
-12 Python files under `.claude/skills/aid-generate/scripts/` (10 renderers/verifiers + 2 emitter self-tests added by work-001); with the top-level `run_generator.py` the project has 13 Python files total. The supported `[agent].format` values are now four — `markdown`, `toml`, `copilot-agent`, `antigravity-rule` (`aid_profile.py` `_KNOWN_AGENT_FORMATS`).
+13 Python files under `.claude/skills/aid-generate/scripts/` (10 renderers/verifiers + 2 emitter self-tests added by work-001 + the `run_generator.py` entrypoint, moved here from repo root by work-001). The supported `[agent].format` values are now four — `markdown`, `toml`, `copilot-agent`, `antigravity-rule` (`aid_profile.py` `_KNOWN_AGENT_FORMATS`).
 
 | File | Purpose |
 |------|---------|
@@ -265,7 +267,7 @@ The build commands:
 
 | Command | Purpose |
 |---------|---------|
-| `python run_generator.py` | Re-generate all 5 install trees from `canonical/` (claude-code, codex, cursor, copilot-cli, antigravity; maintainer-only) |
+| `python .claude/skills/aid-generate/scripts/run_generator.py` | Re-generate all 5 install trees from `canonical/` (claude-code, codex, cursor, copilot-cli, antigravity; maintainer-only) |
 | `python .claude/skills/aid-generate/scripts/verify_deterministic.py` | Verify render is byte-correct + complete |
 | `bash canonical/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md` | Rebuild file inventory |
 | `bash tests/run-all.sh` | Run all canonical helper test suites (currently 24 suites — aggregator globs `tests/canonical/test-*.sh`; see `tests/README.md`) |
@@ -340,7 +342,7 @@ The 40 `add-`/`change-` recipes span 11 target-kind families. See `canonical/rec
 
 | Audience | Entry point | Where it goes |
 |----------|-------------|---------------|
-| Maintainer build | `python run_generator.py` | Renders all 5 install trees + runs VERIFY (deterministic) / VERIFY (advisory) |
+| Maintainer build | `python .claude/skills/aid-generate/scripts/run_generator.py` | Renders all 5 install trees + runs VERIFY (deterministic) / VERIFY (advisory) |
 | End-user install | `./setup.sh` (Unix) / `.\setup.ps1` (Windows) | Installs selected profile(s) into a target project |
 | Methodology reader | `methodology/aid-methodology.md` | The complete spec |
 | First-time AI agent reader | `CLAUDE.md` (dogfood) or `AGENTS.md` (per profile) | Project context, KB pointers |
@@ -354,7 +356,7 @@ The 40 `add-`/`change-` recipes span 11 target-kind families. See `canonical/rec
 
 3. **Split Codex layout.** `profiles/codex/.codex/agents/` holds TOML agent definitions; `profiles/codex/.agents/{skills,scripts,recipes,templates}/` holds the markdown bodies. A single `profiles/codex/emission-manifest.jsonl` covers both roots (per `canonical/EMISSION-MANIFEST.md` `## Filename and Location`).
 
-4. **Generator lives in `.claude/skills/aid-generate/`, not in repo root.** It is a skill that ships with itself; `run_generator.py` is a tiny wrapper that imports its scripts (`run_generator.py` `sys.path.insert(0, '.claude/skills/aid-generate/scripts')`).
+4. **Generator lives in `.claude/skills/aid-generate/`, not in repo root.** It is a skill that ships with itself; the `run_generator.py` entrypoint sits in `.claude/skills/aid-generate/scripts/` alongside the renderers it imports (`run_generator.py` `sys.path.insert(0, str(Path(__file__).parent))`). Invoke it from the repo root: `python .claude/skills/aid-generate/scripts/run_generator.py`.
 
 5. **`canonical/scripts/` was newly reorganized.** Git status shows many recent renames from `canonical/templates/scripts/` and `canonical/skills/*/scripts/` into the consolidated `canonical/scripts/{config,execute,interview,kb,summarize}/` hierarchy; PR #49 added a sixth subdir, `canonical/scripts/housekeep/`.
 

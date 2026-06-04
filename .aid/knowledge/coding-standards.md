@@ -338,7 +338,7 @@ There are no `.env` files, no credential templates, no secrets handling (CONFIRM
 
 ### 7a. Single-source canonical → multi-tree render
 
-**Never edit `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/` directly** (CONFIRMED per `canonical/EMISSION-MANIFEST.md` §Safety-Boundary Semantics). Edit `canonical/` and run `python run_generator.py`. The render reads `canonical/` (the source) and emits byte-identical bodies into the **5 profile trees**:
+**Never edit `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/` directly** (CONFIRMED per `canonical/EMISSION-MANIFEST.md` §Safety-Boundary Semantics). Edit `canonical/` and run `python .claude/skills/aid-generate/scripts/run_generator.py`. The render reads `canonical/` (the source) and emits byte-identical bodies into the **5 profile trees**:
 
 - `profiles/claude-code/.claude/`
 - `profiles/codex/.codex/` + `profiles/codex/.agents/` (split layout)

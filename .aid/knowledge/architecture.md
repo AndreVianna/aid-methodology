@@ -136,7 +136,7 @@ Evidence:
   `_FILENAME_PLACEHOLDERS` — manifest sentinel + placeholder regex; the manifest is JSONL
   with a `{"_manifest_version": 1}` first line, sorted by `dst` for byte-stable diffs.
 - `CONTRIBUTING.md` + `coding-standards.md §7a` — "Never edit `profiles/{claude-code,codex,
-  cursor,copilot-cli,antigravity}/` directly — edit canonical/ and run `python run_generator.py`."
+  cursor,copilot-cli,antigravity}/` directly — edit canonical/ and run `python .claude/skills/aid-generate/scripts/run_generator.py`."
 
 ### 2. Thin-Router state machine (per skill)
 
@@ -261,7 +261,7 @@ setup.{sh,ps1} ─reads→ profiles/{tool}/ ─copies→ user project
 
 ## Data Flow
 
-### Build-time data flow (maintainer running `python run_generator.py`)
+### Build-time data flow (maintainer running `python .claude/skills/aid-generate/scripts/run_generator.py`)
 
 ```
 canonical/agents/aid-architect/AGENT.md
@@ -395,7 +395,7 @@ mechanism was found in any source file.
 
 | Audience | Entry point | What it does |
 |----------|-------------|--------------|
-| **Maintainer build** | `python run_generator.py` | Renders all 5 install trees from `canonical/`, runs VERIFY (deterministic, hard) + VERIFY (advisory). Evidence: `run_generator.py` (`"""Live generator run` module docstring). |
+| **Maintainer build** | `python .claude/skills/aid-generate/scripts/run_generator.py` | Renders all 5 install trees from `canonical/`, runs VERIFY (deterministic, hard) + VERIFY (advisory). Evidence: `run_generator.py` (`"""Live generator run` module docstring). |
 | **Maintainer one-tree render** | `python .claude/skills/aid-generate/scripts/render_skills.py --canonical-root . --profile profiles/claude-code.toml --output-root profiles/claude-code/.claude` | Renderers are each runnable standalone with `--canonical-root` / `--profile` / `--output-root`. Evidence: `.claude/skills/aid-generate/scripts/render_skills.py` (`# Usage:` header). |
 | **Maintainer verify-only** | `python .claude/skills/aid-generate/scripts/verify_deterministic.py` | VERIFY (deterministic) hard gate. Re-renders to scratch tmpdir, byte-compares against committed install trees, parses every frontmatter. Exit code 0 on full pass; 1 on any sub-check failure. Evidence: `verify_deterministic.py` `def run_verify`. |
 | **End-user install (Unix)** | `./setup.sh /path/to/your/project [--force]` | Menu-driven copy of selected profiles into a target project. Evidence: `setup.sh` `print_menu`. |
@@ -434,7 +434,7 @@ caveats worth flagging:
    is stale — it still reports 2,242 across 10 skills and predates `aid-housekeep`; re-run
    `build-metrics.sh` to refresh it. The rendered `.claude/skills/*/SKILL.md` set may also
    differ from canonical if `canonical/` was edited after the last
-   `python run_generator.py` run; run VERIFY (deterministic) to detect drift.
+   `python .claude/skills/aid-generate/scripts/run_generator.py` run; run VERIFY (deterministic) to detect drift.
 
 4. **`.aid/work-NNN/` directories referenced by older docs but absent from the project
    index.**

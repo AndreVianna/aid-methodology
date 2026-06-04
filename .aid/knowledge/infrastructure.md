@@ -87,7 +87,7 @@ The canonical → 5-profiles render is the **only build artifact pipeline** in t
 
 | Component | Path | Lines | Purpose |
 |-----------|------|-------|---------|
-| Top-level entrypoint | `run_generator.py` | 87 | Loops `profiles/*.toml` (5 profiles: claude-code, codex, cursor, copilot-cli, antigravity), calls each renderer, runs VERIFY (deterministic) + VERIFY (advisory) |
+| Generator entrypoint | `.claude/skills/aid-generate/scripts/run_generator.py` | 87 | Loops `profiles/*.toml` (5 profiles: claude-code, codex, cursor, copilot-cli, antigravity), calls each renderer, runs VERIFY (deterministic) + VERIFY (advisory) |
 | Profile parser | `.claude/skills/aid-generate/scripts/aid_profile.py` | 550 | Parses TOML, validates schema |
 | Manifest harness | `.claude/skills/aid-generate/scripts/render_lib.py` | 756 | Emission-manifest implementation; pure-mirror deletion logic |
 | Agent renderer | `.claude/skills/aid-generate/scripts/render_agents.py` | 522 | Renders `canonical/agents/` per profile |

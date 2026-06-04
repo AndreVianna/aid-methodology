@@ -4,7 +4,9 @@ import sys
 import json
 from pathlib import Path
 
-sys.path.insert(0, '.claude/skills/aid-generate/scripts')
+# This script now lives alongside the render engine it imports; resolve the
+# import dir from the script's own location so imports work regardless of CWD.
+sys.path.insert(0, str(Path(__file__).parent))
 from aid_profile import load_profile, validate
 from render_lib import EmissionManifest
 from render_agents import render_agents

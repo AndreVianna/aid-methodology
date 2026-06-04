@@ -40,7 +40,7 @@ check-in pattern that emits mid-wait status when ETAs exceed 5 minutes.
 | `contrast-check.mjs` | ~30 s | 2026-05-21 | 1 | Checks WCAG contrast ratios for all colour pairs |
 | `/aid-generate` (end-to-end) | ~30 s | 2026-05-23 | 4 (4 observed run_generator.py invocations during work-003) | Runs run_generator.py across all 3 profiles; includes VERIFY (deterministic) |
 | `setup.sh` (smoke install) | ~10 s | 2026-05-23 | 2 | Interactive menu (`printf "1\n4\n" |`); copies one profile tree to target dir |
-| `python run_generator.py` | ~25 s | 2026-05-23 | 4 | Full canonical→profile render + VERIFY (deterministic) + VERIFY (advisory) |
+| `python .claude/skills/aid-generate/scripts/run_generator.py` | ~25 s | 2026-05-23 | 4 | Full canonical→profile render + VERIFY (deterministic) + VERIFY (advisory) |
 
 ## Notes
 
