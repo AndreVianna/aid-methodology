@@ -162,7 +162,7 @@ The six numbered development phases form the mandatory sequential path. Deploy a
 
 ## The Lite Path
 
-For small, well-scoped work, `/aid-interview` begins with a TRIAGE that routes automatically — no manual cost-benefit decision required.
+For small, well-scoped work, `/aid-interview` begins with a TRIAGE that routes automatically — no manual cost-benefit decision required. You **describe the work in your own words**; TRIAGE infers the work-type and the best-matching recipe and confirms in one turn.
 
 ```mermaid
 flowchart LR
@@ -170,7 +170,7 @@ flowchart LR
     classDef exe   fill:#166534,stroke:#166534,color:#ffffff
     classDef lite  fill:#92400E,stroke:#92400E,color:#ffffff
 
-    Triage["aid-interview · TRIAGE<br/>T1 breadth · T2 task-count · T3 type"]:::def
+    Triage["aid-interview · TRIAGE<br/>describe the work → infer type + recipe"]:::def
 
     subgraph FullPath[" Full path "]
         direction LR
@@ -187,23 +187,24 @@ flowchart LR
     end
     Exec["aid-execute"]:::exe
 
-    Triage -- "ANY large signal:<br/>T1 = multiple · T2 = many (6+)<br/>· T3 = new feature/system" --> F1
+    Triage -- "no confident match:<br/>multi-target / broad scope" --> F1
     F1 --> F2 --> F3 --> F4 --> Exec
-    Triage -- "ALL small:<br/>T1 none/one-small · T2 a few (≤5)<br/>· T3 bug-fix / refactor / doc" --> L1
+    Triage -- "confident match:<br/>small, single-target work" --> L1
     L1 --> L2 --> L3 --> Exec
     L3 -. "escalate if scope grows" .-> F1
 ```
 
 **Lite path output:** work-root `SPEC.md` + `tasks/` directory — no `features/` folder, no `REQUIREMENTS.md`, no `PLAN.md`. Straight to `/aid-execute`.
 
-| **workType** | **Sub-path** | **Typical output** |
+The work-type is **inferred** (you never pick it from a menu) and is one of three internal kinds — documentation and reports fold into `new-feature` (adding) or `refactor` (changing):
+
+| **work-type (inferred)** | **Sub-path** | **Typical output** |
 |---|---|---|
 | `bug-fix` | LITE-BUG-FIX | 1 IMPLEMENT task (fix + regression test) |
-| `small-refactor` | LITE-REFACTOR | 1–3 REFACTOR + TEST tasks |
-| `single-doc` | LITE-DOC | 1 DOCUMENT task |
-| `small-new-feature` | LITE-FEATURE | 1–5 IMPLEMENT + TEST + DOCUMENT tasks |
+| `refactor` | LITE-REFACTOR | 1–3 REFACTOR + TEST tasks |
+| `new-feature` | LITE-FEATURE | 1–5 IMPLEMENT + TEST + DOCUMENT tasks |
 
-**Recipes** speed up recurring patterns further. Five pre-filled templates live at `canonical/recipes/` — YAML frontmatter + `## spec` + `## tasks` blocks with `{{slot}}` placeholders that `parse-recipe.sh` substitutes, eliminating redundant interview for known work shapes. A lite work can also escalate to full mid-flight if scope grows.
+**Recipes** speed up recurring patterns further. **51 pre-filled templates** live at `canonical/recipes/`, named by the change they make — `add-X` / `change-X` / `fix-X` across target-kind families (API endpoints, UI components, DB entities, jobs, docs/reports, …). TRIAGE reads each recipe's one-line `summary:` to match your description to a recipe; the recipe's YAML frontmatter + `## spec` + `## tasks` blocks (with `{{slot}}` placeholders that `parse-recipe.sh` substitutes) then produce the SPEC and tasks directly, eliminating redundant interview for known work shapes. A lite work can also escalate to full mid-flight if scope grows.
 
 ---
 
@@ -367,7 +368,7 @@ aid-methodology/
 │   ├── skills/                     ← 11 user-facing skill definitions
 │   ├── agents/                     ← 22 agent definitions
 │   ├── templates/                  ← KB templates and document templates
-│   ├── recipes/                    ← 5 lite-path seed recipes
+│   ├── recipes/                    ← 51 lite-path recipes (add-/change-/fix- families)
 │   └── scripts/                    ← helper scripts by phase
 ├── profiles/                       ← rendered install trees (generated — do not edit)
 │   ├── claude-code/

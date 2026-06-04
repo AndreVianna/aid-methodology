@@ -15,8 +15,8 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 > Populated by `aid-interview` TRIAGE state for lite-path works. Left empty for full-path works (aid-interview runs the full interview flow instead).
 
 - **Path:** lite | full
-- **Work Type:** bug-fix | single-doc | small-refactor | small-new-feature | {omitted for full path}
-- **Sub-path:** LITE-BUG-FIX | LITE-DOC | LITE-REFACTOR | LITE-FEATURE | — (absent for full path)
+- **Work Type:** bug-fix | new-feature | refactor | {omitted for full path}
+- **Sub-path:** LITE-BUG-FIX | LITE-REFACTOR | LITE-FEATURE | — (absent for full path)
 - **Sub-path (auto):** {auto-detected sub-path label, or — if overridden or full path}
 - **Decision rationale:** {one sentence: why this path/sub-path was selected}
 - **Override:** yes | no (yes = human changed auto-detected sub-path)

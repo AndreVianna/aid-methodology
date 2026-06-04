@@ -1,8 +1,8 @@
 # State: TRIAGE
 
 Runs immediately after FIRST-RUN scaffolding and before the conversational interview.
-Asks 2–3 deterministic triage questions to decide whether this work takes the **lite path**
-or the **full path**.
+Asks a free-form description question to decide whether this work takes the **lite path**
+or the **full path**, and infers the best matching recipe from the description in prose.
 
 ## Idempotency check
 
@@ -14,156 +14,141 @@ Print: `[State: TRIAGE] Already complete — Path: {value}. Resuming.`
 
 ---
 
-## Step 1: Ask T1 — Breadth
+## Step 1: Ask for free-form work description
 
-Ask the user (closed choice, ONE turn):
+Ask the user (free-form, ONE turn):
 
 ```
-Quick triage (3 questions to pick the right path):
-
-T1 — How many distinct features does this work touch?
-  [a] None — it's a bug fix, refactor, or single artifact
-  [b] One small feature
-  [c] Multiple features or a whole system
+Describe the work you want to do, in your own words.
+(e.g., "fix the login crash on special characters", "add a /orders API endpoint",
+ "rename the OrderSvc class everywhere", "write an ADR for the DB choice")
 ```
 
-Wait for the user's answer. Record the selection internally: `T1 = none | one small | multiple`.
+Wait for the user's free-form answer. Record it internally as `{description}`.
 
 ---
 
-## Step 2: Ask T2 — Size
+## Step 2: Classify — agent inference (prose, no script)
 
-Ask the user (closed choice, ONE turn):
+From `{description}`, infer **two things** in prose:
 
-```
-T2 — Roughly how many distinct tasks will this require?
-  [a] A few (≤ ~5)
-  [b] Many (6 or more)
-```
+### 2a: Infer internal work-type
 
-Wait for the user's answer. Record: `T2 = a few | many`.
+Assign one of the three internal work-type labels (never shown as a menu to the user):
 
----
-
-## Step 3: Ask T3 — Type
-
-Ask the user (closed choice, ONE turn):
-
-```
-T3 — What kind of work is it?
-  [a] Bug fix
-  [b] Small refactor
-  [c] Single document or artifact
-  [d] New feature or system
-```
-
-Wait for the user's answer. Record: `T3 = bug fix | small refactor | single document/artifact | new feature or system`.
-
----
-
-## Step 4: Apply deterministic routing rule
-
-Route **LITE** if and only if **all** of:
-- T1 ∈ {`none`, `one small`}
-- T2 = `a few`
-- T3 ∈ {`bug fix`, `small refactor`, `single document/artifact`}
-
-Route **FULL** otherwise. The rule is intentionally conservative: any single "large" signal
-routes to FULL.
-
-**T3 → workType kebab mapping:**
-
-| T3 answer | `workType` enum |
-|-----------|-----------------|
-| `bug fix` | `bug-fix` |
-| `small refactor` | `small-refactor` |
-| `single document/artifact` | `single-doc` |
-| `new feature or system` | `small-new-feature` |
-
-If T3's answer does not match any of the four choices above (e.g., free-form text that
-cannot be normalised), fall back to FULL path — the lite path is only selected when T3
-yields a normalisable value.
+| Heuristic | `workType` |
+|-----------|-----------|
+| Broken / observed-wrong behaviour; something worked before | `bug-fix` |
+| Net-new capability or net-new artifact (incl. new docs, reports, ADRs) | `new-feature` |
+| Change / rename / improve an existing working artifact (incl. editing existing docs) | `refactor` |
 
 **workType → Sub-path mapping (lite path only):**
 
 | `workType` | Sub-path |
 |------------|----------|
 | `bug-fix` | `LITE-BUG-FIX` |
-| `single-doc` | `LITE-DOC` |
-| `small-refactor` | `LITE-REFACTOR` |
-| `small-new-feature` | `LITE-FEATURE` |
+| `refactor` | `LITE-REFACTOR` |
+| `new-feature` | `LITE-FEATURE` |
+
+Documentation and report work is classified as `new-feature` (creating a new doc/report →
+`LITE-FEATURE`) or `refactor` (editing an existing doc/report → `LITE-REFACTOR`). There is
+no dedicated doc-only sub-path — doc work routes under `LITE-FEATURE` / `LITE-REFACTOR`.
+
+### 2b: Find best-matching recipe
+
+Scan `canonical/recipes/` relative to the AID installation root (the same directory that
+contains `canonical/skills/`). For each `.md` file, read the `applies-to` and `summary:`
+fields from its YAML front-matter. **Skip any file whose front-matter cannot be parsed or
+is missing required fields** (e.g., `README.md` has no front-matter — `parse-recipe.sh
+--validate` exits non-zero on it). Parse failures are not errors; handle gracefully and
+continue.
+
+**Candidate set** — recipes whose `applies-to` field matches the inferred `workType` OR is
+the wildcard `'*'`:
+
+```
+recipe.applies-to == workType   OR   recipe.applies-to == '*'
+```
+
+(The current wildcard recipe is `add-test-coverage`, `applies-to: *`. Wildcard recipes
+participate in the candidate set for every inferred type.)
+
+Within the candidate set, **read each recipe's `summary:`** and pick the recipe whose
+summary text best matches `{description}` (semantic match on the summary string — agent
+inference, no script). Produce:
+
+- **best recipe** (the clearest single match), AND
+- **confidence judgment**: single clear winner | several plausible | none.
+
+If the candidate set is empty, confidence = none.
 
 ---
 
-## Step 5: Expose decision and offer override
+## Step 3: Single confirmation turn
 
-This step runs on **both** LITE and FULL verdicts, but with different options.
+Present the inference to the user and wait for their response **on this same turn** (this
+is the one-turn NFR — the common case resolves here with no further back-and-forth):
 
-### For LITE verdict — show decision and offer 3 choices
-
-Show the auto-detected decision to the user on the same triage turn (no re-invocation
-needed) and wait for their response:
+**When a recipe was matched:**
 
 ```
-Triage decided:
-  Path:     lite
-  Type:     {workType}
-  Sub-path: {Sub-path} ({one-line description})
+Looks like a {inferred-type} — recipe `{recipe-name}` ({summary}).
 
-[1] Proceed with {Sub-path}
-[2] Use a different sub-path:
-      [a] LITE-BUG-FIX  — reproduction + intended-behavior + 1 task
-      [b] LITE-DOC       — document outline + 1 task
-      [c] LITE-REFACTOR  — before/after sketch + scope + AC + tasks
-      [d] LITE-FEATURE   — standard lite SPEC with extra AC elicitation
-[3] Escalate to full path
+[1] Yes — proceed (lite path, recipe `{recipe-name}`)
+[2] No — it's a different kind of work (I'll route to the full path)
+[3] Different recipe: {list other plausible candidates, if any}
 ```
 
-Wait for user response **on this same turn** before advancing.
+**When no recipe matched (candidate set empty or no summary fits):**
 
-**[1] Accept auto-detected sub-path:**
-- No override recorded.
-- `Sub-path (auto)` and `Override` fields are **omitted** from the STATE.md write.
-- Proceed to Step 6 with Path=lite, Sub-path={auto-detected value}.
+```
+Looks like a {inferred-type}, but I couldn't find a matching recipe for this description.
 
-**[2] Use a different sub-path:**
-- Record `Sub-path (auto)` = the original auto-detected Sub-path value.
-- Update `Sub-path` to the user's selected sub-path (`[a]`→`LITE-BUG-FIX`, `[b]`→`LITE-DOC`,
-  `[c]`→`LITE-REFACTOR`, `[d]`→`LITE-FEATURE`).
-- Set `Override: yes`.
-- Update `workType` to match the new Sub-path:
-  - `LITE-BUG-FIX` → `bug-fix`
-  - `LITE-DOC` → `single-doc`
-  - `LITE-REFACTOR` → `small-refactor`
-  - `LITE-FEATURE` → `small-new-feature`
-- Proceed to Step 6 with Path=lite, Sub-path={user-chosen value}.
+[1] Proceed without a recipe (lite path, standard condensed interview)
+[2] Route to full path instead
+```
 
-**[3] Escalate to full path:**
-- Set `Path: full`.
-- `Sub-path` field is **absent** — do NOT write "n/a" or any placeholder.
-- `Work Type`, `Sub-path (auto)`, and `Override` fields are also **absent**.
-- Ask the user for the escalation rationale (ONE follow-up question):
-  ```
-  Why escalate to full path? (e.g., "scope is broader than expected", "need full spec")
-  ```
-  Wait for the user's response. Record it as the escalation rationale.
-- Proceed to Step 6 with Path=full.
+Wait for the user's response **on this same turn** before advancing.
 
-### For FULL verdict (from routing rule, not escalation)
+**Response mapping:**
 
-Proceed directly to Step 6. No override offer — FULL is the safe default and the routing
-rule's own conservative logic already handles this case. The user may re-run with
-`--reset` if they believe FULL is wrong.
+- **`[1]` accept (recipe present):** confident single match accepted → route **lite** with
+  `{recipe-name}`.
+- **`[1]` accept (no recipe):** confirmed type, no recipe → route **lite**, no Recipe field.
+- **`[2]` reject / route to full:** user rejects the inferred type or prefers full path →
+  route **full** (treat as no-confident-match; the description carries forward as the
+  full-path seed for CONTINUE). No second type-guess loop.
+- **`[3]` pick a different candidate:** user selects one of the listed plausible alternatives
+  → route **lite** with the chosen recipe.
+
+**Escalation at the description or confirm turn:** if the user types an escalation phrase,
+treat as `[2]` (route full).
 
 ---
 
-## Step 5a: Recipe-offer (lite path only)
+## Step 4: Routing decision
 
-This step runs **only when Path = lite** (auto-detected or overridden, but NOT when
-escalated to full). It fires immediately after the user's sub-path choice is recorded
-in Step 5, before STATE.md is written in Step 6.
+Deterministic from Step 2's confidence and Step 3's answer:
 
-**Trigger condition:** Path = lite AND at least one recipe matches `workType`.
+| Step 2 confidence | Step 3 answer | Route |
+|---|---|---|
+| Single clear recipe winner | `[1]` accept | **lite**, recipe = winner |
+| Single clear recipe winner | `[3]` pick another candidate | **lite**, recipe = chosen |
+| Several plausible recipes (ambiguous) | `[3]` pick one | **lite**, recipe = chosen |
+| Several plausible recipes | user can't pick / declines | **full** |
+| No candidate matches (empty set) | `[1]` accept no-recipe | **lite**, no recipe |
+| No candidate matches (empty set) | `[2]` reject | **full** |
+| Any | `[2]` reject type | **full** |
+
+The rule is intentionally conservative: any signal short of one confident, user-confirmed
+single recipe routes to **full** (or lite-no-recipe for the rare edge case above).
+
+---
+
+## Step 5a: Recipe slot-fill (lite path only)
+
+This step runs **only when Path = lite AND a recipe was confirmed** in Step 3. It fires
+immediately after Step 4 routes lite-with-recipe, before STATE.md is written in Step 6.
 
 ### 5a-1: Discover matching recipes
 
@@ -180,30 +165,6 @@ recipe.applies-to == workType   OR   recipe.applies-to == '*'
 
 If no recipes match — the catalog is empty or no applies-to matches `workType` or `*`
 — skip this entire step (Step 5a). Proceed directly to Step 6.
-
-### 5a-2: Present recipe list to user
-
-If at least one recipe matches, present the filtered list and offer a choice on
-**one turn**:
-
-```
-Recipe catalog — {N} recipe(s) available for {workType}:
-
-  [1] {recipe-name-1} — {one-line description from recipe name}
-  [2] {recipe-name-2} — {one-line description from recipe name}
-  ...
-  [0] Decline — use the standard {Sub-path} condensed interview instead
-
-Recipes give you a pre-filled SPEC + tasks in under 1 minute.
-Pick a number, or press 0 to skip:
-```
-
-The one-line description per recipe is derived from the recipe `name` field: convert
-kebab-case to title-case words (e.g., `bug-fix` → "Bug Fix",
-`add-crud-endpoint` → "Add CRUD Endpoint"). Do not re-read the file body to generate
-the description — the name field is sufficient.
-
-Wait for the user's response **on this same turn** before advancing.
 
 ### 5a-3a: User picks a recipe — slot-fill loop
 
@@ -354,27 +315,27 @@ After the user confirms emission (Step 5a-3a choice [1]):
 ## Step 6: Write STATE.md `## Triage` block
 
 Write the triage result to the work-area `STATE.md ## Triage` section.
-**Write immediately** after the user accepts, overrides, or escalates. Do not batch.
+**Write immediately** after Step 4 routes the work. Do not batch.
 
-**Full-path result (from routing rule):**
+**Full-path result (from routing — no confident recipe match or user rejected):**
 
 ```markdown
 ## Triage
 
 - **Path:** full
-- **Decision rationale:** T1={T1 value} + T2={T2 value} + T3={T3 value} → full path
+- **Decision rationale:** description → no confident recipe match → full
 ```
 
 `Work Type`, `Sub-path`, `Sub-path (auto)`, `Override`, and `Recipe` fields are **absent**
 (not written, not "n/a") for full-path works.
 
-**Full-path result (user escalated from lite):**
+**Full-path result (user escalated from lite during Step 3):**
 
 ```markdown
 ## Triage
 
 - **Path:** escalated
-- **Decision rationale:** T1={T1 value} + T2={T2 value} + T3={T3 value} → lite (auto); escalated to full — {user escalation rationale}
+- **Decision rationale:** description → inferred {type}; recipe {name} proposed → escalated to full — {user escalation rationale}
 ```
 
 `Work Type`, `Sub-path`, `Sub-path (auto)`, `Override`, and `Recipe` fields are **absent**
@@ -388,7 +349,7 @@ Write the triage result to the work-area `STATE.md ## Triage` section.
 > `Path: escalated` routes identically to `Path: full` in all state detection branches.
 > See `SKILL.md § State Detection` step (f) and `references/lite-to-full-escalation.md § State Detection contract`.
 
-**Lite-path result (no override, no recipe):**
+**Lite-path result (no recipe / recipe declined):**
 
 ```markdown
 ## Triage
@@ -396,13 +357,13 @@ Write the triage result to the work-area `STATE.md ## Triage` section.
 - **Path:** lite
 - **Work Type:** {workType}
 - **Sub-path:** {Sub-path}
-- **Decision rationale:** T1={T1 value} + T2={T2 value} + T3={T3 value} → lite/{Sub-path}
+- **Decision rationale:** description → inferred {type} → lite/{Sub-path}
 ```
 
 `Recipe` field is **absent** (not written, not "none") when the user declines the
-recipe-offer or no recipes matched.
+recipe or no recipes matched.
 
-**Lite-path result (no override, recipe picked):**
+**Lite-path result (recipe confirmed, no sub-path override):**
 
 ```markdown
 ## Triage
@@ -410,11 +371,12 @@ recipe-offer or no recipes matched.
 - **Path:** lite
 - **Work Type:** {workType}
 - **Sub-path:** {Sub-path}
-- **Decision rationale:** T1={T1 value} + T2={T2 value} + T3={T3 value} → lite/{Sub-path}
+- **Decision rationale:** description → inferred {type}; recipe {name} matched → lite/{Sub-path}
 - **Recipe:** {recipe-name}
 ```
 
-**Lite-path result (user chose different sub-path, no recipe):**
+**Lite-path result (user picked a different recipe — `[3]` — whose recipe implies a
+different sub-path than first-inferred):**
 
 ```markdown
 ## Triage
@@ -422,24 +384,15 @@ recipe-offer or no recipes matched.
 - **Path:** lite
 - **Work Type:** {workType}
 - **Sub-path:** {user-chosen Sub-path}
-- **Sub-path (auto):** {originally auto-detected Sub-path}
-- **Decision rationale:** T1={T1 value} + T2={T2 value} + T3={T3 value} → lite/{user-chosen Sub-path}
-- **Override:** yes
-```
-
-**Lite-path result (user chose different sub-path, recipe picked):**
-
-```markdown
-## Triage
-
-- **Path:** lite
-- **Work Type:** {workType}
-- **Sub-path:** {user-chosen Sub-path}
-- **Sub-path (auto):** {originally auto-detected Sub-path}
-- **Decision rationale:** T1={T1 value} + T2={T2 value} + T3={T3 value} → lite/{user-chosen Sub-path}
+- **Sub-path (auto):** {originally inferred Sub-path}
+- **Decision rationale:** description → inferred {type}; {user-chosen recipe} selected → lite/{user-chosen Sub-path}
 - **Override:** yes
 - **Recipe:** {recipe-name}
 ```
+
+`Override: yes` now only arises when the user picks a `[3]` candidate whose recipe implies
+a different sub-path than the first-inferred one. When the user accepts `[1]` or the `[3]`
+pick stays within the same sub-path, `Sub-path (auto)` and `Override` are **omitted**.
 
 ---
 
@@ -455,29 +408,26 @@ recipe-offer or no recipes matched.
 
 ### Routing and mapping (task-014 scope)
 
-| Input | Rule | Output |
-|-------|------|--------|
-| T1=none, T2=a few, T3=bug fix | LITE | path=lite, workType=bug-fix, Sub-path=LITE-BUG-FIX |
-| T1=none, T2=a few, T3=small refactor | LITE | path=lite, workType=small-refactor, Sub-path=LITE-REFACTOR |
-| T1=none, T2=a few, T3=single document/artifact | LITE | path=lite, workType=single-doc, Sub-path=LITE-DOC |
-| T1=one small, T2=a few, T3=new feature or system | FULL | path=full (T3 is not a lite-eligible type) |
-| T1=one small, T2=a few, T3=bug fix | LITE | path=lite, workType=bug-fix, Sub-path=LITE-BUG-FIX |
-| T1=multiple, T2=a few, T3=bug fix | FULL | path=full (T1=multiple forces FULL) |
-| T1=none, T2=many, T3=bug fix | FULL | path=full (T2=many forces FULL) |
-| T1=none, T2=a few, T3={unrecognised} | FULL | path=full (T3 non-normalisable → fallback FULL) |
+| Description (free-form) | Inferred type | Confidence | Step 3 answer | Route | workType | Sub-path |
+|-------------------------|---------------|-----------|--------------|-------|----------|----------|
+| "fix the login crash on special characters" | `bug-fix` | single clear winner | `[1]` accept | lite | `bug-fix` | `LITE-BUG-FIX` |
+| "add a /orders REST endpoint" | `new-feature` | single clear winner | `[1]` accept | lite | `new-feature` | `LITE-FEATURE` |
+| "rename the OrderSvc class everywhere" | `refactor` | single clear winner | `[1]` accept | lite | `refactor` | `LITE-REFACTOR` |
+| "write an ADR for the database choice" | `new-feature` | single clear winner | `[1]` accept | lite | `new-feature` | `LITE-FEATURE` |
+| "rewrite the whole billing subsystem across 4 services" | `refactor` | no match (multi-target / ambiguous) | (auto → full) | full | — | — |
+| "fix the crash" (ambiguous — multiple plausible recipes) | `bug-fix` | several plausible | user can't pick | full | — | — |
+| "add unit tests for the parser" | `new-feature` or `refactor` | single clear winner (`add-test-coverage`, `applies-to=*`) | `[1]` accept | lite | inferred type | inferred sub-path |
+| any description | any | any | `[2]` reject type | full | — | — |
 
-### Override paths (task-015 scope)
+### Confirmation and override paths (task-015 scope)
 
-| Auto-result | User choice | Override recorded? | Final STATE.md |
-|-------------|-------------|-------------------|---------------|
-| LITE / LITE-BUG-FIX | [1] Accept | no | Path=lite, Sub-path=LITE-BUG-FIX (no Override field, no Sub-path (auto) field) |
-| LITE / LITE-BUG-FIX | [2] Choose LITE-REFACTOR | yes | Path=lite, Sub-path=LITE-REFACTOR, Sub-path (auto)=LITE-BUG-FIX, Override=yes |
-| LITE / LITE-REFACTOR | [2] Choose LITE-FEATURE | yes | Path=lite, Sub-path=LITE-FEATURE, Sub-path (auto)=LITE-REFACTOR, Override=yes |
-| LITE / LITE-DOC | [2] Choose LITE-BUG-FIX | yes | Path=lite, Sub-path=LITE-BUG-FIX, Sub-path (auto)=LITE-DOC, Override=yes |
-| LITE / LITE-FEATURE | [2] Choose same (LITE-FEATURE) | yes | Path=lite, Sub-path=LITE-FEATURE, Sub-path (auto)=LITE-FEATURE, Override=yes |
-| LITE / LITE-BUG-FIX | [3] Escalate | no (Sub-path absent) | Path=full, Sub-path absent, rationale includes escalation reason |
-| LITE / LITE-DOC | [3] Escalate | no (Sub-path absent) | Path=full, Sub-path absent, rationale includes escalation reason |
-| FULL (routing rule) | (no override offered) | n/a | Path=full, no Sub-path, no Override |
+| Inferred result | User choice | Override recorded? | Final STATE.md |
+|----------------|-------------|-------------------|----------------|
+| lite / `LITE-BUG-FIX`, recipe `fix-application` | `[1]` accept | no | Path=lite, Sub-path=LITE-BUG-FIX, Recipe=fix-application (no Override, no Sub-path (auto)) |
+| lite / `LITE-REFACTOR`, recipe `change-member` | `[1]` accept | no | Path=lite, Sub-path=LITE-REFACTOR, Recipe=change-member |
+| lite / `LITE-FEATURE`, recipe `add-api-endpoint` | `[3]` pick `change-member` (different sub-path) | yes | Path=lite, Sub-path=LITE-REFACTOR, Sub-path (auto)=LITE-FEATURE, Override=yes, Recipe=change-member |
+| lite / `LITE-BUG-FIX`, recipe `fix-application` | `[2]` reject → full | no (Sub-path absent) | Path=full, Sub-path absent, rationale: description → no confident recipe match → full |
+| full (routing — no match) | (no confirmation offered) | n/a | Path=full, no Sub-path, no Override |
 
 ### Recipe-offer paths (task-028 scope)
 
@@ -485,13 +435,13 @@ recipe-offer or no recipes matched.
 |------|----------|----------------|-------------|-----------------|----------------|------------|
 | FULL | any | any | (not offered) | n/a | no Recipe field | CONTINUE |
 | LITE escalated to full | any | any | (not offered) | n/a | no Recipe field | CONTINUE |
-| LITE | bug-fix | no matching recipes | (skip — step not shown) | n/a | no Recipe field | CONDENSED-INTAKE |
-| LITE | bug-fix | ≥1 match | [0] Decline | n/a | no Recipe field | CONDENSED-INTAKE |
-| LITE | bug-fix | ≥1 match | pick recipe, confirm [1] Emit | all slots filled | Recipe=bug-fix | LITE-DONE |
-| LITE | bug-fix | ≥1 match | pick recipe, confirm [3] Abort | abandoned; no slot carry | no Recipe field | CONDENSED-INTAKE (no pre-fill) |
-| LITE | small-refactor | ≥1 match | pick recipe, escalate during slot-fill | partial slots in STATE.md ## Recipe Slots; Status=abandoned | no Recipe field | CONDENSED-INTAKE (seeded from partial slots) |
-| LITE | small-refactor | ≥1 match | pick recipe, all slots filled, confirm [4] Escalate | all slots in STATE.md ## Recipe Slots; Status=abandoned | no Recipe field | CONDENSED-INTAKE (all questions pre-filled) |
-| LITE | * (add-unit-test) | workType=single-doc, add-unit-test applies-to=* | pick add-unit-test | all slots filled | Recipe=add-unit-test | LITE-DONE |
+| LITE | `bug-fix` | no matching recipes | (skip — step not shown) | n/a | no Recipe field | CONDENSED-INTAKE |
+| LITE | `bug-fix` | ≥1 match | `[2]` reject (no recipe) | n/a | no Recipe field | CONDENSED-INTAKE |
+| LITE | `bug-fix` | ≥1 match | `[1]` accept, confirm `[1]` Emit | all slots filled | Recipe=fix-application | LITE-DONE |
+| LITE | `bug-fix` | ≥1 match | `[1]` accept, confirm `[3]` Abort | abandoned; no slot carry | no Recipe field | CONDENSED-INTAKE (no pre-fill) |
+| LITE | `refactor` | ≥1 match | `[1]` accept, escalate during slot-fill | partial slots in STATE.md ## Recipe Slots; Status=abandoned | no Recipe field | CONDENSED-INTAKE (seeded from partial slots) |
+| LITE | `refactor` | ≥1 match | `[1]` accept, all slots filled, confirm `[4]` Escalate | all slots in STATE.md ## Recipe Slots; Status=abandoned | no Recipe field | CONDENSED-INTAKE (all questions pre-filled) |
+| LITE | `*` (`add-test-coverage`, `applies-to=*`) | any inferred type, `add-test-coverage` applies-to=* | `[1]` accept | all slots filled | Recipe=add-test-coverage | LITE-DONE |
 
 ### Slot-fill rules (task-028 / task-029 scope)
 

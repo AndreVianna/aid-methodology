@@ -18,6 +18,7 @@ contracts:
   - "Recipe slot syntax: {{slot-name}} where slot-name matches POSIX ERE [a-z][a-z0-9-]*"
   - "Task templates have 6 sections: title heading, Type, Source, Depends on, Scope, Acceptance Criteria"
 changelog:
+  - 2026-06-03: work-001 feature-001 — lite work-type enum collapsed 4→3 (single-doc eliminated); Work Type enum updated to {bug-fix, new-feature, refactor}; applies-to enum updated to {bug-fix, new-feature, refactor, *}.
   - 2026-06-01: work-001-add-providers (PRs #42/#43/#44) — render profiles grew 3→5 (added copilot-cli + antigravity). Updated §8 emission-manifest profile enum + manifest-location table (5 profiles); §9 profile-TOML schema ([agent].format now 4 values; [layout] output_root covers .github/.agent roots; [extras] gained rules_frontmatter + per-rule output_filename); RuleEntry/ExtrasConfig dataclass additions documented.
   - 2026-05-31: delivery-002 — added §2a discovery.doc_set sub-section; updated settings contract to reflect the optional discovery section
   - 2026-05-27: Initial generation by discovery-analyst (cycle-1)
@@ -177,8 +178,8 @@ The actual active set for any given project is whatever was confirmed in Step 0d
 **Triage enum values** (per `work-state-template.md` `## Triage`):
 
 - `Path:` ∈ {`lite`, `full`}
-- `Work Type:` ∈ {`bug-fix`, `single-doc`, `small-refactor`, `small-new-feature`} (omitted for full path)
-- `Sub-path:` ∈ {`LITE-BUG-FIX`, `LITE-DOC`, `LITE-REFACTOR`, `LITE-FEATURE`, `—`}
+- `Work Type:` ∈ {`bug-fix`, `new-feature`, `refactor`} (omitted for full path)
+- `Sub-path:` ∈ {`LITE-BUG-FIX`, `LITE-REFACTOR`, `LITE-FEATURE`, `—`}
 - `Override:` ∈ {`yes`, `no`}
 
 **Task `Type` enum** (per `work-state-template.md` `## Tasks Status` Type column + `canonical/templates/delivery-plans/task-template.md` `**Type:**` line):
@@ -366,7 +367,7 @@ The dataclasses mirror this schema 1:1 in `.claude/skills/aid-generate/scripts/a
 | Field | Type | Validation |
 |-------|------|------------|
 | `name` | string (kebab-case) | Must match the file basename without `.md` |
-| `applies-to` | enum | One of `bug-fix`, `small-refactor`, `single-doc`, `small-new-feature`, or `*` (matches any workType — use sparingly per `recipe-template.md` `## Conventions`) |
+| `applies-to` | enum | One of `bug-fix`, `new-feature`, `refactor`, or `*` (matches any workType — use sparingly per `recipe-template.md` `## Conventions`) |
 | `slot-count` | integer | Count of unique `{{slot-name}}` tokens in body; parser warns on mismatch |
 | `task-count` | integer | Count of `### task-NNN` headings in `## tasks` block; parser warns on mismatch |
 

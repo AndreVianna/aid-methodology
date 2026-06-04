@@ -81,7 +81,6 @@ question slot names when they are **identical** (exact string match). No fuzzy m
 | Sub-path | Known question slot names |
 |----------|--------------------------|
 | LITE-BUG-FIX | `bug-title`, `bug-description`, `reproduction-steps`, `intended-behavior` |
-| LITE-DOC | `doc-title`, `doc-purpose`, `outline-bullets` |
 | LITE-REFACTOR | `scope`, `before-sketch`, `after-sketch`, `ac` |
 | LITE-FEATURE | `feature-title`, `goal`, `scope`, `ac-1`, `ac-additional` |
 
@@ -206,97 +205,16 @@ the reproduction + intended-behavior pair.
 
 ---
 
-### Sub-path: LITE-DOC
-
-**Purpose:** A single document or artifact. The "delivery" is the doc itself.
-The work-root SPEC.md IS the document outline.
-
-**Questions (ask one per turn; wait for answer before asking next):**
-
-1. **doc-title** — What is the document's title?
-   ```
-   What is the title of the document or artifact you need to produce?
-   (e.g., "API Reference for /orders endpoint", "ADR-007 Database Choice")
-   ```
-
-2. **doc-purpose** — Who is the audience and what should they be able to do after reading it?
-   ```
-   Who will read this document, and what should they be able to do or understand after reading it?
-   ```
-
-3. **outline-bullets** — What sections or topics must the document cover?
-   ```
-   List the sections or topics this document must cover.
-   (Bullet points are fine; this becomes the outline.)
-   ```
-
-**SPEC.md shape for LITE-DOC:**
-
-```markdown
-# {doc-title}
-
-- **Work:** {work-NNN-name}
-- **Created:** {today}
-- **Source:** /aid-interview lite path — LITE-DOC
-- **Status:** Draft
-
-## Goal
-
-{doc-purpose — one paragraph: audience + what they gain from reading this document.}
-
-## Context
-
-**Audience:** {who will read this}
-**Purpose:** {what readers will be able to do or understand}
-
-{KB references if relevant — cite by INDEX.md doc name}
-
-## Document Outline
-
-{outline-bullets — the sections the document must cover, as a structured list}
-
-## Acceptance Criteria
-
-- [ ] Document covers all sections listed in the outline.
-- [ ] Target audience can {doc-purpose outcome} after reading.
-- [ ] All §6 quality gates pass.
-
-## Tasks
-
-| Task | Type | Title |
-|------|------|-------|
-| task-001 | DOCUMENT | Write {doc-title} |
-
-## Execution Graph
-
-### Task Dependencies
-
-| Task | Depends On |
-|------|------------|
-| task-001 | — (none) |
-
-### Can Be Done In Parallel
-
-| Wave | Tasks |
-|------|-------|
-| 1 | task-001 |
-
-## Revision History
-
-| Date | Change | Source |
-|------|--------|--------|
-| {today} | Initial lite-path SPEC created | /aid-interview LITE-DOC |
-```
-
-> Note: L1 writes `## Goal`, `## Context`, `## Document Outline`, `## Acceptance Criteria`.
-> The `## Tasks` / `## Execution Graph` scaffold rows are placeholders — L2 overwrites them.
-
----
-
 ### Sub-path: LITE-REFACTOR
 
 **Purpose:** A small, bounded refactor. The before/after sketch + scope + AC
 describes both the intent and the definition of done.
+
+> **Documentation/report work** that edits an existing doc or report routes here
+> (e.g., `change-docs`, `change-report` recipes). When the work is a doc/report
+> revision, interpret `scope` as the document being updated, `before-sketch` as its
+> current state/gaps, and `after-sketch` as the desired post-edit state. Audience and
+> outline changes are captured via the `scope` + `after-sketch` prompts.
 
 **Questions (ask one per turn; wait for answer before asking next):**
 
@@ -392,6 +310,13 @@ describes both the intent and the definition of done.
 **Purpose:** A small new feature. Unlike LITE-REFACTOR, there is no existing
 behavior to serve as the spec — explicit AC elicitation is required. Extends
 LITE-REFACTOR with additional AC prompts.
+
+> **Documentation/report work** that creates a new doc or report routes here
+> (e.g., `add-docs`, `add-report` recipes). When the work is a new doc/report,
+> interpret `feature-title` as the document title, `goal` as audience + purpose
+> (who will read it and what they will be able to do), and `scope` as the sections
+> or topics the document must cover (the outline). Audience and outline intent
+> is captured via the `goal` + `scope` prompts — documentation work has no separate sub-path.
 
 **Questions (ask one per turn; wait for answer before asking next):**
 
@@ -517,7 +442,6 @@ sections of `SPEC.md`.
 | Input (Sub-path + answers) | Expected SPEC.md output |
 |---------------------------|------------------------|
 | LITE-BUG-FIX + all 4 answers | `## Goal` + `## Context` (reproduction + intended-behavior) + `## Acceptance Criteria` — no Specify block |
-| LITE-DOC + all 3 answers | `## Goal` + `## Context` + `## Document Outline` + `## Acceptance Criteria` (outline-based) |
 | LITE-REFACTOR + all 4 answers | `## Goal` + `## Context` (before/after/scope) + `## Acceptance Criteria` |
 | LITE-FEATURE + all 5 answers | `## Goal` + `## Context` + `## Acceptance Criteria` (explicit Given/when/then per AC slot) |
 | Sub-path = LITE-BUG-FIX, SPEC.md already has `## Acceptance Criteria` | Skip intake; advance to TASK-BREAKDOWN |

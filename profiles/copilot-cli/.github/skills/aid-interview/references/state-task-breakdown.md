@@ -50,7 +50,7 @@ Propose a small typed task breakdown directly from the work-root `SPEC.md`.
 - Dependencies drive ordering — no task starts before its dependencies are done.
 - Natural ordering: RESEARCH → DESIGN → IMPLEMENT → TEST → DOCUMENT.
 - Each task must be traceable to at least one `## Acceptance Criteria` entry.
-- Task count: 1–2 for LITE-BUG-FIX, exactly 1 for LITE-DOC, 1–3 for LITE-REFACTOR,
+- Task count: 1–2 for LITE-BUG-FIX, 1–3 for LITE-REFACTOR,
   1–5 for LITE-FEATURE. Propose the minimum number needed; escalate if genuinely more.
 
 **Sub-path-specific guidance:**
@@ -58,9 +58,8 @@ Propose a small typed task breakdown directly from the work-root `SPEC.md`.
 | Sub-path | Typical task count | Typical task types |
 |----------|-------------------|--------------------|
 | LITE-BUG-FIX | 1 (apply fix + add regression test as one task) | IMPLEMENT |
-| LITE-DOC | 1 | DOCUMENT |
-| LITE-REFACTOR | 1–3 | REFACTOR, TEST (if tests need separate update) |
-| LITE-FEATURE | 1–5 | IMPLEMENT, TEST, DOCUMENT |
+| LITE-REFACTOR | 1–3 | REFACTOR, TEST (if tests need separate update); when the work is a doc/report revision (`change-docs`/`change-report` recipe), the single task is typed DOCUMENT |
+| LITE-FEATURE | 1–5 | IMPLEMENT, TEST, DOCUMENT; when the work is a new doc/report (`add-docs`/`add-report` recipe), exactly 1 DOCUMENT task is typical |
 
 ### Step 3: Present proposed breakdown for approval
 
@@ -189,7 +188,6 @@ Add entry to `STATE.md ## Lifecycle History`:
 | Input | Expected output |
 |-------|----------------|
 | LITE-BUG-FIX SPEC.md, no tasks/ | task-001 IMPLEMENT written; `## Tasks` + `## Execution Graph` filled; wave-1 = task-001 |
-| LITE-DOC SPEC.md, no tasks/ | task-001 DOCUMENT written; single-wave graph |
 | LITE-REFACTOR SPEC.md, 2-task breakdown approved | task-001 REFACTOR + task-002 TEST written; dependency graph: task-002 depends on task-001 |
 | LITE-FEATURE SPEC.md, 3-task breakdown approved | 3 tasks written; parallel waves calculated correctly |
 | tasks/ already has task-NNN rows in SPEC.md ## Tasks | Skip; advance to LITE-REVIEW (idempotent) |
