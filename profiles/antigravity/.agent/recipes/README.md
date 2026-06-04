@@ -23,19 +23,84 @@ the user provides only the work-specific slot values.
 
 ## Seed Catalog
 
-The seed catalog ships five recipes:
+The catalog ships 51 recipes across 4 groups.
 
-| Recipe file         | applies-to        | Slots | Tasks | Typical use                          |
-|---------------------|-------------------|-------|-------|--------------------------------------|
-| `bug-fix.md`        | `bug-fix`         | 4     | 1     | Fix a known defect + add a unit test |
-| `method-refactor.md`| `small-refactor`  | 5     | 1     | Refactor a single method             |
-| `add-crud-endpoint.md` | `small-new-feature` | 6 | 3  | New CRUD endpoint with tests         |
-| `write-release-note.md` | `single-doc`  | 4     | 1     | Draft a versioned release note       |
-| `add-unit-test.md`  | `*`               | 4     | 1     | Add a unit test for any workType     |
+### Group 1 — add/change pairs (40 recipes, 20 pairs across 11 target-kind families)
 
-The `add-unit-test` recipe uses `applies-to: *` because writing a unit test is
-a cross-type pattern (useful for bug fixes, refactors, and new features alike).
-All other seed recipes target a specific workType.
+`add-X` recipes use `applies-to: new-feature`; `change-X` recipes use `applies-to: refactor`.
+
+| # | Recipe | Slots | Tasks | Target-kind family |
+|---|--------|-------|-------|--------------------|
+| 1 | `add-member` | 4 | 1 | Objects / Models |
+| 2 | `change-member` | 5 | 1 | Objects / Models |
+| 3 | `add-interface` | 4 | 1 | Objects / Models |
+| 4 | `change-interface` | 5 | 1 | Objects / Models |
+| 5 | `add-api-endpoint` | 6 | 3 | API |
+| 6 | `change-api-endpoint` | 6 | 2 | API |
+| 7 | `add-api-middleware` | 4 | 2 | API |
+| 8 | `change-api-middleware` | 5 | 1 | API |
+| 9 | `add-ui-endpoint` | 5 | 2 | UI |
+| 10 | `change-ui-endpoint` | 5 | 1 | UI |
+| 11 | `add-ui-component` | 5 | 2 | UI |
+| 12 | `change-ui-component` | 5 | 1 | UI |
+| 13 | `add-ui-style` | 4 | 1 | UI |
+| 14 | `change-ui-style` | 4 | 1 | UI |
+| 15 | `add-cli-command` | 5 | 2 | CLI command |
+| 16 | `change-cli-command` | 5 | 1 | CLI command |
+| 17 | `add-entity` | 5 | 2 | DB / Storage |
+| 18 | `change-schema` | 5 | 2 | DB / Storage |
+| 19 | `add-container` | 4 | 1 | DB / Storage |
+| 20 | `change-container` | 5 | 1 | DB / Storage |
+| 21 | `add-config-option` | 4 | 1 | config / feature flag |
+| 22 | `change-config-option` | 5 | 1 | config / feature flag |
+| 23 | `add-feature-flag` | 4 | 1 | config / feature flag |
+| 24 | `change-feature-flag` | 4 | 1 | config / feature flag |
+| 25 | `add-job` | 5 | 2 | job |
+| 26 | `change-job` | 5 | 1 | job |
+| 27 | `add-event-handler` | 5 | 2 | event handler / consumer |
+| 28 | `change-event-handler` | 5 | 1 | event handler / consumer |
+| 29 | `add-queue` | 4 | 2 | event handler / consumer |
+| 30 | `change-queue` | 5 | 1 | event handler / consumer |
+| 31 | `add-message` | 4 | 1 | event handler / consumer |
+| 32 | `change-message` | 5 | 1 | event handler / consumer |
+| 33 | `add-rule` | 4 | 1 | validation / business rule |
+| 34 | `change-rule` | 5 | 1 | validation / business rule |
+| 35 | `add-docs` | 4 | 1 | documentation / report |
+| 36 | `change-docs` | 4 | 1 | documentation / report |
+| 37 | `add-report` | 4 | 1 | documentation / report |
+| 38 | `change-report` | 4 | 1 | documentation / report |
+| 39 | `add-integration` | 5 | 2 | integration / external client |
+| 40 | `change-integration` | 5 | 1 | integration / external client |
+
+### Group 2 — bug-fix recipes (7), `applies-to: bug-fix`
+
+| # | Recipe | Slots | Tasks | Focus area |
+|---|--------|-------|-------|------------|
+| 41 | `fix-application` | 4 | 1 | domain / business-logic (broad default) |
+| 42 | `fix-infrastructure` | 4 | 1 | infrastructure / deployment / config |
+| 43 | `fix-api` | 4 | 1 | API-layer (status, contract, payload) |
+| 44 | `fix-ui` | 4 | 1 | UI-layer (rendering, interaction, state) |
+| 45 | `fix-integration` | 4 | 1 | external-service integration |
+| 46 | `fix-regression` | 5 | 1 | regression (bisect to introducing change) |
+| 47 | `fix-security` | 5 | 1 | security vulnerability |
+
+### Group 3 — refactor-only recipes (3), `applies-to: refactor`
+
+| # | Recipe | Slots | Tasks | Description |
+|---|--------|-------|-------|-------------|
+| 48 | `improve-performance` | 5 | 2 | Improve a hot path against a measured baseline |
+| 49 | `bump-dependency` | 4 | 2 | Upgrade a dependency and reconcile breaking changes |
+| 50 | `rename-symbol` | 4 | 1 | Rename a symbol across the codebase |
+
+### Group 4 — cross-type recipe (1), `applies-to: *`
+
+| # | Recipe | Slots | Tasks | Description |
+|---|--------|-------|-------|-------------|
+| 51 | `add-test-coverage` `*` | 4 | 1 | Add test coverage for any work type |
+
+`add-test-coverage` is the single `*` recipe — writing tests is a cross-type pattern
+(useful for bug fixes, refactors, and new features alike). All other recipes target
+a specific `workType`.
 
 ---
 
@@ -53,10 +118,11 @@ name: bug-fix
 applies-to: bug-fix
 slot-count: 4
 task-count: 1
+summary: Fix a known defect and add a regression test.
 ---
 ```
 
-All four fields are required.
+The first four fields are required. `summary:` is optional.
 
 | Field        | Type            | Description                                                       |
 |--------------|-----------------|-------------------------------------------------------------------|
@@ -64,20 +130,20 @@ All four fields are required.
 | `applies-to` | string          | The `workType` value this recipe matches. See valid values below. |
 | `slot-count` | integer         | Number of unique `{{slot}}` tokens in the body.                   |
 | `task-count` | integer         | Number of `### task-NNN` headings in the `## tasks` block.        |
+| `summary`    | string (one-line) | Optional. One-line description read by TRIAGE for description→recipe matching. Not validated by `parse-recipe.sh`. |
 
 Valid `applies-to` values:
 
-| Value               | When used                                      |
-|---------------------|------------------------------------------------|
-| `bug-fix`           | Fixing a defect                                |
-| `small-refactor`    | Refactoring — a method, a class                |
-| `single-doc`        | Writing one document or artifact               |
-| `small-new-feature` | Adding a small new feature                     |
-| `*`                 | Cross-type: offered for any `workType`         |
+| Value        | When used                                      |
+|--------------|------------------------------------------------|
+| `bug-fix`    | Fixing a defect                                |
+| `refactor`   | Refactoring — a method, a class                |
+| `new-feature`| Adding a new feature                           |
+| `*`          | Cross-type: offered for any `workType`         |
 
 The `*` value should be reserved for patterns that are genuinely useful regardless
-of work type. Overuse adds catalog noise; the seed catalog ships only one `*`
-recipe (`add-unit-test`).
+of work type. Overuse adds catalog noise; the catalog ships only one `*`
+recipe (`add-test-coverage`).
 
 ### Slot Syntax
 
@@ -152,7 +218,7 @@ becomes a rendered `tasks/task-NNN.md` file. The task shape is the 6-section
 flat form defined in `.agent/templates/delivery-plans/task-template.md`
 (title heading, Type, Source, Depends on, Scope, Acceptance Criteria).
 
-### Full Example (bug-fix recipe)
+### Full Example (fix-application recipe)
 
 > **slot-count note:** `{{date}}` and `{{work-name}}` are counted as explicit
 > slot tokens in this example (slot-count: 6). In a real recipe these two tokens
@@ -164,7 +230,7 @@ flat form defined in `.agent/templates/delivery-plans/task-template.md`
 
 ```markdown
 ---
-name: bug-fix
+name: fix-application
 applies-to: bug-fix
 slot-count: 6
 task-count: 1
@@ -176,7 +242,7 @@ task-count: 1
 
 **Work:** {{work-name}}
 **Created:** {{date}}
-**Source:** recipe `bug-fix` via /aid-interview lite path
+**Source:** recipe `fix-application` via /aid-interview lite path
 **Status:** Active
 
 ## Goal
@@ -213,7 +279,7 @@ Fix the defect described below.
 
 | Date | Change | Source |
 |------|--------|--------|
-| {{date}} | Created from recipe `bug-fix` | /aid-interview lite path |
+| {{date}} | Created from recipe `fix-application` | /aid-interview lite path |
 
 ## tasks
 
@@ -230,26 +296,26 @@ Fix the defect described below.
   - [ ] No regression in adjacent test suites.
 ```
 
-### Multi-Task Example (add-crud-endpoint shape)
+### Multi-Task Example (add-api-endpoint shape)
 
 The following abbreviated example shows the `## tasks` block with multiple
 `### task-NNN` headings. Front-matter and spec block are truncated for brevity.
 
 ```markdown
 ---
-name: add-crud-endpoint
-applies-to: small-new-feature
+name: add-api-endpoint
+applies-to: new-feature
 slot-count: 5
 task-count: 3
 ---
 
 ## spec
 
-# Add CRUD endpoint: {{resource-name}}
+# Add API endpoint: {{resource-name}}
 
 **Work:** {{work-name}}
 **Created:** {{date}}
-**Source:** recipe `add-crud-endpoint` via /aid-interview lite path
+**Source:** recipe `add-api-endpoint` via /aid-interview lite path
 **Status:** Active
 
 ## Goal
@@ -290,7 +356,7 @@ Add a full CRUD REST endpoint for the `{{resource-name}}` resource.
 
 | Date | Change | Source |
 |------|--------|--------|
-| {{date}} | Created from recipe `add-crud-endpoint` | /aid-interview lite path |
+| {{date}} | Created from recipe `add-api-endpoint` | /aid-interview lite path |
 
 ## tasks
 
@@ -331,57 +397,76 @@ Add a full CRUD REST endpoint for the `{{resource-name}}` resource.
 
 ### Triage flow overview
 
-`/aid-interview` runs 2–3 deterministic triage questions (T1 breadth, T2 size,
-T3 type) and applies a routing rule:
+`/aid-interview` uses a **description-first** triage flow:
 
-- **FULL** — any single "large" signal routes to the full pipeline.
-- **LITE** — all signals small → lite path, with a `workType` value derived from
-  the T3 answer (`bug-fix`, `small-refactor`, `single-doc`, or `small-new-feature`).
+1. The user gives a free-form work description in their own words.
+2. The agent infers the internal `workType` ∈ `{bug-fix, new-feature, refactor}`
+   from the description and finds the best-matching recipe by reading each
+   recipe's `summary:` front-matter field.
+3. The agent presents a **single confirmation turn**: "Looks like a {type} —
+   recipe `{name}` ({summary}). Correct?"
+4. The routing rule is intentionally conservative:
+   - A confident single-recipe match that the user accepts → **lite path** with
+     that recipe.
+   - An ambiguous, multi-target, or no-match description, or a user rejection
+     (`[2]`) → **full path**.
 
-### Recipe-offer step (T3 → recipe-offer)
+The user never picks a work type from a menu. `workType` is agent-inferred and
+recorded internally in `STATE.md ## Triage`; the sub-path
+(`LITE-BUG-FIX`, `LITE-REFACTOR`, or `LITE-FEATURE`) is derived from it.
 
-The recipe-offer step fires **inside the lite path**, after the `workType` is
-determined and after the user accepts or overrides the auto-selected sub-path
-(LITE-BUG-FIX, LITE-DOC, LITE-REFACTOR, or LITE-FEATURE), but **before** the
-sub-path's condensed interview begins. Sequencing:
+### Recipe discovery — candidate set and matching
 
-```
-T1 → T2 → T3
-  → path = LITE, workType = bug-fix
-  → sub-path: LITE-BUG-FIX (auto-selected; user may override)
-  → user accepts sub-path
-  → recipe-offer: filter catalog for applies-to == "bug-fix" OR applies-to == "*"
-  → offer list presented; user picks a recipe OR declines
-  → if recipe: slot-fill → emit → hand-off to /aid-execute
-  → if declined: standard LITE-BUG-FIX condensed interview
-```
-
-### Triage T3 → workType mapping
-
-The triage's T3 question ("what kind of work is it?") maps directly to the
-`workType` signal and from there to the recipe `applies-to` filter:
-
-| T3 answer                  | workType            | Recipes offered (`applies-to`)       |
-|----------------------------|---------------------|--------------------------------------|
-| bug fix                    | `bug-fix`           | `bug-fix` + `*`                      |
-| small refactor             | `small-refactor`    | `small-refactor` + `*`               |
-| single document / artifact | `single-doc`        | `single-doc` + `*`                   |
-| new feature or system      | `small-new-feature` | `small-new-feature` + `*`            |
-
-If no recipe matches (the catalog is empty or no `applies-to` matches), the
-recipe-offer step is skipped and the standard lite-path interview runs.
-
-### Triage T3 → workType → standard-lite escalation
-
-The relationship between T3, workType, the recipe-offer step, and standard-lite
-is a chain, not a branch — recipes accelerate the lite path but do not replace it:
+After the agent infers `workType`, it scans `.agent/recipes/` and reads each
+recipe's `applies-to:` and `summary:` fields. The **candidate set** is:
 
 ```
-T3 → workType (LITE routing confirmed)
-  └─ recipe-offer fires
-       ├─ user picks recipe → slot-fill → emit (skips condensed interview)
-       └─ user declines → standard lite-path condensed interview runs (unchanged)
-            └─ if work proves large → escalate to FULL path (FR1 escalation)
+recipe.applies-to == workType   OR   recipe.applies-to == '*'
+```
+
+Within the candidate set the agent picks the recipe whose `summary:` text best
+matches the user's description (semantic match — agent inference, no script).
+The `*` recipe (`add-test-coverage`) participates in the candidate set for every
+inferred type.
+
+If no recipe matches, the recipe-offer step is skipped and the standard lite-path
+condensed interview runs.
+
+### Description-first sequencing example
+
+```
+User: "fix the login crash on special characters"
+  → agent infers workType = bug-fix
+  → candidate set: applies-to == "bug-fix" OR "*"
+  → summary match: fix-application ("Fix a domain/business-logic defect …")
+  → confirmation turn: "Looks like a bug-fix — recipe `fix-application` (…). [1] Yes …"
+  → user [1] → lite / LITE-BUG-FIX, recipe = fix-application
+  → slot-fill → emit → hand-off to /aid-execute
+```
+
+### workType → Sub-path mapping
+
+| `workType` | Sub-path |
+|------------|----------|
+| `bug-fix` | `LITE-BUG-FIX` |
+| `refactor` | `LITE-REFACTOR` |
+| `new-feature` | `LITE-FEATURE` |
+
+Documentation and report work classifies as `new-feature` (creating a new
+doc/report → `LITE-FEATURE`, recipes `add-docs`/`add-report`) or `refactor`
+(editing an existing doc/report → `LITE-REFACTOR`, recipes `change-docs`/
+`change-report`). There is no dedicated doc-only sub-path.
+
+### Recipe-confirmed path and escalation
+
+Once a recipe is confirmed the lite path continues immediately into slot-fill
+(no separate condensed interview):
+
+```
+description → inferred workType → candidate set → best match → user confirms
+  → slot-fill → emit SPEC.md + tasks/ → hand-off to /aid-execute
+  └─ user declines recipe → standard lite-path condensed interview
+       └─ if work proves large → escalate to FULL path (FR1 escalation)
 ```
 
 A recipe-instantiated work can escalate at any point:
@@ -434,8 +519,8 @@ A recipe-instantiated work can escalate at any point:
   `desc`. The slot name is shown verbatim as the prompt label during slot-fill.
 - **Slot-name lexical rule:** `[a-z][a-z0-9-]*`. No underscores, uppercase, dots,
   or spaces.
-- **Reserve `applies-to: *` for cross-type patterns.** The seed catalog ships one
-  `*` recipe (`add-unit-test`). A catalog with many `*` recipes creates noise on
+- **Reserve `applies-to: *` for cross-type patterns.** The catalog ships one
+  `*` recipe (`add-test-coverage`). A catalog with many `*` recipes creates noise on
   every lite-path triage.
 - **No recipe versioning.** Updating a recipe file updates everyone's behavior. If
   a recipe needs breaking changes, author a new recipe (`bug-fix-v2`) and let the

@@ -225,7 +225,7 @@ aid-interview  ▸ you are here
 
 **TRIAGE:**
 ```
-[State: TRIAGE] — 3 deterministic questions to choose lite or full path.
+[State: TRIAGE] — free-form description → infer type + recipe → confirm (lite) or escalate (full).
 aid-interview  ▸ you are here
   [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [● TRIAGE ] → [ CONTINUE ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
   (lite path)  → [ CONDENSED-INTAKE ] → [ TASK-BREAKDOWN ] → [ LITE-REVIEW ] → [ LITE-DONE ]

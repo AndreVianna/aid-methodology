@@ -9,6 +9,9 @@ intent: |
   and rubric tiers. Read this when any AID term is unfamiliar.
 contracts: []
 changelog:
+  - 2026-06-03: work-001 feature-003 — recipe catalog expanded to 51 (5 seed recipes migrated + 46 new recipe names authored; 47 files newly created on disk since the write-release-note split adds a second new file); Seed Catalog term updated to 51-recipe definition across 4 groups.
+  - 2026-06-03: work-001 feature-002 — TRIAGE rewritten description-first; LITE-DOC sub-path eliminated; documentation/report work folds under LITE-FEATURE (add-docs/add-report) and LITE-REFACTOR (change-docs/change-report); Triage + workType glossary terms updated to description-first flow.
+  - 2026-06-03: work-001 feature-001 — lite work-type enum collapsed 4→3 (single-doc eliminated); workType term enum updated to {bug-fix | new-feature | refactor}; LITE-REFACTOR source updated small-refactor→refactor; LITE-FEATURE source updated small-new-feature→new-feature.
   - 2026-06-03: methodology v3.2 — Deploy/Monitor recast from numbered phases 7/8 to optional end-of-pipeline Deliver skills; AID term updated to "6 numbered development phases"; updated source anchors to the renamed spec headings (`#### Deploy … — optional` / `#### Monitor … — optional`). Loops 9/10 + Bug/CR Path terms re-pointed Monitor → Interview (bug via LITE-BUG-FIX; CR as new/changed requirements).
   - 2026-06-03: housekeep run-state relocation (PR #51) — corrected the "Housekeep Status" term: the run-state block now lives in the project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md` (transient/gitignored), not a work-area STATE.md.
   - 2026-06-03: aid-housekeep merge (PR #49) — added "Housekeep / KB-drift reconciliation" (the optional off-pipeline /aid-housekeep skill) and "Housekeep Status" (the work-area run-state block) terms; left "Pre-flight Cleanup" (the distinct /aid-discover orchestrator-only KB sweep) unchanged
@@ -143,12 +146,11 @@ changelog:
 |------|------------|--------|
 | **Lite Path** | Collapsed Interview → Specify → Plan → Detail into a single condensed flow; emits one work-root `SPEC.md` + `tasks/` (no features/, no REQUIREMENTS.md, no PLAN.md). | `canonical/skills/aid-interview/SKILL.md` `A lite work has **no \`features/\` folder` |
 | **Full Path** | The standard pipeline — all four design phases run separately, REQUIREMENTS.md + per-feature SPEC.md + PLAN.md + tasks/. | `canonical/templates/work-state-template.md` `- **Path:** lite | full` |
-| **Triage** | The 2-3 question deterministic routing state inside `aid-interview` (T1 = breadth, T2 = size, T3 = type). Conservative — any "large" signal routes to FULL. | `canonical/skills/aid-interview/references/state-triage.md` `# State: TRIAGE` |
-| **workType** | The kebab-normalized type from T3: `bug-fix | small-refactor | single-doc | small-new-feature`. | `canonical/skills/aid-interview/references/state-triage.md` `**T3 → workType kebab mapping:**` |
+| **Triage** | Description-first routing state inside `aid-interview`: the agent asks for a free-form work description, infers `workType + best-matching recipe` from it, and presents one confirmation turn. A confident single-recipe match routes to the lite path; an ambiguous, multi-target, or no-match description routes to full. Conservative — any signal short of one confirmed recipe routes full. | `canonical/skills/aid-interview/references/state-triage.md` `# State: TRIAGE` |
+| **workType** | The kebab-normalized internal work type inferred by the TRIAGE agent from the user's description: `bug-fix | new-feature | refactor`. Never presented as a menu — derived by agent inference and recorded in `STATE.md ## Triage`. | `canonical/skills/aid-interview/references/state-triage.md` `# State: TRIAGE` |
 | **LITE-BUG-FIX** | Sub-path for `bug-fix` workType. Typically 1 IMPLEMENT task (fix + regression test). | `canonical/skills/aid-interview/references/state-task-breakdown.md` `| LITE-BUG-FIX |` |
-| **LITE-DOC** | Sub-path for `single-doc` workType. Exactly 1 DOCUMENT task. | `canonical/skills/aid-interview/references/state-task-breakdown.md` `| LITE-DOC |` |
-| **LITE-REFACTOR** | Sub-path for `small-refactor` workType. 1–3 REFACTOR + TEST tasks. | `canonical/skills/aid-interview/references/state-task-breakdown.md` `| LITE-REFACTOR |` |
-| **LITE-FEATURE** | Sub-path for `small-new-feature` workType. 1–5 IMPLEMENT + TEST + DOCUMENT tasks. | `canonical/skills/aid-interview/references/state-task-breakdown.md` `| LITE-FEATURE |` |
+| **LITE-REFACTOR** | Sub-path for `refactor` workType. 1–3 REFACTOR + TEST tasks. Documentation/report revision work (`change-docs`/`change-report` recipes) also routes here — the single task is typed DOCUMENT. | `canonical/skills/aid-interview/references/state-task-breakdown.md` `| LITE-REFACTOR |` |
+| **LITE-FEATURE** | Sub-path for `new-feature` workType. 1–5 IMPLEMENT + TEST + DOCUMENT tasks. New documentation/report work (`add-docs`/`add-report` recipes) also routes here — the typical single task is typed DOCUMENT. | `canonical/skills/aid-interview/references/state-task-breakdown.md` `| LITE-FEATURE |` |
 | **CONDENSED-INTAKE (L1)** | Lite-path sub-path-specific slot-fill conversational interview; written by `interviewer`. | `canonical/skills/aid-interview/SKILL.md` `| L1 CONDENSED-INTAKE |` |
 | **TASK-BREAKDOWN (L2)** | Lite-path state — `architect` proposes typed task breakdown directly from work-root SPEC. | `canonical/skills/aid-interview/references/state-task-breakdown.md` `# State: TASK-BREAKDOWN (L2)` |
 | **LITE-REVIEW (L3)** | Lite-path pre-execution gate — `reviewer` adversarially validates the task set against SPEC. | `canonical/skills/aid-interview/SKILL.md` `| L3 LITE-REVIEW |` |
@@ -165,7 +167,7 @@ changelog:
 | **Slot** | `{{slot-name}}` placeholder in a recipe body. Lexical rule: `[a-z][a-z0-9-]*`. Substituted at render via `parse-recipe.sh --render`. | `canonical/recipes/README.md` `### Slot Syntax` |
 | **Slot escape** | `{!{` in recipe body — rewritten to literal `{{` at emit time (so recipes can quote slot syntax without triggering it). | `canonical/recipes/README.md` `**Escape sequence for literal \`{{\`:**` |
 | **applies-to** | Recipe front-matter field — which `workType` this recipe matches (or `*` for cross-type). | `canonical/recipes/README.md` `Valid \`applies-to\` values:` |
-| **Seed Catalog (5 recipes)** | `bug-fix.md`, `method-refactor.md`, `add-crud-endpoint.md`, `add-unit-test.md`, `write-release-note.md`. | `canonical/recipes/README.md` `## Seed Catalog` |
+| **Seed Catalog (51 recipes)** | 51 recipes across 4 groups: (1) 40 add/change pairs across 11 target-kind families (`new-feature`/`refactor`); (2) 7 bug-fix recipes (`fix-application`, `fix-infrastructure`, `fix-api`, `fix-ui`, `fix-integration`, `fix-regression`, `fix-security`); (3) 3 refactor-only recipes (`improve-performance`, `bump-dependency`, `rename-symbol`); (4) 1 cross-type recipe (`add-test-coverage`, `applies-to: *`). All 51 follow the `add-X`/`change-X`/`fix-X` naming convention. | `canonical/recipes/README.md` `## Seed Catalog` |
 
 ---
 

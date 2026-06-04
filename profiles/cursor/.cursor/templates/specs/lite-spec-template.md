@@ -2,24 +2,22 @@
 
 - **Work:** {work-NNN-name}
 - **Created:** {YYYY-MM-DD}
-- **Source:** /aid-interview lite path — {LITE-BUG-FIX | LITE-DOC | LITE-REFACTOR | LITE-FEATURE}
+- **Source:** /aid-interview lite path — {LITE-BUG-FIX | LITE-REFACTOR | LITE-FEATURE}
 - **Status:** Draft | Ready
 
 ## Goal
 
 {One paragraph: what this work is and what success looks like.
 For LITE-BUG-FIX: what is broken and its impact.
-For LITE-DOC: audience + what they gain from reading.
-For LITE-REFACTOR: what is changing and why.
-For LITE-FEATURE: what the feature does and the user problem it solves.}
+For LITE-REFACTOR: what is changing and why (incl. changing existing docs/reports).
+For LITE-FEATURE: what the feature does and the user problem it solves (incl. adding new docs/reports).}
 
 ## Context
 
 {Condensed problem statement + architectural constraints.
 For LITE-BUG-FIX: bug description + reproduction steps + intended behavior.
-For LITE-DOC: audience + purpose + document outline.
-For LITE-REFACTOR: before/after sketch + scope.
-For LITE-FEATURE: scope + KB references.
+For LITE-REFACTOR: before/after sketch + scope (for doc/report changes: audience + purpose + outline).
+For LITE-FEATURE: scope + KB references (for new docs/reports: audience + purpose + document outline).
 KB references by INDEX.md doc name.}
 
 ## Acceptance Criteria

@@ -3,6 +3,7 @@ name: {{recipe-name}}  # Fill in before saving as .agent/recipes/{name}.md. Thes
 applies-to: {{applies-to}}
 slot-count: {{slot-count}}
 task-count: {{task-count}}
+summary: {{summary}}
 ---
 
 ## spec
@@ -76,21 +77,21 @@ a new recipe. A recipe is a single Markdown file with YAML front-matter + a body
 containing two blocks: `## spec` (the work-root SPEC.md skeleton) and `## tasks`
 (the task-NNN.md skeletons).
 
-## YAML front-matter fields (all required)
+## YAML front-matter fields
 
-| Field        | Type            | Description                                                     |
-|--------------|-----------------|-----------------------------------------------------------------|
-| name         | string (kebab)  | Unique recipe id. Must match the file basename (without .md).   |
-| applies-to   | string          | The workType this recipe matches. See valid values below.        |
-| slot-count   | integer         | Number of unique {{slot}} tokens in the body. Used for display. |
-| task-count   | integer         | Number of ### task-NNN headings in ## tasks. Used for display.  |
+| Field        | Type              | Description                                                                                          |
+|--------------|-------------------|------------------------------------------------------------------------------------------------------|
+| name         | string (kebab)    | Unique recipe id. Must match the file basename (without .md).                                        |
+| applies-to   | string            | The workType this recipe matches. See valid values below.                                            |
+| slot-count   | integer           | Number of unique {{slot}} tokens in the body. Used for display.                                      |
+| task-count   | integer           | Number of ### task-NNN headings in ## tasks. Used for display.                                       |
+| summary      | string (one-line) | Optional. One-line description; read by TRIAGE for description→recipe matching; not validated by parse-recipe.sh. |
 
 Valid `applies-to` values (from feature-005 type-aware triage):
-  bug-fix            — a bug fix
-  small-refactor     — a small refactor (a method, a class)
-  single-doc         — a single document or artifact
-  small-new-feature  — a small new feature
-  *                  — matches any workType (use sparingly — see conventions)
+  bug-fix      — a bug fix
+  refactor     — a refactor (a method, a class)
+  new-feature  — a new feature
+  *            — matches any workType (use sparingly — see conventions)
 
 ## Slot syntax
 
