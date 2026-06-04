@@ -1,8 +1,9 @@
 ---
-name: add-unit-test
+name: add-test-coverage
 applies-to: "*"
 slot-count: 4
 task-count: 1
+summary: Add test coverage for any work type (bug fix, refactor, or new feature).
 ---
 
 ## spec
@@ -11,7 +12,7 @@ task-count: 1
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-unit-test` via /aid-interview lite path
+**Source:** recipe `add-test-coverage` via /aid-interview lite path
 **Status:** Active
 
 ## Goal
@@ -54,7 +55,7 @@ pre-fix code and passes after the fix is applied.
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-unit-test` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-test-coverage` | /aid-interview lite path |
 
 ## tasks
 

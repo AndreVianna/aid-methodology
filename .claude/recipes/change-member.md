@@ -1,8 +1,9 @@
 ---
-name: method-refactor
-applies-to: small-refactor
+name: change-member
+applies-to: refactor
 slot-count: 5
 task-count: 1
+summary: Refactor an existing member of an object or model without changing observable behavior.
 ---
 
 ## spec
@@ -11,7 +12,7 @@ task-count: 1
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `method-refactor` via /aid-interview lite path
+**Source:** recipe `change-member` via /aid-interview lite path
 **Status:** Active
 
 ## Goal
@@ -54,7 +55,7 @@ Target shape: {{after-shape}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `method-refactor` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-member` | /aid-interview lite path |
 
 ## tasks
 

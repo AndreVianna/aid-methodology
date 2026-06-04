@@ -1,17 +1,18 @@
 ---
-name: add-crud-endpoint
-applies-to: small-new-feature
+name: add-api-endpoint
+applies-to: new-feature
 slot-count: 6
 task-count: 3
+summary: Add a CRUD/REST API endpoint backed by persistence and covered by integration tests.
 ---
 
 ## spec
 
-# Add CRUD endpoint: {{resource-name}}
+# Add API endpoint: {{resource-name}}
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-crud-endpoint` via /aid-interview lite path
+**Source:** recipe `add-api-endpoint` via /aid-interview lite path
 **Status:** Active
 
 ## Goal
@@ -64,7 +65,7 @@ Security notes: {{security-notes}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-crud-endpoint` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-api-endpoint` | /aid-interview lite path |
 
 ## tasks
 
