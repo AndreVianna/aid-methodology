@@ -12,6 +12,7 @@ contracts:
   - "11 user-facing skill slash-command contracts documented (aid-config + 6 numbered phases aid-discover…aid-execute + optional aid-deploy/aid-monitor/aid-summarize + optional off-pipeline aid-housekeep) + maintainer-only aid-generate"
   - "discovery.doc_set in settings.yml: declared-set → dispatch mapping honors the set (no-hang on omission; dispatch on addition)"
 changelog:
+  - 2026-06-04: work-003 task-001 — /aid-execute signature reordered work-first to `/aid-execute [work-NNN] <task-NNN>` (was `<task-NNN> [work-NNN]`), matching the rest of the aid-* family; args remain prefix-typed so the legacy order still resolves.
   - 2026-06-03: work-001 feature-001 — lite work-type enum collapsed 4→3 (single-doc eliminated); Recipe File Front-matter Contract applies-to inline comment updated to {bug-fix | new-feature | refactor | *}.
   - 2026-06-03: methodology v3.2 — aid-deploy/aid-monitor reclassified as optional, on-demand end-of-pipeline Deliver skills (not mandatory phases 7/8); contract list reframed as aid-config + 6 numbered phases + optional deploy/monitor/summarize + off-pipeline housekeep. Per-skill state-machine contracts unchanged.
   - 2026-06-03: housekeep run-state relocation (PR #51) — /aid-housekeep run-state moved out of the work-area STATE.md to the transient project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`; dropped the `## Housekeep Status` work-state-section row; cleanup now offers every work folder for user-confirmed deletion (signals informational).
@@ -99,7 +100,7 @@ Source: `find canonical/skills -maxdepth 1 -type d`,
 - **States:** `FIRST-RUN → REVIEW → DONE` (`canonical/skills/aid-detail/SKILL.md` frontmatter `State machine: FIRST-RUN → REVIEW → DONE`)
 - **Source:** `canonical/skills/aid-detail/SKILL.md`
 
-### `/aid-execute <task-NNN> [work-NNN]`
+### `/aid-execute [work-NNN] <task-NNN>`
 
 - **States:** `EXECUTE → REVIEW → FIX → REVIEW → DONE` (`canonical/skills/aid-execute/SKILL.md` frontmatter `State machine: EXECUTE → REVIEW → FIX`)
 - **Branch contract:** One branch per delivery (`aid/delivery-NNN`); RESEARCH/DOCUMENT
