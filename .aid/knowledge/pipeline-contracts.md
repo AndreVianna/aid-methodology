@@ -605,16 +605,19 @@ Equivalent area-STATE for the Discovery area:
 
 ```
 ---
-name: bug-fix          # kebab; must match basename
-applies-to: bug-fix    # bug-fix | new-feature | refactor | *
-slot-count: 4          # integer; must equal unique {{slot}} count in body
-task-count: 1          # integer; must equal ### task-NNN heading count
+name: add-api-endpoint     # kebab; must match basename
+applies-to: new-feature    # bug-fix | new-feature | refactor | *
+slot-count: 6              # integer; must equal unique {{slot}} count in body
+task-count: 3              # integer; must equal ### task-NNN heading count
+summary: <one-line description>  # free-form one-line; read by TRIAGE for description→recipe matching
 ---
 ```
 
-All 4 fields required. Body must contain `## spec` and `## tasks` blocks. Slot lexical
-rule: `[a-z][a-z0-9-]*`. Escape `{!{` → `{{` at render time.
-- **Source:** `canonical/recipes/README.md` `### YAML Front-Matter`
+The first 4 fields are required; `summary:` is optional. `summary:` is a one-line
+free-form description read by TRIAGE for description→recipe matching (agent-read, **not**
+validated by `parse-recipe.sh`). Body must contain `## spec` and `## tasks` blocks. Slot
+lexical rule: `[a-z][a-z0-9-]*`. Escape `{!{` → `{{` at render time.
+- **Source:** `canonical/recipes/README.md` `### YAML Front-Matter`, `canonical/recipes/add-api-endpoint.md` (front-matter example)
 
 ### IMPEDIMENT-task-NNN.md Contract
 

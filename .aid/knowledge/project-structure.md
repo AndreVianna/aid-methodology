@@ -53,7 +53,7 @@ aid-methodology/                       (repo root)
 │   └── settings.yml                   ← runtime AID settings
 ├── .claude/                           ← dogfood Claude Code install tree (this repo uses AID on itself)
 │   ├── agents/                        ← 22 generated agent definitions
-│   ├── recipes/                       ← 5 generated lite-path recipes + README
+│   ├── recipes/                       ← dogfood lite-path recipes + README (refreshed on re-install; see `## Recipes` for the canonical 51-recipe catalog)
 │   ├── scripts/                       ← generated helper scripts (config/, execute/, housekeep/, interview/, kb/, summarize/)
 │   ├── skills/                        ← 11 AID skills + maintainer-only aid-generate
 │   ├── templates/                     ← generated templates (knowledge-base/, knowledge-summary/, kb-authoring/, ...)
@@ -61,7 +61,7 @@ aid-methodology/                       (repo root)
 ├── canonical/                         ← SINGLE SOURCE OF TRUTH for all install-tree content
 │   ├── EMISSION-MANIFEST.md           ← deletion-safety boundary spec
 │   ├── agents/                        ← 22 agent dirs (AGENT.md + README.md per agent)
-│   ├── recipes/                       ← 5 recipes + README + .gitkeep
+│   ├── recipes/                       ← 51 recipes + README + .gitkeep
 │   ├── rules/                         ← cursor .mdc rule files
 │   ├── scripts/                       ← helper scripts (mirror of .claude/scripts/): config/, execute/, housekeep/, interview/, kb/, summarize/
 │   │   └── housekeep/                 ← branch-commit.sh, cleanup-classify.sh, housekeep-state.sh (added work-001-aid-housekeep, PR #49)
@@ -309,18 +309,19 @@ Installed at `.claude/agents/`. Three tiers (per `README.md` `## The Agent Model
 
 Densest agent definitions by purpose: `discovery-reviewer.md`, `discovery-architect.md`, `discovery-quality.md`, `discovery-scout.md` — discovery sub-agents have the densest contracts. Per-file line counts are in `.aid/generated/project-index.md`.
 
-## Recipes (5)
+## Recipes (51)
 
-Lite-path templates at `canonical/recipes/`, replicated into all 5 install trees (`.claude/recipes/`, `profiles/codex/.agents/recipes/`, `profiles/cursor/.cursor/recipes/`, `profiles/copilot-cli/.github/recipes/`, `profiles/antigravity/.agent/recipes/`):
+Lite-path templates at `canonical/recipes/`, rendered into all 5 profile install trees (`profiles/claude-code/.claude/recipes/`, `profiles/codex/.agents/recipes/`, `profiles/cursor/.cursor/recipes/`, `profiles/copilot-cli/.github/recipes/`, `profiles/antigravity/.agent/recipes/`). The catalog ships **51** recipes named by the change they make, plus `README.md` documenting the catalog. (The repo-root `.claude/` dogfood install is rendered separately and is not one of the 5 profile trees — see line 54.):
 
-| Recipe | Purpose |
-|--------|---------|
-| `add-crud-endpoint.md` | Add a new CRUD HTTP endpoint |
-| `add-unit-test.md` | Add a single unit test |
-| `bug-fix.md` | Minimal bug-fix lite path |
-| `method-refactor.md` | Refactor a single method |
-| `write-release-note.md` | Author a release note |
-| `README.md` | Recipe catalog documentation |
+| Group | Naming | Count |
+|-------|--------|-------|
+| Add a thing (`new-feature`) | `add-X` (e.g. `add-api-endpoint`, `add-ui-component`, `add-entity`, `add-docs`) | 20 |
+| Change a thing (`refactor`) | `change-X` (e.g. `change-api-endpoint`, `change-schema`, `change-docs`) | 20 |
+| Fix a thing (`bug-fix`) | `fix-X` (e.g. `fix-application`, `fix-api`, `fix-regression`, `fix-security`) | 7 |
+| Refactor-only | verb (`improve-performance`, `bump-dependency`, `rename-symbol`) | 3 |
+| Cross-type (`*`) | `add-test-coverage` | 1 |
+
+The 40 `add-`/`change-` recipes span 11 target-kind families. See `canonical/recipes/README.md ## Seed Catalog` for the full list.
 
 ## Templates (categories under `canonical/templates/`)
 

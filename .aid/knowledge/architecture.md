@@ -65,7 +65,7 @@ aid-methodology/                    (repo root)
 │   ├── skills/                     ← 11 skill dirs (Thin-Router SKILL.md + references/);
 │   │                                 7 core-pipeline (aid-config + 6 phases) + 4 optional (summarize, deploy, monitor, housekeep)
 │   ├── templates/                  ← 15 KB templates + knowledge-summary/ HTML bundle + …
-│   ├── recipes/                    ← 5 lite-path recipes + README
+│   ├── recipes/                    ← 51 lite-path recipes + README (add-X / change-X / fix-X family)
 │   ├── scripts/                    ← helper scripts grouped by phase
 │   │   ├── config/                 ← read-setting.sh
 │   │   ├── execute/                ← writeback-state.sh, compute-block-radius.sh, …

@@ -180,7 +180,7 @@ canonical/                          ← single source of truth (maintainer edits
   ├── agents/        (22 dirs)
   ├── skills/        (11 user-facing dirs + maintainer-only aid-generate)
   ├── templates/     (knowledge-base, knowledge-summary, kb-authoring, ...)
-  ├── recipes/       (5 lite-path templates + README)
+  ├── recipes/       (51 add-/change-/fix- recipe templates + README)
   ├── scripts/       (config/, execute/, housekeep/, interview/, kb/, summarize/, grade.sh)
   └── EMISSION-MANIFEST.md          ← safety-boundary spec
 
