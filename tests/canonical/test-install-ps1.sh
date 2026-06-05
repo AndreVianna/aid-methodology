@@ -673,4 +673,71 @@ else
     _stop_http_server
 fi  # end python3 check for IN31/IN32 tests
 
+# ---------------------------------------------------------------------------
+# IN33 – Host-survival (piped/iex mode): the key regression guard.
+#
+# When install.ps1 is run as a scriptblock (simulating `irm <url> | iex` or
+# `& ([scriptblock]::Create(...))`), `exit` would normally kill the HOST
+# session.  The fix routes all exits through script:Exit-Install which, in
+# piped mode, sets $global:LASTEXITCODE and throws a sentinel exception that
+# unwinds cleanly — the host session SURVIVES.
+#
+# Verifies:
+#   IN33  success path: install exits 0, HOST-SURVIVED printed, parent's exit 7 wins.
+#   IN33b failure path: bad flag exits 2, HOST-SURVIVED printed, parent's exit 7 wins.
+#   IN33c LASTEXITCODE from install is visible to caller after scriptblock returns.
+#
+# Uses AID_LIB_PATH to inject the local lib (avoids remote fetch, no network needed).
+# ---------------------------------------------------------------------------
+
+# Scriptblock helper: invokes install.ps1 as a raw scriptblock (simulating iex).
+# The parent pwsh session is the outer `pwsh -NoProfile -Command ...`.
+# After the scriptblock returns, we write HOST-SURVIVED and exit 7.
+# PARENT-EXIT must be 7 (parent's own exit) not the install code.
+_run_scriptblock_host_test() {
+    local extra_args="$1"   # extra install.ps1 args (quoted as PS literal)
+    local extra_vars="$2"   # extra env-var assignments for env(...)
+    local extra_env=""
+    [[ -n "$extra_vars" ]] && extra_env="$extra_vars"
+
+    # Write a small wrapper PS1 that runs the install scriptblock and reports results.
+    local wrapper
+    wrapper=$(cat <<PSEOF
+\$ErrorActionPreference = 'Continue'
+& ([scriptblock]::Create((Get-Content '${SUT}' -Raw))) ${extra_args} 2>&1
+\$code = \$LASTEXITCODE
+Write-Output "INSTALL-LASTEXITCODE=\$code"
+Write-Output 'HOST-SURVIVED'
+exit 7
+PSEOF
+)
+    env $extra_env "$PWSH" -NoProfile -Command "$wrapper" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'
+}
+
+T=$(newtarget)
+_hs_out=$(_run_scriptblock_host_test \
+    "-Tool codex -FromBundle '${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz' -TargetDirectory '${T}'" \
+    "AID_LIB_PATH=${REPO_ROOT}/lib/AidInstallCore.psm1")
+_hs_parent_exit=$?
+
+assert_exit_eq "$_hs_parent_exit" 7 \
+    "IN33 host-survival success: parent exit 7 wins (install did NOT kill host)"
+assert_output_contains "$_hs_out" "HOST-SURVIVED" \
+    "IN33b host-survival success: HOST-SURVIVED printed after scriptblock returns"
+assert_output_contains "$_hs_out" "INSTALL-LASTEXITCODE=0" \
+    "IN33c host-survival success: install LASTEXITCODE=0 visible to caller"
+
+# Failure path: bad flag → install exits 2, host still survives.
+_hs_fail_out=$(_run_scriptblock_host_test \
+    "-BadFlag" \
+    "AID_LIB_PATH=${REPO_ROOT}/lib/AidInstallCore.psm1")
+_hs_fail_parent=$?
+
+assert_exit_eq "$_hs_fail_parent" 7 \
+    "IN33d host-survival failure: parent exit 7 wins (bad-flag install did NOT kill host)"
+assert_output_contains "$_hs_fail_out" "HOST-SURVIVED" \
+    "IN33e host-survival failure: HOST-SURVIVED printed after bad-flag scriptblock returns"
+assert_output_contains "$_hs_fail_out" "INSTALL-LASTEXITCODE=2" \
+    "IN33f host-survival failure: install LASTEXITCODE=2 (usage error) visible to caller"
+
 test_summary

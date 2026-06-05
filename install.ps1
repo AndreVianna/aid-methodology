@@ -88,6 +88,43 @@ param(
 $ErrorActionPreference = 'Stop'
 
 # ---------------------------------------------------------------------------
+# Piped-mode detection.
+#
+# When invoked as a real script file (`pwsh -File install.ps1` or `.\install.ps1`),
+# $PSCommandPath / $MyInvocation.MyCommand.Path is set.
+# When invoked via `irm <url> | iex` or `& ([scriptblock]::Create(...))`, the script
+# runs inside the caller's runspace and $PSCommandPath is empty.
+#
+# In piped mode, calling `exit <N>` terminates the HOST session (closes the user's
+# terminal).  Instead we set $global:LASTEXITCODE and throw a private sentinel
+# exception that unwinds cleanly to the outermost catch block, which then returns.
+#
+# NOTE: bash install.sh does NOT need this guard — `curl | bash` runs in a subshell
+# so `exit` is correct there.  This asymmetry is intentional: the goal (host/terminal
+# survives) is the same; the mechanism differs because PowerShell `iex` runs in-process.
+# ---------------------------------------------------------------------------
+$script:_PipedMode = [string]::IsNullOrEmpty($PSCommandPath)
+
+# Private sentinel type for clean unwind in piped mode.
+# We use a uniquely-named string to avoid collisions.
+$script:_SentinelTag = '__AidInstallExit__'
+
+# script:Exit-Install <code>
+# In file mode  : calls `exit <code>` (process exit, returns the code to the caller).
+# In piped mode : sets $global:LASTEXITCODE = <code> and throws the sentinel exception
+#                 so the host session survives.  The outermost try/catch catches it and
+#                 returns cleanly.
+function script:Exit-Install {
+    param([int]$Code)
+    if ($script:_PipedMode) {
+        $global:LASTEXITCODE = $Code
+        throw "$($script:_SentinelTag)$Code"
+    } else {
+        exit $Code
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Locate the directory containing this script.
 # When piped via irm | iex, $MyInvocation.MyCommand.Path is null/empty — guard.
 # ---------------------------------------------------------------------------
@@ -142,15 +179,23 @@ function Show-Usage {
 function script:Fail {
     param([string]$Message, [int]$Code = 1)
     [Console]::Error.WriteLine("ERROR: install.ps1: $Message")
-    exit $Code
+    script:Exit-Install $Code
 }
+
+# ---------------------------------------------------------------------------
+# Outermost try/catch: wraps all logic so that in piped mode the sentinel
+# exception is caught here and we return cleanly instead of killing the host.
+# In file mode script:Exit-Install calls `exit` directly so this catch is
+# never reached for normal exits.
+# ---------------------------------------------------------------------------
+try {
 
 # ---------------------------------------------------------------------------
 # -Help
 # ---------------------------------------------------------------------------
 if ($Help) {
     Show-Usage
-    exit 0
+    script:Exit-Install 0
 }
 
 # ---------------------------------------------------------------------------
@@ -159,7 +204,7 @@ if ($Help) {
 if ($RemainingArgs -and $RemainingArgs.Count -gt 0) {
     [Console]::Error.WriteLine("ERROR: install.ps1: unknown parameter: $($RemainingArgs[0])")
     [Console]::Error.WriteLine("Run with -Help for usage information.")
-    exit 2
+    script:Exit-Install 2
 }
 
 # ---------------------------------------------------------------------------
@@ -254,13 +299,13 @@ if ($aidLibPath) {
         } catch {
             [Console]::Error.WriteLine("ERROR: install.ps1: could not fetch SHA256SUMS from $sumsUrl; refusing to import unverified lib (fail-closed)")
             [Console]::Error.WriteLine("ERROR: install.ps1: set AID_INSECURE_SKIP_LIB_VERIFY=1 to bypass (insecure)")
-            exit 3
+            script:Exit-Install 3
         }
 
         if (-not $sumsOk -or -not (Test-Path $sumsFile -PathType Leaf)) {
             [Console]::Error.WriteLine("ERROR: install.ps1: could not fetch SHA256SUMS from $sumsUrl; refusing to import unverified lib (fail-closed)")
             [Console]::Error.WriteLine("ERROR: install.ps1: set AID_INSECURE_SKIP_LIB_VERIFY=1 to bypass (insecure)")
-            exit 3
+            script:Exit-Install 3
         }
 
         $libHash = (Get-FileHash -LiteralPath $CoreModule -Algorithm SHA256).Hash.ToLower()
@@ -274,10 +319,10 @@ if ($aidLibPath) {
         if (-not $expectedHash) {
             [Console]::Error.WriteLine("ERROR: install.ps1: AidInstallCore.psm1 not found in SHA256SUMS from $sumsUrl; refusing to import unverified lib (fail-closed)")
             [Console]::Error.WriteLine("ERROR: install.ps1: set AID_INSECURE_SKIP_LIB_VERIFY=1 to bypass (insecure)")
-            exit 3
+            script:Exit-Install 3
         } elseif ($libHash -ne $expectedHash) {
             [Console]::Error.WriteLine("ERROR: install.ps1: checksum mismatch for AidInstallCore.psm1: expected $expectedHash, got $libHash")
-            exit 4
+            script:Exit-Install 4
         } else {
             [Console]::Error.WriteLine("Checksum OK: AidInstallCore.psm1")
         }
@@ -359,7 +404,7 @@ function Resolve-ToolList {
 
 $toolList = Resolve-ToolList -RawTool $Tool -TargetDir $Target -CurrentMode $Mode
 if ($null -eq $toolList) {
-    exit 2
+    script:Exit-Install 2
 }
 
 if ($toolList.Count -eq 0 -and $Mode -eq 'uninstall') {
@@ -413,25 +458,25 @@ function Prepare-ToolStaging {
             script:Fail "bundle file not found: $tarball" 1
         }
         # Verify sibling SHA256SUMS if present.
-        if (-not (Verify-BundleChecksum -Tarball $tarball)) { exit 4 }
+        if (-not (Verify-BundleChecksum -Tarball $tarball)) { script:Exit-Install 4 }
         # Extract version from filename: aid-<tool>-v<version>.tar.gz
         $tbase = [System.IO.Path]::GetFileName($tarball)
         $script:ResolvedVersion = $tbase -replace "^aid-$CurrentTool-v", '' -replace '\.tar\.gz$', ''
         if (-not $script:ResolvedVersion) { $script:ResolvedVersion = if ($CurrentVersion) { $CurrentVersion } else { 'unknown' } }
-        if (-not (Extract-Tarball -Tarball $tarball -DestDir $toolStaging)) { exit 1 }
+        if (-not (Extract-Tarball -Tarball $tarball -DestDir $toolStaging)) { script:Exit-Install 1 }
     } else {
         # Online mode.
         if (-not $CurrentVersion) {
             $script:ResolvedVersion = Resolve-AidVersion
-            if (-not $script:ResolvedVersion) { exit 3 }
+            if (-not $script:ResolvedVersion) { script:Exit-Install 3 }
         } else {
             $script:ResolvedVersion = $CurrentVersion
         }
         $dlDir = Join-Path $StagingBase ("download-$CurrentTool-" + [System.IO.Path]::GetRandomFileName())
         New-Item -ItemType Directory -Path $dlDir -Force | Out-Null
-        if (-not (Fetch-Tarball -Tool $CurrentTool -Version $script:ResolvedVersion -DestDir $dlDir)) { exit 3 }
+        if (-not (Fetch-Tarball -Tool $CurrentTool -Version $script:ResolvedVersion -DestDir $dlDir)) { script:Exit-Install 3 }
         $tarball = Join-Path $dlDir "aid-$CurrentTool-v$($script:ResolvedVersion).tar.gz"
-        if (-not (Extract-Tarball -Tarball $tarball -DestDir $toolStaging)) { exit 1 }
+        if (-not (Extract-Tarball -Tarball $tarball -DestDir $toolStaging)) { script:Exit-Install 1 }
     }
 
     $script:StagingDir = $toolStaging
@@ -455,7 +500,7 @@ try {
                 if ($rc -eq 5) {
                     $overallBlocked = $true
                 } elseif ($rc -ne 0) {
-                    exit $rc
+                    script:Exit-Install $rc
                 }
             }
 
@@ -463,30 +508,30 @@ try {
             if ($overallBlocked) {
                 Write-Host "Install complete with warnings: one or more root agent files were not overwritten."
                 Write-Host "Review the *.aid-new file(s) and merge, or re-run with --force to overwrite."
-                exit 5
+                script:Exit-Install 5
             }
             Write-Host "Done. AID $($script:ResolvedVersion) installed into: $Target"
-            exit 0
+            script:Exit-Install 0
         }
 
         'uninstall' {
             $manifestPath = Join-Path $Target (Join-Path '.aid' '.aid-manifest.json')
             if (-not (Test-ManifestExists -ManifestPath $manifestPath)) {
                 [Console]::Error.WriteLine("ERROR: install.ps1: no manifest at $Target/.aid/.aid-manifest.json; nothing to uninstall")
-                exit 6
+                script:Exit-Install 6
             }
 
             foreach ($t in $toolList) {
                 Write-Host ""
                 Write-Host "--- uninstall $t ---"
                 $rc = Uninstall-AidTool -ManifestPath $manifestPath -Tool $t -Target $Target
-                if ($rc -eq 6) { exit 6 }
-                if ($rc -ne 0) { exit $rc }
+                if ($rc -eq 6) { script:Exit-Install 6 }
+                if ($rc -ne 0) { script:Exit-Install $rc }
             }
 
             Write-Host ""
             Write-Host "Uninstall complete."
-            exit 0
+            script:Exit-Install 0
         }
     }
 } finally {
@@ -494,4 +539,23 @@ try {
     if ($script:_AidTmpLibDir -and (Test-Path $script:_AidTmpLibDir -PathType Container)) {
         Remove-Item -LiteralPath $script:_AidTmpLibDir -Recurse -Force -ErrorAction SilentlyContinue
     }
+}
+
+} catch {
+    # In piped mode, script:Exit-Install throws the sentinel string to unwind cleanly.
+    # Catch it here, suppress it, and return — the host session survives.
+    # Any other exception is re-thrown so PowerShell's normal error handling applies.
+    $msg = "$_"
+    if ($msg.StartsWith($script:_SentinelTag)) {
+        # Clean unwind — $global:LASTEXITCODE was already set by script:Exit-Install.
+        return
+    }
+    # Unhandled exception in piped mode: set exit code 1, emit the error, and return.
+    if ($script:_PipedMode) {
+        $global:LASTEXITCODE = 1
+        [Console]::Error.WriteLine("ERROR: install.ps1: unhandled exception: $_")
+        return
+    }
+    # File mode: re-throw so PowerShell's default error display fires.
+    throw
 }

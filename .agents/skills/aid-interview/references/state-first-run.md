@@ -1,0 +1,45 @@
+# State: FIRST-RUN
+
+This state runs only when STATE.md `## Interview Status` does not exist in the work folder; it creates the scaffolding so that TRIAGE can ask the 3 path-determination questions before the conversational interview begins.
+
+### 1a. Read KB (if it exists)
+
+Check for `.aid/knowledge/INDEX.md`. If it exists, read it to understand what's
+already known about the project. This context prevents asking questions the KB already answers.
+
+If no KB exists, that's fine — this is a greenfield project.
+
+### 1b. Create or update STATE.md
+
+Ensure `.aid/{work}/STATE.md` exists and has an `## Interview Status` section and a
+`## Cross-phase Q&A` section. Copy from `../../templates/work-state-template.md` if
+the file does not yet exist.
+
+### 1c. Create REQUIREMENTS.md scaffold
+
+Copy the template from `../../templates/requirements.md` to
+`.aid/{work}/REQUIREMENTS.md`.
+Add the first Change Log entry: `| {today} | Initial interview started | /aid-interview |`
+
+### 1d. Monitor-routed finding seed (optional)
+
+If this work was opened from an `aid-monitor` finding — a `MONITOR-STATE.md` finding
+routed here per `aid-monitor/references/state-route.md` Step 5 — read that finding and
+use it to seed the intake:
+
+- **BUG finding** → it carries the lite path: TRIAGE settles on `LITE-BUG-FIX`, and the
+  recorded root cause, patch scope, and test requirements pre-fill the reproduction /
+  intended-behavior so the condensed interview is near-complete.
+- **CHANGE REQUEST finding** → seed REQUIREMENTS.md with the desired new/changed behavior
+  and its evidence; TRIAGE then routes by scope as usual.
+
+If there is no Monitor finding (the normal case — a human-initiated interview), skip this
+step. TRIAGE still asks its questions; the seed only pre-fills answers, it never overrides
+the deterministic routing rule.
+
+**Note:** Sections are empty — no placeholder markers. The STATE.md `## Interview Status` tracks
+which sections have been filled.
+
+---
+
+**Advance:** **CHAIN** → [State: TRIAGE] after scaffolding is complete (continue inline). Triage then determines the path (lite or full).
