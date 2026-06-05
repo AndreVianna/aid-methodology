@@ -10,14 +10,14 @@
 #
 # Usage:
 #   bash install.sh [--tool <name>[,<name>...]] [--version <v>] [--from-bundle <path>]
-#                   [--force] [--target <dir>] [<target-dir>]
+#                   [--force] [--verbose] [--target <dir>] [<target-dir>]
 #       Install AID into the target directory (default: current directory).
 #
 #   bash install.sh --update [--tool <name>[,...]] [--version <v>] [--from-bundle <path>]
-#                   [--force] [--target <dir>]
+#                   [--force] [--verbose] [--target <dir>]
 #       Re-install / update an existing AID installation to the given or latest version.
 #
-#   bash install.sh --uninstall [--tool <name>[,...]] [--target <dir>]
+#   bash install.sh --uninstall [--tool <name>[,...]] [--verbose] [--target <dir>]
 #       Remove AID-installed files (manifest-driven).
 #
 #   bash install.sh -h | --help
@@ -32,6 +32,8 @@
 #   --from-bundle <path>   Offline install from a pre-downloaded tarball (single --tool) or
 #                          a directory of tarballs (comma-list).  No network.
 #   --force                Overwrite files that exist and differ, including root agent files.
+#   --verbose              Print per-file Copied:/Up to date:/Updated:/Removed: lines.
+#                          Default: concise per-tool summary only.
 #   --update               Re-install over an existing AID setup (refresh to version/latest).
 #   --uninstall            Manifest-driven removal.  --tool limits to that tool; without it,
 #                          removes all installed tools.
@@ -55,7 +57,20 @@ set -uo pipefail
 # Adding -e would cause subshell exit codes (e.g. from _resolve_tools) to terminate the
 # script silently rather than letting the caller inspect and act on them.
 #
-# Environment variables:
+# Environment variables (installer options — take effect when the explicit flag is NOT given):
+#   AID_TOOL       — equivalent to --tool <value>.  Accepts a comma-list.
+#                    Useful for piped invocations: AID_TOOL=claude-code curl … | bash
+#                    Precedence: explicit --tool flag > AID_TOOL > auto-detect.
+#   AID_VERSION    — equivalent to --version <value>.
+#                    Precedence: explicit --version flag > AID_VERSION > resolve latest.
+#   AID_TARGET     — equivalent to --target <dir>.
+#                    Precedence: explicit --target / positional arg > AID_TARGET > cwd.
+#   AID_FORCE      — set to '1' or 'true' to enable --force.
+#                    Precedence: explicit --force flag > AID_FORCE.
+#   AID_VERBOSE    — set to '1' to enable --verbose (per-file output).
+#                    Precedence: explicit --verbose flag > AID_VERBOSE.
+#
+# Environment variables (bootstrap/lib fetch — existing):
 #   AID_LIB_PATH   — absolute path to aid-install-core.sh to source directly (overrides
 #                    sibling detection and remote fetch; useful for tests and vendored use).
 #   AID_LIB_BASE   — base URL prefix for the remote lib fetch when the lib is not beside
@@ -70,6 +85,7 @@ set -uo pipefail
 #                    or AID_SUMS_URL may be set to override the checksum URL directly.
 #   AID_SUMS_URL   — override URL for SHA256SUMS used during lib checksum verification.
 #                    Useful for tests.  When unset, derived from the release tag URL.
+#   AID_LIB_VERSION — pin the lib fetch to a specific release version (avoids API call).
 #   AID_INSECURE_SKIP_LIB_VERIFY — set to '1' to skip lib checksum verification for the
 #                    remote-fetch path.  INSECURE — for restricted test environments only.
 #                    Default is fail-closed: SHA256SUMS must be fetchable and the hash must
@@ -116,14 +132,18 @@ usage() {
         printf '  --version <v>        Pin to release version (e.g. 0.7.0)\n'
         printf '  --from-bundle <path> Offline install from pre-downloaded tarball\n'
         printf '  --force              Overwrite differing files including root agent files\n'
+        printf '  --verbose            Print per-file detail (default: concise summary)\n'
         printf '  --target <dir>       Install root (default: current directory)\n'
+        printf '\n'
+        printf 'Env vars: AID_TOOL, AID_VERSION, AID_TARGET, AID_FORCE, AID_VERBOSE\n'
+        printf '  (equivalent to the flags; flags take precedence)\n'
         printf '\n'
         printf 'Exit codes: 0 success, 1 failure, 2 usage error, 3 network error,\n'
         printf '            4 checksum mismatch, 5 protect-on-diff blocked, 6 no manifest\n'
         printf '\n'
         printf 'Full docs: https://github.com/AndreVianna/aid-methodology/blob/master/docs/install.md\n'
     else
-        sed -n '2,49p' "$0" | sed 's/^# \{0,1\}//'
+        sed -n '2,51p' "$0" | sed 's/^# \{0,1\}//'
     fi
 }
 
@@ -352,6 +372,9 @@ VERSION_ARG=""         # raw --version value (empty = latest)
 FROM_BUNDLE=""         # path to tarball or directory (offline)
 FORCE=0
 TARGET=""
+# AID_VERBOSE is exported so lib/aid-install-core.sh can read it.
+# Initialize from env var; may be overridden by --verbose flag below.
+AID_VERBOSE="${AID_VERBOSE:-0}"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -384,6 +407,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --force)
             FORCE=1
+            shift
+            ;;
+        --verbose)
+            AID_VERBOSE=1
             shift
             ;;
         --target)
@@ -420,6 +447,24 @@ while [[ $# -gt 0 ]]; do
         die "unexpected argument: $1 (target already set to '${TARGET}')" 2
     fi
 done
+
+# ---------------------------------------------------------------------------
+# Apply env-var fallbacks (AID_TOOL, AID_VERSION, AID_TARGET, AID_FORCE).
+# Precedence: explicit flag/arg > env var > auto-detect/default.
+# ---------------------------------------------------------------------------
+if [[ -z "$TOOL_ARG" && -n "${AID_TOOL:-}" ]]; then
+    TOOL_ARG="$AID_TOOL"
+fi
+if [[ -z "$VERSION_ARG" && -n "${AID_VERSION:-}" ]]; then
+    VERSION_ARG="$AID_VERSION"
+fi
+if [[ -z "$TARGET" && -n "${AID_TARGET:-}" ]]; then
+    TARGET="$AID_TARGET"
+fi
+if [[ "$FORCE" -eq 0 && ( "${AID_FORCE:-0}" == "1" || "${AID_FORCE:-0}" == "true" ) ]]; then
+    FORCE=1
+fi
+export AID_VERBOSE
 
 # ---------------------------------------------------------------------------
 # Validation.
@@ -595,8 +640,8 @@ case "$MODE" in
     install|update)
         for tool in "${TOOLS[@]}"; do
             echo ""
-            echo "--- ${tool} ---"
             prepare_tool_staging "$tool" "$VERSION_ARG" "$FROM_BUNDLE"
+            echo "Installing ${tool} v${RESOLVED_VERSION} → ${TARGET}"
             install_tool "$STAGING_DIR" "$tool" "$TARGET" "$RESOLVED_VERSION" "$FORCE" || {
                 _RC=$?
                 if [[ "$_RC" -eq 5 ]]; then
@@ -626,7 +671,7 @@ case "$MODE" in
 
         for tool in "${TOOLS[@]}"; do
             echo ""
-            echo "--- uninstall ${tool} ---"
+            echo "Uninstalling ${tool} from ${TARGET}"
             uninstall_tool "$_MANIFEST" "$tool" "$TARGET" || {
                 _RC=$?
                 [[ "$_RC" -eq 6 ]] && exit 6

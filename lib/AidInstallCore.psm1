@@ -14,9 +14,9 @@
 #   Fetch-Tarball <tool> <ver> <destDir>         — download + verify tarball; throws on error
 #   Extract-Tarball <tarball> <destDir>          — extract (flat root); throws on fail
 #   Verify-BundleChecksum <tarball>              — verify sibling SHA256SUMS if present
-#   Copy-AidFile <src> <dst> [force]             — copy semantics (skip-identical/skip-on-diff/force)
-#   Copy-AidDir <srcDir> <dstDir> [force]        — recursive copy via Copy-AidFile
-#   Install-AidTool <staging> <tool> <target> <version> [force]
+#   Copy-AidFile <src> <dst> [force] [aidVerbose]  — copy semantics; per-file output when verbose
+#   Copy-AidDir <srcDir> <dstDir> [force] [aidVerbose] — recursive copy via Copy-AidFile
+#   Install-AidTool <staging> <tool> <target> <version> [force] [aidVerbose]
 #                                                — full install for one tool (copy + manifest)
 #   Read-ManifestToolPaths <manifest> <tool>     — array of paths from tools.<tool>.paths
 #   Read-ManifestToolVersion <manifest> <tool>   — version string for named tool
@@ -28,8 +28,13 @@
 #                                                — atomic write/merge of manifest JSON
 #   Remove-ManifestTool <manifest> <tool>        — removes a tool section from manifest
 #   Test-ManifestExists <manifest>               — returns $true when manifest exists/parseable
-#   Uninstall-AidTool <manifest> <tool> <target> — manifest-driven removal
+#   Uninstall-AidTool <manifest> <tool> <target> [aidVerbose] — manifest-driven removal
 #   Write-VersionMarker <target> <version>       — writes <target>/.aid/.aid-version
+#
+# Verbose mode:
+#   Pass -AidVerbose $true to Install-AidTool / Uninstall-AidTool / Copy-AidFile /
+#   Copy-AidDir to enable per-file Copied:/Up to date:/Updated:/Removed: lines.
+#   Default (false): only per-tool summary line.  WARN lines always show.
 #
 # Exit codes (from install.ps1):
 #   0  success
@@ -47,6 +52,12 @@ Set-StrictMode -Version Latest
 $_aidLoadedVar = Get-Variable -Name '_AID_INSTALL_CORE_LOADED' -Scope Global -ErrorAction SilentlyContinue
 if ($_aidLoadedVar -and $_aidLoadedVar.Value -eq $true) { return }
 Set-Variable -Name '_AID_INSTALL_CORE_LOADED' -Value $true -Scope Global
+
+# Module-level per-tool copy counters. Reset by Install-AidTool before each tool.
+$script:_CopyCountCopied   = 0
+$script:_CopyCountUpToDate = 0
+$script:_CopyCountUpdated  = 0
+$script:_CopyCountSkipped  = 0
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -325,15 +336,17 @@ function Extract-Tarball {
 # Copy semantics
 # ---------------------------------------------------------------------------
 
-# Copy-AidFile <src> <dst> [force]
+# Copy-AidFile <src> <dst> [force] [aidVerbose]
 # Handles NON-root-agent files only.
-# Prints: "Copied: <dst>" / "Up to date: <dst>" / "Updated: <dst>" / "Skipped ..."
-# Returns 0-based status: 0=ok.
+# Per-file lines emitted only when AidVerbose=$true.
+# Increments module-level counters: $script:_CopyCountCopied, _CopyCountUpToDate,
+#   _CopyCountUpdated, _CopyCountSkipped (caller resets before loop).
 function Copy-AidFile {
     param(
         [string]$Src,
         [string]$Dst,
-        [bool]$Force = $false
+        [bool]$Force = $false,
+        [bool]$AidVerbose = $false
     )
     $dstDir = [System.IO.Path]::GetDirectoryName($Dst)
     if ($dstDir -and -not (Test-Path $dstDir -PathType Container)) {
@@ -342,7 +355,8 @@ function Copy-AidFile {
 
     if (-not (Test-Path $Dst -PathType Leaf)) {
         Copy-Item -LiteralPath $Src -Destination $Dst -Force
-        Write-Host "Copied: $Dst"
+        $script:_CopyCountCopied++
+        if ($AidVerbose) { Write-Host "Copied: $Dst" }
         return
     }
 
@@ -351,26 +365,30 @@ function Copy-AidFile {
     $dstHash = Get-Sha256File -FilePath $Dst
 
     if ($srcHash -eq $dstHash) {
-        Write-Host "Up to date: $Dst"
+        $script:_CopyCountUpToDate++
+        if ($AidVerbose) { Write-Host "Up to date: $Dst" }
         return
     }
 
     # File exists and differs.
     if ($Force) {
         Copy-Item -LiteralPath $Src -Destination $Dst -Force
-        Write-Host "Updated: $Dst"
+        $script:_CopyCountUpdated++
+        if ($AidVerbose) { Write-Host "Updated: $Dst" }
     } else {
-        Write-Host "Skipped (differs; use --force): $Dst"
+        $script:_CopyCountSkipped++
+        if ($AidVerbose) { Write-Host "Skipped (differs; use --force): $Dst" }
     }
 }
 
-# Copy-AidDir <srcDir> <dstDir> [force]
+# Copy-AidDir <srcDir> <dstDir> [force] [aidVerbose]
 # Recursively copies a directory tree, file by file (preserving empty dirs).
 function Copy-AidDir {
     param(
         [string]$SrcDir,
         [string]$DstDir,
-        [bool]$Force = $false
+        [bool]$Force = $false,
+        [bool]$AidVerbose = $false
     )
 
     # Create directory structure first.
@@ -392,7 +410,7 @@ function Copy-AidDir {
         foreach ($fp in $filePaths) {
             $rel = $fp.Substring($SrcDir.Length).TrimStart([char]'\', [char]'/')
             $dst = Join-Path $DstDir $rel
-            Copy-AidFile -Src $fp -Dst $dst -Force $Force
+            Copy-AidFile -Src $fp -Dst $dst -Force $Force -AidVerbose $AidVerbose
         }
     }
 }
@@ -401,20 +419,22 @@ function Copy-AidDir {
 # Protect-on-diff (FR11) for root agent files
 # ---------------------------------------------------------------------------
 
-# script:Copy-RootAgentFile <src> <dst> <tool> <force> [manifest]
+# script:Copy-RootAgentFile <src> <dst> <tool> <force> [manifest] [aidVerbose]
 # Implements the FR11 algorithm.
 # Returns:
 #   0 — success (copied/up-to-date/updated/forced)
 #   5 — protect-on-diff blocked (written .aid-new instead)
 #
 # Sets $script:_CORE_ROOT_AGENT_STATUS = 'owned' | 'pending-merge'.
+# Increments module-level counters $script:_CopyCount* just like Copy-AidFile.
 function script:Copy-RootAgentFile {
     param(
         [string]$Src,
         [string]$Dst,
         [string]$Tool,
         [bool]$Force = $false,
-        [string]$Manifest = ''
+        [string]$Manifest = '',
+        [bool]$AidVerbose = $false
     )
 
     $script:_CORE_ROOT_AGENT_STATUS = 'owned'
@@ -427,7 +447,8 @@ function script:Copy-RootAgentFile {
             New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
         }
         Copy-Item -LiteralPath $Src -Destination $Dst -Force
-        Write-Host "Copied: $Dst"
+        $script:_CopyCountCopied++
+        if ($AidVerbose) { Write-Host "Copied: $Dst" }
         $script:_CORE_ROOT_AGENT_STATUS = 'owned'
         return 0
     }
@@ -436,7 +457,8 @@ function script:Copy-RootAgentFile {
 
     if ($diskSha -eq $incSha) {
         # Step 3: Identical → up to date.
-        Write-Host "Up to date: $Dst"
+        $script:_CopyCountUpToDate++
+        if ($AidVerbose) { Write-Host "Up to date: $Dst" }
         $script:_CORE_ROOT_AGENT_STATUS = 'owned'
         return 0
     }
@@ -451,7 +473,8 @@ function script:Copy-RootAgentFile {
     if ($recordedSha -and ($diskSha -eq $recordedSha)) {
         # Step 4: AID owns it → overwrite.
         Copy-Item -LiteralPath $Src -Destination $Dst -Force
-        Write-Host "Updated: $Dst"
+        $script:_CopyCountUpdated++
+        if ($AidVerbose) { Write-Host "Updated: $Dst" }
         $script:_CORE_ROOT_AGENT_STATUS = 'owned'
         return 0
     }
@@ -459,13 +482,15 @@ function script:Copy-RootAgentFile {
     # Step 5: Someone else owns it.
     if ($Force) {
         Copy-Item -LiteralPath $Src -Destination $Dst -Force
-        Write-Host "Updated: $Dst (forced over existing)"
+        $script:_CopyCountUpdated++
+        if ($AidVerbose) { Write-Host "Updated: $Dst (forced over existing)" }
         $script:_CORE_ROOT_AGENT_STATUS = 'owned'
         return 0
     }
 
     # Without -Force: write .aid-new.
     Copy-Item -LiteralPath $Src -Destination "$Dst.aid-new" -Force
+    # WARN always shows regardless of AidVerbose.
     [Console]::Error.WriteLine("WARN: $Dst exists and was not written by AID; wrote incoming version to $Dst.aid-new — review and merge, or re-run with --force to overwrite")
     $script:_CORE_ROOT_AGENT_STATUS = 'pending-merge'
     return 5
@@ -863,7 +888,7 @@ function Write-VersionMarker {
 # High-level Install-AidTool
 # ---------------------------------------------------------------------------
 
-# Install-AidTool <stagingDir> <tool> <target> <version> [force]
+# Install-AidTool <stagingDir> <tool> <target> <version> [force] [aidVerbose]
 # Returns:
 #   0 — success (all files installed or up-to-date)
 #   5 — at least one root agent file was protect-on-diff blocked
@@ -875,13 +900,20 @@ function Install-AidTool {
         [string]$Tool,
         [string]$Target,
         [string]$Version,
-        [bool]$Force = $false
+        [bool]$Force = $false,
+        [bool]$AidVerbose = $false
     )
 
     $manifest = Join-Path $Target (Join-Path '.aid' '.aid-manifest.json')
     $installPaths  = [System.Collections.Generic.List[string]]::new()
     $rootEntries   = [System.Collections.Generic.List[string]]::new()
     $blocked       = $false
+
+    # Reset per-tool copy counters.
+    $script:_CopyCountCopied   = 0
+    $script:_CopyCountUpToDate = 0
+    $script:_CopyCountUpdated  = 0
+    $script:_CopyCountSkipped  = 0
 
     $rootAgentFile = script:Get-RootAgentFile -Tool $Tool
 
@@ -904,7 +936,7 @@ function Install-AidTool {
         'claude-code' {
             $claudeDir = Join-Path $StagingDir '.claude'
             if (Test-Path $claudeDir -PathType Container) {
-                Copy-AidDir -SrcDir $claudeDir -DstDir (Join-Path $Target '.claude') -Force $Force
+                Copy-AidDir -SrcDir $claudeDir -DstDir (Join-Path $Target '.claude') -Force $Force -AidVerbose $AidVerbose
                 & $collectPaths $claudeDir $StagingDir $installPaths
             }
         }
@@ -912,32 +944,32 @@ function Install-AidTool {
             $codexDir  = Join-Path $StagingDir '.codex'
             $agentsDir = Join-Path $StagingDir '.agents'
             if (Test-Path $codexDir -PathType Container) {
-                Copy-AidDir -SrcDir $codexDir -DstDir (Join-Path $Target '.codex') -Force $Force
+                Copy-AidDir -SrcDir $codexDir -DstDir (Join-Path $Target '.codex') -Force $Force -AidVerbose $AidVerbose
                 & $collectPaths $codexDir $StagingDir $installPaths
             }
             if (Test-Path $agentsDir -PathType Container) {
-                Copy-AidDir -SrcDir $agentsDir -DstDir (Join-Path $Target '.agents') -Force $Force
+                Copy-AidDir -SrcDir $agentsDir -DstDir (Join-Path $Target '.agents') -Force $Force -AidVerbose $AidVerbose
                 & $collectPaths $agentsDir $StagingDir $installPaths
             }
         }
         'cursor' {
             $cursorDir = Join-Path $StagingDir '.cursor'
             if (Test-Path $cursorDir -PathType Container) {
-                Copy-AidDir -SrcDir $cursorDir -DstDir (Join-Path $Target '.cursor') -Force $Force
+                Copy-AidDir -SrcDir $cursorDir -DstDir (Join-Path $Target '.cursor') -Force $Force -AidVerbose $AidVerbose
                 & $collectPaths $cursorDir $StagingDir $installPaths
             }
         }
         'copilot-cli' {
             $githubDir = Join-Path $StagingDir '.github'
             if (Test-Path $githubDir -PathType Container) {
-                Copy-AidDir -SrcDir $githubDir -DstDir (Join-Path $Target '.github') -Force $Force
+                Copy-AidDir -SrcDir $githubDir -DstDir (Join-Path $Target '.github') -Force $Force -AidVerbose $AidVerbose
                 & $collectPaths $githubDir $StagingDir $installPaths
             }
         }
         'antigravity' {
             $agentDir = Join-Path $StagingDir '.agent'
             if (Test-Path $agentDir -PathType Container) {
-                Copy-AidDir -SrcDir $agentDir -DstDir (Join-Path $Target '.agent') -Force $Force
+                Copy-AidDir -SrcDir $agentDir -DstDir (Join-Path $Target '.agent') -Force $Force -AidVerbose $AidVerbose
                 & $collectPaths $agentDir $StagingDir $installPaths
             }
         }
@@ -949,7 +981,8 @@ function Install-AidTool {
 
     if (Test-Path $rootSrc -PathType Leaf) {
         $script:_CORE_ROOT_AGENT_STATUS = 'owned'
-        $rafRc = script:Copy-RootAgentFile -Src $rootSrc -Dst $rootDst -Tool $Tool -Force $Force -Manifest $manifest
+        $rafRc = script:Copy-RootAgentFile -Src $rootSrc -Dst $rootDst -Tool $Tool -Force $Force `
+                     -Manifest $manifest -AidVerbose $AidVerbose
         if ($rafRc -eq 5) { $blocked = $true }
 
         $incSha = Get-Sha256File -FilePath $rootSrc
@@ -968,6 +1001,22 @@ function Install-AidTool {
     # Write version marker.
     Write-VersionMarker -Target $Target -Version $Version
 
+    # Print concise install summary (always shown; per-file lines only when AidVerbose).
+    $totalFiles = $script:_CopyCountCopied + $script:_CopyCountUpToDate + $script:_CopyCountUpdated + $script:_CopyCountSkipped
+    if ($totalFiles -gt 0) {
+        if ($script:_CopyCountCopied -gt 0 -and $script:_CopyCountUpToDate -eq 0 -and $script:_CopyCountUpdated -eq 0) {
+            Write-Host "  $([char]0x2713) $($script:_CopyCountCopied) files installed"
+        } elseif ($script:_CopyCountUpToDate -gt 0 -and $script:_CopyCountCopied -eq 0 -and $script:_CopyCountUpdated -eq 0) {
+            Write-Host "  $([char]0x2713) up to date ($($script:_CopyCountUpToDate) files)"
+        } else {
+            $parts = [System.Collections.Generic.List[string]]::new()
+            if ($script:_CopyCountUpdated -gt 0) { $parts.Add("$($script:_CopyCountUpdated) updated") }
+            if ($script:_CopyCountCopied -gt 0)  { $parts.Add("$($script:_CopyCountCopied) installed") }
+            if ($script:_CopyCountUpToDate -gt 0) { $parts.Add("$($script:_CopyCountUpToDate) unchanged") }
+            Write-Host "  $([char]0x2713) $($parts -join ', ')"
+        }
+    }
+
     if ($blocked) { return 5 }
     return 0
 }
@@ -976,7 +1025,7 @@ function Install-AidTool {
 # Uninstall
 # ---------------------------------------------------------------------------
 
-# Uninstall-AidTool <manifest> <tool> <target>
+# Uninstall-AidTool <manifest> <tool> <target> [aidVerbose]
 # Removes all files recorded under tools.<tool>.paths.
 # Root agent files removed only when sha256 still matches.
 # Returns 6 if manifest missing; 0 otherwise.
@@ -984,7 +1033,8 @@ function Uninstall-AidTool {
     param(
         [string]$ManifestPath,
         [string]$Tool,
-        [string]$Target
+        [string]$Target,
+        [bool]$AidVerbose = $false
     )
 
     if (-not (Test-ManifestExists -ManifestPath $ManifestPath)) { return 6 }
@@ -999,13 +1049,16 @@ function Uninstall-AidTool {
 
     $rootAgentFile = script:Get-RootAgentFile -Tool $Tool
 
+    $uninstRemoved     = 0
+    $uninstLeftInPlace = 0
+
     foreach ($p in $paths) {
         # Normalize path separators.
         $pNorm = $p -replace '/', [System.IO.Path]::DirectorySeparatorChar
         $full = Join-Path $Target $pNorm
 
         if (-not (Test-Path $full)) {
-            Write-Host "Already absent: $full"
+            if ($AidVerbose) { Write-Host "Already absent: $full" }
             continue
         }
 
@@ -1017,13 +1070,21 @@ function Uninstall-AidTool {
             if ($recordedSha) {
                 $diskSha = Get-Sha256File -FilePath $full
                 if ($diskSha -ne $recordedSha) {
+                    $uninstLeftInPlace++
+                    # "Left in place" always shown (important for user awareness).
                     Write-Host "Left in place (modified or not AID-owned): $full"
                     continue
                 }
             }
         }
         Remove-Item -LiteralPath $full -Force
-        Write-Host "Removed: $full"
+        $uninstRemoved++
+        if ($AidVerbose) { Write-Host "Removed: $full" }
+    }
+
+    # Print concise uninstall summary (always shown).
+    if ($uninstRemoved -gt 0) {
+        Write-Host "  $([char]0x2713) $uninstRemoved files removed"
     }
 
     # Prune now-empty AID-owned dirs.
@@ -1042,7 +1103,7 @@ function Uninstall-AidTool {
             $remaining = Get-ChildItem -LiteralPath $fullDir -Recurse -File -ErrorAction SilentlyContinue | Select-Object -First 1
             if (-not $remaining) {
                 Remove-Item -LiteralPath $fullDir -Recurse -Force
-                Write-Host "Removed dir: $fullDir"
+                if ($AidVerbose) { Write-Host "Removed dir: $fullDir" }
             }
         }
     }

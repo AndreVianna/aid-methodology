@@ -96,6 +96,11 @@ run_install() {
     OUT=$("$PWSH" -NoProfile -File "$SUT" "$@" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
 }
 
+# Helper: run install.ps1 in verbose mode (per-file output).
+run_install_verbose() {
+    OUT=$("$PWSH" -NoProfile -File "$SUT" -Verbose "$@" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+}
+
 # ---------------------------------------------------------------------------
 # Usage / error cases
 # ---------------------------------------------------------------------------
@@ -124,8 +129,17 @@ run_install -Tool claude-code \
 assert_exit_eq "$RC" 0 "IN04 fresh install claude-code → exit 0"
 assert_dir_exists "$T/.claude" "IN04b .claude/ created"
 assert_file_exists "$T/CLAUDE.md" "IN04c CLAUDE.md created"
-assert_output_contains "$OUT" "Copied:" "IN04d reports Copied:"
+# Default output: concise summary (no per-file lines).
+assert_output_not_contains "$OUT" "Copied:" "IN04d default output has no per-file Copied: lines"
+assert_output_contains "$OUT" "files installed" "IN04d2 concise summary shows 'files installed'"
 assert_output_contains "$OUT" "Done." "IN04e done banner"
+# With -Verbose: per-file lines appear.
+T2=$(newtarget)
+run_install_verbose -Tool claude-code \
+    -FromBundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
+    -TargetDirectory "$T2"
+assert_exit_eq "$RC" 0 "IN04f verbose fresh install → exit 0"
+assert_output_contains "$OUT" "Copied:" "IN04g -Verbose shows per-file Copied: lines"
 
 # Byte-fidelity: installed CLAUDE.md matches profile source.
 assert_eq "$(cmp -s "$T/CLAUDE.md" "${PROFILES_DIR}/claude-code/CLAUDE.md" && echo same || echo diff)" \
@@ -251,8 +265,16 @@ run_install -Tool claude-code \
     -FromBundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
     -TargetDirectory "$T"
 assert_exit_eq "$RC" 0 "IN10 idempotent re-install → exit 0"
-assert_output_contains "$OUT" "Up to date:" "IN10b identical files reported 'Up to date'"
-assert_output_not_contains "$OUT" "Copied:" "IN10c nothing re-copied on identical re-install"
+assert_output_contains "$OUT" "up to date" "IN10b concise summary shows 'up to date'"
+assert_output_not_contains "$OUT" "Copied:" "IN10c no per-file Copied: in default mode"
+assert_output_not_contains "$OUT" "Up to date:" "IN10d no per-file Up to date: in default mode"
+# With -Verbose: per-file lines appear.
+run_install_verbose -Tool claude-code \
+    -FromBundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
+    -TargetDirectory "$T"
+assert_exit_eq "$RC" 0 "IN10e verbose idempotent → exit 0"
+assert_output_contains "$OUT" "Up to date:" "IN10f -Verbose shows per-file Up to date: lines"
+assert_output_not_contains "$OUT" "Copied:" "IN10g -Verbose idempotent: nothing re-copied"
 
 # ---------------------------------------------------------------------------
 # IN11 – -Force overwrites a locally-modified non-root file
@@ -269,11 +291,19 @@ run_install -Tool claude-code \
     -FromBundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
     -Force -TargetDirectory "$T"
 assert_exit_eq "$RC" 0 "IN11 -Force re-install → exit 0"
-assert_output_contains "$OUT" "Updated:" "IN11b -Force overwrites differing files"
+# Default mode: no per-file Updated: line.
+assert_output_not_contains "$OUT" "Updated:" "IN11b default mode: no per-file Updated: line"
+# -Verbose mode shows per-file Updated: line.
+printf '\nlocal edit\n' >> "$_dot_file"
+run_install_verbose -Tool claude-code \
+    -FromBundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
+    -Force -TargetDirectory "$T"
+assert_exit_eq "$RC" 0 "IN11c -Verbose -Force → exit 0"
+assert_output_contains "$OUT" "Updated:" "IN11d -Verbose -Force shows per-file Updated: line"
 # Verify the file is restored.
 _rel="${_dot_file#${T}/}"
 assert_eq "$(cmp -s "$_dot_file" "${PROFILES_DIR}/claude-code/${_rel}" && echo same || echo diff)" \
-    "same" "IN11c file restored to source after -Force"
+    "same" "IN11e file restored to source after -Force"
 
 # ---------------------------------------------------------------------------
 # IN12 – Manifest correctness: paths, version, root_agent sha
@@ -302,7 +332,9 @@ assert_file_exists "$MANIFEST" "IN13 pre-uninstall manifest exists"
 
 run_install -Uninstall -Tool codex -TargetDirectory "$T"
 assert_exit_eq "$RC" 0 "IN13b uninstall → exit 0"
-assert_output_contains "$OUT" "Removed:" "IN13c reports Removed: lines"
+# Default mode: concise summary (no per-file Removed: lines).
+assert_output_not_contains "$OUT" "Removed:" "IN13c default uninstall has no per-file Removed: lines"
+assert_output_contains "$OUT" "files removed" "IN13c2 concise summary shows 'files removed'"
 assert_output_contains "$OUT" "Uninstall complete." "IN13d uninstall complete banner"
 
 # All installed dirs should be gone.
@@ -435,7 +467,8 @@ run_install -Update -Tool cursor \
     -FromBundle "${FIXTURE_DIR}/aid-cursor-v${VERSION}.tar.gz" \
     -TargetDirectory "$T"
 assert_exit_eq "$RC" 0 "IN21b -Update same version → exit 0"
-assert_output_contains "$OUT" "Up to date:" "IN21c -Update identical files → Up to date"
+assert_output_contains "$OUT" "up to date" "IN21c -Update identical files → concise 'up to date'"
+assert_output_not_contains "$OUT" "Up to date:" "IN21d -Update default mode has no per-file Up to date: line"
 
 # ---------------------------------------------------------------------------
 # IN22 – Help flag exits 0.
@@ -739,5 +772,41 @@ assert_output_contains "$_hs_fail_out" "HOST-SURVIVED" \
     "IN33e host-survival failure: HOST-SURVIVED printed after bad-flag scriptblock returns"
 assert_output_contains "$_hs_fail_out" "INSTALL-LASTEXITCODE=2" \
     "IN33f host-survival failure: install LASTEXITCODE=2 (usage error) visible to caller"
+
+# ---------------------------------------------------------------------------
+# IN33 – $env:AID_TOOL: selects tool when -Tool not given.
+# ---------------------------------------------------------------------------
+T=$(newtarget)
+OUT=$(env "AID_TOOL=codex" "AID_LIB_PATH=${REPO_ROOT}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "$SUT" \
+     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     -TargetDirectory "$T" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_exit_eq "$RC" 0 "IN33 AID_TOOL=codex (no -Tool) → installs codex, exit 0"
+assert_dir_exists "$T/.codex" "IN33b .codex/ created via AID_TOOL env"
+assert_file_exists "$T/AGENTS.md" "IN33c AGENTS.md created via AID_TOOL env"
+
+# IN33d – explicit -Tool overrides $env:AID_TOOL (precedence check).
+T=$(newtarget)
+OUT=$(env "AID_TOOL=codex" "AID_LIB_PATH=${REPO_ROOT}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "$SUT" \
+     -Tool cursor \
+     -FromBundle "${FIXTURE_DIR}/aid-cursor-v${VERSION}.tar.gz" \
+     -TargetDirectory "$T" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_exit_eq "$RC" 0 "IN33d explicit -Tool cursor overrides AID_TOOL=codex → exit 0"
+assert_dir_exists "$T/.cursor" "IN33e .cursor/ created (cursor, not codex)"
+assert_eq "$([[ -d "$T/.codex" ]] && echo exists || echo none)" "none" \
+    "IN33f .codex/ not created (codex NOT installed)"
+
+# ---------------------------------------------------------------------------
+# IN34 – $env:AID_VERBOSE=1: enables per-file output.
+# ---------------------------------------------------------------------------
+T=$(newtarget)
+OUT=$(env "AID_VERBOSE=1" "AID_LIB_PATH=${REPO_ROOT}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "$SUT" \
+     -Tool claude-code \
+     -FromBundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
+     -TargetDirectory "$T" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_exit_eq "$RC" 0 "IN34 AID_VERBOSE=1 → exit 0"
+assert_output_contains "$OUT" "Copied:" "IN34b AID_VERBOSE=1 shows per-file Copied: lines"
 
 test_summary

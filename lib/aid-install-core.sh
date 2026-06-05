@@ -42,6 +42,11 @@
 #   write_version_marker <target> <version>
 #                               → writes <target>/.aid/.aid-version
 #
+# Verbose mode:
+#   Set AID_VERBOSE=1 (or pass --verbose to install.sh) to print per-file
+#   Copied:/Up to date:/Updated:/Skipped:/Removed: lines.  Default (0) prints
+#   only the per-tool summary line.  Protect-on-diff WARNs and errors always show.
+#
 # Exit codes (from install.sh):
 #   0  success
 #   1  generic runtime failure
@@ -296,7 +301,9 @@ extract_tarball() {
 
 # copy_file <src> <dst> [force]
 # Returns 0 always (errors are logged; protect-on-diff is handled in install_tool).
-# Prints: "Copied: <dst>" / "Up to date: <dst>" / "Updated: <dst>" / "Skipped ..."
+# Prints per-file lines only when AID_VERBOSE=1.
+# Increments counters: _COPY_COUNT_COPIED, _COPY_COUNT_UPTODATE, _COPY_COUNT_UPDATED,
+#   _COPY_COUNT_SKIPPED (caller initialises before iterating; install_tool reads them).
 # This function handles NON-root-agent files only.
 # Root agent files go through _copy_root_agent_file in install_tool.
 copy_file() {
@@ -307,21 +314,25 @@ copy_file() {
 
     if [[ ! -e "$dst" ]]; then
         cp "$src" "$dst"
-        echo "Copied: ${dst}"
+        _COPY_COUNT_COPIED=$((_COPY_COUNT_COPIED + 1))
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Copied: ${dst}"
         return 0
     fi
 
     if cmp -s "$src" "$dst"; then
-        echo "Up to date: ${dst}"
+        _COPY_COUNT_UPTODATE=$((_COPY_COUNT_UPTODATE + 1))
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Up to date: ${dst}"
         return 0
     fi
 
     # File exists and differs.
     if [[ "$force" -eq 1 ]]; then
         cp "$src" "$dst"
-        echo "Updated: ${dst}"
+        _COPY_COUNT_UPDATED=$((_COPY_COUNT_UPDATED + 1))
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: ${dst}"
     else
-        echo "Skipped (differs; use --force): ${dst}"
+        _COPY_COUNT_SKIPPED=$((_COPY_COUNT_SKIPPED + 1))
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Skipped (differs; use --force): ${dst}"
     fi
 }
 
@@ -368,7 +379,8 @@ _copy_root_agent_file() {
         # Step 2: Destination absent → copy.
         mkdir -p "$(dirname "$dst")"
         cp "$src" "$dst"
-        echo "Copied: ${dst}"
+        _COPY_COUNT_COPIED=$((_COPY_COUNT_COPIED + 1))
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Copied: ${dst}"
         _CORE_ROOT_AGENT_STATUS="owned"
         return 0
     fi
@@ -378,7 +390,8 @@ _copy_root_agent_file() {
 
     if [[ "$disk_sha" == "$inc_sha" ]]; then
         # Step 3: Identical → up to date.
-        echo "Up to date: ${dst}"
+        _COPY_COUNT_UPTODATE=$((_COPY_COUNT_UPTODATE + 1))
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Up to date: ${dst}"
         _CORE_ROOT_AGENT_STATUS="owned"
         return 0
     fi
@@ -392,7 +405,8 @@ _copy_root_agent_file() {
     if [[ -n "$recorded_sha" && "$disk_sha" == "$recorded_sha" ]]; then
         # Step 4: AID owns it → overwrite.
         cp "$src" "$dst"
-        echo "Updated: ${dst}"
+        _COPY_COUNT_UPDATED=$((_COPY_COUNT_UPDATED + 1))
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: ${dst}"
         _CORE_ROOT_AGENT_STATUS="owned"
         return 0
     fi
@@ -400,13 +414,15 @@ _copy_root_agent_file() {
     # Step 5: Someone else owns it.
     if [[ "$force" -eq 1 ]]; then
         cp "$src" "$dst"
-        echo "Updated: ${dst} (forced over existing)"
+        _COPY_COUNT_UPDATED=$((_COPY_COUNT_UPDATED + 1))
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: ${dst} (forced over existing)"
         _CORE_ROOT_AGENT_STATUS="owned"
         return 0
     fi
 
     # Without --force: write .aid-new.
     cp "$src" "${dst}.aid-new"
+    # WARN always shows regardless of AID_VERBOSE.
     echo "WARN: ${dst} exists and was not written by AID; wrote incoming version to ${dst}.aid-new — review and merge, or re-run with --force to overwrite" >&2
     _CORE_ROOT_AGENT_STATUS="pending-merge"
     return 5
@@ -1138,6 +1154,12 @@ install_tool() {
     local -a root_entries=()
     local blocked=0
 
+    # Per-tool file counters (incremented by copy_file and _copy_root_agent_file).
+    _COPY_COUNT_COPIED=0
+    _COPY_COUNT_UPTODATE=0
+    _COPY_COUNT_UPDATED=0
+    _COPY_COUNT_SKIPPED=0
+
     local root_agent
     root_agent="$(_root_agent_file "$tool")"
 
@@ -1230,6 +1252,28 @@ install_tool() {
     # Write version marker.
     write_version_marker "$target" "$version"
 
+    # Print concise summary (always shown; per-file lines only when AID_VERBOSE=1).
+    local _total_files=$((_COPY_COUNT_COPIED + _COPY_COUNT_UPTODATE + _COPY_COUNT_UPDATED + _COPY_COUNT_SKIPPED))
+    if [[ "$_total_files" -gt 0 ]]; then
+        if [[ "$_COPY_COUNT_COPIED" -gt 0 && "$_COPY_COUNT_UPTODATE" -eq 0 && "$_COPY_COUNT_UPDATED" -eq 0 ]]; then
+            echo "  ✓ ${_COPY_COUNT_COPIED} files installed"
+        elif [[ "$_COPY_COUNT_UPTODATE" -gt 0 && "$_COPY_COUNT_COPIED" -eq 0 && "$_COPY_COUNT_UPDATED" -eq 0 ]]; then
+            echo "  ✓ up to date (${_COPY_COUNT_UPTODATE} files)"
+        else
+            local _parts=""
+            [[ "$_COPY_COUNT_UPDATED" -gt 0 ]] && _parts="${_COPY_COUNT_UPDATED} updated"
+            [[ "$_COPY_COUNT_COPIED" -gt 0 ]] && {
+                [[ -n "$_parts" ]] && _parts="${_parts}, "
+                _parts="${_parts}${_COPY_COUNT_COPIED} installed"
+            }
+            [[ "$_COPY_COUNT_UPTODATE" -gt 0 ]] && {
+                [[ -n "$_parts" ]] && _parts="${_parts}, "
+                _parts="${_parts}${_COPY_COUNT_UPTODATE} unchanged"
+            }
+            echo "  ✓ ${_parts}"
+        fi
+    fi
+
     if [[ "$blocked" -eq 1 ]]; then
         return 5
     fi
@@ -1265,11 +1309,15 @@ uninstall_tool() {
     local root_agent
     root_agent="$(_root_agent_file "$tool")"
 
+    # Per-uninstall counters.
+    local _uninst_removed=0
+    local _uninst_leftinplace=0
+
     # Remove each path.
     for p in "${paths[@]}"; do
         local full="${target}/${p}"
         if [[ ! -e "$full" ]]; then
-            echo "Already absent: ${full}"
+            [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Already absent: ${full}"
             continue
         fi
         # Check if this is the root agent file → apply FR11 uninstall check.
@@ -1282,14 +1330,22 @@ uninstall_tool() {
                 local disk_sha
                 disk_sha="$(sha256_file "$full")"
                 if [[ "$disk_sha" != "$recorded_sha" ]]; then
+                    _uninst_leftinplace=$((_uninst_leftinplace + 1))
+                    # "Left in place" always shown (important for user awareness).
                     echo "Left in place (modified or not AID-owned): ${full}"
                     continue
                 fi
             fi
         fi
         rm -f "$full"
-        echo "Removed: ${full}"
+        _uninst_removed=$((_uninst_removed + 1))
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Removed: ${full}"
     done
+
+    # Print concise uninstall summary (always shown).
+    if [[ "$_uninst_removed" -gt 0 ]]; then
+        echo "  ✓ ${_uninst_removed} files removed"
+    fi
 
     # Prune now-empty AID-owned dirs (in reverse depth order).
     local -a aid_dirs=()
@@ -1309,7 +1365,7 @@ uninstall_tool() {
             remaining_files="$(find "$full_dir" -type f 2>/dev/null | head -1)"
             if [[ -z "$remaining_files" ]]; then
                 rm -rf "$full_dir"
-                echo "Removed dir: ${full_dir}"
+                [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Removed dir: ${full_dir}"
             fi
         fi
     done

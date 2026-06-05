@@ -7,6 +7,9 @@
 # Usage:
 #   bash test-install.sh [--verbose]
 # Exit codes: 0 all pass / 1 any fail.
+#
+# Note: default install output is the concise summary (no per-file lines).
+# Tests that check for per-file lines (Copied:, Updated:, Removed:) use --verbose.
 
 set -uo pipefail
 
@@ -77,6 +80,11 @@ run_install() {
     OUT=$(bash "$SUT" "$@" 2>&1); RC=$?
 }
 
+# Helper: run install.sh in verbose mode (per-file output).
+run_install_verbose() {
+    OUT=$(bash "$SUT" --verbose "$@" 2>&1); RC=$?
+}
+
 # ---------------------------------------------------------------------------
 # Usage / error cases
 # ---------------------------------------------------------------------------
@@ -104,8 +112,17 @@ run_install --tool claude-code \
 assert_exit_eq "$RC" 0 "IN04 fresh install claude-code → exit 0"
 assert_dir_exists "$T/.claude" "IN04b .claude/ created"
 assert_file_exists "$T/CLAUDE.md" "IN04c CLAUDE.md created"
-assert_output_contains "$OUT" "Copied:" "IN04d reports Copied:"
+# Default output: concise summary (no per-file lines).
+assert_output_not_contains "$OUT" "Copied:" "IN04d default output has no per-file Copied: lines"
+assert_output_contains "$OUT" "files installed" "IN04d2 concise summary shows 'files installed'"
 assert_output_contains "$OUT" "Done." "IN04e done banner"
+# With --verbose: per-file lines appear.
+T2=$(newtarget)
+run_install_verbose --tool claude-code \
+    --from-bundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
+    --target "$T2"
+assert_exit_eq "$RC" 0 "IN04f verbose fresh install → exit 0"
+assert_output_contains "$OUT" "Copied:" "IN04g --verbose shows per-file Copied: lines"
 
 # Byte-fidelity: installed CLAUDE.md matches profile source.
 assert_eq "$(cmp -s "$T/CLAUDE.md" "${PROFILES_DIR}/claude-code/CLAUDE.md" && echo same || echo diff)" \
@@ -220,19 +237,27 @@ if [[ -n "$_sample_rule" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# IN10 – Idempotent re-install (identical files → "Up to date")
+# IN10 – Idempotent re-install (identical files → concise "up to date" summary)
 # ---------------------------------------------------------------------------
 T=$(newtarget)
 run_install --tool claude-code \
     --from-bundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
     --target "$T"
-# Second install, same version.
+# Second install, same version — default (concise) mode.
 run_install --tool claude-code \
     --from-bundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
     --target "$T"
 assert_exit_eq "$RC" 0 "IN10 idempotent re-install → exit 0"
-assert_output_contains "$OUT" "Up to date:" "IN10b identical files reported 'Up to date'"
-assert_output_not_contains "$OUT" "Copied:" "IN10c nothing re-copied on identical re-install"
+assert_output_contains "$OUT" "up to date" "IN10b concise summary shows 'up to date'"
+assert_output_not_contains "$OUT" "Copied:" "IN10c no per-file Copied: in default mode"
+assert_output_not_contains "$OUT" "Up to date:" "IN10d no per-file Up to date: in default mode"
+# With --verbose: per-file lines appear.
+run_install_verbose --tool claude-code \
+    --from-bundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
+    --target "$T"
+assert_exit_eq "$RC" 0 "IN10e verbose idempotent → exit 0"
+assert_output_contains "$OUT" "Up to date:" "IN10f --verbose shows per-file Up to date: lines"
+assert_output_not_contains "$OUT" "Copied:" "IN10g --verbose idempotent: nothing re-copied"
 
 # ---------------------------------------------------------------------------
 # IN11 – --force overwrites a locally-modified non-root file
@@ -244,16 +269,23 @@ run_install --tool claude-code \
 # Find a file inside .claude to modify.
 _dot_file=$(find "$T/.claude" -type f | head -1)
 printf '\nlocal edit\n' >> "$_dot_file"
-# Re-install with --force.
+# Re-install with --force (default/concise mode): summary shown, no per-file lines.
 run_install --tool claude-code \
     --from-bundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
     --force --target "$T"
 assert_exit_eq "$RC" 0 "IN11 --force re-install → exit 0"
-assert_output_contains "$OUT" "Updated:" "IN11b --force overwrites differing files"
+assert_output_not_contains "$OUT" "Updated:" "IN11b default mode: no per-file Updated: line"
+# --verbose mode shows per-file Updated: line.
+printf '\nlocal edit\n' >> "$_dot_file"
+run_install_verbose --tool claude-code \
+    --from-bundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
+    --force --target "$T"
+assert_exit_eq "$RC" 0 "IN11c --verbose --force → exit 0"
+assert_output_contains "$OUT" "Updated:" "IN11d --verbose --force shows per-file Updated: line"
 # Verify the file is restored.
 _rel="${_dot_file#${T}/}"
 assert_eq "$(cmp -s "$_dot_file" "${PROFILES_DIR}/claude-code/${_rel}" && echo same || echo diff)" \
-    "same" "IN11c file restored to source after --force"
+    "same" "IN11e file restored to source after --force"
 
 # ---------------------------------------------------------------------------
 # IN12 – Manifest correctness: paths, version, root_agent sha
@@ -282,7 +314,9 @@ assert_file_exists "$MANIFEST" "IN13 pre-uninstall manifest exists"
 
 run_install --uninstall --tool codex --target "$T"
 assert_exit_eq "$RC" 0 "IN13b uninstall → exit 0"
-assert_output_contains "$OUT" "Removed:" "IN13c reports Removed: lines"
+# Default mode: concise summary (no per-file Removed: lines).
+assert_output_not_contains "$OUT" "Removed:" "IN13c default uninstall has no per-file Removed: lines"
+assert_output_contains "$OUT" "files removed" "IN13c2 concise summary shows 'files removed'"
 assert_output_contains "$OUT" "Uninstall complete." "IN13d uninstall complete banner"
 
 # All installed dirs should be gone.
@@ -411,12 +445,13 @@ run_install --tool cursor \
     --from-bundle "${FIXTURE_DIR}/aid-cursor-v${VERSION}.tar.gz" \
     --target "$T"
 assert_exit_eq "$RC" 0 "IN21 initial install for update test"
-# Run again with --update; same version → Up to date.
+# Run again with --update; same version → concise "up to date" (default mode).
 run_install --update --tool cursor \
     --from-bundle "${FIXTURE_DIR}/aid-cursor-v${VERSION}.tar.gz" \
     --target "$T"
 assert_exit_eq "$RC" 0 "IN21b --update same version → exit 0"
-assert_output_contains "$OUT" "Up to date:" "IN21c --update identical files → Up to date"
+assert_output_contains "$OUT" "up to date" "IN21c --update identical files → concise 'up to date'"
+assert_output_not_contains "$OUT" "Up to date:" "IN21d --update default mode has no per-file Up to date: line"
 
 # ---------------------------------------------------------------------------
 # IN22 – Help flag exits 0.
@@ -751,5 +786,60 @@ OUT=$(cd "${_RUN_IN_DIR}" && \
         --target "$T" < "$SUT" 2>&1); RC=$?
 assert_exit_eq "$RC" 0 "IN32c AID_INSECURE_SKIP_LIB_VERIFY=1 → bypass succeeds (explicit opt-out)"
 assert_output_contains "$OUT" "INSECURE" "IN32d insecure bypass emits loud warning"
+
+# ---------------------------------------------------------------------------
+# IN33 – AID_TOOL env var: selects tool when --tool not given.
+# ---------------------------------------------------------------------------
+T=$(newtarget)
+OUT=$(AID_TOOL=codex AID_LIB_PATH="${REPO_ROOT}/lib/aid-install-core.sh" \
+     bash "$SUT" \
+     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     --target "$T" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "IN33 AID_TOOL=codex (no --tool) → installs codex, exit 0"
+assert_dir_exists "$T/.codex" "IN33b .codex/ created via AID_TOOL env"
+assert_file_exists "$T/AGENTS.md" "IN33c AGENTS.md created via AID_TOOL env"
+
+# IN33d – explicit --tool overrides AID_TOOL (precedence check).
+T=$(newtarget)
+OUT=$(AID_TOOL=codex AID_LIB_PATH="${REPO_ROOT}/lib/aid-install-core.sh" \
+     bash "$SUT" \
+     --tool cursor \
+     --from-bundle "${FIXTURE_DIR}/aid-cursor-v${VERSION}.tar.gz" \
+     --target "$T" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "IN33d explicit --tool cursor overrides AID_TOOL=codex → exit 0"
+assert_dir_exists "$T/.cursor" "IN33e .cursor/ created (cursor, not codex)"
+assert_eq "$([[ -d "$T/.codex" ]] && echo exists || echo none)" "none" \
+    "IN33f .codex/ not created (codex NOT installed)"
+
+# ---------------------------------------------------------------------------
+# IN34 – AID_VERBOSE=1 env var: enables per-file output.
+# ---------------------------------------------------------------------------
+T=$(newtarget)
+OUT=$(AID_VERBOSE=1 bash "$SUT" \
+     --tool claude-code \
+     --from-bundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
+     --target "$T" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "IN34 AID_VERBOSE=1 → exit 0"
+assert_output_contains "$OUT" "Copied:" "IN34b AID_VERBOSE=1 shows per-file Copied: lines"
+
+# IN34c – --verbose flag overrides AID_VERBOSE=0 (flag takes precedence).
+T=$(newtarget)
+OUT=$(AID_VERBOSE=0 bash "$SUT" \
+     --tool claude-code \
+     --verbose \
+     --from-bundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
+     --target "$T" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "IN34c --verbose flag (AID_VERBOSE=0) → exit 0"
+assert_output_contains "$OUT" "Copied:" "IN34d --verbose flag shows per-file Copied: even when AID_VERBOSE=0"
+
+# ---------------------------------------------------------------------------
+# IN35 – AID_TARGET env var: sets the target directory.
+# ---------------------------------------------------------------------------
+T=$(newtarget)
+OUT=$(AID_TARGET="$T" bash "$SUT" \
+     --tool codex \
+     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "IN35 AID_TARGET env sets target dir → exit 0"
+assert_dir_exists "$T/.codex" "IN35b .codex/ created in AID_TARGET dir"
 
 test_summary

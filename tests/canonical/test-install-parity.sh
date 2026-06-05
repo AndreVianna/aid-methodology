@@ -123,6 +123,15 @@ run_ps1() {
     PS1_OUT=$("$PWSH" -NoProfile -File "$SUT_PS1" "$@" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); PS1_RC=$?
 }
 
+# Verbose runners (for tests that check per-file lines).
+run_sh_verbose() {
+    SH_OUT=$(bash "$SUT_SH" --verbose "$@" 2>&1); SH_RC=$?
+}
+
+run_ps1_verbose() {
+    PS1_OUT=$("$PWSH" -NoProfile -File "$SUT_PS1" -Verbose "$@" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); PS1_RC=$?
+}
+
 # ---------------------------------------------------------------------------
 # Manifest comparison helper.
 # Strips all 'installed_at' timestamps, then compares the normalized JSON.
@@ -200,8 +209,8 @@ assert_exit_codes_match() {
 T_SH=$(newtarget_bash)
 T_PS1=$(newtarget_ps1)
 
-run_sh  --tool claude-code --from-bundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" --target "$T_SH"
-run_ps1  -Tool claude-code  -FromBundle  "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz"  -TargetDirectory "$T_PS1"
+run_sh_verbose  --tool claude-code --from-bundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" --target "$T_SH"
+run_ps1_verbose  -Tool claude-code  -FromBundle  "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz"  -TargetDirectory "$T_PS1"
 
 assert_exit_codes_match 0 "PAR01 fresh install claude-code"
 assert_both_contain "Copied:"  "PAR01b"
@@ -230,8 +239,8 @@ fi
 T_SH=$(newtarget_bash)
 T_PS1=$(newtarget_ps1)
 
-run_sh  --tool codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "$T_SH"
-run_ps1  -Tool codex  -FromBundle  "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz"  -TargetDirectory "$T_PS1"
+run_sh_verbose  --tool codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "$T_SH"
+run_ps1_verbose  -Tool codex  -FromBundle  "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz"  -TargetDirectory "$T_PS1"
 
 assert_exit_codes_match 0 "PAR02 fresh install codex"
 assert_both_contain "Copied:" "PAR02b"
@@ -315,13 +324,13 @@ fi
 T_SH=$(newtarget_bash)
 T_PS1=$(newtarget_ps1)
 
-# First installs.
+# First installs (default mode).
 run_sh  --tool codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "$T_SH"
 run_ps1  -Tool codex  -FromBundle  "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz"  -TargetDirectory "$T_PS1"
 
-# Second (idempotent) installs.
-run_sh  --tool codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "$T_SH"
-run_ps1  -Tool codex  -FromBundle  "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz"  -TargetDirectory "$T_PS1"
+# Second (idempotent) installs — verbose mode so we can assert per-file strings.
+run_sh_verbose  --tool codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "$T_SH"
+run_ps1_verbose  -Tool codex  -FromBundle  "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz"  -TargetDirectory "$T_PS1"
 
 assert_exit_codes_match 0 "PAR06 idempotent re-install"
 assert_both_contain     "Up to date:"  "PAR06b"
@@ -384,8 +393,8 @@ T_PS1=$(newtarget_ps1)
 printf 'User-owned AGENTS.md\n' > "$T_SH/AGENTS.md"
 printf 'User-owned AGENTS.md\n' > "$T_PS1/AGENTS.md"
 
-run_sh  --tool codex --force --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "$T_SH"
-run_ps1  -Tool codex  -Force  -FromBundle  "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz"  -TargetDirectory "$T_PS1"
+run_sh_verbose  --tool codex --force --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "$T_SH"
+run_ps1_verbose  -Tool codex  -Force  -FromBundle  "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz"  -TargetDirectory "$T_PS1"
 
 assert_exit_codes_match 0 "PAR08 force install"
 assert_both_contain "Updated:" "PAR08b"
@@ -414,8 +423,8 @@ T_PS1=$(newtarget_ps1)
 run_sh  --tool codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "$T_SH"
 run_ps1  -Tool codex  -FromBundle  "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz"  -TargetDirectory "$T_PS1"
 
-run_sh  --uninstall --tool codex --target "$T_SH"
-run_ps1  -Uninstall  -Tool codex  -TargetDirectory "$T_PS1"
+run_sh_verbose  --uninstall --tool codex --target "$T_SH"
+run_ps1_verbose  -Uninstall  -Tool codex  -TargetDirectory "$T_PS1"
 
 assert_exit_codes_match 0 "PAR09 uninstall"
 assert_both_contain "Removed:"          "PAR09b"

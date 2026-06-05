@@ -154,12 +154,13 @@ PRIMARY_TARGET=$(mktemp -d "${TMP}/target.XXXXXX")
 # Run install — the staged SHA256SUMS is a sibling of the tarball, so
 # verify_bundle_checksum will pick it up automatically.
 INST_OUT=$(bash "${INSTALL_SH}" \
+    --verbose \
     --tool "${PRIMARY_TOOL}" \
     --from-bundle "${PRIMARY_TARBALL}" \
     --target "${PRIMARY_TARGET}" 2>&1); INST_RC=$?
 
 assert_exit_zero "$INST_RC" "E2E03 install.sh --from-bundle staged tarball exits 0"
-assert_output_contains "$INST_OUT" "Copied:"   "E2E03b install reports Copied:"
+assert_output_contains "$INST_OUT" "Copied:"   "E2E03b install --verbose reports Copied:"
 assert_output_contains "$INST_OUT" "Done."     "E2E03c install reports Done."
 
 # Byte-fidelity: installed CLAUDE.md matches the profile source (from clone, not worktree,
@@ -220,14 +221,15 @@ assert_output_contains "$TAMPER_OUT" "checksum" "E2E04b error message mentions c
 echo "--- E2E05: --update idempotent re-run ---"
 
 UPDATE_OUT=$(bash "${INSTALL_SH}" \
+    --verbose \
     --update \
     --tool "${PRIMARY_TOOL}" \
     --from-bundle "${PRIMARY_TARBALL}" \
     --target "${PRIMARY_TARGET}" 2>&1); UPDATE_RC=$?
 
 assert_exit_zero "$UPDATE_RC" "E2E05 --update re-run exits 0"
-assert_output_contains "$UPDATE_OUT" "Up to date:" "E2E05b --update same version reports 'Up to date:'"
-assert_output_not_contains "$UPDATE_OUT" "Copied:" "E2E05c --update does not re-copy identical files"
+assert_output_contains "$UPDATE_OUT" "Up to date:" "E2E05b --verbose --update same version reports 'Up to date:'"
+assert_output_not_contains "$UPDATE_OUT" "Copied:" "E2E05c --verbose --update does not re-copy identical files"
 
 # Verify the installed state is unchanged after --update.
 CMP_AFTER=$(cmp -s "${PRIMARY_TARGET}/CLAUDE.md" "${CLONE}/profiles/claude-code/CLAUDE.md" \
@@ -240,12 +242,13 @@ assert_eq "${CMP_AFTER}" "same" "E2E05d CLAUDE.md unchanged after --update"
 echo "--- E2E06: uninstall ---"
 
 UNINST_OUT=$(bash "${INSTALL_SH}" \
+    --verbose \
     --uninstall \
     --tool "${PRIMARY_TOOL}" \
     --target "${PRIMARY_TARGET}" 2>&1); UNINST_RC=$?
 
 assert_exit_zero "$UNINST_RC" "E2E06 uninstall exits 0"
-assert_output_contains "$UNINST_OUT" "Removed:"          "E2E06b uninstall reports Removed:"
+assert_output_contains "$UNINST_OUT" "Removed:"          "E2E06b --verbose uninstall reports Removed:"
 assert_output_contains "$UNINST_OUT" "Uninstall complete." "E2E06c uninstall complete banner"
 
 # Installed dirs/files must be gone.
@@ -364,14 +367,14 @@ else
         PS1_RC=$(cat "${_PS1_RC_FILE}" 2>/dev/null || echo 1)
     }
 
-    # E2E08a — Fresh install via install.ps1.
-    run_ps1 -Tool "${PRIMARY_TOOL}" \
+    # E2E08a — Fresh install via install.ps1 (verbose for per-file assertions).
+    run_ps1 -Verbose -Tool "${PRIMARY_TOOL}" \
         -FromBundle "${PRIMARY_TARBALL}" \
         -TargetDirectory "${PS1_TARGET}"
     PS1_INST_OUT="$PS1_OUT"; PS1_INST_RC="$PS1_RC"
 
     assert_exit_zero "$PS1_INST_RC" "E2E08a install.ps1 --from-bundle staged tarball exits 0"
-    assert_output_contains "$PS1_INST_OUT" "Copied:" "E2E08b install.ps1 reports Copied:"
+    assert_output_contains "$PS1_INST_OUT" "Copied:" "E2E08b install.ps1 -Verbose reports Copied:"
     assert_output_contains "$PS1_INST_OUT" "Done."   "E2E08c install.ps1 reports Done."
 
     # Byte-fidelity.
@@ -389,26 +392,26 @@ else
     assert_eq "$(cat "${PS1_TARGET}/.aid/.aid-version")" "${STAGE_VERSION}" \
         "E2E08i ps1 .aid-version contains correct version"
 
-    # E2E08b — Idempotent -Update.
-    run_ps1 -Update \
+    # E2E08b — Idempotent -Update (verbose for per-file assertion).
+    run_ps1 -Verbose -Update \
         -Tool "${PRIMARY_TOOL}" \
         -FromBundle "${PRIMARY_TARBALL}" \
         -TargetDirectory "${PS1_TARGET}"
     PS1_UPD_OUT="$PS1_OUT"; PS1_UPD_RC="$PS1_RC"
 
     assert_exit_zero "$PS1_UPD_RC" "E2E08j install.ps1 -Update exits 0"
-    assert_output_contains "$PS1_UPD_OUT" "Up to date:" "E2E08k install.ps1 -Update identical files → Up to date"
-    assert_output_not_contains "$PS1_UPD_OUT" "Copied:" "E2E08l install.ps1 -Update does not re-copy"
+    assert_output_contains "$PS1_UPD_OUT" "Up to date:" "E2E08k install.ps1 -Verbose -Update identical files → Up to date"
+    assert_output_not_contains "$PS1_UPD_OUT" "Copied:" "E2E08l install.ps1 -Verbose -Update does not re-copy"
 
-    # E2E08c — Uninstall.
-    run_ps1 -Uninstall \
+    # E2E08c — Uninstall (verbose for per-file assertion).
+    run_ps1 -Verbose -Uninstall \
         -Tool "${PRIMARY_TOOL}" \
         -TargetDirectory "${PS1_TARGET}"
     PS1_UNI_OUT="$PS1_OUT"; PS1_UNI_RC="$PS1_RC"
 
     assert_exit_zero "$PS1_UNI_RC" "E2E08m install.ps1 -Uninstall exits 0"
     assert_output_contains "$PS1_UNI_OUT" "Removed:" \
-        "E2E08n install.ps1 uninstall reports Removed:"
+        "E2E08n install.ps1 -Verbose uninstall reports Removed:"
     assert_output_contains "$PS1_UNI_OUT" "Uninstall complete." \
         "E2E08o install.ps1 uninstall complete banner"
 

@@ -47,8 +47,16 @@ The installer auto-detects your host tool from the project tree. Pass `--tool <n
 
 ### Online install (Windows PowerShell 5.1+)
 
+The simplest Windows one-liner (auto-detects your tool from the project tree):
+
 ```powershell
 irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
+```
+
+To pass a specific tool without scriptblock syntax, set `$env:AID_TOOL` before piping:
+
+```powershell
+$env:AID_TOOL = 'claude-code'; irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
 ```
 
 ### Pinned-version install (recommended for CI and reproducibility)
@@ -59,8 +67,16 @@ curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/
 ```
 
 ```powershell
-# PowerShell — pin to a specific release
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1))) -Version 0.7.0
+# PowerShell — pin to a specific release via env vars (works with irm | iex)
+$env:AID_TOOL = 'claude-code'; $env:AID_VERSION = '0.7.0'
+irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
+```
+
+Or, using the scriptblock form to pass params directly:
+
+```powershell
+# PowerShell — scriptblock form (advanced)
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1))) -Tool claude-code -Version 0.7.0
 ```
 
 Pinning `--version` is strongly recommended for any automated or reproducible install. Without it the installer resolves the latest GitHub Release, which can change.
@@ -382,10 +398,10 @@ $env:GITHUB_TOKEN = 'ghp_...'
 
 ```
 bash install.sh [--tool <name>[,<name>...]] [--version <v>] [--from-bundle <path>]
-                [--force] [--target <dir>] [<target-dir>]
+                [--force] [--verbose] [--target <dir>] [<target-dir>]
 bash install.sh --update   [--tool <name>[,...]] [--version <v>] [--from-bundle <path>]
-                [--force] [--target <dir>]
-bash install.sh --uninstall [--tool <name>[,...]] [--target <dir>]
+                [--force] [--verbose] [--target <dir>]
+bash install.sh --uninstall [--tool <name>[,...]] [--verbose] [--target <dir>]
 bash install.sh -h | --help
 ```
 
@@ -395,18 +411,29 @@ bash install.sh -h | --help
 | `--version <v>` | latest release | Pin to a release version (`0.7.0` or `v0.7.0`). Mutually exclusive with `--from-bundle`. |
 | `--from-bundle <path>` | — | Offline install from a tarball (single tool) or a directory of tarballs (comma-list). No network. |
 | `--force` | off | Overwrite differing files, including protected root agent files. |
+| `--verbose` | off | Print per-file `Copied:` / `Up to date:` / `Updated:` / `Removed:` lines. Default: concise per-tool summary only. |
 | `--update` | — | Mode: re-install over an existing AID setup. |
 | `--uninstall` | — | Mode: manifest-driven removal. |
 | `--target <dir>` | `.` (cwd) | Install root. Also accepted as a trailing positional argument. |
 | `-h`, `--help` | — | Print help and exit 0. |
 
+**Env-var equivalents** (take effect when the flag is not given; flags take precedence):
+
+| Env var | Equivalent flag | Notes |
+|---------|-----------------|-------|
+| `AID_TOOL` | `--tool` | Accepts a comma-list. Useful for piped invocations: `AID_TOOL=claude-code curl … \| bash` |
+| `AID_VERSION` | `--version` | |
+| `AID_TARGET` | `--target` | |
+| `AID_FORCE` | `--force` | Set to `1` or `true` to enable. |
+| `AID_VERBOSE` | `--verbose` | Set to `1` to enable per-file output. |
+
 ### PowerShell (`install.ps1`)
 
 ```
 .\install.ps1 [-Tool <name[,name...]>] [-Version <v>] [-FromBundle <path>]
-              [-Force] [-TargetDirectory <dir>]
-.\install.ps1 -Update    [-Tool ...] [-Version <v>] [-FromBundle <path>] [-Force] [-TargetDirectory <dir>]
-.\install.ps1 -Uninstall [-Tool ...] [-TargetDirectory <dir>]
+              [-Force] [-Verbose] [-TargetDirectory <dir>]
+.\install.ps1 -Update    [-Tool ...] [-Version <v>] [-FromBundle <path>] [-Force] [-Verbose] [-TargetDirectory <dir>]
+.\install.ps1 -Uninstall [-Tool ...] [-Verbose] [-TargetDirectory <dir>]
 .\install.ps1 -Help
 ```
 
@@ -416,10 +443,21 @@ bash install.sh -h | --help
 | `-Version <v>` | latest release | Pin to a release version. Mutually exclusive with `-FromBundle`. |
 | `-FromBundle <path>` | — | Offline mode. Single tarball (single `-Tool`) or directory of tarballs (comma-list). |
 | `-Force` | off | Overwrite differing files including protected root agent files. |
+| `-Verbose` | off | Print per-file `Copied:` / `Up to date:` / `Updated:` / `Removed:` lines. Default: concise summary. |
 | `-Update` | — | Mode: re-install over an existing AID setup. |
 | `-Uninstall` | — | Mode: manifest-driven removal. |
 | `-TargetDirectory <dir>` | `.` (cwd) | Install root. |
 | `-Help` | — | Print help and exit 0. |
+
+**Env-var equivalents** (take effect when the parameter is not given; params take precedence):
+
+| Env var | Equivalent param | Notes |
+|---------|-----------------|-------|
+| `AID_TOOL` | `-Tool` | Accepts a comma-list. Useful for piped invocations: `$env:AID_TOOL='claude-code'; irm … \| iex` |
+| `AID_VERSION` | `-Version` | |
+| `AID_TARGET` | `-TargetDirectory` | |
+| `AID_FORCE` | `-Force` | Set to `1` or `true` to enable. |
+| `AID_VERBOSE` | `-Verbose` | Set to `1` to enable per-file output. |
 
 ### Behavioral parity
 

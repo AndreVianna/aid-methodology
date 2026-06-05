@@ -10,14 +10,14 @@
 #
 # Usage:
 #   .\install.ps1 [-Tool <name[,name...]>] [-Version <v>] [-FromBundle <path>]
-#                 [-Force] [-TargetDirectory <dir>]
+#                 [-Force] [-Verbose] [-TargetDirectory <dir>]
 #       Install AID into the target directory (default: current directory).
 #
 #   .\install.ps1 -Update [-Tool <name[,...]>] [-Version <v>] [-FromBundle <path>]
-#                 [-Force] [-TargetDirectory <dir>]
+#                 [-Force] [-Verbose] [-TargetDirectory <dir>]
 #       Re-install / update an existing AID installation to the given or latest version.
 #
-#   .\install.ps1 -Uninstall [-Tool <name[,...]>] [-TargetDirectory <dir>]
+#   .\install.ps1 -Uninstall [-Tool <name[,...]>] [-Verbose] [-TargetDirectory <dir>]
 #       Remove AID-installed files (manifest-driven).
 #
 #   .\install.ps1 -Help
@@ -34,13 +34,28 @@
 #   -FromBundle <path>     Offline install from a pre-downloaded tarball (single -Tool) or
 #                          a directory of tarballs (comma-list).  No network.
 #   -Force                 Overwrite files that exist and differ, including root agent files.
+#   -Verbose               Print per-file Copied:/Up to date:/Updated:/Removed: lines.
+#                          Default: concise per-tool summary only.
 #   -Update                Re-install over an existing AID setup (refresh to version/latest).
 #   -Uninstall             Manifest-driven removal.  -Tool limits to that tool; without it,
 #                          removes all installed tools.
 #   -TargetDirectory <dir> Install root (default: current directory).
 #   -Help                  Print this help and exit 0.
 #
-# Environment variables:
+# Environment variables (installer options — take effect when the explicit param is NOT given):
+#   AID_TOOL       — equivalent to -Tool <value>.  Accepts a comma-list.
+#                    Useful for piped invocations: $env:AID_TOOL='claude-code'; irm … | iex
+#                    Precedence: explicit -Tool > $env:AID_TOOL > auto-detect.
+#   AID_VERSION    — equivalent to -Version <value>.
+#                    Precedence: explicit -Version > $env:AID_VERSION > resolve latest.
+#   AID_TARGET     — equivalent to -TargetDirectory <dir>.
+#                    Precedence: explicit -TargetDirectory > $env:AID_TARGET > cwd.
+#   AID_FORCE      — set to '1' or 'true' to enable -Force.
+#                    Precedence: explicit -Force > $env:AID_FORCE.
+#   AID_VERBOSE    — set to '1' to enable -Verbose (per-file output).
+#                    Precedence: explicit -Verbose > $env:AID_VERBOSE.
+#
+# Environment variables (bootstrap/lib fetch — existing):
 #   AID_LIB_PATH   — absolute path to AidInstallCore.psm1 to import directly (overrides
 #                    sibling detection and remote fetch; useful for tests and vendored use).
 #   AID_LIB_BASE   — base URL prefix for the remote module fetch when the lib is not beside
@@ -49,6 +64,7 @@
 #                    parent directory of AID_LIB_BASE (one dir up from lib/).
 #   AID_SUMS_URL   — override URL for SHA256SUMS used during lib checksum verification.
 #                    Useful for tests.  When unset, derived from the release tag URL.
+#   AID_LIB_VERSION — pin the lib fetch to a specific release version (avoids API call).
 #   AID_INSECURE_SKIP_LIB_VERIFY — set to '1' to skip lib checksum verification for the
 #                    remote-fetch path.  INSECURE — for restricted test environments only.
 #                    Default is fail-closed: SHA256SUMS must be fetchable and the hash must
@@ -140,7 +156,7 @@ $LibDir = Join-Path $ScriptDir 'lib'
 # Usage helper (prints the header block as plain text).
 # ---------------------------------------------------------------------------
 function Show-Usage {
-    # Extract lines 2..61 of this script (the header comment), strip leading '# '.
+    # Extract lines 2..86 of this script (the header comment), strip leading '# '.
     # Use $script:_InstallPs1Path captured at load time to avoid $MyInvocation scoping issues.
     # When piped ($script:_InstallPs1Path is null), emit a minimal usage stub (FR9 parity
     # with install.sh piped-stub).
@@ -149,7 +165,7 @@ function Show-Usage {
         Write-Host ""
         Write-Host "Usage:"
         Write-Host "  .\install.ps1 [-Tool <name>[,...]] [-Version <v>] [-FromBundle <path>]"
-        Write-Host "                [-Force] [-TargetDirectory <dir>]"
+        Write-Host "                [-Force] [-Verbose] [-TargetDirectory <dir>]"
         Write-Host "  .\install.ps1 -Update  [...params...]"
         Write-Host "  .\install.ps1 -Uninstall [-Tool <name>[,...]] [-TargetDirectory <dir>]"
         Write-Host "  .\install.ps1 -Help"
@@ -159,7 +175,11 @@ function Show-Usage {
         Write-Host "  -Version <v>            Pin to release version (e.g. 0.7.0)"
         Write-Host "  -FromBundle <path>      Offline install from pre-downloaded tarball"
         Write-Host "  -Force                  Overwrite differing files including root agent files"
+        Write-Host "  -Verbose                Print per-file detail (default: concise summary)"
         Write-Host "  -TargetDirectory <dir>  Install root (default: current directory)"
+        Write-Host ""
+        Write-Host "Env vars: AID_TOOL, AID_VERSION, AID_TARGET, AID_FORCE, AID_VERBOSE"
+        Write-Host "  (equivalent to the params; params take precedence)"
         Write-Host ""
         Write-Host "Exit codes: 0 success, 1 failure, 2 usage error, 3 network error,"
         Write-Host "            4 checksum mismatch, 5 protect-on-diff blocked, 6 no manifest"
@@ -169,7 +189,7 @@ function Show-Usage {
     }
     $lines = Get-Content -LiteralPath $script:_InstallPs1Path -ErrorAction SilentlyContinue
     if ($lines) {
-        $lines[1..60] | ForEach-Object { $_ -replace '^# ?', '' } | Write-Host
+        $lines[1..85] | ForEach-Object { $_ -replace '^# ?', '' } | Write-Host
     }
 }
 
@@ -205,6 +225,28 @@ if ($RemainingArgs -and $RemainingArgs.Count -gt 0) {
     [Console]::Error.WriteLine("ERROR: install.ps1: unknown parameter: $($RemainingArgs[0])")
     [Console]::Error.WriteLine("Run with -Help for usage information.")
     script:Exit-Install 2
+}
+
+# ---------------------------------------------------------------------------
+# Resolve AID_VERBOSE: set from -Verbose common param ($VerbosePreference) or
+# from $env:AID_VERBOSE.  Explicit -Verbose flag takes precedence.
+# ---------------------------------------------------------------------------
+$script:_AidVerbose = $false
+if ($VerbosePreference -eq 'Continue') {
+    $script:_AidVerbose = $true
+} elseif ($env:AID_VERBOSE -eq '1') {
+    $script:_AidVerbose = $true
+}
+
+# ---------------------------------------------------------------------------
+# Apply env-var fallbacks for installer options.
+# Precedence: explicit param > env var > auto-detect/default.
+# ---------------------------------------------------------------------------
+if (-not $Tool    -and $env:AID_TOOL)    { $Tool    = $env:AID_TOOL }
+if (-not $Version -and $env:AID_VERSION) { $Version = $env:AID_VERSION }
+if (-not $TargetDirectory -and $env:AID_TARGET) { $TargetDirectory = $env:AID_TARGET }
+if (-not $Force -and ($env:AID_FORCE -eq '1' -or $env:AID_FORCE -eq 'true')) {
+    $Force = [switch]$true
 }
 
 # ---------------------------------------------------------------------------
@@ -493,10 +535,11 @@ try {
         { $_ -in 'install', 'update' } {
             foreach ($t in $toolList) {
                 Write-Host ""
-                Write-Host "--- $t ---"
                 Prepare-ToolStaging -CurrentTool $t -CurrentVersion $Version -CurrentBundle $FromBundle
+                Write-Host "Installing $t v$($script:ResolvedVersion) $([char]0x2192) $Target"
                 $rc = Install-AidTool -StagingDir $script:StagingDir -Tool $t -Target $Target `
-                         -Version $script:ResolvedVersion -Force ([bool]$Force)
+                         -Version $script:ResolvedVersion -Force ([bool]$Force) `
+                         -AidVerbose $script:_AidVerbose
                 if ($rc -eq 5) {
                     $overallBlocked = $true
                 } elseif ($rc -ne 0) {
@@ -523,8 +566,9 @@ try {
 
             foreach ($t in $toolList) {
                 Write-Host ""
-                Write-Host "--- uninstall $t ---"
-                $rc = Uninstall-AidTool -ManifestPath $manifestPath -Tool $t -Target $Target
+                Write-Host "Uninstalling $t from $Target"
+                $rc = Uninstall-AidTool -ManifestPath $manifestPath -Tool $t -Target $Target `
+                         -AidVerbose $script:_AidVerbose
                 if ($rc -eq 6) { script:Exit-Install 6 }
                 if ($rc -ne 0) { script:Exit-Install $rc }
             }
