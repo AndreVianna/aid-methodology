@@ -81,7 +81,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| delivery-001 | Working — live-verified on Linux(zsh)+Windows(pwsh 7.6.2); v0.7.5; gate pending | 001–010 + 020–030 | Persistent `aid` CLI; cross-platform CI (Linux bash + native Windows PS) green; ASCII-only hardened; Must |
+| delivery-001 | Done — live-verified Linux(zsh)+Windows(pwsh 7.6.2), CI-green both OS, v0.7.5 | 001–010 + 020–030 | Persistent `aid` CLI; foundation installer; closed by user after cross-platform live verification |
 | delivery-002 | Detailed (A+) | 011–012 (2) | npm channel; depends on d-001; Must |
 | delivery-003 | Detailed (A+) | 013–015 (3) | PyPI channel; depends on d-001; CasuloAI org blocker; Must |
 | delivery-004 | Detailed (A+) | 016–017 (2) | CI release automation; depends on d-001/002/003; Should |
@@ -113,17 +113,17 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 017 | Version-sync unit test + workflow validation | TEST | d4·W2 | Pending | — | — | delivery-004; deps 016 |
 | 018 | Normalize root `AGENTS.md` byte-invariant ×4 | IMPLEMENT | d5·W1 | Pending | — | — | delivery-005; deps —; independent/early |
 | 019 | CI invariance guard for root `AGENTS.md` | TEST | d5·W2 | Pending | — | — | delivery-005; deps 018 |
-| 020 | `aid` dispatcher (Bash) — subcommand parse + map to engine modes | IMPLEMENT | d1·W6 | Pending | — | — | delivery-001 CLI; net-new; deps 003 |
-| 021 | Core read additions (Bash) — `manifest_list_tools` + `aid_status` (exit 7) | IMPLEMENT | d1·W6 | Pending | — | — | delivery-001 CLI; net-new; deps 003 |
-| 022 | Global layout + bootstrap reshape (Bash) — arg-free `~/.aid` install; convenience chain; idempotent | IMPLEMENT | d1·W6 | Pending | — | — | delivery-001 CLI; amends 003; deps 020,021 |
-| 023 | PATH wiring + self-uninstall (Unix) — idempotent marked-block; `--no-path` | IMPLEMENT | d1·W6 | Pending | — | — | delivery-001 CLI; net-new; deps 022 |
-| 024 | `aid` dispatcher (PowerShell) — `aid.cmd`+`aid.ps1`, subcommand parity | IMPLEMENT | d1·W6 | Pending | — | — | delivery-001 CLI; amends 005; deps 020,005 |
-| 025 | Core read additions (PowerShell) — `Get-ManifestToolList` + `Get-AidStatus` (parity w/021) | IMPLEMENT | d1·W6 | Pending | — | — | delivery-001 CLI; net-new; deps 005,021 |
-| 026 | Global layout + bootstrap + USER-PATH wiring + self-uninstall (Windows) | IMPLEMENT | d1·W6 | Pending | — | — | delivery-001 CLI; amends 005; deps 024,025 |
-| 027 | `aid` CLI test suite (Bash) — subcommands, status/exit 7, convenience chain, PATH idempotency | TEST | d1·W7 | Pending | — | — | delivery-001 CLI; net-new; deps 020–023; run at end |
-| 028 | `aid` CLI test suite (PowerShell) — parity w/027; USER-PATH dedup; cmd/ps1 resolution | TEST | d1·W7 | Pending | — | — | delivery-001 CLI; net-new; deps 024–027; run at end |
-| 029 | Cross-platform `aid` parity e2e | TEST | d1·W8 | Pending | — | — | delivery-001 CLI; net-new; deps 027,028; run at end |
-| 030 | Docs — `aid` CLI usage + 003/004 ripple note; update `docs/install.md` | DOCUMENT | d1·W8 | Pending | — | — | delivery-001 CLI; amends 009; deps 023,026 |
+| 020 | `aid` dispatcher (Bash) — subcommand parse + map to engine modes | IMPLEMENT | d1·W6 | Done | — | — | delivery-001 CLI; net-new; deps 003 |
+| 021 | Core read additions (Bash) — `manifest_list_tools` + `aid_status` (exit 7) | IMPLEMENT | d1·W6 | Done | — | — | delivery-001 CLI; net-new; deps 003 |
+| 022 | Global layout + bootstrap reshape (Bash) — arg-free `~/.aid` install; convenience chain; idempotent | IMPLEMENT | d1·W6 | Done | — | — | delivery-001 CLI; amends 003; deps 020,021 |
+| 023 | PATH wiring + self-uninstall (Unix) — idempotent marked-block; `--no-path` | IMPLEMENT | d1·W6 | Done | — | — | delivery-001 CLI; net-new; deps 022 |
+| 024 | `aid` dispatcher (PowerShell) — `aid.cmd`+`aid.ps1`, subcommand parity | IMPLEMENT | d1·W6 | Done | — | — | delivery-001 CLI; amends 005; deps 020,005 |
+| 025 | Core read additions (PowerShell) — `Get-ManifestToolList` + `Get-AidStatus` (parity w/021) | IMPLEMENT | d1·W6 | Done | — | — | delivery-001 CLI; net-new; deps 005,021 |
+| 026 | Global layout + bootstrap + USER-PATH wiring + self-uninstall (Windows) | IMPLEMENT | d1·W6 | Done | — | — | delivery-001 CLI; amends 005; deps 024,025 |
+| 027 | `aid` CLI test suite (Bash) — subcommands, status/exit 7, convenience chain, PATH idempotency | TEST | d1·W7 | Done | — | — | delivery-001 CLI; net-new; deps 020–023; run at end |
+| 028 | `aid` CLI test suite (PowerShell) — parity w/027; USER-PATH dedup; cmd/ps1 resolution | TEST | d1·W7 | Done | — | — | delivery-001 CLI; net-new; deps 024–027; run at end |
+| 029 | Cross-platform `aid` parity e2e | TEST | d1·W8 | Done | — | — | delivery-001 CLI; net-new; deps 027,028; run at end |
+| 030 | Docs — `aid` CLI usage + 003/004 ripple note; update `docs/install.md` | DOCUMENT | d1·W8 | Done | — | — | delivery-001 CLI; amends 009; deps 023,026 |
 
 > **Amended (reopened) delivery-001 tasks:** 003 → 022 (Bash bootstrap gains CLI/global-install scope), 005 → 024/026 (PS bootstrap), 007 → 029 (e2e), 009 → 030 (docs). These were "Done — gate A"; reopening is the consequence of the user-approved CLI direction folded into delivery-001. Tests (027–029) run at the END per the user's testing cadence. Final delivery-gate re-run before push.
 
