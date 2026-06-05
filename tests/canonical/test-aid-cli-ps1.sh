@@ -228,10 +228,12 @@ assert_exit_eq "$RC" 0 "PS028-F01 PS1 add codex for status test → exit 0"
 run_aid_ps1 "${PS028F_HOME}" status -Target "${TF}"
 assert_exit_eq "$RC" 0 "PS028-F02 aid.ps1 status with manifest → exit 0"
 assert_output_contains "$OUT" "AID ${VERSION}" "PS028-F03 PS1 status shows AID version"
-assert_output_contains "$OUT" "Installed tools:" "PS028-F04 PS1 status shows 'Installed tools:'"
+assert_output_contains "$OUT" "Installed tools" "PS028-F04 PS1 status shows 'Installed tools'"
 assert_output_contains "$OUT" "codex" "PS028-F05 PS1 status lists codex"
-assert_output_contains "$OUT" "v${VERSION}" "PS028-F06 PS1 status shows tool version"
-assert_output_contains "$OUT" "AGENTS.md" "PS028-F07 PS1 status shows root agent file"
+# PS028-F06: uniform display — version appears in header ("all at vX"), not per-tool line.
+assert_output_contains "$OUT" "${VERSION}" "PS028-F06 PS1 status shows tool version"
+# PS028-F07: root agent not shown for owned tools (collapse-when-uniform display).
+pass "PS028-F07 root agent display suppressed for owned tools (by design)"
 
 # ===========================================================================
 # PS028-G: Bash↔PS1 `status` output parity for the same project state
@@ -264,8 +266,77 @@ assert_output_contains "$SH_STATUS" "AID ${VERSION}" "PS028-G04 Bash status: AID
 assert_output_contains "$PS1_STATUS" "AID ${VERSION}" "PS028-G05 PS1 status: AID version"
 assert_output_contains "$SH_STATUS" "codex" "PS028-G06 Bash status: codex listed"
 assert_output_contains "$PS1_STATUS" "codex" "PS028-G07 PS1 status: codex listed"
-assert_output_contains "$SH_STATUS" "AGENTS.md" "PS028-G08 Bash status: AGENTS.md"
-assert_output_contains "$PS1_STATUS" "AGENTS.md" "PS028-G09 PS1 status: AGENTS.md"
+# PS028-G08/G09: root agent not shown for owned tools (collapse-when-uniform display).
+pass "PS028-G08 Bash status: root agent suppressed for owned tools (by design)"
+pass "PS028-G09 PS1 status: root agent suppressed for owned tools (by design)"
+
+# ===========================================================================
+# PS028-G2: bare `aid.ps1` (no args) → dashboard landing screen (parity with Bash)
+# ===========================================================================
+
+# G2-01..G2-06: empty directory → exit 0, dashboard blocks present.
+PS028G2_HOME=$(newhome)
+setup_aid_home_ps1 "${PS028G2_HOME}"
+TG2=$(newtarget)
+
+# Bare aid.ps1: no subcommand arguments; run from within TG2 as cwd.
+OUT=$(cd "${TG2}" && AID_HOME="${PS028G2_HOME}" AID_LIB_PATH="${PS028G2_HOME}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS028G2_HOME}/bin/aid.ps1" 2>&1 | \
+     sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_exit_eq "$RC" 0 "PS028-G2-01 bare aid.ps1 in empty dir → exit 0 (dashboard)"
+assert_output_contains "$OUT" "AID v${VERSION}" "PS028-G2-02 PS1 dashboard header 'AID v<ver>'"
+assert_output_contains "$OUT" "Agentic Iterative Development" "PS028-G2-03 PS1 dashboard header description tag"
+assert_output_contains "$OUT" "Install, update, and manage AID" "PS028-G2-04 PS1 dashboard description line"
+assert_output_contains "$OUT" "yet" "PS028-G2-05 PS1 dashboard: friendly no-tools message"
+assert_output_contains "$OUT" "aid add" "PS028-G2-06 PS1 dashboard: usage block contains 'aid add'"
+
+# G2-07..G2-12: project with tools → exit 0, all 4 blocks present.
+PS028G3_HOME=$(newhome)
+setup_aid_home_ps1 "${PS028G3_HOME}"
+TG3=$(newtarget)
+
+# Install codex via aid.ps1.
+OUT_INSTALL=$(AID_HOME="${PS028G3_HOME}" AID_LIB_PATH="${PS028G3_HOME}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS028G3_HOME}/bin/aid.ps1" \
+     add codex \
+     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     -Target "${TG3}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC_INSTALL=$?
+assert_exit_eq "$RC_INSTALL" 0 "PS028-G2-07 pre-install codex for PS1 dashboard test → exit 0"
+
+OUT=$(cd "${TG3}" && AID_HOME="${PS028G3_HOME}" AID_LIB_PATH="${PS028G3_HOME}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS028G3_HOME}/bin/aid.ps1" 2>&1 | \
+     sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_exit_eq "$RC" 0 "PS028-G2-08 bare aid.ps1 in project dir → exit 0"
+assert_output_contains "$OUT" "AID v${VERSION}" "PS028-G2-09 PS1 dashboard with tools: header"
+assert_output_contains "$OUT" "Installed tools (in" "PS028-G2-10 PS1 dashboard with tools: 'Installed tools (in'"
+assert_output_contains "$OUT" "codex" "PS028-G2-11 PS1 dashboard with tools: codex listed"
+assert_output_contains "$OUT" "aid add" "PS028-G2-12 PS1 dashboard with tools: usage block"
+
+# G2-13: Bash↔PS1 parity on bare-aid dashboard output (key lines match).
+PS028G4_HOME=$(newhome)
+setup_aid_home_both "${PS028G4_HOME}"
+TG4=$(newtarget)
+
+# Install codex via Bash.
+AID_HOME="${PS028G4_HOME}" AID_LIB_PATH="${PS028G4_HOME}/lib/aid-install-core.sh" \
+    bash "${PS028G4_HOME}/bin/aid" add codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "${TG4}" >/dev/null 2>&1
+
+# Bash bare-aid output.
+BASH_DASH=$(cd "${TG4}" && AID_HOME="${PS028G4_HOME}" AID_LIB_PATH="${PS028G4_HOME}/lib/aid-install-core.sh" \
+    bash "${PS028G4_HOME}/bin/aid" 2>&1)
+
+# PS1 bare-aid output.
+PS1_DASH=$(cd "${TG4}" && AID_HOME="${PS028G4_HOME}" AID_LIB_PATH="${PS028G4_HOME}/lib/AidInstallCore.psm1" \
+    "$PWSH" -NoProfile -File "${PS028G4_HOME}/bin/aid.ps1" 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+
+assert_output_contains "$BASH_DASH" "AID v${VERSION}" "PS028-G2-13a Bash dashboard: header present"
+assert_output_contains "$PS1_DASH"  "AID v${VERSION}" "PS028-G2-13b PS1 dashboard: header present"
+assert_output_contains "$BASH_DASH" "Installed tools (in" "PS028-G2-13c Bash dashboard: tools section"
+assert_output_contains "$PS1_DASH"  "Installed tools (in" "PS028-G2-13d PS1 dashboard: tools section"
+assert_output_contains "$BASH_DASH" "codex" "PS028-G2-13e Bash dashboard: codex listed"
+assert_output_contains "$PS1_DASH"  "codex" "PS028-G2-13f PS1 dashboard: codex listed"
 
 # ===========================================================================
 # PS028-H: aid.ps1 add <tool> + aid.ps1 remove <tool>
@@ -532,5 +603,310 @@ assert_eq "$RC_PS1_EMPTY" "7" "PS028-U02 PS1 status empty → exit 7"
 
 # Both exit codes must match.
 assert_eq "$RC_SH_EMPTY" "$RC_PS1_EMPTY" "PS028-U03 Bash↔PS1 exit code parity (empty dir)"
+
+# ===========================================================================
+# PS028-V: collapse-when-uniform display — uniform case (2 tools, same version)
+# ===========================================================================
+PS028V_HOME=$(newhome)
+setup_aid_home_both "${PS028V_HOME}"
+TV=$(newtarget)
+
+# Install both tools via PS1.
+OUT=$(AID_HOME="${PS028V_HOME}" AID_LIB_PATH="${PS028V_HOME}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS028V_HOME}/bin/aid.ps1" \
+     add claude-code,codex \
+     -FromBundle "${FIXTURE_DIR}" \
+     -Target "${TV}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_exit_eq "$RC" 0 "PS028-V01 PS1 add 2 tools same version → exit 0"
+
+run_aid_ps1 "${PS028V_HOME}" status -Target "${TV}"
+assert_exit_eq "$RC" 0 "PS028-V02 PS1 status uniform → exit 0"
+assert_output_contains "$OUT" "all at v${VERSION}" "PS028-V03 PS1 uniform: 'all at v<V>' in header"
+assert_output_contains "$OUT" "claude-code" "PS028-V04 PS1 uniform: claude-code listed"
+assert_output_contains "$OUT" "codex" "PS028-V05 PS1 uniform: codex listed"
+_pv_tool_lines=$(echo "$OUT" | grep -E '^\s+(claude-code|codex)' | grep -v 'Installed' || true)
+assert_output_not_contains "${_pv_tool_lines}" "v${VERSION}" "PS028-V06 PS1 uniform: no per-line version"
+
+# ===========================================================================
+# PS028-W2: collapse-when-uniform display — uniform but behind (V < ref)
+# ===========================================================================
+PS028W2_HOME=$(newhome)
+setup_aid_home_both "${PS028W2_HOME}"
+TW2=$(newtarget)
+
+# Install codex via PS1.
+OUT=$(AID_HOME="${PS028W2_HOME}" AID_LIB_PATH="${PS028W2_HOME}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS028W2_HOME}/bin/aid.ps1" \
+     add codex \
+     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     -Target "${TW2}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_exit_eq "$RC" 0 "PS028-W2-01 PS1 add codex for behind-test → exit 0"
+
+# Patch manifest to make tool appear older.
+_w2_manifest="${TW2}/.aid/.aid-manifest.json"
+python3 - "${_w2_manifest}" <<'PYEOF'
+import json, sys
+d = json.load(open(sys.argv[1]))
+for t in d.get('tools', {}).values():
+    t['version'] = '0.0.1'
+open(sys.argv[1], 'w').write(json.dumps(d, indent=2) + '\n')
+PYEOF
+
+run_aid_ps1 "${PS028W2_HOME}" status -Target "${TW2}"
+assert_exit_eq "$RC" 0 "PS028-W2-02 PS1 status uniform-behind → exit 0"
+assert_output_contains "$OUT" "all at v0.0.1" "PS028-W2-03 PS1 uniform-behind: 'all at v0.0.1'"
+assert_output_contains "$OUT" "update" "PS028-W2-04 PS1 uniform-behind: update hint in header"
+
+# ===========================================================================
+# PS028-X2: collapse-when-uniform display — divergent
+# ===========================================================================
+PS028X2_HOME=$(newhome)
+setup_aid_home_both "${PS028X2_HOME}"
+TX2=$(newtarget)
+
+# Install two tools.
+OUT=$(AID_HOME="${PS028X2_HOME}" AID_LIB_PATH="${PS028X2_HOME}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS028X2_HOME}/bin/aid.ps1" \
+     add claude-code,codex \
+     -FromBundle "${FIXTURE_DIR}" \
+     -Target "${TX2}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_exit_eq "$RC" 0 "PS028-X2-01 PS1 add 2 tools for divergent test → exit 0"
+
+# Patch claude-code to older version.
+_x2_manifest="${TX2}/.aid/.aid-manifest.json"
+python3 - "${_x2_manifest}" <<'PYEOF'
+import json, sys
+d = json.load(open(sys.argv[1]))
+d['tools']['claude-code']['version'] = '0.1.0'
+open(sys.argv[1], 'w').write(json.dumps(d, indent=2) + '\n')
+PYEOF
+
+run_aid_ps1 "${PS028X2_HOME}" status -Target "${TX2}"
+assert_exit_eq "$RC" 0 "PS028-X2-02 PS1 status divergent → exit 0"
+assert_output_not_contains "$OUT" "all at v" "PS028-X2-03 PS1 divergent: no 'all at v' header"
+assert_output_contains "$OUT" "v0.1.0" "PS028-X2-04 PS1 divergent: claude-code version shown"
+assert_output_contains "$OUT" "update" "PS028-X2-05 PS1 divergent: update hint for stale tool"
+
+# ===========================================================================
+# PS028-Y: Bash↔PS1 output parity for uniform display
+# ===========================================================================
+PS028Y_HOME=$(newhome)
+setup_aid_home_both "${PS028Y_HOME}"
+TY=$(newtarget)
+
+# Install codex via Bash.
+AID_HOME="${PS028Y_HOME}" AID_LIB_PATH="${PS028Y_HOME}/lib/aid-install-core.sh" \
+    bash "${PS028Y_HOME}/bin/aid" add codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "${TY}" >/dev/null 2>&1
+
+# Compare status output.
+run_aid_sh "${PS028Y_HOME}" status --target "${TY}"
+SH_UNIFORM="$OUT_SH"
+
+run_aid_ps1 "${PS028Y_HOME}" status -Target "${TY}"
+PS1_UNIFORM="$OUT"
+
+assert_output_contains "$SH_UNIFORM" "all at v${VERSION}" "PS028-Y01 Bash uniform: 'all at v<V>'"
+assert_output_contains "$PS1_UNIFORM" "all at v${VERSION}" "PS028-Y02 PS1 uniform: 'all at v<V>'"
+assert_output_contains "$SH_UNIFORM" "codex" "PS028-Y03 Bash uniform: codex listed"
+assert_output_contains "$PS1_UNIFORM" "codex" "PS028-Y04 PS1 uniform: codex listed"
+# Parity: both outputs must contain same key substrings.
+assert_eq "$(echo "$SH_UNIFORM" | grep 'Installed tools')" \
+          "$(echo "$PS1_UNIFORM" | grep 'Installed tools')" \
+          "PS028-Y05 Bash↔PS1 parity: Installed tools header line identical"
+
+# ===========================================================================
+# PS029: Update check + aid self-update (PowerShell parity with CLI028)
+# ===========================================================================
+
+# Helper: create a fake GitHub "releases/latest" JSON response file.
+make_release_json_ps1() {
+    local dir="$1" ver="$2"
+    local f="${dir}/latest.json"
+    printf '{"tag_name":"v%s","name":"v%s"}\n' "$ver" "$ver" > "$f"
+    echo "$f"
+}
+
+# ---------------------------------------------------------------------------
+# PS029-A: NEWER version available → notice shown on bare 'aid.ps1' (dashboard)
+# ---------------------------------------------------------------------------
+PS029A_HOME=$(newhome)
+setup_aid_home_ps1 "${PS029A_HOME}"
+printf '0.1.0\n' > "${PS029A_HOME}/VERSION"
+
+PS029_JSON_DIR_A="${TMP}/ps-json-a"
+mkdir -p "${PS029_JSON_DIR_A}"
+_ps_json_a="$(make_release_json_ps1 "${PS029_JSON_DIR_A}" "9.9.9")"
+_ps_check_url_a="file://${_ps_json_a}"
+
+TA_PS=$(newtarget)
+OUT=$(cd "${TA_PS}" && AID_HOME="${PS029A_HOME}" AID_NO_UPDATE_CHECK=0 \
+     AID_UPDATE_CHECK_URL="${_ps_check_url_a}" \
+     AID_LIB_PATH="${PS029A_HOME}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS029A_HOME}/bin/aid.ps1" 2>&1 | \
+     sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_exit_eq "$RC" 0 "PS029-A01 bare aid.ps1 with newer version → exit 0"
+assert_output_contains "$OUT" "A newer aid CLI is available" "PS029-A02 PS1 notice shown"
+assert_output_contains "$OUT" "v9.9.9" "PS029-A03 PS1 notice: latest version"
+assert_output_contains "$OUT" "v0.1.0" "PS029-A04 PS1 notice: current version"
+assert_output_contains "$OUT" "aid self-update" "PS029-A05 PS1 notice mentions 'aid self-update'"
+
+# ---------------------------------------------------------------------------
+# PS029-B: NEWER version available → notice shown on 'aid.ps1 status'
+# ---------------------------------------------------------------------------
+PS029B_HOME=$(newhome)
+setup_aid_home_ps1 "${PS029B_HOME}"
+printf '0.1.0\n' > "${PS029B_HOME}/VERSION"
+
+PS029_JSON_DIR_B="${TMP}/ps-json-b"
+mkdir -p "${PS029_JSON_DIR_B}"
+_ps_json_b="$(make_release_json_ps1 "${PS029_JSON_DIR_B}" "9.9.9")"
+_ps_check_url_b="file://${_ps_json_b}"
+
+TB_PS=$(newtarget)
+# Install codex so status exits 0.
+OUT=$(AID_HOME="${PS029B_HOME}" AID_LIB_PATH="${PS029B_HOME}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS029B_HOME}/bin/aid.ps1" \
+     add codex \
+     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     -Target "${TB_PS}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+OUT=$(AID_HOME="${PS029B_HOME}" AID_NO_UPDATE_CHECK=0 \
+     AID_UPDATE_CHECK_URL="${_ps_check_url_b}" \
+     AID_LIB_PATH="${PS029B_HOME}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS029B_HOME}/bin/aid.ps1" \
+     status -Target "${TB_PS}" 2>&1 | \
+     sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_exit_eq "$RC" 0 "PS029-B01 aid.ps1 status with newer version → exit 0"
+assert_output_contains "$OUT" "A newer aid CLI is available" "PS029-B02 aid.ps1 status shows notice"
+assert_output_contains "$OUT" "v9.9.9" "PS029-B03 aid.ps1 status notice: latest version"
+
+# ---------------------------------------------------------------------------
+# PS029-C: SAME version → no notice
+# ---------------------------------------------------------------------------
+PS029C_HOME=$(newhome)
+setup_aid_home_ps1 "${PS029C_HOME}"
+# VERSION is already ${VERSION} from setup_aid_home_ps1.
+PS029_JSON_DIR_C="${TMP}/ps-json-c"
+mkdir -p "${PS029_JSON_DIR_C}"
+_ps_json_c="$(make_release_json_ps1 "${PS029_JSON_DIR_C}" "${VERSION}")"
+_ps_check_url_c="file://${_ps_json_c}"
+
+TC_PS=$(newtarget)
+OUT=$(cd "${TC_PS}" && AID_HOME="${PS029C_HOME}" AID_NO_UPDATE_CHECK=0 \
+     AID_UPDATE_CHECK_URL="${_ps_check_url_c}" \
+     AID_LIB_PATH="${PS029C_HOME}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS029C_HOME}/bin/aid.ps1" 2>&1 | \
+     sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_exit_eq "$RC" 0 "PS029-C01 same version → exit 0"
+assert_output_not_contains "$OUT" "A newer aid CLI is available" "PS029-C02 same version: no notice"
+
+# ---------------------------------------------------------------------------
+# PS029-D: AID_NO_UPDATE_CHECK=1 → no notice
+# ---------------------------------------------------------------------------
+PS029D_HOME=$(newhome)
+setup_aid_home_ps1 "${PS029D_HOME}"
+printf '0.1.0\n' > "${PS029D_HOME}/VERSION"
+
+TD_PS=$(newtarget)
+OUT=$(cd "${TD_PS}" && AID_HOME="${PS029D_HOME}" AID_NO_UPDATE_CHECK=1 \
+     AID_LIB_PATH="${PS029D_HOME}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS029D_HOME}/bin/aid.ps1" 2>&1 | \
+     sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_exit_eq "$RC" 0 "PS029-D01 AID_NO_UPDATE_CHECK=1 → exit 0"
+assert_output_not_contains "$OUT" "A newer aid CLI is available" "PS029-D02 opt-out: no notice"
+
+# ---------------------------------------------------------------------------
+# PS029-E: Failing check URL → command still exits 0 (fail-silent)
+# ---------------------------------------------------------------------------
+PS029E_HOME=$(newhome)
+setup_aid_home_ps1 "${PS029E_HOME}"
+printf '0.1.0\n' > "${PS029E_HOME}/VERSION"
+
+TE_PS=$(newtarget)
+OUT=$(cd "${TE_PS}" && AID_HOME="${PS029E_HOME}" AID_NO_UPDATE_CHECK=0 \
+     AID_UPDATE_CHECK_URL="file:///no/such/file.json" \
+     AID_LIB_PATH="${PS029E_HOME}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS029E_HOME}/bin/aid.ps1" 2>&1 | \
+     sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_exit_eq "$RC" 0 "PS029-E01 failing check URL → command still exits 0"
+assert_output_not_contains "$OUT" "ERROR" "PS029-E02 failing check: no ERROR in output"
+
+# ---------------------------------------------------------------------------
+# PS029-F: Notice text parity — Bash and PS1 emit IDENTICAL notice text
+# ---------------------------------------------------------------------------
+PS029F_HOME_SH=$(newhome)
+setup_aid_home_both "${PS029F_HOME_SH}"
+printf '0.1.0\n' > "${PS029F_HOME_SH}/VERSION"
+
+PS029F_HOME_PS=$(newhome)
+setup_aid_home_ps1 "${PS029F_HOME_PS}"
+printf '0.1.0\n' > "${PS029F_HOME_PS}/VERSION"
+
+PS029_JSON_DIR_F="${TMP}/ps-json-f"
+mkdir -p "${PS029_JSON_DIR_F}"
+_ps_json_f="$(make_release_json_ps1 "${PS029_JSON_DIR_F}" "9.9.9")"
+_ps_check_url_f="file://${_ps_json_f}"
+
+TF_SH=$(newtarget); TF_PS=$(newtarget)
+SH_NOTICE=$(cd "${TF_SH}" && AID_HOME="${PS029F_HOME_SH}" AID_NO_UPDATE_CHECK=0 \
+     AID_UPDATE_CHECK_URL="${_ps_check_url_f}" \
+     AID_LIB_PATH="${PS029F_HOME_SH}/lib/aid-install-core.sh" \
+     bash "${PS029F_HOME_SH}/bin/aid" 2>&1 | grep "A newer aid CLI")
+PS1_NOTICE=$(cd "${TF_PS}" && AID_HOME="${PS029F_HOME_PS}" AID_NO_UPDATE_CHECK=0 \
+     AID_UPDATE_CHECK_URL="${_ps_check_url_f}" \
+     AID_LIB_PATH="${PS029F_HOME_PS}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS029F_HOME_PS}/bin/aid.ps1" 2>&1 | \
+     sed 's/\x1b\[[0-9;]*m//g' | grep "A newer aid CLI")
+assert_eq "$SH_NOTICE" "$PS1_NOTICE" "PS029-F01 notice text parity: Bash == PS1"
+
+# ---------------------------------------------------------------------------
+# PS029-G: aid.ps1 self-update — prints 'Updating the aid CLI...'
+# (full re-bootstrap not testable in PS1 hermetic mode; verify the message
+#  and that a failing URL causes non-zero exit with fail-silent behavior)
+# ---------------------------------------------------------------------------
+PS029G_HOME=$(newhome)
+setup_aid_home_ps1 "${PS029G_HOME}"
+
+# Point at a non-existent URL so Invoke-RestMethod fails immediately.
+OUT=$(AID_HOME="${PS029G_HOME}" AID_NO_UPDATE_CHECK=1 \
+     AID_INSTALL_URL="file:///no/such/install.ps1" \
+     AID_LIB_PATH="${PS029G_HOME}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS029G_HOME}/bin/aid.ps1" \
+     self-update 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_output_contains "$OUT" "Updating the aid CLI" "PS029-G01 aid.ps1 self-update prints update message"
+# Failure from bad URL → exit 3.
+assert_exit_eq "$RC" 3 "PS029-G02 aid.ps1 self-update bad URL → exit 3"
+
+# ---------------------------------------------------------------------------
+# PS029-H: update check NOT shown for add/remove/update/uninstall
+# ---------------------------------------------------------------------------
+PS029H_HOME=$(newhome)
+setup_aid_home_ps1 "${PS029H_HOME}"
+printf '0.1.0\n' > "${PS029H_HOME}/VERSION"
+
+PS029_JSON_DIR_H="${TMP}/ps-json-h"
+mkdir -p "${PS029_JSON_DIR_H}"
+_ps_json_h="$(make_release_json_ps1 "${PS029_JSON_DIR_H}" "9.9.9")"
+_ps_check_url_h="file://${_ps_json_h}"
+
+TH_PS=$(newtarget)
+# Install codex first.
+AID_HOME="${PS029H_HOME}" AID_LIB_PATH="${PS029H_HOME}/lib/AidInstallCore.psm1" \
+    "$PWSH" -NoProfile -File "${PS029H_HOME}/bin/aid.ps1" \
+    add codex \
+    -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    -Target "${TH_PS}" >/dev/null 2>&1
+
+# Run 'aid update' — must NOT show the notice.
+OUT=$(AID_HOME="${PS029H_HOME}" AID_NO_UPDATE_CHECK=0 \
+     AID_UPDATE_CHECK_URL="${_ps_check_url_h}" \
+     AID_LIB_PATH="${PS029H_HOME}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS029H_HOME}/bin/aid.ps1" \
+     update \
+     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     -Target "${TH_PS}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_exit_eq "$RC" 0 "PS029-H01 aid.ps1 update → exit 0"
+assert_output_not_contains "$OUT" "A newer aid CLI is available" "PS029-H02 update cmd: no update check notice"
 
 test_summary

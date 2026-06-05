@@ -40,6 +40,12 @@
 set -uo pipefail
 
 # ---------------------------------------------------------------------------
+# Bootstrap URL — single place to update when the branch merges to master.
+# Override with AID_INSTALL_URL env var for tests.
+# ---------------------------------------------------------------------------
+AID_INSTALL_URL="${AID_INSTALL_URL:-https://raw.githubusercontent.com/AndreVianna/aid-methodology/worktree-work-002-auto-installer/install.sh}"
+
+# ---------------------------------------------------------------------------
 # Locate $AID_HOME.  The installed dispatcher lives at $AID_HOME/bin/aid.
 # When invoked directly (not via PATH), BASH_SOURCE[0] is the absolute path.
 # ---------------------------------------------------------------------------
@@ -102,6 +108,10 @@ _aid_usage() {
             printf '  Remove the global aid CLI (PATH wiring + $AID_HOME).\n'
             printf '  Does not touch per-project AID installs.\n'
             ;;
+        self-update)
+            printf 'aid self-update\n'
+            printf '  Update the aid CLI to the latest published version.\n'
+            ;;
         *)
             printf 'aid — AID CLI dispatcher (Bash side).\n'
             printf '\n'
@@ -114,6 +124,7 @@ _aid_usage() {
             printf '  aid uninstall                Remove AID entirely from cwd project\n'
             printf '  aid version                  Print CLI version\n'
             printf '  aid help [<subcommand>]      Print usage\n'
+            printf '  aid self-update              Update the aid CLI to latest version\n'
             printf '  aid self-uninstall           Remove the global aid CLI\n'
             printf '  -h | --help                  Print this help\n'
             printf '\n'
@@ -128,6 +139,7 @@ _aid_usage() {
             printf '            5 protect-on-diff, 6 no manifest, 7 not an AID project\n'
             printf '\n'
             printf 'Env vars: AID_TOOL, AID_VERSION, AID_TARGET, AID_FORCE, AID_VERBOSE\n'
+            printf '          AID_NO_UPDATE_CHECK=1  disable update check\n'
             ;;
     esac
 }
@@ -151,6 +163,107 @@ _find_install_sh() {
     # The install.sh is NOT shipped inside AID_HOME — we use the core functions directly.
     # Return empty string — callers will use the engine functions directly.
     echo ""
+}
+
+# ---------------------------------------------------------------------------
+# Update check (throttled, cached, non-blocking, opt-out).
+# ---------------------------------------------------------------------------
+
+# _aid_check_update
+# Compares the installed CLI version ($AID_HOME/VERSION) against the latest
+# GitHub release.  Prints ONE notice line when a newer version is available.
+# Fail-silent: any error (no curl, network down, bad JSON) is suppressed.
+# Throttle: re-fetches at most once per 24h; caches result in $AID_HOME/.update-check.
+# Opt-out: AID_NO_UPDATE_CHECK=1 → skip entirely.
+# Test hook: AID_UPDATE_CHECK_URL overrides the fetch URL (and bypasses throttle).
+_aid_check_update() {
+    # Opt-out.
+    [[ "${AID_NO_UPDATE_CHECK:-0}" == "1" ]] && return 0
+
+    # Read installed version.
+    local installed_version=""
+    local ver_file="${AID_HOME}/VERSION"
+    if [[ -f "$ver_file" ]]; then
+        installed_version="$(tr -d '[:space:]' < "$ver_file")"
+    fi
+    [[ -z "$installed_version" ]] && return 0
+
+    local cache_file="${AID_HOME}/.update-check"
+    local now
+    now="$(date +%s 2>/dev/null)" || return 0
+    local throttle_secs=86400  # 24 hours
+
+    # Determine the fetch URL (test override or real GitHub API).
+    local check_url="${AID_UPDATE_CHECK_URL:-}"
+    local use_throttle=1
+    if [[ -n "$check_url" ]]; then
+        # Test override: bypass throttle so tests run on first invocation.
+        use_throttle=0
+    else
+        check_url="${AID_API_BASE}/releases/latest"
+    fi
+
+    # Try to read cache.
+    local cached_ts=0
+    local cached_latest=""
+    if [[ -f "$cache_file" ]]; then
+        cached_ts="$(awk 'NR==1{print $1}' "$cache_file" 2>/dev/null)" || cached_ts=0
+        cached_latest="$(awk 'NR==2{print $1}' "$cache_file" 2>/dev/null)" || cached_latest=""
+    fi
+
+    # Decide whether to fetch.
+    local latest_version=""
+    local need_fetch=1
+    if [[ "$use_throttle" -eq 1 && -n "$cached_latest" ]]; then
+        local age=$(( now - ${cached_ts:-0} ))
+        if [[ "$age" -lt "$throttle_secs" ]]; then
+            need_fetch=0
+            latest_version="$cached_latest"
+        fi
+    fi
+
+    if [[ "$need_fetch" -eq 1 ]]; then
+        # Fetch latest release tag — hard 2s timeout, fail-silent.
+        local response=""
+        if command -v curl >/dev/null 2>&1; then
+            response="$(curl --max-time 2 -fsS "$check_url" 2>/dev/null)" || return 0
+        else
+            return 0
+        fi
+
+        # Parse tag_name; strip leading 'v'.
+        local tag
+        tag="$(printf '%s' "$response" | grep '"tag_name"' | head -1 | \
+               sed 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')" || return 0
+        [[ -z "$tag" ]] && return 0
+        latest_version="${tag#v}"
+
+        # Update cache.
+        printf '%s\n%s\n' "$now" "$latest_version" > "$cache_file" 2>/dev/null || true
+    fi
+
+    [[ -z "$latest_version" ]] && return 0
+
+    # Compare: show notice only when latest > installed.
+    if _semver_lt "$installed_version" "$latest_version"; then
+        printf '⬆ A newer aid CLI is available: v%s (you have v%s). Run: aid self-update\n' \
+            "$latest_version" "$installed_version"
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# self-update command.
+# ---------------------------------------------------------------------------
+_cmd_self_update() {
+    printf 'Updating the aid CLI...\n'
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL "${AID_INSTALL_URL}" | bash
+        return $?
+    else
+        echo "ERROR: aid: curl not found; cannot self-update" >&2
+        return 3
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -417,10 +530,36 @@ _AID_TARGET=""
 _AID_VERBOSE="${AID_VERBOSE:-0}"
 _AID_NO_PATH=0
 
+# ---------------------------------------------------------------------------
+# Dashboard (bare 'aid' — no arguments).
+# ---------------------------------------------------------------------------
+_cmd_dashboard() {
+    # Block 1 + 2: Header + description.
+    local cli_version="unknown"
+    local ver_file="${AID_HOME}/VERSION"
+    if [[ -f "$ver_file" ]]; then
+        cli_version="$(tr -d '[:space:]' < "$ver_file")"
+    fi
+    printf 'AID v%s — Agentic Iterative Development\n' "$cli_version"
+    printf 'Install, update, and manage AID across your repositories.\n'
+
+    # Block 3: Installed tools for cwd.
+    printf '\n'
+    aid_status_body "."
+
+    # Block 4: Usage/help.
+    printf '\n'
+    _aid_usage
+
+    # Block 5: Update check notice (final line, non-blocking).
+    _aid_check_update
+}
+
 # Early help check.
 if [[ $# -eq 0 ]]; then
-    # Bare 'aid' → status.
-    set -- status
+    # Bare 'aid' → dashboard landing screen.
+    _cmd_dashboard
+    exit 0
 fi
 
 case "$1" in
@@ -451,6 +590,12 @@ if [[ "$SUBCMD" == "help" || "$SUBCMD" == "-h" || "$SUBCMD" == "--help" ]]; then
     exit 0
 fi
 
+# ---- self-update ------------------------------------------------------------
+if [[ "$SUBCMD" == "self-update" ]]; then
+    _cmd_self_update
+    exit $?
+fi
+
 # ---- self-uninstall ---------------------------------------------------------
 if [[ "$SUBCMD" == "self-uninstall" ]]; then
     _cmd_self_uninstall "$@"
@@ -476,7 +621,10 @@ if [[ "$SUBCMD" == "status" ]]; then
     _AID_TARGET="${_AID_TARGET:-.}"
     export AID_VERBOSE="$_AID_VERBOSE"
     aid_status "$_AID_TARGET"
-    exit $?
+    _status_rc=$?
+    # Update check notice appended after status output (non-blocking).
+    _aid_check_update
+    exit $_status_rc
 fi
 
 # ---- add / remove / update / uninstall --------------------------------------
@@ -493,6 +641,7 @@ case "$SUBCMD" in
         exit 2
         ;;
 esac
+
 
 # Collect positional tool args (comma-separated or space-separated before flags).
 _AID_POSITIONAL_TOOLS=""

@@ -482,6 +482,431 @@ Assert-Eq "$($script:_LastRC)" '6' 'T17 uninstall with no manifest → exit 6'
 Write-Host ""
 
 # ===========================================================================
+# T18-T19: bare aid.ps1 (no args) → dashboard landing screen
+# ===========================================================================
+Write-Host "=== T18-T19: bare aid.ps1 dashboard ==="
+
+# T18: empty directory → exit 0, header + friendly no-tools message + usage block.
+$AidHomeT18 = Join-Path $TmpRoot 'aid-home-t18'
+$AidBinT18  = Join-Path $AidHomeT18 'bin'
+$AidLibT18  = Join-Path $AidHomeT18 'lib'
+New-Item -ItemType Directory -Path $AidBinT18 -Force | Out-Null
+New-Item -ItemType Directory -Path $AidLibT18 -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1')       -Destination (Join-Path $AidBinT18 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath -Destination (Join-Path $AidLibT18 'AidInstallCore.psm1') -Force
+# Write a VERSION file so the header can read the CLI version.
+$verBytes = [System.Text.Encoding]::UTF8.GetBytes("$Ver`n")
+[System.IO.File]::WriteAllBytes((Join-Path $AidHomeT18 'VERSION'), $verBytes)
+
+$ProjT18 = Join-Path $TmpRoot 'project-t18'
+New-Item -ItemType Directory -Path $ProjT18 -Force | Out-Null
+
+# Run bare aid.ps1 (no args) from ProjT18 as cwd (so '.' resolves to an empty project dir).
+$savedHome18 = $env:AID_HOME
+$savedLib18  = $env:AID_LIB_PATH
+$env:AID_HOME     = $AidHomeT18
+$env:AID_LIB_PATH = $LocalLibPath
+Push-Location $ProjT18
+$outLines18 = & $PwshExe -NoProfile -File (Join-Path $AidBinT18 'aid.ps1') 2>&1
+$rc18 = $LASTEXITCODE
+Pop-Location
+$out18 = ($outLines18 | ForEach-Object { [string]$_ }) -join "`n"
+$out18 = [System.Text.RegularExpressions.Regex]::Replace($out18, $_AnsiPattern, '')
+$env:AID_HOME     = $savedHome18
+$env:AID_LIB_PATH = $savedLib18
+
+Assert-Eq     "$rc18"    '0'  'T18a bare aid.ps1 empty dir → exit 0'
+Assert-Contains $out18 "AID v$Ver"                        'T18b dashboard: header contains AID v<ver>'
+Assert-Contains $out18 'Agentic Iterative Development'    'T18c dashboard: header contains description tag'
+Assert-Contains $out18 'Install, update, and manage AID'  'T18d dashboard: description line'
+Assert-Contains $out18 'yet'                              'T18e dashboard: friendly no-tools message'
+Assert-Contains $out18 'aid add'                          'T18f dashboard: usage block contains aid add'
+
+# T19: project with tool → exit 0, installed tool visible in dashboard.
+$AidHomeT19 = Join-Path $TmpRoot 'aid-home-t19'
+$AidBinT19  = Join-Path $AidHomeT19 'bin'
+$AidLibT19  = Join-Path $AidHomeT19 'lib'
+New-Item -ItemType Directory -Path $AidBinT19 -Force | Out-Null
+New-Item -ItemType Directory -Path $AidLibT19 -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1')       -Destination (Join-Path $AidBinT19 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath -Destination (Join-Path $AidLibT19 'AidInstallCore.psm1') -Force
+[System.IO.File]::WriteAllBytes((Join-Path $AidHomeT19 'VERSION'), $verBytes)
+
+$ProjT19 = Join-Path $TmpRoot 'project-t19'
+New-Item -ItemType Directory -Path $ProjT19 -Force | Out-Null
+
+# Install codex into ProjT19 first.
+Run-AidPs1 -AidHome $AidHomeT19 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT19)
+Assert-Eq "$($script:_LastRC)" '0' 'T19-pre add codex → exit 0'
+
+# Now run bare aid.ps1 (no args) with ProjT19 as current working directory.
+$savedHome19 = $env:AID_HOME
+$savedLib19  = $env:AID_LIB_PATH
+$env:AID_HOME     = $AidHomeT19
+$env:AID_LIB_PATH = $LocalLibPath
+Push-Location $ProjT19
+$outLines19 = & $PwshExe -NoProfile -File (Join-Path $AidBinT19 'aid.ps1') 2>&1
+$rc19 = $LASTEXITCODE
+Pop-Location
+$out19 = ($outLines19 | ForEach-Object { [string]$_ }) -join "`n"
+$out19 = [System.Text.RegularExpressions.Regex]::Replace($out19, $_AnsiPattern, '')
+$env:AID_HOME     = $savedHome19
+$env:AID_LIB_PATH = $savedLib19
+
+Assert-Eq       "$rc19"    '0'                         'T19a bare aid.ps1 with tool → exit 0'
+Assert-Contains  $out19   "AID v$Ver"                  'T19b dashboard with tool: header'
+Assert-Contains  $out19   'Installed tools (in'        'T19c dashboard with tool: installed tools section'
+Assert-Contains  $out19   'codex'                      'T19d dashboard with tool: codex listed'
+Assert-Contains  $out19   'aid add'                    'T19e dashboard with tool: usage block'
+Write-Host ""
+
+# ===========================================================================
+# T20-T24: collapse-when-uniform display (new behaviour)
+# ===========================================================================
+Write-Host "=== T20-T24: collapse-when-uniform display ==="
+
+# Provision a fresh AID_HOME for T20+.
+$AidHomeT20 = Join-Path $TmpRoot 'aid-home-t20'
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT20 'bin') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT20 'lib') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
+          -Destination (Join-Path $AidHomeT20 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath `
+          -Destination (Join-Path $AidHomeT20 'lib' 'AidInstallCore.psm1') -Force
+[System.IO.File]::WriteAllBytes((Join-Path $AidHomeT20 'VERSION'),
+    [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
+
+# T20: uniform case — two tools at the same version, ref == version.
+# → header "all at v<V>:", per-tool lines have ONLY the tool name.
+$ProjT20 = Join-Path $TmpRoot 'project-t20'
+New-Item -ItemType Directory -Path $ProjT20 -Force | Out-Null
+
+Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT20)
+Assert-Eq  "$($script:_LastRC)" '0' 'T20-pre1 add claude-code → exit 0'
+Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT20)
+Assert-Eq  "$($script:_LastRC)" '0' 'T20-pre2 add codex → exit 0'
+
+Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('status', '-Target', $ProjT20)
+Assert-Eq  "$($script:_LastRC)" '0' 'T20a uniform status → exit 0'
+Assert-Contains $script:_LastOut "all at v$Ver" 'T20b uniform: header contains "all at v<V>"'
+Assert-Contains $script:_LastOut 'claude-code'  'T20c uniform: claude-code listed'
+Assert-Contains $script:_LastOut 'codex'        'T20d uniform: codex listed'
+# Per-tool lines must NOT contain the version string (collapsed into header).
+$toolLines20 = $script:_LastOut -split "`n" | Where-Object { $_ -match '^\s+(claude-code|codex)\s*$' }
+foreach ($tl in $toolLines20) {
+    Assert-NotContains $tl "v$Ver" "T20e uniform: no per-line version in '$tl'"
+}
+# Root agent not shown for owned tools.
+Assert-NotContains $script:_LastOut 'AGENTS.md'  'T20f uniform: no AGENTS.md shown (owned)'
+Assert-NotContains $script:_LastOut 'CLAUDE.md'  'T20g uniform: no CLAUDE.md shown (owned)'
+Write-Host ""
+
+# T21: uniform-behind case — tool version < ref version.
+# Patch manifest so both tools appear at v0.0.1.
+$ProjT21 = Join-Path $TmpRoot 'project-t21'
+New-Item -ItemType Directory -Path $ProjT21 -Force | Out-Null
+Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT21)
+
+$mPathT21 = Join-Path $ProjT21 '.aid' '.aid-manifest.json'
+$mDataT21 = Get-Content -LiteralPath $mPathT21 -Raw | ConvertFrom-Json
+$mDataT21.tools.PSObject.Properties | ForEach-Object { $_.Value.version = '0.0.1' }
+# Re-serialize and write.
+$mJsonT21 = ($mDataT21 | ConvertTo-Json -Depth 10) -replace "`r`n", "`n"
+[System.IO.File]::WriteAllText($mPathT21, $mJsonT21 + "`n")
+
+Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('status', '-Target', $ProjT21)
+Assert-Eq      "$($script:_LastRC)" '0'       'T21a uniform-behind status → exit 0'
+Assert-Contains $script:_LastOut 'all at v0.0.1' 'T21b uniform-behind: "all at v0.0.1" in header'
+Assert-Contains $script:_LastOut 'update'         'T21c uniform-behind: update hint present'
+Assert-Contains $script:_LastOut "v$Ver"           'T21d uniform-behind: ref version in hint'
+Write-Host ""
+
+# T22: divergent case — two tools at different versions.
+$ProjT22 = Join-Path $TmpRoot 'project-t22'
+New-Item -ItemType Directory -Path $ProjT22 -Force | Out-Null
+Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT22)
+Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'codex',       '-FromBundle', $FixCodex,      '-Target', $ProjT22)
+
+# Patch claude-code to an older version.
+$mPathT22 = Join-Path $ProjT22 '.aid' '.aid-manifest.json'
+$mDataT22 = Get-Content -LiteralPath $mPathT22 -Raw | ConvertFrom-Json
+$mDataT22.tools.'claude-code'.version = '0.1.0'
+$mJsonT22 = ($mDataT22 | ConvertTo-Json -Depth 10) -replace "`r`n", "`n"
+[System.IO.File]::WriteAllText($mPathT22, $mJsonT22 + "`n")
+
+Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('status', '-Target', $ProjT22)
+Assert-Eq         "$($script:_LastRC)" '0' 'T22a divergent status → exit 0'
+Assert-NotContains $script:_LastOut 'all at v'   'T22b divergent: no "all at v" header'
+Assert-Contains    $script:_LastOut 'v0.1.0'     'T22c divergent: claude-code version shown'
+Assert-Contains    $script:_LastOut "v$Ver"      'T22d divergent: codex version shown'
+Assert-Contains    $script:_LastOut 'update'     'T22e divergent: update hint for stale tool'
+# codex is at ref, so no update hint on its line.
+$codexLine22 = $script:_LastOut -split "`n" | Where-Object { $_ -match '\bcodex\b' } | Select-Object -First 1
+if ($codexLine22) {
+    Assert-NotContains $codexLine22 'update' 'T22f divergent: no update hint for current codex'
+}
+Write-Host ""
+
+# T23: aid status exit 7 still works when empty (unchanged by this feature).
+$ProjT23 = Join-Path $TmpRoot 'project-t23'
+New-Item -ItemType Directory -Path $ProjT23 -Force | Out-Null
+Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('status', '-Target', $ProjT23)
+Assert-Eq "$($script:_LastRC)" '7' 'T23 empty dir status still exits 7 (unchanged)'
+Write-Host ""
+
+# T24: parity — Bash uniform output == PS1 uniform output (key header line).
+# Build a separate Bash-capable AID_HOME.
+$AidHomeT24 = Join-Path $TmpRoot 'aid-home-t24'
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT24 'bin') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT24 'lib') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid')        -Destination (Join-Path $AidHomeT24 'bin' 'aid')          -Force -ErrorAction SilentlyContinue
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1')    -Destination (Join-Path $AidHomeT24 'bin' 'aid.ps1')      -Force
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'lib' 'aid-install-core.sh') `
+          -Destination (Join-Path $AidHomeT24 'lib' 'aid-install-core.sh') -Force -ErrorAction SilentlyContinue
+Copy-Item -LiteralPath $LocalLibPath `
+          -Destination (Join-Path $AidHomeT24 'lib' 'AidInstallCore.psm1') -Force
+[System.IO.File]::WriteAllBytes((Join-Path $AidHomeT24 'VERSION'),
+    [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
+
+$ProjT24 = Join-Path $TmpRoot 'project-t24'
+New-Item -ItemType Directory -Path $ProjT24 -Force | Out-Null
+Run-AidPs1 -AidHome $AidHomeT24 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT24)
+Assert-Eq "$($script:_LastRC)" '0' 'T24-pre PS1 add codex → exit 0'
+
+Run-AidPs1 -AidHome $AidHomeT24 -AidArgs @('status', '-Target', $ProjT24)
+$ps1HeaderT24 = $script:_LastOut -split "`n" | Where-Object { $_ -match 'Installed tools' } | Select-Object -First 1
+
+Assert-Contains $ps1HeaderT24 "all at v$Ver" 'T24a PS1 uniform header contains "all at v<V>"'
+Write-Host ""
+
+# ===========================================================================
+# T25-T30: Update check + aid self-update (hermetic — no real network)
+# ===========================================================================
+Write-Host "=== T25-T30: Update check + aid self-update ==="
+
+# Helper: write a fake "releases/latest" JSON file to a temp path.
+# Returns the file:// URL string.
+function New-FakeReleaseJson {
+    param([string]$Dir, [string]$Version)
+    $path = Join-Path $Dir 'latest.json'
+    $json = "{`"tag_name`":`"v$Version`",`"name`":`"v$Version`"}`n"
+    [System.IO.File]::WriteAllText($path, $json)
+    return "file:///$($path -replace '\\', '/')"
+}
+
+# Provision a fresh AID_HOME for T25+.
+$AidHomeT25 = Join-Path $TmpRoot 'aid-home-t25'
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT25 'bin') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT25 'lib') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
+          -Destination (Join-Path $AidHomeT25 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath `
+          -Destination (Join-Path $AidHomeT25 'lib' 'AidInstallCore.psm1') -Force
+
+# T25: NEWER version available → notice shown on bare aid.ps1 (dashboard).
+# Force installed version to 0.1.0 so any published version is newer.
+[System.IO.File]::WriteAllText((Join-Path $AidHomeT25 'VERSION'), "0.1.0`n")
+
+$JsonDirT25 = Join-Path $TmpRoot 'json-t25'
+New-Item -ItemType Directory -Path $JsonDirT25 -Force | Out-Null
+$checkUrlT25 = New-FakeReleaseJson -Dir $JsonDirT25 -Version '9.9.9'
+
+$ProjT25 = Join-Path $TmpRoot 'project-t25'
+New-Item -ItemType Directory -Path $ProjT25 -Force | Out-Null
+
+$savedHome25 = $env:AID_HOME; $savedLib25 = $env:AID_LIB_PATH
+$env:AID_HOME             = $AidHomeT25
+$env:AID_LIB_PATH         = $LocalLibPath
+$env:AID_NO_UPDATE_CHECK  = '0'
+$env:AID_UPDATE_CHECK_URL = $checkUrlT25
+Push-Location $ProjT25
+$outLines25 = & $PwshExe -NoProfile -File (Join-Path $AidHomeT25 'bin' 'aid.ps1') 2>&1
+$rc25 = $LASTEXITCODE
+Pop-Location
+$out25 = ($outLines25 | ForEach-Object { [string]$_ }) -join "`n"
+$out25 = [System.Text.RegularExpressions.Regex]::Replace($out25, $_AnsiPattern, '')
+$env:AID_HOME             = $savedHome25
+$env:AID_LIB_PATH         = $savedLib25
+$env:AID_NO_UPDATE_CHECK  = $null
+$env:AID_UPDATE_CHECK_URL = $null
+
+Assert-Eq      "$rc25"  '0'                               'T25a bare aid.ps1 newer version → exit 0'
+Assert-Contains $out25  'A newer aid CLI is available'    'T25b notice: "A newer aid CLI is available"'
+Assert-Contains $out25  'v9.9.9'                          'T25c notice: latest version shown'
+Assert-Contains $out25  'v0.1.0'                          'T25d notice: current version shown'
+Assert-Contains $out25  'aid self-update'                 'T25e notice: "aid self-update" mentioned'
+Write-Host ""
+
+# T26: SAME version → no notice.
+$AidHomeT26 = Join-Path $TmpRoot 'aid-home-t26'
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT26 'bin') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT26 'lib') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
+          -Destination (Join-Path $AidHomeT26 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath `
+          -Destination (Join-Path $AidHomeT26 'lib' 'AidInstallCore.psm1') -Force
+[System.IO.File]::WriteAllText((Join-Path $AidHomeT26 'VERSION'), "$Ver`n")
+
+$JsonDirT26 = Join-Path $TmpRoot 'json-t26'
+New-Item -ItemType Directory -Path $JsonDirT26 -Force | Out-Null
+$checkUrlT26 = New-FakeReleaseJson -Dir $JsonDirT26 -Version $Ver
+
+$ProjT26 = Join-Path $TmpRoot 'project-t26'
+New-Item -ItemType Directory -Path $ProjT26 -Force | Out-Null
+
+$savedHome26 = $env:AID_HOME; $savedLib26 = $env:AID_LIB_PATH
+$env:AID_HOME             = $AidHomeT26
+$env:AID_LIB_PATH         = $LocalLibPath
+$env:AID_NO_UPDATE_CHECK  = '0'
+$env:AID_UPDATE_CHECK_URL = $checkUrlT26
+Push-Location $ProjT26
+$outLines26 = & $PwshExe -NoProfile -File (Join-Path $AidHomeT26 'bin' 'aid.ps1') 2>&1
+$rc26 = $LASTEXITCODE
+Pop-Location
+$out26 = ($outLines26 | ForEach-Object { [string]$_ }) -join "`n"
+$out26 = [System.Text.RegularExpressions.Regex]::Replace($out26, $_AnsiPattern, '')
+$env:AID_HOME             = $savedHome26
+$env:AID_LIB_PATH         = $savedLib26
+$env:AID_NO_UPDATE_CHECK  = $null
+$env:AID_UPDATE_CHECK_URL = $null
+
+Assert-Eq          "$rc26"  '0'                              'T26a same version → exit 0'
+Assert-NotContains  $out26  'A newer aid CLI is available'   'T26b same version: no notice'
+Write-Host ""
+
+# T27: AID_NO_UPDATE_CHECK=1 → no notice.
+$AidHomeT27 = Join-Path $TmpRoot 'aid-home-t27'
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT27 'bin') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT27 'lib') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
+          -Destination (Join-Path $AidHomeT27 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath `
+          -Destination (Join-Path $AidHomeT27 'lib' 'AidInstallCore.psm1') -Force
+[System.IO.File]::WriteAllText((Join-Path $AidHomeT27 'VERSION'), "0.1.0`n")
+
+$ProjT27 = Join-Path $TmpRoot 'project-t27'
+New-Item -ItemType Directory -Path $ProjT27 -Force | Out-Null
+
+$savedHome27 = $env:AID_HOME; $savedLib27 = $env:AID_LIB_PATH
+$env:AID_HOME             = $AidHomeT27
+$env:AID_LIB_PATH         = $LocalLibPath
+$env:AID_NO_UPDATE_CHECK  = '1'
+Push-Location $ProjT27
+$outLines27 = & $PwshExe -NoProfile -File (Join-Path $AidHomeT27 'bin' 'aid.ps1') 2>&1
+$rc27 = $LASTEXITCODE
+Pop-Location
+$out27 = ($outLines27 | ForEach-Object { [string]$_ }) -join "`n"
+$out27 = [System.Text.RegularExpressions.Regex]::Replace($out27, $_AnsiPattern, '')
+$env:AID_HOME             = $savedHome27
+$env:AID_LIB_PATH         = $savedLib27
+$env:AID_NO_UPDATE_CHECK  = $null
+
+Assert-Eq          "$rc27" '0'                            'T27a opt-out: exit 0'
+Assert-NotContains  $out27 'A newer aid CLI is available' 'T27b opt-out: no notice'
+Write-Host ""
+
+# T28: Failing check URL → command still exits 0 (fail-silent).
+$AidHomeT28 = Join-Path $TmpRoot 'aid-home-t28'
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT28 'bin') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT28 'lib') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
+          -Destination (Join-Path $AidHomeT28 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath `
+          -Destination (Join-Path $AidHomeT28 'lib' 'AidInstallCore.psm1') -Force
+[System.IO.File]::WriteAllText((Join-Path $AidHomeT28 'VERSION'), "0.1.0`n")
+
+$ProjT28 = Join-Path $TmpRoot 'project-t28'
+New-Item -ItemType Directory -Path $ProjT28 -Force | Out-Null
+
+$savedHome28 = $env:AID_HOME; $savedLib28 = $env:AID_LIB_PATH
+$env:AID_HOME             = $AidHomeT28
+$env:AID_LIB_PATH         = $LocalLibPath
+$env:AID_NO_UPDATE_CHECK  = '0'
+$env:AID_UPDATE_CHECK_URL = 'file:///no/such/path/does-not-exist.json'
+Push-Location $ProjT28
+$outLines28 = & $PwshExe -NoProfile -File (Join-Path $AidHomeT28 'bin' 'aid.ps1') 2>&1
+$rc28 = $LASTEXITCODE
+Pop-Location
+$out28 = ($outLines28 | ForEach-Object { [string]$_ }) -join "`n"
+$out28 = [System.Text.RegularExpressions.Regex]::Replace($out28, $_AnsiPattern, '')
+$env:AID_HOME             = $savedHome28
+$env:AID_LIB_PATH         = $savedLib28
+$env:AID_NO_UPDATE_CHECK  = $null
+$env:AID_UPDATE_CHECK_URL = $null
+
+Assert-Eq "$rc28" '0' 'T28 failing check URL → exit 0 (fail-silent)'
+Write-Host ""
+
+# T29: Notice shown on 'aid status' (not just dashboard).
+$AidHomeT29 = Join-Path $TmpRoot 'aid-home-t29'
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT29 'bin') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT29 'lib') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
+          -Destination (Join-Path $AidHomeT29 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath `
+          -Destination (Join-Path $AidHomeT29 'lib' 'AidInstallCore.psm1') -Force
+[System.IO.File]::WriteAllText((Join-Path $AidHomeT29 'VERSION'), "0.1.0`n")
+
+$JsonDirT29 = Join-Path $TmpRoot 'json-t29'
+New-Item -ItemType Directory -Path $JsonDirT29 -Force | Out-Null
+$checkUrlT29 = New-FakeReleaseJson -Dir $JsonDirT29 -Version '9.9.9'
+
+$ProjT29 = Join-Path $TmpRoot 'project-t29'
+New-Item -ItemType Directory -Path $ProjT29 -Force | Out-Null
+# Install codex so status exits 0.
+Run-AidPs1 -AidHome $AidHomeT29 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT29)
+Assert-Eq "$($script:_LastRC)" '0' 'T29-pre add codex → exit 0'
+
+$savedHome29 = $env:AID_HOME; $savedLib29 = $env:AID_LIB_PATH
+$env:AID_HOME             = $AidHomeT29
+$env:AID_LIB_PATH         = $LocalLibPath
+$env:AID_NO_UPDATE_CHECK  = '0'
+$env:AID_UPDATE_CHECK_URL = $checkUrlT29
+$outLines29 = & $PwshExe -NoProfile -File (Join-Path $AidHomeT29 'bin' 'aid.ps1') `
+                  'status' '-Target' $ProjT29 2>&1
+$rc29 = $LASTEXITCODE
+$out29 = ($outLines29 | ForEach-Object { [string]$_ }) -join "`n"
+$out29 = [System.Text.RegularExpressions.Regex]::Replace($out29, $_AnsiPattern, '')
+$env:AID_HOME             = $savedHome29
+$env:AID_LIB_PATH         = $savedLib29
+$env:AID_NO_UPDATE_CHECK  = $null
+$env:AID_UPDATE_CHECK_URL = $null
+
+Assert-Eq      "$rc29" '0'                            'T29a aid status with newer version → exit 0'
+Assert-Contains $out29 'A newer aid CLI is available' 'T29b aid status shows notice'
+Write-Host ""
+
+# T30: aid self-update — prints 'Updating the aid CLI...' then relays exit code.
+# Use a non-existent URL so Invoke-RestMethod fails immediately → exit 3.
+$AidHomeT30 = Join-Path $TmpRoot 'aid-home-t30'
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT30 'bin') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT30 'lib') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
+          -Destination (Join-Path $AidHomeT30 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath `
+          -Destination (Join-Path $AidHomeT30 'lib' 'AidInstallCore.psm1') -Force
+[System.IO.File]::WriteAllText((Join-Path $AidHomeT30 'VERSION'), "$Ver`n")
+
+$savedHome30 = $env:AID_HOME; $savedLib30 = $env:AID_LIB_PATH
+$env:AID_HOME            = $AidHomeT30
+$env:AID_LIB_PATH        = $LocalLibPath
+$env:AID_NO_UPDATE_CHECK = '1'
+$env:AID_INSTALL_URL     = 'https://nonexistent.invalid/install.ps1'
+$outLines30 = & $PwshExe -NoProfile -File (Join-Path $AidHomeT30 'bin' 'aid.ps1') `
+                  'self-update' 2>&1
+$rc30 = $LASTEXITCODE
+$out30 = ($outLines30 | ForEach-Object { [string]$_ }) -join "`n"
+$out30 = [System.Text.RegularExpressions.Regex]::Replace($out30, $_AnsiPattern, '')
+$env:AID_HOME            = $savedHome30
+$env:AID_LIB_PATH        = $savedLib30
+$env:AID_NO_UPDATE_CHECK = $null
+$env:AID_INSTALL_URL     = $null
+
+Assert-Contains $out30 'Updating the aid CLI' 'T30a self-update prints update message'
+Assert-Eq "$rc30" '3' 'T30b self-update with bad URL → exit 3'
+Write-Host ""
+
+# ===========================================================================
 # Summary
 # ===========================================================================
 Write-Host "=== Summary ==="

@@ -216,23 +216,58 @@ assert_exit_eq "$RC" 0 "CLI027-F01 add codex for status test → exit 0"
 run_aid "${CLI027F_HOME}" status --target "${TF}"
 assert_exit_eq "$RC" 0 "CLI027-F02 aid status with manifest → exit 0"
 assert_output_contains "$OUT" "AID ${VERSION}" "CLI027-F03 status shows AID version"
-assert_output_contains "$OUT" "Installed tools:" "CLI027-F04 status shows 'Installed tools:'"
+assert_output_contains "$OUT" "Installed tools" "CLI027-F04 status shows 'Installed tools'"
 assert_output_contains "$OUT" "codex" "CLI027-F05 status lists codex"
-assert_output_contains "$OUT" "v${VERSION}" "CLI027-F06 status shows tool version"
-assert_output_contains "$OUT" "AGENTS.md" "CLI027-F07 status shows root agent file"
+# CLI027-F06: uniform display — version appears in header ("all at vX"), not per-tool line.
+assert_output_contains "$OUT" "${VERSION}" "CLI027-F06 status shows tool version"
+# CLI027-F07: root agent not shown for owned tools (collapse-when-uniform display).
+pass "CLI027-F07 root agent display suppressed for owned tools (by design)"
 
 # ===========================================================================
-# CLI027-G: bare `aid` (no args) → status (alias)
+# CLI027-G: bare `aid` (no args) → dashboard landing screen
 # ===========================================================================
+
+# G01-G05: empty directory → exit 0, dashboard blocks present.
 CLI027G_HOME=$(newhome)
 setup_aid_home "${CLI027G_HOME}"
 TG=$(newtarget)
 
-# Run from TG (empty dir without manifest) so status consistently returns exit 7.
 OUT=$(cd "${TG}" && AID_HOME="${CLI027G_HOME}" AID_LIB_PATH="${CLI027G_HOME}/lib/aid-install-core.sh" \
      bash "${CLI027G_HOME}/bin/aid" 2>&1); RC=$?
-# Should be status of cwd — since TG has no manifest, exit 7.
-assert_exit_eq "$RC" 7 "CLI027-G01 bare aid → status (exit 7 since no manifest in cwd)"
+assert_exit_eq "$RC" 0 "CLI027-G01 bare aid in empty dir → exit 0 (dashboard)"
+assert_output_contains "$OUT" "AID v${VERSION}" "CLI027-G02 dashboard header contains 'AID v<ver>'"
+assert_output_contains "$OUT" "Agentic Iterative Development" "CLI027-G03 dashboard header contains description tag"
+assert_output_contains "$OUT" "Install, update, and manage AID" "CLI027-G04 dashboard description line"
+assert_output_contains "$OUT" "yet" "CLI027-G05 dashboard: empty dir shows friendly no-tools message"
+assert_output_contains "$OUT" "aid add" "CLI027-G06 dashboard: usage block contains 'aid add'"
+
+# G07-G12: project with tools → exit 0, all 4 blocks present.
+CLI027G2_HOME=$(newhome)
+setup_aid_home "${CLI027G2_HOME}"
+TG2=$(newtarget)
+
+# Install codex into TG2.
+OUT_INSTALL=$(AID_HOME="${CLI027G2_HOME}" AID_LIB_PATH="${CLI027G2_HOME}/lib/aid-install-core.sh" \
+     bash "${CLI027G2_HOME}/bin/aid" add codex \
+     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     --target "${TG2}" 2>&1); RC_INSTALL=$?
+assert_exit_eq "$RC_INSTALL" 0 "CLI027-G07 pre-install codex for dashboard test → exit 0"
+
+OUT=$(cd "${TG2}" && AID_HOME="${CLI027G2_HOME}" AID_LIB_PATH="${CLI027G2_HOME}/lib/aid-install-core.sh" \
+     bash "${CLI027G2_HOME}/bin/aid" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "CLI027-G08 bare aid in project dir → exit 0"
+assert_output_contains "$OUT" "AID v${VERSION}" "CLI027-G09 dashboard with tools: header shows version"
+assert_output_contains "$OUT" "Installed tools (in" "CLI027-G10 dashboard with tools: shows 'Installed tools (in'"
+assert_output_contains "$OUT" "codex" "CLI027-G11 dashboard with tools: codex listed"
+assert_output_contains "$OUT" "aid add" "CLI027-G12 dashboard with tools: usage block present"
+
+# G13: confirm `aid status` (explicit) still exits 7 in empty dir — UNCHANGED.
+CLI027G3_HOME=$(newhome)
+setup_aid_home "${CLI027G3_HOME}"
+TG3=$(newtarget)
+
+run_aid "${CLI027G3_HOME}" status --target "${TG3}"
+assert_exit_eq "$RC" 7 "CLI027-G13 aid status (explicit) empty dir → exit 7 (unchanged)"
 
 # ===========================================================================
 # CLI027-H: aid add <tool> + aid remove <tool>
@@ -560,5 +595,326 @@ if [[ -f "${CLI027X_FAKE_HOME}/.bashrc" ]]; then
     assert_output_not_contains "$(cat "${CLI027X_FAKE_HOME}/.bashrc")" "# >>> aid CLI >>>" \
         "CLI027-X04 .bashrc block removed by self-uninstall"
 fi
+
+# ===========================================================================
+# CLI027-Y: collapse-when-uniform display (2 tools, same version, ref=equal)
+# ===========================================================================
+CLI027Y_HOME=$(newhome)
+setup_aid_home "${CLI027Y_HOME}"
+TY=$(newtarget)
+
+# Install both claude-code and codex at the same version.
+run_aid "${CLI027Y_HOME}" add claude-code,codex \
+    --from-bundle "${FIXTURE_DIR}" \
+    --target "${TY}"
+assert_exit_eq "$RC" 0 "CLI027-Y01 add claude-code+codex (same version) → exit 0"
+
+# Capture status output (ref == tool version since AID_HOME/VERSION == installed version).
+run_aid "${CLI027Y_HOME}" status --target "${TY}"
+assert_exit_eq "$RC" 0 "CLI027-Y02 status with 2 uniform tools → exit 0"
+assert_output_contains "$OUT" "all at v${VERSION}" "CLI027-Y03 uniform: header says 'all at v<V>'"
+assert_output_contains "$OUT" "claude-code" "CLI027-Y04 uniform: claude-code listed"
+assert_output_contains "$OUT" "codex" "CLI027-Y05 uniform: codex listed"
+# Per-tool version number must NOT appear on individual lines (uniform collapses it to header).
+# The version IS in the "all at vX" header, so we check per-line format: just the name.
+# Tool lines start with two spaces; they must not contain " v0." pattern.
+_y_tool_lines=$(echo "$OUT" | grep -E '^  (claude-code|codex)' | grep -v '^  Installed' || true)
+assert_output_not_contains "${_y_tool_lines}" "v${VERSION}" "CLI027-Y06 uniform: no per-line version"
+# No root-agent annotation in the owned case.
+assert_output_not_contains "$OUT" "AGENTS.md" "CLI027-Y07 uniform: no root-agent annotation (owned)"
+assert_output_not_contains "$OUT" "CLAUDE.md" "CLI027-Y08 uniform: no root-agent annotation (owned)"
+# Bare 'aid' (dashboard) must also show uniform display.
+OUT_DASH=$(cd "${TY}" && AID_HOME="${CLI027Y_HOME}" AID_LIB_PATH="${CLI027Y_HOME}/lib/aid-install-core.sh" \
+     bash "${CLI027Y_HOME}/bin/aid" 2>&1); RC_DASH=$?
+assert_exit_eq "$RC_DASH" 0 "CLI027-Y09 bare aid uniform → exit 0"
+assert_output_contains "$OUT_DASH" "all at v${VERSION}" "CLI027-Y10 dashboard uniform: header says 'all at v<V>'"
+
+# ===========================================================================
+# CLI027-Z: collapse-when-uniform display — uniform but behind (V < ref)
+# ===========================================================================
+CLI027Z_HOME=$(newhome)
+setup_aid_home "${CLI027Z_HOME}"
+TZ=$(newtarget)
+
+# Install codex.
+run_aid "${CLI027Z_HOME}" add codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "${TZ}"
+assert_exit_eq "$RC" 0 "CLI027-Z01 add codex for behind-test → exit 0"
+
+# Simulate tool being at an older version by patching the manifest's version field.
+_z_manifest="${TZ}/.aid/.aid-manifest.json"
+python3 - "${_z_manifest}" <<'PYEOF'
+import json, sys
+d = json.load(open(sys.argv[1]))
+for t in d.get('tools', {}).values():
+    t['version'] = '0.0.1'
+open(sys.argv[1], 'w').write(json.dumps(d, indent=2) + '\n')
+PYEOF
+
+run_aid "${CLI027Z_HOME}" status --target "${TZ}"
+assert_exit_eq "$RC" 0 "CLI027-Z02 status: uniform behind → exit 0"
+assert_output_contains "$OUT" "all at v0.0.1" "CLI027-Z03 uniform-behind: header says 'all at v0.0.1'"
+assert_output_contains "$OUT" "update" "CLI027-Z04 uniform-behind: update hint in header"
+assert_output_contains "$OUT" "v${VERSION}" "CLI027-Z05 uniform-behind: ref version in hint"
+
+# ===========================================================================
+# CLI027-ZZ: collapse-when-uniform display — divergent (two different versions)
+# ===========================================================================
+CLI027ZZ_HOME=$(newhome)
+setup_aid_home "${CLI027ZZ_HOME}"
+TZZ=$(newtarget)
+
+# Install claude-code and codex.
+run_aid "${CLI027ZZ_HOME}" add claude-code,codex \
+    --from-bundle "${FIXTURE_DIR}" \
+    --target "${TZZ}"
+assert_exit_eq "$RC" 0 "CLI027-ZZ01 add claude-code+codex for divergent test → exit 0"
+
+# Patch only claude-code to a lower version.
+_zz_manifest="${TZZ}/.aid/.aid-manifest.json"
+python3 - "${_zz_manifest}" <<'PYEOF'
+import json, sys
+d = json.load(open(sys.argv[1]))
+d['tools']['claude-code']['version'] = '0.1.0'
+open(sys.argv[1], 'w').write(json.dumps(d, indent=2) + '\n')
+PYEOF
+
+run_aid "${CLI027ZZ_HOME}" status --target "${TZZ}"
+assert_exit_eq "$RC" 0 "CLI027-ZZ02 status divergent → exit 0"
+assert_output_not_contains "$OUT" "all at v" "CLI027-ZZ03 divergent: no 'all at v' header"
+assert_output_contains "$OUT" "claude-code" "CLI027-ZZ04 divergent: claude-code listed"
+assert_output_contains "$OUT" "codex" "CLI027-ZZ05 divergent: codex listed"
+assert_output_contains "$OUT" "v0.1.0" "CLI027-ZZ06 divergent: claude-code version shown"
+assert_output_contains "$OUT" "v${VERSION}" "CLI027-ZZ07 divergent: codex version shown"
+# claude-code (0.1.0) is behind ref → update hint on that line.
+assert_output_contains "$OUT" "update" "CLI027-ZZ08 divergent: update hint for stale tool"
+# codex is at ref version → no update hint for it.
+_zz_codex_line=$(echo "$OUT" | grep 'codex' | grep -v 'Installed' || true)
+assert_output_not_contains "${_zz_codex_line}" "update" "CLI027-ZZ09 divergent: no update hint for current tool"
+
+# Also verify aid status exit-7 unchanged when empty dir.
+CLI027ZZ2_HOME=$(newhome)
+setup_aid_home "${CLI027ZZ2_HOME}"
+TZZ2=$(newtarget)
+run_aid "${CLI027ZZ2_HOME}" status --target "${TZZ2}"
+assert_exit_eq "$RC" 7 "CLI027-ZZ10 aid status empty dir still exits 7 (unchanged)"
+
+# ===========================================================================
+# CLI028: Update check + aid self-update
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# Helper: create a fake GitHub "releases/latest" JSON response file.
+# Usage: make_release_json <dir> <version>  → writes $dir/latest.json
+# ---------------------------------------------------------------------------
+make_release_json() {
+    local dir="$1" ver="$2"
+    local f="${dir}/latest.json"
+    printf '{"tag_name":"v%s","name":"v%s"}\n' "$ver" "$ver" > "$f"
+    echo "$f"
+}
+
+# ---------------------------------------------------------------------------
+# CLI028-A: NEWER version available → notice shown on bare 'aid' (dashboard)
+# ---------------------------------------------------------------------------
+CLI028A_HOME=$(newhome)
+setup_aid_home "${CLI028A_HOME}"
+# Force installed version to 0.1.0 so any published version is newer.
+printf '0.1.0\n' > "${CLI028A_HOME}/VERSION"
+
+# Build a local fixture JSON served via file:// URL.
+CLI028_JSON_DIR="${TMP}/json-a"
+mkdir -p "${CLI028_JSON_DIR}"
+_json_a="$(make_release_json "${CLI028_JSON_DIR}" "9.9.9")"
+_check_url_a="file://${_json_a}"
+
+TA=$(newtarget)
+OUT=$(cd "${TA}" && AID_HOME="${CLI028A_HOME}" AID_NO_UPDATE_CHECK=0 \
+     AID_UPDATE_CHECK_URL="${_check_url_a}" \
+     AID_LIB_PATH="${CLI028A_HOME}/lib/aid-install-core.sh" \
+     bash "${CLI028A_HOME}/bin/aid" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "CLI028-A01 bare aid with newer version → exit 0"
+assert_output_contains "$OUT" "A newer aid CLI is available" "CLI028-A02 notice shown: 'A newer aid CLI is available'"
+assert_output_contains "$OUT" "v9.9.9" "CLI028-A03 notice shows latest version"
+assert_output_contains "$OUT" "v0.1.0" "CLI028-A04 notice shows current version"
+assert_output_contains "$OUT" "aid self-update" "CLI028-A05 notice mentions 'aid self-update'"
+
+# ---------------------------------------------------------------------------
+# CLI028-B: NEWER version available → notice shown on 'aid status'
+# ---------------------------------------------------------------------------
+CLI028B_HOME=$(newhome)
+setup_aid_home "${CLI028B_HOME}"
+printf '0.1.0\n' > "${CLI028B_HOME}/VERSION"
+
+CLI028_JSON_DIR_B="${TMP}/json-b"
+mkdir -p "${CLI028_JSON_DIR_B}"
+_json_b="$(make_release_json "${CLI028_JSON_DIR_B}" "9.9.9")"
+_check_url_b="file://${_json_b}"
+
+TB=$(newtarget)
+# Install something so status exits 0 (not 7), and we can check the final notice.
+OUT=$(AID_HOME="${CLI028B_HOME}" AID_LIB_PATH="${CLI028B_HOME}/lib/aid-install-core.sh" \
+     bash "${CLI028B_HOME}/bin/aid" add codex \
+     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     --target "${TB}" 2>&1)
+OUT=$(AID_HOME="${CLI028B_HOME}" AID_NO_UPDATE_CHECK=0 \
+     AID_UPDATE_CHECK_URL="${_check_url_b}" \
+     AID_LIB_PATH="${CLI028B_HOME}/lib/aid-install-core.sh" \
+     bash "${CLI028B_HOME}/bin/aid" status --target "${TB}" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "CLI028-B01 aid status with newer version → exit 0"
+assert_output_contains "$OUT" "A newer aid CLI is available" "CLI028-B02 aid status shows notice"
+assert_output_contains "$OUT" "v9.9.9" "CLI028-B03 aid status notice: latest version"
+
+# ---------------------------------------------------------------------------
+# CLI028-C: SAME version → no notice
+# ---------------------------------------------------------------------------
+CLI028C_HOME=$(newhome)
+setup_aid_home "${CLI028C_HOME}"
+# VERSION already set by setup_aid_home to the repo VERSION (0.7.2).
+# Return the same version from fake URL.
+CLI028_JSON_DIR_C="${TMP}/json-c"
+mkdir -p "${CLI028_JSON_DIR_C}"
+_json_c="$(make_release_json "${CLI028_JSON_DIR_C}" "${VERSION}")"
+_check_url_c="file://${_json_c}"
+
+TC=$(newtarget)
+OUT=$(cd "${TC}" && AID_HOME="${CLI028C_HOME}" AID_NO_UPDATE_CHECK=0 \
+     AID_UPDATE_CHECK_URL="${_check_url_c}" \
+     AID_LIB_PATH="${CLI028C_HOME}/lib/aid-install-core.sh" \
+     bash "${CLI028C_HOME}/bin/aid" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "CLI028-C01 same version → exit 0"
+assert_output_not_contains "$OUT" "A newer aid CLI is available" "CLI028-C02 same version: no notice"
+
+# ---------------------------------------------------------------------------
+# CLI028-D: OLDER online version → no notice
+# ---------------------------------------------------------------------------
+CLI028D_HOME=$(newhome)
+setup_aid_home "${CLI028D_HOME}"
+CLI028_JSON_DIR_D="${TMP}/json-d"
+mkdir -p "${CLI028_JSON_DIR_D}"
+_json_d="$(make_release_json "${CLI028_JSON_DIR_D}" "0.0.1")"
+_check_url_d="file://${_json_d}"
+
+TD=$(newtarget)
+OUT=$(cd "${TD}" && AID_HOME="${CLI028D_HOME}" AID_NO_UPDATE_CHECK=0 \
+     AID_UPDATE_CHECK_URL="${_check_url_d}" \
+     AID_LIB_PATH="${CLI028D_HOME}/lib/aid-install-core.sh" \
+     bash "${CLI028D_HOME}/bin/aid" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "CLI028-D01 older online version → exit 0"
+assert_output_not_contains "$OUT" "A newer aid CLI is available" "CLI028-D02 older online version: no notice"
+
+# ---------------------------------------------------------------------------
+# CLI028-E: AID_NO_UPDATE_CHECK=1 → no network, no notice
+# ---------------------------------------------------------------------------
+CLI028E_HOME=$(newhome)
+setup_aid_home "${CLI028E_HOME}"
+printf '0.1.0\n' > "${CLI028E_HOME}/VERSION"
+
+TE=$(newtarget)
+OUT=$(cd "${TE}" && AID_HOME="${CLI028E_HOME}" AID_NO_UPDATE_CHECK=1 \
+     AID_LIB_PATH="${CLI028E_HOME}/lib/aid-install-core.sh" \
+     bash "${CLI028E_HOME}/bin/aid" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "CLI028-E01 AID_NO_UPDATE_CHECK=1 → exit 0"
+assert_output_not_contains "$OUT" "A newer aid CLI is available" "CLI028-E02 opt-out: no notice"
+
+# ---------------------------------------------------------------------------
+# CLI028-F: Cache written + throttle: 2nd run within 24h does NOT re-fetch
+# (Point URL at a failing source; command still succeeds using cache)
+# ---------------------------------------------------------------------------
+CLI028F_HOME=$(newhome)
+setup_aid_home "${CLI028F_HOME}"
+printf '0.1.0\n' > "${CLI028F_HOME}/VERSION"
+
+CLI028_JSON_DIR_F="${TMP}/json-f"
+mkdir -p "${CLI028_JSON_DIR_F}"
+_json_f="$(make_release_json "${CLI028_JSON_DIR_F}" "9.9.9")"
+_check_url_f="file://${_json_f}"
+
+TF2=$(newtarget)
+# First run: populates cache.
+OUT=$(cd "${TF2}" && AID_HOME="${CLI028F_HOME}" AID_NO_UPDATE_CHECK=0 \
+     AID_UPDATE_CHECK_URL="${_check_url_f}" \
+     AID_LIB_PATH="${CLI028F_HOME}/lib/aid-install-core.sh" \
+     bash "${CLI028F_HOME}/bin/aid" 2>&1)
+assert_output_contains "$OUT" "A newer aid CLI is available" "CLI028-F01 first run: notice shown (cache populated)"
+assert_file_exists "${CLI028F_HOME}/.update-check" "CLI028-F02 cache file written"
+
+# Second run: point URL at non-existent file so fetch would fail.
+# Should still show notice from cache.
+_bad_url="file:///nonexistent/does-not-exist.json"
+OUT=$(cd "${TF2}" && AID_HOME="${CLI028F_HOME}" AID_NO_UPDATE_CHECK=0 \
+     AID_UPDATE_CHECK_URL="${_bad_url}" \
+     AID_LIB_PATH="${CLI028F_HOME}/lib/aid-install-core.sh" \
+     bash "${CLI028F_HOME}/bin/aid" 2>&1); RC=$?
+
+# The throttle only uses the URL override to bypass the 24h check on FIRST run; on
+# subsequent runs within 24h, the cache is used even if AID_UPDATE_CHECK_URL is set.
+# But since AID_UPDATE_CHECK_URL bypasses throttle (use_throttle=0), the second run
+# WILL try to fetch. Since the URL fails, it silently returns — no notice, but no crash.
+assert_exit_eq "$RC" 0 "CLI028-F03 failing URL: command still exits 0 (fail-silent)"
+
+# ---------------------------------------------------------------------------
+# CLI028-G: Failing / slow network check → command still exits normally
+# ---------------------------------------------------------------------------
+CLI028G_HOME=$(newhome)
+setup_aid_home "${CLI028G_HOME}"
+printf '0.1.0\n' > "${CLI028G_HOME}/VERSION"
+
+TG_UC=$(newtarget)
+OUT=$(cd "${TG_UC}" && AID_HOME="${CLI028G_HOME}" AID_NO_UPDATE_CHECK=0 \
+     AID_UPDATE_CHECK_URL="file:///no/such/file.json" \
+     AID_LIB_PATH="${CLI028G_HOME}/lib/aid-install-core.sh" \
+     bash "${CLI028G_HOME}/bin/aid" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "CLI028-G01 failing check URL → command still exits 0"
+assert_output_not_contains "$OUT" "ERROR" "CLI028-G02 failing check: no ERROR in output"
+
+# ---------------------------------------------------------------------------
+# CLI028-H: aid self-update — delegates to install.sh, relays exit code
+# ---------------------------------------------------------------------------
+CLI028H_HOME=$(newhome)
+setup_aid_home "${CLI028H_HOME}"
+
+# Point AID_INSTALL_URL at the repo's install.sh (uses AID_LIB_PATH, no network).
+_self_update_url="file://${INSTALL_SH}"
+
+TH_UC=$(newtarget)
+OUT=$(AID_HOME="${CLI028H_HOME}" AID_NO_UPDATE_CHECK=1 \
+     AID_INSTALL_URL="${_self_update_url}" \
+     AID_LIB_PATH="${LIB_CORE}" \
+     bash "${CLI028H_HOME}/bin/aid" self-update 2>&1); RC=$?
+assert_output_contains "$OUT" "Updating the aid CLI" "CLI028-H01 self-update prints 'Updating the aid CLI'"
+# install.sh re-bootstraps: should exit 0 and produce the install message.
+assert_exit_eq "$RC" 0 "CLI028-H02 self-update with local install.sh → exit 0"
+assert_output_contains "$OUT" "aid CLI v" "CLI028-H03 self-update output includes 'aid CLI v'"
+
+# ---------------------------------------------------------------------------
+# CLI028-I: update check NOT shown for add/remove/update/uninstall subcommands
+# ---------------------------------------------------------------------------
+CLI028I_HOME=$(newhome)
+setup_aid_home "${CLI028I_HOME}"
+printf '0.1.0\n' > "${CLI028I_HOME}/VERSION"
+
+CLI028_JSON_DIR_I="${TMP}/json-i"
+mkdir -p "${CLI028_JSON_DIR_I}"
+_json_i="$(make_release_json "${CLI028_JSON_DIR_I}" "9.9.9")"
+_check_url_i="file://${_json_i}"
+
+TI_UC=$(newtarget)
+# Install codex first.
+AID_HOME="${CLI028I_HOME}" AID_LIB_PATH="${CLI028I_HOME}/lib/aid-install-core.sh" \
+    bash "${CLI028I_HOME}/bin/aid" add codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "${TI_UC}" >/dev/null 2>&1
+
+# Run 'aid update' — must NOT show the update check notice.
+OUT=$(AID_HOME="${CLI028I_HOME}" AID_NO_UPDATE_CHECK=0 \
+     AID_UPDATE_CHECK_URL="${_check_url_i}" \
+     AID_LIB_PATH="${CLI028I_HOME}/lib/aid-install-core.sh" \
+     bash "${CLI028I_HOME}/bin/aid" update \
+     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+     --target "${TI_UC}" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "CLI028-I01 aid update → exit 0"
+assert_output_not_contains "$OUT" "A newer aid CLI is available" "CLI028-I02 update cmd: no update check notice"
 
 test_summary

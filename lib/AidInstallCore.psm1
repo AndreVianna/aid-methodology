@@ -1174,6 +1174,155 @@ function Get-ManifestToolList {
     return $result
 }
 
+# ---------------------------------------------------------------------------
+# Semver comparison helper
+# ---------------------------------------------------------------------------
+
+# script:Test-SemverLt <a> <b>
+# Returns $true when version string a is strictly less than b.
+# Splits on '.', compares major/minor/patch numerically.
+# Non-numeric characters at the end of a segment are stripped.
+function script:Test-SemverLt {
+    param([string]$A, [string]$B)
+    $partsA = $A -split '\.'
+    $partsB = $B -split '\.'
+    for ($i = 0; $i -lt 3; $i++) {
+        $rawA = if ($i -lt $partsA.Count) { $partsA[$i] } else { '0' }
+        $rawB = if ($i -lt $partsB.Count) { $partsB[$i] } else { '0' }
+        # Strip non-numeric suffix.
+        if ($rawA -match '^(\d+)') { $va = [int]$matches[1] } else { $va = 0 }
+        if ($rawB -match '^(\d+)') { $vb = [int]$matches[1] } else { $vb = 0 }
+        if ($va -lt $vb) { return $true }
+        if ($va -gt $vb) { return $false }
+    }
+    return $false  # equal → not less than
+}
+
+# ---------------------------------------------------------------------------
+# Shared tool-list renderer (used by Get-AidStatusBody and Get-AidStatus)
+# ---------------------------------------------------------------------------
+
+# script:Invoke-RenderToolsBlock <manifestPath> <refVersion> <headerPrefix>
+#
+# Outputs the complete tools block to stdout via Write-Host:
+#   — uniform:   "<headerPrefix> — all at v<V>[hint]:\n  <tool>\n..."
+#   — divergent: "<headerPrefix>:\n  <tool>   v<ver>[hint]\n..."
+# Root-agent annotation only when status != "owned".
+function script:Invoke-RenderToolsBlock {
+    param(
+        [string]$ManifestPath,
+        [string]$RefVersion,
+        [string]$HeaderPrefix
+    )
+
+    $tools = Get-ManifestToolList -ManifestPath $ManifestPath
+
+    if ($tools.Count -eq 0) {
+        Write-Host "${HeaderPrefix}:"
+        return
+    }
+
+    # Determine uniform vs divergent.
+    $firstVer = $tools[0].Version
+    $uniform = $true
+    foreach ($t in $tools) {
+        if ($t.Version -ne $firstVer) { $uniform = $false; break }
+    }
+
+    if ($uniform) {
+        # Build update hint for header if tools are behind CLI.
+        $hint = ''
+        if ($RefVersion -and $firstVer -and (script:Test-SemverLt -A $firstVer -B $RefVersion)) {
+            $hint = " (update `u{2192} v$RefVersion)"
+        }
+        Write-Host "$HeaderPrefix — all at v$firstVer${hint}:"
+        foreach ($tool in $tools) {
+            $rs = if ($tool.RootStatus) { $tool.RootStatus } else { 'owned' }
+            $extra = ''
+            if ($rs -ne 'owned' -and $rs) { $extra = '  (root pending merge)' }
+            Write-Host "  $($tool.Id)$extra"
+            if ($env:AID_VERBOSE -eq '1') {
+                $paths = Read-ManifestToolPaths -ManifestPath $ManifestPath -Tool $tool.Id
+                Write-Host "                 ($($paths.Count) files installed)"
+            }
+        }
+    } else {
+        # Divergent case.
+        Write-Host "${HeaderPrefix}:"
+        foreach ($tool in $tools) {
+            $ver = $tool.Version
+            $rs  = if ($tool.RootStatus) { $tool.RootStatus } else { 'owned' }
+            $hint = ''
+            if ($RefVersion -and $ver -and (script:Test-SemverLt -A $ver -B $RefVersion)) {
+                $hint = "  (update `u{2192} v$RefVersion)"
+            }
+            $rootExtra = ''
+            if ($rs -ne 'owned' -and $rs) { $rootExtra = '  (root pending merge)' }
+            # Pad tool id to 14 chars (matches Bash `printf '  %-14s v%s'`).
+            $paddedId = $tool.Id.PadRight(14)
+            Write-Host "  $paddedId v$ver$hint$rootExtra"
+            if ($env:AID_VERBOSE -eq '1') {
+                $paths = Read-ManifestToolPaths -ManifestPath $ManifestPath -Tool $tool.Id
+                Write-Host "                 ($($paths.Count) files installed)"
+            }
+        }
+    }
+}
+
+# Get-AidStatusBody <target>
+# Renders only the installed-tools block (no exit-7 logic, no project header).
+# Prints:
+#   Installed tools (in <dir>) — all at v<V>[hint]:   (uniform)
+#   <per-tool lines (name-only when uniform)>
+# OR (divergent):
+#   Installed tools (in <dir>):
+#   <per-tool lines with version + hint>
+# OR (when no manifest):
+#   No AID tools installed in <dir> yet — run 'aid add <tool>'.
+# Returns: 0 always (caller decides how to handle missing manifest).
+function Get-AidStatusBody {
+    param([string]$Target = '.')
+
+    $resolvedTarget = (Resolve-Path $Target -ErrorAction SilentlyContinue)
+    if (-not $resolvedTarget) {
+        Write-Host "No AID tools installed in $Target yet — run 'aid add <tool>'."
+        return 0
+    }
+    $targetPath = $resolvedTarget.Path
+
+    $manifest = Join-Path $targetPath (Join-Path '.aid' '.aid-manifest.json')
+
+    $manifestOk = $false
+    if (Test-Path $manifest -PathType Leaf) {
+        try {
+            $raw = Get-Content -LiteralPath $manifest -Raw
+            if ($raw -match '"manifest_version"') {
+                $manifestOk = $true
+            }
+        } catch {}
+    }
+
+    if (-not $manifestOk) {
+        Write-Host "No AID tools installed in $targetPath yet — run 'aid add <tool>'."
+        return 0
+    }
+
+    # Read CLI ref version from $env:AID_HOME/VERSION.
+    $refVersion = ''
+    $aidHome = $env:AID_HOME
+    if ($aidHome) {
+        $verFile = Join-Path $aidHome 'VERSION'
+        if (Test-Path $verFile -PathType Leaf) {
+            $refVersion = (Get-Content -LiteralPath $verFile -Raw).Trim()
+        }
+    }
+
+    script:Invoke-RenderToolsBlock -ManifestPath $manifest -RefVersion $refVersion `
+        -HeaderPrefix "Installed tools (in $targetPath)"
+
+    return 0
+}
+
 # Get-AidStatus <target>
 # Renders the "aid status" output for the AID project rooted at <target>.
 # Output is byte-identical to the Bash aid_status function.
@@ -1215,33 +1364,22 @@ function Get-AidStatus {
         if ($data.aid_version) { $aidVersion = $data.aid_version }
     } catch {}
 
-    # Emit header line — byte-identical format to Bash:
-    # "AID <ver>  (project: <dir>)\nInstalled tools:\n"
-    Write-Host "AID $aidVersion  (project: $targetPath)"
-    Write-Host "Installed tools:"
-
-    $tools = Get-ManifestToolList -ManifestPath $manifest
-    foreach ($tool in $tools) {
-        $ver        = $tool.Version
-        $rootAgent  = $tool.RootAgent
-        $rootStatus = if ($tool.RootStatus) { $tool.RootStatus } else { 'owned' }
-
-        # Pad tool id to 14 chars for alignment (matches Bash `printf '  %-14s v%s'`).
-        $paddedId = $tool.Id.PadRight(14)
-        $line = "  $paddedId v$ver"
-        if ($rootAgent) {
-            $line = "$line   root: $rootAgent ($rootStatus)"
-        }
-        Write-Host $line
-
-        # --verbose: also show file count (AID_VERBOSE env var).
-        if ($env:AID_VERBOSE -eq '1') {
-            $paths = Read-ManifestToolPaths -ManifestPath $manifest -Tool $tool.Id
-            $count = $paths.Count
-            # Pad to match Bash: 17 spaces before "(<n> files installed)".
-            Write-Host "                 ($count files installed)"
+    # Read CLI ref version from $env:AID_HOME/VERSION.
+    $refVersion = ''
+    $aidHome = $env:AID_HOME
+    if ($aidHome) {
+        $verFile = Join-Path $aidHome 'VERSION'
+        if (Test-Path $verFile -PathType Leaf) {
+            $refVersion = (Get-Content -LiteralPath $verFile -Raw).Trim()
         }
     }
+
+    # Emit header line — byte-identical format to Bash:
+    # "AID <ver>  (project: <dir>)"
+    Write-Host "AID $aidVersion  (project: $targetPath)"
+
+    script:Invoke-RenderToolsBlock -ManifestPath $manifest -RefVersion $refVersion `
+        -HeaderPrefix "Installed tools"
 
     return 0
 }
@@ -1268,5 +1406,6 @@ Export-ModuleMember -Function @(
     'Uninstall-AidTool',
     'Write-VersionMarker',
     'Get-ManifestToolList',
+    'Get-AidStatusBody',
     'Get-AidStatus'
 )

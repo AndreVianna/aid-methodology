@@ -1143,6 +1143,183 @@ PY
     ' "$manifest"
 }
 
+# ---------------------------------------------------------------------------
+# Semver comparison helpers
+# ---------------------------------------------------------------------------
+
+# _semver_lt <a> <b>
+# Returns 0 (true) when version a < version b using simple numeric major.minor.patch
+# comparison.  Non-numeric segments are treated as 0.  Returns 1 when a >= b.
+_semver_lt() {
+    local a="$1" b="$2"
+    local -a pa=() pb=()
+    IFS='.' read -ra pa <<< "$a"
+    IFS='.' read -ra pb <<< "$b"
+    local i
+    for i in 0 1 2; do
+        local va="${pa[$i]:-0}" vb="${pb[$i]:-0}"
+        # Strip non-numeric suffixes (e.g. "1-rc1" → "1").
+        va="${va%%[^0-9]*}"
+        vb="${vb%%[^0-9]*}"
+        [[ -z "$va" ]] && va=0
+        [[ -z "$vb" ]] && vb=0
+        if (( va < vb )); then return 0; fi
+        if (( va > vb )); then return 1; fi
+    done
+    return 1  # equal → not less than
+}
+
+# ---------------------------------------------------------------------------
+# Shared tool-list renderer (used by both aid_status_body and aid_status)
+# ---------------------------------------------------------------------------
+
+# _render_tools_block <manifest> <ref_version> <header_prefix>
+#
+# <manifest>       — path to the .aid-manifest.json
+# <ref_version>    — the CLI's own version (from $AID_HOME/VERSION)
+# <header_prefix>  — text before the "— all at vX:" collapse suffix (e.g.
+#                    "Installed tools (in /path)" or "Installed tools")
+#
+# Outputs the complete tools block:
+#   — uniform case:  "<header_prefix> — all at v<V>[update hint]:\n  <tool>\n..."
+#   — divergent case: "<header_prefix>:\n  <tool>   v<ver>[update hint]\n..."
+# Root-agent annotation only when status != "owned".
+_render_tools_block() {
+    local manifest="$1"
+    local ref_version="$2"
+    local header_prefix="$3"
+
+    # Enumerate tools (sorted by insertion order from manifest).
+    local -a tools=()
+    while IFS= read -r t; do
+        [[ -n "$t" ]] && tools+=("$t")
+    done < <(manifest_list_tools "$manifest")
+
+    if [[ "${#tools[@]}" -eq 0 ]]; then
+        # Nothing to show — shouldn't happen if manifest exists, but safe guard.
+        printf '%s:\n' "$header_prefix"
+        return 0
+    fi
+
+    # Collect per-tool version + root-agent status.
+    local -a tool_vers=()
+    local -a tool_rstatus=()
+    for tool_id in "${tools[@]}"; do
+        local ver
+        ver="$(manifest_read_tool_version "$manifest" "$tool_id")"
+        tool_vers+=("${ver:-}")
+        local root_agent
+        root_agent="$(_root_agent_file "$tool_id")"
+        local root_status=""
+        if [[ -n "$root_agent" ]]; then
+            root_status="$(manifest_read_root_agent_status "$manifest" "$tool_id" "$root_agent")"
+        fi
+        tool_rstatus+=("${root_status:-owned}")
+    done
+
+    # Determine uniform vs divergent.
+    local first_ver="${tool_vers[0]:-}"
+    local uniform=1
+    local ver
+    for ver in "${tool_vers[@]}"; do
+        if [[ "$ver" != "$first_ver" ]]; then
+            uniform=0
+            break
+        fi
+    done
+
+    if [[ "$uniform" -eq 1 ]]; then
+        # Uniform case.
+        local hint=""
+        if [[ -n "$ref_version" && -n "$first_ver" ]] && _semver_lt "$first_ver" "$ref_version"; then
+            hint=" (update → v${ref_version})"
+        fi
+        printf '%s — all at v%s%s:\n' "$header_prefix" "$first_ver" "$hint"
+        local idx=0
+        for tool_id in "${tools[@]}"; do
+            local rs="${tool_rstatus[$idx]}"
+            local extra=""
+            if [[ "$rs" != "owned" && -n "$rs" ]]; then
+                extra="  (root pending merge)"
+            fi
+            printf '  %s%s\n' "$tool_id" "$extra"
+            # --verbose: also show file count
+            if [[ "${AID_VERBOSE:-0}" == "1" ]]; then
+                local count=0
+                while IFS= read -r _p; do
+                    [[ -n "$_p" ]] && count=$((count + 1))
+                done < <(manifest_read_tool_paths "$manifest" "$tool_id")
+                printf '                 (%d files installed)\n' "$count"
+            fi
+            idx=$((idx + 1))
+        done
+    else
+        # Divergent case.
+        printf '%s:\n' "$header_prefix"
+        local idx=0
+        for tool_id in "${tools[@]}"; do
+            local ver="${tool_vers[$idx]}"
+            local rs="${tool_rstatus[$idx]}"
+            local hint=""
+            if [[ -n "$ref_version" && -n "$ver" ]] && _semver_lt "$ver" "$ref_version"; then
+                hint="  (update → v${ref_version})"
+            fi
+            local root_extra=""
+            if [[ "$rs" != "owned" && -n "$rs" ]]; then
+                root_extra="  (root pending merge)"
+            fi
+            # Pad tool id to 14 chars for alignment.
+            local line
+            printf -v line '  %-14s v%s%s%s' "$tool_id" "$ver" "$hint" "$root_extra"
+            printf '%s\n' "$line"
+            # --verbose: also show file count
+            if [[ "${AID_VERBOSE:-0}" == "1" ]]; then
+                local count=0
+                while IFS= read -r _p; do
+                    [[ -n "$_p" ]] && count=$((count + 1))
+                done < <(manifest_read_tool_paths "$manifest" "$tool_id")
+                printf '                 (%d files installed)\n' "$count"
+            fi
+            idx=$((idx + 1))
+        done
+    fi
+    return 0
+}
+
+# aid_status_body <target>
+# Renders only the installed-tools block for an AID project rooted at <target>.
+# Caller is responsible for checking whether a manifest exists first.
+# Prints:
+#   Installed tools (in <cwd>) — all at v<V>[hint]:
+#   <per-tool lines (name-only when uniform)>
+# OR (divergent):
+#   Installed tools (in <cwd>):
+#   <per-tool lines with version + hint>
+# OR (when no manifest):
+#   No AID tools installed in <cwd> yet — run 'aid add <tool>'.
+# Returns:
+#   0 — always (no exit-7; caller decides what to do on missing manifest)
+aid_status_body() {
+    local target="${1:-.}"
+    local manifest="${target}/.aid/.aid-manifest.json"
+    local cwd_display
+    cwd_display="$(cd "$target" && pwd)"
+
+    if [[ ! -f "$manifest" ]] || ! grep -q '"manifest_version"' "$manifest" 2>/dev/null; then
+        printf "No AID tools installed in %s yet — run 'aid add <tool>'.\n" "$cwd_display"
+        return 0
+    fi
+
+    # Read CLI ref version from $AID_HOME/VERSION.
+    local ref_version=""
+    if [[ -n "${AID_HOME:-}" && -f "${AID_HOME}/VERSION" ]]; then
+        ref_version="$(tr -d '[:space:]' < "${AID_HOME}/VERSION")"
+    fi
+
+    _render_tools_block "$manifest" "$ref_version" "Installed tools (in ${cwd_display})"
+    return 0
+}
+
 # aid_status <target>
 # Renders the "aid status" output for the AID project rooted at <target>.
 # Reads <target>/.aid/.aid-manifest.json (and .aid/.aid-version).
@@ -1177,43 +1354,15 @@ PY
             sed 's/.*"aid_version"[^:]*:[^"]*"\([^"]*\)".*/\1/')"
     fi
 
+    # Read CLI ref version from $AID_HOME/VERSION.
+    local ref_version=""
+    if [[ -n "${AID_HOME:-}" && -f "${AID_HOME}/VERSION" ]]; then
+        ref_version="$(tr -d '[:space:]' < "${AID_HOME}/VERSION")"
+    fi
+
     printf 'AID %s  (project: %s)\n' "$aid_version" "$cwd_display"
-    printf 'Installed tools:\n'
 
-    # Enumerate tools and print one line each.
-    local -a tools=()
-    while IFS= read -r t; do
-        [[ -n "$t" ]] && tools+=("$t")
-    done < <(manifest_list_tools "$manifest")
-
-    for tool_id in "${tools[@]}"; do
-        local ver
-        ver="$(manifest_read_tool_version "$manifest" "$tool_id")"
-        local root_agent
-        root_agent="$(_root_agent_file "$tool_id")"
-        local root_status=""
-        if [[ -n "$root_agent" ]]; then
-            root_status="$(manifest_read_root_agent_status "$manifest" "$tool_id" "$root_agent")"
-        fi
-
-        # Pad tool id to 14 chars for alignment.
-        local line
-        printf -v line '  %-14s v%s' "$tool_id" "$ver"
-        if [[ -n "$root_agent" ]]; then
-            local status_display="${root_status:-owned}"
-            line="${line}   root: ${root_agent} (${status_display})"
-        fi
-        printf '%s\n' "$line"
-
-        # --verbose: also show file count
-        if [[ "${AID_VERBOSE:-0}" == "1" ]]; then
-            local count=0
-            while IFS= read -r _p; do
-                [[ -n "$_p" ]] && count=$((count + 1))
-            done < <(manifest_read_tool_paths "$manifest" "$tool_id")
-            printf '                 (%d files installed)\n' "$count"
-        fi
-    done
+    _render_tools_block "$manifest" "$ref_version" "Installed tools"
 
     return 0
 }

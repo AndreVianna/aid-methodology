@@ -37,6 +37,14 @@
 #   7   aid status: no AID install found in cwd
 
 # ---------------------------------------------------------------------------
+# Bootstrap URL — single place to update when the branch merges to master.
+# Override with $env:AID_INSTALL_URL for tests.
+# ---------------------------------------------------------------------------
+$script:_AidInstallUrl = if ($env:AID_INSTALL_URL) { $env:AID_INSTALL_URL } else {
+    'https://raw.githubusercontent.com/AndreVianna/aid-methodology/worktree-work-002-auto-installer/install.ps1'
+}
+
+# ---------------------------------------------------------------------------
 # Piped-mode / terminal-survival guard.
 # When invoked via scriptblock or iex, calling exit <N> kills the host.
 # Use the same sentinel-throw pattern as install.ps1.
@@ -119,6 +127,10 @@ function script:Show-AidUsage {
             Write-Host '  Remove the global aid CLI (PATH wiring + $AID_HOME).'
             Write-Host '  Does not touch per-project AID installs.'
         }
+        'self-update' {
+            Write-Host 'aid self-update'
+            Write-Host '  Update the aid CLI to the latest published version.'
+        }
         default {
             Write-Host 'aid — AID CLI dispatcher (PowerShell side).'
             Write-Host ''
@@ -131,6 +143,7 @@ function script:Show-AidUsage {
             Write-Host '  aid uninstall                Remove AID entirely from cwd project'
             Write-Host '  aid version                  Print CLI version'
             Write-Host '  aid help [<subcommand>]      Print usage'
+            Write-Host '  aid self-update              Update the aid CLI to latest version'
             Write-Host '  aid self-uninstall           Remove the global aid CLI'
             Write-Host ''
             Write-Host 'Shared flags:'
@@ -144,6 +157,7 @@ function script:Show-AidUsage {
             Write-Host '            5 protect-on-diff, 6 no manifest, 7 not an AID project'
             Write-Host ''
             Write-Host 'Env vars: AID_TOOL, AID_VERSION, AID_TARGET, AID_FORCE, AID_VERBOSE'
+            Write-Host '          AID_NO_UPDATE_CHECK=1  disable update check'
         }
     }
 }
@@ -155,6 +169,126 @@ function script:Fail-Aid {
     param([string]$Message, [int]$Code = 1)
     [Console]::Error.WriteLine("ERROR: aid: $Message")
     script:Exit-Aid $Code
+}
+
+# ---------------------------------------------------------------------------
+# Update check (throttled, cached, non-blocking, opt-out).
+# ---------------------------------------------------------------------------
+
+# Invoke-AidUpdateCheck
+# Compares installed CLI version against latest GitHub release.
+# Prints ONE notice line when newer is available.  Fail-silent.
+# Throttle: re-fetches at most once per 24h; cache in $AID_HOME\.update-check.
+# Opt-out: $env:AID_NO_UPDATE_CHECK = '1'
+# Test hook: $env:AID_UPDATE_CHECK_URL overrides the fetch URL (and bypasses throttle).
+function script:Invoke-AidUpdateCheck {
+    # Opt-out.
+    if ($env:AID_NO_UPDATE_CHECK -eq '1') { return }
+
+    # Read installed version.
+    $verFile = Join-Path $script:_AidHome 'VERSION'
+    if (-not (Test-Path $verFile -PathType Leaf)) { return }
+    $installedVersion = (Get-Content -LiteralPath $verFile -Raw -ErrorAction SilentlyContinue).Trim()
+    if (-not $installedVersion) { return }
+
+    $cacheFile    = Join-Path $script:_AidHome '.update-check'
+    $throttleSecs = 86400   # 24 hours
+    try { $now = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() } catch { return }
+
+    # Determine URL and throttle behaviour.
+    $checkUrl    = $env:AID_UPDATE_CHECK_URL
+    $useThrottle = [string]::IsNullOrEmpty($checkUrl)
+    if ($useThrottle) {
+        $checkUrl = "https://api.github.com/repos/AndreVianna/aid-methodology/releases/latest"
+    }
+
+    # Try to read cache.
+    $cachedTs      = 0
+    $cachedLatest  = ''
+    if (Test-Path $cacheFile -PathType Leaf) {
+        try {
+            $lines = @(Get-Content -LiteralPath $cacheFile -ErrorAction SilentlyContinue)
+            if ($lines.Count -ge 1) { $cachedTs     = [long]$lines[0] }
+            if ($lines.Count -ge 2) { $cachedLatest = $lines[1].Trim() }
+        } catch {}
+    }
+
+    # Decide whether to fetch.
+    $latestVersion = ''
+    $needFetch = $true
+    if ($useThrottle -and $cachedLatest) {
+        $age = $now - $cachedTs
+        if ($age -lt $throttleSecs) {
+            $needFetch     = $false
+            $latestVersion = $cachedLatest
+        }
+    }
+
+    if ($needFetch) {
+        $body = ''
+        try {
+            # Support file:// URLs for hermetic tests (PowerShell web cmdlets don't
+            # handle file://, so we strip the scheme and read the file directly).
+            if ($checkUrl -match '^file:///?(.+)$') {
+                $filePath = $matches[1]
+                # On Windows file:///C:/path → C:/path; on Linux file:///tmp/path → /tmp/path
+                if ($filePath -notmatch '^[A-Za-z]:') {
+                    $filePath = '/' + $filePath.TrimStart('/')
+                }
+                $body = Get-Content -LiteralPath $filePath -Raw -ErrorAction Stop
+            } else {
+                $resp = Invoke-WebRequest -Uri $checkUrl -UseBasicParsing -TimeoutSec 2 `
+                            -ErrorAction Stop
+                $body = $resp.Content
+            }
+        } catch {
+            return  # fail-silent
+        }
+        if ($body -match '"tag_name"\s*:\s*"([^"]+)"') {
+            $tag = $matches[1] -replace '^v', ''
+            $latestVersion = $tag
+            # Update cache.
+            try {
+                [System.IO.File]::WriteAllText($cacheFile, "$now`n$latestVersion`n")
+            } catch {}
+        }
+    }
+
+    if (-not $latestVersion) { return }
+
+    # Compare: notice only when latest > installed.
+    # Inline semver comparison (mirrors script:Test-SemverLt from AidInstallCore.psm1
+    # but kept local here since script:-scoped module functions are not callable across
+    # the module boundary from the dispatcher script).
+    $partsA = $installedVersion -split '\.'
+    $partsB = $latestVersion    -split '\.'
+    $isLt   = $false
+    for ($i = 0; $i -lt 3; $i++) {
+        $rawA = if ($i -lt $partsA.Count) { $partsA[$i] } else { '0' }
+        $rawB = if ($i -lt $partsB.Count) { $partsB[$i] } else { '0' }
+        if ($rawA -match '^(\d+)') { $va = [int]$matches[1] } else { $va = 0 }
+        if ($rawB -match '^(\d+)') { $vb = [int]$matches[1] } else { $vb = 0 }
+        if ($va -lt $vb) { $isLt = $true; break }
+        if ($va -gt $vb) { break }
+    }
+    if ($isLt) {
+        Write-Host "`u{2B06} A newer aid CLI is available: v$latestVersion (you have v$installedVersion). Run: aid self-update"
+    }
+}
+
+# Invoke-AidSelfUpdate
+# Re-runs the bootstrap in place.  Relays bootstrap exit code.
+function script:Invoke-AidSelfUpdate {
+    Write-Host 'Updating the aid CLI...'
+    $url = $script:_AidInstallUrl
+    try {
+        $scriptContent = (Invoke-RestMethod -Uri $url -ErrorAction Stop)
+        & ([scriptblock]::Create($scriptContent))
+        script:Exit-Aid $LASTEXITCODE
+    } catch {
+        [Console]::Error.WriteLine("ERROR: aid: self-update failed: $_")
+        script:Exit-Aid 3
+    }
 }
 
 # ---------------------------------------------------------------------------
@@ -241,9 +375,28 @@ $script:_RawArgs = $args
 # Resolve verbose from env var first (flag overrides below).
 $script:_AidVerbose = ($env:AID_VERBOSE -eq '1')
 
-# ---- Bare aid → status ----
+# ---- Bare aid → dashboard landing screen ----
 if ($script:_RawArgs.Count -eq 0) {
-    $script:_RawArgs = @('status')
+    # Block 1 + 2: Header + description.
+    $cliVersion = 'unknown'
+    $verFile = Join-Path $script:_AidHome 'VERSION'
+    if (Test-Path $verFile -PathType Leaf) {
+        $cliVersion = (Get-Content -LiteralPath $verFile -Raw).Trim()
+    }
+    Write-Host "AID v$cliVersion — Agentic Iterative Development"
+    Write-Host "Install, update, and manage AID across your repositories."
+
+    # Block 3: Installed tools for cwd.
+    Write-Host ""
+    $null = Get-AidStatusBody -Target '.'
+
+    # Block 4: Usage/help.
+    Write-Host ""
+    script:Show-AidUsage
+
+    # Block 5: Update check notice (final line, non-blocking).
+    script:Invoke-AidUpdateCheck
+    script:Exit-Aid 0
 }
 
 # ---- Early -h / --help ----
@@ -371,7 +524,17 @@ if ($SUBCMD -eq 'status') {
     if ($script:_AidVerbose) { $env:AID_VERBOSE = '1' }
 
     $rc = Get-AidStatus -Target $statusTarget
+    # Update check notice appended after status output (non-blocking).
+    script:Invoke-AidUpdateCheck
     script:Exit-Aid $rc
+}
+
+# ---------------------------------------------------------------------------
+# self-update
+# ---------------------------------------------------------------------------
+if ($SUBCMD -eq 'self-update') {
+    script:Invoke-AidSelfUpdate
+    # Invoke-AidSelfUpdate always calls Exit-Aid.
 }
 
 # ---------------------------------------------------------------------------
