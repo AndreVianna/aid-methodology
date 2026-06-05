@@ -88,6 +88,13 @@ if (-not (Test-Path $script:_CoreModule -PathType Leaf)) {
 }
 Import-Module $script:_CoreModule -Force -DisableNameChecking -ErrorAction Stop
 
+# Defensive guard: verify the required core function was exported by the loaded module.
+# This catches an upgrade that left a stale AidInstallCore.psm1 (missing new exports).
+if (-not (Get-Command 'Get-AidStatusBody' -ErrorAction SilentlyContinue)) {
+    [Console]::Error.WriteLine("ERROR: aid: CLI core is stale or incomplete at $($script:_CoreModule). Re-run the installer (or 'aid self-update').")
+    script:Exit-Aid 1
+}
+
 # ---------------------------------------------------------------------------
 # Usage helper.
 # ---------------------------------------------------------------------------

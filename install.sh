@@ -727,6 +727,10 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
     cp "$_SOURCED_LIB_FILE" "${_BOOTSTRAP_STAGE}/lib/aid-install-core.sh"
     printf '%s\n' "$_CLI_VERSION" > "${_BOOTSTRAP_STAGE}/VERSION"
 
+    # Clean-replace: remove stale files before copying so upgrades never leave old bits.
+    rm -f "${local_bin_dir}/aid" "${local_bin_dir}/aid.ps1" "${local_bin_dir}/aid.cmd" \
+          "${local_lib_dir}/aid-install-core.sh" 2>/dev/null || true
+
     # Atomic install: move staged files into AID_HOME.
     mkdir -p "$local_bin_dir" "$local_lib_dir"
     cp "${_BOOTSTRAP_STAGE}/bin/aid" "${local_bin_dir}/aid"
@@ -735,6 +739,12 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
     [[ -f "${_BOOTSTRAP_STAGE}/bin/aid.cmd" ]] && cp "${_BOOTSTRAP_STAGE}/bin/aid.cmd" "${local_bin_dir}/aid.cmd"
     cp "${_BOOTSTRAP_STAGE}/lib/aid-install-core.sh" "${local_lib_dir}/aid-install-core.sh"
     cp "${_BOOTSTRAP_STAGE}/VERSION" "${AID_HOME}/VERSION"
+
+    # Post-copy verify: assert the installed lib contains the expected sentinel.
+    if ! grep -qF 'aid_status_body' "${local_lib_dir}/aid-install-core.sh" 2>/dev/null; then
+        echo "ERROR: install.sh: installer could not refresh the CLI core at ${local_lib_dir}/aid-install-core.sh; the installed file does not contain the expected sentinel 'aid_status_body'. Delete ${AID_HOME} and reinstall." >&2
+        exit 1
+    fi
 
     echo "aid CLI v${_CLI_VERSION} installed to ${AID_HOME}."
 
@@ -882,6 +892,11 @@ if [[ "$_INSTALL_MODE" == "CONVENIENCE" ]]; then
         fi
 
         mkdir -p "${AID_HOME}/bin" "${AID_HOME}/lib"
+
+        # Clean-replace: remove stale files before copying so upgrades never leave old bits.
+        rm -f "${AID_HOME}/bin/aid" "${AID_HOME}/bin/aid.ps1" "${AID_HOME}/bin/aid.cmd" \
+              "${AID_HOME}/lib/aid-install-core.sh" 2>/dev/null || true
+
         cp "$_CONV_BIN_SRC" "${AID_HOME}/bin/aid"
         chmod +x "${AID_HOME}/bin/aid"
         # Install aid.ps1 / aid.cmd if available.
@@ -895,6 +910,13 @@ if [[ "$_INSTALL_MODE" == "CONVENIENCE" ]]; then
         [[ -n "$_CONV_CLI_BUNDLE_EXTRACT" && -f "${_CONV_CLI_BUNDLE_EXTRACT}/lib/aid-install-core.sh" ]] && \
             _conv_lib_src="${_CONV_CLI_BUNDLE_EXTRACT}/lib/aid-install-core.sh"
         cp "$_conv_lib_src" "${AID_HOME}/lib/aid-install-core.sh"
+
+        # Post-copy verify: assert the installed lib contains the expected sentinel.
+        if ! grep -qF 'aid_status_body' "${AID_HOME}/lib/aid-install-core.sh" 2>/dev/null; then
+            echo "ERROR: install.sh: installer could not refresh the CLI core at ${AID_HOME}/lib/aid-install-core.sh; the installed file does not contain the expected sentinel 'aid_status_body'. Delete ${AID_HOME} and reinstall." >&2
+            exit 1
+        fi
+
         printf '%s\n' "$_CONV_CLI_VER" > "${AID_HOME}/VERSION"
         echo "aid CLI v${_CONV_CLI_VER} installed to ${AID_HOME}."
 

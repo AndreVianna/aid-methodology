@@ -69,6 +69,13 @@ fi
 # shellcheck source=../lib/aid-install-core.sh
 source "$_AID_CORE"
 
+# Defensive guard: verify the required core function was defined by the sourced lib.
+# This catches an upgrade that left a stale aid-install-core.sh (missing new functions).
+if ! declare -F aid_status_body >/dev/null 2>&1; then
+    echo "ERROR: aid: CLI core is stale or incomplete at ${_AID_CORE}. Re-run the installer (or 'aid self-update')." >&2
+    exit 1
+fi
+
 # ---------------------------------------------------------------------------
 # Usage helper.
 # ---------------------------------------------------------------------------

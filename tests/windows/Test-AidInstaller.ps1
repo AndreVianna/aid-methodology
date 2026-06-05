@@ -907,6 +907,174 @@ Assert-Eq "$rc30" '3' 'T30b self-update with bad URL → exit 3'
 Write-Host ""
 
 # ===========================================================================
+# T31-T34: Upgrade regression — stale lib gets replaced on re-bootstrap
+# ===========================================================================
+Write-Host "=== T31-T34: Upgrade regression (stale lib replaced on re-bootstrap) ==="
+
+# T31: Bootstrap over an existing install with a stale AidInstallCore.psm1 refreshes it.
+# Seed AID_HOME with an old aid.ps1 + a lib stub that does NOT contain Get-AidStatusBody.
+$AidHomeT31 = Join-Path $TmpRoot 'aid-home-t31'
+$AidBinT31  = Join-Path $AidHomeT31 'bin'
+$AidLibT31  = Join-Path $AidHomeT31 'lib'
+New-Item -ItemType Directory -Path $AidBinT31 -Force | Out-Null
+New-Item -ItemType Directory -Path $AidLibT31 -Force | Out-Null
+
+# Seed a stale aid.ps1 (empty placeholder).
+$stalePs1Bytes = [System.Text.Encoding]::UTF8.GetBytes("#Requires -Version 5.1`n# stale`n")
+[System.IO.File]::WriteAllBytes((Join-Path $AidBinT31 'aid.ps1'), $stalePs1Bytes)
+
+# Seed a stale lib that does NOT export Get-AidStatusBody.
+$staleModBytes = [System.Text.Encoding]::UTF8.GetBytes("# stale module — missing Get-AidStatusBody`nfunction Stale-Fn { }`n")
+[System.IO.File]::WriteAllBytes((Join-Path $AidLibT31 'AidInstallCore.psm1'), $staleModBytes)
+
+# Seed an old VERSION.
+[System.IO.File]::WriteAllText((Join-Path $AidHomeT31 'VERSION'), "0.0.1`n")
+
+# Re-bootstrap over the stale install (disk path, no network).
+$savedHome31  = $env:AID_HOME
+$savedNoPath31 = $env:AID_NO_PATH
+$savedLib31   = $env:AID_LIB_PATH
+$env:AID_HOME     = $AidHomeT31
+$env:AID_NO_PATH  = '1'
+$env:AID_LIB_PATH = $LocalLibPath
+
+$outLines31 = & $PwshExe -NoProfile -File $InstallPs1 2>&1
+$rc31 = $LASTEXITCODE
+$out31 = ($outLines31 | ForEach-Object { [string]$_ }) -join "`n"
+$out31 = [System.Text.RegularExpressions.Regex]::Replace($out31, $_AnsiPattern, '')
+
+$env:AID_HOME     = $savedHome31
+$env:AID_NO_PATH  = $savedNoPath31
+$env:AID_LIB_PATH = $savedLib31
+
+Assert-Eq "$rc31" '0' 'T31a re-bootstrap over stale install → exit 0'
+
+$installedLibContent31 = ''
+$installedLibPath31 = Join-Path $AidLibT31 'AidInstallCore.psm1'
+if (Test-Path $installedLibPath31 -PathType Leaf) {
+    $installedLibContent31 = Get-Content -LiteralPath $installedLibPath31 -Raw
+}
+Assert-Contains $installedLibContent31 'Get-AidStatusBody' `
+    'T31b re-bootstrap: installed lib now contains Get-AidStatusBody sentinel'
+Assert-Eq (Get-Content -LiteralPath (Join-Path $AidHomeT31 'VERSION') -Raw).Trim() $Ver `
+    'T31c re-bootstrap: VERSION updated to current'
+Write-Host ""
+
+# T32: Post-copy verify catches a deliberately-corrupted/empty lib source.
+# Pass a bad AID_LIB_PATH (empty file) → installer must exit non-zero with clear error.
+$AidHomeT32   = Join-Path $TmpRoot 'aid-home-t32'
+$BadLibT32    = Join-Path $TmpRoot 'bad-lib-t32.psm1'
+# Empty lib: no sentinel, no functions.
+[System.IO.File]::WriteAllBytes($BadLibT32, [byte[]]@())
+
+$savedHome32   = $env:AID_HOME
+$savedNoPath32 = $env:AID_NO_PATH
+$savedLib32    = $env:AID_LIB_PATH
+$env:AID_HOME     = $AidHomeT32
+$env:AID_NO_PATH  = '1'
+$env:AID_LIB_PATH = $BadLibT32
+
+$outLines32 = & $PwshExe -NoProfile -File $InstallPs1 2>&1
+$rc32 = $LASTEXITCODE
+$out32 = ($outLines32 | ForEach-Object { [string]$_ }) -join "`n"
+$out32 = [System.Text.RegularExpressions.Regex]::Replace($out32, $_AnsiPattern, '')
+
+$env:AID_HOME     = $savedHome32
+$env:AID_NO_PATH  = $savedNoPath32
+$env:AID_LIB_PATH = $savedLib32
+
+Assert ($rc32 -ne 0) 'T32a corrupted lib (empty) → installer exits non-zero' "expected non-zero exit, got $rc32"
+Assert-Contains $out32 'Get-AidStatusBody' `
+    'T32b corrupted lib: error message mentions sentinel Get-AidStatusBody'
+Assert-Contains $out32 'installer could not refresh' `
+    'T32c corrupted lib: error message says installer could not refresh'
+Write-Host ""
+
+# T33: Stale-core dispatcher guard (aid.ps1).
+# Point aid.ps1 at an AID_HOME whose lib is a stub missing Get-AidStatusBody.
+# The dispatcher must print the clear 'stale core' error and exit 1.
+$AidHomeT33 = Join-Path $TmpRoot 'aid-home-t33'
+$AidBinT33  = Join-Path $AidHomeT33 'bin'
+$AidLibT33  = Join-Path $AidHomeT33 'lib'
+New-Item -ItemType Directory -Path $AidBinT33 -Force | Out-Null
+New-Item -ItemType Directory -Path $AidLibT33 -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') -Destination (Join-Path $AidBinT33 'aid.ps1') -Force
+
+# Stub lib that loads without error but does NOT define Get-AidStatusBody.
+$stubModBytes = [System.Text.Encoding]::UTF8.GetBytes("# stub module — no Get-AidStatusBody`nfunction Stub-Fn { }`n")
+[System.IO.File]::WriteAllBytes((Join-Path $AidLibT33 'AidInstallCore.psm1'), $stubModBytes)
+[System.IO.File]::WriteAllText((Join-Path $AidHomeT33 'VERSION'), "$Ver`n")
+
+$ProjT33 = Join-Path $TmpRoot 'project-t33'
+New-Item -ItemType Directory -Path $ProjT33 -Force | Out-Null
+
+$savedHome33 = $env:AID_HOME
+$env:AID_HOME = $AidHomeT33
+Push-Location $ProjT33
+$outLines33 = & $PwshExe -NoProfile -File (Join-Path $AidBinT33 'aid.ps1') 2>&1
+$rc33 = $LASTEXITCODE
+Pop-Location
+$out33 = ($outLines33 | ForEach-Object { [string]$_ }) -join "`n"
+$out33 = [System.Text.RegularExpressions.Regex]::Replace($out33, $_AnsiPattern, '')
+$env:AID_HOME = $savedHome33
+
+Assert ($rc33 -ne 0) 'T33a dispatcher with stale-core lib → exits non-zero' "expected non-zero exit, got $rc33"
+Assert-Contains $out33 'stale or incomplete' `
+    'T33b dispatcher stale-core: error says stale or incomplete'
+Assert-Contains $out33 'Re-run the installer' `
+    'T33c dispatcher stale-core: error says Re-run the installer'
+Write-Host ""
+
+# T34: After a successful re-bootstrap, bare aid.ps1 (dashboard) exits 0
+# (no "term not recognized" error from the refreshed lib).
+$AidHomeT34 = Join-Path $TmpRoot 'aid-home-t34'
+$AidBinT34  = Join-Path $AidHomeT34 'bin'
+$AidLibT34  = Join-Path $AidHomeT34 'lib'
+New-Item -ItemType Directory -Path $AidBinT34 -Force | Out-Null
+New-Item -ItemType Directory -Path $AidLibT34 -Force | Out-Null
+
+# Seed a stale install.
+$stalePs1Bytes34 = [System.Text.Encoding]::UTF8.GetBytes("#Requires -Version 5.1`n# stale`n")
+[System.IO.File]::WriteAllBytes((Join-Path $AidBinT34 'aid.ps1'), $stalePs1Bytes34)
+$staleModBytes34 = [System.Text.Encoding]::UTF8.GetBytes("# stale module`nfunction Stale-Fn { }`n")
+[System.IO.File]::WriteAllBytes((Join-Path $AidLibT34 'AidInstallCore.psm1'), $staleModBytes34)
+[System.IO.File]::WriteAllText((Join-Path $AidHomeT34 'VERSION'), "0.0.1`n")
+
+# Re-bootstrap.
+$savedHome34  = $env:AID_HOME
+$savedNoPath34 = $env:AID_NO_PATH
+$savedLib34   = $env:AID_LIB_PATH
+$env:AID_HOME     = $AidHomeT34
+$env:AID_NO_PATH  = '1'
+$env:AID_LIB_PATH = $LocalLibPath
+$outLines34 = & $PwshExe -NoProfile -File $InstallPs1 2>&1
+$rc34bs = $LASTEXITCODE
+$env:AID_HOME     = $savedHome34
+$env:AID_NO_PATH  = $savedNoPath34
+$env:AID_LIB_PATH = $savedLib34
+Assert-Eq "$rc34bs" '0' 'T34a re-bootstrap for dashboard test → exit 0'
+
+# Run bare aid.ps1 (dashboard) → should succeed with the fresh lib.
+$ProjT34 = Join-Path $TmpRoot 'project-t34'
+New-Item -ItemType Directory -Path $ProjT34 -Force | Out-Null
+$savedHome34b = $env:AID_HOME
+$savedLib34b  = $env:AID_LIB_PATH
+$env:AID_HOME     = $AidHomeT34
+$env:AID_LIB_PATH = $LocalLibPath
+Push-Location $ProjT34
+$outLines34b = & $PwshExe -NoProfile -File (Join-Path $AidBinT34 'aid.ps1') 2>&1
+$rc34 = $LASTEXITCODE
+Pop-Location
+$out34 = ($outLines34b | ForEach-Object { [string]$_ }) -join "`n"
+$out34 = [System.Text.RegularExpressions.Regex]::Replace($out34, $_AnsiPattern, '')
+$env:AID_HOME     = $savedHome34b
+$env:AID_LIB_PATH = $savedLib34b
+
+Assert-Eq "$rc34" '0' 'T34b bare aid.ps1 after re-bootstrap → exit 0 (no stale-core error)'
+Assert-Contains $out34 'AID v' 'T34c dashboard header present after re-bootstrap'
+Write-Host ""
+
+# ===========================================================================
 # Summary
 # ===========================================================================
 Write-Host "=== Summary ==="

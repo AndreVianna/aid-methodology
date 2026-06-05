@@ -678,25 +678,53 @@ if ($script:_InstallMode -eq 'BOOTSTRAP') {
     New-Item -ItemType Directory -Path $bsBinDir -Force | Out-Null
     New-Item -ItemType Directory -Path $bsLibDir -Force | Out-Null
 
+    # Clean-replace: remove stale files before copying so upgrades never leave old bits.
+    foreach ($bsStaleFile in @(
+        (Join-Path $bsBinDir 'aid.ps1'),
+        (Join-Path $bsBinDir 'aid.cmd'),
+        (Join-Path $bsBinDir 'aid'),
+        (Join-Path $bsLibDir 'AidInstallCore.psm1')
+    )) {
+        if (Test-Path $bsStaleFile -PathType Leaf) {
+            Remove-Item -LiteralPath $bsStaleFile -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     Copy-Item -LiteralPath $bsAidPs1 -Destination (Join-Path $bsBinDir 'aid.ps1') -Force
     if (Test-Path $bsAidCmd -PathType Leaf) {
         Copy-Item -LiteralPath $bsAidCmd -Destination (Join-Path $bsBinDir 'aid.cmd') -Force
     }
-    # Also install bin/aid (Bash dispatcher) if available in the bundle.
+
+    # Determine the lib source.
+    $bsLibSrc = $CoreModule
     if ($bsCliBundleExtract) {
         $bsAidBash = Join-Path $bsCliBundleExtract 'bin' | Join-Path -ChildPath 'aid'
         if (Test-Path $bsAidBash -PathType Leaf) {
             Copy-Item -LiteralPath $bsAidBash -Destination (Join-Path $bsBinDir 'aid') -Force
         }
-        # Use lib from bundle.
         $bsBundleLib = Join-Path $bsCliBundleExtract 'lib' | Join-Path -ChildPath 'AidInstallCore.psm1'
         if (Test-Path $bsBundleLib -PathType Leaf) {
-            Copy-Item -LiteralPath $bsBundleLib -Destination (Join-Path $bsLibDir 'AidInstallCore.psm1') -Force
-        } else {
-            Copy-Item -LiteralPath $CoreModule -Destination (Join-Path $bsLibDir 'AidInstallCore.psm1') -Force
+            $bsLibSrc = $bsBundleLib
         }
-    } else {
-        Copy-Item -LiteralPath $CoreModule -Destination (Join-Path $bsLibDir 'AidInstallCore.psm1') -Force
+    }
+
+    # Write lib via temp file then rename-replace (avoids PS module-lock issues on upgrades).
+    $bsLibDest = Join-Path $bsLibDir 'AidInstallCore.psm1'
+    $bsLibTmp  = Join-Path $bsLibDir ('AidInstallCore.psm1.install-tmp-' + [System.IO.Path]::GetRandomFileName())
+    try {
+        Copy-Item -LiteralPath $bsLibSrc -Destination $bsLibTmp -Force -ErrorAction Stop
+        Move-Item  -LiteralPath $bsLibTmp -Destination $bsLibDest -Force -ErrorAction Stop
+    } catch {
+        if (Test-Path $bsLibTmp -PathType Leaf) {
+            Remove-Item -LiteralPath $bsLibTmp -Force -ErrorAction SilentlyContinue
+        }
+        script:Fail "installer could not refresh the CLI core at ${bsLibDest}; close any running 'aid' or PowerShell using it and re-run, or delete ${aidHome} and reinstall. Detail: $_" 1
+    }
+
+    # Post-copy verify: assert the installed lib contains the expected sentinel.
+    $bsInstalledLibContent = Get-Content -LiteralPath $bsLibDest -Raw -ErrorAction SilentlyContinue
+    if (-not ($bsInstalledLibContent -match 'Get-AidStatusBody')) {
+        script:Fail "installer could not refresh the CLI core at ${bsLibDest}; the installed file does not contain the expected sentinel 'Get-AidStatusBody'. Close any running 'aid' or PowerShell using it and re-run, or delete ${aidHome} and reinstall." 1
     }
 
     $bsBytes = [System.Text.Encoding]::UTF8.GetBytes("$bsCliVersion`n")
@@ -823,23 +851,53 @@ if ($script:_InstallMode -eq 'CONVENIENCE') {
         New-Item -ItemType Directory -Path $convBinDir -Force | Out-Null
         New-Item -ItemType Directory -Path $convLibDir -Force | Out-Null
 
+        # Clean-replace: remove stale files before copying so upgrades never leave old bits.
+        foreach ($convStaleFile in @(
+            (Join-Path $convBinDir 'aid.ps1'),
+            (Join-Path $convBinDir 'aid.cmd'),
+            (Join-Path $convBinDir 'aid'),
+            (Join-Path $convLibDir 'AidInstallCore.psm1')
+        )) {
+            if (Test-Path $convStaleFile -PathType Leaf) {
+                Remove-Item -LiteralPath $convStaleFile -Force -ErrorAction SilentlyContinue
+            }
+        }
+
         Copy-Item -LiteralPath $convBinSrc -Destination (Join-Path $convBinDir 'aid.ps1') -Force
         if (Test-Path $convAidCmd -PathType Leaf) {
             Copy-Item -LiteralPath $convAidCmd -Destination (Join-Path $convBinDir 'aid.cmd') -Force
         }
+
+        # Determine the lib source.
+        $convLibSrc = $CoreModule
         if ($convCliBundleExtract) {
             $convBundleLib = Join-Path $convCliBundleExtract 'lib' | Join-Path -ChildPath 'AidInstallCore.psm1'
             if (Test-Path $convBundleLib -PathType Leaf) {
-                Copy-Item -LiteralPath $convBundleLib -Destination (Join-Path $convLibDir 'AidInstallCore.psm1') -Force
-            } else {
-                Copy-Item -LiteralPath $CoreModule -Destination (Join-Path $convLibDir 'AidInstallCore.psm1') -Force
+                $convLibSrc = $convBundleLib
             }
             $convBundleBash = Join-Path $convCliBundleExtract 'bin' | Join-Path -ChildPath 'aid'
             if (Test-Path $convBundleBash -PathType Leaf) {
                 Copy-Item -LiteralPath $convBundleBash -Destination (Join-Path $convBinDir 'aid') -Force
             }
-        } else {
-            Copy-Item -LiteralPath $CoreModule -Destination (Join-Path $convLibDir 'AidInstallCore.psm1') -Force
+        }
+
+        # Write lib via temp file then rename-replace (avoids PS module-lock issues on upgrades).
+        $convLibDest = Join-Path $convLibDir 'AidInstallCore.psm1'
+        $convLibTmp  = Join-Path $convLibDir ('AidInstallCore.psm1.install-tmp-' + [System.IO.Path]::GetRandomFileName())
+        try {
+            Copy-Item -LiteralPath $convLibSrc -Destination $convLibTmp -Force -ErrorAction Stop
+            Move-Item  -LiteralPath $convLibTmp -Destination $convLibDest -Force -ErrorAction Stop
+        } catch {
+            if (Test-Path $convLibTmp -PathType Leaf) {
+                Remove-Item -LiteralPath $convLibTmp -Force -ErrorAction SilentlyContinue
+            }
+            script:Fail "installer could not refresh the CLI core at ${convLibDest}; close any running 'aid' or PowerShell using it and re-run, or delete ${aidHome} and reinstall. Detail: $_" 1
+        }
+
+        # Post-copy verify: assert the installed lib contains the expected sentinel.
+        $convInstalledLibContent = Get-Content -LiteralPath $convLibDest -Raw -ErrorAction SilentlyContinue
+        if (-not ($convInstalledLibContent -match 'Get-AidStatusBody')) {
+            script:Fail "installer could not refresh the CLI core at ${convLibDest}; the installed file does not contain the expected sentinel 'Get-AidStatusBody'. Close any running 'aid' or PowerShell using it and re-run, or delete ${aidHome} and reinstall." 1
         }
 
         $convBytes = [System.Text.Encoding]::UTF8.GetBytes("$convCliVer`n")

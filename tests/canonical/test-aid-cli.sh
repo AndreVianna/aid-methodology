@@ -917,4 +917,108 @@ OUT=$(AID_HOME="${CLI028I_HOME}" AID_NO_UPDATE_CHECK=0 \
 assert_exit_eq "$RC" 0 "CLI028-I01 aid update → exit 0"
 assert_output_not_contains "$OUT" "A newer aid CLI is available" "CLI028-I02 update cmd: no update check notice"
 
+# ===========================================================================
+# CLI029: Upgrade regression — stale lib gets replaced on re-bootstrap
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# CLI029-A: BOOTSTRAP over an existing install with a stale lib refreshes it.
+# Seed AID_HOME with an old aid + a lib stub that does NOT contain aid_status_body.
+# Then re-bootstrap. Expect: lib now contains aid_status_body; VERSION updated.
+# ---------------------------------------------------------------------------
+CLI029A_HOME=$(newhome)
+mkdir -p "${CLI029A_HOME}/bin" "${CLI029A_HOME}/lib"
+
+# Seed a stale aid dispatcher (empty).
+printf '#!/usr/bin/env bash\n# stale\n' > "${CLI029A_HOME}/bin/aid"
+chmod +x "${CLI029A_HOME}/bin/aid"
+
+# Seed a stale lib that does NOT export aid_status_body.
+printf '#!/usr/bin/env bash\n# stale lib — missing aid_status_body\nstale_fn() { echo stale; }\n' \
+    > "${CLI029A_HOME}/lib/aid-install-core.sh"
+
+# Seed an old VERSION.
+printf '0.0.1\n' > "${CLI029A_HOME}/VERSION"
+
+# Re-bootstrap over the stale install.
+OUT=$(AID_HOME="${CLI029A_HOME}" AID_LIB_PATH="${LIB_CORE}" \
+      bash "${INSTALL_SH}" \
+      --no-path 2>&1); RC=$?
+
+assert_exit_eq "$RC" 0 "CLI029-A01 re-bootstrap over stale install → exit 0"
+assert_file_contains "${CLI029A_HOME}/lib/aid-install-core.sh" "aid_status_body" \
+    "CLI029-A02 re-bootstrap: installed lib now contains aid_status_body sentinel"
+assert_eq "$(tr -d '[:space:]' < "${CLI029A_HOME}/VERSION")" "${VERSION}" \
+    "CLI029-A03 re-bootstrap: VERSION updated to current"
+
+# ---------------------------------------------------------------------------
+# CLI029-B: Post-copy verify catches a deliberately-corrupted/empty lib.
+# Seed AID_LIB_PATH with an empty file → installer must exit non-zero with clear error.
+# ---------------------------------------------------------------------------
+CLI029B_HOME=$(newhome)
+CLI029B_BAD_LIB="$(mktemp "${TMP}/bad-lib.XXXXXX")"
+# Empty lib: no sentinel, no functions.
+: > "$CLI029B_BAD_LIB"
+
+OUT=$(AID_HOME="${CLI029B_HOME}" AID_LIB_PATH="$CLI029B_BAD_LIB" \
+      bash "${INSTALL_SH}" \
+      --no-path 2>&1); RC=$?
+
+assert_exit_ne "$RC" 0 "CLI029-B01 corrupted lib (empty) → installer exits non-zero"
+assert_output_contains "$OUT" "aid_status_body" \
+    "CLI029-B02 corrupted lib: error message mentions sentinel 'aid_status_body'"
+assert_output_contains "$OUT" "installer could not refresh" \
+    "CLI029-B03 corrupted lib: error message says 'installer could not refresh'"
+
+# ---------------------------------------------------------------------------
+# CLI029-C: Stale-core dispatcher guard (bin/aid).
+# Point aid at an AID_HOME whose lib is a stub missing aid_status_body.
+# The dispatcher must print the clear 'stale core' error and exit 1.
+# ---------------------------------------------------------------------------
+CLI029C_HOME=$(newhome)
+mkdir -p "${CLI029C_HOME}/bin" "${CLI029C_HOME}/lib"
+cp "${REPO_ROOT}/bin/aid" "${CLI029C_HOME}/bin/aid"
+chmod +x "${CLI029C_HOME}/bin/aid"
+
+# Write a stub lib that sources without error but does NOT define aid_status_body.
+printf '#!/usr/bin/env bash\n# stub lib — no aid_status_body\nstub_fn() { :; }\n' \
+    > "${CLI029C_HOME}/lib/aid-install-core.sh"
+printf '%s\n' "${VERSION}" > "${CLI029C_HOME}/VERSION"
+
+OUT=$(AID_HOME="${CLI029C_HOME}" \
+      bash "${CLI029C_HOME}/bin/aid" 2>&1); RC=$?
+
+assert_exit_ne "$RC" 0 "CLI029-C01 dispatcher with stale-core lib → exits non-zero"
+assert_output_contains "$OUT" "stale or incomplete" \
+    "CLI029-C02 dispatcher stale-core: error says 'stale or incomplete'"
+assert_output_contains "$OUT" "Re-run the installer" \
+    "CLI029-C03 dispatcher stale-core: error says 'Re-run the installer'"
+
+# ---------------------------------------------------------------------------
+# CLI029-D: After a successful re-bootstrap, bare 'aid' (dashboard) exits 0
+# (no "not recognized" error from the refreshed lib).
+# ---------------------------------------------------------------------------
+CLI029D_HOME=$(newhome)
+mkdir -p "${CLI029D_HOME}/bin" "${CLI029D_HOME}/lib"
+
+# Seed a stale install.
+printf '#!/usr/bin/env bash\n# stale\n' > "${CLI029D_HOME}/bin/aid"
+chmod +x "${CLI029D_HOME}/bin/aid"
+printf '#!/usr/bin/env bash\n# stale lib\nstale_fn() { :; }\n' \
+    > "${CLI029D_HOME}/lib/aid-install-core.sh"
+printf '0.0.1\n' > "${CLI029D_HOME}/VERSION"
+
+# Re-bootstrap.
+OUT_BS=$(AID_HOME="${CLI029D_HOME}" AID_LIB_PATH="${LIB_CORE}" \
+         bash "${INSTALL_SH}" --no-path 2>&1); RC_BS=$?
+assert_exit_eq "$RC_BS" 0 "CLI029-D01 re-bootstrap for dashboard test → exit 0"
+
+# Run bare 'aid' (dashboard) → should succeed with the fresh lib.
+TMP_TARGET_D=$(newtarget)
+OUT=$(cd "${TMP_TARGET_D}" && \
+     AID_HOME="${CLI029D_HOME}" AID_LIB_PATH="${CLI029D_HOME}/lib/aid-install-core.sh" \
+     bash "${CLI029D_HOME}/bin/aid" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "CLI029-D02 bare aid after re-bootstrap → exit 0 (no stale-core error)"
+assert_output_contains "$OUT" "AID v" "CLI029-D03 dashboard header present after re-bootstrap"
+
 test_summary
