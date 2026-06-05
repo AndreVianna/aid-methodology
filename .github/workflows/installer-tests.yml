@@ -51,6 +51,11 @@ jobs:
         with:
           python-version: '3.11'
 
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        if: matrix.mode == 'bash-harness'
+        with:
+          node-version: '20'
+
       - name: Ensure python3 resolves (Windows ships only `python`)
         if: matrix.mode == 'bash-harness'
         shell: bash
@@ -58,14 +63,14 @@ jobs:
 
       - name: Make scripts executable (Linux/macOS)
         if: matrix.mode == 'bash-harness'
-        run: find canonical/scripts tests/canonical bin -type f \( -name '*.sh' -o -name 'aid' \) -exec chmod +x {} +
+        run: find canonical/scripts tests/canonical bin packages/npm/scripts -type f \( -name '*.sh' -o -name '*.js' -o -name 'aid' \) -exec chmod +x {} +
 
       - name: Run installer + CLI + release suites (bash harness)
         if: matrix.mode == 'bash-harness'
         shell: bash
         run: |
           set -u
-          SUITES="test-install test-install-ps1 test-install-parity test-aid-cli test-aid-cli-ps1 test-aid-cli-parity test-release test-release-install-e2e"
+          SUITES="test-install test-install-ps1 test-install-parity test-aid-cli test-aid-cli-ps1 test-aid-cli-parity test-release test-release-install-e2e test-npm-installer"
           FAILED=""
           for s in $SUITES; do
             echo "::group::$s (${{ matrix.os }})"
@@ -86,7 +91,96 @@ jobs:
       # -----------------------------------------------------------------------
       # windows-latest: native PowerShell test
       # -----------------------------------------------------------------------
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        if: matrix.mode == 'native-ps1'
+        with:
+          node-version: '20'
+
       - name: Run native PowerShell installer test
         if: matrix.mode == 'native-ps1'
         shell: pwsh
         run: pwsh -NoProfile -File tests/windows/Test-AidInstaller.ps1
+
+      - name: npm channel Windows smoke (pack + global install + aid status/add)
+        if: matrix.mode == 'native-ps1'
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+
+          $repoRoot = (Get-Location).Path
+          $pkgDir   = Join-Path $repoRoot 'packages' 'npm'
+          $profilesDir = Join-Path $repoRoot 'profiles'
+          $version  = (Get-Content -LiteralPath (Join-Path $repoRoot 'VERSION') -Raw).Trim()
+
+          # Vendor the 6 aid-cli files into the package directory.
+          node (Join-Path $pkgDir 'scripts' 'vendor.js')
+
+          # Pack to a temp dir.
+          $packDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          npm pack --pack-destination $packDir.FullName (Resolve-Path $pkgDir).Path
+          $tgz = Get-ChildItem -Path $packDir.FullName -Filter '*.tgz' | Select-Object -First 1
+          if (-not $tgz) { Write-Error 'npm pack produced no .tgz'; exit 1 }
+          Write-Host "Packed: $($tgz.Name)"
+
+          # Global install.
+          $prefix = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          npm install -g $tgz.FullName --prefix $prefix.FullName
+          $aidJs = Get-ChildItem -Recurse -Path $prefix.FullName -Filter 'aid.js' |
+                   Where-Object { $_.FullName -notmatch 'node_modules' } |
+                   Select-Object -First 1
+          if (-not $aidJs) {
+              $aidJs = Get-ChildItem -Recurse -Path $prefix.FullName -Filter 'aid' |
+                       Where-Object { $_.FullName -notmatch 'lib' } |
+                       Select-Object -First 1
+          }
+          if (-not $aidJs) { Write-Error "installed aid not found under $($prefix.FullName)"; exit 1 }
+          Write-Host "Installed aid at: $($aidJs.FullName)"
+
+          # Set up a minimal AID_HOME from repo source.
+          $aidHome = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          New-Item -ItemType Directory -Path (Join-Path $aidHome.FullName 'bin') | Out-Null
+          New-Item -ItemType Directory -Path (Join-Path $aidHome.FullName 'lib') | Out-Null
+          Copy-Item (Join-Path $repoRoot 'bin' 'aid.ps1') (Join-Path $aidHome.FullName 'bin' 'aid.ps1')
+          Copy-Item (Join-Path $repoRoot 'lib' 'AidInstallCore.psm1') (Join-Path $aidHome.FullName 'lib' 'AidInstallCore.psm1')
+          Set-Content -LiteralPath (Join-Path $aidHome.FullName 'VERSION') -Value $version -Encoding utf8
+
+          # Smoke: aid status in empty dir -> exit 7.
+          $emptyDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          $env:AID_HOME = $aidHome.FullName
+          $env:AID_NO_UPDATE_CHECK = '1'
+          $out = node $aidJs.FullName status --target $emptyDir.FullName 2>&1
+          if ($LASTEXITCODE -ne 7) {
+              Write-Error "aid status empty dir: expected exit 7, got $LASTEXITCODE`nOutput: $out"
+              exit 1
+          }
+          Write-Host "aid status empty dir: exit 7 (PASS)"
+
+          # Smoke: build codex fixture tarball.
+          $fixtureDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          $profileDir = Join-Path $profilesDir 'codex'
+          $tarball    = Join-Path $fixtureDir.FullName "aid-codex-v$version.tar.gz"
+          $filelist   = [System.IO.Path]::GetTempFileName()
+          Get-ChildItem -Recurse -File -LiteralPath $profileDir |
+              Where-Object { $_.Name -notin @('README.md', 'emission-manifest.jsonl') } |
+              ForEach-Object { "./$($_.FullName.Substring($profileDir.Length + 1).Replace('\','/'))" } |
+              Set-Content $filelist -Encoding utf8
+          Push-Location $profileDir
+          tar -czf $tarball --no-recursion -T $filelist
+          Pop-Location
+          Remove-Item $filelist -ErrorAction SilentlyContinue
+
+          # Smoke: aid add codex --from-bundle.
+          $targetDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          $out2 = node $aidJs.FullName add codex --from-bundle $tarball --target $targetDir.FullName 2>&1
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "aid add codex: expected exit 0, got $LASTEXITCODE`nOutput: $out2"
+              exit 1
+          }
+          $codexDir = Join-Path $targetDir.FullName '.codex'
+          if (-not (Test-Path $codexDir -PathType Container)) {
+              Write-Error "aid add codex: .codex/ not created under $($targetDir.FullName)"
+              exit 1
+          }
+          Write-Host "aid add codex: .codex/ created (PASS)"
+          Write-Host "npm channel Windows smoke: all checks passed."

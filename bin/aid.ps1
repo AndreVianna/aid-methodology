@@ -259,13 +259,32 @@ function script:Invoke-AidUpdateCheck {
         if ($va -gt $vb) { break }
     }
     if ($isLt) {
-        Write-Host "A newer aid CLI is available: v$latestVersion (you have v$installedVersion). Run: aid update self"
+        $updateCmd = switch ($env:AID_INSTALL_CHANNEL) {
+            'npm'  { 'npm i -g @aid/installer@latest' }
+            'pypi' { 'pipx upgrade aid-installer  (or: pip install --user -U aid-installer)' }
+            default { 'aid update self' }
+        }
+        Write-Host "A newer aid CLI is available: v$latestVersion (you have v$installedVersion). Run: $updateCmd"
     }
 }
 
 # Invoke-AidUpdateSelf
 # Re-runs the bootstrap in place.  Relays bootstrap exit code.
+# AID_INSTALL_CHANNEL guard: npm/pypi channels print a package-manager hint
+# and exit 0 instead of re-bootstrapping.
 function script:Invoke-AidUpdateSelf {
+    switch ($env:AID_INSTALL_CHANNEL) {
+        'npm' {
+            Write-Host 'Updating the aid CLI: run  npm i -g @aid/installer@latest'
+            script:Exit-Aid 0
+            return
+        }
+        'pypi' {
+            Write-Host 'Updating the aid CLI: run  pipx upgrade aid-installer  (or: pip install --user -U aid-installer)'
+            script:Exit-Aid 0
+            return
+        }
+    }
     Write-Host 'Updating the aid CLI...'
     $url = $script:_AidInstallUrl
     try {

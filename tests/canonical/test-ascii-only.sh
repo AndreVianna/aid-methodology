@@ -30,6 +30,8 @@ SHIPPED_SCRIPTS=(
     "bin/aid.cmd"
     "install.sh"
     "install.ps1"
+    "packages/npm/bin/aid.js"
+    "packages/npm/scripts/vendor.js"
 )
 
 echo "=== ASCII-only guard ==="

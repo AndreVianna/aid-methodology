@@ -1,0 +1,36 @@
+{
+  "name": "@aid/installer",
+  "version": "0.7.5",
+  "description": "AID CLI installer - puts the persistent aid command on PATH via npm",
+  "bin": {
+    "aid": "bin/aid.js"
+  },
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "prepack": "node scripts/vendor.js"
+  },
+  "dependencies": {},
+  "files": [
+    "bin/",
+    "lib/",
+    "VERSION",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "aid",
+    "agentic",
+    "iterative",
+    "development",
+    "cli",
+    "installer"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AndreVianna/aid-methodology"
+  }
+}

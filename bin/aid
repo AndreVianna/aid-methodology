@@ -218,8 +218,14 @@ _aid_check_update() {
 
     # Compare: show notice only when latest > installed.
     if _semver_lt "$installed_version" "$latest_version"; then
-        printf 'A newer aid CLI is available: v%s (you have v%s). Run: aid update self\n' \
-            "$latest_version" "$installed_version"
+        local _update_cmd
+        case "${AID_INSTALL_CHANNEL:-}" in
+            npm)  _update_cmd="npm i -g @aid/installer@latest" ;;
+            pypi) _update_cmd="pipx upgrade aid-installer  (or: pip install --user -U aid-installer)" ;;
+            *)    _update_cmd="aid update self" ;;
+        esac
+        printf 'A newer aid CLI is available: v%s (you have v%s). Run: %s\n' \
+            "$latest_version" "$installed_version" "$_update_cmd"
     fi
     return 0
 }
@@ -228,6 +234,18 @@ _aid_check_update() {
 # update self command (formerly self-update).
 # ---------------------------------------------------------------------------
 _cmd_update_self() {
+    # AID_INSTALL_CHANNEL guard: npm/pypi channels print a package-manager hint
+    # and exit 0 instead of re-bootstrapping (which would overwrite the channel).
+    case "${AID_INSTALL_CHANNEL:-}" in
+        npm)
+            printf 'Updating the aid CLI: run  npm i -g @aid/installer@latest\n'
+            return 0
+            ;;
+        pypi)
+            printf 'Updating the aid CLI: run  pipx upgrade aid-installer  (or: pip install --user -U aid-installer)\n'
+            return 0
+            ;;
+    esac
     printf 'Updating the aid CLI...\n'
     if command -v curl >/dev/null 2>&1; then
         curl -fsSL "${AID_INSTALL_URL}" | bash
