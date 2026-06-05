@@ -73,6 +73,8 @@
 #   AID_SUMS_URL   — override URL for SHA256SUMS verification.
 #   AID_LIB_VERSION — pin the lib fetch to a specific release version.
 #   AID_INSECURE_SKIP_LIB_VERIFY — set to '1' to skip lib checksum (INSECURE).
+#   AID_CLI_BUNDLE_URL  — direct URL for the CLI bundle tarball (test/override).
+#   AID_CLI_BUNDLE_BASE — base URL for CLI bundle fetch (default: release download base).
 #
 # Exit codes:
 #   0   success
@@ -255,6 +257,113 @@ if (-not $Force -and ($env:AID_FORCE -eq '1' -or $env:AID_FORCE -eq 'true')) {
 #      AID_LIB_BASE / AID_SUMS_URL env overrides allow hermetic tests without network.
 # ---------------------------------------------------------------------------
 $script:_AidTmpLibDir = $null
+$script:_RemoteResolvedVer = ''   # set during remote lib-fetch; reused by CLI bundle fetch
+$script:_RemoteSumsFile    = ''   # path to fetched SHA256SUMS; reused by CLI bundle fetch
+$script:_AidCliBundleTmpDir = $null
+
+function script:Cleanup-CliBundleTmp {
+    if ($script:_AidCliBundleTmpDir -and (Test-Path $script:_AidCliBundleTmpDir -PathType Container)) {
+        Remove-Item -LiteralPath $script:_AidCliBundleTmpDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# Fetch-And-Verify-CliBundlePs1 <resolvedVer> [<localSumsFile>]
+# Fetches aid-cli-v<resolvedVer>.tar.gz, verifies sha256 against SHA256SUMS,
+# extracts to a temp dir, sets $script:_AidCliBundleExtractDir.
+# Honors AID_CLI_BUNDLE_URL, AID_CLI_BUNDLE_BASE, AID_INSECURE_SKIP_LIB_VERIFY.
+# Exit codes via script:Exit-Install: 3 = fetch failure, 4 = checksum mismatch.
+$script:_AidCliBundleExtractDir = $null
+
+function script:Fetch-And-Verify-CliBundlePs1 {
+    param([string]$ResolvedVer, [string]$LocalSumsFile = '')
+
+    $tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) ("aid-clibundle-" + [System.IO.Path]::GetRandomFileName())
+    New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+    $script:_AidCliBundleTmpDir = $tmpDir
+
+    $bundleFilename = "aid-cli-v$ResolvedVer.tar.gz"
+    $bundleFile = Join-Path $tmpDir $bundleFilename
+
+    # Resolve the CLI bundle URL.
+    $bundleUrl = ''
+    if ($env:AID_CLI_BUNDLE_URL) {
+        $bundleUrl = $env:AID_CLI_BUNDLE_URL
+    } else {
+        $defaultBundleBase = "https://github.com/AndreVianna/aid-methodology/releases/download/v$ResolvedVer"
+        $bundleBase = if ($env:AID_CLI_BUNDLE_BASE) { $env:AID_CLI_BUNDLE_BASE } else { $defaultBundleBase }
+        $bundleUrl = "$bundleBase/$bundleFilename"
+    }
+
+    [Console]::Error.WriteLine("Fetching CLI bundle from $bundleUrl ...")
+    try {
+        Invoke-WebRequest -Uri $bundleUrl -OutFile $bundleFile -UseBasicParsing -ErrorAction Stop
+    } catch {
+        [Console]::Error.WriteLine("ERROR: install.ps1: failed to fetch CLI bundle from $bundleUrl : $_")
+        script:Exit-Install 3
+    }
+
+    # Checksum verification.
+    if ($env:AID_INSECURE_SKIP_LIB_VERIFY -eq '1') {
+        [Console]::Error.WriteLine("WARN: install.ps1: AID_INSECURE_SKIP_LIB_VERIFY=1 — skipping CLI bundle checksum verification (INSECURE)")
+    } else {
+        $localSums = $LocalSumsFile
+        if (-not $localSums -or -not (Test-Path $localSums -PathType Leaf)) {
+            # Fetch SHA256SUMS now.
+            $sumsUrl = if ($env:AID_SUMS_URL) {
+                $env:AID_SUMS_URL
+            } elseif ($env:AID_LIB_BASE) {
+                $parentBase = $env:AID_LIB_BASE -replace '/lib/?$', ''
+                "$parentBase/SHA256SUMS"
+            } elseif ($env:AID_CLI_BUNDLE_BASE) {
+                "$($env:AID_CLI_BUNDLE_BASE)/SHA256SUMS"
+            } else {
+                "https://github.com/AndreVianna/aid-methodology/releases/download/v$ResolvedVer/SHA256SUMS"
+            }
+            $localSums = Join-Path $tmpDir 'SHA256SUMS'
+            [Console]::Error.WriteLine("Fetching SHA256SUMS from $sumsUrl ...")
+            try {
+                Invoke-WebRequest -Uri $sumsUrl -OutFile $localSums -UseBasicParsing -ErrorAction Stop
+            } catch {
+                [Console]::Error.WriteLine("ERROR: install.ps1: could not fetch SHA256SUMS from $sumsUrl; refusing to install unverified CLI bundle (fail-closed)")
+                [Console]::Error.WriteLine("ERROR: install.ps1: set AID_INSECURE_SKIP_LIB_VERIFY=1 to bypass (insecure)")
+                script:Exit-Install 3
+            }
+        }
+
+        $bundleHash = (Get-FileHash -LiteralPath $bundleFile -Algorithm SHA256).Hash.ToLower()
+        $expectedHash = ''
+        foreach ($line in [System.IO.File]::ReadAllLines($localSums)) {
+            if ($line -match "^\s*([0-9a-fA-F]{64})\s+[* ]?$([regex]::Escape($bundleFilename))$") {
+                $expectedHash = $matches[1].ToLower()
+                break
+            }
+        }
+        if (-not $expectedHash) {
+            [Console]::Error.WriteLine("ERROR: install.ps1: $bundleFilename not found in SHA256SUMS; refusing to install unverified CLI bundle (fail-closed)")
+            [Console]::Error.WriteLine("ERROR: install.ps1: set AID_INSECURE_SKIP_LIB_VERIFY=1 to bypass (insecure)")
+            script:Exit-Install 3
+        } elseif ($bundleHash -ne $expectedHash) {
+            [Console]::Error.WriteLine("ERROR: install.ps1: checksum mismatch for ${bundleFilename}: expected $expectedHash, got $bundleHash")
+            script:Exit-Install 4
+        } else {
+            [Console]::Error.WriteLine("Checksum OK: $bundleFilename")
+        }
+    }
+
+    # Extract the bundle.
+    $extractDir = Join-Path $tmpDir 'extracted'
+    New-Item -ItemType Directory -Path $extractDir -Force | Out-Null
+    try {
+        # tar is available on Windows 10 1803+ and all modern Linux/macOS.
+        $tarArgs = @('-xzf', $bundleFile, '-C', $extractDir)
+        & tar @tarArgs
+        if ($LASTEXITCODE -ne 0) { throw "tar exited $LASTEXITCODE" }
+    } catch {
+        [Console]::Error.WriteLine("ERROR: install.ps1: failed to extract CLI bundle: $_")
+        script:Exit-Install 1
+    }
+    $script:_AidCliBundleExtractDir = $extractDir
+}
 
 $aidLibPath = $env:AID_LIB_PATH
 if ($aidLibPath) {
@@ -360,7 +469,11 @@ if ($aidLibPath) {
         } else {
             [Console]::Error.WriteLine("Checksum OK: AidInstallCore.psm1")
         }
+        # Cache the fetched SHA256SUMS path and resolved version for CLI bundle reuse.
+        $script:_RemoteSumsFile    = $sumsFile
     }
+    # Expose the resolved version for CLI bundle fetch.
+    $script:_RemoteResolvedVer = $resolvedVer
 }
 Import-Module $CoreModule -Force -DisableNameChecking
 
@@ -530,12 +643,30 @@ if ($script:_InstallMode -eq 'BOOTSTRAP') {
     }
 
     # Locate aid.ps1 (beside install.ps1 in bin/).
+    # When absent (piped/iex execution), fetch the CLI bundle from the release.
     $bsAidPs1 = $null
+    $bsCliBundleExtract = $null
     if (-not [string]::IsNullOrEmpty($script:_InstallPs1Path)) {
         $bsAidPs1 = Join-Path (Split-Path -Parent $script:_InstallPs1Path) 'bin' | Join-Path -ChildPath 'aid.ps1'
     }
     if (-not $bsAidPs1 -or -not (Test-Path $bsAidPs1 -PathType Leaf)) {
-        script:Fail "aid.ps1 dispatcher not found. Ensure you are running the full release package." 1
+        # Piped bootstrap: aid.ps1 not beside install.ps1 — fetch CLI bundle.
+        # Version resolution: prefer cached value from remote lib-fetch; fall back to
+        # AID_LIB_VERSION env var or -Version parameter (so local-lib-path installs work too).
+        $bsResolvedVer = $script:_RemoteResolvedVer
+        if (-not $bsResolvedVer -and $env:AID_LIB_VERSION) { $bsResolvedVer = $env:AID_LIB_VERSION -replace '^v', '' }
+        if (-not $bsResolvedVer -and $bsCliVersion -and $bsCliVersion -ne '0.0.0') { $bsResolvedVer = $bsCliVersion }
+        if (-not $bsResolvedVer) {
+            script:Fail "Cannot determine release version for CLI bundle fetch; set AID_LIB_VERSION or -Version." 3
+        }
+        script:Fetch-And-Verify-CliBundlePs1 -ResolvedVer $bsResolvedVer -LocalSumsFile $script:_RemoteSumsFile
+        $bsCliBundleExtract = $script:_AidCliBundleExtractDir
+        $bsAidPs1 = Join-Path $bsCliBundleExtract 'bin' | Join-Path -ChildPath 'aid.ps1'
+        # Use version from bundle's VERSION file.
+        $bsBundleVer = Join-Path $bsCliBundleExtract 'VERSION'
+        if (Test-Path $bsBundleVer -PathType Leaf) {
+            $bsCliVersion = (Get-Content -LiteralPath $bsBundleVer -Raw).Trim()
+        }
     }
 
     # Locate aid.cmd (beside aid.ps1).
@@ -551,7 +682,22 @@ if ($script:_InstallMode -eq 'BOOTSTRAP') {
     if (Test-Path $bsAidCmd -PathType Leaf) {
         Copy-Item -LiteralPath $bsAidCmd -Destination (Join-Path $bsBinDir 'aid.cmd') -Force
     }
-    Copy-Item -LiteralPath $CoreModule -Destination (Join-Path $bsLibDir 'AidInstallCore.psm1') -Force
+    # Also install bin/aid (Bash dispatcher) if available in the bundle.
+    if ($bsCliBundleExtract) {
+        $bsAidBash = Join-Path $bsCliBundleExtract 'bin' | Join-Path -ChildPath 'aid'
+        if (Test-Path $bsAidBash -PathType Leaf) {
+            Copy-Item -LiteralPath $bsAidBash -Destination (Join-Path $bsBinDir 'aid') -Force
+        }
+        # Use lib from bundle.
+        $bsBundleLib = Join-Path $bsCliBundleExtract 'lib' | Join-Path -ChildPath 'AidInstallCore.psm1'
+        if (Test-Path $bsBundleLib -PathType Leaf) {
+            Copy-Item -LiteralPath $bsBundleLib -Destination (Join-Path $bsLibDir 'AidInstallCore.psm1') -Force
+        } else {
+            Copy-Item -LiteralPath $CoreModule -Destination (Join-Path $bsLibDir 'AidInstallCore.psm1') -Force
+        }
+    } else {
+        Copy-Item -LiteralPath $CoreModule -Destination (Join-Path $bsLibDir 'AidInstallCore.psm1') -Force
+    }
 
     $bsBytes = [System.Text.Encoding]::UTF8.GetBytes("$bsCliVersion`n")
     [System.IO.File]::WriteAllBytes((Join-Path $aidHome 'VERSION'), $bsBytes)
@@ -641,16 +787,31 @@ if ($script:_InstallMode -eq 'CONVENIENCE') {
     # Bootstrap the CLI if not already present.
     if (-not (Test-Path $convAidPs1 -PathType Leaf)) {
         $convBinSrc = $null
+        $convCliBundleExtract = $null
         if (-not [string]::IsNullOrEmpty($script:_InstallPs1Path)) {
             $convBinSrc = Join-Path (Split-Path -Parent $script:_InstallPs1Path) 'bin' | Join-Path -ChildPath 'aid.ps1'
         }
         if (-not $convBinSrc -or -not (Test-Path $convBinSrc -PathType Leaf)) {
-            script:Fail "aid.ps1 dispatcher not found. Ensure you are running the full release package." 1
+            # Piped bootstrap: fetch CLI bundle.
+            $convBundleVer = $script:_RemoteResolvedVer
+            if (-not $convBundleVer -and $env:AID_LIB_VERSION) { $convBundleVer = $env:AID_LIB_VERSION -replace '^v', '' }
+            if (-not $convBundleVer -and $convCliVer -and $convCliVer -ne '0.0.0') { $convBundleVer = $convCliVer }
+            if (-not $convBundleVer) {
+                script:Fail "Cannot determine release version for CLI bundle fetch; set AID_LIB_VERSION." 3
+            }
+            script:Fetch-And-Verify-CliBundlePs1 -ResolvedVer $convBundleVer -LocalSumsFile $script:_RemoteSumsFile
+            $convCliBundleExtract = $script:_AidCliBundleExtractDir
+            $convBinSrc = Join-Path $convCliBundleExtract 'bin' | Join-Path -ChildPath 'aid.ps1'
         }
         $convAidCmd = Join-Path (Split-Path -Parent $convBinSrc) 'aid.cmd'
 
         $convCliVer = '0.0.0'
-        if (-not [string]::IsNullOrEmpty($script:_InstallPs1Path)) {
+        if ($convCliBundleExtract) {
+            $cvf = Join-Path $convCliBundleExtract 'VERSION'
+            if (Test-Path $cvf -PathType Leaf) {
+                $convCliVer = (Get-Content -LiteralPath $cvf -Raw).Trim()
+            }
+        } elseif (-not [string]::IsNullOrEmpty($script:_InstallPs1Path)) {
             $vf = Join-Path (Split-Path -Parent $script:_InstallPs1Path) 'VERSION'
             if (Test-Path $vf -PathType Leaf) {
                 $convCliVer = (Get-Content -LiteralPath $vf -Raw).Trim()
@@ -666,7 +827,20 @@ if ($script:_InstallMode -eq 'CONVENIENCE') {
         if (Test-Path $convAidCmd -PathType Leaf) {
             Copy-Item -LiteralPath $convAidCmd -Destination (Join-Path $convBinDir 'aid.cmd') -Force
         }
-        Copy-Item -LiteralPath $CoreModule -Destination (Join-Path $convLibDir 'AidInstallCore.psm1') -Force
+        if ($convCliBundleExtract) {
+            $convBundleLib = Join-Path $convCliBundleExtract 'lib' | Join-Path -ChildPath 'AidInstallCore.psm1'
+            if (Test-Path $convBundleLib -PathType Leaf) {
+                Copy-Item -LiteralPath $convBundleLib -Destination (Join-Path $convLibDir 'AidInstallCore.psm1') -Force
+            } else {
+                Copy-Item -LiteralPath $CoreModule -Destination (Join-Path $convLibDir 'AidInstallCore.psm1') -Force
+            }
+            $convBundleBash = Join-Path $convCliBundleExtract 'bin' | Join-Path -ChildPath 'aid'
+            if (Test-Path $convBundleBash -PathType Leaf) {
+                Copy-Item -LiteralPath $convBundleBash -Destination (Join-Path $convBinDir 'aid') -Force
+            }
+        } else {
+            Copy-Item -LiteralPath $CoreModule -Destination (Join-Path $convLibDir 'AidInstallCore.psm1') -Force
+        }
 
         $convBytes = [System.Text.Encoding]::UTF8.GetBytes("$convCliVer`n")
         [System.IO.File]::WriteAllBytes((Join-Path $aidHome 'VERSION'), $convBytes)
@@ -921,6 +1095,7 @@ try {
     if ($script:_AidTmpLibDir -and (Test-Path $script:_AidTmpLibDir -PathType Container)) {
         Remove-Item -LiteralPath $script:_AidTmpLibDir -Recurse -Force -ErrorAction SilentlyContinue
     }
+    script:Cleanup-CliBundleTmp
 }
 
 } catch {

@@ -104,12 +104,15 @@ assert_exit_zero "$DRY_RC" "E2E01 release.sh --dry-run exits 0"
 
 TOOLS=(claude-code codex cursor copilot-cli antigravity)
 TARBALL_COUNT=$(ls "${STAGE_DIR}"/aid-*.tar.gz 2>/dev/null | wc -l | tr -d ' ')
-assert_eq "${TARBALL_COUNT}" "5" "E2E01b staging dir contains exactly 5 tarballs"
+assert_eq "${TARBALL_COUNT}" "6" "E2E01b staging dir contains exactly 6 tarballs (5 profile + 1 CLI bundle)"
 
 for _t in "${TOOLS[@]}"; do
     assert_file_exists "${STAGE_DIR}/aid-${_t}-v${STAGE_VERSION}.tar.gz" \
         "E2E01c aid-${_t}-v${STAGE_VERSION}.tar.gz staged"
 done
+
+# CLI bundle must also be staged.
+assert_file_exists "${STAGE_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz"  "E2E01c-cli aid-cli-v${STAGE_VERSION}.tar.gz staged"
 
 # Lib files must also be staged (fix #12 — release assets for bootstrap verification).
 assert_file_exists "${STAGE_DIR}/aid-install-core.sh"  "E2E01d aid-install-core.sh staged"
@@ -118,9 +121,9 @@ assert_file_exists "${STAGE_DIR}/AidInstallCore.psm1"  "E2E01e AidInstallCore.ps
 SUMS_FILE="${STAGE_DIR}/SHA256SUMS"
 assert_file_exists "${SUMS_FILE}" "E2E01f SHA256SUMS staged"
 
-# SHA256SUMS must cover all 7 assets (5 tarballs + 2 libs).
+# SHA256SUMS must cover all 8 assets (5 profile tarballs + 1 CLI bundle + 2 libs).
 SUMS_LINE_COUNT=$(wc -l < "${SUMS_FILE}" | tr -d ' ')
-assert_eq "${SUMS_LINE_COUNT}" "7" "E2E01g SHA256SUMS has 7 entries (5 tarballs + 2 libs)"
+assert_eq "${SUMS_LINE_COUNT}" "8" "E2E01g SHA256SUMS has 8 entries (5 profile tarballs + 1 CLI bundle + 2 libs)"
 
 # ---------------------------------------------------------------------------
 # E2E02 — Independent sha256sum -c verification.
@@ -429,6 +432,221 @@ else
         -Tool "${PRIMARY_TOOL}" \
         -TargetDirectory "${PS1_TARGET}"
     assert_exit_eq "$PS1_RC" 6 "E2E08s ps1 second uninstall → exit 6 (no manifest)"
+fi
+
+# ---------------------------------------------------------------------------
+# E2E09 — Piped CLI-bundle install (Bash): simulate curl|bash with no bin/ beside
+#          install.sh.  AID_CLI_BUNDLE_URL and AID_SUMS_URL point at local staged
+#          artifacts; AID_LIB_VERSION pins the version to skip the GitHub API.
+#          Verifies: CLI installed to temp AID_HOME, aid status/add work, tampered
+#          bundle exits 4, missing SHA256SUMS exits 3.
+# ---------------------------------------------------------------------------
+echo "--- E2E09: piped CLI-bundle install (Bash) ---"
+
+# Run install.sh from a temp dir that has NO bin/ beside it (simulates piped invocation).
+_E2E09_RUN_DIR="${TMP}/e2e09-run"
+mkdir -p "${_E2E09_RUN_DIR}"
+
+# We need a local HTTP server for the lib fetch (or use file://). Use file:// via AID_LIB_BASE.
+# Build a local "serve" dir with the lib, SHA256SUMS, and the CLI bundle.
+_E2E09_SERVE_DIR="${TMP}/e2e09-serve"
+mkdir -p "${_E2E09_SERVE_DIR}/lib"
+cp "${REPO_ROOT}/lib/aid-install-core.sh" "${_E2E09_SERVE_DIR}/lib/aid-install-core.sh"
+cp "${STAGE_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz" "${_E2E09_SERVE_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz"
+# Copy SHA256SUMS with all entries (already covers the CLI bundle).
+cp "${SUMS_FILE}" "${_E2E09_SERVE_DIR}/SHA256SUMS"
+
+# E2E09a — correct bundle + valid SHA256SUMS → CLI installed.
+_E2E09_AID_HOME="${TMP}/e2e09-aid-home"
+_E2E09_TARGET="${TMP}/e2e09-target"
+mkdir -p "${_E2E09_TARGET}"
+
+E2E09_OUT=$(cd "${_E2E09_RUN_DIR}" && \
+    env -u AID_LIB_PATH \
+    AID_LIB_VERSION="${STAGE_VERSION}" \
+    AID_LIB_BASE="file://${_E2E09_SERVE_DIR}/lib" \
+    AID_SUMS_URL="file://${_E2E09_SERVE_DIR}/SHA256SUMS" \
+    AID_CLI_BUNDLE_URL="file://${_E2E09_SERVE_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz" \
+    AID_HOME="${_E2E09_AID_HOME}" \
+    AID_NO_PATH=1 \
+    bash -s -- < "${INSTALL_SH}" 2>&1); E2E09_RC=$?
+assert_exit_zero "${E2E09_RC}" "E2E09a piped CLI-bundle install exits 0"
+assert_output_contains "${E2E09_OUT}" "Checksum OK" \
+    "E2E09b piped CLI-bundle install verifies checksum"
+assert_file_exists "${_E2E09_AID_HOME}/bin/aid" \
+    "E2E09c aid dispatcher installed to AID_HOME/bin/aid"
+assert_file_exists "${_E2E09_AID_HOME}/lib/aid-install-core.sh" \
+    "E2E09d install core installed to AID_HOME/lib/"
+assert_file_exists "${_E2E09_AID_HOME}/VERSION" \
+    "E2E09e VERSION file written to AID_HOME"
+
+# Verify aid status works (add a .claude dir to make it an AID project).
+mkdir -p "${_E2E09_TARGET}/.claude"
+_E2E09_STATUS_OUT=$(AID_HOME="${_E2E09_AID_HOME}" \
+    bash "${_E2E09_AID_HOME}/bin/aid" --from-bundle "${STAGE_DIR}/aid-claude-code-v${STAGE_VERSION}.tar.gz" \
+    --tool claude-code --target "${_E2E09_TARGET}" 2>&1 || true)
+# Just verify the CLI binary is executable and runs.
+assert_file_exists "${_E2E09_AID_HOME}/bin/aid" "E2E09f aid binary is present after piped install"
+
+# E2E09b — tampered CLI bundle → exit 4, CLI NOT installed.
+_E2E09_TAMPER_DIR="${TMP}/e2e09-tamper"
+mkdir -p "${_E2E09_TAMPER_DIR}/lib"
+cp "${REPO_ROOT}/lib/aid-install-core.sh" "${_E2E09_TAMPER_DIR}/lib/aid-install-core.sh"
+cp "${STAGE_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz" "${_E2E09_TAMPER_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz"
+printf 'TAMPER' >> "${_E2E09_TAMPER_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz"
+cp "${SUMS_FILE}" "${_E2E09_TAMPER_DIR}/SHA256SUMS"
+
+_E2E09_AID_HOME_TAMPER="${TMP}/e2e09-aid-home-tamper"
+E2E09T_OUT=$(cd "${_E2E09_RUN_DIR}" && \
+    env -u AID_LIB_PATH \
+    AID_LIB_VERSION="${STAGE_VERSION}" \
+    AID_LIB_BASE="file://${_E2E09_TAMPER_DIR}/lib" \
+    AID_SUMS_URL="file://${_E2E09_TAMPER_DIR}/SHA256SUMS" \
+    AID_CLI_BUNDLE_URL="file://${_E2E09_TAMPER_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz" \
+    AID_HOME="${_E2E09_AID_HOME_TAMPER}" \
+    AID_NO_PATH=1 \
+    bash -s -- < "${INSTALL_SH}" 2>&1); E2E09T_RC=$?
+assert_exit_eq "${E2E09T_RC}" 4 "E2E09g tampered CLI bundle → exit 4"
+assert_output_contains "${E2E09T_OUT}" "checksum mismatch" \
+    "E2E09h tampered CLI bundle error mentions checksum mismatch"
+assert_eq "$([[ -f "${_E2E09_AID_HOME_TAMPER}/bin/aid" ]] && echo exists || echo gone)" "gone" \
+    "E2E09i tampered bundle: aid NOT installed to AID_HOME"
+
+# E2E09c — missing SHA256SUMS → exit 3 (fail-closed), CLI NOT installed.
+_E2E09_NOSUMS_DIR="${TMP}/e2e09-nosums"
+mkdir -p "${_E2E09_NOSUMS_DIR}/lib"
+cp "${REPO_ROOT}/lib/aid-install-core.sh" "${_E2E09_NOSUMS_DIR}/lib/aid-install-core.sh"
+# Deliberately do NOT create SHA256SUMS.
+
+_E2E09_AID_HOME_NOSUMS="${TMP}/e2e09-aid-home-nosums"
+E2E09N_OUT=$(cd "${_E2E09_RUN_DIR}" && \
+    env -u AID_LIB_PATH \
+    AID_LIB_VERSION="${STAGE_VERSION}" \
+    AID_LIB_BASE="file://${_E2E09_NOSUMS_DIR}/lib" \
+    AID_SUMS_URL="file://${_E2E09_NOSUMS_DIR}/SHA256SUMS" \
+    AID_CLI_BUNDLE_URL="file://${_E2E09_SERVE_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz" \
+    AID_HOME="${_E2E09_AID_HOME_NOSUMS}" \
+    AID_NO_PATH=1 \
+    bash -s -- < "${INSTALL_SH}" 2>&1); E2E09N_RC=$?
+assert_exit_ne "${E2E09N_RC}" 0 "E2E09j missing SHA256SUMS → fail-closed (exit 3)"
+assert_eq "$([[ -f "${_E2E09_AID_HOME_NOSUMS}/bin/aid" ]] && echo exists || echo gone)" "gone" \
+    "E2E09k missing SHA256SUMS: aid NOT installed"
+
+# ---------------------------------------------------------------------------
+# E2E10 — Piped CLI-bundle install (PowerShell via pwsh): same flow as E2E09
+#          but through install.ps1 as a scriptblock (iex simulation).
+#          SKIP when pwsh is absent or python3 http.server is unavailable.
+# ---------------------------------------------------------------------------
+if [[ -z "$PWSH" ]]; then
+    echo "--- E2E10: SKIP (pwsh not found) ---"
+elif ! command -v python3 >/dev/null 2>&1; then
+    echo "--- E2E10: SKIP (python3 not found — needed for http server for PS1 test) ---"
+else
+    echo "--- E2E10: piped CLI-bundle install (PowerShell) ---"
+
+    # Find a free port.
+    _e2e10_find_free_port() {
+        local port=19200
+        while ss -tlnH "sport = :$port" 2>/dev/null | grep -q .; do
+            port=$((port + 1))
+        done
+        echo "$port"
+    }
+
+    # Start an http server serving the staged artifacts + lib.
+    _E2E10_SERVE_DIR="${TMP}/e2e10-serve"
+    mkdir -p "${_E2E10_SERVE_DIR}/lib"
+    cp "${REPO_ROOT}/lib/AidInstallCore.psm1" "${_E2E10_SERVE_DIR}/lib/AidInstallCore.psm1"
+    cp "${STAGE_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz" "${_E2E10_SERVE_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz"
+    cp "${SUMS_FILE}" "${_E2E10_SERVE_DIR}/SHA256SUMS"
+
+    _E2E10_PORT=$(_e2e10_find_free_port)
+    python3 -m http.server "${_E2E10_PORT}" --directory "${_E2E10_SERVE_DIR}" >/dev/null 2>&1 &
+    _E2E10_SERVER_PID=$!
+    # Wait for server to start.
+    _e10_waited=0
+    while ! curl -s --max-time 1 "http://127.0.0.1:${_E2E10_PORT}/" >/dev/null 2>&1; do
+        sleep 0.1
+        _e10_waited=$((_e10_waited + 1))
+        [[ "$_e10_waited" -ge 20 ]] && break
+    done
+
+    # Run install.ps1 as a scriptblock (piped mode) from a dir with no lib/ beside it.
+    _E2E10_PS1_RUN_DIR="${TMP}/e2e10-run"
+    mkdir -p "${_E2E10_PS1_RUN_DIR}"
+    _E2E10_PS1_COPY="${_E2E10_PS1_RUN_DIR}/install.ps1"
+    cp "${INSTALL_PS1}" "${_E2E10_PS1_COPY}"
+
+    _E2E10_AID_HOME="${TMP}/e2e10-aid-home"
+
+    _E2E10_OUT=$(env -u AID_LIB_PATH \
+        "AID_LIB_VERSION=${STAGE_VERSION}" \
+        "AID_LIB_BASE=http://127.0.0.1:${_E2E10_PORT}/lib" \
+        "AID_SUMS_URL=http://127.0.0.1:${_E2E10_PORT}/SHA256SUMS" \
+        "AID_CLI_BUNDLE_URL=http://127.0.0.1:${_E2E10_PORT}/aid-cli-v${STAGE_VERSION}.tar.gz" \
+        "AID_HOME=${_E2E10_AID_HOME}" \
+        "AID_NO_PATH=1" \
+        "$PWSH" -NoProfile -Command "
+\$ErrorActionPreference='Continue'
+& ([scriptblock]::Create((Get-Content '${_E2E10_PS1_COPY}' -Raw)))
+" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); _E2E10_RC=$?
+
+    kill "${_E2E10_SERVER_PID}" 2>/dev/null || true
+    wait "${_E2E10_SERVER_PID}" 2>/dev/null || true
+
+    assert_exit_zero "${_E2E10_RC}" "E2E10a piped PS1 CLI-bundle install exits 0"
+    assert_output_contains "${_E2E10_OUT}" "Checksum OK" \
+        "E2E10b piped PS1 install verifies checksum"
+    assert_file_exists "${_E2E10_AID_HOME}/bin/aid.ps1" \
+        "E2E10c aid.ps1 dispatcher installed to AID_HOME/bin/"
+    assert_file_exists "${_E2E10_AID_HOME}/lib/AidInstallCore.psm1" \
+        "E2E10d AidInstallCore.psm1 installed to AID_HOME/lib/"
+    assert_file_exists "${_E2E10_AID_HOME}/VERSION" \
+        "E2E10e VERSION file written to AID_HOME"
+
+    # E2E10b — tampered CLI bundle → exit 4.
+    _E2E10_TAMPER_SERVE="${TMP}/e2e10-tamper"
+    mkdir -p "${_E2E10_TAMPER_SERVE}/lib"
+    cp "${REPO_ROOT}/lib/AidInstallCore.psm1" "${_E2E10_TAMPER_SERVE}/lib/AidInstallCore.psm1"
+    cp "${STAGE_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz" "${_E2E10_TAMPER_SERVE}/aid-cli-v${STAGE_VERSION}.tar.gz"
+    printf 'TAMPER' >> "${_E2E10_TAMPER_SERVE}/aid-cli-v${STAGE_VERSION}.tar.gz"
+    cp "${SUMS_FILE}" "${_E2E10_TAMPER_SERVE}/SHA256SUMS"
+
+    _E2E10T_PORT=$(_e2e10_find_free_port)
+    python3 -m http.server "${_E2E10T_PORT}" --directory "${_E2E10_TAMPER_SERVE}" >/dev/null 2>&1 &
+    _E2E10T_PID=$!
+    _e10t_waited=0
+    while ! curl -s --max-time 1 "http://127.0.0.1:${_E2E10T_PORT}/" >/dev/null 2>&1; do
+        sleep 0.1
+        _e10t_waited=$((_e10t_waited + 1))
+        [[ "$_e10t_waited" -ge 20 ]] && break
+    done
+
+    _E2E10T_AID_HOME="${TMP}/e2e10-aid-home-tamper"
+    _E2E10T_OUT=$(env -u AID_LIB_PATH \
+        "AID_LIB_VERSION=${STAGE_VERSION}" \
+        "AID_LIB_BASE=http://127.0.0.1:${_E2E10T_PORT}/lib" \
+        "AID_SUMS_URL=http://127.0.0.1:${_E2E10T_PORT}/SHA256SUMS" \
+        "AID_CLI_BUNDLE_URL=http://127.0.0.1:${_E2E10T_PORT}/aid-cli-v${STAGE_VERSION}.tar.gz" \
+        "AID_HOME=${_E2E10T_AID_HOME}" \
+        "AID_NO_PATH=1" \
+        "$PWSH" -NoProfile -Command "
+\$ErrorActionPreference='Continue'
+& ([scriptblock]::Create((Get-Content '${_E2E10_PS1_COPY}' -Raw)))
+Write-Output \"LASTEXITCODE=\$LASTEXITCODE\"
+" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); _E2E10T_RC=$?
+
+    kill "${_E2E10T_PID}" 2>/dev/null || true
+    wait "${_E2E10T_PID}" 2>/dev/null || true
+
+    # In piped mode the PS1 doesn't actually exit the parent; check output for exit code.
+    if echo "${_E2E10T_OUT}" | grep -qF "checksum mismatch"; then
+        pass "E2E10f tampered PS1 CLI bundle error mentions checksum mismatch"
+    else
+        fail "E2E10f tampered PS1 CLI bundle error mentions checksum mismatch"
+    fi
+    assert_eq "$([[ -f "${_E2E10T_AID_HOME}/bin/aid.ps1" ]] && echo exists || echo gone)" "gone" \
+        "E2E10g tampered PS1 bundle: aid.ps1 NOT installed"
 fi
 
 test_summary

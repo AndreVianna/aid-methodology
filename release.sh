@@ -273,7 +273,52 @@ build_tarball "copilot-cli" "profiles/copilot-cli" ".github" "AGENTS.md"
 build_tarball "antigravity" "profiles/antigravity" ".agent" "AGENTS.md"
 
 # ---------------------------------------------------------------------------
-# Step 5: Emit SHA256SUMS
+# Step 5: Build the CLI bundle tarball
+#
+# aid-cli-v<VERSION>.tar.gz — extraction root IS the $AID_HOME layout:
+#   bin/aid, bin/aid.ps1, bin/aid.cmd,
+#   lib/aid-install-core.sh, lib/AidInstallCore.psm1,
+#   VERSION
+#
+# The piped-bootstrap (curl|bash / irm|iex) fetches this bundle when the
+# local bin/aid is absent, verifies it against SHA256SUMS, extracts to a
+# temp dir, and installs into $AID_HOME.
+# ---------------------------------------------------------------------------
+
+echo "release.sh: building CLI bundle (aid-cli-v${VERSION}.tar.gz) ..."
+
+CLI_BUNDLE_STAGE="${STAGE_DIR}/.cli-bundle-tmp"
+mkdir -p "${CLI_BUNDLE_STAGE}/bin" "${CLI_BUNDLE_STAGE}/lib"
+
+cp "${REPO_ROOT}/bin/aid"              "${CLI_BUNDLE_STAGE}/bin/aid"
+cp "${REPO_ROOT}/bin/aid.ps1"          "${CLI_BUNDLE_STAGE}/bin/aid.ps1"
+cp "${REPO_ROOT}/bin/aid.cmd"          "${CLI_BUNDLE_STAGE}/bin/aid.cmd"
+cp "${REPO_ROOT}/lib/aid-install-core.sh" "${CLI_BUNDLE_STAGE}/lib/aid-install-core.sh"
+cp "${REPO_ROOT}/lib/AidInstallCore.psm1" "${CLI_BUNDLE_STAGE}/lib/AidInstallCore.psm1"
+printf '%s\n' "${VERSION}" > "${CLI_BUNDLE_STAGE}/VERSION"
+
+CLI_BUNDLE="${REPO_ROOT}/${STAGE_DIR}/aid-cli-v${VERSION}.tar.gz"
+
+# Build deterministically from cli-bundle-tmp/: flat layout (no wrapping dir prefix).
+(
+    cd "${CLI_BUNDLE_STAGE}"
+    _cli_fl=$(mktemp)
+    printf '%s\n' \
+        "./bin/aid" \
+        "./bin/aid.ps1" \
+        "./bin/aid.cmd" \
+        "./lib/aid-install-core.sh" \
+        "./lib/AidInstallCore.psm1" \
+        "./VERSION" > "$_cli_fl"
+    tar -czf "${CLI_BUNDLE}" --no-recursion -T "$_cli_fl"
+    rm -f "$_cli_fl"
+)
+
+rm -rf "${CLI_BUNDLE_STAGE}"
+echo "release.sh:   done: aid-cli-v${VERSION}.tar.gz"
+
+# ---------------------------------------------------------------------------
+# Step 6: Emit SHA256SUMS
 # ---------------------------------------------------------------------------
 
 echo "release.sh: copying installer libs into staging dir ..."
@@ -289,7 +334,8 @@ echo "release.sh: generating SHA256SUMS ..."
 
 SUMS_FILE="${STAGE_DIR}/SHA256SUMS"
 
-# Compute checksums for all five tarballs + the two lib files, sorted by filename.
+# Compute checksums for all six tarballs (5 profile + 1 CLI bundle) + the two
+# lib files, sorted by filename.
 # We cd into the staging dir so filenames in SHA256SUMS are bare (no path prefix).
 # Use a glob array (not ls in command substitution) to avoid SC2046/SC2012.
 (
@@ -305,7 +351,7 @@ echo "release.sh: SHA256SUMS written:"
 cat "${SUMS_FILE}"
 
 # ---------------------------------------------------------------------------
-# Step 6: (--sign placeholder — deferred to feature-005)
+# Step 7: (--sign placeholder — deferred to feature-005)
 # ---------------------------------------------------------------------------
 # No-op in this feature; --sign exits early at argument-parse time.
 
@@ -325,7 +371,7 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Step 7: Create the GitHub Release
+# Step 8: Create the GitHub Release
 # ---------------------------------------------------------------------------
 
 if ! command -v gh >/dev/null 2>&1; then
@@ -347,7 +393,7 @@ else
     cat > "${STUB_NOTES}" <<EOF
 ## AID v${VERSION}
 
-Five per-profile tarballs for the AID methodology installer.
+Five per-profile tarballs + CLI bundle for the AID methodology installer.
 
 Verify your download:
 \`\`\`
@@ -357,7 +403,7 @@ EOF
     GH_ARGS+=(--notes-file "${STUB_NOTES}")
 fi
 
-# Add assets: tarballs + lib files + SHA256SUMS
+# Add assets: all tarballs (5 profile + 1 CLI bundle) + lib files + SHA256SUMS
 # Use a glob array (not ls in command substitution) to avoid SC2046/SC2012.
 ASSETS=()
 _gh_tarballs=( "${STAGE_DIR}"/aid-*.tar.gz )

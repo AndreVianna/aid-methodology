@@ -50,6 +50,8 @@
 #   AID_SUMS_URL       Override URL for SHA256SUMS verification.
 #   AID_LIB_VERSION    Pin the remote lib fetch to a specific release version.
 #   AID_INSECURE_SKIP_LIB_VERIFY  Set '1' to bypass lib checksum (INSECURE).
+#   AID_CLI_BUNDLE_URL Direct URL for the CLI bundle tarball (test/override).
+#   AID_CLI_BUNDLE_BASE Base URL for CLI bundle fetch (default: release download base).
 #
 # Exit codes:
 #   0   success
@@ -222,6 +224,12 @@ _cleanup_tmplib() {
     fi
 }
 
+# Exposed by _source_install_core when it performs a remote fetch:
+#   _REMOTE_RESOLVED_VER  — the version resolved during lib fetch (e.g. "0.7.0")
+#   _REMOTE_SUMS_FILE     — path to the fetched SHA256SUMS (reusable for CLI bundle check)
+_REMOTE_RESOLVED_VER=""
+_REMOTE_SUMS_FILE=""
+
 STAGING_BASE=""
 _cleanup_staging() {
     if [[ -n "$STAGING_BASE" && -d "$STAGING_BASE" ]]; then
@@ -230,6 +238,146 @@ _cleanup_staging() {
 }
 
 trap '_cleanup_tmplib; _cleanup_staging' EXIT
+
+# ---------------------------------------------------------------------------
+# _fetch_and_verify_cli_bundle <resolved_ver> <sums_url>
+#
+# Fetches aid-cli-v<resolved_ver>.tar.gz from the release download base,
+# verifies its sha256 against the SHA256SUMS file at <sums_url> (which was
+# already fetched and cached during the lib-fetch step), extracts to a temp
+# dir, and sets _AID_CLI_BUNDLE_EXTRACT_DIR to the extracted root.
+#
+# Honors AID_CLI_BUNDLE_URL (direct URL) and AID_CLI_BUNDLE_BASE (base URL).
+# Reuses AID_SUMS_URL / AID_INSECURE_SKIP_LIB_VERIFY semantics.
+#
+# Exit codes:
+#   3  fetch failure
+#   4  checksum mismatch
+# On success, _AID_CLI_BUNDLE_EXTRACT_DIR is set and the function returns 0.
+# ---------------------------------------------------------------------------
+_AID_CLI_BUNDLE_EXTRACT_DIR=""
+_AID_CLI_BUNDLE_TMPDIR=""
+
+_cleanup_cli_bundle() {
+    if [[ -n "${_AID_CLI_BUNDLE_TMPDIR:-}" && -d "${_AID_CLI_BUNDLE_TMPDIR}" ]]; then
+        rm -rf "${_AID_CLI_BUNDLE_TMPDIR}"
+    fi
+}
+
+_fetch_and_verify_cli_bundle() {
+    local resolved_ver="$1"
+    local sums_file="$2"   # path to already-fetched SHA256SUMS (may be "" if not fetched yet)
+
+    _AID_CLI_BUNDLE_TMPDIR="$(mktemp -d /tmp/aid-clibundle-XXXXXX)"
+    trap '_cleanup_tmplib; _cleanup_staging; _cleanup_cli_bundle' EXIT
+
+    local bundle_filename="aid-cli-v${resolved_ver}.tar.gz"
+    local bundle_file="${_AID_CLI_BUNDLE_TMPDIR}/${bundle_filename}"
+
+    # Resolve the CLI bundle URL.
+    local _bundle_url=""
+    if [[ -n "${AID_CLI_BUNDLE_URL:-}" ]]; then
+        _bundle_url="${AID_CLI_BUNDLE_URL}"
+    else
+        local _default_bundle_base="https://github.com/AndreVianna/aid-methodology/releases/download/v${resolved_ver}"
+        local _bundle_base="${AID_CLI_BUNDLE_BASE:-${_default_bundle_base}}"
+        _bundle_url="${_bundle_base}/${bundle_filename}"
+    fi
+
+    echo "Fetching CLI bundle from ${_bundle_url} ..." >&2
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL -o "${bundle_file}" "${_bundle_url}" || {
+            echo "ERROR: install.sh: failed to fetch CLI bundle from ${_bundle_url}" >&2
+            exit 3
+        }
+    elif command -v wget >/dev/null 2>&1; then
+        wget -qO "${bundle_file}" "${_bundle_url}" || {
+            echo "ERROR: install.sh: failed to fetch CLI bundle from ${_bundle_url}" >&2
+            exit 3
+        }
+    else
+        echo "ERROR: install.sh: neither curl nor wget found; cannot fetch CLI bundle" >&2
+        exit 3
+    fi
+
+    # Checksum verification (reuses the same SHA256SUMS used for lib verification).
+    if [[ "${AID_INSECURE_SKIP_LIB_VERIFY:-0}" == "1" ]]; then
+        echo "WARN: install.sh: AID_INSECURE_SKIP_LIB_VERIFY=1 set — skipping CLI bundle checksum verification (INSECURE)" >&2
+    else
+        # If sums_file is empty, we need to fetch it now.
+        local _local_sums=""
+        if [[ -n "$sums_file" && -f "$sums_file" ]]; then
+            _local_sums="$sums_file"
+        else
+            # Derive the SHA256SUMS URL (same logic as _source_install_core).
+            local _sums_url="${AID_SUMS_URL:-}"
+            if [[ -z "$_sums_url" ]]; then
+                if [[ -n "${AID_LIB_BASE:-}" ]]; then
+                    local _parent_base
+                    _parent_base="${AID_LIB_BASE%/lib}"
+                    _parent_base="${_parent_base%/lib/}"
+                    _sums_url="${_parent_base}/SHA256SUMS"
+                elif [[ -n "${AID_CLI_BUNDLE_BASE:-}" ]]; then
+                    # Derive from AID_CLI_BUNDLE_BASE parent.
+                    _sums_url="${AID_CLI_BUNDLE_BASE}/SHA256SUMS"
+                else
+                    _sums_url="https://github.com/AndreVianna/aid-methodology/releases/download/v${resolved_ver}/SHA256SUMS"
+                fi
+            fi
+            _local_sums="${_AID_CLI_BUNDLE_TMPDIR}/SHA256SUMS"
+            local _sums_ok=0
+            echo "Fetching SHA256SUMS from ${_sums_url} ..." >&2
+            if command -v curl >/dev/null 2>&1; then
+                curl -fsSL -o "${_local_sums}" "${_sums_url}" 2>/dev/null && _sums_ok=1 || _sums_ok=0
+            elif command -v wget >/dev/null 2>&1; then
+                wget -qO "${_local_sums}" "${_sums_url}" 2>/dev/null && _sums_ok=1 || _sums_ok=0
+            fi
+            if [[ "$_sums_ok" -ne 1 || ! -f "$_local_sums" ]]; then
+                echo "ERROR: install.sh: could not fetch SHA256SUMS; refusing to install unverified CLI bundle (fail-closed)" >&2
+                echo "ERROR: install.sh: set AID_INSECURE_SKIP_LIB_VERIFY=1 to bypass (insecure)" >&2
+                exit 3
+            fi
+        fi
+
+        # Compute hash of the fetched bundle.
+        local _bundle_sha=""
+        if command -v sha256sum >/dev/null 2>&1; then
+            _bundle_sha="$(sha256sum "${bundle_file}" | awk '{print $1}')"
+        elif command -v shasum >/dev/null 2>&1; then
+            _bundle_sha="$(shasum -a 256 "${bundle_file}" | awk '{print $1}')"
+        fi
+        if [[ -z "$_bundle_sha" ]]; then
+            echo "ERROR: install.sh: could not compute sha256 of CLI bundle; refusing to install unverified bundle" >&2
+            exit 3
+        fi
+
+        local _expected_sha
+        _expected_sha="$(grep "[[:space:]]${bundle_filename}$" "${_local_sums}" | awk '{print $1}')"
+        if [[ -z "$_expected_sha" ]]; then
+            echo "ERROR: install.sh: ${bundle_filename} not found in SHA256SUMS; refusing to install unverified CLI bundle (fail-closed)" >&2
+            echo "ERROR: install.sh: set AID_INSECURE_SKIP_LIB_VERIFY=1 to bypass (insecure)" >&2
+            exit 3
+        elif [[ "$_bundle_sha" != "$_expected_sha" ]]; then
+            echo "ERROR: install.sh: checksum mismatch for ${bundle_filename}: expected ${_expected_sha}, got ${_bundle_sha}" >&2
+            exit 4
+        else
+            echo "Checksum OK: ${bundle_filename}" >&2
+        fi
+    fi
+
+    # Extract the bundle to a temp dir.
+    _AID_CLI_BUNDLE_EXTRACT_DIR="${_AID_CLI_BUNDLE_TMPDIR}/extracted"
+    mkdir -p "${_AID_CLI_BUNDLE_EXTRACT_DIR}"
+    if command -v tar >/dev/null 2>&1; then
+        tar -xzf "${bundle_file}" -C "${_AID_CLI_BUNDLE_EXTRACT_DIR}" || {
+            echo "ERROR: install.sh: failed to extract CLI bundle ${bundle_file}" >&2
+            exit 1
+        }
+    else
+        echo "ERROR: install.sh: tar not found; cannot extract CLI bundle" >&2
+        exit 1
+    fi
+}
 
 # ---------------------------------------------------------------------------
 # Source the shared install core (same logic as before — resolution order:
@@ -366,7 +514,12 @@ _source_install_core() {
             else
                 echo "Checksum OK: aid-install-core.sh" >&2
             fi
+            # Cache the fetched SHA256SUMS path and resolved version for reuse by
+            # the CLI bundle fetch (avoids a second download of the same file).
+            _REMOTE_SUMS_FILE="$_sums_file"
         fi
+        # Expose the resolved version for the CLI bundle fetch.
+        _REMOTE_RESOLVED_VER="$_resolved_ver"
     fi
 
     # shellcheck source=lib/aid-install-core.sh
@@ -534,18 +687,46 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
 
     # Locate the dispatcher (bin/aid) to install.
     # It lives at: <script-dir>/bin/aid (relative to install.sh in the release tree).
+    # When absent (piped/curl execution), fetch the CLI bundle from the release.
     _BOOTSTRAP_AID_BIN="${SCRIPT_DIR}/bin/aid"
     if [[ ! -f "$_BOOTSTRAP_AID_BIN" ]]; then
-        die "aid dispatcher not found at ${_BOOTSTRAP_AID_BIN}. Ensure you are running the full release package." 1
+        # Piped bootstrap: bin/aid not beside install.sh.
+        # Fetch, verify, and extract the CLI bundle from the release.
+        # Version resolution: prefer cached remote lib-fetch value; fall back to
+        # AID_LIB_VERSION env var or _CLI_VERSION (covers local-lib-path installs too).
+        _bs_resolved_ver="${_REMOTE_RESOLVED_VER:-}"
+        [[ -z "$_bs_resolved_ver" && -n "${AID_LIB_VERSION:-}" ]] && _bs_resolved_ver="${AID_LIB_VERSION#v}"
+        [[ -z "$_bs_resolved_ver" && -n "$_CLI_VERSION" && "$_CLI_VERSION" != "0.0.0" ]] && _bs_resolved_ver="$_CLI_VERSION"
+        if [[ -z "$_bs_resolved_ver" ]]; then
+            die "Cannot determine release version for CLI bundle fetch; set AID_LIB_VERSION or --version." 3
+        fi
+        _fetch_and_verify_cli_bundle "$_bs_resolved_ver" "${_REMOTE_SUMS_FILE:-}"
+        # _AID_CLI_BUNDLE_EXTRACT_DIR now contains: bin/aid, bin/aid.ps1, bin/aid.cmd,
+        # lib/aid-install-core.sh, lib/AidInstallCore.psm1, VERSION.
+        _BOOTSTRAP_AID_BIN="${_AID_CLI_BUNDLE_EXTRACT_DIR}/bin/aid"
+        # Use the version from the bundle's VERSION file.
+        if [[ -f "${_AID_CLI_BUNDLE_EXTRACT_DIR}/VERSION" ]]; then
+            _CLI_VERSION="$(tr -d '[:space:]' < "${_AID_CLI_BUNDLE_EXTRACT_DIR}/VERSION")"
+        fi
+        _SOURCED_LIB_FILE="${_AID_CLI_BUNDLE_EXTRACT_DIR}/lib/aid-install-core.sh"
     fi
 
     # Stage into a temp dir, then atomic-move into AID_HOME to avoid partial writes.
     _BOOTSTRAP_STAGE="$(mktemp -d /tmp/aid-bootstrap-XXXXXX)"
-    trap '_cleanup_tmplib; _cleanup_staging; rm -rf "${_BOOTSTRAP_STAGE:-}"' EXIT
+    trap '_cleanup_tmplib; _cleanup_staging; _cleanup_cli_bundle; rm -rf "${_BOOTSTRAP_STAGE:-}"' EXIT
 
     mkdir -p "${_BOOTSTRAP_STAGE}/bin" "${_BOOTSTRAP_STAGE}/lib"
     cp "$_BOOTSTRAP_AID_BIN" "${_BOOTSTRAP_STAGE}/bin/aid"
     chmod +x "${_BOOTSTRAP_STAGE}/bin/aid"
+    # Also install aid.ps1 and aid.cmd if available (from bundle or release tree).
+    _BOOTSTRAP_AID_PS1="${SCRIPT_DIR}/bin/aid.ps1"
+    _BOOTSTRAP_AID_CMD="${SCRIPT_DIR}/bin/aid.cmd"
+    if [[ -n "${_AID_CLI_BUNDLE_EXTRACT_DIR:-}" ]]; then
+        _BOOTSTRAP_AID_PS1="${_AID_CLI_BUNDLE_EXTRACT_DIR}/bin/aid.ps1"
+        _BOOTSTRAP_AID_CMD="${_AID_CLI_BUNDLE_EXTRACT_DIR}/bin/aid.cmd"
+    fi
+    [[ -f "$_BOOTSTRAP_AID_PS1" ]] && cp "$_BOOTSTRAP_AID_PS1" "${_BOOTSTRAP_STAGE}/bin/aid.ps1"
+    [[ -f "$_BOOTSTRAP_AID_CMD" ]] && cp "$_BOOTSTRAP_AID_CMD" "${_BOOTSTRAP_STAGE}/bin/aid.cmd"
     cp "$_SOURCED_LIB_FILE" "${_BOOTSTRAP_STAGE}/lib/aid-install-core.sh"
     printf '%s\n' "$_CLI_VERSION" > "${_BOOTSTRAP_STAGE}/VERSION"
 
@@ -553,6 +734,8 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
     mkdir -p "$local_bin_dir" "$local_lib_dir"
     cp "${_BOOTSTRAP_STAGE}/bin/aid" "${local_bin_dir}/aid"
     chmod +x "${local_bin_dir}/aid"
+    [[ -f "${_BOOTSTRAP_STAGE}/bin/aid.ps1" ]] && cp "${_BOOTSTRAP_STAGE}/bin/aid.ps1" "${local_bin_dir}/aid.ps1"
+    [[ -f "${_BOOTSTRAP_STAGE}/bin/aid.cmd" ]] && cp "${_BOOTSTRAP_STAGE}/bin/aid.cmd" "${local_bin_dir}/aid.cmd"
     cp "${_BOOTSTRAP_STAGE}/lib/aid-install-core.sh" "${local_lib_dir}/aid-install-core.sh"
     cp "${_BOOTSTRAP_STAGE}/VERSION" "${AID_HOME}/VERSION"
 
@@ -669,17 +852,41 @@ if [[ "$_INSTALL_MODE" == "CONVENIENCE" ]]; then
     if [[ ! -f "$_CONV_AID_BIN" ]]; then
         # Install the CLI first.
         _CONV_BIN_SRC="${SCRIPT_DIR}/bin/aid"
+        _CONV_CLI_BUNDLE_EXTRACT=""
         if [[ ! -f "$_CONV_BIN_SRC" ]]; then
-            die "aid dispatcher not found at ${_CONV_BIN_SRC}. Ensure you are running the full release package." 1
+            # Piped bootstrap: bin/aid not beside install.sh — fetch CLI bundle.
+            _conv_resolved_ver="${_REMOTE_RESOLVED_VER:-}"
+            [[ -z "$_conv_resolved_ver" && -n "${AID_LIB_VERSION:-}" ]] && _conv_resolved_ver="${AID_LIB_VERSION#v}"
+            [[ -z "$_conv_resolved_ver" && -n "$_CONV_CLI_VER" && "$_CONV_CLI_VER" != "0.0.0" ]] && _conv_resolved_ver="$_CONV_CLI_VER"
+            if [[ -z "$_conv_resolved_ver" ]]; then
+                die "Cannot determine release version for CLI bundle fetch; set AID_LIB_VERSION." 3
+            fi
+            _fetch_and_verify_cli_bundle "$_conv_resolved_ver" "${_REMOTE_SUMS_FILE:-}"
+            _CONV_CLI_BUNDLE_EXTRACT="${_AID_CLI_BUNDLE_EXTRACT_DIR}"
+            _CONV_BIN_SRC="${_AID_CLI_BUNDLE_EXTRACT_DIR}/bin/aid"
         fi
         _CONV_VERSION_FILE="${SCRIPT_DIR}/VERSION"
         _CONV_CLI_VER="0.0.0"
-        [[ -f "$_CONV_VERSION_FILE" ]] && _CONV_CLI_VER="$(tr -d '[:space:]' < "$_CONV_VERSION_FILE")"
+        if [[ -n "$_CONV_CLI_BUNDLE_EXTRACT" && -f "${_CONV_CLI_BUNDLE_EXTRACT}/VERSION" ]]; then
+            _CONV_CLI_VER="$(tr -d '[:space:]' < "${_CONV_CLI_BUNDLE_EXTRACT}/VERSION")"
+        elif [[ -f "$_CONV_VERSION_FILE" ]]; then
+            _CONV_CLI_VER="$(tr -d '[:space:]' < "$_CONV_VERSION_FILE")"
+        fi
 
         mkdir -p "${AID_HOME}/bin" "${AID_HOME}/lib"
         cp "$_CONV_BIN_SRC" "${AID_HOME}/bin/aid"
         chmod +x "${AID_HOME}/bin/aid"
-        cp "$_SOURCED_LIB_FILE" "${AID_HOME}/lib/aid-install-core.sh"
+        # Install aid.ps1 / aid.cmd if available.
+        _conv_ps1_src="${SCRIPT_DIR}/bin/aid.ps1"
+        _conv_cmd_src="${SCRIPT_DIR}/bin/aid.cmd"
+        [[ -n "$_CONV_CLI_BUNDLE_EXTRACT" ]] && _conv_ps1_src="${_CONV_CLI_BUNDLE_EXTRACT}/bin/aid.ps1"
+        [[ -n "$_CONV_CLI_BUNDLE_EXTRACT" ]] && _conv_cmd_src="${_CONV_CLI_BUNDLE_EXTRACT}/bin/aid.cmd"
+        [[ -f "$_conv_ps1_src" ]] && cp "$_conv_ps1_src" "${AID_HOME}/bin/aid.ps1"
+        [[ -f "$_conv_cmd_src" ]] && cp "$_conv_cmd_src" "${AID_HOME}/bin/aid.cmd"
+        _conv_lib_src="$_SOURCED_LIB_FILE"
+        [[ -n "$_CONV_CLI_BUNDLE_EXTRACT" && -f "${_CONV_CLI_BUNDLE_EXTRACT}/lib/aid-install-core.sh" ]] && \
+            _conv_lib_src="${_CONV_CLI_BUNDLE_EXTRACT}/lib/aid-install-core.sh"
+        cp "$_conv_lib_src" "${AID_HOME}/lib/aid-install-core.sh"
         printf '%s\n' "$_CONV_CLI_VER" > "${AID_HOME}/VERSION"
         echo "aid CLI v${_CONV_CLI_VER} installed to ${AID_HOME}."
 

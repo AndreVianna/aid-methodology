@@ -1,0 +1,60 @@
+name: Installer CI (cross-platform)
+
+# The AID installer + `aid` CLI ship as bash (install.sh) and PowerShell (install.ps1)
+# and must work on real Linux/macOS AND real Windows. The main CI (test.yml) runs the
+# full canonical suite on Linux only; this workflow runs the platform-sensitive
+# installer/CLI/release suites on a real Windows runner (native pwsh, not pwsh-on-Linux)
+# in addition to Linux, and fires on every feature-branch push so changes are validated
+# remotely without a local full-suite run.
+
+on:
+  push:
+    branches-ignore: [master]   # master is covered by test.yml; feature branches run here
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  installer:
+    name: installer/CLI suites (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.11'
+      - name: Ensure python3 resolves (Windows ships only `python`)
+        shell: bash
+        run: command -v python3 >/dev/null || ln -s "$(command -v python)" "$(dirname "$(command -v python)")/python3" || true
+      - name: Make scripts executable (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: find canonical/scripts tests/canonical bin -type f \( -name '*.sh' -o -name 'aid' \) -exec chmod +x {} +
+      - name: Assert pwsh present (PowerShell coverage must not silently skip)
+        shell: bash
+        run: command -v pwsh >/dev/null || { echo "::error::pwsh missing on ${{ matrix.os }} — PowerShell suites would skip"; exit 1; }
+      - name: Run installer + CLI + release suites
+        shell: bash
+        run: |
+          set -u
+          SUITES="test-install test-install-ps1 test-install-parity test-aid-cli test-aid-cli-ps1 test-aid-cli-parity test-release test-release-install-e2e"
+          FAILED=""
+          for s in $SUITES; do
+            echo "::group::$s (${{ matrix.os }})"
+            if bash "tests/canonical/$s.sh"; then
+              echo "$s: PASS"
+            else
+              echo "::error::$s failed on ${{ matrix.os }}"
+              FAILED="$FAILED $s"
+            fi
+            echo "::endgroup::"
+          done
+          if [ -n "$FAILED" ]; then
+            echo "::error::Failed suites on ${{ matrix.os }}:$FAILED"
+            exit 1
+          fi
+          echo "All installer/CLI/release suites passed on ${{ matrix.os }}."

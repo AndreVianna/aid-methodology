@@ -124,16 +124,20 @@ OUT=$(cd "${CLONE}" && bash ./release.sh --dry-run 2>&1); RC=$?
 assert_exit_zero "$RC" "RL01 dry-run exits 0 (happy path)"
 
 # ---------------------------------------------------------------------------
-# RL01: Naming — exactly five tarballs named aid-<tool>-v<VERSION>.tar.gz
+# RL01: Naming — exactly six tarballs: five profile + one CLI bundle
 # ---------------------------------------------------------------------------
 TOOLS=("claude-code" "codex" "cursor" "copilot-cli" "antigravity")
 TARBALL_COUNT=$(ls "${STAGE_DIR}"/aid-*.tar.gz 2>/dev/null | wc -l | tr -d ' ')
-assert_eq "${TARBALL_COUNT}" "5" "RL01 exactly 5 tarballs in staging dir"
+assert_eq "${TARBALL_COUNT}" "6" "RL01 exactly 6 tarballs in staging dir (5 profile + 1 CLI bundle)"
 
 for tool in "${TOOLS[@]}"; do
     assert_file_exists "${STAGE_DIR}/aid-${tool}-v${STAGE_VERSION}.tar.gz" \
         "RL01 aid-${tool}-v${STAGE_VERSION}.tar.gz exists"
 done
+
+# CLI bundle.
+assert_file_exists "${STAGE_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz" \
+    "RL01 aid-cli-v${STAGE_VERSION}.tar.gz (CLI bundle) exists"
 
 # ---------------------------------------------------------------------------
 # RL02: Layout — expected roots present; no README.md; no emission-manifest.jsonl
@@ -229,7 +233,7 @@ assert_output_not_contains "${LISTING}" "aid-antigravity/" \
 # ---------------------------------------------------------------------------
 SUMS_FILE="${STAGE_DIR}/SHA256SUMS"
 assert_file_exists "${SUMS_FILE}" "RL04 SHA256SUMS file exists"
-assert_line_count "${SUMS_FILE}" 7 "RL04 SHA256SUMS has exactly 7 lines (5 tarballs + 2 libs)"
+assert_line_count "${SUMS_FILE}" 8 "RL04 SHA256SUMS has exactly 8 lines (5 profile tarballs + 1 CLI bundle + 2 libs)"
 
 # Validate each line matches the two-space format: <64-hex>  <filename>
 LINE_CHECK_PASS=1
@@ -280,6 +284,24 @@ for tool in "${TOOLS[@]}"; do
     assert_eq "${INDEP_HEX}" "${RECORDED_HEX}" \
         "RL05 checksum correctness for aid-${tool}-v${STAGE_VERSION}.tar.gz"
 done
+
+# CLI bundle checksum correctness.
+_cli_tarball="${STAGE_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz"
+_cli_indep_hex=$(sha256sum "${_cli_tarball}" | awk '{print $1}')
+_cli_fname="aid-cli-v${STAGE_VERSION}.tar.gz"
+_cli_recorded_hex=$(grep " ${_cli_fname}$" "${SUMS_FILE}" | awk '{print $1}')
+assert_eq "${_cli_indep_hex}" "${_cli_recorded_hex}" \
+    "RL05 checksum correctness for aid-cli-v${STAGE_VERSION}.tar.gz (CLI bundle)"
+
+# CLI bundle layout: must contain bin/aid, bin/aid.ps1, bin/aid.cmd, lib/aid-install-core.sh,
+# lib/AidInstallCore.psm1, VERSION.
+CLI_LISTING="$(tar -tzf "${_cli_tarball}")"
+assert_output_contains "${CLI_LISTING}" "./bin/aid"                    "RL05b CLI bundle contains ./bin/aid"
+assert_output_contains "${CLI_LISTING}" "./bin/aid.ps1"                "RL05c CLI bundle contains ./bin/aid.ps1"
+assert_output_contains "${CLI_LISTING}" "./bin/aid.cmd"                "RL05d CLI bundle contains ./bin/aid.cmd"
+assert_output_contains "${CLI_LISTING}" "./lib/aid-install-core.sh"    "RL05e CLI bundle contains ./lib/aid-install-core.sh"
+assert_output_contains "${CLI_LISTING}" "./lib/AidInstallCore.psm1"    "RL05f CLI bundle contains ./lib/AidInstallCore.psm1"
+assert_output_contains "${CLI_LISTING}" "./VERSION"                    "RL05g CLI bundle contains ./VERSION"
 
 # Also verify lib files' checksums.
 for libname in "aid-install-core.sh" "AidInstallCore.psm1"; do

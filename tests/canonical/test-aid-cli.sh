@@ -37,7 +37,7 @@ trap 'rm -rf "$TMP"' EXIT
 FIXTURE_DIR="${TMP}/fixtures"
 mkdir -p "${FIXTURE_DIR}"
 
-VERSION="0.7.0"
+VERSION="$(tr -d '[:space:]' < "${REPO_ROOT}/VERSION")"
 
 # ---------------------------------------------------------------------------
 # build_fixture_tarball <tool>
