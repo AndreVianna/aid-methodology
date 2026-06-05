@@ -1,5 +1,5 @@
 #Requires -Version 5.1
-# aid.ps1 — AID CLI dispatcher (PowerShell side).
+# aid.ps1 - AID CLI dispatcher (PowerShell side).
 #
 # Purpose:
 #   Persistent global command installed at $AID_HOME\bin\aid.ps1.  Parses
@@ -26,7 +26,7 @@
 #   -NoPath              (bootstrap / update self only) Skip PATH wiring.
 
 # ---------------------------------------------------------------------------
-# Bootstrap URL — single place to update when the branch merges to master.
+# Bootstrap URL - single place to update when the branch merges to master.
 # Override with $env:AID_INSTALL_URL for tests.
 # ---------------------------------------------------------------------------
 $script:_AidInstallUrl = if ($env:AID_INSTALL_URL) { $env:AID_INSTALL_URL } else {
@@ -58,7 +58,7 @@ $script:_AidSelfPath = $MyInvocation.MyCommand.Path
 if (-not [string]::IsNullOrEmpty($script:_AidSelfPath)) {
     $script:_AidHome = $env:AID_HOME
     if (-not $script:_AidHome) {
-        # bin/aid.ps1 → parent of bin/ = AID_HOME
+        # bin/aid.ps1 -> parent of bin/ = AID_HOME
         $script:_AidHome = Split-Path -Parent (Split-Path -Parent $script:_AidSelfPath)
     }
 } else {
@@ -75,13 +75,13 @@ if (-not (Test-Path $script:_CoreModule -PathType Leaf)) {
     [Console]::Error.WriteLine("ERROR: aid: install core not found at $($script:_CoreModule). Re-run the AID bootstrap to repair.")
     script:Exit-Aid 1
 }
-# Load the core lib by dot-sourcing its content (NOT Import-Module — avoids PowerShell's
+# Load the core lib by dot-sourcing its content (NOT Import-Module - avoids PowerShell's
 # module-analysis cache, which can serve a stale exported-command list across upgrades).
 # Export-ModuleMember is a module-only cmdlet; shadow it with a local no-op so the lib's
 # trailing Export-ModuleMember call is harmless when dot-sourced.
 $_aidLibRaw = $null
 try {
-    $_aidLibRaw = Get-Content -LiteralPath $script:_CoreModule -Raw -ErrorAction Stop
+    $_aidLibRaw = Get-Content -LiteralPath $script:_CoreModule -Raw -Encoding utf8 -ErrorAction Stop
 } catch {
     [Console]::Error.WriteLine("ERROR: aid: failed to read the CLI core from $($script:_CoreModule): $_")
     script:Exit-Aid 1
@@ -91,9 +91,9 @@ function Export-ModuleMember { param([Parameter(ValueFromRemainingArguments=$tru
 
 # Defensive guard: verify the required core function was loaded via dot-source.
 # If Get-AidStatusBody is still absent after dot-sourcing, the lib is genuinely
-# broken or incomplete (not a cache issue — the file itself is the problem).
+# broken or incomplete (not a cache issue - the file itself is the problem).
 if (-not (Get-Command 'Get-AidStatusBody' -ErrorAction SilentlyContinue)) {
-    [Console]::Error.WriteLine("ERROR: aid: failed to load the CLI core from $($script:_CoreModule). The file may be incomplete — reinstall with: irm $($script:_AidInstallUrl) | iex")
+    [Console]::Error.WriteLine("ERROR: aid: failed to load the CLI core from $($script:_CoreModule). The file may be incomplete - reinstall with: irm $($script:_AidInstallUrl) | iex")
     script:Exit-Aid 1
 }
 
@@ -131,7 +131,7 @@ function script:Show-AidUsage {
             Write-Host '  Print the installed aid CLI version and exit 0.'
         }
         default {
-            Write-Host 'aid — AID CLI'
+            Write-Host 'aid - AID CLI'
             Write-Host ''
             Write-Host 'Usage:'
             Write-Host '  aid                              Show the dashboard'
@@ -218,7 +218,7 @@ function script:Invoke-AidUpdateCheck {
             # handle file://, so we strip the scheme and read the file directly).
             if ($checkUrl -match '^file:///?(.+)$') {
                 $filePath = $matches[1]
-                # On Windows file:///C:/path → C:/path; on Linux file:///tmp/path → /tmp/path
+                # On Windows file:///C:/path -> C:/path; on Linux file:///tmp/path -> /tmp/path
                 if ($filePath -notmatch '^[A-Za-z]:') {
                     $filePath = '/' + $filePath.TrimStart('/')
                 }
@@ -259,7 +259,7 @@ function script:Invoke-AidUpdateCheck {
         if ($va -gt $vb) { break }
     }
     if ($isLt) {
-        Write-Host "`u{2B06} A newer aid CLI is available: v$latestVersion (you have v$installedVersion). Run: aid update self"
+        Write-Host "A newer aid CLI is available: v$latestVersion (you have v$installedVersion). Run: aid update self"
     }
 }
 
@@ -279,7 +279,7 @@ function script:Invoke-AidUpdateSelf {
 }
 
 # ---------------------------------------------------------------------------
-# PATH wiring helpers (Windows — User-scope registry).
+# PATH wiring helpers (Windows - User-scope registry).
 # ---------------------------------------------------------------------------
 
 # Add-AidToPath <binDir> [-NoPath]
@@ -300,7 +300,7 @@ function script:Add-AidToPath {
     # Split on ';', filter empty, deduplicate while preserving order.
     $parts = $currentPath -split ';' | Where-Object { $_ -and $_.Trim() }
     if ($parts -contains $BinDir) {
-        # Already present — update in-process path and return silently.
+        # Already present - update in-process path and return silently.
         if ($env:Path -notmatch [regex]::Escape($BinDir)) {
             $env:Path = "$BinDir;$($env:Path)"
         }
@@ -362,7 +362,7 @@ $script:_RawArgs = $args
 # Resolve verbose from env var first (flag overrides below).
 $script:_AidVerbose = ($env:AID_VERBOSE -eq '1')
 
-# ---- Bare aid → dashboard landing screen ----
+# ---- Bare aid -> dashboard landing screen ----
 if ($script:_RawArgs.Count -eq 0) {
     # Block 1 + 2: Header + description.
     $cliVersion = 'unknown'
@@ -370,7 +370,7 @@ if ($script:_RawArgs.Count -eq 0) {
     if (Test-Path $verFile -PathType Leaf) {
         $cliVersion = (Get-Content -LiteralPath $verFile -Raw).Trim()
     }
-    Write-Host "AID v$cliVersion — Agentic Iterative Development"
+    Write-Host "AID v$cliVersion - Agentic Iterative Development"
     Write-Host "Install, update, and manage AID across your repositories."
 
     # Block 3: Installed tools for cwd.
@@ -455,7 +455,7 @@ if ($SUBCMD -eq 'status') {
 }
 
 # ---------------------------------------------------------------------------
-# update (with 'self' subarg → update self)
+# update (with 'self' subarg -> update self)
 # ---------------------------------------------------------------------------
 if ($SUBCMD -eq 'update') {
     if ($script:_RemArgs.Count -gt 0 -and $script:_RemArgs[0] -eq 'self') {
@@ -477,7 +477,7 @@ if ($SUBCMD -eq 'update') {
 }
 
 # ---------------------------------------------------------------------------
-# remove (with 'self' subarg → remove self)
+# remove (with 'self' subarg -> remove self)
 # ---------------------------------------------------------------------------
 if ($SUBCMD -eq 'remove') {
     if ($script:_RemArgs.Count -gt 0 -and $script:_RemArgs[0] -eq 'self') {
@@ -548,7 +548,7 @@ if ($SUBCMD -eq 'remove') {
 }
 
 # ---------------------------------------------------------------------------
-# add / remove / update — validate subcommand
+# add / remove / update - validate subcommand
 # ---------------------------------------------------------------------------
 if ($SUBCMD -notin @('add', 'remove', 'update')) {
     [Console]::Error.WriteLine("ERROR: aid: unknown command: $SUBCMD (see 'aid -h')")
@@ -596,7 +596,7 @@ while ($remIdx -lt $script:_RemArgs.Count) {
             script:Fail-Aid "unknown flag: $a" 2
         }
         default {
-            # Positional: tool name(s) — comma-separated or space-separated.
+            # Positional: tool name(s) - comma-separated or space-separated.
             $_AidPosTools.Add($a)
             break
         }
@@ -670,7 +670,7 @@ function script:Resolve-AidToolList {
 
     if (-not $Raw) {
         if ($Subcmd -in @('update', 'remove')) {
-            # No tool specified → all tools in manifest.
+            # No tool specified -> all tools in manifest.
             if (-not (Test-Path $ManifestPath -PathType Leaf)) {
                 $ResultRef.Value = $true  # success, empty list = no manifest
                 return
@@ -844,7 +844,7 @@ try {
 } catch {
     $msg = "$_"
     if ($msg.StartsWith($script:_SentinelTag)) {
-        # Clean unwind in piped mode — $global:LASTEXITCODE already set.
+        # Clean unwind in piped mode - $global:LASTEXITCODE already set.
         return
     }
     if ($script:_PipedMode) {

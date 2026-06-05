@@ -1,35 +1,35 @@
 #Requires -Version 5.1
-# AidInstallCore.psm1 — Shared PowerShell install-core module for the AID installer.
+# AidInstallCore.psm1 - Shared PowerShell install-core module for the AID installer.
 #
 # Purpose:
 #   Importable module of pure functions used by install.ps1 (PowerShell bootstrap)
-#   and any future in-language caller.  No top-level side effects when imported —
+#   and any future in-language caller.  No top-level side effects when imported -
 #   every function is defined here; nothing executes at import time.
 #
 # Provides:
-#   Get-Sha256File <path>                        — hex sha256 of file (returns string)
-#   Normalize-Tool <id>                          — canonical lower-case-hyphen tool id
-#   Detect-Tool <target>                         — detected tool id; throws on 0 or >1
-#   Resolve-AidVersion                           — latest GitHub release version; throws on fail
-#   Fetch-Tarball <tool> <ver> <destDir>         — download + verify tarball; throws on error
-#   Extract-Tarball <tarball> <destDir>          — extract (flat root); throws on fail
-#   Verify-BundleChecksum <tarball>              — verify sibling SHA256SUMS if present
-#   Copy-AidFile <src> <dst> [force] [aidVerbose]  — copy semantics; per-file output when verbose
-#   Copy-AidDir <srcDir> <dstDir> [force] [aidVerbose] — recursive copy via Copy-AidFile
+#   Get-Sha256File <path>                        - hex sha256 of file (returns string)
+#   Normalize-Tool <id>                          - canonical lower-case-hyphen tool id
+#   Detect-Tool <target>                         - detected tool id; throws on 0 or >1
+#   Resolve-AidVersion                           - latest GitHub release version; throws on fail
+#   Fetch-Tarball <tool> <ver> <destDir>         - download + verify tarball; throws on error
+#   Extract-Tarball <tarball> <destDir>          - extract (flat root); throws on fail
+#   Verify-BundleChecksum <tarball>              - verify sibling SHA256SUMS if present
+#   Copy-AidFile <src> <dst> [force] [aidVerbose]  - copy semantics; per-file output when verbose
+#   Copy-AidDir <srcDir> <dstDir> [force] [aidVerbose] - recursive copy via Copy-AidFile
 #   Install-AidTool <staging> <tool> <target> <version> [force] [aidVerbose]
-#                                                — full install for one tool (copy + manifest)
-#   Read-ManifestToolPaths <manifest> <tool>     — array of paths from tools.<tool>.paths
-#   Read-ManifestToolVersion <manifest> <tool>   — version string for named tool
+#                                                - full install for one tool (copy + manifest)
+#   Read-ManifestToolPaths <manifest> <tool>     - array of paths from tools.<tool>.paths
+#   Read-ManifestToolVersion <manifest> <tool>   - version string for named tool
 #   Read-ManifestRootAgent <manifest> <tool> <fname>
-#                                                — sha256 from root_agent_files entry (or empty)
+#                                                - sha256 from root_agent_files entry (or empty)
 #   Read-ManifestRootAgentStatus <manifest> <tool> <fname>
-#                                                — status field from root_agent_files entry
+#                                                - status field from root_agent_files entry
 #   Write-AidManifest <manifest> <tool> <version> <paths> <rootEntries>
-#                                                — atomic write/merge of manifest JSON
-#   Remove-ManifestTool <manifest> <tool>        — removes a tool section from manifest
-#   Test-ManifestExists <manifest>               — returns $true when manifest exists/parseable
-#   Uninstall-AidTool <manifest> <tool> <target> [aidVerbose] — manifest-driven removal
-#   Write-VersionMarker <target> <version>       — writes <target>/.aid/.aid-version
+#                                                - atomic write/merge of manifest JSON
+#   Remove-ManifestTool <manifest> <tool>        - removes a tool section from manifest
+#   Test-ManifestExists <manifest>               - returns $true when manifest exists/parseable
+#   Uninstall-AidTool <manifest> <tool> <target> [aidVerbose] - manifest-driven removal
+#   Write-VersionMarker <target> <version>       - writes <target>/.aid/.aid-version
 #
 # Verbose mode:
 #   Pass -AidVerbose $true to Install-AidTool / Uninstall-AidTool / Copy-AidFile /
@@ -82,7 +82,7 @@ function script:Get-RootAgentFile {
 # Utility
 # ---------------------------------------------------------------------------
 
-# Get-Sha256File <path> — return lower-case hex sha256 of file content.
+# Get-Sha256File <path> - return lower-case hex sha256 of file content.
 function Get-Sha256File {
     param([string]$FilePath)
     $hash = (Get-FileHash -LiteralPath $FilePath -Algorithm SHA256).Hash
@@ -93,14 +93,14 @@ function Get-Sha256File {
 # Tool-id normalization + detection
 # ---------------------------------------------------------------------------
 
-# Normalize-Tool <input> — return canonical id or $null on unknown.
+# Normalize-Tool <input> - return canonical id or $null on unknown.
 # Accepts canonical ids (case-insensitive) and PascalCase aliases.
 # All forms normalize via ToLower() mapping:
-#   claude-code / claudecode / ClaudeCode  → 'claude-code'
-#   codex / Codex                          → 'codex'
-#   cursor / Cursor                        → 'cursor'
-#   copilot-cli / copilotcli / CopilotCli → 'copilot-cli'
-#   antigravity / Antigravity             → 'antigravity'
+#   claude-code / claudecode / ClaudeCode  -> 'claude-code'
+#   codex / Codex                          -> 'codex'
+#   cursor / Cursor                        -> 'cursor'
+#   copilot-cli / copilotcli / CopilotCli -> 'copilot-cli'
+#   antigravity / Antigravity             -> 'antigravity'
 function Normalize-Tool {
     param([string]$Raw)
     switch ($Raw.ToLower()) {
@@ -118,7 +118,7 @@ function Normalize-Tool {
     }
 }
 
-# Detect-Tool <target> — auto-detect installed host tool from tree markers.
+# Detect-Tool <target> - auto-detect installed host tool from tree markers.
 # Returns canonical id.  Writes error message to stderr and returns $null on ambiguous (>1) or none (0).
 function Detect-Tool {
     param([string]$TargetPath)
@@ -162,7 +162,7 @@ function Detect-Tool {
 # Version resolution (online)
 # ---------------------------------------------------------------------------
 
-# Resolve-AidVersion — fetch the latest release tag from GitHub API.
+# Resolve-AidVersion - fetch the latest release tag from GitHub API.
 # Returns the version without leading 'v'.  Returns $null on failure.
 function Resolve-AidVersion {
     $url = "$($script:AID_API_BASE)/releases/latest"
@@ -279,7 +279,7 @@ function Verify-BundleChecksum {
 }
 
 # Extract-Tarball <tarball> <destDir>
-# Extracts into destDir.  feature-002 §S2.3 guarantees a flat-root tarball.
+# Extracts into destDir.  feature-002 S2.3 guarantees a flat-root tarball.
 # Asserts the flat-root contract and fails loudly when violated.
 # Returns $true on success.
 function Extract-Tarball {
@@ -303,7 +303,7 @@ function Extract-Tarball {
             # (pattern: "topdir/" with no sub-separators before the trailing slash).
             $firstMember = $listOutput | Where-Object { $_ -match '\S' } | Select-Object -First 1
             if ($firstMember -match '^[^/]+/$') {
-                [Console]::Error.WriteLine("ERROR: AidInstallCore: tarball has a wrapping top-level directory ('$firstMember') — expected flat-root per feature-002 §S2.3 contract: $Tarball")
+                [Console]::Error.WriteLine("ERROR: AidInstallCore: tarball has a wrapping top-level directory ('$firstMember') - expected flat-root per feature-002 S2.3 contract: $Tarball")
                 return $false
             }
 
@@ -319,8 +319,8 @@ function Extract-Tarball {
         }
     }
 
-    # Expand-Archive fallback (zip only — for .tar.gz this is a limitation;
-    # documented fallback per SPEC §Artifact-consumption contract).
+    # Expand-Archive fallback (zip only - for .tar.gz this is a limitation;
+    # documented fallback per SPEC Artifact-consumption contract).
     # For tar.gz on old Windows without tar.exe we use a workaround via .NET GZipStream.
     [Console]::Error.WriteLine("WARN: AidInstallCore: tar not found; attempting Expand-Archive fallback (zip only)")
     try {
@@ -401,7 +401,7 @@ function Copy-AidDir {
         }
     }
 
-    # Copy files in ordinal (byte-order) sorted order — matching Bash's `find | sort -z`.
+    # Copy files in ordinal (byte-order) sorted order - matching Bash's `find | sort -z`.
     # Use [System.Array]::Sort with StringComparer.Ordinal for byte-identical path ordering.
     $fileItems = @(Get-ChildItem -LiteralPath $SrcDir -Recurse -File -ErrorAction SilentlyContinue)
     if ($fileItems.Count -gt 0) {
@@ -422,8 +422,8 @@ function Copy-AidDir {
 # script:Copy-RootAgentFile <src> <dst> <tool> <force> [manifest] [aidVerbose]
 # Implements the FR11 algorithm.
 # Returns:
-#   0 — success (copied/up-to-date/updated/forced)
-#   5 — protect-on-diff blocked (written .aid-new instead)
+#   0 - success (copied/up-to-date/updated/forced)
+#   5 - protect-on-diff blocked (written .aid-new instead)
 #
 # Sets $script:_CORE_ROOT_AGENT_STATUS = 'owned' | 'pending-merge'.
 # Increments module-level counters $script:_CopyCount* just like Copy-AidFile.
@@ -441,7 +441,7 @@ function script:Copy-RootAgentFile {
     $incSha = Get-Sha256File -FilePath $Src
 
     if (-not (Test-Path $Dst -PathType Leaf)) {
-        # Step 2: Destination absent → copy.
+        # Step 2: Destination absent -> copy.
         $dstDir = [System.IO.Path]::GetDirectoryName($Dst)
         if ($dstDir -and -not (Test-Path $dstDir -PathType Container)) {
             New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
@@ -456,7 +456,7 @@ function script:Copy-RootAgentFile {
     $diskSha = Get-Sha256File -FilePath $Dst
 
     if ($diskSha -eq $incSha) {
-        # Step 3: Identical → up to date.
+        # Step 3: Identical -> up to date.
         $script:_CopyCountUpToDate++
         if ($AidVerbose) { Write-Host "Up to date: $Dst" }
         $script:_CORE_ROOT_AGENT_STATUS = 'owned'
@@ -471,7 +471,7 @@ function script:Copy-RootAgentFile {
     }
 
     if ($recordedSha -and ($diskSha -eq $recordedSha)) {
-        # Step 4: AID owns it → overwrite.
+        # Step 4: AID owns it -> overwrite.
         Copy-Item -LiteralPath $Src -Destination $Dst -Force
         $script:_CopyCountUpdated++
         if ($AidVerbose) { Write-Host "Updated: $Dst" }
@@ -491,13 +491,13 @@ function script:Copy-RootAgentFile {
     # Without -Force: write .aid-new.
     Copy-Item -LiteralPath $Src -Destination "$Dst.aid-new" -Force
     # WARN always shows regardless of AidVerbose.
-    [Console]::Error.WriteLine("WARN: $Dst exists and was not written by AID; wrote incoming version to $Dst.aid-new — review and merge, or re-run with --force to overwrite")
+    [Console]::Error.WriteLine("WARN: $Dst exists and was not written by AID; wrote incoming version to $Dst.aid-new - review and merge, or re-run with --force to overwrite")
     $script:_CORE_ROOT_AGENT_STATUS = 'pending-merge'
     return 5
 }
 
 # ---------------------------------------------------------------------------
-# Manifest — JSON reader/writer
+# Manifest - JSON reader/writer
 # ---------------------------------------------------------------------------
 
 # Read-ManifestToolPaths <manifest> <tool>
@@ -570,7 +570,7 @@ function Read-ManifestRootAgentStatus {
 # Python's json.dump(data, f, indent=2) followed by f.write("\n")).
 # ---------------------------------------------------------------------------
 
-# script:Escape-JsonString <s> — escape a string for JSON embedding.
+# script:Escape-JsonString <s> - escape a string for JSON embedding.
 function script:Escape-JsonString {
     param([string]$s)
     $s = $s -replace '\\', '\\'
@@ -581,7 +581,7 @@ function script:Escape-JsonString {
     return $s
 }
 
-# script:Build-ManifestJson — build the manifest JSON string with 2-space indent + LF + trailing LF.
+# script:Build-ManifestJson - build the manifest JSON string with 2-space indent + LF + trailing LF.
 # Parameters mirror Write-AidManifest internal state.
 function script:Build-ManifestJson {
     param(
@@ -656,8 +656,8 @@ function script:Build-ManifestJson {
 
 # Write-AidManifest <manifestPath> <tool> <version> <pathsArray> <rootEntriesArray>
 #
-# <pathsArray>       — array of relative POSIX paths.
-# <rootEntriesArray> — array of "path|sha256|status" strings.
+# <pathsArray>       - array of relative POSIX paths.
+# <rootEntriesArray> - array of "path|sha256|status" strings.
 #
 # Reads the existing manifest (if any), merges the tool entry, writes back atomically
 # (via a temp file).  Creates <target>/.aid/ as needed.
@@ -855,7 +855,7 @@ function Remove-ManifestTool {
     }
 }
 
-# Test-ManifestExists <manifest> — returns $true when manifest exists and is parseable.
+# Test-ManifestExists <manifest> - returns $true when manifest exists and is parseable.
 function Test-ManifestExists {
     param([string]$ManifestPath)
     if (-not (Test-Path $ManifestPath -PathType Leaf)) { return $false }
@@ -890,8 +890,8 @@ function Write-VersionMarker {
 
 # Install-AidTool <stagingDir> <tool> <target> <version> [force] [aidVerbose]
 # Returns:
-#   0 — success (all files installed or up-to-date)
-#   5 — at least one root agent file was protect-on-diff blocked
+#   0 - success (all files installed or up-to-date)
+#   5 - at least one root agent file was protect-on-diff blocked
 #
 # Side effects: writes <target>/.aid/.aid-manifest.json and .aid/.aid-version.
 function Install-AidTool {
@@ -1005,15 +1005,15 @@ function Install-AidTool {
     $totalFiles = $script:_CopyCountCopied + $script:_CopyCountUpToDate + $script:_CopyCountUpdated + $script:_CopyCountSkipped
     if ($totalFiles -gt 0) {
         if ($script:_CopyCountCopied -gt 0 -and $script:_CopyCountUpToDate -eq 0 -and $script:_CopyCountUpdated -eq 0) {
-            Write-Host "  $([char]0x2713) $($script:_CopyCountCopied) files installed"
+            Write-Host "  $($script:_CopyCountCopied) files installed"
         } elseif ($script:_CopyCountUpToDate -gt 0 -and $script:_CopyCountCopied -eq 0 -and $script:_CopyCountUpdated -eq 0) {
-            Write-Host "  $([char]0x2713) up to date ($($script:_CopyCountUpToDate) files)"
+            Write-Host "  up to date ($($script:_CopyCountUpToDate) files)"
         } else {
             $parts = [System.Collections.Generic.List[string]]::new()
             if ($script:_CopyCountUpdated -gt 0) { $parts.Add("$($script:_CopyCountUpdated) updated") }
             if ($script:_CopyCountCopied -gt 0)  { $parts.Add("$($script:_CopyCountCopied) installed") }
             if ($script:_CopyCountUpToDate -gt 0) { $parts.Add("$($script:_CopyCountUpToDate) unchanged") }
-            Write-Host "  $([char]0x2713) $($parts -join ', ')"
+            Write-Host "  $($parts -join ', ')"
         }
     }
 
@@ -1062,7 +1062,7 @@ function Uninstall-AidTool {
             continue
         }
 
-        # Root agent file → apply FR11 uninstall check.
+        # Root agent file -> apply FR11 uninstall check.
         $base = [System.IO.Path]::GetFileName($p)
         # Match: base name is root agent file AND path has no directory separator.
         if ($base -eq $rootAgentFile -and ($p -eq $rootAgentFile -or $p -replace '\\','/' -eq $rootAgentFile)) {
@@ -1084,7 +1084,7 @@ function Uninstall-AidTool {
 
     # Print concise uninstall summary (always shown).
     if ($uninstRemoved -gt 0) {
-        Write-Host "  $([char]0x2713) $uninstRemoved files removed"
+        Write-Host "  $uninstRemoved files removed"
     }
 
     # Prune now-empty AID-owned dirs.
@@ -1130,7 +1130,7 @@ function Uninstall-AidTool {
 }
 
 # ---------------------------------------------------------------------------
-# CLI status helpers (additive — used by bin/aid.ps1 dispatcher)
+# CLI status helpers (additive - used by bin/aid.ps1 dispatcher)
 # ---------------------------------------------------------------------------
 
 # Get-ManifestToolList <manifestPath>
@@ -1195,7 +1195,7 @@ function script:Test-SemverLt {
         if ($va -lt $vb) { return $true }
         if ($va -gt $vb) { return $false }
     }
-    return $false  # equal → not less than
+    return $false  # equal -> not less than
 }
 
 # ---------------------------------------------------------------------------
@@ -1205,8 +1205,8 @@ function script:Test-SemverLt {
 # script:Invoke-RenderToolsBlock <manifestPath> <refVersion> <headerPrefix>
 #
 # Outputs the complete tools block to stdout via Write-Host:
-#   — uniform:   "<headerPrefix> — all at v<V>[hint]:\n  <tool>\n..."
-#   — divergent: "<headerPrefix>:\n  <tool>   v<ver>[hint]\n..."
+#   - uniform:   "<headerPrefix> - all at v<V>[hint]:\n  <tool>\n..."
+#   - divergent: "<headerPrefix>:\n  <tool>   v<ver>[hint]\n..."
 # Root-agent annotation only when status != "owned".
 function script:Invoke-RenderToolsBlock {
     param(
@@ -1233,9 +1233,9 @@ function script:Invoke-RenderToolsBlock {
         # Build update hint for header if tools are behind CLI.
         $hint = ''
         if ($RefVersion -and $firstVer -and (script:Test-SemverLt -A $firstVer -B $RefVersion)) {
-            $hint = " (update `u{2192} v$RefVersion)"
+            $hint = " (update -> v$RefVersion)"
         }
-        Write-Host "$HeaderPrefix — all at v$firstVer${hint}:"
+        Write-Host "$HeaderPrefix - all at v$firstVer${hint}:"
         foreach ($tool in $tools) {
             $rs = if ($tool.RootStatus) { $tool.RootStatus } else { 'owned' }
             $extra = ''
@@ -1254,7 +1254,7 @@ function script:Invoke-RenderToolsBlock {
             $rs  = if ($tool.RootStatus) { $tool.RootStatus } else { 'owned' }
             $hint = ''
             if ($RefVersion -and $ver -and (script:Test-SemverLt -A $ver -B $RefVersion)) {
-                $hint = "  (update `u{2192} v$RefVersion)"
+                $hint = "  (update -> v$RefVersion)"
             }
             $rootExtra = ''
             if ($rs -ne 'owned' -and $rs) { $rootExtra = '  (root pending merge)' }
@@ -1272,20 +1272,20 @@ function script:Invoke-RenderToolsBlock {
 # Get-AidStatusBody <target>
 # Renders only the installed-tools block (no exit-7 logic, no project header).
 # Prints:
-#   Installed tools (in <dir>) — all at v<V>[hint]:   (uniform)
+#   Installed tools (in <dir>) - all at v<V>[hint]:   (uniform)
 #   <per-tool lines (name-only when uniform)>
 # OR (divergent):
 #   Installed tools (in <dir>):
 #   <per-tool lines with version + hint>
 # OR (when no manifest):
-#   No AID tools installed in <dir> yet — run 'aid add <tool>'.
+#   No AID tools installed in <dir> yet - run 'aid add <tool>'.
 # Returns: 0 always (caller decides how to handle missing manifest).
 function Get-AidStatusBody {
     param([string]$Target = '.')
 
     $resolvedTarget = (Resolve-Path $Target -ErrorAction SilentlyContinue)
     if (-not $resolvedTarget) {
-        Write-Host "No AID tools installed in $Target yet — run 'aid add <tool>'."
+        Write-Host "No AID tools installed in $Target yet - run 'aid add <tool>'."
         return 0
     }
     $targetPath = $resolvedTarget.Path
@@ -1303,7 +1303,7 @@ function Get-AidStatusBody {
     }
 
     if (-not $manifestOk) {
-        Write-Host "No AID tools installed in $targetPath yet — run 'aid add <tool>'."
+        Write-Host "No AID tools installed in $targetPath yet - run 'aid add <tool>'."
         return 0
     }
 
@@ -1327,8 +1327,8 @@ function Get-AidStatusBody {
 # Renders the "aid status" output for the AID project rooted at <target>.
 # Output is byte-identical to the Bash aid_status function.
 # Returns:
-#   0 — manifest found; status printed to stdout.
-#   7 — no manifest in <target>; message printed + returns 7.
+#   0 - manifest found; status printed to stdout.
+#   7 - no manifest in <target>; message printed + returns 7.
 function Get-AidStatus {
     param([string]$Target = '.')
 
@@ -1374,7 +1374,7 @@ function Get-AidStatus {
         }
     }
 
-    # Emit header line — byte-identical format to Bash:
+    # Emit header line - byte-identical format to Bash:
     # "AID <ver>  (project: <dir>)"
     Write-Host "AID $aidVersion  (project: $targetPath)"
 

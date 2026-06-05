@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# install.sh — AID installer bootstrap (Bash 4+).
+# install.sh - AID installer bootstrap (Bash 4+).
 #
 # Purpose:
 #   Bootstrap / install the persistent global `aid` CLI and (optionally) add
 #   an AID profile to the current project in a single command.  Also retains
 #   the legacy flag-style direct-install path for one release.
 #
-# Usage (new — preferred):
+# Usage (new - preferred):
 #   bash install.sh
 #       Install the global aid CLI into $AID_HOME (~/.aid by default) and wire
-#       PATH.  No project install — run 'aid add <tool>' afterwards.
+#       PATH.  No project install - run 'aid add <tool>' afterwards.
 #
 #   bash install.sh <subcommand> [args]
 #       Bootstrap the CLI (if not already installed), then immediately run
@@ -23,7 +23,7 @@
 #       Remove the global aid CLI (PATH wiring + $AID_HOME).  Fallback for
 #       when 'aid' is not yet on PATH.
 #
-# Usage (legacy — back-compat, hidden, retained for one release):
+# Usage (legacy - back-compat, hidden, retained for one release):
 #   bash install.sh [--tool <name>[,...]] [--version <v>] [--from-bundle <path>]
 #                   [--force] [--verbose] [--target <dir>] [<target-dir>]
 #       Direct project install (no global CLI install).  Identical to the
@@ -64,7 +64,7 @@
 #   7   aid status: no AID install in cwd
 
 set -uo pipefail
-# Note: -e (errexit) intentionally omitted — error paths use explicit exit codes.
+# Note: -e (errexit) intentionally omitted - error paths use explicit exit codes.
 
 # ---------------------------------------------------------------------------
 # Locate script dir (used in sibling-lib detection).
@@ -94,21 +94,21 @@ _is_known_subcmd() {
 # Detect the install.sh invocation mode.
 #
 # Modes (mutually exclusive, detected from $@):
-#   BOOTSTRAP  — no args (or only bootstrap flags: --version, --no-path, --from-bundle)
-#   CONVENIENCE — first non-flag arg is a known subcommand
-#   UNINSTALL_CLI — --uninstall-cli flag present
-#   LEGACY     — --tool / --update / --uninstall flags (or first positional is not a subcmd)
+#   BOOTSTRAP  - no args (or only bootstrap flags: --version, --no-path, --from-bundle)
+#   CONVENIENCE - first non-flag arg is a known subcommand
+#   UNINSTALL_CLI - --uninstall-cli flag present
+#   LEGACY     - --tool / --update / --uninstall flags (or first positional is not a subcmd)
 # ---------------------------------------------------------------------------
 _INSTALL_MODE="BOOTSTRAP"  # default
 
 # Peek at arguments to determine mode before full parse.
 # Disambiguation rules (in priority order):
-#   1. --uninstall-cli            → UNINSTALL_CLI
-#   2. --tool / --update / --uninstall flags  → LEGACY
-#   3. --from-bundle or --target (without a subcommand) → LEGACY (project-install flags)
-#   4. First non-flag = known subcommand  → CONVENIENCE
-#   5. First non-flag = unknown word      → LEGACY (unknown positional arg)
-#   6. No args / only bootstrap flags     → BOOTSTRAP
+#   1. --uninstall-cli            -> UNINSTALL_CLI
+#   2. --tool / --update / --uninstall flags  -> LEGACY
+#   3. --from-bundle or --target (without a subcommand) -> LEGACY (project-install flags)
+#   4. First non-flag = known subcommand  -> CONVENIENCE
+#   5. First non-flag = unknown word      -> LEGACY (unknown positional arg)
+#   6. No args / only bootstrap flags     -> BOOTSTRAP
 _peek_first_nonopt=""
 _peek_has_tool=0
 _peek_has_update=0
@@ -141,7 +141,7 @@ for _peek_arg in "$@"; do
         --uninstall-cli) _peek_has_uninstall_cli=1 ;;
         --force|--verbose|--no-path|-h|--help) ;;
         -*)
-            # Unknown flag — treat as LEGACY.
+            # Unknown flag - treat as LEGACY.
             [[ -z "$_peek_first_nonopt" ]] && _peek_first_nonopt="$_peek_arg"
             ;;
         --)
@@ -161,7 +161,7 @@ if [[ "$_peek_has_uninstall_cli" -eq 1 ]]; then
 elif [[ "$_peek_has_tool" -eq 1 || "$_peek_has_update" -eq 1 || "$_peek_has_uninstall" -eq 1 ]]; then
     _INSTALL_MODE="LEGACY"
 elif [[ "$_peek_has_legacy_project_flag" -eq 1 ]]; then
-    # --from-bundle or --target before any subcommand → project-install (legacy).
+    # --from-bundle or --target before any subcommand -> project-install (legacy).
     _INSTALL_MODE="LEGACY"
 elif [[ -n "$_peek_first_nonopt" ]]; then
     if _is_known_subcmd "$_peek_first_nonopt"; then
@@ -184,7 +184,7 @@ fi
 # ---------------------------------------------------------------------------
 usage() {
     if [[ ! -r "$0" ]]; then
-        printf 'install.sh — AID bootstrap (Bash 4+).\n'
+        printf 'install.sh - AID bootstrap (Bash 4+).\n'
         printf '\n'
         printf 'Usage:\n'
         printf '  bash install.sh                          Install global aid CLI\n'
@@ -214,7 +214,7 @@ die() {
 }
 
 # ---------------------------------------------------------------------------
-# Cleanup helpers — defined BEFORE the EXIT trap.
+# Cleanup helpers - defined BEFORE the EXIT trap.
 # ---------------------------------------------------------------------------
 _AID_TMPLIB_DIR=""
 
@@ -225,8 +225,8 @@ _cleanup_tmplib() {
 }
 
 # Exposed by _source_install_core when it performs a remote fetch:
-#   _REMOTE_RESOLVED_VER  — the version resolved during lib fetch (e.g. "0.7.0")
-#   _REMOTE_SUMS_FILE     — path to the fetched SHA256SUMS (reusable for CLI bundle check)
+#   _REMOTE_RESOLVED_VER  - the version resolved during lib fetch (e.g. "0.7.0")
+#   _REMOTE_SUMS_FILE     - path to the fetched SHA256SUMS (reusable for CLI bundle check)
 _REMOTE_RESOLVED_VER=""
 _REMOTE_SUMS_FILE=""
 
@@ -302,7 +302,7 @@ _fetch_and_verify_cli_bundle() {
 
     # Checksum verification (reuses the same SHA256SUMS used for lib verification).
     if [[ "${AID_INSECURE_SKIP_LIB_VERIFY:-0}" == "1" ]]; then
-        echo "WARN: install.sh: AID_INSECURE_SKIP_LIB_VERIFY=1 set — skipping CLI bundle checksum verification (INSECURE)" >&2
+        echo "WARN: install.sh: AID_INSECURE_SKIP_LIB_VERIFY=1 set - skipping CLI bundle checksum verification (INSECURE)" >&2
     else
         # If sums_file is empty, we need to fetch it now.
         local _local_sums=""
@@ -380,7 +380,7 @@ _fetch_and_verify_cli_bundle() {
 }
 
 # ---------------------------------------------------------------------------
-# Source the shared install core (same logic as before — resolution order:
+# Source the shared install core (same logic as before - resolution order:
 #   1. AID_LIB_PATH env var
 #   2. Sibling lib/aid-install-core.sh
 #   3. Remote fetch (piped execution) with fail-closed checksum verification
@@ -475,7 +475,7 @@ _source_install_core() {
         fi
 
         if [[ "${AID_INSECURE_SKIP_LIB_VERIFY:-0}" == "1" ]]; then
-            echo "WARN: install.sh: AID_INSECURE_SKIP_LIB_VERIFY=1 set — skipping lib checksum verification (INSECURE)" >&2
+            echo "WARN: install.sh: AID_INSECURE_SKIP_LIB_VERIFY=1 set - skipping lib checksum verification (INSECURE)" >&2
         else
             local _sums_file="${_AID_TMPLIB_DIR}/SHA256SUMS"
             echo "Fetching SHA256SUMS from ${_sums_url} ..." >&2
@@ -547,7 +547,7 @@ _SOURCED_LIB_FILE="${_SOURCED_LIB_FILE:-${LIB_DIR}/aid-install-core.sh}"
 
 # ---------------------------------------------------------------------------
 # ============================================================================
-# UNINSTALL_CLI mode — remove the global aid CLI (fallback path)
+# UNINSTALL_CLI mode - remove the global aid CLI (fallback path)
 # ============================================================================
 # ---------------------------------------------------------------------------
 if [[ "$_INSTALL_MODE" == "UNINSTALL_CLI" ]]; then
@@ -633,7 +633,7 @@ fi
 
 # ---------------------------------------------------------------------------
 # ============================================================================
-# BOOTSTRAP mode — install the global aid CLI and optionally wire PATH
+# BOOTSTRAP mode - install the global aid CLI and optionally wire PATH
 # ============================================================================
 # ---------------------------------------------------------------------------
 if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
@@ -846,7 +846,7 @@ fi
 
 # ---------------------------------------------------------------------------
 # ============================================================================
-# CONVENIENCE mode — bootstrap CLI (if needed) then exec 'aid <subcmd> ...'
+# CONVENIENCE mode - bootstrap CLI (if needed) then exec 'aid <subcmd> ...'
 # ============================================================================
 # ---------------------------------------------------------------------------
 if [[ "$_INSTALL_MODE" == "CONVENIENCE" ]]; then
@@ -890,7 +890,7 @@ if [[ "$_INSTALL_MODE" == "CONVENIENCE" ]]; then
         _CONV_BIN_SRC="${SCRIPT_DIR}/bin/aid"
         _CONV_CLI_BUNDLE_EXTRACT=""
         if [[ ! -f "$_CONV_BIN_SRC" ]]; then
-            # Piped bootstrap: bin/aid not beside install.sh — fetch CLI bundle.
+            # Piped bootstrap: bin/aid not beside install.sh - fetch CLI bundle.
             _conv_resolved_ver="${_REMOTE_RESOLVED_VER:-}"
             [[ -z "$_conv_resolved_ver" && -n "${AID_LIB_VERSION:-}" ]] && _conv_resolved_ver="${AID_LIB_VERSION#v}"
             [[ -z "$_conv_resolved_ver" && -n "$_CONV_CLI_VER" && "$_CONV_CLI_VER" != "0.0.0" ]] && _conv_resolved_ver="$_CONV_CLI_VER"
@@ -1016,7 +1016,7 @@ fi
 
 # ---------------------------------------------------------------------------
 # ============================================================================
-# LEGACY mode — original flag-style direct project install (back-compat).
+# LEGACY mode - original flag-style direct project install (back-compat).
 #
 # Identical behavior to the pre-CLI-evolution install.sh.
 # Preserved for one release so existing test fixtures keep passing.

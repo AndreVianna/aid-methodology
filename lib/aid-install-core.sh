@@ -1,46 +1,46 @@
 #!/usr/bin/env bash
-# aid-install-core.sh — Shared Bash install-core library for the AID installer.
+# aid-install-core.sh - Shared Bash install-core library for the AID installer.
 #
 # Purpose:
 #   Sourceable library of pure functions used by install.sh (Bash bootstrap) and
-#   any future in-language caller.  No top-level side effects when sourced — every
+#   any future in-language caller.  No top-level side effects when sourced - every
 #   function is defined here; nothing executes at source time.
 #
 # Provides:
-#   sha256_file <path>          → hex sha256 of file content (stdout)
-#   normalize_tool <id>         → canonical lower-case-hyphen tool id (stdout)
-#   detect_tool <target>        → detected tool id (stdout); exit 2 on 0 or >1 matches
-#   resolve_version             → latest GitHub release version (stdout); exit 3 on fail
+#   sha256_file <path>          -> hex sha256 of file content (stdout)
+#   normalize_tool <id>         -> canonical lower-case-hyphen tool id (stdout)
+#   detect_tool <target>        -> detected tool id (stdout); exit 2 on 0 or >1 matches
+#   resolve_version             -> latest GitHub release version (stdout); exit 3 on fail
 #   fetch_tarball <tool> <ver> <dest_dir>
-#                               → downloads aid-<tool>-v<ver>.tar.gz + SHA256SUMS into
+#                               -> downloads aid-<tool>-v<ver>.tar.gz + SHA256SUMS into
 #                                 dest_dir; verifies sha256; exit 3 on fetch, 4 on mismatch
 #   extract_tarball <tarball> <dest_dir>
-#                               → extracts tarball (flat root) into dest_dir; exit 1 on fail
+#                               -> extracts tarball (flat root) into dest_dir; exit 1 on fail
 #   verify_bundle_checksum <tarball>
-#                               → verifies sibling SHA256SUMS when present; exit 4 on mismatch
+#                               -> verifies sibling SHA256SUMS when present; exit 4 on mismatch
 #   copy_file <src> <dst> [force]
-#                               → copy semantics (skip-identical/skip-on-diff/force)
+#                               -> copy semantics (skip-identical/skip-on-diff/force)
 #   copy_dir <src_dir> <dst_dir> [force]
-#                               → recursive copy via copy_file
+#                               -> recursive copy via copy_file
 #   install_tool <staging> <tool> <target> <version> [force]
-#                               → run the full install for one tool (copy + manifest + protect-on-diff)
+#                               -> run the full install for one tool (copy + manifest + protect-on-diff)
 #   manifest_read_tool_paths <manifest> <tool>
-#                               → newline-delimited paths from tools.<tool>.paths (stdout)
+#                               -> newline-delimited paths from tools.<tool>.paths (stdout)
 #   manifest_read_tool_version <manifest> <tool>
-#                               → version string from tools.<tool>.version (stdout)
+#                               -> version string from tools.<tool>.version (stdout)
 #   manifest_read_root_agent <manifest> <tool> <path>
-#                               → sha256 from root_agent_files entry (stdout); empty if absent
+#                               -> sha256 from root_agent_files entry (stdout); empty if absent
 #   manifest_read_root_agent_status <manifest> <tool> <path>
-#                               → status field from root_agent_files entry (stdout)
+#                               -> status field from root_agent_files entry (stdout)
 #   manifest_write <manifest> <tool> <version> <paths_arr_name> <root_entries_arr_name>
-#                               → atomically writes/merges the manifest JSON
+#                               -> atomically writes/merges the manifest JSON
 #   manifest_remove_tool <manifest> <tool>
-#                               → removes a tool section from the manifest
-#   manifest_exists <manifest>  → exit 0 when manifest exists and is parseable, else exit 6
+#                               -> removes a tool section from the manifest
+#   manifest_exists <manifest>  -> exit 0 when manifest exists and is parseable, else exit 6
 #   uninstall_tool <manifest> <tool> <target>
-#                               → manifest-driven removal of one tool's files
+#                               -> manifest-driven removal of one tool's files
 #   write_version_marker <target> <version>
-#                               → writes <target>/.aid/.aid-version
+#                               -> writes <target>/.aid/.aid-version
 #
 # Verbose mode:
 #   Set AID_VERBOSE=1 (or pass --verbose to install.sh) to print per-file
@@ -83,7 +83,7 @@ _root_agent_file() {
 # Utility
 # ---------------------------------------------------------------------------
 
-# sha256_file <path> — print lower-case hex sha256 of file.
+# sha256_file <path> - print lower-case hex sha256 of file.
 sha256_file() {
     local f="$1"
     if command -v sha256sum >/dev/null 2>&1; then
@@ -100,7 +100,7 @@ sha256_file() {
 # Tool-id normalization + detection
 # ---------------------------------------------------------------------------
 
-# normalize_tool <input> — print canonical id or exit 2 on unknown.
+# normalize_tool <input> - print canonical id or exit 2 on unknown.
 normalize_tool() {
     local raw
     raw="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
@@ -117,7 +117,7 @@ normalize_tool() {
     esac
 }
 
-# detect_tool <target> — auto-detect the installed host tool from tree markers.
+# detect_tool <target> - auto-detect the installed host tool from tree markers.
 # Prints the canonical id.  Exits 2 on ambiguous (>1) or undetectable (0).
 detect_tool() {
     local target="$1"
@@ -155,7 +155,7 @@ detect_tool() {
 # Version resolution (online)
 # ---------------------------------------------------------------------------
 
-# resolve_version — fetch the latest release tag from GitHub API.
+# resolve_version - fetch the latest release tag from GitHub API.
 # Prints the version without leading 'v'.  Exits 3 on failure.
 resolve_version() {
     local url="${AID_API_BASE}/releases/latest"
@@ -254,7 +254,7 @@ verify_bundle_checksum() {
 }
 
 # extract_tarball <tarball> <dest_dir>
-# Extracts into dest_dir.  feature-002 §S2.3 guarantees a flat-root tarball (no
+# Extracts into dest_dir.  feature-002 S2.3 guarantees a flat-root tarball (no
 # wrapping top-level directory).  Asserts this contract and fails loudly when
 # violated rather than silently stripping components.
 extract_tarball() {
@@ -284,7 +284,7 @@ extract_tarball() {
     # "./topdir/" counts as a wrapping dir; "./.claude/file.md" does not.
     local _stripped="${first_member#./}"
     if [[ "$_stripped" =~ ^[^/]+/$ ]]; then
-        echo "ERROR: aid-install-core: tarball has a wrapping top-level directory ('${first_member}') — expected flat-root per feature-002 §S2.3 contract: ${tarball}" >&2
+        echo "ERROR: aid-install-core: tarball has a wrapping top-level directory ('${first_member}') - expected flat-root per feature-002 S2.3 contract: ${tarball}" >&2
         return 1
     fi
 
@@ -338,7 +338,7 @@ copy_file() {
 
 # copy_dir <src_dir> <dst_dir> [force]
 # Recursively copies a directory tree, file by file (preserving empty dirs).
-# Root agent files in the source dir are skipped — caller handles them.
+# Root agent files in the source dir are skipped - caller handles them.
 copy_dir() {
     local src="$1" dst="$2" force="${3:-0}"
 
@@ -362,8 +362,8 @@ copy_dir() {
 # _copy_root_agent_file <src> <dst> <tool> <force> <manifest>
 # Implements the FR11 algorithm.
 # Returns:
-#   0 — success (copied/up-to-date/updated/forced)
-#   5 — protect-on-diff blocked (written .aid-new instead)
+#   0 - success (copied/up-to-date/updated/forced)
+#   5 - protect-on-diff blocked (written .aid-new instead)
 #
 # Callers accumulate path/sha256 data into arrays and pass them to manifest_write.
 # This function prints FR11 messages to stdout (progress) and stderr (warnings).
@@ -376,7 +376,7 @@ _copy_root_agent_file() {
     inc_sha="$(sha256_file "$src")"
 
     if [[ ! -e "$dst" ]]; then
-        # Step 2: Destination absent → copy.
+        # Step 2: Destination absent -> copy.
         mkdir -p "$(dirname "$dst")"
         cp "$src" "$dst"
         _COPY_COUNT_COPIED=$((_COPY_COUNT_COPIED + 1))
@@ -389,7 +389,7 @@ _copy_root_agent_file() {
     disk_sha="$(sha256_file "$dst")"
 
     if [[ "$disk_sha" == "$inc_sha" ]]; then
-        # Step 3: Identical → up to date.
+        # Step 3: Identical -> up to date.
         _COPY_COUNT_UPTODATE=$((_COPY_COUNT_UPTODATE + 1))
         [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Up to date: ${dst}"
         _CORE_ROOT_AGENT_STATUS="owned"
@@ -403,7 +403,7 @@ _copy_root_agent_file() {
     fi
 
     if [[ -n "$recorded_sha" && "$disk_sha" == "$recorded_sha" ]]; then
-        # Step 4: AID owns it → overwrite.
+        # Step 4: AID owns it -> overwrite.
         cp "$src" "$dst"
         _COPY_COUNT_UPDATED=$((_COPY_COUNT_UPDATED + 1))
         [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: ${dst}"
@@ -423,13 +423,13 @@ _copy_root_agent_file() {
     # Without --force: write .aid-new.
     cp "$src" "${dst}.aid-new"
     # WARN always shows regardless of AID_VERBOSE.
-    echo "WARN: ${dst} exists and was not written by AID; wrote incoming version to ${dst}.aid-new — review and merge, or re-run with --force to overwrite" >&2
+    echo "WARN: ${dst} exists and was not written by AID; wrote incoming version to ${dst}.aid-new - review and merge, or re-run with --force to overwrite" >&2
     _CORE_ROOT_AGENT_STATUS="pending-merge"
     return 5
 }
 
 # ---------------------------------------------------------------------------
-# Manifest — pure-Bash reader (no jq/python required)
+# Manifest - pure-Bash reader (no jq/python required)
 # ---------------------------------------------------------------------------
 #
 # The manifest has this shape (2-space indent, \n newlines):
@@ -447,7 +447,7 @@ _copy_root_agent_file() {
 #   }
 # }
 #
-# Readers use grep/sed/awk to extract what they need — sufficient because the
+# Readers use grep/sed/awk to extract what they need - sufficient because the
 # schema is flat enough.
 
 # manifest_read_tool_paths <manifest> <tool>
@@ -592,8 +592,8 @@ PY
 
 # manifest_write <manifest_path> <tool> <version> <paths_varname> <root_entries_varname>
 #
-# <paths_varname>        — name of a Bash array variable holding relative POSIX paths.
-# <root_entries_varname> — name of a Bash array variable holding entries, each formatted as
+# <paths_varname>        - name of a Bash array variable holding relative POSIX paths.
+# <root_entries_varname> - name of a Bash array variable holding entries, each formatted as
 #                          "path|sha256|status" (pipe-delimited).
 #
 # Reads the existing manifest (if any), merges the tool's entry, writes back atomically
@@ -623,7 +623,7 @@ manifest_write() {
     fi
 }
 
-# _manifest_write_python — write manifest via python3 (fast path).
+# _manifest_write_python - write manifest via python3 (fast path).
 # Signature: <manifest> <tool> <version> <now> [paths...] -- [root_entries...]
 _manifest_write_python() {
     local manifest="$1" tool="$2" version="$3" now="$4"
@@ -724,7 +724,7 @@ except Exception as e:
 PY
 }
 
-# _manifest_write_bash — pure-Bash fallback manifest writer.
+# _manifest_write_bash - pure-Bash fallback manifest writer.
 # Signature same as _manifest_write_python.
 _manifest_write_bash() {
     local manifest="$1" tool="$2" version="$3" now="$4"
@@ -1158,7 +1158,7 @@ _semver_lt() {
     local i
     for i in 0 1 2; do
         local va="${pa[$i]:-0}" vb="${pb[$i]:-0}"
-        # Strip non-numeric suffixes (e.g. "1-rc1" → "1").
+        # Strip non-numeric suffixes (e.g. "1-rc1" -> "1").
         va="${va%%[^0-9]*}"
         vb="${vb%%[^0-9]*}"
         [[ -z "$va" ]] && va=0
@@ -1166,7 +1166,7 @@ _semver_lt() {
         if (( va < vb )); then return 0; fi
         if (( va > vb )); then return 1; fi
     done
-    return 1  # equal → not less than
+    return 1  # equal -> not less than
 }
 
 # ---------------------------------------------------------------------------
@@ -1175,14 +1175,14 @@ _semver_lt() {
 
 # _render_tools_block <manifest> <ref_version> <header_prefix>
 #
-# <manifest>       — path to the .aid-manifest.json
-# <ref_version>    — the CLI's own version (from $AID_HOME/VERSION)
-# <header_prefix>  — text before the "— all at vX:" collapse suffix (e.g.
+# <manifest>       - path to the .aid-manifest.json
+# <ref_version>    - the CLI's own version (from $AID_HOME/VERSION)
+# <header_prefix>  - text before the "- all at vX:" collapse suffix (e.g.
 #                    "Installed tools (in /path)" or "Installed tools")
 #
 # Outputs the complete tools block:
-#   — uniform case:  "<header_prefix> — all at v<V>[update hint]:\n  <tool>\n..."
-#   — divergent case: "<header_prefix>:\n  <tool>   v<ver>[update hint]\n..."
+#   - uniform case:  "<header_prefix> - all at v<V>[update hint]:\n  <tool>\n..."
+#   - divergent case: "<header_prefix>:\n  <tool>   v<ver>[update hint]\n..."
 # Root-agent annotation only when status != "owned".
 _render_tools_block() {
     local manifest="$1"
@@ -1196,7 +1196,7 @@ _render_tools_block() {
     done < <(manifest_list_tools "$manifest")
 
     if [[ "${#tools[@]}" -eq 0 ]]; then
-        # Nothing to show — shouldn't happen if manifest exists, but safe guard.
+        # Nothing to show - shouldn't happen if manifest exists, but safe guard.
         printf '%s:\n' "$header_prefix"
         return 0
     fi
@@ -1232,9 +1232,9 @@ _render_tools_block() {
         # Uniform case.
         local hint=""
         if [[ -n "$ref_version" && -n "$first_ver" ]] && _semver_lt "$first_ver" "$ref_version"; then
-            hint=" (update → v${ref_version})"
+            hint=" (update -> v${ref_version})"
         fi
-        printf '%s — all at v%s%s:\n' "$header_prefix" "$first_ver" "$hint"
+        printf '%s - all at v%s%s:\n' "$header_prefix" "$first_ver" "$hint"
         local idx=0
         for tool_id in "${tools[@]}"; do
             local rs="${tool_rstatus[$idx]}"
@@ -1262,7 +1262,7 @@ _render_tools_block() {
             local rs="${tool_rstatus[$idx]}"
             local hint=""
             if [[ -n "$ref_version" && -n "$ver" ]] && _semver_lt "$ver" "$ref_version"; then
-                hint="  (update → v${ref_version})"
+                hint="  (update -> v${ref_version})"
             fi
             local root_extra=""
             if [[ "$rs" != "owned" && -n "$rs" ]]; then
@@ -1290,15 +1290,15 @@ _render_tools_block() {
 # Renders only the installed-tools block for an AID project rooted at <target>.
 # Caller is responsible for checking whether a manifest exists first.
 # Prints:
-#   Installed tools (in <cwd>) — all at v<V>[hint]:
+#   Installed tools (in <cwd>) - all at v<V>[hint]:
 #   <per-tool lines (name-only when uniform)>
 # OR (divergent):
 #   Installed tools (in <cwd>):
 #   <per-tool lines with version + hint>
 # OR (when no manifest):
-#   No AID tools installed in <cwd> yet — run 'aid add <tool>'.
+#   No AID tools installed in <cwd> yet - run 'aid add <tool>'.
 # Returns:
-#   0 — always (no exit-7; caller decides what to do on missing manifest)
+#   0 - always (no exit-7; caller decides what to do on missing manifest)
 aid_status_body() {
     local target="${1:-.}"
     local manifest="${target}/.aid/.aid-manifest.json"
@@ -1306,7 +1306,7 @@ aid_status_body() {
     cwd_display="$(cd "$target" && pwd)"
 
     if [[ ! -f "$manifest" ]] || ! grep -q '"manifest_version"' "$manifest" 2>/dev/null; then
-        printf "No AID tools installed in %s yet — run 'aid add <tool>'.\n" "$cwd_display"
+        printf "No AID tools installed in %s yet - run 'aid add <tool>'.\n" "$cwd_display"
         return 0
     fi
 
@@ -1324,8 +1324,8 @@ aid_status_body() {
 # Renders the "aid status" output for the AID project rooted at <target>.
 # Reads <target>/.aid/.aid-manifest.json (and .aid/.aid-version).
 # Returns:
-#   0 — manifest found; status printed to stdout.
-#   7 — no manifest in <target>; "not an AID project here" message printed to stdout.
+#   0 - manifest found; status printed to stdout.
+#   7 - no manifest in <target>; "not an AID project here" message printed to stdout.
 aid_status() {
     local target="${1:-.}"
     local manifest="${target}/.aid/.aid-manifest.json"
@@ -1367,7 +1367,7 @@ PY
     return 0
 }
 
-# manifest_exists <manifest> — exits 0 when manifest exists and is parseable; 6 otherwise.
+# manifest_exists <manifest> - exits 0 when manifest exists and is parseable; 6 otherwise.
 manifest_exists() {
     local manifest="$1"
     if [[ ! -f "$manifest" ]]; then
@@ -1396,10 +1396,10 @@ write_version_marker() {
 # ---------------------------------------------------------------------------
 
 # install_tool <staging_dir> <tool> <target> <version> <force>
-# <staging_dir> — directory produced by extract_tarball (content of profiles/<tool>/)
+# <staging_dir> - directory produced by extract_tarball (content of profiles/<tool>/)
 # Returns:
-#   0 — success (all files installed or up-to-date)
-#   5 — at least one root agent file was protect-on-diff blocked
+#   0 - success (all files installed or up-to-date)
+#   5 - at least one root agent file was protect-on-diff blocked
 #
 # Side effects: writes <target>/.aid/.aid-manifest.json and .aid/.aid-version.
 install_tool() {
@@ -1512,9 +1512,9 @@ install_tool() {
     local _total_files=$((_COPY_COUNT_COPIED + _COPY_COUNT_UPTODATE + _COPY_COUNT_UPDATED + _COPY_COUNT_SKIPPED))
     if [[ "$_total_files" -gt 0 ]]; then
         if [[ "$_COPY_COUNT_COPIED" -gt 0 && "$_COPY_COUNT_UPTODATE" -eq 0 && "$_COPY_COUNT_UPDATED" -eq 0 ]]; then
-            echo "  ✓ ${_COPY_COUNT_COPIED} files installed"
+            echo "  ${_COPY_COUNT_COPIED} files installed"
         elif [[ "$_COPY_COUNT_UPTODATE" -gt 0 && "$_COPY_COUNT_COPIED" -eq 0 && "$_COPY_COUNT_UPDATED" -eq 0 ]]; then
-            echo "  ✓ up to date (${_COPY_COUNT_UPTODATE} files)"
+            echo "  up to date (${_COPY_COUNT_UPTODATE} files)"
         else
             local _parts=""
             [[ "$_COPY_COUNT_UPDATED" -gt 0 ]] && _parts="${_COPY_COUNT_UPDATED} updated"
@@ -1526,7 +1526,7 @@ install_tool() {
                 [[ -n "$_parts" ]] && _parts="${_parts}, "
                 _parts="${_parts}${_COPY_COUNT_UPTODATE} unchanged"
             }
-            echo "  ✓ ${_parts}"
+            echo "  ${_parts}"
         fi
     fi
 
@@ -1576,7 +1576,7 @@ uninstall_tool() {
             [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Already absent: ${full}"
             continue
         fi
-        # Check if this is the root agent file → apply FR11 uninstall check.
+        # Check if this is the root agent file -> apply FR11 uninstall check.
         local base
         base="$(basename "$p")"
         if [[ "$base" == "$root_agent" && "$p" == "$root_agent" ]]; then
@@ -1600,7 +1600,7 @@ uninstall_tool() {
 
     # Print concise uninstall summary (always shown).
     if [[ "$_uninst_removed" -gt 0 ]]; then
-        echo "  ✓ ${_uninst_removed} files removed"
+        echo "  ${_uninst_removed} files removed"
     fi
 
     # Prune now-empty AID-owned dirs (in reverse depth order).

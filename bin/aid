@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# aid — AID CLI dispatcher (Bash side).
+# aid - AID CLI dispatcher (Bash side).
 #
 # Purpose:
 #   Persistent global command installed at $AID_HOME/bin/aid.  Parses
@@ -28,7 +28,7 @@
 set -uo pipefail
 
 # ---------------------------------------------------------------------------
-# Bootstrap URL — single place to update when the branch merges to master.
+# Bootstrap URL - single place to update when the branch merges to master.
 # Override with AID_INSTALL_URL env var for tests.
 # ---------------------------------------------------------------------------
 AID_INSTALL_URL="${AID_INSTALL_URL:-https://raw.githubusercontent.com/AndreVianna/aid-methodology/worktree-work-002-auto-installer/install.sh}"
@@ -98,7 +98,7 @@ _aid_usage() {
             printf '  Print the installed aid CLI version and exit 0.\n'
             ;;
         *)
-            printf 'aid — AID CLI\n'
+            printf 'aid - AID CLI\n'
             printf '\n'
             printf 'Usage:\n'
             printf '  aid                              Show the dashboard\n'
@@ -132,8 +132,8 @@ _aid_die() {
 _find_install_sh() {
     # Sibling of the bin/ dir: AID_HOME/../install.sh would be the release root.
     # But installed layout is: AID_HOME/bin/aid + AID_HOME/lib/aid-install-core.sh
-    # The install.sh is NOT shipped inside AID_HOME — we use the core functions directly.
-    # Return empty string — callers will use the engine functions directly.
+    # The install.sh is NOT shipped inside AID_HOME - we use the core functions directly.
+    # Return empty string - callers will use the engine functions directly.
     echo ""
 }
 
@@ -146,7 +146,7 @@ _find_install_sh() {
 # GitHub release.  Prints ONE notice line when a newer version is available.
 # Fail-silent: any error (no curl, network down, bad JSON) is suppressed.
 # Throttle: re-fetches at most once per 24h; caches result in $AID_HOME/.update-check.
-# Opt-out: AID_NO_UPDATE_CHECK=1 → skip entirely.
+# Opt-out: AID_NO_UPDATE_CHECK=1 -> skip entirely.
 # Test hook: AID_UPDATE_CHECK_URL overrides the fetch URL (and bypasses throttle).
 _aid_check_update() {
     # Opt-out.
@@ -195,7 +195,7 @@ _aid_check_update() {
     fi
 
     if [[ "$need_fetch" -eq 1 ]]; then
-        # Fetch latest release tag — hard 2s timeout, fail-silent.
+        # Fetch latest release tag - hard 2s timeout, fail-silent.
         local response=""
         if command -v curl >/dev/null 2>&1; then
             response="$(curl --max-time 2 -fsS "$check_url" 2>/dev/null)" || return 0
@@ -218,7 +218,7 @@ _aid_check_update() {
 
     # Compare: show notice only when latest > installed.
     if _semver_lt "$installed_version" "$latest_version"; then
-        printf '⬆ A newer aid CLI is available: v%s (you have v%s). Run: aid update self\n' \
+        printf 'A newer aid CLI is available: v%s (you have v%s). Run: aid update self\n' \
             "$latest_version" "$installed_version"
     fi
     return 0
@@ -510,7 +510,7 @@ _AID_VERBOSE="${AID_VERBOSE:-0}"
 _AID_NO_PATH=0
 
 # ---------------------------------------------------------------------------
-# Dashboard (bare 'aid' — no arguments).
+# Dashboard (bare 'aid' - no arguments).
 # ---------------------------------------------------------------------------
 _cmd_dashboard() {
     # Block 1 + 2: Header + description.
@@ -519,7 +519,7 @@ _cmd_dashboard() {
     if [[ -f "$ver_file" ]]; then
         cli_version="$(tr -d '[:space:]' < "$ver_file")"
     fi
-    printf 'AID v%s — Agentic Iterative Development\n' "$cli_version"
+    printf 'AID v%s - Agentic Iterative Development\n' "$cli_version"
     printf 'Install, update, and manage AID across your repositories.\n'
 
     # Block 3: Installed tools for cwd.
@@ -536,7 +536,7 @@ _cmd_dashboard() {
 
 # Early help check.
 if [[ $# -eq 0 ]]; then
-    # Bare 'aid' → dashboard landing screen.
+    # Bare 'aid' -> dashboard landing screen.
     _cmd_dashboard
     exit 0
 fi
@@ -744,7 +744,7 @@ _resolve_tools_for_aid() {
 
     if [[ -z "$raw" ]]; then
         if [[ "$subcmd" == "update" || "$subcmd" == "remove" ]]; then
-            # No tool specified → all tools in manifest.
+            # No tool specified -> all tools in manifest.
             if [[ ! -f "$_AID_MANIFEST" ]]; then
                 return 0
             fi

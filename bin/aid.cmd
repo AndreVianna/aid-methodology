@@ -1,5 +1,5 @@
 @echo off
-:: aid.cmd — CMD entry point for the aid CLI.
+:: aid.cmd - CMD entry point for the aid CLI.
 :: Tries pwsh (PowerShell 7+) first, falls back to powershell (Windows PowerShell 5.1).
 :: Installed at %AID_HOME%\bin\aid.cmd so that `aid` resolves in cmd.exe AND pwsh.
 setlocal

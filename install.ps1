@@ -1,15 +1,15 @@
 #Requires -Version 5.1
-# install.ps1 — AID installer bootstrap (PowerShell 5.1+).
+# install.ps1 - AID installer bootstrap (PowerShell 5.1+).
 #
 # Purpose:
 #   Bootstrap / install the persistent global `aid` CLI and (optionally) add
 #   an AID profile to the current project in a single command.  Also retains
 #   the legacy flag-style direct-install path for one release.
 #
-# Usage (new — preferred):
+# Usage (new - preferred):
 #   .\install.ps1
 #       Install the global aid CLI into $AID_HOME (%LOCALAPPDATA%\aid by default)
-#       and wire PATH.  No project install — run 'aid add <tool>' afterwards.
+#       and wire PATH.  No project install - run 'aid add <tool>' afterwards.
 #
 #   .\install.ps1 <subcommand> [args]
 #       Bootstrap the CLI (if not already installed), then immediately run
@@ -23,7 +23,7 @@
 #       Remove the global aid CLI (PATH wiring + $AID_HOME).  Fallback for
 #       when 'aid' is not yet on PATH.
 #
-# Usage (legacy — back-compat, hidden, retained for one release):
+# Usage (legacy - back-compat, hidden, retained for one release):
 #   .\install.ps1 [-Tool <name>[,...]] [-Version <v>] [-FromBundle <path>]
 #                 [-Force] [-Verbose] [-TargetDirectory <dir>]
 #       Direct project install (no global CLI install).  Identical to the
@@ -58,23 +58,23 @@
 #   -Help                  Print this help and exit 0.
 #
 # Environment variables (installer options):
-#   AID_TOOL       — equivalent to -Tool.  Also triggers CONVENIENCE mode if set and no
+#   AID_TOOL       - equivalent to -Tool.  Also triggers CONVENIENCE mode if set and no
 #                    legacy-project flags are present.
-#   AID_VERSION    — equivalent to -Version.
-#   AID_TARGET     — equivalent to -TargetDirectory.
-#   AID_FORCE      — set to '1' or 'true' to enable -Force.
-#   AID_VERBOSE    — set to '1' to enable -Verbose.
-#   AID_NO_PATH    — set to '1' to skip PATH wiring (same as -NoPath).
+#   AID_VERSION    - equivalent to -Version.
+#   AID_TARGET     - equivalent to -TargetDirectory.
+#   AID_FORCE      - set to '1' or 'true' to enable -Force.
+#   AID_VERBOSE    - set to '1' to enable -Verbose.
+#   AID_NO_PATH    - set to '1' to skip PATH wiring (same as -NoPath).
 #
 # Environment variables (bootstrap/lib fetch):
-#   AID_HOME       — override global install dir (default: %LOCALAPPDATA%\aid).
-#   AID_LIB_PATH   — absolute path to AidInstallCore.psm1 (test override or vendored).
-#   AID_LIB_BASE   — base URL prefix for remote module fetch.
-#   AID_SUMS_URL   — override URL for SHA256SUMS verification.
-#   AID_LIB_VERSION — pin the lib fetch to a specific release version.
-#   AID_INSECURE_SKIP_LIB_VERIFY — set to '1' to skip lib checksum (INSECURE).
-#   AID_CLI_BUNDLE_URL  — direct URL for the CLI bundle tarball (test/override).
-#   AID_CLI_BUNDLE_BASE — base URL for CLI bundle fetch (default: release download base).
+#   AID_HOME       - override global install dir (default: %LOCALAPPDATA%\aid).
+#   AID_LIB_PATH   - absolute path to AidInstallCore.psm1 (test override or vendored).
+#   AID_LIB_BASE   - base URL prefix for remote module fetch.
+#   AID_SUMS_URL   - override URL for SHA256SUMS verification.
+#   AID_LIB_VERSION - pin the lib fetch to a specific release version.
+#   AID_INSECURE_SKIP_LIB_VERIFY - set to '1' to skip lib checksum (INSECURE).
+#   AID_CLI_BUNDLE_URL  - direct URL for the CLI bundle tarball (test/override).
+#   AID_CLI_BUNDLE_BASE - base URL for CLI bundle fetch (default: release download base).
 #
 # Exit codes:
 #   0   success
@@ -98,7 +98,7 @@ param(
     [string]$TargetDirectory  = '',
     [switch]$NoPath,
     [switch]$Help,
-    # Catch-all for unknown parameters: any unrecognised flag → exit 2 (usage error).
+    # Catch-all for unknown parameters: any unrecognised flag -> exit 2 (usage error).
     [Parameter(ValueFromRemainingArguments)]
     [string[]]$RemainingArgs  = @()
 )
@@ -118,7 +118,7 @@ $ErrorActionPreference = 'Stop'
 # terminal).  Instead we set $global:LASTEXITCODE and throw a private sentinel
 # exception that unwinds cleanly to the outermost catch block, which then returns.
 #
-# NOTE: bash install.sh does NOT need this guard — `curl | bash` runs in a subshell
+# NOTE: bash install.sh does NOT need this guard - `curl | bash` runs in a subshell
 # so `exit` is correct there.  This asymmetry is intentional: the goal (host/terminal
 # survives) is the same; the mechanism differs because PowerShell `iex` runs in-process.
 # ---------------------------------------------------------------------------
@@ -145,7 +145,7 @@ function script:Exit-Install {
 
 # ---------------------------------------------------------------------------
 # Locate the directory containing this script.
-# When piped via irm | iex, $MyInvocation.MyCommand.Path is null/empty — guard.
+# When piped via irm | iex, $MyInvocation.MyCommand.Path is null/empty - guard.
 # ---------------------------------------------------------------------------
 $script:_InstallPs1Path = $MyInvocation.MyCommand.Path
 if ([string]::IsNullOrEmpty($script:_InstallPs1Path)) {
@@ -164,7 +164,7 @@ function Show-Usage {
     # When piped ($script:_InstallPs1Path is null), emit a minimal usage stub (FR9 parity
     # with install.sh piped-stub).
     if ([string]::IsNullOrEmpty($script:_InstallPs1Path)) {
-        Write-Host "install.ps1 — AID installer bootstrap (PowerShell 5.1+)."
+        Write-Host "install.ps1 - AID installer bootstrap (PowerShell 5.1+)."
         Write-Host ""
         Write-Host "Usage:"
         Write-Host "  .\install.ps1 [-Tool <name>[,...]] [-Version <v>] [-FromBundle <path>]"
@@ -246,13 +246,13 @@ if (-not $Force -and ($env:AID_FORCE -eq '1' -or $env:AID_FORCE -eq 'true')) {
 # ---------------------------------------------------------------------------
 # Import the shared install core.
 # Resolution order (first match wins):
-#   1. AID_LIB_PATH env var — absolute path to the psm1 file (test override or vendored).
-#   2. Sibling lib/AidInstallCore.psm1 — present when invoked as a local file.
-#   3. Remote fetch (piped execution) — fix #12:
+#   1. AID_LIB_PATH env var - absolute path to the psm1 file (test override or vendored).
+#   2. Sibling lib/AidInstallCore.psm1 - present when invoked as a local file.
+#   3. Remote fetch (piped execution) - fix #12:
 #      a. Resolve the release version (from -Version flag or GitHub API latest).
 #      b. Fetch the lib from the IMMUTABLE release tag raw URL (not master).
 #      c. Fetch SHA256SUMS from the same release tag.
-#      d. Verify the lib's sha256 against SHA256SUMS — exit 4 on mismatch.
+#      d. Verify the lib's sha256 against SHA256SUMS - exit 4 on mismatch.
 #      e. Import the verified module.
 #      AID_LIB_BASE / AID_SUMS_URL env overrides allow hermetic tests without network.
 # ---------------------------------------------------------------------------
@@ -304,7 +304,7 @@ function script:Fetch-And-Verify-CliBundlePs1 {
 
     # Checksum verification.
     if ($env:AID_INSECURE_SKIP_LIB_VERIFY -eq '1') {
-        [Console]::Error.WriteLine("WARN: install.ps1: AID_INSECURE_SKIP_LIB_VERIFY=1 — skipping CLI bundle checksum verification (INSECURE)")
+        [Console]::Error.WriteLine("WARN: install.ps1: AID_INSECURE_SKIP_LIB_VERIFY=1 - skipping CLI bundle checksum verification (INSECURE)")
     } else {
         $localSums = $LocalSumsFile
         if (-not $localSums -or -not (Test-Path $localSums -PathType Leaf)) {
@@ -428,10 +428,10 @@ if ($aidLibPath) {
     }
 
     # Verify checksum (fix #12, fix #14: fail-closed).
-    # AID_INSECURE_SKIP_LIB_VERIFY=1 is an explicit opt-out — must be deliberately set.
+    # AID_INSECURE_SKIP_LIB_VERIFY=1 is an explicit opt-out - must be deliberately set.
     # Default: fail closed if SHA256SUMS is unreachable OR entry is missing OR hash mismatches.
     if ($env:AID_INSECURE_SKIP_LIB_VERIFY -eq '1') {
-        [Console]::Error.WriteLine("WARN: install.ps1: AID_INSECURE_SKIP_LIB_VERIFY=1 set — skipping lib checksum verification (INSECURE)")
+        [Console]::Error.WriteLine("WARN: install.ps1: AID_INSECURE_SKIP_LIB_VERIFY=1 set - skipping lib checksum verification (INSECURE)")
     } else {
         $sumsFile = Join-Path $tmpDir 'SHA256SUMS'
         $sumsOk = $false
@@ -478,7 +478,7 @@ if ($aidLibPath) {
 Import-Module $CoreModule -Force -DisableNameChecking
 
 # ---------------------------------------------------------------------------
-# AID_HOME resolution helper — cross-platform (Windows/Linux/macOS).
+# AID_HOME resolution helper - cross-platform (Windows/Linux/macOS).
 # Windows: %LOCALAPPDATA%\aid; Unix: ~/.aid (mirrors Bash default).
 # ---------------------------------------------------------------------------
 function script:Resolve-AidHome {
@@ -491,20 +491,20 @@ function script:Resolve-AidHome {
 # Dual-mode disambiguation (mirrors install.sh logic).
 #
 # Modes (mutually exclusive, detected from parameters):
-#   BOOTSTRAP      — no legacy flags, no subcommand → install CLI + wire PATH
-#   CONVENIENCE    — first positional in $RemainingArgs is a known subcommand
-#   UNINSTALL_CLI  — -UninstallCli switch present
-#   LEGACY         — -Tool / -Update / -Uninstall flags, or -FromBundle / -TargetDirectory
+#   BOOTSTRAP      - no legacy flags, no subcommand -> install CLI + wire PATH
+#   CONVENIENCE    - first positional in $RemainingArgs is a known subcommand
+#   UNINSTALL_CLI  - -UninstallCli switch present
+#   LEGACY         - -Tool / -Update / -Uninstall flags, or -FromBundle / -TargetDirectory
 #                    without a subcommand, or first positional is an unknown word
 #
 # Priority order:
-#   1. -UninstallCli              → UNINSTALL_CLI
-#   2. -Tool / -Update / -Uninstall flags → LEGACY
-#   3. -FromBundle or -TargetDirectory (without a known subcommand) → LEGACY
-#   4. First positional = known subcommand → CONVENIENCE
-#   5. First positional = unknown word → LEGACY
-#   6. AID_TOOL env-var + no legacy flags + no args → CONVENIENCE
-#   7. No args / only bootstrap params → BOOTSTRAP
+#   1. -UninstallCli              -> UNINSTALL_CLI
+#   2. -Tool / -Update / -Uninstall flags -> LEGACY
+#   3. -FromBundle or -TargetDirectory (without a known subcommand) -> LEGACY
+#   4. First positional = known subcommand -> CONVENIENCE
+#   5. First positional = unknown word -> LEGACY
+#   6. AID_TOOL env-var + no legacy flags + no args -> CONVENIENCE
+#   7. No args / only bootstrap params -> BOOTSTRAP
 # ---------------------------------------------------------------------------
 
 function script:Test-KnownSubcmd {
@@ -541,10 +541,10 @@ $_hasLegacyProjectFlag = ($FromBundle -or $TargetDirectory) -and -not (script:Te
 if ($UninstallCli) {
     $script:_InstallMode = 'UNINSTALL_CLI'
 } elseif ($_toolIsSubcmd) {
-    # $Tool was captured positionally as a known subcommand → CONVENIENCE.
+    # $Tool was captured positionally as a known subcommand -> CONVENIENCE.
     $script:_InstallMode = 'CONVENIENCE'
 } elseif ($Tool -or $Update -or $Uninstall) {
-    # Explicit legacy flags (non-subcommand $Tool, -Update, -Uninstall) → LEGACY.
+    # Explicit legacy flags (non-subcommand $Tool, -Update, -Uninstall) -> LEGACY.
     $script:_InstallMode = 'LEGACY'
 } elseif ($_hasLegacyProjectFlag) {
     $script:_InstallMode = 'LEGACY'
@@ -555,13 +555,13 @@ if ($UninstallCli) {
         $script:_InstallMode = 'LEGACY'
     }
 } elseif (-not $Tool -and $env:AID_TOOL -and -not $Update -and -not $Uninstall -and -not $FromBundle -and -not $TargetDirectory) {
-    # AID_TOOL env-var only → CONVENIENCE (synthesise 'add $AID_TOOL').
+    # AID_TOOL env-var only -> CONVENIENCE (synthesise 'add $AID_TOOL').
     $script:_InstallMode = 'CONVENIENCE'
     $script:_AidToolEnvOnly = $true
 }
 
 # ---------------------------------------------------------------------------
-# UNINSTALL_CLI mode — remove the global aid CLI (fallback path).
+# UNINSTALL_CLI mode - remove the global aid CLI (fallback path).
 # ---------------------------------------------------------------------------
 if ($script:_InstallMode -eq 'UNINSTALL_CLI') {
     $ucForce  = [bool]$Force
@@ -622,7 +622,7 @@ if ($script:_InstallMode -eq 'UNINSTALL_CLI') {
 }
 
 # ---------------------------------------------------------------------------
-# BOOTSTRAP mode — install the global aid CLI and wire PATH.
+# BOOTSTRAP mode - install the global aid CLI and wire PATH.
 # ---------------------------------------------------------------------------
 if ($script:_InstallMode -eq 'BOOTSTRAP') {
     $bsNoPath = [bool]$NoPath
@@ -650,7 +650,7 @@ if ($script:_InstallMode -eq 'BOOTSTRAP') {
         $bsAidPs1 = Join-Path (Split-Path -Parent $script:_InstallPs1Path) 'bin' | Join-Path -ChildPath 'aid.ps1'
     }
     if (-not $bsAidPs1 -or -not (Test-Path $bsAidPs1 -PathType Leaf)) {
-        # Piped bootstrap: aid.ps1 not beside install.ps1 — fetch CLI bundle.
+        # Piped bootstrap: aid.ps1 not beside install.ps1 - fetch CLI bundle.
         # Version resolution: prefer cached value from remote lib-fetch; fall back to
         # AID_LIB_VERSION env var or -Version parameter (so local-lib-path installs work too).
         $bsResolvedVer = $script:_RemoteResolvedVer
@@ -710,7 +710,7 @@ if ($script:_InstallMode -eq 'BOOTSTRAP') {
 
     # Pre-copy sanity: verify the source lib contains the required sentinel function.
     # This catches a bad AID_LIB_PATH (empty file, truncated download, wrong file).
-    $bsLibSrcContent = Get-Content -LiteralPath $bsLibSrc -Raw -ErrorAction SilentlyContinue
+    $bsLibSrcContent = Get-Content -LiteralPath $bsLibSrc -Raw -Encoding utf8 -ErrorAction SilentlyContinue
     if (-not ($bsLibSrcContent -match 'Get-AidStatusBody')) {
         script:Fail "installer could not refresh the CLI core at ${bsLibDest}; the source lib at ${bsLibSrc} does not contain the expected function 'Get-AidStatusBody'. Close any running 'aid' or PowerShell using it and re-run, or delete ${aidHome} and reinstall." 1
     }
@@ -748,7 +748,7 @@ if ($script:_InstallMode -eq 'BOOTSTRAP') {
         if (-not $bsCurrentPath) { $bsCurrentPath = '' }
         $bsParts = $bsCurrentPath -split ';' | Where-Object { $_ -and $_.Trim() }
         if ($bsParts -contains $bsBinDir) {
-            # Already present — only update in-process.
+            # Already present - only update in-process.
             if ($env:Path -notmatch [regex]::Escape($bsBinDir)) {
                 $env:Path = "$bsBinDir;$($env:Path)"
             }
@@ -777,7 +777,7 @@ if ($script:_InstallMode -eq 'BOOTSTRAP') {
 }
 
 # ---------------------------------------------------------------------------
-# CONVENIENCE mode — bootstrap CLI if needed, then exec 'aid.ps1 <subcmd> ...'.
+# CONVENIENCE mode - bootstrap CLI if needed, then exec 'aid.ps1 <subcmd> ...'.
 # ---------------------------------------------------------------------------
 if ($script:_InstallMode -eq 'CONVENIENCE') {
     $convNoPath = [bool]$NoPath
@@ -794,7 +794,7 @@ if ($script:_InstallMode -eq 'CONVENIENCE') {
     $convSubcmdArgs = [System.Collections.Generic.List[string]]::new()
 
     if ($script:_AidToolEnvOnly -eq $true) {
-        # AID_TOOL env-var only → synthesise 'add <AID_TOOL>'.
+        # AID_TOOL env-var only -> synthesise 'add <AID_TOOL>'.
         $convSubcmdArgs.Add('add')
         $convSubcmdArgs.Add($env:AID_TOOL)
     } elseif ($_toolIsSubcmd) {
@@ -894,7 +894,7 @@ if ($script:_InstallMode -eq 'CONVENIENCE') {
         # Pre-copy sanity: verify the source lib contains the required sentinel function.
         # This catches a bad AID_LIB_PATH (empty file, truncated download, wrong file).
         $convLibDest = Join-Path $convLibDir 'AidInstallCore.psm1'
-        $convLibSrcContent = Get-Content -LiteralPath $convLibSrc -Raw -ErrorAction SilentlyContinue
+        $convLibSrcContent = Get-Content -LiteralPath $convLibSrc -Raw -Encoding utf8 -ErrorAction SilentlyContinue
         if (-not ($convLibSrcContent -match 'Get-AidStatusBody')) {
             script:Fail "installer could not refresh the CLI core at ${convLibDest}; the source lib at ${convLibSrc} does not contain the expected function 'Get-AidStatusBody'. Close any running 'aid' or PowerShell using it and re-run, or delete ${aidHome} and reinstall." 1
         }
@@ -951,7 +951,7 @@ if ($script:_InstallMode -eq 'CONVENIENCE') {
 }
 
 # ---------------------------------------------------------------------------
-# LEGACY mode — original flag-style direct project install (back-compat).
+# LEGACY mode - original flag-style direct project install (back-compat).
 #
 # Unknown parameters check: applies only in LEGACY mode (CONVENIENCE and
 # BOOTSTRAP don't use RemainingArgs as positional flags).
@@ -1006,7 +1006,7 @@ function Resolve-ToolList {
 
     if (-not $RawTool) {
         if ($CurrentMode -eq 'uninstall') {
-            # No -Tool for uninstall → all tools in manifest.
+            # No -Tool for uninstall -> all tools in manifest.
             $mpath = Join-Path $TargetDir (Join-Path '.aid' '.aid-manifest.json')
             if (-not (Test-Path $mpath -PathType Leaf)) { return $result }
             try {
@@ -1126,7 +1126,7 @@ try {
             foreach ($t in $toolList) {
                 Write-Host ""
                 Prepare-ToolStaging -CurrentTool $t -CurrentVersion $Version -CurrentBundle $FromBundle
-                Write-Host "Installing $t v$($script:ResolvedVersion) $([char]0x2192) $Target"
+                Write-Host "Installing $t v$($script:ResolvedVersion) -> $Target"
                 $rc = Install-AidTool -StagingDir $script:StagingDir -Tool $t -Target $Target `
                          -Version $script:ResolvedVersion -Force ([bool]$Force) `
                          -AidVerbose $script:_AidVerbose
@@ -1178,11 +1178,11 @@ try {
 
 } catch {
     # In piped mode, script:Exit-Install throws the sentinel string to unwind cleanly.
-    # Catch it here, suppress it, and return — the host session survives.
+    # Catch it here, suppress it, and return - the host session survives.
     # Any other exception is re-thrown so PowerShell's normal error handling applies.
     $msg = "$_"
     if ($msg.StartsWith($script:_SentinelTag)) {
-        # Clean unwind — $global:LASTEXITCODE was already set by script:Exit-Install.
+        # Clean unwind - $global:LASTEXITCODE was already set by script:Exit-Install.
         return
     }
     # Unhandled exception in piped mode: set exit code 1, emit the error, and return.
