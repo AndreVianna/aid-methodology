@@ -81,7 +81,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| delivery-001 | In progress — CLI evolution (was gate A) | 001–010 + 020–030 | Foundation install + persistent `aid` CLI (folded in, no re-interview); curl + offline tar; Must |
+| delivery-001 | CLI built + CI-green + v0.7.1 released (gate pending) | 001–010 + 020–030 | Persistent `aid` CLI; cross-platform CI (Linux bash + native Windows PS); live curl\|bash bootstrap verified; Must |
 | delivery-002 | Detailed (A+) | 011–012 (2) | npm channel; depends on d-001; Must |
 | delivery-003 | Detailed (A+) | 013–015 (3) | PyPI channel; depends on d-001; CasuloAI org blocker; Must |
 | delivery-004 | Detailed (A+) | 016–017 (2) | CI release automation; depends on d-001/002/003; Should |
