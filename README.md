@@ -89,8 +89,10 @@ aid add claude-code       # or: codex  cursor  copilot-cli  antigravity
 aid add codex,cursor      # multiple tools at once
 aid status                # show what is installed
 aid update                # update all installed tools
+aid update self           # update the aid CLI itself
 aid remove codex          # remove one tool
-aid uninstall             # remove AID entirely from this project
+aid remove                # remove AID entirely from this project (asks to confirm)
+aid remove self           # remove the aid CLI itself (asks to confirm)
 ```
 
 **One-line bootstrap + add (first install):**
@@ -120,7 +122,7 @@ version as `*.aid-new` for you to review rather than overwriting silently.
 
 **Runtime requirements:** one or more of the five supported AI tools · Bash or PowerShell 5.1+ · Git · Node 18+ (optional, only for `/aid-summarize` diagram validation).
 
-[Full install guide — bootstrap, subcommand reference, offline bundles, version pinning, protect-on-diff →](docs/install.md)
+[Full install guide — bootstrap, subcommand reference, offline bundles, version pinning, protect-on-diff, reference →](docs/install.md)
 
 ---
 
@@ -373,7 +375,7 @@ All five profiles are generated from the same canonical source at `canonical/` �
 
 AID is at **`0.7.0`** (see [`VERSION`](VERSION)). A versioned-release flow is being introduced; until it ships, `master` remains the canonical source.
 
-- Install via `install.sh` (or `install.ps1`) to get current `master`; re-run with `--update` to pick up updates.
+- Install via `install.sh` (or `install.ps1`) to get current `master`; run `aid update` to pick up tool updates, or `aid update self` to update the CLI.
 - A formal version bump will be introduced when the methodology stabilizes.
 
 ---
@@ -413,7 +415,7 @@ aid-methodology/
 | Look up a term | [`docs/glossary.md`](docs/glossary.md) |
 | Answer a how-to question | [`docs/faq.md`](docs/faq.md) |
 | See AID applied step by step | [`examples/`](examples/README.md) — greenfield, brownfield full-path, brownfield lite-path |
-| Full install guide (update, uninstall, offline, version pinning) | [`docs/install.md`](docs/install.md) |
+| Full install guide (update, remove, offline, version pinning) | [`docs/install.md`](docs/install.md) |
 | Cut a release (maintainer runbook) | [`docs/release.md`](docs/release.md) |
 
 ---

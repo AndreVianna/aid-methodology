@@ -14,7 +14,7 @@
 #   .\install.ps1 <subcommand> [args]
 #       Bootstrap the CLI (if not already installed), then immediately run
 #       'aid <subcommand> [args]' in the current directory.
-#       Subcommands: status add remove update uninstall self-uninstall version help
+#       Subcommands: status add remove update version help
 #       Examples:
 #         .\install.ps1 add codex -FromBundle .\aid-codex-v0.7.0.tar.gz
 #         .\install.ps1 status
@@ -509,7 +509,7 @@ function script:Resolve-AidHome {
 
 function script:Test-KnownSubcmd {
     param([string]$w)
-    return ($w -in @('status', 'add', 'remove', 'update', 'uninstall', 'self-uninstall', 'version', 'help'))
+    return ($w -in @('status', 'add', 'remove', 'update', 'version', 'help'))
 }
 
 $script:_InstallMode   = 'BOOTSTRAP'

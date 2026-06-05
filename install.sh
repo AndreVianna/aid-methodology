@@ -14,7 +14,7 @@
 #   bash install.sh <subcommand> [args]
 #       Bootstrap the CLI (if not already installed), then immediately run
 #       'aid <subcommand> [args]' in the current directory.
-#       Subcommands: status add remove update uninstall self-uninstall version help
+#       Subcommands: status add remove update version help
 #       Examples:
 #         bash install.sh add codex --from-bundle ./aid-codex-v0.7.0.tar.gz
 #         bash install.sh status
@@ -80,12 +80,12 @@ LIB_DIR="${SCRIPT_DIR}/lib"
 # ---------------------------------------------------------------------------
 # Known subcommands (for disambiguation).
 # ---------------------------------------------------------------------------
-_KNOWN_SUBCMDS="status add remove update uninstall self-uninstall version help"
+_KNOWN_SUBCMDS="status add remove update version help"
 
 _is_known_subcmd() {
     local w="$1"
     case "$w" in
-        status|add|remove|update|uninstall|self-uninstall|version|help) return 0 ;;
+        status|add|remove|update|version|help) return 0 ;;
         *) return 1 ;;
     esac
 }
@@ -196,7 +196,7 @@ usage() {
         printf '  bash install.sh [--tool X] [--version v] [--from-bundle p] [--force] [--target d]\n'
         printf '  bash install.sh --update [...]  | --uninstall [...]\n'
         printf '\n'
-        printf 'Subcommands: status add remove update uninstall self-uninstall version help\n'
+        printf 'Subcommands: status add remove update version help\n'
         printf '\n'
         printf 'Exit codes: 0 ok, 1 failure, 2 usage, 3 network, 4 checksum,\n'
         printf '            5 protect-on-diff, 6 no manifest, 7 not an AID project\n'

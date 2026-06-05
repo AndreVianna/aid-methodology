@@ -1,4 +1,4 @@
-# AID Install / Update / Uninstall Guide
+# AID Install / Update / Remove Guide
 
 Complete reference for the `aid` CLI: bootstrap, per-project subcommands, offline install,
 and uninstall — across Linux, macOS, and Windows.
@@ -12,14 +12,13 @@ and uninstall — across Linux, macOS, and Windows.
 - [Step 2 — Use `aid` per project](#step-2--use-aid-per-project)
 - [One-line first install (bootstrap + add in one command)](#one-line-first-install-bootstrap--add-in-one-command)
 - [Offline / air-gapped install](#offline--air-gapped-install)
-- [Uninstalling](#uninstalling)
+- [Removing AID](#removing-aid)
+- [Update check](#update-check)
 - [Trust model and checksum verification](#trust-model-and-checksum-verification)
 - [Protect-on-diff for root agent files](#protect-on-diff-for-root-agent-files)
 - [Version recording and the manifest](#version-recording-and-the-manifest)
-- [Exit codes](#exit-codes)
 - [GitHub API rate limits and authentication](#github-api-rate-limits-and-authentication)
-- [Full flag reference](#full-flag-reference)
-- [Channels](#channels)
+- [Reference](#reference)
 
 ---
 
@@ -103,8 +102,9 @@ Installed tools:
   claude-code   v0.7.0   root: CLAUDE.md (owned)
 ```
 
-Bare `aid` (no subcommand) is an alias for `aid status`. Exit 7 when no AID install is
-found in the current directory.
+Bare `aid` (no subcommand) shows a dashboard: the installed CLI version, the project
+status, the full command list, and any pending update notice. Exit 7 when no AID install
+is found in the current directory.
 
 ### Install a tool into this project
 
@@ -142,6 +142,12 @@ aid update claude-code
 aid update --version 0.8.0
 ```
 
+### Update the aid CLI itself
+
+```bash
+aid update self
+```
+
 ### Remove a specific tool
 
 ```bash
@@ -151,12 +157,16 @@ aid remove codex
 ### Remove AID entirely from this project
 
 ```bash
-aid uninstall
+aid remove
 ```
 
 Removes all AID-installed files (manifest-driven — only what `aid add` wrote). Your own
 edits to `CLAUDE.md`/`AGENTS.md` are left in place (see
 [Protect-on-diff](#protect-on-diff-for-root-agent-files)).
+
+`aid remove` (no tool argument) prompts for confirmation before proceeding. The prompt is
+bypassed automatically when `--force` is given or when running non-interactively (CI /
+piped stdin).
 
 ### Print the CLI version
 
@@ -166,6 +176,17 @@ aid version
 
 This prints the version of the global `aid` CLI itself (from `~/.aid/VERSION`), not the
 version of tools installed in the current project (those are in the manifest).
+
+### Per-command help
+
+```bash
+aid <command> -h
+# e.g.:
+aid add -h
+aid remove -h
+aid update -h
+aid status -h
+```
 
 ---
 
@@ -242,17 +263,22 @@ aid add codex,cursor --from-bundle ./bundles/
 
 ---
 
-## Uninstalling
+## Removing AID
 
-### Remove AID from a project
+### Remove a specific tool from a project
 
 ```bash
-# Remove all tools
-aid uninstall
-
-# Remove a specific tool
 aid remove claude-code
 ```
+
+### Remove all AID from a project
+
+```bash
+aid remove
+```
+
+Prompts for confirmation. Pass `--force` to skip the prompt, or run non-interactively
+(CI / piped stdin) and the prompt is bypassed automatically.
 
 Uninstall is manifest-driven: only files that `aid add` wrote are removed. Files you
 created or modified yourself are left in place.
@@ -260,12 +286,14 @@ created or modified yourself are left in place.
 ### Remove the global `aid` CLI itself
 
 ```bash
-aid self-uninstall
+aid remove self
 ```
 
-This removes `~/.aid` (or `%LOCALAPPDATA%\aid`) and the PATH-wiring block. It does
-**not** touch per-project AID installs — run `aid uninstall` inside each project first
-if you want to clean those up too.
+Prompts for confirmation before removing `~/.aid` (or `%LOCALAPPDATA%\aid`) and the
+PATH-wiring block. It does **not** touch per-project AID installs — run `aid remove`
+inside each project first if you want to clean those up too.
+
+The prompt is bypassed by `--force` or when running non-interactively.
 
 If `aid` is not on your PATH (for example, because PATH wiring failed during bootstrap),
 use the bootstrap scripts directly:
@@ -279,6 +307,23 @@ bash install.sh --uninstall-cli
 # Windows
 .\install.ps1 -UninstallCli
 ```
+
+---
+
+## Update check
+
+When `aid` runs (bare `aid`, `aid status`, and other subcommands), it checks whether a
+newer CLI version has been published and prints a one-line notice if so:
+
+```
+⬆ A newer aid CLI is available: v0.7.2 (you have v0.7.1). Run: aid update self
+```
+
+- The check is **throttled**: at most once per 24 hours per machine.
+- The result is **cached** at `~/.aid/.update-check` between checks.
+- The check is **fail-silent**: network errors, JSON parse failures, or an absent `curl`
+  are swallowed — the check never blocks or errors a command.
+- **Opt out** permanently by setting `AID_NO_UPDATE_CHECK=1` in your environment.
 
 ---
 
@@ -354,9 +399,9 @@ aid add <tool> --force
 
 ### Uninstall safety
 
-On `aid uninstall` / `aid remove`, a root agent file is only removed if it still matches
-the checksum AID recorded at install time. If you have edited it since, the file is left
-in place: `Left in place (modified or not AID-owned): AGENTS.md`.
+On `aid remove`, a root agent file is only removed if it still matches the checksum AID
+recorded at install time. If you have edited it since, the file is left in place:
+`Left in place (modified or not AID-owned): AGENTS.md`.
 
 ### Pre-FR12 multi-tool note
 
@@ -373,7 +418,7 @@ files byte-identical.
 
 After every `aid add` or `aid update`, AID records what it installed at
 `.aid/.aid-manifest.json` in the target repo. This manifest drives `aid update`,
-`aid remove`, and `aid uninstall` — do not delete it.
+`aid remove` — do not delete it.
 
 ### Manifest location
 
@@ -414,21 +459,6 @@ contain your Knowledge Base and work-area files.
 
 ---
 
-## Exit codes
-
-| Code | Meaning |
-|------|---------|
-| `0` | Success. Install/update/uninstall completed. "Nothing to do" is success. |
-| `1` | Generic runtime failure (extract failed, write failed). |
-| `2` | Usage error: unknown subcommand, bad argument, ambiguous tool, undetectable tool, missing target directory, `--from-bundle` + `--version` together. |
-| `3` | Network / fetch failure: download or latest-release resolution failed and no `--from-bundle`. |
-| `4` | Checksum mismatch: SHA-256 of downloaded file did not match `SHA256SUMS`. |
-| `5` | Protect-on-diff: at least one root agent file was blocked. Other files were installed successfully. Review the `.aid-new` file and merge manually, or re-run with `--force`. |
-| `6` | Uninstall with no manifest: nothing installed (idempotent — not a hard error). |
-| `7` | `aid status` / `aid` (bare): no AID install found in the current directory. |
-
----
-
 ## GitHub API rate limits and authentication
 
 Online installs without `--version` resolve the latest release via the GitHub API.
@@ -455,44 +485,76 @@ aid add claude-code
 
 ---
 
-## Full flag reference
+## Reference
 
-### `aid` subcommands
+### Command surface
 
 ```
-aid                            Alias for aid status
-aid status [--verbose] [--target <dir>]
-aid add <tool>[,...] [--version <v>] [--from-bundle <path>]
-                     [--force] [--verbose] [--target <dir>]
-aid remove <tool>[,...] [--verbose] [--target <dir>]
-aid update [<tool>...] [--version <v>] [--from-bundle <path>]
-                       [--force] [--verbose] [--target <dir>]
-aid uninstall [--verbose] [--target <dir>]
-aid version
-aid self-uninstall [--force]
-aid help [<subcommand>]
+aid                              Show the dashboard (status + help + update notice)
+aid -h | --help                  Show help
+aid version                      Print the CLI version
+aid status                       Show AID state of the current project
+aid add <tool>[,...]             Add tool(s): claude-code, codex, cursor, copilot-cli, antigravity
+aid update [<tool>... | self]    Update to latest; no arg = all installed tools; 'self' = the aid CLI
+aid remove [<tool>... | self]    Remove; no arg = ALL AID from the project (asks to confirm); 'self' = the aid CLI (asks to confirm)
+aid <command> -h | --help        Per-command help
 ```
+
+### Flags
 
 PowerShell flags use the same words; the `-` prefix is accepted alongside `--`:
 `-Force`, `-Verbose`, `-Version <v>`, `-FromBundle <path>`, `-Target <dir>`.
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--version <v>` | latest release | Pin to a release version (`0.7.0` or `v0.7.0`). Mutually exclusive with `--from-bundle`. |
-| `--from-bundle <path>` | — | Offline install from a tarball (single tool) or a directory of tarballs (comma-list). No network. |
-| `--force` | off | Overwrite differing files, including protected root agent files. |
-| `--verbose` | off | Print per-file `Copied:` / `Up to date:` / `Updated:` / `Removed:` lines. Default: concise per-tool summary. |
-| `--target <dir>` | `.` (cwd) | Project root. Must exist; a missing target is a usage error (exit 2). |
+| Flag | Applies to | Default | Description |
+|------|-----------|---------|-------------|
+| `--version <v>` | `add`, `update` | latest release | Pin to a release version (`0.7.0` or `v0.7.0`). Mutually exclusive with `--from-bundle`. |
+| `--from-bundle <path>` | `add`, `update` | — | Offline install from a tarball (single tool) or a directory of tarballs. No network required. |
+| `--force` | `add`, `update`, `remove` | off | Overwrite differing files and skip confirmation prompts. |
+| `--verbose` | all | off | Print per-file `Copied:` / `Up to date:` / `Updated:` / `Removed:` lines. Default: concise summary. |
+| `--target <dir>` | all | `.` (cwd) | Project root. Must exist; a missing target is a usage error (exit 2). |
+| `--no-path` | bootstrap, `update self` | off | Skip automatic PATH wiring. |
 
-**Env-var equivalents** (flags take precedence over env vars):
+### Exit codes
 
-| Env var | Equivalent flag | Notes |
-|---------|-----------------|-------|
-| `AID_TOOL` | positional tool arg | Accepted by `add`/`remove`/`update`. |
-| `AID_VERSION` | `--version` | |
-| `AID_TARGET` | `--target` | |
-| `AID_FORCE` | `--force` | Set to `1` or `true`. |
-| `AID_VERBOSE` | `--verbose` | Set to `1`. |
+| Code | Meaning |
+|------|---------|
+| `0` | Success. Install/update/remove completed. "Nothing to do" is success. |
+| `1` | Generic runtime failure (extract failed, write failed). |
+| `2` | Usage error: unknown subcommand, bad argument, ambiguous tool, undetectable tool, missing target directory, `--from-bundle` + `--version` together. |
+| `3` | Network / fetch failure: download or latest-release resolution failed and no `--from-bundle`. |
+| `4` | Checksum mismatch: SHA-256 of downloaded file did not match `SHA256SUMS`. |
+| `5` | Protect-on-diff: at least one root agent file was blocked. Other files were installed successfully. Review the `.aid-new` file and merge manually, or re-run with `--force`. |
+| `6` | No manifest: `remove` or `update` found no `.aid-manifest.json` (nothing installed — idempotent). |
+| `7` | `aid status` / bare `aid`: no AID install found in the current directory. |
+
+### Environment variables
+
+**User-facing** — set these to control `aid` behavior without passing flags:
+
+| Variable | Equivalent flag / effect |
+|----------|--------------------------|
+| `AID_TOOL` | Positional tool argument for `add` / `remove` / `update`. Also used by the bootstrap convenience-chain (`AID_TOOL=claude-code irm … \| iex`). |
+| `AID_VERSION` | `--version` |
+| `AID_TARGET` | `--target` |
+| `AID_FORCE` | `--force` — set to `1` or `true`. |
+| `AID_VERBOSE` | `--verbose` — set to `1`. |
+| `AID_NO_UPDATE_CHECK` | Set to `1` to permanently disable the automatic update-available notice. |
+| `AID_HOME` | Override the global CLI install directory (default: `~/.aid` on Unix, `%LOCALAPPDATA%\aid` on Windows). |
+| `AID_NO_PATH` | Set to `1` to skip PATH wiring during bootstrap or `update self`. |
+
+**Advanced / test hooks** — override internal URLs and paths; not intended for normal use:
+
+| Variable | Effect |
+|----------|--------|
+| `AID_LIB_PATH` | Absolute path to a local `aid-install-core.sh` — bypasses remote fetch. |
+| `AID_LIB_BASE` | Base URL for remote lib fetch (default: GitHub release download base). |
+| `AID_SUMS_URL` | Override URL for the `SHA256SUMS` verification file. |
+| `AID_LIB_VERSION` | Pin the remote lib fetch to a specific release version. |
+| `AID_INSECURE_SKIP_LIB_VERIFY` | Set to `1` to bypass lib checksum verification. **INSECURE** — test environments only; never in production. |
+| `AID_CLI_BUNDLE_URL` | Direct URL for the CLI bundle tarball (bypasses computed URL). |
+| `AID_CLI_BUNDLE_BASE` | Base URL for CLI bundle fetch (default: release download base). |
+| `AID_UPDATE_CHECK_URL` | Override the GitHub API URL used for the update check (also bypasses the 24h throttle — useful in tests). |
+| `AID_INSTALL_URL` | Override the bootstrap `install.sh` URL used by `aid update self`. |
 
 ### Canonical tool ids
 
@@ -507,12 +569,33 @@ PowerShell flags use the same words; the `-` prefix is accepted alongside `--`:
 Tool ids are accepted case-insensitively. On Windows, PascalCase aliases are also
 accepted: `ClaudeCode`, `Codex`, `Cursor`, `CopilotCli`, `Antigravity`.
 
+### Tool auto-detect
+
+When `aid add` is run without a tool name, the CLI probes the current directory for
+per-tool markers:
+
+| Marker present in target | Detected tool |
+|--------------------------|---------------|
+| `.claude/` dir | `claude-code` |
+| `.codex/` dir or `.agents/` dir | `codex` |
+| `.cursor/` dir | `cursor` |
+| `.github/` with AID-specific children (`agents/` or `skills/`) | `copilot-cli` |
+| `.agent/` dir | `antigravity` |
+
+A plain `.github/` directory (without the AID copilot subtree) does **not** trigger
+`copilot-cli` detection.
+
+- Exactly one marker found → that tool is used.
+- Zero markers found → error, exit 2: `cannot auto-detect host tool; pass tool name as argument`.
+- More than one marker found → error, exit 2: `ambiguous host tool (found: X, Y)`.
+
 ### Bootstrap scripts (fallback / back-compat)
 
 `install.sh` and `install.ps1` retain the legacy direct-install flag style for **one
-release** as a back-compat path. Prefer `aid add` for new workflows.
+release** as a back-compat path. Prefer `aid add` / `aid remove` / `aid update` for new
+workflows.
 
-```
+```bash
 # Linux / macOS (legacy back-compat — retained one release)
 bash install.sh --tool <name>[,...] [--version <v>] [--from-bundle <path>]
                 [--force] [--verbose] [--target <dir>]
@@ -543,26 +626,6 @@ curl -fsSL .../install.sh | bash -s -- --no-path
 $env:AID_NO_PATH = '1'
 irm .../install.ps1 | iex
 ```
-
-### Tool auto-detect
-
-When `aid add` is run without a tool name, the CLI probes the current directory for
-per-tool markers:
-
-| Marker present in target | Detected tool |
-|--------------------------|---------------|
-| `.claude/` dir | `claude-code` |
-| `.codex/` dir or `.agents/` dir | `codex` |
-| `.cursor/` dir | `cursor` |
-| `.github/` with AID-specific children (`agents/` or `skills/`) | `copilot-cli` |
-| `.agent/` dir | `antigravity` |
-
-A plain `.github/` directory (without the AID copilot subtree) does **not** trigger
-`copilot-cli` detection.
-
-- Exactly one marker found → that tool is used.
-- Zero markers found → error, exit 2: `cannot auto-detect host tool; pass tool name as argument`.
-- More than one marker found → error, exit 2: `ambiguous host tool (found: X, Y)`.
 
 ---
 
