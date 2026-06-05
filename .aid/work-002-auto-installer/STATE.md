@@ -85,7 +85,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | delivery-002 | Built + CI-green (publish deferred) | 031–035 + 042 | npm `aid` on PATH; Linux+Windows CI green; needs @aid scope+token to publish |
 | delivery-003 | Built + CI-green (publish deferred) | 036–041 | PyPI `aid` on PATH; Linux+Windows CI green; CasuloAI Labs org reg blocks publish |
 | delivery-004 | Detailed (A+) | 016–017 (2) | CI release automation; depends on d-001/002/003; Should |
-| delivery-005 | Detailed (A+) | 018–019 (2) | Invariant AGENTS.md; independent; sequence early; Should |
+| delivery-005 | Done | 018–019 | Invariant root AGENTS.md (4 files byte-identical) + CI guard; no render-drift |
 
 ## Tasks Status
 
@@ -111,8 +111,8 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 015 | PyPI org registration prereq + publish runbook | DOCUMENT | d3·W3 | Superseded | — | — | delivery-003; deps 014; external blocker |
 | 016 | One-tag release workflow `release.yml` + version-sync gate | IMPLEMENT | d4·W1 | Pending | — | — | delivery-004; deps 001,011,013 |
 | 017 | Version-sync unit test + workflow validation | TEST | d4·W2 | Pending | — | — | delivery-004; deps 016 |
-| 018 | Normalize root `AGENTS.md` byte-invariant ×4 | IMPLEMENT | d5·W1 | Pending | — | — | delivery-005; deps —; independent/early |
-| 019 | CI invariance guard for root `AGENTS.md` | TEST | d5·W2 | Pending | — | — | delivery-005; deps 018 |
+| 018 | Normalize root `AGENTS.md` byte-invariant ×4 | IMPLEMENT | d5·W1 | Done | — | — | delivery-005; deps —; independent/early |
+| 019 | CI invariance guard for root `AGENTS.md` | TEST | d5·W2 | Done | — | — | delivery-005; deps 018 |
 | 020 | `aid` dispatcher (Bash) — subcommand parse + map to engine modes | IMPLEMENT | d1·W6 | Done | — | — | delivery-001 CLI; net-new; deps 003 |
 | 021 | Core read additions (Bash) — `manifest_list_tools` + `aid_status` (exit 7) | IMPLEMENT | d1·W6 | Done | — | — | delivery-001 CLI; net-new; deps 003 |
 | 022 | Global layout + bootstrap reshape (Bash) — arg-free `~/.aid` install; convenience chain; idempotent | IMPLEMENT | d1·W6 | Done | — | — | delivery-001 CLI; amends 003; deps 020,021 |
@@ -131,13 +131,13 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 032 | `package.json` (bin:{aid}, files allowlist, 0 deps) + prepack vendoring of the 6 aid-cli files | IMPLEMENT | d2·W1 | Done | — | — | delivery-002; deps 031 |
 | 033 | npm wrapper test suite (NM01–NM09) | TEST | d2·W2 | Done | — | — | delivery-002; deps 031,032; CI bash-harness |
 | 034 | npm pack + global-install smoke (NM10) | TEST | d2·W2 | Done | — | — | delivery-002; deps 032; installer-tests.yml matrix |
-| 035 | npm channel docs (README + docs/install.md) | DOCUMENT | d2·W3 | Pending | — | — | delivery-002; deps 033,034 |
+| 035 | npm channel docs (README + docs/install.md) | DOCUMENT | d2·W3 | Done | — | — | delivery-002; deps 033,034 |
 | 036 | PyPI shim `aid_installer/__main__.py` (parity w/031; AID_INSTALL_CHANNEL=pypi) | IMPLEMENT | d3·W1 | Done | — | — | delivery-003; deps 042 |
 | 037 | `pyproject.toml` (scripts:aid, hatchling, _vendor) + build-time vendoring | IMPLEMENT | d3·W1 | Done | — | — | delivery-003; deps 036 |
 | 038 | PyPI wrapper test suite (PW01–05,07,08) | TEST | d3·W2 | Done | — | — | delivery-003; deps 036,037; CI bash-harness |
 | 039 | PyPI build + pipx-install smoke (PW06) | TEST | d3·W2 | Done | — | — | delivery-003; deps 037; installer-tests.yml matrix |
 | 040 | CasuloAI Labs PyPI org registration prereq + publish runbook | DOCUMENT | d3·W3 | Pending | — | — | delivery-003; deps 039; external blocker |
-| 041 | PyPI channel docs (README + docs/install.md) | DOCUMENT | d3·W3 | Pending | — | — | delivery-003; deps 038,039 |
+| 041 | PyPI channel docs (README + docs/install.md) | DOCUMENT | d3·W3 | Done | — | — | delivery-003; deps 038,039 |
 | 042 | Shared: AID_INSTALL_CHANNEL guard in update-self (bin/aid + bin/aid.ps1) + update notice | IMPLEMENT | d2·W0 | Done | — | — | delivery-002/003; deps —; additive to d-001 |
 
 ## Deploy Status

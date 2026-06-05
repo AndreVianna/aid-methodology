@@ -8,6 +8,7 @@ and uninstall — across Linux, macOS, and Windows.
 ## Contents
 
 - [How it works (two steps)](#how-it-works-two-steps)
+- [Install channels](#install-channels)
 - [Step 1 — Bootstrap the `aid` CLI (once per machine)](#step-1--bootstrap-the-aid-cli-once-per-machine)
 - [Step 2 — Use `aid` per project](#step-2--use-aid-per-project)
 - [One-line first install (bootstrap + add in one command)](#one-line-first-install-bootstrap--add-in-one-command)
@@ -33,6 +34,132 @@ AID separates into two install layers:
 2. **Per-project AID files** — the profile trees (`.claude/`, `.codex/`, `CLAUDE.md`,
    `AGENTS.md`, etc.) that `aid add <tool>` installs into a repo. Each repo tracks what
    was installed in its own `.aid/.aid-manifest.json`.
+
+---
+
+## Install channels
+
+All channels deliver the same `aid` CLI (same `aid add / status / update / remove`). The
+difference is only how `aid` lands on your PATH.
+
+| Channel | Requires | Status |
+|---------|----------|--------|
+| `curl` / `irm` bootstrap (online) | Bash or PowerShell 5.1+ | Available — see [Step 1](#step-1--bootstrap-the-aid-cli-once-per-machine) |
+| `--from-bundle` (offline / air-gapped) | Bash or PowerShell 5.1+ | Available — see [Offline install](#offline--air-gapped-install) |
+| npm: `npm i -g @aid/installer` | Node >=18 | Built and tested; not yet published to the npm registry (see note below) |
+| PyPI: `pipx install aid-installer` | Python >=3.8 | Built and tested; not yet published to PyPI (see note below) |
+
+> **Publishing status:** The `@aid/installer` npm package and the `aid-installer` PyPI
+> package are built and tested in CI, but the npm `@aid` scope and the PyPI CasuloAI Labs
+> org registration are pending. Until those are in place, the npm and PyPI channels are for
+> local and CI use only. The `curl`/`irm` bootstrap is the supported install path for all
+> end users today.
+
+---
+
+### npm channel (once published)
+
+Requires Node >=18.
+
+**Global install** — puts `aid` on PATH permanently:
+
+```bash
+npm install -g @aid/installer
+aid add claude-code
+```
+
+**Without a global install** — invoke once with `npx`:
+
+```bash
+npx @aid/installer add claude-code
+```
+
+`npx` downloads and runs the package without adding it to PATH. Useful for one-off installs
+or CI.
+
+After either form, usage is identical:
+
+```bash
+aid add <tool>          # install a tool profile into the current project
+aid status              # show installed tools
+aid update [<tool>]     # update a tool (or all tools)
+aid remove [<tool>]     # remove a tool (or all AID from the project)
+```
+
+**Updating the `aid` CLI itself (npm channel):**
+
+```bash
+npm install -g @aid/installer@latest
+```
+
+Or via `aid`:
+
+```bash
+aid update self
+# Prints: npm install -g @aid/installer@latest
+```
+
+The CLI detects the npm channel (`AID_INSTALL_CHANNEL=npm`) and prints the correct
+command automatically.
+
+---
+
+### PyPI channel (once published)
+
+Requires Python >=3.8.
+
+**pipx (recommended)** — installs `aid` into an isolated environment and puts it on PATH:
+
+```bash
+pipx install aid-installer
+aid add claude-code
+```
+
+**pip** — use `--user` to avoid system-level writes:
+
+```bash
+pip install --user aid-installer
+aid add claude-code
+```
+
+`pipx` is preferred because it isolates the install and avoids dependency conflicts. Use
+`pip --user` only if `pipx` is unavailable.
+
+After either form, usage is identical — same `aid add / status / update / remove`.
+
+**Updating the `aid` CLI itself (PyPI channel):**
+
+With pipx:
+
+```bash
+pipx upgrade aid-installer
+```
+
+Or via `aid`:
+
+```bash
+aid update self
+# Prints: pipx upgrade aid-installer
+```
+
+The CLI detects the PyPI channel (`AID_INSTALL_CHANNEL=pypi`) and prints the correct
+command automatically.
+
+---
+
+### Multiple channels on PATH
+
+If `aid` is installed via more than one channel (for example, both via `curl` bootstrap
+and via npm), PATH order determines which one runs. Pick one channel per machine and
+remove the others to avoid confusion.
+
+To check which `aid` is active:
+
+```bash
+which aid      # Linux / macOS
+where aid      # Windows (cmd)
+Get-Command aid | Select-Object Source   # Windows (PowerShell)
+```
 
 ---
 
@@ -147,6 +274,15 @@ aid update --version 0.8.0
 ```bash
 aid update self
 ```
+
+The command is channel-aware: it detects how `aid` was installed and prints the right
+upgrade instruction.
+
+| Install channel | What `aid update self` does |
+|----------------|------------------------------|
+| `curl` / `irm` bootstrap | Re-runs the bootstrap script to fetch and install the latest CLI |
+| npm | Prints: `npm install -g @aid/installer@latest` |
+| PyPI / pipx | Prints: `pipx upgrade aid-installer` |
 
 ### Remove a specific tool
 
@@ -631,15 +767,15 @@ irm .../install.ps1 | iex
 
 ## Channels
 
-| Channel | Status | Command |
-|---------|--------|---------|
-| `curl … \| bash` (online, Linux / macOS / git-bash) | Available | See [Step 1](#step-1--bootstrap-the-aid-cli-once-per-machine) |
-| `irm … \| iex` (online, Windows PowerShell) | Available | See [Step 1](#step-1--bootstrap-the-aid-cli-once-per-machine) |
-| `--from-bundle <path>` (offline tarball) | Available | See [Offline install](#offline--air-gapped-install) |
-| `npm i -g @aid/installer` → `aid` | Coming in a later delivery (003) | — |
-| `pipx install aid-installer` → `aid` | Coming in a later delivery (004) | — |
+| Channel | Requires | Status | Command |
+|---------|----------|--------|---------|
+| `curl … \| bash` (online, Linux / macOS / git-bash) | Bash | Available | See [Step 1](#step-1--bootstrap-the-aid-cli-once-per-machine) |
+| `irm … \| iex` (online, Windows PowerShell) | PowerShell 5.1+ | Available | See [Step 1](#step-1--bootstrap-the-aid-cli-once-per-machine) |
+| `--from-bundle <path>` (offline tarball) | Bash or PowerShell 5.1+ | Available | See [Offline install](#offline--air-gapped-install) |
+| `npm install -g @aid/installer` → `aid` | Node >=18 | Built; not yet published to npm registry | See [npm channel](#npm-channel-once-published) |
+| `pipx install aid-installer` → `aid` | Python >=3.8 | Built; not yet published to PyPI | See [PyPI channel](#pypi-channel-once-published) |
 
-> **Note (003/004 ripple):** The npm and PyPI packages for features 003 and 004 will publish
-> the `aid` command directly, making `npm i -g @aid/installer` and `pipx install aid-installer`
-> equivalent bootstrap paths to `curl | bash`. Those deliveries are not yet shipped; the
-> `curl`/`irm` path is the only supported bootstrap today.
+The `curl`/`irm` bootstrap is the supported install path for all end users today. The npm
+and PyPI packages are built and tested in CI but are awaiting registry publication
+(npm `@aid` scope and PyPI CasuloAI Labs org registration pending). Once published,
+all three channels deliver an identical `aid` CLI.
