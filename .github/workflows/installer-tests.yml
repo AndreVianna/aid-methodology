@@ -1,11 +1,17 @@
 name: Installer CI (cross-platform)
 
 # The AID installer + `aid` CLI ship as bash (install.sh) and PowerShell (install.ps1)
-# and must work on real Linux/macOS AND real Windows. The main CI (test.yml) runs the
+# and must work on real Linux/macOS AND real Windows.  The main CI (test.yml) runs the
 # full canonical suite on Linux only; this workflow runs the platform-sensitive
-# installer/CLI/release suites on a real Windows runner (native pwsh, not pwsh-on-Linux)
-# in addition to Linux, and fires on every feature-branch push so changes are validated
-# remotely without a local full-suite run.
+# installer/CLI/release suites on each OS and fires on every feature-branch push so
+# changes are validated remotely without a local full-suite run.
+#
+# OS split:
+#   ubuntu-latest  — bash harness (test-install, test-install-ps1, test-install-parity,
+#                    test-aid-cli, test-aid-cli-ps1, test-aid-cli-parity, test-release,
+#                    test-release-install-e2e)
+#   windows-latest — native PowerShell test (tests/windows/Test-AidInstaller.ps1) only;
+#                    the bash harness is NOT run on Windows to avoid Git Bash path issues.
 
 on:
   push:
@@ -17,27 +23,45 @@ permissions:
 
 jobs:
   installer:
-    name: installer/CLI suites (${{ matrix.os }})
+    name: installer/CLI (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            mode: bash-harness
+          - os: windows-latest
+            mode: native-ps1
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # -----------------------------------------------------------------------
+      # Shared: assert pwsh is present (PowerShell coverage must not silently skip).
+      # -----------------------------------------------------------------------
+      - name: Assert pwsh present
+        shell: bash
+        run: command -v pwsh >/dev/null || { echo "::error::pwsh missing on ${{ matrix.os }} — PowerShell tests would skip"; exit 1; }
+
+      # -----------------------------------------------------------------------
+      # ubuntu-latest: bash harness
+      # -----------------------------------------------------------------------
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        if: matrix.mode == 'bash-harness'
         with:
           python-version: '3.11'
+
       - name: Ensure python3 resolves (Windows ships only `python`)
+        if: matrix.mode == 'bash-harness'
         shell: bash
         run: command -v python3 >/dev/null || ln -s "$(command -v python)" "$(dirname "$(command -v python)")/python3" || true
+
       - name: Make scripts executable (Linux/macOS)
-        if: runner.os != 'Windows'
+        if: matrix.mode == 'bash-harness'
         run: find canonical/scripts tests/canonical bin -type f \( -name '*.sh' -o -name 'aid' \) -exec chmod +x {} +
-      - name: Assert pwsh present (PowerShell coverage must not silently skip)
-        shell: bash
-        run: command -v pwsh >/dev/null || { echo "::error::pwsh missing on ${{ matrix.os }} — PowerShell suites would skip"; exit 1; }
-      - name: Run installer + CLI + release suites
+
+      - name: Run installer + CLI + release suites (bash harness)
+        if: matrix.mode == 'bash-harness'
         shell: bash
         run: |
           set -u
@@ -58,3 +82,11 @@ jobs:
             exit 1
           fi
           echo "All installer/CLI/release suites passed on ${{ matrix.os }}."
+
+      # -----------------------------------------------------------------------
+      # windows-latest: native PowerShell test
+      # -----------------------------------------------------------------------
+      - name: Run native PowerShell installer test
+        if: matrix.mode == 'native-ps1'
+        shell: pwsh
+        run: pwsh -NoProfile -File tests/windows/Test-AidInstaller.ps1
