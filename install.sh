@@ -589,33 +589,30 @@ if [[ "$_INSTALL_MODE" == "UNINSTALL_CLI" ]]; then
 
     _uc_partial=0
 
-    # Remove PATH wiring.
+    # Remove PATH wiring from all standard rc files (or a single explicit file).
     if [[ "$_UC_NO_PATH" -eq 0 ]]; then
-        _uc_profile=""
+        _uc_unwire_one() {
+            local _uc_f="$1"
+            if [[ -f "$_uc_f" ]] && grep -qF '# >>> aid CLI >>>' "$_uc_f" 2>/dev/null; then
+                local _uc_tmp
+                _uc_tmp="$(mktemp "${_uc_f}.aid-tmp.XXXXXX")"
+                awk 'BEGIN{skip=0} /# >>> aid CLI >>>/{ skip=1; next } skip && /# <<< aid CLI <<</{ skip=0; next } skip{next} {print}' \
+                    "$_uc_f" > "$_uc_tmp"
+                mv "$_uc_tmp" "$_uc_f"
+                echo "PATH wiring removed from ${_uc_f}."
+            fi
+        }
         if [[ -n "$_UC_PROFILE_FILE" ]]; then
-            _uc_profile="$_UC_PROFILE_FILE"
+            _uc_unwire_one "$_UC_PROFILE_FILE"
         else
-            _shell_name="$(basename "${SHELL:-bash}")"
-            case "$_shell_name" in
-                zsh)  _uc_profile="${ZDOTDIR:-${HOME}}/.zshrc" ;;
-                bash)
-                    _uname_s="$(uname -s 2>/dev/null || echo Linux)"
-                    if [[ "$_uname_s" == "Darwin" ]]; then
-                        _uc_profile="${HOME}/.bash_profile"
-                    else
-                        _uc_profile="${HOME}/.bashrc"
-                    fi
-                    ;;
-                *)    _uc_profile="${HOME}/.profile" ;;
-            esac
-        fi
-
-        if [[ -f "$_uc_profile" ]] && grep -qF '# >>> aid CLI >>>' "$_uc_profile" 2>/dev/null; then
-            _uc_tmp="$(mktemp "${_uc_profile}.aid-tmp.XXXXXX")"
-            awk 'BEGIN{skip=0} /# >>> aid CLI >>>/{ skip=1; next } skip && /# <<< aid CLI <<</{ skip=0; next } skip{next} {print}' \
-                "$_uc_profile" > "$_uc_tmp"
-            mv "$_uc_tmp" "$_uc_profile"
-            echo "PATH wiring removed from ${_uc_profile}."
+            for _uc_rc in \
+                "${ZDOTDIR:-${HOME}}/.zshrc" \
+                "${HOME}/.bashrc" \
+                "${HOME}/.bash_profile" \
+                "${HOME}/.profile"
+            do
+                _uc_unwire_one "$_uc_rc"
+            done
         fi
     fi
 
@@ -741,16 +738,12 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
 
     echo "aid CLI v${_CLI_VERSION} installed to ${AID_HOME}."
 
-    # Wire PATH (idempotent marked-block).
+    # Wire PATH (idempotent marked-block) into a single profile file.
+    # Usage: _wire_profile_block <bin_dir> <profile>
+    # Does NOT handle --no-path; caller must check before calling.
     _wire_profile_block() {
         local bin_dir="$1"
         local profile="$2"
-        local no_path="$3"
-
-        if [[ "$no_path" -eq 1 ]]; then
-            printf 'Add "%s" to your PATH manually.\n' "$bin_dir"
-            return 0
-        fi
 
         if [[ ! -f "$profile" ]]; then
             touch "$profile" 2>/dev/null || {
@@ -762,7 +755,8 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
 
         local fence_start='# >>> aid CLI >>>'
         local fence_end='# <<< aid CLI <<<'
-        local path_line="export PATH=\"${bin_dir}:\$PATH\""
+        # Duplicate-guarded export: safe even when multiple rc files are sourced.
+        local path_line="case \":\$PATH:\" in *\":${bin_dir}:\"*) ;; *) export PATH=\"${bin_dir}:\$PATH\" ;; esac"
 
         if grep -qF "$fence_start" "$profile" 2>/dev/null; then
             local tmp_p
@@ -779,30 +773,44 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
             printf '\n%s\n%s\n%s\n' "$fence_start" "$path_line" "$fence_end" >> "$profile"
             echo "PATH wiring added to ${profile}."
         fi
-
-        echo "Open a new shell, or run: export PATH=\"${bin_dir}:\$PATH\" (or: source ${profile})"
     }
 
-    # Detect profile.
-    if [[ -n "$_BOOTSTRAP_PROFILE_FILE" ]]; then
-        _DETECTED_PROFILE="$_BOOTSTRAP_PROFILE_FILE"
+    # Wire PATH into all standard rc files that exist (rustup/nvm pattern).
+    # --profile-file overrides to a single explicit file.
+    if [[ "$_BOOTSTRAP_NO_PATH" -eq 1 ]]; then
+        printf 'Add "%s" to your PATH manually.\n' "$local_bin_dir"
+    elif [[ -n "$_BOOTSTRAP_PROFILE_FILE" ]]; then
+        _wire_profile_block "$local_bin_dir" "$_BOOTSTRAP_PROFILE_FILE"
+        echo "Open a new shell, or run: export PATH=\"${local_bin_dir}:\$PATH\" (or: source ${_BOOTSTRAP_PROFILE_FILE})"
     else
-        _SHELL_NAME="$(basename "${SHELL:-bash}")"
-        case "$_SHELL_NAME" in
-            zsh)  _DETECTED_PROFILE="${ZDOTDIR:-${HOME}}/.zshrc" ;;
-            bash)
-                _BS_UNAME="$(uname -s 2>/dev/null || echo Linux)"
-                if [[ "$_BS_UNAME" == "Darwin" ]]; then
-                    _DETECTED_PROFILE="${HOME}/.bash_profile"
-                else
-                    _DETECTED_PROFILE="${HOME}/.bashrc"
-                fi
-                ;;
-            *)    _DETECTED_PROFILE="${HOME}/.profile" ;;
-        esac
+        # Candidate rc files; wire every one that already exists.
+        _bs_rc_candidates=(
+            "${ZDOTDIR:-${HOME}}/.zshrc"
+            "${HOME}/.bashrc"
+            "${HOME}/.bash_profile"
+            "${HOME}/.profile"
+        )
+        _bs_wired=()
+        for _bs_rc in "${_bs_rc_candidates[@]}"; do
+            if [[ -f "$_bs_rc" ]]; then
+                _wire_profile_block "$local_bin_dir" "$_bs_rc"
+                _bs_wired+=("$_bs_rc")
+            fi
+        done
+        # If none exist, create and wire ~/.profile.
+        if [[ "${#_bs_wired[@]}" -eq 0 ]]; then
+            _wire_profile_block "$local_bin_dir" "${HOME}/.profile"
+            _bs_wired+=("${HOME}/.profile")
+        fi
+        # Summarise wired files.
+        _bs_wired_display=""
+        for _bs_w in "${_bs_wired[@]}"; do
+            _bs_rel="${_bs_w/#${HOME}/~}"
+            _bs_wired_display="${_bs_wired_display:+${_bs_wired_display}, }${_bs_rel}"
+        done
+        echo "PATH wiring added to: ${_bs_wired_display}"
+        echo "Open a new shell to pick up the updated PATH."
     fi
-
-    _wire_profile_block "$local_bin_dir" "$_DETECTED_PROFILE" "$_BOOTSTRAP_NO_PATH"
 
     printf '\nThen: aid add <tool>    (e.g. aid add codex)\n'
     exit 0
@@ -890,45 +898,53 @@ if [[ "$_INSTALL_MODE" == "CONVENIENCE" ]]; then
         printf '%s\n' "$_CONV_CLI_VER" > "${AID_HOME}/VERSION"
         echo "aid CLI v${_CONV_CLI_VER} installed to ${AID_HOME}."
 
-        # Wire PATH.
-        _CONV_PROFILE=""
-        if [[ -n "$_CONV_PROFILE_FILE" ]]; then
-            _CONV_PROFILE="$_CONV_PROFILE_FILE"
-        else
-            _cv_shell="$(basename "${SHELL:-bash}")"
-            case "$_cv_shell" in
-                zsh)  _CONV_PROFILE="${ZDOTDIR:-${HOME}}/.zshrc" ;;
-                bash)
-                    _cv_uname="$(uname -s 2>/dev/null || echo Linux)"
-                    if [[ "$_cv_uname" == "Darwin" ]]; then
-                        _CONV_PROFILE="${HOME}/.bash_profile"
-                    else
-                        _CONV_PROFILE="${HOME}/.bashrc"
-                    fi
-                    ;;
-                *)    _CONV_PROFILE="${HOME}/.profile" ;;
-            esac
-        fi
+        # Wire PATH into all standard rc files that exist (or a single explicit file).
+        _cp_bin="${AID_HOME}/bin"
+        _cp_fence='# >>> aid CLI >>>'
+        _cp_fence_end='# <<< aid CLI <<<'
+        # Duplicate-guarded export.
+        _cp_line="case \":\$PATH:\" in *\":${_cp_bin}:\"*) ;; *) export PATH=\"${_cp_bin}:\$PATH\" ;; esac"
 
-        if [[ "$_CONV_NO_PATH" -eq 0 && -n "$_CONV_PROFILE" ]]; then
-            [[ ! -f "$_CONV_PROFILE" ]] && touch "$_CONV_PROFILE" 2>/dev/null || true
-            _cp_bin="${AID_HOME}/bin"
-            _cp_fence='# >>> aid CLI >>>'
-            _cp_fence_end='# <<< aid CLI <<<'
-            _cp_line="export PATH=\"${_cp_bin}:\$PATH\""
-            if grep -qF "$_cp_fence" "$_CONV_PROFILE" 2>/dev/null; then
-                _cp_tmp="$(mktemp "${_CONV_PROFILE}.aid-tmp.XXXXXX")"
+        _conv_wire_one() {
+            local _cv_f="$1"
+            [[ ! -f "$_cv_f" ]] && touch "$_cv_f" 2>/dev/null || true
+            if grep -qF "$_cp_fence" "$_cv_f" 2>/dev/null; then
+                local _cv_tmp
+                _cv_tmp="$(mktemp "${_cv_f}.aid-tmp.XXXXXX")"
                 awk -v fs="$_cp_fence" -v fe="$_cp_fence_end" -v pl="$_cp_line" \
                     'BEGIN{skip=0}
                      $0==fs{skip=1; print fs; print pl; print fe; next}
                      skip && $0==fe{skip=0; next}
                      skip{next}
-                     {print}' "$_CONV_PROFILE" > "$_cp_tmp"
-                mv "$_cp_tmp" "$_CONV_PROFILE"
-                echo "PATH wiring updated in ${_CONV_PROFILE}."
+                     {print}' "$_cv_f" > "$_cv_tmp"
+                mv "$_cv_tmp" "$_cv_f"
+                echo "PATH wiring updated in ${_cv_f}."
             else
-                printf '\n%s\n%s\n%s\n' "$_cp_fence" "$_cp_line" "$_cp_fence_end" >> "$_CONV_PROFILE"
-                echo "PATH wiring added to ${_CONV_PROFILE}."
+                printf '\n%s\n%s\n%s\n' "$_cp_fence" "$_cp_line" "$_cp_fence_end" >> "$_cv_f"
+                echo "PATH wiring added to ${_cv_f}."
+            fi
+        }
+
+        if [[ "$_CONV_NO_PATH" -eq 0 ]]; then
+            if [[ -n "$_CONV_PROFILE_FILE" ]]; then
+                _conv_wire_one "$_CONV_PROFILE_FILE"
+            else
+                _cv_rc_candidates=(
+                    "${ZDOTDIR:-${HOME}}/.zshrc"
+                    "${HOME}/.bashrc"
+                    "${HOME}/.bash_profile"
+                    "${HOME}/.profile"
+                )
+                _cv_wired=()
+                for _cv_rc in "${_cv_rc_candidates[@]}"; do
+                    if [[ -f "$_cv_rc" ]]; then
+                        _conv_wire_one "$_cv_rc"
+                        _cv_wired+=("$_cv_rc")
+                    fi
+                done
+                if [[ "${#_cv_wired[@]}" -eq 0 ]]; then
+                    _conv_wire_one "${HOME}/.profile"
+                fi
             fi
         fi
     fi

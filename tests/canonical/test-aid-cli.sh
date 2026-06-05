@@ -431,4 +431,134 @@ if [[ -f "${CLI027R_PROFILE}" ]]; then
 fi
 assert_output_contains "$OUT" "aid CLI removed" "CLI027-R04 exact self-uninstall message string"
 
+# ===========================================================================
+# CLI027-S: PATH wiring — multi-rc regression (the main bug fix)
+#   $HOME has BOTH .zshrc and .bashrc; SHELL=/bin/bash → BOTH get the block.
+# ===========================================================================
+CLI027S_HOME=$(newhome)
+CLI027S_FAKE_HOME=$(newhome)
+touch "${CLI027S_FAKE_HOME}/.zshrc"
+touch "${CLI027S_FAKE_HOME}/.bashrc"
+
+OUT=$(AID_HOME="${CLI027S_HOME}" AID_LIB_PATH="${LIB_CORE}" \
+      HOME="${CLI027S_FAKE_HOME}" SHELL="/bin/bash" \
+      bash "${INSTALL_SH}" 2>&1); RC=$?
+
+assert_exit_eq "$RC" 0 "CLI027-S01 multi-rc bootstrap (bash+zsh present) → exit 0"
+assert_file_contains "${CLI027S_FAKE_HOME}/.zshrc"  "# >>> aid CLI >>>" "CLI027-S02 .zshrc gets the fence block"
+assert_file_contains "${CLI027S_FAKE_HOME}/.bashrc" "# >>> aid CLI >>>" "CLI027-S03 .bashrc gets the fence block"
+# The guarded export must be present (case-in-PATH form).
+assert_file_contains "${CLI027S_FAKE_HOME}/.zshrc"  "case \":\$PATH:\" in" "CLI027-S04 .zshrc has duplicate-guarded export"
+assert_file_contains "${CLI027S_FAKE_HOME}/.bashrc" "case \":\$PATH:\" in" "CLI027-S05 .bashrc has duplicate-guarded export"
+
+# ===========================================================================
+# CLI027-T: PATH wiring — only .profile exists
+# ===========================================================================
+CLI027T_HOME=$(newhome)
+CLI027T_FAKE_HOME=$(newhome)
+touch "${CLI027T_FAKE_HOME}/.profile"
+
+OUT=$(AID_HOME="${CLI027T_HOME}" AID_LIB_PATH="${LIB_CORE}" \
+      HOME="${CLI027T_FAKE_HOME}" SHELL="/bin/bash" \
+      bash "${INSTALL_SH}" 2>&1); RC=$?
+
+assert_exit_eq "$RC" 0 "CLI027-T01 bootstrap with only .profile → exit 0"
+assert_file_contains "${CLI027T_FAKE_HOME}/.profile" "# >>> aid CLI >>>" "CLI027-T02 .profile gets fence block"
+
+# ===========================================================================
+# CLI027-U: PATH wiring — no rc file exists → .profile created and wired
+# ===========================================================================
+CLI027U_HOME=$(newhome)
+CLI027U_FAKE_HOME=$(newhome)
+# Ensure none of the standard files exist.
+rm -f "${CLI027U_FAKE_HOME}/.zshrc" "${CLI027U_FAKE_HOME}/.bashrc" \
+      "${CLI027U_FAKE_HOME}/.bash_profile" "${CLI027U_FAKE_HOME}/.profile" 2>/dev/null || true
+
+OUT=$(AID_HOME="${CLI027U_HOME}" AID_LIB_PATH="${LIB_CORE}" \
+      HOME="${CLI027U_FAKE_HOME}" SHELL="/bin/bash" \
+      bash "${INSTALL_SH}" 2>&1); RC=$?
+
+assert_exit_eq "$RC" 0 "CLI027-U01 bootstrap with no rc files → exit 0"
+assert_file_exists "${CLI027U_FAKE_HOME}/.profile" "CLI027-U02 .profile created when no rc file exists"
+assert_file_contains "${CLI027U_FAKE_HOME}/.profile" "# >>> aid CLI >>>" "CLI027-U03 created .profile gets fence block"
+
+# ===========================================================================
+# CLI027-V: PATH wiring idempotent — re-run bootstrap; exactly one block per file
+# ===========================================================================
+CLI027V_HOME=$(newhome)
+CLI027V_FAKE_HOME=$(newhome)
+touch "${CLI027V_FAKE_HOME}/.zshrc"
+touch "${CLI027V_FAKE_HOME}/.bashrc"
+
+# First run.
+AID_HOME="${CLI027V_HOME}" AID_LIB_PATH="${LIB_CORE}" \
+    HOME="${CLI027V_FAKE_HOME}" SHELL="/bin/bash" \
+    bash "${INSTALL_SH}" >/dev/null 2>&1 || true
+# Second run.
+AID_HOME="${CLI027V_HOME}" AID_LIB_PATH="${LIB_CORE}" \
+    HOME="${CLI027V_FAKE_HOME}" SHELL="/bin/bash" \
+    bash "${INSTALL_SH}" >/dev/null 2>&1 || true
+
+_v_zshrc_count=$(grep -c '# >>> aid CLI >>>' "${CLI027V_FAKE_HOME}/.zshrc" 2>/dev/null || echo 0)
+_v_bashrc_count=$(grep -c '# >>> aid CLI >>>' "${CLI027V_FAKE_HOME}/.bashrc" 2>/dev/null || echo 0)
+assert_eq "$_v_zshrc_count"  "1" "CLI027-V01 idempotent: exactly one block in .zshrc"
+assert_eq "$_v_bashrc_count" "1" "CLI027-V02 idempotent: exactly one block in .bashrc"
+# Verify duplicate-guarded form.
+assert_file_contains "${CLI027V_FAKE_HOME}/.zshrc"  "case \":\$PATH:\" in" "CLI027-V03 .zshrc retains guarded export after re-run"
+assert_file_contains "${CLI027V_FAKE_HOME}/.bashrc" "case \":\$PATH:\" in" "CLI027-V04 .bashrc retains guarded export after re-run"
+
+# ===========================================================================
+# CLI027-W: PATH wiring — --no-path skips ALL rc files
+# ===========================================================================
+CLI027W_HOME=$(newhome)
+CLI027W_FAKE_HOME=$(newhome)
+touch "${CLI027W_FAKE_HOME}/.zshrc"
+touch "${CLI027W_FAKE_HOME}/.bashrc"
+
+OUT=$(AID_HOME="${CLI027W_HOME}" AID_LIB_PATH="${LIB_CORE}" \
+      HOME="${CLI027W_FAKE_HOME}" SHELL="/bin/bash" \
+      bash "${INSTALL_SH}" --no-path 2>&1); RC=$?
+
+assert_exit_eq "$RC" 0 "CLI027-W01 --no-path bootstrap → exit 0"
+if [[ -s "${CLI027W_FAKE_HOME}/.zshrc" ]]; then
+    assert_output_not_contains "$(cat "${CLI027W_FAKE_HOME}/.zshrc")" "# >>> aid CLI >>>" \
+        "CLI027-W02 --no-path: .zshrc not touched"
+else
+    pass "CLI027-W02 --no-path: .zshrc not touched (empty)"
+fi
+if [[ -s "${CLI027W_FAKE_HOME}/.bashrc" ]]; then
+    assert_output_not_contains "$(cat "${CLI027W_FAKE_HOME}/.bashrc")" "# >>> aid CLI >>>" \
+        "CLI027-W03 --no-path: .bashrc not touched"
+else
+    pass "CLI027-W03 --no-path: .bashrc not touched (empty)"
+fi
+
+# ===========================================================================
+# CLI027-X: self-uninstall removes fenced block from ALL wired files
+# ===========================================================================
+CLI027X_HOME=$(newhome)
+CLI027X_FAKE_HOME=$(newhome)
+setup_aid_home "${CLI027X_HOME}"
+
+# Manually wire the fenced block into both .zshrc and .bashrc.
+for _x_rc in "${CLI027X_FAKE_HOME}/.zshrc" "${CLI027X_FAKE_HOME}/.bashrc"; do
+    printf '\n# >>> aid CLI >>>\ncase ":$PATH:" in *":%s/bin:"*) ;; *) export PATH="%s/bin:$PATH" ;; esac\n# <<< aid CLI <<<\n' \
+        "${CLI027X_HOME}" "${CLI027X_HOME}" >> "$_x_rc"
+done
+
+OUT=$(AID_HOME="${CLI027X_HOME}" HOME="${CLI027X_FAKE_HOME}" \
+      "${CLI027X_HOME}/bin/aid" self-uninstall --force 2>&1); RC=$?
+
+assert_exit_eq "$RC" 0 "CLI027-X01 self-uninstall with multi-rc → exit 0"
+assert_eq "$([[ -d "${CLI027X_HOME}" ]] && echo exists || echo gone)" "gone" \
+    "CLI027-X02 AID_HOME removed after multi-rc self-uninstall"
+if [[ -f "${CLI027X_FAKE_HOME}/.zshrc" ]]; then
+    assert_output_not_contains "$(cat "${CLI027X_FAKE_HOME}/.zshrc")" "# >>> aid CLI >>>" \
+        "CLI027-X03 .zshrc block removed by self-uninstall"
+fi
+if [[ -f "${CLI027X_FAKE_HOME}/.bashrc" ]]; then
+    assert_output_not_contains "$(cat "${CLI027X_FAKE_HOME}/.bashrc")" "# >>> aid CLI >>>" \
+        "CLI027-X04 .bashrc block removed by self-uninstall"
+fi
+
 test_summary

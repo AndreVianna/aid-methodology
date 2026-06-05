@@ -157,33 +157,49 @@ _find_install_sh() {
 # Path-wiring helpers (Unix).
 # ---------------------------------------------------------------------------
 
-# _detect_profile — print the shell profile file to modify.
-_detect_profile() {
-    local shell_name
-    shell_name="$(basename "${SHELL:-bash}")"
-    case "$shell_name" in
-        zsh)
-            local zdotdir="${ZDOTDIR:-${HOME}}"
-            echo "${zdotdir}/.zshrc"
-            ;;
-        bash)
-            # macOS: use .bash_profile; Linux: .bashrc.
-            local uname_s
-            uname_s="$(uname -s 2>/dev/null || echo Linux)"
-            if [[ "$uname_s" == "Darwin" ]]; then
-                echo "${HOME}/.bash_profile"
-            else
-                echo "${HOME}/.bashrc"
-            fi
-            ;;
-        *)
-            echo "${HOME}/.profile"
-            ;;
-    esac
+# _wire_one_profile <bin_dir> <profile_file>
+# Idempotently write the fenced PATH block into a single profile file.
+_wire_one_profile() {
+    local bin_dir="$1"
+    local profile="$2"
+
+    # Create the profile file if it doesn't exist.
+    if [[ ! -f "$profile" ]]; then
+        touch "$profile" 2>/dev/null || {
+            echo "WARN: aid: could not create ${profile}; PATH not wired." >&2
+            printf 'Add "%s" to your PATH manually.\n' "$bin_dir"
+            return 0
+        }
+    fi
+
+    local fence_start='# >>> aid CLI >>>'
+    local fence_end='# <<< aid CLI <<<'
+    # Duplicate-guarded export: safe when multiple rc files are sourced.
+    local path_line="case \":\$PATH:\" in *\":${bin_dir}:\"*) ;; *) export PATH=\"${bin_dir}:\$PATH\" ;; esac"
+
+    if grep -qF "$fence_start" "$profile" 2>/dev/null; then
+        # Replace the existing block in-place.
+        local tmp_profile
+        tmp_profile="$(mktemp "${profile}.aid-tmp.XXXXXX")"
+        awk -v fs="$fence_start" -v fe="$fence_end" -v pl="$path_line" '
+        BEGIN { skip=0 }
+        $0 == fs { skip=1; print fs; print pl; print fe; next }
+        skip && $0 == fe { skip=0; next }
+        skip { next }
+        { print }
+        ' "$profile" > "$tmp_profile"
+        mv "$tmp_profile" "$profile"
+        echo "PATH wiring updated in ${profile}."
+    else
+        # Append the block.
+        printf '\n%s\n%s\n%s\n' "$fence_start" "$path_line" "$fence_end" >> "$profile"
+        echo "PATH wiring added to ${profile}."
+    fi
 }
 
 # _wire_path_unix <aid_bin_dir> [--no-path] [--profile-file <file>]
-# Idempotently add $aid_bin_dir to PATH via a fenced block in the profile.
+# Idempotently add $aid_bin_dir to PATH via a fenced block.
+# Without --profile-file, wires ALL standard rc files that exist (rustup/nvm pattern).
 # When --no-path is given, print the manual instruction and return.
 _wire_path_unix() {
     local bin_dir="$1"
@@ -204,53 +220,45 @@ _wire_path_unix() {
         return 0
     fi
 
-    local profile
     if [[ -n "$profile_override" ]]; then
-        profile="$profile_override"
-    else
-        profile="$(_detect_profile)"
+        _wire_one_profile "$bin_dir" "$profile_override"
+        echo "Open a new shell, or run: export PATH=\"${bin_dir}:\$PATH\" (or: source ${profile_override})"
+        return 0
     fi
 
-    # Create the profile file if it doesn't exist.
-    if [[ ! -f "$profile" ]]; then
-        touch "$profile" || {
-            echo "WARN: aid: could not create ${profile}; PATH not wired." >&2
-            printf 'Add "%s" to your PATH manually.\n' "$bin_dir"
-            return 0
-        }
+    # Wire every standard rc file that already exists.
+    local _wp_candidates=(
+        "${ZDOTDIR:-${HOME}}/.zshrc"
+        "${HOME}/.bashrc"
+        "${HOME}/.bash_profile"
+        "${HOME}/.profile"
+    )
+    local _wp_wired=()
+    local _wp_rc
+    for _wp_rc in "${_wp_candidates[@]}"; do
+        if [[ -f "$_wp_rc" ]]; then
+            _wire_one_profile "$bin_dir" "$_wp_rc"
+            _wp_wired+=("$_wp_rc")
+        fi
+    done
+    # If none exist, create and wire ~/.profile.
+    if [[ "${#_wp_wired[@]}" -eq 0 ]]; then
+        _wire_one_profile "$bin_dir" "${HOME}/.profile"
+        _wp_wired+=("${HOME}/.profile")
     fi
-
-    local fence_start='# >>> aid CLI >>>'
-    local fence_end='# <<< aid CLI <<<'
-    local path_line="export PATH=\"${bin_dir}:\$PATH\""
-
-    if grep -qF "$fence_start" "$profile" 2>/dev/null; then
-        # Replace the existing block in-place.
-        # Use a temp file for portability (no in-place sed on all platforms).
-        local tmp_profile
-        tmp_profile="$(mktemp "${profile}.aid-tmp.XXXXXX")"
-        awk -v start="$fence_start" -v end="$fence_end" \
-            -v line="$path_line" \
-            -v fs="$fence_start" -v fe="$fence_end" '
-        BEGIN { skip=0 }
-        $0 == start { skip=1; print fs; print line; print fe; next }
-        skip && $0 == end { skip=0; next }
-        skip { next }
-        { print }
-        ' "$profile" > "$tmp_profile"
-        mv "$tmp_profile" "$profile"
-        echo "PATH wiring updated in ${profile}."
-    else
-        # Append the block.
-        printf '\n%s\n%s\n%s\n' "$fence_start" "$path_line" "$fence_end" >> "$profile"
-        echo "PATH wiring added to ${profile}."
-    fi
-
-    echo "Open a new shell, or run: export PATH=\"${bin_dir}:\$PATH\" (or: source ${profile})"
+    # Summarise.
+    local _wp_display=""
+    local _wp_w
+    for _wp_w in "${_wp_wired[@]}"; do
+        local _wp_rel="${_wp_w/#${HOME}/~}"
+        _wp_display="${_wp_display:+${_wp_display}, }${_wp_rel}"
+    done
+    echo "PATH wiring added to: ${_wp_display}"
+    echo "Open a new shell to pick up the updated PATH."
 }
 
 # _unwire_path_unix [--profile-file <file>]
-# Remove the fenced PATH block from the detected profile.
+# Remove the fenced PATH block from all standard rc files (or a single explicit file).
 _unwire_path_unix() {
     local profile_override=""
     while [[ $# -gt 0 ]]; do
@@ -260,34 +268,44 @@ _unwire_path_unix() {
         esac
     done
 
-    local profile
-    if [[ -n "$profile_override" ]]; then
-        profile="$profile_override"
-    else
-        profile="$(_detect_profile)"
-    fi
-
-    if [[ ! -f "$profile" ]]; then
-        return 0
-    fi
-
     local fence_start='# >>> aid CLI >>>'
-    if ! grep -qF "$fence_start" "$profile" 2>/dev/null; then
+
+    _unwire_one() {
+        local _uw_f="$1"
+        if [[ ! -f "$_uw_f" ]]; then
+            return 0
+        fi
+        if ! grep -qF "$fence_start" "$_uw_f" 2>/dev/null; then
+            return 0
+        fi
+        local tmp_profile
+        tmp_profile="$(mktemp "${_uw_f}.aid-tmp.XXXXXX")"
+        awk -v start="$fence_start" -v end='# <<< aid CLI <<<' '
+        BEGIN { skip=0 }
+        $0 == start { skip=1; next }
+        skip && $0 == end { skip=0; next }
+        skip { next }
+        { print }
+        ' "$_uw_f" > "$tmp_profile"
+        mv "$tmp_profile" "$_uw_f"
+        echo "PATH wiring removed from ${_uw_f}."
+    }
+
+    if [[ -n "$profile_override" ]]; then
+        _unwire_one "$profile_override"
         return 0
     fi
 
-    # Remove the fenced block.
-    local tmp_profile
-    tmp_profile="$(mktemp "${profile}.aid-tmp.XXXXXX")"
-    awk -v start="$fence_start" -v end='# <<< aid CLI <<<' '
-    BEGIN { skip=0 }
-    $0 == start { skip=1; next }
-    skip && $0 == end { skip=0; next }
-    skip { next }
-    { print }
-    ' "$profile" > "$tmp_profile"
-    mv "$tmp_profile" "$profile"
-    echo "PATH wiring removed from ${profile}."
+    # Remove from all standard rc files.
+    local _uw_rc
+    for _uw_rc in \
+        "${ZDOTDIR:-${HOME}}/.zshrc" \
+        "${HOME}/.bashrc" \
+        "${HOME}/.bash_profile" \
+        "${HOME}/.profile"
+    do
+        _unwire_one "$_uw_rc"
+    done
 }
 
 # ---------------------------------------------------------------------------
