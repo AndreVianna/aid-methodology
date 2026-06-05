@@ -184,19 +184,19 @@ assert_output_contains "$OUT" "manually" "PS028-C03 -NoPath prints manual instru
 assert_output_not_contains "$OUT" "PATH wiring added" "PS028-C04 -NoPath: no 'PATH wiring added' message"
 
 # ===========================================================================
-# PS028-D: aid.ps1 self-uninstall --force removes AID_HOME
+# PS028-D: aid.ps1 remove self -Force removes AID_HOME
 # ===========================================================================
 PS028D_HOME=$(newhome)
 setup_aid_home_ps1 "${PS028D_HOME}"
 
 OUT=$(AID_HOME="${PS028D_HOME}" AID_LIB_PATH="${PS028D_HOME}/lib/AidInstallCore.psm1" \
      "$PWSH" -NoProfile -File "${PS028D_HOME}/bin/aid.ps1" \
-     self-uninstall -Force 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+     remove self -Force 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
 
-assert_exit_eq "$RC" 0 "PS028-D01 aid.ps1 self-uninstall -Force → exit 0"
+assert_exit_eq "$RC" 0 "PS028-D01 aid.ps1 remove self -Force → exit 0"
 assert_eq "$([[ -d "${PS028D_HOME}" ]] && echo exists || echo gone)" "gone" \
-    "PS028-D02 AID_HOME removed after self-uninstall"
-assert_output_contains "$OUT" "aid CLI removed" "PS028-D03 self-uninstall message"
+    "PS028-D02 AID_HOME removed after remove self"
+assert_output_contains "$OUT" "aid CLI removed" "PS028-D03 remove self message"
 
 # ===========================================================================
 # PS028-E: aid.ps1 status — empty dir → exit 7 + message
@@ -414,7 +414,7 @@ OUT=$(AID_HOME="${PS028J_HOME}" AID_LIB_PATH="${PS028J_HOME}/lib/AidInstallCore.
 assert_exit_eq "$RC" 6 "PS028-J04 PS1 update empty manifest → exit 6"
 
 # ===========================================================================
-# PS028-K: aid.ps1 uninstall (all tools)
+# PS028-K: aid.ps1 remove (no arg, all tools) — with -Force to skip prompt
 # ===========================================================================
 PS028K_HOME=$(newhome)
 setup_aid_home_ps1 "${PS028K_HOME}"
@@ -425,16 +425,16 @@ OUT=$(AID_HOME="${PS028K_HOME}" AID_LIB_PATH="${PS028K_HOME}/lib/AidInstallCore.
      add codex \
      -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
      -Target "${TK}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
-assert_exit_eq "$RC" 0 "PS028-K01 PS1 add for uninstall test → exit 0"
+assert_exit_eq "$RC" 0 "PS028-K01 PS1 add for remove test → exit 0"
 
 OUT=$(AID_HOME="${PS028K_HOME}" AID_LIB_PATH="${PS028K_HOME}/lib/AidInstallCore.psm1" \
      "$PWSH" -NoProfile -File "${PS028K_HOME}/bin/aid.ps1" \
-     uninstall \
+     remove -Force \
      -Target "${TK}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
-assert_exit_eq "$RC" 0 "PS028-K02 PS1 uninstall all → exit 0"
+assert_exit_eq "$RC" 0 "PS028-K02 PS1 remove -Force (all) → exit 0"
 assert_eq "$([[ -d "${TK}/.codex" ]] && echo exists || echo gone)" "gone" \
-    "PS028-K03 .codex/ removed after PS1 uninstall"
-assert_output_contains "$OUT" "Uninstall complete." "PS028-K04 PS1 uninstall reports 'Uninstall complete.'"
+    "PS028-K03 .codex/ removed after PS1 remove"
+assert_output_contains "$OUT" "Uninstall complete." "PS028-K04 PS1 remove reports 'Uninstall complete.'"
 
 # ===========================================================================
 # PS028-L: protect-on-diff (FR11) honored via aid.ps1 add
@@ -464,7 +464,8 @@ assert_exit_eq "$RC" 0 "PS028-M01 aid.ps1 version → exit 0"
 assert_output_contains "$OUT" "${VERSION}" "PS028-M02 aid.ps1 version prints version string"
 
 # ===========================================================================
-# PS028-N: aid.ps1 help → exit 0, prints Usage
+# PS028-N: aid.ps1 help / -h → exit 0, prints Usage
+#           Per-subcommand -h also works
 # ===========================================================================
 PS028N_HOME=$(newhome)
 setup_aid_home_ps1 "${PS028N_HOME}"
@@ -472,6 +473,25 @@ setup_aid_home_ps1 "${PS028N_HOME}"
 run_aid_ps1 "${PS028N_HOME}" help
 assert_exit_eq "$RC" 0 "PS028-N01 aid.ps1 help → exit 0"
 assert_output_contains "$OUT" "Usage" "PS028-N02 aid.ps1 help prints 'Usage'"
+# General help must NOT contain removed sections.
+assert_output_not_contains "$OUT" "Env vars:" "PS028-N03 PS1 general help: no 'Env vars:' section"
+assert_output_not_contains "$OUT" "Exit codes:" "PS028-N04 PS1 general help: no 'Exit codes:' section"
+# General help must contain the short flags hint.
+assert_output_contains "$OUT" "Flags:" "PS028-N05 PS1 general help: has 'Flags:' line"
+assert_output_contains "$OUT" "aid <command> -h" "PS028-N06 PS1 general help: has per-command hint"
+
+# Per-subcommand -h prints focused help and exits 0.
+run_aid_ps1 "${PS028N_HOME}" add -h
+assert_exit_eq "$RC" 0 "PS028-N07 aid.ps1 add -h → exit 0"
+assert_output_contains "$OUT" "aid add" "PS028-N08 aid.ps1 add -h shows 'aid add'"
+
+run_aid_ps1 "${PS028N_HOME}" remove -h
+assert_exit_eq "$RC" 0 "PS028-N09 aid.ps1 remove -h → exit 0"
+assert_output_contains "$OUT" "aid remove" "PS028-N10 aid.ps1 remove -h shows 'aid remove'"
+
+run_aid_ps1 "${PS028N_HOME}" update -h
+assert_exit_eq "$RC" 0 "PS028-N11 aid.ps1 update -h → exit 0"
+assert_output_contains "$OUT" "aid update" "PS028-N12 aid.ps1 update -h shows 'aid update'"
 
 # ===========================================================================
 # PS028-O: unknown subcommand → exit 2
@@ -530,7 +550,7 @@ OUT=$(AID_HOME="${PS028R_HOME}" AID_LIB_PATH="${LIB_CORE_PS1}" \
 assert_exit_eq "$RC" 0 "PS028-R01 PS1 -UninstallCli -Force → exit 0"
 assert_eq "$([[ -d "${PS028R_HOME}" ]] && echo exists || echo gone)" "gone" \
     "PS028-R02 AID_HOME removed by PS1 -UninstallCli"
-assert_output_contains "$OUT" "aid CLI removed" "PS028-R03 PS1 exact self-uninstall message"
+assert_output_contains "$OUT" "aid CLI removed" "PS028-R03 PS1 exact remove self message"
 
 # ===========================================================================
 # PS028-S: Terminal-survival — aid.ps1 invoked via scriptblock (piped mode)
@@ -717,7 +737,7 @@ assert_eq "$(echo "$SH_UNIFORM" | grep 'Installed tools')" \
           "PS028-Y05 Bash↔PS1 parity: Installed tools header line identical"
 
 # ===========================================================================
-# PS029: Update check + aid self-update (PowerShell parity with CLI028)
+# PS029: Update check + aid update self (PowerShell parity with CLI028)
 # ===========================================================================
 
 # Helper: create a fake GitHub "releases/latest" JSON response file.
@@ -750,7 +770,7 @@ assert_exit_eq "$RC" 0 "PS029-A01 bare aid.ps1 with newer version → exit 0"
 assert_output_contains "$OUT" "A newer aid CLI is available" "PS029-A02 PS1 notice shown"
 assert_output_contains "$OUT" "v9.9.9" "PS029-A03 PS1 notice: latest version"
 assert_output_contains "$OUT" "v0.1.0" "PS029-A04 PS1 notice: current version"
-assert_output_contains "$OUT" "aid self-update" "PS029-A05 PS1 notice mentions 'aid self-update'"
+assert_output_contains "$OUT" "aid update self" "PS029-A05 PS1 notice mentions 'aid update self'"
 
 # ---------------------------------------------------------------------------
 # PS029-B: NEWER version available → notice shown on 'aid.ps1 status'
@@ -861,7 +881,7 @@ PS1_NOTICE=$(cd "${TF_PS}" && AID_HOME="${PS029F_HOME_PS}" AID_NO_UPDATE_CHECK=0
 assert_eq "$SH_NOTICE" "$PS1_NOTICE" "PS029-F01 notice text parity: Bash == PS1"
 
 # ---------------------------------------------------------------------------
-# PS029-G: aid.ps1 self-update — prints 'Updating the aid CLI...'
+# PS029-G: aid.ps1 update self — prints 'Updating the aid CLI...'
 # (full re-bootstrap not testable in PS1 hermetic mode; verify the message
 #  and that a failing URL causes non-zero exit with fail-silent behavior)
 # ---------------------------------------------------------------------------
@@ -873,10 +893,10 @@ OUT=$(AID_HOME="${PS029G_HOME}" AID_NO_UPDATE_CHECK=1 \
      AID_INSTALL_URL="file:///no/such/install.ps1" \
      AID_LIB_PATH="${PS029G_HOME}/lib/AidInstallCore.psm1" \
      "$PWSH" -NoProfile -File "${PS029G_HOME}/bin/aid.ps1" \
-     self-update 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
-assert_output_contains "$OUT" "Updating the aid CLI" "PS029-G01 aid.ps1 self-update prints update message"
+     update self 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_output_contains "$OUT" "Updating the aid CLI" "PS029-G01 aid.ps1 update self prints update message"
 # Failure from bad URL → exit 3.
-assert_exit_eq "$RC" 3 "PS029-G02 aid.ps1 self-update bad URL → exit 3"
+assert_exit_eq "$RC" 3 "PS029-G02 aid.ps1 update self bad URL → exit 3"
 
 # ---------------------------------------------------------------------------
 # PS029-H: update check NOT shown for add/remove/update/uninstall
@@ -908,5 +928,80 @@ OUT=$(AID_HOME="${PS029H_HOME}" AID_NO_UPDATE_CHECK=0 \
      -Target "${TH_PS}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
 assert_exit_eq "$RC" 0 "PS029-H01 aid.ps1 update → exit 0"
 assert_output_not_contains "$OUT" "A newer aid CLI is available" "PS029-H02 update cmd: no update check notice"
+
+# ===========================================================================
+# PS029-I: PS1 remove confirmation behavior (parity with Bash CLI028-J)
+# ===========================================================================
+
+# I01: non-interactive (piped) → auto-proceeds (PowerShell: non-UserInteractive env)
+PS029I_HOME=$(newhome)
+setup_aid_home_ps1 "${PS029I_HOME}"
+TI_CONF=$(newtarget)
+AID_HOME="${PS029I_HOME}" AID_LIB_PATH="${PS029I_HOME}/lib/AidInstallCore.psm1" \
+    "$PWSH" -NoProfile -File "${PS029I_HOME}/bin/aid.ps1" \
+    add codex \
+    -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    -Target "${TI_CONF}" >/dev/null 2>&1
+
+# Use -Force to guarantee no hang (non-interactive remove).
+OUT=$(AID_HOME="${PS029I_HOME}" AID_LIB_PATH="${PS029I_HOME}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS029I_HOME}/bin/aid.ps1" \
+     remove -Force \
+     -Target "${TI_CONF}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_exit_eq "$RC" 0 "PS029-I01 PS1 remove -Force → exit 0 (no hang)"
+assert_output_contains "$OUT" "Uninstall complete." "PS029-I02 PS1 remove -Force: completed"
+
+# I03: remove self -Force → tears down AID_HOME
+PS029I2_HOME=$(newhome)
+setup_aid_home_ps1 "${PS029I2_HOME}"
+OUT=$(AID_HOME="${PS029I2_HOME}" AID_LIB_PATH="${PS029I2_HOME}/lib/AidInstallCore.psm1" \
+     "$PWSH" -NoProfile -File "${PS029I2_HOME}/bin/aid.ps1" \
+     remove self -Force 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+assert_exit_eq "$RC" 0 "PS029-I03 PS1 remove self -Force → exit 0"
+assert_eq "$([[ -d "${PS029I2_HOME}" ]] && echo exists || echo gone)" "gone" \
+    "PS029-I04 PS1 remove self -Force: AID_HOME removed"
+
+# ===========================================================================
+# PS029-J: Bash↔PS1 help text parity (general help + per-subcommand -h)
+# ===========================================================================
+PS029J_HOME_SH=$(newhome)
+PS029J_HOME_PS=$(newhome)
+
+# Need both runtimes for parity.
+setup_aid_home_both() {
+    local home_dir="$1"
+    setup_aid_home_ps1 "$home_dir"
+    cp "${BIN_AID_SH}" "${home_dir}/bin/aid"
+    chmod +x "${home_dir}/bin/aid"
+    cp "${LIB_CORE_SH}" "${home_dir}/lib/aid-install-core.sh"
+}
+setup_aid_home_both "${PS029J_HOME_SH}"
+setup_aid_home_ps1 "${PS029J_HOME_PS}"
+
+# General help: both should contain 'Flags:' and 'aid <command> -h'.
+SH_HELP=$(AID_HOME="${PS029J_HOME_SH}" AID_LIB_PATH="${PS029J_HOME_SH}/lib/aid-install-core.sh" \
+    bash "${PS029J_HOME_SH}/bin/aid" -h 2>&1)
+PS1_HELP=$(AID_HOME="${PS029J_HOME_PS}" AID_LIB_PATH="${PS029J_HOME_PS}/lib/AidInstallCore.psm1" \
+    "$PWSH" -NoProfile -File "${PS029J_HOME_PS}/bin/aid.ps1" -h 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+assert_output_contains "$SH_HELP"  "Flags:" "PS029-J01 Bash general help: 'Flags:' line"
+assert_output_contains "$PS1_HELP" "Flags:" "PS029-J02 PS1 general help: 'Flags:' line"
+assert_output_not_contains "$SH_HELP"  "Env vars:" "PS029-J03 Bash general help: no 'Env vars:'"
+assert_output_not_contains "$PS1_HELP" "Env vars:" "PS029-J04 PS1 general help: no 'Env vars:'"
+
+# add -h parity.
+SH_ADD_H=$(AID_HOME="${PS029J_HOME_SH}" AID_LIB_PATH="${PS029J_HOME_SH}/lib/aid-install-core.sh" \
+    bash "${PS029J_HOME_SH}/bin/aid" add -h 2>&1)
+PS1_ADD_H=$(AID_HOME="${PS029J_HOME_PS}" AID_LIB_PATH="${PS029J_HOME_PS}/lib/AidInstallCore.psm1" \
+    "$PWSH" -NoProfile -File "${PS029J_HOME_PS}/bin/aid.ps1" add -h 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+assert_output_contains "$SH_ADD_H"  "aid add" "PS029-J05 Bash add -h: mentions 'aid add'"
+assert_output_contains "$PS1_ADD_H" "aid add" "PS029-J06 PS1 add -h: mentions 'aid add'"
+
+# remove -h parity.
+SH_RM_H=$(AID_HOME="${PS029J_HOME_SH}" AID_LIB_PATH="${PS029J_HOME_SH}/lib/aid-install-core.sh" \
+    bash "${PS029J_HOME_SH}/bin/aid" remove -h 2>&1)
+PS1_RM_H=$(AID_HOME="${PS029J_HOME_PS}" AID_LIB_PATH="${PS029J_HOME_PS}/lib/AidInstallCore.psm1" \
+    "$PWSH" -NoProfile -File "${PS029J_HOME_PS}/bin/aid.ps1" remove -h 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+assert_output_contains "$SH_RM_H"  "self" "PS029-J07 Bash remove -h: mentions 'self'"
+assert_output_contains "$PS1_RM_H" "self" "PS029-J08 PS1 remove -h: mentions 'self'"
 
 test_summary

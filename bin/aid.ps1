@@ -8,33 +8,22 @@
 #   directory (-Target / AID_TARGET overrides).
 #
 # Usage:
-#   aid                          # alias for 'aid status'
-#   aid status                   # print AID state of the cwd project
-#   aid add <tool>[,<tool>...]   # install/add tool(s) into cwd project
-#   aid remove <tool>[,...]      # remove specific tool(s) from cwd project
-#   aid update [<tool>...]       # update installed tool(s) (all if no args)
-#   aid uninstall                # remove AID entirely from cwd project
-#   aid version                  # print the CLI's own version
-#   aid help [<subcommand>]      # print usage and exit 0
-#   aid self-uninstall           # remove the global aid CLI
+#   aid                              Show the dashboard
+#   aid -h | --help                  Show help
+#   aid version                      Print the CLI version
+#   aid status                       Show AID state of the current project
+#   aid add <tool>[,...]             Add tool(s) to the current project
+#   aid update [<tool>... | self]    Update to latest; no arg = all tools; 'self' = the aid CLI
+#   aid remove [<tool>... | self]    Remove; no arg = ALL AID from project; 'self' = the aid CLI
+#   aid <command> -h | --help        Per-command help
 #
 # Flags (shared across subcommands where applicable):
 #   -FromBundle <path>   Offline install from a pre-downloaded tarball / dir.
 #   -Version <v>         Pin to a specific release version (e.g. 0.7.0).
-#   -Force               Overwrite differing files including root agent files.
+#   -Force               Overwrite differing files / skip confirmation prompts.
 #   -Target <dir>        Project root (default: current directory).
 #   -Verbose             Print per-file detail (default: concise summary).
-#   -NoPath              (bootstrap / self-update only) Skip PATH wiring.
-#
-# Exit codes:
-#   0   success
-#   1   generic runtime failure
-#   2   usage error (unknown subcommand or invalid flag)
-#   3   network / fetch failure
-#   4   checksum mismatch
-#   5   protect-on-diff blocked (-Force not given)
-#   6   uninstall with no manifest
-#   7   aid status: no AID install found in cwd
+#   -NoPath              (bootstrap / update self only) Skip PATH wiring.
 
 # ---------------------------------------------------------------------------
 # Bootstrap URL — single place to update when the branch merges to master.
@@ -91,7 +80,7 @@ Import-Module $script:_CoreModule -Force -DisableNameChecking -ErrorAction Stop
 # Defensive guard: verify the required core function was exported by the loaded module.
 # This catches an upgrade that left a stale AidInstallCore.psm1 (missing new exports).
 if (-not (Get-Command 'Get-AidStatusBody' -ErrorAction SilentlyContinue)) {
-    [Console]::Error.WriteLine("ERROR: aid: CLI core is stale or incomplete at $($script:_CoreModule). Re-run the installer (or 'aid self-update').")
+    [Console]::Error.WriteLine("ERROR: aid: CLI core is stale or incomplete at $($script:_CoreModule). Re-run the installer (or 'aid update self').")
     script:Exit-Aid 1
 }
 
@@ -103,68 +92,46 @@ function script:Show-AidUsage {
     switch ($Sub) {
         'status' {
             Write-Host 'aid status [-Verbose] [-Target <dir>]'
-            Write-Host '  Print the AID installation state of the target project (default: cwd).'
+            Write-Host '  Show AID state of the current project (default: cwd).'
             Write-Host '  Exit 7 when no AID install is found.'
         }
         'add' {
             Write-Host 'aid add <tool>[,<tool>...] [-Version <v>] [-FromBundle <path>]'
             Write-Host '                           [-Force] [-Verbose] [-Target <dir>]'
-            Write-Host '  Install or add tool(s) into the target project.'
+            Write-Host '  Add tool(s) to the current project.'
             Write-Host '  Tools: claude-code, codex, cursor, copilot-cli, antigravity'
         }
         'remove' {
-            Write-Host 'aid remove <tool>[,<tool>...] [-Verbose] [-Target <dir>]'
-            Write-Host '  Remove specific tool(s) from the target project (manifest-driven).'
+            Write-Host 'aid remove [<tool>[,<tool>...] | self] [-Force] [-Verbose] [-Target <dir>]'
+            Write-Host '  Remove tool(s) from the current project (manifest-driven).'
+            Write-Host '  No args: remove ALL AID from the project (asks for confirmation).'
+            Write-Host '  self: remove the aid CLI itself (asks for confirmation).'
         }
         'update' {
-            Write-Host 'aid update [<tool>...] [-Version <v>] [-FromBundle <path>]'
+            Write-Host 'aid update [<tool>... | self] [-Version <v>] [-FromBundle <path>]'
             Write-Host '           [-Force] [-Verbose] [-Target <dir>]'
-            Write-Host '  Update installed tool(s). No tool args -> update all installed tools.'
-        }
-        'uninstall' {
-            Write-Host 'aid uninstall [-Verbose] [-Target <dir>]'
-            Write-Host '  Remove AID entirely from the target project (all tools).'
+            Write-Host '  Update to latest. No args: update all installed tools.'
+            Write-Host '  self: update the aid CLI itself.'
         }
         'version' {
             Write-Host 'aid version'
             Write-Host '  Print the installed aid CLI version and exit 0.'
         }
-        'self-uninstall' {
-            Write-Host 'aid self-uninstall [-Force]'
-            Write-Host '  Remove the global aid CLI (PATH wiring + $AID_HOME).'
-            Write-Host '  Does not touch per-project AID installs.'
-        }
-        'self-update' {
-            Write-Host 'aid self-update'
-            Write-Host '  Update the aid CLI to the latest published version.'
-        }
         default {
-            Write-Host 'aid — AID CLI dispatcher (PowerShell side).'
+            Write-Host 'aid — AID CLI'
             Write-Host ''
             Write-Host 'Usage:'
-            Write-Host '  aid                          Alias for aid status'
-            Write-Host '  aid status                   Print AID state of cwd project'
-            Write-Host '  aid add <tool>[,...]         Install/add tool(s) to cwd project'
-            Write-Host '  aid remove <tool>[,...]      Remove specific tool(s) from cwd project'
-            Write-Host '  aid update [<tool>...]       Update installed tool(s) (all if omitted)'
-            Write-Host '  aid uninstall                Remove AID entirely from cwd project'
-            Write-Host '  aid version                  Print CLI version'
-            Write-Host '  aid help [<subcommand>]      Print usage'
-            Write-Host '  aid self-update              Update the aid CLI to latest version'
-            Write-Host '  aid self-uninstall           Remove the global aid CLI'
+            Write-Host '  aid                              Show the dashboard'
+            Write-Host '  aid -h | --help                  Show this help'
+            Write-Host '  aid version                      Print the CLI version'
+            Write-Host '  aid status                       Show AID state of the current project'
+            Write-Host '  aid add <tool>[,...]             Add tool(s) to the current project'
+            Write-Host '  aid update [<tool>... | self]    Update to latest; no arg = all tools'
+            Write-Host '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project'
+            Write-Host "  aid <command> -h | --help        Per-command help"
             Write-Host ''
-            Write-Host 'Shared flags:'
-            Write-Host '  -FromBundle <path>   Offline install from tarball or directory'
-            Write-Host '  -Version <v>         Pin to release version (e.g. 0.7.0)'
-            Write-Host '  -Force               Overwrite differing files'
-            Write-Host '  -Target <dir>        Project root (default: cwd)'
-            Write-Host '  -Verbose             Per-file output'
-            Write-Host ''
-            Write-Host 'Exit codes: 0 ok, 1 failure, 2 usage error, 3 network, 4 checksum,'
-            Write-Host '            5 protect-on-diff, 6 no manifest, 7 not an AID project'
-            Write-Host ''
-            Write-Host 'Env vars: AID_TOOL, AID_VERSION, AID_TARGET, AID_FORCE, AID_VERBOSE'
-            Write-Host '          AID_NO_UPDATE_CHECK=1  disable update check'
+            Write-Host 'Flags: -FromBundle, -Version, -Force, -Target, -Verbose'
+            Write-Host "Run 'aid <command> -h' for details."
         }
     }
 }
@@ -279,13 +246,13 @@ function script:Invoke-AidUpdateCheck {
         if ($va -gt $vb) { break }
     }
     if ($isLt) {
-        Write-Host "`u{2B06} A newer aid CLI is available: v$latestVersion (you have v$installedVersion). Run: aid self-update"
+        Write-Host "`u{2B06} A newer aid CLI is available: v$latestVersion (you have v$installedVersion). Run: aid update self"
     }
 }
 
-# Invoke-AidSelfUpdate
+# Invoke-AidUpdateSelf
 # Re-runs the bootstrap in place.  Relays bootstrap exit code.
-function script:Invoke-AidSelfUpdate {
+function script:Invoke-AidUpdateSelf {
     Write-Host 'Updating the aid CLI...'
     $url = $script:_AidInstallUrl
     try {
@@ -293,7 +260,7 @@ function script:Invoke-AidSelfUpdate {
         & ([scriptblock]::Create($scriptContent))
         script:Exit-Aid $LASTEXITCODE
     } catch {
-        [Console]::Error.WriteLine("ERROR: aid: self-update failed: $_")
+        [Console]::Error.WriteLine("ERROR: aid: update self failed: $_")
         script:Exit-Aid 3
     }
 }
@@ -429,72 +396,10 @@ if ($SUBCMD -eq 'version') {
 }
 
 # ---------------------------------------------------------------------------
-# help
+# help (bare 'aid help' still works as general help)
 # ---------------------------------------------------------------------------
 if ($SUBCMD -in @('help', '-h', '--help')) {
-    $subHelp = if ($script:_RemArgs.Count -gt 0) { $script:_RemArgs[0] } else { '' }
-    script:Show-AidUsage $subHelp
-    script:Exit-Aid 0
-}
-
-# ---------------------------------------------------------------------------
-# self-uninstall
-# ---------------------------------------------------------------------------
-if ($SUBCMD -eq 'self-uninstall') {
-    $suForce   = $false
-    $suNoPath  = $false
-    foreach ($a in $script:_RemArgs) {
-        switch ($a) {
-            { $_ -in @('-Force', '--force', '/force') }   { $suForce  = $true }
-            { $_ -in @('-NoPath', '--no-path', '/nopath') } { $suNoPath = $true }
-            { $_ -in @('-h', '--help', '-Help') }         { script:Show-AidUsage 'self-uninstall'; script:Exit-Aid 0 }
-            default {
-                script:Fail-Aid "unknown flag for self-uninstall: $a" 2
-            }
-        }
-    }
-
-    # Env-var fallback for force.
-    if (-not $suForce -and ($env:AID_FORCE -eq '1' -or $env:AID_FORCE -eq 'true')) {
-        $suForce = $true
-    }
-
-    $aidHome = $script:_AidHome
-
-    if (-not $suForce) {
-        Write-Host "This will remove the aid CLI from $aidHome and the PATH wiring."
-        Write-Host "Per-project AID installs are NOT affected."
-        $answer = Read-Host "Confirm? [y/N]"
-        if ($answer -notin @('y', 'Y')) {
-            Write-Host "Cancelled."
-            script:Exit-Aid 0
-        }
-    }
-
-    $partial = $false
-
-    # Remove PATH wiring.
-    if (-not $suNoPath) {
-        $binDir = Join-Path $aidHome 'bin'
-        try { script:Remove-AidFromPath -BinDir $binDir } catch { $partial = $true }
-    }
-
-    # Remove $AID_HOME directory.
-    if (Test-Path $aidHome -PathType Container) {
-        try {
-            Remove-Item -LiteralPath $aidHome -Recurse -Force -ErrorAction Stop
-        } catch {
-            [Console]::Error.WriteLine("ERROR: aid: failed to remove $aidHome : $_")
-            $partial = $true
-        }
-    }
-
-    if ($partial) {
-        Write-Host "aid CLI partially removed. Check the messages above for what remained."
-        script:Exit-Aid 1
-    }
-
-    Write-Host "aid CLI removed. Per-project AID installs are unaffected; run 'aid uninstall' in a project before removing the CLI if you also want to remove those."
+    script:Show-AidUsage
     script:Exit-Aid 0
 }
 
@@ -537,28 +442,114 @@ if ($SUBCMD -eq 'status') {
 }
 
 # ---------------------------------------------------------------------------
-# self-update
+# update (with 'self' subarg → update self)
 # ---------------------------------------------------------------------------
-if ($SUBCMD -eq 'self-update') {
-    script:Invoke-AidSelfUpdate
-    # Invoke-AidSelfUpdate always calls Exit-Aid.
+if ($SUBCMD -eq 'update') {
+    if ($script:_RemArgs.Count -gt 0 -and $script:_RemArgs[0] -eq 'self') {
+        # Consume any flags after 'self'.
+        $remIdx = 1
+        while ($remIdx -lt $script:_RemArgs.Count) {
+            $a = $script:_RemArgs[$remIdx]
+            switch ($a) {
+                { $_ -in @('-Force', '--force', '-y') } { }  # no-op for update self
+                { $_ -in @('-h', '--help', '-Help') }   { script:Show-AidUsage 'update'; script:Exit-Aid 0 }
+                default { script:Fail-Aid "unknown flag for 'update self': $a" 2 }
+            }
+            $remIdx++
+        }
+        script:Invoke-AidUpdateSelf
+        # Invoke-AidUpdateSelf always calls Exit-Aid.
+    }
+    # Fall through to shared add/update handler below.
 }
 
 # ---------------------------------------------------------------------------
-# add / remove / update / uninstall — validate subcommand
+# remove (with 'self' subarg → remove self)
 # ---------------------------------------------------------------------------
-if ($SUBCMD -notin @('add', 'remove', 'update', 'uninstall')) {
-    [Console]::Error.WriteLine("ERROR: aid: unknown command: $SUBCMD (see 'aid help')")
+if ($SUBCMD -eq 'remove') {
+    if ($script:_RemArgs.Count -gt 0 -and $script:_RemArgs[0] -eq 'self') {
+        # Parse flags after 'self'.
+        $rsForce  = $false
+        $rsNoPath = $false
+        $remIdx   = 1
+        while ($remIdx -lt $script:_RemArgs.Count) {
+            $a = $script:_RemArgs[$remIdx]
+            switch ($a) {
+                { $_ -in @('-Force', '--force', '-y') }       { $rsForce  = $true }
+                { $_ -in @('-NoPath', '--no-path', '/nopath') } { $rsNoPath = $true }
+                { $_ -in @('-h', '--help', '-Help') }         { script:Show-AidUsage 'remove'; script:Exit-Aid 0 }
+                default { script:Fail-Aid "unknown flag for 'remove self': $a" 2 }
+            }
+            $remIdx++
+        }
+
+        # Env-var fallback for force.
+        if (-not $rsForce -and ($env:AID_FORCE -eq '1' -or $env:AID_FORCE -eq 'true')) {
+            $rsForce = $true
+        }
+
+        $aidHome = $script:_AidHome
+
+        if (-not $rsForce) {
+            # Skip prompt when non-interactive.
+            $isInteractive = [Environment]::UserInteractive -and [Console]::In -ne [System.IO.TextReader]::Null
+            if (-not $isInteractive) {
+                $rsForce = $true
+            } else {
+                Write-Host -NoNewline "Remove the aid CLI from ${aidHome}? [y/N] "
+                $answer = Read-Host
+                if ($answer -notin @('y', 'Y', 'yes', 'YES')) {
+                    Write-Host "Aborted."
+                    script:Exit-Aid 0
+                }
+            }
+        }
+
+        $partial = $false
+
+        # Remove PATH wiring.
+        if (-not $rsNoPath) {
+            $binDir = Join-Path $aidHome 'bin'
+            try { script:Remove-AidFromPath -BinDir $binDir } catch { $partial = $true }
+        }
+
+        # Remove $AID_HOME directory.
+        if (Test-Path $aidHome -PathType Container) {
+            try {
+                Remove-Item -LiteralPath $aidHome -Recurse -Force -ErrorAction Stop
+            } catch {
+                [Console]::Error.WriteLine("ERROR: aid: failed to remove $aidHome : $_")
+                $partial = $true
+            }
+        }
+
+        if ($partial) {
+            Write-Host "aid CLI partially removed. Check the messages above for what remained."
+            script:Exit-Aid 1
+        }
+
+        Write-Host "aid CLI removed. Per-project AID installs are unaffected; run 'aid remove' in a project before removing the CLI if you also want to remove those."
+        script:Exit-Aid 0
+    }
+    # Fall through to shared remove handler below (may be 'remove' with no arg or with tool).
+}
+
+# ---------------------------------------------------------------------------
+# add / remove / update — validate subcommand
+# ---------------------------------------------------------------------------
+if ($SUBCMD -notin @('add', 'remove', 'update')) {
+    [Console]::Error.WriteLine("ERROR: aid: unknown command: $SUBCMD (see 'aid -h')")
     script:Exit-Aid 2
 }
 
 # ---------------------------------------------------------------------------
-# Parse shared flags for add/remove/update/uninstall.
+# Parse shared flags for add/remove/update.
 # ---------------------------------------------------------------------------
 $_AidToolArg     = ''
 $_AidVersionArg  = ''
 $_AidFromBundle  = ''
 $_AidForce       = $false
+$_AidRemoveForce = $false
 $_AidTarget      = ''
 $_AidPosTools    = [System.Collections.Generic.List[string]]::new()
 
@@ -578,7 +569,7 @@ while ($remIdx -lt $script:_RemArgs.Count) {
             $_AidVersionArg = $script:_RemArgs[$remIdx]
             break
         }
-        '^(-Force|--force)$'    { $_AidForce  = $true; break }
+        '^(-Force|--force|-y)$'  { $_AidForce = $true; $_AidRemoveForce = $true; break }
         '^(-Verbose|--verbose)$' { $script:_AidVerbose = $true; $env:AID_VERBOSE = '1'; break }
         '^(-Target|--target)$'  {
             $remIdx++
@@ -607,6 +598,7 @@ if (-not $_AidVersionArg -and $env:AID_VERSION)       { $_AidVersionArg = $env:A
 if (-not $_AidTarget -and $env:AID_TARGET)            { $_AidTarget = $env:AID_TARGET }
 if (-not $_AidForce -and ($env:AID_FORCE -eq '1' -or $env:AID_FORCE -eq 'true')) {
     $_AidForce = $true
+    $_AidRemoveForce = $true
 }
 if ($script:_AidVerbose) { $env:AID_VERBOSE = '1' }
 
@@ -626,35 +618,45 @@ if ($_AidFromBundle -and $_AidVersionArg) {
     script:Fail-Aid "-FromBundle and -Version are mutually exclusive" 2
 }
 
-# Validate per subcommand.
-switch ($SUBCMD) {
-    'remove' {
-        if (-not $_AidToolArg) { script:Fail-Aid "remove requires at least one tool name" 2 }
-    }
-    'uninstall' {
-        if ($_AidFromBundle)   { script:Fail-Aid "-FromBundle is not valid with uninstall" 2 }
-        if ($_AidVersionArg)   { script:Fail-Aid "-Version is not valid with uninstall" 2 }
-    }
-}
-
 # ---------------------------------------------------------------------------
 # Manifest path.
 # ---------------------------------------------------------------------------
 $_AidManifest = Join-Path $_AidTarget (Join-Path '.aid' '.aid-manifest.json')
 
 # ---------------------------------------------------------------------------
+# For 'remove' with no tool arg: confirm then remove all.
+# ---------------------------------------------------------------------------
+if ($SUBCMD -eq 'remove' -and -not $_AidToolArg) {
+    if (-not $_AidRemoveForce) {
+        # Skip prompt when non-interactive.
+        $isInteractive = [Environment]::UserInteractive -and [Console]::In -ne [System.IO.TextReader]::Null
+        if (-not $isInteractive) {
+            $_AidRemoveForce = $true
+        } else {
+            Write-Host -NoNewline "Remove ALL AID from ${_AidTarget}? [y/N] "
+            $answer = Read-Host
+            if ($answer -notin @('y', 'Y', 'yes', 'YES')) {
+                Write-Host "Aborted."
+                script:Exit-Aid 0
+            }
+        }
+    }
+    # Proceed: fall through to resolve all tools from manifest.
+}
+
+# ---------------------------------------------------------------------------
 # Resolve tool list.
 # ---------------------------------------------------------------------------
 function script:Resolve-AidToolList {
     # Returns a [ref] result: sets $ResultRef.Value to $true (success) or $false (error).
-    # On success, populates $OutList with tool ids (may be empty for update/remove/uninstall
+    # On success, populates $OutList with tool ids (may be empty for update/remove
     # when no manifest exists).
     # On error (auto-detect failed, normalize failed), sets $ResultRef.Value to $false.
     param([string]$Raw, [string]$Subcmd, [string]$ManifestPath, [string]$TargetDir,
           [ref]$ResultRef, [System.Collections.Generic.List[string]]$OutList)
 
     if (-not $Raw) {
-        if ($Subcmd -in @('uninstall', 'update', 'remove')) {
+        if ($Subcmd -in @('update', 'remove')) {
             # No tool specified → all tools in manifest.
             if (-not (Test-Path $ManifestPath -PathType Leaf)) {
                 $ResultRef.Value = $true  # success, empty list = no manifest
@@ -697,10 +699,6 @@ $_AidTools = $_AidToolsList
 
 if ($_AidTools.Count -eq 0) {
     switch ($SUBCMD) {
-        'uninstall' {
-            [Console]::Error.WriteLine("ERROR: aid: no manifest at $_AidTarget\.aid\.aid-manifest.json (exit 6)")
-            script:Exit-Aid 6
-        }
         'remove' {
             [Console]::Error.WriteLine("ERROR: aid: no manifest at $_AidTarget\.aid\.aid-manifest.json (exit 6)")
             script:Exit-Aid 6
@@ -804,7 +802,7 @@ try {
             script:Exit-Aid 0
         }
 
-        { $_ -in @('remove', 'uninstall') } {
+        'remove' {
             if (-not (Test-ManifestExists -ManifestPath $_AidManifest)) {
                 [Console]::Error.WriteLine("ERROR: aid: no manifest at $_AidTarget\.aid\.aid-manifest.json; nothing to uninstall")
                 script:Exit-Aid 6

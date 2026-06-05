@@ -8,34 +8,22 @@
 #   directory (--target / AID_TARGET overrides).
 #
 # Usage:
-#   aid                          # alias for 'aid status'
-#   aid status                   # print AID state of the cwd project
-#   aid add <tool>[,<tool>...]   # install/add tool(s) into cwd project
-#   aid remove <tool>[,...]      # remove specific tool(s) from cwd project
-#   aid update [<tool>...]       # update installed tool(s) (all if no args)
-#   aid uninstall                # remove AID entirely from cwd project
-#   aid version                  # print the CLI's own version
-#   aid help [<subcommand>]      # print usage and exit 0
-#   aid self-uninstall           # remove the global aid CLI
-#   -h | --help                  # print usage and exit 0
+#   aid                              Show the dashboard
+#   aid -h | --help                  Show help
+#   aid version                      Print the CLI version
+#   aid status                       Show AID state of the current project
+#   aid add <tool>[,...]             Add tool(s) to the current project
+#   aid update [<tool>... | self]    Update to latest; no arg = all tools; 'self' = the aid CLI
+#   aid remove [<tool>... | self]    Remove; no arg = ALL AID from project; 'self' = the aid CLI
+#   aid <command> -h | --help        Per-command help
 #
 # Flags (shared across subcommands where applicable):
 #   --from-bundle <path>   Offline install from a pre-downloaded tarball / dir.
 #   --version <v>          Pin to a specific release version (e.g. 0.7.0).
-#   --force                Overwrite differing files including root agent files.
+#   --force                Overwrite differing files / skip confirmation prompts.
 #   --target <dir>         Project root (default: current directory).
 #   --verbose              Print per-file detail (default: concise summary).
-#   --no-path              (bootstrap / self-update only) Skip PATH wiring.
-#
-# Exit codes:
-#   0   success
-#   1   generic runtime failure
-#   2   usage error (unknown subcommand or invalid flag)
-#   3   network / fetch failure
-#   4   checksum mismatch
-#   5   protect-on-diff blocked (--force not given)
-#   6   uninstall with no manifest
-#   7   aid status: no AID install found in cwd
+#   --no-path              (bootstrap / update self only) Skip PATH wiring.
 
 set -uo pipefail
 
@@ -72,7 +60,7 @@ source "$_AID_CORE"
 # Defensive guard: verify the required core function was defined by the sourced lib.
 # This catches an upgrade that left a stale aid-install-core.sh (missing new functions).
 if ! declare -F aid_status_body >/dev/null 2>&1; then
-    echo "ERROR: aid: CLI core is stale or incomplete at ${_AID_CORE}. Re-run the installer (or 'aid self-update')." >&2
+    echo "ERROR: aid: CLI core is stale or incomplete at ${_AID_CORE}. Re-run the installer (or 'aid update self')." >&2
     exit 1
 fi
 
@@ -84,69 +72,46 @@ _aid_usage() {
     case "$sub" in
         status)
             printf 'aid status [--verbose] [--target <dir>]\n'
-            printf '  Print the AID installation state of the target project (default: cwd).\n'
+            printf '  Show AID state of the current project (default: cwd).\n'
             printf '  Exit 7 when no AID install is found.\n'
             ;;
         add)
             printf 'aid add <tool>[,<tool>...] [--version <v>] [--from-bundle <path>]\n'
             printf '                           [--force] [--verbose] [--target <dir>]\n'
-            printf '  Install or add tool(s) into the target project.\n'
+            printf '  Add tool(s) to the current project.\n'
             printf '  Tools: claude-code, codex, cursor, copilot-cli, antigravity\n'
             ;;
         remove)
-            printf 'aid remove <tool>[,<tool>...] [--verbose] [--target <dir>]\n'
-            printf '  Remove specific tool(s) from the target project (manifest-driven).\n'
+            printf 'aid remove [<tool>[,<tool>...] | self] [--force] [--verbose] [--target <dir>]\n'
+            printf '  Remove tool(s) from the current project (manifest-driven).\n'
+            printf '  No args: remove ALL AID from the project (asks for confirmation).\n'
+            printf '  self: remove the aid CLI itself (asks for confirmation).\n'
             ;;
         update)
-            printf 'aid update [<tool>...] [--version <v>] [--from-bundle <path>]\n'
+            printf 'aid update [<tool>... | self] [--version <v>] [--from-bundle <path>]\n'
             printf '           [--force] [--verbose] [--target <dir>]\n'
-            printf '  Update installed tool(s). No tool args -> update all installed tools.\n'
-            ;;
-        uninstall)
-            printf 'aid uninstall [--verbose] [--target <dir>]\n'
-            printf '  Remove AID entirely from the target project (all tools).\n'
+            printf '  Update to latest. No args: update all installed tools.\n'
+            printf '  self: update the aid CLI itself.\n'
             ;;
         version)
             printf 'aid version\n'
             printf '  Print the installed aid CLI version and exit 0.\n'
             ;;
-        self-uninstall)
-            printf 'aid self-uninstall [--force]\n'
-            printf '  Remove the global aid CLI (PATH wiring + $AID_HOME).\n'
-            printf '  Does not touch per-project AID installs.\n'
-            ;;
-        self-update)
-            printf 'aid self-update\n'
-            printf '  Update the aid CLI to the latest published version.\n'
-            ;;
         *)
-            printf 'aid — AID CLI dispatcher (Bash side).\n'
+            printf 'aid — AID CLI\n'
             printf '\n'
             printf 'Usage:\n'
-            printf '  aid                          Alias for aid status\n'
-            printf '  aid status                   Print AID state of cwd project\n'
-            printf '  aid add <tool>[,...]         Install/add tool(s) to cwd project\n'
-            printf '  aid remove <tool>[,...]      Remove specific tool(s) from cwd project\n'
-            printf '  aid update [<tool>...]       Update installed tool(s) (all if omitted)\n'
-            printf '  aid uninstall                Remove AID entirely from cwd project\n'
-            printf '  aid version                  Print CLI version\n'
-            printf '  aid help [<subcommand>]      Print usage\n'
-            printf '  aid self-update              Update the aid CLI to latest version\n'
-            printf '  aid self-uninstall           Remove the global aid CLI\n'
-            printf '  -h | --help                  Print this help\n'
+            printf '  aid                              Show the dashboard\n'
+            printf '  aid -h | --help                  Show this help\n'
+            printf '  aid version                      Print the CLI version\n'
+            printf '  aid status                       Show AID state of the current project\n'
+            printf '  aid add <tool>[,...]             Add tool(s) to the current project\n'
+            printf '  aid update [<tool>... | self]    Update to latest; no arg = all tools\n'
+            printf '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project\n'
+            printf '  aid <command> -h | --help        Per-command help\n'
             printf '\n'
-            printf 'Shared flags:\n'
-            printf '  --from-bundle <path>   Offline install from tarball or directory\n'
-            printf '  --version <v>          Pin to release version (e.g. 0.7.0)\n'
-            printf '  --force                Overwrite differing files\n'
-            printf '  --target <dir>         Project root (default: cwd)\n'
-            printf '  --verbose              Per-file output\n'
-            printf '\n'
-            printf 'Exit codes: 0 ok, 1 failure, 2 usage error, 3 network, 4 checksum,\n'
-            printf '            5 protect-on-diff, 6 no manifest, 7 not an AID project\n'
-            printf '\n'
-            printf 'Env vars: AID_TOOL, AID_VERSION, AID_TARGET, AID_FORCE, AID_VERBOSE\n'
-            printf '          AID_NO_UPDATE_CHECK=1  disable update check\n'
+            printf 'Flags: --from-bundle, --version, --force, --target, --verbose\n'
+            printf "Run 'aid <command> -h' for details.\n"
             ;;
     esac
 }
@@ -160,7 +125,7 @@ _aid_die() {
 }
 
 # ---------------------------------------------------------------------------
-# Locate the bootstrap install.sh to delegate add/remove/update/uninstall.
+# Locate the bootstrap install.sh to delegate add/remove/update.
 # Prefers the sibling ../install.sh (if aid is run from the release tree),
 # then a resolved bootstrap relative to AID_HOME.
 # ---------------------------------------------------------------------------
@@ -253,22 +218,22 @@ _aid_check_update() {
 
     # Compare: show notice only when latest > installed.
     if _semver_lt "$installed_version" "$latest_version"; then
-        printf '⬆ A newer aid CLI is available: v%s (you have v%s). Run: aid self-update\n' \
+        printf '⬆ A newer aid CLI is available: v%s (you have v%s). Run: aid update self\n' \
             "$latest_version" "$installed_version"
     fi
     return 0
 }
 
 # ---------------------------------------------------------------------------
-# self-update command.
+# update self command (formerly self-update).
 # ---------------------------------------------------------------------------
-_cmd_self_update() {
+_cmd_update_self() {
     printf 'Updating the aid CLI...\n'
     if command -v curl >/dev/null 2>&1; then
         curl -fsSL "${AID_INSTALL_URL}" | bash
         return $?
     else
-        echo "ERROR: aid: curl not found; cannot self-update" >&2
+        echo "ERROR: aid: curl not found; cannot update self" >&2
         return 3
     fi
 }
@@ -459,21 +424,21 @@ _install_global_cli() {
 }
 
 # ---------------------------------------------------------------------------
-# Self-uninstall.
+# remove self (formerly self-uninstall).
 # ---------------------------------------------------------------------------
 
-_cmd_self_uninstall() {
+_cmd_remove_self() {
     local force=0
     local no_path=0
     local profile_file=""
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --force|-Force)  force=1; shift ;;
+            --force|-y)      force=1; shift ;;
             --no-path)       no_path=1; shift ;;
             --profile-file)  profile_file="$2"; shift 2 ;;
-            -h|--help)       _aid_usage self-uninstall; exit 0 ;;
-            *)               _aid_die "unknown flag for self-uninstall: $1" 2 ;;
+            -h|--help)       _aid_usage remove; exit 0 ;;
+            *)               _aid_die "unknown flag for 'remove self': $1" 2 ;;
         esac
     done
 
@@ -485,14 +450,21 @@ _cmd_self_uninstall() {
     local aid_home="${AID_HOME:-${HOME}/.aid}"
 
     if [[ "$force" -eq 0 ]]; then
-        printf 'This will remove the aid CLI from %s and the PATH wiring.\n' "$aid_home"
-        printf 'Per-project AID installs are NOT affected.\n'
-        printf 'Confirm? [y/N] '
-        local answer
-        read -r answer
-        if [[ "$answer" != "y" && "$answer" != "Y" ]]; then
-            echo "Cancelled."
-            exit 0
+        # Skip prompt when non-interactive (piped or no tty).
+        if [[ ! -t 0 ]]; then
+            force=1
+        else
+            printf 'Remove the aid CLI from %s? [y/N] ' "$aid_home"
+            local answer
+            if [[ -e /dev/tty ]]; then
+                read -r answer < /dev/tty
+            else
+                read -r answer
+            fi
+            if [[ "$answer" != "y" && "$answer" != "Y" && "$answer" != "yes" && "$answer" != "YES" ]]; then
+                echo "Aborted."
+                exit 0
+            fi
         fi
     fi
 
@@ -520,7 +492,7 @@ _cmd_self_uninstall() {
         exit 1
     fi
 
-    echo "aid CLI removed. Per-project AID installs are unaffected; run 'aid uninstall' in a project before removing the CLI if you also want to remove those."
+    echo "aid CLI removed. Per-project AID installs are unaffected; run 'aid remove' in a project before removing the CLI if you also want to remove those."
     exit 0
 }
 
@@ -592,21 +564,8 @@ fi
 
 # ---- help -------------------------------------------------------------------
 if [[ "$SUBCMD" == "help" || "$SUBCMD" == "-h" || "$SUBCMD" == "--help" ]]; then
-    sub_help="${1:-}"
-    _aid_usage "$sub_help"
+    _aid_usage
     exit 0
-fi
-
-# ---- self-update ------------------------------------------------------------
-if [[ "$SUBCMD" == "self-update" ]]; then
-    _cmd_self_update
-    exit $?
-fi
-
-# ---- self-uninstall ---------------------------------------------------------
-if [[ "$SUBCMD" == "self-uninstall" ]]; then
-    _cmd_self_uninstall "$@"
-    # _cmd_self_uninstall always exits.
 fi
 
 # ---- status -----------------------------------------------------------------
@@ -634,17 +593,49 @@ if [[ "$SUBCMD" == "status" ]]; then
     exit $_status_rc
 fi
 
-# ---- add / remove / update / uninstall --------------------------------------
+# ---- update -----------------------------------------------------------------
+if [[ "$SUBCMD" == "update" ]]; then
+    # Check for 'update self' as first positional arg.
+    if [[ $# -gt 0 && "$1" == "self" ]]; then
+        shift
+        # Consume any flags after 'self'.
+        while [[ $# -gt 0 ]]; do
+            case "$1" in
+                --force|-y) shift ;;  # no-op for update self
+                -h|--help) _aid_usage update; exit 0 ;;
+                *) _aid_die "unknown flag for 'update self': $1" 2 ;;
+            esac
+        done
+        _cmd_update_self
+        exit $?
+    fi
+    # Fall through to the shared add/update handler below.
+fi
+
+# ---- remove -----------------------------------------------------------------
+if [[ "$SUBCMD" == "remove" ]]; then
+    # Check for 'remove self' as first positional arg.
+    if [[ $# -gt 0 && "$1" == "self" ]]; then
+        shift
+        _cmd_remove_self "$@"
+        # _cmd_remove_self always exits.
+    fi
+
+    # Check for 'remove' with no tool args (remove ALL from project).
+    # We do this check after parsing flags below, so continue to parse first.
+fi
+
+# ---- add / remove / update --------------------------------------------------
 # These subcommands all share flag parsing; we then call the engine functions
 # (install_tool / uninstall_tool) directly through a per-tool loop, exactly as
 # install.sh does.  We build a temporary staging area for install/update, and
 # reuse the same prepare_tool_staging + install_tool / uninstall_tool pattern.
 
-# First, parse the subcommand and positional tool args.
+# First, validate the subcommand.
 case "$SUBCMD" in
-    add|remove|update|uninstall) ;;
+    add|remove|update) ;;
     *)
-        echo "ERROR: aid: unknown command: ${SUBCMD} (see 'aid help')" >&2
+        echo "ERROR: aid: unknown command: ${SUBCMD} (see 'aid -h')" >&2
         exit 2
         ;;
 esac
@@ -652,6 +643,7 @@ esac
 
 # Collect positional tool args (comma-separated or space-separated before flags).
 _AID_POSITIONAL_TOOLS=""
+_AID_REMOVE_FORCE=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -661,7 +653,7 @@ while [[ $# -gt 0 ]]; do
         --version)
             [[ $# -lt 2 ]] && _aid_die "--version requires a value" 2
             _AID_VERSION_ARG="$2"; shift 2 ;;
-        --force)   _AID_FORCE=1; shift ;;
+        --force|-y) _AID_FORCE=1; _AID_REMOVE_FORCE=1; shift ;;
         --verbose) _AID_VERBOSE=1; shift ;;
         --target)
             [[ $# -lt 2 ]] && _aid_die "--target requires a value" 2
@@ -688,6 +680,7 @@ done
 [[ -z "$_AID_TARGET" && -n "${AID_TARGET:-}" ]]             && _AID_TARGET="$AID_TARGET"
 if [[ "$_AID_FORCE" -eq 0 && ( "${AID_FORCE:-0}" == "1" || "${AID_FORCE:-0}" == "true" ) ]]; then
     _AID_FORCE=1
+    _AID_REMOVE_FORCE=1
 fi
 export AID_VERBOSE="$_AID_VERBOSE"
 
@@ -706,20 +699,39 @@ if [[ -n "$_AID_FROM_BUNDLE" && -n "$_AID_VERSION_ARG" ]]; then
     _aid_die "--from-bundle and --version are mutually exclusive" 2
 fi
 
+# For 'remove' with no tool arg: confirm, then remove all.
+if [[ "$SUBCMD" == "remove" && -z "$_AID_TOOL_ARG" ]]; then
+    # Confirmation required (unless --force or non-interactive).
+    if [[ "$_AID_REMOVE_FORCE" -eq 0 ]]; then
+        if [[ ! -t 0 ]]; then
+            # Non-interactive: auto-proceed (don't hang CI).
+            _AID_REMOVE_FORCE=1
+        else
+            printf 'Remove ALL AID from %s? [y/N] ' "$_AID_TARGET"
+            _AID_RM_ANSWER=""
+            if [[ -e /dev/tty ]]; then
+                read -r _AID_RM_ANSWER < /dev/tty
+            else
+                read -r _AID_RM_ANSWER
+            fi
+            if [[ "$_AID_RM_ANSWER" != "y" && "$_AID_RM_ANSWER" != "Y" && "$_AID_RM_ANSWER" != "yes" && "$_AID_RM_ANSWER" != "YES" ]]; then
+                echo "Aborted."
+                exit 0
+            fi
+        fi
+    fi
+    # Proceed: fall through to resolve all tools from manifest.
+fi
+
 # Validate constraints per subcommand.
 case "$SUBCMD" in
     add)
         # Tool is required (or must be auto-detectable / env-var set).
         : ;;  # handled below in _resolve_tools_for_aid
     remove)
-        [[ -z "$_AID_TOOL_ARG" ]] && _aid_die "remove requires at least one tool name" 2
-        ;;
+        : ;; # tool optional (empty = all installed, confirmed above)
     update)
         : ;; # tool optional (empty = all installed)
-    uninstall)
-        [[ -n "$_AID_FROM_BUNDLE" ]] && _aid_die "--from-bundle is not valid with uninstall" 2
-        [[ -n "$_AID_VERSION_ARG" ]] && _aid_die "--version is not valid with uninstall" 2
-        ;;
 esac
 
 # ---------------------------------------------------------------------------
@@ -731,7 +743,7 @@ _resolve_tools_for_aid() {
     local raw="$1" subcmd="$2" outfile="$3"
 
     if [[ -z "$raw" ]]; then
-        if [[ "$subcmd" == "uninstall" || "$subcmd" == "update" || "$subcmd" == "remove" ]]; then
+        if [[ "$subcmd" == "update" || "$subcmd" == "remove" ]]; then
             # No tool specified → all tools in manifest.
             if [[ ! -f "$_AID_MANIFEST" ]]; then
                 return 0
@@ -782,7 +794,7 @@ mapfile -t _AID_TOOLS < "$_TOOLS_TMP"
 
 if [[ "${#_AID_TOOLS[@]}" -eq 0 ]]; then
     case "$SUBCMD" in
-        uninstall|remove)
+        remove)
             echo "ERROR: aid: no manifest at ${_AID_TARGET}/.aid/.aid-manifest.json (exit 6)" >&2
             rm -rf "$_AID_STAGING_BASE"
             exit 6
@@ -878,7 +890,7 @@ case "$SUBCMD" in
         exit 0
         ;;
 
-    remove|uninstall)
+    remove)
         manifest_exists "$_AID_MANIFEST" || {
             echo "ERROR: aid: no manifest at ${_AID_TARGET}/.aid/.aid-manifest.json; nothing to uninstall" >&2
             exit 6

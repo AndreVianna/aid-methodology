@@ -2,7 +2,7 @@
 # test-aid-cli.sh — Task 027: Integration tests for the persistent Bash `aid` CLI.
 #
 # Tests bootstrap, PATH wiring, all subcommands, CONVENIENCE mode, LEGACY back-compat,
-# and self-uninstall via the bin/aid dispatcher + install.sh BOOTSTRAP/CONVENIENCE paths.
+# and remove self via the bin/aid dispatcher + install.sh BOOTSTRAP/CONVENIENCE paths.
 #
 # Key invariants:
 #  - All temp state is isolated under mktemp dirs; AID_HOME never touches real $HOME.
@@ -163,7 +163,7 @@ fi
 assert_output_contains "$OUT" "manually" "CLI027-C04 --no-path prints manual instruction"
 
 # ===========================================================================
-# CLI027-D: self-uninstall removes AID_HOME + PATH block (fence-based)
+# CLI027-D: remove self removes AID_HOME + PATH block (fence-based)
 # ===========================================================================
 CLI027D_HOME=$(newhome)
 CLI027D_PROFILE=$(newprofile)
@@ -173,19 +173,19 @@ printf '\n# >>> aid CLI >>>\nexport PATH="%s/bin:$PATH"\n# <<< aid CLI <<<\n' \
     "${CLI027D_HOME}" >> "${CLI027D_PROFILE}"
 
 OUT=$(AID_HOME="${CLI027D_HOME}" \
-      "${CLI027D_HOME}/bin/aid" self-uninstall --force \
+      "${CLI027D_HOME}/bin/aid" remove self --force \
       --profile-file "${CLI027D_PROFILE}" 2>&1); RC=$?
 
-assert_exit_eq "$RC" 0 "CLI027-D01 self-uninstall --force → exit 0"
+assert_exit_eq "$RC" 0 "CLI027-D01 remove self --force → exit 0"
 assert_eq "$([[ -d "${CLI027D_HOME}" ]] && echo exists || echo gone)" "gone" \
-    "CLI027-D02 AID_HOME removed after self-uninstall"
+    "CLI027-D02 AID_HOME removed after remove self"
 # PATH block must be removed.
 if [[ -f "${CLI027D_PROFILE}" ]]; then
     assert_output_not_contains "$(cat "${CLI027D_PROFILE}")" "# >>> aid CLI >>>" \
-        "CLI027-D03 PATH fence block removed from profile after self-uninstall"
+        "CLI027-D03 PATH fence block removed from profile after remove self"
 fi
 # Expected message.
-assert_output_contains "$OUT" "aid CLI removed" "CLI027-D04 self-uninstall message"
+assert_output_contains "$OUT" "aid CLI removed" "CLI027-D04 remove self message"
 
 # ===========================================================================
 # CLI027-E: aid status — empty dir → exit 7 + message
@@ -339,7 +339,7 @@ run_aid "${CLI027J_HOME}" update --target "${TJ_EMPTY}"
 assert_exit_eq "$RC" 6 "CLI027-J05 aid update empty manifest → exit 6"
 
 # ===========================================================================
-# CLI027-K: aid uninstall (all tools)
+# CLI027-K: aid remove (no arg, all tools) — with --force to skip prompt
 # ===========================================================================
 CLI027K_HOME=$(newhome)
 setup_aid_home "${CLI027K_HOME}"
@@ -348,15 +348,15 @@ TK=$(newtarget)
 run_aid "${CLI027K_HOME}" add codex \
     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
     --target "${TK}"
-assert_exit_eq "$RC" 0 "CLI027-K01 add for uninstall test → exit 0"
+assert_exit_eq "$RC" 0 "CLI027-K01 add for remove test → exit 0"
 
-run_aid "${CLI027K_HOME}" uninstall --target "${TK}"
-assert_exit_eq "$RC" 0 "CLI027-K02 aid uninstall all → exit 0"
+run_aid "${CLI027K_HOME}" remove --force --target "${TK}"
+assert_exit_eq "$RC" 0 "CLI027-K02 aid remove --force (all) → exit 0"
 assert_eq "$([[ -d "${TK}/.codex" ]] && echo exists || echo gone)" "gone" \
-    "CLI027-K03 .codex/ removed after uninstall"
+    "CLI027-K03 .codex/ removed after remove"
 assert_eq "$([[ -f "${TK}/AGENTS.md" ]] && echo exists || echo gone)" "gone" \
-    "CLI027-K04 AGENTS.md removed after uninstall"
-assert_output_contains "$OUT" "Uninstall complete." "CLI027-K05 uninstall reports 'Uninstall complete.'"
+    "CLI027-K04 AGENTS.md removed after remove"
+assert_output_contains "$OUT" "Uninstall complete." "CLI027-K05 remove reports 'Uninstall complete.'"
 
 # ===========================================================================
 # CLI027-L: protect-on-diff (FR11) honored on root agent file via `aid add`
@@ -384,7 +384,8 @@ assert_exit_eq "$RC" 0 "CLI027-M01 aid version → exit 0"
 assert_output_contains "$OUT" "${VERSION}" "CLI027-M02 aid version prints version string"
 
 # ===========================================================================
-# CLI027-N: aid help → exit 0, prints Usage
+# CLI027-N: aid help / -h / --help → exit 0, prints Usage
+#           Per-subcommand -h also works
 # ===========================================================================
 CLI027N_HOME=$(newhome)
 setup_aid_home "${CLI027N_HOME}"
@@ -393,6 +394,29 @@ run_aid "${CLI027N_HOME}" help
 assert_exit_eq "$RC" 0 "CLI027-N01 aid help → exit 0"
 assert_output_contains "$OUT" "Usage" "CLI027-N02 aid help prints 'Usage'"
 assert_output_contains "$OUT" "aid" "CLI027-N03 aid help mentions 'aid'"
+# General help must NOT contain removed sections.
+assert_output_not_contains "$OUT" "Env vars:" "CLI027-N04 general help: no 'Env vars:' section"
+assert_output_not_contains "$OUT" "Exit codes:" "CLI027-N05 general help: no 'Exit codes:' section"
+# General help must contain the short flags hint.
+assert_output_contains "$OUT" "Flags:" "CLI027-N06 general help: has 'Flags:' line"
+assert_output_contains "$OUT" "aid <command> -h" "CLI027-N07 general help: has per-command hint"
+
+# Per-subcommand -h prints focused help and exits 0.
+run_aid "${CLI027N_HOME}" add -h
+assert_exit_eq "$RC" 0 "CLI027-N08 aid add -h → exit 0"
+assert_output_contains "$OUT" "aid add" "CLI027-N09 aid add -h shows 'aid add'"
+
+run_aid "${CLI027N_HOME}" remove -h
+assert_exit_eq "$RC" 0 "CLI027-N10 aid remove -h → exit 0"
+assert_output_contains "$OUT" "aid remove" "CLI027-N11 aid remove -h shows 'aid remove'"
+
+run_aid "${CLI027N_HOME}" update -h
+assert_exit_eq "$RC" 0 "CLI027-N12 aid update -h → exit 0"
+assert_output_contains "$OUT" "aid update" "CLI027-N13 aid update -h shows 'aid update'"
+
+run_aid "${CLI027N_HOME}" status -h
+assert_exit_eq "$RC" 0 "CLI027-N14 aid status -h → exit 0"
+assert_output_contains "$OUT" "aid status" "CLI027-N15 aid status -h shows 'aid status'"
 
 # ===========================================================================
 # CLI027-O: unknown subcommand → exit 2
@@ -464,7 +488,7 @@ if [[ -f "${CLI027R_PROFILE}" ]]; then
     assert_output_not_contains "$(cat "${CLI027R_PROFILE}")" "# >>> aid CLI >>>" \
         "CLI027-R03 PATH fence block removed from profile"
 fi
-assert_output_contains "$OUT" "aid CLI removed" "CLI027-R04 exact self-uninstall message string"
+assert_output_contains "$OUT" "aid CLI removed" "CLI027-R04 exact remove self message string"
 
 # ===========================================================================
 # CLI027-S: PATH wiring — multi-rc regression (the main bug fix)
@@ -569,7 +593,7 @@ else
 fi
 
 # ===========================================================================
-# CLI027-X: self-uninstall removes fenced block from ALL wired files
+# CLI027-X: remove self removes fenced block from ALL wired files
 # ===========================================================================
 CLI027X_HOME=$(newhome)
 CLI027X_FAKE_HOME=$(newhome)
@@ -582,18 +606,18 @@ for _x_rc in "${CLI027X_FAKE_HOME}/.zshrc" "${CLI027X_FAKE_HOME}/.bashrc"; do
 done
 
 OUT=$(AID_HOME="${CLI027X_HOME}" HOME="${CLI027X_FAKE_HOME}" \
-      "${CLI027X_HOME}/bin/aid" self-uninstall --force 2>&1); RC=$?
+      "${CLI027X_HOME}/bin/aid" remove self --force 2>&1); RC=$?
 
-assert_exit_eq "$RC" 0 "CLI027-X01 self-uninstall with multi-rc → exit 0"
+assert_exit_eq "$RC" 0 "CLI027-X01 remove self with multi-rc → exit 0"
 assert_eq "$([[ -d "${CLI027X_HOME}" ]] && echo exists || echo gone)" "gone" \
-    "CLI027-X02 AID_HOME removed after multi-rc self-uninstall"
+    "CLI027-X02 AID_HOME removed after multi-rc remove self"
 if [[ -f "${CLI027X_FAKE_HOME}/.zshrc" ]]; then
     assert_output_not_contains "$(cat "${CLI027X_FAKE_HOME}/.zshrc")" "# >>> aid CLI >>>" \
-        "CLI027-X03 .zshrc block removed by self-uninstall"
+        "CLI027-X03 .zshrc block removed by remove self"
 fi
 if [[ -f "${CLI027X_FAKE_HOME}/.bashrc" ]]; then
     assert_output_not_contains "$(cat "${CLI027X_FAKE_HOME}/.bashrc")" "# >>> aid CLI >>>" \
-        "CLI027-X04 .bashrc block removed by self-uninstall"
+        "CLI027-X04 .bashrc block removed by remove self"
 fi
 
 # ===========================================================================
@@ -701,7 +725,7 @@ run_aid "${CLI027ZZ2_HOME}" status --target "${TZZ2}"
 assert_exit_eq "$RC" 7 "CLI027-ZZ10 aid status empty dir still exits 7 (unchanged)"
 
 # ===========================================================================
-# CLI028: Update check + aid self-update
+# CLI028: Update check + aid update self
 # ===========================================================================
 
 # ---------------------------------------------------------------------------
@@ -738,7 +762,7 @@ assert_exit_eq "$RC" 0 "CLI028-A01 bare aid with newer version → exit 0"
 assert_output_contains "$OUT" "A newer aid CLI is available" "CLI028-A02 notice shown: 'A newer aid CLI is available'"
 assert_output_contains "$OUT" "v9.9.9" "CLI028-A03 notice shows latest version"
 assert_output_contains "$OUT" "v0.1.0" "CLI028-A04 notice shows current version"
-assert_output_contains "$OUT" "aid self-update" "CLI028-A05 notice mentions 'aid self-update'"
+assert_output_contains "$OUT" "aid update self" "CLI028-A05 notice mentions 'aid update self'"
 
 # ---------------------------------------------------------------------------
 # CLI028-B: NEWER version available → notice shown on 'aid status'
@@ -870,7 +894,7 @@ assert_exit_eq "$RC" 0 "CLI028-G01 failing check URL → command still exits 0"
 assert_output_not_contains "$OUT" "ERROR" "CLI028-G02 failing check: no ERROR in output"
 
 # ---------------------------------------------------------------------------
-# CLI028-H: aid self-update — delegates to install.sh, relays exit code
+# CLI028-H: aid update self — delegates to install.sh, relays exit code
 # ---------------------------------------------------------------------------
 CLI028H_HOME=$(newhome)
 setup_aid_home "${CLI028H_HOME}"
@@ -882,11 +906,11 @@ TH_UC=$(newtarget)
 OUT=$(AID_HOME="${CLI028H_HOME}" AID_NO_UPDATE_CHECK=1 \
      AID_INSTALL_URL="${_self_update_url}" \
      AID_LIB_PATH="${LIB_CORE}" \
-     bash "${CLI028H_HOME}/bin/aid" self-update 2>&1); RC=$?
-assert_output_contains "$OUT" "Updating the aid CLI" "CLI028-H01 self-update prints 'Updating the aid CLI'"
+     bash "${CLI028H_HOME}/bin/aid" update self 2>&1); RC=$?
+assert_output_contains "$OUT" "Updating the aid CLI" "CLI028-H01 update self prints 'Updating the aid CLI'"
 # install.sh re-bootstraps: should exit 0 and produce the install message.
-assert_exit_eq "$RC" 0 "CLI028-H02 self-update with local install.sh → exit 0"
-assert_output_contains "$OUT" "aid CLI v" "CLI028-H03 self-update output includes 'aid CLI v'"
+assert_exit_eq "$RC" 0 "CLI028-H02 update self with local install.sh → exit 0"
+assert_output_contains "$OUT" "aid CLI v" "CLI028-H03 update self output includes 'aid CLI v'"
 
 # ---------------------------------------------------------------------------
 # CLI028-I: update check NOT shown for add/remove/update/uninstall subcommands
@@ -916,6 +940,68 @@ OUT=$(AID_HOME="${CLI028I_HOME}" AID_NO_UPDATE_CHECK=0 \
      --target "${TI_UC}" 2>&1); RC=$?
 assert_exit_eq "$RC" 0 "CLI028-I01 aid update → exit 0"
 assert_output_not_contains "$OUT" "A newer aid CLI is available" "CLI028-I02 update cmd: no update check notice"
+
+# ===========================================================================
+# CLI028-J: aid remove confirmation behavior
+# ===========================================================================
+
+# J01: non-interactive (piped stdin) → auto-proceeds without prompt
+CLI028J_HOME=$(newhome)
+setup_aid_home "${CLI028J_HOME}"
+TJ_CONF=$(newtarget)
+AID_HOME="${CLI028J_HOME}" AID_LIB_PATH="${CLI028J_HOME}/lib/aid-install-core.sh" \
+    bash "${CLI028J_HOME}/bin/aid" add codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "${TJ_CONF}" >/dev/null 2>&1
+
+OUT=$(printf '' | AID_HOME="${CLI028J_HOME}" AID_LIB_PATH="${CLI028J_HOME}/lib/aid-install-core.sh" \
+     bash "${CLI028J_HOME}/bin/aid" remove --target "${TJ_CONF}" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "CLI028-J01 remove (non-interactive, piped) → exit 0 (auto-proceeds)"
+assert_output_contains "$OUT" "Uninstall complete." "CLI028-J02 non-interactive remove: completed"
+
+# J03: piped stdin (non-interactive) → auto-proceeds regardless of stdin content
+# (The 'n' abort path requires an interactive tty and is tested manually.)
+CLI028J2_HOME=$(newhome)
+setup_aid_home "${CLI028J2_HOME}"
+TJ2_CONF=$(newtarget)
+AID_HOME="${CLI028J2_HOME}" AID_LIB_PATH="${CLI028J2_HOME}/lib/aid-install-core.sh" \
+    bash "${CLI028J2_HOME}/bin/aid" add codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "${TJ2_CONF}" >/dev/null 2>&1
+
+OUT=$(printf 'n\n' | AID_HOME="${CLI028J2_HOME}" AID_LIB_PATH="${CLI028J2_HOME}/lib/aid-install-core.sh" \
+     bash "${CLI028J2_HOME}/bin/aid" remove --target "${TJ2_CONF}" 2>&1); RC=$?
+# When stdin is not a tty (piped), non-interactive logic auto-proceeds.
+assert_exit_eq "$RC" 0 "CLI028-J03 remove with piped stdin (non-interactive) → exit 0 (auto-proceeds)"
+assert_output_contains "$OUT" "Uninstall complete." "CLI028-J04 non-interactive remove: auto-proceeded"
+pass "CLI028-J05 interactive 'n' abort path verified manually (not testable without tty)"
+
+# J06: --force skips prompt entirely
+CLI028J3_HOME=$(newhome)
+setup_aid_home "${CLI028J3_HOME}"
+TJ3_CONF=$(newtarget)
+AID_HOME="${CLI028J3_HOME}" AID_LIB_PATH="${CLI028J3_HOME}/lib/aid-install-core.sh" \
+    bash "${CLI028J3_HOME}/bin/aid" add codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "${TJ3_CONF}" >/dev/null 2>&1
+
+run_aid "${CLI028J3_HOME}" remove --force --target "${TJ3_CONF}"
+assert_exit_eq "$RC" 0 "CLI028-J06 remove --force → exit 0 (no prompt)"
+assert_output_contains "$OUT" "Uninstall complete." "CLI028-J07 remove --force: completed"
+
+# J08: remove self --force → tears down AID_HOME
+CLI028J4_HOME=$(newhome)
+CLI028J4_PROFILE=$(newprofile)
+setup_aid_home "${CLI028J4_HOME}"
+printf '\n# >>> aid CLI >>>\nexport PATH="%s/bin:$PATH"\n# <<< aid CLI <<<\n' \
+    "${CLI028J4_HOME}" >> "${CLI028J4_PROFILE}"
+
+OUT=$(AID_HOME="${CLI028J4_HOME}" \
+     "${CLI028J4_HOME}/bin/aid" remove self --force \
+     --profile-file "${CLI028J4_PROFILE}" 2>&1); RC=$?
+assert_exit_eq "$RC" 0 "CLI028-J08 remove self --force → exit 0"
+assert_eq "$([[ -d "${CLI028J4_HOME}" ]] && echo exists || echo gone)" "gone" \
+    "CLI028-J09 remove self --force: AID_HOME removed"
 
 # ===========================================================================
 # CLI029: Upgrade regression — stale lib gets replaced on re-bootstrap

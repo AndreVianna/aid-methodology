@@ -253,53 +253,53 @@ assert_file_exists "${T_SH_D}/AGENTS.md.aid-new"  "PAR029-D04 Bash: .aid-new cre
 assert_file_exists "${T_PS1_D}/AGENTS.md.aid-new" "PAR029-D05 PS1: .aid-new created"
 
 # ===========================================================================
-# PAR029-E: Exit code parity — uninstall no manifest → exit 6
+# PAR029-E: Exit code parity — remove (no manifest) → exit 6
 # ===========================================================================
 SH_HOME_E=$(newhome); setup_sh_home "${SH_HOME_E}"
 PS_HOME_E=$(newhome); setup_ps1_home "${PS_HOME_E}"
 T_SH_E=$(newtarget); T_PS1_E=$(newtarget)
 
-run_sh  "${SH_HOME_E}" uninstall --target "${T_SH_E}"
-run_ps1 "${PS_HOME_E}" uninstall -Target "${T_PS1_E}"
+run_sh  "${SH_HOME_E}" remove --force --target "${T_SH_E}"
+run_ps1 "${PS_HOME_E}" remove -Force -Target "${T_PS1_E}"
 
-assert_exit_eq "$RC_SH"  6 "PAR029-E01 Bash uninstall no manifest → exit 6"
-assert_exit_eq "$RC_PS1" 6 "PAR029-E02 PS1 uninstall no manifest → exit 6"
+assert_exit_eq "$RC_SH"  6 "PAR029-E01 Bash remove no manifest → exit 6"
+assert_exit_eq "$RC_PS1" 6 "PAR029-E02 PS1 remove no manifest → exit 6"
 assert_eq "$RC_SH" "$RC_PS1" "PAR029-E03 Bash↔PS1 exit code parity (no manifest)"
 
 # ===========================================================================
-# PAR029-F: Uninstall parity — same project tree state after uninstall
+# PAR029-F: Remove parity — same project tree state after remove (all tools)
 # ===========================================================================
 SH_HOME_F=$(newhome); setup_sh_home "${SH_HOME_F}"
 PS_HOME_F=$(newhome); setup_ps1_home "${PS_HOME_F}"
 T_SH_F=$(newtarget); T_PS1_F=$(newtarget)
 
-# Install via Bash, then uninstall via Bash.
+# Install via Bash, then remove via Bash (--force to skip prompt).
 run_sh "${SH_HOME_F}" add codex \
     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
     --target "${T_SH_F}"
-assert_exit_eq "$RC_SH" 0 "PAR029-F01 Bash add for uninstall parity → exit 0"
-run_sh "${SH_HOME_F}" uninstall --target "${T_SH_F}"
-assert_exit_eq "$RC_SH" 0 "PAR029-F02 Bash uninstall → exit 0"
+assert_exit_eq "$RC_SH" 0 "PAR029-F01 Bash add for remove parity → exit 0"
+run_sh "${SH_HOME_F}" remove --force --target "${T_SH_F}"
+assert_exit_eq "$RC_SH" 0 "PAR029-F02 Bash remove --force → exit 0"
 
-# Install via PS1, then uninstall via PS1.
+# Install via PS1, then remove via PS1 (-Force to skip prompt).
 run_ps1 "${PS_HOME_F}" add codex \
     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
     -Target "${T_PS1_F}"
-assert_exit_eq "$RC_PS1" 0 "PAR029-F03 PS1 add for uninstall parity → exit 0"
-run_ps1 "${PS_HOME_F}" uninstall -Target "${T_PS1_F}"
-assert_exit_eq "$RC_PS1" 0 "PAR029-F04 PS1 uninstall → exit 0"
+assert_exit_eq "$RC_PS1" 0 "PAR029-F03 PS1 add for remove parity → exit 0"
+run_ps1 "${PS_HOME_F}" remove -Force -Target "${T_PS1_F}"
+assert_exit_eq "$RC_PS1" 0 "PAR029-F04 PS1 remove -Force → exit 0"
 
-# Both targets must be clean after uninstall.
+# Both targets must be clean after remove.
 for _chk in .codex AGENTS.md .aid; do
     assert_eq "$([[ -e "${T_SH_F}/${_chk}" ]] && echo exists || echo gone)" "gone" \
-        "PAR029-F05 Bash: ${_chk} gone after uninstall"
+        "PAR029-F05 Bash: ${_chk} gone after remove"
     assert_eq "$([[ -e "${T_PS1_F}/${_chk}" ]] && echo exists || echo gone)" "gone" \
-        "PAR029-F06 PS1: ${_chk} gone after uninstall"
+        "PAR029-F06 PS1: ${_chk} gone after remove"
 done
 
 # Both report "Uninstall complete."
-assert_output_contains "$OUT_SH"  "Uninstall complete." "PAR029-F07 Bash uninstall message"
-assert_output_contains "$OUT_PS1" "Uninstall complete." "PAR029-F08 PS1 uninstall message"
+assert_output_contains "$OUT_SH"  "Uninstall complete." "PAR029-F07 Bash remove message"
+assert_output_contains "$OUT_PS1" "Uninstall complete." "PAR029-F08 PS1 remove message"
 
 # ===========================================================================
 # PAR029-G: Update parity — same-version update produces same state
@@ -385,11 +385,11 @@ assert_exit_eq "$RC_PS1" 0 "PAR029-I02 PS1 status on Bash-installed project → 
 assert_output_contains "$OUT_PS1" "codex" "PAR029-I03 PS1 reads Bash-written manifest correctly"
 assert_output_contains "$OUT_PS1" "v${VERSION}" "PAR029-I04 PS1 reads correct version from Bash manifest"
 
-# Cross-uninstall: PS1 can uninstall a Bash-installed project.
-run_ps1 "${PS_HOME_I}" uninstall -Target "${T_I}"
-assert_exit_eq "$RC_PS1" 0 "PAR029-I05 PS1 uninstall of Bash-installed project → exit 0"
+# Cross-remove: PS1 can remove a Bash-installed project.
+run_ps1 "${PS_HOME_I}" remove -Force -Target "${T_I}"
+assert_exit_eq "$RC_PS1" 0 "PAR029-I05 PS1 remove of Bash-installed project → exit 0"
 assert_eq "$([[ -d "${T_I}/.codex" ]] && echo exists || echo gone)" "gone" \
-    "PAR029-I06 .codex/ removed by cross-runtime uninstall"
+    "PAR029-I06 .codex/ removed by cross-runtime remove"
 
 # ===========================================================================
 # PAR029-J: Cross-runtime interop — install via PS1, read + remove via Bash
@@ -409,11 +409,11 @@ run_sh "${SH_HOME_J}" status --target "${T_J}"
 assert_exit_eq "$RC_SH" 0 "PAR029-J02 Bash status on PS1-installed project → exit 0"
 assert_output_contains "$OUT_SH" "codex" "PAR029-J03 Bash reads PS1-written manifest"
 
-# Bash uninstall of PS1-installed project.
-run_sh "${SH_HOME_J}" uninstall --target "${T_J}"
-assert_exit_eq "$RC_SH" 0 "PAR029-J04 Bash uninstall of PS1-installed project → exit 0"
+# Bash remove of PS1-installed project.
+run_sh "${SH_HOME_J}" remove --force --target "${T_J}"
+assert_exit_eq "$RC_SH" 0 "PAR029-J04 Bash remove of PS1-installed project → exit 0"
 assert_eq "$([[ -d "${T_J}/.codex" ]] && echo exists || echo gone)" "gone" \
-    "PAR029-J05 .codex/ removed by cross-runtime Bash uninstall"
+    "PAR029-J05 .codex/ removed by cross-runtime Bash remove"
 
 # ===========================================================================
 # PAR029-K: Unknown subcommand exit code parity

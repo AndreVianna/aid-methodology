@@ -17,7 +17,7 @@
 #   T09  aid add codex (from bootstrap) installs codex into project
 #   T10  aid status after add shows codex
 #   T11  aid remove codex removes it
-#   T12  aid uninstall removes the project AID install
+#   T12  aid remove (no arg, -Force) removes the project AID install
 #   T13  Manifest stays LF/no-BOM after all CLI operations
 #   T14  protect-on-diff: user-owned root-agent → .aid-new + exit 5
 #   T15  -Force overrides protect-on-diff
@@ -396,14 +396,14 @@ Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('remove', 'codex', '-Target', $ProjT0
 Assert-Eq      "$($script:_LastRC)" '0' 'T11a aid remove codex → exit 0'
 Assert-DirGone (Join-Path $ProjT09 '.codex') 'T11b .codex/ removed'
 
-# Re-add codex for the uninstall test.
+# Re-add codex for the remove (all) test.
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT09)
 
-# T12: aid uninstall.
-Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('uninstall', '-Target', $ProjT09)
-Assert-Eq      "$($script:_LastRC)" '0' 'T12a aid uninstall → exit 0'
-Assert-Contains $script:_LastOut 'Uninstall complete.' 'T12b uninstall banner'
-Assert-DirGone (Join-Path $ProjT09 '.codex') 'T12c .codex/ gone after uninstall'
+# T12: aid remove (no arg) with -Force to skip prompt.
+Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('remove', '-Force', '-Target', $ProjT09)
+Assert-Eq      "$($script:_LastRC)" '0' 'T12a aid remove -Force (all) → exit 0'
+Assert-Contains $script:_LastOut 'Uninstall complete.' 'T12b remove banner'
+Assert-DirGone (Join-Path $ProjT09 '.codex') 'T12c .codex/ gone after remove'
 
 # T13: Manifest and version files are LF/no-BOM after all CLI operations.
 $ProjT13 = Join-Path $TmpRoot 'project-t13'
@@ -680,9 +680,9 @@ Assert-Contains $ps1HeaderT24 "all at v$Ver" 'T24a PS1 uniform header contains "
 Write-Host ""
 
 # ===========================================================================
-# T25-T30: Update check + aid self-update (hermetic — no real network)
+# T25-T30: Update check + aid update self (hermetic — no real network)
 # ===========================================================================
-Write-Host "=== T25-T30: Update check + aid self-update ==="
+Write-Host "=== T25-T30: Update check + aid update self ==="
 
 # Helper: write a fake "releases/latest" JSON file to a temp path.
 # Returns the file:// URL string.
@@ -734,7 +734,7 @@ Assert-Eq      "$rc25"  '0'                               'T25a bare aid.ps1 new
 Assert-Contains $out25  'A newer aid CLI is available'    'T25b notice: "A newer aid CLI is available"'
 Assert-Contains $out25  'v9.9.9'                          'T25c notice: latest version shown'
 Assert-Contains $out25  'v0.1.0'                          'T25d notice: current version shown'
-Assert-Contains $out25  'aid self-update'                 'T25e notice: "aid self-update" mentioned'
+Assert-Contains $out25  'aid update self'                 'T25e notice: "aid update self" mentioned'
 Write-Host ""
 
 # T26: SAME version → no notice.
@@ -876,7 +876,7 @@ Assert-Eq      "$rc29" '0'                            'T29a aid status with newe
 Assert-Contains $out29 'A newer aid CLI is available' 'T29b aid status shows notice'
 Write-Host ""
 
-# T30: aid self-update — prints 'Updating the aid CLI...' then relays exit code.
+# T30: aid update self — prints 'Updating the aid CLI...' then relays exit code.
 # Use a non-existent URL so Invoke-RestMethod fails immediately → exit 3.
 $AidHomeT30 = Join-Path $TmpRoot 'aid-home-t30'
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT30 'bin') -Force | Out-Null
@@ -893,7 +893,7 @@ $env:AID_LIB_PATH        = $LocalLibPath
 $env:AID_NO_UPDATE_CHECK = '1'
 $env:AID_INSTALL_URL     = 'https://nonexistent.invalid/install.ps1'
 $outLines30 = & $PwshExe -NoProfile -File (Join-Path $AidHomeT30 'bin' 'aid.ps1') `
-                  'self-update' 2>&1
+                  'update' 'self' 2>&1
 $rc30 = $LASTEXITCODE
 $out30 = ($outLines30 | ForEach-Object { [string]$_ }) -join "`n"
 $out30 = [System.Text.RegularExpressions.Regex]::Replace($out30, $_AnsiPattern, '')
@@ -902,8 +902,8 @@ $env:AID_LIB_PATH        = $savedLib30
 $env:AID_NO_UPDATE_CHECK = $null
 $env:AID_INSTALL_URL     = $null
 
-Assert-Contains $out30 'Updating the aid CLI' 'T30a self-update prints update message'
-Assert-Eq "$rc30" '3' 'T30b self-update with bad URL → exit 3'
+Assert-Contains $out30 'Updating the aid CLI' 'T30a update self prints update message'
+Assert-Eq "$rc30" '3' 'T30b update self with bad URL → exit 3'
 Write-Host ""
 
 # ===========================================================================
