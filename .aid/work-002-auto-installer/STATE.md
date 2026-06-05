@@ -84,7 +84,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | delivery-001 | Done — live-verified Linux(zsh)+Windows(pwsh 7.6.2), CI-green both OS, v0.7.5 | 001–010 + 020–030 | Persistent `aid` CLI; foundation installer; closed by user after cross-platform live verification |
 | delivery-002 | Built + CI-green (publish deferred) | 031–035 + 042 | npm `aid` on PATH; Linux+Windows CI green; needs @aid scope+token to publish |
 | delivery-003 | Built + CI-green (publish deferred) | 036–041 | PyPI `aid` on PATH; Linux+Windows CI green; CasuloAI Labs org reg blocks publish |
-| delivery-004 | Detailed (A+) | 016–017 (2) | CI release automation; depends on d-001/002/003; Should |
+| delivery-004 | Built (publish inert) | 016–017 | release.yml tag-triggered (gate->release->npm/PyPI publish, OIDC); version-sync FR10; publish gated on NPM/PYPI_ENABLED + secrets |
 | delivery-005 | Done | 018–019 | Invariant root AGENTS.md (4 files byte-identical) + CI guard; no render-drift |
 
 ## Tasks Status
@@ -109,8 +109,8 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 013 | PyPI wrapper `aid-installer` (vendor-and-spawn) | IMPLEMENT | d3·W1 | Superseded | — | — | delivery-003; deps 003,005 |
 | 014 | PyPI wrapper test suite + vendored-payload parity | TEST | d3·W2 | Superseded | — | — | delivery-003; deps 013 |
 | 015 | PyPI org registration prereq + publish runbook | DOCUMENT | d3·W3 | Superseded | — | — | delivery-003; deps 014; external blocker |
-| 016 | One-tag release workflow `release.yml` + version-sync gate | IMPLEMENT | d4·W1 | Pending | — | — | delivery-004; deps 001,011,013 |
-| 017 | Version-sync unit test + workflow validation | TEST | d4·W2 | Pending | — | — | delivery-004; deps 016 |
+| 016 | One-tag release workflow `release.yml` + version-sync gate | IMPLEMENT | d4·W1 | Done | — | — | delivery-004; deps 001,011,013 |
+| 017 | Version-sync unit test + workflow validation | TEST | d4·W2 | Done | — | — | delivery-004; deps 016 |
 | 018 | Normalize root `AGENTS.md` byte-invariant ×4 | IMPLEMENT | d5·W1 | Done | — | — | delivery-005; deps —; independent/early |
 | 019 | CI invariance guard for root `AGENTS.md` | TEST | d5·W2 | Done | — | — | delivery-005; deps 018 |
 | 020 | `aid` dispatcher (Bash) — subcommand parse + map to engine modes | IMPLEMENT | d1·W6 | Done | — | — | delivery-001 CLI; net-new; deps 003 |
