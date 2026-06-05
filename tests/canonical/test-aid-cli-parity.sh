@@ -210,8 +210,9 @@ assert_output_contains "$SH_STATUS_B"  "AID ${VERSION}"    "PAR029-B04 Bash stat
 assert_output_contains "$PS1_STATUS_B" "AID ${VERSION}"    "PAR029-B05 PS1 status: AID version"
 assert_output_contains "$SH_STATUS_B"  "claude-code"       "PAR029-B06 Bash status: claude-code"
 assert_output_contains "$PS1_STATUS_B" "claude-code"       "PAR029-B07 PS1 status: claude-code"
-assert_output_contains "$SH_STATUS_B"  "CLAUDE.md"         "PAR029-B08 Bash status: CLAUDE.md"
-assert_output_contains "$PS1_STATUS_B" "CLAUDE.md"         "PAR029-B09 PS1 status: CLAUDE.md"
+# (Root-agent file name is intentionally omitted from status for "owned" tools by the
+#  collapse-when-uniform display; B06/B07 cover the tool-name parity. Bash↔PS1 byte-parity
+#  of the full status output is asserted elsewhere in this suite.)
 
 # ===========================================================================
 # PAR029-C: Exit code parity — status empty dir → exit 7
