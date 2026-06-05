@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aid-installer"
+version = "0.7.5"
+description = "AID CLI installer - puts the persistent aid command on PATH via pipx or pip"
+requires-python = ">=3.8"
+dependencies = []
+keywords = ["aid", "agentic", "iterative", "development", "cli", "installer"]
+license = { text = "MIT" }
+
+[[project.authors]]
+name = "Andre Vianna"
+email = "andre.vianna.rj@hotmail.com"
+
+[project.urls]
+Repository = "https://github.com/AndreVianna/aid-methodology"
+
+[project.scripts]
+aid = "aid_installer.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+include = [
+    "/aid_installer",
+]
+artifacts = [
+    "aid_installer/_vendor/**",
+]
+
+[tool.hatch.build.hooks.custom]
+path = "scripts/vendor.py"

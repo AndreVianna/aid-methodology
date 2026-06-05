@@ -1,0 +1,7 @@
+# PyPI package vendored copies (generated at build time by scripts/vendor.py; not committed)
+aid_installer/_vendor/
+
+# Build artifacts
+dist/
+*.whl
+*.tar.gz

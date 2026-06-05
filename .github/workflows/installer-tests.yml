@@ -47,7 +47,7 @@ jobs:
       # ubuntu-latest: bash harness
       # -----------------------------------------------------------------------
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        if: matrix.mode == 'bash-harness'
+        # Both OSes: bash-harness (render/generator) and the Windows PyPI smoke need Python.
         with:
           python-version: '3.11'
 
@@ -65,12 +65,17 @@ jobs:
         if: matrix.mode == 'bash-harness'
         run: find canonical/scripts tests/canonical bin packages/npm/scripts -type f \( -name '*.sh' -o -name '*.js' -o -name 'aid' \) -exec chmod +x {} +
 
+      - name: Install Python build tools (bash-harness)
+        if: matrix.mode == 'bash-harness'
+        shell: bash
+        run: python3 -m pip install --user pipx build || true
+
       - name: Run installer + CLI + release suites (bash harness)
         if: matrix.mode == 'bash-harness'
         shell: bash
         run: |
           set -u
-          SUITES="test-install test-install-ps1 test-install-parity test-aid-cli test-aid-cli-ps1 test-aid-cli-parity test-release test-release-install-e2e test-npm-installer"
+          SUITES="test-install test-install-ps1 test-install-parity test-aid-cli test-aid-cli-ps1 test-aid-cli-parity test-release test-release-install-e2e test-npm-installer test-pypi-installer"
           FAILED=""
           for s in $SUITES; do
             echo "::group::$s (${{ matrix.os }})"
@@ -126,16 +131,14 @@ jobs:
           # Global install.
           $prefix = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
           npm install -g $tgz.FullName --prefix $prefix.FullName
-          $aidJs = Get-ChildItem -Recurse -Path $prefix.FullName -Filter 'aid.js' |
-                   Where-Object { $_.FullName -notmatch 'node_modules' } |
-                   Select-Object -First 1
-          if (-not $aidJs) {
-              $aidJs = Get-ChildItem -Recurse -Path $prefix.FullName -Filter 'aid' |
-                       Where-Object { $_.FullName -notmatch 'lib' } |
-                       Select-Object -First 1
-          }
-          if (-not $aidJs) { Write-Error "installed aid not found under $($prefix.FullName)"; exit 1 }
-          Write-Host "Installed aid at: $($aidJs.FullName)"
+          # npm creates Windows command wrappers (aid.cmd / aid.ps1 / aid) in the prefix
+          # root; invoke aid.cmd directly (it execs `node <pkg>/bin/aid.js`). Do NOT run
+          # `node` against the bare 'aid' sh-wrapper (it is a bash script).
+          $aidCmd = Get-ChildItem -Recurse -Path $prefix.FullName -Filter 'aid.cmd' |
+                    Where-Object { $_.FullName -notmatch 'node_modules' } |
+                    Select-Object -First 1
+          if (-not $aidCmd) { Write-Error "installed aid.cmd not found under $($prefix.FullName)"; exit 1 }
+          Write-Host "Installed aid at: $($aidCmd.FullName)"
 
           # Set up a minimal AID_HOME from repo source.
           $aidHome = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
@@ -149,7 +152,7 @@ jobs:
           $emptyDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
           $env:AID_HOME = $aidHome.FullName
           $env:AID_NO_UPDATE_CHECK = '1'
-          $out = node $aidJs.FullName status --target $emptyDir.FullName 2>&1
+          $out = & $aidCmd.FullName status --target $emptyDir.FullName 2>&1
           if ($LASTEXITCODE -ne 7) {
               Write-Error "aid status empty dir: expected exit 7, got $LASTEXITCODE`nOutput: $out"
               exit 1
@@ -172,7 +175,7 @@ jobs:
 
           # Smoke: aid add codex --from-bundle.
           $targetDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
-          $out2 = node $aidJs.FullName add codex --from-bundle $tarball --target $targetDir.FullName 2>&1
+          $out2 = & $aidCmd.FullName add codex --from-bundle $tarball --target $targetDir.FullName 2>&1
           if ($LASTEXITCODE -ne 0) {
               Write-Error "aid add codex: expected exit 0, got $LASTEXITCODE`nOutput: $out2"
               exit 1
@@ -184,3 +187,98 @@ jobs:
           }
           Write-Host "aid add codex: .codex/ created (PASS)"
           Write-Host "npm channel Windows smoke: all checks passed."
+
+      - name: PyPI channel Windows smoke (build + pipx install + aid status/add)
+        if: matrix.mode == 'native-ps1'
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+
+          $repoRoot    = (Get-Location).Path
+          $pkgDir      = Join-Path $repoRoot 'packages' 'pypi'
+          $profilesDir = Join-Path $repoRoot 'profiles'
+          $version     = (Get-Content -LiteralPath (Join-Path $repoRoot 'VERSION') -Raw).Trim()
+
+          # Vendor the 6 aid-cli files into the package directory.
+          python (Join-Path $pkgDir 'scripts' 'vendor.py')
+
+          # Install build tools.
+          python -m pip install --quiet build pipx
+
+          # Build the wheel.
+          $distDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          python -m build --wheel --outdir $distDir.FullName $pkgDir
+          $whl = Get-ChildItem -Path $distDir.FullName -Filter '*.whl' | Select-Object -First 1
+          if (-not $whl) { Write-Error 'python -m build produced no .whl'; exit 1 }
+          Write-Host "Built: $($whl.Name)"
+
+          # pipx install into isolated venv.
+          $pipxHome   = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          $pipxBinDir = Join-Path $pipxHome.FullName 'bin'
+          New-Item -ItemType Directory -Path $pipxBinDir -Force | Out-Null
+          $env:PIPX_HOME    = $pipxHome.FullName
+          $env:PIPX_BIN_DIR = $pipxBinDir
+          python -m pipx install $whl.FullName
+          $aidBin = Join-Path $pipxBinDir 'aid'
+          $aidBinExe = $aidBin + '.exe'
+          $aidEntry = $null
+          if (Test-Path $aidBin)    { $aidEntry = $aidBin }
+          elseif (Test-Path $aidBinExe) { $aidEntry = $aidBinExe }
+          if (-not $aidEntry) {
+              $found = Get-ChildItem -Recurse -Path $pipxHome.FullName -Filter 'aid*' `
+                       -ErrorAction SilentlyContinue |
+                       Where-Object { -not $_.PSIsContainer -and $_.Name -notmatch '__main__' } |
+                       Select-Object -First 1
+              if ($found) { $aidEntry = $found.FullName }
+          }
+          if (-not $aidEntry) { Write-Error "installed aid not found under $($pipxHome.FullName)"; exit 1 }
+          Write-Host "Installed aid at: $aidEntry"
+
+          # Set up a minimal AID_HOME from repo source.
+          $aidHome2 = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          New-Item -ItemType Directory -Path (Join-Path $aidHome2.FullName 'bin') | Out-Null
+          New-Item -ItemType Directory -Path (Join-Path $aidHome2.FullName 'lib') | Out-Null
+          Copy-Item (Join-Path $repoRoot 'bin' 'aid.ps1') (Join-Path $aidHome2.FullName 'bin' 'aid.ps1')
+          Copy-Item (Join-Path $repoRoot 'lib' 'AidInstallCore.psm1') (Join-Path $aidHome2.FullName 'lib' 'AidInstallCore.psm1')
+          Set-Content -LiteralPath (Join-Path $aidHome2.FullName 'VERSION') -Value $version -Encoding utf8
+          $env:AID_HOME = $aidHome2.FullName
+          $env:AID_NO_UPDATE_CHECK = '1'
+
+          # Smoke: aid status in empty dir -> exit 7.
+          $emptyDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          $out = & $aidEntry status --target $emptyDir.FullName 2>&1
+          if ($LASTEXITCODE -ne 7) {
+              Write-Error "aid status empty dir: expected exit 7, got $LASTEXITCODE`nOutput: $out"
+              exit 1
+          }
+          Write-Host "aid status empty dir: exit 7 (PASS)"
+
+          # Smoke: build codex fixture tarball.
+          $fixtureDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          $profileDir = Join-Path $profilesDir 'codex'
+          $tarball    = Join-Path $fixtureDir.FullName "aid-codex-v$version.tar.gz"
+          $filelist   = [System.IO.Path]::GetTempFileName()
+          Get-ChildItem -Recurse -File -LiteralPath $profileDir |
+              Where-Object { $_.Name -notin @('README.md', 'emission-manifest.jsonl') } |
+              ForEach-Object { "./$($_.FullName.Substring($profileDir.Length + 1).Replace('\','/'))" } |
+              Set-Content $filelist -Encoding utf8
+          Push-Location $profileDir
+          tar -czf $tarball --no-recursion -T $filelist
+          Pop-Location
+          Remove-Item $filelist -ErrorAction SilentlyContinue
+
+          # Smoke: aid add codex --from-bundle.
+          $targetDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          $out2 = & $aidEntry add codex --from-bundle $tarball --target $targetDir.FullName 2>&1
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "aid add codex: expected exit 0, got $LASTEXITCODE`nOutput: $out2"
+              exit 1
+          }
+          $codexDir = Join-Path $targetDir.FullName '.codex'
+          if (-not (Test-Path $codexDir -PathType Container)) {
+              Write-Error "aid add codex: .codex/ not created under $($targetDir.FullName)"
+              exit 1
+          }
+          Write-Host "aid add codex: .codex/ created (PASS)"
+          Write-Host "PyPI channel Windows smoke: all checks passed."

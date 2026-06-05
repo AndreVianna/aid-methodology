@@ -23,6 +23,10 @@ packages/npm/bin/aid.cmd
 packages/npm/lib/
 packages/npm/VERSION
 
+# PyPI package vendored copies (generated at build time by scripts/vendor.py; not committed)
+packages/pypi/aid_installer/_vendor/
+packages/pypi/dist/
+
 # Logs and temp
 *.log
 *.tmp

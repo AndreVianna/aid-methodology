@@ -32,6 +32,8 @@ SHIPPED_SCRIPTS=(
     "install.ps1"
     "packages/npm/bin/aid.js"
     "packages/npm/scripts/vendor.js"
+    "packages/pypi/aid_installer/__main__.py"
+    "packages/pypi/scripts/vendor.py"
 )
 
 echo "=== ASCII-only guard ==="
