@@ -82,8 +82,8 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
 | delivery-001 | Done — live-verified Linux(zsh)+Windows(pwsh 7.6.2), CI-green both OS, v0.7.5 | 001–010 + 020–030 | Persistent `aid` CLI; foundation installer; closed by user after cross-platform live verification |
-| delivery-002 | Detailed (A+) | 011–012 (2) | npm channel; depends on d-001; Must |
-| delivery-003 | Detailed (A+) | 013–015 (3) | PyPI channel; depends on d-001; CasuloAI org blocker; Must |
+| delivery-002 | Ready (CLI-adapted) | 031–035 + 042 | npm: `npm i -g @aid/installer` -> `aid` on PATH (shim spawns vendored CLI); depends d-001; Must |
+| delivery-003 | Ready (CLI-adapted) | 036–041 | PyPI: `pipx install aid-installer` -> `aid` on PATH; depends d-001; CasuloAI org blocker; Must |
 | delivery-004 | Detailed (A+) | 016–017 (2) | CI release automation; depends on d-001/002/003; Should |
 | delivery-005 | Detailed (A+) | 018–019 (2) | Invariant AGENTS.md; independent; sequence early; Should |
 
@@ -104,11 +104,11 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 008 | Remove `setup.sh`/`setup.ps1` + update all references | REFACTOR | d1·W4 | Done | — | — | delivery-001; deps 004,006 |
 | 009 | Install/update/uninstall flow docs + first-release runbook | DOCUMENT | d1·W5 | Done | — | — | delivery-001; deps 006,008 |
 | 010 | First manual release dry-run + d-001 e2e validation | TEST | d1·W5 | Done | — | — | delivery-001; deps 001,007 |
-| 011 | npm wrapper `@aid/installer` (vendor-and-spawn) | IMPLEMENT | d2·W1 | Pending | — | — | delivery-002; deps 003,005 |
-| 012 | npm wrapper test suite + packaging smoke | TEST | d2·W2 | Pending | — | — | delivery-002; deps 011 |
-| 013 | PyPI wrapper `aid-installer` (vendor-and-spawn) | IMPLEMENT | d3·W1 | Pending | — | — | delivery-003; deps 003,005 |
-| 014 | PyPI wrapper test suite + vendored-payload parity | TEST | d3·W2 | Pending | — | — | delivery-003; deps 013 |
-| 015 | PyPI org registration prereq + publish runbook | DOCUMENT | d3·W3 | Pending | — | — | delivery-003; deps 014; external blocker |
+| 011 | npm wrapper `@aid/installer` (vendor-and-spawn) | IMPLEMENT | d2·W1 | Superseded | — | — | delivery-002; deps 003,005 |
+| 012 | npm wrapper test suite + packaging smoke | TEST | d2·W2 | Superseded | — | — | delivery-002; deps 011 |
+| 013 | PyPI wrapper `aid-installer` (vendor-and-spawn) | IMPLEMENT | d3·W1 | Superseded | — | — | delivery-003; deps 003,005 |
+| 014 | PyPI wrapper test suite + vendored-payload parity | TEST | d3·W2 | Superseded | — | — | delivery-003; deps 013 |
+| 015 | PyPI org registration prereq + publish runbook | DOCUMENT | d3·W3 | Superseded | — | — | delivery-003; deps 014; external blocker |
 | 016 | One-tag release workflow `release.yml` + version-sync gate | IMPLEMENT | d4·W1 | Pending | — | — | delivery-004; deps 001,011,013 |
 | 017 | Version-sync unit test + workflow validation | TEST | d4·W2 | Pending | — | — | delivery-004; deps 016 |
 | 018 | Normalize root `AGENTS.md` byte-invariant ×4 | IMPLEMENT | d5·W1 | Pending | — | — | delivery-005; deps —; independent/early |
@@ -126,6 +126,19 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 030 | Docs — `aid` CLI usage + 003/004 ripple note; update `docs/install.md` | DOCUMENT | d1·W8 | Done | — | — | delivery-001 CLI; amends 009; deps 023,026 |
 
 > **Amended (reopened) delivery-001 tasks:** 003 → 022 (Bash bootstrap gains CLI/global-install scope), 005 → 024/026 (PS bootstrap), 007 → 029 (e2e), 009 → 030 (docs). These were "Done — gate A"; reopening is the consequence of the user-approved CLI direction folded into delivery-001. Tests (027–029) run at the END per the user's testing cadence. Final delivery-gate re-run before push.
+
+| 031 | npm shim `bin/aid.js` (runtime select + argv passthrough + exit relay + AID_INSTALL_CHANNEL=npm) | IMPLEMENT | d2·W1 | Pending | — | — | delivery-002; deps 042; CLI-adapted |
+| 032 | `package.json` (bin:{aid}, files allowlist, 0 deps) + prepack vendoring of the 6 aid-cli files | IMPLEMENT | d2·W1 | Pending | — | — | delivery-002; deps 031 |
+| 033 | npm wrapper test suite (NM01–NM09) | TEST | d2·W2 | Pending | — | — | delivery-002; deps 031,032; CI bash-harness |
+| 034 | npm pack + global-install smoke (NM10) | TEST | d2·W2 | Pending | — | — | delivery-002; deps 032; installer-tests.yml matrix |
+| 035 | npm channel docs (README + docs/install.md) | DOCUMENT | d2·W3 | Pending | — | — | delivery-002; deps 033,034 |
+| 036 | PyPI shim `aid_installer/__main__.py` (parity w/031; AID_INSTALL_CHANNEL=pypi) | IMPLEMENT | d3·W1 | Pending | — | — | delivery-003; deps 042 |
+| 037 | `pyproject.toml` (scripts:aid, hatchling, _vendor) + build-time vendoring | IMPLEMENT | d3·W1 | Pending | — | — | delivery-003; deps 036 |
+| 038 | PyPI wrapper test suite (PW01–05,07,08) | TEST | d3·W2 | Pending | — | — | delivery-003; deps 036,037; CI bash-harness |
+| 039 | PyPI build + pipx-install smoke (PW06) | TEST | d3·W2 | Pending | — | — | delivery-003; deps 037; installer-tests.yml matrix |
+| 040 | CasuloAI Labs PyPI org registration prereq + publish runbook | DOCUMENT | d3·W3 | Pending | — | — | delivery-003; deps 039; external blocker |
+| 041 | PyPI channel docs (README + docs/install.md) | DOCUMENT | d3·W3 | Pending | — | — | delivery-003; deps 038,039 |
+| 042 | Shared: AID_INSTALL_CHANNEL guard in update-self (bin/aid + bin/aid.ps1) + update notice | IMPLEMENT | d2·W0 | Pending | — | — | delivery-002/003; deps —; additive to d-001 |
 
 ## Deploy Status
 
