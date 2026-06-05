@@ -724,6 +724,13 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
     fi
     [[ -f "$_BOOTSTRAP_AID_PS1" ]] && cp "$_BOOTSTRAP_AID_PS1" "${_BOOTSTRAP_STAGE}/bin/aid.ps1"
     [[ -f "$_BOOTSTRAP_AID_CMD" ]] && cp "$_BOOTSTRAP_AID_CMD" "${_BOOTSTRAP_STAGE}/bin/aid.cmd"
+    # Pre-copy sanity: verify the source lib contains the required sentinel function.
+    # This catches a bad AID_LIB_PATH (empty file, truncated download, wrong file).
+    if ! grep -qF 'aid_status_body' "$_SOURCED_LIB_FILE" 2>/dev/null; then
+        echo "ERROR: install.sh: installer could not refresh the CLI core; the source lib at ${_SOURCED_LIB_FILE} does not contain the expected function 'aid_status_body'. Delete ${AID_HOME} and reinstall." >&2
+        exit 1
+    fi
+
     cp "$_SOURCED_LIB_FILE" "${_BOOTSTRAP_STAGE}/lib/aid-install-core.sh"
     printf '%s\n' "$_CLI_VERSION" > "${_BOOTSTRAP_STAGE}/VERSION"
 
@@ -740,9 +747,20 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
     cp "${_BOOTSTRAP_STAGE}/lib/aid-install-core.sh" "${local_lib_dir}/aid-install-core.sh"
     cp "${_BOOTSTRAP_STAGE}/VERSION" "${AID_HOME}/VERSION"
 
-    # Post-copy verify: assert the installed lib contains the expected sentinel.
-    if ! grep -qF 'aid_status_body' "${local_lib_dir}/aid-install-core.sh" 2>/dev/null; then
-        echo "ERROR: install.sh: installer could not refresh the CLI core at ${local_lib_dir}/aid-install-core.sh; the installed file does not contain the expected sentinel 'aid_status_body'. Delete ${AID_HOME} and reinstall." >&2
+    # Post-copy verify: sha256 of installed lib must match the source we copied from.
+    # A grep-based sentinel check (the previous approach) passes stale/partial files
+    # that contain the sentinel string in a comment earlier in the file.
+    _bs_src_sha=""
+    _bs_dest_sha=""
+    if command -v sha256sum >/dev/null 2>&1; then
+        _bs_src_sha="$(sha256sum "$_SOURCED_LIB_FILE" | awk '{print $1}')"
+        _bs_dest_sha="$(sha256sum "${local_lib_dir}/aid-install-core.sh" | awk '{print $1}')"
+    elif command -v shasum >/dev/null 2>&1; then
+        _bs_src_sha="$(shasum -a 256 "$_SOURCED_LIB_FILE" | awk '{print $1}')"
+        _bs_dest_sha="$(shasum -a 256 "${local_lib_dir}/aid-install-core.sh" | awk '{print $1}')"
+    fi
+    if [[ -z "$_bs_src_sha" || "$_bs_src_sha" != "$_bs_dest_sha" ]]; then
+        echo "ERROR: install.sh: installer could not refresh the CLI core at ${local_lib_dir}/aid-install-core.sh; sha256 mismatch between source and installed copy (source: ${_bs_src_sha}, installed: ${_bs_dest_sha}). Delete ${AID_HOME} and reinstall." >&2
         exit 1
     fi
 
@@ -909,11 +927,30 @@ if [[ "$_INSTALL_MODE" == "CONVENIENCE" ]]; then
         _conv_lib_src="$_SOURCED_LIB_FILE"
         [[ -n "$_CONV_CLI_BUNDLE_EXTRACT" && -f "${_CONV_CLI_BUNDLE_EXTRACT}/lib/aid-install-core.sh" ]] && \
             _conv_lib_src="${_CONV_CLI_BUNDLE_EXTRACT}/lib/aid-install-core.sh"
+
+        # Pre-copy sanity: verify the source lib contains the required sentinel function.
+        # This catches a bad AID_LIB_PATH (empty file, truncated download, wrong file).
+        if ! grep -qF 'aid_status_body' "$_conv_lib_src" 2>/dev/null; then
+            echo "ERROR: install.sh: installer could not refresh the CLI core; the source lib at ${_conv_lib_src} does not contain the expected function 'aid_status_body'. Delete ${AID_HOME} and reinstall." >&2
+            exit 1
+        fi
+
         cp "$_conv_lib_src" "${AID_HOME}/lib/aid-install-core.sh"
 
-        # Post-copy verify: assert the installed lib contains the expected sentinel.
-        if ! grep -qF 'aid_status_body' "${AID_HOME}/lib/aid-install-core.sh" 2>/dev/null; then
-            echo "ERROR: install.sh: installer could not refresh the CLI core at ${AID_HOME}/lib/aid-install-core.sh; the installed file does not contain the expected sentinel 'aid_status_body'. Delete ${AID_HOME} and reinstall." >&2
+        # Post-copy verify: sha256 of installed lib must match the source we copied from.
+        # A grep-based sentinel check (the previous approach) passes stale/partial files
+        # that contain the sentinel string in a comment earlier in the file.
+        _cv_src_sha=""
+        _cv_dest_sha=""
+        if command -v sha256sum >/dev/null 2>&1; then
+            _cv_src_sha="$(sha256sum "$_conv_lib_src" | awk '{print $1}')"
+            _cv_dest_sha="$(sha256sum "${AID_HOME}/lib/aid-install-core.sh" | awk '{print $1}')"
+        elif command -v shasum >/dev/null 2>&1; then
+            _cv_src_sha="$(shasum -a 256 "$_conv_lib_src" | awk '{print $1}')"
+            _cv_dest_sha="$(shasum -a 256 "${AID_HOME}/lib/aid-install-core.sh" | awk '{print $1}')"
+        fi
+        if [[ -z "$_cv_src_sha" || "$_cv_src_sha" != "$_cv_dest_sha" ]]; then
+            echo "ERROR: install.sh: installer could not refresh the CLI core at ${AID_HOME}/lib/aid-install-core.sh; sha256 mismatch between source and installed copy (source: ${_cv_src_sha}, installed: ${_cv_dest_sha}). Delete ${AID_HOME} and reinstall." >&2
             exit 1
         fi
 

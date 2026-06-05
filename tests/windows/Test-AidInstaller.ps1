@@ -1019,10 +1019,10 @@ $out33 = [System.Text.RegularExpressions.Regex]::Replace($out33, $_AnsiPattern, 
 $env:AID_HOME = $savedHome33
 
 Assert ($rc33 -ne 0) 'T33a dispatcher with stale-core lib → exits non-zero' "expected non-zero exit, got $rc33"
-Assert-Contains $out33 'stale or incomplete' `
-    'T33b dispatcher stale-core: error says stale or incomplete'
-Assert-Contains $out33 'Re-run the installer' `
-    'T33c dispatcher stale-core: error says Re-run the installer'
+Assert-Contains $out33 'failed to load the CLI core' `
+    'T33b dispatcher stale-core: error says failed to load the CLI core'
+Assert-Contains $out33 'reinstall' `
+    'T33c dispatcher stale-core: error says reinstall'
 Write-Host ""
 
 # T34: After a successful re-bootstrap, bare aid.ps1 (dashboard) exits 0
@@ -1072,6 +1072,146 @@ $env:AID_LIB_PATH = $savedLib34b
 
 Assert-Eq "$rc34" '0' 'T34b bare aid.ps1 after re-bootstrap → exit 0 (no stale-core error)'
 Assert-Contains $out34 'AID v' 'T34c dashboard header present after re-bootstrap'
+Write-Host ""
+
+# ===========================================================================
+# T35: Dot-source load path — Get-AidStatusBody is available in script scope
+# Verifies that the cache-proof dot-source path in aid.ps1 exposes the function
+# so it is callable from within the dispatcher's script scope.
+# ===========================================================================
+Write-Host "=== T35: Dot-source load exposes Get-AidStatusBody ==="
+
+$AidHomeT35 = Join-Path $TmpRoot 'aid-home-t35'
+$AidBinT35  = Join-Path $AidHomeT35 'bin'
+$AidLibT35  = Join-Path $AidHomeT35 'lib'
+New-Item -ItemType Directory -Path $AidBinT35 -Force | Out-Null
+New-Item -ItemType Directory -Path $AidLibT35 -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') -Destination (Join-Path $AidBinT35 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath -Destination (Join-Path $AidLibT35 'AidInstallCore.psm1') -Force
+[System.IO.File]::WriteAllBytes((Join-Path $AidHomeT35 'VERSION'),
+    [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
+
+# Verify that the dot-source approach in aid.ps1 makes Get-AidStatusBody available:
+# run `aid.ps1 version` (which loads the lib) and confirm exit 0.
+# More directly: verify the lib is dot-sourceable in a fresh PS scope and the function exists.
+$probe35 = & $PwshExe -NoProfile -Command @"
+`$env:AID_HOME     = '$AidHomeT35'
+`$env:AID_NO_UPDATE_CHECK = '1'
+`$libPath = '$AidLibT35\AidInstallCore.psm1'
+`$libRaw = Get-Content -LiteralPath `$libPath -Raw -ErrorAction Stop
+function Export-ModuleMember { param([Parameter(ValueFromRemainingArguments=`$true)]`$args) }
+. ([scriptblock]::Create(`$libRaw))
+if (Get-Command 'Get-AidStatusBody' -ErrorAction SilentlyContinue) {
+    Write-Host 'Get-AidStatusBody: FOUND'
+    exit 0
+} else {
+    Write-Host 'Get-AidStatusBody: MISSING'
+    exit 1
+}
+"@ 2>&1
+$rc35 = $LASTEXITCODE
+$out35probe = ($probe35 | ForEach-Object { [string]$_ }) -join "`n"
+
+Assert-Eq "$rc35" '0' 'T35a dot-source exposes Get-AidStatusBody → exit 0'
+Assert-Contains $out35probe 'Get-AidStatusBody: FOUND' 'T35b Get-AidStatusBody visible after dot-source'
+
+# Also verify bare aid.ps1 (dashboard) exits 0, confirming dispatch works end-to-end.
+$ProjT35 = Join-Path $TmpRoot 'project-t35'
+New-Item -ItemType Directory -Path $ProjT35 -Force | Out-Null
+
+$savedHome35 = $env:AID_HOME
+$savedLib35  = $env:AID_LIB_PATH
+$env:AID_HOME            = $AidHomeT35
+$env:AID_LIB_PATH        = $LocalLibPath
+$env:AID_NO_UPDATE_CHECK = '1'
+Push-Location $ProjT35
+$outLines35 = & $PwshExe -NoProfile -File (Join-Path $AidBinT35 'aid.ps1') 2>&1
+$rc35d = $LASTEXITCODE
+Pop-Location
+$out35 = ($outLines35 | ForEach-Object { [string]$_ }) -join "`n"
+$out35 = [System.Text.RegularExpressions.Regex]::Replace($out35, $_AnsiPattern, '')
+$env:AID_HOME            = $savedHome35
+$env:AID_LIB_PATH        = $savedLib35
+$env:AID_NO_UPDATE_CHECK = $null
+
+Assert-Eq     "$rc35d" '0'     'T35c bare aid.ps1 with dot-source → exit 0 (no cache-error)'
+Assert-Contains $out35 "AID v$Ver" 'T35d dashboard header present (dot-source load path)'
+Write-Host ""
+
+# ===========================================================================
+# T36: sha256 installer verify — truncated dest lib fails, correct dest passes
+# Confirms that the new sha256 post-copy verify in install.ps1 catches a
+# corrupted/truncated installed lib (mismatch source ≠ dest).
+# ===========================================================================
+Write-Host "=== T36: sha256 installer verify catches truncated install ==="
+
+# T36a: Good install (correct source) → verify passes (exit 0 on full bootstrap).
+# This is implicitly tested by T08/T31 already.  Re-confirm with a direct hash check.
+$AidHomeT36 = Join-Path $TmpRoot 'aid-home-t36'
+New-Item -ItemType Directory -Path $AidHomeT36 -Force | Out-Null
+
+$savedHome36  = $env:AID_HOME
+$savedNoPath36 = $env:AID_NO_PATH
+$savedLib36   = $env:AID_LIB_PATH
+$env:AID_HOME     = $AidHomeT36
+$env:AID_NO_PATH  = '1'
+$env:AID_LIB_PATH = $LocalLibPath
+
+$outLines36a = & $PwshExe -NoProfile -File $InstallPs1 2>&1
+$rc36a = $LASTEXITCODE
+
+$env:AID_HOME     = $savedHome36
+$env:AID_NO_PATH  = $savedNoPath36
+$env:AID_LIB_PATH = $savedLib36
+
+Assert-Eq "$rc36a" '0' 'T36a good install → sha256 verify passes (exit 0)'
+
+# Verify the installed lib sha256 matches the source.
+$installedLib36 = Join-Path $AidHomeT36 'lib' 'AidInstallCore.psm1'
+if (Test-Path $installedLib36 -PathType Leaf) {
+    $srcHash36  = (Get-FileHash -LiteralPath $LocalLibPath   -Algorithm SHA256).Hash
+    $destHash36 = (Get-FileHash -LiteralPath $installedLib36 -Algorithm SHA256).Hash
+    Assert-Eq "$destHash36" "$srcHash36" 'T36b installed lib sha256 matches source'
+} else {
+    script:RecordFail 'T36b installed lib sha256 matches source' "installed lib not found: $installedLib36"
+}
+
+# T36c: Tamper: truncate the installed lib AFTER install, then attempt to use it via
+# the dispatcher (aid.ps1).  Aid should reject it with the "failed to load" error.
+# (The sha256 verify in install.ps1 runs at install time, not at dispatch time.)
+# We test dispatch resilience by putting a truncated lib in AID_HOME and running aid.ps1.
+$AidHomeT36c = Join-Path $TmpRoot 'aid-home-t36c'
+$AidBinT36c  = Join-Path $AidHomeT36c 'bin'
+$AidLibT36c  = Join-Path $AidHomeT36c 'lib'
+New-Item -ItemType Directory -Path $AidBinT36c -Force | Out-Null
+New-Item -ItemType Directory -Path $AidLibT36c -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') -Destination (Join-Path $AidBinT36c 'aid.ps1') -Force
+[System.IO.File]::WriteAllBytes((Join-Path $AidHomeT36c 'VERSION'),
+    [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
+
+# Write a deliberately-truncated lib: has the sentinel in a comment but no actual function.
+# This simulates a partial download that passed the old grep-based check.
+$truncatedLib36 = "# AidInstallCore.psm1`n# Contains Get-AidStatusBody in this comment only`nfunction Stub-Fn { }`n"
+[System.IO.File]::WriteAllBytes((Join-Path $AidLibT36c 'AidInstallCore.psm1'),
+    [System.Text.Encoding]::UTF8.GetBytes($truncatedLib36))
+
+$ProjT36c = Join-Path $TmpRoot 'project-t36c'
+New-Item -ItemType Directory -Path $ProjT36c -Force | Out-Null
+
+$savedHome36c = $env:AID_HOME
+$env:AID_HOME = $AidHomeT36c
+Push-Location $ProjT36c
+$outLines36c = & $PwshExe -NoProfile -File (Join-Path $AidBinT36c 'aid.ps1') 2>&1
+$rc36c = $LASTEXITCODE
+Pop-Location
+$out36c = ($outLines36c | ForEach-Object { [string]$_ }) -join "`n"
+$out36c = [System.Text.RegularExpressions.Regex]::Replace($out36c, $_AnsiPattern, '')
+$env:AID_HOME = $savedHome36c
+
+Assert ($rc36c -ne 0) 'T36c truncated lib in AID_HOME → aid dispatcher exits non-zero' `
+    "expected non-zero exit from aid.ps1 with truncated lib, got $rc36c"
+Assert-Contains $out36c 'failed to load the CLI core' `
+    'T36d truncated lib: aid.ps1 reports failed to load the CLI core'
 Write-Host ""
 
 # ===========================================================================

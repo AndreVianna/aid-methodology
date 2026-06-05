@@ -75,12 +75,25 @@ if (-not (Test-Path $script:_CoreModule -PathType Leaf)) {
     [Console]::Error.WriteLine("ERROR: aid: install core not found at $($script:_CoreModule). Re-run the AID bootstrap to repair.")
     script:Exit-Aid 1
 }
-Import-Module $script:_CoreModule -Force -DisableNameChecking -ErrorAction Stop
+# Load the core lib by dot-sourcing its content (NOT Import-Module — avoids PowerShell's
+# module-analysis cache, which can serve a stale exported-command list across upgrades).
+# Export-ModuleMember is a module-only cmdlet; shadow it with a local no-op so the lib's
+# trailing Export-ModuleMember call is harmless when dot-sourced.
+$_aidLibRaw = $null
+try {
+    $_aidLibRaw = Get-Content -LiteralPath $script:_CoreModule -Raw -ErrorAction Stop
+} catch {
+    [Console]::Error.WriteLine("ERROR: aid: failed to read the CLI core from $($script:_CoreModule): $_")
+    script:Exit-Aid 1
+}
+function Export-ModuleMember { param([Parameter(ValueFromRemainingArguments=$true)]$args) }
+. ([scriptblock]::Create($_aidLibRaw))
 
-# Defensive guard: verify the required core function was exported by the loaded module.
-# This catches an upgrade that left a stale AidInstallCore.psm1 (missing new exports).
+# Defensive guard: verify the required core function was loaded via dot-source.
+# If Get-AidStatusBody is still absent after dot-sourcing, the lib is genuinely
+# broken or incomplete (not a cache issue — the file itself is the problem).
 if (-not (Get-Command 'Get-AidStatusBody' -ErrorAction SilentlyContinue)) {
-    [Console]::Error.WriteLine("ERROR: aid: CLI core is stale or incomplete at $($script:_CoreModule). Re-run the installer (or 'aid update self').")
+    [Console]::Error.WriteLine("ERROR: aid: failed to load the CLI core from $($script:_CoreModule). The file may be incomplete — reinstall with: irm $($script:_AidInstallUrl) | iex")
     script:Exit-Aid 1
 }
 

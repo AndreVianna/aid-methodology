@@ -708,6 +708,13 @@ if ($script:_InstallMode -eq 'BOOTSTRAP') {
         }
     }
 
+    # Pre-copy sanity: verify the source lib contains the required sentinel function.
+    # This catches a bad AID_LIB_PATH (empty file, truncated download, wrong file).
+    $bsLibSrcContent = Get-Content -LiteralPath $bsLibSrc -Raw -ErrorAction SilentlyContinue
+    if (-not ($bsLibSrcContent -match 'Get-AidStatusBody')) {
+        script:Fail "installer could not refresh the CLI core at ${bsLibDest}; the source lib at ${bsLibSrc} does not contain the expected function 'Get-AidStatusBody'. Close any running 'aid' or PowerShell using it and re-run, or delete ${aidHome} and reinstall." 1
+    }
+
     # Write lib via temp file then rename-replace (avoids PS module-lock issues on upgrades).
     $bsLibDest = Join-Path $bsLibDir 'AidInstallCore.psm1'
     $bsLibTmp  = Join-Path $bsLibDir ('AidInstallCore.psm1.install-tmp-' + [System.IO.Path]::GetRandomFileName())
@@ -721,10 +728,13 @@ if ($script:_InstallMode -eq 'BOOTSTRAP') {
         script:Fail "installer could not refresh the CLI core at ${bsLibDest}; close any running 'aid' or PowerShell using it and re-run, or delete ${aidHome} and reinstall. Detail: $_" 1
     }
 
-    # Post-copy verify: assert the installed lib contains the expected sentinel.
-    $bsInstalledLibContent = Get-Content -LiteralPath $bsLibDest -Raw -ErrorAction SilentlyContinue
-    if (-not ($bsInstalledLibContent -match 'Get-AidStatusBody')) {
-        script:Fail "installer could not refresh the CLI core at ${bsLibDest}; the installed file does not contain the expected sentinel 'Get-AidStatusBody'. Close any running 'aid' or PowerShell using it and re-run, or delete ${aidHome} and reinstall." 1
+    # Post-copy verify: sha256 of installed lib must match the source we copied from.
+    # A string-grep (the previous approach) passes stale/partial files that contain the
+    # sentinel in a comment earlier in the file.  Hash comparison is exact.
+    $bsSrcHash  = (Get-FileHash -LiteralPath $bsLibSrc  -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash
+    $bsDestHash = (Get-FileHash -LiteralPath $bsLibDest -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash
+    if ($bsSrcHash -ne $bsDestHash -or -not $bsSrcHash) {
+        script:Fail "installer could not refresh the CLI core at ${bsLibDest}; sha256 mismatch between source and installed copy (source: $bsSrcHash, installed: $bsDestHash). Close any running 'aid' or PowerShell using it and re-run, or delete ${aidHome} and reinstall." 1
     }
 
     $bsBytes = [System.Text.Encoding]::UTF8.GetBytes("$bsCliVersion`n")
@@ -881,8 +891,15 @@ if ($script:_InstallMode -eq 'CONVENIENCE') {
             }
         }
 
-        # Write lib via temp file then rename-replace (avoids PS module-lock issues on upgrades).
+        # Pre-copy sanity: verify the source lib contains the required sentinel function.
+        # This catches a bad AID_LIB_PATH (empty file, truncated download, wrong file).
         $convLibDest = Join-Path $convLibDir 'AidInstallCore.psm1'
+        $convLibSrcContent = Get-Content -LiteralPath $convLibSrc -Raw -ErrorAction SilentlyContinue
+        if (-not ($convLibSrcContent -match 'Get-AidStatusBody')) {
+            script:Fail "installer could not refresh the CLI core at ${convLibDest}; the source lib at ${convLibSrc} does not contain the expected function 'Get-AidStatusBody'. Close any running 'aid' or PowerShell using it and re-run, or delete ${aidHome} and reinstall." 1
+        }
+
+        # Write lib via temp file then rename-replace (avoids PS module-lock issues on upgrades).
         $convLibTmp  = Join-Path $convLibDir ('AidInstallCore.psm1.install-tmp-' + [System.IO.Path]::GetRandomFileName())
         try {
             Copy-Item -LiteralPath $convLibSrc -Destination $convLibTmp -Force -ErrorAction Stop
@@ -894,10 +911,13 @@ if ($script:_InstallMode -eq 'CONVENIENCE') {
             script:Fail "installer could not refresh the CLI core at ${convLibDest}; close any running 'aid' or PowerShell using it and re-run, or delete ${aidHome} and reinstall. Detail: $_" 1
         }
 
-        # Post-copy verify: assert the installed lib contains the expected sentinel.
-        $convInstalledLibContent = Get-Content -LiteralPath $convLibDest -Raw -ErrorAction SilentlyContinue
-        if (-not ($convInstalledLibContent -match 'Get-AidStatusBody')) {
-            script:Fail "installer could not refresh the CLI core at ${convLibDest}; the installed file does not contain the expected sentinel 'Get-AidStatusBody'. Close any running 'aid' or PowerShell using it and re-run, or delete ${aidHome} and reinstall." 1
+        # Post-copy verify: sha256 of installed lib must match the source we copied from.
+        # A string-grep (the previous approach) passes stale/partial files that contain the
+        # sentinel in a comment earlier in the file.  Hash comparison is exact.
+        $convSrcHash  = (Get-FileHash -LiteralPath $convLibSrc  -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash
+        $convDestHash = (Get-FileHash -LiteralPath $convLibDest -Algorithm SHA256 -ErrorAction SilentlyContinue).Hash
+        if ($convSrcHash -ne $convDestHash -or -not $convSrcHash) {
+            script:Fail "installer could not refresh the CLI core at ${convLibDest}; sha256 mismatch between source and installed copy (source: $convSrcHash, installed: $convDestHash). Close any running 'aid' or PowerShell using it and re-run, or delete ${aidHome} and reinstall." 1
         }
 
         $convBytes = [System.Text.Encoding]::UTF8.GetBytes("$convCliVer`n")
