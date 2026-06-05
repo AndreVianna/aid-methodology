@@ -120,7 +120,9 @@ run_sh() {
 }
 
 run_ps1() {
-    PS1_OUT=$("$PWSH" -NoProfile -File "$SUT_PS1" "$@" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); PS1_RC=$?
+    # ISOLATION: unset AID_LIB_PATH so a parent-exported Bash .sh path does not bleed into
+    # install.ps1 which expects a .psm1 module.  PS1 finds its sibling lib/AidInstallCore.psm1.
+    PS1_OUT=$(env -u AID_LIB_PATH "$PWSH" -NoProfile -File "$SUT_PS1" "$@" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); PS1_RC=$?
 }
 
 # Verbose runners (for tests that check per-file lines).
@@ -129,7 +131,8 @@ run_sh_verbose() {
 }
 
 run_ps1_verbose() {
-    PS1_OUT=$("$PWSH" -NoProfile -File "$SUT_PS1" -Verbose "$@" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); PS1_RC=$?
+    # ISOLATION: same AID_LIB_PATH guard as run_ps1.
+    PS1_OUT=$(env -u AID_LIB_PATH "$PWSH" -NoProfile -File "$SUT_PS1" -Verbose "$@" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); PS1_RC=$?
 }
 
 # ---------------------------------------------------------------------------

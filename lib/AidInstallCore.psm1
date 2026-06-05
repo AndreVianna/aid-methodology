@@ -1129,6 +1129,123 @@ function Uninstall-AidTool {
     return 0
 }
 
+# ---------------------------------------------------------------------------
+# CLI status helpers (additive — used by bin/aid.ps1 dispatcher)
+# ---------------------------------------------------------------------------
+
+# Get-ManifestToolList <manifestPath>
+# Enumerates tools.<id> keys from the manifest.
+# Returns a list of [PSCustomObject]@{Id=; Version=; RootAgent=; RootStatus=} objects.
+# Returns an empty list when the manifest is absent.
+function Get-ManifestToolList {
+    param([string]$ManifestPath)
+    $result = [System.Collections.Generic.List[psobject]]::new()
+    if (-not (Test-Path $ManifestPath -PathType Leaf)) { return $result }
+    try {
+        $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+        if (-not $data.tools) { return $result }
+        $data.tools.PSObject.Properties | ForEach-Object {
+            $tid = $_.Name
+            $t   = $_.Value
+            $ver = if ($t.version) { $t.version } else { '' }
+            # Determine root agent file for this tool.
+            $rootAgent = switch ($tid) {
+                'claude-code' { 'CLAUDE.md' }
+                default       { 'AGENTS.md' }
+            }
+            # Read root agent status from manifest.
+            $rootStatus = ''
+            if ($t.root_agent_files) {
+                foreach ($entry in $t.root_agent_files) {
+                    if ($entry.path -eq $rootAgent) {
+                        $rootStatus = if ($entry.PSObject.Properties['status']) { $entry.status } else { 'owned' }
+                        break
+                    }
+                }
+            }
+            $result.Add([PSCustomObject]@{
+                Id         = $tid
+                Version    = $ver
+                RootAgent  = $rootAgent
+                RootStatus = $rootStatus
+            })
+        }
+    } catch {}
+    return $result
+}
+
+# Get-AidStatus <target>
+# Renders the "aid status" output for the AID project rooted at <target>.
+# Output is byte-identical to the Bash aid_status function.
+# Returns:
+#   0 — manifest found; status printed to stdout.
+#   7 — no manifest in <target>; message printed + returns 7.
+function Get-AidStatus {
+    param([string]$Target = '.')
+
+    $resolvedTarget = (Resolve-Path $Target -ErrorAction SilentlyContinue)
+    if (-not $resolvedTarget) {
+        Write-Host "No AID install found in $Target. Run 'aid add <tool>' to install."
+        return 7
+    }
+    $targetPath = $resolvedTarget.Path
+
+    $manifest = Join-Path $targetPath (Join-Path '.aid' '.aid-manifest.json')
+
+    # Check if manifest exists and has manifest_version key.
+    $manifestOk = $false
+    if (Test-Path $manifest -PathType Leaf) {
+        try {
+            $raw = Get-Content -LiteralPath $manifest -Raw
+            if ($raw -match '"manifest_version"') {
+                $manifestOk = $true
+            }
+        } catch {}
+    }
+
+    if (-not $manifestOk) {
+        Write-Host "No AID install found in $targetPath. Run 'aid add <tool>' to install."
+        return 7
+    }
+
+    # Read aid_version from manifest.
+    $aidVersion = ''
+    try {
+        $data = Get-Content -LiteralPath $manifest -Raw | ConvertFrom-Json
+        if ($data.aid_version) { $aidVersion = $data.aid_version }
+    } catch {}
+
+    # Emit header line — byte-identical format to Bash:
+    # "AID <ver>  (project: <dir>)\nInstalled tools:\n"
+    Write-Host "AID $aidVersion  (project: $targetPath)"
+    Write-Host "Installed tools:"
+
+    $tools = Get-ManifestToolList -ManifestPath $manifest
+    foreach ($tool in $tools) {
+        $ver        = $tool.Version
+        $rootAgent  = $tool.RootAgent
+        $rootStatus = if ($tool.RootStatus) { $tool.RootStatus } else { 'owned' }
+
+        # Pad tool id to 14 chars for alignment (matches Bash `printf '  %-14s v%s'`).
+        $paddedId = $tool.Id.PadRight(14)
+        $line = "  $paddedId v$ver"
+        if ($rootAgent) {
+            $line = "$line   root: $rootAgent ($rootStatus)"
+        }
+        Write-Host $line
+
+        # --verbose: also show file count (AID_VERBOSE env var).
+        if ($env:AID_VERBOSE -eq '1') {
+            $paths = Read-ManifestToolPaths -ManifestPath $manifest -Tool $tool.Id
+            $count = $paths.Count
+            # Pad to match Bash: 17 spaces before "(<n> files installed)".
+            Write-Host "                 ($count files installed)"
+        }
+    }
+
+    return 0
+}
+
 # Export only public functions (not script-scoped helpers).
 Export-ModuleMember -Function @(
     'Get-Sha256File',
@@ -1149,5 +1266,7 @@ Export-ModuleMember -Function @(
     'Remove-ManifestTool',
     'Test-ManifestExists',
     'Uninstall-AidTool',
-    'Write-VersionMarker'
+    'Write-VersionMarker',
+    'Get-ManifestToolList',
+    'Get-AidStatus'
 )

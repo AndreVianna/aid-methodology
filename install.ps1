@@ -2,31 +2,44 @@
 # install.ps1 — AID installer bootstrap (PowerShell 5.1+).
 #
 # Purpose:
-#   Install, update, or uninstall the AID (AI-Driven Development) methodology
-#   files into a target repository.  Parses CLI params, imports the shared install
-#   core module (lib/AidInstallCore.psm1), then dispatches install/update/uninstall
-#   across the five canonical tool layouts.  Designed for non-interactive use
-#   (irm | iex, CI) — no interactive prompts.
+#   Bootstrap / install the persistent global `aid` CLI and (optionally) add
+#   an AID profile to the current project in a single command.  Also retains
+#   the legacy flag-style direct-install path for one release.
 #
-# Usage:
-#   .\install.ps1 [-Tool <name[,name...]>] [-Version <v>] [-FromBundle <path>]
+# Usage (new — preferred):
+#   .\install.ps1
+#       Install the global aid CLI into $AID_HOME (%LOCALAPPDATA%\aid by default)
+#       and wire PATH.  No project install — run 'aid add <tool>' afterwards.
+#
+#   .\install.ps1 <subcommand> [args]
+#       Bootstrap the CLI (if not already installed), then immediately run
+#       'aid <subcommand> [args]' in the current directory.
+#       Subcommands: status add remove update uninstall self-uninstall version help
+#       Examples:
+#         .\install.ps1 add codex -FromBundle .\aid-codex-v0.7.0.tar.gz
+#         .\install.ps1 status
+#
+#   .\install.ps1 -UninstallCli [-Force]
+#       Remove the global aid CLI (PATH wiring + $AID_HOME).  Fallback for
+#       when 'aid' is not yet on PATH.
+#
+# Usage (legacy — back-compat, hidden, retained for one release):
+#   .\install.ps1 [-Tool <name>[,...]] [-Version <v>] [-FromBundle <path>]
 #                 [-Force] [-Verbose] [-TargetDirectory <dir>]
-#       Install AID into the target directory (default: current directory).
+#       Direct project install (no global CLI install).  Identical to the
+#       pre-CLI-evolution behavior.  Triggers when -Tool is given or when
+#       -FromBundle / -TargetDirectory are given without a subcommand.
 #
-#   .\install.ps1 -Update [-Tool <name[,...]>] [-Version <v>] [-FromBundle <path>]
-#                 [-Force] [-Verbose] [-TargetDirectory <dir>]
-#       Re-install / update an existing AID installation to the given or latest version.
-#
-#   .\install.ps1 -Uninstall [-Tool <name[,...]>] [-Verbose] [-TargetDirectory <dir>]
-#       Remove AID-installed files (manifest-driven).
+#   .\install.ps1 -Update [...]
+#   .\install.ps1 -Uninstall [...]
+#       Legacy update/uninstall modes (flag style).
 #
 #   .\install.ps1 -Help
 #       Print this help and exit 0.
 #
 # Parameters:
 #   -Tool <name>[,...]     Host tool(s) to install.  Canonical ids: claude-code, codex,
-#                          cursor, copilot-cli, antigravity.  PascalCase aliases accepted:
-#                          ClaudeCode, Codex, Cursor, CopilotCli, Antigravity.
+#                          cursor, copilot-cli, antigravity.  PascalCase aliases accepted.
 #                          Comma-list installs multiple tools.  Omit to auto-detect from
 #                          target dir.
 #   -Version <v>           Pin to a specific release version (e.g. 0.7.0 or v0.7.0).
@@ -39,42 +52,27 @@
 #   -Update                Re-install over an existing AID setup (refresh to version/latest).
 #   -Uninstall             Manifest-driven removal.  -Tool limits to that tool; without it,
 #                          removes all installed tools.
+#   -UninstallCli          Remove the global aid CLI (PATH wiring + $AID_HOME).
 #   -TargetDirectory <dir> Install root (default: current directory).
+#   -NoPath                Skip PATH wiring during bootstrap (new mode only).
 #   -Help                  Print this help and exit 0.
 #
-# Environment variables (installer options — take effect when the explicit param is NOT given):
-#   AID_TOOL       — equivalent to -Tool <value>.  Accepts a comma-list.
-#                    Useful for piped invocations: $env:AID_TOOL='claude-code'; irm … | iex
-#                    Precedence: explicit -Tool > $env:AID_TOOL > auto-detect.
-#   AID_VERSION    — equivalent to -Version <value>.
-#                    Precedence: explicit -Version > $env:AID_VERSION > resolve latest.
-#   AID_TARGET     — equivalent to -TargetDirectory <dir>.
-#                    Precedence: explicit -TargetDirectory > $env:AID_TARGET > cwd.
+# Environment variables (installer options):
+#   AID_TOOL       — equivalent to -Tool.  Also triggers CONVENIENCE mode if set and no
+#                    legacy-project flags are present.
+#   AID_VERSION    — equivalent to -Version.
+#   AID_TARGET     — equivalent to -TargetDirectory.
 #   AID_FORCE      — set to '1' or 'true' to enable -Force.
-#                    Precedence: explicit -Force > $env:AID_FORCE.
-#   AID_VERBOSE    — set to '1' to enable -Verbose (per-file output).
-#                    Precedence: explicit -Verbose > $env:AID_VERBOSE.
+#   AID_VERBOSE    — set to '1' to enable -Verbose.
+#   AID_NO_PATH    — set to '1' to skip PATH wiring (same as -NoPath).
 #
-# Environment variables (bootstrap/lib fetch — existing):
-#   AID_LIB_PATH   — absolute path to AidInstallCore.psm1 to import directly (overrides
-#                    sibling detection and remote fetch; useful for tests and vendored use).
-#   AID_LIB_BASE   — base URL prefix for the remote module fetch when the lib is not beside
-#                    the script (piped/irm|iex case).  Defaults to the raw GitHub URL for
-#                    the resolved release tag.  When set, SHA256SUMS is fetched from the
-#                    parent directory of AID_LIB_BASE (one dir up from lib/).
-#   AID_SUMS_URL   — override URL for SHA256SUMS used during lib checksum verification.
-#                    Useful for tests.  When unset, derived from the release tag URL.
-#   AID_LIB_VERSION — pin the lib fetch to a specific release version (avoids API call).
-#   AID_INSECURE_SKIP_LIB_VERIFY — set to '1' to skip lib checksum verification for the
-#                    remote-fetch path.  INSECURE — for restricted test environments only.
-#                    Default is fail-closed: SHA256SUMS must be fetchable and the hash must
-#                    match.  Do not set in production.
-#
-# Trust model: irm|iex trusts the GitHub repo at the resolved pinned tag (fail-closed:
-#   SHA256SUMS must be fetchable and hash must match before the lib is imported; exit 3 if
-#   SHA256SUMS unreachable or entry missing; exit 4 on mismatch).  Offline -FromBundle
-#   installs remain the recommended verify-before-install path for air-gapped and
-#   high-security adopters.
+# Environment variables (bootstrap/lib fetch):
+#   AID_HOME       — override global install dir (default: %LOCALAPPDATA%\aid).
+#   AID_LIB_PATH   — absolute path to AidInstallCore.psm1 (test override or vendored).
+#   AID_LIB_BASE   — base URL prefix for remote module fetch.
+#   AID_SUMS_URL   — override URL for SHA256SUMS verification.
+#   AID_LIB_VERSION — pin the lib fetch to a specific release version.
+#   AID_INSECURE_SKIP_LIB_VERIFY — set to '1' to skip lib checksum (INSECURE).
 #
 # Exit codes:
 #   0   success
@@ -84,6 +82,7 @@
 #   4   checksum verification failed
 #   5   protect-on-diff blocked a root agent file (-Force was not given)
 #   6   uninstall with no manifest (nothing installed)
+#   7   aid status: no AID install in cwd
 
 [CmdletBinding()]
 param(
@@ -93,7 +92,9 @@ param(
     [switch]$Force,
     [switch]$Update,
     [switch]$Uninstall,
+    [switch]$UninstallCli,
     [string]$TargetDirectory  = '',
+    [switch]$NoPath,
     [switch]$Help,
     # Catch-all for unknown parameters: any unrecognised flag → exit 2 (usage error).
     [Parameter(ValueFromRemainingArguments)]
@@ -216,15 +217,6 @@ try {
 if ($Help) {
     Show-Usage
     script:Exit-Install 0
-}
-
-# ---------------------------------------------------------------------------
-# Unknown parameters → exit 2 (usage error, FR9 parity with bash exit 2).
-# ---------------------------------------------------------------------------
-if ($RemainingArgs -and $RemainingArgs.Count -gt 0) {
-    [Console]::Error.WriteLine("ERROR: install.ps1: unknown parameter: $($RemainingArgs[0])")
-    [Console]::Error.WriteLine("Run with -Help for usage information.")
-    script:Exit-Install 2
 }
 
 # ---------------------------------------------------------------------------
@@ -371,6 +363,352 @@ if ($aidLibPath) {
     }
 }
 Import-Module $CoreModule -Force -DisableNameChecking
+
+# ---------------------------------------------------------------------------
+# AID_HOME resolution helper — cross-platform (Windows/Linux/macOS).
+# Windows: %LOCALAPPDATA%\aid; Unix: ~/.aid (mirrors Bash default).
+# ---------------------------------------------------------------------------
+function script:Resolve-AidHome {
+    if ($env:AID_HOME) { return $env:AID_HOME }
+    if ($env:LOCALAPPDATA) { return Join-Path $env:LOCALAPPDATA 'aid' }
+    return Join-Path $HOME '.aid'
+}
+
+# ---------------------------------------------------------------------------
+# Dual-mode disambiguation (mirrors install.sh logic).
+#
+# Modes (mutually exclusive, detected from parameters):
+#   BOOTSTRAP      — no legacy flags, no subcommand → install CLI + wire PATH
+#   CONVENIENCE    — first positional in $RemainingArgs is a known subcommand
+#   UNINSTALL_CLI  — -UninstallCli switch present
+#   LEGACY         — -Tool / -Update / -Uninstall flags, or -FromBundle / -TargetDirectory
+#                    without a subcommand, or first positional is an unknown word
+#
+# Priority order:
+#   1. -UninstallCli              → UNINSTALL_CLI
+#   2. -Tool / -Update / -Uninstall flags → LEGACY
+#   3. -FromBundle or -TargetDirectory (without a known subcommand) → LEGACY
+#   4. First positional = known subcommand → CONVENIENCE
+#   5. First positional = unknown word → LEGACY
+#   6. AID_TOOL env-var + no legacy flags + no args → CONVENIENCE
+#   7. No args / only bootstrap params → BOOTSTRAP
+# ---------------------------------------------------------------------------
+
+function script:Test-KnownSubcmd {
+    param([string]$w)
+    return ($w -in @('status', 'add', 'remove', 'update', 'uninstall', 'self-uninstall', 'version', 'help'))
+}
+
+$script:_InstallMode   = 'BOOTSTRAP'
+$script:_AidToolEnvOnly = $false
+
+# Positional capture fix: [CmdletBinding()] binds positional args to named params in order.
+# If $Tool received a known subcommand, this was actually a positional subcommand call,
+# not a legacy -Tool flag.  Similarly $Version may have been the tool name.
+# Reconstruct: treat $Tool as positional subcommand and $Version as tool name.
+$_toolIsSubcmd = script:Test-KnownSubcmd $Tool
+
+# First positional: either from $RemainingArgs (unbound), or from $Tool if it's a known subcmd.
+$_firstPositional = if ($_toolIsSubcmd -and $Tool) { $Tool }
+                    elseif ($RemainingArgs -and $RemainingArgs.Count -gt 0) { $RemainingArgs[0] }
+                    else { '' }
+
+# Rebuild RemainingArgs for CONVENIENCE mode: if $Tool was the subcommand, the
+# actual args for aid.ps1 come from: $Version (first positional tool?), then $RemainingArgs.
+$_convPositionals = [System.Collections.Generic.List[string]]::new()
+if ($_toolIsSubcmd -and $Tool) {
+    $_convPositionals.Add($Tool)          # subcommand
+    if ($Version) { $_convPositionals.Add($Version) } # first positional (tool name) if any
+    foreach ($a in $RemainingArgs) { $_convPositionals.Add($a) }
+}
+
+# hasLegacyProjectFlag: -FromBundle or -TargetDirectory given WITHOUT a known subcommand.
+$_hasLegacyProjectFlag = ($FromBundle -or $TargetDirectory) -and -not (script:Test-KnownSubcmd $_firstPositional)
+
+if ($UninstallCli) {
+    $script:_InstallMode = 'UNINSTALL_CLI'
+} elseif ($_toolIsSubcmd) {
+    # $Tool was captured positionally as a known subcommand → CONVENIENCE.
+    $script:_InstallMode = 'CONVENIENCE'
+} elseif ($Tool -or $Update -or $Uninstall) {
+    # Explicit legacy flags (non-subcommand $Tool, -Update, -Uninstall) → LEGACY.
+    $script:_InstallMode = 'LEGACY'
+} elseif ($_hasLegacyProjectFlag) {
+    $script:_InstallMode = 'LEGACY'
+} elseif ($_firstPositional) {
+    if (script:Test-KnownSubcmd $_firstPositional) {
+        $script:_InstallMode = 'CONVENIENCE'
+    } else {
+        $script:_InstallMode = 'LEGACY'
+    }
+} elseif (-not $Tool -and $env:AID_TOOL -and -not $Update -and -not $Uninstall -and -not $FromBundle -and -not $TargetDirectory) {
+    # AID_TOOL env-var only → CONVENIENCE (synthesise 'add $AID_TOOL').
+    $script:_InstallMode = 'CONVENIENCE'
+    $script:_AidToolEnvOnly = $true
+}
+
+# ---------------------------------------------------------------------------
+# UNINSTALL_CLI mode — remove the global aid CLI (fallback path).
+# ---------------------------------------------------------------------------
+if ($script:_InstallMode -eq 'UNINSTALL_CLI') {
+    $ucForce  = [bool]$Force
+    $ucNoPath = [bool]$NoPath
+    if (-not $ucForce -and ($env:AID_FORCE -eq '1' -or $env:AID_FORCE -eq 'true')) { $ucForce = $true }
+    if (-not $ucNoPath -and $env:AID_NO_PATH -eq '1') { $ucNoPath = $true }
+
+    $aidHome = script:Resolve-AidHome
+
+    if (-not $ucForce) {
+        Write-Host "This will remove the aid CLI from $aidHome and the PATH wiring."
+        Write-Host "Per-project AID installs are NOT affected."
+        $ans = Read-Host "Confirm? [y/N]"
+        if ($ans -notin @('y', 'Y')) {
+            Write-Host "Cancelled."
+            script:Exit-Install 0
+        }
+    }
+
+    $ucPartial = $false
+
+    # Remove PATH wiring.
+    if (-not $ucNoPath) {
+        $ucBinDir = Join-Path $aidHome 'bin'
+        $ucCurrentPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+        if ($ucCurrentPath) {
+            $ucParts   = $ucCurrentPath -split ';' | Where-Object { $_ -and $_.Trim() -ne $ucBinDir }
+            $ucNewPath = $ucParts -join ';'
+            if ($ucNewPath -ne $ucCurrentPath) {
+                try {
+                    [Environment]::SetEnvironmentVariable('Path', $ucNewPath, 'User')
+                    Write-Host "PATH wiring removed (User scope): $ucBinDir"
+                } catch {
+                    [Console]::Error.WriteLine("WARN: install.ps1: failed to remove PATH wiring: $_")
+                    $ucPartial = $true
+                }
+            }
+        }
+    }
+
+    # Remove $AID_HOME directory.
+    if (Test-Path $aidHome -PathType Container) {
+        try {
+            Remove-Item -LiteralPath $aidHome -Recurse -Force -ErrorAction Stop
+        } catch {
+            [Console]::Error.WriteLine("ERROR: install.ps1: failed to remove $aidHome : $_")
+            $ucPartial = $true
+        }
+    }
+
+    if ($ucPartial) {
+        Write-Host "aid CLI partially removed. Check the messages above for what remained."
+        script:Exit-Install 1
+    }
+
+    Write-Host "aid CLI removed. Per-project AID installs are unaffected; run 'aid uninstall' in a project before removing the CLI if you also want to remove those."
+    script:Exit-Install 0
+}
+
+# ---------------------------------------------------------------------------
+# BOOTSTRAP mode — install the global aid CLI and wire PATH.
+# ---------------------------------------------------------------------------
+if ($script:_InstallMode -eq 'BOOTSTRAP') {
+    $bsNoPath = [bool]$NoPath
+    if (-not $bsNoPath -and $env:AID_NO_PATH -eq '1') { $bsNoPath = $true }
+
+    $aidHome = script:Resolve-AidHome
+
+    # Determine CLI version from VERSION file beside install.ps1.
+    $bsCliVersion = $Version -replace '^v', ''
+    if (-not $bsCliVersion) {
+        if (-not [string]::IsNullOrEmpty($script:_InstallPs1Path)) {
+            $vf = Join-Path (Split-Path -Parent $script:_InstallPs1Path) 'VERSION'
+            if (Test-Path $vf -PathType Leaf) {
+                $bsCliVersion = (Get-Content -LiteralPath $vf -Raw).Trim()
+            }
+        }
+        if (-not $bsCliVersion) { $bsCliVersion = '0.0.0' }
+    }
+
+    # Locate aid.ps1 (beside install.ps1 in bin/).
+    $bsAidPs1 = $null
+    if (-not [string]::IsNullOrEmpty($script:_InstallPs1Path)) {
+        $bsAidPs1 = Join-Path (Split-Path -Parent $script:_InstallPs1Path) 'bin' | Join-Path -ChildPath 'aid.ps1'
+    }
+    if (-not $bsAidPs1 -or -not (Test-Path $bsAidPs1 -PathType Leaf)) {
+        script:Fail "aid.ps1 dispatcher not found. Ensure you are running the full release package." 1
+    }
+
+    # Locate aid.cmd (beside aid.ps1).
+    $bsAidCmd = Join-Path (Split-Path -Parent $bsAidPs1) 'aid.cmd'
+
+    # Install into $AID_HOME.
+    $bsBinDir = Join-Path $aidHome 'bin'
+    $bsLibDir = Join-Path $aidHome 'lib'
+    New-Item -ItemType Directory -Path $bsBinDir -Force | Out-Null
+    New-Item -ItemType Directory -Path $bsLibDir -Force | Out-Null
+
+    Copy-Item -LiteralPath $bsAidPs1 -Destination (Join-Path $bsBinDir 'aid.ps1') -Force
+    if (Test-Path $bsAidCmd -PathType Leaf) {
+        Copy-Item -LiteralPath $bsAidCmd -Destination (Join-Path $bsBinDir 'aid.cmd') -Force
+    }
+    Copy-Item -LiteralPath $CoreModule -Destination (Join-Path $bsLibDir 'AidInstallCore.psm1') -Force
+
+    $bsBytes = [System.Text.Encoding]::UTF8.GetBytes("$bsCliVersion`n")
+    [System.IO.File]::WriteAllBytes((Join-Path $aidHome 'VERSION'), $bsBytes)
+
+    Write-Host "aid CLI v$bsCliVersion installed to $aidHome."
+
+    # Wire PATH (User scope, idempotent dedup on ';'-split).
+    if (-not $bsNoPath) {
+        $bsCurrentPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+        if (-not $bsCurrentPath) { $bsCurrentPath = '' }
+        $bsParts = $bsCurrentPath -split ';' | Where-Object { $_ -and $_.Trim() }
+        if ($bsParts -contains $bsBinDir) {
+            # Already present — only update in-process.
+            if ($env:Path -notmatch [regex]::Escape($bsBinDir)) {
+                $env:Path = "$bsBinDir;$($env:Path)"
+            }
+            Write-Host "PATH already wired: $bsBinDir"
+        } else {
+            $bsNewParts = @($bsBinDir) + @($bsParts)
+            $bsNewPath  = $bsNewParts -join ';'
+            $bsSafeLimit = 2000
+            if ($bsNewPath.Length -gt $bsSafeLimit) {
+                Write-Host "WARN: aid: User PATH would exceed $bsSafeLimit chars. Skipping automatic PATH wiring."
+                Write-Host "Add `"$bsBinDir`" to your PATH manually via System Properties > Environment Variables."
+            } else {
+                [Environment]::SetEnvironmentVariable('Path', $bsNewPath, 'User')
+                $env:Path = "$bsBinDir;$($env:Path)"
+                Write-Host "PATH wiring added (User scope): $bsBinDir"
+                Write-Host "Open a new shell, or the PATH is already active in this session."
+            }
+        }
+    } else {
+        Write-Host "Add `"$bsBinDir`" to your PATH manually."
+    }
+
+    Write-Host ""
+    Write-Host "Then: aid add <tool>    (e.g. aid add codex)"
+    script:Exit-Install 0
+}
+
+# ---------------------------------------------------------------------------
+# CONVENIENCE mode — bootstrap CLI if needed, then exec 'aid.ps1 <subcmd> ...'.
+# ---------------------------------------------------------------------------
+if ($script:_InstallMode -eq 'CONVENIENCE') {
+    $convNoPath = [bool]$NoPath
+    if (-not $convNoPath -and $env:AID_NO_PATH -eq '1') { $convNoPath = $true }
+
+    $aidHome = script:Resolve-AidHome
+    $convAidPs1 = Join-Path $aidHome 'bin' | Join-Path -ChildPath 'aid.ps1'
+
+    # Build subcommand args for aid.ps1.
+    # $RemainingArgs contains positional args (subcommand + tool names) and any flags that
+    # install.ps1 doesn't recognize (-Target, etc.).  Named parameters that install.ps1 DID
+    # consume ($FromBundle, $Version, $Force, $VerbosePreference) must be reconstructed so
+    # aid.ps1 receives the full argument list.  Bootstrap-only flags (-NoPath) are excluded.
+    $convSubcmdArgs = [System.Collections.Generic.List[string]]::new()
+
+    if ($script:_AidToolEnvOnly -eq $true) {
+        # AID_TOOL env-var only → synthesise 'add <AID_TOOL>'.
+        $convSubcmdArgs.Add('add')
+        $convSubcmdArgs.Add($env:AID_TOOL)
+    } elseif ($_toolIsSubcmd) {
+        # $Tool was captured positionally as subcommand (e.g. install.ps1 add codex -FromBundle ...).
+        # $_convPositionals already has [subcmd, toolname?, ...RemainingArgs].
+        foreach ($a in $_convPositionals) { $convSubcmdArgs.Add($a) }
+
+        # Re-append install.ps1 named params that aid.ps1 needs (already consumed by PS binding).
+        # Note: $Version was captured as second positional (tool name), already in $_convPositionals.
+        if ($FromBundle) { $convSubcmdArgs.Add('-FromBundle'); $convSubcmdArgs.Add($FromBundle) }
+        if ($Force)      { $convSubcmdArgs.Add('-Force') }
+        if ($VerbosePreference -eq 'Continue') { $convSubcmdArgs.Add('-Verbose') }
+        # $TargetDirectory: may have been set via -TargetDirectory or -Target abbreviation.
+        if ($TargetDirectory) { $convSubcmdArgs.Add('-Target'); $convSubcmdArgs.Add($TargetDirectory) }
+    } else {
+        # Subcommand came from $RemainingArgs[0] (not positional param binding).
+        foreach ($a in $RemainingArgs) { $convSubcmdArgs.Add($a) }
+
+        # Re-append install.ps1 named params that aid.ps1 needs (if set).
+        if ($FromBundle) { $convSubcmdArgs.Add('-FromBundle'); $convSubcmdArgs.Add($FromBundle) }
+        if ($Version)    { $convSubcmdArgs.Add('-Version');    $convSubcmdArgs.Add($Version)    }
+        if ($Force)      { $convSubcmdArgs.Add('-Force') }
+        if ($VerbosePreference -eq 'Continue') { $convSubcmdArgs.Add('-Verbose') }
+        # Note: -TargetDirectory maps to -Target in aid.ps1.
+        if ($TargetDirectory) { $convSubcmdArgs.Add('-Target'); $convSubcmdArgs.Add($TargetDirectory) }
+    }
+
+    # Bootstrap the CLI if not already present.
+    if (-not (Test-Path $convAidPs1 -PathType Leaf)) {
+        $convBinSrc = $null
+        if (-not [string]::IsNullOrEmpty($script:_InstallPs1Path)) {
+            $convBinSrc = Join-Path (Split-Path -Parent $script:_InstallPs1Path) 'bin' | Join-Path -ChildPath 'aid.ps1'
+        }
+        if (-not $convBinSrc -or -not (Test-Path $convBinSrc -PathType Leaf)) {
+            script:Fail "aid.ps1 dispatcher not found. Ensure you are running the full release package." 1
+        }
+        $convAidCmd = Join-Path (Split-Path -Parent $convBinSrc) 'aid.cmd'
+
+        $convCliVer = '0.0.0'
+        if (-not [string]::IsNullOrEmpty($script:_InstallPs1Path)) {
+            $vf = Join-Path (Split-Path -Parent $script:_InstallPs1Path) 'VERSION'
+            if (Test-Path $vf -PathType Leaf) {
+                $convCliVer = (Get-Content -LiteralPath $vf -Raw).Trim()
+            }
+        }
+
+        $convBinDir = Join-Path $aidHome 'bin'
+        $convLibDir = Join-Path $aidHome 'lib'
+        New-Item -ItemType Directory -Path $convBinDir -Force | Out-Null
+        New-Item -ItemType Directory -Path $convLibDir -Force | Out-Null
+
+        Copy-Item -LiteralPath $convBinSrc -Destination (Join-Path $convBinDir 'aid.ps1') -Force
+        if (Test-Path $convAidCmd -PathType Leaf) {
+            Copy-Item -LiteralPath $convAidCmd -Destination (Join-Path $convBinDir 'aid.cmd') -Force
+        }
+        Copy-Item -LiteralPath $CoreModule -Destination (Join-Path $convLibDir 'AidInstallCore.psm1') -Force
+
+        $convBytes = [System.Text.Encoding]::UTF8.GetBytes("$convCliVer`n")
+        [System.IO.File]::WriteAllBytes((Join-Path $aidHome 'VERSION'), $convBytes)
+
+        Write-Host "aid CLI v$convCliVer installed to $aidHome."
+
+        # Wire PATH (idempotent).
+        if (-not $convNoPath) {
+            $cpCurrentPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+            if (-not $cpCurrentPath) { $cpCurrentPath = '' }
+            $cpParts = $cpCurrentPath -split ';' | Where-Object { $_ -and $_.Trim() }
+            if ($cpParts -notcontains $convBinDir) {
+                $cpNewParts = @($convBinDir) + @($cpParts)
+                $cpNewPath  = $cpNewParts -join ';'
+                if ($cpNewPath.Length -le 2000) {
+                    [Environment]::SetEnvironmentVariable('Path', $cpNewPath, 'User')
+                    $env:Path = "$convBinDir;$($env:Path)"
+                    Write-Host "PATH wiring added (User scope): $convBinDir"
+                }
+            } elseif ($env:Path -notmatch [regex]::Escape($convBinDir)) {
+                $env:Path = "$convBinDir;$($env:Path)"
+            }
+        }
+    }
+
+    # Exec 'aid.ps1 <subcmd> ...' directly.
+    $env:AID_HOME = $aidHome
+    & $convAidPs1 @convSubcmdArgs
+    script:Exit-Install $LASTEXITCODE
+}
+
+# ---------------------------------------------------------------------------
+# LEGACY mode — original flag-style direct project install (back-compat).
+#
+# Unknown parameters check: applies only in LEGACY mode (CONVENIENCE and
+# BOOTSTRAP don't use RemainingArgs as positional flags).
+# ---------------------------------------------------------------------------
+if ($RemainingArgs -and $RemainingArgs.Count -gt 0) {
+    [Console]::Error.WriteLine("ERROR: install.ps1: unknown parameter: $($RemainingArgs[0])")
+    [Console]::Error.WriteLine("Run with -Help for usage information.")
+    script:Exit-Install 2
+}
 
 # ---------------------------------------------------------------------------
 # Determine mode.

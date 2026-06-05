@@ -5,6 +5,7 @@
 | Date | Change | Source |
 |------|--------|--------|
 | 2026-06-04 | Feature identified from REQUIREMENTS.md §4, §5 (FR1–FR5, FR9), §7, §10 | /aid-interview |
+| 2026-06-04 | **CLI evolution** — installer reshaped into a persistent global `aid` CLI (subcommands, PATH wiring, self-uninstall); bootstrap becomes arg-free CLI installer; §"CLI Evolution" added. User-approved new direction, folded into delivery-001 (no re-interview). | /aid-architect |
 
 ## Source
 
@@ -485,3 +486,305 @@ Mirror the existing `tests/canonical/test-*.sh` conventions (auto-discovered by
    `Expand-Archive` fallback (which handles `.zip`, not `.tar.gz`). **Confirm with feature-002**
    whether to also publish a `.zip` per profile for old-Windows offline installs, or require
    `tar.exe`. *(Cross-feature Q&A with 002.)*
+
+---
+
+## CLI Evolution — persistent global `aid` CLI
+
+> Added by `/aid-architect` (2026-06-04). **User-approved new direction, folded into
+> delivery-001 — no re-interview.** This section evolves the one-shot bootstrap above into a
+> persistent, globally-installed **`aid` CLI** that operates on the AID project in the current
+> working directory. Everything above this line remains the **per-tool install engine**; this
+> section adds the **CLI surface, the global install layout, PATH wiring, and the bootstrap
+> reshape** on top of it. Where this section and the original CLI surface conflict, **this
+> section governs** (the conflicts are enumerated in §"Resolved conflicts with the original
+> spec"). The reuse mandate is strict: the install/update/uninstall/manifest/protect-on-diff
+> engine in `lib/aid-install-core.sh` + `lib/AidInstallCore.psm1` is reused **unchanged** except
+> for the small, enumerated additions in §"Core additions". FR9 (Bash↔PowerShell parity), FR11
+> (protect-on-diff), the manifest schema, and the exit-code table are **preserved and extended,
+> not broken**.
+
+### Motivation (what changes and why)
+
+The original bootstrap is a **one-shot script** fetched per use (`curl … | bash` /
+`irm … | iex`). Two problems motivate the evolution:
+
+1. **No persistent command.** An adopter who wants to add a second tool, update, or uninstall
+   later must re-fetch and re-pipe the script and re-remember its flags. There is no `aid` on
+   their PATH.
+2. **The PowerShell `irm | iex` arg problem.** `irm <url> | iex` cannot forward arguments to the
+   downloaded script (iex evaluates a string; positional/named args do not thread through
+   cleanly). The original spec works around this with `$env:AID_TOOL` env-var input only.
+
+The evolution **dissolves both**: the fetched script becomes an **arg-free bootstrap** that
+installs a persistent `aid` command into a global location and wires it onto PATH. After
+bootstrap, the adopter runs `aid add codex`, `aid status`, `aid update`, `aid uninstall`
+directly — no re-fetch, no `iex` arg threading. A one-line convenience chain
+(`curl … | bash -s -- add codex`, or `$env:AID_TOOL='codex'` for the PowerShell side) still lets
+first-run bootstrap-then-add in a single command.
+
+### Global install layout (the `aid` CLI itself)
+
+The **`aid` CLI is a global, per-user tool** (installed once per machine), distinct from the
+**per-project AID files** it installs (the profile trees + `.aid/.aid-manifest.json` in each
+adopter repo). Do not confuse the two install locations.
+
+**Unix (Linux / macOS / git-bash):** `~/.aid/` (override with `$AID_HOME`)
+```
+~/.aid/
+  bin/aid                    # dispatcher (Bash); the file added to PATH
+  lib/aid-install-core.sh    # the shared core, copied verbatim from the release
+  VERSION                    # the CLI's own version (== the release it was installed from)
+```
+- Add `~/.aid/bin` to PATH via the user's shell profile (see §"PATH wiring (Unix)").
+- `bin/aid` is `chmod +x`. It locates its sibling core at `$AID_HOME/lib/aid-install-core.sh`
+  (no network needed for local subcommands; only `add`/`update` online fetch the profile
+  tarball, exactly as today).
+
+**Windows (native PowerShell / cmd.exe):** `%LOCALAPPDATA%\aid\` (override with `$env:AID_HOME`)
+```
+%LOCALAPPDATA%\aid\
+  aid.cmd                    # cmd.exe shim → forwards to aid.ps1 via pwsh/powershell
+  aid.ps1                    # dispatcher (PowerShell)
+  lib\AidInstallCore.psm1    # the shared core module, copied verbatim
+  VERSION
+```
+- Two entry files so `aid` resolves in **both** `cmd.exe` and `pwsh`/`powershell`: `aid.cmd` is
+  what cmd.exe/Explorer find on PATH; it execs `pwsh -NoProfile -File "%~dp0aid.ps1" %*` (falling
+  back to `powershell` when `pwsh` is absent). Inside `pwsh`, `aid` resolves to `aid.cmd` (which
+  re-enters PowerShell) — acceptable; alternatively a `aid` function/alias may be added to the
+  PowerShell profile, but the `.cmd` shim is the MUST and the profile alias is a SHOULD.
+- Add `%LOCALAPPDATA%\aid` to the **USER** PATH (see §"PATH wiring (Windows)").
+
+**Rationale for `~/.aid` vs `~/.local/bin`:** keeping the CLI, its core lib, and VERSION
+together under one self-contained, removable dir makes `aid self-uninstall` a single `rm -rf`
+plus one PATH-block removal, and avoids scattering files into shared bin dirs. Only the
+`bin/`/`%LOCALAPPDATA%\aid` entry goes on PATH.
+
+### Subcommand surface (authoritative)
+
+The dispatcher parses `aid <subcommand> [args] [flags]`. The **flags** are the existing
+engine flags, unchanged in spelling (§"CLI surface" above): `--version <v>` / `-Version`,
+`--from-bundle <path>` / `-FromBundle`, `--force` / `-Force`, `--target <dir>` /
+`-TargetDirectory`, `--verbose` / `-Verbose`, plus the new `--no-path` (bootstrap/self-install
+only, see PATH wiring). Env-var fallbacks (`AID_TOOL`, `AID_VERSION`, `AID_TARGET`, `AID_FORCE`,
+`AID_VERBOSE`) are **preserved** and apply to the subcommand they map to.
+
+The **target project** for every project-scoped subcommand defaults to the **current working
+directory** (`--target`/`-TargetDirectory`/`AID_TARGET` override, exactly as today). The CLI
+operates on `./.aid/.aid-manifest.json` of that cwd.
+
+| Subcommand | Maps to (engine) | Behavior | Exit codes |
+|---|---|---|---|
+| `aid` (bare) | — | Alias for `aid status`. | per `status` |
+| `aid status` | manifest reader (new thin surface) | Print the AID state of the cwd project read from `./.aid/.aid-manifest.json` (see §"`aid status` output"). **No network.** | 0 if a manifest exists; **7** "not an AID project here" if absent (see exit-code addition) |
+| `aid add <tool>[,<tool>…]` | `MODE=install` (`install_tool`) | Install/add tool(s) into the cwd project. Identical to today's default install path; `<tool>` list replaces `--tool`. Auto-detect applies **only** when `<tool>` is omitted AND `AID_TOOL` is unset (rare for `add`; mainly for the bootstrap convenience chain). | 0/1/2/3/4/**5** as today |
+| `aid remove <tool>[,…]` | `MODE=uninstall` with tool list (`uninstall_tool` per tool) | Remove specific tool(s) from the cwd project. Per-tool manifest removal; protect-on-diff uninstall-safety (FR11) honored on root agent files (removed only if still checksum-matches what AID wrote). `<tool>` is **required** (≥1). | 0/1/2; **6** if no manifest |
+| `aid update [<tool>…]` | `MODE=update` (`install_tool` over existing) | Update installed tool(s) to `--version`/`-Version` or latest. **No tool args → update every tool currently in the manifest.** Reads manifest for installed set + versions. | 0/1/2/3/4/5; **6** if no manifest |
+| `aid uninstall` | `MODE=uninstall`, no tool list (all tools) | Remove AID **entirely** from the cwd project (today's full uninstall: all manifested tools, prune empty AID dirs, remove `.aid/.aid-manifest.json` + `.aid/.aid-version`). Does **not** touch the global `aid` CLI. | 0; **6** if no manifest |
+| `aid version` | — | Print the **CLI's own** version (from `$AID_HOME/VERSION`) and exit 0. Distinct from `--version`, which pins a profile release. | 0 |
+| `aid help` / `aid -h` / `aid --help` | usage block | Print usage and exit 0. `aid help <subcommand>` MAY print subcommand-specific usage (SHOULD). | 0 |
+| `aid self-uninstall` | new (global teardown) | Remove the global `aid` CLI: delete `$AID_HOME` and the PATH-wiring block/entry. Does **not** touch any per-project AID install (those are removed via `aid uninstall` per project). Prompts unless `--force`/`-Force` or `AID_FORCE`. **MUST.** | 0; 1 on partial teardown |
+| `aid self-update` | new (global upgrade) | Re-fetch the latest (or `--version`) release and replace `$AID_HOME/bin`+`lib`+`VERSION` in place; idempotent; no duplicate PATH entries. **SHOULD** (the bootstrap chain re-run achieves the same; provide as ergonomic sugar). | 0/1/3/4 |
+
+**Unknown subcommand** → usage error, exit **2**, message `unknown command: <x> (see 'aid help')`.
+
+**Bash↔PowerShell subcommand parity (FR9):** `aid.ps1`'s dispatcher accepts the **same
+subcommand words** (`status`, `add`, `remove`, `update`, `uninstall`, `version`, `help`,
+`self-uninstall`, `self-update`) and the same `<tool>` list grammar; it normalizes PascalCase
+tool aliases as the engine already does. Message strings, output format, and exit codes are
+byte-for-byte identical to the Bash dispatcher (enforced by the parity test, §Testing).
+
+#### `aid status` output (authoritative format)
+
+`aid status` reads `./.aid/.aid-manifest.json` (and `./.aid/.aid-version`) and prints:
+
+```
+AID <aid_version>  (project: <cwd>)
+Installed tools:
+  claude-code   v0.7.0   root: CLAUDE.md (owned)
+  codex         v0.7.0   root: AGENTS.md (owned)
+```
+- Header line: `aid_version` from the manifest + the resolved project dir.
+- One line per tool in `tools.<id>`: `<id>` (padded), `v<version>`, and root-agent status
+  rendered as `root: <file> (<status>)` where `<status>` is the `root_agent_files[].status`
+  (`owned` | `pending-merge`); tools with no root agent file omit the `root:` segment.
+- **Not-installed case** (no manifest at cwd): print to **stdout**
+  `No AID install found in <cwd>. Run 'aid add <tool>' to install.` and exit **7**.
+- `aid status --verbose`/`-Verbose` additionally lists each tool's installed file count (from
+  `tools.<id>.paths` length). No new manifest fields are required — `status` is a **pure
+  reader** over the existing schema.
+
+This is the only genuinely new read-surface; it reuses `manifest_read_tool_version`,
+`manifest_read_root_agent_status`, `manifest_read_tool_paths`, and a new tiny
+`manifest_list_tools` helper (the tool-id enumeration already implemented inline in `install.sh`
+`_resolve_tools` and the PS equivalent — promote it to a named core function for reuse).
+
+### Bootstrap reshape (arg-free CLI installer)
+
+`install.sh` / `install.ps1` (the files fetched via `curl`/`irm`) are **repurposed** from
+"install AID into this repo" to "**install the `aid` CLI into the global location and wire
+PATH**". This is the change that dissolves the `irm | iex` arg problem.
+
+**New default behavior (no args):**
+1. Resolve the release version (`--version`/`-Version`/`AID_VERSION` or latest GitHub release —
+   reuses `resolve_version`).
+2. Fetch (or use sibling, or `--from-bundle`) the **core lib** for that version (reuses the
+   existing fail-closed checksum-verified lib fetch — unchanged).
+3. Create `$AID_HOME` (`~/.aid` / `%LOCALAPPDATA%\aid`); write `bin/aid`(+`aid.cmd`/`aid.ps1`),
+   copy the verified `lib/*`, write `VERSION`. **Idempotent**: re-running upgrades these files in
+   place (the dispatcher and lib are overwritten; VERSION refreshed).
+4. Wire PATH (see below) unless `--no-path`/`-NoPath`/`AID_NO_PATH=1`.
+5. Print the post-install hint: `aid CLI v<ver> installed to <AID_HOME>. Open a new shell, or
+   run: <source-or-refresh-hint>. Then: aid add <tool>`.
+
+**Convenience chain (bootstrap-then-act in one line):** trailing args after the bootstrap are
+interpreted as **an `aid` subcommand to run immediately after install**:
+- Bash: `curl -fsSL <url> | bash -s -- add codex` → bootstrap installs the CLI, then execs
+  `aid add codex` in the **current cwd** (using the just-installed `bin/aid`, so PATH-refresh is
+  not required for this first action). `AID_TOOL=codex curl … | bash` is equivalent (env-var
+  fallback → `add codex`).
+- PowerShell: because `irm | iex` cannot forward args, the supported first-run form is
+  `$env:AID_TOOL='codex'; irm <url> | iex` → bootstrap installs the CLI, then runs
+  `aid add codex`. (A downloaded-then-invoked `install.ps1 add codex` also works for users who
+  save the file; the env-var form is the documented `iex` path.)
+- If **no** trailing subcommand/`AID_TOOL` is given, the bootstrap installs the CLI **only**
+  (no project install) and prints the hint. This is the clean "install the tool, I'll add
+  profiles later" path.
+
+**Idempotent re-bootstrap:** re-running the bootstrap on a machine that already has `aid`
+**upgrades in place** — overwrites `bin`/`lib`/`VERSION`, and re-runs PATH wiring which is itself
+idempotent (no duplicate profile blocks / no duplicate PATH entries — see wiring sections).
+
+### PATH wiring (Unix) — authoritative
+
+Goal: add `$AID_HOME/bin` to PATH **idempotently**, in a **clearly-marked, removable block**, in
+the right profile file, without clobbering the user's config.
+
+- **Profile detection (in order):** honor `$SHELL`/login shell — for **zsh** target
+  `~/.zshrc`; for **bash** target `~/.bashrc` (Linux) or `~/.bash_profile` (macOS login bash);
+  fall back to `~/.profile` when neither is identifiable. If the chosen file does not exist,
+  create it. (Detect, don't guess: probe `$SHELL` basename; `ZDOTDIR` honored for zsh.)
+- **Idempotent marked block** appended once:
+  ```
+  # >>> aid CLI >>>
+  export PATH="$HOME/.aid/bin:$PATH"
+  # <<< aid CLI <<<
+  ```
+  Before appending, the wiring **greps for the `# >>> aid CLI >>>` marker**; if present, it
+  **replaces** the block (in place) rather than appending a second one. This guarantees a
+  re-bootstrap never duplicates the entry.
+- **`--no-path` / `-NoPath` / `AID_NO_PATH=1`** skips the profile edit entirely and prints a
+  manual instruction (`add "$HOME/.aid/bin" to your PATH`).
+- **Refresh hint:** PATH edits don't affect the *current* shell. Print:
+  `Open a new shell, or run: export PATH="$HOME/.aid/bin:$PATH" (or: source <profile>)`. The
+  convenience chain's first `aid` action bypasses this by invoking `bin/aid` directly.
+- **Removal (`self-uninstall`):** delete the marked block by matching the `>>> aid CLI >>>` …
+  `<<< aid CLI <<<` fence (sed range delete on the detected profile(s); tolerate absence).
+
+### PATH wiring (Windows) — authoritative
+
+- Add `%LOCALAPPDATA%\aid` to the **USER** PATH via
+  `[Environment]::SetEnvironmentVariable('Path', <new>, 'User')`. **Idempotent:** read the
+  current User Path, split on `;`, and **only append if the entry is not already present**
+  (case-insensitive compare; ignore empty segments) — no duplicate entries on re-run.
+- Edit the **User** scope only (never Machine — no admin required, no system-wide mutation).
+- **Refresh:** the new PATH applies to **new** processes only; the current session is updated
+  in-process (`$env:Path = "$env:Path;$dir"`) so the convenience-chain `aid add …` works
+  immediately, but the user is told to open a new terminal for persistence to take effect
+  elsewhere.
+- **`-NoPath` / `AID_NO_PATH=1`** skips the SetEnvironmentVariable call and prints the manual
+  instruction.
+- **Windows PATH length:** the User PATH has a practical length ceiling (see Risks). The wiring
+  appends a **single short entry**; if the resulting User Path would exceed a safe bound, warn
+  and print the manual instruction rather than truncating.
+- **Removal (`self-uninstall`):** read User Path, remove the `%LOCALAPPDATA%\aid` segment
+  (case-insensitive), write back; tolerate absence.
+
+### Self-uninstall (global CLI teardown) — authoritative
+
+`aid self-uninstall` (MUST):
+1. Confirm (prompt) unless `--force`/`-Force`/`AID_FORCE`.
+2. Remove the PATH wiring (the marked block on Unix; the User-Path segment on Windows).
+3. Delete `$AID_HOME` (`~/.aid` / `%LOCALAPPDATA%\aid`) recursively.
+4. Print: `aid CLI removed. Per-project AID installs are unaffected; run 'aid uninstall' in a
+   project before removing the CLI if you also want to remove those` — i.e. **self-uninstall
+   does not walk projects**; it only removes the global tool. Exit 0 (1 on partial teardown, with
+   a clear note about what remained).
+
+The bootstrap script retains a **`--uninstall-cli` / `-UninstallCli`** equivalent (for users who
+still have the fetched script but no `aid` on PATH) that performs the same teardown — so the
+global tool is removable even if PATH wiring failed.
+
+### Core additions (the only changes to the reused engine)
+
+The engine in `lib/aid-install-core.sh` / `lib/AidInstallCore.psm1` is reused **unchanged**
+except for these **additive, non-breaking** helpers (no existing function signature or behavior
+changes; FR11/manifest/exit-engine untouched):
+
+1. `manifest_list_tools <manifest>` (Bash) / `Get-ManifestToolList` (PS) — enumerate
+   `tools.<id>` keys. (Promotes logic already inlined in `install.sh::_resolve_tools` and the PS
+   equivalent; `aid status` and `aid update`/`aid uninstall`-all reuse it.)
+2. `aid_status <target>` (Bash) / `Get-AidStatus` (PS) — render the §"`aid status` output"
+   block from the manifest. Pure reader; no writes.
+3. PATH-wiring + global-layout helpers — these live in the **bootstrap/dispatcher**, not the
+   install engine (install-engine purity is preserved): `_wire_path_unix`,
+   `_unwire_path_unix`, `_install_global_cli`, `_self_uninstall` (Bash) and the PS analogues.
+   They are new code, but they sit **outside** the manifest/copy/protect-on-diff engine.
+
+Everything else — `install_tool`, `uninstall_tool`, `copy_file`, `copy_dir`,
+`_copy_root_agent_file`, all `manifest_*` read/write functions, `fetch_tarball`,
+`extract_tarball`, `resolve_version`, the fail-closed lib-fetch — is **called as-is**. The `aid`
+dispatcher is a thin argument-shaper that translates `aid add codex` → the same internal calls
+`install.sh --tool codex` makes today.
+
+### Exit-code additions (extends, does not break, the table above)
+
+The original table (0–6) is preserved with identical meanings. The CLI adds:
+
+| Code | Meaning |
+|------|---------|
+| 7 | **`aid status` (or any project-scoped read) found no AID install in the cwd** — "not an AID project here". Distinct from 6 (uninstall-with-no-manifest) so `status` and `uninstall`/`remove` report the "nothing here" condition with the verb-appropriate code. `aid remove`/`aid update`/`aid uninstall` keep **6** (their semantics are uninstall-family); only the read-only `status` uses **7**. |
+
+No existing code's meaning changes. `aid add` failures map to the same 1–5 as `install.sh`
+today; `aid remove`/`update`/`uninstall` map to the same as `--uninstall`/`--update` today.
+
+### Boundary note — ripple to features 003 (npm) & 004 (PyPI)
+
+The CLI evolution changes what "install AID" means for the npm/PyPI wrappers, and this is a
+**flagged cross-feature implication**, not a change made here:
+
+- **Today (003/004 SPECs):** the wrappers ship a bin named **`aid-installer`** that vendors
+  `install.sh`/`install.ps1` + `lib/*` and **shells out to do a per-repo install** (feature-003
+  §S2–S5; feature-004 §"flag translation"). They do **not** put an `aid` command on PATH; the
+  user runs `npx aid-installer …` / `pipx run aid-installer …` per invocation.
+- **Implication of this evolution:** the reshaped bootstrap installs a persistent **`aid`**
+  command. The npm/PyPI channels SHOULD converge so that `npm i -g @aid/installer` /
+  `pipx install aid-installer` **put the `aid` command onto PATH** (npm bin → `aid`; the Python
+  console-script entry point → `aid`), making the three channels (curl, npm, PyPI) deliver the
+  **same `aid` CLI** rather than three differently-named one-shot wrappers. feature-003's S8
+  open question #4 ("support `npm i -g`") and feature-004's pipx-install path already anticipate
+  a global install; this evolution makes that the **primary** shape and renames the surfaced
+  command to `aid`.
+- **This feature does NOT rewrite 003/004.** It only (a) keeps the **delegation contract**
+  stable (flag names, tool ids, manifest schema, exit codes, `--from-bundle` semantics — all
+  preserved), and (b) records this implication so 003/004 are re-specified separately (their
+  deliveries 002/003 are downstream and out of scope for delivery-001). **Action for 003/004
+  owners:** rename the published binary/entry-point to `aid`, target a global install, and have
+  it dispatch the subcommand surface above (or continue to delegate to the bootstrap's global
+  install). Tracked as a cross-feature note; no edit to 003/004 SPECs in this change.
+
+### Resolved conflicts with the original spec
+
+| # | Original spec said | CLI evolution says | Resolution |
+|---|---|---|---|
+| C1 | Bootstrap (`install.sh`) **installs profiles into the target repo** by default (no mode flag → install). | Bootstrap **installs the global `aid` CLI** by default (no args → install CLI + wire PATH). | The **arg-free default changes meaning**. Project install now happens via `aid add <tool>` (or the `curl … \| bash -s -- add <tool>` convenience chain). The original "default = install profiles" is **superseded**; the engine that did it is unchanged and is now reached through `aid add`. Tests that invoked `install.sh --tool X` to install profiles are reframed as `aid add X` (and a back-compat note: `install.sh --tool X` MAY be retained as a hidden alias for one release to avoid breaking the existing test fixtures — SHOULD, decided at IMPLEMENT). |
+| C2 | Modes selected by `--update`/`--uninstall` flags on one script. | Modes are **subcommands** of `aid` (`add`/`remove`/`update`/`uninstall`). | The engine modes are unchanged; only the **surface** moves from flags to subcommands. The bootstrap still accepts the flag forms internally for the convenience chain and for 003/004 delegation stability (the delegation contract's flag spellings are preserved). |
+| C3 | `--tool <name>` carries the tool list. | `aid add <tool>[,…]` / `aid remove <tool>[,…]` carry the list **positionally**; `--tool`/`AID_TOOL` remain as fallbacks. | Positional tool args are the CLI ergonomic; `--tool`/`-Tool`/`AID_TOOL` still work (engine reads them) so the delegation contract and env-var inputs are intact. |
+| C4 | Exit codes 0–6; `status` did not exist. | Adds exit **7** for `aid status` "not an AID project here". | Additive; no 0–6 meaning changes (see §"Exit-code additions"). |
+| C5 | "All new files live at the AID repo root … `lib/` for the core." (component layout) | Adds a **global install layout** (`~/.aid` / `%LOCALAPPDATA%\aid`) and **dispatcher files** (`bin/aid`, `aid.cmd`, `aid.ps1`). | The repo-root `install.sh`/`install.ps1`/`lib/*` are the **source/bootstrap**; the global layout is the **installed** form. Both coexist: the repo files are what the release ships and what the bootstrap deploys into `$AID_HOME`. |
+
+No contradiction is left unresolved. The single load-bearing decision flagged for the user at
+IMPLEMENT is **C1's back-compat alias** (retain `install.sh --tool X` as a hidden
+profile-install alias for one release, or hard-cut to `aid add`) — recommend **retain as hidden
+alias** to keep delivery-001's existing test fixtures green while the CLI surface stabilizes.

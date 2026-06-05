@@ -1,0 +1,727 @@
+#!/usr/bin/env bash
+# aid — AID CLI dispatcher (Bash side).
+#
+# Purpose:
+#   Persistent global command installed at $AID_HOME/bin/aid.  Parses
+#   subcommands and dispatches to the shared install-core engine located at
+#   $AID_HOME/lib/aid-install-core.sh.  Operates on the current working
+#   directory (--target / AID_TARGET overrides).
+#
+# Usage:
+#   aid                          # alias for 'aid status'
+#   aid status                   # print AID state of the cwd project
+#   aid add <tool>[,<tool>...]   # install/add tool(s) into cwd project
+#   aid remove <tool>[,...]      # remove specific tool(s) from cwd project
+#   aid update [<tool>...]       # update installed tool(s) (all if no args)
+#   aid uninstall                # remove AID entirely from cwd project
+#   aid version                  # print the CLI's own version
+#   aid help [<subcommand>]      # print usage and exit 0
+#   aid self-uninstall           # remove the global aid CLI
+#   -h | --help                  # print usage and exit 0
+#
+# Flags (shared across subcommands where applicable):
+#   --from-bundle <path>   Offline install from a pre-downloaded tarball / dir.
+#   --version <v>          Pin to a specific release version (e.g. 0.7.0).
+#   --force                Overwrite differing files including root agent files.
+#   --target <dir>         Project root (default: current directory).
+#   --verbose              Print per-file detail (default: concise summary).
+#   --no-path              (bootstrap / self-update only) Skip PATH wiring.
+#
+# Exit codes:
+#   0   success
+#   1   generic runtime failure
+#   2   usage error (unknown subcommand or invalid flag)
+#   3   network / fetch failure
+#   4   checksum mismatch
+#   5   protect-on-diff blocked (--force not given)
+#   6   uninstall with no manifest
+#   7   aid status: no AID install found in cwd
+
+set -uo pipefail
+
+# ---------------------------------------------------------------------------
+# Locate $AID_HOME.  The installed dispatcher lives at $AID_HOME/bin/aid.
+# When invoked directly (not via PATH), BASH_SOURCE[0] is the absolute path.
+# ---------------------------------------------------------------------------
+_AID_SELF="${BASH_SOURCE[0]:-}"
+if [[ -n "$_AID_SELF" && -f "$_AID_SELF" ]]; then
+    # Resolve symlinks so we get the real directory.
+    _AID_SELF_REAL="$(cd "$(dirname "$_AID_SELF")" && pwd -P)/$(basename "$_AID_SELF")"
+    AID_HOME="${AID_HOME:-$(dirname "$(dirname "$_AID_SELF_REAL")")}"
+else
+    AID_HOME="${AID_HOME:-${HOME}/.aid}"
+fi
+
+# ---------------------------------------------------------------------------
+# Source the shared install core from $AID_HOME/lib/.
+# ---------------------------------------------------------------------------
+_AID_CORE="${AID_HOME}/lib/aid-install-core.sh"
+if [[ ! -f "$_AID_CORE" ]]; then
+    echo "ERROR: aid: install core not found at ${_AID_CORE}. Re-run the AID bootstrap to repair." >&2
+    exit 1
+fi
+# shellcheck source=../lib/aid-install-core.sh
+source "$_AID_CORE"
+
+# ---------------------------------------------------------------------------
+# Usage helper.
+# ---------------------------------------------------------------------------
+_aid_usage() {
+    local sub="${1:-}"
+    case "$sub" in
+        status)
+            printf 'aid status [--verbose] [--target <dir>]\n'
+            printf '  Print the AID installation state of the target project (default: cwd).\n'
+            printf '  Exit 7 when no AID install is found.\n'
+            ;;
+        add)
+            printf 'aid add <tool>[,<tool>...] [--version <v>] [--from-bundle <path>]\n'
+            printf '                           [--force] [--verbose] [--target <dir>]\n'
+            printf '  Install or add tool(s) into the target project.\n'
+            printf '  Tools: claude-code, codex, cursor, copilot-cli, antigravity\n'
+            ;;
+        remove)
+            printf 'aid remove <tool>[,<tool>...] [--verbose] [--target <dir>]\n'
+            printf '  Remove specific tool(s) from the target project (manifest-driven).\n'
+            ;;
+        update)
+            printf 'aid update [<tool>...] [--version <v>] [--from-bundle <path>]\n'
+            printf '           [--force] [--verbose] [--target <dir>]\n'
+            printf '  Update installed tool(s). No tool args -> update all installed tools.\n'
+            ;;
+        uninstall)
+            printf 'aid uninstall [--verbose] [--target <dir>]\n'
+            printf '  Remove AID entirely from the target project (all tools).\n'
+            ;;
+        version)
+            printf 'aid version\n'
+            printf '  Print the installed aid CLI version and exit 0.\n'
+            ;;
+        self-uninstall)
+            printf 'aid self-uninstall [--force]\n'
+            printf '  Remove the global aid CLI (PATH wiring + $AID_HOME).\n'
+            printf '  Does not touch per-project AID installs.\n'
+            ;;
+        *)
+            printf 'aid — AID CLI dispatcher (Bash side).\n'
+            printf '\n'
+            printf 'Usage:\n'
+            printf '  aid                          Alias for aid status\n'
+            printf '  aid status                   Print AID state of cwd project\n'
+            printf '  aid add <tool>[,...]         Install/add tool(s) to cwd project\n'
+            printf '  aid remove <tool>[,...]      Remove specific tool(s) from cwd project\n'
+            printf '  aid update [<tool>...]       Update installed tool(s) (all if omitted)\n'
+            printf '  aid uninstall                Remove AID entirely from cwd project\n'
+            printf '  aid version                  Print CLI version\n'
+            printf '  aid help [<subcommand>]      Print usage\n'
+            printf '  aid self-uninstall           Remove the global aid CLI\n'
+            printf '  -h | --help                  Print this help\n'
+            printf '\n'
+            printf 'Shared flags:\n'
+            printf '  --from-bundle <path>   Offline install from tarball or directory\n'
+            printf '  --version <v>          Pin to release version (e.g. 0.7.0)\n'
+            printf '  --force                Overwrite differing files\n'
+            printf '  --target <dir>         Project root (default: cwd)\n'
+            printf '  --verbose              Per-file output\n'
+            printf '\n'
+            printf 'Exit codes: 0 ok, 1 failure, 2 usage error, 3 network, 4 checksum,\n'
+            printf '            5 protect-on-diff, 6 no manifest, 7 not an AID project\n'
+            printf '\n'
+            printf 'Env vars: AID_TOOL, AID_VERSION, AID_TARGET, AID_FORCE, AID_VERBOSE\n'
+            ;;
+    esac
+}
+
+# ---------------------------------------------------------------------------
+# Error helper.
+# ---------------------------------------------------------------------------
+_aid_die() {
+    echo "ERROR: aid: $1" >&2
+    exit "${2:-1}"
+}
+
+# ---------------------------------------------------------------------------
+# Locate the bootstrap install.sh to delegate add/remove/update/uninstall.
+# Prefers the sibling ../install.sh (if aid is run from the release tree),
+# then a resolved bootstrap relative to AID_HOME.
+# ---------------------------------------------------------------------------
+_find_install_sh() {
+    # Sibling of the bin/ dir: AID_HOME/../install.sh would be the release root.
+    # But installed layout is: AID_HOME/bin/aid + AID_HOME/lib/aid-install-core.sh
+    # The install.sh is NOT shipped inside AID_HOME — we use the core functions directly.
+    # Return empty string — callers will use the engine functions directly.
+    echo ""
+}
+
+# ---------------------------------------------------------------------------
+# Path-wiring helpers (Unix).
+# ---------------------------------------------------------------------------
+
+# _detect_profile — print the shell profile file to modify.
+_detect_profile() {
+    local shell_name
+    shell_name="$(basename "${SHELL:-bash}")"
+    case "$shell_name" in
+        zsh)
+            local zdotdir="${ZDOTDIR:-${HOME}}"
+            echo "${zdotdir}/.zshrc"
+            ;;
+        bash)
+            # macOS: use .bash_profile; Linux: .bashrc.
+            local uname_s
+            uname_s="$(uname -s 2>/dev/null || echo Linux)"
+            if [[ "$uname_s" == "Darwin" ]]; then
+                echo "${HOME}/.bash_profile"
+            else
+                echo "${HOME}/.bashrc"
+            fi
+            ;;
+        *)
+            echo "${HOME}/.profile"
+            ;;
+    esac
+}
+
+# _wire_path_unix <aid_bin_dir> [--no-path] [--profile-file <file>]
+# Idempotently add $aid_bin_dir to PATH via a fenced block in the profile.
+# When --no-path is given, print the manual instruction and return.
+_wire_path_unix() {
+    local bin_dir="$1"
+    local no_path=0
+    local profile_override=""
+
+    shift
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --no-path)           no_path=1; shift ;;
+            --profile-file)      profile_override="$2"; shift 2 ;;
+            *)                   shift ;;
+        esac
+    done
+
+    if [[ "$no_path" -eq 1 ]]; then
+        printf 'Add "%s" to your PATH manually.\n' "$bin_dir"
+        return 0
+    fi
+
+    local profile
+    if [[ -n "$profile_override" ]]; then
+        profile="$profile_override"
+    else
+        profile="$(_detect_profile)"
+    fi
+
+    # Create the profile file if it doesn't exist.
+    if [[ ! -f "$profile" ]]; then
+        touch "$profile" || {
+            echo "WARN: aid: could not create ${profile}; PATH not wired." >&2
+            printf 'Add "%s" to your PATH manually.\n' "$bin_dir"
+            return 0
+        }
+    fi
+
+    local fence_start='# >>> aid CLI >>>'
+    local fence_end='# <<< aid CLI <<<'
+    local path_line="export PATH=\"${bin_dir}:\$PATH\""
+
+    if grep -qF "$fence_start" "$profile" 2>/dev/null; then
+        # Replace the existing block in-place.
+        # Use a temp file for portability (no in-place sed on all platforms).
+        local tmp_profile
+        tmp_profile="$(mktemp "${profile}.aid-tmp.XXXXXX")"
+        awk -v start="$fence_start" -v end="$fence_end" \
+            -v line="$path_line" \
+            -v fs="$fence_start" -v fe="$fence_end" '
+        BEGIN { skip=0 }
+        $0 == start { skip=1; print fs; print line; print fe; next }
+        skip && $0 == end { skip=0; next }
+        skip { next }
+        { print }
+        ' "$profile" > "$tmp_profile"
+        mv "$tmp_profile" "$profile"
+        echo "PATH wiring updated in ${profile}."
+    else
+        # Append the block.
+        printf '\n%s\n%s\n%s\n' "$fence_start" "$path_line" "$fence_end" >> "$profile"
+        echo "PATH wiring added to ${profile}."
+    fi
+
+    echo "Open a new shell, or run: export PATH=\"${bin_dir}:\$PATH\" (or: source ${profile})"
+}
+
+# _unwire_path_unix [--profile-file <file>]
+# Remove the fenced PATH block from the detected profile.
+_unwire_path_unix() {
+    local profile_override=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --profile-file) profile_override="$2"; shift 2 ;;
+            *) shift ;;
+        esac
+    done
+
+    local profile
+    if [[ -n "$profile_override" ]]; then
+        profile="$profile_override"
+    else
+        profile="$(_detect_profile)"
+    fi
+
+    if [[ ! -f "$profile" ]]; then
+        return 0
+    fi
+
+    local fence_start='# >>> aid CLI >>>'
+    if ! grep -qF "$fence_start" "$profile" 2>/dev/null; then
+        return 0
+    fi
+
+    # Remove the fenced block.
+    local tmp_profile
+    tmp_profile="$(mktemp "${profile}.aid-tmp.XXXXXX")"
+    awk -v start="$fence_start" -v end='# <<< aid CLI <<<' '
+    BEGIN { skip=0 }
+    $0 == start { skip=1; next }
+    skip && $0 == end { skip=0; next }
+    skip { next }
+    { print }
+    ' "$profile" > "$tmp_profile"
+    mv "$tmp_profile" "$profile"
+    echo "PATH wiring removed from ${profile}."
+}
+
+# ---------------------------------------------------------------------------
+# Global CLI install helpers.
+# ---------------------------------------------------------------------------
+
+# _install_global_cli <version> <src_bin_aid> <src_lib_core>
+# Stage then atomic-move into $AID_HOME.
+_install_global_cli() {
+    local version="$1"
+    local src_bin_aid="$2"
+    local src_lib_core="$3"
+
+    local aid_home="${AID_HOME:-${HOME}/.aid}"
+    local bin_dir="${aid_home}/bin"
+    local lib_dir="${aid_home}/lib"
+
+    mkdir -p "$bin_dir" "$lib_dir"
+
+    # Copy the dispatcher.
+    cp "$src_bin_aid" "${bin_dir}/aid"
+    chmod +x "${bin_dir}/aid"
+
+    # Copy the core lib.
+    cp "$src_lib_core" "${lib_dir}/aid-install-core.sh"
+
+    # Write the VERSION file.
+    printf '%s\n' "$version" > "${aid_home}/VERSION"
+
+    echo "aid CLI v${version} installed to ${aid_home}."
+}
+
+# ---------------------------------------------------------------------------
+# Self-uninstall.
+# ---------------------------------------------------------------------------
+
+_cmd_self_uninstall() {
+    local force=0
+    local no_path=0
+    local profile_file=""
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --force|-Force)  force=1; shift ;;
+            --no-path)       no_path=1; shift ;;
+            --profile-file)  profile_file="$2"; shift 2 ;;
+            -h|--help)       _aid_usage self-uninstall; exit 0 ;;
+            *)               _aid_die "unknown flag for self-uninstall: $1" 2 ;;
+        esac
+    done
+
+    # Apply AID_FORCE env-var fallback.
+    if [[ "$force" -eq 0 && ( "${AID_FORCE:-0}" == "1" || "${AID_FORCE:-0}" == "true" ) ]]; then
+        force=1
+    fi
+
+    local aid_home="${AID_HOME:-${HOME}/.aid}"
+
+    if [[ "$force" -eq 0 ]]; then
+        printf 'This will remove the aid CLI from %s and the PATH wiring.\n' "$aid_home"
+        printf 'Per-project AID installs are NOT affected.\n'
+        printf 'Confirm? [y/N] '
+        local answer
+        read -r answer
+        if [[ "$answer" != "y" && "$answer" != "Y" ]]; then
+            echo "Cancelled."
+            exit 0
+        fi
+    fi
+
+    local partial=0
+
+    # Remove PATH wiring first (while we still have the profile-detect logic).
+    if [[ "$no_path" -eq 0 ]]; then
+        if [[ -n "$profile_file" ]]; then
+            _unwire_path_unix --profile-file "$profile_file" || partial=1
+        else
+            _unwire_path_unix || partial=1
+        fi
+    fi
+
+    # Remove $AID_HOME.
+    if [[ -d "$aid_home" ]]; then
+        rm -rf "$aid_home" || {
+            echo "ERROR: aid: failed to remove ${aid_home}" >&2
+            partial=1
+        }
+    fi
+
+    if [[ "$partial" -eq 1 ]]; then
+        echo "aid CLI partially removed. Check the messages above for what remained."
+        exit 1
+    fi
+
+    echo "aid CLI removed. Per-project AID installs are unaffected; run 'aid uninstall' in a project before removing the CLI if you also want to remove those."
+    exit 0
+}
+
+# ---------------------------------------------------------------------------
+# Parse subcommand and dispatch.
+# ---------------------------------------------------------------------------
+
+# Shared flag buckets (populated during subcommand-specific arg parsing).
+_AID_TOOL_ARG=""
+_AID_VERSION_ARG=""
+_AID_FROM_BUNDLE=""
+_AID_FORCE=0
+_AID_TARGET=""
+_AID_VERBOSE="${AID_VERBOSE:-0}"
+_AID_NO_PATH=0
+
+# Early help check.
+if [[ $# -eq 0 ]]; then
+    # Bare 'aid' → status.
+    set -- status
+fi
+
+case "$1" in
+    -h|--help)
+        _aid_usage
+        exit 0
+        ;;
+esac
+
+SUBCMD="$1"
+shift
+
+# ---- version ----------------------------------------------------------------
+if [[ "$SUBCMD" == "version" ]]; then
+    local_version_file="${AID_HOME}/VERSION"
+    if [[ -f "$local_version_file" ]]; then
+        cat "$local_version_file"
+    else
+        echo "unknown (VERSION file not found at ${local_version_file})"
+    fi
+    exit 0
+fi
+
+# ---- help -------------------------------------------------------------------
+if [[ "$SUBCMD" == "help" || "$SUBCMD" == "-h" || "$SUBCMD" == "--help" ]]; then
+    sub_help="${1:-}"
+    _aid_usage "$sub_help"
+    exit 0
+fi
+
+# ---- self-uninstall ---------------------------------------------------------
+if [[ "$SUBCMD" == "self-uninstall" ]]; then
+    _cmd_self_uninstall "$@"
+    # _cmd_self_uninstall always exits.
+fi
+
+# ---- status -----------------------------------------------------------------
+if [[ "$SUBCMD" == "status" ]]; then
+    # Parse flags for status.
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --target)
+                [[ $# -lt 2 ]] && _aid_die "--target requires a value" 2
+                _AID_TARGET="$2"; shift 2 ;;
+            --verbose) _AID_VERBOSE=1; shift ;;
+            -h|--help) _aid_usage status; exit 0 ;;
+            -*)        _aid_die "unknown flag for status: $1" 2 ;;
+            *)         _aid_die "unexpected argument for status: $1" 2 ;;
+        esac
+    done
+    # Apply env-var fallbacks.
+    [[ -z "$_AID_TARGET" && -n "${AID_TARGET:-}" ]] && _AID_TARGET="$AID_TARGET"
+    _AID_TARGET="${_AID_TARGET:-.}"
+    export AID_VERBOSE="$_AID_VERBOSE"
+    aid_status "$_AID_TARGET"
+    exit $?
+fi
+
+# ---- add / remove / update / uninstall --------------------------------------
+# These subcommands all share flag parsing; we then call the engine functions
+# (install_tool / uninstall_tool) directly through a per-tool loop, exactly as
+# install.sh does.  We build a temporary staging area for install/update, and
+# reuse the same prepare_tool_staging + install_tool / uninstall_tool pattern.
+
+# First, parse the subcommand and positional tool args.
+case "$SUBCMD" in
+    add|remove|update|uninstall) ;;
+    *)
+        echo "ERROR: aid: unknown command: ${SUBCMD} (see 'aid help')" >&2
+        exit 2
+        ;;
+esac
+
+# Collect positional tool args (comma-separated or space-separated before flags).
+_AID_POSITIONAL_TOOLS=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --from-bundle)
+            [[ $# -lt 2 ]] && _aid_die "--from-bundle requires a value" 2
+            _AID_FROM_BUNDLE="$2"; shift 2 ;;
+        --version)
+            [[ $# -lt 2 ]] && _aid_die "--version requires a value" 2
+            _AID_VERSION_ARG="$2"; shift 2 ;;
+        --force)   _AID_FORCE=1; shift ;;
+        --verbose) _AID_VERBOSE=1; shift ;;
+        --target)
+            [[ $# -lt 2 ]] && _aid_die "--target requires a value" 2
+            _AID_TARGET="$2"; shift 2 ;;
+        --no-path) _AID_NO_PATH=1; shift ;;
+        -h|--help) _aid_usage "$SUBCMD"; exit 0 ;;
+        -*)        _aid_die "unknown flag: $1" 2 ;;
+        *)
+            # Positional arg: tool name(s).
+            if [[ -z "$_AID_POSITIONAL_TOOLS" ]]; then
+                _AID_POSITIONAL_TOOLS="$1"
+            else
+                # Additional space-separated tools: append as comma-list.
+                _AID_POSITIONAL_TOOLS="${_AID_POSITIONAL_TOOLS},$1"
+            fi
+            shift ;;
+    esac
+done
+
+# Apply env-var fallbacks.
+[[ -z "$_AID_TOOL_ARG" && -n "$_AID_POSITIONAL_TOOLS" ]]  && _AID_TOOL_ARG="$_AID_POSITIONAL_TOOLS"
+[[ -z "$_AID_TOOL_ARG" && -n "${AID_TOOL:-}" ]]            && _AID_TOOL_ARG="$AID_TOOL"
+[[ -z "$_AID_VERSION_ARG" && -n "${AID_VERSION:-}" ]]      && _AID_VERSION_ARG="$AID_VERSION"
+[[ -z "$_AID_TARGET" && -n "${AID_TARGET:-}" ]]             && _AID_TARGET="$AID_TARGET"
+if [[ "$_AID_FORCE" -eq 0 && ( "${AID_FORCE:-0}" == "1" || "${AID_FORCE:-0}" == "true" ) ]]; then
+    _AID_FORCE=1
+fi
+export AID_VERBOSE="$_AID_VERBOSE"
+
+_AID_TARGET="${_AID_TARGET:-.}"
+# Validate target dir.
+if [[ ! -d "$_AID_TARGET" ]]; then
+    _aid_die "target directory does not exist: ${_AID_TARGET}" 2
+fi
+_AID_TARGET="$(cd "$_AID_TARGET" && pwd)"
+
+# Strip leading 'v' from version.
+_AID_VERSION_ARG="${_AID_VERSION_ARG#v}"
+
+# --from-bundle and --version are mutually exclusive.
+if [[ -n "$_AID_FROM_BUNDLE" && -n "$_AID_VERSION_ARG" ]]; then
+    _aid_die "--from-bundle and --version are mutually exclusive" 2
+fi
+
+# Validate constraints per subcommand.
+case "$SUBCMD" in
+    add)
+        # Tool is required (or must be auto-detectable / env-var set).
+        : ;;  # handled below in _resolve_tools_for_aid
+    remove)
+        [[ -z "$_AID_TOOL_ARG" ]] && _aid_die "remove requires at least one tool name" 2
+        ;;
+    update)
+        : ;; # tool optional (empty = all installed)
+    uninstall)
+        [[ -n "$_AID_FROM_BUNDLE" ]] && _aid_die "--from-bundle is not valid with uninstall" 2
+        [[ -n "$_AID_VERSION_ARG" ]] && _aid_die "--version is not valid with uninstall" 2
+        ;;
+esac
+
+# ---------------------------------------------------------------------------
+# Resolve tool list (reuses the same logic as install.sh _resolve_tools).
+# ---------------------------------------------------------------------------
+_AID_MANIFEST="${_AID_TARGET}/.aid/.aid-manifest.json"
+
+_resolve_tools_for_aid() {
+    local raw="$1" subcmd="$2" outfile="$3"
+
+    if [[ -z "$raw" ]]; then
+        if [[ "$subcmd" == "uninstall" || "$subcmd" == "update" || "$subcmd" == "remove" ]]; then
+            # No tool specified → all tools in manifest.
+            if [[ ! -f "$_AID_MANIFEST" ]]; then
+                return 0
+            fi
+            manifest_list_tools "$_AID_MANIFEST" >> "$outfile"
+            return 0
+        fi
+        # auto-detect for 'add'.
+        local detected
+        detected="$(detect_tool "$_AID_TARGET")"
+        local _rc=$?
+        if [[ "$_rc" -ne 0 ]]; then
+            return "$_rc"
+        fi
+        echo "$detected" >> "$outfile"
+        return 0
+    fi
+
+    # Split on comma.
+    local -a raw_tools=()
+    IFS=',' read -ra raw_tools <<< "$raw"
+    for t in "${raw_tools[@]}"; do
+        t="$(echo "$t" | tr -d '[:space:]')"
+        local canonical
+        canonical="$(normalize_tool "$t")"
+        local _rc=$?
+        if [[ "$_rc" -ne 0 ]]; then
+            return "$_rc"
+        fi
+        echo "$canonical" >> "$outfile"
+    done
+    return 0
+}
+
+# Set up staging area.
+_AID_STAGING_BASE="$(mktemp -d /tmp/aid-XXXXXX)"
+trap 'rm -rf "$_AID_STAGING_BASE"' EXIT
+
+_TOOLS_TMP="$(mktemp "${_AID_STAGING_BASE}/tools.XXXXXX")"
+_resolve_tools_for_aid "$_AID_TOOL_ARG" "$SUBCMD" "$_TOOLS_TMP"
+_RESOLVE_RC=$?
+if [[ "$_RESOLVE_RC" -ne 0 ]]; then
+    rm -rf "$_AID_STAGING_BASE"
+    exit "$_RESOLVE_RC"
+fi
+
+mapfile -t _AID_TOOLS < "$_TOOLS_TMP"
+
+if [[ "${#_AID_TOOLS[@]}" -eq 0 ]]; then
+    case "$SUBCMD" in
+        uninstall|remove)
+            echo "ERROR: aid: no manifest at ${_AID_TARGET}/.aid/.aid-manifest.json (exit 6)" >&2
+            rm -rf "$_AID_STAGING_BASE"
+            exit 6
+            ;;
+        update)
+            echo "ERROR: aid: no manifest at ${_AID_TARGET}/.aid/.aid-manifest.json; nothing to update (exit 6)" >&2
+            rm -rf "$_AID_STAGING_BASE"
+            exit 6
+            ;;
+        add)
+            echo "ERROR: aid: cannot auto-detect host tool; pass tool name as argument (e.g. aid add codex)" >&2
+            rm -rf "$_AID_STAGING_BASE"
+            exit 2
+            ;;
+    esac
+fi
+
+# ---------------------------------------------------------------------------
+# Prepare staging for install/update (mirrors install.sh prepare_tool_staging).
+# ---------------------------------------------------------------------------
+_AID_RESOLVED_VERSION=""
+_AID_STAGING_DIR=""
+
+_prepare_tool_staging_aid() {
+    local tool="$1" version="$2" from_bundle="$3"
+
+    local tool_staging
+    tool_staging="$(mktemp -d "${_AID_STAGING_BASE}/staging-${tool}-XXXXXX")"
+
+    if [[ -n "$from_bundle" ]]; then
+        local tarball="$from_bundle"
+        if [[ -d "$from_bundle" ]]; then
+            tarball="$(ls "${from_bundle}"/aid-${tool}-v*.tar.gz 2>/dev/null | head -1)"
+            if [[ -z "$tarball" ]]; then
+                echo "ERROR: aid: no tarball found for tool '${tool}' in bundle directory: ${from_bundle}" >&2
+                exit 1
+            fi
+        fi
+        if [[ ! -f "$tarball" ]]; then
+            echo "ERROR: aid: bundle file not found: ${tarball}" >&2
+            exit 1
+        fi
+        verify_bundle_checksum "$tarball" || exit $?
+        local tbase
+        tbase="$(basename "$tarball")"
+        _AID_RESOLVED_VERSION="$(echo "$tbase" | sed "s/aid-${tool}-v//" | sed 's/\.tar\.gz$//')"
+        [[ -z "$_AID_RESOLVED_VERSION" ]] && _AID_RESOLVED_VERSION="${version:-unknown}"
+        extract_tarball "$tarball" "$tool_staging" || exit $?
+    else
+        if [[ -z "$version" ]]; then
+            _AID_RESOLVED_VERSION="$(resolve_version)" || exit $?
+        else
+            _AID_RESOLVED_VERSION="$version"
+        fi
+        local dl_dir
+        dl_dir="$(mktemp -d "${_AID_STAGING_BASE}/download-${tool}-XXXXXX")"
+        fetch_tarball "$tool" "$_AID_RESOLVED_VERSION" "$dl_dir" || exit $?
+        local tarball="${dl_dir}/aid-${tool}-v${_AID_RESOLVED_VERSION}.tar.gz"
+        extract_tarball "$tarball" "$tool_staging" || exit $?
+    fi
+
+    _AID_STAGING_DIR="$tool_staging"
+}
+
+# ---------------------------------------------------------------------------
+# Dispatch to engine.
+# ---------------------------------------------------------------------------
+_AID_OVERALL_BLOCKED=0
+
+case "$SUBCMD" in
+    add|update)
+        for _tool in "${_AID_TOOLS[@]}"; do
+            echo ""
+            _prepare_tool_staging_aid "$_tool" "$_AID_VERSION_ARG" "$_AID_FROM_BUNDLE"
+            echo "Installing ${_tool} v${_AID_RESOLVED_VERSION} -> ${_AID_TARGET}"
+            install_tool "$_AID_STAGING_DIR" "$_tool" "$_AID_TARGET" "$_AID_RESOLVED_VERSION" "$_AID_FORCE" || {
+                _RC=$?
+                if [[ "$_RC" -eq 5 ]]; then
+                    _AID_OVERALL_BLOCKED=1
+                else
+                    exit "$_RC"
+                fi
+            }
+        done
+
+        echo ""
+        if [[ "$_AID_OVERALL_BLOCKED" -eq 1 ]]; then
+            echo "Install complete with warnings: one or more root agent files were not overwritten."
+            echo "Review the *.aid-new file(s) and merge, or re-run with --force to overwrite."
+            exit 5
+        fi
+        echo "Done. AID ${_AID_RESOLVED_VERSION:-} installed into: ${_AID_TARGET}"
+        exit 0
+        ;;
+
+    remove|uninstall)
+        manifest_exists "$_AID_MANIFEST" || {
+            echo "ERROR: aid: no manifest at ${_AID_TARGET}/.aid/.aid-manifest.json; nothing to uninstall" >&2
+            exit 6
+        }
+
+        for _tool in "${_AID_TOOLS[@]}"; do
+            echo ""
+            echo "Uninstalling ${_tool} from ${_AID_TARGET}"
+            uninstall_tool "$_AID_MANIFEST" "$_tool" "$_AID_TARGET" || {
+                _RC=$?
+                [[ "$_RC" -eq 6 ]] && exit 6
+                exit "$_RC"
+            }
+        done
+
+        echo ""
+        echo "Uninstall complete."
+        exit 0
+        ;;
+esac

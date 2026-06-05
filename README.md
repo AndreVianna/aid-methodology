@@ -61,27 +61,54 @@ flowchart TB
 
 ## Install
 
-AID is distributed via a one-command installer that fetches and copies the correct profile tree into your project — no full repo clone required.
+AID uses a persistent global `aid` CLI installed once per machine. After bootstrap, use
+`aid add <tool>` inside any repo to install the AID profile for that tool.
+
+### 1. Bootstrap the `aid` CLI (once per machine)
+
+**Linux / macOS:**
 
 ```bash
-# Linux / macOS / git-bash (auto-detects your tool, or pass --tool <name>)
-curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
-
-# Windows (PowerShell 5.1+)
-irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/<ref>/install.sh | bash
 ```
 
-Pass `--tool <name>` to target a specific host tool (one of `claude-code`, `codex`, `cursor`, `copilot-cli`, `antigravity`). Omit it and the installer auto-detects from your project tree.
+Installs to `~/.aid/` and adds `~/.aid/bin` to your PATH. Open a new shell after.
+
+**Windows (PowerShell 5.1+):**
+
+```powershell
+irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/<ref>/install.ps1 | iex
+```
+
+Installs to `%LOCALAPPDATA%\aid\` and adds it to your User PATH. Open a new shell after.
+
+### 2. Add AID to a project (run inside the repo)
 
 ```bash
-# Explicit tool selection
-bash install.sh --tool claude-code /path/to/your/project
-
-# PowerShell
-.\install.ps1 -Tool ClaudeCode -TargetDirectory C:\path\to\your\project
+aid add claude-code       # or: codex  cursor  copilot-cli  antigravity
+aid add codex,cursor      # multiple tools at once
+aid status                # show what is installed
+aid update                # update all installed tools
+aid remove codex          # remove one tool
+aid uninstall             # remove AID entirely from this project
 ```
 
-Re-running is safe: identical files are skipped, changed files that differ are skipped unless you pass `--force`. Root agent files (`CLAUDE.md`/`AGENTS.md`) that you wrote yourself are protected — the installer writes the incoming version as `*.aid-new` for you to review.
+**One-line bootstrap + add (first install):**
+
+```bash
+# Linux / macOS
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/<ref>/install.sh | bash -s -- add claude-code
+```
+
+```powershell
+# Windows
+$env:AID_TOOL = 'claude-code'
+irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/<ref>/install.ps1 | iex
+```
+
+Re-running `aid add` is safe: identical files are skipped. Root agent files
+(`CLAUDE.md`/`AGENTS.md`) that you wrote yourself are protected — AID writes the incoming
+version as `*.aid-new` for you to review rather than overwriting silently.
 
 > [!NOTE]
 > Prefer to install by hand? Copy the profile directory for each tool you use directly into your project root:
@@ -93,7 +120,7 @@ Re-running is safe: identical files are skipped, changed files that differ are s
 
 **Runtime requirements:** one or more of the five supported AI tools · Bash or PowerShell 5.1+ · Git · Node 18+ (optional, only for `/aid-summarize` diagram validation).
 
-[Full install guide — update, uninstall, offline bundles, version pinning, protect-on-diff →](docs/install.md)
+[Full install guide — bootstrap, subcommand reference, offline bundles, version pinning, protect-on-diff →](docs/install.md)
 
 ---
 

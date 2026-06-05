@@ -92,13 +92,15 @@ newtarget() { mktemp -d "${TMP}/tgt.XXXXXX"; }
 
 # Helper: run install.ps1 and capture output + exit code.
 # Usage: run_install [ps1-args...]
+# ISOLATION: unset AID_LIB_PATH so a parent-exported Bash .sh path does not bleed into
+# install.ps1 which expects a .psm1 module.  install.ps1 finds its sibling lib/AidInstallCore.psm1.
 run_install() {
-    OUT=$("$PWSH" -NoProfile -File "$SUT" "$@" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+    OUT=$(env -u AID_LIB_PATH "$PWSH" -NoProfile -File "$SUT" "$@" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
 }
 
 # Helper: run install.ps1 in verbose mode (per-file output).
 run_install_verbose() {
-    OUT=$("$PWSH" -NoProfile -File "$SUT" -Verbose "$@" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+    OUT=$(env -u AID_LIB_PATH "$PWSH" -NoProfile -File "$SUT" -Verbose "$@" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
 }
 
 # ---------------------------------------------------------------------------
@@ -622,7 +624,9 @@ else
     _start_http_server "${_SERVE_GOOD}" "$_PORT_GOOD"
 
     T=$(newtarget)
-    OUT=$(env \
+    # ISOLATION: -u AID_LIB_PATH so a parent-exported Bash .sh path does not bypass
+    # the remote-fetch code path we are testing.
+    OUT=$(env -u AID_LIB_PATH \
         "AID_LIB_VERSION=${VERSION}" \
         "AID_LIB_BASE=http://127.0.0.1:${_PORT_GOOD}/lib" \
         "AID_SUMS_URL=http://127.0.0.1:${_PORT_GOOD}/SHA256SUMS" \
@@ -647,7 +651,7 @@ else
     _start_http_server "${_SERVE_TAMPER}" "$_PORT_TAMPER"
 
     T=$(newtarget)
-    OUT=$(env \
+    OUT=$(env -u AID_LIB_PATH \
         "AID_LIB_VERSION=${VERSION}" \
         "AID_LIB_BASE=http://127.0.0.1:${_PORT_TAMPER}/lib" \
         "AID_SUMS_URL=http://127.0.0.1:${_PORT_TAMPER}/SHA256SUMS" \
@@ -673,7 +677,7 @@ else
     _start_http_server "${_SERVE_NOSUMS}" "$_PORT_NOSUMS"
 
     T=$(newtarget)
-    OUT=$(env \
+    OUT=$(env -u AID_LIB_PATH \
         "AID_LIB_VERSION=${VERSION}" \
         "AID_LIB_BASE=http://127.0.0.1:${_PORT_NOSUMS}/lib" \
         "AID_SUMS_URL=http://127.0.0.1:${_PORT_NOSUMS}/SHA256SUMS" \
@@ -691,7 +695,7 @@ else
     _start_http_server "${_SERVE_NOSUMS}" "$_PORT_NOSUMS2"
 
     T=$(newtarget)
-    OUT=$(env \
+    OUT=$(env -u AID_LIB_PATH \
         "AID_LIB_VERSION=${VERSION}" \
         "AID_LIB_BASE=http://127.0.0.1:${_PORT_NOSUMS2}/lib" \
         "AID_SUMS_URL=http://127.0.0.1:${_PORT_NOSUMS2}/SHA256SUMS" \

@@ -356,11 +356,13 @@ else
     # Helper: run install.ps1, capture output, preserve pwsh exit code.
     # Command substitution loses PIPESTATUS, so we write the exit code to a
     # temp file from within the pipe and read it back after the subshell.
+    # ISOLATION: unset AID_LIB_PATH — a parent-exported Bash .sh path must not
+    # bleed into install.ps1 which expects a .psm1 module.
     _PS1_RC_FILE="${TMP}/.ps1rc"
     run_ps1() {
         PS1_OUT=$(
             {
-                "$PWSH" -NoProfile -File "${INSTALL_PS1}" "$@" 2>&1
+                env -u AID_LIB_PATH "$PWSH" -NoProfile -File "${INSTALL_PS1}" "$@" 2>&1
                 printf '%s' "$?" > "${_PS1_RC_FILE}"
             } | sed 's/\x1b\[[0-9;]*m//g'
         )

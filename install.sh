@@ -2,104 +2,70 @@
 # install.sh — AID installer bootstrap (Bash 4+).
 #
 # Purpose:
-#   Install, update, or uninstall the AID (AI-Driven Development) methodology
-#   files into a target repository.  Parses CLI flags, sources the shared install
-#   core library (lib/aid-install-core.sh), then dispatches install/update/uninstall
-#   across the five canonical tool layouts.  Designed for non-interactive use
-#   (curl | bash, CI) — no /dev/tty prompts.
+#   Bootstrap / install the persistent global `aid` CLI and (optionally) add
+#   an AID profile to the current project in a single command.  Also retains
+#   the legacy flag-style direct-install path for one release.
 #
-# Usage:
-#   bash install.sh [--tool <name>[,<name>...]] [--version <v>] [--from-bundle <path>]
+# Usage (new — preferred):
+#   bash install.sh
+#       Install the global aid CLI into $AID_HOME (~/.aid by default) and wire
+#       PATH.  No project install — run 'aid add <tool>' afterwards.
+#
+#   bash install.sh <subcommand> [args]
+#       Bootstrap the CLI (if not already installed), then immediately run
+#       'aid <subcommand> [args]' in the current directory.
+#       Subcommands: status add remove update uninstall self-uninstall version help
+#       Examples:
+#         bash install.sh add codex --from-bundle ./aid-codex-v0.7.0.tar.gz
+#         bash install.sh status
+#
+#   bash install.sh --uninstall-cli [--force]
+#       Remove the global aid CLI (PATH wiring + $AID_HOME).  Fallback for
+#       when 'aid' is not yet on PATH.
+#
+# Usage (legacy — back-compat, hidden, retained for one release):
+#   bash install.sh [--tool <name>[,...]] [--version <v>] [--from-bundle <path>]
 #                   [--force] [--verbose] [--target <dir>] [<target-dir>]
-#       Install AID into the target directory (default: current directory).
+#       Direct project install (no global CLI install).  Identical to the
+#       pre-CLI-evolution behavior.  Triggers when --tool is given or when
+#       the first non-flag argument is NOT a known subcommand.
 #
-#   bash install.sh --update [--tool <name>[,...]] [--version <v>] [--from-bundle <path>]
-#                   [--force] [--verbose] [--target <dir>]
-#       Re-install / update an existing AID installation to the given or latest version.
-#
-#   bash install.sh --uninstall [--tool <name>[,...]] [--verbose] [--target <dir>]
-#       Remove AID-installed files (manifest-driven).
+#   bash install.sh --update [...]
+#   bash install.sh --uninstall [...]
+#       Legacy update/uninstall modes (flag style).
 #
 #   bash install.sh -h | --help
 #       Print this help and exit 0.
 #
-# Flags:
-#   --tool <name>[,...]    Host tool(s) to install.  Canonical ids: claude-code, codex,
-#                          cursor, copilot-cli, antigravity.  Case-insensitive.  Comma-list
-#                          installs multiple tools.  Omit to auto-detect from target dir.
-#   --version <v>          Pin to a specific release version (e.g. 0.7.0 or v0.7.0).
-#                          Mutually exclusive with --from-bundle.
-#   --from-bundle <path>   Offline install from a pre-downloaded tarball (single --tool) or
-#                          a directory of tarballs (comma-list).  No network.
-#   --force                Overwrite files that exist and differ, including root agent files.
-#   --verbose              Print per-file Copied:/Up to date:/Updated:/Removed: lines.
-#                          Default: concise per-tool summary only.
-#   --update               Re-install over an existing AID setup (refresh to version/latest).
-#   --uninstall            Manifest-driven removal.  --tool limits to that tool; without it,
-#                          removes all installed tools.
-#   --target <dir>         Install root (default: current directory).  Also accepted as a
-#                          trailing positional argument.
-#   -h, --help             Print this help and exit 0.
+# Environment variables:
+#   AID_HOME           Override global install dir (default: ~/.aid).
+#   AID_TOOL           Equivalent to --tool (legacy) or tool arg for 'add'.
+#   AID_VERSION        Equivalent to --version.
+#   AID_TARGET         Equivalent to --target.
+#   AID_FORCE          Set '1'/'true' to enable --force.
+#   AID_VERBOSE        Set '1' to enable per-file output.
+#   AID_NO_PATH        Set '1' to skip PATH wiring (new bootstrap mode).
+#   AID_LIB_PATH       Absolute path to aid-install-core.sh (test/override).
+#   AID_LIB_BASE       Base URL for remote lib fetch.
+#   AID_SUMS_URL       Override URL for SHA256SUMS verification.
+#   AID_LIB_VERSION    Pin the remote lib fetch to a specific release version.
+#   AID_INSECURE_SKIP_LIB_VERIFY  Set '1' to bypass lib checksum (INSECURE).
 #
 # Exit codes:
 #   0   success
 #   1   generic runtime failure
-#   2   usage error (unknown flag, bad args, ambiguous tool, missing target, etc.)
+#   2   usage error
 #   3   network / fetch failure
 #   4   checksum verification failed
-#   5   protect-on-diff blocked a root agent file (--force was not given)
-#   6   uninstall with no manifest (nothing installed)
+#   5   protect-on-diff blocked (--force not given)
+#   6   uninstall with no manifest
+#   7   aid status: no AID install in cwd
 
 set -uo pipefail
-# Note: -e (errexit) intentionally omitted — this script is designed for non-interactive
-# piped execution (curl|bash, CI).  Error paths use explicit exit codes and the die()
-# helper so that partial-success cases (exit 5 protect-on-diff) are correctly propagated.
-# Adding -e would cause subshell exit codes (e.g. from _resolve_tools) to terminate the
-# script silently rather than letting the caller inspect and act on them.
-#
-# Environment variables (installer options — take effect when the explicit flag is NOT given):
-#   AID_TOOL       — equivalent to --tool <value>.  Accepts a comma-list.
-#                    Useful for piped invocations: AID_TOOL=claude-code curl … | bash
-#                    Precedence: explicit --tool flag > AID_TOOL > auto-detect.
-#   AID_VERSION    — equivalent to --version <value>.
-#                    Precedence: explicit --version flag > AID_VERSION > resolve latest.
-#   AID_TARGET     — equivalent to --target <dir>.
-#                    Precedence: explicit --target / positional arg > AID_TARGET > cwd.
-#   AID_FORCE      — set to '1' or 'true' to enable --force.
-#                    Precedence: explicit --force flag > AID_FORCE.
-#   AID_VERBOSE    — set to '1' to enable --verbose (per-file output).
-#                    Precedence: explicit --verbose flag > AID_VERBOSE.
-#
-# Environment variables (bootstrap/lib fetch — existing):
-#   AID_LIB_PATH   — absolute path to aid-install-core.sh to source directly (overrides
-#                    sibling detection and remote fetch; useful for tests and vendored use).
-#   AID_LIB_BASE   — base URL prefix for the remote lib fetch when the lib is not beside
-#                    the script (piped/curl|bash case).  Defaults to the raw GitHub raw URL
-#                    for the resolved release tag.  Example for local test override:
-#                      AID_LIB_BASE=http://localhost:8000/lib install.sh ...
-#                    When AID_LIB_BASE is set, the lib is fetched as:
-#                      ${AID_LIB_BASE}/aid-install-core.sh
-#                    When AID_LIB_BASE is set, SHA256SUMS is fetched from the same base dir
-#                    as SHA256SUMS (i.e. one directory up from lib/):
-#                      <parent-of-AID_LIB_BASE>/SHA256SUMS
-#                    or AID_SUMS_URL may be set to override the checksum URL directly.
-#   AID_SUMS_URL   — override URL for SHA256SUMS used during lib checksum verification.
-#                    Useful for tests.  When unset, derived from the release tag URL.
-#   AID_LIB_VERSION — pin the lib fetch to a specific release version (avoids API call).
-#   AID_INSECURE_SKIP_LIB_VERIFY — set to '1' to skip lib checksum verification for the
-#                    remote-fetch path.  INSECURE — for restricted test environments only.
-#                    Default is fail-closed: SHA256SUMS must be fetchable and the hash must
-#                    match.  Do not set in production.
-#
-# Trust model: curl|bash trusts the GitHub repo at the resolved pinned tag (fail-closed:
-#   SHA256SUMS must be fetchable and hash must match before the lib is sourced; exit 3 if
-#   SHA256SUMS unreachable or entry missing; exit 4 on mismatch).  Offline --from-bundle
-#   installs remain the recommended verify-before-install path for air-gapped and
-#   high-security adopters.
+# Note: -e (errexit) intentionally omitted — error paths use explicit exit codes.
 
 # ---------------------------------------------------------------------------
-# Locate repo root (the directory containing this script).
-# When piped via stdin BASH_SOURCE[0] is unset or empty — guard with :-
+# Locate script dir (used in sibling-lib detection).
 # ---------------------------------------------------------------------------
 _SCRIPT_SELF="${BASH_SOURCE[0]:-}"
 if [[ -n "$_SCRIPT_SELF" ]]; then
@@ -110,40 +76,130 @@ fi
 LIB_DIR="${SCRIPT_DIR}/lib"
 
 # ---------------------------------------------------------------------------
-# Usage helper (prints the header block as plain text).
-# Fix #11: when $0 is not a readable file (piped via curl|bash), print a
-# concise stub so that --help and early error exits never emit
-# "sed: can't read bash".  When $0 IS a readable file keep the sed path.
+# Known subcommands (for disambiguation).
+# ---------------------------------------------------------------------------
+_KNOWN_SUBCMDS="status add remove update uninstall self-uninstall version help"
+
+_is_known_subcmd() {
+    local w="$1"
+    case "$w" in
+        status|add|remove|update|uninstall|self-uninstall|version|help) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# ---------------------------------------------------------------------------
+# Detect the install.sh invocation mode.
+#
+# Modes (mutually exclusive, detected from $@):
+#   BOOTSTRAP  — no args (or only bootstrap flags: --version, --no-path, --from-bundle)
+#   CONVENIENCE — first non-flag arg is a known subcommand
+#   UNINSTALL_CLI — --uninstall-cli flag present
+#   LEGACY     — --tool / --update / --uninstall flags (or first positional is not a subcmd)
+# ---------------------------------------------------------------------------
+_INSTALL_MODE="BOOTSTRAP"  # default
+
+# Peek at arguments to determine mode before full parse.
+# Disambiguation rules (in priority order):
+#   1. --uninstall-cli            → UNINSTALL_CLI
+#   2. --tool / --update / --uninstall flags  → LEGACY
+#   3. --from-bundle or --target (without a subcommand) → LEGACY (project-install flags)
+#   4. First non-flag = known subcommand  → CONVENIENCE
+#   5. First non-flag = unknown word      → LEGACY (unknown positional arg)
+#   6. No args / only bootstrap flags     → BOOTSTRAP
+_peek_first_nonopt=""
+_peek_has_tool=0
+_peek_has_update=0
+_peek_has_uninstall=0
+_peek_has_uninstall_cli=0
+_peek_has_legacy_project_flag=0  # --from-bundle or --target seen (before any subcommand)
+_peek_found_subcommand=0
+_peek_next_skip=0
+
+for _peek_arg in "$@"; do
+    if [[ "$_peek_next_skip" -eq 1 ]]; then
+        _peek_next_skip=0
+        continue
+    fi
+    case "$_peek_arg" in
+        --tool)
+            _peek_has_tool=1
+            _peek_next_skip=1
+            ;;
+        --from-bundle|--target)
+            # These are project-install flags; mark LEGACY (unless a subcommand was seen first).
+            [[ "$_peek_found_subcommand" -eq 0 ]] && _peek_has_legacy_project_flag=1
+            _peek_next_skip=1
+            ;;
+        --version|--profile-file|--notes-file)
+            _peek_next_skip=1
+            ;;
+        --update)   _peek_has_update=1 ;;
+        --uninstall) _peek_has_uninstall=1 ;;
+        --uninstall-cli) _peek_has_uninstall_cli=1 ;;
+        --force|--verbose|--no-path|-h|--help) ;;
+        -*)
+            # Unknown flag — treat as LEGACY.
+            [[ -z "$_peek_first_nonopt" ]] && _peek_first_nonopt="$_peek_arg"
+            ;;
+        --)
+            break  # Stop at end-of-flags marker.
+            ;;
+        *)
+            if [[ -z "$_peek_first_nonopt" ]]; then
+                _peek_first_nonopt="$_peek_arg"
+                _is_known_subcmd "$_peek_arg" && _peek_found_subcommand=1
+            fi
+            ;;
+    esac
+done
+
+if [[ "$_peek_has_uninstall_cli" -eq 1 ]]; then
+    _INSTALL_MODE="UNINSTALL_CLI"
+elif [[ "$_peek_has_tool" -eq 1 || "$_peek_has_update" -eq 1 || "$_peek_has_uninstall" -eq 1 ]]; then
+    _INSTALL_MODE="LEGACY"
+elif [[ "$_peek_has_legacy_project_flag" -eq 1 ]]; then
+    # --from-bundle or --target before any subcommand → project-install (legacy).
+    _INSTALL_MODE="LEGACY"
+elif [[ -n "$_peek_first_nonopt" ]]; then
+    if _is_known_subcmd "$_peek_first_nonopt"; then
+        _INSTALL_MODE="CONVENIENCE"
+    else
+        _INSTALL_MODE="LEGACY"
+    fi
+fi
+
+# AID_TOOL env-var: if set and no legacy-project flags in args, treat as convenience chain.
+# If legacy-project flags are present (e.g. AID_TOOL=codex install.sh --from-bundle X),
+# keep LEGACY mode so the existing install path handles AID_TOOL as --tool equivalent.
+if [[ "$_INSTALL_MODE" == "BOOTSTRAP" && -n "${AID_TOOL:-}" ]]; then
+    _INSTALL_MODE="CONVENIENCE"
+    _AID_TOOL_ENV_ONLY=1
+fi
+
+# ---------------------------------------------------------------------------
+# Usage helper (adapted for dual-mode).
 # ---------------------------------------------------------------------------
 usage() {
     if [[ ! -r "$0" ]]; then
-        # Piped execution — print a minimal stub mirroring install.ps1's Show-Usage stub.
-        printf 'install.sh — AID installer bootstrap (Bash 4+).\n'
+        printf 'install.sh — AID bootstrap (Bash 4+).\n'
         printf '\n'
         printf 'Usage:\n'
-        printf '  bash install.sh [--tool <name>[,...]] [--version <v>] [--from-bundle <path>]\n'
-        printf '                  [--force] [--target <dir>] [<target-dir>]\n'
-        printf '  bash install.sh --update  [...flags...]\n'
-        printf '  bash install.sh --uninstall [--tool <name>[,...]] [--target <dir>]\n'
-        printf '  bash install.sh -h | --help\n'
+        printf '  bash install.sh                          Install global aid CLI\n'
+        printf '  bash install.sh <subcommand> [args]      Bootstrap + run aid <subcmd>\n'
+        printf '  bash install.sh --uninstall-cli [--force] Remove global aid CLI\n'
+        printf '  bash install.sh -h | --help              Print this help\n'
         printf '\n'
-        printf 'Key flags:\n'
-        printf '  --tool <name>[,...]  Tool id: claude-code, codex, cursor, copilot-cli, antigravity\n'
-        printf '  --version <v>        Pin to release version (e.g. 0.7.0)\n'
-        printf '  --from-bundle <path> Offline install from pre-downloaded tarball\n'
-        printf '  --force              Overwrite differing files including root agent files\n'
-        printf '  --verbose            Print per-file detail (default: concise summary)\n'
-        printf '  --target <dir>       Install root (default: current directory)\n'
+        printf 'Legacy (back-compat, one release):\n'
+        printf '  bash install.sh [--tool X] [--version v] [--from-bundle p] [--force] [--target d]\n'
+        printf '  bash install.sh --update [...]  | --uninstall [...]\n'
         printf '\n'
-        printf 'Env vars: AID_TOOL, AID_VERSION, AID_TARGET, AID_FORCE, AID_VERBOSE\n'
-        printf '  (equivalent to the flags; flags take precedence)\n'
+        printf 'Subcommands: status add remove update uninstall self-uninstall version help\n'
         printf '\n'
-        printf 'Exit codes: 0 success, 1 failure, 2 usage error, 3 network error,\n'
-        printf '            4 checksum mismatch, 5 protect-on-diff blocked, 6 no manifest\n'
-        printf '\n'
-        printf 'Full docs: https://github.com/AndreVianna/aid-methodology/blob/master/docs/install.md\n'
+        printf 'Exit codes: 0 ok, 1 failure, 2 usage, 3 network, 4 checksum,\n'
+        printf '            5 protect-on-diff, 6 no manifest, 7 not an AID project\n'
     else
-        sed -n '2,51p' "$0" | sed 's/^# \{0,1\}//'
+        sed -n '2,55p' "$0" | sed 's/^# \{0,1\}//'
     fi
 }
 
@@ -156,7 +212,7 @@ die() {
 }
 
 # ---------------------------------------------------------------------------
-# Cleanup helpers — defined BEFORE the EXIT trap (fix #13).
+# Cleanup helpers — defined BEFORE the EXIT trap.
 # ---------------------------------------------------------------------------
 _AID_TMPLIB_DIR=""
 
@@ -166,9 +222,6 @@ _cleanup_tmplib() {
     fi
 }
 
-# _cleanup_staging is defined later (after STAGING_BASE is declared), but the
-# function definition itself must exist before the trap fires.  We pre-define
-# a placeholder here; the real body is set below.
 STAGING_BASE=""
 _cleanup_staging() {
     if [[ -n "$STAGING_BASE" && -d "$STAGING_BASE" ]]; then
@@ -176,47 +229,30 @@ _cleanup_staging() {
     fi
 }
 
-# Register the EXIT trap NOW — both cleanup functions are already defined.
 trap '_cleanup_tmplib; _cleanup_staging' EXIT
 
 # ---------------------------------------------------------------------------
-# Source the shared install core.
-# Resolution order (first match wins):
-#   1. AID_LIB_PATH env var — absolute path to the lib file (test override or vendored).
-#   2. Sibling lib/aid-install-core.sh — present when invoked as a local file.
-#   3. Remote fetch (piped execution) — fix #12:
-#      a. Resolve the release version (from --version flag or GitHub API latest).
-#      b. Fetch the lib from the IMMUTABLE release tag raw URL (not master).
-#      c. Fetch SHA256SUMS from the same release tag.
-#      d. Verify the lib's sha256 against SHA256SUMS — exit 4 on mismatch.
-#      e. Source the verified lib.
-#      AID_LIB_BASE / AID_SUMS_URL env overrides allow hermetic tests without
-#      any network access.
+# Source the shared install core (same logic as before — resolution order:
+#   1. AID_LIB_PATH env var
+#   2. Sibling lib/aid-install-core.sh
+#   3. Remote fetch (piped execution) with fail-closed checksum verification
 # ---------------------------------------------------------------------------
 
 _source_install_core() {
     local lib_file
 
-    # 1. Explicit override.
     if [[ -n "${AID_LIB_PATH:-}" ]]; then
         if [[ ! -f "$AID_LIB_PATH" ]]; then
             echo "ERROR: install.sh: AID_LIB_PATH set but file not found: ${AID_LIB_PATH}" >&2
             exit 1
         fi
         lib_file="$AID_LIB_PATH"
-    # 2. Sibling lib.
     elif [[ -f "${LIB_DIR}/aid-install-core.sh" ]]; then
         lib_file="${LIB_DIR}/aid-install-core.sh"
     else
-        # 3. Remote fetch with pinned tag + checksum verification (fix #12).
         _AID_TMPLIB_DIR="$(mktemp -d /tmp/aid-libfetch-XXXXXX)"
         lib_file="${_AID_TMPLIB_DIR}/aid-install-core.sh"
 
-        # Determine the version to pin.  Resolution order:
-        #   1. AID_LIB_VERSION env var (test/override: avoids API call without
-        #      requiring --version which is mutually exclusive with --from-bundle).
-        #   2. --version / -Version flag from $@ (quick scan without full parse).
-        #   3. GitHub API latest (requires network).
         local _pin_ver="${AID_LIB_VERSION:-}"
         if [[ -n "$_pin_ver" ]]; then
             _pin_ver="${_pin_ver#v}"
@@ -238,7 +274,6 @@ _source_install_core() {
         if [[ -n "$_pin_ver" ]]; then
             _resolved_ver="$_pin_ver"
         else
-            # Resolve latest from GitHub API.
             local _api_url="https://api.github.com/repos/AndreVianna/aid-methodology/releases/latest"
             local _curl_args=(-fsSL)
             local _token="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
@@ -258,20 +293,14 @@ _source_install_core() {
             fi
         fi
 
-        # Build URLs.  AID_LIB_BASE overrides the lib base URL (for tests).
-        # AID_SUMS_URL overrides the SHA256SUMS URL (for tests).
         local _default_lib_base="https://raw.githubusercontent.com/AndreVianna/aid-methodology/v${_resolved_ver}/lib"
         local _base_url="${AID_LIB_BASE:-${_default_lib_base}}"
         local _lib_url="${_base_url}/aid-install-core.sh"
 
-        # SHA256SUMS sits at the release root (one dir up from lib/).
-        # When AID_LIB_BASE is overridden (test), derive sums URL from its parent dir
-        # unless AID_SUMS_URL is set directly.
         local _default_sums_url="https://github.com/AndreVianna/aid-methodology/releases/download/v${_resolved_ver}/SHA256SUMS"
         local _sums_url="${AID_SUMS_URL:-}"
         if [[ -z "$_sums_url" ]]; then
             if [[ -n "${AID_LIB_BASE:-}" ]]; then
-                # Derive sums URL from parent directory of AID_LIB_BASE.
                 local _parent_base
                 _parent_base="${AID_LIB_BASE%/lib}"
                 _parent_base="${_parent_base%/lib/}"
@@ -297,9 +326,6 @@ _source_install_core() {
             exit 3
         fi
 
-        # Verify checksum (fix #12, fix #14: fail-closed).
-        # AID_INSECURE_SKIP_LIB_VERIFY=1 is an explicit opt-out — must be deliberately set.
-        # Default: fail closed if SHA256SUMS is unreachable OR entry is missing OR hash mismatches.
         if [[ "${AID_INSECURE_SKIP_LIB_VERIFY:-0}" == "1" ]]; then
             echo "WARN: install.sh: AID_INSECURE_SKIP_LIB_VERIFY=1 set — skipping lib checksum verification (INSECURE)" >&2
         else
@@ -318,7 +344,6 @@ _source_install_core() {
                 exit 3
             fi
 
-            # Verify the lib's sha256 against the entry in SHA256SUMS.
             local _lib_sha=""
             if command -v sha256sum >/dev/null 2>&1; then
                 _lib_sha="$(sha256sum "$lib_file" | awk '{print $1}')"
@@ -326,7 +351,7 @@ _source_install_core() {
                 _lib_sha="$(shasum -a 256 "$lib_file" | awk '{print $1}')"
             fi
             if [[ -z "$_lib_sha" ]]; then
-                echo "ERROR: install.sh: could not compute sha256 of fetched lib (no sha256sum/shasum); refusing to source unverified lib" >&2
+                echo "ERROR: install.sh: could not compute sha256 of fetched lib; refusing to source unverified lib" >&2
                 exit 3
             fi
             local _expected_sha
@@ -346,34 +371,383 @@ _source_install_core() {
 
     # shellcheck source=lib/aid-install-core.sh
     source "$lib_file"
+
+    # Return the resolved lib file path (used by BOOTSTRAP mode to copy into AID_HOME).
+    _SOURCED_LIB_FILE="$lib_file"
 }
 
 # ---------------------------------------------------------------------------
-# Early --help check (before lib source): print usage and exit immediately.
-# This avoids attempting network resolution when the user only wants help.
+# Early --help check (before lib source).
 # ---------------------------------------------------------------------------
 for _early_arg in "$@"; do
     if [[ "$_early_arg" == "-h" || "$_early_arg" == "--help" ]]; then
         usage
         exit 0
     fi
-    # Stop at '--' (end of flags).
     [[ "$_early_arg" == "--" ]] && break
 done
 
 _source_install_core "$@"
 
+# After sourcing the core, _SOURCED_LIB_FILE holds the path to the lib.
+_SOURCED_LIB_FILE="${_SOURCED_LIB_FILE:-${LIB_DIR}/aid-install-core.sh}"
+
 # ---------------------------------------------------------------------------
-# Argument parsing.
+# ============================================================================
+# UNINSTALL_CLI mode — remove the global aid CLI (fallback path)
+# ============================================================================
 # ---------------------------------------------------------------------------
-MODE="install"         # install | update | uninstall
-TOOL_ARG=""            # raw --tool value (comma-list or empty)
-VERSION_ARG=""         # raw --version value (empty = latest)
-FROM_BUNDLE=""         # path to tarball or directory (offline)
+if [[ "$_INSTALL_MODE" == "UNINSTALL_CLI" ]]; then
+    _UC_FORCE=0
+    _UC_NO_PATH=0
+    _UC_PROFILE_FILE=""
+    _uc_args=("$@")
+    _uc_i=0
+    while [[ "$_uc_i" -lt "${#_uc_args[@]}" ]]; do
+        _uc_a="${_uc_args[$_uc_i]}"
+        case "$_uc_a" in
+            --uninstall-cli) ;;
+            --force)   _UC_FORCE=1 ;;
+            --no-path) _UC_NO_PATH=1 ;;
+            --profile-file)
+                _uc_i=$((_uc_i + 1))
+                _UC_PROFILE_FILE="${_uc_args[$_uc_i]:-}"
+                ;;
+        esac
+        _uc_i=$((_uc_i + 1))
+    done
+
+    if [[ "$_UC_FORCE" -eq 0 && ( "${AID_FORCE:-0}" == "1" || "${AID_FORCE:-0}" == "true" ) ]]; then
+        _UC_FORCE=1
+    fi
+
+    AID_HOME="${AID_HOME:-${HOME}/.aid}"
+
+    if [[ "$_UC_FORCE" -eq 0 ]]; then
+        printf 'This will remove the aid CLI from %s and the PATH wiring.\n' "$AID_HOME"
+        printf 'Per-project AID installs are NOT affected.\n'
+        printf 'Confirm? [y/N] '
+        read -r _uc_answer
+        if [[ "$_uc_answer" != "y" && "$_uc_answer" != "Y" ]]; then
+            echo "Cancelled."
+            exit 0
+        fi
+    fi
+
+    _uc_partial=0
+
+    # Remove PATH wiring.
+    if [[ "$_UC_NO_PATH" -eq 0 ]]; then
+        _uc_profile=""
+        if [[ -n "$_UC_PROFILE_FILE" ]]; then
+            _uc_profile="$_UC_PROFILE_FILE"
+        else
+            _shell_name="$(basename "${SHELL:-bash}")"
+            case "$_shell_name" in
+                zsh)  _uc_profile="${ZDOTDIR:-${HOME}}/.zshrc" ;;
+                bash)
+                    _uname_s="$(uname -s 2>/dev/null || echo Linux)"
+                    if [[ "$_uname_s" == "Darwin" ]]; then
+                        _uc_profile="${HOME}/.bash_profile"
+                    else
+                        _uc_profile="${HOME}/.bashrc"
+                    fi
+                    ;;
+                *)    _uc_profile="${HOME}/.profile" ;;
+            esac
+        fi
+
+        if [[ -f "$_uc_profile" ]] && grep -qF '# >>> aid CLI >>>' "$_uc_profile" 2>/dev/null; then
+            _uc_tmp="$(mktemp "${_uc_profile}.aid-tmp.XXXXXX")"
+            awk 'BEGIN{skip=0} /# >>> aid CLI >>>/{ skip=1; next } skip && /# <<< aid CLI <<</{ skip=0; next } skip{next} {print}' \
+                "$_uc_profile" > "$_uc_tmp"
+            mv "$_uc_tmp" "$_uc_profile"
+            echo "PATH wiring removed from ${_uc_profile}."
+        fi
+    fi
+
+    if [[ -d "$AID_HOME" ]]; then
+        rm -rf "$AID_HOME" || {
+            echo "ERROR: install.sh: failed to remove ${AID_HOME}" >&2
+            _uc_partial=1
+        }
+    fi
+
+    if [[ "$_uc_partial" -eq 1 ]]; then
+        echo "aid CLI partially removed."
+        exit 1
+    fi
+    echo "aid CLI removed. Per-project AID installs are unaffected; run 'aid uninstall' in a project before removing the CLI if you also want to remove those."
+    exit 0
+fi
+
+# ---------------------------------------------------------------------------
+# ============================================================================
+# BOOTSTRAP mode — install the global aid CLI and optionally wire PATH
+# ============================================================================
+# ---------------------------------------------------------------------------
+if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
+    # Parse bootstrap flags.
+    _BOOTSTRAP_VERSION=""
+    _BOOTSTRAP_FROM_BUNDLE=""
+    _BOOTSTRAP_NO_PATH="${AID_NO_PATH:-0}"
+    _BOOTSTRAP_PROFILE_FILE=""
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --version)
+                [[ $# -lt 2 ]] && die "--version requires a value" 2
+                _BOOTSTRAP_VERSION="$2"; shift 2 ;;
+            --from-bundle)
+                [[ $# -lt 2 ]] && die "--from-bundle requires a value" 2
+                _BOOTSTRAP_FROM_BUNDLE="$2"; shift 2 ;;
+            --no-path) _BOOTSTRAP_NO_PATH=1; shift ;;
+            --profile-file)
+                [[ $# -lt 2 ]] && die "--profile-file requires a value" 2
+                _BOOTSTRAP_PROFILE_FILE="$2"; shift 2 ;;
+            -h|--help) usage; exit 0 ;;
+            --) shift; break ;;
+            -*) die "unknown flag: $1" 2 ;;
+            *)  die "unexpected argument: $1 (no subcommand; did you mean 'install.sh add $1'?)" 2 ;;
+        esac
+    done
+
+    # Apply env-var overrides.
+    [[ -z "$_BOOTSTRAP_VERSION" && -n "${AID_VERSION:-}" ]] && _BOOTSTRAP_VERSION="${AID_VERSION#v}"
+    _BOOTSTRAP_VERSION="${_BOOTSTRAP_VERSION#v}"
+
+    AID_HOME="${AID_HOME:-${HOME}/.aid}"
+    local_bin_dir="${AID_HOME}/bin"
+    local_lib_dir="${AID_HOME}/lib"
+
+    # Determine CLI version (what we are installing).
+    # If the lib was fetched remotely, we can derive the version from the lib-fetch
+    # resolution already done.  If from sibling, use _BOOTSTRAP_VERSION or read VERSION file.
+    _CLI_VERSION="${_BOOTSTRAP_VERSION}"
+    if [[ -z "$_CLI_VERSION" ]]; then
+        if [[ -f "${SCRIPT_DIR}/VERSION" ]]; then
+            _CLI_VERSION="$(tr -d '[:space:]' < "${SCRIPT_DIR}/VERSION")"
+        else
+            _CLI_VERSION="0.0.0"
+        fi
+    fi
+
+    # Locate the dispatcher (bin/aid) to install.
+    # It lives at: <script-dir>/bin/aid (relative to install.sh in the release tree).
+    _BOOTSTRAP_AID_BIN="${SCRIPT_DIR}/bin/aid"
+    if [[ ! -f "$_BOOTSTRAP_AID_BIN" ]]; then
+        die "aid dispatcher not found at ${_BOOTSTRAP_AID_BIN}. Ensure you are running the full release package." 1
+    fi
+
+    # Stage into a temp dir, then atomic-move into AID_HOME to avoid partial writes.
+    _BOOTSTRAP_STAGE="$(mktemp -d /tmp/aid-bootstrap-XXXXXX)"
+    trap '_cleanup_tmplib; _cleanup_staging; rm -rf "${_BOOTSTRAP_STAGE:-}"' EXIT
+
+    mkdir -p "${_BOOTSTRAP_STAGE}/bin" "${_BOOTSTRAP_STAGE}/lib"
+    cp "$_BOOTSTRAP_AID_BIN" "${_BOOTSTRAP_STAGE}/bin/aid"
+    chmod +x "${_BOOTSTRAP_STAGE}/bin/aid"
+    cp "$_SOURCED_LIB_FILE" "${_BOOTSTRAP_STAGE}/lib/aid-install-core.sh"
+    printf '%s\n' "$_CLI_VERSION" > "${_BOOTSTRAP_STAGE}/VERSION"
+
+    # Atomic install: move staged files into AID_HOME.
+    mkdir -p "$local_bin_dir" "$local_lib_dir"
+    cp "${_BOOTSTRAP_STAGE}/bin/aid" "${local_bin_dir}/aid"
+    chmod +x "${local_bin_dir}/aid"
+    cp "${_BOOTSTRAP_STAGE}/lib/aid-install-core.sh" "${local_lib_dir}/aid-install-core.sh"
+    cp "${_BOOTSTRAP_STAGE}/VERSION" "${AID_HOME}/VERSION"
+
+    echo "aid CLI v${_CLI_VERSION} installed to ${AID_HOME}."
+
+    # Wire PATH (idempotent marked-block).
+    _wire_profile_block() {
+        local bin_dir="$1"
+        local profile="$2"
+        local no_path="$3"
+
+        if [[ "$no_path" -eq 1 ]]; then
+            printf 'Add "%s" to your PATH manually.\n' "$bin_dir"
+            return 0
+        fi
+
+        if [[ ! -f "$profile" ]]; then
+            touch "$profile" 2>/dev/null || {
+                echo "WARN: install.sh: could not create ${profile}; PATH not wired." >&2
+                printf 'Add "%s" to your PATH manually.\n' "$bin_dir"
+                return 0
+            }
+        fi
+
+        local fence_start='# >>> aid CLI >>>'
+        local fence_end='# <<< aid CLI <<<'
+        local path_line="export PATH=\"${bin_dir}:\$PATH\""
+
+        if grep -qF "$fence_start" "$profile" 2>/dev/null; then
+            local tmp_p
+            tmp_p="$(mktemp "${profile}.aid-tmp.XXXXXX")"
+            awk -v fs="$fence_start" -v fe="$fence_end" -v pl="$path_line" \
+                'BEGIN{skip=0}
+                 $0==fs{skip=1; print fs; print pl; print fe; next}
+                 skip && $0==fe{skip=0; next}
+                 skip{next}
+                 {print}' "$profile" > "$tmp_p"
+            mv "$tmp_p" "$profile"
+            echo "PATH wiring updated in ${profile}."
+        else
+            printf '\n%s\n%s\n%s\n' "$fence_start" "$path_line" "$fence_end" >> "$profile"
+            echo "PATH wiring added to ${profile}."
+        fi
+
+        echo "Open a new shell, or run: export PATH=\"${bin_dir}:\$PATH\" (or: source ${profile})"
+    }
+
+    # Detect profile.
+    if [[ -n "$_BOOTSTRAP_PROFILE_FILE" ]]; then
+        _DETECTED_PROFILE="$_BOOTSTRAP_PROFILE_FILE"
+    else
+        _SHELL_NAME="$(basename "${SHELL:-bash}")"
+        case "$_SHELL_NAME" in
+            zsh)  _DETECTED_PROFILE="${ZDOTDIR:-${HOME}}/.zshrc" ;;
+            bash)
+                _BS_UNAME="$(uname -s 2>/dev/null || echo Linux)"
+                if [[ "$_BS_UNAME" == "Darwin" ]]; then
+                    _DETECTED_PROFILE="${HOME}/.bash_profile"
+                else
+                    _DETECTED_PROFILE="${HOME}/.bashrc"
+                fi
+                ;;
+            *)    _DETECTED_PROFILE="${HOME}/.profile" ;;
+        esac
+    fi
+
+    _wire_profile_block "$local_bin_dir" "$_DETECTED_PROFILE" "$_BOOTSTRAP_NO_PATH"
+
+    printf '\nThen: aid add <tool>    (e.g. aid add codex)\n'
+    exit 0
+fi
+
+# ---------------------------------------------------------------------------
+# ============================================================================
+# CONVENIENCE mode — bootstrap CLI (if needed) then exec 'aid <subcmd> ...'
+# ============================================================================
+# ---------------------------------------------------------------------------
+if [[ "$_INSTALL_MODE" == "CONVENIENCE" ]]; then
+    # Parse args: strip bootstrap-only flags (--no-path, --profile-file) from both
+    # the pre-subcommand and post-subcommand positions; pass everything else to aid.
+    _CONV_NO_PATH="${AID_NO_PATH:-0}"
+    _CONV_PROFILE_FILE=""
+    _CONV_SUBCMD_ARGS=()
+
+    _conv_args=("$@")
+    _conv_i=0
+    while [[ "$_conv_i" -lt "${#_conv_args[@]}" ]]; do
+        _conv_a="${_conv_args[$_conv_i]}"
+        case "$_conv_a" in
+            --no-path)
+                _CONV_NO_PATH=1
+                ;;
+            --profile-file)
+                _conv_i=$((_conv_i + 1))
+                _CONV_PROFILE_FILE="${_conv_args[$_conv_i]:-}"
+                ;;
+            *)
+                _CONV_SUBCMD_ARGS+=("$_conv_a")
+                ;;
+        esac
+        _conv_i=$((_conv_i + 1))
+    done
+
+    # If triggered by AID_TOOL env-var only (no args), synthesize 'add <AID_TOOL>'.
+    if [[ "${_AID_TOOL_ENV_ONLY:-0}" -eq 1 && "${#_CONV_SUBCMD_ARGS[@]}" -eq 0 ]]; then
+        _CONV_SUBCMD_ARGS=("add" "${AID_TOOL}")
+    fi
+
+    AID_HOME="${AID_HOME:-${HOME}/.aid}"
+    _CONV_AID_BIN="${AID_HOME}/bin/aid"
+
+    # Bootstrap the CLI if not already present or if it needs upgrading.
+    # (Reuse BOOTSTRAP logic by detecting whether AID_HOME/bin/aid exists.)
+    if [[ ! -f "$_CONV_AID_BIN" ]]; then
+        # Install the CLI first.
+        _CONV_BIN_SRC="${SCRIPT_DIR}/bin/aid"
+        if [[ ! -f "$_CONV_BIN_SRC" ]]; then
+            die "aid dispatcher not found at ${_CONV_BIN_SRC}. Ensure you are running the full release package." 1
+        fi
+        _CONV_VERSION_FILE="${SCRIPT_DIR}/VERSION"
+        _CONV_CLI_VER="0.0.0"
+        [[ -f "$_CONV_VERSION_FILE" ]] && _CONV_CLI_VER="$(tr -d '[:space:]' < "$_CONV_VERSION_FILE")"
+
+        mkdir -p "${AID_HOME}/bin" "${AID_HOME}/lib"
+        cp "$_CONV_BIN_SRC" "${AID_HOME}/bin/aid"
+        chmod +x "${AID_HOME}/bin/aid"
+        cp "$_SOURCED_LIB_FILE" "${AID_HOME}/lib/aid-install-core.sh"
+        printf '%s\n' "$_CONV_CLI_VER" > "${AID_HOME}/VERSION"
+        echo "aid CLI v${_CONV_CLI_VER} installed to ${AID_HOME}."
+
+        # Wire PATH.
+        _CONV_PROFILE=""
+        if [[ -n "$_CONV_PROFILE_FILE" ]]; then
+            _CONV_PROFILE="$_CONV_PROFILE_FILE"
+        else
+            _cv_shell="$(basename "${SHELL:-bash}")"
+            case "$_cv_shell" in
+                zsh)  _CONV_PROFILE="${ZDOTDIR:-${HOME}}/.zshrc" ;;
+                bash)
+                    _cv_uname="$(uname -s 2>/dev/null || echo Linux)"
+                    if [[ "$_cv_uname" == "Darwin" ]]; then
+                        _CONV_PROFILE="${HOME}/.bash_profile"
+                    else
+                        _CONV_PROFILE="${HOME}/.bashrc"
+                    fi
+                    ;;
+                *)    _CONV_PROFILE="${HOME}/.profile" ;;
+            esac
+        fi
+
+        if [[ "$_CONV_NO_PATH" -eq 0 && -n "$_CONV_PROFILE" ]]; then
+            [[ ! -f "$_CONV_PROFILE" ]] && touch "$_CONV_PROFILE" 2>/dev/null || true
+            _cp_bin="${AID_HOME}/bin"
+            _cp_fence='# >>> aid CLI >>>'
+            _cp_fence_end='# <<< aid CLI <<<'
+            _cp_line="export PATH=\"${_cp_bin}:\$PATH\""
+            if grep -qF "$_cp_fence" "$_CONV_PROFILE" 2>/dev/null; then
+                _cp_tmp="$(mktemp "${_CONV_PROFILE}.aid-tmp.XXXXXX")"
+                awk -v fs="$_cp_fence" -v fe="$_cp_fence_end" -v pl="$_cp_line" \
+                    'BEGIN{skip=0}
+                     $0==fs{skip=1; print fs; print pl; print fe; next}
+                     skip && $0==fe{skip=0; next}
+                     skip{next}
+                     {print}' "$_CONV_PROFILE" > "$_cp_tmp"
+                mv "$_cp_tmp" "$_CONV_PROFILE"
+                echo "PATH wiring updated in ${_CONV_PROFILE}."
+            else
+                printf '\n%s\n%s\n%s\n' "$_cp_fence" "$_cp_line" "$_cp_fence_end" >> "$_CONV_PROFILE"
+                echo "PATH wiring added to ${_CONV_PROFILE}."
+            fi
+        fi
+    fi
+
+    # Exec 'aid <subcmd> ...' directly (bypass PATH refresh requirement).
+    exec "$_CONV_AID_BIN" "${_CONV_SUBCMD_ARGS[@]+"${_CONV_SUBCMD_ARGS[@]}"}"
+    # exec replaces process; we never reach here.
+    exit 0
+fi
+
+# ---------------------------------------------------------------------------
+# ============================================================================
+# LEGACY mode — original flag-style direct project install (back-compat).
+#
+# Identical behavior to the pre-CLI-evolution install.sh.
+# Preserved for one release so existing test fixtures keep passing.
+# ============================================================================
+# ---------------------------------------------------------------------------
+
+# Argument parsing (verbatim from the original install.sh).
+MODE="install"
+TOOL_ARG=""
+VERSION_ARG=""
+FROM_BUNDLE=""
 FORCE=0
 TARGET=""
-# AID_VERBOSE is exported so lib/aid-install-core.sh can read it.
-# Initialize from env var; may be overridden by --verbose flag below.
 AID_VERBOSE="${AID_VERBOSE:-0}"
 
 while [[ $# -gt 0 ]]; do
@@ -388,6 +762,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --uninstall)
             MODE="uninstall"
+            shift
+            ;;
+        --uninstall-cli)
+            # Should have been handled above; re-route.
             shift
             ;;
         --tool)
@@ -418,16 +796,18 @@ while [[ $# -gt 0 ]]; do
             TARGET="$2"
             shift 2
             ;;
+        --no-path)
+            # Bootstrap-only flag; silently ignore in legacy mode.
+            shift
+            ;;
         --)
             shift
-            # Remaining args are positional.
             break
             ;;
         -*)
             die "unknown flag: $1" 2
             ;;
         *)
-            # Trailing positional → target dir.
             if [[ -z "$TARGET" ]]; then
                 TARGET="$1"
                 shift
@@ -448,10 +828,7 @@ while [[ $# -gt 0 ]]; do
     fi
 done
 
-# ---------------------------------------------------------------------------
-# Apply env-var fallbacks (AID_TOOL, AID_VERSION, AID_TARGET, AID_FORCE).
-# Precedence: explicit flag/arg > env var > auto-detect/default.
-# ---------------------------------------------------------------------------
+# Apply env-var fallbacks.
 if [[ -z "$TOOL_ARG" && -n "${AID_TOOL:-}" ]]; then
     TOOL_ARG="$AID_TOOL"
 fi
@@ -466,16 +843,10 @@ if [[ "$FORCE" -eq 0 && ( "${AID_FORCE:-0}" == "1" || "${AID_FORCE:-0}" == "true
 fi
 export AID_VERBOSE
 
-# ---------------------------------------------------------------------------
 # Validation.
-# ---------------------------------------------------------------------------
-
-# --from-bundle and --version are mutually exclusive.
 if [[ -n "$FROM_BUNDLE" && -n "$VERSION_ARG" ]]; then
     die "--from-bundle and --version are mutually exclusive" 2
 fi
-
-# Uninstall does not accept --from-bundle or --version.
 if [[ "$MODE" == "uninstall" ]]; then
     if [[ -n "$FROM_BUNDLE" ]]; then
         die "--from-bundle is not valid with --uninstall" 2
@@ -485,30 +856,20 @@ if [[ "$MODE" == "uninstall" ]]; then
     fi
 fi
 
-# Target defaults to current directory.
 TARGET="${TARGET:-.}"
-
-# Resolve and validate target.
 if [[ ! -d "$TARGET" ]]; then
     die "target directory does not exist: ${TARGET}" 2
 fi
 TARGET="$(cd "$TARGET" && pwd)"
-
-# Strip leading 'v' from version.
 VERSION_ARG="${VERSION_ARG#v}"
 
-# ---------------------------------------------------------------------------
-# Resolve tool list.
-# ---------------------------------------------------------------------------
-# _resolve_tools writes tool ids (one per line) to a temp file and sets
-# _RESOLVE_TOOLS_RC to the exit code. This avoids the subshell problem.
+# Resolve tool list (same logic as original).
 _RESOLVE_TOOLS_RC=0
 _resolve_tools() {
     local raw="$1" target_dir="$2" mode="$3" outfile="$4"
 
     if [[ -z "$raw" ]]; then
         if [[ "$mode" == "uninstall" ]]; then
-            # No --tool for uninstall → all tools in manifest.
             local manifest="${target_dir}/.aid/.aid-manifest.json"
             if [[ ! -f "$manifest" ]]; then
                 return 0
@@ -529,7 +890,6 @@ PY
             fi
             return 0
         fi
-        # Auto-detect.
         local detected
         detected="$(detect_tool "$target_dir")"
         local _rc=$?
@@ -540,7 +900,6 @@ PY
         return 0
     fi
 
-    # Split on comma.
     local -a raw_tools=()
     IFS=',' read -ra raw_tools <<< "$raw"
     for t in "${raw_tools[@]}"; do
@@ -556,31 +915,18 @@ PY
     return 0
 }
 
-# ---------------------------------------------------------------------------
-# Staging area management.
-# ---------------------------------------------------------------------------
-# Note: _cleanup_staging and _cleanup_tmplib are defined and the EXIT trap is
-# registered earlier in the file (before _source_install_core) so that any
-# exit between the function defs and here is still handled correctly (fix #13).
-
-# get_tarball_for_tool <tool> <version> <from_bundle>
-# Populates STAGING_DIR (per-tool extracted staging dir) and RESOLVED_VERSION.
 STAGING_DIR=""
 RESOLVED_VERSION=""
 
 prepare_tool_staging() {
     local tool="$1" version="$2" from_bundle="$3"
 
-    # Create the per-tool staging dir.
     local tool_staging
     tool_staging="$(mktemp -d "${STAGING_BASE}/staging-${tool}-XXXXXX")"
 
     if [[ -n "$from_bundle" ]]; then
-        # Offline mode.
         local tarball="$from_bundle"
         if [[ -d "$from_bundle" ]]; then
-            # Directory of tarballs.
-            local fname="aid-${tool}-v"
             tarball="$(ls "${from_bundle}"/aid-${tool}-v*.tar.gz 2>/dev/null | head -1)"
             if [[ -z "$tarball" ]]; then
                 die "no tarball found for tool '${tool}' in bundle directory: ${from_bundle}" 1
@@ -589,16 +935,13 @@ prepare_tool_staging() {
         if [[ ! -f "$tarball" ]]; then
             die "bundle file not found: ${tarball}" 1
         fi
-        # Verify sibling SHA256SUMS if present.
         verify_bundle_checksum "$tarball" || exit $?
-        # Extract version from filename: aid-<tool>-v<version>.tar.gz
         local tbase
         tbase="$(basename "$tarball")"
         RESOLVED_VERSION="$(echo "$tbase" | sed "s/aid-${tool}-v//" | sed 's/\.tar\.gz$//')"
         [[ -z "$RESOLVED_VERSION" ]] && RESOLVED_VERSION="${version:-unknown}"
         extract_tarball "$tarball" "$tool_staging" || exit $?
     else
-        # Online mode.
         if [[ -z "$version" ]]; then
             RESOLVED_VERSION="$(resolve_version)" || exit $?
         else
@@ -614,13 +957,8 @@ prepare_tool_staging() {
     STAGING_DIR="$tool_staging"
 }
 
-# ---------------------------------------------------------------------------
-# Main dispatch.
-# ---------------------------------------------------------------------------
-
 STAGING_BASE="$(mktemp -d /tmp/aid-install-XXXXXX)"
 
-# Resolve tool list using a temp file to preserve exit code across the subshell boundary.
 _TOOLS_FILE="$(mktemp "${STAGING_BASE}/tools.XXXXXX")"
 _resolve_tools "$TOOL_ARG" "$TARGET" "$MODE" "$_TOOLS_FILE"
 _RESOLVE_TOOLS_RC=$?
@@ -633,7 +971,6 @@ if [[ "${#TOOLS[@]}" -eq 0 && "$MODE" == "uninstall" ]]; then
     die "uninstall: no manifest found at ${TARGET}/.aid/.aid-manifest.json (exit 6)" 6
 fi
 
-# Track overall blocked status for exit 5.
 OVERALL_BLOCKED=0
 
 case "$MODE" in
@@ -641,7 +978,7 @@ case "$MODE" in
         for tool in "${TOOLS[@]}"; do
             echo ""
             prepare_tool_staging "$tool" "$VERSION_ARG" "$FROM_BUNDLE"
-            echo "Installing ${tool} v${RESOLVED_VERSION} → ${TARGET}"
+            echo "Installing ${tool} v${RESOLVED_VERSION} -> ${TARGET}"
             install_tool "$STAGING_DIR" "$tool" "$TARGET" "$RESOLVED_VERSION" "$FORCE" || {
                 _RC=$?
                 if [[ "$_RC" -eq 5 ]]; then

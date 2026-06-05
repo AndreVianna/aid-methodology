@@ -696,7 +696,10 @@ mkdir -p "${_RUN_IN_DIR}"
 T=$(newtarget)
 # Note: AID_LIB_VERSION avoids the GitHub API call for version resolution
 # (--version is mutually exclusive with --from-bundle in the main arg parser).
+# ISOLATION: AID_LIB_PATH must be unset so the remote-fetch code path (path 3) is
+# exercised instead of the sibling-lib shortcut.  'env -u' is the portable way.
 OUT=$(cd "${_RUN_IN_DIR}" && \
+      env -u AID_LIB_PATH \
       AID_LIB_VERSION="${VERSION}" \
       AID_LIB_BASE="file://${_LIB_SERVE_DIR}/lib" \
       AID_SUMS_URL="file://${_LIB_SERVE_DIR}/SHA256SUMS" \
@@ -717,6 +720,7 @@ printf '%s  aid-install-core.sh\n' "$_LIB_SHA256" > "${_TAMPER_DIR}/SHA256SUMS"
 
 T=$(newtarget)
 OUT=$(cd "${_RUN_IN_DIR}" && \
+      env -u AID_LIB_PATH \
       AID_LIB_VERSION="${VERSION}" \
       AID_LIB_BASE="file://${_TAMPER_DIR}/lib" \
       AID_SUMS_URL="file://${_TAMPER_DIR}/SHA256SUMS" \
@@ -739,6 +743,7 @@ printf '%s  aid-install-core.sh\n' "$_LIB_SHA256" > "${_PWNED_DIR}/SHA256SUMS"
 
 T=$(newtarget)
 OUT=$(cd "${_RUN_IN_DIR}" && \
+      env -u AID_LIB_PATH \
       AID_LIB_VERSION="${VERSION}" \
       AID_LIB_BASE="file://${_PWNED_DIR}/lib" \
       AID_SUMS_URL="file://${_PWNED_DIR}/SHA256SUMS" \
@@ -763,6 +768,7 @@ cp "${REPO_ROOT}/lib/aid-install-core.sh" "${_NOSUMS_DIR}/lib/aid-install-core.s
 
 T=$(newtarget)
 OUT=$(cd "${_RUN_IN_DIR}" && \
+      env -u AID_LIB_PATH \
       AID_LIB_VERSION="${VERSION}" \
       AID_LIB_BASE="file://${_NOSUMS_DIR}/lib" \
       AID_SUMS_URL="file://${_NOSUMS_DIR}/SHA256SUMS" \
@@ -776,6 +782,7 @@ assert_output_contains "$OUT" "fail-closed" "IN32b missing SHA256SUMS → 'fail-
 # IN32c – AID_INSECURE_SKIP_LIB_VERIFY=1 must be the explicit opt-out only.
 T=$(newtarget)
 OUT=$(cd "${_RUN_IN_DIR}" && \
+      env -u AID_LIB_PATH \
       AID_LIB_VERSION="${VERSION}" \
       AID_LIB_BASE="file://${_NOSUMS_DIR}/lib" \
       AID_SUMS_URL="file://${_NOSUMS_DIR}/SHA256SUMS" \

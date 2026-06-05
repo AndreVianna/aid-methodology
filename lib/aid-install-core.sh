@@ -1111,6 +1111,113 @@ PY
     fi
 }
 
+# manifest_list_tools <manifest>
+# Prints each installed tool id (one per line) from tools.<id> keys.
+# Exits 0 even when the manifest is absent (prints nothing).
+manifest_list_tools() {
+    local manifest="$1"
+    [[ -f "$manifest" ]] || return 0
+    if command -v python3 >/dev/null 2>&1; then
+        python3 - "$manifest" <<'PY'
+import json, sys
+try:
+    data = json.load(open(sys.argv[1]))
+    for t in data.get("tools", {}).keys():
+        print(t)
+except Exception:
+    pass
+PY
+        return
+    fi
+    # Pure-Bash fallback: extract tool keys from the "tools" section.
+    # Each tool entry looks like:    "tool-name": {  at 4-space indent.
+    awk '
+    BEGIN { in_tools=0; depth=0 }
+    /"tools"[[:space:]]*:/ { in_tools=1; depth=0; next }
+    in_tools && /\{/ { depth++ }
+    in_tools && /\}/ { depth--; if (depth<=0) exit }
+    in_tools && depth==1 && /^    "[a-z][a-zA-Z-]*"[[:space:]]*:/ {
+        s=$0; gsub(/^[[:space:]]*"/, "", s); gsub(/".*/, "", s)
+        if (s != "") print s
+    }
+    ' "$manifest"
+}
+
+# aid_status <target>
+# Renders the "aid status" output for the AID project rooted at <target>.
+# Reads <target>/.aid/.aid-manifest.json (and .aid/.aid-version).
+# Returns:
+#   0 — manifest found; status printed to stdout.
+#   7 — no manifest in <target>; "not an AID project here" message printed to stdout.
+aid_status() {
+    local target="${1:-.}"
+    local manifest="${target}/.aid/.aid-manifest.json"
+    local cwd_display
+    cwd_display="$(cd "$target" && pwd)"
+
+    if [[ ! -f "$manifest" ]] || ! grep -q '"manifest_version"' "$manifest" 2>/dev/null; then
+        printf "No AID install found in %s. Run 'aid add <tool>' to install.\n" "$cwd_display"
+        return 7
+    fi
+
+    # Read aid_version from manifest.
+    local aid_version=""
+    if command -v python3 >/dev/null 2>&1; then
+        aid_version="$(python3 - "$manifest" <<'PY'
+import json, sys
+try:
+    data = json.load(open(sys.argv[1]))
+    print(data.get("aid_version", ""))
+except Exception:
+    pass
+PY
+)"
+    else
+        aid_version="$(grep '"aid_version"' "$manifest" | head -1 | \
+            sed 's/.*"aid_version"[^:]*:[^"]*"\([^"]*\)".*/\1/')"
+    fi
+
+    printf 'AID %s  (project: %s)\n' "$aid_version" "$cwd_display"
+    printf 'Installed tools:\n'
+
+    # Enumerate tools and print one line each.
+    local -a tools=()
+    while IFS= read -r t; do
+        [[ -n "$t" ]] && tools+=("$t")
+    done < <(manifest_list_tools "$manifest")
+
+    for tool_id in "${tools[@]}"; do
+        local ver
+        ver="$(manifest_read_tool_version "$manifest" "$tool_id")"
+        local root_agent
+        root_agent="$(_root_agent_file "$tool_id")"
+        local root_status=""
+        if [[ -n "$root_agent" ]]; then
+            root_status="$(manifest_read_root_agent_status "$manifest" "$tool_id" "$root_agent")"
+        fi
+
+        # Pad tool id to 14 chars for alignment.
+        local line
+        printf -v line '  %-14s v%s' "$tool_id" "$ver"
+        if [[ -n "$root_agent" ]]; then
+            local status_display="${root_status:-owned}"
+            line="${line}   root: ${root_agent} (${status_display})"
+        fi
+        printf '%s\n' "$line"
+
+        # --verbose: also show file count
+        if [[ "${AID_VERBOSE:-0}" == "1" ]]; then
+            local count=0
+            while IFS= read -r _p; do
+                [[ -n "$_p" ]] && count=$((count + 1))
+            done < <(manifest_read_tool_paths "$manifest" "$tool_id")
+            printf '                 (%d files installed)\n' "$count"
+        fi
+    done
+
+    return 0
+}
+
 # manifest_exists <manifest> — exits 0 when manifest exists and is parseable; 6 otherwise.
 manifest_exists() {
     local manifest="$1"
