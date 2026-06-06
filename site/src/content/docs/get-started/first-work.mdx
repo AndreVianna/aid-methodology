@@ -1,0 +1,156 @@
+---
+title: Your first work
+description: A guided walkthrough from configuring AID to running your first full work through the pipeline.
+sidebar:
+  order: 3
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+This walkthrough takes you from a fresh AID install to a completed, delivered work item. It follows
+the **full path** — the complete six-phase pipeline. If your change is small and well-scoped,
+see [Lite path quickstart](/get-started/lite-path/) instead.
+
+**Prerequisites:** `aid` is installed and on your PATH. See [Install AID](/get-started/install/)
+if you haven't done that yet.
+
+## 1. Configure AID (once per project)
+
+<Steps>
+
+1. **Open a terminal in your project root.**
+
+   This is the git repository where you want to use AID. All `aid` commands operate on the
+   current directory.
+
+2. **Bootstrap the AID configuration.**
+
+   ```bash
+   aid-config
+   ```
+
+   This scaffolds the `.aid/` directory — the Knowledge Base root — and creates the initial
+   configuration files. Run it once per project; re-running it is safe and non-destructive.
+
+3. **Add your AI tool profile.**
+
+   ```bash
+   aid add claude-code
+   ```
+
+   Replace `claude-code` with your tool's canonical id: `codex`, `cursor`, `copilot-cli`, or
+   `antigravity`. This installs the skill and agent files into the correct location for your tool.
+
+   Run `aid status` to confirm the install.
+
+</Steps>
+
+## 2. Scope your work: Discover and Interview
+
+<Steps>
+
+1. **Discover (brownfield projects only).**
+
+   ```
+   /aid-discover
+   ```
+
+   Scans the codebase and builds the Knowledge Base under `.aid/knowledge/`. This phase is
+   mandatory for existing codebases; skip it for greenfield projects.
+
+   Approve the DISCOVERY-SUMMARY before moving on.
+
+2. **Run the Interview skill.**
+
+   In your AI tool, invoke:
+
+   ```
+   /aid-interview
+   ```
+
+   The Interview opens in **TRIAGE** state. Answer the intake questions about your work item —
+   what you want to change, what's in scope, and roughly how big it is.
+
+3. **TRIAGE routes your work.**
+
+   At the end of intake, TRIAGE classifies the work:
+
+   - **Full path** — the work is complex or high-risk; proceed through all phases below.
+   - **Lite path** — the work is small and well-scoped; jumps directly to Execute. Follow the
+     [Lite path quickstart](/get-started/lite-path/) for this flow.
+
+   For this walkthrough, assume TRIAGE routes to the **full path**.
+
+4. **Review the REQUIREMENTS document.**
+
+   At the end of Interview, the agent produces a `REQUIREMENTS.md` in `.aid/`. Read it, confirm
+   it captures your intent, and approve to advance.
+
+</Steps>
+
+## 3. Walk the phases
+
+Each phase produces an artifact. Read it, approve it, and the next phase begins.
+
+<Steps>
+
+1. **Specify.**
+
+   ```
+   /aid-specify
+   ```
+
+   Writes a grounded specification (`SPEC.md`) from the Knowledge Base and REQUIREMENTS.
+   Review the spec carefully — this is where "what we're building" is locked down.
+
+   Approve the spec to advance to planning.
+
+3. **Plan.**
+
+   ```
+   /aid-plan
+   ```
+
+   Decomposes the spec into a delivery plan (`PLAN.md`) with milestones and tasks. Review
+   the plan for scope, dependencies, and sequencing.
+
+   Approve the plan to advance to detailing.
+
+4. **Detail.**
+
+   ```
+   /aid-detail
+   ```
+
+   Produces implementation-level task files (one per task) under `.aid/work-XXX/tasks/`.
+   Each task has acceptance criteria and a scope description. Review and approve.
+
+5. **Execute.**
+
+   ```
+   /aid-execute
+   ```
+
+   Implements the tasks in sequence, grades its own output, and loops until each task passes.
+   You review each task's output and approve advancement. Repeat until all tasks are done.
+
+</Steps>
+
+## 4. What you get at each gate
+
+| Phase | Artifact | Gate action |
+|-------|----------|-------------|
+| Discover | DISCOVERY-SUMMARY + Knowledge Base | Approve discovery |
+| Interview | `REQUIREMENTS.md` | Confirm requirements |
+| Specify | `SPEC.md` | Approve spec |
+| Plan | `PLAN.md` | Approve plan |
+| Detail | Task files under `.aid/work-*/tasks/` | Approve each task |
+| Execute | Code + test output | Review, approve, or request revision |
+
+Every gate is a human decision. The pipeline never advances without your explicit approval.
+
+## Next steps
+
+- [Lite path quickstart](/get-started/lite-path/) — for small changes that skip the middle phases.
+- [Installation guide](/guides/installation/) — if you need to reinstall or switch channels.
+- [Methodology](/concepts/methodology/) — the full philosophy and decision logic behind each phase.

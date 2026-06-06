@@ -38,16 +38,37 @@ function stripLeadingV(s: string): string {
 }
 
 function readVersionFile(): string {
+  // During Astro SSG, import.meta.url may resolve to a Vite-bundled location
+  // rather than the original source path. We probe multiple candidate paths:
+  //   1. Three levels up from import.meta.url (dev / Vitest: site/src/lib/ → repo root)
+  //   2. One level up from process.cwd() (Astro build runs from site/; repo root is ../VERSION)
+  //   3. process.cwd() itself (in case the build runs from the repo root)
+  const candidates: string[] = [];
+
+  // Candidate 1: import.meta.url-based (works in dev and Vitest)
   try {
-    // VERSION file is at the repo root (three levels up from site/src/lib/)
-    // Use import.meta.url for ESM compatibility (Astro builds as ESM)
     const moduleDir = dirname(fileURLToPath(import.meta.url));
-    const versionPath = resolve(moduleDir, '../../../VERSION');
-    const raw = readFileSync(versionPath, 'utf8').trim();
-    return stripLeadingV(raw);
+    candidates.push(resolve(moduleDir, '../../../VERSION'));
   } catch {
-    return '';
+    // fileURLToPath may fail for virtual/data URLs; skip
   }
+
+  // Candidate 2: cwd-based (works when Astro SSG build runs from site/ directory)
+  candidates.push(resolve(process.cwd(), '../VERSION'));
+
+  // Candidate 3: cwd itself as repo root
+  candidates.push(resolve(process.cwd(), 'VERSION'));
+
+  for (const candidate of candidates) {
+    try {
+      const raw = readFileSync(candidate, 'utf8').trim();
+      if (raw) return stripLeadingV(raw);
+    } catch {
+      // Try next candidate
+    }
+  }
+
+  return '';
 }
 
 function safeParseJson<T>(raw: string | undefined, fallback: T): T {

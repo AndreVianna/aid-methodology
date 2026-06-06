@@ -1,6 +1,354 @@
 ---
 title: Installation
-description: Install AID in your project — all channels, all host tools.
+description: Install, update, and remove AID across curl/irm, npm, PyPI, and offline bundle channels — with per-OS and per-tool instructions.
+sidebar:
+  order: 1
 ---
 
-This guide is a stub. Full content arrives in delivery-002 (feature-004 installation-guide).
+import { Tabs, TabItem, Steps, Aside, LinkButton } from '@astrojs/starlight/components';
+import InstallCommand from '../../../components/InstallCommand.astro';
+
+## How it works (two layers)
+
+AID separates into two install layers:
+
+1. **The `aid` CLI** — a persistent, global command installed once per machine into
+   `~/.aid` (Unix) or `%LOCALAPPDATA%\aid` (Windows). It never changes when you add or
+   remove AID from a project. Bootstrap it once with the one-liners in Step 1 below.
+
+2. **Per-project AID files** — the profile trees (`.claude/`, `.codex/`, `CLAUDE.md`,
+   `AGENTS.md`, and so on) that `aid add <tool>` installs into a repo. Each repo tracks
+   what was installed in its own `.aid/.aid-manifest.json`.
+
+## Choose your install channel
+
+All channels deliver the same `aid` CLI. The difference is only how `aid` lands on your PATH.
+Pick one channel per machine.
+
+| Channel | Requires | When to use |
+|---------|----------|-------------|
+| **curl / irm** (online bootstrap) | Bash or PowerShell 5.1+ | Most users — Linux, macOS, Windows |
+| **npm** | Node >=18 | Node-heavy environments; global install via npm |
+| **PyPI (pipx)** | Python >=3.8 | Python environments; isolated install via pipx |
+| **Offline bundle** | Bash or PowerShell 5.1+ | Air-gapped machines; teams pinning to a specific release |
+
+If `aid` is installed via more than one channel, PATH order determines which one runs.
+Pick one and remove the others to avoid confusion.
+
+## Step 1 — Bootstrap the `aid` CLI
+
+Run this once per machine. The bootstrap installs the `aid` command and wires it onto your PATH.
+You do not need to be inside a project directory.
+
+### curl / irm channel
+
+<Tabs syncKey="os">
+  <TabItem label="Linux">
+    <InstallCommand channel="curl" />
+
+    - Installs to `~/.aid/` (override with `$AID_HOME`).
+    - Adds `~/.aid/bin` to your PATH via `~/.bashrc`, `~/.zshrc`, or `~/.bash_profile`.
+    - Pass `--no-path` to skip the profile edit and wire PATH yourself.
+
+    **After bootstrap, open a new shell** (or source your profile) to pick up the updated PATH.
+  </TabItem>
+  <TabItem label="macOS">
+    <InstallCommand channel="curl" />
+
+    - Installs to `~/.aid/` (override with `$AID_HOME`).
+    - Adds `~/.aid/bin` to your PATH via `~/.zshrc` or `~/.bash_profile`.
+    - Pass `--no-path` to skip the profile edit and wire PATH yourself.
+
+    **After bootstrap, open a new shell** (or source your profile) to pick up the updated PATH.
+  </TabItem>
+  <TabItem label="Windows">
+    <InstallCommand channel="irm" />
+
+    - Installs to `%LOCALAPPDATA%\aid\` (override with `$env:AID_HOME`).
+    - Adds `%LOCALAPPDATA%\aid` to your **User** PATH (no admin required).
+    - Pass `-NoPath` to skip the PATH edit.
+
+    **After bootstrap, open a new PowerShell session** to pick up the updated PATH.
+  </TabItem>
+</Tabs>
+
+### npm channel
+
+Requires Node >=18.
+
+<InstallCommand channel="npm" />
+
+**Without a global install** — invoke once with `npx`:
+
+```bash
+npx aid-installer add claude-code
+```
+
+**Updating the `aid` CLI itself (npm channel):**
+
+```bash
+npm install -g aid-installer@latest
+```
+
+Or via `aid`:
+
+```bash
+aid update self
+# Prints: npm install -g aid-installer@latest
+```
+
+### PyPI channel
+
+Requires Python >=3.8.
+
+<InstallCommand channel="pypi" />
+
+**pip** — use `--user` to avoid system-level writes:
+
+```bash
+pip install --user aid-installer
+```
+
+`pipx` is preferred because it isolates the install and avoids dependency conflicts.
+
+**Updating the `aid` CLI itself (PyPI channel):**
+
+```bash
+pipx upgrade aid-installer
+```
+
+Or via `aid`:
+
+```bash
+aid update self
+# Prints: pipx upgrade aid-installer
+```
+
+### Offline / air-gapped install
+
+For machines without internet access. Download the tarball and `SHA256SUMS` from the
+[Releases page](/releases/changelog/), then install with `--from-bundle`.
+
+<Steps>
+
+1. **Download the bundle for your tool.**
+
+   <InstallCommand channel="offline" />
+
+   Also download the checksum file:
+
+   ```bash
+   curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/$(aid version)/SHA256SUMS
+   ```
+
+2. **Verify the checksum.**
+
+   <Tabs syncKey="os">
+     <TabItem label="Linux">
+       ```bash
+       sha256sum --check --ignore-missing SHA256SUMS
+       ```
+     </TabItem>
+     <TabItem label="macOS">
+       ```bash
+       shasum -a 256 -c SHA256SUMS
+       ```
+     </TabItem>
+     <TabItem label="Windows">
+       ```powershell
+       $expected = (Get-Content SHA256SUMS | Where-Object { $_ -match 'aid-claude-code' }) -split '\s+' | Select-Object -First 1
+       $actual   = (Get-FileHash .\aid-claude-code-vX.Y.Z.tar.gz -Algorithm SHA256).Hash.ToLower()
+       if ($expected -ne $actual) { Write-Error "Checksum mismatch"; exit 4 }
+       ```
+     </TabItem>
+   </Tabs>
+
+3. **After bootstrapping the CLI (Step 1), add from the bundle.**
+
+   ```bash
+   aid add claude-code --from-bundle aid-claude-code-vX.Y.Z.tar.gz
+   ```
+
+   For multiple tools, pass a directory containing the per-tool tarballs
+   (`aid-<tool>-v<version>.tar.gz` naming):
+
+   ```bash
+   aid add codex,cursor --from-bundle ./bundles/
+   ```
+
+   The live per-release asset list (all five tools) is on the [Releases page](/releases/changelog/).
+
+</Steps>
+
+## Step 2 — Add AID to your project
+
+After bootstrap, `cd` into the project repo and use subcommands directly. No re-downloading.
+No re-piping.
+
+<Tabs syncKey="tool">
+  <TabItem label="Claude Code">
+    ```bash
+    aid add claude-code
+    ```
+
+    **What gets installed:**
+    - `.claude/skills/` — skill markdown files
+    - `.claude/agents/` — agent markdown files
+    - `CLAUDE.md` — project-context file at the project root
+  </TabItem>
+  <TabItem label="Codex">
+    ```bash
+    aid add codex
+    ```
+
+    **What gets installed:**
+    - `.codex/agents/` — agent TOML files
+    - `.agents/` — agent TOML files (alternate path Codex probes)
+    - `AGENTS.md` — project-context file at the project root
+  </TabItem>
+  <TabItem label="Cursor">
+    ```bash
+    aid add cursor
+    ```
+
+    **What gets installed:**
+    - `.cursor/rules/` — skill and agent `.mdc` rule files
+    - `AGENTS.md` — project-context file at the project root
+  </TabItem>
+  <TabItem label="Copilot CLI">
+    ```bash
+    aid add copilot-cli
+    ```
+
+    **What gets installed:**
+    - `.github/copilot-agents/` — agent `.agent.md` files
+    - `AGENTS.md` — project-context file at the project root
+  </TabItem>
+  <TabItem label="Antigravity">
+    ```bash
+    aid add antigravity
+    ```
+
+    **What gets installed:**
+    - `.agent/` — skill and agent files with `trigger:` frontmatter
+    - `AGENTS.md` — project-context file at the project root
+  </TabItem>
+</Tabs>
+
+**Check the install:**
+
+```bash
+aid status
+```
+
+**Install multiple tools at once:**
+
+```bash
+aid add codex,cursor
+```
+
+**Pin to a specific version:**
+
+```bash
+aid add claude-code --version X.Y.Z
+```
+
+Without `--version`, the installer resolves the latest GitHub Release.
+
+<Aside type="caution">
+Root agent files — `CLAUDE.md` (claude-code) and `AGENTS.md` (codex, cursor, copilot-cli,
+antigravity) — may contain your own customizations. `aid add` protects them from silent overwrites.
+If the file already exists and differs from the incoming version, `aid add` writes the new content
+to `<filename>.aid-new` and exits with code 5. Review the diff and merge, or re-run with
+`--force` to overwrite.
+</Aside>
+
+## One-line first install
+
+Bootstrap the CLI **and** add a tool to the current project in a single command:
+
+<Tabs syncKey="os">
+  <TabItem label="Linux">
+    ```bash
+    curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- add claude-code
+    ```
+  </TabItem>
+  <TabItem label="macOS">
+    ```bash
+    curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- add claude-code
+    ```
+  </TabItem>
+  <TabItem label="Windows">
+    ```powershell
+    $env:AID_TOOL = 'claude-code'
+    irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
+    ```
+  </TabItem>
+</Tabs>
+
+## Update
+
+### Update installed tools
+
+```bash
+# Update all installed tools to latest
+aid update
+
+# Update a specific tool
+aid update claude-code
+
+# Update to a pinned version
+aid update --version X.Y.Z
+```
+
+### Update the aid CLI itself
+
+```bash
+aid update self
+```
+
+The command is channel-aware: it detects how `aid` was installed and prints the correct
+upgrade instruction.
+
+| Install channel | What `aid update self` does |
+|----------------|------------------------------|
+| `curl` / `irm` bootstrap | Re-runs the bootstrap script to fetch and install the latest CLI |
+| npm | Prints: `npm install -g aid-installer@latest` |
+| PyPI / pipx | Prints: `pipx upgrade aid-installer` |
+
+## Remove
+
+### Remove a specific tool from a project
+
+```bash
+aid remove claude-code
+```
+
+### Remove all AID from a project
+
+```bash
+aid remove
+```
+
+Prompts for confirmation. Pass `--force` to skip the prompt. Uninstall is manifest-driven:
+only files that `aid add` wrote are removed. Files you created or modified yourself are
+left in place.
+
+### Remove the global `aid` CLI itself
+
+```bash
+aid remove self
+```
+
+Prompts for confirmation before removing `~/.aid` (or `%LOCALAPPDATA%\aid`) and the PATH
+wiring block. Does not touch per-project AID installs — run `aid remove` inside each project
+first if you want to clean those up too.
+
+## Next steps
+
+<LinkButton href="/get-started/first-work/" variant="primary" icon="right-arrow">
+  Your first work
+</LinkButton>
+<LinkButton href="/reference/overview/" variant="secondary" icon="open-book">
+  CLI Reference
+</LinkButton>

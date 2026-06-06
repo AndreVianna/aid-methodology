@@ -2,7 +2,7 @@
 title: Get Started
 description: Begin your journey with AID — Agentic Iterative Development.
 sidebar:
-  order: 1
+  hidden: true
 ---
 
-This section is a stub. Full content arrives in delivery-002 (feature-003 home-and-get-started).
+Redirected to overview. See [Overview](/get-started/overview/).
