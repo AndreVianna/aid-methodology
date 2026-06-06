@@ -190,4 +190,4 @@ Downstream phases find requirements are wrong, incomplete, or contradictory. The
 
 ## See Also
 
-- [AID Methodology](../../methodology/aid-methodology.md) — The complete methodology.
+- [AID Methodology](../../docs/aid-methodology.md) — The complete methodology.
