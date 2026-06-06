@@ -28,12 +28,13 @@ flowchart TB
         Sum["aid-summarize<br/>optional"]:::aux
     end
     subgraph G2[" 2 · Define "]
-        Intv["2 · aid-interview<br/>TRIAGE → full or lite"]:::def
-        Spec["3 · aid-specify<br/>full path only"]:::def
+        Intv["2 · aid-interview<br/>gather requirements"]:::def
+        Triage{"TRIAGE<br/>full or lite?"}:::def
+        Spec["3 · aid-specify<br/>full path"]:::def
     end
     subgraph G3[" 3 · Map "]
-        Plan["4 · aid-plan<br/>full path only"]:::map
-        Det["5 · aid-detail<br/>full path only"]:::map
+        Plan["4 · aid-plan<br/>full path"]:::map
+        Det["5 · aid-detail<br/>full path"]:::map
     end
     subgraph G4[" 4 · Execute "]
         Exe["6 · aid-execute<br/>8 task types · graded loop"]:::exe
@@ -45,7 +46,9 @@ flowchart TB
 
     HK["aid-housekeep<br/>on-demand · off-pipeline<br/>KB-DELTA · SUMMARY-DELTA · CLEANUP"]:::offpipe
 
-    Init --> Disc --> Intv --> Spec --> Plan --> Det --> Exe
+    Init --> Disc --> Intv --> Triage
+    Triage -- "full path<br/>broad / multi-target" --> Spec --> Plan --> Det --> Exe
+    Triage -- "lite path<br/>small, single-target" --> Exe
     Exe -. "on demand" .-> Dep
     Exe -. "on demand" .-> Mon
     Exe -. "when finished" .-> HK
