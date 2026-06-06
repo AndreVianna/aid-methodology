@@ -1,0 +1,284 @@
+name: Installer CI (cross-platform)
+
+# The AID installer + `aid` CLI ship as bash (install.sh) and PowerShell (install.ps1)
+# and must work on real Linux/macOS AND real Windows.  The main CI (test.yml) runs the
+# full canonical suite on Linux only; this workflow runs the platform-sensitive
+# installer/CLI/release suites on each OS and fires on every feature-branch push so
+# changes are validated remotely without a local full-suite run.
+#
+# OS split:
+#   ubuntu-latest  — bash harness (test-install, test-install-ps1, test-install-parity,
+#                    test-aid-cli, test-aid-cli-ps1, test-aid-cli-parity, test-release,
+#                    test-release-install-e2e)
+#   windows-latest — native PowerShell test (tests/windows/Test-AidInstaller.ps1) only;
+#                    the bash harness is NOT run on Windows to avoid Git Bash path issues.
+
+on:
+  push:
+    branches-ignore: [master]   # master is covered by test.yml; feature branches run here
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  installer:
+    name: installer/CLI (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            mode: bash-harness
+          - os: windows-latest
+            mode: native-ps1
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # -----------------------------------------------------------------------
+      # Shared: assert pwsh is present (PowerShell coverage must not silently skip).
+      # -----------------------------------------------------------------------
+      - name: Assert pwsh present
+        shell: bash
+        run: command -v pwsh >/dev/null || { echo "::error::pwsh missing on ${{ matrix.os }} — PowerShell tests would skip"; exit 1; }
+
+      # -----------------------------------------------------------------------
+      # ubuntu-latest: bash harness
+      # -----------------------------------------------------------------------
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        # Both OSes: bash-harness (render/generator) and the Windows PyPI smoke need Python.
+        with:
+          python-version: '3.11'
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        if: matrix.mode == 'bash-harness'
+        with:
+          node-version: '20'
+
+      - name: Ensure python3 resolves (Windows ships only `python`)
+        if: matrix.mode == 'bash-harness'
+        shell: bash
+        run: command -v python3 >/dev/null || ln -s "$(command -v python)" "$(dirname "$(command -v python)")/python3" || true
+
+      - name: Make scripts executable (Linux/macOS)
+        if: matrix.mode == 'bash-harness'
+        run: find canonical/scripts tests/canonical bin packages/npm/scripts -type f \( -name '*.sh' -o -name '*.js' -o -name 'aid' \) -exec chmod +x {} +
+
+      - name: Install Python build tools (bash-harness)
+        if: matrix.mode == 'bash-harness'
+        shell: bash
+        run: python3 -m pip install --user pipx build || true
+
+      - name: Run installer + CLI + release suites (bash harness)
+        if: matrix.mode == 'bash-harness'
+        shell: bash
+        run: |
+          set -u
+          SUITES="test-install test-install-ps1 test-install-parity test-aid-cli test-aid-cli-ps1 test-aid-cli-parity test-release test-release-install-e2e test-npm-installer test-pypi-installer"
+          FAILED=""
+          for s in $SUITES; do
+            echo "::group::$s (${{ matrix.os }})"
+            if bash "tests/canonical/$s.sh"; then
+              echo "$s: PASS"
+            else
+              echo "::error::$s failed on ${{ matrix.os }}"
+              FAILED="$FAILED $s"
+            fi
+            echo "::endgroup::"
+          done
+          if [ -n "$FAILED" ]; then
+            echo "::error::Failed suites on ${{ matrix.os }}:$FAILED"
+            exit 1
+          fi
+          echo "All installer/CLI/release suites passed on ${{ matrix.os }}."
+
+      # -----------------------------------------------------------------------
+      # windows-latest: native PowerShell test
+      # -----------------------------------------------------------------------
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        if: matrix.mode == 'native-ps1'
+        with:
+          node-version: '20'
+
+      - name: Run native PowerShell installer test
+        if: matrix.mode == 'native-ps1'
+        shell: pwsh
+        run: pwsh -NoProfile -File tests/windows/Test-AidInstaller.ps1
+
+      - name: npm channel Windows smoke (pack + global install + aid status/add)
+        if: matrix.mode == 'native-ps1'
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+
+          $repoRoot = (Get-Location).Path
+          $pkgDir   = Join-Path $repoRoot 'packages' 'npm'
+          $profilesDir = Join-Path $repoRoot 'profiles'
+          $version  = (Get-Content -LiteralPath (Join-Path $repoRoot 'VERSION') -Raw).Trim()
+
+          # Vendor the 6 aid-cli files into the package directory.
+          node (Join-Path $pkgDir 'scripts' 'vendor.js')
+
+          # Pack to a temp dir.
+          $packDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          npm pack --pack-destination $packDir.FullName (Resolve-Path $pkgDir).Path
+          $tgz = Get-ChildItem -Path $packDir.FullName -Filter '*.tgz' | Select-Object -First 1
+          if (-not $tgz) { Write-Error 'npm pack produced no .tgz'; exit 1 }
+          Write-Host "Packed: $($tgz.Name)"
+
+          # Global install.
+          $prefix = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          npm install -g $tgz.FullName --prefix $prefix.FullName
+          # npm creates Windows command wrappers (aid.cmd / aid.ps1 / aid) in the prefix
+          # root; invoke aid.cmd directly (it execs `node <pkg>/bin/aid.js`). Do NOT run
+          # `node` against the bare 'aid' sh-wrapper (it is a bash script).
+          $aidCmd = Get-ChildItem -Recurse -Path $prefix.FullName -Filter 'aid.cmd' |
+                    Where-Object { $_.FullName -notmatch 'node_modules' } |
+                    Select-Object -First 1
+          if (-not $aidCmd) { Write-Error "installed aid.cmd not found under $($prefix.FullName)"; exit 1 }
+          Write-Host "Installed aid at: $($aidCmd.FullName)"
+
+          # Set up a minimal AID_HOME from repo source.
+          $aidHome = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          New-Item -ItemType Directory -Path (Join-Path $aidHome.FullName 'bin') | Out-Null
+          New-Item -ItemType Directory -Path (Join-Path $aidHome.FullName 'lib') | Out-Null
+          Copy-Item (Join-Path $repoRoot 'bin' 'aid.ps1') (Join-Path $aidHome.FullName 'bin' 'aid.ps1')
+          Copy-Item (Join-Path $repoRoot 'lib' 'AidInstallCore.psm1') (Join-Path $aidHome.FullName 'lib' 'AidInstallCore.psm1')
+          Set-Content -LiteralPath (Join-Path $aidHome.FullName 'VERSION') -Value $version -Encoding utf8
+
+          # Smoke: aid status in empty dir -> exit 7.
+          $emptyDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          $env:AID_HOME = $aidHome.FullName
+          $env:AID_NO_UPDATE_CHECK = '1'
+          $out = & $aidCmd.FullName status --target $emptyDir.FullName 2>&1
+          if ($LASTEXITCODE -ne 7) {
+              Write-Error "aid status empty dir: expected exit 7, got $LASTEXITCODE`nOutput: $out"
+              exit 1
+          }
+          Write-Host "aid status empty dir: exit 7 (PASS)"
+
+          # Smoke: build codex fixture tarball.
+          $fixtureDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          $profileDir = Join-Path $profilesDir 'codex'
+          $tarball    = Join-Path $fixtureDir.FullName "aid-codex-v$version.tar.gz"
+          $filelist   = [System.IO.Path]::GetTempFileName()
+          Get-ChildItem -Recurse -File -LiteralPath $profileDir |
+              Where-Object { $_.Name -notin @('README.md', 'emission-manifest.jsonl') } |
+              ForEach-Object { "./$($_.FullName.Substring($profileDir.Length + 1).Replace('\','/'))" } |
+              Set-Content $filelist -Encoding utf8
+          Push-Location $profileDir
+          tar -czf $tarball --no-recursion -T $filelist
+          Pop-Location
+          Remove-Item $filelist -ErrorAction SilentlyContinue
+
+          # Smoke: aid add codex --from-bundle.
+          $targetDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          $out2 = & $aidCmd.FullName add codex --from-bundle $tarball --target $targetDir.FullName 2>&1
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "aid add codex: expected exit 0, got $LASTEXITCODE`nOutput: $out2"
+              exit 1
+          }
+          $codexDir = Join-Path $targetDir.FullName '.codex'
+          if (-not (Test-Path $codexDir -PathType Container)) {
+              Write-Error "aid add codex: .codex/ not created under $($targetDir.FullName)"
+              exit 1
+          }
+          Write-Host "aid add codex: .codex/ created (PASS)"
+          Write-Host "npm channel Windows smoke: all checks passed."
+
+      - name: PyPI channel Windows smoke (build + pipx install + aid status/add)
+        if: matrix.mode == 'native-ps1'
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+
+          $repoRoot    = (Get-Location).Path
+          $pkgDir      = Join-Path $repoRoot 'packages' 'pypi'
+          $profilesDir = Join-Path $repoRoot 'profiles'
+          $version     = (Get-Content -LiteralPath (Join-Path $repoRoot 'VERSION') -Raw).Trim()
+
+          # Vendor the 6 aid-cli files into the package directory.
+          python (Join-Path $pkgDir 'scripts' 'vendor.py')
+
+          # Install build tools.
+          python -m pip install --quiet build pipx
+
+          # Build the wheel.
+          $distDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          python -m build --wheel --outdir $distDir.FullName $pkgDir
+          $whl = Get-ChildItem -Path $distDir.FullName -Filter '*.whl' | Select-Object -First 1
+          if (-not $whl) { Write-Error 'python -m build produced no .whl'; exit 1 }
+          Write-Host "Built: $($whl.Name)"
+
+          # pipx install into isolated venv.
+          $pipxHome   = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          $pipxBinDir = Join-Path $pipxHome.FullName 'bin'
+          New-Item -ItemType Directory -Path $pipxBinDir -Force | Out-Null
+          $env:PIPX_HOME    = $pipxHome.FullName
+          $env:PIPX_BIN_DIR = $pipxBinDir
+          python -m pipx install $whl.FullName
+          $aidBin = Join-Path $pipxBinDir 'aid'
+          $aidBinExe = $aidBin + '.exe'
+          $aidEntry = $null
+          if (Test-Path $aidBin)    { $aidEntry = $aidBin }
+          elseif (Test-Path $aidBinExe) { $aidEntry = $aidBinExe }
+          if (-not $aidEntry) {
+              $found = Get-ChildItem -Recurse -Path $pipxHome.FullName -Filter 'aid*' `
+                       -ErrorAction SilentlyContinue |
+                       Where-Object { -not $_.PSIsContainer -and $_.Name -notmatch '__main__' } |
+                       Select-Object -First 1
+              if ($found) { $aidEntry = $found.FullName }
+          }
+          if (-not $aidEntry) { Write-Error "installed aid not found under $($pipxHome.FullName)"; exit 1 }
+          Write-Host "Installed aid at: $aidEntry"
+
+          # Set up a minimal AID_HOME from repo source.
+          $aidHome2 = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          New-Item -ItemType Directory -Path (Join-Path $aidHome2.FullName 'bin') | Out-Null
+          New-Item -ItemType Directory -Path (Join-Path $aidHome2.FullName 'lib') | Out-Null
+          Copy-Item (Join-Path $repoRoot 'bin' 'aid.ps1') (Join-Path $aidHome2.FullName 'bin' 'aid.ps1')
+          Copy-Item (Join-Path $repoRoot 'lib' 'AidInstallCore.psm1') (Join-Path $aidHome2.FullName 'lib' 'AidInstallCore.psm1')
+          Set-Content -LiteralPath (Join-Path $aidHome2.FullName 'VERSION') -Value $version -Encoding utf8
+          $env:AID_HOME = $aidHome2.FullName
+          $env:AID_NO_UPDATE_CHECK = '1'
+
+          # Smoke: aid status in empty dir -> exit 7.
+          $emptyDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          $out = & $aidEntry status --target $emptyDir.FullName 2>&1
+          if ($LASTEXITCODE -ne 7) {
+              Write-Error "aid status empty dir: expected exit 7, got $LASTEXITCODE`nOutput: $out"
+              exit 1
+          }
+          Write-Host "aid status empty dir: exit 7 (PASS)"
+
+          # Smoke: build codex fixture tarball.
+          $fixtureDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          $profileDir = Join-Path $profilesDir 'codex'
+          $tarball    = Join-Path $fixtureDir.FullName "aid-codex-v$version.tar.gz"
+          $filelist   = [System.IO.Path]::GetTempFileName()
+          Get-ChildItem -Recurse -File -LiteralPath $profileDir |
+              Where-Object { $_.Name -notin @('README.md', 'emission-manifest.jsonl') } |
+              ForEach-Object { "./$($_.FullName.Substring($profileDir.Length + 1).Replace('\','/'))" } |
+              Set-Content $filelist -Encoding utf8
+          Push-Location $profileDir
+          tar -czf $tarball --no-recursion -T $filelist
+          Pop-Location
+          Remove-Item $filelist -ErrorAction SilentlyContinue
+
+          # Smoke: aid add codex --from-bundle.
+          $targetDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
+          $out2 = & $aidEntry add codex --from-bundle $tarball --target $targetDir.FullName 2>&1
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "aid add codex: expected exit 0, got $LASTEXITCODE`nOutput: $out2"
+              exit 1
+          }
+          $codexDir = Join-Path $targetDir.FullName '.codex'
+          if (-not (Test-Path $codexDir -PathType Container)) {
+              Write-Error "aid add codex: .codex/ not created under $($targetDir.FullName)"
+              exit 1
+          }
+          Write-Host "aid add codex: .codex/ created (PASS)"
+          Write-Host "PyPI channel Windows smoke: all checks passed."

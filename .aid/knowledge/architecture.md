@@ -15,6 +15,7 @@ contracts:
   - "9 specialist agents across 3 tiers (4 large / 4 medium / 1 small)"
   - "5 rendered install trees: claude-code, codex, cursor, copilot-cli, antigravity"
 changelog:
+  - 2026-06-05: work-002-auto-installer — end-user installer rewritten: the former clone+`setup.sh`/`setup.ps1` menu installers were removed and replaced by a persistent global `aid` CLI (`bin/aid` + `bin/aid.ps1` + `bin/aid.cmd`, cores `lib/aid-install-core.sh` + `lib/AidInstallCore.psm1`, bootstrap `install.sh` / `install.ps1`) with four install channels (curl/irm bootstrap, npm, PyPI, offline `--from-bundle`). Module-boundaries End-user-installer row, install-time data-flow section, and Entry-Points install rows rewritten to the `aid add <tool>` flow (fetch+verify tarball → copy → FR11 protect-on-diff → `.aid/.aid-manifest.json`). Methodology-spec metrics de-cited (volatile line-count dropped per KB convention; `docs/aid-methodology.md` is the flagship after `methodology/` consolidated into `docs/`).
   - 2026-06-04: work-001-agents-review (task-013) — roster reduced 22→9 agents with aid-* prefix; §3 tier model updated to 4 large / 4 medium / 1 small; counts updated at lines 38, 64; agent canonical paths updated to aid-<name>/ dirs; boilerplate now shared-include via canonical/templates/agent-boilerplate.md.
   - 2026-06-03: methodology v3.2 — aid-deploy and aid-monitor reclassified from mandatory numbered phases (7/8) to OPTIONAL end-of-pipeline Deliver skills; numbered development phases 8→6 (Discover→Execute); skill taxonomy now 7 core-pipeline (aid-config + 6 phases) + 4 optional (aid-summarize, aid-deploy, aid-monitor, aid-housekeep) + maintainer-only aid-generate
   - 2026-06-03: post-merge update for work-001-aid-housekeep (PR #49) — added aid-housekeep (11th user-facing canonical skill, optional/on-demand, NOT in the mandatory pipeline flow); skill framing 10→11 user-facing / 11→12 total counting aid-generate; canonical SKILL.md body total 2,242→2,498 lines across 11 skills
@@ -35,7 +36,7 @@ changelog:
 single-branch monorepo whose deliverable is **documentation rendered into five
 host-tool install bundles**. There is no application runtime; the project ships:
 
-1. The AID methodology specification (`methodology/aid-methodology.md`, 1,070 lines).
+1. The AID methodology specification (`docs/aid-methodology.md`).
 2. Eleven user-facing skills + 9 agents + templates + recipes + helper scripts, authored
    once in `canonical/` and rendered into five byte-identical install trees
    (`profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/`). Of the eleven, seven
@@ -60,7 +61,7 @@ Evidence:
 
 ```
 aid-methodology/                    (repo root)
-├── methodology/                    ← the load-bearing spec (1 .md, 1,070 lines) + images/
+├── docs/                           ← the load-bearing spec (docs/aid-methodology.md, v3.2) + FAQ + glossary + install.md
 ├── canonical/                      ← SINGLE SOURCE OF TRUTH (renderer input)
 │   ├── agents/                     ← 9 agent dirs (AGENT.md + README.md each)
 │   ├── skills/                     ← 11 skill dirs (Thin-Router SKILL.md + references/);
@@ -94,19 +95,24 @@ aid-methodology/                    (repo root)
 │   └── skills/aid-generate/        ← maintainer-only generator (NOT in canonical/)
 │       └── scripts/                ← 12 Python files (render_lib.py, aid_profile.py, render_*.py, test_*_emitter.py, …)
 ├── tests/
-│   ├── canonical/                  ← currently 24 helper-script test suites (test-*.sh, bash)
+│   ├── canonical/                  ← currently 35 helper-script + installer/CLI/release test suites (test-*.sh, bash)
+│   ├── windows/                    ← native-Windows PowerShell installer test (Test-AidInstaller.ps1)
 │   ├── lib/assert.sh               ← shared assertion helpers
 │   ├── run-all.sh                  ← single aggregator entrypoint (globs test-*.sh)
 │   └── README.md                   ← suite inventory + run instructions
 ├── examples/                       ← 3 case studies (brownfield-enterprise, data-pipeline, desktop-app)
-├── docs/                           ← FAQ (61) + glossary (76)
+├── bin/                            ← `aid` CLI dispatchers: aid (Bash) + aid.ps1 + aid.cmd (Windows)
+├── lib/                            ← install cores: aid-install-core.sh (Bash) + AidInstallCore.psm1 (PowerShell)
+├── packages/                       ← npm (`aid-installer`) + PyPI (`aid-installer`) thin-shim publish packages
 ├── .aid/                           ← runtime KB scaffold (committed in THIS repo — AID dogfoods itself)
 │   ├── knowledge/                  ← KB output (this discovery's target)
 │   ├── generated/project-index.md  ← built by build-project-index.sh
 │   ├── settings.yml                ← AID runtime config
 │   └── .heartbeat/                 ← ephemeral subagent heartbeat files (gitignored)
 ├── run_generator.py                ← live entrypoint
-├── setup.sh / setup.ps1            ← end-user installers
+├── install.sh / install.ps1        ← `aid` CLI bootstrap (curl/irm-piped first install)
+├── release.sh                      ← maintainer release packager (per-profile tarballs + SHA256SUMS)
+├── VERSION                         ← single version source (FR10 version-sync; currently 1.0.0)
 └── README.md / CLAUDE.md / CONTRIBUTING.md / LICENSE
 ```
 
@@ -234,7 +240,7 @@ Evidence:
 
 | Module | Path | Responsibility | Depends on |
 |--------|------|----------------|------------|
-| **Methodology spec** | `methodology/aid-methodology.md` | Authoritative human-readable methodology document (1,070 lines, version 3.1) | — |
+| **Methodology spec** | `docs/aid-methodology.md` | Authoritative human-readable methodology document (`*Version 3.2*` header; line count is volatile and not pinned here) | — |
 | **Canonical source** | `canonical/` | Single source of truth for everything that ships into install trees | (manually edited by maintainer) |
 | **Generator harness** | `.claude/skills/aid-generate/scripts/render_lib.py` + `aid_profile.py` | Profile parsing, placeholder substitution, manifest read/write/diff, SHA-256 fingerprinting | Python stdlib only (`tomllib`, `hashlib`, `json`, `pathlib`) |
 | **Asset renderers** | `render_agents.py`, `render_skills.py`, `render_templates.py`, `render_canonical_scripts.py`, `render_recipes.py` | One renderer per asset kind; each reads `canonical/<kind>/` and writes into the profile-specific install path. `render_agents.py` emits one of 4 agent formats per `[agent].format` (markdown / toml / copilot-agent / antigravity-rule); `render_skills.py` `_render_cursor_extras` handles per-rule `output_filename` + a gated trigger-frontmatter dialect | `render_lib`, `aid_profile` |
@@ -242,7 +248,7 @@ Evidence:
 | **VERIFY (advisory)** | `verify_advisory.py` | Non-fatal advisory checks logged separately | `render_lib`, `aid_profile` |
 | **Generator self-tests** | `test_manifest_safety.py`, `test_copilot_emitter.py`, `test_antigravity_emitter.py` | Manifest-deletion-boundary tests + per-format emitter unit tests for the copilot-agent and antigravity-rule frontmatter builders | `render_lib`, all renderers |
 | **Entry point** | `run_generator.py` | 87-line glue: iterate `profiles/*.toml` (5 profiles), run renderers per profile, deletion pass, then VERIFY (deterministic) + VERIFY (advisory) | All of the above |
-| **End-user installer** | `setup.sh`, `setup.ps1` | Interactive tool-selection menu; copies the selected `profiles/<tool>/` subtree into a target project | None (pure shell / PowerShell, no Python) |
+| **End-user installer (`aid` CLI)** | `bin/aid` (+ `bin/aid.ps1` / `bin/aid.cmd`) → cores `lib/aid-install-core.sh` / `lib/AidInstallCore.psm1`; bootstrap `install.sh` / `install.ps1` | Persistent global CLI: per-project `aid add/update/remove <tool>` fetches+verifies the matching release tarball (or `--from-bundle`), copies the profile subtree into the target, applies FR11 protect-on-diff to root agent files, and records `.aid/.aid-manifest.json` | curl/irm + tar + sha256sum/shasum (Bash) or PowerShell built-ins; no Python required (python3 used only as an optional manifest fast-path) |
 | **Helper script library** | `canonical/scripts/{config,execute,interview,kb,summarize}/` + top-level `grade.sh` | Runtime helpers used by skill bodies (read-setting, parse-recipe, writeback-state, build-project-index, summarize pipeline, …) | bash 4+, occasionally Node 18+ for `.mjs` validators |
 | **Per-tool profile config** | `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}.toml` (5) | Per-host conventions: layout, agent frontmatter shape + format, model tier names, tool-name remapping, filename map, extras (incl. `rules_frontmatter` + per-rule `output_filename`) | Consumed by `aid_profile.py` |
 | **HTML viewer asset bundle** | `canonical/templates/knowledge-summary/` | The optional offline KB viewer template + JS + CSS + Mermaid init + section profiles — see `canonical/templates/knowledge-summary/` for the bundle details | Inlined Mermaid (pinned v11.15.0, SHA-verified) at render time, fetched by `fetch-mermaid.sh` |
@@ -250,13 +256,13 @@ Evidence:
 Dependency direction (no cycles):
 
 ```
-methodology/ ──(read by humans)──> canonical/* (authored)
+docs/aid-methodology.md ──(read by humans)──> canonical/* (authored)
 canonical/scripts/grade.sh ─(callable from)─> canonical/skills/*/SKILL.md
 canonical/* ─→ aid_profile.py ─→ render_lib.py ─→ render_*.py ─→ profiles/{tool}/...   (tool ∈ {claude-code, codex, cursor, copilot-cli, antigravity})
                                               │
                                               └─→ emission-manifest.jsonl (sorted)
 run_generator.py ─orchestrates→ renderers ─then→ verify_deterministic.py + verify_advisory.py
-setup.{sh,ps1} ─reads→ profiles/{tool}/ ─copies→ user project
+bin/aid ─sources→ lib/aid-install-core.sh ─fetches+verifies→ release tarball ─copies→ user project ─records→ .aid/.aid-manifest.json
 ```
 
 ## Data Flow
@@ -303,19 +309,48 @@ verify_deterministic.run_verify(repo) ──→ re-render to scratch tmpdir,
 verify_advisory.run_advisory(repo) ──→ non-fatal advisory checks
 ```
 
-### Install-time data flow (end user running `./setup.sh /target/project`)
+### Install-time data flow (end user running `aid add <tool>`)
 
-`setup.sh` shows a menu of `[1] Claude Code [2] Codex [3] Cursor [4] GitHub Copilot CLI
-[5] Antigravity [6] Done`, then copies each chosen `profiles/<tool>/` subtree into the
-user's project root (`.claude/`; `.codex/` + `.agents/`; `.cursor/`; `.github/`; or
-`.agent/`). Codex (2), Cursor (3), Copilot CLI (4) and Antigravity (5) all write a root
-`AGENTS.md`; when ≥2 are selected, the Option-A collision handler warns once and the
-highest-numbered selected writer's `AGENTS.md` wins (last-write-wins by fixed per-tool
-install order — others are not preserved). Existing identical files are skipped; differing
-files prompt unless `--force` is passed.
+The end-user install entrypoint is the **persistent global `aid` CLI**, bootstrapped once
+per machine (curl/irm bootstrap, npm, or PyPI), then invoked per project as `aid add <tool>`
+(tool auto-detected when omitted; `--target` overrides the working directory):
 
-Evidence: `setup.sh` `print_menu` (menu loop), `README.md` `### 1. Install` (install
-instructions).
+```
+aid add <tool> [--version <v>] [--from-bundle <tar>] [--force]
+            │
+            ▼
+resolve_version  (latest GitHub release tag, unless --version pins one)   ← bin/aid → lib/aid-install-core.sh `resolve_version`
+            │
+            ▼
+fetch_tarball <tool> <ver>  →  aid-<tool>-v<ver>.tar.gz + SHA256SUMS       ← `fetch_tarball` (online)
+            │   (--from-bundle path: verify_bundle_checksum against sibling SHA256SUMS)
+            ▼
+verify sha256 against SHA256SUMS  (exit 4 on mismatch)                     ← `_verify_checksum`
+            │
+            ▼
+extract_tarball  (asserts flat-root, exit 1 on a wrapping dir)            ← `extract_tarball`
+            │
+            ▼
+copy_dir staging → target  (copy_file: new=copy, identical=skip,
+            │               different=skip-unless-`--force`)               ← `copy_file` / `copy_dir`
+            ▼
+FR11 protect-on-diff for the root agent file (CLAUDE.md / AGENTS.md):
+   absent → copy; identical → up-to-date; AID-owned (manifest sha) → overwrite;
+   someone-else's → write `<file>.aid-new` + WARN (exit 5) unless `--force`    ← `_copy_root_agent_file`
+            │
+            ▼
+manifest_write  →  <target>/.aid/.aid-manifest.json  (+ .aid/.aid-version)     ← `manifest_write` / `write_version_marker`
+```
+
+The four AGENTS.md-writing tools (Codex, Cursor, Copilot CLI, Antigravity) now ship a
+**byte-identical** root `AGENTS.md` (FR12 invariant), so a second AGENTS.md-writing
+install is up-to-date rather than a collision; only a user-modified `AGENTS.md`/`CLAUDE.md`
+triggers the protect-on-diff `*.aid-new` path. Claude Code uses `CLAUDE.md` and is exempt.
+
+Evidence: `bin/aid` `_aid_usage` (subcommand surface) + `lib/aid-install-core.sh`
+`install_tool` (the copy + manifest + protect-on-diff sequence); `README.md` `## Install`
+(install instructions); `docs/install.md` `## Protect-on-diff for root agent files` (FR11);
+`tests/canonical/test-agents-md-invariant.sh` (FR12 byte-identity guard).
 
 ### Run-time data flow (end user invoking `/aid-<skill>`)
 
@@ -398,12 +433,13 @@ mechanism was found in any source file.
 | **Maintainer build** | `python .claude/skills/aid-generate/scripts/run_generator.py` | Renders all 5 install trees from `canonical/`, runs VERIFY (deterministic, hard) + VERIFY (advisory). Evidence: `run_generator.py` (`"""Live generator run` module docstring). |
 | **Maintainer one-tree render** | `python .claude/skills/aid-generate/scripts/render_skills.py --canonical-root . --profile profiles/claude-code.toml --output-root profiles/claude-code/.claude` | Renderers are each runnable standalone with `--canonical-root` / `--profile` / `--output-root`. Evidence: `.claude/skills/aid-generate/scripts/render_skills.py` (`# Usage:` header). |
 | **Maintainer verify-only** | `python .claude/skills/aid-generate/scripts/verify_deterministic.py` | VERIFY (deterministic) hard gate. Re-renders to scratch tmpdir, byte-compares against committed install trees, parses every frontmatter. Exit code 0 on full pass; 1 on any sub-check failure. Evidence: `verify_deterministic.py` `def run_verify`. |
-| **End-user install (Unix)** | `./setup.sh /path/to/your/project [--force]` | Menu-driven copy of selected profiles into a target project. Evidence: `setup.sh` `print_menu`. |
-| **End-user install (Windows)** | `.\setup.ps1 C:\path\to\your\project` | PowerShell 5.1+ equivalent of `setup.sh`. |
+| **Maintainer release** | `bash release.sh` (or tag-push → `.github/workflows/release.yml`) | Packages the five per-profile tarballs + `SHA256SUMS` for a GitHub Release. Evidence: `release.sh`; `test-release.sh` header. |
+| **End-user CLI bootstrap** | `curl -fsSL …/install.sh \| bash` / `irm …/install.ps1 \| iex` / `npm i -g aid-installer` / `pipx install aid-installer` | Installs the persistent global `aid` CLI once per machine (extracts `bin/` + `lib/` into `$AID_HOME`, wires PATH). Evidence: `install.sh` / `install.ps1`; `README.md` `## Install`. |
+| **End-user install (per project)** | `aid add <tool>[,...] [--version <v>] [--from-bundle <tar>] [--force]` | Fetches+verifies the profile tarball and installs the AID tree into the current project (FR11 protect-on-diff + `.aid/.aid-manifest.json`). `aid status` / `aid update` / `aid remove` manage it thereafter. Evidence: `bin/aid` `_aid_usage`; `lib/aid-install-core.sh` `install_tool`. |
 | **End-user runtime (pipeline skill)** | Slash command `/aid-config`, `/aid-discover`, `/aid-interview`, `/aid-specify`, `/aid-plan`, `/aid-detail`, `/aid-execute` (+ optional `/aid-summarize`, `/aid-deploy`, `/aid-monitor`) | Seven core-pipeline slash commands (setup + six numbered phases) plus three optional skills. Each enters at the state detected from disk and exits after one state. |
 | **End-user runtime (on-demand)** | Slash command `/aid-housekeep` | The 11th user-facing skill — optional/on-demand KB + summary + cleanup maintenance, NOT part of the linear pipeline. Evidence: `canonical/skills/aid-housekeep/SKILL.md`. |
 | **First-time AI agent context** | `CLAUDE.md` (Claude Code dogfood) / `AGENTS.md` (Codex, Cursor, Copilot CLI, Antigravity profiles) | Top-level project-context document — describes purpose, KB location, build/test commands, conventions. |
-| **Methodology reader** | `methodology/aid-methodology.md` | The 1,070-line authoritative specification. Read by humans, not by skills directly. |
+| **Methodology reader** | `docs/aid-methodology.md` | The authoritative specification (Version 3.2). Read by humans, not by skills directly. |
 
 ## Documentation vs. Implementation Discrepancies
 

@@ -14,6 +14,18 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.tgz
+
+# npm package vendored copies (generated at pack time by scripts/vendor.js; not committed)
+packages/npm/bin/aid
+packages/npm/bin/aid.ps1
+packages/npm/bin/aid.cmd
+packages/npm/lib/
+packages/npm/VERSION
+
+# PyPI package vendored copies (generated at build time by scripts/vendor.py; not committed)
+packages/pypi/aid_installer/_vendor/
+packages/pypi/dist/
 
 # Logs and temp
 *.log

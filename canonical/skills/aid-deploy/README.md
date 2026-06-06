@@ -196,4 +196,4 @@ The delivery summary and KB updates are especially important — they capture th
 
 ## See Also
 
-- [AID Methodology](../../methodology/aid-methodology.md) — The complete methodology.
+- [AID Methodology](../../docs/aid-methodology.md) — The complete methodology.

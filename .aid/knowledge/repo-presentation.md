@@ -14,6 +14,7 @@ changelog:
   - 2026-05-27: Initial authoring during cycle-1 FIX Phase B (replaces deleted ui-architecture.md per Q3)
   - 2026-06-01: Post-merge update for work-001-add-providers (PRs #42/#43/#44) — install surface 3 profiles → 5 (added GitHub Copilot CLI + Antigravity); Option-A AGENTS.md collision handler documented; setup.sh/ps1 line counts refreshed (210/199).
   - 2026-06-03: Post-merge update for work-001-aid-housekeep (PR #49) — total installed skills 10 → 11 (added optional/on-demand aid-housekeep); clarified that README's "## The Pipeline" table still lists 10 pipeline skills only (aid-housekeep is intentionally absent from that table).
+  - 2026-06-05: work-002-auto-installer — README was rewritten lean; reconciled the README section map to the current headings (Install / Quick Start / Why AID / How It Works / Documentation); replaced the `setup.sh`/`setup.ps1` install-script surface with the `aid` CLI + four install channels (curl/irm bootstrap, npm, PyPI, offline); documented the `methodology/` → `docs/` move + the expanded `docs/` taxonomy (aid-methodology.md, repository-structure.md, install.md, release.md, faq.md, glossary.md); methodology spec refreshed to v3.2; `2-comparison.png` removed (only `3-ironman.png` remains).
   - 2026-06-03: methodology v3.2 — README pipeline framing reconciled: numbered development phases 8 → 6; aid-deploy/aid-monitor recast from numbered phases 7/8 to optional end-of-pipeline Deliver skills; "10 skills" breakdown is now one setup + six numbered phases + three optional skills (summarize, deploy, monitor); Monitor feedback loops re-pointed to Interview (bugs + CRs).
 ---
 
@@ -22,19 +23,20 @@ changelog:
 ## Overview
 
 The AID GitHub repository is itself a documentation product. It ships no application
-code — it ships methodology, skills, agents, templates, and install scripts. Every
+code — it ships methodology, skills, agents, templates, and an installer. Every
 file a user sees when they clone the repo is part of the methodology's user-facing
 surface, and the quality of that surface determines whether a user understands what
 AID is and how to adopt it.
 
-The user-facing surface has five layers: the root `README.md` (the pitch and entry
-point), the `docs/` folder (reference material for ongoing use), the `examples/`
-folder (proof-of-concept case studies), the `methodology/aid-methodology.md`
-specification (the load-bearing intellectual artifact), and the install scripts
-(`setup.sh` / `setup.ps1`) plus the five profile install trees. These layers are
-designed to serve different readers at different stages: a skeptic scanning the README,
-a practitioner using the glossary, a potential adopter reading a case study, a deep
-reader working through the methodology, and a first-time installer running the script.
+The user-facing surface has five layers: the root `README.md` (the lean pitch and entry
+point), the `docs/` folder (reference material for ongoing use — methodology, install,
+release, FAQ, glossary, repo map), the `examples/` folder (proof-of-concept case studies),
+the `docs/aid-methodology.md` specification (the load-bearing intellectual artifact), and
+the install surface — the persistent global `aid` CLI delivered over four channels
+(curl/irm bootstrap, npm, PyPI, offline) plus the five profile install trees. These layers
+are designed to serve different readers at different stages: a skeptic scanning the README,
+a practitioner using the glossary, a potential adopter reading a case study, a deep reader
+working through the methodology, and a first-time installer running `curl … | bash` then `aid add`.
 
 Nothing on this surface describes internal pipeline machinery (that is `architecture.md`)
 or module structure (that is `module-map.md`). This document maps the surface as a
@@ -46,62 +48,66 @@ reader experiences it.
 
 Source: `README.md` (the root pitch document)
 
-The README is the primary pitch document. It is structured as a progressive disclosure:
-hook first, proof second, how-to last. Its table of contents (`README.md` `## Contents`) lists
-the major sections:
+The README was rewritten lean by work-002. It now leads with the install action, then
+the value pitch, then how-it-works, then a documentation index that links into `docs/`.
+Its major sections (`README.md` headings):
 
 | Section | Anchor | Purpose |
 |---------|--------|---------|
-| **What is AID?** | `README.md` `## What is AID?` | Core philosophy in three convictions; Iron Man collaboration image |
-| **Why AID? — the failure modes it removes** | `README.md` `## Why AID? — the failure modes it removes` | Failure-mode table mapping failure modes to structural fixes (knowledge gaps, hallucination, drift, overengineering, etc.) |
-| **The Pipeline** | `README.md` `## The Pipeline` | Mermaid flowchart + table of the 10 pipeline skills (one setup skill, six numbered phases, three optional skills — `aid-summarize` plus the two end-of-pipeline Deliver skills `aid-deploy`/`aid-monitor`), their groups, and outputs. ⚠️ This table covers the *pipeline* skills only — `aid-housekeep` (the 11th installed skill, optional/on-demand) is intentionally NOT in this table because it is not part of the linear pipeline flow. |
-| **The Knowledge Base** | `README.md` `## The Knowledge Base — the gravitational center` | KB structure, 14-standard-document fixed shape, 3-tier context economy diagram |
-| **The Agent Model** | `README.md` `## The Agent Model — three tiers` | Three-tier agent diagram (Large/Medium/Small), provider-agnostic tier table, skill→agent dispatch |
-| **Feedback Loops** | `README.md` `## Feedback Loops` | 11 formal loops described; key loops called out (Any phase → Discovery, Execute → IMPEDIMENT, Monitor → Interview for both bugs and change requests) |
-| **AID vs. SDD** | `README.md` `## AID vs. SDD` | Comparison table; framing quote |
-| **Using AID in your own project** | `README.md` `## Using AID in your own project` | Install instructions (git clone + setup.sh/setup.ps1), slash command list, what gets installed, runtime requirements, incremental adoption |
-| **Repository structure** | `README.md` `## Repository structure` | Directory tree + navigation table (where to go to read methodology, skills, agents, examples) |
+| **Install** | `README.md` `## Install` | The primary call-to-action, surfaced first. Four channels: curl/irm bootstrap (`### Bootstrap the `aid` CLI`), npm, PyPI, and offline/air-gapped bundle install; then `### Use it` (the `aid add`/`status`/`update`/`remove` subcommand cheat-sheet) + a protect-on-diff note. Links to `docs/install.md`. |
+| **Quick Start** | `README.md` `## Quick Start` | Minimal end-to-end first run after install |
+| **Why AID** | `README.md` `## Why AID` | The value pitch / failure modes AID removes |
+| **How It Works** | `README.md` `## How It Works` | `### The Pipeline` (the skills + flow), `### The Lite Path`, `### The Knowledge Base`, `### The Agent Model` |
+| **Documentation** | `README.md` `## Documentation` | An index table linking the `docs/` set (aid-methodology.md, install.md, repository-structure.md, release.md, faq.md, glossary.md) + `examples/` |
 | **Contributing / License** | `README.md` `## Contributing` / `## License` | Links to CONTRIBUTING.md, MIT license; closing tagline with blog link |
 
 The README deliberately does not reproduce the full methodology — it links to
-`methodology/aid-methodology.md` for depth. Its job is to orient a first-time reader
-in under 20 minutes and give them one clear action: install and run `/aid-config`.
+`docs/aid-methodology.md` for depth. Its job is to get a first-time reader installed
+quickly (`curl … | bash`, then `aid add claude-code`) and oriented in one sitting.
 
-The footer (`README.md`, closing `*Read the full methodology:*` line) carries the external blog link:
+The footer (`README.md`, closing `*Full methodology:*` line) carries the external blog link:
 `https://casuloailabs.com/blog/aid-methodology/`
 
 ### A note on skill counts (pipeline vs. total installed)
 
-The README's `## The Pipeline` section frames AID as "**10 skills** — one setup skill,
-six numbered development phases, three optional skills" (`README.md` `## The Pipeline`).
-That "10 skills" count refers to the **pipeline-table skills** — the ones in
-the Pipeline table and Mermaid flowchart (`aid-config`, the six numbered phases
-`aid-discover`…`aid-execute`, plus the optional `aid-summarize`, `aid-deploy`, and
-`aid-monitor`). `aid-deploy` and `aid-monitor` are optional, on-demand Deliver skills
-positioned at the end of the pipeline — not required, numbered phases.
+The README's `### The Pipeline` section (under `## How It Works`) frames the pipeline as
+"**Six numbered development phases** … Deploy and Monitor are optional. `aid-housekeep`
+runs off the pipeline on demand" (`README.md` `### The Pipeline`). The numbered
+sequential path is therefore six phases (`aid-discover`…`aid-execute`); `aid-config` is the
+once-per-project setup skill; `aid-summarize`, `aid-deploy`, and `aid-monitor` are optional.
 
-The repository actually ships **11 user-facing skills**: those 10 pipeline skills **plus**
-`aid-housekeep` — an optional, on-demand maintenance skill that is deliberately absent from
-the README Pipeline table because it is not part of the linear pipeline flow (see
+The repository actually ships **11 user-facing skills**: `aid-config` + the six numbered
+phases + the three optional skills (`aid-summarize`/`aid-deploy`/`aid-monitor`) + the
+off-pipeline `aid-housekeep` (an optional, on-demand maintenance skill — see
 `architecture.md` "Skill inventory" + `canonical/skills/aid-housekeep/SKILL.md`,
 "Absent from the mandatory pipeline flow."). A 12th skill, `aid-generate`, is
 maintainer-only and never installed for end users (it lives only in `.claude/skills/`,
-not in `canonical/` — see `architecture.md`). So: **10 pipeline + 1 optional on-demand
-(`aid-housekeep`) = 11 user-facing installed skills; +1 maintainer-only = 12 total.**
+not in `canonical/` — see `architecture.md`). So: **1 setup + 6 numbered + 3 optional + 1
+off-pipeline (`aid-housekeep`) = 11 user-facing installed skills; +1 maintainer-only = 12 total.**
 
-⚠️ The README's "10 skills" phrasing is therefore correct *as a description of the
-pipeline*, but the total count of installed skills a user receives is 11. Keep these
+⚠️ The README frames the *pipeline* as six numbered phases, but the total count of
+installed skills a user receives is 11. Keep these
 two counts distinct when reconciling.
 
 ---
 
 ## docs/
 
-Source: `docs/faq.md`, `docs/glossary.md`
+Source: `docs/aid-methodology.md`, `docs/install.md`, `docs/repository-structure.md`, `docs/release.md`, `docs/faq.md`, `docs/glossary.md`
 
-The `docs/` folder contains two reference documents intended for ongoing use, not
-initial orientation. Readers who have already installed AID and are working with
-it are the primary audience.
+The `docs/` folder is the repo's reference library — six documents intended for ongoing
+use rather than initial orientation. work-002 moved the methodology spec here from the
+former `methodology/` directory (now `docs/aid-methodology.md`) and added the install,
+repository-structure, and release docs:
+
+| Document | Audience | Purpose |
+|----------|----------|---------|
+| `docs/aid-methodology.md` | Deep reader | The complete methodology spec — the load-bearing artifact (see its own section below) |
+| `docs/install.md` | Adopter | Full install/update/remove guide: the four channels, offline bundles, version pinning, protect-on-diff, per-channel `aid update self`, the checksum trust model |
+| `docs/repository-structure.md` | Contributor | Contributor-oriented map of the repo layout (`bin/`, `lib/`, `packages/`, `canonical/`, `profiles/`, …) |
+| `docs/release.md` | Maintainer | Release runbook — tag-triggered CI (`release.yml`) primary path; manual `release.sh` fallback |
+| `docs/faq.md` | Adopter | How-to questions (General / Adoption / Technical) |
+| `docs/glossary.md` | All | Canonical term definitions |
 
 ### docs/faq.md
 
@@ -118,7 +124,7 @@ it are the primary audience.
   problem via IMPEDIMENT.md.
 
 The FAQ references `README.md#aid-vs-sdd` (`docs/faq.md` `[comparison table]`) and
-`methodology/aid-methodology.md#4-feedback-loops` (`docs/faq.md` `[methodology document]`)
+`docs/aid-methodology.md#6-feedback-loops` (`docs/faq.md` `[methodology document]`)
 for deeper reading.
 
 ### docs/glossary.md
@@ -217,36 +223,36 @@ key takeaway per case. Detailed files live within each case study subdirectory.
 
 ---
 
-## methodology/aid-methodology.md
+## docs/aid-methodology.md
 
-Source: `methodology/aid-methodology.md` (full document is 1,070 lines per
-`project-structure.md` `| `methodology/aid-methodology.md` |`)
+Source: `docs/aid-methodology.md` (moved here from `methodology/` by work-002)
 
 The methodology specification is the load-bearing intellectual artifact of the repo.
 Every skill, agent, and template is derived from it. It is the authoritative definition
 of how AID works.
 
-**Version:** 3.1 — May 2026 (`methodology/aid-methodology.md` `*Version 3.1 — May 2026*`)
+**Version:** 3.2 — June 2026 (`docs/aid-methodology.md` `*Version 3.2 — June 2026*`)
 
-**Structure:** Nine sections (`methodology/aid-methodology.md` `## Table of Contents`):
+**Structure:** Ten sections (`docs/aid-methodology.md` `## Table of Contents`):
 
 | # | Section | Scope |
 |---|---------|-------|
-| 1 | Philosophy | Waterfall rehabilitation, Human-in-the-Middle, three core principles, failure modes table, roles (Director/Orchestrator/Specialist) |
-| 2 | The Knowledge Base | KB structure (14 standard + 3 meta + 1 generated), completeness tracking, context feeding strategy (3-tier economy), INDEX.md mechanism |
-| 3 | The Phases | The six numbered phases (plus the two optional Deliver skills) defined in detail with inputs, outputs, agent assignments |
-| 4 | Feedback Loops | 11 formal loops enumerated with trigger conditions and artifacts produced |
-| 5 | Artifacts Reference | Every artifact defined: SPEC.md, STATE files, IMPEDIMENT.md, MONITOR-STATE.md, grading rubric |
-| 6 | The Pipeline | End-to-end pipeline with state machine per skill |
-| 7 | Case Studies | Summarized versions of the three examples/ case studies |
-| 8 | Comparison with SDD | Detailed comparison table (expands on README's AID vs. SDD table) |
-| 9 | Adoption Guide | Incremental adoption, team use, common entry points |
+| 1 | The Pipeline | The end-to-end pipeline, surfaced first — phases, gates, flow |
+| 2 | Philosophy | Waterfall rehabilitation, Human-in-the-Middle, three core principles, failure modes, roles (Director/Orchestrator/Specialist) |
+| 3 | The Knowledge Base | KB structure, completeness tracking, context feeding strategy (3-tier economy), INDEX.md mechanism |
+| 4 | The Phases | The six numbered phases (plus the optional Deliver skills) defined with inputs, outputs, agent assignments |
+| 5 | The Agent Model | The 9-agent three-tier model + reviewer >= executor invariant |
+| 6 | Feedback Loops | 11 formal loops enumerated with trigger conditions and artifacts produced |
+| 7 | Artifacts Reference | Every artifact defined: SPEC.md, STATE files, IMPEDIMENT.md, MONITOR-STATE.md, grading rubric |
+| 8 | Case Studies | Summarized versions of the three examples/ case studies |
+| 9 | Comparison with SDD | Detailed comparison table (expands on README's AID vs. SDD framing) |
+| 10 | Adoption Guide | Incremental adoption, team use, common entry points |
 
-The methodology document is explicitly flagged as a ~40-minute read in the README's
-repository structure section (`README.md` `## Repository structure`). Two supporting images live alongside
-it in `methodology/images/`: `2-comparison.png` (SDD vs. AID comparison diagram) and
-`3-ironman.png` (Human-AI collaboration model, referenced inline at
-`README.md` `![Human-AI collaboration model](methodology/images/3-ironman.png)`).
+The methodology document is flagged as a ~40-minute read in the README's Documentation
+index (`README.md` `## Documentation`, the `docs/aid-methodology.md` row). One supporting
+image lives alongside it in `docs/images/`: `3-ironman.png` (the Iron Man / Human-AI
+collaboration model), referenced inline at `docs/aid-methodology.md`
+`![…](images/3-ironman.png)`. (The former `2-comparison.png` was removed by work-002.)
 
 The methodology document is not regenerated by the build system — it is hand-authored
 and lives at a fixed path. It is the upstream source that informs all generated
@@ -256,44 +262,52 @@ artifacts but is not itself produced by any generator.
 
 ## External References
 
-The README footer (`README.md`, closing `*Read the full methodology:*` line) links to a blog post:
+The README footer (`README.md`, closing `*Full methodology:*` line) links to a blog post:
 
 > `https://casuloailabs.com/blog/aid-methodology/`
 
-This is the only external URL cited in the README. The blog is hosted at
-`casuloailabs.com`, which is the author's lab/consulting domain. The post is titled
+This is the only external (non-GitHub-registry) URL cited in the README prose. The blog is
+hosted at `casuloailabs.com`, the author's lab/consulting domain. The post is titled
 "AID — the complete picture" per the README link text.
 
-No other external links are cited in the README. The FAQ and glossary contain only
-internal cross-references (to `README.md` sections and `methodology/aid-methodology.md`).
+The other external endpoints the README surfaces are the **install registries**: the
+`raw.githubusercontent.com` bootstrap URLs (`install.sh` / `install.ps1`), the `npm` and
+`pipx`/`pip` package commands (`aid-installer`), and the GitHub Releases download URLs in the
+offline-install example. The FAQ and glossary otherwise contain only internal
+cross-references (to `README.md` sections and `docs/aid-methodology.md`).
 
 ⚠️ The blog post content has not been verified against the current repo state (as of
 this KB document authoring). The URL is confirmed from `README.md` (closing
-`*Read the full methodology:*` line); content
-accuracy relative to the v3.1 methodology spec is not verified here.
+`*Full methodology:*` line); content accuracy relative to the v3.2 methodology spec is not
+verified here.
 
 ---
 
 ## Cross-Tool Installation Surface
 
-Source: `README.md` `## Using AID in your own project`, `setup.sh`,
+Source: `README.md` `## Install`, `docs/install.md`, `bin/aid`,
 `project-structure.md` `├── profiles/`
 
-### Install Scripts
+### The `aid` CLI + four install channels
 
-Users install AID into their own projects via two cross-platform scripts at the repo root:
+Adopters no longer clone-and-run a script — work-002 replaced `setup.sh`/`setup.ps1` with a
+persistent global `aid` CLI, installed once per machine then run per project with
+`aid add <tool>`. The README leads with this (`README.md` `## Install`). All four channels
+deliver the same CLI:
 
-| Script | Platform | Lines | Behavior |
-|--------|----------|-------|----------|
-| `setup.sh` | Bash (Linux/macOS/git-bash) | 210 | Interactive menu: select Claude Code (1), Codex (2), Cursor (3), GitHub Copilot CLI (4), Antigravity (5), Done (6); installs selected profiles into target directory (`setup.sh` `tool_name()`, `print_menu()`) |
-| `setup.ps1` | PowerShell 5.1+ (Windows) | 199 | Same 5-tool menu and behavior in PowerShell |
+| Channel | First-install command (from `README.md` `## Install`) | Platform |
+|---------|-------------------------------------------------------|----------|
+| curl/irm bootstrap | `curl -fsSL …/install.sh \| bash` / `irm …/install.ps1 \| iex` | Linux/macOS / Windows |
+| npm | `npm i -g aid-installer` (or `npx aid-installer add <tool>`) | any with Node >=18 |
+| PyPI | `pipx install aid-installer` (or `pip install --user aid-installer`) | any with Python >=3.8 |
+| Offline / air-gapped | download a release tarball, verify against `SHA256SUMS`, then `aid add <tool> --from-bundle <path>` | any |
 
-Both scripts accept `<target-directory>` as a positional argument and an optional
-`--force` flag to overwrite without prompts (`README.md` `**Re-running is safe:**`).
-Re-running is safe: identical files are skipped; changed files prompt before overwriting.
-
-Manual installation is also documented: copy the relevant profile directory directly
-into the project root (`README.md` `Prefer to install by hand?`).
+After bootstrap, the per-project subcommands (`README.md` `### Use it`) are
+`aid add <tool>[,...]`, `aid status`, `aid update [self]`, `aid remove [tool | self]`. Re-running
+`aid add` is safe: identical files are skipped, and a user-authored root `CLAUDE.md`/`AGENTS.md`
+is written as `*.aid-new` for review rather than overwritten (FR11 protect-on-diff, surfaced in
+`README.md` after the `### Use it` block). The full channel comparison + offline + version-pinning
+guide lives in `docs/install.md`.
 
 ### Profile Install Trees
 
@@ -307,7 +321,7 @@ Five tool-specific install bundles live in `profiles/` (`ls profiles/*.toml | wc
 | **GitHub Copilot CLI** | `profiles/copilot-cli/` | `.github/` directory (`output_root` `.github`) with `agents/*.agent.md` (copilot-agent format), `skills/`, `scripts/`, `recipes/`, `templates/`; plus `AGENTS.md` at project root |
 | **Antigravity** | `profiles/antigravity/` | `.agent/` directory (`output_root` `.agent`) with sub-agents reshaped into `rules/*.md` (antigravity-rule format, `trigger:`-style frontmatter), plus `skills/`, `scripts/`, `recipes/`, `templates/`; plus `AGENTS.md` at project root |
 
-(`project-structure.md` `├── profiles/`, `README.md` `### 3. What gets installed`)
+(`project-structure.md` `├── profiles/`, `docs/install.md` `## What gets installed per tool`)
 
 All five profiles contain byte-identical skill and agent bodies — only the wrapper
 format differs per tool (markdown for Claude Code, TOML for Codex agents, `.mdc` for
@@ -319,30 +333,31 @@ at end of every render (see `architecture.md` `verify_deterministic.py` for the 
 
 ### What End Users See After Install
 
-After running `setup.sh` or `setup.ps1`, the target project gains:
+After `aid add <tool>`, the target project gains (`docs/install.md` `## What gets installed per tool`):
 
 - The tool-appropriate hidden directory (`.claude/`, `.codex/`+`.agents/`, `.cursor/`,
   `.github/` for Copilot CLI, or `.agent/` for Antigravity)
-  containing all 11 user-facing skills (the 10 pipeline-table skills + the optional
-  on-demand `aid-housekeep`), 9 agents, 51 recipes, templates, and helper scripts.
-  (The maintainer-only `aid-generate` skill is never installed — it lives only in the
-  source repo's `.claude/skills/`, not in `canonical/`; see `architecture.md`.)
-- ⚠️ **AGENTS.md collision (Option A):** Codex, Cursor, Copilot CLI, and Antigravity all
-  write a root `AGENTS.md`. When ≥2 of these are selected, `setup.sh`/`setup.ps1` warn
-  once and the highest-numbered selected writer wins — no interactive prompt
-  (`setup.sh` `AGENTS.md collision pre-copy block (Option A)`).
+  containing all 11 user-facing skills (the six numbered phases + `aid-config` + the three
+  optional skills + the off-pipeline `aid-housekeep`), 9 agents, 51 recipes, templates, and
+  helper scripts. (The maintainer-only `aid-generate` skill is never installed — it lives only
+  in the source repo's `.claude/skills/`, not in `canonical/`; see `architecture.md`.)
 - A `CLAUDE.md` or `AGENTS.md` at the project root with placeholders that
-  `/aid-config` and `/aid-discover` populate. (`README.md` `### 3. What gets installed`)
+  `/aid-config` and `/aid-discover` populate. The root `AGENTS.md` is byte-identical across
+  the four AGENTS.md-writing tools (FR12 invariant), so multi-tool installs no longer collide;
+  a user-authored copy is preserved as `*.aid-new` (FR11 protect-on-diff). (`docs/install.md`
+  `## What gets installed per tool`, `## Protect-on-diff for root agent files`)
 - `.aid/` appended to the project's `.gitignore` — the Knowledge Base stays out of
   git by default; users remove the entry to commit it.
-  (`README.md` ``.aid/` appended to your project's `.gitignore``)
+  (`docs/install.md` ``.aid/` is appended to your `.gitignore` by default`)
 
 ### Runtime Requirements
 
-(`README.md` `### Runtime requirements`)
+(`README.md` `## Install`, `docs/install.md` `## Install channels`)
 
 - One or more host AI tools: Claude Code, OpenAI Codex CLI, Cursor, GitHub Copilot CLI, or Antigravity.
-- Bash (or git-bash on Windows) for scripts; PowerShell 5.1+ for `setup.ps1`.
+- The `aid` CLI runtime per channel: Bash (or git-bash on Windows) + curl for the curl bootstrap;
+  PowerShell 5.1+ for the irm bootstrap on Windows; Node >=18 for the npm channel; Python >=3.8
+  (pipx/pip) for the PyPI channel.
 - Git.
 - Node 18+ is optional — only `/aid-summarize` uses it for diagram validation.
   No `package.json` is present in the repo; users install Mermaid CLI ad-hoc

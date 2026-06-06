@@ -41,7 +41,7 @@ Distinct from `library` (no UI but exports an API; this profile exports *skills 
 
 ### §2 The Pipeline
 
-The defining diagram: a top-to-bottom or left-to-right pipeline of named phases with explicit phase gates (where the user approves transitions) and feedback loops (where downstream phases can revise upstream artifacts). Cite the methodology spec line range (`methodology/*.md:N-M`) for each phase if available. Explain *why* the pipeline is sequential by default, and *which* feedback loops exist as escape hatches.
+The defining diagram: a top-to-bottom or left-to-right pipeline of named phases with explicit phase gates (where the user approves transitions) and feedback loops (where downstream phases can revise upstream artifacts). Cite the methodology spec line range (`docs/aid-methodology.md:N-M`) for each phase if available. Explain *why* the pipeline is sequential by default, and *which* feedback loops exist as escape hatches.
 
 ### §3 Phases & Skills
 
@@ -65,7 +65,7 @@ The review-grade-fix discipline that makes the pipeline self-correcting: reviewe
 
 ### §8 Distribution / Install
 
-How the project ships to adopters: install script (setup.sh / setup.ps1), supported tool hosts (Claude Code / Codex / Cursor / etc. for AID), what gets copied where, runtime requirements (Node, Python, Git Bash on Windows). If multi-tool, include the canonical → 3-profile distribution model diagram (Fig 3).
+How the project ships to adopters: install script (`install.sh` / `install.ps1` — per-tool, `--tool <name>` or auto-detect), supported tool hosts (Claude Code / Codex / Cursor / etc. for AID), what gets copied where, runtime requirements (Node, Python, Git Bash on Windows). If multi-tool, include the canonical → profile distribution model diagram (Fig 3).
 
 ### §11 Documentation Surface
 

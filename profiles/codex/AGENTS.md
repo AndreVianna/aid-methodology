@@ -13,7 +13,7 @@ This project uses the [AID methodology](https://github.com/AndreVianna/aid-metho
 
 Any review output you produce — dispatched sub-agent, script validator, or
 ad-hoc user-prompted — uses the schema at
-`.agents/templates/reviewer-ledger-schema.md`. Write the ledger as a single
+`templates/reviewer-ledger-schema.md` (under this tool's install root). Write the ledger as a single
 markdown table at `.aid/.temp/review-pending/<scope>.md`. Use the 7-column
 shape: `# | Severity | Status | Doc | Line | Description | Evidence`.
 Severity tags bracketed; Status enum: Pending/Fixed/Recurred/Accepted/OOS/Invalid.

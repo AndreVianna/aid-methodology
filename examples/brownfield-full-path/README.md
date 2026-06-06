@@ -32,29 +32,34 @@ so the full path is appropriate.
 
 ## Step 0 — Install AID into the project
 
-If AID is not yet installed in OrderFlow, run the setup script from the AID repo root:
+If AID is not yet installed, first bootstrap the `aid` CLI (once per machine), then
+add AID to the OrderFlow project:
 
 ```bash
-bash setup.sh
+# Bootstrap the aid CLI — Linux / macOS
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
+
+# Bootstrap the aid CLI — Windows PowerShell
+irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
+
+# Also available via npm or PyPI:
+# npm i -g aid-installer
+# pipx install aid-installer
 ```
 
-The interactive menu lists the five supported AI coding tools. Select the tool(s) you
-use and choose **Done**:
+Open a new shell after bootstrap so the updated PATH takes effect, then add AID to the
+project (run inside the repo directory):
 
-```
-AID Setup — select your AI coding tools
-  1) Claude Code
-  2) OpenAI Codex CLI
-  3) Cursor
-  4) GitHub Copilot CLI
-  5) Antigravity
-  6) Done
+```bash
+cd /path/to/orderflow
+aid add claude-code      # or: codex  cursor  copilot-cli  antigravity
 ```
 
-The installer copies the selected profile(s) into your project. For Claude Code, this
-produces a `.claude/` directory containing skills, agents, and a `CLAUDE.md` context
-file. For other tools the output directory differs (Codex: `.codex/` + `.agents/`;
-Cursor: `.cursor/`; Copilot CLI: `.github/`; Antigravity: `.agent/`).
+For Claude Code, this produces a `.claude/` directory containing skills, agents, and a
+`CLAUDE.md` context file. For other tools the output directory differs (Codex:
+`.codex/` + `.agents/`; Cursor: `.cursor/`; Copilot CLI: `.github/`; Antigravity:
+`.agent/`). Pass the tool name explicitly; omit it and `aid add` auto-detects from your
+project tree.
 
 Then run `aid-config` to initialize the AID work area inside OrderFlow:
 
@@ -438,6 +443,6 @@ practice — not exact outputs (AID produces tailored content for each codebase)
 
 - Return to the [examples index](../README.md) to compare this with the greenfield
   and lite-path examples.
-- Read the [methodology narrative](../../methodology/aid-methodology.md) for a
+- Read the [methodology narrative](../../docs/aid-methodology.md) for a
   deep-dive into each phase.
 - Consult the [glossary](../../docs/glossary.md) for any unfamiliar AID terms.

@@ -1,0 +1,321 @@
+name: Release
+
+# Tag-triggered GitHub Actions workflow that gates, builds, and publishes all
+# release channels: GitHub Release tarballs + SHA256SUMS (via release.sh),
+# npm aid-installer, and PyPI aid-installer.
+#
+# Primary path: maintainer pushes v<VERSION> tag → one tag → all channels.
+# Escape hatch: workflow_dispatch with ref + dry_run inputs.
+#
+# Gate design: a `gate` job re-runs the exact same correctness invariants as
+# test.yml (render-drift + canonical suites + generator self-tests) on the
+# tagged commit.  Publish jobs are blocked behind `needs: [gate]` so nothing
+# is published from an ungated state.
+#
+# This workflow DOES NOT edit test.yml and DOES NOT add required-check changes.
+# It is a separate workflow on a separate trigger (tag push is not governed by
+# master branch protection; the gate re-runs the suite here instead).
+#
+# External-setup blockers (publish jobs are correct but will fail until these exist):
+#
+#   npm (aid-installer):
+#     - The @aid npm scope must be created and owned by the maintainer.
+#     - A classic NPM_TOKEN automation token must be stored in repo secrets
+#       as `NPM_TOKEN`.
+#     - Once the scope exists, flip repo variable `NPM_ENABLED` to 'true'.
+#     - npm OIDC Trusted Publishing (token-less) reached GA in 2025; if confirmed
+#       supported for the @aid scope, drop NPM_TOKEN and rely on id-token alone.
+#
+#   PyPI (aid-installer):
+#     - The CasuloAI Labs PyPI organisation must be registered and the package
+#       name `aid-installer` reserved.
+#     - A Trusted Publisher must be configured on PyPI pointing at:
+#         repository: AndreVianna/aid-methodology
+#         workflow:   release.yml
+#       (and optionally an environment name matching `environment:` below).
+#     - Once the org + Trusted Publisher exist, flip repo variable `PYPI_ENABLED`
+#       to 'true'.
+#     - No PYPI_TOKEN secret is needed; authentication is via OIDC id-token.
+
+on:
+  push:
+    tags: ['v*']            # primary path: maintainer pushes v<VERSION>
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag to release (e.g. v0.7.5)'
+        required: true
+      dry_run:
+        description: 'Build + assert version-sync, but publish nothing'
+        type: boolean
+        default: false
+
+# Least-privilege permissions:
+#   contents: write  — gh release create + asset upload (built-in GITHUB_TOKEN; same-repo only)
+#   id-token: write  — OIDC token for npm --provenance attestation + PyPI Trusted Publishing
+# All other scopes stay at the default-deny (no packages:/pull-requests:/issues:).
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  # --------------------------------------------------------------------------
+  # gate — re-run the three correctness invariants from test.yml on the tagged
+  # commit; emit the bare semver as a job output for the publish jobs.
+  #
+  # kb-hygiene checks (CRLF / .aid/.temp / INDEX freshness) are repo-hygiene,
+  # not release-correctness, and are deliberately not re-run here.
+  # --------------------------------------------------------------------------
+  gate:
+    name: gate (render-drift + suites + version-sync)
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.ver.outputs.version }}    # bare semver, e.g. '0.7.5'
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.11'
+
+      # Derive bare semver from the tag (strip leading 'v').
+      # Tag path: github.ref_name is the tag (e.g. v0.7.5).
+      # Dispatch path: inputs.ref (e.g. v0.7.5 or a commit SHA).
+      # Exports VERSION into $GITHUB_ENV for this job (used by version-sync step)
+      # and into $GITHUB_OUTPUT so publish jobs can re-import it.
+      - id: ver
+        name: Derive authoritative version from the tag/ref (strip leading 'v')
+        shell: bash
+        run: |
+          # Tag path (push of v1.2.3 or dispatch with ref=v1.2.3): strip the leading 'v'.
+          # Non-tag dispatch (e.g. dry_run on a branch/SHA): fall back to the VERSION file,
+          # so the pipeline can be validated before the release tag exists.
+          RAW="${{ inputs.ref || github.ref_name }}"
+          case "$RAW" in
+            v[0-9]*) VERSION="${RAW#v}" ;;
+            *)       VERSION="$(tr -d ' \t\r\n' < VERSION)" ;;
+          esac
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      # FR10 version-sync: all four carriers must equal the tag version.
+      # Runs before any packaging or publish to fail fast on drift.
+      # Missing manifests are skipped with a notice when their channel is not
+      # yet enabled (NPM_ENABLED / PYPI_ENABLED repo variables).
+      - name: FR10 version-sync (VERSION == package.json == pyproject.toml == tag)
+        shell: bash
+        env:
+          NPM_ENABLED: ${{ vars.NPM_ENABLED || 'false' }}
+          PYPI_ENABLED: ${{ vars.PYPI_ENABLED || 'false' }}
+        run: |
+          bash canonical/scripts/release/check-version-sync.sh --expect "${VERSION}"
+
+      - name: Ignore exec-bit changes (repo is maintained with core.fileMode=false)
+        run: git config core.fileMode false
+
+      # render-drift: identical invariant to test.yml render-drift job.
+      - name: render-drift (profiles in sync with canonical)
+        shell: bash
+        run: |
+          python .claude/skills/aid-generate/scripts/run_generator.py
+          if ! git diff --exit-code -- profiles/; then
+            echo "::error::profiles/ is out of sync with canonical/. Run 'python .claude/skills/aid-generate/scripts/run_generator.py' and commit the result."
+            exit 1
+          fi
+
+      # canonical helper suites — mirror test.yml's canonical-tests job.
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '20'
+
+      - name: Cache the pinned Mermaid library
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: .aid/knowledge/.cache/mermaid.min.js
+          key: mermaid-v11.15.0
+
+      - name: Pre-seed pinned Mermaid (SHA-verified; hermetic after first run)
+        run: bash canonical/scripts/summarize/fetch-mermaid.sh
+
+      - name: Make helper + test scripts executable
+        run: find canonical/scripts tests/canonical -name '*.sh' -exec chmod +x {} +
+
+      # Verbatim from test.yml canonical-tests: fail loudly if node/pwsh absent.
+      - name: Assert test runtimes present (node + pwsh)
+        shell: bash
+        run: |
+          command -v node >/dev/null || { echo "::error::node missing — .mjs suites would skip"; exit 1; }
+          command -v pwsh >/dev/null || { echo "::error::pwsh missing — PowerShell suites would skip"; exit 1; }
+          echo "node $(node --version) | $(pwsh --version)"
+
+      - name: Run all canonical suites
+        shell: bash
+        run: bash tests/run-all.sh
+
+      # generator self-tests — mirror test.yml's generator-selftests job.
+      - name: generator unit self-tests
+        run: |
+          python .claude/skills/aid-generate/scripts/render_lib.py --self-test
+          python .claude/skills/aid-generate/scripts/test_manifest_safety.py --self-test
+          python .claude/skills/aid-generate/scripts/render_canonical_scripts.py --self-test --canonical-root .
+          python .claude/skills/aid-generate/scripts/verify_deterministic.py --self-test --canonical-root .
+          python .claude/skills/aid-generate/scripts/verify_advisory.py --self-test --canonical-root .
+          python .claude/skills/aid-generate/scripts/test_copilot_emitter.py --self-test --canonical-root .
+          python .claude/skills/aid-generate/scripts/test_antigravity_emitter.py --self-test --canonical-root .
+
+  # --------------------------------------------------------------------------
+  # github-release — build the 5 profile tarballs + CLI bundle + SHA256SUMS
+  # and create the GitHub Release via release.sh.  Runs first (before npm/PyPI)
+  # so the authoritative artifact channel is established before the package
+  # registries are hit.
+  # --------------------------------------------------------------------------
+  github-release:
+    name: github-release (tarballs + SHA256SUMS)
+    needs: [gate]
+    runs-on: ubuntu-24.04
+    env:
+      VERSION: ${{ needs.gate.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.11'
+
+      - name: Build tarballs + SHA256SUMS + GitHub Release (feature-002 release.sh)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            # dry_run: build + checksums only; no gh release create, no network I/O.
+            bash release.sh --version "${VERSION}" --dry-run
+          else
+            bash release.sh --version "${VERSION}"
+          fi
+
+  # --------------------------------------------------------------------------
+  # npm-publish — publish aid-installer to npm with OIDC provenance.
+  #
+  # BLOCKED until:
+  #   1. The @aid npm scope is created and owned by the maintainer.
+  #   2. A classic automation token is stored in repo secrets as `NPM_TOKEN`.
+  #      (Or npm OIDC Trusted Publishing is confirmed for the @aid scope.)
+  #   3. Repo variable NPM_ENABLED is flipped to 'true'.
+  #
+  # Idempotency: `npm view` pre-check skips with a notice if this version is
+  # already published, so a re-run to fix only PyPI does not red-fail here.
+  # --------------------------------------------------------------------------
+  npm-publish:
+    name: npm-publish (aid-installer)
+    needs: [gate, github-release]
+    if: vars.NPM_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    env:
+      VERSION: ${{ needs.gate.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      # Vendor the aid-cli payload into packages/npm/ (runs scripts/vendor.js).
+      # npm ci requires a committed package-lock.json; if packages/npm ships
+      # without one (empty deps by design), replace with:
+      #   npm install --no-package-lock --ignore-scripts
+      - name: Install npm dependencies (deterministic)
+        working-directory: packages/npm
+        run: npm ci
+
+      # Idempotency guard: skip (exit 0) if this exact version already exists.
+      - name: Check if npm version already published (idempotency guard)
+        id: npm_check
+        shell: bash
+        run: |
+          if npm view "aid-installer@${VERSION}" version >/dev/null 2>&1; then
+            echo "already_published=true" >> "$GITHUB_OUTPUT"
+            echo "NOTICE: aid-installer@${VERSION} already published on npm — skipping."
+          else
+            echo "already_published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The prepack script in packages/npm/package.json runs scripts/vendor.js
+      # which vendoring the aid-cli payload; npm publish triggers prepack automatically.
+      - name: Publish with provenance
+        if: steps.npm_check.outputs.already_published != 'true' && inputs.dry_run != true
+        working-directory: packages/npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
+
+      - name: Dry-run publish (build only, no upload)
+        if: inputs.dry_run == true
+        working-directory: packages/npm
+        run: npm pack --dry-run
+
+  # --------------------------------------------------------------------------
+  # pypi-publish — publish aid-installer to PyPI via Trusted Publishing (OIDC).
+  #
+  # BLOCKED until:
+  #   1. The CasuloAI Labs PyPI organisation is registered.
+  #   2. The package name `aid-installer` is reserved.
+  #   3. A Trusted Publisher is configured on PyPI:
+  #        repository: AndreVianna/aid-methodology
+  #        workflow:   release.yml
+  #      (No PYPI_TOKEN secret needed; auth is via OIDC id-token.)
+  #   4. Repo variable PYPI_ENABLED is flipped to 'true'.
+  #
+  # Runs in parallel with npm-publish (both need only gate + github-release).
+  # skip-existing: true makes re-runs idempotent (PyPI rejects re-uploads by
+  # default; this turns that into a skip rather than a failure).
+  # --------------------------------------------------------------------------
+  pypi-publish:
+    name: pypi-publish (aid-installer)
+    needs: [gate, github-release]
+    if: vars.PYPI_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    env:
+      VERSION: ${{ needs.gate.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.11'
+
+      # Build sdist + wheel; the hatchling build hook (scripts/vendor.py) vendors
+      # the aid-cli payload into aid_installer/_vendor/ at build time.
+      - name: Build sdist + wheel
+        shell: bash
+        working-directory: packages/pypi
+        run: |
+          python -m pip install --upgrade build
+          python -m build
+
+      # Trusted Publishing: the OIDC id-token is exchanged for a short-lived PyPI
+      # token by pypa/gh-action-pypi-publish; no PYPI_TOKEN secret required.
+      # skip-existing: true — re-runs skip already-uploaded files rather than failing.
+      # attestations: true (default) — PEP 740 / sigstore attestations emitted.
+      - name: Publish via Trusted Publishing (OIDC, no token)
+        if: inputs.dry_run != true
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
+        with:
+          packages-dir: packages/pypi/dist/
+          skip-existing: true
+          # attestations: true is the default in v1.14.0; explicitly documented here.
+          attestations: true

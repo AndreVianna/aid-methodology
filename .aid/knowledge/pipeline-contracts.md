@@ -633,7 +633,7 @@ Recommendation. The type determines the resolution loop:
 
 - **Source:** `canonical/templates/feedback-artifacts/IMPEDIMENT.md` `## Type`,
   `canonical/skills/aid-execute/SKILL.md` `## Impediments`,
-  `methodology/aid-methodology.md` `#### Loop 6: Execute → Discovery / Specify / Detail`
+  `docs/aid-methodology.md` `**Loop 6: Execute → Discovery / Specify / Detail`
 
 ### Q&A Entry Contract (universal loopback artifact)
 
@@ -659,7 +659,7 @@ The next run of the owning phase detects the pending entry and resolves it in Q&
 `aid-housekeep` KB-DELTA writes exactly such an entry with `**Impact:** Required` (and
 `**Category:** Housekeep / KB Delta Refresh`) into `.aid/knowledge/STATE.md ## Q&A
 (Pending)` to force `/aid-discover` into targeted re-entry regardless of current grade.
-- **Source:** `coding-standards.md §12`; `methodology/aid-methodology.md` `### Feedback Loop Artifacts`;
+- **Source:** `coding-standards.md §12`; `docs/aid-methodology.md` `### Feedback Loop Artifacts`;
   `canonical/skills/aid-housekeep/references/state-kb-delta.md` `## Step 4 — Synthesize an Impact: Required Q&A entry + invoke /aid-discover`
 
 ---

@@ -64,6 +64,7 @@
 {"dst": ".agents/scripts/kb/build-metrics.sh", "profile": "codex", "sha256": "6564d9cb41b4c087a971f8974b07b4b8c52d1ca57e756384cc12b08062e0e893", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".agents/scripts/kb/build-project-index.sh", "profile": "codex", "sha256": "2beab9b255fd1f984843c7e4b9b4e579c9509c249c1bad30668baa7bd5ff55ec", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".agents/scripts/kb/discover-preflight.sh", "profile": "codex", "sha256": "ab7289ebd91e3b64808df8d7a916202fd7148090a48f8aeec07ea444b39cbd52", "src": "canonical/scripts/kb/discover-preflight.sh"}
+{"dst": ".agents/scripts/release/check-version-sync.sh", "profile": "codex", "sha256": "e8154094c81a15a79261dc463b7df492eb2a8d4fe0203cfea5b9a847f4ee0e3c", "src": "canonical/scripts/release/check-version-sync.sh"}
 {"dst": ".agents/scripts/summarize/assemble-3part.ps1", "profile": "codex", "sha256": "d4038a687b8368e32e360afe6c8b479ce61928bc36dd302cfecaf9855e0bc38d", "src": "canonical/scripts/summarize/assemble-3part.ps1"}
 {"dst": ".agents/scripts/summarize/assemble-3part.sh", "profile": "codex", "sha256": "50cab25aa3d8f1833bfd4755402c06b6fadc8ce5224b16ceb153ce83dd81c08e", "src": "canonical/scripts/summarize/assemble-3part.sh"}
 {"dst": ".agents/scripts/summarize/assemble.sh", "profile": "codex", "sha256": "4845da8f7d428f5c5d8f477a8fb248bff64fca72f78c3bd5b67bbaec49b2751c", "src": "canonical/scripts/summarize/assemble.sh"}
@@ -90,7 +91,7 @@
 {"dst": ".agents/skills/aid-detail/references/review.md", "profile": "codex", "sha256": "8093681cd3f18038fd1aa0685e6ef47420ba2c877671c334eeb072485d4cd0ee", "src": "canonical/skills/aid-detail/references/review.md"}
 {"dst": ".agents/skills/aid-detail/references/reviewer-brief.md", "profile": "codex", "sha256": "7b61d81c7dd10b3e332d49ffd19c64ca20f262241b80e7d74cd98150a918792f", "src": "canonical/skills/aid-detail/references/reviewer-brief.md"}
 {"dst": ".agents/skills/aid-detail/references/task-decomposition.md", "profile": "codex", "sha256": "63310178d6dd02f075c503a68338e8219cb5d31375b20688161aa837e3d2e96c", "src": "canonical/skills/aid-detail/references/task-decomposition.md"}
-{"dst": ".agents/skills/aid-discover/SKILL.md", "profile": "codex", "sha256": "9ea86fe8b8cefa332982ac5deb56b04035ee546512f63c82e723ad6d582e92f2", "src": "canonical/skills/aid-discover/SKILL.md"}
+{"dst": ".agents/skills/aid-discover/SKILL.md", "profile": "codex", "sha256": "9dba48b24e6766840e03bc4629c059620ac5f2238fe92dbe7ca80330fdf03921", "src": "canonical/skills/aid-discover/SKILL.md"}
 {"dst": ".agents/skills/aid-discover/references/agent-prompts.md", "profile": "codex", "sha256": "843f0f852c1615fd17b59637a55ebeed686ef15094440ff90b3d7abc39f8413a", "src": "canonical/skills/aid-discover/references/agent-prompts.md"}
 {"dst": ".agents/skills/aid-discover/references/doc-set-resolve.md", "profile": "codex", "sha256": "6627231c88e8fd3b9da2a7ded20203d89a4f2da17e34051a22efd92d6a0ff563", "src": "canonical/skills/aid-discover/references/doc-set-resolve.md"}
 {"dst": ".agents/skills/aid-discover/references/document-expectations.md", "profile": "codex", "sha256": "d0cbb0eb0d3d4df1f84f2e532a4bfdc7aa35f01128f62ed23fed91c49c893904", "src": "canonical/skills/aid-discover/references/document-expectations.md"}
@@ -208,7 +209,7 @@
 {"dst": ".agents/templates/knowledge-summary/mermaid-examples.md", "profile": "codex", "sha256": "6dc9e805a67d48c78296e50c336f6e43f6cfd9c14dad1a51759fef97f5ac59a5", "src": "canonical/templates/knowledge-summary/mermaid-examples.md"}
 {"dst": ".agents/templates/knowledge-summary/mermaid-init.js", "profile": "codex", "sha256": "5b497dbe03b1a81d0a7e8791da83f6ec3944cb0f21f253cd8c141bccd39cadcb", "src": "canonical/templates/knowledge-summary/mermaid-init.js"}
 {"dst": ".agents/templates/knowledge-summary/prompt.md", "profile": "codex", "sha256": "52715fcff9e1693e9b934c30b07713f6d0949bbbc77c92f62a6f256c4dee0c19", "src": "canonical/templates/knowledge-summary/prompt.md"}
-{"dst": ".agents/templates/knowledge-summary/section-templates/agentic-pipeline.md", "profile": "codex", "sha256": "2ae7e9ba687ccac47c66c4636b44c8bc6debdfdfc01c682d1ee8f13cd27ab1aa", "src": "canonical/templates/knowledge-summary/section-templates/agentic-pipeline.md"}
+{"dst": ".agents/templates/knowledge-summary/section-templates/agentic-pipeline.md", "profile": "codex", "sha256": "5ebca9fd9b86ee1da09fae6f57b0b499f2b93e56d30d19752d6096db723336bb", "src": "canonical/templates/knowledge-summary/section-templates/agentic-pipeline.md"}
 {"dst": ".agents/templates/knowledge-summary/section-templates/auto-detect.md", "profile": "codex", "sha256": "9e810bc592e21a082f6bd49f8f1a2e8977d0495934ddc86075d87dbc4960ebac", "src": "canonical/templates/knowledge-summary/section-templates/auto-detect.md"}
 {"dst": ".agents/templates/knowledge-summary/section-templates/cli.md", "profile": "codex", "sha256": "9bb65c9702030195ccfc7a8c3e51fa78ee47e700796a2ac6bf4d3f6d119820c9", "src": "canonical/templates/knowledge-summary/section-templates/cli.md"}
 {"dst": ".agents/templates/knowledge-summary/section-templates/data-pipeline.md", "profile": "codex", "sha256": "b909fc85b5f333537c8667d3821ac2cb86927e84985c9141afa3fcd76dfe018f", "src": "canonical/templates/knowledge-summary/section-templates/data-pipeline.md"}
@@ -223,7 +224,7 @@
 {"dst": ".agents/templates/requirements/requirements-template.md", "profile": "codex", "sha256": "1a1ae36c8342e45c94edcf87b9b2263ff706e2e8866193e31fd07b4004343ce1", "src": "canonical/templates/requirements/requirements-template.md"}
 {"dst": ".agents/templates/reviewer-dispatch.md", "profile": "codex", "sha256": "aa39b90c18f4192ac1dd61989258a834ac023d32a624419320e9afd3700b5b0b", "src": "canonical/templates/reviewer-dispatch.md"}
 {"dst": ".agents/templates/reviewer-ledger-schema.md", "profile": "codex", "sha256": "fc8471d3a0b95c3b9776c3b42b426523916d08bccad42d83dd1a55c94d8b05b6", "src": "canonical/templates/reviewer-ledger-schema.md"}
-{"dst": ".agents/templates/rough-time-hints.md", "profile": "codex", "sha256": "0f67b8fe61cc6527384f7a500203d6852882fe7289db2bd5352b7fce2a626651", "src": "canonical/templates/rough-time-hints.md"}
+{"dst": ".agents/templates/rough-time-hints.md", "profile": "codex", "sha256": "6ba7ac173ce7fd71695cea207cc6eceed8a9b730f2fbe8c24e757552714c46f9", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".agents/templates/self-review-protocol.md", "profile": "codex", "sha256": "3ec7607729a0431ab17b23be0558962ecc52f76a8c9a448cb81be4a92877c0be", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".agents/templates/settings.yml", "profile": "codex", "sha256": "4d237cad28aea5b6d3d80d7fd50e79030ee7575bcaa0b4ca0a3006c8b8dd2de9", "src": "canonical/templates/settings.yml"}
 {"dst": ".agents/templates/specs/lite-spec-template.md", "profile": "codex", "sha256": "874d2e7c0af827d8bf4563a515d09e2ba06ebe540e7fa9669da4f92bf62079cb", "src": "canonical/templates/specs/lite-spec-template.md"}

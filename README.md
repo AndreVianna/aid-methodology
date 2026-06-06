@@ -1,7 +1,7 @@
 # AID — AI Integrated Development
 
 ![License](https://img.shields.io/github/license/AndreVianna/aid-methodology)
-![Version](https://img.shields.io/badge/version-0.1.0--dev-blue)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Claude Code](https://img.shields.io/badge/Claude_Code-supported-8B5CF6)
 ![Codex CLI](https://img.shields.io/badge/Codex_CLI-supported-10B981)
 ![Cursor](https://img.shields.io/badge/Cursor-supported-3B82F6)
@@ -28,12 +28,13 @@ flowchart TB
         Sum["aid-summarize<br/>optional"]:::aux
     end
     subgraph G2[" 2 · Define "]
-        Intv["2 · aid-interview<br/>TRIAGE → full or lite"]:::def
-        Spec["3 · aid-specify<br/>full path only"]:::def
+        Intv["2 · aid-interview<br/>gather requirements"]:::def
+        Triage{"TRIAGE<br/>full or lite?"}:::def
+        Spec["3 · aid-specify<br/>full path"]:::def
     end
     subgraph G3[" 3 · Map "]
-        Plan["4 · aid-plan<br/>full path only"]:::map
-        Det["5 · aid-detail<br/>full path only"]:::map
+        Plan["4 · aid-plan<br/>full path"]:::map
+        Det["5 · aid-detail<br/>full path"]:::map
     end
     subgraph G4[" 4 · Execute "]
         Exe["6 · aid-execute<br/>8 task types · graded loop"]:::exe
@@ -45,14 +46,16 @@ flowchart TB
 
     HK["aid-housekeep<br/>on-demand · off-pipeline<br/>KB-DELTA · SUMMARY-DELTA · CLEANUP"]:::offpipe
 
-    Init --> Disc --> Intv --> Spec --> Plan --> Det --> Exe
+    Init --> Disc --> Intv --> Triage
+    Triage -- "full path<br/>broad / multi-target" --> Spec --> Plan --> Det --> Exe
+    Triage -- "lite path<br/>small, single-target" --> Exe
     Exe -. "on demand" .-> Dep
     Exe -. "on demand" .-> Mon
     Exe -. "when finished" .-> HK
     HK  -. "targeted KB refresh" .-> Disc
 ```
 
-*11 skills · 5 groups · 2 paths (TRIAGE-routed). Full methodology: [methodology/aid-methodology.md](methodology/aid-methodology.md).*
+*11 skills · 5 groups · 2 paths (TRIAGE-routed). Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
 
 > [!TIP]
 > New to AID? Install takes 2 minutes. Run slash commands directly in your AI coding tool — no plugins required. Jump to [Install](#install) to get started.
@@ -61,41 +64,74 @@ flowchart TB
 
 ## Install
 
-AID is distributed by `git clone`. The setup script copies skills, agents, and templates into your target project in each tool's native format.
+AID uses a persistent global `aid` CLI installed once per machine. After bootstrap, use `aid add <tool>` inside any repo to install the AID profile for that tool.
+
+### Bootstrap the `aid` CLI (once per machine)
+
+**Linux / macOS:**
 
 ```bash
-git clone https://github.com/AndreVianna/aid-methodology.git
-cd aid-methodology
-
-# Linux / macOS / git-bash
-./setup.sh /path/to/your/project
-
-# Windows (PowerShell 5.1+)
-.\setup.ps1 C:\path\to\your\project
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
 ```
 
-The script shows a numbered menu — select the tools you use, then select Done:
+Installs to `~/.aid/` and adds `~/.aid/bin` to your PATH. Open a new shell after.
 
-```
-1. Claude Code
-2. OpenAI Codex CLI
-3. Cursor
-4. GitHub Copilot CLI
-5. Antigravity
-[6] Done
+**Windows (PowerShell 5.1+):**
+
+```powershell
+irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
 ```
 
-Re-running is safe: identical files are skipped, changed files prompt before overwriting. Pass `--force` to overwrite without prompts.
+Installs to `%LOCALAPPDATA%\aid\` and adds it to your User PATH. Open a new shell after.
 
-> [!NOTE]
-> Prefer to install by hand? Copy the profile directory for each tool you use directly into your project root:
-> - Claude Code: `profiles/claude-code/.claude/`
-> - Codex CLI: `profiles/codex/.codex/` + `profiles/codex/.agents/`
-> - Cursor: `profiles/cursor/.cursor/`
-> - GitHub Copilot CLI: `profiles/copilot-cli/.github/`
-> - Antigravity: `profiles/antigravity/.agent/`
+**npm (Node >=18):**
 
-**Runtime requirements:** one or more of the five supported AI tools · Bash or PowerShell 5.1+ · Git · Node 18+ (optional, only for `/aid-summarize` diagram validation).
+```bash
+npm i -g aid-installer
+# one-off without a global install:
+npx aid-installer add claude-code
+```
+
+**PyPI (Python >=3.8):**
+
+```bash
+pipx install aid-installer        # recommended — isolated environment
+# or:
+pip install --user aid-installer
+```
+
+**Offline / air-gapped:**
+
+Download a profile tarball from the [GitHub Releases page](https://github.com/AndreVianna/aid-methodology/releases), verify it, then install without network access:
+
+```bash
+# Download and verify (example: claude-code at v1.0.0)
+curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v1.0.0/aid-claude-code-v1.0.0.tar.gz
+curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v1.0.0/SHA256SUMS
+sha256sum --check --ignore-missing SHA256SUMS     # Linux
+shasum -a 256 -c SHA256SUMS                       # macOS
+
+# Install from the local bundle (after bootstrapping the CLI)
+aid add claude-code --from-bundle aid-claude-code-v1.0.0.tar.gz
+```
+
+All four channels deliver the same `aid` CLI. See [Full install guide →](docs/install.md) for the channel comparison and `aid update self` behavior per channel.
+
+### Use it
+
+```bash
+aid add claude-code        # install AID into the current project (also: codex cursor copilot-cli antigravity)
+aid add codex,cursor       # multiple tools at once
+aid status                 # show what is installed
+aid update                 # update all installed tools
+aid update self            # update the aid CLI itself
+aid remove codex           # remove one tool
+aid remove self            # remove the aid CLI itself (asks to confirm)
+```
+
+Re-running `aid add` is safe: identical files are skipped. Root agent files (`CLAUDE.md` / `AGENTS.md`) that you wrote yourself are protected — AID writes the incoming version as `*.aid-new` for you to review rather than overwriting silently.
+
+[Full install guide — all channels, offline bundles, version pinning, protect-on-diff, reference →](docs/install.md)
 
 ---
 
@@ -117,11 +153,13 @@ Open your AI coding tool in your project and run the skills as slash commands:
 /aid-housekeep        # on-demand — keep the Knowledge Base current (off-pipeline)
 ```
 
-**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-interview`. **Greenfield** projects skip Discovery and start at `/aid-interview`. Every phase is gated — nothing advances without your approval. See [examples/](examples/README.md) for step-by-step walkthroughs.
+**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-interview`. **Greenfield** projects skip Discovery and start at `/aid-interview`. Every phase is gated — nothing advances without your approval.
+
+[See it applied step by step →](examples/)
 
 ---
 
-## Why AID? — The Failure Modes It Removes
+## Why AID
 
 Hand a capable coding agent a vague task and a large repository and you get predictable failure modes. AID removes each one structurally — not with prompt-tuning, but with process.
 
@@ -131,262 +169,56 @@ Hand a capable coding agent a vague task and a large repository and you get pred
 | **Hallucination** | The agent states things about the code that aren't true. | Every KB claim carries a `path:line` citation. Agents navigate to exact lines instead of guessing. |
 | **Drift** | Implementation quietly diverges from intent; the spec rots. | Spec-as-hypothesis + 11 formal feedback loops. When reality contradicts an artifact the agent files a Q&A entry or IMPEDIMENT and the upstream artifact is revised — traceably. |
 | **Overengineering** | The agent adds scope nobody asked for. | Typed, PR-sized tasks with explicit acceptance criteria. The Reviewer grades against the spec, not vibes. |
-| **Oversights** | Bugs and untested paths slip through review. | Separate adversarial review: the agent that writes never grades its own work — a higher-tier Reviewer with clean context loops until grade ≥ minimum. |
-| **Context exhaustion** | Loading the whole repo — slow, expensive, lossy. | A 3-tier context economy: always-loaded index → one KB doc on demand → exact `path:line`. The agent pays only for what the task needs. |
+| **Oversights** | Bugs and untested paths slip through review. | Separate adversarial review: the agent that writes never grades its own work — a higher-tier Reviewer with clean context loops until grade >= minimum. |
+| **Context exhaustion** | Loading the whole repo — slow, expensive, lossy. | A 3-tier context economy: always-loaded index -> one KB doc on demand -> exact `path:line`. The agent pays only for what the task needs. |
 
-[Full philosophy and design rationale →](methodology/aid-methodology.md)
-
----
-
-## The Pipeline
-
-The six numbered development phases form the mandatory sequential path. Deploy and Monitor are optional Deliver skills. `aid-housekeep` runs off the pipeline on demand.
-
-| **Group** | **Phase** | **Skill** | **What it produces** |
-|---|---|---|---|
-| **1 · Prepare** | — Init | `/aid-config` | `.aid/` scaffold · KB placeholders (14 templates + meta) · `CLAUDE.md` / `AGENTS.md` |
-| | 1 · Discover | `/aid-discover` | the 14-standard-document Knowledge Base |
-| | — Summarize | `/aid-summarize` | optional offline HTML viewer of the KB |
-| **2 · Define** | 2 · Interview | `/aid-interview` | `REQUIREMENTS.md` + per-feature `SPEC.md` stubs (full path) OR work-root `SPEC.md` + `tasks/` (lite path) |
-| | 3 · Specify | `/aid-specify` | technical specification for each feature (full path only) |
-| **3 · Map** | 4 · Plan | `/aid-plan` | `PLAN.md` — features sequenced into shippable deliveries (full path only) |
-| | 5 · Detail | `/aid-detail` | typed, PR-sized task files with acceptance criteria (full path only) |
-| **4 · Execute** | 6 · Execute | `/aid-execute` | implemented + reviewed code, looped to grade |
-| **5 · Deliver** | — Deploy | `/aid-deploy` | *(optional)* shipped delivery + pull request |
-| | — Monitor | `/aid-monitor` | *(optional)* production findings classified and routed to fixes |
-| **off-pipeline** | — | `/aid-housekeep` | KB-DELTA refresh · SUMMARY-DELTA · workspace CLEANUP |
-
-[Per-phase deep-dive →](methodology/aid-methodology.md)
+[Full philosophy and design rationale →](docs/aid-methodology.md)
 
 ---
 
-## The Lite Path
+## How It Works
 
-For small, well-scoped work, `/aid-interview` begins with a TRIAGE that routes automatically — no manual cost-benefit decision required. You **describe the work in your own words**; TRIAGE infers the work-type and the best-matching recipe and confirms in one turn.
+### The Pipeline
 
-```mermaid
-flowchart LR
-    classDef def   fill:#6D28D9,stroke:#6D28D9,color:#ffffff
-    classDef exe   fill:#166534,stroke:#166534,color:#ffffff
-    classDef lite  fill:#92400E,stroke:#92400E,color:#ffffff
+Six numbered development phases form the mandatory sequential path. Deploy and Monitor are optional. `aid-housekeep` runs off the pipeline on demand.
 
-    Triage["aid-interview · TRIAGE<br/>describe the work → infer type + recipe"]:::def
+AID's phases are gated: you approve every transition. Nothing auto-advances. [Full pipeline deep-dive →](docs/aid-methodology.md#1-the-pipeline)
 
-    subgraph FullPath[" Full path "]
-        direction LR
-        F1["Interview<br/>REQUIREMENTS + feature SPEC stubs"]:::def
-        F2["aid-specify"]:::def
-        F3["aid-plan"]:::def
-        F4["aid-detail"]:::def
-    end
-    subgraph LitePath[" Lite path "]
-        direction LR
-        L1["CONDENSED-INTAKE"]:::lite
-        L2["TASK-BREAKDOWN"]:::lite
-        L3["LITE-REVIEW"]:::lite
-    end
-    Exec["aid-execute"]:::exe
+### The Lite Path
 
-    Triage -- "no confident match:<br/>multi-target / broad scope" --> F1
-    F1 --> F2 --> F3 --> F4 --> Exec
-    Triage -- "confident match:<br/>small, single-target work" --> L1
-    L1 --> L2 --> L3 --> Exec
-    L3 -. "escalate if scope grows" .-> F1
-```
+For small, well-scoped work, `/aid-interview` opens with a TRIAGE: you describe the work in your own words and the agent infers the work-type and the best-matching recipe. A confident, single-target match skips the full pipeline and routes straight to `/aid-execute`.
 
-**Lite path output:** work-root `SPEC.md` + `tasks/` directory — no `features/` folder, no `REQUIREMENTS.md`, no `PLAN.md`. Straight to `/aid-execute`.
+[Lite path and recipes →](docs/aid-methodology.md#2-philosophy)
 
-The work-type is **inferred** (you never pick it from a menu) and is one of three internal kinds — documentation and reports fold into `new-feature` (adding) or `refactor` (changing):
+### The Knowledge Base
 
-| **work-type (inferred)** | **Sub-path** | **Typical output** |
-|---|---|---|
-| `bug-fix` | LITE-BUG-FIX | 1 IMPLEMENT task (fix + regression test) |
-| `refactor` | LITE-REFACTOR | 1–3 REFACTOR + TEST tasks |
-| `new-feature` | LITE-FEATURE | 1–5 IMPLEMENT + TEST + DOCUMENT tasks |
+The KB is the central artifact: a living 14-document picture of the project. Every phase reads it; any phase can revise it. A 3-tier retrieval model (INDEX → one doc on demand → exact `path:line`) gives agents precise context at minimal cost — no vectors, no embeddings, no chunking.
 
-**Recipes** speed up recurring patterns further. **51 pre-filled templates** live at `canonical/recipes/`, named by the change they make — `add-X` / `change-X` / `fix-X` across target-kind families (API endpoints, UI components, DB entities, jobs, docs/reports, …). TRIAGE reads each recipe's one-line `summary:` to match your description to a recipe; the recipe's YAML frontmatter + `## spec` + `## tasks` blocks (with `{{slot}}` placeholders that `parse-recipe.sh` substitutes) then produce the SPEC and tasks directly, eliminating redundant interview for known work shapes. A lite work can also escalate to full mid-flight if scope grows.
+[Knowledge Base in depth →](docs/aid-methodology.md#3-the-knowledge-base)
+
+### The Agent Model
+
+AID defines 9 agents across three tiers (Large / Medium / Small), mapped per tool to concrete models. The invariant enforced everywhere: the Reviewer's tier is always >= the Executor's. The agent that writes never grades its own work.
+
+[Full agent roster and dispatch rules →](docs/aid-methodology.md#5-the-agent-model)
+
+**Feedback Loops** — 11 formal pathways so any phase can revise an upstream artifact when reality contradicts an assumption. [All 11 loops →](docs/aid-methodology.md#6-feedback-loops)
+
+**AID vs. SDD** — SDD says the spec drives development. AID says understanding drives the spec, the spec drives development, and production drives the next understanding. [Comparison →](docs/aid-methodology.md#9-comparison-with-sdd)
 
 ---
 
-## The Knowledge Base
+## Documentation
 
-The KB is the central artifact: the accumulated, living understanding of the project. Every phase reads it; every phase may revise it. Its doc-set is declared per project — a standard 14-document default, adjustable via `discovery.doc_set` in `.aid/settings.yml`.
-
-**Standard KB doc-set (14 documents):** `architecture` · `coding-standards` · `domain-glossary` · `external-sources` · `feature-inventory` · `infrastructure` · `integration-map` · `module-map` · `pipeline-contracts` · `project-structure` · `schemas` · `tech-debt` · `technology-stack` · `test-landscape`
-
-Because the set is declared, an agent looking for data schemas always reads `schemas.md`; looking for debt, always `tech-debt.md` — navigation by convention, not search. Retrieval happens in three tiers, cheapest first:
-
-- **Tier 1 — `INDEX.md`, always loaded.** A 2-3 line summary of every KB doc (~200-500 tokens). The agent knows what exists and where, at negligible cost.
-- **Tier 2 — one KB document, on demand.** From the INDEX entry the agent reads only the single document a task needs.
-- **Tier 3 — exact `path:line` citation.** Every factual claim in a KB doc carries an inline citation. The agent jumps straight to the precise file and line — never bulk-loading unrelated source.
-
-Net effect: retrieval-augmented behavior with no vector database, no embeddings, no chunking.
-
-[Knowledge Base in depth →](methodology/aid-methodology.md)
-
----
-
-## The Agent Model
-
-Skills are state-machine orchestrators; agents are the workers. AID defines 9 agents across three tiers.
-
-```mermaid
-flowchart TB
-    classDef large fill:#1E3A8A,stroke:#1E3A8A,color:#ffffff
-    classDef med   fill:#0F766E,stroke:#0F766E,color:#ffffff
-    classDef small fill:#E5E7EB,stroke:#9CA3AF,color:#1F2937
-
-    subgraph L["Large tier — 4 · highest-stakes (Opus / GPT-5.5 / Gemini-3 Pro hi)"]
-        direction LR
-        LI["aid-interviewer"]:::large
-        LA["aid-architect"]:::large
-        LR2["aid-researcher"]:::large
-        LRv["aid-reviewer"]:::large
-    end
-    subgraph M["Medium tier — 4 · production workhorses (Sonnet / GPT-5.4 / Gemini-3 Pro lo)"]
-        direction LR
-        MD["aid-developer"]:::med
-        MOps["aid-operator"]:::med
-        MO["aid-orchestrator"]:::med
-        MTW["aid-tech-writer"]:::med
-    end
-    subgraph S["Small tier — 1 · mechanical (Haiku / GPT-5.4-mini / Gemini-3 Flash)"]
-        direction LR
-        SC["aid-clerk"]:::small
-    end
-    L -. "reviewer tier ≥ executor tier" .-> M -.-> S
-```
-
-The tiers are provider-agnostic — each host tool maps them to a concrete model:
-
-| **Tier** | **Claude Code** | **Codex CLI** | **Cursor** | **Copilot CLI** | **Antigravity** |
-|---|---|---|---|---|---|
-| **Large** | Claude Opus | GPT-5.5 (high reasoning) | Claude Opus | claude-opus-4.8 | gemini-3-pro |
-| **Medium** | Claude Sonnet | GPT-5.4 (medium reasoning) | Claude Sonnet | claude-sonnet-4.6 | gemini-3-pro |
-| **Small** | Claude Haiku | GPT-5.4-mini (low reasoning) | Claude Haiku | claude-haiku-4.5 | gemini-3-flash |
-
-The invariant enforced everywhere: **the Reviewer's tier is always ≥ the Executor's tier.** The agent that writes never grades its own work.
-
-[Full agent roster and dispatch rules →](methodology/aid-methodology.md)
-
----
-
-## Feedback Loops
-
-The development pipeline is sequential by default. AID defines 11 formal feedback loops so any phase can revise an upstream artifact when reality contradicts an assumption — eight within development, two from production back to development, and one cross-cutting re-entry available from any phase.
-
-Key loops:
-
-- **Any phase → Discovery** — the KB is wrong or incomplete; targeted re-discovery fills the specific gap.
-- **Execute → IMPEDIMENT** — the agent hits an assumption that doesn't hold and escalates explicitly instead of working around it silently.
-- **Monitor → Interview** — a production bug takes the short path through Interview's lite bug-fix TRIAGE into Execute.
-- **Monitor → Interview** — a change request re-enters as new requirements and runs the pipeline from Interview.
-
-Every loop produces a formal record (Q&A entry in a STATE file, an IMPEDIMENT file, or a Monitor finding) with a revision trail. The spec evolves — but traceably.
-
-[All 11 loops described →](methodology/aid-methodology.md)
-
----
-
-## AID vs. SDD
-
-Spec-Driven Development is a good idea. AID contains it and goes further.
-
-| **Dimension** | **SDD** | **AID** |
-|---|---|---|
-| **Starting point** | You have a spec | You have a problem |
-| **Brownfield support** | Not addressed | First-class Discovery phase + 14-document KB |
-| **Spec philosophy** | Spec is the source of truth | Spec is a hypothesis — revised by formal protocol |
-| **Requirements** | Assumed to exist | Adaptive interview, one question at a time |
-| **Path routing** | One fixed path | TRIAGE routes full or lite automatically |
-| **Planning depth** | A single spec | Two levels: Plan (strategy) → Detail (tactics) |
-| **Quality** | Review the output | Separate adversarial reviewer + deterministic grading loop |
-| **Feedback loops** | Linear: spec → code → done | 11 formal loops (8 development + 2 post-production + 1 cross-cutting) |
-| **Post-delivery** | Not addressed | Monitor classifies findings and routes them back |
-
-> SDD says: *the spec drives development.*
-> AID says: *understanding drives the spec, the spec drives development, and production drives the next understanding.*
-
----
-
-## What Gets Installed
-
-<details>
-<summary>Expand file listings by tool</summary>
-
-**Claude Code** — installed into `.claude/`:
-- `.claude/skills/` — 11 skill markdown files
-- `.claude/agents/` — 9 agent markdown files
-- `CLAUDE.md` — project-context file at your project root
-
-**Codex CLI** — installed into `.codex/` + `.agents/`:
-- `.codex/agents/` — agent TOML files
-- `.agents/` — agent TOML files
-- `AGENTS.md` — project-context file at your project root
-
-**Cursor** — installed into `.cursor/`:
-- `.cursor/rules/` — skill and agent `.mdc` rule files
-- `AGENTS.md` — project-context file at your project root
-
-**GitHub Copilot CLI** — installed into `.github/`:
-- `.github/copilot-agents/` — agent `.agent.md` files
-- `AGENTS.md` — project-context file at your project root
-
-**Antigravity** — installed into `.agent/`:
-- `.agent/` — skill and agent files with `trigger:` frontmatter
-- `AGENTS.md` — project-context file at your project root
-
-All five profiles contain byte-identical skill/agent bodies — only the wrapper format differs per tool. `.aid/` is appended to your `.gitignore` by default (the Knowledge Base stays out of git; remove the entry if you want to commit it).
-
-</details>
-
-All five profiles are generated from the same canonical source at `canonical/` — byte-identity is verified by `verify_deterministic.py` after every render. Never edit `profiles/` directly; edit `canonical/` and re-run `python run_generator.py`.
-
----
-
-## Versioning
-
-AID is at **`0.1.0-dev`** (see [`VERSION`](VERSION)) — a pre-release marker, not a stable release. The canonical position is **"continuous master"**: there is no formal semver release cadence yet.
-
-- Install via `setup.sh` (or `setup.ps1`) to get current `master`; re-run to pick up updates.
-- A formal version bump will be introduced when the methodology stabilizes.
-
----
-
-## Repository Structure
-
-<details>
-<summary>Expand full repository layout</summary>
-
-```
-aid-methodology/
-├── canonical/                      ← single source of truth (never edit profiles/ directly)
-│   ├── skills/                     ← 11 user-facing skill definitions
-│   ├── agents/                     ← 9 agent definitions
-│   ├── templates/                  ← KB templates and document templates
-│   ├── recipes/                    ← 51 lite-path recipes (add-/change-/fix- families)
-│   └── scripts/                    ← helper scripts by phase
-├── profiles/                       ← rendered install trees (generated — do not edit)
-│   ├── claude-code/
-│   ├── codex/
-│   ├── cursor/
-│   ├── copilot-cli/
-│   └── antigravity/
-├── methodology/aid-methodology.md  ← the complete methodology (~40 min read)
-├── docs/                           ← glossary and FAQ
-├── examples/                       ← step-by-step worked tutorial examples
-├── setup.sh  ·  setup.ps1         ← cross-platform installers
-└── CONTRIBUTING.md  ·  LICENSE
-```
-
-</details>
-
-| **Want to…** | **Go to** |
+| Document | Contents |
 |---|---|
-| Read the complete methodology | [`methodology/aid-methodology.md`](methodology/aid-methodology.md) |
-| Look up a term | [`docs/glossary.md`](docs/glossary.md) |
-| Answer a how-to question | [`docs/faq.md`](docs/faq.md) |
-| See AID applied step by step | [`examples/`](examples/README.md) — greenfield, brownfield full-path, brownfield lite-path |
+| [docs/aid-methodology.md](docs/aid-methodology.md) | Complete methodology (~40 min read) |
+| [docs/install.md](docs/install.md) | Full install guide — all channels, offline, update, remove |
+| [docs/repository-structure.md](docs/repository-structure.md) | Repo layout and contributor orientation |
+| [docs/release.md](docs/release.md) | Maintainer release runbook |
+| [docs/faq.md](docs/faq.md) | How-to questions |
+| [docs/glossary.md](docs/glossary.md) | Term definitions |
+| [examples/](examples/README.md) | Step-by-step walkthroughs — greenfield, brownfield full-path, brownfield lite-path |
 
 ---
 
@@ -400,4 +232,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Full methodology: [methodology/aid-methodology.md](methodology/aid-methodology.md) · Blog: [AID — the complete picture](https://casuloailabs.com/blog/aid-methodology/)*
+*Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md) · Blog: [AID — the complete picture](https://casuloailabs.com/blog/aid-methodology/)*

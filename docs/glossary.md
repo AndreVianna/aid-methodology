@@ -113,6 +113,22 @@ All five profiles contain byte-identical skill and agent bodies — only the wra
 
 ---
 
+## Install and Distribution
+
+**`aid` CLI:** The persistent global command installed once per machine. Provides `aid add / status / update / remove`. All install channels deliver the same CLI — only the method of putting it on PATH differs.
+
+**Bootstrap:** The one-time step of installing the `aid` CLI onto a machine. Done via one of four channels: `curl | bash` (Linux/macOS), `irm | iex` (Windows PowerShell), `npm i -g aid-installer`, or `pipx install aid-installer`.
+
+**Install channel:** The method by which the `aid` CLI was bootstrapped onto a machine. AID supports four live channels: `curl`/`irm` script, npm, and PyPI. A fifth path — offline bundle — is also available for air-gapped environments. The channel is recorded in `AID_INSTALL_CHANNEL`; `aid update self` reads it and prints the correct upgrade command.
+
+**Profile:** The set of files `aid add <tool>` installs into a project. One profile per tool; profiles are generated from `canonical/` by the generator and stored in `profiles/<tool>/`.
+
+**`--from-bundle` (offline bundle):** An installation mode that uses a locally-downloaded tarball instead of fetching from GitHub. Used for air-gapped or security-sensitive environments. Invoked as `aid add <tool> --from-bundle <path.tar.gz>`. Profile tarballs and `SHA256SUMS` are available on the [GitHub Releases page](https://github.com/AndreVianna/aid-methodology/releases).
+
+**Protect-on-diff:** The behavior `aid add` (and `aid update`) uses when a root agent file (`CLAUDE.md` or `AGENTS.md`) already exists and was not written by AID. Instead of overwriting silently, AID writes the incoming version as `<file>.aid-new` and exits with a warning (exit 5). The user reviews the diff and merges manually, or re-runs with `--force` to overwrite.
+
+---
+
 ## Declared Doc-Set
 
 **Declared doc-set:** The KB document set for a project, defined in `.aid/settings.yml` under `discovery.doc_set`. The default seed is 14 standard documents. Because the set is declared (not ad-hoc), downstream skills navigate by convention — an agent looking for schemas always reads `schemas.md`; for tech debt, always `tech-debt.md`.

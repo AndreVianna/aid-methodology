@@ -3,21 +3,23 @@ kb-category: primary
 source: hand-authored
 intent: |
   Inventory of test suites that protect the canonical helper scripts AID skills
-  depend on. Currently 24 unit/integration suites under tests/canonical/, discovered by
-  glob and run by the tests/run-all.sh aggregator. Most are pure bash (POSIX);
-  two shell out to node (.mjs validators) and two to pwsh (PowerShell mirrors),
-  each skipping if its runtime is absent. All suites source the shared
+  depend on plus the `aid` CLI installer/release surface. Currently 35 unit/integration
+  suites under tests/canonical/ (plus the native-Windows tests/windows/Test-AidInstaller.ps1),
+  discovered by glob and run by the tests/run-all.sh aggregator. Most are pure bash (POSIX);
+  a few shell out to node (.mjs validators) or pwsh (PowerShell mirrors + the install.ps1 /
+  aid.ps1 CLI suites), each skipping if its runtime is absent. All suites source the shared
   tests/lib/assert.sh assertion library. NO methodology/orchestration/E2E tests —
   those don't exist and aren't needed (the methodology is exercised by
   dogfooding, the renderer has its own VERIFY (deterministic) gate). Read this to
   understand what changes to canonical/scripts/ are guarded by tests vs require
   manual verification.
 contracts:
-  - "currently 24 test suites under tests/canonical/ (glob-discovered; recount with ls tests/canonical/test-*.sh | wc -l), no skill-level tests"
+  - "currently 35 test suites under tests/canonical/ (glob-discovered; recount with ls tests/canonical/test-*.sh | wc -l) + tests/windows/Test-AidInstaller.ps1 (native Windows), no skill-level tests"
   - "tests/run-all.sh is the single aggregator (glob-discovers tests/canonical/test-*.sh)"
   - "All suites source tests/lib/assert.sh (shared counters + asserts + test_summary)"
-  - "Most suites are pure bash (POSIX, Git Bash on Windows); 2 need node, 2 need pwsh — each skips if absent"
+  - "Most suites are pure bash (POSIX, Git Bash on Windows); 2 need node, several need pwsh (the *-ps1.sh mirrors + the install.ps1 / aid.ps1 CLI suites) — each skips if absent; CI installer-tests.yml runs the native-Windows path"
 changelog:
+  - 2026-06-05: work-002-auto-installer — the former `setup.sh`/`setup.ps1` installers were removed and replaced by the persistent `aid` CLI; deleted the `test-setup.sh` / `test-setup-ps1.sh` suite docs and added the real installer/CLI/release suites: `test-install.sh`, `test-install-ps1.sh`, `test-install-parity.sh`, `test-aid-cli.sh`, `test-aid-cli-ps1.sh`, `test-aid-cli-parity.sh`, `test-release.sh`, `test-release-install-e2e.sh`, `test-version-sync.sh`, `test-ascii-only.sh`, `test-agents-md-invariant.sh`, `test-npm-installer.sh`, `test-pypi-installer.sh`, plus the native-Windows `tests/windows/Test-AidInstaller.ps1`. Suite count 24→35 (verified `ls tests/canonical/test-*.sh | wc -l` = 35 on disk). Added the new `.github/workflows/installer-tests.yml` cross-platform runner to the CI notes; documented that the installer/CLI/release suites run on `installer-tests.yml` (cross-platform) in addition to the `test.yml` `canonical-tests` aggregator.
   - 2026-06-03: housekeep KB-delta (Q29) — work-001 (PR #56) expanded the recipe catalog 5→51 and migrated/renamed the old seed recipes; updated the test-parse-recipe.sh description so the dogfood note reflects the migrated catalog (validates the migrated seed basenames fix-application/add-docs/change-member/add-api-endpoint/add-test-coverage as representatives, per the suite's Units 15–19) rather than implying the old 5-recipe seed set. Kept qualitative — no per-suite assertion count added (§9a).
   - 2026-06-03: housekeep run-state relocation (PR #51) — updated the test-housekeep-state.sh + test-housekeep-workfolder-safety.sh descriptions: run-state now in `.aid/.temp/HOUSEKEEP_STATE_<ts>.md` (absent-file tolerance covered); the work-folder matrix is now informational (every folder offered, user-confirmed; only the current-branch folder hard-skipped — old signals (a)/(c) removed).
   - 2026-06-03: post-merge work-001-aid-housekeep (PR #49) + work-002 canonical bug-fix suites — suite count 18→24 (verified `ls tests/canonical/test-*.sh | wc -l` = 24 on disk). Documented the 5 new housekeep suites (test-housekeep-state.sh, test-housekeep-branch-commit.sh, test-housekeep-classify.sh, test-housekeep-workfolder-safety.sh, test-housekeep-deletion-split.sh) added by the /aid-housekeep skill, which guard the canonical/scripts/housekeep/ helpers (housekeep-state.sh, branch-commit.sh, cleanup-classify.sh). Also documented test-complexity-score.sh (work-002 task-001 four-fix regression suite for canonical/scripts/execute/complexity-score.sh) which was on disk but missing from this inventory. Done via /aid-housekeep targeted re-discovery.
@@ -35,10 +37,12 @@ changelog:
 
 These tests cover the **canonical helper scripts** only — the small utilities that
 AID skills invoke at runtime (writeback, BFS compute, recipe parsing, severity
-grading, diagram/contrast validation, 3-part assembly, the end-user installer, the
-/aid-housekeep helpers, etc.).
+grading, diagram/contrast validation, 3-part assembly, the `aid` CLI installer +
+release tooling, the /aid-housekeep helpers, etc.).
 Most are pure bash; a few shell out to `node` or `pwsh` to exercise the `.mjs`
-validators and the PowerShell mirror scripts.
+validators and the PowerShell side of the installer (`install.ps1` / `bin/aid.ps1` /
+the `*-ps1.sh` mirrors). The native-Windows path is exercised by
+`tests/windows/Test-AidInstaller.ps1` on the `installer-tests.yml` Windows runner.
 
 What is NOT tested here:
 - **Orchestration skills** (`/aid-discover`, `/aid-execute`, …) — prompt-driven; no
@@ -114,8 +118,10 @@ missing one still runs the rest:
 
 - **`node`** — `test-validate-diagrams.sh`, `test-contrast-check.sh` (the two `.mjs`
   validators).
-- **`pwsh`** — `test-assemble-3part-ps1.sh`, `test-setup-ps1.sh` (the PowerShell
-  mirrors).
+- **`pwsh`** — `test-assemble-3part-ps1.sh` (the assemble mirror) plus the installer/CLI
+  PowerShell suites `test-install-ps1.sh`, `test-aid-cli-ps1.sh`, and the cross-platform
+  parity suites `test-install-parity.sh`, `test-aid-cli-parity.sh` (which need BOTH bash and
+  pwsh). Each SKIPs (exit 0 with a `SKIP:` notice) when `pwsh` is absent.
 
 (One additional optional-runtime guard exists in `test-housekeep-workfolder-safety.sh`,
 which SKIPs the gh-PR-merge path when `gh` is absent and otherwise exercises the
@@ -127,10 +133,13 @@ either is missing so the node/PowerShell coverage can never be silently bypassed
 
 ---
 
-## Suites (currently 24)
+## Suites (currently 35)
 
 All suites live under `tests/canonical/` and target scripts under `canonical/scripts/`
-(or the top-level `setup.*` installers, or the canonical agent/skill source files).
+(or the `aid` CLI installer/release surface — `bin/aid`, `lib/aid-install-core.sh`,
+`lib/AidInstallCore.psm1`, `install.sh`/`install.ps1`, `release.sh` — or the canonical
+agent/skill source files). The native-Windows installer test lives separately at
+`tests/windows/Test-AidInstaller.ps1` (run by `installer-tests.yml`, not by `run-all.sh`).
 Coverage is described qualitatively — suites share one `test_summary` format and the
 suite inventory in `tests/README.md` does not commit to per-suite assertion counts.
 
@@ -250,26 +259,133 @@ parse paths, low-contrast fail, unresolvable-vars skipped-not-failed, dark-theme
 override extraction, and an integration check that the shipped `knowledge-summary.html`
 passes.
 
-### test-setup.sh
+### test-install.sh
 
-**Target:** `setup.sh` (the end-user installer)
+**Target:** `install.sh` + `lib/aid-install-core.sh` (the Bash installer core)
 
-Covers the installer's arg/precondition errors, interactive menu logic (Done / toggle /
-invalid), per-tool installs across all **5** menu options (Claude Code=1 / Codex=2 /
-Cursor=3 / GitHub Copilot CLI=4 / Antigravity=5; `[6] Done`), multi-tool install,
-idempotent re-install ("Up to date"), and `--force` overwrite. New-provider cases:
-**SU12** Copilot install (`.github/` tree + root `AGENTS.md`), **SU13** Antigravity
-install (`.agent/skills` + `.agent/rules` + root `AGENTS.md`), **SU14** new-provider
-files byte-identical to their `profiles/<tool>/` sources, **SU15** out-of-range rejected
-(Done is now 6), **SU16** the Option-A AGENTS.md multi-install collision
-(Codex+Copilot → `AGENTS_COLLISION=1`, last-installed/highest-numbered-block wins —
-`GitHub Copilot CLI wins`, resolved non-interactively, installed `AGENTS.md`
-byte-identical to Copilot's source), **SU16b** the guard does NOT fire for a single
-AGENTS.md writer (no false collision), **SU17** new-provider idempotent re-install +
-`--force`. The menu is driven via piped stdin; only the fresh / identical / `--force` /
-non-interactive-collision (`AGENTS_COLLISION`) paths are exercised (never the
-`/dev/tty` prompt). See `setup.sh` `tool_name()` / `print_menu()` and the
-`AGENTS_COLLISION` collision block (the `_survivor` / `last-writer-wins` lines).
+Drives `install.sh` against temp target directories using **locally-built fixture
+tarballs** (`--from-bundle`), so no network calls run in CI. Covers per-tool install of
+each of the 5 profiles (`.claude/` / `.codex/`+`.agents/` / `.cursor/` / `.github/` /
+`.agent/`), tool auto-detection vs `--tool`, idempotent re-install ("up to date"),
+`--force` overwrite, `--verbose` per-file lines (`Copied:` / `Updated:` / `Removed:`),
+manifest write (`.aid/.aid-manifest.json`) + `.aid-version` marker, the flat-root tarball
+contract assertion, checksum verification against `SHA256SUMS` (exit 4 on mismatch), and
+the `lib` integrity-verify opt-out (`AID_INSECURE_SKIP_LIB_VERIFY`). Pure bash on the
+Linux runner.
+
+### test-install-ps1.sh
+
+**Target:** `install.ps1` + `lib/AidInstallCore.psm1` (the PowerShell installer core).
+**Needs `pwsh`.**
+
+The PowerShell mirror of `test-install.sh`: same `--from-bundle` install/idempotency/
+`--force`/manifest/checksum contract, driven through `install.ps1` under `pwsh`. **SKIPs
+(exit 0 with a `SKIP:` notice) when `pwsh` is absent**; CI's installer matrix asserts
+`pwsh` is present so the skip cannot silently fire there.
+
+### test-install-parity.sh
+
+**Target:** cross-platform parity between `install.sh` and `install.ps1`. **Needs `pwsh`.**
+
+Installs the SAME fixture tarball through BOTH the bash and PowerShell installers into
+separate temp targets and asserts the installed trees are **byte-identical** (`diff -r`)
+and the two `.aid/.aid-manifest.json` files are identical modulo the `installed_at`
+timestamps (same `manifest_version`, `aid_version`, tools, `paths`, `sha256`, `status`,
+and key order). SKIPs without `pwsh`.
+
+### test-aid-cli.sh
+
+**Target:** the persistent Bash `aid` CLI — `bin/aid` dispatcher + `install.sh`
+BOOTSTRAP/CONVENIENCE paths
+
+Integration tests for the per-machine CLI: bootstrap + PATH wiring (all temp state under
+`mktemp`, `AID_HOME` never touches the real `$HOME`), every subcommand
+(`aid` bare dashboard / `status` / `add` / `update` / `remove` / `version`), CONVENIENCE
+mode, LEGACY back-compat, and `remove self`. Profile files are temp; `AID_LIB_PATH` is
+always set so no network calls occur.
+
+### test-aid-cli-ps1.sh
+
+**Target:** the PowerShell `aid` CLI — `bin/aid.ps1`. **Needs `pwsh`.**
+
+PowerShell mirror of `test-aid-cli.sh` for the `bin/aid.ps1` dispatcher (subcommand
+surface + bootstrap/PATH parity). SKIPs without `pwsh`.
+
+### test-aid-cli-parity.sh
+
+**Target:** cross-platform parity for the `aid` CLI (`bin/aid` vs `bin/aid.ps1`).
+**Needs `pwsh`.**
+
+Runs the same `add` / `remove` / `update` / `uninstall` subcommand sequence on both
+dispatchers and asserts an identical project tree, manifest equivalence (same tool list,
+paths, sha256/status) and identical `status` output + exit codes. SKIPs without `pwsh`.
+
+### test-release.sh
+
+**Target:** `release.sh` (the maintainer release packager)
+
+Drives `release.sh --dry-run` hermetically (no network, no `gh`, no tag creation; uses a
+local git clone per group so the real `profiles/` is untouched and the clean-worktree
+precondition holds). Cases (find via the `RL01`..`RL07` headers): tarball naming, install
+layout, flat-root tarball contract, `SHA256SUMS` format + checksum correctness, a
+render-drift FAIL path, and a version-mismatch path.
+
+### test-release-install-e2e.sh
+
+**Target:** the full release→install loop (`release.sh` → tarballs+`SHA256SUMS` →
+`install.sh`/`install.ps1` → `update` → `uninstall`). **Uses `pwsh` when available.**
+
+End-to-end (delivery-001): packages the staged artifacts with `release.sh --dry-run`, then
+installs them via `install.sh` (and `install.ps1` when `pwsh` is present), then exercises
+`update` and `uninstall` — all against the staged artifacts with no pre-built fixtures and
+no network.
+
+### test-version-sync.sh
+
+**Target:** the FR10 version-sync invariant — `VERSION` == `packages/npm/package.json`
+== `packages/pypi/pyproject.toml` (== release tag)
+
+Asserts the four version carriers agree (cases `VS02`/`VS03`/`VS06`): a `package.json`,
+`pyproject.toml`, or `VERSION`-vs-`--expect` divergence fails (exit 1, naming the drifting
+carrier). This is the same check the `release.yml` `gate` job runs on the tagged commit.
+
+### test-ascii-only.sh
+
+**Target:** the shipped CLI/installer scripts — `lib/aid-install-core.sh`,
+`lib/AidInstallCore.psm1`, `bin/aid`, `bin/aid.ps1`, `bin/aid.cmd`, `install.sh`,
+`install.ps1`, `packages/npm/bin/aid.js` (the `SHIPPED_SCRIPTS` array)
+
+Guards the **ASCII-only shipped-script** standard: each listed script must contain only
+ASCII bytes. Rationale (per the suite header) — Windows decodes a no-BOM UTF-8 script in
+the ANSI codepage and mis-parses non-ASCII characters, whereas ASCII bytes decode
+identically in every single-byte codepage. CI-guarded.
+
+### test-agents-md-invariant.sh
+
+**Target:** the four profile root `AGENTS.md` files (FR12 invariant)
+
+Asserts the root `AGENTS.md` shipped by the four AGENTS.md-writing profiles (Codex,
+Cursor, Copilot CLI, Antigravity) is **byte-identical** across all four — the guard that
+lets the installer treat a second AGENTS.md-writing install as up-to-date rather than a
+collision (replacing the former Option-A last-installed-wins handler).
+
+### test-npm-installer.sh
+
+**Target:** the npm channel — `packages/npm/bin/aid.js` (the `aid-installer` shim)
+
+Tests the npm thin-shim: argv passthrough, exit-code relay, platform selection
+(`bin/aid` on Unix / `bin/aid.ps1` on Windows), missing-runtime handling,
+`AID_INSTALL_CHANNEL=npm` injection (so `aid update self` prints the npm-correct upgrade
+hint), a pack/install smoke, and version parity with `VERSION`.
+
+### test-pypi-installer.sh
+
+**Target:** the PyPI channel — `packages/pypi/aid_installer/__main__.py` (the
+`aid-installer` shim)
+
+Tests the PyPI thin-shim: argv passthrough, exit-code relay, platform selection,
+missing-runtime handling, `AID_INSTALL_CHANNEL=pypi` injection (pipx upgrade hint), a
+pip/pipx smoke, and version parity with `VERSION`.
 
 ### test-assemble-3part.sh
 
@@ -288,21 +404,22 @@ concatenation + ordering.
 Same contract as the `.sh` oracle, run under `pwsh`. Cross-platform (explicit paths +
 byte I/O), so it runs fully on the Linux CI runner once `pwsh` is present.
 
-### test-setup-ps1.sh
+### tests/windows/Test-AidInstaller.ps1 (native Windows — NOT under tests/canonical/)
 
-**Target:** `setup.ps1` (the Windows-host installer). **Needs `pwsh`.**
+**Target:** `install.ps1` + `bin/aid.ps1` + `lib/AidInstallCore.psm1` on a **real Windows
+host**. Run by `installer-tests.yml` (the `windows-latest` / `native-ps1` leg), NOT by
+`run-all.sh`.
 
-Only its platform-independent pre-install logic is exercised under `pwsh` on Linux:
-target validation + the selection-menu loop. The backslash-path file copy is
-Windows-only; the actual install coverage lives in `test-setup.sh`. New menu-parity
-cases: **SPS05** menu lists 5 tools + `Done=6` (and names GitHub Copilot CLI +
-Antigravity), **SPS06** toggle a new tool on/off (nothing installed), **SPS07**
-out-of-range rejected with `Done=6`, **SPS08** collision-warning parity (Codex+Copilot →
-`Note:` warning naming the AGENTS.md collision + `GitHub Copilot CLI wins`). This suite
-**SKIPs (exit 0 with a `SKIP:` notice) when `pwsh` is absent** (established repo
-contract; the suite's `command -v pwsh` guard) — so `setup.ps1` menu/collision parity is
-code-read, not CI-executed, unless a `pwsh` runtime is present. CI's `canonical-tests`
-job asserts `pwsh` IS present so this skip cannot silently fire there.
+Self-contained PowerShell integration test (no Pester; its own `Assert` / `Assert-Match` /
+`Assert-FileLF` helpers; runs under `pwsh` or Windows PowerShell 5.1). Covers the path the
+Linux bash harness cannot reach (find via the `T01`..`T07`+ headers): per-project install
+via `install.ps1 -Tool -FromBundle -TargetDirectory`; install tree + `manifest`/`version`
+files present; the manifest and `.aid-version` are **LF-only with no UTF-8 BOM**
+(byte-level assertion — the Windows-encoding hazard the ASCII-only guard also protects);
+manifest JSON parses and contains the tool with `"status":"owned"`; idempotent re-install;
+and `aid status` via the installed `bin/aid.ps1`. The Windows leg of `installer-tests.yml`
+additionally smokes the npm + PyPI Windows channels (pack/build → global install →
+`aid status`/`aid add`).
 
 ### test-housekeep-state.sh
 
@@ -476,17 +593,27 @@ a PR cannot merge unless it is green. The same job pins `node` v20, pre-seeds th
 SHA-verified Mermaid pin via `fetch-mermaid.sh`, and asserts both `node` and `pwsh`
 are present so the node/PowerShell suites cannot silently skip.
 
+A second workflow, `.github/workflows/installer-tests.yml` (`Installer CI
+(cross-platform)`), runs a two-leg matrix dedicated to the installer surface: the
+`ubuntu-latest` / `bash-harness` leg drives the bash installer/CLI/release suites, and the
+`windows-latest` / `native-ps1` leg runs `tests/windows/Test-AidInstaller.ps1` plus the
+npm + PyPI Windows channel smokes. Both legs assert `pwsh` is present, so the real-Windows
+path the Linux bash harness cannot reach is always exercised.
+
 ---
 
 ## Coverage gaps and roadmap
 
-The earlier inversion in this doc — which listed the PowerShell mirrors, the `.mjs`
-validators, and the `setup.*` install flow as *untested* — is **wrong and now fixed**.
-Those are all covered (closed under L2): `test-setup.sh`, `test-setup-ps1.sh`,
-`test-validate-diagrams.sh`, `test-contrast-check.sh`, `test-assemble-3part.sh`,
-`test-assemble-3part-ps1.sh`. The `/aid-housekeep` helpers
-(`canonical/scripts/housekeep/`) are likewise covered by the five `test-housekeep-*.sh`
-suites. The genuinely untested surface is the prompt-driven / orchestration layer:
+The PowerShell mirrors, the `.mjs` validators, and the **`aid` CLI installer/release
+flow** are all covered (closed under L2): `test-validate-diagrams.sh`,
+`test-contrast-check.sh`, `test-assemble-3part.sh`, `test-assemble-3part-ps1.sh`, and the
+installer/CLI/release suites `test-install*.sh`, `test-aid-cli*.sh`, `test-release*.sh`,
+`test-version-sync.sh`, `test-ascii-only.sh`, `test-agents-md-invariant.sh`, plus the
+native-Windows `tests/windows/Test-AidInstaller.ps1` on `installer-tests.yml`. (The former
+`test-setup.sh` / `test-setup-ps1.sh` suites were removed with the `setup.sh`/`setup.ps1`
+installers they targeted.) The `/aid-housekeep` helpers (`canonical/scripts/housekeep/`)
+are likewise covered by the five `test-housekeep-*.sh` suites. The genuinely untested
+surface is the prompt-driven / orchestration layer:
 
 - **Orchestration skills** (`/aid-discover`, `/aid-execute`, …) — prompt-driven and hard
   to test without an AI host. `aid-reviewer` dispatched from `/aid-discover` is the

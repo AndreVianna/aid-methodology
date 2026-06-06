@@ -43,4 +43,4 @@ Three tutorial-style worked examples showing AID applied step by step to realist
 For background on the methodology and terms used in the examples, see:
 - [docs/glossary.md](../docs/glossary.md) — term definitions
 - [docs/faq.md](../docs/faq.md) — how-to questions
-- [methodology/aid-methodology.md](../methodology/aid-methodology.md) — full methodology reference
+- [docs/aid-methodology.md](../docs/aid-methodology.md) — full methodology reference

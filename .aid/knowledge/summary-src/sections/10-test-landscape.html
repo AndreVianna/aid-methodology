@@ -2,7 +2,7 @@
 	<header>
 		<span class="eyebrow">Tests</span>
 		<h2>Test Landscape</h2>
-		<p class="lede">18 unit/integration test suites under <code>tests/canonical/</code>, glob-discovered and run by the <code>tests/run-all.sh</code> aggregator, all sharing the <code>tests/lib/assert.sh</code> assertion library. Most are pure Bash; two shell out to <code>node</code> (the <code>.mjs</code> validators) and two to <code>pwsh</code> (the PowerShell mirrors), each skipping if its runtime is absent. They cover the canonical helper scripts that AID skills depend on, plus discovery doc-ownership and the declared doc-set resolve/dispatch logic. CI runs the suites on PR/push (`.github/workflows/test.yml`), pins <code>node</code> + asserts <code>pwsh</code> present, and is a required status check on master. (per test-landscape.md)</p>
+		<p class="lede">35 unit/integration test suites under <code>tests/canonical/</code> (plus the native-Windows <code>tests/windows/Test-AidInstaller.ps1</code>), glob-discovered and run by the <code>tests/run-all.sh</code> aggregator, all sharing the <code>tests/lib/assert.sh</code> assertion library. Most are pure Bash; two shell out to <code>node</code> (the <code>.mjs</code> validators) and several to <code>pwsh</code> (the PowerShell mirrors and <code>install.ps1</code> / <code>aid.ps1</code> CLI suites), each skipping if its runtime is absent. They cover the canonical helper scripts that AID skills depend on, the installer/CLI/release surface, and discovery doc-ownership and the declared doc-set resolve/dispatch logic. CI runs the suites on PR/push (<code>.github/workflows/test.yml</code> + <code>installer-tests.yml</code> cross-platform), and is a required status check on master. (per test-landscape.md)</p>
 	</header>
 
 	<div class="tbl-wrap">
@@ -64,10 +64,124 @@
 					<td>WCAG AA contrast: usage exit 2, missing-file non-zero, hex-6/hex-3/<code>rgb()</code> parse paths, low-contrast fail, dark-theme override, shipped <code>knowledge-summary.html</code> passes. Skips if <code>node</code> absent</td>
 				</tr>
 				<tr>
-					<td><code>test-setup.sh</code></td>
-					<td><code>setup.sh</code> (end-user installer)</td>
+					<td><code>test-install.sh</code></td>
+					<td><code>install.sh</code> + <code>lib/aid-install-core.sh</code></td>
 					<td>bash</td>
-					<td>Arg/precondition errors, interactive 5-tool menu logic (Done/toggle/invalid), per-tool installs (Claude Code/Codex/Cursor/Copilot CLI/Antigravity), multi-tool install, idempotent re-install, <code>--force</code> overwrite, and the Option-A AGENTS.md last-writer-wins collision (cases SU12-17/SU16b)</td>
+					<td>Per-tool installs (all 5 profiles), idempotent re-install, update, uninstall, FR11 protect-on-diff (<code>*.aid-new</code> guard), <code>--from-bundle</code> offline path, manifest write/verify, exit codes; uses local fixture tarballs — no network calls in CI</td>
+				</tr>
+				<tr>
+					<td><code>test-install-ps1.sh</code></td>
+					<td><code>install.ps1</code> + <code>lib/AidInstallCore.psm1</code></td>
+					<td>pwsh</td>
+					<td>FR9 parity mirror of <code>test-install.sh</code>: same user-visible messages and exit codes for all platform-independent paths under <code>pwsh</code>; skips if <code>pwsh</code> absent</td>
+				</tr>
+				<tr>
+					<td><code>test-install-parity.sh</code></td>
+					<td><code>install.sh</code> vs <code>install.ps1</code> (cross-platform parity)</td>
+					<td>bash + pwsh</td>
+					<td>Same fixture tarball installed through both shells into separate temp dirs; asserts byte-identical file trees, equivalent manifest content (modulo <code>installed_at</code> timestamps), identical <code>.aid-version</code>, matching exit codes; skips if <code>pwsh</code> absent</td>
+				</tr>
+				<tr>
+					<td><code>test-aid-cli.sh</code></td>
+					<td><code>bin/aid</code> (persistent Bash CLI dispatcher)</td>
+					<td>bash</td>
+					<td>Bootstrap, PATH wiring, all subcommands (<code>add</code>/<code>status</code>/<code>update</code>/<code>remove</code>), CONVENIENCE mode, LEGACY back-compat, <code>remove self</code>; all temp state isolated under <code>mktemp</code> dirs — no real <code>$HOME</code> or network calls</td>
+				</tr>
+				<tr>
+					<td><code>test-aid-cli-ps1.sh</code></td>
+					<td><code>bin/aid.ps1</code> (persistent PowerShell CLI dispatcher)</td>
+					<td>pwsh</td>
+					<td>Mirrors every <code>test-aid-cli.sh</code> case via <code>pwsh</code>/<code>aid.ps1</code>: byte-identical <code>status</code> output, identical exit codes + messages, user-PATH dedup, <code>aid.ps1</code> resolution; skips if <code>pwsh</code> absent</td>
+				</tr>
+				<tr>
+					<td><code>test-aid-cli-parity.sh</code></td>
+					<td><code>bin/aid</code> vs <code>bin/aid.ps1</code> (cross-platform CLI parity)</td>
+					<td>bash + pwsh</td>
+					<td>Same subcommand sequence on Bash and PowerShell: identical project trees after add/remove/update, equivalent manifest content, identical <code>status</code> output and exit codes, same failure-path exit codes (2/5/6/7); skips if <code>pwsh</code> absent</td>
+				</tr>
+				<tr>
+					<td><code>test-release.sh</code></td>
+					<td><code>release.sh</code> (maintainer tarball packager)</td>
+					<td>bash</td>
+					<td>Dry-run: naming, layout, flat root, SHA256SUMS format, checksum correctness, render-drift FAIL, version-mismatch FAIL; uses a local git clone — no network, no <code>gh</code>, no tag creation</td>
+				</tr>
+				<tr>
+					<td><code>test-release-install-e2e.sh</code></td>
+					<td><code>release.sh</code> → <code>install.sh</code> / <code>install.ps1</code> end-to-end</td>
+					<td>bash (+ pwsh when present)</td>
+					<td>Full loop: <code>release.sh --dry-run</code> → tarballs + SHA256SUMS → <code>install.sh</code> (and <code>install.ps1</code> when <code>pwsh</code> available) → update → uninstall; no pre-built fixtures, no network</td>
+				</tr>
+				<tr>
+					<td><code>test-version-sync.sh</code></td>
+					<td><code>canonical/scripts/release/check-version-sync.sh</code> + <code>release.yml</code></td>
+					<td>bash</td>
+					<td>FR10 version-sync invariant: all four version carriers agree → pass; any carrier differs → fail with name; structural validation of <code>.github/workflows/release.yml</code> tag-trigger wiring</td>
+				</tr>
+				<tr>
+					<td><code>test-ascii-only.sh</code></td>
+					<td>All shipped scripts in <code>bin/</code>, <code>lib/</code>, <code>install.sh</code>, <code>install.ps1</code></td>
+					<td>bash</td>
+					<td>Guards that every shipped script is ASCII-only; non-ASCII bytes cause PowerShell parse failures on Windows ANSI codepages — ASCII bytes decode identically in every single-byte codepage</td>
+				</tr>
+				<tr>
+					<td><code>test-agents-md-invariant.sh</code></td>
+					<td>Root <code>AGENTS.md</code> across codex, cursor, copilot-cli, antigravity profiles</td>
+					<td>bash</td>
+					<td>FR12 guard: asserts byte-identical root <code>AGENTS.md</code> across all four AGENTS.md-writing profiles; a per-tool token reintroduced by a maintainer fails this gate and would cause spurious FR11 protect-on-diff warnings at install time</td>
+				</tr>
+				<tr>
+					<td><code>test-npm-installer.sh</code></td>
+					<td><code>packages/npm/bin/aid.js</code> (npm channel shim)</td>
+					<td>node</td>
+					<td>argv passthrough, exit-code relay, platform selection, missing runtime, <code>AID_INSTALL_CHANNEL</code> injection, pack/install smoke, version parity; skips if <code>node</code> absent</td>
+				</tr>
+				<tr>
+					<td><code>test-pypi-installer.sh</code></td>
+					<td><code>packages/pypi/aid_installer/__main__.py</code> (PyPI channel shim)</td>
+					<td>python3</td>
+					<td>argv passthrough, exit-code relay, platform selection, missing runtime, <code>AID_INSTALL_CHANNEL</code> injection, pip/pipx smoke, version parity; skips if <code>python3</code> absent</td>
+				</tr>
+				<tr>
+					<td><code>tests/windows/Test-AidInstaller.ps1</code></td>
+					<td><code>install.ps1</code> + <code>aid.ps1</code> (native Windows)</td>
+					<td>pwsh (Windows runner)</td>
+					<td>Native-Windows install/CLI smoke run on the <code>installer-tests.yml</code> Windows CI runner; covers the backslash-path copy and Windows-only PATH mutation paths that the Linux-hosted pwsh suites skip</td>
+				</tr>
+				<tr>
+					<td><code>test-housekeep-state.sh</code></td>
+					<td><code>canonical/scripts/housekeep/housekeep-state.sh</code></td>
+					<td>bash</td>
+					<td>State field read/write/idempotency (all 9 C-2 fields round-trip), --resume routing logic (PREFLIGHT / CLEANUP / KB-DELTA / IN-PROGRESS paths), error exits</td>
+				</tr>
+				<tr>
+					<td><code>test-housekeep-branch-commit.sh</code></td>
+					<td><code>canonical/scripts/housekeep/branch-commit.sh</code></td>
+					<td>bash</td>
+					<td>branch-ensure + per-stage commit helper against a throwaway git repo fixture; branch creation, idempotent re-ensure, commit lifecycle, error exits; isolated under <code>mktemp</code> — no real repo modified</td>
+				</tr>
+				<tr>
+					<td><code>test-housekeep-classify.sh</code></td>
+					<td><code>canonical/scripts/housekeep/cleanup-classify.sh</code></td>
+					<td>bash</td>
+					<td>Tier-assignment: Tier-0 (.aid/.temp, .aid/.heartbeat, .aid/knowledge/.cache), S4/S5/S6 tier rules, fixture <code>.aid/</code> tree in temp dir; boundary cases between tiers</td>
+				</tr>
+				<tr>
+					<td><code>test-housekeep-workfolder-safety.sh</code></td>
+					<td><code>canonical/scripts/housekeep/cleanup-classify.sh</code> (work-folder safety rules)</td>
+					<td>bash (+ gh when present)</td>
+					<td>Decision-matrix (i)/(ii) for <code>.aid/work-*/</code> safety: ancestry fallback via <code>git merge-base --is-ancestor</code>; gh-PR path skips if <code>gh</code> absent; offline — no network or real origin touched</td>
+				</tr>
+				<tr>
+					<td><code>test-housekeep-deletion-split.sh</code></td>
+					<td><code>canonical/scripts/housekeep/cleanup-classify.sh</code> (tracked/untracked split)</td>
+					<td>bash</td>
+					<td>Tracked vs untracked discrimination via <code>git ls-files</code> / <code>git check-ignore</code>; asserts the script contains no <code>rm</code> / <code>git rm</code> / <code>git push</code> calls (structural safety guard)</td>
+				</tr>
+				<tr>
+					<td><code>test-complexity-score.sh</code></td>
+					<td><code>canonical/scripts/execute/complexity-score.sh</code></td>
+					<td>bash</td>
+					<td>Four work-002 bug-fix regressions: bold + flat <code>Type:</code> forms both score risk (A1); portable awk under mawk (A2); lite/recipe specs parse without a delivery wrapper (A3); delivery-id numeric matching including leading-zero IDs (A2)</td>
 				</tr>
 				<tr>
 					<td><code>test-assemble-3part.sh</code></td>
@@ -80,12 +194,6 @@
 					<td><code>canonical/scripts/summarize/assemble-3part.ps1</code></td>
 					<td>pwsh</td>
 					<td>Same contract as the <code>.sh</code> oracle, run under <code>pwsh</code>. Cross-platform (explicit paths + byte I/O), runs fully on Linux CI once <code>pwsh</code> is present. Skips if <code>pwsh</code> absent</td>
-				</tr>
-				<tr>
-					<td><code>test-setup-ps1.sh</code></td>
-					<td><code>setup.ps1</code> (Windows-host installer)</td>
-					<td>pwsh</td>
-					<td>Platform-independent pre-install logic under <code>pwsh</code> on Linux: target validation + selection-menu/collision parity (backslash-path copy is Windows-only; cases SPS05-08). Skips if <code>pwsh</code> absent</td>
 				</tr>
 				<tr>
 					<td><code>test-discovery-doc-ownership.sh</code></td>
@@ -118,10 +226,10 @@
 					<td>Propose&rarr;confirm flow (SPEC feature-004 §3.1/§4): default path (accepting default is a no-op — no <code>discovery.doc_set</code> written); user-edit path (omission + addition honored verbatim; counts match). 9 checks</td>
 				</tr>
 				<tr style="font-weight:600;">
-					<td>18 suites</td>
+					<td>35 suites</td>
 					<td></td>
-					<td>bash / node / pwsh</td>
-					<td>All self-reporting via the shared <code>tests/lib/assert.sh</code> <code>test_summary</code> (<code>Tests passed: N</code> / <code>Tests failed: M</code>); aggregated by <code>tests/run-all.sh</code>, which exits non-zero if any suite fails</td>
+					<td>bash / node / pwsh / python3</td>
+					<td>All self-reporting via the shared <code>tests/lib/assert.sh</code> <code>test_summary</code> (<code>Tests passed: N</code> / <code>Tests failed: M</code>); aggregated by <code>tests/run-all.sh</code>, which exits non-zero if any suite fails; plus native-Windows <code>tests/windows/Test-AidInstaller.ps1</code> run on the <code>installer-tests.yml</code> Windows CI runner</td>
 				</tr>
 			</tbody>
 		</table>
@@ -129,7 +237,7 @@
 
 	<div class="callout warn" style="margin-top:1rem;">
 		<h4>Coverage gaps</h4>
-		<p>The <code>.mjs</code> validators, the PowerShell mirrors, and the <code>setup.*</code> install flow are now covered (CI asserts <code>node</code> + <code>pwsh</code> present so those suites can never silently skip). The two new agent-format emitters carry their own generator self-tests run by the CI <code>generator-selftests</code> job (<code>test_copilot_emitter.py</code> — Copilot real-YAML round-trip; <code>test_antigravity_emitter.py</code> — Antigravity rule reshape), alongside <code>test_manifest_safety.py</code> — these live under <code>.claude/skills/aid-generate/scripts/</code>, not <code>tests/canonical/</code>. The genuinely untested surface is the prompt-driven orchestration layer: the <code>/aid-*</code> skills (verified by dogfooding; the <code>aid-reviewer</code> sub-agent is the closest adversarial integration check), the renderer (covered by its own VERIFY (deterministic) byte-identity gate across the 5 profiles, not <code>tests/canonical/</code>), and the end-to-end pipeline. There is no statement/branch coverage measurement. (per test-landscape.md §Coverage gaps and roadmap)</p>
+		<p>The <code>.mjs</code> validators, the PowerShell mirrors, and the installer/CLI/release surface are now covered (CI asserts <code>node</code> + <code>pwsh</code> present so those suites can never silently skip; the native-Windows path runs on the <code>installer-tests.yml</code> Windows runner). The two new agent-format emitters carry their own generator self-tests run by the CI <code>generator-selftests</code> job (<code>test_copilot_emitter.py</code> — Copilot real-YAML round-trip; <code>test_antigravity_emitter.py</code> — Antigravity rule reshape), alongside <code>test_manifest_safety.py</code> — these live under <code>.claude/skills/aid-generate/scripts/</code>, not <code>tests/canonical/</code>. The genuinely untested surface is the prompt-driven orchestration layer: the <code>/aid-*</code> skills (verified by dogfooding; the <code>aid-reviewer</code> sub-agent is the closest adversarial integration check), the renderer (covered by its own VERIFY (deterministic) byte-identity gate across the 5 profiles, not <code>tests/canonical/</code>), and the end-to-end pipeline. There is no statement/branch coverage measurement. (per test-landscape.md §Coverage gaps and roadmap)</p>
 	</div>
 </section>
 
