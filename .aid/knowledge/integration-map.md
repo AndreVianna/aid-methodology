@@ -9,6 +9,7 @@ intent: |
   Inter-skill choreography is implemented via filesystem state hand-offs (not a message broker).
 contracts: []
 changelog:
+  - 2026-06-05: work-002-auto-installer — added the distribution/registry integrations: npm registry (`aid-installer`), PyPI (`aid-installer`), and GitHub Releases (release-asset download for install/bootstrap + OIDC publishing from `release.yml`). Replaced the `setup.sh`/`setup.ps1` adopter-install-flow + Option-A collision sections with the `aid` CLI + four channels + per-channel `aid update self` behavior + FR12 invariant root AGENTS.md.
   - 2026-06-03: methodology v3.2 — Phase Sequence diagram + skill-set composition reconciled: numbered phases 8→6 (Discover→Execute); aid-deploy/aid-monitor recast from Phases 7/8 to optional, on-demand end-of-pipeline Deliver skills (not required, not sequential); loops L8–L10 now apply only when those skills are run. Production re-entry unified: L9 (bug) and L10 (change request) now route Monitor → Interview (bugs via the LITE-BUG-FIX triage; CRs as new/changed requirements), replacing the prior Monitor→Execute / Monitor→Discover targets.
   - 2026-06-03: housekeep run-state relocation (PR #51) — corrected the aid-housekeep State-File R/W row: run-state moved from the work-area STATE.md to the project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`; CLEANUP offers every work folder + stale artifact for user-confirmed deletion.
   - 2026-06-03: aid-housekeep merge (PR #49) — skill enumeration 10→11 user-facing (added optional off-pipeline aid-housekeep) + maintainer-only aid-generate; documented aid-housekeep as a filesystem-state choreography participant (STATE.md Q&A handshake with /aid-discover, work-area ## Housekeep Status run-state block, /aid-summarize delegation)
@@ -18,10 +19,12 @@ changelog:
 # Integration Map
 
 > The AID repo has **no application runtime** — it ships a methodology distribution.
-> External integrations are limited to: (1) the Mermaid library + npm registry + jsdelivr
-> CDN consumed by the optional `aid-summarize` skill, (2) the `gh` GitHub CLI used in
-> the PR-creation workflow, and (3) the **multi-tool distribution model** that emits the
-> canonical source into 5 host-tool install trees.
+> External integrations are: (1) the Mermaid library + jsdelivr CDN consumed by the
+> optional `aid-summarize` skill, (2) the `gh` GitHub CLI used in the PR-creation
+> workflow, (3) the **multi-tool distribution model** that emits the canonical source
+> into 5 host-tool install trees, and (4) the **install / release registries** — GitHub
+> Releases (the `aid` CLI fetches SHA-verified release tarballs; `release.yml` publishes
+> via OIDC) plus the npm and PyPI registries (the published `aid-installer` shim packages).
 >
 > All claims cite `` `file` `anchor` `` (grep-recoverable symbol/heading) against the canonical source.
 
@@ -45,7 +48,7 @@ Source: every aid-* SKILL.md `## State Detection` block, e.g.
 `canonical/skills/aid-discover/SKILL.md` `## State Detection`.
 
 The state-machine + Q&A loopback pattern (§ Feedback Loops in
-`methodology/aid-methodology.md` `## 4. Feedback Loops`) is conceptually a single-producer / single-consumer
+`docs/aid-methodology.md` `## 6. Feedback Loops`) is conceptually a single-producer / single-consumer
 queue per loop, but materialized as Markdown-formatted entries appended to STATE files
 rather than a runtime queue.
 
@@ -104,7 +107,10 @@ personal credentials and does not register webhooks.
 | Service | Purpose | Integration method | Auth / credentials | Source |
 |---------|---------|--------------------|--------------------|--------|
 | **jsdelivr CDN** (`cdn.jsdelivr.net`) | Fetch pinned Mermaid library bytes (mermaid@v11.15.0) | `curl -sSf --max-time 120` against `/npm/mermaid@11.15.0/dist/mermaid.min.js`; download SHA-verified against `EXPECTED_SHA256` constant before accepting | None (public CDN, no API key) | `canonical/scripts/summarize/fetch-mermaid.sh` (`curl -sSf --max-time 120` download + `# Post-download path: verify SHA` block) |
-| **GitHub** (via `gh` CLI) | PR creation, issue mgmt, repo ops | Subprocess invocation of `gh` (assumed installed by adopter) | `gh auth login` — credential stored by `gh` (out-of-band), never embedded in repo. ⚠️ Maintainer note in user memory: `AndreVianna` account required for AID push access | `CLAUDE.md` PR/git workflow blocks |
+| **GitHub Releases** (`github.com/AndreVianna/aid-methodology/releases`) | Install/bootstrap asset source (the `aid-cli-v<VERSION>.tar.gz` bundle + per-profile tarballs + `SHA256SUMS`); also the publish target for `release.sh` | `aid`/`install.sh` download release assets and verify SHA-256 against `SHA256SUMS` before extracting (`install.sh` bundle-verify block; `lib/aid-install-core.sh` asset download). `release.sh` uploads via `gh release create`; `release.yml` `github-release` job runs it on a `v*` tag. Releases v0.7.0-v0.7.5 exist. | Download: none (public). Publish: built-in `GITHUB_TOKEN` (`contents: write`), same-repo only | `install.sh` (`releases/download/v${resolved_ver}/...` + SHA256SUMS verify), `release.sh` (`gh release view`/`gh release create`), `.github/workflows/release.yml` `github-release` |
+| **npm registry** (`registry.npmjs.org`) | Publish + install the `aid-installer` shim (`npm i -g aid-installer`) | `release.yml` `npm-publish` job runs `npm publish --provenance --access public` (gated on repo var `NPM_ENABLED`); the package vendors `bin/`+`lib/` via `prepack` and spawns `bin/aid`. `aid update self` (npm channel) tells the user to `npm i -g aid-installer@latest`. | OIDC `id-token` for provenance attestation (+ classic `NPM_TOKEN` until the `@aid` scope confirms token-less Trusted Publishing) | `packages/npm/package.json`, `packages/npm/bin/aid.js`, `.github/workflows/release.yml` `npm-publish` |
+| **PyPI** (`pypi.org`) | Publish + install the `aid-installer` shim (`pipx install aid-installer`) | `release.yml` `pypi-publish` job builds sdist+wheel (hatchling) and publishes via `pypa/gh-action-pypi-publish` Trusted Publishing (gated on repo var `PYPI_ENABLED`); the package vendors the payload and spawns `bin/aid`. `aid update self` (pypi channel) tells the user to `pipx upgrade aid-installer`. | OIDC `id-token` (Trusted Publishing); **no** `PYPI_TOKEN` secret needed | `packages/pypi/pyproject.toml`, `packages/pypi/aid_installer/__main__.py`, `.github/workflows/release.yml` `pypi-publish` |
+| **GitHub** (via `gh` CLI) | PR creation, issue mgmt, repo ops, `release.sh` release creation | Subprocess invocation of `gh` (assumed installed by adopter / maintainer) | `gh auth login` — credential stored by `gh` (out-of-band), never embedded in repo. ⚠️ Maintainer note in user memory: `AndreVianna` account required for AID push access | `CLAUDE.md` PR/git workflow blocks, `release.sh` `gh release create` |
 | **Git server (any)** | VCS operations (branch, commit, push) | Inline `git` invocations by `aid-execute` / `aid-deploy` / `aid-housekeep` / dev workflow | OS git config / SSH key (out-of-band) | `canonical/skills/aid-execute/SKILL.md` `### Check 5: Branch Isolation`, `canonical/scripts/housekeep/branch-commit.sh` (`git switch -c`/`git commit`; never `git push`) |
 
 ⚠️ Credentials not visible in code — likely environment-injected (gh CLI auth context,
@@ -300,31 +306,46 @@ Files the user creates manually (outside any manifest) are NEVER touched.
 
 Source: `canonical/EMISSION-MANIFEST.md` `## Safety-Boundary Semantics`
 
-### Adopter installation flow
+### Adopter installation flow (the `aid` CLI + four channels)
 
-End users install AID into their own projects via:
-- `./setup.sh <target-directory>` (Bash; macOS / Linux / Git Bash) — interactive menu
-  with 5 tool options (`[1]` Claude Code, `[2]` Codex, `[3]` Cursor, `[4]` GitHub Copilot CLI,
-  `[5]` Antigravity) + `[6]` Done; copies the selected `profiles/<tool>/` tree(s) into the
-  target with diff-aware copy semantics
-- `.\setup.ps1 <target-directory>` (PowerShell; Windows) — equivalent
-- Source: `setup.sh` (the menu `echo` block + `[6] Done`), `setup.ps1`
-  (per `.aid/knowledge/project-structure.md` `## Key Files and Their Purpose`)
+End users install AID via a persistent global `aid` CLI, bootstrapped once per machine, then
+`aid add <tool>` inside any project. The five tools are the profile names: `claude-code`,
+`codex`, `cursor`, `copilot-cli`, `antigravity`. The four channels all deliver the same CLI:
 
-### Option-A AGENTS.md multi-install collision handler
+- **curl/irm bootstrap** — `curl -fsSL …/install.sh | bash` (Unix) / `irm …/install.ps1 | iex`
+  (Windows). Fetches + SHA-verifies the `aid-cli-v<VERSION>.tar.gz` bundle from GitHub Releases,
+  extracts to `$AID_HOME`, wires PATH. Source: `install.sh`, `install.ps1`.
+- **npm** — `npm i -g aid-installer` (or `npx aid-installer add <tool>`). Source: `packages/npm/`.
+- **PyPI** — `pipx install aid-installer` (or `pip install --user aid-installer`). Source: `packages/pypi/`.
+- **Offline / air-gapped** — download a release tarball, verify against `SHA256SUMS`, then
+  `aid add <tool> --from-bundle <path>`. Source: `bin/aid` `--from-bundle`, `docs/install.md`.
 
-Codex (2), Cursor (3), Copilot CLI (4), and Antigravity (5) all write a root `AGENTS.md`.
-When ≥2 of these are selected, `setup.sh` sets `AGENTS_COLLISION=1`, prints a one-time
-non-interactive warning, and applies **last-installed-wins**: the survivor is the
-highest-numbered selected AGENTS.md-writing tool (fixed per-tool install order, NOT the
-toggle order). On copy, the survivor's `AGENTS.md` overwrites without prompting
-(`copy_file` AGENTS.md branch: "AGENTS.md last-writer-wins — collision resolved
-non-interactively"). Claude Code (1) uses `CLAUDE.md` only and is exempt.
-- Source: `setup.sh` (the "AGENTS.md collision pre-copy block (Option A)" comment, the
-  `AGENTS_COLLISION` survivor-selection block, and the `copy_file` AGENTS.md branch).
+`aid add`/`aid update` use diff-aware copy semantics (identical = skip, differing = prompt
+or `--force`) and verify each downloaded profile tarball against `SHA256SUMS`. Source:
+`lib/aid-install-core.sh`, `docs/install.md`.
 
-Setup.sh diff handling: `new = copy`, `identical = skip`, `different = ask`
-(or overwrite with `--force`). Source: `setup.sh` `copy_file()`.
+### Per-channel `aid update self` behavior
+
+`aid update self` upgrades the CLI itself, and its behavior is channel-aware via the
+`AID_INSTALL_CHANNEL` environment variable the shim injects:
+- **bootstrap channel** (unset) — re-runs the curl/irm bootstrap to fetch the latest CLI bundle.
+- **npm** (`AID_INSTALL_CHANNEL=npm`, set by `packages/npm/bin/aid.js`) — prints
+  `Updating the aid CLI: run  npm i -g aid-installer@latest` and stops (the package manager owns the upgrade).
+- **pypi** (`AID_INSTALL_CHANNEL=pypi`, set by `packages/pypi/aid_installer/__main__.py`) — prints
+  `pipx upgrade aid-installer  (or: pip install --user -U aid-installer)` and stops.
+
+Source: `bin/aid` (the `AID_INSTALL_CHANNEL` `case` in the `update self` path), `bin/aid.ps1` (the
+parallel `switch ($env:AID_INSTALL_CHANNEL)` block).
+
+### FR12 invariant root `AGENTS.md`
+
+Codex, Cursor, Copilot CLI, and Antigravity all write a root `AGENTS.md`. work-002 made all four
+profile copies **byte-identical**, so multi-tool installs no longer collide — the former
+last-installed-wins Option-A handler is gone (it lived in the removed `setup.sh`/`setup.ps1`).
+A CI guard asserts the four copies match. Claude Code uses `CLAUDE.md` only and is exempt.
+Source: `tests/canonical/test-agents-md-invariant.sh`, `docs/install.md`. FR11 protect-on-diff
+additionally writes a user-authored `CLAUDE.md`/`AGENTS.md` as `*.aid-new` rather than overwriting
+it (`lib/aid-install-core.sh` protect-on-diff path).
 
 ---
 
@@ -362,7 +383,7 @@ aid-housekeep       ← optional, OFF the mandatory pipeline (no phase gate refe
 aid-generate        ← maintainer-only (canonical → profile trees)
 ```
 
-Source: `methodology/aid-methodology.md` `## 4. Feedback Loops` (the 11 feedback loops Mermaid graph),
+Source: `docs/aid-methodology.md` `## 6. Feedback Loops` (the 11 feedback loops Mermaid graph),
 `docs/glossary.md` `## Phases` (phase table),
 `canonical/templates/work-state-template.md` `# Work State`,
 `canonical/skills/aid-housekeep/SKILL.md` (`**Absent from the mandatory pipeline flow.**`)
@@ -383,7 +404,7 @@ Source: `methodology/aid-methodology.md` `## 4. Feedback Loops` (the 11 feedback
 | L10 | Monitor → Interview | Change Request classification | New/changed requirements (`REQUIREMENTS.md`) |
 | L11 | Any phase → Discovery | Targeted re-discovery | `DISCOVERY-STATE.md` Q&A |
 
-Source: `methodology/aid-methodology.md` `### The Eleven Loops`
+Source: `docs/aid-methodology.md` `### The Eleven Loops`
 
 > **`aid-housekeep` reuses Loop 11 (targeted re-discovery) mechanically, off-pipeline.**
 > Its KB-DELTA stage synthesizes a `**Impact:** Required` Q&A entry into
@@ -425,7 +446,7 @@ docs. The agent uses it as a navigation directory (Tier 1), then loads at most o
 relevant KB doc on demand (Tier 2), and follows inline `path:line` citations to the
 exact lines (Tier 3). This is RAG-by-convention, not vector embeddings.
 
-Source: `methodology/aid-methodology.md` `### Context Feeding Strategy`
+Source: `docs/aid-methodology.md` `### Context Feeding Strategy`
 
 ---
 

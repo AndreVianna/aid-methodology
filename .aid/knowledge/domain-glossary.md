@@ -21,7 +21,7 @@ changelog:
 ---
 # Domain Glossary
 
-> Terms mined from `methodology/aid-methodology.md` (1,070-line spec),
+> Terms mined from `docs/aid-methodology.md` (the methodology spec),
 > `docs/glossary.md`, `CLAUDE.md`, `canonical/skills/*/SKILL.md` frontmatter and bodies,
 > `canonical/agents/*/AGENT.md`, `canonical/EMISSION-MANIFEST.md`,
 > `canonical/templates/*.md`, `canonical/scripts/**/*.sh`, and the work-state template.
@@ -38,15 +38,15 @@ changelog:
 
 | Term | Definition (inferred from usage) | Source |
 |------|----------------------------------|--------|
-| **AID** | "AI Integrated Development" — a structured methodology for building/maintaining software with AI agents; 6 numbered development phases in 5 groups (delivery and summary skills optional), every phase co-executed by human + AI. | `methodology/aid-methodology.md` `# AID — AI Integrated Development`, `CLAUDE.md` `## Project`, `docs/glossary.md` `**AID (AI Integrated Development):**` |
-| **Iron Man Model** | The human-AI collaboration philosophy: AI is the suit (amplifies capability); human is the pilot (sets direction, decisions). Human never leaves the cockpit. | `methodology/aid-methodology.md` `### Human-in-the-Middle`, `docs/glossary.md` `**Iron Man Model:**` |
-| **Director** | Role — the human. Sets direction, makes decisions, reviews artifacts, approves phase transitions. Orchestrates, doesn't code. | `methodology/aid-methodology.md` `### Roles` |
-| **Orchestrator** | Role — an AI agent (or human). Manages the pipeline: spawns agents, routes feedback loops, enforces quality gates, maintains KB. | `methodology/aid-methodology.md` `### Roles` |
-| **Specialist** | Role — an AI coding agent. Executes tasks within defined scope. Reports impediments rather than working around them. | `methodology/aid-methodology.md` `### Roles` |
+| **AID** | "AI Integrated Development" — a structured methodology for building/maintaining software with AI agents; 6 numbered development phases in 5 groups (delivery and summary skills optional), every phase co-executed by human + AI. | `docs/aid-methodology.md` `# AID — AI Integrated Development`, `CLAUDE.md` `## Project`, `docs/glossary.md` `**AID (AI Integrated Development):**` |
+| **Iron Man Model** | The human-AI collaboration philosophy: AI is the suit (amplifies capability); human is the pilot (sets direction, decisions). Human never leaves the cockpit. | `docs/aid-methodology.md` `### The Iron Man Model: Human-in-the-Middle`, `docs/glossary.md` `**Iron Man Model:**` |
+| **Director** | Role — the human. Sets direction, makes decisions, reviews artifacts, approves phase transitions. Orchestrates, doesn't code. | `docs/aid-methodology.md` `### The Iron Man Model: Human-in-the-Middle` |
+| **Orchestrator** | Role — an AI agent (or human). Manages the pipeline: spawns agents, routes feedback loops, enforces quality gates, maintains KB. | `docs/aid-methodology.md` `## 5. The Agent Model` |
+| **Specialist** | Role — an AI coding agent. Executes tasks within defined scope. Reports impediments rather than working around them. | `docs/aid-methodology.md` `## 5. The Agent Model` |
 | **Phase Gate** | Human decision point between phases. The human reviews phase output and approves advancement. "OK?" is the gate. | `docs/glossary.md` `**Phase Gate:**` |
 | **Determinism Test** | "Can you write a complete set of rules to validate the outcome?" If yes, automate fully; if no, keep a human in the loop. Used to decide automation depth per phase. | `docs/glossary.md` `**Determinism Test:**` |
 | **Brownfield** | An existing codebase with history, technical debt, and undocumented knowledge. Discovery phase is designed for brownfield. | `docs/glossary.md` `**Brownfield:**`, `canonical/templates/settings.yml` `type: brownfield` |
-| **Greenfield** | A new project with no existing code. Runs `aid-config` first, then skips Discovery, starts at Interview. | `docs/glossary.md` `**Greenfield:**`, `methodology/aid-methodology.md` `#### Prepare-Group Skills: \`aid-config\` and \`aid-summarize\`` |
+| **Greenfield** | A new project with no existing code. Runs `aid-config` first, then skips Discovery, starts at Interview. | `docs/glossary.md` `**Greenfield:**`, `docs/aid-methodology.md` `#### \`aid-config\` — Bootstrap (not a numbered phase)` |
 | **SDD** | "Spec-Driven Development" — a methodology where specs drive code generation. AID contains SDD as a subset and extends it with discovery, two-level planning, feedback loops, and post-deployment phases. | `docs/glossary.md` `**SDD (Spec-Driven Development):**` |
 
 ---
@@ -55,14 +55,14 @@ changelog:
 
 | Term | Group | Skill | Definition | Source |
 |------|-------|-------|------------|--------|
-| **Discover** | Prepare | `aid-discover` | Phase 1 — Understand the existing system; produces the KB. State machine: GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE. | `methodology/aid-methodology.md` `#### Phase 1: Discover`, `canonical/skills/aid-discover/SKILL.md` `State-machine: GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE` |
-| **Interview** | Define | `aid-interview` | Phase 2 — Gather requirements one question at a time; produces REQUIREMENTS.md + per-feature SPEC.md (requirements side). | `methodology/aid-methodology.md` `#### Phase 2: Interview`, `canonical/skills/aid-interview/SKILL.md` `# Adaptive Requirements Gathering` |
-| **Specify** | Define | `aid-specify` | Phase 3 — Technical refinement per feature; agent acts as tech lead, proposes solutions, writes Technical Specification into SPEC.md. | `methodology/aid-methodology.md` `#### Phase 3: Specify` |
-| **Plan** | Map | `aid-plan` | Phase 4 — Sequence features into deliverables, each a functional MVP. Plan answers ONE question: order + standalone-functionality. | `methodology/aid-methodology.md` `#### Phase 4: Plan` |
-| **Detail** | Map | `aid-detail` | Phase 5 — Decompose each deliverable into PR-sized typed tasks. "Ultimate breakdown." | `methodology/aid-methodology.md` `#### Phase 5: Detail` |
-| **Execute** | Execute | `aid-execute` | Phase 6 — Execute a task per its Type; built-in two-tier review (per-task quick-check + per-delivery gate). One branch per delivery. | `methodology/aid-methodology.md` `#### Phase 6: Execute` |
-| **Deploy** | Deliver | `aid-deploy` | Optional (end-of-pipeline Deliver skill, not a numbered phase) — Bundle deliveries into a release; final verification (build + tests + lint); ship per `infrastructure.md § Deployment`. Routes KB-affecting discoveries to Discovery (never edits KB directly). | `methodology/aid-methodology.md` `#### Deploy (`aid-deploy`) — optional` |
-| **Monitor** | Deliver | `aid-monitor` | Optional (end-of-pipeline Deliver skill, not a numbered phase) — Observe production; classify findings (BUG/CR/Infra/No Action); route to Interview. The short path (BUG → Interview LITE-BUG-FIX → Execute) skips spec/plan. | `methodology/aid-methodology.md` `#### Monitor (`aid-monitor`) — optional` |
+| **Discover** | Prepare | `aid-discover` | Phase 1 — Understand the existing system; produces the KB. State machine: GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE. | `docs/aid-methodology.md` `#### Phase 1: Discover`, `canonical/skills/aid-discover/SKILL.md` `State-machine: GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE` |
+| **Interview** | Define | `aid-interview` | Phase 2 — Gather requirements one question at a time; produces REQUIREMENTS.md + per-feature SPEC.md (requirements side). | `docs/aid-methodology.md` `#### Phase 2: Interview`, `canonical/skills/aid-interview/SKILL.md` `# Adaptive Requirements Gathering` |
+| **Specify** | Define | `aid-specify` | Phase 3 — Technical refinement per feature; agent acts as tech lead, proposes solutions, writes Technical Specification into SPEC.md. | `docs/aid-methodology.md` `#### Phase 3: Specify` |
+| **Plan** | Map | `aid-plan` | Phase 4 — Sequence features into deliverables, each a functional MVP. Plan answers ONE question: order + standalone-functionality. | `docs/aid-methodology.md` `#### Phase 4: Plan` |
+| **Detail** | Map | `aid-detail` | Phase 5 — Decompose each deliverable into PR-sized typed tasks. "Ultimate breakdown." | `docs/aid-methodology.md` `#### Phase 5: Detail` |
+| **Execute** | Execute | `aid-execute` | Phase 6 — Execute a task per its Type; built-in two-tier review (per-task quick-check + per-delivery gate). One branch per delivery. | `docs/aid-methodology.md` `#### Phase 6: Execute` |
+| **Deploy** | Deliver | `aid-deploy` | Optional (end-of-pipeline Deliver skill, not a numbered phase) — Bundle deliveries into a release; final verification (build + tests + lint); ship per `infrastructure.md § Deployment`. Routes KB-affecting discoveries to Discovery (never edits KB directly). | `docs/aid-methodology.md` `#### Deploy (`aid-deploy`) — optional` |
+| **Monitor** | Deliver | `aid-monitor` | Optional (end-of-pipeline Deliver skill, not a numbered phase) — Observe production; classify findings (BUG/CR/Infra/No Action); route to Interview. The short path (BUG → Interview LITE-BUG-FIX → Execute) skips spec/plan. | `docs/aid-methodology.md` `#### Monitor (`aid-monitor`) — optional` |
 
 ---
 
@@ -70,8 +70,8 @@ changelog:
 
 | Term | Skill | Definition | Source |
 |------|-------|------------|--------|
-| **Config** | `aid-config` | Bootstrap skill; runs once before the pipeline. Creates `.aid/settings.yml` + KB doc scaffolds (from the default seed set templates) + `AGENTS.md`/`CLAUDE.md` + `INDEX.md` placeholders + `DISCOVERY-STATE.md`. The exact scaffold count matches the default seed (varies if templates are added/removed from `canonical/templates/knowledge-base/`). | `docs/glossary.md` `**aid-config:**`, `methodology/aid-methodology.md` `#### Prepare-Group Skills: \`aid-config\` and \`aid-summarize\`` |
-| **Summarize** | `aid-summarize` | Optional read-only skill; generates `knowledge-summary.html` from approved KB. Idempotent. WCAG-AA accessibility-first. | `methodology/aid-methodology.md` `#### Prepare-Group Skills: \`aid-config\` and \`aid-summarize\``, `canonical/skills/aid-summarize/SKILL.md` `# Knowledge Base Visual Summary` |
+| **Config** | `aid-config` | Bootstrap skill; runs once before the pipeline. Creates `.aid/settings.yml` + KB doc scaffolds (from the default seed set templates) + `AGENTS.md`/`CLAUDE.md` + `INDEX.md` placeholders + `DISCOVERY-STATE.md`. The exact scaffold count matches the default seed (varies if templates are added/removed from `canonical/templates/knowledge-base/`). | `docs/glossary.md` `**aid-config:**`, `docs/aid-methodology.md` `#### \`aid-config\` — Bootstrap (not a numbered phase)` |
+| **Summarize** | `aid-summarize` | Optional read-only skill; generates `knowledge-summary.html` from approved KB. Idempotent. WCAG-AA accessibility-first. | `docs/aid-methodology.md` `#### \`aid-summarize\` — Optional KB Viewer (not a numbered phase)`, `canonical/skills/aid-summarize/SKILL.md` `# Knowledge Base Visual Summary` |
 | **Housekeep / KB-drift reconciliation** | `aid-housekeep` | Optional, **on-demand** skill that is **OFF the mandatory pipeline** (not in the phase→skill mapping; no phase gate references it — REQUIREMENTS.md FR6). Reconciles drift across three gated jobs in strict order on a dedicated `aid/housekeep-*` branch (one commit per stage, never pushes): **KB-DELTA** (re-discover KB docs that drifted from the repo since the last KB approval — synthesizes an `**Impact:** Required` Q&A entry to drive `/aid-discover`'s targeted re-discovery), **SUMMARY-DELTA** (regenerate the visual summary via `/aid-summarize` if the KB changed), **CLEANUP** (sweep stale `.aid/` work-area artifacts). State machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE; re-entrant (a stalled run resumes at the stalled stage). Distinct from "Pre-flight Cleanup" (which is a `/aid-discover` orchestrator-only KB sweep). | `canonical/skills/aid-housekeep/SKILL.md` `# Knowledge Base Housekeeping` + `**Absent from the mandatory pipeline flow.**`, `canonical/skills/aid-housekeep/references/state-kb-delta.md` `## Step 4 — Synthesize an Impact: Required Q&A entry + invoke /aid-discover` |
 | **Generate** | `aid-generate` | Maintainer-only skill; renders `canonical/` → 5 profile install trees (claude-code, codex, cursor, copilot-cli, antigravity). Wrapped by `run_generator.py`. | `.claude/skills/aid-generate/SKILL.md` `# AID Install-Tree Generator`, `profiles/*.toml` (5 profiles) |
 
@@ -89,18 +89,18 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **Knowledge Base / KB** | `.aid/knowledge/` — a set of active markdown documents whose count varies by project (driven by the declared doc-set) + 2 meta-documents (README, STATE) + 1 generated (INDEX) + 1 generated pre-pass (metrics + project-index in .aid/generated/). The gravitational center of AID — every phase reads from it; any phase can update it. | `methodology/aid-methodology.md` `## 2. The Knowledge Base`, `docs/glossary.md` `**Knowledge Base (KB):**` |
+| **Knowledge Base / KB** | `.aid/knowledge/` — a set of active markdown documents whose count varies by project (driven by the declared doc-set) + 2 meta-documents (README, STATE) + 1 generated (INDEX) + 1 generated pre-pass (metrics + project-index in .aid/generated/). The gravitational center of AID — every phase reads from it; any phase can update it. | `docs/aid-methodology.md` `## 3. The Knowledge Base`, `docs/glossary.md` `**Knowledge Base (KB):**` |
 | **declared doc-set** | The project-specific list of KB documents for a discovery run, declared in `.aid/settings.yml` `discovery.doc_set` as a YAML block-list of pipe-delimited `filename\|owner\|presence[:when]` entries. Drives which agents are dispatched and what filenames they produce. When absent, the default seed set is used. | `canonical/skills/aid-discover/references/doc-set-resolve.md` `## Schema: discovery.doc_set in .aid/settings.yml` |
 | **default seed set** | The canonical default KB doc-set, synthesized by `synth_default_seed` from `canonical/templates/knowledge-base/*.md` using the §2.2 ownership map when `discovery.doc_set` is absent from settings.yml. Backward-compatible: an unmodified settings.yml yields the canonical standard set. | `canonical/skills/aid-discover/references/doc-set-resolve.md` `## synth_default_seed` |
 | **doc-set derivation (propose→confirm)** | Step 0d of the GENERATE state — a PAUSE-FOR-USER-DECISION checkpoint where the orchestrator infers a proposed doc-set from the project-index file inventory (as a diff against the default seed) and presents it to the user for confirmation or editing before dispatch begins. Accepting the default writes nothing to settings.yml (absent-section-means-default-seed invariant). | `canonical/skills/aid-discover/references/state-generate.md` `### Step 0d: Propose & Confirm Doc-Set` |
-| **INDEX.md** | Meta — 2-3 line summary of every KB document; included in every task context for self-serve KB navigation. | `methodology/aid-methodology.md` `├── INDEX.md`, `methodology/aid-methodology.md` `# Knowledge Base Index — {Project Name}` |
-| **README.md (KB)** | Meta — tracks completeness status (Complete / Partial / Missing) per KB document. | `methodology/aid-methodology.md` `├── README.md`, `methodology/aid-methodology.md` `### Completeness Is Tracked` |
-| **DISCOVERY-STATE.md** | Meta — discovery grade, Q&A entries, review history. Pre-FR2 name; post-FR2 consolidated into `.aid/knowledge/STATE.md`. | `methodology/aid-methodology.md` `├── DISCOVERY-STATE.md`, `canonical/templates/discovery-state-template.md` |
-| **project-index.md** | Generated — file-inventory pre-pass for discovery sub-agents (~1,148 lines in this repo). Built by `build-project-index.sh`. | `methodology/aid-methodology.md` `├── project-index.md`, `.aid/knowledge/project-structure.md` `← pre-built file inventory` |
+| **INDEX.md** | Meta — 2-3 line summary of every KB document; included in every task context for self-serve KB navigation. | `docs/aid-methodology.md` `├── INDEX.md`, `docs/aid-methodology.md` `# Knowledge Base Index — {Project Name}` |
+| **README.md (KB)** | Meta — tracks completeness status (Complete / Partial / Missing) per KB document. | `docs/aid-methodology.md` `├── README.md`, `docs/aid-methodology.md` `### Completeness Is Tracked` |
+| **DISCOVERY-STATE.md** | Meta — discovery grade, Q&A entries, review history. Pre-FR2 name; post-FR2 consolidated into `.aid/knowledge/STATE.md`. | `docs/aid-methodology.md` `├── STATE.md`, `canonical/templates/discovery-state-template.md` |
+| **project-index.md** | Generated — file-inventory pre-pass for discovery sub-agents (~1,148 lines in this repo). Built by `build-project-index.sh`. | `docs/aid-methodology.md` `├── project-index.md`, `.aid/knowledge/project-structure.md` `← pre-built file inventory` |
 | **active KB docs (this repo)** | For this repo (post-Q3 FIX): `project-structure.md`, `external-sources.md`, `architecture.md`, `technology-stack.md`, `module-map.md`, `coding-standards.md`, `schemas.md` (was `data-model.md`), `pipeline-contracts.md` (was `api-contracts.md`), `integration-map.md`, `domain-glossary.md`, `test-landscape.md`, `tech-debt.md`, `infrastructure.md`, `repo-presentation.md` (NEW — replaced `ui-architecture.md` per Q3), `feature-inventory.md`. The count varies by project; the active set for any project is the confirmed declared doc-set from the most recent GENERATE run. | `canonical/skills/aid-discover/references/doc-set-resolve.md` `## synth_default_seed`, `canonical/skills/aid-discover/references/state-generate.md` `### Step 0d: Propose & Confirm Doc-Set` |
-| **Tier 1 / Tier 2 / Tier 3 (context economy)** | Tier 1 = INDEX.md (always loaded). Tier 2 = one KB doc on demand. Tier 3 = exact `path:line` via citation. "RAG by convention" — no embeddings/vector DB. | `methodology/aid-methodology.md` `Tier 3 — an exact repository location, via citation` |
-| **Context Feeding Strategy** | The protocol by which agents are given KB context: always include INDEX.md; orchestrator pre-selects 2-4 relevant KB docs; agent self-serves additional docs via INDEX. | `methodology/aid-methodology.md` `### Context Feeding Strategy` |
-| **Path:line citation** | Every factual KB claim carries an inline `path:line` reference. Anchors facts to source. Enables Tier 3 jump. | `methodology/aid-methodology.md` `**Hallucination**` row |
+| **Tier 1 / Tier 2 / Tier 3 (context economy)** | Tier 1 = INDEX.md (always loaded). Tier 2 = one KB doc on demand. Tier 3 = exact `path:line` via citation. "RAG by convention" — no embeddings/vector DB. | `docs/aid-methodology.md` `Tier 3 — an exact repository location, via citation` |
+| **Context Feeding Strategy** | The protocol by which agents are given KB context: always include INDEX.md; orchestrator pre-selects 2-4 relevant KB docs; agent self-serves additional docs via INDEX. | `docs/aid-methodology.md` `### Context Feeding Strategy` |
+| **Path:line citation** | Every factual KB claim carries an inline `path:line` reference. Anchors facts to source. Enables Tier 3 jump. | `docs/aid-methodology.md` `**Hallucination**` row |
 
 ---
 
@@ -108,20 +108,20 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **Work** | A self-contained scope unit at `.aid/work-NNN-{name}/`. One interview = one work. Multiple works coexist; each has its own requirements + features; all share the KB. | `methodology/aid-methodology.md` `#### Phase 2: Interview` |
-| **Feature** | A discrete capability inside a work. Lives at `.aid/{work}/features/feature-NNN-{name}/` with its own `SPEC.md`. Created by `aid-interview` Feature Decomposition state. | `methodology/aid-methodology.md` `#### Phase 2: Interview` |
-| **Delivery / Deliverable** | A subset of features grouped by `aid-plan` such that the group is a standalone-functional MVP. One branch per delivery (`aid/delivery-NNN`). | `methodology/aid-methodology.md` `#### Phase 4: Plan`, `canonical/skills/aid-execute/SKILL.md` `One branch per delivery. All tasks in a delivery share the same branch.` |
-| **Task** | The atomic unit produced by `aid-detail`. `task-NNN.md` — 6 sections (Title, Type, Source, Depends on, Scope, Acceptance Criteria). One task = one agent session = one PR. | `methodology/aid-methodology.md` `#### Phase 5: Detail`, `canonical/skills/aid-execute/SKILL.md` `Read \`task-NNN.md\`. It has 6 sections:` |
-| **Package** | A release artifact bundling one or more completed deliveries. `package-NNN-{name}.md` per shipped package. | `methodology/aid-methodology.md` `#### Deploy (`aid-deploy`) — optional` |
-| **REQUIREMENTS.md** | The product-of-Interview document; one per work (full path only). Frozen after approval (rev-tracked). Holds Objective / Problem / Scope / FRs / NFRs / Constraints / Acceptance / Priority. | `methodology/aid-methodology.md` `### REQUIREMENTS.md Template` |
-| **SPEC.md (per-feature)** | Per-feature spec; requirements side (from Interview) + technical side (from Specify). | `methodology/aid-methodology.md` `### Feature SPEC.md Template` |
+| **Work** | A self-contained scope unit at `.aid/work-NNN-{name}/`. One interview = one work. Multiple works coexist; each has its own requirements + features; all share the KB. | `docs/aid-methodology.md` `#### Phase 2: Interview` |
+| **Feature** | A discrete capability inside a work. Lives at `.aid/{work}/features/feature-NNN-{name}/` with its own `SPEC.md`. Created by `aid-interview` Feature Decomposition state. | `docs/aid-methodology.md` `#### Phase 2: Interview` |
+| **Delivery / Deliverable** | A subset of features grouped by `aid-plan` such that the group is a standalone-functional MVP. One branch per delivery (`aid/delivery-NNN`). | `docs/aid-methodology.md` `#### Phase 4: Plan`, `canonical/skills/aid-execute/SKILL.md` `One branch per delivery. All tasks in a delivery share the same branch.` |
+| **Task** | The atomic unit produced by `aid-detail`. `task-NNN.md` — 6 sections (Title, Type, Source, Depends on, Scope, Acceptance Criteria). One task = one agent session = one PR. | `docs/aid-methodology.md` `#### Phase 5: Detail`, `canonical/skills/aid-execute/SKILL.md` `Read \`task-NNN.md\`. It has 6 sections:` |
+| **Package** | A release artifact bundling one or more completed deliveries. `package-NNN-{name}.md` per shipped package. | `docs/aid-methodology.md` `#### Deploy (`aid-deploy`) — optional` |
+| **REQUIREMENTS.md** | The product-of-Interview document; one per work (full path only). Frozen after approval (rev-tracked). Holds Objective / Problem / Scope / FRs / NFRs / Constraints / Acceptance / Priority. | `docs/aid-methodology.md` `### Templates Reference`, `docs/aid-methodology.md` `**REQUIREMENTS.md template:**` |
+| **SPEC.md (per-feature)** | Per-feature spec; requirements side (from Interview) + technical side (from Specify). | `docs/aid-methodology.md` `### Templates Reference`, `docs/aid-methodology.md` `**Feature SPEC.md template:**` |
 | **SPEC.md (work-root, lite path)** | A single consolidated work-root SPEC.md in lite path (no features/ folder, no REQUIREMENTS.md, no PLAN.md). | `canonical/skills/aid-interview/SKILL.md` `A lite work has **no \`features/\` folder` |
-| **PLAN.md** | The product-of-Plan document; ordered deliverables + optional cross-cutting risks + deferred features + Execution Graph (appended by Detail). | `methodology/aid-methodology.md` `### PLAN.md Template` |
-| **known-issues.md** | Living issue log per work; created when the first issue is registered. Read by Plan, Execute, Deploy, Monitor. | `methodology/aid-methodology.md` `### Core Artifacts` |
-| **MONITOR-STATE.md** | The product-of-Monitor file: last-run log + active findings + resolved findings. | `methodology/aid-methodology.md` `### MONITOR-STATE.md Template` |
-| **IMPEDIMENT-task-NNN.md** | Written by `aid-execute` when it discovers an assumption that doesn't hold. Has Type (wrong-assumption / missing-dependency / architecture-conflict / kb-gap), Options, Recommendation. The human decides. | `canonical/templates/feedback-artifacts/IMPEDIMENT.md` `# Impediment — task-NNN`, `methodology/aid-methodology.md` `# Impediment — task-NNN` |
-| **Q&A entry** | Universal loopback artifact appended to a STATE file. Schema (Style A): `### Q{N}` + sub-bullets `Category`, `Impact`, `Status`, `Context`, `Suggested`, `Answer` (per `coding-standards.md §12`). | `methodology/aid-methodology.md` `### Q{N}`, `coding-standards.md §12` |
-| **Revision History / Change Log** | Inline rev-tracking table on every artifact. Distinct from process state. | `methodology/aid-methodology.md` `### The Revision Trail`, `canonical/templates/work-state-template.md` `keep their inline \`## Change Log\` sections` |
+| **PLAN.md** | The product-of-Plan document; ordered deliverables + optional cross-cutting risks + deferred features + Execution Graph (appended by Detail). | `docs/aid-methodology.md` `### Templates Reference`, `docs/aid-methodology.md` `**PLAN.md template:**` |
+| **known-issues.md** | Living issue log per work; created when the first issue is registered. Read by Plan, Execute, Deploy, Monitor. | `docs/aid-methodology.md` `### Core Artifacts` |
+| **MONITOR-STATE.md** | The product-of-Monitor file: last-run log + active findings + resolved findings. | `docs/aid-methodology.md` `### Templates Reference`, `docs/aid-methodology.md` `**MONITOR-STATE.md template:**` |
+| **IMPEDIMENT-task-NNN.md** | Written by `aid-execute` when it discovers an assumption that doesn't hold. Has Type (wrong-assumption / missing-dependency / architecture-conflict / kb-gap), Options, Recommendation. The human decides. | `canonical/templates/feedback-artifacts/IMPEDIMENT.md` `# Impediment — task-NNN`, `docs/aid-methodology.md` `# Impediment — task-NNN` |
+| **Q&A entry** | Universal loopback artifact appended to a STATE file. Schema (Style A): `### Q{N}` + sub-bullets `Category`, `Impact`, `Status`, `Context`, `Suggested`, `Answer` (per `coding-standards.md §12`). | `docs/aid-methodology.md` `### Q{N}`, `coding-standards.md §12` |
+| **Revision History / Change Log** | Inline rev-tracking table on every artifact. Distinct from process state. | `docs/aid-methodology.md` `### The Revision Trail`, `canonical/templates/work-state-template.md` `keep their inline \`## Change Log\` sections` |
 
 ---
 
@@ -129,14 +129,14 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **RESEARCH** | Investigate, compare options, document findings. May skip branch isolation if only `.aid/` artifacts. | `methodology/aid-methodology.md` `**RESEARCH** — investigate, compare options`, `canonical/skills/aid-execute/SKILL.md` `RESEARCH and DOCUMENT tasks may not need a branch` |
-| **DESIGN** | Mockups, wireframes, UI prototypes, interaction flows. | `methodology/aid-methodology.md` `**DESIGN** — mockups, wireframes` |
-| **IMPLEMENT** | Write code + unit tests. | `methodology/aid-methodology.md` `**IMPLEMENT** — write code + unit tests` |
-| **TEST** | Integration, E2E, UI, load tests. | `methodology/aid-methodology.md` `**TEST** — integration, E2E, UI, load tests` |
-| **DOCUMENT** | ADRs, API docs, runbooks, diagrams. May skip branch isolation. | `methodology/aid-methodology.md` `**DOCUMENT** — ADRs, API docs, runbooks` |
-| **MIGRATE** | Data migration scripts, schema changes. | `methodology/aid-methodology.md` `**MIGRATE** — data migration scripts` |
-| **REFACTOR** | Restructure code without changing behavior. | `methodology/aid-methodology.md` `**REFACTOR** — restructure code without changing behavior` |
-| **CONFIGURE** | Config files, CI/CD, environment setup. | `methodology/aid-methodology.md` `**CONFIGURE** — config files, CI/CD` |
+| **RESEARCH** | Investigate, compare options, document findings. May skip branch isolation if only `.aid/` artifacts. | `docs/aid-methodology.md` `**RESEARCH** — investigate, compare options`, `canonical/skills/aid-execute/SKILL.md` `RESEARCH and DOCUMENT tasks may not need a branch` |
+| **DESIGN** | Mockups, wireframes, UI prototypes, interaction flows. | `docs/aid-methodology.md` `**DESIGN** — mockups, wireframes` |
+| **IMPLEMENT** | Write code + unit tests. | `docs/aid-methodology.md` `**IMPLEMENT** — write code + unit tests` |
+| **TEST** | Integration, E2E, UI, load tests. | `docs/aid-methodology.md` `**TEST** — integration, E2E, UI, load tests` |
+| **DOCUMENT** | ADRs, API docs, runbooks, diagrams. May skip branch isolation. | `docs/aid-methodology.md` `**DOCUMENT** — ADRs, API docs, runbooks` |
+| **MIGRATE** | Data migration scripts, schema changes. | `docs/aid-methodology.md` `**MIGRATE** — data migration scripts` |
+| **REFACTOR** | Restructure code without changing behavior. | `docs/aid-methodology.md` `**REFACTOR** — restructure code without changing behavior` |
+| **CONFIGURE** | Config files, CI/CD, environment setup. | `docs/aid-methodology.md` `**CONFIGURE** — config files, CI/CD` |
 
 ---
 
@@ -227,7 +227,7 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **Universal Grading Rubric** | One rubric across the pipeline: severity tags `[CRITICAL] [HIGH] [MEDIUM] [LOW] [MINOR]` → grade computed deterministically by `grade.sh`. Worst severity dominates the letter; count sets modifier. | `methodology/aid-methodology.md` `#### Phase 2: Interview`, `canonical/scripts/grade.sh` `Apply the rubric: worst severity dominates, count determines the modifier.` |
+| **Universal Grading Rubric** | One rubric across the pipeline: severity tags `[CRITICAL] [HIGH] [MEDIUM] [LOW] [MINOR]` → grade computed deterministically by `grade.sh`. Worst severity dominates the letter; count sets modifier. | `docs/aid-methodology.md` `#### Phase 2: Interview`, `canonical/scripts/grade.sh` `Apply the rubric: worst severity dominates, count determines the modifier.` |
 | **Grade scale** | `A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, E+, E, E-, F`. E band = critical-severity present. F = non-functional. | `canonical/skills/aid-discover/SKILL.md` `**Grade ordering** (highest to lowest):`, `canonical/scripts/grade.sh` `modifier_for_count()`, `canonical/templates/settings.yml` `# Valid grade values: A+, A, A-` |
 | **minimum_grade** | The REVIEW exit criterion (default `A`). Per-skill overrides possible (`<skill>.minimum_grade`). | `canonical/templates/settings.yml` `review:` block + `# Optional per-skill overrides` |
 | **Severity tag** | `[CRITICAL] [HIGH] [MEDIUM] [LOW] [MINOR]` — reviewer assigns; script computes grade. | `canonical/agents/aid-reviewer/AGENT.md` `## Severity Classification` |
@@ -246,20 +246,20 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **Loop 1 — Interview→Discovery** | Q&A entry to DISCOVERY-STATE → targeted discovery → KB update → interview resumes. | `methodology/aid-methodology.md` `#### Loop 1: Interview → Discovery` |
-| **Loop 2 — Specify→Discovery** | Specify pauses → Q&A → discovery → resume. | `methodology/aid-methodology.md` `#### Loop 2: Specify → Discovery` |
-| **Loop 3 — Plan→Discovery** | Plan reveals codebase complexity → Q&A → discovery → resume. | `methodology/aid-methodology.md` `#### Loop 3: Plan → Discovery` |
-| **Loop 4 — Plan→Specify** | KB OK but SPEC ambiguous → feature `STATE.md` Q&A → spec revision. | `methodology/aid-methodology.md` `#### Loop 4: Plan → Specify` |
-| **Loop 5 — Detail→Plan** | Plan too vague to decompose → Plan revises → Detail resumes. | `methodology/aid-methodology.md` `#### Loop 5: Detail → Plan` |
-| **Loop 6 — Execute→Discovery / Specify / Detail** | IMPEDIMENT routed by Type. | `methodology/aid-methodology.md` `#### Loop 6: Execute → Discovery / Specify / Detail` |
-| **Loop 7 — Execute Review→upstream** | CODE auto-fixed; TASK/SPEC/KB issues escalate. | `methodology/aid-methodology.md` `#### Loop 7: Execute Review → Any Upstream Phase` |
-| **Loop 8 — Deploy→Execute** | Deploy verification fails → back to Execute. | `methodology/aid-methodology.md` `#### Loop 8: Deploy → Execute` |
-| **Loop 9 — Monitor→Interview** | BUG classification → Interview LITE-BUG-FIX triage → new task → Execute. The "short path." | `methodology/aid-methodology.md` `#### Loop 9: Monitor → Interview (Bug Path)` |
-| **Loop 10 — Monitor→Interview** | Change Request → Interview (new/changed requirements) → full pipeline. | `methodology/aid-methodology.md` `#### Loop 10: Monitor → Interview (Change Request Path)` |
-| **Loop 11 — Any→Discovery** | Cross-cutting targeted re-discovery — KB is always the return target; "the loop that makes the Knowledge Base the gravitational center." | `methodology/aid-methodology.md` `#### Loop 11: Any Phase → Discovery (Targeted Re-Discovery)` |
-| **Targeted re-discovery** | Re-entry to Discovery that fills a specific gap; never a full redo. Triggered by a Pending Q&A entry with `**Impact:** Required` naming the docs to refresh; also driven on-demand by `/aid-housekeep`'s KB-DELTA stage (off-pipeline). | `methodology/aid-methodology.md` `#### Loop 11: Any Phase → Discovery (Targeted Re-Discovery)`, `canonical/skills/aid-discover/SKILL.md` `## Targeted Discovery (Re-entry)`, `canonical/skills/aid-housekeep/references/state-kb-delta.md` `## Step 4` |
-| **Bug Path (short)** | Monitor → Interview (LITE-BUG-FIX) → Execute. Skips spec/plan because spec is already correct. | `methodology/aid-methodology.md` `### The Two Post-Production Paths`, `methodology/aid-methodology.md` `#### Monitor (`aid-monitor`) — optional` |
-| **Change Request Path (full cycle)** | Monitor → Interview → ... full pipeline from Interview. | `methodology/aid-methodology.md` `### The Two Post-Production Paths`, `methodology/aid-methodology.md` `#### Loop 10: Monitor → Interview (Change Request Path)` |
+| **Loop 1 — Interview→Discovery** | Q&A entry to DISCOVERY-STATE → targeted discovery → KB update → interview resumes. | `docs/aid-methodology.md` `**Loop 1: Interview → Discovery` |
+| **Loop 2 — Specify→Discovery** | Specify pauses → Q&A → discovery → resume. | `docs/aid-methodology.md` `**Loop 2: Specify → Discovery` |
+| **Loop 3 — Plan→Discovery** | Plan reveals codebase complexity → Q&A → discovery → resume. | `docs/aid-methodology.md` `**Loop 3: Plan → Discovery` |
+| **Loop 4 — Plan→Specify** | KB OK but SPEC ambiguous → feature `STATE.md` Q&A → spec revision. | `docs/aid-methodology.md` `**Loop 4: Plan → Specify` |
+| **Loop 5 — Detail→Plan** | Plan too vague to decompose → Plan revises → Detail resumes. | `docs/aid-methodology.md` `**Loop 5: Detail → Plan` |
+| **Loop 6 — Execute→Discovery / Specify / Detail** | IMPEDIMENT routed by Type. | `docs/aid-methodology.md` `**Loop 6: Execute → Discovery / Specify / Detail` |
+| **Loop 7 — Execute Review→upstream** | CODE auto-fixed; TASK/SPEC/KB issues escalate. | `docs/aid-methodology.md` `**Loop 7: Execute Review → Any Upstream Phase` |
+| **Loop 8 — Deploy→Execute** | Deploy verification fails → back to Execute. | `docs/aid-methodology.md` `**Loop 8: Deploy → Execute` |
+| **Loop 9 — Monitor→Interview** | BUG classification → Interview LITE-BUG-FIX triage → new task → Execute. The "short path." | `docs/aid-methodology.md` `**Loop 9: Monitor → Interview (Bug Path)` |
+| **Loop 10 — Monitor→Interview** | Change Request → Interview (new/changed requirements) → full pipeline. | `docs/aid-methodology.md` `**Loop 10: Monitor → Interview (Change Request Path)` |
+| **Loop 11 — Any→Discovery** | Cross-cutting targeted re-discovery — KB is always the return target; "the loop that makes the Knowledge Base the gravitational center." | `docs/aid-methodology.md` `**Loop 11: Any Phase → Discovery (Targeted Re-Discovery)` |
+| **Targeted re-discovery** | Re-entry to Discovery that fills a specific gap; never a full redo. Triggered by a Pending Q&A entry with `**Impact:** Required` naming the docs to refresh; also driven on-demand by `/aid-housekeep`'s KB-DELTA stage (off-pipeline). | `docs/aid-methodology.md` `**Loop 11: Any Phase → Discovery (Targeted Re-Discovery)`, `canonical/skills/aid-discover/SKILL.md` `## Targeted Discovery (Re-entry)`, `canonical/skills/aid-housekeep/references/state-kb-delta.md` `## Step 4` |
+| **Bug Path (short)** | Monitor → Interview (LITE-BUG-FIX) → Execute. Skips spec/plan because spec is already correct. | `docs/aid-methodology.md` `#### Post-Production Loops (9–10)`, `docs/aid-methodology.md` `#### Monitor (`aid-monitor`) — optional` |
+| **Change Request Path (full cycle)** | Monitor → Interview → ... full pipeline from Interview. | `docs/aid-methodology.md` `#### Post-Production Loops (9–10)`, `docs/aid-methodology.md` `**Loop 10: Monitor → Interview (Change Request Path)` |
 
 ---
 
@@ -299,8 +299,9 @@ changelog:
 | **`rules_frontmatter` trigger-dialect** | Gated `[extras] rules_frontmatter = "trigger"` knob (Antigravity): `_render_cursor_extras` strips the source `.mdc` frontmatter and regenerates `trigger:/description/globs` keys from `RuleEntry` fields (`always_apply=true`→`trigger: always_on`; `false`→`trigger: glob` + globs). Default `None` (cursor) → verbatim copy → cursor byte-identical. Decoupled from `[agent].format`. | `profiles/antigravity.toml` `[extras]` `rules_frontmatter = "trigger"`, `.claude/skills/aid-generate/scripts/aid_profile.py` `rules_frontmatter` |
 | **`RuleEntry.output_filename`** | Per-rule `[[extras.rules]] output_filename` enabling a `.mdc`→`.md` rename for methodology rules (Antigravity emits `.md`; cursor leaves it unset → source name preserved → cursor byte-identical). | `profiles/antigravity.toml` `[[extras.rules]]` `output_filename = "aid-methodology.md"`, `.claude/skills/aid-generate/scripts/aid_profile.py` `output_filename` |
 | **MCP omission ([omit])** | All profiles emit no MCP config — no `[mcp]` table in any profile TOML because the repo ships zero MCP servers; Copilot CLI specifically omits `mcp-config.json`. | `profiles/copilot-cli.toml` `No [mcp] table`, `profiles/antigravity.toml` `No [mcp] table` |
-| **Option-A AGENTS.md collision** | `setup.sh`/`setup.ps1` multi-install handler: Codex/Cursor/Copilot CLI/Antigravity all write a root `AGENTS.md`; when ≥2 are selected, `AGENTS_COLLISION=1` triggers a one-time warning and last-installed-wins (survivor = highest-numbered selected AGENTS.md-writing tool by fixed install order, non-interactive). Claude Code uses `CLAUDE.md` and is exempt. | `setup.sh` (the "AGENTS.md collision pre-copy block (Option A)" comment + `AGENTS_COLLISION` survivor block) |
-| **setup.sh / setup.ps1** | End-user installers (Bash / PowerShell). Interactive menu of 5 tools (`[1]`-`[5]`) + `[6]` Done; diff-aware copy (`new=copy, identical=skip, different=ask`); Option-A AGENTS.md collision handler for multi-install. | `setup.sh` `#!/usr/bin/env bash`, `setup.sh` (menu `echo` block + AGENTS.md collision block), `.aid/knowledge/project-structure.md` `Repo-root entrypoints` |
+| **Invariant root `AGENTS.md` (FR12)** | The four AGENTS.md-writing tools (Codex, Cursor, Copilot CLI, Antigravity) now ship a **byte-identical** root `AGENTS.md`, so installing a second AGENTS.md-writing tool is up-to-date rather than a collision. This replaced the former Option-A last-installed-wins collision dance (the old `setup.sh`/`setup.ps1` `AGENTS_COLLISION` survivor handler, removed with those installers). Claude Code uses `CLAUDE.md` and is exempt. A CI guard asserts the four profile copies are identical. | `tests/canonical/test-agents-md-invariant.sh` (byte-identity guard); `profiles/{codex,cursor,copilot-cli,antigravity}/AGENTS.md` |
+| **`aid` CLI** | The persistent global end-user installer — a Bash dispatcher (`bin/aid`) on macOS/Linux/WSL/git-bash and a PowerShell dispatcher (`bin/aid.ps1`, with `bin/aid.cmd` shim) on Windows, backed by the shared install cores `lib/aid-install-core.sh` / `lib/AidInstallCore.psm1`. Bootstrapped once per machine via `install.sh` / `install.ps1` (or the npm/PyPI `aid-installer` packages), then invoked per project: `aid add/update/remove <tool>`, `aid status`, `aid version`. `aid add` fetches+verifies the matching release tarball (or installs offline via `--from-bundle <tar>`), copies the profile subtree, applies FR11 protect-on-diff, and records `.aid/.aid-manifest.json`. (Replaced the former `setup.sh`/`setup.ps1` clone+run menu installers, which were removed.) | `bin/aid` `_aid_usage`, `lib/aid-install-core.sh` `install_tool`, `install.sh`, `.aid/knowledge/infrastructure.md` `## Install Pipeline` |
+| **FR11 protect-on-diff** | When `aid add`/`aid update` would overwrite a root agent file (`CLAUDE.md` / `AGENTS.md`) that the user authored or modified themselves, the incoming version is written as `<file>.aid-new` for review (exit 5, WARN) rather than overwritten silently; `--force` overrides. AID ownership is tracked by the recorded sha256 in the manifest's `root_agent_files` entry. | `lib/aid-install-core.sh` `_copy_root_agent_file` (the `.aid-new` write + WARN), `docs/install.md` `## Protect-on-diff for root agent files` |
 
 ---
 
@@ -337,11 +338,11 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **PROPOSE** | Step 1 of the universal loop — agent proposes a concrete solution grounded in KB / codebase / SPEC. | `methodology/aid-methodology.md` `#### Phase 3: Specify`, `canonical/skills/aid-specify/SKILL.md` `1. PROPOSE  → agent proposes (grounded in KB, codebase, SPEC)` |
-| **DISCUSS** | Step 2 — developer validates, adjusts, redirects. Agent pushes back on contradictions, presents trade-offs. | `methodology/aid-methodology.md` `#### Phase 3: Specify` |
-| **WRITE** | Step 3 — the agreed content is written to the target artifact. | `methodology/aid-methodology.md` `#### Phase 3: Specify` |
-| **REVIEW** | Step 4 — agent verifies what was written against KB / codebase reality. Pass → next section. Fail → back to PROPOSE. | `methodology/aid-methodology.md` `#### Phase 3: Specify` |
-| **Re-run = enter at step 4** | Re-running a design-phase skill enters at REVIEW with existing content — the same loop handles both creation and maintenance. | `methodology/aid-methodology.md` `**Re-run = enter at step 4 with existing content.**`, `canonical/skills/aid-specify/SKILL.md` `**Re-run = enter at step 4 with existing content.**` |
+| **PROPOSE** | Step 1 of the universal loop — agent proposes a concrete solution grounded in KB / codebase / SPEC. | `docs/aid-methodology.md` `#### Phase 3: Specify`, `canonical/skills/aid-specify/SKILL.md` `1. PROPOSE  → agent proposes (grounded in KB, codebase, SPEC)` |
+| **DISCUSS** | Step 2 — developer validates, adjusts, redirects. Agent pushes back on contradictions, presents trade-offs. | `docs/aid-methodology.md` `#### Phase 3: Specify` |
+| **WRITE** | Step 3 — the agreed content is written to the target artifact. | `docs/aid-methodology.md` `#### Phase 3: Specify` |
+| **REVIEW** | Step 4 — agent verifies what was written against KB / codebase reality. Pass → next section. Fail → back to PROPOSE. | `docs/aid-methodology.md` `#### Phase 3: Specify` |
+| **Re-run = enter at step 4** | Re-running a design-phase skill enters at REVIEW with existing content — the same loop handles both creation and maintenance. | `docs/aid-methodology.md` `**Re-run = enter at step 4 with existing content.**`, `canonical/skills/aid-specify/SKILL.md` `**Re-run = enter at step 4 with existing content.**` |
 
 ---
 
@@ -349,15 +350,15 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **Adversarial Reviewer** | `aid-reviewer` is structurally adversarial to the developer — never grades its own work. Separation prevents bias. | `canonical/agents/aid-reviewer/AGENT.md` `You are adversarial to the Developer by design.`, `methodology/aid-methodology.md` `**Oversights**` row |
+| **Adversarial Reviewer** | `aid-reviewer` is structurally adversarial to the developer — never grades its own work. Separation prevents bias. | `canonical/agents/aid-reviewer/AGENT.md` `You are adversarial to the Developer by design.`, `docs/aid-methodology.md` `**Oversights**` row |
 | **Clean Context** | The reviewer is dispatched in a clean context (no chat history with the executor) — guarantees independent assessment. | `canonical/skills/aid-execute/SKILL.md` `Grading task output against acceptance criteria with a clean-context reviewer.` |
-| **Hypothesis vs Knowledge (specs)** | "A spec written before implementation is a hypothesis. A spec revised after implementation is knowledge." | `methodology/aid-methodology.md` `**2. Specs Are Living Documents**` |
-| **Spec-as-Hypothesis** | Treats SPEC.md as a living artifact with formal revision protocols — every change is tracked, justified, approved. | `methodology/aid-methodology.md` `**Drift**` row, `methodology/aid-methodology.md` `**2. Specs Are Living Documents**` |
-| **Spike** | A pause in `aid-specify` for investigation; records what needs research. | `methodology/aid-methodology.md` `Spike needed → pause the feature, record what needs investigation.`, `canonical/skills/aid-specify/SKILL.md` `SPIKE / BLOCKED are loopback states that return to CONTINUE` |
-| **Execution Graph** | Dependency + parallel-wave tables appended to PLAN.md by Detail. Drives `aid-execute` task ordering + pool dispatch. | `methodology/aid-methodology.md` `#### Phase 5: Detail`, `canonical/skills/aid-execute/SKILL.md` `Execution follows the **Execution Graph** in PLAN.md.` |
+| **Hypothesis vs Knowledge (specs)** | "A spec written before implementation is a hypothesis. A spec revised after implementation is knowledge." | `docs/aid-methodology.md` `**2. Specs Are Living Documents**` |
+| **Spec-as-Hypothesis** | Treats SPEC.md as a living artifact with formal revision protocols — every change is tracked, justified, approved. | `docs/aid-methodology.md` `**Drift**` row, `docs/aid-methodology.md` `**2. Specs Are Living Documents**` |
+| **Spike** | A pause in `aid-specify` for investigation; records what needs research. | `docs/aid-methodology.md` `#### Phase 3: Specify`, `canonical/skills/aid-specify/SKILL.md` `SPIKE / BLOCKED are loopback states that return to CONTINUE` |
+| **Execution Graph** | Dependency + parallel-wave tables appended to PLAN.md by Detail. Drives `aid-execute` task ordering + pool dispatch. | `docs/aid-methodology.md` `#### Phase 5: Detail`, `canonical/skills/aid-execute/SKILL.md` `Execution follows the **Execution Graph** in PLAN.md.` |
 | **Wave** | A group of tasks that can be executed in parallel (no inter-dependencies). Drives EXECUTE-WAVE pool dispatch. | `canonical/templates/work-state-template.md` `## Tasks Status` |
 | **Failure Tolerance** | EXECUTE-WAVE policy for handling failed sub-units — see `state-execute-drilldown.md` `### Failure Tolerance`. | `canonical/skills/aid-execute/SKILL.md` `\`references/state-execute-drilldown.md\`` |
-| **Circuit Breaker** | The Execute review loop's safety stop: if grade hasn't improved (same or worse) after 3 consecutive cycles, halt. | `methodology/aid-methodology.md` `Circuit breaker if the grade has not improved` |
+| **Circuit Breaker** | The Execute review loop's safety stop: if grade hasn't improved (same or worse) after 3 consecutive cycles, halt. | `docs/aid-methodology.md` `Circuit breaker if the grade has not improved` |
 | **Stale-Check** | The `aid-summarize` state that compares `LAST_KB_CHANGE_DATE` vs `LAST_SUMMARY_DATE` to decide whether to regenerate the HTML. | `canonical/skills/aid-summarize/SKILL.md` `STALE-CHECK first (always):` |
 | **Knowledge Summary** | The single self-contained `.aid/knowledge/knowledge-summary.html` produced by `aid-summarize`. Offline, light/dark, accessible, Mermaid-rendered. | `canonical/skills/aid-summarize/SKILL.md` `Generates a single self-contained \`knowledge-summary.html\`` |
 | **Profile (summarize)** | One of `auto | web-app | library | cli | microservices | data-pipeline | agentic-pipeline` — drives section-template selection for the knowledge-summary HTML. | `canonical/skills/aid-summarize/SKILL.md` `| \`--profile X\` | Force a specific profile.` |
@@ -380,7 +381,7 @@ changelog:
 | **Sentinel-File Lock** | The concurrency primitive used by `writeback-state.sh` and `parse-recipe.sh --render`: `set -o noclobber` + atomic create + sleep-poll retry. | `canonical/scripts/execute/writeback-state.sh` `Uses a sentinel-file lock (set -o` |
 | **AID Workspace** | `.aid/` — the runtime root for all KB + work artifacts. Gitignore convention varies (committed vs ignored is user choice). | `canonical/skills/aid-interview/SKILL.md` `AID workspace not found. Run /aid-config first` |
 | **Run** | One invocation of an aid-* slash command. Each run advances one state (no auto-advance). | `canonical/skills/aid-discover/SKILL.md` `each \`/aid-discover\` invocation drives the state machine until it hits a natural pause point` |
-| **One question at a time** | Interview discipline — never batch multiple questions in a single turn. User-memory rule `feedback_one-question-at-a-time.md`. | `methodology/aid-methodology.md` `#### Phase 2: Interview`, user memory |
+| **One question at a time** | Interview discipline — never batch multiple questions in a single turn. User-memory rule `feedback_one-question-at-a-time.md`. | `docs/aid-methodology.md` `#### Phase 2: Interview`, user memory |
 | **Wait for responses** | When the user says wait or has open questions, do NOT proceed on assumed intent. User-memory rule `feedback_wait-when-told.md`. | user memory |
 | **Subjective-Issue Collaboration** | For human-detected/subjective issues: expose → propose → ask; never fix autonomously. User-memory rule. | user memory `feedback_subjective-issue-collaboration.md` |
 | **No Effort-Dodging** | Do what is asked or give a concrete specific reason; never vague hand-waves, never defer doable work. User-memory rule. | user memory `feedback_no-effort-dodging.md` |
@@ -391,5 +392,5 @@ changelog:
 ## Glossary Statistics
 
 - **Total terms defined:** ~209 (across 16 categorical groups above; +5 housekeep terms added in the aid-housekeep / PR #49 update — "Housekeep / KB-drift reconciliation", "Housekeep Status", "aid/housekeep-* branch", "`--cleanup-only` flag (housekeep)", and the targeted-re-discovery/Q&A cross-references; +9 distribution terms added in the work-001-add-providers update; counted by row audit of this document)
-- **Primary sources:** `methodology/aid-methodology.md` (1,070 lines), `docs/glossary.md` (76 lines), 11 user-facing canonical SKILL.md files (+ maintainer-only aid-generate), 22 canonical AGENT.md files, `canonical/EMISSION-MANIFEST.md` (152 lines), `canonical/templates/{settings.yml, work-state-template.md, subagent-heartbeat-protocol.md, long-wait-protocol.md, reviewer-dispatch.md, feedback-artifacts/IMPEDIMENT.md}`, helper scripts under `canonical/scripts/` (config/, execute/, housekeep/, interview/, kb/, summarize/)
+- **Primary sources:** `docs/aid-methodology.md` (the methodology spec), `docs/glossary.md`, 11 user-facing canonical SKILL.md files (+ maintainer-only aid-generate), 22 canonical AGENT.md files, `canonical/EMISSION-MANIFEST.md` (152 lines), `canonical/templates/{settings.yml, work-state-template.md, subagent-heartbeat-protocol.md, long-wait-protocol.md, reviewer-dispatch.md, feedback-artifacts/IMPEDIMENT.md}`, helper scripts under `canonical/scripts/` (config/, execute/, housekeep/, interview/, kb/, summarize/)
 - **Every entry cites at least one durable-anchor source** (file path + grep-recoverable symbol/heading/string, no line numbers). ⚠️ Inferred-from-code annotations are explicit where used.

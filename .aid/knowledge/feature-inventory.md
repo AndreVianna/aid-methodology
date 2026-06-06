@@ -8,6 +8,7 @@ changelog:
   - 2026-05-26: KB Authoring v2 template seed
   - 2026-05-27: Populated with 10 user-facing skills + 1 maintainer-only skill
   - 2026-06-03: Added /aid-housekeep (11th user-facing skill) via /aid-housekeep KB-delta refresh
+  - 2026-06-05: work-002-auto-installer — added the installer/CLI capability (the persistent global `aid` CLI + its four install channels) as an engineering feature; corrected the `/aid-generate` row (it is no longer shipped via `setup.sh` — that installer was replaced by the `aid` CLI).
   - 2026-06-03: methodology v3.2 — marked /aid-deploy and /aid-monitor as optional, on-demand end-of-pipeline Deliver skills (not numbered phases); independent of each other.
 ---
 
@@ -39,7 +40,7 @@ changelog:
 
 | # | Skill | Status | Description | Source |
 |---|-------|--------|-------------|--------|
-| - | `/aid-generate` | Shipped | Regenerates the five install trees (claude-code, codex, cursor, copilot-cli, antigravity) from `canonical/` and `profiles/`. Not shipped to end users via `setup.sh`; lives only at `.claude/skills/aid-generate/` to avoid a chicken-and-egg deployment problem. | `.claude/skills/aid-generate/SKILL.md` |
+| - | `/aid-generate` | Shipped | Regenerates the five install trees (claude-code, codex, cursor, copilot-cli, antigravity) from `canonical/` and `profiles/`. Not part of the end-user `aid` CLI; lives only at `.claude/skills/aid-generate/` to avoid a chicken-and-egg deployment problem. | `.claude/skills/aid-generate/SKILL.md` |
 
 ## Engineering features (referenced for historical context)
 
@@ -52,3 +53,16 @@ The 11 user-facing skills above are the result of the following engineering work
 - **Recipes catalog** (work-001 feature-011; expanded by work-001-lite-path-recipes) — `canonical/recipes/` ships **51** pre-filled lite-path templates, named `add-X`/`change-X`/`fix-X` across 11 target-kind families + refactor-only verbs + 1 cross-type (`add-test-coverage`), with YAML front-matter (incl. a `summary:` field TRIAGE matches against) and `{{slot}}` placeholders.
 - **Always-on traceability** (work-003) — every long-running subagent dispatch surfaces L1 state markers, L2 ETA bracket pairs, and L3 heartbeat files.
 - **Optional housekeeping skill** (work-001-aid-housekeep) — `/aid-housekeep` reconciles drift in three strictly-ordered gated jobs (KB-DELTA → SUMMARY-DELTA → CLEANUP) on an `aid/housekeep-*` branch, backed by deterministic helpers in `canonical/scripts/housekeep/` (run-state I/O + resume rule, branch/commit safety guard, stale-artifact classification).
+
+## Delivery surface (the installer)
+
+How adopters get AID onto their machine and into a project — not a slash command, but the
+capability that delivers all of the above. Shipped by **work-002-auto-installer**.
+
+| Capability | Status | Description | Source |
+|------------|--------|-------------|--------|
+| Persistent global `aid` CLI | Shipped | Bootstrapped once per machine into `$AID_HOME`, then run per project. Subcommands: bare `aid` (dashboard), `aid status`, `aid add <tool>[,...]`, `aid update [<tool>... \| self]`, `aid remove [<tool>... \| self]`, `aid version`; flags `--from-bundle`/`--version`/`--force`/`--target`/`--verbose`. Cross-platform: `bin/aid` (Bash), `bin/aid.ps1` + `bin/aid.cmd` (PowerShell), shared engines `lib/aid-install-core.sh` + `lib/AidInstallCore.psm1`. | `bin/aid`, `lib/aid-install-core.sh` |
+| Four install channels | Shipped | (1) curl/irm bootstrap (`install.sh` / `install.ps1`), (2) npm `aid-installer` (`packages/npm/`), (3) PyPI `aid-installer` (`packages/pypi/`), (4) offline `aid add <tool> --from-bundle <path>`. All deliver the same CLI; npm/PyPI are thin shims that vendor the payload and spawn `bin/aid`. | `install.sh`, `packages/npm/package.json`, `packages/pypi/pyproject.toml` |
+| FR11 protect-on-diff | Shipped | A user-authored root `CLAUDE.md`/`AGENTS.md` is written as `*.aid-new` for review rather than overwritten on `aid add`/`aid update`. | `lib/aid-install-core.sh`, `docs/install.md` |
+| FR12 invariant root `AGENTS.md` | Shipped | The four AGENTS.md-writing tools ship a byte-identical root `AGENTS.md`; CI-guarded. | `tests/canonical/test-agents-md-invariant.sh` |
+| Tag-triggered release pipeline | Shipped | `release.sh` builds the profile tarballs + CLI bundle + `SHA256SUMS` + `gh release create`; `.github/workflows/release.yml` gates then publishes GitHub Release + npm/PyPI via OIDC on a `v*` tag. Releases v0.7.0-v0.7.5 exist; `VERSION` = 0.7.5. | `release.sh`, `.github/workflows/release.yml` |

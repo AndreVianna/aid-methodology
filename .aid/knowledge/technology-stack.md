@@ -10,11 +10,13 @@ intent: |
   is required to build, run, or contribute to AID. For file and line counts see
   `.aid/generated/project-index.md` `## Language Breakdown`.
 contracts:
-  - "Python 3.11+ required (tomllib stdlib dependency)"
-  - "No third-party Python packages (stdlib only)"
-  - "No npm package.json at any level"
+  - "Python 3.11+ required by the generator pipeline (tomllib stdlib dependency)"
+  - "No third-party Python packages in the generator (stdlib only)"
+  - "The PyPI `aid-installer` package requires Python >=3.8 and builds with hatchling; the npm `aid-installer` package requires Node >=18. Both have zero runtime dependencies."
+  - "package.json + pyproject.toml exist ONLY under `packages/npm/` and `packages/pypi/` (the published installer shims); none exists for application code"
 changelog:
-  - 2026-06-03: §9a T3-count strip — removed all hardcoded file-count and line-count figures from frontmatter intent, Languages table, Development Tools table, Build System table, Configuration Files table, and Testing Infrastructure; replaced aggregate counts with pointer to `.aid/generated/project-index.md`; removed stale branch name; corrected setup.sh/setup.ps1 T3 references
+  - 2026-06-05: work-002-auto-installer — the repo gained its first `package.json` (`packages/npm/package.json`) and `pyproject.toml` (`packages/pypi/pyproject.toml`, hatchling build), so the former "no package.json/pyproject at any level" claim is now FALSE and was corrected; added Node 18+ (npm `aid-installer`) and Python 3.8+ (PyPI `aid-installer`, hatchling) as build/packaging tooling, both zero runtime deps; replaced setup.sh/setup.ps1 evidence with the new `aid` CLI (`bin/aid` + `install.sh` / `bin/aid.ps1` + `install.ps1`).
+  - 2026-06-03: §9a T3-count strip — removed all hardcoded file-count and line-count figures from frontmatter intent, Languages table, Development Tools table, Build System table, Configuration Files table, and Testing Infrastructure; replaced aggregate counts with pointer to `.aid/generated/project-index.md`; removed stale branch name
   - 2026-06-01: post-merge update for work-001-add-providers (PRs #42/#43/#44) — generator Python files 11→12 (added test_copilot_emitter.py + test_antigravity_emitter.py); TOML config files 3→5 profiles (added copilot-cli + antigravity); byte-identical mirror count canonical+.claude+3 → canonical+.claude+5 profiles
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
 ---
@@ -31,10 +33,10 @@ changelog:
 | Language | Version | Source file / evidence |
 |----------|---------|------------------------|
 | **Markdown** | CommonMark + GFM tables (assumed; no validator pinned) | All docs, skills, agents, templates, recipes. For counts see `.aid/generated/project-index.md` `## Language Breakdown`. |
-| **Bash (shell)** | bash 4+ (uses `declare -A` associative arrays, `[[ ]]`, `${var:-}`) | Example: `setup.sh` `declare -A selected`. |
+| **Bash (shell)** | bash 4+ (uses `declare -A` associative arrays, `[[ ]]`, `${var:-}`) | Example: `lib/aid-install-core.sh` (the install-core engine sourced by `bin/aid`); every `canonical/scripts/**/*.sh`. |
 | **Python** | 3.11+ (required for `tomllib` stdlib) | Includes `test_copilot_emitter.py` and `test_antigravity_emitter.py` (added by work-001). Pinned by `.claude/skills/aid-generate/scripts/render_lib.py` "Requirements: Python 3.11+ (tomllib is stdlib; no third-party deps)" and `aid_profile.py` "Requirements: Python 3.11+ (tomllib is stdlib from 3.11)". |
 | **JavaScript (ES modules + plain)** | ES2020+ (no explicit pin); `.mjs` for ESM scripts | `canonical/scripts/summarize/validate-diagrams.mjs`, `contrast-check.mjs`; `canonical/templates/knowledge-summary/lightbox.js`, `mermaid-init.js`. |
-| **PowerShell** | 5.1+ | `setup.ps1`, `canonical/scripts/summarize/assemble-3part.ps1`. Version requirement from `README.md` `### Runtime requirements`. |
+| **PowerShell** | 5.1+ | `bin/aid.ps1`, `install.ps1`, `lib/AidInstallCore.psm1`, `canonical/scripts/summarize/assemble-3part.ps1`. PowerShell 5.1+ pin from `README.md` `### Bootstrap the `aid` CLI` (Windows). |
 | **CSS** | CSS3 (custom properties, `:focus-visible`, `@media (forced-colors)`, `@media (prefers-reduced-motion)`) | Single canonical source `canonical/templates/knowledge-summary/component-css.css` rendered into the render-target trees: canonical + `.claude` dogfood + 5 profile trees = **7 copies** on disk (a runtime `.aid/templates/` copy makes 8 total). |
 | **HTML** | HTML5 (semantic landmarks: `<header role="banner">`, `<main>`, `<nav>`, `<footer>`) | `canonical/templates/knowledge-summary/html-skeleton.html` rendered into canonical + `.claude` dogfood + 5 profile trees = **7 copies** on disk (a runtime `.aid/templates/` copy makes 8). |
 | **TOML** | TOML 1.0 (Python `tomllib` parser implies 1.0) | 5 profile config files (`profiles/*.toml`) + 22 Codex agent definitions (`profiles/codex/.codex/agents/*.toml`). |
@@ -54,33 +56,39 @@ Django, etc.). The only runtime libraries are:
 | **Mermaid** | Pinned to v11.15.0 (constant `PINNED_VERSION`); downloaded once from jsdelivr CDN and cached; SHA-verified against `EXPECTED_SHA256` on both cache-hit and post-download paths | Diagram rendering inside `/aid-summarize`-generated HTML; inlined into the single-file output so the viewer works fully offline | `canonical/scripts/summarize/fetch-mermaid.sh` `PINNED_VERSION` / `EXPECTED_SHA256` |
 | **(Implicit) jsdelivr CDN** | n/a — download URL: `https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js` | Source of the pinned Mermaid bundle that gets cached + inlined | `canonical/scripts/summarize/fetch-mermaid.sh` `URL=` |
 
-Python uses **stdlib only** — `tomllib`, `hashlib`, `json`, `pathlib`, `re`, `dataclasses`,
-`argparse`, `tempfile`, `filecmp`, `sys`. Confirmed by `render_lib.py` `import` block and the absence
-of any `requirements.txt`, `pyproject.toml`, or `setup.py` at any level.
+The **generator** uses Python **stdlib only** — `tomllib`, `hashlib`, `json`, `pathlib`, `re`, `dataclasses`,
+`argparse`, `tempfile`, `filecmp`, `sys`. Confirmed by `render_lib.py` `import` block; there is no
+`requirements.txt` or `setup.py`, and the only `pyproject.toml` in the repo belongs to the
+**published installer package** (`packages/pypi/pyproject.toml`, hatchling build), not to the generator.
 
 JavaScript uses **no npm dependencies** — `canonical/templates/knowledge-summary/lightbox.js`
 is a self-contained IIFE; `canonical/scripts/summarize/validate-diagrams.mjs` and
-`contrast-check.mjs` run with Node's built-in modules only. No `package.json` exists at any
-level (verified absent in `.aid/generated/project-index.md`).
+`contrast-check.mjs` run with Node's built-in modules only. The **only** `package.json` in the repo
+is the **published installer package** (`packages/npm/package.json`), which declares an empty
+`"dependencies": {}` — its `bin/aid.js` shim runs on Node built-ins (`child_process`, `path`, `os`, `fs`)
+with zero third-party packages.
 
 ## Package Manager
 
 | Tool | Version | Lock file |
 |------|---------|-----------|
 | **None for application code** | — | — |
-| **Implicit: jsDelivr CDN (pinned)** (used only by `/aid-summarize` to download the **pinned** Mermaid release `v11.15.0`, SHA-256-verified; the prior npm-registry "discover latest" call was removed when C1 was resolved 2026-05-29) | n/a | No `package-lock.json`, no `package.json` anywhere. The SHA-verified library is cached at `.aid/knowledge/.cache/mermaid.min.js` (per `canonical/scripts/summarize/fetch-mermaid.sh`). |
+| **npm** (publishes the `aid-installer` shim; not used to install application deps) | declares `"dependencies": {}` | No `package-lock.json` is committed; the package vendors `bin/` + `lib/` via its `prepack` hook (`packages/npm/scripts/vendor.js`). `packages/npm/package.json`. |
+| **pip / pipx + hatchling** (builds + publishes the `aid-installer` shim) | `requires-python >=3.8`; build via `hatchling` | No lock file; `packages/pypi/pyproject.toml` `[build-system] requires = ["hatchling"]`, with a custom build hook (`scripts/vendor.py`) that force-vendors the CLI payload into the sdist. |
+| **Implicit: jsDelivr CDN (pinned)** (used only by `/aid-summarize` to download the **pinned** Mermaid release `v11.15.0`, SHA-256-verified; the prior npm-registry "discover latest" call was removed when C1 was resolved 2026-05-29) | n/a | The SHA-verified library is cached at `.aid/knowledge/.cache/mermaid.min.js` (per `canonical/scripts/summarize/fetch-mermaid.sh`). |
 
-Confirmed by repo-wide search: no `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`,
-`requirements.txt`, or `pom.xml` anywhere in the repo (project-structure.md §6 attests the
-absence of `package.json`-style config).
+A `package.json` and a `pyproject.toml` **do** exist — but **only** under `packages/npm/` and
+`packages/pypi/` (the published installer shims). There is still no `package.json`/`pyproject.toml`
+for application code, and no `Cargo.toml`, `go.mod`, `requirements.txt`, or `pom.xml` anywhere
+(see `project-structure.md` `## Languages NOT Present`).
 
 ## Runtime
 
 | Runtime | Version | How detected |
 |---------|---------|--------------|
 | **Python** | 3.11+ | `.claude/skills/aid-generate/SKILL.md` "Python 3.11+ is available" Pre-flight check (`python --version`); `render_lib.py` "Requirements: Python 3.11+"; `aid_profile.py` "Requirements: Python 3.11+". Required for `tomllib` stdlib. |
-| **Bash** | 4+ (associative arrays) | `setup.sh` shebang `#!/usr/bin/env bash`, `set -euo pipefail`; `setup.sh` `declare -A selected`. Per `README.md` `### Runtime requirements`: "Bash (or git-bash on Windows) for scripts". |
-| **PowerShell** | 5.1+ | `README.md` `### Runtime requirements` explicit pin: "PowerShell 5.1+ for setup.ps1". |
+| **Bash** | 4+ (associative arrays) | `bin/aid` shebang `#!/usr/bin/env bash`; `lib/aid-install-core.sh` engine; every `canonical/scripts/**/*.sh`. Per `README.md` Linux/macOS bootstrap: `curl … \| bash`. |
+| **PowerShell** | 5.1+ | `README.md` Windows bootstrap pin "Windows (PowerShell 5.1+)"; `bin/aid.ps1` + `install.ps1` + `lib/AidInstallCore.psm1`. |
 | **Node.js** | 18+ (optional — only for `/aid-summarize` diagram validators) | `README.md` `### Runtime requirements`: "Node 18+ is optional — only `/aid-summarize` uses it, for diagram validation." `.mjs` files imply ESM support (Node 14+ minimum). |
 | **Git** | unpinned (any modern version) | `README.md` `### Runtime requirements`: "Git" listed as a runtime requirement; `.claude/skills/aid-generate/SKILL.md` "git working tree" Pre-flight runs `git rev-parse --git-dir`. |
 | **One of: Claude Code / OpenAI Codex CLI / Cursor IDE / GitHub Copilot CLI / Antigravity** | unpinned (host-tool-specific) | `README.md` `### Runtime requirements`: "One or more host AI tools." End-user runtime; required to invoke the slash commands. The 5 install profiles map 1:1 to these host tools (`profiles/*.toml`). |
@@ -92,7 +100,9 @@ absence of `package.json`-style config).
 | **`run_generator.py`** | `.claude/skills/aid-generate/scripts/run_generator.py` | The build. Iterates `profiles/*.toml` (5 profiles), calls each renderer per profile, performs the pure-mirror deletion pass, writes one emission manifest per profile, then runs VERIFY (deterministic) (hard) and VERIFY (advisory) (advisory). |
 | **Per-tool profile TOMLs** | `profiles/claude-code.toml`, `profiles/codex.toml`, `profiles/cursor.toml`, `profiles/copilot-cli.toml`, `profiles/antigravity.toml` (5 profiles) | Per-host conventions: `[layout]`, `[agent.frontmatter]` (incl. `format` ∈ markdown/toml/copilot-agent/antigravity-rule), `[skill.frontmatter]`, `[model_tiers]`, `[tool_names]`, `[filename_map]`, `[extras]` (incl. `rules_frontmatter` + per-rule `output_filename`), `[capabilities]`. |
 | **Emission manifest spec** | `canonical/EMISSION-MANIFEST.md` | Authoritative spec for the manifest format (JSONL, LF-only, sentinel first line `{"_manifest_version": 1}`, sorted by `dst`). |
-| **End-user installer** | `setup.sh` / `setup.ps1` | Cross-platform install scripts that copy a built profile tree into a target project (not a build per se — runs after `run_generator.py`). |
+| **End-user installer** | `bin/aid` (Bash) / `bin/aid.ps1` (PowerShell) | The persistent global `aid` CLI that copies a built profile tree into a target project (not a build per se — consumes the rendered `profiles/` trees). |
+| **Installer-package builds** | `packages/npm/scripts/vendor.js` (npm `prepack`) / `packages/pypi/scripts/vendor.py` (hatchling build hook) | Vendor the `bin/` + `lib/` CLI payload into the published npm / PyPI `aid-installer` packages. |
+| **Release packager** | `release.sh` | Builds the five per-profile tarballs + the `aid-cli-v<VERSION>.tar.gz` CLI bundle + the two libs + `SHA256SUMS`, then `gh release create`. Tag-triggered via `.github/workflows/release.yml`. |
 
 ### Build Commands
 
@@ -114,8 +124,9 @@ Source: `run_generator.py`.
 
 ### Lint Commands
 
-This repository has **no language linters** (no ESLint, no flake8, no shellcheck config,
-no `pyproject.toml`). Quality is enforced by:
+This repository has **no language linters** (no ESLint, no flake8, no shellcheck config; the
+only `pyproject.toml` is the PyPI `aid-installer` build manifest under `packages/pypi/`, which
+declares no linter `[tool.*]` config). Quality is enforced by:
 
 ```bash
 # Rebuild file inventory used by Discovery
@@ -182,9 +193,10 @@ see `.aid/generated/project-index.md` `## Language Breakdown`.
 
 | Tool | Version | Purpose | Config / location |
 |------|---------|---------|---------|
-| **Pure bash test suites** | bash 4+ | All tests are plain bash scripts (no pytest, no jest, no junit); aggregated by `tests/run-all.sh` + shared `tests/lib/assert.sh` | `tests/canonical/test-*.sh` (currently 24 suites — see `tests/README.md`) |
+| **Pure bash test suites** | bash 4+ | All tests are plain bash scripts (no pytest, no jest, no junit); aggregated by `tests/run-all.sh` + shared `tests/lib/assert.sh` | `tests/canonical/test-*.sh` (currently 35 suites — see `tests/README.md`) |
+| **Native Windows installer test** | PowerShell 5.1+ | Real-Windows installer/CLI coverage (run by `installer-tests.yml` on `windows-latest`) | `tests/windows/Test-AidInstaller.ps1` |
 | **Generator self-tests** | Python 3.11+ | Manifest-safety unit tests | `.claude/skills/aid-generate/scripts/test_manifest_safety.py` |
-| **CI** | **GitHub Actions (enforced)** | `.github/workflows/test.yml` runs render-drift + all canonical suites (via `tests/run-all.sh`) + generator self-tests + hygiene on PR/push; required status check on `master` | See `test-landscape.md` |
+| **CI** | **GitHub Actions (enforced)** | `.github/workflows/test.yml` runs render-drift + all canonical suites (via `tests/run-all.sh`) + generator self-tests + hygiene on PR/push (required status check on `master`). `installer-tests.yml` runs the cross-platform installer/CLI matrix (ubuntu + windows); `release.yml` is the tag-triggered gate+publish pipeline. | See `test-landscape.md`, `infrastructure.md` `## CI / CD Pipeline` |
 
 Source: `project-structure.md` `## Build & Test System`; `tests/README.md`.
 
@@ -201,6 +213,9 @@ Source: `project-structure.md` `## Build & Test System`; `tests/README.md`.
 | `.claude/settings.local.json` | JSON | Personal Claude Code overrides (gitignored per `.gitignore` `.claude/settings.local.json`) |
 | `.aid/settings.yml` | YAML 1.2 | AID runtime config — project identity, review minimum_grade, parallelism, heartbeat interval, per-skill overrides |
 | `canonical/templates/settings.yml` | YAML 1.2 | Settings template shipped via render |
+| `packages/npm/package.json` | JSON | npm `aid-installer` package manifest — `bin.aid` → `bin/aid.js`, `engines.node >=18`, empty `dependencies`, `prepack` vendoring hook |
+| `packages/pypi/pyproject.toml` | TOML | PyPI `aid-installer` package manifest — hatchling build, `requires-python >=3.8`, empty `dependencies`, `[project.scripts] aid`, custom vendoring build hook |
+| `VERSION` | plain text | Single-source release version (`0.7.5`); FR10 version-sync asserts it equals both package manifests + the release tag |
 | `.gitignore` | gitignore patterns | Excludes Python/Node caches, IDE files, `.aid/knowledge/.cache/`, `.claude/worktrees/`, `.aid/.heartbeat/` |
 
 ## Languages NOT Present

@@ -14,10 +14,12 @@ contracts:
   - "Settings file = .aid/settings.yml, YAML 1.2, with 5 mandatory top-level sections (project, tools, review, execution, traceability) plus optional discovery section"
   - "discovery.doc_set is a YAML block-list of pipe-delimited scalars (filename|owner|presence[:when]); absent section means use default seed"
   - "Emission manifest is JSON-Lines (.jsonl) with 4-key record schema (profile, src, dst, sha256) + 1-key sentinel object {_manifest_version: 1}"
+  - "Install manifest = <project>/.aid/.aid-manifest.json, single JSON object (manifest_version/aid_version/installed_at/tools{<tool>: version, installed_at, paths[], root_agent_files[{path, sha256, status}]}); written by the aid CLI, LF-only, no BOM"
   - "Frontmatter schema for KB docs requires kb-category + source + intent; generator required iff source=generated"
   - "Recipe slot syntax: {{slot-name}} where slot-name matches POSIX ERE [a-z][a-z0-9-]*"
   - "Task templates have 6 sections: title heading, Type, Source, Depends on, Scope, Acceptance Criteria"
 changelog:
+  - 2026-06-05: work-002-auto-installer — added §8a install-manifest schema (`<project>/.aid/.aid-manifest.json`, written by the `aid` CLI per `lib/aid-install-core.sh` `manifest_write`); re-pointed the §2 `tools.installed` note off the deleted `setup.sh` menu to the `aid add <tool>` CLI and named the install manifest as the authoritative installed-state record.
   - 2026-06-03: work-001 feature-001 — lite work-type enum collapsed 4→3 (single-doc eliminated); Work Type enum updated to {bug-fix, new-feature, refactor}; applies-to enum updated to {bug-fix, new-feature, refactor, *}.
   - 2026-06-01: work-001-add-providers (PRs #42/#43/#44) — render profiles grew 3→5 (added copilot-cli + antigravity). Updated §8 emission-manifest profile enum + manifest-location table (5 profiles); §9 profile-TOML schema ([agent].format now 4 values; [layout] output_root covers .github/.agent roots; [extras] gained rules_frontmatter + per-rule output_filename); RuleEntry/ExtrasConfig dataclass additions documented.
   - 2026-05-31: delivery-002 — added §2a discovery.doc_set sub-section; updated settings contract to reflect the optional discovery section
@@ -54,7 +56,7 @@ changelog:
 | `project.name` | string | `<project-name>` | Set during `/aid-config` INIT |
 | `project.description` | string | `<project-description>` | Sole source of truth (not duplicated in CLAUDE.md/AGENTS.md per `settings.yml` `description:` comment "sole source of truth") |
 | `project.type` | enum `brownfield`|`greenfield` | `brownfield` | Project class |
-| `tools.installed` | list of strings | `[claude-code]` | Which install trees are active; valid values are the profile names (one per `profiles/*.toml`): `claude-code`, `codex`, `cursor`, `copilot-cli`, `antigravity`. (The `canonical/templates/settings.yml` `installed:` block only shows `claude-code`/`codex`/`cursor` as commented examples; the `setup.sh` install menu offers all 5 — see `setup.sh` options 1-5.) |
+| `tools.installed` | list of strings | `[claude-code]` | Which install trees are active; valid values are the profile names (one per `profiles/*.toml`): `claude-code`, `codex`, `cursor`, `copilot-cli`, `antigravity`. (The `canonical/templates/settings.yml` `installed:` block only shows `claude-code`/`codex`/`cursor` as commented examples; the `aid` CLI installs all 5 — `aid add <tool>`, one per profile, per `bin/aid` `_aid_usage`. The authoritative record of what is installed per project is the install manifest `.aid/.aid-manifest.json` — see §8a — not this settings field.) |
 | `review.minimum_grade` | grade string | `A` | Quality bar for every skill's REVIEW state |
 | `execution.max_parallel_tasks` | int | `5` | Parallel pool dispatch capacity (FR6 / work-001 feature-009) |
 | `traceability.heartbeat_interval` | int (minutes) | `1` | L3 heartbeat interval; `0` disables heartbeat entirely |
@@ -314,6 +316,71 @@ Codex + Antigravity use a `[model_tiers.<tier>]` sub-table with `model` + `reaso
 5. Write current manifest to disk.
 
 Files **outside** any manifest are NEVER touched.
+
+---
+
+## 8a. Install Manifest — `<project>/.aid/.aid-manifest.json`
+
+**Source of truth:** `lib/aid-install-core.sh` (`manifest_write` / the manifest-shape
+comment block above `manifest_read_tool_paths`) and `lib/AidInstallCore.psm1`.
+
+**Purpose:** the authoritative per-project record of what the `aid` CLI installed — which
+tools, at which version, which files, and the ownership sha256 of each root agent file
+(driving FR11 protect-on-diff and `aid status`/`aid update`/`aid remove`). Distinct from
+the generator's emission-manifest (§8); written by the **installer**, not the renderer.
+
+**Format:** a single JSON object, 2-space indent, **LF-only** newlines, trailing newline,
+written atomically via temp-file + rename (no UTF-8 BOM — asserted by
+`tests/windows/Test-AidInstaller.ps1` T03/T04).
+
+**Top-level keys:**
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `manifest_version` | int | Schema version (currently `1`) |
+| `aid_version` | string | The `aid` CLI version that last wrote the manifest (e.g. `0.7.5`) |
+| `installed_at` | string | ISO-8601 UTC timestamp of first manifest write (preserved across merges) |
+| `tools` | object | Map keyed by canonical tool id (`claude-code` / `codex` / `cursor` / `copilot-cli` / `antigravity`) → per-tool entry |
+
+**Per-tool entry** (`tools.<tool>`):
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `version` | string | The AID version installed for this tool |
+| `installed_at` | string | ISO-8601 UTC timestamp of this tool's first install (preserved on re-install) |
+| `paths` | list of strings | Project-relative POSIX paths of every file the installer wrote for this tool (de-duplicated union across re-installs) |
+| `root_agent_files` | list of objects | One entry per root agent file (`CLAUDE.md` / `AGENTS.md`) this tool owns |
+
+**`root_agent_files[]` entry:**
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `path` | string | Root agent filename (`CLAUDE.md` or `AGENTS.md`) |
+| `sha256` | string | Lowercase hex SHA-256 of the AID-written bytes (the ownership token FR11 checks before overwriting) |
+| `status` | string | `owned` (AID wrote/owns it) or `pending-merge` (a user-authored file differed → incoming written as `<path>.aid-new`) |
+
+**Example shape** (per the `lib/aid-install-core.sh` schema comment):
+
+```json
+{
+  "manifest_version": 1,
+  "aid_version": "0.7.5",
+  "installed_at": "2026-06-05T12:00:00Z",
+  "tools": {
+    "claude-code": {
+      "version": "0.7.5",
+      "installed_at": "2026-06-05T12:00:00Z",
+      "paths": [".claude/skills/aid-discover/SKILL.md"],
+      "root_agent_files": [
+        { "path": "CLAUDE.md", "sha256": "<hex>", "status": "owned" }
+      ]
+    }
+  }
+}
+```
+
+Companion file: `<project>/.aid/.aid-version` records the installed AID version as a plain
+string (`write_version_marker` in `lib/aid-install-core.sh`).
 
 ---
 

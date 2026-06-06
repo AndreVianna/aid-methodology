@@ -2,23 +2,26 @@
 kb-category: primary
 source: hand-authored
 intent: |
-  Describes the hosting, runtime, build pipeline, and dev tooling for the AID-methodology
-  repo. There is no conventional runtime infrastructure (no Docker, no cloud, no Terraform).
-  "Infrastructure" here means: install scripts (setup.sh / setup.ps1) that put AID into a
-  target project, the canonical→5-profiles render pipeline driven by run_generator.py, and
-  the local-filesystem conventions for runtime state. Read this to understand how AID is
-  built, installed, and operated on a local workstation.
+  Describes the hosting, runtime, build pipeline, distribution, CI/CD, and dev tooling for
+  the AID-methodology repo. There is no conventional runtime infrastructure (no Docker, no
+  cloud, no Terraform). "Infrastructure" here means: the persistent global `aid` CLI (and
+  its four install channels) that puts AID into a target project, the canonical→5-profiles
+  render pipeline driven by run_generator.py, the tag-triggered release pipeline (release.sh
+  + release.yml that cut GitHub Releases and publish the npm/PyPI packages), and the
+  local-filesystem conventions for runtime state. Read this to understand how AID is built,
+  installed, released, and operated on a local workstation.
 contracts: []
 changelog:
-  - 2026-06-01: post-merge work-001-add-providers (PRs #42/#43/#44) — canonical render pipeline 3→5 profiles (added copilot-cli + antigravity); setup menu now 5 tools + Done=6 (4=GitHub Copilot CLI, 5=Antigravity) with the Option-A AGENTS.md last-installed-wins non-interactive collision handler; build-pipeline component table gained the 2 new emitter self-tests (test_copilot_emitter.py, test_antigravity_emitter.py) now wired into the CI generator-selftests step. Verified profiles=5 (`ls profiles/*.toml`), setup.sh menu options 1-5 + `[6] Done`.
+  - 2026-06-05: work-002-auto-installer — installer evolved from setup.sh/setup.ps1 clone+run to a persistent global `aid` CLI (`bin/aid` + `bin/aid.ps1` + `bin/aid.cmd`, shared libs `lib/aid-install-core.sh` + `lib/AidInstallCore.psm1`, bootstrap `install.sh` / `install.ps1`); four install channels (curl/irm bootstrap, npm `aid-installer`, PyPI `aid-installer`, offline `--from-bundle`); added the release pipeline (`release.sh` + `.github/workflows/release.yml`, tag-triggered, OIDC publish) and the cross-platform installer CI (`.github/workflows/installer-tests.yml`); GitHub Releases v0.7.0-v0.7.5 now exist (`VERSION` = 0.7.5). `setup.sh`/`setup.ps1` removed.
+  - 2026-06-01: post-merge work-001-add-providers (PRs #42/#43/#44) — canonical render pipeline 3→5 profiles (added copilot-cli + antigravity); install menu now 5 tools with the Option-A AGENTS.md last-installed-wins non-interactive collision handler; build-pipeline component table gained the 2 new emitter self-tests (test_copilot_emitter.py, test_antigravity_emitter.py) now wired into the CI generator-selftests step. Verified profiles=5 (`ls profiles/*.toml`).
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
 ---
 # Infrastructure
 
 > **Source:** `aid-researcher` (quality doc-set) (Phase 1), cycle-1
 > **Status:** Complete
-> **Last Updated:** 2026-05-27
-> **Scope:** This repo ships a methodology + a multi-tool distribution. There is **no runtime infrastructure** in the conventional sense — no Docker, no Terraform, no Kubernetes, no cloud account, no managed services. "Infrastructure" here means: the install scripts that put AID into a target project, the canonical → 5-profiles render pipeline, the supporting toolchain (git, gh, python, bash), and the local-filesystem conventions for runtime state.
+> **Last Updated:** 2026-06-05
+> **Scope:** This repo ships a methodology + a multi-tool distribution. There is **no runtime infrastructure** in the conventional sense — no Docker, no Terraform, no Kubernetes, no cloud account, no managed services. "Infrastructure" here means: the persistent global `aid` CLI (and its four install channels) that puts AID into a target project, the canonical → 5-profiles render pipeline, the tag-triggered release pipeline (GitHub Releases + npm/PyPI), the supporting toolchain (git, gh, python, bash, node, pwsh), and the local-filesystem conventions for runtime state.
 
 ---
 
@@ -42,7 +45,7 @@ No NAT, no VPN, no firewall rule lives in this repo. No production environment e
 
 - No `Dockerfile` anywhere in the repo (confirmed by file-system search).
 - No `docker-compose.yml`, no `Containerfile`, no `.dockerignore`.
-- No mention of Docker / container runtime in any setup script (`setup.sh`, `setup.ps1`) or in `CLAUDE.md`.
+- No mention of Docker / container runtime in any installer (`bin/aid`, `install.sh`, `install.ps1`) or in `CLAUDE.md`.
 
 End users install AID directly into a host filesystem; the host AI tool (Claude Code, etc.) provides whatever isolation it provides.
 
@@ -71,13 +74,15 @@ The closest analog is the **AID parallel pool dispatch model** (work-001 feature
 
 ## CI / CD Pipeline
 
-**CI is enforced** — `.github/workflows/test.yml` (added 2026-05-29) runs render-drift + canonical suites + generator self-tests + hygiene on every PR/push and is a required status check for merging to `master` (branch protection enabled 2026-05-29). The suite job invokes `tests/run-all.sh`, which discovers suites by glob (`tests/canonical/test-*.sh`), so the count is not hard-coded (currently 24; see `test-landscape.md`). The `generator-selftests` job additionally runs three Python generator self-tests with `--self-test` (`.github/workflows/test.yml`): `test_manifest_safety.py`, plus the two new emitter tests `test_copilot_emitter.py` (Copilot real-YAML round-trip) and `test_antigravity_emitter.py` (Antigravity rule reshape).
+The repo runs **three GitHub Actions workflows**: the PR-gate (`test.yml`), the cross-platform installer suite (`installer-tests.yml`), and the tag-triggered release pipeline (`release.yml`).
 
-There is also no **release pipeline** — the project distributes via:
-1. End users cloning the repo and running `setup.sh` / `setup.ps1` against a target directory, OR
-2. End users invoking `gh` CLI commands manually (see `gh` Tool below).
+**CI gate (enforced).** `.github/workflows/test.yml` (added 2026-05-29) runs render-drift + canonical suites + generator self-tests + hygiene on every PR/push and is a required status check for merging to `master` (branch protection enabled 2026-05-29). The suite job invokes `tests/run-all.sh`, which discovers suites by glob (`tests/canonical/test-*.sh`), so the count is not hard-coded (currently 35; see `test-landscape.md`). The `generator-selftests` job additionally runs three Python generator self-tests with `--self-test` (`.github/workflows/test.yml`): `test_manifest_safety.py`, plus the two emitter tests `test_copilot_emitter.py` (Copilot real-YAML round-trip) and `test_antigravity_emitter.py` (Antigravity rule reshape).
 
-There is no published package on npm, PyPI, Homebrew, Chocolatey, or any other package registry.
+**Installer CI (cross-platform).** `.github/workflows/installer-tests.yml` (`name: Installer CI (cross-platform)`) runs a two-leg matrix: `ubuntu-latest` (`mode: bash-harness`) drives the bash installer/CLI/release suites, and `windows-latest` (`mode: native-ps1`) runs the native PowerShell installer test plus the npm + PyPI Windows channel smokes (pack/build → global install → `aid status`/`aid add`). Both legs assert `pwsh` is present so PowerShell coverage cannot silently skip (the `Assert pwsh present` step). This is the runner that exercises the real-Windows path the Linux bash harness cannot.
+
+**Release pipeline (tag-triggered).** `.github/workflows/release.yml` (`name: Release`) fires on `push` of a `v*` tag (with a `workflow_dispatch` escape hatch carrying `ref` + `dry_run` inputs). A `gate` job re-runs the same correctness invariants as `test.yml` (render-drift + canonical suites + generator self-tests) plus the **FR10 version-sync** check (`VERSION` == `packages/npm/package.json` == `packages/pypi/pyproject.toml` == tag) on the tagged commit; all publish jobs sit behind `needs: [gate]` so nothing publishes from an ungated state. Three publish jobs follow: `github-release` (runs `release.sh` to build tarballs + `SHA256SUMS` and `gh release create`), `npm-publish` (gated on repo variable `NPM_ENABLED == 'true'`; `npm publish --provenance --access public`), and `pypi-publish` (gated on `PYPI_ENABLED == 'true'`; `pypa/gh-action-pypi-publish` via Trusted Publishing). The workflow declares least-privilege `permissions: contents: write` (release upload) + `id-token: write` (OIDC for npm provenance + PyPI Trusted Publishing); no long-lived PyPI token is stored. Real GitHub Releases **v0.7.0 through v0.7.5** exist (`gh release list`); `VERSION` = `0.7.5`.
+
+**Published packages.** Two thin-shim packages are published from `packages/`: **npm** `aid-installer` (`packages/npm/package.json`) and **PyPI** `aid-installer` (`packages/pypi/pyproject.toml`). Both vendor the CLI payload (`bin/` + `lib/`) and spawn `bin/aid`; neither carries runtime dependencies. The npm/PyPI publish steps remain blocked behind the `NPM_ENABLED`/`PYPI_ENABLED` repo variables until the registry scope/org + credentials exist (see the external-setup blockers comment block atop `release.yml`); the GitHub Releases channel is live. No Homebrew or Chocolatey channel exists.
 
 ---
 
@@ -123,20 +128,42 @@ profiles/*.toml ─┐
 
 ---
 
-## Install Pipeline (end-user installer)
+## Install Pipeline (the `aid` CLI + four channels)
 
-The **`setup.sh` / `setup.ps1` pair** is the end-user-facing install entrypoint. It is the "infrastructure" that delivers AID into a new project.
+The end-user install entrypoint is a **persistent global `aid` CLI**, not a clone-and-run script. It is bootstrapped once per machine, then invoked per project with subcommands. (The former `setup.sh` / `setup.ps1` clone+run installers were removed by work-002-auto-installer.)
 
-| Script | Path | Platform |
-|--------|------|----------|
-| Bash installer | `setup.sh` | macOS, Linux, WSL |
-| PowerShell installer | `setup.ps1` | Windows |
+**CLI layout.** The dispatcher and shared engine live at the repo root and are extracted into `$AID_HOME` (default `~/.aid` on Unix, `%LOCALAPPDATA%\aid` on Windows) at bootstrap:
 
-Both scripts accept a target directory and an interactive menu with **5 tool options + Done**: `1 = Claude Code`, `2 = Codex`, `3 = Cursor`, `4 = GitHub Copilot CLI`, `5 = Antigravity`, `[6] Done` (multi-select). They copy the matching `profiles/<tool>/` tree into the target — Copilot installs a `.github/` subtree + root `AGENTS.md`, Antigravity installs a `.agent/` subtree (`.agent/skills`, `.agent/rules`) + root `AGENTS.md`. See `setup.sh` `tool_name()` / `print_menu()` and `setup.ps1` `Get-ToolName` / `Show-Menu` for the argument-parsing and menu-state code.
+| Component | Path | Platform |
+|-----------|------|----------|
+| Bash dispatcher | `bin/aid` | macOS, Linux, WSL, git-bash |
+| PowerShell dispatcher | `bin/aid.ps1` | Windows |
+| cmd.exe shim | `bin/aid.cmd` | Windows (resolves `aid` in cmd.exe; tries `pwsh` then `powershell`) |
+| Bash install-core | `lib/aid-install-core.sh` | sourced by `bin/aid` and by `install.sh` in piped mode |
+| PowerShell install-core | `lib/AidInstallCore.psm1` | imported by `bin/aid.ps1` and by `install.ps1` |
+| Bash bootstrap | `install.sh` | curl-piped first install (`curl -fsSL …/install.sh \| bash`) |
+| PowerShell bootstrap | `install.ps1` | irm-piped first install (`irm …/install.ps1 \| iex`) |
 
-**Option-A AGENTS.md multi-install collision handler.** Four of the five tools (Codex, Cursor, Copilot CLI, Antigravity) write a root `AGENTS.md`; Claude Code uses `CLAUDE.md` only. When **≥2** AGENTS.md-writing tools are selected, `setup.sh` sets `AGENTS_COLLISION=1`, warns once (`Note: … all install a shared AGENTS.md; the last-installed tool's version wins …`), and resolves **non-interactively** with **last-installed-wins** — the survivor is the highest-numbered selected tool's per-tool install block (fixed order, not toggle order), reported as `Updated: … (AGENTS.md last-writer-wins …)`. The handler is **gated**: it fires only when `AGENTS_COLLISION=1` and the destination basename is `AGENTS.md` (see `setup.sh` the `AGENTS_COLLISION` block + the `_survivor` / `last-writer-wins` lines), so a single-AGENTS.md-writer install never triggers the auto-overwrite branch.
+`bin/aid` parses the subcommand and dispatches into `lib/aid-install-core.sh`, operating on the current working directory (`--target` / `AID_TARGET` overrides). Subcommands: `aid` (bare → project dashboard), `aid status`, `aid add <tool>[,...]`, `aid update [<tool>... | self]`, `aid remove [<tool>... | self]`, `aid version`. Shared flags: `--from-bundle <path>` (offline install), `--version <v>` (pin a release), `--force`, `--target <dir>`, `--verbose`. The tools are the five profile names: `claude-code`, `codex`, `cursor`, `copilot-cli`, `antigravity` (`bin/aid` `_aid_usage`).
 
-The install flow (incl. the new Copilot/Antigravity installs and the Option-A collision) is covered by `tests/canonical/test-setup.sh` (cases SU12-17/SU16b); `test-setup-ps1.sh` exercises `setup.ps1`'s platform-independent pre-install logic + menu/collision parity (cases SPS05-08) and **SKIPs (exit 0) when `pwsh` is absent** per the established repo contract (its Windows-only backslash-path file copy is not run on Linux CI). The CI `canonical-tests` job asserts `pwsh` IS present, so the skip cannot silently fire there.
+**Four install channels.** All four deliver the same `aid` CLI:
+
+| Channel | First-install command | Source |
+|---------|-----------------------|--------|
+| curl/irm bootstrap | `curl -fsSL …/install.sh \| bash` / `irm …/install.ps1 \| iex` | `install.sh`, `install.ps1` |
+| npm | `npm i -g aid-installer` (or `npx aid-installer add <tool>`) | `packages/npm/` → published `aid-installer` |
+| PyPI | `pipx install aid-installer` (or `pip install --user aid-installer`) | `packages/pypi/` → published `aid-installer` |
+| Offline / air-gapped | download a release tarball, verify against `SHA256SUMS`, then `aid add <tool> --from-bundle <path>` | GitHub Releases assets |
+
+The npm and PyPI packages are **thin shims**: `packages/npm/bin/aid.js` and `packages/pypi/aid_installer/__main__.py` vendor the `bin/` + `lib/` payload and spawn `bin/aid` (Unix) or `bin/aid.ps1` (Windows, `pwsh` then `powershell`), injecting `AID_INSTALL_CHANNEL=npm`/`pypi` so that `aid update self` prints the channel-correct upgrade hint (`npm i -g aid-installer@latest` / `pipx upgrade aid-installer`) instead of re-bootstrapping (`bin/aid` `AID_INSTALL_CHANNEL` guard).
+
+**Bootstrap trust model.** The piped bootstrap fetches the `aid-cli-v<VERSION>.tar.gz` bundle from the matching GitHub Release and verifies its SHA-256 against the release `SHA256SUMS` before extracting into `$AID_HOME` and wiring PATH (`install.sh` `_source_install_core` / bundle-verify block). `aid add` likewise verifies each downloaded profile tarball against `SHA256SUMS`.
+
+**FR11 protect-on-diff.** When `aid add`/`aid update` would overwrite a root agent file (`CLAUDE.md` / `AGENTS.md`) the user authored themselves, the incoming version is written as `*.aid-new` for review rather than overwriting silently (per `docs/install.md` `## Protect-on-diff for root agent files`).
+
+**FR12 invariant root `AGENTS.md`.** The four AGENTS.md-writing tools (Codex, Cursor, Copilot CLI, Antigravity) now ship a **byte-identical** root `AGENTS.md`; a CI guard (`tests/canonical/test-agents-md-invariant.sh`) asserts the four profile copies are identical, replacing the former last-installed-wins Option-A collision dance.
+
+The install/CLI/release surface is covered by the `tests/canonical/test-install*.sh`, `test-aid-cli*.sh`, and `test-release*.sh` suites plus `tests/windows/Test-AidInstaller.ps1` (native Windows), all run by `installer-tests.yml` (see CI / CD Pipeline above and `test-landscape.md`).
 
 ---
 
@@ -182,8 +209,10 @@ The `gh` CLI is the maintainer's primary tool for PR creation, issue triage, and
 | Tool | Version | Used for | Evidence |
 |------|---------|----------|----------|
 | Python | 3.11+ (stdlib `tomllib`) | Generator pipeline | `.claude/skills/aid-generate/scripts/render_lib.py` `Requirements: Python 3.11+` |
-| Bash | POSIX-compatible | All `canonical/scripts/` + `tests/canonical/` + `setup.sh` | `#!/usr/bin/env bash` at top of every script |
-| PowerShell | 5.1+ | `setup.ps1` + `assemble-3part.ps1` | `setup.ps1` `#Requires -Version 5.1` |
+| Python | 3.8+ (`requires-python`) | PyPI `aid-installer` package build (hatchling) + shim runtime | `packages/pypi/pyproject.toml` `requires-python = ">=3.8"`; `[build-system] requires = ["hatchling"]` |
+| Node | 18+ (`engines.node`) | npm `aid-installer` package + shim runtime | `packages/npm/package.json` `"engines": { "node": ">=18" }` |
+| Bash | POSIX-compatible | All `canonical/scripts/` + `tests/canonical/` + `bin/aid` + `install.sh` + `lib/aid-install-core.sh` | `#!/usr/bin/env bash` at top of every script |
+| PowerShell | 5.1+ | `bin/aid.ps1` + `install.ps1` + `lib/AidInstallCore.psm1` + `assemble-3part.ps1` | `assemble-3part.ps1` `#Requires -Version 5.1`; the npm/PyPI shims try `pwsh` then `powershell` on Windows |
 | Node | 18+ | `aid-summarize` validators (`*.mjs`) + Mermaid CLI | `README.md` `Node 18+` requirements bullet (per scout) |
 | Git | any modern | VCS | implicit |
 | GitHub CLI (`gh`) | any modern | PR/issue/release operations | user memory; called by AID docs |

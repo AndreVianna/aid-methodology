@@ -17,6 +17,7 @@ contracts:
   - "6 script categories under canonical/scripts/ (config, kb, execute, summarize, interview, housekeep) + grade.sh at the category root"
   - "Every canonical helper script has 7 byte-identical copies on disk (canonical + .claude dogfood + 5 profile trees)"
 changelog:
+  - 2026-06-05: work-002-auto-installer — added Module class 6 (Installer / CLI): the `aid` CLI dispatcher (bin/aid + bin/aid.ps1 + bin/aid.cmd), the shared install-core libs (lib/aid-install-core.sh + lib/AidInstallCore.psm1), the curl/irm bootstrap (install.sh + install.ps1), and the npm/PyPI shim packages (packages/npm + packages/pypi). Fixed the §4g test-coverage table: the removed test-setup.sh/test-setup-ps1.sh rows replaced with the installer/CLI suites.
   - 2026-06-04: work-001-agents-review (task-013) — roster reduced 22→9 agents with aid-* prefix (feature-002); §2 per-tier rosters replaced with new 4/4/1 tier split; boilerplate-presence claim updated to shared-include via canonical/templates/agent-boilerplate.md; all old bare agent names removed.
   - 2026-06-03: housekeep run-state relocation (PR #51) — corrected housekeep-state.sh (run-state now in the project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`, not a work-area STATE.md) and cleanup-classify.sh (every work folder offered, user-confirmed; signals informational; only the current-branch folder hard-skipped).
   - 2026-06-03: aid/housekeep-2026-06-03 (PR #49) — added the optional aid-housekeep skill (11→12 total skills; 11 user-facing canonical + aid-generate maintainer-only) and the canonical/scripts/housekeep/ category (5→6 script categories): housekeep-state.sh, branch-commit.sh, cleanup-classify.sh.
@@ -34,13 +35,14 @@ changelog:
 
 ## Module classes
 
-The repo contains five module classes, each with its own conventions:
+The repo contains six module classes, each with its own conventions:
 
 1. **Skills** — 11 user-facing + 1 maintainer-only — under `canonical/skills/aid-*/`
 2. **Agents** — 9 specialist agents — under `canonical/agents/<name>/`
 3. **Renderer (Python)** — 13 files under `.claude/skills/aid-generate/scripts/` (incl. the `run_generator.py` entrypoint)
 4. **Helper scripts (Bash + JS + PS1)** — under `canonical/scripts/{config,kb,execute,summarize,interview,housekeep}/` + `canonical/scripts/grade.sh`
 5. **Templates + Recipes** — content fixtures consumed by skills — under `canonical/templates/` + `canonical/recipes/`
+6. **Installer / CLI** — the persistent global `aid` CLI + its install-core libs + bootstrap + the npm/PyPI shim packages — under `bin/`, `lib/`, repo-root `install.sh`/`install.ps1`, and `packages/`
 
 The render pipeline (Module 3) emits Modules 1, 2, 4, 5 into 5 install trees
 (`profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/`) and the dogfood
@@ -249,9 +251,9 @@ any `rm`/`git rm`/`git commit`) call.
 |--------|---------|
 | `grade.sh` | Deterministic grading: reads issue list with severity tags ([CRITICAL]/[HIGH]/[MEDIUM]/[LOW]/[MINOR]), applies the universal AID rubric (worst severity dominates, count modifies), prints letter grade. Used by reviewers + delivery gates. `--non-functional` flag forces F. |
 
-**Test coverage:** currently 24 dedicated test suites under `tests/canonical/`, each invoked
+**Test coverage:** currently 35 dedicated test suites under `tests/canonical/`, each invoked
 manually or as a batch via `tests/run-all.sh` (recount with `ls tests/canonical/test-*.sh | wc -l`). Suites share helpers from
-`tests/lib/assert.sh`.
+`tests/lib/assert.sh`. The installer/CLI/release suites are covered in Module 6e; a subset of helper-script suites:
 
 | Test file | Covers |
 |-----------|------|
@@ -266,8 +268,9 @@ manually or as a batch via `tests/run-all.sh` (recount with `ls tests/canonical/
 | `tests/canonical/test-contrast-check.sh` | `contrast-check.mjs` WCAG AA contrast (Node) |
 | `tests/canonical/test-assemble-3part.sh` | `assemble-3part.sh` byte-concat |
 | `tests/canonical/test-assemble-3part-ps1.sh` | `assemble-3part.ps1` mirror (PowerShell) |
-| `tests/canonical/test-setup.sh` | `setup.sh` installer |
-| `tests/canonical/test-setup-ps1.sh` | `setup.ps1` pre-install logic (PowerShell) |
+| `tests/canonical/test-install.sh` / `test-install-ps1.sh` / `test-install-parity.sh` | `install.sh` / `install.ps1` bootstrap + cross-platform parity |
+| `tests/canonical/test-aid-cli.sh` / `test-aid-cli-ps1.sh` / `test-aid-cli-parity.sh` | `bin/aid` / `bin/aid.ps1` subcommand behavior + parity |
+| `tests/canonical/test-release.sh` / `test-release-install-e2e.sh` | `release.sh` packaging + end-to-end release→install |
 | `tests/canonical/test-discovery-doc-ownership.sh` | discovery agent doc-ownership consistency (scout vs quality) |
 | `tests/canonical/test-expectations-single-source.sh` | `document-expectations.md` single-source + reviewer-has-access invariants |
 
@@ -310,6 +313,46 @@ catalog and is not a recipe.
 Consumed by `canonical/scripts/interview/parse-recipe.sh` during `/aid-interview` TRIAGE → recipe-offer (description→recipe matching uses each recipe's `summary:` field).
 
 **Test coverage:** indirect — recipe behavior is exercised by `tests/canonical/test-parse-recipe.sh`. (`tests/skills/lite-subpaths.sh` was deleted in cycle-1 per Q6.)
+
+---
+
+## 6. Installer / CLI — `bin/` + `lib/` + `install.sh`/`install.ps1` + `packages/`
+
+The end-user delivery surface (added by work-002-auto-installer). A persistent global `aid` CLI is bootstrapped once per machine into `$AID_HOME` (default `~/.aid` / `%LOCALAPPDATA%\aid`), then run per project. The CLI dispatches into a shared install-core engine; four install channels all deliver the same CLI.
+
+### 6a. CLI dispatcher — `bin/`
+
+| Component | Purpose | Depends on |
+|-----------|---------|------------|
+| `bin/aid` | Bash dispatcher. Parses subcommands (`add`/`status`/`update`/`remove`/`version`, bare → dashboard) + shared flags (`--from-bundle`, `--version`, `--force`, `--target`, `--verbose`), then sources + dispatches into `lib/aid-install-core.sh` (`bin/aid` `_aid_usage`, `source "$_AID_CORE"`). | `lib/aid-install-core.sh` |
+| `bin/aid.ps1` | PowerShell dispatcher (Windows) — same subcommand surface. | `lib/AidInstallCore.psm1` |
+| `bin/aid.cmd` | cmd.exe shim so `aid` resolves in cmd.exe and pwsh; tries `pwsh` then `powershell`, calling `bin/aid.ps1`. | `bin/aid.ps1` |
+
+### 6b. Install-core libraries — `lib/`
+
+| Component | Purpose | Consumers |
+|-----------|---------|-----------|
+| `lib/aid-install-core.sh` | The Bash install engine: status/add/update/remove bodies, release-asset download + SHA-256 verification against `SHA256SUMS`, manifest-driven remove, FR11 protect-on-diff (`*.aid-new`), the `AID_INSTALL_CHANNEL` per-channel `update self` hint. | `bin/aid`, `install.sh` (sourced in piped mode) |
+| `lib/AidInstallCore.psm1` | The PowerShell parity module — same engine for Windows. | `bin/aid.ps1`, `install.ps1` |
+
+### 6c. Bootstrap — `install.sh` / `install.ps1`
+
+Repo-root curl/irm-piped bootstrap. In piped mode they fetch the `aid-cli-v<VERSION>.tar.gz` bundle from the matching GitHub Release, verify it against the release `SHA256SUMS`, extract into `$AID_HOME`, and wire PATH (`install.sh` `_source_install_core` + bundle-verify block; `AID_NO_PATH` skips PATH wiring). They also accept legacy project-install flags (`--from-bundle`, `--target`) as a fallback when `aid` is not yet on PATH.
+
+### 6d. Channel shims — `packages/npm` + `packages/pypi`
+
+Thin published wrappers that put the same `aid` CLI on PATH via a package manager. Each vendors the `bin/` + `lib/` payload and spawns `bin/aid` (Unix) or `bin/aid.ps1` (Windows), injecting `AID_INSTALL_CHANNEL`.
+
+| Module | Purpose | Manifest |
+|--------|---------|----------|
+| `packages/npm/bin/aid.js` | npm `aid-installer` shim — spawns the vendored CLI with `AID_INSTALL_CHANNEL=npm`; runs on Node built-ins only (zero deps). Payload vendored at pack time by `packages/npm/scripts/vendor.js` (`prepack`). | `packages/npm/package.json` (`engines.node >=18`) |
+| `packages/pypi/aid_installer/__main__.py` | PyPI `aid-installer` shim — spawns the vendored CLI with `AID_INSTALL_CHANNEL=pypi`. Payload vendored by `packages/pypi/scripts/vendor.py` (hatchling build hook). | `packages/pypi/pyproject.toml` (`requires-python >=3.8`, hatchling) |
+
+### 6e. Release packager — `release.sh`
+
+Maintainer-only. Verifies `profiles/` matches `canonical/` (reusing the render-drift gate), builds the five per-profile tarballs + the `aid-cli-v<VERSION>.tar.gz` CLI bundle + the two libs + `SHA256SUMS` under `.aid/.temp/release-<VERSION>/`, then `gh release create` (`release.sh` `build_tarball()`, `# Step 5: Build the CLI bundle tarball`). Driven in CI by `.github/workflows/release.yml` on a `v*` tag push.
+
+**Test coverage:** `tests/canonical/test-install.sh` + `test-install-ps1.sh` + `test-install-parity.sh` (bootstrap), `test-aid-cli.sh` + `test-aid-cli-ps1.sh` + `test-aid-cli-parity.sh` (CLI subcommands), `test-release.sh` + `test-release-install-e2e.sh` (release packaging + end-to-end), `test-npm-installer.sh` + `test-pypi-installer.sh` (channel shims), `test-version-sync.sh` (FR10), `test-ascii-only.sh` (ASCII guard for shipped scripts), `test-agents-md-invariant.sh` (FR12), and the native-Windows `tests/windows/Test-AidInstaller.ps1`. All run by `.github/workflows/installer-tests.yml`.
 
 ---
 
