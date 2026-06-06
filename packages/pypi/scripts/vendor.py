@@ -77,13 +77,29 @@ try:
         """Hatchling hook: vendor the 6 aid-cli files before the wheel is built."""
 
         def initialize(self, version: str, build_data: dict) -> None:  # type: ignore[override]
-            """Called by hatchling before wheel assembly."""
-            # Derive repo root from the hook's root (which is packages/pypi/).
+            """Called by hatchling before sdist/wheel assembly.
+
+            In the worktree (repo-root sources present) we (re)vendor from the repo root.
+            When building the wheel FROM an sdist (isolated temp dir, no repo-root sources)
+            we fall back to the _vendor payload bundled inside the sdist.
+            """
             hook_root = Path(self.root)
             repo_root = hook_root.parent.parent
             vendor_dir = hook_root / "aid_installer" / "_vendor"
-            if not vendor(repo_root=repo_root, vendor_dir=vendor_dir):
-                raise RuntimeError("vendor.py: failed to vendor aid-cli files; aborting build.")
+            sources_present = all((repo_root / src).exists() for src, _ in COPIES)
+            if sources_present:
+                if not vendor(repo_root=repo_root, vendor_dir=vendor_dir):
+                    raise RuntimeError("vendor.py: failed to vendor aid-cli files; aborting build.")
+            else:
+                # Building from an sdist: the payload must already be bundled.
+                missing = [dst for _, dst in COPIES if not (vendor_dir / dst).exists()]
+                if missing:
+                    raise RuntimeError(
+                        "vendor.py: aid-cli sources not found and the bundled _vendor payload is "
+                        "incomplete (missing: %s). The sdist must include aid_installer/_vendor/."
+                        % ", ".join(missing)
+                    )
+                # Payload already present (came in via the sdist) — nothing to do.
 
 except ImportError:
     # hatchling not present (e.g. running the script standalone without build deps).

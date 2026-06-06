@@ -29,5 +29,13 @@ artifacts = [
     "aid_installer/_vendor/**",
 ]
 
+[tool.hatch.build.targets.sdist]
+# Force-include the vendored CLI payload so the sdist is SELF-CONTAINED. `python -m build`
+# builds the wheel from the sdist in an isolated temp dir without the repo-root bin/lib/VERSION,
+# so the payload must travel inside the sdist (the build hook below then skips re-vendoring).
+artifacts = [
+    "aid_installer/_vendor/**",
+]
+
 [tool.hatch.build.hooks.custom]
 path = "scripts/vendor.py"
