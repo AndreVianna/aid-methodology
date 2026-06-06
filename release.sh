@@ -149,7 +149,10 @@ if ! "${PYTHON_CMD}" .claude/skills/aid-generate/scripts/run_generator.py; then
 fi
 
 echo "release.sh: checking for render drift (git diff -- profiles/) ..."
-if ! git diff --exit-code -- profiles/ >/dev/null 2>&1; then
+# Ignore exec-bit (file mode) changes: the repo is maintained with core.fileMode=false,
+# and a fresh CI checkout (fileMode defaults to true) sees the generator's chmod on .sh
+# files as spurious drift. -c core.fileMode=false catches real content drift only.
+if ! git -c core.fileMode=false diff --exit-code -- profiles/ >/dev/null 2>&1; then
     echo "ERROR: release.sh: profiles/ differs from HEAD after running .claude/skills/aid-generate/scripts/run_generator.py." >&2
     echo "profiles/ is out of sync with canonical/. Run 'python .claude/skills/aid-generate/scripts/run_generator.py' and commit the result." >&2
     exit 1
