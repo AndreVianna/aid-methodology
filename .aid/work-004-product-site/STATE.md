@@ -44,13 +44,13 @@ This is the single state file for **this work** — the full dev lifecycle from 
 |---|---------|-------------|------------|-----------|-------|
 | 1 | feature-001-site-foundation | Ready | A+ | 0 | FR1,FR2,FR13 · Must · spec'd (Astro+Starlight `site/`, casulo theme, Pagefind, astro-mermaid) |
 | 2 | feature-002-build-and-deploy | Ready | A+ | 0 | FR12 · Must · spec'd (docs.yml workflow, Pages+CNAME, release-data contract `getAidVersion`/`getLatestRelease`/`getAllReleases`) |
-| 3 | feature-003-home-and-get-started | Decomposed | — | 0 | FR3,FR4 (consumes FR15) · Must |
-| 4 | feature-004-installation-guide | Decomposed | — | 0 | FR5 (consumes FR15) · Must |
+| 3 | feature-003-home-and-get-started | Ready | A+ | 0 | FR3,FR4 · Must · spec'd (splash home, get-started autogenerate, InstallCommand/VersionBadge) |
+| 4 | feature-004-installation-guide | Ready | A+ | 0 | FR5 · Must · spec'd (installation.mdx, per-OS+per-tool tabs, 5 channels incl. irm) |
 | 5 | feature-005-content-migration | Ready | A+ | 0 | FR11 · Must · spec'd (sync-docs.mjs, committed-generated + CI drift-check, docs/ single source) |
-| 6 | feature-006-concepts-and-reference | Decomposed | — | 0 | FR8,FR9 · Should |
+| 6 | feature-006-concepts-and-reference | Ready | A+ | 0 | FR8,FR9 · Should · spec'd (concepts arrange + reference autogenerate; gen-reference.mjs for skills/agents/KB/settings) |
 | 7 | feature-007-pipeline-and-maintainer-guides | Decomposed | — | 0 | FR6,FR7 · Could |
 | 8 | feature-008-version-injection | Ready | A+ | 0 | FR15 · Must · spec'd (imports getAidVersion; `<InstallCommand>`/`<VersionBadge>`) |
-| 9 | feature-009-releases-and-banner | Decomposed | — | 0 | FR10,FR16 · Should/Could |
+| 9 | feature-009-releases-and-banner | Ready | A+ | 0 | FR10,FR16 · Should/Could · spec'd (changelog.astro from getAllReleases, Banner override, sanitized notes) |
 | 10 | feature-010-feedback-and-issues | Decomposed | — | 0 | FR14 · Should |
 
 ## Plan / Deliveries

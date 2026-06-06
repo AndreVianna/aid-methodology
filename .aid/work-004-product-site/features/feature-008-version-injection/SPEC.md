@@ -38,7 +38,7 @@ Must
 
 ## Acceptance Criteria
 
-- [ ] Given a build, when the version badge and the install one-liners (curl/irm, npm, PyPI, offline) render, then each shows the latest released version, matching the `VERSION` file / latest GitHub Release. (AC13)
+- [ ] Given a build, when the version badge and all five install one-liners (curl bash bootstrap, irm Windows PowerShell bootstrap, npm, PyPI, offline) render, then each shows the latest released version, matching the `VERSION` file / latest GitHub Release. (AC13)
 - [ ] Given features 003 and 004, when they render version-bearing commands, then they consume the value injected by this feature rather than hard-coding a version. (AC13)
 - [ ] Given a published GitHub Release, when the docs rebuild on the `release: published` event, then the badge and all install commands update with no manual steps and no change to `release.yml`. (AC15 — version/install portion)
 - [ ] Given the binding, when the version is read, then it is read at build time with no runtime backend call. (§4, §7)
@@ -53,7 +53,7 @@ This feature provides the **single build-time version binding** for the whole si
 one typed data module and a small set of components; every version number and every install
 one-liner rendered anywhere on the site derives from this binding, so there is exactly one
 place that answers "what is the current AID version." Features 003 (home install one-liner)
-and 004 (install guide, all four channels) are **pure consumers** — they import the components
+and 004 (install guide, all five channels) are **pure consumers** — they import the components
 defined here and never hard-code a version string.
 
 The binding is **build-time only** (no runtime backend, honoring §4/§7 and AC's "read at build
@@ -113,7 +113,7 @@ export const VERSION: string = getAidVersion();
 /** Tag form, e.g. "v1.0.0" — used in release-asset URLs. */
 export const VERSION_TAG: string = `v${VERSION}`;
 
-export type InstallChannel = 'curl' | 'npm' | 'pypi' | 'offline';
+export type InstallChannel = 'curl' | 'irm' | 'npm' | 'pypi' | 'offline';
 
 /**
  * Version-pinned, copy-pasteable install commands, one per channel.
@@ -123,6 +123,11 @@ export type InstallChannel = 'curl' | 'npm' | 'pypi' | 'offline';
 export const installCommands: Record<InstallChannel, string> = {
   curl:
     `curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- --version ${VERSION}`,
+  // Windows PowerShell bootstrap. irm … | iex cannot forward args, so the pinned
+  // version is supplied via $env:AID_VERSION (docs/install.md "Pinned-version
+  // bootstrap", lines 202-204). Two PowerShell statements, one per line.
+  irm:
+    `$env:AID_VERSION = '${VERSION}'\nirm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex`,
   npm:
     `npm i -g aid-installer@${VERSION}`,
   pypi:
@@ -133,7 +138,8 @@ export const installCommands: Record<InstallChannel, string> = {
 
 /** Human label per channel, for tab/heading reuse by 004. */
 export const channelLabels: Record<InstallChannel, string> = {
-  curl: 'curl / irm (bootstrap)',
+  curl: 'curl (Linux / macOS)',
+  irm: 'irm (Windows PowerShell)',
   npm: 'npm',
   pypi: 'PyPI (pipx)',
   offline: 'Offline bundle',
@@ -162,13 +168,26 @@ import { installCommands, type InstallChannel } from '../data/version';
 
 interface Props {
   /** Which install channel's command to render. */
-  channel: InstallChannel;        // 'curl' | 'npm' | 'pypi' | 'offline'
+  channel: InstallChannel;        // 'curl' | 'irm' | 'npm' | 'pypi' | 'offline'
   /** Override the syntax-highlight language (default per channel). */
   lang?: string;
 }
+
+/**
+ * Per-channel syntax-highlight language. irm is a PowerShell bootstrap and must
+ * highlight as `powershell`; all others are shell one-liners (`bash`).
+ */
+const channelLang: Record<InstallChannel, string> = {
+  curl: 'bash',
+  irm: 'powershell',
+  npm: 'bash',
+  pypi: 'bash',
+  offline: 'bash',
+};
+
 const { channel, lang } = Astro.props;
 const code = installCommands[channel];
-const language = lang ?? 'bash';
+const language = lang ?? channelLang[channel];
 ---
 <Code code={code} lang={language} />
 ```
@@ -178,14 +197,17 @@ Usage (this is the **consumer contract for 003 and 004**):
 ```mdx
 import InstallCommand from '../../components/InstallCommand.astro';
 
-<InstallCommand channel="curl" />     {/* feature-003 home one-liner */}
+<InstallCommand channel="curl" />     {/* feature-003 home one-liner + 004 Linux/macOS tab */}
+<InstallCommand channel="irm" />      {/* feature-004 Windows PowerShell tab (powershell) */}
 <InstallCommand channel="npm" />      {/* feature-004 npm channel  */}
 <InstallCommand channel="pypi" />     {/* feature-004 PyPI channel */}
 <InstallCommand channel="offline" />  {/* feature-004 offline channel */}
 ```
 
 - 003 renders **one** `<InstallCommand channel="curl" />` for the home hero one-liner.
-- 004 renders **all four** channels (its per-channel tabbed blocks wrap these components).
+- 004 renders **all five** channels (its per-channel tabbed blocks wrap these components),
+  including `<InstallCommand channel="irm" />` for its **Windows PowerShell bootstrap tab**
+  (rendered with `powershell` highlighting; the bash `curl` form fills the Linux/macOS tab).
 - The version interpolation happens entirely inside `version.ts`; consumers pass only `channel`.
 
 **`VersionBadge.astro`** — the version badge for the header/hero (AC13).
@@ -257,7 +279,7 @@ Plus a small `.version-badge` rule appended to feature-001's `site/src/styles/ca
 |---------|-------|--------------|
 | `release: published` trigger, `AID_VERSION` env / data-fetch, `getAidVersion()` accessor, `release.yml` (unchanged) | feature-002 | imports `getAidVersion()`; consumes the `AID_VERSION` resolution it provides; needs no workflow change |
 | Home hero install one-liner (FR3) | feature-003 | provides `<InstallCommand channel="curl" />` + `<VersionBadge>` for it to embed |
-| Install guide, all four channels + per-tool tabs (FR5) | feature-004 | provides `<InstallCommand>` for all four channels; 004 owns the surrounding tabs/copy |
+| Install guide, all five channels + per-tool tabs (FR5) | feature-004 | provides `<InstallCommand>` for all five channels; 004 consumes `channel="irm"` for its Windows PowerShell bootstrap tab and `channel="curl"` for Linux/macOS; 004 owns the surrounding tabs/copy |
 | Releases page from GitHub Releases API, per-release assets (FR10) | feature-009 | not in scope (D7); badge may link to the Releases page |
 | Announcement banner (FR16) | feature-009 | not in scope |
 | Theme tokens, nav, build config | feature-001 / feature-002 | reuses existing tokens; adds no config |
@@ -266,7 +288,7 @@ Plus a small `.version-badge` rule appended to feature-001's `site/src/styles/ca
 
 | AC | How this feature satisfies it |
 |----|-------------------------------|
-| AC13 — badge + all four one-liners show latest, matching `VERSION`/latest release | `version.ts` sets `VERSION = getAidVersion()` (feature-002's accessor) once at build; `<VersionBadge>` + `<InstallCommand channel="curl\|npm\|pypi\|offline" />` interpolate it. Verify at build: once `site/` is built, `<VersionBadge>` and all four `<InstallCommand>` channels render the resolved `VERSION` (currently `1.0.0` per the `VERSION` file). |
+| AC13 — badge + all five one-liners show latest, matching `VERSION`/latest release | `version.ts` sets `VERSION = getAidVersion()` (feature-002's accessor) once at build; `<VersionBadge>` + `<InstallCommand channel="curl\|irm\|npm\|pypi\|offline" />` interpolate it. All **five** FR15/AC13 forms are version-injected: the `curl` bash bootstrap, the **`irm` Windows PowerShell bootstrap** (`$env:AID_VERSION = '${VERSION}'` then `irm … install.ps1 \| iex`, per docs/install.md lines 202-204; rendered with `powershell` highlighting), `npm`, `pypi`, and the `offline` tarball. Verify at build: once `site/` is built, `<VersionBadge>` and all five `<InstallCommand>` channels render the resolved `VERSION` (currently `1.0.0` per the `VERSION` file). |
 | AC13 — 003/004 consume the injected value, not hard-coded | 003/004 import the components and pass only `channel`; no version literal in their files (consumer contract above). |
 | AC15 (version/install portion) — rebuild on `release: published` updates badge + commands, no manual steps, no `release.yml` change | Refresh flow above; this feature adds no workflow steps and edits no release file. |
 | §4/§7 — read at build time, no runtime backend | D2/D3: `getAidVersion()` (feature-002) resolves env-or-`VERSION`-file at import time during `astro build`; the value is inlined into static HTML; nothing shipped to the browser; no client fetch. |

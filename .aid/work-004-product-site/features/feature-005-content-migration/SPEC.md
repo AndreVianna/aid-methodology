@@ -15,19 +15,21 @@
 ## Description
 
 Establish the repeatable, low-drift migration of the repo's existing Markdown into Starlight
-content. The existing `docs/*.md` files — `aid-methodology.md`, `install.md`,
-`repository-structure.md`, `faq.md`, `glossary.md` — are brought into Starlight's content
+content. Four existing `docs/*.md` files — `aid-methodology.md`, `faq.md`,
+`repository-structure.md`, `glossary.md` — are brought into Starlight's content
 directory with the required YAML frontmatter added, kept as the single source where feasible to
 minimize duplication and drift, with internal relative links and anchors fixed for the new IA and
-Mermaid diagrams rendering correctly. This feature owns the migration mechanism and the faithful
-transfer of the source files; the content-bearing features (Get Started, Installation, Concepts,
-Reference) consume the migrated pages and arrange them into the site map. Isolating the
-migration/transform step lets it be built and validated (no content loss, links resolve, diagrams
-render) independently of page-layout decisions.
+Mermaid diagrams rendering correctly. `docs/install.md` is deliberately **excluded**: it is a
+SOURCE consumed by features 004/006/008 as hand-authored pages (`guides/installation.mdx`,
+`reference/cli.mdx`, install-command version injection), not migrated by this feature. This
+feature owns the migration mechanism and the faithful transfer of the four source files; the
+content-bearing features (Concepts, Reference) consume the migrated pages and arrange them into
+the site map. Isolating the migration/transform step lets it be built and validated (no content
+loss, links resolve, diagrams render) independently of page-layout decisions.
 
 ## User Stories
 
-- As a returning user, I want the existing docs (methodology, install, repo structure, FAQ,
+- As a returning user, I want the existing docs (methodology, repo structure, FAQ,
   glossary) to appear on the site with no content loss so that nothing I relied on disappears.
 - As a returning user, I want internal links to resolve under the new structure so that I never
   hit a broken cross-reference.
@@ -42,8 +44,9 @@ Must
 
 ## Acceptance Criteria
 
-- [ ] Given the existing `docs/*.md` (methodology, install, repository-structure, faq, glossary),
-  when migrated, then each appears in Starlight content with no content loss (AC5).
+- [ ] Given the four migrated `docs/*.md` (methodology, repository-structure, faq, glossary; NOT
+  `install.md`, which is a source consumed by features 004/006/008), when migrated, then each
+  appears in Starlight content with no content loss (AC5).
 - [ ] Given migrated pages, when built, then required YAML frontmatter (incl. `title`) is present
   and the pages live in Starlight's content directory (§8).
 - [ ] Given migrated pages containing Mermaid, when built, then the diagrams render correctly
@@ -60,21 +63,30 @@ Must
 ### Overview & Approach
 
 This feature owns the **migration transform**: the repeatable, low-drift mechanism that turns
-the repo's existing `docs/*.md` into Starlight-consumable content under
-`site/src/content/docs/`. It does **not** own the page information architecture — the
-content-bearing siblings (feature-003 Get Started, feature-004 Installation, feature-006
-Concepts & Reference) decide which migrated page lands in which section
-and how it is grouped in the sidebar. This feature
+a defined subset of the repo's existing `docs/*.md` into Starlight-consumable content under
+`site/src/content/docs/`. It migrates exactly **four** source docs —
+`docs/aid-methodology.md`, `docs/faq.md`, `docs/repository-structure.md`, and
+`docs/glossary.md`. It does **not** own the page information architecture — the
+content-bearing siblings (feature-006 Concepts & Reference) decide which migrated page lands in
+which section and how it is grouped in the sidebar. This feature
 guarantees five things about the transform: (AC5) no content loss, required YAML frontmatter
 present, Mermaid diagrams survive and render, internal links/anchors resolve under the new
 routes, and the whole step is **scriptable and repeatable** so `docs/` stays the single source.
+
+**`docs/install.md` is explicitly NOT migrated by this feature.** It is a **SOURCE** consumed by
+feature-004 (which OWNS the hand-authored `guides/installation.mdx` with tabbed/version-injected
+UX), feature-006 (CLI reference, hand-authored `reference/cli.mdx`), and feature-008 (install
+commands / FR15 version injection). Auto-migrating it to `guides/installation.md` would collide at
+the `guides/installation` slug with feature-004's `.mdx` page and lose the tabbed/version-injected
+UX — so it is left out of the manifest entirely.
 
 It builds on the feature-001 anchor and does not contradict it: the `docs` content collection,
 the `config.ts` schema (`docsSchema()` extended with `sourceDoc?: string` and
 `reportIssue: boolean = true`), the five sections (`get-started/`, `guides/`, `concepts/`,
 `reference/`, `releases/`), and `astro-mermaid` for client-side Mermaid rendering are all
 inherited as-is. This feature supplies the **populated** versions of the placeholder pages that
-feature-001 stubbed (e.g. `concepts/methodology.md`, `reference/repository-structure.md`).
+feature-001 stubbed for the four migrated docs (e.g. `concepts/methodology.md`,
+`reference/repository-structure.md`).
 
 ### Architectural Decisions
 
@@ -83,7 +95,7 @@ feature-001 stubbed (e.g. `concepts/methodology.md`, `reference/repository-struc
 | **D1 — Single source: keep `docs/*.md`, sync at build** | `docs/*.md` remains the canonical source of truth. A build-time sync script (`site/scripts/sync-docs.mjs`) copies + transforms each source doc into `site/src/content/docs/<section>/<page>.md`, injecting frontmatter and rewriting links. Run as an npm `prebuild` (and explicitly in CI before `astro build`). | Directly satisfies the NFR "reuse a single source from `docs/` where feasible; minimize duplication and drift." A one-time move would fork every file into two editable copies and immediately start drifting (the exact failure REQUIREMENTS §7 / §10 calls out). Build-time sync means a maintainer edits `docs/` only and the site re-derives — no second copy to keep in step. Matches the §8 assumption ("a one-time, scriptable migration") in *spirit* but upgrades it to *every build* for durability. |
 | **D2 — Generated pages are committed; a CI drift-check guards them** | The synced page tree produced from `docs/` is **committed** to the repo (not git-ignored), and CI re-runs the sync and asserts no diff (see *Single-Source / Sync Mechanism* and *Sync drift-check* below). This matches this repo's existing **render-drift** convention (canonical → profiles is committed and drift-checked): `docs/` is source, the synced pages under `site/src/content/docs/` are committed derived output, and CI runs `sync-docs` then `git diff --exit-code` to assert no drift. **Ownership boundary:** feature-001 ships *stub* placeholder pages at these same paths (so nav works pre-migration); feature-005's committed sync output is **authoritative** and supersedes the stub at each managed path. Pages carry `sourceDoc` frontmatter (and are listed in the manifest) as the "derived — do not hand-edit" marker. | A committed tree gives at-a-glance diffing and a clean checkout that builds without a pre-step, while the CI drift-check removes the only real downside (silent drift): any `docs/` edit not re-synced fails CI. Because the pages are committed, there is **no path collision** with feature-001's committed placeholders — the sync output simply overwrites the stub content at the shared path, and the manifest records exactly which paths feature-005 owns. |
 | **D3 — `.md` not `.mdx` for migrated pages** | Migrated pages keep the `.md` extension. | The only risk to `.md` would be bare angle-bracket tokens **outside** code fences (MDX/JSX would mis-parse them); inspection confirms every such token (`<tool>`, `<command>`, `<version>`, `<hex>`, `<id>`) lives **inside** code fences, so `.md` is safe. Using `.md` (CommonMark) avoids MDX's stricter JSX parsing, which would choke on any stray `{}`/`<>` and is unnecessary here since no Astro components are embedded in body content. (Pages that need MDX components — tabbed installs in feature-004 — are authored separately as `.mdx`, not produced by this transform.) |
-| **D4 — Keep large source docs as single pages; do not auto-split** | `aid-methodology.md` (1430 lines, 10 numbered H2 sections) migrates to **one** `concepts/methodology.md` page; `install.md` (827 lines) migrates to **one** `guides/installation.md` page. The transform does not split by heading. | Splitting requires editorial IA decisions that belong to the consuming features (003/004/006), not the transform. A single faithful page guarantees AC5 "no content loss" and preserves the docs' own in-page ToC anchors (`#1-the-pipeline`, …) which stay valid only while the doc is one page. If a consumer later wants `install.md` content surfaced as a Get-Started chooser and a CLI reference, it **links to anchors within** the migrated page or authors net-new pages — it does not re-run a different split here. |
+| **D4 — Keep large source docs as single pages; do not auto-split** | `aid-methodology.md` (1430 lines, 10 numbered H2 sections) migrates to **one** `concepts/methodology.md` page. The transform does not split by heading. | Splitting requires editorial IA decisions that belong to the consuming feature (006), not the transform. A single faithful page guarantees AC5 "no content loss" and preserves the doc's own in-page ToC anchors (`#1-the-pipeline`, …) which stay valid only while the doc is one page. |
 | **D5 — Heading-fence awareness in the transform** | The sync script must treat `#`-prefixed lines **inside fenced code blocks** as literal text, never as document headings. | `aid-methodology.md` embeds template snippets in ```` ```markdown ```` fences that contain lines like `# Requirements`, `# Knowledge Base — {Project Name}`, `# task-NNN`. A naive line-based H1 detector would mis-read these as real headings (and, e.g., a naive multi-page splitter would shatter the page). The transform parses fence state; the only real H1 is line 1. |
 | **D6 — Images relocated to `src/assets/`, references rewritten** | `docs/images/3-ironman.png` is copied to `site/src/assets/3-ironman.png` and the Markdown image reference is rewritten to a **relative** path from the content page (e.g. `../../assets/3-ironman.png` from `concepts/methodology.md`). | Starlight optimizes images in `.md` pages via Astro's content image pipeline only when referenced by a **relative** path — relative refs are resolved and optimized at build, whereas a root-relative `/…` (public/) path ships the file unoptimized. `.md` cannot use ESM `import`, but it does not need to: the relative reference is sufficient. One image today, but the rule is general. |
 
@@ -149,12 +161,20 @@ column records who arranges the page in the IA (this feature only produces it).
 | Source file | Lines | Dest path (`site/src/content/docs/`) | Section | Injected frontmatter (`title` / `description` / `sourceDoc`) | Consuming feature | Notes |
 |-------------|-------|--------------------------------------|---------|--------------------------------------------------------------|-------------------|-------|
 | `docs/aid-methodology.md` | 1430 | `concepts/methodology.md` | concepts | `title: "The AID Methodology"` · desc: "How AID works — pipeline, philosophy, Knowledge Base, phases, agents, feedback loops." · `sourceDoc: "docs/aid-methodology.md"` | feature-006 (Concepts & Reference) | Single page (D4). 7 Mermaid blocks (AC5). In-page ToC anchors preserved. Contains 1 image (D6). |
-| `docs/install.md` | 827 | `guides/installation.md` | guides | `title: "Installation"` · desc: "Install, update, and remove AID across curl/irm, npm, PyPI, and offline bundle channels." · `sourceDoc: "docs/install.md"` | feature-004 (Guides/Install) + feature-003 (Get Started chooser) | Single page (D4). Consumers link to its anchors (`#npm-channel`, `#pypi-channel`, `#reference`, …) rather than re-splitting. FR15 version injection is a **separate** build step (feature-008) layered after sync — out of scope here. |
+| `docs/faq.md` | 153 | `concepts/faq.md` | concepts | `title: "FAQ"` · desc: "Frequently asked questions about adopting and running AID." · `sourceDoc: "docs/faq.md"` | feature-006 (Concepts & Reference) | Has cross-doc links into methodology (rewritten). |
 | `docs/repository-structure.md` | 122 | `reference/repository-structure.md` | reference | `title: "Repository Structure"` · desc: "How the AID repository is laid out and where things live." · `sourceDoc: "docs/repository-structure.md"` | feature-006 (Concepts & Reference) | Contains 1 cross-repo link to `../CONTRIBUTING.md` (see link rules). |
-| `docs/faq.md` | 153 | `concepts/faq.md` | concepts | `title: "FAQ"` · desc: "Frequently asked questions about adopting and running AID." · `sourceDoc: "docs/faq.md"` | feature-006 (Concepts & Reference) | Has cross-doc links into methodology and install (rewritten). |
 | `docs/glossary.md` | 148 | `reference/glossary.md` | reference | `title: "Glossary"` · desc: "Definitions of AID concepts, phases, artifacts, and install terms." · `sourceDoc: "docs/glossary.md"` | feature-006 (Concepts & Reference) | No internal links/anchors/images. Lowest-risk migration. |
 
-`docs/release.md` is intentionally **not** in this feature's manifest: it feeds FR7 (Maintainer
+`docs/install.md` is intentionally **not** in this feature's manifest. It is a **SOURCE consumed
+by features 004/006/008 as hand-authored pages, not migrated by this feature.** feature-004 OWNS
+the hand-authored `guides/installation.mdx` (tabbed, version-injected install UX), feature-006 OWNS
+the hand-authored `reference/cli.mdx` (CLI reference), and feature-008 owns FR15 version injection
+into the install commands. Auto-migrating `install.md` to `guides/installation.md` would collide at
+the `guides/installation` slug with feature-004's `.mdx` page and lose the tabbed/version-injected
+UX. The four migrated pages above are this feature's complete output; nothing in `guides/` is
+produced by the sync.
+
+`docs/release.md` is also intentionally **not** in this feature's manifest: it feeds FR7 (Maintainer
 guides, a Could-priority sibling) and is migrated by that feature using the same `sync-docs`
 mechanism (the script is the reusable asset; the manifest is extended there).
 
@@ -165,10 +185,10 @@ from the **manifest** (source path → dest slug), so they stay correct if a des
 
 | Link pattern (in source) | Example | Rewrite rule | Result |
 |--------------------------|---------|--------------|--------|
-| **Cross-doc, file only** | `](install.md)` | Look up source in manifest → emit the dest **route** (slug, no extension, leading `/`). | `](/guides/installation)` |
+| **Cross-doc, file only** | `](glossary.md)` | Look up source in manifest → emit the dest **route** (slug, no extension, leading `/`). | `](/reference/glossary)` |
 | **Cross-doc, file + anchor** | `](aid-methodology.md#9-comparison-with-sdd)` | Resolve file to its route; **preserve the anchor** (Starlight slugifies headings the same GitHub way, so `#9-comparison-with-sdd` stays valid on the single migrated page). | `](/concepts/methodology#9-comparison-with-sdd)` |
-| **Same-doc anchor** | `](#step-1--bootstrap-the-aid-cli-once-per-machine)` | Leave unchanged — same-page anchors resolve as-is once the doc is one Starlight page. | unchanged |
-| **Cross-doc, target not in scope** | `](../CONTRIBUTING.md)` | Not a migrated page (lives in repo root, not a site page). Rewrite to the **absolute GitHub blob URL** (`https://github.com/AndreVianna/aid-methodology/blob/master/CONTRIBUTING.md` — the repo default branch is `master`; a commit-pinned permalink is also acceptable); flag in build log as an external rewrite for review. | GitHub URL |
+| **Same-doc anchor** | `](#9-comparison-with-sdd)` | Leave unchanged — same-page anchors resolve as-is once the doc is one Starlight page. | unchanged |
+| **Cross-doc, target not in scope** | `](install.md)`, `](../CONTRIBUTING.md)` | Not a migrated page (`install.md` is owned hand-authored by feature-004; `CONTRIBUTING.md` lives in repo root). Rewrite to the **absolute GitHub blob URL** (e.g. `https://github.com/AndreVianna/aid-methodology/blob/master/docs/install.md` — the repo default branch is `master`; a commit-pinned permalink is also acceptable); flag in build log as an external rewrite for review. (Once feature-004 ships `guides/installation.mdx`, a consuming feature may instead re-point such links to `/guides/installation`, but that is not this feature's transform.) | GitHub URL |
 | **Image** | `![…](images/3-ironman.png)` | Copy file to `site/src/assets/3-ironman.png`; rewrite the reference to a **relative** path from the content page so Astro's content image pipeline optimizes it (e.g. `../../assets/3-ironman.png` from `concepts/methodology.md`). `.md` cannot use ESM `import` but a relative ref needs none. Alt text preserved verbatim. | optimized image, same alt |
 | **External `http(s)`** | any absolute URL | Leave unchanged. | unchanged |
 
@@ -187,8 +207,8 @@ agree. External links are not failed (only reported) to avoid flaky network gati
 
 ### Mermaid Handling (AC5)
 
-`docs/aid-methodology.md` contains **7** fenced ```` ```mermaid ```` blocks; the other four
-source docs contain none. The transform copies these fences **verbatim** — it must not reflow,
+`docs/aid-methodology.md` contains **7** fenced ```` ```mermaid ```` blocks; the other three
+migrated source docs contain none. The transform copies these fences **verbatim** — it must not reflow,
 re-indent, or HTML-escape fenced content. Because feature-001 added `astro-mermaid` (its own D6,
 not this spec's image D6) as an integration that transforms ```` ```mermaid ```` fences at build into client-side-rendered
 diagrams, the migrated `concepts/methodology.md` renders all 7 diagrams with **no extra work in
@@ -212,28 +232,28 @@ site/
         ├── concepts/
         │   ├── methodology.md         # committed; generated from docs/aid-methodology.md
         │   └── faq.md                 # committed; generated from docs/faq.md
-        ├── guides/
-        │   └── installation.md        # committed; generated from docs/install.md
         └── reference/
             ├── repository-structure.md# committed; generated from docs/repository-structure.md
             └── glossary.md            # committed; generated from docs/glossary.md
 ```
 
-(All five generated pages, the copied image, and `.synced-manifest.json` are **committed** derived
-output per D2; CI re-runs the sync and `git diff --exit-code` to assert no drift. The
-hand-authored artifacts of this feature are `sync-docs.mjs`, the `package.json` edit, and the
-manifest data embedded in the script. The manifest sits in `site/scripts/` — outside
-`site/src/content/docs/` — so docsLoader's glob never treats it as a content page. No
-`site/.gitignore` rule is added for generated pages.)
+(`guides/installation.mdx` is **not** produced here — it is hand-authored and owned by feature-004;
+this feature writes nothing under `guides/`.) All four generated pages, the copied image, and
+`.synced-manifest.json` are **committed** derived output per D2; CI re-runs the sync and
+`git diff --exit-code` to assert no drift. The hand-authored artifacts of this feature are
+`sync-docs.mjs`, the `package.json` edit, and the manifest data embedded in the script. The
+manifest sits in `site/scripts/` — outside `site/src/content/docs/` — so docsLoader's glob never
+treats it as a content page. No `site/.gitignore` rule is added for generated pages.)
 
 ### Feature Boundaries
 
 | Concern | Owner | This feature does |
 |---------|-------|-------------------|
 | Content collection, schema (`sourceDoc`, `reportIssue`), sections, `astro-mermaid` | feature-001 | Inherits, does not modify |
-| Page IA / sidebar grouping / which content shows where | features 003/004/006 | Produces the migrated pages they arrange |
+| Page IA / sidebar grouping / which content shows where | feature-006 | Produces the four migrated pages it arranges |
+| `docs/install.md` content → site pages | features 004/006/008 | **Not migrated here**; `install.md` is a SOURCE they consume as hand-authored pages (`guides/installation.mdx`, `reference/cli.mdx`, install-command injection) |
 | CI workflow (runs `sync:docs` + link check) | feature-002 | Specifies the rules the CI must enforce |
-| FR15 version injection into install commands | feature-008 | Out of scope; layered after sync |
+| FR15 version injection into install commands | feature-008 | Out of scope; install content not migrated here |
 | `docs/release.md` → Maintainer guide | feature (FR7) | Reuses `sync-docs.mjs`, extends the manifest |
 | Net-new content (tutorials, skills/agents/KB reference) | features 003/006 | Not a migration; out of scope |
 
@@ -249,12 +269,18 @@ manifest data embedded in the script. The manifest sits in `site/scripts/` — o
 
 ### Assumptions & Open Questions
 
-- **A1 (single-page over split):** `aid-methodology.md` and `install.md` migrate as single pages
-  (D4). This is the safe default for "no content loss" and preserves their ToC anchors, but if
-  the consuming features (003/004/006) decide the methodology should be split per-H2 across
-  several Concepts pages, that split is **their** transform/IA decision — anchors into those
-  sections would then need re-pointing. Spot-check: confirm reviewers accept single-page
-  methodology/install for MVP.
+- **A1 (single-page over split):** `aid-methodology.md` migrates as a single page (D4). This is
+  the safe default for "no content loss" and preserves its ToC anchors, but if the consuming
+  feature (006) decides the methodology should be split per-H2 across several Concepts pages, that
+  split is **their** transform/IA decision — anchors into those sections would then need
+  re-pointing. Spot-check: confirm reviewers accept single-page methodology for MVP.
+- **A1b (`install.md` not migrated):** `docs/install.md` is deliberately excluded from this
+  feature's manifest. It is a SOURCE consumed by feature-004 (hand-authored
+  `guides/installation.mdx` with tabbed/version-injected UX), feature-006 (hand-authored
+  `reference/cli.mdx`), and feature-008 (FR15 install-command version injection). Migrating it to
+  `guides/installation.md` would collide with feature-004's `.mdx` page at the `guides/installation`
+  slug and lose the tabbed/version-injected UX. Spot-check: confirm reviewers agree install content
+  is owned by 004/006/008, not migrated here.
 - **A2 (anchor-slug parity):** assumes Starlight's heading-slug algorithm matches the source
   docs' hand-written ToC anchors (GitHub-style). True for the patterns observed
   (`#9-comparison-with-sdd`, `#npm-channel`); the CI anchor check is the backstop if any edge

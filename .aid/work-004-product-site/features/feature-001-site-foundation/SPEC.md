@@ -47,6 +47,12 @@ Must
 
 - [ ] Given the project repo, when the site is built and served, then it renders the three-pane
   layout with top nav, grouped collapsible left sidebar, on-this-page TOC, and breadcrumbs (AC3).
+- [ ] Given the reconciled sidebar contract, when the foundation is built standalone (no sibling
+  features), then every sidebar entry resolves to a shipped stub page with no broken nav/links:
+  the `autogenerate` dirs `get-started/`, `concepts/`, `reference/` each contain at least one
+  stub page; the explicit Guides slugs `guides/installation`, `guides/pipeline`,
+  `guides/maintainer` exist; and the Releases `link: '/releases/changelog'` is served by a stub
+  `src/pages/releases/changelog.astro` route (AC3).
 - [ ] Given any page, when it is viewed, then the header/footer expose persistent links to
   GitHub and casuloailabs.com (AC3).
 - [ ] Given the rendered site, when inspected against the brand reference, then it uses the
@@ -71,9 +77,9 @@ Must
 This feature stands up the **Astro + Starlight** documentation project that every other
 feature in `work-004-product-site` extends. It is the project skeleton: the Node/Astro
 toolchain, the Starlight configuration, the casulo theme layer, the navigation contract
-(top-nav tabs + grouped sidebar), build-time search (Pagefind) and Mermaid rendering, and a
-concrete `site/` directory tree with **placeholder pages** for the five top sections plus the
-home page. No real content, deploy workflow, version injection, or releases binding is built
+(top-nav tabs + grouped sidebar — see the reconciled sidebar contract under *Navigation
+Structure* / D8), build-time search (Pagefind) and Mermaid rendering, and a concrete `site/`
+directory tree with **placeholder/stub pages** behind every sidebar entry plus the home page. No real content, deploy workflow, version injection, or releases binding is built
 here — those are owned by sibling features (see *Feature Boundaries* below) and only stubbed.
 
 The project is **self-contained under `site/`** at the repo root, a sibling to `docs/`,
@@ -94,7 +100,7 @@ shipped installer/CLI scripts) does **not** apply to `site/` content (REQUIREMEN
 | D5 | Pagefind (Starlight built-in) for search | NFR/AC8: offline, client-side, no SaaS; zero extra integration. |
 | D6 | Mermaid rendered via the `astro-mermaid` integration (client-side runtime rendering, no Playwright/build-time browser) | Baseline: a concrete, maintained plugin avoiding a headless browser. `astro-mermaid` emits `<pre class="mermaid">` at build and ships Mermaid's JS, which renders the SVG **client-side in the browser at runtime** — so no Playwright/build-time browser is needed (unlike `rehype-mermaid`'s SVG strategies, which require Playwright). **Note:** because rendering is client-side, Mermaid diagrams require JavaScript on the pages that contain them. This is the one place JS is shipped to the browser; it interacts with the minimal-JS / Lighthouse-≥90 NFR, so diagram JS loads **only on pages that use a Mermaid block** (non-diagram pages stay JS-free). See *Mermaid* below for the contract this must satisfy. |
 | D7 | Content as a Starlight `docs` content collection under `site/src/content/docs/`, MD/MDX + YAML frontmatter | Baseline & REQUIREMENTS §8: Starlight requires `title` frontmatter and a content dir. |
-| D8 | Explicit hand-authored sidebar config (not `autogenerate` initially) | Deterministic group order/labels for the five sections; placeholder pages exist before content migration (feature-005). Groups may switch to `autogenerate` per-section later. |
+| D8 | Reconciled sidebar contract: **Get Started / Concepts / Reference use `autogenerate`** (sibling features add ordered pages via per-page `sidebar.order` + optional `sidebar.label`); **Guides uses explicit `slug:` items**; **Releases uses `link:`** to a `src/pages/` route | `autogenerate` is the canonical mechanism for the three content-collection groups whose page set grows across siblings (no central re-edit of `astro.config.mjs` per page; order/labels are set in each page's frontmatter). Guides has a small fixed, hand-curated set spanning features 004/007, so explicit `slug:` items keep label control. Releases is a `src/pages/releases/changelog.astro` route (feature-009), not a content-collection doc, so it must be referenced with `link:` not `slug:`. feature-001 ships stub pages for every entry so the foundation builds standalone. |
 | D9 | Inter via `@fontsource/inter` (self-hosted), not a Google Fonts `<link>` | Performance (Lighthouse ≥ 90), privacy (no third-party request, aligns with "no analytics/SaaS"), offline-capable. |
 
 ### Layers & Components
@@ -112,9 +118,12 @@ The `site/` project has four layers:
    Model / Content Schema*).
 3. **Theme layer** — `site/src/styles/casulo.css` (token overrides + component polish) plus
    font import. This is the brand single-source.
-4. **Content / page layer** — `site/src/content/docs/**` MD/MDX pages. This feature ships the
-   home page + one placeholder index page per top section. Real pages arrive in features
-   003–007.
+4. **Content / page layer** — `site/src/content/docs/**` MD/MDX pages plus the
+   `site/src/pages/releases/changelog.astro` route. This feature ships the home page, at least
+   one stub page in each `autogenerate` directory (`get-started/`, `concepts/`, `reference/`),
+   a stub for each explicit Guides slug (`guides/installation`, `guides/pipeline`,
+   `guides/maintainer`), and a stub `src/pages/releases/changelog.astro` for the Releases link.
+   Real pages arrive in features 003–009 (which supersede these stubs).
 
 Optional component override slots (Starlight component overrides via `components:` in config)
 are **reserved but not implemented here** — the announcement banner (feature-009 / FR16),
@@ -158,25 +167,33 @@ Per-page frontmatter fields available (Starlight built-ins used by this feature)
 
 Starlight renders **top-level sidebar groups as the section structure**; the five tabs
 (REQUIREMENTS FR1, AC3) are modeled as the five top-level sidebar groups, with Home as the
-splash landing at `/`. Sidebar configured explicitly in `astro.config.mjs`:
+splash landing at `/`. Sidebar configured in `astro.config.mjs` per the reconciled contract
+(D8) — `autogenerate` for the three growing content-collection groups, explicit `slug:` items
+for Guides, and a `link:` for the Releases route:
 
 ```js
 sidebar: [
-  { label: 'Get Started', items: [
-      { label: 'Overview', slug: 'get-started/overview' } ] },     // feature-003
+  { label: 'Get Started', autogenerate: { directory: 'get-started' } },   // pages by feature-003 (ordered via sidebar.order/sidebar.label)
   { label: 'Guides', items: [
-      { label: 'Installation', slug: 'guides/installation' } ] },   // feature-004/003
-  { label: 'Concepts', items: [
-      { label: 'The methodology', slug: 'concepts/methodology' } ] }, // feature-005
-  { label: 'Reference', items: [
-      { label: 'Overview', slug: 'reference/overview' } ] },        // feature-007
+      { label: 'Installation', slug: 'guides/installation' },              // feature-004 (.mdx)
+      { label: 'Working the pipeline', slug: 'guides/pipeline' },          // feature-007
+      { label: 'Maintainer', slug: 'guides/maintainer' },                  // feature-007
+  ]},
+  { label: 'Concepts', autogenerate: { directory: 'concepts' } },          // feature-005 (migrated) + feature-006 (arranged)
+  { label: 'Reference', autogenerate: { directory: 'reference' } },        // feature-006
   { label: 'Releases', items: [
-      { label: 'Changelog', slug: 'releases/changelog' } ] },       // feature-008
-],
+      { label: 'Changelog', link: '/releases/changelog' },                 // feature-009 — src/pages route, so link: not slug:
+  ]},
+]
 ```
 
-Each group points at a placeholder page shipped by this feature; later features deepen the
-items. Breadcrumbs, the on-this-page TOC (`tableOfContents: { minHeadingLevel: 2,
+The three `autogenerate` groups list themselves from the pages siblings drop into the matching
+content directory; each sibling controls position/label via that page's `sidebar.order` and
+optional `sidebar.label` frontmatter (so feature-001 never re-edits this config as content
+grows). Guides is a small curated set across features 004/007 with explicit `slug:` items.
+Releases points at a `src/pages/releases/changelog.astro` route (feature-009) and so must use
+`link:` rather than `slug:`. feature-001 ships a stub page behind every entry so the foundation
+builds standalone with no broken nav/links; later features deepen or supersede them. Breadcrumbs, the on-this-page TOC (`tableOfContents: { minHeadingLevel: 2,
 maxHeadingLevel: 3 }`), grouped collapsible sidebar (drawer on mobile), and the global
 search box are all **provided by Starlight's default layout** once the project is configured —
 this satisfies AC3 / FR1 without custom layout code.
@@ -324,12 +341,17 @@ site/
     │   ├── config.ts            # docs collection + docsSchema extend
     │   └── docs/
     │       ├── index.mdx                       # Home (template: splash, hero)  [FR3 stub]
-    │       ├── get-started/overview.md         # placeholder  [feature-003]
-    │       ├── guides/installation.md          # placeholder  [feature-004]
-    │       ├── concepts/methodology.md         # placeholder  [feature-005]
-    │       ├── reference/overview.md           # placeholder  [feature-007]
-    │       ├── releases/changelog.md           # placeholder  [feature-008]
+    │       ├── get-started/index.md            # autogenerate stub  [feature-003 supersedes]
+    │       ├── guides/installation.mdx         # explicit slug stub  [feature-004 (.mdx)]
+    │       ├── guides/pipeline.md              # explicit slug stub  [feature-007]
+    │       ├── guides/maintainer.md            # explicit slug stub  [feature-007]
+    │       ├── concepts/index.md               # autogenerate stub  [feature-005 + feature-006]
+    │       ├── reference/index.md              # autogenerate stub  [feature-006]
     │       └── mermaid-smoke.md                # Mermaid pipeline smoke test (AC5)
+    ├── pages/
+    │   └── releases/
+    │       └── changelog.astro  # Releases route stub for sidebar link: '/releases/changelog'
+    │                            #   [feature-009 supersedes]
     └── styles/
         └── casulo.css           # brand token → Starlight CSS-var overrides (single source)
 ```
@@ -344,15 +366,17 @@ site/
 | Home value-prop / CTAs depth (FR3) | feature-003 | minimal `index.mdx` hero stub |
 | Install guide content + per-tool tabs (FR4/FR5) | feature-003/004 | placeholder pages |
 | Migration of `docs/*.md` + Mermaid diagrams (FR11) | feature-005 | empty section pages + Mermaid pipeline proven |
-| Concepts / Reference content (FR8/FR9) | feature-005/007 | placeholder pages |
+| Concepts / Reference content (FR8/FR9), arranged into `autogenerate` dirs | feature-005/006 | `concepts/` + `reference/` autogenerate stubs |
+| Working-the-pipeline + Maintainer guides (explicit slugs) | feature-007 | `guides/pipeline` + `guides/maintainer` slug stubs |
 | Feedback / "Report an issue" (FR14) | feature-006 | `reportIssue` schema field + reserved `components:` slot |
-| Releases binding (FR10), version injection (FR15), banner (FR16) | feature-008/009 | `releases/changelog.md` stub + reserved `Banner` slot |
+| Version injection (FR15), banner (FR16) | feature-008/009 | reserved `Banner` slot |
+| Releases route + changelog binding (FR10) | feature-009 | `src/pages/releases/changelog.astro` route stub (sidebar `link:`) |
 
 ### Acceptance Criteria Coverage
 
 | Scaffold AC | How this feature satisfies it |
 |-------------|-------------------------------|
-| AC3 — three-pane layout, top nav, grouped sidebar, TOC, breadcrumbs | Starlight default `doc` template + explicit `sidebar` config + `tableOfContents`. |
+| AC3 — three-pane layout, top nav, grouped sidebar, TOC, breadcrumbs | Starlight default `doc` template + reconciled `sidebar` config (autogenerate Get Started/Concepts/Reference, explicit Guides slugs, Releases `link:`) + `tableOfContents`. |
 | AC3 — header/footer GitHub + casuloailabs.com | `social:` config + footer back-link override. |
 | AC4 — casulo palette, Inter, dark default + light toggle | `casulo.css` token overrides for both `[data-theme]` scopes; `@fontsource/inter`; Starlight toggle. |
 | AC4/AC10 — gold + tokens WCAG AA both modes | dark uses `#d4a853`; light uses darkened gold; contrast verified as an acceptance step. |
