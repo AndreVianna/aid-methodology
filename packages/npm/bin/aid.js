@@ -2,7 +2,7 @@
 // aid.js - npm channel shim for the AID CLI.
 //
 // Purpose:
-//   Installed as the `aid` bin entry when the user runs `npm i -g @aid/installer`.
+//   Installed as the `aid` bin entry when the user runs `npm i -g aid-installer`.
 //   Spawns the vendored bin/aid (bash) or bin/aid.ps1 (pwsh/powershell) with
 //   AID_INSTALL_CHANNEL=npm injected into the child environment so that
 //   `aid update self` prints the npm upgrade hint instead of re-bootstrapping.

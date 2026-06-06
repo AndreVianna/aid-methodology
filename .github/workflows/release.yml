@@ -2,7 +2,7 @@ name: Release
 
 # Tag-triggered GitHub Actions workflow that gates, builds, and publishes all
 # release channels: GitHub Release tarballs + SHA256SUMS (via release.sh),
-# npm @aid/installer, and PyPI aid-installer.
+# npm aid-installer, and PyPI aid-installer.
 #
 # Primary path: maintainer pushes v<VERSION> tag → one tag → all channels.
 # Escape hatch: workflow_dispatch with ref + dry_run inputs.
@@ -18,7 +18,7 @@ name: Release
 #
 # External-setup blockers (publish jobs are correct but will fail until these exist):
 #
-#   npm (@aid/installer):
+#   npm (aid-installer):
 #     - The @aid npm scope must be created and owned by the maintainer.
 #     - A classic NPM_TOKEN automation token must be stored in repo secrets
 #       as `NPM_TOKEN`.
@@ -195,7 +195,7 @@ jobs:
           fi
 
   # --------------------------------------------------------------------------
-  # npm-publish — publish @aid/installer to npm with OIDC provenance.
+  # npm-publish — publish aid-installer to npm with OIDC provenance.
   #
   # BLOCKED until:
   #   1. The @aid npm scope is created and owned by the maintainer.
@@ -207,7 +207,7 @@ jobs:
   # already published, so a re-run to fix only PyPI does not red-fail here.
   # --------------------------------------------------------------------------
   npm-publish:
-    name: npm-publish (@aid/installer)
+    name: npm-publish (aid-installer)
     needs: [gate, github-release]
     if: vars.NPM_ENABLED == 'true'
     runs-on: ubuntu-24.04
@@ -237,9 +237,9 @@ jobs:
         id: npm_check
         shell: bash
         run: |
-          if npm view "@aid/installer@${VERSION}" version >/dev/null 2>&1; then
+          if npm view "aid-installer@${VERSION}" version >/dev/null 2>&1; then
             echo "already_published=true" >> "$GITHUB_OUTPUT"
-            echo "NOTICE: @aid/installer@${VERSION} already published on npm — skipping."
+            echo "NOTICE: aid-installer@${VERSION} already published on npm — skipping."
           else
             echo "already_published=false" >> "$GITHUB_OUTPUT"
           fi

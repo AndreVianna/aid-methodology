@@ -260,7 +260,7 @@ function script:Invoke-AidUpdateCheck {
     }
     if ($isLt) {
         $updateCmd = switch ($env:AID_INSTALL_CHANNEL) {
-            'npm'  { 'npm i -g @aid/installer@latest' }
+            'npm'  { 'npm i -g aid-installer@latest' }
             'pypi' { 'pipx upgrade aid-installer  (or: pip install --user -U aid-installer)' }
             default { 'aid update self' }
         }
@@ -275,7 +275,7 @@ function script:Invoke-AidUpdateCheck {
 function script:Invoke-AidUpdateSelf {
     switch ($env:AID_INSTALL_CHANNEL) {
         'npm' {
-            Write-Host 'Updating the aid CLI: run  npm i -g @aid/installer@latest'
+            Write-Host 'Updating the aid CLI: run  npm i -g aid-installer@latest'
             script:Exit-Aid 0
             return
         }

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test-npm-installer.sh - Task 033/034: Tests for the npm channel (@aid/installer).
+# test-npm-installer.sh - Task 033/034: Tests for the npm channel (aid-installer).
 #
 # Tests the packages/npm/bin/aid.js shim: argv passthrough, exit-code relay,
 # platform selection, missing runtime, AID_INSTALL_CHANNEL injection,
@@ -227,7 +227,7 @@ printf '%s\n' "${VERSION}" > "${NM07_HOME}/VERSION"
 NM07_OUT=$(AID_HOME="${NM07_HOME}" AID_NO_UPDATE_CHECK=1 \
            node "${SHIM}" update self 2>&1); NM07_RC=$?
 assert_exit_eq "$NM07_RC" 0 "NM07-01 shim update self with channel=npm -> exit 0"
-assert_output_contains "$NM07_OUT" "npm i -g @aid/installer@latest" \
+assert_output_contains "$NM07_OUT" "npm i -g aid-installer@latest" \
     "NM07-02 update self prints npm install command"
 assert_output_not_contains "$NM07_OUT" "Updating the aid CLI..." \
     "NM07-03 update self does NOT re-bootstrap (no curl path)"

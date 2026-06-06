@@ -1,5 +1,5 @@
 {
-  "name": "@aid/installer",
+  "name": "aid-installer",
   "version": "0.7.5",
   "description": "AID CLI installer - puts the persistent aid command on PATH via npm",
   "bin": {

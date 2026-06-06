@@ -220,7 +220,7 @@ _aid_check_update() {
     if _semver_lt "$installed_version" "$latest_version"; then
         local _update_cmd
         case "${AID_INSTALL_CHANNEL:-}" in
-            npm)  _update_cmd="npm i -g @aid/installer@latest" ;;
+            npm)  _update_cmd="npm i -g aid-installer@latest" ;;
             pypi) _update_cmd="pipx upgrade aid-installer  (or: pip install --user -U aid-installer)" ;;
             *)    _update_cmd="aid update self" ;;
         esac
@@ -238,7 +238,7 @@ _cmd_update_self() {
     # and exit 0 instead of re-bootstrapping (which would overwrite the channel).
     case "${AID_INSTALL_CHANNEL:-}" in
         npm)
-            printf 'Updating the aid CLI: run  npm i -g @aid/installer@latest\n'
+            printf 'Updating the aid CLI: run  npm i -g aid-installer@latest\n'
             return 0
             ;;
         pypi)

@@ -115,8 +115,8 @@ version as `*.aid-new` for you to review rather than overwriting silently.
 **Also available via npm and PyPI (once published):**
 
 ```bash
-# npm (Node >=18) — once @aid/installer is published to the npm registry
-npm install -g @aid/installer
+# npm (Node >=18) — once aid-installer is published to the npm registry
+npm install -g aid-installer
 
 # PyPI (Python >=3.8) — once aid-installer is published to PyPI
 pipx install aid-installer
