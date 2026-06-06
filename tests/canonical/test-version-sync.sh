@@ -179,13 +179,16 @@ assert_output_contains "$OUT" "all carriers in sync" "VS08 real repo output conf
 # ---------------------------------------------------------------------------
 # WF01: release.yml is valid YAML
 # ---------------------------------------------------------------------------
-if command -v python3 >/dev/null 2>&1; then
+# Requires python3 AND the PyYAML module. A clean setup-python (e.g. the release.yml
+# gate runner) has no PyYAML, so skip rather than fail there; test.yml validates the
+# YAML on the runner's system python, and GitHub itself rejects an invalid workflow.
+if command -v python3 >/dev/null 2>&1 && python3 -c "import yaml" >/dev/null 2>&1; then
     WF_PARSE_OUT="$(python3 -c "import yaml,sys; yaml.safe_load(open('${RELEASE_YML}')); print('OK')" 2>&1)"
     WF_PARSE_RC=$?
     assert_exit_zero "$WF_PARSE_RC" "WF01 release.yml is valid YAML"
     assert_output_contains "$WF_PARSE_OUT" "OK" "WF01 yaml.safe_load returns without error"
 else
-    echo "  SKIP: python3 not found — skipping WF01 YAML validation"
+    echo "  SKIP: python3 or PyYAML not available — skipping WF01 YAML validation"
 fi
 
 # ---------------------------------------------------------------------------
