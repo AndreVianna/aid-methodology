@@ -90,9 +90,16 @@ jobs:
         name: Derive authoritative version from the tag/ref (strip leading 'v')
         shell: bash
         run: |
+          # Tag path (push of v1.2.3 or dispatch with ref=v1.2.3): strip the leading 'v'.
+          # Non-tag dispatch (e.g. dry_run on a branch/SHA): fall back to the VERSION file,
+          # so the pipeline can be validated before the release tag exists.
           RAW="${{ inputs.ref || github.ref_name }}"
-          echo "VERSION=${RAW#v}" >> "$GITHUB_ENV"
-          echo "version=${RAW#v}" >> "$GITHUB_OUTPUT"
+          case "$RAW" in
+            v[0-9]*) VERSION="${RAW#v}" ;;
+            *)       VERSION="$(tr -d ' \t\r\n' < VERSION)" ;;
+          esac
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
       # FR10 version-sync: all four carriers must equal the tag version.
       # Runs before any packaging or publish to fail fast on drift.
