@@ -22,7 +22,7 @@
 #   PAR09 — uninstall (exit 0, "Uninstall complete.")
 #   PAR10 — uninstall with no manifest (exit 6)
 #   PAR11 — auto-detect ambiguity (exit 2)
-#   PAR12 — comma-list codex,cursor (exit 5 — second AGENTS.md triggers protect-on-diff)
+#   PAR12 — comma-list codex,cursor (exit 0 — second AGENTS.md byte-identical (FR12) -> skipped as up-to-date)
 #
 # SKIP (exit 0) when `pwsh` is absent — CI asserts pwsh IS present.
 #
@@ -481,7 +481,7 @@ assert_exit_codes_match 2 "PAR11 auto-detect ambiguous"
 assert_both_contain "ambiguous" "PAR11b"
 
 # ---------------------------------------------------------------------------
-# PAR12 – Comma-list codex,cursor: protect-on-diff on second AGENTS.md → exit 5
+# PAR12 – Comma-list codex,cursor: second AGENTS.md is byte-identical (FR12) -> skipped as up-to-date, exit 0
 # ---------------------------------------------------------------------------
 T_SH=$(newtarget_bash)
 T_PS1=$(newtarget_ps1)
@@ -489,9 +489,7 @@ T_PS1=$(newtarget_ps1)
 run_sh  --tool codex,cursor --from-bundle "${FIXTURE_DIR}" --target "$T_SH"
 run_ps1  -Tool codex,cursor  -FromBundle  "${FIXTURE_DIR}"  -TargetDirectory "$T_PS1"
 
-assert_exit_codes_match 5 "PAR12 comma-list protect-on-diff"
-assert_both_contain "Install complete with warnings" "PAR12b"
-assert_both_contain "aid-new" "PAR12c"
+assert_exit_codes_match 0 "PAR12 comma-list: second AGENTS.md byte-identical (FR12) -> exit 0"
 
 # Both should have installed .codex/ and .cursor/.
 assert_dir_exists "$T_SH/.codex"  "PAR12d sh .codex/ installed"

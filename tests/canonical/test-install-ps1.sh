@@ -412,16 +412,18 @@ assert_output_contains "$OUT" "Left in place" "IN16b reports 'Left in place' for
 assert_file_exists "$T/AGENTS.md" "IN16c modified AGENTS.md left in place after uninstall"
 
 # ---------------------------------------------------------------------------
-# IN17 – Comma-list -Tool codex,cursor: second AGENTS.md triggers protect-on-diff
+# IN17 – Comma-list -Tool codex,cursor: second AGENTS.md is byte-identical (FR12) -> skipped as up-to-date, no .aid-new
 # ---------------------------------------------------------------------------
 T=$(newtarget)
 run_install -Tool codex,cursor \
     -FromBundle "${FIXTURE_DIR}" \
     -TargetDirectory "$T"
 # codex installs AGENTS.md (its profile content).
-# cursor also writes AGENTS.md, which differs from codex's → protect-on-diff → exit 5.
-assert_exit_eq "$RC" 5 "IN17 codex,cursor comma-list: second AGENTS.md triggers protect-on-diff → exit 5"
-assert_file_exists "$T/AGENTS.md.aid-new" "IN17b AGENTS.md.aid-new created for second AGENTS.md write"
+# cursor also writes AGENTS.md — under FR12 all four root AGENTS.md are byte-identical,
+# so the second write is skipped as up-to-date → exit 0, no .aid-new created.
+assert_exit_eq "$RC" 0 "IN17 codex,cursor comma-list: second AGENTS.md is byte-identical (FR12) -> skipped as up-to-date, exit 0"
+assert_eq "$([[ -f "$T/AGENTS.md.aid-new" ]] && echo exists || echo none)" "none" \
+    "IN17b no AGENTS.md.aid-new when second AGENTS.md is byte-identical (FR12)"
 # codex dirs should have been installed.
 assert_dir_exists "$T/.codex" "IN17c .codex/ created by codex"
 assert_dir_exists "$T/.agents" "IN17d .agents/ created by codex"
