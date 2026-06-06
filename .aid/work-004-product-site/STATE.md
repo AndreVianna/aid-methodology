@@ -42,7 +42,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | # | Feature | Spec Status | Spec Grade | Q&A Count | Notes |
 |---|---------|-------------|------------|-----------|-------|
-| 1 | feature-001-site-foundation | Decomposed | — | 0 | FR1,FR2,FR13 · Must |
+| 1 | feature-001-site-foundation | Ready | A+ | 0 | FR1,FR2,FR13 · Must · spec'd (Astro+Starlight `site/`, casulo theme, Pagefind, astro-mermaid) |
 | 2 | feature-002-build-and-deploy | Decomposed | — | 0 | FR12 (+release trigger/fetch) · Must |
 | 3 | feature-003-home-and-get-started | Decomposed | — | 0 | FR3,FR4 (consumes FR15) · Must |
 | 4 | feature-004-installation-guide | Decomposed | — | 0 | FR5 (consumes FR15) · Must |
