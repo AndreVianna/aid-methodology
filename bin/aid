@@ -31,7 +31,7 @@ set -uo pipefail
 # Bootstrap URL - single place to update when the branch merges to master.
 # Override with AID_INSTALL_URL env var for tests.
 # ---------------------------------------------------------------------------
-AID_INSTALL_URL="${AID_INSTALL_URL:-https://raw.githubusercontent.com/AndreVianna/aid-methodology/worktree-work-002-auto-installer/install.sh}"
+AID_INSTALL_URL="${AID_INSTALL_URL:-https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh}"
 
 # ---------------------------------------------------------------------------
 # Locate $AID_HOME.  The installed dispatcher lives at $AID_HOME/bin/aid.

@@ -1,7 +1,7 @@
 # AID — AI Integrated Development
 
 ![License](https://img.shields.io/github/license/AndreVianna/aid-methodology)
-![Version](https://img.shields.io/badge/version-0.7.5-blue)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Claude Code](https://img.shields.io/badge/Claude_Code-supported-8B5CF6)
 ![Codex CLI](https://img.shields.io/badge/Codex_CLI-supported-10B981)
 ![Cursor](https://img.shields.io/badge/Cursor-supported-3B82F6)
@@ -105,14 +105,14 @@ pip install --user aid-installer
 Download a profile tarball from the [GitHub Releases page](https://github.com/AndreVianna/aid-methodology/releases), verify it, then install without network access:
 
 ```bash
-# Download and verify (example: claude-code at v0.7.5)
-curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v0.7.5/aid-claude-code-v0.7.5.tar.gz
-curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v0.7.5/SHA256SUMS
+# Download and verify (example: claude-code at v1.0.0)
+curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v1.0.0/aid-claude-code-v1.0.0.tar.gz
+curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v1.0.0/SHA256SUMS
 sha256sum --check --ignore-missing SHA256SUMS     # Linux
 shasum -a 256 -c SHA256SUMS                       # macOS
 
 # Install from the local bundle (after bootstrapping the CLI)
-aid add claude-code --from-bundle aid-claude-code-v0.7.5.tar.gz
+aid add claude-code --from-bundle aid-claude-code-v1.0.0.tar.gz
 ```
 
 All four channels deliver the same `aid` CLI. See [Full install guide →](docs/install.md) for the channel comparison and `aid update self` behavior per channel.

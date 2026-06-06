@@ -49,7 +49,7 @@ aid-methodology/
 |-- install.sh                  <- curl | bash bootstrap installer (Linux / macOS)
 |-- install.ps1                 <- irm | iex bootstrap installer (Windows PowerShell)
 |-- release.sh                  <- manual release script (maintainer runbook path)
-|-- VERSION                     <- single source of version truth (e.g. 0.7.5)
+|-- VERSION                     <- single source of version truth (e.g. 1.0.0)
 |-- CONTRIBUTING.md
 `-- LICENSE
 ```

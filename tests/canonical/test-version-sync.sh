@@ -15,7 +15,7 @@
 #   VS06  VERSION file differs from --expect → fail
 #   VS07  Missing manifest, channel
 #         enabled (NPM_ENABLED=true)      → fail
-#   VS08  real repo is in-sync at 0.7.5   → pass
+#   VS08  real repo is in-sync at its declared VERSION   → pass
 #   WF01  release.yml is valid YAML       → pass
 #   WF02  release.yml has gate job        → pass
 #   WF03  publish jobs need gate          → pass
@@ -166,12 +166,14 @@ assert_exit_nonzero "$RC" "VS07 NPM_ENABLED=true but package.json absent → exi
 assert_output_contains "$OUT" "package.json" "VS07 error mentions package.json"
 
 # ---------------------------------------------------------------------------
-# VS08: Real repo is in-sync at 0.7.5
+# VS08: Real repo is in-sync at its declared VERSION (read dynamically so the
+# test does not need editing on every version bump / release).
 # ---------------------------------------------------------------------------
 OUT=""; RC=0
-bash "${SUT}" --repo-root "${REPO_ROOT}" --expect "0.7.5" > "${TMP}/vs08_out.txt" 2>&1 || RC=$?
+REPO_VER="$(tr -d ' \t\r\n' < "${REPO_ROOT}/VERSION")"
+bash "${SUT}" --repo-root "${REPO_ROOT}" --expect "${REPO_VER}" > "${TMP}/vs08_out.txt" 2>&1 || RC=$?
 OUT="$(cat "${TMP}/vs08_out.txt")"
-assert_exit_zero "$RC" "VS08 real repo is in-sync at 0.7.5 → exit 0"
+assert_exit_zero "$RC" "VS08 real repo is in-sync at its VERSION (${REPO_VER}) → exit 0"
 assert_output_contains "$OUT" "all carriers in sync" "VS08 real repo output confirms in-sync"
 
 # ---------------------------------------------------------------------------

@@ -195,12 +195,12 @@ irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install
 
 ```bash
 # Linux / macOS
-curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- --version 0.7.5
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- --version 1.0.0
 ```
 
 ```powershell
 # Windows
-$env:AID_VERSION = '0.7.5'
+$env:AID_VERSION = '1.0.0'
 irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
 ```
 
@@ -220,9 +220,9 @@ aid status
 ```
 
 ```
-AID 0.7.5  (project: /path/to/your/project)
+AID 1.0.0  (project: /path/to/your/project)
 Installed tools:
-  claude-code   v0.7.5   root: CLAUDE.md (owned)
+  claude-code   v1.0.0   root: CLAUDE.md (owned)
 ```
 
 Bare `aid` (no subcommand) shows a dashboard: the installed CLI version, the project
@@ -246,7 +246,7 @@ aid add codex,cursor
 Pin to a specific version:
 
 ```bash
-aid add claude-code --version 0.7.5
+aid add claude-code --version 1.0.0
 ```
 
 Without `--version` the installer resolves the latest GitHub Release
@@ -359,9 +359,9 @@ use `aid add --from-bundle` — no network required.
 ### Download and verify
 
 ```bash
-# Download (example: claude-code at v0.7.5)
-curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v0.7.5/aid-claude-code-v0.7.5.tar.gz
-curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v0.7.5/SHA256SUMS
+# Download (example: claude-code at v1.0.0)
+curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v1.0.0/aid-claude-code-v1.0.0.tar.gz
+curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v1.0.0/SHA256SUMS
 
 # Verify (Linux)
 sha256sum --check --ignore-missing SHA256SUMS
@@ -373,7 +373,7 @@ shasum -a 256 -c SHA256SUMS
 ```powershell
 # Verify (Windows)
 $expected = (Get-Content SHA256SUMS | Where-Object { $_ -match 'aid-claude-code' }) -split '\s+' | Select-Object -First 1
-$actual   = (Get-FileHash .\aid-claude-code-v0.7.5.tar.gz -Algorithm SHA256).Hash.ToLower()
+$actual   = (Get-FileHash .\aid-claude-code-v1.0.0.tar.gz -Algorithm SHA256).Hash.ToLower()
 if ($expected -ne $actual) { Write-Error "Checksum mismatch"; exit 4 }
 ```
 
@@ -381,7 +381,7 @@ if ($expected -ne $actual) { Write-Error "Checksum mismatch"; exit 4 }
 
 ```bash
 # After bootstrapping the CLI (see Step 1)
-aid add claude-code --from-bundle aid-claude-code-v0.7.5.tar.gz
+aid add claude-code --from-bundle aid-claude-code-v1.0.0.tar.gz
 ```
 
 For multiple tools, pass a directory containing the per-tool tarballs
@@ -615,11 +615,11 @@ into that repo. A human-readable convenience file is also written: `.aid/.aid-ve
 ```json
 {
   "manifest_version": 1,
-  "aid_version": "0.7.5",
+  "aid_version": "1.0.0",
   "installed_at": "2026-06-04T12:00:00Z",
   "tools": {
     "claude-code": {
-      "version": "0.7.5",
+      "version": "1.0.0",
       "installed_at": "2026-06-04T12:00:00Z",
       "paths": [".claude/skills/...", "CLAUDE.md"],
       "root_agent_files": [
@@ -691,7 +691,7 @@ PowerShell flags use the same words; the `-` prefix is accepted alongside `--`:
 
 | Flag | Applies to | Default | Description |
 |------|-----------|---------|-------------|
-| `--version <v>` | `add`, `update` | latest release | Pin to a release version (`0.7.5` or `v0.7.5`). Mutually exclusive with `--from-bundle`. |
+| `--version <v>` | `add`, `update` | latest release | Pin to a release version (`1.0.0` or `v1.0.0`). Mutually exclusive with `--from-bundle`. |
 | `--from-bundle <path>` | `add`, `update` | — | Offline install from a tarball (single tool) or a directory of tarballs. No network required. |
 | `--force` | `add`, `update`, `remove` | off | Overwrite differing files and skip confirmation prompts. |
 | `--verbose` | all | off | Print per-file `Copied:` / `Up to date:` / `Updated:` / `Removed:` lines. Default: concise summary. |

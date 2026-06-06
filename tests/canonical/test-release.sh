@@ -43,7 +43,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 # The worktree branch that contains the profiles/ and canonical/ state to test.
 # release.sh is untracked in the worktree (not yet committed) so we inject it.
-WORKTREE_BRANCH="worktree-work-002-auto-installer"
+WORKTREE_BRANCH="${AID_TEST_BRANCH:-$(git -C "${REPO_ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo master)}"
 # Main .git directory (shared across worktrees) for cloning.
 MAIN_GIT_DIR="$(git -C "${REPO_ROOT}" rev-parse --git-common-dir)"
 MAIN_REPO_ROOT="$(cd "${MAIN_GIT_DIR}/.." 2>/dev/null && pwd)" || MAIN_REPO_ROOT="${REPO_ROOT}"

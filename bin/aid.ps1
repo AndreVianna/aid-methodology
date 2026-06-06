@@ -30,7 +30,7 @@
 # Override with $env:AID_INSTALL_URL for tests.
 # ---------------------------------------------------------------------------
 $script:_AidInstallUrl = if ($env:AID_INSTALL_URL) { $env:AID_INSTALL_URL } else {
-    'https://raw.githubusercontent.com/AndreVianna/aid-methodology/worktree-work-002-auto-installer/install.ps1'
+    'https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1'
 }
 
 # ---------------------------------------------------------------------------

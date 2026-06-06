@@ -112,7 +112,7 @@ aid-methodology/                    (repo root)
 ├── run_generator.py                ← live entrypoint
 ├── install.sh / install.ps1        ← `aid` CLI bootstrap (curl/irm-piped first install)
 ├── release.sh                      ← maintainer release packager (per-profile tarballs + SHA256SUMS)
-├── VERSION                         ← single version source (FR10 version-sync; currently 0.7.5)
+├── VERSION                         ← single version source (FR10 version-sync; currently 1.0.0)
 └── README.md / CLAUDE.md / CONTRIBUTING.md / LICENSE
 ```
 

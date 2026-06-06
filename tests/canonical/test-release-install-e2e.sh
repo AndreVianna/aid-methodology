@@ -71,7 +71,7 @@ trap 'rm -rf "$TMP"' EXIT
 # Build a clean clone of the worktree branch to satisfy release.sh's
 # clean-worktree precondition. Mirrors the approach in test-release.sh.
 # ---------------------------------------------------------------------------
-WORKTREE_BRANCH="worktree-work-002-auto-installer"
+WORKTREE_BRANCH="${AID_TEST_BRANCH:-$(git -C "${REPO_ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo master)}"
 MAIN_GIT_DIR="$(git -C "${REPO_ROOT}" rev-parse --git-common-dir)"
 MAIN_REPO_ROOT="$(cd "${MAIN_GIT_DIR}/.." 2>/dev/null && pwd)" || MAIN_REPO_ROOT="${REPO_ROOT}"
 
