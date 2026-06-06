@@ -1,0 +1,153 @@
+/* casulo.css — single-source brand layer for AID docs site.
+ *
+ * Import order (registered via astro.config.mjs customCss):
+ *   1. @fontsource/inter/index.css  (self-hosted, no Google Fonts request)
+ *   2. this file
+ *
+ * Strategy: define casulo brand tokens once on :root, then map them onto
+ * Starlight CSS custom properties.  Dark mode is the default scope (Starlight
+ * applies dark on bare :root); light overrides live under :root[data-theme='light'].
+ *
+ * Contrast guarantees (WCAG 2.1 AA):
+ *   Dark: #d4a853 on #0a0e1a  → 8.73:1  (exceeds AA for normal text; meets AAA)
+ *   Light: #8a6418 on white   → 5.36:1  (passes AA)
+ */
+
+/* ── Inter font (self-hosted via @fontsource/inter) ─────────────────────── */
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/inter/800.css";
+
+/* ── casulo brand tokens (single source) ────────────────────────────────── */
+:root {
+  --casulo-bg-primary: #0a0e1a;
+  --casulo-bg-secondary: #111827;
+  --casulo-bg-card: #1a2035;
+  --casulo-bg-card-hover: #212b45;
+  --casulo-text-primary: #f1f5f9;
+  --casulo-text-secondary: #94a3b8;
+  --casulo-text-muted: #64748b;
+  /* dark-scope structural grays (Starlight gray-4/gray-5: dividers, faint borders) */
+  --casulo-gray-4: #475569;
+  --casulo-gray-5: #2d3748;
+  --casulo-accent: #d4a853;
+  --casulo-accent-hover: #e6bc6a;
+  --casulo-accent-glow: rgba(212, 168, 83, 0.15);
+  --casulo-border: rgba(148, 163, 184, 0.1);
+  --casulo-border-accent: rgba(212, 168, 83, 0.3);
+  --casulo-radius: 12px;
+  --casulo-radius-sm: 8px;
+}
+
+/* ── DARK (default) — Starlight emits dark on bare :root ─────────────────── */
+:root {
+  /* accent */
+  --sl-color-accent: var(--casulo-accent);
+  --sl-color-accent-high: var(--casulo-accent-hover);
+  --sl-color-accent-low: var(--casulo-accent-glow);
+  /* text */
+  --sl-color-text: var(--casulo-text-primary);
+  --sl-color-text-accent: var(--casulo-accent);
+  --sl-color-gray-1: var(--casulo-text-primary);
+  --sl-color-gray-2: var(--casulo-text-secondary);
+  --sl-color-gray-3: var(--casulo-text-muted);
+  --sl-color-gray-4: var(--casulo-gray-4);
+  --sl-color-gray-5: var(--casulo-gray-5);
+  --sl-color-gray-6: var(--casulo-bg-card);
+  --sl-color-gray-7: var(--casulo-bg-secondary);
+  /* backgrounds */
+  --sl-color-bg: var(--casulo-bg-primary);
+  --sl-color-bg-nav: var(--casulo-bg-secondary);
+  --sl-color-bg-sidebar: var(--casulo-bg-secondary);
+  --sl-color-bg-inline-code: var(--casulo-bg-card);
+  /* borders */
+  --sl-color-hairline: var(--casulo-border);
+  --sl-color-hairline-shade: var(--casulo-border-accent);
+  /* white (used for nav text on dark bg) */
+  --sl-color-white: var(--casulo-text-primary);
+  --sl-color-black: var(--casulo-bg-primary);
+}
+
+/* ── Light-mode derived tokens ───────────────────────────────────────────── */
+/* casulo-brand.md documents dark-mode tokens only (the parent site is dark-  */
+/* first).  Light-mode values are derived variants grounded per feature-001   */
+/* acceptance criterion A2 ("light-mode readable with brand colours").        */
+/* Accent is darkened gold (#8a6418) — achieves 5.36:1 on white (WCAG AA).   */
+:root {
+  /* accent — darkened from dark-mode #d4a853 to pass WCAG AA on white */
+  --casulo-accent-light: #8a6418;
+  --casulo-accent-light-hover: #6f5013;
+  --casulo-accent-light-glow: rgba(138, 100, 24, 0.15);
+  --casulo-accent-light-hairline: rgba(138, 100, 24, 0.25);
+  /* slate text scale — slate-800 → slate-400 inverted for light reading */
+  --casulo-slate-800: #1e293b;
+  --casulo-slate-700: #334155;
+  --casulo-slate-600: #475569;
+  --casulo-slate-500: #64748b;
+  --casulo-slate-400: #94a3b8;
+  /* surface scale — slate-200 → white for light backgrounds */
+  --casulo-surface-200: #e2e8f0;
+  --casulo-surface-50: #f8fafc;
+  --casulo-surface-100: #f1f5f9;
+  --casulo-surface-white: #ffffff;
+  /* neutral hairline on light */
+  --casulo-hairline-light: rgba(148, 163, 184, 0.2);
+}
+
+/* ── LIGHT — casulo-branded light variant ────────────────────────────────── */
+:root[data-theme='light'] {
+  --sl-color-accent: var(--casulo-accent-light);
+  --sl-color-accent-high: var(--casulo-accent-light-hover);
+  --sl-color-accent-low: var(--casulo-accent-light-glow);
+  --sl-color-text-accent: var(--casulo-accent-light);
+  --sl-color-gray-1: var(--casulo-slate-800);
+  --sl-color-gray-2: var(--casulo-slate-700);
+  --sl-color-gray-3: var(--casulo-slate-600);
+  --sl-color-gray-4: var(--casulo-slate-500);
+  --sl-color-gray-5: var(--casulo-slate-400);
+  --sl-color-gray-6: var(--casulo-surface-200);
+  --sl-color-gray-7: var(--casulo-surface-50);
+  --sl-color-bg: var(--casulo-surface-white);
+  --sl-color-bg-nav: var(--casulo-surface-50);
+  --sl-color-bg-sidebar: var(--casulo-surface-100);
+  --sl-color-bg-inline-code: var(--casulo-surface-100);
+  --sl-color-hairline: var(--casulo-hairline-light);
+  --sl-color-hairline-shade: var(--casulo-accent-light-hairline);
+  --sl-color-white: var(--casulo-surface-white);
+  --sl-color-black: var(--casulo-bg-primary);
+}
+
+/* ── Typography ──────────────────────────────────────────────────────────── */
+:root {
+  --sl-text-h1: 2.25rem;
+  --sl-text-h2: 1.75rem;
+  --sl-text-h3: 1.375rem;
+  --sl-font: 'Inter', var(--sl-font-system);
+}
+
+:root,
+body {
+  font-family: 'Inter', var(--sl-font-system), sans-serif;
+}
+
+/* ── Corner radius ───────────────────────────────────────────────────────── */
+.sl-markdown-content :is(pre, code) {
+  border-radius: var(--casulo-radius-sm);
+}
+
+/* ── Mermaid / diagram horizontal scroll (responsive NFR) ───────────────── */
+/* Prevent wide diagrams from overflowing on narrow viewports */
+.mermaid,
+.mermaid-diagram-wrapper,
+pre.mermaid,
+[data-mermaid],
+[data-rehype-mermaid-id] {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+pre {
+  overflow-x: auto;
+}

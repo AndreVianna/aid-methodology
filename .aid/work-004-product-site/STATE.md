@@ -1,7 +1,7 @@
 # Work State — work-004-product-site
 
-> **Status:** Detail Complete (25 tasks @ A+ — ready for /aid-execute)
-> **Phase:** Detail
+> **Status:** Executing — delivery-001 Done @ A+ (9/25 tasks)
+> **Phase:** Execute
 > **Minimum Grade:** {resolved at runtime by `bash .claude/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-06-06
 > **User Approved:** yes
@@ -59,7 +59,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| delivery-001 | Detailed | tasks 001-009 | Live branded site shell on domain · features 001,002 · Must · depends: — |
+| delivery-001 | Done @ A+ | tasks 001-009 | Live branded site shell on domain · features 001,002 · Must · depends: — |
 | delivery-002 | Detailed | tasks 010-013 | Version-bound front door (home, get-started, install) · features 008,003,004 · Must · depends: d-001 |
 | delivery-003 | Detailed | tasks 014-023 | Knowledge surfaces (migration, concepts, reference, releases+banner, feedback) · features 005,006,009,010 · Must(005)+Should · depends: d-001 |
 | delivery-004 | Detailed | tasks 024-025 | Pipeline & maintainer guides · feature 007 · Could · depends: d-001 |
@@ -70,15 +70,15 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|
-| 1 | task-001 | CONFIGURE | d1 | Pending | — | — | scaffold site/ Astro+Starlight + pinned deps |
-| 2 | task-002 | CONFIGURE | d1 | Pending | — | — | casulo theme CSS (dark/light) |
-| 3 | task-003 | CONFIGURE | d1 | Pending | — | — | astro.config (Starlight, sidebar, sitemap, mermaid, Pagefind, components map) |
-| 4 | task-004 | IMPLEMENT | d1 | Pending | — | — | content schema + stub pages |
-| 5 | task-005 | CONFIGURE | d1 | Pending | — | — | pages/SEO (robots, releases stub route) |
-| 6 | task-006 | IMPLEMENT | d1 | Pending | — | — | fetch-release-data + release-data.ts accessor |
-| 7 | task-007 | CONFIGURE | d1 | Pending | — | — | docs.yml deploy workflow + CNAME |
-| 8 | task-008 | DOCUMENT | d1 | Pending | — | — | one-time DNS/Pages/HTTPS runbook |
-| 9 | task-009 | TEST | d1 | Pending | — | — | build/Lighthouse/a11y/mermaid/standalone-build |
+| 1 | task-001 | CONFIGURE | d1 | Done | A+ | — | scaffold site/ Astro+Starlight + pinned deps |
+| 2 | task-002 | CONFIGURE | d1 | Done | A+ | — | casulo theme CSS (dark/light) |
+| 3 | task-003 | CONFIGURE | d1 | Done | A+ | — | astro.config (Starlight, sidebar, sitemap, mermaid, Pagefind, components map) |
+| 4 | task-004 | IMPLEMENT | d1 | Done | A+ | — | content schema + stub pages |
+| 5 | task-005 | CONFIGURE | d1 | Done | A+ | — | pages/SEO (robots, releases stub route) |
+| 6 | task-006 | IMPLEMENT | d1 | Done | A+ | — | fetch-release-data + release-data.ts accessor |
+| 7 | task-007 | CONFIGURE | d1 | Done | A+ | — | docs.yml deploy workflow + CNAME |
+| 8 | task-008 | DOCUMENT | d1 | Done | A+ | — | one-time DNS/Pages/HTTPS runbook |
+| 9 | task-009 | TEST | d1 | Done | A+ | — | build/Lighthouse/a11y/mermaid/standalone-build |
 | 10 | task-010 | IMPLEMENT | d2 | Pending | — | — | version.ts + InstallCommand/VersionBadge |
 | 11 | task-011 | IMPLEMENT | d2 | Pending | — | — | home splash + get-started pages |
 | 12 | task-012 | IMPLEMENT | d2 | Pending | — | — | installation.mdx (tabs, 5 channels) |

@@ -1,0 +1,29 @@
+{
+  "name": "aid-product-site",
+  "description": "AID methodology product documentation site (Astro Starlight)",
+  "version": "0.0.1",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "astro build",
+    "dev": "astro dev",
+    "preview": "astro preview",
+    "astro": "astro",
+    "check": "astro check",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "3.7.3",
+    "@astrojs/starlight": "0.39.3",
+    "@fontsource/inter": "5.2.8",
+    "astro": "6.4.4",
+    "astro-mermaid": "2.0.2"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.9",
+    "typescript": "6.0.3",
+    "vitest": "3.2.3"
+  }
+}

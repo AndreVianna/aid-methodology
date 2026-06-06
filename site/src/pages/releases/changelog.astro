@@ -1,0 +1,26 @@
+---
+// Releases changelog route — stub for sidebar link: '/releases/changelog'
+// Full implementation arrives in delivery-003 (feature-009 releases-and-banner).
+//
+// This is a src/pages/ route (not a content-collection doc) because it is
+// dynamically populated from the GitHub Releases API via build-time env vars
+// (see site/src/lib/release-data.ts).  The sidebar entry uses link: not slug:.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+---
+
+<StarlightPage
+  frontmatter={{
+    title: 'Changelog',
+    description: 'AID release history and changelog.',
+  }}
+>
+  <p>
+    Release data will appear here once feature-009 (releases-and-banner) is implemented
+    in delivery-003.
+  </p>
+  <p>
+    See the{' '}
+    <a href="https://github.com/AndreVianna/aid-methodology/releases">GitHub Releases page</a>
+    {' '}for the current release history.
+  </p>
+</StarlightPage>
