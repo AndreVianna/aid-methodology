@@ -1,7 +1,7 @@
 # Work State — work-004-product-site
 
-> **Status:** Specs Complete (10/10 features Ready @ A+ — ready for /aid-plan)
-> **Phase:** Specify
+> **Status:** Plan Complete (4 deliveries @ A+ — ready for /aid-detail)
+> **Phase:** Plan
 > **Minimum Grade:** {resolved at runtime by `bash .claude/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-06-06
 > **User Approved:** yes
@@ -59,7 +59,10 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| _none yet_ | | | |
+| delivery-001 | Planned | — | Live branded site shell on domain · features 001,002 · Must · depends: — |
+| delivery-002 | Planned | — | Version-bound front door (home, get-started, install) · features 008,003,004 · Must · depends: d-001 |
+| delivery-003 | Planned | — | Knowledge surfaces (migration, concepts, reference, releases+banner, feedback) · features 005,006,009,010 · Must(005)+Should · depends: d-001 |
+| delivery-004 | Planned | — | Pipeline & maintainer guides · feature 007 · Could · depends: d-001 |
 
 ## Tasks Status
 
@@ -140,3 +143,4 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 2026-06-06 | Feature Decomposition | — | aid-architect; 10 features created (feature-008 split into version-injection + releases-and-banner; feedback → feature-010); user-approved cut |
 | 2026-06-06 | Cross-Reference | A+ | aid-reviewer; initial C+ (1 MEDIUM + 3 LOW + 2 MINOR), coverage clean; all 6 resolved; re-grade A+. Interview phase complete. |
 | 2026-06-06 | Specify (all 10 features) | A+ | /aid-specify run across all features with an A+ (zero-finding) gate each; aid-architect authored, aid-reviewer gated, fix-loops to A+; cross-feature contracts reconciled (release-data accessor, sidebar, content-migration, irm channel, issue-form prefill). All 10 specs Ready @ A+. Ready for /aid-plan. |
+| 2026-06-06 | Plan | A+ | /aid-plan; aid-architect sequenced 10 features into 4 dependency-ordered standalone deliveries; aid-reviewer gated C+→A+ (1 MEDIUM priority-label fixed). All features assigned, none deferred; 3 cross-cutting risks. Ready for /aid-detail. |
