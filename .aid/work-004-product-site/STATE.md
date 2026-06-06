@@ -1,7 +1,7 @@
 # Work State — work-004-product-site
 
-> **Status:** Plan Complete (4 deliveries @ A+ — ready for /aid-detail)
-> **Phase:** Plan
+> **Status:** Detail Complete (25 tasks @ A+ — ready for /aid-execute)
+> **Phase:** Detail
 > **Minimum Grade:** {resolved at runtime by `bash .claude/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-06-06
 > **User Approved:** yes
@@ -59,10 +59,10 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| delivery-001 | Planned | — | Live branded site shell on domain · features 001,002 · Must · depends: — |
-| delivery-002 | Planned | — | Version-bound front door (home, get-started, install) · features 008,003,004 · Must · depends: d-001 |
-| delivery-003 | Planned | — | Knowledge surfaces (migration, concepts, reference, releases+banner, feedback) · features 005,006,009,010 · Must(005)+Should · depends: d-001 |
-| delivery-004 | Planned | — | Pipeline & maintainer guides · feature 007 · Could · depends: d-001 |
+| delivery-001 | Detailed | tasks 001-009 | Live branded site shell on domain · features 001,002 · Must · depends: — |
+| delivery-002 | Detailed | tasks 010-013 | Version-bound front door (home, get-started, install) · features 008,003,004 · Must · depends: d-001 |
+| delivery-003 | Detailed | tasks 014-023 | Knowledge surfaces (migration, concepts, reference, releases+banner, feedback) · features 005,006,009,010 · Must(005)+Should · depends: d-001 |
+| delivery-004 | Detailed | tasks 024-025 | Pipeline & maintainer guides · feature 007 · Could · depends: d-001 |
 
 ## Tasks Status
 
@@ -70,7 +70,31 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|
-| _none yet_ | | | | | | | |
+| 1 | task-001 | CONFIGURE | d1 | Pending | — | — | scaffold site/ Astro+Starlight + pinned deps |
+| 2 | task-002 | CONFIGURE | d1 | Pending | — | — | casulo theme CSS (dark/light) |
+| 3 | task-003 | CONFIGURE | d1 | Pending | — | — | astro.config (Starlight, sidebar, sitemap, mermaid, Pagefind, components map) |
+| 4 | task-004 | IMPLEMENT | d1 | Pending | — | — | content schema + stub pages |
+| 5 | task-005 | CONFIGURE | d1 | Pending | — | — | pages/SEO (robots, releases stub route) |
+| 6 | task-006 | IMPLEMENT | d1 | Pending | — | — | fetch-release-data + release-data.ts accessor |
+| 7 | task-007 | CONFIGURE | d1 | Pending | — | — | docs.yml deploy workflow + CNAME |
+| 8 | task-008 | DOCUMENT | d1 | Pending | — | — | one-time DNS/Pages/HTTPS runbook |
+| 9 | task-009 | TEST | d1 | Pending | — | — | build/Lighthouse/a11y/mermaid/standalone-build |
+| 10 | task-010 | IMPLEMENT | d2 | Pending | — | — | version.ts + InstallCommand/VersionBadge |
+| 11 | task-011 | IMPLEMENT | d2 | Pending | — | — | home splash + get-started pages |
+| 12 | task-012 | IMPLEMENT | d2 | Pending | — | — | installation.mdx (tabs, 5 channels) |
+| 13 | task-013 | TEST | d2 | Pending | — | — | version injection / AC13 |
+| 14 | task-014 | IMPLEMENT | d3 | Pending | — | — | sync-docs.mjs + migrated pages |
+| 15 | task-015 | TEST | d3 | Pending | — | — | migration no-loss/links/mermaid/drift (scoped) |
+| 16 | task-016 | IMPLEMENT | d3 | Pending | — | — | gen-reference.mjs + generated reference |
+| 17 | task-017 | IMPLEMENT | d3 | Pending | — | — | concepts/reference IA + sidebar |
+| 18 | task-018 | TEST | d3 | Pending | — | — | concepts/reference / drift-check |
+| 19 | task-019 | IMPLEMENT | d3 | Pending | — | — | releases.astro + Banner override |
+| 20 | task-020 | TEST | d3 | Pending | — | — | releases render / banner dismissal |
+| 21 | task-021 | CONFIGURE | d3 | Pending | — | — | .github/ISSUE_TEMPLATE/feedback.yml + labels |
+| 22 | task-022 | IMPLEMENT | d3 | Pending | — | — | Footer override + feedback page |
+| 23 | task-023 | TEST | d3 | Pending | — | — | feedback prefilled-issue |
+| 24 | task-024 | IMPLEMENT | d4 | Pending | — | — | pipeline.mdx + maintainer.mdx |
+| 25 | task-025 | TEST | d4 | Pending | — | — | guides links/mermaid |
 
 ## Deploy Status
 
@@ -144,3 +168,4 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 2026-06-06 | Cross-Reference | A+ | aid-reviewer; initial C+ (1 MEDIUM + 3 LOW + 2 MINOR), coverage clean; all 6 resolved; re-grade A+. Interview phase complete. |
 | 2026-06-06 | Specify (all 10 features) | A+ | /aid-specify run across all features with an A+ (zero-finding) gate each; aid-architect authored, aid-reviewer gated, fix-loops to A+; cross-feature contracts reconciled (release-data accessor, sidebar, content-migration, irm channel, issue-form prefill). All 10 specs Ready @ A+. Ready for /aid-plan. |
 | 2026-06-06 | Plan | A+ | /aid-plan; aid-architect sequenced 10 features into 4 dependency-ordered standalone deliveries; aid-reviewer gated C+→A+ (1 MEDIUM priority-label fixed). All features assigned, none deferred; 3 cross-cutting risks. Ready for /aid-detail. |
+| 2026-06-06 | Detail | A+ | /aid-detail; aid-architect decomposed 4 deliveries into 25 typed tasks (gap-free, one-type-each, dependency-declared) + per-delivery execution graphs; aid-reviewer gated C+→A+ (1 MEDIUM: drift-check scope narrowed so tasks 015/016 are independent). Ready for /aid-execute. |

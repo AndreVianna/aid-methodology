@@ -41,6 +41,25 @@ a complete, navigable (if content-light) site is live.
 
 **Priority** — Must
 
+#### Execution Graph
+
+| Task | Depends On |
+|------|-----------|
+| task-001 (CONFIGURE — scaffold) | — |
+| task-002 (CONFIGURE — theme CSS) | task-001 |
+| task-003 (CONFIGURE — astro.config) | task-002 |
+| task-004 (IMPLEMENT — schema + stubs) | task-003 |
+| task-005 (CONFIGURE — pages/SEO) | task-003 |
+| task-006 (IMPLEMENT — fetch + accessor) | task-004 |
+| task-007 (CONFIGURE — docs.yml workflow) | task-005, task-006 |
+| task-008 (DOCUMENT — DNS/Pages runbook) | task-007 |
+| task-009 (TEST — build/Lighthouse/a11y/mermaid) | task-007 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-004, task-005 |
+| task-008, task-009 |
+
 ### delivery-002: Version-bound front door — home, get-started, and install
 
 **What it delivers** — The adoption path an evaluator/new-adopter actually reads: the Home
@@ -59,6 +78,19 @@ site now carries a visitor from landing to a working install.
 foundation + 008's components)
 
 **Priority** — Must
+
+#### Execution Graph
+
+| Task | Depends On |
+|------|-----------|
+| task-010 (IMPLEMENT — version.ts + components) | task-009 |
+| task-011 (IMPLEMENT — home + get-started) | task-010 |
+| task-012 (IMPLEMENT — installation.mdx) | task-010 |
+| task-013 (TEST — version injection / AC13) | task-011, task-012 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-011, task-012 |
 
 ### delivery-003: Knowledge surfaces — migrated docs, concepts, reference, releases, feedback
 
@@ -86,6 +118,31 @@ prerequisite for feature-006's Concepts/Reference arrangement), **Should** for 0
 (All Must *deliverables* — 001, 002 — ship in deliveries 001-002; feature-005 is the one Must
 *feature* sequenced here for its dependency, not a deferral of Must work.)
 
+#### Execution Graph
+
+| Task | Depends On |
+|------|-----------|
+| task-014 (IMPLEMENT — sync-docs.mjs) | task-009 |
+| task-015 (TEST — migration / drift-check) | task-014 |
+| task-016 (IMPLEMENT — gen-reference.mjs) | task-014 |
+| task-017 (IMPLEMENT — concepts/reference IA + sidebar) | task-016 |
+| task-018 (TEST — concepts/reference / drift-check) | task-017 |
+| task-019 (IMPLEMENT — releases page + banner) | task-009 |
+| task-020 (TEST — releases / banner dismissal) | task-019 |
+| task-021 (CONFIGURE — issue template + labels) | task-009 |
+| task-022 (IMPLEMENT — Footer override + feedback page) | task-021 |
+| task-023 (TEST — feedback prefilled-issue) | task-022 |
+
+> Note: task-014 → task-016 → task-017 → task-019 → task-022 each ADD a key to the single
+> `astro.config.mjs` / shared maps (Cross-Cutting Risk #1) or share the committed-generated
+> convention (Risk #3); execute the `astro.config.mjs`/`components:` edits in id order and verify
+> all expected keys are present after the last edit.
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-019, task-021 (both depend only on task-009; disjoint from the 014→017 chain) |
+| task-015, task-016 (both depend only on task-014; task-015's drift-check is scoped to sync-docs' four migrated pages + assets + sync manifest, disjoint from task-016's generated `reference/*` pages, so they share no file/state) |
+
 ### delivery-004: Task-oriented guides — pipeline & maintainer
 
 **What it delivers** — The two hand-authored **Guides** pages that complete the site map's
@@ -101,6 +158,17 @@ guides slotting into the Guides slugs the foundation already reserved.
 (delivery-003) resolve once those ship — non-blocking, stub the anchors if 007 lands first
 
 **Priority** — Could
+
+#### Execution Graph
+
+| Task | Depends On |
+|------|-----------|
+| task-024 (IMPLEMENT — pipeline + maintainer guides) | task-009 |
+| task-025 (TEST — links resolve / mermaid) | task-024 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| (none — sequential) |
 
 ## Cross-Cutting Risks
 
