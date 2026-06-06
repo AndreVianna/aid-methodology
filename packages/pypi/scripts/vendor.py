@@ -99,7 +99,7 @@ try:
                         "incomplete (missing: %s). The sdist must include aid_installer/_vendor/."
                         % ", ".join(missing)
                     )
-                # Payload already present (came in via the sdist) — nothing to do.
+                # Payload already present (came in via the sdist); nothing to do.
 
 except ImportError:
     # hatchling not present (e.g. running the script standalone without build deps).
