@@ -231,13 +231,11 @@ jobs:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
-      # Vendor the aid-cli payload into packages/npm/ (runs scripts/vendor.js).
-      # npm ci requires a committed package-lock.json; if packages/npm ships
-      # without one (empty deps by design), replace with:
-      #   npm install --no-package-lock --ignore-scripts
-      - name: Install npm dependencies (deterministic)
-        working-directory: packages/npm
-        run: npm ci
+      # Trusted Publishing (OIDC) requires npm >= 11.5.1; node 20 ships an older npm.
+      # The package has zero runtime deps and vendors its aid-cli payload via prepack
+      # at publish time, so no install step is needed -- just ensure a recent npm.
+      - name: Upgrade npm (Trusted Publishing requires npm >= 11.5)
+        run: npm install -g npm@latest
 
       # Idempotency guard: skip (exit 0) if this exact version already exists.
       - name: Check if npm version already published (idempotency guard)
@@ -253,11 +251,12 @@ jobs:
 
       # The prepack script in packages/npm/package.json runs scripts/vendor.js
       # which vendoring the aid-cli payload; npm publish triggers prepack automatically.
-      - name: Publish with provenance
+      # Trusted Publishing: auth is via the workflow's OIDC id-token (no NPM_TOKEN secret).
+      # Requires an npm Trusted Publisher configured for aid-installer pointing at this
+      # repo + workflow. --provenance attestation is emitted from the same id-token.
+      - name: Publish via Trusted Publishing (OIDC) with provenance
         if: steps.npm_check.outputs.already_published != 'true' && inputs.dry_run != true
         working-directory: packages/npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --provenance --access public
 
       - name: Dry-run publish (build only, no upload)
