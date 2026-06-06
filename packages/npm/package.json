@@ -31,6 +31,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AndreVianna/aid-methodology"
+    "url": "git+https://github.com/AndreVianna/aid-methodology.git"
   }
 }

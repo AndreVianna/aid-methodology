@@ -112,20 +112,22 @@ Re-running `aid add` is safe: identical files are skipped. Root agent files
 (`CLAUDE.md`/`AGENTS.md`) that you wrote yourself are protected — AID writes the incoming
 version as `*.aid-new` for you to review rather than overwriting silently.
 
-**Also available via npm and PyPI (once published):**
+**Also available via npm (live) and PyPI (pending):**
 
 ```bash
-# npm (Node >=18) — once aid-installer is published to the npm registry
-npm install -g aid-installer
+# npm (Node >=18) — live on the npm registry
+npm i -g aid-installer
+# or: npx aid-installer add claude-code  (one-off, no global install)
 
-# PyPI (Python >=3.8) — once aid-installer is published to PyPI
+# PyPI (Python >=3.8) — not yet published (CasuloAI Labs org registration pending)
 pipx install aid-installer
 ```
 
-Both channels put the same `aid` CLI on PATH. The `curl`/`irm` bootstrap above is the
-supported install path for all end users today; the npm and PyPI packages are built and
-tested but pending registry publication. See [docs/install.md](docs/install.md) for the
-full channel comparison and `aid update self` behavior per channel.
+All channels put the same `aid` CLI on PATH. The `curl`/`irm` bootstrap and
+`npm i -g aid-installer` are both supported install paths for end users today. The PyPI
+package is built and tested in CI but not yet published to PyPI. See
+[docs/install.md](docs/install.md) for the full channel comparison and `aid update self`
+behavior per channel.
 
 > [!NOTE]
 > Prefer to install by hand? Copy the profile directory for each tool you use directly into your project root:

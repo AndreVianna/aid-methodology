@@ -46,25 +46,26 @@ difference is only how `aid` lands on your PATH.
 |---------|----------|--------|
 | `curl` / `irm` bootstrap (online) | Bash or PowerShell 5.1+ | Available — see [Step 1](#step-1--bootstrap-the-aid-cli-once-per-machine) |
 | `--from-bundle` (offline / air-gapped) | Bash or PowerShell 5.1+ | Available — see [Offline install](#offline--air-gapped-install) |
-| npm: `npm i -g aid-installer` | Node >=18 | Built and tested; not yet published to the npm registry (see note below) |
+| npm: `npm i -g aid-installer` | Node >=18 | Published / live — see [npm channel](#npm-channel) |
 | PyPI: `pipx install aid-installer` | Python >=3.8 | Built and tested; not yet published to PyPI (see note below) |
 
-> **Publishing status:** The `aid-installer` npm package and the `aid-installer` PyPI
-> package are built and tested in CI, but the npm `@aid` scope and the PyPI CasuloAI Labs
-> org registration are pending. Until those are in place, the npm and PyPI channels are for
-> local and CI use only. The `curl`/`irm` bootstrap is the supported install path for all
-> end users today.
+> **Publishing status:** The `aid-installer` npm package is published and live on the npm
+> registry. The `aid-installer` PyPI package is built and tested in CI but not yet
+> published — the CasuloAI Labs PyPI org registration is pending. Until PyPI publication,
+> `pipx install aid-installer` is for local and CI use only. The `curl`/`irm` bootstrap
+> and `npm i -g aid-installer` are both supported install paths for end users today.
 
 ---
 
-### npm channel (once published)
+### npm channel
 
 Requires Node >=18.
 
 **Global install** — puts `aid` on PATH permanently:
 
 ```bash
-npm install -g aid-installer
+npm i -g aid-installer      # short form
+# or: npm install -g aid-installer
 aid add claude-code
 ```
 
@@ -104,7 +105,7 @@ command automatically.
 
 ---
 
-### PyPI channel (once published)
+### PyPI channel (not yet published)
 
 Requires Python >=3.8.
 
@@ -772,10 +773,10 @@ irm .../install.ps1 | iex
 | `curl … \| bash` (online, Linux / macOS / git-bash) | Bash | Available | See [Step 1](#step-1--bootstrap-the-aid-cli-once-per-machine) |
 | `irm … \| iex` (online, Windows PowerShell) | PowerShell 5.1+ | Available | See [Step 1](#step-1--bootstrap-the-aid-cli-once-per-machine) |
 | `--from-bundle <path>` (offline tarball) | Bash or PowerShell 5.1+ | Available | See [Offline install](#offline--air-gapped-install) |
-| `npm install -g aid-installer` → `aid` | Node >=18 | Built; not yet published to npm registry | See [npm channel](#npm-channel-once-published) |
-| `pipx install aid-installer` → `aid` | Python >=3.8 | Built; not yet published to PyPI | See [PyPI channel](#pypi-channel-once-published) |
+| `npm install -g aid-installer` → `aid` | Node >=18 | Published / live | See [npm channel](#npm-channel) |
+| `pipx install aid-installer` → `aid` | Python >=3.8 | Built; not yet published to PyPI | See [PyPI channel](#pypi-channel-not-yet-published) |
 
-The `curl`/`irm` bootstrap is the supported install path for all end users today. The npm
-and PyPI packages are built and tested in CI but are awaiting registry publication
-(npm `@aid` scope and PyPI CasuloAI Labs org registration pending). Once published,
-all three channels deliver an identical `aid` CLI.
+The `curl`/`irm` bootstrap and `npm i -g aid-installer` are both supported install paths
+for end users today. The PyPI package is built and tested in CI but awaiting registry
+publication (CasuloAI Labs org registration pending). Once published, all four channels
+deliver an identical `aid` CLI.
