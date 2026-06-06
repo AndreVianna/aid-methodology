@@ -43,13 +43,13 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | # | Feature | Spec Status | Spec Grade | Q&A Count | Notes |
 |---|---------|-------------|------------|-----------|-------|
 | 1 | feature-001-site-foundation | Ready | A+ | 0 | FR1,FR2,FR13 · Must · spec'd (Astro+Starlight `site/`, casulo theme, Pagefind, astro-mermaid) |
-| 2 | feature-002-build-and-deploy | Decomposed | — | 0 | FR12 (+release trigger/fetch) · Must |
+| 2 | feature-002-build-and-deploy | Ready | A+ | 0 | FR12 · Must · spec'd (docs.yml workflow, Pages+CNAME, release-data contract `getAidVersion`/`getLatestRelease`/`getAllReleases`) |
 | 3 | feature-003-home-and-get-started | Decomposed | — | 0 | FR3,FR4 (consumes FR15) · Must |
 | 4 | feature-004-installation-guide | Decomposed | — | 0 | FR5 (consumes FR15) · Must |
 | 5 | feature-005-content-migration | Decomposed | — | 0 | FR11 · Must |
 | 6 | feature-006-concepts-and-reference | Decomposed | — | 0 | FR8,FR9 · Should |
 | 7 | feature-007-pipeline-and-maintainer-guides | Decomposed | — | 0 | FR6,FR7 · Could |
-| 8 | feature-008-version-injection | Decomposed | — | 0 | FR15 · Must |
+| 8 | feature-008-version-injection | Ready | A+ | 0 | FR15 · Must · spec'd (imports getAidVersion; `<InstallCommand>`/`<VersionBadge>`) |
 | 9 | feature-009-releases-and-banner | Decomposed | — | 0 | FR10,FR16 · Should/Could |
 | 10 | feature-010-feedback-and-issues | Decomposed | — | 0 | FR14 · Should |
 
