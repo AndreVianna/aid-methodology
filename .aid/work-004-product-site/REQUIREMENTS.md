@@ -9,6 +9,7 @@
 | 2026-06-06 | §7/§8: tooling=Astro Starlight, host=GitHub Pages+Actions, domain=aid.casuloailabs.com (GoDaddy CNAME), brand=casulo dark+gold+Inter (structure may differ) | /aid-interview + research |
 | 2026-06-06 | §3 Users, §4 Scope, §5 FRs (sitemap-driven), §6 NFRs (desktop+landscape-tablet first; dark default + light toggle; no analytics), §9 ACs, §10 Priority captured | /aid-interview |
 | 2026-06-06 | Interview complete — approved | /aid-interview |
+| 2026-06-06 | Scope addition (during decomposition): live-project bindings — FR14 feedback→prefilled GitHub issue + per-page "Report an issue", FR15 always-current version/install, FR16 release announcement banner, FR10 bound to `release: published` event; "Edit this page" links explicitly out; serverless feedback + RSS feed deferred. Repo slug corrected to AndreVianna/aid-methodology. | /aid-interview (user request) |
 
 ## 1. Objective
 
@@ -19,6 +20,8 @@ running their first work" with minimal friction. It is a polished, multi-page si
 the value proposition, how AID works, installation across every channel, a getting-started
 walkthrough, a releases/changelog section, and reference documentation — with content reused
 from the repo's existing `docs/` where possible, deployed through a GitHub Actions workflow.
+Where useful, the site is **bound to the live AID project** so it stays current hands-free
+(releases, version numbers) and offers a low-friction feedback path.
 
 ## 2. Problem Statement
 
@@ -76,12 +79,25 @@ page, so AID inherits the credibility and branding of an established site.
 - **CI/CD:** a GitHub Actions workflow that builds and deploys to **GitHub Pages** at the
   custom domain **`aid.casuloailabs.com`** (HTTPS).
 - **Releases** section auto-populated from GitHub Releases / `CHANGELOG.md`, including
-  per-release **offline-tarball download links**.
+  per-release **offline-tarball download links**, **rebuilt automatically on the
+  `release: published` event** so it stays current hands-free.
+- **Feedback path:** a feedback page and a per-page **"Report an issue"** link that open a
+  **prefilled GitHub issue** (backed by a GitHub issue-form template) — no backend.
+- **Always-current version & install:** the latest released version is injected at build
+  time into the version badge and all install commands so they never go stale.
+- **Release announcement banner:** a dismissible banner surfacing the latest release.
 - **Cross-linking** to `casuloailabs.com` from the docs (nav/footer).
 
 ### Out of Scope
 
-- Any **backend/server**, user accounts, or authentication.
+- Any **backend/server**, user accounts, or authentication — **including** a serverless
+  function to auto-create issues from an on-page form. The feedback path uses **prefilled
+  GitHub issues** instead; a "fully automatic" serverless feedback Worker is **deferred**
+  (designed so it can be added later without reworking the form).
+- **"Edit this page" links** — deliberately omitted: pages are migrated/generated from
+  `docs/` and `canonical/`, so edit links would target copies and invite drift; feedback is
+  funnelled through "Report an issue" instead.
+- An **RSS/Atom releases feed** — deferred (may be added later).
 - **Heavy analytics** (basic privacy-friendly page views optional, not required).
 - Rewriting or restructuring the **casuloailabs.com marketing site** (only an outbound link
   from the parent site to AID docs may be added later — tracked separately as it lives in
@@ -117,8 +133,10 @@ page, so AID inherits the credibility and branding of an established site.
   **Skills / Agents / KB** reference (from `canonical/`); settings keys; artifacts;
   repository structure (from `docs/repository-structure.md`); glossary (from
   `docs/glossary.md`).
-- **FR10 — Releases.** A changelog auto-pulled from GitHub Releases / `CHANGELOG.md` at
-  build time, with per-release offline-tarball download links.
+- **FR10 — Releases (auto-bound).** A changelog auto-pulled from GitHub Releases /
+  `CHANGELOG.md` at build time, with per-release offline-tarball download links. The docs
+  deploy workflow **rebuilds on the `release: published` event** (no change to `release.yml`
+  — decoupled binding), so the Releases page stays current hands-free.
 - **FR11 — Content reuse.** Existing `docs/*.md` are migrated into Starlight content
   (frontmatter added) and kept as the single source where feasible; Mermaid diagrams render
   correctly.
@@ -127,6 +145,18 @@ page, so AID inherits the credibility and branding of an established site.
   `CNAME` in the build output.
 - **FR13 — Brand theming.** The site visually inherits the casuloailabs.com palette and
   Inter typography (dark-first), per `research/casulo-brand.md`.
+- **FR14 — Feedback & "Report an issue".** A dedicated feedback page and a per-page
+  **"Report an issue"** link, each opening a **prefilled GitHub issue** (title, body,
+  labels, and the originating page URL prefilled) backed by a GitHub issue-form template
+  under `.github/ISSUE_TEMPLATE/`. No backend, no secrets; the visitor reviews and submits
+  on GitHub. The form is structured so a serverless auto-create path could replace the
+  prefilled link later without changing the UI.
+- **FR15 — Always-current version & install.** At build time the latest released version
+  is injected into the version badge and **all install one-liners** (curl/irm, npm, PyPI,
+  offline) so the documented commands and version never go stale.
+- **FR16 — Release announcement banner.** A dismissible site banner surfacing the latest
+  release (e.g. "AID vX.Y.Z is out"), driven from the latest GitHub Release at build time,
+  linking to the Releases page.
 
 ## 6. Non-Functional Requirements
 
@@ -150,12 +180,13 @@ page, so AID inherits the credibility and branding of an established site.
 - **Analytics:** **none** in v1 (may be added later).
 - **Maintainability:** content authored in Markdown/MDX; reuse a single source from `docs/`
   where feasible; pinned build dependencies for reproducible builds; CI should flag broken
-  internal links where practical.
+  internal links where practical. Live-project bindings (releases, version, banner) must be
+  **decoupled** from `release.yml` (event-driven), so the release process needs no changes.
 
 ## 7. Constraints
 
 - **Hosting:** static site on **GitHub Pages**, built and deployed via a **GitHub Actions**
-  workflow from the AID repository (`AndreVianna/AID`).
+  workflow from the AID repository (`AndreVianna/aid-methodology`).
 - **Generator:** **Astro Starlight** (Node/Astro toolchain). Chosen for closest fit to the
   modern three-pane developer-docs look, CSS-variable theming, and built-in offline search.
 - **Custom domain:** **`aid.casuloailabs.com`** — a subdomain, via a `CNAME` DNS record at
@@ -171,6 +202,14 @@ page, so AID inherits the credibility and branding of an established site.
 - **Content reuse:** reuse existing repo Markdown (`docs/aid-methodology.md`,
   `docs/install.md`, `docs/repository-structure.md`, `docs/faq.md`, `docs/glossary.md`)
   as the content source where possible; minimize duplication and drift.
+- **Live-project bindings:** release/version/banner data is read at **build time** and the
+  docs workflow triggers on the **`release: published`** GitHub event — **decoupled** from
+  `release.yml` (which is not modified). No runtime backend.
+- **Feedback path is static:** the feedback page and "Report an issue" link use **prefilled
+  GitHub issues only** (no token, no serverless function), preserving the no-backend
+  constraint. A serverless auto-create path is deferred.
+- **No "Edit this page" links** — omitted by decision (generated/migrated content; risk of
+  pointing at copies / inviting drift).
 - **Maintenance:** low ongoing burden; the releases/changelog section must update with
   minimal manual effort.
 - The repo's **ASCII-only rule does not apply** to site content (that guard is for shipped
@@ -179,8 +218,8 @@ page, so AID inherits the credibility and branding of an established site.
 
 ## 8. Assumptions & Dependencies
 
-- The docs site is built and deployed from the **AID repo** (`AndreVianna/AID`), a separate
-  repository from `casuloailabs.com`.
+- The docs site is built and deployed from the **AID repo**
+  (`AndreVianna/aid-methodology`), a separate repository from `casuloailabs.com`.
 - The owner controls `casuloailabs.com` **DNS at GoDaddy** and can add the `aid` CNAME
   record and configure the repo's GitHub Pages custom domain.
 - **Build dependencies:** Node.js + Astro + Starlight; **Pagefind** (bundled with Starlight)
@@ -188,8 +227,11 @@ page, so AID inherits the credibility and branding of an established site.
 - **Content dependencies:** the existing `docs/*.md` files and `canonical/` (for a
   skills/agents/KB reference). **New content is required** for the Get-Started/tutorial
   walkthrough and the skills/agents/KB reference pages — these do not exist yet.
-- **Releases automation** depends on the **GitHub Releases API** (and/or a `CHANGELOG.md`);
-  a build-step Action reads it using the workflow's `GITHUB_TOKEN`.
+- **Releases / version / banner automation** depends on the **GitHub Releases API** (and/or
+  `CHANGELOG.md` and the `VERSION` file); a build-step Action reads it using the workflow's
+  `GITHUB_TOKEN`, and the workflow listens for the `release: published` event.
+- **Feedback** depends on a **GitHub issue-form template** (`.github/ISSUE_TEMPLATE/`) and
+  the GitHub `issues/new` prefill query parameters; submitters need a GitHub account.
 - GitHub Pages must be enabled for the repo with **source = GitHub Actions**.
 - Starlight content uses MD/MDX with **YAML frontmatter**; existing `docs/*.md` will need
   frontmatter added and to be placed in Starlight's content directory (a one-time,
@@ -222,6 +264,17 @@ page, so AID inherits the credibility and branding of an established site.
   verified.
 - **AC11 — Human visual gate.** The rendered site passes a human visual review/approval
   (look-and-feel is a primary goal of this work).
+- **AC12 — Feedback → prefilled issue.** The feedback page and every per-page "Report an
+  issue" link open a **prefilled GitHub issue** (correct issue-form template; title, body,
+  labels, and originating page URL prefilled) with **no backend call**.
+- **AC13 — Version/install never stale.** The version badge and every install one-liner
+  (curl/irm, npm, PyPI, offline) render the **latest released version** at build time,
+  matching the `VERSION` file / latest GitHub Release.
+- **AC14 — Announcement banner.** A dismissible banner shows the latest release and links to
+  the Releases page; dismissal persists for the visitor.
+- **AC15 — Release-event rebind.** Publishing a GitHub Release triggers a docs rebuild that
+  updates the Releases page, version badge/install commands, and banner — with **no manual
+  steps and no change to `release.yml`**.
 
 ## 10. Priority
 
@@ -232,11 +285,12 @@ Suggested delivery shape (MoSCoW), to guide `/aid-specify` and `/aid-plan`:
 
 - **Must (first deploy / MVP):** FR1 shell & nav · FR13 theming · FR2 search · FR3 home ·
   FR4 Get Started (install + first-work) · FR5 installation guide · FR11 reuse of core docs ·
-  FR12 build + deploy + custom domain.
+  FR12 build + deploy + custom domain · **FR15 always-current version & install** (prevents
+  the most damaging docs-rot, core to credibility).
 - **Should:** FR8 Concepts (full methodology) · FR9 Reference (CLI, repository structure,
-  glossary) · FR10 Releases.
+  glossary) · FR10 Releases (auto-bound) · **FR14 feedback + "Report an issue"**.
 - **Could:** FR6 pipeline guide depth · FR7 maintainer guides · generated Skills/Agents/KB
-  reference (may start as stubs and deepen later).
-- **Won't (this round):** AI assistant panel · internationalization · versioned docs ·
+  reference (may start as stubs and deepen later) · **FR16 release announcement banner**.
+- **Won't (this round):** serverless auto-create feedback Worker · "Edit this page" links ·
+  RSS/Atom releases feed · AI assistant panel · internationalization · versioned docs ·
   analytics.
-
