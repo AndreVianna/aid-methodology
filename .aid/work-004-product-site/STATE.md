@@ -46,7 +46,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 2 | feature-002-build-and-deploy | Ready | A+ | 0 | FR12 · Must · spec'd (docs.yml workflow, Pages+CNAME, release-data contract `getAidVersion`/`getLatestRelease`/`getAllReleases`) |
 | 3 | feature-003-home-and-get-started | Decomposed | — | 0 | FR3,FR4 (consumes FR15) · Must |
 | 4 | feature-004-installation-guide | Decomposed | — | 0 | FR5 (consumes FR15) · Must |
-| 5 | feature-005-content-migration | Decomposed | — | 0 | FR11 · Must |
+| 5 | feature-005-content-migration | Ready | A+ | 0 | FR11 · Must · spec'd (sync-docs.mjs, committed-generated + CI drift-check, docs/ single source) |
 | 6 | feature-006-concepts-and-reference | Decomposed | — | 0 | FR8,FR9 · Should |
 | 7 | feature-007-pipeline-and-maintainer-guides | Decomposed | — | 0 | FR6,FR7 · Could |
 | 8 | feature-008-version-injection | Ready | A+ | 0 | FR15 · Must · spec'd (imports getAidVersion; `<InstallCommand>`/`<VersionBadge>`) |
