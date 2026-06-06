@@ -71,13 +71,19 @@ trap 'rm -rf "$TMP"' EXIT
 # Build a clean clone of the worktree branch to satisfy release.sh's
 # clean-worktree precondition. Mirrors the approach in test-release.sh.
 # ---------------------------------------------------------------------------
-WORKTREE_BRANCH="${AID_TEST_BRANCH:-$(git -C "${REPO_ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo master)}"
+# The commit to test: the current HEAD SHA (robust under CI's detached-HEAD PR checkouts,
+# where a branch name resolves to the literal "HEAD"). Override with AID_TEST_REF.
+WORKTREE_REF="${AID_TEST_REF:-$(git -C "${REPO_ROOT}" rev-parse HEAD)}"
 MAIN_GIT_DIR="$(git -C "${REPO_ROOT}" rev-parse --git-common-dir)"
 MAIN_REPO_ROOT="$(cd "${MAIN_GIT_DIR}/.." 2>/dev/null && pwd)" || MAIN_REPO_ROOT="${REPO_ROOT}"
 
 CLONE="${TMP}/e2e-clone"
-git clone --local --quiet --branch "${WORKTREE_BRANCH}" \
-    "${MAIN_REPO_ROOT}" "${CLONE}" 2>/dev/null
+# Pin the commit under test with a temp tag, clone that, then remove it — robust under
+# CI detached-HEAD PR checkouts (a detached HEAD has no branch ref for a plain clone to find).
+_E2E_REF="aid-test-e2e-$$"
+git -C "${MAIN_REPO_ROOT}" tag -f "${_E2E_REF}" "${WORKTREE_REF}" >/dev/null 2>&1
+git clone --local --quiet --branch "${_E2E_REF}" "${MAIN_REPO_ROOT}" "${CLONE}" 2>/dev/null
+git -C "${MAIN_REPO_ROOT}" tag -d "${_E2E_REF}" >/dev/null 2>&1
 git -C "${CLONE}" config core.fileMode false
 git -C "${CLONE}" config user.email "test@example.com"
 git -C "${CLONE}" config user.name "Test"

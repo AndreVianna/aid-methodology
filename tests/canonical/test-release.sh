@@ -41,9 +41,10 @@ fi
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-# The worktree branch that contains the profiles/ and canonical/ state to test.
-# release.sh is untracked in the worktree (not yet committed) so we inject it.
-WORKTREE_BRANCH="${AID_TEST_BRANCH:-$(git -C "${REPO_ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo master)}"
+# The commit to test: the current HEAD SHA. Using the SHA (not a branch name) is robust
+# in CI's detached-HEAD checkouts (PR builds check out a merge commit, where the branch
+# name resolves to the literal "HEAD"). Override with AID_TEST_REF for ad-hoc runs.
+WORKTREE_REF="${AID_TEST_REF:-$(git -C "${REPO_ROOT}" rev-parse HEAD)}"
 # Main .git directory (shared across worktrees) for cloning.
 MAIN_GIT_DIR="$(git -C "${REPO_ROOT}" rev-parse --git-common-dir)"
 MAIN_REPO_ROOT="$(cd "${MAIN_GIT_DIR}/.." 2>/dev/null && pwd)" || MAIN_REPO_ROOT="${REPO_ROOT}"
@@ -57,10 +58,13 @@ MAIN_REPO_ROOT="$(cd "${MAIN_GIT_DIR}/.." 2>/dev/null && pwd)" || MAIN_REPO_ROOT
 # ---------------------------------------------------------------------------
 make_clone() {
     local dest="$1"
-    # Clone the specific worktree branch so we get VERSION=0.7.0 and the
-    # current profiles/ state — not the stale main-branch state.
-    git clone --local --quiet --branch "${WORKTREE_BRANCH}" \
-        "${MAIN_REPO_ROOT}" "${dest}" 2>/dev/null
+    # Clone the exact commit under test (current VERSION + profiles/ state), robust under
+    # CI's detached-HEAD PR checkouts. A detached HEAD has no branch ref, so a plain local
+    # clone can omit the commit; pin it with a temp tag, clone that tag, then remove it.
+    local _ref="aid-test-clone-$$"
+    git -C "${MAIN_REPO_ROOT}" tag -f "${_ref}" "${WORKTREE_REF}" >/dev/null 2>&1
+    git clone --local --quiet --branch "${_ref}" "${MAIN_REPO_ROOT}" "${dest}" 2>/dev/null
+    git -C "${MAIN_REPO_ROOT}" tag -d "${_ref}" >/dev/null 2>&1
     # Mirror the main repo's fileMode=false so chmod changes from run_generator.py
     # are not treated as render drift (same setting as the origin repo).
     git -C "${dest}" config core.fileMode false
