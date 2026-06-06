@@ -45,7 +45,9 @@ COPIES: list[tuple[str, str]] = [
 
 def vendor(repo_root: Path = _REPO_ROOT, vendor_dir: Path = _VENDOR_DIR) -> bool:
     """Copy the 6 aid-cli files into vendor_dir. Returns True on full success."""
-    # Ensure destination directories exist.
+    # Clean slate: remove any prior payload so stray runtime artifacts (e.g. the
+    # CLI's .update-check cache, or files from an older version) never ship in the wheel.
+    shutil.rmtree(str(vendor_dir), ignore_errors=True)
     (vendor_dir / "bin").mkdir(parents=True, exist_ok=True)
     (vendor_dir / "lib").mkdir(parents=True, exist_ok=True)
 

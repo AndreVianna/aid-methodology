@@ -33,6 +33,14 @@ var copies = [
     ['VERSION',                  'VERSION'],
 ];
 
+// Clean slate: remove any prior vendored payload (lib/ dir + the vendored bin scripts +
+// VERSION) so stray runtime artifacts or files from an older version never ship. Keep the
+// committed shim bin/aid.js.
+try { fs.rmSync(path.join(pkgRoot, 'lib'), { recursive: true, force: true }); } catch (e) {}
+['bin/aid', 'bin/aid.ps1', 'bin/aid.cmd', 'VERSION'].forEach(function (f) {
+    try { fs.rmSync(path.join(pkgRoot, f), { force: true }); } catch (e) {}
+});
+
 // Ensure destination directories exist.
 var dirs = ['bin', 'lib'];
 for (var i = 0; i < dirs.length; i++) {
