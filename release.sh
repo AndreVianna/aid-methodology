@@ -121,9 +121,15 @@ if ! git diff --cached --quiet; then
     die "Index has staged changes. Commit or stash them before releasing." 1
 fi
 
-# Assert the git tag does not already exist.
-if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null 2>&1; then
-    die "Git tag ${TAG} already exists. Delete it or choose a different version." 4
+# Assert the git tag does not already exist at a CONFLICTING commit.
+# --dry-run only stages artifacts (it never creates a tag or Release), so skip this.
+# The CD is tag-triggered: the release tag is pushed first and legitimately points at
+# HEAD, so allow that case; die only on a genuine conflict (tag at a different commit).
+# A duplicate already-published Release is caught by the gh check below.
+if [[ "$DRY_RUN" -eq 0 ]] && git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null 2>&1; then
+    if [[ "$(git rev-list -n 1 "${TAG}")" != "$(git rev-parse HEAD)" ]]; then
+        die "Git tag ${TAG} already exists at a different commit. Delete it or choose a different version." 4
+    fi
 fi
 
 # Assert no existing GitHub Release for this tag (only when not dry-run and gh is available).
