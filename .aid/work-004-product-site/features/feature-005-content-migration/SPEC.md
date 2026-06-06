@@ -174,9 +174,12 @@ the `guides/installation` slug with feature-004's `.mdx` page and lose the tabbe
 UX. The four migrated pages above are this feature's complete output; nothing in `guides/` is
 produced by the sync.
 
-`docs/release.md` is also intentionally **not** in this feature's manifest: it feeds FR7 (Maintainer
-guides, a Could-priority sibling) and is migrated by that feature using the same `sync-docs`
-mechanism (the script is the reusable asset; the manifest is extended there).
+`docs/release.md` is also intentionally **not** in this feature's manifest. Like `docs/install.md`,
+it is a **SOURCE consumed by feature-007** (which OWNS the hand-authored `guides/maintainer.mdx`),
+**not migrated by this feature.** The sync transform does not produce a page from it, and
+`docs/release.md` does not appear in the manifest now or in any future extension of it — feature-007
+hand-authors its maintainer guide from `docs/release.md` as a source, exactly as feature-004 does
+with `docs/install.md`. Nothing in `guides/` is produced by this feature's sync.
 
 ### Link / Anchor / Image Rewrite Rules
 
@@ -254,7 +257,7 @@ treats it as a content page. No `site/.gitignore` rule is added for generated pa
 | `docs/install.md` content → site pages | features 004/006/008 | **Not migrated here**; `install.md` is a SOURCE they consume as hand-authored pages (`guides/installation.mdx`, `reference/cli.mdx`, install-command injection) |
 | CI workflow (runs `sync:docs` + link check) | feature-002 | Specifies the rules the CI must enforce |
 | FR15 version injection into install commands | feature-008 | Out of scope; install content not migrated here |
-| `docs/release.md` → Maintainer guide | feature (FR7) | Reuses `sync-docs.mjs`, extends the manifest |
+| `docs/release.md` content → site pages | feature-007 | **Not migrated here**; `docs/release.md` is a SOURCE feature-007 consumes as a hand-authored page (`guides/maintainer.mdx`) |
 | Net-new content (tutorials, skills/agents/KB reference) | features 003/006 | Not a migration; out of scope |
 
 ### Acceptance Criteria Coverage
