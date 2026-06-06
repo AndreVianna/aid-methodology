@@ -10,6 +10,7 @@
 | 2026-06-06 | §3 Users, §4 Scope, §5 FRs (sitemap-driven), §6 NFRs (desktop+landscape-tablet first; dark default + light toggle; no analytics), §9 ACs, §10 Priority captured | /aid-interview |
 | 2026-06-06 | Interview complete — approved | /aid-interview |
 | 2026-06-06 | Scope addition (during decomposition): live-project bindings — FR14 feedback→prefilled GitHub issue + per-page "Report an issue", FR15 always-current version/install, FR16 release announcement banner, FR10 bound to `release: published` event; "Edit this page" links explicitly out; serverless feedback + RSS feed deferred. Repo slug corrected to AndreVianna/aid-methodology. | /aid-interview (user request) |
+| 2026-06-06 | Cross-reference fixes: Releases source = GitHub Releases API only (CHANGELOG.md dropped — does not exist); settings-keys = net-new from settings.yml; Antigravity added (5 shipped profiles); pipeline reframed per methodology v3.2 (aid-config + 6 phases, deploy/monitor = Deliver); minor wording (offline bundle asset(s), regenerate trees). | /aid-interview (cross-reference) |
 
 ## 1. Objective
 
@@ -78,8 +79,8 @@ page, so AID inherits the credibility and branding of an established site.
   **Mermaid** diagram rendering.
 - **CI/CD:** a GitHub Actions workflow that builds and deploys to **GitHub Pages** at the
   custom domain **`aid.casuloailabs.com`** (HTTPS).
-- **Releases** section auto-populated from GitHub Releases / `CHANGELOG.md`, including
-  per-release **offline-tarball download links**, **rebuilt automatically on the
+- **Releases** section auto-populated from the **GitHub Releases API**, including
+  per-release **offline bundle asset link(s)**, **rebuilt automatically on the
   `release: published` event** so it stays current hands-free.
 - **Feedback path:** a feedback page and a per-page **"Report an issue"** link that open a
   **prefilled GitHub issue** (backed by a GitHub issue-form template) — no backend.
@@ -120,21 +121,25 @@ page, so AID inherits the credibility and branding of an established site.
 - **FR4 — Get Started.** Overview / "What is AID"; **Install AID**; **"Your first work"**
   walkthrough (new); **Lite path quickstart** (new).
 - **FR5 — Guides / Installation.** Channels overview + curl/irm + npm + PyPI + offline
-  tarball; **per-tool "add to project"** instructions in tabbed blocks
-  (Claude/Codex/Cursor/Copilot/…); update / remove. Sourced from `docs/install.md`.
-- **FR6 — Guides / Pipeline.** End-to-end how-to for working the pipeline
-  (discover → interview → specify → plan → detail → execute → deploy/monitor).
+  bundle; **per-tool "add to project"** instructions in tabbed blocks
+  (Claude Code / Codex / Cursor / Copilot CLI / Antigravity — the five shipped profiles);
+  update / remove. Sourced from `docs/install.md`.
+- **FR6 — Guides / Pipeline.** End-to-end how-to for working the pipeline — `aid-config`
+  then the **six numbered phases** (Discover → Interview → Specify → Plan → Detail →
+  Execute), with **deploy/monitor as the optional Deliver skills** (per methodology v3.2,
+  matching the KB taxonomy).
 - **FR7 — Guides / Maintainer.** "Cut a release" (from `docs/release.md`) and
-  "regenerate trees/profiles".
+  **regenerating the host-tool trees/profiles** via the canonical render/generate workflow.
 - **FR8 — Concepts.** The methodology, pipeline & phases, philosophy, Knowledge Base, agent
   model, feedback loops, lite vs full, AID vs spec-driven-dev (from
   `docs/aid-methodology.md`); FAQ (from `docs/faq.md`).
 - **FR9 — Reference.** CLI & subcommands (from `docs/install.md`); a generated
-  **Skills / Agents / KB** reference (from `canonical/`); settings keys; artifacts;
+  **Skills / Agents / KB** reference (from `canonical/`); **settings keys** (net-new,
+  generated from `.aid/settings.yml`); artifacts;
   repository structure (from `docs/repository-structure.md`); glossary (from
   `docs/glossary.md`).
-- **FR10 — Releases (auto-bound).** A changelog auto-pulled from GitHub Releases /
-  `CHANGELOG.md` at build time, with per-release offline-tarball download links. The docs
+- **FR10 — Releases (auto-bound).** A changelog auto-pulled from the **GitHub Releases
+  API** at build time, with per-release offline bundle asset link(s). The docs
   deploy workflow **rebuilds on the `release: published` event** (no change to `release.yml`
   — decoupled binding), so the Releases page stays current hands-free.
 - **FR11 — Content reuse.** Existing `docs/*.md` are migrated into Starlight content
@@ -227,9 +232,10 @@ page, so AID inherits the credibility and branding of an established site.
 - **Content dependencies:** the existing `docs/*.md` files and `canonical/` (for a
   skills/agents/KB reference). **New content is required** for the Get-Started/tutorial
   walkthrough and the skills/agents/KB reference pages — these do not exist yet.
-- **Releases / version / banner automation** depends on the **GitHub Releases API** (and/or
-  `CHANGELOG.md` and the `VERSION` file); a build-step Action reads it using the workflow's
-  `GITHUB_TOKEN`, and the workflow listens for the `release: published` event.
+- **Releases / version / banner automation** depends on the **GitHub Releases API** and the
+  `VERSION` file; a build-step Action reads them using the workflow's `GITHUB_TOKEN`, and the
+  workflow listens for the `release: published` event. (No `CHANGELOG.md` — Releases are the
+  single live source.)
 - **Feedback** depends on a **GitHub issue-form template** (`.github/ISSUE_TEMPLATE/`) and
   the GitHub `issues/new` prefill query parameters; submitters need a GitHub account.
 - GitHub Pages must be enabled for the repo with **source = GitHub Actions**.
@@ -253,11 +259,13 @@ page, so AID inherits the credibility and branding of an established site.
   render**; internal links resolve.
 - **AC6 — New content present.** "Your first work" walkthrough, "Lite path quickstart", and
   a Skills / Agents / KB reference exist.
-- **AC7 — Install instructions.** All four channels (curl/irm, npm, PyPI, offline tarball)
-  are documented with per-tool **tabbed** blocks and copyable commands.
+- **AC7 — Install instructions.** All four channels (curl/irm, npm, PyPI, offline bundle)
+  are documented with copyable commands; the **"add to project"** step uses **per-tool
+  tabbed** blocks for the five shipped profiles (Claude Code / Codex / Cursor / Copilot CLI /
+  Antigravity), and the offline channel covers its bundle asset(s).
 - **AC8 — Search works.** Client-side search returns relevant results with no external SaaS.
-- **AC9 — Releases current.** The Releases section reflects GitHub Releases / `CHANGELOG.md`
-  with per-release offline-tarball download links.
+- **AC9 — Releases current.** The Releases section reflects the **GitHub Releases API**
+  with per-release offline bundle asset link(s).
 - **AC10 — Quality bars.** Layout optimized for desktop + landscape tablet, and **usable**
   (readable, navigable; diagrams/code scroll) on portrait tablet and mobile; **Lighthouse
   ≥ 90** across Performance / Accessibility / Best-Practices / SEO; **WCAG 2.1 AA** contrast

@@ -17,9 +17,11 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 ## Interview Status
 
-**Status:** Approved · **Grade:** Pending (set at CROSS-REFERENCE)
+**Status:** Approved · **Grade:** A+ (cross-reference, 2026-06-06)
 
-> **Review History:** 2026-06-06 — all 10 sections Complete; presented summary; **user approved** requirements.
+> **Review History:**
+> - 2026-06-06 — all 10 sections Complete; presented summary; **user approved** requirements.
+> - 2026-06-06 — CROSS-REFERENCE (aid-reviewer): initial **C+** (1 MEDIUM + 3 LOW + 2 MINOR), feature coverage clean. All 6 findings resolved (user-approved resolutions + obvious corrections); re-grade **A+**.
 
 | # | Section | Status | Last Updated |
 |---|---------|--------|--------------|
@@ -77,9 +79,53 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 ## Cross-phase Q&A (Pending)
 
-> Consolidated open questions across all phases of this work.
+> Consolidated open questions across all phases of this work. The entries below were raised
+> by the CROSS-REFERENCE pass and are all **Answered** (no Pending items remain).
 
-_none yet_
+### Q1
+
+- **Category:** Requirements / Releases
+- **Impact:** Medium
+- **Status:** Answered
+- **Context:** `CHANGELOG.md` was cited as a release-data source but does not exist in the repo (surfaced by /aid-interview cross-reference).
+- **Answer:** Use the **GitHub Releases API only**; drop all `CHANGELOG.md` references.
+- **Applied to:** REQUIREMENTS.md §4/§5(FR10)/§8/§9(AC9); feature-009 SPEC.
+
+### Q2
+
+- **Category:** Requirements / Reference
+- **Impact:** Low
+- **Status:** Answered
+- **Context:** FR9 "settings keys" Reference page had no source doc.
+- **Answer:** Treat as **net-new content generated from `.aid/settings.yml`**.
+- **Applied to:** REQUIREMENTS.md §5(FR9); feature-006 SPEC.
+
+### Q3
+
+- **Category:** Documentation accuracy
+- **Impact:** Low
+- **Status:** Answered
+- **Context:** Install tabs omitted Antigravity (the 5th shipped profile).
+- **Answer:** Include all five profiles (Claude Code / Codex / Cursor / Copilot CLI / Antigravity).
+- **Applied to:** REQUIREMENTS.md §5(FR5)/§9(AC7); feature-004 SPEC.
+
+### Q4
+
+- **Category:** Documentation accuracy
+- **Impact:** Low
+- **Status:** Answered
+- **Context:** Pipeline flow framed deploy/monitor as numbered phases and omitted aid-config, vs KB methodology v3.2.
+- **Answer:** Reframe as **aid-config + 6 numbered phases (Discover→Execute), deploy/monitor as optional Deliver skills**.
+- **Applied to:** REQUIREMENTS.md §5(FR6); feature-007 SPEC.
+
+### Q5
+
+- **Category:** Documentation accuracy (MINOR)
+- **Impact:** Low
+- **Status:** Answered
+- **Context:** "regenerate trees/profiles" had no single source doc; "offline tarball" singular vs multi-asset reality.
+- **Answer:** Soften "regenerate trees/profiles" to "the canonical render/generate workflow"; use "offline bundle asset(s)".
+- **Applied to:** REQUIREMENTS.md §5(FR7)/§9(AC7); feature-007 SPEC; feature-009 SPEC.
 
 ## Lifecycle History
 
@@ -92,3 +138,4 @@ _none yet_
 | 2026-06-06 | Interview approved | — | All 10 sections complete; user-approved; key decisions: Astro Starlight, aid.casuloailabs.com, casulo brand |
 | 2026-06-06 | Scope addition | — | User added FR14 (feedback→prefilled GitHub issue), FR15 (always-current version/install), FR16 (release banner), FR10 bound to release event |
 | 2026-06-06 | Feature Decomposition | — | aid-architect; 10 features created (feature-008 split into version-injection + releases-and-banner; feedback → feature-010); user-approved cut |
+| 2026-06-06 | Cross-Reference | A+ | aid-reviewer; initial C+ (1 MEDIUM + 3 LOW + 2 MINOR), coverage clean; all 6 resolved; re-grade A+. Interview phase complete. |

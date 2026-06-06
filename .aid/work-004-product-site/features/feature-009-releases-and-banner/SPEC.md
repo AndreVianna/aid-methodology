@@ -13,9 +13,9 @@
 ## Description
 
 The release-visible surface of the live-project binding. At build time this feature consumes the
-release data fetched by feature-002 (the GitHub Releases API and/or `CHANGELOG.md`) and produces
-two outputs: (1) a **Releases page** auto-populated from GitHub Releases with each release's
-notes, date, and per-release **offline-tarball download asset link**, rebuilt automatically on
+release data fetched by feature-002 (the GitHub Releases API) and produces
+two outputs: (1) a **Releases page** auto-populated from the GitHub Releases API with each
+release's notes, date, and per-release **offline bundle asset link(s)**, rebuilt automatically on
 the `release: published` event so it stays current hands-free; and (2) a **dismissible
 release-announcement banner** surfacing the latest release (e.g. "AID vX.Y.Z is out") and linking
 to the Releases page, with the dismissal persisted for the visitor. Both are read at build time —
@@ -39,7 +39,7 @@ Should
 
 ## Acceptance Criteria
 
-- [ ] Given a build, when the Releases page renders, then it reflects GitHub Releases / `CHANGELOG.md` with per-release offline-tarball download links. (AC9)
+- [ ] Given a build, when the Releases page renders, then it reflects the GitHub Releases API with per-release offline bundle asset link(s). (AC9)
 - [ ] Given the latest release data, when any page renders, then a dismissible banner shows the latest release and links to the Releases page, and dismissal persists for the visitor. (AC14)
 - [ ] Given a published GitHub Release, when the `release: published` rebuild runs, then the Releases page and the banner update with no manual steps and no change to `release.yml`. (AC15 — releases-page/banner portion)
 - [ ] Given the binding, when release data is read, then it is read at build time with no runtime backend call. (§4, §7)

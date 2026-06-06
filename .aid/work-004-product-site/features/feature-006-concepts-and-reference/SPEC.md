@@ -17,7 +17,8 @@ Build the understanding-oriented and information-oriented areas of the site. Con
 methodology in full — pipeline & phases, philosophy, the Knowledge Base, the agent model, feedback
 loops, lite vs full, and AID vs spec-driven development (from `docs/aid-methodology.md`) — plus the
 FAQ (from `docs/faq.md`). Reference presents the facts: CLI & subcommands (from `docs/install.md`),
-a generated Skills / Agents / KB reference (from `canonical/`), settings keys, artifacts,
+a generated Skills / Agents / KB reference (from `canonical/`), settings keys (net-new,
+generated from `.aid/settings.yml`), artifacts,
 repository structure (from `docs/repository-structure.md`), and the glossary (from
 `docs/glossary.md`). Concepts and Reference consume content produced by the migration feature and
 add the net-new generated catalog pages. Per §10, Concepts and the core Reference pages are
@@ -45,8 +46,9 @@ Should
 - [ ] Given the Concepts section, when navigated, then the full methodology (pipeline & phases,
   philosophy, KB, agent model, feedback loops, lite vs full, AID vs SDD) and the FAQ are present
   (FR8, AC3).
-- [ ] Given the Reference section, when navigated, then CLI & subcommands, settings keys,
-  artifacts, repository structure, and glossary pages are present (FR9, AC3).
+- [ ] Given the Reference section, when navigated, then CLI & subcommands, settings keys
+  (generated from `.aid/settings.yml`), artifacts, repository structure, and glossary pages
+  are present (FR9, AC3).
 - [ ] Given `canonical/`, when the Reference is built, then a Skills / Agents / KB reference
   exists (may begin as stubs and deepen later) (FR9, AC6).
 - [ ] Given the migrated methodology, FAQ, repo-structure, and glossary source, when published in
