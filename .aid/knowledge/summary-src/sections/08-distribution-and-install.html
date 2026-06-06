@@ -2,10 +2,10 @@
 	<header>
 		<span class="eyebrow">Build &amp; Install</span>
 		<h2>Distribution / Install</h2>
-		<p class="lede">Single-source canonical directory renders into five byte-identical host-tool install trees via <code>run_generator.py</code>. End users install by running <code>setup.sh</code> or <code>setup.ps1</code>, which copies the selected profile tree into their project. (per infrastructure.md, repo-presentation.md)</p>
+		<p class="lede">Single-source canonical directory renders into five byte-identical host-tool install trees via <code>run_generator.py</code>. The persistent <code>aid</code> CLI is installed once per machine (curl/irm bootstrap, or the <code>aid-installer</code> npm or PyPI package), then <code>aid add &lt;tool&gt;</code> copies the selected profile tree into any project; offline installs use <code>aid add &lt;tool&gt; --from-bundle &lt;tar&gt;</code>. (per infrastructure.md, repo-presentation.md)</p>
 	</header>
 
-	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 3: Canonical source to five install trees plus setup.sh to any adopter repo — click or press Enter to expand">
+	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 3: Canonical source to five install trees, packaged via release.sh, and installed into any adopter repo via the aid CLI — click or press Enter to expand">
 		<div class="mermaid">
 flowchart TB
     classDef src     fill:#0B1F3A,stroke:#00A3A1,color:#fff,stroke-width:2px;
@@ -14,6 +14,7 @@ flowchart TB
     classDef install fill:#6941C6,stroke:#5521b5,color:#fff,stroke-width:2px;
     classDef adopter fill:#0E7490,stroke:#155E75,color:#fff,stroke-width:2px;
     classDef verify  fill:#2E7D32,stroke:#1B5E20,color:#fff,stroke-width:2px;
+    classDef release fill:#92400E,stroke:#78350F,color:#fff,stroke-width:2px;
 
     SRC["canonical/<br/>agents, skills, templates,<br/>scripts, recipes"]:::src
 
@@ -35,9 +36,13 @@ flowchart TB
         T5["profiles/antigravity/<br/>.agent/ + AGENTS.md"]:::install
     end
 
-    ADOPTER["Any adopter repo<br/>.claude/ | .codex/+.agents/ | .cursor/<br/>| .github/ | .agent/"]:::adopter
-
     VFY["verify_deterministic.py<br/>VERIFY (deterministic) hard gate<br/>byte-identical re-render"]:::verify
+
+    REL["release.sh<br/>GitHub Release tarballs + SHA256SUMS"]:::release
+
+    CLI["aid CLI<br/>aid add TOOL<br/>(curl/irm | npm | PyPI | --from-bundle)"]:::install
+
+    ADOPTER["Any adopter repo<br/>.claude/ | .codex/+.agents/ | .cursor/<br/>| .github/ | .agent/"]:::adopter
 
     SRC --> GEN
     P1 --> GEN
@@ -51,13 +56,15 @@ flowchart TB
     GEN --> T4
     GEN --> T5
     GEN --> VFY
-    T1 -.->|setup.sh| ADOPTER
-    T2 -.->|setup.sh| ADOPTER
-    T3 -.->|setup.sh| ADOPTER
-    T4 -.->|setup.sh| ADOPTER
-    T5 -.->|setup.sh| ADOPTER
+    T1 --> REL
+    T2 --> REL
+    T3 --> REL
+    T4 --> REL
+    T5 --> REL
+    REL --> CLI
+    CLI -.->|copies profile subtree| ADOPTER
 		</div>
-		<p class="caption">Fig 3 — Canonical-to-5-install-trees pipeline: one canonical source, five profile TOML configs (claude-code, codex, cursor, copilot-cli, antigravity), five renderers per profile, VERIFY (deterministic) hard gate. Adopters install by running setup.sh / setup.ps1, which copies the selected profile tree into their repo. (per architecture.md, infrastructure.md)</p>
+		<p class="caption">Fig 3 — Canonical-to-5-install-trees pipeline: one canonical source, five profile TOML configs (claude-code, codex, cursor, copilot-cli, antigravity), five renderers per profile, VERIFY (deterministic) hard gate. Profile trees are packaged by release.sh into GitHub Release tarballs; adopters run aid add &lt;tool&gt; (via the persistent aid CLI, bootstrapped once per machine via curl/irm, npm, or PyPI) to copy the profile subtree into their repo. (per architecture.md, infrastructure.md)</p>
 	</div>
 
 	<div class="grid g3">
@@ -68,8 +75,8 @@ flowchart TB
 		</div>
 		<div class="card">
 			<div class="kicker">End-user install</div>
-			<h3><code>setup.sh</code> / <code>setup.ps1</code></h3>
-			<p>Interactive multi-select menu — <code>[1] Claude Code [2] Codex [3] Cursor [4] GitHub Copilot CLI [5] Antigravity [6] Done</code>. Copies each selected profile tree into the user's project root. Existing identical files are skipped; differing files prompt unless <code>--force</code> is passed. Bash 4+ (Linux/macOS/Git Bash) or PowerShell 5.1+ (Windows). (per infrastructure.md)</p>
+			<h3><code>aid</code> CLI</h3>
+			<p>Bootstrapped once per machine: <code>curl … | bash</code> / <code>irm … | iex</code>, or <code>npm install -g aid-installer</code> / <code>pip install aid-installer</code> (PyPI). Per project: <code>aid add &lt;tool&gt;</code> fetches and verifies the release tarball then copies the profile subtree; <code>aid status</code>, <code>aid update [self]</code>, <code>aid remove [self]</code>; bare <code>aid</code> shows a project dashboard. Idempotent — identical files are skipped. Offline: <code>aid add &lt;tool&gt; --from-bundle &lt;tar&gt;</code>. Bash 4+ (Linux/macOS/Git Bash) or PowerShell 5.1+ (Windows). (per infrastructure.md)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">4 agent formats / split roots</div>
@@ -79,8 +86,8 @@ flowchart TB
 	</div>
 
 	<div class="callout">
-		<h4>Option-A AGENTS.md collision handler</h4>
-		<p>Four of the five tools — Codex, Cursor, Copilot CLI, Antigravity — write a root <code>AGENTS.md</code> (Claude Code uses <code>CLAUDE.md</code> only). When ≥2 AGENTS.md-writing tools are selected, <code>setup.sh</code> sets <code>AGENTS_COLLISION=1</code>, warns once, and resolves <strong>non-interactively</strong> with last-installed-wins — the survivor is the highest-numbered selected tool's install block (fixed per-tool order). The handler is gated: it only fires when <code>AGENTS_COLLISION=1</code> and the destination basename is <code>AGENTS.md</code>, so a single-writer install never triggers auto-overwrite. (per infrastructure.md §Install Pipeline, architecture.md §Install-time data flow)</p>
+		<h4>FR12 invariant root <code>AGENTS.md</code> + FR11 protect-on-diff</h4>
+		<p>Four of the five tools — Codex, Cursor, Copilot CLI, Antigravity — write a root <code>AGENTS.md</code> (Claude Code uses <code>CLAUDE.md</code> only). <strong>FR12:</strong> all four ship a byte-identical root <code>AGENTS.md</code>, enforced by <code>tests/canonical/test-agents-md-invariant.sh</code> as a CI hard gate, so installing a second AGENTS.md-writing tool into a project is no longer a collision. <strong>FR11 protect-on-diff:</strong> when <code>aid add</code> would overwrite a user-owned root agent file (<code>CLAUDE.md</code> or <code>AGENTS.md</code>) that has been modified since AID wrote it, the incoming version is written as <code>*.aid-new</code> instead of silently overwriting — the user reviews and merges. The former Option-A last-installed-wins handler was removed with <code>setup.sh</code>. (per infrastructure.md §Install Pipeline, architecture.md)</p>
 	</div>
 
 	<div class="callout warn">
