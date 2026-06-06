@@ -47,13 +47,7 @@ difference is only how `aid` lands on your PATH.
 | `curl` / `irm` bootstrap (online) | Bash or PowerShell 5.1+ | Available — see [Step 1](#step-1--bootstrap-the-aid-cli-once-per-machine) |
 | `--from-bundle` (offline / air-gapped) | Bash or PowerShell 5.1+ | Available — see [Offline install](#offline--air-gapped-install) |
 | npm: `npm i -g aid-installer` | Node >=18 | Published / live — see [npm channel](#npm-channel) |
-| PyPI: `pipx install aid-installer` | Python >=3.8 | Built and tested; not yet published to PyPI (see note below) |
-
-> **Publishing status:** The `aid-installer` npm package is published and live on the npm
-> registry. The `aid-installer` PyPI package is built and tested in CI but not yet
-> published — the CasuloAI Labs PyPI org registration is pending. Until PyPI publication,
-> `pipx install aid-installer` is for local and CI use only. The `curl`/`irm` bootstrap
-> and `npm i -g aid-installer` are both supported install paths for end users today.
+| PyPI: `pipx install aid-installer` | Python >=3.8 | Published / live — see [PyPI channel](#pypi-channel) |
 
 ---
 
@@ -105,7 +99,7 @@ command automatically.
 
 ---
 
-### PyPI channel (not yet published)
+### PyPI channel
 
 Requires Python >=3.8.
 
@@ -774,9 +768,7 @@ irm .../install.ps1 | iex
 | `irm … \| iex` (online, Windows PowerShell) | PowerShell 5.1+ | Available | See [Step 1](#step-1--bootstrap-the-aid-cli-once-per-machine) |
 | `--from-bundle <path>` (offline tarball) | Bash or PowerShell 5.1+ | Available | See [Offline install](#offline--air-gapped-install) |
 | `npm install -g aid-installer` → `aid` | Node >=18 | Published / live | See [npm channel](#npm-channel) |
-| `pipx install aid-installer` → `aid` | Python >=3.8 | Built; not yet published to PyPI | See [PyPI channel](#pypi-channel-not-yet-published) |
+| `pipx install aid-installer` → `aid` | Python >=3.8 | Published / live | See [PyPI channel](#pypi-channel) |
 
-The `curl`/`irm` bootstrap and `npm i -g aid-installer` are both supported install paths
-for end users today. The PyPI package is built and tested in CI but awaiting registry
-publication (CasuloAI Labs org registration pending). Once published, all four channels
-deliver an identical `aid` CLI.
+All four channels — `curl`/`irm` bootstrap, `--from-bundle`, npm, and PyPI — are
+available and deliver an identical `aid` CLI.

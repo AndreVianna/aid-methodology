@@ -83,7 +83,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 |----------|--------|-------|-------|
 | delivery-001 | Done — live-verified Linux(zsh)+Windows(pwsh 7.6.2), CI-green both OS, v0.7.5 | 001–010 + 020–030 | Persistent `aid` CLI; foundation installer; closed by user after cross-platform live verification |
 | delivery-002 | PUBLISHED (npm) | 031–035 + 042 | `aid-installer` LIVE on npm (v0.7.5); `npm i -g aid-installer` / `npx aid-installer`; CI-green |
-| delivery-003 | Built + CI-green (publish deferred) | 036–041 | PyPI `aid` on PATH; Linux+Windows CI green; CasuloAI Labs org reg blocks publish |
+| delivery-003 | PUBLISHED (PyPI) | 036–041 | `aid-installer` LIVE on PyPI (v0.7.5); `pipx install aid-installer`; self-contained sdist+wheel |
 | delivery-004 | Built (publish inert) | 016–017 | release.yml tag-triggered (gate->release->npm/PyPI publish, OIDC); version-sync FR10; publish gated on NPM/PYPI_ENABLED + secrets |
 | delivery-005 | Done | 018–019 | Invariant root AGENTS.md (4 files byte-identical) + CI guard; no render-drift |
 
