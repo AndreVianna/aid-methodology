@@ -18,7 +18,7 @@ Understanding the structure is key to contributing in the right place:
 | `profiles/cursor/.cursor/` | LLMs | .md / .mdc | Generated — Cursor IDE install tree |
 | `templates/` | Both | Markdown | Fill-in templates (canonical source in `canonical/templates/`) |
 | `examples/` | Humans | Markdown | Real-world case studies |
-| `methodology/` | Humans | Markdown | Core methodology document |
+| `docs/` | Humans | Markdown | User-facing documentation, including the core methodology document |
 
 **Important:** To update a skill, agent, or template, edit the canonical source under
 `canonical/` and run `/aid-generate`. The five install trees (`profiles/claude-code/.claude/`,

@@ -6,7 +6,7 @@
 **AI Integrated Development.** "Integrated" captures the core philosophy: human and AI co-execute every phase. Not "AI-driven" (human is the pilot) and not "AI-assisted" (AI does more than assist).
 
 ### How is AID different from SDD (Spec-Driven Development)?
-SDD covers spec→code. AID covers problem→production→maintenance. AID contains SDD as one layer — the spec-and-build span — and adds discovery, requirements gathering, multi-level planning, post-deployment monitoring, and formal feedback loops. See the [comparison table](../README.md#aid-vs-sdd).
+SDD covers spec→code. AID covers problem→production→maintenance. AID contains SDD as one layer — the spec-and-build span — and adds discovery, requirements gathering, multi-level planning, post-deployment monitoring, and formal feedback loops. See the [comparison table](aid-methodology.md#9-comparison-with-sdd).
 
 ### Is this just Waterfall rebranded?
 Yes — and that's the point. Waterfall's phases were sound. Waterfall failed because humans were too slow to execute them with rigor. Agile solved that by dropping the rigor. AI changes the economics: discovery takes hours not weeks, going back costs tokens not sprints. The rigor becomes viable again.
@@ -34,22 +34,55 @@ AID ships install bundles for five host tools:
 4. **GitHub Copilot CLI** — installs to `.github/`
 5. **Antigravity** — installs to `.agent/`
 
-The `install.sh` / `install.ps1` installer supports all five tools via `--tool`. All five install trees are byte-identical in skill and agent content; only the wrapper format differs per tool.
+All five install trees are byte-identical in skill and agent content; only the wrapper format differs per tool.
 
 ### How do I install AID into my project?
-Run the one-command installer (no full repo clone required):
-```bash
-# Linux / macOS / git-bash — auto-detects your tool
-curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
 
-# Explicit tool
-bash install.sh --tool claude-code /path/to/your/project
+First, bootstrap the `aid` CLI once per machine, then use `aid add` inside the repo.
+
+**Bootstrap (one of four channels):**
+
+```bash
+# Linux / macOS
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
 
 # Windows PowerShell
 irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
-.\install.ps1 -Tool ClaudeCode -TargetDirectory C:\path\to\your\project
+
+# npm (Node >=18)
+npm i -g aid-installer
+
+# PyPI (Python >=3.8)
+pipx install aid-installer
 ```
-Re-running is safe — identical files are skipped; changed files are skipped unless you pass `--force`.
+
+**Add AID to a project (run inside the repo):**
+
+```bash
+aid add claude-code      # or: codex  cursor  copilot-cli  antigravity
+aid add codex,cursor     # multiple tools at once
+```
+
+Re-running `aid add` is safe — identical files are skipped. Root agent files you edited yourself are protected (see [docs/install.md](install.md#protect-on-diff-for-root-agent-files)). See the [full install guide](install.md) for offline installs, version pinning, and the complete subcommand reference.
+
+### How do I update AID?
+
+```bash
+aid update             # update all installed tools in the current project
+aid update self        # update the aid CLI itself
+```
+
+`aid update self` is channel-aware: it detects how `aid` was installed (curl/irm, npm, or PyPI) and prints the correct upgrade command automatically.
+
+### How do I remove AID?
+
+```bash
+aid remove             # remove all AID from the current project (asks to confirm)
+aid remove claude-code # remove one tool
+aid remove self        # remove the aid CLI itself (asks to confirm)
+```
+
+Uninstall is manifest-driven — only files that `aid add` wrote are removed. Files you edited yourself are left in place.
 
 ### How do I use the skills?
 The skills run as slash commands inside your AI coding tool:
@@ -93,7 +126,7 @@ The 14 standard markdown documents that capture the living understanding of a pr
 The count is configurable per project via `discovery.doc_set` in `.aid/settings.yml`; 14 is the default seed.
 
 ### What are feedback loops?
-Formal pathways for a downstream phase to revise upstream artifacts. When implementation reveals the spec was wrong, you don't silently work around it — you create an IMPEDIMENT.md that triggers a spec revision. There are 11 loops total. See the [methodology document](../methodology/aid-methodology.md#6-feedback-loops).
+Formal pathways for a downstream phase to revise upstream artifacts. When implementation reveals the spec was wrong, you don't silently work around it — you create an IMPEDIMENT.md that triggers a spec revision. There are 11 loops total. See the [methodology document](aid-methodology.md#6-feedback-loops).
 
 ### What's the Grade A gate?
 AID's review phase grades code on a scale from A+ (exemplary) to F (doesn't build). The grading evaluates specification compliance, architecture adherence, and convention conformance — not a fixed checklist. Define your project's specific quality gates in SPEC.md and the review criteria.

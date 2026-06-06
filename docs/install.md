@@ -1,7 +1,7 @@
 # AID Install / Update / Remove Guide
 
-Complete reference for the `aid` CLI: bootstrap, per-project subcommands, offline install,
-and uninstall — across Linux, macOS, and Windows.
+Complete reference for the `aid` CLI: bootstrap, per-project subcommands, what gets
+installed per tool, offline install, and uninstall — across Linux, macOS, and Windows.
 
 ---
 
@@ -13,6 +13,7 @@ and uninstall — across Linux, macOS, and Windows.
 - [Step 2 — Use `aid` per project](#step-2--use-aid-per-project)
 - [One-line first install (bootstrap + add in one command)](#one-line-first-install-bootstrap--add-in-one-command)
 - [Offline / air-gapped install](#offline--air-gapped-install)
+- [What gets installed per tool](#what-gets-installed-per-tool)
 - [Removing AID](#removing-aid)
 - [Update check](#update-check)
 - [Trust model and checksum verification](#trust-model-and-checksum-verification)
@@ -166,7 +167,7 @@ do not need to be inside a project directory.
 ### Linux / macOS
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/<ref>/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
 ```
 
 - Installs to `~/.aid/` (override with `$AID_HOME`).
@@ -177,14 +178,14 @@ curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/<ref>/i
 ### Windows (PowerShell 5.1+)
 
 ```powershell
-irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/<ref>/install.ps1 | iex
+irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
 ```
 
 - Installs to `%LOCALAPPDATA%\aid\` (override with `$env:AID_HOME`).
 - Adds `%LOCALAPPDATA%\aid` to your **User** PATH (no admin required).
 - Pass `-NoPath` to skip the PATH edit:
   ```powershell
-  $env:AID_NO_PATH = '1'; irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/<ref>/install.ps1 | iex
+  $env:AID_NO_PATH = '1'; irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
   ```
 
 > **After bootstrap, open a new shell** (or source your profile) to pick up the
@@ -194,13 +195,13 @@ irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/<ref>/install.
 
 ```bash
 # Linux / macOS
-curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/<ref>/install.sh | bash -s -- --version 0.7.0
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- --version 0.7.5
 ```
 
 ```powershell
 # Windows
-$env:AID_VERSION = '0.7.0'
-irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/<ref>/install.ps1 | iex
+$env:AID_VERSION = '0.7.5'
+irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
 ```
 
 Pinning ensures every machine bootstraps the same CLI version.
@@ -219,9 +220,9 @@ aid status
 ```
 
 ```
-AID 0.7.0  (project: /path/to/your/project)
+AID 0.7.5  (project: /path/to/your/project)
 Installed tools:
-  claude-code   v0.7.0   root: CLAUDE.md (owned)
+  claude-code   v0.7.5   root: CLAUDE.md (owned)
 ```
 
 Bare `aid` (no subcommand) shows a dashboard: the installed CLI version, the project
@@ -245,7 +246,7 @@ aid add codex,cursor
 Pin to a specific version:
 
 ```bash
-aid add claude-code --version 0.7.0
+aid add claude-code --version 0.7.5
 ```
 
 Without `--version` the installer resolves the latest GitHub Release
@@ -329,7 +330,7 @@ command:
 ### Linux / macOS
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/<ref>/install.sh | bash -s -- add claude-code
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- add claude-code
 ```
 
 The bootstrap installs `aid`, then immediately runs `aid add claude-code` in the current
@@ -342,7 +343,7 @@ Because `irm … | iex` cannot forward arguments, use the `AID_TOOL` environment
 
 ```powershell
 $env:AID_TOOL = 'claude-code'
-irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/<ref>/install.ps1 | iex
+irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
 ```
 
 This bootstraps the CLI and then runs `aid add claude-code` in the current directory.
@@ -358,9 +359,9 @@ use `aid add --from-bundle` — no network required.
 ### Download and verify
 
 ```bash
-# Download (example: claude-code at v0.7.0)
-curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v0.7.0/aid-claude-code-v0.7.0.tar.gz
-curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v0.7.0/SHA256SUMS
+# Download (example: claude-code at v0.7.5)
+curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v0.7.5/aid-claude-code-v0.7.5.tar.gz
+curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v0.7.5/SHA256SUMS
 
 # Verify (Linux)
 sha256sum --check --ignore-missing SHA256SUMS
@@ -372,7 +373,7 @@ shasum -a 256 -c SHA256SUMS
 ```powershell
 # Verify (Windows)
 $expected = (Get-Content SHA256SUMS | Where-Object { $_ -match 'aid-claude-code' }) -split '\s+' | Select-Object -First 1
-$actual   = (Get-FileHash .\aid-claude-code-v0.7.0.tar.gz -Algorithm SHA256).Hash.ToLower()
+$actual   = (Get-FileHash .\aid-claude-code-v0.7.5.tar.gz -Algorithm SHA256).Hash.ToLower()
 if ($expected -ne $actual) { Write-Error "Checksum mismatch"; exit 4 }
 ```
 
@@ -380,7 +381,7 @@ if ($expected -ne $actual) { Write-Error "Checksum mismatch"; exit 4 }
 
 ```bash
 # After bootstrapping the CLI (see Step 1)
-aid add claude-code --from-bundle aid-claude-code-v0.7.0.tar.gz
+aid add claude-code --from-bundle aid-claude-code-v0.7.5.tar.gz
 ```
 
 For multiple tools, pass a directory containing the per-tool tarballs
@@ -391,6 +392,58 @@ aid add codex,cursor --from-bundle ./bundles/
 ```
 
 `--from-bundle` and `--version` are mutually exclusive.
+
+---
+
+## What gets installed per tool
+
+`aid add <tool>` copies the AID profile for one tool into the current project directory.
+The files written depend on the tool.
+
+### Claude Code
+
+Installs into `.claude/`:
+
+- `.claude/skills/` — 11 skill markdown files
+- `.claude/agents/` — 9 agent markdown files
+- `CLAUDE.md` — project-context file at the project root
+
+### Codex CLI
+
+Installs into `.codex/` and `.agents/`:
+
+- `.codex/agents/` — agent TOML files
+- `.agents/` — agent TOML files (alternate path Codex probes)
+- `AGENTS.md` — project-context file at the project root
+
+### Cursor
+
+Installs into `.cursor/`:
+
+- `.cursor/rules/` — skill and agent `.mdc` rule files
+- `AGENTS.md` — project-context file at the project root
+
+### GitHub Copilot CLI
+
+Installs into `.github/`:
+
+- `.github/copilot-agents/` — agent `.agent.md` files
+- `AGENTS.md` — project-context file at the project root
+
+### Antigravity
+
+Installs into `.agent/`:
+
+- `.agent/` — skill and agent files with `trigger:` frontmatter
+- `AGENTS.md` — project-context file at the project root
+
+### Notes
+
+All five profiles contain byte-identical skill and agent bodies — only the wrapper format
+differs per tool. The source of truth is `canonical/`; `profiles/` are generated output.
+
+`.aid/` is appended to your `.gitignore` by default (the Knowledge Base stays out of git;
+remove the entry if you want to commit it).
 
 ---
 
@@ -562,11 +615,11 @@ into that repo. A human-readable convenience file is also written: `.aid/.aid-ve
 ```json
 {
   "manifest_version": 1,
-  "aid_version": "0.7.0",
+  "aid_version": "0.7.5",
   "installed_at": "2026-06-04T12:00:00Z",
   "tools": {
     "claude-code": {
-      "version": "0.7.0",
+      "version": "0.7.5",
       "installed_at": "2026-06-04T12:00:00Z",
       "paths": [".claude/skills/...", "CLAUDE.md"],
       "root_agent_files": [
@@ -638,7 +691,7 @@ PowerShell flags use the same words; the `-` prefix is accepted alongside `--`:
 
 | Flag | Applies to | Default | Description |
 |------|-----------|---------|-------------|
-| `--version <v>` | `add`, `update` | latest release | Pin to a release version (`0.7.0` or `v0.7.0`). Mutually exclusive with `--from-bundle`. |
+| `--version <v>` | `add`, `update` | latest release | Pin to a release version (`0.7.5` or `v0.7.5`). Mutually exclusive with `--from-bundle`. |
 | `--from-bundle <path>` | `add`, `update` | — | Offline install from a tarball (single tool) or a directory of tarballs. No network required. |
 | `--force` | `add`, `update`, `remove` | off | Overwrite differing files and skip confirmation prompts. |
 | `--verbose` | all | off | Print per-file `Copied:` / `Up to date:` / `Updated:` / `Removed:` lines. Default: concise summary. |

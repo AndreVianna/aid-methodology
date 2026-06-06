@@ -1344,6 +1344,29 @@ SDD is not wrong. It is incomplete. AID is SDD + Discovery + Feedback Loops + Tw
 
 ## 10. Adoption Guide
 
+### Getting AID onto Your Machine
+
+AID installs in one command. Pick the channel that fits your environment:
+
+```bash
+# Linux / macOS
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
+
+# Windows PowerShell
+irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
+
+# npm (Node >=18)
+npm i -g aid-installer
+
+# PyPI (Python >=3.8)
+pipx install aid-installer
+```
+
+Offline / air-gapped environments can download a profile tarball from the GitHub
+Releases page and install with `aid add <tool> --from-bundle <file.tar.gz>` — no
+network required after the initial download. All channels deliver the same persistent
+`aid` CLI; once bootstrapped, use `aid add <tool>` inside any project.
+
 ### Starting with an Existing Project (Brownfield)
 
 1. Run `/aid-config` to initialize the workspace (once per project).
