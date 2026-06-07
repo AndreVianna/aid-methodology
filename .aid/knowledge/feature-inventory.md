@@ -10,6 +10,7 @@ changelog:
   - 2026-06-03: Added /aid-housekeep (11th user-facing skill) via /aid-housekeep KB-delta refresh
   - 2026-06-05: work-002-auto-installer — added the installer/CLI capability (the persistent global `aid` CLI + its four install channels) as an engineering feature; corrected the `/aid-generate` row (it is no longer shipped via `setup.sh` — that installer was replaced by the `aid` CLI).
   - 2026-06-03: methodology v3.2 — marked /aid-deploy and /aid-monitor as optional, on-demand end-of-pipeline Deliver skills (not numbered phases); independent of each other.
+  - 2026-06-07: v1.0.0 first stable release — corrected stale VERSION note (0.7.5 → 1.0.0); added Agent model (9 agents), Knowledge Base doc-set (14), feedback loops (11), and host-tool profiles (5) as tracked feature areas.
 ---
 
 # Feature Inventory
@@ -42,6 +43,46 @@ changelog:
 |---|-------|--------|-------------|--------|
 | - | `/aid-generate` | Shipped | Regenerates the five install trees (claude-code, codex, cursor, copilot-cli, antigravity) from `canonical/` and `profiles/`. Not part of the end-user `aid` CLI; lives only at `.claude/skills/aid-generate/` to avoid a chicken-and-egg deployment problem. | `.claude/skills/aid-generate/SKILL.md` |
 
+## Agent model (9 agents)
+
+The skills above dispatch a fixed roster of specialized agents across three model tiers.
+The reviewer's tier is always ≥ the executor's, and the agent that writes code never grades
+its own work.
+
+| Tier | Agents | Source |
+|------|--------|--------|
+| Large | `aid-architect`, `aid-interviewer`, `aid-researcher`, `aid-reviewer` | `canonical/agents/*/AGENT.md` |
+| Medium | `aid-developer`, `aid-operator`, `aid-orchestrator`, `aid-tech-writer` | `canonical/agents/*/AGENT.md` |
+| Small | `aid-clerk` | `canonical/agents/aid-clerk/AGENT.md` |
+
+## Knowledge Base doc-set (14 standard docs)
+
+`aid-discover` populates a configurable set of standard Knowledge Base documents (default
+seed: **14**) under `.aid/knowledge/`, plus three meta-documents (`INDEX.md`, `README.md`,
+`STATE.md`). Navigated by convention (RAG-by-convention). Configurable per project via
+`discovery.doc_set` in `.aid/settings.yml`. Templates: `canonical/templates/knowledge-base/*.md`.
+
+## Feedback loops (11)
+
+Eleven formal pathways let a downstream phase revise an upstream artifact, each producing a
+tracked record: Q&A entries (appended to a STATE file), `IMPEDIMENT.md` (implementation
+contradicts the spec), and MONITOR-STATE findings (production → fix / change-request).
+Source: `docs/aid-methodology.md` §6 Feedback Loops.
+
+## Host-tool profiles (5)
+
+`aid add <tool>` installs AID into a project for any of five host tools, with byte-identical
+skill/agent bodies (only the wrapper format differs). Source of truth is `canonical/`,
+rendered into `profiles/` by the generator (`run_generator.py`).
+
+| Profile | Install dir | Context file |
+|---------|-------------|--------------|
+| Claude Code | `.claude/` | `CLAUDE.md` |
+| Codex CLI | `.codex/agents/` + `.agents/` | `AGENTS.md` |
+| Cursor | `.cursor/` | `AGENTS.md` |
+| GitHub Copilot CLI | `.github/` | `AGENTS.md` |
+| Antigravity | `.agent/` | `AGENTS.md` |
+
 ## Engineering features (referenced for historical context)
 
 The 11 user-facing skills above are the result of the following engineering work items:
@@ -65,4 +106,4 @@ capability that delivers all of the above. Shipped by **work-002-auto-installer*
 | Four install channels | Shipped | (1) curl/irm bootstrap (`install.sh` / `install.ps1`), (2) npm `aid-installer` (`packages/npm/`), (3) PyPI `aid-installer` (`packages/pypi/`), (4) offline `aid add <tool> --from-bundle <path>`. All deliver the same CLI; npm/PyPI are thin shims that vendor the payload and spawn `bin/aid`. | `install.sh`, `packages/npm/package.json`, `packages/pypi/pyproject.toml` |
 | FR11 protect-on-diff | Shipped | A user-authored root `CLAUDE.md`/`AGENTS.md` is written as `*.aid-new` for review rather than overwritten on `aid add`/`aid update`. | `lib/aid-install-core.sh`, `docs/install.md` |
 | FR12 invariant root `AGENTS.md` | Shipped | The four AGENTS.md-writing tools ship a byte-identical root `AGENTS.md`; CI-guarded. | `tests/canonical/test-agents-md-invariant.sh` |
-| Tag-triggered release pipeline | Shipped | `release.sh` builds the profile tarballs + CLI bundle + `SHA256SUMS` + `gh release create`; `.github/workflows/release.yml` gates then publishes GitHub Release + npm/PyPI via OIDC on a `v*` tag. Releases v0.7.0-v0.7.5 exist; `VERSION` = 0.7.5. | `release.sh`, `.github/workflows/release.yml` |
+| Tag-triggered release pipeline | Shipped | `release.sh` builds the profile tarballs + CLI bundle + `SHA256SUMS` + `gh release create`; `.github/workflows/release.yml` gates then publishes GitHub Release + npm/PyPI via OIDC on a `v*` tag. **v1.0.0** is the first stable release (v0.7.0–v0.7.5 were pre-releases); `VERSION` = 1.0.0. | `release.sh`, `.github/workflows/release.yml` |

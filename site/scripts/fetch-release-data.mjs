@@ -84,7 +84,9 @@ async function fetchReleases(owner, repo, token) {
 
   return {
     latest: projectRelease(latestRaw),
-    all: allRaw.map(projectRelease),
+    // Changelog shows stable releases only — exclude drafts and pre-releases
+    // (e.g. the v0.7.x dev pre-releases) so the public history starts at v1.0.0.
+    all: allRaw.filter((r) => !r.prerelease && !r.draft).map(projectRelease),
   };
 }
 
