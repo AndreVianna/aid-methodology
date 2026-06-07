@@ -102,7 +102,7 @@ Source: `find canonical/skills -maxdepth 1 -type d`,
 ### `/aid-execute <task-NNN> [work-NNN]`
 
 - **States:** `EXECUTE → REVIEW → FIX → REVIEW → DONE` (`canonical/skills/aid-execute/SKILL.md` frontmatter `State machine: EXECUTE → REVIEW → FIX`)
-- **Branch contract:** One branch per delivery (`aid/delivery-NNN`); RESEARCH/DOCUMENT
+- **Branch contract:** One branch per delivery (`aid/{work}-delivery-NNN`); RESEARCH/DOCUMENT
   tasks that produce only `.aid/` artifacts may skip branching
   (`canonical/skills/aid-execute/SKILL.md` `### Check 5: Branch Isolation`)
 - **Source:** `canonical/skills/aid-execute/SKILL.md`

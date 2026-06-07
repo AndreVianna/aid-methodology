@@ -60,5 +60,5 @@ These artifacts are produced during `aid-execute` delivery branches.
 
 | Artifact | Path | Produced by | Description |
 |----------|------|-------------|-------------|
-| Delivery branch | `aid/{work}-delivery-{NNN}` (git branch) | `aid-execute` | One git branch per delivery. `aid-execute` creates it, commits implementation work to it, and the delivery is merged when the review loop exits at grade ≥ minimum. |
+| Delivery branch | `aid/{work}-delivery-NNN` (git branch) | `aid-execute` | One git branch per delivery. `aid-execute` creates it, commits implementation work to it, and the delivery is merged when the review loop exits at grade ≥ minimum. |
 | Delivery PR | GitHub Pull Request | `aid-operator` | The pull request that merges the delivery branch. `aid-operator` creates it with release notes and links to the tasks it closes. |
