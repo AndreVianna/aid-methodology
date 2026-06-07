@@ -17,7 +17,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // VERSION file is at the repo root (two levels up from site/scripts/)
@@ -143,7 +143,10 @@ async function main() {
 }
 
 // Only run main() when this file is executed directly (not imported by tests).
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Use pathToFileURL for a cross-platform comparison — string-concatenating
+// `file://` + process.argv[1] does not match import.meta.url on Windows
+// (drive letters + backslashes), which silently skipped the fetch there.
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((err) => {
     console.warn(`[fetch-release-data] FATAL: Unexpected error — ${err.message}`);
     console.warn('[fetch-release-data] Emitting empty release data and exiting 0.');
