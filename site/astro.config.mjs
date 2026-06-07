@@ -47,7 +47,7 @@ export default defineConfig({
     }),
 
     starlight({
-      title: 'AID — Agentic Iterative Development',
+      title: 'AID — AI Integrated Development',
 
       // Persistent social links in header/footer chrome (AC3)
       social: [

@@ -1,12 +1,12 @@
 ---
 title: What is AID?
-description: A two-minute orientation to Agentic Iterative Development — what it is, who it's for, and how the pipeline works.
+description: A two-minute orientation to AI Integrated Development — what it is, who it's for, and how the pipeline works.
 sidebar:
   label: Overview
   order: 1
 ---
 
-AID (Agentic Iterative Development) is a methodology and toolchain for building software with AI
+AID (AI Integrated Development) is a methodology and toolchain for building software with AI
 coding agents. It provides a disciplined, human-gated pipeline that takes an idea from first
 understanding all the way to delivered code — without the ad hoc drift that comes from unstructured
 AI-assisted work.

@@ -1,6 +1,6 @@
 ---
 title: Concepts Overview
-description: An orientation to the core ideas behind AID — Agentic Iterative Development.
+description: An orientation to the core ideas behind AID — AI Integrated Development.
 sidebar:
   order: 1
   label: Overview

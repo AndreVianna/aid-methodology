@@ -1,6 +1,6 @@
 ---
 title: Concepts
-description: Core concepts and philosophy behind AID — Agentic Iterative Development.
+description: Core concepts and philosophy behind AID — AI Integrated Development.
 sidebar:
   hidden: true
 ---

@@ -1,6 +1,6 @@
 ---
 title: Get Started
-description: Begin your journey with AID — Agentic Iterative Development.
+description: Begin your journey with AID — AI Integrated Development.
 sidebar:
   hidden: true
 ---
