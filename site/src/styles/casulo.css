@@ -186,3 +186,129 @@ pre {
   background: var(--casulo-accent-light-glow-hover);
   border-color: var(--casulo-accent-light);
 }
+
+/* ── Releases page (feature-009) ────────────────────────────────────────── */
+/* Uses only existing casulo tokens — no new color variables. */
+
+.release {
+  border-top: 1px solid var(--casulo-border);
+  padding-top: 2rem;
+  margin-top: 2rem;
+}
+
+.release:first-child {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.release-meta {
+  color: var(--casulo-text-secondary);
+  font-size: 0.9em;
+  margin-top: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.release-meta code {
+  font-size: 0.9em;
+  color: var(--sl-color-accent);
+  background: var(--casulo-accent-glow);
+  border: 1px solid var(--casulo-border-accent);
+  border-radius: var(--casulo-radius-sm);
+  padding: 0.1em 0.4em;
+}
+
+.release-notes {
+  margin-bottom: 1rem;
+}
+
+.release-downloads {
+  background: var(--casulo-bg-card);
+  border: 1px solid var(--casulo-border);
+  border-radius: var(--casulo-radius-sm);
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+}
+
+.release-downloads h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 0.95em;
+  color: var(--casulo-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.release-downloads ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.release-downloads a {
+  color: var(--sl-color-accent);
+  text-decoration: none;
+}
+
+.release-downloads a:hover {
+  text-decoration: underline;
+}
+
+/* ── Announcement banner (feature-009) ──────────────────────────────────── */
+
+.aid-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: var(--casulo-bg-card);
+  border-bottom: 1px solid var(--casulo-border-accent);
+  font-size: 0.9em;
+  flex-wrap: wrap;
+}
+
+.aid-banner a {
+  color: var(--sl-color-accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.aid-banner a:hover {
+  text-decoration: underline;
+}
+
+.aid-banner-dismiss {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--casulo-border);
+  border-radius: var(--casulo-radius-sm);
+  color: var(--casulo-text-muted);
+  cursor: pointer;
+  font-size: 1em;
+  line-height: 1;
+  padding: 0.1em 0.4em;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.aid-banner-dismiss:hover {
+  color: var(--casulo-text-primary);
+  border-color: var(--casulo-border-accent);
+}
+
+/* ── Report an issue link (feature-010) ─────────────────────────────────── */
+
+.aid-report-issue {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--casulo-border);
+  font-size: 0.875em;
+  color: var(--casulo-text-secondary);
+}
+
+.aid-report-issue a {
+  color: var(--sl-color-accent);
+  text-decoration: none;
+}
+
+.aid-report-issue a:hover {
+  text-decoration: underline;
+}

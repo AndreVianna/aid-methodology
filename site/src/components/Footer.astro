@@ -1,0 +1,33 @@
+---
+// site/src/components/Footer.astro — Starlight Footer override (FR14, AC12).
+// Per-page "Report an issue" → prefilled GitHub issue. No backend, no fetch.
+import Default from '@astrojs/starlight/components/Footer.astro';
+
+const REPO = 'AndreVianna/aid-methodology';
+
+// feature-001 pins Starlight >= 0.32 (current 0.39.3); starlightRoute.entry is the route accessor.
+const { entry } = Astro.locals.starlightRoute;     // current page (title + frontmatter)
+const reportIssue = entry.data.reportIssue ?? true; // feature-001 schema field; default true
+const pageTitle = entry.data.title ?? '';
+const pageUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+// Single seam for the feedback URL (future serverless seam).
+function buildIssueUrl(title: string, url: string): string {
+  const params = new URLSearchParams({
+    template: 'feedback.yml',
+    title: `[Docs] ${title}`,            // title prefill
+    labels: 'documentation,feedback',    // labels prefill (must pre-exist in the repo)
+    page: url,                           // form field id=page → originating page URL prefilled
+    description: '',                     // form field id=description → optional skeleton
+  });
+  return `https://github.com/${REPO}/issues/new?${params.toString()}`;
+}
+
+const issueUrl = buildIssueUrl(pageTitle, pageUrl);
+---
+<Default {...Astro.props}><slot /></Default>
+{reportIssue && (
+  <p class="aid-report-issue">
+    <a href={issueUrl} target="_blank" rel="noopener">Report an issue with this page &rarr;</a>
+  </p>
+)}

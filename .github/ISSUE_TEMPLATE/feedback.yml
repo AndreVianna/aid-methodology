@@ -1,0 +1,51 @@
+name: "Documentation feedback / report an issue"
+description: "Report a problem with the AID documentation, flag incorrect content, or suggest an improvement."
+title: "[Docs] "
+labels:
+  - documentation
+  - feedback
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to improve the AID documentation!
+        Fill in the fields below so we can triage your feedback quickly.
+        If you arrived here from a documentation page link, the **Originating page** and
+        **What's wrong** fields will already be prefilled — review them before submitting.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: "Type of issue"
+      description: "What kind of problem did you encounter?"
+      options:
+        - "Incorrect / outdated content"
+        - "Broken link or example"
+        - "Unclear / hard to follow"
+        - "Missing content"
+        - "Bug in AID itself"
+        - "Other"
+    validations:
+      required: true
+
+  - type: input
+    id: page
+    attributes:
+      label: "Originating page (URL)"
+      description: "Which page are you reporting an issue for? (prefilled when arriving via the page link)"
+      placeholder: "https://aid.casuloailabs.com/..."
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "What's wrong / what would help?"
+      description: "Describe the problem or improvement clearly."
+      placeholder: "The section on X says Y, but it should say Z..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "What did you expect? (optional)"
+      description: "If the content is incorrect or confusing, what would correct / clearer content look like?"

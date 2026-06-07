@@ -1,6 +1,6 @@
 # Work State — work-004-product-site
 
-> **Status:** Executing — deliveries 001-002 Done @ A+ (13/25 tasks)
+> **Status:** Executing — deliveries 001-003 Done @ A+ (23/25 tasks)
 > **Phase:** Execute
 > **Minimum Grade:** {resolved at runtime by `bash .claude/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-06-06
@@ -61,7 +61,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 |----------|--------|-------|-------|
 | delivery-001 | Done @ A+ | tasks 001-009 | Live branded site shell on domain · features 001,002 · Must · depends: — |
 | delivery-002 | Done @ A+ | tasks 010-013 | Version-bound front door (home, get-started, install) · features 008,003,004 · Must · depends: d-001 |
-| delivery-003 | Detailed | tasks 014-023 | Knowledge surfaces (migration, concepts, reference, releases+banner, feedback) · features 005,006,009,010 · Must(005)+Should · depends: d-001 |
+| delivery-003 | Done @ A+ | tasks 014-023 | Knowledge surfaces (migration, concepts, reference, releases+banner, feedback) · features 005,006,009,010 · Must(005)+Should · depends: d-001 |
 | delivery-004 | Detailed | tasks 024-025 | Pipeline & maintainer guides · feature 007 · Could · depends: d-001 |
 
 ## Tasks Status
@@ -83,16 +83,16 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 11 | task-011 | IMPLEMENT | d2 | Done | A+ | — | home splash + get-started pages |
 | 12 | task-012 | IMPLEMENT | d2 | Done | A+ | — | installation.mdx (tabs, 5 channels) |
 | 13 | task-013 | TEST | d2 | Done | A+ | — | version injection / AC13 |
-| 14 | task-014 | IMPLEMENT | d3 | Pending | — | — | sync-docs.mjs + migrated pages |
-| 15 | task-015 | TEST | d3 | Pending | — | — | migration no-loss/links/mermaid/drift (scoped) |
-| 16 | task-016 | IMPLEMENT | d3 | Pending | — | — | gen-reference.mjs + generated reference |
-| 17 | task-017 | IMPLEMENT | d3 | Pending | — | — | concepts/reference IA + sidebar |
-| 18 | task-018 | TEST | d3 | Pending | — | — | concepts/reference / drift-check |
-| 19 | task-019 | IMPLEMENT | d3 | Pending | — | — | releases.astro + Banner override |
-| 20 | task-020 | TEST | d3 | Pending | — | — | releases render / banner dismissal |
-| 21 | task-021 | CONFIGURE | d3 | Pending | — | — | .github/ISSUE_TEMPLATE/feedback.yml + labels |
-| 22 | task-022 | IMPLEMENT | d3 | Pending | — | — | Footer override + feedback page |
-| 23 | task-023 | TEST | d3 | Pending | — | — | feedback prefilled-issue |
+| 14 | task-014 | IMPLEMENT | d3 | Done | A+ | — | sync-docs.mjs + migrated pages |
+| 15 | task-015 | TEST | d3 | Done | A+ | — | migration no-loss/links/mermaid/drift (scoped) |
+| 16 | task-016 | IMPLEMENT | d3 | Done | A+ | — | gen-reference.mjs + generated reference |
+| 17 | task-017 | IMPLEMENT | d3 | Done | A+ | — | concepts/reference IA + sidebar |
+| 18 | task-018 | TEST | d3 | Done | A+ | — | concepts/reference / drift-check |
+| 19 | task-019 | IMPLEMENT | d3 | Done | A+ | — | releases.astro + Banner override |
+| 20 | task-020 | TEST | d3 | Done | A+ | — | releases render / banner dismissal |
+| 21 | task-021 | CONFIGURE | d3 | Done | A+ | — | .github/ISSUE_TEMPLATE/feedback.yml + labels |
+| 22 | task-022 | IMPLEMENT | d3 | Done | A+ | — | Footer override + feedback page |
+| 23 | task-023 | TEST | d3 | Done | A+ | — | feedback prefilled-issue |
 | 24 | task-024 | IMPLEMENT | d4 | Pending | — | — | pipeline.mdx + maintainer.mdx |
 | 25 | task-025 | TEST | d4 | Pending | — | — | guides links/mermaid |
 

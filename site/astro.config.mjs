@@ -90,13 +90,30 @@ export default defineConfig({
             { label: 'Maintainer', slug: 'guides/maintainer' },
           ],
         },
+        // feature-006 owns the Concepts + Reference groups (explicit item order per SPEC D1)
+        // feature-010 adds feedback.md last in the Concepts group (sidebar.order: 99)
         {
           label: 'Concepts',
-          items: [{ autogenerate: { directory: 'concepts' } }],
+          items: [
+            { label: 'Overview',          slug: 'concepts/overview' },
+            { label: 'The methodology',   slug: 'concepts/methodology' },
+            { label: 'FAQ',               slug: 'concepts/faq' },
+            { label: 'Feedback',          slug: 'concepts/feedback' },
+          ],
         },
         {
           label: 'Reference',
-          items: [{ autogenerate: { directory: 'reference' } }],
+          items: [
+            { label: 'Overview',              slug: 'reference/overview' },
+            { label: 'CLI & subcommands',     slug: 'reference/cli' },
+            { label: 'Skills',                slug: 'reference/skills' },
+            { label: 'Agents',                slug: 'reference/agents' },
+            { label: 'Knowledge Base',        slug: 'reference/kb' },
+            { label: 'Settings keys',         slug: 'reference/settings' },
+            { label: 'Artifacts',             slug: 'reference/artifacts' },
+            { label: 'Repository structure',  slug: 'reference/repository-structure' },
+            { label: 'Glossary',              slug: 'reference/glossary' },
+          ],
         },
         {
           label: 'Releases',
@@ -113,10 +130,10 @@ export default defineConfig({
       //   Footer:  feature-010 (feedback + casuloailabs.com back-link, delivery-003)
       //   Hero:    feature-008 (version badge on splash hero, delivery-002)
       components: {
-        // Reserved slots — uncomment and assign when the feature implements:
-        // Banner: './src/components/Banner.astro',
-        // Footer: './src/components/Footer.astro',
-        // Hero:   './src/components/Hero.astro',
+        // Reserved slots — feature-009 (Banner) + feature-010 (Footer) added below:
+        Banner: './src/components/Banner.astro',
+        Footer: './src/components/Footer.astro',
+        // Hero:   './src/components/Hero.astro',  (feature-008, delivery-002)
       },
 
       // Pagefind (built-in) powers the search box; no extra config needed.
