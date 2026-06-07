@@ -1,8 +1,8 @@
 ---
 // site/src/components/Footer.astro — Starlight Footer override.
-// Per-page "Report an issue" → opens the Page-issue form on the Feedback page with the
-// current page pre-captured (?type=page&page=&title=). The form there builds a prefilled
-// GitHub issue (label "site issue") and opens it in a new tab. No backend, no fetch.
+// Per-page "Report an issue" → opens the Contact Us › Site Issue form with the current
+// page pre-captured (?page=&title=). That form builds a prefilled GitHub issue (label
+// "site issue") and opens it in a new tab. No backend, no fetch.
 import Default from '@astrojs/starlight/components/Footer.astro';
 
 const { entry } = Astro.locals.starlightRoute;        // current page (title + frontmatter)
@@ -11,8 +11,7 @@ const pageTitle = entry.data.title ?? '';
 const pageUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 const feedbackUrl =
-  `/concepts/feedback/?type=page` +
-  `&page=${encodeURIComponent(pageUrl)}` +
+  `/contact/site-issue/?page=${encodeURIComponent(pageUrl)}` +
   `&title=${encodeURIComponent(pageTitle)}`;
 ---
 <Default {...Astro.props}><slot /></Default>

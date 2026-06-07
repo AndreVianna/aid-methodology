@@ -101,7 +101,6 @@ export default defineConfig({
             { label: 'Overview',          slug: 'concepts/overview' },
             { label: 'The methodology',   slug: 'concepts/methodology' },
             { label: 'FAQ',               slug: 'concepts/faq' },
-            { label: 'Feedback',          slug: 'concepts/feedback' },
           ],
         },
         {
@@ -123,6 +122,15 @@ export default defineConfig({
           items: [
             // link: (not slug:) because this is a src/pages route, not a docs page
             { label: 'Changelog', link: '/releases/changelog' },
+          ],
+        },
+        {
+          label: 'Contact Us',
+          items: [
+            { label: 'Site Issue',          slug: 'contact/site-issue' },
+            { label: 'Methodology Bug',     slug: 'contact/methodology-bug' },
+            { label: 'Question or Feedback', slug: 'contact/feedback' },
+            { label: 'Contact Request',     slug: 'contact/contact-request' },
           ],
         },
       ],
