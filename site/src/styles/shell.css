@@ -47,17 +47,35 @@ header.header {
   border-bottom: 1px solid var(--sl-color-hairline);
 }
 
+/* left brand lockup: Casulo AI Labs logo (→ casuloailabs.com) · divider · AID name (→ home) */
+.aid-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.aid-casulo { display: flex; align-items: center; flex: 0 0 auto; }
+.aid-casulo img {
+  height: 30px;
+  width: auto;
+  display: block;
+  border-radius: 6px;
+}
+.aid-brand-sep {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 24px;
+  background: var(--sl-color-hairline);
+}
 .aid-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
   font-weight: 700;
   font-size: 14.5px;
   letter-spacing: -0.01em;
   white-space: nowrap;
   color: var(--sl-color-text);
 }
-.aid-logo { width: 26px; height: 26px; flex: 0 0 auto; }
 .aid-name b { color: var(--sl-color-white); }
 .aid-name span { color: var(--sl-color-gray-2); font-weight: 500; }
 
