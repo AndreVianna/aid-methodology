@@ -15,13 +15,17 @@
 // Contract shape (owned here; feature-008 and feature-009 are consumers):
 //   Release: { tag, name, url, publishedAt, body?, assets: [{ name, url }] }
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // VERSION file is at the repo root (two levels up from site/scripts/)
 const VERSION_PATH = resolve(__dirname, '../../VERSION');
+// Build-time data file consumed by src/lib/release-data.ts as a fallback when the
+// AID_* env vars are not set (i.e. a plain local `npm run build`). Script-relative
+// so the path is stable regardless of the process cwd. Resolves to site/.release-data.json.
+const DATA_FILE = resolve(__dirname, '..', '.release-data.json');
 
 // ── Read VERSION ─────────────────────────────────────────────────────────────
 
@@ -114,11 +118,28 @@ async function main() {
     console.warn('[fetch-release-data] Degrading to empty release fields (build will succeed).');
   }
 
-  // Emit three KEY=value lines for $GITHUB_ENV.
+  // Persist a JSON data file (local fallback path for src/lib/release-data.ts).
+  try {
+    const fileData = {
+      version,
+      latest: latestJson ? JSON.parse(latestJson) : null,
+      all: allJson ? JSON.parse(allJson) : [],
+    };
+    writeFileSync(DATA_FILE, JSON.stringify(fileData) + '\n', 'utf8');
+    console.warn(`[fetch-release-data] wrote ${DATA_FILE} (version=${version}, releases=${fileData.all.length})`);
+  } catch (err) {
+    console.warn(`[fetch-release-data] WARNING: could not write data file — ${err.message}`);
+  }
+
+  // Emit three KEY=value lines for $GITHUB_ENV (CI consumes stdout via `>> $GITHUB_ENV`).
   // Values must be single-line (no embedded newlines) to be valid GITHUB_ENV entries.
-  console.log(`AID_VERSION=${version}`);
-  console.log(`AID_LATEST_RELEASE_JSON=${latestJson}`);
-  console.log(`AID_RELEASES_JSON=${allJson}`);
+  // Skipped for local runs (no $GITHUB_ENV) to avoid dumping a 20KB JSON line into the
+  // build log — the data file written above is the local source instead.
+  if (process.env.GITHUB_ENV) {
+    console.log(`AID_VERSION=${version}`);
+    console.log(`AID_LATEST_RELEASE_JSON=${latestJson}`);
+    console.log(`AID_RELEASES_JSON=${allJson}`);
+  }
 }
 
 // Only run main() when this file is executed directly (not imported by tests).
@@ -128,9 +149,16 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.warn('[fetch-release-data] Emitting empty release data and exiting 0.');
     // Best-effort: emit whatever we can
     const version = readVersion();
-    console.log(`AID_VERSION=${version}`);
-    console.log('AID_LATEST_RELEASE_JSON=');
-    console.log('AID_RELEASES_JSON=');
+    try {
+      writeFileSync(DATA_FILE, JSON.stringify({ version, latest: null, all: [] }) + '\n', 'utf8');
+    } catch {
+      /* ignore */
+    }
+    if (process.env.GITHUB_ENV) {
+      console.log(`AID_VERSION=${version}`);
+      console.log('AID_LATEST_RELEASE_JSON=');
+      console.log('AID_RELEASES_JSON=');
+    }
     process.exit(0);
   });
 }

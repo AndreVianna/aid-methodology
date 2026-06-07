@@ -9,8 +9,9 @@
   "scripts": {
     "sync:docs": "node scripts/sync-docs.mjs",
     "gen:reference": "node scripts/gen-reference.mjs",
-    "prebuild": "npm run sync:docs && npm run gen:reference",
-    "predev": "npm run sync:docs && npm run gen:reference",
+    "fetch:release": "node scripts/fetch-release-data.mjs",
+    "prebuild": "npm run sync:docs && npm run gen:reference && npm run fetch:release",
+    "predev": "npm run sync:docs && npm run gen:reference && npm run fetch:release",
     "build": "astro build",
     "dev": "astro dev",
     "preview": "astro preview",

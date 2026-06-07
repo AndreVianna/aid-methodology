@@ -8,6 +8,11 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
+// Isolate the env-var path from the on-disk .release-data.json fallback (which is
+// generated into the working tree by `npm run fetch:release`). These unit tests
+// verify env-var behaviour specifically.
+process.env.AID_NO_RELEASE_FILE = '1';
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 // We must reset module registry between tests that manipulate import.meta.url

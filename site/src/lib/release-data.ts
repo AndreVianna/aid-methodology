@@ -80,6 +80,49 @@ function safeParseJson<T>(raw: string | undefined, fallback: T): T {
   }
 }
 
+// ── Local data-file fallback ───────────────────────────────────────────────────
+// CI sets the AID_* env vars (via fetch-release-data.mjs → $GITHUB_ENV). A plain
+// local `npm run build` does not, so we also read site/.release-data.json, which the
+// prebuild step (npm run fetch:release) writes. Env vars take priority; this is the
+// fallback. Cached after first read.
+
+interface ReleaseDataFile {
+  version?: string;
+  latest?: Release | null;
+  all?: Release[];
+}
+
+let _fileCache: ReleaseDataFile | null | undefined;
+
+function readReleaseDataFile(): ReleaseDataFile | null {
+  // Opt-out hook (used by unit tests to isolate the env-var path from the
+  // on-disk fallback, which is otherwise present in the working tree).
+  if (process.env['AID_NO_RELEASE_FILE'] === '1') return null;
+  if (_fileCache !== undefined) return _fileCache;
+  const candidates: string[] = [];
+  try {
+    const moduleDir = dirname(fileURLToPath(import.meta.url));
+    candidates.push(resolve(moduleDir, '../../.release-data.json')); // src/lib → site/
+  } catch {
+    /* virtual URL; skip */
+  }
+  candidates.push(resolve(process.cwd(), '.release-data.json')); // cwd = site/
+  candidates.push(resolve(process.cwd(), 'site/.release-data.json')); // cwd = repo root
+  for (const c of candidates) {
+    try {
+      const raw = readFileSync(c, 'utf8');
+      if (raw.trim()) {
+        _fileCache = JSON.parse(raw) as ReleaseDataFile;
+        return _fileCache;
+      }
+    } catch {
+      /* try next candidate */
+    }
+  }
+  _fileCache = null;
+  return _fileCache;
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
@@ -95,6 +138,10 @@ export function getAidVersion(): string {
   if (fromEnv && fromEnv.trim() !== '') {
     return stripLeadingV(fromEnv.trim());
   }
+  const file = readReleaseDataFile();
+  if (file && file.version && file.version.trim() !== '') {
+    return stripLeadingV(file.version.trim());
+  }
   return readVersionFile();
 }
 
@@ -103,10 +150,10 @@ export function getAidVersion(): string {
  * if unavailable (API failure, local dev, or no releases published yet).
  */
 export function getLatestRelease(): Release | null {
-  return safeParseJson<Release | null>(
-    process.env['AID_LATEST_RELEASE_JSON'],
-    null
-  );
+  const fromEnv = safeParseJson<Release | null>(process.env['AID_LATEST_RELEASE_JSON'], null);
+  if (fromEnv) return fromEnv;
+  const file = readReleaseDataFile();
+  return file && file.latest ? file.latest : null;
 }
 
 /**
@@ -114,8 +161,8 @@ export function getLatestRelease(): Release | null {
  * Returns an empty array if unavailable.
  */
 export function getAllReleases(): Release[] {
-  return safeParseJson<Release[]>(
-    process.env['AID_RELEASES_JSON'],
-    []
-  );
+  const fromEnv = safeParseJson<Release[] | null>(process.env['AID_RELEASES_JSON'], null);
+  if (fromEnv && fromEnv.length > 0) return fromEnv;
+  const file = readReleaseDataFile();
+  return file && Array.isArray(file.all) ? file.all : [];
 }

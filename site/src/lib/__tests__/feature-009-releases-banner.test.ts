@@ -10,6 +10,11 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { marked } from 'marked';
+
+// Isolate the env-var path from the on-disk .release-data.json fallback (generated
+// into the working tree by `npm run fetch:release`) so the empty-state assertions
+// test env behaviour, not a happened-to-exist data file.
+process.env.AID_NO_RELEASE_FILE = '1';
 import sanitizeHtml from 'sanitize-html';
 
 // ── Reusable helpers ──────────────────────────────────────────────────────────
