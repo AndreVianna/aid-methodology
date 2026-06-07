@@ -1,6 +1,6 @@
 # Work State — work-004-product-site
 
-> **Status:** Executing — deliveries 001-003 Done @ A+ (23/25 tasks)
+> **Status:** Execute Complete — 25/25 tasks @ A+ (4/4 deliveries; ready for /aid-deploy)
 > **Phase:** Execute
 > **Minimum Grade:** {resolved at runtime by `bash .claude/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-06-06
@@ -62,7 +62,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | delivery-001 | Done @ A+ | tasks 001-009 | Live branded site shell on domain · features 001,002 · Must · depends: — |
 | delivery-002 | Done @ A+ | tasks 010-013 | Version-bound front door (home, get-started, install) · features 008,003,004 · Must · depends: d-001 |
 | delivery-003 | Done @ A+ | tasks 014-023 | Knowledge surfaces (migration, concepts, reference, releases+banner, feedback) · features 005,006,009,010 · Must(005)+Should · depends: d-001 |
-| delivery-004 | Detailed | tasks 024-025 | Pipeline & maintainer guides · feature 007 · Could · depends: d-001 |
+| delivery-004 | Done @ A+ | tasks 024-025 | Pipeline & maintainer guides · feature 007 · Could · depends: d-001 |
 
 ## Tasks Status
 
@@ -93,8 +93,8 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 21 | task-021 | CONFIGURE | d3 | Done | A+ | — | .github/ISSUE_TEMPLATE/feedback.yml + labels |
 | 22 | task-022 | IMPLEMENT | d3 | Done | A+ | — | Footer override + feedback page |
 | 23 | task-023 | TEST | d3 | Done | A+ | — | feedback prefilled-issue |
-| 24 | task-024 | IMPLEMENT | d4 | Pending | — | — | pipeline.mdx + maintainer.mdx |
-| 25 | task-025 | TEST | d4 | Pending | — | — | guides links/mermaid |
+| 24 | task-024 | IMPLEMENT | d4 | Done | A+ | — | pipeline.mdx + maintainer.mdx |
+| 25 | task-025 | TEST | d4 | Done | A+ | — | guides links/mermaid |
 
 ## Deploy Status
 
@@ -169,3 +169,4 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 2026-06-06 | Specify (all 10 features) | A+ | /aid-specify run across all features with an A+ (zero-finding) gate each; aid-architect authored, aid-reviewer gated, fix-loops to A+; cross-feature contracts reconciled (release-data accessor, sidebar, content-migration, irm channel, issue-form prefill). All 10 specs Ready @ A+. Ready for /aid-plan. |
 | 2026-06-06 | Plan | A+ | /aid-plan; aid-architect sequenced 10 features into 4 dependency-ordered standalone deliveries; aid-reviewer gated C+→A+ (1 MEDIUM priority-label fixed). All features assigned, none deferred; 3 cross-cutting risks. Ready for /aid-detail. |
 | 2026-06-06 | Detail | A+ | /aid-detail; aid-architect decomposed 4 deliveries into 25 typed tasks (gap-free, one-type-each, dependency-declared) + per-delivery execution graphs; aid-reviewer gated C+→A+ (1 MEDIUM: drift-check scope narrowed so tasks 015/016 are independent). Ready for /aid-execute. |
+| 2026-06-06 | Execute (all 4 deliveries) | A+ | /aid-execute; aid-developer built the real Astro+Starlight site under site/ (25 tasks), each delivery A+-gated by aid-reviewer (d1 D+→A+, d2 D+→A+, d3 D→A+, d4 A+ first pass). npm run build 27 pages 0 errors; 223 unit tests; deterministic generators. Ready for /aid-deploy. |

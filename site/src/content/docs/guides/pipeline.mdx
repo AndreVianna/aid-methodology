@@ -1,0 +1,239 @@
+---
+title: Working the pipeline
+description: An end-to-end, task-oriented walkthrough of running a real piece of work through AID — aid-config plus the six numbered phases (Discover → Execute) and the optional Deliver skills.
+sidebar:
+  label: Working the pipeline
+---
+
+import { Steps, Tabs, TabItem, Aside, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## Before you start
+
+This page is the **how** — a step-by-step guide to driving a real piece of work through
+the AID methodology from discovery to deployment.
+
+Before running the pipeline, make sure AID is installed and added to your project. See the
+[Installation guide](/guides/installation) for the one-liner bootstrap and the `aid add <tool>` step.
+
+For the **why** behind each phase — the mental model, the philosophy, the full methodology
+explanation — read the [Methodology](/concepts/methodology) concept page. This guide does not
+duplicate that depth; it points you at the right command and artifact for each step.
+
+## The pipeline at a glance
+
+```mermaid
+flowchart LR
+    C(["/aid-config\n(Step 0)"])
+    D(["/aid-discover\n(Phase 1)"])
+    I(["/aid-interview\n(Phase 2)"])
+    S(["/aid-specify\n(Phase 3)"])
+    P(["/aid-plan\n(Phase 4)"])
+    DT(["/aid-detail\n(Phase 5)"])
+    E(["/aid-execute\n(Phase 6)"])
+    DP(["/aid-deploy\n(Deliver)"])
+    M(["/aid-monitor\n(Deliver)"])
+
+    C --> D
+    C --> I
+    D --> I
+    I --> S
+    S --> P
+    P --> DT
+    DT --> E
+    E --> DP
+    DP --> M
+    M -->|"findings loop back"| I
+```
+
+The diagram shows the canonical order. Greenfield projects skip Phase 1 (Discover) and
+go directly from Configure to Interview. The Deliver skills (deploy + monitor) are
+optional and loop findings back into Interview.
+
+## Step 0 — Configure (`/aid-config`)
+
+Run `/aid-config` once before starting any new piece of work. It scaffolds or inspects
+`.aid/settings.yml` and lets you set the project name, review grade threshold, and other
+workspace-level options.
+
+<Steps>
+1. **Invoke the skill** — type `/aid-config` in your AI tool.
+
+2. **Review the generated settings file** — the skill creates or updates
+   `.aid/settings.yml`. Confirm the `project.name` and `review.grade` fields.
+
+3. **Commit the settings file** — `.aid/settings.yml` is checked in. All agents read
+   it; keep it accurate.
+</Steps>
+
+<Aside type="tip">
+Re-run `/aid-config` any time you want to inspect or change workspace settings. It is
+idempotent — running it on an existing project does not reset your configuration.
+</Aside>
+
+## The six phases
+
+Each phase has a corresponding `/aid-*` skill. Invoke the skill in your AI tool; the
+skill runs its state machine and produces the named artifact.
+
+### Phase 1 — Discover (`/aid-discover`)
+
+**Brownfield projects only.** The Discover skill analyses an existing repository and
+populates the Knowledge Base with what it finds (architecture, conventions, existing
+patterns). State machine: GENERATE → REVIEW → … → DONE.
+
+**Artifact produced:** `.aid/knowledge/` entries describing the existing codebase.
+
+<Aside type="note">
+**Greenfield projects skip this phase.** If you are starting a brand-new repository with
+no existing code, go directly to Phase 2 (Interview).
+</Aside>
+
+<LinkCard
+  title="Skills reference"
+  description="Full roster of AID skills with descriptions and argument hints."
+  href="/reference/skills"
+/>
+
+### Phase 2 — Interview (`/aid-interview`)
+
+The Interview skill gathers requirements conversationally. It asks you structured
+questions about your goals, constraints, and scope, then writes `REQUIREMENTS.md` and
+decomposes the requirements into feature files under `.aid/<work>/features/`.
+
+**Artifact produced:** `REQUIREMENTS.md` + `features/feature-NNN-*.md` stubs.
+
+<LinkCard
+  title="Skills reference"
+  description="Full roster of AID skills with descriptions and argument hints."
+  href="/reference/skills"
+/>
+
+### Phase 3 — Specify (`/aid-specify`)
+
+The Specify skill writes a technical specification for one feature at a time. Point it at
+a feature file; it reads `REQUIREMENTS.md`, the Knowledge Base, and the feature stub,
+then appends a `SPEC.md` section with design decisions and an acceptance-criteria mapping.
+
+**Artifact produced:** `SPEC.md` appended to `features/feature-NNN-*.md`.
+
+**Run once per feature** — repeat this phase for each feature before moving to Plan.
+
+<LinkCard
+  title="Skills reference"
+  description="Full roster of AID skills with descriptions and argument hints."
+  href="/reference/skills"
+/>
+
+### Phase 4 — Plan (`/aid-plan`)
+
+The Plan skill reads all your feature specs and sequences them into a delivery roadmap.
+It decides which features go into which delivery, respecting dependencies, and writes
+`PLAN.md` with the strategy.
+
+**Artifact produced:** `PLAN.md` — the delivery sequence and dependency graph.
+
+<LinkCard
+  title="Skills reference"
+  description="Full roster of AID skills with descriptions and argument hints."
+  href="/reference/skills"
+/>
+
+### Phase 5 — Detail (`/aid-detail`)
+
+The Detail skill breaks a delivery into typed tasks and produces an execution graph. Each
+task gets a `task-NNN.md` file with type (IMPLEMENT / TEST / MIGRATE / CONFIGURE /
+DOCUMENT), acceptance criteria, and dependencies.
+
+**Artifact produced:** `task-NNN.md` files under `.aid/<work>/tasks/` + an execution graph.
+
+**Run once per delivery** — repeat for each delivery in your plan.
+
+<LinkCard
+  title="Skills reference"
+  description="Full roster of AID skills with descriptions and argument hints."
+  href="/reference/skills"
+/>
+
+### Phase 6 — Execute (`/aid-execute`)
+
+The Execute skill picks up a typed task and implements it on a per-delivery branch, with
+a built-in review loop. The Developer agent writes the code; the Reviewer agent grades it
+against the task's acceptance criteria; failing grades loop back for revision.
+
+**Artifact produced:** committed code on a delivery branch, graded and merged.
+
+**Run once per task** — repeat for each task in the execution graph, respecting the
+dependency order.
+
+<Aside type="tip">
+The Execute skill tracks the current delivery branch automatically. Run tasks in
+dependency order; the skill warns you if a dependency is not yet complete.
+</Aside>
+
+<LinkCard
+  title="Skills reference"
+  description="Full roster of AID skills with descriptions and argument hints."
+  href="/reference/skills"
+/>
+
+## Delivering: deploy and monitor (optional)
+
+After all Execute tasks are complete, the optional **Deliver** skills package and observe
+the work.
+
+### Deploy (`/aid-deploy`)
+
+The Deploy skill packages completed deliveries into a release — tarballs, changelogs, and
+registry publishes. It reads the delivery branch state and the `VERSION` file, and
+invokes the release pipeline.
+
+### Monitor (`/aid-monitor`)
+
+The Monitor skill observes the deployed system, classifies incoming findings (bug /
+enhancement / question), and routes actionable items back into `/aid-interview` as new
+requirements. This closes the feedback loop.
+
+<Aside type="note">
+Neither Deliver skill is required to use AID. Many teams run the six core phases and
+handle deployment through their existing CI/CD pipeline without `/aid-deploy` or
+`/aid-monitor`.
+</Aside>
+
+## Lite vs full path
+
+Not every project needs all six phases. A **lite path** — Interview → Specify → Execute
+— is sufficient for small, well-understood features. The [Methodology](/concepts/methodology)
+page explains when to use the lite path and when the full pipeline pays off.
+
+The [Installation guide](/guides/installation) also covers the quick-start flow for new
+adopters who want to get something working before reading the full pipeline.
+
+## Next steps
+
+<CardGrid>
+  <LinkCard
+    title="CLI reference"
+    description="All AID subcommands, flags, and exit codes."
+    href="/reference/cli"
+  />
+  <LinkCard
+    title="Skills reference"
+    description="Full roster of AID skills with descriptions and argument hints."
+    href="/reference/skills"
+  />
+  <LinkCard
+    title="Agents reference"
+    description="The specialist agents that AID dispatches during Execute."
+    href="/reference/agents"
+  />
+  <LinkCard
+    title="Methodology"
+    description="The why behind the pipeline — mental model and design decisions."
+    href="/concepts/methodology"
+  />
+  <LinkCard
+    title="Maintainer guide"
+    description="Cut a release and regenerate host-tool install trees."
+    href="/guides/maintainer"
+  />
+</CardGrid>
