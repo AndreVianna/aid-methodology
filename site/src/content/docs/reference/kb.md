@@ -6,6 +6,8 @@ generatedFrom: 'canonical/templates/knowledge-base/*.md'
 
 <!-- generated — do not edit; source: canonical/templates/knowledge-base/*.md -->
 
+The Knowledge Base is the gravitational center of AID — every phase reads it, any phase can revise it. `aid-discover` populates these **14 standard documents** under `.aid/knowledge/` (plus three meta-documents: `INDEX.md`, `README.md`, and `STATE.md`). The set is the default seed and is configurable per project via `discovery.doc_set` in `.aid/settings.yml`. Each row links to the template the document is generated from.
+
 | Doc Type | Title | Source |
 |----------|-------|--------|
 | `architecture` | Architecture | [`canonical/templates/knowledge-base/architecture.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/templates/knowledge-base/architecture.md) |

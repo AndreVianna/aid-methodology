@@ -43,7 +43,7 @@ const fmtDate = (iso?: string): string =>
     ? new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     : '';
 ---
-<StarlightPage frontmatter={{ title: 'Releases', description: 'AID release notes and offline bundle downloads.' }}>
+<StarlightPage frontmatter={{ title: 'Changelog', description: 'AID release notes and offline bundle downloads.' }}>
   {releases.length === 0 ? (
     <p>
       Releases will appear here once the first GitHub Release is published.

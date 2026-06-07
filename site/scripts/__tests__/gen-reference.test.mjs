@@ -97,27 +97,27 @@ describe('gen-reference: generatedFrom frontmatter', () => {
 // ── Roster counts match source ────────────────────────────────────────────────
 
 describe('gen-reference: roster counts', () => {
-  it('skills.md: exactly 11 skill rows matching canonical/skills/', () => {
+  it('skills.md: exactly 11 skill sections matching canonical/skills/', () => {
     const skillDirs = readdirSync(SKILLS_DIR, { withFileTypes: true })
       .filter((d) => d.isDirectory())
       .map((d) => d.name);
     expect(skillDirs).toHaveLength(11);
 
     const skillsContent = readFileSync(join(CONTENT_DOCS, 'reference', 'skills.md'), 'utf8');
-    // Count data rows in the table (lines starting with | `aid-)
-    const rows = skillsContent.split('\n').filter((l) => l.startsWith('| `aid-'));
-    expect(rows).toHaveLength(11);
+    // Per-skill sections render as `### \`aid-...\`` headings (one per skill).
+    const sections = skillsContent.split('\n').filter((l) => /^### `aid-/.test(l));
+    expect(sections).toHaveLength(11);
   });
 
-  it('agents.md: exactly 9 agent rows matching canonical/agents/', () => {
+  it('agents.md: exactly 9 agent sections matching canonical/agents/', () => {
     const agentDirs = readdirSync(AGENTS_DIR, { withFileTypes: true })
       .filter((d) => d.isDirectory())
       .map((d) => d.name);
     expect(agentDirs).toHaveLength(9);
 
     const agentsContent = readFileSync(join(CONTENT_DOCS, 'reference', 'agents.md'), 'utf8');
-    const rows = agentsContent.split('\n').filter((l) => l.startsWith('| `aid-'));
-    expect(rows).toHaveLength(9);
+    const sections = agentsContent.split('\n').filter((l) => /^### `aid-/.test(l));
+    expect(sections).toHaveLength(9);
   });
 
   it('kb.md: exactly 14 KB doc-type rows matching canonical/templates/knowledge-base/', () => {

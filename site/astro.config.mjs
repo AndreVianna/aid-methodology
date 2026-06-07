@@ -66,6 +66,7 @@ export default defineConfig({
       // Self-hosted Inter + casulo brand token overrides (task-002)
       customCss: [
         './src/styles/casulo.css',
+        './src/styles/shell.css',
       ],
 
       favicon: '/favicon.svg',
@@ -78,6 +79,8 @@ export default defineConfig({
       // Note: Starlight v0.39.0+ requires autogenerate groups to be nested inside
       // an items array (the combined label+autogenerate form was removed).
       sidebar: [
+        // Root doc page — Overview is the top item of the sidebar (points to /)
+        { label: 'Overview', slug: '' },
         {
           label: 'Get Started',
           items: [{ autogenerate: { directory: 'get-started' } }],
@@ -130,7 +133,11 @@ export default defineConfig({
       //   Footer:  feature-010 (feedback + casuloailabs.com back-link, delivery-003)
       //   Hero:    feature-008 (version badge on splash hero, delivery-002)
       components: {
-        // Reserved slots — feature-009 (Banner) + feature-010 (Footer) added below:
+        // prototype-01 shell: two-row header (brand + section tabs) and
+        // breadcrumb/eyebrow/title. See src/components/overrides/.
+        Header: './src/components/overrides/Header.astro',
+        PageTitle: './src/components/overrides/PageTitle.astro',
+        // Reserved slots — feature-009 (Banner) + feature-010 (Footer):
         Banner: './src/components/Banner.astro',
         Footer: './src/components/Footer.astro',
         // Hero:   './src/components/Hero.astro',  (feature-008, delivery-002)

@@ -169,19 +169,21 @@ describe('AC13 — AID_VERSION override propagates to all five commands (no runt
 
 // ── AC5 — Home pipeline diagram present ──────────────────────────────────────
 
-describe('AC5 — Home pipeline Mermaid diagram', () => {
-  it('index.mdx contains a ```mermaid fence', () => {
+describe('AC5 — Home pipeline diagram', () => {
+  // Per the prototype-01 redesign, the home pipeline is rendered as the inline
+  // pill-step <PipelineDiagram /> component (not a Mermaid flowchart). Mermaid is
+  // still exercised on the guide pages (pipeline.mdx, maintainer.mdx).
+  it('index.mdx renders the pill-step <PipelineDiagram /> component', () => {
     const src = readDoc('index.mdx');
-    expect(src).toContain('```mermaid');
-    expect(src).toContain('flowchart TB');
+    expect(src).toContain("import PipelineDiagram from '../../components/PipelineDiagram.astro'");
+    expect(src).toContain('<PipelineDiagram');
   });
 
-  it('index.mdx mermaid fence contains pipeline group nodes', () => {
+  it('index.mdx lists the six core phases in order', () => {
     const src = readDoc('index.mdx');
-    // Five phase groups must be present
-    expect(src).toContain('Prepare');
-    expect(src).toContain('Define');
-    expect(src).toContain('Execute');
+    for (const phase of ['Discover', 'Interview', 'Specify', 'Plan', 'Detail', 'Execute']) {
+      expect(src).toContain(phase);
+    }
   });
 });
 
@@ -290,33 +292,51 @@ describe('AC7 — Installation guide four channels and five tool tabs', () => {
   });
 });
 
-// ── AC3 — Home CTAs and section cards ────────────────────────────────────────
+// ── AC3 — Home doc page (Overview) structure ──────────────────────────────────
+// The root page is a standard documentation page, NOT a marketing splash. The
+// anti-splash invariant is the absence of `template: splash`, a `hero:` block, and
+// CTA `actions:`. Per prototype-01 it DOES use a <CardGrid> of <LinkCard>s for doc
+// navigation and the inline <PipelineDiagram /> — both are documentation patterns.
 
-describe('AC3 — Home page value prop, CTAs, and section cards', () => {
-  it('index.mdx has template: splash', () => {
+describe('AC3 — Home page is a documentation page (no marketing splash)', () => {
+  it('index.mdx does NOT have template: splash', () => {
     const src = readDoc('index.mdx');
-    expect(src).toContain('template: splash');
+    expect(src).not.toContain('template: splash');
   });
 
-  it('index.mdx has Get Started CTA pointing to /get-started/overview/', () => {
+  it('index.mdx does NOT have a hero block', () => {
     const src = readDoc('index.mdx');
-    expect(src).toContain('/get-started/overview/');
+    expect(src).not.toContain('hero:');
   });
 
-  it('index.mdx has GitHub CTA', () => {
+  it('index.mdx does NOT have CTA actions (splash buttons)', () => {
     const src = readDoc('index.mdx');
-    expect(src).toContain('github.com/AndreVianna/aid-methodology');
+    expect(src).not.toContain('actions:');
   });
 
-  it('index.mdx has section <CardGrid> with <LinkCard>s', () => {
+  it('index.mdx uses <CardGrid>/<LinkCard> for documentation navigation', () => {
     const src = readDoc('index.mdx');
     expect(src).toContain('<CardGrid>');
     expect(src).toContain('<LinkCard');
   });
 
-  it('index.mdx imports CardGrid and LinkCard from starlight components', () => {
+  it('index.mdx title is Overview (documentation voice)', () => {
     const src = readDoc('index.mdx');
-    expect(src).toContain("import { CardGrid, LinkCard }");
-    expect(src).toContain("@astrojs/starlight/components");
+    expect(src).toContain('title: Overview');
+  });
+
+  it('index.mdx links to /get-started/overview/ (navigation card)', () => {
+    const src = readDoc('index.mdx');
+    expect(src).toContain('/get-started/overview/');
+  });
+
+  it('index.mdx links to the Installation guide (all channels)', () => {
+    const src = readDoc('index.mdx');
+    expect(src).toContain('/guides/installation/');
+  });
+
+  it('index.mdx has a pipeline diagram (PipelineDiagram component)', () => {
+    const src = readDoc('index.mdx');
+    expect(src).toContain('<PipelineDiagram');
   });
 });

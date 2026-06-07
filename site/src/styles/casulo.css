@@ -42,8 +42,12 @@
   --casulo-radius-sm: 8px;
 }
 
-/* ── DARK (default) — Starlight emits dark on bare :root ─────────────────── */
-:root {
+/* ── DARK (default + auto-dark) ──────────────────────────────────────────── */
+/* Scoped to :not([data-theme='light']) so these unlayered overrides do NOT
+ * bleed into explicit light mode (an unlayered :root rule would otherwise beat
+ * Starlight's layered light palette, leaving light mode with dark backgrounds
+ * and a light/default Mermaid diagram rendered on top — the beige-on-dark bug). */
+:root:not([data-theme='light']) {
   /* accent */
   --sl-color-accent: var(--casulo-accent);
   --sl-color-accent-high: var(--casulo-accent-hover);
@@ -99,26 +103,14 @@
 }
 
 /* ── LIGHT — casulo-branded light variant ────────────────────────────────── */
+/* Override ONLY accent tokens; let Starlight's built-in AA-correct light
+ * palette supply all gray/bg/text/white/black values so body text is dark
+ * and readable on the light background. */
 :root[data-theme='light'] {
   --sl-color-accent: var(--casulo-accent-light);
   --sl-color-accent-high: var(--casulo-accent-light-hover);
   --sl-color-accent-low: var(--casulo-accent-light-glow);
   --sl-color-text-accent: var(--casulo-accent-light);
-  --sl-color-gray-1: var(--casulo-slate-800);
-  --sl-color-gray-2: var(--casulo-slate-700);
-  --sl-color-gray-3: var(--casulo-slate-600);
-  --sl-color-gray-4: var(--casulo-slate-500);
-  --sl-color-gray-5: var(--casulo-slate-400);
-  --sl-color-gray-6: var(--casulo-surface-200);
-  --sl-color-gray-7: var(--casulo-surface-50);
-  --sl-color-bg: var(--casulo-surface-white);
-  --sl-color-bg-nav: var(--casulo-surface-50);
-  --sl-color-bg-sidebar: var(--casulo-surface-100);
-  --sl-color-bg-inline-code: var(--casulo-surface-100);
-  --sl-color-hairline: var(--casulo-hairline-light);
-  --sl-color-hairline-shade: var(--casulo-accent-light-hairline);
-  --sl-color-white: var(--casulo-surface-white);
-  --sl-color-black: var(--casulo-bg-primary);
 }
 
 /* ── Typography ──────────────────────────────────────────────────────────── */

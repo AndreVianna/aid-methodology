@@ -1,86 +1,82 @@
 ---
-title: AID — AI Integrated Development
-description: A methodology and toolchain that carries an idea from discovery to delivery with AI agents — grounded in real understanding, with the human in control at every gate.
-template: splash
-hero:
-  tagline: From "never heard of it" to "installed and running your first work" — a disciplined, AI-agent pipeline with the human in control at every gate.
-  actions:
-    - text: Get Started
-      link: /get-started/overview/
-      icon: right-arrow
-      variant: primary
-    - text: View on GitHub
-      link: https://github.com/AndreVianna/aid-methodology
-      icon: external
-      variant: minimal
+title: Overview
+description: AID (AI Integrated Development) — a methodology and toolchain that carries a work item from discovery to delivery with AI agents, with the human in control at every gate.
 ---
 
+import { Tabs, TabItem, LinkCard, CardGrid } from '@astrojs/starlight/components';
+import PipelineDiagram from '../../components/PipelineDiagram.astro';
 import InstallCommand from '../../components/InstallCommand.astro';
 import VersionBadge from '../../components/VersionBadge.astro';
-import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-## Why AID?
+AID — **AI Integrated Development** — is a methodology and toolchain for building software with AI
+coding agents. A structured, human-gated pipeline carries a work item from first understanding all
+the way to delivered code, without the ad-hoc drift of unstructured AI assistance. "Integrated"
+is the point: the human and the AI co-execute every phase — the AI proposes, the human steers, and
+nothing advances without an explicit OK.
 
-Most AI-assisted development today is ad hoc: a chat, a suggestion, a quick edit. That works for isolated tasks — but it breaks down when the work spans discovery, specification, planning, implementation, and delivery. Without structure, AI agents repeat the same mistakes that plagued unassisted development: incomplete understanding, drifting requirements, unreviewed output.
+These docs are the reference for both the **methodology** and the **tool** that ships it. If you are
+new, read on; the sections are ordered the way you will actually use AID.
 
-AID gives AI-assisted development the structure it needs. A six-phase pipeline — Discover → Interview → Specify → Plan → Detail → Execute — carries a work item from first contact to delivered code, with the human approving every gate. The result is traceable, repeatable, and genuinely grounded in how the codebase works.
+## The pipeline at a glance
 
-The full pipeline runs when the scope demands it. For small, well-bounded changes, the **lite path** skips Specify, Plan, and Detail and goes straight to execution — the same rigour, proportionate overhead.
+Every work item moves through the same phases. Each produces a reviewable artifact and ends at a
+**human gate** — you approve before the next phase begins. The flow starts at configuration and ends
+at delivered, optionally monitored, code.
 
-## The Pipeline
+<PipelineDiagram />
 
-```mermaid
-flowchart TB
-    subgraph G1[" 1 · Prepare "]
-        Init["aid-config\nsetup · once"]
-        Disc["1 · aid-discover\nbrownfield"]
-        Sum["aid-summarize\noptional"]
-    end
-    subgraph G2[" 2 · Define "]
-        Intv["2 · aid-interview\nTRIAGE → full or lite"]
-        Spec["3 · aid-specify\nfull path only"]
-    end
-    subgraph G3[" 3 · Map "]
-        Plan["4 · aid-plan\nfull path only"]
-        Det["5 · aid-detail\nfull path only"]
-    end
-    subgraph G4[" 4 · Execute "]
-        Exe["6 · aid-execute\n8 task types · graded loop"]
-    end
-    subgraph G5[" 5 · Deliver (optional) "]
-        Dep["aid-deploy"]
-        Mon["aid-monitor"]
-    end
+The six core phases, in order:
 
-    HK["aid-housekeep\non-demand · off-pipeline\nKB-DELTA · SUMMARY · CLEANUP"]
+1. **Discover** — map an existing codebase into a Knowledge Base the agents can reason over. (Brownfield only; greenfield starts at Interview.)
+2. **Interview** — gather requirements conversationally; TRIAGE routes small work to the lite path automatically.
+3. **Specify** — turn each feature into a technical SPEC, with an agent acting as tech lead.
+4. **Plan** — sequence SPECs into deliveries, each a functional, buildable MVP.
+5. **Detail** — break deliveries into small, typed, dependency-ordered tasks.
+6. **Execute** — run each task with a built-in adversarial review loop until it clears the grade bar.
 
-    Init --> Disc --> Intv --> Spec --> Plan --> Det --> Exe
-    Exe -. "on demand" .-> Dep
-    Exe -. "on demand" .-> Mon
-    Exe -. "when finished" .-> HK
-    Mon -. "bugs → LITE-BUG-FIX" .-> Intv
-    Mon -. "change requests" .-> Intv
-    HK  -. "targeted KB refresh" .-> Disc
-```
+Eleven user-facing skills across five groups deliver these phases. When the work is small and
+well-scoped, the **lite path** skips Specify, Plan, and Detail — the same rigour, proportionate
+overhead.
 
-*Eleven user-facing skills, five groups. The six numbered phases form the mandatory sequential pipeline. `/aid-interview`'s TRIAGE routes small work to the lite path automatically.*
+## Install
 
-See the [full methodology explanation](/concepts/methodology/) for the complete phase guide, philosophy, and lite-vs-full routing logic.
+AID installs as a global `aid` CLI; you then run `aid add <tool>` inside a repository to drop the
+skills, agents, and Knowledge Base scaffold into your project. Pick the channel for your platform:
 
-## Install in one line
+<Tabs syncKey="install-channel">
+  <TabItem label="macOS / Linux"><InstallCommand channel="curl" /></TabItem>
+  <TabItem label="Windows"><InstallCommand channel="irm" /></TabItem>
+  <TabItem label="npm"><InstallCommand channel="npm" /></TabItem>
+  <TabItem label="PyPI"><InstallCommand channel="pypi" /></TabItem>
+</Tabs>
 
-<p>Current release: <VersionBadge href="/releases/changelog/" /></p>
+Current release: <VersionBadge href="/releases/changelog/" />. After install, run `aid add claude-code`
+(or another tool), then `/aid-config` in your AI tool to scaffold the Knowledge Base.
+The [Installation guide](/guides/installation/) covers every channel, per-OS detail, updates, and removal.
 
-<InstallCommand channel="curl" />
+## How to navigate these docs
 
-[All install channels (npm, PyPI, Windows, offline)](/guides/installation/)
-
-## Explore the docs
+The docs are organized to match the order you will actually use AID.
 
 <CardGrid>
-  <LinkCard title="Get Started" href="/get-started/overview/" description="What AID is, install it, run your first work." />
-  <LinkCard title="Guides" href="/guides/installation/" description="Installation across every channel and the full pipeline how-to." />
-  <LinkCard title="Concepts" href="/concepts/methodology/" description="The methodology, phases, philosophy, and FAQ." />
-  <LinkCard title="Reference" href="/reference/overview/" description="CLI, repository structure, settings, and glossary." />
-  <LinkCard title="Releases" href="/releases/changelog/" description="Every release, with offline bundle assets." />
+  <LinkCard
+    title="Get Started"
+    href="/get-started/overview/"
+    description="Install AID, run your first work item, and try the lite quickstart path."
+  />
+  <LinkCard
+    title="Guides"
+    href="/guides/installation/"
+    description="Task-focused walkthroughs: installation, working the pipeline, and maintaining a release."
+  />
+  <LinkCard
+    title="Concepts"
+    href="/concepts/methodology/"
+    description="The methodology in depth — the pipeline, philosophy, the Knowledge Base, and the FAQ."
+  />
+  <LinkCard
+    title="Reference"
+    href="/reference/overview/"
+    description="Exhaustive lookups: CLI, skills, agents, the KB, settings, artifacts, and the glossary."
+  />
 </CardGrid>
