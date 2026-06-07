@@ -26,6 +26,17 @@ const CONTACT_EMAIL = 'andre.vianna.rj@hotmail.com';
     </p>
   )}
 
+  <label class="rf-label" for="rf-name">
+    Your name {kind === 'contact' ? (<span class="rf-req">*</span>) : (<span class="rf-muted">(optional)</span>)}
+  </label>
+  <input class="rf-input" id="rf-name" type="text" placeholder="So we know who we're talking to" />
+  <label class="rf-label" for="rf-reply">
+    Your email {kind === 'contact'
+      ? (<span class="rf-req">*</span>)
+      : (<span class="rf-muted">(optional — appears in the public issue)</span>)}
+  </label>
+  <input class="rf-input" id="rf-reply" type="email" placeholder="you@example.com" />
+
   {kind === 'site' && (
     <>
       <label class="rf-label" for="rf-page">Page <span class="rf-muted">(auto-filled from the page's “Report an issue” link)</span></label>
@@ -60,10 +71,6 @@ const CONTACT_EMAIL = 'andre.vianna.rj@hotmail.com';
 
   {kind === 'contact' && (
     <>
-      <label class="rf-label" for="rf-name">Your name</label>
-      <input class="rf-input" id="rf-name" type="text" placeholder="So we know who we're talking to" />
-      <label class="rf-label" for="rf-reply">Your email <span class="rf-muted">(so we can reply)</span></label>
-      <input class="rf-input" id="rf-reply" type="email" placeholder="you@example.com" />
       <label class="rf-label" for="rf-message">What would you like to talk about? <span class="rf-req">*</span></label>
       <textarea class="rf-input" id="rf-message" rows="6" placeholder="Tell us a bit about your team, your use case, or what you'd like to discuss…"></textarea>
     </>
@@ -165,6 +172,24 @@ const CONTACT_EMAIL = 'andre.vianna.rj@hotmail.com';
       if (labels) p.set('labels', labels);
       window.open('https://github.com/' + REPO + '/issues/new?' + p.toString(), '_blank', 'noopener,noreferrer');
     }
+    // Optional reporter identity, woven into the issue body when provided.
+    function fromBlock(): string {
+      const n = val('#rf-name');
+      const e = val('#rf-reply');
+      if (!n && !e) return '';
+      return '\n\n**From:** ' + (n || '(name not given)') + (e ? ' <' + e + '>' : '');
+    }
+    // Validate an email field's format. Empty passes (required-ness is enforced by need()).
+    function emailOk(sel: string): boolean {
+      const el = root!.querySelector(sel) as HTMLInputElement | null;
+      if (!el) return true;
+      const v = el.value.trim();
+      if (!v) return true;
+      const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      el.classList.toggle('rf-invalid', !ok);
+      if (!ok) el.focus();
+      return ok;
+    }
 
     // site kind: prefill page from ?page=&title=
     if (kind === 'site') {
@@ -179,31 +204,25 @@ const CONTACT_EMAIL = 'andre.vianna.rj@hotmail.com';
     if (!submit) return;
     submit.addEventListener('click', function () {
       if (kind === 'site') {
-        if (!need('#rf-desc')) return;
+        if (!need('#rf-desc') || !emailOk('#rf-reply')) return;
         const pg = val('#rf-page');
         const ttl = val('#rf-page-title') || pg || 'a documentation page';
-        openIssue('[Site] ' + ttl, '**Page:** ' + (pg || '(not specified)') + '\n\n**Issue:**\n' + val('#rf-desc') + FOOTER, 'site issue');
+        openIssue('[Site] ' + ttl, '**Page:** ' + (pg || '(not specified)') + '\n\n**Issue:**\n' + val('#rf-desc') + fromBlock() + FOOTER, 'site issue');
       } else if (kind === 'bug') {
-        if (!need('#rf-summary') || !need('#rf-what')) return;
+        if (!need('#rf-summary') || !need('#rf-what') || !emailOk('#rf-reply')) return;
         openIssue(
           '[Bug] ' + val('#rf-summary'),
           '**What happened:**\n' + val('#rf-what') +
             '\n\n**Expected:**\n' + (val('#rf-expected') || '(not specified)') +
-            '\n\n**AID version / environment:**\n' + (val('#rf-version') || '(not specified)') + FOOTER,
+            '\n\n**AID version / environment:**\n' + (val('#rf-version') || '(not specified)') + fromBlock() + FOOTER,
           'bug'
         );
       } else if (kind === 'feedback') {
-        if (!need('#rf-subject') || !need('#rf-message')) return;
-        openIssue('[Feedback] ' + val('#rf-subject'), val('#rf-message') + FOOTER, 'feedback');
+        if (!need('#rf-subject') || !need('#rf-message') || !emailOk('#rf-reply')) return;
+        openIssue('[Feedback] ' + val('#rf-subject'), val('#rf-message') + fromBlock() + FOOTER, 'feedback');
       } else if (kind === 'contact') {
-        if (!need('#rf-message')) return;
-        const name = val('#rf-name');
-        const reply = val('#rf-reply');
-        const lines = [];
-        if (name) lines.push('Name: ' + name);
-        if (reply) lines.push('Email: ' + reply);
-        if (lines.length) lines.push('');
-        lines.push(val('#rf-message'));
+        if (!need('#rf-name') || !need('#rf-reply') || !emailOk('#rf-reply') || !need('#rf-message')) return;
+        const lines = ['Name: ' + val('#rf-name'), 'Email: ' + val('#rf-reply'), '', val('#rf-message')];
         const p = new URLSearchParams();
         p.set('subject', 'AID — request for a conversation');
         p.set('body', lines.join('\n'));
