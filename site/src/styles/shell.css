@@ -63,9 +63,12 @@ header.header {
 
 .aid-header-spacer { flex: 1; }
 
-/* search — restyle Starlight's Pagefind open button into the proto pill */
+/* search — restyle Starlight's Pagefind open button into the proto pill.
+ * NB: scope width/styles to the trigger button only ([data-open-modal]).
+ * A broad `.aid-search button` rule also hits the Pagefind modal's buttons
+ * (e.g. .pagefind-ui__search-clear) which live inside <site-search>'s dialog. */
 .aid-search { display: flex; }
-.aid-search :is(site-search, button) { width: 100%; }
+.aid-search > site-search { display: inline-flex; }
 .aid-search button[data-open-modal] {
   display: flex;
   align-items: center;
