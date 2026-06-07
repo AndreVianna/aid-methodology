@@ -4,7 +4,6 @@ description: AID (AI Integrated Development) — a methodology and toolchain tha
 ---
 
 import { Tabs, TabItem, LinkCard, CardGrid } from '@astrojs/starlight/components';
-import PipelineDiagram from '../../components/PipelineDiagram.astro';
 import InstallCommand from '../../components/InstallCommand.astro';
 import VersionBadge from '../../components/VersionBadge.astro';
 
@@ -23,7 +22,52 @@ Every work item moves through the same phases. Each produces a reviewable artifa
 **human gate** — you approve before the next phase begins. The flow starts at configuration and ends
 at delivered, optionally monitored, code.
 
-<PipelineDiagram />
+```mermaid
+flowchart TB
+    classDef prep    fill:#1E3A8A,stroke:#1E3A8A,color:#ffffff
+    classDef def     fill:#6D28D9,stroke:#6D28D9,color:#ffffff
+    classDef map     fill:#0F766E,stroke:#0F766E,color:#ffffff
+    classDef exe     fill:#166534,stroke:#166534,color:#ffffff
+    classDef delopt  fill:#C2410C,stroke:#C2410C,color:#ffffff,stroke-dasharray:5 4
+    classDef aux     fill:#E5E7EB,stroke:#9CA3AF,color:#1F2937,stroke-dasharray:4 3
+    classDef offpipe fill:#374151,stroke:#374151,color:#ffffff,stroke-dasharray:6 4
+
+    subgraph G1[" 1 · Prepare "]
+        Init["aid-config<br/>setup · once"]:::aux
+        Disc["1 · aid-discover<br/>brownfield"]:::prep
+        Sum["aid-summarize<br/>optional"]:::aux
+    end
+    subgraph G2[" 2 · Define "]
+        Intv["2 · aid-interview<br/>gather requirements"]:::def
+        Triage{"TRIAGE<br/>full or lite?"}:::def
+        Spec["3 · aid-specify<br/>full path"]:::def
+    end
+    subgraph G3[" 3 · Map "]
+        Plan["4 · aid-plan<br/>full path"]:::map
+        Det["5 · aid-detail<br/>full path"]:::map
+    end
+    subgraph G4[" 4 · Execute "]
+        Exe["6 · aid-execute<br/>8 task types · graded loop"]:::exe
+    end
+    subgraph G5[" 5 · Deliver (optional) "]
+        Dep["aid-deploy"]:::delopt
+        Mon["aid-monitor"]:::delopt
+    end
+
+    HK["aid-housekeep<br/>on-demand · off-pipeline<br/>KB-DELTA · SUMMARY-DELTA · CLEANUP"]:::offpipe
+
+    Init --> Disc --> Intv --> Triage
+    Triage -- "full path<br/>broad / multi-target" --> Spec --> Plan --> Det --> Exe
+    Triage -- "lite path<br/>small, single-target" --> Exe
+    Exe -. "on demand" .-> Dep
+    Exe -. "on demand" .-> Mon
+    Exe -. "when finished" .-> HK
+    HK  -. "targeted KB refresh" .-> Disc
+```
+
+*Eleven user-facing skills · five groups · two paths (TRIAGE-routed). The six numbered
+phases — Discover through Execute — are the mandatory pipeline; TRIAGE routes small,
+single-target work down the **lite path** straight to Execute.*
 
 The six core phases, in order:
 

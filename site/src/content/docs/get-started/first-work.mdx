@@ -23,25 +23,27 @@ if you haven't done that yet.
    This is the git repository where you want to use AID. All `aid` commands operate on the
    current directory.
 
-2. **Bootstrap the AID configuration.**
-
-   ```bash
-   aid-config
-   ```
-
-   This scaffolds the `.aid/` directory — the Knowledge Base root — and creates the initial
-   configuration files. Run it once per project; re-running it is safe and non-destructive.
-
-3. **Add your AI tool profile.**
+2. **Add your AI tool profile.**
 
    ```bash
    aid add claude-code
    ```
 
    Replace `claude-code` with your tool's canonical id: `codex`, `cursor`, `copilot-cli`, or
-   `antigravity`. This installs the skill and agent files into the correct location for your tool.
+   `antigravity`. This installs the AID skills and agents into the correct location for your tool.
 
    Run `aid status` to confirm the install.
+
+3. **Scaffold the Knowledge Base.**
+
+   In your AI coding tool, run the `/aid-config` skill (it was installed by the previous step):
+
+   ```
+   /aid-config
+   ```
+
+   This scaffolds the `.aid/` directory — the Knowledge Base root — and records your project
+   defaults. Run it once per project; re-running it is safe and non-destructive.
 
 </Steps>
 

@@ -39,7 +39,8 @@ flowchart TB
         Sum["aid-summarize<br/>optional"]:::aux
     end
     subgraph G2[" 2 · Define "]
-        Intv["2 · aid-interview<br/>TRIAGE → full or lite"]:::def
+        Intv["2 · aid-interview<br/>gather requirements"]:::def
+        Triage{"TRIAGE<br/>full or lite?"}:::def
         Spec["3 · aid-specify<br/>full path only"]:::def
     end
     subgraph G3[" 3 · Map "]
@@ -56,7 +57,9 @@ flowchart TB
 
     HK["aid-housekeep<br/>on-demand · off-pipeline<br/>KB-DELTA · SUMMARY · CLEANUP"]:::offpipe
 
-    Init --> Disc --> Intv --> Spec --> Plan --> Det --> Exe
+    Init --> Disc --> Intv --> Triage
+    Triage -- "full path<br/>broad / multi-target" --> Spec --> Plan --> Det --> Exe
+    Triage -- "lite path<br/>small, single-target" --> Exe
     Exe -. "on demand" .-> Dep
     Exe -. "on demand" .-> Mon
     Exe -. "when finished" .-> HK
@@ -199,7 +202,7 @@ flowchart TD
     STD --> S1["architecture · tech-stack<br/>coding-standards · module-map"]:::std
     STD --> S2["schemas · pipeline-contracts<br/>integration-map · infrastructure"]:::std
     STD --> S3["test-landscape · tech-debt<br/>domain-glossary · …"]:::std
-    DISC["aid-discover<br/>6 discovery sub-agents"]:::gen
+    DISC["aid-discover<br/>5 discovery sub-agents"]:::gen
     DISC -. "populate" .-> STD
     DISC -. "populate" .-> GEN
 ```

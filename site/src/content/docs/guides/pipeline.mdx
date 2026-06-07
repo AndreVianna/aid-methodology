@@ -23,23 +23,26 @@ duplicate that depth; it points you at the right command and artifact for each s
 
 ```mermaid
 flowchart LR
-    C(["/aid-config\n(Step 0)"])
-    D(["/aid-discover\n(Phase 1)"])
-    I(["/aid-interview\n(Phase 2)"])
-    S(["/aid-specify\n(Phase 3)"])
-    P(["/aid-plan\n(Phase 4)"])
-    DT(["/aid-detail\n(Phase 5)"])
-    E(["/aid-execute\n(Phase 6)"])
-    DP(["/aid-deploy\n(Deliver)"])
-    M(["/aid-monitor\n(Deliver)"])
+    C(["/aid-config<br/>Step 0"])
+    D(["/aid-discover<br/>Phase 1"])
+    I(["/aid-interview<br/>Phase 2"])
+    T{"TRIAGE<br/>full or lite?"}
+    S(["/aid-specify<br/>Phase 3"])
+    P(["/aid-plan<br/>Phase 4"])
+    DT(["/aid-detail<br/>Phase 5"])
+    E(["/aid-execute<br/>Phase 6"])
+    DP(["/aid-deploy<br/>Deliver"])
+    M(["/aid-monitor<br/>Deliver"])
 
     C --> D
     C --> I
     D --> I
-    I --> S
+    I --> T
+    T -- "full path" --> S
     S --> P
     P --> DT
     DT --> E
+    T -- "lite path<br/>skips Specify/Plan/Detail" --> E
     E --> DP
     DP --> M
     M -->|"findings loop back"| I
@@ -141,8 +144,8 @@ It decides which features go into which delivery, respecting dependencies, and w
 ### Phase 5 — Detail (`/aid-detail`)
 
 The Detail skill breaks a delivery into typed tasks and produces an execution graph. Each
-task gets a `task-NNN.md` file with type (IMPLEMENT / TEST / MIGRATE / CONFIGURE /
-DOCUMENT), acceptance criteria, and dependencies.
+task gets a `task-NNN.md` file with one of the eight task types (RESEARCH, DESIGN, IMPLEMENT,
+TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE), acceptance criteria, and dependencies.
 
 **Artifact produced:** `task-NNN.md` files under `.aid/<work>/tasks/` + an execution graph.
 
@@ -201,9 +204,11 @@ handle deployment through their existing CI/CD pipeline without `/aid-deploy` or
 
 ## Lite vs full path
 
-Not every project needs all six phases. A **lite path** — Interview → Specify → Execute
-— is sufficient for small, well-understood features. The [Methodology](/concepts/methodology)
-page explains when to use the lite path and when the full pipeline pays off.
+Not every project needs all six phases. For small, well-scoped work, `/aid-interview`'s
+TRIAGE routes down the **lite path** — Interview → Execute, **skipping Specify, Plan, and
+Detail** — emitting a work-root `SPEC.md` with tasks directly. The
+[Methodology](/concepts/methodology) page explains when TRIAGE chooses the lite path and
+when the full pipeline pays off.
 
 The [Installation guide](/guides/installation) also covers the quick-start flow for new
 adopters who want to get something working before reading the full pipeline.

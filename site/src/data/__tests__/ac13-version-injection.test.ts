@@ -170,13 +170,12 @@ describe('AC13 — AID_VERSION override propagates to all five commands (no runt
 // ── AC5 — Home pipeline diagram present ──────────────────────────────────────
 
 describe('AC5 — Home pipeline diagram', () => {
-  // Per the prototype-01 redesign, the home pipeline is rendered as the inline
-  // pill-step <PipelineDiagram /> component (not a Mermaid flowchart). Mermaid is
-  // still exercised on the guide pages (pipeline.mdx, maintainer.mdx).
-  it('index.mdx renders the pill-step <PipelineDiagram /> component', () => {
+  // The home pipeline is the canonical README diagram (a Mermaid flowchart with a
+  // TRIAGE branch). It MUST show both the full and lite paths.
+  it('index.mdx renders the pipeline as a Mermaid diagram', () => {
     const src = readDoc('index.mdx');
-    expect(src).toContain("import PipelineDiagram from '../../components/PipelineDiagram.astro'");
-    expect(src).toContain('<PipelineDiagram');
+    expect(src).toContain('```mermaid');
+    expect(src).toContain('flowchart TB');
   });
 
   it('index.mdx lists the six core phases in order', () => {
@@ -184,6 +183,17 @@ describe('AC5 — Home pipeline diagram', () => {
     for (const phase of ['Discover', 'Interview', 'Specify', 'Plan', 'Detail', 'Execute']) {
       expect(src).toContain(phase);
     }
+  });
+
+  // Regression guard (this has been wrong three times): the pipeline diagram must
+  // include the TRIAGE node AND the lite-path branch that routes straight to Execute,
+  // skipping Specify/Plan/Detail — matching README.md's canonical diagram.
+  it('index.mdx pipeline shows the TRIAGE branch and the lite path', () => {
+    const src = readDoc('index.mdx');
+    expect(src).toContain('TRIAGE');
+    expect(src).toContain('lite path');
+    // The lite branch routes Triage --> Exe (skips Specify/Plan/Detail).
+    expect(src).toMatch(/Triage\s*--\s*"lite path[\s\S]*?-->\s*Exe/);
   });
 });
 
@@ -335,8 +345,8 @@ describe('AC3 — Home page is a documentation page (no marketing splash)', () =
     expect(src).toContain('/guides/installation/');
   });
 
-  it('index.mdx has a pipeline diagram (PipelineDiagram component)', () => {
+  it('index.mdx has a pipeline diagram (Mermaid)', () => {
     const src = readDoc('index.mdx');
-    expect(src).toContain('<PipelineDiagram');
+    expect(src).toContain('```mermaid');
   });
 });
