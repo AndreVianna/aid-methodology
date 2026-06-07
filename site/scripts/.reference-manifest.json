@@ -1,0 +1,27 @@
+{
+  "generator": "site/scripts/gen-reference.mjs",
+  "entries": [
+    {
+      "src": "canonical/skills/*/SKILL.md",
+      "dest": "site/src/content/docs/reference/skills.md"
+    },
+    {
+      "src": "canonical/agents/*/AGENT.md",
+      "dest": "site/src/content/docs/reference/agents.md"
+    },
+    {
+      "src": "canonical/templates/knowledge-base/*.md",
+      "dest": "site/src/content/docs/reference/kb.md"
+    },
+    {
+      "src": ".aid/settings.yml",
+      "dest": "site/src/content/docs/reference/settings.md"
+    }
+  ],
+  "generatedPaths": [
+    "site/src/content/docs/reference/skills.md",
+    "site/src/content/docs/reference/agents.md",
+    "site/src/content/docs/reference/kb.md",
+    "site/src/content/docs/reference/settings.md"
+  ]
+}

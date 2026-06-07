@@ -1,0 +1,40 @@
+{
+  "name": "aid-product-site",
+  "description": "AID methodology product documentation site (Astro Starlight)",
+  "version": "0.0.1",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "sync:docs": "node scripts/sync-docs.mjs",
+    "gen:reference": "node scripts/gen-reference.mjs",
+    "fetch:release": "node scripts/fetch-release-data.mjs",
+    "prebuild": "npm run sync:docs && npm run gen:reference && npm run fetch:release",
+    "predev": "npm run sync:docs && npm run gen:reference && npm run fetch:release",
+    "build": "astro build",
+    "dev": "astro dev",
+    "preview": "astro preview",
+    "astro": "astro",
+    "check": "astro check",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "3.7.3",
+    "@astrojs/starlight": "0.39.3",
+    "@fontsource/inter": "5.2.8",
+    "astro": "6.4.4",
+    "astro-mermaid": "2.0.2",
+    "marked": "16.4.2",
+    "sanitize-html": "2.17.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.9",
+    "@types/sanitize-html": "^2.16.1",
+    "typescript": "6.0.3",
+    "vitest": "^4.1.8"
+  },
+  "overrides": {
+    "yaml": "^2.8.3"
+  }
+}

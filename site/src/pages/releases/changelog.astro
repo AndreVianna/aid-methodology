@@ -1,0 +1,76 @@
+---
+// site/src/pages/releases/changelog.astro — Releases/changelog (FR10, AC9).
+// Build-time only: reads feature-002's accessor (no fetch, no runtime backend).
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import { getAllReleases, type Release, type ReleaseAsset } from '../../lib/release-data';
+import { marked } from 'marked';
+import sanitizeHtml from 'sanitize-html';
+
+const releases: Release[] = getAllReleases();
+
+// D4 — offline bundle assets only (aid-*.tar.gz), e.g. aid-claude-code-v1.0.0.tar.gz
+const OFFLINE_RE = /^aid-.*\.tar\.gz$/;
+const offlineAssets = (r: Release): ReleaseAsset[] =>
+  (r.assets ?? []).filter((a) => OFFLINE_RE.test(a.name));
+
+// D3 — render GitHub-Flavored Markdown body → sanitized HTML at build time.
+// Allowlist re-admits headings, images, links, lists, code/pre and GFM task-list
+// checkboxes — sanitize-html's bare defaults drop h1/h2/img and the <input> checkboxes.
+const ALLOWED_TAGS = [
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  'p', 'a', 'ul', 'ol', 'li', 'blockquote', 'hr', 'br',
+  'strong', 'em', 'del', 'code', 'pre',
+  'table', 'thead', 'tbody', 'tr', 'th', 'td',
+  'img', 'input',
+];
+const ALLOWED_ATTRS: sanitizeHtml.IOptions['allowedAttributes'] = {
+  a: ['href', 'name', 'target', 'rel'],
+  img: ['src', 'alt', 'title'],
+  // GFM task-list checkboxes render as <input type="checkbox" disabled checked>
+  input: ['type', 'checked', 'disabled'],
+};
+const renderBody = (body?: string): string =>
+  body
+    ? sanitizeHtml(marked.parse(body, { async: false }), {
+        allowedTags: ALLOWED_TAGS,
+        allowedAttributes: ALLOWED_ATTRS,
+      })
+    : '';
+
+// Guard against empty/null publishedAt (draft releases) → omit date, no "Invalid Date".
+const fmtDate = (iso?: string): string =>
+  iso
+    ? new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    : '';
+---
+<StarlightPage frontmatter={{ title: 'Changelog', description: 'AID release notes and offline bundle downloads.' }}>
+  {releases.length === 0 ? (
+    <p>
+      Releases will appear here once the first GitHub Release is published.
+      See <a href="https://github.com/AndreVianna/aid-methodology/releases">all releases on GitHub</a>.
+    </p>
+  ) : (
+    releases.map((r) => (
+      <section class="release">
+        <h2 id={r.tag}><a href={r.url}>{r.name || r.tag}</a></h2>
+        <p class="release-meta">
+          <code>{r.tag}</code>
+          {r.publishedAt && (
+            <Fragment> · <time datetime={r.publishedAt}>{fmtDate(r.publishedAt)}</time></Fragment>
+          )}
+        </p>
+        <div class="release-notes" set:html={renderBody(r.body)} />
+        {offlineAssets(r).length > 0 && (
+          <div class="release-downloads">
+            <h3>Offline bundles</h3>
+            <ul>
+              {offlineAssets(r).map((a) => (
+                <li><a href={a.url}>{a.name}</a></li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+    ))
+  )}
+</StarlightPage>

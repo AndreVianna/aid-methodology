@@ -1,0 +1,271 @@
+/* shell.css — prototype-01 "faithful Claude/Mintlify" shell, layered over Starlight.
+ *
+ * casulo.css supplies the brand tokens + Starlight token mapping (colors, fonts).
+ * This file restyles Starlight's chrome to the winning prototype-01 layout:
+ *   - two-row header (thin bar + section tabs)  → src/components/overrides/Header.astro
+ *   - breadcrumb + eyebrow + title              → src/components/overrides/PageTitle.astro
+ *   - grouped, collapsible, gold-active sidebar
+ *   - quiet right-hand "On this page" TOC
+ *
+ * These selectors are intentionally unlayered so they win over Starlight's
+ * @layer starlight.core defaults without !important.
+ */
+
+/* ── Layout dimensions ──────────────────────────────────────────────────── */
+:root {
+  --aid-header-h: 56px;
+  --aid-tabs-h: 46px;
+  /* Combined nav height drives every Starlight offset (sidebar, content, TOC). */
+  --sl-nav-height: calc(var(--aid-header-h) + var(--aid-tabs-h));
+  --sl-content-width: 47.5rem;   /* ~760px reading column (proto --content-max) */
+  --sl-sidebar-width: 17rem;     /* ~272px (proto --sidebar-w) */
+  --sl-sidebar-pad-x: 0.75rem;
+  --sl-text-h1: 2.125rem;        /* 34px (proto h1) */
+}
+
+/* ── Fixed header container (PageFrame <header class="header">) ──────────── */
+header.header {
+  padding: 0;
+  border-bottom: none;
+  background-color: color-mix(in srgb, var(--sl-color-bg) 88%, transparent);
+  backdrop-filter: saturate(140%) blur(12px);
+}
+
+.aid-header {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ── Row 1: thin header bar ─────────────────────────────────────────────── */
+.aid-header-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: var(--aid-header-h);
+  padding: 0 24px;
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+
+/* left brand lockup: Casulo AI Labs logo (→ casuloailabs.com) · divider · AID name (→ home) */
+.aid-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.aid-casulo { display: flex; align-items: center; flex: 0 0 auto; }
+.aid-casulo img {
+  height: 30px;
+  width: auto;
+  display: block;
+  border-radius: 6px;
+}
+.aid-brand-sep {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 24px;
+  background: var(--sl-color-hairline);
+}
+.aid-brand {
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: 14.5px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: var(--sl-color-text);
+}
+.aid-name b { color: var(--sl-color-white); }
+.aid-name span { color: var(--sl-color-gray-2); font-weight: 500; }
+
+.aid-header-spacer { flex: 1; }
+
+/* search — restyle Starlight's Pagefind open button into the proto pill.
+ * NB: scope width/styles to the trigger button only ([data-open-modal]).
+ * A broad `.aid-search button` rule also hits the Pagefind modal's buttons
+ * (e.g. .pagefind-ui__search-clear) which live inside <site-search>'s dialog. */
+.aid-search { display: flex; }
+.aid-search > site-search { display: inline-flex; }
+.aid-search button[data-open-modal] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 230px;
+  height: 34px;
+  margin: 0;
+  padding: 0 10px;
+  border: 1px solid var(--casulo-border-strong, rgba(148, 163, 184, 0.16));
+  border-radius: var(--casulo-radius-sm);
+  background: var(--sl-color-bg-inline-code);
+  color: var(--sl-color-gray-3);
+  font-size: 13px;
+  font-family: var(--sl-font);
+  font-weight: 400;
+  cursor: text;
+  transition: border-color 0.15s, background 0.15s;
+}
+.aid-search button[data-open-modal]:hover {
+  border-color: var(--casulo-border-accent);
+  background: var(--sl-color-bg-inline-code);
+}
+.aid-search button[data-open-modal] > svg { width: 15px; height: 15px; flex: 0 0 auto; }
+.aid-search button[data-open-modal] > span { flex: 1; text-align: left; }
+.aid-search button[data-open-modal] kbd {
+  font-family: var(--sl-font);
+  font-size: 11px;
+  padding: 1px 6px;
+  border: 1px solid var(--casulo-border-strong, rgba(148, 163, 184, 0.16));
+  border-radius: 5px;
+  background: var(--sl-color-bg);
+  color: var(--sl-color-gray-3);
+}
+
+.aid-header-links { display: flex; align-items: center; gap: 2px; }
+.aid-header-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  border-radius: var(--casulo-radius-sm);
+  color: var(--sl-color-gray-2);
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.15s, background 0.15s;
+}
+.aid-header-link:hover { color: var(--sl-color-white); background: var(--sl-color-bg-inline-code); }
+.aid-header-link svg { width: 16px; height: 16px; }
+
+/* theme select — keep Starlight's accessible 3-way picker, just make it compact */
+.aid-theme :is(label, .theme-select) {
+  border: 1px solid var(--casulo-border-strong, rgba(148, 163, 184, 0.16));
+  border-radius: var(--casulo-radius-sm);
+  background: var(--sl-color-bg-inline-code);
+  color: var(--sl-color-gray-2);
+}
+
+/* ── Row 2: section tabs ────────────────────────────────────────────────── */
+.aid-tabs {
+  display: flex;
+  height: var(--aid-tabs-h);
+  padding: 8px 24px 0;
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+.aid-tabs-inner {
+  display: flex;
+  align-items: stretch;
+  gap: 26px;
+  width: 100%;
+}
+.aid-tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 2px;
+  color: var(--sl-color-gray-2);
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+.aid-tab:hover { color: var(--sl-color-white); }
+.aid-tab.active { color: var(--sl-color-text-accent); font-weight: 650; }
+.aid-tab.active::after {
+  content: "";
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  bottom: -1px;
+  height: 3px;
+  background: var(--sl-color-accent);
+  border-radius: 3px 3px 0 0;
+  box-shadow: 0 0 10px var(--casulo-accent-glow);
+}
+
+/* ── Left sidebar ───────────────────────────────────────────────────────── */
+#starlight__sidebar { font-size: 13.5px; }
+#starlight__sidebar .top-level { gap: 0.25rem; }
+
+/* solo top-level links (Overview) + nested links share the item style */
+#starlight__sidebar a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 10px;
+  border-radius: var(--casulo-radius-sm);
+  color: var(--sl-color-gray-2);
+  font-size: 13.5px;
+  font-weight: 450;
+  line-height: 1.4;
+  transition: color 0.12s, background 0.12s;
+}
+#starlight__sidebar a:hover {
+  color: var(--sl-color-white);
+  background: var(--sl-color-bg-inline-code);
+}
+#starlight__sidebar a[aria-current="page"] {
+  color: var(--sl-color-text-accent);
+  background: var(--casulo-accent-glow);
+  font-weight: 600;
+}
+
+/* group headers (Get Started / Guides / …) — uppercase, muted, with caret */
+#starlight__sidebar details { margin-bottom: 1rem; }
+#starlight__sidebar summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px;
+  margin-bottom: 2px;
+  cursor: pointer;
+}
+#starlight__sidebar summary .group-label .large {
+  color: var(--sl-color-gray-3);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+#starlight__sidebar summary .caret { color: var(--sl-color-gray-3); opacity: 0.7; }
+
+/* ── Breadcrumb + eyebrow + title ───────────────────────────────────────── */
+.aid-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--sl-color-gray-3);
+  margin-bottom: 18px;
+}
+.aid-breadcrumb a { color: var(--sl-color-gray-3); transition: color 0.12s; }
+.aid-breadcrumb a:hover { color: var(--sl-color-text-accent); }
+.aid-breadcrumb .sep { opacity: 0.6; }
+.aid-breadcrumb .cur { color: var(--sl-color-gray-2); }
+
+.aid-eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sl-color-text-accent);
+  margin-bottom: 10px;
+}
+
+/* ── Right-hand "On this page" TOC ──────────────────────────────────────── */
+starlight-toc a {
+  font-size: 13px;
+}
+starlight-toc a[aria-current="true"] {
+  color: var(--sl-color-text-accent);
+  font-weight: 500;
+}
+
+/* ── Responsive — fold the tab row into a scroll strip on narrow screens ─── */
+@media (max-width: 50rem) {
+  .aid-header-bar { gap: 10px; padding: 0 16px; }
+  .aid-name span { display: none; }
+  .aid-header-link span { display: none; }
+  .aid-search button[data-open-modal] { width: 150px; }
+  .aid-tabs { padding: 8px 16px 0; }
+  .aid-tabs-inner { gap: 18px; overflow-x: auto; }
+}

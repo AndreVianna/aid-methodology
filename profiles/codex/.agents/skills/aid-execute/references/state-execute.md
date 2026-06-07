@@ -140,7 +140,7 @@ While `|in-flight| < MaxConcurrent` and the ready set is non-empty:
 2. Move it from ready set → in-flight set.
 3. **Provision an isolated worktree** for this task:
    - Worktree path: `.aid/.worktrees/task-{NNN}/` (create with `git worktree add`)
-   - Branch: same delivery branch (`aid/delivery-NNN`) — task inherits the
+   - Branch: same delivery branch (`aid/{work}-delivery-NNN`) — task inherits the
      shared delivery branch; graph-independence guarantees file-disjointness.
 4. **Dispatch via Agent tool with `run_in_background: true`:**
 
@@ -217,7 +217,7 @@ Remove `task-{NNN}` from the in-flight set.
 **If the task completed successfully (DONE):**
 
 1. **Verify worktree HEAD is on delivery branch.** Under the shared-branch model,
-   each worktree was provisioned on the same `aid/delivery-NNN` branch (PD-2 step 3)
+   each worktree was provisioned on the same `aid/{work}-delivery-NNN` branch (PD-2 step 3)
    and committed directly to it. No cherry-pick is needed — the commits are already
    on the shared delivery branch by construction. This is a no-op verification:
    ```bash

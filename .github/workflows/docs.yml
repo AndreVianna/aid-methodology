@@ -1,0 +1,84 @@
+name: Docs
+
+# Builds the Astro Starlight site under site/ and deploys it to GitHub Pages
+# at https://aid.casuloailabs.com.  Decoupled from release.yml: it merely
+# *listens* for release:published to refresh release-bound content; it does
+# not modify or depend on the release pipeline.
+
+on:
+  push:
+    branches: [master]
+    paths:                      # only rebuild when site inputs change
+      - 'site/**'
+      - 'docs/**'               # migrated content source (feature-005)
+      - 'VERSION'               # version injection input (feature-008)
+      - '.github/workflows/docs.yml'
+  release:
+    types: [published]          # AC15 enabler — refresh release-bound content hands-free
+  workflow_dispatch:            # manual re-deploy
+
+# Least-privilege: read the repo, write the Pages deployment, mint the OIDC
+# token deploy-pages exchanges.  No contents:write, no issues/pull-requests.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One in-flight Pages deploy at a time; a newer push supersedes an older
+# queued run, but never cancel a deploy mid-publish.
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build (astro build → Pages artifact)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: 'site/.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: 'site/package-lock.json'
+
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
+
+      # Build-time data-fetch (feature-002 OWNS this; features 008/009 consume it).
+      # Reads VERSION + the GitHub Releases API via the workflow GITHUB_TOKEN
+      # and exports the contract env vars into $GITHUB_ENV for the build step.
+      # Degrades gracefully: exits 0 on any API failure; build never blocked.
+      - name: Fetch build-time release data (VERSION + Releases API)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node site/scripts/fetch-release-data.mjs >> "$GITHUB_ENV"
+
+      - name: Install deps (reproducible)
+        working-directory: site
+        run: npm ci
+
+      - name: Build Astro Starlight site
+        working-directory: site
+        env:
+          # Surface the build-time data-fetch contract to the Astro SSG build
+          AID_VERSION: ${{ env.AID_VERSION }}
+          AID_LATEST_RELEASE_JSON: ${{ env.AID_LATEST_RELEASE_JSON }}
+          AID_RELEASES_JSON: ${{ env.AID_RELEASES_JSON }}
+        run: npm run build
+
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: site/dist
+
+  deploy:
+    name: deploy (Pages)
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5

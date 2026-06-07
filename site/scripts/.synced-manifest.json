@@ -1,0 +1,32 @@
+{
+  "generator": "site/scripts/sync-docs.mjs",
+  "entries": [
+    {
+      "src": "docs/aid-methodology.md",
+      "dest": "site/src/content/docs/concepts/methodology.md",
+      "slug": "concepts/methodology"
+    },
+    {
+      "src": "docs/faq.md",
+      "dest": "site/src/content/docs/concepts/faq.md",
+      "slug": "concepts/faq"
+    },
+    {
+      "src": "docs/repository-structure.md",
+      "dest": "site/src/content/docs/reference/repository-structure.md",
+      "slug": "reference/repository-structure"
+    },
+    {
+      "src": "docs/glossary.md",
+      "dest": "site/src/content/docs/reference/glossary.md",
+      "slug": "reference/glossary"
+    }
+  ],
+  "generatedPaths": [
+    "site/src/content/docs/concepts/methodology.md",
+    "site/src/content/docs/concepts/faq.md",
+    "site/src/content/docs/reference/repository-structure.md",
+    "site/src/content/docs/reference/glossary.md",
+    "site/src/assets/"
+  ]
+}

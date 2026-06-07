@@ -1,0 +1,233 @@
+---
+// ReportForm.astro — a single report/contact form, one per Contact Us page.
+//
+// kind:
+//   "site"     -> GitHub issue, label "site issue" (+ originating page auto-captured)
+//   "bug"      -> GitHub issue, label "bug"
+//   "feedback" -> GitHub issue, label "feedback"
+//   "contact"  -> mailto (private request for a conversation; not a public issue)
+//
+// GitHub kinds: capture client-side, then open a prefilled "New issue" in a NEW TAB
+// (reporter submits under their own account). No backend, no token, no tracking.
+interface Props {
+  kind: 'site' | 'bug' | 'feedback' | 'contact';
+}
+const { kind } = Astro.props;
+const REPO = 'AndreVianna/aid-methodology';
+const CONTACT_EMAIL = 'andre.vianna.rj@hotmail.com';
+---
+
+<section class="rf" data-kind={kind} data-repo={REPO} data-email={CONTACT_EMAIL}>
+  {kind !== 'contact' && (
+    <p class="rf-note">
+      Submitting opens a <strong>prefilled GitHub issue in a new tab</strong> — review it and click
+      <em>Submit new issue</em> there. A free GitHub account is required; nothing is sent until you
+      submit on GitHub.
+    </p>
+  )}
+
+  <label class="rf-label" for="rf-name">
+    Your name {kind === 'contact' ? (<span class="rf-req">*</span>) : (<span class="rf-muted">(optional)</span>)}
+  </label>
+  <input class="rf-input" id="rf-name" type="text" placeholder="So we know who we're talking to" />
+  <label class="rf-label" for="rf-reply">
+    Your email {kind === 'contact'
+      ? (<span class="rf-req">*</span>)
+      : (<span class="rf-muted">(optional — appears in the public issue)</span>)}
+  </label>
+  <input class="rf-input" id="rf-reply" type="email" placeholder="you@example.com" />
+
+  {kind === 'site' && (
+    <>
+      <label class="rf-label" for="rf-page">Page <span class="rf-muted">(auto-filled from the page's “Report an issue” link)</span></label>
+      <input class="rf-input" id="rf-page" type="text" placeholder="URL of the affected page (optional)" />
+      <input type="hidden" id="rf-page-title" />
+      <label class="rf-label" for="rf-desc">What's the problem? <span class="rf-req">*</span></label>
+      <textarea class="rf-input" id="rf-desc" rows="6" placeholder="A typo, a broken link, an error, or anything unclear on this page…"></textarea>
+    </>
+  )}
+
+  {kind === 'bug' && (
+    <>
+      <label class="rf-label" for="rf-summary">Summary <span class="rf-req">*</span></label>
+      <input class="rf-input" id="rf-summary" type="text" placeholder="Short summary of the bug" />
+      <label class="rf-label" for="rf-what">What happened? <span class="rf-req">*</span></label>
+      <textarea class="rf-input" id="rf-what" rows="4" placeholder="What you ran (CLI / skill / script) and what went wrong…"></textarea>
+      <label class="rf-label" for="rf-expected">What did you expect?</label>
+      <textarea class="rf-input" id="rf-expected" rows="2" placeholder="Expected behavior…"></textarea>
+      <label class="rf-label" for="rf-version">AID version / environment</label>
+      <input class="rf-input" id="rf-version" type="text" placeholder="e.g. aid v1.0.0, claude-code, macOS 14" />
+    </>
+  )}
+
+  {kind === 'feedback' && (
+    <>
+      <label class="rf-label" for="rf-subject">Subject <span class="rf-req">*</span></label>
+      <input class="rf-input" id="rf-subject" type="text" placeholder="What's this about?" />
+      <label class="rf-label" for="rf-message">Your question, feedback, or suggestion <span class="rf-req">*</span></label>
+      <textarea class="rf-input" id="rf-message" rows="6" placeholder="Share your thoughts…"></textarea>
+    </>
+  )}
+
+  {kind === 'contact' && (
+    <>
+      <label class="rf-label" for="rf-message">What would you like to talk about? <span class="rf-req">*</span></label>
+      <textarea class="rf-input" id="rf-message" rows="6" placeholder="Tell us a bit about your team, your use case, or what you'd like to discuss…"></textarea>
+    </>
+  )}
+
+  <button class="rf-submit" id="rf-submit" type="button">
+    {kind === 'contact' ? 'Open email →' : 'Open prefilled issue on GitHub →'}
+  </button>
+</section>
+
+<style>
+  .rf {
+    margin: 1.25rem 0 0;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: var(--casulo-radius, 12px);
+    background: var(--sl-color-bg-nav);
+    overflow: hidden;
+    padding: 18px;
+  }
+  .rf-note {
+    margin: -18px -18px 18px;
+    padding: 12px 18px;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--sl-color-gray-2);
+    background: var(--casulo-accent-glow, rgba(212,168,83,.12));
+    border-bottom: 1px solid var(--sl-color-hairline);
+  }
+  .rf-label {
+    display: block;
+    margin: 14px 0 5px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+  .rf-note + .rf-label,
+  .rf > .rf-label:first-of-type { margin-top: 0; }
+  .rf-req { color: var(--sl-color-text-accent); }
+  .rf-muted { color: var(--sl-color-gray-3); font-weight: 400; }
+  .rf-input {
+    width: 100%;
+    padding: 8px 11px;
+    border: 1px solid var(--casulo-border-strong, rgba(148,163,184,.16));
+    border-radius: var(--casulo-radius-sm, 8px);
+    background: var(--sl-color-bg);
+    color: var(--sl-color-white);
+    font: inherit;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .rf-input::placeholder { color: var(--sl-color-gray-3); }
+  .rf-input:focus {
+    outline: none;
+    border-color: var(--sl-color-accent);
+    box-shadow: 0 0 0 3px var(--casulo-accent-glow, rgba(212,168,83,.15));
+  }
+  textarea.rf-input { resize: vertical; min-height: 64px; }
+  .rf-invalid { border-color: #ef4444 !important; }
+  .rf-submit {
+    margin-top: 18px;
+    padding: 9px 16px;
+    border: 1px solid var(--casulo-border-accent, rgba(212,168,83,.3));
+    border-radius: var(--casulo-radius-sm, 8px);
+    background: var(--casulo-accent-glow, rgba(212,168,83,.15));
+    color: var(--sl-color-text-accent);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .rf-submit:hover { background: var(--sl-color-accent); color: var(--sl-color-black); border-color: var(--sl-color-accent); }
+</style>
+
+<script>
+  (function () {
+    const root = document.querySelector('.rf') as HTMLElement | null;
+    if (!root) return;
+    const kind = root.getAttribute('data-kind') || '';
+    const REPO = root.getAttribute('data-repo') || '';
+    const EMAIL = root.getAttribute('data-email') || '';
+    const FOOTER = '\n\n---\n_Filed from the AID docs Contact Us form._';
+
+    function val(sel: string): string {
+      const el = root!.querySelector(sel) as HTMLInputElement | HTMLTextAreaElement | null;
+      return el ? el.value.trim() : '';
+    }
+    function need(sel: string): boolean {
+      const el = root!.querySelector(sel) as HTMLInputElement | HTMLTextAreaElement | null;
+      if (el && !el.value.trim()) { el.classList.add('rf-invalid'); el.focus(); return false; }
+      if (el) el.classList.remove('rf-invalid');
+      return true;
+    }
+    function openIssue(title: string, body: string, labels: string) {
+      const p = new URLSearchParams();
+      p.set('title', title);
+      p.set('body', body);
+      if (labels) p.set('labels', labels);
+      window.open('https://github.com/' + REPO + '/issues/new?' + p.toString(), '_blank', 'noopener,noreferrer');
+    }
+    // Optional reporter identity, woven into the issue body when provided.
+    function fromBlock(): string {
+      const n = val('#rf-name');
+      const e = val('#rf-reply');
+      if (!n && !e) return '';
+      return '\n\n**From:** ' + (n || '(name not given)') + (e ? ' <' + e + '>' : '');
+    }
+    // Validate an email field's format. Empty passes (required-ness is enforced by need()).
+    function emailOk(sel: string): boolean {
+      const el = root!.querySelector(sel) as HTMLInputElement | null;
+      if (!el) return true;
+      const v = el.value.trim();
+      if (!v) return true;
+      const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      el.classList.toggle('rf-invalid', !ok);
+      if (!ok) el.focus();
+      return ok;
+    }
+
+    // site kind: prefill page from ?page=&title=
+    if (kind === 'site') {
+      const params = new URLSearchParams(location.search);
+      const pageEl = root.querySelector('#rf-page') as HTMLInputElement | null;
+      const titleEl = root.querySelector('#rf-page-title') as HTMLInputElement | null;
+      if (pageEl && params.get('page')) pageEl.value = params.get('page') || '';
+      if (titleEl && params.get('title')) titleEl.value = params.get('title') || '';
+    }
+
+    const submit = root.querySelector('#rf-submit');
+    if (!submit) return;
+    submit.addEventListener('click', function () {
+      if (kind === 'site') {
+        if (!need('#rf-desc') || !emailOk('#rf-reply')) return;
+        const pg = val('#rf-page');
+        const ttl = val('#rf-page-title') || pg || 'a documentation page';
+        openIssue('[Site] ' + ttl, '**Page:** ' + (pg || '(not specified)') + '\n\n**Issue:**\n' + val('#rf-desc') + fromBlock() + FOOTER, 'site issue');
+      } else if (kind === 'bug') {
+        if (!need('#rf-summary') || !need('#rf-what') || !emailOk('#rf-reply')) return;
+        openIssue(
+          '[Bug] ' + val('#rf-summary'),
+          '**What happened:**\n' + val('#rf-what') +
+            '\n\n**Expected:**\n' + (val('#rf-expected') || '(not specified)') +
+            '\n\n**AID version / environment:**\n' + (val('#rf-version') || '(not specified)') + fromBlock() + FOOTER,
+          'bug'
+        );
+      } else if (kind === 'feedback') {
+        if (!need('#rf-subject') || !need('#rf-message') || !emailOk('#rf-reply')) return;
+        openIssue('[Feedback] ' + val('#rf-subject'), val('#rf-message') + fromBlock() + FOOTER, 'feedback');
+      } else if (kind === 'contact') {
+        if (!need('#rf-name') || !need('#rf-reply') || !emailOk('#rf-reply') || !need('#rf-message')) return;
+        const lines = ['Name: ' + val('#rf-name'), 'Email: ' + val('#rf-reply'), '', val('#rf-message')];
+        const p = new URLSearchParams();
+        p.set('subject', 'AID — request for a conversation');
+        p.set('body', lines.join('\n'));
+        window.location.href = 'mailto:' + EMAIL + '?' + p.toString();
+      }
+    });
+  })();
+</script>

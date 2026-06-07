@@ -225,7 +225,7 @@ Tasks ready:
   task-001 — IMPLEMENT — Add cache invalidation call + unit test
   task-002 — TEST      — Integration test, depends on task-001
 
-Run /aid-execute to begin execution on branch aid/delivery-001.
+Run /aid-execute to begin execution on branch aid/work-001-fix-stale-cache-delivery-001.
 ```
 
 The STATE.md is updated: `Path: lite`, `Status: Ready`, phase gate reached.
@@ -242,7 +242,7 @@ The STATE.md is updated: `Path: lite`, `Status: Ready`, phase gate reached.
 (task-002 depends on task-001). It runs task-001 first, runs the built-in
 quick-check review, then dispatches task-002. After both tasks complete, the
 delivery gate runs a full review. The gate passes (grade A). The branch
-`aid/delivery-001` is ready for a PR.
+`aid/work-001-fix-stale-cache-delivery-001` is ready for a PR.
 
 The full path's two-tier review model — per-task quick-check + per-delivery gate
 — applies unchanged on the lite path. The lite path compresses the *planning*
@@ -352,7 +352,7 @@ two-tier review.
       ▼
 /aid-execute
   Two-tier review applies (quick-check + delivery gate)
-  Branch: aid/delivery-001
+  Branch: aid/work-001-fix-stale-cache-delivery-001
 ```
 
 The full path inserts `aid-specify` → `aid-plan` → `aid-detail` between TRIAGE
