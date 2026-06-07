@@ -393,7 +393,7 @@ rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true
 [DELIVERY-GATE] Gate PASS — delivery-NNN is Done.
 Grade: {grade}  Cycles: {N}  Tier: {tier}
 
-✅ Delivery complete. Branch aid/delivery-NNN is Done.
+✅ Delivery complete. Branch aid/{work}-delivery-NNN is Done.
 Optional next steps (independent, not required, not sequential): /aid-deploy, /aid-monitor.
 ```
 

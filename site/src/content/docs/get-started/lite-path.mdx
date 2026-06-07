@@ -1,0 +1,84 @@
+---
+title: Lite path quickstart
+description: Make a small change fast — the lite path skips the full pipeline for low-risk work.
+sidebar:
+  order: 4
+---
+
+import { Steps } from '@astrojs/starlight/components';
+
+The **lite path** is AID's fast lane for small, well-scoped changes. It skips Specify, Plan, and
+Detail and goes straight from Interview to Execute — the same human-gated output, proportionate
+overhead.
+
+You don't choose the lite path manually. `/aid-interview`'s TRIAGE reads the scope and risk of
+your work and routes it automatically. If TRIAGE classifies your work as small and low-risk, you
+land on the lite path without any extra steps.
+
+## When does TRIAGE route to the lite path?
+
+TRIAGE routes to the lite path when the work is:
+
+- **Small** — a single well-defined change, not a multi-feature delivery.
+- **Low-risk** — minimal architectural impact; no cross-cutting concerns.
+- **Well-bounded** — the scope is clear from the interview alone; no discovery needed.
+
+Typical lite-path candidates: bug fixes, small feature tweaks, documentation updates, isolated
+refactors, adding a single test.
+
+If TRIAGE decides the work needs the full pipeline — because it's complex, risky, or
+under-understood — it routes there automatically. You can read the TRIAGE rationale in the
+output and request a re-route if you disagree.
+
+## The lite path flow
+
+<Steps>
+
+1. **Run the Interview.**
+
+   In your AI tool, invoke:
+
+   ```
+   /aid-interview
+   ```
+
+   Answer the intake questions. Keep your answers scoped to the change at hand.
+
+2. **TRIAGE classifies the work as lite.**
+
+   At the end of intake, TRIAGE confirms the lite routing and Interview emits a work-root
+   `SPEC.md` with the task breakdown already included — no separate Specify, Plan, or Detail
+   phase. Review it and approve.
+
+3. **Execute.**
+
+   ```
+   /aid-execute
+   ```
+
+   The agent implements the task directly, grades its output, and loops until it passes your
+   acceptance criteria. Review each output and approve.
+
+4. **Done.**
+
+   Your change is implemented. No spec, no plan, no detail phase — just the approved output.
+
+</Steps>
+
+## Lite path vs full path
+
+| | Lite path | Full path |
+|--|-----------|-----------|
+| Best for | Small, low-risk, well-bounded work | Complex, high-risk, or poorly understood work |
+| Phases | Interview → Execute | Discover → Interview → Specify → Plan → Detail → Execute |
+| Artifacts | work-root `SPEC.md` + task files | `REQUIREMENTS.md` + per-feature `SPEC.md` + `PLAN.md` + task files |
+| Gates | 2 (intake, execute review) | one per phase |
+| TRIAGE routing | Automatic | Automatic |
+
+The lite path is not a shortcut that skips quality — it is proportionate rigour. TRIAGE is
+conservative: when in doubt, it routes to the full path.
+
+## Next steps
+
+- [Your first work](/get-started/first-work/) — the full-path walkthrough for complex changes.
+- [Methodology](/concepts/methodology/) — the complete TRIAGE routing logic and phase philosophy.

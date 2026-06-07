@@ -35,7 +35,7 @@ for both execution and review.
 
 ## Branch Isolation
 
-One branch per delivery (`aid/delivery-NNN`). All tasks in a delivery share the branch.
+One branch per delivery (`aid/{work}-delivery-NNN`). All tasks in a delivery share the branch.
 RESEARCH and DOCUMENT tasks that produce only `.aid/` artifacts may skip branching.
 
 ## Usage

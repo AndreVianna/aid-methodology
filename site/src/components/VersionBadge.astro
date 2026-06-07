@@ -1,0 +1,21 @@
+---
+// site/src/components/VersionBadge.astro
+import { VERSION } from '../data/version';
+
+interface Props {
+  /** Prefix label, default "v". e.g. renders "v1.0.0". */
+  prefix?: string;
+  /**
+   * Optional link target. Feature-008 does NOT own any route and sets no default:
+   * the consumer (e.g. the page/feature using the badge) passes the target. When
+   * omitted, the badge renders as plain text with no link.
+   */
+  href?: string;
+}
+
+const { prefix = 'v', href } = Astro.props;
+const label = `${prefix}${VERSION}`;
+---
+{href
+  ? <a class="version-badge" href={href}>{label}</a>
+  : <span class="version-badge">{label}</span>}

@@ -1,0 +1,31 @@
+---
+// site/src/components/Banner.astro — Starlight `Banner` override (FR16, AC14).
+// Build-time: latest release from feature-002's accessor; no fetch, no runtime backend.
+import { getLatestRelease } from '../lib/release-data';
+const latest = getLatestRelease();
+const tag = latest ? (latest.tag.startsWith('v') ? latest.tag : `v${latest.tag}`) : '';
+// Suppress the banner on the Releases page itself — its "See what's new" link would
+// point at the current page. (Trailing slash tolerated.)
+const onReleasesPage = Astro.url.pathname.replace(/\/$/, '') === '/releases/changelog';
+---
+{latest && !onReleasesPage && (
+  <div class="aid-banner" data-tag={tag} id="aid-release-banner">
+    <span>AID <strong>{tag}</strong> is out.</span>
+    <a href="/releases/changelog">See what's new &rarr;</a>
+    <button type="button" class="aid-banner-dismiss" aria-label="Dismiss announcement">&times;</button>
+    {/* D7/D8 — blocking inline script: hide iff this tag was already dismissed. */}
+    <script is:inline>
+      (() => {
+        const el = document.getElementById('aid-release-banner');
+        if (!el) return;
+        const key = 'aid-banner-dismissed';
+        const tag = el.getAttribute('data-tag');
+        if (localStorage.getItem(key) === tag) { el.hidden = true; return; }
+        el.querySelector('.aid-banner-dismiss')?.addEventListener('click', () => {
+          localStorage.setItem(key, tag);
+          el.hidden = true;
+        });
+      })();
+    </script>
+  </div>
+)}

@@ -1,0 +1,51 @@
+---
+// PageTitle.astro — AID docs: breadcrumb + section eyebrow + H1 (prototype-01).
+// Keeps the title heading id so Starlight's TOC / "Overview" anchor still works.
+// PAGE_TITLE_ID is '_top' (see @astrojs/starlight/constants); inlined because the
+// package does not expose ./constants as a public export.
+const PAGE_TITLE_ID = '_top';
+
+const { sidebar, entry } = Astro.locals.starlightRoute;
+const title = entry.data.title;
+
+type AnyEntry = { type: string; label: string; href?: string; isCurrent?: boolean; entries?: AnyEntry[] };
+
+function collectLinks(entries: AnyEntry[]): AnyEntry[] {
+  const out: AnyEntry[] = [];
+  for (const e of entries ?? []) {
+    if (e.type === 'link') out.push(e);
+    else if (e.type === 'group') out.push(...collectLinks(e.entries ?? []));
+  }
+  return out;
+}
+
+// Which top-level section (sidebar group) owns the current page?
+let section: { label: string; href: string } | null = null;
+for (const e of sidebar as AnyEntry[]) {
+  if (e.type === 'group') {
+    const links = collectLinks(e.entries ?? []);
+    if (links.some((l) => l.isCurrent)) {
+      section = { label: e.label, href: links[0]?.href ?? '#' };
+      break;
+    }
+  }
+}
+---
+
+<nav class="aid-breadcrumb" aria-label="Breadcrumb">
+  <a href="/">Docs</a>
+  {
+    section && (
+      <>
+        <span class="sep" aria-hidden="true">/</span>
+        <a href={section.href}>{section.label}</a>
+      </>
+    )
+  }
+  <span class="sep" aria-hidden="true">/</span>
+  <span class="cur">{title}</span>
+</nav>
+
+{section && <div class="aid-eyebrow">{section.label}</div>}
+
+<h1 id={PAGE_TITLE_ID}>{title}</h1>

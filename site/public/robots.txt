@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://aid.casuloailabs.com/sitemap-index.xml

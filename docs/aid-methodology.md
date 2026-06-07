@@ -39,7 +39,8 @@ flowchart TB
         Sum["aid-summarize<br/>optional"]:::aux
     end
     subgraph G2[" 2 · Define "]
-        Intv["2 · aid-interview<br/>TRIAGE → full or lite"]:::def
+        Intv["2 · aid-interview<br/>gather requirements"]:::def
+        Triage{"TRIAGE<br/>full or lite?"}:::def
         Spec["3 · aid-specify<br/>full path only"]:::def
     end
     subgraph G3[" 3 · Map "]
@@ -56,7 +57,9 @@ flowchart TB
 
     HK["aid-housekeep<br/>on-demand · off-pipeline<br/>KB-DELTA · SUMMARY · CLEANUP"]:::offpipe
 
-    Init --> Disc --> Intv --> Spec --> Plan --> Det --> Exe
+    Init --> Disc --> Intv --> Triage
+    Triage -- "full path<br/>broad / multi-target" --> Spec --> Plan --> Det --> Exe
+    Triage -- "lite path<br/>small, single-target" --> Exe
     Exe -. "on demand" .-> Dep
     Exe -. "on demand" .-> Mon
     Exe -. "when finished" .-> HK
@@ -199,7 +202,7 @@ flowchart TD
     STD --> S1["architecture · tech-stack<br/>coding-standards · module-map"]:::std
     STD --> S2["schemas · pipeline-contracts<br/>integration-map · infrastructure"]:::std
     STD --> S3["test-landscape · tech-debt<br/>domain-glossary · …"]:::std
-    DISC["aid-discover<br/>6 discovery sub-agents"]:::gen
+    DISC["aid-discover<br/>5 discovery sub-agents"]:::gen
     DISC -. "populate" .-> STD
     DISC -. "populate" .-> GEN
 ```
@@ -682,7 +685,7 @@ The eight task types are:
 
 **Parallel pool dispatch:** In delivery mode, Execute uses a continuous parallel pool (PD model) rather than a serial task loop. Up to `max_parallel_tasks` tasks (default 5, configured in `.aid/settings.yml`) run simultaneously. The pool is replenished as tasks complete; failed tasks block their transitive dependents (computed by `compute-block-radius.sh` via BFS). If the host does not support background dispatch, the pool degrades gracefully to sequential execution with a user-visible notice.
 
-**Branch isolation:** One branch per delivery (`aid/delivery-NNN`). All tasks in a delivery share the branch. RESEARCH and DOCUMENT tasks that produce only `.aid/` artifacts may skip branching.
+**Branch isolation:** One branch per delivery (`aid/{work}-delivery-NNN`). All tasks in a delivery share the branch. RESEARCH and DOCUMENT tasks that produce only `.aid/` artifacts may skip branching.
 
 **Impediment protocol:** When the agent discovers assumptions don't hold, it generates an `IMPEDIMENT-task-NNN.md` rather than silently working around the problem. The impediment is typed (`kb-gap | architecture-conflict | missing-dependency | wrong-assumption`) and presented to the human with options and a recommendation. The human decides.
 

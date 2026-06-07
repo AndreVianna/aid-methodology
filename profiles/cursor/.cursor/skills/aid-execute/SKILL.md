@@ -54,7 +54,7 @@ This is the exit criterion for the review loop.
 **One branch per delivery. All tasks in a delivery share the same branch.**
 
 1. Extract `delivery-NNN` from the task's Source field
-2. Branch name: `aid/delivery-NNN` (e.g., `aid/delivery-001`)
+2. Branch name: `aid/{work}-delivery-NNN` (e.g., `aid/{work}-delivery-001`)
 3. **Look up the project's VCS** from `infrastructure.md § Source Control` (via INDEX.md)
    to determine the correct branch/commit commands.
 
@@ -179,7 +179,7 @@ Execution follows the **Execution Graph** in PLAN.md. Tasks run in dependency or
 Independent tasks (listed in the "Can Be Done In Parallel" table) can run concurrently.
 
 ```
-create branch aid/delivery-001
+create branch aid/{work}-delivery-001
   → /aid-execute task-001 [RESEARCH]      ← investigate → review → ✅
   → /aid-execute task-002 [DESIGN]        ← mockup → review → ✅
   → /aid-execute task-003 [IMPLEMENT]  ┐
