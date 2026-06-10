@@ -87,6 +87,7 @@
 {"dst": ".claude/scripts/summarize/validate-diagrams.mjs", "profile": "claude-code", "sha256": "639cfe6dabbc3cb0d680f818b1066f2042972a95b0064638fe25b3b17fe958e4", "src": "canonical/scripts/summarize/validate-diagrams.mjs"}
 {"dst": ".claude/scripts/summarize/validate-html-output.sh", "profile": "claude-code", "sha256": "b3a4016040363b741d326f8eaff66fef370a5264ed0d020308249eefc746ad52", "src": "canonical/scripts/summarize/validate-html-output.sh"}
 {"dst": ".claude/scripts/summarize/writeback-state.sh", "profile": "claude-code", "sha256": "b8d23c3266eabfb722f008ac3026e8489b0ea96bcb599ae8dd70c56367ea55a0", "src": "canonical/scripts/summarize/writeback-state.sh"}
+{"dst": ".claude/skills/aid-ask/SKILL.md", "profile": "claude-code", "sha256": "c71623eceb40b95613018a8b1fd43e6879b02b81ca11d8a82180d34141368aff", "src": "canonical/skills/aid-ask/SKILL.md"}
 {"dst": ".claude/skills/aid-config/SKILL.md", "profile": "claude-code", "sha256": "a9d6f519a5fcd52f990a4ba742c934809d90b343f1fa6acffbf239709280ea93", "src": "canonical/skills/aid-config/SKILL.md"}
 {"dst": ".claude/skills/aid-deploy/SKILL.md", "profile": "claude-code", "sha256": "d3b1a0d96a8f7d01ed71f16cc7aa1f1464928b29519e405c1ee5c25f505aac81", "src": "canonical/skills/aid-deploy/SKILL.md"}
 {"dst": ".claude/skills/aid-deploy/references/state-idle.md", "profile": "claude-code", "sha256": "5306a58062d8ff973ca8bcad56eda7c3fffc4642b900db5322b9a6e6a2ad366b", "src": "canonical/skills/aid-deploy/references/state-idle.md"}
