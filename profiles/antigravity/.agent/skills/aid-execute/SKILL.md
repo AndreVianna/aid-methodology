@@ -6,7 +6,7 @@ description: >
   State machine: EXECUTE → REVIEW → FIX → back to REVIEW → DONE when grade ≥ minimum.
   Branch per delivery for isolation.
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
-argument-hint: "task-001 (required)  [work-001 if multiple works]"
+argument-hint: "work-001 (required if multiple works)  task-001 (required)"
 ---
 
 # Execute Task
@@ -17,9 +17,9 @@ Read the type. Do the work. Review it. Fix it. Ship it.
 
 ### Check 1: Locate Work and Task
 
-1. If work arg provided → use that work directory
-2. If single work exists → auto-select
-3. If multiple works → list them, ask user to choose
+1. Read first arg: if it starts with `work-` → use that work directory; if it starts with `task-` → treat as shorthand (single-work auto-select below)
+2. If work arg not provided (or shorthand): if single work exists → auto-select; if multiple works → list them, ask user to choose
+3. Read second arg (or first arg when shorthand): the `task-NNN` identifier
 4. Find `task-NNN.md` in `.aid/{work}/tasks/`
 5. Task not found → **STOP.** List available tasks.
 
@@ -180,12 +180,12 @@ Independent tasks (listed in the "Can Be Done In Parallel" table) can run concur
 
 ```
 create branch aid/{work}-delivery-001
-  → /aid-execute task-001 [RESEARCH]      ← investigate → review → ✅
-  → /aid-execute task-002 [DESIGN]        ← mockup → review → ✅
-  → /aid-execute task-003 [IMPLEMENT]  ┐
-  → /aid-execute task-004 [IMPLEMENT]  ┘  ← parallel (both depend on task-002)
-  → /aid-execute task-005 [TEST]          ← waits for task-003 + task-004
-  → /aid-execute task-006 [DOCUMENT]      ← ADR → review → ✅
+  → /aid-execute work-001 task-001 [RESEARCH]      ← investigate → review → ✅
+  → /aid-execute work-001 task-002 [DESIGN]        ← mockup → review → ✅
+  → /aid-execute work-001 task-003 [IMPLEMENT]  ┐
+  → /aid-execute work-001 task-004 [IMPLEMENT]  ┘  ← parallel (both depend on task-002)
+  → /aid-execute work-001 task-005 [TEST]          ← waits for task-003 + task-004
+  → /aid-execute work-001 task-006 [DOCUMENT]      ← ADR → review → ✅
   → merge to main
 ```
 
