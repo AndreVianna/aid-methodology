@@ -10,6 +10,7 @@ intent: |
 contracts: []
 changelog:
   - 2026-06-09: Created — Unreleased (aid-ask, product site, aid-execute work-first arg order) + v1.0.0 back-filled from the GitHub release.
+  - 2026-06-09: Moved the AID product website from Unreleased to v1.0.0 (it shipped with v1.0.0; absent from the GitHub release page because that covers only the CLI package).
 ---
 
 # Release Tracking
@@ -23,7 +24,6 @@ changelog:
 
 ## Unreleased
 
-- [NEW] AID product website - documentation + marketing site (home, install, releases, knowledge surfaces, pipeline & maintainer guides, Contact Us, and on-site feedback forms that prefill a GitHub issue).
 - [NEW] /aid-ask - optional read-only skill that answers free-form project questions from the Knowledge Base, the codebase, and in-flight works, with source citations.
 - [CHANGE] /aid-execute now leads with the work argument (/aid-execute work-001 task-001), consistent with the other skills; the single-work shorthand still works.
 
@@ -36,4 +36,5 @@ changelog:
 - Quality & review - two-tier review (per-task quick-check + per-delivery graded fix loop, A+ to F), a configurable minimum grade, and 11 formal feedback loops.
 - Execution engine - 8 task types, parallel pool dispatch, branch-per-delivery isolation (aid/{work}-delivery-NNN), and always-on traceability.
 - Installation & host-tool support - persistent global `aid` CLI (add/status/update/remove/version), four install channels (curl/irm, npm, PyPI, offline bundle), and five host tools with byte-identical bodies.
-- Documentation & examples - methodology guide, FAQ, glossary, repository map, the documentation site, and worked greenfield / brownfield (full + lite) examples.
+- Documentation & examples - methodology guide, FAQ, glossary, repository map, and worked greenfield / brownfield (full + lite) examples.
+- Product website - documentation + marketing site (home, install, releases, knowledge surfaces, pipeline & maintainer guides, Contact Us, and on-site feedback forms that prefill a GitHub issue). Not in the GitHub release page, which covers only the CLI package.
