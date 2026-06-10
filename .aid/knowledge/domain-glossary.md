@@ -9,6 +9,7 @@ intent: |
   and rubric tiers. Read this when any AID term is unfamiliar.
 contracts: []
 changelog:
+  - 2026-06-09: aid-ask added (11->12 user-facing skills) via /aid-housekeep KB-DELTA.
   - 2026-06-03: work-001 feature-003 — recipe catalog expanded to 51 (5 seed recipes migrated + 46 new recipe names authored; 47 files newly created on disk since the write-release-note split adds a second new file); Seed Catalog term updated to 51-recipe definition across 4 groups.
   - 2026-06-03: work-001 feature-002 — TRIAGE rewritten description-first; LITE-DOC sub-path eliminated; documentation/report work folds under LITE-FEATURE (add-docs/add-report) and LITE-REFACTOR (change-docs/change-report); Triage + workType glossary terms updated to description-first flow.
   - 2026-06-03: work-001 feature-001 — lite work-type enum collapsed 4→3 (single-doc eliminated); workType term enum updated to {bug-fix | new-feature | refactor}; LITE-REFACTOR source updated small-refactor→refactor; LITE-FEATURE source updated small-new-feature→new-feature.
@@ -75,13 +76,14 @@ changelog:
 | **Housekeep / KB-drift reconciliation** | `aid-housekeep` | Optional, **on-demand** skill that is **OFF the mandatory pipeline** (not in the phase→skill mapping; no phase gate references it — REQUIREMENTS.md FR6). Reconciles drift across three gated jobs in strict order on a dedicated `aid/housekeep-*` branch (one commit per stage, never pushes): **KB-DELTA** (re-discover KB docs that drifted from the repo since the last KB approval — synthesizes an `**Impact:** Required` Q&A entry to drive `/aid-discover`'s targeted re-discovery), **SUMMARY-DELTA** (regenerate the visual summary via `/aid-summarize` if the KB changed), **CLEANUP** (sweep stale `.aid/` work-area artifacts). State machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE; re-entrant (a stalled run resumes at the stalled stage). Distinct from "Pre-flight Cleanup" (which is a `/aid-discover` orchestrator-only KB sweep). | `canonical/skills/aid-housekeep/SKILL.md` `# Knowledge Base Housekeeping` + `**Absent from the mandatory pipeline flow.**`, `canonical/skills/aid-housekeep/references/state-kb-delta.md` `## Step 4 — Synthesize an Impact: Required Q&A entry + invoke /aid-discover` |
 | **Generate** | `aid-generate` | Maintainer-only skill; renders `canonical/` → 5 profile install trees (claude-code, codex, cursor, copilot-cli, antigravity). Wrapped by `run_generator.py`. | `.claude/skills/aid-generate/SKILL.md` `# AID Install-Tree Generator`, `profiles/*.toml` (5 profiles) |
 
-> **Skill enumeration (post PR #49):** 11 user-facing skills (`aid-config`, `aid-discover`,
+> **Skill enumeration (post aid-ask):** 12 user-facing skills (`aid-config`, `aid-discover`,
 > `aid-interview`, `aid-specify`, `aid-plan`, `aid-detail`, `aid-execute`, `aid-deploy`,
-> `aid-monitor`, `aid-summarize`, `aid-housekeep`) + maintainer-only `aid-generate`. Of these
-> `aid-summarize`, `aid-deploy`, `aid-monitor`, and `aid-housekeep` are optional, non-required
-> skills (not numbered phases): `aid-deploy`/`aid-monitor` are optional end-of-pipeline Deliver
-> skills, and `aid-housekeep` is additionally off the mandatory pipeline (no phase gate
-> references it). Source: `find canonical/skills -maxdepth 1 -type d`.
+> `aid-monitor`, `aid-summarize`, `aid-housekeep`, `aid-ask`) + maintainer-only `aid-generate`.
+> Of these `aid-summarize`, `aid-deploy`, `aid-monitor`, `aid-housekeep`, and `aid-ask` are
+> optional, non-required skills (not numbered phases): `aid-deploy`/`aid-monitor` are optional
+> end-of-pipeline Deliver skills; `aid-housekeep` is off the mandatory pipeline (no phase gate
+> references it); and `aid-ask` is an off-pipeline, read-only Q&A skill (`allowed-tools: Read,
+> Glob, Grep, Agent` — no write). Source: `find canonical/skills -maxdepth 1 -type d`.
 
 ---
 
@@ -392,5 +394,5 @@ changelog:
 ## Glossary Statistics
 
 - **Total terms defined:** ~209 (across 16 categorical groups above; +5 housekeep terms added in the aid-housekeep / PR #49 update — "Housekeep / KB-drift reconciliation", "Housekeep Status", "aid/housekeep-* branch", "`--cleanup-only` flag (housekeep)", and the targeted-re-discovery/Q&A cross-references; +9 distribution terms added in the work-001-add-providers update; counted by row audit of this document)
-- **Primary sources:** `docs/aid-methodology.md` (the methodology spec), `docs/glossary.md`, 11 user-facing canonical SKILL.md files (+ maintainer-only aid-generate), 22 canonical AGENT.md files, `canonical/EMISSION-MANIFEST.md` (152 lines), `canonical/templates/{settings.yml, work-state-template.md, subagent-heartbeat-protocol.md, long-wait-protocol.md, reviewer-dispatch.md, feedback-artifacts/IMPEDIMENT.md}`, helper scripts under `canonical/scripts/` (config/, execute/, housekeep/, interview/, kb/, summarize/)
+- **Primary sources:** `docs/aid-methodology.md` (the methodology spec), `docs/glossary.md`, 12 user-facing canonical SKILL.md files (+ maintainer-only aid-generate), 9 canonical AGENT.md files, `canonical/EMISSION-MANIFEST.md` (152 lines), `canonical/templates/{settings.yml, work-state-template.md, subagent-heartbeat-protocol.md, long-wait-protocol.md, reviewer-dispatch.md, feedback-artifacts/IMPEDIMENT.md}`, helper scripts under `canonical/scripts/` (config/, execute/, housekeep/, interview/, kb/, summarize/)
 - **Every entry cites at least one durable-anchor source** (file path + grep-recoverable symbol/heading/string, no line numbers). ⚠️ Inferred-from-code annotations are explicit where used.

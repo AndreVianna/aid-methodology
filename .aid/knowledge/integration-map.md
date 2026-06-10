@@ -9,6 +9,7 @@ intent: |
   Inter-skill choreography is implemented via filesystem state hand-offs (not a message broker).
 contracts: []
 changelog:
+  - 2026-06-09: aid-ask added (11->12 user-facing skills, 12->13 total) via /aid-housekeep KB-DELTA.
   - 2026-06-05: work-002-auto-installer — added the distribution/registry integrations: npm registry (`aid-installer`), PyPI (`aid-installer`), and GitHub Releases (release-asset download for install/bootstrap + OIDC publishing from `release.yml`). Replaced the `setup.sh`/`setup.ps1` adopter-install-flow + Option-A collision sections with the `aid` CLI + four channels + per-channel `aid update self` behavior + FR12 invariant root AGENTS.md.
   - 2026-06-03: methodology v3.2 — Phase Sequence diagram + skill-set composition reconciled: numbered phases 8→6 (Discover→Execute); aid-deploy/aid-monitor recast from Phases 7/8 to optional, on-demand end-of-pipeline Deliver skills (not required, not sequential); loops L8–L10 now apply only when those skills are run. Production re-entry unified: L9 (bug) and L10 (change request) now route Monitor → Interview (bugs via the LITE-BUG-FIX triage; CRs as new/changed requirements), replacing the prior Monitor→Execute / Monitor→Discover targets.
   - 2026-06-03: housekeep run-state relocation (PR #51) — corrected the aid-housekeep State-File R/W row: run-state moved from the work-area STATE.md to the project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`; CLEANUP offers every work folder + stale artifact for user-confirmed deletion.
@@ -183,8 +184,8 @@ five host-tool install trees** plus a dogfood `.claude/` tree the repo uses on i
 
 ```
 canonical/                          ← single source of truth (maintainer edits here)
-  ├── agents/        (22 dirs)
-  ├── skills/        (11 user-facing dirs + maintainer-only aid-generate)
+  ├── agents/        (9 dirs)
+  ├── skills/        (12 user-facing dirs + maintainer-only aid-generate)
   ├── templates/     (knowledge-base, knowledge-summary, kb-authoring, ...)
   ├── recipes/       (51 add-/change-/fix- recipe templates + README)
   ├── scripts/       (config/, execute/, housekeep/, interview/, kb/, summarize/, grade.sh)
@@ -213,10 +214,12 @@ canonical/                          ← single source of truth (maintainer edits
 
 Source: `.aid/knowledge/project-structure.md` heading `### Generator (maintainer-only, ...)`
 
-> **Skill enumeration (post PR #49):** `canonical/skills/` holds **11 user-facing skills**
+> **Skill enumeration (post aid-ask):** `canonical/skills/` holds **12 user-facing skills**
 > (`aid-config`, `aid-discover`, `aid-interview`, `aid-specify`, `aid-plan`, `aid-detail`,
-> `aid-execute`, plus the **optional** `aid-deploy`, `aid-monitor`, `aid-summarize`, and the
-> **optional off-pipeline** `aid-housekeep`) **+ maintainer-only `aid-generate`**. The six
+> `aid-execute`, plus the **optional** `aid-deploy`, `aid-monitor`, `aid-summarize`, the
+> **optional off-pipeline** `aid-housekeep`, and the **optional on-demand read-only Q&A**
+> `aid-ask` — answers free-form project questions from the KB + codebase + in-flight works
+> with citations, outside the numbered pipeline) **+ maintainer-only `aid-generate`**. The six
 > numbered phases are `aid-discover`…`aid-execute`; `aid-deploy`/`aid-monitor` are optional
 > end-of-pipeline Deliver skills, `aid-summarize` is optional, and `aid-housekeep` is
 > additionally off the mandatory pipeline (no phase gate references it) — all invoked

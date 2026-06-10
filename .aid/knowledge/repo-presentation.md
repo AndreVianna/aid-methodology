@@ -11,6 +11,7 @@ intent: |
   than the repo's documentation surface).
 contracts: []
 changelog:
+  - 2026-06-09: aid-ask added (11->12 user-facing skills, 12->13 total, 4->5 optional) via /aid-housekeep KB-DELTA.
   - 2026-05-27: Initial authoring during cycle-1 FIX Phase B (replaces deleted ui-architecture.md per Q3)
   - 2026-06-01: Post-merge update for work-001-add-providers (PRs #42/#43/#44) — install surface 3 profiles → 5 (added GitHub Copilot CLI + Antigravity); Option-A AGENTS.md collision handler documented; setup.sh/ps1 line counts refreshed (210/199).
   - 2026-06-03: Post-merge update for work-001-aid-housekeep (PR #49) — total installed skills 10 → 11 (added optional/on-demand aid-housekeep); clarified that README's "## The Pipeline" table still lists 10 pipeline skills only (aid-housekeep is intentionally absent from that table).
@@ -76,17 +77,20 @@ runs off the pipeline on demand" (`README.md` `### The Pipeline`). The numbered
 sequential path is therefore six phases (`aid-discover`…`aid-execute`); `aid-config` is the
 once-per-project setup skill; `aid-summarize`, `aid-deploy`, and `aid-monitor` are optional.
 
-The repository actually ships **11 user-facing skills**: `aid-config` + the six numbered
-phases + the three optional skills (`aid-summarize`/`aid-deploy`/`aid-monitor`) + the
-off-pipeline `aid-housekeep` (an optional, on-demand maintenance skill — see
-`architecture.md` "Skill inventory" + `canonical/skills/aid-housekeep/SKILL.md`,
-"Absent from the mandatory pipeline flow."). A 12th skill, `aid-generate`, is
-maintainer-only and never installed for end users (it lives only in `.claude/skills/`,
-not in `canonical/` — see `architecture.md`). So: **1 setup + 6 numbered + 3 optional + 1
-off-pipeline (`aid-housekeep`) = 11 user-facing installed skills; +1 maintainer-only = 12 total.**
+The repository actually ships **12 user-facing skills**: `aid-config` + the six numbered
+phases + the three optional skills (`aid-summarize`/`aid-deploy`/`aid-monitor`) + the two
+off-pipeline skills `aid-housekeep` (an optional, on-demand maintenance skill) and `aid-ask`
+(an optional, on-demand, read-only Q&A skill that answers free-form project questions from
+the KB + live codebase + in-flight works with citations) — see
+`architecture.md` "Skill inventory" + `canonical/skills/aid-housekeep/SKILL.md`
+("Absent from the mandatory pipeline flow.") + `canonical/skills/aid-ask/SKILL.md`. A 13th
+skill, `aid-generate`, is maintainer-only and never installed for end users (it lives only
+in `.claude/skills/`, not in `canonical/` — see `architecture.md`). So: **1 setup + 6
+numbered + 3 optional + 2 off-pipeline (`aid-housekeep`, `aid-ask`) = 12 user-facing
+installed skills; +1 maintainer-only = 13 total.**
 
 ⚠️ The README frames the *pipeline* as six numbered phases, but the total count of
-installed skills a user receives is 11. Keep these
+installed skills a user receives is 12. Keep these
 two counts distinct when reconciling.
 
 ---
@@ -337,8 +341,8 @@ After `aid add <tool>`, the target project gains (`docs/install.md` `## What get
 
 - The tool-appropriate hidden directory (`.claude/`, `.codex/`+`.agents/`, `.cursor/`,
   `.github/` for Copilot CLI, or `.agent/` for Antigravity)
-  containing all 11 user-facing skills (the six numbered phases + `aid-config` + the three
-  optional skills + the off-pipeline `aid-housekeep`), 9 agents, 51 recipes, templates, and
+  containing all 12 user-facing skills (the six numbered phases + `aid-config` + the three
+  optional skills + the off-pipeline `aid-housekeep` and `aid-ask`), 9 agents, 51 recipes, templates, and
   helper scripts. (The maintainer-only `aid-generate` skill is never installed — it lives only
   in the source repo's `.claude/skills/`, not in `canonical/`; see `architecture.md`.)
 - A `CLAUDE.md` or `AGENTS.md` at the project root with placeholders that

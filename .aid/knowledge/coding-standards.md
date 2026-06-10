@@ -18,6 +18,7 @@ contracts:
   - "Every helper script declares set -euo pipefail (or set -uo pipefail with documented rationale)"
   - "Every helper script supports -h | --help that prints its own header comment via sed"
 changelog:
+  - 2026-06-09: aid-ask added (11->12 user-facing skills) via /aid-housekeep KB-DELTA.
   - 2026-06-04: work-001-agents-review (task-013) — §2a agent-dir naming updated to aid-* prefix; §8e agent-authoring updated to shared-include boilerplate (canonical/templates/agent-boilerplate.md via {{include:agent-boilerplate}}); §11c security model updated to new 9-agent roster; §10 convention table updated to 9 agents; old bare agent-name evidence cites replaced with aid-* paths.
   - 2026-06-01: work-001-add-providers (PRs #42/#43/#44) — render profiles grew 3→5; updated §7a multi-tree render set to include copilot-cli (.github) + antigravity (.agent), and §7d helper-script copy count (4→7 trees).
   - 2026-05-31: delivery-002 — added pipe-delimited-list-in-settings convention note to §6a (discovery.doc_set uses this pattern)
@@ -455,7 +456,7 @@ Docs that describe a convention vs. what code actually does:
 
 | Convention | Documented at | Code confirms? | Notes |
 |------------|---------------|----------------|-------|
-| Thin-Router SKILL.md ≤~360 lines | `coding-standards.md §7b`; `canonical/skills/*/SKILL.md` structure | YES — all 11 user-facing skills fit under the threshold; the largest is `aid-interview`. Per-file line counts live in `.aid/generated/metrics.md` / `project-index.md` | Confirmed |
+| Thin-Router SKILL.md ≤~360 lines | `coding-standards.md §7b`; `canonical/skills/*/SKILL.md` structure | YES — all 12 user-facing skills fit under the threshold; the largest is `aid-interview` (the newest, `aid-ask`, is well under the thin-router line limit as a single-shot read-only router). Per-file line counts live in `.aid/generated/metrics.md` / `project-index.md` | Confirmed |
 | 9 agents, 3 tiers (4L/4M/1S) | `README.md` `## The Agent Model — three tiers` | YES — confirmed via 9 `AGENT.md` files under `canonical/agents/aid-*/` with `tier: large|medium|small` frontmatter | Confirmed |
 | Active KB docs | `canonical/skills/aid-discover/references/doc-set-resolve.md` `## synth_default_seed` | YES — the default seed is now data-driven from `canonical/templates/knowledge-base/*.md` via `synth_default_seed`; count varies by project (delivery-002 resolved H5; hardcoded 14-doc list removed from SKILL.md) | Confirmed |
 | 8-task-type catalog | `canonical/skills/aid-execute/references/state-execute.md` `## Task Types`; `canonical/templates/delivery-plans/task-template.md` `**Type:**` | YES — both lists match: RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE | Confirmed |
