@@ -33,7 +33,6 @@
 - **`/aid-execute` now leads with the work argument** — `/aid-execute work-001 task-001`,
   consistent with every sibling skill (aid-detail, aid-plan, aid-specify,
   aid-interview). The single-work shorthand `/aid-execute task-001` still works.
-  _(Pending PR #70.)_
 - **Work-scoped delivery branches.** Delivery branches are now named
   `aid/{work}-delivery-NNN`, preventing cross-work branch collisions when multiple
   works share a delivery number.
