@@ -87,6 +87,7 @@
 {"dst": ".github/scripts/summarize/validate-diagrams.mjs", "profile": "copilot-cli", "sha256": "639cfe6dabbc3cb0d680f818b1066f2042972a95b0064638fe25b3b17fe958e4", "src": "canonical/scripts/summarize/validate-diagrams.mjs"}
 {"dst": ".github/scripts/summarize/validate-html-output.sh", "profile": "copilot-cli", "sha256": "b3a4016040363b741d326f8eaff66fef370a5264ed0d020308249eefc746ad52", "src": "canonical/scripts/summarize/validate-html-output.sh"}
 {"dst": ".github/scripts/summarize/writeback-state.sh", "profile": "copilot-cli", "sha256": "b8d23c3266eabfb722f008ac3026e8489b0ea96bcb599ae8dd70c56367ea55a0", "src": "canonical/scripts/summarize/writeback-state.sh"}
+{"dst": ".github/skills/aid-ask/SKILL.md", "profile": "copilot-cli", "sha256": "f23df94cbd0ad65e19a197a6a82fcba1b3f69920a63f8b9ec6f1b78dc230b506", "src": "canonical/skills/aid-ask/SKILL.md"}
 {"dst": ".github/skills/aid-config/SKILL.md", "profile": "copilot-cli", "sha256": "10c738075a7d2e6e143dbc20470ce97433b4c674f4b9272520dc018541f83224", "src": "canonical/skills/aid-config/SKILL.md"}
 {"dst": ".github/skills/aid-deploy/SKILL.md", "profile": "copilot-cli", "sha256": "6d2afea7136de23502e0e008ce0a3950a52ba32522844f006443c0dc2e09fa16", "src": "canonical/skills/aid-deploy/SKILL.md"}
 {"dst": ".github/skills/aid-deploy/references/state-idle.md", "profile": "copilot-cli", "sha256": "5306a58062d8ff973ca8bcad56eda7c3fffc4642b900db5322b9a6e6a2ad366b", "src": "canonical/skills/aid-deploy/references/state-idle.md"}
