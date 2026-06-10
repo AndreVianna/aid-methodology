@@ -41,8 +41,8 @@ RESEARCH and DOCUMENT tasks that produce only `.aid/` artifacts may skip branchi
 ## Usage
 
 ```
+/aid-execute work-001 task-001
 /aid-execute task-001
-/aid-execute task-003 work-001
 ```
 
 ## Input

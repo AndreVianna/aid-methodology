@@ -58,7 +58,7 @@ Tasks ready:
   task-002 [{Type}] — {title}    ← only if present
   ...
 
-Next step: /aid-execute task-001 {work-NNN-name}
+Next step: /aid-execute {work-NNN-name} task-001
 
 [E] Escalate to full path instead (e.g., scope revealed too broad for lite execution)
 ```
@@ -82,7 +82,7 @@ When escalation is triggered from LITE-DONE:
    and all captured info: the work-root `SPEC.md`, all task files in `tasks/`, and the
    `LITE-REVIEW` grade (if recorded in `STATE.md ## Delivery Gates`).
 
-The `{work-NNN-name}` work id is appended to the `/aid-execute` command so that
+The `{work-NNN-name}` work id leads the `/aid-execute` command so that
 multi-work `.aid/` directories resolve unambiguously.
 
 ---
@@ -92,7 +92,7 @@ multi-work `.aid/` directories resolve unambiguously.
 Terminal state. No further state advance. The user's next step is:
 
 ```
-/aid-execute task-001 {work-NNN-name}
+/aid-execute {work-NNN-name} task-001
 ```
 
 ---
