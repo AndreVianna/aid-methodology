@@ -11,6 +11,7 @@ changelog:
   - 2026-06-05: work-002-auto-installer — added the installer/CLI capability (the persistent global `aid` CLI + its four install channels) as an engineering feature; corrected the `/aid-generate` row (it is no longer shipped via `setup.sh` — that installer was replaced by the `aid` CLI).
   - 2026-06-03: methodology v3.2 — marked /aid-deploy and /aid-monitor as optional, on-demand end-of-pipeline Deliver skills (not numbered phases); independent of each other.
   - 2026-06-07: v1.0.0 first stable release — corrected stale VERSION note (0.7.5 → 1.0.0); added Agent model (9 agents), Knowledge Base doc-set (14), feedback loops (11), and host-tool profiles (5) as tracked feature areas.
+  - 2026-06-09: aid-ask added (11->12 user-facing skills) via /aid-housekeep KB-DELTA.
 ---
 
 # Feature Inventory
@@ -21,7 +22,7 @@ changelog:
 **Status values (text-only — machine-parsed):** `Shipped` · `Partial` · `Pending` · `In Progress` · `Deprecated`
 (Decorative glyphs are NOT used here — see `coding-standards.md §14` for the text-for-machine rule.)
 
-## User-facing skills (11)
+## User-facing skills (12)
 
 | # | Skill | Status | Description | Source |
 |---|-------|--------|-------------|--------|
@@ -36,6 +37,7 @@ changelog:
 | 9 | `/aid-monitor` | Shipped | Optional, on-demand end-of-pipeline Deliver skill (not a numbered phase; independent of `aid-deploy`). Observes production, classifies findings, and routes actions. Combines telemetry interpretation with triage — detects anomalies, performs root cause analysis, and routes findings to `aid-interview` (bugs via its LITE-BUG-FIX triage; change requests as new/changed requirements). | `canonical/skills/aid-monitor/SKILL.md` |
 | 10 | `/aid-summarize` | Shipped | Generates a single self-contained `knowledge-summary.html` from `.aid/knowledge/`. Inlines Mermaid diagrams for offline use, supports light/dark themes, and enforces a two-grade quality gate (Machine + Human) before writing the final output. | `canonical/skills/aid-summarize/SKILL.md` |
 | 11 | `/aid-housekeep` | Shipped | Optional on-demand housekeeping. Runs three gated jobs in strict order — KB-DELTA (re-discover KB docs that drifted since the last approval) → SUMMARY-DELTA (regenerate the visual summary if the KB changed) → CLEANUP (sweep stale `.aid/` work-area artifacts). Each stage commits on an `aid/housekeep-*` branch; never pushes. Re-entrant: a stalled run resumes at the stalled stage. Not part of the mandatory pipeline. | `canonical/skills/aid-housekeep/SKILL.md` |
+| 12 | `/aid-ask` | Shipped | Optional, on-demand, read-only Q&A skill outside the numbered pipeline. Answers free-form project questions from the KB + codebase + in-flight works with source citations; single-shot (one question per invocation). Dispatches `aid-researcher` for deep questions, answers trivial ones inline; never writes (`allowed-tools: Read, Glob, Grep, Agent`). | `canonical/skills/aid-ask/SKILL.md` |
 
 ## Maintainer-only skills (1)
 
@@ -85,7 +87,7 @@ rendered into `profiles/` by the generator (`run_generator.py`).
 
 ## Engineering features (referenced for historical context)
 
-The 11 user-facing skills above are the result of the following engineering work items:
+The 12 user-facing skills above are the result of the following engineering work items:
 
 - **Thin-Router Skills** (work-001 feature-002) — every `aid-*` SKILL.md is a state router (≤~360 lines) that delegates per-state logic to `references/state-*.md` files.
 - **Two-tier review** (work-001 feature-004) — per-task quick-check (Small-tier reviewer, no grade loop) + per-delivery quality gate (full review/fix/review loop with `grade.sh` determinism).

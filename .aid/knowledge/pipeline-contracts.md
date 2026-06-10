@@ -9,9 +9,10 @@ intent: |
   and the canonical→5-profile renderer contract. Read this to understand what each pipeline
   boundary expects and emits.
 contracts:
-  - "11 user-facing skill slash-command contracts documented (aid-config + 6 numbered phases aid-discover…aid-execute + optional aid-deploy/aid-monitor/aid-summarize + optional off-pipeline aid-housekeep) + maintainer-only aid-generate"
+  - "12 user-facing skill slash-command contracts documented (aid-config + 6 numbered phases aid-discover…aid-execute + optional aid-deploy/aid-monitor/aid-summarize + optional off-pipeline aid-housekeep/aid-ask) + maintainer-only aid-generate"
   - "discovery.doc_set in settings.yml: declared-set → dispatch mapping honors the set (no-hang on omission; dispatch on addition)"
 changelog:
+  - 2026-06-09: aid-ask added (11->12 user-facing skill contracts) + /aid-execute argument order corrected to work-first (PR #70) via /aid-housekeep KB-DELTA.
   - 2026-06-03: work-001 feature-001 — lite work-type enum collapsed 4→3 (single-doc eliminated); Recipe File Front-matter Contract applies-to inline comment updated to {bug-fix | new-feature | refactor | *}.
   - 2026-06-03: methodology v3.2 — aid-deploy/aid-monitor reclassified as optional, on-demand end-of-pipeline Deliver skills (not mandatory phases 7/8); contract list reframed as aid-config + 6 numbered phases + optional deploy/monitor/summarize + off-pipeline housekeep. Per-skill state-machine contracts unchanged.
   - 2026-06-03: housekeep run-state relocation (PR #51) — /aid-housekeep run-state moved out of the work-area STATE.md to the transient project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`; dropped the `## Housekeep Status` work-state-section row; cleanup now offers every work folder for user-confirmed deletion (signals informational).
@@ -40,12 +41,14 @@ These are the only "endpoints" the user invokes. Each is an AID skill installed 
 (Codex split layout), `.cursor/skills/<skill>/` (Cursor), `.github/skills/<slug>/SKILL.md`
 (Copilot CLI native Agent Skills), or `.agent/skills/<slug>/SKILL.md` (Antigravity).
 
-There are **11 user-facing skills** (`aid-config` … `aid-monitor`, `aid-summarize`, and the
-optional off-pipeline `aid-housekeep`) plus maintainer-only `aid-generate`. Of these,
-`aid-summarize` and `aid-housekeep` are **non-phase / optional** and `aid-housekeep` is
-additionally **off the mandatory pipeline** (no phase gate references it; invoked on-demand).
-Source: `find canonical/skills -maxdepth 1 -type d`,
-`canonical/skills/aid-housekeep/SKILL.md` (`**Absent from the mandatory pipeline flow.**`).
+There are **12 user-facing skills** (`aid-config` … `aid-monitor`, `aid-summarize`, and the
+optional off-pipeline `aid-housekeep` and `aid-ask`) plus maintainer-only `aid-generate`. Of
+these, `aid-summarize` is **non-phase / optional**, and `aid-housekeep` and `aid-ask` are
+additionally **off the mandatory pipeline** (no phase gate references them; invoked
+on-demand). `aid-ask` is also **read-only** (writes no files). Source:
+`find canonical/skills -maxdepth 1 -type d` (12 dirs),
+`canonical/skills/aid-housekeep/SKILL.md` (`**Absent from the mandatory pipeline flow.**`),
+`canonical/skills/aid-ask/SKILL.md` (`allowed-tools: Read, Glob, Grep, Agent`).
 
 ### `/aid-config`
 
@@ -99,8 +102,14 @@ Source: `find canonical/skills -maxdepth 1 -type d`,
 - **States:** `FIRST-RUN → REVIEW → DONE` (`canonical/skills/aid-detail/SKILL.md` frontmatter `State machine: FIRST-RUN → REVIEW → DONE`)
 - **Source:** `canonical/skills/aid-detail/SKILL.md`
 
-### `/aid-execute <task-NNN> [work-NNN]`
+### `/aid-execute <work-NNN> <task-NNN>`
 
+- **Argument order:** work-first — `<work-NNN>` leads, then `<task-NNN>` (PR #70; consistent
+  with `aid-detail`/`aid-plan`/`aid-specify`/`aid-interview`). The single-work shorthand
+  `/aid-execute <task-NNN>` is preserved: a lone `task-` first arg auto-selects the sole work;
+  with multiple works the skill lists them and asks the user to choose
+  (`canonical/skills/aid-execute/SKILL.md` `### Check 1: Locate Work and Task`,
+  frontmatter `argument-hint: "work-001 (required if multiple works)  task-001 (required)"`)
 - **States:** `EXECUTE → REVIEW → FIX → REVIEW → DONE` (`canonical/skills/aid-execute/SKILL.md` frontmatter `State machine: EXECUTE → REVIEW → FIX`)
 - **Branch contract:** One branch per delivery (`aid/{work}-delivery-NNN`); RESEARCH/DOCUMENT
   tasks that produce only `.aid/` artifacts may skip branching
@@ -164,6 +173,28 @@ Source: `find canonical/skills -maxdepth 1 -type d`,
   `references/state-summary-delta.md` `## Step 2 — Delegate to /aid-summarize`)
 - **Source:** `canonical/skills/aid-housekeep/SKILL.md`,
   `canonical/skills/aid-housekeep/references/{state-preflight,state-kb-delta,state-summary-delta,state-cleanup,state-done}.md`
+
+### `/aid-ask <question>` (optional — OFF the mandatory pipeline; READ-ONLY)
+
+- **Type:** Optional, on-demand, **read-only** Q&A skill **outside** the numbered pipeline —
+  no phase gate references it, no state machine (single-shot; answers in one pass). Writes
+  **no files**. (`canonical/skills/aid-ask/SKILL.md` frontmatter `allowed-tools: Read, Glob,
+  Grep, Agent`, `argument-hint: "<question> — a free-form question about the project"`)
+- **Request:** a free-form `<question>` about the project
+  (`canonical/skills/aid-ask/SKILL.md` `# Project Q&A`)
+- **Consumes (read-only):**
+  - the Knowledge Base — `.aid/knowledge/` (KB docs)
+  - the live codebase (project source files)
+  - in-flight AID works — `.aid/work-*/STATE.md` + progress
+  (`canonical/skills/aid-ask/SKILL.md` frontmatter `description:` — "three context sources")
+- **Produces:** an **in-conversation answer** grounded in those sources, with source
+  citations (KB doc names, file paths, or `work-NNN` STATE references); when the context
+  cannot answer, it states the gap explicitly rather than fabricating. **No file writes, no
+  commits, no branches.** (`canonical/skills/aid-ask/SKILL.md` frontmatter `description:`)
+- **Dispatch:** trivial questions answered inline with `Read`/`Glob`/`Grep`; broad or
+  expensive investigations dispatch `aid-researcher` in strictly read-only mode (via `Agent`)
+  (`canonical/skills/aid-ask/SKILL.md` frontmatter `description:`)
+- **Source:** `canonical/skills/aid-ask/SKILL.md`
 
 ---
 

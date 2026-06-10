@@ -676,7 +676,7 @@ details.accord > summary:focus-visible,
 	<h1>AI Integrated Development</h1>
 	<p class="subtitle">Knowledge Base Summary — AI-agent methodology distribution for Claude Code, Codex CLI, and Cursor IDE</p>
 	<div class="badges">
-		<span class="badge badge-primary">11 Skills</span>
+		<span class="badge badge-primary">12 Skills</span>
 		<span class="badge badge-accent">9 Agents</span>
 		<span class="badge badge-info">5 Install Trees</span>
 		<span class="badge badge-ok">24 Test Suites</span>
@@ -723,7 +723,7 @@ details.accord > summary:focus-visible,
 		</div>
 		<div class="card">
 			<div class="kicker">Skills</div>
-			<div class="stat">10</div>
+			<div class="stat">12</div>
 			<div class="stat-sub">user-facing slash commands</div>
 			<div class="meta">+ 1 maintainer-only aid-generate<br>(per module-map.md)</div>
 		</div>
@@ -768,7 +768,7 @@ details.accord > summary:focus-visible,
 		<p class="lede">AID defines six sequential development phases — from brownfield discovery through reviewed execution — with explicit human-controlled phase gates and feedback loops. Two optional Deliver skills (Deploy, Monitor) sit at the end of the pipeline, run on demand. Each numbered phase maps to a slash-command skill. (per architecture.md, repo-presentation.md)</p>
 	</header>
 
-	<p>The development pipeline (Discover → Execute) is sequential by default: human approval is required to advance between phases. The optional skills — Deploy and Monitor (end-of-pipeline Deliver), plus the read-only Summarize and the off-pipeline Housekeep — run on demand; none is required and Deploy/Monitor do not presuppose each other. Feedback loops exist as escape hatches — Monitor routes both bugs and change requests back to Interview, which triages them; Execute can issue IMPEDIMENT escalations; any phase can revisit Discovery, and Housekeep reconciles the KB back into Discovery. After Interview, a Lite path decision routes small work directly to task execution, bypassing Specify, Plan, and Detail. (per feature-inventory.md §Engineering features)</p>
+	<p>The development pipeline (Discover → Execute) is sequential by default: human approval is required to advance between phases. The optional skills — Deploy and Monitor (end-of-pipeline Deliver), plus the read-only Summarize, the off-pipeline Housekeep, and the read-only project Q&amp;A helper Ask — run on demand; none is required and Deploy/Monitor do not presuppose each other. Feedback loops exist as escape hatches — Monitor routes both bugs and change requests back to Interview, which triages them; Execute can issue IMPEDIMENT escalations; any phase can revisit Discovery, and Housekeep reconciles the KB back into Discovery. After Interview, a Lite path decision routes small work directly to task execution, bypassing Specify, Plan, and Detail. (per feature-inventory.md §Engineering features)</p>
 
 	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 1: AID phase pipeline — click or press Enter to expand">
 		<div class="mermaid">
@@ -789,6 +789,7 @@ flowchart LR
     MON["aid-monitor<br/>optional"]:::optional
     SUM["aid-summarize<br/>optional"]:::optional
     HK["aid-housekeep<br/>optional"]:::optional
+    ASK["aid-ask<br/>optional"]:::optional
     LITE{"Lite path?"}:::lite
 
     CFG --> DSC
@@ -805,9 +806,10 @@ flowchart LR
     MON -. bug found .-> INT
     MON -. change req .-> INT
     DSC -. optional .-> SUM
+    DSC -. optional .-> ASK
     HK -. reconcile KB .-> DSC
 		</div>
-		<p class="caption">Fig 1 — AID pipeline: 6 numbered phases (Discover → Execute, solid) plus four optional skills (dashed) — Deploy &amp; Monitor (end-of-pipeline Deliver), Summarize (after Discovery), and Housekeep (reconciles the KB back into Discovery). The Lite path decision (diamond) sends small work straight to Execute. Feedback loops route both bugs and change requests from Monitor back to Interview. (per architecture.md)</p>
+		<p class="caption">Fig 1 — AID pipeline: 6 numbered phases (Discover → Execute, solid) plus five optional skills (dashed) — Deploy &amp; Monitor (end-of-pipeline Deliver), Summarize (after Discovery), Housekeep (reconciles the KB back into Discovery), and aid-ask (a read-only project Q&amp;A helper). The Lite path decision (diamond) sends small work straight to Execute. Feedback loops route both bugs and change requests from Monitor back to Interview. (per architecture.md)</p>
 	</div>
 
 	<div class="callout">
@@ -962,6 +964,30 @@ flowchart LR
 			</div>
 			<dl>
 				<dt>States</dt><dd>PREFLIGHT → STALE-CHECK → PROFILE → GENERATE → VALIDATE → MANUAL-CHECKLIST → FIX → APPROVAL → WRITEBACK → DONE</dd>
+			</dl>
+		</div>
+
+		<div class="card plugin">
+			<div class="kicker">Optional — Housekeep</div>
+			<div class="plugin-name">/aid-housekeep</div>
+			<div class="plugin-body">Optional, off-pipeline KB maintenance skill. Reconciles the Knowledge Base and knowledge summary, sweeps stale artifacts, and routes the reconciled KB back into Discovery. Accepts optional flags to restrict scope or enforce a minimum grade.</div>
+			<div class="plugin-stats">
+				<span class="badge badge-ok">Shipped</span>
+			</div>
+			<dl>
+				<dt>States</dt><dd>PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE</dd>
+			</dl>
+		</div>
+
+		<div class="card plugin">
+			<div class="kicker">Optional — Ask</div>
+			<div class="plugin-name">/aid-ask</div>
+			<div class="plugin-body">Optional, on-demand, read-only Q&amp;A skill (off-pipeline). Answers free-form project questions from the Knowledge Base, the live codebase, and in-flight works (<code>.aid/work-*/</code>) with source citations. Single-shot — no state machine. Dispatches <code>aid-researcher</code> for deep investigation; answers trivial questions inline. Writes no files (<code>allowed-tools: Read, Glob, Grep, Agent</code>).</div>
+			<div class="plugin-stats">
+				<span class="badge badge-ok">Shipped</span>
+			</div>
+			<dl>
+				<dt>States</dt><dd>single-shot (read-only, no state machine)</dd>
 			</dl>
 		</div>
 
@@ -1131,7 +1157,7 @@ erDiagram
 		<p class="lede">AID ships no HTTP services or RPC endpoints. Contracts here means: skill slash-command signatures and state-machine contracts, script CLI signatures and exit codes, file-format contracts, subagent dispatch conventions, and the canonical-to-5-profile renderer contract. (per pipeline-contracts.md)</p>
 	</header>
 
-	<h3>Slash-command contracts (11 skills)</h3>
+	<h3>Slash-command contracts (12 skills)</h3>
 	<div class="tbl-wrap">
 		<table class="tbl">
 			<thead><tr><th>Skill</th><th>Signature</th><th>States</th><th>Side effects</th></tr></thead>
@@ -1142,10 +1168,12 @@ erDiagram
 				<tr><td><code>/aid-specify</code></td><td><code>[work-NNN/feature-NNN] [--reset]</code></td><td>INITIALIZE→CONTINUE→REVIEW→DONE</td><td>Writes SPEC.md per feature</td></tr>
 				<tr><td><code>/aid-plan</code></td><td><code>[work-NNN] [--reset]</code></td><td>FIRST-RUN→REVIEW→DONE</td><td>Writes PLAN.md</td></tr>
 				<tr><td><code>/aid-detail</code></td><td><code>[work-NNN] [--reset]</code></td><td>FIRST-RUN→REVIEW→DONE</td><td>Writes task-NNN.md per task</td></tr>
-				<tr><td><code>/aid-execute</code></td><td><code>[task-NNN] [work-NNN]</code></td><td>EXECUTE→REVIEW→FIX→DELIVERY-GATE</td><td>Implements task; updates STATE.md rows</td></tr>
+				<tr><td><code>/aid-execute</code></td><td><code>[work-NNN] [task-NNN]</code></td><td>EXECUTE→REVIEW→FIX→DELIVERY-GATE</td><td>Implements task; updates STATE.md rows</td></tr>
 				<tr><td><code>/aid-deploy</code></td><td><code>[work-NNN]</code></td><td>IDLE→SELECTING→VERIFYING→PACKAGING→DONE</td><td>Creates PR; updates delivery statuses</td></tr>
 				<tr><td><code>/aid-monitor</code></td><td><code>[work-NNN] [--since] [--package]</code></td><td>OBSERVE→CLASSIFY→ROUTE→DONE</td><td>Routes findings to aid-interview (bugs + CRs)</td></tr>
 				<tr><td><code>/aid-summarize</code></td><td><code>(no args)</code></td><td>PREFLIGHT→…→APPROVAL→WRITEBACK→DONE</td><td>Writes <code>knowledge-summary.html</code></td></tr>
+				<tr><td><code>/aid-housekeep</code></td><td><code>[--cleanup-only] [--grade X]</code></td><td>PREFLIGHT→KB-DELTA→SUMMARY-DELTA→CLEANUP→DONE</td><td>Reconciles KB + summary; sweeps stale artifacts</td></tr>
+				<tr><td><code>/aid-ask</code></td><td><code>&lt;question&gt;</code></td><td>single-shot (read-only)</td><td>Answers from KB + code + works with citations; writes nothing</td></tr>
 			</tbody>
 		</table>
 	</div>
@@ -1692,7 +1720,7 @@ flowchart TB
 		<div class="card">
 			<div class="kicker">README.md</div>
 			<h3>Primary pitch document</h3>
-			<p>Lean, adopter-first entry point: What is AID, Why AID (failure modes it removes), The Pipeline (Mermaid flowchart + 11 skills), The Knowledge Base (declared/derived doc-set), The Agent Model (3-tier diagram), Feedback Loops (11 formal loops), AID vs. SDD (8-row comparison), Using AID in your project (install via <code>aid add</code>). (per repo-presentation.md)
+			<p>Lean, adopter-first entry point: What is AID, Why AID (failure modes it removes), The Pipeline (Mermaid flowchart + 12 skills), The Knowledge Base (declared/derived doc-set), The Agent Model (3-tier diagram), Feedback Loops (11 formal loops), AID vs. SDD (8-row comparison), Using AID in your project (install via <code>aid add</code>). (per repo-presentation.md)
 		</div>
 		<div class="card">
 			<div class="kicker">docs/aid-methodology.md</div>

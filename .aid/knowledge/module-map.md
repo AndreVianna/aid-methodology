@@ -2,8 +2,8 @@
 kb-category: primary
 source: hand-authored
 intent: |
-  Maps the major code/content modules in AID — the 11 user-facing aid-* skills,
-  the 12th maintainer-only aid-generate skill, the 9 agents, the 13 renderer
+  Maps the major code/content modules in AID — the 12 user-facing aid-* skills,
+  the 13th maintainer-only aid-generate skill, the 9 agents, the 13 renderer
   Python files (12 under .claude/skills/aid-generate/scripts/ + run_generator.py),
   and the canonical helper scripts under canonical/scripts/{config,kb,execute,summarize,interview,housekeep}.
   Each entry lists purpose, directory path, dependencies, and associated tests.
@@ -11,12 +11,13 @@ intent: |
   NOT a tech-stack overview (see architecture.md) and NOT a per-script API
   reference (see the script's own header comment block).
 contracts:
-  - "11 user-facing aid-* skills + 1 maintainer-only aid-generate skill = 12 total"
+  - "12 user-facing aid-* skills + 1 maintainer-only aid-generate skill = 13 total"
   - "9 agents under canonical/agents/ (4 large / 4 medium / 1 small)"
   - "12 renderer Python files under .claude/skills/aid-generate/scripts/ (render_agents, render_skills, render_templates, render_canonical_scripts, render_recipes) + render_lib + aid_profile + verify_deterministic + verify_advisory + test_manifest_safety + test_copilot_emitter + test_antigravity_emitter + run_generator.py (the entrypoint, moved here from repo root by work-001)"
   - "6 script categories under canonical/scripts/ (config, kb, execute, summarize, interview, housekeep) + grade.sh at the category root"
   - "Every canonical helper script has 7 byte-identical copies on disk (canonical + .claude dogfood + 5 profile trees)"
 changelog:
+  - 2026-06-09: aid-ask added (11->12 user-facing skills, 12->13 total) via /aid-housekeep KB-DELTA.
   - 2026-06-05: work-002-auto-installer — added Module class 6 (Installer / CLI): the `aid` CLI dispatcher (bin/aid + bin/aid.ps1 + bin/aid.cmd), the shared install-core libs (lib/aid-install-core.sh + lib/AidInstallCore.psm1), the curl/irm bootstrap (install.sh + install.ps1), and the npm/PyPI shim packages (packages/npm + packages/pypi). Fixed the §4g test-coverage table: the removed test-setup.sh/test-setup-ps1.sh rows replaced with the installer/CLI suites.
   - 2026-06-04: work-001-agents-review (task-013) — roster reduced 22→9 agents with aid-* prefix (feature-002); §2 per-tier rosters replaced with new 4/4/1 tier split; boilerplate-presence claim updated to shared-include via canonical/templates/agent-boilerplate.md; all old bare agent names removed.
   - 2026-06-03: housekeep run-state relocation (PR #51) — corrected housekeep-state.sh (run-state now in the project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`, not a work-area STATE.md) and cleanup-classify.sh (every work folder offered, user-confirmed; signals informational; only the current-branch folder hard-skipped).
@@ -37,7 +38,7 @@ changelog:
 
 The repo contains six module classes, each with its own conventions:
 
-1. **Skills** — 11 user-facing + 1 maintainer-only — under `canonical/skills/aid-*/`
+1. **Skills** — 12 user-facing + 1 maintainer-only — under `canonical/skills/aid-*/`
 2. **Agents** — 9 specialist agents — under `canonical/agents/<name>/`
 3. **Renderer (Python)** — 13 files under `.claude/skills/aid-generate/scripts/` (incl. the `run_generator.py` entrypoint)
 4. **Helper scripts (Bash + JS + PS1)** — under `canonical/scripts/{config,kb,execute,summarize,interview,housekeep}/` + `canonical/scripts/grade.sh`
@@ -54,8 +55,8 @@ byte-identical output verified by
 
 ## 1. Skills — `canonical/skills/aid-*/`
 
-Eleven user-facing `aid-*` skills (`ls -d canonical/skills/*/` = 11) plus the
-maintainer-only `aid-generate` (`.claude/`-only, NOT in `canonical/skills/`) = 12
+Twelve user-facing `aid-*` skills (`ls -d canonical/skills/*/` = 12) plus the
+maintainer-only `aid-generate` (`.claude/`-only, NOT in `canonical/skills/`) = 13
 total. Each has a `SKILL.md` Thin-Router (per `coding-standards.md §7b`)
 plus a `references/state-*.md` per state plus topic-specific reference docs.
 
@@ -72,6 +73,7 @@ plus a `references/state-*.md` per state plus topic-specific reference docs.
 | `aid-monitor` | Production-finding classification + routing | `canonical/skills/aid-monitor/SKILL.md` | 3 | `state-{observe,classify,route}.md` |
 | `aid-housekeep` | Optional on-demand housekeeping skill — runs three gated jobs in strict order on an `aid/housekeep-*` branch, one commit per stage, never pushes; re-entrant (a stalled run resumes at the stalled stage). State machine PREFLIGHT→KB-DELTA→SUMMARY-DELTA→CLEANUP→DONE (per `canonical/skills/aid-housekeep/SKILL.md` `description:`). NOT inserted into the mandatory phase-to-skill pipeline. | `canonical/skills/aid-housekeep/SKILL.md` | 5 | `state-{preflight,kb-delta,summary-delta,cleanup,done}.md` |
 | `aid-summarize` | Optional offline HTML KB viewer (Mermaid + sectioned per profile) | `canonical/skills/aid-summarize/SKILL.md` | 10 | `state-{preflight,profile,generate,validate,manual-checklist,stale-check,writeback,fix,approval,done}.md` |
+| `aid-ask` | Optional on-demand, read-only Q&A skill OUTSIDE the numbered pipeline — answers free-form project questions from the KB + codebase + in-flight works with source citations; single-shot, no write (dispatches `aid-researcher` for deep work, inline for trivial) | `canonical/skills/aid-ask/SKILL.md` | 0 | (single-shot router; `allowed-tools: Read, Glob, Grep, Agent`) |
 | `aid-generate` (maintainer-only) | Render canonical/ → 5 install trees; LOAD → VALIDATE → RENDER → VERIFY → REPORT | `.claude/skills/aid-generate/SKILL.md` (NOT in `canonical/skills/` — see `.claude/skills/aid-generate/SKILL.md` `chicken-and-egg deployment problem` for the justification) | n/a — uses `scripts/*.py` instead | (renderer Python files — see §3) |
 
 **Test coverage:**

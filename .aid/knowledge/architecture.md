@@ -11,10 +11,11 @@ intent: |
   to understand how the methodology pieces hang together; for raw file inventory see
   project-structure.md.
 contracts:
-  - "11 user-facing AID skills (7 core-pipeline: aid-config + 6 numbered phases; 4 optional: aid-summarize, aid-deploy, aid-monitor, aid-housekeep) listed in Dispatch table"
+  - "12 user-facing AID skills (7 core-pipeline: aid-config + 6 numbered phases; 5 optional: aid-summarize, aid-deploy, aid-monitor, aid-housekeep, aid-ask) listed in Dispatch table"
   - "9 specialist agents across 3 tiers (4 large / 4 medium / 1 small)"
   - "5 rendered install trees: claude-code, codex, cursor, copilot-cli, antigravity"
 changelog:
+  - 2026-06-09: aid-ask added (11->12 user-facing skills, 12->13 total, 4->5 optional) via /aid-housekeep KB-DELTA.
   - 2026-06-05: work-002-auto-installer — end-user installer rewritten: the former clone+`setup.sh`/`setup.ps1` menu installers were removed and replaced by a persistent global `aid` CLI (`bin/aid` + `bin/aid.ps1` + `bin/aid.cmd`, cores `lib/aid-install-core.sh` + `lib/AidInstallCore.psm1`, bootstrap `install.sh` / `install.ps1`) with four install channels (curl/irm bootstrap, npm, PyPI, offline `--from-bundle`). Module-boundaries End-user-installer row, install-time data-flow section, and Entry-Points install rows rewritten to the `aid add <tool>` flow (fetch+verify tarball → copy → FR11 protect-on-diff → `.aid/.aid-manifest.json`). Methodology-spec metrics de-cited (volatile line-count dropped per KB convention; `docs/aid-methodology.md` is the flagship after `methodology/` consolidated into `docs/`).
   - 2026-06-04: work-001-agents-review (task-013) — roster reduced 22→9 agents with aid-* prefix; §3 tier model updated to 4 large / 4 medium / 1 small; counts updated at lines 38, 64; agent canonical paths updated to aid-<name>/ dirs; boilerplate now shared-include via canonical/templates/agent-boilerplate.md.
   - 2026-06-03: methodology v3.2 — aid-deploy and aid-monitor reclassified from mandatory numbered phases (7/8) to OPTIONAL end-of-pipeline Deliver skills; numbered development phases 8→6 (Discover→Execute); skill taxonomy now 7 core-pipeline (aid-config + 6 phases) + 4 optional (aid-summarize, aid-deploy, aid-monitor, aid-housekeep) + maintainer-only aid-generate
@@ -37,14 +38,14 @@ single-branch monorepo whose deliverable is **documentation rendered into five
 host-tool install bundles**. There is no application runtime; the project ships:
 
 1. The AID methodology specification (`docs/aid-methodology.md`).
-2. Eleven user-facing skills + 9 agents + templates + recipes + helper scripts, authored
+2. Twelve user-facing skills + 9 agents + templates + recipes + helper scripts, authored
    once in `canonical/` and rendered into five byte-identical install trees
-   (`profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/`). Of the eleven, seven
+   (`profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/`). Of the twelve, seven
    form the core development pipeline — `aid-config` (one-time setup) plus the six numbered
-   phases `aid-discover`…`aid-execute`; the other four (`aid-summarize`, `aid-deploy`,
-   `aid-monitor`, `aid-housekeep`) are optional, on-demand skills not required to complete a
+   phases `aid-discover`…`aid-execute`; the other five (`aid-summarize`, `aid-deploy`,
+   `aid-monitor`, `aid-housekeep`, `aid-ask`) are optional, on-demand skills not required to complete a
    cycle. `aid-deploy` and `aid-monitor` are optional end-of-pipeline Deliver skills;
-   `aid-summarize` and `aid-housekeep` run outside the linear flow.
+   `aid-summarize`, `aid-housekeep`, and `aid-ask` run outside the linear flow.
 3. An optional offline HTML Knowledge Base viewer (the UI surface — see
    `canonical/templates/knowledge-summary/` for the HTML/CSS/JS bundle).
 
@@ -64,8 +65,8 @@ aid-methodology/                    (repo root)
 ├── docs/                           ← the load-bearing spec (docs/aid-methodology.md, v3.2) + FAQ + glossary + install.md
 ├── canonical/                      ← SINGLE SOURCE OF TRUTH (renderer input)
 │   ├── agents/                     ← 9 agent dirs (AGENT.md + README.md each)
-│   ├── skills/                     ← 11 skill dirs (Thin-Router SKILL.md + references/);
-│   │                                 7 core-pipeline (aid-config + 6 phases) + 4 optional (summarize, deploy, monitor, housekeep)
+│   ├── skills/                     ← 12 skill dirs (Thin-Router SKILL.md + references/);
+│   │                                 7 core-pipeline (aid-config + 6 phases) + 5 optional (summarize, deploy, monitor, housekeep, ask)
 │   ├── templates/                  ← 15 KB templates + knowledge-summary/ HTML bundle + …
 │   ├── recipes/                    ← 51 lite-path recipes + README (add-X / change-X / fix-X family)
 │   ├── scripts/                    ← helper scripts grouped by phase
@@ -155,7 +156,7 @@ auto-advance; the human re-invokes the skill for the next state.
 Evidence:
 - `coding-standards.md §7b` — "When a SKILL.md grows past ~200 lines, extract per-state
   bodies into references/state-{name}.md; keep the router as Dispatch table + Pre-flight +
-  State Detection only." Total canonical SKILL.md body lines: 2,498 (counted from disk:
+  State Detection only." Total canonical SKILL.md body lines: 2,685 (counted from disk:
   `find canonical/skills -name SKILL.md -exec cat {} + | wc -l`).
 - `.claude/skills/aid-discover/SKILL.md` `State machine for this skill` — explicit
   `[GENERATE]→[REVIEW]→[Q-AND-A]→[FIX]→[APPROVAL]→[DONE]` machine.
@@ -169,11 +170,11 @@ Evidence:
 
 Skill line counts (canonical): `.aid/generated/metrics.md` carries a per-skill breakdown
 generated by `build-metrics.sh`, but ⚠️ it is currently stale — it lists 10 SKILL.md bodies
-summing to 2,242 and predates `aid-housekeep`. The live on-disk total is **2,498 lines
-across 11 canonical skills** (7 core-pipeline + 4 optional incl. `aid-housekeep`); re-run
+summing to 2,242 and predates `aid-housekeep`. The live on-disk total is **2,685 lines
+across 12 canonical skills** (7 core-pipeline + 5 optional incl. `aid-housekeep` and `aid-ask`); re-run
 `build-metrics.sh` to refresh `metrics.md`.
 
-#### Skill inventory (canonical/skills/, 11 user-facing skills)
+#### Skill inventory (canonical/skills/, 12 user-facing skills)
 
 | Skill | Role | In mandatory pipeline? |
 |-------|------|------------------------|
@@ -188,11 +189,12 @@ across 11 canonical skills** (7 core-pipeline + 4 optional incl. `aid-housekeep`
 | `aid-deploy` | ship delivery + PR | optional (Deliver group, end-of-pipeline, not numbered) |
 | `aid-monitor` | production findings → fixes | optional (Deliver group, end-of-pipeline, not numbered) |
 | `aid-housekeep` | **optional / on-demand** KB + summary + cleanup maintenance | **no — not in the pipeline flow; no phase gate references it** |
+| `aid-ask` | **optional / on-demand** read-only Q&A over KB + live codebase + in-flight works | **no — outside the numbered pipeline; single-shot, read-only** |
 
-`aid-generate` is a **12th skill but maintainer-only**: it lives only at
+`aid-generate` is a **13th skill but maintainer-only**: it lives only at
 `.claude/skills/aid-generate/`, is excluded from `canonical/`, and is not a user-facing
-skill (see "Documentation vs. Implementation Discrepancies" below). Hence: **11 user-facing
-skills + 1 maintainer-only = 12 total.**
+skill (see "Documentation vs. Implementation Discrepancies" below). Hence: **12 user-facing
+skills + 1 maintainer-only = 13 total.**
 
 ### 3. Three-tier agent dispatch with reviewer-tier-≥-executor invariant
 
@@ -436,21 +438,21 @@ mechanism was found in any source file.
 | **Maintainer release** | `bash release.sh` (or tag-push → `.github/workflows/release.yml`) | Packages the five per-profile tarballs + `SHA256SUMS` for a GitHub Release. Evidence: `release.sh`; `test-release.sh` header. |
 | **End-user CLI bootstrap** | `curl -fsSL …/install.sh \| bash` / `irm …/install.ps1 \| iex` / `npm i -g aid-installer` / `pipx install aid-installer` | Installs the persistent global `aid` CLI once per machine (extracts `bin/` + `lib/` into `$AID_HOME`, wires PATH). Evidence: `install.sh` / `install.ps1`; `README.md` `## Install`. |
 | **End-user install (per project)** | `aid add <tool>[,...] [--version <v>] [--from-bundle <tar>] [--force]` | Fetches+verifies the profile tarball and installs the AID tree into the current project (FR11 protect-on-diff + `.aid/.aid-manifest.json`). `aid status` / `aid update` / `aid remove` manage it thereafter. Evidence: `bin/aid` `_aid_usage`; `lib/aid-install-core.sh` `install_tool`. |
-| **End-user runtime (pipeline skill)** | Slash command `/aid-config`, `/aid-discover`, `/aid-interview`, `/aid-specify`, `/aid-plan`, `/aid-detail`, `/aid-execute` (+ optional `/aid-summarize`, `/aid-deploy`, `/aid-monitor`) | Seven core-pipeline slash commands (setup + six numbered phases) plus three optional skills. Each enters at the state detected from disk and exits after one state. |
-| **End-user runtime (on-demand)** | Slash command `/aid-housekeep` | The 11th user-facing skill — optional/on-demand KB + summary + cleanup maintenance, NOT part of the linear pipeline. Evidence: `canonical/skills/aid-housekeep/SKILL.md`. |
+| **End-user runtime (pipeline skill)** | Slash command `/aid-config`, `/aid-discover`, `/aid-interview`, `/aid-specify`, `/aid-plan`, `/aid-detail`, `/aid-execute` (+ optional `/aid-summarize`, `/aid-deploy`, `/aid-monitor`) | Seven core-pipeline slash commands (setup + six numbered phases) plus three optional Deliver/Prepare skills. Each enters at the state detected from disk and exits after one state. |
+| **End-user runtime (on-demand)** | Slash command `/aid-housekeep`, `/aid-ask` | Two off-pipeline user-facing skills — `aid-housekeep` is optional/on-demand KB + summary + cleanup maintenance; `aid-ask` is an optional, on-demand, read-only Q&A skill answering free-form project questions from the KB + live codebase + in-flight works with citations. Neither is part of the linear pipeline. Evidence: `canonical/skills/aid-housekeep/SKILL.md`; `canonical/skills/aid-ask/SKILL.md`. |
 | **First-time AI agent context** | `CLAUDE.md` (Claude Code dogfood) / `AGENTS.md` (Codex, Cursor, Copilot CLI, Antigravity profiles) | Top-level project-context document — describes purpose, KB location, build/test commands, conventions. |
 | **Methodology reader** | `docs/aid-methodology.md` | The authoritative specification (Version 3.2). Read by humans, not by skills directly. |
 
 ## Documentation vs. Implementation Discrepancies
 
-The repository's documentation describes an "11 user-facing skills + 1 maintainer-only
-(`aid-generate`) = 12 total" architecture; observed implementation matches with a few
+The repository's documentation describes a "12 user-facing skills + 1 maintainer-only
+(`aid-generate`) = 13 total" architecture; observed implementation matches with a few
 caveats worth flagging:
 
 1. **`aid-generate` is intentionally NOT in `canonical/`.** It lives only at
    `.claude/skills/aid-generate/` and is excluded from the render. `canonical/skills/`
-   contains 11 directories (7 core-pipeline skills + 4 optional skills incl. `aid-housekeep`),
-   not 12 — `aid-generate` is the 12th skill and is maintainer-only. Reason per
+   contains 12 directories (7 core-pipeline skills + 5 optional skills incl. `aid-housekeep` and `aid-ask`),
+   not 13 — `aid-generate` is the 13th skill and is maintainer-only. Reason per
    `.claude/skills/aid-generate/SKILL.md` (`Maintainer-only skill` blockquote): "Edits to
    this skill are made directly to its files. Reason: it generates the install
    trees, so it cannot itself be generated from canonical without a chicken-and-egg
@@ -466,7 +468,7 @@ caveats worth flagging:
    `references/state-{preflight,kb-delta,summary-delta,cleanup,done}.md`.
 
 3. **Skill total line drift + stale metrics.md.** The current canonical SKILL.md bodies
-   sum to **2,498 lines across 11 skills** (counted from disk). ⚠️ `.aid/generated/metrics.md`
+   sum to **2,685 lines across 12 skills** (counted from disk). ⚠️ `.aid/generated/metrics.md`
    is stale — it still reports 2,242 across 10 skills and predates `aid-housekeep`; re-run
    `build-metrics.sh` to refresh it. The rendered `.claude/skills/*/SKILL.md` set may also
    differ from canonical if `canonical/` was edited after the last

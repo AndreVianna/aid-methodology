@@ -5,7 +5,7 @@
 		<p class="lede">AID defines six sequential development phases — from brownfield discovery through reviewed execution — with explicit human-controlled phase gates and feedback loops. Two optional Deliver skills (Deploy, Monitor) sit at the end of the pipeline, run on demand. Each numbered phase maps to a slash-command skill. (per architecture.md, repo-presentation.md)</p>
 	</header>
 
-	<p>The development pipeline (Discover → Execute) is sequential by default: human approval is required to advance between phases. The optional skills — Deploy and Monitor (end-of-pipeline Deliver), plus the read-only Summarize and the off-pipeline Housekeep — run on demand; none is required and Deploy/Monitor do not presuppose each other. Feedback loops exist as escape hatches — Monitor routes both bugs and change requests back to Interview, which triages them; Execute can issue IMPEDIMENT escalations; any phase can revisit Discovery, and Housekeep reconciles the KB back into Discovery. After Interview, a Lite path decision routes small work directly to task execution, bypassing Specify, Plan, and Detail. (per feature-inventory.md §Engineering features)</p>
+	<p>The development pipeline (Discover → Execute) is sequential by default: human approval is required to advance between phases. The optional skills — Deploy and Monitor (end-of-pipeline Deliver), plus the read-only Summarize, the off-pipeline Housekeep, and the read-only project Q&amp;A helper Ask — run on demand; none is required and Deploy/Monitor do not presuppose each other. Feedback loops exist as escape hatches — Monitor routes both bugs and change requests back to Interview, which triages them; Execute can issue IMPEDIMENT escalations; any phase can revisit Discovery, and Housekeep reconciles the KB back into Discovery. After Interview, a Lite path decision routes small work directly to task execution, bypassing Specify, Plan, and Detail. (per feature-inventory.md §Engineering features)</p>
 
 	<div class="mermaid-box" role="button" tabindex="0" aria-label="Fig 1: AID phase pipeline — click or press Enter to expand">
 		<div class="mermaid">
@@ -26,6 +26,7 @@ flowchart LR
     MON["aid-monitor<br/>optional"]:::optional
     SUM["aid-summarize<br/>optional"]:::optional
     HK["aid-housekeep<br/>optional"]:::optional
+    ASK["aid-ask<br/>optional"]:::optional
     LITE{"Lite path?"}:::lite
 
     CFG --> DSC
@@ -42,9 +43,10 @@ flowchart LR
     MON -. bug found .-> INT
     MON -. change req .-> INT
     DSC -. optional .-> SUM
+    DSC -. optional .-> ASK
     HK -. reconcile KB .-> DSC
 		</div>
-		<p class="caption">Fig 1 — AID pipeline: 6 numbered phases (Discover → Execute, solid) plus four optional skills (dashed) — Deploy &amp; Monitor (end-of-pipeline Deliver), Summarize (after Discovery), and Housekeep (reconciles the KB back into Discovery). The Lite path decision (diamond) sends small work straight to Execute. Feedback loops route both bugs and change requests from Monitor back to Interview. (per architecture.md)</p>
+		<p class="caption">Fig 1 — AID pipeline: 6 numbered phases (Discover → Execute, solid) plus five optional skills (dashed) — Deploy &amp; Monitor (end-of-pipeline Deliver), Summarize (after Discovery), Housekeep (reconciles the KB back into Discovery), and aid-ask (a read-only project Q&amp;A helper). The Lite path decision (diamond) sends small work straight to Execute. Feedback loops route both bugs and change requests from Monitor back to Interview. (per architecture.md)</p>
 	</div>
 
 	<div class="callout">

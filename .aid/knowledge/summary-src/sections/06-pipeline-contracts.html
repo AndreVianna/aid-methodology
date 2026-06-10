@@ -5,7 +5,7 @@
 		<p class="lede">AID ships no HTTP services or RPC endpoints. Contracts here means: skill slash-command signatures and state-machine contracts, script CLI signatures and exit codes, file-format contracts, subagent dispatch conventions, and the canonical-to-5-profile renderer contract. (per pipeline-contracts.md)</p>
 	</header>
 
-	<h3>Slash-command contracts (11 skills)</h3>
+	<h3>Slash-command contracts (12 skills)</h3>
 	<div class="tbl-wrap">
 		<table class="tbl">
 			<thead><tr><th>Skill</th><th>Signature</th><th>States</th><th>Side effects</th></tr></thead>
@@ -16,10 +16,12 @@
 				<tr><td><code>/aid-specify</code></td><td><code>[work-NNN/feature-NNN] [--reset]</code></td><td>INITIALIZE→CONTINUE→REVIEW→DONE</td><td>Writes SPEC.md per feature</td></tr>
 				<tr><td><code>/aid-plan</code></td><td><code>[work-NNN] [--reset]</code></td><td>FIRST-RUN→REVIEW→DONE</td><td>Writes PLAN.md</td></tr>
 				<tr><td><code>/aid-detail</code></td><td><code>[work-NNN] [--reset]</code></td><td>FIRST-RUN→REVIEW→DONE</td><td>Writes task-NNN.md per task</td></tr>
-				<tr><td><code>/aid-execute</code></td><td><code>[task-NNN] [work-NNN]</code></td><td>EXECUTE→REVIEW→FIX→DELIVERY-GATE</td><td>Implements task; updates STATE.md rows</td></tr>
+				<tr><td><code>/aid-execute</code></td><td><code>[work-NNN] [task-NNN]</code></td><td>EXECUTE→REVIEW→FIX→DELIVERY-GATE</td><td>Implements task; updates STATE.md rows</td></tr>
 				<tr><td><code>/aid-deploy</code></td><td><code>[work-NNN]</code></td><td>IDLE→SELECTING→VERIFYING→PACKAGING→DONE</td><td>Creates PR; updates delivery statuses</td></tr>
 				<tr><td><code>/aid-monitor</code></td><td><code>[work-NNN] [--since] [--package]</code></td><td>OBSERVE→CLASSIFY→ROUTE→DONE</td><td>Routes findings to aid-interview (bugs + CRs)</td></tr>
 				<tr><td><code>/aid-summarize</code></td><td><code>(no args)</code></td><td>PREFLIGHT→…→APPROVAL→WRITEBACK→DONE</td><td>Writes <code>knowledge-summary.html</code></td></tr>
+				<tr><td><code>/aid-housekeep</code></td><td><code>[--cleanup-only] [--grade X]</code></td><td>PREFLIGHT→KB-DELTA→SUMMARY-DELTA→CLEANUP→DONE</td><td>Reconciles KB + summary; sweeps stale artifacts</td></tr>
+				<tr><td><code>/aid-ask</code></td><td><code>&lt;question&gt;</code></td><td>single-shot (read-only)</td><td>Answers from KB + code + works with citations; writes nothing</td></tr>
 			</tbody>
 		</table>
 	</div>
