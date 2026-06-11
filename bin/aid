@@ -526,6 +526,175 @@ _cmd_remove_self() {
 }
 
 # ---------------------------------------------------------------------------
+# Remote exposure helpers (feature-005 / LC-EXP-B).
+# SEC-1: These helpers invoke ONLY 'tailscale serve' (tailnet-only). The public
+#        exposure verb is never used -- a bare grep for it returns nothing
+#        anywhere in this file (structural never-public, C1).
+# ---------------------------------------------------------------------------
+
+# _aid_remote_expose <port>
+# Bring up tailscale serve (tailnet-only) for a loopback port.
+# stdout (exit 0): two lines: handle (tailscale-serve:<port>) + https URL.
+# stderr:          human messages, errors, FR18 ACL-grant guidance.
+# exit:  0=ok  10=mechanism absent  11=non-loopback target  12=serve failed
+_aid_remote_expose() {
+    local port="$1"
+
+    # Step 1: Re-assert the loopback target (belt-and-suspenders, SEC-1).
+    # This function only accepts a bare port number (caller always passes 127.0.0.1:<port>
+    # as the server's bind, but exposes only via a port token).  If someone passes a
+    # non-numeric or IP-prefixed token the contract is violated.
+    if [[ -z "$port" ]] || ! [[ "$port" =~ ^[0-9]+$ ]]; then
+        echo "ERROR: aid: dashboard: expose target must be 127.0.0.1 (got: ${port})" >&2
+        return 11
+    fi
+
+    # Step 2a: availability -- tailscale on PATH?
+    if ! command -v tailscale >/dev/null 2>&1; then
+        echo "ERROR: aid: dashboard: --remote requested but tailscale is not on PATH; --remote is unavailable" >&2
+        return 10
+    fi
+
+    # Step 2b: availability -- node logged in and Running?
+    local ts_status_out
+    ts_status_out="$(tailscale status 2>&1)" || true
+    # 'tailscale status' exits nonzero and prints "not running" or similar when the
+    # daemon is stopped, or when not logged in.
+    if echo "$ts_status_out" | grep -qiE '(not running|logged out|Stopped|NeedsLogin|NoState|not logged in)'; then
+        echo "ERROR: aid: dashboard: --remote requested but tailscale is not running or not logged in (tailscale status: ${ts_status_out}); --remote is unavailable" >&2
+        return 10
+    fi
+    # Also check for error/failure exit where output may be empty.
+    if [[ -z "$ts_status_out" ]]; then
+        echo "ERROR: aid: dashboard: --remote requested but tailscale status returned no output; --remote is unavailable" >&2
+        return 10
+    fi
+
+    # Step 3: Bring up Serve (tailnet-only; the public exposure verb is never invoked -- SEC-1).
+    local serve_err
+    serve_err="$(tailscale serve --bg "$port" 2>&1)"
+    local serve_rc=$?
+    if [[ "$serve_rc" -ne 0 ]]; then
+        echo "ERROR: aid: dashboard: tailscale serve failed (rc=${serve_rc}): ${serve_err}" >&2
+        # Revert: take down the 443 frontend mapping (if it was partially set).
+        tailscale serve --bg --https=443 off >/dev/null 2>&1 || true
+        return 12
+    fi
+
+    # Step 4: Resolve the private URL from tailscale status --json (Self.DNSName).
+    local ts_json node_fqdn private_url
+    ts_json="$(tailscale status --json 2>/dev/null)" || ts_json=""
+    node_fqdn=""
+    if [[ -n "$ts_json" ]]; then
+        # Extract Self.DNSName: "DNSName":"srvrivind01.tail74e815.ts.net."
+        # Strip the trailing dot if present.
+        node_fqdn="$(echo "$ts_json" | grep -o '"DNSName":"[^"]*"' | head -1 | sed 's/"DNSName":"//;s/"//' | sed 's/\.$//')"
+    fi
+    if [[ -z "$node_fqdn" ]]; then
+        # Fallback: try tailscale serve status --json for the HTTPS URL directly.
+        local serve_json
+        serve_json="$(tailscale serve status --json 2>/dev/null)" || serve_json=""
+        if [[ -n "$serve_json" ]]; then
+            # Extract the URL from WebConfigs or just use hostname from machine name.
+            node_fqdn="$(echo "$serve_json" | grep -o '"[a-z0-9-]*\.[a-z0-9.-]*\.ts\.net"' | head -1 | tr -d '"')"
+        fi
+    fi
+    if [[ -z "$node_fqdn" ]]; then
+        node_fqdn="$(hostname -f 2>/dev/null || hostname 2>/dev/null || echo "unknown-host")"
+    fi
+    private_url="https://${node_fqdn}/"
+
+    # Resolve the node identity for the ACL grant guidance.
+    local node_identity
+    node_identity=""
+    if [[ -n "$ts_json" ]]; then
+        # Extract Self.UserID login name if available -- not always in status JSON.
+        # Use LoginName from the Users map if Self.UserID is present.
+        # Simpler: pull the tailnet domain from DNSName.
+        local tailnet_domain
+        tailnet_domain="$(echo "$node_fqdn" | sed 's/^[^.]*\.//')"
+        node_identity="${tailnet_domain}"
+    fi
+    local node_short
+    node_short="$(echo "$node_fqdn" | cut -d. -f1)"
+
+    # Step 5: Print FR18 step-by-step ACL-grant guidance to STDERR (informational only).
+    local src_placeholder dst_placeholder url_placeholder
+    src_placeholder="${node_identity:-<you@example.com>}"
+    dst_placeholder="${node_short:-<this-host>}"
+    url_placeholder="${private_url}"
+
+    cat >&2 <<GUIDANCE_EOF
+
+Remote exposure is UP (tailnet-private). To restrict it to ONLY you (C3), add a
+deny-by-default tailnet ACL grant -- without it, any tailnet device can reach this host.
+Step 1. Open the tailnet policy file:
+          https://login.tailscale.com/admin/acls/file
+Step 2. Add this grant (replace the identity with yours or a group):
+          {"grants":[{"src":["${src_placeholder}"],"dst":["${dst_placeholder}"],"ip":["tcp:443"]}]}
+          (src = your identity/group; dst = THIS host only, never "*"; ip = the serve port.)
+Step 3. Save. Tailscale is deny-by-default once any grant exists, so every other device is
+        now denied.
+Step 4. Verify from your laptop: open ${url_placeholder} -- it should load for you, and a
+        non-authorized device should get connection-refused/forbidden.
+(AID cannot edit your tailnet policy for you -- it is admin-plane, and the dashboard never
+runs an agent/LLM at runtime. See 'aid dashboard' docs / feature-005 SEC-2.)
+
+GUIDANCE_EOF
+
+    # Step 6: Emit handle + URL on stdout, exit 0.
+    printf 'tailscale-serve:%s\n' "$port"
+    printf '%s\n' "$private_url"
+    return 0
+}
+
+# _aid_remote_teardown <handle>
+# Revert the tailscale serve mapping created by _aid_remote_expose.
+# exit: 0=ok/idempotent  13=revert warned
+_aid_remote_teardown() {
+    local handle="${1:-}"
+
+    # Step 1: Parse the handle; malformed/empty -> idempotent exit 0.
+    if [[ -z "$handle" ]]; then
+        return 0
+    fi
+    if ! [[ "$handle" =~ ^tailscale-serve:([0-9]+)$ ]]; then
+        # Malformed handle -- nothing to tear down.
+        return 0
+    fi
+    # We don't use the port for teardown (we target the HTTPS:443 frontend, not the backend port).
+
+    # Step 2: If tailscale is gone now -> WARN, exit 0.
+    if ! command -v tailscale >/dev/null 2>&1; then
+        echo "WARN: aid: dashboard: tailscale not found; cannot revert serve mapping (handle: ${handle})" >&2
+        return 0
+    fi
+
+    # Step 3: Revert the HTTPS:443 frontend mapping (not a backend port off).
+    local off_err
+    off_err="$(tailscale serve --bg --https=443 off 2>&1)"
+    local off_rc=$?
+    if [[ "$off_rc" -ne 0 ]]; then
+        # Fallback: check if serve status shows no other mappings; if so, reset.
+        local srv_status
+        srv_status="$(tailscale serve status 2>/dev/null)" || srv_status=""
+        # Count serve entries. If there's nothing else to protect, do a reset.
+        local mapping_count
+        mapping_count="$(echo "$srv_status" | grep -cE '(https?://|tcp://)' 2>/dev/null || echo "0")"
+        if [[ "$mapping_count" -le 1 ]]; then
+            tailscale serve reset >/dev/null 2>&1 || true
+            # After reset, exit 0 -- best effort.
+            return 0
+        fi
+        echo "WARN: aid: dashboard: tailscale serve --https=443 off failed (rc=${off_rc}): ${off_err}" >&2
+        return 13
+    fi
+
+    # Step 4: exit 0 on clean revert.
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # Dashboard control (aid dashboard start|stop).
 # ---------------------------------------------------------------------------
 _cmd_dashboard_ctl() {
@@ -732,7 +901,7 @@ _dc_start() {
         echo "WARN: aid: dashboard: server started but not yet responding on :${port}; check ${log_file}" >&2
     fi
 
-    # Step 9: write dashboard.pid JSON record (DM-1).
+    # Step 9: write dashboard.pid JSON record (DM-1) with remote=false initially.
     local started_at
     started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "unknown")"
     cat > "$pid_file" <<EOF
@@ -750,13 +919,45 @@ _dc_start() {
 }
 EOF
 
-    # Step 10: --remote is a clear-fail stub (delivery-003 / feature-005 not yet implemented).
+    # Step 10: --remote: invoke _aid_remote_expose; update record on success.
     if [[ "$remote" -eq 1 ]]; then
-        echo "ERROR: aid: dashboard: --remote requested but the secure remote-exposure mechanism is not available on this host; the dashboard is NOT exposed. Local server still running at http://127.0.0.1:${port}." >&2
-        exit 10
+        # Capture stdout into a temp file; let stderr (guidance + errors) flow to the user.
+        local _expose_tmp expose_rc expose_handle expose_url
+        _expose_tmp="$(mktemp)"
+        _aid_remote_expose "$port" >"$_expose_tmp"
+        expose_rc=$?
+        if [[ "$expose_rc" -ne 0 ]]; then
+            rm -f "$_expose_tmp"
+            # All expose failures (10/11/12) map to user-facing exit 10.
+            # dashboard stays local-only (server remains running).
+            echo "ERROR: aid: dashboard: --remote requested but the secure remote-exposure mechanism is not available on this host; the dashboard is NOT exposed. Local server still running at http://127.0.0.1:${port}." >&2
+            exit 10
+        fi
+        expose_handle="$(head -1 "$_expose_tmp")"
+        expose_url="$(sed -n '2p' "$_expose_tmp")"
+        rm -f "$_expose_tmp"
+        # Update the record with remote=true and the handle.
+        cat > "$pid_file" <<EOF
+{
+  "schema": 1,
+  "pid": ${child_pid},
+  "runtime": "${runtime}",
+  "port": ${port},
+  "bind": "127.0.0.1",
+  "remote": true,
+  "remote_handle": "${expose_handle}",
+  "started_at": "${started_at}",
+  "target": "${target}",
+  "logfile": "${log_file}"
+}
+EOF
+        # Step 11 (remote success): print local URL + remote URL.
+        echo "Dashboard (${runtime}) running at http://127.0.0.1:${port} -- stop with: aid dashboard stop"
+        echo "Remote (private): ${expose_url}"
+        exit 0
     fi
 
-    # Step 11: print success.
+    # Step 11: print success (local-only).
     echo "Dashboard (${runtime}) running at http://127.0.0.1:${port} -- stop with: aid dashboard stop"
     exit 0
 }
@@ -785,7 +986,19 @@ _dc_stop() {
         exit 0
     fi
 
-    # Step 4: --remote teardown skipped (stub; remote_handle is always null in this delivery).
+    # Step 4: --remote teardown (if the record says remote=true, call _aid_remote_teardown).
+    local existing_remote existing_handle
+    existing_remote="$(grep '"remote":' "$pid_file" | grep -v '"remote_handle"' | sed 's/.*"remote":[[:space:]]*//' | tr -d '", ')"
+    # Extract handle: matches quoted string value; if unquoted (null), returns empty.
+    existing_handle="$(grep '"remote_handle"' "$pid_file" | sed -n 's/.*"remote_handle":[[:space:]]*"\([^"]*\)".*/\1/p')"
+    if [[ "$existing_remote" == "true" && -n "$existing_handle" ]]; then
+        [[ "$verbose" -eq 1 ]] && echo "aid: dashboard: tearing down remote exposure (handle: ${existing_handle})" >&2
+        _aid_remote_teardown "$existing_handle"
+        local teardown_rc=$?
+        if [[ "$teardown_rc" -eq 13 ]]; then
+            echo "WARN: aid: dashboard: remote teardown reported a warning; continuing server shutdown" >&2
+        fi
+    fi
 
     # Step 5: terminate the process group cleanly.
     [[ "$verbose" -eq 1 ]] && echo "aid: dashboard: sending SIGTERM to process group ${existing_pid}" >&2

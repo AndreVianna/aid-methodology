@@ -104,6 +104,95 @@ run_dc() {
     RC_DC=$?
 }
 
+# Run aid with a custom PATH prefix (for tailscale stubs); merges stdout+stderr.
+run_dc_path() {
+    local path_prefix="$1"; local home_dir="$2"; shift 2
+    OUT_DC="$(PATH="${path_prefix}:${PATH}" AID_HOME="$home_dir" AID_NO_UPDATE_CHECK=1 \
+              bash "${home_dir}/bin/aid" "$@" 2>&1)"
+    RC_DC=$?
+}
+
+# Run aid with a custom PATH prefix, splitting stdout and stderr.
+run_dc_path_split() {
+    local path_prefix="$1"; local home_dir="$2"; shift 2
+    local _tmp_out _tmp_err
+    _tmp_out="$(mktemp "${TMP}/out.XXXXXX")"
+    _tmp_err="$(mktemp "${TMP}/err.XXXXXX")"
+    PATH="${path_prefix}:${PATH}" AID_HOME="$home_dir" AID_NO_UPDATE_CHECK=1 \
+        bash "${home_dir}/bin/aid" "$@" >"$_tmp_out" 2>"$_tmp_err"
+    RC_DC=$?
+    OUT_DC="$(cat "$_tmp_out")"
+    ERR_DC="$(cat "$_tmp_err")"
+    rm -f "$_tmp_out" "$_tmp_err"
+}
+
+# Create a PATH stub directory containing a fake tailscale.
+# Args: <stub_dir> <behaviour>
+#   behaviour = "absent"      -- no tailscale binary at all (used for no-tailscale tests)
+#   behaviour = "logged-in"   -- tailscale present, status OK, serve succeeds
+#   behaviour = "not-logged-in" -- tailscale present, status says "not logged in"
+#   behaviour = "serve-fail"  -- tailscale present, status OK, serve fails
+# The stub records each invocation's argv to <stub_dir>/ts_calls.log.
+make_tailscale_stub() {
+    local stub_dir="$1"
+    local behaviour="$2"
+    local fqdn="${3:-stubhost.tail00000.ts.net}"
+
+    mkdir -p "$stub_dir"
+
+    if [[ "$behaviour" == "absent" ]]; then
+        # No tailscale binary: PATH stub dir exists but no tailscale in it.
+        return 0
+    fi
+
+    cat > "${stub_dir}/tailscale" <<STUBEOF
+#!/usr/bin/env bash
+# Stub tailscale for testing.
+BEHAVIOUR="${behaviour}"
+FQDN="${fqdn}"
+STUB_DIR="${stub_dir}"
+
+# Record argv.
+echo "\$*" >> "\${STUB_DIR}/ts_calls.log"
+
+# Fail if funnel is ever invoked (SEC-1 guard).
+for arg in "\$@"; do
+    if [[ "\$arg" == "funnel" || "\$arg" == "--funnel" ]]; then
+        echo "STUB SECURITY VIOLATION: funnel called!" >&2
+        exit 99
+    fi
+done
+
+case "\$1" in
+    status)
+        if [[ "\$2" == "--json" ]]; then
+            # Return minimal JSON with Self.DNSName.
+            printf '{"Self":{"DNSName":"%s.","HostName":"%s"}}\n' "\$FQDN" "\${FQDN%%.*}"
+            exit 0
+        fi
+        if [[ "\${BEHAVIOUR}" == "not-logged-in" ]]; then
+            echo "not logged in" >&2
+            exit 1
+        fi
+        echo "stubhost  100.64.0.1  stubhost  \${FQDN%%.*}"
+        exit 0
+        ;;
+    serve)
+        if [[ "\${BEHAVIOUR}" == "serve-fail" ]]; then
+            echo "stub: tailscale serve failed" >&2
+            exit 1
+        fi
+        # Simulate success for both serve --bg <port> and serve --bg --https=443 off.
+        exit 0
+        ;;
+    *)
+        exit 0
+        ;;
+esac
+STUBEOF
+    chmod +x "${stub_dir}/tailscale"
+}
+
 # Run aid capturing stdout and stderr separately.
 run_dc_split() {
     local home_dir="$1"; shift
@@ -516,12 +605,26 @@ assert_output_not_contains "$OUT_DC" "already running" \
 # ---------------------------------------------------------------------------
 # T-11: --remote with no mechanism — exit 10, record.remote=false, server local
 # ---------------------------------------------------------------------------
-echo "--- T-11: --remote clear-fail ---"
+echo "--- T-11: --remote no mechanism (tailscale absent via command override) ---"
 H11="$(new_aid_home)"
 R11="$(new_fixture_repo)"
 PORT11="$(pick_free_port)"
 
-run_dc "$H11" dashboard start python --port "$PORT11" --remote --target "$R11"
+# Override 'command -v tailscale' to return failure (simulate tailscale not on PATH).
+# Uses the same heredoc subshell technique as T-8 for runtime-absent testing.
+OUT_DC="$(AID_HOME="$H11" AID_NO_UPDATE_CHECK=1 bash << INNEREOF11
+command() {
+    if [[ "\$1" == "-v" && "\$2" == "tailscale" ]]; then
+        return 127
+    fi
+    builtin command "\$@"
+}
+export -f command
+AID_HOME="${H11}" AID_NO_UPDATE_CHECK=1 bash "${H11}/bin/aid" dashboard start python \
+    --port "${PORT11}" --remote --target "${R11}" 2>&1
+INNEREOF11
+)"
+RC_DC=$?
 assert_exit_eq "$RC_DC" 10 "T-11: --remote unavailable exit 10"
 # Pattern avoids leading '--' for grep safety (assert uses grep -F).
 assert_output_contains "$OUT_DC" \
@@ -546,7 +649,7 @@ _T11_PID="$(grep '"pid"' "$PID11_FILE" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
 assert_eq "$(kill -0 "$_T11_PID" 2>/dev/null && echo alive || echo dead)" "alive" \
     "T-11: local server process still alive despite --remote failure"
 
-# Clean up T-11.
+# Clean up T-11 (server is running locally).
 run_dc "$H11" dashboard stop --target "$R11"
 
 # ---------------------------------------------------------------------------
@@ -599,6 +702,240 @@ assert_exit_eq "$RC_DC" 2 "T-12f: missing runtime exit 2"
 assert_output_contains "$OUT_DC" \
     "ERROR: aid: dashboard start requires a runtime: node or python (e.g. aid dashboard start python)" \
     "T-12f: missing runtime exact message"
+
+# ---------------------------------------------------------------------------
+# T-13: ASCII-only guard (delegate to test-ascii-only.sh)
+# ---------------------------------------------------------------------------
+echo "--- T-13: ASCII-only guard ---"
+ASCII_SUITE="${SCRIPT_DIR}/test-ascii-only.sh"
+if [[ -f "$ASCII_SUITE" ]]; then
+    # Run and capture exit code; ignore output (the suite prints its own results).
+    bash "$ASCII_SUITE" > /dev/null 2>&1
+    ASCII_RC=$?
+    assert_exit_eq "$ASCII_RC" 0 "T-13: bin/aid + bin/aid.ps1 pass ASCII-only gate"
+else
+    fail "T-13: test-ascii-only.sh not found at ${ASCII_SUITE}"
+fi
+
+# ---------------------------------------------------------------------------
+# T-14: _aid_remote_expose / _aid_remote_teardown basic CLI tests (feature-005)
+# Uses function-level mocking via bash heredoc technique -- never touches real tailnet.
+# ---------------------------------------------------------------------------
+
+echo "--- T-14: _aid_remote_expose / _aid_remote_teardown unit tests ---"
+H14="$(new_aid_home)"
+PORT14="$(pick_free_port)"
+
+# Helper: extract ONLY function definitions from bin/aid (no top-level executable code).
+# We grep for function definitions starting with the first function through to the dispatch marker.
+# This avoids re-running the preamble (set -uo pipefail, source, exit calls) when eval'd.
+_make_fn_src() {
+    local bin="$1"
+    # Extract only lines that are part of function bodies.
+    # Strategy: extract from the first function definition (_aid_usage) to the dispatch marker.
+    # This includes all function definitions plus any pure-function code between them.
+    awk '/^# Parse subcommand and dispatch\./{exit}
+         /^_aid_usage\(\)|^_aid_die\(\)|^_find_install_sh\(\)|^_aid_check_update\(\)|^_cmd_update_self\(\)|^_wire_one_profile\(\)|^_wire_path_unix\(\)|^_unwire_path_unix\(\)|^_install_global_cli\(\)|^_cmd_remove_self\(\)|^_aid_remote_expose\(\)|^_aid_remote_teardown\(\)|^_cmd_dashboard_ctl\(\)|^_dc_start\(\)|^_dc_stop\(\)|^_cmd_dashboard\(\)|^_resolve_tools_for_aid\(\)|^_prepare_tool_staging_aid\(\)/{in_fn=1}
+         in_fn{print}' "$bin"
+}
+_BIN_AID_FN_SRC="$(_make_fn_src "${H14}/bin/aid")"
+
+# Helper: runs a function in a subshell with a tailscale stub (records calls to ts_calls.log).
+# Usage: run_aid_fn_with_stub <stub_dir> <fn_name> [args...]
+# ts_calls.log in stub_dir records all invocations.
+# Sets RC_DC, OUT_DC, ERR_DC.
+run_aid_fn_with_stub() {
+    local stub_dir="$1"; shift
+    local _o _e
+    _o="$(mktemp "${TMP}/o14.XXXXXX")"
+    _e="$(mktemp "${TMP}/e14.XXXXXX")"
+    local _fn_src="$_BIN_AID_FN_SRC"
+    local _fn_args=("$@")
+    # Build a miniature bash that: sources install-core, defines the functions,
+    # stubs tailscale via a PATH-priority script, then calls the function.
+    (
+        PATH="${stub_dir}:${PATH}"
+        AID_HOME="${H14}"
+        AID_NO_UPDATE_CHECK=1
+        source "${H14}/lib/aid-install-core.sh" 2>/dev/null || true
+        eval "$_fn_src"
+        "${_fn_args[@]}"
+    ) >"$_o" 2>"$_e"
+    RC_DC=$?
+    OUT_DC="$(cat "$_o")"
+    ERR_DC="$(cat "$_e")"
+    rm -f "$_o" "$_e"
+}
+
+# T-14a: expose with stub logged-in tailscale -> exit 0, handle on stdout line1, https URL on line2.
+echo "--- T-14a: expose with logged-in stub ---"
+STUB14="$(mktemp -d "${TMP}/stub14.XXXXXX")"
+make_tailscale_stub "$STUB14" "logged-in" "srvtest01.tail99999.ts.net"
+run_aid_fn_with_stub "$STUB14" _aid_remote_expose "$PORT14"
+assert_exit_eq "$RC_DC" 0 "T-14a: expose exit 0 with stub logged-in"
+assert_output_contains "$OUT_DC" "tailscale-serve:${PORT14}" \
+    "T-14a: handle line on stdout"
+assert_output_contains "$OUT_DC" "https://" \
+    "T-14a: https URL on stdout"
+# stderr must contain the FR18 guidance block.
+assert_output_contains "$ERR_DC" "tailnet policy file" \
+    "T-14a: FR18 guidance printed to stderr"
+assert_output_contains "$ERR_DC" "https://login.tailscale.com/admin/acls/file" \
+    "T-14a: FR18 policy URL on stderr"
+assert_output_contains "$ERR_DC" "deny-by-default" \
+    "T-14a: deny-by-default in stderr"
+# Confirm stub was called with 'serve --bg <port>' (NEVER funnel).
+assert_output_contains "$(cat "${STUB14}/ts_calls.log" 2>/dev/null)" "serve --bg ${PORT14}" \
+    "T-14a: stub recorded 'serve --bg <port>'"
+if grep -q "funnel" "${STUB14}/ts_calls.log" 2>/dev/null; then
+    fail "T-14a: SEC-1 VIOLATED -- funnel was called!"
+else
+    pass "T-14a: SEC-1 confirmed -- funnel never called"
+fi
+
+# T-14b: teardown with valid handle -> exit 0, stub records '--https=443 off'.
+echo "--- T-14b: teardown with valid handle ---"
+STUB14B="$(mktemp -d "${TMP}/stub14b.XXXXXX")"
+make_tailscale_stub "$STUB14B" "logged-in" "srvtest01.tail99999.ts.net"
+run_aid_fn_with_stub "$STUB14B" _aid_remote_teardown "tailscale-serve:${PORT14}"
+assert_exit_eq "$RC_DC" 0 "T-14b: teardown exit 0"
+# Stub recorded '--https=443 off' (the serve frontend revert command).
+_t14b_calls="$(cat "${STUB14B}/ts_calls.log" 2>/dev/null || echo "")"
+if echo "$_t14b_calls" | grep -qF -- "--https=443 off"; then
+    pass "T-14b: teardown called 'serve --bg --https=443 off'"
+else
+    fail "T-14b: teardown called 'serve --bg --https=443 off' -- calls were: ${_t14b_calls}"
+fi
+if grep -q "funnel" "${STUB14B}/ts_calls.log" 2>/dev/null; then
+    fail "T-14b: SEC-1 VIOLATED -- funnel was called in teardown!"
+else
+    pass "T-14b: SEC-1 confirmed in teardown -- funnel never called"
+fi
+
+# T-14c: expose with no tailscale on PATH -> exit 10.
+# Create a stub dir with NO tailscale binary, but override command -v via the subshell.
+echo "--- T-14c: expose no tailscale ---"
+STUB14C="$(mktemp -d "${TMP}/stub14c.XXXXXX")"
+make_tailscale_stub "$STUB14C" "absent"
+# Use a PATH with stub dir first AND remove the real tailscale from lookup
+# by creating a directory with only essential binaries (not tailscale).
+# Approach: use a wrapper that makes tailscale lookup fail via a non-executable stub.
+cat > "${STUB14C}/tailscale" << 'NOTEXECEOF'
+#!/usr/bin/env bash
+# This stub explicitly makes tailscale look absent by returning error.
+# It IS executable, so 'command -v' finds it, but that's the real test:
+# we test that expose handles tailscale being truly absent by using
+# a different approach: a PATH that hides the real tailscale.
+NOTEXECEOF
+# Remove the stub and instead make a truly absent PATH:
+# Use run_aid_fn_with_stub with a PATH that only has stub dir (with no tailscale).
+rm -f "${STUB14C}/tailscale"  # Remove so tailscale is absent from stub dir.
+# But the real /usr/bin/tailscale is still on PATH. We need to shadow it.
+# Solution: create a script that exits with 127 (like "not found") and is not executable.
+# Instead, create a fake directory as the PATH, without any tailscale.
+# The underlying PATH still has /usr/bin/tailscale.
+# BEST solution: use the command() override inside the subshell.
+_fn_src="$_BIN_AID_FN_SRC"
+_o14c="$(mktemp "${TMP}/o14c.XXXXXX")"
+_e14c="$(mktemp "${TMP}/e14c.XXXXXX")"
+(
+    AID_HOME="${H14}"
+    AID_NO_UPDATE_CHECK=1
+    source "${H14}/lib/aid-install-core.sh" 2>/dev/null || true
+    eval "$_fn_src"
+    command() {
+        if [[ "$1" == "-v" && "$2" == "tailscale" ]]; then return 127; fi
+        builtin command "$@"
+    }
+    _aid_remote_expose "$PORT14"
+) >"$_o14c" 2>"$_e14c"
+_rc14c=$?
+rm -f "$_o14c" "$_e14c"
+assert_exit_eq "$_rc14c" 10 "T-14c: expose no tailscale exit 10"
+
+# T-14d: expose with non-numeric port (non-loopback token) -> exit 11.
+echo "--- T-14d: expose non-loopback token ---"
+run_aid_fn_with_stub "$STUB14" _aid_remote_expose "192.168.1.5:${PORT14}"
+assert_exit_eq "$RC_DC" 11 "T-14d: expose non-loopback token exit 11"
+
+# T-14e: expose with serve-fail stub -> exit 12, revert called.
+echo "--- T-14e: expose serve fails ---"
+STUB14E="$(mktemp -d "${TMP}/stub14e.XXXXXX")"
+make_tailscale_stub "$STUB14E" "serve-fail" "srvtest01.tail99999.ts.net"
+run_aid_fn_with_stub "$STUB14E" _aid_remote_expose "$PORT14"
+assert_exit_eq "$RC_DC" 12 "T-14e: expose serve-fail exit 12"
+# Revert should have been attempted: stub records '--https=443 off'.
+_t14e_calls="$(cat "${STUB14E}/ts_calls.log" 2>/dev/null || echo "")"
+if echo "$_t14e_calls" | grep -qF -- "--https=443 off"; then
+    pass "T-14e: serve-fail triggered revert (--https=443 off)"
+else
+    fail "T-14e: serve-fail triggered revert (--https=443 off) -- calls were: ${_t14e_calls}"
+fi
+
+# T-14f: teardown with malformed handle -> exit 0 (idempotent).
+echo "--- T-14f: teardown malformed handle ---"
+run_aid_fn_with_stub "$STUB14" _aid_remote_teardown "not-a-valid-handle"
+assert_exit_eq "$RC_DC" 0 "T-14f: malformed handle exit 0"
+
+# T-14g: teardown with empty handle -> exit 0 (idempotent).
+echo "--- T-14g: teardown empty handle ---"
+run_aid_fn_with_stub "$STUB14" _aid_remote_teardown ""
+assert_exit_eq "$RC_DC" 0 "T-14g: empty handle exit 0"
+
+# T-14h: start --remote with logged-in stub -> exit 0, record.remote=true, remote_handle set.
+# For T-14h/i we use the same command-override technique as T-8/T-11 but for tailscale stub.
+echo "--- T-14h: start --remote with logged-in stub ---"
+H14h="$(new_aid_home)"
+R14h="$(new_fixture_repo)"
+PORT14h="$(pick_free_port)"
+STUB14H="$(mktemp -d "${TMP}/stub14h.XXXXXX")"
+make_tailscale_stub "$STUB14H" "logged-in" "srvtest01.tail99999.ts.net"
+
+# Run the full aid binary with the stub on PATH (for T-14h, tailscale must be the stub).
+# The stub IS a real executable, so PATH="${STUB14H}:..." ensures it wins over /usr/bin/tailscale.
+_T14H_OUT="$(mktemp "${TMP}/t14h_out.XXXXXX")"
+_T14H_ERR="$(mktemp "${TMP}/t14h_err.XXXXXX")"
+PATH="${STUB14H}:${PATH}" AID_HOME="$H14h" AID_NO_UPDATE_CHECK=1 \
+    bash "${H14h}/bin/aid" dashboard start python --port "$PORT14h" --remote --target "$R14h" \
+    >"$_T14H_OUT" 2>"$_T14H_ERR"
+RC_DC=$?
+OUT_DC="$(cat "$_T14H_OUT")"
+ERR_DC="$(cat "$_T14H_ERR")"
+rm -f "$_T14H_OUT" "$_T14H_ERR"
+
+assert_exit_eq "$RC_DC" 0 "T-14h: start --remote with stub exit 0"
+assert_output_contains "$OUT_DC" "Dashboard (python) running at http://127.0.0.1:${PORT14h}" \
+    "T-14h: local URL printed"
+assert_output_contains "$OUT_DC" "Remote (private):" \
+    "T-14h: Remote (private) URL printed"
+PID14H_FILE="${R14h}/.aid/.temp/dashboard.pid"
+assert_file_exists "$PID14H_FILE" "T-14h: dashboard.pid written"
+assert_file_contains "$PID14H_FILE" '"remote": true' "T-14h: record.remote=true"
+assert_file_contains "$PID14H_FILE" "tailscale-serve:${PORT14h}" "T-14h: remote_handle in record"
+_T14H_PID="$(grep '"pid"' "$PID14H_FILE" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
+[[ -n "$_T14H_PID" ]] && SPAWNED_PIDS+=("$_T14H_PID")
+
+# T-14i: stop after remote start -> teardown called, stub records --https=443 off, exit 0.
+echo "--- T-14i: stop after remote start ---"
+PATH="${STUB14H}:${PATH}" AID_HOME="$H14h" AID_NO_UPDATE_CHECK=1 \
+    bash "${H14h}/bin/aid" dashboard stop --target "$R14h" >/dev/null 2>&1
+assert_exit_eq "$?" 0 "T-14i: stop after remote start exit 0"
+_t14i_calls="$(cat "${STUB14H}/ts_calls.log" 2>/dev/null || echo "")"
+if echo "$_t14i_calls" | grep -qF -- "--https=443 off"; then
+    pass "T-14i: teardown called --https=443 off on stop"
+else
+    fail "T-14i: teardown called --https=443 off on stop -- calls were: ${_t14i_calls}"
+fi
+
+# T-14j: SEC-1 grep check -- no EXECUTABLE 'funnel' call in the expose/teardown helpers.
+# We check that no non-comment, non-string-literal line invokes tailscale funnel.
+# The functions may MENTION 'funnel' in comments (documenting why we don't use it);
+# what matters is that no code path calls it.
+echo "--- T-14j: SEC-1 no-funnel grep check ---"
+# Check bin/aid expose/teardown section for any line that is NOT a comment and contains 'funnel'.
+_funnel_exec_hits="$(awk '/_aid_remote_expose\(\)/,/_cmd_dashboard_ctl\(\)/' "${BIN_AID}" | \
+    grep -v '^\s*#' | grep -c 'funnel' || true)"
+assert_eq "$_funnel_exec_hits" "0" "T-14j: no executable 'funnel' call in expose/teardown helpers (SEC-1)"
 
 # ---------------------------------------------------------------------------
 # T-13: ASCII-only guard (delegate to test-ascii-only.sh)
