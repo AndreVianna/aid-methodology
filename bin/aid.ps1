@@ -130,6 +130,16 @@ function script:Show-AidUsage {
             Write-Host 'aid version'
             Write-Host '  Print the installed aid CLI version and exit 0.'
         }
+        'dashboard' {
+            Write-Host 'aid dashboard start <node|python> [--remote] [--port <n>] [--target <dir>]'
+            Write-Host 'aid dashboard stop                [--target <dir>]'
+            Write-Host '  Start or stop the local pipeline dashboard for the current project.'
+            Write-Host '  <node|python>  select the server runtime to launch.'
+            Write-Host '  --remote       also expose it to authorized users over a private channel (never public);'
+            Write-Host '                 fails clearly if that mechanism is unavailable -- never binds publicly.'
+            Write-Host '  --port <n>     listen port on 127.0.0.1 (default 8787).'
+            Write-Host "  The dashboard binds to 127.0.0.1 only. 'stop' is idempotent and also tears down --remote."
+        }
         default {
             Write-Host 'aid - AID CLI'
             Write-Host ''
@@ -141,6 +151,7 @@ function script:Show-AidUsage {
             Write-Host '  aid add <tool>[,...]             Add tool(s) to the current project'
             Write-Host '  aid update [<tool>... | self]    Update to latest; no arg = all tools'
             Write-Host '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project'
+            Write-Host '  aid dashboard start|stop ...     Start/stop the local dashboard'
             Write-Host "  aid <command> -h | --help        Per-command help"
             Write-Host ''
             Write-Host 'Flags: -FromBundle, -Version, -Force, -Target, -Verbose'
@@ -367,6 +378,342 @@ function script:Remove-AidFromPath {
 }
 
 # ---------------------------------------------------------------------------
+# Dashboard control (aid dashboard start|stop).
+# ---------------------------------------------------------------------------
+function script:Invoke-AidDashboardCtl {
+    param([string[]]$DcArgs)
+
+    $verb = if ($DcArgs.Count -gt 0) { $DcArgs[0] } else { '' }
+    $rest = if ($DcArgs.Count -gt 1) { $DcArgs[1..($DcArgs.Count - 1)] } else { @() }
+
+    # Top-level help.
+    if ($verb -in @('-h', '--help', '-Help')) {
+        script:Show-AidUsage 'dashboard'
+        script:Exit-Aid 0
+    }
+
+    if ($verb -ne 'start' -and $verb -ne 'stop') {
+        if ([string]::IsNullOrEmpty($verb)) {
+            [Console]::Error.WriteLine('ERROR: aid: dashboard requires a verb: start or stop (e.g. aid dashboard start python)')
+            script:Exit-Aid 2
+        }
+        [Console]::Error.WriteLine("ERROR: aid: dashboard: unknown verb '$verb' (expected: start or stop)")
+        script:Exit-Aid 2
+    }
+
+    # --- shared arg parsing ---
+    $dcTarget  = ''
+    $dcVerbose = $false
+    $dcPort    = 8787
+    $dcRemote  = $false
+    $dcRuntime = ''
+
+    $idx = 0
+    if ($verb -eq 'start') {
+        # First positional after verb is runtime (if not a flag).
+        if ($rest.Count -gt 0 -and -not $rest[0].StartsWith('-')) {
+            $dcRuntime = $rest[0]
+            $idx = 1
+        }
+    }
+
+    while ($idx -lt $rest.Count) {
+        $a = $rest[$idx]
+        switch ($a) {
+            { $_ -in @('-h', '--help', '-Help') } {
+                script:Show-AidUsage 'dashboard'
+                script:Exit-Aid 0
+            }
+            { $_ -in @('-Target', '--target') } {
+                $idx++
+                if ($idx -ge $rest.Count) {
+                    [Console]::Error.WriteLine('ERROR: aid: dashboard: --target requires a value')
+                    script:Exit-Aid 2
+                }
+                $dcTarget = $rest[$idx]
+            }
+            { $_ -in @('-Verbose', '--verbose') } { $dcVerbose = $true }
+            { $_ -in @('-Remote', '--remote') } {
+                if ($verb -eq 'stop') {
+                    [Console]::Error.WriteLine("ERROR: aid: dashboard: unknown flag: $a")
+                    script:Exit-Aid 2
+                }
+                $dcRemote = $true
+            }
+            { $_ -in @('-Port', '--port') } {
+                if ($verb -eq 'stop') {
+                    [Console]::Error.WriteLine("ERROR: aid: dashboard: unknown flag: $a")
+                    script:Exit-Aid 2
+                }
+                $idx++
+                if ($idx -ge $rest.Count) {
+                    [Console]::Error.WriteLine('ERROR: aid: dashboard: --port requires a value')
+                    script:Exit-Aid 2
+                }
+                $portVal = $rest[$idx]
+                if ($portVal -notmatch '^\d+$' -or [int]$portVal -lt 1024 -or [int]$portVal -gt 65535) {
+                    [Console]::Error.WriteLine('ERROR: aid: dashboard: --port must be an integer in 1024..65535')
+                    script:Exit-Aid 2
+                }
+                $dcPort = [int]$portVal
+            }
+            default {
+                if ($a.StartsWith('-')) {
+                    [Console]::Error.WriteLine("ERROR: aid: dashboard: unknown flag: $a")
+                    script:Exit-Aid 2
+                }
+                # Stray positional.
+                [Console]::Error.WriteLine("ERROR: aid: dashboard: unknown flag: $a")
+                script:Exit-Aid 2
+            }
+        }
+        $idx++
+    }
+
+    # Apply env-var fallback for target.
+    if (-not $dcTarget -and $env:AID_TARGET) { $dcTarget = $env:AID_TARGET }
+    if (-not $dcTarget) { $dcTarget = '.' }
+    if (-not (Test-Path $dcTarget -PathType Container)) {
+        [Console]::Error.WriteLine("ERROR: aid: dashboard: target directory does not exist: $dcTarget")
+        script:Exit-Aid 2
+    }
+    $dcTarget = (Resolve-Path $dcTarget).Path
+
+    if ($verb -eq 'start') {
+        script:Invoke-DcStart -Runtime $dcRuntime -Port $dcPort -Remote $dcRemote -Target $dcTarget -Verbose $dcVerbose
+    } else {
+        script:Invoke-DcStop -Target $dcTarget -Verbose $dcVerbose
+    }
+}
+
+function script:Invoke-DcStart {
+    param([string]$Runtime, [int]$Port, [bool]$Remote, [string]$Target, [bool]$Verbose)
+
+    # Step 1: validate runtime.
+    if ([string]::IsNullOrEmpty($Runtime)) {
+        [Console]::Error.WriteLine('ERROR: aid: dashboard start requires a runtime: node or python (e.g. aid dashboard start python)')
+        script:Exit-Aid 2
+    }
+    if ($Runtime -ne 'node' -and $Runtime -ne 'python') {
+        [Console]::Error.WriteLine("ERROR: aid: dashboard: unknown runtime '$Runtime' (expected: node or python)")
+        script:Exit-Aid 2
+    }
+
+    # Step 3: check .aid/ exists.
+    if (-not (Test-Path (Join-Path $Target '.aid') -PathType Container)) {
+        [Console]::Error.WriteLine("ERROR: aid: dashboard: no AID install found at $Target (run 'aid add <tool>' first)")
+        script:Exit-Aid 7
+    }
+
+    $pidFile = Join-Path $Target (Join-Path '.aid' (Join-Path '.temp' 'dashboard.pid'))
+    $logFile = Join-Path $Target (Join-Path '.aid' (Join-Path '.temp' 'dashboard.log'))
+
+    # Step 4: already-running guard (stale-record reclaim included).
+    if (Test-Path $pidFile -PathType Leaf) {
+        $pidContent = Get-Content -LiteralPath $pidFile -Raw -ErrorAction SilentlyContinue
+        $existingPid  = 0
+        $existingPort = 0
+        $existingRuntime = ''
+        if ($pidContent -match '"pid"\s*:\s*(\d+)') { $existingPid = [int]$matches[1] }
+        if ($pidContent -match '"port"\s*:\s*(\d+)') { $existingPort = [int]$matches[1] }
+        if ($pidContent -match '"runtime"\s*:\s*"([^"]+)"') { $existingRuntime = $matches[1] }
+        $procAlive = $false
+        if ($existingPid -gt 0) {
+            try { $null = Get-Process -Id $existingPid -ErrorAction Stop; $procAlive = $true } catch {}
+        }
+        if ($procAlive) {
+            Write-Host "aid: dashboard already running (runtime $existingRuntime, http://127.0.0.1:${existingPort}); run 'aid dashboard stop' first."
+            script:Exit-Aid 8
+        } else {
+            # Stale record: reclaim silently (or verbosely).
+            if ($Verbose) { [Console]::Error.WriteLine("aid: dashboard: reclaiming stale record (pid $existingPid is dead)") }
+            Remove-Item -LiteralPath $pidFile -Force -ErrorAction SilentlyContinue
+            if (Test-Path $logFile -PathType Leaf) { Remove-Item -LiteralPath $logFile -Force -ErrorAction SilentlyContinue }
+        }
+    }
+
+    # Step 5: check runtime on PATH.
+    if ($Runtime -eq 'python') {
+        $interp = 'python3'
+        if (-not (Get-Command 'python3' -ErrorAction SilentlyContinue)) {
+            [Console]::Error.WriteLine('ERROR: aid: dashboard: python3 not found on PATH (install it, or try: aid dashboard start node)')
+            script:Exit-Aid 9
+        }
+    } else {
+        $interp = 'node'
+        if (-not (Get-Command 'node' -ErrorAction SilentlyContinue)) {
+            [Console]::Error.WriteLine('ERROR: aid: dashboard: node not found on PATH (install it, or try: aid dashboard start python)')
+            script:Exit-Aid 9
+        }
+    }
+
+    # Step 6: locate the server entry point.
+    $assetsDir = Join-Path $Target 'dashboard'
+    if ($Runtime -eq 'python') {
+        $entryPoint = Join-Path $assetsDir (Join-Path 'server' 'server.py')
+    } else {
+        $entryPoint = Join-Path $assetsDir (Join-Path 'server' 'server.mjs')
+    }
+    if (-not (Test-Path $entryPoint -PathType Leaf)) {
+        [Console]::Error.WriteLine("ERROR: aid: dashboard: AID install at $Target is missing the dashboard server ($Runtime entry-point not found); try 'aid update'")
+        script:Exit-Aid 7
+    }
+
+    # Ensure log dir exists.
+    $tempDir = Join-Path $Target (Join-Path '.aid' '.temp')
+    New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+
+    # Step 7: spawn the server child.
+    # SEC-1: literal 127.0.0.1 -- never read from input/config/env.
+    $spawnArgs = @($entryPoint, '--root', $Target, '--host', '127.0.0.1', '--port', "$Port")
+    $proc = Start-Process -FilePath $interp `
+        -ArgumentList $spawnArgs `
+        -RedirectStandardOutput $logFile `
+        -RedirectStandardError  $logFile `
+        -PassThru `
+        -WindowStyle Hidden
+
+    $childPid = $proc.Id
+
+    if ($Verbose) { [Console]::Error.WriteLine("aid: dashboard: spawned $Runtime server (pid $childPid, port $Port)") }
+
+    # Step 8: bounded readiness wait (~5s, poll TCP socket).
+    $ready      = $false
+    $attempts   = 0
+    $maxAttempts = 50   # 50 x 0.1s = 5s
+    while ($attempts -lt $maxAttempts) {
+        # Check child is still alive.
+        $childAlive = $false
+        try { $null = Get-Process -Id $childPid -ErrorAction Stop; $childAlive = $true } catch {}
+        if (-not $childAlive) {
+            # Child exited early.
+            [Console]::Error.WriteLine('ERROR: aid: dashboard: server failed to start; last log lines:')
+            if (Test-Path $logFile -PathType Leaf) {
+                Get-Content -LiteralPath $logFile -Tail 10 -ErrorAction SilentlyContinue | ForEach-Object { [Console]::Error.WriteLine($_) }
+                Remove-Item -LiteralPath $logFile -Force -ErrorAction SilentlyContinue
+            }
+            script:Exit-Aid 3
+        }
+        # Try TCP connect to 127.0.0.1:<Port>.
+        try {
+            $tcpClient = [System.Net.Sockets.TcpClient]::new()
+            $tcpClient.Connect('127.0.0.1', $Port)
+            $tcpClient.Close()
+            $ready = $true
+            break
+        } catch {}
+        Start-Sleep -Milliseconds 100
+        $attempts++
+    }
+
+    # Check if child is still alive even if not ready (timeout case).
+    if (-not $ready) {
+        $childAlive = $false
+        try { $null = Get-Process -Id $childPid -ErrorAction Stop; $childAlive = $true } catch {}
+        if (-not $childAlive) {
+            [Console]::Error.WriteLine('ERROR: aid: dashboard: server failed to start; last log lines:')
+            if (Test-Path $logFile -PathType Leaf) {
+                Get-Content -LiteralPath $logFile -Tail 10 -ErrorAction SilentlyContinue | ForEach-Object { [Console]::Error.WriteLine($_) }
+                Remove-Item -LiteralPath $logFile -Force -ErrorAction SilentlyContinue
+            }
+            script:Exit-Aid 3
+        }
+        # Timeout but pid alive: warn and continue.
+        [Console]::Error.WriteLine("WARN: aid: dashboard: server started but not yet responding on :${Port}; check $logFile")
+    }
+
+    # Step 9: write dashboard.pid JSON record (DM-1).
+    $startedAt = [System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
+    if (-not $startedAt) { $startedAt = 'unknown' }
+    $pidJson = @"
+{
+  "schema": 1,
+  "pid": $childPid,
+  "runtime": "$Runtime",
+  "port": $Port,
+  "bind": "127.0.0.1",
+  "remote": false,
+  "remote_handle": null,
+  "started_at": "$startedAt",
+  "target": "$($Target -replace '\\', '\\')",
+  "logfile": "$($logFile -replace '\\', '\\')"
+}
+"@
+    [System.IO.File]::WriteAllText($pidFile, $pidJson)
+
+    # Step 10: --remote is a clear-fail stub (delivery-003 / feature-005 not yet implemented).
+    if ($Remote) {
+        [Console]::Error.WriteLine("ERROR: aid: dashboard: --remote requested but the secure remote-exposure mechanism is not available on this host; the dashboard is NOT exposed. Local server still running at http://127.0.0.1:${Port}.")
+        script:Exit-Aid 10
+    }
+
+    # Step 11: print success.
+    Write-Host "Dashboard ($Runtime) running at http://127.0.0.1:${Port} -- stop with: aid dashboard stop"
+    script:Exit-Aid 0
+}
+
+function script:Invoke-DcStop {
+    param([string]$Target, [bool]$Verbose)
+
+    $pidFile = Join-Path $Target (Join-Path '.aid' (Join-Path '.temp' 'dashboard.pid'))
+
+    # Step 3: read record; absent or stale -> idempotent exit 0.
+    if (-not (Test-Path $pidFile -PathType Leaf)) {
+        Write-Host 'aid: dashboard: not running (nothing to stop).'
+        script:Exit-Aid 0
+    }
+
+    $pidContent = Get-Content -LiteralPath $pidFile -Raw -ErrorAction SilentlyContinue
+    $existingPid = 0
+    $logFile     = ''
+    if ($pidContent -match '"pid"\s*:\s*(\d+)') { $existingPid = [int]$matches[1] }
+    if ($pidContent -match '"logfile"\s*:\s*"([^"]+)"') { $logFile = $matches[1] }
+
+    $procAlive = $false
+    if ($existingPid -gt 0) {
+        try { $null = Get-Process -Id $existingPid -ErrorAction Stop; $procAlive = $true } catch {}
+    }
+
+    if (-not $procAlive) {
+        if ($Verbose) { [Console]::Error.WriteLine("aid: dashboard: record exists but pid $existingPid is dead; cleaning up.") }
+        Remove-Item -LiteralPath $pidFile -Force -ErrorAction SilentlyContinue
+        if ($logFile -and (Test-Path $logFile -PathType Leaf)) { Remove-Item -LiteralPath $logFile -Force -ErrorAction SilentlyContinue }
+        Write-Host 'aid: dashboard: not running (nothing to stop).'
+        script:Exit-Aid 0
+    }
+
+    # Step 4: --remote teardown skipped (stub; remote_handle is always null in this delivery).
+
+    # Step 5: terminate the process cleanly.
+    if ($Verbose) { [Console]::Error.WriteLine("aid: dashboard: sending Stop-Process to pid $existingPid") }
+    try { Stop-Process -Id $existingPid -ErrorAction SilentlyContinue } catch {}
+
+    # Wait up to ~5s for exit.
+    $waited = 0
+    while ($waited -lt 50) {
+        $stillAlive = $false
+        try { $null = Get-Process -Id $existingPid -ErrorAction Stop; $stillAlive = $true } catch {}
+        if (-not $stillAlive) { break }
+        Start-Sleep -Milliseconds 100
+        $waited++
+    }
+
+    # Escalate to -Force if still alive.
+    $stillAlive = $false
+    try { $null = Get-Process -Id $existingPid -ErrorAction Stop; $stillAlive = $true } catch {}
+    if ($stillAlive) {
+        if ($Verbose) { [Console]::Error.WriteLine("aid: dashboard: escalating to Stop-Process -Force on pid $existingPid") }
+        try { Stop-Process -Id $existingPid -Force -ErrorAction SilentlyContinue } catch {}
+    }
+
+    # Step 6: remove record and logfile, print success.
+    Remove-Item -LiteralPath $pidFile -Force -ErrorAction SilentlyContinue
+    if ($logFile -and (Test-Path $logFile -PathType Leaf)) { Remove-Item -LiteralPath $logFile -Force -ErrorAction SilentlyContinue }
+    Write-Host 'aid: dashboard stopped.'
+    script:Exit-Aid 0
+}
+
+# ---------------------------------------------------------------------------
 # Wrap everything in try/catch for terminal-survival in piped/iex mode.
 # ---------------------------------------------------------------------------
 try {
@@ -564,6 +911,14 @@ if ($SUBCMD -eq 'remove') {
         script:Exit-Aid 0
     }
     # Fall through to shared remove handler below (may be 'remove' with no arg or with tool).
+}
+
+# ---------------------------------------------------------------------------
+# dashboard
+# ---------------------------------------------------------------------------
+if ($SUBCMD -eq 'dashboard') {
+    script:Invoke-AidDashboardCtl -DcArgs $script:_RemArgs
+    script:Exit-Aid $LASTEXITCODE
 }
 
 # ---------------------------------------------------------------------------
