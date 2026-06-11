@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex">
+<title id="page-title">AID Dashboard</title>
+<style>
+/* ---------- Color scheme (informs native UI: scrollbars, form controls) ---------- */
+:root { color-scheme: light dark; }
+html[data-theme="light"] { color-scheme: light; }
+html[data-theme="dark"]  { color-scheme: dark; }
+
+/* ---------- Theme variables (copied verbatim from component-css.css :root) ---------- */
+:root, html[data-theme="light"] {
+  --bg: #F7F9FC;
+  --bg-elev: #FFFFFF;
+  --bg-sunken: #EEF2F7;
+  --text: #101828;
+  --text-muted: #4B5565;
+  --text-dim: #667085;
+  --border: #E3E8EF;
+  --border-strong: #CDD5DF;
+  --primary: #0B1F3A;
+  --primary-fg: #FFFFFF;
+  --accent: #007F7D;
+  --accent-fg: #FFFFFF;
+  --ok: #2E7D32;
+  --ok-bg: #E8F5E9;
+  --warn: #B45309;
+  --warn-bg: #FEF3C7;
+  --err: #B42318;
+  --err-bg: #FEE4E2;
+  --info: #1D4ED8;
+  --info-bg: #DBEAFE;
+  --purple: #6941C6;
+  --purple-bg: #F4EBFF;
+  --shadow-sm: 0 1px 3px rgba(16,24,40,0.06), 0 1px 2px rgba(16,24,40,0.04);
+  --shadow-md: 0 4px 8px -2px rgba(16,24,40,0.08), 0 2px 4px -2px rgba(16,24,40,0.04);
+  --shadow-lg: 0 12px 24px -4px rgba(16,24,40,0.12), 0 4px 8px -4px rgba(16,24,40,0.06);
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+}
+html[data-theme="dark"] {
+  --bg: #0B1220;
+  --bg-elev: #111A2E;
+  --bg-sunken: #081021;
+  --text: #E5EAF2;
+  --text-muted: #9AA5B8;
+  --text-dim: #8A99B8;
+  --border: #1E293B;
+  --border-strong: #2B3A52;
+  --primary: #0D2A52;
+  --primary-fg: #E8F2FF;
+  --accent: #2DD4D2;
+  --accent-fg: #051514;
+  --ok: #4ADE80;
+  --ok-bg: rgba(34,197,94,0.15);
+  --warn: #FBBF24;
+  --warn-bg: rgba(251,191,36,0.15);
+  --err: #F87171;
+  --err-bg: rgba(220,38,38,0.20);
+  --info: #60A5FA;
+  --info-bg: rgba(37,99,235,0.18);
+  --purple: #C084FC;
+  --purple-bg: rgba(147,51,234,0.18);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.35);
+  --shadow-md: 0 4px 10px rgba(0,0,0,0.40);
+  --shadow-lg: 0 14px 30px rgba(0,0,0,0.55);
+}
+
+/* ---------- Base ---------- */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); font-weight: 600; line-height: 1.25; margin: 0 0 0.4em 0; }
+h2 { font-size: 1.5rem; margin-top: 0; }
+h3 { font-size: 1.15rem; }
+h4 { font-size: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+p { margin: 0 0 1em 0; color: var(--text-muted); }
+code { font-family: "SF Mono", Monaco, Consolas, "Roboto Mono", monospace; font-size: 0.88em; background: var(--bg-sunken); padding: 0.12em 0.4em; border-radius: 4px; color: var(--text); }
+ul, ol { margin: 0 0 1em 0; padding-left: 1.5em; color: var(--text-muted); }
+ul li, ol li { margin-bottom: 0.3em; }
+hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+
+/* ---------- Top bar ---------- */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  backdrop-filter: saturate(140%) blur(8px);
+}
+.top-bar .brand {
+  font-weight: 700;
+  color: var(--text);
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+.top-bar .brand .dot { color: var(--accent); margin: 0 0.4em; }
+.breadcrumb {
+  flex: 1;
+  color: var(--text-dim);
+  font-size: 0.87rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.breadcrumb .sep { margin: 0 0.45em; opacity: 0.6; }
+.breadcrumb .current { color: var(--text); font-weight: 500; }
+.controls { display: flex; align-items: center; gap: 0.5rem; }
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.4rem 0.7rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: inherit;
+}
+.btn-ghost:hover { background: var(--bg-sunken); }
+
+/* ---------- Layout ---------- */
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* ---------- Badges ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.25em 0.75em;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: var(--bg-sunken);
+  color: var(--text);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.badge-primary { background: var(--primary); color: var(--primary-fg); border-color: transparent; }
+.badge-accent  { background: var(--accent);  color: var(--accent-fg);  border-color: transparent; }
+.badge-ok      { background: var(--ok-bg);   color: var(--ok);         border-color: transparent; }
+.badge-warn    { background: var(--warn-bg); color: var(--warn);       border-color: transparent; }
+.badge-err     { background: var(--err-bg);  color: var(--err);        border-color: transparent; }
+.badge-info    { background: var(--info-bg); color: var(--info);       border-color: transparent; }
+.badge-purple  { background: var(--purple-bg); color: var(--purple);   border-color: transparent; }
+.badge-dim     { color: var(--text-dim); }
+
+/* ---------- Card grids ---------- */
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+.grid.g2 { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
+.grid.g3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.grid.g4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+.card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.3rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.card .kicker { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.08em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.3em; }
+.card h3 { margin-bottom: 0.4em; font-size: 1.05rem; }
+.card .stat { font-size: 2rem; font-weight: 700; color: var(--accent); line-height: 1; margin-bottom: 0.2em; }
+.card .stat-sub { color: var(--text-muted); font-size: 0.9rem; }
+.card .meta { color: var(--text-dim); font-size: 0.85rem; }
+.card.card-primary { background: var(--primary); color: var(--primary-fg); border-color: transparent; }
+.card.card-primary .kicker,
+.card.card-primary .stat-sub,
+.card.card-primary .meta { color: color-mix(in srgb, var(--primary-fg) 70%, transparent); }
+.card.card-primary .stat { color: var(--accent); }
+
+/* ---------- Callouts ---------- */
+.callout {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  border-left: 4px solid var(--info);
+  background: var(--info-bg);
+  color: var(--text);
+  margin: 1rem 0;
+  font-size: 0.92rem;
+}
+.callout.warn { border-left-color: var(--warn); background: var(--warn-bg); color: var(--text); }
+.callout.err  { border-left-color: var(--err);  background: var(--err-bg);  color: var(--text); }
+.callout.ok   { border-left-color: var(--ok);   background: var(--ok-bg);   color: var(--text); }
+.callout h4 { margin: 0 0 0.35em 0; font-size: 0.78rem; color: inherit; opacity: 0.85; }
+.callout p:last-child { margin-bottom: 0; }
+
+/* ---------- Footer ---------- */
+footer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .top-bar { padding: 0.6rem 1rem; gap: 0.5rem; }
+  .top-bar .brand { font-size: 0.85rem; }
+  .breadcrumb { font-size: 0.78rem; }
+  main { padding: 1rem 1rem 3rem; }
+  .grid, .grid.g2, .grid.g3, .grid.g4 { grid-template-columns: 1fr; }
+  .stage-rail { overflow-x: auto; flex-wrap: nowrap; }
+}
+
+/* ---------- Print ---------- */
+@media print {
+  .top-bar, .controls { display: none !important; }
+  body { background: white; color: black; }
+}
+
+/* ---------- Accessibility ---------- */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 8px;
+  z-index: 1000;
+  padding: 0.5rem 1rem;
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus { top: 8px; outline: 2px solid var(--text); outline-offset: 2px; }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.btn-ghost:focus-visible { outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  html { scroll-behavior: auto; }
+  .card:hover { transform: none; }
+}
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (forced-colors: active) {
+  .card, .callout { border: 1px solid CanvasText; }
+  .badge { border: 1px solid CanvasText; forced-color-adjust: none; }
+}
+.noscript-fallback {
+  max-width: 720px;
+  margin: 4rem auto;
+  padding: 2rem;
+  background: var(--bg-elev);
+  border: 2px solid var(--warn);
+  border-radius: var(--radius);
+  color: var(--text);
+}
+
+/* ---------- Dashboard-specific ---------- */
+
+/* Stage rail (UI-2) */
+.stage-rail {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+  align-items: center;
+}
+
+/* Work header card attention borders (UI-4) */
+.card.border-warn { border-left: 4px solid var(--warn); }
+.card.border-err  { border-left: 4px solid var(--err); }
+
+/* Wave section */
+.wave-section {
+  margin-bottom: 1.5rem;
+}
+.wave-section.wave-active {
+  border-left: 3px solid var(--accent);
+  padding-left: 0.75rem;
+}
+.wave-section.wave-pending { opacity: 0.65; }
+.wave-section .wave-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
+}
+.wave-summary {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  padding: 0.4rem 0;
+}
+
+/* Interval input in controls */
+.interval-control {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.interval-input {
+  width: 3.5em;
+  padding: 0.35rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-family: inherit;
+  text-align: center;
+}
+.interval-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Running pulse animation — disabled with prefers-reduced-motion */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+.pulse-dot {
+  display: inline-block;
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulse-dot { animation: none; }
+}
+
+/* Empty / loading state */
+.empty-state {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 3rem 1rem;
+  font-size: 0.95rem;
+}
+
+/* Pending inputs list */
+.pending-input-item {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-sunken);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+.pending-input-item .meta { color: var(--text-dim); font-size: 0.8rem; margin-top: 0.2rem; }
+</style>
+</head>
+<body>
+
+<!-- Skip-to-content for keyboard / screen reader users -->
+<a class="skip-link" href="#top">Skip to content</a>
+
+<!-- Sticky top bar (UI-1) -->
+<header class="top-bar" role="banner">
+  <div class="brand">
+    <strong id="brand-name">AID Dashboard</strong><span class="dot">·</span>Pipeline
+  </div>
+  <!-- Breadcrumb: repurposed for active work id/name (UI-1 note) -->
+  <nav class="breadcrumb" aria-label="Active work">
+    <span id="breadcrumb-work" class="current">—</span>
+  </nav>
+  <div class="controls">
+    <!-- Freshness badge (Telemetry) -->
+    <span class="badge badge-dim" id="freshness-badge" aria-live="polite">● Loading</span>
+    <!-- Interval control (UI-5) -->
+    <label class="interval-control" title="Poll interval in seconds">
+      Refresh
+      <input type="number" class="interval-input" id="interval-input"
+             min="1" max="600" value="5" aria-label="Refresh interval in seconds">
+      s
+    </label>
+    <!-- Theme toggle (from html-skeleton.html) -->
+    <button type="button" class="btn-ghost" id="theme-toggle"
+            aria-label="Switch theme" title="Toggle light/dark theme">
+      <span id="theme-icon" aria-hidden="true">◐</span>
+      <span id="theme-label">Dark</span>
+    </button>
+  </div>
+</header>
+
+<!-- Main page content -->
+<main id="top">
+
+  <!-- Schema-mismatch banner (hidden by default; shown on schema_version mismatch) -->
+  <div class="callout warn" id="schema-mismatch-banner" style="display:none" role="alert">
+    <h4>Assets out of date</h4>
+    <p>Dashboard assets are out of date — restart <code>aid dashboard</code> to get the latest version.</p>
+  </div>
+
+  <!-- Parse-warning data note (hidden by default) -->
+  <div class="callout" id="parse-warning-note" style="display:none">
+    <h4>Data note</h4>
+    <p id="parse-warning-text"></p>
+  </div>
+
+  <!-- Attention strip for Paused or Blocked (UI-4) — shown above stage rail -->
+  <div id="attention-strip" style="display:none" role="alert"></div>
+
+  <!-- Work header card (UI-1 / UI-2) -->
+  <div id="work-header" style="display:none">
+    <div class="card" id="work-header-card" style="margin-bottom:1rem">
+      <div class="kicker" id="work-kicker"></div>
+      <h2 id="work-name" style="margin-bottom:0.3rem"></h2>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem" id="work-badges"></div>
+      <div class="meta" id="work-meta"></div>
+    </div>
+
+    <!-- Stage rail (UI-2) -->
+    <div id="stage-rail-wrap">
+      <div class="stage-rail" id="stage-rail" role="list" aria-label="Pipeline stages"></div>
+    </div>
+
+    <!-- Tasks section (UI-3) -->
+    <div id="tasks-section" style="margin-top:1.5rem"></div>
+  </div>
+
+  <!-- Empty / no works state -->
+  <div class="empty-state" id="empty-state" style="display:none">
+    <p>No works found in <code>.aid/</code>. Start a pipeline to see progress here.</p>
+  </div>
+
+  <!-- Initial loading state -->
+  <div class="empty-state" id="loading-state">
+    <p>Connecting to dashboard server…</p>
+  </div>
+
+</main>
+
+<footer id="page-footer">
+  <p>served locally by <code>aid dashboard</code> &middot; read-only &middot;
+  refreshes every <span id="footer-interval">5</span>s &middot;
+  <span id="footer-generated-by"></span></p>
+</footer>
+
+<noscript>
+  <div class="noscript-fallback">
+    <h2>JavaScript required</h2>
+    <p>The AID dashboard uses JavaScript to poll <code>/api/model</code> and render pipeline state.
+       Please enable JavaScript to use this dashboard.</p>
+  </div>
+</noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------------------------------------------------------------------------
+  // Constants
+  // ---------------------------------------------------------------------------
+  var EXPECTED_SCHEMA_VERSION = 1;
+  var LS_KEY_POLL_MS = 'aid-dashboard-poll-ms';
+  var PHASE_ORDER = ['Interview', 'Specify', 'Plan', 'Detail', 'Execute', 'Deploy', 'Monitor'];
+
+  // ---------------------------------------------------------------------------
+  // State
+  // ---------------------------------------------------------------------------
+  var pollMs = 5000;
+  var pollTimer = null;
+  var fetchPending = false;
+  var lastGoodModel = null;
+  var lastSuccessTime = null;
+  var consecutiveErrors = 0;
+
+  // ---------------------------------------------------------------------------
+  // Boot: read interval from localStorage
+  // ---------------------------------------------------------------------------
+  (function boot() {
+    var stored = localStorage.getItem(LS_KEY_POLL_MS);
+    if (stored !== null) {
+      var n = parseInt(stored, 10);
+      if (!isNaN(n)) {
+        pollMs = clampInterval(n);
+      }
+    }
+    var input = document.getElementById('interval-input');
+    if (input) {
+      input.value = Math.round(pollMs / 1000);
+      input.addEventListener('change', onIntervalChange);
+    }
+    updateFooterInterval();
+    initTheme();
+    // Immediate first fetch
+    doFetch();
+  })();
+
+  // ---------------------------------------------------------------------------
+  // Interval helpers
+  // ---------------------------------------------------------------------------
+  function clampInterval(ms) {
+    // Clamp to [1000ms, 600000ms] = [1s, 600s]
+    if (ms < 1000) return 1000;
+    if (ms > 600000) return 600000;
+    return ms;
+  }
+
+  function onIntervalChange() {
+    var input = document.getElementById('interval-input');
+    if (!input) return;
+    var raw = parseFloat(input.value);
+    if (isNaN(raw)) raw = 5;
+    var clamped = clampInterval(Math.round(raw * 1000));
+    input.value = Math.round(clamped / 1000);
+    pollMs = clamped;
+    localStorage.setItem(LS_KEY_POLL_MS, String(pollMs));
+    updateFooterInterval();
+    // Reschedule: clear any pending timer; next tick fires after new interval
+    if (pollTimer !== null) {
+      clearTimeout(pollTimer);
+      pollTimer = null;
+    }
+    scheduleNextPoll();
+  }
+
+  function updateFooterInterval() {
+    var el = document.getElementById('footer-interval');
+    if (el) el.textContent = Math.round(pollMs / 1000);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Poll loop
+  // ---------------------------------------------------------------------------
+  function scheduleNextPoll() {
+    if (pollTimer !== null) return; // already scheduled
+    // Backoff on consecutive errors: double interval up to 4x
+    var delay = pollMs;
+    if (consecutiveErrors > 0) {
+      delay = Math.min(pollMs * Math.pow(2, Math.min(consecutiveErrors - 1, 2)), pollMs * 4);
+    }
+    pollTimer = setTimeout(function () {
+      pollTimer = null;
+      doFetch();
+    }, delay);
+  }
+
+  function doFetch() {
+    if (fetchPending) {
+      // Single in-flight guard: skip this tick, reschedule
+      scheduleNextPoll();
+      return;
+    }
+    fetchPending = true;
+    fetch('/api/model')
+      .then(function (resp) {
+        if (!resp.ok) {
+          throw new Error('HTTP ' + resp.status);
+        }
+        return resp.json();
+      })
+      .then(function (envelope) {
+        fetchPending = false;
+        consecutiveErrors = 0;
+        onSuccess(envelope);
+        scheduleNextPoll();
+      })
+      .catch(function (err) {
+        fetchPending = false;
+        consecutiveErrors += 1;
+        onError(err);
+        scheduleNextPoll();
+      });
+  }
+
+  function onSuccess(envelope) {
+    // Check schema_version
+    if (envelope.schema_version !== EXPECTED_SCHEMA_VERSION) {
+      showSchemaMismatch();
+      // Keep last good view; do not update
+      return;
+    }
+    hideSchemaMismatch();
+    lastSuccessTime = Date.now();
+    lastGoodModel = envelope.model;
+
+    // Update footer generated_by (envelope-level field, NOT the model subtree)
+    var genByEl = document.getElementById('footer-generated-by');
+    if (genByEl && envelope.generated_by) {
+      genByEl.textContent = 'via ' + envelope.generated_by;
+    }
+
+    renderModel(envelope.model);
+    updateFreshnessBadge('live');
+  }
+
+  function onError(err) {
+    updateFreshnessBadge('disconnected');
+    // Keep last good view if we have one; never blank the page
+    if (lastGoodModel) {
+      // Model remains rendered from last successful render
+    } else {
+      // No model yet — show loading state with reconnecting message
+      var loadEl = document.getElementById('loading-state');
+      if (loadEl) loadEl.innerHTML = '<p>Reconnecting to dashboard server…</p>';
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Freshness badge (Telemetry)
+  // ---------------------------------------------------------------------------
+  function updateFreshnessBadge(state, readAt) {
+    var badge = document.getElementById('freshness-badge');
+    if (!badge) return;
+
+    if (state === 'disconnected') {
+      badge.className = 'badge badge-err';
+      badge.textContent = '○ Reconnecting';
+      return;
+    }
+
+    // Compute freshness from read_at vs now (if provided) and lastSuccessTime
+    if (state === 'live' && readAt && lastSuccessTime) {
+      var readTime = new Date(readAt).getTime();
+      var now = Date.now();
+      var ageMs = now - readTime;
+      // Stale if read_at older than ~2× interval
+      if (ageMs > pollMs * 2) {
+        state = 'stale';
+      }
+    }
+
+    if (state === 'stale') {
+      badge.className = 'badge badge-warn';
+      badge.innerHTML = '&#9680; Stale';
+    } else {
+      badge.className = 'badge badge-ok';
+      badge.innerHTML = '<span class="pulse-dot">&#9679;</span> Live';
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Schema mismatch banner
+  // ---------------------------------------------------------------------------
+  function showSchemaMismatch() {
+    var el = document.getElementById('schema-mismatch-banner');
+    if (el) el.style.display = '';
+  }
+
+  function hideSchemaMismatch() {
+    var el = document.getElementById('schema-mismatch-banner');
+    if (el) el.style.display = 'none';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Main render
+  // ---------------------------------------------------------------------------
+  function renderModel(model) {
+    // Hide loading state
+    var loadEl = document.getElementById('loading-state');
+    if (loadEl) loadEl.style.display = 'none';
+
+    // Update page title from repo.project_name
+    var projectName = (model.repo && model.repo.project_name) ? model.repo.project_name : 'AID Dashboard';
+    document.title = projectName + ' — AID Dashboard';
+    var brandEl = document.getElementById('brand-name');
+    if (brandEl) brandEl.textContent = projectName;
+
+    // Surface parse_warnings data note (Telemetry)
+    renderParseWarnings(model.read);
+
+    // Select active work (FR9 single-work MVP)
+    var works = (model.works || []).slice();
+    var activeWork = selectActiveWork(works);
+
+    if (!activeWork) {
+      document.getElementById('work-header').style.display = 'none';
+      document.getElementById('empty-state').style.display = '';
+      document.getElementById('attention-strip').style.display = 'none';
+      document.getElementById('breadcrumb-work').textContent = '—';
+      updateFreshnessBadge('live', model.read && model.read.read_at);
+      return;
+    }
+
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('work-header').style.display = '';
+
+    // Breadcrumb: work_id · name
+    var bcEl = document.getElementById('breadcrumb-work');
+    if (bcEl) bcEl.textContent = activeWork.work_id + (activeWork.name ? ' · ' + activeWork.name : '');
+
+    renderWorkHeader(activeWork);
+    renderAttentionStrip(activeWork);
+    renderStageRail(activeWork);
+    renderTasks(activeWork);
+
+    // Update freshness badge now that we have read_at
+    var readAt = model.read && model.read.read_at;
+    var hasWarnings = model.read && model.read.parse_warnings && model.read.parse_warnings.length > 0;
+    if (hasWarnings) {
+      updateFreshnessBadge('stale', readAt);
+    } else {
+      updateFreshnessBadge('live', readAt);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Work selection (FR9)
+  // Active = first non-terminal lifecycle work, else highest work_id
+  // ---------------------------------------------------------------------------
+  function selectActiveWork(works) {
+    if (!works || works.length === 0) return null;
+    var NON_TERMINAL = ['Running', 'Paused-Awaiting-Input', 'Blocked'];
+    for (var i = 0; i < works.length; i++) {
+      if (NON_TERMINAL.indexOf(works[i].lifecycle) !== -1) {
+        return works[i];
+      }
+    }
+    // All terminal: return highest work_id (works arrive sorted ascending per DM-2)
+    return works[works.length - 1];
+  }
+
+  // ---------------------------------------------------------------------------
+  // Work header card (UI-1 / UI-4)
+  // ---------------------------------------------------------------------------
+  function renderWorkHeader(work) {
+    var card = document.getElementById('work-header-card');
+    if (!card) return;
+
+    // Reset border classes
+    card.classList.remove('border-warn', 'border-err');
+    if (work.lifecycle === 'Paused-Awaiting-Input') card.classList.add('border-warn');
+    if (work.lifecycle === 'Blocked') card.classList.add('border-err');
+
+    var kicker = document.getElementById('work-kicker');
+    if (kicker) kicker.textContent = work.work_id;
+
+    var nameEl = document.getElementById('work-name');
+    if (nameEl) nameEl.textContent = work.name || work.work_id;
+
+    // Badges: lifecycle + active_skill
+    var badgesEl = document.getElementById('work-badges');
+    if (badgesEl) {
+      badgesEl.innerHTML = '';
+      badgesEl.appendChild(makeLifecycleBadge(work.lifecycle));
+      if (work.active_skill) {
+        var skillBadge = document.createElement('span');
+        skillBadge.className = 'badge badge-dim';
+        skillBadge.textContent = work.active_skill;
+        badgesEl.appendChild(skillBadge);
+      }
+    }
+
+    // Meta: updated time
+    var metaEl = document.getElementById('work-meta');
+    if (metaEl) {
+      metaEl.textContent = work.updated ? 'Updated: ' + work.updated : '';
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Attention strip (UI-4 — top-of-page for Paused / Blocked)
+  // ---------------------------------------------------------------------------
+  function renderAttentionStrip(work) {
+    var strip = document.getElementById('attention-strip');
+    if (!strip) return;
+
+    if (work.lifecycle === 'Paused-Awaiting-Input') {
+      strip.style.display = '';
+      var html = '<div class="callout warn"><h4>&#10074;&#10074; Awaiting Input</h4>';
+      if (work.pause_reason) {
+        html += '<p>' + escHtml(work.pause_reason) + '</p>';
+      }
+      // pending_inputs list
+      if (work.pending_inputs && work.pending_inputs.length > 0) {
+        html += '<ul style="margin-top:0.5rem">';
+        for (var i = 0; i < work.pending_inputs.length; i++) {
+          var pi = work.pending_inputs[i];
+          html += '<li><strong>' + escHtml(pi.question_id) + '</strong>';
+          if (pi.category) html += ' <span class="meta">' + escHtml(pi.category) + '</span>';
+          if (pi.impact)   html += ' &mdash; impact: ' + escHtml(pi.impact);
+          html += '</li>';
+        }
+        html += '</ul>';
+      }
+      html += '</div>';
+      strip.innerHTML = html;
+    } else if (work.lifecycle === 'Blocked') {
+      strip.style.display = '';
+      var html2 = '<div class="callout err"><h4>&#10005; Blocked</h4>';
+      if (work.block_reason) {
+        html2 += '<p>' + escHtml(work.block_reason) + '</p>';
+      }
+      if (work.block_artifact) {
+        html2 += '<p>Artifact: <code>' + escHtml(work.block_artifact) + '</code></p>';
+      }
+      html2 += '</div>';
+      strip.innerHTML = html2;
+    } else {
+      strip.style.display = 'none';
+      strip.innerHTML = '';
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Stage rail (UI-2)
+  // ---------------------------------------------------------------------------
+  function renderStageRail(work) {
+    var rail = document.getElementById('stage-rail');
+    if (!rail) return;
+    rail.innerHTML = '';
+
+    var phase = work.phase; // may be null or "Unknown"
+    if (!phase || phase === 'Unknown') {
+      var unknownPill = document.createElement('span');
+      unknownPill.className = 'badge badge-dim';
+      unknownPill.setAttribute('role', 'listitem');
+      unknownPill.textContent = 'phase unknown';
+      rail.appendChild(unknownPill);
+      return;
+    }
+
+    var currentIdx = PHASE_ORDER.indexOf(phase);
+    // If phase not in canonical order (future/unrecognized), treat as Unknown
+    if (currentIdx === -1) {
+      var unknownPill2 = document.createElement('span');
+      unknownPill2.className = 'badge badge-dim';
+      unknownPill2.setAttribute('role', 'listitem');
+      unknownPill2.textContent = 'phase unknown';
+      rail.appendChild(unknownPill2);
+      return;
+    }
+
+    for (var i = 0; i < PHASE_ORDER.length; i++) {
+      var p = PHASE_ORDER[i];
+      var pill = document.createElement('span');
+      pill.setAttribute('role', 'listitem');
+      pill.setAttribute('aria-current', i === currentIdx ? 'step' : 'false');
+
+      if (i < currentIdx) {
+        // Prior — done
+        pill.className = 'badge badge-ok';
+        pill.textContent = '✓ ' + p;
+      } else if (i === currentIdx) {
+        // Current — emphasized
+        pill.className = 'badge badge-primary';
+        pill.textContent = '▸ ' + p;
+      } else {
+        // Later — upcoming
+        pill.className = 'badge badge-dim';
+        pill.textContent = '○ ' + p;
+      }
+      rail.appendChild(pill);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Task chips, wave-grouped (UI-3)
+  // ---------------------------------------------------------------------------
+  function renderTasks(work) {
+    var section = document.getElementById('tasks-section');
+    if (!section) return;
+    section.innerHTML = '';
+
+    var tasks = work.tasks || [];
+    if (tasks.length === 0) {
+      section.innerHTML = '<p class="meta" style="color:var(--text-dim)">No tasks recorded.</p>';
+      return;
+    }
+
+    // Group tasks by wave; preserve source order within each wave
+    var waveOrder = [];
+    var waveMap = {};
+    for (var i = 0; i < tasks.length; i++) {
+      var t = tasks[i];
+      var waveKey = (t.wave !== null && t.wave !== undefined) ? String(t.wave) : '__ungrouped__';
+      if (!waveMap[waveKey]) {
+        waveMap[waveKey] = [];
+        waveOrder.push(waveKey);
+      }
+      waveMap[waveKey].push(t);
+    }
+
+    for (var wi = 0; wi < waveOrder.length; wi++) {
+      var wk = waveOrder[wi];
+      var waveTasks = waveMap[wk];
+      var waveLabel = wk === '__ungrouped__' ? 'Ungrouped' : 'Wave ' + wk;
+
+      // Determine wave state for foregrounding
+      var waveState = getWaveState(waveTasks);
+
+      var waveDiv = document.createElement('div');
+      waveDiv.className = 'wave-section';
+      if (waveState === 'active') waveDiv.classList.add('wave-active');
+      if (waveState === 'pending') waveDiv.classList.add('wave-pending');
+
+      // Terminal-only waves collapse to summary
+      if (waveState === 'terminal') {
+        var doneCount = waveTasks.filter(function(t) { return t.status === 'Done' || t.status === 'Canceled'; }).length;
+        var summaryDiv = document.createElement('div');
+        summaryDiv.className = 'wave-summary';
+        summaryDiv.innerHTML = '✓ ' + waveLabel + ' &mdash; ' + doneCount + ' done';
+        waveDiv.appendChild(summaryDiv);
+      } else {
+        var labelDiv = document.createElement('div');
+        labelDiv.className = 'wave-label';
+        labelDiv.textContent = waveLabel;
+        waveDiv.appendChild(labelDiv);
+
+        var grid = document.createElement('div');
+        // g4 for many chips, g3 otherwise
+        grid.className = 'grid ' + (waveTasks.length >= 4 ? 'g4' : 'g3');
+
+        for (var ti = 0; ti < waveTasks.length; ti++) {
+          grid.appendChild(makeTaskChip(waveTasks[ti]));
+        }
+        waveDiv.appendChild(grid);
+      }
+      section.appendChild(waveDiv);
+    }
+  }
+
+  function getWaveState(tasks) {
+    // active: any In Progress or In Review
+    // pending: all Pending
+    // terminal: all Done/Canceled
+    // mixed: otherwise (some active + some pending, etc.)
+    var allTerminal = tasks.every(function(t) { return t.status === 'Done' || t.status === 'Canceled'; });
+    if (allTerminal) return 'terminal';
+    var allPending = tasks.every(function(t) { return t.status === 'Pending'; });
+    if (allPending) return 'pending';
+    var anyActive = tasks.some(function(t) { return t.status === 'In Progress' || t.status === 'In Review'; });
+    if (anyActive) return 'active';
+    return 'mixed';
+  }
+
+  function makeTaskChip(task) {
+    var card = document.createElement('div');
+    card.className = 'card';
+
+    var kicker = document.createElement('div');
+    kicker.className = 'kicker';
+    kicker.textContent = task.type || '—';
+    card.appendChild(kicker);
+
+    // Status badge
+    var statusBadge = makeTaskStatusBadge(task.status);
+    card.appendChild(statusBadge);
+
+    // Review grade badge (if present)
+    if (task.review_grade) {
+      var gradeBadge = document.createElement('span');
+      gradeBadge.className = 'badge badge-info';
+      gradeBadge.style.marginTop = '0.3rem';
+      gradeBadge.textContent = 'Grade ' + task.review_grade;
+      card.appendChild(gradeBadge);
+    }
+
+    // Elapsed meta
+    if (task.elapsed) {
+      var metaEl = document.createElement('div');
+      metaEl.className = 'meta';
+      metaEl.style.marginTop = '0.4rem';
+      metaEl.textContent = task.elapsed;
+      card.appendChild(metaEl);
+    }
+
+    return card;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Badge factories
+  // ---------------------------------------------------------------------------
+
+  // Lifecycle → badge (UI-4)
+  function makeLifecycleBadge(lifecycle) {
+    var LIFECYCLE_MAP = {
+      'Running':               { cls: 'badge-accent', glyph: '▶', word: 'Running' },
+      'Paused-Awaiting-Input': { cls: 'badge-warn',   glyph: '❚❚', word: 'Input' },
+      'Blocked':               { cls: 'badge-err',    glyph: '✕', word: 'Blocked' },
+      'Completed':             { cls: 'badge-ok',     glyph: '✓', word: 'Done' },
+      'Canceled':              { cls: 'badge-dim',    glyph: '⊘', word: 'Canceled' }
+    };
+    var badge = document.createElement('span');
+    var mapping = LIFECYCLE_MAP[lifecycle];
+    if (mapping) {
+      badge.className = 'badge ' + mapping.cls;
+      badge.textContent = mapping.glyph + ' ' + mapping.word;
+    } else {
+      // Unknown or unrecognized: neutral badge (NFR7 forward-compat)
+      badge.className = 'badge';
+      badge.textContent = '? ' + (lifecycle || 'Unknown');
+    }
+    return badge;
+  }
+
+  // TaskStatus → badge (UI-3 / UI-4)
+  function makeTaskStatusBadge(status) {
+    var STATUS_MAP = {
+      'Pending':     { cls: 'badge-dim',    glyph: '○', word: 'Pending' },
+      'In Progress': { cls: 'badge-accent', glyph: '▶', word: 'In Progress' },
+      'In Review':   { cls: 'badge-info',   glyph: '◑', word: 'In Review' },
+      'Blocked':     { cls: 'badge-err',    glyph: '✕', word: 'Blocked' },
+      'Done':        { cls: 'badge-ok',     glyph: '✓', word: 'Done' },
+      'Failed':      { cls: 'badge-err',    glyph: '✕', word: 'Failed' },
+      'Canceled':    { cls: 'badge-dim',    glyph: '⊘', word: 'Canceled' },
+      'Unknown':     { cls: '',             glyph: '?',      word: 'Unknown' }
+    };
+    var badge = document.createElement('span');
+    badge.style.marginTop = '0.3rem';
+    var mapping = STATUS_MAP[status];
+    if (mapping) {
+      badge.className = 'badge ' + mapping.cls;
+      badge.textContent = mapping.glyph + ' ' + mapping.word;
+    } else {
+      // Unrecognized status: neutral badge (NFR7 forward-compat, never throws)
+      badge.className = 'badge';
+      badge.textContent = '? ' + (status || 'Unknown');
+    }
+    return badge;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Parse warnings / data note (Telemetry)
+  // ---------------------------------------------------------------------------
+  function renderParseWarnings(readMeta) {
+    var noteEl = document.getElementById('parse-warning-note');
+    var textEl = document.getElementById('parse-warning-text');
+    if (!noteEl || !textEl) return;
+
+    if (!readMeta) { noteEl.style.display = 'none'; return; }
+
+    var warnings = readMeta.parse_warnings || [];
+    var fallbacks = readMeta.fallback_works || [];
+
+    if (warnings.length === 0 && fallbacks.length === 0) {
+      noteEl.style.display = 'none';
+      return;
+    }
+
+    noteEl.style.display = '';
+    var parts = [];
+    if (warnings.length > 0) {
+      parts.push(warnings.length + ' parse warning(s) this read');
+    }
+    if (fallbacks.length > 0) {
+      parts.push(fallbacks.length + ' work(s) read via fallback derivation');
+    }
+    textEl.textContent = parts.join(' · ');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Utility: HTML-escape
+  // ---------------------------------------------------------------------------
+  function escHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Theme toggle (from html-skeleton.html)
+  // ---------------------------------------------------------------------------
+  function initTheme() {
+    var saved = localStorage.getItem('aid-dashboard-theme');
+    if (saved === 'dark' || saved === 'light') {
+      applyTheme(saved);
+    }
+    var btn = document.getElementById('theme-toggle');
+    if (btn) {
+      btn.addEventListener('click', function () {
+        var current = document.documentElement.getAttribute('data-theme') || 'light';
+        var next = current === 'light' ? 'dark' : 'light';
+        applyTheme(next);
+        localStorage.setItem('aid-dashboard-theme', next);
+      });
+    }
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    var icon = document.getElementById('theme-icon');
+    var label = document.getElementById('theme-label');
+    if (theme === 'dark') {
+      if (icon) icon.textContent = '◐';
+      if (label) label.textContent = 'Light';
+    } else {
+      if (icon) icon.textContent = '◑';
+      if (label) label.textContent = 'Dark';
+    }
+  }
+
+})();
+</script>
+
+</body>
+</html>
