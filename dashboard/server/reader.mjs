@@ -704,13 +704,97 @@ function deriveLifecycle({ workDir, tasks, pendingInputs, stateText, workId }) {
 }
 
 // ---------------------------------------------------------------------------
+// REQUIREMENTS.md parser (mirrors parsers.py parse_requirements_md)
+// ---------------------------------------------------------------------------
+
+function parseRequirementsMd(reqPath) {
+  // Returns [title, description, objective, bytesRead]
+  let isFile = false;
+  try { isFile = statSync(reqPath).isFile(); } catch (_) { isFile = false; }
+  if (!isFile) return [null, null, null, 0];
+
+  let raw;
+  try {
+    raw = readFileSync(reqPath);
+  } catch (_) {
+    return [null, null, null, 0];
+  }
+  const bytesRead = raw.length;
+  const text = raw.toString("utf-8");
+
+  const RE_NAME = /^\s*-\s*\*\*Name:\*\*\s*(.+)/i;
+  const RE_DESC = /^\s*-\s*\*\*Description:\*\*\s*(.+)/i;
+  const RE_OBJ_HDR = /^##\s+(?:\d+\.\s+)?Objective\s*$/i;
+  const RE_SECTION_HDR = /^##\s+\S/;
+
+  let title = null;
+  let description = null;
+  const objLines = [];
+  let inObjective = false;
+
+  for (const line of text.split("\n")) {
+    if (inObjective) {
+      if (RE_SECTION_HDR.test(line)) {
+        inObjective = false;
+      } else {
+        objLines.push(line);
+      }
+      continue;
+    }
+
+    let m = line.match(RE_NAME);
+    if (m && title === null) {
+      title = m[1].trim();
+      continue;
+    }
+    m = line.match(RE_DESC);
+    if (m && description === null) {
+      description = m[1].trim();
+      continue;
+    }
+    if (RE_OBJ_HDR.test(line)) {
+      inObjective = true;
+      continue;
+    }
+  }
+
+  let objective = null;
+  if (objLines.length > 0) {
+    const raw_obj = objLines.join("\n").trim();
+    if (raw_obj) objective = raw_obj;
+  }
+
+  return [title, description, objective, bytesRead];
+}
+
+// ---------------------------------------------------------------------------
+// Slug extraction (mirrors reader.py _slug_from_work_id)
+// ---------------------------------------------------------------------------
+
+function numberFromWorkId(workId) {
+  // mirrors reader.py _number_from_work_id
+  const m = workId.match(/^work-(\d+)-/);
+  if (m) {
+    const n = parseInt(m[1], 10);
+    if (!isNaN(n)) return n;
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // STATE.md parser (mirrors parsers.py parse_state_md)
 // ---------------------------------------------------------------------------
 
 const RE_PIPELINE_STATUS = /^##\s+Pipeline Status\s*$/i;
 const RE_TASKS_STATUS = /^##\s+Tasks Status\s*$/i;
 const RE_CROSSPHASE_QA = /^##\s+Cross-phase Q&A/i;
+const RE_TRIAGE = /^##\s+Triage\s*$/i;
+const RE_FEATURES_STATUS = /^##\s+Features Status\s*$/i;
+// RE_PLAN_DELIVERIES already declared in derivation helpers above (reused here)
 const RE_SECTION = /^##\s+\S/;
+
+const RE_TRIAGE_PATH   = /^\s*-\s*\*\*Path:\*\*\s*(.+)/i;
+const RE_TRIAGE_RECIPE = /^\s*-\s*\*\*Recipe:\*\*\s*(.+)/i;
 
 const RE_PS_LIFECYCLE    = /^\s*-\s*\*\*Lifecycle:\*\*\s*(.+)/i;
 const RE_PS_PHASE        = /^\s*-\s*\*\*Phase:\*\*\s*(.+)/i;
@@ -743,12 +827,22 @@ function parseStateText(text, workId, workDir) {
   let sourceMode = SourceMode.Fallback;
   const parseWarnings = [];
   let bytesRead = 0; // bytes accounted by caller
+  // prototype: work-overview header fields
+  let workPath = null;
+  let recipe = null;
+  const features = [];
+  const deliverables = [];
 
   let inPipelineStatus = false;
   let pipelineStatusFound = false;
   let inTasks = false;
   let inCrossphase = false;
+  let inTriage = false;
+  let inFeatures = false;
+  let inDeliveries = false;
   let tasksHeaderSeen = false;
+  let featuresHeaderSeen = false;
+  let deliveriesHeaderSeen = false;
 
   let currentQId = null;
   let currentQ = {};
@@ -767,35 +861,52 @@ function parseStateText(text, workId, workDir) {
     currentQ = {};
   }
 
+  function resetSections() {
+    inPipelineStatus = false;
+    inTasks = false;
+    inCrossphase = false;
+    inTriage = false;
+    inFeatures = false;
+    inDeliveries = false;
+  }
+
   const lines = text.split("\n");
   for (const line of lines) {
     if (RE_PIPELINE_STATUS.test(line)) {
-      flushQ();
+      flushQ(); resetSections();
       inPipelineStatus = true;
-      inTasks = false;
-      inCrossphase = false;
       continue;
     }
     if (RE_TASKS_STATUS.test(line)) {
-      flushQ();
+      flushQ(); resetSections();
       inTasks = true;
-      inPipelineStatus = false;
-      inCrossphase = false;
       tasksHeaderSeen = false;
       continue;
     }
     if (RE_CROSSPHASE_QA.test(line)) {
-      flushQ();
+      flushQ(); resetSections();
       inCrossphase = true;
-      inPipelineStatus = false;
-      inTasks = false;
+      continue;
+    }
+    if (RE_TRIAGE.test(line)) {
+      flushQ(); resetSections();
+      inTriage = true;
+      continue;
+    }
+    if (RE_FEATURES_STATUS.test(line)) {
+      flushQ(); resetSections();
+      inFeatures = true;
+      featuresHeaderSeen = false;
+      continue;
+    }
+    if (RE_PLAN_DELIVERIES.test(line)) {
+      flushQ(); resetSections();
+      inDeliveries = true;
+      deliveriesHeaderSeen = false;
       continue;
     }
     if (RE_SECTION.test(line)) {
-      flushQ();
-      inPipelineStatus = false;
-      inTasks = false;
-      inCrossphase = false;
+      flushQ(); resetSections();
       continue;
     }
 
@@ -926,6 +1037,88 @@ function parseStateText(text, workId, workDir) {
         }
       }
     }
+
+    if (inTriage) {
+      let m;
+      if ((m = line.match(RE_TRIAGE_PATH))) {
+        const val = m[1].trim();
+        if (!isNull(val)) workPath = val.toLowerCase();
+      } else if ((m = line.match(RE_TRIAGE_RECIPE))) {
+        const val = m[1].trim();
+        if (!isNull(val)) recipe = val;
+      }
+      continue;
+    }
+
+    if (inFeatures) {
+      // mirrors parsers.py _parse_features_line
+      const stripped = line.trim();
+      if (!stripped.startsWith("|")) continue;
+      if (hasTableSep(stripped)) continue;
+      const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+      if (cols.length < 2) continue;
+      // Skip header row
+      if ((cols[0] === "#" || cols[0] === "") && !featuresHeaderSeen) {
+        featuresHeaderSeen = true;
+        continue;
+      }
+      if (!featuresHeaderSeen) { featuresHeaderSeen = true; continue; }
+
+      function fcol(idx) {
+        if (idx < cols.length) { const v = cols[idx].trim(); return isNull(v) ? null : v; }
+        return null;
+      }
+      const numStr = fcol(0) || "";
+      const featureName = fcol(1) || "";
+      if (!numStr || numStr === "#" || !featureName) continue;
+      const number = parseInt(numStr, 10);
+      if (isNaN(number)) continue;
+      // Readable name: strip "feature-NNN-" prefix (mirrors Python)
+      let readable = featureName.replace(/^feature-\d+-/i, "").replace(/-/g, " ").trim();
+      if (!readable) readable = featureName;
+      features.push({ number: number, name: readable });
+      continue;
+    }
+
+    if (inDeliveries) {
+      // mirrors parsers.py _parse_deliveries_line
+      const stripped = line.trim();
+      if (!stripped.startsWith("|")) continue;
+      if (hasTableSep(stripped)) continue;
+      const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+      if (cols.length < 3) continue;
+      // Skip header row (first col "Delivery" or blank)
+      if ((cols[0].toLowerCase() === "delivery" || cols[0] === "") && !deliveriesHeaderSeen) {
+        deliveriesHeaderSeen = true;
+        continue;
+      }
+      if (!deliveriesHeaderSeen) { deliveriesHeaderSeen = true; continue; }
+
+      function dcol(idx) {
+        if (idx < cols.length) { const v = cols[idx].trim(); return isNull(v) ? null : v; }
+        return null;
+      }
+      const deliveryId = dcol(0) || "";
+      const tasksStr = dcol(2) || "";
+      const notesStr = dcol(3) || "";
+      if (!deliveryId || deliveryId.toLowerCase() === "delivery") continue;
+      // Parse delivery number from "delivery-NNN"
+      const dm = deliveryId.match(/^delivery-(\d+)/i);
+      if (!dm) continue;
+      const number = parseInt(dm[1], 10);
+      // task_count: leading integer from tasks column
+      let taskCount = 0;
+      const tm = tasksStr.match(/^(\d+)/);
+      if (tm) taskCount = parseInt(tm[1], 10);
+      // name: first clause of notes (split on ";", " - ", " -- ")
+      let name = deliveryId;
+      if (notesStr) {
+        const short = notesStr.split(";")[0].split(" - ")[0].split(" -- ")[0].trim();
+        if (short) name = short;
+      }
+      deliverables.push({ number: number, name: name, task_count: taskCount });
+      continue;
+    }
   }
 
   flushQ();
@@ -969,6 +1162,10 @@ function parseStateText(text, workId, workDir) {
     pendingInputs,
     sourceMode,
     parseWarnings,
+    workPath,
+    recipe,
+    features,
+    deliverables,
   };
 }
 
@@ -1096,6 +1293,14 @@ function readWork(workDir, workId) {
 
   const name = slugFromWorkId(workId);
 
+  // Prototype: parse work number from folder prefix (work-NNN-...)
+  const workNumber = numberFromWorkId(workId);
+
+  // Prototype: parse REQUIREMENTS.md for identity fields
+  const reqPath = join(workDir, "REQUIREMENTS.md");
+  const [reqTitle, reqDescription, reqObjective, reqBytes] = parseRequirementsMd(reqPath);
+  bytesRead += reqBytes;
+
   const workModel = _buildWorkModel({
     work_id: workId,
     name,
@@ -1109,6 +1314,14 @@ function readWork(workDir, workId) {
     tasks: pw.tasks,
     pending_inputs: pw.pendingInputs,
     source_mode: pw.sourceMode,
+    number: workNumber,
+    title: reqTitle,
+    description: reqDescription,
+    objective: reqObjective,
+    work_path: pw.workPath,
+    recipe: pw.recipe,
+    features: pw.features,
+    deliverables: pw.deliverables,
   });
 
   return [workModel, parseWarnings, bytesRead];
@@ -1128,6 +1341,14 @@ function _minimalWorkModel(workId) {
     tasks: [],
     pending_inputs: [],
     source_mode: SourceMode.Fallback,
+    number: numberFromWorkId(workId),
+    title: null,
+    description: null,
+    objective: null,
+    work_path: null,
+    recipe: null,
+    features: [],
+    deliverables: [],
   });
 }
 
@@ -1189,9 +1410,27 @@ function _buildTaskModel(t) {
   };
 }
 
+function _buildFeatureRef(f) {
+  // FeatureRef field order: number, name
+  return {
+    number: f.number,
+    name: f.name,
+  };
+}
+
+function _buildDeliverableRef(d) {
+  // DeliverableRef field order: number, name, task_count
+  return {
+    number: d.number,
+    name: d.name,
+    task_count: d.task_count,
+  };
+}
+
 function _buildWorkModel(wm) {
   // WorkModel field order: work_id, name, lifecycle, phase, active_skill, updated,
-  //   pause_reason, block_reason, block_artifact, tasks, pending_inputs, source_mode
+  //   pause_reason, block_reason, block_artifact, tasks, pending_inputs, source_mode,
+  //   number, title, description, objective, work_path, recipe, features, deliverables
   return {
     work_id: wm.work_id,
     name: wm.name,
@@ -1202,9 +1441,18 @@ function _buildWorkModel(wm) {
     pause_reason: wm.pause_reason,
     block_reason: wm.block_reason,
     block_artifact: wm.block_artifact,
-    tasks: wm.tasks.map(_buildTaskModel),
-    pending_inputs: wm.pending_inputs.map(_buildPendingInput),
+    tasks: (wm.tasks || []).map(_buildTaskModel),
+    pending_inputs: (wm.pending_inputs || []).map(_buildPendingInput),
     source_mode: wm.source_mode,
+    // prototype: work-overview header fields (declared order matches models.py WorkModel)
+    number: wm.number !== undefined ? wm.number : null,
+    title: wm.title !== undefined ? wm.title : null,
+    description: wm.description !== undefined ? wm.description : null,
+    objective: wm.objective !== undefined ? wm.objective : null,
+    work_path: wm.work_path !== undefined ? wm.work_path : null,
+    recipe: wm.recipe !== undefined ? wm.recipe : null,
+    features: (wm.features || []).map(_buildFeatureRef),
+    deliverables: (wm.deliverables || []).map(_buildDeliverableRef),
   };
 }
 

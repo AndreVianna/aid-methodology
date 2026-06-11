@@ -182,6 +182,7 @@ main {
 .grid.g2 { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
 .grid.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .grid.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.grid.g-lane { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
 
 .card {
   background: var(--bg-elev);
@@ -242,7 +243,7 @@ footer {
   .top-bar .brand { font-size: 0.85rem; }
   .breadcrumb { font-size: 0.78rem; min-width: 0; }
   main { padding: 1rem 1rem 3rem; }
-  .grid, .grid.g2, .grid.g3, .grid.g4 { grid-template-columns: 1fr; }
+  .grid, .grid.g2, .grid.g3, .grid.g4, .grid.g-lane { grid-template-columns: 1fr; }
   .stage-rail { overflow-x: auto; flex-wrap: nowrap; }
   .content-col { max-width: 100%; }
 }
@@ -318,6 +319,181 @@ footer {
   margin-right: auto;
 }
 
+/* Data-note chip in top bar */
+#data-note-chip {
+  cursor: default;
+}
+
+/* Work overview header (prototype: delivery-002) */
+.work-overview {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 1.2rem 1.4rem 1rem;
+  margin-bottom: 1rem;
+}
+.work-overview.border-warn { border-left: 4px solid var(--warn); }
+.work-overview.border-err  { border-left: 4px solid var(--err); }
+
+/* Collapsible panel header row */
+.work-overview-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  padding: 0;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  margin-bottom: 0.25rem;
+}
+.work-overview-header:hover { opacity: 0.85; }
+.work-overview-chevron {
+  font-size: 0.72rem;
+  display: inline-block;
+  transition: transform 0.18s ease;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.work-overview-header.open .work-overview-chevron { transform: rotate(90deg); }
+.work-overview-body { display: none; }
+.work-overview-body.open { display: block; }
+
+.work-overview-identity {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0;
+}
+.work-overview-number {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  font-family: "SF Mono", Monaco, Consolas, "Roboto Mono", monospace;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+.work-overview-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+.work-overview-desc {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0 0 0.75rem 0;
+}
+
+/* Objective collapsible */
+.work-overview-obj-wrap {
+  margin-bottom: 0.75rem;
+}
+.work-overview-obj-body {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: hidden;
+  max-height: 6.5em;
+  transition: max-height 0.25s ease;
+  position: relative;
+}
+.work-overview-obj-body.expanded {
+  max-height: none;
+}
+.work-overview-obj-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2em;
+  background: linear-gradient(transparent, var(--bg-elev));
+  pointer-events: none;
+}
+.work-overview-obj-body.expanded .work-overview-obj-fade {
+  display: none;
+}
+.btn-text-toggle {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.82rem;
+  padding: 0.15rem 0;
+  font-family: inherit;
+  display: inline-block;
+  margin-top: 0.2rem;
+}
+.btn-text-toggle:hover { text-decoration: underline; }
+
+/* Stat strip */
+.work-stat-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  align-items: center;
+}
+
+/* Disclosure sections (features / deliverables) */
+.work-disclosure {
+  border-top: 1px solid var(--border);
+  padding-top: 0.6rem;
+  margin-top: 0.5rem;
+}
+.work-disclosure + .work-disclosure {
+  margin-top: 0.35rem;
+}
+.work-disclosure-toggle {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.25rem 0;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.work-disclosure-toggle:hover { color: var(--text); }
+.work-disclosure-toggle .disc-arrow {
+  font-size: 0.7rem;
+  display: inline-block;
+  transition: transform 0.18s ease;
+}
+.work-disclosure-toggle.open .disc-arrow { transform: rotate(90deg); }
+.work-disclosure-body {
+  display: none;
+  padding: 0.5rem 0 0.25rem 0.5rem;
+  list-style: none;
+  margin: 0;
+}
+.work-disclosure-body.open { display: block; }
+.work-disclosure-body li {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  padding: 0.2rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.work-disclosure-body li:last-child { border-bottom: none; }
+.work-disclosure-body .disc-num {
+  font-family: "SF Mono", Monaco, Consolas, "Roboto Mono", monospace;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-right: 0.35rem;
+}
+
 /* Stage rail (UI-2) */
 .stage-rail {
   display: flex;
@@ -331,24 +507,97 @@ footer {
 .card.border-warn { border-left: 4px solid var(--warn); }
 .card.border-err  { border-left: 4px solid var(--err); }
 
-/* Wave section */
+/* Delivery panel (collapsible) */
+.delivery-panel {
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.delivery-panel-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+.delivery-panel-summary:hover { background: var(--bg-sunken); }
+.delivery-panel-chevron {
+  font-size: 0.7rem;
+  display: inline-block;
+  transition: transform 0.18s ease;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.delivery-panel-summary.open .delivery-panel-chevron { transform: rotate(90deg); }
+.delivery-panel-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+.delivery-panel-body {
+  display: none;
+  padding: 0.5rem 1rem 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.delivery-panel-body.open { display: block; }
+
+/* Lane panel (collapsible, inside delivery) */
+.lane-panel {
+  margin-bottom: 0.75rem;
+}
+.lane-panel:last-child { margin-bottom: 0; }
+.lane-panel-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  border-radius: var(--radius-sm);
+}
+.lane-panel-summary:hover { background: var(--bg-sunken); }
+.lane-panel-chevron {
+  font-size: 0.68rem;
+  display: inline-block;
+  transition: transform 0.18s ease;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.lane-panel-summary.open .lane-panel-chevron { transform: rotate(90deg); }
+.lane-panel-body {
+  display: none;
+  padding: 0.5rem 0 0.25rem 0;
+}
+.lane-panel-body.open { display: block; }
+
+/* Task card (two-line chip inside a lane) */
+.task-chip .chip-short-name {
+  font-size: 0.80rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+/* Wave section (kept for CSS class integrity test) */
 .wave-section {
   margin-bottom: 1.5rem;
 }
-.wave-section.wave-active {
-  border-left: 3px solid var(--accent);
-  padding-left: 0.75rem;
-}
-.wave-section.wave-pending { opacity: 0.65; }
-.wave-section .wave-label {
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  margin-bottom: 0.5rem;
-}
-/* Done wave: muted pill row matching active wave visual language */
+/* Done wave: muted pill (kept for CSS test) */
 .wave-summary {
   display: inline-flex;
   align-items: center;
@@ -471,13 +720,12 @@ footer {
   <div class="brand">
     <strong id="brand-name">AID Dashboard</strong><span class="dot">·</span>Pipeline
   </div>
-  <!-- Breadcrumb: repurposed for active work id/name (UI-1 note) -->
-  <nav class="breadcrumb" aria-label="Active work">
-    <span id="breadcrumb-work" class="current">—</span>
-  </nav>
+  <div style="flex:1"></div>
   <div class="controls">
+    <!-- Data-note chip (inline warn chip; hidden when no warnings/fallbacks) -->
+    <span class="badge badge-warn" id="data-note-chip" style="display:none" title=""></span>
     <!-- Freshness badge (Telemetry) -->
-    <span class="badge badge-dim" id="freshness-badge" aria-live="polite">● Loading</span>
+    <span class="badge badge-dim" id="freshness-badge" aria-live="polite">&#9679; Loading</span>
     <!-- Interval control (UI-5) -->
     <label class="interval-control" title="Poll interval in seconds">
       Refresh
@@ -488,7 +736,7 @@ footer {
     <!-- Theme toggle (from html-skeleton.html) -->
     <button type="button" class="btn-ghost" id="theme-toggle"
             aria-label="Switch theme" title="Toggle light/dark theme">
-      <span id="theme-icon" aria-hidden="true">◐</span>
+      <span id="theme-icon" aria-hidden="true">&#9680;</span>
       <span id="theme-label">Dark</span>
     </button>
   </div>
@@ -503,24 +751,62 @@ footer {
     <p>Dashboard assets are out of date — restart <code>aid dashboard</code> to get the latest version.</p>
   </div>
 
-  <!-- Parse-warning data note (hidden by default) -->
-  <div class="callout" id="parse-warning-note" style="display:none">
-    <h4>Data note</h4>
-    <p id="parse-warning-text"></p>
-  </div>
-
   <!-- Attention strip for Paused or Blocked (UI-4) — shown above stage rail -->
   <div id="attention-strip" style="display:none" role="alert"></div>
 
-  <!-- Work header card (UI-1 / UI-2) -->
+  <!-- Work header (UI-1) + overview panel -->
   <div id="work-header" style="display:none">
     <div class="content-col">
-      <div class="card" id="work-header-card" style="margin-bottom:1rem">
-        <div class="kicker" id="work-kicker"></div>
-        <h2 id="work-name" style="margin-bottom:0.3rem"></h2>
-        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-bottom:0.4rem" id="work-badges"></div>
-        <div class="meta" id="work-meta"></div>
-      </div>
+
+      <!-- Work overview header (prototype: delivery-002) -->
+      <div class="work-overview" id="work-overview-panel">
+
+        <!-- Collapsible header row: always visible summary -->
+        <button type="button" class="work-overview-header" id="work-overview-header-btn"
+                aria-expanded="false" aria-controls="work-overview-body">
+          <!-- Chevron -->
+          <span class="work-overview-chevron" aria-hidden="true">&#9658;</span>
+          <!-- Identity line: #N · Title -->
+          <div class="work-overview-identity">
+            <span class="work-overview-number" id="overview-number"></span>
+            <span class="work-overview-title" id="overview-title"></span>
+          </div>
+          <!-- Lifecycle + skill badges (inline in summary) -->
+          <span id="overview-badges" style="display:inline-flex;gap:0.4rem;flex-wrap:wrap;align-items:center;margin-left:0.25rem"></span>
+        </button>
+
+        <!-- Collapsible body: all detail below the summary line -->
+        <div class="work-overview-body" id="work-overview-body">
+
+          <!-- Description -->
+          <p class="work-overview-desc" id="overview-desc" style="display:none"></p>
+
+          <!-- Objective collapsible -->
+          <div class="work-overview-obj-wrap" id="overview-obj-wrap" style="display:none">
+            <div class="work-overview-obj-body" id="overview-obj-body">
+              <div class="work-overview-obj-fade" id="overview-obj-fade"></div>
+            </div>
+            <button type="button" class="btn-text-toggle" id="overview-obj-toggle">Show more</button>
+          </div>
+
+          <!-- Updated / kicker line -->
+          <div class="meta" id="work-meta" style="font-size:0.8rem;color:var(--text-dim);margin-bottom:0.65rem"></div>
+
+          <!-- Stat strip -->
+          <div class="work-stat-strip" id="overview-stat-strip" style="display:none"></div>
+
+          <!-- Features disclosure (full path only) -->
+          <div class="work-disclosure" id="overview-features-disclosure" style="display:none">
+            <button type="button" class="work-disclosure-toggle" id="overview-features-toggle" aria-expanded="false">
+              <span class="disc-arrow">&#9658;</span>
+              <span id="overview-features-label">Features</span>
+            </button>
+            <ul class="work-disclosure-body" id="overview-features-body"></ul>
+          </div>
+
+        </div><!-- /#work-overview-body -->
+
+      </div><!-- /.work-overview -->
 
       <!-- Stage rail (UI-2) -->
       <div id="stage-rail-wrap">
@@ -565,7 +851,7 @@ footer {
   // ---------------------------------------------------------------------------
   // Constants
   // ---------------------------------------------------------------------------
-  var EXPECTED_SCHEMA_VERSION = 1;
+  var EXPECTED_SCHEMA_VERSION = 2;
   var LS_KEY_POLL_MS = 'aid-dashboard-poll-ms';
   var PHASE_ORDER = ['Interview', 'Specify', 'Plan', 'Detail', 'Execute', 'Deploy', 'Monitor'];
 
@@ -578,6 +864,15 @@ footer {
   var lastGoodModel = null;
   var lastSuccessTime = null;
   var consecutiveErrors = 0;
+
+  // UI state: preserved across poll re-renders (Change 3)
+  var uiState = {
+    workOpen: false,        // work panel expanded (default: collapsed)
+    objectiveOpen: false,   // objective "Show more" expanded
+    featuresOpen: false,    // features disclosure open
+    deliveries: {},         // per-delivery open state keyed by "d"+N (e.g. "d1")
+    lanes: {}               // per-lane open state keyed by raw wave string (e.g. "delivery-002-wave-2")
+  };
 
   // ---------------------------------------------------------------------------
   // Boot: read interval from localStorage
@@ -782,17 +1077,12 @@ footer {
       document.getElementById('work-header').style.display = 'none';
       document.getElementById('empty-state').style.display = '';
       document.getElementById('attention-strip').style.display = 'none';
-      document.getElementById('breadcrumb-work').textContent = '—';
       updateFreshnessBadge('live', model.read && model.read.read_at);
       return;
     }
 
     document.getElementById('empty-state').style.display = 'none';
     document.getElementById('work-header').style.display = '';
-
-    // Breadcrumb: work_id · name
-    var bcEl = document.getElementById('breadcrumb-work');
-    if (bcEl) bcEl.textContent = activeWork.work_id + (activeWork.name ? ' · ' + activeWork.name : '');
 
     renderWorkHeader(activeWork);
     renderAttentionStrip(activeWork);
@@ -826,25 +1116,37 @@ footer {
   }
 
   // ---------------------------------------------------------------------------
-  // Work header card (UI-1 / UI-4)
+  // Work overview header (prototype: delivery-002 work-overview header)
   // ---------------------------------------------------------------------------
   function renderWorkHeader(work) {
-    var card = document.getElementById('work-header-card');
-    if (!card) return;
+    var panel = document.getElementById('work-overview-panel');
+    if (!panel) return;
 
-    // Reset border classes
-    card.classList.remove('border-warn', 'border-err');
-    if (work.lifecycle === 'Paused-Awaiting-Input') card.classList.add('border-warn');
-    if (work.lifecycle === 'Blocked') card.classList.add('border-err');
+    // Attention border on the overview panel
+    panel.classList.remove('border-warn', 'border-err');
+    if (work.lifecycle === 'Paused-Awaiting-Input') panel.classList.add('border-warn');
+    if (work.lifecycle === 'Blocked') panel.classList.add('border-err');
 
-    var kicker = document.getElementById('work-kicker');
-    if (kicker) kicker.textContent = work.work_id;
+    // Identity line: #N
+    var numEl = document.getElementById('overview-number');
+    if (numEl) {
+      if (work.number != null) {
+        numEl.textContent = '#' + work.number;
+        numEl.style.display = '';
+      } else {
+        numEl.textContent = '';
+        numEl.style.display = 'none';
+      }
+    }
 
-    var nameEl = document.getElementById('work-name');
-    if (nameEl) nameEl.textContent = work.name || work.work_id;
+    // Title (fall back to work_id if absent)
+    var titleEl = document.getElementById('overview-title');
+    if (titleEl) {
+      titleEl.textContent = work.title || work.work_id;
+    }
 
-    // Badges: lifecycle + active_skill
-    var badgesEl = document.getElementById('work-badges');
+    // Lifecycle + skill badges inline with identity
+    var badgesEl = document.getElementById('overview-badges');
     if (badgesEl) {
       badgesEl.innerHTML = '';
       badgesEl.appendChild(makeLifecycleBadge(work.lifecycle));
@@ -856,11 +1158,194 @@ footer {
       }
     }
 
-    // Meta: updated time
+    // Wire up work panel collapse/expand (Change 2 + 3)
+    _applyWorkPanelState();
+
+    // Description
+    var descEl = document.getElementById('overview-desc');
+    if (descEl) {
+      if (work.description) {
+        descEl.textContent = work.description;
+        descEl.style.display = '';
+      } else {
+        descEl.style.display = 'none';
+      }
+    }
+
+    // Objective collapsible
+    _renderObjective(work.objective);
+
+    // Meta: updated time + work_id kicker
     var metaEl = document.getElementById('work-meta');
     if (metaEl) {
-      metaEl.textContent = work.updated ? 'Updated: ' + work.updated : '';
+      var metaParts = [];
+      metaParts.push(work.work_id);
+      if (work.updated) metaParts.push('Updated: ' + work.updated);
+      metaEl.textContent = metaParts.join('  ·  ');
     }
+
+    // Stat strip
+    _renderStatStrip(work);
+
+    // Features disclosure (full path only); Deliverables removed from work card
+    var isFullPath = work.work_path === 'full';
+    _renderFeaturesDisclosure(work.features, isFullPath);
+  }
+
+  // Apply uiState.workOpen to the panel DOM (idempotent; called each render)
+  function _applyWorkPanelState() {
+    var btn = document.getElementById('work-overview-header-btn');
+    var body = document.getElementById('work-overview-body');
+    if (!btn || !body) return;
+
+    if (uiState.workOpen) {
+      btn.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+      body.classList.add('open');
+    } else {
+      btn.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+      body.classList.remove('open');
+    }
+
+    // Re-attach click handler (idempotent — replaces any existing onclick)
+    btn.onclick = function() {
+      uiState.workOpen = !uiState.workOpen;
+      _applyWorkPanelState();
+    };
+  }
+
+  function _renderObjective(objective) {
+    var wrap = document.getElementById('overview-obj-wrap');
+    var body = document.getElementById('overview-obj-body');
+    var fade = document.getElementById('overview-obj-fade');
+    var toggle = document.getElementById('overview-obj-toggle');
+    if (!wrap || !body || !toggle) return;
+
+    if (!objective) {
+      wrap.style.display = 'none';
+      return;
+    }
+
+    wrap.style.display = '';
+    // Set text safely (escHtml then set innerHTML preserving paragraphs)
+    body.innerHTML = '<div style="position:relative">' +
+      escHtml(objective).replace(/\n\n+/g, '</div><div style="margin-top:0.6em">') +
+      (fade ? '<div class="work-overview-obj-fade" id="overview-obj-fade-inner"></div>' : '') +
+      '</div>';
+
+    // Restore uiState.objectiveOpen across re-renders (Change 3)
+    if (uiState.objectiveOpen) {
+      body.classList.add('expanded');
+      toggle.textContent = 'Show less';
+    } else {
+      body.classList.remove('expanded');
+      toggle.textContent = 'Show more';
+    }
+    toggle.onclick = function() {
+      uiState.objectiveOpen = !uiState.objectiveOpen;
+      if (uiState.objectiveOpen) {
+        body.classList.add('expanded');
+        toggle.textContent = 'Show less';
+      } else {
+        body.classList.remove('expanded');
+        toggle.textContent = 'Show more';
+      }
+    };
+  }
+
+  function _renderStatStrip(work) {
+    var strip = document.getElementById('overview-stat-strip');
+    if (!strip) return;
+
+    var path = work.work_path || null;
+    var features = work.features || [];
+    var deliverables = work.deliverables || [];
+    var tasks = work.tasks || [];
+
+    // Total task count = actual tasks array length (DM-2 authoritative source)
+    var totalTasks = tasks.length;
+
+    strip.innerHTML = '';
+    strip.style.display = '';
+
+    function addBadge(text, cls) {
+      var b = document.createElement('span');
+      b.className = 'badge ' + (cls || '');
+      b.textContent = text;
+      strip.appendChild(b);
+    }
+
+    if (path === 'full') {
+      addBadge('Full', 'badge-info');
+      if (features.length > 0) addBadge(features.length + ' Feature' + (features.length !== 1 ? 's' : ''), '');
+      if (deliverables.length > 0) addBadge(deliverables.length + ' Deliverable' + (deliverables.length !== 1 ? 's' : ''), '');
+      if (totalTasks > 0) addBadge(totalTasks + ' Task' + (totalTasks !== 1 ? 's' : ''), 'badge-dim');
+    } else if (path === 'lite') {
+      addBadge('Lite', 'badge-purple');
+      if (work.recipe) addBadge('Recipe: ' + work.recipe, '');
+      if (totalTasks > 0) addBadge(totalTasks + ' Task' + (totalTasks !== 1 ? 's' : ''), 'badge-dim');
+    } else if (path) {
+      addBadge(path, '');
+    }
+  }
+
+  function _renderFeaturesDisclosure(features, show) {
+    var disc = document.getElementById('overview-features-disclosure');
+    var toggle = document.getElementById('overview-features-toggle');
+    var body = document.getElementById('overview-features-body');
+    var label = document.getElementById('overview-features-label');
+    if (!disc) return;
+
+    if (!show || !features || features.length === 0) {
+      disc.style.display = 'none';
+      return;
+    }
+
+    disc.style.display = '';
+    if (label) label.textContent = 'Features (' + features.length + ')';
+
+    body.innerHTML = '';
+    for (var i = 0; i < features.length; i++) {
+      var f = features[i];
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="disc-num">#' + f.number + '</span>' +
+        escHtml(f.name || '');
+      body.appendChild(li);
+    }
+
+    _attachDisclosureToggle(toggle, body, 'featuresOpen');
+  }
+
+  // Attach disclosure toggle, restoring uiState[stateKey] across re-renders (Change 3)
+  function _attachDisclosureToggle(toggle, body, stateKey) {
+    if (!toggle || !body) return;
+
+    // Restore from uiState
+    if (uiState[stateKey]) {
+      body.classList.add('open');
+      toggle.classList.add('open');
+      toggle.setAttribute('aria-expanded', 'true');
+    } else {
+      toggle.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+      body.classList.remove('open');
+    }
+
+    toggle.onclick = function() {
+      var isOpen = body.classList.contains('open');
+      if (isOpen) {
+        body.classList.remove('open');
+        toggle.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+        if (stateKey) uiState[stateKey] = false;
+      } else {
+        body.classList.add('open');
+        toggle.classList.add('open');
+        toggle.setAttribute('aria-expanded', 'true');
+        if (stateKey) uiState[stateKey] = true;
+      }
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -960,8 +1445,59 @@ footer {
   }
 
   // ---------------------------------------------------------------------------
-  // Task chips, wave-grouped (UI-3)
+  // Task section: Delivery > Lane > Task hierarchy (UI-3)
   // ---------------------------------------------------------------------------
+
+  // Parse delivery# and lane# from wave string "delivery-NNN-wave-M"
+  function parseWave(wave) {
+    if (!wave) return null;
+    var m = String(wave).match(/^delivery-0*(\d+)-wave-0*(\d+)$/);
+    if (!m) return null;
+    return { delivery: parseInt(m[1], 10), lane: parseInt(m[2], 10) };
+  }
+
+  // Parse integer task number from task_id "task-008" -> 8
+  function parseTaskNumber(taskId) {
+    if (!taskId) return null;
+    var m = String(taskId).match(/(\d+)$/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+
+  // Derive aggregate state from a list of tasks
+  function getGroupState(tasks) {
+    // Returns: 'done' | 'pending' | 'active' | 'mixed'
+    var allDone    = tasks.every(function(t) { return t.status === 'Done' || t.status === 'Canceled'; });
+    if (allDone) return 'done';
+    var allPending = tasks.every(function(t) { return t.status === 'Pending'; });
+    if (allPending) return 'pending';
+    var anyActive  = tasks.some(function(t) { return t.status === 'In Progress' || t.status === 'In Review'; });
+    if (anyActive) return 'active';
+    return 'mixed';
+  }
+
+  // Make a status badge for a delivery or lane aggregate state
+  function makeGroupBadge(state, tasks) {
+    var badge = document.createElement('span');
+    if (state === 'done') {
+      badge.className = 'badge badge-ok';
+      badge.textContent = '✓ Done';
+    } else if (state === 'pending') {
+      badge.className = 'badge badge-dim';
+      badge.textContent = '○ Pending';
+    } else if (state === 'active') {
+      var activeCount = tasks.filter(function(t) { return t.status === 'In Progress' || t.status === 'In Review'; }).length;
+      badge.className = 'badge badge-accent';
+      badge.textContent = '▶ In Progress (' + activeCount + ')';
+    } else {
+      // mixed: show done + pending counts
+      var doneC = tasks.filter(function(t) { return t.status === 'Done' || t.status === 'Canceled'; }).length;
+      var pendC = tasks.filter(function(t) { return t.status === 'Pending'; }).length;
+      badge.className = 'badge badge-dim';
+      badge.textContent = doneC + ' Done · ' + pendC + ' Pending';
+    }
+    return badge;
+  }
+
   function renderTasks(work) {
     var section = document.getElementById('tasks-section');
     if (!section) return;
@@ -973,72 +1509,181 @@ footer {
       return;
     }
 
-    // Group tasks by wave; preserve source order within each wave
-    var waveOrder = [];
-    var waveMap = {};
-    for (var i = 0; i < tasks.length; i++) {
-      var t = tasks[i];
-      var waveKey = (t.wave !== null && t.wave !== undefined) ? String(t.wave) : '__ungrouped__';
-      if (!waveMap[waveKey]) {
-        waveMap[waveKey] = [];
-        waveOrder.push(waveKey);
-      }
-      waveMap[waveKey].push(t);
-    }
+    var workPath = work.work_path || 'full';
 
-    for (var wi = 0; wi < waveOrder.length; wi++) {
-      var wk = waveOrder[wi];
-      var waveTasks = waveMap[wk];
-      var waveLabel = wk === '__ungrouped__' ? 'Ungrouped' : 'Wave ' + wk;
-
-      // Determine wave state for foregrounding
-      var waveState = getWaveState(waveTasks);
-
-      var waveDiv = document.createElement('div');
-      waveDiv.className = 'wave-section';
-      if (waveState === 'active') waveDiv.classList.add('wave-active');
-      if (waveState === 'pending') waveDiv.classList.add('wave-pending');
-
-      // Terminal-only waves collapse to summary
-      if (waveState === 'terminal') {
-        var doneCount = waveTasks.filter(function(t) { return t.status === 'Done'; }).length;
-        var canceledCount = waveTasks.filter(function(t) { return t.status === 'Canceled'; }).length;
-        var summaryText = doneCount + ' done' + (canceledCount > 0 ? ', ' + canceledCount + ' canceled' : '');
-        var summaryDiv = document.createElement('div');
-        summaryDiv.className = 'wave-summary';
-        summaryDiv.innerHTML = '✓ ' + waveLabel + ' &mdash; ' + summaryText;
-        waveDiv.appendChild(summaryDiv);
-      } else {
-        var labelDiv = document.createElement('div');
-        labelDiv.className = 'wave-label';
-        labelDiv.textContent = waveLabel;
-        waveDiv.appendChild(labelDiv);
-
-        var grid = document.createElement('div');
-        // g4 for many chips, g3 otherwise
-        grid.className = 'grid ' + (waveTasks.length >= 4 ? 'g4' : 'g3');
-
-        for (var ti = 0; ti < waveTasks.length; ti++) {
-          grid.appendChild(makeTaskChip(waveTasks[ti]));
-        }
-        waveDiv.appendChild(grid);
-      }
-      section.appendChild(waveDiv);
+    if (workPath === 'full') {
+      renderTasksFull(section, tasks);
+    } else {
+      // Lite: render lanes at top level (no delivery wrapper)
+      renderLanes(section, tasks, null);
     }
   }
 
-  function getWaveState(tasks) {
-    // active: any In Progress or In Review
-    // pending: all Pending
-    // terminal: all Done/Canceled
-    // mixed: otherwise (some active + some pending, etc.)
-    var allTerminal = tasks.every(function(t) { return t.status === 'Done' || t.status === 'Canceled'; });
-    if (allTerminal) return 'terminal';
-    var allPending = tasks.every(function(t) { return t.status === 'Pending'; });
-    if (allPending) return 'pending';
-    var anyActive = tasks.some(function(t) { return t.status === 'In Progress' || t.status === 'In Review'; });
-    if (anyActive) return 'active';
-    return 'mixed';
+  function renderTasksFull(container, tasks) {
+    // Group by delivery#, in ascending order
+    var deliveryOrder = [];
+    var deliveryMap = {};
+
+    for (var i = 0; i < tasks.length; i++) {
+      var t = tasks[i];
+      var parsed = parseWave(t.wave);
+      var dKey = parsed ? parsed.delivery : 0;
+      if (!deliveryMap[dKey]) {
+        deliveryMap[dKey] = [];
+        deliveryOrder.push(dKey);
+      }
+      deliveryMap[dKey].push(t);
+    }
+    // Sort delivery keys ascending
+    deliveryOrder.sort(function(a, b) { return a - b; });
+
+    for (var di = 0; di < deliveryOrder.length; di++) {
+      var dNum = deliveryOrder[di];
+      var dTasks = deliveryMap[dNum];
+      var dState = getGroupState(dTasks);
+      var dStateKey = 'd' + dNum;
+
+      // Default open: any active task -> expanded; otherwise collapsed
+      var hasActive = dTasks.some(function(t) { return t.status === 'In Progress' || t.status === 'In Review'; });
+      if (!(dStateKey in uiState.deliveries)) {
+        uiState.deliveries[dStateKey] = hasActive;
+      }
+      var dOpen = uiState.deliveries[dStateKey];
+
+      // Build delivery panel
+      var panel = document.createElement('div');
+      panel.className = 'delivery-panel';
+
+      var summaryBtn = document.createElement('button');
+      summaryBtn.type = 'button';
+      summaryBtn.className = 'delivery-panel-summary' + (dOpen ? ' open' : '');
+      summaryBtn.setAttribute('aria-expanded', dOpen ? 'true' : 'false');
+
+      var chevron = document.createElement('span');
+      chevron.className = 'delivery-panel-chevron';
+      chevron.setAttribute('aria-hidden', 'true');
+      chevron.textContent = '►';
+      summaryBtn.appendChild(chevron);
+
+      var labelEl = document.createElement('span');
+      labelEl.className = 'delivery-panel-label';
+      labelEl.textContent = 'Delivery #' + dNum;
+      summaryBtn.appendChild(labelEl);
+
+      summaryBtn.appendChild(makeGroupBadge(dState, dTasks));
+
+      var body = document.createElement('div');
+      body.className = 'delivery-panel-body' + (dOpen ? ' open' : '');
+
+      // Render lanes inside the body
+      renderLanes(body, dTasks, dStateKey);
+
+      // Toggle handler (closure over dStateKey, summaryBtn, body)
+      (function(sk, btn, bd) {
+        btn.onclick = function() {
+          var nowOpen = bd.classList.contains('open');
+          if (nowOpen) {
+            bd.classList.remove('open');
+            btn.classList.remove('open');
+            btn.setAttribute('aria-expanded', 'false');
+            uiState.deliveries[sk] = false;
+          } else {
+            bd.classList.add('open');
+            btn.classList.add('open');
+            btn.setAttribute('aria-expanded', 'true');
+            uiState.deliveries[sk] = true;
+          }
+        };
+      })(dStateKey, summaryBtn, body);
+
+      panel.appendChild(summaryBtn);
+      panel.appendChild(body);
+      container.appendChild(panel);
+    }
+  }
+
+  function renderLanes(container, tasks, deliveryStateKey) {
+    // Group by lane# (wave M), in ascending order
+    var laneOrder = [];
+    var laneMap = {};
+
+    for (var i = 0; i < tasks.length; i++) {
+      var t = tasks[i];
+      var parsed = parseWave(t.wave);
+      // Use raw wave string as lane key for uiState persistence
+      var lKey = (t.wave && parsed) ? String(t.wave) : '__ungrouped__';
+      var lNum = parsed ? parsed.lane : 0;
+      if (!laneMap[lKey]) {
+        laneMap[lKey] = { num: lNum, tasks: [] };
+        laneOrder.push(lKey);
+      }
+      laneMap[lKey].tasks.push(t);
+    }
+    // Sort by lane number ascending
+    laneOrder.sort(function(a, b) { return laneMap[a].num - laneMap[b].num; });
+
+    for (var li = 0; li < laneOrder.length; li++) {
+      var lRawKey = laneOrder[li];
+      var lEntry = laneMap[lRawKey];
+      var lTasks = lEntry.tasks;
+      var lState = getGroupState(lTasks);
+
+      // Default open: any active task -> expanded; otherwise collapsed
+      var lHasActive = lTasks.some(function(t) { return t.status === 'In Progress' || t.status === 'In Review'; });
+      if (!(lRawKey in uiState.lanes)) {
+        uiState.lanes[lRawKey] = lHasActive;
+      }
+      var lOpen = uiState.lanes[lRawKey];
+
+      var lPanel = document.createElement('div');
+      lPanel.className = 'lane-panel';
+
+      var lSummary = document.createElement('button');
+      lSummary.type = 'button';
+      lSummary.className = 'lane-panel-summary' + (lOpen ? ' open' : '');
+      lSummary.setAttribute('aria-expanded', lOpen ? 'true' : 'false');
+
+      var lChevron = document.createElement('span');
+      lChevron.className = 'lane-panel-chevron';
+      lChevron.setAttribute('aria-hidden', 'true');
+      lChevron.textContent = '►';
+      lSummary.appendChild(lChevron);
+
+      lSummary.appendChild(makeGroupBadge(lState, lTasks));
+
+      var lBody = document.createElement('div');
+      lBody.className = 'lane-panel-body' + (lOpen ? ' open' : '');
+
+      // Task cards laid out horizontally (parallel) using adaptive chip grid
+      var grid = document.createElement('div');
+      grid.className = 'grid g-lane';
+      for (var ti = 0; ti < lTasks.length; ti++) {
+        grid.appendChild(makeTaskChip(lTasks[ti]));
+      }
+      lBody.appendChild(grid);
+
+      // Toggle handler
+      (function(lk, btn, bd) {
+        btn.onclick = function() {
+          var nowOpen = bd.classList.contains('open');
+          if (nowOpen) {
+            bd.classList.remove('open');
+            btn.classList.remove('open');
+            btn.setAttribute('aria-expanded', 'false');
+            uiState.lanes[lk] = false;
+          } else {
+            bd.classList.add('open');
+            btn.classList.add('open');
+            btn.setAttribute('aria-expanded', 'true');
+            uiState.lanes[lk] = true;
+          }
+        };
+      })(lRawKey, lSummary, lBody);
+
+      lPanel.appendChild(lSummary);
+      lPanel.appendChild(lBody);
+      container.appendChild(lPanel);
+    }
   }
 
   function makeTaskChip(task) {
@@ -1055,13 +1700,14 @@ footer {
       card.classList.add('chip-done');
     }
 
-    // Top row: task_id + type kicker
+    // Line 1: #N + TYPE + status badge
     var topRow = document.createElement('div');
     topRow.className = 'chip-top';
 
     var idEl = document.createElement('span');
     idEl.className = 'chip-task-id';
-    idEl.textContent = task.task_id || '—';
+    var taskNum = parseTaskNumber(task.task_id);
+    idEl.textContent = taskNum !== null ? '#' + taskNum : (task.task_id || '—');
     topRow.appendChild(idEl);
 
     var typeEl = document.createElement('span');
@@ -1071,31 +1717,16 @@ footer {
 
     card.appendChild(topRow);
 
-    // Status badge row
+    // Status badge (line 1 continues)
     var statusBadge = makeTaskStatusBadge(task.status);
     card.appendChild(statusBadge);
 
-    // Meta row: grade + elapsed (when present)
-    var hasMeta = task.review_grade || task.elapsed;
-    if (hasMeta) {
-      var metaRow = document.createElement('div');
-      metaRow.className = 'chip-meta';
-
-      if (task.review_grade) {
-        var gradeBadge = document.createElement('span');
-        gradeBadge.className = 'badge badge-info';
-        gradeBadge.textContent = 'Grade ' + task.review_grade;
-        metaRow.appendChild(gradeBadge);
-      }
-
-      if (task.elapsed) {
-        var elapsedEl = document.createElement('span');
-        elapsedEl.textContent = task.elapsed;
-        metaRow.appendChild(elapsedEl);
-      }
-
-      card.appendChild(metaRow);
-    }
+    // Line 2: short name from notes (HTML-escaped); fallback to task_id
+    var shortName = (task.notes && String(task.notes).trim() && task.notes !== '--') ? task.notes : task.task_id;
+    var nameEl = document.createElement('div');
+    nameEl.className = 'chip-short-name';
+    nameEl.textContent = shortName || '';
+    card.appendChild(nameEl);
 
     return card;
   }
@@ -1153,32 +1784,35 @@ footer {
   }
 
   // ---------------------------------------------------------------------------
-  // Parse warnings / data note (Telemetry)
+  // Parse warnings / data note chip (Telemetry) — Change 1
   // ---------------------------------------------------------------------------
   function renderParseWarnings(readMeta) {
-    var noteEl = document.getElementById('parse-warning-note');
-    var textEl = document.getElementById('parse-warning-text');
-    if (!noteEl || !textEl) return;
+    var chipEl = document.getElementById('data-note-chip');
+    if (!chipEl) return;
 
-    if (!readMeta) { noteEl.style.display = 'none'; return; }
+    if (!readMeta) { chipEl.style.display = 'none'; return; }
 
     var warnings = readMeta.parse_warnings || [];
     var fallbacks = readMeta.fallback_works || [];
 
     if (warnings.length === 0 && fallbacks.length === 0) {
-      noteEl.style.display = 'none';
+      chipEl.style.display = 'none';
       return;
     }
 
-    noteEl.style.display = '';
-    var parts = [];
-    if (warnings.length > 0) {
-      parts.push(warnings.length + ' parse warning(s) this read');
-    }
-    if (fallbacks.length > 0) {
-      parts.push(fallbacks.length + ' work(s) read via fallback derivation');
-    }
-    textEl.textContent = parts.join(' · ');
+    // Build compact label
+    var labelParts = [];
+    if (warnings.length > 0) labelParts.push(warnings.length + ' warning' + (warnings.length !== 1 ? 's' : ''));
+    if (fallbacks.length > 0) labelParts.push(fallbacks.length + ' fallback' + (fallbacks.length !== 1 ? 's' : ''));
+    chipEl.textContent = '! ' + labelParts.join(', ');
+
+    // Full tooltip text
+    var titleParts = [];
+    if (warnings.length > 0) titleParts.push(warnings.length + ' parse warning(s) this read');
+    if (fallbacks.length > 0) titleParts.push(fallbacks.length + ' work(s) read via fallback derivation');
+    chipEl.title = titleParts.join(' · ');
+
+    chipEl.style.display = '';
   }
 
   // ---------------------------------------------------------------------------

@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 from .locator import locate_aid_root
 from .models import (
@@ -37,6 +37,7 @@ from .parsers import (
     ParsedWork,
     parse_kb_state,
     parse_project_name,
+    parse_requirements_md,
     parse_state_md,
     parse_tool_info,
 )
@@ -181,6 +182,14 @@ def _read_work(
     # Extract display name from work_id slug (strip leading "work-NNN-")
     name = _slug_from_work_id(work_id)
 
+    # Prototype: parse work number from folder prefix (work-NNN-...)
+    work_number = _number_from_work_id(work_id)
+
+    # Prototype: parse REQUIREMENTS.md for identity fields
+    req_path = work_dir / "REQUIREMENTS.md"
+    req_title, req_description, req_objective, req_bytes = parse_requirements_md(req_path)
+    bytes_read += req_bytes
+
     # Step 5e: set source_mode; step 5f: lifecycle already set by parsers
     # Step 5g: set updated, pause/block fields
     work_model = WorkModel(
@@ -196,6 +205,14 @@ def _read_work(
         tasks=pw.tasks,
         pending_inputs=pw.pending_inputs,
         source_mode=pw.source_mode,
+        number=work_number,
+        title=req_title,
+        description=req_description,
+        objective=req_objective,
+        work_path=pw.work_path,
+        recipe=pw.recipe,
+        features=pw.features,
+        deliverables=pw.deliverables,
     )
 
     return work_model, parse_warnings, bytes_read
@@ -221,3 +238,18 @@ def _slug_from_work_id(work_id: str) -> str:
     import re
     m = re.match(r"^work-\d+-(.+)$", work_id)
     return m.group(1) if m else work_id
+
+
+def _number_from_work_id(work_id: str) -> Optional[int]:
+    """Extract the integer prefix from a work_id like 'work-001-slug'.
+
+    Returns 1 for 'work-001-...', None if the pattern does not match.
+    """
+    import re
+    m = re.match(r"^work-(\d+)-", work_id)
+    if m:
+        try:
+            return int(m.group(1))
+        except ValueError:
+            pass
+    return None

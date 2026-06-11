@@ -5,7 +5,7 @@ test_server_py.py -- Self-check and behavioral tests for dashboard/server/server
 Assertions:
   (a) Source contains no 0.0.0.0/wildcard bind token (LC-S bind-address invariant).
   (b) Source contains no write/append/remove primitive and no agent/LLM import (NFR2/NFR7).
-  (c) GET /api/model returns the DM-1 envelope (schema_version:1, generated_by:"python",
+  (c) GET /api/model returns the DM-1 envelope (schema_version:2, generated_by:"python",
       model with works sorted by work_id).
   (d) GET on an unknown path -> 404; POST -> 405.
   (e) U+2028/U+2029 post-process: both chars are escaped in the JSON output.
@@ -220,7 +220,7 @@ class TestRoutes(unittest.TestCase):
         with _ServerThread(self._tmpdir) as srv:
             status, body, _ = srv.get("/api/model")
         data = json.loads(body)
-        self.assertEqual(data.get("schema_version"), 1)
+        self.assertEqual(data.get("schema_version"), 2)
 
     def test_api_model_envelope_generated_by(self):
         with _ServerThread(self._tmpdir) as srv:
@@ -416,6 +416,8 @@ class TestSerializationShape(unittest.TestCase):
             "work_id", "name", "lifecycle", "phase", "active_skill",
             "updated", "pause_reason", "block_reason", "block_artifact",
             "tasks", "pending_inputs", "source_mode",
+            "number", "title", "description", "objective",
+            "work_path", "recipe", "features", "deliverables",
         ]
         self.assertEqual(work_keys, expected)
 

@@ -19,6 +19,8 @@ from pathlib import Path
 from typing import Optional
 
 from .models import (
+    DeliverableRef,
+    FeatureRef,
     KbStateRef,
     Lifecycle,
     PendingInput,
@@ -53,6 +55,11 @@ class ParsedWork:
         "source_mode",
         "parse_warnings",
         "bytes_read",
+        # prototype: work-overview header fields
+        "work_path",
+        "recipe",
+        "features",
+        "deliverables",
     )
 
     def __init__(self) -> None:
@@ -68,6 +75,11 @@ class ParsedWork:
         self.source_mode: SourceMode = SourceMode.Fallback
         self.parse_warnings: list[str] = []
         self.bytes_read: int = 0
+        # prototype: work-overview header fields
+        self.work_path: Optional[str] = None
+        self.recipe: Optional[str] = None
+        self.features: list[FeatureRef] = []
+        self.deliverables: list[DeliverableRef] = []
 
 
 # ---------------------------------------------------------------------------
@@ -287,6 +299,77 @@ def _parse_kb_doc_count(text: str) -> Optional[int]:
 
 
 # ---------------------------------------------------------------------------
+# Prototype: REQUIREMENTS.md parser (work-overview header, delivery-002)
+# ---------------------------------------------------------------------------
+
+def parse_requirements_md(path: Path) -> tuple[Optional[str], Optional[str], Optional[str], int]:
+    """Parse REQUIREMENTS.md for identity block fields.
+
+    Returns (title, description, objective, bytes_read).
+    All fields are None when the file is absent or the pattern is not found.
+    Never raises (NFR7).
+
+    Parses:
+      - **Name:** value      -> title
+      - **Description:** val -> description
+      - ## 1. Objective (or ## Objective) body -> objective (until next ## heading)
+    """
+    if not path.is_file():
+        return None, None, None, 0
+
+    try:
+        raw = path.read_bytes()
+        bytes_read = len(raw)
+        text = raw.decode("utf-8", errors="replace")
+    except OSError:
+        return None, None, None, 0
+
+    title: Optional[str] = None
+    description: Optional[str] = None
+    objective: Optional[str] = None
+
+    _re_name = re.compile(r"^\s*-\s*\*\*Name:\*\*\s*(.+)", re.IGNORECASE)
+    _re_desc = re.compile(r"^\s*-\s*\*\*Description:\*\*\s*(.+)", re.IGNORECASE)
+    _re_obj_hdr = re.compile(r"^##\s+(?:\d+\.\s+)?Objective\s*$", re.IGNORECASE)
+    _re_section = re.compile(r"^##\s+\S")
+
+    lines = text.splitlines()
+    in_objective = False
+    obj_lines: list[str] = []
+
+    for line in lines:
+        if in_objective:
+            if _re_section.match(line):
+                in_objective = False
+            else:
+                obj_lines.append(line)
+            continue
+
+        m = _re_name.match(line)
+        if m and title is None:
+            title = m.group(1).strip()
+            continue
+
+        m = _re_desc.match(line)
+        if m and description is None:
+            description = m.group(1).strip()
+            continue
+
+        if _re_obj_hdr.match(line):
+            in_objective = True
+            obj_lines = []
+            continue
+
+    if obj_lines:
+        # Strip leading/trailing blank lines from the captured block
+        raw_obj = "\n".join(obj_lines).strip()
+        if raw_obj:
+            objective = raw_obj
+
+    return title, description, objective, bytes_read
+
+
+# ---------------------------------------------------------------------------
 # Level-2: STATE.md parser -- normalized path (LC-2 levels 0-3)
 # ---------------------------------------------------------------------------
 
@@ -294,7 +377,14 @@ def _parse_kb_doc_count(text: str) -> Optional[int]:
 _RE_PIPELINE_STATUS = re.compile(r"^##\s+Pipeline Status\s*$", re.IGNORECASE)
 _RE_TASKS_STATUS    = re.compile(r"^##\s+Tasks Status\s*$",    re.IGNORECASE)
 _RE_CROSSPHASE_QA   = re.compile(r"^##\s+Cross-phase Q&A",     re.IGNORECASE)
+_RE_TRIAGE          = re.compile(r"^##\s+Triage\s*$",          re.IGNORECASE)
+_RE_FEATURES_STATUS = re.compile(r"^##\s+Features Status\s*$", re.IGNORECASE)
+_RE_PLAN_DELIVERIES = re.compile(r"^##\s+Plan\s*/\s*Deliveries\s*$", re.IGNORECASE)
 _RE_SECTION         = re.compile(r"^##\s+\S")  # any ## section (to end a prior section)
+
+# Triage field patterns
+_RE_TRIAGE_PATH     = re.compile(r"^\s*-\s*\*\*Path:\*\*\s*(.+)", re.IGNORECASE)
+_RE_TRIAGE_RECIPE   = re.compile(r"^\s*-\s*\*\*Recipe:\*\*\s*(.+)", re.IGNORECASE)
 
 # Pipeline Status field patterns (each is a "- **Field:** value" line)
 _RE_PS_LIFECYCLE    = re.compile(r"^\s*-\s*\*\*Lifecycle:\*\*\s*(.+)", re.IGNORECASE)
@@ -349,7 +439,12 @@ def parse_state_md(
     pipeline_status_found = False
     in_tasks = False
     in_crossphase = False
+    in_triage = False
+    in_features = False
+    in_deliveries = False
     tasks_header_seen = False
+    features_header_seen = False
+    deliveries_header_seen = False
 
     # Q&A tracking
     current_q_id: Optional[str] = None
@@ -368,36 +463,61 @@ def parse_state_md(
         current_q_id = None
         current_q = {}
 
+    def _reset_sections() -> None:
+        nonlocal in_pipeline_status, in_tasks, in_crossphase
+        nonlocal in_triage, in_features, in_deliveries
+        in_pipeline_status = False
+        in_tasks = False
+        in_crossphase = False
+        in_triage = False
+        in_features = False
+        in_deliveries = False
+
     for line in lines:
         # Detect section boundaries (## headers)
         if _RE_PIPELINE_STATUS.match(line):
             _flush_q()
+            _reset_sections()
             in_pipeline_status = True
-            in_tasks = False
-            in_crossphase = False
             continue
 
         if _RE_TASKS_STATUS.match(line):
             _flush_q()
+            _reset_sections()
             in_tasks = True
-            in_pipeline_status = False
-            in_crossphase = False
             tasks_header_seen = False
             continue
 
         if _RE_CROSSPHASE_QA.match(line):
             _flush_q()
+            _reset_sections()
             in_crossphase = True
-            in_pipeline_status = False
-            in_tasks = False
+            continue
+
+        if _RE_TRIAGE.match(line):
+            _flush_q()
+            _reset_sections()
+            in_triage = True
+            continue
+
+        if _RE_FEATURES_STATUS.match(line):
+            _flush_q()
+            _reset_sections()
+            in_features = True
+            features_header_seen = False
+            continue
+
+        if _RE_PLAN_DELIVERIES.match(line):
+            _flush_q()
+            _reset_sections()
+            in_deliveries = True
+            deliveries_header_seen = False
             continue
 
         # Any other ## section resets active section
         if _RE_SECTION.match(line):
             _flush_q()
-            in_pipeline_status = False
-            in_tasks = False
-            in_crossphase = False
+            _reset_sections()
             continue
 
         # --- Process active section ---
@@ -442,6 +562,22 @@ def parse_state_md(
                 if m2:
                     current_q["suggested"] = m2.group(1).strip()
                     continue
+
+        if in_triage:
+            _parse_triage_line(line, pw)
+            continue
+
+        if in_features:
+            _parse_features_line(line, pw, features_header_seen)
+            if line.strip().startswith("|") and not _RE_TABLE_SEP.match(line.strip()):
+                features_header_seen = True
+            continue
+
+        if in_deliveries:
+            _parse_deliveries_line(line, pw, deliveries_header_seen)
+            if line.strip().startswith("|") and not _RE_TABLE_SEP.match(line.strip()):
+                deliveries_header_seen = True
+            continue
 
     # Flush any trailing Q block
     _flush_q()
@@ -581,6 +717,122 @@ def _parse_tasks_line(line: str, pw: ParsedWork, header_seen: bool) -> None:
         elapsed=_col(6),
         notes=_col(7),
     ))
+
+
+def _parse_triage_line(line: str, pw: ParsedWork) -> None:
+    """Parse one line from the ## Triage section into pw fields."""
+    m = _RE_TRIAGE_PATH.match(line)
+    if m:
+        val = m.group(1).strip()
+        if not _is_null(val):
+            pw.work_path = val.lower()
+        return
+
+    m = _RE_TRIAGE_RECIPE.match(line)
+    if m:
+        val = m.group(1).strip()
+        if not _is_null(val):
+            pw.recipe = val
+        return
+
+
+def _parse_features_line(line: str, pw: ParsedWork, header_seen: bool) -> None:
+    """Parse one line from the ## Features Status table.
+
+    Table columns: # | Feature | Spec Status | ... (at minimum # and Feature)
+    """
+    stripped = line.strip()
+    if not stripped.startswith("|"):
+        return
+    if _RE_TABLE_SEP.match(stripped):
+        return
+
+    cols = [c.strip() for c in stripped.strip("|").split("|")]
+    if len(cols) < 2:
+        return
+
+    # Skip header row
+    if cols[0] in ("#", "") and not header_seen:
+        return
+
+    def _col(idx: int) -> Optional[str]:
+        if idx < len(cols):
+            v = cols[idx].strip()
+            return None if _is_null(v) else v
+        return None
+
+    num_str = _col(0) or ""
+    feature_name = _col(1) or ""
+
+    if not num_str or num_str == "#" or not feature_name:
+        return
+
+    try:
+        number = int(num_str)
+    except ValueError:
+        return
+
+    # Readable name: strip "feature-NNN-" prefix if present
+    readable = re.sub(r"^feature-\d+-", "", feature_name, flags=re.IGNORECASE).replace("-", " ").strip()
+    if not readable:
+        readable = feature_name
+
+    pw.features.append(FeatureRef(number=number, name=readable))
+
+
+def _parse_deliveries_line(line: str, pw: ParsedWork, header_seen: bool) -> None:
+    """Parse one line from the ## Plan / Deliveries table.
+
+    Table columns: Delivery | Status | Tasks | Notes
+    """
+    stripped = line.strip()
+    if not stripped.startswith("|"):
+        return
+    if _RE_TABLE_SEP.match(stripped):
+        return
+
+    cols = [c.strip() for c in stripped.strip("|").split("|")]
+    if len(cols) < 3:
+        return
+
+    # Skip header row (first column is "Delivery" or blank)
+    if cols[0].lower() in ("delivery", "") and not header_seen:
+        return
+
+    def _col(idx: int) -> Optional[str]:
+        if idx < len(cols):
+            v = cols[idx].strip()
+            return None if _is_null(v) else v
+        return None
+
+    delivery_id = _col(0) or ""
+    tasks_str = _col(2) or ""
+    notes_str = _col(3) or ""
+
+    if not delivery_id or delivery_id.lower() == "delivery":
+        return
+
+    # Parse delivery number from "delivery-NNN" or "delivery-NNN ..."
+    m = re.match(r"delivery-(\d+)", delivery_id, re.IGNORECASE)
+    if not m:
+        return
+    number = int(m.group(1))
+
+    # Parse leading integer from tasks column e.g. "13 (task-001-013)" -> 13
+    task_count = 0
+    tm = re.match(r"(\d+)", tasks_str)
+    if tm:
+        task_count = int(tm.group(1))
+
+    # Name: use notes up to first semicolon/period, or delivery_id
+    name = delivery_id
+    if notes_str:
+        # Split on "; " or " - " or " -- " separators to get the first clause
+        short = notes_str.split(";")[0].split(" - ")[0].split(" -- ")[0].strip()
+        if short:
+            name = short
+
+    pw.deliverables.append(DeliverableRef(number=number, name=name, task_count=task_count))
 
 
 # ---------------------------------------------------------------------------

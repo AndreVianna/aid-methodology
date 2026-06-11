@@ -99,6 +99,23 @@ def _ser_pending_input(obj) -> dict:
     }
 
 
+def _ser_feature_ref(obj) -> dict:
+    """Serialize FeatureRef in declared field order."""
+    return {
+        "number": obj.number,
+        "name":   obj.name,
+    }
+
+
+def _ser_deliverable_ref(obj) -> dict:
+    """Serialize DeliverableRef in declared field order."""
+    return {
+        "number":     obj.number,
+        "name":       obj.name,
+        "task_count": obj.task_count,
+    }
+
+
 def _ser_work(obj) -> dict:
     """Serialize WorkModel in declared field order."""
     return {
@@ -114,6 +131,15 @@ def _ser_work(obj) -> dict:
         "tasks":         [_ser_task(t) for t in obj.tasks],
         "pending_inputs": [_ser_pending_input(p) for p in obj.pending_inputs],
         "source_mode":   obj.source_mode.value,
+        # prototype: work-overview header fields
+        "number":        obj.number,
+        "title":         obj.title,
+        "description":   obj.description,
+        "objective":     obj.objective,
+        "work_path":     obj.work_path,
+        "recipe":        obj.recipe,
+        "features":      [_ser_feature_ref(f) for f in (obj.features or [])],
+        "deliverables":  [_ser_deliverable_ref(d) for d in (obj.deliverables or [])],
     }
 
 
@@ -146,7 +172,7 @@ def serialize_model(model) -> bytes:
     byte-identical to the Node server (which applies the same post-process).
     """
     envelope = {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_by":   "python",
         "model":          _ser_repo_model(model),
     }

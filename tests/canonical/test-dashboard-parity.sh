@@ -331,7 +331,7 @@ if [[ $HAS_PYTHON -eq 1 ]]; then
         fetch_api_model "$local_py_port" "/tmp/pt1_py_raw.json"
 
         schema_ver=$(python3 -c "import json; d = json.load(open('/tmp/pt1_py_raw.json')); print(d.get('schema_version', 'MISSING'))")
-        assert_eq "$schema_ver" "1" "[full-fixture] python schema_version == 1"
+        assert_eq "$schema_ver" "2" "[full-fixture] python schema_version == 2"
 
         gen_by=$(python3 -c "import json; d = json.load(open('/tmp/pt1_py_raw.json')); print(d.get('generated_by', 'MISSING'))")
         assert_eq "$gen_by" "python" "[full-fixture] python generated_by == 'python'"

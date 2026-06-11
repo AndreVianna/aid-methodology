@@ -8,7 +8,7 @@
  *   (a) server.mjs source contains no 0.0.0.0/wildcard bind token.
  *   (b) server.mjs and reader.mjs contain no fs.writeFile/appendFile/unlink
  *       and no agent/LLM import.
- *   (c) GET /api/model returns DM-1 envelope (schema_version:1, generated_by:"node",
+ *   (c) GET /api/model returns DM-1 envelope (schema_version:2, generated_by:"node",
  *       works sorted by work_id).
  *   (d) Unknown path -> 404, POST -> 405.
  *
@@ -164,6 +164,47 @@ writeFileSync(join(workDir2, "STATE.md"), [
   "| 1 | task-001 | IMPLEMENT | 1 | Done | A | 5h | - |",
 ].join("\n"), "utf-8");
 
+// work-001-alpha: add REQUIREMENTS.md with identity fields
+writeFileSync(join(workDir1, "REQUIREMENTS.md"), [
+  "# Requirements -- Alpha Work",
+  "",
+  "- **Name:** Alpha Work",
+  "- **Description:** A test work item for the alpha fixture.",
+  "",
+  "## 1. Objective",
+  "",
+  "This is the objective block for the alpha work.",
+  "",
+].join("\n"), "utf-8");
+
+// work-001-alpha: add STATE.md with Triage + Features + Deliveries sections
+writeFileSync(join(workDir1, "STATE.md"), [
+  "## Triage",
+  "- **Path:** full",
+  "",
+  "## Features Status",
+  "| # | Feature | Notes |",
+  "| --- | --- | --- |",
+  "| 1 | feature-001-core | core feature |",
+  "",
+  "## Plan / Deliveries",
+  "| Delivery | Status | Tasks | Notes |",
+  "| --- | --- | --- | --- |",
+  "| delivery-001 | Done | 2 (task-001-002) | Initial delivery |",
+  "",
+  "## Pipeline Status",
+  "- **Lifecycle:** Running",
+  "- **Phase:** Execute",
+  "- **Active Skill:** aid-execute",
+  "- **Updated:** 2026-06-10T12:00:00+00:00",
+  "",
+  "## Tasks Status",
+  "| # | Task | Type | Wave | Status | Review | Elapsed | Notes |",
+  "| --- | --- | --- | --- | --- | --- | --- | --- |",
+  "| 1 | task-001 | IMPLEMENT | 1 | In Progress | - | 2h | - |",
+  "| 2 | task-002 | REVIEW | 1 | Pending | - | - | - |",
+].join("\n"), "utf-8");
+
 // Minimal manifest
 writeFileSync(join(aidDir, ".aid-manifest.json"), JSON.stringify({
   manifest_version: 1,
@@ -272,7 +313,7 @@ async function runLiveTests() {
       envelope = null;
     }
     assert(envelope !== null, "GET /api/model body is valid JSON");
-    assert(!!(envelope && envelope.schema_version === 1), "envelope.schema_version === 1");
+    assert(!!(envelope && envelope.schema_version === 2), "envelope.schema_version === 2");
     assert(!!(envelope && envelope.generated_by === "node"), 'envelope.generated_by === "node"');
     assert(!!(envelope && typeof envelope.model === "object"), "envelope.model is an object");
 
@@ -299,6 +340,25 @@ async function runLiveTests() {
     assert(
       !!(w1 && Array.isArray(w1.tasks) && w1.tasks.length === 2),
       "work-001-alpha has 2 tasks"
+    );
+    // New work-identity fields (PART 2)
+    assert(!!(w1 && w1.number === 1), "work-001-alpha number=1");
+    assert(!!(w1 && w1.title === "Alpha Work"), "work-001-alpha title=Alpha Work");
+    assert(!!(w1 && typeof w1.description === "string" && w1.description.length > 0),
+      "work-001-alpha description is non-empty string");
+    assert(!!(w1 && typeof w1.objective === "string" && w1.objective.length > 0),
+      "work-001-alpha objective is non-empty string");
+    assert(!!(w1 && w1.work_path === "full"), "work-001-alpha work_path=full");
+    assert(!!(w1 && Array.isArray(w1.features) && w1.features.length === 1),
+      "work-001-alpha has 1 feature");
+    assert(!!(w1 && w1.features[0] && w1.features[0].number === 1 && w1.features[0].name === "core"),
+      "work-001-alpha feature[0]: number=1, name=core");
+    assert(!!(w1 && Array.isArray(w1.deliverables) && w1.deliverables.length === 1),
+      "work-001-alpha has 1 deliverable");
+    assert(
+      !!(w1 && w1.deliverables[0] && w1.deliverables[0].number === 1 &&
+         w1.deliverables[0].task_count === 2),
+      "work-001-alpha deliverable[0]: number=1, task_count=2"
     );
 
     const w2 = works.find((w) => w.work_id === "work-002-beta");

@@ -158,6 +158,21 @@ class PendingInput:
 
 
 @dataclass
+class FeatureRef:
+    """A single row from ## Features Status in STATE.md (prototype field)."""
+    number: int
+    name: str
+
+
+@dataclass
+class DeliverableRef:
+    """A single row from ## Plan / Deliveries in STATE.md (prototype field)."""
+    number: int
+    name: str
+    task_count: int
+
+
+@dataclass
 class WorkModel:
     """Level-2 work folder state. One per .aid/work-NNN-*/ directory.
 
@@ -177,6 +192,15 @@ class WorkModel:
     tasks: list[TaskModel] = field(default_factory=list)
     pending_inputs: list[PendingInput] = field(default_factory=list)
     source_mode: SourceMode = SourceMode.Fallback
+    # --- prototype: work-overview header fields (delivery-002 prototype) ---
+    number: Optional[int] = None           # from folder prefix work-NNN-... -> NNN
+    title: Optional[str] = None            # **Name:** from REQUIREMENTS.md
+    description: Optional[str] = None      # **Description:** from REQUIREMENTS.md
+    objective: Optional[str] = None        # body under ## 1. Objective in REQUIREMENTS.md
+    work_path: Optional[str] = None        # **Path:** from STATE.md ## Triage (full/lite)
+    recipe: Optional[str] = None           # lite-path recipe from Triage, else None
+    features: list[FeatureRef] = field(default_factory=list)      # from ## Features Status
+    deliverables: list[DeliverableRef] = field(default_factory=list)  # from ## Plan / Deliveries
 
 
 # ---------------------------------------------------------------------------

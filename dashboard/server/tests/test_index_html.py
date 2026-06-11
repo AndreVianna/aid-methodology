@@ -243,8 +243,8 @@ class TestStructural(unittest.TestCase):
 
     # S7 -- schema_version expected constant
     def test_s7_expected_schema_version_1(self):
-        # Should define EXPECTED_SCHEMA_VERSION = 1
-        self.assertIn('EXPECTED_SCHEMA_VERSION = 1', self.src)
+        # Should define EXPECTED_SCHEMA_VERSION = 2
+        self.assertIn('EXPECTED_SCHEMA_VERSION = 2', self.src)
 
     def test_s7_schema_version_mismatch_check(self):
         # Must have a !== EXPECTED check
