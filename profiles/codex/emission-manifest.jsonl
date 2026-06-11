@@ -135,7 +135,7 @@
 {"dst": ".agents/skills/aid-interview/references/state-cross-reference.md", "profile": "codex", "sha256": "6417a2e3f94e09e53fbcf7f760e6c9c8adf6c44c508a9ba687d1ba40fc2efaa4", "src": "canonical/skills/aid-interview/references/state-cross-reference.md"}
 {"dst": ".agents/skills/aid-interview/references/state-done.md", "profile": "codex", "sha256": "0d180bf2e9d9950842ff4d119c89f3459b2e67b5656586beeb3e84067ae13053", "src": "canonical/skills/aid-interview/references/state-done.md"}
 {"dst": ".agents/skills/aid-interview/references/state-feature-decomposition.md", "profile": "codex", "sha256": "62063576b4d2f7fb353614a68baa1fd3b078a4c9ab0ca1d4288e28af18e89765", "src": "canonical/skills/aid-interview/references/state-feature-decomposition.md"}
-{"dst": ".agents/skills/aid-interview/references/state-first-run.md", "profile": "codex", "sha256": "339ca442efe8245c0651c52da3ea40c126edccf4d7a896f8d03fe64cb7ec8a6d", "src": "canonical/skills/aid-interview/references/state-first-run.md"}
+{"dst": ".agents/skills/aid-interview/references/state-first-run.md", "profile": "codex", "sha256": "c2038e19e5b8ffef66fc4ffd1576f157470f597e4c7c60058c564c6fd0a2da29", "src": "canonical/skills/aid-interview/references/state-first-run.md"}
 {"dst": ".agents/skills/aid-interview/references/state-lite-done.md", "profile": "codex", "sha256": "2788995d9609b7db69610d3f49719e80094327b20b544a54a2ca50cfc2ee6166", "src": "canonical/skills/aid-interview/references/state-lite-done.md"}
 {"dst": ".agents/skills/aid-interview/references/state-lite-review.md", "profile": "codex", "sha256": "6f08ab3a2297b9e45e9fdcee13424b46498a1db3184265c78c8e1bb5a2b70500", "src": "canonical/skills/aid-interview/references/state-lite-review.md"}
 {"dst": ".agents/skills/aid-interview/references/state-q-and-a.md", "profile": "codex", "sha256": "9c7d28ab3e6c17928e84315fea18f4a480a3f432ca070eaa6a70d7ef48b31b1a", "src": "canonical/skills/aid-interview/references/state-q-and-a.md"}
@@ -232,7 +232,7 @@
 {"dst": ".agents/templates/specs/spec-template.md", "profile": "codex", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".agents/templates/state-machine-chaining.md", "profile": "codex", "sha256": "128feca0f90a6b52226df1bd3527185cd25ed404a94f9880795c69d5865256a9", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".agents/templates/subagent-heartbeat-protocol.md", "profile": "codex", "sha256": "0a36203d06a2cf717c8aa14ff20c72824c6f15ef71c389493ac1184381783692", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
-{"dst": ".agents/templates/work-state-template.md", "profile": "codex", "sha256": "4fa7c624ac5162d0009d12ce851bfa8c54221e73bee6cbd5e2b2f7341310e098", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".agents/templates/work-state-template.md", "profile": "codex", "sha256": "beee9e2e953f1ac19816d5f7b6ffe421928a7551baa4318e64d3092e65ca76f1", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".codex/agents/aid-architect.toml", "profile": "codex", "sha256": "61e1b8eeea04b4ac09e9f150abe3272f95e7eeec6104da60bbc6c5a4e0316ec2", "src": "canonical/agents/aid-architect/AGENT.md"}
 {"dst": ".codex/agents/aid-clerk.toml", "profile": "codex", "sha256": "a4207fe6bded56801e261a77c8bb02e19952c0b7dc719e70e9dc2edada63dcae", "src": "canonical/agents/aid-clerk/AGENT.md"}
 {"dst": ".codex/agents/aid-developer.toml", "profile": "codex", "sha256": "bb8fe01d72a6bda9e489a27088ccb6c7faef70ca0f5e1f78ca1e2192c9466135", "src": "canonical/agents/aid-developer/AGENT.md"}

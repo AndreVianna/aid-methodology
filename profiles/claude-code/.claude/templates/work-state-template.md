@@ -10,6 +10,25 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep their inline `## Change Log` sections — that's *content history* (what changed in the document), distinct from *process state* (where are we in the workflow). Both are useful; they live in different places.
 
+## Pipeline Status
+
+> Single-source derivation summary for read-only consumers (the dashboard reader, FR16).
+> Written ONLY by the helper `writeback-state.sh --pipeline ...` (new mode) at every existing
+> phase/state transition the pipeline already performs. Never hand-edited. All values are
+> closed enums so a deterministic reader needs no inference.
+>
+> Lifecycle enum:    Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
+> Phase enum:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
+> Active Skill enum: aid-{skill} | none
+
+- **Lifecycle:** Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
+- **Phase:** Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
+- **Active Skill:** aid-{skill} | none
+- **Updated:** {YYYY-MM-DDTHH:MM:SSZ}
+- **Pause Reason:** {short text} | —          (present only when Lifecycle = Paused-Awaiting-Input)
+- **Block Reason:** {short text} | —          (present only when Lifecycle = Blocked)
+- **Block Artifact:** {relative path} | —     (e.g. IMPEDIMENT-task-NNN.md, or the failed gate)
+
 ## Triage
 
 > Populated by `aid-interview` TRIAGE state for lite-path works. Left empty for full-path works (aid-interview runs the full interview flow instead).

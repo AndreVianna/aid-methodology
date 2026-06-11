@@ -15,6 +15,32 @@ Ensure `.aid/{work}/STATE.md` exists and has an `## Interview Status` section an
 `## Cross-phase Q&A` section. Copy from `../../templates/work-state-template.md` if
 the file does not yet exist.
 
+### 1b-ii. Seed the `## Pipeline Status` block
+
+After the STATE.md file exists (created from the template above or already present), write
+the opening `## Pipeline Status` field values directly into `.aid/{work}/STATE.md`, replacing
+the template placeholder lines under `## Pipeline Status` with the actual opening values:
+
+```
+- **Lifecycle:** Running
+- **Phase:** Interview
+- **Active Skill:** aid-interview
+- **Updated:** {YYYY-MM-DDTHH:MM:SSZ}         ← today's UTC timestamp, e.g. 2026-06-10T14:32:00Z
+- **Pause Reason:** —
+- **Block Reason:** —
+- **Block Artifact:** —
+```
+
+This side-effect is a state-write only (no user-visible output, no gate, no prompt). It does
+not change any observable interview behavior — TRIAGE continues immediately after scaffolding.
+The `Pause Reason`, `Block Reason`, and `Block Artifact` lines are included with the sentinel
+value `—` so the grep-recoverable `**Field:** value` format is structurally complete from the
+start. All values are valid opening members of the closed enums declared in the template.
+
+**Idempotency:** if `## Pipeline Status` already has `Lifecycle: Running` (the work was
+previously scaffolded), skip this step — do not overwrite values that may have been advanced
+by a later phase.
+
 ### 1c. Create REQUIREMENTS.md scaffold
 
 Copy the template from `../../templates/requirements.md` to
