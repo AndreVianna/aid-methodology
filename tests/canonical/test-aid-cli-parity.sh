@@ -693,4 +693,174 @@ else
     pass "PAR023-M32 Bash<->PS1 parity: bad port exit code [SKIPPED: pwsh absent]"
 fi
 
+# ===========================================================================
+# PAR005-N: feature-005 remote-expose parity (T-8) — T-1/T-3/T-5 clear-fail paths
+#
+# Verifies that the Bash and PowerShell expose/teardown helpers produce:
+#   - identical exit codes for the clear-fail paths (mechanism absent -> exit 10;
+#     teardown nothing-running -> exit 0)
+#   - identical user-visible messages (NOT platform-specific verbose diagnostics)
+#
+# PowerShell half: SKIP-IF-ABSENT (clear notice, Bash half always runs).
+# When pwsh IS present, exit-code and message parity is asserted.
+# Server-spawn scenarios: SKIP on Linux PS (Start-Process WindowStyle).
+# No live tailnet is touched -- tailscale is absent (PATH shadow) or not called.
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# Fixture helpers for feature-005 parity.
+# ---------------------------------------------------------------------------
+_AID_LIB_PS1="${REPO_ROOT}/lib/AidInstallCore.psm1"
+
+new_dash_home_par005() {
+    local h; h="$(mktemp -d "${TMP}/hpar005.XXXXXX")"
+    mkdir -p "${h}/bin" "${h}/lib"
+    cp "${BIN_AID_SH}"  "${h}/bin/aid"; chmod +x "${h}/bin/aid"
+    cp "${BIN_AID_PS1}" "${h}/bin/aid.ps1"
+    cp "${LIB_SH}"              "${h}/lib/aid-install-core.sh"
+    [[ -f "$_AID_LIB_PS1" ]] && cp "$_AID_LIB_PS1" "${h}/lib/AidInstallCore.psm1"
+    printf '0.7.0\n' > "${h}/VERSION"
+    echo "$h"
+}
+
+new_dash_repo_par005() {
+    local r; r="$(mktemp -d "${TMP}/rpar005.XXXXXX")"
+    mkdir -p "${r}/.aid/.temp" "${r}/dashboard/server"
+    ln -sf "${DASH_SERVER_DIR}/server.py"  "${r}/dashboard/server/server.py"
+    ln -sf "${DASH_SERVER_DIR}/server.mjs" "${r}/dashboard/server/server.mjs"
+    [[ -f "$DASH_READER_PY" ]] && ln -sf "$DASH_READER_PY" "${r}/dashboard/reader.py"
+    [[ -f "$DASH_INIT_PY" ]]   && ln -sf "$DASH_INIT_PY"   "${r}/dashboard/__init__.py"
+    echo "$r"
+}
+
+# Absent-tailscale wrapper: a PATH-first script that exits 127 for all calls,
+# simulating tailscale completely absent from PATH.
+_absent_ts_dir_par005="$(mktemp -d "${TMP}/absenttspar005.XXXXXX")"
+cat > "${_absent_ts_dir_par005}/tailscale" <<'ABSPAR005EOF'
+#!/usr/bin/env bash
+exit 127
+ABSPAR005EOF
+chmod +x "${_absent_ts_dir_par005}/tailscale"
+
+# Skip condition for server-spawn PS scenarios on this platform.
+PS_WIN_STYLE_PAR005=0
+if [[ -n "$PWSH" ]]; then
+    _PS_WS_TEST2="$("$PWSH" -NoProfile -Command \
+        'try { Start-Process -FilePath "echo" -ArgumentList "x" -WindowStyle Hidden -Wait -ErrorAction Stop; Write-Host "ok" } catch { Write-Host "fail" }' \
+        2>&1)"
+    if ! echo "$_PS_WS_TEST2" | grep -q "fail\|not supported\|WindowStyle"; then
+        PS_WIN_STYLE_PAR005=1
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# PAR005-N01/N02: T-3 parity — --remote no mechanism -> exit 10
+# (Bash always runs; PS skip on absent or Linux PS WindowStyle limitation)
+# ---------------------------------------------------------------------------
+SH_HOME_N01="$(new_dash_home_par005)"
+REPO_N01="$(new_dash_repo_par005)"
+PORT_N01="$(pick_dash_port)"
+
+_o_n01sh="$(mktemp "${TMP}/on01sh.XXXXXX")"
+_e_n01sh="$(mktemp "${TMP}/en01sh.XXXXXX")"
+PATH="${_absent_ts_dir_par005}:${PATH}" AID_HOME="${SH_HOME_N01}" AID_NO_UPDATE_CHECK=1 \
+    bash "${SH_HOME_N01}/bin/aid" dashboard start python \
+    --port "$PORT_N01" --remote --target "${REPO_N01}" \
+    >"$_o_n01sh" 2>"$_e_n01sh"
+SH_RC_N01=$?
+SH_ERR_N01="$(cat "$_e_n01sh")"
+rm -f "$_o_n01sh" "$_e_n01sh"
+
+assert_exit_eq "$SH_RC_N01" 10 \
+    "PAR005-N01 Bash --remote no mechanism -> exit 10"
+assert_output_contains "$SH_ERR_N01" "NOT exposed" \
+    "PAR005-N02 Bash --remote no mechanism: NOT exposed message"
+
+# Stop the local server that was started.
+AID_HOME="${SH_HOME_N01}" AID_NO_UPDATE_CHECK=1 \
+    bash "${SH_HOME_N01}/bin/aid" dashboard stop --target "${REPO_N01}" \
+    >/dev/null 2>&1 || true
+
+if [[ -z "$PWSH" ]]; then
+    echo "  SKIP (PS half PAR005-N03..N06): pwsh absent -- PS parity skipped (Bash assertions ran above)."
+    pass "PAR005-N03 PS1 --remote no mechanism -> exit 10 [SKIPPED: pwsh absent]"
+    pass "PAR005-N04 PS1 --remote no mechanism: NOT exposed message [SKIPPED: pwsh absent]"
+    pass "PAR005-N05 Bash<->PS1 exit code parity: --remote no mechanism [SKIPPED: pwsh absent]"
+elif [[ "$PS_WIN_STYLE_PAR005" -eq 0 ]]; then
+    echo "  SKIP (PS server-spawn PAR005-N03..N05): Start-Process WindowStyle not supported on Linux PS."
+    pass "PAR005-N03 PS1 --remote no mechanism -> exit 10 [SKIPPED: Linux PS WindowStyle unsupported]"
+    pass "PAR005-N04 PS1 --remote no mechanism: NOT exposed message [SKIPPED: Linux PS WindowStyle unsupported]"
+    pass "PAR005-N05 Bash<->PS1 exit code parity: --remote no mechanism [SKIPPED: Linux PS WindowStyle unsupported]"
+else
+    PS_HOME_N01="$(new_dash_home_par005)"
+    REPO_N01_PS="$(new_dash_repo_par005)"
+    PORT_N01_PS="$(pick_dash_port)"
+    _o_n01ps="$(mktemp "${TMP}/on01ps.XXXXXX")"
+    _e_n01ps="$(mktemp "${TMP}/en01ps.XXXXXX")"
+    PATH="${_absent_ts_dir_par005}:${PATH}" AID_HOME="${PS_HOME_N01}" AID_NO_UPDATE_CHECK=1 \
+        "$PWSH" -NoProfile -File "${PS_HOME_N01}/bin/aid.ps1" \
+        dashboard start python \
+        --port "$PORT_N01_PS" --remote --target "${REPO_N01_PS}" \
+        >"$_o_n01ps" 2>"$_e_n01ps"
+    PS_RC_N01=$?
+    PS_ERR_N01="$(cat "$_e_n01ps")"
+    rm -f "$_o_n01ps" "$_e_n01ps"
+
+    assert_exit_eq "$PS_RC_N01" 10 \
+        "PAR005-N03 PS1 --remote no mechanism -> exit 10"
+    assert_output_contains "$PS_ERR_N01" "NOT exposed" \
+        "PAR005-N04 PS1 --remote no mechanism: NOT exposed message"
+    assert_eq "$SH_RC_N01" "$PS_RC_N01" \
+        "PAR005-N05 Bash<->PS1 exit code parity: --remote no mechanism"
+
+    AID_HOME="${PS_HOME_N01}" AID_NO_UPDATE_CHECK=1 \
+        bash "${PS_HOME_N01}/bin/aid" dashboard stop --target "${REPO_N01_PS}" \
+        >/dev/null 2>&1 || true
+fi
+
+# ---------------------------------------------------------------------------
+# PAR005-N06/N07: T-5 parity — dashboard stop nothing-running -> exit 0
+# (no server-spawn required; runs even on Linux PS when pwsh is present)
+# ---------------------------------------------------------------------------
+SH_HOME_N06="$(new_dash_home_par005)"
+REPO_N06="$(new_dash_repo_par005)"
+
+_o_n06sh="$(mktemp "${TMP}/on06sh.XXXXXX")"
+AID_HOME="${SH_HOME_N06}" AID_NO_UPDATE_CHECK=1 \
+    bash "${SH_HOME_N06}/bin/aid" dashboard stop --target "${REPO_N06}" \
+    >"$_o_n06sh" 2>&1
+SH_RC_N06=$?
+SH_OUT_N06="$(cat "$_o_n06sh")"
+rm -f "$_o_n06sh"
+
+assert_exit_eq "$SH_RC_N06" 0 \
+    "PAR005-N06 Bash stop nothing-running -> exit 0 (T-5 parity)"
+assert_output_contains "$SH_OUT_N06" "not running (nothing to stop)" \
+    "PAR005-N07 Bash stop nothing-running: nothing-to-stop message"
+
+if [[ -z "$PWSH" ]]; then
+    echo "  SKIP (PS half PAR005-N08..N10): pwsh absent."
+    pass "PAR005-N08 PS1 stop nothing-running -> exit 0 [SKIPPED: pwsh absent]"
+    pass "PAR005-N09 PS1 stop nothing-running: nothing-to-stop message [SKIPPED: pwsh absent]"
+    pass "PAR005-N10 Bash<->PS1 exit code parity: stop nothing-running [SKIPPED: pwsh absent]"
+else
+    PS_HOME_N06="$(new_dash_home_par005)"
+    REPO_N06_PS="$(new_dash_repo_par005)"
+    _o_n06ps="$(mktemp "${TMP}/on06ps.XXXXXX")"
+    AID_HOME="${PS_HOME_N06}" AID_NO_UPDATE_CHECK=1 \
+        "$PWSH" -NoProfile -File "${PS_HOME_N06}/bin/aid.ps1" \
+        dashboard stop --target "${REPO_N06_PS}" \
+        >"$_o_n06ps" 2>&1
+    PS_RC_N06=$?
+    PS_OUT_N06="$(cat "$_o_n06ps")"
+    rm -f "$_o_n06ps"
+
+    assert_exit_eq "$PS_RC_N06" 0 \
+        "PAR005-N08 PS1 stop nothing-running -> exit 0 (T-5 parity)"
+    assert_output_contains "$PS_OUT_N06" "not running (nothing to stop)" \
+        "PAR005-N09 PS1 stop nothing-running: nothing-to-stop message"
+    assert_eq "$SH_RC_N06" "$PS_RC_N06" \
+        "PAR005-N10 Bash<->PS1 exit code parity: stop nothing-running"
+fi
+
 test_summary
