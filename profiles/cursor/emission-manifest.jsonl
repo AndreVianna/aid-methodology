@@ -65,7 +65,7 @@
 {"dst": ".cursor/scripts/config/read-setting.sh", "profile": "cursor", "sha256": "f7418a0fcb09bdcb606de6f79fec1d6596964bd1da75ccb215e62a7d757403b6", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".cursor/scripts/execute/complexity-score.sh", "profile": "cursor", "sha256": "0196dcc73a9626864262534b08b80d24356b0d13f39c26305d13729137128d31", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".cursor/scripts/execute/compute-block-radius.sh", "profile": "cursor", "sha256": "32bd31e5b828d006a8171b951cca5103ab396f834af84212f7549139bef30a5b", "src": "canonical/scripts/execute/compute-block-radius.sh"}
-{"dst": ".cursor/scripts/execute/writeback-state.sh", "profile": "cursor", "sha256": "4b9050dbe609917f8b94231eb457ef43e7c32709735b98980ad144c76a98a275", "src": "canonical/scripts/execute/writeback-state.sh"}
+{"dst": ".cursor/scripts/execute/writeback-state.sh", "profile": "cursor", "sha256": "238c568b498083aa5d8e7a69e39056572811fb92c750a7e69e99af78079c4164", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".cursor/scripts/grade.sh", "profile": "cursor", "sha256": "4984ef7486d0c66dc593db1e714db69b85e3a6aac636e68a4fc1b757aaced8c9", "src": "canonical/scripts/grade.sh"}
 {"dst": ".cursor/scripts/housekeep/branch-commit.sh", "profile": "cursor", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
 {"dst": ".cursor/scripts/housekeep/cleanup-classify.sh", "profile": "cursor", "sha256": "2009092b70b468237df6bfdaf8d0f0f1c2e2e5f49b4a65b3c3146146b7854342", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
@@ -243,4 +243,4 @@
 {"dst": ".cursor/templates/specs/spec-template.md", "profile": "cursor", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".cursor/templates/state-machine-chaining.md", "profile": "cursor", "sha256": "d7ccac7b41637763d11e5fe87a458bdbc88e92bb365de23cf431d7ad9f5fc66a", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".cursor/templates/subagent-heartbeat-protocol.md", "profile": "cursor", "sha256": "c5bab59475d63df4598dadbe6c1b02bbfa4c0ce33a90a73b69eab3d9fb0f9c3d", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
-{"dst": ".cursor/templates/work-state-template.md", "profile": "cursor", "sha256": "1870a0846e8e5f4ad375bcdf127eeee3c967fdc529db0d541a83762b27ebb1d5", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".cursor/templates/work-state-template.md", "profile": "cursor", "sha256": "3aa7f30f5b9b866a6a602fe25097a1dafd308ca2dd956cb32e471887302fa7bc", "src": "canonical/templates/work-state-template.md"}

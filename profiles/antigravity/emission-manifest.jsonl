@@ -65,7 +65,7 @@
 {"dst": ".agent/scripts/config/read-setting.sh", "profile": "antigravity", "sha256": "f7418a0fcb09bdcb606de6f79fec1d6596964bd1da75ccb215e62a7d757403b6", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".agent/scripts/execute/complexity-score.sh", "profile": "antigravity", "sha256": "0196dcc73a9626864262534b08b80d24356b0d13f39c26305d13729137128d31", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".agent/scripts/execute/compute-block-radius.sh", "profile": "antigravity", "sha256": "32bd31e5b828d006a8171b951cca5103ab396f834af84212f7549139bef30a5b", "src": "canonical/scripts/execute/compute-block-radius.sh"}
-{"dst": ".agent/scripts/execute/writeback-state.sh", "profile": "antigravity", "sha256": "4b9050dbe609917f8b94231eb457ef43e7c32709735b98980ad144c76a98a275", "src": "canonical/scripts/execute/writeback-state.sh"}
+{"dst": ".agent/scripts/execute/writeback-state.sh", "profile": "antigravity", "sha256": "238c568b498083aa5d8e7a69e39056572811fb92c750a7e69e99af78079c4164", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".agent/scripts/grade.sh", "profile": "antigravity", "sha256": "4984ef7486d0c66dc593db1e714db69b85e3a6aac636e68a4fc1b757aaced8c9", "src": "canonical/scripts/grade.sh"}
 {"dst": ".agent/scripts/housekeep/branch-commit.sh", "profile": "antigravity", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
 {"dst": ".agent/scripts/housekeep/cleanup-classify.sh", "profile": "antigravity", "sha256": "b421a685698f5a533b4cac3c9c30b85730b9433822f9f0654e8a7966f72cd2c5", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
@@ -243,4 +243,4 @@
 {"dst": ".agent/templates/specs/spec-template.md", "profile": "antigravity", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".agent/templates/state-machine-chaining.md", "profile": "antigravity", "sha256": "8eb579de700771ca70d3341eacc26e60f195a233403f32efd389cb686b431e3d", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".agent/templates/subagent-heartbeat-protocol.md", "profile": "antigravity", "sha256": "4ce600682be8a3c52a7f0ccc75ad9d70f7da9de65f4091a73ff74d81c3e1c40f", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
-{"dst": ".agent/templates/work-state-template.md", "profile": "antigravity", "sha256": "4dfe97fc95c8f6626192d87348278c55dc2e769effb11c533432ce06fc221b52", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".agent/templates/work-state-template.md", "profile": "antigravity", "sha256": "2ecc564da9783be0e731e9b5831f49801a8c0337240f5cf776843fa6464da7a3", "src": "canonical/templates/work-state-template.md"}

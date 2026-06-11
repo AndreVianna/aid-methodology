@@ -54,7 +54,7 @@
 {"dst": ".agents/scripts/config/read-setting.sh", "profile": "codex", "sha256": "f7418a0fcb09bdcb606de6f79fec1d6596964bd1da75ccb215e62a7d757403b6", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".agents/scripts/execute/complexity-score.sh", "profile": "codex", "sha256": "0196dcc73a9626864262534b08b80d24356b0d13f39c26305d13729137128d31", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".agents/scripts/execute/compute-block-radius.sh", "profile": "codex", "sha256": "32bd31e5b828d006a8171b951cca5103ab396f834af84212f7549139bef30a5b", "src": "canonical/scripts/execute/compute-block-radius.sh"}
-{"dst": ".agents/scripts/execute/writeback-state.sh", "profile": "codex", "sha256": "4b9050dbe609917f8b94231eb457ef43e7c32709735b98980ad144c76a98a275", "src": "canonical/scripts/execute/writeback-state.sh"}
+{"dst": ".agents/scripts/execute/writeback-state.sh", "profile": "codex", "sha256": "238c568b498083aa5d8e7a69e39056572811fb92c750a7e69e99af78079c4164", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".agents/scripts/grade.sh", "profile": "codex", "sha256": "4984ef7486d0c66dc593db1e714db69b85e3a6aac636e68a4fc1b757aaced8c9", "src": "canonical/scripts/grade.sh"}
 {"dst": ".agents/scripts/housekeep/branch-commit.sh", "profile": "codex", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
 {"dst": ".agents/scripts/housekeep/cleanup-classify.sh", "profile": "codex", "sha256": "5803fea24d6634b3794397bde2a88676e4c9973f4731731b7b502c4dbaa61629", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
@@ -232,7 +232,7 @@
 {"dst": ".agents/templates/specs/spec-template.md", "profile": "codex", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".agents/templates/state-machine-chaining.md", "profile": "codex", "sha256": "128feca0f90a6b52226df1bd3527185cd25ed404a94f9880795c69d5865256a9", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".agents/templates/subagent-heartbeat-protocol.md", "profile": "codex", "sha256": "0a36203d06a2cf717c8aa14ff20c72824c6f15ef71c389493ac1184381783692", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
-{"dst": ".agents/templates/work-state-template.md", "profile": "codex", "sha256": "beee9e2e953f1ac19816d5f7b6ffe421928a7551baa4318e64d3092e65ca76f1", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".agents/templates/work-state-template.md", "profile": "codex", "sha256": "7635bcfc9ad0d49280ae349632cb19557f8acc21408551e8fd228d16d4f0b346", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".codex/agents/aid-architect.toml", "profile": "codex", "sha256": "61e1b8eeea04b4ac09e9f150abe3272f95e7eeec6104da60bbc6c5a4e0316ec2", "src": "canonical/agents/aid-architect/AGENT.md"}
 {"dst": ".codex/agents/aid-clerk.toml", "profile": "codex", "sha256": "a4207fe6bded56801e261a77c8bb02e19952c0b7dc719e70e9dc2edada63dcae", "src": "canonical/agents/aid-clerk/AGENT.md"}
 {"dst": ".codex/agents/aid-developer.toml", "profile": "codex", "sha256": "bb8fe01d72a6bda9e489a27088ccb6c7faef70ca0f5e1f78ca1e2192c9466135", "src": "canonical/agents/aid-developer/AGENT.md"}

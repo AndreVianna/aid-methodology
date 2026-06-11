@@ -98,6 +98,12 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 ## Tasks Status
 
 > One row per task from PLAN.md execution graph. Tracks /aid-execute progress per task. This is the iteration source for FR1's AC4 sub-unit drill-down on aid-execute/EXECUTE-WAVE.
+>
+> Status enum (closed; single source of truth — feature-002 TaskStatus imports this vocabulary):
+>   Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
+> Written only by `writeback-state.sh --field Status --value VALUE` (enum-validated; feature-001 M3).
+> The `_none yet_` placeholder row is accepted but skipped by the state reader (feature-002 DM-5).
+> Canceled is a reserved member with no current task-level producer.
 
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|

@@ -217,6 +217,16 @@ mode_field() {
         *) die "unknown field '$FIELD'; allowed: Status Review Elapsed Notes Wave Type Task" 4 ;;
     esac
 
+    # Enum validation for the Status field (closed enum; feature-001 M3).
+    # Accepted values: the 7 TaskStatus enum members + the _none yet_ placeholder row.
+    # Every other field passes through without additional constraint.
+    if [[ "$field_lower" == "status" ]]; then
+        case "$FIELD_VALUE" in
+            Pending|"In Progress"|"In Review"|Blocked|Done|Failed|Canceled|"_none yet_") ;;
+            *) die "invalid Status value '$FIELD_VALUE'; must be one of: Pending | In Progress | In Review | Blocked | Done | Failed | Canceled (or the _none yet_ placeholder)" 4 ;;
+        esac
+    fi
+
     # Verify ## Tasks Status section exists
     if ! grep -q '^## Tasks Status' "$STATE_FILE"; then
         die "malformed STATE.md: ## Tasks Status section not found in $STATE_FILE" 6

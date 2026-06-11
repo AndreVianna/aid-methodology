@@ -315,23 +315,27 @@ STATEOF2
 # Remove stale lock if any
 rm -f "${WORK_DIR}/.writeback-state.lock"
 
-# Launch 5 concurrent writers
+# Launch 5 concurrent writers, each with a distinct valid TaskStatus enum value.
+# Values chosen: Done, In Progress, Failed, Blocked, In Review (all valid enum members).
+# Each updates a different task row so we can verify each write landed.
 (
-    bash "$SCRIPT" --task-id 1 --field Status --value "Done-P1" &
-    bash "$SCRIPT" --task-id 2 --field Status --value "Done-P2" &
-    bash "$SCRIPT" --task-id 3 --field Status --value "Done-P3" &
-    bash "$SCRIPT" --task-id 4 --field Status --value "Done-P4" &
-    bash "$SCRIPT" --task-id 5 --field Status --value "Done-P5" &
+    bash "$SCRIPT" --task-id 1 --field Status --value "Done" &
+    bash "$SCRIPT" --task-id 2 --field Status --value "In Progress" &
+    bash "$SCRIPT" --task-id 3 --field Status --value "Failed" &
+    bash "$SCRIPT" --task-id 4 --field Status --value "Blocked" &
+    bash "$SCRIPT" --task-id 5 --field Status --value "In Review" &
     wait
 )
 
-# All 5 status values must appear in the file
+# Verify each distinct status value appears in the file (one per task row)
+declare -A CONC_VALS=([1]="Done" [2]="In Progress" [3]="Failed" [4]="Blocked" [5]="In Review")
 ALL_OK=1
 for i in 1 2 3 4 5; do
-    if grep -qF "Done-P${i}" "$AID_STATE_FILE"; then
-        pass "concurrent P${i} write present (Done-P${i})"
+    expected="${CONC_VALS[$i]}"
+    if grep -qF "$expected" "$AID_STATE_FILE"; then
+        pass "concurrent P${i} write present (${expected})"
     else
-        fail "concurrent P${i} write MISSING from STATE.md"
+        fail "concurrent P${i} write MISSING from STATE.md (expected '${expected}')"
         ALL_OK=0
     fi
 done
@@ -730,9 +734,9 @@ make_pipeline_state "$PIPE_STATE14"
 AID_STATE_FILE="$PIPE_STATE14" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE14" bash "$SCRIPT" --pipeline --field Phase --value Execute 2>/dev/null
 
-# 14a: --field write on a task row should still work
-AID_TASKS_DIR="$TASKS_DIR" AID_STATE_FILE="$PIPE_STATE14" bash "$SCRIPT" --task-id 1 --field Status --value "Mixed-OK" 2>/dev/null
-assert_file_contains "$PIPE_STATE14" "Mixed-OK" "14a: --field write works on STATE.md that has Pipeline Status"
+# 14a: --field write on a task row should still work (use a valid TaskStatus enum value)
+AID_TASKS_DIR="$TASKS_DIR" AID_STATE_FILE="$PIPE_STATE14" bash "$SCRIPT" --task-id 1 --field Status --value "In Progress" 2>/dev/null
+assert_file_contains "$PIPE_STATE14" "In Progress" "14a: --field write works on STATE.md that has Pipeline Status"
 assert_file_contains "$PIPE_STATE14" "**Lifecycle:** Running" "14a: Pipeline Status block intact after --field write"
 assert_file_contains "$PIPE_STATE14" "**Phase:** Execute" "14a: Phase field intact after --field write"
 
@@ -842,7 +846,7 @@ rm -f "${TMPDIR_BASE}/pipe15b/.writeback-state.lock"
         bash "$SCRIPT" --pipeline --field Lifecycle --value Completed &
     AID_LOCK_DIR="${TMPDIR_BASE}/pipe15b" AID_STATE_FILE="$PIPE_STATE15B" \
         AID_TASKS_DIR="$TASKS_DIR" \
-        bash "$SCRIPT" --task-id 1 --field Status --value "Concurrent-OK" &
+        bash "$SCRIPT" --task-id 1 --field Status --value "In Review" &
     AID_LOCK_DIR="${TMPDIR_BASE}/pipe15b" AID_STATE_FILE="$PIPE_STATE15B" \
         bash "$SCRIPT" --pipeline --field Phase --value Deploy &
     AID_LOCK_DIR="${TMPDIR_BASE}/pipe15b" AID_STATE_FILE="$PIPE_STATE15B" \
