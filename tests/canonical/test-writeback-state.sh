@@ -883,6 +883,160 @@ fi
 
 # ---------------------------------------------------------------------------
 echo ""
+echo "=== Unit 17: M3 — Status enum validation (feature-001 §4 M3) ==="
+
+# Per-case helper: create a fresh scratch STATE.md with a ## Tasks Status table
+# and a single task-001 row with Status=Pending.
+# Usage: make_status_state <dest-dir>
+make_status_state() {
+    local dir="$1"
+    mkdir -p "$dir"
+    cat > "${dir}/STATE.md" <<'STATUSEOF'
+# Work State — work-status-test
+
+## Tasks Status
+
+| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
+|---|------|------|------|--------|--------|---------|-------|
+| 001 | task-001-alpha | IMPLEMENT | 1 | Pending | — | — | — |
+
+## Deploy Status
+
+| Delivery | State | PR |
+|----------|----|---|
+| — | — | — |
+STATUSEOF
+}
+
+# Helper: run a --field Status write against a scratch state and return exit code.
+# Usage: run_status_write <state-file> <value>  (captures exit code in STATUS_CODE)
+run_status_write() {
+    local sf="$1" val="$2"
+    STATUS_CODE=0
+    AID_STATE_FILE="$sf" bash "$SCRIPT" --task-id 1 --field Status --value "$val" 2>/dev/null || STATUS_CODE=$?
+}
+
+# ---------------------------------------------------------------------------
+# 17.1 — All 7 TaskStatus members accepted (exit 0)
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- 17.1: All 7 TaskStatus members accepted ---"
+
+for status_val in "Pending" "In Progress" "In Review" "Blocked" "Done" "Failed" "Canceled"; do
+    S17_DIR="${TMPDIR_BASE}/unit17-member-$(echo "$status_val" | tr ' ' '_')"
+    make_status_state "$S17_DIR"
+    run_status_write "${S17_DIR}/STATE.md" "$status_val"
+    assert_exit_zero "$STATUS_CODE" "17.1: Status='${status_val}' accepted (exit 0)"
+    # Also verify the value was actually written
+    assert_file_contains "${S17_DIR}/STATE.md" "$status_val" "17.1: Status='${status_val}' written to STATE.md"
+done
+
+# ---------------------------------------------------------------------------
+# 17.2 — _none yet_ placeholder accepted (exit 0)
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- 17.2: _none yet_ placeholder accepted ---"
+
+S17_NONE="${TMPDIR_BASE}/unit17-none-yet"
+make_status_state "$S17_NONE"
+run_status_write "${S17_NONE}/STATE.md" "_none yet_"
+assert_exit_zero "$STATUS_CODE" "17.2: Status='_none yet_' placeholder accepted (exit 0)"
+assert_file_contains "${S17_NONE}/STATE.md" "_none yet_" "17.2: _none yet_ placeholder written to STATE.md"
+
+# ---------------------------------------------------------------------------
+# 17.3 — Out-of-enum values rejected (exit 4)
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- 17.3: Out-of-enum values rejected (exit 4) ---"
+
+for bad_val in "running" "DONE" "Finished" "in progress" "InProgress" "todo" "PENDING"; do
+    S17_BAD="${TMPDIR_BASE}/unit17-bad-$(echo "$bad_val" | tr ' /' '_')"
+    make_status_state "$S17_BAD"
+    run_status_write "${S17_BAD}/STATE.md" "$bad_val"
+    assert_exit_eq "$STATUS_CODE" 4 "17.3: Status='${bad_val}' rejected (exit 4)"
+    # Verify STATE.md was NOT modified (still shows Pending)
+    assert_file_contains "${S17_BAD}/STATE.md" "Pending" "17.3: STATE.md unchanged after rejection of '${bad_val}'"
+done
+
+# ---------------------------------------------------------------------------
+# 17.4 — C4 no-regression: the 6 legacy producer strings still validate (exit 0)
+# These are exactly what the live pipeline writes today.
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- 17.4: C4 no-regression — 6 legacy producer strings accepted ---"
+
+for legacy_val in "Pending" "In Progress" "In Review" "Blocked" "Done" "Failed"; do
+    S17_LEG="${TMPDIR_BASE}/unit17-legacy-$(echo "$legacy_val" | tr ' ' '_')"
+    make_status_state "$S17_LEG"
+    run_status_write "${S17_LEG}/STATE.md" "$legacy_val"
+    assert_exit_zero "$STATUS_CODE" "17.4: C4 legacy Status='${legacy_val}' accepted (exit 0)"
+done
+
+# ---------------------------------------------------------------------------
+# 17.5 — Status-only scope: non-Status field with unusual value passes through
+# The enum guard must NOT leak to other fields (e.g. Notes, Elapsed).
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- 17.5: Status-only scope — enum does not leak to other fields ---"
+
+S17_SCOPE="${TMPDIR_BASE}/unit17-scope"
+make_status_state "$S17_SCOPE"
+
+# Notes field with a value that would be invalid as a Status member — must be accepted
+SCOPE_CODE=0
+AID_STATE_FILE="${S17_SCOPE}/STATE.md" bash "$SCRIPT" --task-id 1 --field Notes --value "anything weird !@#" 2>/dev/null || SCOPE_CODE=$?
+assert_exit_zero "$SCOPE_CODE" "17.5: Notes='anything weird !@#' accepted (enum does not leak to Notes)"
+assert_file_contains "${S17_SCOPE}/STATE.md" "anything weird !@#" "17.5: Notes value written successfully"
+
+# Elapsed field with a non-enum-like value — must be accepted
+SCOPE_CODE=0
+AID_STATE_FILE="${S17_SCOPE}/STATE.md" bash "$SCRIPT" --task-id 1 --field Elapsed --value "running" 2>/dev/null || SCOPE_CODE=$?
+assert_exit_zero "$SCOPE_CODE" "17.5: Elapsed='running' accepted (enum does not apply to Elapsed)"
+
+# Review field with a lowercase-Status-like value — must be accepted
+SCOPE_CODE=0
+AID_STATE_FILE="${S17_SCOPE}/STATE.md" bash "$SCRIPT" --task-id 1 --field Review --value "done" 2>/dev/null || SCOPE_CODE=$?
+assert_exit_zero "$SCOPE_CODE" "17.5: Review='done' accepted (enum does not apply to Review)"
+
+# ---------------------------------------------------------------------------
+# 17.6 — Deterministic consumability: written Status is grep-recoverable in
+# the ## Tasks Status row format that feature-002 consumes.
+# The row format is: | NNN | task-name | Type | Wave | Status | Review | Elapsed | Notes |
+# feature-002 reads the Status column by grepping for the task row within the table.
+# ---------------------------------------------------------------------------
+echo ""
+echo "--- 17.6: Deterministic consumability — Status grep-recoverable in Tasks Status row ---"
+
+S17_CONS="${TMPDIR_BASE}/unit17-consumable"
+make_status_state "$S17_CONS"
+
+# Write "In Review" — a multi-word status that must round-trip exactly
+AID_STATE_FILE="${S17_CONS}/STATE.md" bash "$SCRIPT" --task-id 1 --field Status --value "In Review" 2>/dev/null
+
+# Verify the ## Tasks Status section still contains the row
+assert_file_contains "${S17_CONS}/STATE.md" "## Tasks Status" "17.6: ## Tasks Status section present after Status write"
+
+# Extract the task-001 row and verify Status column is "In Review"
+# The row format: | 001 | task-001-alpha | IMPLEMENT | 1 | In Review | — | — | — |
+task_row=$(grep '| 001 ' "${S17_CONS}/STATE.md")
+assert_output_contains "$task_row" "In Review" "17.6: 'In Review' appears in task-001 row"
+
+# Verify the Status value is grep-recoverable from the task row (feature-002 pattern)
+recovered_status=$(grep '| 001 ' "${S17_CONS}/STATE.md" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $6); print $6}')
+assert_eq "$recovered_status" "In Review" "17.6: Status value grep-recoverable from task row (awk column 5)"
+
+# Repeat for "Done" to confirm a single-word status also round-trips
+AID_STATE_FILE="${S17_CONS}/STATE.md" bash "$SCRIPT" --task-id 1 --field Status --value "Done" 2>/dev/null
+recovered_status=$(grep '| 001 ' "${S17_CONS}/STATE.md" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $6); print $6}')
+assert_eq "$recovered_status" "Done" "17.6: Status 'Done' grep-recoverable from task row after overwrite"
+
+# Repeat for Canceled (7th member — not in legacy C4 set; confirm it is also consumable)
+AID_STATE_FILE="${S17_CONS}/STATE.md" bash "$SCRIPT" --task-id 1 --field Status --value "Canceled" 2>/dev/null
+recovered_status=$(grep '| 001 ' "${S17_CONS}/STATE.md" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $6); print $6}')
+assert_eq "$recovered_status" "Canceled" "17.6: Status 'Canceled' grep-recoverable from task row"
+
+# ---------------------------------------------------------------------------
+echo ""
 echo "=== Unit 16: FR16 derivation primitives — on-disk block determinism ==="
 
 # FR16 needs: a readable Lifecycle value + conditional reason fields present/absent per state.
