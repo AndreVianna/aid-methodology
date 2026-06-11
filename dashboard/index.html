@@ -105,8 +105,9 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
   box-shadow: var(--shadow-sm);
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.6rem 1.5rem;
   backdrop-filter: saturate(140%) blur(8px);
 }
 .top-bar .brand {
@@ -126,7 +127,7 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
 }
 .breadcrumb .sep { margin: 0 0.45em; opacity: 0.6; }
 .breadcrumb .current { color: var(--text); font-weight: 500; }
-.controls { display: flex; align-items: center; gap: 0.5rem; }
+.controls { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
 .btn-ghost {
   background: transparent;
   border: 1px solid var(--border);
@@ -179,8 +180,8 @@ main {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 .grid.g2 { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
-.grid.g3 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-.grid.g4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.grid.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
 .card {
   background: var(--bg-elev);
@@ -204,18 +205,18 @@ main {
 
 /* ---------- Callouts ---------- */
 .callout {
-  padding: 1rem 1.25rem;
+  padding: 0.6rem 1.1rem;
   border-radius: var(--radius);
   border-left: 4px solid var(--info);
   background: var(--info-bg);
   color: var(--text);
-  margin: 1rem 0;
+  margin: 0.75rem 0;
   font-size: 0.92rem;
 }
 .callout.warn { border-left-color: var(--warn); background: var(--warn-bg); color: var(--text); }
 .callout.err  { border-left-color: var(--err);  background: var(--err-bg);  color: var(--text); }
 .callout.ok   { border-left-color: var(--ok);   background: var(--ok-bg);   color: var(--text); }
-.callout h4 { margin: 0 0 0.35em 0; font-size: 0.78rem; color: inherit; opacity: 0.85; }
+.callout h4 { margin: 0 0 0.2em 0; font-size: 0.78rem; color: inherit; opacity: 0.85; }
 .callout p:last-child { margin-bottom: 0; }
 
 /* ---------- Footer ---------- */
@@ -230,13 +231,26 @@ footer {
 }
 
 /* ---------- Responsive ---------- */
+
+/* Tablet: 2-col chip grid between 768px and 1024px */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .grid.g3, .grid.g4 { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 768px) {
-  .top-bar { padding: 0.6rem 1rem; gap: 0.5rem; }
+  .top-bar { padding: 0.5rem 1rem; gap: 0.4rem 0.75rem; }
   .top-bar .brand { font-size: 0.85rem; }
-  .breadcrumb { font-size: 0.78rem; }
+  .breadcrumb { font-size: 0.78rem; min-width: 0; }
   main { padding: 1rem 1rem 3rem; }
   .grid, .grid.g2, .grid.g3, .grid.g4 { grid-template-columns: 1fr; }
   .stage-rail { overflow-x: auto; flex-wrap: nowrap; }
+  .content-col { max-width: 100%; }
+}
+
+/* Extra-narrow: ensure top-bar wraps at 390px */
+@media (max-width: 420px) {
+  .breadcrumb { display: none; }
+  .controls { width: 100%; justify-content: flex-end; }
 }
 
 /* ---------- Print ---------- */
@@ -297,6 +311,13 @@ footer {
 
 /* ---------- Dashboard-specific ---------- */
 
+/* Content-column wrapper: header card + stage rail centered at comfortable width */
+.content-col {
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* Stage rail (UI-2) */
 .stage-rail {
   display: flex;
@@ -327,10 +348,64 @@ footer {
   color: var(--text-dim);
   margin-bottom: 0.5rem;
 }
+/* Done wave: muted pill row matching active wave visual language */
 .wave-summary {
-  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: var(--text-dim);
-  padding: 0.4rem 0;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.85rem;
+}
+
+/* Compact task chip — auto-height, content-sized */
+.task-chip {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.65rem 0.85rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  align-items: flex-start;
+}
+.task-chip:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.task-chip.chip-active { border-left: 3px solid var(--accent); }
+.task-chip.chip-pending { opacity: 0.7; }
+.task-chip.chip-done { opacity: 0.55; }
+.task-chip .chip-top {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+}
+.task-chip .chip-task-id {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+  font-family: "SF Mono", Monaco, Consolas, "Roboto Mono", monospace;
+}
+.task-chip .chip-type {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.task-chip .chip-meta {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  align-items: center;
 }
 
 /* Interval input in controls */
@@ -439,19 +514,21 @@ footer {
 
   <!-- Work header card (UI-1 / UI-2) -->
   <div id="work-header" style="display:none">
-    <div class="card" id="work-header-card" style="margin-bottom:1rem">
-      <div class="kicker" id="work-kicker"></div>
-      <h2 id="work-name" style="margin-bottom:0.3rem"></h2>
-      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem" id="work-badges"></div>
-      <div class="meta" id="work-meta"></div>
+    <div class="content-col">
+      <div class="card" id="work-header-card" style="margin-bottom:1rem">
+        <div class="kicker" id="work-kicker"></div>
+        <h2 id="work-name" style="margin-bottom:0.3rem"></h2>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;margin-bottom:0.4rem" id="work-badges"></div>
+        <div class="meta" id="work-meta"></div>
+      </div>
+
+      <!-- Stage rail (UI-2) -->
+      <div id="stage-rail-wrap">
+        <div class="stage-rail" id="stage-rail" role="list" aria-label="Pipeline stages"></div>
+      </div>
     </div>
 
-    <!-- Stage rail (UI-2) -->
-    <div id="stage-rail-wrap">
-      <div class="stage-rail" id="stage-rail" role="list" aria-label="Pipeline stages"></div>
-    </div>
-
-    <!-- Tasks section (UI-3) -->
+    <!-- Tasks section (UI-3) — full width for grid -->
     <div id="tasks-section" style="margin-top:1.5rem"></div>
   </div>
 
@@ -964,33 +1041,58 @@ footer {
 
   function makeTaskChip(task) {
     var card = document.createElement('div');
-    card.className = 'card';
+    card.className = 'task-chip';
 
-    var kicker = document.createElement('div');
-    kicker.className = 'kicker';
-    kicker.textContent = task.type || '—';
-    card.appendChild(kicker);
+    // Visual state class for active/pending/done
+    var s = task.status;
+    if (s === 'In Progress' || s === 'In Review') {
+      card.classList.add('chip-active');
+    } else if (s === 'Pending') {
+      card.classList.add('chip-pending');
+    } else if (s === 'Done' || s === 'Canceled') {
+      card.classList.add('chip-done');
+    }
 
-    // Status badge
+    // Top row: task_id + type kicker
+    var topRow = document.createElement('div');
+    topRow.className = 'chip-top';
+
+    var idEl = document.createElement('span');
+    idEl.className = 'chip-task-id';
+    idEl.textContent = task.task_id || '—';
+    topRow.appendChild(idEl);
+
+    var typeEl = document.createElement('span');
+    typeEl.className = 'chip-type';
+    typeEl.textContent = task.type || '—';
+    topRow.appendChild(typeEl);
+
+    card.appendChild(topRow);
+
+    // Status badge row
     var statusBadge = makeTaskStatusBadge(task.status);
     card.appendChild(statusBadge);
 
-    // Review grade badge (if present)
-    if (task.review_grade) {
-      var gradeBadge = document.createElement('span');
-      gradeBadge.className = 'badge badge-info';
-      gradeBadge.style.marginTop = '0.3rem';
-      gradeBadge.textContent = 'Grade ' + task.review_grade;
-      card.appendChild(gradeBadge);
-    }
+    // Meta row: grade + elapsed (when present)
+    var hasMeta = task.review_grade || task.elapsed;
+    if (hasMeta) {
+      var metaRow = document.createElement('div');
+      metaRow.className = 'chip-meta';
 
-    // Elapsed meta
-    if (task.elapsed) {
-      var metaEl = document.createElement('div');
-      metaEl.className = 'meta';
-      metaEl.style.marginTop = '0.4rem';
-      metaEl.textContent = task.elapsed;
-      card.appendChild(metaEl);
+      if (task.review_grade) {
+        var gradeBadge = document.createElement('span');
+        gradeBadge.className = 'badge badge-info';
+        gradeBadge.textContent = 'Grade ' + task.review_grade;
+        metaRow.appendChild(gradeBadge);
+      }
+
+      if (task.elapsed) {
+        var elapsedEl = document.createElement('span');
+        elapsedEl.textContent = task.elapsed;
+        metaRow.appendChild(elapsedEl);
+      }
+
+      card.appendChild(metaRow);
     }
 
     return card;

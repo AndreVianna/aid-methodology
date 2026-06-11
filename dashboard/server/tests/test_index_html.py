@@ -425,5 +425,53 @@ class TestServerRoundTrip(unittest.TestCase):
         self.assertNotIn('unpkg.com', text)
 
 
+# ---------------------------------------------------------------------------
+# VP1: Visual polish checks (delivery-002 VISUAL-POLISH pass)
+# ---------------------------------------------------------------------------
+
+class TestVisualPolish(unittest.TestCase):
+    """
+    Structural checks for the visual-polish changes introduced in delivery-002.
+
+    VP1: Enriched chip layout — chip-task-id span present in JS output.
+    VP2: Content column — .content-col CSS class present.
+    VP3: Wave summary pill — wave-summary uses inline-flex (muted pill).
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        assert _INDEX_HTML.is_file(), f"index.html not found at {_INDEX_HTML}"
+        cls.src = _INDEX_HTML.read_text(encoding="utf-8")
+
+    def test_vp1_task_chip_class_present(self):
+        # The makeTaskChip function must produce .task-chip elements
+        self.assertIn("'task-chip'", self.src,
+                      "JS must create task-chip elements for enriched compact chips")
+
+    def test_vp1_chip_task_id_class_present(self):
+        # Each chip must include a chip-task-id element showing the task_id field
+        self.assertIn("'chip-task-id'", self.src,
+                      "JS must produce chip-task-id element on each task chip")
+
+    def test_vp1_chip_reads_task_id_field(self):
+        # JS must access task.task_id
+        self.assertIn("task.task_id", self.src,
+                      "JS must read task.task_id to populate chip-task-id")
+
+    def test_vp2_content_col_css(self):
+        # .content-col must be defined in CSS to constrain header/rail column
+        self.assertIn(".content-col", self.src,
+                      ".content-col CSS class must exist for centered-column layout")
+
+    def test_vp3_wave_summary_pill(self):
+        # wave-summary must use inline-flex (muted pill treatment)
+        # Check the CSS block has inline-flex for .wave-summary
+        idx = self.src.find('.wave-summary')
+        self.assertNotEqual(idx, -1, ".wave-summary CSS block must be present")
+        snippet = self.src[idx:idx + 300]
+        self.assertIn('inline-flex', snippet,
+                      ".wave-summary must use inline-flex for muted pill look")
+
+
 if __name__ == "__main__":
     unittest.main()
