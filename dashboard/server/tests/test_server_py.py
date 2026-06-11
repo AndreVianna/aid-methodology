@@ -453,7 +453,7 @@ class TestSigtermExit(unittest.TestCase):
 
         _REPO_ROOT = Path(__file__).resolve().parents[4]
         _SERVER_SCRIPT = Path(__file__).resolve().parents[1] / "server.py"
-        fixture = Path(__file__).resolve().parents[1] / ".." / ".." / "tests" / "fixtures" / "pt1-aid"
+        fixture = Path(__file__).resolve().parent / "fixtures" / "pt1-aid"
 
         # Pick a free port.
         with socket.socket() as s:

@@ -11,8 +11,8 @@
 #
 # Fixture cases covered:
 #   1. Full fixture (.aid/ with Running+parallel, Paused, Blocked+IMPEDIMENT,
-#      Completed, and Fallback works) -- tests/fixtures/pt1-aid/
-#   2. No .aid/ directory present -- tests/fixtures/pt1-no-aid/
+#      Completed, and Fallback works) -- dashboard/server/tests/fixtures/pt1-aid/
+#   2. No .aid/ directory present -- dashboard/server/tests/fixtures/pt1-no-aid/
 #
 # Skip-if-absent:
 #   - python3 half: only if python3 is present
@@ -26,7 +26,7 @@
 #   1 -- one or more checks failed
 #
 # Source is ASCII-only (shipped script posture; coding-standards.md).
-# The fixture data files (tests/fixtures/pt1-aid/) MAY contain U+2028/U+2029 --
+# The fixture data files (dashboard/server/tests/fixtures/pt1-aid/) MAY contain U+2028/U+2029 --
 # they are test DATA, not shipped scripts, and are not scanned by test-ascii-only.sh.
 
 set -uo pipefail
@@ -71,8 +71,8 @@ fi
 # Fixtures
 # ---------------------------------------------------------------------------
 
-FIXTURE_FULL="${REPO_ROOT}/tests/fixtures/pt1-aid"
-FIXTURE_EMPTY="${REPO_ROOT}/tests/fixtures/pt1-no-aid"
+FIXTURE_FULL="${REPO_ROOT}/dashboard/server/tests/fixtures/pt1-aid"
+FIXTURE_EMPTY="${REPO_ROOT}/dashboard/server/tests/fixtures/pt1-no-aid"
 
 # ---------------------------------------------------------------------------
 # Cleanup registry: track pids to kill on exit
