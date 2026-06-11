@@ -1,0 +1,222 @@
+# dashboard/reader/reader.py
+# Public entry point: read_repo(aid_root) -> RepoModel
+#
+# Feature-002 Feature Flow (step numbers match the SPEC.md):
+#   1. RESOLVE    verify aid_root/.aid exists; absent -> empty RepoModel + parse_warning
+#   2. LEVEL-0    parse .aid/.aid-manifest.json (+ .aid/.aid-version)    -> ToolInfo
+#   3. LEVEL-1    parse .aid/settings.yml + stat .aid/knowledge/          -> RepoInfo
+#   4. ENUMERATE  glob .aid/work-NNN-*/ (dirs only; FR12)                -> work_id list
+#   5. PER WORK   read STATE.md once; parse normalized block + tasks + Q&A -> WorkModel list
+#   6. ASSEMBLE   RepoModel{tool, repo, works, read=ReadMeta}             -> return
+#
+# This module is the ONLY place that performs filesystem I/O for the whole pass.
+# LC-1 Locator is in locator.py; LC-2 Parsers are in parsers.py.
+#
+# NFR2 (read-only): no write, no append, no lock, no subprocess, no agent/LLM.
+# NFR7 (no-LLM):    all derivation is deterministic code; no inference, no model call.
+# NFR4 (overhead):  single bounded pass; ReadMeta.bytes_read records total bytes read.
+#
+# Python 3.11+ stdlib only. Zero third-party deps.
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Union
+
+from .locator import locate_aid_root
+from .models import (
+    ReadMeta,
+    RepoInfo,
+    RepoModel,
+    SourceMode,
+    ToolInfo,
+    WorkModel,
+)
+from .parsers import (
+    ParsedWork,
+    parse_kb_state,
+    parse_project_name,
+    parse_state_md,
+    parse_tool_info,
+)
+
+
+def read_repo(aid_root: Union[str, Path]) -> RepoModel:
+    """Read AID state for the repo at aid_root and return a normalized RepoModel.
+
+    Single pure, idempotent filesystem pass. No writes, no locks, no subprocess,
+    no agent/LLM (NFR2/NFR7).
+
+    Edge cases:
+    - Absent .aid/       -> empty RepoModel with a parse_warning (SPEC AC1).
+    - Zero work folders  -> works=[] with valid tool/repo/read fields (SPEC AC1).
+    - Malformed STATE.md -> parse_warning + best-effort WorkModel; never aborts (SPEC).
+
+    Args:
+        aid_root: The repo root directory that contains the .aid/ subdirectory.
+                  May be the repo root (which contains .aid/) or .aid/ itself --
+                  both are accepted for convenience.
+
+    Returns:
+        RepoModel with tool, repo, works, and read (ReadMeta) fields populated.
+    """
+    read_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    parse_warnings: list[str] = []
+    bytes_read = 0
+
+    # Normalize aid_root: accept either the repo root or a path ending in ".aid"
+    root = Path(aid_root).resolve()
+    if root.name == ".aid":
+        root = root.parent
+
+    # Step 1: RESOLVE -- locate .aid/ and enumerate work folders (LC-1)
+    loc = locate_aid_root(root)
+
+    if not loc.aid_exists:
+        parse_warnings.append(
+            f"No .aid/ directory found at {root}; returning empty model."
+        )
+        return RepoModel(
+            tool=ToolInfo(manifest_present=False),
+            repo=RepoInfo(
+                project_name=root.name,
+                aid_dir=str(loc.aid_dir),
+                kb_state=None,
+            ),
+            works=[],
+            read=ReadMeta(
+                read_at=read_at,
+                work_count=0,
+                fallback_works=[],
+                parse_warnings=parse_warnings,
+                bytes_read=0,
+            ),
+        )
+
+    # Step 2: LEVEL-0 -- ToolInfo (LC-2)
+    tool_info, br = parse_tool_info(loc.manifest_path, loc.version_path)
+    bytes_read += br
+
+    # Step 3: LEVEL-1 -- RepoInfo + KbStateRef (LC-2)
+    project_name, br = parse_project_name(loc.settings_path)
+    bytes_read += br
+    if not project_name:
+        project_name = root.name  # fallback: folder basename (SPEC DM-7 note)
+
+    kb_state, br = parse_kb_state(loc.kb_dir)
+    bytes_read += br
+
+    repo_info = RepoInfo(
+        project_name=project_name,
+        aid_dir=str(loc.aid_dir),
+        kb_state=kb_state,
+    )
+
+    # Step 4: ENUMERATE -- work folders already enumerated by LC-1 locator
+    # Steps 5a-5g: PER WORK -- parse STATE.md; build WorkModel list
+    works: list[WorkModel] = []
+    fallback_works: list[str] = []
+
+    for work_dir in loc.work_dirs:
+        work_id = work_dir.name
+        work_model, work_warnings, work_bytes = _read_work(work_dir, work_id)
+        works.append(work_model)
+        parse_warnings.extend(work_warnings)
+        bytes_read += work_bytes
+        if work_model.source_mode != SourceMode.Normalized:
+            fallback_works.append(work_id)
+
+    # Step 6: ASSEMBLE
+    return RepoModel(
+        tool=tool_info,
+        repo=repo_info,
+        works=works,
+        read=ReadMeta(
+            read_at=read_at,
+            work_count=len(works),
+            fallback_works=fallback_works,
+            parse_warnings=parse_warnings,
+            bytes_read=bytes_read,
+        ),
+    )
+
+
+def _read_work(
+    work_dir: Path, work_id: str
+) -> tuple[WorkModel, list[str], int]:
+    """Read and parse a single work folder's STATE.md.
+
+    Steps 5a-5g of the Feature Flow, per-work.
+
+    Returns (WorkModel, parse_warnings, bytes_read).
+    Never raises: any exception yields a parse_warning + best-effort WorkModel.
+    """
+    state_path = work_dir / "STATE.md"
+    parse_warnings: list[str] = []
+    bytes_read = 0
+
+    # Step 5a: read STATE.md once into memory (single file read)
+    if not state_path.is_file():
+        parse_warnings.append(
+            f"{work_id}: STATE.md not found; returning minimal WorkModel."
+        )
+        return _minimal_work_model(work_id, parse_warnings), parse_warnings, 0
+
+    try:
+        raw = state_path.read_bytes()
+        bytes_read = len(raw)
+        text = raw.decode("utf-8", errors="replace")
+    except OSError as exc:
+        parse_warnings.append(
+            f"{work_id}: STATE.md read error ({exc}); returning minimal WorkModel."
+        )
+        return _minimal_work_model(work_id, parse_warnings), parse_warnings, 0
+
+    # Steps 5b-5d: parse normalized block, tasks, pending Q&A (LC-2)
+    pw: ParsedWork = parse_state_md(text, work_id=work_id)
+    parse_warnings.extend(pw.parse_warnings)
+
+    # Extract display name from work_id slug (strip leading "work-NNN-")
+    name = _slug_from_work_id(work_id)
+
+    # Step 5e: set source_mode; step 5f: lifecycle already set by parsers
+    # Step 5g: set updated, pause/block fields
+    work_model = WorkModel(
+        work_id=work_id,
+        name=name,
+        lifecycle=pw.lifecycle,
+        phase=pw.phase,
+        active_skill=pw.active_skill,
+        updated=pw.updated,
+        pause_reason=pw.pause_reason,
+        block_reason=pw.block_reason,
+        block_artifact=pw.block_artifact,
+        tasks=pw.tasks,
+        pending_inputs=pw.pending_inputs,
+        source_mode=pw.source_mode,
+    )
+
+    return work_model, parse_warnings, bytes_read
+
+
+def _minimal_work_model(work_id: str, _warnings: list[str]) -> WorkModel:
+    """Return a minimal WorkModel for a work folder with no parseable STATE.md."""
+    from .models import Lifecycle, SourceMode
+    return WorkModel(
+        work_id=work_id,
+        name=_slug_from_work_id(work_id),
+        lifecycle=Lifecycle.Unknown,
+        source_mode=SourceMode.Fallback,
+    )
+
+
+def _slug_from_work_id(work_id: str) -> str:
+    """Extract the display slug from a work_id like 'work-001-aid-dashboard'.
+
+    Returns 'aid-dashboard' (strips leading 'work-NNN-').
+    Falls back to the full work_id if it doesn't match the expected pattern.
+    """
+    import re
+    m = re.match(r"^work-\d+-(.+)$", work_id)
+    return m.group(1) if m else work_id
