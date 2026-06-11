@@ -106,6 +106,108 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File tests/windows/Test-AidInstaller.ps1
 
+      - name: Dashboard CLI Windows smoke (PS spawn path)
+        if: matrix.mode == 'native-ps1'
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = 'Stop'
+
+          $env:AID_NO_UPDATE_CHECK = '1'
+          $repoRoot = (Get-Location).Path
+          $aidPs1   = Join-Path $repoRoot 'bin' 'aid.ps1'
+          $port     = 8799
+          $pidFile  = Join-Path $repoRoot '.aid' '.temp' 'dashboard.pid'
+
+          # Robust cleanup helper: best-effort stop so no child/pid leaks even on failure.
+          $cleanup = {
+              pwsh -NoProfile -File $aidPs1 dashboard stop --target $repoRoot 2>&1 | Out-Null
+          }
+
+          try {
+              # 1. Start node server -- expect exit 0 and a URL line in output.
+              $out1 = pwsh -NoProfile -File $aidPs1 dashboard start node --port $port --target $repoRoot 2>&1
+              if ($LASTEXITCODE -ne 0) {
+                  Write-Error "dashboard start node: expected exit 0, got $LASTEXITCODE`nOutput: $out1"
+                  exit 1
+              }
+              $urlLine = $out1 | Where-Object { $_ -match 'http://127\.0\.0\.1' } | Select-Object -First 1
+              if (-not $urlLine) {
+                  Write-Error "dashboard start node: no URL line in output`nOutput: $out1"
+                  exit 1
+              }
+              Write-Host "dashboard start node: exit 0, URL present (PASS)"
+
+              # 2. pid file exists and is valid JSON with correct fields.
+              if (-not (Test-Path $pidFile -PathType Leaf)) {
+                  Write-Error "dashboard start node: pid file not found at $pidFile"
+                  exit 1
+              }
+              $rec = Get-Content -LiteralPath $pidFile -Raw | ConvertFrom-Json
+              if ($rec.bind -ne '127.0.0.1') {
+                  Write-Error "dashboard start: rec.bind expected '127.0.0.1', got '$($rec.bind)'"
+                  exit 1
+              }
+              if ($rec.remote -ne $false) {
+                  Write-Error "dashboard start: rec.remote expected false, got '$($rec.remote)'"
+                  exit 1
+              }
+              if ($rec.runtime -ne 'node') {
+                  Write-Error "dashboard start: rec.runtime expected 'node', got '$($rec.runtime)'"
+                  exit 1
+              }
+              Write-Host "dashboard start node: pid record valid JSON, bind/remote/runtime correct (PASS)"
+
+              # 3. Second start while running -> exit 8 (already running).
+              $out3 = pwsh -NoProfile -File $aidPs1 dashboard start node --port $port --target $repoRoot 2>&1
+              if ($LASTEXITCODE -ne 8) {
+                  Write-Error "dashboard start (already running): expected exit 8, got $LASTEXITCODE`nOutput: $out3"
+                  exit 1
+              }
+              Write-Host "dashboard start (already running): exit 8 (PASS)"
+
+              # 4. Stop -> exit 0; pid file removed.
+              $out4 = pwsh -NoProfile -File $aidPs1 dashboard stop --target $repoRoot 2>&1
+              if ($LASTEXITCODE -ne 0) {
+                  Write-Error "dashboard stop: expected exit 0, got $LASTEXITCODE`nOutput: $out4"
+                  exit 1
+              }
+              if (Test-Path $pidFile -PathType Leaf) {
+                  Write-Error "dashboard stop: pid file still present after stop"
+                  exit 1
+              }
+              Write-Host "dashboard stop: exit 0, pid file removed (PASS)"
+
+              # 5. Second stop (nothing running) -> exit 0 (idempotent).
+              $out5 = pwsh -NoProfile -File $aidPs1 dashboard stop --target $repoRoot 2>&1
+              if ($LASTEXITCODE -ne 0) {
+                  Write-Error "dashboard stop (idempotent): expected exit 0, got $LASTEXITCODE`nOutput: $out5"
+                  exit 1
+              }
+              Write-Host "dashboard stop (idempotent): exit 0 (PASS)"
+
+              # 6. Start with --remote -> exit 10 (clear-fail stub).
+              $out6 = pwsh -NoProfile -File $aidPs1 dashboard start node --remote --port $port --target $repoRoot 2>&1
+              if ($LASTEXITCODE -ne 10) {
+                  Write-Error "dashboard start --remote: expected exit 10, got $LASTEXITCODE`nOutput: $out6"
+                  exit 1
+              }
+              # If a pid record was written (server spawned before exit 10), assert it shows remote=false.
+              if (Test-Path $pidFile -PathType Leaf) {
+                  $rec6 = Get-Content -LiteralPath $pidFile -Raw | ConvertFrom-Json
+                  if ($rec6.remote -ne $false) {
+                      Write-Error "dashboard start --remote: rec.remote expected false (server stayed local), got '$($rec6.remote)'"
+                      exit 1
+                  }
+                  Write-Host "dashboard start --remote: pid record present with remote=false (local-only, PASS)"
+              }
+              Write-Host "dashboard start --remote: exit 10 (PASS)"
+
+              Write-Host "Dashboard CLI Windows smoke: all checks passed."
+          } finally {
+              & $cleanup
+          }
+
       - name: npm channel Windows smoke (pack + global install + aid status/add)
         if: matrix.mode == 'native-ps1'
         shell: pwsh
