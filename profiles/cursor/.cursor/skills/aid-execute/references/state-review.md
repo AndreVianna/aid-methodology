@@ -70,6 +70,14 @@ For each `[CRITICAL]` finding:
 2. Re-verify build/lint/test gates after the fix.
 3. If the critical persists after the fix → **STOP.** Raise an IMPEDIMENT
    (`type: architecture-conflict`). Do not attempt a second fix cycle.
+   Write the IMPEDIMENT to `.aid/{work}/IMPEDIMENT-task-{NNN}.md` and emit the pipeline block
+   signal (silent state-write — no output, no gate):
+   ```bash
+   bash .cursor/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
+   bash .cursor/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Critical finding persists after fix attempt — architecture-conflict impediment raised"
+   bash .cursor/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-task-{NNN}.md"
+   bash .cursor/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+   ```
 4. Mark the finding as `Fixed-on-spot` in the quick-check findings block (see §
    Write Findings to STATE.md below).
 

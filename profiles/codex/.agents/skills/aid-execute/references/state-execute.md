@@ -256,6 +256,14 @@ Remove `task-{NNN}` from the in-flight set.
    writeback-state.sh --task-id NNN --field Status --value "Failed"
    ```
 
+   Emit pipeline block signal (silent state-write — no output, no gate):
+   ```bash
+   bash .agents/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
+   bash .agents/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Task failed with unresolved impediment — task-{NNN}"
+   bash .agents/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-task-{NNN}.md"
+   bash .agents/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+   ```
+
 3. Emit `[pool] ✗ task-{NNN} FAILED — computing failure-block-radius`.
 
 4. **Compute the failure-block-radius (transitive-descendant BFS):**

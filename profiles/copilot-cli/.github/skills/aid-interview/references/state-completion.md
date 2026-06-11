@@ -61,6 +61,12 @@ Is there anything else we should consider, or are the requirements ready?
     if they exist
   - If `infrastructure.md § Project Management` defines a tool → create an Epic for this work
   - Print: `✅ Requirements approved.`
+  - Emit pipeline pause signal (silent state-write — no output, no gate):
+    ```
+    bash .github/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
+    bash .github/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Requirements approved — awaiting user re-invocation to begin feature decomposition"
+    bash .github/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    ```
   - Print the pause reason and resume command: `[Pause] User approval is a contracted checkpoint (feature-002 SPEC IQ9). Re-run /aid-interview to continue to [State: FEATURE-DECOMPOSITION].` and exit (this state is **PAUSE-FOR-USER-DECISION** — does NOT auto-chain).
 
 - **[2] Additional consideration:**

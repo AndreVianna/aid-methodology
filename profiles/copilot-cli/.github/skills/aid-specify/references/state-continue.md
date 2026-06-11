@@ -2,6 +2,14 @@
 
 Work STATE.md `## Features Status` shows this feature `In Discussion`; find first `Pending` or `In Discussion` section in SPEC.md and resume **The Loop** for that section.
 
+Emit pipeline phase (silent state-write only — no output, no gate):
+```
+bash .github/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .github/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
+bash .github/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-specify
+bash .github/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+```
+
 ---
 
 ## The Loop — Per Section

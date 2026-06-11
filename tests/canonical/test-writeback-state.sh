@@ -1096,5 +1096,87 @@ assert_eq "$as_val" "aid-develop" "16e: FR16 Active Skill value grep-recoverable
 
 # ---------------------------------------------------------------------------
 echo ""
+echo "=== Unit 18: M5 — pause/block signal sequences (feature-001 §4 M5) ==="
+
+# 18a: Pause path (PAUSE-FOR-USER-ACTION / PAUSE-FOR-USER-DECISION emit sequence)
+# Simulates: skill hits a PAUSE advance type → emits Paused-Awaiting-Input + Pause Reason + Updated
+PIPE_STATE18A="${TMPDIR_BASE}/pipe18a/STATE.md"
+mkdir -p "$(dirname "$PIPE_STATE18A")"
+make_pipeline_state "$PIPE_STATE18A"
+AID_STATE_FILE="$PIPE_STATE18A" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
+AID_STATE_FILE="$PIPE_STATE18A" bash "$SCRIPT" --pipeline --field Phase --value Specify 2>/dev/null
+AID_STATE_FILE="$PIPE_STATE18A" bash "$SCRIPT" --pipeline --field "Active Skill" --value aid-specify 2>/dev/null
+# PAUSE transition (e.g. state-blocked.md emit)
+AID_STATE_FILE="$PIPE_STATE18A" bash "$SCRIPT" --pipeline --field Lifecycle --value "Paused-Awaiting-Input" 2>/dev/null
+code=0
+AID_STATE_FILE="$PIPE_STATE18A" bash "$SCRIPT" --pipeline --field "Pause Reason" --value "Blocker pending — awaiting loopback resolution before /aid-specify can continue" 2>/dev/null || code=$?
+assert_exit_zero "$code" "18a: Pause Reason emit after PAUSE transition → exit 0"
+assert_file_contains "$PIPE_STATE18A" "**Lifecycle:** Paused-Awaiting-Input" "18a: Lifecycle set to Paused-Awaiting-Input"
+assert_file_contains "$PIPE_STATE18A" "**Pause Reason:** Blocker pending" "18a: Pause Reason written"
+
+# 18b: Resume path — M4 Running emit clears Pause Reason
+# Simulates: user re-invokes skill → state entry emits Running (as M4 specifies)
+AID_STATE_FILE="$PIPE_STATE18A" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
+assert_file_contains "$PIPE_STATE18A" "**Lifecycle:** Running" "18b: Lifecycle returns to Running on resume"
+assert_file_not_contains "$PIPE_STATE18A" "**Pause Reason:**" "18b: Pause Reason cleared on Running transition (M4 resume)"
+
+# 18c: Block path (impediment / Failed task emit sequence)
+# Simulates: state-execute.md PD-4 failure → Status=Failed → Blocked + Block Reason + Block Artifact
+PIPE_STATE18C="${TMPDIR_BASE}/pipe18c/STATE.md"
+mkdir -p "$(dirname "$PIPE_STATE18C")"
+make_pipeline_state "$PIPE_STATE18C"
+AID_STATE_FILE="$PIPE_STATE18C" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
+AID_STATE_FILE="$PIPE_STATE18C" bash "$SCRIPT" --pipeline --field Phase --value Execute 2>/dev/null
+AID_STATE_FILE="$PIPE_STATE18C" bash "$SCRIPT" --pipeline --field "Active Skill" --value aid-execute 2>/dev/null
+# Failure path: set task Failed, then emit Blocked
+AID_STATE_FILE="$PIPE_STATE18C" bash "$SCRIPT" --task-id 1 --field Status --value "Failed" 2>/dev/null
+AID_STATE_FILE="$PIPE_STATE18C" bash "$SCRIPT" --pipeline --field Lifecycle --value Blocked 2>/dev/null
+code=0
+AID_STATE_FILE="$PIPE_STATE18C" bash "$SCRIPT" --pipeline --field "Block Reason" --value "Task failed with unresolved impediment — task-001" 2>/dev/null || code=$?
+assert_exit_zero "$code" "18c: Block Reason emit after task failure → exit 0"
+AID_STATE_FILE="$PIPE_STATE18C" bash "$SCRIPT" --pipeline --field "Block Artifact" --value ".aid/work-001/IMPEDIMENT-task-001.md" 2>/dev/null
+assert_file_contains "$PIPE_STATE18C" "**Lifecycle:** Blocked" "18c: Lifecycle set to Blocked on task failure"
+assert_file_contains "$PIPE_STATE18C" "**Block Reason:** Task failed" "18c: Block Reason written"
+assert_file_contains "$PIPE_STATE18C" "**Block Artifact:** .aid/work-001/IMPEDIMENT-task-001.md" "18c: Block Artifact written"
+assert_file_not_contains "$PIPE_STATE18C" "**Pause Reason:**" "18c: Pause Reason absent when Blocked"
+
+# 18d: Block resolution path — M4 Running emit on re-entry clears Block fields
+# Simulates: user resolves impediment → re-runs /aid-execute → state-execute.md Step 1 emits Running
+AID_STATE_FILE="$PIPE_STATE18C" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
+assert_file_contains "$PIPE_STATE18C" "**Lifecycle:** Running" "18d: Lifecycle returns to Running after impediment resolved"
+assert_file_not_contains "$PIPE_STATE18C" "**Block Reason:**" "18d: Block Reason cleared on Running transition"
+assert_file_not_contains "$PIPE_STATE18C" "**Block Artifact:**" "18d: Block Artifact cleared on Running transition"
+
+# 18e: Delivery-gate circuit-breaker block (sub-min grade, 3 cycles no improvement)
+# Simulates: state-delivery-gate.md Step 5 circuit-breaker → IMPEDIMENT-delivery-NNN.md written
+PIPE_STATE18E="${TMPDIR_BASE}/pipe18e/STATE.md"
+mkdir -p "$(dirname "$PIPE_STATE18E")"
+make_pipeline_state "$PIPE_STATE18E"
+AID_STATE_FILE="$PIPE_STATE18E" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
+AID_STATE_FILE="$PIPE_STATE18E" bash "$SCRIPT" --pipeline --field Phase --value Execute 2>/dev/null
+AID_STATE_FILE="$PIPE_STATE18E" bash "$SCRIPT" --pipeline --field "Active Skill" --value aid-execute 2>/dev/null
+AID_STATE_FILE="$PIPE_STATE18E" bash "$SCRIPT" --pipeline --field Lifecycle --value Blocked 2>/dev/null
+AID_STATE_FILE="$PIPE_STATE18E" bash "$SCRIPT" --pipeline --field "Block Reason" --value "Delivery gate circuit breaker triggered — grade not improving after 3 cycles" 2>/dev/null
+code=0
+AID_STATE_FILE="$PIPE_STATE18E" bash "$SCRIPT" --pipeline --field "Block Artifact" --value ".aid/work-001/IMPEDIMENT-delivery-001.md" 2>/dev/null || code=$?
+assert_exit_zero "$code" "18e: Delivery gate circuit-breaker block emit → exit 0"
+assert_file_contains "$PIPE_STATE18E" "**Lifecycle:** Blocked" "18e: Lifecycle Blocked on circuit-breaker stop"
+assert_file_contains "$PIPE_STATE18E" "**Block Artifact:** .aid/work-001/IMPEDIMENT-delivery-001.md" "18e: Block Artifact is delivery IMPEDIMENT path"
+
+# 18f: Delivery-gate non-CODE pause (SPEC/TASK/KB issues only — Paused-Awaiting-Input)
+# Simulates: state-delivery-gate.md Step 4 non-CODE-only STOP → upstream fix required
+PIPE_STATE18F="${TMPDIR_BASE}/pipe18f/STATE.md"
+mkdir -p "$(dirname "$PIPE_STATE18F")"
+make_pipeline_state "$PIPE_STATE18F"
+AID_STATE_FILE="$PIPE_STATE18F" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
+AID_STATE_FILE="$PIPE_STATE18F" bash "$SCRIPT" --pipeline --field Lifecycle --value "Paused-Awaiting-Input" 2>/dev/null
+code=0
+AID_STATE_FILE="$PIPE_STATE18F" bash "$SCRIPT" --pipeline --field "Pause Reason" --value "Delivery gate blocked on non-CODE issues — upstream fix required (SPEC/TASK/KB)" 2>/dev/null || code=$?
+assert_exit_zero "$code" "18f: Delivery gate non-CODE pause emit → exit 0"
+assert_file_contains "$PIPE_STATE18F" "**Lifecycle:** Paused-Awaiting-Input" "18f: Lifecycle Paused on non-CODE-only gate stop"
+assert_file_contains "$PIPE_STATE18F" "**Pause Reason:** Delivery gate blocked on non-CODE issues" "18f: Pause Reason explains upstream fix needed"
+
+# ---------------------------------------------------------------------------
+echo ""
 test_summary
 exit $?

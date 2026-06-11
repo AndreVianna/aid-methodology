@@ -282,6 +282,12 @@ Gate grade below minimum. Next steps:
 
 **If ONLY non-CODE issues remain:** **STOP.** The delivery is as good as it
 can be — the problem is upstream. Present what needs to change and where.
+Emit pipeline pause signal (silent state-write — no output, no gate):
+```bash
+bash .github/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
+bash .github/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Delivery gate blocked on non-CODE issues — upstream fix required (SPEC/TASK/KB)"
+bash .github/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+```
 
 **Advance:** **CHAIN** → Step 5 (FIX) when grade < minimum; **CHAIN** → Step 6 (RECORD) when grade ≥ minimum.
 
@@ -322,7 +328,14 @@ Options:
 2. Raise an IMPEDIMENT (architecture-conflict) if the issue is structural.
 ```
 
-Write impediment to `.aid/{work}/IMPEDIMENT-delivery-NNN.md` if stopping.
+Write impediment to `.aid/{work}/IMPEDIMENT-delivery-NNN.md` if stopping. When the impediment
+is written, emit the pipeline block signal (silent state-write — no output, no gate):
+```bash
+bash .github/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
+bash .github/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Delivery gate circuit breaker triggered — grade not improving after 3 cycles"
+bash .github/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-delivery-{NNN}.md"
+bash .github/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+```
 
 **Advance:** **CHAIN** → back to Step 2 (REVIEW) — fresh reviewer, clean context.
 

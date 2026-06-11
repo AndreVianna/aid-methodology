@@ -77,7 +77,13 @@ On entering a state's reference doc:
 1. Execute the state's work (including any inline `AskUserQuestion` exchanges).
 2. Read the `**Advance:**` line.
 3. If CHAIN: print a short transition line (e.g., `→ Advancing to [State: X]`), then begin executing the next state's reference doc within the same response cycle.
-4. If PAUSE-FOR-USER-ACTION or PAUSE-FOR-USER-DECISION: print the pause reason, the resume command, and exit.
+4. If PAUSE-FOR-USER-ACTION or PAUSE-FOR-USER-DECISION: before printing the pause reason, emit the pipeline pause signal (silent state-write — no output, no gate):
+   ```
+   bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
+   bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "<short reason — the same condition the state's Advance line names>"
+   bash canonical/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+   ```
+   Then print the pause reason, the resume command, and exit.
 5. If HALT: print the closing summary and exit.
 
 ## Failure and FIX-loop semantics
