@@ -1001,10 +1001,12 @@ footer {
 
       // Terminal-only waves collapse to summary
       if (waveState === 'terminal') {
-        var doneCount = waveTasks.filter(function(t) { return t.status === 'Done' || t.status === 'Canceled'; }).length;
+        var doneCount = waveTasks.filter(function(t) { return t.status === 'Done'; }).length;
+        var canceledCount = waveTasks.filter(function(t) { return t.status === 'Canceled'; }).length;
+        var summaryText = doneCount + ' done' + (canceledCount > 0 ? ', ' + canceledCount + ' canceled' : '');
         var summaryDiv = document.createElement('div');
         summaryDiv.className = 'wave-summary';
-        summaryDiv.innerHTML = '✓ ' + waveLabel + ' &mdash; ' + doneCount + ' done';
+        summaryDiv.innerHTML = '✓ ' + waveLabel + ' &mdash; ' + summaryText;
         waveDiv.appendChild(summaryDiv);
       } else {
         var labelDiv = document.createElement('div');

@@ -11,7 +11,7 @@
  *   non-GET verb     -> 405
  *
  * Invariants (structurally enforced):
- *   - Binds LITERAL "127.0.0.1" only; never 0.0.0.0 / :: / wildcard.
+ *   - Binds validated --host only (must be in LOOPBACK_ADDRS: 127.0.0.1 or ::1); never 0.0.0.0 / :: / wildcard.
  *   - No fs.write* / appendFile / unlink / open-for-write in this file.
  *   - No agent/LLM import in this file.
  *   - http.createServer; binds before slow work; SIGTERM -> server.close + exit 0.
@@ -187,13 +187,14 @@ const { root: ROOT, host: HOST, port: PORT } = parseArgs(process.argv);
 
 const server = createServer(handler);
 
-// Bind BEFORE any slow work (LC-1 readiness contract)
-server.listen(PORT, "127.0.0.1", () => {
+// Bind BEFORE any slow work (LC-1 readiness contract).
+// HOST is validated against LOOPBACK_ADDRS (127.0.0.1 or ::1) at parse time (SEC-1).
+server.listen(PORT, HOST, () => {
   // Nothing required on stdout (LC-1 spawn seam D1).
   // The CLI confirms readiness via TCP-connect poll, not stdout.
   // Diagnostics may go to stderr.
   process.stderr.write(
-    "server.mjs: listening on http://127.0.0.1:" + PORT + " (root=" + ROOT + ")\n"
+    "server.mjs: listening on http://" + HOST + ":" + PORT + " (root=" + ROOT + ")\n"
   );
 });
 

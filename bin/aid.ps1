@@ -625,6 +625,7 @@ function script:Invoke-DcStart {
     # Step 9: write dashboard.pid JSON record (DM-1).
     $startedAt = [System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
     if (-not $startedAt) { $startedAt = 'unknown' }
+    # String.Replace (literal) doubles each backslash for valid JSON on Windows paths.
     $pidJson = @"
 {
   "schema": 1,
@@ -635,8 +636,8 @@ function script:Invoke-DcStart {
   "remote": false,
   "remote_handle": null,
   "started_at": "$startedAt",
-  "target": "$($Target -replace '\\', '\\')",
-  "logfile": "$($logFile -replace '\\', '\\')"
+  "target": "$($Target.Replace('\', '\\'))",
+  "logfile": "$($logFile.Replace('\', '\\'))"
 }
 "@
     [System.IO.File]::WriteAllText($pidFile, $pidJson)

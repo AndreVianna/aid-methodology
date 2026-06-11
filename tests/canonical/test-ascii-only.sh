@@ -34,6 +34,9 @@ SHIPPED_SCRIPTS=(
     "packages/npm/scripts/vendor.js"
     "packages/pypi/aid_installer/__main__.py"
     "packages/pypi/scripts/vendor.py"
+    "dashboard/server/server.py"
+    "dashboard/server/server.mjs"
+    "dashboard/server/reader.mjs"
 )
 
 echo "=== ASCII-only guard ==="

@@ -54,13 +54,16 @@ process.stdout.write("\n[a] server.mjs bind-address invariant\n");
 const serverSrc = readFileSync(SERVER_MJS, "utf-8");
 const readerSrc = readFileSync(READER_MJS, "utf-8");
 
-// The server.listen call must use "127.0.0.1", not 0.0.0.0 or ::
+// The server binds only validated loopback addresses (127.0.0.1 or ::1).
+// HOST is validated against LOOPBACK_ADDRS at parse time (SEC-1 contract).
+// We check: LOOPBACK_ADDRS contains "127.0.0.1", listen call uses HOST variable
+// (not 0.0.0.0 / wildcard), and the source enforces loopback via the set check.
+assert(
+  serverSrc.includes('"127.0.0.1"'),
+  "server.mjs LOOPBACK_ADDRS contains literal 127.0.0.1"
+);
 const listenM = serverSrc.match(/server\.listen\([^)]*\)/);
 const listenStr = listenM ? listenM[0] : "";
-assert(
-  listenStr.includes('"127.0.0.1"') || listenStr.includes("'127.0.0.1'"),
-  "server.listen() uses literal 127.0.0.1"
-);
 assert(
   !listenStr.includes('"0.0.0.0"') && !listenStr.includes("'0.0.0.0'"),
   "server.listen() does not contain 0.0.0.0"
@@ -69,6 +72,11 @@ assert(
   !serverSrc.match(/server\.listen\(PORT,\s*"::"\s*\)/) &&
   !serverSrc.match(/server\.listen\(PORT,\s*'::'\s*\)/),
   "server.mjs has no :: wildcard as listen arg"
+);
+// HOST must be validated against LOOPBACK_ADDRS before bind (loopback guarantee)
+assert(
+  serverSrc.includes("LOOPBACK_ADDRS.has(host)"),
+  "server.mjs validates host against LOOPBACK_ADDRS before bind"
 );
 
 // ---------------------------------------------------------------------------
