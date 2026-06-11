@@ -203,10 +203,10 @@ STATE_CANCELED = """\
 
 ## Lifecycle History
 
-| Date | Phase | Event | Phase Transition / Gate | Notes |
-|------|-------|-------|--------------------------|-------|
-| 2026-06-01 | Execute | Work started | Interview -> Execute | -- |
-| 2026-06-10 | Execute | User canceled | Canceled | User request |
+| Date | Phase Transition / Gate | Grade | Notes |
+|------|------------------------|-------|-------|
+| 2026-06-01 | Interview -> Execute | -- | -- |
+| 2026-06-10 | Canceled | -- | User request |
 """
 
 STATE_NO_SIGNALS = """\
@@ -224,10 +224,10 @@ STATE_WITH_HISTORY_DATE = """\
 
 ## Lifecycle History
 
-| Date | Phase | Event | Phase Transition / Gate | Notes |
-|------|-------|-------|--------------------------|-------|
-| 2026-06-01 | Interview | Started | Interview start | -- |
-| 2026-06-10 | Execute | Task started | Execute start | -- |
+| Date | Phase Transition / Gate | Grade | Notes |
+|------|------------------------|-------|-------|
+| 2026-06-01 | Interview start | -- | -- |
+| 2026-06-10 | Execute start | -- | -- |
 """
 
 STATE_DELIVERY_GATES_BELOW_MIN = """\
@@ -743,9 +743,9 @@ class TestFallbackHelpers(unittest.TestCase):
         text = """\
 ## Lifecycle History
 
-| Date | Phase | Event | Phase Transition / Gate | Notes |
-|------|-------|-------|--------------------------|-------|
-| 2026-06-10 | Execute | Stopped | CANCELED | user |
+| Date | Phase Transition / Gate | Grade | Notes |
+|------|------------------------|-------|-------|
+| 2026-06-10 | CANCELED | -- | user |
 """
         self.assertTrue(_has_cancellation_in_history(text, [], "w"))
 
@@ -754,14 +754,15 @@ class TestFallbackHelpers(unittest.TestCase):
         text = """\
 ## Lifecycle History
 
-| Date | Phase | Event | Phase Transition / Gate | Notes |
-|------|-------|-------|--------------------------|-------|
-| 2026-06-10 | Execute | Task ran | Execute continues | user asked if we can cancel |
+| Date | Phase Transition / Gate | Grade | Notes |
+|------|------------------------|-------|-------|
+| 2026-06-10 | Execute continues | -- | user asked if we can cancel |
 """
         # Notes-column mention should trigger the ambiguous-warn but not return True
         # (the check only returns True for Gate column matches)
         warnings = []
         result = _has_cancellation_in_history(text, warnings, "w")
+        # Regression guard for fix #1: cancel in Notes must NOT derive Canceled lifecycle
         self.assertFalse(result)
         # But a warning IS added for the ambiguous mention
         self.assertTrue(any("ambiguous" in w for w in warnings))
@@ -779,11 +780,11 @@ class TestFallbackHelpers(unittest.TestCase):
         text = """\
 ## Lifecycle History
 
-| Date | Phase | Event | Phase Transition / Gate | Notes |
-|------|-------|-------|--------------------------|-------|
-| 2026-05-01 | Interview | Start | Interview start | -- |
-| 2026-06-10 | Execute | Task | Execute | -- |
-| 2026-04-15 | Specify | Spec | Specify start | -- |
+| Date | Phase Transition / Gate | Grade | Notes |
+|------|------------------------|-------|-------|
+| 2026-05-01 | Interview start | -- | -- |
+| 2026-06-10 | Execute start | -- | -- |
+| 2026-04-15 | Specify start | -- | -- |
 """
         self.assertEqual(_extract_latest_history_date(text), "2026-06-10")
 

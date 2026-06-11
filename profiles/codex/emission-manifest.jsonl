@@ -54,7 +54,7 @@
 {"dst": ".agents/scripts/config/read-setting.sh", "profile": "codex", "sha256": "f7418a0fcb09bdcb606de6f79fec1d6596964bd1da75ccb215e62a7d757403b6", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".agents/scripts/execute/complexity-score.sh", "profile": "codex", "sha256": "0196dcc73a9626864262534b08b80d24356b0d13f39c26305d13729137128d31", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".agents/scripts/execute/compute-block-radius.sh", "profile": "codex", "sha256": "32bd31e5b828d006a8171b951cca5103ab396f834af84212f7549139bef30a5b", "src": "canonical/scripts/execute/compute-block-radius.sh"}
-{"dst": ".agents/scripts/execute/writeback-state.sh", "profile": "codex", "sha256": "238c568b498083aa5d8e7a69e39056572811fb92c750a7e69e99af78079c4164", "src": "canonical/scripts/execute/writeback-state.sh"}
+{"dst": ".agents/scripts/execute/writeback-state.sh", "profile": "codex", "sha256": "c74a7b7cf7a2eb4c0769e7d93ac1194f35e1d2344a37b1d379c9ce8cbb49a6b6", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".agents/scripts/grade.sh", "profile": "codex", "sha256": "4984ef7486d0c66dc593db1e714db69b85e3a6aac636e68a4fc1b757aaced8c9", "src": "canonical/scripts/grade.sh"}
 {"dst": ".agents/scripts/housekeep/branch-commit.sh", "profile": "codex", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
 {"dst": ".agents/scripts/housekeep/cleanup-classify.sh", "profile": "codex", "sha256": "5803fea24d6634b3794397bde2a88676e4c9973f4731731b7b502c4dbaa61629", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}

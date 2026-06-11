@@ -257,7 +257,7 @@ def _has_cancellation_in_history(text: str, warnings: list[str], work_id: str = 
     """Scan ## Lifecycle History rows for a Phase Transition / Gate column matching /cancel|canceled/i.
 
     Table shape (canonical/templates/work-state-template.md):
-        | Date | Phase | Event | Phase Transition / Gate | Notes |
+        | Date | Phase Transition / Gate | Grade | Notes |
 
     LEGITIMATE PATH (permanent): Canceled is a user action; no automatic pipeline producer
     will ever emit Lifecycle: Canceled. This ## Lifecycle History scan is the intended
@@ -285,8 +285,8 @@ def _has_cancellation_in_history(text: str, warnings: list[str], work_id: str = 
             if not header_seen:
                 header_seen = True  # skip header row
                 continue
-            # Phase Transition / Gate is column index 3 (0-based: Date|Phase|Event|Gate|Notes)
-            gate_col = cols[3].strip() if len(cols) > 3 else ""
+            # Phase Transition / Gate is column index 1 (0-based: Date|Gate|Grade|Notes)
+            gate_col = cols[1].strip() if len(cols) > 1 else ""
             if _CANCEL_RE.search(gate_col):
                 return True
             # Check all columns for ambiguous cancellation mentions
@@ -402,7 +402,7 @@ def _deploy_status_shipped(text: str) -> bool:
             if not header_seen:
                 header_seen = True
                 continue
-            # Status is typically column 1 (Delivery | Status | Notes)
+            # State is column 1 (Delivery | State | PR | KB Updated | Tag | Notes)
             status_col = cols[1].strip() if len(cols) > 1 else ""
             if _SHIPPED_RE.search(status_col):
                 return True
