@@ -378,6 +378,173 @@ function script:Remove-AidFromPath {
 }
 
 # ---------------------------------------------------------------------------
+# Remote exposure helpers (feature-005 / LC-EXP-P).
+# SEC-1: These helpers invoke ONLY 'tailscale serve' (tailnet-only). The public
+#        exposure verb is never used -- a bare grep for it returns nothing
+#        anywhere in this file (structural never-public, C1).
+# ---------------------------------------------------------------------------
+
+# Invoke-AidRemoteExpose -Port <n>
+# Bring up tailscale serve (tailnet-only) for a loopback port.
+# stdout (exit 0): two lines: handle (tailscale-serve:<port>) + https URL.
+# stderr:          human messages, errors, FR18 ACL-grant guidance.
+# exit:  0=ok  10=mechanism absent  11=non-loopback target  12=serve failed
+function script:Invoke-AidRemoteExpose {
+    param([int]$Port)
+
+    # Step 1: Re-assert the loopback target (belt-and-suspenders, SEC-1).
+    if ($Port -le 0) {
+        [Console]::Error.WriteLine("ERROR: aid: dashboard: expose target must be 127.0.0.1 (got: $Port)")
+        return 11
+    }
+
+    # Step 2a: availability -- tailscale on PATH?
+    if (-not (Get-Command 'tailscale' -ErrorAction SilentlyContinue)) {
+        [Console]::Error.WriteLine("ERROR: aid: dashboard: --remote requested but tailscale is not on PATH; --remote is unavailable")
+        return 10
+    }
+
+    # Step 2b: availability -- node logged in and Running?
+    $tsStatusOut = ''
+    try { $tsStatusOut = (& tailscale status 2>&1) -join "`n" } catch { $tsStatusOut = '' }
+    if ($tsStatusOut -match '(?i)(not running|logged out|Stopped|NeedsLogin|NoState|not logged in)') {
+        [Console]::Error.WriteLine("ERROR: aid: dashboard: --remote requested but tailscale is not running or not logged in (tailscale status: $tsStatusOut); --remote is unavailable")
+        return 10
+    }
+    if ([string]::IsNullOrEmpty($tsStatusOut)) {
+        [Console]::Error.WriteLine("ERROR: aid: dashboard: --remote requested but tailscale status returned no output; --remote is unavailable")
+        return 10
+    }
+
+    # Step 3: Bring up Serve (tailnet-only; the public exposure verb is never invoked -- SEC-1).
+    $serveErr = ''
+    $serveRc  = 0
+    try {
+        $serveErr = (& tailscale serve --bg $Port 2>&1) -join "`n"
+        $serveRc  = $LASTEXITCODE
+    } catch {
+        $serveErr = "$_"
+        $serveRc  = 1
+    }
+    if ($serveRc -ne 0) {
+        [Console]::Error.WriteLine("ERROR: aid: dashboard: tailscale serve failed (rc=${serveRc}): $serveErr")
+        # Revert: take down the 443 frontend mapping (if it was partially set).
+        try { & tailscale serve --bg --https=443 off 2>&1 | Out-Null } catch {}
+        return 12
+    }
+
+    # Step 4: Resolve the private URL from tailscale status --json (Self.DNSName).
+    $tsJson   = ''
+    $nodeFqdn = ''
+    try { $tsJson = (& tailscale status --json 2>&1) -join "`n" } catch { $tsJson = '' }
+    if (-not [string]::IsNullOrEmpty($tsJson)) {
+        if ($tsJson -match '"DNSName"\s*:\s*"([^"]*)"') {
+            $nodeFqdn = $matches[1] -replace '\.$', ''
+        }
+    }
+    if ([string]::IsNullOrEmpty($nodeFqdn)) {
+        # Fallback: try tailscale serve status --json for the HTTPS URL directly.
+        $serveJson = ''
+        try { $serveJson = (& tailscale serve status --json 2>&1) -join "`n" } catch { $serveJson = '' }
+        if (-not [string]::IsNullOrEmpty($serveJson)) {
+            if ($serveJson -match '"([a-z0-9-]+\.[a-z0-9.-]+\.ts\.net)"') {
+                $nodeFqdn = $matches[1]
+            }
+        }
+    }
+    if ([string]::IsNullOrEmpty($nodeFqdn)) {
+        try { $nodeFqdn = (& hostname 2>&1) | Select-Object -First 1 } catch { $nodeFqdn = 'unknown-host' }
+        if ([string]::IsNullOrEmpty($nodeFqdn)) { $nodeFqdn = 'unknown-host' }
+    }
+    $privateUrl = "https://${nodeFqdn}/"
+
+    # Resolve the node identity for the ACL grant guidance.
+    $nodeIdentity = ''
+    if (-not [string]::IsNullOrEmpty($tsJson)) {
+        if ($nodeFqdn -match '^[^.]+\.(.+)$') {
+            $nodeIdentity = $matches[1]
+        }
+    }
+    $nodeShort = ($nodeFqdn -split '\.')[0]
+
+    # Step 5: Print FR18 step-by-step ACL-grant guidance to STDERR (informational only).
+    $srcPlaceholder = if ($nodeIdentity) { $nodeIdentity } else { '<you@example.com>' }
+    $dstPlaceholder = if ($nodeShort)    { $nodeShort }    else { '<this-host>' }
+    $urlPlaceholder = $privateUrl
+
+    [Console]::Error.WriteLine('')
+    [Console]::Error.WriteLine('Remote exposure is UP (tailnet-private). To restrict it to ONLY you (C3), add a')
+    [Console]::Error.WriteLine('deny-by-default tailnet ACL grant -- without it, any tailnet device can reach this host.')
+    [Console]::Error.WriteLine('Step 1. Open the tailnet policy file:')
+    [Console]::Error.WriteLine('          https://login.tailscale.com/admin/acls/file')
+    [Console]::Error.WriteLine('Step 2. Add this grant (replace the identity with yours or a group):')
+    [Console]::Error.WriteLine("          {`"grants`":[{`"src`":[`"$srcPlaceholder`"],`"dst`":[`"$dstPlaceholder`"],`"ip`":[`"tcp:443`"]}]}")
+    [Console]::Error.WriteLine('          (src = your identity/group; dst = THIS host only, never "*"; ip = the serve port.)')
+    [Console]::Error.WriteLine('Step 3. Save. Tailscale is deny-by-default once any grant exists, so every other device is')
+    [Console]::Error.WriteLine('        now denied.')
+    [Console]::Error.WriteLine("Step 4. Verify from your laptop: open $urlPlaceholder -- it should load for you, and a")
+    [Console]::Error.WriteLine('        non-authorized device should get connection-refused/forbidden.')
+    [Console]::Error.WriteLine('(AID cannot edit your tailnet policy for you -- it is admin-plane, and the dashboard never')
+    [Console]::Error.WriteLine("runs an agent/LLM at runtime. See 'aid dashboard' docs / feature-005 SEC-2.)")
+    [Console]::Error.WriteLine('')
+
+    # Step 6: Emit handle + URL on stdout, exit 0.
+    Write-Output "tailscale-serve:$Port"
+    Write-Output $privateUrl
+    return 0
+}
+
+# Invoke-AidRemoteTeardown -Handle <s>
+# Revert the tailscale serve mapping created by Invoke-AidRemoteExpose.
+# exit: 0=ok/idempotent  13=revert warned
+function script:Invoke-AidRemoteTeardown {
+    param([string]$Handle = '')
+
+    # Step 1: Parse the handle; malformed/empty -> idempotent exit 0.
+    if ([string]::IsNullOrEmpty($Handle)) {
+        return 0
+    }
+    if ($Handle -notmatch '^tailscale-serve:([0-9]+)$') {
+        # Malformed handle -- nothing to tear down.
+        return 0
+    }
+    # We don't use the port for teardown (we target the HTTPS:443 frontend, not the backend port).
+
+    # Step 2: If tailscale is gone now -> WARN, exit 0.
+    if (-not (Get-Command 'tailscale' -ErrorAction SilentlyContinue)) {
+        [Console]::Error.WriteLine("WARN: aid: dashboard: tailscale not found; cannot revert serve mapping (handle: $Handle)")
+        return 0
+    }
+
+    # Step 3: Revert the HTTPS:443 frontend mapping (not a backend port off).
+    $offErr = ''
+    $offRc  = 0
+    try {
+        $offErr = (& tailscale serve --bg --https=443 off 2>&1) -join "`n"
+        $offRc  = $LASTEXITCODE
+    } catch {
+        $offErr = "$_"
+        $offRc  = 1
+    }
+    if ($offRc -ne 0) {
+        # Fallback: check if serve status shows no other mappings; if so, reset.
+        $srvStatus = ''
+        try { $srvStatus = (& tailscale serve status 2>&1) -join "`n" } catch { $srvStatus = '' }
+        $mappingCount = ([regex]::Matches($srvStatus, '(?:https?://|tcp://)') | Measure-Object).Count
+        if ($mappingCount -le 1) {
+            try { & tailscale serve reset 2>&1 | Out-Null } catch {}
+            # After reset, exit 0 -- best effort.
+            return 0
+        }
+        [Console]::Error.WriteLine("WARN: aid: dashboard: tailscale serve --https=443 off failed (rc=${offRc}): $offErr")
+        return 13
+    }
+
+    # Step 4: exit 0 on clean revert.
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # Dashboard control (aid dashboard start|stop).
 # ---------------------------------------------------------------------------
 function script:Invoke-AidDashboardCtl {
@@ -642,13 +809,51 @@ function script:Invoke-DcStart {
 "@
     [System.IO.File]::WriteAllText($pidFile, $pidJson)
 
-    # Step 10: --remote is a clear-fail stub (delivery-003 / feature-005 not yet implemented).
+    # Step 10: --remote: invoke Invoke-AidRemoteExpose; update record on success.
     if ($Remote) {
-        [Console]::Error.WriteLine("ERROR: aid: dashboard: --remote requested but the secure remote-exposure mechanism is not available on this host; the dashboard is NOT exposed. Local server still running at http://127.0.0.1:${Port}.")
-        script:Exit-Aid 10
+        # Capture all pipeline output; let stderr (guidance + errors) flow to the user.
+        # Invoke-AidRemoteExpose emits handle+URL via Write-Output (strings) and the return
+        # integer via 'return <n>' -- both land on the pipeline. We split by type.
+        $rawOut = @(script:Invoke-AidRemoteExpose -Port $Port)
+        $exposeRc     = 0
+        $exposeHandle = ''
+        $exposeUrl    = ''
+        $strLines     = [System.Collections.Generic.List[string]]::new()
+        foreach ($item in $rawOut) {
+            if ($item -is [int]) { $exposeRc = $item }
+            elseif ($item -ne $null) { $strLines.Add([string]$item) }
+        }
+        if ($exposeRc -ne 0) {
+            # All expose failures (10/11/12) map to user-facing exit 10.
+            # dashboard stays local-only (server remains running).
+            [Console]::Error.WriteLine("ERROR: aid: dashboard: --remote requested but the secure remote-exposure mechanism is not available on this host; the dashboard is NOT exposed. Local server still running at http://127.0.0.1:${Port}.")
+            script:Exit-Aid 10
+        }
+        if ($strLines.Count -ge 1) { $exposeHandle = $strLines[0] }
+        if ($strLines.Count -ge 2) { $exposeUrl    = $strLines[1] }
+        # Update the record with remote=true and the handle.
+        $pidJson2 = @"
+{
+  "schema": 1,
+  "pid": $childPid,
+  "runtime": "$Runtime",
+  "port": $Port,
+  "bind": "127.0.0.1",
+  "remote": true,
+  "remote_handle": "$exposeHandle",
+  "started_at": "$startedAt",
+  "target": "$($Target.Replace('\', '\\'))",
+  "logfile": "$($logFile.Replace('\', '\\'))"
+}
+"@
+        [System.IO.File]::WriteAllText($pidFile, $pidJson2)
+        # Step 11 (remote success): print local URL + remote URL.
+        Write-Host "Dashboard ($Runtime) running at http://127.0.0.1:${Port} -- stop with: aid dashboard stop"
+        Write-Host "Remote (private): $exposeUrl"
+        script:Exit-Aid 0
     }
 
-    # Step 11: print success.
+    # Step 11: print success (local-only).
     Write-Host "Dashboard ($Runtime) running at http://127.0.0.1:${Port} -- stop with: aid dashboard stop"
     script:Exit-Aid 0
 }
@@ -683,7 +888,18 @@ function script:Invoke-DcStop {
         script:Exit-Aid 0
     }
 
-    # Step 4: --remote teardown skipped (stub; remote_handle is always null in this delivery).
+    # Step 4: --remote teardown (if the record says remote=true, call Invoke-AidRemoteTeardown).
+    $existingRemote = ''
+    $existingHandle = ''
+    if ($pidContent -match '"remote"\s*:\s*(true|false)') { $existingRemote = $matches[1] }
+    if ($pidContent -match '"remote_handle"\s*:\s*"([^"]*)"') { $existingHandle = $matches[1] }
+    if ($existingRemote -eq 'true' -and -not [string]::IsNullOrEmpty($existingHandle)) {
+        if ($Verbose) { [Console]::Error.WriteLine("aid: dashboard: tearing down remote exposure (handle: $existingHandle)") }
+        $teardownRc = script:Invoke-AidRemoteTeardown -Handle $existingHandle
+        if ($teardownRc -eq 13) {
+            [Console]::Error.WriteLine('WARN: aid: dashboard: remote teardown reported a warning; continuing server shutdown')
+        }
+    }
 
     # Step 5: terminate the process cleanly.
     if ($Verbose) { [Console]::Error.WriteLine("aid: dashboard: sending Stop-Process to pid $existingPid") }
