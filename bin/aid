@@ -97,6 +97,16 @@ _aid_usage() {
             printf 'aid version\n'
             printf '  Print the installed aid CLI version and exit 0.\n'
             ;;
+        dashboard)
+            printf 'aid dashboard start <node|python> [--remote] [--port <n>] [--target <dir>]\n'
+            printf 'aid dashboard stop                [--target <dir>]\n'
+            printf '  Start or stop the local pipeline dashboard for the current project.\n'
+            printf '  <node|python>  select the server runtime to launch.\n'
+            printf '  --remote       also expose it to authorized users over a private channel (never public);\n'
+            printf '                 fails clearly if that mechanism is unavailable -- never binds publicly.\n'
+            printf '  --port <n>     listen port on 127.0.0.1 (default 8787).\n'
+            printf '  The dashboard binds to 127.0.0.1 only. '"'"'stop'"'"' is idempotent and also tears down --remote.\n'
+            ;;
         *)
             printf 'aid - AID CLI\n'
             printf '\n'
@@ -108,6 +118,7 @@ _aid_usage() {
             printf '  aid add <tool>[,...]             Add tool(s) to the current project\n'
             printf '  aid update [<tool>... | self]    Update to latest; no arg = all tools\n'
             printf '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project\n'
+            printf '  aid dashboard start|stop ...     Start/stop the local dashboard\n'
             printf '  aid <command> -h | --help        Per-command help\n'
             printf '\n'
             printf 'Flags: --from-bundle, --version, --force, --target, --verbose\n'
@@ -515,6 +526,291 @@ _cmd_remove_self() {
 }
 
 # ---------------------------------------------------------------------------
+# Dashboard control (aid dashboard start|stop).
+# ---------------------------------------------------------------------------
+_cmd_dashboard_ctl() {
+    local verb="${1:-}"
+    [[ $# -gt 0 ]] && shift
+
+    # Top-level help.
+    if [[ "$verb" == "-h" || "$verb" == "--help" ]]; then
+        _aid_usage dashboard
+        exit 0
+    fi
+
+    if [[ "$verb" != "start" && "$verb" != "stop" ]]; then
+        if [[ -z "$verb" ]]; then
+            echo "ERROR: aid: dashboard requires a verb: start or stop (e.g. aid dashboard start python)" >&2
+            exit 2
+        fi
+        echo "ERROR: aid: dashboard: unknown verb '${verb}' (expected: start or stop)" >&2
+        exit 2
+    fi
+
+    # --- shared arg parsing ---
+    local _dc_target=""
+    local _dc_verbose=0
+    local _dc_port=8787
+    local _dc_remote=0
+    local _dc_runtime=""
+
+    if [[ "$verb" == "start" ]]; then
+        # First positional after verb is runtime.
+        if [[ $# -gt 0 && "$1" != -* ]]; then
+            _dc_runtime="$1"
+            shift
+        fi
+    fi
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                _aid_usage dashboard
+                exit 0
+                ;;
+            --target)
+                [[ $# -lt 2 ]] && _aid_die "dashboard: --target requires a value" 2
+                _dc_target="$2"; shift 2 ;;
+            --verbose) _dc_verbose=1; shift ;;
+            --remote)
+                if [[ "$verb" == "stop" ]]; then
+                    echo "ERROR: aid: dashboard: unknown flag: $1" >&2; exit 2
+                fi
+                _dc_remote=1; shift ;;
+            --port)
+                if [[ "$verb" == "stop" ]]; then
+                    echo "ERROR: aid: dashboard: unknown flag: $1" >&2; exit 2
+                fi
+                [[ $# -lt 2 ]] && _aid_die "dashboard: --port requires a value" 2
+                _dc_port="$2"; shift 2
+                # Validate port: integer in 1024..65535.
+                if ! [[ "$_dc_port" =~ ^[0-9]+$ ]] || [[ "$_dc_port" -lt 1024 || "$_dc_port" -gt 65535 ]]; then
+                    echo "ERROR: aid: dashboard: --port must be an integer in 1024..65535" >&2
+                    exit 2
+                fi
+                ;;
+            -*)
+                echo "ERROR: aid: dashboard: unknown flag: $1" >&2; exit 2 ;;
+            *)
+                if [[ "$verb" == "stop" ]]; then
+                    echo "ERROR: aid: dashboard: unknown flag: $1" >&2; exit 2
+                fi
+                # Stray positional on start after runtime was consumed.
+                echo "ERROR: aid: dashboard: unknown flag: $1" >&2; exit 2 ;;
+        esac
+    done
+
+    # Apply env-var fallback for target.
+    [[ -z "$_dc_target" && -n "${AID_TARGET:-}" ]] && _dc_target="$AID_TARGET"
+    _dc_target="${_dc_target:-.}"
+    if [[ ! -d "$_dc_target" ]]; then
+        _aid_die "dashboard: target directory does not exist: ${_dc_target}" 2
+    fi
+    _dc_target="$(cd "$_dc_target" && pwd)"
+
+    if [[ "$verb" == "start" ]]; then
+        _dc_start "$_dc_runtime" "$_dc_port" "$_dc_remote" "$_dc_target" "$_dc_verbose"
+    else
+        _dc_stop "$_dc_target" "$_dc_verbose"
+    fi
+}
+
+_dc_start() {
+    local runtime="$1"
+    local port="$2"
+    local remote="$3"
+    local target="$4"
+    local verbose="$5"
+
+    # Step 1: validate runtime.
+    if [[ -z "$runtime" ]]; then
+        echo "ERROR: aid: dashboard start requires a runtime: node or python (e.g. aid dashboard start python)" >&2
+        exit 2
+    fi
+    if [[ "$runtime" != "node" && "$runtime" != "python" ]]; then
+        echo "ERROR: aid: dashboard: unknown runtime '${runtime}' (expected: node or python)" >&2
+        exit 2
+    fi
+
+    # Step 3: check .aid/ exists.
+    if [[ ! -d "${target}/.aid" ]]; then
+        echo "ERROR: aid: dashboard: no AID install found at ${target} (run 'aid add <tool>' first)" >&2
+        exit 7
+    fi
+
+    local pid_file="${target}/.aid/.temp/dashboard.pid"
+    local log_file="${target}/.aid/.temp/dashboard.log"
+
+    # Step 4: already-running guard (stale-record reclaim included).
+    if [[ -f "$pid_file" ]]; then
+        local existing_pid existing_port existing_runtime
+        existing_pid="$(grep '"pid"' "$pid_file" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
+        existing_port="$(grep '"port"' "$pid_file" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
+        existing_runtime="$(grep '"runtime"' "$pid_file" | sed 's/.*"runtime": *"\([^"]*\)".*/\1/')"
+        if [[ -n "$existing_pid" ]] && kill -0 "$existing_pid" 2>/dev/null; then
+            echo "aid: dashboard already running (runtime ${existing_runtime}, http://127.0.0.1:${existing_port}); run 'aid dashboard stop' first."
+            exit 8
+        else
+            # Stale record: reclaim silently (or verbosely).
+            [[ "$verbose" -eq 1 ]] && echo "aid: dashboard: reclaiming stale record (pid ${existing_pid} is dead)" >&2
+            rm -f "$pid_file" "$log_file"
+        fi
+    fi
+
+    # Step 5: check runtime on PATH.
+    local interp
+    if [[ "$runtime" == "python" ]]; then
+        interp="python3"
+        if ! command -v python3 >/dev/null 2>&1; then
+            echo "ERROR: aid: dashboard: python3 not found on PATH (install it, or try: aid dashboard start node)" >&2
+            exit 9
+        fi
+    else
+        interp="node"
+        if ! command -v node >/dev/null 2>&1; then
+            echo "ERROR: aid: dashboard: node not found on PATH (install it, or try: aid dashboard start python)" >&2
+            exit 9
+        fi
+    fi
+
+    # Step 6: locate the server entry point.
+    # <assets> = <target>/dashboard (the dashboard subtree of the repo being served).
+    local assets_dir="${target}/dashboard"
+    local entry_point
+    if [[ "$runtime" == "python" ]]; then
+        entry_point="${assets_dir}/server/server.py"
+    else
+        entry_point="${assets_dir}/server/server.mjs"
+    fi
+    if [[ ! -f "$entry_point" ]]; then
+        echo "ERROR: aid: dashboard: AID install at ${target} is missing the dashboard server (${runtime} entry-point not found); try 'aid update'" >&2
+        exit 7
+    fi
+
+    # Ensure log dir exists.
+    mkdir -p "${target}/.aid/.temp"
+
+    # Step 7: spawn the server child in a new session (clean process-group kill on stop).
+    # SEC-1: literal 127.0.0.1 -- never read from input/config/env.
+    setsid "$interp" "$entry_point" --root "$target" --host 127.0.0.1 --port "$port" \
+        >"$log_file" 2>&1 &
+    local child_pid=$!
+
+    [[ "$verbose" -eq 1 ]] && echo "aid: dashboard: spawned ${runtime} server (pid ${child_pid}, port ${port})" >&2
+
+    # Step 8: bounded readiness wait (~5s, poll TCP socket).
+    local ready=0
+    local attempts=0
+    local max_attempts=50   # 50 x 0.1s = 5s
+    while [[ "$attempts" -lt "$max_attempts" ]]; do
+        # Check child is still alive.
+        if ! kill -0 "$child_pid" 2>/dev/null; then
+            # Child exited early.
+            echo "ERROR: aid: dashboard: server failed to start; last log lines:" >&2
+            tail -n 10 "$log_file" >&2 2>/dev/null || true
+            rm -f "$log_file"
+            exit 3
+        fi
+        # Try TCP connect to 127.0.0.1:<port>.
+        if (: < /dev/tcp/127.0.0.1/"$port") 2>/dev/null; then
+            ready=1
+            break
+        fi
+        sleep 0.1
+        attempts=$((attempts + 1))
+    done
+
+    # Check if child is still alive even if not ready (timeout case).
+    if [[ "$ready" -eq 0 ]]; then
+        if ! kill -0 "$child_pid" 2>/dev/null; then
+            echo "ERROR: aid: dashboard: server failed to start; last log lines:" >&2
+            tail -n 10 "$log_file" >&2 2>/dev/null || true
+            rm -f "$log_file"
+            exit 3
+        fi
+        # Timeout but pid alive: warn and continue (child may be slow on a large repo).
+        echo "WARN: aid: dashboard: server started but not yet responding on :${port}; check ${log_file}" >&2
+    fi
+
+    # Step 9: write dashboard.pid JSON record (DM-1).
+    local started_at
+    started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "unknown")"
+    cat > "$pid_file" <<EOF
+{
+  "schema": 1,
+  "pid": ${child_pid},
+  "runtime": "${runtime}",
+  "port": ${port},
+  "bind": "127.0.0.1",
+  "remote": false,
+  "remote_handle": null,
+  "started_at": "${started_at}",
+  "target": "${target}",
+  "logfile": "${log_file}"
+}
+EOF
+
+    # Step 10: --remote is a clear-fail stub (delivery-003 / feature-005 not yet implemented).
+    if [[ "$remote" -eq 1 ]]; then
+        echo "ERROR: aid: dashboard: --remote requested but the secure remote-exposure mechanism is not available on this host; the dashboard is NOT exposed. Local server still running at http://127.0.0.1:${port}." >&2
+        exit 10
+    fi
+
+    # Step 11: print success.
+    echo "Dashboard (${runtime}) running at http://127.0.0.1:${port} -- stop with: aid dashboard stop"
+    exit 0
+}
+
+_dc_stop() {
+    local target="$1"
+    local verbose="$2"
+
+    local pid_file="${target}/.aid/.temp/dashboard.pid"
+
+    # Step 3: read record; absent or stale -> idempotent exit 0.
+    if [[ ! -f "$pid_file" ]]; then
+        echo "aid: dashboard: not running (nothing to stop)."
+        exit 0
+    fi
+
+    local existing_pid
+    existing_pid="$(grep '"pid"' "$pid_file" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
+    local log_file
+    log_file="$(grep '"logfile"' "$pid_file" | sed 's/.*"logfile": *"\([^"]*\)".*/\1/')"
+
+    if [[ -z "$existing_pid" ]] || ! kill -0 "$existing_pid" 2>/dev/null; then
+        [[ "$verbose" -eq 1 ]] && echo "aid: dashboard: record exists but pid ${existing_pid} is dead; cleaning up." >&2
+        rm -f "$pid_file" "$log_file"
+        echo "aid: dashboard: not running (nothing to stop)."
+        exit 0
+    fi
+
+    # Step 4: --remote teardown skipped (stub; remote_handle is always null in this delivery).
+
+    # Step 5: terminate the process group cleanly.
+    [[ "$verbose" -eq 1 ]] && echo "aid: dashboard: sending SIGTERM to process group ${existing_pid}" >&2
+    kill -TERM -"$existing_pid" 2>/dev/null || true
+
+    # Wait up to ~5s for exit.
+    local waited=0
+    while kill -0 "$existing_pid" 2>/dev/null && [[ "$waited" -lt 50 ]]; do
+        sleep 0.1
+        waited=$((waited + 1))
+    done
+
+    # Escalate to SIGKILL if still alive.
+    if kill -0 "$existing_pid" 2>/dev/null; then
+        [[ "$verbose" -eq 1 ]] && echo "aid: dashboard: escalating to SIGKILL on process group ${existing_pid}" >&2
+        kill -KILL -"$existing_pid" 2>/dev/null || true
+    fi
+
+    # Step 6: remove record and logfile, print success.
+    rm -f "$pid_file" "$log_file"
+    echo "aid: dashboard stopped."
+    exit 0
+}
+
+# ---------------------------------------------------------------------------
 # Parse subcommand and dispatch.
 # ---------------------------------------------------------------------------
 
@@ -641,6 +937,12 @@ if [[ "$SUBCMD" == "remove" ]]; then
 
     # Check for 'remove' with no tool args (remove ALL from project).
     # We do this check after parsing flags below, so continue to parse first.
+fi
+
+# ---- dashboard --------------------------------------------------------------
+if [[ "$SUBCMD" == "dashboard" ]]; then
+    _cmd_dashboard_ctl "$@"
+    exit $?
 fi
 
 # ---- add / remove / update --------------------------------------------------
