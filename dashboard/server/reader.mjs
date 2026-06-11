@@ -1057,12 +1057,13 @@ function parseStateText(text, workId, workDir) {
       if (hasTableSep(stripped)) continue;
       const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
       if (cols.length < 2) continue;
-      // Skip header row
+      // Skip header row: pattern-based (col[0] is "#" or empty) before first data row seen
       if ((cols[0] === "#" || cols[0] === "") && !featuresHeaderSeen) {
         featuresHeaderSeen = true;
         continue;
       }
-      if (!featuresHeaderSeen) { featuresHeaderSeen = true; continue; }
+      // Mark first non-separator pipe row seen (mirrors Python: header_seen set after any | row)
+      featuresHeaderSeen = true;
 
       function fcol(idx) {
         if (idx < cols.length) { const v = cols[idx].trim(); return isNull(v) ? null : v; }
@@ -1087,12 +1088,13 @@ function parseStateText(text, workId, workDir) {
       if (hasTableSep(stripped)) continue;
       const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
       if (cols.length < 3) continue;
-      // Skip header row (first col "Delivery" or blank)
+      // Skip header row: pattern-based (first col "Delivery" or blank) before first data row seen
       if ((cols[0].toLowerCase() === "delivery" || cols[0] === "") && !deliveriesHeaderSeen) {
         deliveriesHeaderSeen = true;
         continue;
       }
-      if (!deliveriesHeaderSeen) { deliveriesHeaderSeen = true; continue; }
+      // Mark first non-separator pipe row seen (mirrors Python: header_seen set after any | row)
+      deliveriesHeaderSeen = true;
 
       function dcol(idx) {
         if (idx < cols.length) { const v = cols[idx].trim(); return isNull(v) ? null : v; }

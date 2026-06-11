@@ -242,7 +242,7 @@ class TestStructural(unittest.TestCase):
             self.assertIn(cls, self.src, f"CSS class {cls} missing from index.html")
 
     # S7 -- schema_version expected constant
-    def test_s7_expected_schema_version_1(self):
+    def test_s7_expected_schema_version_2(self):
         # Should define EXPECTED_SCHEMA_VERSION = 2
         self.assertIn('EXPECTED_SCHEMA_VERSION = 2', self.src)
 

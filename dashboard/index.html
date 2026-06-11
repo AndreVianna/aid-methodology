@@ -1278,16 +1278,16 @@ footer {
 
     if (path === 'full') {
       addBadge('Full', 'badge-info');
-      if (features.length > 0) addBadge(features.length + ' Feature' + (features.length !== 1 ? 's' : ''), '');
-      if (deliverables.length > 0) addBadge(deliverables.length + ' Deliverable' + (deliverables.length !== 1 ? 's' : ''), '');
-      if (totalTasks > 0) addBadge(totalTasks + ' Task' + (totalTasks !== 1 ? 's' : ''), 'badge-dim');
     } else if (path === 'lite') {
       addBadge('Lite', 'badge-purple');
       if (work.recipe) addBadge('Recipe: ' + work.recipe, '');
-      if (totalTasks > 0) addBadge(totalTasks + ' Task' + (totalTasks !== 1 ? 's' : ''), 'badge-dim');
     } else if (path) {
       addBadge(path, '');
     }
+    // Always show counts derivable regardless of path (features/deliverables/tasks)
+    if (features.length > 0) addBadge(features.length + ' Feature' + (features.length !== 1 ? 's' : ''), '');
+    if (deliverables.length > 0) addBadge(deliverables.length + ' Deliverable' + (deliverables.length !== 1 ? 's' : ''), '');
+    if (totalTasks > 0) addBadge(totalTasks + ' Task' + (totalTasks !== 1 ? 's' : ''), 'badge-dim');
   }
 
   function _renderFeaturesDisclosure(features, show) {

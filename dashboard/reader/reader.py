@@ -226,6 +226,14 @@ def _minimal_work_model(work_id: str, _warnings: list[str]) -> WorkModel:
         name=_slug_from_work_id(work_id),
         lifecycle=Lifecycle.Unknown,
         source_mode=SourceMode.Fallback,
+        number=_number_from_work_id(work_id),
+        title=None,
+        description=None,
+        objective=None,
+        work_path=None,
+        recipe=None,
+        features=[],
+        deliverables=[],
     )
 
 
