@@ -174,7 +174,8 @@ def _read_work(
         return _minimal_work_model(work_id, parse_warnings), parse_warnings, 0
 
     # Steps 5b-5d: parse normalized block, tasks, pending Q&A (LC-2)
-    pw: ParsedWork = parse_state_md(text, work_id=work_id)
+    # work_dir is passed for the LC-3 fallback IMPEDIMENT scan (KI-003).
+    pw: ParsedWork = parse_state_md(text, work_id=work_id, work_dir=work_dir)
     parse_warnings.extend(pw.parse_warnings)
 
     # Extract display name from work_id slug (strip leading "work-NNN-")

@@ -28,6 +28,7 @@ from .models import (
     TaskStatus,
     ToolInfo,
 )
+from .derivation import derive_lifecycle
 
 
 # ---------------------------------------------------------------------------
@@ -318,7 +319,11 @@ _RE_TABLE_SEP  = re.compile(r"^\|[\s\-|]+\|$")
 _NONE_YET      = "_none yet_"
 
 
-def parse_state_md(text: str, work_id: str = "") -> ParsedWork:
+def parse_state_md(
+    text: str,
+    work_id: str = "",
+    work_dir: Optional[Path] = None,
+) -> ParsedWork:
     """Parse a STATE.md file text into a ParsedWork.
 
     Single-pass line scan. Three phases in a single pass:
@@ -326,12 +331,15 @@ def parse_state_md(text: str, work_id: str = "") -> ParsedWork:
       - ## Tasks Status     -> tasks[] (DM-5); skip _none yet_
       - ## Cross-phase Q&A  -> pending_inputs (Status: Pending only)
 
-    When ## Pipeline Status is absent, source_mode=fallback and lifecycle=Unknown.
-    NOTE: The full fallback derivation (LC-3) is task-011 -- see the marked plug-in
-    point below. For task-010 (normalized path only), a missing block yields
-    lifecycle=Unknown + a parse_warning.
+    When ## Pipeline Status is absent, the LC-3 fallback adapter (derive_lifecycle)
+    is invoked to reconstruct lifecycle from legacy signals (SM-2 fallback path).
+    source_mode=fallback is recorded for all works that use the fallback.
 
-    This function is pure: it takes text and returns ParsedWork; no I/O.
+    work_dir is required for the fallback IMPEDIMENT scan (KI-003); if absent,
+    the IMPEDIMENT check is skipped (IMPEDIMENT file detection does not fire).
+
+    This function is pure (text-only) when work_dir is None. When work_dir is
+    supplied it performs one filesystem scan for IMPEDIMENT files; no writes.
     """
     pw = ParsedWork()
     lines = text.splitlines()
@@ -442,24 +450,34 @@ def parse_state_md(text: str, work_id: str = "") -> ParsedWork:
     if pipeline_status_found:
         pw.source_mode = SourceMode.Normalized
     else:
-        # TASK-011 FALLBACK PLUG-IN POINT:
-        # When ## Pipeline Status is absent, task-011 inserts the LC-3 fallback adapter
-        # here to derive lifecycle from legacy signals (SM-2 fallback path: IMPEDIMENT
-        # scan, task status rollup, Q&A pending, Lifecycle History, Deploy Status).
-        # For task-010 (normalized path only), we record a warning and leave
-        # lifecycle=Unknown / source_mode=fallback.
-        pw.lifecycle = Lifecycle.Unknown
-        pw.source_mode = SourceMode.Fallback
-        if work_id:
-            pw.parse_warnings.append(
-                f"{work_id}: ## Pipeline Status block absent; "
-                "lifecycle=Unknown (fallback adapter not yet implemented -- task-011)"
-            )
-        else:
-            pw.parse_warnings.append(
-                "## Pipeline Status block absent; "
-                "lifecycle=Unknown (fallback adapter not yet implemented -- task-011)"
-            )
+        # LC-3 FALLBACK ADAPTER (task-011):
+        # ## Pipeline Status block absent -- apply SM-2 fallback derivation from
+        # legacy signals (IMPEDIMENT scan, task status rollup, Q&A pending,
+        # Lifecycle History, Deploy Status).  source_mode=fallback is recorded.
+        # Each fallback path is TEMPORARY (KI-003/KI-004); task-013 retires them
+        # per-signal as feature-001 normalizes the corresponding field.
+        _wd = work_dir if work_dir is not None else Path(".")
+        (
+            pw.lifecycle,
+            pw.source_mode,
+            pw.pause_reason,
+            pw.block_reason,
+            pw.block_artifact,
+            fallback_updated,
+            extra_warnings,
+        ) = derive_lifecycle(
+            work_dir=_wd,
+            tasks=pw.tasks,
+            pending_inputs=pw.pending_inputs,
+            state_text=text,
+            work_id=work_id,
+        )
+        # Only update updated from fallback if not already set (normalized path may
+        # have set it before the fallback; in practice the block is absent here so
+        # pw.updated is always None, but guard explicitly for mixed-mode safety).
+        if pw.updated is None:
+            pw.updated = fallback_updated
+        pw.parse_warnings.extend(extra_warnings)
 
     return pw
 

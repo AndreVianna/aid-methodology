@@ -465,12 +465,20 @@ class TestParseStateMd(unittest.TestCase):
         self.assertEqual(pw.pending_inputs[0].question_id, "Q1")
         self.assertEqual(pw.pending_inputs[0].category, "Architecture")
 
-    def test_no_pipeline_status_yields_unknown_lifecycle(self):
+    def test_no_pipeline_status_uses_fallback_adapter(self):
+        """When ## Pipeline Status is absent, the LC-3 fallback adapter fires (task-011).
+
+        STATE_NO_PIPELINE_STATUS has a pending Q1, so derive_lifecycle produces
+        PausedAwaitingInput (SM-2 prio-4). source_mode=fallback is recorded.
+        """
         pw = parse_state_md(STATE_NO_PIPELINE_STATUS)
-        self.assertEqual(pw.lifecycle, Lifecycle.Unknown)
+        # Fallback adapter active: not Unknown (stub behavior), not normalized
         self.assertEqual(pw.source_mode, SourceMode.Fallback)
-        self.assertGreater(len(pw.parse_warnings), 0)
-        self.assertTrue(any("Pipeline Status" in w for w in pw.parse_warnings))
+        # The fixture has Q1 Status: Pending, no IMPEDIMENT, no failed task -> Paused
+        self.assertEqual(pw.lifecycle, Lifecycle.PausedAwaitingInput)
+        self.assertIsNotNone(pw.pause_reason)
+        # No extra parse warnings needed (fallback adapter succeeded)
+        # (no "fallback adapter not yet implemented" message now)
 
     def test_completed_lifecycle(self):
         pw = parse_state_md(STATE_NONE_YET)
@@ -828,6 +836,7 @@ class TestReadRepo(unittest.TestCase):
             reader_dir / "parsers.py",
             reader_dir / "reader.py",
             reader_dir / "models.py",
+            reader_dir / "derivation.py",  # task-011: fallback adapter
         ]
 
         write_primitives = {"open"}
