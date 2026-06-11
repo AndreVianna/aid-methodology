@@ -436,6 +436,82 @@ class TestSerializationShape(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# Tests: SIGTERM clean exit (LC-1 contract)
+# ---------------------------------------------------------------------------
+
+class TestSigtermExit(unittest.TestCase):
+    """Verify that SIGTERM causes the server subprocess to exit cleanly within 2s
+    and releases the port.  Uses subprocess so the signal is delivered to a real
+    OS process (not a thread), matching the production code path."""
+
+    def test_sigterm_exits_within_2s(self):
+        import os
+        import signal
+        import socket
+        import subprocess
+        import time
+
+        _REPO_ROOT = Path(__file__).resolve().parents[4]
+        _SERVER_SCRIPT = Path(__file__).resolve().parents[1] / "server.py"
+        fixture = Path(__file__).resolve().parents[1] / ".." / ".." / "tests" / "fixtures" / "pt1-aid"
+
+        # Pick a free port.
+        with socket.socket() as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+
+        proc = subprocess.Popen(
+            [
+                sys.executable, str(_SERVER_SCRIPT),
+                "--root", str(fixture.resolve()),
+                "--host", "127.0.0.1",
+                "--port", str(port),
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        try:
+            # Wait until the port is accepting connections (up to 5s).
+            deadline = time.monotonic() + 5.0
+            ready = False
+            while time.monotonic() < deadline:
+                try:
+                    with socket.create_connection(("127.0.0.1", port), timeout=0.1):
+                        ready = True
+                        break
+                except OSError:
+                    time.sleep(0.05)
+            self.assertTrue(ready, "Server did not become ready within 5s")
+
+            # Send SIGTERM and measure how long until the process exits.
+            t0 = time.monotonic()
+            proc.send_signal(signal.SIGTERM)
+            try:
+                proc.wait(timeout=2.0)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()
+                self.fail("Server did NOT exit within 2s after SIGTERM (deadlock)")
+            elapsed = time.monotonic() - t0
+
+            self.assertLess(elapsed, 2.0,
+                            f"Server took {elapsed:.2f}s to exit after SIGTERM (limit 2s)")
+
+            # Confirm the port is no longer bound.
+            port_freed = False
+            try:
+                with socket.create_connection(("127.0.0.1", port), timeout=0.3):
+                    pass
+            except OSError:
+                port_freed = True
+            self.assertTrue(port_freed, "Port still bound after server exited on SIGTERM")
+
+        finally:
+            if proc.poll() is None:
+                proc.kill()
+                proc.wait()
+
+# ---------------------------------------------------------------------------
 # Tests: arg validation
 # ---------------------------------------------------------------------------
 

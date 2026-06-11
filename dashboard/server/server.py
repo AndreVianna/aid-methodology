@@ -22,6 +22,7 @@ import argparse
 import json
 import signal
 import sys
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -284,10 +285,13 @@ def main(argv: list[str] | None = None) -> None:
     # Attach the repo root so the handler can reach it without a global
     server.aid_root = args.root  # type: ignore[attr-defined]
 
-    # Clean exit on SIGTERM (LC-1 section 4 "clean exit on signal")
+    # Clean exit on SIGTERM (LC-1 section 4 "clean exit on signal").
+    # shutdown() blocks until serve_forever() returns, so call it from a
+    # separate thread -- the main thread must remain free to run serve_forever's
+    # accept loop; calling shutdown() on the main thread while serve_forever()
+    # is suspended inside the signal handler causes a self-deadlock.
     def _handle_sigterm(signum, frame):  # noqa: ANN001
-        server.shutdown()
-        sys.exit(0)
+        threading.Thread(target=server.shutdown, daemon=True).start()
 
     signal.signal(signal.SIGTERM, _handle_sigterm)
 
