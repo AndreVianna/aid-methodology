@@ -443,4 +443,254 @@ assert_eq "$RC_SH" "$RC_PS1" "PAR029-L03 Bash↔PS1 exit code parity (version)"
 assert_output_contains "$OUT_SH"  "${VERSION}" "PAR029-L04 Bash version output"
 assert_output_contains "$OUT_PS1" "${VERSION}" "PAR029-L05 PS1 version output"
 
+# ===========================================================================
+# PAR023-M: dashboard start/stop parity (T-12) — T-1/T-3/T-4/T-5/T-7
+#
+# Verifies that the Bash and PowerShell CLI twins produce:
+#   - identical exit codes for dashboard start/stop scenarios
+#   - identical user-visible stdout/stderr messages
+# Explicitly EXCLUDES internal verbose/diagnostic messages (e.g. "SIGTERM to
+# process group" vs "Stop-Process to pid") which legitimately differ by platform.
+#
+# PowerShell half: SKIP-IF-ABSENT (print clear notice, still run Bash side).
+# When pwsh IS present (CI Windows runner), the PS half runs and asserts parity.
+# This avoids a vacuous pass: when pwsh is absent, the Bash-side assertions still
+# catch regressions; when pwsh is present, full Bash<->PS1 parity is verified.
+#
+# Start/stop server parity (T-1/T-3/T-4): also SKIP on Linux even when pwsh is
+# present, because PowerShell Start-Process -WindowStyle Hidden is Windows-only
+# and fails on Linux PS. Usage/error parity (T-5/T-7) does NOT require spawning
+# a server so it ALWAYS runs when pwsh is present.
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# Fixture: a minimal .aid/ repo with real dashboard server entry points.
+# Both runtimes (python/node) are present on this Linux machine so start works.
+# ---------------------------------------------------------------------------
+REPO_ROOT_PAR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+DASH_SERVER_DIR="${REPO_ROOT_PAR}/dashboard/server"
+DASH_READER_PY="${REPO_ROOT_PAR}/dashboard/reader.py"
+DASH_INIT_PY="${REPO_ROOT_PAR}/dashboard/__init__.py"
+
+new_dash_repo() {
+    local r; r="$(mktemp -d "${TMP}/dashrepo.XXXXXX")"
+    mkdir -p "${r}/.aid/.temp" "${r}/dashboard/server"
+    ln -sf "${DASH_SERVER_DIR}/server.py"  "${r}/dashboard/server/server.py"
+    ln -sf "${DASH_SERVER_DIR}/server.mjs" "${r}/dashboard/server/server.mjs"
+    [[ -f "$DASH_READER_PY" ]] && ln -sf "$DASH_READER_PY" "${r}/dashboard/reader.py"
+    [[ -f "$DASH_INIT_PY" ]]   && ln -sf "$DASH_INIT_PY"   "${r}/dashboard/__init__.py"
+    echo "$r"
+}
+
+pick_dash_port() {
+    python3 -c "import socket; s=socket.socket(); s.bind(('',0)); p=s.getsockname()[1]; s.close(); print(p)"
+}
+
+SH_HOME_M=$(newhome); setup_sh_home "${SH_HOME_M}"
+PS_HOME_M=$(newhome); setup_ps1_home "${PS_HOME_M}"
+DASH_REPO_M="$(new_dash_repo)"
+
+# Two skip conditions for the PS half:
+#   PS_ABSENT_M=1  -> pwsh not found at all (CI check: pwsh must be present on Windows runner)
+#   PS_LINUX_M=1   -> pwsh present but Start-Process -WindowStyle not supported (Linux PS)
+#                     Only affects server-spawn scenarios (T-1/T-3/T-4); not usage errors (T-5/T-7)
+PS_ABSENT_M=0
+PS_LINUX_M=0
+
+if [[ -z "$PWSH" ]]; then
+    PS_ABSENT_M=1
+    echo "SKIP (PS half): pwsh not found — dashboard parity PS assertions skipped (Bash side runs)."
+else
+    # Detect Linux PS limitation: Start-Process -WindowStyle is Windows-only.
+    # Test by running a trivial Start-Process with -WindowStyle and checking for the error.
+    _PS_WS_TEST="$("$PWSH" -NoProfile -Command \
+        'try { Start-Process -FilePath "echo" -ArgumentList "x" -WindowStyle Hidden -Wait -ErrorAction Stop; Write-Host "ok" } catch { Write-Host "fail" }' \
+        2>&1)"
+    if echo "$_PS_WS_TEST" | grep -q "fail\|not supported\|WindowStyle"; then
+        PS_LINUX_M=1
+        echo "SKIP (PS server-spawn): Start-Process -WindowStyle Hidden not supported on this platform (Linux PS)."
+        echo "  T-1/T-3/T-4 PS server-spawn parity skipped; T-5/T-7 usage/error parity still runs."
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# PAR023-M01/M02: T-1 parity — start python (Bash always; PS skip on absent/linux)
+# ---------------------------------------------------------------------------
+PORT_M1="$(pick_dash_port)"
+run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1" --target "${DASH_REPO_M}"
+SH_OUT_M1="$OUT_SH"; SH_RC_M1=$RC_SH
+
+assert_exit_eq "$SH_RC_M1" 0 "PAR023-M01 Bash dashboard start python -> exit 0"
+assert_output_contains "$SH_OUT_M1" "Dashboard (python) running at http://127.0.0.1:${PORT_M1}" \
+    "PAR023-M02 Bash start python: URL printed"
+
+if [[ "$PS_ABSENT_M" -eq 0 && "$PS_LINUX_M" -eq 0 ]]; then
+    # PS side uses a separate home/repo (independent server child).
+    PS_HOME_M1="$(newhome)"; setup_ps1_home "${PS_HOME_M1}"
+    DASH_REPO_PS1="$(new_dash_repo)"
+    PORT_M1PS="$(pick_dash_port)"
+    run_ps1 "${PS_HOME_M1}" dashboard start python --port "$PORT_M1PS" --target "${DASH_REPO_PS1}"
+    PS_OUT_M1="$OUT_PS1"; PS_RC_M1=$RC_PS1
+    assert_exit_eq "$PS_RC_M1" 0 "PAR023-M03 PS1 dashboard start python -> exit 0"
+    assert_output_contains "$PS_OUT_M1" "Dashboard (python) running at http://127.0.0.1:${PORT_M1PS}" \
+        "PAR023-M04 PS1 start python: URL printed"
+    assert_eq "$SH_RC_M1" "$PS_RC_M1" "PAR023-M05 Bash<->PS1 exit code parity: start python"
+else
+    _skip_reason="pwsh absent"
+    [[ "$PS_LINUX_M" -eq 1 ]] && _skip_reason="Linux PS: Start-Process WindowStyle unsupported"
+    pass "PAR023-M03 PS1 dashboard start python [SKIPPED: ${_skip_reason}]"
+    pass "PAR023-M04 PS1 start python: URL printed [SKIPPED: ${_skip_reason}]"
+    pass "PAR023-M05 Bash<->PS1 exit code parity: start python [SKIPPED: ${_skip_reason}]"
+fi
+
+# ---------------------------------------------------------------------------
+# PAR023-M06/M07: T-3 parity — second start while running -> exit 8
+# (DASH_REPO_M has python running from M01 above via Bash)
+# ---------------------------------------------------------------------------
+run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1" --target "${DASH_REPO_M}"
+SH_OUT_M6="$OUT_SH"; SH_RC_M6=$RC_SH
+
+assert_exit_eq "$SH_RC_M6" 8 "PAR023-M06 Bash second start -> exit 8"
+assert_output_contains "$SH_OUT_M6" "already running" \
+    "PAR023-M07 Bash second start: 'already running' message"
+
+if [[ "$PS_ABSENT_M" -eq 0 && "$PS_LINUX_M" -eq 0 ]]; then
+    # PS_HOME_M1/DASH_REPO_PS1 were set in the block above (PS start succeeded).
+    run_ps1 "${PS_HOME_M1}" dashboard start python --port "$PORT_M1PS" --target "${DASH_REPO_PS1}"
+    PS_OUT_M6="$OUT_PS1"; PS_RC_M6=$RC_PS1
+    assert_exit_eq "$PS_RC_M6" 8 "PAR023-M08 PS1 second start -> exit 8"
+    assert_output_contains "$PS_OUT_M6" "already running" \
+        "PAR023-M09 PS1 second start: 'already running' message"
+    assert_eq "$SH_RC_M6" "$PS_RC_M6" "PAR023-M10 Bash<->PS1 exit code parity: second start"
+else
+    _skip_reason="pwsh absent"
+    [[ "$PS_LINUX_M" -eq 1 ]] && _skip_reason="Linux PS: Start-Process WindowStyle unsupported"
+    pass "PAR023-M08 PS1 second start -> exit 8 [SKIPPED: ${_skip_reason}]"
+    pass "PAR023-M09 PS1 second start: 'already running' message [SKIPPED: ${_skip_reason}]"
+    pass "PAR023-M10 Bash<->PS1 exit code parity: second start [SKIPPED: ${_skip_reason}]"
+fi
+
+# ---------------------------------------------------------------------------
+# PAR023-M11/M12: T-4 parity — stop after start -> exit 0
+# ---------------------------------------------------------------------------
+run_sh "${SH_HOME_M}" dashboard stop --target "${DASH_REPO_M}"
+SH_OUT_M11="$OUT_SH"; SH_RC_M11=$RC_SH
+
+assert_exit_eq "$SH_RC_M11" 0 "PAR023-M11 Bash dashboard stop -> exit 0"
+assert_output_contains "$SH_OUT_M11" "aid: dashboard stopped." \
+    "PAR023-M12 Bash stop: 'dashboard stopped.' message"
+
+if [[ "$PS_ABSENT_M" -eq 0 && "$PS_LINUX_M" -eq 0 ]]; then
+    run_ps1 "${PS_HOME_M1}" dashboard stop --target "${DASH_REPO_PS1}"
+    PS_OUT_M11="$OUT_PS1"; PS_RC_M11=$RC_PS1
+    assert_exit_eq "$PS_RC_M11" 0 "PAR023-M13 PS1 dashboard stop -> exit 0"
+    assert_output_contains "$PS_OUT_M11" "aid: dashboard stopped." \
+        "PAR023-M14 PS1 stop: 'dashboard stopped.' message"
+    assert_eq "$SH_RC_M11" "$PS_RC_M11" "PAR023-M15 Bash<->PS1 exit code parity: stop"
+else
+    _skip_reason="pwsh absent"
+    [[ "$PS_LINUX_M" -eq 1 ]] && _skip_reason="Linux PS: Start-Process WindowStyle unsupported"
+    pass "PAR023-M13 PS1 dashboard stop -> exit 0 [SKIPPED: ${_skip_reason}]"
+    pass "PAR023-M14 PS1 stop: 'dashboard stopped.' message [SKIPPED: ${_skip_reason}]"
+    pass "PAR023-M15 Bash<->PS1 exit code parity: stop [SKIPPED: ${_skip_reason}]"
+fi
+
+# ---------------------------------------------------------------------------
+# PAR023-M16/M17: T-5 parity — stop with nothing running -> exit 0, idempotent
+# (DASH_REPO_M was just stopped above via Bash; stop again for nothing-to-stop)
+# This scenario does NOT require spawning a server, so PS runs even on Linux.
+# ---------------------------------------------------------------------------
+run_sh "${SH_HOME_M}" dashboard stop --target "${DASH_REPO_M}"
+SH_OUT_M16="$OUT_SH"; SH_RC_M16=$RC_SH
+
+assert_exit_eq "$SH_RC_M16" 0 "PAR023-M16 Bash stop nothing -> exit 0"
+assert_output_contains "$SH_OUT_M16" "not running (nothing to stop)" \
+    "PAR023-M17 Bash stop nothing: nothing-to-stop message"
+
+if [[ "$PS_ABSENT_M" -eq 0 ]]; then
+    # T-5 uses PS_HOME_M with a fresh nothing-running repo.
+    DASH_REPO_M5="$(new_dash_repo)"
+    run_ps1 "${PS_HOME_M}" dashboard stop --target "${DASH_REPO_M5}"
+    PS_OUT_M16="$OUT_PS1"; PS_RC_M16=$RC_PS1
+    assert_exit_eq "$PS_RC_M16" 0 "PAR023-M18 PS1 stop nothing -> exit 0"
+    assert_output_contains "$PS_OUT_M16" "not running (nothing to stop)" \
+        "PAR023-M19 PS1 stop nothing: nothing-to-stop message"
+    assert_eq "$SH_RC_M16" "$PS_RC_M16" "PAR023-M20 Bash<->PS1 exit code parity: stop nothing"
+else
+    pass "PAR023-M18 PS1 stop nothing -> exit 0 [SKIPPED: pwsh absent]"
+    pass "PAR023-M19 PS1 stop nothing: nothing-to-stop message [SKIPPED: pwsh absent]"
+    pass "PAR023-M20 Bash<->PS1 exit code parity: stop nothing [SKIPPED: pwsh absent]"
+fi
+
+# ---------------------------------------------------------------------------
+# PAR023-M21..M32: T-7 parity — usage errors -> exit 2
+# These do NOT spawn a server so they run whenever pwsh is present.
+# Note: assert_output_contains uses grep -F; avoid patterns starting with '--'.
+# ---------------------------------------------------------------------------
+DASH_REPO_M7="$(new_dash_repo)"
+
+# T-7a: bad runtime.
+run_sh "${SH_HOME_M}" dashboard start foo --target "${DASH_REPO_M7}"
+SH_RC_M7A=$RC_SH
+if [[ "$PS_ABSENT_M" -eq 0 ]]; then
+    run_ps1 "${PS_HOME_M}" dashboard start foo --target "${DASH_REPO_M7}"
+    PS_RC_M7A=$RC_PS1
+fi
+assert_exit_eq "$SH_RC_M7A" 2 "PAR023-M21 Bash bad runtime -> exit 2"
+if [[ "$PS_ABSENT_M" -eq 0 ]]; then
+    assert_exit_eq "$PS_RC_M7A" 2 "PAR023-M22 PS1 bad runtime -> exit 2"
+    assert_eq "$SH_RC_M7A" "$PS_RC_M7A" "PAR023-M23 Bash<->PS1 parity: bad runtime exit code"
+else
+    pass "PAR023-M22 PS1 bad runtime -> exit 2 [SKIPPED: pwsh absent]"
+    pass "PAR023-M23 Bash<->PS1 parity: bad runtime exit code [SKIPPED: pwsh absent]"
+fi
+
+# T-7b: missing runtime.
+run_sh "${SH_HOME_M}" dashboard start --target "${DASH_REPO_M7}"
+SH_RC_M7B=$RC_SH
+if [[ "$PS_ABSENT_M" -eq 0 ]]; then
+    run_ps1 "${PS_HOME_M}" dashboard start --target "${DASH_REPO_M7}"
+    PS_RC_M7B=$RC_PS1
+fi
+assert_exit_eq "$SH_RC_M7B" 2 "PAR023-M24 Bash missing runtime -> exit 2"
+if [[ "$PS_ABSENT_M" -eq 0 ]]; then
+    assert_exit_eq "$PS_RC_M7B" 2 "PAR023-M25 PS1 missing runtime -> exit 2"
+    assert_eq "$SH_RC_M7B" "$PS_RC_M7B" "PAR023-M26 Bash<->PS1 parity: missing runtime exit code"
+else
+    pass "PAR023-M25 PS1 missing runtime -> exit 2 [SKIPPED: pwsh absent]"
+    pass "PAR023-M26 Bash<->PS1 parity: missing runtime exit code [SKIPPED: pwsh absent]"
+fi
+
+# T-7c: unknown flag.
+run_sh "${SH_HOME_M}" dashboard start python --unknown-flag --target "${DASH_REPO_M7}"
+SH_RC_M7C=$RC_SH
+if [[ "$PS_ABSENT_M" -eq 0 ]]; then
+    run_ps1 "${PS_HOME_M}" dashboard start python --unknown-flag --target "${DASH_REPO_M7}"
+    PS_RC_M7C=$RC_PS1
+fi
+assert_exit_eq "$SH_RC_M7C" 2 "PAR023-M27 Bash unknown flag -> exit 2"
+if [[ "$PS_ABSENT_M" -eq 0 ]]; then
+    assert_exit_eq "$PS_RC_M7C" 2 "PAR023-M28 PS1 unknown flag -> exit 2"
+    assert_eq "$SH_RC_M7C" "$PS_RC_M7C" "PAR023-M29 Bash<->PS1 parity: unknown flag exit code"
+else
+    pass "PAR023-M28 PS1 unknown flag -> exit 2 [SKIPPED: pwsh absent]"
+    pass "PAR023-M29 Bash<->PS1 parity: unknown flag exit code [SKIPPED: pwsh absent]"
+fi
+
+# T-7d: bad --port.
+run_sh "${SH_HOME_M}" dashboard start python --port abc --target "${DASH_REPO_M7}"
+SH_RC_M7D=$RC_SH
+if [[ "$PS_ABSENT_M" -eq 0 ]]; then
+    run_ps1 "${PS_HOME_M}" dashboard start python --port abc --target "${DASH_REPO_M7}"
+    PS_RC_M7D=$RC_PS1
+fi
+assert_exit_eq "$SH_RC_M7D" 2 "PAR023-M30 Bash bad port -> exit 2"
+if [[ "$PS_ABSENT_M" -eq 0 ]]; then
+    assert_exit_eq "$PS_RC_M7D" 2 "PAR023-M31 PS1 bad port -> exit 2"
+    assert_eq "$SH_RC_M7D" "$PS_RC_M7D" "PAR023-M32 Bash<->PS1 parity: bad port exit code"
+else
+    pass "PAR023-M31 PS1 bad port -> exit 2 [SKIPPED: pwsh absent]"
+    pass "PAR023-M32 Bash<->PS1 parity: bad port exit code [SKIPPED: pwsh absent]"
+fi
+
 test_summary
