@@ -135,3 +135,19 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 | Date | Phase Transition / Gate | Grade | Notes |
 |------|------------------------|-------|-------|
 | {YYYY-MM-DD} | Work created | — | Initial scaffold by aid-config |
+
+## Calibration Log
+
+> Appended by every dispatcher on subagent completion (L1+L2+L3 traceability; always-on, never optional). One row per dispatch. Created on first use ("create section if missing"). Source: `.claude/skills/aid-discover/SKILL.md ## Dispatch Protocol`.
+
+| Date | Agent | Task / Cycle | ETA Band | Actual | Notes |
+|------|-------|-------------|----------|--------|-------|
+
+## Dispatches
+
+> Records the per-task dispatch log for subagents invoked during execution of this work. One sub-section per task that triggered at least one dispatch; each sub-section lists the dispatches with their outcome. Updated by the dispatcher on subagent completion alongside the `## Calibration Log` row.
+
+### task-NNN
+
+| Date | Agent | ETA Band | Actual | Outcome |
+|------|-------|----------|--------|---------|

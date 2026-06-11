@@ -243,4 +243,4 @@
 {"dst": ".agent/templates/specs/spec-template.md", "profile": "antigravity", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".agent/templates/state-machine-chaining.md", "profile": "antigravity", "sha256": "8eb579de700771ca70d3341eacc26e60f195a233403f32efd389cb686b431e3d", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".agent/templates/subagent-heartbeat-protocol.md", "profile": "antigravity", "sha256": "4ce600682be8a3c52a7f0ccc75ad9d70f7da9de65f4091a73ff74d81c3e1c40f", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
-{"dst": ".agent/templates/work-state-template.md", "profile": "antigravity", "sha256": "11f4d781195b7fb3676ddf401ec109005f281e9762e1c2b8ae7a60b039049a9a", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".agent/templates/work-state-template.md", "profile": "antigravity", "sha256": "a2b0b101f88df343b1e11d13eb4be8e893518068a03f7bcfbb137e0dbc6a7613", "src": "canonical/templates/work-state-template.md"}

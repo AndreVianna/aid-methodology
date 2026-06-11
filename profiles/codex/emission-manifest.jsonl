@@ -232,7 +232,7 @@
 {"dst": ".agents/templates/specs/spec-template.md", "profile": "codex", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".agents/templates/state-machine-chaining.md", "profile": "codex", "sha256": "128feca0f90a6b52226df1bd3527185cd25ed404a94f9880795c69d5865256a9", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".agents/templates/subagent-heartbeat-protocol.md", "profile": "codex", "sha256": "0a36203d06a2cf717c8aa14ff20c72824c6f15ef71c389493ac1184381783692", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
-{"dst": ".agents/templates/work-state-template.md", "profile": "codex", "sha256": "48e035525c48cf7593d0dc5967ab0c53f34276d3b28decf4161c9483a5ffd8e3", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".agents/templates/work-state-template.md", "profile": "codex", "sha256": "4fa7c624ac5162d0009d12ce851bfa8c54221e73bee6cbd5e2b2f7341310e098", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".codex/agents/aid-architect.toml", "profile": "codex", "sha256": "61e1b8eeea04b4ac09e9f150abe3272f95e7eeec6104da60bbc6c5a4e0316ec2", "src": "canonical/agents/aid-architect/AGENT.md"}
 {"dst": ".codex/agents/aid-clerk.toml", "profile": "codex", "sha256": "a4207fe6bded56801e261a77c8bb02e19952c0b7dc719e70e9dc2edada63dcae", "src": "canonical/agents/aid-clerk/AGENT.md"}
 {"dst": ".codex/agents/aid-developer.toml", "profile": "codex", "sha256": "bb8fe01d72a6bda9e489a27088ccb6c7faef70ca0f5e1f78ca1e2192c9466135", "src": "canonical/agents/aid-developer/AGENT.md"}

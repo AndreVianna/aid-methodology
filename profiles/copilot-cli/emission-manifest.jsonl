@@ -241,4 +241,4 @@
 {"dst": ".github/templates/specs/spec-template.md", "profile": "copilot-cli", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".github/templates/state-machine-chaining.md", "profile": "copilot-cli", "sha256": "d1e6d3bcf2ac61547cb124a8be72ecae0668dc4d29ed0bc4e37318530b62721a", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".github/templates/subagent-heartbeat-protocol.md", "profile": "copilot-cli", "sha256": "a742b8524ad63db08ef0d9df04be681a68c29048910465dd6081827f03723626", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
-{"dst": ".github/templates/work-state-template.md", "profile": "copilot-cli", "sha256": "e7d179bcfca0e34f3096820c4a9b4ecff9fc541728c42ef7dd12187ab6bcc8f1", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".github/templates/work-state-template.md", "profile": "copilot-cli", "sha256": "e98b3c7bc10b5717dcb54fd4383c9f82c10be9d3253bf8b0d4fbd49f8450fdc5", "src": "canonical/templates/work-state-template.md"}

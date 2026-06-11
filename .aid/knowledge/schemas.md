@@ -19,6 +19,7 @@ contracts:
   - "Recipe slot syntax: {{slot-name}} where slot-name matches POSIX ERE [a-z][a-z0-9-]*"
   - "Task templates have 6 sections: title heading, Type, Source, Depends on, Scope, Acceptance Criteria"
 changelog:
+  - 2026-06-10: work-001-aid-dashboard task-001 (KI-002) — corrected §13 IMPEDIMENT path from `.aid/{work}/task-NNN/IMPEDIMENT.md` (wrong subdirectory shape) to `.aid/{work}/IMPEDIMENT-task-NNN.md` (flat, hyphenated; matches producer `canonical/skills/aid-execute/references/state-execute.md:322,368` and `pipeline-contracts.md ### IMPEDIMENT-task-NNN.md Contract`). Doc-only fix; no producer behavior change.
   - 2026-06-05: work-002-auto-installer — added §8a install-manifest schema (`<project>/.aid/.aid-manifest.json`, written by the `aid` CLI per `lib/aid-install-core.sh` `manifest_write`); re-pointed the §2 `tools.installed` note off the deleted `setup.sh` menu to the `aid add <tool>` CLI and named the install manifest as the authoritative installed-state record.
   - 2026-06-03: work-001 feature-001 — lite work-type enum collapsed 4→3 (single-doc eliminated); Work Type enum updated to {bug-fix, new-feature, refactor}; applies-to enum updated to {bug-fix, new-feature, refactor, *}.
   - 2026-06-01: work-001-add-providers (PRs #42/#43/#44) — render profiles grew 3→5 (added copilot-cli + antigravity). Updated §8 emission-manifest profile enum + manifest-location table (5 profiles); §9 profile-TOML schema ([agent].format now 4 values; [layout] output_root covers .github/.agent roots; [extras] gained rules_frontmatter + per-rule output_filename); RuleEntry/ExtrasConfig dataclass additions documented.
@@ -501,7 +502,7 @@ The dataclasses mirror this schema 1:1 in `.claude/skills/aid-generate/scripts/a
 
 ---
 
-## 13. IMPEDIMENT Schema — `.aid/{work}/task-NNN/IMPEDIMENT.md`
+## 13. IMPEDIMENT Schema — `.aid/{work}/IMPEDIMENT-task-NNN.md`
 
 **Source of truth:** `canonical/templates/feedback-artifacts/IMPEDIMENT.md`.
 
