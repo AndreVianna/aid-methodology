@@ -125,7 +125,7 @@ dispatch in this skill.
 | SELECTING | `references/state-selecting.md` | `aid-operator` | → VERIFYING |
 | VERIFYING | `references/state-verifying.md` | `aid-operator` | → PACKAGING |
 | PACKAGING | `references/state-packaging.md` | `aid-operator` | → DONE |
-| DONE | _(inline — terminal)_ | `inline` | → halt |
+| DONE | `references/state-done.md` | `inline` | → halt |
 | RE-RUN | `references/state-re-run.md` | `inline` | → halt |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.

@@ -450,12 +450,13 @@ def parse_state_md(
     if pipeline_status_found:
         pw.source_mode = SourceMode.Normalized
     else:
-        # LC-3 FALLBACK ADAPTER (task-011):
+        # LC-3 FALLBACK ADAPTER (task-011, audited task-013 M6):
         # ## Pipeline Status block absent -- apply SM-2 fallback derivation from
         # legacy signals (IMPEDIMENT scan, task status rollup, Q&A pending,
         # Lifecycle History, Deploy Status).  source_mode=fallback is recorded.
-        # Each fallback path is TEMPORARY (KI-003/KI-004); task-013 retires them
-        # per-signal as feature-001 normalizes the corresponding field.
+        # All signals except Canceled are now LEGACY-COMPAT (live works use the
+        # normalized ## Pipeline Status path). Canceled remains the legitimate path
+        # since it has no automatic producer. KI-003 RESOLVED (task-013).
         _wd = work_dir if work_dir is not None else Path(".")
         (
             pw.lifecycle,

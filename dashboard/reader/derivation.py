@@ -8,12 +8,41 @@
 #   - Fallback-only helpers that scan legacy STATE.md sections when ## Pipeline Status
 #     is absent (LC-3 Fallback Adapter).
 #
-# TECH-DEBT TRACKING: every fallback derivation path in this module is TEMPORARY.
-# Each function that reads a legacy signal is annotated with its KI reference so
-# task-013 (M6 cutover) can audit and retire per-signal when feature-001 normalizes it.
-#   - KI-003: IMPEDIMENT scan hard-codes the flat .aid/{work}/IMPEDIMENT-task-NNN.md path.
-#   - KI-004: heartbeat is repo-level corroborating only; not used here (never a lifecycle
-#             primitive).
+# MIGRATION STATUS (task-013 M6 cutover audit):
+#
+#   NORMALIZED (producer-emitted, feature-001 M1-M6 complete):
+#   - Running          — M4: aid-interview, aid-specify, aid-plan, aid-detail,
+#                        aid-execute, aid-deploy (state-idle.md) emit at phase entry.
+#   - Paused-Awaiting-Input + Pause Reason — M5: aid-specify (state-blocked.md,
+#                        state-spike.md), aid-execute (state-delivery-gate.md),
+#                        aid-interview (state-completion.md) emit on pause transitions.
+#   - Blocked + Block Reason/Artifact — M5: aid-execute (state-execute.md,
+#                        state-review.md), aid-execute (state-delivery-gate.md)
+#                        emit on impediment/failed-gate transitions.
+#   - Completed        — M6 (task-013): aid-deploy (state-done.md) emits at final
+#                        work-completion transition (DONE state entry).
+#
+#   LEGITIMATE FALLBACK (no automatic producer by design):
+#   - Canceled         — Per feature-001 §3 SM, Canceled is a USER ACTION only
+#                        (no automatic pipeline trigger). Its ## Lifecycle History
+#                        scan IS the intended derivation path, not tech-debt.
+#                        No automatic producer will ever emit Lifecycle: Canceled;
+#                        the fallback scan is retained as the permanent mechanism.
+#
+#   LEGACY-COMPAT (fallback code retained for works created before M4-M6):
+#   The fallback code paths below are no longer "temporary by construction" for
+#   signals that now have producers. They are retained as LEGACY-COMPAT for works
+#   created before the migration (no ## Pipeline Status block present).
+#   source_mode=fallback identifies these legacy works; ReadMeta.fallback_works
+#   is the runtime evidence of which works still use the fallback path.
+#
+#   KI-003 RESOLVED (task-013): task-001 reconciled schemas.md §13 to the flat
+#   IMPEDIMENT-task-NNN.md path (the path the reader's _find_impediment_file already
+#   scans). The reader's flat-scan path now matches the canonical documented path.
+#   The KI-003 coupling note is closed; the flat-scan code is correct and stays.
+#
+#   KI-004: heartbeat is repo-level corroborating only; not used here (never a lifecycle
+#           primitive). Retained as a known design choice (not tech-debt).
 #
 # No I/O here; this module receives pre-parsed in-memory data structures (ParsedWork fields
 # + the extra fallback-parsed text blobs). The filesystem is touched only by parsers.py.
@@ -39,7 +68,7 @@ from .models import Lifecycle, PendingInput, SourceMode, TaskModel, TaskStatus
 #   derive_lifecycle() is called for the FALLBACK path only; the caller (parsers.py) decides
 #   which path to use.
 #
-# FALLBACK path (LC-3, migration window -- task-013 retires this per-signal):
+# FALLBACK path (LC-3, legacy-compat -- see module docstring for M6 migration status):
 #   Apply SM-2 priority rules in order; first match wins; always returns exactly one.
 # ---------------------------------------------------------------------------
 
@@ -53,28 +82,40 @@ def derive_lifecycle(
 ) -> tuple[Lifecycle, SourceMode, Optional[str], Optional[str], Optional[str], Optional[str], list[str]]:
     """Apply SM-2 fallback derivation when ## Pipeline Status is absent.
 
-    TEMPORARY (KI-003, KI-004): each branch below is a legacy signal scan that
-    task-013 (M6 cutover) will retire once feature-001 fully normalizes the field.
+    LEGACY-COMPAT: each branch below is a legacy signal scan for works created before
+    the M4-M6 producer migration (no ## Pipeline Status block present). Live works now
+    use the normalized path (source_mode=normalized). These branches are retained for
+    works that pre-date the migration.
+
+    Exception: Canceled (prio-1) is the LEGITIMATE derivation path for all works,
+    since Canceled is a user action with no automatic producer by design (feature-001 §3).
 
     Returns:
         (lifecycle, source_mode, pause_reason, block_reason, block_artifact, updated,
          extra_warnings)
 
     Priority order (first match wins, TOTAL -- feature-002 SM-2):
-      1. Canceled  -- ## Lifecycle History row matching /cancel|canceled/i (best-effort)
-      2. Completed -- ## Deploy Status shipped OR all ## Plan / Deliveries Done + no open task
-      3. Blocked   -- IMPEDIMENT-task-NNN.md exists (flat path, KI-003) OR any task Status=Failed
-                      OR ## Delivery Gates block with Grade < minimum
-      4. Paused-Awaiting-Input -- pending_inputs non-empty
+      1. Canceled  -- ## Lifecycle History row matching /cancel|canceled/i (best-effort).
+                      LEGITIMATE PATH (not tech-debt): Canceled has no automatic producer.
+      2. Completed -- ## Deploy Status shipped OR all ## Plan / Deliveries Done + no open task.
+                      LEGACY-COMPAT: live works now emit Lifecycle: Completed via state-done.md.
+      3. Blocked   -- IMPEDIMENT-task-NNN.md exists (flat path, KI-003 RESOLVED) OR any task
+                      Status=Failed OR ## Delivery Gates block with Grade < minimum.
+                      LEGACY-COMPAT: live works now emit Lifecycle: Blocked via M5 producers.
+      4. Paused-Awaiting-Input -- pending_inputs non-empty.
+                      LEGACY-COMPAT: live works now emit Lifecycle: Paused-Awaiting-Input via M5.
          NOTE: **User Approved:** (top blockquote) is DELIBERATELY EXCLUDED from this primitive
          (SM-2 prio-4 note: it is the terminal work-completion gate, not a mid-run pause signal).
-      5. Running   -- default (live work with no terminal/pause/block signal)
+      5. Running   -- default (live work with no terminal/pause/block signal).
+                      LEGACY-COMPAT: live works now emit Lifecycle: Running via M4 producers.
     """
     warnings: list[str] = []
 
-    # ---- Prio 1: Canceled (TEMPORARY -- KI-003) ----
+    # ---- Prio 1: Canceled (LEGITIMATE PATH -- no automatic producer by design) ----
     # Scan ## Lifecycle History for a row whose Phase Transition / Gate column matches
     # /cancel|canceled/i.  Best-effort: if not found, fall through.
+    # Per feature-001 §3 SM, Canceled is a user action only; no pipeline producer will
+    # ever emit Lifecycle: Canceled automatically. This scan is the permanent mechanism.
     if _has_cancellation_in_history(state_text, warnings, work_id):
         return (
             Lifecycle.Canceled,
@@ -84,8 +125,10 @@ def derive_lifecycle(
             warnings,
         )
 
-    # ---- Prio 2: Completed (TEMPORARY -- KI-003) ----
+    # ---- Prio 2: Completed (LEGACY-COMPAT) ----
     # ## Deploy Status shipped OR all ## Plan / Deliveries rows Done with no open task.
+    # Live works (created after M6) emit Lifecycle: Completed via state-done.md at DONE entry.
+    # This branch is retained for legacy works created before the M6 migration.
     if _is_completed(state_text, tasks):
         return (
             Lifecycle.Completed,
@@ -95,10 +138,12 @@ def derive_lifecycle(
             warnings,
         )
 
-    # ---- Prio 3: Blocked (TEMPORARY -- KI-003) ----
-    # IMPEDIMENT-task-NNN.md exists at the flat work-folder path (KI-003),
+    # ---- Prio 3: Blocked (LEGACY-COMPAT) ----
+    # IMPEDIMENT-task-NNN.md exists at the flat work-folder path (KI-003 RESOLVED),
     # OR any task Status = Failed,
     # OR ## Delivery Gates block with Grade < minimum.
+    # Live works (created after M5) emit Lifecycle: Blocked via state-execute.md /
+    # state-review.md / state-delivery-gate.md. Retained for legacy works.
     block_reason, block_artifact = _find_block_signal(work_dir, tasks, state_text)
     if block_reason is not None:
         return (
@@ -111,11 +156,12 @@ def derive_lifecycle(
             warnings,
         )
 
-    # ---- Prio 4: Paused-Awaiting-Input (TEMPORARY -- KI-003) ----
+    # ---- Prio 4: Paused-Awaiting-Input (LEGACY-COMPAT) ----
     # pending_inputs non-empty (Q{N} with Status: Pending under ## Cross-phase Q&A).
-    # DELIBERATELY EXCLUDES the top-blockquote **User Approved:** field (SM-2 prio-4 note):
-    # that field is the terminal work-completion gate; using it would falsely mark every
-    # not-yet-completed live work as Paused.
+    # Live works (created after M5) emit Lifecycle: Paused-Awaiting-Input via M5 producers.
+    # Retained for legacy works. DELIBERATELY EXCLUDES the top-blockquote **User Approved:**
+    # field (SM-2 prio-4 note): that field is the terminal work-completion gate; using it
+    # would falsely mark every not-yet-completed live work as Paused.
     if pending_inputs:
         q_ids = ", ".join(p.question_id for p in pending_inputs)
         pause_reason = f"Pending Q&A: {q_ids}"
@@ -128,9 +174,10 @@ def derive_lifecycle(
             warnings,
         )
 
-    # ---- Prio 5: Running -- total default (TEMPORARY -- KI-003) ----
+    # ---- Prio 5: Running -- total default (LEGACY-COMPAT) ----
     # Live work with no terminal/pause/block signal.
-    # Heartbeat is corroborating only (KI-004) and never used here as a primitive.
+    # Live works (created after M4) emit Lifecycle: Running via M4 producers at phase entry.
+    # Retained for legacy works. Heartbeat is corroborating only (KI-004, design choice).
     return (
         Lifecycle.Running,
         SourceMode.Fallback,
@@ -191,11 +238,15 @@ def rollup_lifecycle(
 
 
 # ---------------------------------------------------------------------------
-# Fallback parsing helpers (LC-3 -- TEMPORARY: KI-003)
+# Fallback parsing helpers (LC-3)
 # Each function reads one legacy STATE.md signal.
+# Status per M6 audit (task-013):
+#   - Canceled scan   : LEGITIMATE PATH (no automatic producer; see module docstring)
+#   - All other scans : LEGACY-COMPAT (live works use normalized ## Pipeline Status)
+# KI-003 RESOLVED: flat-scan path now matches canonical documented path (task-001).
 # ---------------------------------------------------------------------------
 
-# --- Prio 1: Cancellation (TEMPORARY -- KI-003) ---
+# --- Prio 1: Cancellation (LEGITIMATE PATH -- no automatic producer by design) ---
 
 _RE_HISTORY_SECTION = re.compile(r"^##\s+Lifecycle History\s*$", re.IGNORECASE)
 _RE_TABLE_SEP = re.compile(r"^\|[\s\-|]+\|$")
@@ -208,8 +259,9 @@ def _has_cancellation_in_history(text: str, warnings: list[str], work_id: str = 
     Table shape (canonical/templates/work-state-template.md):
         | Date | Phase | Event | Phase Transition / Gate | Notes |
 
-    TEMPORARY (KI-003): best-effort legacy parse; once feature-001 normalizes
-    Lifecycle: Canceled in ## Pipeline Status, this scan is retired by task-013.
+    LEGITIMATE PATH (permanent): Canceled is a user action; no automatic pipeline producer
+    will ever emit Lifecycle: Canceled. This ## Lifecycle History scan is the intended
+    derivation mechanism for all works (legacy and live alike). Not retired by M6.
 
     Returns True if a cancellation row is found; emits a warning for ambiguous rows.
     """
@@ -255,8 +307,9 @@ _RE_DATE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
 def _extract_latest_history_date(text: str) -> Optional[str]:
     """Return the most recent date found in ## Lifecycle History as the coarse updated fallback.
 
-    TEMPORARY (KI-003): approximate; once feature-001 normalizes Updated in ## Pipeline Status,
-    the Lifecycle History date is not needed.
+    LEGACY-COMPAT: used only when ## Pipeline Status is absent (no Updated field).
+    Live works (M4+) have authoritative Updated in ## Pipeline Status; this scan is
+    retained for legacy works created before the migration.
 
     Scans the Date column (first column of each data row) in ## Lifecycle History.
     Returns the lexicographically latest date string ("YYYY-MM-DD"), or None if absent.
@@ -292,7 +345,7 @@ def _extract_latest_history_date(text: str) -> Optional[str]:
     return latest
 
 
-# --- Prio 2: Completed (TEMPORARY -- KI-003) ---
+# --- Prio 2: Completed (LEGACY-COMPAT) ---
 
 _RE_DEPLOY_STATUS = re.compile(r"^##\s+Deploy Status\s*$", re.IGNORECASE)
 _RE_PLAN_DELIVERIES = re.compile(r"^##\s+Plan\s*/\s*Deliveries\s*$", re.IGNORECASE)
@@ -308,13 +361,14 @@ _DELIVERY_NOT_DONE_RE = re.compile(r"^(pending|in[\s-]progress|blocked)\b", re.I
 def _is_completed(text: str, tasks: list[TaskModel]) -> bool:
     """Return True if the work appears completed from legacy signals.
 
-    TEMPORARY (KI-003): two sub-checks (either fires):
+    LEGACY-COMPAT: two sub-checks (either fires):
       (a) ## Deploy Status table has at least one row whose Status column contains
           a shipped/done marker.
       (b) ## Plan / Deliveries: all rows have Status=Done AND no task is open
           (no In Progress / In Review task).
 
-    Once feature-001 normalizes Lifecycle: Completed, this scan is retired by task-013.
+    Live works (created after M6) emit Lifecycle: Completed via state-done.md at DONE entry.
+    This scan is retained for works created before the M6 migration.
     """
     if _deploy_status_shipped(text):
         return True
@@ -326,7 +380,7 @@ def _is_completed(text: str, tasks: list[TaskModel]) -> bool:
 def _deploy_status_shipped(text: str) -> bool:
     """Return True if ## Deploy Status contains a shipped/deployed row.
 
-    TEMPORARY (KI-003). Scans the Status column (column 1) of each data row.
+    LEGACY-COMPAT. Scans the Status column (column 1) of each data row.
     """
     in_deploy = False
     header_seen = False
@@ -358,7 +412,7 @@ def _deploy_status_shipped(text: str) -> bool:
 def _all_deliveries_done(text: str) -> bool:
     """Return True if ## Plan / Deliveries has at least one row AND all rows are Done.
 
-    TEMPORARY (KI-003). Scans Status column (column 1: Delivery | Status | Tasks | Notes).
+    LEGACY-COMPAT. Scans Status column (column 1: Delivery | Status | Tasks | Notes).
     An empty table (no rows) returns False (cannot confirm completion with no deliveries).
     """
     in_plan = False
@@ -405,7 +459,7 @@ def _has_open_task(tasks: list[TaskModel]) -> bool:
     return any(t.status in open_statuses for t in tasks)
 
 
-# --- Prio 3: Blocked (TEMPORARY -- KI-003) ---
+# --- Prio 3: Blocked (LEGACY-COMPAT) ---
 
 _IMPEDIMENT_RE = re.compile(r"^IMPEDIMENT-task-\w+\.md$", re.IGNORECASE)
 _RE_DELIVERY_GATES = re.compile(r"^##\s+Delivery Gates\s*$", re.IGNORECASE)
@@ -423,16 +477,18 @@ def _find_block_signal(
 ) -> tuple[Optional[str], Optional[str]]:
     """Return (block_reason, block_artifact) or (None, None) if no block signal found.
 
-    TEMPORARY (KI-003): three sub-checks (first wins in the block priority):
+    LEGACY-COMPAT: three sub-checks (first wins in the block priority):
       (a) IMPEDIMENT-task-NNN.md exists at the flat path work_dir/IMPEDIMENT-task-NNN.md
-          (de-facto producer path, state-execute.md:322; KI-003 tracks path reconciliation).
+          (de-facto producer path, state-execute.md:322; KI-003 RESOLVED: this path now
+          matches the canonical documented path after task-001 reconciliation).
       (b) Any task has Status = Failed.
       (c) ## Delivery Gates block has a Grade that is below the per-work minimum grade
           (from the top blockquote **Minimum Grade:**).
 
-    Once feature-001 normalizes Lifecycle: Blocked, this scan is retired by task-013.
+    Live works (created after M5) emit Lifecycle: Blocked via state-execute.md /
+    state-review.md / state-delivery-gate.md. Retained for legacy works.
     """
-    # (a) IMPEDIMENT file -- flat path per KI-003 (not subdir; schema.md §13 is wrong)
+    # (a) IMPEDIMENT file -- flat path per KI-003 RESOLVED (canonical documented path)
     impediment_path = _find_impediment_file(work_dir)
     if impediment_path is not None:
         artifact = impediment_path.name
@@ -455,10 +511,10 @@ def _find_block_signal(
 def _find_impediment_file(work_dir: Path) -> Optional[Path]:
     """Return the first IMPEDIMENT-task-NNN.md file in work_dir, or None.
 
-    TEMPORARY (KI-003): scans the FLAT work_dir/ path.
+    KI-003 RESOLVED (task-013): scans the FLAT work_dir/ path.
     The producer writes to .aid/{work}/IMPEDIMENT-task-NNN.md (state-execute.md:322).
-    schemas.md §13 wrongly documents the subdir form; this reader follows the producer.
-    When feature-001 KI-002 reconciles the path, update this scan in task-013.
+    task-001 reconciled schemas.md §13 to this flat path; the reader's scan now matches
+    the canonical documented path. No update needed.
     """
     try:
         for entry in work_dir.iterdir():
@@ -472,7 +528,7 @@ def _find_impediment_file(work_dir: Path) -> Optional[Path]:
 def _find_subminimum_gate(state_text: str) -> Optional[str]:
     """Return the delivery id of a ## Delivery Gates block with Grade < minimum, or None.
 
-    TEMPORARY (KI-003): reads the top-blockquote **Minimum Grade:** + per-delivery **Grade:**.
+    LEGACY-COMPAT: reads the top-blockquote **Minimum Grade:** + per-delivery **Grade:**.
     A Gate is sub-minimum when its Grade falls below the minimum in the grade order.
 
     Scans ## Delivery Gates for ### delivery-NNN sub-sections;

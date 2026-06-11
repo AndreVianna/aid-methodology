@@ -97,4 +97,4 @@ Print what was done:
    KB updates: {count} Q&A entries routed to .aid/knowledge/STATE.md
 ```
 
-**Advance:** **CHAIN** → [State: DONE] (continue inline).
+**Advance:** **CHAIN** → [State: DONE] (see `references/state-done.md`).

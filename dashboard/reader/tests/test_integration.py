@@ -460,6 +460,70 @@ class TestProducerConsumerRoundTrip(unittest.TestCase):
         model = read_repo(self.root)
         self.assertEqual(model.works[0].name, "integration-test")
 
+    # -------------------------------------------------------------------------
+    # M6: Completed emit (task-013) -- normalized Completed path
+    # -------------------------------------------------------------------------
+
+    def test_m6_completed_emit_normalized(self):
+        """M6 (task-013): Producer writes Lifecycle: Completed (state-done.md pattern).
+        Consumer reads it back as Lifecycle.Completed with source_mode=normalized.
+
+        This proves the M6 Completed emit added to state-done.md is correctly consumed
+        by the reader. A work that reaches the DONE state will emit Completed to the
+        ## Pipeline Status block; the reader must return Completed (not Running forever).
+
+        Without the M6 emit, a finished work would have read as Running indefinitely
+        (the last Running emit from state-idle.md / state-execute.md). This test
+        confirms the integration gap is closed.
+        """
+        # Simulate full pipeline flow: work runs, then completes (state-done.md emit)
+        self._produce("Lifecycle", "Running")
+        self._produce("Phase", "Deploy")
+        self._produce("Active Skill", "aid-deploy")
+        self._produce("Updated", "2026-06-11T10:00:00Z")
+
+        # Verify Running before completion
+        model = read_repo(self.root)
+        self.assertEqual(model.works[0].lifecycle, Lifecycle.Running)
+
+        # Emit Completed (mirrors state-done.md Step 10)
+        self._produce("Lifecycle", "Completed")
+        self._produce("Active Skill", "none")
+        self._produce("Updated", "2026-06-11T10:05:00Z")
+
+        model = read_repo(self.root)
+        w = model.works[0]
+
+        self.assertEqual(w.lifecycle, Lifecycle.Completed,
+                         "Reader must return Completed after state-done.md emits Lifecycle: Completed")
+        self.assertEqual(w.source_mode, SourceMode.Normalized,
+                         "Completed via ## Pipeline Status -> source_mode=normalized")
+        self.assertIsNone(w.active_skill,
+                          "active_skill must be none after DONE state (state-done.md sets it to none)")
+        self.assertIsNone(w.block_reason,
+                          "Completed work must have no block_reason")
+        self.assertIsNone(w.pause_reason,
+                          "Completed work must have no pause_reason")
+        self.assertNotIn("work-001-integration-test", model.read.fallback_works,
+                         "Completed normalized work must not appear in fallback_works")
+
+    def test_m6_completed_not_in_fallback_works(self):
+        """M6: A work that emits Completed via ## Pipeline Status is NOT in fallback_works.
+
+        ReadMeta.fallback_works accurately reflects the reduced fallback surface:
+        a normalized Completed work is not a fallback work.
+        """
+        # Seed a Completed state via the normalized path
+        self._produce("Lifecycle", "Completed")
+        self._produce("Active Skill", "none")
+
+        model = read_repo(self.root)
+
+        self.assertEqual(model.works[0].lifecycle, Lifecycle.Completed)
+        self.assertEqual(model.works[0].source_mode, SourceMode.Normalized)
+        self.assertEqual(model.read.fallback_works, [],
+                         "fallback_works must be empty for a normalized Completed work")
+
 
 # ---------------------------------------------------------------------------
 # Verify the test module itself doesn't import forbidden modules
