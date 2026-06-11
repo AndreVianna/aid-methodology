@@ -63,7 +63,7 @@
 {"dst": ".claude/scripts/config/read-setting.sh", "profile": "claude-code", "sha256": "f7418a0fcb09bdcb606de6f79fec1d6596964bd1da75ccb215e62a7d757403b6", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".claude/scripts/execute/complexity-score.sh", "profile": "claude-code", "sha256": "0196dcc73a9626864262534b08b80d24356b0d13f39c26305d13729137128d31", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".claude/scripts/execute/compute-block-radius.sh", "profile": "claude-code", "sha256": "32bd31e5b828d006a8171b951cca5103ab396f834af84212f7549139bef30a5b", "src": "canonical/scripts/execute/compute-block-radius.sh"}
-{"dst": ".claude/scripts/execute/writeback-state.sh", "profile": "claude-code", "sha256": "709f3a2cbb0e133ef88ce9487bc7d62084a467b56ac8f06c39787d70d3e73808", "src": "canonical/scripts/execute/writeback-state.sh"}
+{"dst": ".claude/scripts/execute/writeback-state.sh", "profile": "claude-code", "sha256": "4b9050dbe609917f8b94231eb457ef43e7c32709735b98980ad144c76a98a275", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".claude/scripts/grade.sh", "profile": "claude-code", "sha256": "4984ef7486d0c66dc593db1e714db69b85e3a6aac636e68a4fc1b757aaced8c9", "src": "canonical/scripts/grade.sh"}
 {"dst": ".claude/scripts/housekeep/branch-commit.sh", "profile": "claude-code", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
 {"dst": ".claude/scripts/housekeep/cleanup-classify.sh", "profile": "claude-code", "sha256": "c9eef9a5edb4bc21a963abb321c56810265b49fdba39d809ccf46be945b72f95", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}

@@ -2,7 +2,7 @@
 # writeback-state.sh — row-level write coordination for FR6 parallel pool
 # × per-area STATE writes in AID aid-execute.
 #
-# Provides 4 safe write modes for the work STATE.md Tasks Status section and
+# Provides 5 safe write modes for the work STATE.md Tasks Status section and
 # per-task/per-delivery artifact files. Uses a sentinel-file lock (set -o
 # noclobber + atomic create + sleep-poll retry) to prevent races when multiple
 # parallel tasks dispatch reviewers concurrently.
@@ -26,6 +26,17 @@
 #   writeback-state.sh --delivery-id NNN --append-issue ROW
 #       Append a single issue row to the delivery's delivery-NNN-issues.md.
 #       ROW must be a valid markdown table row (pipe-delimited).
+#
+#   writeback-state.sh --pipeline --field FIELD --value VALUE
+#       Write/update a single field in the ## Pipeline Status block of STATE.md.
+#       FIELD must be one of: Lifecycle | Phase | Active Skill | Updated |
+#         Pause Reason | Block Reason | Block Artifact
+#       Lifecycle, Phase, and Active Skill are closed-enum validated.
+#       Conditional fields: Pause Reason written only when Lifecycle is
+#         Paused-Awaiting-Input; Block Reason + Block Artifact written only when
+#         Lifecycle is Blocked. On Lifecycle change, conditional fields that no
+#         longer apply are cleared (removed from the block).
+#       Emits no user-facing output (C4 behavior-preserving).
 #
 #   writeback-state.sh -h | --help
 #
@@ -67,6 +78,7 @@ FIELD_VALUE=""
 FINDINGS_BLOCK=""
 DELIVERY_BLOCK=""
 ISSUE_ROW=""
+PIPELINE_FLAG=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -81,6 +93,9 @@ while [[ $# -gt 0 ]]; do
         --delivery-id)
             [[ $# -lt 2 ]] && die "--delivery-id requires a value" 5
             DELIVERY_ID="$2"; shift 2
+            ;;
+        --pipeline)
+            PIPELINE_FLAG=1; shift
             ;;
         --field)
             [[ $# -lt 2 ]] && die "--field requires a value" 5
@@ -111,7 +126,10 @@ done
 # ---------------------------------------------------------------------------
 # Determine mode from parsed arguments
 # ---------------------------------------------------------------------------
-if [[ -n "$TASK_ID" && -n "$FIELD" ]]; then
+if [[ "$PIPELINE_FLAG" -eq 1 && -n "$FIELD" ]]; then
+    MODE="pipeline"
+    [[ -z "$FIELD_VALUE" ]] && die "--value is required with --pipeline --field" 5
+elif [[ -n "$TASK_ID" && -n "$FIELD" ]]; then
     MODE="field"
     [[ -z "$FIELD_VALUE" ]] && die "--value is required with --task-id --field" 5
 elif [[ -n "$TASK_ID" && -n "$FINDINGS_BLOCK" ]]; then
@@ -616,9 +634,211 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
+# Mode: --pipeline --field FIELD --value VALUE
+# Write/update a single field in the ## Pipeline Status block of STATE.md.
+# The block shape (grep-recoverable **Field:** value lines) matches the
+# work-state-template.md ## Pipeline Status section (feature-001 M2).
+#
+# Fields (canonical casing): Lifecycle | Phase | Active Skill | Updated |
+#   Pause Reason | Block Reason | Block Artifact
+#
+# Enum-validated fields (closed enums from work-state-template.md):
+#   Lifecycle:    Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
+#   Phase:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
+#   Active Skill: any string matching "aid-{skill}" pattern, or "none"
+#
+# Conditional fields (written only when Lifecycle matches; cleared otherwise):
+#   Pause Reason   -> present only when Lifecycle = Paused-Awaiting-Input
+#   Block Reason   -> present only when Lifecycle = Blocked
+#   Block Artifact -> present only when Lifecycle = Blocked
+#
+# Creates the ## Pipeline Status section if absent. Emits no user-facing
+# output (C4 behavior-preserving). Acquires the existing sentinel lock.
+# ---------------------------------------------------------------------------
+mode_pipeline() {
+    if [[ ! -f "$STATE_FILE" ]]; then
+        die "$STATE_FILE does not exist" 1
+    fi
+
+    # Validate field name (canonical casing stored; comparison is case-insensitive)
+    local field_lower
+    field_lower="${FIELD,,}"
+    local canonical_field
+    case "$field_lower" in
+        lifecycle)       canonical_field="Lifecycle" ;;
+        phase)           canonical_field="Phase" ;;
+        "active skill")  canonical_field="Active Skill" ;;
+        updated)         canonical_field="Updated" ;;
+        "pause reason")  canonical_field="Pause Reason" ;;
+        "block reason")  canonical_field="Block Reason" ;;
+        "block artifact") canonical_field="Block Artifact" ;;
+        *) die "unknown --pipeline field '$FIELD'; allowed: Lifecycle Phase \"Active Skill\" Updated \"Pause Reason\" \"Block Reason\" \"Block Artifact\"" 4 ;;
+    esac
+
+    # Enum validation for closed-enum fields
+    case "$canonical_field" in
+        Lifecycle)
+            case "$FIELD_VALUE" in
+                Running|Paused-Awaiting-Input|Blocked|Completed|Canceled) ;;
+                *) die "invalid Lifecycle value '$FIELD_VALUE'; must be one of: Running | Paused-Awaiting-Input | Blocked | Completed | Canceled" 4 ;;
+            esac
+            ;;
+        Phase)
+            case "$FIELD_VALUE" in
+                Interview|Specify|Plan|Detail|Execute|Deploy|Monitor) ;;
+                *) die "invalid Phase value '$FIELD_VALUE'; must be one of: Interview | Specify | Plan | Detail | Execute | Deploy | Monitor" 4 ;;
+            esac
+            ;;
+        "Active Skill")
+            # Accepts aid-{skill} (aid- prefix followed by at least one char) or "none"
+            if [[ "$FIELD_VALUE" != "none" ]] && ! [[ "$FIELD_VALUE" =~ ^aid-[a-zA-Z0-9_-]+$ ]]; then
+                die "invalid Active Skill value '$FIELD_VALUE'; must match aid-{skill} or be \"none\"" 4
+            fi
+            ;;
+    esac
+
+    acquire_lock
+
+    local tmp
+    tmp=$(mktemp)
+
+    if grep -q '^## Pipeline Status' "$STATE_FILE"; then
+        # Section exists -- update/add the target field within it, and manage
+        # conditional fields when Lifecycle changes.
+        awk \
+            -v field="$canonical_field" \
+            -v value="$FIELD_VALUE" \
+            '
+            BEGIN {
+                in_ps = 0
+                field_written = 0
+                # Field order for canonical rendering
+                split("Lifecycle,Phase,Active Skill,Updated,Pause Reason,Block Reason,Block Artifact", order, ",")
+                # Track lines we have seen in the section (key=field, val=line text)
+            }
+
+            /^## Pipeline Status/ {
+                in_ps = 1
+                print
+                next
+            }
+
+            in_ps && /^## / {
+                # Leaving the section -- flush any field not yet written
+                if (!field_written) {
+                    print "- **" field ":** " value
+                    field_written = 1
+                }
+                in_ps = 0
+                print
+                next
+            }
+
+            in_ps {
+                # Check if this line is a **Field:** line in the block.
+                # Format: - **Field:** value  (colon is inside the bold markers)
+                if ($0 ~ /^- \*\*[^*]+:\*\*/) {
+                    # Extract field name between ** markers (strip colon too)
+                    line = $0
+                    sub(/^- \*\*/, "", line)
+                    sub(/:\*\*.*$/, "", line)
+                    cur_field = line
+
+                    if (cur_field == field) {
+                        # Replace with the new value
+                        print "- **" field ":** " value
+                        field_written = 1
+                        next
+                    }
+
+                    # For conditional Pause/Block fields: suppress them when
+                    # we are writing Lifecycle and the new Lifecycle does not
+                    # match the condition.
+                    if (field == "Lifecycle") {
+                        if (cur_field == "Pause Reason" && value != "Paused-Awaiting-Input") {
+                            # Clear -- omit this line
+                            next
+                        }
+                        if ((cur_field == "Block Reason" || cur_field == "Block Artifact") && value != "Blocked") {
+                            # Clear -- omit this line
+                            next
+                        }
+                    }
+                }
+                print
+                next
+            }
+
+            { print }
+
+            END {
+                if (!field_written) {
+                    print "- **" field ":** " value
+                }
+            }
+            ' "$STATE_FILE" > "$tmp"
+    else
+        # ## Pipeline Status section absent -- build a minimal block and append.
+        # Seed with a skeleton of all 7 fields (using placeholder dashes for
+        # fields not provided), then overwrite the target field.
+        {
+            cat "$STATE_FILE"
+            printf '\n'
+            printf '## Pipeline Status\n'
+            printf '\n'
+            printf '> Single-source derivation summary for read-only consumers (the dashboard reader, FR16).\n'
+            printf '> Written ONLY by the helper `writeback-state.sh --pipeline ...` (new mode) at every existing\n'
+            printf '> phase/state transition the pipeline already performs. Never hand-edited. All values are\n'
+            printf '> closed enums so a deterministic reader needs no inference.\n'
+            printf '>\n'
+            printf '> Lifecycle enum:    Running | Paused-Awaiting-Input | Blocked | Completed | Canceled\n'
+            printf '> Phase enum:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor\n'
+            printf '> Active Skill enum: aid-{skill} | none\n'
+            printf '\n'
+            # Write all 7 field lines; for the target field use the provided value;
+            # for others use a dash placeholder (will be updated by later calls).
+            local lc ph as up pr br ba
+            lc="-"; ph="-"; as="-"; up="-"; pr=""; br=""; ba=""
+            case "$canonical_field" in
+                Lifecycle)       lc="$FIELD_VALUE" ;;
+                Phase)           ph="$FIELD_VALUE" ;;
+                "Active Skill")  as="$FIELD_VALUE" ;;
+                Updated)         up="$FIELD_VALUE" ;;
+                "Pause Reason")  pr="$FIELD_VALUE" ;;
+                "Block Reason")  br="$FIELD_VALUE" ;;
+                "Block Artifact") ba="$FIELD_VALUE" ;;
+            esac
+            echo "- **Lifecycle:** $lc"
+            echo "- **Phase:** $ph"
+            echo "- **Active Skill:** $as"
+            echo "- **Updated:** $up"
+            # Conditional fields: only emit if relevant
+            [[ -n "$pr" ]] && echo "- **Pause Reason:** $pr"
+            [[ -n "$br" ]] && echo "- **Block Reason:** $br"
+            [[ -n "$ba" ]] && echo "- **Block Artifact:** $ba"
+        } > "$tmp"
+    fi
+
+    if [[ ! -s "$tmp" ]]; then
+        rm -f "$tmp"
+        die "writeback produced empty output; $STATE_FILE preserved" 3
+    fi
+
+    # Sanity: ## Pipeline Status section must be present in output
+    if ! grep -q '^## Pipeline Status' "$tmp"; then
+        rm -f "$tmp"
+        die "## Pipeline Status section was not written to output" 3
+    fi
+
+    mv "$tmp" "$STATE_FILE"
+    # No user-facing output (C4)
+}
+
+# ---------------------------------------------------------------------------
 # Dispatch
 # ---------------------------------------------------------------------------
 case "$MODE" in
+    pipeline)         mode_pipeline ;;
     field)            mode_field ;;
     findings)         mode_findings ;;
     delivery-block)   mode_delivery_block ;;
