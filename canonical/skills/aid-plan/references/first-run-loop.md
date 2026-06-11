@@ -4,6 +4,16 @@ No PLAN.md found; begin dependency mapping and deliverable sequencing.
 
 ## FIRST RUN — The Loop
 
+### Step 0: Emit pipeline phase
+
+Emit pipeline phase (silent state-write only — no output, no gate):
+```
+bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash canonical/scripts/execute/writeback-state.sh --pipeline --field Phase --value Plan
+bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-plan
+bash canonical/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+```
+
 ### Step 1: Map Dependencies
 
 For each feature:

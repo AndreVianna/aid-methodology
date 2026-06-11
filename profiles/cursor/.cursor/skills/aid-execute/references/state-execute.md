@@ -467,6 +467,14 @@ decision tree — lives in its own reference to keep this state file navigable:
 
 Update work `STATE.md` `## Tasks Status` table: set this task's row Status to `In Progress`.
 
+Emit pipeline phase (silent state-write only — no output, no gate):
+```
+bash .cursor/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .cursor/scripts/execute/writeback-state.sh --pipeline --field Phase --value Execute
+bash .cursor/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-execute
+bash .cursor/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+```
+
 **Pick the executor by task Type from the Agent Selection table above** (RESEARCH → `aid-researcher`, DESIGN → `aid-architect`, IMPLEMENT/TEST/REFACTOR → `aid-developer`, DOCUMENT → `aid-tech-writer`, MIGRATE → `aid-developer`, CONFIGURE → `aid-developer`).
 
 Dispatch with the Task tool, setting `subagent_type` explicitly to the chosen executor — this overrides the skill's default `agent: aid-developer` from frontmatter. Example: a DESIGN task dispatches with `subagent_type: aid-architect`; an IMPLEMENT task uses `subagent_type: aid-developer` (matches the default).

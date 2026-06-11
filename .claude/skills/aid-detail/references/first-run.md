@@ -8,6 +8,16 @@ Load `references/task-decomposition.md` for task type rules, file format, and qu
 
 ## FIRST RUN — The Loop
 
+### Step 0: Emit pipeline phase
+
+Emit pipeline phase (silent state-write only — no output, no gate):
+```
+bash .claude/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .claude/scripts/execute/writeback-state.sh --pipeline --field Phase --value Detail
+bash .claude/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-detail
+bash .claude/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+```
+
 ### Step 1: Propose Tasks for First Deliverable
 
 Read the first deliverable from PLAN.md. Identify its features, read their SPECs.

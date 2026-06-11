@@ -21,4 +21,12 @@ If infrastructure.md has no Deployment section or it's a placeholder:
 
 Update work `STATE.md` `## Deploy Status`: Status → Selecting.
 
+Emit pipeline phase (silent state-write only — no output, no gate):
+```
+bash .agent/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .agent/scripts/execute/writeback-state.sh --pipeline --field Phase --value Deploy
+bash .agent/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-deploy
+bash .agent/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+```
+
 **Advance:** **CHAIN** → [State: SELECTING] (continue inline).
