@@ -48,9 +48,12 @@ from dashboard.reader.parsers import (
     _parse_lifecycle,
     _parse_phase,
     _parse_task_status,
+    parse_execution_graph,
     parse_kb_state,
     parse_project_name,
+    parse_requirements_md,
     parse_state_md,
+    parse_task_short_name,
     parse_tool_info,
 )
 
@@ -871,6 +874,404 @@ class TestReadRepo(unittest.TestCase):
                                             f"Write primitive found in {mod_path.name}: "
                                             f"open(mode=) containing '{c}'"
                                         )
+
+
+# ---------------------------------------------------------------------------
+# Feature-009 (delivery-006) new parse rules
+# ---------------------------------------------------------------------------
+
+class TestPF2ObjectiveBlockquoteSkip(unittest.TestCase):
+    """PF-2: Objective parser skips > _..._ status blockquote lines."""
+
+    def _req_path(self, tmpdir: Path, content: str) -> Path:
+        p = tmpdir / "REQUIREMENTS.md"
+        p.write_text(content, encoding="utf-8")
+        return p
+
+    def test_single_blockquote_skipped(self):
+        content = (
+            "# Requirements\n\n"
+            "## 1. Objective\n\n"
+            "The real objective text.\n\n"
+            "> _Status: Complete -- approved._\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            p = self._req_path(Path(d), content)
+            _, _, objective, _ = parse_requirements_md(p)
+        self.assertIsNotNone(objective)
+        self.assertNotIn("> _Status:", objective)
+        self.assertIn("real objective text", objective)
+
+    def test_multiple_blockquotes_all_skipped(self):
+        content = (
+            "# Requirements\n\n"
+            "## 1. Objective\n\n"
+            "Objective body here.\n\n"
+            "> _Status: Complete -- approved._\n"
+            "> _Another status line._\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            p = self._req_path(Path(d), content)
+            _, _, objective, _ = parse_requirements_md(p)
+        self.assertIsNotNone(objective)
+        self.assertNotIn("> _", objective)
+        self.assertIn("Objective body here", objective)
+
+    def test_no_blockquote_unchanged(self):
+        content = (
+            "# Requirements\n\n"
+            "## 1. Objective\n\n"
+            "Clean objective with no blockquote.\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            p = self._req_path(Path(d), content)
+            _, _, objective, _ = parse_requirements_md(p)
+        self.assertEqual(objective, "Clean objective with no blockquote.")
+
+    def test_blockquote_only_objective_becomes_none(self):
+        # If the entire body is blockquotes, objective should be None (stripped to empty)
+        content = (
+            "# Requirements\n\n"
+            "## 1. Objective\n\n"
+            "> _Status: Complete._\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            p = self._req_path(Path(d), content)
+            _, _, objective, _ = parse_requirements_md(p)
+        # After stripping all blockquote lines the body is blank -> objective=None
+        self.assertIsNone(objective)
+
+
+class TestPF3TaskShortName(unittest.TestCase):
+    """PF-3: parse_task_short_name from task-NNN.md first line."""
+
+    def _task_path(self, tmpdir: Path, content: str, filename: str = "task-016.md") -> Path:
+        p = tmpdir / filename
+        p.write_text(content, encoding="utf-8")
+        return p
+
+    def test_standard_title(self):
+        content = "# task-016: Python thin server\n\nBody.\n"
+        with tempfile.TemporaryDirectory() as d:
+            p = self._task_path(Path(d), content)
+            sn, _ = parse_task_short_name(p)
+        self.assertEqual(sn, "Python thin server")
+
+    def test_trailing_period_stripped(self):
+        content = "# task-016: Python thin server.\n\nBody.\n"
+        with tempfile.TemporaryDirectory() as d:
+            p = self._task_path(Path(d), content)
+            sn, _ = parse_task_short_name(p)
+        self.assertEqual(sn, "Python thin server")
+
+    def test_bare_task_id_no_title(self):
+        # No colon -> no short_name
+        content = "# task-007\n\nBody.\n"
+        with tempfile.TemporaryDirectory() as d:
+            p = self._task_path(Path(d), content)
+            sn, _ = parse_task_short_name(p)
+        self.assertIsNone(sn)
+
+    def test_absent_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "task-999.md"
+            sn, br = parse_task_short_name(p)
+        self.assertIsNone(sn)
+        self.assertEqual(br, 0)
+
+    def test_leading_blank_lines_skipped(self):
+        content = "\n\n# task-001: Some title\n\nBody.\n"
+        with tempfile.TemporaryDirectory() as d:
+            p = self._task_path(Path(d), content)
+            sn, _ = parse_task_short_name(p)
+        self.assertEqual(sn, "Some title")
+
+    def test_zero_padded_task_number(self):
+        content = "# task-001: First task title\n"
+        with tempfile.TemporaryDirectory() as d:
+            p = self._task_path(Path(d), content)
+            sn, _ = parse_task_short_name(p)
+        self.assertEqual(sn, "First task title")
+
+
+class TestPF4PhaseSingleSource(unittest.TestCase):
+    """PF-4: phase derived SOLELY from ## Pipeline Status block."""
+
+    def test_phase_from_pipeline_status(self):
+        text = (
+            "## Pipeline Status\n\n"
+            "- **Lifecycle:** Running\n"
+            "- **Phase:** Execute\n"
+            "- **Active Skill:** aid-execute\n"
+            "- **Updated:** 2026-06-11T00:00:00+00:00\n"
+        )
+        pw = parse_state_md(text)
+        from dashboard.reader.models import Phase
+        self.assertEqual(pw.phase, Phase.Execute)
+        self.assertEqual(pw.source_mode.value, "normalized")
+
+    def test_phase_absent_when_no_pipeline_status_block(self):
+        # Bootstrap case: no ## Pipeline Status -> phase must be None (not "unknown")
+        text = (
+            "## Tasks Status\n\n"
+            "| # | Task | Type | Wave | Status | Review | Elapsed | Notes |\n"
+            "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
+            "| 1 | task-001 | IMPLEMENT | delivery-001 | In Progress | - | - | - |\n"
+        )
+        pw = parse_state_md(text)
+        self.assertIsNone(pw.phase)
+        self.assertEqual(pw.source_mode.value, "fallback")
+
+    def test_no_secondary_phase_from_blockquote(self):
+        # Legacy blockquote > **Phase:** Execute must NOT feed phase
+        text = (
+            "> **Phase:** Execute\n\n"
+            "## Tasks Status\n\n"
+            "| # | Task | Type | Wave | Status | Review | Elapsed | Notes |\n"
+            "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
+        )
+        pw = parse_state_md(text)
+        # Phase must be None (no ## Pipeline Status block); the blockquote is ignored
+        self.assertIsNone(pw.phase)
+
+
+class TestPF5ExecutionGraph(unittest.TestCase):
+    """PF-5: parse_execution_graph from PLAN.md (wave-map + prose fallback)."""
+
+    def _plan_path(self, tmpdir: Path, content: str) -> Path:
+        p = tmpdir / "PLAN.md"
+        p.write_text(content, encoding="utf-8")
+        return p
+
+    def test_wavemap_primary_parse(self):
+        content = (
+            "### delivery-001 execution graph\n\n"
+            "```wave-map\n"
+            "delivery: 001\n"
+            "wave 1: task-001\n"
+            "wave 2: task-002, task-003\n"
+            "```\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            p = self._plan_path(Path(d), content)
+            lane_map, _ = parse_execution_graph(p)
+        self.assertEqual(lane_map["task-001"], 1)
+        self.assertEqual(lane_map["task-002"], 2)
+        self.assertEqual(lane_map["task-003"], 2)
+
+    def test_wavemap_multiple_deliveries(self):
+        content = (
+            "### delivery-001 execution graph\n\n"
+            "```wave-map\n"
+            "delivery: 001\n"
+            "wave 1: task-001\n"
+            "wave 2: task-002\n"
+            "```\n\n"
+            "### delivery-002 execution graph\n\n"
+            "```wave-map\n"
+            "delivery: 002\n"
+            "wave 1: task-003\n"
+            "wave 2: task-004\n"
+            "```\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            p = self._plan_path(Path(d), content)
+            lane_map, _ = parse_execution_graph(p)
+        self.assertEqual(lane_map["task-001"], 1)
+        self.assertEqual(lane_map["task-002"], 2)
+        self.assertEqual(lane_map["task-003"], 1)
+        self.assertEqual(lane_map["task-004"], 2)
+
+    def test_legacy_prose_fallback(self):
+        content = (
+            "### delivery-001 execution graph\n"
+            "- Wave 1: task-001\n"
+            "- Wave 2 (parallel):\n"
+            "  - feature-001 lane: task-002 -> task-003\n"
+            "  - feature-002 lane: task-004\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            p = self._plan_path(Path(d), content)
+            lane_map, _ = parse_execution_graph(p)
+        self.assertEqual(lane_map["task-001"], 1)
+        # task-002, task-003 in sub-bullet of Wave 2
+        self.assertEqual(lane_map["task-002"], 2)
+        self.assertEqual(lane_map["task-003"], 2)
+        self.assertEqual(lane_map["task-004"], 2)
+
+    def test_ungraphed_task_returns_none(self):
+        content = (
+            "### delivery-001 execution graph\n\n"
+            "```wave-map\n"
+            "delivery: 001\n"
+            "wave 1: task-001\n"
+            "```\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            p = self._plan_path(Path(d), content)
+            lane_map, _ = parse_execution_graph(p)
+        # task-999 not in wave-map -> absent from map -> lane = None via .get()
+        self.assertIsNone(lane_map.get("task-999"))
+
+    def test_absent_plan_returns_empty(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "PLAN.md"
+            lane_map, br = parse_execution_graph(p)
+        self.assertEqual(lane_map, {})
+        self.assertEqual(br, 0)
+
+    def test_delivery_from_state_wave_column(self):
+        """PF-5c: delivery derived from STATE Wave 'delivery-NNN' (reader.py test)."""
+        import tempfile as _tmp
+        with _tmp.TemporaryDirectory() as d:
+            root = Path(d)
+            aid = root / ".aid"
+            work = aid / "work-001-test"
+            work.mkdir(parents=True)
+            tasks_dir = work / "tasks"
+            tasks_dir.mkdir()
+
+            # Write STATE.md with Wave = delivery-002
+            (work / "STATE.md").write_text(
+                "## Pipeline Status\n\n"
+                "- **Lifecycle:** Running\n"
+                "- **Phase:** Execute\n"
+                "- **Active Skill:** -\n"
+                "- **Updated:** 2026-06-11\n\n"
+                "## Tasks Status\n\n"
+                "| # | Task | Type | Wave | Status | Review | Elapsed | Notes |\n"
+                "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
+                "| 1 | task-001 | IMPLEMENT | delivery-002 | In Progress | - | - | - |\n",
+                encoding="utf-8",
+            )
+            # Write a minimal PLAN.md with wave-map for delivery-002
+            (work / "PLAN.md").write_text(
+                "### delivery-002 execution graph\n\n"
+                "```wave-map\n"
+                "delivery: 002\n"
+                "wave 3: task-001\n"
+                "```\n",
+                encoding="utf-8",
+            )
+            # Write task file
+            (tasks_dir / "task-001.md").write_text(
+                "# task-001: My task title\n\nBody.\n", encoding="utf-8"
+            )
+            from dashboard.reader import read_repo
+            model = read_repo(root)
+        work_model = model.works[0]
+        t = work_model.tasks[0]
+        self.assertEqual(t.delivery, 2)  # from STATE Wave delivery-002
+        self.assertEqual(t.lane, 3)      # from PLAN wave-map wave 3
+        self.assertEqual(t.short_name, "My task title")
+        self.assertNotEqual(t.delivery, 0)  # no task with delivery=0
+
+
+class TestPF6ProjectNameCommentStrip(unittest.TestCase):
+    """PF-6: parse_project_name strips inline YAML comment."""
+
+    def _settings_path(self, tmpdir: Path, content: str) -> Path:
+        p = tmpdir / "settings.yml"
+        p.write_text(content, encoding="utf-8")
+        return p
+
+    def test_inline_comment_stripped(self):
+        content = "project:\n  name: AID  # set during /aid-config INIT\n"
+        with tempfile.TemporaryDirectory() as d:
+            p = self._settings_path(Path(d), content)
+            name, _ = parse_project_name(p)
+        self.assertEqual(name, "AID")
+
+    def test_quoted_value_with_comment(self):
+        content = 'project:\n  name: "Foo Bar" # comment\n'
+        with tempfile.TemporaryDirectory() as d:
+            p = self._settings_path(Path(d), content)
+            name, _ = parse_project_name(p)
+        self.assertEqual(name, "Foo Bar")
+
+    def test_plain_value_no_comment(self):
+        content = "project:\n  name: MyProject\n"
+        with tempfile.TemporaryDirectory() as d:
+            p = self._settings_path(Path(d), content)
+            name, _ = parse_project_name(p)
+        self.assertEqual(name, "MyProject")
+
+    def test_real_settings_yml_format(self):
+        # Simulates the actual settings.yml format in this repo
+        content = (
+            "project:\n"
+            "  name: AID                          # set during /aid-config INIT\n"
+            "  description: AI Integrated Development\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            p = self._settings_path(Path(d), content)
+            name, _ = parse_project_name(p)
+        self.assertEqual(name, "AID")
+
+
+class TestTaskModelNewFields(unittest.TestCase):
+    """Schema version 3: TaskModel carries short_name, delivery, lane fields."""
+
+    def test_task_model_has_new_fields(self):
+        from dashboard.reader.models import TaskModel, TaskStatus
+        t = TaskModel(task_id="task-001", type="IMPLEMENT")
+        self.assertIsNone(t.short_name)
+        self.assertIsNone(t.delivery)
+        self.assertIsNone(t.lane)
+
+    def test_task_model_fields_settable(self):
+        from dashboard.reader.models import TaskModel, TaskStatus
+        t = TaskModel(
+            task_id="task-001",
+            type="IMPLEMENT",
+            short_name="My task",
+            delivery=2,
+            lane=3,
+        )
+        self.assertEqual(t.short_name, "My task")
+        self.assertEqual(t.delivery, 2)
+        self.assertEqual(t.lane, 3)
+
+
+class TestSchemaVersion3Serialization(unittest.TestCase):
+    """Server serializes schema_version 3 with new task fields in deterministic order."""
+
+    def test_python_server_emits_schema_3(self):
+        import sys
+        sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+        from dashboard.server import server as srv
+        import tempfile as _tmp
+        with _tmp.TemporaryDirectory() as d:
+            root = Path(d)
+            aid = root / ".aid"
+            work = aid / "work-001-test"
+            work.mkdir(parents=True)
+            (work / "STATE.md").write_text(
+                "## Pipeline Status\n\n"
+                "- **Lifecycle:** Running\n"
+                "- **Phase:** Execute\n"
+                "- **Active Skill:** -\n"
+                "- **Updated:** 2026-06-11\n\n"
+                "## Tasks Status\n\n"
+                "| # | Task | Type | Wave | Status | Review | Elapsed | Notes |\n"
+                "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
+                "| 1 | task-001 | IMPLEMENT | delivery-001 | In Progress | - | - | - |\n",
+                encoding="utf-8",
+            )
+            from dashboard.reader import read_repo
+            model = read_repo(root)
+            body = srv.serialize_model(model)
+        import json as _json
+        data = _json.loads(body)
+        self.assertEqual(data["schema_version"], 3)
+        # Verify task shape has new fields
+        task = data["model"]["works"][0]["tasks"][0]
+        self.assertIn("short_name", task)
+        self.assertIn("delivery", task)
+        self.assertIn("lane", task)
+        # delivery=1 (from delivery-001 wave), lane=None (no PLAN.md)
+        self.assertEqual(task["delivery"], 1)
+        self.assertIsNone(task["lane"])
 
 
 class TestKbHelpers(unittest.TestCase):

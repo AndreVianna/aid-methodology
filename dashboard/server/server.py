@@ -76,7 +76,7 @@ def _ser_repo_info(obj) -> dict:
 
 
 def _ser_task(obj) -> dict:
-    """Serialize TaskModel in declared field order."""
+    """Serialize TaskModel in declared field order (schema_version 3)."""
     return {
         "task_id":      obj.task_id,
         "type":         obj.type,
@@ -85,6 +85,10 @@ def _ser_task(obj) -> dict:
         "review_grade": obj.review_grade,
         "elapsed":      obj.elapsed,
         "notes":        obj.notes,
+        # schema_version 3 fields (PF-3 / PF-5)
+        "short_name":   obj.short_name,
+        "delivery":     obj.delivery,
+        "lane":         obj.lane,
     }
 
 
@@ -172,7 +176,7 @@ def serialize_model(model) -> bytes:
     byte-identical to the Node server (which applies the same post-process).
     """
     envelope = {
-        "schema_version": 2,
+        "schema_version": 3,
         "generated_by":   "python",
         "model":          _ser_repo_model(model),
     }

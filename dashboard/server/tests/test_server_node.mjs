@@ -8,7 +8,7 @@
  *   (a) server.mjs source contains no 0.0.0.0/wildcard bind token.
  *   (b) server.mjs and reader.mjs contain no fs.writeFile/appendFile/unlink
  *       and no agent/LLM import.
- *   (c) GET /api/model returns DM-1 envelope (schema_version:2, generated_by:"node",
+ *   (c) GET /api/model returns DM-1 envelope (schema_version:3, generated_by:"node",
  *       works sorted by work_id).
  *   (d) Unknown path -> 404, POST -> 405.
  *
@@ -25,6 +25,7 @@ import net from "net";
 import { spawn } from "child_process";
 import { tmpdir } from "os";
 import { createRequire } from "module";
+import { readRepo } from "../reader.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -313,7 +314,7 @@ async function runLiveTests() {
       envelope = null;
     }
     assert(envelope !== null, "GET /api/model body is valid JSON");
-    assert(!!(envelope && envelope.schema_version === 2), "envelope.schema_version === 2");
+    assert(!!(envelope && envelope.schema_version === 3), "envelope.schema_version === 3");
     assert(!!(envelope && envelope.generated_by === "node"), 'envelope.generated_by === "node"');
     assert(!!(envelope && typeof envelope.model === "object"), "envelope.model is an object");
 
@@ -398,6 +399,113 @@ async function runLiveTests() {
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// (e) Malformed-input regression: delivery-006 bug class (PT-1 divergences)
+//     These tests guard the two parsing fixes against future regression.
+// ---------------------------------------------------------------------------
+
+process.stdout.write("\n[e] Malformed-input regression (delivery-006 fixes)\n");
+
+function runMalformedTests() {
+  // Case e1: Headerless ## Tasks Status table.
+  // A table whose first pipe row is a data row (col[0] != "#" and != "").
+  // Before the fix, Node dropped the first data row; Python kept it.
+  // After the fix, Node must parse BOTH rows.
+  const tmpE1 = join(tmpdir(), "aid-e1-" + Date.now());
+  const aidE1 = join(tmpE1, ".aid");
+  const wdirE1 = join(aidE1, "work-001-headerless");
+  mkdirSync(wdirE1, { recursive: true });
+  writeFileSync(join(wdirE1, "STATE.md"), [
+    "## Pipeline Status",
+    "- **Lifecycle:** Running",
+    "- **Phase:** Execute",
+    "- **Active Skill:** -",
+    "- **Updated:** 2026-06-01T00:00:00+00:00",
+    "",
+    "## Tasks Status",
+    "| 1 | task-001 | IMPLEMENT | wave-1 | Done | A | 2h | first task |",
+    "| 2 | task-002 | REVIEW | wave-1 | Pending | - | - | second task |",
+  ].join("\n"), "utf-8");
+  writeFileSync(join(aidE1, ".aid-manifest.json"), JSON.stringify({
+    manifest_version: 1, aid_version: "1.0.0",
+    installed_at: "2026-01-01T00:00:00Z", tools: {},
+  }));
+
+  try {
+    const modelE1 = readRepo(tmpE1);
+    const w1 = modelE1.works.find((w) => w.work_id === "work-001-headerless");
+    assert(
+      !!(w1 && w1.tasks.length === 2),
+      "e1: headerless Tasks table: both data rows parsed (task_count=2, got " +
+        (w1 ? w1.tasks.length : "no work") + ")"
+    );
+    assert(
+      !!(w1 && w1.tasks[0] && w1.tasks[0].task_id === "task-001"),
+      "e1: headerless Tasks table: first task is task-001"
+    );
+    assert(
+      !!(w1 && w1.tasks[1] && w1.tasks[1].task_id === "task-002"),
+      "e1: headerless Tasks table: second task is task-002"
+    );
+    assert(
+      !!(w1 && w1.source_mode === "normalized"),
+      "e1: headerless Tasks table: source_mode=normalized (got " +
+        (w1 ? w1.source_mode : "no work") + ")"
+    );
+  } finally {
+    try { rmSync(tmpE1, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // Case e2: ## Pipeline Status section present but containing NO typed "- **Field:**" lines.
+  // Before the fix, Node fell through to fallback (source_mode=fallback, lifecycle=Running,
+  // work added to fallback_works). Python set source_mode=normalized / lifecycle=Unknown.
+  // After the fix, Node must match Python: source_mode=normalized, lifecycle=Unknown,
+  // fallback_works=[].
+  const tmpE2 = join(tmpdir(), "aid-e2-" + Date.now());
+  const aidE2 = join(tmpE2, ".aid");
+  const wdirE2 = join(aidE2, "work-001-psonly");
+  mkdirSync(wdirE2, { recursive: true });
+  writeFileSync(join(wdirE2, "STATE.md"), [
+    "## Pipeline Status",
+    "",
+    "This section has prose but no typed fields.",
+    "",
+    "## Tasks Status",
+    "| # | Task | Type | Wave | Status | Review | Elapsed | Notes |",
+    "| --- | --- | --- | --- | --- | --- | --- | --- |",
+    "| 1 | task-001 | IMPLEMENT | wave-1 | Done | A | 2h | - |",
+  ].join("\n"), "utf-8");
+  writeFileSync(join(aidE2, ".aid-manifest.json"), JSON.stringify({
+    manifest_version: 1, aid_version: "1.0.0",
+    installed_at: "2026-01-01T00:00:00Z", tools: {},
+  }));
+
+  try {
+    const modelE2 = readRepo(tmpE2);
+    const w2 = modelE2.works.find((w) => w.work_id === "work-001-psonly");
+    assert(
+      !!(w2 && w2.source_mode === "normalized"),
+      "e2: PS heading + no typed fields: source_mode=normalized (got " +
+        (w2 ? w2.source_mode : "no work") + ")"
+    );
+    assert(
+      !!(w2 && w2.lifecycle === "Unknown"),
+      "e2: PS heading + no typed fields: lifecycle=Unknown (got " +
+        (w2 ? w2.lifecycle : "no work") + ")"
+    );
+    assert(
+      !!(modelE2.read && Array.isArray(modelE2.read.fallback_works) &&
+         modelE2.read.fallback_works.length === 0),
+      "e2: PS heading + no typed fields: fallback_works=[] (got " +
+        (modelE2.read ? JSON.stringify(modelE2.read.fallback_works) : "no read") + ")"
+    );
+  } finally {
+    try { rmSync(tmpE2, { recursive: true, force: true }); } catch (_) {}
+  }
+}
+
+runMalformedTests();
 
 runLiveTests().then(() => {
   process.stdout.write("\n--- Result: " + passed + " passed, " + failed + " failed ---\n");

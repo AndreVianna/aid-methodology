@@ -220,7 +220,7 @@ class TestRoutes(unittest.TestCase):
         with _ServerThread(self._tmpdir) as srv:
             status, body, _ = srv.get("/api/model")
         data = json.loads(body)
-        self.assertEqual(data.get("schema_version"), 2)
+        self.assertEqual(data.get("schema_version"), 3)
 
     def test_api_model_envelope_generated_by(self):
         with _ServerThread(self._tmpdir) as srv:

@@ -159,7 +159,7 @@ function serveApiModel(res) {
 
   // DM-1 envelope: schema_version + generated_by at top level, then model
   const envelope = {
-    schema_version: 2,
+    schema_version: 3,
     generated_by: "node",
     model: model,
   };

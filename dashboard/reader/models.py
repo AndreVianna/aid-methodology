@@ -133,6 +133,11 @@ class TaskModel:
     Table columns (work-state-template.md):
         # | Task | Type | Wave | Status | Review | Elapsed | Notes
     The _none yet_ placeholder row is skipped by the parser.
+
+    PF-3/PF-5 fields (feature-009, schema_version 3):
+        short_name -- parsed from tasks/task-NNN.md first line "# task-NNN: <title>"
+        delivery   -- integer parsed from STATE Wave "delivery-NNN" (PF-5c; STATE wins)
+        lane       -- integer derived from PLAN.md wave-map or prose fallback (PF-5a/5b)
     """
     task_id: str
     type: str
@@ -141,6 +146,10 @@ class TaskModel:
     review_grade: Optional[str] = None
     elapsed: Optional[str] = None
     notes: Optional[str] = None
+    # schema_version 3 fields (PF-3 / PF-5)
+    short_name: Optional[str] = None
+    delivery: Optional[int] = None
+    lane: Optional[int] = None
 
 
 # ---------------------------------------------------------------------------

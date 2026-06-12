@@ -26,19 +26,23 @@ from typing import Optional, Union
 
 from .locator import locate_aid_root
 from .models import (
+    Lifecycle,
     ReadMeta,
     RepoInfo,
     RepoModel,
     SourceMode,
+    TaskModel,
     ToolInfo,
     WorkModel,
 )
 from .parsers import (
     ParsedWork,
+    parse_execution_graph,
     parse_kb_state,
     parse_project_name,
     parse_requirements_md,
     parse_state_md,
+    parse_task_short_name,
     parse_tool_info,
 )
 
@@ -190,6 +194,48 @@ def _read_work(
     req_title, req_description, req_objective, req_bytes = parse_requirements_md(req_path)
     bytes_read += req_bytes
 
+    # PF-5: parse PLAN.md execution graph to derive lane per task_id
+    plan_path = work_dir / "PLAN.md"
+    task_lane_map, plan_bytes = parse_execution_graph(plan_path)
+    bytes_read += plan_bytes
+
+    # PF-3 + PF-5c: enrich each TaskModel with short_name, delivery, lane
+    tasks_dir = work_dir / "tasks"
+    enriched_tasks = []
+    import re as _re
+    _re_delivery = _re.compile(r"^delivery-(\d+)$", _re.IGNORECASE)
+    for task in pw.tasks:
+        # PF-5c: delivery from STATE Wave column ("delivery-NNN")
+        delivery: Optional[int] = None
+        if task.wave:
+            dm = _re_delivery.match(task.wave.strip())
+            if dm:
+                delivery = int(dm.group(1))
+
+        # PF-5a/5b: lane from PLAN.md wave-map / prose
+        lane: Optional[int] = task_lane_map.get(task.task_id.lower())
+
+        # PF-3: short_name from tasks/task-NNN.md first line
+        short_name: Optional[str] = None
+        task_file = tasks_dir / f"{task.task_id}.md"
+        if task_file.is_file():
+            sn, sn_bytes = parse_task_short_name(task_file)
+            bytes_read += sn_bytes
+            short_name = sn
+
+        enriched_tasks.append(TaskModel(
+            task_id=task.task_id,
+            type=task.type,
+            wave=task.wave,
+            status=task.status,
+            review_grade=task.review_grade,
+            elapsed=task.elapsed,
+            notes=task.notes,
+            short_name=short_name,
+            delivery=delivery,
+            lane=lane,
+        ))
+
     # Step 5e: set source_mode; step 5f: lifecycle already set by parsers
     # Step 5g: set updated, pause/block fields
     work_model = WorkModel(
@@ -202,7 +248,7 @@ def _read_work(
         pause_reason=pw.pause_reason,
         block_reason=pw.block_reason,
         block_artifact=pw.block_artifact,
-        tasks=pw.tasks,
+        tasks=enriched_tasks,
         pending_inputs=pw.pending_inputs,
         source_mode=pw.source_mode,
         number=work_number,
@@ -220,7 +266,6 @@ def _read_work(
 
 def _minimal_work_model(work_id: str, _warnings: list[str]) -> WorkModel:
     """Return a minimal WorkModel for a work folder with no parseable STATE.md."""
-    from .models import Lifecycle, SourceMode
     return WorkModel(
         work_id=work_id,
         name=_slug_from_work_id(work_id),

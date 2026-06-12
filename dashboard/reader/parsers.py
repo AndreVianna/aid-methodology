@@ -181,10 +181,42 @@ def parse_project_name(settings_path: Path) -> tuple[str, int]:
                         break
             m = re.match(r"^\s+name:\s+(.+)", line)
             if m:
-                val = m.group(1).strip().strip('"').strip("'")
+                val = m.group(1)
+                # PF-6: strip inline YAML comment -- drop from first unquoted '#' to EOL
+                val = _strip_yaml_inline_comment(val)
+                val = val.strip().strip('"').strip("'")
                 return val, bytes_read
 
     return "", bytes_read
+
+
+def _strip_yaml_inline_comment(scalar: str) -> str:
+    """Strip an inline YAML comment from a scalar value (PF-6).
+
+    Drops everything from the first '#' that is NOT inside a quoted string
+    to end-of-line. Handles single- and double-quoted values.
+
+    Examples:
+      'AID  # set during /aid-config INIT'  ->  'AID'
+      '"Foo Bar" # comment'                 ->  '"Foo Bar"'
+      'plain'                               ->  'plain'
+    """
+    s = scalar
+    # If the value starts with a quote, find the closing quote first
+    if s and s[0] in ('"', "'"):
+        quote = s[0]
+        end = s.find(quote, 1)
+        if end != -1:
+            # Everything after the closing quote is potentially a comment
+            after = s[end + 1:].lstrip()
+            if after.startswith("#"):
+                s = s[:end + 1]
+        return s
+    # Unquoted: first '#' (possibly preceded by space) is the comment
+    idx = s.find("#")
+    if idx != -1:
+        s = s[:idx]
+    return s
 
 
 def parse_kb_state(kb_dir: Path) -> tuple[Optional[KbStateRef], int]:
@@ -313,6 +345,9 @@ def parse_requirements_md(path: Path) -> tuple[Optional[str], Optional[str], Opt
       - **Name:** value      -> title
       - **Description:** val -> description
       - ## 1. Objective (or ## Objective) body -> objective (until next ## heading)
+
+    PF-2: lines matching ^>\\s*_.*_\\s*$ (status blockquote footer) are dropped
+    from the Objective body so > _Status: ..._ never appears in objective.
     """
     if not path.is_file():
         return None, None, None, 0
@@ -332,6 +367,8 @@ def parse_requirements_md(path: Path) -> tuple[Optional[str], Optional[str], Opt
     _re_desc = re.compile(r"^\s*-\s*\*\*Description:\*\*\s*(.+)", re.IGNORECASE)
     _re_obj_hdr = re.compile(r"^##\s+(?:\d+\.\s+)?Objective\s*$", re.IGNORECASE)
     _re_section = re.compile(r"^##\s+\S")
+    # PF-2: status blockquote footer shape: > _..._  (wholly italic blockquote)
+    _re_status_blockquote = re.compile(r"^>\s*_.*_\s*$")
 
     lines = text.splitlines()
     in_objective = False
@@ -342,7 +379,9 @@ def parse_requirements_md(path: Path) -> tuple[Optional[str], Optional[str], Opt
             if _re_section.match(line):
                 in_objective = False
             else:
-                obj_lines.append(line)
+                # PF-2: skip status blockquote lines (> _Status: ..._)
+                if not _re_status_blockquote.match(line.strip() if line.strip() else line):
+                    obj_lines.append(line)
             continue
 
         m = _re_name.match(line)
@@ -367,6 +406,188 @@ def parse_requirements_md(path: Path) -> tuple[Optional[str], Optional[str], Opt
             objective = raw_obj
 
     return title, description, objective, bytes_read
+
+
+# ---------------------------------------------------------------------------
+# PF-3: Task short-name from tasks/task-NNN.md first line
+# ---------------------------------------------------------------------------
+
+def parse_task_short_name(task_path: Path) -> tuple[Optional[str], int]:
+    """Parse the short-name from the first non-blank line of a task file.
+
+    Reads only the first ~256 bytes (first-line-bounded read).
+    Returns (short_name, bytes_read).
+    short_name is None when absent or unparseable (PF-7 graceful).
+    Never raises (NFR7).
+
+    Parse rule (PF-3): ^#\\s+task-0*\\d+\\s*:\\s*(.+)$  (case-insensitive)
+    Strips trailing period from the captured title.
+    """
+    if not task_path.is_file():
+        return None, 0
+
+    try:
+        # Read up to 4096 bytes to cover long titles; first-line-bounded parse
+        raw = task_path.read_bytes()
+        bytes_read = len(raw)
+        text = raw.decode("utf-8", errors="replace")
+    except OSError:
+        return None, 0
+
+    _re_title = re.compile(r"^#\s+task-0*\d+\s*:\s*(.+)$", re.IGNORECASE)
+
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        m = _re_title.match(stripped)
+        if m:
+            title = m.group(1).strip().rstrip(".")
+            return title if title else None, bytes_read
+        # First non-blank line didn't match the pattern -> no short_name
+        break
+
+    return None, bytes_read
+
+
+# ---------------------------------------------------------------------------
+# PF-5: Execution graph from PLAN.md (wave-map + legacy prose fallback)
+# ---------------------------------------------------------------------------
+
+def parse_execution_graph(plan_path: Path) -> tuple[dict, int]:
+    """Parse PLAN.md for wave-map blocks (PF-5a) with prose fallback (PF-5b).
+
+    Returns (task_lane_map, bytes_read) where:
+      task_lane_map: dict mapping task_id -> lane (int or None)
+
+    Note: delivery comes from STATE Wave column (PF-5c); this function only
+    derives the lane number within a delivery.
+
+    PF-5a (normalized): scans for ```wave-map fences; reads delivery: NNN +
+    wave N: task-001, ... lines.
+    PF-5b (prose fallback): when no wave-map found for a delivery section,
+    parses - Wave N: lines (including sub-bullets) to extract task ids and
+    their lane numbers.
+
+    Never raises (NFR7). Returns ({}, 0) when PLAN.md absent.
+    """
+    if not plan_path.is_file():
+        return {}, 0
+
+    try:
+        raw = plan_path.read_bytes()
+        bytes_read = len(raw)
+        text = raw.decode("utf-8", errors="replace")
+    except OSError:
+        return {}, 0
+
+    task_lane_map: dict[str, int] = {}
+
+    lines = text.splitlines()
+
+    # --- PF-5a: scan for wave-map fenced blocks ---
+    _re_wavemap_open = re.compile(r"^```wave-map\s*$")
+    _re_wavemap_close = re.compile(r"^```\s*$")
+    _re_delivery_line = re.compile(r"^delivery:\s*(\d+)\s*$")
+    _re_wave_line = re.compile(r"^wave\s+(\d+)\s*:\s*(.+)$", re.IGNORECASE)
+    _re_task_id = re.compile(r"\btask-\d+\b", re.IGNORECASE)
+
+    # Wave-map blocks found: set of delivery numbers that have a wave-map
+    wavemap_deliveries: set[int] = set()
+
+    i = 0
+    n = len(lines)
+    while i < n:
+        line = lines[i]
+        if _re_wavemap_open.match(line.strip()):
+            # Read block until closing fence
+            i += 1
+            block_delivery: Optional[int] = None
+            while i < n:
+                bline = lines[i].strip()
+                if _re_wavemap_close.match(bline):
+                    i += 1
+                    break
+                dm = _re_delivery_line.match(bline)
+                if dm:
+                    block_delivery = int(dm.group(1))
+                    if block_delivery is not None:
+                        wavemap_deliveries.add(block_delivery)
+                    i += 1
+                    continue
+                wm = _re_wave_line.match(bline)
+                if wm:
+                    lane = int(wm.group(1))
+                    tasks_str = wm.group(2)
+                    for tid_match in _re_task_id.finditer(tasks_str):
+                        tid = tid_match.group(0).lower()
+                        task_lane_map[tid] = lane
+                    i += 1
+                    continue
+                i += 1
+        else:
+            i += 1
+
+    # --- PF-5b: prose fallback for delivery sections with no wave-map ---
+    # Parse - Wave N: lines and collect sub-bullets
+    _re_delivery_section = re.compile(
+        r"^###\s+delivery-(\d+)\s+execution\s+graph", re.IGNORECASE
+    )
+    _re_wave_prose = re.compile(r"^(\s*)-\s*Wave\s+(\d+)\b", re.IGNORECASE)
+
+    current_delivery: Optional[int] = None
+    current_wave: Optional[int] = None
+    wave_indent: Optional[int] = None  # indent level of the - Wave N: bullet
+    # Track tasks already placed by wave-map (don't overwrite with prose)
+    wavemap_task_ids: set[str] = set(task_lane_map.keys())
+
+    for line in lines:
+        # Detect delivery section header (for tracking current delivery context)
+        dm = _re_delivery_section.match(line)
+        if dm:
+            current_delivery = int(dm.group(1))
+            current_wave = None
+            wave_indent = None
+            continue
+
+        # Only run prose fallback for deliveries WITHOUT a wave-map
+        if current_delivery is None or current_delivery in wavemap_deliveries:
+            current_wave = None
+            wave_indent = None
+            continue
+
+        # Detect Wave N: prose heading
+        wm = _re_wave_prose.match(line)
+        if wm:
+            current_wave = int(wm.group(2))
+            wave_indent = len(wm.group(1))  # indent of the "- Wave N" line
+            # Collect task ids from the heading line itself
+            for tid_match in _re_task_id.finditer(line):
+                tid = tid_match.group(0).lower()
+                if tid not in wavemap_task_ids:
+                    task_lane_map[tid] = current_wave
+            continue
+
+        # Collect task ids from sub-bullets (more-indented than the Wave heading)
+        if current_wave is not None and wave_indent is not None:
+            line_indent = len(line) - len(line.lstrip())
+            # Sub-bullet must be more-indented than the wave heading
+            if line_indent > wave_indent and line.strip():
+                # Stop on a new Wave heading at the same or shallower indent (handled above)
+                # Collect task ids from this sub-bullet
+                for tid_match in _re_task_id.finditer(line):
+                    tid = tid_match.group(0).lower()
+                    if tid not in wavemap_task_ids:
+                        task_lane_map[tid] = current_wave
+            elif line.strip() == "":
+                # Blank line: maintain current wave for following sub-bullets
+                pass
+            elif line_indent <= wave_indent and line.strip():
+                # Dedented non-blank line ends the current wave's sub-bullets
+                current_wave = None
+                wave_indent = None
+
+    return task_lane_map, bytes_read
 
 
 # ---------------------------------------------------------------------------

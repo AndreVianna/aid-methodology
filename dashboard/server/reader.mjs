@@ -254,6 +254,29 @@ function parseToolInfo(manifestPath, versionPath) {
 // Level-1: RepoInfo helpers (mirrors parsers.py parse_project_name / parse_kb_state)
 // ---------------------------------------------------------------------------
 
+// PF-6: strip inline YAML comment from a scalar value.
+// Drops everything from the first '#' that is NOT inside a quoted string.
+function stripYamlInlineComment(scalar) {
+  const s = scalar;
+  if (s && (s[0] === '"' || s[0] === "'")) {
+    const quote = s[0];
+    const end = s.indexOf(quote, 1);
+    if (end !== -1) {
+      const after = s.slice(end + 1).trimStart();
+      if (after.startsWith("#")) {
+        return s.slice(0, end + 1);
+      }
+    }
+    return s;
+  }
+  // Unquoted: first '#' is the comment
+  const idx = s.indexOf("#");
+  if (idx !== -1) {
+    return s.slice(0, idx);
+  }
+  return s;
+}
+
 function parseProjectName(settingsPath) {
   if (!existsSync(settingsPath)) return ["", 0];
   let raw;
@@ -281,7 +304,8 @@ function parseProjectName(settingsPath) {
       }
       const m = line.match(/^\s+name:\s+(.+)/);
       if (m) {
-        let val = m[1].trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
+        // PF-6: strip inline YAML comment
+        let val = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
         return [val, bytesRead];
       }
     }
@@ -709,6 +733,7 @@ function deriveLifecycle({ workDir, tasks, pendingInputs, stateText, workId }) {
 
 function parseRequirementsMd(reqPath) {
   // Returns [title, description, objective, bytesRead]
+  // PF-2: status blockquote lines (^> _..._) are skipped in the Objective body.
   let isFile = false;
   try { isFile = statSync(reqPath).isFile(); } catch (_) { isFile = false; }
   if (!isFile) return [null, null, null, 0];
@@ -726,6 +751,8 @@ function parseRequirementsMd(reqPath) {
   const RE_DESC = /^\s*-\s*\*\*Description:\*\*\s*(.+)/i;
   const RE_OBJ_HDR = /^##\s+(?:\d+\.\s+)?Objective\s*$/i;
   const RE_SECTION_HDR = /^##\s+\S/;
+  // PF-2: status blockquote footer: > _..._  (wholly italic blockquote)
+  const RE_STATUS_BLOCKQUOTE = /^>\s*_.*_\s*$/;
 
   let title = null;
   let description = null;
@@ -737,7 +764,10 @@ function parseRequirementsMd(reqPath) {
       if (RE_SECTION_HDR.test(line)) {
         inObjective = false;
       } else {
-        objLines.push(line);
+        // PF-2: skip status blockquote lines
+        if (!RE_STATUS_BLOCKQUOTE.test(line.trim())) {
+          objLines.push(line);
+        }
       }
       continue;
     }
@@ -765,6 +795,172 @@ function parseRequirementsMd(reqPath) {
   }
 
   return [title, description, objective, bytesRead];
+}
+
+// ---------------------------------------------------------------------------
+// PF-3: parse task short-name from tasks/task-NNN.md first line
+// ---------------------------------------------------------------------------
+
+function parseTaskShortName(taskPath) {
+  // Returns [shortName, bytesRead]
+  // Parse rule: ^#\s+task-0*\d+\s*:\s*(.+)$  (case-insensitive)
+  // Strips trailing period from the title.
+  let isFile = false;
+  try { isFile = statSync(taskPath).isFile(); } catch (_) { isFile = false; }
+  if (!isFile) return [null, 0];
+
+  let raw;
+  try {
+    raw = readFileSync(taskPath);
+  } catch (_) {
+    return [null, 0];
+  }
+  const bytesRead = raw.length;
+  const text = raw.toString("utf-8");
+
+  const RE_TITLE = /^#\s+task-0*\d+\s*:\s*(.+)$/i;
+
+  for (const line of text.split("\n")) {
+    const stripped = line.trim();
+    if (!stripped) continue;
+    const m = stripped.match(RE_TITLE);
+    if (m) {
+      let title = m[1].trim().replace(/\.$/, "");
+      return [title || null, bytesRead];
+    }
+    // First non-blank line didn't match -> no short_name
+    break;
+  }
+
+  return [null, bytesRead];
+}
+
+// ---------------------------------------------------------------------------
+// PF-5: parse execution graph from PLAN.md (wave-map + prose fallback)
+// ---------------------------------------------------------------------------
+
+function parseExecutionGraph(planPath) {
+  // Returns [taskLaneMap, bytesRead]
+  // taskLaneMap: { task_id -> lane (int) }
+  // Delivery comes from STATE (PF-5c); this only derives the lane.
+  let isFile = false;
+  try { isFile = statSync(planPath).isFile(); } catch (_) { isFile = false; }
+  if (!isFile) return [{}, 0];
+
+  let raw;
+  try {
+    raw = readFileSync(planPath);
+  } catch (_) {
+    return [{}, 0];
+  }
+  const bytesRead = raw.length;
+  const text = raw.toString("utf-8");
+
+  const taskLaneMap = {};
+  const lines = text.split("\n");
+
+  // --- PF-5a: scan for wave-map fenced blocks ---
+  const RE_WAVEMAP_OPEN = /^```wave-map\s*$/;
+  const RE_WAVEMAP_CLOSE = /^```\s*$/;
+  const RE_DELIVERY_LINE = /^delivery:\s*(\d+)\s*$/;
+  const RE_WAVE_LINE = /^wave\s+(\d+)\s*:\s*(.+)$/i;
+  const RE_TASK_ID = /\btask-\d+\b/gi;
+
+  const wavemapDeliveries = new Set();
+
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    if (RE_WAVEMAP_OPEN.test(line)) {
+      i++;
+      let blockDelivery = null;
+      while (i < lines.length) {
+        const bline = lines[i].trim();
+        if (RE_WAVEMAP_CLOSE.test(bline)) { i++; break; }
+        const dm = bline.match(RE_DELIVERY_LINE);
+        if (dm) {
+          blockDelivery = parseInt(dm[1], 10);
+          if (!isNaN(blockDelivery)) wavemapDeliveries.add(blockDelivery);
+          i++; continue;
+        }
+        const wm = bline.match(RE_WAVE_LINE);
+        if (wm) {
+          const lane = parseInt(wm[1], 10);
+          const tasksStr = wm[2];
+          let tm;
+          const re = /\btask-\d+\b/gi;
+          while ((tm = re.exec(tasksStr)) !== null) {
+            taskLaneMap[tm[0].toLowerCase()] = lane;
+          }
+          i++; continue;
+        }
+        i++;
+      }
+    } else {
+      i++;
+    }
+  }
+
+  // --- PF-5b: prose fallback for delivery sections with no wave-map ---
+  const RE_DELIVERY_SECTION = /^###\s+delivery-(\d+)\s+execution\s+graph/i;
+  const RE_WAVE_PROSE = /^(\s*)-\s*Wave\s+(\d+)\b/i;
+
+  const wavemapTaskIds = new Set(Object.keys(taskLaneMap));
+  let currentDelivery = null;
+  let currentWave = null;
+  let waveIndent = null;
+
+  for (const line of lines) {
+    const dsm = line.match(RE_DELIVERY_SECTION);
+    if (dsm) {
+      currentDelivery = parseInt(dsm[1], 10);
+      currentWave = null;
+      waveIndent = null;
+      continue;
+    }
+
+    // Only prose-fallback for deliveries without a wave-map
+    if (currentDelivery === null || wavemapDeliveries.has(currentDelivery)) {
+      currentWave = null;
+      waveIndent = null;
+      continue;
+    }
+
+    const wpm = line.match(RE_WAVE_PROSE);
+    if (wpm) {
+      currentWave = parseInt(wpm[2], 10);
+      waveIndent = wpm[1].length;
+      // Collect task ids from the heading line
+      const re = /\btask-\d+\b/gi;
+      let tm;
+      while ((tm = re.exec(line)) !== null) {
+        const tid = tm[0].toLowerCase();
+        if (!wavemapTaskIds.has(tid)) taskLaneMap[tid] = currentWave;
+      }
+      continue;
+    }
+
+    if (currentWave !== null && waveIndent !== null) {
+      const lineIndent = line.length - line.trimStart().length;
+      if (line.trim() === "") {
+        // blank line: keep wave context
+      } else if (lineIndent > waveIndent) {
+        // sub-bullet: collect task ids
+        const re = /\btask-\d+\b/gi;
+        let tm;
+        while ((tm = re.exec(line)) !== null) {
+          const tid = tm[0].toLowerCase();
+          if (!wavemapTaskIds.has(tid)) taskLaneMap[tid] = currentWave;
+        }
+      } else {
+        // dedented -> end of wave sub-bullets
+        currentWave = null;
+        waveIndent = null;
+      }
+    }
+  }
+
+  return [taskLaneMap, bytesRead];
 }
 
 // ---------------------------------------------------------------------------
@@ -875,6 +1071,9 @@ function parseStateText(text, workId, workDir) {
     if (RE_PIPELINE_STATUS.test(line)) {
       flushQ(); resetSections();
       inPipelineStatus = true;
+      // Mirror Python parsers.py:748: pipeline_status_found=True for ANY line in the section.
+      // The heading itself counts — presence of ## Pipeline Status means normalized source.
+      pipelineStatusFound = true;
       continue;
     }
     if (RE_TASKS_STATUS.test(line)) {
@@ -967,15 +1166,15 @@ function parseStateText(text, workId, workDir) {
       const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
       if (cols.length < 2) continue;
 
-      // Skip header row (first column "#" or blank) before tasksHeaderSeen
+      // Skip header row: pattern-based only (col[0] is "#" or blank), mirrors Python
+      // parsers.py:910 which only skips when cols[0] in ("#", "").
+      // Do NOT unconditionally skip the first row — a headerless table must keep it.
       if ((cols[0] === "#" || cols[0] === "") && !tasksHeaderSeen) {
         tasksHeaderSeen = true;
         continue;
       }
-      if (!tasksHeaderSeen) {
-        tasksHeaderSeen = true;
-        continue;
-      }
+      // Mark first non-separator pipe row seen (matches Python header_seen tracking)
+      tasksHeaderSeen = true;
 
       // Skip _none yet_ placeholder
       if (cols.some(c => c.includes(NONE_YET))) continue;
@@ -1303,6 +1502,40 @@ function readWork(workDir, workId) {
   const [reqTitle, reqDescription, reqObjective, reqBytes] = parseRequirementsMd(reqPath);
   bytesRead += reqBytes;
 
+  // PF-5: parse PLAN.md execution graph to derive lane per task_id
+  const planPath = join(workDir, "PLAN.md");
+  const [taskLaneMap, planBytes] = parseExecutionGraph(planPath);
+  bytesRead += planBytes;
+
+  // PF-3 + PF-5c: enrich each task with short_name, delivery, lane
+  const tasksDir = join(workDir, "tasks");
+  const RE_DELIVERY = /^delivery-(\d+)$/i;
+  const enrichedTasks = pw.tasks.map(task => {
+    // PF-5c: delivery from STATE Wave column ("delivery-NNN")
+    let delivery = null;
+    if (task.wave) {
+      const dm = task.wave.trim().match(RE_DELIVERY);
+      if (dm) delivery = parseInt(dm[1], 10);
+    }
+
+    // PF-5a/5b: lane from PLAN.md wave-map / prose
+    const lane = taskLaneMap[task.task_id.toLowerCase()];
+    const laneVal = (lane !== undefined) ? lane : null;
+
+    // PF-3: short_name from tasks/task-NNN.md first line
+    let shortName = null;
+    const taskFile = join(tasksDir, task.task_id + ".md");
+    const [sn, snBytes] = parseTaskShortName(taskFile);
+    bytesRead += snBytes;
+    shortName = sn;
+
+    return Object.assign({}, task, {
+      short_name: shortName,
+      delivery: delivery,
+      lane: laneVal,
+    });
+  });
+
   const workModel = _buildWorkModel({
     work_id: workId,
     name,
@@ -1313,7 +1546,7 @@ function readWork(workDir, workId) {
     pause_reason: pw.pauseReason,
     block_reason: pw.blockReason,
     block_artifact: pw.blockArtifact,
-    tasks: pw.tasks,
+    tasks: enrichedTasks,
     pending_inputs: pw.pendingInputs,
     source_mode: pw.sourceMode,
     number: workNumber,
@@ -1400,7 +1633,8 @@ function _buildPendingInput(pi) {
 }
 
 function _buildTaskModel(t) {
-  // TaskModel field order: task_id, type, wave, status, review_grade, elapsed, notes
+  // TaskModel field order: task_id, type, wave, status, review_grade, elapsed, notes,
+  //   short_name, delivery, lane  (schema_version 3 fields -- PF-3/PF-5)
   return {
     task_id: t.task_id,
     type: t.type,
@@ -1409,6 +1643,9 @@ function _buildTaskModel(t) {
     review_grade: t.review_grade,
     elapsed: t.elapsed,
     notes: t.notes,
+    short_name: t.short_name !== undefined ? t.short_name : null,
+    delivery: t.delivery !== undefined ? t.delivery : null,
+    lane: t.lane !== undefined ? t.lane : null,
   };
 }
 
