@@ -47,6 +47,18 @@ Copy the template from `../../templates/requirements.md` to
 `.aid/{work}/REQUIREMENTS.md`.
 Add the first Change Log entry: `| {today} | Initial interview started | /aid-interview |`
 
+**Identity header seeding:** the template already carries the identity block between
+`# Requirements` and `## Change Log`:
+
+```
+- **Name:** *(pending)*
+- **Description:** *(pending)*
+```
+
+These placeholder lines are written as part of the template copy. Do not remove or
+overwrite them here — they are replaced with confirmed values at COMPLETION (see
+`state-completion.md` Step 3). No additional write is required in this step.
+
 ### 1d. Monitor-routed finding seed (optional)
 
 If this work was opened from an `aid-monitor` finding — a `MONITOR-STATE.md` finding

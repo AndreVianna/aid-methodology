@@ -22,6 +22,9 @@ This template defines the structure for `.aid/knowledge/REQUIREMENTS.md` — a f
 ```markdown
 # Requirements
 
+- **Name:** *(pending)*
+- **Description:** *(pending)*
+
 ## Change Log
 
 | Date | Change | Source |

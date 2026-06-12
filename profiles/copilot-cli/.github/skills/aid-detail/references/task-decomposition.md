@@ -132,6 +132,13 @@ Not rigid. Not all types appear in every delivery. The user adjusts during discu
 
 Six sections. Nothing else.
 
+**Descriptive-title rule (PF-3):** The `{Title}` on line 1 MUST be a **descriptive short-name** — a
+noun phrase naming the deliverable of the task (e.g. `Python thin server + /api/model endpoint`).
+It must NOT be a restatement of the task type (e.g. not `IMPLEMENT task-007`) and NOT a bare id
+(e.g. not `task-007`). The title is the task's human display name in the dashboard; it is parsed via
+`^#\s+task-0*\d+\s*:\s*(.+)$`. `/aid-execute` preserves the title line verbatim on any task-file
+update — it does not overwrite it.
+
 **Quality gate cascade:** Every task inherits:
 1. **Project baseline** from REQUIREMENTS.md §6 (unit test minimum, linting standard)
 2. **Feature-specific requirements** from the SPEC.md quality sections (if any)

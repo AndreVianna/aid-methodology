@@ -34,7 +34,61 @@ to guess.
 
 After hydration is complete, proceed to the summary.
 
-### Step 3: Present Summary
+### Step 3: Compose and Confirm Identity Header
+
+Before presenting the approval summary, compose the work's **Name** and **Description**
+and present them to the user for confirmation. These values will be written into the
+`- **Name:**` / `- **Description:**` block in `REQUIREMENTS.md` (placed immediately after
+the `# Requirements` H1, before `## Change Log`).
+
+**How to compose:**
+
+- **Name** — derive a concise, human-readable title from the work's subject. It must be
+  Title Case and must not end with a period. It should be short enough to serve as a
+  dashboard work-overview title (e.g. "AID Live Dashboard", "Order Processing Refactor").
+  Do NOT use the raw `work_id` slug as the Name.
+- **Description** — write exactly one sentence that summarises what the work delivers and
+  why, derived from the body of `## 1. Objective`. It is NOT the Objective text verbatim,
+  and it is NOT free-form authored independently. Compose it by distilling the Objective
+  into one sentence (the agent writes this sentence; the user confirms it).
+
+**Present to the user:**
+
+```
+Before I present the summary, here are the identity fields I will write into
+REQUIREMENTS.md:
+
+- **Name:** {composed Title Case name}
+- **Description:** {one sentence derived from ## 1. Objective}
+
+Do these look right, or would you like to adjust either?
+
+[1] Looks good
+[2] Adjust Name: ___
+[3] Adjust Description: ___
+```
+
+Process feedback:
+- **[1]:** proceed with the composed values.
+- **[2] / [3]:** accept the user's correction and update the relevant value. Confirm once
+  more before proceeding.
+
+Once confirmed, write the two lines into `.aid/{work}/REQUIREMENTS.md`, replacing the
+`*(pending)*` seeds:
+
+```
+- **Name:** {confirmed name}
+- **Description:** {confirmed description}
+```
+
+This write must leave the block in the **exact parse format** the reader expects:
+`^\s*-\s*\*\*Name:\*\*\s*(.+)` and `^\s*-\s*\*\*Description:\*\*\s*(.+)`. No trailing
+period on the Name; Description is one sentence ending with a period.
+
+**This step is mandatory at COMPLETION** (not optional, not skippable). If `## 1. Objective`
+is `*(pending)*` or absent, ask the user for a one-sentence description before proceeding.
+
+### Step 4: Present Summary
 
 ```
 I believe I have enough information. Here's a summary:
@@ -51,7 +105,7 @@ Is there anything else we should consider, or are the requirements ready?
 [2] Additional consideration: ___
 ```
 
-### Step 4: Process Response
+### Step 5: Process Approval Response
 
 - **[1] Approved:**
   - Set `**Interview Status:** Approved` in STATE.md `## Interview Status`
