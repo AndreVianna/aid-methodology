@@ -52,6 +52,7 @@ from dashboard.reader.parsers import (
     parse_kb_state,
     parse_project_name,
     parse_requirements_md,
+    parse_spec_md,
     parse_state_md,
     parse_task_short_name,
     parse_tool_info,
@@ -1303,6 +1304,120 @@ class TestKbHelpers(unittest.TestCase):
     def test_parse_kb_doc_count_empty_table(self):
         text = "## Completeness\n\n| # | Document |\n|---|---|\n"
         self.assertEqual(_parse_kb_doc_count(text), 0)
+
+
+class TestPF8ParseSpecMd(unittest.TestCase):
+    """PF-8: parse_spec_md -- SPEC.md identity fallback (Lite-path).
+
+    Covers:
+      (i)  SPEC with Name+Description returns them correctly.
+      (ii) SPEC with only H1 (no Name line) returns H1 as h1_title; title is None.
+      (iii) *(pending)* seed -> None for both title and description.
+      (iv) Integration: read_repo over the Lite fixture (work-006-lite-sample)
+           asserts title==SPEC Name and description==SPEC Description (HT-2).
+    """
+
+    def _spec_path(self, tmpdir: Path, content: str) -> Path:
+        p = tmpdir / "SPEC.md"
+        p.write_text(content, encoding="utf-8")
+        return p
+
+    def test_name_and_description_returned(self):
+        """(i) SPEC with Name+Description returns both."""
+        content = (
+            "# My Feature\n\n"
+            "- **Name:** My Feature Name\n"
+            "- **Description:** A short description.\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            p = self._spec_path(Path(d), content)
+            title, desc, h1, br = parse_spec_md(p)
+        self.assertEqual(title, "My Feature Name")
+        self.assertEqual(desc, "A short description.")
+        self.assertEqual(h1, "My Feature")
+        self.assertGreater(br, 0)
+
+    def test_h1_only_no_name_line(self):
+        """(ii) SPEC with only H1 (no Name line) returns H1 as h1_title; title=None."""
+        content = "# Dashboard Lite\n\nSome body text.\n"
+        with tempfile.TemporaryDirectory() as d:
+            p = self._spec_path(Path(d), content)
+            title, desc, h1, br = parse_spec_md(p)
+        self.assertIsNone(title)
+        self.assertIsNone(desc)
+        self.assertEqual(h1, "Dashboard Lite")
+
+    def test_pending_placeholder_returns_none(self):
+        """(iii) *(pending)* seed -> None for title and description."""
+        content = (
+            "# Pending Work\n\n"
+            "- **Name:** *(pending)*\n"
+            "- **Description:** *(pending)*\n"
+        )
+        with tempfile.TemporaryDirectory() as d:
+            p = self._spec_path(Path(d), content)
+            title, desc, h1, br = parse_spec_md(p)
+        self.assertIsNone(title)
+        self.assertIsNone(desc)
+        self.assertEqual(h1, "Pending Work")
+
+    def test_absent_file_returns_nones(self):
+        """Missing SPEC.md returns all None, bytes_read=0."""
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "SPEC.md"
+            title, desc, h1, br = parse_spec_md(p)
+        self.assertIsNone(title)
+        self.assertIsNone(desc)
+        self.assertIsNone(h1)
+        self.assertEqual(br, 0)
+
+    def test_crlf_spec_h1_parsed(self):
+        """CRLF SPEC.md (H1 only) -- h1_title parsed correctly (byte-parity with Node)."""
+        content = b"# CRLF Title\r\n\r\nBody text.\r\n"
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "SPEC.md"
+            p.write_bytes(content)
+            title, desc, h1, br = parse_spec_md(p)
+        self.assertIsNone(title)
+        self.assertIsNone(desc)
+        self.assertEqual(h1, "CRLF Title")
+
+    def test_read_repo_lite_fixture_ht2(self):
+        """(iv) HT-2: read_repo over work-006-lite-sample asserts title==Name and desc==Description."""
+        # _REPO_ROOT is parents[4] of this file (the projects/ dir); AID root is parents[3]
+        _aid_root = Path(__file__).resolve().parents[3]
+        fixture_root = _aid_root / "dashboard" / "server" / "tests" / "fixtures" / "pt1-aid"
+        if not fixture_root.is_dir():
+            self.skipTest("pt1-aid fixture not found")
+
+        from dashboard.reader import read_repo
+        model = read_repo(fixture_root)
+
+        lite_work = None
+        for w in model.works:
+            if w.work_id == "work-006-lite-sample":
+                lite_work = w
+                break
+
+        if lite_work is None:
+            self.skipTest("work-006-lite-sample not found in fixture")
+
+        # Must have NO REQUIREMENTS.md (this is the Lite path)
+        req_path = fixture_root / ".aid" / "work-006-lite-sample" / "REQUIREMENTS.md"
+        self.assertFalse(req_path.exists(), "work-006-lite-sample must NOT have REQUIREMENTS.md")
+
+        # Title comes from SPEC.md Name (not de-slug)
+        self.assertEqual(lite_work.title, "Lite Sample Feature",
+                         "title must equal SPEC Name field")
+
+        # Description comes from SPEC.md Description
+        self.assertEqual(lite_work.description,
+                         "A minimal Lite-path work used to verify SPEC.md identity parsing.",
+                         "description must equal SPEC Description field")
+
+        # source_mode should be normalized (has ## Pipeline Status)
+        from dashboard.reader.models import SourceMode
+        self.assertEqual(lite_work.source_mode, SourceMode.Normalized)
 
 
 if __name__ == "__main__":

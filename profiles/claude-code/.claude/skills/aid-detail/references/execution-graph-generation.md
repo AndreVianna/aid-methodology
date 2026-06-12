@@ -50,6 +50,24 @@ whose only dependencies are wave-1 tasks; and so on. Where a wave contains paral
 (e.g. two independent feature tracks that both unblock at the same wave), emit one `wave N:` line
 per sub-lane so the dashboard can distinguish them.
 
+#### DERIVATION rule (PF-5a+)
+
+The agent MUST derive the wave-map **mechanically** from the `Depends On` table it just wrote —
+**not** hand-compose it independently:
+
+1. **Wave 1:** collect every task whose `Depends On` entry is `—` (no dependencies).
+2. **Wave N (N > 1):** collect every task whose ALL dependencies are already assigned to waves
+   `< N`. Repeat until every task is assigned.
+3. **Parallel sub-lanes within a wave:** where two or more tasks in the same wave are independent
+   of each other AND represent distinct execution tracks (e.g. two feature lanes), emit one
+   `wave N:` line per sub-lane. Tasks that are fully parallel with no inter-dependence within
+   the wave MAY be listed on the same `wave N:` line when they share no sub-lane distinction.
+
+**Mandatory SELF-CHECK (MUST, not optional):** after drafting the wave-map block, verify that
+every task id appearing in the delivery's `Depends On` table appears in **exactly one** `wave N:`
+line. If any task id is missing or duplicated, correct the block before writing. This totality
+invariant is enforced mechanically by the PF-9 producer-completeness gate on the fixture.
+
 **Format (exact — must match the reader's parse rule):**
 
 ````markdown

@@ -41,6 +41,7 @@ from .parsers import (
     parse_kb_state,
     parse_project_name,
     parse_requirements_md,
+    parse_spec_md,
     parse_state_md,
     parse_task_short_name,
     parse_tool_info,
@@ -193,6 +194,22 @@ def _read_work(
     req_path = work_dir / "REQUIREMENTS.md"
     req_title, req_description, req_objective, req_bytes = parse_requirements_md(req_path)
     bytes_read += req_bytes
+
+    # PF-8: SPEC.md fallback source for Lite-path works (no REQUIREMENTS.md)
+    # Resolution order: REQUIREMENTS.md Name -> SPEC.md Name -> SPEC.md H1 -> de-slug
+    # Resolution order: REQUIREMENTS.md Description -> SPEC.md Description -> null
+    if req_title is None or req_description is None:
+        spec_path = work_dir / "SPEC.md"
+        spec_title, spec_description, spec_h1, spec_bytes = parse_spec_md(spec_path)
+        bytes_read += spec_bytes
+        if req_title is None:
+            # Prefer SPEC.md Name over H1; de-slug is the final fallback (set by 'name')
+            if spec_title is not None:
+                req_title = spec_title
+            elif spec_h1 is not None:
+                req_title = spec_h1
+        if req_description is None and spec_description is not None:
+            req_description = spec_description
 
     # PF-5: parse PLAN.md execution graph to derive lane per task_id
     plan_path = work_dir / "PLAN.md"

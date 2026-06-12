@@ -142,9 +142,16 @@ the reproduction + intended-behavior pair.
 
 **SPEC.md shape for LITE-BUG-FIX:**
 
+> **Identity block composition (MUST):** When writing the SPEC.md, the agent MUST compose:
+> - **Name** — a concise Title-Case title from the work subject (no trailing period; NOT the `work_id` slug; derived from `bug-title`).
+> - **Description** — exactly one sentence distilled from the captured problem/objective (derived from `bug-description`); no trailing period.
+> These MUST be real values (not `*(pending)*`) at the moment of writing.
+
 ```markdown
 # {bug-title}
 
+- **Name:** {Name — Title Case title derived from bug-title, no trailing period}
+- **Description:** {Description — one sentence from bug-description, no trailing period}
 - **Work:** {work-NNN-name}
 - **Created:** {today}
 - **Source:** /aid-interview lite path — LITE-BUG-FIX
@@ -245,9 +252,16 @@ describes both the intent and the definition of done.
 
 **SPEC.md shape for LITE-REFACTOR:**
 
+> **Identity block composition (MUST):** When writing the SPEC.md, the agent MUST compose:
+> - **Name** — a concise Title-Case title from the work subject (no trailing period; NOT the `work_id` slug; derived from `scope`).
+> - **Description** — exactly one sentence distilled from the captured problem/objective (derived from `before-sketch` → `after-sketch`); no trailing period.
+> These MUST be real values (not `*(pending)*`) at the moment of writing.
+
 ```markdown
 # {scope} — Refactor
 
+- **Name:** {Name — Title Case title derived from scope, no trailing period}
+- **Description:** {Description — one sentence from before/after sketch, no trailing period}
 - **Work:** {work-NNN-name}
 - **Created:** {today}
 - **Source:** /aid-interview lite path — LITE-REFACTOR
@@ -352,9 +366,16 @@ LITE-REFACTOR with additional AC prompts.
 
 **SPEC.md shape for LITE-FEATURE:**
 
+> **Identity block composition (MUST):** When writing the SPEC.md, the agent MUST compose:
+> - **Name** — a concise Title-Case title from the work subject (no trailing period; NOT the `work_id` slug; derived from `feature-title`).
+> - **Description** — exactly one sentence distilled from the captured problem/objective (derived from `goal`); no trailing period.
+> These MUST be real values (not `*(pending)*`) at the moment of writing.
+
 ```markdown
 # {feature-title}
 
+- **Name:** {Name — Title Case title derived from feature-title, no trailing period}
+- **Description:** {Description — one sentence from goal, no trailing period}
 - **Work:** {work-NNN-name}
 - **Created:** {today}
 - **Source:** /aid-interview lite path — LITE-FEATURE

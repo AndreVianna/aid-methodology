@@ -414,6 +414,69 @@ def parse_requirements_md(path: Path) -> tuple[Optional[str], Optional[str], Opt
 
 
 # ---------------------------------------------------------------------------
+# PF-8: SPEC.md parser (Lite-path identity fallback source)
+# ---------------------------------------------------------------------------
+
+def parse_spec_md(spec_path: Path) -> tuple[Optional[str], Optional[str], Optional[str], int]:
+    """Parse work-root SPEC.md for identity fields (PF-8 Lite-path fallback).
+
+    Returns (title, description, h1_title, bytes_read).
+    - title: value from '- **Name:**' line (None if absent or *(pending)*)
+    - description: value from '- **Description:**' line (None if absent or *(pending)*)
+    - h1_title: text after the first '# ' line (None if absent)
+    - bytes_read: number of bytes read
+
+    Reuses the same _re_name/_re_desc regexes as parse_requirements_md and the
+    *(pending)* null sentinel (PF-7). Never raises (NFR7).
+    """
+    if not spec_path.is_file():
+        return None, None, None, 0
+
+    try:
+        raw = spec_path.read_bytes()
+        bytes_read = len(raw)
+        text = raw.decode("utf-8", errors="replace")
+    except OSError:
+        return None, None, None, 0
+
+    _re_name = re.compile(r"^\s*-\s*\*\*Name:\*\*\s*(.+)", re.IGNORECASE)
+    _re_desc = re.compile(r"^\s*-\s*\*\*Description:\*\*\s*(.+)", re.IGNORECASE)
+    _re_h1 = re.compile(r"^#\s+(.+)$")
+
+    # Template seed placeholder: treat *(pending)* as absent (PF-7)
+    _PENDING_PLACEHOLDER = "*(pending)*"
+
+    title: Optional[str] = None
+    description: Optional[str] = None
+    h1_title: Optional[str] = None
+
+    for line in text.splitlines():
+        if h1_title is None:
+            m = _re_h1.match(line)
+            if m:
+                h1_title = m.group(1).strip()
+                continue
+
+        m = _re_name.match(line)
+        if m and title is None:
+            val = m.group(1).strip()
+            title = None if val == _PENDING_PLACEHOLDER else val
+            continue
+
+        m = _re_desc.match(line)
+        if m and description is None:
+            val = m.group(1).strip()
+            description = None if val == _PENDING_PLACEHOLDER else val
+            continue
+
+        # Stop scanning after we have all three fields
+        if title is not None and description is not None and h1_title is not None:
+            break
+
+    return title, description, h1_title, bytes_read
+
+
+# ---------------------------------------------------------------------------
 # PF-3: Task short-name from tasks/task-NNN.md first line
 # ---------------------------------------------------------------------------
 

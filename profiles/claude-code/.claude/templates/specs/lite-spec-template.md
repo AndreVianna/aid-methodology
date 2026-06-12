@@ -1,5 +1,7 @@
 # {work title}
 
+- **Name:** *(pending)*
+- **Description:** *(pending)*
 - **Work:** {work-NNN-name}
 - **Created:** {YYYY-MM-DD}
 - **Source:** /aid-interview lite path — {LITE-BUG-FIX | LITE-REFACTOR | LITE-FEATURE}

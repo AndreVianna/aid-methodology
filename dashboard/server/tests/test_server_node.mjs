@@ -25,7 +25,7 @@ import net from "net";
 import { spawn } from "child_process";
 import { tmpdir } from "os";
 import { createRequire } from "module";
-import { readRepo } from "../reader.mjs";
+import { readRepo, parseSpecMd } from "../reader.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -504,6 +504,119 @@ function runMalformedTests() {
     try { rmSync(tmpE2, { recursive: true, force: true }); } catch (_) {}
   }
 }
+
+// ---------------------------------------------------------------------------
+// (f) PF-8 parseSpecMd unit tests + HT-2 readWork over Lite fixture
+// ---------------------------------------------------------------------------
+
+process.stdout.write("\n[f] PF-8 parseSpecMd + Lite fixture (HT-2)\n");
+
+function runSpecMdTests() {
+  const tmpF = join(tmpdir(), "aid-spec-" + Date.now());
+  mkdirSync(tmpF, { recursive: true });
+
+  // f1: Name+Description returned correctly
+  const specF1 = join(tmpF, "spec-f1.md");
+  writeFileSync(specF1, [
+    "# My Feature",
+    "",
+    "- **Name:** My Feature Name",
+    "- **Description:** A short description.",
+  ].join("\n"), "utf-8");
+  const [tf1, df1, h1f1] = parseSpecMd(specF1);
+  assert(tf1 === "My Feature Name", "f1: Name field returned correctly (got " + tf1 + ")");
+  assert(df1 === "A short description.", "f1: Description field returned correctly");
+  assert(h1f1 === "My Feature", "f1: H1 title returned correctly");
+
+  // f2: H1 only (no Name line) -> title=null, h1Title=H1 text
+  const specF2 = join(tmpF, "spec-f2.md");
+  writeFileSync(specF2, "# Dashboard Lite\n\nSome body text.\n", "utf-8");
+  const [tf2, df2, h1f2] = parseSpecMd(specF2);
+  assert(tf2 === null, "f2: title=null when no Name line (got " + tf2 + ")");
+  assert(df2 === null, "f2: description=null when no Description line");
+  assert(h1f2 === "Dashboard Lite", "f2: H1 title captured (got " + h1f2 + ")");
+
+  // f3: *(pending)* seed -> null
+  const specF3 = join(tmpF, "spec-f3.md");
+  writeFileSync(specF3, [
+    "# Pending Work",
+    "",
+    "- **Name:** *(pending)*",
+    "- **Description:** *(pending)*",
+  ].join("\n"), "utf-8");
+  const [tf3, df3] = parseSpecMd(specF3);
+  assert(tf3 === null, "f3: *(pending)* Name -> null");
+  assert(df3 === null, "f3: *(pending)* Description -> null");
+
+  // f4: absent file -> all null, bytesRead=0
+  const specF4 = join(tmpF, "spec-absent.md");
+  const [tf4, df4, h1f4, brf4] = parseSpecMd(specF4);
+  assert(tf4 === null, "f4: absent file -> title=null");
+  assert(df4 === null, "f4: absent file -> description=null");
+  assert(h1f4 === null, "f4: absent file -> h1Title=null");
+  assert(brf4 === 0, "f4: absent file -> bytesRead=0");
+
+  // f5: CRLF SPEC.md (H1 only) -- bytes-parity proof vs Python
+  const specF5 = join(tmpF, "spec-f5.md");
+  // Write CRLF manually using Buffer
+  const crlfContent = Buffer.from("# CRLF Title\r\n\r\nBody text.\r\n", "utf-8");
+  writeFileSync(specF5, crlfContent);
+  const [tf5, df5, h1f5] = parseSpecMd(specF5);
+  assert(tf5 === null, "f5: CRLF H1-only SPEC -> title=null (no Name line)");
+  assert(df5 === null, "f5: CRLF H1-only SPEC -> description=null");
+  assert(h1f5 === "CRLF Title", "f5: CRLF H1-only SPEC -> h1Title=CRLF Title (got " + h1f5 + ")");
+
+  // f6: HT-2 -- readWork over work-006-lite-sample fixture
+  // Resolve the pt1-aid fixture root from this file's location
+  // __dirname = dashboard/server/tests/; fixtures are in dashboard/server/tests/fixtures/
+  const fixtureRoot = join(__dirname, "fixtures", "pt1-aid");
+  try {
+    statSync(fixtureRoot);
+  } catch (_) {
+    process.stdout.write("  SKIP: pt1-aid fixture not found\n");
+    try { rmSync(tmpF, { recursive: true, force: true }); } catch (_) {}
+    return;
+  }
+  const liteWorkDir = join(fixtureRoot, ".aid", "work-006-lite-sample");
+  try {
+    statSync(liteWorkDir);
+  } catch (_) {
+    process.stdout.write("  SKIP: work-006-lite-sample not found in fixture\n");
+    try { rmSync(tmpF, { recursive: true, force: true }); } catch (_) {}
+    return;
+  }
+
+  // Confirm no REQUIREMENTS.md (pure Lite path)
+  let hasReqs = true;
+  try {
+    statSync(join(liteWorkDir, "REQUIREMENTS.md"));
+  } catch (_) {
+    hasReqs = false;
+  }
+  assert(!hasReqs, "f6: work-006-lite-sample has no REQUIREMENTS.md (pure Lite path)");
+
+  const model = readRepo(fixtureRoot);
+  const liteWork = model.works.find((w) => w.work_id === "work-006-lite-sample");
+  assert(!!liteWork, "f6: work-006-lite-sample found in model");
+  if (liteWork) {
+    assert(
+      liteWork.title === "Lite Sample Feature",
+      "f6: HT-2 title from SPEC Name (got " + liteWork.title + ")"
+    );
+    assert(
+      liteWork.description === "A minimal Lite-path work used to verify SPEC.md identity parsing.",
+      "f6: HT-2 description from SPEC Description (got " + liteWork.description + ")"
+    );
+    assert(
+      liteWork.source_mode === "normalized",
+      "f6: Lite work source_mode=normalized (got " + liteWork.source_mode + ")"
+    );
+  }
+
+  try { rmSync(tmpF, { recursive: true, force: true }); } catch (_) {}
+}
+
+runSpecMdTests();
 
 runMalformedTests();
 

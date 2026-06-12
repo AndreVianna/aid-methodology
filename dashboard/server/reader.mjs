@@ -803,6 +803,71 @@ function parseRequirementsMd(reqPath) {
 }
 
 // ---------------------------------------------------------------------------
+// PF-8: parse work-root SPEC.md for identity fields (Lite-path fallback)
+// ---------------------------------------------------------------------------
+
+export function parseSpecMd(specPath) {
+  // Returns [title, description, h1Title, bytesRead]
+  // Mirrors parse_spec_md in parsers.py (byte-parity).
+  // - title: value from '- **Name:**' line (null if absent or *(pending)*)
+  // - description: value from '- **Description:**' line (null if absent or *(pending)*)
+  // - h1Title: text after the first '# ' line (null if absent)
+  // Reuses RE_NAME/RE_DESC from parseRequirementsMd and PENDING_PLACEHOLDER.
+  let isFile = false;
+  try { isFile = statSync(specPath).isFile(); } catch (_) { isFile = false; }
+  if (!isFile) return [null, null, null, 0];
+
+  let raw;
+  try {
+    raw = readFileSync(specPath);
+  } catch (_) {
+    return [null, null, null, 0];
+  }
+  const bytesRead = raw.length;
+  const text = raw.toString("utf-8");
+
+  const RE_NAME = /^\s*-\s*\*\*Name:\*\*\s*(.+)/i;
+  const RE_DESC = /^\s*-\s*\*\*Description:\*\*\s*(.+)/i;
+  const RE_H1 = /^#\s+(.+)$/;
+
+  // Template seed placeholder: treat *(pending)* as absent (PF-7)
+  const PENDING_PLACEHOLDER = "*(pending)*";
+
+  let title = null;
+  let description = null;
+  let h1Title = null;
+
+  // Split on \r\n, \r, or \n (mirrors Python splitlines() \r handling) -- CRLF fix
+  for (const line of text.split(/\r\n|\r|\n/)) {
+    if (h1Title === null) {
+      const mh = line.match(RE_H1);
+      if (mh) {
+        h1Title = mh[1].trim();
+        continue;
+      }
+    }
+
+    let m = line.match(RE_NAME);
+    if (m && title === null) {
+      const val = m[1].trim();
+      title = val === PENDING_PLACEHOLDER ? null : val;
+      continue;
+    }
+    m = line.match(RE_DESC);
+    if (m && description === null) {
+      const val = m[1].trim();
+      description = val === PENDING_PLACEHOLDER ? null : val;
+      continue;
+    }
+
+    // Stop scanning after all three fields are found
+    if (title !== null && description !== null && h1Title !== null) break;
+  }
+
+  return [title, description, h1Title, bytesRead];
+}
+
+// ---------------------------------------------------------------------------
 // PF-3: parse task short-name from tasks/task-NNN.md first line
 // ---------------------------------------------------------------------------
 
@@ -1504,8 +1569,28 @@ function readWork(workDir, workId) {
 
   // Prototype: parse REQUIREMENTS.md for identity fields
   const reqPath = join(workDir, "REQUIREMENTS.md");
-  const [reqTitle, reqDescription, reqObjective, reqBytes] = parseRequirementsMd(reqPath);
+  let [reqTitle, reqDescription, reqObjective, reqBytes] = parseRequirementsMd(reqPath);
   bytesRead += reqBytes;
+
+  // PF-8: SPEC.md fallback source for Lite-path works (no REQUIREMENTS.md)
+  // Resolution order: REQUIREMENTS.md Name -> SPEC.md Name -> SPEC.md H1 -> de-slug
+  // Resolution order: REQUIREMENTS.md Description -> SPEC.md Description -> null
+  if (reqTitle === null || reqDescription === null) {
+    const specPath = join(workDir, "SPEC.md");
+    const [specTitle, specDescription, specH1, specBytes] = parseSpecMd(specPath);
+    bytesRead += specBytes;
+    if (reqTitle === null) {
+      // Prefer SPEC.md Name over H1; de-slug is the final fallback (set by 'name')
+      if (specTitle !== null) {
+        reqTitle = specTitle;
+      } else if (specH1 !== null) {
+        reqTitle = specH1;
+      }
+    }
+    if (reqDescription === null && specDescription !== null) {
+      reqDescription = specDescription;
+    }
+  }
 
   // PF-5: parse PLAN.md execution graph to derive lane per task_id
   const planPath = join(workDir, "PLAN.md");
