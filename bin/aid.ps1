@@ -707,6 +707,11 @@ function script:Invoke-DcStart {
 
     $pidFile = Join-Path $Target (Join-Path '.aid' (Join-Path '.temp' 'dashboard.pid'))
     $logFile = Join-Path $Target (Join-Path '.aid' (Join-Path '.temp' 'dashboard.log'))
+    # PowerShell's Start-Process REJECTS the same path for -RedirectStandardOutput and
+    # -RedirectStandardError ("...are same"). The Bash launcher merges both into one log via
+    # '>"$log_file" 2>&1'; on Windows we cannot, so stderr goes to this sibling .err file --
+    # surfaced on an early-exit failure and cleaned alongside the main log.
+    $errFile = "${logFile}.err"
 
     # Step 4: already-running guard (stale-record reclaim included).
     if (Test-Path $pidFile -PathType Leaf) {
@@ -729,6 +734,7 @@ function script:Invoke-DcStart {
             if ($Verbose) { [Console]::Error.WriteLine("aid: dashboard: reclaiming stale record (pid $existingPid is dead)") }
             Remove-Item -LiteralPath $pidFile -Force -ErrorAction SilentlyContinue
             if (Test-Path $logFile -PathType Leaf) { Remove-Item -LiteralPath $logFile -Force -ErrorAction SilentlyContinue }
+            if (Test-Path $errFile -PathType Leaf) { Remove-Item -LiteralPath $errFile -Force -ErrorAction SilentlyContinue }
         }
     }
 
@@ -769,7 +775,7 @@ function script:Invoke-DcStart {
     $proc = Start-Process -FilePath $interp `
         -ArgumentList $spawnArgs `
         -RedirectStandardOutput $logFile `
-        -RedirectStandardError  $logFile `
+        -RedirectStandardError  $errFile `
         -PassThru `
         -WindowStyle Hidden
 
@@ -788,9 +794,11 @@ function script:Invoke-DcStart {
         if (-not $childAlive) {
             # Child exited early.
             [Console]::Error.WriteLine('ERROR: aid: dashboard: server failed to start; last log lines:')
-            if (Test-Path $logFile -PathType Leaf) {
-                Get-Content -LiteralPath $logFile -Tail 10 -ErrorAction SilentlyContinue | ForEach-Object { [Console]::Error.WriteLine($_) }
-                Remove-Item -LiteralPath $logFile -Force -ErrorAction SilentlyContinue
+            foreach ($_lf in @($logFile, $errFile)) {
+                if (Test-Path $_lf -PathType Leaf) {
+                    Get-Content -LiteralPath $_lf -Tail 10 -ErrorAction SilentlyContinue | ForEach-Object { [Console]::Error.WriteLine($_) }
+                    Remove-Item -LiteralPath $_lf -Force -ErrorAction SilentlyContinue
+                }
             }
             script:Exit-Aid 3
         }
@@ -812,14 +820,16 @@ function script:Invoke-DcStart {
         try { $null = Get-Process -Id $childPid -ErrorAction Stop; $childAlive = $true } catch {}
         if (-not $childAlive) {
             [Console]::Error.WriteLine('ERROR: aid: dashboard: server failed to start; last log lines:')
-            if (Test-Path $logFile -PathType Leaf) {
-                Get-Content -LiteralPath $logFile -Tail 10 -ErrorAction SilentlyContinue | ForEach-Object { [Console]::Error.WriteLine($_) }
-                Remove-Item -LiteralPath $logFile -Force -ErrorAction SilentlyContinue
+            foreach ($_lf in @($logFile, $errFile)) {
+                if (Test-Path $_lf -PathType Leaf) {
+                    Get-Content -LiteralPath $_lf -Tail 10 -ErrorAction SilentlyContinue | ForEach-Object { [Console]::Error.WriteLine($_) }
+                    Remove-Item -LiteralPath $_lf -Force -ErrorAction SilentlyContinue
+                }
             }
             script:Exit-Aid 3
         }
         # Timeout but pid alive: warn and continue.
-        [Console]::Error.WriteLine("WARN: aid: dashboard: server started but not yet responding on :${Port}; check $logFile")
+        [Console]::Error.WriteLine("WARN: aid: dashboard: server started but not yet responding on :${Port}; check $logFile (stderr in $errFile)")
     }
 
     # Step 9: write dashboard.pid JSON record (DM-1).
@@ -911,6 +921,7 @@ function script:Invoke-DcStop {
     $logFile     = ''
     if ($pidContent -match '"pid"\s*:\s*(\d+)') { $existingPid = [int]$matches[1] }
     if ($pidContent -match '"logfile"\s*:\s*"([^"]+)"') { $logFile = $matches[1] }
+    $errFile = if ($logFile) { "${logFile}.err" } else { '' }
 
     $procAlive = $false
     if ($existingPid -gt 0) {
@@ -921,6 +932,7 @@ function script:Invoke-DcStop {
         if ($Verbose) { [Console]::Error.WriteLine("aid: dashboard: record exists but pid $existingPid is dead; cleaning up.") }
         Remove-Item -LiteralPath $pidFile -Force -ErrorAction SilentlyContinue
         if ($logFile -and (Test-Path $logFile -PathType Leaf)) { Remove-Item -LiteralPath $logFile -Force -ErrorAction SilentlyContinue }
+        if ($errFile -and (Test-Path $errFile -PathType Leaf)) { Remove-Item -LiteralPath $errFile -Force -ErrorAction SilentlyContinue }
         Write-Host 'aid: dashboard: not running (nothing to stop).'
         script:Exit-Aid 0
     }
@@ -963,6 +975,7 @@ function script:Invoke-DcStop {
     # Step 6: remove record and logfile, print success.
     Remove-Item -LiteralPath $pidFile -Force -ErrorAction SilentlyContinue
     if ($logFile -and (Test-Path $logFile -PathType Leaf)) { Remove-Item -LiteralPath $logFile -Force -ErrorAction SilentlyContinue }
+    if ($errFile -and (Test-Path $errFile -PathType Leaf)) { Remove-Item -LiteralPath $errFile -Force -ErrorAction SilentlyContinue }
     Write-Host 'aid: dashboard stopped.'
     script:Exit-Aid 0
 }
