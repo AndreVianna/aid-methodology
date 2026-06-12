@@ -129,6 +129,7 @@ def _ser_work(obj) -> dict:
         "phase":         obj.phase.value if obj.phase is not None else None,
         "active_skill":  obj.active_skill,
         "updated":       obj.updated,
+        "created":       obj.created,
         "pause_reason":  obj.pause_reason,
         "block_reason":  obj.block_reason,
         "block_artifact": obj.block_artifact,

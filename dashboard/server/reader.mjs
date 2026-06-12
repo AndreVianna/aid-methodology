@@ -1057,6 +1057,7 @@ const RE_CROSSPHASE_QA = /^##\s+Cross-phase Q&A/i;
 const RE_TRIAGE = /^##\s+Triage\s*$/i;
 const RE_FEATURES_STATUS = /^##\s+Features Status\s*$/i;
 // RE_PLAN_DELIVERIES already declared in derivation helpers above (reused here)
+const RE_LIFECYCLE_HISTORY_SECTION = /^##\s+Lifecycle History\s*$/i;
 const RE_SECTION = /^##\s+\S/;
 
 const RE_TRIAGE_PATH   = /^\s*-\s*\*\*Path:\*\*\s*(.+)/i;
@@ -1106,9 +1107,12 @@ function parseStateText(text, workId, workDir) {
   let inTriage = false;
   let inFeatures = false;
   let inDeliveries = false;
+  let inLifecycleHistory = false;
   let tasksHeaderSeen = false;
   let featuresHeaderSeen = false;
   let deliveriesHeaderSeen = false;
+  let lifecycleHistoryHeaderSeen = false;
+  let created = null;
 
   let currentQId = null;
   let currentQ = {};
@@ -1134,6 +1138,7 @@ function parseStateText(text, workId, workDir) {
     inTriage = false;
     inFeatures = false;
     inDeliveries = false;
+    inLifecycleHistory = false;
   }
 
   const lines = text.split("\n");
@@ -1172,6 +1177,12 @@ function parseStateText(text, workId, workDir) {
       flushQ(); resetSections();
       inDeliveries = true;
       deliveriesHeaderSeen = false;
+      continue;
+    }
+    if (RE_LIFECYCLE_HISTORY_SECTION.test(line)) {
+      flushQ(); resetSections();
+      inLifecycleHistory = true;
+      lifecycleHistoryHeaderSeen = false;
       continue;
     }
     if (RE_SECTION.test(line)) {
@@ -1390,6 +1401,31 @@ function parseStateText(text, workId, workDir) {
       deliverables.push({ number: number, name: name, task_count: taskCount });
       continue;
     }
+
+    if (inLifecycleHistory) {
+      // mirrors parsers.py _parse_lifecycle_history_line + its caller
+      // The caller flips header_seen for ANY non-separator pipe row regardless
+      // of column count; the <2-col guard only skips data extraction.
+      const stripped = line.trim();
+      if (!stripped.startsWith("|")) continue;
+      if (hasTableSep(stripped)) continue;
+      // Flip header-seen for ALL non-separator pipe rows (mirrors Python caller)
+      const wasHeaderSeen = lifecycleHistoryHeaderSeen;
+      lifecycleHistoryHeaderSeen = true;
+      const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+      if (cols.length < 2) continue;
+      // Skip header row (first non-separator pipe row) before first data row
+      if (!wasHeaderSeen) continue;
+      // Only extract created once (first matching row)
+      if (created === null) {
+        const dateVal = cols[0].trim();
+        const gateVal = cols[1].trim();
+        if (gateVal.toLowerCase() === "work created" && dateVal) {
+          created = dateVal;
+        }
+      }
+      continue;
+    }
   }
 
   flushQ();
@@ -1437,6 +1473,7 @@ function parseStateText(text, workId, workDir) {
     recipe,
     features,
     deliverables,
+    created,
   };
 }
 
@@ -1633,6 +1670,7 @@ function readWork(workDir, workId) {
     phase: pw.phase,
     active_skill: pw.activeSkill,
     updated: pw.updated,
+    created: pw.created,
     pause_reason: pw.pauseReason,
     block_reason: pw.blockReason,
     block_artifact: pw.blockArtifact,
@@ -1660,6 +1698,7 @@ function _minimalWorkModel(workId) {
     phase: null,
     active_skill: null,
     updated: null,
+    created: null,
     pause_reason: null,
     block_reason: null,
     block_artifact: null,
@@ -1757,7 +1796,7 @@ function _buildDeliverableRef(d) {
 }
 
 function _buildWorkModel(wm) {
-  // WorkModel field order: work_id, name, lifecycle, phase, active_skill, updated,
+  // WorkModel field order: work_id, name, lifecycle, phase, active_skill, updated, created,
   //   pause_reason, block_reason, block_artifact, tasks, pending_inputs, source_mode,
   //   number, title, description, objective, work_path, recipe, features, deliverables
   return {
@@ -1767,6 +1806,7 @@ function _buildWorkModel(wm) {
     phase: wm.phase,
     active_skill: wm.active_skill,
     updated: wm.updated,
+    created: wm.created !== undefined ? wm.created : null,
     pause_reason: wm.pause_reason,
     block_reason: wm.block_reason,
     block_artifact: wm.block_artifact,

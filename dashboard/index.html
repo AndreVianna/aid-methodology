@@ -184,7 +184,7 @@ main {
 .grid.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .grid.g-lane { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
 /* Main-page pipelines grid: auto-fit reflow (does NOT mutate shared .g3 fixed-3-col) */
-.pipelines-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.pipelines-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 .card {
   background: var(--bg-elev);
@@ -237,7 +237,7 @@ footer {
 
 /* Tablet: 2-col chip grid between 768px and 1024px */
 @media (min-width: 769px) and (max-width: 1024px) {
-  .grid.g3, .grid.g4 { grid-template-columns: repeat(2, 1fr); }
+  .grid.g3, .grid.g4, .pipelines-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
@@ -525,6 +525,17 @@ footer {
 
 /* Main-page section headings */
 .main-section-head { margin: 1.5rem 0 0.75rem; }
+/* Knowledge & Tool is the fixed-size header band: a cool (info) accent sets it apart
+   from the teal pipelines below. */
+.kt-head { color: var(--info); }
+.kt-section .card { border-left: 3px solid var(--info); }
+/* Work-card progress bar: Readiness (pre-execution) vs Execution (task completion) */
+.progress-row { margin: 0.55rem 0 0; }
+.progress-track { height: 6px; background: var(--bg-sunken); border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+.progress-execution .progress-fill { background: var(--accent); }
+.progress-readiness .progress-fill { background: var(--info); }
+.progress-label { display: block; margin-bottom: 0.3rem; font-size: 0.8rem; color: var(--text-dim); }
 
 /* Delivery panel (collapsible) */
 .delivery-panel {
@@ -845,13 +856,13 @@ footer {
 
   <!-- Main page (feature-006): card grid + KB card + Level-0 panel -->
   <div id="main-page" style="display:none">
-    <!-- Pipelines section -->
-    <h2 class="main-section-head">Pipelines</h2>
-    <div id="pipelines-section"></div>
+    <!-- Knowledge & Tooling section — fixed-size header band, rendered first -->
+    <h2 class="main-section-head kt-head">Knowledge &amp; Tooling</h2>
+    <div class="grid g2 kt-section" id="knowledge-tool-section"></div>
 
-    <!-- Knowledge & Tool section -->
-    <h2 class="main-section-head" style="margin-top:2rem">Knowledge &amp; Tool</h2>
-    <div class="grid g2" id="knowledge-tool-section"></div>
+    <!-- Pipelines section -->
+    <h2 class="main-section-head" style="margin-top:2rem">Pipelines</h2>
+    <div id="pipelines-section"></div>
   </div>
 
   <!-- KB view placeholder (SEAM-1 for feature-007) -->
@@ -1282,6 +1293,112 @@ footer {
     }
   }
 
+  // Format an ISO timestamp in the browser's local format + timezone, without seconds.
+  // Date-only values (YYYY-MM-DD) render as a date with no time (and no TZ shift).
+  function _fmtLocalDateTime(iso) {
+    if (!iso) return null;
+    var dOnly = String(iso).trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dOnly) {
+      var ld = new Date(parseInt(dOnly[1], 10), parseInt(dOnly[2], 10) - 1, parseInt(dOnly[3], 10));
+      return ld.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return String(iso); // unparseable -> show raw
+    return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  // Pretty-print a lite recipe id: "LITE-BUG-FIX" -> "Bug fix"
+  function _formatRecipe(r) {
+    if (!r) return '';
+    var s = String(r).replace(/^lite-/i, '').replace(/[-_]+/g, ' ').trim().toLowerCase();
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+  }
+
+  // Progressive triage-path summary for a work card.
+  //   Full: "Full path: 9 features -> 7 deliveries -> 45 Tasks"  (numbers fill in as produced)
+  //   Lite: "Lite path: Bug fix -> 5 Tasks"
+  //   A bracketed [stage] marks the step in progress; "[Identifying path]" before triage.
+  function _pathSummary(work) {
+    var ARROW = ' → ';
+    var wp = (work.work_path || '').toLowerCase();
+    var nf = (work.features || []).length;
+    var nd = (work.deliverables || []).length;
+    var nt = (work.tasks || []).length;
+    function tasks(n) { return n + ' Task' + (n === 1 ? '' : 's'); }
+    if (wp === 'full') {
+      if (nf === 0) return 'Full path: [defining features]';
+      var s = 'Full path: ' + nf + ' feature' + (nf === 1 ? '' : 's');
+      if (nd === 0) return s + ARROW + '[planning deliveries]';
+      s += ARROW + nd + ' deliver' + (nd === 1 ? 'y' : 'ies');
+      if (nt === 0) return s + ARROW + '[writing tasks]';
+      return s + ARROW + tasks(nt);
+    }
+    if (wp === 'lite') {
+      var rec = _formatRecipe(work.recipe) || 'Lite';
+      var base = 'Lite path: ' + rec;
+      return nt === 0 ? base + ARROW + '[writing tasks]' : base + ARROW + tasks(nt);
+    }
+    return '[Identifying path]';
+  }
+
+  // Two-part progress model:
+  //  - Readiness: progress through the pre-execution pipeline (Interview->Specify->Plan->Detail),
+  //    i.e. how close to having an approved task list. 4 steps; the in-progress phase counts half.
+  //  - Execution: completed tasks / total (Canceled excluded), once the task list exists.
+  var PRE_EXEC_STEPS = 4; // Interview, Specify, Plan, Detail (index of Execute in PHASE_ORDER)
+
+  function _readinessPct(work) {
+    var idx = PHASE_ORDER.indexOf(work.phase);
+    if (idx === -1) return null;                 // unknown phase
+    if (idx >= PRE_EXEC_STEPS) return 100;       // Execute or later -> task list ready
+    return Math.round(((idx + 0.5) / PRE_EXEC_STEPS) * 100);
+  }
+
+  function _executionStats(work) {
+    var tasks = work.tasks || [];
+    var total = 0, done = 0;
+    for (var i = 0; i < tasks.length; i++) {
+      var s = (tasks[i].status || '').toLowerCase();
+      if (s === 'canceled' || s === 'cancelled') continue; // out of scope
+      total++;
+      if (s === 'done') done++;
+    }
+    if (total === 0) return null;
+    return { pct: Math.round((done / total) * 100), done: done, total: total };
+  }
+
+  // Build the contextual progress row: Readiness (pre-execution) or Execution (task list exists).
+  function _renderProgress(work) {
+    var idx = PHASE_ORDER.indexOf(work.phase);
+    var label, pct, detail;
+    if (idx !== -1 && idx < PRE_EXEC_STEPS) {
+      pct = _readinessPct(work);
+      if (pct === null) return null;
+      label = 'Readiness';
+      detail = work.phase;
+    } else {
+      var ex = _executionStats(work);
+      if (!ex) return null;                       // no task list yet -> no bar
+      label = 'Execution';
+      pct = ex.pct;
+      detail = ex.done + '/' + ex.total + ' tasks';
+    }
+    var row = document.createElement('div');
+    row.className = 'progress-row progress-' + label.toLowerCase();
+    var track = document.createElement('div');
+    track.className = 'progress-track';
+    var fill = document.createElement('div');
+    fill.className = 'progress-fill';
+    fill.style.width = pct + '%';
+    track.appendChild(fill);
+    var lbl = document.createElement('span');
+    lbl.className = 'progress-label';
+    lbl.textContent = label + ' ' + pct + '% · ' + detail;
+    row.appendChild(lbl);    // percentage first
+    row.appendChild(track);  // bar below
+    return row;
+  }
+
   // Build a work-card DOM element for the main page grid (UI-3)
   function _renderWorkCard(work) {
     var isAttention = work.lifecycle === 'Paused-Awaiting-Input' || work.lifecycle === 'Blocked';
@@ -1312,30 +1429,44 @@ footer {
     }
     card.appendChild(titleEl);
 
-    // Mini phase rail (condensed: current pill + index/total)
-    var phase = work.phase;
-    if (phase && phase !== 'Unknown') {
-      var currentIdx = PHASE_ORDER.indexOf(phase);
-      if (currentIdx !== -1) {
-        var railWrap = document.createElement('div');
-        railWrap.style.cssText = 'display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin:0.4rem 0;';
-        var currentPill = document.createElement('span');
-        currentPill.className = 'badge badge-primary';
-        currentPill.textContent = '▸ ' + phase;
-        railWrap.appendChild(currentPill);
-        var progressSpan = document.createElement('span');
-        progressSpan.className = 'badge badge-dim';
-        progressSpan.textContent = (currentIdx + 1) + '/' + PHASE_ORDER.length;
-        railWrap.appendChild(progressSpan);
-        card.appendChild(railWrap);
-      }
-    }
-
-    // Lifecycle badge (reuses makeLifecycleBadge verbatim)
+    // STATE (lifecycle badge) -- shown first; reuses makeLifecycleBadge verbatim
     var badgeWrap = document.createElement('div');
-    badgeWrap.style.marginBottom = '0.4rem';
+    badgeWrap.style.margin = '0.1rem 0 0.4rem';
     badgeWrap.appendChild(makeLifecycleBadge(work.lifecycle));
     card.appendChild(badgeWrap);
+
+    // Current phase -- labelled, no progress counter (the 7 phases are fixed and 2 are
+    // optional, so an index/total adds little here)
+    var phase = work.phase;
+    if (phase && phase !== 'Unknown' && PHASE_ORDER.indexOf(phase) !== -1) {
+      var phaseLine = document.createElement('div');
+      phaseLine.style.cssText = 'display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;margin:0.4rem 0;';
+      var phaseLabel = document.createElement('span');
+      phaseLabel.className = 'meta';
+      phaseLabel.textContent = 'Phase';
+      phaseLine.appendChild(phaseLabel);
+      var phasePill = document.createElement('span');
+      phasePill.className = 'badge badge-primary';
+      phasePill.textContent = '▸ ' + phase;
+      phaseLine.appendChild(phasePill);
+      card.appendChild(phaseLine);
+    }
+
+    // Triage-path progress pipeline -- progressively disclosed by what's been produced so far.
+    // Full: features -> deliveries -> tasks; Lite: recipe -> tasks. A bracketed [stage] marks
+    // the step currently in progress; "[Identifying path]" before triage has run.
+    var pathText = _pathSummary(work);
+    if (pathText) {
+      var pathLineEl = document.createElement('p');
+      pathLineEl.className = 'meta';
+      pathLineEl.style.margin = '0.35rem 0 0';
+      pathLineEl.textContent = pathText;
+      card.appendChild(pathLineEl);
+    }
+
+    // Progress bar: Readiness (pre-execution) or Execution (task completion)
+    var progressRow = _renderProgress(work);
+    if (progressRow) card.appendChild(progressRow);
 
     // Attention detail (pause_reason / block_reason + block_artifact)
     if (work.lifecycle === 'Paused-Awaiting-Input' && work.pause_reason) {
@@ -1364,15 +1495,17 @@ footer {
       }
     }
 
-    // Meta footer: updated, tasks.length, source_mode chip
+    // Meta footer: created + last-update (local format), source_mode chip.
+    // (task count now lives in the path-summary line above)
     var metaEl = document.createElement('div');
     metaEl.className = 'meta';
     metaEl.style.marginTop = '0.5rem';
     var metaParts = [];
-    if (work.updated) metaParts.push('Updated: ' + work.updated);
-    var tasks = work.tasks || [];
-    metaParts.push(tasks.length + ' task' + (tasks.length !== 1 ? 's' : ''));
-    metaEl.textContent = metaParts.join('  ·  ');
+    var createdStr = _fmtLocalDateTime(work.created);
+    if (createdStr) metaParts.push('Created: ' + createdStr);
+    var updatedStr = _fmtLocalDateTime(work.updated);
+    if (updatedStr) metaParts.push('Last Update: ' + updatedStr);
+    metaEl.textContent = metaParts.join(';  ');
     // source_mode chip (only when != "normalized")
     if (work.source_mode && work.source_mode !== 'normalized') {
       var modeChip = document.createElement('span');
@@ -1446,7 +1579,7 @@ footer {
       var freshMeta = document.createElement('p');
       freshMeta.className = 'meta';
       freshMeta.style.marginTop = '0.5rem';
-      freshMeta.textContent = 'summary updated ' + kbState.last_summary_date;
+      freshMeta.textContent = 'summary updated ' + (_fmtLocalDateTime(kbState.last_summary_date) || kbState.last_summary_date);
       card.appendChild(freshMeta);
     }
 
@@ -1496,7 +1629,7 @@ footer {
     if (tool.installed_at) {
       var instSpan = document.createElement('span');
       instSpan.className = 'meta';
-      instSpan.textContent = tool.installed_at;
+      instSpan.textContent = _fmtLocalDateTime(tool.installed_at) || tool.installed_at;
       ddInst.appendChild(instSpan);
     } else {
       ddInst.textContent = '—';

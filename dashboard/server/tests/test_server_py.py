@@ -414,7 +414,7 @@ class TestSerializationShape(unittest.TestCase):
         work_keys = list(works[0].keys())
         expected = [
             "work_id", "name", "lifecycle", "phase", "active_skill",
-            "updated", "pause_reason", "block_reason", "block_artifact",
+            "updated", "created", "pause_reason", "block_reason", "block_artifact",
             "tasks", "pending_inputs", "source_mode",
             "number", "title", "description", "objective",
             "work_path", "recipe", "features", "deliverables",

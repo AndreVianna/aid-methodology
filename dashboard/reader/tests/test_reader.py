@@ -1420,5 +1420,148 @@ class TestPF8ParseSpecMd(unittest.TestCase):
         self.assertEqual(lite_work.source_mode, SourceMode.Normalized)
 
 
+# ---------------------------------------------------------------------------
+# TestCreatedField: parse_state_md extracts 'created' from Lifecycle History
+# ---------------------------------------------------------------------------
+
+class TestCreatedField(unittest.TestCase):
+    """PF-CR: parse_state_md extracts pw.created from ## Lifecycle History table.
+
+    A row whose second column is 'Work created' (case-insensitive) yields
+    created == the first-column date string.  Works without that row yield
+    created is None.
+    """
+
+    _STATE_WITH_HISTORY = """\
+## Pipeline Status
+
+- **Lifecycle:** Running
+- **Phase:** Execute
+- **Active Skill:** aid-execute
+- **Updated:** 2026-06-10T12:00:00Z
+- **Pause Reason:** --
+- **Block Reason:** --
+- **Block Artifact:** --
+
+## Tasks Status
+
+| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
+|---|------|------|------|--------|--------|---------|-------|
+| 001 | task-001 | IMPLEMENT | delivery-001 | Done | A | 1h | -- |
+
+## Lifecycle History
+
+| Date | Phase Transition / Gate | Grade | Notes |
+|------|--------------------------|-------|-------|
+| 2026-05-15 | Work created | -- | Initial creation |
+| 2026-05-20 | Interview -> Specify | A | -- |
+| 2026-06-01 | Specify -> Plan | A | -- |
+"""
+
+    _STATE_WITHOUT_HISTORY = """\
+## Pipeline Status
+
+- **Lifecycle:** Completed
+- **Phase:** Deploy
+- **Active Skill:** none
+- **Updated:** 2026-06-12T00:00:00Z
+- **Pause Reason:** --
+- **Block Reason:** --
+- **Block Artifact:** --
+
+## Tasks Status
+
+| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
+|---|------|------|------|--------|--------|---------|-------|
+| 001 | task-001 | IMPLEMENT | delivery-001 | Done | A | 2h | -- |
+"""
+
+    _STATE_HISTORY_CASE_INSENSITIVE = """\
+## Pipeline Status
+
+- **Lifecycle:** Running
+- **Phase:** Plan
+- **Active Skill:** aid-plan
+- **Updated:** 2026-06-11T00:00:00Z
+- **Pause Reason:** --
+- **Block Reason:** --
+- **Block Artifact:** --
+
+## Lifecycle History
+
+| Date | Phase Transition / Gate | Grade | Notes |
+|------|--------------------------|-------|-------|
+| 2026-04-01 | WORK CREATED | -- | case-insensitive check |
+"""
+
+    def test_created_extracted_from_lifecycle_history(self):
+        """Work with 'Work created' row yields created == the date string."""
+        pw = parse_state_md(self._STATE_WITH_HISTORY)
+        self.assertEqual(pw.created, "2026-05-15",
+                         "created must be the Date cell of the 'Work created' row")
+
+    def test_created_is_none_without_history(self):
+        """Work without ## Lifecycle History section yields created is None."""
+        pw = parse_state_md(self._STATE_WITHOUT_HISTORY)
+        self.assertIsNone(pw.created,
+                          "created must be None when no Lifecycle History table is present")
+
+    def test_created_case_insensitive_work_created(self):
+        """'WORK CREATED' (all-caps) is still matched (case-insensitive)."""
+        pw = parse_state_md(self._STATE_HISTORY_CASE_INSENSITIVE)
+        self.assertEqual(pw.created, "2026-04-01",
+                         "created extraction must be case-insensitive on 'Work created'")
+
+    def test_created_takes_first_row_only(self):
+        """If two rows match 'Work created', only the first date is taken."""
+        content = """\
+## Pipeline Status
+
+- **Lifecycle:** Running
+- **Phase:** Execute
+- **Active Skill:** aid-execute
+- **Updated:** 2026-06-10T00:00:00Z
+- **Pause Reason:** --
+- **Block Reason:** --
+- **Block Artifact:** --
+
+## Lifecycle History
+
+| Date | Phase Transition / Gate | Grade | Notes |
+|------|--------------------------|-------|-------|
+| 2026-03-01 | Work created | -- | first |
+| 2026-04-01 | Work created | -- | duplicate (should be ignored) |
+"""
+        pw = parse_state_md(content)
+        self.assertEqual(pw.created, "2026-03-01",
+                         "created must be taken from the FIRST matching 'Work created' row")
+
+    def test_created_field_exposed_on_work_model(self):
+        """read_repo propagates pw.created into WorkModel.created."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            aid = root / ".aid"
+            work = aid / "work-001-cr"
+            work.mkdir(parents=True)
+            (work / "STATE.md").write_text(self._STATE_WITH_HISTORY, encoding="utf-8")
+            model = read_repo(root)
+        self.assertEqual(len(model.works), 1)
+        self.assertEqual(model.works[0].created, "2026-05-15",
+                         "WorkModel.created must be set from parsed pw.created")
+
+    def test_created_none_propagated_when_absent(self):
+        """read_repo sets WorkModel.created = None when no Lifecycle History."""
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            aid = root / ".aid"
+            work = aid / "work-001-nocr"
+            work.mkdir(parents=True)
+            (work / "STATE.md").write_text(self._STATE_WITHOUT_HISTORY, encoding="utf-8")
+            model = read_repo(root)
+        self.assertEqual(len(model.works), 1)
+        self.assertIsNone(model.works[0].created,
+                          "WorkModel.created must be None when Lifecycle History is absent")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

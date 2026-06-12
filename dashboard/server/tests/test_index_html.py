@@ -583,12 +583,14 @@ class TestFeature006Router(unittest.TestCase):
         self.assertIn('.pipelines-grid', self.src,
                       ".pipelines-grid CSS class must be defined")
 
-    def test_f6g_pipelines_grid_uses_auto_fit(self):
+    def test_f6g_pipelines_grid_uses_fixed_3col(self):
+        # delivery-004 UX rework: .pipelines-grid changed from auto-fit to fixed 3-col
+        # (matches .grid.g3 semantics; responsive rules collapse it at breakpoints)
         idx = self.src.find('.pipelines-grid')
         self.assertNotEqual(idx, -1)
         snippet = self.src[idx:idx + 200]
-        self.assertIn('auto-fit', snippet,
-                      ".pipelines-grid must use auto-fit (not fixed column count)")
+        self.assertIn('repeat(3,', snippet.replace(' ', ''),
+                      ".pipelines-grid must use fixed repeat(3,...) (NOT auto-fit) after delivery-004 rework")
 
     def test_f6g_grid_g3_not_mutated_to_autofit(self):
         # .grid.g3 must remain fixed 3-column (repeat(3, minmax(0, 1fr)))
@@ -798,6 +800,389 @@ class TestFeature006Router(unittest.TestCase):
     def test_f6_stale_work_notice_div_present(self):
         self.assertIn('id="stale-work-notice"', self.src,
                       "#stale-work-notice div must be present in HTML")
+
+
+# ---------------------------------------------------------------------------
+# F6-RW: feature-006 main-page card rework (delivery-004 UX refinement)
+# ---------------------------------------------------------------------------
+
+class TestFeature006CardRework(unittest.TestCase):
+    """
+    Static-source assertions for the delivery-004 card rework.
+
+    F6-RW-1:  Section order: Knowledge & Tooling before Pipelines; kt-head/kt-section CSS.
+    F6-RW-2:  Heading text is exactly 'Knowledge &amp; Tooling'.
+    F6-RW-3:  .pipelines-grid is fixed 3-col repeat(3,...) and in both responsive rules.
+    F6-RW-4:  Helper functions _pathSummary/_formatRecipe/_fmtLocalDateTime/_readinessPct/
+              _executionStats/_renderProgress all defined in inline script.
+    F6-RW-5:  Card order: lifecycle badge before phase line; phase label is 'Phase';
+              old (currentIdx+1)/PHASE_ORDER.length counter is gone.
+    F6-RW-6:  _pathSummary markers: Full/Lite path, bracketed stages, arrow.
+    F6-RW-7:  Two-part progress bar: CSS classes; labels 'Readiness'/'Execution';
+              _executionStats excludes 'canceled'; PRE_EXEC_STEPS present;
+              label appended BEFORE track.
+    F6-RW-8:  Footer uses 'Created: ' and 'Last Update: ' via _fmtLocalDateTime;
+              no ' task'/' tasks' push in the meta-footer block.
+    F6-RW-9:  KB last_summary_date and L0 installed_at both pass through _fmtLocalDateTime.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        assert _INDEX_HTML.is_file(), f"index.html not found at {_INDEX_HTML}"
+        cls.src = _INDEX_HTML.read_text(encoding="utf-8")
+
+    # ------------------------------------------------------------------
+    # F6-RW-1: Section order
+    # ------------------------------------------------------------------
+
+    def test_f6rw1_kt_head_before_pipelines_head(self):
+        # Knowledge & Tooling h2 (kt-head) must appear BEFORE the Pipelines h2 in source
+        kt_idx = self.src.find('kt-head')
+        pipes_idx = self.src.find('pipelines-section')
+        self.assertNotEqual(kt_idx, -1, "kt-head not found in index.html")
+        self.assertNotEqual(pipes_idx, -1, "pipelines-section not found in index.html")
+        self.assertLess(kt_idx, pipes_idx,
+                        "kt-head must appear BEFORE pipelines-section in the HTML source")
+
+    def test_f6rw1_kt_section_before_pipelines_section(self):
+        # .kt-section grid must appear before the pipelines section
+        kt_idx = self.src.find('kt-section')
+        pipes_idx = self.src.find('pipelines-section')
+        self.assertNotEqual(kt_idx, -1, "kt-section not found")
+        self.assertNotEqual(pipes_idx, -1, "pipelines-section not found")
+        self.assertLess(kt_idx, pipes_idx,
+                        "kt-section must appear BEFORE pipelines-section in source")
+
+    def test_f6rw1_kt_head_css_color_info(self):
+        # .kt-head must use the --info accent (cool blue)
+        self.assertIn('.kt-head', self.src, ".kt-head CSS rule missing")
+        idx = self.src.find('.kt-head')
+        snippet = self.src[idx:idx + 60]
+        self.assertIn('var(--info)', snippet,
+                      ".kt-head must set color to var(--info)")
+
+    def test_f6rw1_kt_section_card_border_info(self):
+        # .kt-section .card must have a border-left using --info
+        self.assertIn('.kt-section .card', self.src, ".kt-section .card CSS rule missing")
+        idx = self.src.find('.kt-section .card')
+        snippet = self.src[idx:idx + 80]
+        self.assertIn('var(--info)', snippet,
+                      ".kt-section .card must use var(--info) for border accent")
+
+    # ------------------------------------------------------------------
+    # F6-RW-2: Heading text
+    # ------------------------------------------------------------------
+
+    def test_f6rw2_heading_text_knowledge_and_tooling(self):
+        # The h2 heading must read 'Knowledge &amp; Tooling' (HTML entity, not bare &)
+        self.assertIn('Knowledge &amp; Tooling', self.src,
+                      "h2 must read 'Knowledge &amp; Tooling' (not 'Tool' or 'Tools')")
+
+    def test_f6rw2_heading_not_tools(self):
+        # Sanity guard: must NOT be 'Tools' (old name)
+        # We check the kt-head h2 region specifically
+        idx = self.src.find('kt-head')
+        self.assertNotEqual(idx, -1)
+        region = self.src[idx:idx + 200]
+        self.assertNotIn('Knowledge &amp; Tools', region,
+                         "kt-head heading must be 'Tooling', not 'Tools'")
+
+    # ------------------------------------------------------------------
+    # F6-RW-3: 3-column grid; responsive rules
+    # ------------------------------------------------------------------
+
+    def test_f6rw3_pipelines_grid_fixed_3col(self):
+        # .pipelines-grid base rule must be repeat(3, minmax(0, 1fr)) — NOT auto-fit
+        idx = self.src.find('.pipelines-grid')
+        self.assertNotEqual(idx, -1, ".pipelines-grid CSS not found")
+        # Grab the definition line (ends at newline or brace)
+        snippet = self.src[idx:idx + 80]
+        self.assertIn('repeat(3,', snippet.replace(' ', ''),
+                      ".pipelines-grid must be fixed repeat(3,...) — auto-fit was removed in delivery-004")
+        self.assertNotIn('auto-fit', snippet,
+                         ".pipelines-grid must NOT use auto-fit after delivery-004 rework")
+
+    def test_f6rw3_pipelines_grid_in_tablet_2col_rule(self):
+        # .pipelines-grid must appear in the 769..1024px tablet rule (2-col collapse)
+        idx = self.src.find('@media (min-width: 769px) and (max-width: 1024px)')
+        self.assertNotEqual(idx, -1,
+                            "Tablet media query '@media (min-width: 769px) and (max-width: 1024px)' not found")
+        snippet = self.src[idx:idx + 200]
+        self.assertIn('pipelines-grid', snippet,
+                      ".pipelines-grid must be in the 769..1024px 2-col responsive rule")
+
+    def test_f6rw3_pipelines_grid_in_mobile_1col_rule(self):
+        # .pipelines-grid must appear in the max-width:768px rule (1-col collapse)
+        idx = self.src.find('@media (max-width: 768px)')
+        self.assertNotEqual(idx, -1, "@media (max-width: 768px) block not found")
+        snippet = self.src[idx:idx + 500]
+        self.assertIn('pipelines-grid', snippet,
+                      ".pipelines-grid must be in the max-width:768px 1-col responsive rule")
+
+    def test_f6rw3_grid_g3_still_fixed_3col(self):
+        # .grid.g3 must remain unchanged: repeat(3, minmax(0, 1fr))
+        idx = self.src.find('.grid.g3')
+        self.assertNotEqual(idx, -1, ".grid.g3 CSS not found")
+        snippet = self.src[idx:idx + 80]
+        self.assertIn('repeat(3,', snippet.replace(' ', ''),
+                      ".grid.g3 must remain fixed 3-column (unchanged from pre-delivery-004)")
+
+    # ------------------------------------------------------------------
+    # F6-RW-4: Helper functions present
+    # ------------------------------------------------------------------
+
+    def test_f6rw4_path_summary_function(self):
+        self.assertIn('function _pathSummary(', self.src,
+                      "_pathSummary() function must be defined in the inline script")
+
+    def test_f6rw4_format_recipe_function(self):
+        self.assertIn('function _formatRecipe(', self.src,
+                      "_formatRecipe() function must be defined in the inline script")
+
+    def test_f6rw4_fmt_local_datetime_function(self):
+        self.assertIn('function _fmtLocalDateTime(', self.src,
+                      "_fmtLocalDateTime() function must be defined in the inline script")
+
+    def test_f6rw4_readiness_pct_function(self):
+        self.assertIn('function _readinessPct(', self.src,
+                      "_readinessPct() function must be defined in the inline script")
+
+    def test_f6rw4_execution_stats_function(self):
+        self.assertIn('function _executionStats(', self.src,
+                      "_executionStats() function must be defined in the inline script")
+
+    def test_f6rw4_render_progress_function(self):
+        self.assertIn('function _renderProgress(', self.src,
+                      "_renderProgress() function must be defined in the inline script")
+
+    # ------------------------------------------------------------------
+    # F6-RW-5: Card order: State before Phase; 'Phase' label; counter gone
+    # ------------------------------------------------------------------
+
+    def test_f6rw5_lifecycle_badge_before_phase_in_source(self):
+        # In _renderWorkCard, makeLifecycleBadge must be appended BEFORE the phaseLine
+        idx = self.src.find('function _renderWorkCard(')
+        self.assertNotEqual(idx, -1, "_renderWorkCard function not found")
+        # Read the full function body (enough to cover both badge and phase blocks)
+        snippet = self.src[idx:idx + 5200]
+        badge_pos = snippet.find('makeLifecycleBadge(work.lifecycle)')
+        phase_pos = snippet.find("phaseLine")
+        self.assertNotEqual(badge_pos, -1, "makeLifecycleBadge(work.lifecycle) not found in _renderWorkCard")
+        self.assertNotEqual(phase_pos, -1, "phaseLine not found in _renderWorkCard")
+        self.assertLess(badge_pos, phase_pos,
+                        "makeLifecycleBadge must appear BEFORE phaseLine in _renderWorkCard")
+
+    def test_f6rw5_phase_label_text_is_phase(self):
+        # The phase label text must be 'Phase' (not 'Current Phase' or something else)
+        idx = self.src.find('function _renderWorkCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5200]
+        self.assertIn("phaseLabel.textContent = 'Phase'", snippet,
+                      "Phase label textContent must be exactly 'Phase'")
+
+    def test_f6rw5_old_5_of_7_counter_gone(self):
+        # The old (currentIdx + 1) + '/' + PHASE_ORDER.length progress counter
+        # must not exist in the file (removed in delivery-004)
+        self.assertNotIn("currentIdx + 1) + '/' + PHASE_ORDER.length", self.src,
+                         "Old '5/7' phase counter ((currentIdx+1)/.../PHASE_ORDER.length) must be absent")
+
+    def test_f6rw5_current_idx_not_in_work_card(self):
+        # currentIdx is only used in renderStagePills (work detail view), not in _renderWorkCard
+        idx = self.src.find('function _renderWorkCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5200]
+        self.assertNotIn('currentIdx + 1', snippet,
+                         "The per-card currentIdx+1 progress counter must not appear in _renderWorkCard")
+
+    # ------------------------------------------------------------------
+    # F6-RW-6: Progressive path line markers
+    # ------------------------------------------------------------------
+
+    def test_f6rw6_path_summary_full_path_prefix(self):
+        idx = self.src.find('function _pathSummary(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1300]
+        self.assertIn("'Full path: '", snippet,
+                      "_pathSummary must include 'Full path: ' marker")
+
+    def test_f6rw6_path_summary_lite_path_prefix(self):
+        idx = self.src.find('function _pathSummary(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1300]
+        self.assertIn("'Lite path: '", snippet,
+                      "_pathSummary must include 'Lite path: ' marker")
+
+    def test_f6rw6_path_summary_defining_features(self):
+        # '[defining features]' appears embedded inside 'Full path: [defining features]'
+        idx = self.src.find('function _pathSummary(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1300]
+        self.assertIn("'Full path: [defining features]'", snippet,
+                      "_pathSummary must include 'Full path: [defining features]' bracketed stage")
+
+    def test_f6rw6_path_summary_planning_deliveries(self):
+        idx = self.src.find('function _pathSummary(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1300]
+        self.assertIn("'[planning deliveries]'", snippet,
+                      "_pathSummary must include '[planning deliveries]' bracketed stage")
+
+    def test_f6rw6_path_summary_writing_tasks(self):
+        idx = self.src.find('function _pathSummary(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1300]
+        self.assertIn("'[writing tasks]'", snippet,
+                      "_pathSummary must include '[writing tasks]' bracketed stage")
+
+    def test_f6rw6_path_summary_identifying_path(self):
+        idx = self.src.find('function _pathSummary(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1300]
+        self.assertIn("'[Identifying path]'", snippet,
+                      "_pathSummary must include '[Identifying path]' as the pre-triage fallback")
+
+    def test_f6rw6_path_summary_arrow(self):
+        # Arrow ' → ' (Unicode right arrow with spaces) must be the separator
+        idx = self.src.find('function _pathSummary(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1300]
+        self.assertIn(' → ', snippet,
+                      "_pathSummary must use ' → ' (Unicode right-arrow with spaces) as separator")
+
+    # ------------------------------------------------------------------
+    # F6-RW-7: Two-part progress bar
+    # ------------------------------------------------------------------
+
+    def test_f6rw7_progress_row_css(self):
+        self.assertIn('.progress-row', self.src, ".progress-row CSS class must be defined")
+
+    def test_f6rw7_progress_track_css(self):
+        self.assertIn('.progress-track', self.src, ".progress-track CSS class must be defined")
+
+    def test_f6rw7_progress_fill_css(self):
+        self.assertIn('.progress-fill', self.src, ".progress-fill CSS class must be defined")
+
+    def test_f6rw7_progress_label_css(self):
+        self.assertIn('.progress-label', self.src, ".progress-label CSS class must be defined")
+
+    def test_f6rw7_progress_readiness_variant_css(self):
+        self.assertIn('.progress-readiness', self.src,
+                      ".progress-readiness CSS variant must be defined")
+
+    def test_f6rw7_progress_execution_variant_css(self):
+        self.assertIn('.progress-execution', self.src,
+                      ".progress-execution CSS variant must be defined")
+
+    def test_f6rw7_render_progress_label_readiness(self):
+        idx = self.src.find('function _renderProgress(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1200]
+        self.assertIn("'Readiness'", snippet,
+                      "_renderProgress must use label 'Readiness' for pre-execution phase")
+
+    def test_f6rw7_render_progress_label_execution(self):
+        idx = self.src.find('function _renderProgress(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1200]
+        self.assertIn("'Execution'", snippet,
+                      "_renderProgress must use label 'Execution' for task-completion phase")
+
+    def test_f6rw7_execution_stats_excludes_canceled(self):
+        idx = self.src.find('function _executionStats(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 500]
+        self.assertIn("'canceled'", snippet,
+                      "_executionStats must explicitly skip 'canceled' tasks")
+
+    def test_f6rw7_pre_exec_steps_constant(self):
+        self.assertIn('PRE_EXEC_STEPS', self.src,
+                      "PRE_EXEC_STEPS constant must be defined (Interview/Specify/Plan/Detail = 4)")
+
+    def test_f6rw7_pre_exec_steps_value_4(self):
+        self.assertIn('PRE_EXEC_STEPS = 4', self.src,
+                      "PRE_EXEC_STEPS must equal 4 (Interview, Specify, Plan, Detail)")
+
+    def test_f6rw7_label_appended_before_track(self):
+        # _renderProgress appends label before track (percentage above the bar)
+        idx = self.src.find('function _renderProgress(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1200]
+        lbl_append_pos = snippet.find('row.appendChild(lbl)')
+        track_append_pos = snippet.find('row.appendChild(track)')
+        self.assertNotEqual(lbl_append_pos, -1, "row.appendChild(lbl) not found in _renderProgress")
+        self.assertNotEqual(track_append_pos, -1, "row.appendChild(track) not found in _renderProgress")
+        self.assertLess(lbl_append_pos, track_append_pos,
+                        "label (lbl) must be appended BEFORE track in _renderProgress (percentage above bar)")
+
+    # ------------------------------------------------------------------
+    # F6-RW-8: Footer uses Created/Last Update; no task-count push
+    # ------------------------------------------------------------------
+
+    def test_f6rw8_footer_created_label(self):
+        idx = self.src.find('function _renderWorkCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5200]
+        self.assertIn("'Created: '", snippet,
+                      "_renderWorkCard footer must use 'Created: ' label")
+
+    def test_f6rw8_footer_last_update_label(self):
+        idx = self.src.find('function _renderWorkCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5200]
+        self.assertIn("'Last Update: '", snippet,
+                      "_renderWorkCard footer must use 'Last Update: ' label")
+
+    def test_f6rw8_footer_created_uses_fmt(self):
+        # _fmtLocalDateTime must wrap work.created before push
+        idx = self.src.find('function _renderWorkCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5200]
+        self.assertIn('_fmtLocalDateTime(work.created)', snippet,
+                      "_fmtLocalDateTime must be called on work.created in _renderWorkCard")
+
+    def test_f6rw8_footer_updated_uses_fmt(self):
+        # _fmtLocalDateTime must wrap work.updated before push
+        idx = self.src.find('function _renderWorkCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5200]
+        self.assertIn('_fmtLocalDateTime(work.updated)', snippet,
+                      "_fmtLocalDateTime must be called on work.updated in _renderWorkCard")
+
+    def test_f6rw8_no_task_count_in_meta_footer(self):
+        # The meta-footer block must NOT push a ' task'/' tasks' count string
+        # (task count moved to the path-summary line)
+        idx = self.src.find('function _renderWorkCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5200]
+        # Isolate the var metaParts block (from its declaration to end of function region)
+        meta_start = snippet.rfind("var metaParts")
+        self.assertNotEqual(meta_start, -1, "var metaParts declaration not found in _renderWorkCard")
+        meta_block = snippet[meta_start:]
+        # The only metaParts.push calls must be 'Created: ' and 'Last Update: '
+        self.assertNotIn("' task'", meta_block,
+                         "meta-footer must not push ' task' count (task count moved to path line)")
+        self.assertNotIn("' tasks'", meta_block,
+                         "meta-footer must not push ' tasks' count (task count moved to path line)")
+
+    # ------------------------------------------------------------------
+    # F6-RW-9: KB + CLI date formatting via _fmtLocalDateTime
+    # ------------------------------------------------------------------
+
+    def test_f6rw9_kb_last_summary_date_wrapped(self):
+        # _renderKbCard must call _fmtLocalDateTime(kbState.last_summary_date)
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 2300]
+        self.assertIn('_fmtLocalDateTime(kbState.last_summary_date)', snippet,
+                      "_renderKbCard must call _fmtLocalDateTime(kbState.last_summary_date)")
+
+    def test_f6rw9_l0_installed_at_wrapped(self):
+        # _renderLevel0Card must call _fmtLocalDateTime(tool.installed_at)
+        idx = self.src.find('function _renderLevel0Card(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1500]
+        self.assertIn('_fmtLocalDateTime(tool.installed_at)', snippet,
+                      "_renderLevel0Card must call _fmtLocalDateTime(tool.installed_at)")
 
 
 if __name__ == "__main__":

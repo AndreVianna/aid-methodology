@@ -26,5 +26,12 @@
 | 005 | task-005 | IMPLEMENT | delivery-001 | In Progress | -- | -- | Cut the reader over to typed state |
 | 006 | task-006 | IMPLEMENT | delivery-002 | Pending | -- | -- | Implement the Python thin server |
 
+## Lifecycle History
+
+| Date | Phase Transition / Gate | Grade | Notes |
+|------|-------------------------|-------|-------|
+| 2026-05-01 | Work created | — | Initial triage approved |
+| 2026-05-10 | Specify -> Execute | A | Spec gate passed |
+
 ## Cross-phase Q&A (Pending)
 

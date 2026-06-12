@@ -195,6 +195,7 @@ class WorkModel:
     phase: Optional[Phase] = None
     active_skill: Optional[str] = None
     updated: Optional[str] = None   # ISO-8601 or None
+    created: Optional[str] = None   # date string from ## Lifecycle History "Work created" row
     pause_reason: Optional[str] = None  # present only when lifecycle=Paused-Awaiting-Input
     block_reason: Optional[str] = None  # present only when lifecycle=Blocked
     block_artifact: Optional[str] = None  # e.g. "IMPEDIMENT-task-NNN.md"

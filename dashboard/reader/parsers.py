@@ -60,6 +60,7 @@ class ParsedWork:
         "recipe",
         "features",
         "deliverables",
+        "created",
     )
 
     def __init__(self) -> None:
@@ -80,6 +81,7 @@ class ParsedWork:
         self.recipe: Optional[str] = None
         self.features: list[FeatureRef] = []
         self.deliverables: list[DeliverableRef] = []
+        self.created: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -663,13 +665,14 @@ def parse_execution_graph(plan_path: Path) -> tuple[dict, int]:
 # ---------------------------------------------------------------------------
 
 # Section header patterns (anchored, case-insensitive for resilience)
-_RE_PIPELINE_STATUS = re.compile(r"^##\s+Pipeline Status\s*$", re.IGNORECASE)
-_RE_TASKS_STATUS    = re.compile(r"^##\s+Tasks Status\s*$",    re.IGNORECASE)
-_RE_CROSSPHASE_QA   = re.compile(r"^##\s+Cross-phase Q&A",     re.IGNORECASE)
-_RE_TRIAGE          = re.compile(r"^##\s+Triage\s*$",          re.IGNORECASE)
-_RE_FEATURES_STATUS = re.compile(r"^##\s+Features Status\s*$", re.IGNORECASE)
-_RE_PLAN_DELIVERIES = re.compile(r"^##\s+Plan\s*/\s*Deliveries\s*$", re.IGNORECASE)
-_RE_SECTION         = re.compile(r"^##\s+\S")  # any ## section (to end a prior section)
+_RE_PIPELINE_STATUS    = re.compile(r"^##\s+Pipeline Status\s*$",    re.IGNORECASE)
+_RE_TASKS_STATUS       = re.compile(r"^##\s+Tasks Status\s*$",       re.IGNORECASE)
+_RE_CROSSPHASE_QA      = re.compile(r"^##\s+Cross-phase Q&A",        re.IGNORECASE)
+_RE_TRIAGE             = re.compile(r"^##\s+Triage\s*$",             re.IGNORECASE)
+_RE_FEATURES_STATUS    = re.compile(r"^##\s+Features Status\s*$",    re.IGNORECASE)
+_RE_PLAN_DELIVERIES    = re.compile(r"^##\s+Plan\s*/\s*Deliveries\s*$", re.IGNORECASE)
+_RE_LIFECYCLE_HISTORY  = re.compile(r"^##\s+Lifecycle History\s*$",  re.IGNORECASE)
+_RE_SECTION            = re.compile(r"^##\s+\S")  # any ## section (to end a prior section)
 
 # Triage field patterns
 _RE_TRIAGE_PATH     = re.compile(r"^\s*-\s*\*\*Path:\*\*\s*(.+)", re.IGNORECASE)
@@ -731,6 +734,8 @@ def parse_state_md(
     in_triage = False
     in_features = False
     in_deliveries = False
+    in_lifecycle_history = False
+    lifecycle_history_header_seen = False
     tasks_header_seen = False
     features_header_seen = False
     deliveries_header_seen = False
@@ -754,13 +759,14 @@ def parse_state_md(
 
     def _reset_sections() -> None:
         nonlocal in_pipeline_status, in_tasks, in_crossphase
-        nonlocal in_triage, in_features, in_deliveries
+        nonlocal in_triage, in_features, in_deliveries, in_lifecycle_history
         in_pipeline_status = False
         in_tasks = False
         in_crossphase = False
         in_triage = False
         in_features = False
         in_deliveries = False
+        in_lifecycle_history = False
 
     for line in lines:
         # Detect section boundaries (## headers)
@@ -801,6 +807,13 @@ def parse_state_md(
             _reset_sections()
             in_deliveries = True
             deliveries_header_seen = False
+            continue
+
+        if _RE_LIFECYCLE_HISTORY.match(line):
+            _flush_q()
+            _reset_sections()
+            in_lifecycle_history = True
+            lifecycle_history_header_seen = False
             continue
 
         # Any other ## section resets active section
@@ -866,6 +879,12 @@ def parse_state_md(
             _parse_deliveries_line(line, pw, deliveries_header_seen)
             if line.strip().startswith("|") and not _RE_TABLE_SEP.match(line.strip()):
                 deliveries_header_seen = True
+            continue
+
+        if in_lifecycle_history:
+            _parse_lifecycle_history_line(line, pw, lifecycle_history_header_seen)
+            if line.strip().startswith("|") and not _RE_TABLE_SEP.match(line.strip()):
+                lifecycle_history_header_seen = True
             continue
 
     # Flush any trailing Q block
@@ -1122,6 +1141,42 @@ def _parse_deliveries_line(line: str, pw: ParsedWork, header_seen: bool) -> None
             name = short
 
     pw.deliverables.append(DeliverableRef(number=number, name=name, task_count=task_count))
+
+
+def _parse_lifecycle_history_line(line: str, pw: ParsedWork, header_seen: bool) -> None:
+    """Parse one line from the ## Lifecycle History table for the 'created' date.
+
+    Table columns: Date | Phase Transition / Gate | Grade | Notes  (typical shape)
+    The Date column is index 0; the Phase Transition / Gate column is index 1.
+
+    Extracts pw.created = the Date cell (first column, trimmed) of the FIRST row
+    whose second column equals "Work created" (case-insensitive, trimmed).
+    Once pw.created is set, subsequent rows are not re-evaluated (take first match).
+    Header row and separator rows are skipped.
+    """
+    stripped = line.strip()
+    if not stripped.startswith("|"):
+        return
+    if _RE_TABLE_SEP.match(stripped):
+        return
+
+    cols = [c.strip() for c in stripped.strip("|").split("|")]
+    if len(cols) < 2:
+        return
+
+    # Skip header row (first column is "Date" or blank) before first data row seen
+    if not header_seen:
+        return
+
+    # Already found created date; skip remaining rows
+    if pw.created is not None:
+        return
+
+    date_val = cols[0].strip()
+    gate_val = cols[1].strip()
+
+    if gate_val.lower() == "work created" and date_val:
+        pw.created = date_val
 
 
 # ---------------------------------------------------------------------------
