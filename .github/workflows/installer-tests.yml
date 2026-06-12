@@ -21,6 +21,12 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same branch cancels the in-progress run, so a hung platform
+# step can never block the branch (or burn the 6h default job timeout).
+concurrency:
+  group: installer-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   installer:
     name: installer/CLI (${{ matrix.os }})
@@ -33,6 +39,7 @@ jobs:
           - os: windows-latest
             mode: native-ps1
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 25   # hard cap: a hung spawn fails fast instead of the 6h default
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
