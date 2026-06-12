@@ -143,7 +143,38 @@ done
 case "\$1" in
     status)
         if [[ "\$2" == "--json" ]]; then
-            printf '{"Self":{"DNSName":"%s.","HostName":"%s"}}\n' "\$FQDN" "\${FQDN%%.*}"
+            # dnsname-absent: emit a valid Self block with NO DNSName field so the
+            # status --json path yields nothing and the serve-status fallback is exercised.
+            if [[ "\${BEHAVIOUR}" == "dnsname-absent" ]]; then
+                printf '{\n'
+                printf '  "Self": {\n'
+                printf '    "HostName": "%s",\n' "\${FQDN%%.*}"
+                printf '    "UserID": 12345\n'
+                printf '  }\n'
+                printf '}\n'
+                exit 0
+            fi
+            # Real tailscale emits PRETTY-PRINTED JSON (whitespace after colons) and includes
+            # peers unless --peers=false. Reproduce both so the launcher's Self.DNSName parse is
+            # exercised against the real format (regression guard for the no-space-grep bug that
+            # made the URL fall back to the corporate hostname domain).
+            _peers_off=0
+            for _a in "\$@"; do [[ "\$_a" == "--peers=false" ]] && _peers_off=1; done
+            printf '{\n'
+            printf '  "Self": {\n'
+            printf '    "HostName": "%s",\n' "\${FQDN%%.*}"
+            printf '    "DNSName": "%s.",\n' "\$FQDN"
+            printf '    "UserID": 12345\n'
+            printf '  }'
+            if [[ "\$_peers_off" -eq 0 ]]; then
+                printf ',\n  "Peer": {\n'
+                printf '    "nodekey:deadbeef": {\n'
+                printf '      "HostName": "peerbox",\n'
+                printf '      "DNSName": "peerbox.tailpeer99.ts.net."\n'
+                printf '    }\n'
+                printf '  }'
+            fi
+            printf '\n}\n'
             exit 0
         fi
         if [[ "\${BEHAVIOUR}" == "not-logged-in" ]]; then
@@ -157,6 +188,23 @@ case "\$1" in
         if [[ "\${BEHAVIOUR}" == "serve-fail" ]]; then
             echo "stub: tailscale serve failed" >&2
             exit 1
+        fi
+        # dnsname-absent: serve --bg <port> succeeds; 'serve status --json' returns a
+        # realistic pretty-printed serve-status JSON containing a *.ts.net host so the
+        # fallback branch resolves the FQDN from that output.
+        if [[ "\${BEHAVIOUR}" == "dnsname-absent" ]]; then
+            if [[ "\$2" == "status" && "\$3" == "--json" ]]; then
+                printf '{\n'
+                printf '  "Web": {\n'
+                printf '    "https://%s:443": {\n' "\$FQDN"
+                printf '      "Handlers": {}\n'
+                printf '    }\n'
+                printf '  }\n'
+                printf '}\n'
+                exit 0
+            fi
+            # serve --bg <port> succeeds.
+            exit 0
         fi
         # logged-in: serve --bg <port> and serve --bg --https=443 off both succeed.
         exit 0
@@ -223,10 +271,24 @@ assert_output_contains "$OUT_DC" "tailscale-serve:${PORT1}" \
     "T-1: handle line 1 on stdout (tailscale-serve:<port>)"
 assert_output_contains "$OUT_DC" "https://" \
     "T-1: https:// URL on stdout (line 2)"
+# Wrong-domain regression guard: the URL MUST be the tailnet MagicDNS FQDN, not a
+# hostname/corporate-domain fallback. (Bug: a no-space DNSName grep on pretty-printed
+# JSON fell through to 'hostname -f' -> host.corp.example -> a URL that does not work.)
+assert_output_contains "$OUT_DC" "https://srvtest01.tail99999.ts.net/" \
+    "T-1: stdout URL is the tailnet MagicDNS FQDN (not the hostname/corporate domain)"
 
 # FR18: ACL-grant guidance on stderr.
 assert_output_contains "$ERR_DC" "tailnet policy file" \
     "T-1: FR18 -- tailnet policy file guidance on stderr"
+# The same wrong-domain bug leaked into the ACL grant: src was derived from the FQDN
+# domain. src must be an identity placeholder; dst the host short-name; neither may be a
+# DNS domain.
+assert_output_contains "$ERR_DC" '"src":["<you@example.com>"]' \
+    "T-1: ACL grant src is an identity placeholder (never a tailnet/corporate domain)"
+assert_output_contains "$ERR_DC" '"dst":["srvtest01"]' \
+    "T-1: ACL grant dst is THIS host's tailnet short-name"
+assert_output_not_contains "$ERR_DC" '"src":["tail99999.ts.net"]' \
+    "T-1: ACL grant src does not leak the tailnet domain as a selector"
 assert_output_contains "$ERR_DC" "https://login.tailscale.com/admin/acls/file" \
     "T-1: FR18 -- policy URL on stderr"
 assert_output_contains "$ERR_DC" "deny-by-default" \
@@ -589,6 +651,39 @@ fi
 # Bash side for T-8: verify Bash expose clear-fail exit 10 (already verified in T-3;
 # explicitly name it as T-8 Bash reference so a missing Bash regression shows here too).
 assert_exit_eq "$_rc3_absent" 10 "T-8: Bash expose no-mechanism -> exit 10 (T-3 Bash side)"
+
+# ---------------------------------------------------------------------------
+# T-1b: serve-status fallback branch: when status --json yields no DNSName, the
+#       expose function falls back to 'tailscale serve status --json' to resolve
+#       the FQDN. The dnsname-absent stub exercises this branch.
+# ---------------------------------------------------------------------------
+echo "--- T-1b: serve-status fallback resolves FQDN when DNSName absent from status --json ---"
+PORT1B="$(pick_free_port)"
+STUB1B="$(mktemp -d "${TMP}/stub1b.XXXXXX")"
+make_tailscale_stub "$STUB1B" "dnsname-absent" "fallback01.tail12345.ts.net"
+
+run_fn_with_stub "$STUB1B" _aid_remote_expose "$PORT1B"
+
+assert_exit_eq "$RC_DC" 0 "T-1b: expose exit 0 when serve-status fallback used"
+assert_output_contains "$OUT_DC" "tailscale-serve:${PORT1B}" \
+    "T-1b: handle line 1 on stdout (tailscale-serve:<port>)"
+assert_output_contains "$OUT_DC" "https://fallback01.tail12345.ts.net/" \
+    "T-1b: stdout URL resolved from serve-status fallback (*.ts.net FQDN)"
+
+# Confirm the serve-status fallback was actually invoked (stub recorded 'serve status --json').
+_t1b_calls="$(cat "${STUB1B}/ts_calls.log" 2>/dev/null || echo "")"
+if echo "$_t1b_calls" | grep -q "serve status --json"; then
+    pass "T-1b: stub recorded 'tailscale serve status --json' (fallback branch exercised)"
+else
+    fail "T-1b: 'tailscale serve status --json' not in stub log -- fallback not exercised. Calls: ${_t1b_calls}"
+fi
+
+# SEC-1: funnel must never be invoked.
+if grep -q "funnel" "${STUB1B}/ts_calls.log" 2>/dev/null; then
+    fail "T-1b: SEC-1 VIOLATED -- funnel was called!"
+else
+    pass "T-1b: SEC-1 confirmed -- funnel never called in serve-status fallback path"
+fi
 
 # ---------------------------------------------------------------------------
 # T-9: ASCII-only guard -- bin/aid + bin/aid.ps1 (including the new helpers +

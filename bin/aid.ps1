@@ -433,42 +433,75 @@ function script:Invoke-AidRemoteExpose {
         return 12
     }
 
-    # Step 4: Resolve the private URL from tailscale status --json (Self.DNSName).
+    # Step 4: Resolve the private URL from tailscale's Self.DNSName (the MagicDNS name).
+    # NOTE: 'tailscale status --json' is PRETTY-PRINTED, so the regex tolerates whitespace
+    # after the colon; '--peers=false' isolates Self so a peer DNSName is never picked up.
+    # NEVER fall back to the machine hostname/FQDN here -- that is the local/corporate DNS
+    # domain, not the tailnet, and would produce a non-working URL + wrong ACL src.
     $tsJson   = ''
     $nodeFqdn = ''
-    try { $tsJson = (& tailscale status --json 2>&1) -join "`n" } catch { $tsJson = '' }
+    try { $tsJson = (& tailscale status --json --peers=false 2>&1) -join "`n" } catch { $tsJson = '' }
+    if ([string]::IsNullOrEmpty($tsJson)) {
+        try { $tsJson = (& tailscale status --json 2>&1) -join "`n" } catch { $tsJson = '' }
+    }
     if (-not [string]::IsNullOrEmpty($tsJson)) {
-        if ($tsJson -match '"DNSName"\s*:\s*"([^"]*)"') {
+        # Scope the parse to the Self object so a peer DNSName can never be selected
+        # regardless of JSON ordering. Find "Self" index, then "Peer" index after it;
+        # use the substring between them (or from "Self" to end if no "Peer" present).
+        $selfIdx = $tsJson.IndexOf('"Self"')
+        $selfBlock = $tsJson
+        if ($selfIdx -ge 0) {
+            $peerIdx = $tsJson.IndexOf('"Peer"', $selfIdx + 1)
+            if ($peerIdx -gt $selfIdx) {
+                $selfBlock = $tsJson.Substring($selfIdx, $peerIdx - $selfIdx)
+            } else {
+                $selfBlock = $tsJson.Substring($selfIdx)
+            }
+        }
+        if ($selfBlock -match '"DNSName"\s*:\s*"([^"]*)"') {
             $nodeFqdn = $matches[1] -replace '\.$', ''
         }
     }
     if ([string]::IsNullOrEmpty($nodeFqdn)) {
-        # Fallback: try tailscale serve status --json for the HTTPS URL directly.
+        # Defensive fallback: a *.ts.net host reported by 'tailscale serve status --json'.
         $serveJson = ''
         try { $serveJson = (& tailscale serve status --json 2>&1) -join "`n" } catch { $serveJson = '' }
         if (-not [string]::IsNullOrEmpty($serveJson)) {
-            if ($serveJson -match '"([a-z0-9-]+\.[a-z0-9.-]+\.ts\.net)"') {
+            if ($serveJson -match '([a-z0-9-]+(\.[a-z0-9-]+)*\.ts\.net)') {
                 $nodeFqdn = $matches[1]
             }
         }
     }
-    if ([string]::IsNullOrEmpty($nodeFqdn)) {
-        try { $nodeFqdn = (& hostname 2>&1) | Select-Object -First 1 } catch { $nodeFqdn = 'unknown-host' }
-        if ([string]::IsNullOrEmpty($nodeFqdn)) { $nodeFqdn = 'unknown-host' }
+    if (-not [string]::IsNullOrEmpty($nodeFqdn)) {
+        $privateUrl = "https://${nodeFqdn}/"
+    } else {
+        # Could not resolve the tailnet MagicDNS name. Do NOT fabricate a public-domain URL.
+        $privateUrl = "(unresolved: run 'tailscale status' to find this host's .ts.net name)"
     }
-    $privateUrl = "https://${nodeFqdn}/"
 
-    # Resolve the node identity for the ACL grant guidance.
-    $nodeIdentity = ''
-    if (-not [string]::IsNullOrEmpty($tsJson)) {
-        if ($nodeFqdn -match '^[^.]+\.(.+)$') {
-            $nodeIdentity = $matches[1]
+    # Resolve display values for the ACL-grant guidance. The grant *src* is an identity only
+    # you can choose (login/group/tag); a DNS domain is not a valid selector, so AID shows a
+    # placeholder. The *dst* is THIS host's tailnet short-name.
+    $nodeShort = ($nodeFqdn -split '\.')[0]
+    if ([string]::IsNullOrEmpty($nodeShort) -and -not [string]::IsNullOrEmpty($tsJson)) {
+        # Same Self-scoping applied to HostName extraction.
+        $selfIdx2 = $tsJson.IndexOf('"Self"')
+        $selfBlockHn = $tsJson
+        if ($selfIdx2 -ge 0) {
+            $peerIdx2 = $tsJson.IndexOf('"Peer"', $selfIdx2 + 1)
+            if ($peerIdx2 -gt $selfIdx2) {
+                $selfBlockHn = $tsJson.Substring($selfIdx2, $peerIdx2 - $selfIdx2)
+            } else {
+                $selfBlockHn = $tsJson.Substring($selfIdx2)
+            }
+        }
+        if ($selfBlockHn -match '"HostName"\s*:\s*"([^"]*)"') {
+            $nodeShort = $matches[1].ToLower()
         }
     }
-    $nodeShort = ($nodeFqdn -split '\.')[0]
 
     # Step 5: Print FR18 step-by-step ACL-grant guidance to STDERR (informational only).
-    $srcPlaceholder = if ($nodeIdentity) { $nodeIdentity } else { '<you@example.com>' }
+    $srcPlaceholder = '<you@example.com>'
     $dstPlaceholder = if ($nodeShort)    { $nodeShort }    else { '<this-host>' }
     $urlPlaceholder = $privateUrl
 
@@ -849,7 +882,11 @@ function script:Invoke-DcStart {
         [System.IO.File]::WriteAllText($pidFile, $pidJson2)
         # Step 11 (remote success): print local URL + remote URL.
         Write-Host "Dashboard ($Runtime) running at http://127.0.0.1:${Port} -- stop with: aid dashboard stop"
-        Write-Host "Remote (private): $exposeUrl"
+        if ($exposeUrl -like 'https://*') {
+            Write-Host "Remote (private): $exposeUrl"
+        } else {
+            Write-Host "Remote exposure is UP (tailnet-private), but the .ts.net URL could not be auto-detected -- run 'tailscale status' on this host to find it."
+        }
         script:Exit-Aid 0
     }
 

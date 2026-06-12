@@ -581,46 +581,72 @@ _aid_remote_expose() {
         return 12
     fi
 
-    # Step 4: Resolve the private URL from tailscale status --json (Self.DNSName).
+    # Step 4: Resolve the private URL from tailscale's Self.DNSName (the MagicDNS name).
+    # NOTE: 'tailscale status --json' is PRETTY-PRINTED ("DNSName": "host.tailnet.ts.net."),
+    # so the match MUST tolerate whitespace after the colon. '--peers=false' isolates Self so
+    # a peer's DNSName is never picked up by mistake. We must NEVER fall back to the machine's
+    # own hostname/FQDN for this URL: that resolves to the local/corporate DNS domain (e.g.
+    # host.example.com), not the tailnet -- producing a URL that does not work and leaking the
+    # wrong domain into the ACL guidance below.
     local ts_json node_fqdn private_url
-    ts_json="$(tailscale status --json 2>/dev/null)" || ts_json=""
+    ts_json="$(tailscale status --json --peers=false 2>/dev/null)" || ts_json=""
+    if [[ -z "$ts_json" ]]; then
+        ts_json="$(tailscale status --json 2>/dev/null)" || ts_json=""
+    fi
     node_fqdn=""
     if [[ -n "$ts_json" ]]; then
-        # Extract Self.DNSName: "DNSName":"srvrivind01.tail74e815.ts.net."
-        # Strip the trailing dot if present.
-        node_fqdn="$(echo "$ts_json" | grep -o '"DNSName":"[^"]*"' | head -1 | sed 's/"DNSName":"//;s/"//' | sed 's/\.$//')"
+        # Scope the parse to the Self object so a peer DNSName can never be selected
+        # regardless of JSON ordering. sed -n prints from "Self": to the first "Peer":
+        # line (exclusive); when --peers=false was used there is no "Peer" line so the
+        # range runs to EOF -- which is Self-only, the correct and safe result.
+        local self_block
+        self_block="$(printf '%s' "$ts_json" \
+            | sed -n '/"Self"[[:space:]]*:/,/"Peer"[[:space:]]*:/p')"
+        [[ -z "$self_block" ]] && self_block="$ts_json"
+        node_fqdn="$(printf '%s' "$self_block" \
+            | grep -oE '"DNSName"[[:space:]]*:[[:space:]]*"[^"]*"' \
+            | head -1 \
+            | sed -E 's/.*"DNSName"[[:space:]]*:[[:space:]]*"//; s/"$//; s/\.$//')"
     fi
     if [[ -z "$node_fqdn" ]]; then
-        # Fallback: try tailscale serve status --json for the HTTPS URL directly.
+        # Defensive fallback: a *.ts.net host reported by 'tailscale serve status --json'.
         local serve_json
         serve_json="$(tailscale serve status --json 2>/dev/null)" || serve_json=""
         if [[ -n "$serve_json" ]]; then
-            # Extract the URL from WebConfigs or just use hostname from machine name.
-            node_fqdn="$(echo "$serve_json" | grep -o '"[a-z0-9-]*\.[a-z0-9.-]*\.ts\.net"' | head -1 | tr -d '"')"
+            node_fqdn="$(printf '%s' "$serve_json" \
+                | grep -oE '[a-z0-9-]+(\.[a-z0-9-]+)*\.ts\.net' | head -1)"
         fi
     fi
-    if [[ -z "$node_fqdn" ]]; then
-        node_fqdn="$(hostname -f 2>/dev/null || hostname 2>/dev/null || echo "unknown-host")"
+    if [[ -n "$node_fqdn" ]]; then
+        private_url="https://${node_fqdn}/"
+    else
+        # Could not resolve the tailnet MagicDNS name. Do NOT fabricate a public-domain URL.
+        private_url="(unresolved: run 'tailscale status' to find this host's .ts.net name)"
     fi
-    private_url="https://${node_fqdn}/"
 
-    # Resolve the node identity for the ACL grant guidance.
-    local node_identity
-    node_identity=""
-    if [[ -n "$ts_json" ]]; then
-        # Extract Self.UserID login name if available -- not always in status JSON.
-        # Use LoginName from the Users map if Self.UserID is present.
-        # Simpler: pull the tailnet domain from DNSName.
-        local tailnet_domain
-        tailnet_domain="$(echo "$node_fqdn" | sed 's/^[^.]*\.//')"
-        node_identity="${tailnet_domain}"
-    fi
+    # Resolve display values for the ACL-grant guidance. The grant *src* (who may reach the
+    # host) is an identity only you can choose -- your login, a group:, or a tag: -- and a DNS
+    # domain is NOT a valid grant selector, so AID shows a placeholder rather than guessing it.
+    # The *dst* is correctly THIS host's tailnet short-name.
     local node_short
-    node_short="$(echo "$node_fqdn" | cut -d. -f1)"
+    node_short="$(printf '%s' "$node_fqdn" | cut -d. -f1)"
+    if [[ -z "$node_short" && -n "$ts_json" ]]; then
+        # Same Self-scoping applied to HostName extraction to prevent a peer hostname
+        # from being selected when the Self-first ordering assumption does not hold.
+        local self_block_hn
+        self_block_hn="$(printf '%s' "$ts_json" \
+            | sed -n '/"Self"[[:space:]]*:/,/"Peer"[[:space:]]*:/p')"
+        [[ -z "$self_block_hn" ]] && self_block_hn="$ts_json"
+        node_short="$(printf '%s' "$self_block_hn" \
+            | grep -oE '"HostName"[[:space:]]*:[[:space:]]*"[^"]*"' \
+            | head -1 \
+            | sed -E 's/.*"HostName"[[:space:]]*:[[:space:]]*"//; s/"$//' \
+            | tr 'A-Z' 'a-z')"
+    fi
 
     # Step 5: Print FR18 step-by-step ACL-grant guidance to STDERR (informational only).
     local src_placeholder dst_placeholder url_placeholder
-    src_placeholder="${node_identity:-<you@example.com>}"
+    src_placeholder="<you@example.com>"
     dst_placeholder="${node_short:-<this-host>}"
     url_placeholder="${private_url}"
 
@@ -953,7 +979,11 @@ EOF
 EOF
         # Step 11 (remote success): print local URL + remote URL.
         echo "Dashboard (${runtime}) running at http://127.0.0.1:${port} -- stop with: aid dashboard stop"
-        echo "Remote (private): ${expose_url}"
+        if [[ "${expose_url}" == https://* ]]; then
+            echo "Remote (private): ${expose_url}"
+        else
+            echo "Remote exposure is UP (tailnet-private), but the .ts.net URL could not be auto-detected -- run 'tailscale status' on this host to find it."
+        fi
         exit 0
     fi
 
