@@ -579,6 +579,12 @@ footer {
   flex-shrink: 0;
 }
 .lane-panel-summary.open .lane-panel-chevron { transform: rotate(90deg); }
+.lane-panel-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
 .lane-panel-body {
   display: none;
   padding: 0.5rem 0 0.25rem 0;
@@ -851,7 +857,7 @@ footer {
   // ---------------------------------------------------------------------------
   // Constants
   // ---------------------------------------------------------------------------
-  var EXPECTED_SCHEMA_VERSION = 2;
+  var EXPECTED_SCHEMA_VERSION = 3;
   var LS_KEY_POLL_MS = 'aid-dashboard-poll-ms';
   var PHASE_ORDER = ['Interview', 'Specify', 'Plan', 'Detail', 'Execute', 'Deploy', 'Monitor'];
 
@@ -871,7 +877,7 @@ footer {
     objectiveOpen: false,   // objective "Show more" expanded
     featuresOpen: false,    // features disclosure open
     deliveries: {},         // per-delivery open state keyed by "d"+N (e.g. "d1")
-    lanes: {}               // per-lane open state keyed by raw wave string (e.g. "delivery-002-wave-2")
+    lanes: {}               // per-lane open state keyed by delivery-scoped key: "d<delivery>-lane<lane>" (e.g. "d1-lane2") or "d<delivery>-unseq" for unsequenced; never collides across deliveries
   };
 
   // ---------------------------------------------------------------------------
@@ -1139,10 +1145,23 @@ footer {
       }
     }
 
-    // Title (fall back to work_id if absent)
+    // Title: use the real authored Name; when absent show a labelled de-slug fallback (never raw work_id as if it were the name)
     var titleEl = document.getElementById('overview-title');
     if (titleEl) {
-      titleEl.textContent = work.title || work.work_id;
+      if (work.title) {
+        titleEl.textContent = work.title;
+        titleEl.style.opacity = '';
+        titleEl.title = '';
+      } else {
+        // PF-7: de-slug and title-case the work_id as a labelled fallback
+        var deSlug = (work.work_id || '')
+          .replace(/^work-\d+-/, '')        // strip "work-NNN-" prefix
+          .replace(/[-_]+/g, ' ')           // hyphens/underscores → spaces
+          .replace(/\b\w/g, function(c) { return c.toUpperCase(); }); // Title Case
+        titleEl.textContent = deSlug || work.work_id || '—';
+        titleEl.style.opacity = '0.6';
+        titleEl.title = 'Name not yet recorded (' + (work.work_id || '') + ')';
+      }
     }
 
     // Lifecycle + skill badges inline with identity
@@ -1402,22 +1421,23 @@ footer {
 
     var phase = work.phase; // may be null or "Unknown"
     if (!phase || phase === 'Unknown') {
-      var unknownPill = document.createElement('span');
-      unknownPill.className = 'badge badge-dim';
-      unknownPill.setAttribute('role', 'listitem');
-      unknownPill.textContent = 'phase unknown';
-      rail.appendChild(unknownPill);
+      // PF-4/PF-7: neutral sentinel — not a garbage "phase unknown" error badge
+      var notYetPill = document.createElement('span');
+      notYetPill.className = 'badge badge-dim';
+      notYetPill.setAttribute('role', 'listitem');
+      notYetPill.textContent = '— phase not yet recorded';
+      rail.appendChild(notYetPill);
       return;
     }
 
     var currentIdx = PHASE_ORDER.indexOf(phase);
-    // If phase not in canonical order (future/unrecognized), treat as Unknown
+    // If phase not in canonical order (future/unrecognized), treat as not-yet-recorded (PF-7 forward-compat)
     if (currentIdx === -1) {
-      var unknownPill2 = document.createElement('span');
-      unknownPill2.className = 'badge badge-dim';
-      unknownPill2.setAttribute('role', 'listitem');
-      unknownPill2.textContent = 'phase unknown';
-      rail.appendChild(unknownPill2);
+      var notYetPill2 = document.createElement('span');
+      notYetPill2.className = 'badge badge-dim';
+      notYetPill2.setAttribute('role', 'listitem');
+      notYetPill2.textContent = '— phase not yet recorded';
+      rail.appendChild(notYetPill2);
       return;
     }
 
@@ -1447,14 +1467,6 @@ footer {
   // ---------------------------------------------------------------------------
   // Task section: Delivery > Lane > Task hierarchy (UI-3)
   // ---------------------------------------------------------------------------
-
-  // Parse delivery# and lane# from wave string "delivery-NNN-wave-M"
-  function parseWave(wave) {
-    if (!wave) return null;
-    var m = String(wave).match(/^delivery-0*(\d+)-wave-0*(\d+)$/);
-    if (!m) return null;
-    return { delivery: parseInt(m[1], 10), lane: parseInt(m[2], 10) };
-  }
 
   // Parse integer task number from task_id "task-008" -> 8
   function parseTaskNumber(taskId) {
@@ -1520,28 +1532,36 @@ footer {
   }
 
   function renderTasksFull(container, tasks) {
-    // Group by delivery#, in ascending order
-    var deliveryOrder = [];
-    var deliveryMap = {};
+    // Group by task.delivery (real integer from reader; null -> "unsequenced" bucket)
+    // Never uses parseWave() or the invented delivery-NNN-wave-M string.
+    var deliveryOrder = [];   // integer delivery numbers, ascending (null last)
+    var deliveryMap = {};     // dKey -> task[]  where dKey is integer or null
 
     for (var i = 0; i < tasks.length; i++) {
       var t = tasks[i];
-      var parsed = parseWave(t.wave);
-      var dKey = parsed ? parsed.delivery : 0;
-      if (!deliveryMap[dKey]) {
-        deliveryMap[dKey] = [];
-        deliveryOrder.push(dKey);
+      // task.delivery is an integer (from STATE Wave delivery-NNN) or null
+      var dNum = (t.delivery != null) ? t.delivery : null;
+      var dMapKey = (dNum != null) ? dNum : '__unseq__';
+      if (!deliveryMap[dMapKey]) {
+        deliveryMap[dMapKey] = [];
+        deliveryOrder.push(dMapKey);
       }
-      deliveryMap[dKey].push(t);
+      deliveryMap[dMapKey].push(t);
     }
-    // Sort delivery keys ascending
-    deliveryOrder.sort(function(a, b) { return a - b; });
+    // Sort: real delivery numbers ascending; null/unseq bucket last
+    deliveryOrder.sort(function(a, b) {
+      if (a === '__unseq__') return 1;
+      if (b === '__unseq__') return -1;
+      return a - b;
+    });
 
     for (var di = 0; di < deliveryOrder.length; di++) {
-      var dNum = deliveryOrder[di];
-      var dTasks = deliveryMap[dNum];
+      var dMapKey2 = deliveryOrder[di];
+      var dNum2 = (dMapKey2 !== '__unseq__') ? dMapKey2 : null;
+      var dTasks = deliveryMap[dMapKey2];
       var dState = getGroupState(dTasks);
-      var dStateKey = 'd' + dNum;
+      // uiState key: "d<N>" for real deliveries, "d-unseq" for unsequenced
+      var dStateKey = (dNum2 != null) ? ('d' + dNum2) : 'd-unseq';
 
       // Default open: any active task -> expanded; otherwise collapsed
       var hasActive = dTasks.some(function(t) { return t.status === 'In Progress' || t.status === 'In Review'; });
@@ -1567,7 +1587,8 @@ footer {
 
       var labelEl = document.createElement('span');
       labelEl.className = 'delivery-panel-label';
-      labelEl.textContent = 'Delivery #' + dNum;
+      // PF-5/PF-7: real integer delivery number; null -> "Unsequenced" (never "Delivery #0")
+      labelEl.textContent = (dNum2 != null) ? ('Delivery #' + dNum2) : 'Unsequenced';
       summaryBtn.appendChild(labelEl);
 
       summaryBtn.appendChild(makeGroupBadge(dState, dTasks));
@@ -1575,8 +1596,8 @@ footer {
       var body = document.createElement('div');
       body.className = 'delivery-panel-body' + (dOpen ? ' open' : '');
 
-      // Render lanes inside the body
-      renderLanes(body, dTasks, dStateKey);
+      // Render lanes inside the body (pass dNum2 for delivery-scoped uiState keys)
+      renderLanes(body, dTasks, dNum2);
 
       // Toggle handler (closure over dStateKey, summaryBtn, body)
       (function(sk, btn, bd) {
@@ -1602,38 +1623,49 @@ footer {
     }
   }
 
-  function renderLanes(container, tasks, deliveryStateKey) {
-    // Group by lane# (wave M), in ascending order
-    var laneOrder = [];
-    var laneMap = {};
+  function renderLanes(container, tasks, deliveryNum) {
+    // Group by task.lane (integer from PLAN execution graph; null -> "unsequenced" lane)
+    // deliveryNum: the integer delivery number (or null for the unsequenced delivery bucket)
+    // uiState key is delivery-scoped: "d<D>-lane<L>" or "d<D>-unseq" — never collides across deliveries
+    var laneOrder = [];  // lane integer keys (ascending), null last
+    var laneMap = {};    // lMapKey -> { num: int|null, tasks: [] }
 
     for (var i = 0; i < tasks.length; i++) {
       var t = tasks[i];
-      var parsed = parseWave(t.wave);
-      // Use raw wave string as lane key for uiState persistence
-      var lKey = (t.wave && parsed) ? String(t.wave) : '__ungrouped__';
-      var lNum = parsed ? parsed.lane : 0;
-      if (!laneMap[lKey]) {
-        laneMap[lKey] = { num: lNum, tasks: [] };
-        laneOrder.push(lKey);
+      // task.lane is an integer (from PLAN wave) or null
+      var lNum = (t.lane != null) ? t.lane : null;
+      var lMapKey = (lNum != null) ? lNum : '__unseq__';
+      if (!laneMap[lMapKey]) {
+        laneMap[lMapKey] = { num: lNum, tasks: [] };
+        laneOrder.push(lMapKey);
       }
-      laneMap[lKey].tasks.push(t);
+      laneMap[lMapKey].tasks.push(t);
     }
-    // Sort by lane number ascending
-    laneOrder.sort(function(a, b) { return laneMap[a].num - laneMap[b].num; });
+    // Sort: real lane numbers ascending; null/unseq bucket last
+    laneOrder.sort(function(a, b) {
+      if (a === '__unseq__') return 1;
+      if (b === '__unseq__') return -1;
+      return a - b;
+    });
 
     for (var li = 0; li < laneOrder.length; li++) {
-      var lRawKey = laneOrder[li];
-      var lEntry = laneMap[lRawKey];
+      var lMapKey2 = laneOrder[li];
+      var lEntry = laneMap[lMapKey2];
+      var lNum2 = lEntry.num;  // integer or null
       var lTasks = lEntry.tasks;
       var lState = getGroupState(lTasks);
 
+      // Delivery-scoped uiState key (PF-5): "d<D>-lane<L>" or "d<D>-unseq"
+      // For the unsequenced delivery bucket, deliveryNum is null -> "d-unseq-lane<L>" or "d-unseq-unseq"
+      var dPart = (deliveryNum != null) ? ('d' + deliveryNum) : 'd-unseq';
+      var lUiKey = (lNum2 != null) ? (dPart + '-lane' + lNum2) : (dPart + '-unseq');
+
       // Default open: any active task -> expanded; otherwise collapsed
       var lHasActive = lTasks.some(function(t) { return t.status === 'In Progress' || t.status === 'In Review'; });
-      if (!(lRawKey in uiState.lanes)) {
-        uiState.lanes[lRawKey] = lHasActive;
+      if (!(lUiKey in uiState.lanes)) {
+        uiState.lanes[lUiKey] = lHasActive;
       }
-      var lOpen = uiState.lanes[lRawKey];
+      var lOpen = uiState.lanes[lUiKey];
 
       var lPanel = document.createElement('div');
       lPanel.className = 'lane-panel';
@@ -1649,6 +1681,12 @@ footer {
       lChevron.textContent = '►';
       lSummary.appendChild(lChevron);
 
+      // Lane label: "Lane N" or "Unsequenced" (never "#0" lane — PF-7)
+      var lLabelEl = document.createElement('span');
+      lLabelEl.className = 'lane-panel-label';
+      lLabelEl.textContent = (lNum2 != null) ? ('Lane ' + lNum2) : 'Unsequenced';
+      lSummary.appendChild(lLabelEl);
+
       lSummary.appendChild(makeGroupBadge(lState, lTasks));
 
       var lBody = document.createElement('div');
@@ -1662,7 +1700,7 @@ footer {
       }
       lBody.appendChild(grid);
 
-      // Toggle handler
+      // Toggle handler (closure over lUiKey)
       (function(lk, btn, bd) {
         btn.onclick = function() {
           var nowOpen = bd.classList.contains('open');
@@ -1678,7 +1716,7 @@ footer {
             uiState.lanes[lk] = true;
           }
         };
-      })(lRawKey, lSummary, lBody);
+      })(lUiKey, lSummary, lBody);
 
       lPanel.appendChild(lSummary);
       lPanel.appendChild(lBody);
@@ -1721,8 +1759,8 @@ footer {
     var statusBadge = makeTaskStatusBadge(task.status);
     card.appendChild(statusBadge);
 
-    // Line 2: short name from notes (HTML-escaped); fallback to task_id
-    var shortName = (task.notes && String(task.notes).trim() && task.notes !== '--') ? task.notes : task.task_id;
+    // Line 2: short_name from task file header (PF-3); fallback to task_id when null (PF-7)
+    var shortName = (task.short_name != null && String(task.short_name).trim()) ? task.short_name : task.task_id;
     var nameEl = document.createElement('div');
     nameEl.className = 'chip-short-name';
     nameEl.textContent = shortName || '';

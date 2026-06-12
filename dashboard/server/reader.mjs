@@ -1072,7 +1072,7 @@ function parseStateText(text, workId, workDir) {
       flushQ(); resetSections();
       inPipelineStatus = true;
       // Mirror Python parsers.py:748: pipeline_status_found=True for ANY line in the section.
-      // The heading itself counts — presence of ## Pipeline Status means normalized source.
+      // The heading itself counts -- presence of ## Pipeline Status means normalized source.
       pipelineStatusFound = true;
       continue;
     }
@@ -1168,7 +1168,7 @@ function parseStateText(text, workId, workDir) {
 
       // Skip header row: pattern-based only (col[0] is "#" or blank), mirrors Python
       // parsers.py:910 which only skips when cols[0] in ("#", "").
-      // Do NOT unconditionally skip the first row — a headerless table must keep it.
+      // Do NOT unconditionally skip the first row -- a headerless table must keep it.
       if ((cols[0] === "#" || cols[0] === "") && !tasksHeaderSeen) {
         tasksHeaderSeen = true;
         continue;

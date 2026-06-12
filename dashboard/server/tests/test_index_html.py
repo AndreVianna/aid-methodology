@@ -241,10 +241,10 @@ class TestStructural(unittest.TestCase):
         for cls in ['.callout', '.callout.warn', '.callout.err']:
             self.assertIn(cls, self.src, f"CSS class {cls} missing from index.html")
 
-    # S7 -- schema_version expected constant
-    def test_s7_expected_schema_version_2(self):
-        # Should define EXPECTED_SCHEMA_VERSION = 2
-        self.assertIn('EXPECTED_SCHEMA_VERSION = 2', self.src)
+    # S7 -- schema_version expected constant (bumped 2→3 in feature-009/task-041)
+    def test_s7_expected_schema_version_3(self):
+        # Should define EXPECTED_SCHEMA_VERSION = 3 (schema_version bump: per-task delivery/lane/short_name fields)
+        self.assertIn('EXPECTED_SCHEMA_VERSION = 3', self.src)
 
     def test_s7_schema_version_mismatch_check(self):
         # Must have a !== EXPECTED check

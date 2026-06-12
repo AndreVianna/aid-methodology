@@ -14,7 +14,7 @@
 
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|
-| 003 | task-003 | CODE | delivery-001-wave-1 | Done | A | 2h | -- |
-| 004 | task-004 | TEST | delivery-001-wave-1 | Done | B | 1h | -- |
-| 005 | task-005 | CODE | delivery-001-wave-2 | Blocked | -- | -- | impediment raised |
+| 003 | task-003 | CODE | delivery-001 | Done | A | 2h | -- |
+| 004 | task-004 | TEST | delivery-001 | Done | B | 1h | -- |
+| 005 | task-005 | CODE | delivery-001 | Blocked | -- | -- | impediment raised |
 
