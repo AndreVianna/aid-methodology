@@ -12,7 +12,7 @@ inlined JavaScript logic in isolation via a small Python-level extraction:
   (S4) Structural: no CDN script tags or external stylesheets.
   (S5) Structural: meta robots noindex present.
   (S6) Structural: CSS :root token block copied verbatim from design family (key tokens present).
-  (S7) Structural: schema_version EXPECTED constant is present and equals 1.
+  (S7) Structural: schema_version EXPECTED constant is present and equals 3.
   (S8) Structural: localStorage key 'aid-dashboard-poll-ms' used for interval persistence.
   (B1) Behavioral: clampInterval logic -- extracted from JS, tested at Python level.
   (B2) Behavioral: schema_version mismatch path -- presence of !== EXPECTED check in JS.

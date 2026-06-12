@@ -6,6 +6,12 @@ Covers:
   T-10 Producer<->consumer contract: writes via REAL producer emission strings,
        reads via read_repo(), asserts field-by-field agreement; a mutated producer
        string (e.g. **Name** without colon, broken wave-map fence) FAILS the test.
+  T-11 Canonical-producer pinning: reads the ACTUAL canonical producer specification
+       files (canonical/templates/requirements.md, canonical/skills/aid-detail/
+       references/task-decomposition.md and execution-graph-generation.md) and asserts
+       the reader parses each format AS DOCUMENTED THERE.  These tests fail if the
+       canonical doc's format and the reader's parser diverge -- pinning
+       reader<->canonical, not reader<->hand-copied copy.
   T-4  Phase single source: phase comes SOLELY from ## Pipeline Status; absent block
        -> phase=None; blockquote > **Phase:** ... does NOT populate phase.
        Cross-runtime (Python + Node assertions).
@@ -487,6 +493,381 @@ class TestT10ProducerConsumerContract(unittest.TestCase):
             w.description,
             "A modular widget assembly pipeline with configurable stages.",
             "Mutated '- **Description**' (no colon) should NOT parse as the correct description",
+        )
+
+
+# ---------------------------------------------------------------------------
+# T-11: Canonical-producer pinning
+#
+# For each producer format (PF-1, PF-3, PF-5a), READ the canonical producer
+# specification file and assert the reader parses the format AS DOCUMENTED
+# THERE.  These tests fail if the canonical doc's format and the reader's
+# parser diverge -- pinning reader<->canonical, not reader<->hand-copied copy.
+#
+# Canonical producer files:
+#   PF-1: canonical/templates/requirements.md
+#         (contains - **Name:** / - **Description:** header lines)
+#   PF-3: canonical/skills/aid-detail/references/task-decomposition.md
+#         (documents # task-NNN: {Title} format + regex ^#\s+task-0*\d+\s*:\s*(.+)$)
+#   PF-5a: canonical/skills/aid-detail/references/execution-graph-generation.md
+#          (documents ```wave-map fence + delivery:/wave N: line format with example)
+# ---------------------------------------------------------------------------
+
+_CANONICAL_REQUIREMENTS_TEMPLATE = (
+    _REPO_ROOT / "canonical" / "templates" / "requirements.md"
+)
+_CANONICAL_TASK_DECOMPOSITION = (
+    _REPO_ROOT / "canonical" / "skills" / "aid-detail" / "references"
+    / "task-decomposition.md"
+)
+_CANONICAL_EXECUTION_GRAPH = (
+    _REPO_ROOT / "canonical" / "skills" / "aid-detail" / "references"
+    / "execution-graph-generation.md"
+)
+
+
+def _extract_wave_map_example(doc_text: str) -> str:
+    """Extract the first complete wave-map fenced block from documentation text.
+
+    Scans for ```wave-map ... ``` blocks and returns the content between
+    the opening and closing fences (excluding the fence lines).
+    Returns the full block content (delivery: + wave lines) or raises
+    AssertionError if no wave-map block is found (canonical doc changed).
+    """
+    lines = doc_text.splitlines()
+    in_block = False
+    block_lines: list[str] = []
+    for line in lines:
+        if not in_block:
+            # Accept both ` ```wave-map` (backtick inside markdown code block)
+            # and bare ```wave-map (direct fence)
+            stripped = line.strip()
+            if stripped == "```wave-map" or stripped.endswith("```wave-map"):
+                in_block = True
+                block_lines = []
+                continue
+        else:
+            stripped = line.strip()
+            if stripped == "```":
+                # End of block -- return what we have
+                return "\n".join(block_lines)
+            block_lines.append(line.strip())
+    raise AssertionError(
+        "No ```wave-map block found in canonical execution-graph-generation.md -- "
+        "format may have changed incompatibly (T-11 canonical pin)"
+    )
+
+
+class TestT11CanonicalProducerPinning(unittest.TestCase):
+    """T-11: Reader is pinned to the ACTUAL canonical producer specification files.
+
+    Each test reads the canonical producer file at test time, extracts the
+    documented format, and asserts the reader parses it correctly.  If the
+    canonical doc's format changes incompatibly (e.g. wave-map fence renamed,
+    Name header line dropped), these tests fail -- catching producer<->reader
+    drift before it reaches production.
+    """
+
+    # -----------------------------------------------------------------------
+    # PF-1: requirements.md template -- Name / Description headers
+    # -----------------------------------------------------------------------
+
+    def test_pf1_canonical_template_contains_name_header(self):
+        """PF-1 pin: canonical/templates/requirements.md has '- **Name:**' line."""
+        self.assertTrue(
+            _CANONICAL_REQUIREMENTS_TEMPLATE.is_file(),
+            f"Canonical requirements template not found: {_CANONICAL_REQUIREMENTS_TEMPLATE}",
+        )
+        text = _CANONICAL_REQUIREMENTS_TEMPLATE.read_text(encoding="utf-8")
+        self.assertIn(
+            "- **Name:**",
+            text,
+            "canonical/templates/requirements.md must contain '- **Name:**' header line "
+            "(PF-1 pin: reader's parse_requirements_md regex expects this exact format)",
+        )
+
+    def test_pf1_canonical_template_contains_description_header(self):
+        """PF-1 pin: canonical/templates/requirements.md has '- **Description:**' line."""
+        self.assertTrue(
+            _CANONICAL_REQUIREMENTS_TEMPLATE.is_file(),
+            f"Canonical requirements template not found: {_CANONICAL_REQUIREMENTS_TEMPLATE}",
+        )
+        text = _CANONICAL_REQUIREMENTS_TEMPLATE.read_text(encoding="utf-8")
+        self.assertIn(
+            "- **Description:**",
+            text,
+            "canonical/templates/requirements.md must contain '- **Description:**' header line "
+            "(PF-1 pin: reader's parse_requirements_md regex expects this exact format)",
+        )
+
+    def test_pf1_reader_parses_canonical_template_header_format(self):
+        """PF-1 pin: reader parses the EXACT header format from the canonical template.
+
+        Reads the canonical template, replaces *(pending)* with real values,
+        and asserts the reader extracts them.  If the template's header format
+        changes so the reader can no longer parse it, this test fails.
+        """
+        from dashboard.reader.parsers import parse_requirements_md
+
+        self.assertTrue(
+            _CANONICAL_REQUIREMENTS_TEMPLATE.is_file(),
+            f"Canonical requirements template not found: {_CANONICAL_REQUIREMENTS_TEMPLATE}",
+        )
+        template_text = _CANONICAL_REQUIREMENTS_TEMPLATE.read_text(encoding="utf-8")
+
+        # Verify the template has the expected placeholder format
+        self.assertIn("- **Name:** *(pending)*", template_text,
+                      "canonical template must seed Name with *(pending)* placeholder")
+        self.assertIn("- **Description:** *(pending)*", template_text,
+                      "canonical template must seed Description with *(pending)* placeholder")
+
+        # Replace the placeholders with concrete values (simulating post-interview state)
+        concrete = template_text.replace(
+            "- **Name:** *(pending)*", "- **Name:** Canonical Test Project"
+        ).replace(
+            "- **Description:** *(pending)*",
+            "- **Description:** A test project seeded from the canonical template.",
+        )
+
+        with tempfile.TemporaryDirectory() as d:
+            req_path = Path(d) / "REQUIREMENTS.md"
+            req_path.write_text(concrete, encoding="utf-8")
+            title, description, _obj, br = parse_requirements_md(req_path)
+
+        self.assertEqual(
+            title, "Canonical Test Project",
+            "PF-1 pin: reader must parse Name from the canonical template's header format "
+            "(format divergence detected -- update reader or canonical template)",
+        )
+        self.assertEqual(
+            description,
+            "A test project seeded from the canonical template.",
+            "PF-1 pin: reader must parse Description from the canonical template's header format",
+        )
+
+    def test_pf1_canonical_pending_placeholder_is_absorbed(self):
+        """PF-1 pin: canonical template's *(pending)* seed -> reader returns None (not literal).
+
+        The template seeds Name/Description with *(pending)* before the interview
+        populates them.  The reader must treat that as absent (None) so a
+        mid-interview work degrades gracefully via PF-7 rather than displaying
+        '*(pending)*' as the project title.
+        """
+        from dashboard.reader.parsers import parse_requirements_md
+
+        self.assertTrue(
+            _CANONICAL_REQUIREMENTS_TEMPLATE.is_file(),
+            f"Canonical requirements template not found: {_CANONICAL_REQUIREMENTS_TEMPLATE}",
+        )
+        template_text = _CANONICAL_REQUIREMENTS_TEMPLATE.read_text(encoding="utf-8")
+
+        with tempfile.TemporaryDirectory() as d:
+            req_path = Path(d) / "REQUIREMENTS.md"
+            # Write the template verbatim (without replacing the placeholders)
+            req_path.write_text(template_text, encoding="utf-8")
+            title, description, _obj, br = parse_requirements_md(req_path)
+
+        self.assertIsNone(
+            title,
+            "PF-1 pin: reader must return None for Name when canonical template "
+            "seed '*(pending)*' is present (not render it literally as the title)",
+        )
+        self.assertIsNone(
+            description,
+            "PF-1 pin: reader must return None for Description when canonical template "
+            "seed '*(pending)*' is present",
+        )
+
+    # -----------------------------------------------------------------------
+    # PF-3: task-decomposition.md -- task short-name format
+    # -----------------------------------------------------------------------
+
+    def test_pf3_canonical_doc_contains_task_title_format(self):
+        """PF-3 pin: task-decomposition.md documents '# task-NNN: {Title}' format."""
+        self.assertTrue(
+            _CANONICAL_TASK_DECOMPOSITION.is_file(),
+            f"Canonical task-decomposition not found: {_CANONICAL_TASK_DECOMPOSITION}",
+        )
+        text = _CANONICAL_TASK_DECOMPOSITION.read_text(encoding="utf-8")
+        self.assertIn(
+            "# task-NNN:",
+            text,
+            "canonical/skills/aid-detail/references/task-decomposition.md must document "
+            "'# task-NNN: {Title}' format (PF-3 pin: reader's short_name regex relies on this)",
+        )
+
+    def test_pf3_canonical_doc_documents_parse_regex(self):
+        """PF-3 pin: task-decomposition.md explicitly documents the parse regex."""
+        self.assertTrue(
+            _CANONICAL_TASK_DECOMPOSITION.is_file(),
+            f"Canonical task-decomposition not found: {_CANONICAL_TASK_DECOMPOSITION}",
+        )
+        text = _CANONICAL_TASK_DECOMPOSITION.read_text(encoding="utf-8")
+        # The doc should document the regex pattern used by the reader
+        self.assertIn(
+            r"task-0*\d+",
+            text,
+            "canonical/skills/aid-detail/references/task-decomposition.md must document "
+            r"the parse regex (^#\s+task-0*\d+\s*:\s*(.+)$) so reader<->canonical is pinned",
+        )
+
+    def test_pf3_reader_parses_canonical_documented_format(self):
+        """PF-3 pin: reader parses the # task-NNN: {Title} format documented in canonical doc."""
+        from dashboard.reader.parsers import parse_task_short_name
+
+        self.assertTrue(
+            _CANONICAL_TASK_DECOMPOSITION.is_file(),
+            f"Canonical task-decomposition not found: {_CANONICAL_TASK_DECOMPOSITION}",
+        )
+        text = _CANONICAL_TASK_DECOMPOSITION.read_text(encoding="utf-8")
+
+        # Confirm doc has the format line before asserting the reader parses it
+        self.assertIn("# task-NNN:", text)
+
+        # Build a concrete example in the documented format and assert reader parses it
+        task_content = "# task-042: Canonical format validation task\n\n**Type:** IMPLEMENT\n"
+        with tempfile.TemporaryDirectory() as d:
+            task_path = Path(d) / "task-042.md"
+            task_path.write_text(task_content, encoding="utf-8")
+            short_name, br = parse_task_short_name(task_path)
+
+        self.assertEqual(
+            short_name, "Canonical format validation task",
+            "PF-3 pin: reader must parse short_name from the '# task-NNN: Title' format "
+            "documented in task-decomposition.md "
+            "(format divergence: update reader or canonical doc)",
+        )
+
+    # -----------------------------------------------------------------------
+    # PF-5a: execution-graph-generation.md -- wave-map format
+    # -----------------------------------------------------------------------
+
+    def test_pf5a_canonical_doc_contains_wave_map_fence(self):
+        """PF-5a pin: execution-graph-generation.md documents ```wave-map fence."""
+        self.assertTrue(
+            _CANONICAL_EXECUTION_GRAPH.is_file(),
+            f"Canonical execution-graph-generation not found: {_CANONICAL_EXECUTION_GRAPH}",
+        )
+        text = _CANONICAL_EXECUTION_GRAPH.read_text(encoding="utf-8")
+        self.assertIn(
+            "```wave-map",
+            text,
+            "canonical/skills/aid-detail/references/execution-graph-generation.md "
+            "must document ```wave-map fence (PF-5a pin)",
+        )
+
+    def test_pf5a_canonical_doc_example_block_parses_correctly(self):
+        """PF-5a pin: reader parses the wave-map example block from the canonical doc.
+
+        Extracts the documented example ```wave-map block from execution-graph-
+        generation.md and runs the reader's execution-graph parser on it.
+        Asserts it yields the expected task->{delivery, lane} mapping exactly
+        as the doc describes.  If the doc's format changes incompatibly, this fails.
+        """
+        from dashboard.reader.parsers import parse_execution_graph
+
+        self.assertTrue(
+            _CANONICAL_EXECUTION_GRAPH.is_file(),
+            f"Canonical execution-graph-generation not found: {_CANONICAL_EXECUTION_GRAPH}",
+        )
+        doc_text = _CANONICAL_EXECUTION_GRAPH.read_text(encoding="utf-8")
+
+        # The canonical doc's example block (for the two-delivery plan) reads:
+        #   delivery: 001 / wave 1: task-001 / wave 2: task-002, task-003
+        #   delivery: 002 / wave 1: task-004 / wave 2: task-005
+        # Extract the example block and wrap it in a valid PLAN.md context
+        example_block = _extract_wave_map_example(doc_text)
+        self.assertTrue(
+            example_block.strip(),
+            "No content found inside the first ```wave-map block in execution-graph-generation.md",
+        )
+
+        # Verify the doc example block has the expected content (canonical pins both sides)
+        self.assertIn("delivery:", example_block,
+                      "PF-5a pin: wave-map example must start with 'delivery:' line")
+        self.assertIn("wave 1:", example_block,
+                      "PF-5a pin: wave-map example must have 'wave 1:' line")
+
+        # Wrap the extracted block into a minimal PLAN.md and run the parser
+        plan_text = (
+            "# Plan\n\n"
+            "### delivery-001 execution graph\n\n"
+            "```wave-map\n"
+            + example_block + "\n"
+            "```\n"
+        )
+
+        with tempfile.TemporaryDirectory() as d:
+            plan_path = Path(d) / "PLAN.md"
+            plan_path.write_text(plan_text, encoding="utf-8")
+            lane_map, br = parse_execution_graph(plan_path)
+
+        # The canonical example block contains task-001 in wave 1 and task-002/task-003 in wave 2
+        # (first block in the two-delivery example: delivery 001)
+        self.assertIn(
+            "task-001", lane_map,
+            "PF-5a pin: task-001 must appear in the parsed lane map from the canonical example",
+        )
+        self.assertEqual(
+            lane_map.get("task-001"), 1,
+            "PF-5a pin: task-001 must be in wave/lane 1 per canonical doc example",
+        )
+        # task-002 and/or task-003 should be in wave 2
+        wave2_tasks = [t for t, l in lane_map.items() if l == 2]
+        self.assertTrue(
+            len(wave2_tasks) > 0,
+            "PF-5a pin: canonical doc example must have tasks in wave 2; "
+            "lane_map=" + str(lane_map),
+        )
+
+    def test_pf5a_broken_fence_name_fails_canonical_parse(self):
+        """PF-5a drift detection: renaming the fence (e.g. ```wavemap) breaks lane parsing.
+
+        This is the same mutation as TestT10's test_drift_mutated_wavemap_fence_breaks_lane
+        but now the canonical format is the reference.  If the fence name in the
+        canonical doc is renamed (format divergence), the reader will fail to parse
+        live repos -- this test surfaces that early.
+        """
+        from dashboard.reader.parsers import parse_execution_graph
+
+        self.assertTrue(
+            _CANONICAL_EXECUTION_GRAPH.is_file(),
+            f"Canonical execution-graph-generation not found: {_CANONICAL_EXECUTION_GRAPH}",
+        )
+        doc_text = _CANONICAL_EXECUTION_GRAPH.read_text(encoding="utf-8")
+
+        # Confirm the canonical doc actually has the expected fence before mutation
+        self.assertIn("```wave-map", doc_text,
+                      "Canonical doc must have ```wave-map fence for this drift test to be valid")
+
+        # Extract the canonical example block from the unmodified doc first
+        canonical_block = _extract_wave_map_example(doc_text)
+        self.assertTrue(canonical_block.strip(),
+                        "Canonical doc must have a non-empty wave-map example block")
+
+        # Build a PLAN.md using the MUTATED (wrong) fence name -- simulates format drift
+        # where the canonical doc renames the fence but the reader hasn't been updated
+        plan_text = (
+            "# Plan\n\n"
+            "### delivery-001 execution graph\n\n"
+            "```wavemap\n"  # <-- wrong fence name (drift mutation)
+            + canonical_block + "\n"
+            "```\n"
+        )
+
+        with tempfile.TemporaryDirectory() as d:
+            plan_path = Path(d) / "PLAN.md"
+            plan_path.write_text(plan_text, encoding="utf-8")
+            lane_map, br = parse_execution_graph(plan_path)
+
+        # The reader must NOT parse the mutated fence (drift caught)
+        all_tasks_have_lane = (
+            lane_map.get("task-001") == 1
+        )
+        self.assertFalse(
+            all_tasks_have_lane,
+            "PF-5a drift: mutated fence '```wavemap' must NOT be parsed by the reader "
+            "(if this fails, the reader is accepting non-canonical fence names)",
         )
 
 

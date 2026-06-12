@@ -754,6 +754,9 @@ function parseRequirementsMd(reqPath) {
   // PF-2: status blockquote footer: > _..._  (wholly italic blockquote)
   const RE_STATUS_BLOCKQUOTE = /^>\s*_.*_\s*$/;
 
+  // Template seed placeholder: treat *(pending)* as absent (PF-7)
+  const PENDING_PLACEHOLDER = "*(pending)*";
+
   let title = null;
   let description = null;
   const objLines = [];
@@ -774,12 +777,14 @@ function parseRequirementsMd(reqPath) {
 
     let m = line.match(RE_NAME);
     if (m && title === null) {
-      title = m[1].trim();
+      const val = m[1].trim();
+      title = val === PENDING_PLACEHOLDER ? null : val;
       continue;
     }
     m = line.match(RE_DESC);
     if (m && description === null) {
-      description = m[1].trim();
+      const val = m[1].trim();
+      description = val === PENDING_PLACEHOLDER ? null : val;
       continue;
     }
     if (RE_OBJ_HDR.test(line)) {

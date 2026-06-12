@@ -374,6 +374,9 @@ def parse_requirements_md(path: Path) -> tuple[Optional[str], Optional[str], Opt
     in_objective = False
     obj_lines: list[str] = []
 
+    # Template seed placeholder: treat *(pending)* as absent (PF-7)
+    _PENDING_PLACEHOLDER = "*(pending)*"
+
     for line in lines:
         if in_objective:
             if _re_section.match(line):
@@ -386,12 +389,14 @@ def parse_requirements_md(path: Path) -> tuple[Optional[str], Optional[str], Opt
 
         m = _re_name.match(line)
         if m and title is None:
-            title = m.group(1).strip()
+            val = m.group(1).strip()
+            title = None if val == _PENDING_PLACEHOLDER else val
             continue
 
         m = _re_desc.match(line)
         if m and description is None:
-            description = m.group(1).strip()
+            val = m.group(1).strip()
+            description = None if val == _PENDING_PLACEHOLDER else val
             continue
 
         if _re_obj_hdr.match(line):
