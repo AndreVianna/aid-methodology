@@ -183,6 +183,8 @@ main {
 .grid.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .grid.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .grid.g-lane { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+/* Main-page pipelines grid: auto-fit reflow (does NOT mutate shared .g3 fixed-3-col) */
+.pipelines-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 
 .card {
   background: var(--bg-elev);
@@ -243,7 +245,7 @@ footer {
   .top-bar .brand { font-size: 0.85rem; }
   .breadcrumb { font-size: 0.78rem; min-width: 0; }
   main { padding: 1rem 1rem 3rem; }
-  .grid, .grid.g2, .grid.g3, .grid.g4, .grid.g-lane { grid-template-columns: 1fr; }
+  .grid, .grid.g2, .grid.g3, .grid.g4, .grid.g-lane, .pipelines-grid { grid-template-columns: 1fr; }
   .stage-rail { overflow-x: auto; flex-wrap: nowrap; }
   .content-col { max-width: 100%; }
 }
@@ -506,6 +508,23 @@ footer {
 /* Work header card attention borders (UI-4) */
 .card.border-warn { border-left: 4px solid var(--warn); }
 .card.border-err  { border-left: 4px solid var(--err); }
+
+/* Card-link: neutralize global anchor styling for whole-card clickable cards */
+.card-link { display: block; color: inherit; text-decoration: none; }
+.card-link:hover { text-decoration: none; }
+
+/* Level-0 CLI panel (.card.plugin) -- copied verbatim from component-css.css:235-242 */
+.card.plugin { display: flex; flex-direction: column; gap: 0.5rem; }
+.card.plugin .plugin-name { font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 0.86rem; color: var(--accent); }
+.card.plugin .plugin-stats { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.4em; }
+.card.plugin .plugin-body { color: var(--text-muted); font-size: 0.9rem; }
+.card.plugin dl { display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.6rem; margin: 0.5rem 0 0 0; font-size: 0.85rem; }
+.card.plugin dt { color: var(--text-dim); font-weight: 500; }
+.card.plugin dd { margin: 0; color: var(--text); }
+.card.plugin .foot { margin-top: auto; padding-top: 0.6rem; }
+
+/* Main-page section headings */
+.main-section-head { margin: 1.5rem 0 0.75rem; }
 
 /* Delivery panel (collapsible) */
 .delivery-panel {
@@ -824,14 +843,31 @@ footer {
     <div id="tasks-section" style="margin-top:1.5rem"></div>
   </div>
 
-  <!-- Empty / no works state -->
+  <!-- Main page (feature-006): card grid + KB card + Level-0 panel -->
+  <div id="main-page" style="display:none">
+    <!-- Pipelines section -->
+    <h2 class="main-section-head">Pipelines</h2>
+    <div id="pipelines-section"></div>
+
+    <!-- Knowledge & Tool section -->
+    <h2 class="main-section-head" style="margin-top:2rem">Knowledge &amp; Tool</h2>
+    <div class="grid g2" id="knowledge-tool-section"></div>
+  </div>
+
+  <!-- KB view placeholder (SEAM-1 for feature-007) -->
+  <div id="kb-view" style="display:none"></div>
+
+  <!-- Stale work notice (FC-3) -->
+  <div id="stale-work-notice" style="display:none"></div>
+
+  <!-- Empty / no works state (legacy; hidden by feature-006 render path) -->
   <div class="empty-state" id="empty-state" style="display:none">
     <p>No works found in <code>.aid/</code>. Start a pipeline to see progress here.</p>
   </div>
 
   <!-- Initial loading state -->
   <div class="empty-state" id="loading-state">
-    <p>Connecting to dashboard server…</p>
+    <p>Connecting to dashboard server&#8230;</p>
   </div>
 
 </main>
@@ -898,6 +934,8 @@ footer {
     }
     updateFooterInterval();
     initTheme();
+    // Wire hash-change handler (DD-1: back/forward re-renders without new fetch)
+    window.addEventListener('hashchange', onHashChange);
     // Immediate first fetch
     doFetch();
   })();
@@ -1059,13 +1097,69 @@ footer {
   }
 
   // ---------------------------------------------------------------------------
-  // Main render
+  // Hash router (DD-1, feature-006)
   // ---------------------------------------------------------------------------
+
+  // Parse location.hash into a route descriptor
+  // Returns { view: "main" } | { view: "work", workId: string } | { view: "kb" }
+  function parseRoute(hash) {
+    var h = hash || '';
+    // Strip leading '#'
+    if (h.charAt(0) === '#') h = h.slice(1);
+    // Match /work/<work_id>
+    var workMatch = h.match(/^\/work\/(.+)$/);
+    if (workMatch) {
+      // location.hash is URL-encoded; decode to compare against the raw work_id.
+      // (no-op for today's slug-shaped ids; robust if the slug charset ever widens)
+      var wid = workMatch[1];
+      try { wid = decodeURIComponent(wid); } catch (e) { /* malformed %xx: keep raw */ }
+      return { view: 'work', workId: wid };
+    }
+    // Match /kb
+    if (h === '/kb') {
+      return { view: 'kb' };
+    }
+    // Default: main (covers "", "/", and any unrecognized hash)
+    return { view: 'main' };
+  }
+
+  // Find a work by work_id (find-by-key, never index-by-position)
+  // Returns the matching work object or null
+  function findWorkById(works, workId) {
+    if (!works || !workId) return null;
+    for (var i = 0; i < works.length; i++) {
+      if (works[i].work_id === workId) {
+        return works[i];
+      }
+    }
+    return null;
+  }
+
+  // hashchange handler: re-render current lastGoodModel against new route (no fetch)
+  function onHashChange() {
+    if (lastGoodModel) {
+      render(lastGoodModel, parseRoute(location.hash));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Main render (router-driven, feature-006)
+  // ---------------------------------------------------------------------------
+
+  // Thin wrapper: keeps existing poll-loop call site (renderModel(envelope.model)) intact
   function renderModel(model) {
+    render(model, parseRoute(location.hash));
+  }
+
+  // Primary render entry: dispatches to the correct view based on route
+  function render(model, route) {
+    if (!route) route = parseRoute(location.hash);
+
     // Hide loading state
     var loadEl = document.getElementById('loading-state');
     if (loadEl) loadEl.style.display = 'none';
 
+    // -- Route-independent shell head (runs for every route) --
     // Update page title from repo.project_name
     var projectName = (model.repo && model.repo.project_name) ? model.repo.project_name : 'AID Dashboard';
     document.title = projectName + ' — AID Dashboard';
@@ -1075,27 +1169,61 @@ footer {
     // Surface parse_warnings data note (Telemetry)
     renderParseWarnings(model.read);
 
-    // Select active work (FR9 single-work MVP)
-    var works = (model.works || []).slice();
-    var activeWork = selectActiveWork(works);
-
-    if (!activeWork) {
-      document.getElementById('work-header').style.display = 'none';
-      document.getElementById('empty-state').style.display = '';
-      document.getElementById('attention-strip').style.display = 'none';
-      updateFreshnessBadge('live', model.read && model.read.read_at);
-      return;
+    // -- View branch --
+    if (route.view === 'work') {
+      var work = findWorkById(model.works || [], route.workId);
+      if (!work) {
+        _showView('stale');
+        renderStaleWorkNotice(route.workId);
+      } else {
+        _showView('work');
+        renderWorkView(work, model);
+      }
+    } else if (route.view === 'kb') {
+      _showView('kb');
+      renderKbView(model);
+    } else {
+      // Default: main page
+      _showView('main');
+      renderMainPage(model);
     }
+  }
 
-    document.getElementById('empty-state').style.display = 'none';
-    document.getElementById('work-header').style.display = '';
+  // Show one of the top-level view panels; hide others
+  // view: 'main' | 'work' | 'kb' | 'stale'
+  function _showView(view) {
+    var mainPage     = document.getElementById('main-page');
+    var workHeader   = document.getElementById('work-header');
+    var attnStrip    = document.getElementById('attention-strip');
+    var emptyState   = document.getElementById('empty-state');
+    var kbView       = document.getElementById('kb-view');
+    var staleNotice  = document.getElementById('stale-work-notice');
 
-    renderWorkHeader(activeWork);
-    renderAttentionStrip(activeWork);
-    renderStageRail(activeWork);
-    renderTasks(activeWork);
+    // Always reset
+    if (mainPage)   mainPage.style.display   = 'none';
+    if (workHeader) workHeader.style.display  = 'none';
+    if (attnStrip)  attnStrip.style.display   = 'none';
+    if (emptyState) emptyState.style.display  = 'none';
+    if (kbView)     kbView.style.display      = 'none';
+    if (staleNotice) staleNotice.style.display = 'none';
 
-    // Update freshness badge now that we have read_at
+    if (view === 'main')  { if (mainPage) mainPage.style.display = ''; }
+    if (view === 'work')  { if (workHeader) workHeader.style.display = ''; }
+    if (view === 'kb')    { if (kbView) kbView.style.display = ''; }
+    if (view === 'stale') { if (staleNotice) staleNotice.style.display = ''; }
+  }
+
+  // ---------------------------------------------------------------------------
+  // renderWorkView: the existing per-work pipeline view (moved from renderModel body)
+  // The four per-work calls are VERBATIM; only their caller changes.
+  // ---------------------------------------------------------------------------
+  function renderWorkView(work, model) {
+    renderWorkHeader(work);
+    renderAttentionStrip(work);
+    renderStageRail(work);
+    renderTasks(work);
+
+    // Update freshness badge
     var readAt = model.read && model.read.read_at;
     var hasWarnings = model.read && model.read.parse_warnings && model.read.parse_warnings.length > 0;
     if (hasWarnings) {
@@ -1106,7 +1234,395 @@ footer {
   }
 
   // ---------------------------------------------------------------------------
-  // Work selection (FR9)
+  // renderMainPage: the feature-006 main page (card grid + KB card + Level-0 panel)
+  // ---------------------------------------------------------------------------
+  function renderMainPage(model) {
+    var works = model.works || [];
+
+    // Render pipelines section
+    var pipelinesEl = document.getElementById('pipelines-section');
+    if (pipelinesEl) {
+      pipelinesEl.innerHTML = '';
+      if (works.length === 0) {
+        pipelinesEl.appendChild(_renderEmptyState());
+      } else {
+        var grid = document.createElement('div');
+        grid.className = 'grid pipelines-grid';
+        // Two-pass render: attention cards first (Paused-Awaiting-Input, Blocked), then normal
+        var ATTENTION_STATES = ['Paused-Awaiting-Input', 'Blocked'];
+        for (var i = 0; i < works.length; i++) {
+          if (ATTENTION_STATES.indexOf(works[i].lifecycle) !== -1) {
+            grid.appendChild(_renderWorkCard(works[i]));
+          }
+        }
+        for (var j = 0; j < works.length; j++) {
+          if (ATTENTION_STATES.indexOf(works[j].lifecycle) === -1) {
+            grid.appendChild(_renderWorkCard(works[j]));
+          }
+        }
+        pipelinesEl.appendChild(grid);
+      }
+    }
+
+    // Render Knowledge & Tool section
+    var ktEl = document.getElementById('knowledge-tool-section');
+    if (ktEl) {
+      ktEl.innerHTML = '';
+      ktEl.appendChild(_renderKbCard(model.repo && model.repo.kb_state));
+      ktEl.appendChild(_renderLevel0Card(model.tool));
+    }
+
+    // Update freshness badge
+    var readAt = model.read && model.read.read_at;
+    var hasWarnings = model.read && model.read.parse_warnings && model.read.parse_warnings.length > 0;
+    if (hasWarnings) {
+      updateFreshnessBadge('stale', readAt);
+    } else {
+      updateFreshnessBadge('live', readAt);
+    }
+  }
+
+  // Build a work-card DOM element for the main page grid (UI-3)
+  function _renderWorkCard(work) {
+    var isAttention = work.lifecycle === 'Paused-Awaiting-Input' || work.lifecycle === 'Blocked';
+    var card = document.createElement('a');
+    card.className = 'card card-link work-card';
+    card.href = '#/work/' + encodeURIComponent(work.work_id);
+    if (work.lifecycle === 'Paused-Awaiting-Input') card.classList.add('border-warn');
+    if (work.lifecycle === 'Blocked') card.classList.add('border-err');
+
+    // Kicker: work_id
+    var kicker = document.createElement('div');
+    kicker.className = 'kicker';
+    kicker.textContent = work.work_id || '';
+    card.appendChild(kicker);
+
+    // Title: prefer title; fallback to de-slug of work_id (matches renderWorkHeader precedence)
+    var titleEl = document.createElement('h3');
+    if (work.title) {
+      titleEl.textContent = work.title;
+    } else {
+      var deSlug = (work.work_id || '')
+        .replace(/^work-\d+-/, '')
+        .replace(/[-_]+/g, ' ')
+        .replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+      titleEl.textContent = deSlug || work.work_id || '—';
+      titleEl.style.opacity = '0.6';
+      titleEl.title = 'Name not yet recorded (' + (work.work_id || '') + ')';
+    }
+    card.appendChild(titleEl);
+
+    // Mini phase rail (condensed: current pill + index/total)
+    var phase = work.phase;
+    if (phase && phase !== 'Unknown') {
+      var currentIdx = PHASE_ORDER.indexOf(phase);
+      if (currentIdx !== -1) {
+        var railWrap = document.createElement('div');
+        railWrap.style.cssText = 'display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin:0.4rem 0;';
+        var currentPill = document.createElement('span');
+        currentPill.className = 'badge badge-primary';
+        currentPill.textContent = '▸ ' + phase;
+        railWrap.appendChild(currentPill);
+        var progressSpan = document.createElement('span');
+        progressSpan.className = 'badge badge-dim';
+        progressSpan.textContent = (currentIdx + 1) + '/' + PHASE_ORDER.length;
+        railWrap.appendChild(progressSpan);
+        card.appendChild(railWrap);
+      }
+    }
+
+    // Lifecycle badge (reuses makeLifecycleBadge verbatim)
+    var badgeWrap = document.createElement('div');
+    badgeWrap.style.marginBottom = '0.4rem';
+    badgeWrap.appendChild(makeLifecycleBadge(work.lifecycle));
+    card.appendChild(badgeWrap);
+
+    // Attention detail (pause_reason / block_reason + block_artifact)
+    if (work.lifecycle === 'Paused-Awaiting-Input' && work.pause_reason) {
+      var pauseDetail = document.createElement('p');
+      pauseDetail.className = 'meta';
+      pauseDetail.style.margin = '0.25rem 0';
+      pauseDetail.textContent = work.pause_reason;
+      card.appendChild(pauseDetail);
+    }
+    if (work.lifecycle === 'Blocked') {
+      if (work.block_reason) {
+        var blockDetail = document.createElement('p');
+        blockDetail.className = 'meta';
+        blockDetail.style.margin = '0.25rem 0';
+        blockDetail.textContent = work.block_reason;
+        card.appendChild(blockDetail);
+      }
+      if (work.block_artifact) {
+        var artifactLine = document.createElement('p');
+        artifactLine.className = 'meta';
+        artifactLine.style.margin = '0.15rem 0';
+        var artifactCode = document.createElement('code');
+        artifactCode.textContent = work.block_artifact;
+        artifactLine.appendChild(artifactCode);
+        card.appendChild(artifactLine);
+      }
+    }
+
+    // Meta footer: updated, tasks.length, source_mode chip
+    var metaEl = document.createElement('div');
+    metaEl.className = 'meta';
+    metaEl.style.marginTop = '0.5rem';
+    var metaParts = [];
+    if (work.updated) metaParts.push('Updated: ' + work.updated);
+    var tasks = work.tasks || [];
+    metaParts.push(tasks.length + ' task' + (tasks.length !== 1 ? 's' : ''));
+    metaEl.textContent = metaParts.join('  ·  ');
+    // source_mode chip (only when != "normalized")
+    if (work.source_mode && work.source_mode !== 'normalized') {
+      var modeChip = document.createElement('span');
+      modeChip.className = 'badge badge-dim';
+      modeChip.style.marginLeft = '0.4rem';
+      modeChip.textContent = 'approx';
+      modeChip.title = 'source_mode: ' + work.source_mode;
+      metaEl.appendChild(modeChip);
+    }
+    card.appendChild(metaEl);
+
+    return card;
+  }
+
+  // Build the KB summary card (UI-4)
+  function _renderKbCard(kbState) {
+    if (!kbState) {
+      // null state: non-clickable "No KB yet" card
+      var card = document.createElement('div');
+      card.className = 'card';
+      var kicker = document.createElement('div');
+      kicker.className = 'kicker';
+      kicker.textContent = 'KNOWLEDGE BASE';
+      card.appendChild(kicker);
+      var h3 = document.createElement('h3');
+      h3.textContent = 'No Knowledge Base yet';
+      card.appendChild(h3);
+      var hint = document.createElement('p');
+      hint.className = 'meta';
+      hint.textContent = 'run /aid-discover to build the KB';
+      card.appendChild(hint);
+      return card;
+    }
+
+    // Clickable KB card -> #/kb
+    var card = document.createElement('a');
+    card.className = 'card card-link';
+    card.href = '#/kb';
+
+    var kicker = document.createElement('div');
+    kicker.className = 'kicker';
+    kicker.textContent = 'KNOWLEDGE BASE';
+    card.appendChild(kicker);
+
+    // Stat: doc_count
+    var stat = document.createElement('div');
+    stat.className = 'stat';
+    stat.textContent = (kbState.doc_count != null) ? String(kbState.doc_count) : '—';
+    card.appendChild(stat);
+
+    var statSub = document.createElement('div');
+    statSub.className = 'stat-sub';
+    statSub.textContent = 'docs';
+    card.appendChild(statSub);
+
+    // Approval chip
+    var approvalBadge = document.createElement('span');
+    if (kbState.summary_approved) {
+      approvalBadge.className = 'badge badge-ok';
+      approvalBadge.textContent = '✓ Approved';
+    } else {
+      approvalBadge.className = 'badge badge-warn';
+      approvalBadge.textContent = 'Draft';
+    }
+    approvalBadge.style.display = 'inline-block';
+    approvalBadge.style.marginTop = '0.5rem';
+    card.appendChild(approvalBadge);
+
+    // Freshness meta
+    if (kbState.last_summary_date) {
+      var freshMeta = document.createElement('p');
+      freshMeta.className = 'meta';
+      freshMeta.style.marginTop = '0.5rem';
+      freshMeta.textContent = 'summary updated ' + kbState.last_summary_date;
+      card.appendChild(freshMeta);
+    }
+
+    return card;
+  }
+
+  // Build the Level-0 CLI panel (.card.plugin, UI-5)
+  function _renderLevel0Card(tool) {
+    var card = document.createElement('div');
+    card.className = 'card plugin';
+
+    var kicker = document.createElement('div');
+    kicker.className = 'kicker';
+    kicker.textContent = 'AID CLI (this machine)';
+    card.appendChild(kicker);
+
+    if (!tool || tool.manifest_present === false) {
+      var unavail = document.createElement('p');
+      unavail.className = 'meta';
+      unavail.textContent = 'tool info unavailable';
+      card.appendChild(unavail);
+      return card;
+    }
+
+    var dl = document.createElement('dl');
+
+    // version
+    var dtVer = document.createElement('dt');
+    dtVer.textContent = 'version';
+    dl.appendChild(dtVer);
+    var ddVer = document.createElement('dd');
+    if (tool.aid_version) {
+      var verBadge = document.createElement('span');
+      verBadge.className = 'badge badge-info';
+      verBadge.textContent = tool.aid_version;
+      ddVer.appendChild(verBadge);
+    } else {
+      ddVer.textContent = '—';
+    }
+    dl.appendChild(ddVer);
+
+    // installed
+    var dtInst = document.createElement('dt');
+    dtInst.textContent = 'installed';
+    dl.appendChild(dtInst);
+    var ddInst = document.createElement('dd');
+    if (tool.installed_at) {
+      var instSpan = document.createElement('span');
+      instSpan.className = 'meta';
+      instSpan.textContent = tool.installed_at;
+      ddInst.appendChild(instSpan);
+    } else {
+      ddInst.textContent = '—';
+    }
+    dl.appendChild(ddInst);
+
+    // tools
+    var dtTools = document.createElement('dt');
+    dtTools.textContent = 'tools';
+    dl.appendChild(dtTools);
+    var ddTools = document.createElement('dd');
+    var toolsList = tool.tools_installed || [];
+    if (toolsList.length > 0) {
+      for (var k = 0; k < toolsList.length; k++) {
+        var chip = document.createElement('span');
+        chip.className = 'badge badge-dim';
+        chip.style.marginRight = '0.25rem';
+        chip.textContent = toolsList[k];
+        ddTools.appendChild(chip);
+      }
+    } else {
+      ddTools.textContent = '—';
+    }
+    dl.appendChild(ddTools);
+
+    card.appendChild(dl);
+    return card;
+  }
+
+  // Build the FR18 step-by-step empty-state panel
+  function _renderEmptyState() {
+    var card = document.createElement('div');
+    card.className = 'card empty-state';
+    card.style.textAlign = 'left';
+
+    var kicker = document.createElement('div');
+    kicker.className = 'kicker';
+    kicker.textContent = 'NO PIPELINES YET';
+    card.appendChild(kicker);
+
+    var h3 = document.createElement('h3');
+    h3.textContent = 'This repo has no AID works in .aid/ yet.';
+    card.appendChild(h3);
+
+    var intro = document.createElement('p');
+    intro.textContent = 'To start your first pipeline:';
+    card.appendChild(intro);
+
+    var ol = document.createElement('ol');
+    var steps = [
+      null, // step 1 is special (has <code>)
+      'Follow the interview prompts to capture requirements.',
+      'Verify: a work-NNN-* folder now appears under .aid/, and this page shows a card for it on the next refresh (within the poll interval).'
+    ];
+
+    // Step 1: special — contains code element
+    var li1 = document.createElement('li');
+    li1.appendChild(document.createTextNode('In this repo, run: '));
+    var codeEl = document.createElement('code');
+    codeEl.textContent = '/aid-interview';
+    li1.appendChild(codeEl);
+    li1.appendChild(document.createTextNode(' — begins a new work (creates .aid/work-NNN-<name>/ + its STATE.md).'));
+    ol.appendChild(li1);
+
+    // Steps 2, 3
+    for (var s = 1; s < steps.length; s++) {
+      var li = document.createElement('li');
+      li.textContent = steps[s];
+      ol.appendChild(li);
+    }
+    card.appendChild(ol);
+
+    var meta = document.createElement('p');
+    meta.className = 'meta';
+    meta.textContent = 'this page refreshes every ' + Math.round(pollMs / 1000) + 's — the card appears automatically.';
+    card.appendChild(meta);
+
+    return card;
+  }
+
+  // ---------------------------------------------------------------------------
+  // renderKbView: SEAM-1 placeholder for feature-007
+  // ---------------------------------------------------------------------------
+  function renderKbView(model) {
+    var kbView = document.getElementById('kb-view');
+    if (!kbView) return;
+    kbView.innerHTML = '';
+    var callout = document.createElement('div');
+    callout.className = 'callout';
+    callout.innerHTML = '<h4>Knowledge Base</h4><p>KB dashboard — coming in feature-007.</p>';
+    kbView.appendChild(callout);
+    var backLink = document.createElement('p');
+    backLink.style.marginTop = '1rem';
+    var a = document.createElement('a');
+    a.href = '#/';
+    a.textContent = '← back to main';
+    backLink.appendChild(a);
+    kbView.appendChild(backLink);
+
+    var readAt = model.read && model.read.read_at;
+    updateFreshnessBadge('live', readAt);
+  }
+
+  // ---------------------------------------------------------------------------
+  // renderStaleWorkNotice: FC-3 -- unknown/stale work_id, never blank
+  // ---------------------------------------------------------------------------
+  function renderStaleWorkNotice(workId) {
+    var el = document.getElementById('stale-work-notice');
+    if (!el) return;
+    el.innerHTML = '';
+    var callout = document.createElement('div');
+    callout.className = 'callout warn';
+    callout.innerHTML = '<h4>Pipeline not found</h4>' +
+      '<p>That pipeline (<code>' + escHtml(workId) + '</code>) is no longer in this repo.</p>';
+    el.appendChild(callout);
+    var backLink = document.createElement('p');
+    backLink.style.marginTop = '0.75rem';
+    var a = document.createElement('a');
+    a.href = '#/';
+    a.textContent = '← back to main';
+    backLink.appendChild(a);
+    el.appendChild(backLink);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Work selection (FR9 -- kept; no longer on the default render path under feature-006)
   // Active = first non-terminal lifecycle work, else highest work_id
   // ---------------------------------------------------------------------------
   function selectActiveWork(works) {

@@ -473,5 +473,332 @@ class TestVisualPolish(unittest.TestCase):
                       ".wave-summary must use inline-flex for muted pill look")
 
 
+# ---------------------------------------------------------------------------
+# F6: feature-006 hash router + main page additions (task-028)
+# ---------------------------------------------------------------------------
+
+class TestFeature006Router(unittest.TestCase):
+    """
+    F6-R: Hash router (DD-1) structural checks.
+    F6-G: Card grid (main page) structural checks.
+    F6-K: KB summary card structural checks.
+    F6-L: Level-0 CLI panel structural checks.
+    F6-E: Empty-state (FR18) structural checks.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        assert _INDEX_HTML.is_file(), f"index.html not found at {_INDEX_HTML}"
+        cls.src = _INDEX_HTML.read_text(encoding="utf-8")
+
+    # F6-R: Router function presence and correct implementation
+    def test_f6r_parseroute_function_present(self):
+        self.assertIn('function parseRoute(', self.src,
+                      "parseRoute() function must be defined in JS")
+
+    def test_f6r_parseroute_work_match(self):
+        # Router must match /work/<id> pattern
+        self.assertIn('/work/', self.src,
+                      "parseRoute must handle /work/<work_id> route")
+
+    def test_f6r_parseroute_kb_route(self):
+        # Router must recognize /kb
+        self.assertIn("'/kb'", self.src,
+                      "parseRoute must handle /kb route")
+
+    def test_f6r_parseroute_returns_main_default(self):
+        # Router must return main view as default
+        self.assertIn("view: 'main'", self.src,
+                      "parseRoute must return {view:'main'} as default")
+
+    def test_f6r_findworkbyid_function_present(self):
+        self.assertIn('function findWorkById(', self.src,
+                      "findWorkById() function must be defined in JS")
+
+    def test_f6r_findworkbyid_uses_for_loop_not_array_find(self):
+        # find-by-key must use a classic for loop (ES5 idiom), not .find()
+        # Check findWorkById uses a for loop
+        idx = self.src.find('function findWorkById(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 300]
+        self.assertIn('for (', snippet,
+                      "findWorkById must use a classic for loop (ES5 idiom)")
+        # Must compare work_id by key string equality, not by position
+        self.assertIn('work_id', snippet,
+                      "findWorkById must compare work_id field (find-by-key, not by index)")
+
+    def test_f6r_render_function_signature_present(self):
+        # The primary render entry must be render(model, route)
+        self.assertIn('function render(model, route)', self.src,
+                      "render(model, route) function must be defined")
+
+    def test_f6r_rendermodel_thin_wrapper(self):
+        # renderModel must remain as a thin wrapper calling render()
+        idx = self.src.find('function renderModel(model)')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 200]
+        self.assertIn('render(', snippet,
+                      "renderModel must delegate to render()")
+        self.assertIn('parseRoute', snippet,
+                      "renderModel wrapper must call parseRoute()")
+
+    def test_f6r_hashchange_handler_wired(self):
+        # hashchange event must be wired up at boot
+        self.assertIn("'hashchange'", self.src,
+                      "hashchange event listener must be registered")
+        self.assertIn('onHashChange', self.src,
+                      "onHashChange function must be referenced")
+
+    def test_f6r_onhashchange_rerenders_lastgoodmodel(self):
+        # onHashChange must re-render lastGoodModel (no new fetch)
+        idx = self.src.find('function onHashChange(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 200]
+        self.assertIn('lastGoodModel', snippet,
+                      "onHashChange must use lastGoodModel to re-render")
+        self.assertNotIn('doFetch', snippet,
+                         "onHashChange must NOT trigger a new fetch")
+
+    def test_f6r_stale_work_notice_function_present(self):
+        self.assertIn('function renderStaleWorkNotice(', self.src,
+                      "renderStaleWorkNotice() function must be defined")
+
+    def test_f6r_stale_work_notice_callout_warn(self):
+        # Stale work notice must use .callout.warn (never blank)
+        idx = self.src.find('function renderStaleWorkNotice(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 400]
+        self.assertIn('callout warn', snippet,
+                      "renderStaleWorkNotice must use callout.warn")
+
+    def test_f6r_stale_work_notice_has_back_link(self):
+        idx = self.src.find('function renderStaleWorkNotice(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 800]
+        self.assertIn('#/', snippet,
+                      "renderStaleWorkNotice must include a back-to-main link (#/)")
+
+    # F6-G: Grid class present without mutating .grid.g3
+    def test_f6g_pipelines_grid_class_added(self):
+        self.assertIn('.pipelines-grid', self.src,
+                      ".pipelines-grid CSS class must be defined")
+
+    def test_f6g_pipelines_grid_uses_auto_fit(self):
+        idx = self.src.find('.pipelines-grid')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 200]
+        self.assertIn('auto-fit', snippet,
+                      ".pipelines-grid must use auto-fit (not fixed column count)")
+
+    def test_f6g_grid_g3_not_mutated_to_autofit(self):
+        # .grid.g3 must remain fixed 3-column (repeat(3, minmax(0, 1fr)))
+        idx = self.src.find('.grid.g3')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 100]
+        self.assertIn('repeat(3,', snippet.replace(' ', ''),
+                      ".grid.g3 must still be fixed 3-column; do not mutate it to auto-fit")
+
+    def test_f6g_pipelines_grid_in_mobile_collapse(self):
+        # .pipelines-grid must be in the 768px collapse selector
+        # The shipped file uses "@media (max-width: 768px)" (with space after colon)
+        idx = self.src.find('@media (max-width: 768px)')
+        self.assertNotEqual(idx, -1,
+                            "@media (max-width: 768px) block not found in index.html")
+        snippet = self.src[idx:idx + 500]
+        self.assertIn('pipelines-grid', snippet,
+                      ".pipelines-grid must be in the 768px mobile-collapse selector")
+
+    def test_f6g_main_page_div_present(self):
+        self.assertIn('id="main-page"', self.src,
+                      "#main-page div must be present in HTML")
+
+    def test_f6g_pipelines_section_present(self):
+        self.assertIn('id="pipelines-section"', self.src,
+                      "#pipelines-section div must be present in HTML")
+
+    def test_f6g_knowledge_tool_section_present(self):
+        self.assertIn('id="knowledge-tool-section"', self.src,
+                      "#knowledge-tool-section div must be present in HTML")
+
+    # F6-K: KB summary card
+    def test_f6k_render_kb_card_function_present(self):
+        self.assertIn('function _renderKbCard(', self.src,
+                      "_renderKbCard() function must be defined")
+
+    def test_f6k_kb_null_renders_no_kb_yet(self):
+        # The null kb_state branch must produce a "No Knowledge Base yet" message
+        self.assertIn('No Knowledge Base yet', self.src,
+                      "null kb_state must render 'No Knowledge Base yet'")
+
+    def test_f6k_kb_null_no_href(self):
+        # When kb_state is null the card must NOT be an anchor
+        # Find the null branch: it uses createElement('div') not createElement('a')
+        idx = self.src.find('No Knowledge Base yet')
+        self.assertNotEqual(idx, -1)
+        # Look backward from that text for the surrounding card creation
+        region = self.src[max(0, idx - 500):idx + 100]
+        # The null branch creates a div card, not an anchor card
+        # It should not have an href near this region
+        self.assertNotIn("href = '#/kb'", region,
+                         "null KB card must NOT have an href (non-clickable)")
+
+    def test_f6k_kb_card_seam_link(self):
+        # The populated KB card must link to #/kb
+        self.assertIn("'#/kb'", self.src,
+                      "KB card must link to #/kb (SEAM-1)")
+
+    def test_f6k_kb_card_doc_count(self):
+        self.assertIn('doc_count', self.src,
+                      "KB card must read doc_count from kb_state")
+
+    def test_f6k_kb_card_summary_approved(self):
+        self.assertIn('summary_approved', self.src,
+                      "KB card must read summary_approved from kb_state")
+
+    def test_f6k_kb_card_approved_badge(self):
+        self.assertIn('Approved', self.src,
+                      "KB card must show Approved badge when summary_approved is true")
+
+    def test_f6k_kb_card_draft_badge(self):
+        self.assertIn('Draft', self.src,
+                      "KB card must show Draft badge when summary_approved is false")
+
+    def test_f6k_kb_card_last_summary_date(self):
+        self.assertIn('last_summary_date', self.src,
+                      "KB card must read last_summary_date from kb_state")
+
+    # F6-L: Level-0 CLI panel
+    def test_f6l_render_level0_card_function_present(self):
+        self.assertIn('function _renderLevel0Card(', self.src,
+                      "_renderLevel0Card() function must be defined")
+
+    def test_f6l_card_plugin_css_present(self):
+        self.assertIn('.card.plugin', self.src,
+                      ".card.plugin CSS rules must be inlined in index.html")
+
+    def test_f6l_card_plugin_dl_css_present(self):
+        # .card.plugin dl rule must be present (verbatim from component-css.css)
+        idx = self.src.find('.card.plugin dl')
+        self.assertNotEqual(idx, -1,
+                            ".card.plugin dl CSS rule must be inlined")
+        snippet = self.src[idx:idx + 150]
+        self.assertIn('grid-template-columns', snippet,
+                      ".card.plugin dl must define grid-template-columns for dt/dd layout")
+
+    def test_f6l_card_plugin_dt_dd_css_present(self):
+        self.assertIn('.card.plugin dt', self.src,
+                      ".card.plugin dt CSS rule must be inlined")
+        self.assertIn('.card.plugin dd', self.src,
+                      ".card.plugin dd CSS rule must be inlined")
+
+    def test_f6l_manifest_present_false_branch(self):
+        # When manifest_present is false, must show "tool info unavailable"
+        self.assertIn('tool info unavailable', self.src,
+                      "Level-0 panel must show 'tool info unavailable' when manifest_present=false")
+
+    def test_f6l_manifest_present_false_no_dl_rows(self):
+        # When unavailable, no dt/dd rows -- verify the false branch returns early
+        idx = self.src.find('tool info unavailable')
+        self.assertNotEqual(idx, -1)
+        # The unavailable path returns before creating dl
+        region = self.src[max(0, idx - 300):idx + 300]
+        self.assertIn('return card', region,
+                      "Level-0 panel unavailable branch must return card early (no dl rows)")
+
+    def test_f6l_aid_version_field(self):
+        self.assertIn('aid_version', self.src,
+                      "Level-0 panel must read model.tool.aid_version")
+
+    def test_f6l_installed_at_field(self):
+        self.assertIn('installed_at', self.src,
+                      "Level-0 panel must read model.tool.installed_at")
+
+    def test_f6l_tools_installed_field(self):
+        self.assertIn('tools_installed', self.src,
+                      "Level-0 panel must read model.tool.tools_installed")
+
+    # F6-E: Empty-state (FR18 step-by-step)
+    def test_f6e_render_empty_state_function_present(self):
+        self.assertIn('function _renderEmptyState(', self.src,
+                      "_renderEmptyState() function must be defined")
+
+    def test_f6e_empty_state_aid_interview_command(self):
+        # FR18: must show the exact /aid-interview command
+        self.assertIn('/aid-interview', self.src,
+                      "Empty-state must include /aid-interview command")
+
+    def test_f6e_empty_state_aid_interview_in_code_element(self):
+        # The command must be rendered inside a <code> element
+        idx = self.src.find('/aid-interview')
+        self.assertNotEqual(idx, -1)
+        region = self.src[max(0, idx - 200):idx + 50]
+        self.assertIn("codeEl.textContent = '/aid-interview'", region,
+                      "/aid-interview must be set as textContent of a code element")
+
+    def test_f6e_empty_state_verify_step_present(self):
+        # Step 3: verify step is present
+        self.assertIn('work-NNN-', self.src,
+                      "Empty-state must include work-NNN-* verification instruction")
+
+    def test_f6e_empty_state_poll_interval_ref(self):
+        # The empty-state must reference pollMs to show the live interval
+        idx = self.src.find('function _renderEmptyState(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 2500]
+        self.assertIn('pollMs', snippet,
+                      "Empty-state must reference pollMs for the live poll interval")
+
+    def test_f6e_empty_state_kb_l0_still_render(self):
+        # When works==[], KB card and Level-0 panel still render
+        # This is enforced by renderMainPage always rendering knowledge-tool-section
+        idx = self.src.find('function renderMainPage(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1500]
+        self.assertIn('_renderKbCard', snippet,
+                      "renderMainPage must always render KB card (even when works=[])")
+        self.assertIn('_renderLevel0Card', snippet,
+                      "renderMainPage must always render Level-0 panel (even when works=[])")
+
+    # F6: two-pass pin-to-top attention render
+    def test_f6_two_pass_attention_render(self):
+        # The pipelines grid must use two passes: attention first, then normal
+        idx = self.src.find('function renderMainPage(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 2000]
+        # Must check for ATTENTION_STATES array
+        self.assertIn('ATTENTION_STATES', snippet,
+                      "renderMainPage must use two-pass attention rendering")
+        # First pass checks attention states
+        self.assertIn('Paused-Awaiting-Input', snippet,
+                      "renderMainPage attention pass must include Paused-Awaiting-Input")
+        self.assertIn('Blocked', snippet,
+                      "renderMainPage attention pass must include Blocked")
+
+    # F6: card-link CSS
+    def test_f6_card_link_css_present(self):
+        self.assertIn('.card-link', self.src,
+                      ".card-link CSS rule must be defined")
+
+    def test_f6_card_link_display_block(self):
+        idx = self.src.find('.card-link')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 100]
+        self.assertIn('display:block', snippet.replace(' ', ''),
+                      ".card-link must set display:block")
+
+    # F6: KB view placeholder (SEAM-1)
+    def test_f6_kb_view_div_present(self):
+        self.assertIn('id="kb-view"', self.src,
+                      "#kb-view div must be present in HTML")
+
+    def test_f6_render_kb_view_function_present(self):
+        self.assertIn('function renderKbView(', self.src,
+                      "renderKbView() function must be defined")
+
+    def test_f6_stale_work_notice_div_present(self):
+        self.assertIn('id="stale-work-notice"', self.src,
+                      "#stale-work-notice div must be present in HTML")
+
+
 if __name__ == "__main__":
     unittest.main()
