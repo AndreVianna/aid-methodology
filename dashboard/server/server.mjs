@@ -40,7 +40,7 @@ import { join, dirname, basename } from "path";
 import { fileURLToPath } from "url";
 import { createHash } from "crypto";
 
-import { readRepo } from "./reader.mjs";
+import { readRepo, readRepoDetail } from "./reader.mjs";
 
 // ---------------------------------------------------------------------------
 // Arg parsing
@@ -450,12 +450,73 @@ function serializeHome(homeModel) {
 }
 
 // ---------------------------------------------------------------------------
+// LC-SD ?detail= helpers (task-070)
+// ---------------------------------------------------------------------------
+
+// parseDetailParam: parse ?detail=<work_id>/<task_id>[,...] from a raw query string.
+// Returns [] for missing or empty ?detail= value.
+// Value is URL-decoded (% encoding), comma-split, trimmed, empties dropped.
+function parseDetailParam(queryString) {
+  if (!queryString) return [];
+  // Parse query string manually (no third-party deps, no querystring module).
+  // Find the "detail" param value.
+  const pairs = queryString.split("&");
+  let raw = null;
+  for (const pair of pairs) {
+    const eq = pair.indexOf("=");
+    if (eq === -1) continue;
+    const key = decodeURIComponent(pair.slice(0, eq).replace(/\+/g, " "));
+    if (key === "detail") {
+      raw = decodeURIComponent(pair.slice(eq + 1).replace(/\+/g, " "));
+      break;
+    }
+  }
+  if (raw === null || raw === "") return [];
+  return raw.split(",").map((k) => k.trim()).filter((k) => k.length > 0);
+}
+
+// serializeModelWithDetails: serialize a RepoModel + details map (LC-SD).
+// 'details' values are ALREADY plain objects from readRepoDetail (_buildTaskDetail).
+// Keys are sorted ascending (DM-2 key-order parity); re-sorting here is defensive.
+// schema_version stays at 3 (RC-2 no-bump decision).
+function serializeModelWithDetails(model, details) {
+  // Sort model.works ascending by work_id (DM-3 determinism).
+  if (model.works) {
+    model.works = model.works.slice().sort((a, b) =>
+      a.work_id < b.work_id ? -1 : a.work_id > b.work_id ? 1 : 0
+    );
+  }
+
+  // Sort details keys ascending (DM-2 key-order parity).
+  const sortedDetails = {};
+  for (const k of Object.keys(details).sort()) {
+    sortedDetails[k] = details[k];
+  }
+
+  // DM-1 envelope: schema_version + generated_by + model + details (details is LAST).
+  const envelope = {
+    schema_version: 3,
+    generated_by:   "node",
+    model:          model,
+    details:        sortedDetails,
+  };
+
+  const body = dm3PostProcess(JSON.stringify(envelope));
+  return Buffer.from(body, "utf-8");
+}
+
+// ---------------------------------------------------------------------------
 // Request handler
 // ---------------------------------------------------------------------------
 
 function handler(req, res) {
   const method = req.method || "GET";
-  const url = (req.url || "/").split("?")[0]; // strip query string
+  // Split path and query string; route on path only (closed allowlist).
+  // The raw query string is threaded to serveRepoModel for ?detail= parsing (task-070).
+  const rawUrl = req.url || "/";
+  const qMark = rawUrl.indexOf("?");
+  const url = qMark === -1 ? rawUrl : rawUrl.slice(0, qMark);
+  const queryString = qMark === -1 ? "" : rawUrl.slice(qMark + 1);
 
   // Non-GET -> 405
   if (method !== "GET") {
@@ -478,7 +539,7 @@ function handler(req, res) {
   if (m) {
     const rid = m[1];
     const leaf = m[2];
-    serveRepoRoute(res, rid, leaf);
+    serveRepoRoute(res, rid, leaf, queryString);
     return;
   }
 
@@ -535,7 +596,7 @@ function serveApiHome(res) {
   res.end(bodyBuf);
 }
 
-function serveRepoRoute(res, rid, leaf) {
+function serveRepoRoute(res, rid, leaf, queryString) {
   const regPath = join(AID_HOME, "registry.yml");
   const { idMap } = getIdMap(regPath);
 
@@ -550,7 +611,7 @@ function serveRepoRoute(res, rid, leaf) {
     serveStaticLeaf(res, canonPath, leaf);
   } else {
     // leaf === "api/model"
-    serveRepoModel(res, canonPath);
+    serveRepoModel(res, canonPath, queryString || "");
   }
 }
 
@@ -579,12 +640,24 @@ function serveStaticLeaf(res, canonPath, leaf) {
   res.end(data);
 }
 
-function serveRepoModel(res, canonPath) {
+function serveRepoModel(res, canonPath, queryString) {
   // GET /r/<id>/api/model -> readRepo(canonPath) -> DM-1 envelope.
   // If .aid/ is gone: empty RepoModel (NFR10), NOT 404/500.
-  let model;
+  //
+  // LC-SD (task-070): when ?detail=<work_id>/<task_id>[,...] is present, calls
+  // readRepoDetail and appends a 'details' map to the envelope. The 'details'
+  // key is OMITTED entirely when ?detail= is not supplied (NFR4 byte-identical
+  // bare-poll path). schema_version stays at 3 (RC-2 no-bump decision).
+  const detailKeys = parseDetailParam(queryString || "");
+  let bodyBuf;
   try {
-    model = readRepo(canonPath);
+    if (detailKeys.length > 0) {
+      const { model, details } = readRepoDetail(canonPath, detailKeys);
+      bodyBuf = serializeModelWithDetails(model, details);
+    } else {
+      const model = readRepo(canonPath);
+      bodyBuf = serializeModel(model);
+    }
   } catch (err) {
     process.stderr.write("server.mjs: readRepo error: " + String(err) + "\n");
     res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
@@ -592,7 +665,6 @@ function serveRepoModel(res, canonPath) {
     return;
   }
 
-  const bodyBuf = serializeModel(model);
   res.writeHead(200, {
     "Content-Type": "application/json; charset=utf-8",
     "Content-Length": bodyBuf.length,

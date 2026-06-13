@@ -50,7 +50,7 @@ _DASHBOARD_DIR = _SERVER_DIR.parent              # dashboard/
 if str(_DASHBOARD_DIR) not in sys.path:
     sys.path.insert(0, str(_DASHBOARD_DIR))
 
-from reader import read_repo  # noqa: E402  (inserted sys.path above)
+from reader import read_repo, read_repo_detail  # noqa: E402  (inserted sys.path above)
 from reader.parsers import _strip_yaml_inline_comment  # noqa: E402  (shared PF-6 rule)
 
 
@@ -502,6 +502,98 @@ def _ser_repo_model(obj) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# TaskDetail serializers (LC-SD, task-070)
+# Field order mirrors reader.mjs _build* functions for DM-2 key-order parity.
+# ---------------------------------------------------------------------------
+
+def _ser_finding(obj) -> dict:
+    """Serialize Finding in declared field order (mirrors _buildFinding in reader.mjs)."""
+    return {
+        "severity":      obj.severity,
+        "description":   obj.description,
+        "location":      obj.location,
+        "disposition":   obj.disposition,
+        "reviewer_tier": obj.reviewer_tier,
+    }
+
+
+def _ser_deferred_issue(obj) -> dict:
+    """Serialize DeferredIssue in declared field order (mirrors _buildDeferredIssue)."""
+    return {
+        "source_task": obj.source_task,
+        "severity":    obj.severity,
+        "description": obj.description,
+        "status":      obj.status,
+    }
+
+
+def _ser_task_ledger(obj) -> dict:
+    """Serialize TaskLedger in declared field order (mirrors _buildTaskLedger)."""
+    return {
+        "delivery_id":     obj.delivery_id,
+        "grade":           obj.grade,
+        "reviewer_tier":   obj.reviewer_tier,
+        "gate_timestamp":  obj.gate_timestamp,
+        "deferred_issues": [_ser_deferred_issue(d) for d in (obj.deferred_issues or [])],
+    }
+
+
+def _ser_raw_state_ref(obj) -> "dict | None":
+    """Serialize RawStateRef in declared field order (mirrors _buildRawStateRef), or None."""
+    if obj is None:
+        return None
+    return {
+        "text":     obj.text,
+        "byte_len": obj.byte_len,
+        "path":     obj.path,
+    }
+
+
+def _ser_log_availability(obj) -> "dict | None":
+    """Serialize LogAvailability in declared field order (mirrors _buildLogAvailability), or None."""
+    if obj is None:
+        return None
+    return {
+        "task_logs":          obj.task_logs,
+        "server_log_present": obj.server_log_present,
+        "heartbeat_present":  obj.heartbeat_present,
+    }
+
+
+def _ser_task_detail(obj) -> dict:
+    """Serialize TaskDetail in declared field order (mirrors _buildTaskDetail in reader.mjs).
+
+    Field order: task_id, findings, ledger, raw_state, logs
+    """
+    return {
+        "task_id":  obj.task_id,
+        "findings": [_ser_finding(f) for f in (obj.findings or [])],
+        "ledger":   _ser_task_ledger(obj.ledger),
+        "raw_state": _ser_raw_state_ref(obj.raw_state),
+        "logs":     _ser_log_availability(obj.logs),
+    }
+
+
+def _parse_detail_param(query_string: str) -> list[str]:
+    """Parse ?detail=<work_id>/<task_id>[,...] from a raw query string.
+
+    Returns a list of composite 'work_id/task_id' strings (URL-decoded,
+    trimmed, empties dropped). Returns [] for missing or empty ?detail=.
+    """
+    if not query_string:
+        return []
+    from urllib.parse import parse_qs, unquote_plus  # stdlib, safe to import here
+    parsed = parse_qs(query_string, keep_blank_values=False)
+    raw_vals = parsed.get("detail", [])
+    if not raw_vals:
+        return []
+    # parse_qs joins multi-value but we only take the first occurrence
+    raw = raw_vals[0]
+    keys = [k.strip() for k in raw.split(",")]
+    return [k for k in keys if k]
+
+
 def _dm3_post_process(raw: str) -> bytes:
     """Apply DM-3 U+2028/U+2029 escaping and encode to UTF-8.
 
@@ -513,11 +605,34 @@ def _dm3_post_process(raw: str) -> bytes:
 
 
 def serialize_model(model) -> bytes:
-    """Serialize a RepoModel to the DM-1 envelope bytes (feature-003 compatible)."""
+    """Serialize a RepoModel to the DM-1 envelope bytes (feature-003 compatible).
+
+    NFR4: bare /r/<id>/api/model call (no ?detail=) is byte-for-byte unchanged --
+    the 'details' key is OMITTED entirely (not present) when details is None/not supplied.
+    """
     envelope = {
         "schema_version": 3,
         "generated_by":   "python",
         "model":          _ser_repo_model(model),
+    }
+    raw = json.dumps(envelope, separators=(",", ":"), ensure_ascii=False)
+    return _dm3_post_process(raw)
+
+
+def serialize_model_with_details(model, details: dict) -> bytes:
+    """Serialize a RepoModel with a TaskDetail map appended (LC-SD, task-070).
+
+    'details' is the LAST envelope key (after 'model'), present ONLY when ?detail= was supplied.
+    Keys are sorted ascending (DM-2 key-order parity) -- the caller (read_repo_detail) returns
+    them already sorted, but we re-sort here to be defensive.
+    schema_version stays at 3 (RC-2 no-bump decision).
+    """
+    sorted_details = {k: _ser_task_detail(v) for k, v in sorted(details.items())}
+    envelope = {
+        "schema_version": 3,
+        "generated_by":   "python",
+        "model":          _ser_repo_model(model),
+        "details":        sorted_details,
     }
     raw = json.dumps(envelope, separators=(",", ":"), ensure_ascii=False)
     return _dm3_post_process(raw)
@@ -545,8 +660,12 @@ class _DashboardHandler(BaseHTTPRequestHandler):
     # ---- method dispatch ---------------------------------------------------
 
     def do_GET(self) -> None:  # noqa: N802
-        path = self.path.split("?", 1)[0]  # strip query string
-        self._route_get(path)
+        # Split path and query string; route on path only (closed allowlist).
+        # The raw query string is threaded to _serve_repo_model for ?detail= parsing (task-070).
+        parts = self.path.split("?", 1)
+        path = parts[0]
+        query_string = parts[1] if len(parts) > 1 else ""
+        self._route_get(path, query_string)
 
     def do_HEAD(self) -> None:  # noqa: N802
         # HEAD is a non-GET verb -> 405 (SPEC route table: "non-GET verb -> 405",
@@ -570,7 +689,7 @@ class _DashboardHandler(BaseHTTPRequestHandler):
 
     # ---- router ------------------------------------------------------------
 
-    def _route_get(self, path: str) -> None:
+    def _route_get(self, path: str, query_string: str = "") -> None:
         if path == "/":
             self._serve_cli_home()
             return
@@ -580,7 +699,7 @@ class _DashboardHandler(BaseHTTPRequestHandler):
         m = _R.match(path)
         if m:
             rid, leaf = m.group(1), m.group(2)
-            self._serve_repo_route(rid, leaf)
+            self._serve_repo_route(rid, leaf, query_string)
             return
         self._send_plain(404, b"Not Found")
 
@@ -634,7 +753,7 @@ class _DashboardHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def _serve_repo_route(self, rid: str, leaf: str) -> None:
+    def _serve_repo_route(self, rid: str, leaf: str, query_string: str = "") -> None:
         """Handle /r/<id>/{home.html,kb.html,api/model}."""
         reg_path = Path(self.server.aid_home) / "registry.yml"  # type: ignore[attr-defined]
         id_map, _ = _get_id_map(reg_path)
@@ -648,7 +767,7 @@ class _DashboardHandler(BaseHTTPRequestHandler):
             self._serve_static_leaf(canon_path, leaf)
         else:
             # leaf == "api/model"
-            self._serve_repo_model(canon_path)
+            self._serve_repo_model(canon_path, query_string)
 
     def _serve_static_leaf(self, canon_path: str, leaf: str) -> None:
         """SEC-2: served path constructed as registry[id]/.aid/dashboard/<leaf>."""
@@ -669,14 +788,24 @@ class _DashboardHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
-    def _serve_repo_model(self, canon_path: str) -> None:
+    def _serve_repo_model(self, canon_path: str, query_string: str = "") -> None:
         """GET /r/<id>/api/model -> read_repo(repo(id)) -> DM-1 envelope.
 
         If .aid/ is gone: empty RepoModel (NFR10), NOT 404/500.
+
+        LC-SD (task-070): when ?detail=<work_id>/<task_id>[,...] is present, calls
+        read_repo_detail and appends a 'details' map to the envelope. The 'details'
+        key is OMITTED entirely when ?detail= is not supplied (NFR4 byte-identical
+        bare-poll path). schema_version stays at 3 (RC-2 no-bump decision).
         """
+        detail_keys = _parse_detail_param(query_string)
         try:
-            model = read_repo(canon_path)
-            body = serialize_model(model)
+            if detail_keys:
+                model, details = read_repo_detail(canon_path, detail_keys)
+                body = serialize_model_with_details(model, details)
+            else:
+                model = read_repo(canon_path)
+                body = serialize_model(model)
         except Exception as exc:
             sys.stderr.write(f"server: /r/<id>/api/model error: {exc}\n")
             self._send_plain(500, b"Internal Server Error")
