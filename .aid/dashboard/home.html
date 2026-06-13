@@ -513,15 +513,6 @@ footer {
 .card-link { display: block; color: inherit; text-decoration: none; }
 .card-link:hover { text-decoration: none; }
 
-/* Level-0 CLI panel (.card.plugin) -- copied verbatim from component-css.css:235-242 */
-.card.plugin { display: flex; flex-direction: column; gap: 0.5rem; }
-.card.plugin .plugin-name { font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 0.86rem; color: var(--accent); }
-.card.plugin .plugin-stats { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.4em; }
-.card.plugin .plugin-body { color: var(--text-muted); font-size: 0.9rem; }
-.card.plugin dl { display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.6rem; margin: 0.5rem 0 0 0; font-size: 0.85rem; }
-.card.plugin dt { color: var(--text-dim); font-weight: 500; }
-.card.plugin dd { margin: 0; color: var(--text); }
-.card.plugin .foot { margin-top: auto; padding-top: 0.6rem; }
 
 /* Main-page section headings */
 .main-section-head { margin: 1.5rem 0 0.75rem; }
@@ -854,7 +845,7 @@ footer {
     <div id="tasks-section" style="margin-top:1.5rem"></div>
   </div>
 
-  <!-- Main page (feature-006): card grid + KB card + Level-0 panel -->
+  <!-- Main page (feature-006): card grid + KB card -->
   <div id="main-page" style="display:none">
     <!-- Knowledge & Tooling section — fixed-size header band, rendered first -->
     <h2 class="main-section-head kt-head">Knowledge &amp; Tooling</h2>
@@ -892,7 +883,7 @@ footer {
 <noscript>
   <div class="noscript-fallback">
     <h2>JavaScript required</h2>
-    <p>The AID dashboard uses JavaScript to poll <code>/api/model</code> and render pipeline state.
+    <p>The AID dashboard uses JavaScript to poll <code>./api/model</code> and render pipeline state.
        Please enable JavaScript to use this dashboard.</p>
   </div>
 </noscript>
@@ -1007,7 +998,7 @@ footer {
       return;
     }
     fetchPending = true;
-    fetch('/api/model')
+    fetch('./api/model')
       .then(function (resp) {
         if (!resp.ok) {
           throw new Error('HTTP ' + resp.status);
@@ -1245,7 +1236,7 @@ footer {
   }
 
   // ---------------------------------------------------------------------------
-  // renderMainPage: the feature-006 main page (card grid + KB card + Level-0 panel)
+  // renderMainPage: the feature-006 main page (card grid + KB card)
   // ---------------------------------------------------------------------------
   function renderMainPage(model) {
     var works = model.works || [];
@@ -1280,7 +1271,6 @@ footer {
     if (ktEl) {
       ktEl.innerHTML = '';
       ktEl.appendChild(_renderKbCard(model.repo && model.repo.kb_state));
-      ktEl.appendChild(_renderLevel0Card(model.tool));
     }
 
     // Update freshness badge
@@ -1583,79 +1573,6 @@ footer {
       card.appendChild(freshMeta);
     }
 
-    return card;
-  }
-
-  // Build the Level-0 CLI panel (.card.plugin, UI-5)
-  function _renderLevel0Card(tool) {
-    var card = document.createElement('div');
-    card.className = 'card plugin';
-
-    var kicker = document.createElement('div');
-    kicker.className = 'kicker';
-    kicker.textContent = 'AID CLI (this machine)';
-    card.appendChild(kicker);
-
-    if (!tool || tool.manifest_present === false) {
-      var unavail = document.createElement('p');
-      unavail.className = 'meta';
-      unavail.textContent = 'tool info unavailable';
-      card.appendChild(unavail);
-      return card;
-    }
-
-    var dl = document.createElement('dl');
-
-    // version
-    var dtVer = document.createElement('dt');
-    dtVer.textContent = 'version';
-    dl.appendChild(dtVer);
-    var ddVer = document.createElement('dd');
-    if (tool.aid_version) {
-      var verBadge = document.createElement('span');
-      verBadge.className = 'badge badge-info';
-      verBadge.textContent = tool.aid_version;
-      ddVer.appendChild(verBadge);
-    } else {
-      ddVer.textContent = '—';
-    }
-    dl.appendChild(ddVer);
-
-    // installed
-    var dtInst = document.createElement('dt');
-    dtInst.textContent = 'installed';
-    dl.appendChild(dtInst);
-    var ddInst = document.createElement('dd');
-    if (tool.installed_at) {
-      var instSpan = document.createElement('span');
-      instSpan.className = 'meta';
-      instSpan.textContent = _fmtLocalDateTime(tool.installed_at) || tool.installed_at;
-      ddInst.appendChild(instSpan);
-    } else {
-      ddInst.textContent = '—';
-    }
-    dl.appendChild(ddInst);
-
-    // tools
-    var dtTools = document.createElement('dt');
-    dtTools.textContent = 'tools';
-    dl.appendChild(dtTools);
-    var ddTools = document.createElement('dd');
-    var toolsList = tool.tools_installed || [];
-    if (toolsList.length > 0) {
-      for (var k = 0; k < toolsList.length; k++) {
-        var chip = document.createElement('span');
-        chip.className = 'badge badge-dim';
-        chip.style.marginRight = '0.25rem';
-        chip.textContent = toolsList[k];
-        ddTools.appendChild(chip);
-      }
-    } else {
-      ddTools.textContent = '—';
-    }
-    dl.appendChild(ddTools);
-
-    card.appendChild(dl);
     return card;
   }
 
