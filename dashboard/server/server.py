@@ -242,8 +242,8 @@ def _read_aid_version(aid_home: str) -> str | None:
 
 def _tools_catalog(aid_home: str) -> list[str]:
     """Read manageable-tool catalog from $AID_HOME (best-effort)."""
-    # Aid's manageable tools: well-known fixed list (claude-code, codex, cursor).
-    # The catalog is the set of tools aid add knows how to install; we read it
+    # Aid's manageable tools: the five host tools aid add knows how to install
+    # (antigravity, claude-code, codex, copilot-cli, cursor). We read the catalog
     # from the install tree if a catalog file is present, else fall back to the
     # static known list.
     catalog_path = Path(aid_home) / "lib" / "tools-catalog.txt"
@@ -253,8 +253,8 @@ def _tools_catalog(aid_home: str) -> list[str]:
             return [l.strip() for l in lines if l.strip() and not l.strip().startswith("#")]
         except Exception:
             pass
-    # Static fallback -- the known aid-manageable tools.
-    return ["claude-code", "codex", "cursor"]
+    # Static fallback -- the known aid-manageable tools (kept byte-identical to the Node twin).
+    return ["antigravity", "claude-code", "codex", "copilot-cli", "cursor"]
 
 
 def build_home_model(
@@ -288,6 +288,8 @@ def build_home_model(
             "tools_installed": [],
             "has_home":       False,
             "has_kb":         False,
+            "pipeline_count":        None,
+            "pipelines_in_progress": None,
         }
 
         if available:
@@ -305,6 +307,18 @@ def build_home_model(
                 pass
             try:
                 entry["has_kb"] = (aid_dir / "dashboard" / "kb.html").is_file()
+            except Exception:
+                pass
+            # Pipeline counts (FR27 home summary): total works + how many are Running.
+            # The CLI home is load-once, so a per-project read_repo here is paid once
+            # per page load, not per poll. Best-effort: never raise (NFR10).
+            try:
+                _rm = read_repo(canon_path)
+                _works = getattr(_rm, "works", []) or []
+                entry["pipeline_count"] = len(_works)
+                entry["pipelines_in_progress"] = sum(
+                    1 for _w in _works if getattr(_w, "lifecycle", None) == "Running"
+                )
             except Exception:
                 pass
 

@@ -182,6 +182,8 @@ main {
 .grid.g2 { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
 .grid.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .grid.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+/* Projects grid: fixed-width cards, as many per row as fit (4 on the 1200px desktop). */
+.grid.projects { grid-template-columns: repeat(auto-fill, 270px); justify-content: start; }
 .grid.g-lane { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
 /* Main-page pipelines grid: auto-fit reflow (does NOT mutate shared .g3 fixed-3-col) */
 .pipelines-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -245,7 +247,7 @@ footer {
   .top-bar .brand { font-size: 0.85rem; }
   .breadcrumb { font-size: 0.78rem; min-width: 0; }
   main { padding: 1rem 1rem 3rem; }
-  .grid, .grid.g2, .grid.g3, .grid.g4, .grid.g-lane, .pipelines-grid { grid-template-columns: 1fr; }
+  .grid, .grid.g2, .grid.g3, .grid.g4, .grid.projects, .grid.g-lane, .pipelines-grid { grid-template-columns: 1fr; }
   .stage-rail { overflow-x: auto; flex-wrap: nowrap; }
   .content-col { max-width: 100%; }
 }
@@ -470,15 +472,10 @@ footer {
   </div>
   <div style="flex:1"></div>
   <div class="controls">
-    <!-- Freshness badge (Telemetry) -->
+    <!-- Load status (static: the CLI home loads once, it does not auto-poll) -->
     <span class="badge badge-dim" id="freshness-badge" aria-live="polite">&#9679; Loading</span>
-    <!-- Interval control (UI-5) -->
-    <label class="interval-control" title="Poll interval in seconds">
-      Refresh
-      <input type="number" class="interval-input" id="interval-input"
-             min="1" max="600" value="5" aria-label="Refresh interval in seconds">
-      s
-    </label>
+    <!-- Manual refresh: the CLI home does not auto-poll; click to reload the project list -->
+    <button type="button" class="btn-ghost" id="refresh-btn" title="Reload the project list">Refresh</button>
     <!-- Theme toggle -->
     <button type="button" class="btn-ghost" id="theme-toggle"
             aria-label="Switch theme" title="Toggle light/dark theme">
@@ -500,10 +497,10 @@ footer {
   <!-- Machine panel (UI-H1) -->
   <div id="machine-panel"></div>
 
-  <!-- Repo grid section (UI-H2) -->
+  <!-- Projects grid section (UI-H2) -->
   <div id="repo-section" style="display:none">
-    <h2 class="main-section-head">Repos</h2>
-    <div class="grid g2" id="repo-grid"></div>
+    <h2 class="main-section-head">Projects</h2>
+    <div class="grid projects" id="repo-grid"></div>
   </div>
 
   <!-- Empty registry state (UI-H3 empty) -->
@@ -520,7 +517,7 @@ footer {
 
 <footer id="page-footer">
   <p>served locally by <code>aid dashboard</code> &middot; read-only &middot;
-  refreshes every <span id="footer-interval">5</span>s &middot;
+  refresh to update &middot;
   <span id="footer-generated-by"></span></p>
 </footer>
 
@@ -540,92 +537,35 @@ footer {
   // Constants
   // ---------------------------------------------------------------------------
   var EXPECTED_HOME_SCHEMA = 1;
-  var LS_KEY_POLL_MS = 'aid-dashboard-poll-ms';
 
   // ---------------------------------------------------------------------------
   // State
   // ---------------------------------------------------------------------------
-  var pollMs = 5000;
-  var pollTimer = null;
   var fetchPending = false;
   var lastGoodEnvelope = null;
   var lastSuccessTime = null;
-  var consecutiveErrors = 0;
 
   // ---------------------------------------------------------------------------
-  // Boot: read interval from localStorage
+  // Boot: the CLI home loads ONCE and does NOT auto-poll. Click Refresh (in-page
+  // reload of /api/home) or reload the browser tab to pick up add/remove changes.
   // ---------------------------------------------------------------------------
   (function boot() {
-    var stored = localStorage.getItem(LS_KEY_POLL_MS);
-    if (stored !== null) {
-      var n = parseInt(stored, 10);
-      if (!isNaN(n)) {
-        pollMs = clampInterval(n);
-      }
+    var refreshBtn = document.getElementById('refresh-btn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', function () { doFetch(); });
     }
-    var input = document.getElementById('interval-input');
-    if (input) {
-      input.value = Math.round(pollMs / 1000);
-      input.addEventListener('change', onIntervalChange);
-    }
-    updateFooterInterval();
     initTheme();
-    // Immediate first fetch
     doFetch();
   })();
 
   // ---------------------------------------------------------------------------
-  // Interval helpers
+  // Fetch (single-shot; no recurring poll -- the CLI home updates only on Refresh
+  // or a browser reload)
   // ---------------------------------------------------------------------------
-  function clampInterval(ms) {
-    if (ms < 1000) return 1000;
-    if (ms > 600000) return 600000;
-    return ms;
-  }
-
-  function onIntervalChange() {
-    var input = document.getElementById('interval-input');
-    if (!input) return;
-    var raw = parseFloat(input.value);
-    if (isNaN(raw)) raw = 5;
-    var clamped = clampInterval(Math.round(raw * 1000));
-    input.value = Math.round(clamped / 1000);
-    pollMs = clamped;
-    localStorage.setItem(LS_KEY_POLL_MS, String(pollMs));
-    updateFooterInterval();
-    if (pollTimer !== null) {
-      clearTimeout(pollTimer);
-      pollTimer = null;
-    }
-    scheduleNextPoll();
-  }
-
-  function updateFooterInterval() {
-    var el = document.getElementById('footer-interval');
-    if (el) el.textContent = Math.round(pollMs / 1000);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Poll loop (FF-3)
-  // ---------------------------------------------------------------------------
-  function scheduleNextPoll() {
-    if (pollTimer !== null) return; // already scheduled
-    var delay = pollMs;
-    if (consecutiveErrors > 0) {
-      delay = Math.min(pollMs * Math.pow(2, Math.min(consecutiveErrors - 1, 2)), pollMs * 4);
-    }
-    pollTimer = setTimeout(function () {
-      pollTimer = null;
-      doFetch();
-    }, delay);
-  }
-
   function doFetch() {
-    if (fetchPending) {
-      scheduleNextPoll();
-      return;
-    }
+    if (fetchPending) return;            // single in-flight
     fetchPending = true;
+    updateFreshnessBadge('loading');
     fetch('/api/home')
       .then(function (resp) {
         if (!resp.ok) {
@@ -635,15 +575,11 @@ footer {
       })
       .then(function (envelope) {
         fetchPending = false;
-        consecutiveErrors = 0;
         onSuccess(envelope);
-        scheduleNextPoll();
       })
       .catch(function (err) {
         fetchPending = false;
-        consecutiveErrors += 1;
         onError(err);
-        scheduleNextPoll();
       });
   }
 
@@ -670,46 +606,42 @@ footer {
 
     renderMachinePanel(envelope.machine);
     renderRepoGrid(envelope.repos);
-    updateFreshnessBadge('live', envelope.read && envelope.read.read_at);
+    updateFreshnessBadge('loaded');
   }
 
   function onError(err) {
-    updateFreshnessBadge('disconnected');
+    updateFreshnessBadge('error');
     // Keep last good view if we have one; never blank the page
     if (!lastGoodEnvelope) {
       var loadEl = document.getElementById('loading-state');
-      if (loadEl) loadEl.innerHTML = '<p>Reconnecting to AID dashboard…</p>';
+      if (loadEl) loadEl.innerHTML = '<p>Could not load the project list. Use Refresh or reload the page.</p>';
     }
   }
 
   // ---------------------------------------------------------------------------
   // Freshness badge
   // ---------------------------------------------------------------------------
-  function updateFreshnessBadge(state, readAt) {
+  // Static status badge -- reflects the last load, not a live poll.
+  function _fmtClock(ts) {
+    try {
+      var d = new Date(ts);
+      function p(n) { return (n < 10 ? '0' : '') + n; }
+      return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+    } catch (e) { return ''; }
+  }
+
+  function updateFreshnessBadge(state) {
     var badge = document.getElementById('freshness-badge');
     if (!badge) return;
-
-    if (state === 'disconnected') {
+    if (state === 'loading') {
+      badge.className = 'badge badge-dim';
+      badge.innerHTML = '&#9679; Loading';
+    } else if (state === 'error') {
       badge.className = 'badge badge-err';
-      badge.textContent = '○ Reconnecting';
-      return;
-    }
-
-    if (state === 'live' && readAt && lastSuccessTime) {
-      var readTime = new Date(readAt).getTime();
-      var now = Date.now();
-      var ageMs = now - readTime;
-      if (ageMs > pollMs * 2) {
-        state = 'stale';
-      }
-    }
-
-    if (state === 'stale') {
-      badge.className = 'badge badge-warn';
-      badge.innerHTML = '&#9680; Stale';
-    } else {
+      badge.textContent = 'Could not load';
+    } else { // loaded
       badge.className = 'badge badge-ok';
-      badge.innerHTML = '<span class="pulse-dot">&#9679;</span> Live';
+      badge.textContent = 'as of ' + _fmtClock(lastSuccessTime || Date.now());
     }
   }
 
@@ -748,31 +680,28 @@ footer {
     var card = document.createElement('div');
     card.className = 'card plugin';
 
-    // Kicker
+    // Kicker: "AID CLI" + the installed-version pill (e.g. v1.0.0). No "(this machine)".
     var kicker = document.createElement('div');
     kicker.className = 'kicker';
-    kicker.textContent = 'AID CLI (this machine)';
+    kicker.appendChild(document.createTextNode('AID CLI'));
+    if (machine && machine.aid_version) {
+      var vBadge = document.createElement('span');
+      vBadge.className = 'badge badge-info';
+      vBadge.style.marginLeft = '0.4rem';
+      vBadge.textContent = 'v' + machine.aid_version;
+      kicker.appendChild(vBadge);
+    } else {
+      var vNa = document.createElement('span');
+      vNa.style.marginLeft = '0.4rem';
+      vNa.textContent = '(version unavailable)';
+      kicker.appendChild(vNa);
+    }
     card.appendChild(kicker);
 
     // dl/dt/dd rows
     var dl = document.createElement('dl');
 
-    // Row 1: version
-    var dt1 = document.createElement('dt');
-    dt1.textContent = 'version';
-    var dd1 = document.createElement('dd');
-    if (machine && machine.aid_version) {
-      var vBadge = document.createElement('span');
-      vBadge.className = 'badge badge-info';
-      vBadge.textContent = machine.aid_version;
-      dd1.appendChild(vBadge);
-    } else {
-      dd1.textContent = 'CLI version unavailable';
-    }
-    dl.appendChild(dt1);
-    dl.appendChild(dd1);
-
-    // Row 2: install location
+    // Row: install location
     var dt2 = document.createElement('dt');
     dt2.textContent = 'install location';
     var dd2 = document.createElement('dd');
@@ -784,9 +713,9 @@ footer {
     dl.appendChild(dt2);
     dl.appendChild(dd2);
 
-    // Row 3: tool catalog
+    // Row: available tools
     var dt3 = document.createElement('dt');
-    dt3.textContent = 'tool catalog';
+    dt3.textContent = 'available tools';
     var dd3 = document.createElement('dd');
     var catalog = (machine && Array.isArray(machine.tools_catalog)) ? machine.tools_catalog : [];
     if (catalog.length === 0) {
@@ -806,14 +735,6 @@ footer {
     dl.appendChild(dd3);
 
     card.appendChild(dl);
-
-    // Advisory registry path line
-    if (machine && machine.registry_path) {
-      var metaLine = document.createElement('p');
-      metaLine.className = 'plugin-meta';
-      metaLine.textContent = 'registry: ' + machine.registry_path;
-      card.appendChild(metaLine);
-    }
 
     container.appendChild(card);
   }
@@ -896,25 +817,25 @@ footer {
     descEl.textContent = repo.description ? repo.description : '—';
     card.appendChild(descEl);
 
-    // Chip row: version + tools + KB
+    // Chip row: each installed tool with the AID version after its name + KB.
     var chipWrap = document.createElement('div');
     chipWrap.className = 'chip-row';
 
-    // aid_version chip
-    if (repo.aid_version) {
-      var vChip = document.createElement('span');
-      vChip.className = 'badge badge-info';
-      vChip.textContent = repo.aid_version;
-      chipWrap.appendChild(vChip);
-    }
-
-    // tools_installed chips (omit entirely when list empty/absent)
+    // tools_installed chips -- "<tool> v<version>" (version after the tool name).
     var tools = Array.isArray(repo.tools_installed) ? repo.tools_installed : [];
+    var verSuffix = repo.aid_version ? (' v' + repo.aid_version) : '';
     for (var t = 0; t < tools.length; t++) {
       var tChip = document.createElement('span');
       tChip.className = 'badge badge-dim';
-      tChip.textContent = tools[t];
+      tChip.textContent = tools[t] + verSuffix;
       chipWrap.appendChild(tChip);
+    }
+    // If no tools are listed but a version is known, still show it.
+    if (tools.length === 0 && repo.aid_version) {
+      var vOnly = document.createElement('span');
+      vOnly.className = 'badge badge-info';
+      vOnly.textContent = 'v' + repo.aid_version;
+      chipWrap.appendChild(vOnly);
     }
 
     // has_kb affordance (advisory non-interactive chip)
@@ -927,6 +848,17 @@ footer {
 
     if (chipWrap.hasChildNodes()) {
       card.appendChild(chipWrap);
+    }
+
+    // Pipeline summary line (FR27): total pipelines + how many are in progress.
+    if (typeof repo.pipeline_count === 'number') {
+      var pc = repo.pipeline_count;
+      var ip = (typeof repo.pipelines_in_progress === 'number') ? repo.pipelines_in_progress : 0;
+      var pipeLine = document.createElement('p');
+      pipeLine.className = 'meta';
+      pipeLine.style.marginTop = '0.5rem';
+      pipeLine.textContent = pc + ' pipeline' + (pc === 1 ? '' : 's') + ' · ' + ip + ' in progress';
+      card.appendChild(pipeLine);
     }
 
     // has_home=false note
@@ -982,7 +914,7 @@ footer {
     ol.appendChild(li1);
 
     var li2 = document.createElement('li');
-    li2.textContent = 'Verify: this card disappears on the next refresh (within the poll interval).';
+    li2.textContent = 'Verify: this card disappears the next time you refresh the page.';
     ol.appendChild(li2);
 
     card.appendChild(ol);

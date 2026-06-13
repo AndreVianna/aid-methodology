@@ -312,8 +312,8 @@ function toolsCatalog(aidHome) {
     const lines = readFileSync(catalogPath, "utf8").split(/\r?\n/);
     return lines.map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
   } catch (_) {
-    // Static fallback: known aid-manageable tools.
-    return ["claude-code", "codex", "cursor"];
+    // Static fallback: the known aid-manageable tools (byte-identical to the Python twin).
+    return ["antigravity", "claude-code", "codex", "copilot-cli", "cursor"];
   }
 }
 
@@ -344,6 +344,8 @@ function buildHomeModel(aidHome, regPath, idMap, warnings, runtime) {
       tools_installed: [],
       has_home:       false,
       has_kb:         false,
+      pipeline_count:        null,
+      pipelines_in_progress: null,
     };
 
     if (available) {
@@ -362,6 +364,16 @@ function buildHomeModel(aidHome, regPath, idMap, warnings, runtime) {
       } catch (_) {}
       try {
         entry.has_kb = fileExists(join(canonPath, ".aid", "dashboard", "kb.html"));
+      } catch (_) {}
+      // Pipeline counts (FR27 home summary): total works + how many are Running.
+      // CLI home is load-once, so this per-project readRepo is paid once per page
+      // load, not per poll. Best-effort: never throws (NFR10). Byte-parity twin of
+      // the Python server's read_repo-based counts.
+      try {
+        const rm = readRepo(canonPath);
+        const works = (rm && Array.isArray(rm.works)) ? rm.works : [];
+        entry.pipeline_count = works.length;
+        entry.pipelines_in_progress = works.filter((w) => w && w.lifecycle === "Running").length;
       } catch (_) {}
       // Folder-basename fallback for name.
       if (!entry.name) {

@@ -59,8 +59,11 @@ class TestStructural(unittest.TestCase):
     def test_s1_has_freshness_badge(self):
         self.assertIn('id="freshness-badge"', self.src)
 
-    def test_s1_has_interval_input(self):
-        self.assertIn('id="interval-input"', self.src)
+    def test_s1_has_refresh_button(self):
+        # The CLI home does NOT auto-poll; it offers a manual Refresh button instead
+        # of a poll-interval input.
+        self.assertIn('id="refresh-btn"', self.src)
+        self.assertNotIn('id="interval-input"', self.src)
 
     def test_s1_has_theme_toggle(self):
         self.assertIn('id="theme-toggle"', self.src)
@@ -73,6 +76,13 @@ class TestStructural(unittest.TestCase):
 
     def test_s1_has_repo_grid(self):
         self.assertIn('id="repo-grid"', self.src)
+
+    def test_s1_projects_heading_and_fixed_grid(self):
+        # The repo group is titled "Projects" and uses the fixed-width 4-per-row grid.
+        self.assertIn('>Projects</h2>', self.src)
+        self.assertNotIn('>Repos</h2>', self.src)
+        self.assertIn('class="grid projects"', self.src)
+        self.assertIn('.grid.projects { grid-template-columns: repeat(auto-fill, 270px)', self.src)
 
     def test_s1_has_empty_registry(self):
         self.assertIn('id="empty-registry"', self.src)
@@ -89,8 +99,10 @@ class TestStructural(unittest.TestCase):
     def test_s1_has_skip_link(self):
         self.assertIn('class="skip-link"', self.src)
 
-    def test_s1_has_footer_interval_span(self):
-        self.assertIn('id="footer-interval"', self.src)
+    def test_s1_footer_says_refresh_to_update(self):
+        # No auto-poll: the footer no longer advertises a poll interval.
+        self.assertIn('refresh to update', self.src)
+        self.assertNotIn('id="footer-interval"', self.src)
 
     def test_s1_has_footer_generated_by_span(self):
         self.assertIn('id="footer-generated-by"', self.src)
@@ -221,9 +233,12 @@ class TestStructural(unittest.TestCase):
     def test_s7_does_not_use_expected_schema_version_3(self):
         self.assertNotIn('EXPECTED_SCHEMA_VERSION = 3', self.src)
 
-    # S8 -- localStorage key
-    def test_s8_localstorage_key(self):
-        self.assertIn("'aid-dashboard-poll-ms'", self.src)
+    # S8 -- no auto-poll: the CLI home loads once (no recurring setTimeout, no poll-ms key)
+    def test_s8_no_auto_poll(self):
+        self.assertNotIn("'aid-dashboard-poll-ms'", self.src)
+        self.assertNotIn('scheduleNextPoll', self.src)
+        # the single-shot fetch uses no recurring timer to re-call doFetch
+        self.assertNotIn('setTimeout(function', self.src)
 
     # S9 -- brand is static "AID . this machine" (no id="brand-name")
     def test_s9_brand_contains_aid_this_machine(self):
@@ -240,27 +255,27 @@ class TestStructural(unittest.TestCase):
         self.assertNotIn('id="brand-name"', self.src)
 
 
-class TestIntervalClamping(unittest.TestCase):
-    """B1: clampInterval bounds."""
+class TestLoadOnce(unittest.TestCase):
+    """B1: the CLI home loads once and updates only on Refresh / browser reload."""
 
     @classmethod
     def setUpClass(cls):
         cls.src = _CLI_HOME_HTML.read_text(encoding="utf-8")
 
-    def test_clamp_lower_bound_1000(self):
-        self.assertIn('if (ms < 1000) return 1000', self.src)
+    def test_single_shot_fetch_in_flight_guard(self):
+        # doFetch keeps a single-in-flight guard but does NOT reschedule itself.
+        self.assertIn('if (fetchPending) return;', self.src)
 
-    def test_clamp_upper_bound_600000(self):
-        self.assertIn('if (ms > 600000) return 600000', self.src)
+    def test_no_poll_interval_machinery(self):
+        self.assertNotIn('clampInterval', self.src)
+        self.assertNotIn('onIntervalChange', self.src)
+        self.assertNotIn('pollTimer', self.src)
 
-    def test_input_min_1(self):
-        self.assertIn('min="1"', self.src)
-
-    def test_input_max_600(self):
-        self.assertIn('max="600"', self.src)
-
-    def test_default_5000(self):
-        self.assertIn('5000', self.src)
+    def test_refresh_button_triggers_fetch(self):
+        # The Refresh button re-runs doFetch (in-page reload of /api/home).
+        idx = self.src.find("getElementById('refresh-btn')")
+        self.assertNotEqual(idx, -1)
+        self.assertIn('doFetch()', self.src[idx:idx + 200])
 
 
 class TestSchemaMismatch(unittest.TestCase):
@@ -301,8 +316,14 @@ class TestRenderMachinePanel(unittest.TestCase):
     def test_r1_render_machine_panel_function(self):
         self.assertIn('function renderMachinePanel(', self.src)
 
-    def test_r1_kicker_aid_cli_this_machine(self):
-        self.assertIn('AID CLI (this machine)', self.src)
+    def test_r1_kicker_aid_cli_no_this_machine(self):
+        # First line is just "AID CLI" + the version pill; no "(this machine)".
+        idx = self.src.find('function renderMachinePanel(')
+        snippet = self.src[idx:idx + 2000]
+        self.assertIn("createTextNode('AID CLI')", snippet)
+        self.assertNotIn('AID CLI (this machine)', self.src)
+        # version pill: "v" + machine.aid_version
+        self.assertIn("'v' + machine.aid_version", snippet)
 
     def test_r1_field_aid_version(self):
         idx = self.src.find('function renderMachinePanel(')
@@ -311,7 +332,7 @@ class TestRenderMachinePanel(unittest.TestCase):
         self.assertIn('machine.aid_version', snippet)
 
     def test_r1_null_version_text(self):
-        self.assertIn('CLI version unavailable', self.src)
+        self.assertIn('(version unavailable)', self.src)
 
     def test_r1_field_aid_home(self):
         idx = self.src.find('function renderMachinePanel(')
@@ -333,11 +354,13 @@ class TestRenderMachinePanel(unittest.TestCase):
         self.assertIn("createElement('dt')", snippet)
         self.assertIn("createElement('dd')", snippet)
 
-    def test_r1_version_label(self):
+    def test_r1_version_pill_in_kicker(self):
+        # The version moved out of a dt/dd row into the kicker as a "v<ver>" pill.
         idx = self.src.find('function renderMachinePanel(')
         self.assertNotEqual(idx, -1)
         snippet = self.src[idx:idx + 2000]
-        self.assertIn("'version'", snippet)
+        self.assertIn("'v' + machine.aid_version", snippet)
+        self.assertNotIn("dt1.textContent = 'version'", snippet)
 
     def test_r1_install_location_label(self):
         idx = self.src.find('function renderMachinePanel(')
@@ -345,11 +368,19 @@ class TestRenderMachinePanel(unittest.TestCase):
         snippet = self.src[idx:idx + 2000]
         self.assertIn("'install location'", snippet)
 
-    def test_r1_tool_catalog_label(self):
+    def test_r1_available_tools_label(self):
         idx = self.src.find('function renderMachinePanel(')
         self.assertNotEqual(idx, -1)
         snippet = self.src[idx:idx + 2000]
-        self.assertIn("'tool catalog'", snippet)
+        self.assertIn("'available tools'", snippet)
+        self.assertNotIn("'tool catalog'", snippet)
+
+    def test_r1_no_registry_advisory_line(self):
+        # The registry path advisory line was removed from the machine panel.
+        idx = self.src.find('function renderMachinePanel(')
+        snippet = self.src[idx:idx + 2000]
+        self.assertNotIn('registry: ', snippet)
+        self.assertNotIn('machine.registry_path', snippet)
 
     def test_r1_cli_runtime_not_rendered(self):
         # cli_runtime is explicitly excluded from the panel
@@ -431,7 +462,7 @@ class TestRenderRepoCard(unittest.TestCase):
         idx = self.src.find('dashboard not generated yet')
         self.assertNotEqual(idx, -1)
         # Look backward from the note text to find the enclosing card creation
-        region = self.src[max(0, idx - 1500):idx + 100]
+        region = self.src[max(0, idx - 3000):idx + 100]
         # The non-clickable branch uses createElement('div'), not card-link
         # Confirm there's a div path and the note is not inside an a.card-link context
         self.assertIn("createElement('div')", region)
@@ -492,7 +523,7 @@ class TestRenderRepoCard(unittest.TestCase):
     def test_r7_has_kb_affordance(self):
         idx = self.src.find('function _renderRepoCard(')
         self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 2000]
+        snippet = self.src[idx:idx + 4000]
         self.assertIn('has_kb', snippet)
         self.assertIn('badge-purple', snippet)
         self.assertIn("'KB'", snippet)
@@ -515,7 +546,7 @@ class TestRenderRepoCard(unittest.TestCase):
         # When tools_installed is empty, the chip row is not added
         idx = self.src.find('function _renderRepoCard(')
         self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 2000]
+        snippet = self.src[idx:idx + 4000]
         # The chip row is only appended if it has children
         self.assertIn('hasChildNodes', snippet)
 
@@ -526,6 +557,21 @@ class TestRenderRepoCard(unittest.TestCase):
         snippet = self.src[idx:idx + 2000]
         self.assertIn('description', snippet)
         self.assertIn('—', snippet)
+
+    def test_tool_chip_includes_version_after_name(self):
+        # Each installed-tool chip shows the AID version after the tool name.
+        idx = self.src.find('function _renderRepoCard(')
+        snippet = self.src[idx:idx + 4000]
+        self.assertIn("' v' + repo.aid_version", snippet)
+        self.assertIn('tools[t] + verSuffix', snippet)
+
+    def test_pipeline_summary_line(self):
+        # The card shows a line: "<n> pipeline(s) - <m> in progress".
+        idx = self.src.find('function _renderRepoCard(')
+        snippet = self.src[idx:idx + 4000]
+        self.assertIn('repo.pipeline_count', snippet)
+        self.assertIn('repo.pipelines_in_progress', snippet)
+        self.assertIn('in progress', snippet)
 
 
 class TestInvariants(unittest.TestCase):
