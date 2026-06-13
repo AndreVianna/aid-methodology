@@ -447,6 +447,36 @@ if [[ $HAS_PYTHON -eq 1 && $HAS_NODE -eq 1 && $PY_HOME_OK -eq 1 && $NODE_HOME_OK
         fi
     fi
 
+    # --- Symlinked-AID_HOME parity (regression guard) ---
+    # A symlinked $AID_HOME must NOT diverge machine.aid_home / machine.registry_path
+    # across runtimes (those fields are NOT in the SEC-5 parity-excluded set). Python must
+    # use the AID_HOME env value VERBATIM (no Path.resolve()/realpath), matching Node's
+    # verbatim process.env.AID_HOME. This sub-test booted-with-a-symlinked-home guards the
+    # exact "fixture-only parity masks real divergence" gap (PLAN R9). Skip gracefully where
+    # the filesystem has no symlink support.
+    _sl_home="${PT1H_TMP}/aid-home-symlink"
+    if ln -s "$AID_HOME" "$_sl_home" 2>/dev/null; then
+        _sl_py_port="$(find_free_port)"; _sl_node_port="$(find_free_port)"
+        start_python_server_h "$_sl_py_port" "$_sl_home"
+        start_node_server_h "$_sl_node_port" "$_sl_home"
+        if wait_for_port_h "$_sl_py_port" 12 && wait_for_port_h "$_sl_node_port" 12 \
+           && fetch_url "$_sl_py_port" "/api/home" "/tmp/pt1h_sl_py.json" \
+           && fetch_url "$_sl_node_port" "/api/home" "/tmp/pt1h_sl_node.json"; then
+            normalize_home_json /tmp/pt1h_sl_py.json /tmp/pt1h_sl_py_norm.json
+            normalize_home_json /tmp/pt1h_sl_node.json /tmp/pt1h_sl_node_norm.json
+            if cmp -s /tmp/pt1h_sl_py_norm.json /tmp/pt1h_sl_node_norm.json; then
+                pass "[home] symlinked AID_HOME: python == node (no realpath divergence on aid_home/registry_path)"
+            else
+                fail "[home] symlinked AID_HOME: python != node (realpath divergence on aid_home/registry_path)"
+                [[ "$VERBOSE" -eq 1 ]] && diff /tmp/pt1h_sl_py_norm.json /tmp/pt1h_sl_node_norm.json || true
+            fi
+        else
+            fail "[home] symlinked AID_HOME: servers did not both come up / fetch failed"
+        fi
+    else
+        pass "[home] symlinked AID_HOME parity [SKIPPED: filesystem has no symlink support]"
+    fi
+
     # repo_count assertion: must have 3 entries (2 available + 1 unavailable)
     py_count=$(python3 -c "
 import json

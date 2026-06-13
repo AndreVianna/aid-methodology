@@ -631,6 +631,14 @@ async function runLiveTests() {
       const r = await makeRequest(port, "/r/" + idA + "/api/model", "POST");
       assert(r.status === 405, "POST /r/<id>/api/model -> 405 (got " + r.status + ")");
     }
+    {
+      // HEAD is a non-GET verb -> 405 (SPEC: "non-GET verb -> 405"); must match the
+      // Python server (parity, SEC-5).
+      const r1 = await makeRequest(port, "/", "HEAD");
+      assert(r1.status === 405, "HEAD / -> 405 (got " + r1.status + ")");
+      const r2 = await makeRequest(port, "/r/deadbeef0/home.html", "HEAD");
+      assert(r2.status === 405, "HEAD /r/<id>/home.html -> 405 (got " + r2.status + ")");
+    }
 
     // -----------------------------------------------------------------------
     // (3) SEC-2 refusal matrix

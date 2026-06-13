@@ -210,6 +210,15 @@ class _ServerThread:
         except urllib.error.HTTPError as exc:
             return exc.code, exc.read()
 
+    def head(self, path: str) -> tuple[int, bytes]:
+        url = f"http://127.0.0.1:{self.port}{path}"
+        req = urllib.request.Request(url, method="HEAD")
+        try:
+            with urllib.request.urlopen(req) as resp:
+                return resp.status, resp.read()
+        except urllib.error.HTTPError as exc:
+            return exc.code, exc.read()
+
 
 # ===========================================================================
 # (1) Source invariants
@@ -435,6 +444,18 @@ class TestRouteTable(unittest.TestCase):
         with _ServerThread(str(self._aid_home)) as srv:
             status, _ = srv.delete("/api/home")
         self.assertEqual(status, 405)
+
+    def test_head_405(self):
+        # HEAD is a non-GET verb -> 405 (SPEC: "non-GET verb -> 405"); must match the
+        # Node server (parity, SEC-5). Guards against the prior do_HEAD that 200'd by
+        # regex-match alone (HEAD-vs-GET status mismatch on unregistered ids / absent index).
+        with _ServerThread(str(self._aid_home)) as srv:
+            status, _ = srv.head("/")
+            self.assertEqual(status, 405)
+            status, _ = srv.head("/api/home")
+            self.assertEqual(status, 405)
+            status, _ = srv.head("/r/deadbeef0/home.html")
+            self.assertEqual(status, 405)
 
     def test_post_repo_api_model_405(self):
         with _ServerThread(str(self._aid_home)) as srv:

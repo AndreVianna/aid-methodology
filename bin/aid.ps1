@@ -687,7 +687,7 @@ function script:Invoke-AidDashboardCtl {
         [Console]::Error.WriteLine("ERROR: aid: dashboard: target directory does not exist: $dcTarget")
         script:Exit-Aid 2
     }
-    $dcTarget = (Resolve-Path $dcTarget).Path
+    $dcTarget = (Resolve-Path -LiteralPath $dcTarget).Path
 
     if ($verb -eq 'start') {
         script:Invoke-DcStart -Runtime $dcRuntime -Port $dcPort -Remote $dcRemote -Target $dcTarget -Verbose $dcVerbose
@@ -1364,7 +1364,7 @@ if (-not $_AidTarget) { $_AidTarget = '.' }
 if (-not (Test-Path $_AidTarget -PathType Container)) {
     script:Fail-Aid "target directory does not exist: $_AidTarget" 2
 }
-$_AidTarget = (Resolve-Path $_AidTarget).Path
+$_AidTarget = (Resolve-Path -LiteralPath $_AidTarget).Path
 
 # Strip leading 'v' from version.
 if ($_AidVersionArg) { $_AidVersionArg = $_AidVersionArg -replace '^v', '' }

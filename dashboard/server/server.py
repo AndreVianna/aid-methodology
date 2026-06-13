@@ -516,18 +516,12 @@ class _DashboardHandler(BaseHTTPRequestHandler):
         self._route_get(path)
 
     def do_HEAD(self) -> None:  # noqa: N802
-        # HEAD: mirror status only (no body).
-        path = self.path.split("?", 1)[0]
-        if path in ("/", "/api/home"):
-            self.send_response(200)
-            self.end_headers()
-            return
-        m = _R.match(path)
-        if m:
-            self.send_response(200)
-            self.end_headers()
-            return
-        self._send_plain(404, b"Not Found")
+        # HEAD is a non-GET verb -> 405 (SPEC route table: "non-GET verb -> 405",
+        # NFR2 no write surface). Matches the Node server, which has no HEAD branch and
+        # falls through to its non-GET 405 path (SEC-5 cross-runtime parity). The prior
+        # 200-by-regex-match was both a HEAD-vs-GET status mismatch (it 200'd unregistered
+        # ids and an absent index.html that GET 404s/503s) and a Python<->Node divergence.
+        self._send_plain(405, b"Method Not Allowed")
 
     def do_POST(self) -> None:  # noqa: N802
         self._send_plain(405, b"Method Not Allowed")
@@ -701,11 +695,15 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> None:
     args = _parse_args(argv)
 
-    # Resolve aid_home: (1) AID_HOME env var if set and non-empty, else
-    # (2) self-locate: server.py -> server/ -> dashboard/ -> $AID_HOME.
-    aid_home = str(Path(
-        os.environ.get("AID_HOME") or str(Path(__file__).resolve().parent.parent.parent)
-    ).resolve())
+    # Resolve aid_home WITHOUT following symlinks, to byte-match the Node server (DD-5/SEC-5):
+    #   (1) AID_HOME env var verbatim if set and non-empty (Node uses process.env.AID_HOME as-is);
+    #   (2) else self-locate LOGICALLY: server.py -> server/ -> dashboard/ -> $AID_HOME, via
+    #       os.path (NOT Path.resolve(), which realpath-follows symlinks and would diverge from
+    #       Node's join(__dirname, "..", "..") on a symlinked $AID_HOME -> machine.aid_home /
+    #       machine.registry_path parity break).
+    aid_home = os.environ.get("AID_HOME") or os.path.abspath(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+    )
 
     # Bind before any slow work (LC-1 readiness contract).
     server = ThreadingHTTPServer((args.host, args.port), _DashboardHandler)

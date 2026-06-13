@@ -11,6 +11,7 @@ contracts: []
 changelog:
   - 2026-06-09: Created — Unreleased (aid-ask, product site, aid-execute work-first arg order) + v1.0.0 back-filled from the GitHub release.
   - 2026-06-09: Moved the AID product website from Unreleased to v1.0.0 (it shipped with v1.0.0; absent from the GitHub release page because that covers only the CLI package).
+  - 2026-06-12: Added Unreleased items for the work-001 two-level dashboard (CLI home + repo registry + per-repo home.html relocation + install-wiring), delivery-008.
 ---
 
 # Release Tracking
@@ -26,6 +27,10 @@ changelog:
 
 - [NEW] /aid-ask - optional read-only skill that answers free-form project questions from the Knowledge Base, the codebase, and in-flight works, with source citations.
 - [CHANGE] /aid-execute now leads with the work argument (/aid-execute work-001 task-001), consistent with the other skills; the single-work shorthand still works.
+- [NEW] AID dashboard CLI home - `aid dashboard` now serves a machine-level home page at `/` that lists every repo this CLI install manages (read live from each repo's `.aid/settings.yml`), with a click-through into each repo's own live dashboard. One read-only server (127.0.0.1, Python or Node) serves all repos via `/r/<id>/...`.
+- [NEW] Repo registry - the CLI tracks the repos it manages in `$AID_HOME/registry.yml`; `aid add` registers the current repo (first tool) and `aid remove` unregisters it when the last tool is removed. Paths-only, atomic writes, never blocks the install/uninstall.
+- [CHANGE] The per-repo dashboard page moved from `dashboard/index.html` to `<repo>/.aid/dashboard/home.html` (co-located with the KB summary); the machine/CLI panel moved off the per-repo page onto the new CLI home. `aid dashboard --remote` now exposes the CLI home (all registered repos) over the private tailnet.
+- [CHANGE] The dashboard server + reader are now vendored into the npm and PyPI packages and installed under `$AID_HOME/dashboard/`, so `aid dashboard` runs from the install tree (previously it only ran from a repo checkout).
 
 ## v1.0.0 - 2026-06-07
 
