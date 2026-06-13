@@ -7,7 +7,7 @@ Run `.cursor/scripts/summarize/stale-check.sh`. It outputs one of:
 - `STALE` — KB is newer than last summary (or first run). Continue to PROFILE/GENERATE.
 - `CURRENT_APPROVED` — HTML is up-to-date and approved. Print:
   ```
-  ✅ knowledge-summary.html is already up-to-date with the current KB. Nothing to do.
+  ✅ kb.html is already up-to-date with the current KB. Nothing to do.
   ```
   Exit cleanly.
 - `CURRENT_UNAPPROVED` — HTML is up-to-date but not yet approved. Print:

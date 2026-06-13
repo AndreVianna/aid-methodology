@@ -223,7 +223,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 GATE=""
-ask_yn "Q1. Have you opened the knowledge-summary.html file in a browser?" GATE
+ask_yn "Q1. Have you opened the kb.html file in a browser?" GATE
 if [ "$GATE" = "n" ]; then
     echo ""
     echo "  Checklist aborted — open the file in a browser first, then re-run."

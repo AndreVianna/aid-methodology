@@ -67,7 +67,7 @@ changelog:
 
 - **`/aid-discover`** — reads each KB doc's frontmatter; picks rubric from [review-rubric.md](review-rubric.md); writes findings to temp ledger per [principles.md](principles.md) P3
 - **`/aid-config`** — scaffolds new KB docs with frontmatter from [frontmatter-schema.md](frontmatter-schema.md) seed
-- **`/aid-summarize`** — extracts `intent:` field from each doc to populate section descriptions in `knowledge-summary.html`
+- **`/aid-summarize`** — extracts `intent:` field from each doc to populate section descriptions in `kb.html`
 - **`aid-reviewer`** — validates frontmatter compliance; spot-checks `contracts:` against disk; flags inline T3/T4 markers in primary-category docs (REVIEW state of `/aid-discover`)
 - **`build-kb-index.sh`** — composes `INDEX.md` from each doc's `intent:` + `kb-category:` + path
 - **`build-metrics.sh`** — produces `metrics.md` with all numeric facts (T3) the project tracks

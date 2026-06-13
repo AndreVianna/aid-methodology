@@ -1,7 +1,7 @@
 ---
 name: aid-summarize
 description: >
-  Generate a single-file knowledge-summary.html from .aid/knowledge/. Inlines Mermaid
+  Generate a single-file kb.html from .aid/knowledge/. Inlines Mermaid
   for offline diagrams, light/dark theme, click-to-expand lightbox, accessibility-first
   (WCAG AA). Two-grade quality gate (Machine + Human): script-verifiable checks score
   the Machine Grade; an interactive checklist scores the Human Grade (K1 KB-completeness,
@@ -15,7 +15,7 @@ argument-hint: "[--grade X] override minimum  [--profile auto|web-app|library|cl
 
 # Knowledge Base Visual Summary
 
-Generates a single self-contained `knowledge-summary.html` from a populated and
+Generates a single self-contained `kb.html` from a populated and
 approved `.aid/knowledge/` Knowledge Base. The output works fully offline, includes
 8 Mermaid diagrams (or fewer for non-web-app profiles), supports light/dark themes,
 provides keyboard-accessible click-to-expand lightboxes for every diagram, and meets
@@ -71,7 +71,7 @@ The state-detection logic determines which mode this run executes:
      vs LAST_SUMMARY_DATE (latest entry in STATE.md ## Summarization History,
      or the **Last Run** field in ## Knowledge Summary Status).
    - If --reset → mode = GENERATE (force).
-   - If knowledge-summary.html missing → mode = GENERATE.
+   - If kb.html missing → mode = GENERATE.
    - If ## Summarization History missing/empty → mode = GENERATE.
    - If LAST_KB_CHANGE_DATE > LAST_SUMMARY_DATE → mode = GENERATE.
    - If LAST_KB_CHANGE_DATE <= LAST_SUMMARY_DATE AND HTML exists:
@@ -125,7 +125,7 @@ aid-summarize  ▸ you are here
 
 **GENERATE:**
 ```
-[State: GENERATE] — Building knowledge-summary.html from KB content and Mermaid diagrams.
+[State: GENERATE] — Building kb.html from KB content and Mermaid diagrams.
 aid-summarize  ▸ you are here
   [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [✓ PROFILE ] → [● GENERATE ] → [ VALIDATE ] → [ APPROVAL ] → [ DONE ]
 ```

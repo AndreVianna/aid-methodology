@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# assemble-3part.sh — assemble final knowledge-summary.html from parts.
+# assemble-3part.sh — assemble final kb.html (the KB summary) from parts.
 # Usage: assemble-3part.sh PART1 MERMAID_LIB PART2 OUTPUT
 set -eu
 

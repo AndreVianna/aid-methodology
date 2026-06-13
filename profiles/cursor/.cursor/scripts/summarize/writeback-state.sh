@@ -38,7 +38,7 @@ esac
 GRADE="$1"
 PROFILE="${2:-?}"
 MERMAID="${3:-?}"
-OUTPUT="${4:-knowledge-summary.html}"
+OUTPUT="${4:-.aid/dashboard/kb.html}"
 SIZE="${5:-?}"
 NOTES="${6:-Initial generation}"
 

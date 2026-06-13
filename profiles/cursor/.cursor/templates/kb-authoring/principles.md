@@ -188,7 +188,7 @@ closure prose in the frontmatter `changelog:`. Do **not** retain a closure recor
 live, and it drifts. **git history (and the originating work's artifacts) is the only retained
 audit trail.** This applies most visibly to `tech-debt.md` (open debt only) but holds for any
 doc that tracks a working set. A resolved item still visible anywhere in the doc — or in a
-generated view of it (e.g. `knowledge-summary.html`) — is a defect.
+generated view of it (e.g. `kb.html`) — is a defect.
 
 ---
 

@@ -1,4 +1,4 @@
-# assemble-3part.ps1 — assemble final knowledge-summary.html from parts.
+# assemble-3part.ps1 — assemble final kb.html (the KB summary) from parts.
 # Usage: assemble-3part.ps1 -Part1 X -Mermaid Y -Part2 Z -Output W
 
 param(

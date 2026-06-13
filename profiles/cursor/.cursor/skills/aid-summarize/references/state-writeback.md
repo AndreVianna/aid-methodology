@@ -16,7 +16,7 @@ Run `.cursor/scripts/summarize/writeback-state.sh`. It atomically:
    - **Grade:** {final}
    - **Profile:** {profile}
    - **Mermaid:** {version}
-   - **Output:** `knowledge-summary.html ({size})`
+   - **Output:** `.aid/dashboard/kb.html ({size})`
    - **Notes:** {one-liner — "Initial generation" or "Regenerated after KB review cycle N (date)"}
 6. Writes back, preserving everything else byte-for-byte.
 7. Releases lock.

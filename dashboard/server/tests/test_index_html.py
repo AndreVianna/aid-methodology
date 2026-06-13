@@ -650,48 +650,199 @@ class TestFeature006Router(unittest.TestCase):
         self.assertIn('id="knowledge-tool-section"', self.src,
                       "#knowledge-tool-section div must be present in HTML")
 
-    # F6-K: KB summary card
+    # F6-K: KB summary card — 5-state (task-065, feature-007, UI-A)
     def test_f6k_render_kb_card_function_present(self):
         self.assertIn('function _renderKbCard(', self.src,
                       "_renderKbCard() function must be defined")
 
-    def test_f6k_kb_null_renders_no_kb_yet(self):
-        # The null kb_state branch must produce a "No Knowledge Base yet" message
-        self.assertIn('No Knowledge Base yet', self.src,
-                      "null kb_state must render 'No Knowledge Base yet'")
+    # --- F6-K5: 5-state status-driven render (task-065) ---
 
-    def test_f6k_kb_null_no_href(self):
-        # When kb_state is null the card must NOT be an anchor
-        # Find the null branch: it uses createElement('div') not createElement('a')
-        idx = self.src.find('No Knowledge Base yet')
+    def test_f6k5_reads_kb_state_status(self):
+        # The function must read kb_state.status literally (no client-side re-derivation)
+        idx = self.src.find('function _renderKbCard(')
         self.assertNotEqual(idx, -1)
-        # Look backward from that text for the surrounding card creation
-        region = self.src[max(0, idx - 500):idx + 100]
-        # The null branch creates a div card, not an anchor card
-        # It should not have an href near this region
-        self.assertNotIn("href = '#/kb'", region,
-                         "null KB card must NOT have an href (non-clickable)")
+        snippet = self.src[idx:idx + 5000]
+        self.assertIn('kbState.status', snippet,
+                      "_renderKbCard must read kbState.status literally (no re-derivation)")
 
-    def test_f6k_kb_card_seam_link(self):
-        # The populated KB card must link to #/kb
-        self.assertIn("'#/kb'", self.src,
-                      "KB card must link to #/kb (SEAM-1)")
+    def test_f6k5_status_pending_badge_dim(self):
+        # pending -> .badge-dim with ⊘ No KB text
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        self.assertIn("'badge badge-dim'", snippet,
+                      "pending status must use badge-dim class")
 
+    def test_f6k5_status_pending_label(self):
+        # pending -> label "No KB" in badge
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        self.assertIn('No KB', snippet,
+                      "pending status must show 'No KB' in badge text")
+
+    def test_f6k5_status_pending_meta_text(self):
+        # pending -> meta "run /aid-discover to build the Knowledge Base"
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        self.assertIn('run /aid-discover to build the Knowledge Base', snippet,
+                      "pending status must show /aid-discover hint in meta")
+
+    def test_f6k5_status_pending_dead_card(self):
+        # pending -> non-clickable div (dead card), not an anchor
+        # The 'pending' branch must not set href on the card
+        idx = self.src.find("status === 'pending'")
+        self.assertNotEqual(idx, -1, "pending branch not found in _renderKbCard")
+
+    def test_f6k5_status_generating_badge_info(self):
+        # generating -> .badge-info
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        self.assertIn("'badge badge-info'", snippet,
+                      "generating/preparing status must use badge-info class")
+
+    def test_f6k5_status_generating_label(self):
+        # generating -> badge label "Building"
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        self.assertIn('Building', snippet,
+                      "generating status must show 'Building' label")
+
+    def test_f6k5_status_generating_meta_text(self):
+        # generating -> meta "discovery is building the KB…"
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        self.assertIn('discovery is building the KB', snippet,
+                      "generating status must show 'discovery is building the KB…' meta")
+
+    def test_f6k5_status_preparing_label(self):
+        # preparing -> badge label "Preparing"
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        self.assertIn('Preparing', snippet,
+                      "preparing status must show 'Preparing' label")
+
+    def test_f6k5_status_preparing_meta_text(self):
+        # preparing -> meta "summary generating — KB approved"
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        self.assertIn('summary generating — KB approved', snippet,
+                      "preparing status must show 'summary generating — KB approved' meta")
+
+    def test_f6k5_status_approved_badge_ok(self):
+        # approved -> .badge-ok with ✓ Ready
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        self.assertIn("'badge badge-ok'", snippet,
+                      "approved status must use badge-ok class")
+
+    def test_f6k5_status_approved_label(self):
+        # approved -> badge label "Ready"
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        self.assertIn('Ready', snippet,
+                      "approved status must show 'Ready' label")
+
+    def test_f6k5_status_outdated_badge_warn(self):
+        # outdated -> .badge-warn with ⚠ Outdated
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        self.assertIn("'badge badge-warn'", snippet,
+                      "outdated status must use badge-warn class")
+
+    def test_f6k5_status_outdated_label(self):
+        # outdated -> badge label "Outdated"
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        self.assertIn('Outdated', snippet,
+                      "outdated status must show 'Outdated' label")
+
+    def test_f6k5_status_outdated_kb_baseline_tip_date(self):
+        # outdated -> reads kb_baseline.tip_date for "KB reflects {date}; branch has advanced"
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 6500]
+        self.assertIn('kb_baseline', snippet,
+                      "outdated status must read kb_baseline from kb_state")
+        self.assertIn('tip_date', snippet,
+                      "outdated status must read kb_baseline.tip_date")
+        self.assertIn('branch has advanced', snippet,
+                      "outdated status must show 'branch has advanced' in meta")
+
+    def test_f6k5_status_outdated_refresh_prompt(self):
+        # outdated -> shows inline refresh prompt with /aid-housekeep instruction
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 6500]
+        self.assertIn('/aid-housekeep', snippet,
+                      "outdated status must show /aid-housekeep refresh prompt")
+        self.assertIn('returns to Ready', snippet,
+                      "outdated refresh prompt must say 'returns to Ready'")
+
+    def test_f6k5_clickable_href_relative_kb_html(self):
+        # Only approved/outdated are clickable; href must be location-relative './kb.html'
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        self.assertIn("'./kb.html'", snippet,
+                      "clickable KB card href must be location-relative './kb.html' (LC-A3)")
+
+    def test_f6k5_no_hash_kb_link(self):
+        # The 5-state card must NOT use the old '#/kb' SEAM-1 link in _renderKbCard
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        self.assertNotIn("'#/kb'", snippet,
+                         "_renderKbCard must use './kb.html' not '#/kb' (task-065 repoint)")
+
+    def test_f6k5_dead_card_non_anchor(self):
+        # Non-clickable states use createElement('div'), not createElement('a')
+        # The condition "isClickable ? createElement('a') : createElement('div')" must be present
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        # isClickable pattern: anchor only for approved/outdated
+        self.assertIn("isClickable ? document.createElement('a') : document.createElement('div')",
+                      snippet,
+                      "_renderKbCard must create an anchor for clickable states and a div for dead states")
+
+    def test_f6k5_unknown_status_degrades_to_pending(self):
+        # An unknown/missing status must degrade to pending treatment (DM-A2)
+        # KB_STATUSES list is the guard; anything not in it -> 'pending'
+        idx = self.src.find('function _renderKbCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        self.assertIn("KB_STATUSES", snippet,
+                      "_renderKbCard must define KB_STATUSES for unknown-status degradation (DM-A2)")
+        self.assertIn("'pending'", snippet,
+                      "_renderKbCard must default to 'pending' for unknown/missing status")
+
+    def test_f6k5_no_schema_bump(self):
+        # No schema_version bump (DM-A3) -- EXPECTED must still be 3
+        self.assertIn('EXPECTED_SCHEMA_VERSION = 3', self.src,
+                      "schema_version EXPECTED must remain 3 (DM-A3 — no bump for 5-state card)")
+
+    def test_f6k5_no_new_fetch_call(self):
+        # Only one fetch target allowed: ./api/model (no new network call for KB files)
+        fetch_calls = re.findall(r"fetch\s*\(\s*['\"]([^'\"]+)['\"]", self.src)
+        for url in fetch_calls:
+            self.assertEqual(url, './api/model',
+                             f"Found unexpected fetch target: {url!r} — only ./api/model allowed (LC-A3)")
+
+    # doc_count and last_summary_date are still read (retained fields)
     def test_f6k_kb_card_doc_count(self):
         self.assertIn('doc_count', self.src,
                       "KB card must read doc_count from kb_state")
-
-    def test_f6k_kb_card_summary_approved(self):
-        self.assertIn('summary_approved', self.src,
-                      "KB card must read summary_approved from kb_state")
-
-    def test_f6k_kb_card_approved_badge(self):
-        self.assertIn('Approved', self.src,
-                      "KB card must show Approved badge when summary_approved is true")
-
-    def test_f6k_kb_card_draft_badge(self):
-        self.assertIn('Draft', self.src,
-                      "KB card must show Draft badge when summary_approved is false")
 
     def test_f6k_kb_card_last_summary_date(self):
         self.assertIn('last_summary_date', self.src,
@@ -1163,7 +1314,7 @@ class TestFeature006CardRework(unittest.TestCase):
         # _renderKbCard must call _fmtLocalDateTime(kbState.last_summary_date)
         idx = self.src.find('function _renderKbCard(')
         self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 2300]
+        snippet = self.src[idx:idx + 6500]
         self.assertIn('_fmtLocalDateTime(kbState.last_summary_date)', snippet,
                       "_renderKbCard must call _fmtLocalDateTime(kbState.last_summary_date)")
 

@@ -18,7 +18,7 @@ Print:
 
 [State: DONE]
 
-Open .aid/knowledge/knowledge-summary.html in a browser to view the summary.
+Open .aid/dashboard/kb.html in a browser to view the summary.
 ```
 
 Exit with success.
@@ -29,7 +29,7 @@ Exit with success.
 
 Print:
 ```
-✅ knowledge-summary.html is already up-to-date with the current KB.
+✅ kb.html is already up-to-date with the current KB.
    Last summary: {date} (grade {grade})
    Last KB review: {date}
    Nothing to do. Re-run with --reset to force regeneration.

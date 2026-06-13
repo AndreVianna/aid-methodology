@@ -1510,67 +1510,155 @@ footer {
     return card;
   }
 
-  // Build the KB summary card (UI-4)
+  // Build the KB summary card — 5-state (UI-A, feature-007, task-065)
+  // Reads kb_state.status LITERALLY (never re-derives client-side).
+  // States: pending | generating | preparing | approved | outdated
+  // An unknown/missing status degrades to the pending (dim) treatment (DM-A2).
+  // Only approved/outdated are clickable (FR32); others render a dead (non-link) card.
+  // Clickable href is location-relative ./kb.html (LC-A3).
   function _renderKbCard(kbState) {
-    if (!kbState) {
-      // null state: non-clickable "No KB yet" card
-      var card = document.createElement('div');
-      card.className = 'card';
-      var kicker = document.createElement('div');
-      kicker.className = 'kicker';
-      kicker.textContent = 'KNOWLEDGE BASE';
-      card.appendChild(kicker);
-      var h3 = document.createElement('h3');
-      h3.textContent = 'No Knowledge Base yet';
-      card.appendChild(h3);
-      var hint = document.createElement('p');
-      hint.className = 'meta';
-      hint.textContent = 'run /aid-discover to build the KB';
-      card.appendChild(hint);
-      return card;
+    // Resolve status: read literally; null kbState or missing/unknown status -> 'pending'
+    var KB_STATUSES = ['pending', 'generating', 'preparing', 'approved', 'outdated'];
+    var status = (kbState && kbState.status && KB_STATUSES.indexOf(kbState.status) !== -1)
+      ? kbState.status
+      : 'pending';
+
+    // Only approved and outdated are clickable (FR32)
+    var isClickable = (status === 'approved' || status === 'outdated');
+
+    // Build the card element: anchor for clickable, div for dead states
+    var card = isClickable ? document.createElement('a') : document.createElement('div');
+    card.className = isClickable ? 'card card-link' : 'card';
+    if (isClickable) {
+      card.href = './kb.html';  // location-relative (LC-A3): resolves to /r/<id>/kb.html
     }
 
-    // Clickable KB card -> #/kb
-    var card = document.createElement('a');
-    card.className = 'card card-link';
-    card.href = '#/kb';
-
+    // Kicker
     var kicker = document.createElement('div');
     kicker.className = 'kicker';
     kicker.textContent = 'KNOWLEDGE BASE';
     card.appendChild(kicker);
 
-    // Stat: doc_count
-    var stat = document.createElement('div');
-    stat.className = 'stat';
-    stat.textContent = (kbState.doc_count != null) ? String(kbState.doc_count) : '—';
-    card.appendChild(stat);
+    // Badge + label per state (UI-A)
+    var badge = document.createElement('span');
+    badge.style.display = 'inline-block';
+    badge.style.marginBottom = '0.4rem';
 
-    var statSub = document.createElement('div');
-    statSub.className = 'stat-sub';
-    statSub.textContent = 'docs';
-    card.appendChild(statSub);
+    if (status === 'pending') {
+      badge.className = 'badge badge-dim';
+      badge.textContent = '⊘ No KB';  // ⊘
+      var h3 = document.createElement('h3');
+      h3.textContent = 'No Knowledge Base yet';
+      card.appendChild(badge);
+      card.appendChild(h3);
+      var meta = document.createElement('p');
+      meta.className = 'meta';
+      meta.textContent = 'run /aid-discover to build the Knowledge Base';
+      card.appendChild(meta);
 
-    // Approval chip
-    var approvalBadge = document.createElement('span');
-    if (kbState.summary_approved) {
-      approvalBadge.className = 'badge badge-ok';
-      approvalBadge.textContent = '✓ Approved';
+    } else if (status === 'generating') {
+      badge.className = 'badge badge-info';
+      badge.textContent = '◴ Building';  // ◴
+      var h3 = document.createElement('h3');
+      h3.textContent = 'Building';
+      card.appendChild(badge);
+      card.appendChild(h3);
+      if (kbState && kbState.doc_count != null) {
+        var stat = document.createElement('div');
+        stat.className = 'stat';
+        stat.textContent = String(kbState.doc_count);
+        card.appendChild(stat);
+        var statSub = document.createElement('div');
+        statSub.className = 'stat-sub';
+        statSub.textContent = 'docs';
+        card.appendChild(statSub);
+      }
+      var meta = document.createElement('p');
+      meta.className = 'meta';
+      meta.textContent = 'discovery is building the KB…';
+      card.appendChild(meta);
+
+    } else if (status === 'preparing') {
+      badge.className = 'badge badge-info';
+      badge.textContent = '◴ Preparing';  // ◴
+      var h3 = document.createElement('h3');
+      h3.textContent = 'Preparing';
+      card.appendChild(badge);
+      card.appendChild(h3);
+      if (kbState && kbState.doc_count != null) {
+        var stat = document.createElement('div');
+        stat.className = 'stat';
+        stat.textContent = String(kbState.doc_count);
+        card.appendChild(stat);
+        var statSub = document.createElement('div');
+        statSub.className = 'stat-sub';
+        statSub.textContent = 'docs';
+        card.appendChild(statSub);
+      }
+      var meta = document.createElement('p');
+      meta.className = 'meta';
+      meta.textContent = 'summary generating — KB approved';
+      card.appendChild(meta);
+
+    } else if (status === 'approved') {
+      badge.className = 'badge badge-ok';
+      badge.textContent = '✓ Ready';  // ✓
+      var h3 = document.createElement('h3');
+      h3.textContent = 'Ready';
+      card.appendChild(badge);
+      card.appendChild(h3);
+      if (kbState && kbState.doc_count != null) {
+        var stat = document.createElement('div');
+        stat.className = 'stat';
+        stat.textContent = String(kbState.doc_count);
+        card.appendChild(stat);
+        var statSub = document.createElement('div');
+        statSub.className = 'stat-sub';
+        statSub.textContent = 'docs';
+        card.appendChild(statSub);
+      }
+      if (kbState && kbState.last_summary_date) {
+        var meta = document.createElement('p');
+        meta.className = 'meta';
+        meta.style.marginTop = '0.5rem';
+        meta.textContent = 'summary updated ' + (_fmtLocalDateTime(kbState.last_summary_date) || kbState.last_summary_date);
+        card.appendChild(meta);
+      }
+
     } else {
-      approvalBadge.className = 'badge badge-warn';
-      approvalBadge.textContent = 'Draft';
-    }
-    approvalBadge.style.display = 'inline-block';
-    approvalBadge.style.marginTop = '0.5rem';
-    card.appendChild(approvalBadge);
-
-    // Freshness meta
-    if (kbState.last_summary_date) {
-      var freshMeta = document.createElement('p');
-      freshMeta.className = 'meta';
-      freshMeta.style.marginTop = '0.5rem';
-      freshMeta.textContent = 'summary updated ' + (_fmtLocalDateTime(kbState.last_summary_date) || kbState.last_summary_date);
-      card.appendChild(freshMeta);
+      // status === 'outdated'
+      badge.className = 'badge badge-warn';
+      badge.textContent = '⚠ Outdated';  // ⚠
+      var h3 = document.createElement('h3');
+      h3.textContent = 'Outdated';
+      card.appendChild(badge);
+      card.appendChild(h3);
+      if (kbState && kbState.doc_count != null) {
+        var stat = document.createElement('div');
+        stat.className = 'stat';
+        stat.textContent = String(kbState.doc_count);
+        card.appendChild(stat);
+        var statSub = document.createElement('div');
+        statSub.className = 'stat-sub';
+        statSub.textContent = 'docs';
+        card.appendChild(statSub);
+      }
+      var tipDate = (kbState && kbState.kb_baseline && kbState.kb_baseline.tip_date)
+        ? kbState.kb_baseline.tip_date : null;
+      var metaText = tipDate
+        ? ('KB reflects ' + tipDate + '; branch has advanced')
+        : 'KB baseline has been exceeded; branch has advanced';
+      var meta = document.createElement('p');
+      meta.className = 'meta';
+      meta.style.marginTop = '0.5rem';
+      meta.textContent = metaText;
+      card.appendChild(meta);
+      // Outdated refresh prompt (FR18-style, FR32)
+      var prompt = document.createElement('p');
+      prompt.className = 'meta';
+      prompt.style.marginTop = '0.5rem';
+      prompt.textContent = 'The branch has advanced past the KB baseline. 1. Run /aid-housekeep to reconcile the KB and refresh the summary. 2. Verify: this card returns to Ready on the next refresh.';
+      card.appendChild(prompt);
     }
 
     return card;

@@ -50,6 +50,21 @@ traceability:
   heartbeat_interval: 1   # minutes — interval at which long-running sub-agents update their heartbeat file
 
 # ---------------------------------------------------------------------------
+# kb_baseline: the git baseline the Knowledge Base reflects
+# ---------------------------------------------------------------------------
+# Written by aid-discover (on KB approval, FR35) and aid-housekeep (KB-DELTA
+# resolution + re-stamp, FR36). Read by the dashboard reader for FR35
+# outdated-detection. Absent until the first KB generation.
+# Producer-written - NOT user-authored. /aid-config owns this schema key;
+# aid-discover / aid-housekeep are the writers (DD-A4, feature-007 DM-A4).
+# An absent kb_baseline == "no baseline recorded" -> reader skips the
+# freshness check and stays approved (see feature-007 FF-A2 degradation).
+#
+# kb_baseline:
+#   branch: master                     # the default branch the KB was generated/refreshed against
+#   tip_date: 2026-06-12T14:03:00Z     # ISO-8601 commit date of that branch's tip at generation time
+
+# ---------------------------------------------------------------------------
 # Optional per-skill overrides
 # ---------------------------------------------------------------------------
 # Each top-level skill-name key (when set) overrides the corresponding

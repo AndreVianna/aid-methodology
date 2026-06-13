@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# assemble.sh — assemble knowledge-summary.html from multi-source authoring layout
+# assemble.sh — assemble kb.html (the KB summary) from multi-source authoring layout
 #
 # Reads `.aid/knowledge/summary-src/` and concatenates:
 #   skeleton-head.html
@@ -8,7 +8,7 @@
 #   <Mermaid library>                 (default: cached at .aid/knowledge/.cache/mermaid.min.js)
 #   post-mermaid.html
 #
-# Output: .aid/knowledge/knowledge-summary.html (or as specified by --output)
+# Output: .aid/dashboard/kb.html (or as specified by --output)
 #
 # Usage:
 #   bash assemble.sh                                                     # default paths
@@ -18,7 +18,7 @@
 set -euo pipefail
 
 SRC_DIR=".aid/knowledge/summary-src"
-OUTPUT=".aid/knowledge/knowledge-summary.html"
+OUTPUT=".aid/dashboard/kb.html"
 MERMAID_LIB=".aid/knowledge/.cache/mermaid.min.js"
 NO_MERMAID=0
 

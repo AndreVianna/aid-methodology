@@ -7,8 +7,8 @@ APPROVAL presents the graded summary to the user for final sign-off; it is selec
 Print summary in the standard format:
 
 ```
-✅ knowledge-summary.html ready for approval
-   Path:           .aid/knowledge/knowledge-summary.html
+✅ kb.html ready for approval
+   Path:           .aid/dashboard/kb.html
    Size:           {MB}
    Profile:        {profile} (target_diagrams: {N})
    Machine Grade:  {grade} ({score}/68) — script-verified AUTO_POOL
@@ -20,7 +20,7 @@ Print summary in the standard format:
    Trigger:        {reason}
 
 Preview:  python -m http.server 8000   # then open
-          http://localhost:8000/.aid/knowledge/knowledge-summary.html
+          http://localhost:8000/.aid/dashboard/kb.html
    Or open the file directly in your browser.
 ```
 

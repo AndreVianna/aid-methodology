@@ -1,6 +1,6 @@
 # State: SUMMARY-DELTA
 
-SUMMARY-DELTA checks whether `knowledge-summary.html` needs to be regenerated
+SUMMARY-DELTA checks whether `kb.html` needs to be regenerated
 after the KB stage and, if so, delegates the regeneration to `/aid-summarize`.
 It is entered after KB-DELTA CHAINs forward (resume rows 4) when `**KB Stage:**`
 is `passed` or `skipped`. All staleness detection and grading logic belongs to
@@ -67,7 +67,7 @@ aid-housekeep  ▸ you are here
 Then warn the user about the possible V1 human gate (NFR3 transparency):
 
 ```
-ℹ️  If the summary is stale, /aid-summarize will regenerate knowledge-summary.html
+ℹ️  If the summary is stale, /aid-summarize will regenerate kb.html
    and will ask you to open it in a browser and visually confirm it looks correct
    (V1 human gate). This is mandatory — it cannot be auto-passed.
    If the summary is already current and approved, no action is needed.
@@ -167,7 +167,7 @@ Commit the regenerated HTML and the `STATE.md` history edit in a **single**
 bash .github/scripts/housekeep/branch-commit.sh \
     --commit \
     --message "chore(housekeep): summary delta refresh [feature-003]" \
-    --add .aid/knowledge/knowledge-summary.html \
+    --add .aid/dashboard/kb.html \
     --add .aid/knowledge/STATE.md
 ```
 
@@ -178,6 +178,48 @@ bash .github/scripts/housekeep/branch-commit.sh \
 > intact. For the `CURRENT_UNAPPROVED` approve-only sub-path only `STATE.md`
 > changed (no HTML update), but the same `--add` list is used — git will stage
 > only the changed file.
+
+Re-stamp `.aid/settings.yml kb_baseline.tip_date` to the current default-branch
+tip (FF-A4, FR36) so the card flips from `outdated` back to `approved` on the
+next reader poll (DD-A4):
+
+Resolve the default branch using the same DD-A2 detection order as
+`aid-discover` state-done (FR35):
+1. Read `kb_baseline.branch` from `.aid/settings.yml` — use it if present and non-empty.
+2. Else resolve `origin/HEAD`: `git symbolic-ref --short refs/remotes/origin/HEAD` and take the basename.
+3. Else use the first of `{main, master}` that exists: `git branch --list <name>`.
+
+Then read the tip commit date:
+```bash
+git log -1 --format=%cI <branch>
+```
+
+Select the write idiom (R13 — same selection as task-059/aid-discover DONE):
+- **`kb_baseline` block already present** in `.aid/settings.yml`: use the
+  single-line **"Save in place"** replace (`/aid-config` SKILL.md:124) —
+  replace only the `tip_date:` line within the existing block:
+```bash
+cp .aid/settings.yml .aid/settings.yml.tmp
+sed "s|^  tip_date:.*|  tip_date: <ISO-8601-tip-date>|" .aid/settings.yml.tmp > .aid/settings.yml.tmp2
+mv -f .aid/settings.yml.tmp2 .aid/settings.yml
+rm -f .aid/settings.yml.tmp
+```
+- **`kb_baseline` block absent** (KB generated before task-059 ran — fallback):
+  use the **append-block** idiom (`/aid-config` SKILL.md:126-132) — append the
+  full nested block to a temp copy and atomically rename:
+```bash
+cp .aid/settings.yml .aid/settings.yml.tmp
+cat >> .aid/settings.yml.tmp << 'EOF'
+
+kb_baseline:
+  branch: <resolved-branch>
+  tip_date: <ISO-8601-tip-date>
+EOF
+mv -f .aid/settings.yml.tmp .aid/settings.yml
+```
+
+If git is absent, the repo has no commits, or the branch cannot be resolved,
+skip the re-stamp silently (the reader degrades gracefully — FF-A2, DD-A2).
 
 Print:
 
@@ -195,7 +237,7 @@ Print:
 AND `## Knowledge Summary Status` shows `**User Approved:** yes` (which means
 `/aid-summarize` exited via DONE-IDEMPOTENT after STALE-CHECK returned
 `CURRENT_APPROVED`). `.aid/knowledge/STATE.md` and
-`.aid/knowledge/knowledge-summary.html` are **unchanged**.
+`.aid/dashboard/kb.html` are **unchanged**.
 
 Write the gate field:
 
@@ -209,7 +251,7 @@ bash .github/scripts/housekeep/housekeep-state.sh \
 **No commit** (NFR2 idempotency — nothing changed). Print:
 
 ```
-✓ SUMMARY-DELTA: knowledge-summary.html is already current — skipped (no commit).
+✓ SUMMARY-DELTA: kb.html is already current — skipped (no commit).
 ```
 
 **Advance:** **CHAIN** → [State: CLEANUP] (continue inline).

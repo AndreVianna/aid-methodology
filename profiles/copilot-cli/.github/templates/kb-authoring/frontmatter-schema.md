@@ -83,7 +83,7 @@ One paragraph (1-4 sentences) declaring what the doc is FOR. This field drives:
 - The **agent's task-routing** — `INDEX.md` (or its generator) uses `intent:` to compose
   the per-doc one-liner an agent reads when deciding which KB doc to load.
 - The `aid-summarize` skill's **section descriptions** when rendering
-  `knowledge-summary.html`.
+  `kb.html`.
 
 **Write for an agent reading 21 of these in sequence.** Be precise about scope.
 Don't editorialize ("this is the most important doc"); state what's covered.
@@ -156,7 +156,7 @@ YAML frontmatter between `---` markers is the standard convention used by:
 - All major static site generators
 
 Most renderers display the frontmatter; some hide it. Either is acceptable. The
-`knowledge-summary.html` viewer (rendered by `aid-summarize`) explicitly extracts
+`kb.html` viewer (rendered by `aid-summarize`) explicitly extracts
 `intent:` for section descriptions and skips the rest.
 
 ## Parsing rules (for tools)

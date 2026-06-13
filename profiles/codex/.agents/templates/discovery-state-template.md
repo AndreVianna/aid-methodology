@@ -52,7 +52,7 @@ This is the single state file for the **Discovery area** — persistent project 
 | Human Grade | {grade or Pending} |
 | User Approved | yes | no |
 | Last Run | {YYYY-MM-DD or —} |
-| Output | {knowledge-summary.html (size) or —} |
+| Output | {kb.html (size) or —} |
 | Mermaid Version | {pinned version or —} |
 | Mermaid Cached | {.aid/knowledge/.cache/mermaid.min.js (sha256) or —} |
 
