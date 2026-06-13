@@ -1,0 +1,24 @@
+# task-050: Multi-repo server rewrite — Python (`server.py`) LC-MS new closed allowlist + `/api/home` + per-`<id>` routes
+
+**Type:** IMPLEMENT
+
+**Source:** feature-010-cli-home-and-registry → delivery-008
+
+**Depends on:** task-047, task-048
+
+**Scope:**
+- Rewrite the delivered feature-003 Python server (`dashboard/server/server.py`) into the **LC-MS multi-repo server** (DR-2, FR30/C6) — a **contract-level replacement** of feature-003's closed two-route allowlist (`/` + `/api/model`, single `--root`), not an extension (R9).
+- **NEW closed allowlist** (per task-048's API table): `GET /` → CLI-home `index.html` (from `$AID_HOME/dashboard/index.html`); `GET /api/home` → build the DM-2 model → 200 JSON; `GET /r/<id>/home.html` and `GET /r/<id>/kb.html` → static `<repo(id)>/.aid/dashboard/<leaf>`; `GET /r/<id>/api/model` → `read_repo(repo(id))` → feature-003 DM-1 envelope; everything else → 404; non-GET → 405.
+- **Registry resolution (LC-REG reader half):** `load_registry()` line-scan of `$AID_HOME/registry.yml` (`^\s*-\s` strip, no YAML lib, tolerant of torn/higher-schema — NFR10); build the **DD-1 `<id>`↔path map** (`sha256(CAN-1(path))[:8+]`) cached on the registry file's **mtime+size**, rebuilt only on change (NFR4); `stat` per request is O(1). Cross-runtime id parity (hash the identical stored CAN-1 byte-string).
+- **Construct-not-sanitize static paths (SEC-2, C6):** the served path is built as `registry[id] + "/.aid/dashboard/" + leaf` where `leaf` is chosen from the fixed 2-element static allowlist — the request contributes ONLY the `<id>` (hex; no `.`/`/`/`%`). `..`, `%2e%2e`, absolute injection, symlink-escape, and arbitrary `.aid/` reads are structurally unreachable. Unregistered `<id>` → 404; registered-but-`.aid`-gone → 404 for static leaves, **empty `RepoModel`** (not 404/500) for `/api/model` (NFR10).
+- **`/api/home` builder (DM-2):** `machine` panel from `$AID_HOME` (`VERSION` trimmed → `aid_version`, resolved `aid_home`, the manageable-tool `tools_catalog`, `registry_path`, `cli_runtime`); `repos[]` per registered path — `available` = `path/.aid/` exists; when available read `name`/`description` from `<repo>/.aid/settings.yml` (feature-002 tolerant parse), `aid_version`/`tools_installed` from `<repo>/.aid/.aid-manifest.json`, `has_home`/`has_kb` from `stat`; `repos` sorted by `path`; `read` provenance subset. Best-effort nulls for unavailable (never raise — NFR10).
+- **Serialization (DM-3, identical to feature-003):** declared key order, compact UTF-8, `ensure_ascii=False`, integers-only, the U+2028/U+2029 escape post-process (PT-1 / R7) — for BOTH `/api/home` and per-`<id>` `/api/model`. Parity-excluded set: `{generated_by, machine.cli_runtime, read.read_at}`.
+- **Invariants (carried verbatim, re-asserted across N roots):** bind the literal `127.0.0.1` only (SEC-1, never `0.0.0.0`/wildcard, never from config); no write/append/`os.remove` anywhere (SEC-3); no agent/LLM import (SEC-4); same-origin only. `schema_version` for `/api/home` is its own wire-shape int (DM-2); `/api/model` keeps the feature-003 envelope at the established schema floor (no bump owned here).
+
+**Acceptance Criteria:**
+- [ ] `GET /` serves the CLI-home `index.html` from `$AID_HOME/dashboard/`; `GET /api/home` returns the DM-2 envelope; `GET /r/<id>/{home.html,kb.html}` serve the constructed per-repo static leaf; `GET /r/<id>/api/model` returns the feature-003 DM-1 envelope via `read_repo`; all other paths → 404, non-GET → 405 (the NEW closed allowlist, replacing the f-003 two-route server).
+- [ ] An unregistered `<id>` → 404; a registered repo whose `.aid/` is gone → 404 for static leaves and an **empty `RepoModel`** (not 404/500) for `/api/model` (NFR10); the registry is read via the line-scan, mtime+size-cached, and a torn/higher-schema file degrades best-effort (never 500).
+- [ ] A self-check asserts the static handler resolves ONLY `registry[id]/.aid/dashboard/{home.html,kb.html}` and 404s every crafted traversal/escape (`..`, `%2e%2e`, absolute `/etc/passwd`, `/r/<id>/../settings.yml`, `/r/<id>/work-001/STATE.md`, a symlinked leaf→outside) — construct-not-sanitize (SEC-2/C6).
+- [ ] Self-checks assert: bind is the literal `127.0.0.1` only (no `0.0.0.0`/wildcard token, never config-read — SEC-1); no write/append/remove primitive (SEC-3); no agent/LLM import (SEC-4).
+- [ ] `/api/home` + `/r/<id>/api/model` serialize per DM-3 (key order, sorted, compact, integers-only, `ensure_ascii=False`, U+2028/U+2029 escaped); the `<id>` is derived as `sha256(CAN-1(path))[:8+]` from the stored canonical path (cross-runtime parity prerequisite — proven in task-056).
+- [ ] All §6 quality gates pass; IMPLEMENT default — unit tests for the routes/resolution/serialization/refusals added; existing reader stays read-only/no-LLM (cross-runtime parity is task-056).

@@ -1,0 +1,410 @@
+# Work State — work-001-aid-dashboard
+
+> **Status:** Executing
+> **Phase:** Execute
+> **Minimum Grade:** {resolved at runtime by `bash .claude/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
+> **Started:** 2026-06-10
+> **User Approved:** yes
+
+## Pipeline Status
+
+> Single-source derivation summary for read-only consumers (the dashboard reader, FR16).
+> Written ONLY by the helper `writeback-state.sh --pipeline ...` (new mode) at every existing
+> phase/state transition the pipeline already performs. Never hand-edited. All values are
+> closed enums so a deterministic reader needs no inference.
+>
+> Lifecycle enum:    Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
+> Phase enum:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
+> Active Skill enum: aid-{skill} | none
+
+- **Lifecycle:** Running
+- **Phase:** Execute
+- **Active Skill:** none
+- **Updated:** 2026-06-11T22:00:00Z
+- **Pause Reason:** —
+- **Block Reason:** —
+
+This is the single state file for **this work** — the full dev lifecycle from req → spec → plan → impl → deploy. One STATE.md per `.aid/work-NNN-{name}/` directory. Absorbs what used to be `INTERVIEW-STATE.md` + per-feature `STATE.md` × N + per-task `task-NNN-STATE.md` × N + (future) `DEPLOYMENT-STATE.md`.
+
+Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep their inline `## Change Log` sections — that's *content history* (what changed in the document), distinct from *process state* (where are we in the workflow). Both are useful; they live in different places.
+
+## Triage
+
+- **Path:** full
+- **Decision rationale:** Large, research-heavy net-new capability (live local dashboard for AID runs spanning multiple repos/VMs); user explicitly chose the full path.
+
+## Escalation Carry
+
+> Written by `aid-interview` lite→full escalation (Steps 3–9 of `lite-to-full-escalation.md`).
+> Present only when a work started on the lite path and was escalated to full.
+> The CONTINUE state reads this section to avoid re-asking questions already answered
+> during the lite-path session. See `references/state-continue.md § Escalation Carry`.
+
+- **Escalated from:** {state name} (Sub-path: {sub-path value})
+- **Escalated at:** {YYYY-MM-DDTHH:MM:SSZ}
+- **Escalation rationale:** {one sentence}
+
+### Captured Slot Values
+
+- **{slot-name}:** {slot-value}
+- (no slots captured — escalation before CONDENSED-INTAKE)
+
+### Artifacts at Escalation
+
+- **SPEC.md:** present | absent — {notes on content available for seeding}
+- **tasks/:** {N} task files present | absent
+
+## Interview Status
+
+**Status:** Approved · **Grade:** A+ (cross-reference 2026-06-10) · **Approved:** 2026-06-10
+
+**Review History:**
+- 2026-06-10 — Requirements approved by user (COMPLETION checkpoint, feature-002 SPEC IQ9).
+- 2026-06-10 — Feature Decomposition — 8 features created (MVP = 001–005); FR17/C4 state-architecture foundation front-loaded; aid-architect ran 2 critical-review passes (10→7→8, fixed homeless NFRs + over-split MVP).
+- 2026-06-10 — Cross-Reference (aid-reviewer) — D+ → **A+** after fixes. 1 HIGH (false bare-`aid` claim) + 2 MED + 2 LOW + 3 MINOR all corrected in artifacts; 2 OOS routed to /aid-discover & /aid-specify. 3 forward Q&A (Q1 CLI approach, Q2 FR17 baseline, Q3 C3 scope) raised for spec.
+- 2026-06-12 — **Re-architecture interview (two-level dashboard)** — user-directed information-architecture revision. Added FR27–FR36, NFR9–NFR11, C6–C7. Revised feature map: **feature-010** (NEW: CLI home + `$AID_HOME/registry.yml` repo registry + multi-repo server), feature-006 (REVISED → per-repo `home.html`, L0 panel removed), feature-007 (RE-SCOPED → serve `kb.html` + 5-state KB card + reader status/git-read + discover→summarize chain), feature-008 (DEFERRED to its own later delivery). Old delivery-005 superseded (tasks 030–037). Cross-Reference (aid-reviewer) — **CRITICAL→A+** after fixes: caught that `~/.aid/` is the CLI install tree `AID_HOME` (not per-repo) → registry relocated to `$AID_HOME/registry.yml`; FR34 reframed as deliberate (not C4); FR30 flagged contract-level (preserve f-003 invariants); +5 LOW/MED/MINOR. 2 user decisions: OQ5 (`--remote` → CLI home/all repos), OQ6 (registry = `aid add`/`remove` side-effect).
+
+| # | Section | Status | Last Updated |
+|---|---------|--------|--------------|
+| 1 | Objective | Complete | 2026-06-10 |
+| 2 | Problem Statement | Complete | 2026-06-10 |
+| 3 | Users & Stakeholders | Complete | 2026-06-10 |
+| 4 | Scope | Complete | 2026-06-10 |
+| 5 | Functional Requirements | Complete | 2026-06-10 |
+| 6 | Non-Functional Requirements | Complete | 2026-06-10 |
+| 7 | Constraints | Complete | 2026-06-10 |
+| 8 | Assumptions & Dependencies | Complete | 2026-06-10 |
+| 9 | Acceptance Criteria | Complete | 2026-06-10 |
+| 10 | Priority | Complete | 2026-06-10 |
+
+## Features Status
+
+> One row per feature. Tracks /aid-specify progress per feature.
+
+| # | Feature | Spec Status | Spec Grade | Q&A Count | Notes |
+|---|---------|-------------|------------|-----------|-------|
+| 1 | feature-001-pipeline-state-architecture | Ready | A+ | 0 | Must·MVP (Phase 0); owns FR17/C4, resolves OQ4 · spec A+ 2026-06-10 |
+| 2 | feature-002-state-reader-foundation | Ready | A+ | 0 | Must·MVP; FR16 derivation; consumes feature-001 · spec A+ 2026-06-10 |
+| 3 | feature-003-pipeline-dashboard-app | Ready | A+ | 0 | Must·MVP; render+poll+serve; OQ2 resolved (Option C hybrid, dual-runtime) · spec A+ 2026-06-10 |
+| 4 | feature-004-cli-dashboard-control | Ready | A+ | 0 | Must·MVP; start/stop; OQ3 resolved (aid dashboard start node\|python [--remote] / stop) · spec A+ 2026-06-10 |
+| 5 | feature-005-secure-remote-exposure | Ready | A+ | 0 | Must·MVP (per user); carries C3 (Tailscale Serve + ACL grants) · spec A+ 2026-06-10 |
+| 6 | feature-006-project-main-page | Ready | A+ | 0 | Must (refactor); **revision spec-complete** (gate pending) → added "Re-architecture Revision (Technical)" R-1..R-6: re-home `index.html`→per-repo `home.html` (FR27 Level B, served by feature-010 at `/r/<id>/home.html`, polls `/r/<id>/api/model`); REMOVE Level-0 panel (FR33-removal half → relocates to feature-010); KB card → feature-007's 5-state model + links `kb.html` (hosted here, owned by f-007). R-4 carries d004 unchanged (work cards/FR11 pin-to-top/progress/local-date/per-work route/empty-state/read-only-no-LLM). Owns FR3/11/16/FR27-LevelB/FR33-removal; FR7→feature-010; KB card→feature-007. No new model/endpoint/schema-bump. · **delivered as d004** — small front-end delta (rename + drop L0 + KB-card source), not a rebuild · revision 2026-06-12 |
+| 7 | feature-007-kb-dashboard | Ready | A+ | 0 | Should (refactor); **re-scope spec-complete** (gate pending) → added "Re-architecture Re-scope (Technical)" DM-A/FF-A/LC-A/UI-A/SEC-A/PR-A + DD-A1..A4. Serve relocated `kb.html` (FR31); reader-derived **5-state** KB card pending→generating→preparing→approved→outdated (FR32, derivation waterfall FF-A3); extended `KbStateRef`{status,summary_present,kb_baseline} with **NO schema_version bump** (the simplification — rich KbModel/INDEX-proxy/KI-007 DROPPED); cross-runtime read-only `git log -1` freshness + graceful-degradation matrix (FR35); discover→summarize auto-trigger chain (FR34, deliberate new close, not C4); producers aid-summarize(~9 refs path move)/aid-discover/aid-housekeep + `/aid-config` `kb_baseline` schema (FR36, C7 dogfood-rendered). Historical rich-`KbModel` Technical Spec marked SUPERSEDED. Owns FR31/32/34/35 + FR36(summarize/discover/housekeep). · re-scope spec 2026-06-12 |
+| 8 | feature-008-skill-task-drilldown | Ready | A+ | 0 | Should; Level-3 forensic detail — sequenced as **delivery-010** (after the refactor, user directive; scope unchanged). **Re-architecture reconciliation note added 2026-06-12** (RC-1 routing: drill seam now in `home.html`'s router served at `/r/<id>/home.html`, detail via per-`<id>` `./api/model?detail=`; RC-2 schema: floor is 3, **NO bump** — `details` is additive+omittable+lockstep-consumer = the `created`/DM-A3 shape; RC-3 deps: d008 not d009). SPEC body otherwise unchanged · spec A+ 2026-06-10 · reconciled 2026-06-12 |
+| 9 | feature-009-producer-state-emission | Ready | A+ | 0 | Must; closes the producer loop (dashboard renders REAL data) — PF-1..PF-7, producer skill emission + reader/front-end reconciliation + fixture-from-real contract test + work-001 migration + dogfood render; owns schema 2→3 · spec A+ 2026-06-11 |
+| 10 | feature-010-cli-home-and-registry | Ready | A+ | 0 | Must (refactor); NEW machine level — CLI home page (Level-A `index.html` + relocated Level-0 panel, owns FR7-render) + machine repo registry (**`$AID_HOME/registry.yml`**, the CLI install's own registry; maintained as a side-effect of `aid add`/`aid remove`) + multi-repo server routing (contract-level change to feature-003's delivered closed two-route server; preserves bind/no-write/no-LLM + extends PT-1); owns FR7-render/27/28/29/30/33-receive + FR36(bin/aid). **OQ5 RESOLVED** (`--remote` exposes the CLI home — all registered repos; tailnet-private/host-user-ACL, repo-list-to-grantees accepted) + **OQ6 RESOLVED** (registry = side-effect of `aid add`/`aid remove`, no new verb) · spec A+ 2026-06-12 (gate CRITICAL→A+: bin/aid hand-maintained not canonical-rendered; cli_runtime parity-excluded; CAN-1 single canonicalization; machine tools-catalog vs per-repo tools): activated Data Model (DM-1 registry schema + DM-2 `/api/home` model) / Feature Flow (FF-1 add-remove side-effect, FF-2 multi-repo server cycle, FF-3 home poll) / Layers (LC-REG/LC-MS/LC-HOME) / CLI / API-routing (NEW closed allowlist) / UI Specs (CLI home) / Security (SEC-1..6 multi-root no-traversal + PT-1-H). Key DDs: DD-1 hex-`<id>` URL addressing, DD-2 `/api/home` feed, DD-3 atomic registry write, DD-4 manifest first/last-tool boundary, DD-5 byte-parity reuse. State Machines skipped (none new). 5 residual detail-phase items (server entry-point install-wiring, `--target` residual meaning, `<id>` collision policy, prune ergonomics, FR35 key validation owner) · charter 2026-06-12 |
+
+## Plan / Deliveries
+
+> One row per delivery from PLAN.md. Tracks /aid-plan + /aid-detail completion.
+
+| Delivery | Status | Tasks | Notes |
+|----------|--------|-------|-------|
+| delivery-001 | Done (gate A+) | 13 (task-001–013) | Must·MVP foundation; features 001+002; state contract + read_repo() · branch babb4d9→f02441e |
+| delivery-002 | Done (gate A+) | 10 (task-014–023) | Must·MVP; features 003+004; dual-runtime server + index.html + aid dashboard CLI · branch 9117b73→039bab5 · Playwright R5 validated |
+| delivery-003 | Done (gate A+) | 3 (task-024–026) | Must·MVP; feature 005; secure remote (Tailscale serve + ACL, never-public structural) · branch bd9e4a0→743741a · **completes the full MVP (d001+d002+d003)** |
+| delivery-006 | Done (gate A+) | 8 (task-038–045) | Must; feature 009; producer-loop closure (dashboard renders REAL data); owns schema 2→3; depends-on d002 reader/front-end + d001 state contract; **executed before d004** (spine d003→d006→d004) · branch 2a0c733→a541b23 · Playwright R5 validated over migrated work-001 |
+| delivery-007 | Done (gate A+) | hardening (PF-8/PF-9/PF-5a+) | Must; feature 009 hardening (post-d006 confidence analysis); **enforces the producer contract** — Lite-path identity header (closes the Lite gap: Lite works use work-root SPEC.md, reader gains SPEC.md identity fallback) + producer-completeness CI gate (MUST-by-prose → MUST-by-CI) + mechanical wave-map derivation · branch 2fe52ac · same delivery-006 branch lineage |
+| delivery-004 | Done (gate A+) | 3 (task-027–029) | Should; feature 006; project main page — hash router + work-card grid + KB/L0 cards + FR18 empty-state; front-end-only (server/model/schema untouched, PT-1 15/15) · branch 2a4ddd1 · Playwright R5 validated (6 lifecycle states, FR11 pin-to-top, drill, #/kb seam, empty-state, dark, responsive) |
+| delivery-005 | Superseded (re-planned → d008/d009/d010) | 8 (task-030–037) | Should; **was** features 007+008 (KB dashboard + drill-down). **Superseded by the two-level re-architecture (2026-06-12):** feature-007 RE-SCOPED (served `kb.html` + 5-state card + reader git-read + producer chain — old rich-KbModel tasks 030–032/034/036 dropped); feature-008 DEFERRED to its own separate later delivery (drill-down tasks 033/035/037 carry there). **Re-plan landed (/aid-plan 2026-06-12):** KB half → **delivery-009** (feature-007 re-scope); drill-down half → **delivery-010** (feature-008). No task number reused (d008+ start a fresh counter past task-045). |
+| delivery-008 | Planned (detail pending) | TBD (/aid-detail) | **Must (re-arch spine).** features 010 + 006-revision. CLI home + `$AID_HOME/registry.yml` repo registry (side-effect of `aid add`/`aid remove`, OQ6) + multi-repo server (NEW closed allowlist replacing feature-003's two-route server, PT-1-H byte-parity) + per-repo `home.html` rename + L0-panel removal. Functional win: CLI home lists registered repos, each opens its live per-repo pipeline view. **Depends on the delivered d001–d004 + d006/d007 base; first of the re-arch triplet (no prior new delivery).** Headline planning risk **R8** — resolves the install-tree relocation / server+reader co-vendor (intersects MEMORY "dashboard not install-wired"); R9 contract-rewrite blast radius; R10 hand-maintained `bin/aid`; R5 Playwright hard gate. **Note: feature-006 is split across the boundary** — d008 lands the `home.html` rename + L0-panel removal and ships the carried-over **2-state** KB card (a valid intermediate); the **5-state** KB-card repoint lands in d009 with the reader extension. |
+| delivery-009 | Detailed (execute pending) | 9 (task-059–067) | **Should (KB tier).** feature-007 re-scoped. Served `kb.html` (aid-summarize relocation FR31) + reader-derived **5-state** KB card (FR32) + cross-runtime read-only `git log` freshness vs `kb_baseline` (FR35) + producer chain (discover→summarize auto-trigger FR34, housekeep outdated-resolution FR36). **No schema bump.** Depends on **d008** (server `/r/<id>/kb.html` route + relocated reader). Functional win: KB always viewable + live freshness. Risks R11 (FR34 deliberate behavior change), R12 (git-read byte-parity), R13 (`kb_baseline` append-block), R5. |
+| delivery-010 | Detailed (execute pending) | 6 (task-068–073) | **Should (after the refactor).** feature-008 (scope UNCHANGED — deferred by user directive, sequencing only). Level-3 forensic drill: findings, ledger/grade, raw STATE.md, logs, parallel-task drill. Depends on **d008** spine (per-`<id>` `/api/model` + SEAM-2 drill route, the d008-relocated reader); **NOT** on d009. **R14 resolved: NO `schema_version` bump** — the lazy `details` map is additive + omittable + consumer-tolerant + ships in lockstep with its sole consumer (the `created`/DM-A3 shape, not the feature-009 deliberate-evolution shape); envelope stays at the schema-3 floor, front-end `EXPECTED` stays 3 (feature-008 SPEC RC-2). PT-1-H fixture + `details` key-order parity retained as a parity obligation (task-072). R15 (raw-viewer read-only/escaped) enforced task-071 + visually gated task-073; R5 Playwright hard gate (task-073). · detailed /aid-detail 2026-06-12 |
+
+## Tasks Status
+
+> One row per task from PLAN.md execution graph. Tracks /aid-execute progress per task. This is the iteration source for FR1's AC4 sub-unit drill-down on aid-execute/EXECUTE-WAVE.
+
+| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
+|---|------|------|------|--------|--------|---------|-------|
+| 001 | task-001 | REFACTOR | delivery-001 | Done | clean | — | M0 doc-reconcile (KI-001/002) · babb4d9 · generator+35 suites green |
+| 002 | task-002 | IMPLEMENT | delivery-001 | Done | clean | — | M1 Pipeline Status block · fc313f8 · 38-assert test, 36 suites green |
+| 003 | task-003 | IMPLEMENT | delivery-001 | Done | clean (1 LOW→gate) | — | M2 writeback --pipeline · fe5fba2 · 69 writeback + 36 suites green · LOW: usage() help truncation |
+| 004 | task-004 | TEST | delivery-001 | Done | clean | — | M2 tests · 5f12162 · 174/0 (+105 assert), concurrency exercised |
+| 005 | task-005 | IMPLEMENT | delivery-001 | Done | clean | — | M3 Tasks Status enum · 199b5e1 · Status-only scope, C4 strings pass |
+| 006 | task-006 | TEST | delivery-001 | Done | clean | — | M3 tests · e202820 · Unit 17 (+40 assert, 219 total) |
+| 007 | task-007 | IMPLEMENT | delivery-001 | Done | clean | — | M4 wire phase skills · d8efa2f · 5 skills emit, silent, C4 |
+| 008 | task-008 | IMPLEMENT | delivery-001 | Done | clean | — | M5 pause/block signals · c9c2802 · Unit 18 (238 total), C4 |
+| 009 | task-009 | TEST | delivery-001 | Done | clean | — | M4+M5 walk-through · fcdaa76 · 166 assert, non-hollow C4 detector, 37 suites |
+| 010 | task-010 | IMPLEMENT | delivery-001 | Done | clean | — | reader core read_repo (Python, normalized) · 96db894 · 63 py tests, read-only by construction |
+| 011 | task-011 | IMPLEMENT | delivery-001 | Done | clean | — | fallback + FR16 derivation · 1c8bb05 · total/priority, User-Approved excluded, 132 py tests |
+| 012 | task-012 | TEST | delivery-001 | Done | clean | — | reader fixtures + round-trip · 3fdfd5a · 227 py tests, producer↔consumer integration |
+| 013 | task-013 | REFACTOR | delivery-001 | Done | clean | — | M6 cutover + normalize Completed · 7761754 · closed integration gap, 229 py tests |
+| 014 | task-014 | DESIGN | delivery-002 | Done | clean | — | LC-1 seam · design/LC-1-spawn-seam.md · servers at dashboard/server/{server.py,server.mjs}, --root=repo-root verbatim to read_repo |
+| 015 | task-015 | DESIGN | delivery-002 | Done | clean (1 HIGH→fixed) | — | feature-003 UI specs · design/feature-003-ui-breakdown.md · HIGH: envelope.generated_by (not model.generated_by) fixed on-spot |
+| 016 | task-016 | IMPLEMENT | delivery-002 | Done | clean | — | Python server.py · 9117b73 · 38 self-tests, bind/no-write/no-LLM self-checked |
+| 017 | task-017 | IMPLEMENT | delivery-002 | Done | clean (1 CRIT+1 HIGH→fixed) | — | Node server.mjs + reader.mjs port · 9117b73 · CRIT: U+2028 raw-vs-escaped divergence (SPEC premise wrong) fixed; HIGH: index.html path → dashboard/index.html both servers; 33 self-tests; byte-parity proven |
+| 018 | task-018 | TEST | delivery-002 | Done | clean | — | PT-1 byte-parity · 7d30602 · fixture+U+2028/29, 15/15, skip-if-absent, 39 suites green |
+| 019 | task-019 | IMPLEMENT | delivery-002 | Done | clean | — | front-end index.html · 7d30602 · inlined, envelope.generated_by, never-blank, 58 tests (325 total) |
+| 020 | task-020 | TEST | delivery-002 | Done | clean (visual-polish loop) | — | Playwright R5 · c49b320 · AC1-AC3 + dark + mobile/tablet/desktop validated over PT-1 fixture; drove a visual-polish pass (chips/balance/callouts/mobile-header) + caught Python SIGTERM deadlock (571728a) |
+| 021 | task-021 | IMPLEMENT | delivery-002 | Done | clean | — | CLI Bash start/stop · 2529fe9 · 11 exit-code scenarios, C4 preserved, ASCII gate, --remote exit 10 |
+| 022 | task-022 | IMPLEMENT | delivery-002 | Done | clean | — | CLI PS twin · 09b477e · source-parity vs Bash (8 classes), ASCII gate, C4, aid.cmd untouched (pwsh absent→CI Windows) |
+| 023 | task-023 | TEST | delivery-002 | Done | clean | — | CLI tests T-1..T-13 · 5212123 · 97 CLI assert + 106 parity (PS skip-if-absent), C4 guard, ASCII; 40 canonical suites green |
+| 024 | task-024 | IMPLEMENT | delivery-003 | Done | clean (1 HIGH→fixed) | — | LC-2 Bash expose/teardown · bd9e4a0 · serve-not-funnel (ZERO funnel tokens after comment rephrase), exit 0/10/11/12+0/13, failure-closed, FR18 guidance, 124 CLI tests |
+| 025 | task-025 | IMPLEMENT | delivery-003 | Done | clean | — | LC-2 PS twin · 264dd34 · char-for-char parity vs Bash (FR18 block, exit codes, handle), zero funnel tokens, ASCII, C4 (pwsh absent→source-parity + CI Windows) |
+| 026 | task-026 | TEST | delivery-003 | Done | clean | — | feature-005 T-1..T-9 · 60efe08 · test-aid-remote.sh 40 + parity 116; tailscale stubbed; T-4 bare-grep never-funnel both launchers; quick-check mutation-verified real |
+| 038 | task-038 | IMPLEMENT | delivery-006 | Done | clean | — | PF-1 aid-interview identity header · 2a0c733 · REQUIREMENTS.md typed `- **Name:**`/`- **Description:**` (Description composed from Objective); requirements template+seed; `.claude/` synced |
+| 039 | task-039 | IMPLEMENT | delivery-006 | Done | clean | — | PF-3 descriptive task short-name + PF-5a wave-map · 2a0c733 · aid-detail task-decomposition `# task-NNN: <title>` rule + execution-graph-generation normalized ```wave-map fence; rendered to 5 trees |
+| 040 | task-040 | IMPLEMENT | delivery-006 | Done | clean (2 HIGH→gate) | — | reader reconciliation Python+Node · ac6d0f2 · PF-2/3/5/6/7 parse, TaskModel short_name/delivery/lane, schema 2→3; 2 latent reader.mjs divergences (headerless Tasks Status, empty Pipeline Status) fixed-on-spot, byte-parity proven |
+| 041 | task-041 | IMPLEMENT | delivery-006 | Done | clean | — | front-end reconciliation · 3c7df6d · removed parseWave(); group by task.delivery/lane; neutral phase rail; graceful fallbacks; EXPECTED_SCHEMA_VERSION 2→3 |
+| 042 | task-042 | TEST | delivery-006 | Done | clean (1 HIGH→gate) | — | fixture-from-real PT-1 regen + producer↔consumer contract test · 3c7df6d · fixture regenerated FROM real producer output (anti-drift); cross-runtime byte-parity @ schema 3; ASCII regression (2 em-dashes) caught + fixed-on-spot |
+| 043 | task-043 | CONFIGURE | delivery-006 | Done | clean | — | dogfood render · 2a0c733 · FULL run_generator.py → canonical producer edits into `.claude/skills` + 5 install trees; render-drift clean |
+| 044 | task-044 | MIGRATE | delivery-006 | Done | clean | — | migrate work-001 to canonical schema · (.aid workspace) · PF-1 header + typed `## Pipeline Status` (Running/Execute) in STATE.md + PLAN ```wave-map for d001-006; real-repo byte-parity IDENTICAL |
+| 045 | task-045 | TEST | delivery-006 | Done | clean | — | Playwright R5 over REAL migrated work-001 · zero JS errors; title "AID Live Dashboard", phase Execute, real Delivery▸Lane▸Task (zero Delivery #0); all 4 real-data bugs visually confirmed fixed |
+| 027 | task-027 | DESIGN | delivery-004 | Done | clean | — | feature-006 UI breakdown · design/feature-006-ui-breakdown.md · grounded in current d006 index.html (renderModel/selectActiveWork seam); reconciled .grid.g3/.card.plugin/title-de-slug; all line refs spot-verified |
+| 028 | task-028 | IMPLEMENT | delivery-004 | Done | clean | — | main page front-end · 2a4ddd1 · hash router + render(model,route) + card grid + KB/L0 + FR18 empty-state; +50 static assertions; front-end-only (parity 15/15) |
+| 029 | task-029 | TEST | delivery-004 | Done | clean | — | Playwright R5 visual gate (orchestrator) · 7 screenshots: 6 lifecycle states, FR11 amber/red pin-to-top, click-to-drill, #/kb seam, KB-absent, L0-absent, FR18 empty-state, dark+responsive, zero JS errors |
+| 030 | task-030 | DESIGN | delivery-005 | Superseded (pending re-plan) | — | — | KB dashboard UI specs — **superseded** by the two-level re-architecture; delivery-005 re-planned in /aid-plan (feature-007 re-scoped → rich-KbModel dropped) |
+| 031 | task-031 | IMPLEMENT | delivery-005 | Superseded (pending re-plan) | — | — | reader → KbModel — **superseded** (rich KbModel dropped; feature-007 now serves pre-rendered kb.html + 5-state card) |
+| 032 | task-032 | IMPLEMENT | delivery-005 | Superseded (pending re-plan) | — | — | KB view (index.html) — **superseded** by feature-007 re-scope (served kb.html) |
+| 033 | task-033 | IMPLEMENT | delivery-005 | Superseded (pending re-plan) | — | — | reader → TaskDetail + ?detail= — **superseded**; feature-008 DEFERRED to its own later delivery |
+| 034 | task-034 | IMPLEMENT | delivery-005 | Superseded (pending re-plan) | — | — | shared schema (1→3) + PT-1 grow — **superseded** by the re-architecture (d006/feature-009 already owns the move to 3); re-planned in /aid-plan |
+| 035 | task-035 | IMPLEMENT | delivery-005 | Superseded (pending re-plan) | — | — | drill view — **superseded**; feature-008 DEFERRED to its own later delivery |
+| 036 | task-036 | TEST | delivery-005 | Superseded (pending re-plan) | — | — | PT-1 re-validation @ schema 3 — **superseded**; re-planned in /aid-plan |
+| 037 | task-037 | TEST | delivery-005 | Superseded (pending re-plan) | — | — | Playwright (R5) — **superseded**; re-planned in /aid-plan |
+| 046 | task-046 | RESEARCH | delivery-008 | Pending | — | — | R8 install-tree relocation: pin `$AID_HOME/dashboard/` layout (server + co-vendored reader) + full vendor/install-core blast radius; records proceed-or-IMPEDIMENT verdict (PLAN R8 directive) · feature-010 residual #1 |
+| 047 | task-047 | CONFIGURE | delivery-008 | Pending | — | — | co-vendor server+reader into npm/pypi + place under `$AID_HOME/dashboard/`; relocate spawn seam (`--root`→`$AID_HOME`); first `bin/aid` writer; ASCII+parity+vendor-refresh (NOT render-drift) · needs task-046 |
+| 048 | task-048 | DESIGN | delivery-008 | Pending | — | — | registry contract seam: DM-1 schema + CAN-1 (one rule, four sites) + DD-1 `<id>`=sha256(CAN-1(path))[:8+] + DD-3 atomic write; the shared layout all Slice-2 areas resolve against |
+| 049 | task-049 | IMPLEMENT | delivery-008 | Pending | — | — | `bin/aid`+`bin/aid.ps1` registry side-effect (FF-1 register/unregister, DD-4 manifest boundary, DD-3 atomic); host-tool behavior unchanged; second `bin/aid` writer · needs task-047 ∧ task-048 |
+| 050 | task-050 | IMPLEMENT | delivery-008 | Pending | — | — | `server.py` LC-MS rewrite — NEW closed allowlist `/`+`/api/home`+`/r/<id>/{home.html,kb.html,api/model}`, construct-not-sanitize (SEC-2), invariants re-asserted across N roots (R9) · needs task-047 ∧ task-048 |
+| 051 | task-051 | IMPLEMENT | delivery-008 | Pending | — | — | `server.mjs` LC-MS twin — byte-parity sibling of task-050 (separate file, lockstep contract); cross-runtime `<id>` parity (DD-1/DD-5) · needs task-047 ∧ task-048 |
+| 052 | task-052 | DESIGN | delivery-008 | Pending | — | — | CLI home UI specs (UI-H1..H4): machine panel + repo-card grid + unavailable/prune (guidance-only); resolves residual #2 `aid dashboard --target` · needs task-048 |
+| 053 | task-053 | IMPLEMENT | delivery-008 | Pending | — | — | CLI home `index.html` (LC-HOME) — poll `/api/home`, machine panel + repo-card grid + unavailable/empty-state; NEW file (created after task-054 renames old one away — now dependency-encoded) · needs task-052 ∧ task-050 ∧ task-054 |
+| 054 | task-054 | REFACTOR | delivery-008 | Pending | — | — | feature-006 revision: rename `index.html`→per-repo `home.html` + DELETE L0 `.card.plugin` panel (FR33) + repoint client poll `fetch('/api/model')`→`'./api/model'` (resolves to `/r/<id>/api/model`); KB card stays **2-state** (5-state repoint is d009) · needs task-048 |
+| 055 | task-055 | IMPLEMENT | delivery-008 | Pending | — | — | `--remote` (DR-4/OQ5) re-target — feature-005 expose now fronts CLI home (all repos); mechanism unchanged, never-public verified (SEC-1/SEC-6); third `bin/aid` writer · needs task-047 ∧ task-049 ∧ task-052 |
+| 056 | task-056 | TEST | delivery-008 | Pending | — | — | PT-1-H cross-runtime byte-parity over multi-repo shape — registry fixture (≥2 repos + 1 unavailable), `/api/home` + per-`<id>` `/api/model` byte-identity + traversal-refusal parity + SEC self-checks (R9) · needs task-050 ∧ task-051 |
+| 057 | task-057 | TEST | delivery-008 | Pending | — | — | CLI parity tests — extend `test-aid-cli-parity.sh` (register/unregister + spawn-seam + `--remote`) + ASCII gate + DD-3/DD-4 unit coverage (R10) · needs task-049 ∧ task-055 |
+| 058 | task-058 | TEST | delivery-008 | Pending | — | — | Playwright R5 visual gate (hard) — CLI home renders + click-through into `home.html`; L0-panel-absent + 2-state KB card verified visually; zero JS errors · needs task-053 ∧ task-054 ∧ task-056 |
+| 059 | task-059 | CONFIGURE | delivery-009 | Pending | — | — | `/aid-config` `kb_baseline: {branch, tip_date}` schema key (`canonical/templates/settings.yml` + validation table); schema owner / seam for task-061/062/064; additive, ASCII; block-vs-line write-path documented (R13) · CANONICAL (rendered by task-063) |
+| 060 | task-060 | IMPLEMENT | delivery-009 | Pending | — | — | `aid-summarize` output relocation `knowledge-summary.html` → `.aid/dashboard/kb.html` across the 9 verified files (FR31); content/visual family unchanged; ASCII · CANONICAL (rendered by task-063) |
+| 061 | task-061 | IMPLEMENT | delivery-009 | Pending | — | — | `aid-discover` FR34 auto-trigger of `aid-summarize` + FR35 `kb_baseline` record at DONE (append-block write); **one deliberate behavior change** (R11), composes both gates · needs task-059 · CANONICAL |
+| 062 | task-062 | IMPLEMENT | delivery-009 | Pending | — | — | `aid-housekeep` resolve `outdated` — re-stamp `kb_baseline.tip_date` (single-line replace, R13) + repoint committed `kb.html` path (FR36); behavior-additive · needs task-059 ∧ task-060 · CANONICAL |
+| 063 | task-063 | CONFIGURE | delivery-009 | Pending | — | — | dogfood render — FULL `run_generator.py` emits the 4 KB-domain canonical edits → `.claude/` + 5 install trees; render-drift + deterministic-emission + ASCII gates green (R11/C7, NOT vendor-refresh) · needs task-059 ∧ task-060 ∧ task-061 ∧ task-062 |
+| 064 | task-064 | IMPLEMENT | delivery-009 | Pending | — | — | reader KB-status extension + cross-runtime git read — `KbStateRef{status,summary_present,kb_baseline}` + FF-A3 5-state waterfall + FF-A2 `git log -1` read/degradation matrix + UTC-normalize + 4 "no subprocess" docstrings; Python ∥ Node lockstep, **NO schema bump** (DM-A3, R12) · needs task-059 |
+| 065 | task-065 | IMPLEMENT | delivery-009 | Pending | — | — | front-end 5-state KB card repoint (`home.html`) — 2-state → pending/generating/preparing/approved/outdated; only approved/outdated clickable → `./kb.html`; outdated refresh prompt; location-relative, no `<id>` in model · needs task-064 ∧ task-054 (d008) |
+| 066 | task-066 | TEST | delivery-009 | Pending | — | — | PT-1-H git-state-deterministic byte-parity (5-state fixture, frozen tip) + `Z`-vs-`±HH:MM` normalization unit case + producer↔consumer `kb_baseline` round-trip / kb-status contract (R12/SEC-A4) · needs task-064 ∧ task-063 ∧ task-060 |
+| 067 | task-067 | TEST | delivery-009 | Pending | — | — | Playwright R5 visual gate (hard) — 5 KB-card states incl. `outdated` + served `kb.html` renders; dark + responsive; zero JS errors · needs task-065 ∧ task-066 |
+| 068 | task-068 | DESIGN | delivery-010 | Pending | — | — | feature-008 drill-view UI specs (UI-1..UI-6): findings/ledger panel, escaped read-only raw-STATE viewer, honest logs + FR18, parallel drill, responsive; grounded on the d008 `home.html` + router · needs task-054 (d008) |
+| 069 | task-069 | IMPLEMENT | delivery-010 | Pending | — | — | reader `TaskDetail` sub-parser LC-TR (findings/ledger/raw_state/logs) — Python ∥ Node byte-parity, detail-only (no always-on path change), single reader-files writer; raw_state REUSES already-read STATE.md bytes (NFR4); honest logs (KI-008) · needs task-046 ∧ task-047 (d008 relocated reader) |
+| 070 | task-070 | IMPLEMENT | delivery-010 | Pending | — | — | server LC-SD `?detail=` branch on per-`<id>` `/api/model` — attach `details` only on drill, key-order parity, **NO schema bump** (RC-2, stays at 3); single servers writer (`server.py` ∥ `server.mjs` lockstep), no new route (R15/R9) · needs task-069 ∧ task-050 ∧ task-051 (d008 LC-MS) |
+| 071 | task-071 | IMPLEMENT | delivery-010 | Pending | — | — | front-end drill view LC-DV/LC-RV in `home.html` — SEAM-2 `#/work/<id>/task/<task-id>`, location-relative `./api/model?detail=`, findings/ledger/escaped read-only raw STATE.md (R15)/honest logs/parallel drill; single `home.html` writer · needs task-068 ∧ task-070 ∧ task-054 (d008) |
+| 072 | task-072 | TEST | delivery-010 | Pending | — | — | PT-1-H byte-parity for the `details` envelope — full `TaskDetail` fixture + `U+2028`/`U+2029` raw-state, key-order parity, **NO-schema-bump assertion** (RC-2: 3 on bare ∧ `?detail=`; `details` omitted on bare poll) · needs task-069 ∧ task-070 |
+| 073 | task-073 | TEST | delivery-010 | Pending | — | — | Playwright R5 visual gate (hard) — drill view (findings/ledger/escaped read-only raw STATE.md R15 no-injection/honest logs) + parallel-task drill; dark + responsive; zero JS errors · needs task-071 ∧ task-072 |
+
+## Deploy Status
+
+> One row per delivery from /aid-deploy. Tracks deploy lifecycle.
+
+| Delivery | State | PR | KB Updated | Tag | Notes |
+|----------|-------|----|-----------|----|----|
+| _none yet_ | | | | | |
+
+## Cross-phase Q&A (Pending)
+
+> Consolidated open questions across all phases of this work. Each entry: ID, category, impact, suggested answer, status. Cross-phase because the same question may originate in /aid-specify and apply to /aid-plan, etc.
+
+### Q1
+
+- **Category:** Architecture / CLI
+- **Impact:** High
+- **Status:** Answered
+- **Context:** Surfaced by /aid-interview (cross-reference). feature-004/FR10/OQ3. Bare `aid` is
+  **already** an implemented command (`bin/aid` `_cmd_dashboard()` — version + status + usage text
+  screen), not a free hook. Repurposing it for the web dashboard would change existing CLI behavior
+  (C4 violation). How should start/stop be exposed?
+- **Suggested:** (b) a new subcommand — `aid dashboard` / `aid serve` (avoids C4 collision, stays
+  in the existing CLI). Alternatives: (a) repurpose bare `aid` (C4 risk), (c) separate CLI.
+- **Answer:** New subcommand on the `aid` CLI (e.g. `aid dashboard` / `aid serve`); exact name in /aid-specify. Not bare `aid`, not a separate CLI.
+- **Applied to:** feature-004-cli-dashboard-control/SPEC.md; REQUIREMENTS.md §8 OQ3
+
+### Q2
+
+- **Category:** Architecture / Scope
+- **Impact:** Medium
+- **Status:** Answered
+- **Context:** Surfaced by /aid-interview (cross-reference). feature-001/FR17/C4. The FR17 state
+  refactor should treat the already-shipped FR2 STATE.md consolidation (single work `STATE.md` with
+  its contracted sections) + the `## Housekeep Status` relocation as the **fixed baseline** it
+  extends — not re-open "everything from zero." (Already recorded in the docs; confirm the intent.)
+- **Suggested:** Yes — FR2 consolidation is the baseline; FR17 normalizes/extends it, not re-litigates.
+- **Answer:** **No — fully open redesign.** Everything about state storage is on the table
+  (including re-opening the FR2 consolidation). The only invariant is C4 behavior preservation
+  (observable behavior unchanged; tests/CI/render-drift green). Existing design is catalogued as
+  context, not frozen. (C4 + feature-001 reframed accordingly.)
+- **Applied to:** feature-001-pipeline-state-architecture/SPEC.md; REQUIREMENTS.md §7 C4
+
+### Q3
+
+- **Category:** Security
+- **Impact:** Medium
+- **Status:** Answered
+- **Context:** Surfaced by /aid-interview (cross-reference). feature-005/C3. Plain `tailscale serve`
+  exposes to the **entire tailnet** ("anyone on the tunnel"), which C3 rejects. Does C3 mean
+  tailnet-scoped (acceptable) or genuinely **host/authorized-user-scoped** (requires ACLs/grants)?
+  This sets what /aid-specify targets for the mechanism.
+- **Suggested:** Host/authorized-user-scoped — use Tailscale ACLs/grants (or equivalent), not plain serve.
+- **Answer:** **Host/user-scoped.** If Tailscale is chosen it must be locked to host/user ACLs/grants
+  (not plain serve). **Additionally, the research must search online for alternatives to Tailscale**
+  and compare them — Tailscale is the incumbent candidate, not a foregone conclusion.
+- **Applied to:** feature-005-secure-remote-exposure/SPEC.md; REQUIREMENTS.md §7 C3
+
+## Delivery Gates
+
+> One block per delivery from PLAN.md (or the single work-root SPEC.md delivery on the lite path), written by the delivery-gate closing step of `aid-execute`. Distinct from per-task quick-check findings — the gate aggregates those deferred [HIGH] rows (via `delivery-NNN-issues.md`) and runs a full grade.sh pass. Instances of the deferred-[HIGH] log live at `.aid/work-NNN/delivery-NNN-issues.md`; see `.claude/templates/delivery-issues.md` for the template.
+
+### delivery-001
+
+- **Reviewer Tier:** Large (complexity score 35 — tasks 13 + depth 7 + risk-types 15)
+- **Complexity Score:** 35
+- **Grade:** A+ (cycle 2 — D+ → A+ after fixes)
+- **Cycles:** 2
+- **Timestamp:** 2026-06-11T00:00:00Z
+- **Issue List (cycle 1, all Fixed):**
+  - [HIGH] derivation.py Canceled fallback read wrong column (5-col assumption vs real 4-col Lifecycle History) — the seam bug the per-task quick-checks missed; fixed to cols[1] → Fixed
+  - [LOW] test fixtures encoded the same wrong 5-col shape (masked the HIGH) → Fixed (4-col + false-positive regression guard)
+  - [LOW] writeback-state.sh usage() sed range truncated --pipeline help (task-003 carried) → Fixed (2,51)
+  - [MINOR] derivation.py Deploy Status comment mislabel → Fixed
+  - [MINOR] KI-001/002/003 unannotated → Fixed (marked RESOLVED in known-issues.md)
+- **Integration verification:** generator determinism PASS · 38 canonical suites PASS · 229 reader tests PASS · producer↔consumer round-trip proven
+- **Branch:** aid/work-001-aid-dashboard-delivery-001 (14 commits, babb4d9 → f02441e)
+
+### delivery-002
+
+- **Reviewer Tier:** Large (complexity score 22 — tasks 10 + depth 3 + risk-types 8 + consults 1)
+- **Complexity Score:** 22
+- **Grade:** A+ (cycle 2 — C+ → A+ after fixes)
+- **Cycles:** 2
+- **Timestamp:** 2026-06-11T16:30:00Z
+- **Issue List (gate cycles, all Fixed/Resolved):**
+  - [MEDIUM] bin/aid.ps1 pid-JSON backslash escape flagged as no-op (likely a false positive — .NET `-replace` treats only `$` as special, so `'\\'` already doubled) → Fixed (changed to unambiguous `.Replace('\','\\')`) · 1b178fe
+  - [LOW] server.mjs bound hard-coded 127.0.0.1 ignoring validated --host (parity divergence vs server.py) → Fixed (binds validated HOST, loopback-guarded) · 1b178fe
+  - [LOW] test-ascii-only.sh SHIPPED_SCRIPTS omitted dashboard/server/{server.py,server.mjs,reader.mjs} → Fixed (added; 14 suites) · 1b178fe
+  - [LOW] PS dashboard spawn path had no CI coverage on any runner → Resolved (added native-ps1 Windows smoke; **runtime validation CI-pending on push** — unrunnable on Linux dev box) · 039bab5
+  - [MINOR] index.html wave summary mislabeled Canceled tasks as "done" → Fixed (separate done/canceled counts) · 1b178fe
+- **Per-task quick-checks:** all clean except fix-on-spot: task-017 [CRITICAL] U+2028 raw-vs-escaped divergence (SPEC premise wrong) + [HIGH] index.html path split; task-015 [HIGH] envelope.generated_by doc error; task-016 [HIGH] Python SIGTERM deadlock (caught by orchestrator teardown, fixed 571728a). See delivery-002-issues.md.
+- **Integration verification:** ALL 40 canonical suites PASS · PT-1 cross-runtime byte-parity 15/15 (incl. U+2028/U+2029) · server self-tests 39 py + 34 node · index.html 63 · CLI 97 + parity 106 · **Playwright visual gate (R5):** AC1-AC3 + dark + mobile/tablet/desktop validated over PT-1 fixture; drove a visual-polish pass (chips/balance/callouts/mobile-header/tablet) + caught the Python SIGTERM deadlock
+- **Branch:** aid/work-001-aid-dashboard-delivery-002 (9 commits, 9117b73 → 039bab5)
+- **Caveat:** one CI-pending item — the Windows PS dashboard smoke (039bab5) is unvalidated on the Linux dev box; confirm on the windows-latest runner when the branch is pushed.
+
+#### delivery-002 — Re-gate (work-overview increment, user-directed)
+
+- **Scope added:** work-overview capability folded into delivery-002 (squash 9a0f2ed) — net-new, beyond the original feature-003/004 spec (user-directed via dashboard dogfooding). Reader (Python+Node) new per-work fields (number/title/description/objective/work_path/recipe/features/deliverables from REQUIREMENTS.md + STATE Triage/Features/Plan); front-end work-overview header + Delivery>Lane>Task restructure (collapsible, vertical=sequence/horizontal=parallel, adaptive lane columns, expand-state persistence, data-note chip); schema_version 1→2.
+- **Reviewer Tier:** Large
+- **Grade:** A+ (cycle 2 — **F → A+** after fixes)
+- **Cycles:** 2
+- **Timestamp:** 2026-06-11T22:00:00Z
+- **Issue List (re-gate, all Fixed):**
+  - [CRITICAL] cross-runtime `number` divergence on the minimal-work path (no STATE.md): reader.py omitted it, reader.mjs set it → real-repo /api/model byte-divergent on work-002. The fixture-only parity check missed it (all fixture works have STATE.md). → Fixed (Python minimal path now sets folder-derived number + full null/[] set) · a135efe
+  - [CRITICAL] reader.mjs features/deliverables parsers dropped the first DATA row of a header-less table (unconditional skip Python lacked) → Fixed (pattern-based header skip, matches Python) · a135efe
+  - [LOW] index.html stat strip hidden when no Triage Path → Fixed (counts always shown; only Full/Lite badge path-gated) · a135efe
+  - [MINOR] stale test name test_s7_expected_schema_version_1 → Fixed (renamed _2) · a135efe
+- **Integration verification:** ALL 40 canonical suites PASS · PT-1 15/15 · **real-repo byte-parity IDENTICAL** (10529 bytes, incl. work-002 minimal path) · no-header-table parity IDENTICAL · 331 reader/server pytest + 43 node + 63 index green · **Playwright R5:** Full fixture + real-repo minimal page render, zero JS errors, stat strip shows counts.
+- **Lesson captured:** verify cross-runtime parity against the REAL repo (minimal/edge paths) + header-less tables, not only the fixture — the gate caught what fixture-only testing didn't.
+- **Branch:** aid/work-001-aid-dashboard-delivery-002 (now → a135efe)
+- **Follow-up (not in this delivery):** producer side — aid-interview writes Name/Description; aid-detail writes task short-name. Reader degrades gracefully until then.
+
+### delivery-003
+
+- **Reviewer Tier:** Large (security-weighted; complexity score 8 — tasks 3 + depth 2 + risk-types 3; elevated from Medium-by-formula given the C1-hard never-public stakes)
+- **Complexity Score:** 8
+- **Grade:** A+ (A → A+ after fixing the 1 MINOR)
+- **Cycles:** 1 (+ MINOR cleanup)
+- **Timestamp:** 2026-06-11T23:30:00Z
+- **Issue List:**
+  - [MINOR] task-024 interim T-14a..j duplicated the canonical T-1..T-9 in test-aid-remote.sh → Fixed (deduped; kept unique feature-004 success-path T-14h/i; no coverage lost) · 743741a
+- **Per-task quick-checks:** task-024 [HIGH] never-funnel guard was comment-aware (2 comment tokens) → fixed-on-spot (zero funnel tokens, bare grep proves never-public) · see delivery-003-issues.md; task-025 clean; task-026 clean (quick-check mutation-verified the tests are real).
+- **Security verification (the point of this gate):** SEC-1 never-public CONFIRMED — bare `grep -ic funnel` = 0 on BOTH bin/aid and bin/aid.ps1, no funnel invocation, only `tailscale serve` (tailnet-only). Failure-closed (SEC-3): server bound 127.0.0.1 + record remote=false BEFORE expose; every expose failure (10/11/12) → user-facing exit 10, server stays local, never public, no bind widen. No socket bind/widen/policy-edit/agent-LLM. FR18/KI honesty: expose prints the ACL-grant steps to stderr (annotates what AID can't verify per SEC-2/KI-006), never fabricates a scoping guarantee.
+- **Integration verification:** ALL 41 canonical suites PASS · feature-005 T-1..T-9 (test-aid-remote.sh 40, tailscale fully stubbed — no live tailnet) · CLI parity 116 (PAR005-N, PS skip-if-absent non-vacuous) · ASCII 14 · Bash↔PS char-for-char parity (FR18 block, exit codes, handle). Tailscale IS live on this host (srvrivind01, 1.98.4) but NO real `tailscale serve` was ever invoked — all tests stub it.
+- **Branch:** aid/work-001-aid-dashboard-delivery-003 (4 commits, bd9e4a0 → 743741a)
+- **Operator-side (documented, not code — KI-005/KI-006):** the deny-by-default ACL grant is the operator's one-time tailnet-policy action; AID detects Tailscale + brings up `serve` (tailnet-only) + prints the step-by-step grant guidance, but cannot author/verify the policy. A `serve` mapping survives an AID process crash until the next stop/start reclaims it (bounded, still never public).
+
+### delivery-006
+
+- **Reviewer Tier:** Large (complexity score 14 — tasks 8 + cross-runtime parity depth + producer↔consumer contract + dogfood-render + live data migration risk)
+- **Complexity Score:** 14
+- **Grade:** A+ (cycle 1 — 0 CRITICAL / 0 HIGH at the gate; 1 MED + 1 LOW + 1 MINOR fixed → A+)
+- **Cycles:** 1 (+ MED/LOW/MINOR cleanup)
+- **Timestamp:** 2026-06-11T00:00:00Z
+- **What this delivery closed:** the **producer↔consumer loop** — the dashboard now renders REAL repo data. Producers emit the display schema (aid-interview `- **Name:**`/`- **Description:**` PF-1; aid-detail `# task-NNN: <title>` short-name PF-3 + normalized ```wave-map fence PF-5a), the reader was reconciled to the real on-disk formats (PF-2 objective-blockquote skip, PF-4 phase SOLELY from typed Pipeline Status, PF-6 yml inline-comment strip, PF-7 de-slug title fallback), work-001 was migrated to conform, and the dogfood `.claude/skills` + 5 install trees were re-rendered via the FULL run_generator.py. schema_version 2→3.
+- **Issue List (gate, all Fixed):**
+  - [MEDIUM] producer↔consumer contract test pinned to hand-copied producer strings, not the live canonical files — a future producer-emission edit would not be caught → Fixed (`TestT11CanonicalProducerPinning`, 9 tests read `canonical/templates/requirements.md` PF-1, `canonical/skills/aid-detail/references/task-decomposition.md` PF-3, `execution-graph-generation.md` PF-5a at runtime) · a541b23
+  - [LOW] `*(pending)*` requirements-template seed rendered literally as a work title (PF-7 fallback only fired on absent/null) → Fixed (treat `*(pending)*` as absent in both parsers.py + reader.mjs; byte-parity preserved) · a541b23
+  - [MINOR] stale "equals 1" docstring in test_index_html.py (assertion already checks `EXPECTED_SCHEMA_VERSION = 3`) → Fixed · a541b23
+- **Per-task quick-checks:** 3 deferred [HIGH] (delivery-006-issues.md), all Fixed-on-spot before the gate — task-040 reader.mjs headerless `## Tasks Status` first-row drop + empty `## Pipeline Status` fallback divergence (both delivery-002-class Python↔Node parity bugs); task-042 ASCII regression (2 em-dashes the Wave-2 parity fix introduced, dev mislabeled "pre-existing" — orchestrator verified branch base had 0 non-ASCII and caught it). All byte-parity-restored.
+- **Anti-drift discipline (the lesson from the producer-loop realization):** the canonical schema is the source of truth, NOT work-001's legacy STATE.md. The fix lived on the PRODUCER side; the PT-1 fixture was regenerated FROM real producer output (not invented), and the contract test now pins the live canonical producer files — so the fixture can never silently drift from what the producers actually emit.
+- **Integration verification:** ALL 41 canonical suites PASS · 398 pytest (+19 subtests) + 50 node green · real-repo byte-parity over $PWD IDENTICAL (migrated work-001 + work-002 minimal) · **Playwright R5 over the REAL migrated repo:** title "AID Live Dashboard", phase Execute, real Delivery▸Lane▸Task hierarchy (deliveries 1–5, ZERO Delivery #0), description renders (no `> _Status_` leak), zero JS errors — all 4 reported real-data bugs visually confirmed fixed.
+- **Branch:** aid/work-001-aid-dashboard-delivery-006 (4 commits, 2a0c733 → a541b23) — NOT yet pushed/merged.
+- **Dogfood note:** producer edits are LIVE in this repo's `.claude/skills` (FR24) — no aid-CLI redeploy needed; render-drift clean.
+
+### delivery-007 (feature-009 hardening — enforce the producer contract)
+
+- **Origin:** a post-delivery-006 confidence analysis (user-requested) found the PF-1/PF-3/PF-5a emissions were worded as MUST but enforced only by reader graceful-degradation (no mechanical gate on produced output), and that the **Lite completion path emitted no identity header at all** (Lite works use a work-root `SPEC.md`, never a `REQUIREMENTS.md`, so the reader's Name/Description source did not exist for them).
+- **Reviewer Tier:** Large (cross-runtime byte-parity + new producer surface + the Lite-path gap was the explicit priority)
+- **Grade:** A+ (cycle 2 — gate found 0 CRIT / 1 HIGH / 2 MED / 1 LOW / 1 MINOR; all fixed or OOS → A+)
+- **Cycles:** 2
+- **Timestamp:** 2026-06-12T00:00:00Z
+- **What shipped:**
+  - **PF-8 (Lite identity, priority):** `lite-spec-template.md` seeds `- **Name:**`/`- **Description:**`; `state-condensed-intake.md` composes real values; `state-lite-done.md` gains a **mandatory** identity step before Status→Ready ("not optional, not skippable"). Reader gains a **SPEC.md identity fallback source** (REQUIREMENTS Name → SPEC Name → SPEC H1 → de-slug), Python+Node byte-identical (new `parse_spec_md`/`parseSpecMd`).
+  - **PF-9 (keystone gate):** `tests/canonical/test-producer-completeness.sh` runs both runtimes over the conforming fixture and FAILS if any field fell back to a degraded sentinel (null/de-slug title, null description, lane-less/delivery-less task, bare-id short_name) — converting the three MUST-by-prose emissions into **MUST-by-CI**. Negative assertion proven to fire (lane null).
+  - **PF-5a+ (wave-map):** aid-detail now **derives** the wave-map from the `Depends On` table it just wrote (wave N = deps all in earlier waves) + a mandatory totality self-check.
+- **Gate findings (all resolved):**
+  - [HIGH] PF-8 SPEC.md fallback had zero test coverage — no Lite-style fixture, no `parse_spec_md` unit tests; HT-2 undemonstrated → Fixed (added `work-006-lite-sample` SPEC-only fixture + Python/Node `parse_spec_md`/`parseSpecMd` unit tests + a SPEC-only coverage guard in the completeness gate) · 2fe52ac
+  - [MEDIUM] CRLF byte-parity divergence in `parseSpecMd` H1 (Node `split("\n")` left a `\r` that broke the `$`-anchored H1 regex; Python `splitlines()` stripped it) → Fixed (Node splits on `/\r\n|\r|\n/`; CRLF case test added) · 2fe52ac
+  - [MEDIUM] PF-9 negative assertion's lane degradation was a no-op (removing only the wave-map left the prose `- Wave N:` lines, so PF-5b re-derived lanes) → Fixed (degradation also strips prose Wave lines; negative run now emits real `lane is null` failures) · 2fe52ac
+  - [LOW] `test-install-parity.sh` PAR09b intermittently fails under full `run-all.sh` ordering → **OOS** — pre-existing flaky work-002 installer suite (passes 84/0 in isolation; order/shared-state sensitive; untouched by any delivery-007 file)
+  - [MINOR] SPEC PF-9 prose cited `run-all.sh` instead of `tests/run-all.sh` → Fixed
+- **Integration verification:** 404 pytest (+19 subtests) + 70 node green · PT-1 cross-runtime byte-parity 15/15 (fixture now includes the Lite SPEC-only work) · producer-completeness 9/9 (positive covers the SPEC-only work; negative fires lane-null) · ASCII-only green · FULL `run_generator.py` deterministic (VERIFY PASS), render-drift clean across 5 trees + `.claude/` synced.
+- **Branch:** 2fe52ac (continues the delivery-006 branch lineage) — NOT yet pushed/merged.
+
+### delivery-004 (feature-006 project main page)
+
+- **Reviewer Tier:** Medium (3 tasks; front-end router/render refactor; consumes existing schema-3 model — no server/model risk)
+- **Grade:** A+ (cycle 1 — 0 CRIT/HIGH/MED; 1 LOW fixed + 3 MINOR accepted)
+- **Cycles:** 1
+- **Timestamp:** 2026-06-12T00:00:00Z
+- **What shipped:** the Level-1 project main page as a **front-end-only** route/view inside feature-003's SPA (`dashboard/index.html` only). Hash router (DD-1, no pushState): `#/` main, `#/work/<work_id>` the existing d006 per-work view (find-by-KEY, never index), `#/kb` feature-007 seam; `hashchange` re-renders last-good model with no fetch; stale work_id → notice + back link. `renderModel` → thin wrapper over `render(model, route)`; per-work calls moved verbatim. Main card-grid (new `.pipelines-grid`; `.grid.g3` untouched): work-cards reuse `makeLifecycleBadge` (DD-2) + FR11 attention emphasis (border-warn/err + two-pass pin-to-top render, not a data re-sort) + source_mode chip; KB card (null→"No KB yet"); Level-0 `.card.plugin` panel (manifest absent→"tool info unavailable"); FR18 step-by-step empty-state.
+- **Pre-delivery readiness check (post-d006/d007):** confirmed the schema-3 model already emits every field feature-006 reads (`repo.project_name`, `repo.kb_state`, `tool`, `works[]`); tasks 027-029 executable as-is (DESIGN grounded in current code). No schema bump, no re-detail needed.
+- **R5 Playwright visual gate (orchestrator-performed, CLAUDE.md hard gate):** 7 screenshots over real repo + the pt1-aid fixture (6 lifecycle states incl. Paused/Blocked) + an empty fixture — validated the card grid per lifecycle, FR11 amber-Input/red-Blocked + pin-to-top, click-to-drill to `#/work/<id>`, `#/kb` seam, KB-absent "No Knowledge Base yet", L0 "tool info unavailable", FR18 step-by-step empty-state, dark + mobile(390px) responsive; **zero JS errors** (only a favicon 404).
+- **Gate findings:**
+  - [LOW] work-card `href` used `escHtml` (HTML-entity escaper) on a URL context → would corrupt the route round-trip if a work_id ever contained `& < > "` → Fixed (`encodeURIComponent` on write + `decodeURIComponent` on read, no-op for today's slugs; click-to-drill re-verified in Playwright) · 2a4ddd1
+  - [MINOR] stale-view branch omits `updateFreshnessBadge` (asymmetry; mitigated by onSuccess) → Accepted
+  - [MINOR] `selectActiveWork` retained but off the default path → Accepted (design-sanctioned future default-picker)
+  - [MINOR] boot/deep-link ordering on `#/work/<id>` before first fetch → Accepted (verified non-issue; thin wrapper honors the route on first paint)
+- **Integration verification:** 454 pytest (+50 TestFeature006Router) + 70 node + PT-1 byte-parity 15/15 (proves front-end-only) + ALL 42 canonical suites green.
+- **Branch:** 2a4ddd1 (consolidated branch `aid/work-001-aid-dashboard`).
+
+## Quick Check Findings
+
+> One block per task, keyed by task-id. Written by `writeback-state.sh --findings` during the per-task quick-check step of `aid-execute`. Records the reviewer tier used and all [HIGH] / [CRITICAL] findings for that task. [CRITICAL] findings trigger an immediate fix-on-spot; [HIGH] findings are deferred to the delivery gate via `delivery-NNN-issues.md`. No grade is recorded here — grading is per-delivery, not per-task.
+
+### task-NNN
+
+- **Reviewer Tier:** Small (quick check always uses Small tier)
+- **Findings:**
+  - [CRITICAL] {description} — {source-file:line} — Fixed-on-spot
+  - [HIGH] {description} — {source-file:line} — Deferred-to-gate
+
+## Lifecycle History
+
+> One row per phase transition or gate approval. Append-only audit trail.
+
+| Date | Phase Transition / Gate | Grade | Notes |
+|------|------------------------|-------|-------|
+| 2026-06-10 | Work created | — | Initial scaffold by /aid-interview --reset work-001 |
+| 2026-06-10 | Interview → Approved | — | All 10 sections Complete; user approved at COMPLETION checkpoint |
+| 2026-06-10 | Feature Decomposition | — | 8 features created in features/ (MVP = 001–005) |
+| 2026-06-10 | Specify (all 8 features) | A+ | Every feature SPEC technical-spec'd + A+ review-gated. Resolved OQ2 (hybrid dual-runtime Python+Node), OQ3 (`aid dashboard start node\|python [--remote]` / stop), C3 (Tailscale Serve + ACL grants); added FR18 (step-by-step user-intervention guidance). schema_version coordination (007:1→2, 008:2→3) + LC-1/LC-2 seams flagged for /aid-plan. KI-001..008 registered. |
+| 2026-06-10 | Plan | A+ | PLAN.md: 5 deliveries (d001 fold 001+002; d002 003+004; d003 005; d004 006; d005 group 007+008 @ shared schema 1→3). Full MVP = d001+d002+d003. 7 cross-cutting risks. None deferred. Reviewed B+→A+. |
+| 2026-06-10 | Detail | A+ | 37 tasks (task-001–037), typed + globally numbered, across 5 deliveries; per-delivery execution graphs in PLAN.md. Reviewed C→A+ (3 MED dep-graph + 2 MINOR label fixes: serialized shared-file writers task-006←004 / task-035←032, Playwright task-020←018, delivery-00N Source norm, C4 labels). 5 thin-spec spots flagged as executor resolution points. |
+| 2026-06-11 | Execute delivery-001 | A+ | 13 tasks (001–013) executed on branch aid/work-001-aid-dashboard-delivery-001 (14 commits babb4d9→f02441e): feature-001 state-architecture refactor M0–M6 (typed ## Pipeline Status + writeback --pipeline + enum + phase/pause/block/Completed wiring, all C4-preserving) + feature-002 Python read_repo (read-only, fallback, FR16 derivation). Per-task quick-checks all clean; Large-tier delivery gate D+→A+ (caught + fixed a producer/consumer Canceled column drift the per-task lens missed). generator + 38 suites + 229 reader tests green; producer↔consumer round-trip proven. KI-001/002/003 resolved. |
+| 2026-06-11 | Execute delivery-003 (secure remote) | A+ | 3 tasks (024-026) on branch aid/work-001-aid-dashboard-delivery-003 (4 commits bd9e4a0→743741a): feature-005 LC-2 remote expose/teardown via Tailscale serve (host/user-ACL-scoped, never public) — Bash `_aid_remote_expose`/`_teardown` + PowerShell twin + the --remote path wired into feature-004's start/stop. **SEC-1 never-public is STRUCTURAL: zero funnel tokens (bare grep proves it on both launchers), only `tailscale serve` (tailnet-only).** Failure-closed (every expose failure → server local, never public); FR18 ACL-grant step-by-step guidance (annotates what AID can't verify, KI-005/006). T-1..T-9 with tailscale fully stubbed (no live tailnet); Bash↔PS parity. Per-task: 1 HIGH fixed-on-spot (never-funnel comments). Large security-weighted gate A→A+ (1 MINOR test-dedup). 41 suites green. **Completes the full MVP (d001+d002+d003).** |
+| 2026-06-11 | Re-gate delivery-002 (work-overview) | A+ | User-directed: prototyped a work-overview header (collapsible #N/Name/Description/Objective + Full/Lite stat strip + Features) and restructured the task area into Delivery>Lane>Task (collapsible, vertical=sequence/horizontal=parallel, adaptive lane columns, data-note→top-bar chip, expand persists across poll) on a throwaway branch via Playwright iteration, then formalized (Node reader/server parity + schema_version 1→2) and squash-merged into delivery-002 (9a0f2ed). Re-gate Large F→A+ (cycle 2): caught 2 CRITICAL cross-runtime parity divergences fixture-only testing missed (minimal-work `number`; header-less-table first-row drop) + 1 LOW + 1 MINOR, all fixed (a135efe). Real-repo + no-header byte-parity IDENTICAL; 40 suites + PT-1 15/15 green; Playwright zero JS errors. Producer side (aid-interview Name/Description, aid-detail task short-name) deferred. |
+| 2026-06-11 | Re-plan (insert delivery-006) | — | delivery-006/feature-009 (work-overview producer-loop closure) inserted into the spine as `d003 → d006 → d004`; d006 lands before d004 (project main page consumes its work-overview metadata) and now **owns the move to schema_version 3**. Supersedes the old 5-delivery roadmap's `d004=006` / `d005 group 007+008 @ shared schema 1→3` mapping (line above): task-034 re-baselines off the 3 floor (3→4 or no-bump). |
+| 2026-06-11 | Execute delivery-002 | A+ | 10 tasks (014–023) on branch aid/work-001-aid-dashboard-delivery-002 (9 commits 9117b73→039bab5): feature-003 dual-runtime thin servers (Python+Node, byte-parity proven incl. U+2028/U+2029) + dependency-free index.html front-end (stage rail, parallel task chips, two-color+shape attention, poll loop, never-blank) + feature-004 `aid dashboard start node\|python [--remote] / stop` in bin/aid + PowerShell twin. Per-task quick-checks fixed-on-spot: U+2028 raw-vs-escaped [CRIT], index.html path split [HIGH], envelope.generated_by doc [HIGH], Python SIGTERM deadlock [HIGH]. Large-tier delivery gate C+→A+ (PS pid-JSON likely-FP MED + 3 LOW + 1 MINOR fixed). Playwright R5 visual gate validated AC1-AC3 + dark + responsive, drove a visual-polish pass. ALL 40 canonical suites + PT-1 15/15 green. One CI-pending: Windows PS dashboard smoke (unrunnable on Linux dev box). |
+| 2026-06-11 | Execute delivery-006 (producer-loop closure) | A+ | 8 tasks (038–045) on branch aid/work-001-aid-dashboard-delivery-006 (4 commits 2a0c733→a541b23): feature-009 **closes the producer↔consumer loop so the dashboard renders REAL repo data**. Producers now emit the display schema — aid-interview writes `- **Name:**`/`- **Description:**` (PF-1, Description composed from Objective), aid-detail writes `# task-NNN: <title>` descriptive short-names (PF-3) + a normalized ```wave-map fence (PF-5a) — rendered LIVE into this repo's `.claude/skills` + all 5 install trees via the FULL run_generator.py (FR24 dogfood, render-drift clean). Reader reconciled to the real on-disk formats (PF-2 objective-blockquote skip, PF-4 phase SOLELY from typed Pipeline Status, PF-6 yml inline-comment strip, PF-7 de-slug title fallback), Python+Node byte-parity preserved; schema_version 2→3; front-end drops parseWave() and groups by task.delivery/lane. work-001 migrated to conform (PF-1 header + typed `## Pipeline Status` + PLAN wave-maps). Anti-drift: PT-1 fixture regenerated FROM real producer output + a contract test that pins the live canonical producer files. Large-tier gate (score 14) **A+ cycle 1** — 0 CRIT/0 HIGH at the gate; 1 MED (contract test now reads canonical files) + 1 LOW (`*(pending)*` seed → absent) + 1 MINOR fixed (a541b23). 3 per-task [HIGH] fixed-on-spot (2 reader.mjs parity divergences + 1 ASCII regression the orchestrator caught after a "pre-existing" mislabel). 41 suites + 398 pytest + 50 node green; real-repo byte-parity IDENTICAL. **Playwright R5 over the migrated repo confirmed all 4 reported real-data bugs fixed** (title "AID Live Dashboard", phase Execute, real Delivery▸Lane▸Task, zero Delivery #0, no `> _Status_` leak). Branch not yet pushed/merged. |
+| 2026-06-12 | Execute delivery-007 (enforce producer contract) | A+ | feature-009 hardening (commit 2fe52ac), triggered by a user-requested confidence analysis of the producer skills. The analysis found the producer emissions were worded as MUST but enforced **only** by reader graceful-degradation (no CI gate on produced output), and that the **Lite completion path emitted no identity header at all** (Lite works use a work-root `SPEC.md`, never a `REQUIREMENTS.md`). Three closures: **PF-8** — Lite-path identity (template seed + CONDENSED-INTAKE compose + a **mandatory** LITE-DONE step + a reader **SPEC.md identity fallback source**, Python+Node byte-identical); **PF-9** — a producer-completeness CI gate (`test-producer-completeness.sh`) that fails when any field degrades, converting MUST-by-prose → **MUST-by-CI**; **PF-5a+** — aid-detail derives the wave-map mechanically from the dependency table + totality self-check. Large-tier gate **A+ cycle 2**: the reviewer caught that the Lite SPEC fallback shipped with zero tests (HIGH, HT-2 undemonstrated) + a CRLF H1 byte-parity divergence (MED) + a vacuous negative assertion (MED) — all fixed (Lite SPEC-only fixture `work-006-lite-sample` + parse_spec unit tests Python+Node; Node splits `/\r\n|\r|\n/`; negative now fires real lane-null). 1 LOW OOS (pre-existing flaky installer suite). 404 pytest + 70 node + PT-1 15/15 + completeness 9/9 + ALL 42 canonical suites green; FULL generator deterministic + render-drift clean + `.claude/` synced. Branch not yet pushed/merged. |
+| 2026-06-12 | Fix delivery-003/feature-005 (--remote wrong-domain) | A+ | commit 7f201e6. User-reported: `aid dashboard --remote` printed a **non-working URL** (`https://SRVRIVIND01.rossvideo.com/`, the corporate AD domain) instead of the Tailscale MagicDNS URL, and leaked that domain into the ACL-grant `src`. **Root cause:** `tailscale status --json` is PRETTY-PRINTED (`"DNSName": "..."` — space after the colon), but the Bash launcher's no-space grep `'"DNSName":"[^"]*"'` never matched → fell through to `hostname -f` (corporate domain); the grant `src` was derived from that same wrong FQDN. **Fix** (bin/aid + bin/aid.ps1, parity-preserved, ASCII, zero funnel tokens): resolve Self.DNSName via `tailscale status --json --peers=false` with a whitespace-tolerant match scoped structurally to the Self object; **removed the `hostname -f` URL fallback** (never fabricate a public-domain URL — caller prints an explicit "could not auto-detect" status instead); grant `src` is now a fixed identity placeholder (a DNS domain is not a valid grant selector), `dst` = host short-name. **Test gap closed:** the tailscale stub emitted COMPACT JSON, hiding the bug — now emits realistic pretty-printed JSON (+ Peer block, omitted under --peers=false); T-1 pins the exact tailnet FQDN URL + grant src/dst + a not-contains domain-leak guard; new T-1b covers the serve-status fallback. **Verified on the REAL host:** resolves `srvrivind01.tail74e815.ts.net`. Delivery gate A+ (0 CRIT/HIGH/MED; 2 LOW + 1 MINOR — Self-scoping, unresolved-URL labeling, serve-fallback coverage — all fixed). 49 remote + 116 parity + 14 ascii + ALL 42 canonical suites green. |
+| 2026-06-12 | Fix Windows PS dashboard-start (CI hang) | A+ | commits a541b23→d9ea100. The windows-latest dashboard smoke (first real-runner run, CI-pending since d002) failed, then — after a first fix — **hung**. Two latent bugs surfaced: (1) `Start-Process` redirected stdout+stderr to the SAME file (PowerShell rejects it → exit 1); (2) once that was fixed, `Start-Process` WITH redirection inherits the caller's stdio handles, so the long-lived server held the smoke's capture pipe open → infinite hang. **Fix** (bin/aid.ps1): spawn detached via ShellExecute (`-PassThru -WindowStyle Hidden`, no `-Redirect*`) — the Windows analog of Bash `setsid`; PID-based stop unchanged. Trade-off (KI-009 + feature-008 SPEC + task-022): Windows server log not file-captured (readiness via TCP poll). **CI hardened**: per-branch `concurrency` cancel-in-progress + `timeout-minutes: 25` so a hang can't burn 6h. Gate A+ (2 MED doc-drift fixed; 2 LOW/MINOR accepted). **windows-latest + ubuntu-latest both green** (run 27425385305). |
+| 2026-06-12 | Execute delivery-004 (project main page) | A+ | 3 tasks (027-029) on the consolidated branch (commit 2a4ddd1): feature-006 Level-1 project main page as a **front-end-only** route/view in index.html — hash router (`#/`, `#/work/<id>` find-by-key, `#/kb` seam), `render(model, route)` refactor (per-work view moved verbatim), main work-card grid (reuses makeLifecycleBadge + FR11 pin-to-top attention, source_mode chip), KB card (null→"No KB yet"), Level-0 panel (absent→"tool info unavailable"), FR18 step-by-step empty-state. Server/`/api/model`/`schema_version`/reader/poll UNCHANGED (PT-1 15/15). Pre-flight confirmed schema-3 already emits all consumed fields. **R5 Playwright visual gate (orchestrator): 7 screenshots, all states + drill + seam + empty + dark + responsive, zero JS errors.** Medium-tier gate A+ cycle 1 (1 LOW fixed: href escHtml→encodeURIComponent round-trip; 3 MINOR accepted). 454 pytest (+50) + 70 node + 42 canonical green. |
+| 2026-06-12 | delivery-004 UX refinement + `created` field | A+ | User-directed multi-round visual iteration (commit ea40fe7), front-end-only in index.html **except** an additive reader field. **Changes:** Knowledge & Tooling moved to a top header band (blue `--info` accent); pipeline cards fixed 3-per-line (responsive 3→2→1); card rework — State badge first, labelled "Phase" (dropped N/7), **progressive path line** (Full: features→deliveries→tasks with `[defining features]`/`[planning deliveries]`/`[writing tasks]` stages; Lite: recipe→tasks; `[Identifying path]`), **two-part progress bar** (Readiness % pre-execution / Execution % done÷total tasks, Canceled excluded, bar under the %); **local date formatting** (`_fmtLocalDateTime`, viewer locale+TZ, no seconds, date-only-safe) on card Created/Last-Update + KB `last_summary_date` + CLI `installed_at`. **Reader (Python+Node byte-identical):** new per-work `created` parsed from STATE.md `## Lifecycle History` "Work created" row (null when absent), serialized after `updated`. **R5 Playwright (orchestrator):** light/all-6-states/3-col + dark + mobile(390→1col) + empty-state, dates formatted, zero JS errors. **Gate A+** (0 CRIT/HIGH): 1 MED + 1 LOW **fixed** — `created` Node header-skip aligned to Python (byte-parity on a malformed Lifecycle-History) + a canonical 4-col parity fixture (`work-001-running-parallel`) so cross-runtime `created` is actually exercised (closed the "5-col fixture masks a column assumption" anti-pattern); 3 **accepted** — [LOW] index.html tests are static-source assertions (suite's established design; behavior gate-verified, no new JS-exec infra per project norms), [LOW] **no `schema_version` bump for the additive nullable `created`** (backward-compatible; front-end tolerates absence; bump reserved for breaking/owned schema moves — revisit via /aid-housekeep if a stricter "bump on any field" rule is wanted), [MINOR] Execution bar shows for an Unknown-phase work when tasks exist (done/total is factual; bar requires tasks). 506 pytest (+52) + 70 node + PT-1 15/15 + ALL 42 canonical green. Pushed (2a4ddd1→ea40fe7), unmerged. |
+| 2026-06-12 | **Two-level dashboard re-architecture — full pipeline (interview→specify→plan→detail), planning only** | A+ | User-directed information-architecture revision (the CLI is global/multi-repo; the dashboard conflated machine + repo scope on one page). Driven autonomously through all four planning phases, **each A+ gated** (no production code touched; nothing committed — `.aid/` artifacts only). **Interview:** FR27–36/NFR9–11/C6–7; new **feature-010** (CLI home + `$AID_HOME/registry.yml` registry [aid add/remove side-effect] + multi-repo server), feature-006 revised (per-repo `home.html`, L0 panel relocated up), feature-007 re-scoped (serve `kb.html` + 5-state KB card + reader git-read + discover→summarize chain), feature-008 deferred; old delivery-005 superseded. Gate **CRITICAL→A+**: `~/.aid/` is the CLI install tree `AID_HOME` → registry to `$AID_HOME/registry.yml`. User decisions: OQ5 (`--remote`→CLI home/all repos), OQ6 (registry=add/remove side-effect). **Specify ×3 (all A+):** f-010 (opaque-hex repo `<id>` traversal-safe addressing, `/api/home`, CAN-1, PT-1-H; gate caught `bin/aid` is hand-maintained not canonical-rendered), f-006 revision (bounded), f-007 re-scope (5-state disk-derivable, graceful read-only git read + reader "no subprocess" docstrings reconciled, no schema bump). **Plan (A+):** delivery-008 (spine: 010+006) → delivery-009 (KB tier: 007) → delivery-010 (drill-down: 008, deferred); R8 install-tree/packaging precondition surfaced. **Detail (A+):** d008 = 13 typed tasks (046–058, gate caught a homeless poll-URL change), d009 = 9 typed tasks (059–067, gate caught two delivered "no subprocess" tests the git read would break → homed in task-064); both wave-maps total + acyclic + shared-writers serialized; canonical-render (skills) vs hand-maintained-`bin/aid` distinction enforced. **WHOLE ROADMAP task-ready: d008 (13, tasks 046–058) + d009 (9, 059–067) + d010 (6, 068–073) = 28 typed tasks, all A+ gated; 3 total wave-maps. NONE executed — all execution remains.** d010 reconciliation: routing→/r/<id>/+?detail=, NO schema bump (stays at 3, `created`-class), depends on d008 not d009. |
