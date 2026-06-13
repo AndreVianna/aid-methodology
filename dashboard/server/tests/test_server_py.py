@@ -986,41 +986,123 @@ class TestArgValidation(unittest.TestCase):
 
     def test_rejects_0000_host(self):
         with self.assertRaises(SystemExit):
-            _server_module._parse_args(["--aid-home", "/tmp", "--host", "0.0.0.0", "--port", "8787"])
+            _server_module._parse_args(["--host", "0.0.0.0", "--port", "8787"])
 
     def test_rejects_wildcard_host_double_colon(self):
         with self.assertRaises(SystemExit):
-            _server_module._parse_args(["--aid-home", "/tmp", "--host", "::", "--port", "8787"])
+            _server_module._parse_args(["--host", "::", "--port", "8787"])
 
     def test_rejects_external_ip(self):
         with self.assertRaises(SystemExit):
-            _server_module._parse_args(["--aid-home", "/tmp", "--host", "192.168.1.1", "--port", "8787"])
+            _server_module._parse_args(["--host", "192.168.1.1", "--port", "8787"])
 
     def test_accepts_loopback_127(self):
-        args = _server_module._parse_args(["--aid-home", "/tmp", "--host", "127.0.0.1", "--port", "8787"])
+        args = _server_module._parse_args(["--host", "127.0.0.1", "--port", "8787"])
         self.assertEqual(args.host, "127.0.0.1")
         self.assertEqual(args.port, 8787)
 
     def test_accepts_loopback_ipv6(self):
-        args = _server_module._parse_args(["--aid-home", "/tmp", "--host", "::1", "--port", "8787"])
+        args = _server_module._parse_args(["--host", "::1", "--port", "8787"])
         self.assertEqual(args.host, "::1")
 
     def test_rejects_port_below_range(self):
         with self.assertRaises(SystemExit):
-            _server_module._parse_args(["--aid-home", "/tmp", "--host", "127.0.0.1", "--port", "80"])
+            _server_module._parse_args(["--host", "127.0.0.1", "--port", "80"])
 
     def test_rejects_port_above_range(self):
         with self.assertRaises(SystemExit):
-            _server_module._parse_args(["--aid-home", "/tmp", "--host", "127.0.0.1", "--port", "99999"])
-
-    def test_missing_aid_home_arg(self):
-        with self.assertRaises(SystemExit):
-            _server_module._parse_args(["--host", "127.0.0.1", "--port", "8787"])
+            _server_module._parse_args(["--host", "127.0.0.1", "--port", "99999"])
 
     def test_old_root_arg_rejected(self):
-        """--root is no longer accepted; only --aid-home."""
+        """--root is an unknown arg and is rejected (exit 2)."""
         with self.assertRaises(SystemExit):
             _server_module._parse_args(["--root", "/tmp", "--host", "127.0.0.1", "--port", "8787"])
+
+
+class TestAidHomeResolution(unittest.TestCase):
+    """AID_HOME env-or-self-locate resolution (delivery-008 refinement)."""
+
+    def test_env_precedence_serves_correct_registry(self):
+        """AID_HOME env var takes precedence: server serves fixtureA's registry."""
+        base = Path(tempfile.mkdtemp())
+        try:
+            fixture_a = base / "fixture_a"
+            _make_aid_home(fixture_a)
+            repo_a = base / "repo-a"
+            _make_repo(repo_a)
+            _write_registry(fixture_a, [str(repo_a)])
+
+            # Boot server with AID_HOME=fixture_a via _ServerThread (which uses
+            # the server module directly, setting server.aid_home).
+            with _ServerThread(str(fixture_a)) as srv:
+                status, body, _ = srv.get("/api/home")
+            self.assertEqual(status, 200)
+            data = json.loads(body)
+            # fixture_a has exactly one repo registered.
+            self.assertEqual(len(data["repos"]), 1)
+            self.assertEqual(data["repos"][0]["path"], str(repo_a))
+            self.assertEqual(data["machine"]["aid_home"], str(fixture_a))
+        finally:
+            import shutil as _shutil
+            _shutil.rmtree(str(base), ignore_errors=True)
+
+    def test_subprocess_boot_via_env(self):
+        """Server spawned without --aid-home and with AID_HOME in env boots and responds."""
+        base = Path(tempfile.mkdtemp())
+        try:
+            aid_home = base / "aid_home"
+            _make_aid_home(aid_home)
+
+            with socket.socket() as s:
+                s.bind(("127.0.0.1", 0))
+                port = s.getsockname()[1]
+
+            proc = subprocess.Popen(
+                [sys.executable, str(_SERVER_SCRIPT), "--host", "127.0.0.1", "--port", str(port)],
+                env={**os.environ, "AID_HOME": str(aid_home)},
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            try:
+                deadline = time.monotonic() + 5.0
+                ready = False
+                while time.monotonic() < deadline:
+                    try:
+                        with socket.create_connection(("127.0.0.1", port), timeout=0.1):
+                            ready = True
+                            break
+                    except OSError:
+                        time.sleep(0.05)
+                self.assertTrue(ready, "Server did not become ready within 5s")
+
+                req = urllib.request.Request(f"http://127.0.0.1:{port}/api/home")
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    status = resp.status
+                    body = resp.read()
+                self.assertEqual(status, 200)
+                data = json.loads(body)
+                self.assertEqual(data["machine"]["aid_home"], str(aid_home.resolve()))
+            finally:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait()
+        finally:
+            import shutil as _shutil
+            _shutil.rmtree(str(base), ignore_errors=True)
+
+    def test_help_no_longer_mentions_aid_home_flag(self):
+        """--help output must NOT mention --aid-home (the flag is removed)."""
+        import subprocess as _sp
+        result = _sp.run(
+            [sys.executable, str(_SERVER_SCRIPT), "--help"],
+            capture_output=True,
+            text=True,
+        )
+        self.assertNotIn("--aid-home", result.stdout,
+                         "--help must not mention the removed --aid-home flag")
 
 
 class TestSigtermExit(unittest.TestCase):
@@ -1039,10 +1121,10 @@ class TestSigtermExit(unittest.TestCase):
             proc = subprocess.Popen(
                 [
                     sys.executable, str(_SERVER_SCRIPT),
-                    "--aid-home", str(aid_home),
                     "--host", "127.0.0.1",
                     "--port", str(port),
                 ],
+                env={**os.environ, "AID_HOME": str(aid_home)},
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )

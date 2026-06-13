@@ -4,7 +4,11 @@
  * Byte-parity sibling of server.py (task-051).
  *
  * Entry-point:
- *   node dashboard/server/server.mjs --aid-home <AID_HOME> --host 127.0.0.1 --port <n>
+ *   node dashboard/server/server.mjs --host 127.0.0.1 --port <n>
+ *
+ * AID_HOME resolution (env-or-self-locate):
+ *   1. AID_HOME environment variable if set and non-empty.
+ *   2. Self-locate: server.mjs -> server/ -> dashboard/ -> $AID_HOME (join(__dirname, "..", "..")).
  *
  * Routes (NEW closed allowlist -- replaces feature-003 two-route server):
  *   GET /                    -> CLI-home index.html from $AID_HOME/dashboard/index.html
@@ -44,16 +48,17 @@ import { readRepo } from "./reader.mjs";
 
 const LOOPBACK_ADDRS = new Set(["127.0.0.1", "::1"]);
 
+// __dirname equivalent for ESM modules.
+const __filename_srv = fileURLToPath(import.meta.url);
+const __dirname_srv = dirname(__filename_srv);
+
 function parseArgs(argv) {
   const args = argv.slice(2); // strip node + script
-  let aidHome = null;
   let host = null;
   let port = null;
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--aid-home" && i + 1 < args.length) {
-      aidHome = args[++i];
-    } else if (args[i] === "--host" && i + 1 < args.length) {
+    if (args[i] === "--host" && i + 1 < args.length) {
       host = args[++i];
     } else if (args[i] === "--port" && i + 1 < args.length) {
       port = parseInt(args[++i], 10);
@@ -61,7 +66,6 @@ function parseArgs(argv) {
   }
 
   const errs = [];
-  if (!aidHome) errs.push("--aid-home is required");
   if (!host) errs.push("--host is required");
   if (port === null || isNaN(port)) errs.push("--port is required and must be an integer");
 
@@ -78,6 +82,10 @@ function parseArgs(argv) {
     );
     process.exit(1);
   }
+
+  // Resolve AID_HOME: (1) AID_HOME env var if set and non-empty, else
+  // (2) self-locate: server.mjs -> server/ -> dashboard/ -> $AID_HOME.
+  const aidHome = process.env.AID_HOME || join(__dirname_srv, "..", "..");
 
   return { aidHome, host, port };
 }
@@ -229,6 +237,25 @@ const LEAF_ALLOWLIST = new Set(["home.html", "kb.html"]);
 // /api/home builder (DM-2) -- best-effort, never throws (NFR10)
 // ---------------------------------------------------------------------------
 
+// Strip an inline YAML comment from a scalar value (PF-6 -- port of the reader's
+// _strip_yaml_inline_comment; keeps the server /api/home name/description byte-identical
+// to the Python server AND consistent with the reader's project-name extraction).
+function stripYamlInlineComment(scalar) {
+  let s = scalar;
+  if (s && (s[0] === '"' || s[0] === "'")) {
+    const quote = s[0];
+    const end = s.indexOf(quote, 1);
+    if (end !== -1) {
+      const after = s.slice(end + 1).replace(/^\s+/, "");
+      if (after.startsWith("#")) s = s.slice(0, end + 1);
+    }
+    return s;
+  }
+  const idx = s.indexOf("#");
+  if (idx !== -1) s = s.slice(0, idx);
+  return s;
+}
+
 function readSettings(repoPath) {
   // Returns { name, description } or { name: null, description: null }.
   try {
@@ -241,10 +268,10 @@ function readSettings(repoPath) {
       if (s === "project:" || s.startsWith("project:")) { inProject = true; continue; }
       if (inProject) {
         if (s.startsWith("name:")) {
-          let v = s.slice("name:".length).trim().replace(/^["']|["']$/g, "");
+          let v = stripYamlInlineComment(s.slice("name:".length)).trim().replace(/^["']|["']$/g, "");
           name = v || null;
         } else if (s.startsWith("description:")) {
-          let v = s.slice("description:".length).trim().replace(/^["']|["']$/g, "");
+          let v = stripYamlInlineComment(s.slice("description:".length)).trim().replace(/^["']|["']$/g, "");
           description = v || null;
         } else if (s && !s.startsWith("#") && !/^\s/.test(line)) {
           inProject = false;

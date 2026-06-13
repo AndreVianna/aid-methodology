@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex">
+<title id="page-title">AID — this machine</title>
+<style>
+/* ---------- Color scheme (informs native UI: scrollbars, form controls) ---------- */
+:root { color-scheme: light dark; }
+html[data-theme="light"] { color-scheme: light; }
+html[data-theme="dark"]  { color-scheme: dark; }
+
+/* ---------- Theme variables (copied verbatim from component-css.css :root) ---------- */
+:root, html[data-theme="light"] {
+  --bg: #F7F9FC;
+  --bg-elev: #FFFFFF;
+  --bg-sunken: #EEF2F7;
+  --text: #101828;
+  --text-muted: #4B5565;
+  --text-dim: #667085;
+  --border: #E3E8EF;
+  --border-strong: #CDD5DF;
+  --primary: #0B1F3A;
+  --primary-fg: #FFFFFF;
+  --accent: #007F7D;
+  --accent-fg: #FFFFFF;
+  --ok: #2E7D32;
+  --ok-bg: #E8F5E9;
+  --warn: #B45309;
+  --warn-bg: #FEF3C7;
+  --err: #B42318;
+  --err-bg: #FEE4E2;
+  --info: #1D4ED8;
+  --info-bg: #DBEAFE;
+  --purple: #6941C6;
+  --purple-bg: #F4EBFF;
+  --shadow-sm: 0 1px 3px rgba(16,24,40,0.06), 0 1px 2px rgba(16,24,40,0.04);
+  --shadow-md: 0 4px 8px -2px rgba(16,24,40,0.08), 0 2px 4px -2px rgba(16,24,40,0.04);
+  --shadow-lg: 0 12px 24px -4px rgba(16,24,40,0.12), 0 4px 8px -4px rgba(16,24,40,0.06);
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+}
+html[data-theme="dark"] {
+  --bg: #0B1220;
+  --bg-elev: #111A2E;
+  --bg-sunken: #081021;
+  --text: #E5EAF2;
+  --text-muted: #9AA5B8;
+  --text-dim: #8A99B8;
+  --border: #1E293B;
+  --border-strong: #2B3A52;
+  --primary: #0D2A52;
+  --primary-fg: #E8F2FF;
+  --accent: #2DD4D2;
+  --accent-fg: #051514;
+  --ok: #4ADE80;
+  --ok-bg: rgba(34,197,94,0.15);
+  --warn: #FBBF24;
+  --warn-bg: rgba(251,191,36,0.15);
+  --err: #F87171;
+  --err-bg: rgba(220,38,38,0.20);
+  --info: #60A5FA;
+  --info-bg: rgba(37,99,235,0.18);
+  --purple: #C084FC;
+  --purple-bg: rgba(147,51,234,0.18);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.35);
+  --shadow-md: 0 4px 10px rgba(0,0,0,0.40);
+  --shadow-lg: 0 14px 30px rgba(0,0,0,0.55);
+}
+
+/* ---------- Base ---------- */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1, h2, h3, h4 { color: var(--text); font-weight: 600; line-height: 1.25; margin: 0 0 0.4em 0; }
+h2 { font-size: 1.5rem; margin-top: 0; }
+h3 { font-size: 1.15rem; }
+h4 { font-size: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+p { margin: 0 0 1em 0; color: var(--text-muted); }
+code { font-family: "SF Mono", Monaco, Consolas, "Roboto Mono", monospace; font-size: 0.88em; background: var(--bg-sunken); padding: 0.12em 0.4em; border-radius: 4px; color: var(--text); }
+ul, ol { margin: 0 0 1em 0; padding-left: 1.5em; color: var(--text-muted); }
+ul li, ol li { margin-bottom: 0.3em; }
+hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
+
+/* ---------- Top bar ---------- */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.6rem 1.5rem;
+  backdrop-filter: saturate(140%) blur(8px);
+}
+.top-bar .brand {
+  font-weight: 700;
+  color: var(--text);
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+.top-bar .brand .dot { color: var(--accent); margin: 0 0.4em; }
+.breadcrumb {
+  flex: 1;
+  color: var(--text-dim);
+  font-size: 0.87rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.breadcrumb .sep { margin: 0 0.45em; opacity: 0.6; }
+.breadcrumb .current { color: var(--text); font-weight: 500; }
+.controls { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.4rem 0.7rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: inherit;
+}
+.btn-ghost:hover { background: var(--bg-sunken); }
+
+/* ---------- Layout ---------- */
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* ---------- Badges ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.25em 0.75em;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: var(--bg-sunken);
+  color: var(--text);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.badge-primary { background: var(--primary); color: var(--primary-fg); border-color: transparent; }
+.badge-accent  { background: var(--accent);  color: var(--accent-fg);  border-color: transparent; }
+.badge-ok      { background: var(--ok-bg);   color: var(--ok);         border-color: transparent; }
+.badge-warn    { background: var(--warn-bg); color: var(--warn);       border-color: transparent; }
+.badge-err     { background: var(--err-bg);  color: var(--err);        border-color: transparent; }
+.badge-info    { background: var(--info-bg); color: var(--info);       border-color: transparent; }
+.badge-purple  { background: var(--purple-bg); color: var(--purple);   border-color: transparent; }
+.badge-dim     { color: var(--text-dim); }
+
+/* ---------- Card grids ---------- */
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+.grid.g2 { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
+.grid.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.grid.g-lane { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+/* Main-page pipelines grid: auto-fit reflow (does NOT mutate shared .g3 fixed-3-col) */
+.pipelines-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.3rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.card .kicker { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.08em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.3em; }
+.card h3 { margin-bottom: 0.4em; font-size: 1.05rem; }
+.card .stat { font-size: 2rem; font-weight: 700; color: var(--accent); line-height: 1; margin-bottom: 0.2em; }
+.card .stat-sub { color: var(--text-muted); font-size: 0.9rem; }
+.card .meta { color: var(--text-dim); font-size: 0.85rem; }
+.card.card-primary { background: var(--primary); color: var(--primary-fg); border-color: transparent; }
+.card.card-primary .kicker,
+.card.card-primary .stat-sub,
+.card.card-primary .meta { color: color-mix(in srgb, var(--primary-fg) 70%, transparent); }
+.card.card-primary .stat { color: var(--accent); }
+
+/* ---------- Callouts ---------- */
+.callout {
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--radius);
+  border-left: 4px solid var(--info);
+  background: var(--info-bg);
+  color: var(--text);
+  margin: 0.75rem 0;
+  font-size: 0.92rem;
+}
+.callout.warn { border-left-color: var(--warn); background: var(--warn-bg); color: var(--text); }
+.callout.err  { border-left-color: var(--err);  background: var(--err-bg);  color: var(--text); }
+.callout.ok   { border-left-color: var(--ok);   background: var(--ok-bg);   color: var(--text); }
+.callout h4 { margin: 0 0 0.2em 0; font-size: 0.78rem; color: inherit; opacity: 0.85; }
+.callout p:last-child { margin-bottom: 0; }
+
+/* ---------- Footer ---------- */
+footer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* ---------- Responsive ---------- */
+
+/* Tablet: 2-col chip grid between 768px and 1024px */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .grid.g3, .grid.g4, .pipelines-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .top-bar { padding: 0.5rem 1rem; gap: 0.4rem 0.75rem; }
+  .top-bar .brand { font-size: 0.85rem; }
+  .breadcrumb { font-size: 0.78rem; min-width: 0; }
+  main { padding: 1rem 1rem 3rem; }
+  .grid, .grid.g2, .grid.g3, .grid.g4, .grid.g-lane, .pipelines-grid { grid-template-columns: 1fr; }
+  .stage-rail { overflow-x: auto; flex-wrap: nowrap; }
+  .content-col { max-width: 100%; }
+}
+
+/* Extra-narrow: ensure top-bar wraps at 390px */
+@media (max-width: 420px) {
+  .breadcrumb { display: none; }
+  .controls { width: 100%; justify-content: flex-end; }
+}
+
+/* ---------- Print ---------- */
+@media print {
+  .top-bar, .controls { display: none !important; }
+  body { background: white; color: black; }
+}
+
+/* ---------- Accessibility ---------- */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 8px;
+  z-index: 1000;
+  padding: 0.5rem 1rem;
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+.skip-link:focus { top: 8px; outline: 2px solid var(--text); outline-offset: 2px; }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.btn-ghost:focus-visible { outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  html { scroll-behavior: auto; }
+  .card:hover { transform: none; }
+}
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (forced-colors: active) {
+  .card, .callout { border: 1px solid CanvasText; }
+  .badge { border: 1px solid CanvasText; forced-color-adjust: none; }
+}
+.noscript-fallback {
+  max-width: 720px;
+  margin: 4rem auto;
+  padding: 2rem;
+  background: var(--bg-elev);
+  border: 2px solid var(--warn);
+  border-radius: var(--radius);
+  color: var(--text);
+}
+
+/* ---------- CLI-home specific ---------- */
+
+/* Content-column wrapper */
+.content-col {
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Machine panel (.card.plugin): dl two-column grid */
+.card.plugin {
+  margin-bottom: 1.5rem;
+}
+.card.plugin dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0;
+}
+.card.plugin dt {
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  align-self: start;
+  padding-top: 0.1em;
+}
+.card.plugin dd {
+  margin: 0;
+  font-size: 0.88rem;
+  word-break: break-all;
+}
+.plugin-name {
+  font-family: "SF Mono", Monaco, Consolas, "Roboto Mono", monospace;
+  font-size: 0.85em;
+}
+.plugin-meta {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-top: 0.6rem;
+}
+
+/* Card-link: neutralize global anchor styling for whole-card clickable cards */
+.card-link { display: block; color: inherit; text-decoration: none; }
+.card-link:hover { text-decoration: none; }
+
+/* Main-page section headings */
+.main-section-head { margin: 1.5rem 0 0.75rem; }
+
+/* Stage rail (for CSS class integrity) */
+.stage-rail {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+  align-items: center;
+}
+
+/* Wave section (kept for CSS class integrity) */
+.wave-section { margin-bottom: 1.5rem; }
+.wave-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.85rem;
+}
+
+/* Interval input in controls */
+.interval-control {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.interval-input {
+  width: 3.5em;
+  padding: 0.35rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-family: inherit;
+  text-align: center;
+}
+.interval-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Running pulse animation -- disabled with prefers-reduced-motion */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+.pulse-dot {
+  display: inline-block;
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulse-dot { animation: none; }
+}
+
+/* Empty / loading state */
+.empty-state {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 3rem 1rem;
+  font-size: 0.95rem;
+}
+
+/* Chip row */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+/* Unavailable card muted body */
+.card-unavailable { color: var(--text-dim); }
+.card-unavailable h3 { color: var(--text-dim); }
+
+/* Work-card attention borders (kept for CSS class integrity) */
+.card.border-warn { border-left: 4px solid var(--warn); }
+.card.border-err  { border-left: 4px solid var(--err); }
+
+/* Progress bar classes (kept for CSS class integrity) */
+.progress-row { margin: 0.55rem 0 0; }
+.progress-track { height: 6px; background: var(--bg-sunken); border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+.progress-execution .progress-fill { background: var(--accent); }
+.progress-readiness .progress-fill { background: var(--info); }
+.progress-label { display: block; margin-bottom: 0.3rem; font-size: 0.8rem; color: var(--text-dim); }
+
+/* kt-head / kt-section (kept for CSS class integrity) */
+.kt-head { color: var(--info); }
+.kt-section .card { border-left: 3px solid var(--info); }
+</style>
+</head>
+<body>
+
+<!-- Skip-to-content for keyboard / screen reader users -->
+<a class="skip-link" href="#top">Skip to content</a>
+
+<!-- Sticky top bar (UI-1) -->
+<header class="top-bar" role="banner">
+  <div class="brand">
+    <strong>AID</strong><span class="dot">&#183;</span>this machine
+  </div>
+  <div style="flex:1"></div>
+  <div class="controls">
+    <!-- Freshness badge (Telemetry) -->
+    <span class="badge badge-dim" id="freshness-badge" aria-live="polite">&#9679; Loading</span>
+    <!-- Interval control (UI-5) -->
+    <label class="interval-control" title="Poll interval in seconds">
+      Refresh
+      <input type="number" class="interval-input" id="interval-input"
+             min="1" max="600" value="5" aria-label="Refresh interval in seconds">
+      s
+    </label>
+    <!-- Theme toggle -->
+    <button type="button" class="btn-ghost" id="theme-toggle"
+            aria-label="Switch theme" title="Toggle light/dark theme">
+      <span id="theme-icon" aria-hidden="true">&#9680;</span>
+      <span id="theme-label">Dark</span>
+    </button>
+  </div>
+</header>
+
+<!-- Main page content -->
+<main id="top">
+
+  <!-- Schema-mismatch banner (hidden by default; shown on schema_version mismatch) -->
+  <div class="callout warn" id="schema-mismatch-banner" style="display:none" role="alert">
+    <h4>Assets out of date</h4>
+    <p>Dashboard assets are out of date &#8212; restart <code>aid dashboard</code> to get the latest version.</p>
+  </div>
+
+  <!-- Machine panel (UI-H1) -->
+  <div id="machine-panel"></div>
+
+  <!-- Repo grid section (UI-H2) -->
+  <div id="repo-section" style="display:none">
+    <h2 class="main-section-head">Repos</h2>
+    <div class="grid g2" id="repo-grid"></div>
+  </div>
+
+  <!-- Empty registry state (UI-H3 empty) -->
+  <div class="empty-state" id="empty-registry" style="display:none">
+    <p>No repos registered yet &#8212; run <code>aid add &lt;tool&gt;</code> in a repo to see it here.</p>
+  </div>
+
+  <!-- Initial loading state -->
+  <div class="empty-state" id="loading-state">
+    <p>Connecting to AID dashboard&#8230;</p>
+  </div>
+
+</main>
+
+<footer id="page-footer">
+  <p>served locally by <code>aid dashboard</code> &middot; read-only &middot;
+  refreshes every <span id="footer-interval">5</span>s &middot;
+  <span id="footer-generated-by"></span></p>
+</footer>
+
+<noscript>
+  <div class="noscript-fallback">
+    <h2>JavaScript required</h2>
+    <p>The AID dashboard uses JavaScript to poll <code>/api/home</code> and render machine state.
+       Please enable JavaScript to use this dashboard.</p>
+  </div>
+</noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------------------------------------------------------------------------
+  // Constants
+  // ---------------------------------------------------------------------------
+  var EXPECTED_HOME_SCHEMA = 1;
+  var LS_KEY_POLL_MS = 'aid-dashboard-poll-ms';
+
+  // ---------------------------------------------------------------------------
+  // State
+  // ---------------------------------------------------------------------------
+  var pollMs = 5000;
+  var pollTimer = null;
+  var fetchPending = false;
+  var lastGoodEnvelope = null;
+  var lastSuccessTime = null;
+  var consecutiveErrors = 0;
+
+  // ---------------------------------------------------------------------------
+  // Boot: read interval from localStorage
+  // ---------------------------------------------------------------------------
+  (function boot() {
+    var stored = localStorage.getItem(LS_KEY_POLL_MS);
+    if (stored !== null) {
+      var n = parseInt(stored, 10);
+      if (!isNaN(n)) {
+        pollMs = clampInterval(n);
+      }
+    }
+    var input = document.getElementById('interval-input');
+    if (input) {
+      input.value = Math.round(pollMs / 1000);
+      input.addEventListener('change', onIntervalChange);
+    }
+    updateFooterInterval();
+    initTheme();
+    // Immediate first fetch
+    doFetch();
+  })();
+
+  // ---------------------------------------------------------------------------
+  // Interval helpers
+  // ---------------------------------------------------------------------------
+  function clampInterval(ms) {
+    if (ms < 1000) return 1000;
+    if (ms > 600000) return 600000;
+    return ms;
+  }
+
+  function onIntervalChange() {
+    var input = document.getElementById('interval-input');
+    if (!input) return;
+    var raw = parseFloat(input.value);
+    if (isNaN(raw)) raw = 5;
+    var clamped = clampInterval(Math.round(raw * 1000));
+    input.value = Math.round(clamped / 1000);
+    pollMs = clamped;
+    localStorage.setItem(LS_KEY_POLL_MS, String(pollMs));
+    updateFooterInterval();
+    if (pollTimer !== null) {
+      clearTimeout(pollTimer);
+      pollTimer = null;
+    }
+    scheduleNextPoll();
+  }
+
+  function updateFooterInterval() {
+    var el = document.getElementById('footer-interval');
+    if (el) el.textContent = Math.round(pollMs / 1000);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Poll loop (FF-3)
+  // ---------------------------------------------------------------------------
+  function scheduleNextPoll() {
+    if (pollTimer !== null) return; // already scheduled
+    var delay = pollMs;
+    if (consecutiveErrors > 0) {
+      delay = Math.min(pollMs * Math.pow(2, Math.min(consecutiveErrors - 1, 2)), pollMs * 4);
+    }
+    pollTimer = setTimeout(function () {
+      pollTimer = null;
+      doFetch();
+    }, delay);
+  }
+
+  function doFetch() {
+    if (fetchPending) {
+      scheduleNextPoll();
+      return;
+    }
+    fetchPending = true;
+    fetch('/api/home')
+      .then(function (resp) {
+        if (!resp.ok) {
+          throw new Error('HTTP ' + resp.status);
+        }
+        return resp.json();
+      })
+      .then(function (envelope) {
+        fetchPending = false;
+        consecutiveErrors = 0;
+        onSuccess(envelope);
+        scheduleNextPoll();
+      })
+      .catch(function (err) {
+        fetchPending = false;
+        consecutiveErrors += 1;
+        onError(err);
+        scheduleNextPoll();
+      });
+  }
+
+  function onSuccess(envelope) {
+    // Schema gate (FF-3 / DM-2)
+    if (envelope.schema_version !== EXPECTED_HOME_SCHEMA) {
+      showSchemaMismatch();
+      // Keep last good view; do not update
+      return;
+    }
+    hideSchemaMismatch();
+    lastSuccessTime = Date.now();
+    lastGoodEnvelope = envelope;
+
+    // Hide loading state
+    var loadEl = document.getElementById('loading-state');
+    if (loadEl) loadEl.style.display = 'none';
+
+    // Update footer generated_by
+    var genByEl = document.getElementById('footer-generated-by');
+    if (genByEl && envelope.generated_by) {
+      genByEl.textContent = 'via ' + envelope.generated_by;
+    }
+
+    renderMachinePanel(envelope.machine);
+    renderRepoGrid(envelope.repos);
+    updateFreshnessBadge('live', envelope.read && envelope.read.read_at);
+  }
+
+  function onError(err) {
+    updateFreshnessBadge('disconnected');
+    // Keep last good view if we have one; never blank the page
+    if (!lastGoodEnvelope) {
+      var loadEl = document.getElementById('loading-state');
+      if (loadEl) loadEl.innerHTML = '<p>Reconnecting to AID dashboard…</p>';
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Freshness badge
+  // ---------------------------------------------------------------------------
+  function updateFreshnessBadge(state, readAt) {
+    var badge = document.getElementById('freshness-badge');
+    if (!badge) return;
+
+    if (state === 'disconnected') {
+      badge.className = 'badge badge-err';
+      badge.textContent = '○ Reconnecting';
+      return;
+    }
+
+    if (state === 'live' && readAt && lastSuccessTime) {
+      var readTime = new Date(readAt).getTime();
+      var now = Date.now();
+      var ageMs = now - readTime;
+      if (ageMs > pollMs * 2) {
+        state = 'stale';
+      }
+    }
+
+    if (state === 'stale') {
+      badge.className = 'badge badge-warn';
+      badge.innerHTML = '&#9680; Stale';
+    } else {
+      badge.className = 'badge badge-ok';
+      badge.innerHTML = '<span class="pulse-dot">&#9679;</span> Live';
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Schema mismatch banner
+  // ---------------------------------------------------------------------------
+  function showSchemaMismatch() {
+    var el = document.getElementById('schema-mismatch-banner');
+    if (el) el.style.display = '';
+  }
+
+  function hideSchemaMismatch() {
+    var el = document.getElementById('schema-mismatch-banner');
+    if (el) el.style.display = 'none';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Escape HTML (safety for dynamic text insertion)
+  // ---------------------------------------------------------------------------
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ---------------------------------------------------------------------------
+  // UI-H1b -- Machine panel
+  // ---------------------------------------------------------------------------
+  function renderMachinePanel(machine) {
+    var container = document.getElementById('machine-panel');
+    if (!container) return;
+    container.innerHTML = '';
+
+    var card = document.createElement('div');
+    card.className = 'card plugin';
+
+    // Kicker
+    var kicker = document.createElement('div');
+    kicker.className = 'kicker';
+    kicker.textContent = 'AID CLI (this machine)';
+    card.appendChild(kicker);
+
+    // dl/dt/dd rows
+    var dl = document.createElement('dl');
+
+    // Row 1: version
+    var dt1 = document.createElement('dt');
+    dt1.textContent = 'version';
+    var dd1 = document.createElement('dd');
+    if (machine && machine.aid_version) {
+      var vBadge = document.createElement('span');
+      vBadge.className = 'badge badge-info';
+      vBadge.textContent = machine.aid_version;
+      dd1.appendChild(vBadge);
+    } else {
+      dd1.textContent = 'CLI version unavailable';
+    }
+    dl.appendChild(dt1);
+    dl.appendChild(dd1);
+
+    // Row 2: install location
+    var dt2 = document.createElement('dt');
+    dt2.textContent = 'install location';
+    var dd2 = document.createElement('dd');
+    var loc = (machine && machine.aid_home) ? machine.aid_home : '—';
+    var locSpan = document.createElement('span');
+    locSpan.className = 'plugin-name';
+    locSpan.textContent = loc;
+    dd2.appendChild(locSpan);
+    dl.appendChild(dt2);
+    dl.appendChild(dd2);
+
+    // Row 3: tool catalog
+    var dt3 = document.createElement('dt');
+    dt3.textContent = 'tool catalog';
+    var dd3 = document.createElement('dd');
+    var catalog = (machine && Array.isArray(machine.tools_catalog)) ? machine.tools_catalog : [];
+    if (catalog.length === 0) {
+      dd3.textContent = '—';
+    } else {
+      var chipRow = document.createElement('span');
+      for (var i = 0; i < catalog.length; i++) {
+        var chip = document.createElement('span');
+        chip.className = 'badge badge-dim';
+        chip.style.marginRight = '0.25rem';
+        chip.textContent = catalog[i];
+        chipRow.appendChild(chip);
+      }
+      dd3.appendChild(chipRow);
+    }
+    dl.appendChild(dt3);
+    dl.appendChild(dd3);
+
+    card.appendChild(dl);
+
+    // Advisory registry path line
+    if (machine && machine.registry_path) {
+      var metaLine = document.createElement('p');
+      metaLine.className = 'plugin-meta';
+      metaLine.textContent = 'registry: ' + machine.registry_path;
+      card.appendChild(metaLine);
+    }
+
+    container.appendChild(card);
+  }
+
+  // ---------------------------------------------------------------------------
+  // UI-H2 + UI-H3 -- Repo card grid
+  // ---------------------------------------------------------------------------
+  function renderRepoGrid(repos) {
+    var repoSection = document.getElementById('repo-section');
+    var emptyRegistry = document.getElementById('empty-registry');
+    var grid = document.getElementById('repo-grid');
+
+    if (!repos || repos.length === 0) {
+      if (repoSection) repoSection.style.display = 'none';
+      if (emptyRegistry) emptyRegistry.style.display = '';
+      return;
+    }
+
+    if (emptyRegistry) emptyRegistry.style.display = 'none';
+    if (repoSection) repoSection.style.display = '';
+
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    // Client-side sort by display name (case-insensitive, stable for UX)
+    var sorted = repos.slice().sort(function (a, b) {
+      var na = _displayName(a).toLowerCase();
+      var nb = _displayName(b).toLowerCase();
+      if (na < nb) return -1;
+      if (na > nb) return 1;
+      return 0;
+    });
+
+    for (var i = 0; i < sorted.length; i++) {
+      grid.appendChild(_renderRepoCard(sorted[i]));
+    }
+  }
+
+  // Derive the display name for a repo (never raw path/id as title).
+  // Returns the name, or the folder basename of path, or em-dash.
+  function _displayName(repo) {
+    if (repo.name) return repo.name;
+    // Folder basename fallback
+    if (repo.path) {
+      var parts = repo.path.replace(/\\/g, '/').split('/');
+      for (var k = parts.length - 1; k >= 0; k--) {
+        if (parts[k]) return parts[k];
+      }
+    }
+    return '—';
+  }
+
+  function _renderRepoCard(repo) {
+    var available = repo.available === true;
+    var hasHome = repo.has_home === true;
+
+    if (!available) {
+      return _renderUnavailableCard(repo);
+    }
+
+    // Available card: whole-card click if has_home, non-clickable div otherwise
+    var card;
+    if (hasHome) {
+      card = document.createElement('a');
+      card.className = 'card card-link';
+      card.href = '/r/' + repo.id + '/home.html';
+    } else {
+      card = document.createElement('div');
+      card.className = 'card';
+    }
+
+    // Title (h3)
+    var titleEl = document.createElement('h3');
+    titleEl.textContent = _displayName(repo);
+    card.appendChild(titleEl);
+
+    // Description
+    var descEl = document.createElement('p');
+    descEl.className = 'meta';
+    descEl.textContent = repo.description ? repo.description : '—';
+    card.appendChild(descEl);
+
+    // Chip row: version + tools + KB
+    var chipWrap = document.createElement('div');
+    chipWrap.className = 'chip-row';
+
+    // aid_version chip
+    if (repo.aid_version) {
+      var vChip = document.createElement('span');
+      vChip.className = 'badge badge-info';
+      vChip.textContent = repo.aid_version;
+      chipWrap.appendChild(vChip);
+    }
+
+    // tools_installed chips (omit entirely when list empty/absent)
+    var tools = Array.isArray(repo.tools_installed) ? repo.tools_installed : [];
+    for (var t = 0; t < tools.length; t++) {
+      var tChip = document.createElement('span');
+      tChip.className = 'badge badge-dim';
+      tChip.textContent = tools[t];
+      chipWrap.appendChild(tChip);
+    }
+
+    // has_kb affordance (advisory non-interactive chip)
+    if (repo.has_kb) {
+      var kbChip = document.createElement('span');
+      kbChip.className = 'badge badge-purple';
+      kbChip.textContent = 'KB';
+      chipWrap.appendChild(kbChip);
+    }
+
+    if (chipWrap.hasChildNodes()) {
+      card.appendChild(chipWrap);
+    }
+
+    // has_home=false note
+    if (!hasHome) {
+      var noteEl = document.createElement('p');
+      noteEl.className = 'meta';
+      noteEl.style.marginTop = '0.5rem';
+      noteEl.textContent = 'dashboard not generated yet';
+      card.appendChild(noteEl);
+    }
+
+    return card;
+  }
+
+  // UI-H3 unavailable card: muted, non-clickable, FR18 prune guidance
+  function _renderUnavailableCard(repo) {
+    var card = document.createElement('div');
+    card.className = 'card card-unavailable';
+
+    // Status glyph
+    var statusChip = document.createElement('span');
+    statusChip.className = 'badge badge-dim';
+    statusChip.textContent = '⊘ unavailable';
+    card.appendChild(statusChip);
+
+    // Registered path
+    var pathEl = document.createElement('p');
+    pathEl.className = 'meta';
+    pathEl.style.marginTop = '0.5rem';
+    var pathCode = document.createElement('code');
+    pathCode.textContent = repo.path || '—';
+    pathEl.appendChild(pathCode);
+    card.appendChild(pathEl);
+
+    // FR18 prune guidance (step-by-step, no write button, NFR2)
+    var introEl = document.createElement('p');
+    introEl.className = 'meta';
+    introEl.style.marginTop = '0.75rem';
+    introEl.textContent = "This repo's folder is gone. To remove it from the CLI home:";
+    card.appendChild(introEl);
+
+    var ol = document.createElement('ol');
+    ol.style.color = 'var(--text-dim)';
+    ol.style.fontSize = '0.85rem';
+    ol.style.margin = '0.25rem 0 0 0';
+
+    var li1 = document.createElement('li');
+    li1.appendChild(document.createTextNode('Run '));
+    var cmdCode = document.createElement('code');
+    cmdCode.textContent = 'aid remove --target ' + (repo.path || '');
+    li1.appendChild(cmdCode);
+    li1.appendChild(document.createTextNode(' (unregisters the now-unavailable repo).'));
+    ol.appendChild(li1);
+
+    var li2 = document.createElement('li');
+    li2.textContent = 'Verify: this card disappears on the next refresh (within the poll interval).';
+    ol.appendChild(li2);
+
+    card.appendChild(ol);
+
+    return card;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Theme (reused from donor)
+  // ---------------------------------------------------------------------------
+  function initTheme() {
+    var saved = localStorage.getItem('aid-dashboard-theme');
+    if (saved === 'dark' || saved === 'light') {
+      document.documentElement.setAttribute('data-theme', saved);
+    }
+    _syncThemeBtn();
+    var btn = document.getElementById('theme-toggle');
+    if (btn) btn.addEventListener('click', toggleTheme);
+  }
+
+  function toggleTheme() {
+    var cur = document.documentElement.getAttribute('data-theme') || 'light';
+    var next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('aid-dashboard-theme', next);
+    _syncThemeBtn();
+  }
+
+  function _syncThemeBtn() {
+    var cur = document.documentElement.getAttribute('data-theme') || 'light';
+    var icon = document.getElementById('theme-icon');
+    var label = document.getElementById('theme-label');
+    if (cur === 'dark') {
+      if (icon) icon.innerHTML = '&#9788;';
+      if (label) label.textContent = 'Light';
+    } else {
+      if (icon) icon.innerHTML = '&#9680;';
+      if (label) label.textContent = 'Dark';
+    }
+  }
+
+})();
+</script>
+</body>
+</html>

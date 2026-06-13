@@ -1,0 +1,3 @@
+project:
+  name: PT1H-Repo-A
+  description: Full repo fixture for PT-1-H parity test (has home+kb, U+2028/U+2029 in manifest).

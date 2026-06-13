@@ -2,8 +2,13 @@
 # test-dashboard-parity.sh -- PT-1 cross-runtime byte-parity test (feature-003, task-018).
 #
 # Asserts that the Python server (dashboard/server/server.py) and the Node server
-# (dashboard/server/server.mjs) emit byte-identical /api/model responses for the
+# (dashboard/server/server.mjs) emit byte-identical /r/<id>/api/model responses for the
 # same .aid/ snapshot, after stripping generated_by and normalizing model.read.read_at.
+#
+# Updated for delivery-008 (task-056): servers use AID_HOME env var (registry.yml)
+# instead of --aid-home flag. Each fixture is wrapped in a temporary aid-home with a
+# single-entry registry.yml at test runtime. The /r/<id>/api/model route replaces the
+# old /api/model root route. The parity contract is unchanged.
 #
 # Mandatory (R7): the fixture includes a manifest with U+2028/U+2029 in aid_version,
 # verifying that both servers apply the canonical escaping post-process and neither
@@ -79,12 +84,14 @@ FIXTURE_EMPTY="${REPO_ROOT}/dashboard/server/tests/fixtures/pt1-no-aid"
 # ---------------------------------------------------------------------------
 
 declare -a _BGPIDS=()
+PT1_TMP="$(mktemp -d /tmp/pt1_XXXXXX)"
 
 cleanup() {
     for pid in "${_BGPIDS[@]+"${_BGPIDS[@]}"}"; do
         kill "$pid" 2>/dev/null || true
     done
     _BGPIDS=()
+    rm -rf "$PT1_TMP"
     rm -f /tmp/pt1_py_raw.json /tmp/pt1_node_raw.json /tmp/pt1_py_norm.json /tmp/pt1_node_norm.json
 }
 
@@ -105,7 +112,7 @@ s.close()
 "
 }
 
-# Wait until 127.0.0.1:PORT serves /api/model, with timeout.
+# Wait until 127.0.0.1:PORT serves /api/home, with timeout.
 # Uses urllib (not raw socket) to avoid sandbox restrictions on socket.create_connection.
 # Args: PORT TIMEOUT_SECS
 # Returns 0 if endpoint becomes available within timeout, 1 otherwise.
@@ -118,7 +125,7 @@ wait_for_port() {
     local attempts=$(( timeout * 3 + 1 ))
     local i=0 rc
     while [[ $i -lt $attempts ]]; do
-        python3 "${SCRIPT_DIR}/../lib/pt1_probe.py" "$port"
+        python3 "${SCRIPT_DIR}/../lib/pt1h_probe.py" "$port"
         rc=$?
         if [[ $rc -eq 0 ]]; then
             return 0
@@ -130,18 +137,67 @@ wait_for_port() {
 }
 
 # ---------------------------------------------------------------------------
-# Fetch /api/model from a running server and write to FILE.
-# Args: PORT FILE
+# Build a temporary aid-home wrapping a single fixture repo.
+# The registry.yml points to the fixture directory as the single repo entry.
+# Returns the aid-home path on stdout.
+# ---------------------------------------------------------------------------
+
+build_single_repo_aid_home() {
+    local fixture_root="$1"
+    local label="$2"
+    local aid_home="${PT1_TMP}/aid-home-${label//\//-}"
+    mkdir -p "${aid_home}/dashboard"
+    cat > "${aid_home}/registry.yml" << REGEOF
+schema: 1
+repos:
+  - ${fixture_root}
+REGEOF
+    echo "${aid_home}"
+}
+
+# ---------------------------------------------------------------------------
+# Start server helpers (AID_HOME via env -- no --aid-home flag)
+# ---------------------------------------------------------------------------
+
+start_python_server() {
+    local port="$1"
+    local aid_home="$2"
+    AID_HOME="$aid_home" python3 "${REPO_ROOT}/dashboard/server/server.py" \
+        --host 127.0.0.1 --port "$port" \
+        >/dev/null 2>&1 &
+    _BGPIDS+=($!)
+}
+
+start_node_server() {
+    local port="$1"
+    local aid_home="$2"
+    AID_HOME="$aid_home" node "${REPO_ROOT}/dashboard/server/server.mjs" \
+        --host 127.0.0.1 --port "$port" \
+        >/dev/null 2>&1 &
+    _BGPIDS+=($!)
+}
+
+# ---------------------------------------------------------------------------
+# Fetch the first /r/<id>/api/model from a running server and write to FILE.
+# The server's /api/home is consulted to discover the id for the first registered repo.
+# Args: PORT AID_HOME FILE
 # ---------------------------------------------------------------------------
 
 fetch_api_model() {
     local port="$1"
     local outfile="$2"
     python3 -c "
-import urllib.request, sys
+import urllib.request, json, sys
 try:
-    resp = urllib.request.urlopen('http://127.0.0.1:$port/api/model', timeout=10)
-    data = resp.read()
+    resp = urllib.request.urlopen('http://127.0.0.1:$port/api/home', timeout=10)
+    home_data = json.loads(resp.read().decode('utf-8'))
+    repos = home_data.get('repos', [])
+    if not repos:
+        sys.stderr.write('no repos in /api/home\n')
+        sys.exit(1)
+    repo_id = repos[0]['id']
+    resp2 = urllib.request.urlopen('http://127.0.0.1:$port/r/' + repo_id + '/api/model', timeout=10)
+    data = resp2.read()
     open('$outfile', 'wb').write(data)
     sys.exit(0)
 except Exception as e:
@@ -176,28 +232,6 @@ open('$outfile', 'w', encoding='utf-8').write(out)
 }
 
 # ---------------------------------------------------------------------------
-# Start server helpers
-# ---------------------------------------------------------------------------
-
-start_python_server() {
-    local port="$1"
-    local root="$2"
-    python3 "${REPO_ROOT}/dashboard/server/server.py" \
-        --root "$root" --host 127.0.0.1 --port "$port" \
-        >/dev/null 2>&1 &
-    _BGPIDS+=($!)
-}
-
-start_node_server() {
-    local port="$1"
-    local root="$2"
-    node "${REPO_ROOT}/dashboard/server/server.mjs" \
-        --root "$root" --host 127.0.0.1 --port "$port" \
-        >/dev/null 2>&1 &
-    _BGPIDS+=($!)
-}
-
-# ---------------------------------------------------------------------------
 # Single-fixture parity check.
 # Args: FIXTURE_ROOT FIXTURE_LABEL CHECK_R7
 #   CHECK_R7: "1" = run R7 escaping check (fixture has U+2028/U+2029 in aid_version);
@@ -220,24 +254,28 @@ check_fixture_parity() {
 
     log "Fixture: $label  py=$py_port node=$node_port"
 
+    # Build temporary aid-home with a single-entry registry for this fixture.
+    local aid_home
+    aid_home=$(build_single_repo_aid_home "$fixture_root" "$label")
+
     # --- Python half ---
     if [[ $HAS_PYTHON -eq 1 ]]; then
-        start_python_server "$py_port" "$fixture_root"
+        start_python_server "$py_port" "$aid_home"
         local py_pid="${_BGPIDS[-1]}"
 
         if wait_for_port "$py_port" 12; then
             if fetch_api_model "$py_port" "/tmp/pt1_py_raw.json"; then
-                pass "[$label] python server responds on /api/model"
+                pass "[$label] python server responds on /r/<id>/api/model"
                 if python3 -c "import json; json.load(open('/tmp/pt1_py_raw.json'))" 2>/dev/null; then
-                    pass "[$label] python /api/model is valid JSON"
+                    pass "[$label] python /r/<id>/api/model is valid JSON"
                 else
-                    fail "[$label] python /api/model is not valid JSON"
+                    fail "[$label] python /r/<id>/api/model is not valid JSON"
                 fi
             else
-                fail "[$label] python server /api/model fetch failed"
+                fail "[$label] python server /r/<id>/api/model fetch failed"
             fi
         else
-            fail "[$label] python server did not start within 10s on port $py_port"
+            fail "[$label] python server did not start within 12s on port $py_port"
         fi
 
         kill "$py_pid" 2>/dev/null || true
@@ -246,22 +284,22 @@ check_fixture_parity() {
 
     # --- Node half ---
     if [[ $HAS_NODE -eq 1 ]]; then
-        start_node_server "$node_port" "$fixture_root"
+        start_node_server "$node_port" "$aid_home"
         local node_pid="${_BGPIDS[-1]}"
 
         if wait_for_port "$node_port" 12; then
             if fetch_api_model "$node_port" "/tmp/pt1_node_raw.json"; then
-                pass "[$label] node server responds on /api/model"
+                pass "[$label] node server responds on /r/<id>/api/model"
                 if python3 -c "import json; json.load(open('/tmp/pt1_node_raw.json'))" 2>/dev/null; then
-                    pass "[$label] node /api/model is valid JSON"
+                    pass "[$label] node /r/<id>/api/model is valid JSON"
                 else
-                    fail "[$label] node /api/model is not valid JSON"
+                    fail "[$label] node /r/<id>/api/model is not valid JSON"
                 fi
             else
-                fail "[$label] node server /api/model fetch failed"
+                fail "[$label] node server /r/<id>/api/model fetch failed"
             fi
         else
-            fail "[$label] node server did not start within 10s on port $node_port"
+            fail "[$label] node server did not start within 12s on port $node_port"
         fi
 
         kill "$node_pid" 2>/dev/null || true
@@ -322,9 +360,11 @@ check_fixture_parity "$FIXTURE_EMPTY" "no-aid" "0"
 # Schema version and generated_by field checks
 # ---------------------------------------------------------------------------
 
+FULL_AID_HOME=$(build_single_repo_aid_home "$FIXTURE_FULL" "full-check")
+
 if [[ $HAS_PYTHON -eq 1 ]]; then
     local_py_port=$(find_free_port)
-    start_python_server "$local_py_port" "$FIXTURE_FULL"
+    start_python_server "$local_py_port" "$FULL_AID_HOME"
     local_py_pid="${_BGPIDS[-1]}"
 
     if wait_for_port "$local_py_port" 12; then
@@ -351,7 +391,7 @@ fi
 
 if [[ $HAS_NODE -eq 1 && $HAS_PYTHON -eq 1 ]]; then
     local_node_port=$(find_free_port)
-    start_node_server "$local_node_port" "$FIXTURE_FULL"
+    start_node_server "$local_node_port" "$FULL_AID_HOME"
     local_node_pid="${_BGPIDS[-1]}"
 
     if wait_for_port "$local_node_port" 12; then

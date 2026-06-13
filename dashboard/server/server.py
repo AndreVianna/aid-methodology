@@ -18,7 +18,11 @@
 # CAN-1 site 3: stored path used verbatim (no realpath/resolve -- SEC-2/DD-5).
 #
 # Invocation:
-#   python3 server.py --aid-home <AID_HOME> --host 127.0.0.1 --port <n>
+#   python3 server.py --host 127.0.0.1 --port <n>
+#
+# AID_HOME resolution (env-or-self-locate):
+#   1. AID_HOME environment variable if set and non-empty.
+#   2. Self-locate: server.py -> server/ -> dashboard/ -> $AID_HOME.
 #
 # Python 3.11+ required. Zero third-party deps.
 
@@ -27,6 +31,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import signal
 import sys
@@ -46,6 +51,7 @@ if str(_DASHBOARD_DIR) not in sys.path:
     sys.path.insert(0, str(_DASHBOARD_DIR))
 
 from reader import read_repo  # noqa: E402  (inserted sys.path above)
+from reader.parsers import _strip_yaml_inline_comment  # noqa: E402  (shared PF-6 rule)
 
 
 # ---------------------------------------------------------------------------
@@ -196,10 +202,10 @@ def _read_settings(repo_path: str) -> tuple[str | None, str | None]:
                 continue
             if in_project:
                 if stripped.startswith("name:"):
-                    val = stripped[len("name:"):].strip().strip('"').strip("'")
+                    val = _strip_yaml_inline_comment(stripped[len("name:"):]).strip().strip('"').strip("'")
                     name = val if val else None
                 elif stripped.startswith("description:"):
-                    val = stripped[len("description:"):].strip().strip('"').strip("'")
+                    val = _strip_yaml_inline_comment(stripped[len("description:"):]).strip().strip('"').strip("'")
                     description = val if val else None
                 elif stripped and not stripped.startswith("#") and not line.startswith(" "):
                     in_project = False
@@ -676,7 +682,6 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         prog="server.py",
         description="AID multi-repo dashboard server (feature-010, delivery-008).",
     )
-    parser.add_argument("--aid-home", required=True, help="AID_HOME directory (contains registry.yml and dashboard/)")
     parser.add_argument("--host",     required=True, help="Bind host (must be 127.0.0.1 or ::1)")
     parser.add_argument("--port",     required=True, type=int, help="TCP port 1024..65535")
     args = parser.parse_args(argv)
@@ -696,8 +701,11 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> None:
     args = _parse_args(argv)
 
-    # Resolve aid_home so it is always absolute.
-    aid_home = str(Path(args.aid_home).resolve())
+    # Resolve aid_home: (1) AID_HOME env var if set and non-empty, else
+    # (2) self-locate: server.py -> server/ -> dashboard/ -> $AID_HOME.
+    aid_home = str(Path(
+        os.environ.get("AID_HOME") or str(Path(__file__).resolve().parent.parent.parent)
+    ).resolve())
 
     # Bind before any slow work (LC-1 readiness contract).
     server = ThreadingHTTPServer((args.host, args.port), _DashboardHandler)

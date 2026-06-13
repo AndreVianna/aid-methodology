@@ -382,6 +382,13 @@ function script:Remove-AidFromPath {
 # SEC-1: These helpers invoke ONLY 'tailscale serve' (tailnet-only). The public
 #        exposure verb is never used -- a bare grep for it returns nothing
 #        anywhere in this file (structural never-public, C1).
+# SEC-6: --remote exposes the CLI home (all registered repos, OQ5/DR-4): a
+#        granted tailnet identity sees the full registered-repo list + each
+#        repo's home.html/kb.html/api/model. This is the accepted OQ5 trade-off
+#        -- a grantee is already a trusted operator of this host. The helpers
+#        below, the bind, and the teardown are UNCHANGED; only what the port
+#        serves changed (DR-2/task-047). Never-public (C1) and host/user-ACL
+#        scoping (C3) hold exactly as before.
 # ---------------------------------------------------------------------------
 
 # Invoke-AidRemoteExpose -Port <n>
@@ -519,6 +526,9 @@ function script:Invoke-AidRemoteExpose {
     [Console]::Error.WriteLine('        non-authorized device should get connection-refused/forbidden.')
     [Console]::Error.WriteLine('(AID cannot edit your tailnet policy for you -- it is admin-plane, and the dashboard never')
     [Console]::Error.WriteLine("runs an agent/LLM at runtime. See 'aid dashboard' docs / feature-005 SEC-2.)")
+    [Console]::Error.WriteLine('Note (SEC-6): the exposed surface is the CLI home -- all registered repos (paths/names) are')
+    [Console]::Error.WriteLine('visible to the granted identities. This is the accepted trade-off (OQ5): grantees are trusted')
+    [Console]::Error.WriteLine('operators of this host. Never-public and host/user-ACL scoping (C1/C3) are unchanged.')
     [Console]::Error.WriteLine('')
 
     # Step 6: Emit handle + URL on stdout, exit 0.
@@ -777,9 +787,10 @@ function script:Invoke-DcStart {
     # behaviour-identical. (KI: Windows dashboard server log not captured; Bash captures it via
     # `setsid ... >"$log_file" 2>&1`.)
     # The multi-repo server (feature-010) serves every registered repo from the registry
-    # under AID_HOME; the cwd repo $Target is auto-registered above, so the server takes
-    # --aid-home (not the old single-repo --root).
-    $spawnArgs = @($entryPoint, '--aid-home', $script:_AidHome, '--host', '127.0.0.1', '--port', "$Port")
+    # under AID_HOME; AID_HOME is set in the child's environment explicitly so the server
+    # resolves it via env-or-self-locate (delivery-008 refinement: no --aid-home flag).
+    $env:AID_HOME = $script:_AidHome
+    $spawnArgs = @($entryPoint, '--host', '127.0.0.1', '--port', "$Port")
     $proc = Start-Process -FilePath $interp `
         -ArgumentList $spawnArgs `
         -PassThru `

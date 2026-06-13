@@ -530,6 +530,13 @@ _cmd_remove_self() {
 # SEC-1: These helpers invoke ONLY 'tailscale serve' (tailnet-only). The public
 #        exposure verb is never used -- a bare grep for it returns nothing
 #        anywhere in this file (structural never-public, C1).
+# SEC-6: --remote exposes the CLI home (all registered repos, OQ5/DR-4): a
+#        granted tailnet identity sees the full registered-repo list + each
+#        repo's home.html/kb.html/api/model. This is the accepted OQ5 trade-off
+#        -- a grantee is already a trusted operator of this host. The helpers
+#        below, the bind, and the teardown are UNCHANGED; only what the port
+#        serves changed (DR-2/task-047). Never-public (C1) and host/user-ACL
+#        scoping (C3) hold exactly as before.
 # ---------------------------------------------------------------------------
 
 # _aid_remote_expose <port>
@@ -665,6 +672,9 @@ Step 4. Verify from your laptop: open ${url_placeholder} -- it should load for y
         non-authorized device should get connection-refused/forbidden.
 (AID cannot edit your tailnet policy for you -- it is admin-plane, and the dashboard never
 runs an agent/LLM at runtime. See 'aid dashboard' docs / feature-005 SEC-2.)
+Note (SEC-6): the exposed surface is the CLI home -- all registered repos (paths/names) are
+visible to the granted identities. This is the accepted trade-off (OQ5): grantees are trusted
+operators of this host. Never-public and host/user-ACL scoping (C1/C3) are unchanged.
 
 GUIDANCE_EOF
 
@@ -888,9 +898,9 @@ _dc_start() {
     # Step 7: spawn the server child in a new session (clean process-group kill on stop).
     # SEC-1: literal 127.0.0.1 -- never read from input/config/env.
     # The multi-repo server (feature-010) serves every registered repo from the
-    # registry under $AID_HOME; the cwd repo "$target" is auto-registered above,
-    # so the server takes --aid-home (not the old single-repo --root).
-    setsid "$interp" "$entry_point" --aid-home "$AID_HOME" --host 127.0.0.1 --port "$port" \
+    # registry under $AID_HOME; AID_HOME is exported explicitly so the server
+    # resolves it via env-or-self-locate (delivery-008 refinement: no --aid-home flag).
+    AID_HOME="$AID_HOME" setsid "$interp" "$entry_point" --host 127.0.0.1 --port "$port" \
         >"$log_file" 2>&1 &
     local child_pid=$!
 

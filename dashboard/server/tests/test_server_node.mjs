@@ -180,12 +180,16 @@ function makeRequest(port, path, method) {
 }
 
 // Spawn the server against an aidHome, return {proc, port}.
+// AID_HOME is passed via environment (delivery-008 refinement: no --aid-home flag).
 async function spawnServer(aidHome) {
   const port = await getFreePort();
   const proc = spawn(
     process.execPath,
-    [SERVER_MJS, "--aid-home", aidHome, "--host", "127.0.0.1", "--port", String(port)],
-    { stdio: ["ignore", "ignore", "pipe"] }
+    [SERVER_MJS, "--host", "127.0.0.1", "--port", String(port)],
+    {
+      stdio: ["ignore", "ignore", "pipe"],
+      env: Object.assign({}, process.env, { AID_HOME: aidHome }),
+    }
   );
   let spawnError = null;
   proc.on("error", (err) => { spawnError = err; });
