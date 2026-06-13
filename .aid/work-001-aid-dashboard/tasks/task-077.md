@@ -23,8 +23,11 @@
   definition; if any REQUIRED key missing/malformed → **repair via targeted edit** (single-line-replace /
   append-block, temp-file + `mv -f`), **preserving `kb_baseline` + per-skill overrides byte-intact**
   (DD-3/R21). era-b → **synthesize** a fresh template-derived file (basename name, `brownfield` type,
-  placeholder description, `tools.installed` from `.aid/.aid-manifest.json` via `manifest_list_tools`/
-  `manifest_read_*` in `lib/aid-install-core.sh` (Bash) / `lib/AidInstallCore.psm1` (PS), defaults
+  placeholder description, `tools.installed` from `.aid/.aid-manifest.json` via `manifest_list_tools`
+  in `lib/aid-install-core.sh` (Bash). **⚠ PS parity gap (from task-074 quick-check):** `AidInstallCore.psm1`
+  has only *per-tool* readers (`Read-ManifestToolPaths`/`-Version`), NO list-all-tools enumerator — so this
+  task MUST ADD a `Read-ManifestTools <manifest>` PS function (returns the JSON `tools` object keys, empty
+  when absent — mirroring `manifest_list_tools`) and use it; gated by `test-aid-cli-parity.sh` (R17). defaults
   elsewhere), crash-safe (temp-file + `mv -f`). A valid era-a file → **no write**.
 - **Step 2 — ADD home.html (additive, FR40/RC-2):** if NOT `-f <repo>/.aid/dashboard/home.html`:
   `mkdir -p <repo>/.aid/dashboard` then `cp "$AID_HOME/dashboard/home.html" <repo>/.aid/dashboard/home.html`

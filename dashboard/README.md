@@ -45,3 +45,23 @@ not a CI-enforced requirement for Python source.
 - delivery-001: `dashboard/reader/` Python reference impl + unit tests (task-010/012).
 - delivery-002: Node port + server wiring + byte-parity test (task-014..018).
 - delivery-003: Secure remote exposure (task-024..026).
+
+## home.html — per-repo SPA shell (source of truth)
+
+`dashboard/home.html` is the **single committed source of truth** for the per-repo SPA shell
+(LC-HSRC, DD-5, FR40).  The file `.aid/dashboard/home.html` is a **derived copy** that the
+multi-repo server serves at `/r/<id>/home.html`; it must remain byte-identical to this source.
+
+Sync direction (one-way, authoritative):
+```
+dashboard/home.html  (edit here)
+       |
+       v  CI equality gate enforces byte-identity (tests/canonical/test-home-html-source-sync.sh)
+       v  task-076 vendor step copies to $AID_HOME/dashboard/home.html
+       v  task-077 migration step copies per-repo to <repo>/.aid/dashboard/home.html
+.aid/dashboard/home.html  (derived copy — do NOT edit directly)
+```
+
+**Never edit `.aid/dashboard/home.html` directly.**  Always edit `dashboard/home.html` and
+then sync the copy.  The CI gate (`tests/canonical/test-home-html-source-sync.sh`) will fail
+the build on any divergence between the two files (R20).

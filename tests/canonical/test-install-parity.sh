@@ -505,5 +505,85 @@ DIFF_OUT=$(diff -r \
 assert_eq "${DIFF_OUT}" "" "PAR12h comma-list non-root-agent trees byte-identical"
 
 # ---------------------------------------------------------------------------
+# PAR13 — Static: dashboard file enumeration is identical between install.sh and install.ps1.
+#
+# Extracts the curated dashboard file list from each installer's source, normalises
+# path separators (PS1 uses backslash, sh uses forward slash), and asserts:
+#   a) Both lists are identical after normalisation.
+#   b) home.html is present in the install.sh list.
+#   c) home.html is present in the install.ps1 list.
+# This is a static check that runs without PowerShell and catches payload divergence
+# before any installer invocation.
+# ---------------------------------------------------------------------------
+
+# Extract dashboard filenames from install.sh.
+# The curated list appears as a series of quoted strings in the for-loop body between
+# "home.html" and "server/__init__.py".  We pull every double-quoted path token in that
+# region and normalise to forward-slash.
+SH_DASH_FILES=$(python3 - "$SUT_SH" <<'PY'
+import re, sys
+text = open(sys.argv[1]).read()
+# Find the section header comment and grab everything up to the "do" keyword
+m = re.search(r'Stage dashboard server\+reader unit.*?(?=\s*do\b)', text, re.DOTALL)
+if not m:
+    # Try the install section (second occurrence)
+    m = re.search(r'Install the dashboard unit.*?(?=\s*do\b)', text, re.DOTALL)
+# Collect all for-loop iterations: grab quoted paths from both loops (stage + install)
+paths = re.findall(r'"([a-z/_A-Z.]+(?:/[a-z_A-Z.]+)*)"', text)
+# Filter to dashboard-shaped paths only (have no spaces, are paths in the dashboard unit)
+dashboard = [p for p in paths if any(p.endswith(x) for x in [
+    'home.html','index.html','__init__.py','reader.py','models.py',
+    'parsers.py','derivation.py','locator.py','server.py','server.mjs','reader.mjs'
+])]
+# Deduplicate preserving order
+seen = set(); unique = []
+for p in dashboard:
+    if p not in seen:
+        seen.add(p); unique.append(p)
+for p in sorted(unique):
+    print(p)
+PY
+)
+
+# Extract dashboard filenames from install.ps1.
+# The array uses single-quoted strings with backslash separators.
+PS1_DASH_FILES=$(python3 - "$SUT_PS1" <<'PY'
+import re, sys
+text = open(sys.argv[1]).read()
+# Grab all single-quoted paths inside the $bsDashFiles array
+paths = re.findall(r"'([a-zA-Z_./\\]+)'", text)
+# Normalise backslash to forward slash and filter to dashboard-shaped paths
+dashboard_exts = {'home.html','index.html','__init__.py','reader.py','models.py',
+    'parsers.py','derivation.py','locator.py','server.py','server.mjs','reader.mjs'}
+result = []
+for p in paths:
+    pn = p.replace('\\', '/')
+    if any(pn.endswith(x) for x in dashboard_exts):
+        result.append(pn)
+seen = set(); unique = []
+for p in result:
+    if p not in seen:
+        seen.add(p); unique.append(p)
+for p in sorted(unique):
+    print(p)
+PY
+)
+
+assert_eq "$SH_DASH_FILES" "$PS1_DASH_FILES" \
+    "PAR13a dashboard file enumeration identical between install.sh and install.ps1"
+
+if echo "$SH_DASH_FILES" | grep -qF "home.html"; then
+    pass "PAR13b install.sh lists home.html in dashboard files"
+else
+    fail "PAR13b install.sh does NOT list home.html in dashboard files"
+fi
+
+if echo "$PS1_DASH_FILES" | grep -qF "home.html"; then
+    pass "PAR13c install.ps1 lists home.html in dashboard files"
+else
+    fail "PAR13c install.ps1 does NOT list home.html in dashboard files"
+fi
+
+# ---------------------------------------------------------------------------
 
 test_summary

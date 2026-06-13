@@ -19,7 +19,8 @@
 #   lib/AidInstallCore.psm1  -> aid_installer/_vendor/lib/AidInstallCore.psm1
 #   VERSION              -> aid_installer/_vendor/VERSION
 #
-# Dashboard server+reader unit (11 files, curated -- excludes tests/ __pycache__ *.pyc README):
+# Dashboard server+reader unit (12 files, curated -- excludes tests/ __pycache__ *.pyc README):
+#   dashboard/home.html             -> aid_installer/_vendor/dashboard/home.html
 #   dashboard/index.html            -> aid_installer/_vendor/dashboard/index.html
 #   dashboard/reader/__init__.py    -> aid_installer/_vendor/dashboard/reader/__init__.py
 #   dashboard/reader/reader.py      -> aid_installer/_vendor/dashboard/reader/reader.py
@@ -53,7 +54,8 @@ COPIES: list[tuple[str, str]] = [
     ("lib/aid-install-core.sh",          "lib/aid-install-core.sh"),
     ("lib/AidInstallCore.psm1",          "lib/AidInstallCore.psm1"),
     ("VERSION",                          "VERSION"),
-    # Dashboard server+reader unit (11 files, curated).
+    # Dashboard server+reader unit (12 files, curated).
+    ("dashboard/home.html",              "dashboard/home.html"),
     ("dashboard/index.html",             "dashboard/index.html"),
     ("dashboard/reader/__init__.py",     "dashboard/reader/__init__.py"),
     ("dashboard/reader/reader.py",       "dashboard/reader/reader.py"),
@@ -90,7 +92,7 @@ def vendor(repo_root: Path = _REPO_ROOT, vendor_dir: Path = _VENDOR_DIR) -> bool
             ok = False
 
     if ok:
-        print("vendor: done. 17 files vendored into aid_installer/_vendor/.")
+        print("vendor: done. 18 files vendored into aid_installer/_vendor/.")
     return ok
 
 

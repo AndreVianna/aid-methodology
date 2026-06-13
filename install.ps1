@@ -708,7 +708,7 @@ if ($script:_InstallMode -eq 'BOOTSTRAP') {
         }
     }
 
-    # Install the dashboard server+reader unit (11 files, curated).
+    # Install the dashboard server+reader unit (12 files, curated).
     # Source: beside install.ps1 (repo checkout) or extracted CLI bundle (piped bootstrap).
     $bsDashSrc = $null
     if ($bsCliBundleExtract) {
@@ -723,6 +723,7 @@ if ($script:_InstallMode -eq 'BOOTSTRAP') {
             Remove-Item -LiteralPath $bsDashDest -Recurse -Force -ErrorAction SilentlyContinue
         }
         $bsDashFiles = @(
+            'home.html',
             'index.html',
             'reader\__init__.py',
             'reader\reader.py',

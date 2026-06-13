@@ -727,7 +727,7 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
     [[ -f "$_BOOTSTRAP_AID_PS1" ]] && cp "$_BOOTSTRAP_AID_PS1" "${_BOOTSTRAP_STAGE}/bin/aid.ps1"
     [[ -f "$_BOOTSTRAP_AID_CMD" ]] && cp "$_BOOTSTRAP_AID_CMD" "${_BOOTSTRAP_STAGE}/bin/aid.cmd"
 
-    # Stage dashboard server+reader unit (11 files, curated).
+    # Stage dashboard server+reader unit (12 files, curated).
     # Source: beside install.sh (repo checkout) or extracted CLI bundle (piped bootstrap).
     _BOOTSTRAP_DASHBOARD_SRC="${SCRIPT_DIR}/dashboard"
     if [[ -n "${_AID_CLI_BUNDLE_EXTRACT_DIR:-}" ]]; then
@@ -735,6 +735,7 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
     fi
     if [[ -d "$_BOOTSTRAP_DASHBOARD_SRC" ]]; then
         for _df in \
+            "home.html" \
             "index.html" \
             "reader/__init__.py" \
             "reader/reader.py" \
@@ -781,6 +782,7 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
     if [[ -f "${_BOOTSTRAP_STAGE}/dashboard/server/server.py" ]]; then
         mkdir -p "${AID_HOME}/dashboard/reader" "${AID_HOME}/dashboard/server"
         for _df in \
+            "home.html" \
             "index.html" \
             "reader/__init__.py" \
             "reader/reader.py" \

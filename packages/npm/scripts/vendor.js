@@ -15,7 +15,8 @@
 //   lib/AidInstallCore.psm1  -> packages/npm/lib/AidInstallCore.psm1
 //   VERSION              -> packages/npm/VERSION
 //
-// Dashboard server+reader unit (11 files, curated -- excludes tests/ __pycache__ *.pyc README):
+// Dashboard server+reader unit (12 files, curated -- excludes tests/ __pycache__ *.pyc README):
+//   dashboard/home.html                   -> packages/npm/dashboard/home.html
 //   dashboard/index.html                  -> packages/npm/dashboard/index.html
 //   dashboard/reader/__init__.py          -> packages/npm/dashboard/reader/__init__.py
 //   dashboard/reader/reader.py            -> packages/npm/dashboard/reader/reader.py
@@ -44,7 +45,8 @@ var copies = [
     ['lib/aid-install-core.sh',          'lib/aid-install-core.sh'],
     ['lib/AidInstallCore.psm1',          'lib/AidInstallCore.psm1'],
     ['VERSION',                          'VERSION'],
-    // Dashboard server+reader unit (11 files, curated).
+    // Dashboard server+reader unit (12 files, curated).
+    ['dashboard/home.html',              'dashboard/home.html'],
     ['dashboard/index.html',             'dashboard/index.html'],
     ['dashboard/reader/__init__.py',     'dashboard/reader/__init__.py'],
     ['dashboard/reader/reader.py',       'dashboard/reader/reader.py'],
@@ -93,4 +95,4 @@ if (!ok) {
     process.exit(1);
 }
 
-console.log('vendor: done. 17 files vendored into packages/npm/.');
+console.log('vendor: done. 18 files vendored into packages/npm/.');
