@@ -371,14 +371,33 @@ def _ser_tool_info(obj) -> dict:
     }
 
 
+def _ser_kb_baseline(obj) -> dict | None:
+    """Serialize KbBaseline in declared field order, or None if absent."""
+    if obj is None:
+        return None
+    return {
+        "branch":   obj.branch,
+        "tip_date": obj.tip_date,
+    }
+
+
 def _ser_kb_state(obj) -> dict | None:
-    """Serialize KbStateRef in declared field order, or None if absent."""
+    """Serialize KbStateRef in declared field order (DM-A3, task-064), or None if absent.
+
+    Field order (DM-3 deterministic):
+      retained: summary_approved, last_summary_date, doc_count
+      new (task-064): status, summary_present, kb_baseline
+    No schema_version bump (DM-A3).
+    """
     if obj is None:
         return None
     return {
         "summary_approved":  obj.summary_approved,
         "last_summary_date": obj.last_summary_date,
         "doc_count":         obj.doc_count,
+        "status":            obj.status.value if hasattr(obj.status, "value") else str(obj.status),
+        "summary_present":   obj.summary_present,
+        "kb_baseline":       _ser_kb_baseline(obj.kb_baseline),
     }
 
 

@@ -1,5 +1,6 @@
 # dashboard/reader/derivation.py
 # LC-3 Fallback Adapter + SM-2 / SM-3 lifecycle derivation.
+# FF-A3 KB 5-state status waterfall + FF-A2 git freshness read (task-064, feature-007).
 #
 # Responsibility:
 #   - derive_lifecycle(work_dir, pw) -> Lifecycle (SM-2: preferred or fallback path)
@@ -7,23 +8,27 @@
 #                      cancellation_recorded) -> Lifecycle (SM-3)
 #   - Fallback-only helpers that scan legacy STATE.md sections when ## Pipeline Status
 #     is absent (LC-3 Fallback Adapter).
+#   - derive_kb_status(kb_dir, summary_approved, summary_present, kb_baseline, repo_root)
+#     -> KbStatus  (FF-A3 5-state waterfall, task-064)
+#   - git_freshness_check(repo_root, kb_baseline) -> "approved" | "outdated" | "skip"
+#     (FF-A2 read-only bounded git log subprocess, task-064)
 #
 # MIGRATION STATUS (task-013 M6 cutover audit):
 #
 #   NORMALIZED (producer-emitted, feature-001 M1-M6 complete):
-#   - Running          — M4: aid-interview, aid-specify, aid-plan, aid-detail,
+#   - Running          -- M4: aid-interview, aid-specify, aid-plan, aid-detail,
 #                        aid-execute, aid-deploy (state-idle.md) emit at phase entry.
-#   - Paused-Awaiting-Input + Pause Reason — M5: aid-specify (state-blocked.md,
+#   - Paused-Awaiting-Input + Pause Reason -- M5: aid-specify (state-blocked.md,
 #                        state-spike.md), aid-execute (state-delivery-gate.md),
 #                        aid-interview (state-completion.md) emit on pause transitions.
-#   - Blocked + Block Reason/Artifact — M5: aid-execute (state-execute.md,
+#   - Blocked + Block Reason/Artifact -- M5: aid-execute (state-execute.md,
 #                        state-review.md), aid-execute (state-delivery-gate.md)
 #                        emit on impediment/failed-gate transitions.
-#   - Completed        — M6 (task-013): aid-deploy (state-done.md) emits at final
+#   - Completed        -- M6 (task-013): aid-deploy (state-done.md) emits at final
 #                        work-completion transition (DONE state entry).
 #
 #   LEGITIMATE FALLBACK (no automatic producer by design):
-#   - Canceled         — Per feature-001 §3 SM, Canceled is a USER ACTION only
+#   - Canceled         -- Per feature-001 SS3 SM, Canceled is a USER ACTION only
 #                        (no automatic pipeline trigger). Its ## Lifecycle History
 #                        scan IS the intended derivation path, not tech-debt.
 #                        No automatic producer will ever emit Lifecycle: Canceled;
@@ -36,7 +41,7 @@
 #   source_mode=fallback identifies these legacy works; ReadMeta.fallback_works
 #   is the runtime evidence of which works still use the fallback path.
 #
-#   KI-003 RESOLVED (task-013): task-001 reconciled schemas.md §13 to the flat
+#   KI-003 RESOLVED (task-013): task-001 reconciled schemas.md SS13 to the flat
 #   IMPEDIMENT-task-NNN.md path (the path the reader's _find_impediment_file already
 #   scans). The reader's flat-scan path now matches the canonical documented path.
 #   The KI-003 coupling note is closed; the flat-scan code is correct and stays.
@@ -44,18 +49,220 @@
 #   KI-004: heartbeat is repo-level corroborating only; not used here (never a lifecycle
 #           primitive). Retained as a known design choice (not tech-debt).
 #
-# No I/O here; this module receives pre-parsed in-memory data structures (ParsedWork fields
-# + the extra fallback-parsed text blobs). The filesystem is touched only by parsers.py.
-# Read-only by construction. No write, no subprocess, no agent/LLM.
+# No write / no LLM / one read-only `git log` subprocess for KB freshness (FR35).
 # Python 3.11+ stdlib only. Zero third-party deps.
 
 from __future__ import annotations
 
 import re
+import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from .models import Lifecycle, PendingInput, SourceMode, TaskModel, TaskStatus
+from .models import KbBaseline, KbStatus, Lifecycle, PendingInput, SourceMode, TaskModel, TaskStatus
+
+
+# ---------------------------------------------------------------------------
+# FF-A2: UTC-instant normalization helper (R12, task-064)
+# ---------------------------------------------------------------------------
+
+def _normalize_to_utc_ms(iso_str: str) -> Optional[int]:
+    """Parse an ISO-8601 datetime string and return UTC milliseconds since epoch.
+
+    Handles both Z-suffix and +/-HH:MM offset forms. Returns None if unparseable.
+    Python: datetime.fromisoformat(...).astimezone(timezone.utc) (3.11 parses Z).
+
+    This is the authoritative normalization helper for cross-runtime UTC comparison
+    (FF-A2 step 4, R12). The Z-vs-+-HH:MM boundary unit case is in task-066.
+    """
+    if not iso_str:
+        return None
+    try:
+        # Python 3.11+ parses Z suffix natively
+        dt = datetime.fromisoformat(iso_str)
+        if dt.tzinfo is None:
+            # Assume UTC for naive datetimes (defensive; real data always has offset)
+            dt = dt.replace(tzinfo=timezone.utc)
+        dt_utc = dt.astimezone(timezone.utc)
+        # Return milliseconds since epoch (matching Node Date.parse / getTime)
+        epoch = datetime(1970, 1, 1, tzinfo=timezone.utc)
+        return int((dt_utc - epoch).total_seconds() * 1000)
+    except (ValueError, OverflowError):
+        return None
+
+
+# ---------------------------------------------------------------------------
+# FF-A2: git freshness check (task-064, LC-A2 reader subprocess)
+# ---------------------------------------------------------------------------
+
+# Allowed git verbs: ONLY rev-parse, symbolic-ref, log (read-only)
+# NEVER: fetch, pull, commit, checkout, reset, push, merge, rebase, add, rm
+_GIT_ALLOWED_VERBS = frozenset({"rev-parse", "symbolic-ref", "log"})
+
+# Degradation timeout (seconds) -- bounded read, never blocks indefinitely
+_GIT_TIMEOUT_S = 2
+
+
+def git_freshness_check(
+    repo_root: Path,
+    kb_baseline: Optional[KbBaseline],
+) -> str:
+    """FF-A2: Check if the repo's default branch has advanced past kb_baseline.
+
+    Returns one of: "approved" | "outdated" | "skip".
+    Every failure mode (DD-A2 7-mode degradation matrix) -> "skip" -> stay approved.
+
+    Read-only subprocess: only rev-parse / symbolic-ref / log verbs.
+    No fetch / pull / commit / checkout / reset / push / merge.
+    No file written.
+
+    argv (identical to Node reader.mjs twin):
+        git -C <repo_root> log -1 --format=%cI <branch>
+    """
+    # Degradation mode 6: kb_baseline absent
+    if kb_baseline is None:
+        return "skip"
+
+    # Resolve branch: prefer baseline.branch, else origin/HEAD basename, else main/master
+    branch = _resolve_git_branch(repo_root, kb_baseline)
+    if branch is None:
+        return "skip"
+
+    # Run: git -C <root> log -1 --format=%cI <branch>
+    current_tip_str = _run_git_log(repo_root, branch)
+    if current_tip_str is None:
+        return "skip"
+
+    # UTC normalization before compare (R12, never raw string compare)
+    current_ms = _normalize_to_utc_ms(current_tip_str)
+    baseline_ms = _normalize_to_utc_ms(kb_baseline.tip_date or "")
+    if current_ms is None or baseline_ms is None:
+        return "skip"
+
+    return "outdated" if current_ms > baseline_ms else "approved"
+
+
+def _resolve_git_branch(repo_root: Path, kb_baseline: KbBaseline) -> Optional[str]:
+    """DD-A2 branch resolution: prefer baseline.branch, else origin/HEAD, else main/master."""
+    # Prefer baseline.branch
+    if kb_baseline.branch:
+        return kb_baseline.branch
+
+    # Try git symbolic-ref --short refs/remotes/origin/HEAD
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "symbolic-ref", "--short",
+             "refs/remotes/origin/HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=_GIT_TIMEOUT_S,
+        )
+        if result.returncode == 0:
+            ref = result.stdout.strip()
+            if ref:
+                # basename: "origin/main" -> "main"
+                return ref.split("/")[-1] if "/" in ref else ref
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        pass
+
+    # Fallback: first of {main, master} that exists
+    for candidate in ("main", "master"):
+        try:
+            result = subprocess.run(
+                ["git", "-C", str(repo_root), "rev-parse", "--verify",
+                 f"refs/heads/{candidate}"],
+                capture_output=True,
+                text=True,
+                timeout=_GIT_TIMEOUT_S,
+            )
+            if result.returncode == 0:
+                return candidate
+        except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+            return None
+
+    return None
+
+
+def _run_git_log(repo_root: Path, branch: str) -> Optional[str]:
+    """Run: git -C <repo_root> log -1 --format=%cI <branch>
+
+    Returns the raw ISO-8601 date string on success, None on every failure.
+    Degradation modes: ENOENT (git absent), nonzero, empty, timeout.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "log", "-1", "--format=%cI", branch],
+            capture_output=True,
+            text=True,
+            timeout=_GIT_TIMEOUT_S,
+        )
+        if result.returncode != 0:
+            return None
+        tip = result.stdout.strip()
+        return tip if tip else None
+    except FileNotFoundError:
+        # git binary absent (ENOENT)
+        return None
+    except subprocess.TimeoutExpired:
+        return None
+    except OSError:
+        return None
+
+
+# ---------------------------------------------------------------------------
+# FF-A3: KB 5-state status waterfall (task-064, feature-007 DM-A2)
+# ---------------------------------------------------------------------------
+
+def derive_kb_status(
+    kb_dir: Path,
+    summary_approved: bool,
+    summary_present: bool,
+    kb_baseline: Optional[KbBaseline],
+    repo_root: Path,
+) -> KbStatus:
+    """FF-A3: Derive the FR32 5-state KB status from disk-only signals.
+
+    Waterfall (outermost-first, DD-A3):
+      1. .aid/knowledge/ absent or empty                          -> pending
+      2. KB present but not yet User Approved: yes                -> generating
+         (SPEC residual-#1 safe default -- applied verbatim, no design here)
+      3. KB approved but kb.html absent OR summary not yet approved -> preparing
+      4. freshness_check == "outdated"                            -> outdated
+      5. else                                                     -> approved
+
+    outdated is checked LAST and ONLY over approved (DD-A3).
+    Never raises (NFR7).
+    """
+    try:
+        # Step 1: .aid/knowledge/ absent or empty -> pending
+        if not kb_dir.is_dir():
+            return KbStatus.pending
+        try:
+            entries = list(kb_dir.iterdir())
+        except OSError:
+            entries = []
+        if not entries:
+            return KbStatus.pending
+
+        # Step 2: KB present but not yet User Approved: yes -> generating
+        # (SPEC residual-#1: "KB present but not yet User Approved: yes" is the safe default)
+        if not summary_approved:
+            return KbStatus.generating
+
+        # Step 3: KB approved but kb.html absent OR summary not V1-approved -> preparing
+        if not summary_present:
+            return KbStatus.preparing
+
+        # Step 4+5: freshness check (last, only over approved)
+        freshness = git_freshness_check(repo_root, kb_baseline)
+        if freshness == "outdated":
+            return KbStatus.outdated
+
+        return KbStatus.approved
+
+    except Exception:  # noqa: BLE001 -- never raises (NFR7)
+        return KbStatus.unknown
 
 
 # ---------------------------------------------------------------------------

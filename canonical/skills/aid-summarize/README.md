@@ -6,7 +6,7 @@ Generate a single offline HTML summary of the Knowledge Base after `/aid-discove
 
 ## What It Does
 
-Produces one self-contained `knowledge-summary.html` from `.aid/knowledge/`:
+Produces one self-contained `kb.html` at `.aid/dashboard/` from `.aid/knowledge/`:
 
 1. **Detect profile** — `web-app`, `library`, `cli`, `microservices`, `data-pipeline`, or `auto` (default).
 2. **Fetch Mermaid** — caches the latest npm version to `.aid/knowledge/.cache/mermaid.min.js` (or use `--cdn-mermaid` to skip and load at runtime).
@@ -26,7 +26,7 @@ Produces one self-contained `knowledge-summary.html` from `.aid/knowledge/`:
 
 | Artifact | Location | Purpose |
 |----------|----------|---------|
-| `knowledge-summary.html` | `.aid/knowledge/` | Single-file offline visual summary |
+| `kb.html` | `.aid/dashboard/` | Single-file offline visual summary |
 | `.aid/knowledge/STATE.md` `## Knowledge Summary Status` | `.aid/knowledge/STATE.md` | Profile, grades, approval status, last-run metadata |
 | `.aid/knowledge/.cache/mermaid.min.js` | cache | Pinned Mermaid version (gitignored) |
 

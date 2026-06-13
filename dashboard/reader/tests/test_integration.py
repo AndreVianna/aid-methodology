@@ -542,21 +542,33 @@ class TestIntegrationModuleSelfCheck(unittest.TestCase):
     def test_reader_modules_still_clean_after_integration(self):
         """Reader modules must still pass the read-only check after integration.
 
-        A regression guard: if someone accidentally added a subprocess call
-        to a reader module while implementing the integration test, this catches it.
+        A regression guard: if someone accidentally introduced a mutating or
+        write-mode subprocess call to a reader module, this catches it.
+
+        Relaxed for task-064 (FR35): derivation.py is now allowed to import
+        subprocess and use the ONE read-only 'git log -1 --format=%cI' invocation
+        for KB freshness. All other modules must remain subprocess-free.
+
+        Still forbidden in ALL reader modules:
+          - Popen (write/mutation subprocess)
+          - Any mutating git verb: fetch / pull / commit / checkout / reset
+          - Write-mode open() calls (covered by test_reader.py:test_no_write_primitives)
         """
         import ast
 
         reader_dir = Path(__file__).resolve().parents[1]
-        modules = [
+
+        # Modules that must remain entirely subprocess-free (no import subprocess)
+        subprocess_free_modules = [
             reader_dir / "locator.py",
             reader_dir / "parsers.py",
             reader_dir / "reader.py",
             reader_dir / "models.py",
-            reader_dir / "derivation.py",
         ]
+        # derivation.py is now allowed to import subprocess for the ONE read-only git log
+        all_modules = subprocess_free_modules + [reader_dir / "derivation.py"]
 
-        for mod_path in modules:
+        for mod_path in subprocess_free_modules:
             source = mod_path.read_text(encoding="utf-8")
             # Check no subprocess import was added
             self.assertNotIn(
@@ -564,12 +576,26 @@ class TestIntegrationModuleSelfCheck(unittest.TestCase):
                 source,
                 f"{mod_path.name}: subprocess must not be imported in reader modules",
             )
-            # Check no Popen was added
+
+        for mod_path in all_modules:
+            source = mod_path.read_text(encoding="utf-8")
+            # Check no Popen was added (write/mutation subprocess forbidden everywhere)
             self.assertNotIn(
                 "Popen",
                 source,
                 f"{mod_path.name}: Popen must not appear in reader modules",
             )
+            # Ensure no mutating git verbs appear in git subprocess calls
+            _mutating_verbs = ("git fetch", "git pull", "git commit", "git checkout",
+                               "git reset", "git push", "git merge", "git rebase",
+                               "\"fetch\"", "\"pull\"", "\"commit\"", "\"checkout\"",
+                               "\"reset\"")
+            for verb in _mutating_verbs:
+                self.assertNotIn(
+                    verb,
+                    source,
+                    f"{mod_path.name}: mutating git verb '{verb}' must not appear",
+                )
 
     def test_this_module_uses_subprocess_only_in_test(self):
         """Sanity: this test module DOES import subprocess (for the producer).

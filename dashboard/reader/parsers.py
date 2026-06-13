@@ -21,6 +21,7 @@ from typing import Optional
 from .models import (
     DeliverableRef,
     FeatureRef,
+    KbBaseline,
     KbStateRef,
     Lifecycle,
     PendingInput,
@@ -221,16 +222,81 @@ def _strip_yaml_inline_comment(scalar: str) -> str:
     return s
 
 
-def parse_kb_state(kb_dir: Path) -> tuple[Optional[KbStateRef], int]:
+def parse_kb_baseline(settings_path: Path) -> tuple[Optional["KbBaseline"], int]:
+    """Parse the kb_baseline block from .aid/settings.yml (DM-A4, task-064).
+
+    Tolerant line-scan of the 'kb_baseline:' nested block, reusing the
+    parse_project_name posture (parsers.py:148):
+      - Scan for 'kb_baseline:' top-level key
+      - Within that block, extract 'branch:' and 'tip_date:' scalar values
+      - Absent/unparseable -> None (skip freshness, stay approved; FF-A2)
+
+    Returns (KbBaseline or None, bytes_read).
+    Never raises (NFR7). Never writes.
+    """
+    if not settings_path.is_file():
+        return None, 0
+
+    try:
+        raw = settings_path.read_bytes()
+    except OSError:
+        return None, 0
+
+    bytes_read = len(raw)
+    text = raw.decode("utf-8", errors="replace")
+
+    in_baseline = False
+    branch: Optional[str] = None
+    tip_date: Optional[str] = None
+
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped == "kb_baseline:" or stripped.startswith("kb_baseline: "):
+            in_baseline = True
+            continue
+        if in_baseline:
+            # Another top-level key (no leading whitespace) ends the block
+            if line and not line[0].isspace() and ":" in line and not stripped.startswith("#"):
+                break
+            # Extract branch:
+            m = re.match(r"^\s+branch:\s+(.+)", line)
+            if m and branch is None:
+                val = _strip_yaml_inline_comment(m.group(1)).strip().strip('"').strip("'")
+                if val:
+                    branch = val
+                continue
+            # Extract tip_date:
+            m = re.match(r"^\s+tip_date:\s+(.+)", line)
+            if m and tip_date is None:
+                val = _strip_yaml_inline_comment(m.group(1)).strip().strip('"').strip("'")
+                if val:
+                    tip_date = val
+                continue
+
+    if branch is None and tip_date is None:
+        return None, bytes_read
+
+    return KbBaseline(branch=branch, tip_date=tip_date), bytes_read
+
+
+def parse_kb_state(
+    kb_dir: Path,
+    dashboard_dir: Optional[Path] = None,
+) -> tuple[Optional["KbStateRef"], int]:
     """Parse .aid/knowledge/STATE.md + README.md into a KbStateRef hook.
 
     If .aid/knowledge/ does not exist, returns (None, 0) -- repo never ran
     /aid-discover; render gracefully.
 
+    dashboard_dir: if supplied, stat .aid/dashboard/kb.html for summary_present.
+    The status field and kb_baseline are populated by the caller (reader.py)
+    after derivation (FF-A3) and parsing (parse_kb_baseline).
+
     Fields populated:
       summary_approved  -- from STATE.md "**User Approved:** yes ..."
       last_summary_date -- extracted from same line (parenthesized date)
       doc_count         -- count of data rows in README.md ## Completeness table
+      summary_present   -- True if dashboard_dir/kb.html exists (stat only)
     """
     if not kb_dir.is_dir():
         return None, 0
@@ -262,10 +328,21 @@ def parse_kb_state(kb_dir: Path) -> tuple[Optional[KbStateRef], int]:
             readme_text = ""
         doc_count = _parse_kb_doc_count(readme_text)
 
+    # Stat .aid/dashboard/kb.html for summary_present.
+    summary_present = False
+    if dashboard_dir is not None:
+        kb_html = dashboard_dir / "kb.html"
+        try:
+            summary_present = kb_html.is_file()
+        except OSError:
+            summary_present = False
+
     return KbStateRef(
         summary_approved=summary_approved,
         last_summary_date=last_summary_date,
         doc_count=doc_count,
+        summary_present=summary_present,
+        # status and kb_baseline are set by reader.py after derivation
     ), bytes_read
 
 

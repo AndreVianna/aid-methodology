@@ -149,6 +149,7 @@ Print: `✓ <key>: <old> → <new>` and exit.
 | `execution.max_parallel_tasks` | Positive integer |
 | `traceability.heartbeat_interval` | Positive integer (minutes). `0` disables heartbeat. |
 | `<skill>.minimum_grade` | Same regex as `review.minimum_grade`. |
+| `kb_baseline` | Shape: `{branch: <default-branch>, tip_date: <ISO-8601 commit date>}`. **Producer-written - NOT user-authored.** Written by `aid-discover` (on KB approval, FR35) and `aid-housekeep` (re-stamp on KB-DELTA refresh, FR36). Read by the dashboard reader for outdated-detection (feature-007 FF-A2). Absence-tolerant: a missing `kb_baseline` key is valid and means "no baseline recorded" - the reader skips the freshness check and stays `approved`. Cross-ref feature-010 residual-OQ #5 (the two features' `settings.yml` reads must agree on this key). Write-path selection (R13): the **first** write of `kb_baseline` is a multi-line nested block (`branch:` + `tip_date:`), so the producer uses the **append-block** idiom (Step 6 second idiom, intro at SKILL.md:126, code fence at SKILL.md:127-132) - NOT the single-line "Save in place" replace (SKILL.md:124) which only replaces one line. A subsequent **re-stamp** of `tip_date` within an already-present `kb_baseline` block is a single-line replace of that nested line (the "Save in place" idiom, SKILL.md:124). |
 
 ---
 

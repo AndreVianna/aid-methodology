@@ -102,16 +102,62 @@ class ToolInfo:
 # DM-3: Level 1 -- RepoInfo + KbStateRef
 # ---------------------------------------------------------------------------
 
+class KbStatus(str, Enum):
+    """FR32 5-state KB status enum (feature-007 DM-A2).
+
+    Derived by the reader (FF-A3 waterfall); never written to disk (NFR2).
+    Members:
+        pending    -- .aid/knowledge/ absent or empty
+        generating -- KB present but not yet User Approved: yes (safe default, SPEC residual-#1)
+        preparing  -- KB approved but kb.html absent OR summary not yet V1-approved
+        approved   -- KB + kb.html ready, current, approved
+        outdated   -- approved but default branch has advanced past kb_baseline (FR35)
+    Reader-only:
+        unknown    -- un-derivable combination falls back to pending treatment; never thrown
+    """
+    pending    = "pending"
+    generating = "generating"
+    preparing  = "preparing"
+    approved   = "approved"
+    outdated   = "outdated"
+    unknown    = "unknown"  # reader-only sentinel; never written to disk
+
+
+@dataclass
+class KbBaseline:
+    """Parsed projection of .aid/settings.yml kb_baseline block (DM-A4).
+
+    branch:   the default branch the KB reflects (e.g. 'master'); None if absent
+    tip_date: ISO-8601 commit date of that branch's tip at KB generation time; None if absent
+    """
+    branch: Optional[str] = None
+    tip_date: Optional[str] = None
+
+
 @dataclass
 class KbStateRef:
-    """Thin reference to KB state (hook only; full KB card is feature-007).
+    """KB state reference (feature-007 DM-A1 extended KbStateRef).
 
-    Populated from .aid/knowledge/STATE.md + .aid/knowledge/README.md.
+    Populated from .aid/knowledge/STATE.md + .aid/knowledge/README.md + derivation.
     Absent KB (.aid/knowledge/ missing) -> null in RepoInfo.
+
+    Retained fields (feature-002 DM-3):
+        summary_approved  -- from STATE.md ## Knowledge Summary Status **User Approved:** yes/no
+        last_summary_date -- parenthesized date on that line
+        doc_count         -- rows in README.md ## Completeness table
+
+    New fields (feature-007 DM-A1, task-064):
+        status          -- FR32 5-state KbStatus (derived, never persisted; NFR2)
+        summary_present -- True if <repo>/.aid/dashboard/kb.html exists (stat only)
+        kb_baseline     -- {branch, tip_date} from .aid/settings.yml; None if unset/unparseable
     """
     summary_approved: bool
     last_summary_date: Optional[str] = None  # from STATE.md "User Approved: yes (YYYY-MM-DD...)"
     doc_count: Optional[int] = None          # rows in README.md ## Completeness table
+    # feature-007 DM-A1 new fields (task-064):
+    status: KbStatus = KbStatus.unknown      # FR32 5-state derived status
+    summary_present: bool = False            # True if .aid/dashboard/kb.html exists
+    kb_baseline: Optional[KbBaseline] = None # {branch, tip_date} or None
 
 
 @dataclass

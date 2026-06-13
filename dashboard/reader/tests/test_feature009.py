@@ -21,7 +21,8 @@ Covers:
        Cross-runtime.
 
 Python 3.11+ stdlib only. No third-party deps.
-All tests are deterministic (temp dirs, no network, no subprocess except for Node).
+All tests are deterministic (temp dirs, no network, no subprocess except for Node
+and the one read-only `git log` KB-freshness read (FR35)).
 """
 
 from __future__ import annotations

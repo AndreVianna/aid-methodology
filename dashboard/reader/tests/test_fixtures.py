@@ -1198,9 +1198,12 @@ _FORBIDDEN_ATTR_CALLS = frozenset({
 })
 
 #: Module names whose imports are forbidden (write, subprocess, network, LLM)
+# Note: "subprocess" is intentionally NOT listed here because derivation.py is allowed
+# to import subprocess for the ONE read-only git log subprocess (FR35, task-064).
+# See test_no_subprocess_import_in_any_module (which exempts derivation.py) and
+# test_derivation_subprocess_is_read_only_git_log for the tighter derivation.py check.
 _FORBIDDEN_IMPORTS = frozenset({
-    # subprocess / process execution
-    "subprocess",
+    # subprocess / process execution -- see module-level note above
     "os",        # caught only if os.system is used; see AST check below
     # network / socket
     "socket",
@@ -1329,8 +1332,9 @@ def _check_module_for_write_primitives(source: str, filename: str) -> list[str]:
 class TestReadOnlySelfCheck(unittest.TestCase):
     """PART 2: Broadened AST self-check.
 
-    Asserts that ALL reader modules are clean of write primitives, subprocess,
+    Asserts that ALL reader modules are clean of write primitives,
     socket, urllib, and LLM-client imports (NFR2 + NFR7).
+    subprocess is checked separately (derivation.py is exempt -- see FR35 note).
     Enforced at the AST level so it runs in CI via the normal test suite.
     """
 
@@ -1340,12 +1344,15 @@ class TestReadOnlySelfCheck(unittest.TestCase):
         Checks:
         - open() write modes (w/a/x/wb/ab/xb)
         - .write_text() / .write_bytes() / .write() method calls
-        - subprocess (import)
         - Popen (call)
         - os.system (call)
         - socket (import)
         - urllib (import)
         - LLM-client imports (anthropic, openai, langchain, litellm, boto3, etc.)
+
+        Note: subprocess import is checked separately in test_no_subprocess_import_in_any_module
+        because derivation.py is allowed to import subprocess for the FR35 read-only git log
+        (task-064). The _FORBIDDEN_IMPORTS set excludes 'subprocess' for this reason.
         """
         all_violations: list[str] = []
 
@@ -1375,14 +1382,48 @@ class TestReadOnlySelfCheck(unittest.TestCase):
                 self.fail(f"SyntaxError in {name}: {exc}")
 
     def test_no_subprocess_import_in_any_module(self):
-        """subprocess must not be imported in any reader module (NFR2)."""
-        for name, mod_path in _READER_MODULES.items():
+        """subprocess must not be imported in most reader modules (NFR2).
+
+        Relaxed for task-064 (FR35): derivation.py is the ONE module allowed to
+        import subprocess, exclusively for the read-only 'git log -1 --format=%cI'
+        KB freshness check. All other reader modules remain subprocess-free.
+        See test_derivation_subprocess_is_read_only_git_log for the tighter check.
+        """
+        # These modules must remain entirely subprocess-free
+        subprocess_free = {n: p for n, p in _READER_MODULES.items()
+                           if n != "derivation.py"}
+        for name, mod_path in subprocess_free.items():
             source = mod_path.read_text(encoding="utf-8")
             self.assertNotIn(
                 "import subprocess",
                 source,
                 f"{name} must not import subprocess",
             )
+
+    def test_derivation_subprocess_is_read_only_git_log(self):
+        """derivation.py's subprocess use must be ONLY the sanctioned read-only git log.
+
+        Verifies that derivation.py:
+          - imports subprocess (allowed, for FR35 git freshness)
+          - does NOT import or use Popen (mutation subprocess forbidden)
+          - does NOT invoke any mutating git verb (fetch/pull/commit/checkout/reset)
+        This is the tighter check that replaces the blanket subprocess prohibition
+        for derivation.py only (task-064, SEC-A1).
+        """
+        derivation_path = _READER_MODULES["derivation.py"]
+        source = derivation_path.read_text(encoding="utf-8")
+        # subprocess IS expected (the one sanctioned git log)
+        self.assertIn("import subprocess", source,
+                      "derivation.py must import subprocess (for FR35 git log)")
+        # Popen is still forbidden
+        self.assertNotIn("Popen", source,
+                         "derivation.py must not use Popen (mutation subprocess forbidden)")
+        # Mutating git verbs are forbidden
+        for verb in ("git fetch", "git pull", "git commit", "git checkout",
+                     "git reset", "\"fetch\"", "\"pull\"", "\"commit\"",
+                     "\"checkout\"", "\"reset\""):
+            self.assertNotIn(verb, source,
+                             f"derivation.py must not invoke mutating git verb: {verb}")
 
     def test_no_popen_in_any_module(self):
         """Popen must not be used in any reader module (NFR2)."""

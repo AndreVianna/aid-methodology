@@ -12,7 +12,7 @@
 # This module is the ONLY place that performs filesystem I/O for the whole pass.
 # LC-1 Locator is in locator.py; LC-2 Parsers are in parsers.py.
 #
-# NFR2 (read-only): no write, no append, no lock, no subprocess, no agent/LLM.
+# No write / no LLM / one read-only `git log` subprocess for KB freshness (FR35).
 # NFR7 (no-LLM):    all derivation is deterministic code; no inference, no model call.
 # NFR4 (overhead):  single bounded pass; ReadMeta.bytes_read records total bytes read.
 #
@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Union
 
+from .derivation import derive_kb_status
 from .locator import locate_aid_root
 from .models import (
     Lifecycle,
@@ -38,6 +39,7 @@ from .models import (
 from .parsers import (
     ParsedWork,
     parse_execution_graph,
+    parse_kb_baseline,
     parse_kb_state,
     parse_project_name,
     parse_requirements_md,
@@ -51,8 +53,8 @@ from .parsers import (
 def read_repo(aid_root: Union[str, Path]) -> RepoModel:
     """Read AID state for the repo at aid_root and return a normalized RepoModel.
 
-    Single pure, idempotent filesystem pass. No writes, no locks, no subprocess,
-    no agent/LLM (NFR2/NFR7).
+    Single pure, idempotent filesystem pass.
+    No write / no LLM / one read-only git log subprocess for KB freshness (FR35).
 
     Edge cases:
     - Absent .aid/       -> empty RepoModel with a parse_warning (SPEC AC1).
@@ -110,8 +112,27 @@ def read_repo(aid_root: Union[str, Path]) -> RepoModel:
     if not project_name:
         project_name = root.name  # fallback: folder basename (SPEC DM-7 note)
 
-    kb_state, br = parse_kb_state(loc.kb_dir)
+    # task-064: parse kb_baseline from settings.yml (DM-A4)
+    dashboard_dir = loc.aid_dir / "dashboard"
+    kb_baseline, br = parse_kb_baseline(loc.settings_path)
     bytes_read += br
+
+    # task-064: parse kb_state with summary_present (stat of .aid/dashboard/kb.html)
+    kb_state, br = parse_kb_state(loc.kb_dir, dashboard_dir=dashboard_dir)
+    bytes_read += br
+
+    # task-064: derive 5-state KB status (FF-A3 waterfall) and attach fields
+    if kb_state is not None:
+        from .models import KbStatus as _KbStatus  # avoid circular at module level
+        kb_status = derive_kb_status(
+            kb_dir=loc.kb_dir,
+            summary_approved=kb_state.summary_approved,
+            summary_present=kb_state.summary_present,
+            kb_baseline=kb_baseline,
+            repo_root=root,
+        )
+        kb_state.status = kb_status
+        kb_state.kb_baseline = kb_baseline
 
     repo_info = RepoInfo(
         project_name=project_name,

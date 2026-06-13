@@ -14,6 +14,7 @@
 
 import { readFileSync, readdirSync, statSync, existsSync } from "fs";
 import { resolve, join, basename } from "path";
+import { execFileSync } from "child_process";
 
 // ---------------------------------------------------------------------------
 // Enum literals (DM-6 -- mirrors models.py verbatim)
@@ -54,6 +55,17 @@ const SourceMode = {
   Normalized: "normalized",
   Fallback: "fallback",
   Mixed: "mixed",
+};
+
+// FR32 5-state KB status enum (feature-007 DM-A2, task-064)
+// Derived by the reader (FF-A3); never written to disk (NFR2).
+const KbStatus = {
+  pending:    "pending",    // .aid/knowledge/ absent or empty
+  generating: "generating", // KB present but not yet User Approved: yes (SPEC residual-#1)
+  preparing:  "preparing",  // KB approved but kb.html absent OR summary not V1-approved
+  approved:   "approved",   // KB + kb.html ready, current, approved
+  outdated:   "outdated",   // approved but default branch advanced past kb_baseline (FR35)
+  unknown:    "unknown",    // reader-only sentinel; never written to disk
 };
 
 // ---------------------------------------------------------------------------
@@ -313,6 +325,61 @@ function parseProjectName(settingsPath) {
   return ["", bytesRead];
 }
 
+// ---------------------------------------------------------------------------
+// task-064: parseKbBaseline -- tolerant line-scan of settings.yml kb_baseline block
+// Twin of dashboard/reader/parsers.py parse_kb_baseline (byte-parity minded, DM-A4)
+// ---------------------------------------------------------------------------
+
+function parseKbBaseline(settingsPath) {
+  // Returns [{branch, tip_date}|null, bytesRead]
+  // Tolerant line-scan of the 'kb_baseline:' nested block in .aid/settings.yml.
+  // Absent/unparseable -> null (skip freshness, stay approved; FF-A2).
+  if (!existsSync(settingsPath)) return [null, 0];
+  let raw;
+  try {
+    raw = readFileSync(settingsPath);
+  } catch (_) {
+    return [null, 0];
+  }
+  const bytesRead = raw.length;
+  const text = raw.toString("utf-8");
+
+  let inBaseline = false;
+  let branch = null;
+  let tipDate = null;
+
+  for (const line of text.split("\n")) {
+    const stripped = line.trim();
+    if (stripped === "kb_baseline:" || stripped.startsWith("kb_baseline: ")) {
+      inBaseline = true;
+      continue;
+    }
+    if (inBaseline) {
+      // Another top-level key (no leading whitespace) ends the block
+      if (line.length > 0 && !/^\s/.test(line) && line.includes(":") && !stripped.startsWith("#")) {
+        break;
+      }
+      // Extract branch:
+      let m = line.match(/^\s+branch:\s+(.+)/);
+      if (m && branch === null) {
+        let val = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
+        if (val) branch = val;
+        continue;
+      }
+      // Extract tip_date:
+      m = line.match(/^\s+tip_date:\s+(.+)/);
+      if (m && tipDate === null) {
+        let val = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
+        if (val) tipDate = val;
+        continue;
+      }
+    }
+  }
+
+  if (branch === null && tipDate === null) return [null, bytesRead];
+  return [{ branch: branch, tip_date: tipDate }, bytesRead];
+}
+
 function parseKbSummaryApproval(text) {
   let inSummaryStatus = false;
   for (const line of text.split("\n")) {
@@ -367,7 +434,8 @@ function parseKbDocCount(text) {
   return inCompleteness ? count : null;
 }
 
-function parseKbState(kbDir) {
+function parseKbState(kbDir, dashboardDir) {
+  // dashboardDir: optional path to .aid/dashboard/ for kb.html stat (task-064)
   let isDir = false;
   try {
     isDir = statSync(kbDir).isDirectory();
@@ -407,10 +475,171 @@ function parseKbState(kbDir) {
     }
   }
 
+  // task-064: stat .aid/dashboard/kb.html for summary_present
+  let summaryPresent = false;
+  if (dashboardDir) {
+    const kbHtmlPath = join(dashboardDir, "kb.html");
+    try {
+      summaryPresent = statSync(kbHtmlPath).isFile();
+    } catch (_) {
+      summaryPresent = false;
+    }
+  }
+
   return [
-    { summary_approved: summaryApproved, last_summary_date: lastSummaryDate, doc_count: docCount },
+    {
+      summary_approved: summaryApproved,
+      last_summary_date: lastSummaryDate,
+      doc_count: docCount,
+      summary_present: summaryPresent,
+      // status and kb_baseline set by readRepo after derivation
+      status: KbStatus.unknown,
+      kb_baseline: null,
+    },
     bytesRead,
   ];
+}
+
+// ---------------------------------------------------------------------------
+// task-064: UTC-instant normalization helper (R12, FF-A2 step 4)
+// Twin of derivation.py _normalize_to_utc_ms (byte-parity minded)
+// ---------------------------------------------------------------------------
+
+function normalizeToUtcMs(isoStr) {
+  // Parse ISO-8601 string and return UTC milliseconds since epoch.
+  // Handles Z-suffix and +/-HH:MM offset forms. Returns null if unparseable.
+  // Node: Date.parse() / getTime() -- same UTC epoch for same ISO-8601 input as Python.
+  if (!isoStr) return null;
+  const ms = Date.parse(isoStr);
+  if (isNaN(ms)) return null;
+  return ms;
+}
+
+// ---------------------------------------------------------------------------
+// task-064: FF-A2 git freshness check (read-only bounded subprocess)
+// Twin of derivation.py git_freshness_check / _resolve_git_branch / _run_git_log
+// ---------------------------------------------------------------------------
+
+const GIT_TIMEOUT_MS = 2000; // 2s timeout (matches Python _GIT_TIMEOUT_S = 2)
+
+function runGitCommand(args, cwd) {
+  // Run git with the given args (no shell). Returns stdout string or null on failure.
+  // cwd: working directory for the process (null -> use process.cwd()).
+  //      When args include -C <path>, cwd is not needed (git changes into <path>).
+  // Degradation: ENOENT (git absent), nonzero, timeout, OSError -> null.
+  const opts = {
+    timeout: GIT_TIMEOUT_MS,
+    stdio: ["ignore", "pipe", "pipe"],
+    encoding: "utf-8",
+  };
+  if (cwd !== null && cwd !== undefined) {
+    opts.cwd = cwd;
+  }
+  try {
+    const stdout = execFileSync("git", args, opts);
+    return (stdout || "").trim() || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function resolveGitBranch(repoRoot, kbBaseline) {
+  // DD-A2 branch resolution: prefer baseline.branch, else origin/HEAD, else main/master.
+  // Twin of Python derivation.py _resolve_git_branch.
+  // Uses -C <repoRoot> to match Python's argv exactly (no shell, no cwd).
+  if (kbBaseline && kbBaseline.branch) {
+    return kbBaseline.branch;
+  }
+  // Try: git -C <repoRoot> symbolic-ref --short refs/remotes/origin/HEAD
+  const ref = runGitCommand(
+    ["-C", repoRoot, "symbolic-ref", "--short", "refs/remotes/origin/HEAD"],
+    null  // cwd not needed when using -C
+  );
+  if (ref) {
+    // basename: "origin/main" -> "main"
+    return ref.includes("/") ? ref.split("/").pop() : ref;
+  }
+  // Fallback: first of {main, master} that exists
+  // Try: git -C <repoRoot> rev-parse --verify refs/heads/<candidate>
+  for (const candidate of ["main", "master"]) {
+    const out = runGitCommand(
+      ["-C", repoRoot, "rev-parse", "--verify", "refs/heads/" + candidate],
+      null
+    );
+    if (out !== null) return candidate;
+  }
+  return null;
+}
+
+function runGitLog(repoRoot, branch) {
+  // Run: git -C <repoRoot> log -1 --format=%cI <branch>
+  // argv identical to Python twin (no shell).
+  // Returns ISO-8601 date string or null on every failure.
+  return runGitCommand(["-C", repoRoot, "log", "-1", "--format=%cI", branch], null);
+}
+
+function gitFreshnessCheck(repoRoot, kbBaseline) {
+  // FF-A2: Check if the default branch has advanced past kb_baseline.
+  // Returns "approved" | "outdated" | "skip".
+  // Every failure mode (DD-A2 7-mode degradation matrix) -> "skip" -> stay approved.
+  // Twin of Python derivation.py git_freshness_check.
+
+  // Degradation mode 6: kb_baseline absent
+  if (!kbBaseline) return "skip";
+
+  const branch = resolveGitBranch(repoRoot, kbBaseline);
+  if (branch === null) return "skip";
+
+  // Run: git -C <repoRoot> log -1 --format=%cI <branch> (via runGitLog; twin of
+  // Python git_freshness_check -> _run_git_log). Any failure -> null -> skip.
+  const currentTipStr = runGitLog(repoRoot, branch);
+  if (!currentTipStr) return "skip";
+
+  // UTC normalization before compare (R12, never raw string compare)
+  const currentMs = normalizeToUtcMs(currentTipStr);
+  const baselineMs = normalizeToUtcMs(kbBaseline.tip_date || "");
+  if (currentMs === null || baselineMs === null) return "skip";
+
+  return currentMs > baselineMs ? "outdated" : "approved";
+}
+
+// ---------------------------------------------------------------------------
+// task-064: FF-A3 KB 5-state status waterfall (feature-007 DM-A2)
+// Twin of derivation.py derive_kb_status (byte-parity minded)
+// ---------------------------------------------------------------------------
+
+function deriveKbStatus(kbDir, summaryApproved, summaryPresent, kbBaseline, repoRoot) {
+  // Waterfall (outermost-first, DD-A3):
+  //   1. .aid/knowledge/ absent or empty                           -> pending
+  //   2. KB present but not yet User Approved: yes                 -> generating
+  //      (SPEC residual-#1 safe default -- applied verbatim)
+  //   3. KB approved but kb.html absent OR summary not V1-approved -> preparing
+  //   4. freshness_check == "outdated"                             -> outdated
+  //   5. else                                                      -> approved
+  // Never throws (NFR7).
+  try {
+    // Step 1: .aid/knowledge/ absent or empty -> pending
+    let isDir = false;
+    try { isDir = statSync(kbDir).isDirectory(); } catch (_) { isDir = false; }
+    if (!isDir) return KbStatus.pending;
+    let entries = [];
+    try { entries = readdirSync(kbDir); } catch (_) { entries = []; }
+    if (entries.length === 0) return KbStatus.pending;
+
+    // Step 2: KB present but not yet User Approved: yes -> generating
+    if (!summaryApproved) return KbStatus.generating;
+
+    // Step 3: KB approved but kb.html absent OR summary not V1-approved -> preparing
+    if (!summaryPresent) return KbStatus.preparing;
+
+    // Step 4+5: freshness check (last, only over approved)
+    const freshness = gitFreshnessCheck(repoRoot, kbBaseline);
+    if (freshness === "outdated") return KbStatus.outdated;
+
+    return KbStatus.approved;
+  } catch (_) {
+    return KbStatus.unknown;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1533,8 +1762,27 @@ export function readRepo(root) {
     projectName = basename(resolvedRoot);
   }
 
-  const [kbState, br2] = parseKbState(loc.kbDir);
+  // task-064: parse kb_baseline from settings.yml (DM-A4)
+  const dashboardDir = join(loc.aidDir, "dashboard");
+  const [kbBaseline, brBaseline] = parseKbBaseline(loc.settingsPath);
+  bytesRead += brBaseline;
+
+  // task-064: parse kb_state with summary_present (stat of .aid/dashboard/kb.html)
+  const [kbState, br2] = parseKbState(loc.kbDir, dashboardDir);
   bytesRead += br2;
+
+  // task-064: derive 5-state KB status (FF-A3 waterfall) and attach fields
+  if (kbState !== null) {
+    const kbStatus = deriveKbStatus(
+      loc.kbDir,
+      kbState.summary_approved,
+      kbState.summary_present,
+      kbBaseline,
+      resolvedRoot
+    );
+    kbState.status = kbStatus;
+    kbState.kb_baseline = kbBaseline;
+  }
 
   const repoInfo = { project_name: projectName, aid_dir: loc.aidDir, kb_state: kbState };
 
@@ -1731,13 +1979,27 @@ function _buildToolInfo(ti) {
   };
 }
 
+function _buildKbBaseline(bl) {
+  // KbBaseline field order: branch, tip_date
+  if (bl === null || bl === undefined) return null;
+  return {
+    branch:   bl.branch !== undefined ? bl.branch : null,
+    tip_date: bl.tip_date !== undefined ? bl.tip_date : null,
+  };
+}
+
 function _buildKbStateRef(kb) {
   if (kb === null) return null;
-  // KbStateRef field order: summary_approved, last_summary_date, doc_count
+  // KbStateRef field order (DM-A3 deterministic, task-064):
+  //   retained: summary_approved, last_summary_date, doc_count
+  //   new:      status, summary_present, kb_baseline
   return {
-    summary_approved: kb.summary_approved,
+    summary_approved:  kb.summary_approved,
     last_summary_date: kb.last_summary_date,
-    doc_count: kb.doc_count,
+    doc_count:         kb.doc_count,
+    status:            kb.status !== undefined ? kb.status : KbStatus.unknown,
+    summary_present:   kb.summary_present !== undefined ? kb.summary_present : false,
+    kb_baseline:       _buildKbBaseline(kb.kb_baseline),
   };
 }
 

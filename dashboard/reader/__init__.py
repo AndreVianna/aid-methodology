@@ -4,7 +4,7 @@
 # Single export: read_repo(aid_root) -> RepoModel
 #
 # Python 3.11+ stdlib only. Zero third-party deps.
-# Read-only by construction: no write, no append, no lock, no subprocess, no agent/LLM.
+# No write / no LLM / one read-only `git log` subprocess for KB freshness (FR35).
 
 from .reader import read_repo
 from .models import (
@@ -12,6 +12,8 @@ from .models import (
     ToolInfo,
     RepoInfo,
     KbStateRef,
+    KbStatus,
+    KbBaseline,
     WorkModel,
     TaskModel,
     PendingInput,
@@ -27,6 +29,8 @@ __all__ = [
     "ToolInfo",
     "RepoInfo",
     "KbStateRef",
+    "KbStatus",
+    "KbBaseline",
     "WorkModel",
     "TaskModel",
     "PendingInput",

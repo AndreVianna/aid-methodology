@@ -1,6 +1,6 @@
 # State: GENERATE
 
-GENERATE builds the knowledge-summary.html from KB content and Mermaid diagrams; it is selected after PROFILE completes or when a stored profile already exists and the KB is stale.
+GENERATE builds the kb.html from KB content and Mermaid diagrams; it is selected after PROFILE completes or when a stored profile already exists and the KB is stale.
 
 This is the bulk of the work. Steps:
 
@@ -83,13 +83,14 @@ files concurrently without merge conflicts, since each section is its own file.
 ### 5. Assemble the single-file distribution
 
 Run `canonical/scripts/summarize/assemble.sh` to concatenate the multi-source layout into the
-final single-file `knowledge-summary.html`:
+final single-file `kb.html`. Create `.aid/dashboard/` if absent before writing:
 
 ```bash
-bash canonical/scripts/summarize/assemble.sh
+mkdir -p .aid/dashboard
+bash canonical/scripts/summarize/assemble.sh --output .aid/dashboard/kb.html
 #   reads:  .aid/knowledge/summary-src/{skeleton-head.html, sections/*.html, skeleton-foot.html, post-mermaid.html}
 #   inlines: .aid/knowledge/.cache/mermaid.min.js (between skeleton-foot.html and post-mermaid.html)
-#   writes:  .aid/knowledge/knowledge-summary.html
+#   writes:  .aid/dashboard/kb.html
 ```
 
 Flags:
@@ -124,7 +125,7 @@ Write initial fields to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 **User Approved:** no
 **Last Run:** {iso8601}
 **Trigger Reason:** {initial | stale-after-review-N | --reset | re-approval-only}
-**Output:** .aid/knowledge/knowledge-summary.html
+**Output:** .aid/dashboard/kb.html
 **Output Size:** {MB}
 **Mermaid Version:** {ver}
 **Mermaid Fetched At:** {iso8601}

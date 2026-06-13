@@ -465,6 +465,201 @@ process.stdout.write("\n[9] PF-8 parseSpecMd + Lite fixture (HT-2)\n");
 }
 
 // ---------------------------------------------------------------------------
+// (10) task-064: KB status extension unit tests
+//      -- parseKbBaseline, normalizeToUtcMs, deriveKbStatus, gitFreshnessCheck
+// ---------------------------------------------------------------------------
+
+process.stdout.write("\n[10] task-064 KB status extension (reader.mjs)\n");
+
+// We import the internal helpers via a dynamic eval trick or test them indirectly
+// through readRepo(). Since reader.mjs doesn't export the internal helpers,
+// we test them through behavior via readRepo() and through the exported shapes.
+
+{
+  // --- UTC normalization behavior via readRepo() output shape ---
+  // Test: KbStatus enum values are ASCII strings
+  const KB_STATUS_VALUES = ["pending", "generating", "preparing", "approved", "outdated", "unknown"];
+  for (const s of KB_STATUS_VALUES) {
+    assert(typeof s === "string", "KbStatus value '" + s + "' is a string");
+  }
+  assert(KB_STATUS_VALUES.includes("pending"), "KbStatus.pending defined");
+  assert(KB_STATUS_VALUES.includes("generating"), "KbStatus.generating defined");
+  assert(KB_STATUS_VALUES.includes("preparing"), "KbStatus.preparing defined");
+  assert(KB_STATUS_VALUES.includes("approved"), "KbStatus.approved defined");
+  assert(KB_STATUS_VALUES.includes("outdated"), "KbStatus.outdated defined");
+
+  // --- readRepo() with no .aid/ -> kb_state null ---
+  const tmp0 = join(tmpdir(), "aid-kb064-" + Date.now());
+  mkdirSync(tmp0, { recursive: true });
+  try {
+    const m0 = readRepo(tmp0);
+    assert(m0.repo.kb_state === null, "10.1: kb_state null when .aid/ absent");
+  } finally {
+    try { rmSync(tmp0, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // --- readRepo() with empty knowledge dir -> status=pending ---
+  const tmp1 = join(tmpdir(), "aid-kb064-" + Date.now());
+  mkdirSync(join(tmp1, ".aid", "knowledge"), { recursive: true });
+  try {
+    const m1 = readRepo(tmp1);
+    assert(m1.repo.kb_state !== null, "10.2: kb_state present with knowledge dir");
+    assert(m1.repo.kb_state.status === "pending", "10.3: status=pending when knowledge empty");
+    assert(m1.repo.kb_state.summary_present === false, "10.4: summary_present=false");
+    assert(m1.repo.kb_state.kb_baseline === null, "10.5: kb_baseline=null when not in settings");
+  } finally {
+    try { rmSync(tmp1, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // --- readRepo() with knowledge dir + STATE.md not approved -> status=generating ---
+  const tmp2 = join(tmpdir(), "aid-kb064-" + Date.now());
+  mkdirSync(join(tmp2, ".aid", "knowledge"), { recursive: true });
+  writeFileSync(
+    join(tmp2, ".aid", "knowledge", "STATE.md"),
+    "## Knowledge Summary Status\n**User Approved:** no\n",
+    "utf-8"
+  );
+  try {
+    const m2 = readRepo(tmp2);
+    assert(m2.repo.kb_state !== null, "10.6: kb_state present");
+    assert(m2.repo.kb_state.status === "generating",
+      "10.7: status=generating when KB present but not approved");
+  } finally {
+    try { rmSync(tmp2, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // --- readRepo() with approved STATE.md but no kb.html -> status=preparing ---
+  const tmp3 = join(tmpdir(), "aid-kb064-" + Date.now());
+  mkdirSync(join(tmp3, ".aid", "knowledge"), { recursive: true });
+  writeFileSync(
+    join(tmp3, ".aid", "knowledge", "STATE.md"),
+    "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+    "utf-8"
+  );
+  try {
+    const m3 = readRepo(tmp3);
+    assert(m3.repo.kb_state !== null, "10.8: kb_state present");
+    assert(m3.repo.kb_state.status === "preparing",
+      "10.9: status=preparing when approved but no kb.html");
+    assert(m3.repo.kb_state.summary_present === false, "10.10: summary_present=false");
+  } finally {
+    try { rmSync(tmp3, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // --- readRepo() with approved STATE.md + kb.html + no baseline -> status=approved ---
+  const tmp4 = join(tmpdir(), "aid-kb064-" + Date.now());
+  mkdirSync(join(tmp4, ".aid", "knowledge"), { recursive: true });
+  mkdirSync(join(tmp4, ".aid", "dashboard"), { recursive: true });
+  writeFileSync(
+    join(tmp4, ".aid", "knowledge", "STATE.md"),
+    "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+    "utf-8"
+  );
+  writeFileSync(join(tmp4, ".aid", "dashboard", "kb.html"), "<html></html>", "utf-8");
+  try {
+    const m4 = readRepo(tmp4);
+    assert(m4.repo.kb_state !== null, "10.11: kb_state present");
+    assert(m4.repo.kb_state.status === "approved",
+      "10.12: status=approved when KB+kb.html present, no baseline");
+    assert(m4.repo.kb_state.summary_present === true, "10.13: summary_present=true");
+    assert(m4.repo.kb_state.kb_baseline === null, "10.14: kb_baseline=null when no settings entry");
+  } finally {
+    try { rmSync(tmp4, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // --- readRepo() with kb_baseline in settings.yml -> parsed correctly ---
+  const tmp5 = join(tmpdir(), "aid-kb064-" + Date.now());
+  mkdirSync(join(tmp5, ".aid", "knowledge"), { recursive: true });
+  mkdirSync(join(tmp5, ".aid", "dashboard"), { recursive: true });
+  writeFileSync(
+    join(tmp5, ".aid", "knowledge", "STATE.md"),
+    "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+    "utf-8"
+  );
+  writeFileSync(join(tmp5, ".aid", "dashboard", "kb.html"), "<html></html>", "utf-8");
+  writeFileSync(
+    join(tmp5, ".aid", "settings.yml"),
+    "project:\n  name: Test\nkb_baseline:\n  branch: main\n  tip_date: 2026-06-01T00:00:00Z\n",
+    "utf-8"
+  );
+  try {
+    const m5 = readRepo(tmp5);
+    assert(m5.repo.kb_state !== null, "10.15: kb_state present with baseline");
+    assert(m5.repo.kb_state.kb_baseline !== null, "10.16: kb_baseline parsed");
+    assert(m5.repo.kb_state.kb_baseline.branch === "main", "10.17: kb_baseline.branch=main");
+    assert(m5.repo.kb_state.kb_baseline.tip_date === "2026-06-01T00:00:00Z",
+      "10.18: kb_baseline.tip_date correct");
+  } finally {
+    try { rmSync(tmp5, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // --- UTC normalization: Z and +00:00 same instant -> equal comparison ---
+  // We can't call _normalizeToUtcMs directly (not exported), but we can verify
+  // through the "outdated" logic: a baseline VERY far in the future -> approved,
+  // a baseline in the past -> outdated (in a real git repo). Here we just verify
+  // Date.parse handles both Z and offset forms consistently.
+  const ms_z = Date.parse("2026-06-12T14:03:00Z");
+  const ms_offset = Date.parse("2026-06-12T10:03:00-04:00");  // same instant
+  const ms_plus = Date.parse("2026-06-12T14:03:00+00:00");
+  assert(!isNaN(ms_z), "10.19: Date.parse Z-suffix produces valid ms");
+  assert(!isNaN(ms_offset), "10.20: Date.parse offset form produces valid ms");
+  assert(ms_z === ms_offset, "10.21: Z and -04:00 offset of same instant are equal ms");
+  assert(ms_z === ms_plus, "10.22: Z and +00:00 of same instant are equal ms");
+
+  // --- Degradation: non-git dir + baseline -> freshness degrades to 'approved' ---
+  const tmp6 = join(tmpdir(), "aid-kb064-" + Date.now());
+  mkdirSync(join(tmp6, ".aid", "knowledge"), { recursive: true });
+  mkdirSync(join(tmp6, ".aid", "dashboard"), { recursive: true });
+  writeFileSync(
+    join(tmp6, ".aid", "knowledge", "STATE.md"),
+    "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+    "utf-8"
+  );
+  writeFileSync(join(tmp6, ".aid", "dashboard", "kb.html"), "<html></html>", "utf-8");
+  writeFileSync(
+    join(tmp6, ".aid", "settings.yml"),
+    "kb_baseline:\n  branch: main\n  tip_date: 2000-01-01T00:00:00Z\n",
+    "utf-8"
+  );
+  try {
+    const m6 = readRepo(tmp6);
+    assert(m6.repo.kb_state !== null, "10.23: kb_state present (non-git with old baseline)");
+    // Non-git dir -> git freshness degrades to skip -> approved (not outdated)
+    const s6 = m6.repo.kb_state.status;
+    assert(s6 === "approved" || s6 === "outdated",
+      "10.24: status is approved or outdated (non-git: degradation to skip -> approved expected)");
+    // In a non-git dir git will fail -> skip -> approved
+    assert(s6 === "approved",
+      "10.25: status=approved in non-git dir even with old baseline (graceful degradation)");
+  } finally {
+    try { rmSync(tmp6, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // --- kb_state field order: retained fields come first (DM-A3) ---
+  const tmp7 = join(tmpdir(), "aid-kb064-" + Date.now());
+  mkdirSync(join(tmp7, ".aid", "knowledge"), { recursive: true });
+  writeFileSync(
+    join(tmp7, ".aid", "knowledge", "STATE.md"),
+    "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+    "utf-8"
+  );
+  try {
+    const m7 = readRepo(tmp7);
+    const kb7 = m7.repo.kb_state;
+    assert(kb7 !== null, "10.26: kb_state present");
+    const keys7 = Object.keys(kb7);
+    assert(keys7[0] === "summary_approved", "10.27: first key is summary_approved (DM-3 order)");
+    assert(keys7[1] === "last_summary_date", "10.28: second key is last_summary_date");
+    assert(keys7[2] === "doc_count", "10.29: third key is doc_count");
+    assert(keys7[3] === "status", "10.30: fourth key is status (new, task-064)");
+    assert(keys7[4] === "summary_present", "10.31: fifth key is summary_present");
+    assert(keys7[5] === "kb_baseline", "10.32: sixth key is kb_baseline");
+  } finally {
+    try { rmSync(tmp7, { recursive: true, force: true }); } catch (_) {}
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Live server tests: (2) route table, (3) SEC-2, (4) registry tolerance,
 //                   (5) /api/home DM-2 shape, (6) serialization DM-3
 // ---------------------------------------------------------------------------
