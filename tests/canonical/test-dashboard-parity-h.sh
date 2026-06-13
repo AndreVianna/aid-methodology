@@ -1509,6 +1509,387 @@ YEOF
 fi
 
 # ---------------------------------------------------------------------------
+# Section 6: TaskDetail byte-parity + key-order + no-schema-bump (task-072)
+#
+# Tests:
+#   6a. Python and Node emit a byte-identical /r/<id>/api/model?detail=... envelope
+#       (including details map + raw_state.text with escaped U+2028/U+2029 -- R7).
+#   6b. Key-order parity (DM-2): scrambled ?detail= comma-list yields the same
+#       sorted-ascending-by-composite-key output from both runtimes.
+#   6c. NO-schema-bump (RC-2): schema_version=3 for bare and detail polls;
+#       'details' absent on bare poll; 'details' present on detail poll;
+#       bare-poll body byte-identical before/after (NFR4 always-on path unchanged).
+#   6d. R7: U+2028/U+2029 in raw_state.text are escaped (not raw) in both runtimes.
+#
+# Fixture: dashboard/server/tests/fixtures/pt1h-detail-repo/
+#   work-001-detail/STATE.md  -- U+2028/U+2029 + Quick Check Findings + Delivery Gates
+#   work-001-detail/tasks/task-001.md  -- drilled task (CRITICAL/HIGH/MINOR findings)
+#   work-001-detail/tasks/task-002.md  -- clean task (empty findings)
+#   work-001-detail/tasks/task-003.md  -- null delivery_id (Wave == '--')
+#   work-001-detail/delivery-001-issues.md -- rows for task-001 AND task-002 (filter exercised)
+# ---------------------------------------------------------------------------
+
+echo ""
+echo "--- Section 6: TaskDetail byte-parity + key-order + no-schema-bump (task-072) ---"
+
+DETAIL_FIXTURE_REPO="${FIXTURE_BASE}/pt1h-detail-repo"
+
+if [[ ! -d "${DETAIL_FIXTURE_REPO}" ]]; then
+    fail "[detail] fixture dir absent: ${DETAIL_FIXTURE_REPO}"
+else
+    # Build a dedicated AID_HOME for this section.
+    DETAIL_AID_HOME="${PT1H_TMP}/detail-aid-home"
+    mkdir -p "${DETAIL_AID_HOME}/dashboard"
+    cat > "${DETAIL_AID_HOME}/registry.yml" << DEOF
+schema: 1
+repos:
+  - ${DETAIL_FIXTURE_REPO}
+DEOF
+
+    # Start fresh servers for the detail fixture.
+    D_PY_PORT="" D_NODE_PORT="" D_PY_PID="" D_NODE_PID=""
+
+    if [[ $HAS_PYTHON -eq 1 ]]; then
+        D_PY_PORT=$(find_free_port)
+        AID_HOME="$DETAIL_AID_HOME" python3 "${SERVER_PY}" \
+            --host 127.0.0.1 --port "$D_PY_PORT" \
+            >/dev/null 2>&1 &
+        D_PY_PID=$!
+        _BGPIDS+=($D_PY_PID)
+    fi
+    if [[ $HAS_NODE -eq 1 ]]; then
+        D_NODE_PORT=$(find_free_port)
+        while [[ $HAS_PYTHON -eq 1 && "$D_NODE_PORT" == "$D_PY_PORT" ]]; do
+            D_NODE_PORT=$(find_free_port)
+        done
+        AID_HOME="$DETAIL_AID_HOME" node "${SERVER_MJS}" \
+            --host 127.0.0.1 --port "$D_NODE_PORT" \
+            >/dev/null 2>&1 &
+        D_NODE_PID=$!
+        _BGPIDS+=($D_NODE_PID)
+    fi
+
+    D_PY_OK=0 D_NODE_OK=0
+    if [[ $HAS_PYTHON -eq 1 ]]; then
+        if wait_for_port_h "$D_PY_PORT" 12; then
+            D_PY_OK=1
+            pass "[detail] python detail-server started on port $D_PY_PORT"
+        else
+            fail "[detail] python detail-server did not start on port $D_PY_PORT"
+        fi
+    fi
+    if [[ $HAS_NODE -eq 1 ]]; then
+        if wait_for_port_h "$D_NODE_PORT" 12; then
+            D_NODE_OK=1
+            pass "[detail] node detail-server started on port $D_NODE_PORT"
+        else
+            fail "[detail] node detail-server did not start on port $D_NODE_PORT"
+        fi
+    fi
+
+    # --- Extract repo id for detail-fixture-repo ---
+    DETAIL_REPO_ID=""
+    if [[ $HAS_PYTHON -eq 1 && $D_PY_OK -eq 1 ]]; then
+        D_HOME_JSON="${PT1H_TMP}/detail_home.json"
+        if fetch_url "$D_PY_PORT" "/api/home" "$D_HOME_JSON" 2>/dev/null; then
+            DETAIL_REPO_ID=$(python3 -c "
+import json, sys
+data = json.load(open('$D_HOME_JSON'))
+repos = data.get('repos', [])
+if repos:
+    print(repos[0]['id'])
+    sys.exit(0)
+sys.exit(1)
+" 2>/dev/null) || DETAIL_REPO_ID=""
+        fi
+    elif [[ $HAS_NODE -eq 1 && $D_NODE_OK -eq 1 ]]; then
+        D_HOME_JSON="${PT1H_TMP}/detail_home.json"
+        if fetch_url "$D_NODE_PORT" "/api/home" "$D_HOME_JSON" 2>/dev/null; then
+            DETAIL_REPO_ID=$(python3 -c "
+import json, sys
+data = json.load(open('$D_HOME_JSON'))
+repos = data.get('repos', [])
+if repos:
+    print(repos[0]['id'])
+    sys.exit(0)
+sys.exit(1)
+" 2>/dev/null) || DETAIL_REPO_ID=""
+        fi
+    fi
+
+    if [[ -z "$DETAIL_REPO_ID" ]]; then
+        fail "[detail] could not extract detail-repo id; skipping Section 6 checks"
+    else
+        log "[detail] detail-repo id: $DETAIL_REPO_ID"
+
+        # Composite keys for the three tasks.
+        # SCRAMBLED order for key-order parity test (DM-2, FR14):
+        #   request: task-003, task-001, task-002 (not sorted)
+        #   expected output: work-001-detail/task-001, work-001-detail/task-002, work-001-detail/task-003
+        D_KEY_1="work-001-detail/task-001"
+        D_KEY_2="work-001-detail/task-002"
+        D_KEY_3="work-001-detail/task-003"
+        D_SCRAMBLED="${D_KEY_3},${D_KEY_1},${D_KEY_2}"
+        D_DETAIL_PATH="/r/${DETAIL_REPO_ID}/api/model?detail=${D_SCRAMBLED}"
+
+        # 6a + 6b: Fetch ?detail= (scrambled) from both runtimes; assert byte-identity.
+        D_PY_DETAIL="${PT1H_TMP}/detail_py.json"
+        D_NODE_DETAIL="${PT1H_TMP}/detail_node.json"
+        D_PY_DETAIL_NORM="${PT1H_TMP}/detail_py_norm.json"
+        D_NODE_DETAIL_NORM="${PT1H_TMP}/detail_node_norm.json"
+
+        D_PY_DETAIL_OK=0 D_NODE_DETAIL_OK=0
+
+        if [[ $HAS_PYTHON -eq 1 && $D_PY_OK -eq 1 ]]; then
+            if fetch_url "$D_PY_PORT" "$D_DETAIL_PATH" "$D_PY_DETAIL"; then
+                if python3 -c "import json; json.load(open('$D_PY_DETAIL'))" 2>/dev/null; then
+                    D_PY_DETAIL_OK=1
+                    pass "[detail-6a] python ?detail= (scrambled) responds with valid JSON"
+                else
+                    fail "[detail-6a] python ?detail= (scrambled) is not valid JSON"
+                fi
+            else
+                fail "[detail-6a] python ?detail= (scrambled) fetch failed"
+            fi
+        fi
+
+        if [[ $HAS_NODE -eq 1 && $D_NODE_OK -eq 1 ]]; then
+            if fetch_url "$D_NODE_PORT" "$D_DETAIL_PATH" "$D_NODE_DETAIL"; then
+                if python3 -c "import json; json.load(open('$D_NODE_DETAIL'))" 2>/dev/null; then
+                    D_NODE_DETAIL_OK=1
+                    pass "[detail-6a] node ?detail= (scrambled) responds with valid JSON"
+                else
+                    fail "[detail-6a] node ?detail= (scrambled) is not valid JSON"
+                fi
+            else
+                fail "[detail-6a] node ?detail= (scrambled) fetch failed"
+            fi
+        fi
+
+        # 6a: Normalize and byte-compare (generated_by is the ONLY excluded field).
+        normalize_detail_json() {
+            local infile="$1"
+            local outfile="$2"
+            python3 -c "
+import json, sys
+LS = chr(0x2028)
+PS = chr(0x2029)
+with open('$infile', 'rb') as f:
+    raw = f.read()
+data = json.loads(raw.decode('utf-8'))
+data.pop('generated_by', None)
+if 'model' in data and 'read' in data['model']:
+    data['model']['read'].pop('read_at', None)
+out = json.dumps(data, separators=(',', ':'), ensure_ascii=False)
+out = out.replace(LS, '\\\\u2028').replace(PS, '\\\\u2029')
+open('$outfile', 'w', encoding='utf-8').write(out)
+"
+        }
+
+        if [[ $HAS_PYTHON -eq 1 && $HAS_NODE -eq 1 && $D_PY_DETAIL_OK -eq 1 && $D_NODE_DETAIL_OK -eq 1 ]]; then
+            normalize_detail_json "$D_PY_DETAIL" "$D_PY_DETAIL_NORM"
+            normalize_detail_json "$D_NODE_DETAIL" "$D_NODE_DETAIL_NORM"
+
+            # 6b: Key-order parity -- assert keys are sorted ascending in both outputs
+            D_PY_KEYS=$(python3 -c "
+import json
+data = json.load(open('$D_PY_DETAIL'))
+keys = list(data.get('details', {}).keys())
+print(','.join(keys))
+" 2>/dev/null)
+            D_NODE_KEYS=$(python3 -c "
+import json
+data = json.load(open('$D_NODE_DETAIL'))
+keys = list(data.get('details', {}).keys())
+print(','.join(keys))
+" 2>/dev/null)
+            D_EXPECTED_KEYS="${D_KEY_1},${D_KEY_2},${D_KEY_3}"
+
+            if [[ "$D_PY_KEYS" == "$D_EXPECTED_KEYS" ]]; then
+                pass "[detail-6b] python: details keys sorted ascending (scrambled input -> sorted output)"
+            else
+                fail "[detail-6b] python: details keys not sorted (got='$D_PY_KEYS' expected='$D_EXPECTED_KEYS')"
+            fi
+            if [[ "$D_NODE_KEYS" == "$D_EXPECTED_KEYS" ]]; then
+                pass "[detail-6b] node: details keys sorted ascending (scrambled input -> sorted output)"
+            else
+                fail "[detail-6b] node: details keys not sorted (got='$D_NODE_KEYS' expected='$D_EXPECTED_KEYS')"
+            fi
+
+            # 6a: byte-identical after normalize
+            if cmp -s "$D_PY_DETAIL_NORM" "$D_NODE_DETAIL_NORM"; then
+                pass "[detail-6a] python == node (byte-identical after strip+normalize, including details+raw_state)"
+            else
+                fail "[detail-6a] python != node (NOT byte-identical after strip+normalize)"
+                echo "  BYTE-DIFF RESULT (empty = identical):"
+                diff "$D_PY_DETAIL_NORM" "$D_NODE_DETAIL_NORM" || true
+            fi
+
+            # Show the actual byte-diff result explicitly (required by task-072 verification)
+            echo "  Byte-diff result (empty = identical, scrambled-order ?detail= Python vs Node):"
+            diff "$D_PY_DETAIL_NORM" "$D_NODE_DETAIL_NORM" && echo "  (no differences)" || true
+
+            # 6d: R7 -- U+2028/U+2029 in raw_state.text are ESCAPED (not raw) in both runtimes
+            python3 "${SCRIPT_DIR}/../lib/pt1h_r7_check_state.py" \
+                "$D_PY_DETAIL" "$D_NODE_DETAIL"
+            d_r7_rc=$?
+            if [[ $d_r7_rc -eq 0 ]]; then
+                pass "[detail-6d] R7: raw_state.text U+2028/U+2029 escaped in both runtimes"
+            else
+                fail "[detail-6d] R7: raw_state.text U+2028/U+2029 escaping violated"
+            fi
+
+            # 6a: Assert details map contains exactly our 3 keys with the right content shape
+            python3 -c "
+import json, sys
+data = json.load(open('$D_PY_DETAIL'))
+details = data.get('details', {})
+failures = []
+# Expected 3 keys
+expected = ['work-001-detail/task-001', 'work-001-detail/task-002', 'work-001-detail/task-003']
+if list(details.keys()) != expected:
+    failures.append('keys: got %s expected %s' % (list(details.keys()), expected))
+# task-001: 3 findings (CRITICAL, HIGH, MINOR)
+td1 = details.get('work-001-detail/task-001', {})
+f1 = td1.get('findings', [])
+if len(f1) != 3:
+    failures.append('task-001 findings count: got %d expected 3' % len(f1))
+else:
+    sevs = [f['severity'] for f in f1]
+    if sevs != ['[CRITICAL]', '[HIGH]', '[MINOR]']:
+        failures.append('task-001 severities: %s' % sevs)
+# task-001: delivery_id present, grade A+, 1 deferred issue
+ledger1 = td1.get('ledger', {})
+if ledger1.get('delivery_id') != 'delivery-001':
+    failures.append('task-001 delivery_id: got %s' % ledger1.get('delivery_id'))
+if ledger1.get('grade') != 'A+':
+    failures.append('task-001 grade: got %s' % ledger1.get('grade'))
+if len(ledger1.get('deferred_issues', [])) != 1:
+    failures.append('task-001 deferred_issues count: got %d expected 1' % len(ledger1.get('deferred_issues', [])))
+# task-002: clean findings (empty)
+td2 = details.get('work-001-detail/task-002', {})
+if len(td2.get('findings', [])) != 0:
+    failures.append('task-002 findings: expected 0 got %d' % len(td2.get('findings', [])))
+# task-003: delivery_id null
+td3 = details.get('work-001-detail/task-003', {})
+if td3.get('ledger', {}).get('delivery_id') is not None:
+    failures.append('task-003 delivery_id: expected null got %s' % td3.get('ledger', {}).get('delivery_id'))
+if failures:
+    for msg in failures:
+        sys.stderr.write('  DETAIL-ASSERT FAIL: ' + msg + '\n')
+    sys.exit(1)
+sys.exit(0)
+" 2>&1
+            detail_assert_rc=$?
+            if [[ $detail_assert_rc -eq 0 ]]; then
+                pass "[detail-6a] details map content: 3 tasks, CRITICAL/HIGH/MINOR findings, delivery_id null, deferred-issue filter correct"
+            else
+                fail "[detail-6a] details map content assertion failed (see above)"
+            fi
+
+        else
+            log "[detail-6a/6b] skipping byte-parity: one or both ?detail= fetches failed or single runtime"
+        fi
+
+        # 6c: NO-schema-bump (RC-2)
+        # Fetch bare /r/<id>/api/model (no ?detail=) from both runtimes.
+        D_BARE_PATH="/r/${DETAIL_REPO_ID}/api/model"
+        D_PY_BARE="${PT1H_TMP}/detail_py_bare.json"
+        D_NODE_BARE="${PT1H_TMP}/detail_node_bare.json"
+        D_PY_BARE_NORM="${PT1H_TMP}/detail_py_bare_norm.json"
+        D_NODE_BARE_NORM="${PT1H_TMP}/detail_node_bare_norm.json"
+
+        D_PY_BARE_OK=0 D_NODE_BARE_OK=0
+
+        if [[ $HAS_PYTHON -eq 1 && $D_PY_OK -eq 1 ]]; then
+            if fetch_url "$D_PY_PORT" "$D_BARE_PATH" "$D_PY_BARE" 2>/dev/null; then
+                D_PY_BARE_OK=1
+            fi
+        fi
+        if [[ $HAS_NODE -eq 1 && $D_NODE_OK -eq 1 ]]; then
+            if fetch_url "$D_NODE_PORT" "$D_BARE_PATH" "$D_NODE_BARE" 2>/dev/null; then
+                D_NODE_BARE_OK=1
+            fi
+        fi
+
+        # RC-2 assertions for each available runtime
+        _check_rc2() {
+            local label="$1"
+            local bare_file="$2"
+            local detail_file="$3"
+            local bare_ok="$4"
+            local detail_ok="$5"
+
+            if [[ "$bare_ok" -eq 1 ]]; then
+                local sv
+                sv=$(python3 -c "import json; d=json.load(open('$bare_file')); print(d.get('schema_version','?'))" 2>/dev/null)
+                if [[ "$sv" == "3" ]]; then
+                    pass "[detail-6c] RC-2 $label bare poll: schema_version=3"
+                else
+                    fail "[detail-6c] RC-2 $label bare poll: schema_version=$sv (expected 3)"
+                fi
+                local has_details
+                has_details=$(python3 -c "import json; d=json.load(open('$bare_file')); print('details' in d)" 2>/dev/null)
+                if [[ "$has_details" == "False" ]]; then
+                    pass "[detail-6c] RC-2 $label bare poll: 'details' key absent (NFR4)"
+                else
+                    fail "[detail-6c] RC-2 $label bare poll: 'details' key PRESENT (must be absent without ?detail=)"
+                fi
+            fi
+
+            if [[ "$detail_ok" -eq 1 ]]; then
+                local sv_d
+                sv_d=$(python3 -c "import json; d=json.load(open('$detail_file')); print(d.get('schema_version','?'))" 2>/dev/null)
+                if [[ "$sv_d" == "3" ]]; then
+                    pass "[detail-6c] RC-2 $label ?detail= poll: schema_version=3 (no bump)"
+                else
+                    fail "[detail-6c] RC-2 $label ?detail= poll: schema_version=$sv_d (expected 3, no bump)"
+                fi
+                local has_details_d
+                has_details_d=$(python3 -c "import json; d=json.load(open('$detail_file')); print('details' in d)" 2>/dev/null)
+                if [[ "$has_details_d" == "True" ]]; then
+                    pass "[detail-6c] RC-2 $label ?detail= poll: 'details' key present"
+                else
+                    fail "[detail-6c] RC-2 $label ?detail= poll: 'details' key absent (expected present with ?detail=)"
+                fi
+            fi
+        }
+
+        _check_rc2 "python" "$D_PY_BARE" "$D_PY_DETAIL" "$D_PY_BARE_OK" "$D_PY_DETAIL_OK"
+        _check_rc2 "node"   "$D_NODE_BARE" "$D_NODE_DETAIL" "$D_NODE_BARE_OK" "$D_NODE_DETAIL_OK"
+
+        # RC-2 / NFR4: bare poll byte-identical between Python and Node (always-on path unchanged)
+        if [[ $HAS_PYTHON -eq 1 && $HAS_NODE -eq 1 && $D_PY_BARE_OK -eq 1 && $D_NODE_BARE_OK -eq 1 ]]; then
+            normalize_model_json "$D_PY_BARE" "$D_PY_BARE_NORM"
+            normalize_model_json "$D_NODE_BARE" "$D_NODE_BARE_NORM"
+            if cmp -s "$D_PY_BARE_NORM" "$D_NODE_BARE_NORM"; then
+                pass "[detail-6c] RC-2/NFR4: bare poll body byte-identical across runtimes (always-on path unchanged)"
+            else
+                fail "[detail-6c] RC-2/NFR4: bare poll body NOT byte-identical (always-on path regressed)"
+                if [[ "$VERBOSE" -eq 1 ]]; then
+                    diff "$D_PY_BARE_NORM" "$D_NODE_BARE_NORM" || true
+                fi
+            fi
+        fi
+
+        # 6c: assert bare poll has NO 'details' key but detail poll HAS it (single-runtime path)
+        if [[ $HAS_PYTHON -eq 0 && $HAS_NODE -eq 1 && $D_NODE_BARE_OK -eq 1 && $D_NODE_DETAIL_OK -eq 1 ]]; then
+            : # Already covered by _check_rc2 node above
+        fi
+    fi
+
+    # Clean up detail section servers
+    if [[ -n "$D_PY_PID" ]]; then
+        kill "$D_PY_PID" 2>/dev/null || true
+        _BGPIDS=("${_BGPIDS[@]/$D_PY_PID}")
+    fi
+    if [[ -n "$D_NODE_PID" ]]; then
+        kill "$D_NODE_PID" 2>/dev/null || true
+        _BGPIDS=("${_BGPIDS[@]/$D_NODE_PID}")
+    fi
+fi
+
+# ---------------------------------------------------------------------------
 # Stop servers
 # ---------------------------------------------------------------------------
 

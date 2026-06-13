@@ -749,7 +749,7 @@ footer {
 <!-- Sticky top bar (UI-1) -->
 <header class="top-bar" role="banner">
   <div class="brand">
-    <strong id="brand-name">AID Dashboard</strong><span class="dot">·</span>Pipeline
+    <strong id="brand-name">AID Dashboard</strong><span id="breadcrumb-trail" class="breadcrumb" style="margin-left:0.5em"></span>
   </div>
   <div style="flex:1"></div>
   <div class="controls">
@@ -866,6 +866,9 @@ footer {
   <!-- Stale work notice (FC-3) -->
   <div id="stale-work-notice" style="display:none"></div>
 
+  <!-- Task drill view (SEAM-2, task-071) -->
+  <div id="task-view" style="display:none"></div>
+
   <!-- Empty / no works state (legacy; hidden by feature-006 render path) -->
   <div class="empty-state" id="empty-state" style="display:none">
     <p>No works found in <code>.aid/</code>. Start a pipeline to see progress here.</p>
@@ -921,6 +924,10 @@ footer {
     deliveries: {},         // per-delivery open state keyed by "d"+N (e.g. "d1")
     lanes: {}               // per-lane open state keyed by delivery-scoped key: "d<delivery>-lane<lane>" (e.g. "d1-lane2") or "d<delivery>-unseq" for unsequenced; never collides across deliveries
   };
+
+  // Open-drill set: composite keys "<work_id>/<task_id>" that are currently active.
+  // Derived from the live route; not persisted. Managed by enterDrill/leaveDrill.
+  var openDrillKeys = {}; // key -> true
 
   // ---------------------------------------------------------------------------
   // Boot: read interval from localStorage
@@ -1002,7 +1009,13 @@ footer {
       return;
     }
     fetchPending = true;
-    fetch('./api/model')
+    // Build ?detail= query from open-drill set (RC-1, NFR4)
+    var detailKeys = Object.keys(openDrillKeys).filter(function(k) { return openDrillKeys[k]; });
+    var fetchUrl = './api/model';
+    if (detailKeys.length > 0) {
+      fetchUrl += '?detail=' + detailKeys.map(function(k) { return encodeURIComponent(k); }).join(',');
+    }
+    fetch(fetchUrl)
       .then(function (resp) {
         if (!resp.ok) {
           throw new Error('HTTP ' + resp.status);
@@ -1107,19 +1120,29 @@ footer {
   // ---------------------------------------------------------------------------
 
   // Parse location.hash into a route descriptor
-  // Returns { view: "main" } | { view: "work", workId: string } | { view: "kb" }
+  // Returns { view: "main" } | { view: "work", workId: string } |
+  //         { view: "task", workId: string, taskId: string } | { view: "kb" }
   function parseRoute(hash) {
     var h = hash || '';
     // Strip leading '#'
     if (h.charAt(0) === '#') h = h.slice(1);
+    // Match /work/<work_id>/task/<task_id> (SEAM-2 — matched BEFORE /work/<id> arm)
+    var taskMatch = h.match(/^\/work\/([^/]+)\/task\/(.+)$/);
+    if (taskMatch) {
+      var wid = taskMatch[1];
+      var tid = taskMatch[2];
+      try { wid = decodeURIComponent(wid); } catch (e) { /* malformed %xx: keep raw */ }
+      try { tid = decodeURIComponent(tid); } catch (e) { /* malformed %xx: keep raw */ }
+      return { view: 'task', workId: wid, taskId: tid };
+    }
     // Match /work/<work_id>
     var workMatch = h.match(/^\/work\/(.+)$/);
     if (workMatch) {
       // location.hash is URL-encoded; decode to compare against the raw work_id.
       // (no-op for today's slug-shaped ids; robust if the slug charset ever widens)
-      var wid = workMatch[1];
-      try { wid = decodeURIComponent(wid); } catch (e) { /* malformed %xx: keep raw */ }
-      return { view: 'work', workId: wid };
+      var wid2 = workMatch[1];
+      try { wid2 = decodeURIComponent(wid2); } catch (e) { /* malformed %xx: keep raw */ }
+      return { view: 'work', workId: wid2 };
     }
     // Match /kb
     if (h === '/kb') {
@@ -1172,11 +1195,22 @@ footer {
     var brandEl = document.getElementById('brand-name');
     if (brandEl) brandEl.textContent = projectName;
 
+    // NAV-1: router-driven breadcrumb (recomputed every render from route + model)
+    renderBreadcrumb(model, route);
+
     // Surface parse_warnings data note (Telemetry)
     renderParseWarnings(model.read);
 
     // -- View branch --
-    if (route.view === 'work') {
+    if (route.view === 'task') {
+      // SEAM-2: task drill view — enter drill, render forensic panel
+      var drillKey = route.workId + '/' + route.taskId;
+      openDrillKeys[drillKey] = true;
+      _showView('task');
+      renderTaskView(model, route);
+    } else if (route.view === 'work') {
+      // Leaving task view: clear all drill keys (payload shrinks back — §3.2)
+      openDrillKeys = {};
       var work = findWorkById(model.works || [], route.workId);
       if (!work) {
         _showView('stale');
@@ -1186,10 +1220,12 @@ footer {
         renderWorkView(work, model);
       }
     } else if (route.view === 'kb') {
+      openDrillKeys = {};
       _showView('kb');
       renderKbView(model);
     } else {
-      // Default: main page
+      // Default: main page — clear all open drill keys when returning to main
+      openDrillKeys = {};
       _showView('main');
       renderMainPage(model);
     }
@@ -1204,6 +1240,7 @@ footer {
     var emptyState   = document.getElementById('empty-state');
     var kbView       = document.getElementById('kb-view');
     var staleNotice  = document.getElementById('stale-work-notice');
+    var taskView     = document.getElementById('task-view');
 
     // Always reset
     if (mainPage)   mainPage.style.display   = 'none';
@@ -1212,11 +1249,13 @@ footer {
     if (emptyState) emptyState.style.display  = 'none';
     if (kbView)     kbView.style.display      = 'none';
     if (staleNotice) staleNotice.style.display = 'none';
+    if (taskView)   taskView.style.display    = 'none';
 
     if (view === 'main')  { if (mainPage) mainPage.style.display = ''; }
     if (view === 'work')  { if (workHeader) workHeader.style.display = ''; }
     if (view === 'kb')    { if (kbView) kbView.style.display = ''; }
     if (view === 'stale') { if (staleNotice) staleNotice.style.display = ''; }
+    if (view === 'task')  { if (taskView) taskView.style.display = ''; }
   }
 
   // ---------------------------------------------------------------------------
@@ -2182,14 +2221,14 @@ footer {
     var workPath = work.work_path || 'full';
 
     if (workPath === 'full') {
-      renderTasksFull(section, tasks);
+      renderTasksFull(section, tasks, work.work_id);
     } else {
       // Lite: render lanes at top level (no delivery wrapper)
-      renderLanes(section, tasks, null);
+      renderLanes(section, tasks, null, work.work_id);
     }
   }
 
-  function renderTasksFull(container, tasks) {
+  function renderTasksFull(container, tasks, workId) {
     // Group by task.delivery (real integer from reader; null -> "unsequenced" bucket)
     // Never uses parseWave() or the invented delivery-NNN-wave-M string.
     var deliveryOrder = [];   // integer delivery numbers, ascending (null last)
@@ -2255,7 +2294,7 @@ footer {
       body.className = 'delivery-panel-body' + (dOpen ? ' open' : '');
 
       // Render lanes inside the body (pass dNum2 for delivery-scoped uiState keys)
-      renderLanes(body, dTasks, dNum2);
+      renderLanes(body, dTasks, dNum2, workId);
 
       // Toggle handler (closure over dStateKey, summaryBtn, body)
       (function(sk, btn, bd) {
@@ -2281,7 +2320,7 @@ footer {
     }
   }
 
-  function renderLanes(container, tasks, deliveryNum) {
+  function renderLanes(container, tasks, deliveryNum, workId) {
     // Group by task.lane (integer from PLAN execution graph; null -> "unsequenced" lane)
     // deliveryNum: the integer delivery number (or null for the unsequenced delivery bucket)
     // uiState key is delivery-scoped: "d<D>-lane<L>" or "d<D>-unseq" — never collides across deliveries
@@ -2354,7 +2393,7 @@ footer {
       var grid = document.createElement('div');
       grid.className = 'grid g-lane';
       for (var ti = 0; ti < lTasks.length; ti++) {
-        grid.appendChild(makeTaskChip(lTasks[ti]));
+        grid.appendChild(makeTaskChip(lTasks[ti], workId));
       }
       lBody.appendChild(grid);
 
@@ -2382,9 +2421,20 @@ footer {
     }
   }
 
-  function makeTaskChip(task) {
+  function makeTaskChip(task, workId) {
     var card = document.createElement('div');
     card.className = 'task-chip';
+
+    // SEAM-2: make chip clickable — navigate to task drill view
+    if (workId && task.task_id) {
+      card.style.cursor = 'pointer';
+      card.title = 'Drill into ' + task.task_id;
+      (function(wid, tid) {
+        card.onclick = function() {
+          location.hash = '#/work/' + encodeURIComponent(wid) + '/task/' + encodeURIComponent(tid);
+        };
+      })(workId, task.task_id);
+    }
 
     // Visual state class for active/pending/done
     var s = task.status;
@@ -2553,6 +2603,672 @@ footer {
       if (icon) icon.textContent = '◑';
       if (label) label.textContent = 'Dark';
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // escRawState: HTML-escape for raw STATE.md content (R15, AC4)
+  // Escapes <, >, &, U+2028 (LS), U+2029 (PS) so arbitrary .aid/ content
+  // cannot inject into the page. Separate from escHtml so injections via
+  // line-separator codepoints are always neutralised.
+  // ---------------------------------------------------------------------------
+  function escRawState(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/ /g, '&#8232;')
+      .replace(/ /g, '&#8233;');
+  }
+
+  // ---------------------------------------------------------------------------
+  // NAV-1: renderBreadcrumb — router-driven, called from route-independent shell head
+  // ---------------------------------------------------------------------------
+  function renderBreadcrumb(model, route) {
+    var el = document.getElementById('breadcrumb-trail');
+    if (!el) return;
+    el.innerHTML = '';
+
+    // Helper: make a breadcrumb link
+    function _bcLink(label, href, isHash) {
+      var a = document.createElement('a');
+      a.textContent = label;
+      if (isHash) {
+        a.href = href;
+      } else {
+        a.href = href;
+      }
+      a.style.color = 'inherit';
+      return a;
+    }
+
+    // Helper: separator span
+    function _sep() {
+      var s = document.createElement('span');
+      s.className = 'sep';
+      s.textContent = '›';
+      return s;
+    }
+
+    // Helper: leaf span
+    function _leaf(label) {
+      var s = document.createElement('span');
+      s.className = 'current';
+      s.textContent = label;
+      return s;
+    }
+
+    var projectName = (model.repo && model.repo.project_name) ? model.repo.project_name : 'AID Dashboard';
+
+    if (route.view === 'main') {
+      // main → AID (leaf)
+      el.appendChild(_leaf('AID'));
+
+    } else if (route.view === 'work' || route.view === 'task') {
+      // AID (link → /) › <project> (link → location.pathname) › <pipeline> (link/#/leaf or leaf)
+      el.appendChild(_bcLink('AID', '/'));
+      el.appendChild(_sep());
+      el.appendChild(_bcLink(projectName, location.pathname));
+      el.appendChild(_sep());
+
+      // Pipeline label: prefer work.title; de-slug fallback
+      var workObj = findWorkById(model.works || [], route.workId);
+      var pipelineLabel;
+      if (workObj) {
+        if (workObj.title) {
+          pipelineLabel = workObj.title;
+        } else {
+          pipelineLabel = (workObj.work_id || '')
+            .replace(/^work-\d+-/, '')
+            .replace(/[-_]+/g, ' ')
+            .replace(/\b\w/g, function(c) { return c.toUpperCase(); }) || workObj.work_id || route.workId;
+        }
+      } else {
+        pipelineLabel = route.workId;
+      }
+
+      if (route.view === 'work') {
+        // Pipeline is leaf
+        el.appendChild(_leaf(pipelineLabel));
+      } else {
+        // task view: Pipeline is a link → #/work/<work_id>; Task is leaf
+        el.appendChild(_bcLink(pipelineLabel, '#/work/' + encodeURIComponent(route.workId)));
+        el.appendChild(_sep());
+        el.appendChild(_leaf(route.taskId));
+      }
+
+    } else {
+      // KB or unknown: just show AID as link
+      el.appendChild(_bcLink('AID', '/'));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // renderTaskView: SEAM-2 drill view (task-071)
+  // ---------------------------------------------------------------------------
+  function renderTaskView(model, route) {
+    var container = document.getElementById('task-view');
+    if (!container) return;
+    container.innerHTML = '';
+
+    var workId = route.workId;
+    var taskId = route.taskId;
+    var detailKey = workId + '/' + taskId;
+
+    // Find the work
+    var work = findWorkById(model.works || [], workId);
+    if (!work) {
+      // Work no longer in state (FC-3 parallel: task version)
+      var callout = document.createElement('div');
+      callout.className = 'callout warn';
+      callout.innerHTML = '<h4>Work not found</h4>' +
+        '<p>The work <code>' + escHtml(workId) + '</code> is no longer in this repo.</p>';
+      container.appendChild(callout);
+      var backP = document.createElement('p');
+      backP.style.marginTop = '0.75rem';
+      var backA = document.createElement('a');
+      backA.href = '#/';
+      backA.textContent = '← back to main';
+      backP.appendChild(backA);
+      container.appendChild(backP);
+      return;
+    }
+
+    // Find the task within the work
+    var task = null;
+    var tasks = work.tasks || [];
+    for (var i = 0; i < tasks.length; i++) {
+      if (tasks[i].task_id === taskId) { task = tasks[i]; break; }
+    }
+
+    // Back link + at-a-glance header
+    var headerDiv = document.createElement('div');
+    headerDiv.style.cssText = 'display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem;';
+    var backBtn = document.createElement('a');
+    backBtn.className = 'btn-ghost';
+    backBtn.href = '#/work/' + encodeURIComponent(workId);
+    backBtn.textContent = '◄ back to pipeline';
+    // Leaving the task drill drops the detail key
+    backBtn.addEventListener('click', function() {
+      delete openDrillKeys[detailKey];
+    });
+    headerDiv.appendChild(backBtn);
+
+    if (task) {
+      var taskNum = parseTaskNumber(task.task_id);
+      var taskIdEl = document.createElement('span');
+      taskIdEl.className = 'kicker';
+      taskIdEl.style.fontSize = '1rem';
+      taskIdEl.textContent = taskNum !== null ? '#' + taskNum : taskId;
+      headerDiv.appendChild(taskIdEl);
+      if (task.type) {
+        var typeEl = document.createElement('span');
+        typeEl.className = 'badge badge-dim';
+        typeEl.textContent = task.type;
+        headerDiv.appendChild(typeEl);
+      }
+      headerDiv.appendChild(makeTaskStatusBadge(task.status));
+      if (task.short_name) {
+        var snEl = document.createElement('span');
+        snEl.style.cssText = 'font-weight:500;font-size:0.95rem;';
+        snEl.textContent = task.short_name;
+        headerDiv.appendChild(snEl);
+      }
+    } else {
+      // Task not found — show notice, never blank (FC-3/UI-5)
+      var noTaskCallout = document.createElement('div');
+      noTaskCallout.className = 'callout warn';
+      noTaskCallout.innerHTML = '<h4>Task not found</h4>' +
+        '<p>Task <code>' + escHtml(taskId) + '</code> is no longer in this work\'s state.</p>' +
+        '<p><a href="#/work/' + encodeURIComponent(workId) + '">← back to pipeline</a></p>';
+      container.appendChild(headerDiv);
+      container.appendChild(noTaskCallout);
+      return;
+    }
+    container.appendChild(headerDiv);
+
+    // Get detail (may be absent on first tick — lazy load)
+    var details = (model.details) ? model.details : {};
+    var detail = details[detailKey] || null;
+
+    if (!detail) {
+      // First tick: show at-a-glance + "loading detail…" affordance (never blank)
+      var loadCard = document.createElement('div');
+      loadCard.className = 'card';
+      loadCard.style.marginBottom = '1rem';
+      var loadKicker = document.createElement('div');
+      loadKicker.className = 'kicker';
+      loadKicker.textContent = 'FORENSIC DETAIL';
+      loadCard.appendChild(loadKicker);
+      var loadMsg = document.createElement('p');
+      loadMsg.className = 'meta';
+      loadMsg.style.cssText = 'color:var(--text-dim);margin-top:0.5rem;';
+      loadMsg.textContent = 'Loading detail… (polling server)';
+      loadCard.appendChild(loadMsg);
+      if (task) {
+        var atGlance = document.createElement('p');
+        atGlance.className = 'meta';
+        atGlance.style.marginTop = '0.4rem';
+        atGlance.textContent = 'task_id: ' + task.task_id +
+          (task.type ? '  ·  type: ' + task.type : '') +
+          (task.status ? '  ·  status: ' + task.status : '');
+        loadCard.appendChild(atGlance);
+      }
+      container.appendChild(loadCard);
+      return;
+    }
+
+    // Forensic panels grid: findings ∥ ledger (UI-2, UI-6 — desktop side-by-side, mobile stacked)
+    var forensicGrid = document.createElement('div');
+    forensicGrid.className = 'grid g2';
+    forensicGrid.style.marginBottom = '1.5rem';
+    forensicGrid.appendChild(_renderFindingsPanel(detail));
+    forensicGrid.appendChild(_renderLedgerPanel(detail));
+    container.appendChild(forensicGrid);
+
+    // Raw STATE.md viewer (UI-3) — full width, collapsed by default
+    container.appendChild(_renderRawStatePanel(detail, taskId, workId));
+
+    // Logs panel (UI-4) — full width
+    container.appendChild(_renderLogsPanel(detail, task, work));
+  }
+
+  // ---------------------------------------------------------------------------
+  // UI-2: Findings panel
+  // ---------------------------------------------------------------------------
+  function _renderFindingsPanel(detail) {
+    var card = document.createElement('div');
+    card.className = 'card';
+
+    var kicker = document.createElement('div');
+    kicker.className = 'kicker';
+    kicker.textContent = 'QUICK-CHECK FINDINGS';
+    card.appendChild(kicker);
+
+    var findings = (detail.findings && Array.isArray(detail.findings)) ? detail.findings : [];
+
+    if (findings.length === 0) {
+      var empty = document.createElement('p');
+      empty.className = 'meta';
+      empty.style.cssText = 'color:var(--text-dim);margin-top:0.5rem;';
+      empty.textContent = 'No quick-check findings recorded for this task.';
+      card.appendChild(empty);
+      return card;
+    }
+
+    for (var i = 0; i < findings.length; i++) {
+      var f = findings[i];
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;flex-direction:column;gap:0.2rem;padding:0.5rem 0;border-bottom:1px solid var(--border);';
+      if (i === findings.length - 1) row.style.borderBottom = 'none';
+
+      // Severity chip + description row
+      var topRow = document.createElement('div');
+      topRow.style.cssText = 'display:flex;align-items:flex-start;gap:0.5rem;flex-wrap:wrap;';
+
+      var sevBadge = document.createElement('span');
+      var sev = (f.severity || '').toUpperCase();
+      if (sev === '[CRITICAL]' || sev === 'CRITICAL' || sev === '[CRITICAL') {
+        sevBadge.className = 'badge badge-err';
+        sevBadge.textContent = '✕ CRITICAL';
+      } else if (sev === '[HIGH]' || sev === 'HIGH' || sev === '[HIGH') {
+        sevBadge.className = 'badge badge-warn';
+        sevBadge.textContent = '⚠ HIGH';
+      } else {
+        sevBadge.className = 'badge badge-dim';
+        sevBadge.textContent = f.severity || 'unknown';
+      }
+      topRow.appendChild(sevBadge);
+
+      var desc = document.createElement('span');
+      desc.style.cssText = 'font-size:0.9rem;flex:1;min-width:0;';
+      desc.textContent = f.description || '';
+      topRow.appendChild(desc);
+      row.appendChild(topRow);
+
+      // Location (meta, only when present)
+      if (f.location) {
+        var locEl = document.createElement('code');
+        locEl.className = 'meta';
+        locEl.style.cssText = 'font-size:0.8rem;color:var(--text-dim);margin-left:0.25rem;';
+        locEl.textContent = f.location;
+        row.appendChild(locEl);
+      }
+
+      // Disposition chip
+      if (f.disposition) {
+        var dispBadge = document.createElement('span');
+        if (f.disposition === 'Fixed-on-spot') {
+          dispBadge.className = 'badge badge-ok';
+          dispBadge.textContent = '✓ Fixed-on-spot';
+        } else if (f.disposition === 'Deferred-to-gate') {
+          dispBadge.className = 'badge badge-info';
+          dispBadge.textContent = '→ Deferred-to-gate';
+        } else {
+          dispBadge.className = 'badge badge-dim';
+          dispBadge.textContent = f.disposition;
+        }
+        dispBadge.style.marginLeft = '0.25rem';
+        row.appendChild(dispBadge);
+      }
+
+      card.appendChild(row);
+    }
+    return card;
+  }
+
+  // ---------------------------------------------------------------------------
+  // UI-2: Ledger / delivery grade panel
+  // ---------------------------------------------------------------------------
+  function _renderLedgerPanel(detail) {
+    var card = document.createElement('div');
+    card.className = 'card';
+
+    var kicker = document.createElement('div');
+    kicker.className = 'kicker';
+    kicker.textContent = 'REVIEW LEDGER';
+    card.appendChild(kicker);
+
+    var ledger = detail.ledger || null;
+
+    if (!ledger || ledger.delivery_id === null || ledger.delivery_id === undefined) {
+      var noGrade = document.createElement('p');
+      noGrade.className = 'meta';
+      noGrade.style.cssText = 'color:var(--text-dim);margin-top:0.5rem;';
+      noGrade.textContent = 'Not yet graded (no delivery gate run)';
+      card.appendChild(noGrade);
+    } else {
+      // Delivery grade chip — captioned "delivery grade (delivery-NNN)" never "task grade"
+      var gradeRow = document.createElement('div');
+      gradeRow.style.cssText = 'display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem;';
+
+      var gradeLabel = document.createElement('span');
+      gradeLabel.className = 'meta';
+      gradeLabel.textContent = 'delivery grade (' + ledger.delivery_id + ')';
+      gradeRow.appendChild(gradeLabel);
+
+      var gradeBadge = document.createElement('span');
+      var g = ledger.grade || '';
+      if (g === 'A+' || g === 'A' || g === 'pass' || g === 'Pass') {
+        gradeBadge.className = 'badge badge-ok';
+      } else if (!g || g === 'Pending') {
+        gradeBadge.className = 'badge badge-dim';
+      } else {
+        gradeBadge.className = 'badge badge-warn';
+      }
+      gradeBadge.textContent = g || 'Pending';
+      gradeRow.appendChild(gradeBadge);
+      card.appendChild(gradeRow);
+
+      // Reviewer tier + gate timestamp in .meta
+      var metaLine = document.createElement('p');
+      metaLine.className = 'meta';
+      metaLine.style.cssText = 'font-size:0.8rem;color:var(--text-dim);margin-top:0.35rem;';
+      var metaParts = [];
+      if (ledger.reviewer_tier) metaParts.push('reviewer: ' + ledger.reviewer_tier);
+      if (ledger.gate_timestamp) metaParts.push('gate: ' + _fmtLocalDateTime(ledger.gate_timestamp));
+      metaLine.textContent = metaParts.join('  ·  ');
+      card.appendChild(metaLine);
+    }
+
+    // Deferred [HIGH] issues table
+    var h3Deferred = document.createElement('h3');
+    h3Deferred.style.cssText = 'font-size:0.9rem;margin:1rem 0 0.4rem;';
+    h3Deferred.textContent = 'Deferred Issues';
+    card.appendChild(h3Deferred);
+
+    var deferredIssues = (ledger && ledger.deferred_issues && Array.isArray(ledger.deferred_issues))
+      ? ledger.deferred_issues : [];
+
+    if (deferredIssues.length === 0) {
+      var noDeferred = document.createElement('p');
+      noDeferred.className = 'meta';
+      noDeferred.style.cssText = 'color:var(--text-dim);font-size:0.85rem;';
+      noDeferred.textContent = 'No deferred issues for this task.';
+      card.appendChild(noDeferred);
+    } else {
+      var tbl = document.createElement('table');
+      tbl.style.cssText = 'width:100%;border-collapse:collapse;font-size:0.85rem;margin-top:0.25rem;';
+
+      var thead = document.createElement('thead');
+      var headRow = document.createElement('tr');
+      ['Severity', 'Description', 'Status'].forEach(function(h) {
+        var th = document.createElement('th');
+        th.textContent = h;
+        th.style.cssText = 'text-align:left;padding:0.25rem 0.4rem;border-bottom:1px solid var(--border);color:var(--text-dim);font-weight:500;';
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      tbl.appendChild(thead);
+
+      var tbody = document.createElement('tbody');
+      for (var j = 0; j < deferredIssues.length; j++) {
+        var issue = deferredIssues[j];
+        var tr = document.createElement('tr');
+
+        var tdSev = document.createElement('td');
+        tdSev.style.cssText = 'padding:0.2rem 0.4rem;vertical-align:top;';
+        tdSev.textContent = issue.severity || '';
+        tr.appendChild(tdSev);
+
+        var tdDesc = document.createElement('td');
+        tdDesc.style.cssText = 'padding:0.2rem 0.4rem;vertical-align:top;';
+        tdDesc.textContent = issue.description || '';
+        tr.appendChild(tdDesc);
+
+        var tdStatus = document.createElement('td');
+        tdStatus.style.cssText = 'padding:0.2rem 0.4rem;vertical-align:top;white-space:nowrap;';
+        var statusBadge = document.createElement('span');
+        var st = issue.status || '';
+        if (st === 'Open') {
+          statusBadge.className = 'badge badge-warn';
+        } else if (st === 'Resolved') {
+          statusBadge.className = 'badge badge-ok';
+        } else if (st === 'Accepted') {
+          statusBadge.className = 'badge badge-info';
+        } else {
+          statusBadge.className = 'badge badge-dim';
+        }
+        statusBadge.textContent = st || 'Unknown';
+        tdStatus.appendChild(statusBadge);
+        tr.appendChild(tdStatus);
+
+        tbody.appendChild(tr);
+      }
+      tbl.appendChild(tbody);
+      card.appendChild(tbl);
+    }
+
+    return card;
+  }
+
+  // ---------------------------------------------------------------------------
+  // UI-3: Raw STATE.md viewer — read-only, escaped, collapsed by default (R15)
+  // ---------------------------------------------------------------------------
+  function _renderRawStatePanel(detail, taskId, workId) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.style.marginBottom = '1rem';
+
+    var kicker = document.createElement('div');
+    kicker.className = 'kicker';
+    kicker.textContent = 'RAW STATE.md VIEWER';
+    card.appendChild(kicker);
+
+    var rawState = detail.raw_state || null;
+    if (!rawState || !rawState.text) {
+      var noRaw = document.createElement('p');
+      noRaw.className = 'meta';
+      noRaw.style.cssText = 'color:var(--text-dim);margin-top:0.5rem;';
+      noRaw.textContent = 'Raw STATE.md text not available.';
+      card.appendChild(noRaw);
+      return card;
+    }
+
+    var captionEl = document.createElement('p');
+    captionEl.className = 'meta';
+    captionEl.style.cssText = 'font-size:0.8rem;color:var(--text-dim);margin:0.3rem 0 0.5rem;';
+    var sourcePath = rawState.path ? rawState.path : ('.aid/' + workId + '/STATE.md');
+    captionEl.textContent = 'source: ' + sourcePath + ' · read-only';
+    card.appendChild(captionEl);
+
+    // Byte-length affordance (collapsed by default)
+    var byteLen = rawState.byte_len || 0;
+    var kbDisplay = byteLen > 0 ? (Math.ceil(byteLen / 1024)) + ' KB' : 'file';
+
+    var toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'btn-ghost';
+    toggleBtn.style.marginBottom = '0.5rem';
+    toggleBtn.textContent = 'show raw STATE.md (' + kbDisplay + ')';
+
+    // Pre element — hidden initially (collapsed by default)
+    var preEl = document.createElement('pre');
+    preEl.id = 'raw-state-pre-' + encodeURIComponent(taskId);
+    preEl.style.cssText = [
+      'display:none',
+      'overflow-x:auto',
+      'overflow-y:auto',
+      'max-height:60vh',
+      'background:var(--bg-sunken)',
+      'border:1px solid var(--border)',
+      'border-radius:var(--radius-sm)',
+      'padding:0.75rem',
+      'font-size:0.82rem',
+      'white-space:pre',
+      'word-wrap:normal',
+      'margin-top:0.5rem'
+    ].join(';');
+    // Explicitly NOT contenteditable, NOT textarea, NOT form input
+    preEl.removeAttribute('contenteditable');
+
+    // Escape raw text (R15: no injection via <, >, &, U+2028, U+2029)
+    var escaped = escRawState(rawState.text);
+    preEl.innerHTML = escaped;
+
+    var isOpen = false;
+
+    toggleBtn.addEventListener('click', function() {
+      isOpen = !isOpen;
+      if (isOpen) {
+        preEl.style.display = '';
+        toggleBtn.textContent = 'hide raw STATE.md';
+        // Deep-anchor (DD-3): scroll to task's section within the pre
+        _anchorRawState(preEl, taskId);
+      } else {
+        preEl.style.display = 'none';
+        toggleBtn.textContent = 'show raw STATE.md (' + kbDisplay + ')';
+      }
+    });
+
+    card.appendChild(toggleBtn);
+    card.appendChild(preEl);
+    return card;
+  }
+
+  // Deep-anchor within the raw-state pre: find the task's block and scroll to it (DD-3)
+  function _anchorRawState(preEl, taskId) {
+    // Look for "### <task_id>" or "## Tasks Status" row matching task_id
+    var text = preEl.textContent || '';
+    var lines = text.split('\n');
+    var targetLine = -1;
+    // First try: "### task-NNN" heading
+    for (var i = 0; i < lines.length; i++) {
+      if (lines[i].match(new RegExp('^###\\s+' + taskId.replace(/-/g, '[-_]')))) {
+        targetLine = i;
+        break;
+      }
+    }
+    // Second try: any line containing the task_id
+    if (targetLine < 0) {
+      for (var j = 0; j < lines.length; j++) {
+        if (lines[j].indexOf(taskId) !== -1) {
+          targetLine = j;
+          break;
+        }
+      }
+    }
+    if (targetLine < 0) return;
+    // Estimate scroll offset: each line ~19px
+    var approxOffset = targetLine * 19;
+    preEl.scrollTop = Math.max(0, approxOffset - 40);
+  }
+
+  // ---------------------------------------------------------------------------
+  // UI-4: Honest logs panel (KI-008)
+  // ---------------------------------------------------------------------------
+  function _renderLogsPanel(detail, task, work) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.style.marginBottom = '1rem';
+
+    var kicker = document.createElement('div');
+    kicker.className = 'kicker';
+    kicker.textContent = 'LOGS';
+    card.appendChild(kicker);
+
+    var logs = detail.logs || {};
+    var taskLogs = logs.task_logs || 'none';
+    var serverLogPresent = logs.server_log_present || false;
+    var heartbeatPresent = logs.heartbeat_present || false;
+
+    // task_logs == none (always today): show guidance card
+    if (taskLogs === 'none' || !taskLogs) {
+      var noLogsCard = document.createElement('div');
+      noLogsCard.style.cssText = 'background:var(--bg-sunken);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.75rem;margin-top:0.5rem;';
+
+      var noLogsKicker = document.createElement('div');
+      noLogsKicker.className = 'kicker';
+      noLogsKicker.style.marginBottom = '0.4rem';
+      noLogsKicker.textContent = 'NO TASK LOGS CAPTURED';
+      noLogsCard.appendChild(noLogsKicker);
+
+      var guidance = document.createElement('p');
+      guidance.className = 'meta';
+      guidance.style.cssText = 'font-size:0.85rem;margin:0 0 0.4rem;';
+      guidance.textContent = 'AID does not capture per-task log files. For task diagnostics:';
+      noLogsCard.appendChild(guidance);
+
+      var ol = document.createElement('ol');
+      ol.style.cssText = 'font-size:0.85rem;margin:0.25rem 0 0.25rem 1.25rem;line-height:1.6;';
+      var steps = [
+        'The dashboard server\'s own log is at .aid/.temp/dashboard.log (created by aid dashboard start; records server boot/errors, not task execution).',
+        'For pipeline/task troubleshooting, re-run the relevant skill (e.g. /aid-execute) and watch its live terminal output.',
+        'AID writes task forensics to this work\'s STATE.md (see Quick Check Findings, Delivery Gates above) — shown on this page.',
+        'After a re-run, this page\'s Findings/Ledger sections update on the next refresh (within the poll interval).'
+      ];
+      for (var s = 0; s < steps.length; s++) {
+        var li = document.createElement('li');
+        li.textContent = steps[s];
+        ol.appendChild(li);
+      }
+      noLogsCard.appendChild(ol);
+
+      // Meta: poll interval advisory
+      var pollAdvisory = document.createElement('p');
+      pollAdvisory.className = 'meta';
+      pollAdvisory.style.cssText = 'font-size:0.8rem;color:var(--text-dim);margin-top:0.4rem;';
+      var intervalSec = Math.round(pollMs / 1000);
+      pollAdvisory.textContent = 'This page refreshes every ' + intervalSec + 's — new findings appear automatically.';
+      noLogsCard.appendChild(pollAdvisory);
+
+      card.appendChild(noLogsCard);
+    }
+
+    // server_log_present: surfaced as tool diagnostic, not a task log
+    if (serverLogPresent) {
+      var srvDiv = document.createElement('div');
+      srvDiv.style.cssText = 'margin-top:0.75rem;padding:0.5rem 0.75rem;background:var(--bg-sunken);border:1px solid var(--border);border-radius:var(--radius-sm);';
+      var srvTitle = document.createElement('span');
+      srvTitle.className = 'badge badge-dim';
+      srvTitle.textContent = 'Dashboard server log (tool diagnostic — not a task log)';
+      srvDiv.appendChild(srvTitle);
+      var srvMeta = document.createElement('p');
+      srvMeta.className = 'meta';
+      srvMeta.style.cssText = 'font-size:0.8rem;color:var(--text-dim);margin-top:0.3rem;';
+      srvMeta.textContent = '.aid/.temp/dashboard.log is present. Open it with your editor or terminal for server-level diagnostics.';
+      srvDiv.appendChild(srvMeta);
+      card.appendChild(srvDiv);
+    }
+
+    // heartbeat_present: advisory liveness hint
+    if (heartbeatPresent) {
+      var hbDiv = document.createElement('div');
+      hbDiv.style.cssText = 'margin-top:0.5rem;';
+      var hbBadge = document.createElement('span');
+      hbBadge.className = 'badge badge-info';
+      hbBadge.textContent = 'heartbeat present';
+      hbDiv.appendChild(hbBadge);
+      var hbMeta = document.createElement('span');
+      hbMeta.className = 'meta';
+      hbMeta.style.cssText = 'font-size:0.8rem;color:var(--text-dim);margin-left:0.5rem;';
+      hbMeta.textContent = 'last seen: a heartbeat file exists for this work (liveness hint — not a log).';
+      hbDiv.appendChild(hbMeta);
+      card.appendChild(hbDiv);
+    }
+
+    // Blocked-work IMPEDIMENT pointer (FR18)
+    if (work && work.lifecycle === 'Blocked' && work.block_artifact) {
+      var impDiv = document.createElement('div');
+      impDiv.style.cssText = 'margin-top:0.75rem;padding:0.5rem 0.75rem;border:1px solid var(--err);border-radius:var(--radius-sm);background:var(--bg);';
+      var impTitle = document.createElement('div');
+      impTitle.className = 'kicker';
+      impTitle.style.color = 'var(--err)';
+      impTitle.textContent = 'IMPEDIMENT';
+      impDiv.appendChild(impTitle);
+      var impMeta = document.createElement('p');
+      impMeta.className = 'meta';
+      impMeta.style.cssText = 'font-size:0.85rem;margin-top:0.3rem;';
+      impMeta.textContent = 'This work is Blocked. Review the impediment file for operator action:';
+      impDiv.appendChild(impMeta);
+      var impPath = document.createElement('code');
+      impPath.style.cssText = 'font-size:0.85rem;display:block;margin-top:0.25rem;word-break:break-all;';
+      impPath.textContent = work.block_artifact;
+      impDiv.appendChild(impPath);
+      card.appendChild(impDiv);
+    }
+
+    return card;
   }
 
 })();
