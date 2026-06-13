@@ -179,7 +179,10 @@ def _resolve_git_branch(repo_root: Path, kb_baseline: KbBaseline) -> Optional[st
             if result.returncode == 0:
                 return candidate
         except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
-            return None
+            # Try the next candidate (twin of reader.mjs, which continues the loop on
+            # a failed candidate rather than aborting) -- a spawn error on 'main' must
+            # not prevent checking 'master'.
+            continue
 
     return None
 
