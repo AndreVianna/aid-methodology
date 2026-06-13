@@ -1047,13 +1047,18 @@ footer {
     lastSuccessTime = Date.now();
     lastGoodModel = envelope.model;
 
+    // Graft the envelope-level `details` map (task-070 attaches it as a sibling of
+    // `model`, present ONLY on ?detail= polls) onto the model so the drill view can
+    // read it via model.details. Absent on bare polls -> {} (first-tick loading state).
+    if (lastGoodModel) { lastGoodModel.details = envelope.details || {}; }
+
     // Update footer generated_by (envelope-level field, NOT the model subtree)
     var genByEl = document.getElementById('footer-generated-by');
     if (genByEl && envelope.generated_by) {
       genByEl.textContent = 'via ' + envelope.generated_by;
     }
 
-    renderModel(envelope.model);
+    renderModel(lastGoodModel);
     updateFreshnessBadge('live');
   }
 
@@ -2617,8 +2622,8 @@ footer {
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/ /g, '&#8232;')
-      .replace(/ /g, '&#8233;');
+      .replace(/\u2028/g, '&#8232;')
+      .replace(/\u2029/g, '&#8233;');
   }
 
   // ---------------------------------------------------------------------------
