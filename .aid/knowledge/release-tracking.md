@@ -13,6 +13,7 @@ changelog:
   - 2026-06-09: Moved the AID product website from Unreleased to v1.0.0 (it shipped with v1.0.0; absent from the GitHub release page because that covers only the CLI package).
   - 2026-06-12: Added Unreleased items for the work-001 two-level dashboard (CLI home + repo registry + per-repo home.html relocation + install-wiring), delivery-008.
   - 2026-06-13: Added Unreleased items for the work-001 KB tier (5-state KB freshness card + outdated detection, kb.html relocation, aid-discover->aid-summarize auto-trigger + kb_baseline), delivery-009.
+  - 2026-06-13: Added Unreleased items for the work-001 task drill-down view (Level-3 forensic panel: findings/ledger/raw-STATE/honest-logs over a lazy ?detail= poll) + the 4-level dashboard breadcrumb, delivery-010.
 ---
 
 # Release Tracking
@@ -27,6 +28,8 @@ changelog:
 ## Unreleased
 
 - [NEW] /aid-ask - optional read-only skill that answers free-form project questions from the Knowledge Base, the codebase, and in-flight works, with source citations.
+- [NEW] Task drill-down view - clicking a task in the dashboard pipeline view opens a Level-3 forensic panel for that task: its quick-check findings (severity + location + disposition), the delivery grade + reviewer tier + deferred-[HIGH] issues, a read-only escaped view of the source `STATE.md`, and an honest logs panel (states plainly that AID captures no per-task logs, and what to run instead). Lazy-loaded over the existing dashboard poll (`?detail=` query) — no new endpoint, no schema change.
+- [NEW] Dashboard breadcrumb - a clickable 4-level breadcrumb (Main > Project > Pipeline > Task) in the dashboard top bar lets you walk back up the tree without the browser Back button.
 - [CHANGE] /aid-execute now leads with the work argument (/aid-execute work-001 task-001), consistent with the other skills; the single-work shorthand still works.
 - [NEW] AID dashboard CLI home - `aid dashboard` now serves a machine-level home page at `/` that lists every repo this CLI install manages (read live from each repo's `.aid/settings.yml`), with a click-through into each repo's own live dashboard. One read-only server (127.0.0.1, Python or Node) serves all repos via `/r/<id>/...`.
 - [NEW] Repo registry - the CLI tracks the repos it manages in `$AID_HOME/registry.yml`; `aid add` registers the current repo (first tool) and `aid remove` unregisters it when the last tool is removed. Paths-only, atomic writes, never blocks the install/uninstall.

@@ -2634,15 +2634,13 @@ footer {
     if (!el) return;
     el.innerHTML = '';
 
-    // Helper: make a breadcrumb link
-    function _bcLink(label, href, isHash) {
+    // Helper: make a breadcrumb link. Both absolute ("/", location.pathname) and
+    // hash ("#/work/<id>") hrefs are assigned the same way — the browser resolves
+    // each relative to the current document, so no branch is needed.
+    function _bcLink(label, href) {
       var a = document.createElement('a');
       a.textContent = label;
-      if (isHash) {
-        a.href = href;
-      } else {
-        a.href = href;
-      }
+      a.href = href;
       a.style.color = 'inherit';
       return a;
     }
