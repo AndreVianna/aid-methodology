@@ -32,6 +32,12 @@
   marker) ⇒ the scan/detect does **NOT** treat it as a candidate and mutates nothing (DD-6/SEC-1).
 - No production file is modified by this task; tests are read-only-on-`.aid/`; any server they spin stays
   bound to `127.0.0.1`.
+- **Note (task-077 pre-work):** the bare value-less `name:` repair form (a `project.name:` line with no value)
+  is already covered by `PAR077-T` fixtures in `tests/canonical/test-aid-cli-parity.sh` (Bash + PS1 parity,
+  R21 kb_baseline preservation, idempotency). Task-081's §6 gate 4 fixture for the malformed era-a case
+  **must also include** the bare-`name:` form (not only the missing-section form) to ensure full unit coverage
+  of the emptiness-detection fix; the PAR077-T parity lane is the gate for Bash↔PS1 divergence, but the
+  deeper per-function unit assertions belong here.
 
 **Acceptance Criteria:**
 - [ ] §6 gate 4: era-a valid ⇒ no-op (tree+registry unchanged); era-a malformed **with a populated

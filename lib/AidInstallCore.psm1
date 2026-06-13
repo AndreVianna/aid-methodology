@@ -24,6 +24,7 @@
 #                                                - sha256 from root_agent_files entry (or empty)
 #   Read-ManifestRootAgentStatus <manifest> <tool> <fname>
 #                                                - status field from root_agent_files entry
+#   Read-ManifestTools <manifest>                - [string[]] tool ids (keys of tools object)
 #   Write-AidManifest <manifest> <tool> <version> <paths> <rootEntries>
 #                                                - atomic write/merge of manifest JSON
 #   Remove-ManifestTool <manifest> <tool>        - removes a tool section from manifest
@@ -563,6 +564,24 @@ function Read-ManifestRootAgentStatus {
         }
     } catch {}
     return ''
+}
+
+# Read-ManifestTools <manifest>
+# Returns a [string[]] of installed tool ids (keys of the JSON "tools" object).
+# Returns an empty array when the manifest is absent or has no tool keys.
+# PS parity twin of bash manifest_list_tools (lib/aid-install-core.sh:1117).
+# Used by Invoke-AidMigrateRepo for era-b tools.installed synthesis (task-077).
+function Read-ManifestTools {
+    param([string]$ManifestPath)
+    if (-not (Test-Path $ManifestPath -PathType Leaf)) { return @() }
+    try {
+        $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+        if ($data.tools) {
+            $keys = @($data.tools.PSObject.Properties.Name)
+            if ($keys.Count -gt 0) { return $keys }
+        }
+    } catch {}
+    return @()
 }
 
 # ---------------------------------------------------------------------------
@@ -1400,6 +1419,7 @@ Export-ModuleMember -Function @(
     'Read-ManifestToolVersion',
     'Read-ManifestRootAgent',
     'Read-ManifestRootAgentStatus',
+    'Read-ManifestTools',
     'Write-AidManifest',
     'Remove-ManifestTool',
     'Test-ManifestExists',

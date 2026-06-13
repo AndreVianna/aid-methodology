@@ -1165,6 +1165,603 @@ registry_unregister() {
 }
 
 # ---------------------------------------------------------------------------
+# _aid_migrate_repo <repo>  (FF-1 / LC-MIG / task-077)
+# Per-repo migration core.  Runs DETECT->SETTINGS->ADD->RELOCATE->REGISTER in
+# order.  Each step is WARN-not-fail: a step failure logs WARN and the next
+# step runs; the function always returns 0 (SEC-4 / NFR12).
+# <repo> is a CAN-1 canonical repo base folder (resolved by the caller via
+# cd "$repo" && pwd -- identical to bin/aid:1366 / feature-010 SEC-5).
+# ---------------------------------------------------------------------------
+_aid_migrate_repo() {
+    local repo="$1"
+
+    # ------------------------------------------------------------------
+    # STEP 0 -- DETECT / QUALIFY (DD-6 / SEC-1) -- read-only, no write.
+    # Qualify iff <repo>/.aid/ exists AND at least one era marker is
+    # present.  A bare .aid/ with no marker is NOT a candidate.
+    # ------------------------------------------------------------------
+    if [[ ! -d "${repo}/.aid" ]]; then
+        return 0
+    fi
+
+    local _era=""
+    if [[ -f "${repo}/.aid/settings.yml" ]]; then
+        _era="a"
+    elif [[ -f "${repo}/.aid/knowledge/DISCOVERY_STATE.md" ]] \
+      || [[ -f "${repo}/.aid/knowledge/DISCOVERY-STATE.md" ]] \
+      || [[ -f "${repo}/.aid/knowledge/STATE.md" ]]; then
+        _era="b"
+    else
+        # Bare .aid/ -- not a candidate, no mutation.
+        return 0
+    fi
+
+    # ------------------------------------------------------------------
+    # STEP 1 -- SETTINGS (DM-1 / task-074 contract)
+    # ------------------------------------------------------------------
+    local _settings="${repo}/.aid/settings.yml"
+    local _manifest="${repo}/.aid/.aid-manifest.json"
+    local _repo_name; _repo_name="$(basename "${repo}")"
+
+    if [[ "$_era" == "a" ]]; then
+        # Era-a: validate and targeted-repair REQUIRED keys only.
+        # Preserves every present kb_baseline.* line and <skill>.minimum_grade
+        # line byte-intact (IDIOM-A single-line replace / IDIOM-B append-block).
+        _aid_migrate_repair_settings_era_a "${_settings}" "${_repo_name}" || \
+            echo "WARN: aid migrate: settings repair failed for ${repo}/.aid/settings.yml (continuing)" >&2
+    else
+        # Era-b: synthesize a fresh settings.yml from the template defaults.
+        _aid_migrate_synthesize_settings_era_b "${_settings}" "${_repo_name}" "${_manifest}" || \
+            echo "WARN: aid migrate: settings synthesis failed for ${repo}/.aid/settings.yml (continuing)" >&2
+    fi
+
+    # ------------------------------------------------------------------
+    # STEP 2 -- ADD home.html (FR40 / RC-2) -- copy-when-absent only.
+    # ------------------------------------------------------------------
+    local _home_html_dest="${repo}/.aid/dashboard/home.html"
+    if [[ ! -f "${_home_html_dest}" ]]; then
+        local _home_html_src="${AID_HOME}/dashboard/home.html"
+        if [[ -f "${_home_html_src}" ]]; then
+            mkdir -p "${repo}/.aid/dashboard" 2>/dev/null || \
+                echo "WARN: aid migrate: mkdir .aid/dashboard failed for ${repo} (continuing)" >&2
+            if [[ -d "${repo}/.aid/dashboard" ]]; then
+                cp "${_home_html_src}" "${_home_html_dest}" 2>/dev/null || \
+                    echo "WARN: aid migrate: copy home.html failed for ${repo} (continuing)" >&2
+            fi
+        else
+            echo "WARN: aid migrate: home.html source not found at ${_home_html_src} (continuing)" >&2
+        fi
+    fi
+
+    # ------------------------------------------------------------------
+    # STEP 3 -- RELOCATE legacy summary (DM-4 / FR31) -- no-clobber mv.
+    # Exact idiom from canonical/scripts/summarize/summarize-preflight.sh:102-113
+    # ------------------------------------------------------------------
+    local _old_summary="${repo}/.aid/knowledge/knowledge-summary.html"
+    local _new_summary="${repo}/.aid/dashboard/kb.html"
+    if [[ -f "${_old_summary}" ]] && [[ ! -f "${_new_summary}" ]]; then
+        mkdir -p "${repo}/.aid/dashboard" 2>/dev/null || \
+            echo "WARN: aid migrate: mkdir .aid/dashboard failed for ${repo} (step 3, continuing)" >&2
+        if [[ -d "${repo}/.aid/dashboard" ]]; then
+            mv -n "${_old_summary}" "${_new_summary}" 2>/dev/null || \
+                echo "WARN: aid migrate: relocate legacy summary failed for ${repo} (continuing)" >&2
+        fi
+    fi
+
+    # ------------------------------------------------------------------
+    # STEP 4 -- REGISTER (DM-2 / FR28) -- existing idempotent writer.
+    # Canonicalize path (same rule as bin/aid:1366).
+    # ------------------------------------------------------------------
+    local _canon_repo
+    _canon_repo="$(cd "${repo}" && pwd)" 2>/dev/null || _canon_repo="${repo}"
+    registry_register "${_canon_repo}" || true
+
+    return 0
+}
+
+# _aid_migrate_repair_settings_era_a <settings_file> <repo_name>
+# Era-a: validate/repair REQUIRED keys via targeted edits only.
+# A valid file -> no write (idempotent).
+# Batch all edits in memory, then write a single temp+mv -f (crash-safe).
+_aid_migrate_repair_settings_era_a() {
+    local _sf="$1" _rname="$2"
+    [[ -f "${_sf}" ]] || return 1
+
+    # Read file into an array (preserves byte content per line).
+    local -a _lines=()
+    while IFS= read -r _l || [[ -n "${_l}" ]]; do
+        _lines+=("${_l}")
+    done < "${_sf}"
+
+    local _changed=0
+
+    # ---- Helper: locate a section header line index (col-0 "^<sect>:$") ----
+    _find_section() {
+        local _sect="$1" _i
+        for _i in "${!_lines[@]}"; do
+            if [[ "${_lines[$_i]}" =~ ^${_sect}:[[:space:]]*$ ]]; then
+                echo "$_i"; return 0
+            fi
+        done
+        echo "-1"
+    }
+
+    # ---- Helper: locate an indented key line index inside a section ----
+    _find_key_in_section() {
+        local _sect_idx="$1" _key="$2" _i
+        local _n="${#_lines[@]}"
+        for (( _i=_sect_idx+1; _i<_n; _i++ )); do
+            local _ln="${_lines[$_i]}"
+            # Stop at next col-0 non-comment non-blank line (next section).
+            if [[ "${_ln}" =~ ^[a-zA-Z_] ]]; then
+                echo "-1"; return 0
+            fi
+            if [[ "${_ln}" =~ ^[[:space:]]+${_key}:[[:space:]] ]] || \
+               [[ "${_ln}" =~ ^[[:space:]]+${_key}:[[:space:]]*$ ]]; then
+                echo "$_i"; return 0
+            fi
+        done
+        echo "-1"
+    }
+
+    # ---- Helper: get the scalar value of an indented "  key: value" line ----
+    _get_scalar_value() {
+        local _ln="$1" _key="$2" _val
+        # strip leading whitespace + key: (colon only; trailing space is optional so a bare
+        # "name:" with no value is also reduced to empty; parity with the PS twin's \s*)
+        _val="${_ln#*${_key}:}"
+        # strip one optional leading space (was the colon-space separator)
+        _val="${_val# }"
+        # strip inline comment and surrounding quotes
+        _val="${_val%% #*}"
+        _val="${_val%\"}"
+        _val="${_val#\"}"
+        _val="${_val%%\'}"
+        _val="${_val##\'}"
+        _val="${_val%% }"
+        _val="${_val## }"
+        echo "${_val}"
+    }
+
+    # ---- Insert an indented line after a given index in _lines ----
+    _insert_after() {
+        local _idx="$1" _new_line="$2"
+        local -a _new_lines=()
+        local _i
+        for (( _i=0; _i<${#_lines[@]}; _i++ )); do
+            _new_lines+=("${_lines[$_i]}")
+            if [[ "$_i" -eq "$_idx" ]]; then
+                _new_lines+=("${_new_line}")
+            fi
+        done
+        _lines=("${_new_lines[@]}")
+        _changed=1
+    }
+
+    # ---- Append a block at EOF (IDIOM-B for whole-section missing) ----
+    # Always prepends a blank line so the new section is visually separated from
+    # the preceding content (matching the template's blank-line-between-sections style).
+    # Idempotency is preserved: on a 2nd run the section now exists, so _find_section
+    # finds it and this path never executes again.
+    _append_block() {
+        local _block="$1"
+        local -a _block_lines=()
+        _block_lines+=("")
+        while IFS= read -r _bl; do
+            _block_lines+=("${_bl}")
+        done <<< "${_block}"
+        _lines+=("${_block_lines[@]}")
+        _changed=1
+    }
+
+    # ---- Replace a single line (IDIOM-A) ----
+    _replace_line() {
+        local _idx="$1" _new="$2"
+        _lines[$_idx]="${_new}"
+        _changed=1
+    }
+
+    # ------------------------------------------------------------------
+    # Validate / repair each REQUIRED key.
+    # ------------------------------------------------------------------
+
+    # project section
+    local _proj_idx; _proj_idx="$(_find_section "project")"
+    if [[ "$_proj_idx" -eq -1 ]]; then
+        # Whole project: section missing -> IDIOM-B append.
+        _append_block "project:
+  name: ${_rname}
+  description: <project-description>
+  type: brownfield"
+    else
+        # project.name
+        local _name_idx; _name_idx="$(_find_key_in_section "$_proj_idx" "name")"
+        if [[ "$_name_idx" -eq -1 ]]; then
+            _insert_after "$_proj_idx" "  name: ${_rname}"
+        else
+            local _name_val; _name_val="$(_get_scalar_value "${_lines[$_name_idx]}" "name")"
+            if [[ -z "${_name_val}" ]]; then
+                _replace_line "$_name_idx" "  name: ${_rname}"
+            fi
+        fi
+
+        # project.description (key must exist; value may be placeholder)
+        local _desc_idx; _desc_idx="$(_find_key_in_section "$_proj_idx" "description")"
+        if [[ "$_desc_idx" -eq -1 ]]; then
+            # Find name line to insert after it, else insert after section header.
+            local _name_idx2; _name_idx2="$(_find_key_in_section "$_proj_idx" "name")"
+            if [[ "$_name_idx2" -ne -1 ]]; then
+                _insert_after "$_name_idx2" "  description: <project-description>"
+            else
+                _insert_after "$_proj_idx" "  description: <project-description>"
+            fi
+        fi
+
+        # project.type
+        local _type_idx; _type_idx="$(_find_key_in_section "$_proj_idx" "type")"
+        if [[ "$_type_idx" -eq -1 ]]; then
+            # Insert after description (or name, or section header).
+            local _desc_idx2; _desc_idx2="$(_find_key_in_section "$_proj_idx" "description")"
+            local _ins_after_type
+            if [[ "$_desc_idx2" -ne -1 ]]; then
+                _ins_after_type="$_desc_idx2"
+            else
+                local _name_idx3; _name_idx3="$(_find_key_in_section "$_proj_idx" "name")"
+                if [[ "$_name_idx3" -ne -1 ]]; then
+                    _ins_after_type="$_name_idx3"
+                else
+                    _ins_after_type="$_proj_idx"
+                fi
+            fi
+            _insert_after "$_ins_after_type" "  type: brownfield"
+        else
+            local _type_val; _type_val="$(_get_scalar_value "${_lines[$_type_idx]}" "type")"
+            if [[ "$_type_val" != "brownfield" && "$_type_val" != "greenfield" ]]; then
+                _replace_line "$_type_idx" "  type: brownfield"
+            fi
+        fi
+    fi
+
+    # tools section
+    local _tools_idx; _tools_idx="$(_find_section "tools")"
+    if [[ "$_tools_idx" -eq -1 ]]; then
+        _append_block "tools:
+  installed: []"
+    else
+        local _inst_idx; _inst_idx="$(_find_key_in_section "$_tools_idx" "installed")"
+        if [[ "$_inst_idx" -eq -1 ]]; then
+            _insert_after "$_tools_idx" "  installed: []"
+        fi
+        # If installed key exists (any value, even empty list) -> valid; no touch.
+    fi
+
+    # review section
+    local _rev_idx; _rev_idx="$(_find_section "review")"
+    if [[ "$_rev_idx" -eq -1 ]]; then
+        _append_block "review:
+  minimum_grade: A"
+    else
+        local _mg_idx; _mg_idx="$(_find_key_in_section "$_rev_idx" "minimum_grade")"
+        if [[ "$_mg_idx" -eq -1 ]]; then
+            _insert_after "$_rev_idx" "  minimum_grade: A"
+        else
+            local _mg_val; _mg_val="$(_get_scalar_value "${_lines[$_mg_idx]}" "minimum_grade")"
+            if ! [[ "$_mg_val" =~ ^[A-F][+-]?$ ]]; then
+                _replace_line "$_mg_idx" "  minimum_grade: A"
+            fi
+        fi
+    fi
+
+    # execution section
+    local _exec_idx; _exec_idx="$(_find_section "execution")"
+    if [[ "$_exec_idx" -eq -1 ]]; then
+        _append_block "execution:
+  max_parallel_tasks: 5"
+    else
+        local _mpt_idx; _mpt_idx="$(_find_key_in_section "$_exec_idx" "max_parallel_tasks")"
+        if [[ "$_mpt_idx" -eq -1 ]]; then
+            _insert_after "$_exec_idx" "  max_parallel_tasks: 5"
+        else
+            local _mpt_val; _mpt_val="$(_get_scalar_value "${_lines[$_mpt_idx]}" "max_parallel_tasks")"
+            if ! [[ "$_mpt_val" =~ ^[0-9]+$ ]] || [[ "$_mpt_val" -le 0 ]]; then
+                _replace_line "$_mpt_idx" "  max_parallel_tasks: 5"
+            fi
+        fi
+    fi
+
+    # traceability section
+    local _trace_idx; _trace_idx="$(_find_section "traceability")"
+    if [[ "$_trace_idx" -eq -1 ]]; then
+        _append_block "traceability:
+  heartbeat_interval: 1"
+    else
+        local _hb_idx; _hb_idx="$(_find_key_in_section "$_trace_idx" "heartbeat_interval")"
+        if [[ "$_hb_idx" -eq -1 ]]; then
+            _insert_after "$_trace_idx" "  heartbeat_interval: 1"
+        else
+            local _hb_val; _hb_val="$(_get_scalar_value "${_lines[$_hb_idx]}" "heartbeat_interval")"
+            if ! [[ "$_hb_val" =~ ^[0-9]+$ ]]; then
+                _replace_line "$_hb_idx" "  heartbeat_interval: 1"
+            fi
+        fi
+    fi
+
+    # ------------------------------------------------------------------
+    # Write only if any edit was made (idempotent: no edit -> no write).
+    # ------------------------------------------------------------------
+    if [[ "$_changed" -eq 0 ]]; then
+        return 0
+    fi
+
+    local _tmp
+    _tmp="$(mktemp "${_sf}.aid-tmp.XXXXXX")" || return 1
+    {
+        local _wi
+        for _wi in "${!_lines[@]}"; do
+            printf '%s\n' "${_lines[$_wi]}"
+        done
+    } > "${_tmp}" || { rm -f "${_tmp}"; return 1; }
+    mv -f "${_tmp}" "${_sf}" || { rm -f "${_tmp}" 2>/dev/null; return 1; }
+    return 0
+}
+
+# _aid_migrate_synthesize_settings_era_b <settings_file> <repo_name> <manifest>
+# Era-b: write a fresh template-derived settings.yml when none exists.
+# tools.installed from manifest_list_tools (bash) or empty list if no manifest.
+# Crash-safe: same-directory temp + mv -f.
+_aid_migrate_synthesize_settings_era_b() {
+    local _sf="$1" _rname="$2" _manifest="$3"
+
+    # Collect installed tools from manifest (exits 0, prints nothing when absent).
+    local -a _tools=()
+    while IFS= read -r _tid; do
+        [[ -n "${_tid}" ]] && _tools+=("${_tid}")
+    done < <(manifest_list_tools "${_manifest}" 2>/dev/null)
+
+    local _tmp
+    _tmp="$(mktemp "${_sf}.aid-tmp.XXXXXX")" || return 1
+
+    {
+        printf 'project:\n'
+        printf '  name: %s\n' "${_rname}"
+        printf '  description: <project-description>\n'
+        printf '  type: brownfield\n'
+        printf '\n'
+        printf 'tools:\n'
+        if [[ "${#_tools[@]}" -eq 0 ]]; then
+            printf '  installed: []\n'
+        else
+            printf '  installed:\n'
+            local _t
+            for _t in "${_tools[@]}"; do
+                printf '    - %s\n' "${_t}"
+            done
+        fi
+        printf '\n'
+        printf 'review:\n'
+        printf '  minimum_grade: A\n'
+        printf '\n'
+        printf 'execution:\n'
+        printf '  max_parallel_tasks: 5\n'
+        printf '\n'
+        printf 'traceability:\n'
+        printf '  heartbeat_interval: 1\n'
+    } > "${_tmp}" || { rm -f "${_tmp}"; return 1; }
+
+    mv -f "${_tmp}" "${_sf}" || { rm -f "${_tmp}" 2>/dev/null; return 1; }
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# _aid_scan_for_repos [<root>]  (SCAN_FOR_AID_REPOS / SEC-2 / R19 / task-078)
+# Enumerate candidate AID repo base folders under <root> (default: $HOME).
+# Bounded depth (5 levels), skips node_modules/.git, never follows symlinks
+# out of scope, read-only presence-test detection (DD-6 / SEC-1 / SEC-2).
+# Emits CAN-1-canonical paths (SEC-5): cd && pwd (no -P).
+# Prints one canonical path per line; never exits with non-zero.
+# ---------------------------------------------------------------------------
+_aid_scan_for_repos() {
+    local _scan_root="${1:-${HOME}}"
+    # Canonicalize the root itself (cd && pwd -- CAN-1, no -P).
+    local _canon_root
+    _canon_root="$(cd "${_scan_root}" 2>/dev/null && pwd)" || {
+        echo "WARN: aid scan: cannot access scan root '${_scan_root}' -- skipping" >&2
+        return 0
+    }
+
+    # Find directories named .aid up to depth 5, without following symlinks.
+    # -xdev is NOT used (we want to cross mounts within the root, just not via symlinks).
+    # The -not -path pruning prevents descending into node_modules/.git.
+    local _tmp_found
+    _tmp_found="$(mktemp)" || return 0
+
+    find "${_canon_root}" \
+        -maxdepth 5 \
+        -type d \
+        \( -name "node_modules" -o -name ".git" \) -prune \
+        -o -type d -name ".aid" -print \
+        2>/dev/null > "${_tmp_found}" || true
+
+    while IFS= read -r _aid_dir; do
+        # Parent of the .aid/ dir is the candidate repo base.
+        local _repo_base; _repo_base="$(dirname "${_aid_dir}")"
+        # Never follow .. out of scope: ensure the repo base is still under the scan root.
+        # Use a string prefix check after both are canonicalized.
+        local _canon_base
+        _canon_base="$(cd "${_repo_base}" 2>/dev/null && pwd)" || continue
+        # Symlink-escape guard: reject if the canonical path does not start with the
+        # canonical root (i.e. a symlink resolved to somewhere outside the scan root).
+        case "${_canon_base}/" in
+            "${_canon_root}/"*) ;;  # safe -- within the root
+            *) continue ;;          # outside the root -- skip
+        esac
+        # DD-6 presence test (read-only): .aid/settings.yml (era-a) OR
+        # .aid/knowledge/{DISCOVERY_STATE.md|DISCOVERY-STATE.md|STATE.md} (era-b).
+        # A bare .aid/ with neither marker is NOT a candidate.
+        if [[ -f "${_canon_base}/.aid/settings.yml" ]] \
+        || [[ -f "${_canon_base}/.aid/knowledge/DISCOVERY_STATE.md" ]] \
+        || [[ -f "${_canon_base}/.aid/knowledge/DISCOVERY-STATE.md" ]] \
+        || [[ -f "${_canon_base}/.aid/knowledge/STATE.md" ]]; then
+            echo "${_canon_base}"
+        fi
+    done < "${_tmp_found}"
+
+    rm -f "${_tmp_found}"
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# _aid_check_repo_compliant <repo>  (task-078 / FF-2 fast-path)
+# Returns 0 (fully compliant, no migration needed) or 1 (needs migration).
+# Read-only: no writes (SEC-1).
+# ---------------------------------------------------------------------------
+_aid_check_repo_compliant() {
+    local _r="$1"
+    # Must be a candidate (DD-6).
+    [[ -f "${_r}/.aid/settings.yml" ]] \
+    || [[ -f "${_r}/.aid/knowledge/DISCOVERY_STATE.md" ]] \
+    || [[ -f "${_r}/.aid/knowledge/DISCOVERY-STATE.md" ]] \
+    || [[ -f "${_r}/.aid/knowledge/STATE.md" ]] \
+    || return 1
+    # Step 2: home.html must be present.
+    [[ -f "${_r}/.aid/dashboard/home.html" ]] || return 1
+    # Step 4: must be registered in registry.yml.
+    local _canon_r
+    _canon_r="$(cd "${_r}" 2>/dev/null && pwd)" || return 1
+    local _reg="${AID_HOME}/registry.yml"
+    _registry_read_repos "${_reg}" | grep -qxF "${_canon_r}" || return 1
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# _aid_write_migrated_marker  (DM-3 / task-078 / FF-2 completion)
+# Write $AID_HOME/.migrated = trimmed $AID_HOME/VERSION (crash-safe).
+# ---------------------------------------------------------------------------
+_aid_write_migrated_marker() {
+    local _ver_file="${AID_HOME}/VERSION"
+    local _marker="${AID_HOME}/.migrated"
+    [[ -f "${_ver_file}" ]] || return 0
+    local _ver
+    _ver="$(tr -d '[:space:]' < "${_ver_file}")" || return 0
+    [[ -n "${_ver}" ]] || return 0
+    local _tmp
+    _tmp="$(mktemp "${_marker}.aid-tmp.XXXXXX")" || return 0
+    printf '%s\n' "${_ver}" > "${_tmp}" || { rm -f "${_tmp}"; return 0; }
+    mv -f "${_tmp}" "${_marker}" || { rm -f "${_tmp}" 2>/dev/null; return 0; }
+}
+
+# ---------------------------------------------------------------------------
+# _aid_scan_and_migrate [<apply_all_flag>] [<root>]  (FF-2 / CLI-1 / task-078)
+# Machine-scan + All/Yes/No/Cancel consent walk.  Called after _cmd_update_self.
+# <apply_all_flag>: "1" = --yes/AID_MIGRATE_YES=1 (preset All; non-interactive ok).
+# <root>: optional --root override for the scan.
+# Returns 0 always (exit code 0 on completion/skipped/Cancel per CLI-1/NFR12).
+# DM-3 marker is advanced ONLY on a completed (no Cancel) scan.
+# ---------------------------------------------------------------------------
+_aid_scan_and_migrate() {
+    local _apply_all_flag="${1:-0}"
+    local _scan_root="${2:-}"
+    local _apply_all=0
+    [[ "${_apply_all_flag}" == "1" ]] && _apply_all=1
+    [[ "${AID_MIGRATE_YES:-0}" == "1" ]] && _apply_all=1
+
+    # RC-3 / SEC-1: non-interactive guard.
+    # If not a TTY AND no explicit opt-in -> annotate + defer.
+    if ! [[ -t 0 ]] && [[ "${_apply_all}" -eq 0 ]]; then
+        echo "AID machine scan: no TTY detected. Run 'aid update self' interactively to migrate repos."
+        echo "(Set AID_MIGRATE_YES=1 or use --yes to enable non-interactive migration.)"
+        # Marker NOT advanced -- defer to next interactive run (FF-4 retrigger).
+        return 0
+    fi
+
+    # Enumerate candidates (read-only).
+    local -a _candidates=()
+    local _scan_out
+    if [[ -n "${_scan_root}" ]]; then
+        _scan_out="$(_aid_scan_for_repos "${_scan_root}")"
+    else
+        _scan_out="$(_aid_scan_for_repos)"
+    fi
+    while IFS= read -r _c; do
+        [[ -n "${_c}" ]] && _candidates+=("${_c}")
+    done <<< "${_scan_out}"
+
+    if [[ ${#_candidates[@]} -eq 0 ]]; then
+        echo "aid update self: no AID repos found to migrate."
+        _aid_write_migrated_marker
+        return 0
+    fi
+
+    # Non-interactive + opt-in: annotate candidate list and migrate all.
+    if ! [[ -t 0 ]] && [[ "${_apply_all}" -eq 1 ]]; then
+        echo "AID machine scan (non-interactive, opt-in): ${#_candidates[@]} candidate(s) found."
+        for _repo in "${_candidates[@]}"; do
+            if _aid_check_repo_compliant "${_repo}"; then
+                continue
+            fi
+            echo "  Migrating ${_repo}..."
+            _aid_migrate_repo "${_repo}" || \
+                echo "WARN: aid: migration of ${_repo} failed; continuing" >&2
+        done
+        _aid_write_migrated_marker
+        return 0
+    fi
+
+    # Interactive consent walk (FF-2 state machine).
+    local _cancelled=0
+    for _repo in "${_candidates[@]}"; do
+        # Fast-path: already fully compliant -> silent no-op (FF-2).
+        if _aid_check_repo_compliant "${_repo}"; then
+            continue
+        fi
+        if [[ "${_apply_all}" -eq 1 ]]; then
+            # All already set (from --yes/env or user typed A earlier).
+            _aid_migrate_repo "${_repo}" || \
+                echo "WARN: aid: migration of ${_repo} failed; continuing" >&2
+        else
+            # Prompt the operator (CLI-1 exact wording, ASCII).
+            local _answer=""
+            while true; do
+                printf 'Migrate %s? [A]ll / [Y]es / [N]o / [C]ancel: ' "${_repo}"
+                IFS= read -r _answer </dev/tty || _answer="C"
+                case "${_answer}" in
+                    [Aa]) _apply_all=1; break ;;
+                    [Yy]) break ;;
+                    [Nn])
+                        echo "Skipped ${_repo}. Run 'aid update' inside that folder to migrate it later."
+                        _answer="N"
+                        break
+                        ;;
+                    [Cc])
+                        _cancelled=1
+                        break
+                        ;;
+                    *)
+                        echo "Please type A, Y, N, or C."
+                        ;;
+                esac
+            done
+            if [[ "${_cancelled}" -eq 1 ]]; then
+                break
+            fi
+            if [[ "${_answer}" == "N" ]]; then
+                continue
+            fi
+            # A or Y: migrate.
+            _aid_migrate_repo "${_repo}" || \
+                echo "WARN: aid: migration of ${_repo} failed; continuing" >&2
+        fi
+    done
+
+    if [[ "${_cancelled}" -eq 0 ]]; then
+        # Completed (no Cancel) -> advance DM-3 marker.
+        _aid_write_migrated_marker
+    fi
+    # Cancelled -> marker stays stale -> FF-4 sentinel re-fires next interactive run.
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # Parse subcommand and dispatch.
 # ---------------------------------------------------------------------------
 
@@ -1267,15 +1864,23 @@ if [[ "$SUBCMD" == "update" ]]; then
     if [[ $# -gt 0 && "$1" == "self" ]]; then
         shift
         # Consume any flags after 'self'.
+        _US_MIGRATE_YES=0
+        _US_ROOT=""
         while [[ $# -gt 0 ]]; do
             case "$1" in
                 --force|-y) shift ;;  # no-op for update self
+                --yes) _US_MIGRATE_YES=1; shift ;;  # non-interactive opt-in (RC-3)
+                --root)
+                    [[ $# -lt 2 ]] && _aid_die "--root requires a value" 2
+                    _US_ROOT="$2"; shift 2 ;;
                 -h|--help) _aid_usage update; exit 0 ;;
                 *) _aid_die "unknown flag for 'update self': $1" 2 ;;
             esac
         done
         _cmd_update_self
-        exit $?
+        # ---- post-update machine scan (FF-2 / task-078) ----
+        _aid_scan_and_migrate "${_US_MIGRATE_YES}" "${_US_ROOT}"
+        exit 0
     fi
     # Fall through to the shared add/update handler below.
 fi
@@ -1297,6 +1902,22 @@ fi
 if [[ "$SUBCMD" == "dashboard" ]]; then
     _cmd_dashboard_ctl "$@"
     exit $?
+fi
+
+# ---- __migrate-repo (hidden, callable-core only -- task-077/081) ------------
+if [[ "$SUBCMD" == "__migrate-repo" ]]; then
+    if [[ $# -lt 1 ]]; then
+        echo "ERROR: aid __migrate-repo requires a <repo> path argument" >&2
+        exit 2
+    fi
+    _MIG_TARGET="$1"
+    if [[ ! -d "${_MIG_TARGET}" ]]; then
+        echo "ERROR: aid __migrate-repo: not a directory: ${_MIG_TARGET}" >&2
+        exit 2
+    fi
+    _MIG_TARGET="$(cd "${_MIG_TARGET}" && pwd)"
+    _aid_migrate_repo "${_MIG_TARGET}"
+    exit 0
 fi
 
 # ---- add / remove / update --------------------------------------------------
