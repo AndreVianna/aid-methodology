@@ -75,6 +75,32 @@ Then warn the user about the possible V1 human gate (NFR3 transparency):
 
 ---
 
+## Step 1b — Migrate legacy summary path (FR31 belt-and-suspenders)
+
+Before delegating to `/aid-summarize`, perform the same guarded migrate that
+PREFLIGHT does, as defense-in-depth for paths where housekeep is entered
+directly or before PREFLIGHT has had a chance to run in this invocation:
+
+```bash
+OLD_SUMMARY=".aid/knowledge/knowledge-summary.html"
+NEW_SUMMARY=".aid/dashboard/kb.html"
+MIGRATED_THIS_RUN=0
+if [ -f "$OLD_SUMMARY" ] && [ ! -f "$NEW_SUMMARY" ]; then
+    if mkdir -p .aid/dashboard 2>/dev/null && mv -n "$OLD_SUMMARY" "$NEW_SUMMARY" 2>/dev/null; then
+        echo "i  Migrated legacy summary -> $NEW_SUMMARY (FR31 relocation)."
+        MIGRATED_THIS_RUN=1
+    else
+        echo "i  Could not migrate legacy summary (continuing; summary will regenerate)." >&2
+    fi
+fi
+```
+
+This step is **best-effort** (never block on failure) and **idempotent** (if the new path
+already exists, the `[ ! -f "$NEW_SUMMARY" ]` guard makes it a no-op). Track whether a
+move occurred this run via `MIGRATED_THIS_RUN` for use in the Branch-B commit below.
+
+---
+
 ## Step 2 — Delegate to `/aid-summarize`
 
 Invoke `/aid-summarize` with **no staleness flags**. Forward only the
@@ -248,11 +274,27 @@ bash .agent/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "skipped"
 ```
 
-**No commit** (NFR2 idempotency — nothing changed). Print:
+**No commit** (NFR2 idempotency — nothing changed), **except** when a FR31 migration
+occurred this run (`MIGRATED_THIS_RUN=1`): in that case the relocated file must be
+committed so the relocation is captured in VC even on the skip path:
+
+```bash
+if [ "${MIGRATED_THIS_RUN:-0}" -eq 1 ]; then
+    bash .agent/scripts/housekeep/branch-commit.sh \
+        --commit \
+        --message "chore(housekeep): migrate kb.html path (FR31 relocation) [feature-007]" \
+        --add .aid/dashboard/kb.html
+    # Never block on commit failure -- the file is on disk where the reader needs it.
+fi
+```
+
+Print:
 
 ```
 ✓ SUMMARY-DELTA: kb.html is already current — skipped (no commit).
 ```
+
+(If a migration commit was made, print it before the above line.)
 
 **Advance:** **CHAIN** → [State: CLEANUP] (continue inline).
 

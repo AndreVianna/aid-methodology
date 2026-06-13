@@ -96,7 +96,12 @@ the producer chain. Substantially smaller.
 > `aid-summarize` output **relocation** `.aid/knowledge/knowledge-summary.html` → `.aid/dashboard/kb.html`
 > is a producer path change, not a data migration; an existing repo simply regenerates to the new path on
 > the next summarize/discover run, and the reader treats an absent `kb.html` as `summary_present=false`
-> → `preparing`/`pending`, never an error — graceful, no migration script). **Data-DB / Cache / Batch /
+> → `preparing`/`pending`, never an error — graceful, no migration script).
+> **[SUPERSEDED by Option-1 producer-run migration — see `.aid/work-001-aid-dashboard/design/kb-summary-migration-plan.md`.]**
+> The justified-skip assumption above (next summarize repopulates) was incorrect: regeneration is
+> expensive, only fires on user trigger, and leaves upgraded repos stuck at `preparing`. The
+> producer-run migration (FR31 step 6 in PREFLIGHT + belt-and-suspenders in SUMMARY-DELTA) now
+> performs a cheap `mv` on the next `/aid-summarize` or `/aid-housekeep` run instead. **Data-DB / Cache / Batch /
 > Mobile / Search / AI / Cloud / Hardware / Events / DDD / CQRS / Telemetry / Recovery / External
 > Integrations** (not applicable — AID ships no database, no third-party deps; the git read is a
 > stdlib/built-in subprocess, not an external integration; runtime is deterministic no-LLM code).

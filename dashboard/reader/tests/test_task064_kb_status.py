@@ -467,6 +467,89 @@ class TestReadRepoKbStateExtended(unittest.TestCase):
         assert model.repo.kb_state is not None
         self.assertIsInstance(model.repo.kb_state.status, KbStatus)
 
+    # ------------------------------------------------------------------
+    # T3: post-migrate on-disk state (FR31 Option-1 migration target)
+    #
+    # After the producer's FR31 migration runs, the on-disk state is:
+    #   - STATE.md shows "User Approved: yes" (approved)
+    #   - .aid/dashboard/kb.html is present (migrated from old path)
+    #   - .aid/knowledge/knowledge-summary.html is ABSENT (moved away)
+    #
+    # The reader must derive 'approved' (or 'outdated') from this state,
+    # NEVER 'preparing'. This confirms the migration surfaces the correct
+    # status without any reader-side change (Option-C rejection is valid).
+    # ------------------------------------------------------------------
+
+    def test_post_migrate_state_is_approved_not_preparing(self):
+        """Post-FR31-migrate: kb.html present + approved STATE.md -> approved (never preparing)."""
+        aid = self._make_minimal_repo()
+        kb = aid / "knowledge"
+        kb.mkdir()
+        state = kb / "STATE.md"
+        # Approved STATE.md (simulate post-discover, pre-migrate situation)
+        state.write_text(
+            "## Knowledge Summary Status\n"
+            "**User Approved:** yes (2026-06-01)\n",
+            encoding="utf-8",
+        )
+        # OLD path is ABSENT (already moved by the producer migration)
+        old_path = kb / "knowledge-summary.html"
+        self.assertFalse(old_path.exists(), "pre-condition: old path must not exist")
+
+        # NEW path IS present (migration result)
+        dashboard = aid / "dashboard"
+        dashboard.mkdir(parents=True, exist_ok=True)
+        (dashboard / "kb.html").write_text("<html>migrated summary</html>", encoding="utf-8")
+
+        model = read_repo(self.root)
+        self.assertIsNotNone(model.repo.kb_state)
+        assert model.repo.kb_state is not None
+
+        # Must be approved (or outdated if git freshness fires) -- NEVER preparing
+        status = model.repo.kb_state.status
+        self.assertNotEqual(
+            status,
+            KbStatus.preparing,
+            f"Post-migrate state must not be 'preparing'; got '{status}'"
+        )
+        self.assertIn(
+            status,
+            (KbStatus.approved, KbStatus.outdated),
+            f"Post-migrate state must be 'approved' or 'outdated'; got '{status}'"
+        )
+        self.assertTrue(
+            model.repo.kb_state.summary_present,
+            "summary_present must be True after migration"
+        )
+
+    def test_post_migrate_old_path_absent_still_approved(self):
+        """Reader does not look at old path; only new path matters for summary_present."""
+        aid = self._make_minimal_repo()
+        kb = aid / "knowledge"
+        kb.mkdir()
+        state = kb / "STATE.md"
+        state.write_text(
+            "## Knowledge Summary Status\n"
+            "**User Approved:** yes (2026-06-01)\n",
+            encoding="utf-8",
+        )
+        # OLD path present, NEW path present (both-present case: new is authoritative)
+        old_path = kb / "knowledge-summary.html"
+        old_path.write_text("<html>old</html>", encoding="utf-8")
+        dashboard = aid / "dashboard"
+        dashboard.mkdir(parents=True, exist_ok=True)
+        (dashboard / "kb.html").write_text("<html>new</html>", encoding="utf-8")
+
+        model = read_repo(self.root)
+        self.assertIsNotNone(model.repo.kb_state)
+        assert model.repo.kb_state is not None
+        # Reader ignores the old path; sees new path -> summary_present=True
+        self.assertTrue(model.repo.kb_state.summary_present)
+        self.assertIn(
+            model.repo.kb_state.status,
+            (KbStatus.approved, KbStatus.outdated),
+        )
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
