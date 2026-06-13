@@ -297,7 +297,9 @@ build_tarball "antigravity" "profiles/antigravity" ".agent" "AGENTS.md"
 echo "release.sh: building CLI bundle (aid-cli-v${VERSION}.tar.gz) ..."
 
 CLI_BUNDLE_STAGE="${STAGE_DIR}/.cli-bundle-tmp"
-mkdir -p "${CLI_BUNDLE_STAGE}/bin" "${CLI_BUNDLE_STAGE}/lib"
+mkdir -p "${CLI_BUNDLE_STAGE}/bin" "${CLI_BUNDLE_STAGE}/lib" \
+         "${CLI_BUNDLE_STAGE}/dashboard/reader" \
+         "${CLI_BUNDLE_STAGE}/dashboard/server"
 
 cp "${REPO_ROOT}/bin/aid"              "${CLI_BUNDLE_STAGE}/bin/aid"
 cp "${REPO_ROOT}/bin/aid.ps1"          "${CLI_BUNDLE_STAGE}/bin/aid.ps1"
@@ -305,6 +307,19 @@ cp "${REPO_ROOT}/bin/aid.cmd"          "${CLI_BUNDLE_STAGE}/bin/aid.cmd"
 cp "${REPO_ROOT}/lib/aid-install-core.sh" "${CLI_BUNDLE_STAGE}/lib/aid-install-core.sh"
 cp "${REPO_ROOT}/lib/AidInstallCore.psm1" "${CLI_BUNDLE_STAGE}/lib/AidInstallCore.psm1"
 printf '%s\n' "${VERSION}" > "${CLI_BUNDLE_STAGE}/VERSION"
+
+# Dashboard server+reader unit (11 files, curated -- excludes tests/ __pycache__ *.pyc README).
+cp "${REPO_ROOT}/dashboard/index.html"              "${CLI_BUNDLE_STAGE}/dashboard/index.html"
+cp "${REPO_ROOT}/dashboard/reader/__init__.py"      "${CLI_BUNDLE_STAGE}/dashboard/reader/__init__.py"
+cp "${REPO_ROOT}/dashboard/reader/reader.py"        "${CLI_BUNDLE_STAGE}/dashboard/reader/reader.py"
+cp "${REPO_ROOT}/dashboard/reader/models.py"        "${CLI_BUNDLE_STAGE}/dashboard/reader/models.py"
+cp "${REPO_ROOT}/dashboard/reader/parsers.py"       "${CLI_BUNDLE_STAGE}/dashboard/reader/parsers.py"
+cp "${REPO_ROOT}/dashboard/reader/derivation.py"    "${CLI_BUNDLE_STAGE}/dashboard/reader/derivation.py"
+cp "${REPO_ROOT}/dashboard/reader/locator.py"       "${CLI_BUNDLE_STAGE}/dashboard/reader/locator.py"
+cp "${REPO_ROOT}/dashboard/server/server.py"        "${CLI_BUNDLE_STAGE}/dashboard/server/server.py"
+cp "${REPO_ROOT}/dashboard/server/server.mjs"       "${CLI_BUNDLE_STAGE}/dashboard/server/server.mjs"
+cp "${REPO_ROOT}/dashboard/server/reader.mjs"       "${CLI_BUNDLE_STAGE}/dashboard/server/reader.mjs"
+cp "${REPO_ROOT}/dashboard/server/__init__.py"      "${CLI_BUNDLE_STAGE}/dashboard/server/__init__.py"
 
 CLI_BUNDLE="${REPO_ROOT}/${STAGE_DIR}/aid-cli-v${VERSION}.tar.gz"
 
@@ -318,7 +333,18 @@ CLI_BUNDLE="${REPO_ROOT}/${STAGE_DIR}/aid-cli-v${VERSION}.tar.gz"
         "./bin/aid.cmd" \
         "./lib/aid-install-core.sh" \
         "./lib/AidInstallCore.psm1" \
-        "./VERSION" > "$_cli_fl"
+        "./VERSION" \
+        "./dashboard/index.html" \
+        "./dashboard/reader/__init__.py" \
+        "./dashboard/reader/reader.py" \
+        "./dashboard/reader/models.py" \
+        "./dashboard/reader/parsers.py" \
+        "./dashboard/reader/derivation.py" \
+        "./dashboard/reader/locator.py" \
+        "./dashboard/server/server.py" \
+        "./dashboard/server/server.mjs" \
+        "./dashboard/server/reader.mjs" \
+        "./dashboard/server/__init__.py" > "$_cli_fl"
     tar -czf "${CLI_BUNDLE}" --no-recursion -T "$_cli_fl"
     rm -f "$_cli_fl"
 )

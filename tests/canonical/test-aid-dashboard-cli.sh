@@ -45,9 +45,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 BIN_AID="${REPO_ROOT}/bin/aid"
 LIB_SH="${REPO_ROOT}/lib/aid-install-core.sh"
-DASHBOARD_SERVER_DIR="${REPO_ROOT}/dashboard/server"
-DASHBOARD_READER_PY="${REPO_ROOT}/dashboard/reader.py"
-DASHBOARD_INIT_PY="${REPO_ROOT}/dashboard/__init__.py"
+DASHBOARD_SRC_DIR="${REPO_ROOT}/dashboard"
 
 [[ -f "$BIN_AID" ]] || { echo "ERROR: bin/aid not found at $BIN_AID" >&2; exit 1; }
 [[ -f "$LIB_SH"  ]] || { echo "ERROR: lib/aid-install-core.sh not found at $LIB_SH" >&2; exit 1; }
@@ -78,25 +76,33 @@ VERSION="0.7.0"
 
 new_aid_home() {
     local h; h="$(mktemp -d "${TMP}/home.XXXXXX")"
-    mkdir -p "${h}/bin" "${h}/lib"
+    mkdir -p "${h}/bin" "${h}/lib" "${h}/dashboard/reader" "${h}/dashboard/server"
     cp "$BIN_AID"  "${h}/bin/aid"
     chmod +x "${h}/bin/aid"
     cp "$LIB_SH"   "${h}/lib/aid-install-core.sh"
     printf '%s\n' "${VERSION}" > "${h}/VERSION"
+    # Install the curated dashboard unit under $AID_HOME/dashboard/ (D8 spawn-seam layout).
+    # Use symlinks to the repo sources so tests always run against the current code.
+    ln -sf "${DASHBOARD_SRC_DIR}/index.html"             "${h}/dashboard/index.html"
+    ln -sf "${DASHBOARD_SRC_DIR}/reader/__init__.py"     "${h}/dashboard/reader/__init__.py"
+    ln -sf "${DASHBOARD_SRC_DIR}/reader/reader.py"       "${h}/dashboard/reader/reader.py"
+    ln -sf "${DASHBOARD_SRC_DIR}/reader/models.py"       "${h}/dashboard/reader/models.py"
+    ln -sf "${DASHBOARD_SRC_DIR}/reader/parsers.py"      "${h}/dashboard/reader/parsers.py"
+    ln -sf "${DASHBOARD_SRC_DIR}/reader/derivation.py"   "${h}/dashboard/reader/derivation.py"
+    ln -sf "${DASHBOARD_SRC_DIR}/reader/locator.py"      "${h}/dashboard/reader/locator.py"
+    ln -sf "${DASHBOARD_SRC_DIR}/server/server.py"       "${h}/dashboard/server/server.py"
+    ln -sf "${DASHBOARD_SRC_DIR}/server/server.mjs"      "${h}/dashboard/server/server.mjs"
+    ln -sf "${DASHBOARD_SRC_DIR}/server/reader.mjs"      "${h}/dashboard/server/reader.mjs"
+    ln -sf "${DASHBOARD_SRC_DIR}/server/__init__.py"     "${h}/dashboard/server/__init__.py"
     echo "$h"
 }
 
-# A minimal AID fixture repo: has .aid/ dir and the dashboard server entry points.
+# A minimal AID fixture repo: has .aid/ dir only.
+# The dashboard server now lives in $AID_HOME/dashboard/ (D8 spawn-seam relocation),
+# not inside the served repo -- so the repo fixture needs only the .aid/ workspace.
 new_fixture_repo() {
     local r; r="$(mktemp -d "${TMP}/repo.XXXXXX")"
     mkdir -p "${r}/.aid/.temp"
-    mkdir -p "${r}/dashboard/server"
-    # Symlink the real server entry points so the server can actually start.
-    ln -sf "${DASHBOARD_SERVER_DIR}/server.py"  "${r}/dashboard/server/server.py"
-    ln -sf "${DASHBOARD_SERVER_DIR}/server.mjs" "${r}/dashboard/server/server.mjs"
-    # server.py inserts dashboard/ into sys.path; reader.py must be there.
-    [[ -f "$DASHBOARD_READER_PY" ]]  && ln -sf "$DASHBOARD_READER_PY"  "${r}/dashboard/reader.py"
-    [[ -f "$DASHBOARD_INIT_PY" ]]    && ln -sf "$DASHBOARD_INIT_PY"    "${r}/dashboard/__init__.py"
     echo "$r"
 }
 
@@ -521,26 +527,28 @@ assert_output_contains "$OUT_DC" "install it, or try: aid dashboard start python
 # CLI-2 and the child-exited-early branch of Feature Flow step 8.
 # ---------------------------------------------------------------------------
 echo "--- T-9: server crash / port-in-use simulation ---"
+# T-9 uses a custom AID_HOME with a fake server that exits immediately.
+# The spawn seam now resolves the entry point from $AID_HOME/dashboard/ (D8),
+# so the fake server must live there (not in the served repo).
 H9="$(new_aid_home)"
-
-# Create a repo with a fake server.py that exits immediately with a non-zero
-# code, printing an "Address already in use" error to stderr (as Python's
-# socket library would).
 R9="$(mktemp -d "${TMP}/repo9.XXXXXX")"
 mkdir -p "${R9}/.aid/.temp"
-mkdir -p "${R9}/dashboard/server"
 PORT9="$(pick_free_port)"
 
-# Fake server.py that exits 1 immediately (simulates bind failure).
-cat > "${R9}/dashboard/server/server.py" << 'FAKEEOF'
+# Override the real server.py in the AID_HOME with a fake that exits 1 immediately
+# (simulates bind failure), printing an "Address already in use" error to stderr.
+# Remove the symlinks first so we write a new regular file, not through to the repo source.
+rm -f "${H9}/dashboard/server/server.py"
+cat > "${H9}/dashboard/server/server.py" << 'FAKEEOF'
 import sys
 sys.stderr.write("OSError: [Errno 98] Address already in use\n")
 sys.stderr.flush()
 sys.exit(1)
 FAKEEOF
 
-# Also need a fake server.mjs (not used for python, but for completeness).
-cat > "${R9}/dashboard/server/server.mjs" << 'FAKEEOF'
+# Also replace server.mjs (not used for python in T-9, but for fixture completeness).
+rm -f "${H9}/dashboard/server/server.mjs"
+cat > "${H9}/dashboard/server/server.mjs" << 'FAKEEOF'
 process.stderr.write("Error: Address already in use\n");
 process.exit(1);
 FAKEEOF

@@ -16,6 +16,7 @@
   "files": [
     "bin/",
     "lib/",
+    "dashboard/",
     "VERSION",
     "README.md",
     "LICENSE"

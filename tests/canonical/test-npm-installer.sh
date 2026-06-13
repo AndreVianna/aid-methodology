@@ -235,12 +235,23 @@ assert_output_not_contains "$NM07_OUT" "Updating the aid CLI..." \
 # AID_HOME must not be mutated by re-bootstrap.
 assert_dir_exists "${NM07_HOME}" "NM07-04 AID_HOME not removed (no re-bootstrap)"
 
-echo "=== NM08: npm pack --dry-run lists the 6 vendored files + bin/aid.js ==="
+echo "=== NM08: npm pack --dry-run lists the 17 vendored files + bin/aid.js ==="
 
 NM08_PACK_OUT=$(cd "${PKG_DIR}" && npm pack --dry-run 2>&1) || true
 
 for _expect in "bin/aid.js" "bin/aid" "bin/aid.ps1" "bin/aid.cmd" \
-               "lib/aid-install-core.sh" "lib/AidInstallCore.psm1" "VERSION"; do
+               "lib/aid-install-core.sh" "lib/AidInstallCore.psm1" "VERSION" \
+               "dashboard/index.html" \
+               "dashboard/reader/__init__.py" \
+               "dashboard/reader/reader.py" \
+               "dashboard/reader/models.py" \
+               "dashboard/reader/parsers.py" \
+               "dashboard/reader/derivation.py" \
+               "dashboard/reader/locator.py" \
+               "dashboard/server/server.py" \
+               "dashboard/server/server.mjs" \
+               "dashboard/server/reader.mjs" \
+               "dashboard/server/__init__.py"; do
     if echo "$NM08_PACK_OUT" | grep -qF "$_expect"; then
         pass "NM08 pack --dry-run includes $_expect"
     else

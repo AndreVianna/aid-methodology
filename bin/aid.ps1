@@ -748,14 +748,15 @@ function script:Invoke-DcStart {
     }
 
     # Step 6: locate the server entry point.
-    $assetsDir = Join-Path $Target 'dashboard'
+    # <assets> = $AID_HOME/dashboard (the co-vendored server+reader unit in the install tree).
+    $assetsDir = Join-Path $script:_AidHome 'dashboard'
     if ($Runtime -eq 'python') {
         $entryPoint = Join-Path $assetsDir (Join-Path 'server' 'server.py')
     } else {
         $entryPoint = Join-Path $assetsDir (Join-Path 'server' 'server.mjs')
     }
     if (-not (Test-Path $entryPoint -PathType Leaf)) {
-        [Console]::Error.WriteLine("ERROR: aid: dashboard: AID install at $Target is missing the dashboard server ($Runtime entry-point not found); try 'aid update'")
+        [Console]::Error.WriteLine("ERROR: aid: dashboard: the dashboard server is missing from the install tree ($Runtime entry-point not found at $entryPoint); run 'aid update' or reinstall aid")
         script:Exit-Aid 7
     }
 

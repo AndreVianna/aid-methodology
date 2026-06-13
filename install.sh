@@ -712,7 +712,9 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
     _BOOTSTRAP_STAGE="$(mktemp -d /tmp/aid-bootstrap-XXXXXX)"
     trap '_cleanup_tmplib; _cleanup_staging; _cleanup_cli_bundle; rm -rf "${_BOOTSTRAP_STAGE:-}"' EXIT
 
-    mkdir -p "${_BOOTSTRAP_STAGE}/bin" "${_BOOTSTRAP_STAGE}/lib"
+    mkdir -p "${_BOOTSTRAP_STAGE}/bin" "${_BOOTSTRAP_STAGE}/lib" \
+             "${_BOOTSTRAP_STAGE}/dashboard/reader" \
+             "${_BOOTSTRAP_STAGE}/dashboard/server"
     cp "$_BOOTSTRAP_AID_BIN" "${_BOOTSTRAP_STAGE}/bin/aid"
     chmod +x "${_BOOTSTRAP_STAGE}/bin/aid"
     # Also install aid.ps1 and aid.cmd if available (from bundle or release tree).
@@ -724,6 +726,33 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
     fi
     [[ -f "$_BOOTSTRAP_AID_PS1" ]] && cp "$_BOOTSTRAP_AID_PS1" "${_BOOTSTRAP_STAGE}/bin/aid.ps1"
     [[ -f "$_BOOTSTRAP_AID_CMD" ]] && cp "$_BOOTSTRAP_AID_CMD" "${_BOOTSTRAP_STAGE}/bin/aid.cmd"
+
+    # Stage dashboard server+reader unit (11 files, curated).
+    # Source: beside install.sh (repo checkout) or extracted CLI bundle (piped bootstrap).
+    _BOOTSTRAP_DASHBOARD_SRC="${SCRIPT_DIR}/dashboard"
+    if [[ -n "${_AID_CLI_BUNDLE_EXTRACT_DIR:-}" ]]; then
+        _BOOTSTRAP_DASHBOARD_SRC="${_AID_CLI_BUNDLE_EXTRACT_DIR}/dashboard"
+    fi
+    if [[ -d "$_BOOTSTRAP_DASHBOARD_SRC" ]]; then
+        for _df in \
+            "index.html" \
+            "reader/__init__.py" \
+            "reader/reader.py" \
+            "reader/models.py" \
+            "reader/parsers.py" \
+            "reader/derivation.py" \
+            "reader/locator.py" \
+            "server/server.py" \
+            "server/server.mjs" \
+            "server/reader.mjs" \
+            "server/__init__.py"
+        do
+            _df_src="${_BOOTSTRAP_DASHBOARD_SRC}/${_df}"
+            _df_dst="${_BOOTSTRAP_STAGE}/dashboard/${_df}"
+            [[ -f "$_df_src" ]] && cp "$_df_src" "$_df_dst"
+        done
+    fi
+
     # Pre-copy sanity: verify the source lib contains the required sentinel function.
     # This catches a bad AID_LIB_PATH (empty file, truncated download, wrong file).
     if ! grep -qF 'aid_status_body' "$_SOURCED_LIB_FILE" 2>/dev/null; then
@@ -737,6 +766,8 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
     # Clean-replace: remove stale files before copying so upgrades never leave old bits.
     rm -f "${local_bin_dir}/aid" "${local_bin_dir}/aid.ps1" "${local_bin_dir}/aid.cmd" \
           "${local_lib_dir}/aid-install-core.sh" 2>/dev/null || true
+    # Clean-replace the dashboard unit so upgrades never leave old server bits.
+    rm -rf "${AID_HOME}/dashboard" 2>/dev/null || true
 
     # Atomic install: move staged files into AID_HOME.
     mkdir -p "$local_bin_dir" "$local_lib_dir"
@@ -746,6 +777,26 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
     [[ -f "${_BOOTSTRAP_STAGE}/bin/aid.cmd" ]] && cp "${_BOOTSTRAP_STAGE}/bin/aid.cmd" "${local_bin_dir}/aid.cmd"
     cp "${_BOOTSTRAP_STAGE}/lib/aid-install-core.sh" "${local_lib_dir}/aid-install-core.sh"
     cp "${_BOOTSTRAP_STAGE}/VERSION" "${AID_HOME}/VERSION"
+    # Install the dashboard unit if it was staged.
+    if [[ -f "${_BOOTSTRAP_STAGE}/dashboard/server/server.py" ]]; then
+        mkdir -p "${AID_HOME}/dashboard/reader" "${AID_HOME}/dashboard/server"
+        for _df in \
+            "index.html" \
+            "reader/__init__.py" \
+            "reader/reader.py" \
+            "reader/models.py" \
+            "reader/parsers.py" \
+            "reader/derivation.py" \
+            "reader/locator.py" \
+            "server/server.py" \
+            "server/server.mjs" \
+            "server/reader.mjs" \
+            "server/__init__.py"
+        do
+            _df_staged="${_BOOTSTRAP_STAGE}/dashboard/${_df}"
+            [[ -f "$_df_staged" ]] && cp "$_df_staged" "${AID_HOME}/dashboard/${_df}"
+        done
+    fi
 
     # Post-copy verify: sha256 of installed lib must match the source we copied from.
     # A grep-based sentinel check (the previous approach) passes stale/partial files

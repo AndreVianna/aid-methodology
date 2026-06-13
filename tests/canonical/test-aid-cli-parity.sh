@@ -101,20 +101,48 @@ newhome()   { mktemp -d "${TMP}/home.XXXXXX"; }
 # ---------------------------------------------------------------------------
 setup_sh_home() {
     local home_dir="$1"
-    mkdir -p "${home_dir}/bin" "${home_dir}/lib"
+    mkdir -p "${home_dir}/bin" "${home_dir}/lib" \
+             "${home_dir}/dashboard/reader" "${home_dir}/dashboard/server"
     cp "${BIN_AID_SH}" "${home_dir}/bin/aid"
     chmod +x "${home_dir}/bin/aid"
     cp "${LIB_SH}" "${home_dir}/lib/aid-install-core.sh"
     printf '%s\n' "${VERSION}" > "${home_dir}/VERSION"
+    # Install curated dashboard unit under $AID_HOME/dashboard/ (D8 spawn-seam layout).
+    local _dsrc="${REPO_ROOT}/dashboard"
+    ln -sf "${_dsrc}/index.html"           "${home_dir}/dashboard/index.html"
+    ln -sf "${_dsrc}/reader/__init__.py"   "${home_dir}/dashboard/reader/__init__.py"
+    ln -sf "${_dsrc}/reader/reader.py"     "${home_dir}/dashboard/reader/reader.py"
+    ln -sf "${_dsrc}/reader/models.py"     "${home_dir}/dashboard/reader/models.py"
+    ln -sf "${_dsrc}/reader/parsers.py"    "${home_dir}/dashboard/reader/parsers.py"
+    ln -sf "${_dsrc}/reader/derivation.py" "${home_dir}/dashboard/reader/derivation.py"
+    ln -sf "${_dsrc}/reader/locator.py"    "${home_dir}/dashboard/reader/locator.py"
+    ln -sf "${_dsrc}/server/server.py"     "${home_dir}/dashboard/server/server.py"
+    ln -sf "${_dsrc}/server/server.mjs"    "${home_dir}/dashboard/server/server.mjs"
+    ln -sf "${_dsrc}/server/reader.mjs"    "${home_dir}/dashboard/server/reader.mjs"
+    ln -sf "${_dsrc}/server/__init__.py"   "${home_dir}/dashboard/server/__init__.py"
 }
 
 setup_ps1_home() {
     local home_dir="$1"
-    mkdir -p "${home_dir}/bin" "${home_dir}/lib"
+    mkdir -p "${home_dir}/bin" "${home_dir}/lib" \
+             "${home_dir}/dashboard/reader" "${home_dir}/dashboard/server"
     cp "${BIN_AID_PS1}" "${home_dir}/bin/aid.ps1"
     [[ -f "$BIN_AID_CMD" ]] && cp "${BIN_AID_CMD}" "${home_dir}/bin/aid.cmd" || true
     cp "${LIB_PS1}" "${home_dir}/lib/AidInstallCore.psm1"
     printf '%s\n' "${VERSION}" > "${home_dir}/VERSION"
+    # Install curated dashboard unit under $AID_HOME/dashboard/ (D8 spawn-seam layout).
+    local _dsrc="${REPO_ROOT}/dashboard"
+    ln -sf "${_dsrc}/index.html"           "${home_dir}/dashboard/index.html"
+    ln -sf "${_dsrc}/reader/__init__.py"   "${home_dir}/dashboard/reader/__init__.py"
+    ln -sf "${_dsrc}/reader/reader.py"     "${home_dir}/dashboard/reader/reader.py"
+    ln -sf "${_dsrc}/reader/models.py"     "${home_dir}/dashboard/reader/models.py"
+    ln -sf "${_dsrc}/reader/parsers.py"    "${home_dir}/dashboard/reader/parsers.py"
+    ln -sf "${_dsrc}/reader/derivation.py" "${home_dir}/dashboard/reader/derivation.py"
+    ln -sf "${_dsrc}/reader/locator.py"    "${home_dir}/dashboard/reader/locator.py"
+    ln -sf "${_dsrc}/server/server.py"     "${home_dir}/dashboard/server/server.py"
+    ln -sf "${_dsrc}/server/server.mjs"    "${home_dir}/dashboard/server/server.mjs"
+    ln -sf "${_dsrc}/server/reader.mjs"    "${home_dir}/dashboard/server/reader.mjs"
+    ln -sf "${_dsrc}/server/__init__.py"   "${home_dir}/dashboard/server/__init__.py"
 }
 
 # Bash aid runner.
@@ -468,17 +496,13 @@ assert_output_contains "$OUT_PS1" "${VERSION}" "PAR029-L05 PS1 version output"
 # Both runtimes (python/node) are present on this Linux machine so start works.
 # ---------------------------------------------------------------------------
 REPO_ROOT_PAR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-DASH_SERVER_DIR="${REPO_ROOT_PAR}/dashboard/server"
-DASH_READER_PY="${REPO_ROOT_PAR}/dashboard/reader.py"
-DASH_INIT_PY="${REPO_ROOT_PAR}/dashboard/__init__.py"
 
+# A minimal fixture repo for dashboard tests: has .aid/ dir only.
+# The dashboard server now lives in $AID_HOME/dashboard/ (D8 spawn-seam relocation),
+# so the served repo fixture needs only the .aid/ workspace.
 new_dash_repo() {
     local r; r="$(mktemp -d "${TMP}/dashrepo.XXXXXX")"
-    mkdir -p "${r}/.aid/.temp" "${r}/dashboard/server"
-    ln -sf "${DASH_SERVER_DIR}/server.py"  "${r}/dashboard/server/server.py"
-    ln -sf "${DASH_SERVER_DIR}/server.mjs" "${r}/dashboard/server/server.mjs"
-    [[ -f "$DASH_READER_PY" ]] && ln -sf "$DASH_READER_PY" "${r}/dashboard/reader.py"
-    [[ -f "$DASH_INIT_PY" ]]   && ln -sf "$DASH_INIT_PY"   "${r}/dashboard/__init__.py"
+    mkdir -p "${r}/.aid/.temp"
     echo "$r"
 }
 
@@ -714,22 +738,31 @@ _AID_LIB_PS1="${REPO_ROOT}/lib/AidInstallCore.psm1"
 
 new_dash_home_par005() {
     local h; h="$(mktemp -d "${TMP}/hpar005.XXXXXX")"
-    mkdir -p "${h}/bin" "${h}/lib"
+    mkdir -p "${h}/bin" "${h}/lib" "${h}/dashboard/reader" "${h}/dashboard/server"
     cp "${BIN_AID_SH}"  "${h}/bin/aid"; chmod +x "${h}/bin/aid"
     cp "${BIN_AID_PS1}" "${h}/bin/aid.ps1"
     cp "${LIB_SH}"              "${h}/lib/aid-install-core.sh"
     [[ -f "$_AID_LIB_PS1" ]] && cp "$_AID_LIB_PS1" "${h}/lib/AidInstallCore.psm1"
     printf '0.7.0\n' > "${h}/VERSION"
+    # Install curated dashboard unit under $AID_HOME/dashboard/ (D8 spawn-seam layout).
+    local _dsrc="${REPO_ROOT}/dashboard"
+    ln -sf "${_dsrc}/index.html"           "${h}/dashboard/index.html"
+    ln -sf "${_dsrc}/reader/__init__.py"   "${h}/dashboard/reader/__init__.py"
+    ln -sf "${_dsrc}/reader/reader.py"     "${h}/dashboard/reader/reader.py"
+    ln -sf "${_dsrc}/reader/models.py"     "${h}/dashboard/reader/models.py"
+    ln -sf "${_dsrc}/reader/parsers.py"    "${h}/dashboard/reader/parsers.py"
+    ln -sf "${_dsrc}/reader/derivation.py" "${h}/dashboard/reader/derivation.py"
+    ln -sf "${_dsrc}/reader/locator.py"    "${h}/dashboard/reader/locator.py"
+    ln -sf "${_dsrc}/server/server.py"     "${h}/dashboard/server/server.py"
+    ln -sf "${_dsrc}/server/server.mjs"    "${h}/dashboard/server/server.mjs"
+    ln -sf "${_dsrc}/server/reader.mjs"    "${h}/dashboard/server/reader.mjs"
+    ln -sf "${_dsrc}/server/__init__.py"   "${h}/dashboard/server/__init__.py"
     echo "$h"
 }
 
 new_dash_repo_par005() {
     local r; r="$(mktemp -d "${TMP}/rpar005.XXXXXX")"
-    mkdir -p "${r}/.aid/.temp" "${r}/dashboard/server"
-    ln -sf "${DASH_SERVER_DIR}/server.py"  "${r}/dashboard/server/server.py"
-    ln -sf "${DASH_SERVER_DIR}/server.mjs" "${r}/dashboard/server/server.mjs"
-    [[ -f "$DASH_READER_PY" ]] && ln -sf "$DASH_READER_PY" "${r}/dashboard/reader.py"
-    [[ -f "$DASH_INIT_PY" ]]   && ln -sf "$DASH_INIT_PY"   "${r}/dashboard/__init__.py"
+    mkdir -p "${r}/.aid/.temp"
     echo "$r"
 }
 

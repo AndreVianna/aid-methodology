@@ -869,8 +869,8 @@ _dc_start() {
     fi
 
     # Step 6: locate the server entry point.
-    # <assets> = <target>/dashboard (the dashboard subtree of the repo being served).
-    local assets_dir="${target}/dashboard"
+    # <assets> = $AID_HOME/dashboard (the co-vendored server+reader unit in the install tree).
+    local assets_dir="${AID_HOME}/dashboard"
     local entry_point
     if [[ "$runtime" == "python" ]]; then
         entry_point="${assets_dir}/server/server.py"
@@ -878,7 +878,7 @@ _dc_start() {
         entry_point="${assets_dir}/server/server.mjs"
     fi
     if [[ ! -f "$entry_point" ]]; then
-        echo "ERROR: aid: dashboard: AID install at ${target} is missing the dashboard server (${runtime} entry-point not found); try 'aid update'" >&2
+        echo "ERROR: aid: dashboard: the dashboard server is missing from the install tree (${runtime} entry-point not found at ${entry_point}); run 'aid update' or reinstall aid" >&2
         exit 7
     fi
 

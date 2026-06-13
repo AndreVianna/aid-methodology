@@ -708,6 +708,44 @@ if ($script:_InstallMode -eq 'BOOTSTRAP') {
         }
     }
 
+    # Install the dashboard server+reader unit (11 files, curated).
+    # Source: beside install.ps1 (repo checkout) or extracted CLI bundle (piped bootstrap).
+    $bsDashSrc = $null
+    if ($bsCliBundleExtract) {
+        $bsDashSrc = Join-Path $bsCliBundleExtract 'dashboard'
+    } elseif (-not [string]::IsNullOrEmpty($script:_InstallPs1Path)) {
+        $bsDashSrc = Join-Path (Split-Path -Parent $script:_InstallPs1Path) 'dashboard'
+    }
+    if ($bsDashSrc -and (Test-Path $bsDashSrc -PathType Container)) {
+        # Clean-replace the dashboard unit so upgrades never leave old server bits.
+        $bsDashDest = Join-Path $aidHome 'dashboard'
+        if (Test-Path $bsDashDest -PathType Container) {
+            Remove-Item -LiteralPath $bsDashDest -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        $bsDashFiles = @(
+            'index.html',
+            'reader\__init__.py',
+            'reader\reader.py',
+            'reader\models.py',
+            'reader\parsers.py',
+            'reader\derivation.py',
+            'reader\locator.py',
+            'server\server.py',
+            'server\server.mjs',
+            'server\reader.mjs',
+            'server\__init__.py'
+        )
+        New-Item -ItemType Directory -Path (Join-Path $bsDashDest 'reader') -Force | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $bsDashDest 'server') -Force | Out-Null
+        foreach ($bsDf in $bsDashFiles) {
+            $bsDfSrc = Join-Path $bsDashSrc $bsDf
+            $bsDfDst = Join-Path $bsDashDest $bsDf
+            if (Test-Path $bsDfSrc -PathType Leaf) {
+                Copy-Item -LiteralPath $bsDfSrc -Destination $bsDfDst -Force
+            }
+        }
+    }
+
     # Pre-copy sanity: verify the source lib contains the required sentinel function.
     # This catches a bad AID_LIB_PATH (empty file, truncated download, wrong file).
     $bsLibSrcContent = Get-Content -LiteralPath $bsLibSrc -Raw -Encoding utf8 -ErrorAction SilentlyContinue

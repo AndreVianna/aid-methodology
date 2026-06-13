@@ -206,7 +206,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-echo "=== PW05: _vendor/ byte-identical to the 6 repo-root sources (drift gate) ==="
+echo "=== PW05: _vendor/ byte-identical to the 17 repo-root sources (drift gate) ==="
 # ---------------------------------------------------------------------------
 
 _6_PAIRS=(
@@ -216,6 +216,17 @@ _6_PAIRS=(
     "lib/aid-install-core.sh:lib/aid-install-core.sh"
     "lib/AidInstallCore.psm1:lib/AidInstallCore.psm1"
     "VERSION:VERSION"
+    "dashboard/index.html:dashboard/index.html"
+    "dashboard/reader/__init__.py:dashboard/reader/__init__.py"
+    "dashboard/reader/reader.py:dashboard/reader/reader.py"
+    "dashboard/reader/models.py:dashboard/reader/models.py"
+    "dashboard/reader/parsers.py:dashboard/reader/parsers.py"
+    "dashboard/reader/derivation.py:dashboard/reader/derivation.py"
+    "dashboard/reader/locator.py:dashboard/reader/locator.py"
+    "dashboard/server/server.py:dashboard/server/server.py"
+    "dashboard/server/server.mjs:dashboard/server/server.mjs"
+    "dashboard/server/reader.mjs:dashboard/server/reader.mjs"
+    "dashboard/server/__init__.py:dashboard/server/__init__.py"
 )
 for _pair in "${_6_PAIRS[@]}"; do
     _src_rel="${_pair%%:*}"
