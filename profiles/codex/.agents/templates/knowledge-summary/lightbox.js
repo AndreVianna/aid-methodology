@@ -12,7 +12,7 @@
 
 	/* ---------- Theme handling ---------- */
 	let stored = null;
-	try { stored = localStorage.getItem('kb-theme'); } catch (e) {}
+	try { stored = localStorage.getItem('aid-dashboard-theme'); } catch (e) {}
 	const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 	const initialTheme = stored || (prefersDark ? 'dark' : 'light');
 	root.setAttribute('data-theme', initialTheme);
@@ -97,7 +97,7 @@
 
 	function setTheme(theme) {
 		root.setAttribute('data-theme', theme);
-		try { localStorage.setItem('kb-theme', theme); } catch (e) {}
+		try { localStorage.setItem('aid-dashboard-theme', theme); } catch (e) {}
 		updateThemeUI(theme);
 		initMermaid(theme);
 		renderAllDiagrams();
@@ -349,7 +349,7 @@
 			const mq = window.matchMedia('(prefers-color-scheme: dark)');
 			const handleChange = function(e) {
 				let userChose = null;
-				try { userChose = localStorage.getItem('kb-theme'); } catch (_) {}
+				try { userChose = localStorage.getItem('aid-dashboard-theme'); } catch (_) {}
 				if (!userChose) setTheme(e.matches ? 'dark' : 'light');
 			};
 			if (mq.addEventListener) mq.addEventListener('change', handleChange);
