@@ -31,6 +31,18 @@
   **independent** forensic panel (side-by-side on desktop, stacked on mobile), the view never merges two
   tasks' forensics, and a task that disappears between polls shows the "no longer in the work's state"
   notice + back link (never a blank). Confirm **back** returns to the pipeline view.
+- **NAV-1 4-level breadcrumb (SPEC RC-4) — render + click-navigate each level:** with the page rendered in
+  Playwright, **visually validate the breadcrumb at each level** and confirm each ancestor link navigates
+  correctly: (1) **main view** → breadcrumb shows `AID` (leaf, no link beyond it); (2) **work view**
+  (`#/work/<id>`) → shows `AID › <project> › <pipeline>` with Main + Project as links and Pipeline as the
+  plain leaf; (3) **task drill view** (`#/work/<id>/task/<id>`) → shows `AID › <project> › <pipeline> ›
+  <task>` with Main + Project + Pipeline as links and Task as the plain leaf. Then **click each ancestor and
+  confirm the nav target**: **Pipeline → returns to the `#/work/<id>` pipeline view** (hash route); **Project
+  → clears the hash and returns to the list view** (`location.pathname`, no `<id>` needed); **Main → navigates
+  to the CLI home at `/`** (the cross-page absolute link — confirm it lands on the project-list home, not a
+  404). Confirm the breadcrumb is **router-driven** (it updates as you climb/descend without using the browser
+  Back button) and that labels are correct (project name, work/pipeline name, task id). Capture a screenshot
+  of the breadcrumb at the task (deepest) level and after each ancestor click.
 - **Responsive + dark + no-errors:** validate the 768px responsive collapse (findings+ledger stack; raw
   `<pre>` horizontally-scrollable, never wrap-corrupt) and dark theme (NFR8); **zero JS console errors**
   across all states. Tailscale may serve the page privately for the visual confirmation (global CLAUDE.md).
@@ -52,6 +64,12 @@
 - [ ] **Parallel drill** of several concurrent tasks renders **independent** panels (no merge; desktop
       side-by-side, mobile stacked); a disappeared task shows the notice + back link (never blank); back
       returns to the pipeline view.
+- [ ] The **NAV-1 4-level breadcrumb** is **rendered in Playwright** and visually validated at each level
+      (main → `AID`; work → `AID › <project> › <pipeline>`; task → `AID › <project> › <pipeline> › <task>`,
+      ancestors-as-links / leaf-as-`.current`), and **clicking each ancestor navigates correctly**: **Main →
+      `/`** (lands on the CLI-home project list, not a 404), **Project → list view** (hash cleared,
+      `location.pathname`), **Pipeline → `#/work/<id>`** pipeline view; the breadcrumb is confirmed
+      router-driven (updates without the browser Back button). Screenshots captured.
 - [ ] Dark theme + the 768px responsive collapse are visually confirmed; **zero JS console errors** across
       all states; screenshots are captured for each validated state.
 - [ ] No `.aid/` is mutated during the gate (read-only, NFR2); the server stayed bound to `127.0.0.1`.

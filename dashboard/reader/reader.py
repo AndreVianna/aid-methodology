@@ -27,21 +27,31 @@ from typing import Optional, Union
 from .derivation import derive_kb_status
 from .locator import locate_aid_root
 from .models import (
+    DeferredIssue,
+    Finding,
     Lifecycle,
+    LogAvailability,
+    RawStateRef,
     ReadMeta,
     RepoInfo,
     RepoModel,
     SourceMode,
+    TaskDetail,
+    TaskLedger,
     TaskModel,
     ToolInfo,
     WorkModel,
 )
 from .parsers import (
     ParsedWork,
+    parse_deferred_issues,
+    parse_delivery_gate,
     parse_execution_graph,
     parse_kb_baseline,
     parse_kb_state,
+    parse_log_availability,
     parse_project_name,
+    parse_quick_check_findings,
     parse_requirements_md,
     parse_spec_md,
     parse_state_md,
@@ -69,6 +79,22 @@ def read_repo(aid_root: Union[str, Path]) -> RepoModel:
     Returns:
         RepoModel with tool, repo, works, and read (ReadMeta) fields populated.
     """
+    model, _ = _read_repo_full(aid_root)
+    return model
+
+
+def _read_repo_full(
+    aid_root: Union[str, Path],
+) -> "tuple[RepoModel, dict[str, tuple[str, str]]]":
+    """Run the full always-on repo read pass and return both the model and a
+    per-work STATE.md text cache built as a by-product (zero extra I/O).
+
+    Returns:
+        (RepoModel, state_text_cache)
+        where state_text_cache maps work_id -> (decoded_text, label_str).
+        The cache is used by read_repo_detail to satisfy DR-1/DD-3/NFR4
+        (raw_state reuses bytes already read; no re-read of STATE.md).
+    """
     read_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     parse_warnings: list[str] = []
     bytes_read = 0
@@ -85,7 +111,7 @@ def read_repo(aid_root: Union[str, Path]) -> RepoModel:
         parse_warnings.append(
             f"No .aid/ directory found at {root}; returning empty model."
         )
-        return RepoModel(
+        empty_model = RepoModel(
             tool=ToolInfo(manifest_present=False),
             repo=RepoInfo(
                 project_name=root.name,
@@ -101,6 +127,7 @@ def read_repo(aid_root: Union[str, Path]) -> RepoModel:
                 bytes_read=0,
             ),
         )
+        return empty_model, {}
 
     # Step 2: LEVEL-0 -- ToolInfo (LC-2)
     tool_info, br = parse_tool_info(loc.manifest_path, loc.version_path)
@@ -144,18 +171,24 @@ def read_repo(aid_root: Union[str, Path]) -> RepoModel:
     # Steps 5a-5g: PER WORK -- parse STATE.md; build WorkModel list
     works: list[WorkModel] = []
     fallback_works: list[str] = []
+    # Build per-work STATE.md cache as a by-product of the always-on pass.
+    # DR-1/DD-3/NFR4: read_repo_detail reuses these bytes; zero extra disk I/O.
+    state_text_cache: dict[str, tuple[str, str]] = {}
 
     for work_dir in loc.work_dirs:
         work_id = work_dir.name
-        work_model, work_warnings, work_bytes = _read_work(work_dir, work_id)
+        work_model, work_warnings, work_bytes, state_text, state_label = _read_work(
+            work_dir, work_id
+        )
         works.append(work_model)
         parse_warnings.extend(work_warnings)
         bytes_read += work_bytes
+        state_text_cache[work_id] = (state_text, state_label)
         if work_model.source_mode != SourceMode.Normalized:
             fallback_works.append(work_id)
 
     # Step 6: ASSEMBLE
-    return RepoModel(
+    repo_model = RepoModel(
         tool=tool_info,
         repo=repo_info,
         works=works,
@@ -167,19 +200,162 @@ def read_repo(aid_root: Union[str, Path]) -> RepoModel:
             bytes_read=bytes_read,
         ),
     )
+    return repo_model, state_text_cache
+
+
+def read_repo_detail(
+    aid_root: Union[str, Path],
+    detail_task_ids: Optional[list[str]] = None,
+) -> tuple[RepoModel, dict[str, TaskDetail]]:
+    """Read AID state and populate TaskDetail for each requested task_id.
+
+    LC-TR (feature-008, task-069): the detail sub-parser runs ONLY when
+    detail_task_ids is non-empty. The always-on read_repo() path is UNCHANGED.
+
+    detail_task_ids: list of composite 'work_id/task_id' strings.
+                     None or empty -> identical to read_repo() (no TaskDetail).
+
+    Returns (RepoModel, details) where:
+      details: dict keyed 'work_id/task_id' -> TaskDetail, sorted ascending.
+               Empty dict when detail_task_ids is None/empty (NFR4, DD-1).
+
+    Read-only / no-LLM / no subprocess (NFR2/NFR7).
+    Torn read -> parse_warnings + best-effort TaskDetail; never throws.
+    """
+    # Step 1: run the full always-on read pass; get STATE.md cache as by-product.
+    # DR-1/DD-3/NFR4: reuse bytes already read; zero extra disk I/O for raw_state.
+    repo_model, state_text_cache = _read_repo_full(aid_root)
+
+    # Step 2: if no detail requested, return immediately (NFR4, DD-1)
+    if not detail_task_ids:
+        return repo_model, {}
+
+    # Step 3: LC-TR DETAIL-EXTEND -- only for requested task_ids
+    root = Path(aid_root).resolve()
+    if root.name == ".aid":
+        root = root.parent
+    aid_dir = root / ".aid"
+
+    # Build an index of WorkModel by work_id for quick lookup
+    work_index: dict[str, WorkModel] = {w.work_id: w for w in repo_model.works}
+
+    details: dict[str, TaskDetail] = {}
+    extra_warnings: list[str] = []
+
+    for composite_key in detail_task_ids:
+        # composite_key = 'work_id/task_id'
+        if "/" not in composite_key:
+            extra_warnings.append(
+                f"detail_task_ids: invalid key '{composite_key}' "
+                f"(expected 'work_id/task_id'); skipping"
+            )
+            continue
+
+        slash_idx = composite_key.index("/")
+        work_id = composite_key[:slash_idx]
+        task_id = composite_key[slash_idx + 1:]
+
+        if not work_id or not task_id:
+            extra_warnings.append(
+                f"detail_task_ids: empty work_id or task_id in '{composite_key}'; skipping"
+            )
+            continue
+
+        task_warnings: list[str] = []
+
+        # DR-1: get STATE.md text from the always-on pass cache (no disk re-read).
+        # If work_id was not enumerated in the always-on pass (detail for a non-enumerated
+        # work), use empty text and add a warning -- never re-read from disk (NFR4).
+        state_path_label: str = f".aid/{work_id}/STATE.md"
+        if work_id in state_text_cache:
+            state_text, state_path_label = state_text_cache[work_id]
+        else:
+            task_warnings.append(
+                f"{work_id}/{task_id}: work not found in always-on pass; "
+                f"STATE.md unavailable; raw_state will be empty"
+            )
+            state_text = ""
+
+        raw_state = RawStateRef(
+            text=state_text,
+            byte_len=len(state_text.encode("utf-8")),
+            path=state_path_label,
+        )
+
+        # DR-2: parse ## Quick Check Findings -> ### task-NNN -> **Findings:** bullets
+        findings = parse_quick_check_findings(state_text, task_id, task_warnings)
+
+        # DR-3: resolve the task's delivery from the work model
+        delivery_id: Optional[str] = None
+        work_model = work_index.get(work_id)
+        if work_model is not None:
+            for task in work_model.tasks:
+                if task.task_id.lower() == task_id.lower():
+                    if task.delivery is not None:
+                        delivery_id = f"delivery-{task.delivery:03d}"
+                    break
+
+        # DR-3: parse ## Delivery Gates -> ### delivery-NNN for grade/tier/ts
+        gate_grade: Optional[str] = None
+        gate_reviewer_tier: Optional[str] = None
+        gate_timestamp: Optional[str] = None
+        if delivery_id is not None and state_text:
+            gate_grade, gate_reviewer_tier, gate_timestamp = parse_delivery_gate(
+                state_text, delivery_id, task_warnings
+            )
+
+        # DR-4: read .aid/{work}/delivery-NNN-issues.md; filter to Source task == task_id
+        deferred_issues: list[DeferredIssue] = []
+        if delivery_id is not None:
+            issues_path = aid_dir / work_id / f"{delivery_id}-issues.md"
+            deferred_issues = parse_deferred_issues(issues_path, task_id, task_warnings)
+
+        ledger = TaskLedger(
+            delivery_id=delivery_id,
+            grade=gate_grade,
+            reviewer_tier=gate_reviewer_tier,
+            gate_timestamp=gate_timestamp,
+            deferred_issues=deferred_issues,
+        )
+
+        # DR-5: stat .aid/.temp/dashboard.log + .aid/.heartbeat/
+        logs = parse_log_availability(aid_dir)
+
+        task_detail = TaskDetail(
+            task_id=task_id,
+            findings=findings,
+            ledger=ledger,
+            raw_state=raw_state,
+            logs=logs,
+        )
+
+        details[composite_key] = task_detail
+        extra_warnings.extend(task_warnings)
+
+    # Append any LC-TR warnings to the model's parse_warnings (best-effort)
+    if extra_warnings:
+        repo_model.read.parse_warnings.extend(extra_warnings)
+
+    # Sort details ascending by composite key (parity requirement, DM-2 key-order)
+    sorted_details = dict(sorted(details.items()))
+
+    return repo_model, sorted_details
 
 
 def _read_work(
     work_dir: Path, work_id: str
-) -> tuple[WorkModel, list[str], int]:
+) -> "tuple[WorkModel, list[str], int, str, str]":
     """Read and parse a single work folder's STATE.md.
 
     Steps 5a-5g of the Feature Flow, per-work.
 
-    Returns (WorkModel, parse_warnings, bytes_read).
+    Returns (WorkModel, parse_warnings, bytes_read, state_text, state_label).
+    state_text is the decoded STATE.md content (empty string on error/absent).
+    state_label is the relative path label for raw_state (e.g. '.aid/work-001/STATE.md').
     Never raises: any exception yields a parse_warning + best-effort WorkModel.
     """
     state_path = work_dir / "STATE.md"
+    state_label = f".aid/{work_id}/STATE.md"
     parse_warnings: list[str] = []
     bytes_read = 0
 
@@ -188,7 +364,7 @@ def _read_work(
         parse_warnings.append(
             f"{work_id}: STATE.md not found; returning minimal WorkModel."
         )
-        return _minimal_work_model(work_id, parse_warnings), parse_warnings, 0
+        return _minimal_work_model(work_id, parse_warnings), parse_warnings, 0, "", state_label
 
     try:
         raw = state_path.read_bytes()
@@ -198,7 +374,7 @@ def _read_work(
         parse_warnings.append(
             f"{work_id}: STATE.md read error ({exc}); returning minimal WorkModel."
         )
-        return _minimal_work_model(work_id, parse_warnings), parse_warnings, 0
+        return _minimal_work_model(work_id, parse_warnings), parse_warnings, 0, "", state_label
 
     # Steps 5b-5d: parse normalized block, tasks, pending Q&A (LC-2)
     # work_dir is passed for the LC-3 fallback IMPEDIMENT scan (KI-003).
@@ -300,7 +476,7 @@ def _read_work(
         deliverables=pw.deliverables,
     )
 
-    return work_model, parse_warnings, bytes_read
+    return work_model, parse_warnings, bytes_read, text, state_label
 
 
 def _minimal_work_model(work_id: str, _warnings: list[str]) -> WorkModel:

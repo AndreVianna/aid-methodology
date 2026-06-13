@@ -1720,6 +1720,17 @@ function slugFromWorkId(workId) {
 // ---------------------------------------------------------------------------
 
 export function readRepo(root) {
+  // Thin wrapper: run full pass, discard STATE.md cache, return model only.
+  // Signature and return type are UNCHANGED (DR-1/DD-3/NFR4 satisfied by _readRepoFull).
+  return _readRepoFull(root).model;
+}
+
+function _readRepoFull(root) {
+  // Run the full always-on repo read pass.
+  // Returns { model, stateCache } where stateCache maps workId -> [stateText, statePathLabel].
+  // The cache is a by-product (zero extra I/O); readRepoDetail uses it to satisfy
+  // DR-1/DD-3/NFR4 (raw_state reuses bytes already read; no re-read of STATE.md).
+
   // Normalize: accept repo root or .aid/ dir itself
   let resolvedRoot = resolve(root);
   if (basename(resolvedRoot) === ".aid") {
@@ -1737,7 +1748,7 @@ export function readRepo(root) {
     parseWarnings.push(
       `No .aid/ directory found at ${resolvedRoot}; returning empty model.`
     );
-    return _buildRepoModel({
+    const emptyModel = _buildRepoModel({
       tool: { manifest_present: false, aid_version: null, installed_at: null, tools_installed: [] },
       repo: { project_name: basename(resolvedRoot), aid_dir: loc.aidDir, kb_state: null },
       works: [],
@@ -1749,6 +1760,7 @@ export function readRepo(root) {
         bytes_read: 0,
       },
     });
+    return { model: emptyModel, stateCache: {} };
   }
 
   // Step 2: LEVEL-0 ToolInfo
@@ -1789,20 +1801,23 @@ export function readRepo(root) {
   // Steps 4-5: ENUMERATE + PER WORK
   const works = [];
   const fallbackWorks = [];
+  // Build per-work STATE.md cache as a by-product of the always-on pass.
+  const stateCache = {};
 
   for (const workDir of loc.workDirs) {
     const workId = basename(workDir);
-    const [workModel, workWarnings, workBytes] = readWork(workDir, workId);
+    const [workModel, workWarnings, workBytes, stateText, statePathLabel] = readWork(workDir, workId);
     works.push(workModel);
     parseWarnings.push(...workWarnings);
     bytesRead += workBytes;
+    stateCache[workId] = [stateText, statePathLabel];
     if (workModel.source_mode !== SourceMode.Normalized) {
       fallbackWorks.push(workId);
     }
   }
 
   // Step 6: ASSEMBLE
-  return _buildRepoModel({
+  const model = _buildRepoModel({
     tool: toolInfo,
     repo: repoInfo,
     works,
@@ -1814,10 +1829,12 @@ export function readRepo(root) {
       bytes_read: bytesRead,
     },
   });
+  return { model, stateCache };
 }
 
 function readWork(workDir, workId) {
   const statePath = join(workDir, "STATE.md");
+  const statePathLabel = ".aid/" + workId + "/STATE.md";
   const parseWarnings = [];
   let bytesRead = 0;
 
@@ -1830,7 +1847,7 @@ function readWork(workDir, workId) {
 
   if (!isFile) {
     parseWarnings.push(`${workId}: STATE.md not found; returning minimal WorkModel.`);
-    return [_minimalWorkModel(workId), parseWarnings, 0];
+    return [_minimalWorkModel(workId), parseWarnings, 0, "", statePathLabel];
   }
 
   let text;
@@ -1841,7 +1858,7 @@ function readWork(workDir, workId) {
     text = raw.toString("utf-8");
   } catch (exc) {
     parseWarnings.push(`${workId}: STATE.md read error (${exc}); returning minimal WorkModel.`);
-    return [_minimalWorkModel(workId), parseWarnings, 0];
+    return [_minimalWorkModel(workId), parseWarnings, 0, "", statePathLabel];
   }
 
   const pw = parseStateText(text, workId, workDir);
@@ -1935,7 +1952,7 @@ function readWork(workDir, workId) {
     deliverables: pw.deliverables,
   });
 
-  return [workModel, parseWarnings, bytesRead];
+  return [workModel, parseWarnings, bytesRead, text, statePathLabel];
 }
 
 function _minimalWorkModel(workId) {
@@ -2106,4 +2123,541 @@ function _buildRepoModel({ tool, repo, works, read }) {
     works: works.map(_buildWorkModel),
     read: _buildReadMeta(read),
   };
+}
+
+// ---------------------------------------------------------------------------
+// LC-TR: TaskDetail sub-parsers (feature-008, task-069)
+// Detail-only: these run ONLY when detail_task_ids is supplied to readRepoDetail().
+// The always-on readRepo() path does NOT call any function below.
+// No write / no LLM / no subprocess (NFR2/NFR7).
+// ASCII-only source (shipped script posture; coding-standards.md).
+// ---------------------------------------------------------------------------
+
+// Section header regexes for forensic sections (twin of parsers.py)
+const RE_QUICK_CHECK_FINDINGS = /^##\s+Quick Check Findings\s*$/i;
+const RE_DELIVERY_GATES_SECTION = /^##\s+Delivery Gates\s*$/i;
+const RE_TASK_BLOCK_HEADER = /^###\s+(task-\S+)\s*$/i;
+const RE_DELIVERY_BLOCK_HEADER = /^###\s+(delivery-\d+[^\s]*)\s*$/i;
+
+const RE_FINDINGS_REVIEWER_TIER = /^\s*-\s*\*\*Reviewer Tier:\*\*\s*(.+)/i;
+const RE_GATE_GRADE = /^\s*-\s*\*\*Grade:\*\*\s*(.+)/i;
+const RE_GATE_REVIEWER_TIER = /^\s*-\s*\*\*Reviewer Tier:\*\*\s*(.+)/i;
+const RE_GATE_TIMESTAMP = /^\s*-\s*\*\*Timestamp:\*\*\s*(.+)/i;
+const RE_LOCATION = /\{([^}]+:[^}]*)\}/;
+
+// Severity normalization (twin of _parse_severity in parsers.py)
+function parseSeverity(tag) {
+  const normalized = tag.toUpperCase().trim();
+  if (normalized === "[CRITICAL]" || normalized === "[HIGH]") return normalized;
+  return "[MINOR]";
+}
+
+// Disposition tokens
+const DISPOSITION_TOKENS = ["Fixed-on-spot", "Deferred-to-gate"];
+
+// Parse one **Findings:** bullet into a Finding object (twin of _parse_finding_bullet)
+function parseFindingBullet(bulletText, reviewerTier) {
+  const text = bulletText.trim();
+  if (!text) return null;
+
+  // Extract leading bracketed tag: [SEVERITY]
+  const tagM = text.match(/^(\[\S+?\])\s+(.*)/);
+  let tag, rest;
+  if (tagM) {
+    tag = tagM[1];
+    rest = tagM[2].trim();
+  } else {
+    // No bracketed tag -- whole text is description with MINOR severity
+    return {
+      severity: "[MINOR]",
+      description: text,
+      location: null,
+      disposition: null,
+      reviewer_tier: reviewerTier,
+    };
+  }
+
+  const severity = parseSeverity(tag);
+
+  // Split on em-dash (U+2014, canonical) or legacy ' -- ' (ASCII double-dash).
+  // The canonical findings template uses U+2014; accept both for back-compat.
+  // \u2014 escape used (not literal em-dash) to satisfy the ASCII-only CI gate.
+  const segments = rest.split(/ (?:\u2014|--) /);
+  const description = segments.length > 0 ? segments[0].trim() : rest;
+
+  // Extract location from any segment: {file:line}
+  let location = null;
+  for (let i = 1; i < segments.length; i++) {
+    const lm = segments[i].match(RE_LOCATION);
+    if (lm) {
+      location = lm[1].trim();
+      break;
+    }
+  }
+
+  // Extract disposition
+  let disposition = null;
+  for (const seg of segments) {
+    const stripped = seg.trim();
+    for (const token of DISPOSITION_TOKENS) {
+      if (stripped === token || stripped.startsWith(token)) {
+        disposition = token;
+        break;
+      }
+    }
+    if (disposition) break;
+  }
+
+  return {
+    severity: severity,
+    description: description,
+    location: location,
+    disposition: disposition,
+    reviewer_tier: reviewerTier,
+  };
+}
+
+// DR-2: parse ## Quick Check Findings -> ### task-NNN -> **Findings:** bullets
+// Twin of parse_quick_check_findings in parsers.py (byte-parity minded)
+function parseQuickCheckFindings(stateText, taskId, parseWarnings) {
+  const findings = [];
+  let inFindingsSection = false;
+  let inTaskBlock = false;
+  let inFindingsList = false;
+  let reviewerTier = null;
+  const taskIdLower = taskId.toLowerCase();
+
+  try {
+    const lines = stateText.split("\n");
+    for (const line of lines) {
+      if (RE_QUICK_CHECK_FINDINGS.test(line)) {
+        inFindingsSection = true;
+        inTaskBlock = false;
+        inFindingsList = false;
+        reviewerTier = null;
+        continue;
+      }
+      if (inFindingsSection) {
+        // A ## section (not ###) ends the quick-check findings section
+        if (/^##\s+\S/.test(line) && !/^###/.test(line)) {
+          inFindingsSection = false;
+          inTaskBlock = false;
+          inFindingsList = false;
+          continue;
+        }
+        // ### task-NNN sub-section header
+        const tm = line.match(RE_TASK_BLOCK_HEADER);
+        if (tm) {
+          const blockTaskId = tm[1].toLowerCase();
+          inTaskBlock = (blockTaskId === taskIdLower);
+          inFindingsList = false;
+          reviewerTier = null;
+          continue;
+        }
+        if (inTaskBlock) {
+          // **Reviewer Tier:** line
+          const rtm = line.match(RE_FINDINGS_REVIEWER_TIER);
+          if (rtm) {
+            reviewerTier = rtm[1].trim();
+            continue;
+          }
+          // **Findings:** heading line
+          if (/^\s*-\s*\*\*Findings:\*\*\s*$/i.test(line)) {
+            inFindingsList = true;
+            continue;
+          }
+          if (inFindingsList) {
+            const stripped = line.trim();
+            if (stripped.startsWith("- [") || stripped.startsWith("-[")) {
+              // Parse the bullet (strip the leading '- ')
+              const bulletBody = stripped.replace(/^-\s*/, "");
+              const f = parseFindingBullet(bulletBody, reviewerTier);
+              if (f !== null) findings.push(f);
+              continue;
+            }
+            // Blank line or non-bullet ends findings list
+            if (stripped && !stripped.startsWith("-")) {
+              inFindingsList = false;
+            }
+          }
+        }
+      }
+    }
+  } catch (exc) {
+    parseWarnings.push(
+      taskId + ": error parsing ## Quick Check Findings (" + exc + "); " +
+      "returning best-effort findings"
+    );
+  }
+
+  return findings;
+}
+
+// DR-3: parse ## Delivery Gates -> ### delivery-NNN for grade/tier/timestamp
+// Twin of parse_delivery_gate in parsers.py (byte-parity minded)
+function parseDeliveryGate(stateText, deliveryId, parseWarnings) {
+  let grade = null;
+  let reviewerTier = null;
+  let gateTimestamp = null;
+
+  let inGates = false;
+  let inDeliveryBlock = false;
+  const deliveryIdLower = deliveryId.toLowerCase();
+
+  try {
+    for (const line of stateText.split("\n")) {
+      if (RE_DELIVERY_GATES_SECTION.test(line)) {
+        inGates = true;
+        inDeliveryBlock = false;
+        continue;
+      }
+      if (inGates) {
+        // A ## section (not ###) ends the delivery gates section
+        if (/^##\s+\S/.test(line) && !/^###/.test(line)) {
+          inGates = false;
+          inDeliveryBlock = false;
+          continue;
+        }
+        // ### delivery-NNN sub-section header
+        const dm = line.match(RE_DELIVERY_BLOCK_HEADER);
+        if (dm) {
+          const blockDeliveryId = dm[1].toLowerCase();
+          inDeliveryBlock = (blockDeliveryId === deliveryIdLower);
+          continue;
+        }
+        if (inDeliveryBlock) {
+          const gm = line.match(RE_GATE_GRADE);
+          if (gm && grade === null) {
+            const raw = gm[1].trim();
+            grade = raw ? raw.split(/\s+/)[0] : null;
+            continue;
+          }
+          const rtm = line.match(RE_GATE_REVIEWER_TIER);
+          if (rtm && reviewerTier === null) {
+            const raw = rtm[1].trim();
+            reviewerTier = raw ? raw.split(/\s+/)[0] : null;
+            continue;
+          }
+          const tsm = line.match(RE_GATE_TIMESTAMP);
+          if (tsm && gateTimestamp === null) {
+            gateTimestamp = tsm[1].trim() || null;
+            continue;
+          }
+          // Once all three are found, stop scanning
+          if (grade && reviewerTier && gateTimestamp) break;
+        }
+      }
+    }
+  } catch (exc) {
+    parseWarnings.push(
+      deliveryId + ": error parsing ## Delivery Gates (" + exc + "); " +
+      "returning best-effort gate fields"
+    );
+  }
+
+  return [grade, reviewerTier, gateTimestamp];
+}
+
+// DR-4: parse delivery-NNN-issues.md and filter rows to Source task == task_id
+// Twin of parse_deferred_issues in parsers.py (byte-parity minded)
+function parseDeferredIssues(issuesPath, taskId, parseWarnings) {
+  let isFile = false;
+  try { isFile = statSync(issuesPath).isFile(); } catch (_) { isFile = false; }
+  if (!isFile) return [];
+
+  let raw;
+  try {
+    raw = readFileSync(issuesPath);
+  } catch (exc) {
+    parseWarnings.push(
+      taskId + ": could not read " + basename(issuesPath) + " (" + exc + "); " +
+      "deferred_issues will be empty"
+    );
+    return [];
+  }
+
+  const text = raw.toString("utf-8");
+  const deferred = [];
+  let headerSeen = false;
+
+  try {
+    for (const line of text.split("\n")) {
+      const stripped = line.trim();
+      if (!stripped.startsWith("|")) continue;
+      if (RE_TABLE_SEP.test(stripped)) {
+        headerSeen = true;
+        continue;
+      }
+      const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+      if (cols.length < 4) continue;
+      if (!headerSeen) {
+        headerSeen = true;
+        continue;
+      }
+      const sourceTask = cols[0].trim();
+      const severity = cols[1].trim();
+      const description = cols[2].trim();
+      const status = cols[3].trim();
+
+      if (sourceTask.toLowerCase() === taskId.toLowerCase()) {
+        deferred.push({
+          source_task: sourceTask,
+          severity: severity || "[HIGH]",
+          description: description,
+          status: status || "Open",
+        });
+      }
+    }
+  } catch (exc) {
+    parseWarnings.push(
+      taskId + ": error parsing " + basename(issuesPath) + " (" + exc + "); " +
+      "returning best-effort deferred issues"
+    );
+  }
+
+  return deferred;
+}
+
+// DR-5: stat log/heartbeat paths for honest DM-4 log inventory
+// Twin of parse_log_availability in parsers.py (byte-parity minded)
+function parseLogAvailability(aidDir) {
+  const serverLogPath = join(aidDir, ".temp", "dashboard.log");
+  const heartbeatDir = join(aidDir, ".heartbeat");
+
+  let serverLogPresent = false;
+  let heartbeatPresent = false;
+
+  try {
+    serverLogPresent = statSync(serverLogPath).isFile();
+  } catch (_) {
+    serverLogPresent = false;
+  }
+
+  try {
+    heartbeatPresent = statSync(heartbeatDir).isDirectory();
+  } catch (_) {
+    heartbeatPresent = false;
+  }
+
+  return {
+    task_logs: "none",
+    server_log_present: serverLogPresent,
+    heartbeat_present: heartbeatPresent,
+  };
+}
+
+// Object builders for TaskDetail sub-model (field order matches Python dataclasses, DM-3)
+
+function _buildFinding(f) {
+  // Finding field order: severity, description, location, disposition, reviewer_tier
+  return {
+    severity: f.severity,
+    description: f.description,
+    location: f.location !== undefined ? f.location : null,
+    disposition: f.disposition !== undefined ? f.disposition : null,
+    reviewer_tier: f.reviewer_tier !== undefined ? f.reviewer_tier : null,
+  };
+}
+
+function _buildDeferredIssue(d) {
+  // DeferredIssue field order: source_task, severity, description, status
+  return {
+    source_task: d.source_task,
+    severity: d.severity,
+    description: d.description,
+    status: d.status,
+  };
+}
+
+function _buildTaskLedger(l) {
+  // TaskLedger field order: delivery_id, grade, reviewer_tier, gate_timestamp, deferred_issues
+  return {
+    delivery_id: l.delivery_id !== undefined ? l.delivery_id : null,
+    grade: l.grade !== undefined ? l.grade : null,
+    reviewer_tier: l.reviewer_tier !== undefined ? l.reviewer_tier : null,
+    gate_timestamp: l.gate_timestamp !== undefined ? l.gate_timestamp : null,
+    deferred_issues: (l.deferred_issues || []).map(_buildDeferredIssue),
+  };
+}
+
+function _buildRawStateRef(r) {
+  // RawStateRef field order: text, byte_len, path
+  if (r === null || r === undefined) return null;
+  return {
+    text: r.text,
+    byte_len: r.byte_len,
+    path: r.path,
+  };
+}
+
+function _buildLogAvailability(l) {
+  // LogAvailability field order: task_logs, server_log_present, heartbeat_present
+  if (l === null || l === undefined) return null;
+  return {
+    task_logs: l.task_logs,
+    server_log_present: l.server_log_present,
+    heartbeat_present: l.heartbeat_present,
+  };
+}
+
+function _buildTaskDetail(d) {
+  // TaskDetail field order: task_id, findings, ledger, raw_state, logs
+  return {
+    task_id: d.task_id,
+    findings: (d.findings || []).map(_buildFinding),
+    ledger: _buildTaskLedger(d.ledger || {}),
+    raw_state: _buildRawStateRef(d.raw_state),
+    logs: _buildLogAvailability(d.logs),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// readRepoDetail(root, detailTaskIds) -- LC-TR entry point
+// Twin of read_repo_detail in reader.py (byte-parity minded, task-069)
+// ---------------------------------------------------------------------------
+
+export function readRepoDetail(root, detailTaskIds) {
+  // LC-TR: run full always-on pass then attach TaskDetail for requested task_ids.
+  // detailTaskIds: array of composite 'work_id/task_id' strings.
+  // Returns { model, details } where details is {} when detailTaskIds is empty.
+  //
+  // DR-1/DD-3/NFR4: STATE.md bytes are reused from the always-on pass cache.
+  // No disk re-read for raw_state. Read-only / no-LLM / no subprocess (NFR2/NFR7).
+
+  // Step 1: run full pass; get STATE.md cache as by-product (zero extra I/O).
+  const { model, stateCache } = _readRepoFull(root);
+
+  if (!detailTaskIds || detailTaskIds.length === 0) {
+    return { model: model, details: {} };
+  }
+
+  // Normalize root
+  let resolvedRoot = resolve(root);
+  if (basename(resolvedRoot) === ".aid") {
+    resolvedRoot = resolve(resolvedRoot, "..");
+  }
+  const aidDir = join(resolvedRoot, ".aid");
+
+  // Build index of work models by work_id
+  const workIndex = {};
+  for (const w of model.works) {
+    workIndex[w.work_id] = w;
+  }
+
+  const details = {};
+  const extraWarnings = [];
+
+  for (const compositeKey of detailTaskIds) {
+    const slashIdx = compositeKey.indexOf("/");
+    if (slashIdx < 0) {
+      extraWarnings.push(
+        "detail_task_ids: invalid key '" + compositeKey + "' " +
+        "(expected 'work_id/task_id'); skipping"
+      );
+      continue;
+    }
+
+    const workId = compositeKey.slice(0, slashIdx);
+    const taskId = compositeKey.slice(slashIdx + 1);
+
+    if (!workId || !taskId) {
+      extraWarnings.push(
+        "detail_task_ids: empty work_id or task_id in '" + compositeKey + "'; skipping"
+      );
+      continue;
+    }
+
+    const taskWarnings = [];
+
+    // DR-1: get STATE.md text from the always-on pass cache (no disk re-read).
+    // If work_id was not enumerated (detail for a non-enumerated work), use empty
+    // text and add a warning -- never re-read from disk (DR-1/DD-3/NFR4).
+    let stateText = "";
+    let statePathLabel = ".aid/" + workId + "/STATE.md";
+
+    if (stateCache[workId] !== undefined) {
+      [stateText, statePathLabel] = stateCache[workId];
+    } else {
+      taskWarnings.push(
+        workId + "/" + taskId + ": work not found in always-on pass; " +
+        "STATE.md unavailable; raw_state will be empty"
+      );
+    }
+
+    // byte_len: length of UTF-8 encoded text (mirrors Python len(text.encode('utf-8')))
+    const stateBytes = Buffer.byteLength(stateText, "utf-8");
+    const rawState = {
+      text: stateText,
+      byte_len: stateBytes,
+      path: statePathLabel,
+    };
+
+    // DR-2: parse ## Quick Check Findings
+    const findings = parseQuickCheckFindings(stateText, taskId, taskWarnings);
+
+    // DR-3: resolve delivery_id from work model
+    let deliveryId = null;
+    const workModel = workIndex[workId];
+    if (workModel) {
+      for (const task of workModel.tasks) {
+        if (task.task_id.toLowerCase() === taskId.toLowerCase()) {
+          if (task.delivery !== null && task.delivery !== undefined) {
+            deliveryId = "delivery-" + String(task.delivery).padStart(3, "0");
+          }
+          break;
+        }
+      }
+    }
+
+    // DR-3: parse ## Delivery Gates
+    let gateGrade = null;
+    let gateReviewerTier = null;
+    let gateTimestamp = null;
+    if (deliveryId !== null && stateText) {
+      [gateGrade, gateReviewerTier, gateTimestamp] = parseDeliveryGate(
+        stateText, deliveryId, taskWarnings
+      );
+    }
+
+    // DR-4: read delivery-NNN-issues.md and filter to Source task == task_id
+    let deferredIssues = [];
+    if (deliveryId !== null) {
+      const issuesPath = join(aidDir, workId, deliveryId + "-issues.md");
+      deferredIssues = parseDeferredIssues(issuesPath, taskId, taskWarnings);
+    }
+
+    const ledger = {
+      delivery_id: deliveryId,
+      grade: gateGrade,
+      reviewer_tier: gateReviewerTier,
+      gate_timestamp: gateTimestamp,
+      deferred_issues: deferredIssues,
+    };
+
+    // DR-5: stat log/heartbeat paths
+    const logs = parseLogAvailability(aidDir);
+
+    details[compositeKey] = _buildTaskDetail({
+      task_id: taskId,
+      findings: findings,
+      ledger: ledger,
+      raw_state: rawState,
+      logs: logs,
+    });
+
+    extraWarnings.push(...taskWarnings);
+  }
+
+  // Append LC-TR warnings to model's parse_warnings (best-effort)
+  if (extraWarnings.length > 0) {
+    model.read.parse_warnings.push(...extraWarnings);
+  }
+
+  // Sort details ascending by composite key (parity requirement, DM-2 key-order)
+  const sortedDetails = {};
+  for (const k of Object.keys(details).sort()) {
+    sortedDetails[k] = details[k];
+  }
+
+  return { model: model, details: sortedDetails };
 }

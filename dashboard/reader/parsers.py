@@ -20,13 +20,19 @@ from typing import Optional
 
 from .models import (
     DeliverableRef,
+    DeferredIssue,
     FeatureRef,
+    Finding,
     KbBaseline,
     KbStateRef,
     Lifecycle,
+    LogAvailability,
     PendingInput,
     Phase,
+    RawStateRef,
     SourceMode,
+    TaskDetail,
+    TaskLedger,
     TaskModel,
     TaskStatus,
     ToolInfo,
@@ -1330,3 +1336,372 @@ def _parse_task_status(raw: str) -> TaskStatus:
     Unknown -> TaskStatus.Unknown (reader-only sentinel; DM-6).
     """
     return _TASK_STATUS_MAP.get(raw, TaskStatus.Unknown)
+
+
+# ---------------------------------------------------------------------------
+# LC-TR: TaskDetail sub-parsers (feature-008, task-069)
+# Detail-only: these run ONLY when detail_task_ids is supplied to read_repo_detail().
+# The always-on read_repo() path does NOT call any function below.
+# No write / no LLM / no subprocess (NFR2/NFR7).
+# ---------------------------------------------------------------------------
+
+# Section header patterns for the forensic sections
+_RE_QUICK_CHECK_FINDINGS = re.compile(r"^##\s+Quick Check Findings\s*$", re.IGNORECASE)
+_RE_DELIVERY_GATES_SECTION = re.compile(r"^##\s+Delivery Gates\s*$", re.IGNORECASE)
+# Task block header under ## Quick Check Findings: ### task-NNN
+_RE_TASK_BLOCK_HEADER = re.compile(r"^###\s+(task-\S+)\s*$", re.IGNORECASE)
+# Delivery sub-section under ## Delivery Gates: ### delivery-NNN
+_RE_DELIVERY_BLOCK_HEADER = re.compile(r"^###\s+(delivery-\d+[^\s]*)\s*$", re.IGNORECASE)
+
+# Per-task block field patterns
+_RE_FINDINGS_REVIEWER_TIER = re.compile(r"^\s*-\s*\*\*Reviewer Tier:\*\*\s*(.+)", re.IGNORECASE)
+_RE_FINDINGS_BULLET = re.compile(r"^\s*-\s*(\[.+?\])\s+(.*)")
+# Per-delivery gate field patterns
+_RE_GATE_GRADE = re.compile(r"^\s*-\s*\*\*Grade:\*\*\s*(.+)", re.IGNORECASE)
+_RE_GATE_REVIEWER_TIER = re.compile(r"^\s*-\s*\*\*Reviewer Tier:\*\*\s*(.+)", re.IGNORECASE)
+_RE_GATE_TIMESTAMP = re.compile(r"^\s*-\s*\*\*Timestamp:\*\*\s*(.+)", re.IGNORECASE)
+
+# Severity normalization: only CRITICAL and HIGH; all others -> MINOR neutral
+_KNOWN_SEVERITIES = frozenset({"[CRITICAL]", "[HIGH]"})
+
+# Location pattern: {file:line} or {source-file:line} segments
+_RE_LOCATION = re.compile(r"\{([^}]+:[^}]*)\}")
+
+# Disposition tokens (verbatim from the template)
+_DISPOSITION_TOKENS = ("Fixed-on-spot", "Deferred-to-gate")
+
+
+def _parse_severity(tag: str) -> str:
+    """Normalize a severity tag to [CRITICAL], [HIGH], or [MINOR] (neutral fallback).
+
+    Mirrors feature-002 DM-6: lower/unknown -> [MINOR] neutral, never throws (NFR7).
+    """
+    normalized = tag.upper().strip()
+    if normalized in ("[CRITICAL]", "[HIGH]"):
+        return normalized
+    return "[MINOR]"
+
+
+def _parse_finding_bullet(
+    bullet_text: str,
+    reviewer_tier: Optional[str],
+) -> Optional[Finding]:
+    """Parse one **Findings:** bullet into a Finding.
+
+    Bullet shape (DR-2):
+      - [SEVERITY] description — {file:line} — Disposition
+
+    Field separator: the canonical em-dash ' — ' (space U+2014 space); the
+    legacy ASCII ' -- ' (space dash-dash space) is also accepted. Location and
+    disposition are optional. Never throws (NFR7); returns None only if the
+    bullet is blank.
+    """
+    text = bullet_text.strip()
+    if not text:
+        return None
+
+    # Extract leading bracketed tag (severity)
+    m = _RE_FINDINGS_BULLET.match("- " + text)
+    if not m:
+        # No bracketed tag -- treat whole text as description with MINOR severity
+        return Finding(
+            severity="[MINOR]",
+            description=text,
+            location=None,
+            disposition=None,
+            reviewer_tier=reviewer_tier,
+        )
+
+    tag = m.group(1)
+    rest = m.group(2).strip()
+    severity = _parse_severity(tag)
+
+    # Split on em-dash ' — ' (canonical) or legacy ' -- ' (ASCII double-dash).
+    # The canonical findings template uses U+2014 em-dash; accept both for back-compat.
+    segments = re.split(r" (?:—|--) ", rest)
+
+    description = segments[0].strip() if segments else rest
+
+    # Extract location from any segment: {file:line}
+    location: Optional[str] = None
+    for seg in segments[1:]:
+        lm = _RE_LOCATION.search(seg)
+        if lm:
+            location = lm.group(1).strip()
+            break
+
+    # Extract disposition: last segment matching a known token
+    disposition: Optional[str] = None
+    for seg in segments:
+        stripped_seg = seg.strip()
+        for token in _DISPOSITION_TOKENS:
+            if stripped_seg == token or stripped_seg.startswith(token):
+                disposition = token
+                break
+        if disposition:
+            break
+
+    return Finding(
+        severity=severity,
+        description=description,
+        location=location,
+        disposition=disposition,
+        reviewer_tier=reviewer_tier,
+    )
+
+
+def parse_quick_check_findings(
+    state_text: str,
+    task_id: str,
+    parse_warnings: list[str],
+) -> list[Finding]:
+    """DR-2: Parse ## Quick Check Findings -> ### task-NNN -> **Findings:** bullets.
+
+    Returns a list of Finding objects for the given task_id.
+    A clean task (no block or empty Findings list) -> returns [] (not an error).
+    Torn/missing block -> parse_warning + best-effort (never throws, NFR7).
+    """
+    findings: list[Finding] = []
+    in_findings_section = False
+    in_task_block = False
+    in_findings_list = False
+    reviewer_tier: Optional[str] = None
+
+    # Normalize task_id for comparison (case-insensitive)
+    task_id_lower = task_id.lower()
+
+    try:
+        lines = state_text.splitlines()
+        for line in lines:
+            # Detect ## Quick Check Findings section
+            if _RE_QUICK_CHECK_FINDINGS.match(line):
+                in_findings_section = True
+                in_task_block = False
+                in_findings_list = False
+                reviewer_tier = None
+                continue
+
+            if in_findings_section:
+                # A ## section (not ###) ends the quick-check findings section
+                if re.match(r"^##\s+\S", line) and not re.match(r"^###", line):
+                    in_findings_section = False
+                    in_task_block = False
+                    in_findings_list = False
+                    continue
+
+                # ### task-NNN sub-section header
+                tm = _RE_TASK_BLOCK_HEADER.match(line)
+                if tm:
+                    block_task_id = tm.group(1).lower()
+                    in_task_block = (block_task_id == task_id_lower)
+                    in_findings_list = False
+                    reviewer_tier = None
+                    continue
+
+                if in_task_block:
+                    # **Reviewer Tier:** line
+                    rtm = _RE_FINDINGS_REVIEWER_TIER.match(line)
+                    if rtm:
+                        reviewer_tier = rtm.group(1).strip()
+                        continue
+
+                    # **Findings:** line (heading for the bullet list)
+                    if re.match(r"^\s*-\s*\*\*Findings:\*\*\s*$", line, re.IGNORECASE):
+                        in_findings_list = True
+                        continue
+
+                    if in_findings_list:
+                        # A findings bullet: starts with '  - [' (indented bullet with bracket)
+                        stripped = line.strip()
+                        if stripped.startswith("- [") or stripped.startswith("-["):
+                            # Parse the bullet (strip the leading '- ')
+                            bullet_body = re.sub(r"^-\s*", "", stripped, count=1)
+                            f = _parse_finding_bullet(bullet_body, reviewer_tier)
+                            if f is not None:
+                                findings.append(f)
+                            continue
+                        # Blank line or non-bullet: end of findings list for this task
+                        if stripped and not stripped.startswith("-"):
+                            in_findings_list = False
+
+    except Exception as exc:  # noqa: BLE001 -- never throws (NFR7)
+        parse_warnings.append(
+            f"{task_id}: error parsing ## Quick Check Findings ({exc}); "
+            f"returning best-effort findings"
+        )
+
+    return findings
+
+
+def parse_delivery_gate(
+    state_text: str,
+    delivery_id: str,
+    parse_warnings: list[str],
+) -> tuple[Optional[str], Optional[str], Optional[str]]:
+    """DR-3: Parse ## Delivery Gates -> ### delivery-NNN for grade/tier/timestamp.
+
+    Returns (grade, reviewer_tier, gate_timestamp). All None if the block is absent.
+    Verbatim -- never re-grades (NFR7). Never throws (torn -> parse_warning + None).
+    """
+    grade: Optional[str] = None
+    reviewer_tier: Optional[str] = None
+    gate_timestamp: Optional[str] = None
+
+    in_gates = False
+    in_delivery_block = False
+
+    # Normalize for comparison
+    delivery_id_lower = delivery_id.lower()
+
+    try:
+        for line in state_text.splitlines():
+            if _RE_DELIVERY_GATES_SECTION.match(line):
+                in_gates = True
+                in_delivery_block = False
+                continue
+
+            if in_gates:
+                # A ## section (not ###) ends the delivery gates section
+                if re.match(r"^##\s+\S", line) and not re.match(r"^###", line):
+                    in_gates = False
+                    in_delivery_block = False
+                    continue
+
+                # ### delivery-NNN sub-section header
+                dm = _RE_DELIVERY_BLOCK_HEADER.match(line)
+                if dm:
+                    block_delivery_id = dm.group(1).lower()
+                    in_delivery_block = (block_delivery_id == delivery_id_lower)
+                    continue
+
+                if in_delivery_block:
+                    gm = _RE_GATE_GRADE.match(line)
+                    if gm and grade is None:
+                        raw = gm.group(1).strip()
+                        # Grade is the first word (e.g. "A+ (cycle 2 ...)" -> "A+")
+                        grade = raw.split()[0] if raw else None
+                        continue
+
+                    rtm = _RE_GATE_REVIEWER_TIER.match(line)
+                    if rtm and reviewer_tier is None:
+                        raw = rtm.group(1).strip()
+                        # Tier is the first word (e.g. "Large (complexity score ...)" -> "Large")
+                        reviewer_tier = raw.split()[0] if raw else None
+                        continue
+
+                    tsm = _RE_GATE_TIMESTAMP.match(line)
+                    if tsm and gate_timestamp is None:
+                        gate_timestamp = tsm.group(1).strip() or None
+                        continue
+
+                    # Once all three are found, we can stop scanning the delivery block
+                    if grade and reviewer_tier and gate_timestamp:
+                        break
+
+    except Exception as exc:  # noqa: BLE001 -- never throws (NFR7)
+        parse_warnings.append(
+            f"{delivery_id}: error parsing ## Delivery Gates ({exc}); "
+            f"returning best-effort gate fields"
+        )
+
+    return grade, reviewer_tier, gate_timestamp
+
+
+def parse_deferred_issues(
+    issues_path: Path,
+    task_id: str,
+    parse_warnings: list[str],
+) -> list[DeferredIssue]:
+    """DR-4: Parse delivery-NNN-issues.md and filter rows to Source task == task_id.
+
+    File schema (schemas.md §12): 4-col markdown table
+      Source task | Severity | Description | Status
+
+    Returns list[DeferredIssue] filtered to this task. Absent file -> [] (not an error).
+    Torn/malformed -> parse_warning + best-effort rows. Never throws (NFR7).
+    """
+    if not issues_path.is_file():
+        return []
+
+    try:
+        raw = issues_path.read_bytes()
+        text = raw.decode("utf-8", errors="replace")
+    except OSError as exc:
+        parse_warnings.append(
+            f"{task_id}: could not read {issues_path.name} ({exc}); "
+            f"deferred_issues will be empty"
+        )
+        return []
+
+    deferred: list[DeferredIssue] = []
+    header_seen = False
+
+    try:
+        for line in text.splitlines():
+            stripped = line.strip()
+            if not stripped.startswith("|"):
+                continue
+            if _RE_TABLE_SEP.match(stripped):
+                header_seen = True
+                continue
+            cols = [c.strip() for c in stripped.strip("|").split("|")]
+            if len(cols) < 4:
+                continue
+            # Skip header row (first column is 'Source task' or similar)
+            if not header_seen:
+                header_seen = True
+                continue
+
+            source_task = cols[0].strip()
+            severity = cols[1].strip()
+            description = cols[2].strip()
+            status = cols[3].strip()
+
+            # Filter to this task_id (case-insensitive comparison)
+            if source_task.lower() == task_id.lower():
+                deferred.append(DeferredIssue(
+                    source_task=source_task,
+                    severity=severity if severity else "[HIGH]",
+                    description=description,
+                    status=status if status else "Open",
+                ))
+
+    except Exception as exc:  # noqa: BLE001 -- never throws (NFR7)
+        parse_warnings.append(
+            f"{task_id}: error parsing {issues_path.name} ({exc}); "
+            f"returning best-effort deferred issues"
+        )
+
+    return deferred
+
+
+def parse_log_availability(aid_dir: Path) -> LogAvailability:
+    """DR-5: Stat log/heartbeat paths for honest DM-4 log inventory.
+
+    task_logs:          always 'none' (AID persists no per-task execution log, DM-4)
+    server_log_present: stat .aid/.temp/dashboard.log (expected-false on Windows)
+    heartbeat_present:  stat .aid/.heartbeat/ (liveness signal, corroborating-only, KI-004)
+
+    Never throws (NFR7). No file is read (stat only). No write.
+    """
+    server_log_path = aid_dir / ".temp" / "dashboard.log"
+    heartbeat_dir = aid_dir / ".heartbeat"
+
+    server_log_present = False
+    heartbeat_present = False
+
+    try:
+        server_log_present = server_log_path.is_file()
+    except OSError:
+        server_log_present = False
+
+    try:
+        heartbeat_present = heartbeat_dir.is_dir()
+    except OSError:
+        heartbeat_present = False
+
+    return LogAvailability(
+        task_logs="none",
+        server_log_present=server_log_present,
+        heartbeat_present=heartbeat_present,
+    )

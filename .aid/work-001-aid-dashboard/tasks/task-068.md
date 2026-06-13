@@ -21,6 +21,24 @@
   the per-`<id>` prefix selects repo+document, the hash selects the view). Specify how a **task chip**
   in the pipeline view (feature-003 UI-3, now in `home.html`) sets `location.hash` to enter the drill,
   and how **back** returns to `#/work/<work_id>` and drops that key from the `?detail=` set (reversible).
+- **NAV-1 4-level breadcrumb (SPEC RC-4):** specify the **clickable Main › Project › Pipeline › Task**
+  breadcrumb as an **extension of the existing `.breadcrumb` top-bar family** (`home.html:124–133`
+  `.breadcrumb`/`.sep`/`.current`; the hardcoded `· Pipeline` brand suffix at `home.html:752` becomes the
+  dynamic trail) — **not** a new component. Pin: it is **router-driven** (recomputed in the same shell-head
+  that runs for every route, `home.html:1168–1176`; updates on `#/` → `#/work/<id>` → `#/work/<id>/task/<id>`
+  and back via the existing `onHashChange`), **every ancestor is a link and the leaf is plain `.current`
+  text**, and the **per-level nav targets**: Main → **absolute `/`** (the CLI-home page; label `AID`),
+  Project → **`location.pathname`** (current page, hash cleared = list view; label `model.repo.project_name`),
+  Pipeline → **`#/work/<work_id>`** (hash route; label work/pipeline name), Task = **leaf, no link** (label
+  task id/title). Per route the path shows: main → `AID`; work → `AID › <project> › <pipeline>`;
+  task → `AID › <project> › <pipeline> › <task>`. Specify that labels come **only from data already in
+  `/api/model`** (`project_name`, work name, task id) — **no new field, no `<id>` in the model, no
+  `details`-key dependency** (renders on the first drill tick before `details[key]` arrives), **no
+  `schema_version`/`EXPECTED` change** (RC-2/RC-4) — and the existing **768px** truncation + **390px**
+  collapse rules apply unchanged. Confirm **`index.html` needs no change** (it IS Main/level-1: its
+  `AID · this machine` brand is the root, its cards already link `/r/<id>/home.html`, and it is already
+  served at `/` — the Main link's target). This folds into task-071 (single `home.html` writer) — the
+  DESIGN must **not** spec a separate breadcrumb writer/task.
 - **UI-2 findings + ledger/grade panel:** the severity-tagged findings list (`[CRITICAL]`→`.badge-err`✕,
   `[HIGH]`→`.badge-warn`⚠, unknown→`.badge-dim` neutral; `description`·`location`·`disposition` chip;
   empty→"No quick-check findings recorded for this task."), and the **honestly-labeled** ledger: the
@@ -63,6 +81,13 @@
 - [ ] The `#/work/<work_id>/task/<task-id>` SEAM-2 route is specified as a deeper hash route in
       `home.html`'s existing router (composes under `/r/<id>/home.html`), reachable from a task chip and
       reversible via back (drops the key from `?detail=`); the client needs no `<id>` (location-relative).
+- [ ] The **NAV-1 4-level breadcrumb** (Main › Project › Pipeline › Task) is specified as a **router-driven
+      extension of the existing `.breadcrumb` top-bar family** (reused, not reinvented), with **ancestors as
+      links / leaf as `.current`** and the exact per-level nav targets (Main → absolute `/`, Project →
+      `location.pathname`/hash-cleared, Pipeline → `#/work/<work_id>`, Task = leaf); labels come **only from
+      existing `/api/model` data** (no new field, no `<id>`, no `details` dependency, no schema/`EXPECTED`
+      bump); it **folds into task-071** (no separate breadcrumb writer) and **`index.html` needs no change**
+      (it is Main/level-1, served at `/`).
 - [ ] UI-2 specifies the severity-tagged findings list (color+shape chips, empty state) and the
       **delivery-grade-not-task-grade** ledger (captioned per DM-1; `delivery_id==null` state; deferred-
       `[HIGH]` table with empty state).

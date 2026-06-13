@@ -7,6 +7,7 @@
 | 2026-06-10 | Feature identified from REQUIREMENTS.md §5 FR13, FR14, FR6 | /aid-interview |
 | 2026-06-12 | **DEFERRED to its own separate later delivery** (user directive). Scope **UNCHANGED** — this feature is **not** part of the two-level dashboard re-architecture; it ships as an independent later delivery **after** the refactor. The SPEC below stands as-is; only its sequencing changes. | /aid-interview |
 | 2026-06-12 | **Re-architecture reconciliation note added** (below) ahead of delivery-010 detailing. The SPEC body is **unchanged**; the note reconciles three of its premises to the post-re-arch base (the per-repo `/r/<id>/...` server, `home.html`'s router, the schema-3 floor) and records the **no-bump** schema decision for d010. Scope unchanged. | /aid-detail |
+| 2026-06-13 | **NAV-1 added** (below, as reconciliation note **RC-4**): a user-requested **4-level clickable breadcrumb** (Main › Project › Pipeline › Task) that **folds into the existing d010 tasks** — it lives in the **same `home.html` drill-view router task-071 builds** (single home.html writer; no new home.html-writing task, no same-file race). It is router-driven, read-only, reuses the existing `.breadcrumb` top-bar styling, and requires **no schema change and no `<id>` in the model** (Main → `/`, Project → location-relative). Tasks 068 (DESIGN), 071 (IMPLEMENT), 073 (Playwright R5) extended in place. | /aid-detail |
 
 > **Status: DEFERRED — scope unchanged.** Task drill-down (Level-3 forensic detail) is explicitly
 > **excluded from the two-level refactor effort** and scheduled as its **own separate later
@@ -89,6 +90,78 @@ spine; the plan sequences d010 last by **user directive**, not by dependency —
 "Depends on".) Concretely, d010 task `Depends on:` edges reference **d008 task-050/051** (the LC-MS
 servers, where LC-SD's `?detail=` branch lives), **d008 task-054** (the `home.html` the drill view +
 SEAM-2 route live in), and the d008-relocated reader — **referenced, not duplicated.**
+
+**RC-4 — NAV-1: a 4-level clickable breadcrumb (Main › Project › Pipeline › Task), router-driven, read-only, no schema/`<id>` change.** _(user-requested addition to d010, 2026-06-13.)_ The dashboard's
+existing top bar already renders a breadcrumb-ish label (`home.html`: the `.brand` element
+`<strong id="brand-name">…</strong> · Pipeline`, against the unused-but-present `.breadcrumb` CSS family
+at `home.html:124–133` — `.breadcrumb` / `.sep` / `.current`, with the 768px / 390px responsive rules at
+`:250` / `:259`). NAV-1 **extends that into the full clickable ancestor path** for the current route. It
+**folds entirely into the SEAM-2 drill view task-071 already builds** — it is rendered/updated in the
+**same `home.html` router** (the one that owns `#/`, `#/work/<id>` and the new `#/work/<id>/task/<id>`), in
+the route-independent shell-head that already runs for every route (`home.html:1168–1176`, where
+`brand-name` is set from `model.repo.project_name`). **No new `home.html`-writing task is created** (that
+would race task-054's rename / task-071's body on the same file); NAV-1 is **one writer: task-071**.
+
+**The 4-level navigation tree (the breadcrumb mirrors it exactly):**
+
+| # | Level | Route / location | Breadcrumb label | Is it a link? | Nav target on click |
+|---|-------|------------------|------------------|---------------|---------------------|
+| 1 | **Main** | the CLI home, served at **`/`** (`dashboard/index.html`); lists projects | `AID` (the CLI-home brand) | **link** (ancestor) | **`/`** — an **absolute, same-origin** cross-page link to the CLI home. The model carries **no `<id>`**; the link is the literal `/`, never reconstructed from a repo id |
+| 2 | **Project** | the per-repo dashboard, served at **`/r/<id>/home.html`** (list view, **no hash**); pipelines + KB card | `model.repo.project_name` | **link** (ancestor) | **`location.pathname`** — i.e. **the current page with the hash cleared** (back to the list view). It is the page you are already on, so **no `<id>` is needed** — `location.pathname` already resolves to `/r/<id>/home.html` |
+| 3 | **Pipeline** | the per-work drill view, **`/r/<id>/home.html#/work/<work_id>`** (the existing hash-router view: phase pills + delivery list) | the work / pipeline name (`work.short_name` / `work.work_id`, already in `/api/model`) | **link** (ancestor) | **`#/work/<work_id>`** — an in-page **hash route** (the existing `#/work/<id>` the router already owns) |
+| 4 | **Task** | the **NEW** d010 task drill view, **`/r/<id>/home.html#/work/<work_id>/task/<task-id>`** (SEAM-2, built by task-071) | the task id / title (`task.task_id` / `task.short_name`, already in `/api/model`) | **NOT a link — leaf** | — (current level) |
+
+**Breadcrumb behavior (NAV-1):**
+
+- **Ancestors link, leaf does not.** The breadcrumb renders the ancestor path for the **current** route;
+  **every ancestor is a link, the current (leaf) level is plain `.current` text** (reusing the existing
+  `.breadcrumb .current` style at `home.html:133`). Per route:
+  - **main view** (`#/` or no hash) → `AID` only (Main is the page; Main is `.current`, no further levels).
+  - **work view** (`#/work/<id>`) → `AID › <project> › <pipeline-current>` (Main + Project are links;
+    Pipeline is the leaf).
+  - **task view** (`#/work/<id>/task/<id>`, SEAM-2) → `AID › <project> › <pipeline> › <task-current>`
+    (Main + Project + Pipeline are links; Task is the leaf).
+- **Router-driven (the core requirement).** The breadcrumb is **recomputed on every render** from the
+  parsed route + the polled `/api/model` body — it updates as the hash changes
+  (list → `#/work/<id>` → `#/work/<id>/task/<id>` and back) so the operator can **climb the tree without
+  the browser Back button** and the path always stays correct. It rides the existing `onHashChange`
+  re-render (`home.html:1144–1149`) and the shell-head that runs for every route; **no new listener, no
+  new poll, no new render entry-point.**
+- **Nav targets (exact, no `<id>` carried in the model):** Main → **`/`** (absolute, same origin);
+  Project → **`location.pathname`** (current page, hash cleared — the list view, no `<id>` reconstructed);
+  Pipeline → **`#/work/<work_id>`** (hash route); Task = **leaf** (no link). The Project and Pipeline
+  targets are **location-relative / hash-only** (consistent with RC-1: the client never needs `<id>`,
+  `/api/model` carries no `<id>` field — task-054 / task-065 pattern); Main is the one **absolute** link,
+  and it is the constant `/`, not derived from any id.
+- **Read-only, no model/schema change (consistent with RC-2).** Every label comes from data **already in**
+  `/api/model` — the project name (`model.repo.project_name`, already set at `home.html:1170`), the work
+  name, the task id. **No new field, no `<id>` field, no `details`-key dependency** (the breadcrumb labels
+  come from the always-polled lean body, not from the lazy `?detail=` map — so the path renders correctly
+  on the very first tick of a drill, before `details[key]` arrives). **NO schema bump** — `schema_version`
+  stays **3**, `EXPECTED` stays **3** (RC-2 holds; NAV-1 reads nothing new off the wire). It is read-only:
+  it only sets `location.href` / `location.hash`, never writes `.aid/`, never fetches `.aid/` directly.
+- **Visual reuse (NFR8).** NAV-1 **reuses the existing `.breadcrumb` top-bar family** (`home.html:124–133`)
+  rather than inventing a component: ancestor links inherit the `.breadcrumb` color/size, separators use
+  the existing `.breadcrumb .sep` (a `›`/`·`-style glyph, consistent across all levels), and the leaf uses
+  `.breadcrumb .current`. The existing **768px** truncation/responsive behavior (`home.html:250`,
+  ellipsis/`overflow:hidden`) and the **390px** `display:none` collapse (`home.html:259`) apply unchanged —
+  the breadcrumb truncates gracefully on narrow viewports exactly as the current label does. The hardcoded
+  `· Pipeline` suffix in the current `.brand` markup (`home.html:752`) is **replaced** by the router-driven
+  path (the brand root `AID` stays; the `· Pipeline`/`· this machine`-style static suffix becomes the
+  dynamic ancestor trail).
+- **The CLI home (`/`, `index.html`) is Main (level 1) — needs no breadcrumb-back; likely NO change.** It
+  **is** Main, so it has no ancestor to climb to; its existing `AID · this machine` brand
+  (`index.html:475`) already serves as the level-1 root, and its project cards already link to
+  `/r/<id>/home.html` (`index.html:807`) — i.e. it is already the `/` landing the Project pages' Main link
+  targets. **No change to `index.html` is required by NAV-1** (it is the root of the tree, not a descendant
+  of it). The only contract `index.html` must keep satisfying — which it already does — is being served at
+  `/` (so the absolute Main link lands correctly).
+- **Single writer / no new task.** Because the breadcrumb is rendered in `home.html`'s router and reuses
+  the existing `.breadcrumb` styling, **all** of NAV-1 lands inside the existing d010 task set: **task-068**
+  (DESIGN — specify the breadcrumb in the drill-view UI breakdown), **task-071** (IMPLEMENT — the single
+  `home.html` drill-view writer adds the router-driven breadcrumb), **task-073** (Playwright R5 — visually
+  validate the breadcrumb at each level + that each ancestor link navigates correctly). No new
+  `home.html`-writing task is introduced, avoiding a same-file race with task-054 / task-071.
 
 ## Source
 

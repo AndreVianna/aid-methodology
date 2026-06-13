@@ -16,6 +16,26 @@
   `home.html`'s existing router** (the one that owns `#/`, `#/work/<work_id>`); a **task chip** in the
   pipeline view sets `location.hash = "#/work/<work_id>/task/<task-id>"` to enter; **back** returns to
   `#/work/<work_id>` and drops that key from the `?detail=` set (reversible). The client needs no `<id>`.
+- **NAV-1 4-level breadcrumb (SPEC RC-4) — router-driven, in THIS single `home.html` writer:** implement
+  the **clickable Main › Project › Pipeline › Task** breadcrumb by **extending the existing `.breadcrumb`
+  top-bar family** (`home.html:124–133`; replace the hardcoded `· Pipeline` brand suffix at `home.html:752`
+  with the dynamic trail) — render/update it in the **route-independent shell-head that already runs for
+  every render** (`home.html:1168–1176`, beside the existing `brand-name` set), so it is **router-driven**:
+  recomputed from the parsed route + the polled model on every render and on the existing `onHashChange`
+  (`home.html:1144–1149`) — **no new listener, no new poll, no new render entry-point**. Per route emit:
+  main → `AID` (leaf); work (`#/work/<id>`) → `AID › <project> › <pipeline>` (leaf = pipeline); task
+  (`#/work/<id>/task/<id>`, SEAM-2) → `AID › <project> › <pipeline> › <task>` (leaf = task). **Every
+  ancestor is a link, the leaf is plain `.breadcrumb .current` text.** Exact nav targets: **Main →
+  `href="/"`** (absolute, same origin — the CLI home; do **not** reconstruct it from `<id>`); **Project →
+  `location.pathname`** (the current page with the hash cleared = the list view — no `<id>` needed, it is
+  the page you are on); **Pipeline → `#/work/<work_id>`** (the existing hash route). Labels come **only from
+  the always-polled lean body** — `model.repo.project_name` (already at `home.html:1170`), the work name,
+  the task id — so the path renders correctly on the **first drill tick before `details[key]` arrives**
+  (no `details`-key dependency). Reuse the existing `.breadcrumb .sep` separator (consistent glyph across
+  all levels) and the existing **768px** truncation + **390px** `display:none` rules (`home.html:250`/`:259`)
+  unchanged. **No new field, no `<id>` in the model, NO `schema_version`/`EXPECTED` bump** (RC-2/RC-4 hold).
+  Read-only: only sets `location.href`/`location.hash`, never writes/fetches `.aid/`. **`index.html` is
+  unchanged** (it is Main/level-1, served at `/`).
 - **Lazy detail on the location-relative poll (RC-1, NFR4):** when a task route is active, append the
   open drills' composite keys to the **location-relative `./api/model`** poll as
   `?detail=<work_id>/<task_id>[,...]` (resolves to `/r/<id>/api/model?detail=…` against the served
@@ -60,6 +80,13 @@
 **Acceptance Criteria:**
 - [ ] The `#/work/<work_id>/task/<task-id>` SEAM-2 route renders the drill view in `home.html`, reached
       from a task chip and reversible via back (drops the key from `?detail=`); the client uses no `<id>`.
+- [ ] The **NAV-1 4-level breadcrumb** is implemented in this single `home.html` writer as a **router-driven
+      extension of the existing `.breadcrumb` family**: it recomputes per route (main → `AID`; work → `AID ›
+      <project> › <pipeline>`; task → `AID › <project> › <pipeline> › <task>`) on every render + `onHashChange`,
+      with **ancestors as links / leaf as `.current`** and the exact targets (**Main → `/`**, **Project →
+      `location.pathname`**, **Pipeline → `#/work/<work_id>`**, Task = leaf). Labels read **only** existing
+      `/api/model` data (`project_name`/work name/task id) — no new field, no `<id>`, no `details` dependency
+      (renders on the first drill tick), **no `schema_version`/`EXPECTED` bump**; `index.html` is untouched.
 - [ ] The poll appends `?detail=<work_id>/<task_id>[,...]` to the **location-relative `./api/model`**
       (resolves to `/r/<id>/api/model?detail=…`); the first tick shows at-a-glance + "loading detail…"
       then fills in (**never blank**); leaving drops the key; no network call beyond `./api/model`.

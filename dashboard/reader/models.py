@@ -260,6 +260,105 @@ class WorkModel:
 
 
 # ---------------------------------------------------------------------------
+# DM-1 (feature-008): TaskDetail sub-model (LC-TR, task-069)
+# Populated ONLY for requested task_ids (detail_task_ids param).
+# Never persisted (NFR2); all fields are read-derived.
+# ---------------------------------------------------------------------------
+
+@dataclass
+class Finding:
+    """One bullet under STATE.md ## Quick Check Findings ### task-NNN **Findings:** (DR-2).
+
+    severity:       leading bracketed tag -- [CRITICAL] | [HIGH]; lower/unknown -> [MINOR] neutral
+    description:    bullet text up to the first ' -- ' (em-dash segment separator)
+    location:       '{source-file:line}' segment, null if absent
+    disposition:    trailing 'Fixed-on-spot' / 'Deferred-to-gate' token, null if absent
+    reviewer_tier:  the block's **Reviewer Tier:** line (always 'Small' for a quick check)
+    """
+    severity: str               # '[CRITICAL]' | '[HIGH]' | '[MINOR]' (neutral fallback)
+    description: str
+    location: Optional[str] = None
+    disposition: Optional[str] = None
+    reviewer_tier: Optional[str] = None
+
+
+@dataclass
+class DeferredIssue:
+    """One row from delivery-NNN-issues.md filtered to Source task == task_id (DR-4).
+
+    4-col table: Source task | Severity | Description | Status
+    status enum: Open | Resolved | Accepted (unknown literal -> neutral, never throws)
+    """
+    source_task: str
+    severity: str
+    description: str
+    status: str
+
+
+@dataclass
+class TaskLedger:
+    """Delivery-level grade context for a task (DR-3/DR-4). NOT a per-task grade.
+
+    delivery_id:     resolved delivery for this task (from ## Tasks Status Wave); null if unassociated
+    grade:           per-delivery grade from ## Delivery Gates (verbatim, never re-graded -- NFR7)
+    reviewer_tier:   delivery reviewer tier
+    gate_timestamp:  when the delivery gate ran
+    deferred_issues: rows from delivery-NNN-issues.md where Source task == task_id
+    """
+    delivery_id: Optional[str] = None
+    grade: Optional[str] = None
+    reviewer_tier: Optional[str] = None
+    gate_timestamp: Optional[str] = None
+    deferred_issues: list[DeferredIssue] = field(default_factory=list)
+
+
+@dataclass
+class RawStateRef:
+    """Verbatim STATE.md bytes the reader ALREADY read this pass (DR-1, DD-3, NFR4).
+
+    text:     whole work STATE.md verbatim (reused from memory, no re-read)
+    byte_len: len(text) in bytes (corroborates NFR4 payload budget)
+    path:     '.aid/{work}/STATE.md' -- read-only caption label, NOT an edit link
+    """
+    text: str
+    byte_len: int
+    path: str
+
+
+@dataclass
+class LogAvailability:
+    """Honest DM-4 log inventory for a task (DR-5, KI-008).
+
+    task_logs:           always 'none' (AID persists no per-task execution log)
+    server_log_present:  stat .aid/.temp/dashboard.log (expected-false on Windows)
+    heartbeat_present:   stat .aid/.heartbeat/ (liveness signal, corroborating-only, KI-004)
+    """
+    task_logs: str = "none"      # always "none" today (DM-4)
+    server_log_present: bool = False
+    heartbeat_present: bool = False
+
+
+@dataclass
+class TaskDetail:
+    """Forensic sub-model for one drilled task (DM-1, feature-008 LC-TR).
+
+    Populated ONLY when detail_task_ids is supplied to read_repo_detail().
+    The always-on read_repo() path does NOT populate this; TaskModel is unchanged.
+
+    task_id:   == TaskModel.task_id (the drill key)
+    findings:  from ## Quick Check Findings ### task-NNN **Findings:** bullets
+    ledger:    delivery-level grade join (## Delivery Gates + delivery-NNN-issues.md)
+    raw_state: the already-read STATE.md bytes (no re-read, NFR4/DD-3)
+    logs:      honest DM-4 log inventory
+    """
+    task_id: str
+    findings: list[Finding] = field(default_factory=list)
+    ledger: TaskLedger = field(default_factory=TaskLedger)
+    raw_state: Optional[RawStateRef] = None
+    logs: Optional[LogAvailability] = None
+
+
+# ---------------------------------------------------------------------------
 # DM-7: ReadMeta (provenance of this read pass)
 # ---------------------------------------------------------------------------
 
