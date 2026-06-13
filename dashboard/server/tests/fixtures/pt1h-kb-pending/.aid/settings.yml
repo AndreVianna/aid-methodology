@@ -1,0 +1,3 @@
+project:
+  name: PT1H-KB-Pending
+  description: KB variant fixture: pending (no .aid/knowledge/ dir).

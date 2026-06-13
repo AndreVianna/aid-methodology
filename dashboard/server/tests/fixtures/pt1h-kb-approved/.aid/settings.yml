@@ -1,0 +1,3 @@
+project:
+  name: PT1H-KB-Approved
+  description: KB variant fixture: approved (KB approved, kb.html present, no baseline -> skip freshness).

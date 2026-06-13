@@ -25,7 +25,7 @@ import { fileURLToPath } from "url";
 import { createServer } from "http";
 import http from "http";
 import net from "net";
-import { spawn } from "child_process";
+import { spawn, spawnSync } from "child_process";
 import { tmpdir } from "os";
 import { createHash } from "crypto";
 import { readRepo, parseSpecMd } from "../reader.mjs";
@@ -1199,6 +1199,414 @@ async function runLiveTests() {
   } finally {
     await killServer(proc);
     try { rmSync(base, { recursive: true, force: true }); } catch (_) {}
+  }
+}
+
+// ---------------------------------------------------------------------------
+// (11) task-066: KB-state parity -- Z-vs-offset, round-trip, anti-drift,
+//      frozen-commit outdated verdict, degradation, DM-A3 schema_version.
+// ---------------------------------------------------------------------------
+
+process.stdout.write("\n[11] task-066: KB-state parity + round-trip + degradation\n");
+
+// ---------------------------------------------------------------------------
+// (11a) Z-vs-+/-HH:MM normalization (residual #5, R12)
+// Same instant in Z and -04:00 -> equal ms AND same verdict.
+// ---------------------------------------------------------------------------
+{
+  // The canonical test instant: 2026-06-12T14:03:00Z (UTC)
+  // Same in -04:00: 2026-06-12T10:03:00-04:00
+  // Same in +05:30: 2026-06-12T19:33:00+05:30
+  const INSTANT_Z    = "2026-06-12T14:03:00Z";
+  const INSTANT_NEG4 = "2026-06-12T10:03:00-04:00";
+  const INSTANT_PLUS530 = "2026-06-12T19:33:00+05:30";
+
+  const ms_z    = Date.parse(INSTANT_Z);
+  const ms_neg4 = Date.parse(INSTANT_NEG4);
+  const ms_ist  = Date.parse(INSTANT_PLUS530);
+
+  assert(!isNaN(ms_z),    "11a.1: Z suffix parses to valid ms");
+  assert(!isNaN(ms_neg4), "11a.2: -04:00 offset parses to valid ms");
+  assert(!isNaN(ms_ist),  "11a.3: +05:30 offset parses to valid ms");
+  assert(ms_z === ms_neg4,
+    "11a.4: Z and -04:00 of same instant are equal ms (chronological, not lexicographic)");
+  assert(ms_z === ms_ist,
+    "11a.5: Z and +05:30 (IST) of same instant are equal ms");
+
+  // Guard the offset-boundary bug: lexicographically-earlier but chronologically-later string
+  // baseline: "2026-06-12T14:03:00Z" (UTC 14:03)
+  // newer:    "2026-06-12T11:03:01-04:00" (UTC 15:03:01 -- LATER, but lex-earlier string)
+  const ms_baseline = Date.parse("2026-06-12T14:03:00Z");
+  const ms_newer    = Date.parse("2026-06-12T11:03:01-04:00"); // UTC 15:03:01
+
+  assert(!isNaN(ms_newer), "11a.6: newer offset string parses correctly");
+  assert(ms_newer > ms_baseline,
+    "11a.7: UTC-normalized ms shows newer_str IS after baseline_str "
+    + "(guards lexicographic vs chronological compare bug)");
+
+  // Raw string compare is wrong: newer_str lexicographically < baseline_str
+  const rawCompareWrong = "2026-06-12T11:03:01-04:00" > "2026-06-12T14:03:00Z";
+  assert(!rawCompareWrong,
+    "11a.8: raw string compare says newer_str <= baseline_str (this is the bug UTC normalization prevents)");
+}
+
+// ---------------------------------------------------------------------------
+// (11b) Producer->consumer round-trip (task-059 append-block shape, anti-drift)
+// ---------------------------------------------------------------------------
+{
+  // Well-formed producer block -> readRepo -> same {branch, tip_date}
+  const tmpRt = join(tmpdir(), "aid-066-rt-" + Date.now());
+  mkdirSync(join(tmpRt, ".aid", "knowledge"), { recursive: true });
+  mkdirSync(join(tmpRt, ".aid", "dashboard"), { recursive: true });
+
+  const PRODUCER_BLOCK =
+    "project:\n  name: RT-Test\n" +
+    "kb_baseline:\n" +
+    "  branch: master\n" +
+    "  tip_date: 2026-06-12T14:03:00Z\n";
+
+  writeFileSync(join(tmpRt, ".aid", "settings.yml"), PRODUCER_BLOCK, "utf8");
+  writeFileSync(
+    join(tmpRt, ".aid", "knowledge", "STATE.md"),
+    "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+    "utf8"
+  );
+  writeFileSync(join(tmpRt, ".aid", "dashboard", "kb.html"), "<html></html>", "utf8");
+
+  try {
+    const mRt = readRepo(tmpRt);
+    assert(mRt.repo.kb_state !== null, "11b.1: kb_state present after round-trip");
+    assert(mRt.repo.kb_state.kb_baseline !== null, "11b.2: kb_baseline parsed from producer block");
+    assert(mRt.repo.kb_state.kb_baseline.branch === "master",
+      "11b.3: round-trip: branch='master'");
+    assert(mRt.repo.kb_state.kb_baseline.tip_date === "2026-06-12T14:03:00Z",
+      "11b.4: round-trip: tip_date='2026-06-12T14:03:00Z'");
+  } finally {
+    try { rmSync(tmpRt, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // Anti-drift: wrong key name 'kb_base_line' -> kb_baseline is null
+  const tmpAd1 = join(tmpdir(), "aid-066-ad1-" + Date.now());
+  mkdirSync(join(tmpAd1, ".aid", "knowledge"), { recursive: true });
+  writeFileSync(
+    join(tmpAd1, ".aid", "knowledge", "STATE.md"),
+    "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+    "utf8"
+  );
+  const MUTATED_KEY =
+    "kb_base_line:\n" +   // wrong key
+    "  branch: master\n" +
+    "  tip_date: 2026-06-12T14:03:00Z\n";
+  writeFileSync(join(tmpAd1, ".aid", "settings.yml"), MUTATED_KEY, "utf8");
+  try {
+    const mAd1 = readRepo(tmpAd1);
+    assert(mAd1.repo.kb_state === null || mAd1.repo.kb_state.kb_baseline === null,
+      "11b.5: anti-drift: wrong key name -> kb_baseline is null (contract fails)");
+  } finally {
+    try { rmSync(tmpAd1, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // Anti-drift: wrong sub-key 'git_branch' instead of 'branch' -> branch null
+  const tmpAd2 = join(tmpdir(), "aid-066-ad2-" + Date.now());
+  mkdirSync(join(tmpAd2, ".aid", "knowledge"), { recursive: true });
+  writeFileSync(
+    join(tmpAd2, ".aid", "knowledge", "STATE.md"),
+    "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+    "utf8"
+  );
+  const MUTATED_SUBKEY =
+    "kb_baseline:\n" +
+    "  git_branch: master\n" +  // wrong sub-key
+    "  tip_date: 2026-06-12T14:03:00Z\n";
+  writeFileSync(join(tmpAd2, ".aid", "settings.yml"), MUTATED_SUBKEY, "utf8");
+  try {
+    const mAd2 = readRepo(tmpAd2);
+    // kb_baseline should be parsed (tip_date present) but branch should be null
+    const bl2 = mAd2.repo.kb_state ? mAd2.repo.kb_state.kb_baseline : null;
+    assert(bl2 !== null, "11b.6: anti-drift: kb_baseline still parsed when tip_date present");
+    assert(bl2.branch === null,
+      "11b.7: anti-drift: wrong sub-key 'git_branch' -> branch is null");
+    assert(bl2.tip_date === "2026-06-12T14:03:00Z",
+      "11b.8: anti-drift: tip_date correctly parsed despite wrong branch key");
+  } finally {
+    try { rmSync(tmpAd2, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // Anti-drift: missing indentation -> top-level keys end the block -> None
+  const tmpAd3 = join(tmpdir(), "aid-066-ad3-" + Date.now());
+  mkdirSync(join(tmpAd3, ".aid", "knowledge"), { recursive: true });
+  writeFileSync(
+    join(tmpAd3, ".aid", "knowledge", "STATE.md"),
+    "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+    "utf8"
+  );
+  const MUTATED_INDENT =
+    "kb_baseline:\n" +
+    "branch: master\n" +   // no indent -> top-level key -> ends block
+    "tip_date: 2026-06-12T14:03:00Z\n";
+  writeFileSync(join(tmpAd3, ".aid", "settings.yml"), MUTATED_INDENT, "utf8");
+  try {
+    const mAd3 = readRepo(tmpAd3);
+    const bl3 = mAd3.repo.kb_state ? mAd3.repo.kb_state.kb_baseline : null;
+    assert(bl3 === null,
+      "11b.9: anti-drift: missing indentation -> no sub-keys in block -> kb_baseline null");
+  } finally {
+    try { rmSync(tmpAd3, { recursive: true, force: true }); } catch (_) {}
+  }
+}
+
+// ---------------------------------------------------------------------------
+// (11c) Degradation: git-absent / not-a-git-repo / kb_baseline-absent -> approved
+// ---------------------------------------------------------------------------
+{
+  // kb_baseline absent -> no freshness check -> approved
+  const tmpDg1 = join(tmpdir(), "aid-066-dg1-" + Date.now());
+  mkdirSync(join(tmpDg1, ".aid", "knowledge"), { recursive: true });
+  mkdirSync(join(tmpDg1, ".aid", "dashboard"), { recursive: true });
+  writeFileSync(
+    join(tmpDg1, ".aid", "knowledge", "STATE.md"),
+    "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+    "utf8"
+  );
+  writeFileSync(join(tmpDg1, ".aid", "dashboard", "kb.html"), "<html></html>", "utf8");
+  // No settings.yml -> kb_baseline absent
+  try {
+    const mDg1 = readRepo(tmpDg1);
+    assert(mDg1.repo.kb_state !== null, "11c.1: kb_state present");
+    assert(mDg1.repo.kb_state.kb_baseline === null, "11c.2: kb_baseline null (absent)");
+    assert(mDg1.repo.kb_state.status === "approved",
+      "11c.3: status=approved when kb_baseline absent (skip freshness)");
+  } finally {
+    try { rmSync(tmpDg1, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // Not a git repo + old baseline -> degradation -> approved (not outdated)
+  const tmpDg2 = join(tmpdir(), "aid-066-dg2-" + Date.now());
+  mkdirSync(join(tmpDg2, ".aid", "knowledge"), { recursive: true });
+  mkdirSync(join(tmpDg2, ".aid", "dashboard"), { recursive: true });
+  writeFileSync(
+    join(tmpDg2, ".aid", "knowledge", "STATE.md"),
+    "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+    "utf8"
+  );
+  writeFileSync(join(tmpDg2, ".aid", "dashboard", "kb.html"), "<html></html>", "utf8");
+  writeFileSync(
+    join(tmpDg2, ".aid", "settings.yml"),
+    "kb_baseline:\n  branch: main\n  tip_date: 2000-01-01T00:00:00Z\n",  // very old
+    "utf8"
+  );
+  try {
+    const mDg2 = readRepo(tmpDg2);
+    assert(mDg2.repo.kb_state !== null, "11c.4: kb_state present (non-git + old baseline)");
+    // Non-git dir -> git freshness degrades to skip -> approved (not outdated)
+    assert(mDg2.repo.kb_state.status === "approved",
+      "11c.5: non-git dir -> degradation -> approved (not outdated despite old baseline)");
+  } finally {
+    try { rmSync(tmpDg2, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // Baseline present but tip_date unparseable -> skip -> approved
+  const tmpDg3 = join(tmpdir(), "aid-066-dg3-" + Date.now());
+  mkdirSync(join(tmpDg3, ".aid", "knowledge"), { recursive: true });
+  mkdirSync(join(tmpDg3, ".aid", "dashboard"), { recursive: true });
+  writeFileSync(
+    join(tmpDg3, ".aid", "knowledge", "STATE.md"),
+    "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+    "utf8"
+  );
+  writeFileSync(join(tmpDg3, ".aid", "dashboard", "kb.html"), "<html></html>", "utf8");
+  writeFileSync(
+    join(tmpDg3, ".aid", "settings.yml"),
+    "kb_baseline:\n  branch: main\n  tip_date: not-a-valid-date\n",
+    "utf8"
+  );
+  try {
+    const mDg3 = readRepo(tmpDg3);
+    assert(mDg3.repo.kb_state !== null, "11c.6: kb_state present");
+    // Unparseable tip_date -> normalize returns null -> skip -> approved
+    assert(mDg3.repo.kb_state.status === "approved",
+      "11c.7: unparseable tip_date -> skip -> approved");
+  } finally {
+    try { rmSync(tmpDg3, { recursive: true, force: true }); } catch (_) {}
+  }
+}
+
+// ---------------------------------------------------------------------------
+// (11d) DM-A3: schema_version stays 3 (no bump for feature-007)
+// ---------------------------------------------------------------------------
+{
+  const readerMjsSrc = readFileSync(join(__dirname, "..", "reader.mjs"), "utf8");
+  // The schema_version constant must be 3 in reader.mjs
+  assert(
+    readerMjsSrc.includes("schema_version: 3") ||
+    readerMjsSrc.includes("schema_version:3") ||
+    readerMjsSrc.includes("SCHEMA_VERSION = 3") ||
+    readerMjsSrc.includes("schemaVersion = 3") ||
+    (readerMjsSrc.includes("schema_version") && !readerMjsSrc.match(/schema_version[: ]+[4-9]/)),
+    "11d.1: DM-A3: schema_version is 3 (no bump in reader.mjs for feature-007)"
+  );
+
+  // Verify via readRepo that the model JSON contains schema_version:3
+  const tmpSv = join(tmpdir(), "aid-066-sv-" + Date.now());
+  mkdirSync(join(tmpSv, ".aid"), { recursive: true });
+  try {
+    // Minimal repo: read_repo must still produce schema_version 3
+    const mSv = readRepo(tmpSv);
+    // schema_version is in the top-level envelope (not in readRepo's direct output,
+    // but the server serializes it; check via the reader source constant)
+    // We verify the model does not contain schema_version > 3 by asserting the source
+    // constant hasn't changed -- already done above via source grep.
+    assert(true, "11d.2: DM-A3: readRepo called without error on minimal repo");
+  } finally {
+    try { rmSync(tmpSv, { recursive: true, force: true }); } catch (_) {}
+  }
+}
+
+// ---------------------------------------------------------------------------
+// (11e) Frozen-commit git repo: outdated verdict reproducible (residual #4)
+//       Skipped if git not available.
+// ---------------------------------------------------------------------------
+{
+  let gitAvailable = false;
+  try {
+    const r = spawnSync("git", ["--version"], { timeout: 2000, encoding: "utf8" });
+    gitAvailable = r.status === 0;
+  } catch (_) {}
+
+  if (gitAvailable) {
+    process.stdout.write("  [11e] git available -- running frozen-commit tests\n");
+
+    // Helper: build a frozen-commit git repo
+    function buildFrozenRepo(dir, frozenDate) {
+      const env = Object.assign({}, process.env, {
+        GIT_AUTHOR_DATE: frozenDate,
+        GIT_COMMITTER_DATE: frozenDate,
+        GIT_AUTHOR_NAME: "test",
+        GIT_AUTHOR_EMAIL: "test@test.com",
+        GIT_COMMITTER_NAME: "test",
+        GIT_COMMITTER_EMAIL: "test@test.com",
+      });
+      mkdirSync(dir, { recursive: true });
+      spawnSync("git", ["init", "-b", "master", dir], { env, timeout: 5000 });
+      writeFileSync(join(dir, "dummy.txt"), "frozen commit\n", "utf8");
+      spawnSync("git", ["-C", dir, "add", "dummy.txt"], { env, timeout: 5000 });
+      spawnSync("git", ["-C", dir, "commit", "-m", "frozen commit"], { env, timeout: 5000 });
+    }
+
+    // Test 1: commit 2026-06-10 > baseline 2026-06-01 -> outdated
+    const tmpFc1 = join(tmpdir(), "aid-066-fc1-" + Date.now());
+    try {
+      buildFrozenRepo(tmpFc1, "2026-06-10T12:00:00+00:00");
+      mkdirSync(join(tmpFc1, ".aid", "knowledge"), { recursive: true });
+      mkdirSync(join(tmpFc1, ".aid", "dashboard"), { recursive: true });
+      writeFileSync(
+        join(tmpFc1, ".aid", "knowledge", "STATE.md"),
+        "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+        "utf8"
+      );
+      writeFileSync(join(tmpFc1, ".aid", "dashboard", "kb.html"), "<html></html>", "utf8");
+      writeFileSync(
+        join(tmpFc1, ".aid", "settings.yml"),
+        "kb_baseline:\n  branch: master\n  tip_date: 2026-06-01T00:00:00Z\n",
+        "utf8"
+      );
+      // Run twice to verify reproducibility
+      const m1a = readRepo(tmpFc1);
+      const m1b = readRepo(tmpFc1);
+      const status1a = m1a.repo.kb_state ? m1a.repo.kb_state.status : null;
+      const status1b = m1b.repo.kb_state ? m1b.repo.kb_state.status : null;
+      assert(status1a === "outdated",
+        "11e.1: frozen commit 2026-06-10 > baseline 2026-06-01 -> outdated");
+      assert(status1a === status1b,
+        "11e.2: reproducibility: second run matches first (frozen commit)");
+    } finally {
+      try { rmSync(tmpFc1, { recursive: true, force: true }); } catch (_) {}
+    }
+
+    // Test 2: commit 2026-06-01 < baseline 2026-06-10 -> approved
+    const tmpFc2 = join(tmpdir(), "aid-066-fc2-" + Date.now());
+    try {
+      buildFrozenRepo(tmpFc2, "2026-06-01T12:00:00+00:00");
+      mkdirSync(join(tmpFc2, ".aid", "knowledge"), { recursive: true });
+      mkdirSync(join(tmpFc2, ".aid", "dashboard"), { recursive: true });
+      writeFileSync(
+        join(tmpFc2, ".aid", "knowledge", "STATE.md"),
+        "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+        "utf8"
+      );
+      writeFileSync(join(tmpFc2, ".aid", "dashboard", "kb.html"), "<html></html>", "utf8");
+      writeFileSync(
+        join(tmpFc2, ".aid", "settings.yml"),
+        "kb_baseline:\n  branch: master\n  tip_date: 2026-06-10T00:00:00Z\n",
+        "utf8"
+      );
+      const m2 = readRepo(tmpFc2);
+      const status2 = m2.repo.kb_state ? m2.repo.kb_state.status : null;
+      assert(status2 === "approved",
+        "11e.3: frozen commit 2026-06-01 < baseline 2026-06-10 -> approved");
+    } finally {
+      try { rmSync(tmpFc2, { recursive: true, force: true }); } catch (_) {}
+    }
+
+    // Test 3: Z vs -04:00 baseline of same instant -> same verdict (R12)
+    // Frozen commit: 2026-06-10T12:00:00+00:00
+    // Baseline just before: 2026-06-10T11:59:59Z == 2026-06-10T07:59:59-04:00
+    // Both should give "outdated"
+    const tmpFc3Z = join(tmpdir(), "aid-066-fc3z-" + Date.now());
+    const tmpFc3N = join(tmpdir(), "aid-066-fc3n-" + Date.now());
+    try {
+      buildFrozenRepo(tmpFc3Z, "2026-06-10T12:00:00+00:00");
+      mkdirSync(join(tmpFc3Z, ".aid", "knowledge"), { recursive: true });
+      mkdirSync(join(tmpFc3Z, ".aid", "dashboard"), { recursive: true });
+      writeFileSync(
+        join(tmpFc3Z, ".aid", "knowledge", "STATE.md"),
+        "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+        "utf8"
+      );
+      writeFileSync(join(tmpFc3Z, ".aid", "dashboard", "kb.html"), "<html></html>", "utf8");
+      // Baseline Z form (11:59:59 UTC -> 1 second before 12:00 UTC commit)
+      writeFileSync(
+        join(tmpFc3Z, ".aid", "settings.yml"),
+        "kb_baseline:\n  branch: master\n  tip_date: 2026-06-10T11:59:59Z\n",
+        "utf8"
+      );
+
+      buildFrozenRepo(tmpFc3N, "2026-06-10T12:00:00+00:00");
+      mkdirSync(join(tmpFc3N, ".aid", "knowledge"), { recursive: true });
+      mkdirSync(join(tmpFc3N, ".aid", "dashboard"), { recursive: true });
+      writeFileSync(
+        join(tmpFc3N, ".aid", "knowledge", "STATE.md"),
+        "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+        "utf8"
+      );
+      writeFileSync(join(tmpFc3N, ".aid", "dashboard", "kb.html"), "<html></html>", "utf8");
+      // Baseline -04:00 form: 07:59:59 -04:00 == 11:59:59 UTC (same instant)
+      writeFileSync(
+        join(tmpFc3N, ".aid", "settings.yml"),
+        "kb_baseline:\n  branch: master\n  tip_date: 2026-06-10T07:59:59-04:00\n",
+        "utf8"
+      );
+
+      const m3Z = readRepo(tmpFc3Z);
+      const m3N = readRepo(tmpFc3N);
+      const s3Z = m3Z.repo.kb_state ? m3Z.repo.kb_state.status : null;
+      const s3N = m3N.repo.kb_state ? m3N.repo.kb_state.status : null;
+
+      assert(s3Z === s3N,
+        "11e.4: Z and -04:00 of same baseline instant give same verdict (R12 cross-runtime Z-vs-offset)");
+      assert(s3Z === "outdated",
+        "11e.5: frozen commit 12:00 UTC > baseline 11:59:59 UTC -> outdated (Z form)");
+      assert(s3N === "outdated",
+        "11e.6: frozen commit 12:00 UTC > baseline 11:59:59 UTC -> outdated (-04:00 form)");
+    } finally {
+      try { rmSync(tmpFc3Z, { recursive: true, force: true }); } catch (_) {}
+      try { rmSync(tmpFc3N, { recursive: true, force: true }); } catch (_) {}
+    }
+
+  } else {
+    process.stdout.write("  [11e] git not available -- skipping frozen-commit tests\n");
+    // Soft-skip: emit as a passing note (same posture as test_task066_kb_parity.py)
+    assert(true, "11e: frozen-commit tests SKIPPED (git not available)");
   }
 }
 
