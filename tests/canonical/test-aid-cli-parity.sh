@@ -1218,6 +1218,20 @@ else
     pass "PAR057-Q07 Bash<->PS1 spawn args: neither --aid-home nor --root passed to server"
 fi
 
+# Q08: DEFINITION-ORDER guard (regressed once on Windows). bin/aid.ps1 executes
+#      top-to-bottom, and the 'dashboard' dispatch runs INLINE in the script body
+#      (not at the bottom like Bash). The dashboard-start auto-register seam calls
+#      script:Registry-Register, so that function MUST be DEFINED before the dashboard
+#      dispatch line — otherwise 'dashboard start' dies with "term not recognized" on
+#      Windows (Linux skips the PS dashboard-spawn, so only Windows CI catches it).
+_ps1_regdef_line=$(grep -n '^function script:Registry-Register' "${BIN_AID_PS1}" | head -1 | cut -d: -f1)
+_ps1_dash_dispatch_line=$(grep -n 'Invoke-AidDashboardCtl -DcArgs' "${BIN_AID_PS1}" | head -1 | cut -d: -f1)
+if [[ -n "$_ps1_regdef_line" && -n "$_ps1_dash_dispatch_line" && "$_ps1_regdef_line" -lt "$_ps1_dash_dispatch_line" ]]; then
+    pass "PAR057-Q08 bin/aid.ps1: Registry-Register defined (L${_ps1_regdef_line}) before the dashboard dispatch (L${_ps1_dash_dispatch_line})"
+else
+    fail "PAR057-Q08 bin/aid.ps1: Registry-Register def (L${_ps1_regdef_line}) NOT before dashboard dispatch (L${_ps1_dash_dispatch_line}) -- dashboard start will fail 'term not recognized' on Windows"
+fi
+
 # ===========================================================================
 # PAR057-R: --remote re-target parity: idempotent-teardown and clear-fail
 #           (extends PAR005-N with additional behavioral assertions) (task-057 AC4)
