@@ -279,6 +279,62 @@ function script:Invoke-AidUpdateCheck {
     }
 }
 
+# ---------------------------------------------------------------------------
+# Invoke-AidMigrateSentinel  (FF-4 / DM-3 / DD-1 / task-080)
+# Version-sentinel lazy first-run migration trigger (PS twin of
+# _aid_check_migrate_sentinel in bin/aid).
+# Compares $AID_HOME/VERSION (installed) vs $AID_HOME/.migrated (last migrated).
+# Fires the FF-2 machine scan once when they differ (version advanced or marker
+# absent = never migrated).  Called at the same sites as Invoke-AidUpdateCheck.
+# Opt-out: $env:AID_NO_MIGRATE = '1' -> skip entirely.
+# No-loop: a script-scope flag ($script:_AidMigrateSentinelFired) prevents
+# re-firing within the same run; update self bypasses this path.
+# Non-interactive defer (RC-3): no TTY + no AID_MIGRATE_YES=1 -> annotate +
+# defer (marker NOT advanced); Invoke-AidScanAndMigrate enforces the same on
+# its no-TTY branch.
+# ---------------------------------------------------------------------------
+$script:_AidMigrateSentinelFired = $false
+
+function script:Invoke-AidMigrateSentinel {
+    # Opt-out.
+    if ($env:AID_NO_MIGRATE -eq '1') { return }
+
+    # No-loop guard: only fire once per process.
+    if ($script:_AidMigrateSentinelFired) { return }
+
+    # Read installed version.
+    $verFile = Join-Path $script:_AidHome 'VERSION'
+    if (-not (Test-Path $verFile -PathType Leaf)) { return }
+    $sentinelInstalled = (Get-Content -LiteralPath $verFile -Raw -ErrorAction SilentlyContinue).Trim()
+    if ([string]::IsNullOrEmpty($sentinelInstalled)) { return }
+
+    # Read .migrated marker (absent = empty = never migrated -> treated as advanced).
+    $sentinelMarker = ''
+    $markerFile = Join-Path $script:_AidHome '.migrated'
+    if (Test-Path $markerFile -PathType Leaf) {
+        $sentinelMarker = (Get-Content -LiteralPath $markerFile -Raw -ErrorAction SilentlyContinue).Trim()
+    }
+
+    # DD-1 string inequality: if equal -> steady state, no trigger (SEC-6 no-loop).
+    if ($sentinelInstalled -eq $sentinelMarker) { return }
+
+    # Version advanced past last-migrated (or marker absent on first run after upgrade).
+    $script:_AidMigrateSentinelFired = $true
+
+    # Non-interactive + no opt-in -> annotate + defer (RC-3 / SEC-1).
+    # Marker NOT advanced; the next interactive run re-triggers (FF-4 retrigger).
+    $isTty = [Console]::IsInputRedirected -eq $false
+    if ((-not $isTty) -and ($env:AID_MIGRATE_YES -ne '1')) {
+        Write-Host "AID hint: AID upgraded to $sentinelInstalled; run 'aid update self' to migrate your repos."
+        return
+    }
+
+    # Interactive OR non-interactive opt-in: run the FF-2 scan once.
+    # Invoke-AidScanAndMigrate writes the DM-3 marker on completion.
+    $sentinelApply = ($env:AID_MIGRATE_YES -eq '1')
+    script:Invoke-AidScanAndMigrate -ApplyAllFlag $sentinelApply
+}
+
 # Invoke-AidUpdateSelf
 # Re-runs the bootstrap in place.  Returns the exit code (does NOT call Exit-Aid).
 # AID_INSTALL_CHANNEL guard: npm/pypi channels print a package-manager hint
@@ -304,6 +360,51 @@ function script:Invoke-AidUpdateSelf {
     } catch {
         [Console]::Error.WriteLine("ERROR: aid: update self failed: $_")
         return 3
+    }
+}
+
+# Invoke-AidUpdateSelfIfStale  (FF-3 preamble / CLI-2 / task-079)
+# Self-update-if-needed preamble for the 'aid update [<tool>]' reach.
+# Reuses Invoke-AidUpdateSelf channel logic gated by a skip-if-current check
+# (OQ-6 resolved simplest-correct: compare installed $AID_HOME/VERSION against
+# the cached .update-check latest; if stale -> call Invoke-AidUpdateSelf; if
+# current or unknown -> silent no-op).
+#
+# Safety notes (no re-bootstrap/loop hazard):
+#   - Called only on 'update [<tool>]', not 'update self' or 'add'.
+#   - WARN-not-fail: self-update failure is logged; tool-install continues (NFR12).
+function script:Invoke-AidUpdateSelfIfStale {
+    $aidHome = $script:_AidHome
+
+    # Read installed version.
+    $verFile = Join-Path $aidHome 'VERSION'
+    $installed = ''
+    if (Test-Path $verFile -PathType Leaf) {
+        $installed = (Get-Content $verFile -Raw).Trim()
+    }
+    if (-not $installed) { return }  # no installed version known -> skip
+
+    # Read cached latest version from .update-check (line 2 of the cache file).
+    $cacheFile = Join-Path $aidHome '.update-check'
+    $cachedLatest = ''
+    if (Test-Path $cacheFile -PathType Leaf) {
+        $lines = Get-Content $cacheFile -ErrorAction SilentlyContinue
+        if ($lines -and $lines.Count -ge 2) {
+            $cachedLatest = ($lines[1]).Trim()
+        }
+    }
+    if (-not $cachedLatest) { return }  # no cached latest known -> skip (no network call here)
+
+    # Skip if already current (string equality).
+    if ($installed -eq $cachedLatest) { return }
+
+    # Stale: call the channel-appropriate self-update logic.
+    # WARN-not-fail: failure must not abort the tool-update.
+    Write-Host "aid update: CLI is not current (installed: $installed, available: $cachedLatest); self-updating before tool install..."
+    try {
+        $null = script:Invoke-AidUpdateSelf
+    } catch {
+        [Console]::Error.WriteLine("WARN: aid: self-update failed (continuing with tool install)")
     }
 }
 
@@ -1029,6 +1130,8 @@ if ($script:_RawArgs.Count -eq 0) {
 
     # Block 5: Update check notice (final line, non-blocking).
     script:Invoke-AidUpdateCheck
+    # Block 6: Migration sentinel (FF-4 / DM-3 / task-080).
+    script:Invoke-AidMigrateSentinel
     script:Exit-Aid 0
 }
 
@@ -1097,6 +1200,8 @@ if ($SUBCMD -eq 'status') {
     $rc = Get-AidStatus -Target $statusTarget
     # Update check notice appended after status output (non-blocking).
     script:Invoke-AidUpdateCheck
+    # Migration sentinel (FF-4 / DM-3 / task-080).
+    script:Invoke-AidMigrateSentinel
     script:Exit-Aid $rc
 }
 # ---------------------------------------------------------------------------
@@ -1968,6 +2073,13 @@ if (-not (Test-Path $_AidTarget -PathType Container)) {
 }
 $_AidTarget = (Resolve-Path -LiteralPath $_AidTarget).Path
 
+# ---- Self-update-if-needed preamble (FF-3 / CLI-2 / task-079) --------------
+# For 'update [<tool>]' only (not 'add', not 'update self').  Ensures the CLI
+# is current before the per-repo migration runs (FR38 / OQ-6).  WARN-not-fail.
+if ($SUBCMD -eq 'update') {
+    script:Invoke-AidUpdateSelfIfStale
+}
+
 # Strip leading 'v' from version.
 if ($_AidVersionArg) { $_AidVersionArg = $_AidVersionArg -replace '^v', '' }
 
@@ -2159,6 +2271,14 @@ try {
             Write-Host "Done. AID $($script:_DispResolvedVersion) installed into: $_AidTarget"
             # DR-1 registry side-effect: register repo on first tool add/update (idempotent).
             script:Registry-Register -Repo $_AidTarget
+            # FF-3 / CLI-2 / task-079: per-repo migration on the 'update' reach only.
+            # Runs on the already-canonicalized $_AidTarget (Resolve-Path above).
+            # The Registry-Register above already ran, so migration step 4 is an
+            # idempotent no-op; steps 1-3 run per FF-1.  WARN-not-fail (NFR12):
+            # migration never changes the tool-update exit code.
+            if ($SUBCMD -eq 'update') {
+                script:Invoke-AidMigrateRepo -Repo $_AidTarget
+            }
             script:Exit-Aid 0
         }
 

@@ -10,13 +10,15 @@
     "node": ">=18"
   },
   "scripts": {
-    "prepack": "node scripts/vendor.js"
+    "prepack": "node scripts/vendor.js",
+    "postinstall": "node scripts/postinstall.js"
   },
   "dependencies": {},
   "files": [
     "bin/",
     "lib/",
     "dashboard/",
+    "scripts/",
     "VERSION",
     "README.md",
     "LICENSE"

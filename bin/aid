@@ -242,6 +242,64 @@ _aid_check_update() {
 }
 
 # ---------------------------------------------------------------------------
+# _aid_check_migrate_sentinel  (FF-4 / DM-3 / DD-1 / task-080)
+# Version-sentinel lazy first-run migration trigger.
+# Compares $AID_HOME/VERSION (installed) vs $AID_HOME/.migrated (last migrated).
+# Fires the FF-2 machine scan once when they differ (version advanced or marker
+# absent = never migrated).  Called at the same sites as _aid_check_update.
+# Opt-out: AID_NO_MIGRATE=1 -> skip entirely.
+# No-loop / no-recursion: a module-level guard (_AID_MIGRATE_SENTINEL_FIRED)
+# prevents re-firing within the same run; update self bypasses this path.
+# Non-interactive defer (RC-3): no TTY + no AID_MIGRATE_YES=1 -> annotate +
+# defer (marker NOT advanced); the scan itself (_aid_scan_and_migrate) enforces
+# the same invariant on the no-TTY branch.
+# ---------------------------------------------------------------------------
+_AID_MIGRATE_SENTINEL_FIRED=0
+_aid_check_migrate_sentinel() {
+    # Opt-out.
+    [[ "${AID_NO_MIGRATE:-0}" == "1" ]] && return 0
+
+    # No-loop guard: only fire once per process.
+    [[ "${_AID_MIGRATE_SENTINEL_FIRED}" == "1" ]] && return 0
+
+    # Read installed version (same trim idiom as _aid_check_update:170).
+    local _sentinel_installed=""
+    local _sentinel_ver_file="${AID_HOME}/VERSION"
+    if [[ -f "${_sentinel_ver_file}" ]]; then
+        _sentinel_installed="$(tr -d '[:space:]' < "${_sentinel_ver_file}")"
+    fi
+    [[ -z "${_sentinel_installed}" ]] && return 0
+
+    # Read .migrated marker (absent = empty = never migrated -> treated as advanced).
+    local _sentinel_marker=""
+    local _sentinel_marker_file="${AID_HOME}/.migrated"
+    if [[ -f "${_sentinel_marker_file}" ]]; then
+        _sentinel_marker="$(tr -d '[:space:]' < "${_sentinel_marker_file}")"
+    fi
+
+    # DD-1 string inequality: if equal -> steady state, no trigger (SEC-6 no-loop).
+    if [[ "${_sentinel_installed}" == "${_sentinel_marker}" ]]; then
+        return 0
+    fi
+
+    # Version advanced past last-migrated (or marker absent on first run after upgrade).
+    _AID_MIGRATE_SENTINEL_FIRED=1
+
+    # Non-interactive + no opt-in -> annotate + defer (RC-3 / SEC-1).
+    # Marker NOT advanced here; the next interactive run re-triggers (FF-4 retrigger).
+    if ! [[ -t 0 ]] && [[ "${AID_MIGRATE_YES:-0}" != "1" ]]; then
+        echo "AID hint: AID upgraded to ${_sentinel_installed}; run 'aid update self' to migrate your repos."
+        return 0
+    fi
+
+    # Interactive OR non-interactive opt-in: run the FF-2 scan once.
+    # _aid_scan_and_migrate writes the DM-3 marker on completion.
+    local _sentinel_apply="${AID_MIGRATE_YES:-0}"
+    _aid_scan_and_migrate "${_sentinel_apply}"
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # update self command (formerly self-update).
 # ---------------------------------------------------------------------------
 _cmd_update_self() {
@@ -265,6 +323,56 @@ _cmd_update_self() {
         echo "ERROR: aid: curl not found; cannot update self" >&2
         return 3
     fi
+}
+
+# ---------------------------------------------------------------------------
+# _aid_update_self_if_stale  (FF-3 preamble / CLI-2 / task-079)
+# Self-update-if-needed preamble for the 'aid update [<tool>]' reach.
+# Reuses _cmd_update_self's channel logic gated by a skip-if-current check
+# (OQ-6 resolved simplest-correct: compare installed $AID_HOME/VERSION against
+# the cached .update-check latest; if stale -> call _cmd_update_self; if
+# current or unknown -> silent no-op).
+#
+# Safety notes (to prevent re-bootstrap/loop hazards):
+#   - This is called BEFORE the tool-install loop on the 'update' reach only
+#     (not 'update self', not 'add') -- no recursion possible.
+#   - _cmd_update_self on npm/pypi channels prints a hint and returns 0 (no
+#     code change, no hazard).  On the curl channel it re-runs the bootstrap,
+#     which replaces bin/aid on disk; the current process continues running the
+#     already-loaded script, so the subsequent migration runs under the current
+#     code -- acceptable (same pattern as 'aid update self' + post-update scan).
+#   - WARN-not-fail: a self-update failure is logged and the tool-install
+#     continues (NFR12).
+# ---------------------------------------------------------------------------
+_aid_update_self_if_stale() {
+    # Read installed version (same pattern as _aid_check_update).
+    local _installed=""
+    local _ver_file="${AID_HOME}/VERSION"
+    if [[ -f "${_ver_file}" ]]; then
+        _installed="$(tr -d '[:space:]' < "${_ver_file}")"
+    fi
+    [[ -z "${_installed}" ]] && return 0  # no installed version known -> skip
+
+    # Read cached latest version from .update-check (line 2 of the cache file).
+    local _cache_file="${AID_HOME}/.update-check"
+    local _cached_latest=""
+    if [[ -f "${_cache_file}" ]]; then
+        _cached_latest="$(awk 'NR==2{print $1}' "${_cache_file}" 2>/dev/null)" || _cached_latest=""
+    fi
+    [[ -z "${_cached_latest}" ]] && return 0  # no cached latest known -> skip (no network call here)
+
+    # Skip if already current (string equality -- no semver needed for "are we up to date?").
+    if [[ "${_installed}" == "${_cached_latest}" ]]; then
+        return 0
+    fi
+
+    # Stale: call the channel-appropriate self-update logic.
+    # WARN-not-fail: failure here must not abort the tool-update.
+    printf 'aid update: CLI is not current (installed: %s, available: %s); self-updating before tool install...\n' \
+        "${_installed}" "${_cached_latest}"
+    _cmd_update_self || \
+        echo "WARN: aid: self-update failed (continuing with tool install)" >&2
+    return 0
 }
 
 # ---------------------------------------------------------------------------
@@ -1312,14 +1420,23 @@ _aid_migrate_repair_settings_era_a() {
         _val="${_ln#*${_key}:}"
         # strip one optional leading space (was the colon-space separator)
         _val="${_val# }"
-        # strip inline comment and surrounding quotes
+        # strip inline comment: first " #" to end of line (YAML inline-comment form).
+        # This intentionally matches the first space-hash occurrence (parity with PS twin's
+        # \s*#.*$ strip and the reader's _strip_yaml_inline_comment rule).
         _val="${_val%% #*}"
         _val="${_val%\"}"
         _val="${_val#\"}"
         _val="${_val%%\'}"
         _val="${_val##\'}"
-        _val="${_val%% }"
-        _val="${_val## }"
+        # Full rtrim: remove all trailing whitespace left after the comment strip.
+        # The previous "%% " (single-space suffix) only removed ONE trailing space,
+        # leaving the alignment padding that precedes " # comment" in lines like
+        # "  type: brownfield                  # brownfield | greenfield".
+        local _rstrip="${_val##*[![:space:]]}"
+        _val="${_val%"${_rstrip}"}"
+        # Full ltrim: remove any leading whitespace (e.g. from multi-space colon-separator).
+        local _lstrip="${_val%%[![:space:]]*}"
+        _val="${_val#"${_lstrip}"}"
         echo "${_val}"
     }
 
@@ -1797,6 +1914,8 @@ _cmd_dashboard() {
 
     # Block 5: Update check notice (final line, non-blocking).
     _aid_check_update
+    # Block 6: Migration sentinel (FF-4 / DM-3 / task-080).
+    _aid_check_migrate_sentinel
 }
 
 # Early help check.
@@ -1855,6 +1974,8 @@ if [[ "$SUBCMD" == "status" ]]; then
     _status_rc=$?
     # Update check notice appended after status output (non-blocking).
     _aid_check_update
+    # Migration sentinel (FF-4 / DM-3 / task-080).
+    _aid_check_migrate_sentinel
     exit $_status_rc
 fi
 
@@ -1985,6 +2106,13 @@ if [[ ! -d "$_AID_TARGET" ]]; then
     _aid_die "target directory does not exist: ${_AID_TARGET}" 2
 fi
 _AID_TARGET="$(cd "$_AID_TARGET" && pwd)"
+
+# ---- Self-update-if-needed preamble (FF-3 / CLI-2 / task-079) --------------
+# For 'update [<tool>]' only (not 'add', not 'update self').  Ensures the CLI
+# is current before the per-repo migration runs (FR38 / OQ-6).  WARN-not-fail.
+if [[ "$SUBCMD" == "update" ]]; then
+    _aid_update_self_if_stale
+fi
 
 # Strip leading 'v' from version.
 _AID_VERSION_ARG="${_AID_VERSION_ARG#v}"
@@ -2184,6 +2312,14 @@ case "$SUBCMD" in
         echo "Done. AID ${_AID_RESOLVED_VERSION:-} installed into: ${_AID_TARGET}"
         # DR-1 registry side-effect: register repo on first tool add/update (idempotent).
         registry_register "$_AID_TARGET"
+        # FF-3 / CLI-2 / task-079: per-repo migration on the 'update' reach only.
+        # Runs on the already-CAN-1-canonicalized $_AID_TARGET (cd && pwd above).
+        # The registry_register above already ran, so migration step 4 is an
+        # idempotent no-op; steps 1-3 run per FF-1.  WARN-not-fail (NFR12):
+        # migration never changes the tool-update exit code.
+        if [[ "$SUBCMD" == "update" ]]; then
+            _aid_migrate_repo "$_AID_TARGET"
+        fi
         exit 0
         ;;
 

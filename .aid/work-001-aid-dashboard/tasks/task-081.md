@@ -13,7 +13,12 @@
   PS twin via `test-aid-cli-parity.sh`'s seam — though the deep era-a/era-b assertions are the parity
   partner of task-082's parity lane.
 - **§6 gate 4 — era-a (no-op + repair):** (a) fixture with a **valid** `settings.yml` + `home.html` +
-  registered ⇒ migration is a **no-op** (no fs write/move/create/delete, registry unchanged). (b) fixture
+  registered ⇒ migration is a **no-op** (no fs write/move/create/delete, registry unchanged). **The valid
+  fixture MUST include inline comments + alignment on every required scalar** (e.g. `type: brownfield
+  # brownfield | greenfield`, `max_parallel_tasks: 5   # comment`, `heartbeat_interval: 1   # comment`),
+  because these are the exact forms that triggered the comment-strip value-preservation bug fixed in
+  task-077's era-a repair; a no-inline-comment fixture would pass even against the pre-fix code (TV-1
+  weakness). This regression fixture is now also present in `PAR077-C` of `test-aid-cli-parity.sh`. (b) fixture
   with a **malformed/incomplete** `settings.yml` (missing a required section, e.g. no `project:` block or a
   missing scalar section) **AND** a populated `kb_baseline` block **AND** a per-skill `<skill>.minimum_grade`
   override ⇒ repaired to DM-1 validity, the **`kb_baseline` + override survive byte-for-byte** (R21 — the
