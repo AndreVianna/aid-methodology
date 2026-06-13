@@ -164,27 +164,35 @@ registry_unregister "$_AID_TARGET"     # remove tail (only when the manifest is 
 > If a future call site lacks a pre-canonicalized target, canonicalize explicitly with the IDENTICAL
 > expression: `canon="$(cd "$path" && pwd)"`. Never `pwd -P`.
 
-**Site 1 (PS twin) — `bin/aid.ps1`.** Resolve to an absolute path **without following symlinks**.
-`Resolve-Path` follows symlinks on PowerShell, so use the .NET full-path normalizer, which collapses
-`.`/`..` and absolutizes but does **not** resolve symlinks:
+**Site 1 (PS twin) — `bin/aid.ps1`.** Resolve to an absolute path **without resolving symlink targets**
+(the no-`-P` requirement). The shipped code uses `(Resolve-Path -LiteralPath $Target).Path`, which is
+**correct**: PowerShell's `Resolve-Path` is provider-path normalization — it absolutizes and collapses
+`.`/`..` but does **NOT** resolve symlink/reparse-point targets. (Empirically verified on pwsh 7.4.6,
+both trailing and mid-path symlinks: `Resolve-Path` returns the *logical* path, byte-identical to Bash
+`cd && pwd` and to `[System.IO.Path]::GetFullPath`. Symlink-target resolution in PowerShell requires
+`Get-Item ... .Target` / `.ResolveLinkTarget` / `readlink -f`, which this code never uses.) Either form
+below is an acceptable, equivalent CAN-1 — the shipped code uses (a):
 
 ```powershell
-# CAN-1 twin: absolutize + collapse . / .. WITHOUT resolving symlinks (matches `cd && pwd`, no -P).
-# GetFullPath normalizes relative to the process CWD. To mirror `cd "$Target" && pwd` for a
-# RELATIVE --target, anchor it on the current location first; an ABSOLUTE $Target ignores the cwd.
-if ([System.IO.Path]::IsPathRooted($Target)) {
-    $canon = [System.IO.Path]::GetFullPath($Target)
-} else {
-    $canon = [System.IO.Path]::GetFullPath((Join-Path (Get-Location).Path $Target))
-}
-# REQUIREMENT: absolute, '.'/'..' collapsed, NO symlink-follow. Do NOT use Resolve-Path (it
-# follows symlinks = -P semantics) -- that would diverge from the Bash `cd && pwd` and break DD-5.
+# (a) SHIPPED form — Resolve-Path normalizes (absolute, . / .. collapsed) and does NOT follow symlinks;
+#     it also validates existence (errors on a missing --target, matching Bash `cd` failing on missing).
+$canon = (Resolve-Path -LiteralPath $Target).Path
+
+# (b) Explicit .NET alternative (no existence check) — same logical result, makes the no-symlink intent
+#     textually unambiguous. Anchor a RELATIVE target on the current location to mirror `cd "$Target" && pwd`.
+$canon = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine((Get-Location).Path, $Target))
 ```
 
-> Implementation note for 049: reuse whatever `bin/aid.ps1`'s existing `--target` canonicalization
-> already does (it must already match `cd && pwd`); the registry twin MUST call that same helper so the
-> twin and Bash agree byte-for-byte. If none exists, `[System.IO.Path]::GetFullPath($Target)` (with the
-> CWD set to the repo for a relative target) is the no-symlink-follow equivalent.
+> **REQUIREMENT (both forms):** absolute, `.`/`..` collapsed, **NO symlink-target resolution**. Never use
+> `Get-Item .Target` / `.ResolveLinkTarget` / `readlink -f` / Bash `pwd -P` here — those WOULD diverge from
+> `cd && pwd` and break DD-5. `Resolve-Path` is **not** one of those — it is the no-follow normalizer.
+>
+> Implementation note for 049: reuse `bin/aid.ps1`'s existing `--target` canonicalization
+> (`(Resolve-Path -LiteralPath $Target).Path` at the install + dashboard seams) — it already matches
+> `cd && pwd`; the registry twin calls that same already-canonical `$_AidTarget` so the twin and Bash
+> agree byte-for-byte. Cross-runtime DD-5 parity is anyway carried by the two **servers** hashing the
+> identical stored byte-string (proven byte-identical), and on any one machine only one shell writes the
+> registry — so writer cross-shell drift is not a DD-5 surface in practice.
 
 **Site 2 — storage (DM-1 `repos[]`).** Paths are stored **already CAN-1** (site 1 wrote them that way).
 No re-canonicalization on read. The line-scan (§5) returns the stored string **verbatim**, including no

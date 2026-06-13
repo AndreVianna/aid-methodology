@@ -887,7 +887,10 @@ _dc_start() {
 
     # Step 7: spawn the server child in a new session (clean process-group kill on stop).
     # SEC-1: literal 127.0.0.1 -- never read from input/config/env.
-    setsid "$interp" "$entry_point" --root "$target" --host 127.0.0.1 --port "$port" \
+    # The multi-repo server (feature-010) serves every registered repo from the
+    # registry under $AID_HOME; the cwd repo "$target" is auto-registered above,
+    # so the server takes --aid-home (not the old single-repo --root).
+    setsid "$interp" "$entry_point" --aid-home "$AID_HOME" --host 127.0.0.1 --port "$port" \
         >"$log_file" 2>&1 &
     local child_pid=$!
 
@@ -984,11 +987,16 @@ EOF
         else
             echo "Remote exposure is UP (tailnet-private), but the .ts.net URL could not be auto-detected -- run 'tailscale status' on this host to find it."
         fi
+        # DR-1 registry side-effect: auto-register the dashboard target repo (idempotent).
+        registry_register "$target"
         exit 0
     fi
 
     # Step 11: print success (local-only).
     echo "Dashboard (${runtime}) running at http://127.0.0.1:${port} -- stop with: aid dashboard stop"
+    # DR-1 registry side-effect: auto-register the dashboard target repo (idempotent).
+    # _dc_target is already CAN-1 (cd && pwd, no -P, applied at the dashboard-ctl seam).
+    registry_register "$target"
     exit 0
 }
 
@@ -1051,6 +1059,99 @@ _dc_stop() {
     rm -f "$pid_file" "$log_file"
     echo "aid: dashboard stopped."
     exit 0
+}
+
+# ---------------------------------------------------------------------------
+# Registry helpers (DR-1 / FF-1 / FR29).
+# Implements DM-1 schema, DD-3 atomic write, DD-REG-FMT line-scan.
+# ---------------------------------------------------------------------------
+
+# _registry_read_repos <reg-path>
+# Print newline-delimited canonical repo paths recorded in registry.yml.
+# Returns nothing (empty) when the file is absent or has no items.
+_registry_read_repos() {
+    local reg="$1"
+    [[ -f "$reg" ]] || return 0
+    grep -E '^[[:space:]]*-[[:space:]]+' "$reg" 2>/dev/null \
+        | sed -E 's/^[[:space:]]*-[[:space:]]+//' \
+        | sed -E 's/[[:space:]]+$//'
+}
+
+# registry_register <canon-path>
+# Set-insert <canon-path> into $AID_HOME/registry.yml (idempotent; atomic write).
+# On a real change prints one concise line.  On failure prints WARN and returns 0
+# so the host-tool op is never blocked (NFR10 / DD-3 / CLI-1).
+registry_register() {
+    local repo="$1" reg="${AID_HOME}/registry.yml" tmp existing
+    mkdir -p "$AID_HOME"
+    existing="$(_registry_read_repos "$reg")"
+    # Idempotent: already registered -> silent no-op.
+    if printf '%s\n' "$existing" | grep -qxF "$repo"; then
+        [[ "$_AID_VERBOSE" == "1" ]] && echo "Registry: ${repo} already registered (no-op)."
+        return 0
+    fi
+    tmp="$(mktemp "${reg}.aid-tmp.XXXXXX")" || {
+        echo "WARN: aid: could not update the machine repo registry (${reg}): mktemp failed" >&2
+        return 0
+    }
+    {
+        printf '%s\n' "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
+        printf '%s\n' "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/"
+        printf '%s\n' "# description/version are read from each repo's own .aid/settings.yml at render time."
+        printf '%s\n' "schema: 1"
+        printf '%s\n' "repos:"
+        { printf '%s\n' "$existing"; printf '%s\n' "$repo"; } \
+            | sed '/^$/d' | sort -u \
+            | while IFS= read -r p; do printf '  - %s\n' "$p"; done
+    } > "$tmp" || {
+        rm -f "$tmp"
+        echo "WARN: aid: could not update the machine repo registry (${reg}): write failed" >&2
+        return 0
+    }
+    mv -f "$tmp" "$reg" || {
+        rm -f "$tmp" 2>/dev/null
+        echo "WARN: aid: could not update the machine repo registry (${reg}): mv failed" >&2
+        return 0
+    }
+    echo "Registered ${repo} with the AID CLI."
+}
+
+# registry_unregister <canon-path>
+# Set-remove <canon-path> from $AID_HOME/registry.yml (idempotent; atomic write).
+# Called only when the repo manifest is now gone (last tool removed).
+# On a real change prints one concise line.  On failure prints WARN and returns 0.
+registry_unregister() {
+    local repo="$1" reg="${AID_HOME}/registry.yml" tmp existing
+    [[ -f "$reg" ]] || return 0
+    existing="$(_registry_read_repos "$reg")"
+    # Idempotent: not registered -> silent no-op.
+    printf '%s\n' "$existing" | grep -qxF "$repo" || {
+        [[ "$_AID_VERBOSE" == "1" ]] && echo "Registry: ${repo} not in registry (no-op)."
+        return 0
+    }
+    tmp="$(mktemp "${reg}.aid-tmp.XXXXXX")" || {
+        echo "WARN: aid: could not update the machine repo registry (${reg}): mktemp failed" >&2
+        return 0
+    }
+    {
+        printf '%s\n' "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
+        printf '%s\n' "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/"
+        printf '%s\n' "# description/version are read from each repo's own .aid/settings.yml at render time."
+        printf '%s\n' "schema: 1"
+        printf '%s\n' "repos:"
+        { printf '%s\n' "$existing" | grep -vxF "$repo" || true; } | sed '/^$/d' | sort -u \
+            | while IFS= read -r p; do printf '  - %s\n' "$p"; done
+    } > "$tmp" || {
+        rm -f "$tmp"
+        echo "WARN: aid: could not update the machine repo registry (${reg}): write failed" >&2
+        return 0
+    }
+    mv -f "$tmp" "$reg" || {
+        rm -f "$tmp" 2>/dev/null
+        echo "WARN: aid: could not update the machine repo registry (${reg}): mv failed" >&2
+        return 0
+    }
+    echo "Unregistered ${repo} from the AID CLI."
 }
 
 # ---------------------------------------------------------------------------
@@ -1450,6 +1551,8 @@ case "$SUBCMD" in
             exit 5
         fi
         echo "Done. AID ${_AID_RESOLVED_VERSION:-} installed into: ${_AID_TARGET}"
+        # DR-1 registry side-effect: register repo on first tool add/update (idempotent).
+        registry_register "$_AID_TARGET"
         exit 0
         ;;
 
@@ -1471,6 +1574,10 @@ case "$SUBCMD" in
 
         echo ""
         echo "Uninstall complete."
+        # DR-1 registry side-effect: unregister repo only when the manifest is now gone (last tool removed).
+        if [[ ! -f "$_AID_MANIFEST" ]]; then
+            registry_unregister "$_AID_TARGET"
+        fi
         exit 0
         ;;
 esac

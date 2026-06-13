@@ -776,7 +776,10 @@ function script:Invoke-DcStart {
     # Windows; readiness is verified by TCP poll (not the log), so start/stop/status are
     # behaviour-identical. (KI: Windows dashboard server log not captured; Bash captures it via
     # `setsid ... >"$log_file" 2>&1`.)
-    $spawnArgs = @($entryPoint, '--root', $Target, '--host', '127.0.0.1', '--port', "$Port")
+    # The multi-repo server (feature-010) serves every registered repo from the registry
+    # under AID_HOME; the cwd repo $Target is auto-registered above, so the server takes
+    # --aid-home (not the old single-repo --root).
+    $spawnArgs = @($entryPoint, '--aid-home', $script:_AidHome, '--host', '127.0.0.1', '--port', "$Port")
     $proc = Start-Process -FilePath $interp `
         -ArgumentList $spawnArgs `
         -PassThru `
@@ -896,11 +899,15 @@ function script:Invoke-DcStart {
         } else {
             Write-Host "Remote exposure is UP (tailnet-private), but the .ts.net URL could not be auto-detected -- run 'tailscale status' on this host to find it."
         }
+        # DR-1 registry side-effect: auto-register the dashboard target repo (idempotent).
+        script:Registry-Register -Repo $Target
         script:Exit-Aid 0
     }
 
     # Step 11: print success (local-only).
     Write-Host "Dashboard ($Runtime) running at http://127.0.0.1:${Port} -- stop with: aid dashboard stop"
+    # DR-1 registry side-effect: auto-register the dashboard target repo (idempotent).
+    script:Registry-Register -Repo $Target
     script:Exit-Aid 0
 }
 
@@ -1421,6 +1428,94 @@ function script:Prepare-AidToolStaging {
 }
 
 # ---------------------------------------------------------------------------
+# Registry helpers (DR-1 / FF-1 / FR29 -- PS twin of Bash registry_register /
+# registry_unregister).  Implements DM-1 schema, DD-3 Move-Item -Force atomic
+# write, DD-REG-FMT line-scan (no YAML library).
+# ---------------------------------------------------------------------------
+
+# Read the repos list from registry.yml (line-scan, no YAML parser).
+# Returns [string[]] of canonical paths; empty array when file is absent.
+function script:Get-RegistryRepos {
+    param([string]$RegPath)
+    if (-not (Test-Path $RegPath -PathType Leaf)) { return @() }
+    $results = [System.Collections.Generic.List[string]]::new()
+    foreach ($line in (Get-Content -LiteralPath $RegPath -Encoding utf8 -ErrorAction SilentlyContinue)) {
+        if ($line -match '^\s*-\s+(.+\S)\s*$') {
+            $results.Add($Matches[1])
+        }
+    }
+    return $results.ToArray()
+}
+
+# Register a canonical repo path in $AidHome/registry.yml (set-insert, idempotent).
+# Prints one line on a real change; silent on no-op.  Prints WARN on failure; never
+# throws (host-tool op is never blocked -- NFR10 / DD-3 / CLI-1).
+function script:Registry-Register {
+    param([string]$Repo)
+    $reg = Join-Path $script:_AidHome 'registry.yml'
+    if (-not (Test-Path $script:_AidHome -PathType Container)) {
+        New-Item -ItemType Directory -Path $script:_AidHome -Force | Out-Null
+    }
+    $existing = @(script:Get-RegistryRepos -RegPath $reg)
+    # Idempotent: already registered -> silent no-op.
+    if ($existing -contains $Repo) {
+        if ($script:_AidVerbose) { Write-Host "Registry: $Repo already registered (no-op)." }
+        return
+    }
+    $tmp = Join-Path $script:_AidHome ("registry.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
+    try {
+        $all = ($existing + @($Repo)) | Where-Object { $_ } | Sort-Object -Unique
+        $lines = [System.Collections.Generic.List[string]]::new()
+        $lines.Add("# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).")
+        $lines.Add("# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/")
+        $lines.Add("# description/version are read from each repo's own .aid/settings.yml at render time.")
+        $lines.Add("schema: 1")
+        $lines.Add("repos:")
+        foreach ($p in $all) { $lines.Add("  - $p") }
+        Set-Content -LiteralPath $tmp -Value $lines -Encoding utf8NoBOM -ErrorAction Stop
+        Move-Item -LiteralPath $tmp -Destination $reg -Force -ErrorAction Stop
+    } catch {
+        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+        [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($reg): $_")
+        return
+    }
+    Write-Host "Registered $Repo with the AID CLI."
+}
+
+# Unregister a canonical repo path from $AidHome/registry.yml (set-remove, idempotent).
+# Called only when the repo manifest is now gone (last tool removed).
+# Prints one line on a real change; silent on no-op.  Prints WARN on failure; never throws.
+function script:Registry-Unregister {
+    param([string]$Repo)
+    $reg = Join-Path $script:_AidHome 'registry.yml'
+    if (-not (Test-Path $reg -PathType Leaf)) { return }
+    $existing = @(script:Get-RegistryRepos -RegPath $reg)
+    # Idempotent: not registered -> silent no-op.
+    if ($existing -notcontains $Repo) {
+        if ($script:_AidVerbose) { Write-Host "Registry: $Repo not in registry (no-op)." }
+        return
+    }
+    $tmp = Join-Path $script:_AidHome ("registry.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
+    try {
+        $remaining = $existing | Where-Object { $_ -ne $Repo } | Sort-Object -Unique
+        $lines = [System.Collections.Generic.List[string]]::new()
+        $lines.Add("# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).")
+        $lines.Add("# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/")
+        $lines.Add("# description/version are read from each repo's own .aid/settings.yml at render time.")
+        $lines.Add("schema: 1")
+        $lines.Add("repos:")
+        if ($remaining) { foreach ($p in $remaining) { $lines.Add("  - $p") } }
+        Set-Content -LiteralPath $tmp -Value $lines -Encoding utf8NoBOM -ErrorAction Stop
+        Move-Item -LiteralPath $tmp -Destination $reg -Force -ErrorAction Stop
+    } catch {
+        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+        [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($reg): $_")
+        return
+    }
+    Write-Host "Unregistered $Repo from the AID CLI."
+}
+
+# ---------------------------------------------------------------------------
 # Dispatch to engine.
 # ---------------------------------------------------------------------------
 try {
@@ -1449,6 +1544,8 @@ try {
                 script:Exit-Aid 5
             }
             Write-Host "Done. AID $($script:_DispResolvedVersion) installed into: $_AidTarget"
+            # DR-1 registry side-effect: register repo on first tool add/update (idempotent).
+            script:Registry-Register -Repo $_AidTarget
             script:Exit-Aid 0
         }
 
@@ -1469,6 +1566,10 @@ try {
 
             Write-Host ""
             Write-Host "Uninstall complete."
+            # DR-1 registry side-effect: unregister repo only when manifest is now gone (last tool removed).
+            if (-not (Test-Path $_AidManifest -PathType Leaf)) {
+                script:Registry-Unregister -Repo $_AidTarget
+            }
             script:Exit-Aid 0
         }
     }
