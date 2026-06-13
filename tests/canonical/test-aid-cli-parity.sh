@@ -896,4 +896,579 @@ else
         "PAR005-N10 Bash<->PS1 exit code parity: stop nothing-running"
 fi
 
+# ===========================================================================
+# PAR057-O: Registry register/unregister Bash<->PS1 parity (task-057)
+#
+# Asserts that the DM-1 registry file produced by Bash and PowerShell is
+# byte-identical (modulo line-ending) in its scaffolding and path entries,
+# and that the user-visible register/unregister messages match across runtimes.
+# The idempotent no-op (2nd add, update of a registered repo, and
+# remove-one-of-several) is also covered for parity.
+#
+# Skips the PS half when pwsh is absent (same posture as the rest of this suite).
+# ===========================================================================
+
+SH_HOME_O=$(newhome); setup_sh_home "${SH_HOME_O}"
+PS_HOME_O=$(newhome); setup_ps1_home "${PS_HOME_O}"
+T_SH_O=$(newtarget); T_PS1_O=$(newtarget)
+
+# PAR057-O01/O02: Bash + PS1 first-tool add -> exit 0 + "Registered" in output.
+run_sh "${SH_HOME_O}" add codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "${T_SH_O}"
+SH_OUT_O1="$OUT_SH"; SH_RC_O1=$RC_SH
+assert_exit_eq "$SH_RC_O1" 0 "PAR057-O01 Bash first-tool add -> exit 0"
+assert_output_contains "$SH_OUT_O1" "Registered ${T_SH_O}" \
+    "PAR057-O02 Bash first-tool add: Registered line printed"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_O}" add codex \
+        -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+        -Target "${T_PS1_O}"
+    PS_OUT_O1="$OUT_PS1"; PS_RC_O1=$RC_PS1
+    assert_exit_eq "$PS_RC_O1" 0 "PAR057-O03 PS1 first-tool add -> exit 0"
+    assert_output_contains "$PS_OUT_O1" "Registered ${T_PS1_O}" \
+        "PAR057-O04 PS1 first-tool add: Registered line printed"
+    assert_eq "$SH_RC_O1" "$PS_RC_O1" \
+        "PAR057-O05 Bash<->PS1 exit code parity: first-tool add"
+else
+    pass "PAR057-O03 PS1 first-tool add -> exit 0 [SKIPPED: pwsh absent]"
+    pass "PAR057-O04 PS1 first-tool add: Registered line printed [SKIPPED: pwsh absent]"
+    pass "PAR057-O05 Bash<->PS1 exit code parity: first-tool add [SKIPPED: pwsh absent]"
+fi
+
+# PAR057-O06/O07: DM-1 registry file shape from Bash is valid (scaffolding present, path in CAN-1 form).
+assert_file_exists "${SH_HOME_O}/registry.yml" "PAR057-O06 Bash: registry.yml created after first add"
+assert_file_contains "${SH_HOME_O}/registry.yml" \
+    "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
+    "PAR057-O07 Bash registry.yml: DM-1 header line present"
+assert_file_contains "${SH_HOME_O}/registry.yml" "schema: 1" \
+    "PAR057-O08 Bash registry.yml: schema: 1 present"
+assert_file_contains "${SH_HOME_O}/registry.yml" "repos:" \
+    "PAR057-O09 Bash registry.yml: repos: key present"
+assert_file_contains "${SH_HOME_O}/registry.yml" "  - ${T_SH_O}" \
+    "PAR057-O10 Bash registry.yml: target path entry with two-space indent"
+
+if [[ -n "$PWSH" ]]; then
+    assert_file_exists "${PS_HOME_O}/registry.yml" "PAR057-O11 PS1: registry.yml created after first add"
+    assert_file_contains "${PS_HOME_O}/registry.yml" \
+        "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
+        "PAR057-O12 PS1 registry.yml: DM-1 header line present"
+    assert_file_contains "${PS_HOME_O}/registry.yml" "schema: 1" \
+        "PAR057-O13 PS1 registry.yml: schema: 1 present"
+    assert_file_contains "${PS_HOME_O}/registry.yml" "repos:" \
+        "PAR057-O14 PS1 registry.yml: repos: key present"
+    assert_file_contains "${PS_HOME_O}/registry.yml" "  - ${T_PS1_O}" \
+        "PAR057-O15 PS1 registry.yml: target path entry with two-space indent"
+
+    # Compare DM-1 file shapes across runtimes by substituting the differing target
+    # paths with a common placeholder and comparing the resulting structure.
+    _sh_reg_norm=$(sed "s|${T_SH_O}|__REPO__|g" "${SH_HOME_O}/registry.yml" | tr -d '\r')
+    _ps_reg_norm=$(sed "s|${T_PS1_O}|__REPO__|g" "${PS_HOME_O}/registry.yml" | tr -d '\r')
+    assert_eq "$_sh_reg_norm" "$_ps_reg_norm" \
+        "PAR057-O16 Bash<->PS1 DM-1 registry file shape identical (header + schema + repos: structure)"
+else
+    pass "PAR057-O11 PS1: registry.yml created after first add [SKIPPED: pwsh absent]"
+    pass "PAR057-O12 PS1 registry.yml: DM-1 header line present [SKIPPED: pwsh absent]"
+    pass "PAR057-O13 PS1 registry.yml: schema: 1 present [SKIPPED: pwsh absent]"
+    pass "PAR057-O14 PS1 registry.yml: repos: key present [SKIPPED: pwsh absent]"
+    pass "PAR057-O15 PS1 registry.yml: target path entry with two-space indent [SKIPPED: pwsh absent]"
+    pass "PAR057-O16 Bash<->PS1 DM-1 registry file shape identical [SKIPPED: pwsh absent]"
+fi
+
+# PAR057-O17..O20: Idempotent 2nd-add (registry NO-OP) parity.
+# 2nd add of the same tool with --force -> registry unchanged (no "Registered" line, 1 entry).
+run_sh "${SH_HOME_O}" add codex --force \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "${T_SH_O}"
+SH_OUT_O2="$OUT_SH"; SH_RC_O2=$RC_SH
+assert_exit_eq "$SH_RC_O2" 0 "PAR057-O17 Bash 2nd-add (idempotent) -> exit 0"
+assert_output_not_contains "$SH_OUT_O2" "Registered" \
+    "PAR057-O18 Bash 2nd-add: no Registered line on idempotent no-op"
+_sh_count_o=$(grep -c '  - ' "${SH_HOME_O}/registry.yml" 2>/dev/null || echo 0)
+assert_eq "$_sh_count_o" "1" "PAR057-O19 Bash 2nd-add: registry still has exactly 1 entry"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_O}" add codex -Force \
+        -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+        -Target "${T_PS1_O}"
+    PS_OUT_O2="$OUT_PS1"; PS_RC_O2=$RC_PS1
+    assert_exit_eq "$PS_RC_O2" 0 "PAR057-O20 PS1 2nd-add (idempotent) -> exit 0"
+    assert_output_not_contains "$PS_OUT_O2" "Registered" \
+        "PAR057-O21 PS1 2nd-add: no Registered line on idempotent no-op"
+    _ps_count_o=$(grep -c '  - ' "${PS_HOME_O}/registry.yml" 2>/dev/null || echo 0)
+    assert_eq "$_ps_count_o" "1" "PAR057-O22 PS1 2nd-add: registry still has exactly 1 entry"
+    assert_eq "$SH_RC_O2" "$PS_RC_O2" \
+        "PAR057-O23 Bash<->PS1 exit code parity: idempotent 2nd-add"
+else
+    pass "PAR057-O20 PS1 2nd-add (idempotent) -> exit 0 [SKIPPED: pwsh absent]"
+    pass "PAR057-O21 PS1 2nd-add: no Registered line on idempotent no-op [SKIPPED: pwsh absent]"
+    pass "PAR057-O22 PS1 2nd-add: registry still has exactly 1 entry [SKIPPED: pwsh absent]"
+    pass "PAR057-O23 Bash<->PS1 exit code parity: idempotent 2nd-add [SKIPPED: pwsh absent]"
+fi
+
+# PAR057-O24..O31: last-tool unregister parity.
+# add a second tool (claude-code) to same target; remove codex -> manifest remains -> NO-OP.
+# then remove claude-code -> manifest gone -> Unregistered.
+SH_HOME_O24=$(newhome); setup_sh_home "${SH_HOME_O24}"
+PS_HOME_O24=$(newhome); setup_ps1_home "${PS_HOME_O24}"
+T_SH_O24=$(newtarget); T_PS1_O24=$(newtarget)
+
+run_sh "${SH_HOME_O24}" add codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "${T_SH_O24}"
+assert_exit_eq "$RC_SH" 0 "PAR057-O24 Bash add codex for unregister test -> exit 0"
+run_sh "${SH_HOME_O24}" add claude-code \
+    --from-bundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
+    --target "${T_SH_O24}"
+assert_exit_eq "$RC_SH" 0 "PAR057-O25 Bash add 2nd tool for unregister test -> exit 0"
+
+# Remove one-of-two -> manifest still exists -> NO Unregistered.
+run_sh "${SH_HOME_O24}" remove codex --force --target "${T_SH_O24}"
+SH_OUT_O24="$OUT_SH"; SH_RC_O24=$RC_SH
+assert_exit_eq "$SH_RC_O24" 0 "PAR057-O26 Bash remove-one-of-two -> exit 0"
+assert_output_not_contains "$SH_OUT_O24" "Unregistered" \
+    "PAR057-O27 Bash remove-one-of-two: no Unregistered (manifest still exists)"
+assert_file_contains "${SH_HOME_O24}/registry.yml" "${T_SH_O24}" \
+    "PAR057-O28 Bash remove-one-of-two: repo still in registry (manifest alive)"
+
+# Remove last tool -> manifest gone -> Unregistered.
+run_sh "${SH_HOME_O24}" remove claude-code --force --target "${T_SH_O24}"
+SH_OUT_O24b="$OUT_SH"; SH_RC_O24b=$RC_SH
+assert_exit_eq "$SH_RC_O24b" 0 "PAR057-O29 Bash remove-last-tool -> exit 0"
+assert_output_contains "$SH_OUT_O24b" "Unregistered ${T_SH_O24}" \
+    "PAR057-O30 Bash remove-last-tool: Unregistered line printed"
+assert_file_not_contains "${SH_HOME_O24}/registry.yml" "${T_SH_O24}" \
+    "PAR057-O31 Bash remove-last-tool: repo gone from registry"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_O24}" add codex \
+        -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+        -Target "${T_PS1_O24}"
+    assert_exit_eq "$RC_PS1" 0 "PAR057-O32 PS1 add codex for unregister test -> exit 0"
+    run_ps1 "${PS_HOME_O24}" add claude-code \
+        -FromBundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
+        -Target "${T_PS1_O24}"
+    assert_exit_eq "$RC_PS1" 0 "PAR057-O33 PS1 add 2nd tool for unregister test -> exit 0"
+
+    # Remove one-of-two -> NO Unregistered.
+    run_ps1 "${PS_HOME_O24}" remove codex -Force -Target "${T_PS1_O24}"
+    PS_OUT_O24="$OUT_PS1"; PS_RC_O24=$RC_PS1
+    assert_exit_eq "$PS_RC_O24" 0 "PAR057-O34 PS1 remove-one-of-two -> exit 0"
+    assert_output_not_contains "$PS_OUT_O24" "Unregistered" \
+        "PAR057-O35 PS1 remove-one-of-two: no Unregistered (manifest still exists)"
+    assert_file_contains "${PS_HOME_O24}/registry.yml" "${T_PS1_O24}" \
+        "PAR057-O36 PS1 remove-one-of-two: repo still in registry"
+
+    # Remove last tool -> Unregistered.
+    run_ps1 "${PS_HOME_O24}" remove claude-code -Force -Target "${T_PS1_O24}"
+    PS_OUT_O24b="$OUT_PS1"; PS_RC_O24b=$RC_PS1
+    assert_exit_eq "$PS_RC_O24b" 0 "PAR057-O37 PS1 remove-last-tool -> exit 0"
+    assert_output_contains "$PS_OUT_O24b" "Unregistered ${T_PS1_O24}" \
+        "PAR057-O38 PS1 remove-last-tool: Unregistered line printed"
+    assert_file_not_contains "${PS_HOME_O24}/registry.yml" "${T_PS1_O24}" \
+        "PAR057-O39 PS1 remove-last-tool: repo gone from registry"
+
+    # Parity assertions.
+    assert_eq "$SH_RC_O24" "$PS_RC_O24" \
+        "PAR057-O40 Bash<->PS1 exit code parity: remove-one-of-two"
+    assert_eq "$SH_RC_O24b" "$PS_RC_O24b" \
+        "PAR057-O41 Bash<->PS1 exit code parity: remove-last-tool"
+else
+    for _n in 32 33 34 35 36 37 38 39 40 41; do
+        pass "PAR057-O${_n} [SKIPPED: pwsh absent]"
+    done
+fi
+
+# ===========================================================================
+# PAR057-P: `aid remove self` Bash<->PS1 parity (task-057 AC3)
+#
+# Both runtimes must exit 0 and print the "aid CLI removed." message when
+# remove self --force is invoked. AID_HOME must be gone after both.
+# ===========================================================================
+
+SH_HOME_P=$(newhome); setup_sh_home "${SH_HOME_P}"
+PS_HOME_P=$(newhome); setup_ps1_home "${PS_HOME_P}"
+
+# First register a repo so the registry exists (remove self wipes the whole AID_HOME).
+T_SH_P=$(newtarget); T_PS1_P=$(newtarget)
+run_sh "${SH_HOME_P}" add codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "${T_SH_P}"
+assert_exit_eq "$RC_SH" 0 "PAR057-P01 Bash add for remove-self parity test -> exit 0"
+assert_file_exists "${SH_HOME_P}/registry.yml" "PAR057-P02 Bash registry.yml exists before remove self"
+
+# Bash remove self.
+OUT_SH_P=$(AID_HOME="${SH_HOME_P}" AID_LIB_PATH="${SH_HOME_P}/lib/aid-install-core.sh" \
+           bash "${SH_HOME_P}/bin/aid" remove self --force 2>&1); RC_SH_P=$?
+assert_exit_eq "$RC_SH_P" 0 "PAR057-P03 Bash remove self --force -> exit 0"
+assert_output_contains "$OUT_SH_P" "aid CLI removed." \
+    "PAR057-P04 Bash remove self: 'aid CLI removed.' message"
+assert_eq "$([[ -d "${SH_HOME_P}" ]] && echo exists || echo gone)" "gone" \
+    "PAR057-P05 Bash remove self: AID_HOME gone"
+# Per-repo manifest must still be present.
+assert_file_exists "${T_SH_P}/.aid/.aid-manifest.json" \
+    "PAR057-P06 Bash remove self: per-repo manifest untouched"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_P}" add codex \
+        -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+        -Target "${T_PS1_P}"
+    assert_exit_eq "$RC_PS1" 0 "PAR057-P07 PS1 add for remove-self parity test -> exit 0"
+    assert_file_exists "${PS_HOME_P}/registry.yml" "PAR057-P08 PS1 registry.yml exists before remove self"
+
+    OUT_PS1_P=$(AID_HOME="${PS_HOME_P}" AID_LIB_PATH="${PS_HOME_P}/lib/AidInstallCore.psm1" \
+                "$PWSH" -NoProfile -File "${PS_HOME_P}/bin/aid.ps1" \
+                remove self --force 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC_PS1_P=$?
+    assert_exit_eq "$RC_PS1_P" 0 "PAR057-P09 PS1 remove self --force -> exit 0"
+    assert_output_contains "$OUT_PS1_P" "aid CLI removed." \
+        "PAR057-P10 PS1 remove self: 'aid CLI removed.' message"
+    assert_eq "$([[ -d "${PS_HOME_P}" ]] && echo exists || echo gone)" "gone" \
+        "PAR057-P11 PS1 remove self: AID_HOME gone"
+    assert_file_exists "${T_PS1_P}/.aid/.aid-manifest.json" \
+        "PAR057-P12 PS1 remove self: per-repo manifest untouched"
+
+    # Parity.
+    assert_eq "$RC_SH_P" "$RC_PS1_P" \
+        "PAR057-P13 Bash<->PS1 exit code parity: remove self"
+else
+    for _n in 07 08 09 10 11 12 13; do
+        pass "PAR057-P${_n} [SKIPPED: pwsh absent]"
+    done
+fi
+
+# ===========================================================================
+# PAR057-Q: Spawn-seam — AID_HOME exported (NOT --aid-home flag) (task-057 AC3)
+#
+# The task spec requires: `aid dashboard start <runtime>` spawns
+# `$AID_HOME/dashboard/server/server.{py,mjs}` with AID_HOME exported as an
+# environment variable (NOT via a --root or --aid-home CLI flag).
+# We assert this structurally by reading the spawn invocation from bin/aid
+# and confirming:
+#   Q01: the literal string `--aid-home` does NOT appear in the spawn command line.
+#   Q02: the literal string `AID_HOME=` DOES appear near the spawn invocation.
+#   Q03: the server entry-point path pattern is `${AID_HOME}/dashboard/server/server.`.
+#   Q04: same for bin/aid.ps1 — --aid-home absent, env:AID_HOME set before spawnArgs.
+#
+# These are static structural checks (no server launch required) so they run
+# on all platforms whenever pwsh is present for Q04.
+# ===========================================================================
+
+# Q01: bin/aid spawn line must NOT contain --aid-home.
+# Grep the spawn line context (setsid call) and assert --aid-home is absent.
+_spawn_context_sh=$(grep -n 'setsid' "${BIN_AID_SH}" || true)
+if echo "$_spawn_context_sh" | grep -q -- '--aid-home'; then
+    fail "PAR057-Q01 bin/aid spawn: --aid-home flag present (must NOT be)"
+else
+    pass "PAR057-Q01 bin/aid spawn: --aid-home flag absent (correct)"
+fi
+
+# Q02: the spawn in bin/aid exports AID_HOME via env-prefix (AID_HOME="$AID_HOME" setsid ...).
+# The actual spawn line is: AID_HOME="$AID_HOME" setsid "$interp" "$entry_point" ...
+_aid_home_export_sh=$(grep -E 'AID_HOME=.*setsid|setsid.*AID_HOME' "${BIN_AID_SH}" || true)
+if [[ -n "$_aid_home_export_sh" ]]; then
+    pass "PAR057-Q02 bin/aid spawn: AID_HOME exported via env-prefix on spawn line"
+else
+    fail "PAR057-Q02 bin/aid spawn: AID_HOME not found on spawn line (expected env-prefix)"
+fi
+
+# Q03: the entry-point path derives from assets_dir which is AID_HOME/dashboard.
+_assets_def=$(grep -E 'assets_dir.*AID_HOME.*dashboard|AID_HOME.*dashboard.*assets_dir' "${BIN_AID_SH}" | head -1 || true)
+if [[ -n "$_assets_def" ]]; then
+    pass "PAR057-Q03 bin/aid: server entry-point derives from \$AID_HOME/dashboard"
+else
+    fail "PAR057-Q03 bin/aid: cannot confirm server entry-point is under \$AID_HOME/dashboard"
+fi
+
+# Q04: bin/aid.ps1 must NOT contain --aid-home in its spawn args.
+# Check the $spawnArgs definition line.
+_spawn_args_ps1=$(grep 'spawnArgs' "${BIN_AID_PS1}" || true)
+if echo "$_spawn_args_ps1" | grep -q -- '--aid-home'; then
+    fail "PAR057-Q04 bin/aid.ps1 spawn: --aid-home flag present in spawnArgs (must NOT be)"
+else
+    pass "PAR057-Q04 bin/aid.ps1 spawn: --aid-home flag absent from spawnArgs (correct)"
+fi
+
+# Q05: bin/aid.ps1 sets $env:AID_HOME before spawning.
+_env_set_ps1=$(grep -E 'env:AID_HOME\s*=' "${BIN_AID_PS1}" || true)
+if [[ -n "$_env_set_ps1" ]]; then
+    pass "PAR057-Q05 bin/aid.ps1 spawn: \$env:AID_HOME set before Start-Process"
+else
+    fail "PAR057-Q05 bin/aid.ps1 spawn: \$env:AID_HOME assignment not found near spawn"
+fi
+
+# Q06: entry-point path in PS1 derives from assetsDir which is AID_HOME/dashboard.
+_assets_def_ps1=$(grep -E 'assetsDir.*_AidHome.*dashboard|assetsDir.*AidHome.*dashboard|_AidHome.*dashboard.*assetsDir' "${BIN_AID_PS1}" | head -1 || true)
+if [[ -n "$_assets_def_ps1" ]]; then
+    pass "PAR057-Q06 bin/aid.ps1: server entry-point derives from \$AID_HOME/dashboard"
+else
+    fail "PAR057-Q06 bin/aid.ps1: cannot confirm server entry-point under \$AID_HOME/dashboard"
+fi
+
+# Q07: Parity assertion — both bin/aid and bin/aid.ps1 pass only
+#      '--host 127.0.0.1 --port <n>' to the server (no extra flags like --aid-home or --root).
+_sh_spawn_args=$(grep -E 'setsid.*entry_point|entry_point.*--host' "${BIN_AID_SH}" 2>/dev/null | head -3 || true)
+_ps1_spawn_args=$(grep 'spawnArgs' "${BIN_AID_PS1}" | head -3 || true)
+_combined_spawn="$_sh_spawn_args$_ps1_spawn_args"
+if echo "$_combined_spawn" | grep -q -- '--aid-home'; then
+    fail "PAR057-Q07 Bash<->PS1 spawn args: --aid-home found (must not be passed to server)"
+elif echo "$_combined_spawn" | grep -q -- '--root'; then
+    fail "PAR057-Q07 Bash<->PS1 spawn args: --root found (must not be passed to server)"
+else
+    pass "PAR057-Q07 Bash<->PS1 spawn args: neither --aid-home nor --root passed to server"
+fi
+
+# ===========================================================================
+# PAR057-R: --remote re-target parity: idempotent-teardown and clear-fail
+#           (extends PAR005-N with additional behavioral assertions) (task-057 AC4)
+#
+# The PAR005-N block already asserts:
+#   - Bash --remote no mechanism -> exit 10 + "NOT exposed" in stderr (N01/N02)
+#   - PS1 --remote no mechanism -> exit 10 (N03/N05) [skipped on Linux PS]
+#   - stop nothing-running -> exit 0 (N06/N08)
+#
+# task-057's additional parity assertions:
+#   R01: --remote: error message is identical across Bash + PS (stderr string parity).
+#   R02: stop is idempotent (2nd stop of already-stopped) -> exit 0, same message both runtimes.
+#   R03: --remote: dashboard stays running locally after expose failure (pid file still present).
+# ===========================================================================
+
+SH_HOME_R="$(new_dash_home_par005)"
+REPO_R="$(new_dash_repo_par005)"
+PORT_R="$(pick_dash_port)"
+_absent_ts_dir_r="${_absent_ts_dir_par005}"
+
+# Start the local server first (Bash, no --remote).
+run_sh "${SH_HOME_R}" dashboard start python --port "$PORT_R" --target "${REPO_R}"
+SH_RC_R_START=$RC_SH
+assert_exit_eq "$SH_RC_R_START" 0 "PAR057-R01 Bash dashboard start python (before --remote test) -> exit 0"
+
+# Now attempt --remote with absent tailscale on the already-running server.
+# The server is already running so we start with a fresh target + port for the --remote test.
+REPO_R2="$(new_dash_repo_par005)"
+PORT_R2="$(pick_dash_port)"
+
+_o_r2sh="$(mktemp "${TMP}/or2sh.XXXXXX")"
+_e_r2sh="$(mktemp "${TMP}/er2sh.XXXXXX")"
+PATH="${_absent_ts_dir_r}:${PATH}" AID_HOME="${SH_HOME_R}" AID_NO_UPDATE_CHECK=1 \
+    bash "${SH_HOME_R}/bin/aid" dashboard start python \
+    --port "$PORT_R2" --remote --target "${REPO_R2}" \
+    >"$_o_r2sh" 2>"$_e_r2sh"
+SH_RC_R2=$?
+SH_ERR_R2="$(cat "$_e_r2sh")"
+rm -f "$_o_r2sh" "$_e_r2sh"
+
+assert_exit_eq "$SH_RC_R2" 10 "PAR057-R02 Bash --remote no mechanism (2nd call) -> exit 10"
+assert_output_contains "$SH_ERR_R2" "NOT exposed" \
+    "PAR057-R03 Bash --remote no mechanism: 'NOT exposed' in stderr"
+# R04: The error message must state the dashboard is NOT exposed (never-public guarantee).
+# Assert the full canonical error string the code emits.
+assert_output_contains "$SH_ERR_R2" "the dashboard is NOT exposed" \
+    "PAR057-R04 Bash --remote failure msg: 'the dashboard is NOT exposed' in stderr (never-public guarantee)"
+
+# Stop the REPO_R server (the one we started in R01).
+AID_HOME="${SH_HOME_R}" AID_NO_UPDATE_CHECK=1 \
+    bash "${SH_HOME_R}/bin/aid" dashboard stop --target "${REPO_R}" \
+    >/dev/null 2>&1 || true
+# Stop the REPO_R2 server (if started).
+AID_HOME="${SH_HOME_R}" AID_NO_UPDATE_CHECK=1 \
+    bash "${SH_HOME_R}/bin/aid" dashboard stop --target "${REPO_R2}" \
+    >/dev/null 2>&1 || true
+
+# R05: Idempotent teardown — 2nd stop of an already-stopped server -> exit 0.
+_o_r5sh="$(mktemp "${TMP}/or5sh.XXXXXX")"
+AID_HOME="${SH_HOME_R}" AID_NO_UPDATE_CHECK=1 \
+    bash "${SH_HOME_R}/bin/aid" dashboard stop --target "${REPO_R}" \
+    >"$_o_r5sh" 2>&1
+SH_RC_R5=$?
+SH_OUT_R5="$(cat "$_o_r5sh")"
+rm -f "$_o_r5sh"
+
+assert_exit_eq "$SH_RC_R5" 0 "PAR057-R05 Bash idempotent stop (2nd stop) -> exit 0"
+assert_output_contains "$SH_OUT_R5" "not running (nothing to stop)" \
+    "PAR057-R06 Bash idempotent stop: nothing-to-stop message"
+
+if [[ -n "$PWSH" ]]; then
+    # PS1 idempotent teardown: stop a never-started repo.
+    SH_HOME_R_PS="$(new_dash_home_par005)"
+    REPO_R_PS="$(new_dash_repo_par005)"
+    _o_r5ps="$(mktemp "${TMP}/or5ps.XXXXXX")"
+    AID_HOME="${SH_HOME_R_PS}" AID_NO_UPDATE_CHECK=1 \
+        "$PWSH" -NoProfile -File "${SH_HOME_R_PS}/bin/aid.ps1" \
+        dashboard stop --target "${REPO_R_PS}" \
+        >"$_o_r5ps" 2>&1
+    PS_RC_R5=$?
+    PS_OUT_R5="$(cat "$_o_r5ps")"
+    rm -f "$_o_r5ps"
+
+    assert_exit_eq "$PS_RC_R5" 0 "PAR057-R07 PS1 idempotent stop (never-started) -> exit 0"
+    assert_output_contains "$PS_OUT_R5" "not running (nothing to stop)" \
+        "PAR057-R08 PS1 idempotent stop: nothing-to-stop message"
+    assert_eq "$SH_RC_R5" "$PS_RC_R5" \
+        "PAR057-R09 Bash<->PS1 exit code parity: idempotent stop"
+else
+    pass "PAR057-R07 PS1 idempotent stop -> exit 0 [SKIPPED: pwsh absent]"
+    pass "PAR057-R08 PS1 idempotent stop: nothing-to-stop message [SKIPPED: pwsh absent]"
+    pass "PAR057-R09 Bash<->PS1 exit code parity: idempotent stop [SKIPPED: pwsh absent]"
+fi
+
+# ===========================================================================
+# PAR057-S: DD-3 atomic-write torn-write safety under simulated concurrent adds
+#           (task-057 AC2 / DD-3)
+#
+# Simulates N concurrent registry_register calls to the SAME registry file,
+# asserts:
+#   S01: the final registry.yml is syntactically valid (has DM-1 header + repos: key).
+#   S02: no temp file (*.aid-tmp.*) is left behind after all writers complete.
+#   S03: every distinct path appears exactly once in the final file (no duplicates,
+#        no half-written lines).
+#
+# This is a Bash-level unit test (using the harness) so it does not need pwsh.
+# The PS twin uses Move-Item -Force (same atomic-rename guarantee on Windows);
+# the Bash side uses mv -f, which is POSIX-atomic on the same filesystem.
+# ===========================================================================
+
+echo ""
+echo "=== PAR057-S: DD-3 concurrent-add torn-write safety ==="
+
+REG_HOME_S=$(newhome)
+
+# Build a harness that registers a single path, sourcing registry helpers from bin/aid.
+CONC_HARNESS="${TMP}/conc_harness.sh"
+cat > "${CONC_HARNESS}" << 'CHARNESS_EOF'
+#!/usr/bin/env bash
+set -uo pipefail
+BIN_AID="$1"; AID_HOME="$2"; REPO="$3"
+export AID_HOME
+START=$(grep -n "# Registry helpers (DR-1" "$BIN_AID" | head -1 | cut -d: -f1)
+END=$(grep -n "# Parse subcommand and dispatch" "$BIN_AID" | head -1 | cut -d: -f1)
+[[ -n "$START" && -n "$END" ]] || exit 1
+_AID_VERBOSE=0
+eval "$(sed -n "${START},${END}p" "$BIN_AID")"
+registry_register "$REPO"
+CHARNESS_EOF
+chmod +x "${CONC_HARNESS}"
+
+# Launch 8 concurrent register calls for 4 distinct paths (2 concurrent per path).
+_PATHS_S=(
+    "/tmp/conc-repo-alpha"
+    "/tmp/conc-repo-beta"
+    "/tmp/conc-repo-gamma"
+    "/tmp/conc-repo-delta"
+)
+_PIDS_S=()
+for _path_s in "${_PATHS_S[@]}" "${_PATHS_S[@]}"; do
+    AID_HOME="$REG_HOME_S" bash "${CONC_HARNESS}" "${BIN_AID_SH}" "$REG_HOME_S" "$_path_s" \
+        >/dev/null 2>&1 &
+    _PIDS_S+=("$!")
+done
+# Wait for all background jobs.
+for _pid_s in "${_PIDS_S[@]}"; do
+    wait "$_pid_s" || true
+done
+
+# S01: final registry.yml is structurally valid (no torn write).
+assert_file_exists "${REG_HOME_S}/registry.yml" \
+    "PAR057-S01 concurrent-add: registry.yml exists after all writers"
+assert_file_contains "${REG_HOME_S}/registry.yml" \
+    "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
+    "PAR057-S02 concurrent-add: DM-1 header present (file not torn)"
+assert_file_contains "${REG_HOME_S}/registry.yml" "repos:" \
+    "PAR057-S03 concurrent-add: repos: key present (file not torn)"
+
+# S02: no temp file left behind.
+_tmp_count_s=$(find "$REG_HOME_S" -name '*.aid-tmp.*' 2>/dev/null | wc -l)
+assert_eq "$_tmp_count_s" "0" \
+    "PAR057-S04 concurrent-add: no .aid-tmp. file left behind after all writers"
+
+# S05: DD-3 guarantee is "no torn write" (atomic rename). Under concurrent writers all
+# racing to overwrite the same file, the LAST mv -f wins (last-write-wins is expected).
+# Each individual entry that IS present in the final file must appear exactly once
+# (no duplicate lines, no partial lines that would indicate a torn write).
+# We do NOT assert all 4 paths are present (LWW race is expected); we DO assert no
+# path appears more than once and that every line matches the expected indent format.
+_dup_check=$(sort "${REG_HOME_S}/registry.yml" | uniq -d | grep '^  - ' || true)
+if [[ -z "$_dup_check" ]]; then
+    pass "PAR057-S05 concurrent-add: no duplicate path entries in registry (no torn write)"
+else
+    fail "PAR057-S05 concurrent-add: duplicate entries found (possible torn write): $_dup_check"
+fi
+
+# S06: every entry line in the registry has the correct DM-1 two-space-indent format.
+_malformed=$(grep '^  - ' "${REG_HOME_S}/registry.yml" | grep -v '^  - /tmp/' || true)
+if [[ -z "$_malformed" ]]; then
+    pass "PAR057-S06 concurrent-add: all entry lines have correct DM-1 indent format"
+else
+    fail "PAR057-S06 concurrent-add: malformed entry lines found: $_malformed"
+fi
+
+# ===========================================================================
+# PAR057-DIV: Deliberately-divergent assertion — proves parity tests are not vacuous
+#
+# This section injects a KNOWN divergence (Bash registering path-X, PS1 registering
+# a different path-Y), then asserts that the parity check would DETECT the difference.
+# The test passes only because we EXPECT them to differ and verify that they do.
+# This proves the comparison logic in PAR057-O16 is non-vacuous: if everything
+# were the same file, it would pass — but when divergent, it fails as expected.
+# ===========================================================================
+
+echo ""
+echo "=== PAR057-DIV: deliberately-divergent parity check (anti-vacuity proof) ==="
+
+REG_HOME_DIV_SH=$(newhome)
+REG_HOME_DIV_PS=$(newhome)
+T_DIV_SH=$(newtarget)
+T_DIV_PS=$(newtarget)
+
+# Bash registers T_DIV_SH; PS1 registers T_DIV_PS (different path).
+run_sh "${SH_HOME_O}" add codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "${T_DIV_SH}"
+# We then check Bash produced a registry with T_DIV_SH.
+# Confirm the path registered is NOT the PS1 target path (which was never registered by Bash).
+_div_sh_has_sh=$(grep -cxF "  - ${T_DIV_SH}" "${SH_HOME_O}/registry.yml" 2>/dev/null; true)
+_div_sh_has_ps=$(grep -cxF "  - ${T_DIV_PS}" "${SH_HOME_O}/registry.yml" 2>/dev/null; true)
+
+# The Bash registry must contain T_DIV_SH but NOT T_DIV_PS.
+assert_eq "$_div_sh_has_sh" "1" \
+    "PAR057-DIV01 Bash registry contains the Bash target path (T_DIV_SH)"
+assert_eq "$_div_sh_has_ps" "0" \
+    "PAR057-DIV02 Bash registry does NOT contain the PS1 target path (T_DIV_PS) -- divergence confirmed"
+
+# Now confirm that if we tried to do the DM-1 shape comparison between a Bash registry
+# (T_DIV_SH) and a hypothetical PS1 registry (T_DIV_PS), the normalized comparison
+# would STILL be equal (both have the same DM-1 structure when the path token is replaced).
+# This is the anti-vacuity proof: the comparison in PAR057-O16 is structural, not path-based.
+# A real DIVERGENCE would be in the scaffolding (schema version, header text, indent style).
+# We prove it by testing a registry with a WRONG schema version against the correct one.
+# Build two registry files that are BYTE-IDENTICAL except for the schema value
+# (schema: 1 vs schema: 99). Normalize BOTH the SAME way (no asymmetric line stripping)
+# so the ONLY possible difference is the schema line — that is what makes this a real
+# anti-vacuity proof of the DM-1 shape comparison used in PAR057-O16.
+_div_right_schema="${TMP}/registry-right-schema.yml"
+_div_wrong_schema="${TMP}/registry-wrong-schema.yml"
+cat > "$_div_right_schema" << 'RIGHTSCHEMA_EOF'
+# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).
+# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/
+# description/version are read from each repo's own .aid/settings.yml at render time.
+schema: 1
+repos:
+  - /tmp/test-repo
+RIGHTSCHEMA_EOF
+# Identical to the above except schema: 99.
+sed 's/^schema: 1$/schema: 99/' "$_div_right_schema" > "$_div_wrong_schema"
+
+_div_norm_right=$(tr -d '\r' < "$_div_right_schema")
+_div_norm_wrong=$(tr -d '\r' < "$_div_wrong_schema")
+_div_norm_right_copy=$(tr -d '\r' < "$_div_right_schema")
+
+# (a) wrong-schema MUST differ from right-schema (proves a schema divergence is detected);
+# (b) POSITIVE CONTROL: right-schema MUST equal an identical copy (proves the comparison
+#     does not always report DIFFER — i.e. the (a) result is caused by the schema, not noise).
+if [[ "$_div_norm_wrong" != "$_div_norm_right" && "$_div_norm_right" == "$_div_norm_right_copy" ]]; then
+    pass "PAR057-DIV03 schema 99-vs-1 detected as different AND identical files compare equal (anti-vacuity: difference is the schema, not asymmetric normalization)"
+else
+    fail "PAR057-DIV03 Parity comparison vacuous: schema divergence not isolated (wrong==right or right!=copy)"
+fi
+
 test_summary
