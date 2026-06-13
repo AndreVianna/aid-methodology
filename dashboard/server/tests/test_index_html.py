@@ -866,19 +866,16 @@ class TestFeature006CardRework(unittest.TestCase):
     # F6-RW-2: Heading text
     # ------------------------------------------------------------------
 
-    def test_f6rw2_heading_text_knowledge_and_tooling(self):
-        # The h2 heading must read 'Knowledge &amp; Tooling' (HTML entity, not bare &)
-        self.assertIn('Knowledge &amp; Tooling', self.src,
-                      "h2 must read 'Knowledge &amp; Tooling' (not 'Tool' or 'Tools')")
+    def test_f6rw2_heading_text_knowledge_base(self):
+        # The KB section header is just 'Knowledge Base' now that the machine/CLI
+        # ("Tooling") info moved to the CLI home page.
+        self.assertIn('>Knowledge Base</h2>', self.src,
+                      "kt-head h2 must read 'Knowledge Base'")
 
-    def test_f6rw2_heading_not_tools(self):
-        # Sanity guard: must NOT be 'Tools' (old name)
-        # We check the kt-head h2 region specifically
-        idx = self.src.find('kt-head')
-        self.assertNotEqual(idx, -1)
-        region = self.src[idx:idx + 200]
-        self.assertNotIn('Knowledge &amp; Tools', region,
-                         "kt-head heading must be 'Tooling', not 'Tools'")
+    def test_f6rw2_heading_not_tooling(self):
+        # Sanity guard: the old "Knowledge & Tooling" wording must be gone.
+        self.assertNotIn('Knowledge &amp; Tooling', self.src,
+                         "kt-head heading must be 'Knowledge Base', not 'Knowledge & Tooling'")
 
     # ------------------------------------------------------------------
     # F6-RW-3: 3-column grid; responsive rules
