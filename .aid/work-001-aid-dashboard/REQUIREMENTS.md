@@ -21,6 +21,7 @@
 | 2026-06-10 | Added FR18 (cross-cutting): any user-intervention action must be explained to the end user step by step (commands + verification) — esp. feature-005 ACL grant, feature-004 missing-runtime/--remote | /aid-specify |
 | 2026-06-11 | feature-009 producer-loop closure: added FR19–FR26 (producer emission per skill, single phase source, lane-from-PLAN decision B, consumer reconciliation, dogfood render, graceful degradation, work-001 data migration) + C5 (dogfood-rendered producers; reader stays no-LLM/read-only) | /aid-interview |
 | 2026-06-12 | **Two-level dashboard re-architecture** (user-approved): added FR27–FR36 (CLI home + machine repo registry + multi-repo server routing; per-repo `home.html`/`kb.html` split; CLI-panel relocation; KB-summary relocation to `.aid/dashboard/kb.html`; 5-state KB card; reader KB-status + cross-runtime default-branch git read; discover→summarize auto-trigger chain; KB-freshness baseline/`outdated`; producer-skill changes for summarize/discover/housekeep/`bin/aid`), NFR9–NFR11 (multi-root read-only scoping; stale-registry tolerance; co-located per-repo dashboard artifacts), C6–C7 (multi-root read-only scoping + no path traversal; producer-skill edits are dogfood-rendered & behavior-preserving), OQ5 (`--remote` exposure scope — CLI home vs single repo) and OQ6 (`aid add`/`aid remove` verb-naming collision — those verbs already install/uninstall host-tools; registry-verb shape open) — both open for /aid-specify | /aid-interview |
+| 2026-06-13 | **Upgrade migration** (user-directed, feature-011): added FR37–FR40 (per-repo upgrade migration — detect ≥0.7.X vs pre-0.7, validate/repair or synthesize `settings.yml`, add `home.html`, relocate legacy summary→`kb.html`, register; command model `aid update self`=machine-scan-all w/ All/Yes/No/Cancel vs `aid update [<tool>]`=current-repo-only; trigger=npm postinstall + cross-manager version-sentinel lazy first-run since pypi wheels have no postinstall; `home.html` single vendored source `dashboard/home.html`), NFR12 (migration safety — idempotent/additive/WARN-not-fail/no-delete), C8 (lands in hand-maintained `bin/aid`+PS twin, ASCII+parity+vendor gates not render-drift, never destroys user data). Resolves KI-010 (home.html provisioning). User: not a blocker (adoption negligible) but this version carries the migration. | /aid-interview |
 | 2026-06-12 | **Cross-reference-gate fixes + two OQ decisions** (user-approved): **OQ5 RESOLVED** — `aid dashboard --remote` exposes the **CLI home (all registered repos)**; tailnet-private/never-public (NFR1/C1) + host/user-ACL (C3) hold, repo-list-to-grantees is an accepted trade-off. **OQ6 RESOLVED** — registry maintenance is a **side-effect of the existing `aid add` / `aid remove`** (no new verb; register on first tool added, unregister on last removed; host-tool install/uninstall behavior unchanged). Registry relocated to **`$AID_HOME/registry.yml`** (the CLI install's own registry, not the per-repo `.aid/settings.yml`; `~/.aid/` IS `AID_HOME`). FR34 reframed as a **deliberate new closing behavior** of `aid-discover` (produces `kb.html`), **not** a C4 behavior-preserving change (C7 amended). FR30/C6 reframed as a **contract-level change** to feature-003's delivered closed two-route server (preserve bind/no-write/no-LLM; extend PT-1 to the multi-repo shape). FR3 edited in place (Level-0 relocates per FR33). FR7 explicitly owned by feature-010 (renders on the CLI home). FR35 notes the new `.aid/settings.yml` KB-baseline key (`/aid-config` schema addition). | /aid-interview |
 
 ## 1. Objective
@@ -430,6 +431,78 @@ Open research areas raised at intake (each likely a feature):
     multi-repo server routing (FR30). Also adds a new key to the per-repo `.aid/settings.yml` schema —
     the KB-freshness baseline (FR35); see FR35's schema-ownership note.
 
+### Upgrade migration (FR37–FR40)
+
+> _Context: the two-level re-architecture (FR27–FR36) changed the per-repo layout — the dashboard
+> page is now `<repo>/.aid/dashboard/home.html`, the KB summary moved to `.aid/dashboard/kb.html`,
+> and a repo must be registered in `$AID_HOME/registry.yml` to appear on the CLI home. Repos created
+> by older AID versions do **not** comply: they have no `.aid/dashboard/home.html` (it is neither
+> vendored, generated, nor scaffolded — KI-010), may still hold a legacy
+> `.aid/knowledge/knowledge-summary.html`, may have a missing/invalid `.aid/settings.yml`, and are not
+> in the registry — so their per-repo dashboard cannot be served. FR37–FR40 add an **upgrade
+> migration** that brings existing AID repos into compliance as part of the CLI upgrade. This is a
+> migration problem, not a new-install problem: a fresh `aid add` already lays down a compliant repo
+> once `home.html` is vendored (FR40); the migration is for repos that predate the new layout._
+
+- **FR37 — Per-repo upgrade migration.** The CLI gains an **idempotent, read-mostly migration** that
+  brings a single AID repo up to the current layout. It runs against a repo's base folder and performs,
+  in order, only the steps that are not already satisfied (a no-op on an already-compliant repo):
+  - **Detect / qualify.** A folder is a migratable AID repo iff it has a base-folder `.aid/` **and**
+    either **(a)** a `.aid/settings.yml` (a repo from **≥ 0.7.X**) **or** **(b)** a `.aid/knowledge/`
+    folder containing a discovery/knowledge state file (`DISCOVERY_STATE.md` / `DISCOVERY-STATE.md` /
+    the modern `STATE.md` — a **pre-0.7** repo). A bare `.aid/` with neither marker (e.g. a stray
+    `.aid/.temp`) is **not** a migration candidate.
+  - **settings.yml — validate/repair or synthesize.** Era (a): validate `.aid/settings.yml` against the
+    current schema (`/aid-config`-owned: `project.{name,description,type}`, `tools.installed`,
+    `review.minimum_grade`, `execution.max_parallel_tasks`, `traceability.heartbeat_interval`;
+    preserving any present `kb_baseline`/per-skill overrides) and **repair** it to the current shape if
+    malformed/incomplete. Era (b): **synthesize** `.aid/settings.yml` from the template defaults, with
+    `project.name` = repo folder basename and `tools.installed` derived from `.aid/.aid-manifest.json`
+    (`project.description` empty/placeholder; `project.type` = `brownfield`; review/execution/
+    traceability = template defaults). The synthesized/repaired file must parse cleanly for all current
+    readers (`read-setting.sh`, the dashboard server/reader).
+  - **Add `home.html`.** Place the current `.aid/dashboard/home.html` (the per-repo SPA shell — a
+    static, repo-agnostic file copied from the single vendored source, FR40) if absent.
+  - **Relocate legacy KB summary.** Move `.aid/knowledge/knowledge-summary.html` →
+    `.aid/dashboard/kb.html` reusing the existing FR31 no-clobber idiom
+    (`mkdir -p .aid/dashboard && mv -n`, guarded by `[ -f OLD ] && [ ! -f NEW ]`).
+  - **Register.** Register the repo's base folder in `$AID_HOME/registry.yml` (reusing the existing
+    idempotent, atomic `registry_register`).
+- **FR38 — Migration command model (reach differs; logic is shared).** The migration is reached two
+  ways, both via the **existing `aid update`** command (no new verb):
+  - **`aid update self`** updates the CLI itself **then scans the machine** for AID repos (FR37 detect)
+    and migrates **each discovered repo**, prompting per repo with **All / Yes / No / Cancel** (All =
+    apply to this and all remaining without re-asking; Yes = this repo only; No = skip; Cancel = abort
+    the whole scan). A repo the user answers **No** is **not registered** and the CLI tells the user to
+    run **`aid update`** inside that folder to migrate it later.
+  - **`aid update [<tool>…]`** ensures the CLI is current (self-update if a newer version exists), then
+    migrates **only the current repo** (cwd / `--target`) — **no machine scan** — attaching the FR37
+    migration to the existing per-repo update success path (beside the current `registry_register`
+    side-effect). The same FR37 logic services both reaches; the only difference is scope (machine-wide
+    scan vs current repo).
+- **FR39 — Migration is part of the upgrade (trigger).** The migration is a **required part of the CLI
+  upgrade** — the upgrade is not "complete" until the affected repos are migrated. Because the package
+  managers cannot run a true install-time hook uniformly (npm can add a `postinstall`; pip/pipx wheels
+  have no standard post-install hook, PEP 517), the trigger is realized as:
+  - a **version sentinel** — the installed CLI version (`$AID_HOME/VERSION`) compared against a
+    persisted "last-migrated" marker — checked on `aid` invocation: when the installed version has
+    advanced past the last-migrated marker, the machine scan (FR38 `aid update self` behavior) runs
+    **once** and the marker is updated. This is the **universal guarantee** (covers pypi,
+    `--ignore-scripts`, and curl bootstrap), since pypi wheels have no install-time hook; and
+  - an **npm `postinstall`** as the **eager** path on `npm i -g`.
+  - In a **non-interactive** context (no TTY / CI / postinstall) the scan must **not** silently mutate
+    repos: it annotates the candidate list and defers to the next interactive `aid update self` (or an
+    explicit opt-in), per NFR12.
+  - _(The exact sentinel-marker location and the opt-in flag/env-var name are /aid-specify decisions.)_
+- **FR40 — `home.html` single vendored source.** `home.html` becomes a **vendored, repo-agnostic static
+  shell** with a **single source of truth** (`dashboard/home.html`, alongside the CLI-home
+  `dashboard/index.html`): it is added to both vendor manifests (`packages/npm/scripts/vendor.js`,
+  `packages/pypi/scripts/vendor.py`) and installed to `$AID_HOME/dashboard/home.html`; the migration
+  (FR37) and a fresh `aid add` copy it into each repo's `.aid/dashboard/home.html`. There is **no second
+  committed source** that could drift (the repo's own `.aid/dashboard/home.html` is a copy of the
+  vendored source). Repos stay **self-contained** — each holds its own `home.html` physically (NFR11),
+  and no per-repo display info is duplicated outside its `.aid/` (FR28).
+
 ## 6. Non-Functional Requirements
 
 > _Status: Complete (approved; any open research deferred to /aid-specify)._
@@ -471,6 +544,16 @@ Open research areas raised at intake (each likely a feature):
   (`.aid/knowledge/`) free of generated presentation artifacts. Anything specific to one repo travels
   with that repo's `.aid/` folder (consistent with §3 handoff portability); machine-level state
   (the registry, FR28) lives at the higher `~/.aid/` scope.
+- **NFR12 — Migration safety (idempotent, additive, degrade-don't-block).** The upgrade migration
+  (FR37–FR39) must be **safe to run repeatedly**: a no-op on an already-compliant repo, and it only
+  **adds** files (`home.html`), **moves** the legacy summary (no-clobber `mv -n`, never deletes user
+  data), and **repairs/creates** `settings.yml` while **preserving** any present
+  `kb_baseline`/per-skill-override content. It uses crash-safe writes (temp-file + `mv -f`) and a
+  **WARN-not-fail** posture (a single repo's migration failure never aborts the scan or the CLI op,
+  mirroring registry NFR10). Repo **detection is read-only**; mutation happens only after consent
+  (FR38) and never in a non-interactive context without an explicit opt-in (FR39). There is a **single
+  source** for `home.html` (FR40) so no two copies can drift, and no per-repo metadata is duplicated
+  outside the repo (FR28/NFR11).
 
 ## 7. Constraints
 
@@ -546,6 +629,17 @@ Open research areas raised at intake (each likely a feature):
   added auto-invocation + new output is by design. The dashboard **reader stays no-LLM / read-only**
   (NFR2/NFR7): the new git read (FR35) and KB-status derivation (FR32) are read-only and contain no
   agent/LLM invocation.
+- **C8 — Migration ships in `bin/aid` with PowerShell parity; never destroys user data (hard).** The
+  upgrade migration (FR37–FR40) lands in the **hand-maintained** `bin/aid` (+ its `bin/aid.ps1` twin)
+  and the install/package layer — **not** in `canonical/`→render artifacts. Every `bin/aid` edit is
+  therefore gated by **ASCII-only** (`tests/canonical/test-ascii-only.sh`), **Bash↔PowerShell parity**
+  (`tests/canonical/test-aid-cli-parity.sh`), and **vendored-copy refresh** (`vendor.js`/`vendor.py`) —
+  NOT render-drift. The migration **must never delete or overwrite** user content: it only adds
+  `home.html`, moves the legacy summary with `mv -n` (no-clobber), and repairs/creates `settings.yml`
+  preserving existing values (NFR12). It honors the project's "annotate + offer, let the user confirm"
+  posture — it does not auto-mutate a repo a heuristic merely *guesses* is AID without the FR37 marker,
+  and it asks before writing (FR38). `home.html` has exactly one committed source (`dashboard/home.html`,
+  FR40) to prevent drift, consistent with C7's no-duplication intent for repo info.
 
 ## 8. Assumptions & Dependencies
 

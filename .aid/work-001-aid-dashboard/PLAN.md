@@ -32,6 +32,18 @@
 > **Planning risk to resolve: the d008 packaging / install-wiring decision (R8)** — confirm at /aid-detail
 > whether the server+reader co-vendor is one task inside d008 (recommended) or a gating precondition task,
 > and escalate to a human decision if it proves larger than a co-vendor unit.
+> **Upgrade-migration re-plan (2026-06-13):** feature-011 (upgrade migration — FR37–FR40 / NFR12 / C8) is
+> sequenced as a single cohesive **delivery-011** (the upgrade-migration capability — per-repo migration +
+> the two `aid update` reaches + the sentinel/postinstall trigger + the `home.html` vendoring). It **resolves
+> KI-010** (the `home.html`-not-provisioned gap — the migration's add-step + a fresh `aid add` finally
+> provision the per-repo SPA shell). Extended delivery spine: `…d008 → {d009, d010, d011}` — **delivery-011
+> depends on the d008 spine** (the served per-repo `home.html` route + the relocated install-tree reader/
+> server it provisions for) and reuses the **delivery-009 FR31** legacy-summary relocation precedent; it is
+> **independent of delivery-010** (no drill / `?detail=` surface). delivery-011 is **NOT a release blocker**
+> (user 2026-06-13: negligible current adoption) but this version carries the migration. It lands in the
+> **hand-maintained** `bin/aid` + `bin/aid.ps1` twin + the package/vendor layer (C8) — its gates are
+> **ASCII-only + Bash↔PowerShell parity + vendor-refresh + the new migration tests + R5**, NOT render-drift
+> (R16–R20 below). One delivery, not two — rationale recorded on the delivery-011 block.
 
 ## Deliverables
 
@@ -338,6 +350,87 @@
   - **R5 — Playwright visual gate (hard)** applies to the drill view (findings, ledger, raw-state, logs,
     parallel-task drill).
 
+### delivery-011: Upgrade migration (per-repo compliance + machine scan + home.html vendoring) — resolves KI-010
+
+- **What it delivers:** The **closure of the two-level re-architecture for repos that predate it.** After
+  d008–d010, a repo's live page is `<repo>/.aid/dashboard/home.html`, its KB summary is
+  `<repo>/.aid/dashboard/kb.html`, and it must be in `$AID_HOME/registry.yml` to appear on the CLI home —
+  but **older repos comply with none of this** (KI-010: `home.html` is neither vendored, generated, nor
+  scaffolded; a repo may carry a legacy `knowledge-summary.html`, a missing/invalid `settings.yml`, and be
+  unregistered — so its per-repo dashboard cannot be served). delivery-011 lands feature-011 in full: (a)
+  an **idempotent, read-mostly per-repo upgrade migration** (`_aid_migrate_repo`, FF-1) that does exactly
+  four additive/no-clobber things, each only when not already satisfied — **validate/repair or synthesize
+  `.aid/settings.yml`** (era-a vs era-b, DM-1/RC-4), **add `home.html`** (copy the vendored source, FR40),
+  **relocate the legacy KB summary** (`mv -n`, the FR31 idiom reused, DM-4), and **register the repo**
+  (reusing feature-010's idempotent `registry_register`, DM-2); (b) the **two reaches through the existing
+  `aid update`** (no new verb, FR38) — `aid update self` updates the CLI then **scans the machine** and
+  migrates each discovered repo behind an **All/Yes/No/Cancel** consent prompt (FF-2/CLI-1), while
+  `aid update [<tool>]` updates the CLI if stale then migrates **only the current repo** (FF-3/CLI-2); (c)
+  the **trigger machinery** (FR39) — a **version-sentinel lazy first-run** check in `bin/aid` against the
+  `$AID_HOME/.migrated` marker (DM-3, the universal cross-manager guarantee covering pypi/`--ignore-scripts`/
+  curl) plus an **npm `postinstall`** eager path (FF-4); and (d) the **`home.html` single vendored source**
+  (FR40/LC-HSRC/LC-VND) — the current `.aid/dashboard/home.html` content (which, sequenced after d008–d010,
+  already includes all prior `home.html` work incl. d010's drill view) **moves** to a single
+  committed source `dashboard/home.html`, is added to **both** vendor manifests so it installs to
+  `$AID_HOME/dashboard/home.html`, and the dogfood repo's own `.aid/dashboard/home.html` becomes a
+  **CI-equality-enforced derived copy** (DD-5). Detection is read-only, mutation is consent-gated, every
+  write is additive/no-clobber/value-preserving, and a non-interactive context **defers** rather than
+  silently mutating (NFR12; RC-3). **Resolves KI-010** — the R5 gate renders a freshly-migrated repo's
+  provisioned `home.html`.
+- **Features:** feature-011-upgrade-migration (FR37–FR40, NFR12, C8 — sole owner). Reuses (does not
+  re-specify) feature-010's `registry_register`/`_registry_read_repos` (LC-REG, DM-2), the installer
+  engine's `manifest_list_tools`/`manifest_read_*` (LC-CORE, era-b tool detection), feature-007/d009's FR31
+  legacy-summary relocation idiom (DM-4), and feature-006's `home.html` SPA shell (provisioned, not
+  re-authored).
+- **Depends on:** **delivery-008** (the spine — the multi-repo server's per-repo `/r/<id>/home.html` route +
+  the install-tree-relocated reader/server are the thing the provisioned `home.html` is served *through*;
+  `registry_register`/`_registry_read_repos` and the CAN-1 canonicalization the migration reuses all land in
+  d008's hand-maintained `bin/aid` + `bin/aid.ps1`), and **delivery-009** (the **FR31 relocation precedent** —
+  d009's `aid-summarize` `knowledge-summary.html` → `.aid/dashboard/kb.html` relocation is the exact `mv -n`
+  idiom DM-4 reuses, and d009 establishes `.aid/dashboard/kb.html` as the canonical summary target the
+  migration moves toward). It has **no capability/route coupling to delivery-010** (the drill-down tier — feature-011 provisions
+  and serves `home.html`/`kb.html`/`settings.yml`/registry, none of which touch the `?detail=`/`TaskDetail`
+  surface). **Content-provenance caveat:** because feature-011 vendors `home.html` *as it then exists* and it
+  **sequences after** d010 (already landed on the consolidated branch), the vendored source content
+  **includes** d010's drill view — i.e. delivery-011 has no *functional* dependency on d010 but does inherit
+  d010's `home.html` content by virtue of running after it (a sequencing fact, not a gate). It is the
+  **last** of the re-architecture deliveries (it closes the layout for pre-existing repos once the spine +
+  KB tier exist); functionally it could ship in either order relative to d010, but in practice it follows it.
+- **Priority:** Should (closes KI-010 and FR37–FR40; **not a release blocker** per user 2026-06-13, but this
+  version carries the migration — without it KI-010 stands and the per-repo dashboard is unserveable for any
+  repo not hand-committed like the dogfood repo).
+- **One delivery, not two — rationale:** feature-011 is a **single indivisible capability** (SPEC
+  Decomposition Rationale): the per-repo migration (FR37) is inert without a reach (FR38) and a trigger
+  (FR39), and its add-step (FR37) cannot function without the vendored `home.html` source (FR40) — which
+  exists *only* to feed it. All four FRs land in the **same domain boundary** (the hand-maintained
+  `bin/aid`/`bin/aid.ps1` + the package/vendor layer, C8) under one gate set. There **is** a clean
+  foundation-vs-engine seam (the LC-HSRC `home.html` source-move + LC-VND vendoring is a self-contained
+  Wave-1 foundation the LC-MIG add-step consumes), but it is a **wave seam, not a delivery seam** — splitting
+  it into a delivery-012 would manufacture a cross-delivery dependency on a tiny surface (one source move +
+  two manifest entries) and force the migration engine to depend on a half-delivery, with no independently
+  shippable user value in the foundation alone (a vendored `home.html` nobody copies is inert). The cohesive
+  delivery keeps every FR37–FR40 requirement owned once with no homeless piece, and the foundation/engine
+  ordering is expressed as Waves 1→2 within the one delivery's execution graph. **One cohesive delivery-011;
+  no delivery-012.**
+- **Sequencing note:** Numbered **011** (next free; 005 superseded-not-reused, 006/007 DONE, 008–010 are the
+  re-architecture triplet). Lands in **hand-maintained** `bin/aid` + `bin/aid.ps1` + the package/vendor layer
+  (C8, carried from R10) — gates are **ASCII-only** (`test-ascii-only.sh`) + **Bash↔PowerShell parity**
+  (`test-aid-cli-parity.sh`) + **vendor-refresh** (`vendor.js`/`vendor.py`, incl. the new `dashboard/home.html`
+  entry) + the **new migration tests** (era-a/era-b/idempotency/no-delete/bare-`.aid`/cross-manager) + the
+  **R5 Playwright hard gate** on a freshly-migrated `home.html` — **NOT** render-drift / `run_generator.py`
+  (these files are not `canonical/`-rendered; R16 below). Same-file serialization: `bin/aid` is one file (its
+  migration-function + dispatch-hook + sentinel writers serialize against each other), and `bin/aid.ps1` is
+  its parity twin (R17). The d010 dogfood-`home.html` sync (OQ-5) and the residual scan-scope (OQ-1) /
+  self-update-preamble (OQ-6) wirings are /aid-detail mechanics (the design is decided; see the residual OQs
+  in feature-011 SPEC). Tasks are numbered from a fresh counter past **task-073** (task-074+) in /aid-detail.
+- **Cross-cutting risks / preconditions (see R16–R20 below):** pypi-no-postinstall → sentinel reliance (R16);
+  `bin/aid` PowerShell-twin parity drift across the new migration surface (R17); the `home.html` source-move
+  must not break the live served per-repo page during the transition (R18); machine-scan scope/performance/
+  safety — bounded, no-traversal, read-only-until-consent (R19); the dogfood `home.html` source/copy
+  equality (R20); `settings.yml` repair must preserve `kb_baseline`/per-skill overrides (R21).
+  **R5 — Playwright visual gate (hard)** applies to the freshly-migrated
+  `home.html` (the concrete KI-010-resolved proof).
+
 ## Cross-Cutting Risks
 
 | # | Risk | Impact | Mitigation |
@@ -357,13 +450,21 @@
 | R13 | **`kb_baseline` is a new multi-line settings block (write-path correctness)** — `kb_baseline: {branch, tip_date}` is a nested block, so the first write needs `/aid-config`'s "append a new block" idiom, not the single-line "save in place" replace; a re-stamp is a single-line replace inside the block. | L | `/aid-config` owns the schema key + validation; producers (`aid-discover`/`aid-housekeep`) reuse the append-block-then-line-replace settings-write idiom; feature-010 residual #5 cross-checks the two features' `settings.yml` reads agree. (delivery-009) |
 | R14 | **schema/envelope growth coordination for feature-008 (focused instance of R2)** — if `?detail=`/`TaskDetail` grows the `/api/model` wire shape it re-baselines off the schema-3 floor (3→4 cut, or stays at 3). | M | front-end `EXPECTED` + both servers' envelope + DM-3 key order + PT-1/PT-1-H move in lockstep; stale-assets banner fails loud on mismatch; bump-vs-no-bump finalized when feature-008 is detailed. (delivery-010) |
 | R15 | **Raw `STATE.md` viewer read-only + escaped (NFR2 + no injection)** — feature-008's forensic raw viewer renders arbitrary `.aid/` content. | M | Escape rendered content (no HTML/script injection); no write surface; the served raw content flows only through the spine's construct-not-sanitize static-path discipline (R9), preserving no-write/no-LLM across N roots. (delivery-010) |
+| R16 | **pypi has no install-time hook → the migration trigger relies on the sentinel (FR39/RC-1)** — PEP 517 wheels removed `setup.py install` hooks (grounding §3e), so an npm-only postinstall cannot guarantee the upgrade completes for pypi / `npm --ignore-scripts` / curl installs. If the trigger were postinstall-only, pypi upgrades would never migrate. | M | The **version-sentinel lazy first-run in `bin/aid`** (DM-3 `$AID_HOME/.migrated` vs `$AID_HOME/VERSION`, string-inequality DD-1) is the **primary, universal** guarantee covering all channels; the npm postinstall is an *eager* convenience only. The cross-manager trigger test (§6 gate 9) **exercises the pypi-no-postinstall sentinel-only path** explicitly, plus the no-loop steady state (SEC-6) and the non-interactive defer (RC-3). (delivery-011) |
+| R17 | **`bin/aid` PowerShell-twin parity drift across the new migration surface (carried from R6/R10/R17-class)** — the whole LC-MIG function set (`_aid_migrate_repo`, `SCAN_FOR_AID_REPOS`, the All/Yes/No/Cancel loop, the sentinel R/W) plus the two dispatch hooks land in **both** `bin/aid` (Bash) and `bin/aid.ps1` (PowerShell); divergent era-a/era-b branches, prompt wording, advisories, exit codes, or WARN lines silently break Windows. | M | Direct edits to root `bin/aid` + `bin/aid.ps1` **only** (vendored copies regenerate via prepack/vendor); **ASCII-only** (`test-ascii-only.sh`, MEMORY "ASCII-only PowerShell scripts" — Windows ANSI-codepage hazard for prompt/advisory text); **Bash↔PowerShell parity** (`test-aid-cli-parity.sh` extended for the migration commands: era-a/era-b branches, All/Yes/No/Cancel wording, declined advisory, WARN lines, identical exit codes). **NOT** render-drift / `run_generator.py`. Same-file writers serialize (one `bin/aid`, one `.ps1` twin). (delivery-011) |
+| R18 | **The `home.html` source-move (LC-HSRC) must not break the live served per-repo page during the transition** — feature-011 *moves* the d010 dogfood `.aid/dashboard/home.html` content to a new committed source `dashboard/home.html`; the multi-repo server (feature-010) keeps serving the **per-repo** `<repo>/.aid/dashboard/home.html` at `/r/<id>/home.html`. If the dogfood repo's own `.aid/dashboard/home.html` were deleted by the move (rather than kept as a derived copy), the dogfood dashboard would 404 mid-transition. | M | The move is **source-add + derived-copy-keep**, not a delete: `dashboard/home.html` becomes the single source of truth; the dogfood repo's `.aid/dashboard/home.html` **stays committed as a derived copy** (DD-5/RC-2) so the served page never disappears; a **CI equality gate** (`dashboard/home.html` == `.aid/dashboard/home.html`) catches divergence. The server contract is **unchanged** — it serves the per-repo file exactly as in d008 (a `has_home=false` repo renders the "not generated yet" card until migrated). No server install-tree fallback (NFR11, RC-2). (delivery-011) |
+| R19 | **Machine-scan scope / performance / safety (FR38/SEC-1..2/SEC-5/NFR12)** — `aid update self` enumerates `.aid/` candidate folders across the machine; an unbounded or traversal-following scan is a performance and safety hazard (climbing out of scope via `..`/symlinks, descending `node_modules`/`.git`, or mutating a repo a heuristic merely *guesses* is AID). | M | **Read-only until consent** (SEC-1 — detect/enumerate are pure reads; no write before `A`/`Y`/`aid update`-in-repo/opt-in); **bounded scope, no traversal** (SEC-2 — bounded root set + shallow depth cap, skip `node_modules`/`.git`, never follow `..` or symlinks out of scope); **presence-test detection** (DD-6 — only `.aid/settings.yml` or a `.aid/knowledge/` discovery/state marker qualifies; a bare `.aid/` is a non-candidate, gated by §6 test 8); **CAN-1-canonical paths only** (SEC-5, no path injection). Exact scan root(s)/depth/symlink policy + a `--root` override = /aid-detail (residual OQ-1); the **invariant** (bounded + no-escape + read-only) is fixed. (delivery-011) |
+| R20 | **Dogfood `home.html` source ↔ derived-copy equality (DD-5/RC-2, residual OQ-5)** — because the dogfood repo's `.aid/dashboard/home.html` is *both* a committed servable file *and* a derived copy of `dashboard/home.html`, the two can silently diverge between edits (an editor touches one but not the other), shipping a vendored shell that disagrees with the dogfood-served one. | L | A **CI equality gate** asserts `.aid/dashboard/home.html` byte-equals `dashboard/home.html` and fails the build on any divergence (drift caught, not structurally impossible). The exact sync step (a make/CI check, vs the stronger gitignore-and-generate alternative) is a /aid-detail pick (OQ-5); the invariant (single source of truth, copy equality enforced) is fixed (DD-5). (delivery-011) |
+| R21 | **`settings.yml` repair destroying `kb_baseline` / per-skill overrides (NFR12 no-delete on config data — the highest-consequence migration hazard)** — era-a repair must add only missing/malformed *required* keys; a naive template-overwrite "repair" would silently wipe a repo's producer-written `kb_baseline` (FR35) and user-authored per-skill `minimum_grade` overrides, an NFR12 no-delete violation on config (not just files). | M | Repair = **targeted edit, never wholesale overwrite** (SPEC DD-3): ensure only the missing/malformed required keys via the `/aid-config` single-line-replace + append-block crash-safe idioms, leaving every present optional block byte-intact; era-b synthesizes fresh only when there is nothing to preserve. **§6 gate 4** (era-a malformed-settings fixture **with** a populated `kb_baseline`+override) asserts those values survive the repair byte-for-byte; the Wave-4 migration unit lane owns it. (delivery-011) |
 
 ## Deferred
 
-**No feature is dropped — all 10 are assigned** (the original MVP = 001–005 across deliveries 001–003;
+**No feature is dropped — all 11 are assigned** (the original MVP = 001–005 across deliveries 001–003;
 Must = 009 in delivery-006; the two-level re-architecture lands feature-010 + feature-006-revision in
 **delivery-008** (spine, Must), feature-007 re-scope in **delivery-009** (KB tier, Should), and
-feature-008 in **delivery-010** (drill-down, Should)). **Sequencing-deferred (not scope-deferred):**
+feature-008 in **delivery-010** (drill-down, Should); the upgrade-migration **feature-011** lands in
+**delivery-011** (per-repo compliance + machine scan + `home.html` vendoring, Should — resolves KI-010)).
+**Sequencing-deferred (not scope-deferred):**
 **feature-008 / delivery-010 (task drill-down)** is deliberately scheduled as a **separate delivery
 *after* the two-level refactor** (user directive) — its A+ scope is unchanged; only its place in the
 sequence moved. It is the lowest-urgency of the three re-architecture deliveries and depends on the
@@ -767,4 +868,146 @@ wave 2: task-070
 wave 3: task-071
 wave 3: task-072
 wave 4: task-073
+```
+
+### delivery-011 execution graph (upgrade migration — resolves KI-010)
+
+> One feature (feature-011), one cohesive delivery. Foundation first (the `home.html` source-move +
+> vendoring the LC-MIG add-step depends on), then the shared migration engine (`_aid_migrate_repo` core +
+> the era-a/era-b settings logic), then the command wiring (the two `aid update` reaches + the sentinel/
+> postinstall trigger), then the gates (the migration unit/parity/ASCII/vendor tests + the R5 Playwright
+> hard gate on a freshly-migrated `home.html`). **All edits land in hand-maintained `bin/aid` + `bin/aid.ps1`
+> + the package/vendor layer (C8)** — gates are **ASCII + parity + vendor-refresh + the new migration tests +
+> R5**, **NOT** render-drift / `run_generator.py`. **Same-file writer serialization:** `bin/aid` is one file
+> — its three writer concerns (the LC-MIG migration-function set, the two dispatch hooks for FF-2/FF-3, the
+> FF-4 sentinel check) **cannot parallelize with each other** and land serially within the engine/wiring
+> waves; `bin/aid.ps1` is its parity twin and is written in lockstep against each `bin/aid` change (one twin
+> writer per concern, not a parallel author) — the parity constraint (R17) means a Bash edit and its PS twin
+> are the *same* logical writer, gated by `test-aid-cli-parity.sh`. **Task-level decomposition + the
+> machine-parseable ```wave-map fence are owned by /aid-detail** (task-074+); the slices/lanes/dependencies
+> below are the deliverable-granularity structure the plan owns. `→` = sequential dependency; `∥` = parallel
+> lanes; `∧` = a join needing both predecessors.
+
+- **Wave 1 (foundation — the `home.html` source + vendoring; no `bin/aid` edits yet, fully parallelizable
+  with the Wave-2 *design* but a hard predecessor of the Wave-2 add-step):**
+  - **source-move lane (LC-HSRC, DD-5/RC-2):** move the d010 dogfood `.aid/dashboard/home.html` content to a
+    single committed source `dashboard/home.html`; keep the dogfood `.aid/dashboard/home.html` as a
+    derived copy (the served page must not break — R18) ∥
+  - **vendoring lane (LC-VND, FR40):** add `dashboard/home.html` to **both** vendor manifests
+    (`packages/npm/scripts/vendor.js`, `packages/pypi/scripts/vendor.py`) so it installs to
+    `$AID_HOME/dashboard/home.html`; wire the **CI equality gate** (`dashboard/home.html` ==
+    `.aid/dashboard/home.html`, R20/OQ-5) — needs the source-move lane
+  - **settings design lane (DESIGN, DM-1/RC-4/DD-3):** pin the validate/repair (era-a) + synthesize (era-b)
+    `settings.yml` contract — the "valid" shape all readers parse without falling back, the
+    preserve-`kb_baseline`+overrides repair rule, the era-b basename + manifest-derived `tools.installed`
+    synthesis — the seam the Wave-2 settings step resolves against (independent of the source/vendor lanes)
+- **Wave 2 (migration core — `_aid_migrate_repo` in `bin/aid` + the PS twin; needs the settings design ∧ the
+  vendored `home.html` source the add-step copies):**
+  - **migration-engine lane (LC-MIG, FF-1; Bash + PS twin = one logical writer per R17):** the shared
+    `_aid_migrate_repo` — DETECT/qualify (DD-6 presence-test), SETTINGS validate/repair|synthesize (DM-1, the
+    crash-safe temp-file+`mv -f` write), ADD `home.html` (copy `$AID_HOME/dashboard/home.html`, additive
+    no-clobber, FR40 — needs Wave-1 vendoring), RELOCATE legacy summary (`mv -n`, the d009 FR31 idiom, DM-4),
+    REGISTER (reuse feature-010 `registry_register`, DM-2) — needs the settings design lane ∧ the Wave-1
+    vendoring lane
+- **Wave 3 (command wiring — the two reaches + the trigger; all `bin/aid`/`bin/aid.ps1` edits, **serialized**
+  against the Wave-2 engine and against each other since they share `bin/aid`):**
+  - **scan/consent lane (FF-2/CLI-1):** `SCAN_FOR_AID_REPOS` (bounded, read-only, no-traversal — R19/SEC-2) +
+    the **All/Yes/No/Cancel** consent loop + declined-repo advisory, attached after `_cmd_update_self` in the
+    `aid update self` dispatch; advances the DM-3 marker on completion — needs the Wave-2 engine →
+  - **current-repo lane (FF-3/CLI-2):** the `aid update [<tool>]` per-repo tail beside the existing
+    `registry_register "$_AID_TARGET"` + the self-update-if-needed preamble (OQ-6) — needs the Wave-2 engine
+    (serial after the scan lane — same `bin/aid` file) →
+  - **trigger lane (FF-4/DM-3, R16):** the version-sentinel lazy first-run check (`$AID_HOME/.migrated` vs
+    `VERSION`, string-inequality DD-1, non-interactive defer RC-3, `AID_NO_MIGRATE`/`AID_MIGRATE_YES` env) in
+    `bin/aid` early dispatch + the **npm `postinstall`** entry in `packages/npm/package.json` (pypi has none —
+    sentinel-only, R16) — needs the scan lane (the trigger invokes FF-2; serial — same `bin/aid` file)
+- **Wave 4 (gates — the migration tests, all parallelizable; then the R5 hard gate as the final join):**
+  - **migration unit/safety lane (TEST, §6 gates 4–8):** era-a no-op + repair (preserve `kb_baseline`+override);
+    era-b synthesize (basename + manifest tools); **idempotency** (second run = byte-identical no-op);
+    **no-delete** (existing `home.html` never overwritten, both summary files kept on clobber); **bare-`.aid/`
+    non-candidate** — needs the Wave-2 engine ∥
+  - **trigger lane (TEST, §6 gate 9):** cross-manager trigger — interactive sentinel fires once + advances
+    marker, second run at same version no-ops (SEC-6), non-interactive defers (marker stale), `AID_MIGRATE_YES=1`
+    migrates; **exercises the pypi-no-postinstall sentinel-only path** + the npm-postinstall path (R16) — needs
+    the Wave-3 trigger lane ∥
+  - **parity/ASCII/vendor lane (TEST, §6 gates 1–3):** `test-ascii-only.sh` + `test-aid-cli-parity.sh`
+    (era-a/era-b branches, All/Yes/No/Cancel wording, advisory, WARN lines, exit codes — R17) + the
+    vendor-refresh assertion that `dashboard/home.html` is in both manifests and lands at
+    `$AID_HOME/dashboard/home.html` (and is **absent** from `EMISSION-MANIFEST.md` — not render-drift) — needs
+    Wave-2 ∧ Wave-3 ∧ the Wave-1 vendoring lane
+  - **Wave 5 (join — the R5 Playwright hard gate, final):** run the migration on an era-b fixture repo,
+    register it, start the multi-repo server, and **render that repo's provisioned `home.html` in Playwright**
+    — assert the SPA shell loads, polls `/r/<id>/api/model`, and renders (no 404, no blank page); the concrete
+    proof **KI-010 is resolved** — needs the migration unit lane ∧ the served-page route (d008 spine) ∧ a
+    migrated `home.html` (Wave-2 add-step over the Wave-1 vendored source). Source-only review is an automatic
+    FAIL (R5 project policy).
+
+#### delivery-011 task-level execution graph (upgrade migration — 10 tasks, 074–083)
+
+> Authored by /aid-detail 2026-06-13 from the feature-slice graph above. Tasks numbered from a fresh
+> counter past task-073 (delivery-010). `→` = sequential dependency; `∥` = parallel lanes; `∧` = a join
+> needing both predecessors. Dependencies are authoritative in each `tasks/task-NNN.md` `Depends on:` line.
+> The machine `wave-map` `lane` value is the **scheduling lane** (the reader maps `task → lane`,
+> `parsers.py:671-677`): every task's dependencies sit in a **strictly earlier lane** so a lane is a true
+> parallelizable batch. The deliverable-granularity "Wave 1-5" labels above are the conceptual phases; the
+> serial `bin/aid` writer chain (R17: 077 → 078 → 079 → 080) expands those phases into lanes 3-6.
+> **bin/aid anchors RE-PINNED against the live file (1593 lines) at detail time** (SPEC/brief drift, OQ-2):
+> `_cmd_update_self`:247 (npm/pypi guard 250-259, curl 261-263); update-self dispatch 1265-1281 (call
+> `_cmd_update_self`:1277, `exit $?`:1278, `--force|-y` no-op:1272); `add|update` case:1542 → `Done.`:1563
+> → `registry_register "$_AID_TARGET"`:1565 → `exit 0`:1566; `--target` canon `_AID_TARGET="$(cd … &&
+> pwd)"`:1366; manifest `_AID_MANIFEST`:1414 (`manifest_list_tools` use 1425); `$AID_HOME` resolve 40-47;
+> `registry_register` def 1094-1127 / `_registry_read_repos` 1082-1088; `.update-check`+`AID_NO_UPDATE_CHECK`
+> precedent 159-160/164/174, VERSION read+trim 168-170, `_aid_check_update` def 162 / calls 1202,1260.
+> **Same-file writer serialization (R17):** `bin/aid` is one file — its three writer concerns serialize:
+> task-077 (LC-MIG core) → task-078 (FF-2 scan/consent + `--yes`) → task-079 (FF-3 current-repo tail) →
+> task-080 (FF-4 sentinel). Each `bin/aid` edit's `bin/aid.ps1` twin is the **same** logical writer (parity
+> lockstep, gated by `test-aid-cli-parity.sh`), never a parallel author. `package.json` is written by
+> **task-080 only**; the vendor manifests (`vendor.js`/`vendor.py`) by **task-076 only**. **R5 (task-083) is
+> the final wave.**
+
+- **Wave 1 (foundation — `home.html` source/vendor ∥ the settings design seam, all independent starts):**
+  - task-074 (DESIGN — settings.yml validate/repair + era-b synthesis contract DM-1/DD-3/RC-4/R21: the
+    "valid" reader-parseable shape, the preserve-`kb_baseline`+overrides targeted-repair rule, the era-b
+    basename + manifest-`tools.installed` synthesis map; the seam task-077 resolves against; no deps) ∥
+  - task-075 (MIGRATE — `home.html` source-move LC-HSRC/DD-5/R18: move the dogfood `.aid/dashboard/home.html`
+    content to a single committed source `dashboard/home.html`, keep the dogfood copy derived so serving
+    never breaks; no deps) →
+  - task-076 (CONFIGURE — vendoring LC-VND/FR40: add `dashboard/home.html` to both vendor manifests →
+    `$AID_HOME/dashboard/home.html` + the CI source↔copy equality gate R20/OQ-5; needs task-075)
+- **Wave 2 (migration core — `bin/aid` + PS twin; needs the settings design ∧ the vendored source):**
+  - task-077 (MIGRATE — `_aid_migrate_repo` core LC-MIG/FF-1: DETECT/qualify DD-6, SETTINGS repair|synthesize
+    DM-1, ADD `home.html` FR40, RELOCATE summary DM-4/FR31, REGISTER DM-2 via `registry_register`:1094; the
+    callable core, no dispatch wiring; needs task-074 ∧ task-076)
+- **Wave 3 (command wiring — serialized on `bin/aid`, after the Wave-2 core):**
+  - task-078 (IMPLEMENT — `aid update self` FF-2 scan + All/Yes/No/Cancel CLI-1 + `SCAN_FOR_AID_REPOS`
+    R19/SEC-2 + `--yes`; attached between `_cmd_update_self`:1277 and `exit $?`:1278; advances DM-3 marker on
+    completion; needs task-077) →
+  - task-079 (IMPLEMENT — `aid update [<tool>]` FF-3 current-repo tail beside `registry_register`:1565 +
+    self-update preamble OQ-6/CLI-2; serial after task-078 — same `bin/aid`; needs task-077 ∧ task-078) →
+  - task-080 (IMPLEMENT — FF-4 trigger DM-3/R16: version-sentinel lazy first-run near `_aid_check_update`
+    (`bin/aid:1202`) DD-1/RC-3 + npm `postinstall` in `package.json` OQ-3 (pypi sentinel-only); serial after
+    task-078 — invokes the FF-2 scan, same `bin/aid`; needs task-078)
+- **Wave 4 (gates — the migration tests, parallel):**
+  - task-081 (TEST — migration unit/safety §6 gates 4-8: era-a no-op + repair-preserves-`kb_baseline`+override
+    R21, era-b synthesize RC-4, idempotency, no-delete, bare-`.aid/` non-candidate; needs task-077) ∥
+  - task-082 (TEST — §6 gates 1-3,9: cross-manager trigger incl. pypi-no-postinstall sentinel-only path R16,
+    `test-aid-cli-parity.sh` extension R17, `test-ascii-only.sh`, vendor-refresh + not-render-drift;
+    needs task-076 ∧ task-079 ∧ task-080)
+- **Wave 5 (join — the R5 Playwright hard gate, final):**
+  - task-083 (TEST — R5 Playwright §6 gate 10: provision an era-b fixture repo **via the migration**, serve
+    it, render the provisioned `home.html` + visually validate the SPA shell loads/polls/renders, zero
+    console errors; resolves KI-010; needs task-081 ∧ task-082)
+
+```wave-map
+delivery: 011
+wave 1: task-074
+wave 1: task-075
+wave 2: task-076
+wave 3: task-077
+wave 4: task-078
+wave 5: task-079
+wave 6: task-080
+wave 7: task-081
+wave 7: task-082
+wave 8: task-083
 ```
