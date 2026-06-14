@@ -749,7 +749,7 @@ footer {
 <!-- Sticky top bar (UI-1) -->
 <header class="top-bar" role="banner">
   <div class="brand">
-    <strong id="brand-name">AID Dashboard</strong><span id="breadcrumb-trail" class="breadcrumb" style="margin-left:0.5em"></span>
+    <span id="breadcrumb-trail" class="breadcrumb"></span>
   </div>
   <div style="flex:1"></div>
   <div class="controls">
@@ -1197,10 +1197,11 @@ footer {
     // Update page title from repo.project_name
     var projectName = (model.repo && model.repo.project_name) ? model.repo.project_name : 'AID Dashboard';
     document.title = projectName + ' — AID Dashboard';
-    var brandEl = document.getElementById('brand-name');
-    if (brandEl) brandEl.textContent = projectName;
 
-    // NAV-1: router-driven breadcrumb (recomputed every render from route + model)
+    // NAV-1: router-driven breadcrumb (recomputed every render from route + model).
+    // The breadcrumb is the sole top-bar identity (no separate brand wordmark) — it
+    // always roots at "Home" (the CLI home / all projects) so the project level is
+    // distinct from the root even when the project itself is named "AID".
     renderBreadcrumb(model, route);
 
     // Surface parse_warnings data note (Telemetry)
@@ -2663,14 +2664,14 @@ footer {
 
     var projectName = (model.repo && model.repo.project_name) ? model.repo.project_name : 'AID Dashboard';
 
-    if (route.view === 'main') {
-      // main → AID (leaf)
-      el.appendChild(_leaf('AID'));
+    // Level 1 (Main) is ALWAYS the first crumb: the CLI home (absolute "/") listing
+    // every project on this machine. Labeled "Home" (not the product name) so it never
+    // collides with a project that happens to be named "AID".
+    el.appendChild(_bcLink('Home', '/'));
+    el.appendChild(_sep());
 
-    } else if (route.view === 'work' || route.view === 'task') {
-      // AID (link → /) › <project> (link → location.pathname) › <pipeline> (link/#/leaf or leaf)
-      el.appendChild(_bcLink('AID', '/'));
-      el.appendChild(_sep());
+    if (route.view === 'work' || route.view === 'task') {
+      // Home › <project> (link) › <pipeline> (leaf or link) [› <task> (leaf)]
       el.appendChild(_bcLink(projectName, location.pathname));
       el.appendChild(_sep());
 
@@ -2701,8 +2702,8 @@ footer {
       }
 
     } else {
-      // KB or unknown: just show AID as link
-      el.appendChild(_bcLink('AID', '/'));
+      // main (repo overview) / KB / unknown → Home › <project> (leaf, the level you're on)
+      el.appendChild(_leaf(projectName));
     }
   }
 
