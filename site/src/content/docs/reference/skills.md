@@ -1,12 +1,12 @@
 ---
 title: 'Skills'
-description: 'All 11 AID pipeline skills — grouped by pipeline phase, with what each does and where its definition lives.'
+description: 'All 12 AID pipeline skills — grouped by pipeline phase, with what each does and where its definition lives.'
 generatedFrom: 'canonical/skills/*/SKILL.md'
 ---
 
 <!-- generated — do not edit; source: canonical/skills/*/SKILL.md -->
 
-AID ships **11 user-facing skills** across five pipeline groups, plus one off-pipeline maintenance skill. The six numbered phases — Discover through Execute — form the mandatory sequential pipeline; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Each entry below is generated from the skill's own definition in `canonical/skills/`.
+AID ships **12 user-facing skills** across five pipeline groups, plus two off-pipeline on-demand skills. The six numbered phases — Discover through Execute — form the mandatory sequential pipeline; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Each entry below is generated from the skill's own definition in `canonical/skills/`.
 
 ## Prepare
 
@@ -32,7 +32,7 @@ Brownfield project discovery with built-in quality gate. Run `/aid-config` first
 
 **optional viewer**
 
-Generate a single-file knowledge-summary.html from .aid/knowledge/. Inlines Mermaid for offline diagrams, light/dark theme, click-to-expand lightbox, accessibility-first (WCAG AA). Two-grade quality gate (Machine + Human): script-verifiable checks score the Machine Grade; an interactive checklist scores the Human Grade (K1 KB-completeness, K2 fact-grounding, V1 mandatory human visual gate). APPROVAL requires BOTH grades >= minimum. Idempotent: re-running on an unchanged KB does nothing. State-machine: PREFLIGHT → STALE-CHECK → PROFILE → GENERATE → VALIDATE → MANUAL-CHECKLIST → FIX → APPROVAL → WRITEBACK → DONE.
+Generate a single-file kb.html from .aid/knowledge/. Inlines Mermaid for offline diagrams, light/dark theme, click-to-expand lightbox, accessibility-first (WCAG AA). Two-grade quality gate (Machine + Human): script-verifiable checks score the Machine Grade; an interactive checklist scores the Human Grade (K1 KB-completeness, K2 fact-grounding, V1 mandatory human visual gate). APPROVAL requires BOTH grades >= minimum. Idempotent: re-running on an unchanged KB does nothing. State-machine: PREFLIGHT → STALE-CHECK → PROFILE → GENERATE → VALIDATE → MANUAL-CHECKLIST → FIX → APPROVAL → WRITEBACK → DONE.
 
 [Definition: `canonical/skills/aid-summarize/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md)
 
@@ -110,7 +110,15 @@ Observe production, classify findings, and route actions. Combines telemetry int
 
 ## Off-pipeline
 
-On-demand maintenance, outside the numbered phases.
+On-demand skills, outside the numbered phases.
+
+### `aid-ask`
+
+**on demand · read-only Q&A**
+
+Optional on-demand read-only Q&A skill. Takes a free-form question and answers it in one pass, grounded in three context sources: the Knowledge Base (.aid/knowledge/), the live codebase, and in-flight AID works (.aid/work-*/STATE.md + progress). Returns an answer with source citations (KB doc names, file paths, or work-NNN STATE references). Modifies no files. Trivial questions are answered inline (Read/Glob/Grep only); broad or expensive investigations dispatch aid-researcher in strictly read-only mode. When the available context cannot answer the question, states the gap explicitly rather than fabricating an answer.
+
+[Definition: `canonical/skills/aid-ask/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md)
 
 ### `aid-housekeep`
 

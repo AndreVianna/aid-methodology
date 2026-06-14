@@ -121,8 +121,11 @@ const SKILL_GROUPS = [
   },
   {
     group: 'Off-pipeline',
-    blurb: 'On-demand maintenance, outside the numbered phases.',
-    skills: [{ name: 'aid-housekeep', phase: 'on demand' }],
+    blurb: 'On-demand skills, outside the numbered phases.',
+    skills: [
+      { name: 'aid-ask', phase: 'on demand · read-only Q&A' },
+      { name: 'aid-housekeep', phase: 'on demand' },
+    ],
   },
 ];
 
@@ -147,8 +150,8 @@ function generateSkillsPage() {
   }
 
   const intro =
-    'AID ships **11 user-facing skills** across five pipeline groups, plus one off-pipeline ' +
-    'maintenance skill. The six numbered phases — Discover through Execute — form the mandatory ' +
+    'AID ships **12 user-facing skills** across five pipeline groups, plus two off-pipeline ' +
+    'on-demand skills. The six numbered phases — Discover through Execute — form the mandatory ' +
     'sequential pipeline; every skill runs as a slash command (e.g. `/aid-config`) inside your AI ' +
     'host tool. Each entry below is generated from the skill\'s own definition in `canonical/skills/`.';
 
@@ -170,7 +173,7 @@ function generateSkillsPage() {
 
   const fm = serializeFrontmatter({
     title: 'Skills',
-    description: 'All 11 AID pipeline skills — grouped by pipeline phase, with what each does and where its definition lives.',
+    description: 'All 12 AID pipeline skills — grouped by pipeline phase, with what each does and where its definition lives.',
     generatedFrom: 'canonical/skills/*/SKILL.md',
   });
   const note = `\n<!-- generated — do not edit; source: canonical/skills/*/SKILL.md -->\n\n`;
