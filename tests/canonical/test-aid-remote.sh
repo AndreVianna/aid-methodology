@@ -80,6 +80,19 @@ new_aid_home() {
     cp "$LIB_SH"   "${h}/lib/aid-install-core.sh"
     cp "${REPO_ROOT}/lib/AidInstallCore.psm1" "${h}/lib/AidInstallCore.psm1"
     printf '%s\n' "${VERSION}" > "${h}/VERSION"
+    # d008 spawn-seam: the curated dashboard unit (reader package + server) is
+    # co-vendored under $AID_HOME/dashboard/, and 'aid dashboard start' resolves the
+    # entry point from there. Stage it so the server actually starts (mirrors the
+    # layout in test-aid-dashboard-cli.sh:84-96). Without this, start exits 7
+    # ("server missing from install tree") before the --remote path is reached.
+    mkdir -p "${h}/dashboard/reader" "${h}/dashboard/server"
+    for _f in __init__ reader models parsers derivation locator; do
+        ln -sf "${REPO_ROOT}/dashboard/reader/${_f}.py" "${h}/dashboard/reader/${_f}.py"
+    done
+    ln -sf "${REPO_ROOT}/dashboard/server/server.py"   "${h}/dashboard/server/server.py"
+    ln -sf "${REPO_ROOT}/dashboard/server/server.mjs"  "${h}/dashboard/server/server.mjs"
+    ln -sf "${REPO_ROOT}/dashboard/server/reader.mjs"  "${h}/dashboard/server/reader.mjs"
+    ln -sf "${REPO_ROOT}/dashboard/server/__init__.py" "${h}/dashboard/server/__init__.py"
     echo "$h"
 }
 
