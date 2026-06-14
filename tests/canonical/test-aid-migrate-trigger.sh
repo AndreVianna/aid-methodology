@@ -29,6 +29,8 @@
 #            packages/npm/dashboard/home.html.
 #     VND-F  python3 packages/pypi/scripts/vendor.py runs to completion (exit 0) and lands
 #            packages/pypi/aid_installer/_vendor/dashboard/home.html.
+#     VND-G  dashboard/home.html present in release.sh CLI bundle (cp line + tar -T list,
+#            >= 2 occurrences) -- the curl|bash + release-bundle path's migration source.
 #
 # ISOLATION MECHANISM:
 #   Every aid invocation that can fire the sentinel/scan (TRG-A, TRG-D, TRG-E, TRG-F and
@@ -73,6 +75,7 @@ LIB_SH="${REPO_ROOT}/lib/aid-install-core.sh"
 POSTINSTALL_JS="${REPO_ROOT}/packages/npm/scripts/postinstall.js"
 VENDOR_JS="${REPO_ROOT}/packages/npm/scripts/vendor.js"
 VENDOR_PY="${REPO_ROOT}/packages/pypi/scripts/vendor.py"
+RELEASE_SH="${REPO_ROOT}/release.sh"
 HOME_HTML_SRC="${REPO_ROOT}/dashboard/home.html"
 HOME_HTML_AID="${REPO_ROOT}/.aid/dashboard/home.html"
 EMISSION_MANIFEST="${REPO_ROOT}/canonical/EMISSION-MANIFEST.md"
@@ -607,6 +610,22 @@ if [[ -f "${_PYPI_VENDOR_HOME}" ]]; then
     pass "VND-F03 pypi vendor.py: aid_installer/_vendor/dashboard/home.html landed"
 else
     fail "VND-F03 pypi vendor.py: aid_installer/_vendor/dashboard/home.html NOT found after vendor run"
+fi
+
+# ---------------------------------------------------------------------------
+# VND-G: dashboard/home.html present in release.sh CLI bundle (aid-cli-v*.tar.gz).
+#   This is the GitHub-release bundle the curl|bash bootstrap and the bundle /
+#   `aid update self` curl path download + extract into $AID_HOME. It must ship
+#   home.html in lockstep with the four other manifests (vendor.js/VND-A,E;
+#   vendor.py/VND-B,F; install.sh+install.ps1/PAR13). In release.sh it appears
+#   TWICE -- the cp-into-stage line AND the tar -T file list -- so require >= 2
+#   occurrences, which also catches a half-applied edit (one but not both).
+# ---------------------------------------------------------------------------
+_VND_G="$(grep -c "dashboard/home.html" "${RELEASE_SH}" 2>/dev/null || echo 0)"
+if [[ "${_VND_G}" -ge 2 ]]; then
+    pass "VND-G01 release.sh: dashboard/home.html in CLI bundle (cp + tar list)"
+else
+    fail "VND-G01 release.sh: dashboard/home.html missing from CLI bundle (found ${_VND_G}/2 -- cp line + tar -T list); migration source absent on curl|bash + bundle path"
 fi
 
 # ===========================================================================
