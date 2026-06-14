@@ -56,6 +56,33 @@ fi
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
+# ---------------------------------------------------------------------------
+# GLOBAL HOME PIN (isolation bulletproof fix, task-082 parity)
+#
+# Bin/aid line 1681: `local _scan_root="${1:-${HOME}}"` uses $HOME as the
+# default scan root for every sentinel-triggered scan.  Cases in this suite
+# that call `aid status` or `aid update self` with AID_MIGRATE_YES=1 but
+# WITHOUT an explicit scan-root argument (e.g. PAR080-S07) will therefore
+# scan whatever $HOME is at subprocess time.
+#
+# Without this pin, running the suite standalone (as `tests/run-all.sh` and
+# CI do) would scan the real $HOME and create stray .aid/dashboard/ dirs in
+# unrelated repos on the machine (observed: /home/andre.vianna/projects/
+# casuloailabs/.aid/dashboard/home.html).
+#
+# Mechanism: export HOME to a throwaway subdirectory of $TMP so the WHOLE
+# test process and every spawned subprocess (aid, pwsh, harness scripts)
+# inherits the throwaway and can never reach the real $HOME.
+# REAL_HOME is saved before the override for the end-of-suite canary check.
+# ---------------------------------------------------------------------------
+REAL_HOME="${HOME}"
+# Snapshot .aid/dashboard/ dirs in the real HOME before the suite runs.
+# The canary assertion at end-of-suite compares against this baseline.
+_CANARY_BEFORE="$(find "${REAL_HOME}" -maxdepth 6 \
+    -name dashboard -path '*/.aid/*' -type d 2>/dev/null | sort || true)"
+export HOME="${TMP}/fakehome"
+mkdir -p "${HOME}"
+
 FIXTURE_DIR="${TMP}/fixtures"
 mkdir -p "${FIXTURE_DIR}"
 
@@ -2180,6 +2207,26 @@ if [[ "${_S08_SH_OPTOUT}" -ge 1 ]] && [[ "${_S08_PS_OPTOUT}" -ge 1 ]]; then
     pass "PAR080-S08b AID_NO_MIGRATE opt-out present in both runtimes"
 else
     fail "PAR080-S08b AID_NO_MIGRATE opt-out: Bash=${_S08_SH_OPTOUT} PS1=${_S08_PS_OPTOUT}"
+fi
+
+# ===========================================================================
+# End-of-suite: REAL_HOME blast-surface canary
+#
+# Compare the snapshot of .aid/dashboard/ dirs under REAL_HOME taken before
+# the global HOME pin against one taken after the full suite completes.
+# Any new directory = an escape from the throwaway HOME that reached a real
+# repo.  This assertion would have caught the casuloailabs/.aid/dashboard
+# leak (delivery-011 bisection confirmed bug).
+# ===========================================================================
+_CANARY_AFTER="$(find "${REAL_HOME}" -maxdepth 6 \
+    -name dashboard -path '*/.aid/*' -type d 2>/dev/null | sort || true)"
+if [[ "${_CANARY_BEFORE}" == "${_CANARY_AFTER}" ]]; then
+    pass "CANARY-PAR01 real-HOME blast surface: no new .aid/dashboard/ dirs created under ${REAL_HOME}"
+else
+    _CANARY_NEW="$(comm -13 \
+        <(echo "${_CANARY_BEFORE}") \
+        <(echo "${_CANARY_AFTER}"))"
+    fail "CANARY-PAR01 real-HOME blast surface: NEW .aid/dashboard/ dirs appeared under ${REAL_HOME} (escape detected!): ${_CANARY_NEW}"
 fi
 
 test_summary
