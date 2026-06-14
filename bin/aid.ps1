@@ -1891,7 +1891,8 @@ if ($SUBCMD -eq 'update') {
             }
             $remIdx++
         }
-        script:Invoke-AidUpdateSelf | Out-Null  # returns exit code; ignore for scan path
+        $usRc = script:Invoke-AidUpdateSelf
+        if ($usRc -ne 0) { script:Exit-Aid $usRc }
         # ---- post-update machine scan (FF-2 / task-078) ----
         script:Invoke-AidScanAndMigrate -ApplyAllFlag $usMigrateYes -ScanRoot $usRoot
         script:Exit-Aid 0

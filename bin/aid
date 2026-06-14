@@ -1998,7 +1998,8 @@ if [[ "$SUBCMD" == "update" ]]; then
                 *) _aid_die "unknown flag for 'update self': $1" 2 ;;
             esac
         done
-        _cmd_update_self
+        _cmd_update_self; _us_rc=$?
+        if [[ "${_us_rc}" -ne 0 ]]; then exit "${_us_rc}"; fi
         # ---- post-update machine scan (FF-2 / task-078) ----
         _aid_scan_and_migrate "${_US_MIGRATE_YES}" "${_US_ROOT}"
         exit 0
