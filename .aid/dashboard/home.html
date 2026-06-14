@@ -2698,7 +2698,10 @@ footer {
         // task view: Pipeline is a link → #/work/<work_id>; Task is leaf
         el.appendChild(_bcLink(pipelineLabel, '#/work/' + encodeURIComponent(route.workId)));
         el.appendChild(_sep());
-        el.appendChild(_leaf(route.taskId));
+        // Display the task as "Task #<n>" (drop the "task-" prefix + leading zeros);
+        // fall back to the raw id if it has no trailing number.
+        var _tnum = (String(route.taskId).match(/(\d+)\s*$/) || [])[1];
+        el.appendChild(_leaf(_tnum ? ('Task #' + parseInt(_tnum, 10)) : route.taskId));
       }
 
     } else {
