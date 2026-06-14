@@ -14,6 +14,7 @@ changelog:
   - 2026-06-12: Added Unreleased items for the work-001 two-level dashboard (CLI home + repo registry + per-repo home.html relocation + install-wiring), delivery-008.
   - 2026-06-13: Added Unreleased items for the work-001 KB tier (5-state KB freshness card + outdated detection, kb.html relocation, aid-discover->aid-summarize auto-trigger + kb_baseline), delivery-009.
   - 2026-06-13: Added Unreleased items for the work-001 task drill-down view (Level-3 forensic panel: findings/ledger/raw-STATE/honest-logs over a lazy ?detail= poll) + the 4-level dashboard breadcrumb, delivery-010.
+  - 2026-06-13: Added Unreleased items for the work-001 upgrade migration (aid update self/[<tool>] migrate pre-existing repos: settings repair/synthesize, install home.html, relocate summary, register; version-sentinel + npm postinstall trigger) + the now-vendored per-repo home.html, delivery-011 (resolves KI-010).
 ---
 
 # Release Tracking
@@ -27,6 +28,8 @@ changelog:
 
 ## Unreleased
 
+- [NEW] Upgrade migration - upgrading the AID CLI now brings your existing repos up to the current layout. `aid update self` updates the CLI then scans your machine for AID repos and offers to migrate each (All/Yes/No/Cancel); `aid update [<tool>]` migrates just the current repo. Migration is idempotent and additive — it validates/repairs (or, for very old repos, creates) `.aid/settings.yml` while preserving your settings and comments, installs the per-repo dashboard page (`.aid/dashboard/home.html`), relocates any legacy KB summary to `.aid/dashboard/kb.html`, and registers the repo with the CLI. A repo you decline stays unregistered until you run `aid update` inside it. (The migration also runs lazily on the next `aid` command after an upgrade, so pip/pipx installs — which have no postinstall hook — are covered too.)
+- [CHANGE] The per-repo dashboard page `.aid/dashboard/home.html` is now a vendored, install-provisioned file (single source `dashboard/home.html`) — so a freshly-added or migrated repo's dashboard works out of the box (previously the per-repo page existed only in the AID repo itself). Resolves the gap where a fresh repo's dashboard card showed "dashboard not generated yet".
 - [NEW] /aid-ask - optional read-only skill that answers free-form project questions from the Knowledge Base, the codebase, and in-flight works, with source citations.
 - [NEW] Task drill-down view - clicking a task in the dashboard pipeline view opens a Level-3 forensic panel for that task: its quick-check findings (severity + location + disposition), the delivery grade + reviewer tier + deferred-[HIGH] issues, a read-only escaped view of the source `STATE.md`, and an honest logs panel (states plainly that AID captures no per-task logs, and what to run instead). Lazy-loaded over the existing dashboard poll (`?detail=` query) — no new endpoint, no schema change.
 - [NEW] Dashboard breadcrumb - a clickable 4-level breadcrumb (Main > Project > Pipeline > Task) in the dashboard top bar lets you walk back up the tree without the browser Back button.
