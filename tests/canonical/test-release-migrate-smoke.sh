@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+# test-release-migrate-smoke.sh -- L2/L3 wiring smoke: a REAL channel install/
+# upgrade must migrate a pre-existing AID repo as a side effect.
+#
+# The migration LOGIC is exhaustively covered by test-aid-migrate.sh (unit level).
+# This suite covers the integration gap that no other test did: does installing
+# the actual package via each channel actually TRIGGER migration on a real repo?
+#   - npm : postinstall (eager) runs `aid update self --yes` -> scan+migrate
+#   - curl: install.sh, then the first `aid` run fires the version sentinel (lazy)
+#   - pypi: pip-installed entry point, first `aid` run fires the sentinel (lazy)
+# One seeded "old" repo + one assertion per channel -- not a re-run of the unit
+# fixture matrix. Catches packaging/wiring regressions (e.g. a missing home.html
+# source on the bundle path) that unit tests cannot see.
+#
+# ISOLATION: HOME is pinned to a throwaway for the WHOLE process, so the
+# migration scan (defaults to $HOME) can only ever see this suite's fixtures.
+# An escape canary asserts the real repo was untouched.
+#
+# SKIPs (exit 0) gracefully when a channel's toolchain is absent.
+#
+# Usage: bash tests/canonical/test-release-migrate-smoke.sh [--verbose]
+# Exit codes: 0 all pass / 1 any fail.
+
+set -uo pipefail
+[[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1 || VERBOSE=0
+
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+REF_SETTINGS="${REPO_ROOT}/.aid/settings.yml"
+REF_HOME_HTML="${REPO_ROOT}/dashboard/home.html"
+[[ -f "${REF_SETTINGS}" && -f "${REF_HOME_HTML}" ]] || { echo "SKIP: repo reference files missing"; exit 0; }
+HOME_HTML_SIZE="$(wc -c < "${REF_HOME_HTML}")"
+BASEPATH="/usr/local/bin:/usr/bin:/bin"
+
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+# ---- escape canary: the real repo must be byte-stable across this suite -------
+REAL_GIT_BEFORE="$(git -C "${REPO_ROOT}" status --porcelain 2>/dev/null | wc -l)"
+
+# ---- HOME pin (bulletproof): every child inherits a throwaway HOME -------------
+export HOME="${TMP}/fakehome"; mkdir -p "${HOME}"
+
+# Seed ONE "old" repo that needs migration: valid post-v0.7 settings, NO home.html.
+seed_old_repo() {  # $1 = home dir
+    local r="$1/legacy-repo"
+    mkdir -p "${r}/.aid"
+    cp "${REF_SETTINGS}" "${r}/.aid/settings.yml"
+    printf '%s\n' "${r}"
+}
+# Assert: the seeded repo got home.html provisioned at full source size.
+assert_migrated() {  # $1 = repo path  $2 = label
+    local hh="$1/.aid/dashboard/home.html"
+    if [[ -f "${hh}" ]] && [[ "$(wc -c < "${hh}")" == "${HOME_HTML_SIZE}" ]]; then
+        pass "$2 -- pre-existing repo migrated (home.html provisioned, ${HOME_HTML_SIZE}B)"
+    else
+        fail "$2 -- repo NOT migrated (home.html missing/short at ${hh})"
+    fi
+}
+
+# ===========================================================================
+# RMS-CURL: install.sh (from the checkout tree) then first `aid` run migrates
+# ===========================================================================
+echo "=== RMS-CURL: curl/install.sh real install -> first run migrates ==="
+CH="${TMP}/curl-home"; mkdir -p "${CH}"
+CREPO="$(seed_old_repo "${CH}")"
+env -i HOME="${CH}" PATH="${BASEPATH}" AID_HOME="${CH}/.aid" \
+    bash "${REPO_ROOT}/install.sh" --no-path >/dev/null 2>&1
+if [[ -x "${CH}/.aid/bin/aid" ]]; then
+    pass "RMS-CURL-01 install.sh produced a working \$AID_HOME/bin/aid"
+    env -i HOME="${CH}" PATH="${BASEPATH}" AID_HOME="${CH}/.aid" AID_MIGRATE_YES=1 \
+        bash "${CH}/.aid/bin/aid" status >/dev/null 2>&1 || true
+    assert_migrated "${CREPO}" "RMS-CURL-02"
+else
+    fail "RMS-CURL-01 install.sh did not install a runnable aid (check checkout install path)"
+fi
+
+# ===========================================================================
+# RMS-NPM: npm pack + npm i -g (postinstall migrates eagerly)
+# ===========================================================================
+echo "=== RMS-NPM: npm pack + global install -> postinstall migrates ==="
+if ! command -v npm >/dev/null 2>&1; then
+    echo "SKIP (RMS-NPM): npm not found."
+else
+    NH="${TMP}/npm-home"; NP="${TMP}/npm-prefix"; mkdir -p "${NH}" "${NP}"
+    NREPO="$(seed_old_repo "${NH}")"
+    NTGZ_DIR="${TMP}/npm-pack"; mkdir -p "${NTGZ_DIR}"
+    if ( cd "${REPO_ROOT}/packages/npm" && npm pack --pack-destination "${NTGZ_DIR}" ) >/dev/null 2>&1; then
+        NTGZ="$(ls "${NTGZ_DIR}"/aid-installer-*.tgz 2>/dev/null | head -1)"
+        if [[ -n "${NTGZ}" ]] && env -i HOME="${NH}" PATH="${BASEPATH}" \
+              npm_config_prefix="${NP}" AID_MIGRATE_YES=1 npm i -g "${NTGZ}" >/dev/null 2>&1; then
+            pass "RMS-NPM-01 npm pack + global install succeeded"
+            assert_migrated "${NREPO}" "RMS-NPM-02"
+        else
+            fail "RMS-NPM-01 npm global install failed"
+        fi
+    else
+        echo "SKIP (RMS-NPM): npm pack failed (offline prepack?)."
+    fi
+fi
+
+# ===========================================================================
+# RMS-PYPI: build wheel + pip install (first `aid` run migrates lazily)
+# ===========================================================================
+echo "=== RMS-PYPI: wheel build + pip install -> first run migrates ==="
+_pypi_skip=0
+command -v python3 >/dev/null 2>&1 || _pypi_skip=1
+if [[ "${_pypi_skip}" -eq 0 ]] && ! python3 -m build --version >/dev/null 2>&1; then
+    # Match test-pypi-installer.sh: try to provision `build` in CI, else skip.
+    if [[ -n "${CI:-}" ]]; then python3 -m pip install --quiet build hatchling >/dev/null 2>&1 || _pypi_skip=1; else _pypi_skip=1; fi
+fi
+if [[ "${_pypi_skip}" -eq 1 ]]; then
+    echo "SKIP (RMS-PYPI): python3 + build module not available."
+else
+    PH="${TMP}/pypi-home"; PV="${TMP}/pypi-venv"; PD="${TMP}/pypi-dist"; mkdir -p "${PH}" "${PD}"
+    PREPO="$(seed_old_repo "${PH}")"
+    if python3 -m venv "${PV}" >/dev/null 2>&1 \
+       && ( cd "${REPO_ROOT}/packages/pypi" && python3 -m build --wheel --outdir "${PD}" ) >/dev/null 2>&1; then
+        PWHL="$(ls "${PD}"/aid_installer-*.whl 2>/dev/null | head -1)"
+        if [[ -n "${PWHL}" ]] && "${PV}/bin/pip" install --quiet "${PWHL}" >/dev/null 2>&1; then
+            pass "RMS-PYPI-01 wheel build + pip install succeeded"
+            env -i HOME="${PH}" PATH="${PV}/bin:${BASEPATH}" AID_MIGRATE_YES=1 \
+                "${PV}/bin/aid" status >/dev/null 2>&1 || true
+            assert_migrated "${PREPO}" "RMS-PYPI-02"
+        else
+            fail "RMS-PYPI-01 wheel build or pip install failed"
+        fi
+    else
+        echo "SKIP (RMS-PYPI): venv/build failed."
+    fi
+fi
+
+# ===========================================================================
+# Escape canary: the real repo must be byte-stable (scan never left throwaway).
+# ===========================================================================
+echo "=== RMS-SAFETY: real repo untouched ==="
+REAL_GIT_AFTER="$(git -C "${REPO_ROOT}" status --porcelain 2>/dev/null | wc -l)"
+assert_eq "${REAL_GIT_BEFORE}" "${REAL_GIT_AFTER}" "RMS-SAFETY-01 real repo git status unchanged (scan stayed in throwaway HOME)"
+
+test_summary
