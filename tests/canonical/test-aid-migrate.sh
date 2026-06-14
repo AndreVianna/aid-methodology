@@ -789,4 +789,113 @@ else
 fi
 
 # ===========================================================================
+# Gate 9 -- edge-case robustness (L1 coverage hardening)
+#
+# These lock in the WARN-not-fail / no-data-loss guarantees on inputs the
+# earlier gates never exercised: CRLF line endings, corrupted/non-YAML
+# settings, the home.html absent/positive and source-missing branches, a
+# direct registry-register assertion, the DISCOVERY-STATE.md hyphen variant,
+# and era precedence. Empirically grounded: migration returns 0 and never
+# loses data on any of these.
+# ===========================================================================
+
+# --- Gate 9a: CRLF (Windows-authored) settings.yml -> no data loss ----------
+echo ""
+echo "=== Gate 9a: CRLF settings.yml -> migrate without data loss ==="
+G9A_HOME="$(new_aid_home)"
+G9A_REPO="$(mktemp -d "${TMP}/g9a-repo.XXXXXX")"
+mkdir -p "${G9A_REPO}/.aid"
+printf 'project:\r\n  name: CrlfRepo\r\n  description: crlf fixture\r\n  type: brownfield\r\ntools:\r\n  installed:\r\n    - claude-code\r\nreview:\r\n  minimum_grade: A+\r\n' \
+    > "${G9A_REPO}/.aid/settings.yml"
+run_migrate "${G9A_HOME}" "${G9A_REPO}"
+assert_exit_eq "$MIG_RC" 0 "G9A-01 CRLF settings.yml -> exit 0 (no crash)"
+assert_file_contains "${G9A_REPO}/.aid/settings.yml" "minimum_grade: A+" \
+    "G9A-02 CRLF: minimum_grade A+ override survives (no data loss)"
+assert_file_contains "${G9A_REPO}/.aid/settings.yml" "name: CrlfRepo" \
+    "G9A-03 CRLF: project name survives"
+assert_file_exists "${G9A_REPO}/.aid/dashboard/home.html" \
+    "G9A-04 CRLF: home.html still provisioned (step 2 ran)"
+# Idempotency on CRLF: a second pass must not keep changing the file.
+G9A_SHA1="$(file_sha256 "${G9A_REPO}/.aid/settings.yml")"
+run_migrate "${G9A_HOME}" "${G9A_REPO}"
+G9A_SHA2="$(file_sha256 "${G9A_REPO}/.aid/settings.yml")"
+assert_eq "$G9A_SHA1" "$G9A_SHA2" "G9A-05 CRLF: second migrate is a byte no-op (idempotent)"
+
+# --- Gate 9b: corrupted / non-YAML settings.yml -> WARN-not-fail ------------
+echo ""
+echo "=== Gate 9b: corrupted settings.yml -> WARN-not-fail, other steps run ==="
+G9B_HOME="$(new_aid_home)"
+G9B_REPO="$(mktemp -d "${TMP}/g9b-repo.XXXXXX")"
+mkdir -p "${G9B_REPO}/.aid"
+printf '\x00\x01binary\xff garbage\nnot: yaml: [unclosed\n' > "${G9B_REPO}/.aid/settings.yml"
+run_migrate "${G9B_HOME}" "${G9B_REPO}"
+assert_exit_eq "$MIG_RC" 0 "G9B-01 corrupted settings.yml -> exit 0 (WARN-not-fail, NFR12)"
+assert_file_exists "${G9B_REPO}/.aid/dashboard/home.html" \
+    "G9B-02 corrupted: home.html still provisioned (step 2 continues past a bad step 1)"
+
+# --- Gate 9c: home.html absent -> positively provisioned with source bytes ---
+echo ""
+echo "=== Gate 9c: home.html absent -> provisioned from \$AID_HOME source ==="
+G9C_HOME="$(new_aid_home)"
+G9C_REPO="$(mktemp -d "${TMP}/g9c-repo.XXXXXX")"
+mkdir -p "${G9C_REPO}/.aid"
+cp "${G4A_REPO}/.aid/settings.yml" "${G9C_REPO}/.aid/settings.yml"   # any valid era-a file
+[[ -f "${G9C_REPO}/.aid/dashboard/home.html" ]] && fail "G9C precondition: home.html should be absent" || pass "G9C-00 precondition: home.html absent"
+run_migrate "${G9C_HOME}" "${G9C_REPO}"
+assert_exit_eq "$MIG_RC" 0 "G9C-01 absent home.html -> exit 0"
+assert_file_exists "${G9C_REPO}/.aid/dashboard/home.html" "G9C-02 home.html now present"
+G9C_SRC_SHA="$(file_sha256 "${G9C_HOME}/dashboard/home.html")"
+G9C_DST_SHA="$(file_sha256 "${G9C_REPO}/.aid/dashboard/home.html")"
+assert_eq "$G9C_SRC_SHA" "$G9C_DST_SHA" "G9C-03 provisioned home.html == \$AID_HOME source bytes"
+
+# --- Gate 9d: home.html SOURCE missing in $AID_HOME -> WARN, migration continues
+echo ""
+echo "=== Gate 9d: home.html source missing -> WARN, settings still repaired ==="
+G9D_HOME="$(new_aid_home)"
+rm -f "${G9D_HOME}/dashboard/home.html"          # remove the provisioning source
+G9D_REPO="$(mktemp -d "${TMP}/g9d-repo.XXXXXX")"
+mkdir -p "${G9D_REPO}/.aid/knowledge"
+printf '# Discovery State\nStatus: complete\n' > "${G9D_REPO}/.aid/knowledge/DISCOVERY_STATE.md"
+run_migrate "${G9D_HOME}" "${G9D_REPO}"
+assert_exit_eq "$MIG_RC" 0 "G9D-01 missing home.html source -> exit 0 (continues)"
+assert_output_contains "$MIG_OUT" "home.html source not found" "G9D-02 WARN names the missing source"
+assert_file_exists "${G9D_REPO}/.aid/settings.yml" "G9D-03 settings still synthesized despite missing home.html source"
+
+# --- Gate 9e: direct registry-register assertion ----------------------------
+echo ""
+echo "=== Gate 9e: migrate registers the repo in \$AID_HOME/registry.yml ==="
+G9E_HOME="$(new_aid_home)"
+G9E_REPO="$(mktemp -d "${TMP}/g9e-repo.XXXXXX")"
+mkdir -p "${G9E_REPO}/.aid"
+cp "${G4A_REPO}/.aid/settings.yml" "${G9E_REPO}/.aid/settings.yml"
+run_migrate "${G9E_HOME}" "${G9E_REPO}"
+assert_exit_eq "$MIG_RC" 0 "G9E-01 migrate -> exit 0"
+G9E_CANON="$(cd "${G9E_REPO}" && pwd)"
+assert_file_contains "${G9E_HOME}/registry.yml" "${G9E_CANON}" \
+    "G9E-02 repo canonical path registered in registry.yml"
+
+# --- Gate 9f: DISCOVERY-STATE.md (hyphen) variant + era precedence ----------
+echo ""
+echo "=== Gate 9f: DISCOVERY-STATE.md hyphen variant + era precedence ==="
+G9F_HOME="$(new_aid_home)"
+G9F_REPO="$(mktemp -d "${TMP}/g9f-repo.XXXXXX")"
+mkdir -p "${G9F_REPO}/.aid/knowledge"
+printf '# Discovery State\n' > "${G9F_REPO}/.aid/knowledge/DISCOVERY-STATE.md"   # hyphen form
+run_migrate "${G9F_HOME}" "${G9F_REPO}"
+assert_exit_eq "$MIG_RC" 0 "G9F-01 DISCOVERY-STATE.md (hyphen) -> exit 0"
+assert_file_exists "${G9F_REPO}/.aid/settings.yml" "G9F-02 hyphen variant detected as pre-v0.7 -> settings synthesized"
+# Era precedence: a repo with BOTH settings.yml and a knowledge marker is era-a
+# (settings.yml wins) -> repair path, NOT synthesize-overwrite.
+G9F2_HOME="$(new_aid_home)"
+G9F2_REPO="$(mktemp -d "${TMP}/g9f2-repo.XXXXXX")"
+mkdir -p "${G9F2_REPO}/.aid/knowledge"
+cp "${G4A_REPO}/.aid/settings.yml" "${G9F2_REPO}/.aid/settings.yml"
+printf '# State\n' > "${G9F2_REPO}/.aid/knowledge/STATE.md"
+G9F2_SHA_BEFORE="$(file_sha256 "${G9F2_REPO}/.aid/settings.yml")"
+run_migrate "${G9F2_HOME}" "${G9F2_REPO}"
+G9F2_SHA_AFTER="$(file_sha256 "${G9F2_REPO}/.aid/settings.yml")"
+assert_eq "$G9F2_SHA_BEFORE" "$G9F2_SHA_AFTER" \
+    "G9F-03 era precedence: settings.yml present -> era-a repair (valid file untouched), not synthesize"
+
+# ===========================================================================
 test_summary
