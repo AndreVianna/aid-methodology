@@ -308,7 +308,12 @@ cp "${REPO_ROOT}/lib/aid-install-core.sh" "${CLI_BUNDLE_STAGE}/lib/aid-install-c
 cp "${REPO_ROOT}/lib/AidInstallCore.psm1" "${CLI_BUNDLE_STAGE}/lib/AidInstallCore.psm1"
 printf '%s\n' "${VERSION}" > "${CLI_BUNDLE_STAGE}/VERSION"
 
-# Dashboard server+reader unit (11 files, curated -- excludes tests/ __pycache__ *.pyc README).
+# Dashboard server+reader unit (12 files, curated -- excludes tests/ __pycache__ *.pyc README).
+# home.html is the migration/provisioning source ($AID_HOME/dashboard/home.html that
+# _aid_migrate_repo copies into non-compliant repos); it MUST ship in the bundle in
+# lockstep with install.sh, install.ps1, vendor.js and vendor.py (all of which include
+# it). Omitting it silently breaks home.html provisioning on the curl|bash + bundle path.
+cp "${REPO_ROOT}/dashboard/home.html"               "${CLI_BUNDLE_STAGE}/dashboard/home.html"
 cp "${REPO_ROOT}/dashboard/index.html"              "${CLI_BUNDLE_STAGE}/dashboard/index.html"
 cp "${REPO_ROOT}/dashboard/reader/__init__.py"      "${CLI_BUNDLE_STAGE}/dashboard/reader/__init__.py"
 cp "${REPO_ROOT}/dashboard/reader/reader.py"        "${CLI_BUNDLE_STAGE}/dashboard/reader/reader.py"
@@ -334,6 +339,7 @@ CLI_BUNDLE="${REPO_ROOT}/${STAGE_DIR}/aid-cli-v${VERSION}.tar.gz"
         "./lib/aid-install-core.sh" \
         "./lib/AidInstallCore.psm1" \
         "./VERSION" \
+        "./dashboard/home.html" \
         "./dashboard/index.html" \
         "./dashboard/reader/__init__.py" \
         "./dashboard/reader/reader.py" \

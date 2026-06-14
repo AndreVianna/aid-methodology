@@ -73,6 +73,7 @@ LIB_SH="${REPO_ROOT}/lib/aid-install-core.sh"
 POSTINSTALL_JS="${REPO_ROOT}/packages/npm/scripts/postinstall.js"
 VENDOR_JS="${REPO_ROOT}/packages/npm/scripts/vendor.js"
 VENDOR_PY="${REPO_ROOT}/packages/pypi/scripts/vendor.py"
+RELEASE_SH="${REPO_ROOT}/release.sh"
 HOME_HTML_SRC="${REPO_ROOT}/dashboard/home.html"
 HOME_HTML_AID="${REPO_ROOT}/.aid/dashboard/home.html"
 EMISSION_MANIFEST="${REPO_ROOT}/canonical/EMISSION-MANIFEST.md"
@@ -537,6 +538,21 @@ if [[ "${_VND_B}" -ge 1 ]]; then
     pass "VND-B01 pypi vendor.py: dashboard/home.html present in COPIES list"
 else
     fail "VND-B01 pypi vendor.py: dashboard/home.html NOT found in COPIES list"
+fi
+
+# ---------------------------------------------------------------------------
+# VND-E: dashboard/home.html present in release.sh CLI bundle (aid-cli-v*.tar.gz).
+#   This is the GitHub-release bundle the curl|bash bootstrap and the bundle path
+#   download + extract into $AID_HOME. It must ship home.html in lockstep with the
+#   four other manifests (vendor.js/VND-A, vendor.py/VND-B, install.sh+install.ps1/
+#   PAR13). It appears TWICE: the cp-into-stage line AND the tar -T file list -- so
+#   require >= 2 occurrences, which catches a half-applied edit (one but not both).
+# ---------------------------------------------------------------------------
+_VND_E="$(grep -c "dashboard/home.html" "${RELEASE_SH}" 2>/dev/null || echo 0)"
+if [[ "${_VND_E}" -ge 2 ]]; then
+    pass "VND-E01 release.sh: dashboard/home.html in CLI bundle (cp + tar list)"
+else
+    fail "VND-E01 release.sh: dashboard/home.html missing from CLI bundle (found ${_VND_E}/2 -- cp line + tar -T list); migration source absent on curl|bash + bundle path"
 fi
 
 # ---------------------------------------------------------------------------
