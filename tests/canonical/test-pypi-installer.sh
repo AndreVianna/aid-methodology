@@ -376,7 +376,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-echo "=== PW07: AID_INSTALL_CHANNEL=pypi -> update self prints pipx advice + exit 0 + no re-bootstrap ==="
+echo "=== PW07: AID_INSTALL_CHANNEL=pypi -> update self is channel-aware (pipx upgrade), not curl ==="
 # ---------------------------------------------------------------------------
 
 # Use the real packages/pypi/aid_installer/__main__.py shim (not the stub shim) pointing at
@@ -389,18 +389,19 @@ cp "${LIB_CORE}" "${PW07_HOME}/lib/aid-install-core.sh"
 printf '%s\n' "${VERSION}" > "${PW07_HOME}/VERSION"
 
 # The shim at __main__.py calls _vendor/bin/aid (vendored copy), which is the
-# real bin/aid. We pass AID_HOME so the real bin/aid finds its lib.
-# The shim sets AID_INSTALL_CHANNEL=pypi.
+# real bin/aid; the shim sets AID_INSTALL_CHANNEL=pypi. Use --dry-run so the
+# channel routing is asserted deterministically without touching the real pipx
+# ('update self' is now self-contained, not a printed hint).
 PW07_OUT=$(AID_HOME="${PW07_HOME}" AID_NO_UPDATE_CHECK=1 \
-           python3 "${SHIM}" update self 2>&1); PW07_RC=$?
-assert_exit_eq "$PW07_RC" 0 "PW07-01 shim update self with channel=pypi -> exit 0"
+           python3 "${SHIM}" update self --dry-run 2>&1); PW07_RC=$?
+assert_exit_eq "$PW07_RC" 0 "PW07-01 shim update self --dry-run with channel=pypi -> exit 0"
 assert_output_contains "$PW07_OUT" "pipx upgrade aid-installer" \
-    "PW07-02 update self prints pipx upgrade command"
-assert_output_not_contains "$PW07_OUT" "Updating the aid CLI..." \
-    "PW07-03 update self does NOT re-bootstrap (no curl path)"
+    "PW07-02 update self routes to the pipx upgrade command"
+assert_output_not_contains "$PW07_OUT" "curl -fsSL" \
+    "PW07-03 update self does NOT take the curl path on the pypi channel"
 
-# AID_HOME must not be mutated by re-bootstrap.
-assert_dir_exists "${PW07_HOME}" "PW07-04 AID_HOME not removed (no re-bootstrap)"
+# AID_HOME must not be mutated by a dry-run.
+assert_dir_exists "${PW07_HOME}" "PW07-04 AID_HOME not removed (dry-run mutates nothing)"
 
 # ---------------------------------------------------------------------------
 echo "=== PW08: version parity (pyproject.toml == repo VERSION == vendored _vendor/VERSION) ==="

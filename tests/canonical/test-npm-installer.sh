@@ -210,7 +210,7 @@ else
     fail "NM06-02 shim source missing pwsh-not-found error message"
 fi
 
-echo "=== NM07: AID_INSTALL_CHANNEL=npm -> update self prints npm advice + exit 0 + no re-bootstrap ==="
+echo "=== NM07: AID_INSTALL_CHANNEL=npm -> update self is channel-aware (npm install -g), not curl ==="
 
 # Use the real packages/npm/bin/aid.js shim (not the stub shim) pointing at
 # the vendored bin/aid, which sees AID_INSTALL_CHANNEL=npm set by the shim.
@@ -222,18 +222,19 @@ cp "${LIB_CORE}" "${NM07_HOME}/lib/aid-install-core.sh"
 printf '%s\n' "${VERSION}" > "${NM07_HOME}/VERSION"
 
 # The shim at packages/npm/bin/aid.js calls packages/npm/bin/aid (vendored copy),
-# which is the real bin/aid. We pass AID_HOME so the real bin/aid finds its lib.
-# The shim sets AID_INSTALL_CHANNEL=npm.
+# which is the real bin/aid; the shim sets AID_INSTALL_CHANNEL=npm. Use --dry-run
+# so the channel routing is asserted deterministically without touching the real
+# npm global / network ('update self' is now self-contained, not a printed hint).
 NM07_OUT=$(AID_HOME="${NM07_HOME}" AID_NO_UPDATE_CHECK=1 \
-           node "${SHIM}" update self 2>&1); NM07_RC=$?
-assert_exit_eq "$NM07_RC" 0 "NM07-01 shim update self with channel=npm -> exit 0"
-assert_output_contains "$NM07_OUT" "npm i -g aid-installer@latest" \
-    "NM07-02 update self prints npm install command"
-assert_output_not_contains "$NM07_OUT" "Updating the aid CLI..." \
-    "NM07-03 update self does NOT re-bootstrap (no curl path)"
+           node "${SHIM}" update self --dry-run 2>&1); NM07_RC=$?
+assert_exit_eq "$NM07_RC" 0 "NM07-01 shim update self --dry-run with channel=npm -> exit 0"
+assert_output_contains "$NM07_OUT" "npm install -g aid-installer@latest" \
+    "NM07-02 update self routes to the npm install command"
+assert_output_not_contains "$NM07_OUT" "curl -fsSL" \
+    "NM07-03 update self does NOT take the curl path on the npm channel"
 
-# AID_HOME must not be mutated by re-bootstrap.
-assert_dir_exists "${NM07_HOME}" "NM07-04 AID_HOME not removed (no re-bootstrap)"
+# AID_HOME must not be mutated by a dry-run.
+assert_dir_exists "${NM07_HOME}" "NM07-04 AID_HOME not removed (dry-run mutates nothing)"
 
 echo "=== NM08: npm pack --dry-run lists the 17 vendored files + bin/aid.js ==="
 

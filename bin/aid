@@ -344,6 +344,12 @@ _aid_priv_run() {
 # migration scan runs in the caller's (user) context -- never under the sudo
 # used here for the privileged install step.
 _cmd_update_self() {
+    # AID_SKIP_SELF_INSTALL: the package manager already (re)installed the CLI
+    # (npm postinstall) and only wants the post-update migration to run. Skip the
+    # re-install step; the caller's `_aid_scan_and_migrate` still fires.
+    if [[ "${AID_SKIP_SELF_INSTALL:-0}" == "1" ]]; then
+        return 0
+    fi
     local channel="${AID_INSTALL_CHANNEL:-}"
     local bundle="${_SELF_FROM_BUNDLE:-}"
     case "$channel" in

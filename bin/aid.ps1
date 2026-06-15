@@ -352,6 +352,10 @@ function script:Invoke-AidMigrateSentinel {
 # own shell.  Dry-run prints "+ <command>" lines and returns 0 without making changes.
 # Callers are responsible for calling Exit-Aid after the post-update scan.
 function script:Invoke-AidUpdateSelf {
+    # AID_SKIP_SELF_INSTALL: the package manager already (re)installed the CLI
+    # (postinstall) and only wants the post-update migration to run. Skip the
+    # re-install step; the caller's Invoke-AidScanAndMigrate still fires.
+    if ($env:AID_SKIP_SELF_INSTALL -eq '1') { return 0 }
     $channel = $env:AID_INSTALL_CHANNEL
     $bundle  = $script:_SelfFromBundle
     $dryRun  = $script:_SelfDryRun
