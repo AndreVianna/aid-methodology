@@ -226,6 +226,20 @@ expecting it to also relocate `lib/`/`VERSION`. After the split those expect
 `AID_CODE_HOME`; audit `tests/canonical/*` for `$AID_HOME/lib`, `$AID_HOME/VERSION`,
 `$AID_HOME/.migrated` references when implementing.
 
+**Decision D addenda (resolved during /aid-specify, 2026-06-15):**
+- **Windows shared-state home = `%ProgramData%\aid`** (`$env:ProgramData\aid`) —
+  the Windows analogue of `/var/lib/aid`: machine-wide, app-managed,
+  Administrator-written / all-users-readable; symmetric with the per-user
+  fallback `$env:LOCALAPPDATA\aid` so the shared↔user collapse works identically
+  to POSIX.
+- **Provisioning is runtime/lazy, not install-time.** `_install_global_cli` is
+  dead code and no installer (npm/pypi/curl) has a root-detecting global branch,
+  so there is no reachable install-time hook today. `/var/lib/aid` is therefore
+  provisioned **lazily on the first shared-state write** (from `registry_register`
+  via `_aid_priv_run`), which is also the exact moment the privileged location is
+  needed (the mlocate model). Install-time seeding is deferred to a future
+  installer-scope rework. *(Pending user confirmation — see work-001 STATE.md.)*
+
 **Still genuinely open (deferrable, not blocking):**
 - Optional group-writable shared home (setgid) for non-sudo team registration —
   a future installer knob layered on the `/var/lib/aid` default (Decision D
