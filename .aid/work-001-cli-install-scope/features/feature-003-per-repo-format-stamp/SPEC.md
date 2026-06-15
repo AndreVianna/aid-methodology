@@ -7,6 +7,7 @@
 | 2026-06-15 | Feature identified from REQUIREMENTS.md §5 (FR3), §4, §9 (AC3), §10 (Priority 2) | /aid-interview |
 | 2026-06-15 | Technical Specification authored | /aid-specify |
 | 2026-06-15 | Spec fixes (review cycle 1): corrected parsing-primitive reuse claims (replicate not reuse) | /aid-specify |
+| 2026-06-15 | Doc-hygiene: reconcile dependency note (gate wiring depends on feature-001 call-site removal; stamp logic otherwise repo-local) | /aid-plan |
 
 ## Source
 
@@ -74,9 +75,13 @@ Must (Priority 2 — the coherent model)
 > scripts (CI-enforced), no data loss / fail-safe (mandatory — never operate on a
 > newer-format repo), backward compatibility (no hard failure on a missing stamp).
 >
-> **Dependencies:** independent of the registry; benefits from but does not
-> require feature-001 (the stamp logic itself is repo-local). It is the lazy
-> catch-all that feature-004's registry migration relies on for unregistered repos.
+> **Dependencies:** independent of the registry. The stamp read/compare logic is
+> repo-local, but the **gate wiring** depends on feature-001's removal of the
+> `_aid_check_migrate_sentinel` call sites (`bin/aid:1918`/`:1978`): this feature
+> inserts the format gate where feature-001 deletes the sentinel call, so the two
+> touch the same call sites and feature-001 must land first (or together). It is
+> the lazy catch-all that feature-004's registry migration relies on for
+> unregistered repos.
 
 ---
 

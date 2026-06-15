@@ -7,6 +7,7 @@
 | 2026-06-15 | Feature identified from REQUIREMENTS.md §5 (FR9), §4, §9 (AC9), §10 (Priority 3) | /aid-interview |
 | 2026-06-15 | Technical Specification authored | /aid-specify |
 | 2026-06-15 | Spec fixes (review cycle 1): corrected test-file citations (ASCII vs byte-parity, template site, line refs) | /aid-specify |
+| 2026-06-15 | Doc-hygiene: clarify test migration is distributed per-delivery (d001/d002); this feature owns bootstrap tests + final reconciliation sweep | /aid-plan |
 
 ## Source
 
@@ -89,7 +90,16 @@ This feature has **two coupled deliverables**: (1) the **bootstrap** procedure t
 moves v1.0/v1.1 repos onto the new model with no machine scan, and (2) the
 **canonical test-suite migration** that re-aligns `tests/canonical/*` and
 `tests/run-all.sh` with the feature-001 CODE/STATE home split and the removed
-marker/scan. It carries **no new production code of its own** — bootstrap is a
+marker/scan.
+
+> **Per-delivery distribution (per PLAN):** the breaking-test migration is pulled
+> forward into the deliveries that break the suites — delivery-001 migrates the
+> fixture-split / marker-scan-sentinel / stamp+gate / provisioning suites, and
+> delivery-002 migrates the registry/dispatch suites — so the suite stays green at
+> each delivery boundary. This feature (delivery-003) therefore owns the bootstrap
+> tests plus the **final full-suite reconciliation green sweep**; the migration
+> categories below (C1–C5) are the catalogue of that work, executed where each
+> delivery breaks the corresponding suite and verified whole here. It carries **no new production code of its own** — bootstrap is a
 *procedure* composed from feature-003 (stamp) and feature-004 (register); the
 production behavior it exercises ships in features 001/003/004. This spec defines
 the bootstrap recipe, the test audit/migration plan, the new fixtures, and the

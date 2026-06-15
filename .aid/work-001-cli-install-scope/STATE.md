@@ -1,7 +1,7 @@
 # Work State — work-001-cli-install-scope
 
-> **Status:** Specifying (all 5 feature specs Ready, A+)
-> **Phase:** Specify
+> **Status:** Planning complete (3 deliveries, PLAN A+)
+> **Phase:** Plan
 > **Minimum Grade:** A (resolved via read-setting)
 > **Started:** 2026-06-15
 > **User Approved:** yes
@@ -68,7 +68,9 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| _none yet_ | | | |
+| delivery-001 | Planned | — | Root-cause fix: feature-001 (scope + CODE/STATE split, marker/scan removal) + feature-002 (/var/lib/aid provisioning) + feature-003 (stamp gate = REPLACEMENT trigger). §10 P1 + 003 pulled in for the trigger coupling. Standalone MVP. |
+| delivery-002 | Planned | — | Coherent discovery: feature-004 (two-tier registry union + cwd A/B/C dispatch + update-self registry-migration, replacing the d001 no-op stub). §10 P2. Depends on d001. Standalone MVP. |
+| delivery-003 | Planned | — | Rollout: feature-005 (v1.0/v1.1 bootstrap stamp+register on visit, no scan; + canonical test-suite migration to CODE/STATE split). §10 P3. Depends on d001+d002. Standalone MVP. |
 
 ## Tasks Status
 
@@ -141,6 +143,10 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 2026-06-15 | Decision RESOLVED | — | Re-analysis (aid-researcher) confirmed runtime/lazy-primary wrong (fails AC1, sudo-prompts in aid add, inverts mlocate). User confirmed HYBRID: install-time primary + non-prompting runtime fallback. Design note Decision-D addendum updated. feature-002 re-spec |
 | 2026-06-15 | feature-002 re-spec graded | D→D→A+ | Hybrid re-spec; reviewer caught dead curl guard + spec/design contradiction + no test seam; fixed (env-preset capture guard, AID_SHARED_STATE_HOME seam) → A+ |
 | 2026-06-15 | Seam unified (feature-001+002) | A+ ×2 | Global AID_STATE_HOME default = ${AID_SHARED_STATE_HOME:-/var/lib/aid} (single source: runtime+install+test); both re-verified A+ |
+| 2026-06-15 | Plan created | — | 3 deliveries (d001 root-cause = f001+f002+f003; d002 = f004; d003 = f005); execution graph + PR #78 prerequisite |
+| 2026-06-15 | Plan graded (cycle 1) | C+ | aid-reviewer: 1 MEDIUM (test migration deferral breaks green-per-delivery), 1 LOW, 1 MINOR |
+| 2026-06-15 | Plan graded (cycle 2) | A+ | Per-delivery test migration (green-per-delivery); staging-coordination note; 0 Pending |
+| 2026-06-15 | Plan created — 3 deliveries | — | aid-plan: 5 features → d001 (001+002+003, root-cause + stamp-gate replacement trigger), d002 (004), d003 (005). 001↔003 trigger coupling resolved by grouping 003 into d001. PR #78 hard prerequisite (gated to master first, not a deliverable). |
 
 ## Calibration Log
 

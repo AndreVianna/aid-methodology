@@ -8,6 +8,7 @@
 | 2026-06-15 | Technical Specification authored | /aid-specify |
 | 2026-06-15 | Spec fixes (review cycle 1): orphan-helper removal, ps1 range, prose | /aid-specify |
 | 2026-06-15 | Seam consistency: global AID_STATE_HOME honors AID_SHARED_STATE_HOME (runtime+install unified) | /aid-specify |
+| 2026-06-15 | Doc-hygiene: retire stale feature-007/008 refs (provisioning = feature-002; Windows-global deferral has no allocated feature) | /aid-plan |
 
 ## Source
 
@@ -179,11 +180,12 @@ and never triggers elevation. For a per-user install `AID_STATE_HOME == ~/.aid`,
 so registry and the cache coexist in one dir (no behavioral change there).
 
 > **Within this feature** the registry path is merely **repointed** from the old
-> `AID_HOME` to `AID_STATE_HOME` (a string swap on the cited lines); the two-tier
-> union and `/var/lib/aid` provisioning are feature-002/feature-007 (FR4/FR7).
+> `AID_HOME` to `AID_STATE_HOME` (a string swap on the cited lines); the
+> `/var/lib/aid` provisioning is feature-002 (FR7) and the two-tier union is
+> feature-004 (FR4).
 > Repointing alone is correct for both scopes today: per-user resolves to
 > `~/.aid/registry.yml` (unchanged), global resolves to `/var/lib/aid/registry.yml`
-> (writes will fail best-effort with a WARN until feature-007 provisions it — see
+> (writes will fail best-effort with a WARN until feature-002 provisions it — see
 > Edge cases).
 
 ### Affected components
@@ -263,12 +265,12 @@ the parity note below for the STATE-side Windows default.)
    so it cannot trigger a re-prompt loop. The stale file is inert; cleanup is not
    required for correctness (a later housekeep may delete it). Backward-compat: no
    strand.
-4. **Missing `/var/lib/aid` on a not-yet-provisioned global box (feature-007).**
+4. **Missing `/var/lib/aid` on a not-yet-provisioned global box (feature-002).**
    `AID_STATE_HOME=/var/lib/aid` may not exist. Read paths (registry read) treat
    absent as empty (`_registry_read_repos` returns nothing when the file is absent,
    `bin/aid:1192`). Write paths are best-effort and WARN. Read-only commands MUST
    still operate. This feature does **not** create `/var/lib/aid` (that is FR7 /
-   feature-007); it must degrade gracefully until then.
+   feature-002); it must degrade gracefully until then.
 
 ### bash ↔ ps1 parity
 
@@ -282,7 +284,8 @@ the parity note below for the STATE-side Windows default.)
   so the `.update-check` and per-user registry paths are parallel); a global
   Windows state default is deferred with `/var/lib/aid` (no Windows global install
   path is provisioned in this feature) — spec the per-user path for parity and
-  leave the global Windows default to feature-007. The old `$env:LOCALAPPDATA/aid`
+  leave the global Windows default to a future installer-scope feature (deferred;
+  no feature allocated in this work). The old `$env:LOCALAPPDATA/aid`
   was a **code** fallback and is removed (Q1); it is not repurposed as the state
   default.
 - **ASCII-only** (CI-enforced, NFR): all new/edited lines in `bin/aid` and
