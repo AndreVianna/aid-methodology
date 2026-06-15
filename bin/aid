@@ -2,9 +2,9 @@
 # aid - AID CLI dispatcher (Bash side).
 #
 # Purpose:
-#   Persistent global command installed at $AID_HOME/bin/aid.  Parses
+#   Persistent global command installed at $AID_CODE_HOME/bin/aid.  Parses
 #   subcommands and dispatches to the shared install-core engine located at
-#   $AID_HOME/lib/aid-install-core.sh.  Operates on the current working
+#   $AID_CODE_HOME/lib/aid-install-core.sh.  Operates on the current working
 #   directory (--target / AID_TARGET overrides).
 #
 # Usage:
@@ -34,24 +34,38 @@ set -uo pipefail
 AID_INSTALL_URL="${AID_INSTALL_URL:-https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh}"
 
 # ---------------------------------------------------------------------------
-# Locate $AID_HOME.  The installed dispatcher lives at $AID_HOME/bin/aid.
-# When invoked directly (not via PATH), BASH_SOURCE[0] is the absolute path.
+# AID_CODE_HOME: self-locate the read-only code payload (parent of bin/).
+# NEVER overridden by an env var. Error-out if unresolvable (Q1 fail-safe).
 # ---------------------------------------------------------------------------
 _AID_SELF="${BASH_SOURCE[0]:-}"
 if [[ -n "$_AID_SELF" && -f "$_AID_SELF" ]]; then
-    # Resolve symlinks so we get the real directory.
+    # Resolve symlinks so we get the real payload root directory.
     _AID_SELF_REAL="$(cd "$(dirname "$_AID_SELF")" && pwd -P)/$(basename "$_AID_SELF")"
-    AID_HOME="${AID_HOME:-$(dirname "$(dirname "$_AID_SELF_REAL")")}"
+    AID_CODE_HOME="$(dirname "$(dirname "$_AID_SELF_REAL")")"
 else
-    AID_HOME="${AID_HOME:-${HOME}/.aid}"
+    echo "ERROR: aid: cannot locate the AID code payload (AID_CODE_HOME unresolved). Re-run the AID bootstrap to repair." >&2
+    exit 1
 fi
 
 # ---------------------------------------------------------------------------
-# Source the shared install core from $AID_HOME/lib/.
+# Scope derivation: global iff AID_CODE_HOME is not writable by the current
+# user. Reuses the _aid_priv_run writability approach (no second test).
+# AID_STATE_HOME: mutable state home, env-overridable via AID_HOME.
 # ---------------------------------------------------------------------------
-_AID_CORE="${AID_HOME}/lib/aid-install-core.sh"
+if [[ -n "$AID_CODE_HOME" && -e "$AID_CODE_HOME" && ! -w "$AID_CODE_HOME" && "$(id -u)" -ne 0 ]]; then
+    _AID_SCOPE="global"
+    AID_STATE_HOME="${AID_HOME:-${AID_SHARED_STATE_HOME:-/var/lib/aid}}"
+else
+    _AID_SCOPE="user"
+    AID_STATE_HOME="${AID_HOME:-${HOME}/.aid}"
+fi
+
+# ---------------------------------------------------------------------------
+# Source the shared install core from AID_CODE_HOME/lib/.
+# ---------------------------------------------------------------------------
+_AID_CORE="${AID_CODE_HOME}/lib/aid-install-core.sh"
 if [[ ! -f "$_AID_CORE" ]]; then
-    echo "ERROR: aid: install core not found at ${_AID_CORE}. Re-run the AID bootstrap to repair." >&2
+    echo "ERROR: aid: cannot locate the AID code payload (AID_CODE_HOME unresolved). Re-run the AID bootstrap to repair." >&2
     exit 1
 fi
 # shellcheck source=../lib/aid-install-core.sh
@@ -93,12 +107,11 @@ _aid_usage() {
             ;;
         update)
             printf 'aid update [<tool>...] [--version <v>] [--from-bundle <path>] [--force] [--target <dir>]\n'
-            printf 'aid update self [--from-bundle <path>] [--dry-run] [--yes] [--root <dir>]\n'
+            printf 'aid update self [--from-bundle <path>] [--dry-run]\n'
             printf '  Update to latest. No args: update all installed tools.\n'
-            printf '  self: COMPLETELY update the aid CLI then apply repo migrations, channel-aware:\n'
+            printf '  self: COMPLETELY update the aid CLI, channel-aware:\n'
             printf '        npm -> npm i -g | pypi -> pipx upgrade | curl -> re-bootstrap install.sh.\n'
-            printf '        Auto-elevates with sudo only when the install location needs root;\n'
-            printf '        the migration scan always runs as you, never under sudo.\n'
+            printf '        Auto-elevates with sudo only when the install location needs root.\n'
             printf '  --from-bundle <path>: install the CLI from a local artifact instead of @latest\n'
             printf '        (npm .tgz | pypi .whl | curl release-staging dir with install.sh).\n'
             printf '  --dry-run: print the exact command(s) it would run, then exit (no changes).\n'
@@ -163,10 +176,10 @@ _find_install_sh() {
 # ---------------------------------------------------------------------------
 
 # _aid_check_update
-# Compares the installed CLI version ($AID_HOME/VERSION) against the latest
+# Compares the installed CLI version ($AID_CODE_HOME/VERSION) against the latest
 # GitHub release.  Prints ONE notice line when a newer version is available.
 # Fail-silent: any error (no curl, network down, bad JSON) is suppressed.
-# Throttle: re-fetches at most once per 24h; caches result in $AID_HOME/.update-check.
+# Throttle: re-fetches at most once per 24h; caches result in ~/.aid/.update-check.
 # Opt-out: AID_NO_UPDATE_CHECK=1 -> skip entirely.
 # Test hook: AID_UPDATE_CHECK_URL overrides the fetch URL (and bypasses throttle).
 _aid_check_update() {
@@ -175,13 +188,13 @@ _aid_check_update() {
 
     # Read installed version.
     local installed_version=""
-    local ver_file="${AID_HOME}/VERSION"
+    local ver_file="${AID_CODE_HOME}/VERSION"
     if [[ -f "$ver_file" ]]; then
         installed_version="$(tr -d '[:space:]' < "$ver_file")"
     fi
     [[ -z "$installed_version" ]] && return 0
 
-    local cache_file="${AID_HOME}/.update-check"
+    local cache_file="${HOME}/.aid/.update-check"
     local now
     now="$(date +%s 2>/dev/null)" || return 0
     local throttle_secs=86400  # 24 hours
@@ -248,63 +261,6 @@ _aid_check_update() {
     return 0
 }
 
-# ---------------------------------------------------------------------------
-# _aid_check_migrate_sentinel  (FF-4 / DM-3 / DD-1 / task-080)
-# Version-sentinel lazy first-run migration trigger.
-# Compares $AID_HOME/VERSION (installed) vs $AID_HOME/.migrated (last migrated).
-# Fires the FF-2 machine scan once when they differ (version advanced or marker
-# absent = never migrated).  Called at the same sites as _aid_check_update.
-# Opt-out: AID_NO_MIGRATE=1 -> skip entirely.
-# No-loop / no-recursion: a module-level guard (_AID_MIGRATE_SENTINEL_FIRED)
-# prevents re-firing within the same run; update self bypasses this path.
-# Non-interactive defer (RC-3): no TTY + no AID_MIGRATE_YES=1 -> annotate +
-# defer (marker NOT advanced); the scan itself (_aid_scan_and_migrate) enforces
-# the same invariant on the no-TTY branch.
-# ---------------------------------------------------------------------------
-_AID_MIGRATE_SENTINEL_FIRED=0
-_aid_check_migrate_sentinel() {
-    # Opt-out.
-    [[ "${AID_NO_MIGRATE:-0}" == "1" ]] && return 0
-
-    # No-loop guard: only fire once per process.
-    [[ "${_AID_MIGRATE_SENTINEL_FIRED}" == "1" ]] && return 0
-
-    # Read installed version (same trim idiom as _aid_check_update:170).
-    local _sentinel_installed=""
-    local _sentinel_ver_file="${AID_HOME}/VERSION"
-    if [[ -f "${_sentinel_ver_file}" ]]; then
-        _sentinel_installed="$(tr -d '[:space:]' < "${_sentinel_ver_file}")"
-    fi
-    [[ -z "${_sentinel_installed}" ]] && return 0
-
-    # Read .migrated marker (absent = empty = never migrated -> treated as advanced).
-    local _sentinel_marker=""
-    local _sentinel_marker_file="${AID_HOME}/.migrated"
-    if [[ -f "${_sentinel_marker_file}" ]]; then
-        _sentinel_marker="$(tr -d '[:space:]' < "${_sentinel_marker_file}")"
-    fi
-
-    # DD-1 string inequality: if equal -> steady state, no trigger (SEC-6 no-loop).
-    if [[ "${_sentinel_installed}" == "${_sentinel_marker}" ]]; then
-        return 0
-    fi
-
-    # Version advanced past last-migrated (or marker absent on first run after upgrade).
-    _AID_MIGRATE_SENTINEL_FIRED=1
-
-    # Non-interactive + no opt-in -> annotate + defer (RC-3 / SEC-1).
-    # Marker NOT advanced here; the next interactive run re-triggers (FF-4 retrigger).
-    if ! [[ -t 0 ]] && [[ "${AID_MIGRATE_YES:-0}" != "1" ]]; then
-        echo "AID hint: AID upgraded to ${_sentinel_installed}; run 'aid update self' to migrate your repos."
-        return 0
-    fi
-
-    # Interactive OR non-interactive opt-in: run the FF-2 scan once.
-    # _aid_scan_and_migrate writes the DM-3 marker on completion.
-    local _sentinel_apply="${AID_MIGRATE_YES:-0}"
-    _aid_scan_and_migrate "${_sentinel_apply}"
-    return 0
-}
 
 # ---------------------------------------------------------------------------
 # update self command (formerly self-update).
@@ -346,7 +302,7 @@ _aid_priv_run() {
 _cmd_update_self() {
     # AID_SKIP_SELF_INSTALL: the package manager already (re)installed the CLI
     # (npm postinstall) and only wants the post-update migration to run. Skip the
-    # re-install step; the caller's `_aid_scan_and_migrate` still fires.
+    # re-install step.
     if [[ "${AID_SKIP_SELF_INSTALL:-0}" == "1" ]]; then
         return 0
     fi
@@ -407,7 +363,7 @@ _cmd_update_self() {
 # _aid_update_self_if_stale  (FF-3 preamble / CLI-2 / task-079)
 # Self-update-if-needed preamble for the 'aid update [<tool>]' reach.
 # Reuses _cmd_update_self's channel logic gated by a skip-if-current check
-# (OQ-6 resolved simplest-correct: compare installed $AID_HOME/VERSION against
+# (OQ-6 resolved simplest-correct: compare installed $AID_CODE_HOME/VERSION against
 # the cached .update-check latest; if stale -> call _cmd_update_self; if
 # current or unknown -> silent no-op).
 #
@@ -427,14 +383,14 @@ _cmd_update_self() {
 _aid_update_self_if_stale() {
     # Read installed version (same pattern as _aid_check_update).
     local _installed=""
-    local _ver_file="${AID_HOME}/VERSION"
+    local _ver_file="${AID_CODE_HOME}/VERSION"
     if [[ -f "${_ver_file}" ]]; then
         _installed="$(tr -d '[:space:]' < "${_ver_file}")"
     fi
     [[ -z "${_installed}" ]] && return 0  # no installed version known -> skip
 
     # Read cached latest version from .update-check (line 2 of the cache file).
-    local _cache_file="${AID_HOME}/.update-check"
+    local _cache_file="${HOME}/.aid/.update-check"
     local _cached_latest=""
     if [[ -f "${_cache_file}" ]]; then
         _cached_latest="$(awk 'NR==2{print $1}' "${_cache_file}" 2>/dev/null)" || _cached_latest=""
@@ -615,15 +571,14 @@ _unwire_path_unix() {
 # ---------------------------------------------------------------------------
 
 # _install_global_cli <version> <src_bin_aid> <src_lib_core>
-# Stage then atomic-move into $AID_HOME.
+# Stage then atomic-move into AID_CODE_HOME (the read-only code payload root).
 _install_global_cli() {
     local version="$1"
     local src_bin_aid="$2"
     local src_lib_core="$3"
 
-    local aid_home="${AID_HOME:-${HOME}/.aid}"
-    local bin_dir="${aid_home}/bin"
-    local lib_dir="${aid_home}/lib"
+    local bin_dir="${AID_CODE_HOME}/bin"
+    local lib_dir="${AID_CODE_HOME}/lib"
 
     mkdir -p "$bin_dir" "$lib_dir"
 
@@ -635,9 +590,9 @@ _install_global_cli() {
     cp "$src_lib_core" "${lib_dir}/aid-install-core.sh"
 
     # Write the VERSION file.
-    printf '%s\n' "$version" > "${aid_home}/VERSION"
+    printf '%s\n' "$version" > "${AID_CODE_HOME}/VERSION"
 
-    echo "aid CLI v${version} installed to ${aid_home}."
+    echo "aid CLI v${version} installed to ${AID_CODE_HOME}."
 }
 
 # ---------------------------------------------------------------------------
@@ -1109,8 +1064,8 @@ _dc_start() {
     fi
 
     # Step 6: locate the server entry point.
-    # <assets> = $AID_HOME/dashboard (the co-vendored server+reader unit in the install tree).
-    local assets_dir="${AID_HOME}/dashboard"
+    # <assets> = $AID_CODE_HOME/dashboard (the co-vendored server+reader unit in the install tree).
+    local assets_dir="${AID_CODE_HOME}/dashboard"
     local entry_point
     if [[ "$runtime" == "python" ]]; then
         entry_point="${assets_dir}/server/server.py"
@@ -1128,9 +1083,9 @@ _dc_start() {
     # Step 7: spawn the server child in a new session (clean process-group kill on stop).
     # SEC-1: literal 127.0.0.1 -- never read from input/config/env.
     # The multi-repo server (feature-010) serves every registered repo from the
-    # registry under $AID_HOME; AID_HOME is exported explicitly so the server
-    # resolves it via env-or-self-locate (delivery-008 refinement: no --aid-home flag).
-    AID_HOME="$AID_HOME" setsid "$interp" "$entry_point" --host 127.0.0.1 --port "$port" \
+    # registry under AID_STATE_HOME; export AID_HOME=AID_STATE_HOME so the server
+    # resolves the registry via its legacy AID_HOME env var (delivery-008 seam).
+    AID_HOME="$AID_STATE_HOME" setsid "$interp" "$entry_point" --host 127.0.0.1 --port "$port" \
         >"$log_file" 2>&1 &
     local child_pid=$!
 
@@ -1318,12 +1273,12 @@ _registry_read_repos() {
 }
 
 # registry_register <canon-path>
-# Set-insert <canon-path> into $AID_HOME/registry.yml (idempotent; atomic write).
+# Set-insert <canon-path> into $AID_STATE_HOME/registry.yml (idempotent; atomic write).
 # On a real change prints one concise line.  On failure prints WARN and returns 0
 # so the host-tool op is never blocked (NFR10 / DD-3 / CLI-1).
 registry_register() {
-    local repo="$1" reg="${AID_HOME}/registry.yml" tmp existing
-    mkdir -p "$AID_HOME"
+    local repo="$1" reg="${AID_STATE_HOME}/registry.yml" tmp existing
+    mkdir -p "$AID_STATE_HOME"
     existing="$(_registry_read_repos "$reg")"
     # Idempotent: already registered -> silent no-op.
     if printf '%s\n' "$existing" | grep -qxF "$repo"; then
@@ -1357,11 +1312,11 @@ registry_register() {
 }
 
 # registry_unregister <canon-path>
-# Set-remove <canon-path> from $AID_HOME/registry.yml (idempotent; atomic write).
+# Set-remove <canon-path> from $AID_STATE_HOME/registry.yml (idempotent; atomic write).
 # Called only when the repo manifest is now gone (last tool removed).
 # On a real change prints one concise line.  On failure prints WARN and returns 0.
 registry_unregister() {
-    local repo="$1" reg="${AID_HOME}/registry.yml" tmp existing
+    local repo="$1" reg="${AID_STATE_HOME}/registry.yml" tmp existing
     [[ -f "$reg" ]] || return 0
     existing="$(_registry_read_repos "$reg")"
     # Idempotent: not registered -> silent no-op.
@@ -1450,7 +1405,7 @@ _aid_migrate_repo() {
     # ------------------------------------------------------------------
     local _home_html_dest="${repo}/.aid/dashboard/home.html"
     if [[ ! -f "${_home_html_dest}" ]]; then
-        local _home_html_src="${AID_HOME}/dashboard/home.html"
+        local _home_html_src="${AID_CODE_HOME}/dashboard/home.html"
         if [[ -f "${_home_html_src}" ]]; then
             mkdir -p "${repo}/.aid/dashboard" 2>/dev/null || \
                 echo "WARN: aid migrate: mkdir .aid/dashboard failed for ${repo} (continuing)" >&2
@@ -1791,214 +1746,6 @@ _aid_migrate_synthesize_settings_era_b() {
     return 0
 }
 
-# ---------------------------------------------------------------------------
-# _aid_scan_for_repos [<root>]  (SCAN_FOR_AID_REPOS / SEC-2 / R19 / task-078)
-# Enumerate candidate AID repo base folders under <root> (default: $HOME).
-# Bounded depth (5 levels), skips node_modules/.git, never follows symlinks
-# out of scope, read-only presence-test detection (DD-6 / SEC-1 / SEC-2).
-# Emits CAN-1-canonical paths (SEC-5): cd && pwd (no -P).
-# Prints one canonical path per line; never exits with non-zero.
-# ---------------------------------------------------------------------------
-_aid_scan_for_repos() {
-    local _scan_root="${1:-${HOME}}"
-    # Canonicalize the root itself (cd && pwd -- CAN-1, no -P).
-    local _canon_root
-    _canon_root="$(cd "${_scan_root}" 2>/dev/null && pwd)" || {
-        echo "WARN: aid scan: cannot access scan root '${_scan_root}' -- skipping" >&2
-        return 0
-    }
-
-    # Find directories named .aid up to depth 5, without following symlinks.
-    # -xdev is NOT used (we want to cross mounts within the root, just not via symlinks).
-    # The -not -path pruning prevents descending into node_modules/.git.
-    local _tmp_found
-    _tmp_found="$(mktemp)" || return 0
-
-    find "${_canon_root}" \
-        -maxdepth 5 \
-        -type d \
-        \( -name "node_modules" -o -name ".git" \) -prune \
-        -o -type d -name ".aid" -print \
-        2>/dev/null > "${_tmp_found}" || true
-
-    while IFS= read -r _aid_dir; do
-        # Parent of the .aid/ dir is the candidate repo base.
-        local _repo_base; _repo_base="$(dirname "${_aid_dir}")"
-        # Never follow .. out of scope: ensure the repo base is still under the scan root.
-        # Use a string prefix check after both are canonicalized.
-        local _canon_base
-        _canon_base="$(cd "${_repo_base}" 2>/dev/null && pwd)" || continue
-        # Symlink-escape guard: reject if the canonical path does not start with the
-        # canonical root (i.e. a symlink resolved to somewhere outside the scan root).
-        case "${_canon_base}/" in
-            "${_canon_root}/"*) ;;  # safe -- within the root
-            *) continue ;;          # outside the root -- skip
-        esac
-        # DD-6 presence test (read-only): .aid/settings.yml (era-a) OR
-        # .aid/knowledge/{DISCOVERY_STATE.md|DISCOVERY-STATE.md|STATE.md} (era-b).
-        # A bare .aid/ with neither marker is NOT a candidate.
-        if [[ -f "${_canon_base}/.aid/settings.yml" ]] \
-        || [[ -f "${_canon_base}/.aid/knowledge/DISCOVERY_STATE.md" ]] \
-        || [[ -f "${_canon_base}/.aid/knowledge/DISCOVERY-STATE.md" ]] \
-        || [[ -f "${_canon_base}/.aid/knowledge/STATE.md" ]]; then
-            echo "${_canon_base}"
-        fi
-    done < "${_tmp_found}"
-
-    rm -f "${_tmp_found}"
-    return 0
-}
-
-# ---------------------------------------------------------------------------
-# _aid_check_repo_compliant <repo>  (task-078 / FF-2 fast-path)
-# Returns 0 (fully compliant, no migration needed) or 1 (needs migration).
-# Read-only: no writes (SEC-1).
-# ---------------------------------------------------------------------------
-_aid_check_repo_compliant() {
-    local _r="$1"
-    # Must be a candidate (DD-6).
-    [[ -f "${_r}/.aid/settings.yml" ]] \
-    || [[ -f "${_r}/.aid/knowledge/DISCOVERY_STATE.md" ]] \
-    || [[ -f "${_r}/.aid/knowledge/DISCOVERY-STATE.md" ]] \
-    || [[ -f "${_r}/.aid/knowledge/STATE.md" ]] \
-    || return 1
-    # Step 2: home.html must be present.
-    [[ -f "${_r}/.aid/dashboard/home.html" ]] || return 1
-    # Step 4: must be registered in registry.yml.
-    local _canon_r
-    _canon_r="$(cd "${_r}" 2>/dev/null && pwd)" || return 1
-    local _reg="${AID_HOME}/registry.yml"
-    _registry_read_repos "${_reg}" | grep -qxF "${_canon_r}" || return 1
-    return 0
-}
-
-# ---------------------------------------------------------------------------
-# _aid_write_migrated_marker  (DM-3 / task-078 / FF-2 completion)
-# Write $AID_HOME/.migrated = trimmed $AID_HOME/VERSION (crash-safe).
-# ---------------------------------------------------------------------------
-_aid_write_migrated_marker() {
-    local _ver_file="${AID_HOME}/VERSION"
-    local _marker="${AID_HOME}/.migrated"
-    [[ -f "${_ver_file}" ]] || return 0
-    local _ver
-    _ver="$(tr -d '[:space:]' < "${_ver_file}")" || return 0
-    [[ -n "${_ver}" ]] || return 0
-    local _tmp
-    _tmp="$(mktemp "${_marker}.aid-tmp.XXXXXX")" || return 0
-    printf '%s\n' "${_ver}" > "${_tmp}" || { rm -f "${_tmp}"; return 0; }
-    mv -f "${_tmp}" "${_marker}" || { rm -f "${_tmp}" 2>/dev/null; return 0; }
-}
-
-# ---------------------------------------------------------------------------
-# _aid_scan_and_migrate [<apply_all_flag>] [<root>]  (FF-2 / CLI-1 / task-078)
-# Machine-scan + All/Yes/No/Cancel consent walk.  Called after _cmd_update_self.
-# <apply_all_flag>: "1" = --yes/AID_MIGRATE_YES=1 (preset All; non-interactive ok).
-# <root>: optional --root override for the scan.
-# Returns 0 always (exit code 0 on completion/skipped/Cancel per CLI-1/NFR12).
-# DM-3 marker is advanced ONLY on a completed (no Cancel) scan.
-# ---------------------------------------------------------------------------
-_aid_scan_and_migrate() {
-    local _apply_all_flag="${1:-0}"
-    local _scan_root="${2:-}"
-    local _apply_all=0
-    [[ "${_apply_all_flag}" == "1" ]] && _apply_all=1
-    [[ "${AID_MIGRATE_YES:-0}" == "1" ]] && _apply_all=1
-
-    # RC-3 / SEC-1: non-interactive guard.
-    # If not a TTY AND no explicit opt-in -> annotate + defer.
-    if ! [[ -t 0 ]] && [[ "${_apply_all}" -eq 0 ]]; then
-        echo "AID machine scan: no TTY detected. Run 'aid update self' interactively to migrate repos."
-        echo "(Set AID_MIGRATE_YES=1 or use --yes to enable non-interactive migration.)"
-        # Marker NOT advanced -- defer to next interactive run (FF-4 retrigger).
-        return 0
-    fi
-
-    # Enumerate candidates (read-only).
-    local -a _candidates=()
-    local _scan_out
-    if [[ -n "${_scan_root}" ]]; then
-        _scan_out="$(_aid_scan_for_repos "${_scan_root}")"
-    else
-        _scan_out="$(_aid_scan_for_repos)"
-    fi
-    while IFS= read -r _c; do
-        [[ -n "${_c}" ]] && _candidates+=("${_c}")
-    done <<< "${_scan_out}"
-
-    if [[ ${#_candidates[@]} -eq 0 ]]; then
-        echo "aid update self: no AID repos found to migrate."
-        _aid_write_migrated_marker
-        return 0
-    fi
-
-    # Non-interactive + opt-in: annotate candidate list and migrate all.
-    if ! [[ -t 0 ]] && [[ "${_apply_all}" -eq 1 ]]; then
-        echo "AID machine scan (non-interactive, opt-in): ${#_candidates[@]} candidate(s) found."
-        for _repo in "${_candidates[@]}"; do
-            if _aid_check_repo_compliant "${_repo}"; then
-                continue
-            fi
-            echo "  Migrating ${_repo}..."
-            _aid_migrate_repo "${_repo}" || \
-                echo "WARN: aid: migration of ${_repo} failed; continuing" >&2
-        done
-        _aid_write_migrated_marker
-        return 0
-    fi
-
-    # Interactive consent walk (FF-2 state machine).
-    local _cancelled=0
-    for _repo in "${_candidates[@]}"; do
-        # Fast-path: already fully compliant -> silent no-op (FF-2).
-        if _aid_check_repo_compliant "${_repo}"; then
-            continue
-        fi
-        if [[ "${_apply_all}" -eq 1 ]]; then
-            # All already set (from --yes/env or user typed A earlier).
-            _aid_migrate_repo "${_repo}" || \
-                echo "WARN: aid: migration of ${_repo} failed; continuing" >&2
-        else
-            # Prompt the operator (CLI-1 exact wording, ASCII).
-            local _answer=""
-            while true; do
-                printf 'Migrate %s? [A]ll / [Y]es / [N]o / [C]ancel: ' "${_repo}"
-                IFS= read -r _answer </dev/tty || _answer="C"
-                case "${_answer}" in
-                    [Aa]) _apply_all=1; break ;;
-                    [Yy]) break ;;
-                    [Nn])
-                        echo "Skipped ${_repo}. Run 'aid update' inside that folder to migrate it later."
-                        _answer="N"
-                        break
-                        ;;
-                    [Cc])
-                        _cancelled=1
-                        break
-                        ;;
-                    *)
-                        echo "Please type A, Y, N, or C."
-                        ;;
-                esac
-            done
-            if [[ "${_cancelled}" -eq 1 ]]; then
-                break
-            fi
-            if [[ "${_answer}" == "N" ]]; then
-                continue
-            fi
-            # A or Y: migrate.
-            _aid_migrate_repo "${_repo}" || \
-                echo "WARN: aid: migration of ${_repo} failed; continuing" >&2
-        fi
-    done
-
-    if [[ "${_cancelled}" -eq 0 ]]; then
-        # Completed (no Cancel) -> advance DM-3 marker.
-        _aid_write_migrated_marker
-    fi
-    # Cancelled -> marker stays stale -> FF-4 sentinel re-fires next interactive run.
-    return 0
-}
 
 # ---------------------------------------------------------------------------
 # Parse subcommand and dispatch.
@@ -2019,7 +1766,7 @@ _AID_NO_PATH=0
 _cmd_dashboard() {
     # Block 1 + 2: Header + description.
     local cli_version="unknown"
-    local ver_file="${AID_HOME}/VERSION"
+    local ver_file="${AID_CODE_HOME}/VERSION"
     if [[ -f "$ver_file" ]]; then
         cli_version="$(tr -d '[:space:]' < "$ver_file")"
     fi
@@ -2036,8 +1783,6 @@ _cmd_dashboard() {
 
     # Block 5: Update check notice (final line, non-blocking).
     _aid_check_update
-    # Block 6: Migration sentinel (FF-4 / DM-3 / task-080).
-    _aid_check_migrate_sentinel
 }
 
 # Early help check.
@@ -2059,7 +1804,7 @@ shift
 
 # ---- version ----------------------------------------------------------------
 if [[ "$SUBCMD" == "version" ]]; then
-    local_version_file="${AID_HOME}/VERSION"
+    local_version_file="${AID_CODE_HOME}/VERSION"
     if [[ -f "$local_version_file" ]]; then
         cat "$local_version_file"
     else
@@ -2096,8 +1841,6 @@ if [[ "$SUBCMD" == "status" ]]; then
     _status_rc=$?
     # Update check notice appended after status output (non-blocking).
     _aid_check_update
-    # Migration sentinel (FF-4 / DM-3 / task-080).
-    _aid_check_migrate_sentinel
     exit $_status_rc
 fi
 
@@ -2107,17 +1850,11 @@ if [[ "$SUBCMD" == "update" ]]; then
     if [[ $# -gt 0 && "$1" == "self" ]]; then
         shift
         # Consume any flags after 'self'.
-        _US_MIGRATE_YES=0
-        _US_ROOT=""
         _SELF_FROM_BUNDLE=""
         _SELF_DRYRUN=0
         while [[ $# -gt 0 ]]; do
             case "$1" in
                 --force|-y) shift ;;  # no-op for update self
-                --yes) _US_MIGRATE_YES=1; shift ;;  # non-interactive opt-in (RC-3)
-                --root)
-                    [[ $# -lt 2 ]] && _aid_die "--root requires a value" 2
-                    _US_ROOT="$2"; shift 2 ;;
                 --from-bundle)
                     [[ $# -lt 2 ]] && _aid_die "--from-bundle requires a value" 2
                     _SELF_FROM_BUNDLE="$2"; shift 2 ;;
@@ -2129,13 +1866,8 @@ if [[ "$SUBCMD" == "update" ]]; then
         export _SELF_FROM_BUNDLE _SELF_DRYRUN
         _cmd_update_self; _us_rc=$?
         if [[ "${_us_rc}" -ne 0 ]]; then exit "${_us_rc}"; fi
-        # ---- post-update machine scan (FF-2 / task-078) -- runs as the user,
-        # never under the sudo used for the privileged install step above.
-        if [[ "${_SELF_DRYRUN}" -eq 1 ]]; then
-            printf '+ (then) migration scan over $HOME with All/Yes/No/Cancel consent\n'
-        else
-            _aid_scan_and_migrate "${_US_MIGRATE_YES}" "${_US_ROOT}"
-        fi
+        # Post-update: repo migration is now registry-driven (feature-003).
+        # The scan-and-migrate post-step is removed (FR8/AC7); no-op here.
         exit 0
     fi
     # Fall through to the shared add/update handler below.
