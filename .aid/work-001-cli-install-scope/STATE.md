@@ -80,7 +80,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | task-002 | CODE/STATE home split (ps1 parity) | IMPLEMENT | d001 w2 | Done | A+ | — | feature-001; ps1 parity twin; PARSE OK, grep-zero, ASCII; no ps1 priv-helper (writability probe) |
 | task-003 | /var/lib/aid provisioning helper + install hooks + runtime fallback (bash) | IMPLEMENT | d001 w2 | Done | A+ | — | feature-002; D+→A+ (fixed registry degrade: mktemp-in-nonwritable-dir dropped entry; now preserved in ~/.aid) |
 | task-004 | Global provisioning Windows parity (%ProgramData%\aid) (ps1) | IMPLEMENT | d001 w3 | Pending | — | — | feature-002; parity twin of task-003 |
-| task-005 | Per-repo format stamp + fail-safe gate (bash) | IMPLEMENT | d001 w2 | Pending | — | — | feature-003; constant/synth/repair/helpers/gate |
+| task-005 | Per-repo format stamp + fail-safe gate (bash) | IMPLEMENT | d001 w2 | Done | A+ | — | feature-003; D+→A+ (fixed bare-aid refuse exit-code: exit 0→exit $?); AID_SUPPORTED_FORMAT=1, _aid_repo_format, _aid_format_gate (refuse>1/warn<1/silent==1), era-a+era-b stamp v1; migrate G4A-02/PAR077-C02 red OOS (by-design, owned by TEST 007/009) |
 | task-006 | Per-repo format stamp + fail-safe gate (ps1 parity) | IMPLEMENT | d001 w3 | Pending | — | — | feature-003; parity twin of task-005 |
 | task-007 | d001 test migration — fixture split + retired marker/scan/sentinel + home-split asserts | TEST | d001 w3 | Pending | — | — | feature-001 slice; C1/C2/C3/C5; green-per-delivery |
 | task-008 | d001 test migration — /var/lib/aid provisioning asserts (seam) | TEST | d001 w4 | Pending | — | — | feature-002 slice; green-per-delivery |
@@ -133,6 +133,16 @@ This is the single state file for **this work** — the full dev lifecycle from 
 - **Suggested:** Define `AID_SUPPORTED_FORMAT` once per language entrypoint (bash `bin/aid`, PowerShell `bin/aid.ps1`) as a near-top constant, with a parity assertion in the canonical suite so the two never drift. Resolve in /aid-specify feature-003.
 - **Answer:** One near-top constant per language entrypoint (bin/aid + bin/aid.ps1) with a canonical-suite parity assertion.
 - **Applied to:** feature-003 SPEC (Q3 resolution); task-009 parity-constant assertion.
+
+### Q4
+
+- **Category:** Implementation
+- **Impact:** Medium
+- **Status:** Open
+- **Context:** task-005 REVIEW cycle-1 (feature-003). The format gate is wired into 4 entry points; 3 (`_dc_start`:1039, status:2023, update:2347) propagate the gate's non-zero return via `exit $?`. The bare-`aid` dashboard-landing path does NOT: `_cmd_dashboard` correctly does `_aid_format_gate "." || return $?` (bin/aid:1954), but the dispatch at bin/aid:1972-1973 runs `_cmd_dashboard` then unconditionally `exit 0`, so a refused newer-format repo prints the refuse message but exits 0 (AC3/AC4 require non-zero). The body still short-circuits so no `.aid/` write/operate occurs — fail-safe data protection holds; only the observable exit code is wrong.
+- **Suggested:** At bin/aid:1972-1973 propagate the return code, e.g. `_cmd_dashboard || exit $?` then `exit 0` (or `_cmd_dashboard; exit $?`), so bare `aid` exits non-zero on refuse like the other three sites. Verify with the cwd `format_version: 2` E2E (expect rc!=0).
+- **Answer:** _pending FIX_
+- **Applied to:** _pending_
 
 ## Delivery Gates
 

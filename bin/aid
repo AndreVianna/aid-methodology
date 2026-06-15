@@ -61,6 +61,13 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# C1: Per-repo format stamp constant.
+# The current .aid/ layout version.  Bumped ONLY on a breaking layout change,
+# never on every CLI release.  Defined exactly once; all comparisons read this.
+# ---------------------------------------------------------------------------
+readonly AID_SUPPORTED_FORMAT=1
+
+# ---------------------------------------------------------------------------
 # Source the shared install core from AID_CODE_HOME/lib/.
 # ---------------------------------------------------------------------------
 _AID_CORE="${AID_CODE_HOME}/lib/aid-install-core.sh"
@@ -1028,6 +1035,9 @@ _dc_start() {
         exit 7
     fi
 
+    # C6: format gate before operating (refuse on newer-format repo).
+    _aid_format_gate "${target}" || exit $?
+
     local pid_file="${target}/.aid/.temp/dashboard.pid"
     local log_file="${target}/.aid/.temp/dashboard.log"
 
@@ -1406,6 +1416,84 @@ registry_unregister() {
 }
 
 # ---------------------------------------------------------------------------
+# C4: _aid_repo_format <repo>
+# Read the format_version stamp from <repo>/.aid/settings.yml.
+# Greps the FIRST ^format_version: line, replicates the era-a closure strip
+# logic inline (prefix strip, trim, inline # comment strip, quote-unwrap),
+# validates as ^[0-9]+$; echoes the integer.
+# Collapses absent/empty/non-integer/malformed/negative to 0 (legacy default).
+# Never returns a value > sup from a garbled stamp (fail-safe).
+# ---------------------------------------------------------------------------
+_aid_repo_format() {
+    local _repo="$1"
+    local _settings="${_repo}/.aid/settings.yml"
+    if [[ ! -f "${_settings}" ]]; then
+        echo "0"
+        return 0
+    fi
+    # First-match read (parity with duplicate-line policy).
+    local _raw_line
+    _raw_line="$(grep -m1 '^format_version:' "${_settings}" 2>/dev/null)" || true
+    if [[ -z "${_raw_line}" ]]; then
+        echo "0"
+        return 0
+    fi
+    # Replicate the era-a closure strip logic inline (column-0 key variant).
+    # Step 1: strip the "format_version:" prefix.
+    local _val="${_raw_line#format_version:}"
+    # Step 2: strip one optional leading space (the colon-space separator).
+    _val="${_val# }"
+    # Step 3: strip inline # comment (first " #" to end of line).
+    _val="${_val%% #*}"
+    # Step 4: quote-unwrap (double then single).
+    _val="${_val%\"}"
+    _val="${_val#\"}"
+    _val="${_val%%\'}"
+    _val="${_val##\'}"
+    # Step 5: full trim (ltrim + rtrim remaining whitespace).
+    local _lstrip="${_val%%[![:space:]]*}"
+    _val="${_val#"${_lstrip}"}"
+    local _rstrip="${_val##*[![:space:]]}"
+    _val="${_val%"${_rstrip}"}"
+    # Step 6: validate non-negative integer; collapse anything else to 0.
+    if [[ "${_val}" =~ ^[0-9]+$ ]]; then
+        echo "${_val}"
+    else
+        echo "0"
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# C5: _aid_format_gate <repo>
+# 3-way classify <repo>'s format stamp vs AID_SUPPORTED_FORMAT:
+#   repo > sup  -> refuse (stderr, return 1, no .aid/ write)
+#   repo < sup  -> warn + offer aid update (stdout, return 0, non-blocking)
+#   repo == sup -> silent (return 0)
+# AID_NO_MIGRATE=1 suppresses the warn+offer notice only; never the refuse.
+# ---------------------------------------------------------------------------
+_aid_format_gate() {
+    local _repo="$1"
+    local _repo_fmt
+    _repo_fmt="$(_aid_repo_format "${_repo}")"
+    local _sup="${AID_SUPPORTED_FORMAT}"
+    if [[ "${_repo_fmt}" -gt "${_sup}" ]]; then
+        printf 'ERROR: aid: repo format %s is newer than this CLI supports (%s). Upgrade the aid CLI to operate on this repo.\n' \
+            "${_repo_fmt}" "${_sup}" >&2
+        return 1
+    fi
+    if [[ "${_repo_fmt}" -lt "${_sup}" ]]; then
+        if [[ "${AID_NO_MIGRATE:-0}" != "1" ]]; then
+            printf 'WARN: aid: this repo uses an older format (v%s; current: v%s). Run: aid update\n' \
+                "${_repo_fmt}" "${_sup}"
+        fi
+        return 0
+    fi
+    # repo == sup: silent.
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # _aid_migrate_repo <repo>  (FF-1 / LC-MIG / task-077)
 # Per-repo migration core.  Runs DETECT->SETTINGS->ADD->RELOCATE->REGISTER in
 # order.  Each step is WARN-not-fail: a step failure logs WARN and the next
@@ -1615,6 +1703,35 @@ _aid_migrate_repair_settings_era_a() {
     # Validate / repair each REQUIRED key.
     # ------------------------------------------------------------------
 
+    # C3: format_version ensure-key step (top-of-file column-0 prepend).
+    # If a ^format_version: line is present anywhere, replace it in-place
+    # with the canonical stamp value (IDIOM-A single-line replace).
+    # If absent, prepend format_version: <sup> at index 0 of _lines so it
+    # sits above project: at column 0 (existing _append_block is EOF-only;
+    # _insert_after places indented lines after a header -- neither works
+    # here; we prepend directly).
+    local _fv_idx=-1 _fi
+    for _fi in "${!_lines[@]}"; do
+        if [[ "${_lines[$_fi]}" =~ ^format_version: ]]; then
+            _fv_idx="$_fi"
+            break
+        fi
+    done
+    if [[ "${_fv_idx}" -ge 0 ]]; then
+        # Key present: replace with canonical value (IDIOM-A).
+        _replace_line "${_fv_idx}" "format_version: ${AID_SUPPORTED_FORMAT}"
+    else
+        # Key absent: prepend at index 0 (new top-of-file col-0 insert).
+        local -a _fv_new_lines=()
+        _fv_new_lines+=("format_version: ${AID_SUPPORTED_FORMAT}")
+        local _fv_i
+        for _fv_i in "${!_lines[@]}"; do
+            _fv_new_lines+=("${_lines[$_fv_i]}")
+        done
+        _lines=("${_fv_new_lines[@]}")
+        _changed=1
+    fi
+
     # project section
     local _proj_idx; _proj_idx="$(_find_section "project")"
     if [[ "$_proj_idx" -eq -1 ]]; then
@@ -1772,6 +1889,8 @@ _aid_migrate_synthesize_settings_era_b() {
     _tmp="$(mktemp "${_sf}.aid-tmp.XXXXXX")" || return 1
 
     {
+        # C2: format_version stamp is the FIRST line (before project:).
+        printf 'format_version: %s\n' "${AID_SUPPORTED_FORMAT}"
         printf 'project:\n'
         printf '  name: %s\n' "${_rname}"
         printf '  description: <project-description>\n'
@@ -1829,6 +1948,12 @@ _cmd_dashboard() {
     printf 'AID v%s - Agentic Iterative Development\n' "$cli_version"
     printf 'Install, update, and manage AID across your repositories.\n'
 
+    # C6: format gate for cwd repo (only when .aid/ exists; absent .aid/ falls
+    # through to the existing "set it up?" path via aid_status_body below).
+    if [[ -d "./.aid" ]]; then
+        _aid_format_gate "." || return $?
+    fi
+
     # Block 3: Installed tools for cwd.
     printf '\n'
     aid_status_body "."
@@ -1845,7 +1970,7 @@ _cmd_dashboard() {
 if [[ $# -eq 0 ]]; then
     # Bare 'aid' -> dashboard landing screen.
     _cmd_dashboard
-    exit 0
+    exit $?
 fi
 
 case "$1" in
@@ -1893,6 +2018,10 @@ if [[ "$SUBCMD" == "status" ]]; then
     [[ -z "$_AID_TARGET" && -n "${AID_TARGET:-}" ]] && _AID_TARGET="$AID_TARGET"
     _AID_TARGET="${_AID_TARGET:-.}"
     export AID_VERBOSE="$_AID_VERBOSE"
+    # C6: format gate for status target (only when .aid/ exists).
+    if [[ -d "${_AID_TARGET}/.aid" ]]; then
+        _aid_format_gate "${_AID_TARGET}" || exit $?
+    fi
     aid_status "$_AID_TARGET"
     _status_rc=$?
     # Update check notice appended after status output (non-blocking).
@@ -2212,6 +2341,11 @@ _AID_OVERALL_BLOCKED=0
 
 case "$SUBCMD" in
     add|update)
+        # C6: format gate for the update repo path (only when .aid/ exists;
+        # an add to a fresh repo with no .aid/ falls through normally).
+        if [[ "$SUBCMD" == "update" && -d "${_AID_TARGET}/.aid" ]]; then
+            _aid_format_gate "${_AID_TARGET}" || exit $?
+        fi
         for _tool in "${_AID_TOOLS[@]}"; do
             echo ""
             _prepare_tool_staging_aid "$_tool" "$_AID_VERSION_ARG" "$_AID_FROM_BUNDLE"
