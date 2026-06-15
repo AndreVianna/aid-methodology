@@ -58,8 +58,8 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | # | Feature | Spec Status | Spec Grade | Q&A Count | Notes |
 |---|---------|-------------|------------|-----------|-------|
-| 1 | feature-001-runtime-scope-and-home-split | Ready | A+ | 0 | FR1/FR2/FR8/FR10 — root-cause foundation (Priority 1); spec C+→A+ (orphan-helper removal fix) |
-| 2 | feature-002-global-state-provisioning | Ready | A+ | 0 | FR7 — /var/lib/aid (Priority 1); spec D→A+ (runtime-lazy provisioning via registry_register; _aid_priv_run convention corrected) |
+| 1 | feature-001-runtime-scope-and-home-split | Ready | A+ | 0 | FR1/FR2/FR8/FR10 — root-cause foundation (Priority 1); spec C+→A+; +seam: global AID_STATE_HOME = ${AID_SHARED_STATE_HOME:-/var/lib/aid} (re-verified A+) |
+| 2 | feature-002-global-state-provisioning | Ready | A+ | 0 | FR7 — /var/lib/aid (Priority 1); spec D→A+→re-spec→A+ (HYBRID: install-time primary + non-prompting runtime fallback; AID_SHARED_STATE_HOME seam unified runtime+install+test) |
 | 3 | feature-003-per-repo-format-stamp | Ready | A+ | 0 | FR3 — fail-safe stamp (Priority 2); spec C+→A+ (replicate strip logic, not reuse closure) |
 | 4 | feature-004-two-tier-registry-and-dispatch | Ready | A+ | 0 | FR4/FR5/FR6 — registry, cwd dispatch, migration (Priority 2); spec C→A+ (ps1 parity symbol fixes) |
 | 5 | feature-005-bootstrap-and-test-migration | Ready | A+ | 0 | FR9 + test-suite migration — rollout (Priority 3); spec B→A+ (test-file citation fixes) |
@@ -138,6 +138,9 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 2026-06-15 | Specify all 5 features (cycle 1) | C+/D/C+/C/B | aid-architect authored tech specs; aid-reviewer found real impl-blocking issues per feature |
 | 2026-06-15 | Specify all 5 features (cycle 2) | A+ ×5 | All findings Fixed; feature-002 re-anchored to runtime-lazy provisioning (validated reachable) |
 | 2026-06-15 | Open decision raised | — | feature-002: install-time vs runtime/lazy provisioning of /var/lib/aid (fixer chose runtime; pending user confirm). Windows shared-state = %ProgramData%\aid (design Decision-D addendum) |
+| 2026-06-15 | Decision RESOLVED | — | Re-analysis (aid-researcher) confirmed runtime/lazy-primary wrong (fails AC1, sudo-prompts in aid add, inverts mlocate). User confirmed HYBRID: install-time primary + non-prompting runtime fallback. Design note Decision-D addendum updated. feature-002 re-spec |
+| 2026-06-15 | feature-002 re-spec graded | D→D→A+ | Hybrid re-spec; reviewer caught dead curl guard + spec/design contradiction + no test seam; fixed (env-preset capture guard, AID_SHARED_STATE_HOME seam) → A+ |
+| 2026-06-15 | Seam unified (feature-001+002) | A+ ×2 | Global AID_STATE_HOME default = ${AID_SHARED_STATE_HOME:-/var/lib/aid} (single source: runtime+install+test); both re-verified A+ |
 
 ## Calibration Log
 

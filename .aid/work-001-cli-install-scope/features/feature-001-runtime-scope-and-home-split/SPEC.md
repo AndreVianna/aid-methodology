@@ -7,6 +7,7 @@
 | 2026-06-15 | Feature identified from REQUIREMENTS.md §5 (FR1, FR2, FR8, FR10), §4, §9 (AC1, AC4, AC6 partial, AC7, AC8, AC10), §10 (Priority 1) | /aid-interview |
 | 2026-06-15 | Technical Specification authored | /aid-specify |
 | 2026-06-15 | Spec fixes (review cycle 1): orphan-helper removal, ps1 range, prose | /aid-specify |
+| 2026-06-15 | Seam consistency: global AID_STATE_HOME honors AID_SHARED_STATE_HOME (runtime+install unified) | /aid-specify |
 
 ## Source
 
@@ -138,15 +139,29 @@ before the install-core is sourced.
    (a non-writable payload dir ⇒ global), matching NFR parity.
 3. **`AID_STATE_HOME` (mutable, scope-defaulted, env-overridable).**
    `AID_STATE_HOME="${AID_HOME:-<scope default>}"` where the default is
-   `~/.aid` (per-user) or `/var/lib/aid` (global). The legacy `AID_HOME` env var
-   is **retained but now binds STATE only** — exactly the throwaway-dir redirect
-   the HOME-pinned canonical suite already does. Setting `AID_HOME` never moves
-   code resolution.
+   `~/.aid` (per-user) or `${AID_SHARED_STATE_HOME:-/var/lib/aid}` (global). The
+   legacy `AID_HOME` env var is **retained but now binds STATE only** — exactly
+   the throwaway-dir redirect the HOME-pinned canonical suite already does.
+   Setting `AID_HOME` never moves code resolution.
+
+   **`AID_SHARED_STATE_HOME` is the single override for the shared/global state
+   path.** The global-scope default is `${AID_SHARED_STATE_HOME:-/var/lib/aid}`,
+   and this same override is honored **identically** by (1) this runtime
+   resolution, (2) feature-002's install-time provisioning hooks (npm
+   postinstall + curl `install.sh` + `_provision_shared_state_home`), and (3) the
+   canonical test-sandbox seam. Pinning `AID_SHARED_STATE_HOME` once therefore
+   redirects **both** the install-time provisioning path and the runtime
+   resolution to the same location, so neither ever touches the real
+   `/var/lib/aid`. The non-global default stays `~/.aid`, and `AID_HOME` still
+   overrides STATE regardless of scope (it takes precedence over the
+   `AID_SHARED_STATE_HOME` default for the global case). Consistent with design
+   note §3.2 (`${AID_SHARED_STATE_HOME:-/var/lib/aid}` as the single source).
 
 Resolution order on startup: resolve `AID_CODE_HOME` → (error-out per Q1 if
 unresolved) → source `${AID_CODE_HOME}/lib/aid-install-core.sh` → derive scope
 from `AID_CODE_HOME` writability → resolve `AID_STATE_HOME` from
-`${AID_HOME:-<scope default>}`.
+`${AID_HOME:-<scope default>}` (global scope default
+`${AID_SHARED_STATE_HOME:-/var/lib/aid}`; per-user `~/.aid`).
 
 ### On-disk state layout
 
@@ -177,7 +192,7 @@ so registry and the cache coexist in one dir (no behavioral change there).
 
 | Lines (current master) | Symbol / block | Change |
 |------|------|--------|
-| `40-47` | `AID_HOME` self-locate + `${HOME}/.aid` fallback | **Rewrite** → resolve `AID_CODE_HOME` (self-locate, no env override, error-out per Q1); derive scope from `AID_CODE_HOME` writability; resolve `AID_STATE_HOME="${AID_HOME:-<scope default>}"` |
+| `40-47` | `AID_HOME` self-locate + `${HOME}/.aid` fallback | **Rewrite** → resolve `AID_CODE_HOME` (self-locate, no env override, error-out per Q1); derive scope from `AID_CODE_HOME` writability; resolve `AID_STATE_HOME="${AID_HOME:-<scope default>}"` (global default `${AID_SHARED_STATE_HOME:-/var/lib/aid}`, per-user `~/.aid`) |
 | `52` | `_AID_CORE="${AID_HOME}/lib/..."` | Repoint → `AID_CODE_HOME` |
 | `168,350,1900,1940` | `VERSION` reads | Repoint → `AID_CODE_HOME` |
 | `544,587` | `aid_home="${AID_HOME:-${HOME}/.aid}"` (self-install staging at `:558` writes `VERSION`) | Repoint VERSION-write target → `AID_CODE_HOME`; drop the `${HOME}/.aid` inline fallback |
@@ -197,7 +212,7 @@ so registry and the cache coexist in one dir (no behavioral change there).
 
 | Lines (current master) | Symbol / block | Change |
 |------|------|--------|
-| `55-68` | `$script:_AidHome` self-locate + `$env:LOCALAPPDATA/aid` fallback | **Rewrite** → `$script:_AidCodeHome` (self-locate, no env override, error-out per Q1); scope from writability (`Invoke-AidPrivRun`); `$script:_AidStateHome = if ($env:AID_HOME) {$env:AID_HOME} else {<scope default>}` |
+| `55-68` | `$script:_AidHome` self-locate + `$env:LOCALAPPDATA/aid` fallback | **Rewrite** → `$script:_AidCodeHome` (self-locate, no env override, error-out per Q1); scope from writability (`Invoke-AidPrivRun`); `$script:_AidStateHome = if ($env:AID_HOME) {$env:AID_HOME} else {<scope default>}` (global default honors `$env:AID_SHARED_STATE_HOME` else `/var/lib/aid`; per-user `$HOME/.aid`) |
 | `73` | `$script:_CoreModule = ...lib\AidInstallCore.psm1` | Repoint → `_AidCodeHome` |
 | `187,380` | `VERSION` reads | Repoint → `_AidCodeHome` |
 | `862` | `$assetsDir = ...\dashboard` | Repoint → `_AidCodeHome` |
@@ -224,7 +239,7 @@ the parity note below for the STATE-side Windows default.)
 - **Per-user install** (`AID_CODE_HOME` writable): scope=per-user; STATE=`~/.aid`;
   registry and cache both under `~/.aid`. Identical to today.
 - **Root-owned global install** (`AID_CODE_HOME` = e.g. `/usr/lib/node_modules/aid-installer`,
-  not writable): scope=global; STATE=`/var/lib/aid`; cache stays `~/.aid/.update-check`.
+  not writable): scope=global; STATE=`${AID_SHARED_STATE_HOME:-/var/lib/aid}`; cache stays `~/.aid/.update-check`.
   A read-only `aid status` writes nothing into the root-owned tree and never prompts
   for `sudo` (AC1, AC10).
 - **`AID_HOME` set** (e.g. canonical suite throwaway): STATE redirects there;
@@ -280,8 +295,14 @@ test-compat, AC8):
 
 1. **Scope detection, both ways.** With `AID_CODE_HOME` writable → scope per-user,
    `AID_STATE_HOME=~/.aid`. With `AID_CODE_HOME` made read-only (chmod a payload
-   fixture) → scope global, `AID_STATE_HOME=/var/lib/aid` (assert the *resolved*
-   value; do not require the dir to exist).
+   fixture) → scope global, `AID_STATE_HOME=${AID_SHARED_STATE_HOME:-/var/lib/aid}`
+   (assert the *resolved* value; do not require the dir to exist). Because the
+   global default honors `AID_SHARED_STATE_HOME`, a canonical test sandboxes the
+   global path **without root** by exporting `AID_SHARED_STATE_HOME=<tmp>/shared`
+   and asserting the resolved `AID_STATE_HOME` equals `<tmp>/shared` (never the
+   real `/var/lib/aid`). This is the same single seam feature-002's install hooks
+   honor, so pinning it once redirects both runtime resolution and install
+   provisioning.
 2. **`AID_HOME` redirects STATE only.** Set `AID_HOME=<throwaway>`; assert
    `registry.yml` lands under the throwaway, while `lib/`, `VERSION`, and
    `dashboard/` still resolve under the payload (`AID_CODE_HOME`). This is the

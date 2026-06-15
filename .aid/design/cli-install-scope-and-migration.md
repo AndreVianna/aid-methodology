@@ -73,9 +73,13 @@ machine-scoped.
     **read-only**; locates `lib/aid-install-core.sh`, `dashboard/` source, `VERSION`.
     Lives wherever the channel vendored the payload (npm pkg / pipx venv / curl tree).
   - **`AID_STATE_HOME`** — `${AID_HOME:-<scope default>}`; holds **only mutable
-    state**. Scope default: **non-global → `~/.aid`**; **global → `/var/lib/aid`**
-    (Decision D — FHS variable-state dir, the mlocate model; root-owned,
-    world-readable, shared writes elevate per §3.3).
+    state**. Scope default: **non-global → `~/.aid`**; **global →
+    `${AID_SHARED_STATE_HOME:-/var/lib/aid}`** (Decision D — FHS variable-state dir,
+    the mlocate model; root-owned, world-readable, shared writes elevate per §3.3).
+    The `AID_SHARED_STATE_HOME` env override is the **single source** of the shared
+    path — honored identically by this runtime resolution, the install-time
+    provisioning hooks, and the test sandbox seam — so a test pins it once and both
+    the install and runtime paths redirect together (never touching real `/var/lib/aid`).
   - The env var **`AID_HOME` is retained as an explicit override of the STATE
     home** (not code) — this is exactly what the test suite already does when it
     pins `AID_HOME` to a throwaway dir. Code home is never relocated by env.
@@ -232,13 +236,22 @@ expecting it to also relocate `lib/`/`VERSION`. After the split those expect
   Administrator-written / all-users-readable; symmetric with the per-user
   fallback `$env:LOCALAPPDATA\aid` so the shared↔user collapse works identically
   to POSIX.
-- **Provisioning is runtime/lazy, not install-time.** `_install_global_cli` is
-  dead code and no installer (npm/pypi/curl) has a root-detecting global branch,
-  so there is no reachable install-time hook today. `/var/lib/aid` is therefore
-  provisioned **lazily on the first shared-state write** (from `registry_register`
-  via `_aid_priv_run`), which is also the exact moment the privileged location is
-  needed (the mlocate model). Install-time seeding is deferred to a future
-  installer-scope rework. *(Pending user confirmation — see work-001 STATE.md.)*
+- **Provisioning is install-time primary, with a non-prompting runtime fallback
+  (HYBRID).** *(Resolved 2026-06-15 after re-analysis; user-confirmed.)* A global
+  install is already privileged (root runs `sudo npm i -g` / `sudo curl|bash`), so
+  that is the correct, mlocate-faithful moment to create `/var/lib/aid` — and adding
+  the install hooks is exactly what "provisioning by the installers" means (this is
+  feature-002's job, not a deferral). Hooks: **npm** postinstall `getuid()===0`
+  branch (inline `mkdir 0755` + no-clobber seed `schema: 1`/empty `repos:`); **curl**
+  `install.sh` root-detected branch (guarded so test `AID_HOME` pins never touch real
+  `/var/lib`); **pipx** never (per-user by construction). The **runtime** path in
+  `registry_register` is a *best-effort, non-prompting ensure-exists fallback only*
+  (never-elevate form; if the shared dir can't be created without elevation, degrade
+  to `~/.aid` + warn, `return 0` — a routine `aid add` must NOT sudo-prompt). This
+  satisfies AC1 literally ("/var/lib/aid exists when installation completes") whereas
+  runtime/lazy-primary did not, and it preserves the best-effort contract (§3.3 #2).
+  Old global installs predating the hooks converge on the next root re-install/upgrade;
+  the runtime fallback only degrades, it does not self-heal via prompt.
 
 **Still genuinely open (deferrable, not blocking):**
 - Optional group-writable shared home (setgid) for non-sudo team registration —

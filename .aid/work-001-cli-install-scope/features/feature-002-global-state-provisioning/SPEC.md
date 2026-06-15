@@ -7,6 +7,9 @@
 | 2026-06-15 | Feature identified from REQUIREMENTS.md §5 (FR7), §4, §9 (AC6), §10 (Priority 1) | /aid-interview |
 | 2026-06-15 | Technical Specification authored | /aid-specify |
 | 2026-06-15 | Spec fixes (review cycle 1): _aid_priv_run convention, real provisioning hook, removed fabricated verb | /aid-specify |
+| 2026-06-15 | Re-spec (cycle 2): install-time provisioning primary + non-prompting runtime fallback (was runtime/lazy) | /aid-specify |
+| 2026-06-15 | Spec fixes (cycle 3): working curl install guard (env-preset capture), AID_SHARED_STATE_HOME test seam, line cite | /aid-specify |
+| 2026-06-15 | Seam consistency: global AID_STATE_HOME honors AID_SHARED_STATE_HOME (runtime+install unified) | /aid-specify |
 
 ## Source
 
@@ -77,25 +80,43 @@ Must (Priority 1 — root-cause bug fix)
 
 ### Scope of this feature
 
-This feature is the **runtime shared-state provisioning slice** of the global
-state home. It does **not** re-specify scope detection or the `AID_CODE_HOME` /
+This feature is the **global shared-state provisioning slice** of the global
+state home, using a **HYBRID** model: install-time provisioning is the PRIMARY
+mechanism, and a non-prompting best-effort runtime ensure-exists is a FALLBACK
+only. It does **not** re-specify scope detection or the `AID_CODE_HOME` /
 `AID_STATE_HOME` resolution — those are feature-001 and are treated as GIVEN
 here, as is the `_aid_priv_run` elevation helper (PR #78, gated to master first).
-This feature owns three concrete behaviors:
+This feature owns four concrete behaviors:
 
-1. **Lazy creation** of `/var/lib/aid` (root-owned, world-readable) on the
-   **first shared-state write** of a global install — seeding an empty shared
-   `registry.yml` there — because there is no reachable install-time hook today
-   (see Approach › "Why provisioning is RUNTIME"). Install-time seeding is
-   deferred to feature-003 (installer-scope rework).
-2. The runtime **shared-registry write path** that elevates only when the target
-   is not user-writable, degrading to skip+warn (best-effort) per AC6.
-3. The **per-user collapse** so a non-global install never produces a `/var/lib/aid`
+1. **Install-time creation (PRIMARY)** of `/var/lib/aid` (root-owned,
+   world-readable) and seeding of an empty shared `registry.yml` there, performed
+   by the installers themselves (npm postinstall + curl `install.sh`) **only when
+   the install runs as root**. Adding these install-time hooks IS this feature's
+   job (REQUIREMENTS §4 "global shared-state provisioning `/var/lib/aid` by the
+   installers"; the feature title) — it is **not** deferred to any other feature.
+   The earlier premise "no reachable install-time hook today" is true-but-irrelevant:
+   the hook does not exist *yet* because building it is the work here.
+2. **Runtime ensure-exists (FALLBACK, non-prompting)** on a shared-state write of
+   a global install whose `/var/lib/aid` is absent — e.g. an older global install
+   predating this feature, or a non-root convenience install that could not
+   provision at install time. This path attempts create/seed via the
+   never-elevate route and, if the shared dir is missing and cannot be created
+   without elevation, DEGRADES to the user tier `~/.aid` + one WARN and `return 0`.
+   A routine `aid add` MUST NOT fire an interactive sudo password prompt.
+3. The **shared-registry write path** itself, which is best-effort: the write into
+   an already-root-owned `/var/lib/aid` inherently needs elevation, so per design
+   §3.3 #2 that shared registration is a best-effort skip+warn (it does **not**
+   prompt — it degrades to the user tier).
+4. The **per-user collapse** so a non-global install never produces a `/var/lib/aid`
    path: shared == user == `AID_STATE_HOME` == `~/.aid`.
 
 > **Dependency naming convention used below.** `AID_STATE_HOME` is the
 > feature-001 state-home resolution (`${AID_HOME:-<scope-default>}`, where the
-> scope default is `~/.aid` per-user and `/var/lib/aid` global).
+> scope default is `~/.aid` per-user and `${AID_SHARED_STATE_HOME:-/var/lib/aid}`
+> global). Because feature-001 resolves the global default through the same
+> `AID_SHARED_STATE_HOME` seam this feature uses, the runtime ensure-exists path
+> (which writes to `AID_STATE_HOME`) honors the identical override as the
+> install-time hooks below — pinning the seam once reaches both.
 >
 > `_aid_priv_run <writability-probe-dir> <cmd...>` is the PR #78 best-effort
 > elevation helper (`bin/aid:312-340` on branch `aid/self-contained-update-remove`).
@@ -120,43 +141,74 @@ This feature owns three concrete behaviors:
 >
 > This feature consumes both `AID_STATE_HOME` and `_aid_priv_run` verbatim and
 > defines no new resolution or elevation logic.
+>
+> **Shared-state root override (the one new knob this feature adds).**
+> `AID_SHARED_STATE_HOME` is a single documented environment override for the
+> machine-wide shared-state root, **defaulting to `/var/lib/aid`**. It is the
+> only parameterization introduced here, and it is honored consistently by
+> **every** site that names the shared root:
+>
+> - npm postinstall: `process.env.AID_SHARED_STATE_HOME || '/var/lib/aid'`.
+> - curl `install.sh` hook + `_provision_shared_state_home` arg:
+>   `"${AID_SHARED_STATE_HOME:-/var/lib/aid}"`.
+> - runtime ensure-exists (the global-scope shared home that feature-001's
+>   `AID_STATE_HOME` resolves to): same `"${AID_SHARED_STATE_HOME:-/var/lib/aid}"`
+>   default.
+>
+> Production default is unchanged (`/var/lib/aid`); the override exists so
+> canonical tests get a real, writable sandbox seam (set it to `<tmp>/shared`)
+> instead of touching the live machine path. No broader configuration surface is
+> introduced — this single env var is the whole seam.
 
 ### Approach
 
-#### Why provisioning is RUNTIME (lazy), not install-time
+#### Why provisioning is INSTALL-TIME (primary), with a non-prompting runtime fallback
 
-The earlier draft anchored provisioning on `_install_global_cli` and an
-install.sh `/var/lib` branch. A current-state audit shows **neither is a
-reachable hook**:
+A current-state audit shows the npm/pypi/curl installers do **not** yet provision
+a shared `/var/lib/aid`:
 
-- `_install_global_cli` (`bin/aid:539-561`) is **defined but never called**
-  anywhere in the repo (`grep -rn _install_global_cli bin/ install.sh lib/
-  packages/` finds only the definition + one test-allowlist string). It also
-  installs to `aid_home="${AID_HOME:-${HOME}/.aid}"` — **never** `/var/lib` — so
-  even if it fired it could not provision the shared tier.
-- `install.sh` always installs to `$HOME/.aid` (the three `AID_HOME="${AID_HOME:-${HOME}/.aid}"`
-  sites at `install.sh:577,669,936`) and contains **no root/uid detection and no
-  `/var/lib` branch** (`grep -n 'id -u\|EUID\|/var/' install.sh` is empty). A
-  root `curl|bash` lands in `/root/.aid`, whose payload root *is* root-writable,
-  so feature-001 derives **per-user** scope and a "global path" install hook
-  would never fire.
+- `install.sh` always installs to `$HOME/.aid` (the three
+  `AID_HOME="${AID_HOME:-${HOME}/.aid}"` sites at `install.sh:577,669,936`) and
+  contains **no root/uid detection and no `/var/lib` branch** today
+  (`grep -n 'id -u\|EUID\|/var' install.sh` is empty).
 - `packages/npm/scripts/postinstall.js` has **no `getuid`/root branch** today; it
   only prints a notice or spawns `aid update self`. `pypi` has no JS postinstall
-  at all.
+  at all (per-user by construction via pipx — see Affected components).
 
-So there is **no existing, reachable install-time site that runs `/var/lib`-eligible
-and root** across the npm/pypi/curl channels. Rather than fabricate one in three
-manifests, this feature provisions **lazily at runtime, on the first shared-state
-write** — which is a real, single code site (the registry writers) that
-feature-001 already touches, and which is the exact moment the privileged
-location is genuinely needed (the mlocate "privileged process writes" model,
-design §3.3). This also matches feature-001's runtime-derived-scope model
-(scope = payload-root writability, decided per invocation, never recorded).
+The earlier draft read this absence as "no reachable install-time hook today" and
+made runtime/lazy the primary mechanism. **That premise is true-but-irrelevant:
+adding these hooks IS this feature's job** (REQUIREMENTS §4 "global shared-state
+provisioning `/var/lib/aid` by the installers"; the feature title). The hooks are
+small, reachable insertions in install paths that already run during a global
+install, and they create `/var/lib/aid` at the exact moment the installer holds
+root — so the literal contract "when installation completes, `/var/lib/aid`
+exists" (AC1) is satisfiable as written. We therefore **build them here**, not
+defer to another feature.
 
-**Recommendation (and the one genuine design choice — see Open decision below):
-runtime/lazy provisioning is the primary mechanism.** Install-time seeding is
-deferred to feature-003 (the installer-scope rework) where a real root-detecting
-install path is built; it is **not** specified here against dead code.
+**Install-time is PRIMARY** because:
+
+- It is the only point where the process legitimately holds root for a global
+  install (npm `-g` postinstall under sudo; root `curl|bash`), so the
+  root-owned/world-readable mlocate layout (design §2/§3.2) is created **without
+  a later interactive sudo prompt** during normal CLI use.
+- It makes AC1 literally true: provisioning is a deterministic install step, not
+  a probabilistic "first write someday" event.
+- Non-root installs (user-prefix npm global, non-root `curl|bash`, pipx) correctly
+  **skip** the install-time hook (uid≠0) — they are per-user scope anyway and
+  collapse to `~/.aid` (behavior 4).
+
+**Runtime ensure-exists is the FALLBACK** (non-prompting, best-effort) for global
+installs whose `/var/lib/aid` is absent at write time — old installs predating
+this feature, or a global tree provisioned without root. It re-converges by
+attempting a never-elevate create/seed and, when that is not possible without
+elevation, degrading to `~/.aid` + WARN. It **never** force-prompts sudo: a
+routine `aid add` must not block on a password.
+
+**Recommendation: install-time provisioning is the primary mechanism; runtime is
+a non-prompting best-effort ensure-exists fallback only.** The
+`_provision_shared_state_home` helper body is correct and reusable either way;
+this re-spec moves its **call site** from the runtime registry-write path to the
+installers, and re-scopes the residual runtime path to never-elevate.
 
 #### The provisioning helper
 
@@ -164,19 +216,20 @@ A new helper `_provision_shared_state_home <shared-home>` is added to
 `lib/aid-install-core.sh` (the file the curl bootstrap dot-sources at
 `install.sh:526` and copies to `${AID_HOME}/lib/aid-install-core.sh` at
 `install.sh:779`; the npm/pypi payloads vendor the same file, so the helper is
-available to `bin/aid` at runtime via the existing lib-sourcing path). Because
-provisioning is runtime-driven, **`bin/aid` calls this helper from the registry
-write path** (below), not from any installer.
+available both to the installers and to `bin/aid` at runtime via the existing
+lib-sourcing path). **The installers call this helper at install time when running
+as root** (primary path — see Affected components); the runtime registry-write
+path only invokes the never-elevate ensure-exists portion as a fallback.
 
 The helper, given the resolved shared home `SH` (`/var/lib/aid` on a global
 install):
 
-1. If `"$SH"` does not exist, create it via the elevation helper, **probing the
-   parent**: `_aid_priv_run "$(dirname "$SH")" mkdir -p "$SH"` then
-   `_aid_priv_run "$SH" chmod 0755 "$SH"`. Probing `dirname "$SH"` (`/var/lib`)
-   is correct: if `/var/lib` is not user-writable the helper elevates the
-   `mkdir`; if `$SH` itself does not yet exist it cannot be the probe. Result is
-   root-owned (created under sudo), world-readable + world-traversable,
+1. If `"$SH"` does not exist, create it, **probing the parent**:
+   `_aid_priv_run "$(dirname "$SH")" mkdir -p "$SH"` then
+   `_aid_priv_run "$SH" chmod 0755 "$SH"`. At the **install-time** call site the
+   process already holds root, so the probe of `/var/lib` is writable
+   (uid 0 ⇒ `need_root=0`, `bin/aid:322`) and the `mkdir` runs directly — no
+   prompt. Result is root-owned, world-readable + world-traversable,
    owner-writable only — the mlocate model (design §2/§3.2).
 2. If `"$SH/registry.yml"` does **not** already exist, seed an **empty** registry
    using the exact current schema (`bin/aid:1216-1223`): the three comment lines,
@@ -184,10 +237,21 @@ install):
    `_aid_priv_run "$SH" mv -f "$tmp" "$SH/registry.yml"` (elevates iff `$SH` is
    not user-writable), then `_aid_priv_run "$SH" chmod 0644 "$SH/registry.yml"`.
    Never clobber an existing `registry.yml` (idempotent / upgrade safe).
-3. Best-effort throughout: if any `_aid_priv_run` step declines (returns 13 / no
-   sudo) or fails (read-only `/var`, container), the helper returns non-zero; the
-   caller degrades to the **user** tier `~/.aid` + one `WARN:` line and **never
-   hard-fails** the user's command (see Edge cases, AC6).
+3. Best-effort throughout: if any `_aid_priv_run` step fails (read-only `/var`,
+   container), the helper returns non-zero and **never hard-fails** its caller.
+   At the **install-time** caller (npm postinstall / curl `install.sh`) a non-zero
+   return is simply swallowed (caught try/catch for npm; the install still
+   succeeds) — the install is not blocked and no per-user degrade happens there.
+
+> **Two distinct call modes (the load-bearing distinction of this re-spec).**
+> (a) **Install-time PRIMARY** invokes the full `_provision_shared_state_home`
+> helper while holding root, so its probes are writable and it runs directly.
+> (b) **Runtime FALLBACK** does **not** call the full helper with non-empty
+> probes (that could elevate/prompt); the registry writers instead perform their
+> own **never-elevate** ensure-exists via `_aid_priv_run ""` (empty probe ⇒
+> forced direct, `bin/aid:322,337`) and, on failure, degrade to the user tier
+> `~/.aid` + one `WARN:` + `return 0` (see Affected components, Behavior B,
+> Edge cases, AC6). No routine command prompts for sudo.
 
 **Per-user install: no `/var/lib/aid`.** When feature-001 resolves per-user
 scope, `AID_STATE_HOME == ~/.aid`, so the registry write path targets a
@@ -225,11 +289,13 @@ is a no-op.
 
 | Component | Channel | Change |
 |---|---|---|
-| `lib/aid-install-core.sh` | all (vendored) | **New** `_provision_shared_state_home <shared-home>`: create dir + `chmod 0755` and seed empty `registry.yml` (`0644`, atomic, no-clobber), each filesystem mutation routed through `_aid_priv_run`. Best-effort; returns non-zero (does not abort the caller) when elevation declines. |
-| `bin/aid` `registry_register` (`bin/aid:1202-1235` after the feature-001 `AID_STATE_HOME` rename) | runtime, all | **Primary hook.** Before writing, if `$reg` lives under a **non-user-writable** shared home and the shared dir is missing, call `_provision_shared_state_home "$AID_STATE_HOME"` (lazy, first-shared-write). Then commit via `_aid_priv_run "$AID_STATE_HOME" mv -f "$tmp" "$reg"` (probes the registry's own dir; elevates iff that dir is not user-writable). Best-effort: provisioning or elevation declines → degrade to `~/.aid` + existing `WARN:` and `return 0`. |
-| `bin/aid` `registry_unregister` (`bin/aid:1241-1273` after the rename) | runtime, all | Same atomic-commit change: `_aid_priv_run "$AID_STATE_HOME" mv -f "$tmp" "$reg"`. (No provisioning here — unregister only runs when a registry already exists; `[[ -f "$reg" ]] || return 0` guards it.) |
-| `packages/npm/scripts/postinstall.js` | npm | **No change required for provisioning.** Provisioning is runtime/lazy; the postinstall path (notice / `aid update self`) is unchanged. Documented here only to record that the previously-proposed `process.getuid?.()===0` provisioning spawn and the `aid --provision-shared-state` verb are **dropped** (no such verb exists; `grep -rn provision-shared-state` is empty). |
-| pypi packaging | pypi | **No change required for provisioning** (same rationale; pypi has no JS postinstall and provisioning rides the runtime registry-write path in the vendored `bin/aid` + `lib/`). |
+| `lib/aid-install-core.sh` | all (vendored) | **New** `_provision_shared_state_home <shared-home>`: create dir + `chmod 0755` and seed empty `registry.yml` (`0644`, atomic, no-clobber), each filesystem mutation routed through `_aid_priv_run`. Best-effort; returns non-zero (does not abort the caller) when elevation declines. **Body unchanged from cycle 1 — only the call site moves to install-time.** When the installer already holds root (uid 0), every `_aid_priv_run` probe finds the target writable and runs directly, so install-time provisioning never re-prompts. |
+| `packages/npm/scripts/postinstall.js` | npm | **Install-time PRIMARY hook (npm).** Resolve the shared-state root once via the seam — `var sharedHome = process.env.AID_SHARED_STATE_HOME || '/var/lib/aid';` — then add a branch guarded by `process.getuid && process.getuid() === 0` **and** not-already-provisioned (`!existsSync(path.join(sharedHome, 'registry.yml'))`): `mkdirSync(sharedHome, {mode: 0o755})` then seed an empty `registry.yml` under `sharedHome` (write `0644`, **no-clobber**) using the exact schema (`schema: 1` + empty `repos:`) — the same seed text the CLI uses (`bin/aid:1216-1223`, self-contained branch `bin/aid:1338-1342`). Wrap in the **existing** `try/catch` (the `try` opens at `postinstall.js:31`, `catch` at `:61-67`) so any failure stays non-fatal (`npm i -g` never breaks; NFR12/RC-3). A user-prefix global install runs as **non-root** ⇒ `getuid()!==0` ⇒ the branch is **skipped** correctly (that scope is per-user → `~/.aid`). The `AID_SHARED_STATE_HOME` env override (default `/var/lib/aid`) is the canonical-test sandbox seam — a test sets it to a writable tmp dir so the npm hook never writes the real `/var/lib`. This UN-DROPS the previously-dropped `getuid()===0` idea as an **inline** `mkdirSync`/seed — **not** the fabricated `aid --provision-shared-state` verb (no such verb; `grep -rn provision-shared-state` is empty). |
+| `install.sh` (top-of-file env capture) | curl | **New early capture line.** As one of the first executable lines, immediately after `set -uo pipefail` (`install.sh:66`) and **before** the first `AID_HOME="${AID_HOME:-${HOME}/.aid}"` default (`install.sh:577`), add: `_AID_HOME_PRESET="${AID_HOME:-}"`. This snapshots whether `AID_HOME` was preset **in the environment** before `install.sh` unconditionally defaults it — the signal both hooks guard on. A real root `sudo curl\|bash` has no `AID_HOME` in its env (`_AID_HOME_PRESET` empty ⇒ provision); a canonical test that pins `AID_HOME=<throwaway>` in the env (`_AID_HOME_PRESET` non-empty ⇒ skip, protecting the real `/var/lib`). This intentionally does **not** key off the post-default `AID_HOME` (which is the always-set install dir, not feature-001's STATE-override and never empty at either hook site). |
+| `install.sh` (curl bootstrap + convenience) | curl | **Install-time PRIMARY hook (curl).** After install success in BOOTSTRAP mode (after the `aid CLI ... installed` echo, `install.sh:820`) AND in the shared CONVENIENCE block (after install success / before the `exec` at `install.sh:1065`; block body `install.sh:941-1062`), add: `if [[ "$(id -u)" -eq 0 && -z "$_AID_HOME_PRESET" ]]; then _provision_shared_state_home "${AID_SHARED_STATE_HOME:-/var/lib/aid}"; fi`. The `-z "$_AID_HOME_PRESET"` guard tests the **environment-preset** snapshot taken at `install.sh:66` (above), not the post-default `AID_HOME` — so it is true on a real root `curl\|bash` (env had no `AID_HOME`) and false under a test that env-pins `AID_HOME` (keeping the suite from ever touching the real `/var/lib`). `install.sh` currently installs to `$HOME/.aid` at `:577/:669/:936`; this is the first `/var/lib` / `id -u` site it gains. Best-effort: the helper returns non-zero on failure but the install does not abort. |
+| pipx packaging | pypi/pipx | **No change.** pipx is per-user by construction (installs into a per-user venv, runs as the invoking non-root user); there is no global root install path to hook. Shared==user==`~/.aid` collapse applies; provisioning rides the runtime fallback only if a `/var/lib/aid` ever exists for it to converge to. |
+| `bin/aid` `registry_register` (`bin/aid:1202-1235` after the feature-001 `AID_STATE_HOME` rename) | runtime, all | **Non-prompting FALLBACK hook.** If `$reg` lives under a shared home whose dir is missing, attempt a **never-elevate** ensure-exists: `_aid_priv_run "" mkdir -p "$AID_STATE_HOME"` (empty probe ⇒ forced direct, `bin/aid:322` makes `need_root=0`; `bin/aid:337` runs `"$@"` with no sudo) plus the seed via the same never-elevate path. If the shared dir is missing and cannot be created without elevation, **DEGRADE** to `~/.aid` (user tier) + one `WARN:` + `return 0`. The shared-tier commit `mv -f "$tmp" "$reg"` is likewise best-effort: a write into an already-root-owned `/var/lib/aid` is **skipped+warned (degrades to `~/.aid`), not sudo-prompted** (design §3.3 #2). A routine `aid add` therefore **never** fires an interactive sudo prompt. |
+| `bin/aid` `registry_unregister` (`bin/aid:1241-1273` after the rename) | runtime, all | Atomic-commit via the same never-elevate path; degrade to user tier on failure. (No provisioning here — unregister only runs when a registry already exists; `[[ -f "$reg" ]] || return 0` guards it.) |
 
 > **Feature-001 prerequisite (call-out, not owned here).** The registry writers
 > today hardcode `reg="${AID_HOME}/registry.yml"` (`bin/aid:1203,1242`) and `bin/aid`
@@ -238,77 +304,124 @@ is a no-op.
 > GIVEN** that must land **before** this feature's runtime hook is correct —
 > otherwise the wrapper would key off the wrong variable and the shared tier
 > would never be selected. This feature does not perform that rename; it consumes
-> the resolved `AID_STATE_HOME`.
+> the resolved `AID_STATE_HOME`. **The `AID_SHARED_STATE_HOME` seam reaches
+> runtime via feature-001:** feature-001 resolves the global `AID_STATE_HOME`
+> default as `${AID_SHARED_STATE_HOME:-/var/lib/aid}`, so the runtime
+> ensure-exists path (which writes to `AID_STATE_HOME`) honors the same seam as
+> the install hooks. There is no separate seam for runtime — pinning
+> `AID_SHARED_STATE_HOME` once redirects both the install-time provisioning and
+> the runtime write to the sandbox, so a canonical test exercises the runtime
+> fallback against `<tmp>/shared`, never the real `/var/lib`.
 
-The privileged-write path for the shared registry is
-**`_aid_priv_run "$AID_STATE_HOME" mv -f "$tmp" "$reg"`** — the **first argument
-is the writability-probe dir** (the registry's own directory `$AID_STATE_HOME`),
-**not** the command. `_aid_priv_run` already encodes the
-writable-probe-then-elevate-else-decline contract, so the registry writers gain
-shared-tier support without duplicating that logic. Provisioning's dir/file
-mutations use the same form: `_aid_priv_run "$(dirname "$SH")" mkdir -p "$SH"`,
-`_aid_priv_run "$SH" chmod ...`, `_aid_priv_run "$SH" mv -f ...`.
+**Two distinct call modes of `_aid_priv_run` are used, and the distinction is
+load-bearing:**
+
+- **Install-time provisioning (PRIMARY, may elevate-by-being-root):** the
+  installer runs `_provision_shared_state_home "${AID_SHARED_STATE_HOME:-/var/lib/aid}"` while holding root,
+  so the helper's dir/file mutations
+  (`_aid_priv_run "$(dirname "$SH")" mkdir -p "$SH"`,
+  `_aid_priv_run "$SH" chmod ...`, `_aid_priv_run "$SH" mv -f ...`) all find the
+  probe writable (uid 0 ⇒ `need_root=0`, `bin/aid:322`) and run directly — no
+  sudo, no prompt. This is the only place the root-owned layout is created.
+- **Runtime fallback (NEVER-ELEVATE):** the registry writers use the **empty
+  probe** form `_aid_priv_run "" mkdir -p "$AID_STATE_HOME"` / `_aid_priv_run ""
+  mv -f "$tmp" "$reg"`. The empty first argument forces the direct,
+  never-elevate path (`bin/aid:322` requires `-n "$probe"`, so `need_root`
+  stays 0 and `bin/aid:337` runs `"$@"` with no sudo). When the direct write
+  fails because the target is root-owned, the writer **degrades to `~/.aid` +
+  WARN**, it does **not** route through a non-empty probe (which would prompt).
+  A routine `aid add` therefore never triggers an interactive sudo prompt.
 
 ### Behavior / Flow
 
-**Global first-shared-write provisioning sequence** (runtime, on a global
-install; e.g. `aid add` / dashboard auto-register, repo outside `~`):
+**A. Install-time provisioning sequence (PRIMARY — root global install):**
+1. **npm `-g` (root):** `postinstall.js` runs with `process.getuid() === 0`. The
+   new branch, inside the existing `try/catch` (`postinstall.js:61-67`),
+   `mkdirSync('/var/lib/aid', {mode: 0o755})` (no-op if present) and, if
+   `/var/lib/aid/registry.yml` is absent, writes the empty seed (`schema: 1` +
+   empty `repos:`, mode `0644`). Failure is non-fatal (caught → soft WARN →
+   `exit 0`).
+2. **curl `install.sh` (root, no env-preset `AID_HOME`):** `install.sh` first
+   snapshots `_AID_HOME_PRESET="${AID_HOME:-}"` at the top of the file
+   (`install.sh:66`, before the first default at `:577`), so on a real root
+   `curl|bash` the snapshot is empty. After the install-success echo in BOOTSTRAP
+   (`install.sh:820`) and again at the end of the CONVENIENCE install block
+   (before the `exec`, `install.sh:1065`), the guard
+   `[[ "$(id -u)" -eq 0 && -z "$_AID_HOME_PRESET" ]]` runs
+   `_provision_shared_state_home "${AID_SHARED_STATE_HOME:-/var/lib/aid}"`.
+   Holding root, every internal `_aid_priv_run` probe is writable ⇒ direct
+   `mkdir -p /var/lib/aid`, `chmod 0755`, atomic-seed `registry.yml` `0644`
+   (no-clobber). No prompt.
+3. **Non-root / user-prefix / pipx:** the guard fails (`getuid()!==0` /
+   `id -u != 0`) and nothing is provisioned — that install is per-user scope and
+   collapses to `~/.aid` (behavior 4). A test that env-presets `AID_HOME`
+   likewise short-circuits (`_AID_HOME_PRESET` non-empty), protecting the real
+   `/var/lib`.
+4. Result on a root global install: when installation completes, `/var/lib/aid`
+   exists, root-owned, `0755`, with a seeded `0644` `registry.yml` — **AC1
+   literally satisfied**.
+
+**B. Runtime ensure-exists FALLBACK (non-prompting)** — only when a global
+install's `/var/lib/aid` is absent at write time (old install, or a global tree
+never provisioned at install):
 1. feature-001 resolves scope = global and `AID_STATE_HOME = /var/lib/aid`;
    `reg="$AID_STATE_HOME/registry.yml"`.
 2. Idempotent check: `$repo` already present → no-op (`bin/aid:1207`).
-3. If the shared dir `$AID_STATE_HOME` does not exist, call
-   `_provision_shared_state_home "$AID_STATE_HOME"`:
-   `_aid_priv_run "$(dirname "$AID_STATE_HOME")" mkdir -p "$AID_STATE_HOME"`
-   (elevates iff `/var/lib` is not user-writable — it normally is not, so this
-   runs `sudo mkdir` and **prompts for a password**), then `chmod 0755`, then
-   seed empty `registry.yml` `0644` if absent. Idempotent on every later write.
+3. If the shared dir is missing, attempt a **never-elevate** ensure-exists:
+   `_aid_priv_run "" mkdir -p "$AID_STATE_HOME"` (empty probe ⇒ `need_root=0`,
+   `bin/aid:322`; direct run at `bin/aid:337`) + never-elevate seed. **No sudo,
+   no prompt.** If the parent is not user-writable so the direct `mkdir` fails,
+   go to step 6 (degrade).
 4. `mktemp` next to `reg`; write the merged, deduped, sorted list (unchanged
    logic, `bin/aid:1216-1223`).
-5. Commit: `_aid_priv_run "$AID_STATE_HOME" mv -f "$tmp" "$reg"` — first arg is
-   the **probe dir** (the registry's directory). If that dir is user-writable
-   (e.g. already running as root, or a group-writable future knob) the helper
-   runs `mv` directly; otherwise it prints `aid: <dir> is not writable --
-   elevating this step via sudo...` and runs `sudo mv` (which **prompts**).
-6. **Degrade:** if `_aid_priv_run` returns non-zero — `sudo` absent (return 13),
-   the user fails/cancels the sudo prompt, or provisioning could not create the
-   dir — `rm -f "$tmp"`, fall back to the user registry `~/.aid/registry.yml`
-   (re-run the write there), and print the existing `WARN: aid: could not update
-   the machine repo registry (...)` line. The command the user actually ran
-   (status, dashboard, add) **still completes** — the registry is a rebuildable
-   index, never required for a single-repo op (design §3.3). `return 0`.
+5. Commit: `_aid_priv_run "" mv -f "$tmp" "$reg"` (empty probe ⇒ direct). If
+   `/var/lib/aid` is already root-owned (the normal post-install case but the
+   user is unprivileged), the direct `mv` fails — go to step 6.
+6. **Degrade (best-effort, never prompts):** `rm -f "$tmp"`, fall back to the
+   user registry `~/.aid/registry.yml` (re-run the write there), print the
+   existing `WARN: aid: could not update the machine repo registry (...)` line,
+   and `return 0`. The command the user actually ran (status, dashboard, add)
+   **still completes** — the registry is a rebuildable index, never required for
+   a single-repo op (design §3.3).
 
-> **Note on prompting (corrected from the prior draft).** `_aid_priv_run` has
-> **no TTY guard** and does **not** silently decline: when the probe dir is not
-> writable and `sudo` exists, it runs `sudo "$@"`, which prompts interactively.
-> The only non-prompting decline is when `sudo` is absent (return 13). This is
-> acceptable here because the shared write is an explicit `aid add` / register
-> action, not a read-only command; design §3.3 #2 ("no read-only command
-> force-prompts sudo merely to index") is honored by **not routing read-only
-> commands through this path at all**, not by an internal TTY check.
+> **Note on prompting (re-spec cycle 2).** The runtime path uses the **empty-probe
+> never-elevate form** of `_aid_priv_run` (`_aid_priv_run "" ...`), which the
+> helper body forces down the direct, no-sudo branch (`bin/aid:322,337`). The
+> shared WRITE into an already-root-owned `/var/lib/aid` inherently needs
+> elevation, but per design §3.3 #2 that registration is **best-effort skip+warn**:
+> `aid add`'s shared registration does **NOT** prompt — it degrades to `~/.aid`.
+> A routine `aid add` therefore never fires an interactive sudo password prompt.
+> (Elevation that genuinely needs root happens only at install time, in A, where
+> the process already holds it.)
 
 **Per-user runtime write:** feature-001 resolves `AID_STATE_HOME = ~/.aid`,
 `reg="$HOME/.aid/registry.yml"`, always user-writable; `_provision_shared_state_home`
-is never called and `_aid_priv_run "$AID_STATE_HOME" mv -f ...` runs `mv` directly
-with no elevation, identical to today.
+is never called and `_aid_priv_run "" mv -f ...` runs `mv` directly with no
+elevation, identical to today.
 
 ### Edge cases & fail-safes
 
 - **`/var/lib/aid` not present at runtime** (older global install predating this
-  feature, or a global `curl|bash` that ran without root and never provisioned):
-  the runtime write path finds no shared dir. `mkdir -p` of `/var/lib/aid` via
-  `_aid_priv_run` is attempted **once** on the write; if that too declines/fails,
-  degrade to the **user** registry (`~/.aid/registry.yml`) + one `WARN:` line.
-  Never hard-fail. (AC6: "degrade to skip+warn while still operating.")
-- **Elevation declines on the shared write** (`sudo` absent → `_aid_priv_run`
-  returns 13, or the user cancels the sudo prompt → non-zero): the writer falls
-  back to the user registry, prints `WARN:`, and `return 0`. This path is only
-  ever entered from an explicit write action (`aid add` / register), never from a
-  read-only command — read-only commands are **not** routed through the
-  privileged-write path at all (design §3.3 decision #2; NFR least-privilege),
-  which is how "no read-only command force-prompts sudo to index" is satisfied
-  (the helper itself has no TTY guard, so the guarantee lives at the call site).
-- **Re-install / upgrade over an existing `/var/lib/aid`:** the seed step is
-  no-clobber (`[[ -e "$reg" ]] && skip`), so registered repos survive a reinstall.
+  feature, or a global install whose install-time hook was skipped — e.g. it was
+  not run as root): the runtime FALLBACK finds no shared dir. A **never-elevate**
+  `mkdir -p` (`_aid_priv_run "" ...`) is attempted **once**; if that fails because
+  the parent is not user-writable, degrade to the **user** registry
+  (`~/.aid/registry.yml`) + one `WARN:` line, no prompt. Never hard-fail.
+  (AC6: "degrade to skip+warn while still operating.")
+- **Shared write into a root-owned `/var/lib/aid` by an unprivileged user:** the
+  never-elevate direct `mv` fails; the writer falls back to the user registry,
+  prints `WARN:`, and `return 0`. **It does NOT prompt for sudo** — the shared
+  registration is best-effort (design §3.3 #2; NFR least-privilege). The
+  guarantee lives at the call site (the empty-probe form), not in a TTY check.
+  Read-only commands are additionally **not** routed through this write path at
+  all.
+- **Re-install / upgrade over an existing `/var/lib/aid`:** both the install-time
+  seed (npm/curl) and the runtime seed are no-clobber (`[[ -e "$reg" ]] && skip`),
+  so registered repos survive a reinstall.
+- **Non-root global install (user-prefix npm, non-root `curl|bash`):** the
+  install-time hook is **skipped** (uid≠0 / `id -u != 0`); that install is
+  per-user scope and collapses to `~/.aid`, so no `/var/lib/aid` is expected or
+  created. Correct by design, not a degradation.
 - **Concurrent privileged writers** (two `aid add` racing on the shared registry):
   out of scope beyond the atomic `mv -f` set-insert (REQUIREMENTS §4 non-goal);
   last writer wins, no corruption (atomic rename).
@@ -316,11 +429,10 @@ with no elevation, identical to today.
   persisting across reboots — the FHS `/var/lib/<pkg>` slot. Not `/var/cache`
   (the registry is authoritative, not regenerable from elsewhere), not `/etc`
   (machine-generated, not admin-edited; the header says do-not-hand-edit).
-- **Read-only `/var` / container with no writable `/var/lib`:** the first
-  shared-write provisioning attempt fails (even under sudo); the runtime write
-  falls back to the user tier `~/.aid/registry.yml` + one `WARN:`. The user's
-  command still completes; the global install itself was never blocked because
-  provisioning is lazy, not an install step.
+- **Read-only `/var` / container with no writable `/var/lib`:** the install-time
+  provisioning attempt fails (caught, non-fatal, install still succeeds); a later
+  runtime write falls back to the user tier `~/.aid/registry.yml` + one `WARN:`,
+  no prompt. The user's command still completes.
 
 ### bash ↔ ps1 parity
 
@@ -336,21 +448,26 @@ Windows analogue of `/var/lib` — machine-wide, persistent, application-managed
 data writable by Administrators and readable by all users, mirroring the
 root-writes / everyone-reads model. The per-user home already resolves to
 `$env:LOCALAPPDATA\aid` (`bin/aid.ps1:66`), so the shared/user split is symmetric
-with POSIX. Elevation for the shared write uses the PR #78 PowerShell elevation
-path (UAC `Start-Process -Verb RunAs`, or no-elevation when the location is
-user-writable); when elevation is unavailable, the same skip+warn degrade
-applies. A global Windows install (machine-wide MSI/Admin install) provisions
-`%ProgramData%\aid`; a per-user install collapses shared==user==`%LOCALAPPDATA%\aid`,
-exactly as POSIX collapses to `~/.aid`.
+with POSIX. The **primary** provisioning point mirrors POSIX: a machine-wide
+(Administrator) install creates `%ProgramData%\aid` at **install time** while
+holding elevation; the runtime path is the same non-prompting best-effort
+ensure-exists fallback (no UAC re-prompt during a routine `aid add` — degrade to
+`%LOCALAPPDATA%\aid` + WARN instead). A per-user install collapses
+shared==user==`%LOCALAPPDATA%\aid`, exactly as POSIX collapses to `~/.aid`.
 
 All shipped scripts touched here remain **ASCII-only** (CI-enforced; NFR §6).
 
 ### Testing
 
 Canonical assertions (HOME- and AID_HOME-pinned to a throwaway dir; mirror the
-existing pinning so no real repo or real `/var/lib` is touched — tests target a
-sandbox `SHARED=<tmp>/shared` passed as the shared-home argument, **never** the
-literal `/var/lib/aid`):
+existing pinning so no real repo or real `/var/lib` is touched). The
+shared-state root is redirected to a sandbox via the **`AID_SHARED_STATE_HOME`
+seam** (default `/var/lib/aid`): tests `export AID_SHARED_STATE_HOME=<tmp>/shared`
+(also passed/observed as the `_provision_shared_state_home` argument), so every
+provisioning site — the npm postinstall, the curl `install.sh` hook, the helper,
+and the runtime ensure-exists — writes under the sandbox and **never** touches
+the literal `/var/lib/aid`. Where a test invokes the helper directly it passes
+`SHARED=<tmp>/shared` as the explicit argument:
 
 1. **Provision helper creates the dir + empty registry.** With `_aid_priv_run`
    stubbed to run commands directly (writable sandbox), invoke
@@ -363,20 +480,39 @@ literal `/var/lib/aid`):
    `AID_STATE_HOME == ~/.aid`), run a `registry_register`; assert it never calls
    `_provision_shared_state_home` (stub records calls), creates no
    `/var/lib/aid`-equivalent path, and writes to `~/.aid/registry.yml`.
-4. **Shared write elevates only when needed.** With `$SHARED` user-writable, a
-   `registry_register` writes directly (stub `_aid_priv_run` asserts it ran the
-   command without an elevation branch). With `$SHARED` made non-writable (e.g.
-   `chmod 0555`), assert the writer routed through `_aid_priv_run`.
-5. **Best-effort degrade when elevation declines.** Stub `_aid_priv_run` to
-   return non-zero (simulating `sudo` absent → 13, or a cancelled prompt); assert
-   `registry_register` falls back to `~/.aid/registry.yml`, prints the `WARN:`
-   line, returns 0, the surrounding command still completes, and no
-   `*.aid-tmp.*` temp file is left.
-6. **Missing shared dir at runtime degrades to user tier.** Point
-   `AID_STATE_HOME` at a non-existent, non-creatable shared path with
-   `_aid_priv_run` stubbed to decline; assert the entry lands in
-   `~/.aid/registry.yml` and one WARN is printed, no hard failure.
-7. **ASCII-only guard** over the changed scripts (reuse the existing CI check).
+4. **Install-time hook provisions when root, skips otherwise (npm).** Run
+   `postinstall.js` with `getuid` stubbed to return 0 and
+   `AID_SHARED_STATE_HOME=<tmp>/shared` (the seam redirects `mkdirSync`/seed off
+   `/var/lib/aid` to the sandbox); assert the sandbox dir + empty `0644` seed are
+   created. Re-run with `getuid` returning a non-zero uid; assert **nothing** is
+   provisioned. Re-run with the seed pre-existing; assert no-clobber.
+5. **Install-time hook guard (curl).** With `AID_SHARED_STATE_HOME=$SHARED`
+   (the sandbox seam, default `/var/lib/aid`) and `id -u`→0 and `AID_HOME` unset
+   in the env, run the `install.sh` provisioning guard; assert
+   `_AID_HOME_PRESET` is captured empty, the guard passes, and `$SHARED` is
+   provisioned (the real `/var/lib` is never touched because the helper is
+   pointed at `$SHARED` via the seam). Then env-pin `AID_HOME=<throwaway>` and
+   re-run; assert `_AID_HOME_PRESET` is non-empty so the guard's
+   `-z "$_AID_HOME_PRESET"` short-circuit skips provisioning entirely.
+6. **Runtime fallback never prompts.** With global scope resolved so feature-001
+   sets `AID_STATE_HOME=${AID_SHARED_STATE_HOME:-/var/lib/aid}=$SHARED` (the seam
+   reaches the runtime write through feature-001's resolution — the same override
+   the install hooks use), `$SHARED` made non-writable (e.g. `chmod 0555`), and
+   `sudo` present on PATH, run `registry_register` and assert the empty-probe
+   `_aid_priv_run ""` path was used (no `sudo` invocation, confirmable via a
+   `sudo` stub that fails the test if called), it degraded to `~/.aid/registry.yml`,
+   and printed one `WARN:`.
+7. **Best-effort degrade, no temp leak.** Make the shared write fail (non-writable
+   `$SHARED`); assert `registry_register` falls back to `~/.aid/registry.yml`,
+   prints the `WARN:` line, returns 0, the surrounding command still completes,
+   and no `*.aid-tmp.*` temp file is left.
+8. **Missing shared dir at runtime degrades to user tier.** Point
+   `AID_STATE_HOME` at a non-existent, non-creatable shared path (read-only
+   parent); assert the never-elevate `mkdir` fails, the entry lands in
+   `~/.aid/registry.yml`, one WARN is printed, no hard failure, no prompt.
+9. **ASCII-only guard** over the changed scripts (`install.sh`,
+   `lib/aid-install-core.sh`; `postinstall.js` is not ASCII-CI-gated but stays
+   ASCII for parity) — reuse the existing CI check.
 
 These extend the existing registry suites in `tests/canonical/`; reuse the
 `mktemp`/`mv -f` assertions already covering `registry_register`.
@@ -398,11 +534,14 @@ the read-only code payload. Transition:
   and feature-001's bootstrap). This is intentional and matches the "registry is
   an index, not authoritative state" model — avoids reading from a root-owned
   location the new code deliberately abandons.
-- On a global install, the **first shared-state write** after this feature lands
-  provisions `/var/lib/aid` if absent (lazy, idempotent seed), so upgraders
-  converge to the correct home with no manual step and no install-time root hook.
-  Until that first write, or if provisioning's elevation declines, the write
-  degrades to the user tier + warn (Edge cases), never stranding the user
-  (NFR backward-compat).
+- A **re-install / upgrade** of a global install after this feature lands runs the
+  install-time hook (npm postinstall / curl `install.sh`) as root and provisions
+  `/var/lib/aid` if absent (idempotent, no-clobber seed) — so upgraders converge
+  to the correct home with **no manual step** as part of the normal upgrade.
+- Old global installs that have not yet been re-installed (no install-time hook
+  ran) converge via the **runtime fallback**: the first shared-state write
+  attempts a never-elevate ensure-exists, and if the shared dir is absent/not
+  creatable without elevation, degrades to the user tier + warn (Edge cases) —
+  never prompting, never stranding the user (NFR backward-compat).
 - Per-user installs are unaffected: `~/.aid/registry.yml` was always writable and
   remains the sole registry.
