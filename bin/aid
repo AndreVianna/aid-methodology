@@ -82,16 +82,26 @@ _aid_usage() {
             printf '  Tools: claude-code, codex, cursor, copilot-cli, antigravity\n'
             ;;
         remove)
-            printf 'aid remove [<tool>[,<tool>...] | self] [--force] [--verbose] [--target <dir>]\n'
+            printf 'aid remove [<tool>[,<tool>...]] [--force] [--verbose] [--target <dir>]\n'
+            printf 'aid remove self [--force] [--dry-run]\n'
             printf '  Remove tool(s) from the current project (manifest-driven).\n'
             printf '  No args: remove ALL AID from the project (asks for confirmation).\n'
-            printf '  self: remove the aid CLI itself (asks for confirmation).\n'
+            printf '  self: COMPLETELY remove the aid CLI, channel-aware (asks for confirmation):\n'
+            printf '        npm -> npm uninstall -g | pypi -> pipx uninstall | curl -> rm $AID_HOME + unwire PATH.\n'
+            printf '        Auto-elevates with sudo only when the install location needs root.\n'
+            printf '  --dry-run: print the exact command(s) it would run, then exit (no changes).\n'
             ;;
         update)
-            printf 'aid update [<tool>... | self] [--version <v>] [--from-bundle <path>]\n'
-            printf '           [--force] [--verbose] [--target <dir>]\n'
+            printf 'aid update [<tool>...] [--version <v>] [--from-bundle <path>] [--force] [--target <dir>]\n'
+            printf 'aid update self [--from-bundle <path>] [--dry-run] [--yes] [--root <dir>]\n'
             printf '  Update to latest. No args: update all installed tools.\n'
-            printf '  self: update the aid CLI itself.\n'
+            printf '  self: COMPLETELY update the aid CLI then apply repo migrations, channel-aware:\n'
+            printf '        npm -> npm i -g | pypi -> pipx upgrade | curl -> re-bootstrap install.sh.\n'
+            printf '        Auto-elevates with sudo only when the install location needs root;\n'
+            printf '        the migration scan always runs as you, never under sudo.\n'
+            printf '  --from-bundle <path>: install the CLI from a local artifact instead of @latest\n'
+            printf '        (npm .tgz | pypi .whl | curl release-staging dir with install.sh).\n'
+            printf '  --dry-run: print the exact command(s) it would run, then exit (no changes).\n'
             ;;
         version)
             printf 'aid version\n'
@@ -121,7 +131,7 @@ _aid_usage() {
             printf '  aid dashboard start|stop ...     Start/stop the local dashboard\n'
             printf '  aid <command> -h | --help        Per-command help\n'
             printf '\n'
-            printf 'Flags: --from-bundle, --version, --force, --target, --verbose\n'
+            printf 'Flags: --from-bundle, --version, --force, --dry-run, --target, --verbose\n'
             printf "Run 'aid <command> -h' for details.\n"
             ;;
     esac
@@ -229,14 +239,11 @@ _aid_check_update() {
 
     # Compare: show notice only when latest > installed.
     if _semver_lt "$installed_version" "$latest_version"; then
-        local _update_cmd
-        case "${AID_INSTALL_CHANNEL:-}" in
-            npm)  _update_cmd="npm i -g aid-installer@latest" ;;
-            pypi) _update_cmd="pipx upgrade aid-installer  (or: pip install --user -U aid-installer)" ;;
-            *)    _update_cmd="aid update self" ;;
-        esac
-        printf 'A newer aid CLI is available: v%s (you have v%s). Run: %s\n' \
-            "$latest_version" "$installed_version" "$_update_cmd"
+        # `aid update self` is now channel-aware and self-contained (it runs the
+        # right package manager + applies migrations), so point at it for every
+        # channel instead of a per-channel manual command.
+        printf 'A newer aid CLI is available: v%s (you have v%s). Run: aid update self\n' \
+            "$latest_version" "$installed_version"
     fi
     return 0
 }
@@ -302,20 +309,85 @@ _aid_check_migrate_sentinel() {
 # ---------------------------------------------------------------------------
 # update self command (formerly self-update).
 # ---------------------------------------------------------------------------
+# _aid_priv_run <writability-probe-dir> <cmd...>
+# Run <cmd>, auto-elevating with sudo ONLY when <probe-dir> exists and is not
+# writable by the current user (and we are not already root) -- e.g. a
+# root-owned npm global prefix. A user-level prefix / pipx venv stays sudo-free.
+# Honors _SELF_DRYRUN=1 (print the resolved command, prefixed with sudo when it
+# would elevate, and do nothing). Returns the command's exit code, or 13 when
+# elevation is needed but sudo is unavailable.
+_aid_priv_run() {
+    local probe="$1"; shift
+    local need_root=0
+    if [[ -n "$probe" && -e "$probe" && ! -w "$probe" && "$(id -u)" -ne 0 ]]; then
+        need_root=1
+    fi
+    if [[ "${_SELF_DRYRUN:-0}" == "1" ]]; then
+        if [[ "$need_root" -eq 1 ]]; then printf '+ sudo %s\n' "$*"; else printf '+ %s\n' "$*"; fi
+        return 0
+    fi
+    if [[ "$need_root" -eq 1 ]]; then
+        if command -v sudo >/dev/null 2>&1; then
+            printf 'aid: %s is not writable -- elevating this step via sudo...\n' "$probe" >&2
+            sudo "$@"; return $?
+        fi
+        printf 'ERROR: aid: %s is not writable and sudo is unavailable. Run manually:\n  %s\n' "$probe" "$*" >&2
+        return 13
+    fi
+    "$@"
+}
+
+# Channel-aware, self-contained CLI self-update. Reads the channel from
+# AID_INSTALL_CHANNEL (injected by the npm/pypi shims); the curl/default channel
+# re-bootstraps via install.sh. Honors _SELF_FROM_BUNDLE (a local CLI artifact:
+# npm .tgz / pypi .whl / curl bundle dir) and _SELF_DRYRUN. The post-update
+# migration scan runs in the caller's (user) context -- never under the sudo
+# used here for the privileged install step.
 _cmd_update_self() {
-    # AID_INSTALL_CHANNEL guard: npm/pypi channels print a package-manager hint
-    # and exit 0 instead of re-bootstrapping (which would overwrite the channel).
-    case "${AID_INSTALL_CHANNEL:-}" in
+    local channel="${AID_INSTALL_CHANNEL:-}"
+    local bundle="${_SELF_FROM_BUNDLE:-}"
+    case "$channel" in
         npm)
-            printf 'Updating the aid CLI: run  npm i -g aid-installer@latest\n'
-            return 0
+            command -v npm >/dev/null 2>&1 || { echo "ERROR: aid: npm not found; cannot update the npm-channel CLI" >&2; return 3; }
+            local gdir pkg
+            gdir="$(npm root -g 2>/dev/null)"
+            pkg="aid-installer@latest"; [[ -n "$bundle" ]] && pkg="$bundle"
+            printf 'Updating the aid CLI (npm channel)...\n'
+            _aid_priv_run "$gdir" npm install -g "$pkg"
+            return $?
             ;;
         pypi)
-            printf 'Updating the aid CLI: run  pipx upgrade aid-installer  (or: pip install --user -U aid-installer)\n'
-            return 0
+            command -v pipx >/dev/null 2>&1 || { echo "ERROR: aid: pipx not found; cannot update the pypi-channel CLI" >&2; return 3; }
+            printf 'Updating the aid CLI (pypi/pipx channel)...\n'
+            if [[ -n "$bundle" ]]; then
+                _aid_priv_run "" pipx install --force "$bundle"
+            else
+                _aid_priv_run "" pipx upgrade aid-installer
+            fi
+            return $?
             ;;
     esac
+    # curl / default channel -- re-bootstrap install.sh.
     printf 'Updating the aid CLI...\n'
+    if [[ -n "$bundle" ]]; then
+        # --from-bundle <dir> on the curl channel: a release-staging dir that
+        # carries install.sh + the CLI bundle + SHA256SUMS. Run it offline.
+        if [[ -f "${bundle%/}/install.sh" ]]; then
+            if [[ "${_SELF_DRYRUN:-0}" == "1" ]]; then
+                printf '+ AID_CLI_BUNDLE_BASE=file://%s AID_LIB_BASE=file://%s bash %s/install.sh\n' "${bundle%/}" "${bundle%/}" "${bundle%/}"
+                return 0
+            fi
+            AID_CLI_BUNDLE_BASE="file://${bundle%/}" AID_LIB_BASE="file://${bundle%/}" \
+                bash "${bundle%/}/install.sh"
+            return $?
+        fi
+        echo "ERROR: aid: --from-bundle <dir> for the curl channel must contain install.sh (got: ${bundle})" >&2
+        return 2
+    fi
+    if [[ "${_SELF_DRYRUN:-0}" == "1" ]]; then
+        printf '+ curl -fsSL %s | bash\n' "${AID_INSTALL_URL}"
+        return 0
+    fi
     if command -v curl >/dev/null 2>&1; then
         curl -fsSL "${AID_INSTALL_URL}" | bash
         return $?
@@ -336,11 +408,13 @@ _cmd_update_self() {
 # Safety notes (to prevent re-bootstrap/loop hazards):
 #   - This is called BEFORE the tool-install loop on the 'update' reach only
 #     (not 'update self', not 'add') -- no recursion possible.
-#   - _cmd_update_self on npm/pypi channels prints a hint and returns 0 (no
-#     code change, no hazard).  On the curl channel it re-runs the bootstrap,
-#     which replaces bin/aid on disk; the current process continues running the
-#     already-loaded script, so the subsequent migration runs under the current
-#     code -- acceptable (same pattern as 'aid update self' + post-update scan).
+#   - _cmd_update_self is channel-aware and self-contained: npm runs
+#     `npm install -g`, pypi runs `pipx install/upgrade` (may sudo-prompt only
+#     when the install location needs root), curl re-runs the bootstrap (which
+#     replaces bin/aid on disk). In every case the current process keeps running
+#     the already-loaded script, so the subsequent migration runs under the
+#     current code as the invoking user -- acceptable (same pattern as
+#     'aid update self' + post-update scan).
 #   - WARN-not-fail: a self-update failure is logged and the tool-install
 #     continues (NFR12).
 # ---------------------------------------------------------------------------
@@ -564,34 +638,54 @@ _install_global_cli() {
 # remove self (formerly self-uninstall).
 # ---------------------------------------------------------------------------
 
+# Channel-aware, self-contained CLI removal. npm/pypi installs are owned by the
+# package manager, so removing only $AID_HOME left the wrapper + bin shim behind
+# (a dangling entry point). Now each channel does the COMPLETE removal:
+#   npm  -> npm uninstall -g aid-installer   (package + vendored tree + shim)
+#   pypi -> pipx uninstall aid-installer     (venv + entry point)
+#   curl -> rm -rf $AID_HOME + unwire PATH    (unchanged)
+# Privileged step (root-owned npm global) auto-elevates via _aid_priv_run.
+# Honors --dry-run.
 _cmd_remove_self() {
     local force=0
     local no_path=0
     local profile_file=""
+    local dryrun=0
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --force|-y)      force=1; shift ;;
             --no-path)       no_path=1; shift ;;
             --profile-file)  profile_file="$2"; shift 2 ;;
+            --dry-run)       dryrun=1; shift ;;
             -h|--help)       _aid_usage remove; exit 0 ;;
             *)               _aid_die "unknown flag for 'remove self': $1" 2 ;;
         esac
     done
+    _SELF_DRYRUN="$dryrun"; export _SELF_DRYRUN
 
     # Apply AID_FORCE env-var fallback.
     if [[ "$force" -eq 0 && ( "${AID_FORCE:-0}" == "1" || "${AID_FORCE:-0}" == "true" ) ]]; then
         force=1
     fi
 
+    local channel="${AID_INSTALL_CHANNEL:-}"
     local aid_home="${AID_HOME:-${HOME}/.aid}"
 
-    if [[ "$force" -eq 0 ]]; then
+    # Channel-aware description of what will be removed (NFR transparency).
+    local what
+    case "$channel" in
+        npm)  what="the npm global package 'aid-installer' (npm uninstall -g)" ;;
+        pypi) what="the pipx app 'aid-installer' (pipx uninstall)" ;;
+        *)    what="${aid_home} and its PATH wiring" ;;
+    esac
+
+    if [[ "$force" -eq 0 && "$dryrun" -ne 1 ]]; then
         # Skip prompt when non-interactive (piped or no tty).
         if [[ ! -t 0 ]]; then
             force=1
         else
-            printf 'Remove the aid CLI from %s? [y/N] ' "$aid_home"
+            printf 'Remove the aid CLI -- %s? [y/N] ' "$what"
             local answer
             if [[ -e /dev/tty ]]; then
                 read -r answer < /dev/tty
@@ -606,24 +700,46 @@ _cmd_remove_self() {
     fi
 
     local partial=0
+    case "$channel" in
+        npm)
+            command -v npm >/dev/null 2>&1 || { echo "ERROR: aid: npm not found; cannot remove the npm-channel CLI" >&2; exit 3; }
+            local gdir; gdir="$(npm root -g 2>/dev/null)"
+            _aid_priv_run "$gdir" npm uninstall -g aid-installer || partial=1
+            ;;
+        pypi)
+            command -v pipx >/dev/null 2>&1 || { echo "ERROR: aid: pipx not found; cannot remove the pypi-channel CLI" >&2; exit 3; }
+            if [[ "$dryrun" -eq 1 ]]; then
+                printf '+ pipx uninstall aid-installer\n'
+            else
+                pipx uninstall aid-installer || partial=1
+            fi
+            ;;
+        *)
+            # curl / default channel -- the AID_HOME tree + shell-profile PATH wiring.
+            if [[ "$dryrun" -eq 1 ]]; then
+                [[ "$no_path" -eq 0 ]] && printf '+ (unwire %s/bin from your shell profile)\n' "$aid_home"
+                printf '+ rm -rf %s\n' "$aid_home"
+            else
+                if [[ "$no_path" -eq 0 ]]; then
+                    if [[ -n "$profile_file" ]]; then
+                        _unwire_path_unix --profile-file "$profile_file" || partial=1
+                    else
+                        _unwire_path_unix || partial=1
+                    fi
+                fi
+                if [[ -d "$aid_home" ]]; then
+                    rm -rf "$aid_home" || {
+                        echo "ERROR: aid: failed to remove ${aid_home}" >&2
+                        partial=1
+                    }
+                fi
+            fi
+            ;;
+    esac
 
-    # Remove PATH wiring first (while we still have the profile-detect logic).
-    if [[ "$no_path" -eq 0 ]]; then
-        if [[ -n "$profile_file" ]]; then
-            _unwire_path_unix --profile-file "$profile_file" || partial=1
-        else
-            _unwire_path_unix || partial=1
-        fi
+    if [[ "$dryrun" -eq 1 ]]; then
+        exit 0
     fi
-
-    # Remove $AID_HOME.
-    if [[ -d "$aid_home" ]]; then
-        rm -rf "$aid_home" || {
-            echo "ERROR: aid: failed to remove ${aid_home}" >&2
-            partial=1
-        }
-    fi
-
     if [[ "$partial" -eq 1 ]]; then
         echo "aid CLI partially removed. Check the messages above for what remained."
         exit 1
@@ -1987,6 +2103,8 @@ if [[ "$SUBCMD" == "update" ]]; then
         # Consume any flags after 'self'.
         _US_MIGRATE_YES=0
         _US_ROOT=""
+        _SELF_FROM_BUNDLE=""
+        _SELF_DRYRUN=0
         while [[ $# -gt 0 ]]; do
             case "$1" in
                 --force|-y) shift ;;  # no-op for update self
@@ -1994,14 +2112,24 @@ if [[ "$SUBCMD" == "update" ]]; then
                 --root)
                     [[ $# -lt 2 ]] && _aid_die "--root requires a value" 2
                     _US_ROOT="$2"; shift 2 ;;
+                --from-bundle)
+                    [[ $# -lt 2 ]] && _aid_die "--from-bundle requires a value" 2
+                    _SELF_FROM_BUNDLE="$2"; shift 2 ;;
+                --dry-run) _SELF_DRYRUN=1; shift ;;
                 -h|--help) _aid_usage update; exit 0 ;;
                 *) _aid_die "unknown flag for 'update self': $1" 2 ;;
             esac
         done
+        export _SELF_FROM_BUNDLE _SELF_DRYRUN
         _cmd_update_self; _us_rc=$?
         if [[ "${_us_rc}" -ne 0 ]]; then exit "${_us_rc}"; fi
-        # ---- post-update machine scan (FF-2 / task-078) ----
-        _aid_scan_and_migrate "${_US_MIGRATE_YES}" "${_US_ROOT}"
+        # ---- post-update machine scan (FF-2 / task-078) -- runs as the user,
+        # never under the sudo used for the privileged install step above.
+        if [[ "${_SELF_DRYRUN}" -eq 1 ]]; then
+            printf '+ (then) migration scan over $HOME with All/Yes/No/Cancel consent\n'
+        else
+            _aid_scan_and_migrate "${_US_MIGRATE_YES}" "${_US_ROOT}"
+        fi
         exit 0
     fi
     # Fall through to the shared add/update handler below.
