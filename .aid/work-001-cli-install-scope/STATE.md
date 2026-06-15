@@ -13,10 +13,10 @@ This is the single state file for **this work** — the full dev lifecycle from 
 - **Lifecycle:** Blocked
 - **Phase:** Detail
 - **Active Skill:** none
-- **Updated:** 2026-06-15T18:00:00Z
+- **Updated:** 2026-06-15T18:30:00Z
 - **Pause Reason:** —
-- **Block Reason:** Execution gated on PR #78 (_aid_priv_run + channel-aware self-commands) merging to master first
-- **Block Artifact:** PR #78
+- **Block Reason:** PR #78 merged to master (84ff42f0); PR #79 (this design+plan branch, rebased on master) awaiting review/merge. /aid-execute proceeds once #79 is on master.
+- **Block Artifact:** PR #79
 
 ## Triage
 
