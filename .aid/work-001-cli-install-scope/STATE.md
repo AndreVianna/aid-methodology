@@ -77,8 +77,8 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|
 | task-001 | CODE/STATE home split + scope + marker/scan/sentinel removal (bash) | IMPLEMENT | d001 w1 | Done | A+ | — | feature-001; bin/aid 2485→2217; all ACs verified; suite red until sibling tasks land (by design, green@delivery) |
-| task-002 | CODE/STATE home split (ps1 parity) | IMPLEMENT | d001 w2 | Pending | — | — | feature-001; parity twin of task-001 |
-| task-003 | /var/lib/aid provisioning helper + install hooks + runtime fallback (bash) | IMPLEMENT | d001 w2 | Pending | — | — | feature-002; lib + npm + curl + register fallback |
+| task-002 | CODE/STATE home split (ps1 parity) | IMPLEMENT | d001 w2 | Done | A+ | — | feature-001; ps1 parity twin; PARSE OK, grep-zero, ASCII; no ps1 priv-helper (writability probe) |
+| task-003 | /var/lib/aid provisioning helper + install hooks + runtime fallback (bash) | IMPLEMENT | d001 w2 | Done | A+ | — | feature-002; D+→A+ (fixed registry degrade: mktemp-in-nonwritable-dir dropped entry; now preserved in ~/.aid) |
 | task-004 | Global provisioning Windows parity (%ProgramData%\aid) (ps1) | IMPLEMENT | d001 w3 | Pending | — | — | feature-002; parity twin of task-003 |
 | task-005 | Per-repo format stamp + fail-safe gate (bash) | IMPLEMENT | d001 w2 | Pending | — | — | feature-003; constant/synth/repair/helpers/gate |
 | task-006 | Per-repo format stamp + fail-safe gate (ps1 parity) | IMPLEMENT | d001 w3 | Pending | — | — | feature-003; parity twin of task-005 |

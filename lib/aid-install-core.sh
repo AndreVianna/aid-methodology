@@ -1381,6 +1381,75 @@ manifest_exists() {
 }
 
 # ---------------------------------------------------------------------------
+# Global shared-state provisioning
+# ---------------------------------------------------------------------------
+
+# _provision_shared_state_home <shared-home>
+# Create <shared-home> (mode 0755) and seed an empty registry.yml (mode 0644,
+# atomic, no-clobber) under it.  Every filesystem mutation is routed through
+# _aid_priv_run so elevation is applied only when the parent/target is not
+# user-writable.  Best-effort: returns non-zero on any failure without aborting
+# the caller (install.sh / postinstall.js both swallow a non-zero return).
+#
+# The exact seed text matches the schema used by bin/aid's registry functions:
+#   schema: 1
+#   repos:
+# (three comment lines + schema line + repos line with no items).
+_provision_shared_state_home() {
+    local SH="$1"
+    local _psh_rc=0
+
+    # Step 1: create the shared-home dir if absent.
+    if [[ ! -d "$SH" ]]; then
+        _aid_priv_run "$(dirname "$SH")" mkdir -p "$SH" || { _psh_rc=$?; }
+        if [[ $_psh_rc -ne 0 ]]; then
+            echo "WARN: aid: could not create shared state home ${SH} (rc=${_psh_rc})" >&2
+            return $_psh_rc
+        fi
+        _aid_priv_run "$SH" chmod 0755 "$SH" || { _psh_rc=$?; }
+        if [[ $_psh_rc -ne 0 ]]; then
+            echo "WARN: aid: could not chmod shared state home ${SH} (rc=${_psh_rc})" >&2
+            return $_psh_rc
+        fi
+    fi
+
+    # Step 2: seed registry.yml if absent (no-clobber).
+    local _reg="${SH}/registry.yml"
+    if [[ -e "$_reg" ]]; then
+        return 0
+    fi
+
+    local _tmp
+    _tmp="$(mktemp "${SH}/.registry.aid-tmp.XXXXXX")" || {
+        echo "WARN: aid: could not create temp file for registry seed in ${SH}" >&2
+        return 1
+    }
+    {
+        printf '%s\n' "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
+        printf '%s\n' "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/"
+        printf '%s\n' "# description/version are read from each repo's own .aid/settings.yml at render time."
+        printf '%s\n' "schema: 1"
+        printf '%s\n' "repos:"
+    } > "$_tmp" || {
+        rm -f "$_tmp" 2>/dev/null
+        echo "WARN: aid: could not write registry seed to ${SH}" >&2
+        return 1
+    }
+    _aid_priv_run "$SH" mv -f "$_tmp" "$_reg" || {
+        _psh_rc=$?
+        rm -f "$_tmp" 2>/dev/null
+        echo "WARN: aid: could not install registry seed at ${_reg} (rc=${_psh_rc})" >&2
+        return $_psh_rc
+    }
+    _aid_priv_run "$SH" chmod 0644 "$_reg" || {
+        _psh_rc=$?
+        echo "WARN: aid: could not chmod registry seed at ${_reg} (rc=${_psh_rc})" >&2
+        return $_psh_rc
+    }
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # Version marker
 # ---------------------------------------------------------------------------
 

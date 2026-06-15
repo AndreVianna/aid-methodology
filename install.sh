@@ -66,6 +66,13 @@
 set -uo pipefail
 # Note: -e (errexit) intentionally omitted - error paths use explicit exit codes.
 
+# Snapshot whether AID_HOME was preset in the ENVIRONMENT before install.sh
+# unconditionally defaults it (lines below).  A real root "sudo curl|bash" has
+# no AID_HOME in its env (_AID_HOME_PRESET empty => provision); a canonical test
+# that pins AID_HOME=<throwaway> in the env (_AID_HOME_PRESET non-empty => skip,
+# protecting the real /var/lib/aid).  Must be captured BEFORE any AID_HOME default.
+_AID_HOME_PRESET="${AID_HOME:-}"
+
 # ---------------------------------------------------------------------------
 # Locate script dir (used in sibling-lib detection).
 # ---------------------------------------------------------------------------
@@ -819,6 +826,15 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
 
     echo "aid CLI v${_CLI_VERSION} installed to ${AID_HOME}."
 
+    # Install-time PRIMARY provisioning of /var/lib/aid (or AID_SHARED_STATE_HOME).
+    # Runs only when: (a) the process is root, AND (b) AID_HOME was NOT preset in
+    # the environment (distinguishes a real root curl|bash from a test that
+    # env-pins AID_HOME to a throwaway dir -- the preset guard keeps the suite
+    # from ever touching the real /var/lib/aid).  Best-effort: non-zero is swallowed.
+    if [[ "$(id -u)" -eq 0 && -z "$_AID_HOME_PRESET" ]]; then
+        _provision_shared_state_home "${AID_SHARED_STATE_HOME:-/var/lib/aid}" || true
+    fi
+
     # Wire PATH (idempotent marked-block) into a single profile file.
     # Usage: _wire_profile_block <bin_dir> <profile>
     # Does NOT handle --no-path; caller must check before calling.
@@ -1059,6 +1075,12 @@ if [[ "$_INSTALL_MODE" == "CONVENIENCE" ]]; then
                 fi
             fi
         fi
+    fi
+
+    # Install-time PRIMARY provisioning of /var/lib/aid (or AID_SHARED_STATE_HOME).
+    # Mirrors the BOOTSTRAP hook above: same guard logic, same best-effort contract.
+    if [[ "$(id -u)" -eq 0 && -z "$_AID_HOME_PRESET" ]]; then
+        _provision_shared_state_home "${AID_SHARED_STATE_HOME:-/var/lib/aid}" || true
     fi
 
     # Exec 'aid <subcmd> ...' directly (bypass PATH refresh requirement).

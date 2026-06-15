@@ -1276,16 +1276,37 @@ _registry_read_repos() {
 # Set-insert <canon-path> into $AID_STATE_HOME/registry.yml (idempotent; atomic write).
 # On a real change prints one concise line.  On failure prints WARN and returns 0
 # so the host-tool op is never blocked (NFR10 / DD-3 / CLI-1).
+#
+# FALLBACK (non-prompting, never-elevate): if $AID_STATE_HOME is missing or its
+# registry is not writable by the current user, attempt a never-elevate ensure-exists
+# (_aid_priv_run "" mkdir -p / mv -f -- empty probe forces the direct, no-sudo path).
+# If the direct write fails (root-owned shared home), degrade to the user registry
+# ~/.aid/registry.yml + one WARN + return 0.  A routine 'aid add' MUST NOT prompt
+# for sudo -- the shared registration is best-effort skip+warn (design SS3.3).
 registry_register() {
-    local repo="$1" reg="${AID_STATE_HOME}/registry.yml" tmp existing
-    mkdir -p "$AID_STATE_HOME"
+    local repo="$1" reg tmp existing
+    # Never-elevate ensure-exists: empty probe forces direct (no-sudo) path.
+    _aid_priv_run "" mkdir -p "$AID_STATE_HOME" 2>/dev/null || true
+    # Decide the effective target registry BEFORE mktemp so the temp file
+    # always lands in a writable directory.  A root-owned $AID_STATE_HOME
+    # that already exists causes mkdir-p to succeed (no-op) but remains
+    # non-writable; the -w test catches that case.
+    if [[ -w "$AID_STATE_HOME" ]]; then
+        reg="${AID_STATE_HOME}/registry.yml"
+    else
+        local _user_reg="${HOME}/.aid/registry.yml"
+        mkdir -p "${HOME}/.aid" 2>/dev/null || true
+        echo "WARN: aid: could not write to shared state home ${AID_STATE_HOME}; using ${_user_reg}" >&2
+        reg="$_user_reg"
+    fi
     existing="$(_registry_read_repos "$reg")"
     # Idempotent: already registered -> silent no-op.
     if printf '%s\n' "$existing" | grep -qxF "$repo"; then
         [[ "$_AID_VERBOSE" == "1" ]] && echo "Registry: ${repo} already registered (no-op)."
         return 0
     fi
-    tmp="$(mktemp "${reg}.aid-tmp.XXXXXX")" || {
+    # mktemp in the chosen (writable) target dir so mv is atomic same-filesystem.
+    tmp="$(mktemp "${reg}.aid-tmp.XXXXXX" 2>/dev/null)" || {
         echo "WARN: aid: could not update the machine repo registry (${reg}): mktemp failed" >&2
         return 0
     }
@@ -1303,7 +1324,8 @@ registry_register() {
         echo "WARN: aid: could not update the machine repo registry (${reg}): write failed" >&2
         return 0
     }
-    mv -f "$tmp" "$reg" || {
+    # Never-elevate atomic commit: empty probe forces direct (no-sudo) mv.
+    _aid_priv_run "" mv -f "$tmp" "$reg" || {
         rm -f "$tmp" 2>/dev/null
         echo "WARN: aid: could not update the machine repo registry (${reg}): mv failed" >&2
         return 0
@@ -1315,16 +1337,49 @@ registry_register() {
 # Set-remove <canon-path> from $AID_STATE_HOME/registry.yml (idempotent; atomic write).
 # Called only when the repo manifest is now gone (last tool removed).
 # On a real change prints one concise line.  On failure prints WARN and returns 0.
+#
+# FALLBACK (non-prompting, never-elevate): atomic commit uses empty-probe
+# _aid_priv_run "" mv -f (no sudo prompt).  If the write fails (root-owned shared
+# home), degrade to the user tier ~/.aid/registry.yml + one WARN + return 0.
 registry_unregister() {
-    local repo="$1" reg="${AID_STATE_HOME}/registry.yml" tmp existing
-    [[ -f "$reg" ]] || return 0
+    local repo="$1" reg tmp existing
+    # Determine the effective target registry BEFORE mktemp, mirroring the
+    # same degrade logic as registry_register.  Check both tiers for the
+    # entry; operate on whichever tier contains it (user tier wins when the
+    # shared dir is not user-writable).
+    local _shared_reg="${AID_STATE_HOME}/registry.yml"
+    local _user_reg="${HOME}/.aid/registry.yml"
+    _aid_priv_run "" mkdir -p "$AID_STATE_HOME" 2>/dev/null || true
+    if [[ -w "$AID_STATE_HOME" ]]; then
+        reg="$_shared_reg"
+    else
+        # Shared dir not user-writable; degrade whole operation to user tier.
+        reg="$_user_reg"
+    fi
+    # Look for the repo in the chosen tier; fall back to the other tier.
     existing="$(_registry_read_repos "$reg")"
-    # Idempotent: not registered -> silent no-op.
-    printf '%s\n' "$existing" | grep -qxF "$repo" || {
-        [[ "$_AID_VERBOSE" == "1" ]] && echo "Registry: ${repo} not in registry (no-op)."
-        return 0
-    }
-    tmp="$(mktemp "${reg}.aid-tmp.XXXXXX")" || {
+    if ! printf '%s\n' "$existing" | grep -qxF "$repo"; then
+        # Not in chosen tier; check the other tier before giving up.
+        local _other_reg
+        if [[ "$reg" == "$_shared_reg" ]]; then _other_reg="$_user_reg"; else _other_reg="$_shared_reg"; fi
+        local _other_existing
+        _other_existing="$(_registry_read_repos "$_other_reg")"
+        if printf '%s\n' "$_other_existing" | grep -qxF "$repo"; then
+            reg="$_other_reg"
+            existing="$_other_existing"
+        else
+            # Not in either tier.
+            [[ "$_AID_VERBOSE" == "1" ]] && echo "Registry: ${repo} not in registry (no-op)."
+            return 0
+        fi
+    fi
+    # Emit WARN when operating on user tier because shared tier is not writable.
+    if [[ "$reg" == "$_user_reg" && -e "$AID_STATE_HOME" && ! -w "$AID_STATE_HOME" ]]; then
+        mkdir -p "${HOME}/.aid" 2>/dev/null || true
+        echo "WARN: aid: could not write to shared state home ${AID_STATE_HOME}; using ${reg}" >&2
+    fi
+    # mktemp in the chosen (writable) target dir so mv is atomic same-filesystem.
+    tmp="$(mktemp "${reg}.aid-tmp.XXXXXX" 2>/dev/null)" || {
         echo "WARN: aid: could not update the machine repo registry (${reg}): mktemp failed" >&2
         return 0
     }
@@ -1341,7 +1396,8 @@ registry_unregister() {
         echo "WARN: aid: could not update the machine repo registry (${reg}): write failed" >&2
         return 0
     }
-    mv -f "$tmp" "$reg" || {
+    # Never-elevate atomic commit: empty probe forces direct (no-sudo) mv.
+    _aid_priv_run "" mv -f "$tmp" "$reg" || {
         rm -f "$tmp" 2>/dev/null
         echo "WARN: aid: could not update the machine repo registry (${reg}): mv failed" >&2
         return 0
