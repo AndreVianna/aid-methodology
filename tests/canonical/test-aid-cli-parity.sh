@@ -1799,6 +1799,30 @@ fi
 echo ""
 echo "=== PAR078-U: aid update self scan/consent parity ==="
 
+# Fake npm stub: `npm root -g` returns a writable tmp dir; `npm install -g` exits 0.
+# This intercepts the npm-channel install step so the scan-consent path is reachable
+# without network access or sudo (the new _cmd_update_self actually runs npm now).
+_U_FAKE_BIN="$(mktemp -d "${TMP}/fakebin.XXXXXX")"
+cat > "${_U_FAKE_BIN}/npm" << 'NPMSTUBEOF'
+#!/usr/bin/env bash
+# Fake npm for PAR078-U: root -g returns a writable dir; install/uninstall succeed.
+case "${1:-}" in
+    root) echo "$AID_FAKE_NPM_ROOT" ;;
+    install|uninstall) exit 0 ;;
+    *) exit 0 ;;
+esac
+NPMSTUBEOF
+chmod +x "${_U_FAKE_BIN}/npm"
+# Also a fake pipx stub (in case pypi channel is used).
+cat > "${_U_FAKE_BIN}/pipx" << 'PIPXSTUBEOF'
+#!/usr/bin/env bash
+exit 0
+PIPXSTUBEOF
+chmod +x "${_U_FAKE_BIN}/pipx"
+# A writable dir that the stub returns as the global npm root.
+_U_FAKE_NPM_ROOT="$(mktemp -d "${TMP}/npmd.XXXXXX")"
+export AID_FAKE_NPM_ROOT="${_U_FAKE_NPM_ROOT}"
+
 # Build a shared AID home for U tests.
 _SH_HOME_U=$(newhome); setup_sh_home "${_SH_HOME_U}"
 _PS_HOME_U=$(newhome); setup_ps1_home "${_PS_HOME_U}"
@@ -1846,8 +1870,12 @@ echo '<html><body>stub home</body></html>' > "${_PS_HOME_U}/dashboard/home.html"
 
 # ---------------------------------------------------------------------------
 # PAR078-U01/U02: Non-interactive without --yes -> exit 0 + defers (no marker).
+# PATH prepend ensures the fake npm stub (writable root-g) is used instead of
+# the real npm (which would need sudo and a TTY for a root-owned global prefix).
 # ---------------------------------------------------------------------------
-_U01_OUT=$(AID_HOME="${_SH_HOME_U}" AID_INSTALL_CHANNEL=npm \
+_U01_OUT=$(PATH="${_U_FAKE_BIN}:${PATH}" \
+    AID_HOME="${_SH_HOME_U}" AID_INSTALL_CHANNEL=npm \
+    AID_FAKE_NPM_ROOT="${_U_FAKE_NPM_ROOT}" \
     bash "${_SH_HOME_U}/bin/aid" update self \
     --root "${_U_ROOT}" 2>&1 </dev/null)
 _U01_RC=$?
@@ -1859,7 +1887,9 @@ assert_eq "$([[ -f "${_SH_HOME_U}/.migrated" ]] && echo exists || echo gone)" "g
     "PAR078-U03 Bash update self non-interactive: marker NOT written (deferred)"
 
 if [[ -n "$PWSH" ]]; then
-    _U02_OUT=$(AID_HOME="${_PS_HOME_U}" AID_INSTALL_CHANNEL=npm \
+    _U02_OUT=$(PATH="${_U_FAKE_BIN}:${PATH}" \
+        AID_HOME="${_PS_HOME_U}" AID_INSTALL_CHANNEL=npm \
+        AID_FAKE_NPM_ROOT="${_U_FAKE_NPM_ROOT}" \
         "$PWSH" -NoProfile -File "${_PS_HOME_U}/bin/aid.ps1" \
         update self --root "${_U_ROOT}" 2>&1 </dev/null | sed 's/\x1b\[[0-9;]*m//g')
     _U02_RC=$?
@@ -1880,7 +1910,9 @@ fi
 # ---------------------------------------------------------------------------
 # PAR078-U08/U09: --yes (opt-in) -> exit 0 + marker written = VERSION.
 # ---------------------------------------------------------------------------
-_U08_OUT=$(AID_HOME="${_SH_HOME_U}" AID_INSTALL_CHANNEL=npm \
+_U08_OUT=$(PATH="${_U_FAKE_BIN}:${PATH}" \
+    AID_HOME="${_SH_HOME_U}" AID_INSTALL_CHANNEL=npm \
+    AID_FAKE_NPM_ROOT="${_U_FAKE_NPM_ROOT}" \
     bash "${_SH_HOME_U}/bin/aid" update self --yes \
     --root "${_U_ROOT}" 2>&1 </dev/null)
 _U08_RC=$?
@@ -1894,7 +1926,9 @@ assert_eq "$_U_SH_MARKER" "$_U_SH_VER" \
     "PAR078-U10 Bash update self --yes: marker value = VERSION"
 
 if [[ -n "$PWSH" ]]; then
-    _U09_OUT=$(AID_HOME="${_PS_HOME_U}" AID_INSTALL_CHANNEL=npm \
+    _U09_OUT=$(PATH="${_U_FAKE_BIN}:${PATH}" \
+        AID_HOME="${_PS_HOME_U}" AID_INSTALL_CHANNEL=npm \
+        AID_FAKE_NPM_ROOT="${_U_FAKE_NPM_ROOT}" \
         "$PWSH" -NoProfile -File "${_PS_HOME_U}/bin/aid.ps1" \
         update self --yes --root "${_U_ROOT}" 2>&1 </dev/null | sed 's/\x1b\[[0-9;]*m//g')
     _U09_RC=$?

@@ -29,7 +29,12 @@ var process   = require('process');
 var pkgRoot = path.join(__dirname, '..');
 
 try {
-    var env = Object.assign({}, process.env, { AID_INSTALL_CHANNEL: 'npm' });
+    // AID_SKIP_SELF_INSTALL=1: npm already (re)installed the CLI, so the spawned
+    // `aid update self --yes` must NOT re-install -- it is used here only to
+    // trigger the post-install migration scan. Without it, the now channel-aware
+    // `update self` would run `npm install -g aid-installer@latest` again.
+    var env = Object.assign({}, process.env,
+        { AID_INSTALL_CHANNEL: 'npm', AID_SKIP_SELF_INSTALL: '1' });
 
     if (process.env.AID_MIGRATE_YES === '1') {
         // Non-interactive opt-in: spawn `aid update self --yes` which triggers

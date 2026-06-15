@@ -115,16 +115,26 @@ function script:Show-AidUsage {
             Write-Host '  Tools: claude-code, codex, cursor, copilot-cli, antigravity'
         }
         'remove' {
-            Write-Host 'aid remove [<tool>[,<tool>...] | self] [-Force] [-Verbose] [-Target <dir>]'
+            Write-Host 'aid remove [<tool>[,<tool>...]] [-Force] [-Verbose] [-Target <dir>]'
+            Write-Host 'aid remove self [-Force] [-DryRun]'
             Write-Host '  Remove tool(s) from the current project (manifest-driven).'
             Write-Host '  No args: remove ALL AID from the project (asks for confirmation).'
-            Write-Host '  self: remove the aid CLI itself (asks for confirmation).'
+            Write-Host '  self: COMPLETELY remove the aid CLI, channel-aware (asks for confirmation):'
+            Write-Host '        npm -> npm uninstall -g | pypi -> pipx uninstall | curl -> rm $AID_HOME + unwire PATH.'
+            Write-Host '        On Windows, elevation is the caller''s responsibility (no sudo).'
+            Write-Host '  -DryRun: print the exact command(s) it would run, then exit (no changes).'
         }
         'update' {
-            Write-Host 'aid update [<tool>... | self] [-Version <v>] [-FromBundle <path>]'
-            Write-Host '           [-Force] [-Verbose] [-Target <dir>]'
+            Write-Host 'aid update [<tool>...] [-Version <v>] [-FromBundle <path>] [-Force] [-Target <dir>]'
+            Write-Host 'aid update self [-FromBundle <path>] [-DryRun] [-Yes] [-Root <dir>]'
             Write-Host '  Update to latest. No args: update all installed tools.'
-            Write-Host '  self: update the aid CLI itself.'
+            Write-Host '  self: COMPLETELY update the aid CLI then apply repo migrations, channel-aware:'
+            Write-Host '        npm -> npm i -g | pypi -> pipx upgrade | curl -> re-bootstrap install.ps1.'
+            Write-Host '        On Windows, elevation is the caller''s responsibility (no sudo);'
+            Write-Host '        the migration scan always runs as you.'
+            Write-Host '  -FromBundle <path>: install the CLI from a local artifact instead of @latest'
+            Write-Host '        (npm .tgz | pypi .whl | curl release-staging dir with install.ps1).'
+            Write-Host '  -DryRun: print the exact command(s) it would run, then exit (no changes).'
         }
         'version' {
             Write-Host 'aid version'
@@ -154,7 +164,7 @@ function script:Show-AidUsage {
             Write-Host '  aid dashboard start|stop ...     Start/stop the local dashboard'
             Write-Host "  aid <command> -h | --help        Per-command help"
             Write-Host ''
-            Write-Host 'Flags: -FromBundle, -Version, -Force, -Target, -Verbose'
+            Write-Host 'Flags: -FromBundle, -Version, -Force, -DryRun, -Target, -Verbose'
             Write-Host "Run 'aid <command> -h' for details."
         }
     }
@@ -270,12 +280,10 @@ function script:Invoke-AidUpdateCheck {
         if ($va -gt $vb) { break }
     }
     if ($isLt) {
-        $updateCmd = switch ($env:AID_INSTALL_CHANNEL) {
-            'npm'  { 'npm i -g aid-installer@latest' }
-            'pypi' { 'pipx upgrade aid-installer  (or: pip install --user -U aid-installer)' }
-            default { 'aid update self' }
-        }
-        Write-Host "A newer aid CLI is available: v$latestVersion (you have v$installedVersion). Run: $updateCmd"
+        # `aid update self` is now channel-aware and self-contained (it runs the
+        # right package manager + applies migrations), so point at it for every
+        # channel instead of a per-channel manual command.
+        Write-Host "A newer aid CLI is available: v$latestVersion (you have v$installedVersion). Run: aid update self"
     }
 }
 
@@ -336,23 +344,88 @@ function script:Invoke-AidMigrateSentinel {
 }
 
 # Invoke-AidUpdateSelf
-# Re-runs the bootstrap in place.  Returns the exit code (does NOT call Exit-Aid).
-# AID_INSTALL_CHANNEL guard: npm/pypi channels print a package-manager hint
-# and return 0 instead of re-bootstrapping.
+# Channel-aware, self-contained CLI self-update.  Returns the exit code (does NOT call Exit-Aid).
+# Reads the channel from AID_INSTALL_CHANNEL (injected by the npm/pypi shims).
+# Honors $script:_SelfFromBundle (a local CLI artifact: npm .tgz / pypi .whl / curl bundle dir)
+# and $script:_SelfDryRun.  On Windows there is no sudo -- if a privileged location is not
+# writable, the underlying tool (npm/pipx) will surface its own error; callers elevate their
+# own shell.  Dry-run prints "+ <command>" lines and returns 0 without making changes.
 # Callers are responsible for calling Exit-Aid after the post-update scan.
 function script:Invoke-AidUpdateSelf {
-    switch ($env:AID_INSTALL_CHANNEL) {
+    # AID_SKIP_SELF_INSTALL: the package manager already (re)installed the CLI
+    # (postinstall) and only wants the post-update migration to run. Skip the
+    # re-install step; the caller's Invoke-AidScanAndMigrate still fires.
+    if ($env:AID_SKIP_SELF_INSTALL -eq '1') { return 0 }
+    $channel = $env:AID_INSTALL_CHANNEL
+    $bundle  = $script:_SelfFromBundle
+    $dryRun  = $script:_SelfDryRun
+
+    switch ($channel) {
         'npm' {
-            Write-Host 'Updating the aid CLI: run  npm i -g aid-installer@latest'
-            return 0
+            $npmCmd = Get-Command 'npm' -ErrorAction SilentlyContinue
+            if (-not $npmCmd) {
+                [Console]::Error.WriteLine("ERROR: aid: npm not found; cannot update the npm-channel CLI")
+                return 3
+            }
+            $pkg = if ($bundle) { $bundle } else { 'aid-installer@latest' }
+            if ($dryRun) {
+                Write-Host "+ npm install -g $pkg"
+                return 0
+            }
+            Write-Host 'Updating the aid CLI (npm channel)...'
+            & npm install -g $pkg
+            return $LASTEXITCODE
         }
         'pypi' {
-            Write-Host 'Updating the aid CLI: run  pipx upgrade aid-installer  (or: pip install --user -U aid-installer)'
-            return 0
+            $pipxCmd = Get-Command 'pipx' -ErrorAction SilentlyContinue
+            if (-not $pipxCmd) {
+                [Console]::Error.WriteLine("ERROR: aid: pipx not found; cannot update the pypi-channel CLI")
+                return 3
+            }
+            if ($dryRun) {
+                if ($bundle) {
+                    Write-Host "+ pipx install --force $bundle"
+                } else {
+                    Write-Host '+ pipx upgrade aid-installer'
+                }
+                return 0
+            }
+            Write-Host 'Updating the aid CLI (pypi/pipx channel)...'
+            if ($bundle) {
+                & pipx install --force $bundle
+            } else {
+                & pipx upgrade aid-installer
+            }
+            return $LASTEXITCODE
         }
     }
+
+    # curl / default channel -- re-bootstrap install.ps1.
     Write-Host 'Updating the aid CLI...'
+    if ($bundle) {
+        # --from-bundle <dir> on the curl channel: a release-staging dir that
+        # carries install.ps1 + the CLI bundle + SHA256SUMS. Run it offline.
+        $installScript = Join-Path ($bundle.TrimEnd('/\')) 'install.ps1'
+        if (Test-Path $installScript -PathType Leaf) {
+            if ($dryRun) {
+                $bundleNorm = $bundle.TrimEnd('/\')
+                Write-Host "+ `$env:AID_CLI_BUNDLE_BASE='file://$bundleNorm'; `$env:AID_LIB_BASE='file://$bundleNorm'; & '$installScript'"
+                return 0
+            }
+            $bundleNorm = $bundle.TrimEnd('/\')
+            $env:AID_CLI_BUNDLE_BASE = "file://$bundleNorm"
+            $env:AID_LIB_BASE        = "file://$bundleNorm"
+            & $installScript
+            return $LASTEXITCODE
+        }
+        [Console]::Error.WriteLine("ERROR: aid: -FromBundle <dir> for the curl channel must contain install.ps1 (got: $bundle)")
+        return 2
+    }
     $url = $script:_AidInstallUrl
+    if ($dryRun) {
+        Write-Host "+ irm $url | iex"
+        return 0
+    }
     try {
         $scriptContent = (Invoke-RestMethod -Uri $url -ErrorAction Stop)
         & ([scriptblock]::Create($scriptContent))
@@ -1865,6 +1938,10 @@ function script:Invoke-AidScanAndMigrate {
     }
 }
 
+# Script-scope vars consumed by Invoke-AidUpdateSelf (reset here before each parse).
+$script:_SelfFromBundle = ''
+$script:_SelfDryRun     = $false
+
 # ---------------------------------------------------------------------------
 # update (with 'self' subarg -> update self)
 # ---------------------------------------------------------------------------
@@ -1873,14 +1950,24 @@ if ($SUBCMD -eq 'update') {
         # Consume any flags after 'self'.
         $usMigrateYes = $false
         $usRoot       = ''
+        $script:_SelfFromBundle = ''
+        $script:_SelfDryRun     = $false
         $remIdx = 1
         while ($remIdx -lt $script:_RemArgs.Count) {
             $a = $script:_RemArgs[$remIdx]
             switch ($a) {
                 { $_ -in @('-Force', '--force', '-y') }      { }  # no-op for update self
                 { $_ -in @('-Yes', '--yes') }                { $usMigrateYes = $true }  # RC-3 opt-in
+                { $_ -in @('-DryRun', '--dry-run') }         { $script:_SelfDryRun = $true }
                 { $_ -in @('-h', '--help', '-Help') }        { script:Show-AidUsage 'update'; script:Exit-Aid 0 }
-                '--root' {
+                { $_ -in @('-FromBundle', '--from-bundle') } {
+                    $remIdx++
+                    if ($remIdx -ge $script:_RemArgs.Count) {
+                        script:Fail-Aid '-FromBundle requires a value' 2
+                    }
+                    $script:_SelfFromBundle = $script:_RemArgs[$remIdx]
+                }
+                { $_ -in @('-Root', '--root') } {
                     $remIdx++
                     if ($remIdx -ge $script:_RemArgs.Count) {
                         script:Fail-Aid '--root requires a value' 2
@@ -1893,8 +1980,12 @@ if ($SUBCMD -eq 'update') {
         }
         $usRc = script:Invoke-AidUpdateSelf
         if ($usRc -ne 0) { script:Exit-Aid $usRc }
-        # ---- post-update machine scan (FF-2 / task-078) ----
-        script:Invoke-AidScanAndMigrate -ApplyAllFlag $usMigrateYes -ScanRoot $usRoot
+        # ---- post-update machine scan (FF-2 / task-078) -- runs as the user ----
+        if ($script:_SelfDryRun) {
+            Write-Host '+ (then) migration scan over $HOME with All/Yes/No/Cancel consent'
+        } else {
+            script:Invoke-AidScanAndMigrate -ApplyAllFlag $usMigrateYes -ScanRoot $usRoot
+        }
         script:Exit-Aid 0
     }
     # Fall through to shared add/update handler below.
@@ -1902,19 +1993,29 @@ if ($SUBCMD -eq 'update') {
 
 # ---------------------------------------------------------------------------
 # remove (with 'self' subarg -> remove self)
+# Channel-aware, self-contained CLI removal. npm/pypi installs are owned by the
+# package manager, so removing only $AID_HOME left the wrapper + bin shim behind.
+# Now each channel does the COMPLETE removal:
+#   npm  -> npm uninstall -g aid-installer   (package + vendored tree + shim)
+#   pypi -> pipx uninstall aid-installer     (venv + entry point)
+#   curl -> Remove-Item $AID_HOME + unwire PATH  (unchanged)
+# On Windows there is no sudo -- callers elevate their own shell if needed.
+# Honors -DryRun.
 # ---------------------------------------------------------------------------
 if ($SUBCMD -eq 'remove') {
     if ($script:_RemArgs.Count -gt 0 -and $script:_RemArgs[0] -eq 'self') {
         # Parse flags after 'self'.
         $rsForce  = $false
         $rsNoPath = $false
+        $rsDryRun = $false
         $remIdx   = 1
         while ($remIdx -lt $script:_RemArgs.Count) {
             $a = $script:_RemArgs[$remIdx]
             switch ($a) {
-                { $_ -in @('-Force', '--force', '-y') }       { $rsForce  = $true }
-                { $_ -in @('-NoPath', '--no-path', '/nopath') } { $rsNoPath = $true }
-                { $_ -in @('-h', '--help', '-Help') }         { script:Show-AidUsage 'remove'; script:Exit-Aid 0 }
+                { $_ -in @('-Force', '--force', '-y') }          { $rsForce  = $true }
+                { $_ -in @('-NoPath', '--no-path', '/nopath') }  { $rsNoPath = $true }
+                { $_ -in @('-DryRun', '--dry-run') }             { $rsDryRun = $true }
+                { $_ -in @('-h', '--help', '-Help') }            { script:Show-AidUsage 'remove'; script:Exit-Aid 0 }
                 default { script:Fail-Aid "unknown flag for 'remove self': $a" 2 }
             }
             $remIdx++
@@ -1925,15 +2026,23 @@ if ($SUBCMD -eq 'remove') {
             $rsForce = $true
         }
 
+        $channel = $env:AID_INSTALL_CHANNEL
         $aidHome = $script:_AidHome
 
-        if (-not $rsForce) {
+        # Channel-aware description of what will be removed (NFR transparency).
+        $what = switch ($channel) {
+            'npm'  { "the npm global package 'aid-installer' (npm uninstall -g)" }
+            'pypi' { "the pipx app 'aid-installer' (pipx uninstall)" }
+            default { "$aidHome and its PATH wiring" }
+        }
+
+        if (-not $rsForce -and -not $rsDryRun) {
             # Skip prompt when non-interactive.
             $isInteractive = [Environment]::UserInteractive -and [Console]::In -ne [System.IO.TextReader]::Null
             if (-not $isInteractive) {
                 $rsForce = $true
             } else {
-                Write-Host -NoNewline "Remove the aid CLI from ${aidHome}? [y/N] "
+                Write-Host -NoNewline "Remove the aid CLI -- ${what}? [y/N] "
                 $answer = Read-Host
                 if ($answer -notin @('y', 'Y', 'yes', 'YES')) {
                     Write-Host "Aborted."
@@ -1944,21 +2053,61 @@ if ($SUBCMD -eq 'remove') {
 
         $partial = $false
 
-        # Remove PATH wiring.
-        if (-not $rsNoPath) {
-            $binDir = Join-Path $aidHome 'bin'
-            try { script:Remove-AidFromPath -BinDir $binDir } catch { $partial = $true }
-        }
+        switch ($channel) {
+            'npm' {
+                $npmCmd = Get-Command 'npm' -ErrorAction SilentlyContinue
+                if (-not $npmCmd) {
+                    [Console]::Error.WriteLine("ERROR: aid: npm not found; cannot remove the npm-channel CLI")
+                    script:Exit-Aid 3
+                }
+                if ($rsDryRun) {
+                    Write-Host '+ npm uninstall -g aid-installer'
+                } else {
+                    & npm uninstall -g aid-installer
+                    if ($LASTEXITCODE -ne 0) { $partial = $true }
+                }
+            }
+            'pypi' {
+                $pipxCmd = Get-Command 'pipx' -ErrorAction SilentlyContinue
+                if (-not $pipxCmd) {
+                    [Console]::Error.WriteLine("ERROR: aid: pipx not found; cannot remove the pypi-channel CLI")
+                    script:Exit-Aid 3
+                }
+                if ($rsDryRun) {
+                    Write-Host '+ pipx uninstall aid-installer'
+                } else {
+                    & pipx uninstall aid-installer
+                    if ($LASTEXITCODE -ne 0) { $partial = $true }
+                }
+            }
+            default {
+                # curl / default channel -- the AID_HOME tree + User PATH wiring.
+                if ($rsDryRun) {
+                    if (-not $rsNoPath) {
+                        Write-Host "+ (unwire $aidHome\bin from your User PATH)"
+                    }
+                    Write-Host "+ Remove-Item -Recurse -Force $aidHome"
+                } else {
+                    # Remove PATH wiring.
+                    if (-not $rsNoPath) {
+                        $binDir = Join-Path $aidHome 'bin'
+                        try { script:Remove-AidFromPath -BinDir $binDir } catch { $partial = $true }
+                    }
 
-        # Remove $AID_HOME directory.
-        if (Test-Path $aidHome -PathType Container) {
-            try {
-                Remove-Item -LiteralPath $aidHome -Recurse -Force -ErrorAction Stop
-            } catch {
-                [Console]::Error.WriteLine("ERROR: aid: failed to remove $aidHome : $_")
-                $partial = $true
+                    # Remove $AID_HOME directory.
+                    if (Test-Path $aidHome -PathType Container) {
+                        try {
+                            Remove-Item -LiteralPath $aidHome -Recurse -Force -ErrorAction Stop
+                        } catch {
+                            [Console]::Error.WriteLine("ERROR: aid: failed to remove $aidHome : $_")
+                            $partial = $true
+                        }
+                    }
+                }
             }
         }
+
+        if ($rsDryRun) { script:Exit-Aid 0 }
 
         if ($partial) {
             Write-Host "aid CLI partially removed. Check the messages above for what remained."
