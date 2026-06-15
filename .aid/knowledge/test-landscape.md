@@ -3,7 +3,7 @@ kb-category: primary
 source: hand-authored
 intent: |
   Inventory of test suites that protect the canonical helper scripts AID skills
-  depend on plus the `aid` CLI installer/release surface. Currently 35 unit/integration
+  depend on plus the `aid` CLI installer/release surface. Currently 49 unit/integration
   suites under tests/canonical/ (plus the native-Windows tests/windows/Test-AidInstaller.ps1),
   discovered by glob and run by the tests/run-all.sh aggregator. Most are pure bash (POSIX);
   a few shell out to node (.mjs validators) or pwsh (PowerShell mirrors + the install.ps1 /
@@ -14,11 +14,12 @@ intent: |
   understand what changes to canonical/scripts/ are guarded by tests vs require
   manual verification.
 contracts:
-  - "currently 35 test suites under tests/canonical/ (glob-discovered; recount with ls tests/canonical/test-*.sh | wc -l) + tests/windows/Test-AidInstaller.ps1 (native Windows), no skill-level tests"
+  - "currently 49 test suites under tests/canonical/ (glob-discovered; recount with ls tests/canonical/test-*.sh | wc -l) + tests/windows/Test-AidInstaller.ps1 (native Windows), no skill-level tests"
   - "tests/run-all.sh is the single aggregator (glob-discovers tests/canonical/test-*.sh)"
   - "All suites source tests/lib/assert.sh (shared counters + asserts + test_summary)"
   - "Most suites are pure bash (POSIX, Git Bash on Windows); 2 need node, several need pwsh (the *-ps1.sh mirrors + the install.ps1 / aid.ps1 CLI suites) — each skips if absent; CI installer-tests.yml runs the native-Windows path"
 changelog:
+  - 2026-06-14: housekeep KB-DELTA — VERSION 1.0.0—1.1.0 era; suite count 35→49 (verified `ls tests/canonical/test-*.sh | wc -l` = 49 on disk). Documented the 14 suites that landed across delivery-007/008/010/011 but were missing from this inventory: the dashboard surface (`test-dashboard-parity.sh`, `test-dashboard-parity-h.sh`, `test-dashboard-reader.sh`, `test-aid-dashboard-cli.sh`, `test-aid-remote.sh`, `test-producer-completeness.sh`, `test-pipeline-status-walkthrough.sh`, `test-work-state-template.sh`, `test-summarize-preflight.sh`, `test-registry.sh`, `test-home-html-source-sync.sh`), and the 1.0.0→1.1.0 migration surface (`test-aid-migrate.sh`, `test-aid-migrate-trigger.sh`, `test-release-migrate-smoke.sh`). Kept qualitative — no per-suite assertion counts (§9a).
   - 2026-06-05: work-002-auto-installer — the former `setup.sh`/`setup.ps1` installers were removed and replaced by the persistent `aid` CLI; deleted the `test-setup.sh` / `test-setup-ps1.sh` suite docs and added the real installer/CLI/release suites: `test-install.sh`, `test-install-ps1.sh`, `test-install-parity.sh`, `test-aid-cli.sh`, `test-aid-cli-ps1.sh`, `test-aid-cli-parity.sh`, `test-release.sh`, `test-release-install-e2e.sh`, `test-version-sync.sh`, `test-ascii-only.sh`, `test-agents-md-invariant.sh`, `test-npm-installer.sh`, `test-pypi-installer.sh`, plus the native-Windows `tests/windows/Test-AidInstaller.ps1`. Suite count 24→35 (verified `ls tests/canonical/test-*.sh | wc -l` = 35 on disk). Added the new `.github/workflows/installer-tests.yml` cross-platform runner to the CI notes; documented that the installer/CLI/release suites run on `installer-tests.yml` (cross-platform) in addition to the `test.yml` `canonical-tests` aggregator.
   - 2026-06-03: housekeep KB-delta (Q29) — work-001 (PR #56) expanded the recipe catalog 5→51 and migrated/renamed the old seed recipes; updated the test-parse-recipe.sh description so the dogfood note reflects the migrated catalog (validates the migrated seed basenames fix-application/add-docs/change-member/add-api-endpoint/add-test-coverage as representatives, per the suite's Units 15–19) rather than implying the old 5-recipe seed set. Kept qualitative — no per-suite assertion count added (§9a).
   - 2026-06-03: housekeep run-state relocation (PR #51) — updated the test-housekeep-state.sh + test-housekeep-workfolder-safety.sh descriptions: run-state now in `.aid/.temp/HOUSEKEEP_STATE_<ts>.md` (absent-file tolerance covered); the work-folder matrix is now informational (every folder offered, user-confirmed; only the current-branch folder hard-skipped — old signals (a)/(c) removed).
@@ -110,30 +111,63 @@ Every suite **sources** `tests/lib/assert.sh` (find each at its
   suites share one uniform summary format (closed under M6 — before it, each suite
   carried its own `PASS=0`/`FAIL=0` scaffold and printed in its own format).
 
-### Runtime skips (node / pwsh)
+### Runtime skips (node / python3 / pwsh)
 
-Most suites are pure bash. Four shell out to another runtime via a thin bash wrapper
-that **skips (exit 0 with a `SKIP:` notice) if its runtime is absent**, so a host
-missing one still runs the rest:
+Most suites are pure bash, but a substantial minority shell out to an **external
+runtime** and carry a runtime-presence guard so a host missing that runtime SKIPs
+(exit 0 with a `SKIP:` notice — whole-suite or per-block) rather than failing, and
+still runs the rest.
 
-- **`node`** — `test-validate-diagrams.sh`, `test-contrast-check.sh` (the two `.mjs`
-  validators).
-- **`pwsh`** — `test-assemble-3part-ps1.sh` (the assemble mirror) plus the installer/CLI
-  PowerShell suites `test-install-ps1.sh`, `test-aid-cli-ps1.sh`, and the cross-platform
-  parity suites `test-install-parity.sh`, `test-aid-cli-parity.sh` (which need BOTH bash and
-  pwsh). Each SKIPs (exit 0 with a `SKIP:` notice) when `pwsh` is absent.
+**Counting rule:** a suite "depends on runtime R" here if its source contains an
+explicit `command -v R` presence guard (the gate that drives the SKIP). Reproduce
+the per-runtime counts with:
 
-(One additional optional-runtime guard exists in `test-housekeep-workfolder-safety.sh`,
-which SKIPs the gh-PR-merge path when `gh` is absent and otherwise exercises the
-offline `git merge-base --is-ancestor` ancestry fallback.)
+```bash
+for rt in pwsh python3 node; do
+  printf '%s: ' "$rt"; grep -lE "command -v $rt" tests/canonical/test-*.sh | wc -l
+done
+```
+
+As of the 1.0.0—1.1.0 era this yields **7 `pwsh`, 12 `python3`, 6 `node`** (20 distinct
+suites carry at least one such guard — `grep -lE "command -v (pwsh|python3|node)"
+tests/canonical/test-*.sh | wc -l`; five of them guard two runtimes). The runtime
+footprint grew sharply with the dashboard (deliveries 007/008) and migration
+(deliveries 010/011) surfaces, which lean on `python3`/`node` server twins and the
+per-channel installer toolchains. By category:
+
+- **`node`** (6) — the two `.mjs` validators (`test-validate-diagrams.sh`,
+  `test-contrast-check.sh`) plus the dashboard/Node-server twins and channel shims
+  (`test-dashboard-parity.sh`, `test-dashboard-parity-h.sh`, `test-producer-completeness.sh`,
+  `test-npm-installer.sh`).
+- **`python3`** (12) — the dashboard Python reader/server twins
+  (`test-dashboard-reader.sh`, `test-dashboard-parity.sh`, `test-dashboard-parity-h.sh`,
+  `test-producer-completeness.sh`, `test-aid-dashboard-cli.sh`), the installer/release
+  surface that uses python for render-drift / checksum / JSON paths (`test-install.sh`,
+  `test-install-ps1.sh`, `test-release.sh`, `test-release-install-e2e.sh`,
+  `test-version-sync.sh`, `test-pypi-installer.sh`), and the migration smoke
+  (`test-release-migrate-smoke.sh`, which skips its PyPI leg without python).
+- **`pwsh`** (7) — `test-assemble-3part-ps1.sh` (the assemble mirror), the installer/CLI
+  PowerShell mirrors (`test-install-ps1.sh`, `test-aid-cli-ps1.sh`), the cross-platform
+  parity suites that need BOTH bash and pwsh (`test-install-parity.sh`,
+  `test-aid-cli-parity.sh`), the remote-exposure parity half (`test-aid-remote.sh`), and
+  the release→install E2E (`test-release-install-e2e.sh`, whose `pwsh` legs skip when
+  absent).
+
+Two further nuances the `command -v` rule deliberately excludes: a few suites
+*hard-invoke* a runtime with no skip guard (e.g. `test-aid-migrate-trigger.sh` runs
+`node`/`python3` for its vendor-refresh and postinstall gates, and `test-aid-cli*.sh`
+use `python3` heredocs to parse manifests) — these would FAIL, not skip, if the
+runtime were missing; and one suite uses an *optional* `gh` guard
+(`test-housekeep-workfolder-safety.sh` SKIPs the gh-PR-merge path when `gh` is absent
+and otherwise exercises the offline `git merge-base --is-ancestor` ancestry fallback).
 
 CI does **not** tolerate a silent skip: the `canonical-tests` job pins `node` (v20)
-and asserts both `node` and `pwsh` are present before running, failing loudly if
-either is missing so the node/PowerShell coverage can never be silently bypassed.
+and asserts both `node` and `pwsh` are present before running, and the runner ships
+`python3`, so the node/python/PowerShell coverage can never be silently bypassed.
 
 ---
 
-## Suites (currently 35)
+## Suites (currently 49)
 
 All suites live under `tests/canonical/` and target scripts under `canonical/scripts/`
 (or the `aid` CLI installer/release surface — `bin/aid`, `lib/aid-install-core.sh`,
@@ -565,6 +599,174 @@ verbatim; count matches fixture entry count; omitted doc absent; added doc prese
 Does not duplicate carve-out or non-software set-difference tests (those live in
 `test-doc-set-mapping.sh`). 9 checks (T01–T09).
 
+### test-dashboard-reader.sh
+
+**Target:** the Python state reader under `dashboard/server/` (feature-002), run via
+`python3 -m unittest`. **Needs `python3`.**
+
+Wraps the reader's Python unittest module and maps its result into the canonical
+pass/fail summary format. SKIPs (reports a single failure / non-run) when `python3`
+is absent. Validates that the reader correctly parses a project's `.aid/` state into the
+dashboard model.
+
+### test-dashboard-parity.sh
+
+**Target:** cross-runtime byte-parity of the Python (`dashboard/server/server.py`) and
+Node (`dashboard/server/server.mjs`) dashboard servers (feature-003). **Uses `python3`
+and `node`.**
+
+Asserts both servers emit byte-identical `/r/<id>/api/model` responses for the same
+`.aid/` snapshot (after stripping `generated_by` and normalizing `read.read_at`), using
+checked-in fixtures (full Running/Paused/Blocked/Completed/Fallback state, and a no-`.aid/`
+case). Includes the R7 invariant: a manifest carrying U+2028/U+2029 must be canonically
+escaped by both servers. Each runtime half skips if absent; the parity check runs only
+when both are present.
+
+### test-dashboard-parity-h.sh
+
+**Target:** the multi-repo server shape introduced by delivery-008 — `AID_HOME` +
+`registry.yml`, `/api/home`, and `/r/<id>/{home.html,kb.html,api/model}` routes
+(feature-010, PT-1-H). **Uses `python3` and `node`.**
+
+Extends `test-dashboard-parity.sh`: asserts `GET /api/home` and `GET /r/<id>/api/model`
+are byte-identical across both runtimes (including U+2028/U+2029 escaping and identical
+`<id>` derivation), plus the SEC-2 traversal-refusal set (`../`, `%2e%2e`, absolute path,
+escaping out of a repo root, unregistered/malformed `<id>` → identical 404 from both),
+SEC-1 (no wildcard/`0.0.0.0` bind), SEC-3 (no filesystem-write/delete calls), and SEC-4
+(no agent/LLM import) in either server source.
+
+### test-aid-dashboard-cli.sh
+
+**Target:** the `aid dashboard` start/stop handlers in `bin/aid` (Bash) (feature-004).
+
+Integration tests for the dashboard launcher: `start` spawns a child and writes
+`dashboard.pid` + prints the URL (python and node runtimes); double-start → exit 8
+("already running"); `stop` reaps the child and removes the record/logfile (idempotent);
+stale-PID reclaim on restart; usage errors → exit 2; runtime-absent → exit 9; busy port →
+exit 3; bare `aid`/`version`/`status` regression guard; `--remote` with no mechanism →
+exit 10 (stays local); and the `--remote` SUCCESS integration (record `remote=true` +
+teardown-on-stop) when tailscale is available.
+
+### test-aid-remote.sh
+
+**Target:** the `_aid_remote_expose` / `_aid_remote_teardown` helpers in `bin/aid` and
+their `bin/aid.ps1` twins — feature-005 secure remote exposure. **Uses `pwsh` for the
+parity half.**
+
+Drives the helpers with a PATH-shim `tailscale` STUB (no live tailnet) that fails the
+suite if ever called with the public `funnel` verb. Covers: expose → `serve --bg <port>`
++ handle/HTTPS URL on stdout + FR18 ACL guidance; scoped teardown (`--https=443 off`, not a
+blind reset); the NEVER-FUNNEL guard (SEC-1, static + runtime); idempotent/ malformed
+teardown; non-loopback target refusal (exit 11); serve-failure revert (exit 12, never
+public); not-logged-in / no-tailscale → exit 10; and Bash↔PowerShell parity (PS half skips
+if `pwsh` absent).
+
+### test-registry.sh
+
+**Target:** the DR-1 multi-repo registry side-effect in `bin/aid` (`registry_register` /
+`registry_unregister` / `_registry_read_repos`) — task-049.
+
+Unit + CLI tests for the `~/.aid-dash/registry.yml` book-keeping: first-tool `add`
+registers the repo, a second `add` is a no-op, removing the last tool unregisters, removing
+one-of-several leaves the registry intact; register/unregister idempotency; atomic
+temp-file write (`*.aid-tmp.*`, cleaned up); warn-and-continue on write failure (host-tool
+op never aborts); and the DM-1 `schema: 1` + `repos:` file format (ASCII-only scaffolding).
+
+### test-producer-completeness.sh
+
+**Target:** the PF-9 producer-completeness gate (delivery-007) — the reader invoked
+directly via `python3` / `node` (no HTTP server). **Uses `python3` / `node`.**
+
+Asserts the PT-1 conforming fixture produces a model with no degraded sentinels (null
+title/description/delivery/lane/short_name) for works carrying `REQUIREMENTS.md` or
+`SPEC.md`, plus a negative assertion that a deliberately-degraded fixture copy fails the
+same check (proving the gate bites on regressions). Skips when the runtime is absent.
+
+### test-pipeline-status-walkthrough.sh
+
+**Target:** the M4+M5 pipeline-status lifecycle (feature-001) — `writeback-state.sh
+--pipeline` plus static wiring assertions against the canonical skill files.
+
+Two angles: Part A walks the lifecycle state machine by simulating transitions through
+`writeback-state.sh --pipeline` (against a throwaway `STATE.md`); Part B is C4 wiring-level
+static `grep` assertions that the canonical skills write the `## Pipeline Status` block as
+specified. Behavior-preservation guard for the pipeline-status feature.
+
+### test-work-state-template.sh
+
+**Target:** the `## Pipeline Status` block of `work-state-template.md` (canonical +
+rendered copies) — feature-001 M1.
+
+Shape assertions that the canonical template (and its rendered dogfood + per-profile
+copies) carry the exact `## Pipeline Status` header, all seven fields, and the three closed
+enum declarations (Lifecycle / Phase / Active Skill) that are the single source of truth
+for feature-002; plus the "written ONLY by … / Never hand-edited" note, and that
+`aid-interview` first-run seeds `Lifecycle: Running` / `Phase: Interview` / `Active Skill:
+aid-interview` without adding new user-facing output.
+
+### test-summarize-preflight.sh
+
+**Target:** the FR31 legacy-summary migration block (step 6) inside
+`canonical/scripts/summarize/summarize-preflight.sh`, plus a stale-check integration.
+
+Covers the legacy `knowledge-summary.html` → new `kb.html` migration: old-present/new-absent
+→ migrated; both-present → no clobber; neither → no-op; unwritable `.aid/dashboard` →
+best-effort exit 0; idempotency; and a stale-check integration (a migrated summary makes
+`stale-check.sh` return `CURRENT_APPROVED`). Uses stub fixtures to satisfy the earlier
+preflight checks (which need a real approved KB + network).
+
+### test-home-html-source-sync.sh
+
+**Target:** the home.html source-sync CI equality gate — `dashboard/home.html` (committed
+source of truth) vs `.aid/dashboard/home.html` (derived dogfood copy) (R20 / DD-5 / LC-HSRC).
+
+Asserts the two files are byte-identical via `cmp -s`, catching the case where a developer
+edited the dogfood copy instead of the source (or failed to sync the source back).
+home.html itself is exempt from the ASCII-only gate (served static asset with Unicode
+glyphs); this suite enforces equality only, not charset.
+
+### test-aid-migrate.sh
+
+**Target:** the `_aid_migrate_repo` migration logic in `bin/aid` (reachable via
+`aid __migrate-repo <path>`) — task-081 / feature-011 §6 gates 4-8.
+
+Unit/safety tests for the 1.0.0→1.1.0 settings migration: era-a valid settings → byte-identical
+no-op; era-a malformed/bare settings → repaired to DM-1 validity with `kb_baseline` +
+skill overrides preserved; era-b `STATE.md` + `.aid-manifest.json` (and `DISCOVERY_STATE.md`
+variant / no-manifest) → synthesized settings; idempotency (second run byte-identical);
+no-clobber of existing `kb.html` / legacy summary / `home.html`; and a bare `.aid/.temp/`
+(no marker) → non-candidate with zero writes. Every case runs in a throwaway `$AID_HOME` +
+fixture repo under `mktemp` and NEVER scans the real `$HOME` or this repo's `.aid/`.
+
+### test-aid-migrate-trigger.sh
+
+**Target:** the cross-manager migration trigger (R16, Gate 9) plus the delivery-011 gate
+1/2/3 wrappers — task-082 / feature-011 §6. **Uses `node` / `python3` for vendor-refresh
+gates.**
+
+Covers the version-sentinel/opt-in trigger surface: an advanced `VERSION` with
+`AID_MIGRATE_YES=1` fires the scan inside a throwaway `HOME` (one fixture repo migrated;
+an escape CANARY asserts nothing outside the throwaway HOME is touched); steady-state /
+`AID_NO_MIGRATE=1` / no-TTY-no-opt-in → no trigger (SEC-6 no-loop, non-interactive defer);
+and npm-postinstall default/opt-in/error paths (always exit 0, NFR12). Gate 1 delegates to
+`test-ascii-only.sh`, Gate 2 to `test-aid-cli-parity.sh`, and Gate 3 (vendor-refresh)
+asserts `dashboard/home.html` is vendored into the npm/pypi manifests, absent from the
+emission manifest (C8), byte-identical to `.aid/dashboard/home.html` (R20), and that the
+npm/pypi `vendor` scripts land it.
+
+### test-release-migrate-smoke.sh
+
+**Target:** the L2/L3 install→migrate wiring across all three channels (npm / curl / pypi)
+— integration smoke for feature-011. **SKIPs per channel when its toolchain is absent.**
+
+Asserts a REAL channel install/upgrade migrates a pre-existing AID repo as a side effect
+(the gap unit tests cannot see): npm postinstall eagerly runs `aid update self --yes` →
+scan+migrate; curl `install.sh` then first `aid` run fires the lazy version sentinel; pip
+entry point likewise on first run. One seeded "old" repo + one assertion per channel.
+`HOME` is pinned to a throwaway for the whole process (the scan defaults to `$HOME`), with
+an escape canary asserting the real repo is untouched. Catches packaging/wiring regressions
+(e.g. a missing `home.html` source on the bundle path).
+
 ---
 
 ## Running
@@ -612,8 +814,28 @@ installer/CLI/release suites `test-install*.sh`, `test-aid-cli*.sh`, `test-relea
 native-Windows `tests/windows/Test-AidInstaller.ps1` on `installer-tests.yml`. (The former
 `test-setup.sh` / `test-setup-ps1.sh` suites were removed with the `setup.sh`/`setup.ps1`
 installers they targeted.) The `/aid-housekeep` helpers (`canonical/scripts/housekeep/`)
-are likewise covered by the five `test-housekeep-*.sh` suites. The genuinely untested
-surface is the prompt-driven / orchestration layer:
+are likewise covered by the five `test-housekeep-*.sh` suites.
+
+The **dashboard surface** (deliveries 007/008) is now covered too: the Python state
+reader (`test-dashboard-reader.sh`), the Python↔Node server twins' byte-parity for both
+the single-repo and multi-repo (`AID_HOME` + `registry.yml`, `/api/home`,
+`/r/<id>/{home.html,kb.html,api/model}`) shapes plus their traversal-refusal / no-public-bind
+security invariants (`test-dashboard-parity.sh`, `test-dashboard-parity-h.sh`), the
+producer-completeness gate (`test-producer-completeness.sh`), the `aid dashboard`
+start/stop launcher and the multi-repo registry book-keeping
+(`test-aid-dashboard-cli.sh`, `test-registry.sh`), the secure remote-exposure helpers
+(`test-aid-remote.sh`), the home.html source↔dogfood sync gate
+(`test-home-html-source-sync.sh`), the legacy-summary → `kb.html` migration inside
+summarize-preflight (`test-summarize-preflight.sh`), and the pipeline-status lifecycle +
+work-state template shape (`test-pipeline-status-walkthrough.sh`, `test-work-state-template.sh`).
+
+The **1.0.0→1.1.0 migration surface** (deliveries 010/011) is likewise guarded: the
+settings repair/synthesize + home.html/kb.html no-clobber provisioning logic
+(`test-aid-migrate.sh`), the cross-manager version-sentinel/opt-in trigger and the
+vendor-refresh gates (`test-aid-migrate-trigger.sh`), and the per-channel
+install→migrate wiring smoke across npm/curl/pypi (`test-release-migrate-smoke.sh`).
+
+The genuinely untested surface is the prompt-driven / orchestration layer:
 
 - **Orchestration skills** (`/aid-discover`, `/aid-execute`, …) — prompt-driven and hard
   to test without an AI host. `aid-reviewer` dispatched from `/aid-discover` is the

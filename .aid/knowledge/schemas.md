@@ -339,7 +339,7 @@ written atomically via temp-file + rename (no UTF-8 BOM — asserted by
 | Key | Type | Description |
 |-----|------|-------------|
 | `manifest_version` | int | Schema version (currently `1`) |
-| `aid_version` | string | The `aid` CLI version that last wrote the manifest (e.g. `1.0.0`) |
+| `aid_version` | string | The `aid` CLI version that last wrote the manifest (e.g. `1.1.0`) |
 | `installed_at` | string | ISO-8601 UTC timestamp of first manifest write (preserved across merges) |
 | `tools` | object | Map keyed by canonical tool id (`claude-code` / `codex` / `cursor` / `copilot-cli` / `antigravity`) → per-tool entry |
 
@@ -365,11 +365,11 @@ written atomically via temp-file + rename (no UTF-8 BOM — asserted by
 ```json
 {
   "manifest_version": 1,
-  "aid_version": "1.0.0",
+  "aid_version": "1.1.0",
   "installed_at": "2026-06-05T12:00:00Z",
   "tools": {
     "claude-code": {
-      "version": "1.0.0",
+      "version": "1.1.0",
       "installed_at": "2026-06-05T12:00:00Z",
       "paths": [".claude/skills/aid-discover/SKILL.md"],
       "root_agent_files": [
