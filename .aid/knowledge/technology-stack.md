@@ -215,7 +215,7 @@ Source: `project-structure.md` `## Build & Test System`; `tests/README.md`.
 | `canonical/templates/settings.yml` | YAML 1.2 | Settings template shipped via render |
 | `packages/npm/package.json` | JSON | npm `aid-installer` package manifest — `bin.aid` → `bin/aid.js`, `engines.node >=18`, empty `dependencies`, `prepack` vendoring hook |
 | `packages/pypi/pyproject.toml` | TOML | PyPI `aid-installer` package manifest — hatchling build, `requires-python >=3.8`, empty `dependencies`, `[project.scripts] aid`, custom vendoring build hook |
-| `VERSION` | plain text | Single-source release version (`1.0.0`); FR10 version-sync asserts it equals both package manifests + the release tag |
+| `VERSION` | plain text | Single-source release version (`1.1.0`); FR10 version-sync asserts it equals both package manifests + the release tag |
 | `.gitignore` | gitignore patterns | Excludes Python/Node caches, IDE files, `.aid/knowledge/.cache/`, `.claude/worktrees/`, `.aid/.heartbeat/` |
 
 ## Languages NOT Present

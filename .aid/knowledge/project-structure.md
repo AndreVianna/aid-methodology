@@ -123,7 +123,7 @@ aid-methodology/                       (repo root)
 ├── CLAUDE.md                          ← Claude Code project-context (dogfood)
 ├── CONTRIBUTING.md                    ← contribution guide
 ├── LICENSE                            ← MIT
-├── VERSION                            ← single-source release version (1.0.0)
+├── VERSION                            ← single-source release version (1.1.0)
 ├── install.sh                         ← curl-piped bootstrap of the `aid` CLI (Bash)
 ├── install.ps1                        ← irm-piped bootstrap of the `aid` CLI (PowerShell)
 └── release.sh                         ← maintainer release packager (tarballs + SHA256SUMS + gh release create)
@@ -175,7 +175,7 @@ Languages present (where, not counts):
 | `bin/aid.ps1` / `bin/aid.cmd` | PowerShell dispatcher + cmd.exe shim (Windows) | `bin/aid.ps1`, `bin/aid.cmd` |
 | `install.sh` / `install.ps1` | Curl/irm-piped first-install bootstrap; fetches + SHA-verifies the `aid-cli-v<VERSION>.tar.gz` bundle, extracts to `$AID_HOME`, wires PATH | `install.sh`, `install.ps1` |
 | `release.sh` | Maintainer release packager: 5 per-profile tarballs + `aid-cli-v<VERSION>.tar.gz` bundle + 2 libs + `SHA256SUMS`, then `gh release create` | `release.sh` `# release.sh — Package the five per-profile AID tarballs` |
-| `VERSION` | Single-source release version (`1.0.0`); kept in sync with both package manifests + the release tag by FR10 | `VERSION` |
+| `VERSION` | Single-source release version (`1.1.0`); kept in sync with both package manifests + the release tag by FR10 | `VERSION` |
 | `.gitignore` | Excludes Python/Node caches, IDE, `.aid/knowledge/.cache/`, `.claude/worktrees/`, `.aid/.heartbeat/` | `.gitignore` `.aid/.heartbeat/` |
 
 ### Methodology spec
@@ -303,7 +303,7 @@ Tests `tests/skills/` (skill-level e2e) and `tests/canonical/pool-dispatch.sh` w
 | `canonical/templates/settings.yml` | YAML | Settings template shipped via render | `canonical/templates/settings.yml` |
 | `packages/npm/package.json` | JSON | npm `aid-installer` manifest (`bin.aid` → `bin/aid.js`, `engines.node >=18`, empty `dependencies`) | `packages/npm/package.json` |
 | `packages/pypi/pyproject.toml` | TOML | PyPI `aid-installer` manifest (hatchling build, `requires-python >=3.8`, empty `dependencies`, `[project.scripts] aid`) | `packages/pypi/pyproject.toml` `[build-system]` |
-| `VERSION` | plain text | Single-source release version (`1.0.0`); FR10 version-sync asserts it equals both package manifests + the release tag | `VERSION` |
+| `VERSION` | plain text | Single-source release version (`1.1.0`); FR10 version-sync asserts it equals both package manifests + the release tag | `VERSION` |
 
 ## Build & Test System
 
