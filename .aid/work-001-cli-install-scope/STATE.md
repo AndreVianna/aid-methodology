@@ -1,7 +1,7 @@
 # Work State — work-001-cli-install-scope
 
-> **Status:** Detailed — 16 tasks across 3 deliveries (all gates A+); ready for execution (gated on PR #78)
-> **Phase:** Detail
+> **Status:** Executing delivery-001 — 6/9 tasks Done A+ (001/002/003/005/006/007); task-004 awaiting formal review; 008/009 to reconcile; then delivery gate + PR
+> **Phase:** Execute
 > **Minimum Grade:** A (resolved via read-setting)
 > **Started:** 2026-06-15
 > **User Approved:** yes
@@ -10,13 +10,13 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 ## Pipeline Status
 
-- **Lifecycle:** Blocked
-- **Phase:** Detail
-- **Active Skill:** none
-- **Updated:** 2026-06-15T18:30:00Z
-- **Pause Reason:** —
-- **Block Reason:** PR #78 merged to master (84ff42f0); PR #79 (this design+plan branch, rebased on master) awaiting review/merge. /aid-execute proceeds once #79 is on master.
-- **Block Artifact:** PR #79
+- **Lifecycle:** Paused-Awaiting-Input
+- **Phase:** Execute
+- **Active Skill:** aid-execute
+- **Updated:** 2026-06-16T00:00:00Z
+- **Pause Reason:** delivery-001 6/9 tasks Done A+ on branch aid/work-001-cli-install-scope-delivery-001 (pushed). Resume via /aid-execute — next: task-004 formal review (committed, In Review), reconcile task-008/009 (likely absorbed by task-007; suite green 50/50), then the delivery gate, then open the delivery-001 PR.
+- **Block Reason:** —
+- **Block Artifact:** —
 
 ## Triage
 
