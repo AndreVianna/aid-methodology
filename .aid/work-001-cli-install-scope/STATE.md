@@ -1,6 +1,6 @@
 # Work State — work-001-cli-install-scope
 
-> **Status:** Executing delivery-001 — 6/9 tasks Done A+ (001/002/003/005/006/007); task-004 awaiting formal review; 008/009 to reconcile; then delivery gate + PR
+> **Status:** delivery-001 COMPLETE — all 9 tasks Done, delivery gate A+, suite 51/51 green; PR open to master. delivery-002/003 remain.
 > **Phase:** Execute
 > **Minimum Grade:** A (resolved via read-setting)
 > **Started:** 2026-06-15
@@ -13,8 +13,8 @@ This is the single state file for **this work** — the full dev lifecycle from 
 - **Lifecycle:** Paused-Awaiting-Input
 - **Phase:** Execute
 - **Active Skill:** aid-execute
-- **Updated:** 2026-06-16T00:00:00Z
-- **Pause Reason:** delivery-001 6/9 tasks Done A+ on branch aid/work-001-cli-install-scope-delivery-001 (pushed). Resume via /aid-execute — next: task-004 formal review (committed, In Review), reconcile task-008/009 (likely absorbed by task-007; suite green 50/50), then the delivery gate, then open the delivery-001 PR.
+- **Updated:** 2026-06-16T02:00:00Z
+- **Pause Reason:** delivery-001 COMPLETE (9/9 Done, gate A+, suite 51/51). PR open to master for review/merge. Next: delivery-002 (feature-004 registry+dispatch) then delivery-003 (feature-005 bootstrap) — resume via /aid-execute after delivery-001 merges (delivery-002 builds on it).
 - **Block Reason:** —
 - **Block Artifact:** —
 
@@ -68,7 +68,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| delivery-001 | Detailed | 9 (task-001..009) | Root-cause fix: feature-001 (scope + CODE/STATE split, marker/scan removal) + feature-002 (/var/lib/aid provisioning) + feature-003 (stamp gate = REPLACEMENT trigger). §10 P1 + 003 pulled in for the trigger coupling. Standalone MVP. |
+| delivery-001 | Done (gate A+) | 9/9 Done | Root-cause fix: feature-001 (scope + CODE/STATE split, marker/scan removal) + feature-002 (/var/lib/aid provisioning) + feature-003 (stamp gate). All 9 tasks Done; delivery gate A+; suite 51/51 green; PR to master open. |
 | delivery-002 | Detailed | 4 (task-010..013) | Coherent discovery: feature-004 (two-tier registry union + cwd A/B/C dispatch + update-self registry-migration, replacing the d001 no-op stub). §10 P2. Depends on d001. Standalone MVP. |
 | delivery-003 | Detailed | 3 (task-014..016) | Rollout: feature-005 (v1.0/v1.1 bootstrap stamp+register on visit, no scan; + canonical test-suite migration to CODE/STATE split). §10 P3. Depends on d001+d002. Standalone MVP. |
 
@@ -146,7 +146,13 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 ## Delivery Gates
 
-> _none yet_
+### delivery-001
+
+- **Reviewer Tier:** Large
+- **Grade:** A+
+- **Issue List:** none (gate passed clean; 0 deferred [HIGH] from per-task quick checks)
+- **Timestamp:** 2026-06-16T02:00:00Z
+- **Notes:** Holistic cross-task pass — delivery ACs (AC1/2/3/4/6/7/8/10) verified end-to-end incl. the v1.0→v1.1 root-cause scenario (unprivileged global aid degrades to ~/.aid, no prompt, no re-prompt loop); bash↔ps1 parity (4↔4 gate sites, both stamp constants =1); full canonical suite 51/51 (238/0).
 
 ## Quick Check Findings
 
@@ -181,6 +187,8 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 2026-06-15 | Detail graded (cycle 1) | B+ | aid-reviewer: 1 LOW (task-007 missing 005 dep) + 2 MINOR; no blocking issues |
 | 2026-06-15 | Detail graded (cycle 2) | A+ | All 3 fixed; 16 tasks exact 6-section format, acyclic DAG, green-per-delivery; 0 Pending |
 | 2026-06-15 | DESIGN PIPELINE COMPLETE | A+ | interview→specify→plan→detail all A+. Ready for /aid-execute (gated on PR #78 merge) |
+| 2026-06-16 | delivery-001 executed | A+×8/A×1 | 9 tasks: 001/002/003/005/006/007/008/009 A+, 004 A. Gates caught 4 real bugs (registry-drop, swallowed exit-code, missing ps1 gate site, non-hermetic test) — all fixed |
+| 2026-06-16 | delivery-001 DELIVERY GATE | A+ | Large-tier holistic pass, 0 findings; v1.0→v1.1 root-cause scenario verified clean; suite 51/51 (238/0); PR to master opened |
 | 2026-06-15 | Plan created — 3 deliveries | — | aid-plan: 5 features → d001 (001+002+003, root-cause + stamp-gate replacement trigger), d002 (004), d003 (005). 001↔003 trigger coupling resolved by grouping 003 into d001. PR #78 hard prerequisite (gated to master first, not a deliverable). |
 | 2026-06-15 | Tasks detailed — 16 tasks across 3 deliveries | — | aid-detail: d001=9 (task-001..009: f001/f002/f003 bash+ps1 IMPLEMENT + 3 green-per-delivery TEST), d002=4 (task-010..013: f004 bash split + ps1 + TEST), d003=3 (task-014 bootstrap runbook DOCUMENT, task-015 bootstrap TEST, task-016 final reconciliation TEST). bash/ps1 split as parity twins; per-delivery TEST tasks keep run-all.sh green at each boundary. Per-delivery execution graph + wave-maps appended to PLAN.md. |
 
