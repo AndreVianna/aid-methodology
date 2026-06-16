@@ -69,8 +69,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
 | delivery-001 | MERGED (PR #80) | 9/9 Done | Root-cause fix shipped to master 2026-06-16 (merge 5fa59fea). Gate A+; CI green (canary CI-portability fix). |
-| delivery-002 | In Progress | task-010 Done | feature-004: two-tier registry union + cwd A/B/C dispatch + update-self registry-migration. Branch aid/work-001-cli-install-scope-delivery-002 off master. |
-| delivery-002 | Detailed | 4 (task-010..013) | Coherent discovery: feature-004 (two-tier registry union + cwd A/B/C dispatch + update-self registry-migration, replacing the d001 no-op stub). §10 P2. Depends on d001. Standalone MVP. |
+| delivery-002 | In Progress | 1/4 (task-010 Done) | feature-004: two-tier registry union + cwd A/B/C dispatch + update-self registry-migration (replacing the d001 no-op stub). §10 P2. Branch aid/work-001-cli-install-scope-delivery-002 off master. Standalone MVP. |
 | delivery-003 | Detailed | 3 (task-014..016) | Rollout: feature-005 (v1.0/v1.1 bootstrap stamp+register on visit, no scan; + canonical test-suite migration to CODE/STATE split). §10 P3. Depends on d001+d002. Standalone MVP. |
 
 ## Tasks Status
