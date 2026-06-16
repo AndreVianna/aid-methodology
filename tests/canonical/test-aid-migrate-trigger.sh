@@ -729,15 +729,6 @@ _K2_CODE="${_FIXTURE_CODE_HOME}"
 _K2_REPO="${_FIXTURE_REPO}"
 # AID_STATE_HOME: separate throwaway (simulates /var/lib/aid without needing root).
 _K2_SHARED_STATE="$(mktemp -d "${TMP}/k2_sharedstate.XXXXXX")"
-# Plant an existing user-tier registry at HOME/.aid with a known repo.
-mkdir -p "${HOME}/.aid"
-_K2_USER_REPO_PATH="/fake/user/repo/k2"
-cat > "${HOME}/.aid/registry.yml" << K2REGEOF
-# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).
-schema: 1
-repos:
-  - ${_K2_USER_REPO_PATH}
-K2REGEOF
 
 # Run __migrate-repo with AID_STATE_HOME pointing at the shared-state throwaway.
 # This simulates the global-install two-tier case.
@@ -759,51 +750,12 @@ else
     fail "TRG-K2a pretend-global: AID_STATE_HOME/registry.yml not created"
 fi
 
-# Union read: HOME/.aid/registry.yml (user tier) + AID_STATE_HOME/registry.yml (shared tier)
-# must together contain both the pre-planted user repo AND the newly migrated shared repo.
-# We exercise this via the union harness pattern (inline subshell sourcing _registry_read_union).
-_K2_UNION_OUT="$(bash -c "
-    BIN_AID=\"${BIN_AID}\"
-    HOME=\"${HOME}\"
-    AID_STATE_HOME=\"${_K2_SHARED_STATE}\"
-    export HOME AID_STATE_HOME
-    START=\$(grep -n '# Registry helpers (DR-1' \"\$BIN_AID\" | head -1 | cut -d: -f1)
-    END=\$(grep -n '# Parse subcommand and dispatch' \"\$BIN_AID\" | head -1 | cut -d: -f1)
-    _PRIV_START=\$(grep -n '^_aid_priv_run()' \"\$BIN_AID\" | head -1 | cut -d: -f1)
-    _PRIV_END=\$(awk \"NR>=\${_PRIV_START:-0} && /^\}$/{print NR; exit}\" \"\$BIN_AID\")
-    [[ -n \"\$_PRIV_START\" && -n \"\$_PRIV_END\" ]] && \
-        eval \"\$(sed -n \"\${_PRIV_START},\${_PRIV_END}p\" \"\$BIN_AID\")\" 2>/dev/null || true
-    _AID_VERBOSE=0
-    eval \"\$(sed -n \"\${START},\${END}p\" \"\$BIN_AID\")\"
-    _registry_read_union
-" 2>&1)"
-_K2_UNION_RC=$?
-
-# Create a live .aid dir for the user-tier path so prune-filter passes it through.
-mkdir -p "${_K2_USER_REPO_PATH}/.aid" 2>/dev/null || true
-
-# Re-run union after creating the .aid dir so prune-filter doesn't drop the user repo.
-_K2_UNION_OUT="$(bash -c "
-    BIN_AID=\"${BIN_AID}\"
-    HOME=\"${HOME}\"
-    AID_STATE_HOME=\"${_K2_SHARED_STATE}\"
-    export HOME AID_STATE_HOME
-    START=\$(grep -n '# Registry helpers (DR-1' \"\$BIN_AID\" | head -1 | cut -d: -f1)
-    END=\$(grep -n '# Parse subcommand and dispatch' \"\$BIN_AID\" | head -1 | cut -d: -f1)
-    _PRIV_START=\$(grep -n '^_aid_priv_run()' \"\$BIN_AID\" | head -1 | cut -d: -f1)
-    _PRIV_END=\$(awk \"NR>=\${_PRIV_START:-0} && /^\}$/{print NR; exit}\" \"\$BIN_AID\")
-    [[ -n \"\$_PRIV_START\" && -n \"\$_PRIV_END\" ]] && \
-        eval \"\$(sed -n \"\${_PRIV_START},\${_PRIV_END}p\" \"\$BIN_AID\")\" 2>/dev/null || true
-    _AID_VERBOSE=0
-    eval \"\$(sed -n \"\${START},\${END}p\" \"\$BIN_AID\")\"
-    _registry_read_union
-" 2>&1)"
-
-if echo "${_K2_UNION_OUT}" | grep -qF "${_K2_REPO_CANON}"; then
-    pass "TRG-K2b pretend-global union: shared-tier repo visible in union read"
-else
-    fail "TRG-K2b pretend-global union: shared-tier repo NOT in union read output"
-fi
+# TRG-K2b (two-tier union merge) is covered by REG-V08b in test-registry.sh, which uses
+# fully writable throwaway repos for both user-tier and shared-tier and asserts dedup.
+# The former TRG-K2b here used a non-writable /fake/... user-tier path (mkdir swallowed by
+# || true), so the user-tier entry was always pruned and the union assertion never proved a
+# genuine two-tier merge.  Removed as a redundant weak duplicate; REG-V08b is the authoritative
+# two-tier union test.
 
 # CANARY-K: real REPO_ROOT/.aid/registry.yml not modified.
 _GIT_AID_STATUS_K="$(git -C "${REPO_ROOT}" status --porcelain .aid/registry.yml 2>/dev/null || true)"

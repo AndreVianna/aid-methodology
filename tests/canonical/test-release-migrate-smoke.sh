@@ -5,9 +5,11 @@
 # The migration LOGIC is exhaustively covered by test-aid-migrate.sh (unit level).
 # This suite covers the integration gap that no other test did: does installing
 # the actual package via each channel actually TRIGGER migration on a real repo?
-#   - npm : postinstall (eager) runs `aid update self --yes` -> scan+migrate
-#   - curl: install.sh, then the first `aid` run fires the version sentinel (lazy)
-#   - pypi: pip-installed entry point, first `aid` run fires the sentinel (lazy)
+#   - npm : postinstall (eager) runs `aid update self --yes` -> migrates the
+#           registered repos (registry union, no scan)
+#   - curl: install.sh, then the first `aid` repo-command stamps on encounter
+#           (lazy per-repo format_version gate; no scan, no machine marker)
+#   - pypi: pip-installed entry point, same lazy stamp-on-encounter model
 # One seeded "old" repo + one assertion per channel -- not a re-run of the unit
 # fixture matrix. Catches packaging/wiring regressions (e.g. a missing home.html
 # source on the bundle path) that unit tests cannot see.

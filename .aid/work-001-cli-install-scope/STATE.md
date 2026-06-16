@@ -91,7 +91,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | task-013 | d002 test migration — registry union + A/B/C + update-self migration | TEST | d002 w4 | Done | A | — | feature-004 slice; split into 4 parallel per-suite agents (lesson). Migrated decision-#5 dispatch assertions (exit7/6→0+offer; .aid fixtures for landing/notice tests) across cli/ps1/parity/dashboard/npm; NEW REG-V01-07 (union/collapse/degrade/prune/no-scan/migrate-exactly/AID_HOME-redirect) + PAR029-W parity. run-all 51/51 (incl. CI layout). 2 MINOR cosmetic |
 | task-014 | v1.0/v1.1 bootstrap runbook (manual, per-repo, no scan) | DOCUMENT | d003 w1 | Done | A+ | — | feature-005; bootstrap-runbook.md; C+→A+ (corrected registry-tier path labels to shipped $AID_STATE_HOME-primary model); on-encounter+carry-forward, cd-recipe, no-scan, edge cases; ASCII |
 | task-015 | Bootstrap assertions — stamp+register on first encounter, no scan (AC9) | TEST | d003 w1 | Done | A | — | feature-005; TRG-F/J/K + REG-V08 (first-encounter stamp+register+no-scan canary AC9, carry-forward, tier collapse + pretend-global seam); run-all 51/51 (std+CI layout); 1 MINOR (TRG-K2b weak dup → task-016 cleanup) |
-| task-016 | Final full-suite reconciliation green sweep (bash + ps1) | TEST | d003 w2 | Pending | — | — | feature-005; whole-suite closeout audit |
+| task-016 | Final full-suite reconciliation green sweep (bash + ps1) | TEST | d003 w2 | Done | A+ | — | feature-005; closeout: run-all 51/51 (std+CI layout); C1/C2/C3 conflation audit clean (no AID_HOME code-relocation, no live scan/sentinel/marker refs); removed redundant TRG-K2b (REG-V08b authoritative); fixed stale smoke-suite header comment |
 
 ## Deploy Status
 
