@@ -1,6 +1,6 @@
 # Work State — work-001-cli-install-scope
 
-> **Status:** delivery-002 COMPLETE — 4/4 Done, gate A+, suite 51/51; PR to master open. delivery-003 (feature-005 bootstrap) remains.
+> **Status:** delivery-002 COMPLETE — 4/4 Done, gate A+, PR #81 CI GREEN (all 7), ready to merge. delivery-003 (feature-005 bootstrap) remains.
 > **Phase:** Execute
 > **Minimum Grade:** A (resolved via read-setting)
 > **Started:** 2026-06-15
@@ -201,6 +201,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 2026-06-16 | delivery-001 MERGED | — | PR #80 merged to master (5fa59fea); root-cause fix shipped |
 | 2026-06-16 | delivery-002 executed | A+/A+/A+/A | feature-004 tasks 010(E→A+)/011(C+→A+)/012(D+→A+)/013(A). Gates caught: registry write-escape+25-test regression, bare-aid C-table gap, ps1 fn-ordering register-dead + scan-fn divergence — all fixed |
 | 2026-06-16 | delivery-002 DELIVERY GATE | A+ | Large-tier holistic, 0 findings; AC2/AC5 + FR4/5/6 verified; bash↔ps1 parity; suite 51/51 (incl CI layout); PR to master opened |
+| 2026-06-16 | delivery-002 PR #81 CI fixes | — | decision-#5 migration had 4 assertion sites outside local run-all: test-aid-migrate canary (fixed on master), tests/windows/Test-AidInstaller.ps1, test-pypi-installer PW06 (install-gated), + 2 inline smokes in installer-tests.yml. All migrated; PR #81 CI GREEN (all 7 checks). |
 | 2026-06-15 | Plan created — 3 deliveries | — | aid-plan: 5 features → d001 (001+002+003, root-cause + stamp-gate replacement trigger), d002 (004), d003 (005). 001↔003 trigger coupling resolved by grouping 003 into d001. PR #78 hard prerequisite (gated to master first, not a deliverable). |
 | 2026-06-15 | Tasks detailed — 16 tasks across 3 deliveries | — | aid-detail: d001=9 (task-001..009: f001/f002/f003 bash+ps1 IMPLEMENT + 3 green-per-delivery TEST), d002=4 (task-010..013: f004 bash split + ps1 + TEST), d003=3 (task-014 bootstrap runbook DOCUMENT, task-015 bootstrap TEST, task-016 final reconciliation TEST). bash/ps1 split as parity twins; per-delivery TEST tasks keep run-all.sh green at each boundary. Per-delivery execution graph + wave-maps appended to PLAN.md. |
 
