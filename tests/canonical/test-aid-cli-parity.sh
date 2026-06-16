@@ -2100,6 +2100,262 @@ else
 fi
 
 # ===========================================================================
+# PAR009-V: task-009 AC gaps -- constant-parity drift check, refuse-on-newer
+#           (byte/mtime identity), and malformed->0 (warn+offer, not refuse).
+#
+# AC1: Constant-parity drift check.
+#   V01: AID_SUPPORTED_FORMAT integer in bin/aid EQUALS $AidSupportedFormat
+#        in bin/aid.ps1 (grep both; compare). Both must equal 1.
+#        CI fails if either constant drifts.
+#
+# AC2: Refuse-on-newer (format_version: 2) + byte/mtime identity of settings.yml.
+#   V02: Bash 'aid status' in a format_version: 2 repo -> non-zero exit.
+#   V03: Bash refuse: settings.yml byte-identical after the call (no mutation).
+#   V04: Bash refuse: mtime of settings.yml unchanged after the call.
+#   V05: PS1 parity (skipped when pwsh absent): exit non-zero on newer-format repo.
+#   V06: PS1: settings.yml byte-identical after the call.
+#
+# AC3: malformed->0 (format_version: abc) -> warn+offer, exit 0, NOT refuse.
+#   V07: Bash 'aid status' in a malformed-format repo (format_version: abc) ->
+#        exit 0 (malformed collapsed to 0 = older format = warn+offer, not refuse).
+#   V08: Bash malformed: WARN printed (offer path, not refuse).
+#   V09: PS1 parity (skipped when pwsh absent): exit 0 on malformed-format repo.
+#
+# HOME-pin + canary are already in effect from the global pin at top of suite.
+# ===========================================================================
+
+echo ""
+echo "=== PAR009-V: task-009 -- constant-parity, refuse-on-newer, malformed->0 ==="
+
+# ---------------------------------------------------------------------------
+# V01: Constant-parity drift check (static source grep).
+# Grep the integer from bin/aid (AID_SUPPORTED_FORMAT=N) and from
+# bin/aid.ps1 ($AidSupportedFormat ... -Value N). Compare them.
+# ---------------------------------------------------------------------------
+_V01_BASH_CONST=$(grep -m1 '^readonly AID_SUPPORTED_FORMAT=' "${BIN_AID_SH}" \
+    | sed 's/^readonly AID_SUPPORTED_FORMAT=//' | tr -d '[:space:]' || true)
+_V01_PS1_CONST=$(grep -m1 'AidSupportedFormat.*-Value' "${BIN_AID_PS1}" \
+    | sed 's/.*-Value[[:space:]]*//' \
+    | sed 's/[[:space:]].*//' \
+    | tr -d '[:space:]' || true)
+
+if [[ -z "${_V01_BASH_CONST}" ]]; then
+    fail "PAR009-V01a bin/aid: AID_SUPPORTED_FORMAT constant not found"
+else
+    pass "PAR009-V01a bin/aid: AID_SUPPORTED_FORMAT constant found (${_V01_BASH_CONST})"
+fi
+if [[ -z "${_V01_PS1_CONST}" ]]; then
+    fail "PAR009-V01b bin/aid.ps1: AidSupportedFormat constant not found"
+else
+    pass "PAR009-V01b bin/aid.ps1: AidSupportedFormat constant found (${_V01_PS1_CONST})"
+fi
+if [[ -n "${_V01_BASH_CONST}" && -n "${_V01_PS1_CONST}" ]]; then
+    assert_eq "${_V01_BASH_CONST}" "${_V01_PS1_CONST}" \
+        "PAR009-V01 Bash<->PS1 format-constant parity: AID_SUPPORTED_FORMAT == AidSupportedFormat (both=${_V01_BASH_CONST})"
+fi
+# Both must equal 1 specifically (not just each other).
+assert_eq "${_V01_BASH_CONST}" "1" \
+    "PAR009-V01c bin/aid: AID_SUPPORTED_FORMAT == 1 (expected supported format)"
+assert_eq "${_V01_PS1_CONST}" "1" \
+    "PAR009-V01d bin/aid.ps1: AidSupportedFormat == 1 (expected supported format)"
+
+# ---------------------------------------------------------------------------
+# V02-V04: Refuse-on-newer (format_version: 2) + byte/mtime identity (Bash).
+# ---------------------------------------------------------------------------
+_V_CODE_HOME=$(newhome); setup_sh_home "${_V_CODE_HOME}"
+_V_STATE_HOME="$(mktemp -d "${TMP}/v009state.XXXXXX")"
+
+_V_REPO_NEWER="$(mktemp -d "${TMP}/v009newer.XXXXXX")"
+mkdir -p "${_V_REPO_NEWER}/.aid"
+cat > "${_V_REPO_NEWER}/.aid/settings.yml" << 'V009NEWEREOF'
+format_version: 2
+project:
+  name: newer-format-test
+  description: repo with format newer than CLI supports
+  type: brownfield
+tools:
+  installed: []
+review:
+  minimum_grade: A
+execution:
+  max_parallel_tasks: 5
+traceability:
+  heartbeat_interval: 1
+V009NEWEREOF
+
+# Capture byte content and mtime before invoking aid.
+_V02_SHA_BEFORE=$(sha256sum "${_V_REPO_NEWER}/.aid/settings.yml" | cut -d' ' -f1)
+_V02_MTIME_BEFORE=$(stat -c '%Y' "${_V_REPO_NEWER}/.aid/settings.yml" 2>/dev/null || \
+    stat -f '%m' "${_V_REPO_NEWER}/.aid/settings.yml" 2>/dev/null || echo "unknown")
+
+# Use temp file to capture combined output; run command directly (not in subshell)
+# so $? captures the real exit code of aid (not the || true fallback).
+_V02_TMP_OUT="$(mktemp "${TMP}/v02out.XXXXXX")"
+(cd "${_V_REPO_NEWER}" && \
+    AID_HOME="${_V_STATE_HOME}" AID_NO_UPDATE_CHECK=1 \
+    bash "${_V_CODE_HOME}/bin/aid" status) >"${_V02_TMP_OUT}" 2>&1
+_V02_RC=$?
+_V02_OUT="$(cat "${_V02_TMP_OUT}")"
+rm -f "${_V02_TMP_OUT}"
+
+# V02: non-zero exit on newer-format repo.
+assert_exit_nonzero "${_V02_RC}" \
+    "PAR009-V02 Bash refuse-on-newer: aid status format_version:2 -> non-zero exit"
+
+# V03: byte-identical settings.yml after refuse (no mutation).
+_V02_SHA_AFTER=$(sha256sum "${_V_REPO_NEWER}/.aid/settings.yml" | cut -d' ' -f1)
+assert_eq "${_V02_SHA_BEFORE}" "${_V02_SHA_AFTER}" \
+    "PAR009-V03 Bash refuse-on-newer: settings.yml byte-identical after refuse (no .aid/ write)"
+
+# V04: mtime unchanged.
+_V02_MTIME_AFTER=$(stat -c '%Y' "${_V_REPO_NEWER}/.aid/settings.yml" 2>/dev/null || \
+    stat -f '%m' "${_V_REPO_NEWER}/.aid/settings.yml" 2>/dev/null || echo "unknown")
+assert_eq "${_V02_MTIME_BEFORE}" "${_V02_MTIME_AFTER}" \
+    "PAR009-V04 Bash refuse-on-newer: settings.yml mtime unchanged after refuse"
+
+# Also assert the refuse message is present (ERROR, not WARN).
+if echo "${_V02_OUT}" | grep -qi "newer than this CLI supports\|Upgrade the aid CLI"; then
+    pass "PAR009-V04b Bash refuse-on-newer: ERROR message printed (correct refusal message)"
+else
+    fail "PAR009-V04b Bash refuse-on-newer: expected refuse ERROR message; got: '${_V02_OUT}'"
+fi
+
+# ---------------------------------------------------------------------------
+# V05-V06: PS1 refuse-on-newer parity (skipped when pwsh absent).
+# ---------------------------------------------------------------------------
+if [[ -n "$PWSH" ]]; then
+    _V_PS1_CODE_HOME=$(newhome); setup_ps1_home "${_V_PS1_CODE_HOME}"
+    _V_PS1_STATE_HOME="$(mktemp -d "${TMP}/v009ps1state.XXXXXX")"
+    _V_REPO_NEWER_PS="$(mktemp -d "${TMP}/v009newerps.XXXXXX")"
+    mkdir -p "${_V_REPO_NEWER_PS}/.aid"
+    cat > "${_V_REPO_NEWER_PS}/.aid/settings.yml" << 'V009NEWERPEOF'
+format_version: 2
+project:
+  name: newer-format-ps1-test
+  description: repo with format newer than CLI supports (PS1 fixture)
+  type: brownfield
+tools:
+  installed: []
+review:
+  minimum_grade: A
+execution:
+  max_parallel_tasks: 5
+traceability:
+  heartbeat_interval: 1
+V009NEWERPEOF
+
+    _V05_SHA_BEFORE_PS=$(sha256sum "${_V_REPO_NEWER_PS}/.aid/settings.yml" | cut -d' ' -f1)
+
+    _V05_TMP_OUT="$(mktemp "${TMP}/v05out.XXXXXX")"
+    (cd "${_V_REPO_NEWER_PS}" && \
+        AID_HOME="${_V_PS1_STATE_HOME}" AID_NO_UPDATE_CHECK=1 \
+        "$PWSH" -NoLogo -NonInteractive -File "${_V_PS1_CODE_HOME}/bin/aid.ps1" \
+        status) >"${_V05_TMP_OUT}" 2>&1
+    _V05_RC=$?
+    rm -f "${_V05_TMP_OUT}"
+
+    assert_exit_nonzero "${_V05_RC}" \
+        "PAR009-V05 PS1 refuse-on-newer: aid.ps1 status format_version:2 -> non-zero exit"
+
+    _V05_SHA_AFTER_PS=$(sha256sum "${_V_REPO_NEWER_PS}/.aid/settings.yml" | cut -d' ' -f1)
+    assert_eq "${_V05_SHA_BEFORE_PS}" "${_V05_SHA_AFTER_PS}" \
+        "PAR009-V06 PS1 refuse-on-newer: settings.yml byte-identical after refuse (no .aid/ write)"
+else
+    pass "PAR009-V05 PS1 refuse-on-newer: non-zero exit [SKIPPED: pwsh absent]"
+    pass "PAR009-V06 PS1 refuse-on-newer: settings.yml byte-identical after refuse [SKIPPED: pwsh absent]"
+fi
+
+# ---------------------------------------------------------------------------
+# V07-V08: malformed->0 (format_version: abc) -> warn+offer, exit 0 (Bash).
+# malformed value collapses to 0 = older format = warn+offer, NOT refuse.
+# ---------------------------------------------------------------------------
+_V_REPO_MALFORMED="$(mktemp -d "${TMP}/v009malformed.XXXXXX")"
+mkdir -p "${_V_REPO_MALFORMED}/.aid"
+cat > "${_V_REPO_MALFORMED}/.aid/settings.yml" << 'V009MALFORMEDEOF'
+format_version: abc
+project:
+  name: malformed-format-test
+  description: repo with malformed format_version value
+  type: brownfield
+tools:
+  installed: []
+review:
+  minimum_grade: A
+execution:
+  max_parallel_tasks: 5
+traceability:
+  heartbeat_interval: 1
+V009MALFORMEDEOF
+
+_V07_TMP_OUT="$(mktemp "${TMP}/v07out.XXXXXX")"
+(cd "${_V_REPO_MALFORMED}" && \
+    AID_HOME="${_V_STATE_HOME}" AID_NO_UPDATE_CHECK=1 \
+    bash "${_V_CODE_HOME}/bin/aid" status) >"${_V07_TMP_OUT}" 2>&1
+_V07_RC=$?
+_V07_OUT="$(cat "${_V07_TMP_OUT}")"
+rm -f "${_V07_TMP_OUT}"
+
+# V07: malformed value collapses to 0 -> warn+offer path -> format gate does NOT refuse.
+# The format gate returns 0 (warn+offer); aid status then exits per its own logic
+# (7 = no manifest in a new fixture, which is fine -- the key is gate did NOT refuse with exit 1).
+# Assert: the exit code is NOT 1 (which is the refuse-path exit code from the format gate).
+if [[ "${_V07_RC}" -ne 1 ]]; then
+    pass "PAR009-V07 Bash malformed format_version (abc): format gate did NOT refuse (exit=${_V07_RC}, not 1 = not refused)"
+else
+    fail "PAR009-V07 Bash malformed format_version (abc): format gate refused with exit 1 (must not refuse malformed; collapse to 0)"
+fi
+
+# V08: WARN printed (offer path), not ERROR refuse message.
+if echo "${_V07_OUT}" | grep -qi "WARN.*older format\|older format.*WARN"; then
+    pass "PAR009-V08 Bash malformed format_version: WARN printed (warn+offer path, not refuse)"
+elif echo "${_V07_OUT}" | grep -qi "ERROR.*newer.*CLI\|Upgrade the aid CLI"; then
+    fail "PAR009-V08 Bash malformed format_version: ERROR refuse message printed (must not refuse; malformed collapses to 0)"
+else
+    fail "PAR009-V08 Bash malformed format_version: expected WARN; got: '${_V07_OUT}'"
+fi
+
+# ---------------------------------------------------------------------------
+# V09: PS1 malformed->0 parity (skipped when pwsh absent).
+# ---------------------------------------------------------------------------
+if [[ -n "$PWSH" ]]; then
+    _V_PS1_STATE_ML="$(mktemp -d "${TMP}/v009ps1stateml.XXXXXX")"
+    _V_REPO_MALFORMED_PS="$(mktemp -d "${TMP}/v009malformedps.XXXXXX")"
+    mkdir -p "${_V_REPO_MALFORMED_PS}/.aid"
+    cat > "${_V_REPO_MALFORMED_PS}/.aid/settings.yml" << 'V009MALFORMEDPEOF'
+format_version: abc
+project:
+  name: malformed-format-ps1-test
+  description: repo with malformed format_version value (PS1 fixture)
+  type: brownfield
+tools:
+  installed: []
+review:
+  minimum_grade: A
+execution:
+  max_parallel_tasks: 5
+traceability:
+  heartbeat_interval: 1
+V009MALFORMEDPEOF
+
+    _V09_TMP_OUT="$(mktemp "${TMP}/v09out.XXXXXX")"
+    (cd "${_V_REPO_MALFORMED_PS}" && \
+        AID_HOME="${_V_PS1_STATE_ML}" AID_NO_UPDATE_CHECK=1 \
+        "$PWSH" -NoLogo -NonInteractive -File "${_V_PS1_CODE_HOME}/bin/aid.ps1" \
+        status) >"${_V09_TMP_OUT}" 2>&1
+    _V09_RC=$?
+    rm -f "${_V09_TMP_OUT}"
+
+    # V09: format gate must NOT refuse on malformed value (exit != 1 means not refused).
+    if [[ "${_V09_RC}" -ne 1 ]]; then
+        pass "PAR009-V09 PS1 malformed format_version (abc): format gate did NOT refuse (exit=${_V09_RC}, not 1)"
+    else
+        fail "PAR009-V09 PS1 malformed format_version (abc): format gate refused with exit 1 (must not refuse malformed; collapse to 0)"
+    fi
+else
+    pass "PAR009-V09 PS1 malformed format_version: format gate did not refuse [SKIPPED: pwsh absent]"
+fi
+
+# ===========================================================================
 # End-of-suite: REAL_HOME blast-surface canary
 #
 # Compare the snapshot of .aid/dashboard/ dirs under REAL_HOME taken before
