@@ -86,7 +86,13 @@ if ($script:_AidCodeHomeWritable) {
 } else {
     $script:_AidScope     = 'global'
     $script:_AidStateHome = if ($env:AID_HOME) { $env:AID_HOME } else {
-        if ($env:AID_SHARED_STATE_HOME) { $env:AID_SHARED_STATE_HOME } else { '/var/lib/aid' }
+        if ($env:AID_SHARED_STATE_HOME) {
+            $env:AID_SHARED_STATE_HOME
+        } elseif ($env:ProgramData) {
+            Join-Path $env:ProgramData 'aid'
+        } else {
+            Join-Path $HOME '.aid'
+        }
     }
 }
 
@@ -1260,22 +1266,62 @@ function script:Get-RegistryRepos {
     return $results.ToArray()
 }
 
-# Register a canonical repo path in $AidStateHome/registry.yml (set-insert, idempotent).
+# Register a canonical repo path in the registry.yml (set-insert, idempotent).
 # Prints one line on a real change; silent on no-op.  Prints WARN on failure; never
 # throws (host-tool op is never blocked -- NFR10 / DD-3 / CLI-1).
+#
+# FALLBACK (non-prompting, never-elevate): attempts a best-effort never-elevate
+# ensure-exists of $script:_AidStateHome.  If the shared state home is not writable
+# by the current user, DEGRADES to %LOCALAPPDATA%\aid (the per-user home) + one WARN.
+# A routine 'aid add' MUST NOT trigger a UAC re-prompt -- the shared registration is
+# best-effort skip+warn (feature-002 parity with bash degrade-to-~/.aid contract).
+# The temp file is created in the CHOSEN writable dir so Move-Item is atomic same-FS.
 function script:Registry-Register {
     param([string]$Repo)
-    $reg = Join-Path $script:_AidStateHome 'registry.yml'
+
+    # Never-elevate best-effort ensure-exists of $script:_AidStateHome.
     if (-not (Test-Path $script:_AidStateHome -PathType Container)) {
-        New-Item -ItemType Directory -Path $script:_AidStateHome -Force | Out-Null
+        try { New-Item -ItemType Directory -Path $script:_AidStateHome -Force -ErrorAction Stop | Out-Null } catch {}
     }
-    $existing = @(script:Get-RegistryRepos -RegPath $reg)
+
+    # Decide the effective target dir BEFORE mktemp so the temp file always lands in a
+    # writable directory (mirrors the bash decide-before-mktemp fix in registry_register).
+    # A root-owned (or Administrator-owned) $script:_AidStateHome that already exists causes
+    # the mkdir above to succeed (no-op) but remains non-writable; the writability test
+    # below catches that case and degrades to the per-user home.
+    $writeDir = $null
+    $writeReg = $null
+    $degraded = $false
+    if (Test-Path $script:_AidStateHome -PathType Container) {
+        # Test writability by attempting to create a probe file (no-throw path).
+        $_probeFile = Join-Path $script:_AidStateHome ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
+        $_writable = $false
+        try { [System.IO.File]::WriteAllText($_probeFile, ''); Remove-Item -LiteralPath $_probeFile -Force -ErrorAction SilentlyContinue; $_writable = $true } catch {}
+        if ($_writable) {
+            $writeDir = $script:_AidStateHome
+        }
+    }
+    if (-not $writeDir) {
+        # Degrade: shared home is absent or not writable. Use per-user home (%LOCALAPPDATA%\aid
+        # on Windows; $HOME/.aid on non-Windows). Emit one WARN; no UAC re-prompt.
+        $userHome = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'aid' } else { Join-Path $HOME '.aid' }
+        if (-not (Test-Path $userHome -PathType Container)) {
+            try { New-Item -ItemType Directory -Path $userHome -Force -ErrorAction SilentlyContinue | Out-Null } catch {}
+        }
+        [Console]::Error.WriteLine("WARN: aid: could not write to shared state home $($script:_AidStateHome); using $userHome")
+        $writeDir = $userHome
+        $degraded = $true
+    }
+    $writeReg = Join-Path $writeDir 'registry.yml'
+
+    $existing = @(script:Get-RegistryRepos -RegPath $writeReg)
     # Idempotent: already registered -> silent no-op.
     if ($existing -contains $Repo) {
         if ($script:_AidVerbose) { Write-Host "Registry: $Repo already registered (no-op)." }
         return
     }
-    $tmp = Join-Path $script:_AidStateHome ("registry.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
+    # Temp file in the chosen writable dir (atomic same-filesystem Move-Item).
+    $tmp = Join-Path $writeDir ("registry.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
     try {
         $all = ($existing + @($Repo)) | Where-Object { $_ } | Sort-Object -Unique
         $lines = [System.Collections.Generic.List[string]]::new()
@@ -1286,29 +1332,80 @@ function script:Registry-Register {
         $lines.Add("repos:")
         foreach ($p in $all) { $lines.Add("  - $p") }
         Set-Content -LiteralPath $tmp -Value $lines -Encoding utf8NoBOM -ErrorAction Stop
-        Move-Item -LiteralPath $tmp -Destination $reg -Force -ErrorAction Stop
+        Move-Item -LiteralPath $tmp -Destination $writeReg -Force -ErrorAction Stop
     } catch {
         Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
-        [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($reg): $_")
+        [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($writeReg): $_")
         return
     }
     Write-Host "Registered $Repo with the AID CLI."
 }
 
-# Unregister a canonical repo path from $AidStateHome/registry.yml (set-remove, idempotent).
+# Unregister a canonical repo path from the registry.yml (set-remove, idempotent).
 # Called only when the repo manifest is now gone (last tool removed).
 # Prints one line on a real change; silent on no-op.  Prints WARN on failure; never throws.
+#
+# FALLBACK: mirrors the degrade-to-user-tier logic of Registry-Register.  The entry is
+# looked up in the shared tier first; if the shared dir is not user-writable the operation
+# degrades to the per-user home.  Temp file lands in the chosen writable dir (atomic Move).
 function script:Registry-Unregister {
     param([string]$Repo)
-    $reg = Join-Path $script:_AidStateHome 'registry.yml'
-    if (-not (Test-Path $reg -PathType Leaf)) { return }
-    $existing = @(script:Get-RegistryRepos -RegPath $reg)
-    # Idempotent: not registered -> silent no-op.
-    if ($existing -notcontains $Repo) {
-        if ($script:_AidVerbose) { Write-Host "Registry: $Repo not in registry (no-op)." }
-        return
+
+    $sharedReg = Join-Path $script:_AidStateHome 'registry.yml'
+    $userHome  = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'aid' } else { Join-Path $HOME '.aid' }
+    $userReg   = Join-Path $userHome 'registry.yml'
+
+    # Determine the effective target dir BEFORE mktemp (mirrors bash decide-before-mktemp fix).
+    $writeDir = $null
+    $writeReg = $null
+    if (Test-Path $script:_AidStateHome -PathType Container) {
+        $_probeFile2 = Join-Path $script:_AidStateHome ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
+        $_writable2 = $false
+        try { [System.IO.File]::WriteAllText($_probeFile2, ''); Remove-Item -LiteralPath $_probeFile2 -Force -ErrorAction SilentlyContinue; $_writable2 = $true } catch {}
+        if ($_writable2) { $writeDir = $script:_AidStateHome }
     }
-    $tmp = Join-Path $script:_AidStateHome ("registry.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
+    if (-not $writeDir) {
+        $writeDir = $userHome
+        if (-not (Test-Path $writeDir -PathType Container)) {
+            try { New-Item -ItemType Directory -Path $writeDir -Force -ErrorAction SilentlyContinue | Out-Null } catch {}
+        }
+    }
+    $writeReg = Join-Path $writeDir 'registry.yml'
+
+    # Look for the repo in chosen tier; fall back to the other tier.
+    $existing = @(script:Get-RegistryRepos -RegPath $writeReg)
+    if ($existing -notcontains $Repo) {
+        $otherReg = if ($writeReg -eq $sharedReg) { $userReg } else { $sharedReg }
+        $otherExisting = @(script:Get-RegistryRepos -RegPath $otherReg)
+        if ($otherExisting -contains $Repo) {
+            # Entry found in the other tier -- switch to it only if writable.
+            if (Test-Path (Split-Path $otherReg -Parent) -PathType Container) {
+                $_probeFile3 = Join-Path (Split-Path $otherReg -Parent) ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
+                $_writable3 = $false
+                try { [System.IO.File]::WriteAllText($_probeFile3, ''); Remove-Item -LiteralPath $_probeFile3 -Force -ErrorAction SilentlyContinue; $_writable3 = $true } catch {}
+                if ($_writable3) {
+                    $writeDir = Split-Path $otherReg -Parent
+                    $writeReg = $otherReg
+                    $existing = $otherExisting
+                } else {
+                    # Can't write there either; emit WARN and return.
+                    [Console]::Error.WriteLine("WARN: aid: could not write to registry at $otherReg (not writable); unregister skipped")
+                    return
+                }
+            }
+        } else {
+            # Not in either tier.
+            if ($script:_AidVerbose) { Write-Host "Registry: $Repo not in registry (no-op)." }
+            return
+        }
+    }
+
+    # Emit WARN when operating on user tier because shared tier is not writable.
+    if ($writeReg -eq $userReg -and (Test-Path $script:_AidStateHome -PathType Container)) {
+        [Console]::Error.WriteLine("WARN: aid: could not write to shared state home $($script:_AidStateHome); using $userReg")
+    }
+
+    $tmp = Join-Path $writeDir ("registry.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
     try {
         $remaining = $existing | Where-Object { $_ -ne $Repo } | Sort-Object -Unique
         $lines = [System.Collections.Generic.List[string]]::new()
@@ -1319,10 +1416,10 @@ function script:Registry-Unregister {
         $lines.Add("repos:")
         if ($remaining) { foreach ($p in $remaining) { $lines.Add("  - $p") } }
         Set-Content -LiteralPath $tmp -Value $lines -Encoding utf8NoBOM -ErrorAction Stop
-        Move-Item -LiteralPath $tmp -Destination $reg -Force -ErrorAction Stop
+        Move-Item -LiteralPath $tmp -Destination $writeReg -Force -ErrorAction Stop
     } catch {
         Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
-        [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($reg): $_")
+        [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($writeReg): $_")
         return
     }
     Write-Host "Unregistered $Repo from the AID CLI."

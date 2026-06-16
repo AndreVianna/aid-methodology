@@ -244,6 +244,38 @@ if (-not $Force -and ($env:AID_FORCE -eq '1' -or $env:AID_FORCE -eq 'true')) {
 }
 
 # ---------------------------------------------------------------------------
+# _AID_HOME_PRESET: snapshot whether AID_HOME was pre-set in the environment
+# BEFORE install.ps1 ever defaults it.  This mirrors install.sh's
+# _AID_HOME_PRESET="${AID_HOME:-}" captured before the first AID_HOME default.
+# A real Administrator install.ps1 invocation (no AID_HOME in env) leaves this
+# empty -> the provisioning hook runs.  A test that pins AID_HOME=<throwaway>
+# leaves this non-empty -> the hook is skipped, protecting %ProgramData%\aid.
+# Capture here before any script:Resolve-AidHome call that reads $env:AID_HOME.
+# ---------------------------------------------------------------------------
+$script:_AidHomePreset = if ($env:AID_HOME) { $env:AID_HOME } else { '' }
+
+# ---------------------------------------------------------------------------
+# Test-AidAdminPs1: returns $true when the current process has Administrator
+# (or root-equivalent) elevation.  On Windows uses WindowsPrincipal;
+# on non-Windows (Linux/macOS under pwsh) falls back to id -u == 0.
+# ---------------------------------------------------------------------------
+function script:Test-AidAdminPs1 {
+    try {
+        $id = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+        $prin = [System.Security.Principal.WindowsPrincipal]$id
+        return $prin.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)
+    } catch {
+        # Non-Windows (Linux/macOS) - fall back to id -u.
+        try {
+            $uid = (& id -u 2>$null)
+            return ($uid -eq '0')
+        } catch {
+            return $false
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Import the shared install core.
 # Resolution order (first match wins):
 #   1. AID_LIB_PATH env var - absolute path to the psm1 file (test override or vendored).
@@ -781,6 +813,22 @@ if ($script:_InstallMode -eq 'BOOTSTRAP') {
 
     Write-Host "aid CLI v$bsCliVersion installed to $aidHome."
 
+    # Install-time PRIMARY provisioning hook (feature-002 Windows parity).
+    # Guard: Administrator elevation AND no pre-set AID_HOME in env (same logic as
+    # install.sh: id -u == 0 && -z _AID_HOME_PRESET).
+    # When both hold, provision %ProgramData%\aid (or $env:AID_SHARED_STATE_HOME override).
+    # Best-effort: a failure is WARN-only; the install still completes.
+    if ((script:Test-AidAdminPs1) -and ([string]::IsNullOrEmpty($script:_AidHomePreset))) {
+        $bsSharedHome = if ($env:AID_SHARED_STATE_HOME) { $env:AID_SHARED_STATE_HOME } elseif ($env:ProgramData) { Join-Path $env:ProgramData 'aid' } else { '' }
+        if ($bsSharedHome) {
+            try {
+                $null = Invoke-AidProvisionSharedStateHome -SharedHome $bsSharedHome
+            } catch {
+                [Console]::Error.WriteLine("WARN: install.ps1: shared state provisioning failed (non-fatal): $_")
+            }
+        }
+    }
+
     # Wire PATH (User scope, idempotent dedup on ';'-split).
     if (-not $bsNoPath) {
         $bsCurrentPath = [Environment]::GetEnvironmentVariable('Path', 'User')
@@ -963,6 +1011,20 @@ if ($script:_InstallMode -eq 'CONVENIENCE') {
         [System.IO.File]::WriteAllBytes((Join-Path $aidHome 'VERSION'), $convBytes)
 
         Write-Host "aid CLI v$convCliVer installed to $aidHome."
+
+        # Install-time PRIMARY provisioning hook (feature-002 Windows parity).
+        # Guard: Administrator elevation AND no pre-set AID_HOME in env.
+        # Best-effort: a failure is WARN-only; the install still completes.
+        if ((script:Test-AidAdminPs1) -and ([string]::IsNullOrEmpty($script:_AidHomePreset))) {
+            $convSharedHome = if ($env:AID_SHARED_STATE_HOME) { $env:AID_SHARED_STATE_HOME } elseif ($env:ProgramData) { Join-Path $env:ProgramData 'aid' } else { '' }
+            if ($convSharedHome) {
+                try {
+                    $null = Invoke-AidProvisionSharedStateHome -SharedHome $convSharedHome
+                } catch {
+                    [Console]::Error.WriteLine("WARN: install.ps1: shared state provisioning failed (non-fatal): $_")
+                }
+            }
+        }
 
         # Wire PATH (idempotent).
         if (-not $convNoPath) {

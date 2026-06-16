@@ -887,6 +887,60 @@ function Test-ManifestExists {
 }
 
 # ---------------------------------------------------------------------------
+# Global shared-state provisioning (Windows parity of bash _provision_shared_state_home)
+# ---------------------------------------------------------------------------
+
+# Invoke-AidProvisionSharedStateHome <SharedHome>
+# Create <SharedHome> and seed an empty registry.yml (no-clobber, atomic write).
+# Windows shared-state home = $env:ProgramData\aid; resolved by the caller.
+# Best-effort: returns $false on failure without aborting the caller.
+# On Windows there is no sudo elevation wrapper in this PR -- writes are attempted
+# directly; on failure the underlying error surfaces and we signal $false to the caller.
+#
+# The exact seed text matches the DM-1 schema used by the registry functions:
+#   schema: 1
+#   repos:
+# (three comment lines + schema line + repos line with no items).
+function Invoke-AidProvisionSharedStateHome {
+    param([string]$SharedHome)
+
+    # Step 1: create the shared-home dir if absent.
+    if (-not (Test-Path $SharedHome -PathType Container)) {
+        try {
+            New-Item -ItemType Directory -Path $SharedHome -Force -ErrorAction Stop | Out-Null
+        } catch {
+            [Console]::Error.WriteLine("WARN: aid: could not create shared state home ${SharedHome}: $_")
+            return $false
+        }
+    }
+
+    # Step 2: seed registry.yml if absent (no-clobber).
+    $reg = Join-Path $SharedHome 'registry.yml'
+    if (Test-Path $reg -PathType Leaf) {
+        return $true
+    }
+
+    # Write to a temp file next to the registry, then rename-replace (atomic on Windows).
+    $tmp = Join-Path $SharedHome (".registry.aid-tmp." + [System.IO.Path]::GetRandomFileName())
+    try {
+        $seedLines = @(
+            "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).",
+            "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/",
+            "# description/version are read from each repo's own .aid/settings.yml at render time.",
+            "schema: 1",
+            "repos:"
+        )
+        Set-Content -LiteralPath $tmp -Value $seedLines -Encoding utf8NoBOM -ErrorAction Stop
+        Move-Item -LiteralPath $tmp -Destination $reg -Force -ErrorAction Stop
+    } catch {
+        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+        [Console]::Error.WriteLine("WARN: aid: could not install registry seed at ${reg}: $_")
+        return $false
+    }
+    return $true
+}
+
+# ---------------------------------------------------------------------------
 # Version marker
 # ---------------------------------------------------------------------------
 
@@ -1427,5 +1481,6 @@ Export-ModuleMember -Function @(
     'Write-VersionMarker',
     'Get-ManifestToolList',
     'Get-AidStatusBody',
-    'Get-AidStatus'
+    'Get-AidStatus',
+    'Invoke-AidProvisionSharedStateHome'
 )
