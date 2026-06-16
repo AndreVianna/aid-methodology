@@ -2098,6 +2098,77 @@ _aid_migrate_synthesize_settings_era_b() {
 
 
 # ---------------------------------------------------------------------------
+# _aid_cwd_classify <target-dir>
+# C-table: classify the cwd repo and perform register-on-encounter.
+# Called before repo commands (status, update [tool]) when .aid/ exists.
+# When called with a dir that has .aid/, this function:
+#   1. Checks if already registered (union read); if not, picks tier and registers.
+#   2. Does NOT check stale here -- callers use _aid_format_gate for that.
+# Returns 0 always (registration is best-effort; never blocks the host command).
+_aid_cwd_classify() {
+    local _target="$1"
+    local _canon_target
+    _canon_target="$(cd "$_target" && pwd)" 2>/dev/null || _canon_target="$_target"
+
+    # Check if already registered in the union.
+    local _is_registered=0
+    while IFS= read -r _reg_p; do
+        if [[ "$_reg_p" == "$_canon_target" ]]; then
+            _is_registered=1
+            break
+        fi
+    done < <(_registry_read_union)
+
+    if [[ "$_is_registered" -eq 0 ]]; then
+        # Not registered -- pick tier and register (best-effort, never blocks).
+        local _in_home=0
+        # Check if target is under $HOME.
+        case "$_canon_target" in
+            "${HOME}/"*|"${HOME}") _in_home=1 ;;
+        esac
+
+        local _reg_tier="user"
+        if [[ "$_AID_SCOPE" == "global" && "$_in_home" -eq 0 ]]; then
+            # global && outside ~ : ask shared-vs-user (decision #4: always ask).
+            # No-TTY default: user tier silently (safe, always writable).
+            local _ctab_have_tty=0
+            { exec 3</dev/tty; } 2>/dev/null && { _ctab_have_tty=1; exec 3>&-; } || true
+            if [[ "$_ctab_have_tty" -eq 1 ]]; then
+                printf 'Register this repo in the shared machine registry? [y/N] '
+                local _ask_ans=""
+                read -r _ask_ans < /dev/tty
+                case "$_ask_ans" in
+                    [Yy]|yes|Yes|YES) _reg_tier="shared" ;;
+                    *) _reg_tier="user" ;;
+                esac
+            else
+                # Non-interactive: user tier silently.
+                _reg_tier="user"
+            fi
+        fi
+        # register is best-effort: failure warns, returns 0, host command proceeds.
+        registry_register "$_canon_target" "$_reg_tier" || true
+    fi
+    return 0
+}
+
+# _aid_cwd_no_aid_offer <target-dir>
+# C-table last row: .aid/ absent -- print offer + optional non-git note, then exit 0.
+# This is the "no hard refuse" rule (decision #5): never errors on missing .aid/.
+_aid_cwd_no_aid_offer() {
+    local _target="$1"
+    local _canon
+    _canon="$(cd "$_target" 2>/dev/null && pwd)" || _canon="$_target"
+    printf 'no AID project here -- set it up? (aid add)\n'
+    # Non-git note (decision #5): a non-git dir can use AID; .aid/ just won't be
+    # version-controlled if git is absent.
+    if ! git -C "$_canon" rev-parse --git-dir >/dev/null 2>&1; then
+        printf 'Note: %s is not a git repository -- .aid/ will not be version-controlled.\n' "$_canon"
+    fi
+    exit 0
+}
+
+# ---------------------------------------------------------------------------
 # Parse subcommand and dispatch.
 # ---------------------------------------------------------------------------
 
@@ -2123,8 +2194,9 @@ _cmd_dashboard() {
     printf 'AID v%s - Agentic Iterative Development\n' "$cli_version"
     printf 'Install, update, and manage AID across your repositories.\n'
 
-    # C6: format gate for cwd repo (only when .aid/ exists; absent .aid/ falls
-    # through to the existing "set it up?" path via aid_status_body below).
+    # C6: format gate for cwd repo (.aid/ is guaranteed present here -- the
+    # missing-.aid/ case is intercepted at the dispatch level above via
+    # _aid_cwd_no_aid_offer; register-on-encounter already ran via _aid_cwd_classify).
     if [[ -d "./.aid" ]]; then
         _aid_format_gate "." || return $?
     fi
@@ -2143,6 +2215,13 @@ _cmd_dashboard() {
 
 # Early help check.
 if [[ $# -eq 0 ]]; then
+    # C-table: if no .aid/ -> offer (no hard refuse, decision #5); exit 0.
+    if [[ ! -d "./.aid" ]]; then
+        _aid_cwd_no_aid_offer "."
+        # _aid_cwd_no_aid_offer always exits 0.
+    fi
+    # C-table register-on-encounter (best-effort, never blocks bare aid).
+    _aid_cwd_classify "."
     # Bare 'aid' -> dashboard landing screen.
     _cmd_dashboard
     exit $?
@@ -2193,10 +2272,15 @@ if [[ "$SUBCMD" == "status" ]]; then
     [[ -z "$_AID_TARGET" && -n "${AID_TARGET:-}" ]] && _AID_TARGET="$AID_TARGET"
     _AID_TARGET="${_AID_TARGET:-.}"
     export AID_VERBOSE="$_AID_VERBOSE"
-    # C6: format gate for status target (only when .aid/ exists).
-    if [[ -d "${_AID_TARGET}/.aid" ]]; then
-        _aid_format_gate "${_AID_TARGET}" || exit $?
+    # C-table: if no .aid/ -> offer (no hard refuse, decision #5); exit 0.
+    if [[ ! -d "${_AID_TARGET}/.aid" ]]; then
+        _aid_cwd_no_aid_offer "${_AID_TARGET}"
+        # _aid_cwd_no_aid_offer always exits 0.
     fi
+    # C-table register-on-encounter (best-effort, never blocks status).
+    _aid_cwd_classify "${_AID_TARGET}"
+    # C6: format gate for status target (only when .aid/ exists).
+    _aid_format_gate "${_AID_TARGET}" || exit $?
     aid_status "$_AID_TARGET"
     _status_rc=$?
     # Update check notice appended after status output (non-blocking).
@@ -2226,8 +2310,64 @@ if [[ "$SUBCMD" == "update" ]]; then
         export _SELF_FROM_BUNDLE _SELF_DRYRUN
         _cmd_update_self; _us_rc=$?
         if [[ "${_us_rc}" -ne 0 ]]; then exit "${_us_rc}"; fi
-        # Post-update: repo migration is now registry-driven (feature-003).
-        # The scan-and-migrate post-step is removed (FR8/AC7); no-op here.
+        # Post-update: registry-driven migration (feature-004).
+        # Iterate _registry_read_union -- NO scan -- with All/Yes/No/Cancel per-repo
+        # consent walk.  Unregistered repos are caught lazily by the per-repo stamp.
+        # No .migrated marker is written (removed; stamp in settings.yml is the record).
+        # dry-run: the install step already printed its command; skip migration silently.
+        if [[ "${_SELF_DRYRUN:-0}" != "1" ]]; then
+            _us_migrate_all=0
+            _us_migrate_cancel=0
+            # Read the union of registered repos (quiet-prunes stale entries).
+            _us_repos=()
+            while IFS= read -r _us_r; do
+                [[ -n "$_us_r" ]] && _us_repos+=("$_us_r")
+            done < <(_registry_read_union)
+            if [[ "${#_us_repos[@]}" -eq 0 ]]; then
+                echo "No registered repos to migrate."
+            else
+                # Determine interactive mode: AID_MIGRATE_YES=1 is the explicit opt-in for
+                # auto-yes.  Non-interactive without opt-in -> no migration (per SPEC: without
+                # opt-in, no migration is forced).  Test /dev/tty by attempting to open it.
+                _us_auto_yes=0
+                _us_have_tty=0
+                [[ "${AID_MIGRATE_YES:-0}" == "1" ]] && _us_auto_yes=1
+                { exec 3</dev/tty; } 2>/dev/null && { _us_have_tty=1; exec 3>&-; } || true
+                if [[ "$_us_auto_yes" -eq 0 && "$_us_have_tty" -eq 0 ]]; then
+                    # Non-interactive, no opt-in: skip all (non-interactive default, SPEC edge-cases).
+                    echo "Skipping repo migration (non-interactive; set AID_MIGRATE_YES=1 to opt in)."
+                else
+                    for _us_repo in "${_us_repos[@]}"; do
+                        if [[ "$_us_migrate_cancel" -eq 1 ]]; then
+                            break
+                        fi
+                        if [[ "$_us_migrate_all" -eq 1 || "$_us_auto_yes" -eq 1 ]]; then
+                            _us_answer="y"
+                        else
+                            printf 'Migrate repo %s? [All/Yes/No/Cancel] ' "$_us_repo"
+                            _us_answer=""
+                            read -r _us_answer < /dev/tty
+                        fi
+                        case "$_us_answer" in
+                            [Aa]|all|All|ALL)
+                                _us_migrate_all=1
+                                _aid_migrate_repo "$_us_repo"
+                                ;;
+                            [Yy]|yes|Yes|YES)
+                                _aid_migrate_repo "$_us_repo"
+                                ;;
+                            [Cc]|cancel|Cancel|CANCEL)
+                                _us_migrate_cancel=1
+                                echo "Migration cancelled."
+                                ;;
+                            *)
+                                echo "Skipped: ${_us_repo}"
+                                ;;
+                        esac
+                    done
+                fi
+            fi
+        fi
         exit 0
     fi
     # Fall through to the shared add/update handler below.
@@ -2333,6 +2473,16 @@ if [[ ! -d "$_AID_TARGET" ]]; then
     _aid_die "target directory does not exist: ${_AID_TARGET}" 2
 fi
 _AID_TARGET="$(cd "$_AID_TARGET" && pwd)"
+
+# ---- C-table pre-check for 'update [tool]': missing .aid/ -> offer + exit 0 ----
+# Must run BEFORE _resolve_tools_for_aid so we never reach exit-6 when no .aid/ exists.
+# 'add' uses the B-table (checked inside the dispatch case); 'remove' is not in C-table.
+if [[ "$SUBCMD" == "update" ]]; then
+    if [[ ! -d "${_AID_TARGET}/.aid" ]]; then
+        _aid_cwd_no_aid_offer "${_AID_TARGET}"
+        # _aid_cwd_no_aid_offer always exits 0.
+    fi
+fi
 
 # ---- Self-update-if-needed preamble (FF-3 / CLI-2 / task-079) --------------
 # For 'update [<tool>]' only (not 'add', not 'update self').  Ensures the CLI
@@ -2516,11 +2666,26 @@ _AID_OVERALL_BLOCKED=0
 
 case "$SUBCMD" in
     add|update)
-        # C6: format gate for the update repo path (only when .aid/ exists;
-        # an add to a fresh repo with no .aid/ falls through normally).
-        if [[ "$SUBCMD" == "update" && -d "${_AID_TARGET}/.aid" ]]; then
+        # B-table (for 'add'): writability pre-check BEFORE any .aid/ is created.
+        # Decision #3: never elevate .aid/ creation -- error if folder is not writable.
+        if [[ "$SUBCMD" == "add" ]]; then
+            if [[ ! -w "$_AID_TARGET" ]]; then
+                echo "ERROR: aid: add: target directory is not writable: ${_AID_TARGET}" >&2
+                echo "ERROR: aid: add: AID will not create a root-owned .aid/ -- fix folder permissions and retry." >&2
+                rm -rf "$_AID_STAGING_BASE"
+                exit 1
+            fi
+        fi
+
+        # C-table (for 'update [tool]'): register-on-encounter + format gate.
+        # The missing-.aid/ case was already intercepted above (pre-resolve-tools).
+        if [[ "$SUBCMD" == "update" ]]; then
+            # C-table register-on-encounter (best-effort).
+            _aid_cwd_classify "${_AID_TARGET}"
+            # C6: format gate for the update repo path.
             _aid_format_gate "${_AID_TARGET}" || exit $?
         fi
+
         for _tool in "${_AID_TOOLS[@]}"; do
             echo ""
             _prepare_tool_staging_aid "$_tool" "$_AID_VERSION_ARG" "$_AID_FROM_BUNDLE"
@@ -2542,8 +2707,41 @@ case "$SUBCMD" in
             exit 5
         fi
         echo "Done. AID ${_AID_RESOLVED_VERSION:-} installed into: ${_AID_TARGET}"
-        # DR-1 registry side-effect: register repo on first tool add/update (idempotent).
-        registry_register "$_AID_TARGET"
+
+        # B-table (for 'add'): tier-aware registration after successful install.
+        # Decision #3 (unwritable) already handled above with error+abort.
+        if [[ "$SUBCMD" == "add" ]]; then
+            _btab_in_home=0
+            case "$_AID_TARGET" in
+                "${HOME}/"*|"${HOME}") _btab_in_home=1 ;;
+            esac
+            _btab_tier="user"
+            if [[ "$_AID_SCOPE" == "global" && "$_btab_in_home" -eq 0 ]]; then
+                # B-table: global && outside ~ && writable (already proved writable above).
+                # Decision #4: always ask on a real decision.
+                _btab_have_tty=0
+                { exec 3</dev/tty; } 2>/dev/null && { _btab_have_tty=1; exec 3>&-; } || true
+                if [[ "$_btab_have_tty" -eq 1 ]]; then
+                    printf 'Add this repo to the shared machine registry? [y/N] '
+                    _btab_ans=""
+                    read -r _btab_ans < /dev/tty
+                    case "$_btab_ans" in
+                        [Yy]|yes|Yes|YES) _btab_tier="shared" ;;
+                        *) _btab_tier="user" ;;
+                    esac
+                else
+                    # Non-interactive: user tier silently (safe default).
+                    _btab_tier="user"
+                fi
+            fi
+            # All other rows: user tier silently (in-~ or per-user outside-~).
+            registry_register "$_AID_TARGET" "$_btab_tier"
+        else
+            # 'update [tool]': C-table register-on-encounter already ran above.
+            # The post-install register is idempotent; route via user tier.
+            registry_register "$_AID_TARGET" "user"
+        fi
+
         # FF-3 / CLI-2 / task-079: per-repo migration on the 'update' reach only.
         # Runs on the already-CAN-1-canonicalized $_AID_TARGET (cd && pwd above).
         # The registry_register above already ran, so migration step 4 is an
