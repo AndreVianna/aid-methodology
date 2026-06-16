@@ -404,9 +404,24 @@ _aid_update_self_if_stale() {
     fi
     [[ -z "${_cached_latest}" ]] && return 0  # no cached latest known -> skip (no network call here)
 
-    # Skip if already current (string equality -- no semver needed for "are we up to date?").
+    # Offline / explicit install: when the caller supplied a local bundle, do NOT
+    # phone the package channel to self-update. The bundle is the source of truth
+    # for this install; reaching out to the registry would defeat an air-gapped or
+    # pre-release install (and could replace the running CLI behind the user's back).
+    [[ -n "${_AID_FROM_BUNDLE:-}" ]] && return 0
+
+    # Skip if already current.
     if [[ "${_installed}" == "${_cached_latest}" ]]; then
         return 0
+    fi
+
+    # Only self-update when the installed CLI is strictly OLDER than the latest
+    # (semver-aware). A newer installed version (e.g. an unreleased dev build) must
+    # never be downgraded to "latest". sort -V puts the lower version first.
+    local _lower
+    _lower="$(printf '%s\n%s\n' "${_installed}" "${_cached_latest}" | sort -V | head -1)"
+    if [[ "${_lower}" != "${_installed}" ]]; then
+        return 0  # installed >= latest -> nothing to do (never downgrade)
     fi
 
     # Stale: call the channel-appropriate self-update logic.
@@ -2640,8 +2655,22 @@ _prepare_tool_staging_aid() {
         verify_bundle_checksum "$tarball" || exit $?
         local tbase
         tbase="$(basename "$tarball")"
-        _AID_RESOLVED_VERSION="$(echo "$tbase" | sed "s/aid-${tool}-v//" | sed 's/\.tar\.gz$//')"
-        [[ -z "$_AID_RESOLVED_VERSION" ]] && _AID_RESOLVED_VERSION="${version:-unknown}"
+        # Derive the version STRICTLY from the canonical tool-bundle name
+        # (aid-<tool>-v<semver>.tar.gz). Never stamp a raw filename: a name that
+        # does not match this shape is the wrong artifact (e.g. the CLI installer
+        # package aid-installer-<ver>.tgz), not a tool bundle. Fall back to an
+        # explicit --version, else fail loudly rather than recording garbage.
+        if [[ "$tbase" =~ ^aid-${tool}-v([0-9]+\.[0-9]+\.[0-9]+([.+-][0-9A-Za-z.+-]+)?)\.tar\.gz$ ]]; then
+            _AID_RESOLVED_VERSION="${BASH_REMATCH[1]}"
+        elif [[ -n "${version:-}" ]]; then
+            _AID_RESOLVED_VERSION="$version"
+        else
+            echo "ERROR: aid: '${tbase}' is not a valid AID tool bundle for '${tool}'." >&2
+            echo "       Expected a tarball named 'aid-${tool}-v<version>.tar.gz'." >&2
+            echo "       (Did you pass the CLI installer package instead of a tool bundle?" >&2
+            echo "        Point --from-bundle at a release staging dir or an aid-${tool}-v*.tar.gz file.)" >&2
+            exit 2
+        fi
         extract_tarball "$tarball" "$tool_staging" || exit $?
     else
         if [[ -z "$version" ]]; then
