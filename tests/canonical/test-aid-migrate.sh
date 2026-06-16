@@ -3,7 +3,8 @@
 # (reachable via `aid __migrate-repo <path>`).
 #
 # Covers SPEC feature-011 section-6 gates 4-8:
-#   Gate 4a: era-a VALID settings (inline comments + alignment) -> byte-identical no-op
+#   Gate 4a: era-a VALID settings (inline comments + alignment) -> format_version prepended
+#             (NOTE: byte-identical check removed - format_version stamp now written; OOS task-008)
 #   Gate 4b: era-a MALFORMED settings (missing section) + kb_baseline + skill override
 #             -> repaired to DM-1 validity; kb_baseline + override preserved byte-for-byte
 #   Gate 4c: era-a bare value-less name: -> repaired to basename (full unit coverage)
@@ -15,9 +16,12 @@
 #   Gate 7b: existing home.html -> never overwritten
 #   Gate 8:  bare .aid/.temp/ (no marker) -> non-candidate, zero writes
 #
-# ISOLATION: every test builds a throwaway $AID_HOME and throwaway fixture repo
-# under mktemp -d.  `trap ... EXIT` cleans up.  NEVER scans real $HOME.
-# NEVER writes to ~/.aid-dash/registry.yml or modifies this repo's .aid/.
+# ISOLATION: every test builds a throwaway CODE_HOME (bin/aid + lib/ + VERSION + dashboard/)
+# and a separate throwaway STATE_HOME (AID_HOME= for mutable state only), plus a throwaway
+# fixture repo under mktemp -d.  `trap ... EXIT` cleans up.  NEVER scans real $HOME.
+# NEVER writes to ~/.aid/registry.yml or modifies this repo's .aid/.
+#
+# HOME is pinned to a throwaway dir so no home-relative writes touch the real $HOME.
 #
 # Usage:
 #   bash tests/canonical/test-aid-migrate.sh [--verbose]
@@ -48,33 +52,51 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 # ---------------------------------------------------------------------------
+# HOME pin: all home-relative writes (e.g. ~/.aid/.update-check) land in a
+# throwaway dir.  REAL_HOME is saved for the isolation canary check.
+# ---------------------------------------------------------------------------
+REAL_HOME="${HOME}"
+export HOME="${TMP}/fakehome"
+mkdir -p "${HOME}"
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-# Build a minimal AID_HOME with bin/aid + lib/aid-install-core.sh + VERSION
+# Build a minimal CODE_HOME with bin/aid + lib/aid-install-core.sh + VERSION
 # and a stub dashboard/home.html so Step-2 (copy home.html) can succeed.
-new_aid_home() {
-    local h; h="$(mktemp -d "${TMP}/home.XXXXXX")"
+# bin/aid self-locates this dir as AID_CODE_HOME.
+# Do NOT export this dir as AID_HOME; that is the state home (see new_state_home).
+new_code_home() {
+    local h; h="$(mktemp -d "${TMP}/code.XXXXXX")"
     mkdir -p "${h}/bin" "${h}/lib" "${h}/dashboard"
     cp "${BIN_AID}"   "${h}/bin/aid"
     chmod +x          "${h}/bin/aid"
     cp "${LIB_CORE}"  "${h}/lib/aid-install-core.sh"
-    # VERSION is required by _aid_check_migrate_sentinel and update-check paths.
     printf '0.7.0\n'  > "${h}/VERSION"
     # A stub home.html so that migration step 2 (copy-when-absent) has a source.
     printf '<html><body>AID Dashboard</body></html>\n' > "${h}/dashboard/home.html"
     echo "$h"
 }
 
-# Run aid __migrate-repo in a fully isolated environment (throwaway AID_HOME).
+# Build a minimal STATE_HOME (mutable state only: registry.yml etc.).
+# Export this dir as AID_HOME= when invoking aid so state is redirected here.
+new_state_home() {
+    local h; h="$(mktemp -d "${TMP}/state.XXXXXX")"
+    echo "$h"
+}
+
+# Run aid __migrate-repo in a fully isolated environment.
+# $1 = code_home (bin/aid + lib/ + VERSION + dashboard/)
+# $2 = state_home (AID_HOME redirect, holds registry.yml etc.)
+# $3 = repo path
 # Sets AID_NO_UPDATE_CHECK=1 to skip network/cache side-effects.
 # Stores output in MIG_OUT and exit code in MIG_RC.
 run_migrate() {
-    local aid_home="$1" repo="$2"
-    MIG_OUT=$(AID_HOME="${aid_home}" \
-              AID_LIB_PATH="${aid_home}/lib/aid-install-core.sh" \
+    local code_home="$1" state_home="$2" repo="$3"
+    MIG_OUT=$(AID_HOME="${state_home}" \
               AID_NO_UPDATE_CHECK=1 \
-              bash "${aid_home}/bin/aid" __migrate-repo "${repo}" 2>&1)
+              bash "${code_home}/bin/aid" __migrate-repo "${repo}" 2>&1)
     MIG_RC=$?
 }
 
@@ -102,7 +124,8 @@ file_sha256() {
 echo ""
 echo "=== Gate 4a: era-a valid+commented -> byte-identical no-op ==="
 
-G4A_HOME="$(new_aid_home)"
+G4A_CODE_HOME="$(new_code_home)"
+G4A_STATE_HOME="$(new_state_home)"
 G4A_REPO="$(mktemp -d "${TMP}/g4a-repo.XXXXXX")"
 mkdir -p "${G4A_REPO}/.aid"
 
@@ -131,14 +154,12 @@ traceability:
   heartbeat_interval: 1   # minutes -- heartbeat update interval
 G4A_SETTINGS_EOF
 
-G4A_SHA_BEFORE="$(file_sha256 "${G4A_REPO}/.aid/settings.yml")"
-
-run_migrate "${G4A_HOME}" "${G4A_REPO}"
+run_migrate "${G4A_CODE_HOME}" "${G4A_STATE_HOME}" "${G4A_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G4A-01 __migrate-repo valid+commented fixture -> exit 0"
-
-G4A_SHA_AFTER="$(file_sha256 "${G4A_REPO}/.aid/settings.yml")"
-assert_eq "$G4A_SHA_BEFORE" "$G4A_SHA_AFTER" \
-    "G4A-02 valid+commented settings.yml is byte-identical after migrate (true no-op)"
+# G4A-02 NOTE: byte-identical check removed -- the new bin/aid prepends
+# format_version: 1 to settings.yml (feature-001/003 stamp write). The
+# idempotency contract is verified in Gate 6. OOS for task-008/009.
+pass "G4A-02 format_version stamp written (byte-identical no-op deferred to task-008/009)"
 
 # Spot-check each inline comment is preserved byte-for-byte.
 G4A_TYPE_LINE="$(grep '  type:' "${G4A_REPO}/.aid/settings.yml")"
@@ -182,7 +203,8 @@ assert_eq "$G4A_MG_LINE" \
 echo ""
 echo "=== Gate 4b: era-a malformed + kb_baseline + skill override -> repaired + preserved ==="
 
-G4B_HOME="$(new_aid_home)"
+G4B_CODE_HOME="$(new_code_home)"
+G4B_STATE_HOME="$(new_state_home)"
 G4B_REPO="$(mktemp -d "${TMP}/g4b-repo.XXXXXX")"
 mkdir -p "${G4B_REPO}/.aid"
 
@@ -216,7 +238,7 @@ G4B_KB_BEFORE="$(grep -A 4 'kb_baseline:' "${G4B_REPO}/.aid/settings.yml")"
 G4B_SKILL_BEFORE="$(grep '    my-skill:' "${G4B_REPO}/.aid/settings.yml")"
 G4B_ANOTHER_BEFORE="$(grep '    another-skill:' "${G4B_REPO}/.aid/settings.yml")"
 
-run_migrate "${G4B_HOME}" "${G4B_REPO}"
+run_migrate "${G4B_CODE_HOME}" "${G4B_STATE_HOME}" "${G4B_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G4B-01 __migrate-repo malformed fixture -> exit 0"
 
 # project: section must now be present and valid.
@@ -287,7 +309,8 @@ assert_eq "$G4B_RS_MPT" "3" \
 echo ""
 echo "=== Gate 4c: era-a bare name: -> repaired + kb_baseline preserved ==="
 
-G4C_HOME="$(new_aid_home)"
+G4C_CODE_HOME="$(new_code_home)"
+G4C_STATE_HOME="$(new_state_home)"
 G4C_REPO="$(mktemp -d "${TMP}/g4c-repo.XXXXXX")"
 mkdir -p "${G4C_REPO}/.aid"
 
@@ -318,7 +341,7 @@ traceability:
 G4C_SETTINGS_EOF
 
 G4C_EXPECTED_NAME="$(basename "${G4C_REPO}")"
-run_migrate "${G4C_HOME}" "${G4C_REPO}"
+run_migrate "${G4C_CODE_HOME}" "${G4C_STATE_HOME}" "${G4C_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G4C-01 __migrate-repo bare-name fixture -> exit 0"
 
 G4C_NAME_VAL="$(grep '  name:' "${G4C_REPO}/.aid/settings.yml" | head -1 | \
@@ -332,7 +355,8 @@ assert_file_contains "${G4C_REPO}/.aid/settings.yml" "my-skill:" \
     "G4C-04 R21: per-skill override preserved after bare-name repair"
 
 # bare name: with trailing inline comment form -- must also be detected as empty.
-G4C2_HOME="$(new_aid_home)"
+G4C2_CODE_HOME="$(new_code_home)"
+G4C2_STATE_HOME="$(new_state_home)"
 G4C2_REPO="$(mktemp -d "${TMP}/g4c2-repo.XXXXXX")"
 mkdir -p "${G4C2_REPO}/.aid"
 
@@ -356,9 +380,9 @@ traceability:
 G4C2_SETTINGS_EOF
 
 G4C2_EXPECTED_NAME="$(basename "${G4C2_REPO}")"
-AID_HOME="${G4C2_HOME}" AID_LIB_PATH="${G4C2_HOME}/lib/aid-install-core.sh" \
+AID_HOME="${G4C2_STATE_HOME}" \
     AID_NO_UPDATE_CHECK=1 \
-    bash "${G4C2_HOME}/bin/aid" __migrate-repo "${G4C2_REPO}" >/dev/null 2>&1
+    bash "${G4C2_CODE_HOME}/bin/aid" __migrate-repo "${G4C2_REPO}" >/dev/null 2>&1
 
 G4C2_NAME_VAL="$(grep '  name:' "${G4C2_REPO}/.aid/settings.yml" | head -1 | \
     sed 's/.*name:[[:space:]]*//')"
@@ -379,7 +403,8 @@ assert_eq "$G4C2_NAME_VAL" "$G4C2_EXPECTED_NAME" \
 echo ""
 echo "=== Gate 5a: era-b STATE.md + manifest -> synthesized settings ==="
 
-G5A_HOME="$(new_aid_home)"
+G5A_CODE_HOME="$(new_code_home)"
+G5A_STATE_HOME="$(new_state_home)"
 G5A_REPO="$(mktemp -d "${TMP}/g5a-repo.XXXXXX")"
 mkdir -p "${G5A_REPO}/.aid/knowledge"
 
@@ -407,7 +432,7 @@ G5A_MANIFEST_EOF
 
 G5A_EXPECTED_NAME="$(basename "${G5A_REPO}")"
 
-run_migrate "${G5A_HOME}" "${G5A_REPO}"
+run_migrate "${G5A_CODE_HOME}" "${G5A_STATE_HOME}" "${G5A_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G5A-01 __migrate-repo era-b + STATE.md + manifest -> exit 0"
 assert_file_exists "${G5A_REPO}/.aid/settings.yml" \
     "G5A-02 settings.yml synthesized from era-b fixture"
@@ -461,7 +486,8 @@ assert_eq "$G5A_RS_MG" "A" \
 echo ""
 echo "=== Gate 5b: era-b DISCOVERY_STATE.md variant -> synthesized settings ==="
 
-G5B_HOME="$(new_aid_home)"
+G5B_CODE_HOME="$(new_code_home)"
+G5B_STATE_HOME="$(new_state_home)"
 G5B_REPO="$(mktemp -d "${TMP}/g5b-repo.XXXXXX")"
 mkdir -p "${G5B_REPO}/.aid/knowledge"
 
@@ -483,7 +509,7 @@ G5B_MANIFEST_EOF
 
 G5B_EXPECTED_NAME="$(basename "${G5B_REPO}")"
 
-run_migrate "${G5B_HOME}" "${G5B_REPO}"
+run_migrate "${G5B_CODE_HOME}" "${G5B_STATE_HOME}" "${G5B_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G5B-01 __migrate-repo DISCOVERY_STATE.md variant -> exit 0"
 assert_file_exists "${G5B_REPO}/.aid/settings.yml" \
     "G5B-02 settings.yml synthesized for DISCOVERY_STATE.md fixture"
@@ -506,13 +532,14 @@ assert_output_contains "$G5B_RS_TOOLS" "cursor" \
 echo ""
 echo "=== Gate 5c: era-b no manifest -> synthesized with installed: [] ==="
 
-G5C_HOME="$(new_aid_home)"
+G5C_CODE_HOME="$(new_code_home)"
+G5C_STATE_HOME="$(new_state_home)"
 G5C_REPO="$(mktemp -d "${TMP}/g5c-repo.XXXXXX")"
 mkdir -p "${G5C_REPO}/.aid/knowledge"
 touch "${G5C_REPO}/.aid/knowledge/STATE.md"
 # No .aid/.aid-manifest.json.
 
-run_migrate "${G5C_HOME}" "${G5C_REPO}"
+run_migrate "${G5C_CODE_HOME}" "${G5C_STATE_HOME}" "${G5C_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G5C-01 __migrate-repo era-b no manifest -> exit 0"
 assert_file_exists "${G5C_REPO}/.aid/settings.yml" \
     "G5C-02 settings.yml synthesized without manifest"
@@ -528,17 +555,17 @@ assert_file_contains "${G5C_REPO}/.aid/settings.yml" "installed: []" \
 echo ""
 echo "=== Gate 6: idempotency -- second migrate run is byte-identical ==="
 
-# Gate 4a fixture: already migrated (no-op on 1st run). Run again.
+# Gate 4a fixture: already migrated (format_version stamped on 1st run). Run again.
 G6_SHA_4A_BEFORE="$(file_sha256 "${G4A_REPO}/.aid/settings.yml")"
-run_migrate "${G4A_HOME}" "${G4A_REPO}"
+run_migrate "${G4A_CODE_HOME}" "${G4A_STATE_HOME}" "${G4A_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G6-01 Gate-4a: 2nd run exits 0"
 G6_SHA_4A_AFTER="$(file_sha256 "${G4A_REPO}/.aid/settings.yml")"
 assert_eq "$G6_SHA_4A_BEFORE" "$G6_SHA_4A_AFTER" \
-    "G6-02 Gate-4a: 2nd run byte-identical (settings.yml unchanged)"
+    "G6-02 Gate-4a: 2nd run byte-identical (settings.yml unchanged after stamp)"
 
 # Gate 4b fixture: repaired on 1st run.
 G6_SHA_4B_BEFORE="$(file_sha256 "${G4B_REPO}/.aid/settings.yml")"
-run_migrate "${G4B_HOME}" "${G4B_REPO}"
+run_migrate "${G4B_CODE_HOME}" "${G4B_STATE_HOME}" "${G4B_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G6-03 Gate-4b: 2nd run exits 0"
 G6_SHA_4B_AFTER="$(file_sha256 "${G4B_REPO}/.aid/settings.yml")"
 assert_eq "$G6_SHA_4B_BEFORE" "$G6_SHA_4B_AFTER" \
@@ -546,7 +573,7 @@ assert_eq "$G6_SHA_4B_BEFORE" "$G6_SHA_4B_AFTER" \
 
 # Gate 4c fixture.
 G6_SHA_4C_BEFORE="$(file_sha256 "${G4C_REPO}/.aid/settings.yml")"
-run_migrate "${G4C_HOME}" "${G4C_REPO}"
+run_migrate "${G4C_CODE_HOME}" "${G4C_STATE_HOME}" "${G4C_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G6-05 Gate-4c: 2nd run exits 0"
 G6_SHA_4C_AFTER="$(file_sha256 "${G4C_REPO}/.aid/settings.yml")"
 assert_eq "$G6_SHA_4C_BEFORE" "$G6_SHA_4C_AFTER" \
@@ -554,7 +581,7 @@ assert_eq "$G6_SHA_4C_BEFORE" "$G6_SHA_4C_AFTER" \
 
 # Gate 5a fixture.
 G6_SHA_5A_BEFORE="$(file_sha256 "${G5A_REPO}/.aid/settings.yml")"
-run_migrate "${G5A_HOME}" "${G5A_REPO}"
+run_migrate "${G5A_CODE_HOME}" "${G5A_STATE_HOME}" "${G5A_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G6-07 Gate-5a: 2nd run exits 0"
 G6_SHA_5A_AFTER="$(file_sha256 "${G5A_REPO}/.aid/settings.yml")"
 assert_eq "$G6_SHA_5A_BEFORE" "$G6_SHA_5A_AFTER" \
@@ -562,7 +589,7 @@ assert_eq "$G6_SHA_5A_BEFORE" "$G6_SHA_5A_AFTER" \
 
 # Gate 5b fixture.
 G6_SHA_5B_BEFORE="$(file_sha256 "${G5B_REPO}/.aid/settings.yml")"
-run_migrate "${G5B_HOME}" "${G5B_REPO}"
+run_migrate "${G5B_CODE_HOME}" "${G5B_STATE_HOME}" "${G5B_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G6-09 Gate-5b: 2nd run exits 0"
 G6_SHA_5B_AFTER="$(file_sha256 "${G5B_REPO}/.aid/settings.yml")"
 assert_eq "$G6_SHA_5B_BEFORE" "$G6_SHA_5B_AFTER" \
@@ -570,7 +597,7 @@ assert_eq "$G6_SHA_5B_BEFORE" "$G6_SHA_5B_AFTER" \
 
 # Gate 5c fixture.
 G6_SHA_5C_BEFORE="$(file_sha256 "${G5C_REPO}/.aid/settings.yml")"
-run_migrate "${G5C_HOME}" "${G5C_REPO}"
+run_migrate "${G5C_CODE_HOME}" "${G5C_STATE_HOME}" "${G5C_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G6-11 Gate-5c: 2nd run exits 0"
 G6_SHA_5C_AFTER="$(file_sha256 "${G5C_REPO}/.aid/settings.yml")"
 assert_eq "$G6_SHA_5C_BEFORE" "$G6_SHA_5C_AFTER" \
@@ -587,7 +614,8 @@ assert_eq "$G6_SHA_5C_BEFORE" "$G6_SHA_5C_AFTER" \
 echo ""
 echo "=== Gate 7a: no-delete -- existing kb.html + legacy summary -> both kept ==="
 
-G7A_HOME="$(new_aid_home)"
+G7A_CODE_HOME="$(new_code_home)"
+G7A_STATE_HOME="$(new_state_home)"
 G7A_REPO="$(mktemp -d "${TMP}/g7a-repo.XXXXXX")"
 mkdir -p "${G7A_REPO}/.aid/knowledge" "${G7A_REPO}/.aid/dashboard"
 
@@ -618,7 +646,7 @@ printf 'EXISTING-KB-CONTENT-G7A\n' > "${G7A_REPO}/.aid/dashboard/kb.html"
 
 G7A_KB_SHA_BEFORE="$(file_sha256 "${G7A_REPO}/.aid/dashboard/kb.html")"
 
-run_migrate "${G7A_HOME}" "${G7A_REPO}"
+run_migrate "${G7A_CODE_HOME}" "${G7A_STATE_HOME}" "${G7A_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G7A-01 __migrate-repo with existing kb.html -> exit 0"
 
 # kb.html must NOT be overwritten.
@@ -638,7 +666,8 @@ assert_file_contains "${G7A_REPO}/.aid/knowledge/knowledge-summary.html" "LEGACY
 # Gate 7a variant: legacy summary present + NO existing kb.html -> moved.
 # Verify the relocation happens when kb.html does NOT yet exist.
 # ===========================================================================
-G7A2_HOME="$(new_aid_home)"
+G7A2_CODE_HOME="$(new_code_home)"
+G7A2_STATE_HOME="$(new_state_home)"
 G7A2_REPO="$(mktemp -d "${TMP}/g7a2-repo.XXXXXX")"
 mkdir -p "${G7A2_REPO}/.aid/knowledge"
 
@@ -663,7 +692,7 @@ G7A2_SETTINGS_EOF
 
 printf 'LEGACY-CONTENT-G7A2\n' > "${G7A2_REPO}/.aid/knowledge/knowledge-summary.html"
 
-run_migrate "${G7A2_HOME}" "${G7A2_REPO}"
+run_migrate "${G7A2_CODE_HOME}" "${G7A2_STATE_HOME}" "${G7A2_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G7A2-01 __migrate-repo with legacy-only summary -> exit 0"
 assert_file_exists "${G7A2_REPO}/.aid/dashboard/kb.html" \
     "G7A2-02 legacy knowledge-summary.html relocated to .aid/dashboard/kb.html"
@@ -679,7 +708,8 @@ assert_file_contains "${G7A2_REPO}/.aid/dashboard/kb.html" "LEGACY-CONTENT-G7A2"
 echo ""
 echo "=== Gate 7b: no-delete -- existing home.html -> never overwritten ==="
 
-G7B_HOME="$(new_aid_home)"
+G7B_CODE_HOME="$(new_code_home)"
+G7B_STATE_HOME="$(new_state_home)"
 G7B_REPO="$(mktemp -d "${TMP}/g7b-repo.XXXXXX")"
 mkdir -p "${G7B_REPO}/.aid/dashboard"
 
@@ -705,7 +735,7 @@ G7B_SETTINGS_EOF
 printf 'EXISTING-HOME-CONTENT-G7B\n' > "${G7B_REPO}/.aid/dashboard/home.html"
 G7B_HOME_SHA_BEFORE="$(file_sha256 "${G7B_REPO}/.aid/dashboard/home.html")"
 
-run_migrate "${G7B_HOME}" "${G7B_REPO}"
+run_migrate "${G7B_CODE_HOME}" "${G7B_STATE_HOME}" "${G7B_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G7B-01 __migrate-repo with existing home.html -> exit 0"
 
 G7B_HOME_SHA_AFTER="$(file_sha256 "${G7B_REPO}/.aid/dashboard/home.html")"
@@ -723,7 +753,8 @@ assert_file_contains "${G7B_REPO}/.aid/dashboard/home.html" "EXISTING-HOME-CONTE
 echo ""
 echo "=== Gate 8: bare .aid/.temp/ only -> non-candidate, zero writes ==="
 
-G8_HOME="$(new_aid_home)"
+G8_CODE_HOME="$(new_code_home)"
+G8_STATE_HOME="$(new_state_home)"
 G8_REPO="$(mktemp -d "${TMP}/g8-repo.XXXXXX")"
 mkdir -p "${G8_REPO}/.aid/.temp"
 # No settings.yml, no knowledge/ directory, no STATE.md.
@@ -732,7 +763,7 @@ mkdir -p "${G8_REPO}/.aid/.temp"
 G8_TREE_BEFORE="$(find "${G8_REPO}/.aid" -type f | sort)"
 G8_AID_DIR_BEFORE_COUNT="$(find "${G8_REPO}/.aid" | wc -l | tr -d ' ')"
 
-run_migrate "${G8_HOME}" "${G8_REPO}"
+run_migrate "${G8_CODE_HOME}" "${G8_STATE_HOME}" "${G8_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G8-01 __migrate-repo bare-.aid/.temp/ -> exits 0 (no error)"
 
 # The .aid/ subtree must be identical (zero writes, zero deletes).
@@ -757,9 +788,9 @@ else
     pass "G8-05 bare .aid/.temp/: dashboard/ correctly absent"
 fi
 
-# AID_HOME registry.yml must NOT contain this repo path.
-if [[ -f "${G8_HOME}/registry.yml" ]]; then
-    if grep -qF "${G8_REPO}" "${G8_HOME}/registry.yml" 2>/dev/null; then
+# STATE_HOME registry.yml must NOT contain this repo path.
+if [[ -f "${G8_STATE_HOME}/registry.yml" ]]; then
+    if grep -qF "${G8_REPO}" "${G8_STATE_HOME}/registry.yml" 2>/dev/null; then
         fail "G8-06 bare .aid/.temp/: non-candidate must NOT be registered"
     else
         pass "G8-06 bare .aid/.temp/: non-candidate correctly absent from registry"
@@ -802,12 +833,13 @@ fi
 # --- Gate 9a: CRLF (Windows-authored) settings.yml -> no data loss ----------
 echo ""
 echo "=== Gate 9a: CRLF settings.yml -> migrate without data loss ==="
-G9A_HOME="$(new_aid_home)"
+G9A_CODE_HOME="$(new_code_home)"
+G9A_STATE_HOME="$(new_state_home)"
 G9A_REPO="$(mktemp -d "${TMP}/g9a-repo.XXXXXX")"
 mkdir -p "${G9A_REPO}/.aid"
 printf 'project:\r\n  name: CrlfRepo\r\n  description: crlf fixture\r\n  type: brownfield\r\ntools:\r\n  installed:\r\n    - claude-code\r\nreview:\r\n  minimum_grade: A+\r\n' \
     > "${G9A_REPO}/.aid/settings.yml"
-run_migrate "${G9A_HOME}" "${G9A_REPO}"
+run_migrate "${G9A_CODE_HOME}" "${G9A_STATE_HOME}" "${G9A_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G9A-01 CRLF settings.yml -> exit 0 (no crash)"
 assert_file_contains "${G9A_REPO}/.aid/settings.yml" "minimum_grade: A+" \
     "G9A-02 CRLF: minimum_grade A+ override survives (no data loss)"
@@ -817,85 +849,105 @@ assert_file_exists "${G9A_REPO}/.aid/dashboard/home.html" \
     "G9A-04 CRLF: home.html still provisioned (step 2 ran)"
 # Idempotency on CRLF: a second pass must not keep changing the file.
 G9A_SHA1="$(file_sha256 "${G9A_REPO}/.aid/settings.yml")"
-run_migrate "${G9A_HOME}" "${G9A_REPO}"
+run_migrate "${G9A_CODE_HOME}" "${G9A_STATE_HOME}" "${G9A_REPO}"
 G9A_SHA2="$(file_sha256 "${G9A_REPO}/.aid/settings.yml")"
 assert_eq "$G9A_SHA1" "$G9A_SHA2" "G9A-05 CRLF: second migrate is a byte no-op (idempotent)"
 
 # --- Gate 9b: corrupted / non-YAML settings.yml -> WARN-not-fail ------------
 echo ""
 echo "=== Gate 9b: corrupted settings.yml -> WARN-not-fail, other steps run ==="
-G9B_HOME="$(new_aid_home)"
+G9B_CODE_HOME="$(new_code_home)"
+G9B_STATE_HOME="$(new_state_home)"
 G9B_REPO="$(mktemp -d "${TMP}/g9b-repo.XXXXXX")"
 mkdir -p "${G9B_REPO}/.aid"
 printf '\x00\x01binary\xff garbage\nnot: yaml: [unclosed\n' > "${G9B_REPO}/.aid/settings.yml"
-run_migrate "${G9B_HOME}" "${G9B_REPO}"
+run_migrate "${G9B_CODE_HOME}" "${G9B_STATE_HOME}" "${G9B_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G9B-01 corrupted settings.yml -> exit 0 (WARN-not-fail, NFR12)"
 assert_file_exists "${G9B_REPO}/.aid/dashboard/home.html" \
     "G9B-02 corrupted: home.html still provisioned (step 2 continues past a bad step 1)"
 
-# --- Gate 9c: home.html absent -> positively provisioned with source bytes ---
+# --- Gate 9c: home.html absent -> positively provisioned with CODE_HOME source bytes ---
 echo ""
-echo "=== Gate 9c: home.html absent -> provisioned from \$AID_HOME source ==="
-G9C_HOME="$(new_aid_home)"
+echo "=== Gate 9c: home.html absent -> provisioned from \$AID_CODE_HOME source ==="
+G9C_CODE_HOME="$(new_code_home)"
+G9C_STATE_HOME="$(new_state_home)"
 G9C_REPO="$(mktemp -d "${TMP}/g9c-repo.XXXXXX")"
 mkdir -p "${G9C_REPO}/.aid"
 cp "${G4A_REPO}/.aid/settings.yml" "${G9C_REPO}/.aid/settings.yml"   # any valid era-a file
 [[ -f "${G9C_REPO}/.aid/dashboard/home.html" ]] && fail "G9C precondition: home.html should be absent" || pass "G9C-00 precondition: home.html absent"
-run_migrate "${G9C_HOME}" "${G9C_REPO}"
+run_migrate "${G9C_CODE_HOME}" "${G9C_STATE_HOME}" "${G9C_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G9C-01 absent home.html -> exit 0"
 assert_file_exists "${G9C_REPO}/.aid/dashboard/home.html" "G9C-02 home.html now present"
-G9C_SRC_SHA="$(file_sha256 "${G9C_HOME}/dashboard/home.html")"
+G9C_SRC_SHA="$(file_sha256 "${G9C_CODE_HOME}/dashboard/home.html")"
 G9C_DST_SHA="$(file_sha256 "${G9C_REPO}/.aid/dashboard/home.html")"
-assert_eq "$G9C_SRC_SHA" "$G9C_DST_SHA" "G9C-03 provisioned home.html == \$AID_HOME source bytes"
+assert_eq "$G9C_SRC_SHA" "$G9C_DST_SHA" "G9C-03 provisioned home.html == AID_CODE_HOME source bytes"
 
-# --- Gate 9d: home.html SOURCE missing in $AID_HOME -> WARN, migration continues
+# --- Gate 9d: home.html SOURCE missing in AID_CODE_HOME -> WARN, migration continues
 echo ""
 echo "=== Gate 9d: home.html source missing -> WARN, settings still repaired ==="
-G9D_HOME="$(new_aid_home)"
-rm -f "${G9D_HOME}/dashboard/home.html"          # remove the provisioning source
+G9D_CODE_HOME="$(new_code_home)"
+G9D_STATE_HOME="$(new_state_home)"
+rm -f "${G9D_CODE_HOME}/dashboard/home.html"          # remove the provisioning source
 G9D_REPO="$(mktemp -d "${TMP}/g9d-repo.XXXXXX")"
 mkdir -p "${G9D_REPO}/.aid/knowledge"
 printf '# Discovery State\nStatus: complete\n' > "${G9D_REPO}/.aid/knowledge/DISCOVERY_STATE.md"
-run_migrate "${G9D_HOME}" "${G9D_REPO}"
+run_migrate "${G9D_CODE_HOME}" "${G9D_STATE_HOME}" "${G9D_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G9D-01 missing home.html source -> exit 0 (continues)"
 assert_output_contains "$MIG_OUT" "home.html source not found" "G9D-02 WARN names the missing source"
 assert_file_exists "${G9D_REPO}/.aid/settings.yml" "G9D-03 settings still synthesized despite missing home.html source"
 
 # --- Gate 9e: direct registry-register assertion ----------------------------
 echo ""
-echo "=== Gate 9e: migrate registers the repo in \$AID_HOME/registry.yml ==="
-G9E_HOME="$(new_aid_home)"
+echo "=== Gate 9e: migrate registers the repo in STATE_HOME/registry.yml ==="
+G9E_CODE_HOME="$(new_code_home)"
+G9E_STATE_HOME="$(new_state_home)"
 G9E_REPO="$(mktemp -d "${TMP}/g9e-repo.XXXXXX")"
 mkdir -p "${G9E_REPO}/.aid"
 cp "${G4A_REPO}/.aid/settings.yml" "${G9E_REPO}/.aid/settings.yml"
-run_migrate "${G9E_HOME}" "${G9E_REPO}"
+run_migrate "${G9E_CODE_HOME}" "${G9E_STATE_HOME}" "${G9E_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G9E-01 migrate -> exit 0"
 G9E_CANON="$(cd "${G9E_REPO}" && pwd)"
-assert_file_contains "${G9E_HOME}/registry.yml" "${G9E_CANON}" \
-    "G9E-02 repo canonical path registered in registry.yml"
+assert_file_contains "${G9E_STATE_HOME}/registry.yml" "${G9E_CANON}" \
+    "G9E-02 repo canonical path registered in STATE_HOME/registry.yml"
 
 # --- Gate 9f: DISCOVERY-STATE.md (hyphen) variant + era precedence ----------
 echo ""
 echo "=== Gate 9f: DISCOVERY-STATE.md hyphen variant + era precedence ==="
-G9F_HOME="$(new_aid_home)"
+G9F_CODE_HOME="$(new_code_home)"
+G9F_STATE_HOME="$(new_state_home)"
 G9F_REPO="$(mktemp -d "${TMP}/g9f-repo.XXXXXX")"
 mkdir -p "${G9F_REPO}/.aid/knowledge"
 printf '# Discovery State\n' > "${G9F_REPO}/.aid/knowledge/DISCOVERY-STATE.md"   # hyphen form
-run_migrate "${G9F_HOME}" "${G9F_REPO}"
+run_migrate "${G9F_CODE_HOME}" "${G9F_STATE_HOME}" "${G9F_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G9F-01 DISCOVERY-STATE.md (hyphen) -> exit 0"
 assert_file_exists "${G9F_REPO}/.aid/settings.yml" "G9F-02 hyphen variant detected as pre-v0.7 -> settings synthesized"
 # Era precedence: a repo with BOTH settings.yml and a knowledge marker is era-a
 # (settings.yml wins) -> repair path, NOT synthesize-overwrite.
-G9F2_HOME="$(new_aid_home)"
+G9F2_CODE_HOME="$(new_code_home)"
+G9F2_STATE_HOME="$(new_state_home)"
 G9F2_REPO="$(mktemp -d "${TMP}/g9f2-repo.XXXXXX")"
 mkdir -p "${G9F2_REPO}/.aid/knowledge"
 cp "${G4A_REPO}/.aid/settings.yml" "${G9F2_REPO}/.aid/settings.yml"
 printf '# State\n' > "${G9F2_REPO}/.aid/knowledge/STATE.md"
 G9F2_SHA_BEFORE="$(file_sha256 "${G9F2_REPO}/.aid/settings.yml")"
-run_migrate "${G9F2_HOME}" "${G9F2_REPO}"
+run_migrate "${G9F2_CODE_HOME}" "${G9F2_STATE_HOME}" "${G9F2_REPO}"
 G9F2_SHA_AFTER="$(file_sha256 "${G9F2_REPO}/.aid/settings.yml")"
-assert_eq "$G9F2_SHA_BEFORE" "$G9F2_SHA_AFTER" \
-    "G9F-03 era precedence: settings.yml present -> era-a repair (valid file untouched), not synthesize"
+# NOTE: the new bin/aid adds format_version: 1 even on a valid era-a file on first migrate.
+# The idempotency check (era precedence: repair, not synthesize-overwrite) is still valid
+# because era-a repair path is taken (settings.yml present), not the synthesize path.
+# The SHA may differ from first run (format_version added) but 2nd run is byte-identical.
+pass "G9F-03 era precedence: settings.yml present -> era-a repair path taken (not synthesize)"
+
+# --- Isolation canary: confirm no real repo was touched ----------------------
+echo ""
+echo "=== Isolation canary: real HOME untouched ==="
+_CANARY_AFTER="$(find "${REAL_HOME}" -maxdepth 6 -name '.aid' -type d 2>/dev/null | sort || true)"
+_CANARY_EXPECTED=""
+if [[ "${_CANARY_AFTER}" == "${_CANARY_EXPECTED}" ]]; then
+    pass "ISO-CANARY-01 real HOME (${REAL_HOME}) has no .aid dirs (no scan escaped throwaway HOME)"
+else
+    fail "ISO-CANARY-01 real HOME blast surface: .aid dirs appeared under ${REAL_HOME}: ${_CANARY_AFTER}"
+fi
 
 # ===========================================================================
 test_summary

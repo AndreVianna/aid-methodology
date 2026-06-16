@@ -145,13 +145,25 @@ cat > "${HARNESS_SCRIPT}" << 'HARNESS_EOF'
 #!/usr/bin/env bash
 # Minimal harness: define only the minimal needed env for registry helpers,
 # then source bin/aid up to the registry section only.
+# feature-001: also extract _aid_priv_run (needed by registry_register for mkdir/mv).
 set -uo pipefail
 BIN_AID="$1"; shift
 AID_HOME="$1"; shift
 CMD="$1"; shift  # register | unregister | read_repos
 ARG="${1:-}"
 
-# Source just the helper section by detecting line range.
+# feature-001: registry uses AID_STATE_HOME (= AID_HOME when AID_HOME is set).
+export AID_STATE_HOME="${AID_HOME}"
+
+# Extract _aid_priv_run (standalone helper needed by registry_register for
+# mkdir -p / mv -f operations).
+PRIV_START=$(grep -n '^_aid_priv_run()' "$BIN_AID" | head -1 | cut -d: -f1)
+PRIV_END=$(awk "NR>=${PRIV_START:-0} && /^\}$/{print NR; exit}" "$BIN_AID")
+if [[ -n "$PRIV_START" && -n "$PRIV_END" ]]; then
+    eval "$(sed -n "${PRIV_START},${PRIV_END}p" "$BIN_AID")" 2>/dev/null || true
+fi
+
+# Source just the registry helper section by detecting line range.
 START=$(grep -n '# Registry helpers (DR-1' "$BIN_AID" | head -1 | cut -d: -f1)
 END=$(grep -n '# Parse subcommand and dispatch' "$BIN_AID" | head -1 | cut -d: -f1)
 [[ -n "$START" && -n "$END" ]] || { echo "ERROR: cannot locate registry section" >&2; exit 1; }
@@ -164,7 +176,7 @@ eval "$_registry_code"
 case "$CMD" in
     register)   registry_register "$ARG" ;;
     unregister) registry_unregister "$ARG" ;;
-    read_repos) _registry_read_repos "${AID_HOME}/registry.yml" ;;
+    read_repos) _registry_read_repos "${AID_STATE_HOME}/registry.yml" ;;
     *) echo "ERROR: unknown CMD: $CMD" >&2; exit 1 ;;
 esac
 HARNESS_EOF
@@ -172,7 +184,7 @@ chmod +x "${HARNESS_SCRIPT}"
 
 run_harness() {
     local aid_home="$1" cmd="$2" arg="${3:-}"
-    OUT=$(AID_HOME="$aid_home" _AID_VERBOSE="${_AID_VERBOSE:-0}" \
+    OUT=$(AID_HOME="$aid_home" AID_STATE_HOME="$aid_home" _AID_VERBOSE="${_AID_VERBOSE:-0}" \
           bash "${HARNESS_SCRIPT}" "$BIN_AID" "$aid_home" "$cmd" "$arg" 2>&1)
     RC=$?
 }
