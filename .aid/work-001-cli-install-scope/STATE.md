@@ -1,6 +1,6 @@
 # Work State — work-001-cli-install-scope
 
-> **Status:** delivery-001 COMPLETE — all 9 tasks Done, delivery gate A+, suite 51/51 green; PR open to master. delivery-002/003 remain.
+> **Status:** delivery-001 MERGED (PR #80). Executing delivery-002 (feature-004) — task-010 Done A+; task-011/012/013 remain.
 > **Phase:** Execute
 > **Minimum Grade:** A (resolved via read-setting)
 > **Started:** 2026-06-15
@@ -14,7 +14,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 - **Phase:** Execute
 - **Active Skill:** aid-execute
 - **Updated:** 2026-06-16T02:00:00Z
-- **Pause Reason:** delivery-001 COMPLETE (9/9 Done, gate A+, suite 51/51). PR open to master for review/merge. Next: delivery-002 (feature-004 registry+dispatch) then delivery-003 (feature-005 bootstrap) — resume via /aid-execute after delivery-001 merges (delivery-002 builds on it).
+- **Pause Reason:** delivery-001 merged to master. Executing delivery-002 on branch aid/work-001-cli-install-scope-delivery-002: task-010 Done A+; next task-011 (cwd A/B/C dispatch + update-self migration swap, bash) → task-012 (ps1) → task-013 (TEST) → delivery gate → PR.
 - **Block Reason:** —
 - **Block Artifact:** —
 
@@ -68,7 +68,8 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| delivery-001 | Done (gate A+) | 9/9 Done | Root-cause fix: feature-001 (scope + CODE/STATE split, marker/scan removal) + feature-002 (/var/lib/aid provisioning) + feature-003 (stamp gate). All 9 tasks Done; delivery gate A+; suite 51/51 green; PR to master open. |
+| delivery-001 | MERGED (PR #80) | 9/9 Done | Root-cause fix shipped to master 2026-06-16 (merge 5fa59fea). Gate A+; CI green (canary CI-portability fix). |
+| delivery-002 | In Progress | task-010 Done | feature-004: two-tier registry union + cwd A/B/C dispatch + update-self registry-migration. Branch aid/work-001-cli-install-scope-delivery-002 off master. |
 | delivery-002 | Detailed | 4 (task-010..013) | Coherent discovery: feature-004 (two-tier registry union + cwd A/B/C dispatch + update-self registry-migration, replacing the d001 no-op stub). §10 P2. Depends on d001. Standalone MVP. |
 | delivery-003 | Detailed | 3 (task-014..016) | Rollout: feature-005 (v1.0/v1.1 bootstrap stamp+register on visit, no scan; + canonical test-suite migration to CODE/STATE split). §10 P3. Depends on d001+d002. Standalone MVP. |
 
@@ -85,7 +86,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | task-007 | d001 test migration — fixture split + retired marker/scan/sentinel + home-split asserts | TEST | d001 w3 | Done | green | — | feature-001 slice; overshot to whole suite — ALL 50 canonical suites pass (238/0) HOME-pinned; fixed 1 non-hermetic test (TRG-T2-01 AID_HOME leak → seam pin); likely absorbed much of 008/009 |
 | task-008 | d001 test migration — /var/lib/aid provisioning asserts (seam) | TEST | d001 w4 | Done | A+ | — | feature-002 slice; NEW test-aid-provisioning.sh (42 asserts, seam-sandboxed, /var/lib never touched); B+→A+ (dropped misleading PRV-N03 + dead stub) |
 | task-009 | d001 test migration — stamp + gate asserts (parity constant, refuse/offer/malformed) | TEST | d001 w4 | Done | A+ | — | feature-003 slice; PAR009-V in test-aid-cli-parity.sh (constant-drift, refuse-on-newer byte/mtime identity, malformed→0, bash+ps1); 249/0 |
-| task-010 | Two-tier registry union read + write-tier selection (bash) | IMPLEMENT | d002 w1 | Pending | — | — | feature-004; mechanism 1+2 |
+| task-010 | Two-tier registry union read + write-tier selection (bash) | IMPLEMENT | d002 w1 | Done | A+ | — | feature-004; E→A+ (gate caught CRITICAL: user-tier hardcoded $HOME/.aid ignored AID_HOME override → write-escape + test-registry 68→43; fixed to $AID_STATE_HOME-primary scope-aware tiers); _registry_read_union dedup+prune; run-all 51/51 |
 | task-011 | cwd A/B/C dispatch matrix + update-self registry migration swap (bash) | IMPLEMENT | d002 w2 | Pending | — | — | feature-004; mechanism 3 + migration swap |
 | task-012 | Two-tier registry + dispatch + update-self migration (ps1 parity) | IMPLEMENT | d002 w3 | Pending | — | — | feature-004; parity twin of task-010+011 |
 | task-013 | d002 test migration — registry union + A/B/C + update-self migration | TEST | d002 w4 | Pending | — | — | feature-004 slice; C4; green-per-delivery |
