@@ -56,6 +56,11 @@ trap 'rm -rf "$TMP"' EXIT
 # throwaway dir.  REAL_HOME is saved for the isolation canary check.
 # ---------------------------------------------------------------------------
 REAL_HOME="${HOME}"
+# Snapshot any pre-existing .aid dirs under the real HOME BEFORE the suite runs,
+# so the isolation canary asserts no NEW .aid escaped the throwaway HOME (rather
+# than assuming the real HOME starts empty -- it does not under CI, where the repo
+# checkout lives under $HOME, nor for a dev with .aid repos under ~).
+_CANARY_BEFORE="$(find "${REAL_HOME}" -maxdepth 6 -name '.aid' -type d 2>/dev/null | sort || true)"
 export HOME="${TMP}/fakehome"
 mkdir -p "${HOME}"
 
@@ -942,11 +947,12 @@ pass "G9F-03 era precedence: settings.yml present -> era-a repair path taken (no
 echo ""
 echo "=== Isolation canary: real HOME untouched ==="
 _CANARY_AFTER="$(find "${REAL_HOME}" -maxdepth 6 -name '.aid' -type d 2>/dev/null | sort || true)"
-_CANARY_EXPECTED=""
-if [[ "${_CANARY_AFTER}" == "${_CANARY_EXPECTED}" ]]; then
-    pass "ISO-CANARY-01 real HOME (${REAL_HOME}) has no .aid dirs (no scan escaped throwaway HOME)"
+if [[ "${_CANARY_AFTER}" == "${_CANARY_BEFORE}" ]]; then
+    pass "ISO-CANARY-01 real HOME (${REAL_HOME}) gained no .aid dirs (no scan escaped throwaway HOME)"
 else
-    fail "ISO-CANARY-01 real HOME blast surface: .aid dirs appeared under ${REAL_HOME}: ${_CANARY_AFTER}"
+    # Report only the NEW dirs (set difference after - before) for a clear signal.
+    _CANARY_NEW="$(comm -13 <(printf '%s\n' "${_CANARY_BEFORE}") <(printf '%s\n' "${_CANARY_AFTER}") 2>/dev/null || true)"
+    fail "ISO-CANARY-01 real HOME blast surface: NEW .aid dirs appeared under ${REAL_HOME}: ${_CANARY_NEW}"
 fi
 
 # ===========================================================================
