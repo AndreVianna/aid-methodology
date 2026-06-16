@@ -1,6 +1,6 @@
 # Work State — work-001-cli-install-scope
 
-> **Status:** delivery-001 MERGED (PR #80). Executing delivery-002 (feature-004) — task-010 Done A+; task-011/012/013 remain.
+> **Status:** delivery-002 COMPLETE — 4/4 Done, gate A+, suite 51/51; PR to master open. delivery-003 (feature-005 bootstrap) remains.
 > **Phase:** Execute
 > **Minimum Grade:** A (resolved via read-setting)
 > **Started:** 2026-06-15
@@ -14,7 +14,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 - **Phase:** Execute
 - **Active Skill:** aid-execute
 - **Updated:** 2026-06-16T02:00:00Z
-- **Pause Reason:** delivery-001 merged to master. Executing delivery-002 on branch aid/work-001-cli-install-scope-delivery-002: task-010 Done A+; next task-011 (cwd A/B/C dispatch + update-self migration swap, bash) → task-012 (ps1) → task-013 (TEST) → delivery gate → PR.
+- **Pause Reason:** delivery-002 complete (4/4 Done, gate A+, suite 51/51); PR to master open for review/merge. Next: delivery-003 (feature-005 bootstrap runbook + final reconciliation, tasks 014-016) — resume via /aid-execute after delivery-002 merges.
 - **Block Reason:** —
 - **Block Artifact:** —
 
@@ -69,7 +69,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
 | delivery-001 | MERGED (PR #80) | 9/9 Done | Root-cause fix shipped to master 2026-06-16 (merge 5fa59fea). Gate A+; CI green (canary CI-portability fix). |
-| delivery-002 | In Progress | 1/4 (task-010 Done) | feature-004: two-tier registry union + cwd A/B/C dispatch + update-self registry-migration (replacing the d001 no-op stub). §10 P2. Branch aid/work-001-cli-install-scope-delivery-002 off master. Standalone MVP. |
+| delivery-002 | Done (gate A+) | 4/4 Done | feature-004: two-tier registry union + cwd A/B/C dispatch + update-self registry-migration. All 4 tasks Done; delivery gate A+; suite 51/51 (incl. CI layout); PR to master open. |
 | delivery-003 | Detailed | 3 (task-014..016) | Rollout: feature-005 (v1.0/v1.1 bootstrap stamp+register on visit, no scan; + canonical test-suite migration to CODE/STATE split). §10 P3. Depends on d001+d002. Standalone MVP. |
 
 ## Tasks Status
@@ -154,6 +154,14 @@ This is the single state file for **this work** — the full dev lifecycle from 
 - **Timestamp:** 2026-06-16T02:00:00Z
 - **Notes:** Holistic cross-task pass — delivery ACs (AC1/2/3/4/6/7/8/10) verified end-to-end incl. the v1.0→v1.1 root-cause scenario (unprivileged global aid degrades to ~/.aid, no prompt, no re-prompt loop); bash↔ps1 parity (4↔4 gate sites, both stamp constants =1); full canonical suite 51/51 (238/0).
 
+### delivery-002
+
+- **Reviewer Tier:** Large
+- **Grade:** A+
+- **Issue List:** none (0 deferred [HIGH]; all per-task findings fixed inline — task-010 E→A+, task-011 C+→A+, task-012 D+→A+, task-013 A)
+- **Timestamp:** 2026-06-16T06:00:00Z
+- **Notes:** Holistic cross-task pass — AC2 (no scan) + AC5 (update-self migrates exactly registered: A+B stamped, C not) verified end-to-end; FR4 two-tier union (dedup/prune/collapse/AID_HOME-honoring), FR5 cwd A/B/C dispatch (decision #5 offer exit 0), FR6 registry migration; full bash↔ps1 parity; suite 51/51 (standard + CI layout). Record-note: SPEC §Affected-components describes user-primary tiers but impl is $AID_STATE_HOME-primary (the AID_HOME-honoring task-010 fix) — AC-conformant SPEC-wording divergence, reconcile in housekeep.
+
 ## Quick Check Findings
 
 > _none yet_
@@ -190,6 +198,9 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 2026-06-16 | delivery-001 executed | A+×8/A×1 | 9 tasks: 001/002/003/005/006/007/008/009 A+, 004 A. Gates caught 4 real bugs (registry-drop, swallowed exit-code, missing ps1 gate site, non-hermetic test) — all fixed |
 | 2026-06-16 | delivery-001 DELIVERY GATE | A+ | Large-tier holistic pass, 0 findings; v1.0→v1.1 root-cause scenario verified clean; suite 51/51 (238/0); PR to master opened |
 | 2026-06-16 | PR #80 CI fix | — | test-aid-migrate.sh ISO-CANARY-01 hardcoded empty REAL_HOME expectation → tripped on the repo's own .aid under CI's /home/runner checkout (local HOME-pin masked it; gate reviewer too). Fixed to before/after snapshot (matches sibling suites). PR #80 CI now GREEN (all 7 checks). |
+| 2026-06-16 | delivery-001 MERGED | — | PR #80 merged to master (5fa59fea); root-cause fix shipped |
+| 2026-06-16 | delivery-002 executed | A+/A+/A+/A | feature-004 tasks 010(E→A+)/011(C+→A+)/012(D+→A+)/013(A). Gates caught: registry write-escape+25-test regression, bare-aid C-table gap, ps1 fn-ordering register-dead + scan-fn divergence — all fixed |
+| 2026-06-16 | delivery-002 DELIVERY GATE | A+ | Large-tier holistic, 0 findings; AC2/AC5 + FR4/5/6 verified; bash↔ps1 parity; suite 51/51 (incl CI layout); PR to master opened |
 | 2026-06-15 | Plan created — 3 deliveries | — | aid-plan: 5 features → d001 (001+002+003, root-cause + stamp-gate replacement trigger), d002 (004), d003 (005). 001↔003 trigger coupling resolved by grouping 003 into d001. PR #78 hard prerequisite (gated to master first, not a deliverable). |
 | 2026-06-15 | Tasks detailed — 16 tasks across 3 deliveries | — | aid-detail: d001=9 (task-001..009: f001/f002/f003 bash+ps1 IMPLEMENT + 3 green-per-delivery TEST), d002=4 (task-010..013: f004 bash split + ps1 + TEST), d003=3 (task-014 bootstrap runbook DOCUMENT, task-015 bootstrap TEST, task-016 final reconciliation TEST). bash/ps1 split as parity twins; per-delivery TEST tasks keep run-all.sh green at each boundary. Per-delivery execution graph + wave-maps appended to PLAN.md. |
 
