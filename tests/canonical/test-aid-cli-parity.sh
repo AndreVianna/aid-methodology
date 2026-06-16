@@ -270,7 +270,12 @@ assert_output_contains "$PS1_STATUS_B" "claude-code"       "PAR029-B07 PS1 statu
 #  of the full status output is asserted elsewhere in this suite.)
 
 # ===========================================================================
-# PAR029-C: Exit code parity — status empty dir → exit 7
+# PAR029-C: Exit code parity — status empty dir (no .aid/) → exit 0 + offer
+#
+# NEW BEHAVIOR (decision #5 / task-011 bash + task-012 ps1):
+#   aid status / bare aid / aid update in a dir with NO .aid/ must print
+#   "no AID project here -- set it up? (aid add)" and exit 0 (NOT 7/6).
+#   Both bash and ps1 now behave identically.
 # ===========================================================================
 SH_HOME_C=$(newhome); setup_sh_home "${SH_HOME_C}"
 PS_HOME_C=$(newhome); setup_ps1_home "${PS_HOME_C}"
@@ -279,9 +284,18 @@ T_C=$(newtarget)
 run_sh  "${SH_HOME_C}" status --target "${T_C}"
 run_ps1 "${PS_HOME_C}" status -Target "${T_C}"
 
-assert_exit_eq "$RC_SH"  7 "PAR029-C01 Bash status empty → exit 7"
-assert_exit_eq "$RC_PS1" 7 "PAR029-C02 PS1 status empty → exit 7"
-assert_eq "$RC_SH" "$RC_PS1" "PAR029-C03 Bash↔PS1 exit code parity for empty status"
+assert_exit_eq "$RC_SH"  0 "PAR029-C01 Bash status empty dir → exit 0 (offer, not refuse)"
+assert_exit_eq "$RC_PS1" 0 "PAR029-C02 PS1 status empty dir → exit 0 (offer, not refuse)"
+assert_eq "$RC_SH" "$RC_PS1" "PAR029-C03 Bash↔PS1 exit code parity for empty-dir status"
+assert_output_contains "$OUT_SH"  "no AID project here -- set it up? (aid add)" \
+    "PAR029-C04 Bash status empty dir: offer text printed"
+assert_output_contains "$OUT_PS1" "no AID project here -- set it up? (aid add)" \
+    "PAR029-C05 PS1 status empty dir: offer text printed"
+# Core parity: the offer line must be byte-identical across runtimes.
+_SH_OFFER_C=$(printf '%s\n' "$OUT_SH"  | grep "no AID project here" || true)
+_PS_OFFER_C=$(printf '%s\n' "$OUT_PS1" | grep "no AID project here" || true)
+assert_eq "$_SH_OFFER_C" "$_PS_OFFER_C" \
+    "PAR029-C06 Bash↔PS1 offer line byte-identical for empty-dir status"
 
 # ===========================================================================
 # PAR029-D: Exit code parity — protect-on-diff → exit 5
@@ -2353,6 +2367,126 @@ V009MALFORMEDPEOF
     fi
 else
     pass "PAR009-V09 PS1 malformed format_version: format gate did not refuse [SKIPPED: pwsh absent]"
+fi
+
+# ===========================================================================
+# PAR029-W: feature-004 dispatch surface parity (task-013)
+#
+# Asserts Bash<->PS1 symmetry of the new dispatch behavior (decision #5):
+#   - bare aid (no subcommand) in a no-.aid/ dir -> same offer text, exit 0
+#   - aid update in a no-.aid/ dir -> same offer text, exit 0
+#   - register-on-encounter: "Registered" appears in Bash and PS1 output on
+#     first-add to the same extent (both runtimes register on add)
+#   - format-gate refuse message is identical across runtimes
+#     (refuse message text parity when format_version newer than supported)
+#
+# Does NOT duplicate deep registry-union coverage (owned by test-registry.sh).
+# Asserts only Bash<->PS1 symmetry of the dispatch surface.
+# ===========================================================================
+
+echo ""
+echo "=== PAR029-W: feature-004 dispatch surface parity ==="
+
+SH_HOME_W=$(newhome); setup_sh_home "${SH_HOME_W}"
+PS_HOME_W=$(newhome); setup_ps1_home "${PS_HOME_W}"
+T_W=$(newtarget)
+
+# W01/W02: bare aid (no subcommand) in no-.aid/ dir -> offer + exit 0 (Bash and PS1).
+# bare aid checks ./.aid in CWD, so we must cd into T_W (an empty dir) before running.
+_W_TMP_SH="$(mktemp "${TMP}/wsh.XXXXXX")"
+_W_TMP_PS="$(mktemp "${TMP}/wps.XXXXXX")"
+(cd "${T_W}" && AID_HOME="${SH_HOME_W}" AID_LIB_PATH="${SH_HOME_W}/lib/aid-install-core.sh" \
+    bash "${SH_HOME_W}/bin/aid" 2>&1) >"${_W_TMP_SH}"; RC_SH=$?
+OUT_SH="$(cat "${_W_TMP_SH}")"; rm -f "${_W_TMP_SH}"
+(cd "${T_W}" && AID_HOME="${PS_HOME_W}" AID_LIB_PATH="${PS_HOME_W}/lib/AidInstallCore.psm1" \
+    "$PWSH" -NoProfile -File "${PS_HOME_W}/bin/aid.ps1" 2>&1 | \
+    sed 's/\x1b\[[0-9;]*m//g') >"${_W_TMP_PS}"; RC_PS1=$?
+OUT_PS1="$(cat "${_W_TMP_PS}")"; rm -f "${_W_TMP_PS}"
+
+assert_exit_eq "$RC_SH"  0 "PAR029-W01 Bash bare-aid no-.aid/ dir -> exit 0 (offer)"
+assert_exit_eq "$RC_PS1" 0 "PAR029-W02 PS1 bare-aid no-.aid/ dir -> exit 0 (offer)"
+assert_output_contains "$OUT_SH"  "no AID project here -- set it up? (aid add)" \
+    "PAR029-W03 Bash bare-aid: offer text printed"
+assert_output_contains "$OUT_PS1" "no AID project here -- set it up? (aid add)" \
+    "PAR029-W04 PS1 bare-aid: offer text printed"
+# Offer line must be byte-identical across runtimes.
+_SH_OFFER_W=$(printf '%s\n' "$OUT_SH"  | grep "no AID project here" || true)
+_PS_OFFER_W=$(printf '%s\n' "$OUT_PS1" | grep "no AID project here" || true)
+assert_eq "$_SH_OFFER_W" "$_PS_OFFER_W" \
+    "PAR029-W05 Bash↔PS1 bare-aid offer line byte-identical"
+
+# W06/W07: aid update (no tool, no .aid/) -> offer + exit 0 (Bash and PS1).
+run_sh  "${SH_HOME_W}" update --target "${T_W}"
+run_ps1 "${PS_HOME_W}" update -Target "${T_W}"
+
+assert_exit_eq "$RC_SH"  0 "PAR029-W06 Bash aid-update no-.aid/ dir -> exit 0 (offer)"
+assert_exit_eq "$RC_PS1" 0 "PAR029-W07 PS1 aid-update no-.aid/ dir -> exit 0 (offer)"
+assert_output_contains "$OUT_SH"  "no AID project here -- set it up? (aid add)" \
+    "PAR029-W08 Bash aid-update no-.aid/: offer text printed"
+assert_output_contains "$OUT_PS1" "no AID project here -- set it up? (aid add)" \
+    "PAR029-W09 PS1 aid-update no-.aid/: offer text printed"
+_SH_UPD_OFFER_W=$(printf '%s\n' "$OUT_SH"  | grep "no AID project here" || true)
+_PS_UPD_OFFER_W=$(printf '%s\n' "$OUT_PS1" | grep "no AID project here" || true)
+assert_eq "$_SH_UPD_OFFER_W" "$_PS_UPD_OFFER_W" \
+    "PAR029-W10 Bash↔PS1 aid-update no-.aid/ offer line byte-identical"
+
+# W11/W12: format-gate refuse message parity — refuse text identical across runtimes.
+# Run aid status in a repo with format_version: 2 (newer than supported).
+# The refuse error message text must be the same from both runtimes.
+SH_HOME_W2=$(newhome); setup_sh_home "${SH_HOME_W2}"
+PS_HOME_W2=$(newhome); setup_ps1_home "${PS_HOME_W2}"
+T_W2=$(newtarget)
+mkdir -p "${T_W2}/.aid"
+cat > "${T_W2}/.aid/settings.yml" << 'PAR029W2EOF'
+format_version: 2
+project:
+  name: newer-format-par029w
+  description: newer-than-supported format for refuse parity check
+  type: brownfield
+tools:
+  installed: []
+review:
+  minimum_grade: A
+execution:
+  max_parallel_tasks: 5
+traceability:
+  heartbeat_interval: 1
+PAR029W2EOF
+
+# Capture RC without || true (same technique as PAR009-V02).
+_W11_TMP="$(mktemp "${TMP}/w11out.XXXXXX")"
+_W12_TMP="$(mktemp "${TMP}/w12out.XXXXXX")"
+(cd "${T_W2}" && AID_HOME="${SH_HOME_W2}" AID_LIB_PATH="${SH_HOME_W2}/lib/aid-install-core.sh" \
+    AID_NO_UPDATE_CHECK=1 bash "${SH_HOME_W2}/bin/aid" status) >"${_W11_TMP}" 2>&1
+_W11_RC=$?
+_W11_OUT="$(cat "${_W11_TMP}")"; rm -f "${_W11_TMP}"
+
+assert_exit_nonzero "${_W11_RC}" \
+    "PAR029-W11 Bash aid-status format_version:2 -> non-zero exit (refuse)"
+
+if [[ -n "$PWSH" ]]; then
+    (cd "${T_W2}" && AID_HOME="${PS_HOME_W2}" AID_LIB_PATH="${PS_HOME_W2}/lib/AidInstallCore.psm1" \
+        AID_NO_UPDATE_CHECK=1 \
+        "$PWSH" -NoLogo -NonInteractive -File "${PS_HOME_W2}/bin/aid.ps1" \
+        status) >"${_W12_TMP}" 2>&1
+    _W12_RC=$?
+    _W12_OUT="$(cat "${_W12_TMP}" | sed 's/\x1b\[[0-9;]*m//g')"; rm -f "${_W12_TMP}"
+
+    assert_exit_nonzero "${_W12_RC}" \
+        "PAR029-W12 PS1 aid-status format_version:2 -> non-zero exit (refuse)"
+    # Refuse message text must appear in both runtimes (parity of the refuse surface).
+    assert_output_contains "$_W11_OUT" "newer than this CLI supports" \
+        "PAR029-W13 Bash refuse: 'newer than this CLI supports' in output"
+    assert_output_contains "$_W12_OUT" "newer than this CLI supports" \
+        "PAR029-W14 PS1 refuse: 'newer than this CLI supports' in output"
+    # Parity: both refuse (non-zero) with same message pattern.
+    assert_eq "${_W11_RC}" "${_W12_RC}" \
+        "PAR029-W15 Bash↔PS1 format-gate refuse exit code parity (format_version:2)"
+else
+    pass "PAR029-W12 PS1 format-gate refuse: exit non-zero [SKIPPED: pwsh absent]"
+    pass "PAR029-W13 Bash format-gate refuse message check [SKIPPED: pwsh absent]"
+    pass "PAR029-W14 PS1 format-gate refuse message check [SKIPPED: pwsh absent]"
+    pass "PAR029-W15 Bash↔PS1 format-gate refuse exit code parity [SKIPPED: pwsh absent]"
 fi
 
 # ===========================================================================
