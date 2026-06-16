@@ -188,15 +188,15 @@ fi
 assert_output_contains "$OUT" "aid CLI removed" "CLI027-D04 remove self message"
 
 # ===========================================================================
-# CLI027-E: aid status — empty dir → exit 7 + message
+# CLI027-E: aid status — empty dir → exit 0 + offer message (new behavior)
 # ===========================================================================
 CLI027E_HOME=$(newhome)
 setup_aid_home "${CLI027E_HOME}"
 T=$(newtarget)
 
 run_aid "${CLI027E_HOME}" status --target "$T"
-assert_exit_eq "$RC" 7 "CLI027-E01 aid status empty dir → exit 7"
-assert_output_contains "$OUT" "No AID install found" "CLI027-E02 status empty dir prints 'No AID install found'"
+assert_exit_eq "$RC" 0 "CLI027-E01 aid status empty dir → exit 0 (offer-and-exit)"
+assert_output_contains "$OUT" "no AID project here" "CLI027-E02 status empty dir prints offer message"
 assert_output_contains "$OUT" "aid add" "CLI027-E03 status suggests 'aid add'"
 
 # ===========================================================================
@@ -227,18 +227,23 @@ pass "CLI027-F07 root agent display suppressed for owned tools (by design)"
 # CLI027-G: bare `aid` (no args) → dashboard landing screen
 # ===========================================================================
 
-# G01-G05: empty directory → exit 0, dashboard blocks present.
+# G01-G06: dir with .aid/ fixture → exit 0, dashboard blocks present.
+# Per new behavior bare 'aid' in a dir with NO .aid/ shows the offer-and-exit-0 path;
+# to keep testing the dashboard landing we provide a minimal .aid/ fixture so the
+# repo-command path renders the header, description, no-tools message, and usage block.
 CLI027G_HOME=$(newhome)
 setup_aid_home "${CLI027G_HOME}"
 TG=$(newtarget)
+mkdir -p "${TG}/.aid"
+printf 'format_version: 1\n' > "${TG}/.aid/settings.yml"
 
 OUT=$(cd "${TG}" && AID_HOME="${CLI027G_HOME}" AID_LIB_PATH="${CLI027G_HOME}/lib/aid-install-core.sh" \
      bash "${CLI027G_HOME}/bin/aid" 2>&1); RC=$?
-assert_exit_eq "$RC" 0 "CLI027-G01 bare aid in empty dir → exit 0 (dashboard)"
+assert_exit_eq "$RC" 0 "CLI027-G01 bare aid in repo with .aid/ → exit 0 (dashboard)"
 assert_output_contains "$OUT" "AID v${VERSION}" "CLI027-G02 dashboard header contains 'AID v<ver>'"
 assert_output_contains "$OUT" "Agentic Iterative Development" "CLI027-G03 dashboard header contains description tag"
 assert_output_contains "$OUT" "Install, update, and manage AID" "CLI027-G04 dashboard description line"
-assert_output_contains "$OUT" "yet" "CLI027-G05 dashboard: empty dir shows friendly no-tools message"
+assert_output_contains "$OUT" "yet" "CLI027-G05 dashboard: no-tools dir shows friendly no-tools message"
 assert_output_contains "$OUT" "aid add" "CLI027-G06 dashboard: usage block contains 'aid add'"
 
 # G07-G12: project with tools → exit 0, all 4 blocks present.
@@ -261,13 +266,13 @@ assert_output_contains "$OUT" "Installed tools (in" "CLI027-G10 dashboard with t
 assert_output_contains "$OUT" "codex" "CLI027-G11 dashboard with tools: codex listed"
 assert_output_contains "$OUT" "aid add" "CLI027-G12 dashboard with tools: usage block present"
 
-# G13: confirm `aid status` (explicit) still exits 7 in empty dir — UNCHANGED.
+# G13: confirm `aid status` (explicit) exits 0 + offer message in empty dir — new behavior.
 CLI027G3_HOME=$(newhome)
 setup_aid_home "${CLI027G3_HOME}"
 TG3=$(newtarget)
 
 run_aid "${CLI027G3_HOME}" status --target "${TG3}"
-assert_exit_eq "$RC" 7 "CLI027-G13 aid status (explicit) empty dir → exit 7 (unchanged)"
+assert_exit_eq "$RC" 0 "CLI027-G13 aid status (explicit) empty dir → exit 0 (offer-and-exit)"
 
 # ===========================================================================
 # CLI027-H: aid add <tool> + aid remove <tool>
@@ -333,10 +338,10 @@ run_aid "${CLI027J_HOME}" update \
     --target "${TJ}"
 assert_exit_eq "$RC" 0 "CLI027-J04 aid update all tools → exit 0"
 
-# Update on dir with no manifest → exit 6.
+# Update on dir with no .aid/ → offer-and-exit 0 (new behavior).
 TJ_EMPTY=$(newtarget)
 run_aid "${CLI027J_HOME}" update --target "${TJ_EMPTY}"
-assert_exit_eq "$RC" 6 "CLI027-J05 aid update empty manifest → exit 6"
+assert_exit_eq "$RC" 0 "CLI027-J05 aid update empty dir → exit 0 (offer-and-exit)"
 
 # ===========================================================================
 # CLI027-K: aid remove (no arg, all tools) — with --force to skip prompt
@@ -717,12 +722,12 @@ assert_output_contains "$OUT" "update" "CLI027-ZZ08 divergent: update hint for s
 _zz_codex_line=$(echo "$OUT" | grep 'codex' | grep -v 'Installed' || true)
 assert_output_not_contains "${_zz_codex_line}" "update" "CLI027-ZZ09 divergent: no update hint for current tool"
 
-# Also verify aid status exit-7 unchanged when empty dir.
+# Also verify aid status exits 0 (offer-and-exit) when empty dir — new behavior.
 CLI027ZZ2_HOME=$(newhome)
 setup_aid_home "${CLI027ZZ2_HOME}"
 TZZ2=$(newtarget)
 run_aid "${CLI027ZZ2_HOME}" status --target "${TZZ2}"
-assert_exit_eq "$RC" 7 "CLI027-ZZ10 aid status empty dir still exits 7 (unchanged)"
+assert_exit_eq "$RC" 0 "CLI027-ZZ10 aid status empty dir → exit 0 (offer-and-exit, new behavior)"
 
 # ===========================================================================
 # CLI028: Update check + aid update self
@@ -753,7 +758,10 @@ mkdir -p "${CLI028_JSON_DIR}"
 _json_a="$(make_release_json "${CLI028_JSON_DIR}" "9.9.9")"
 _check_url_a="file://${_json_a}"
 
+# Provide a .aid/ fixture so bare 'aid' takes the repo-command path and renders the notice.
 TA=$(newtarget)
+mkdir -p "${TA}/.aid"
+printf 'format_version: 1\n' > "${TA}/.aid/settings.yml"
 OUT=$(cd "${TA}" && AID_HOME="${CLI028A_HOME}" AID_NO_UPDATE_CHECK=0 \
      AID_UPDATE_CHECK_URL="${_check_url_a}" \
      AID_LIB_PATH="${CLI028A_HOME}/lib/aid-install-core.sh" \
@@ -867,7 +875,10 @@ _check_url_f="file://${_json_f}"
 CLI028F_FAKE_HOME="$(mktemp -d "${TMP}/fakehome028f.XXXXXX")"
 mkdir -p "${CLI028F_FAKE_HOME}/.aid"
 
+# Provide a .aid/ fixture so bare 'aid' takes the repo-command path and renders the notice.
 TF2=$(newtarget)
+mkdir -p "${TF2}/.aid"
+printf 'format_version: 1\n' > "${TF2}/.aid/settings.yml"
 # First run: populates cache.
 OUT=$(cd "${TF2}" && HOME="${CLI028F_FAKE_HOME}" AID_HOME="${CLI028F_HOME}" AID_NO_UPDATE_CHECK=0 \
      AID_UPDATE_CHECK_URL="${_check_url_f}" \
@@ -1113,7 +1124,10 @@ OUT_BS=$(AID_HOME="${CLI029D_HOME}" AID_LIB_PATH="${LIB_CORE}" \
 assert_exit_eq "$RC_BS" 0 "CLI029-D01 re-bootstrap for dashboard test → exit 0"
 
 # Run bare 'aid' (dashboard) → should succeed with the fresh lib.
+# Provide a .aid/ fixture so bare 'aid' takes the repo-command path and renders the header.
 TMP_TARGET_D=$(newtarget)
+mkdir -p "${TMP_TARGET_D}/.aid"
+printf 'format_version: 1\n' > "${TMP_TARGET_D}/.aid/settings.yml"
 OUT=$(cd "${TMP_TARGET_D}" && \
      AID_HOME="${CLI029D_HOME}" AID_LIB_PATH="${CLI029D_HOME}/lib/aid-install-core.sh" \
      bash "${CLI029D_HOME}/bin/aid" 2>&1); RC=$?

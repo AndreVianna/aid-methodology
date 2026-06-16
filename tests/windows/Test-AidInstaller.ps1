@@ -486,7 +486,10 @@ Write-Host ""
 # ===========================================================================
 Write-Host "=== T18-T19: bare aid.ps1 dashboard ==="
 
-# T18: empty directory → exit 0, header + friendly no-tools message + usage block.
+# T18: dir with .aid/ fixture → exit 0, header + friendly no-tools message + usage block.
+# Per decision #5: bare aid in a dir with NO .aid/ shows the offer-and-exit-0 path.
+# To keep testing the dashboard landing we provide a minimal .aid/ fixture so the
+# repo-command path renders the header, description, no-tools message, and usage block.
 $AidHomeT18 = Join-Path $TmpRoot 'aid-home-t18'
 $AidBinT18  = Join-Path $AidHomeT18 'bin'
 $AidLibT18  = Join-Path $AidHomeT18 'lib'
@@ -500,6 +503,10 @@ $verBytes = [System.Text.Encoding]::UTF8.GetBytes("$Ver`n")
 
 $ProjT18 = Join-Path $TmpRoot 'project-t18'
 New-Item -ItemType Directory -Path $ProjT18 -Force | Out-Null
+# Add minimal .aid/ fixture so bare aid enters the dashboard (not the no-.aid/ offer path).
+New-Item -ItemType Directory -Path (Join-Path $ProjT18 '.aid') -Force | Out-Null
+$settingsBytes18 = [System.Text.Encoding]::UTF8.GetBytes("format_version: 1`n")
+[System.IO.File]::WriteAllBytes((Join-Path $ProjT18 '.aid' 'settings.yml'), $settingsBytes18)
 
 # Run bare aid.ps1 (no args) from ProjT18 as cwd (so '.' resolves to an empty project dir).
 $savedHome18 = $env:AID_HOME
@@ -515,7 +522,7 @@ $out18 = [System.Text.RegularExpressions.Regex]::Replace($out18, $_AnsiPattern, 
 $env:AID_HOME     = $savedHome18
 $env:AID_LIB_PATH = $savedLib18
 
-Assert-Eq     "$rc18"    '0'  'T18a bare aid.ps1 empty dir → exit 0'
+Assert-Eq     "$rc18"    '0'  'T18a bare aid.ps1 with .aid/ fixture → exit 0'
 Assert-Contains $out18 "AID v$Ver"                        'T18b dashboard: header contains AID v<ver>'
 Assert-Contains $out18 'Agentic Iterative Development'    'T18c dashboard: header contains description tag'
 Assert-Contains $out18 'Install, update, and manage AID'  'T18d dashboard: description line'
@@ -647,11 +654,12 @@ if ($codexLine22) {
 }
 Write-Host ""
 
-# T23: aid status exit 7 still works when empty (unchanged by this feature).
+# T23: aid status empty dir → exit 0 + offer message (decision #5 new behavior).
 $ProjT23 = Join-Path $TmpRoot 'project-t23'
 New-Item -ItemType Directory -Path $ProjT23 -Force | Out-Null
 Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('status', '-Target', $ProjT23)
-Assert-Eq "$($script:_LastRC)" '7' 'T23 empty dir status still exits 7 (unchanged)'
+Assert-Eq "$($script:_LastRC)" '0' 'T23 empty dir status → exit 0 (offer-and-exit, new behavior)'
+Assert-Contains $script:_LastOut 'no AID project here' 'T23b empty dir status prints offer message'
 Write-Host ""
 
 # T24: parity — Bash uniform output == PS1 uniform output (key header line).
@@ -713,6 +721,11 @@ $checkUrlT25 = New-FakeReleaseJson -Dir $JsonDirT25 -Version '9.9.9'
 
 $ProjT25 = Join-Path $TmpRoot 'project-t25'
 New-Item -ItemType Directory -Path $ProjT25 -Force | Out-Null
+# Add minimal .aid/ fixture so bare aid enters the dashboard (not the no-.aid/ offer path),
+# enabling the update-notice to render (per decision #5 / PS029-A pattern).
+New-Item -ItemType Directory -Path (Join-Path $ProjT25 '.aid') -Force | Out-Null
+$settingsBytes25 = [System.Text.Encoding]::UTF8.GetBytes("format_version: 1`n")
+[System.IO.File]::WriteAllBytes((Join-Path $ProjT25 '.aid' 'settings.yml'), $settingsBytes25)
 
 $savedHome25 = $env:AID_HOME; $savedLib25 = $env:AID_LIB_PATH
 $env:AID_HOME             = $AidHomeT25
@@ -1057,6 +1070,12 @@ Assert-Eq "$rc34bs" '0' 'T34a re-bootstrap for dashboard test → exit 0'
 # Run bare aid.ps1 (dashboard) → should succeed with the fresh lib.
 $ProjT34 = Join-Path $TmpRoot 'project-t34'
 New-Item -ItemType Directory -Path $ProjT34 -Force | Out-Null
+# Add minimal .aid/ fixture so bare aid enters the dashboard path (not the no-.aid/ offer path),
+# enabling T34c to assert the landing header renders correctly (per decision #5).
+New-Item -ItemType Directory -Path (Join-Path $ProjT34 '.aid') -Force | Out-Null
+$settingsBytes34 = [System.Text.Encoding]::UTF8.GetBytes("format_version: 1`n")
+[System.IO.File]::WriteAllBytes((Join-Path $ProjT34 '.aid' 'settings.yml'), $settingsBytes34)
+
 $savedHome34b = $env:AID_HOME
 $savedLib34b  = $env:AID_LIB_PATH
 $env:AID_HOME     = $AidHomeT34
@@ -1118,6 +1137,11 @@ Assert-Contains $out35probe 'Get-AidStatusBody: FOUND' 'T35b Get-AidStatusBody v
 # Also verify bare aid.ps1 (dashboard) exits 0, confirming dispatch works end-to-end.
 $ProjT35 = Join-Path $TmpRoot 'project-t35'
 New-Item -ItemType Directory -Path $ProjT35 -Force | Out-Null
+# Add minimal .aid/ fixture so bare aid enters the dashboard path (not the no-.aid/ offer path),
+# enabling T35d to assert the landing header renders (per decision #5).
+New-Item -ItemType Directory -Path (Join-Path $ProjT35 '.aid') -Force | Out-Null
+$settingsBytes35 = [System.Text.Encoding]::UTF8.GetBytes("format_version: 1`n")
+[System.IO.File]::WriteAllBytes((Join-Path $ProjT35 '.aid' 'settings.yml'), $settingsBytes35)
 
 $savedHome35 = $env:AID_HOME
 $savedLib35  = $env:AID_LIB_PATH

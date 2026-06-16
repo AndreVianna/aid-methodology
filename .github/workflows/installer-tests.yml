@@ -257,16 +257,16 @@ jobs:
           Copy-Item (Join-Path $repoRoot 'lib' 'AidInstallCore.psm1') (Join-Path $aidHome.FullName 'lib' 'AidInstallCore.psm1')
           Set-Content -LiteralPath (Join-Path $aidHome.FullName 'VERSION') -Value $version -Encoding utf8
 
-          # Smoke: aid status in empty dir -> exit 7.
+          # Smoke: aid status in a dir with no .aid/ -> offer + exit 0 (decision #5).
           $emptyDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
           $env:AID_HOME = $aidHome.FullName
           $env:AID_NO_UPDATE_CHECK = '1'
           $out = & $aidCmd.FullName status --target $emptyDir.FullName 2>&1
-          if ($LASTEXITCODE -ne 7) {
-              Write-Error "aid status empty dir: expected exit 7, got $LASTEXITCODE`nOutput: $out"
+          if ($LASTEXITCODE -ne 0 -or "$out" -notmatch 'no AID project here') {
+              Write-Error "aid status no-.aid dir: expected exit 0 + offer, got $LASTEXITCODE`nOutput: $out"
               exit 1
           }
-          Write-Host "aid status empty dir: exit 7 (PASS)"
+          Write-Host "aid status no-.aid dir: exit 0 + offer (PASS)"
 
           # Smoke: build codex fixture tarball.
           $fixtureDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
@@ -354,14 +354,14 @@ jobs:
           $env:AID_HOME = $aidHome2.FullName
           $env:AID_NO_UPDATE_CHECK = '1'
 
-          # Smoke: aid status in empty dir -> exit 7.
+          # Smoke: aid status in a dir with no .aid/ -> offer + exit 0 (decision #5).
           $emptyDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }
           $out = & $aidEntry status --target $emptyDir.FullName 2>&1
-          if ($LASTEXITCODE -ne 7) {
-              Write-Error "aid status empty dir: expected exit 7, got $LASTEXITCODE`nOutput: $out"
+          if ($LASTEXITCODE -ne 0 -or "$out" -notmatch 'no AID project here') {
+              Write-Error "aid status no-.aid dir: expected exit 0 + offer, got $LASTEXITCODE`nOutput: $out"
               exit 1
           }
-          Write-Host "aid status empty dir: exit 7 (PASS)"
+          Write-Host "aid status no-.aid dir: exit 0 + offer (PASS)"
 
           # Smoke: build codex fixture tarball.
           $fixtureDir = New-TemporaryFile | ForEach-Object { Remove-Item $_ -Force; New-Item -ItemType Directory -Path $_.FullName }

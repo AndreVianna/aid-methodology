@@ -354,14 +354,15 @@ else
                 cp "${LIB_CORE}" "${NM10_AID_HOME}/lib/aid-install-core.sh"
                 printf '%s\n' "${VERSION}" > "${NM10_AID_HOME}/VERSION"
 
-                # Smoke: aid status in empty dir -> exit 7.
+                # Smoke: aid status in dir with no .aid/ -> "no AID project here" + exit 0
+                # (decision #5 new behavior; NOT exit 7 / "No AID install found").
                 NM10_EMPTY="$(mktemp -d "${TMP}/nm10-empty.XXXXXX")"
                 NM10_STATUS_OUT=$(AID_HOME="${NM10_AID_HOME}" AID_NO_UPDATE_CHECK=1 \
                     "${NM10_AID}" status --target "${NM10_EMPTY}" 2>&1); NM10_STATUS_RC=$?
-                assert_exit_eq "$NM10_STATUS_RC" 7 \
-                    "NM10-05 installed aid status empty dir -> exit 7"
-                assert_output_contains "$NM10_STATUS_OUT" "No AID install found" \
-                    "NM10-06 installed aid status message"
+                assert_exit_eq "$NM10_STATUS_RC" 0 \
+                    "NM10-05 installed aid status empty dir -> exit 0 (decision #5)"
+                assert_output_contains "$NM10_STATUS_OUT" "no AID project here" \
+                    "NM10-06 installed aid status empty dir message"
 
                 # Smoke: aid add codex --from-bundle -> exit 0, files created.
                 NM10_TARGET="$(mktemp -d "${TMP}/nm10-target.XXXXXX")"

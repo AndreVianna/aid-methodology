@@ -1069,14 +1069,16 @@ function script:Invoke-DcStart {
             Write-Host "Remote exposure is UP (tailnet-private), but the .ts.net URL could not be auto-detected -- run 'tailscale status' on this host to find it."
         }
         # DR-1 registry side-effect: auto-register the dashboard target repo (idempotent).
-        script:Registry-Register -Repo $Target
+        # Always routes to the user tier: dashboard auto-register is never-elevate.
+        script:Registry-Register -Repo $Target -Tier 'user'
         script:Exit-Aid 0
     }
 
     # Step 11: print success (local-only).
     Write-Host "Dashboard ($Runtime) running at http://127.0.0.1:${Port} -- stop with: aid dashboard stop"
     # DR-1 registry side-effect: auto-register the dashboard target repo (idempotent).
-    script:Registry-Register -Repo $Target
+    # Always routes to the user tier: dashboard auto-register is never-elevate.
+    script:Registry-Register -Repo $Target -Tier 'user'
     script:Exit-Aid 0
 }
 
@@ -1217,6 +1219,365 @@ function script:Invoke-AidFormatGate {
 }
 
 # ---------------------------------------------------------------------------
+# Registry helpers (DR-1 / FF-1 / FR29 -- PS twin of Bash registry_register /
+# registry_unregister).  Implements DM-1 schema, DD-3 Move-Item -Force atomic
+# write, DD-REG-FMT line-scan (no YAML library).
+# Defined here (before the sentinel try block) so they are available to the
+# dispatch handlers (status, bare-aid, update-tool) that call them.
+# ---------------------------------------------------------------------------
+
+# Read the repos list from registry.yml (line-scan, no YAML parser).
+# Returns [string[]] of canonical paths; empty array when file is absent.
+function script:Get-RegistryRepos {
+    param([string]$RegPath)
+    if (-not (Test-Path $RegPath -PathType Leaf)) { return @() }
+    $results = [System.Collections.Generic.List[string]]::new()
+    foreach ($line in (Get-Content -LiteralPath $RegPath -Encoding utf8 -ErrorAction SilentlyContinue)) {
+        if ($line -match '^\s*-\s+(.+\S)\s*$') {
+            $results.Add($Matches[1])
+        }
+    }
+    return $results.ToArray()
+}
+
+# Get-RegistryUnion
+# Return the deduped sort-unique union of the primary tier ($script:_AidStateHome/
+# registry.yml, which honors the AID_HOME override via the startup scope derivation)
+# and, when $script:_AidStateHome differs from $HOME/.aid, also the $HOME/.aid/
+# registry.yml fallback tier.  Prunes stale entries quietly: a path is emitted only
+# if its .aid/ sub-directory still exists.  Never writes or mutates any registry file.
+#
+# Per-user collapse: when $script:_AidStateHome == $HOME/.aid the two paths are the
+# same file -- the union degenerates to a single-tier read (no double-read, no elevation).
+# Mirror of bash _registry_read_union.
+function script:Get-RegistryUnion {
+    $primaryReg  = Join-Path $script:_AidStateHome 'registry.yml'
+    $userDotAid  = Join-Path $HOME '.aid'
+    $fallbackReg = Join-Path $userDotAid 'registry.yml'
+
+    $raw = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+
+    # Primary tier (always read).
+    foreach ($p in (script:Get-RegistryRepos -RegPath $primaryReg)) {
+        if ($p) { [void]$raw.Add($p) }
+    }
+
+    # Fallback tier only when paths differ (global install).
+    $primaryNorm  = [System.IO.Path]::GetFullPath($script:_AidStateHome)
+    $fallbackNorm = [System.IO.Path]::GetFullPath($userDotAid)
+    if ($primaryNorm -ne $fallbackNorm) {
+        foreach ($p in (script:Get-RegistryRepos -RegPath $fallbackReg)) {
+            if ($p) { [void]$raw.Add($p) }
+        }
+    }
+
+    # Quiet-prune: emit only paths whose .aid/ still exists.
+    $result = [System.Collections.Generic.List[string]]::new()
+    foreach ($p in ($raw | Sort-Object)) {
+        $aidDir = Join-Path $p '.aid'
+        if (Test-Path $aidDir -PathType Container) {
+            $result.Add($p)
+        }
+    }
+    return $result.ToArray()
+}
+
+# Invoke-AidCwdClassify <Target>
+# C-table: classify the cwd repo and perform register-on-encounter.
+# Called before repo commands (status, update [tool]) when .aid/ exists.
+# Checks if already registered (union read); if not, picks tier and registers.
+# Returns always (registration is best-effort; never blocks the host command).
+# Mirror of bash _aid_cwd_classify.
+function script:Invoke-AidCwdClassify {
+    param([string]$Target)
+
+    $canonTarget = (Resolve-Path -LiteralPath $Target -ErrorAction SilentlyContinue).Path
+    if (-not $canonTarget) { $canonTarget = $Target }
+
+    # Check if already registered in the union.
+    $isRegistered = $false
+    foreach ($regP in (script:Get-RegistryUnion)) {
+        if ($regP -eq $canonTarget) { $isRegistered = $true; break }
+    }
+
+    if (-not $isRegistered) {
+        # Not registered -- pick tier and register (best-effort, never blocks).
+        $inHome = $canonTarget.StartsWith($HOME + [System.IO.Path]::DirectorySeparatorChar) -or
+                  $canonTarget -eq $HOME
+
+        $regTier = 'user'
+        if ($script:_AidScope -eq 'global' -and -not $inHome) {
+            # global && outside $HOME: ask shared-vs-user (decision #4: always ask).
+            # No-TTY default: user tier silently (safe, always writable).
+            $isInteractive = [Environment]::UserInteractive
+            if ($isInteractive) {
+                try {
+                    Write-Host -NoNewline 'Register this repo in the shared machine registry? [y/N] '
+                    $askAns = Read-Host
+                    if ($askAns -in @('y', 'Y', 'yes', 'Yes', 'YES')) {
+                        $regTier = 'shared'
+                    }
+                } catch {
+                    $regTier = 'user'
+                }
+            }
+        }
+        try { script:Registry-Register -Repo $canonTarget -Tier $regTier } catch {}
+    }
+}
+
+# Invoke-AidCwdNoAidOffer <Target>
+# C-table last row: .aid/ absent -- print offer + optional non-git note, exit 0.
+# No hard refuse (decision #5): missing .aid/ is an offer, not an error.
+# Mirror of bash _aid_cwd_no_aid_offer.
+function script:Invoke-AidCwdNoAidOffer {
+    param([string]$Target)
+
+    $canon = (Resolve-Path -LiteralPath $Target -ErrorAction SilentlyContinue).Path
+    if (-not $canon) { $canon = $Target }
+
+    Write-Host 'no AID project here -- set it up? (aid add)'
+    # Non-git note (decision #5): a non-git dir can use AID; .aid/ just won't be
+    # version-controlled if git is absent.
+    $gitOut = $null
+    try { $gitOut = & git -C $canon rev-parse --git-dir 2>&1 } catch {}
+    if ($LASTEXITCODE -ne 0 -or -not $gitOut) {
+        Write-Host "Note: $canon is not a git repository -- .aid/ will not be version-controlled."
+    }
+    script:Exit-Aid 0
+}
+
+# Register a canonical repo path in the registry.yml (set-insert, idempotent).
+# Prints one line on a real change; silent on no-op.  Prints WARN on failure; never
+# throws (host-tool op is never blocked -- NFR10 / DD-3 / CLI-1).
+#
+# Tier param: 'user' (default) or 'shared'.
+#
+# USER tier (default): primary target is $script:_AidStateHome/registry.yml (honors
+# AID_HOME override via startup scope derivation).  If AID_STATE_HOME is not user-
+# writable AND is a different path from $HOME/.aid, degrades to $HOME/.aid/registry.yml
+# with a WARN (fire-and-continue; never blocks the host command).  Per-user collapse:
+# when AID_STATE_HOME == $HOME/.aid the two are the same file -- single-tier, no fallback.
+#
+# SHARED tier: writes to $script:_AidStateHome/registry.yml directly (no elevation
+# wrapper on Windows -- the underlying tool surfaces its own access error; callers
+# elevate their own shell).  If the write fails or the shared dir is not writable,
+# DEGRADES to skip + WARN + return (matching bash _aid_priv_run-declined contract;
+# SPEC AC6 / decision #2).  Per-user install (AID_STATE_HOME == ~/.aid): shared-tier
+# argument is treated as user-tier (same file, no elevation needed).
+# Defined before the sentinel try block so it is available to bare-aid, status, and
+# Invoke-AidCwdClassify (all of which call it before any later def would be reached).
+function script:Registry-Register {
+    param([string]$Repo, [string]$Tier = 'user')
+
+    # Per-user collapse: AID_STATE_HOME == $HOME/.aid -> shared-tier is user-tier (same file).
+    $userDotAid  = Join-Path $HOME '.aid'
+    $primaryNorm = [System.IO.Path]::GetFullPath($script:_AidStateHome)
+    $userNorm    = [System.IO.Path]::GetFullPath($userDotAid)
+    $perUser     = ($primaryNorm -eq $userNorm)
+
+    # Helper: test writability of a directory.
+    $testWritable = {
+        param([string]$dir)
+        if (-not (Test-Path $dir -PathType Container)) { return $false }
+        $probe = Join-Path $dir ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
+        try { [System.IO.File]::WriteAllText($probe, ''); Remove-Item -LiteralPath $probe -Force -ErrorAction SilentlyContinue; return $true } catch { return $false }
+    }
+
+    # Helper: write registry content to a file (temp+mv atomic).
+    $writeRegistry = {
+        param([string]$regPath, [string[]]$repos)
+        $dir = Split-Path $regPath -Parent
+        if (-not (Test-Path $dir -PathType Container)) {
+            try { New-Item -ItemType Directory -Path $dir -Force | Out-Null } catch {}
+        }
+        $tmp = Join-Path $dir ("registry.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
+        try {
+            $lns = [System.Collections.Generic.List[string]]::new()
+            $lns.Add("# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).")
+            $lns.Add("# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/")
+            $lns.Add("# description/version are read from each repo's own .aid/settings.yml at render time.")
+            $lns.Add("schema: 1")
+            $lns.Add("repos:")
+            foreach ($p in ($repos | Where-Object { $_ } | Sort-Object -Unique)) { $lns.Add("  - $p") }
+            Set-Content -LiteralPath $tmp -Value $lns.ToArray() -Encoding utf8NoBOM -ErrorAction Stop
+            Move-Item -LiteralPath $tmp -Destination $regPath -Force -ErrorAction Stop
+            return $true
+        } catch {
+            Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+            return $false
+        }
+    }
+
+    # ------ SHARED tier -------------------------------------------------------
+    if ($Tier -eq 'shared' -and -not $perUser) {
+        # Shared write: attempt directly (no elevation wrapper on Windows).
+        # If the shared dir is not writable, degrade: skip + WARN + return (0-equivalent).
+        $sharedRegDir = $script:_AidStateHome
+        if (-not (Test-Path $sharedRegDir -PathType Container)) {
+            try { New-Item -ItemType Directory -Path $sharedRegDir -Force | Out-Null } catch {}
+        }
+        if (-not (& $testWritable $sharedRegDir)) {
+            [Console]::Error.WriteLine("WARN: aid: shared registry write declined or unavailable; repo not registered in shared tier ($sharedRegDir\registry.yml)")
+            return
+        }
+        $sharedReg = Join-Path $sharedRegDir 'registry.yml'
+        $existing  = @(script:Get-RegistryRepos -RegPath $sharedReg)
+        if ($existing -contains $Repo) {
+            if ($script:_AidVerbose) { Write-Host "Registry: $Repo already registered in shared tier (no-op)." }
+            return
+        }
+        $ok = & $writeRegistry $sharedReg ($existing + @($Repo))
+        if (-not $ok) {
+            [Console]::Error.WriteLine("WARN: aid: could not update the shared repo registry ($sharedReg): write failed")
+            return
+        }
+        Write-Host "Registered $Repo with the AID CLI (shared registry)."
+        return
+    }
+
+    # ------ USER tier (default) or per-user collapse -------------------------
+    # Primary: $script:_AidStateHome (honors AID_HOME override via startup scope derivation).
+    # Fallback: $HOME/.aid (when AID_STATE_HOME is not writable and is a different path).
+    # Never-elevate: empty probe.
+    if (-not (Test-Path $script:_AidStateHome -PathType Container)) {
+        try { New-Item -ItemType Directory -Path $script:_AidStateHome -Force -ErrorAction SilentlyContinue | Out-Null } catch {}
+    }
+    $writeDir = $null
+    if (& $testWritable $script:_AidStateHome) {
+        $writeDir = $script:_AidStateHome
+    } else {
+        # AID_STATE_HOME not writable; degrade to $HOME/.aid (user fallback).
+        if (-not (Test-Path $userDotAid -PathType Container)) {
+            try { New-Item -ItemType Directory -Path $userDotAid -Force -ErrorAction SilentlyContinue | Out-Null } catch {}
+        }
+        [Console]::Error.WriteLine("WARN: aid: could not write to state home $($script:_AidStateHome); using $userDotAid\registry.yml")
+        $writeDir = $userDotAid
+    }
+    $writeReg = Join-Path $writeDir 'registry.yml'
+    $existing  = @(script:Get-RegistryRepos -RegPath $writeReg)
+    # Idempotent: already registered -> silent no-op.
+    if ($existing -contains $Repo) {
+        if ($script:_AidVerbose) { Write-Host "Registry: $Repo already registered (no-op)." }
+        return
+    }
+    $ok = & $writeRegistry $writeReg ($existing + @($Repo))
+    if (-not $ok) {
+        [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($writeReg): write failed")
+        return
+    }
+    Write-Host "Registered $Repo with the AID CLI."
+}
+
+# Unregister a canonical repo path from the registry.yml (set-remove, idempotent).
+# Called only when the repo manifest is now gone (last tool removed).
+# Prints one line on a real change; silent on no-op.  Prints WARN on failure; never throws.
+#
+# Tier-aware: removes from tier(s) where the entry is found.  Scope-aware resolution
+# mirrors Registry-Register: primary=$script:_AidStateHome, fallback=$HOME/.aid.
+# Per-user install (AID_STATE_HOME == $HOME/.aid): both paths are the same -- single write.
+# Defined before the sentinel try block (symmetric with Registry-Register above).
+function script:Registry-Unregister {
+    param([string]$Repo)
+
+    $userDotAid  = Join-Path $HOME '.aid'
+    $primaryNorm = [System.IO.Path]::GetFullPath($script:_AidStateHome)
+    $userNorm    = [System.IO.Path]::GetFullPath($userDotAid)
+    $perUser     = ($primaryNorm -eq $userNorm)
+
+    $sharedReg   = Join-Path $script:_AidStateHome 'registry.yml'
+    $userReg     = Join-Path $userDotAid 'registry.yml'
+
+    # Helper: test writability of a directory.
+    $testW = {
+        param([string]$dir)
+        if (-not (Test-Path $dir -PathType Container)) { return $false }
+        $probe = Join-Path $dir ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
+        try { [System.IO.File]::WriteAllText($probe, ''); Remove-Item -LiteralPath $probe -Force -ErrorAction SilentlyContinue; return $true } catch { return $false }
+    }
+
+    # Helper: rewrite registry removing $Repo (atomic temp+mv).
+    $rewriteReg = {
+        param([string]$regPath, [string[]]$current)
+        $dir = Split-Path $regPath -Parent
+        $tmp = Join-Path $dir ("registry.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
+        try {
+            $remaining = $current | Where-Object { $_ -ne $Repo } | Sort-Object -Unique
+            $lns = [System.Collections.Generic.List[string]]::new()
+            $lns.Add("# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).")
+            $lns.Add("# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/")
+            $lns.Add("# description/version are read from each repo's own .aid/settings.yml at render time.")
+            $lns.Add("schema: 1")
+            $lns.Add("repos:")
+            if ($remaining) { foreach ($p in $remaining) { $lns.Add("  - $p") } }
+            Set-Content -LiteralPath $tmp -Value $lns.ToArray() -Encoding utf8NoBOM -ErrorAction Stop
+            Move-Item -LiteralPath $tmp -Destination $regPath -Force -ErrorAction Stop
+            return $true
+        } catch {
+            Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+            return $false
+        }
+    }
+
+    $foundAny = $false
+
+    # --- PRIMARY TIER ($AID_STATE_HOME) ---
+    if (& $testW $script:_AidStateHome) {
+        $ex = @(script:Get-RegistryRepos -RegPath $sharedReg)
+        if ($ex -contains $Repo) {
+            $foundAny = $true
+            $ok = & $rewriteReg $sharedReg $ex
+            if (-not $ok) {
+                [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($sharedReg): write failed")
+                return
+            }
+        }
+    } else {
+        # AID_STATE_HOME not writable: check/operate on fallback $HOME/.aid tier.
+        if (-not (Test-Path $userDotAid -PathType Container)) {
+            try { New-Item -ItemType Directory -Path $userDotAid -Force -ErrorAction SilentlyContinue | Out-Null } catch {}
+        }
+        $ex = @(script:Get-RegistryRepos -RegPath $userReg)
+        if ($ex -contains $Repo) {
+            $foundAny = $true
+            [Console]::Error.WriteLine("WARN: aid: could not write to state home $($script:_AidStateHome); using $userReg")
+            $ok = & $rewriteReg $userReg $ex
+            if (-not $ok) {
+                [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($userReg): write failed")
+                return
+            }
+        }
+    }
+
+    # --- FALLBACK / SECONDARY TIER ($HOME/.aid, global install only) ---
+    # When AID_STATE_HOME is writable and != $HOME/.aid, also check if the entry
+    # exists in $HOME/.aid (e.g. was registered when AID_STATE_HOME was non-writable).
+    if (-not $perUser -and (& $testW $script:_AidStateHome)) {
+        $fbEx = @(script:Get-RegistryRepos -RegPath $userReg)
+        if ($fbEx -contains $Repo) {
+            $foundAny = $true
+            if (-not (Test-Path $userDotAid -PathType Container)) {
+                try { New-Item -ItemType Directory -Path $userDotAid -Force -ErrorAction SilentlyContinue | Out-Null } catch {}
+            }
+            if (& $testW $userDotAid) {
+                $ok = & $rewriteReg $userReg $fbEx
+                if (-not $ok) {
+                    [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($userReg): write failed")
+                }
+            } else {
+                [Console]::Error.WriteLine("WARN: aid: could not write to registry at $userReg (not writable); unregister skipped")
+            }
+        }
+    }
+
+    if (-not $foundAny) {
+        if ($script:_AidVerbose) { Write-Host "Registry: $Repo not in registry (no-op)." }
+        return
+    }
+    Write-Host "Unregistered $Repo from the AID CLI."
+}
+
+# ---------------------------------------------------------------------------
 # Wrap everything in try/catch for terminal-survival in piped/iex mode.
 # ---------------------------------------------------------------------------
 try {
@@ -1233,6 +1594,14 @@ $script:_AidVerbose = ($env:AID_VERBOSE -eq '1')
 
 # ---- Bare aid -> dashboard landing screen ----
 if ($script:_RawArgs.Count -eq 0) {
+    # C-table: if no .aid/ -> offer (no hard refuse, decision #5); exit 0.
+    if (-not (Test-Path (Join-Path '.' '.aid') -PathType Container)) {
+        script:Invoke-AidCwdNoAidOffer -Target '.'
+        # Invoke-AidCwdNoAidOffer always calls Exit-Aid 0.
+    }
+    # C-table register-on-encounter (best-effort, never blocks bare aid).
+    script:Invoke-AidCwdClassify -Target '.'
+
     # Block 1 + 2: Header + description.
     $cliVersion = 'unknown'
     $verFile = Join-Path $script:_AidCodeHome 'VERSION'
@@ -1242,12 +1611,11 @@ if ($script:_RawArgs.Count -eq 0) {
     Write-Host "AID v$cliVersion - Agentic Iterative Development"
     Write-Host "Install, update, and manage AID across your repositories."
 
-    # C6': format gate for cwd repo (only when .aid/ exists; absent .aid/ falls
-    # through to the existing "set it up?" path via Get-AidStatusBody below).
-    if (Test-Path (Join-Path '.' '.aid') -PathType Container) {
-        $gateRc = script:Invoke-AidFormatGate -Repo '.'
-        if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
-    }
+    # C6': format gate for cwd repo (.aid/ is guaranteed present here -- the
+    # missing-.aid/ case is intercepted above via Invoke-AidCwdNoAidOffer;
+    # register-on-encounter already ran via Invoke-AidCwdClassify).
+    $gateRc = script:Invoke-AidFormatGate -Repo '.'
+    if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
 
     # Block 3: Installed tools for cwd.
     Write-Host ""
@@ -1324,194 +1692,21 @@ if ($SUBCMD -eq 'status') {
     if (-not $statusTarget) { $statusTarget = '.' }
     if ($script:_AidVerbose) { $env:AID_VERBOSE = '1' }
 
-    # C6': format gate for status target (only when .aid/ exists).
-    if (Test-Path (Join-Path $statusTarget '.aid') -PathType Container) {
-        $gateRc = script:Invoke-AidFormatGate -Repo $statusTarget
-        if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
+    # C-table: if no .aid/ -> offer (no hard refuse, decision #5); exit 0.
+    if (-not (Test-Path (Join-Path $statusTarget '.aid') -PathType Container)) {
+        script:Invoke-AidCwdNoAidOffer -Target $statusTarget
+        # Invoke-AidCwdNoAidOffer always calls Exit-Aid 0.
     }
+    # C-table register-on-encounter (best-effort, never blocks status).
+    script:Invoke-AidCwdClassify -Target $statusTarget
+    # C6': format gate for status target (only when .aid/ exists).
+    $gateRc = script:Invoke-AidFormatGate -Repo $statusTarget
+    if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
 
     $rc = Get-AidStatus -Target $statusTarget
     # Update check notice appended after status output (non-blocking).
     script:Invoke-AidUpdateCheck
     script:Exit-Aid $rc
-}
-# ---------------------------------------------------------------------------
-# Registry helpers (DR-1 / FF-1 / FR29 -- PS twin of Bash registry_register /
-# registry_unregister).  Implements DM-1 schema, DD-3 Move-Item -Force atomic
-# write, DD-REG-FMT line-scan (no YAML library).
-# ---------------------------------------------------------------------------
-
-# Read the repos list from registry.yml (line-scan, no YAML parser).
-# Returns [string[]] of canonical paths; empty array when file is absent.
-function script:Get-RegistryRepos {
-    param([string]$RegPath)
-    if (-not (Test-Path $RegPath -PathType Leaf)) { return @() }
-    $results = [System.Collections.Generic.List[string]]::new()
-    foreach ($line in (Get-Content -LiteralPath $RegPath -Encoding utf8 -ErrorAction SilentlyContinue)) {
-        if ($line -match '^\s*-\s+(.+\S)\s*$') {
-            $results.Add($Matches[1])
-        }
-    }
-    return $results.ToArray()
-}
-
-# Register a canonical repo path in the registry.yml (set-insert, idempotent).
-# Prints one line on a real change; silent on no-op.  Prints WARN on failure; never
-# throws (host-tool op is never blocked -- NFR10 / DD-3 / CLI-1).
-#
-# FALLBACK (non-prompting, never-elevate): attempts a best-effort never-elevate
-# ensure-exists of $script:_AidStateHome.  If the shared state home is not writable
-# by the current user, DEGRADES to %LOCALAPPDATA%\aid (the per-user home) + one WARN.
-# A routine 'aid add' MUST NOT trigger a UAC re-prompt -- the shared registration is
-# best-effort skip+warn (feature-002 parity with bash degrade-to-~/.aid contract).
-# The temp file is created in the CHOSEN writable dir so Move-Item is atomic same-FS.
-function script:Registry-Register {
-    param([string]$Repo)
-
-    # Never-elevate best-effort ensure-exists of $script:_AidStateHome.
-    if (-not (Test-Path $script:_AidStateHome -PathType Container)) {
-        try { New-Item -ItemType Directory -Path $script:_AidStateHome -Force -ErrorAction Stop | Out-Null } catch {}
-    }
-
-    # Decide the effective target dir BEFORE mktemp so the temp file always lands in a
-    # writable directory (mirrors the bash decide-before-mktemp fix in registry_register).
-    # A root-owned (or Administrator-owned) $script:_AidStateHome that already exists causes
-    # the mkdir above to succeed (no-op) but remains non-writable; the writability test
-    # below catches that case and degrades to the per-user home.
-    $writeDir = $null
-    $writeReg = $null
-    $degraded = $false
-    if (Test-Path $script:_AidStateHome -PathType Container) {
-        # Test writability by attempting to create a probe file (no-throw path).
-        $_probeFile = Join-Path $script:_AidStateHome ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
-        $_writable = $false
-        try { [System.IO.File]::WriteAllText($_probeFile, ''); Remove-Item -LiteralPath $_probeFile -Force -ErrorAction SilentlyContinue; $_writable = $true } catch {}
-        if ($_writable) {
-            $writeDir = $script:_AidStateHome
-        }
-    }
-    if (-not $writeDir) {
-        # Degrade: shared home is absent or not writable. Use per-user home (%LOCALAPPDATA%\aid
-        # on Windows; $HOME/.aid on non-Windows). Emit one WARN; no UAC re-prompt.
-        $userHome = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'aid' } else { Join-Path $HOME '.aid' }
-        if (-not (Test-Path $userHome -PathType Container)) {
-            try { New-Item -ItemType Directory -Path $userHome -Force -ErrorAction SilentlyContinue | Out-Null } catch {}
-        }
-        [Console]::Error.WriteLine("WARN: aid: could not write to shared state home $($script:_AidStateHome); using $userHome")
-        $writeDir = $userHome
-        $degraded = $true
-    }
-    $writeReg = Join-Path $writeDir 'registry.yml'
-
-    $existing = @(script:Get-RegistryRepos -RegPath $writeReg)
-    # Idempotent: already registered -> silent no-op.
-    if ($existing -contains $Repo) {
-        if ($script:_AidVerbose) { Write-Host "Registry: $Repo already registered (no-op)." }
-        return
-    }
-    # Temp file in the chosen writable dir (atomic same-filesystem Move-Item).
-    $tmp = Join-Path $writeDir ("registry.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
-    try {
-        $all = ($existing + @($Repo)) | Where-Object { $_ } | Sort-Object -Unique
-        $lines = [System.Collections.Generic.List[string]]::new()
-        $lines.Add("# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).")
-        $lines.Add("# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/")
-        $lines.Add("# description/version are read from each repo's own .aid/settings.yml at render time.")
-        $lines.Add("schema: 1")
-        $lines.Add("repos:")
-        foreach ($p in $all) { $lines.Add("  - $p") }
-        Set-Content -LiteralPath $tmp -Value $lines -Encoding utf8NoBOM -ErrorAction Stop
-        Move-Item -LiteralPath $tmp -Destination $writeReg -Force -ErrorAction Stop
-    } catch {
-        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
-        [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($writeReg): $_")
-        return
-    }
-    Write-Host "Registered $Repo with the AID CLI."
-}
-
-# Unregister a canonical repo path from the registry.yml (set-remove, idempotent).
-# Called only when the repo manifest is now gone (last tool removed).
-# Prints one line on a real change; silent on no-op.  Prints WARN on failure; never throws.
-#
-# FALLBACK: mirrors the degrade-to-user-tier logic of Registry-Register.  The entry is
-# looked up in the shared tier first; if the shared dir is not user-writable the operation
-# degrades to the per-user home.  Temp file lands in the chosen writable dir (atomic Move).
-function script:Registry-Unregister {
-    param([string]$Repo)
-
-    $sharedReg = Join-Path $script:_AidStateHome 'registry.yml'
-    $userHome  = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'aid' } else { Join-Path $HOME '.aid' }
-    $userReg   = Join-Path $userHome 'registry.yml'
-
-    # Determine the effective target dir BEFORE mktemp (mirrors bash decide-before-mktemp fix).
-    $writeDir = $null
-    $writeReg = $null
-    if (Test-Path $script:_AidStateHome -PathType Container) {
-        $_probeFile2 = Join-Path $script:_AidStateHome ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
-        $_writable2 = $false
-        try { [System.IO.File]::WriteAllText($_probeFile2, ''); Remove-Item -LiteralPath $_probeFile2 -Force -ErrorAction SilentlyContinue; $_writable2 = $true } catch {}
-        if ($_writable2) { $writeDir = $script:_AidStateHome }
-    }
-    if (-not $writeDir) {
-        $writeDir = $userHome
-        if (-not (Test-Path $writeDir -PathType Container)) {
-            try { New-Item -ItemType Directory -Path $writeDir -Force -ErrorAction SilentlyContinue | Out-Null } catch {}
-        }
-    }
-    $writeReg = Join-Path $writeDir 'registry.yml'
-
-    # Look for the repo in chosen tier; fall back to the other tier.
-    $existing = @(script:Get-RegistryRepos -RegPath $writeReg)
-    if ($existing -notcontains $Repo) {
-        $otherReg = if ($writeReg -eq $sharedReg) { $userReg } else { $sharedReg }
-        $otherExisting = @(script:Get-RegistryRepos -RegPath $otherReg)
-        if ($otherExisting -contains $Repo) {
-            # Entry found in the other tier -- switch to it only if writable.
-            if (Test-Path (Split-Path $otherReg -Parent) -PathType Container) {
-                $_probeFile3 = Join-Path (Split-Path $otherReg -Parent) ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
-                $_writable3 = $false
-                try { [System.IO.File]::WriteAllText($_probeFile3, ''); Remove-Item -LiteralPath $_probeFile3 -Force -ErrorAction SilentlyContinue; $_writable3 = $true } catch {}
-                if ($_writable3) {
-                    $writeDir = Split-Path $otherReg -Parent
-                    $writeReg = $otherReg
-                    $existing = $otherExisting
-                } else {
-                    # Can't write there either; emit WARN and return.
-                    [Console]::Error.WriteLine("WARN: aid: could not write to registry at $otherReg (not writable); unregister skipped")
-                    return
-                }
-            }
-        } else {
-            # Not in either tier.
-            if ($script:_AidVerbose) { Write-Host "Registry: $Repo not in registry (no-op)." }
-            return
-        }
-    }
-
-    # Emit WARN when operating on user tier because shared tier is not writable.
-    if ($writeReg -eq $userReg -and (Test-Path $script:_AidStateHome -PathType Container)) {
-        [Console]::Error.WriteLine("WARN: aid: could not write to shared state home $($script:_AidStateHome); using $userReg")
-    }
-
-    $tmp = Join-Path $writeDir ("registry.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
-    try {
-        $remaining = $existing | Where-Object { $_ -ne $Repo } | Sort-Object -Unique
-        $lines = [System.Collections.Generic.List[string]]::new()
-        $lines.Add("# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).")
-        $lines.Add("# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/")
-        $lines.Add("# description/version are read from each repo's own .aid/settings.yml at render time.")
-        $lines.Add("schema: 1")
-        $lines.Add("repos:")
-        if ($remaining) { foreach ($p in $remaining) { $lines.Add("  - $p") } }
-        Set-Content -LiteralPath $tmp -Value $lines -Encoding utf8NoBOM -ErrorAction Stop
-        Move-Item -LiteralPath $tmp -Destination $writeReg -Force -ErrorAction Stop
-    } catch {
-        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
-        [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($writeReg): $_")
-        return
-    }
-    Write-Host "Unregistered $Repo from the AID CLI."
 }
 
 # ---------------------------------------------------------------------------
@@ -1606,7 +1801,7 @@ function script:Invoke-AidMigrateRepo {
     # STEP 4 -- REGISTER (DM-2 / FR28) -- existing idempotent writer.
     # ------------------------------------------------------------------
     try {
-        script:Registry-Register -Repo $Repo
+        script:Registry-Register -Repo $Repo -Tier 'user'
     } catch {
         [Console]::Error.WriteLine("WARN: aid migrate: registry_register failed for ${Repo}: $_")
     }
@@ -1877,7 +2072,58 @@ if ($SUBCMD -eq 'update') {
         }
         $usRc = script:Invoke-AidUpdateSelf
         if ($usRc -ne 0) { script:Exit-Aid $usRc }
-        # Post-update: registry-driven migration is feature-003 (no-op here).
+        # Post-update: registry-driven migration (feature-004).
+        # Iterate Get-RegistryUnion -- NO scan -- with All/Yes/No/Cancel per-repo
+        # consent walk.  Unregistered repos are caught lazily by the per-repo stamp.
+        # No .migrated marker is written (removed; stamp in settings.yml is the record).
+        # dry-run: the install step already printed its command; skip migration silently.
+        if (-not $script:_SelfDryRun) {
+            $usAutoYes = ($env:AID_MIGRATE_YES -eq '1')
+            $usRepos = @(script:Get-RegistryUnion)
+            if ($usRepos.Count -eq 0) {
+                Write-Host 'No registered repos to migrate.'
+            } else {
+                # Determine interactive mode: AID_MIGRATE_YES=1 is the explicit opt-in for
+                # auto-yes.  Non-interactive without opt-in -> no migration (per SPEC).
+                $usAutoYesFinal = $usAutoYes -or ($env:AID_MIGRATE_YES -eq '1')
+                $usIsInteractive = [Environment]::UserInteractive
+                if (-not $usAutoYesFinal -and -not $usIsInteractive) {
+                    Write-Host 'Skipping repo migration (non-interactive; set AID_MIGRATE_YES=1 to opt in).'
+                } else {
+                    $usMigrateAll    = $false
+                    $usMigrateCancel = $false
+                    foreach ($usRepo in $usRepos) {
+                        if ($usMigrateCancel) { break }
+                        if ($usMigrateAll -or $usAutoYesFinal) {
+                            $usAnswer = 'y'
+                        } else {
+                            Write-Host -NoNewline "Migrate repo $usRepo? [All/Yes/No/Cancel] "
+                            try { $usAnswer = Read-Host } catch { $usAnswer = '' }
+                        }
+                        switch -Regex ($usAnswer) {
+                            '^[Aa](ll|LL)?$' {
+                                $usMigrateAll = $true
+                                try { script:Invoke-AidMigrateRepo -Repo $usRepo } catch {
+                                    [Console]::Error.WriteLine("WARN: aid: migration failed for ${usRepo}: $_")
+                                }
+                            }
+                            '^[Yy](es|ES)?$' {
+                                try { script:Invoke-AidMigrateRepo -Repo $usRepo } catch {
+                                    [Console]::Error.WriteLine("WARN: aid: migration failed for ${usRepo}: $_")
+                                }
+                            }
+                            '^[Cc](ancel|ANCEL)?$' {
+                                $usMigrateCancel = $true
+                                Write-Host 'Migration cancelled.'
+                            }
+                            default {
+                                Write-Host "Skipped: $usRepo"
+                            }
+                        }
+                    }
+                }
+            }
+        }
         script:Exit-Aid 0
     }
     # Fall through to shared add/update handler below.
@@ -2115,6 +2361,16 @@ if (-not (Test-Path $_AidTarget -PathType Container)) {
 }
 $_AidTarget = (Resolve-Path -LiteralPath $_AidTarget).Path
 
+# ---- C-table pre-check for 'update [tool]': missing .aid/ -> offer + exit 0 ----
+# Must run BEFORE resolve-tools so we never reach exit-6 when no .aid/ exists.
+# 'add' uses the B-table (checked inside the dispatch case); 'remove' is not in C-table.
+if ($SUBCMD -eq 'update') {
+    if (-not (Test-Path (Join-Path $_AidTarget '.aid') -PathType Container)) {
+        script:Invoke-AidCwdNoAidOffer -Target $_AidTarget
+        # Invoke-AidCwdNoAidOffer always calls Exit-Aid 0.
+    }
+}
+
 # C6': format gate for the update repo path (only when .aid/ exists;
 # an add to a fresh repo with no .aid/ falls through normally).
 if ($SUBCMD -eq 'update' -and (Test-Path (Join-Path $_AidTarget '.aid') -PathType Container)) {
@@ -2297,6 +2553,25 @@ try {
 
     switch ($SUBCMD) {
         { $_ -in @('add', 'update') } {
+            # B-table (for 'add'): writability pre-check BEFORE any .aid/ is created.
+            # Decision #3: never elevate .aid/ creation -- error if folder is not writable.
+            if ($SUBCMD -eq 'add') {
+                $_aidTargetWritable = $false
+                $_wProbe = Join-Path $_AidTarget ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
+                try { [System.IO.File]::WriteAllText($_wProbe, ''); Remove-Item -LiteralPath $_wProbe -Force -ErrorAction SilentlyContinue; $_aidTargetWritable = $true } catch {}
+                if (-not $_aidTargetWritable) {
+                    [Console]::Error.WriteLine("ERROR: aid: add: target directory is not writable: $_AidTarget")
+                    [Console]::Error.WriteLine("ERROR: aid: add: AID will not create a root-owned .aid/ -- fix folder permissions and retry.")
+                    script:Exit-Aid 1
+                }
+            }
+
+            # C-table (for 'update [tool]'): register-on-encounter.
+            # The missing-.aid/ case was already intercepted above (pre-resolve-tools).
+            if ($SUBCMD -eq 'update') {
+                script:Invoke-AidCwdClassify -Target $_AidTarget
+            }
+
             foreach ($t in $_AidTools) {
                 Write-Host ""
                 script:Prepare-AidToolStaging -Tool $t -Version $_AidVersionArg -Bundle $_AidFromBundle
@@ -2318,8 +2593,34 @@ try {
                 script:Exit-Aid 5
             }
             Write-Host "Done. AID $($script:_DispResolvedVersion) installed into: $_AidTarget"
-            # DR-1 registry side-effect: register repo on first tool add/update (idempotent).
-            script:Registry-Register -Repo $_AidTarget
+
+            # B-table (for 'add'): tier-aware registration after successful install.
+            # Decision #3 (unwritable) already handled above with error+abort.
+            if ($SUBCMD -eq 'add') {
+                $_btabInHome = $_AidTarget.StartsWith($HOME + [System.IO.Path]::DirectorySeparatorChar) -or
+                               $_AidTarget -eq $HOME
+                $_btabTier = 'user'
+                if ($script:_AidScope -eq 'global' -and -not $_btabInHome) {
+                    # B-table: global && outside ~ && writable (already proved writable above).
+                    # Decision #4: always ask on a real decision.
+                    $isInteractive = [Environment]::UserInteractive
+                    if ($isInteractive) {
+                        try {
+                            Write-Host -NoNewline 'Add this repo to the shared machine registry? [y/N] '
+                            $_btabAns = Read-Host
+                            if ($_btabAns -in @('y', 'Y', 'yes', 'Yes', 'YES')) { $_btabTier = 'shared' }
+                        } catch { $_btabTier = 'user' }
+                    }
+                    # Non-interactive: user tier silently (safe default).
+                }
+                # All other rows: user tier silently (in-~ or per-user outside-~).
+                script:Registry-Register -Repo $_AidTarget -Tier $_btabTier
+            } else {
+                # 'update [tool]': C-table register-on-encounter already ran above.
+                # The post-install register is idempotent; route via user tier.
+                script:Registry-Register -Repo $_AidTarget -Tier 'user'
+            }
+
             # FF-3 / CLI-2 / task-079: per-repo migration on the 'update' reach only.
             # Runs on the already-canonicalized $_AidTarget (Resolve-Path above).
             # The Registry-Register above already ran, so migration step 4 is an

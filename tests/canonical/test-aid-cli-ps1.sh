@@ -199,15 +199,15 @@ assert_eq "$([[ -d "${PS028D_HOME}" ]] && echo exists || echo gone)" "gone" \
 assert_output_contains "$OUT" "aid CLI removed" "PS028-D03 remove self message"
 
 # ===========================================================================
-# PS028-E: aid.ps1 status — empty dir → exit 7 + message
+# PS028-E: aid.ps1 status — empty dir (no .aid/) → exit 0 + offer message
 # ===========================================================================
 PS028E_HOME=$(newhome)
 setup_aid_home_ps1 "${PS028E_HOME}"
 TE=$(newtarget)
 
 run_aid_ps1 "${PS028E_HOME}" status -Target "${TE}"
-assert_exit_eq "$RC" 7 "PS028-E01 aid.ps1 status empty dir → exit 7"
-assert_output_contains "$OUT" "No AID install found" "PS028-E02 PS1 status empty dir prints 'No AID install found'"
+assert_exit_eq "$RC" 0 "PS028-E01 aid.ps1 status empty dir → exit 0 (offer, not error)"
+assert_output_contains "$OUT" "no AID project here" "PS028-E02 PS1 status empty dir prints offer message"
 assert_output_contains "$OUT" "aid add" "PS028-E03 PS1 status suggests 'aid add'"
 
 # ===========================================================================
@@ -271,10 +271,11 @@ pass "PS028-G08 Bash status: root agent suppressed for owned tools (by design)"
 pass "PS028-G09 PS1 status: root agent suppressed for owned tools (by design)"
 
 # ===========================================================================
-# PS028-G2: bare `aid.ps1` (no args) → dashboard landing screen (parity with Bash)
+# PS028-G2: bare `aid.ps1` (no args) → behavior depends on .aid/ presence
 # ===========================================================================
 
-# G2-01..G2-06: empty directory → exit 0, dashboard blocks present.
+# G2-01..G2-06: empty directory (no .aid/) → exit 0, offer message (no dashboard).
+# Per decision #5: bare aid in no-.aid/ dir prints offer, not landing screen.
 PS028G2_HOME=$(newhome)
 setup_aid_home_ps1 "${PS028G2_HOME}"
 TG2=$(newtarget)
@@ -283,12 +284,14 @@ TG2=$(newtarget)
 OUT=$(cd "${TG2}" && AID_HOME="${PS028G2_HOME}" AID_LIB_PATH="${PS028G2_HOME}/lib/AidInstallCore.psm1" \
      "$PWSH" -NoProfile -File "${PS028G2_HOME}/bin/aid.ps1" 2>&1 | \
      sed 's/\x1b\[[0-9;]*m//g'); RC=$?
-assert_exit_eq "$RC" 0 "PS028-G2-01 bare aid.ps1 in empty dir → exit 0 (dashboard)"
-assert_output_contains "$OUT" "AID v${VERSION}" "PS028-G2-02 PS1 dashboard header 'AID v<ver>'"
-assert_output_contains "$OUT" "Agentic Iterative Development" "PS028-G2-03 PS1 dashboard header description tag"
-assert_output_contains "$OUT" "Install, update, and manage AID" "PS028-G2-04 PS1 dashboard description line"
-assert_output_contains "$OUT" "yet" "PS028-G2-05 PS1 dashboard: friendly no-tools message"
-assert_output_contains "$OUT" "aid add" "PS028-G2-06 PS1 dashboard: usage block contains 'aid add'"
+assert_exit_eq "$RC" 0 "PS028-G2-01 bare aid.ps1 in empty dir → exit 0 (offer)"
+assert_output_contains "$OUT" "no AID project here" "PS028-G2-02 PS1 empty dir: offer message printed"
+assert_output_contains "$OUT" "aid add" "PS028-G2-03 PS1 empty dir: 'aid add' suggested"
+# G2-04/05 were dashboard content checks; now assert the dashboard header is NOT shown.
+assert_output_not_contains "$OUT" "Agentic Iterative Development" "PS028-G2-04 PS1 empty dir: no dashboard header"
+assert_output_not_contains "$OUT" "Install, update, and manage AID" "PS028-G2-05 PS1 empty dir: no dashboard description"
+# G2-06 slot: aid add still referenced via the offer message.
+assert_output_contains "$OUT" "aid add" "PS028-G2-06 PS1 empty dir offer: 'aid add' present"
 
 # G2-07..G2-12: project with tools → exit 0, all 4 blocks present.
 PS028G3_HOME=$(newhome)
@@ -405,13 +408,14 @@ OUT=$(AID_HOME="${PS028J_HOME}" AID_LIB_PATH="${PS028J_HOME}/lib/AidInstallCore.
 assert_exit_eq "$RC" 0 "PS028-J02 PS1 update codex (same version) → exit 0"
 assert_output_contains "$OUT" "up to date" "PS028-J03 PS1 update same version shows 'up to date'"
 
-# Empty dir → exit 6.
+# Dir with no .aid/ → exit 0 + offer (decision #5: no hard refuse).
 TJ_EMPTY=$(newtarget)
 OUT=$(AID_HOME="${PS028J_HOME}" AID_LIB_PATH="${PS028J_HOME}/lib/AidInstallCore.psm1" \
      "$PWSH" -NoProfile -File "${PS028J_HOME}/bin/aid.ps1" \
      update \
      -Target "${TJ_EMPTY}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
-assert_exit_eq "$RC" 6 "PS028-J04 PS1 update empty manifest → exit 6"
+assert_exit_eq "$RC" 0 "PS028-J04 PS1 update dir with no .aid/ → exit 0 (offer, not exit 6)"
+assert_output_contains "$OUT" "no AID project here" "PS028-J04b PS1 update no-.aid/ dir: offer message"
 
 # ===========================================================================
 # PS028-K: aid.ps1 remove (no arg, all tools) — with -Force to skip prompt
@@ -622,15 +626,15 @@ PS028U_HOME=$(newhome)
 setup_aid_home_both "${PS028U_HOME}"
 TU_EMPTY=$(newtarget)
 
-# Empty dir: both should exit 7.
+# Empty dir (no .aid/): both should exit 0 (offer, decision #5).
 run_aid_sh "${PS028U_HOME}" status --target "${TU_EMPTY}"
 RC_SH_EMPTY=$RC_SH
 
 run_aid_ps1 "${PS028U_HOME}" status -Target "${TU_EMPTY}"
 RC_PS1_EMPTY=$RC
 
-assert_eq "$RC_SH_EMPTY" "7" "PS028-U01 Bash status empty → exit 7"
-assert_eq "$RC_PS1_EMPTY" "7" "PS028-U02 PS1 status empty → exit 7"
+assert_eq "$RC_SH_EMPTY" "0" "PS028-U01 Bash status empty → exit 0 (offer, not error)"
+assert_eq "$RC_PS1_EMPTY" "0" "PS028-U02 PS1 status empty → exit 0 (offer, not error)"
 
 # Both exit codes must match.
 assert_eq "$RC_SH_EMPTY" "$RC_PS1_EMPTY" "PS028-U03 Bash↔PS1 exit code parity (empty dir)"
@@ -761,6 +765,7 @@ make_release_json_ps1() {
 
 # ---------------------------------------------------------------------------
 # PS029-A: NEWER version available → notice shown on bare 'aid.ps1' (dashboard)
+# Requires a .aid/ fixture so bare aid operates as repo-command, not the no-.aid/ offer path.
 # ---------------------------------------------------------------------------
 PS029A_HOME=$(newhome)
 setup_aid_home_ps1 "${PS029A_HOME}"
@@ -772,6 +777,9 @@ _ps_json_a="$(make_release_json_ps1 "${PS029_JSON_DIR_A}" "9.9.9")"
 _ps_check_url_a="file://${_ps_json_a}"
 
 TA_PS=$(newtarget)
+# Add minimal .aid/ fixture so bare aid enters dashboard (not the no-.aid/ offer path).
+mkdir -p "${TA_PS}/.aid"
+printf 'format_version: 1\n' > "${TA_PS}/.aid/settings.yml"
 OUT=$(cd "${TA_PS}" && AID_HOME="${PS029A_HOME}" AID_NO_UPDATE_CHECK=0 \
      AID_UPDATE_CHECK_URL="${_ps_check_url_a}" \
      AID_LIB_PATH="${PS029A_HOME}/lib/AidInstallCore.psm1" \

@@ -317,15 +317,16 @@ else
                     else
                         pass "PW06-04 installed aid found: ${PW06_AID_BIN}"
 
-                        # Smoke: aid status in empty dir -> exit 7.
+                        # Smoke: aid status in dir with no .aid/ -> "no AID project here" + exit 0
+                        # (decision #5 new behavior; NOT exit 7 / "No AID install found").
                         PW06_EMPTY="$(mktemp -d "${TMP}/pw06-empty.XXXXXX")"
                         PW06_STATUS_OUT=$(AID_HOME="${PW06_AID_HOME}" AID_NO_UPDATE_CHECK=1 \
                             "${PW06_AID_BIN}" status --target "${PW06_EMPTY}" 2>&1)
                         PW06_STATUS_RC=$?
-                        assert_exit_eq "$PW06_STATUS_RC" 7 \
-                            "PW06-05 installed aid status empty dir -> exit 7"
-                        assert_output_contains "$PW06_STATUS_OUT" "No AID install found" \
-                            "PW06-06 installed aid status message"
+                        assert_exit_eq "$PW06_STATUS_RC" 0 \
+                            "PW06-05 installed aid status empty dir -> exit 0 (decision #5)"
+                        assert_output_contains "$PW06_STATUS_OUT" "no AID project here" \
+                            "PW06-06 installed aid status empty dir message"
 
                         # Build codex fixture tarball.
                         mkdir -p "${TMP}/fixtures"

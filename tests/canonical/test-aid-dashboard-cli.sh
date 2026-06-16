@@ -582,10 +582,12 @@ run_dc "$H10" version
 assert_exit_eq "$RC_DC" 0 "T-10: aid version exit 0"
 assert_output_contains "$OUT_DC" "${VERSION}" "T-10: aid version prints installed version"
 
-# aid status on an empty dir must exit 7 (no AID install) — C4: existing behavior unchanged.
+# aid status on a dir with no .aid/ -> "no AID project here" + exit 0 (decision #5 new behavior).
 EMPTY_DIR10="$(mktemp -d "${TMP}/empty10.XXXXXX")"
 run_dc "$H10" status --target "$EMPTY_DIR10"
-assert_exit_eq "$RC_DC" 7 "T-10: aid status empty dir exit 7 (C4 not broken)"
+assert_exit_eq "$RC_DC" 0 "T-10: aid status empty dir exit 0 (decision #5: no hard refuse)"
+assert_output_contains "$OUT_DC" "no AID project here" \
+    "T-10: aid status empty dir prints offer message"
 
 # bare 'aid' (no args) must exit 0 and print the AID landing screen,
 # NOT trigger dashboard-start or dashboard-stop code paths.
