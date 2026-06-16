@@ -39,8 +39,6 @@ needs migration.
    scope, both tiers writing to `$AID_STATE_HOME/registry.yml`:
    - **Per-user install** (`AID_STATE_HOME` == `~/.aid`): the tiers collapse to
      a single file (`~/.aid/registry.yml`); no elevation is needed or attempted.
-     If `AID_STATE_HOME` is not writable, the CLI degrades to `~/.aid` as a
-     non-writable fallback with a warning.
    - **Global install** (`AID_STATE_HOME` == e.g. `/var/lib/aid`): the shared
      tier also targets `$AID_STATE_HOME/registry.yml`, but the write is guarded
      by an elevation probe. If elevation is declined or unavailable, the shared

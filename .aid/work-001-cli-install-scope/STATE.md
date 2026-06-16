@@ -1,6 +1,6 @@
 # Work State — work-001-cli-install-scope
 
-> **Status:** delivery-002 COMPLETE — 4/4 Done, gate A+, PR #81 CI GREEN (all 7), ready to merge. delivery-003 (feature-005 bootstrap) remains.
+> **Status:** ALL DELIVERIES COMPLETE — d001 merged (PR #80); d002 PR #81 (CI green); d003 4-task... gate A+ (3 tasks), PR open. work-001 done pending merges.
 > **Phase:** Execute
 > **Minimum Grade:** A (resolved via read-setting)
 > **Started:** 2026-06-15
@@ -14,7 +14,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 - **Phase:** Execute
 - **Active Skill:** aid-execute
 - **Updated:** 2026-06-16T02:00:00Z
-- **Pause Reason:** delivery-002 complete (4/4 Done, gate A+, suite 51/51); PR to master open for review/merge. Next: delivery-003 (feature-005 bootstrap runbook + final reconciliation, tasks 014-016) — resume via /aid-execute after delivery-002 merges.
+- **Pause Reason:** ALL 3 deliveries executed + gated A+. d001 MERGED (PR #80); d002 PR #81 (CI green); d003 PR open (stacked on d002). work-001 implementation COMPLETE — awaiting user merge of #81 then d003 PR. Optional: /aid-deploy for release + KB update.
 - **Block Reason:** —
 - **Block Artifact:** —
 
@@ -70,7 +70,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 |----------|--------|-------|-------|
 | delivery-001 | MERGED (PR #80) | 9/9 Done | Root-cause fix shipped to master 2026-06-16 (merge 5fa59fea). Gate A+; CI green (canary CI-portability fix). |
 | delivery-002 | Done (gate A+) | 4/4 Done | feature-004: two-tier registry union + cwd A/B/C dispatch + update-self registry-migration. All 4 tasks Done; delivery gate A+; suite 51/51 (incl. CI layout); PR to master open. |
-| delivery-003 | Detailed | 3 (task-014..016) | Rollout: feature-005 (v1.0/v1.1 bootstrap stamp+register on visit, no scan; + canonical test-suite migration to CODE/STATE split). §10 P3. Depends on d001+d002. Standalone MVP. |
+| delivery-003 | Done (gate A+) | 3/3 Done | Rollout: feature-005 — bootstrap runbook (014) + AC9 bootstrap assertions (015) + final reconciliation sweep (016). Docs+tests only (behavior shipped in d001/d002). Gate A+; suite 51/51 (std+CI layout). PR open (stacked on d002). |
 
 ## Tasks Status
 
@@ -161,6 +161,14 @@ This is the single state file for **this work** — the full dev lifecycle from 
 - **Issue List:** none (0 deferred [HIGH]; all per-task findings fixed inline — task-010 E→A+, task-011 C+→A+, task-012 D+→A+, task-013 A)
 - **Timestamp:** 2026-06-16T06:00:00Z
 - **Notes:** Holistic cross-task pass — AC2 (no scan) + AC5 (update-self migrates exactly registered: A+B stamped, C not) verified end-to-end; FR4 two-tier union (dedup/prune/collapse/AID_HOME-honoring), FR5 cwd A/B/C dispatch (decision #5 offer exit 0), FR6 registry migration; full bash↔ps1 parity; suite 51/51 (standard + CI layout). Record-note: SPEC §Affected-components describes user-primary tiers but impl is $AID_STATE_HOME-primary (the AID_HOME-honoring task-010 fix) — AC-conformant SPEC-wording divergence, reconcile in housekeep.
+
+### delivery-003
+
+- **Reviewer Tier:** Medium
+- **Grade:** A+
+- **Issue List:** none (1 MINOR runbook wording fixed → A+; per-task 014 A+/015 A/016 A+)
+- **Timestamp:** 2026-06-16T08:00:00Z
+- **Notes:** Holistic pass — AC9/FR9 bootstrap (stamp+register on encounter, no scan) DOCUMENTED (runbook matches shipped bin/aid) + TESTED (TRG-F no-scan canary real); closeout conflation audit C1/C2/C3 discharged; docs+tests only (no production code — behavior shipped d001/d002); suite 51/51 standard + CI layout.
 
 ## Quick Check Findings
 
