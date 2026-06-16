@@ -97,6 +97,14 @@ if ($script:_AidCodeHomeWritable) {
 }
 
 # ---------------------------------------------------------------------------
+# C1': Per-repo format stamp constant.
+# The current .aid/ layout version. Bumped ONLY on a breaking layout change,
+# never on every CLI release. Defined exactly once; all comparisons read this.
+# Integer must equal the bash AID_SUPPORTED_FORMAT in bin/aid.
+# ---------------------------------------------------------------------------
+Set-Variable -Name AidSupportedFormat -Value 1 -Option Constant -Scope Script
+
+# ---------------------------------------------------------------------------
 # Import the shared install core from AID_CODE_HOME\lib\.
 # ---------------------------------------------------------------------------
 $script:_CoreModule = Join-Path $script:_AidCodeHome 'lib' | Join-Path -ChildPath 'AidInstallCore.psm1'
@@ -861,6 +869,10 @@ function script:Invoke-DcStart {
         script:Exit-Aid 7
     }
 
+    # C6': format gate before operating (refuse on newer-format repo).
+    $gateRc = script:Invoke-AidFormatGate -Repo $Target
+    if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
+
     $pidFile = Join-Path $Target (Join-Path '.aid' (Join-Path '.temp' 'dashboard.pid'))
     $logFile = Join-Path $Target (Join-Path '.aid' (Join-Path '.temp' 'dashboard.log'))
 
@@ -1141,6 +1153,70 @@ function script:Invoke-DcStop {
 }
 
 # ---------------------------------------------------------------------------
+# C4': Get-AidRepoFormat <Repo>
+# Read the format_version stamp from <Repo>/.aid/settings.yml.
+# Greps the FIRST ^format_version: line, replicates the era-a closure strip
+# logic inline (prefix strip, trim, inline # comment strip, quote-unwrap),
+# validates as ^\d+$; returns the integer.
+# Collapses absent/empty/non-integer/malformed/negative to 0 (legacy default).
+# Never returns a value > sup from a garbled stamp (fail-safe).
+# Defined here (before dispatch) so it is available to status/bare-aid/update.
+# ---------------------------------------------------------------------------
+function script:Get-AidRepoFormat {
+    param([string]$Repo)
+    $settingsFile = Join-Path $Repo (Join-Path '.aid' 'settings.yml')
+    if (-not (Test-Path $settingsFile -PathType Leaf)) { return 0 }
+    # First-match read (parity with duplicate-line policy).
+    $rawLine = $null
+    foreach ($ln in (Get-Content -LiteralPath $settingsFile -Encoding utf8 -ErrorAction SilentlyContinue)) {
+        if ($ln -match '^format_version:') { $rawLine = $ln; break }
+    }
+    if (-not $rawLine) { return 0 }
+    # Replicate the era-a closure strip logic inline (column-0 key variant).
+    # Step 1: strip the "format_version:" prefix.
+    $val = $rawLine -replace '^format_version:', ''
+    # Step 2: strip one optional leading space (the colon-space separator).
+    if ($val.StartsWith(' ')) { $val = $val.Substring(1) }
+    # Step 3: strip inline # comment (first " #" to end of line).
+    $commentIdx = $val.IndexOf(' #')
+    if ($commentIdx -ge 0) { $val = $val.Substring(0, $commentIdx) }
+    # Step 4: quote-unwrap (double then single).
+    $val = $val.Trim('"').Trim("'")
+    # Step 5: full trim (remaining whitespace).
+    $val = $val.Trim()
+    # Step 6: validate non-negative integer; collapse anything else to 0.
+    if ($val -match '^\d+$') { return [int]$val }
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# C5': Invoke-AidFormatGate <Repo>
+# 3-way classify <Repo>'s format stamp vs $AidSupportedFormat:
+#   repo > sup  -> refuse (stderr, return 1, no .aid/ write)
+#   repo < sup  -> warn + offer aid update (stdout, return 0, non-blocking)
+#   repo == sup -> silent (return 0)
+# AID_NO_MIGRATE=1 suppresses the warn+offer notice only; never the refuse.
+# Defined here (before dispatch) so it is available to status/bare-aid/update.
+# ---------------------------------------------------------------------------
+function script:Invoke-AidFormatGate {
+    param([string]$Repo)
+    $repoFmt = script:Get-AidRepoFormat -Repo $Repo
+    $sup = $script:AidSupportedFormat
+    if ($repoFmt -gt $sup) {
+        [Console]::Error.WriteLine("ERROR: aid: repo format $repoFmt is newer than this CLI supports ($sup). Upgrade the aid CLI to operate on this repo.")
+        return 1
+    }
+    if ($repoFmt -lt $sup) {
+        if ($env:AID_NO_MIGRATE -ne '1') {
+            Write-Host "WARN: aid: this repo uses an older format (v${repoFmt}; current: v${sup}). Run: aid update"
+        }
+        return 0
+    }
+    # repo == sup: silent.
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # Wrap everything in try/catch for terminal-survival in piped/iex mode.
 # ---------------------------------------------------------------------------
 try {
@@ -1165,6 +1241,13 @@ if ($script:_RawArgs.Count -eq 0) {
     }
     Write-Host "AID v$cliVersion - Agentic Iterative Development"
     Write-Host "Install, update, and manage AID across your repositories."
+
+    # C6': format gate for cwd repo (only when .aid/ exists; absent .aid/ falls
+    # through to the existing "set it up?" path via Get-AidStatusBody below).
+    if (Test-Path (Join-Path '.' '.aid') -PathType Container) {
+        $gateRc = script:Invoke-AidFormatGate -Repo '.'
+        if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
+    }
 
     # Block 3: Installed tools for cwd.
     Write-Host ""
@@ -1240,6 +1323,12 @@ if ($SUBCMD -eq 'status') {
     if (-not $statusTarget -and $env:AID_TARGET) { $statusTarget = $env:AID_TARGET }
     if (-not $statusTarget) { $statusTarget = '.' }
     if ($script:_AidVerbose) { $env:AID_VERBOSE = '1' }
+
+    # C6': format gate for status target (only when .aid/ exists).
+    if (Test-Path (Join-Path $statusTarget '.aid') -PathType Container) {
+        $gateRc = script:Invoke-AidFormatGate -Repo $statusTarget
+        if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
+    }
 
     $rc = Get-AidStatus -Target $statusTarget
     # Update check notice appended after status output (non-blocking).
@@ -1590,6 +1679,22 @@ function script:Invoke-AidRepairSettingsEraA {
         $changed = $true
     }
 
+    # --- C3': format_version ensure-key step (top-of-file column-0 prepend) ---
+    # If a ^format_version: line is present, replace it in-place (IDIOM-A).
+    # If absent, prepend format_version: <sup> at index 0 above project:.
+    $fvIdx = -1
+    for ($fi = 0; $fi -lt $lines.Count; $fi++) {
+        if ($lines[$fi] -match '^format_version:') { $fvIdx = $fi; break }
+    }
+    if ($fvIdx -ge 0) {
+        # Key present: replace with canonical value (IDIOM-A).
+        & $replaceLine $fvIdx "format_version: $($script:AidSupportedFormat)"
+    } else {
+        # Key absent: prepend at index 0 (new top-of-file col-0 insert above project:).
+        $lines.Insert(0, "format_version: $($script:AidSupportedFormat)")
+        $changed = $true
+    }
+
     # --- project section ---
     $projIdx = & $findSection 'project'
     if ($projIdx -eq -1) {
@@ -1700,6 +1805,8 @@ function script:Invoke-AidSynthesizeSettingsEraB {
     $toolIds = @(Read-ManifestTools -ManifestPath $ManifestPath)
 
     $sb = [System.Text.StringBuilder]::new()
+    # C2': format_version stamp is the FIRST line (before project:).
+    [void]$sb.Append("format_version: $($script:AidSupportedFormat)`n")
     [void]$sb.Append("project:`n")
     [void]$sb.Append("  name: ${RepoName}`n")
     [void]$sb.Append("  description: <project-description>`n")
@@ -2007,6 +2114,13 @@ if (-not (Test-Path $_AidTarget -PathType Container)) {
     script:Fail-Aid "target directory does not exist: $_AidTarget" 2
 }
 $_AidTarget = (Resolve-Path -LiteralPath $_AidTarget).Path
+
+# C6': format gate for the update repo path (only when .aid/ exists;
+# an add to a fresh repo with no .aid/ falls through normally).
+if ($SUBCMD -eq 'update' -and (Test-Path (Join-Path $_AidTarget '.aid') -PathType Container)) {
+    $gateRc = script:Invoke-AidFormatGate -Repo $_AidTarget
+    if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
+}
 
 # ---- Self-update-if-needed preamble (FF-3 / CLI-2 / task-079) --------------
 # For 'update [<tool>]' only (not 'add', not 'update self').  Ensures the CLI
