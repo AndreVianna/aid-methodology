@@ -729,6 +729,125 @@ else
     fail "REG-V07a AID_HOME redirect: registry not found in AID_STATE_HOME (${_V07_OVERRIDE_REG})"
 fi
 
+# REG-V08: Tier coverage -- task-015 assertions (non-global collapse + pretend-global two-tier).
+#
+# V08a: Non-global collapse -- confirm the default non-global user install collapse.
+#   When AID_STATE_HOME equals HOME/.aid (the production default for a per-user
+#   install), the union read is a single-file read and the registry at
+#   AID_STATE_HOME/registry.yml is the only tier.
+#
+# V08b: Pretend-global (simulated shared tier, no /var/lib/aid needed) -- assert
+#   that when AID_STATE_HOME is set to a writable throwaway DIFFERENT from HOME/.aid
+#   (simulating a global-install shared-state dir without requiring root), a
+#   registry_register call writes to AID_STATE_HOME/registry.yml (shared tier),
+#   and _registry_read_union returns repos from BOTH the user-tier (HOME/.aid) AND
+#   the shared tier (AID_STATE_HOME), confirming the two-tier union path.
+#
+# ESCAPE CANARY (scoped to V08): HOME is pinned to a fresh throwaway for V08 so
+#   no real ~/.aid is touched; /var/lib/aid is never created (checked at suite end).
+echo ""
+echo "=== REG-V08: tier coverage -- task-015 (non-global collapse + pretend-global union) ==="
+
+# --- V08a: Non-global collapse ---
+echo "--- REG-V08a: non-global collapse ---"
+_V08_HOME=$(mktemp -d "${TMP}/v08_home.XXXXXX")
+_V08_AID="${_V08_HOME}/.aid"
+mkdir -p "${_V08_AID}"
+_V08_REPO=$(mktemp -d "${TMP}/v08_repo.XXXXXX")
+mkdir -p "${_V08_REPO}/.aid"
+
+# Write an entry into HOME/.aid/registry.yml via the harness.
+# With AID_STATE_HOME == HOME/.aid, this IS the single collapsed file.
+_V08a_OUT=$(bash -c '
+    BIN_AID="'"$BIN_AID"'"
+    HOME="'"${_V08_HOME}"'"
+    AID_STATE_HOME="'"${_V08_AID}"'"
+    export HOME AID_STATE_HOME
+    START=$(grep -n "# Registry helpers (DR-1" "$BIN_AID" | head -1 | cut -d: -f1)
+    END=$(grep -n "# Parse subcommand and dispatch" "$BIN_AID" | head -1 | cut -d: -f1)
+    _PRIV_START=$(grep -n "^_aid_priv_run()" "$BIN_AID" | head -1 | cut -d: -f1)
+    _PRIV_END=$(awk "NR>=${_PRIV_START:-0} && /^\}$/{print NR; exit}" "$BIN_AID")
+    [[ -n "$_PRIV_START" && -n "$_PRIV_END" ]] && \
+        eval "$(sed -n "${_PRIV_START},${_PRIV_END}p" "$BIN_AID")" 2>/dev/null || true
+    _AID_VERBOSE=0
+    eval "$(sed -n "${START},${END}p" "$BIN_AID")"
+    registry_register "'"${_V08_REPO}"'"
+' 2>&1)
+_V08a_RC=$?
+assert_exit_eq "$_V08a_RC" 0 "REG-V08a-01 non-global collapse: register returns 0"
+assert_file_exists "${_V08_AID}/registry.yml" \
+    "REG-V08a-02 non-global collapse: registry.yml in HOME/.aid (collapsed single-tier)"
+assert_file_contains "${_V08_AID}/registry.yml" "${_V08_REPO}" \
+    "REG-V08a-03 non-global collapse: repo path present in collapsed registry"
+# Union read must return the same entry (single-tier collapse is not double-read).
+_V08a_UNION_OUT=$(HOME="${_V08_HOME}" AID_STATE_HOME="${_V08_AID}" \
+    bash "${UNION_HARNESS}" "$BIN_AID" "${_V08_HOME}" "${_V08_AID}" "read_union" 2>&1)
+assert_output_contains "$_V08a_UNION_OUT" "${_V08_REPO}" \
+    "REG-V08a-04 non-global collapse: union read returns the collapsed-tier entry"
+_V08a_COUNT=$(printf '%s\n' "$_V08a_UNION_OUT" | grep -cxF "${_V08_REPO}" || echo 0)
+assert_eq "$_V08a_COUNT" "1" \
+    "REG-V08a-05 non-global collapse: repo appears exactly once in union (no double-read)"
+
+# --- V08b: Pretend-global (two-tier AID_STATE_HOME != HOME/.aid) ---
+echo "--- REG-V08b: pretend-global two-tier (AID_STATE_HOME != HOME/.aid) ---"
+_V08b_HOME=$(mktemp -d "${TMP}/v08b_home.XXXXXX")
+_V08b_AID_USER="${_V08b_HOME}/.aid"
+mkdir -p "${_V08b_AID_USER}"
+_V08b_AID_SHARED=$(mktemp -d "${TMP}/v08b_shared.XXXXXX")  # simulates /var/lib/aid
+_V08b_REPO_USER=$(mktemp -d "${TMP}/v08b_repo_user.XXXXXX")
+_V08b_REPO_SHARED=$(mktemp -d "${TMP}/v08b_repo_shared.XXXXXX")
+mkdir -p "${_V08b_REPO_USER}/.aid" "${_V08b_REPO_SHARED}/.aid"
+
+# Pre-populate user-tier registry at HOME/.aid.
+cat > "${_V08b_AID_USER}/registry.yml" << V08REGEOF
+# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).
+schema: 1
+repos:
+  - ${_V08b_REPO_USER}
+V08REGEOF
+
+# Register the shared-tier repo via harness with AID_STATE_HOME = shared dir.
+_V08b_REG_OUT=$(bash -c '
+    BIN_AID="'"$BIN_AID"'"
+    HOME="'"${_V08b_HOME}"'"
+    AID_STATE_HOME="'"${_V08b_AID_SHARED}"'"
+    export HOME AID_STATE_HOME
+    START=$(grep -n "# Registry helpers (DR-1" "$BIN_AID" | head -1 | cut -d: -f1)
+    END=$(grep -n "# Parse subcommand and dispatch" "$BIN_AID" | head -1 | cut -d: -f1)
+    _PRIV_START=$(grep -n "^_aid_priv_run()" "$BIN_AID" | head -1 | cut -d: -f1)
+    _PRIV_END=$(awk "NR>=${_PRIV_START:-0} && /^\}$/{print NR; exit}" "$BIN_AID")
+    [[ -n "$_PRIV_START" && -n "$_PRIV_END" ]] && \
+        eval "$(sed -n "${_PRIV_START},${_PRIV_END}p" "$BIN_AID")" 2>/dev/null || true
+    _AID_VERBOSE=0
+    eval "$(sed -n "${START},${END}p" "$BIN_AID")"
+    registry_register "'"${_V08b_REPO_SHARED}"'"
+' 2>&1)
+_V08b_REG_RC=$?
+assert_exit_eq "$_V08b_REG_RC" 0 \
+    "REG-V08b-01 pretend-global: register to shared tier returns 0"
+assert_file_exists "${_V08b_AID_SHARED}/registry.yml" \
+    "REG-V08b-02 pretend-global: registry.yml created in AID_STATE_HOME (shared tier)"
+assert_file_contains "${_V08b_AID_SHARED}/registry.yml" "${_V08b_REPO_SHARED}" \
+    "REG-V08b-03 pretend-global: shared-tier repo path in AID_STATE_HOME/registry.yml"
+
+# Union read: user-tier (HOME/.aid) + shared-tier (AID_STATE_HOME) -> both repos visible.
+_V08b_UNION_OUT=$(HOME="${_V08b_HOME}" AID_STATE_HOME="${_V08b_AID_SHARED}" \
+    bash "${UNION_HARNESS}" "$BIN_AID" "${_V08b_HOME}" "${_V08b_AID_SHARED}" "read_union" 2>&1)
+assert_output_contains "$_V08b_UNION_OUT" "${_V08b_REPO_USER}" \
+    "REG-V08b-04 pretend-global union: user-tier repo visible"
+assert_output_contains "$_V08b_UNION_OUT" "${_V08b_REPO_SHARED}" \
+    "REG-V08b-05 pretend-global union: shared-tier repo visible"
+# Neither entry should appear more than once (dedup).
+_V08b_COUNT_U=$(printf '%s\n' "$_V08b_UNION_OUT" | grep -cxF "${_V08b_REPO_USER}" || echo 0)
+_V08b_COUNT_S=$(printf '%s\n' "$_V08b_UNION_OUT" | grep -cxF "${_V08b_REPO_SHARED}" || echo 0)
+assert_eq "$_V08b_COUNT_U" "1" "REG-V08b-06 pretend-global union: user-tier entry appears exactly once"
+assert_eq "$_V08b_COUNT_S" "1" "REG-V08b-07 pretend-global union: shared-tier entry appears exactly once"
+
+# HOME/.aid must NOT have been written to by the shared-tier registration.
+_V08b_USER_REG_COUNT=$(grep -c '  - ' "${_V08b_AID_USER}/registry.yml" 2>/dev/null || echo 0)
+assert_eq "$_V08b_USER_REG_COUNT" "1" \
+    "REG-V08b-08 pretend-global: shared-tier register did not add entry to user-tier registry"
+
 # ---------------------------------------------------------------------------
 # ESCAPE CANARY FINAL CHECK: /var/lib/aid must not have been created.
 # ---------------------------------------------------------------------------
