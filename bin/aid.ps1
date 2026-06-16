@@ -2,9 +2,9 @@
 # aid.ps1 - AID CLI dispatcher (PowerShell side).
 #
 # Purpose:
-#   Persistent global command installed at $AID_HOME\bin\aid.ps1.  Parses
+#   Persistent global command installed at $AID_CODE_HOME\bin\aid.ps1.  Parses
 #   subcommands and dispatches to the shared install-core engine located at
-#   $AID_HOME\lib\AidInstallCore.psm1.  Operates on the current working
+#   $AID_CODE_HOME\lib\AidInstallCore.psm1.  Operates on the current working
 #   directory (-Target / AID_TARGET overrides).
 #
 # Usage:
@@ -52,25 +52,62 @@ function script:Exit-Aid {
 }
 
 # ---------------------------------------------------------------------------
-# Locate $AID_HOME.  The installed dispatcher lives at $AID_HOME\bin\aid.ps1.
+# AID_CODE_HOME: self-locate the read-only code payload (parent of bin/).
+# NEVER overridden by an env var. Error-out if unresolvable (Q1 fail-safe).
 # ---------------------------------------------------------------------------
 $script:_AidSelfPath = $MyInvocation.MyCommand.Path
-if (-not [string]::IsNullOrEmpty($script:_AidSelfPath)) {
-    $script:_AidHome = $env:AID_HOME
-    if (-not $script:_AidHome) {
-        # bin/aid.ps1 -> parent of bin/ = AID_HOME
-        $script:_AidHome = Split-Path -Parent (Split-Path -Parent $script:_AidSelfPath)
-    }
+if (-not [string]::IsNullOrEmpty($script:_AidSelfPath) -and (Test-Path $script:_AidSelfPath -PathType Leaf)) {
+    # bin/aid.ps1 -> parent of bin/ = AID_CODE_HOME
+    $script:_AidCodeHome = Split-Path -Parent (Split-Path -Parent $script:_AidSelfPath)
 } else {
-    $script:_AidHome = if ($env:AID_HOME) { $env:AID_HOME } else {
-        if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'aid' } else { Join-Path $HOME '.aid' }
+    [Console]::Error.WriteLine("ERROR: aid: cannot locate the AID code payload (AID_CODE_HOME unresolved). Re-run the AID bootstrap to repair.")
+    script:Exit-Aid 1
+}
+
+# ---------------------------------------------------------------------------
+# Scope derivation: global iff AID_CODE_HOME is not writable by the current
+# user. Mirrors bash: [[ ! -w "$AID_CODE_HOME" && "$(id -u)" -ne 0 ]].
+# No install-time marker -- writability of the code payload is the sole test.
+# AID_STATE_HOME: mutable state home, env-overridable via AID_HOME.
+# ---------------------------------------------------------------------------
+$script:_AidCodeHomeWritable = $false
+try {
+    $_aidWriteTestFile = Join-Path $script:_AidCodeHome ('.aid-write-test.' + [System.IO.Path]::GetRandomFileName())
+    [System.IO.File]::WriteAllText($_aidWriteTestFile, '')
+    Remove-Item -LiteralPath $_aidWriteTestFile -Force -ErrorAction SilentlyContinue
+    $script:_AidCodeHomeWritable = $true
+} catch {
+    $script:_AidCodeHomeWritable = $false
+}
+
+if ($script:_AidCodeHomeWritable) {
+    $script:_AidScope     = 'user'
+    $script:_AidStateHome = if ($env:AID_HOME) { $env:AID_HOME } else { Join-Path $HOME '.aid' }
+} else {
+    $script:_AidScope     = 'global'
+    $script:_AidStateHome = if ($env:AID_HOME) { $env:AID_HOME } else {
+        if ($env:AID_SHARED_STATE_HOME) {
+            $env:AID_SHARED_STATE_HOME
+        } elseif ($env:ProgramData) {
+            Join-Path $env:ProgramData 'aid'
+        } else {
+            Join-Path $HOME '.aid'
+        }
     }
 }
 
 # ---------------------------------------------------------------------------
-# Import the shared install core from $AID_HOME\lib\.
+# C1': Per-repo format stamp constant.
+# The current .aid/ layout version. Bumped ONLY on a breaking layout change,
+# never on every CLI release. Defined exactly once; all comparisons read this.
+# Integer must equal the bash AID_SUPPORTED_FORMAT in bin/aid.
 # ---------------------------------------------------------------------------
-$script:_CoreModule = Join-Path $script:_AidHome 'lib' | Join-Path -ChildPath 'AidInstallCore.psm1'
+Set-Variable -Name AidSupportedFormat -Value 1 -Option Constant -Scope Script
+
+# ---------------------------------------------------------------------------
+# Import the shared install core from AID_CODE_HOME\lib\.
+# ---------------------------------------------------------------------------
+$script:_CoreModule = Join-Path $script:_AidCodeHome 'lib' | Join-Path -ChildPath 'AidInstallCore.psm1'
 if (-not (Test-Path $script:_CoreModule -PathType Leaf)) {
     [Console]::Error.WriteLine("ERROR: aid: install core not found at $($script:_CoreModule). Re-run the AID bootstrap to repair.")
     script:Exit-Aid 1
@@ -120,18 +157,17 @@ function script:Show-AidUsage {
             Write-Host '  Remove tool(s) from the current project (manifest-driven).'
             Write-Host '  No args: remove ALL AID from the project (asks for confirmation).'
             Write-Host '  self: COMPLETELY remove the aid CLI, channel-aware (asks for confirmation):'
-            Write-Host '        npm -> npm uninstall -g | pypi -> pipx uninstall | curl -> rm $AID_HOME + unwire PATH.'
+            Write-Host '        npm -> npm uninstall -g | pypi -> pipx uninstall | curl -> rm $AID_CODE_HOME + unwire PATH.'
             Write-Host '        On Windows, elevation is the caller''s responsibility (no sudo).'
             Write-Host '  -DryRun: print the exact command(s) it would run, then exit (no changes).'
         }
         'update' {
             Write-Host 'aid update [<tool>...] [-Version <v>] [-FromBundle <path>] [-Force] [-Target <dir>]'
-            Write-Host 'aid update self [-FromBundle <path>] [-DryRun] [-Yes] [-Root <dir>]'
+            Write-Host 'aid update self [-FromBundle <path>] [-DryRun]'
             Write-Host '  Update to latest. No args: update all installed tools.'
-            Write-Host '  self: COMPLETELY update the aid CLI then apply repo migrations, channel-aware:'
+            Write-Host '  self: COMPLETELY update the aid CLI, channel-aware:'
             Write-Host '        npm -> npm i -g | pypi -> pipx upgrade | curl -> re-bootstrap install.ps1.'
-            Write-Host '        On Windows, elevation is the caller''s responsibility (no sudo);'
-            Write-Host '        the migration scan always runs as you.'
+            Write-Host '        On Windows, elevation is the caller''s responsibility (no sudo).'
             Write-Host '  -FromBundle <path>: install the CLI from a local artifact instead of @latest'
             Write-Host '        (npm .tgz | pypi .whl | curl release-staging dir with install.ps1).'
             Write-Host '  -DryRun: print the exact command(s) it would run, then exit (no changes).'
@@ -186,7 +222,7 @@ function script:Fail-Aid {
 # Invoke-AidUpdateCheck
 # Compares installed CLI version against latest GitHub release.
 # Prints ONE notice line when newer is available.  Fail-silent.
-# Throttle: re-fetches at most once per 24h; cache in $AID_HOME\.update-check.
+# Throttle: re-fetches at most once per 24h; cache in $HOME\.aid\.update-check (FR10: always per-user).
 # Opt-out: $env:AID_NO_UPDATE_CHECK = '1'
 # Test hook: $env:AID_UPDATE_CHECK_URL overrides the fetch URL (and bypasses throttle).
 function script:Invoke-AidUpdateCheck {
@@ -194,12 +230,15 @@ function script:Invoke-AidUpdateCheck {
     if ($env:AID_NO_UPDATE_CHECK -eq '1') { return }
 
     # Read installed version.
-    $verFile = Join-Path $script:_AidHome 'VERSION'
+    $verFile = Join-Path $script:_AidCodeHome 'VERSION'
     if (-not (Test-Path $verFile -PathType Leaf)) { return }
     $installedVersion = (Get-Content -LiteralPath $verFile -Raw -ErrorAction SilentlyContinue).Trim()
     if (-not $installedVersion) { return }
 
-    $cacheFile    = Join-Path $script:_AidHome '.update-check'
+    # FR10: .update-check is always per-user ($HOME/.aid), never AID_STATE_HOME.
+    # This ensures a routine version check never writes into /var/lib/aid on a
+    # root-owned global install and never triggers elevation.
+    $cacheFile    = Join-Path $HOME (Join-Path '.aid' '.update-check')
     $throttleSecs = 86400   # 24 hours
     try { $now = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() } catch { return }
 
@@ -287,62 +326,6 @@ function script:Invoke-AidUpdateCheck {
     }
 }
 
-# ---------------------------------------------------------------------------
-# Invoke-AidMigrateSentinel  (FF-4 / DM-3 / DD-1 / task-080)
-# Version-sentinel lazy first-run migration trigger (PS twin of
-# _aid_check_migrate_sentinel in bin/aid).
-# Compares $AID_HOME/VERSION (installed) vs $AID_HOME/.migrated (last migrated).
-# Fires the FF-2 machine scan once when they differ (version advanced or marker
-# absent = never migrated).  Called at the same sites as Invoke-AidUpdateCheck.
-# Opt-out: $env:AID_NO_MIGRATE = '1' -> skip entirely.
-# No-loop: a script-scope flag ($script:_AidMigrateSentinelFired) prevents
-# re-firing within the same run; update self bypasses this path.
-# Non-interactive defer (RC-3): no TTY + no AID_MIGRATE_YES=1 -> annotate +
-# defer (marker NOT advanced); Invoke-AidScanAndMigrate enforces the same on
-# its no-TTY branch.
-# ---------------------------------------------------------------------------
-$script:_AidMigrateSentinelFired = $false
-
-function script:Invoke-AidMigrateSentinel {
-    # Opt-out.
-    if ($env:AID_NO_MIGRATE -eq '1') { return }
-
-    # No-loop guard: only fire once per process.
-    if ($script:_AidMigrateSentinelFired) { return }
-
-    # Read installed version.
-    $verFile = Join-Path $script:_AidHome 'VERSION'
-    if (-not (Test-Path $verFile -PathType Leaf)) { return }
-    $sentinelInstalled = (Get-Content -LiteralPath $verFile -Raw -ErrorAction SilentlyContinue).Trim()
-    if ([string]::IsNullOrEmpty($sentinelInstalled)) { return }
-
-    # Read .migrated marker (absent = empty = never migrated -> treated as advanced).
-    $sentinelMarker = ''
-    $markerFile = Join-Path $script:_AidHome '.migrated'
-    if (Test-Path $markerFile -PathType Leaf) {
-        $sentinelMarker = (Get-Content -LiteralPath $markerFile -Raw -ErrorAction SilentlyContinue).Trim()
-    }
-
-    # DD-1 string inequality: if equal -> steady state, no trigger (SEC-6 no-loop).
-    if ($sentinelInstalled -eq $sentinelMarker) { return }
-
-    # Version advanced past last-migrated (or marker absent on first run after upgrade).
-    $script:_AidMigrateSentinelFired = $true
-
-    # Non-interactive + no opt-in -> annotate + defer (RC-3 / SEC-1).
-    # Marker NOT advanced; the next interactive run re-triggers (FF-4 retrigger).
-    $isTty = [Console]::IsInputRedirected -eq $false
-    if ((-not $isTty) -and ($env:AID_MIGRATE_YES -ne '1')) {
-        Write-Host "AID hint: AID upgraded to $sentinelInstalled; run 'aid update self' to migrate your repos."
-        return
-    }
-
-    # Interactive OR non-interactive opt-in: run the FF-2 scan once.
-    # Invoke-AidScanAndMigrate writes the DM-3 marker on completion.
-    $sentinelApply = ($env:AID_MIGRATE_YES -eq '1')
-    script:Invoke-AidScanAndMigrate -ApplyAllFlag $sentinelApply
-}
-
 # Invoke-AidUpdateSelf
 # Channel-aware, self-contained CLI self-update.  Returns the exit code (does NOT call Exit-Aid).
 # Reads the channel from AID_INSTALL_CHANNEL (injected by the npm/pypi shims).
@@ -350,11 +333,11 @@ function script:Invoke-AidMigrateSentinel {
 # and $script:_SelfDryRun.  On Windows there is no sudo -- if a privileged location is not
 # writable, the underlying tool (npm/pipx) will surface its own error; callers elevate their
 # own shell.  Dry-run prints "+ <command>" lines and returns 0 without making changes.
-# Callers are responsible for calling Exit-Aid after the post-update scan.
+# Callers are responsible for calling Exit-Aid after the update completes.
 function script:Invoke-AidUpdateSelf {
     # AID_SKIP_SELF_INSTALL: the package manager already (re)installed the CLI
-    # (postinstall) and only wants the post-update migration to run. Skip the
-    # re-install step; the caller's Invoke-AidScanAndMigrate still fires.
+    # (postinstall) and only wants the post-update step to run. Skip the
+    # re-install step.
     if ($env:AID_SKIP_SELF_INSTALL -eq '1') { return 0 }
     $channel = $env:AID_INSTALL_CHANNEL
     $bundle  = $script:_SelfFromBundle
@@ -439,7 +422,7 @@ function script:Invoke-AidUpdateSelf {
 # Invoke-AidUpdateSelfIfStale  (FF-3 preamble / CLI-2 / task-079)
 # Self-update-if-needed preamble for the 'aid update [<tool>]' reach.
 # Reuses Invoke-AidUpdateSelf channel logic gated by a skip-if-current check
-# (OQ-6 resolved simplest-correct: compare installed $AID_HOME/VERSION against
+# (OQ-6 resolved simplest-correct: compare installed $AID_CODE_HOME/VERSION against
 # the cached .update-check latest; if stale -> call Invoke-AidUpdateSelf; if
 # current or unknown -> silent no-op).
 #
@@ -447,18 +430,16 @@ function script:Invoke-AidUpdateSelf {
 #   - Called only on 'update [<tool>]', not 'update self' or 'add'.
 #   - WARN-not-fail: self-update failure is logged; tool-install continues (NFR12).
 function script:Invoke-AidUpdateSelfIfStale {
-    $aidHome = $script:_AidHome
-
-    # Read installed version.
-    $verFile = Join-Path $aidHome 'VERSION'
+    # Read installed version from the code payload (read-only).
+    $verFile = Join-Path $script:_AidCodeHome 'VERSION'
     $installed = ''
     if (Test-Path $verFile -PathType Leaf) {
         $installed = (Get-Content $verFile -Raw).Trim()
     }
     if (-not $installed) { return }  # no installed version known -> skip
 
-    # Read cached latest version from .update-check (line 2 of the cache file).
-    $cacheFile = Join-Path $aidHome '.update-check'
+    # Read cached latest version from per-user .update-check (FR10: always $HOME/.aid).
+    $cacheFile = Join-Path $HOME (Join-Path '.aid' '.update-check')
     $cachedLatest = ''
     if (Test-Path $cacheFile -PathType Leaf) {
         $lines = Get-Content $cacheFile -ErrorAction SilentlyContinue
@@ -888,6 +869,10 @@ function script:Invoke-DcStart {
         script:Exit-Aid 7
     }
 
+    # C6': format gate before operating (refuse on newer-format repo).
+    $gateRc = script:Invoke-AidFormatGate -Repo $Target
+    if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
+
     $pidFile = Join-Path $Target (Join-Path '.aid' (Join-Path '.temp' 'dashboard.pid'))
     $logFile = Join-Path $Target (Join-Path '.aid' (Join-Path '.temp' 'dashboard.log'))
 
@@ -931,8 +916,8 @@ function script:Invoke-DcStart {
     }
 
     # Step 6: locate the server entry point.
-    # <assets> = $AID_HOME/dashboard (the co-vendored server+reader unit in the install tree).
-    $assetsDir = Join-Path $script:_AidHome 'dashboard'
+    # <assets> = $AID_CODE_HOME/dashboard (the co-vendored server+reader unit in the install tree).
+    $assetsDir = Join-Path $script:_AidCodeHome 'dashboard'
     if ($Runtime -eq 'python') {
         $entryPoint = Join-Path $assetsDir (Join-Path 'server' 'server.py')
     } else {
@@ -960,9 +945,9 @@ function script:Invoke-DcStart {
     # behaviour-identical. (KI: Windows dashboard server log not captured; Bash captures it via
     # `setsid ... >"$log_file" 2>&1`.)
     # The multi-repo server (feature-010) serves every registered repo from the registry
-    # under AID_HOME; AID_HOME is set in the child's environment explicitly so the server
-    # resolves it via env-or-self-locate (delivery-008 refinement: no --aid-home flag).
-    $env:AID_HOME = $script:_AidHome
+    # under AID_STATE_HOME; export AID_HOME=AID_STATE_HOME so the server resolves the
+    # registry via its legacy AID_HOME env var (delivery-008 seam).
+    $env:AID_HOME = $script:_AidStateHome
     $spawnArgs = @($entryPoint, '--host', '127.0.0.1', '--port', "$Port")
     $proc = Start-Process -FilePath $interp `
         -ArgumentList $spawnArgs `
@@ -1168,6 +1153,70 @@ function script:Invoke-DcStop {
 }
 
 # ---------------------------------------------------------------------------
+# C4': Get-AidRepoFormat <Repo>
+# Read the format_version stamp from <Repo>/.aid/settings.yml.
+# Greps the FIRST ^format_version: line, replicates the era-a closure strip
+# logic inline (prefix strip, trim, inline # comment strip, quote-unwrap),
+# validates as ^\d+$; returns the integer.
+# Collapses absent/empty/non-integer/malformed/negative to 0 (legacy default).
+# Never returns a value > sup from a garbled stamp (fail-safe).
+# Defined here (before dispatch) so it is available to status/bare-aid/update.
+# ---------------------------------------------------------------------------
+function script:Get-AidRepoFormat {
+    param([string]$Repo)
+    $settingsFile = Join-Path $Repo (Join-Path '.aid' 'settings.yml')
+    if (-not (Test-Path $settingsFile -PathType Leaf)) { return 0 }
+    # First-match read (parity with duplicate-line policy).
+    $rawLine = $null
+    foreach ($ln in (Get-Content -LiteralPath $settingsFile -Encoding utf8 -ErrorAction SilentlyContinue)) {
+        if ($ln -match '^format_version:') { $rawLine = $ln; break }
+    }
+    if (-not $rawLine) { return 0 }
+    # Replicate the era-a closure strip logic inline (column-0 key variant).
+    # Step 1: strip the "format_version:" prefix.
+    $val = $rawLine -replace '^format_version:', ''
+    # Step 2: strip one optional leading space (the colon-space separator).
+    if ($val.StartsWith(' ')) { $val = $val.Substring(1) }
+    # Step 3: strip inline # comment (first " #" to end of line).
+    $commentIdx = $val.IndexOf(' #')
+    if ($commentIdx -ge 0) { $val = $val.Substring(0, $commentIdx) }
+    # Step 4: quote-unwrap (double then single).
+    $val = $val.Trim('"').Trim("'")
+    # Step 5: full trim (remaining whitespace).
+    $val = $val.Trim()
+    # Step 6: validate non-negative integer; collapse anything else to 0.
+    if ($val -match '^\d+$') { return [int]$val }
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# C5': Invoke-AidFormatGate <Repo>
+# 3-way classify <Repo>'s format stamp vs $AidSupportedFormat:
+#   repo > sup  -> refuse (stderr, return 1, no .aid/ write)
+#   repo < sup  -> warn + offer aid update (stdout, return 0, non-blocking)
+#   repo == sup -> silent (return 0)
+# AID_NO_MIGRATE=1 suppresses the warn+offer notice only; never the refuse.
+# Defined here (before dispatch) so it is available to status/bare-aid/update.
+# ---------------------------------------------------------------------------
+function script:Invoke-AidFormatGate {
+    param([string]$Repo)
+    $repoFmt = script:Get-AidRepoFormat -Repo $Repo
+    $sup = $script:AidSupportedFormat
+    if ($repoFmt -gt $sup) {
+        [Console]::Error.WriteLine("ERROR: aid: repo format $repoFmt is newer than this CLI supports ($sup). Upgrade the aid CLI to operate on this repo.")
+        return 1
+    }
+    if ($repoFmt -lt $sup) {
+        if ($env:AID_NO_MIGRATE -ne '1') {
+            Write-Host "WARN: aid: this repo uses an older format (v${repoFmt}; current: v${sup}). Run: aid update"
+        }
+        return 0
+    }
+    # repo == sup: silent.
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # Wrap everything in try/catch for terminal-survival in piped/iex mode.
 # ---------------------------------------------------------------------------
 try {
@@ -1186,12 +1235,19 @@ $script:_AidVerbose = ($env:AID_VERBOSE -eq '1')
 if ($script:_RawArgs.Count -eq 0) {
     # Block 1 + 2: Header + description.
     $cliVersion = 'unknown'
-    $verFile = Join-Path $script:_AidHome 'VERSION'
+    $verFile = Join-Path $script:_AidCodeHome 'VERSION'
     if (Test-Path $verFile -PathType Leaf) {
         $cliVersion = (Get-Content -LiteralPath $verFile -Raw).Trim()
     }
     Write-Host "AID v$cliVersion - Agentic Iterative Development"
     Write-Host "Install, update, and manage AID across your repositories."
+
+    # C6': format gate for cwd repo (only when .aid/ exists; absent .aid/ falls
+    # through to the existing "set it up?" path via Get-AidStatusBody below).
+    if (Test-Path (Join-Path '.' '.aid') -PathType Container) {
+        $gateRc = script:Invoke-AidFormatGate -Repo '.'
+        if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
+    }
 
     # Block 3: Installed tools for cwd.
     Write-Host ""
@@ -1203,8 +1259,6 @@ if ($script:_RawArgs.Count -eq 0) {
 
     # Block 5: Update check notice (final line, non-blocking).
     script:Invoke-AidUpdateCheck
-    # Block 6: Migration sentinel (FF-4 / DM-3 / task-080).
-    script:Invoke-AidMigrateSentinel
     script:Exit-Aid 0
 }
 
@@ -1221,7 +1275,7 @@ $script:_RemArgs = @($script:_RawArgs | Select-Object -Skip 1)
 # version
 # ---------------------------------------------------------------------------
 if ($SUBCMD -eq 'version') {
-    $versionFile = Join-Path $script:_AidHome 'VERSION'
+    $versionFile = Join-Path $script:_AidCodeHome 'VERSION'
     if (Test-Path $versionFile -PathType Leaf) {
         Write-Host (Get-Content -LiteralPath $versionFile -Raw).Trim()
     } else {
@@ -1270,11 +1324,15 @@ if ($SUBCMD -eq 'status') {
     if (-not $statusTarget) { $statusTarget = '.' }
     if ($script:_AidVerbose) { $env:AID_VERBOSE = '1' }
 
+    # C6': format gate for status target (only when .aid/ exists).
+    if (Test-Path (Join-Path $statusTarget '.aid') -PathType Container) {
+        $gateRc = script:Invoke-AidFormatGate -Repo $statusTarget
+        if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
+    }
+
     $rc = Get-AidStatus -Target $statusTarget
     # Update check notice appended after status output (non-blocking).
     script:Invoke-AidUpdateCheck
-    # Migration sentinel (FF-4 / DM-3 / task-080).
-    script:Invoke-AidMigrateSentinel
     script:Exit-Aid $rc
 }
 # ---------------------------------------------------------------------------
@@ -1297,22 +1355,62 @@ function script:Get-RegistryRepos {
     return $results.ToArray()
 }
 
-# Register a canonical repo path in $AidHome/registry.yml (set-insert, idempotent).
+# Register a canonical repo path in the registry.yml (set-insert, idempotent).
 # Prints one line on a real change; silent on no-op.  Prints WARN on failure; never
 # throws (host-tool op is never blocked -- NFR10 / DD-3 / CLI-1).
+#
+# FALLBACK (non-prompting, never-elevate): attempts a best-effort never-elevate
+# ensure-exists of $script:_AidStateHome.  If the shared state home is not writable
+# by the current user, DEGRADES to %LOCALAPPDATA%\aid (the per-user home) + one WARN.
+# A routine 'aid add' MUST NOT trigger a UAC re-prompt -- the shared registration is
+# best-effort skip+warn (feature-002 parity with bash degrade-to-~/.aid contract).
+# The temp file is created in the CHOSEN writable dir so Move-Item is atomic same-FS.
 function script:Registry-Register {
     param([string]$Repo)
-    $reg = Join-Path $script:_AidHome 'registry.yml'
-    if (-not (Test-Path $script:_AidHome -PathType Container)) {
-        New-Item -ItemType Directory -Path $script:_AidHome -Force | Out-Null
+
+    # Never-elevate best-effort ensure-exists of $script:_AidStateHome.
+    if (-not (Test-Path $script:_AidStateHome -PathType Container)) {
+        try { New-Item -ItemType Directory -Path $script:_AidStateHome -Force -ErrorAction Stop | Out-Null } catch {}
     }
-    $existing = @(script:Get-RegistryRepos -RegPath $reg)
+
+    # Decide the effective target dir BEFORE mktemp so the temp file always lands in a
+    # writable directory (mirrors the bash decide-before-mktemp fix in registry_register).
+    # A root-owned (or Administrator-owned) $script:_AidStateHome that already exists causes
+    # the mkdir above to succeed (no-op) but remains non-writable; the writability test
+    # below catches that case and degrades to the per-user home.
+    $writeDir = $null
+    $writeReg = $null
+    $degraded = $false
+    if (Test-Path $script:_AidStateHome -PathType Container) {
+        # Test writability by attempting to create a probe file (no-throw path).
+        $_probeFile = Join-Path $script:_AidStateHome ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
+        $_writable = $false
+        try { [System.IO.File]::WriteAllText($_probeFile, ''); Remove-Item -LiteralPath $_probeFile -Force -ErrorAction SilentlyContinue; $_writable = $true } catch {}
+        if ($_writable) {
+            $writeDir = $script:_AidStateHome
+        }
+    }
+    if (-not $writeDir) {
+        # Degrade: shared home is absent or not writable. Use per-user home (%LOCALAPPDATA%\aid
+        # on Windows; $HOME/.aid on non-Windows). Emit one WARN; no UAC re-prompt.
+        $userHome = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'aid' } else { Join-Path $HOME '.aid' }
+        if (-not (Test-Path $userHome -PathType Container)) {
+            try { New-Item -ItemType Directory -Path $userHome -Force -ErrorAction SilentlyContinue | Out-Null } catch {}
+        }
+        [Console]::Error.WriteLine("WARN: aid: could not write to shared state home $($script:_AidStateHome); using $userHome")
+        $writeDir = $userHome
+        $degraded = $true
+    }
+    $writeReg = Join-Path $writeDir 'registry.yml'
+
+    $existing = @(script:Get-RegistryRepos -RegPath $writeReg)
     # Idempotent: already registered -> silent no-op.
     if ($existing -contains $Repo) {
         if ($script:_AidVerbose) { Write-Host "Registry: $Repo already registered (no-op)." }
         return
     }
-    $tmp = Join-Path $script:_AidHome ("registry.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
+    # Temp file in the chosen writable dir (atomic same-filesystem Move-Item).
+    $tmp = Join-Path $writeDir ("registry.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
     try {
         $all = ($existing + @($Repo)) | Where-Object { $_ } | Sort-Object -Unique
         $lines = [System.Collections.Generic.List[string]]::new()
@@ -1323,29 +1421,80 @@ function script:Registry-Register {
         $lines.Add("repos:")
         foreach ($p in $all) { $lines.Add("  - $p") }
         Set-Content -LiteralPath $tmp -Value $lines -Encoding utf8NoBOM -ErrorAction Stop
-        Move-Item -LiteralPath $tmp -Destination $reg -Force -ErrorAction Stop
+        Move-Item -LiteralPath $tmp -Destination $writeReg -Force -ErrorAction Stop
     } catch {
         Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
-        [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($reg): $_")
+        [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($writeReg): $_")
         return
     }
     Write-Host "Registered $Repo with the AID CLI."
 }
 
-# Unregister a canonical repo path from $AidHome/registry.yml (set-remove, idempotent).
+# Unregister a canonical repo path from the registry.yml (set-remove, idempotent).
 # Called only when the repo manifest is now gone (last tool removed).
 # Prints one line on a real change; silent on no-op.  Prints WARN on failure; never throws.
+#
+# FALLBACK: mirrors the degrade-to-user-tier logic of Registry-Register.  The entry is
+# looked up in the shared tier first; if the shared dir is not user-writable the operation
+# degrades to the per-user home.  Temp file lands in the chosen writable dir (atomic Move).
 function script:Registry-Unregister {
     param([string]$Repo)
-    $reg = Join-Path $script:_AidHome 'registry.yml'
-    if (-not (Test-Path $reg -PathType Leaf)) { return }
-    $existing = @(script:Get-RegistryRepos -RegPath $reg)
-    # Idempotent: not registered -> silent no-op.
-    if ($existing -notcontains $Repo) {
-        if ($script:_AidVerbose) { Write-Host "Registry: $Repo not in registry (no-op)." }
-        return
+
+    $sharedReg = Join-Path $script:_AidStateHome 'registry.yml'
+    $userHome  = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'aid' } else { Join-Path $HOME '.aid' }
+    $userReg   = Join-Path $userHome 'registry.yml'
+
+    # Determine the effective target dir BEFORE mktemp (mirrors bash decide-before-mktemp fix).
+    $writeDir = $null
+    $writeReg = $null
+    if (Test-Path $script:_AidStateHome -PathType Container) {
+        $_probeFile2 = Join-Path $script:_AidStateHome ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
+        $_writable2 = $false
+        try { [System.IO.File]::WriteAllText($_probeFile2, ''); Remove-Item -LiteralPath $_probeFile2 -Force -ErrorAction SilentlyContinue; $_writable2 = $true } catch {}
+        if ($_writable2) { $writeDir = $script:_AidStateHome }
     }
-    $tmp = Join-Path $script:_AidHome ("registry.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
+    if (-not $writeDir) {
+        $writeDir = $userHome
+        if (-not (Test-Path $writeDir -PathType Container)) {
+            try { New-Item -ItemType Directory -Path $writeDir -Force -ErrorAction SilentlyContinue | Out-Null } catch {}
+        }
+    }
+    $writeReg = Join-Path $writeDir 'registry.yml'
+
+    # Look for the repo in chosen tier; fall back to the other tier.
+    $existing = @(script:Get-RegistryRepos -RegPath $writeReg)
+    if ($existing -notcontains $Repo) {
+        $otherReg = if ($writeReg -eq $sharedReg) { $userReg } else { $sharedReg }
+        $otherExisting = @(script:Get-RegistryRepos -RegPath $otherReg)
+        if ($otherExisting -contains $Repo) {
+            # Entry found in the other tier -- switch to it only if writable.
+            if (Test-Path (Split-Path $otherReg -Parent) -PathType Container) {
+                $_probeFile3 = Join-Path (Split-Path $otherReg -Parent) ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
+                $_writable3 = $false
+                try { [System.IO.File]::WriteAllText($_probeFile3, ''); Remove-Item -LiteralPath $_probeFile3 -Force -ErrorAction SilentlyContinue; $_writable3 = $true } catch {}
+                if ($_writable3) {
+                    $writeDir = Split-Path $otherReg -Parent
+                    $writeReg = $otherReg
+                    $existing = $otherExisting
+                } else {
+                    # Can't write there either; emit WARN and return.
+                    [Console]::Error.WriteLine("WARN: aid: could not write to registry at $otherReg (not writable); unregister skipped")
+                    return
+                }
+            }
+        } else {
+            # Not in either tier.
+            if ($script:_AidVerbose) { Write-Host "Registry: $Repo not in registry (no-op)." }
+            return
+        }
+    }
+
+    # Emit WARN when operating on user tier because shared tier is not writable.
+    if ($writeReg -eq $userReg -and (Test-Path $script:_AidStateHome -PathType Container)) {
+        [Console]::Error.WriteLine("WARN: aid: could not write to shared state home $($script:_AidStateHome); using $userReg")
+    }
+
+    $tmp = Join-Path $writeDir ("registry.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
     try {
         $remaining = $existing | Where-Object { $_ -ne $Repo } | Sort-Object -Unique
         $lines = [System.Collections.Generic.List[string]]::new()
@@ -1356,10 +1505,10 @@ function script:Registry-Unregister {
         $lines.Add("repos:")
         if ($remaining) { foreach ($p in $remaining) { $lines.Add("  - $p") } }
         Set-Content -LiteralPath $tmp -Value $lines -Encoding utf8NoBOM -ErrorAction Stop
-        Move-Item -LiteralPath $tmp -Destination $reg -Force -ErrorAction Stop
+        Move-Item -LiteralPath $tmp -Destination $writeReg -Force -ErrorAction Stop
     } catch {
         Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
-        [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($reg): $_")
+        [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($writeReg): $_")
         return
     }
     Write-Host "Unregistered $Repo from the AID CLI."
@@ -1422,7 +1571,7 @@ function script:Invoke-AidMigrateRepo {
     $dashDir   = Join-Path $aidDir 'dashboard'
     $htmlDest  = Join-Path $dashDir 'home.html'
     if (-not (Test-Path $htmlDest -PathType Leaf)) {
-        $htmlSrc = Join-Path $script:_AidHome 'dashboard' | Join-Path -ChildPath 'home.html'
+        $htmlSrc = Join-Path $script:_AidCodeHome 'dashboard' | Join-Path -ChildPath 'home.html'
         if (Test-Path $htmlSrc -PathType Leaf) {
             try {
                 if (-not (Test-Path $dashDir -PathType Container)) {
@@ -1527,6 +1676,22 @@ function script:Invoke-AidRepairSettingsEraA {
     $replaceLine = {
         param([int]$idx, [string]$newLine)
         $lines[$idx] = $newLine
+        $changed = $true
+    }
+
+    # --- C3': format_version ensure-key step (top-of-file column-0 prepend) ---
+    # If a ^format_version: line is present, replace it in-place (IDIOM-A).
+    # If absent, prepend format_version: <sup> at index 0 above project:.
+    $fvIdx = -1
+    for ($fi = 0; $fi -lt $lines.Count; $fi++) {
+        if ($lines[$fi] -match '^format_version:') { $fvIdx = $fi; break }
+    }
+    if ($fvIdx -ge 0) {
+        # Key present: replace with canonical value (IDIOM-A).
+        & $replaceLine $fvIdx "format_version: $($script:AidSupportedFormat)"
+    } else {
+        # Key absent: prepend at index 0 (new top-of-file col-0 insert above project:).
+        $lines.Insert(0, "format_version: $($script:AidSupportedFormat)")
         $changed = $true
     }
 
@@ -1640,6 +1805,8 @@ function script:Invoke-AidSynthesizeSettingsEraB {
     $toolIds = @(Read-ManifestTools -ManifestPath $ManifestPath)
 
     $sb = [System.Text.StringBuilder]::new()
+    # C2': format_version stamp is the FIRST line (before project:).
+    [void]$sb.Append("format_version: $($script:AidSupportedFormat)`n")
     [void]$sb.Append("project:`n")
     [void]$sb.Append("  name: ${RepoName}`n")
     [void]$sb.Append("  description: <project-description>`n")
@@ -1678,266 +1845,6 @@ function script:Invoke-AidSynthesizeSettingsEraB {
     }
 }
 
-
-# ---------------------------------------------------------------------------
-# Invoke-AidScanForRepos [<ScanRoot>]  (SCAN_FOR_AID_REPOS / SEC-2 / task-078)
-# Enumerate candidate AID repo base folders under ScanRoot (default: $HOME).
-# Bounded depth (5 levels), skips node_modules/.git, no symlink escape (SEC-2).
-# Returns [string[]] of CAN-1-canonical repo base paths.
-# ---------------------------------------------------------------------------
-function script:Invoke-AidScanForRepos {
-    param([string]$ScanRoot = '')
-
-    if ([string]::IsNullOrEmpty($ScanRoot)) {
-        $ScanRoot = $env:USERPROFILE
-        if ([string]::IsNullOrEmpty($ScanRoot)) {
-            $ScanRoot = $env:HOME
-        }
-        if ([string]::IsNullOrEmpty($ScanRoot)) { return @() }
-    }
-
-    # Canonicalize the scan root.
-    try {
-        $canonRoot = (Resolve-Path -LiteralPath $ScanRoot -ErrorAction Stop).Path
-    } catch {
-        [Console]::Error.WriteLine("WARN: aid scan: cannot access scan root '$ScanRoot' -- skipping")
-        return @()
-    }
-
-    $results = [System.Collections.Generic.List[string]]::new()
-    $skipDirs = @('node_modules', '.git')
-
-    # BFS with depth cap (5 levels).
-    # Use a queue of (path, depth) pairs.
-    $queue = [System.Collections.Generic.Queue[object]]::new()
-    $queue.Enqueue([pscustomobject]@{ Path = $canonRoot; Depth = 0 })
-
-    while ($queue.Count -gt 0) {
-        $item = $queue.Dequeue()
-        $dir  = $item.Path
-        $dep  = $item.Depth
-
-        # Check for .aid subdirectory (DD-6 presence test).
-        $aidDir = Join-Path $dir '.aid'
-        if (Test-Path $aidDir -PathType Container) {
-            $settingsPath = Join-Path $aidDir 'settings.yml'
-            $kbDir        = Join-Path $aidDir 'knowledge'
-            $ds1          = Join-Path $kbDir 'DISCOVERY_STATE.md'
-            $ds2          = Join-Path $kbDir 'DISCOVERY-STATE.md'
-            $ds3          = Join-Path $kbDir 'STATE.md'
-            if ((Test-Path $settingsPath -PathType Leaf) -or
-                (Test-Path $ds1 -PathType Leaf) -or
-                (Test-Path $ds2 -PathType Leaf) -or
-                (Test-Path $ds3 -PathType Leaf)) {
-                # CAN-1 canonical: resolve without symlink expansion.
-                try {
-                    $canon = (Resolve-Path -LiteralPath $dir -ErrorAction Stop).Path
-                } catch {
-                    $canon = $dir
-                }
-                # Symlink-escape guard: must still be under the scan root.
-                # Require exact-equality (root itself) OR starts-with(root + sep) so that a
-                # sibling whose name shares a prefix (e.g. root C:\scan, sibling C:\scan-evil)
-                # is correctly rejected -- mirrors Bash: case "${_canon_base}/" in "${_canon_root}/"*)
-                $sep = [IO.Path]::DirectorySeparatorChar
-                if (($canon -eq $canonRoot) -or
-                    $canon.StartsWith($canonRoot + $sep, [System.StringComparison]::OrdinalIgnoreCase)) {
-                    if (-not $results.Contains($canon)) {
-                        $results.Add($canon)
-                    }
-                }
-            }
-        }
-
-        # Recurse into subdirectories up to depth 5 (skip node_modules/.git).
-        if ($dep -lt 5) {
-            try {
-                $children = Get-ChildItem -LiteralPath $dir -Directory -ErrorAction SilentlyContinue
-                foreach ($child in $children) {
-                    if ($skipDirs -contains $child.Name) { continue }
-                    # Skip symlinks that resolve outside the root (SEC-2).
-                    # Same trailing-sep guard as the repo containment check above.
-                    if ($child.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
-                        try {
-                            $resolvedChild = (Resolve-Path -LiteralPath $child.FullName -ErrorAction Stop).Path
-                            $sep = [IO.Path]::DirectorySeparatorChar
-                            if (-not (($resolvedChild -eq $canonRoot) -or
-                                $resolvedChild.StartsWith($canonRoot + $sep, [System.StringComparison]::OrdinalIgnoreCase))) {
-                                continue  # symlink escapes root -- skip
-                            }
-                        } catch { continue }
-                    }
-                    $queue.Enqueue([pscustomobject]@{ Path = $child.FullName; Depth = $dep + 1 })
-                }
-            } catch { }
-        }
-    }
-
-    return $results.ToArray()
-}
-
-# ---------------------------------------------------------------------------
-# Invoke-AidCheckRepoCompliant <Repo>  (task-078 / FF-2 fast-path)
-# Returns $true if the repo is fully compliant (no migration needed).
-# Read-only (SEC-1).
-# ---------------------------------------------------------------------------
-function script:Invoke-AidCheckRepoCompliant {
-    param([string]$Repo)
-    $aidDir = Join-Path $Repo '.aid'
-    if (-not (Test-Path $aidDir -PathType Container)) { return $false }
-
-    $settingsPath = Join-Path $aidDir 'settings.yml'
-    $kbDir        = Join-Path $aidDir 'knowledge'
-    $ds1          = Join-Path $kbDir 'DISCOVERY_STATE.md'
-    $ds2          = Join-Path $kbDir 'DISCOVERY-STATE.md'
-    $ds3          = Join-Path $kbDir 'STATE.md'
-
-    $isCandidate = (Test-Path $settingsPath -PathType Leaf) -or
-                   (Test-Path $ds1 -PathType Leaf) -or
-                   (Test-Path $ds2 -PathType Leaf) -or
-                   (Test-Path $ds3 -PathType Leaf)
-    if (-not $isCandidate) { return $false }
-
-    # Step 2: home.html must be present.
-    $homeHtml = Join-Path $aidDir 'dashboard' | Join-Path -ChildPath 'home.html'
-    if (-not (Test-Path $homeHtml -PathType Leaf)) { return $false }
-
-    # Step 4: must be registered.
-    try {
-        $canonRepo = (Resolve-Path -LiteralPath $Repo -ErrorAction Stop).Path
-    } catch { return $false }
-    $reg = Join-Path $script:_AidHome 'registry.yml'
-    $existing = script:Get-RegistryRepos -RegPath $reg
-    if ($existing -notcontains $canonRepo) { return $false }
-
-    return $true
-}
-
-# ---------------------------------------------------------------------------
-# Write-AidMigratedMarker  (DM-3 / task-078 / FF-2 completion)
-# Write $AID_HOME/.migrated = trimmed $AID_HOME/VERSION (crash-safe).
-# ---------------------------------------------------------------------------
-function script:Write-AidMigratedMarker {
-    $verFile = Join-Path $script:_AidHome 'VERSION'
-    $marker  = Join-Path $script:_AidHome '.migrated'
-    if (-not (Test-Path $verFile -PathType Leaf)) { return }
-    $ver = (Get-Content -LiteralPath $verFile -Raw -ErrorAction SilentlyContinue).Trim()
-    if ([string]::IsNullOrEmpty($ver)) { return }
-    $tmp = $marker + '.aid-tmp.' + [System.IO.Path]::GetRandomFileName()
-    try {
-        [System.IO.File]::WriteAllText($tmp, ($ver + "`n"), [System.Text.UTF8Encoding]::new($false))
-        Move-Item -LiteralPath $tmp -Destination $marker -Force -ErrorAction Stop
-    } catch {
-        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
-    }
-}
-
-# ---------------------------------------------------------------------------
-# Invoke-AidScanAndMigrate  (FF-2 / CLI-1 / task-078)
-# Machine-scan + All/Yes/No/Cancel consent walk. Called after Invoke-AidUpdateSelf.
-# ApplyAllFlag: $true = --yes/AID_MIGRATE_YES=1 (preset All).
-# ScanRoot: optional --root override.
-# Always returns (exit code 0 per CLI-1/NFR12); DM-3 marker advanced only on
-# completed (no Cancel) scan.
-# ---------------------------------------------------------------------------
-function script:Invoke-AidScanAndMigrate {
-    param([bool]$ApplyAllFlag = $false, [string]$ScanRoot = '')
-
-    $applyAll = $ApplyAllFlag
-    if ($env:AID_MIGRATE_YES -eq '1') { $applyAll = $true }
-
-    # RC-3 / SEC-1: non-interactive guard.
-    $isTty = [Console]::IsInputRedirected -eq $false
-    if ((-not $isTty) -and (-not $applyAll)) {
-        Write-Host "AID machine scan: no TTY detected. Run 'aid update self' interactively to migrate repos."
-        Write-Host "(Set AID_MIGRATE_YES=1 or use --yes to enable non-interactive migration.)"
-        return
-    }
-
-    # Enumerate candidates (read-only).
-    # Force array: @() prevents PowerShell from unwrapping a single-element result.
-    $candidates = @(script:Invoke-AidScanForRepos -ScanRoot $ScanRoot)
-
-    if ($candidates.Count -eq 0) {
-        Write-Host "aid update self: no AID repos found to migrate."
-        script:Write-AidMigratedMarker
-        return
-    }
-
-    # Non-interactive + opt-in: annotate and migrate all.
-    if ((-not $isTty) -and $applyAll) {
-        Write-Host "AID machine scan (non-interactive, opt-in): $($candidates.Count) candidate(s) found."
-        foreach ($repo in $candidates) {
-            if (script:Invoke-AidCheckRepoCompliant -Repo $repo) { continue }
-            Write-Host "  Migrating $repo..."
-            try {
-                $null = script:Invoke-AidMigrateRepo -Repo $repo
-            } catch {
-                [Console]::Error.WriteLine("WARN: aid: migration of $repo failed; continuing")
-            }
-        }
-        script:Write-AidMigratedMarker
-        return
-    }
-
-    # Interactive consent walk (FF-2 state machine / CLI-1 exact ASCII wording).
-    $cancelled = $false
-    foreach ($repo in $candidates) {
-        if (script:Invoke-AidCheckRepoCompliant -Repo $repo) { continue }
-
-        if ($applyAll) {
-            try {
-                $null = script:Invoke-AidMigrateRepo -Repo $repo
-            } catch {
-                [Console]::Error.WriteLine("WARN: aid: migration of $repo failed; continuing")
-            }
-        } else {
-            $answered = $false
-            while (-not $answered) {
-                [Console]::Write("Migrate ${repo}? [A]ll / [Y]es / [N]o / [C]ancel: ")
-                $ans = [Console]::ReadLine()
-                if ($null -eq $ans) { $ans = 'C' }
-                $ans = $ans.Trim()
-                switch -CaseSensitive ($ans.ToUpper()) {
-                    'A' {
-                        $applyAll = $true
-                        try {
-                            $null = script:Invoke-AidMigrateRepo -Repo $repo
-                        } catch {
-                            [Console]::Error.WriteLine("WARN: aid: migration of $repo failed; continuing")
-                        }
-                        $answered = $true
-                    }
-                    'Y' {
-                        try {
-                            $null = script:Invoke-AidMigrateRepo -Repo $repo
-                        } catch {
-                            [Console]::Error.WriteLine("WARN: aid: migration of $repo failed; continuing")
-                        }
-                        $answered = $true
-                    }
-                    'N' {
-                        Write-Host "Skipped ${repo}. Run 'aid update' inside that folder to migrate it later."
-                        $answered = $true
-                    }
-                    'C' {
-                        $cancelled = $true
-                        $answered  = $true
-                    }
-                    default {
-                        Write-Host "Please type A, Y, N, or C."
-                    }
-                }
-            }
-            if ($cancelled) { break }
-        }
-    }
-
-    if (-not $cancelled) {
-        script:Write-AidMigratedMarker
-    }
-}
-
 # Script-scope vars consumed by Invoke-AidUpdateSelf (reset here before each parse).
 $script:_SelfFromBundle = ''
 $script:_SelfDryRun     = $false
@@ -1948,8 +1855,6 @@ $script:_SelfDryRun     = $false
 if ($SUBCMD -eq 'update') {
     if ($script:_RemArgs.Count -gt 0 -and $script:_RemArgs[0] -eq 'self') {
         # Consume any flags after 'self'.
-        $usMigrateYes = $false
-        $usRoot       = ''
         $script:_SelfFromBundle = ''
         $script:_SelfDryRun     = $false
         $remIdx = 1
@@ -1957,7 +1862,6 @@ if ($SUBCMD -eq 'update') {
             $a = $script:_RemArgs[$remIdx]
             switch ($a) {
                 { $_ -in @('-Force', '--force', '-y') }      { }  # no-op for update self
-                { $_ -in @('-Yes', '--yes') }                { $usMigrateYes = $true }  # RC-3 opt-in
                 { $_ -in @('-DryRun', '--dry-run') }         { $script:_SelfDryRun = $true }
                 { $_ -in @('-h', '--help', '-Help') }        { script:Show-AidUsage 'update'; script:Exit-Aid 0 }
                 { $_ -in @('-FromBundle', '--from-bundle') } {
@@ -1967,25 +1871,13 @@ if ($SUBCMD -eq 'update') {
                     }
                     $script:_SelfFromBundle = $script:_RemArgs[$remIdx]
                 }
-                { $_ -in @('-Root', '--root') } {
-                    $remIdx++
-                    if ($remIdx -ge $script:_RemArgs.Count) {
-                        script:Fail-Aid '--root requires a value' 2
-                    }
-                    $usRoot = $script:_RemArgs[$remIdx]
-                }
                 default { script:Fail-Aid "unknown flag for 'update self': $a" 2 }
             }
             $remIdx++
         }
         $usRc = script:Invoke-AidUpdateSelf
         if ($usRc -ne 0) { script:Exit-Aid $usRc }
-        # ---- post-update machine scan (FF-2 / task-078) -- runs as the user ----
-        if ($script:_SelfDryRun) {
-            Write-Host '+ (then) migration scan over $HOME with All/Yes/No/Cancel consent'
-        } else {
-            script:Invoke-AidScanAndMigrate -ApplyAllFlag $usMigrateYes -ScanRoot $usRoot
-        }
+        # Post-update: registry-driven migration is feature-003 (no-op here).
         script:Exit-Aid 0
     }
     # Fall through to shared add/update handler below.
@@ -1998,7 +1890,7 @@ if ($SUBCMD -eq 'update') {
 # Now each channel does the COMPLETE removal:
 #   npm  -> npm uninstall -g aid-installer   (package + vendored tree + shim)
 #   pypi -> pipx uninstall aid-installer     (venv + entry point)
-#   curl -> Remove-Item $AID_HOME + unwire PATH  (unchanged)
+#   curl -> Remove-Item $AID_CODE_HOME + unwire PATH
 # On Windows there is no sudo -- callers elevate their own shell if needed.
 # Honors -DryRun.
 # ---------------------------------------------------------------------------
@@ -2027,7 +1919,7 @@ if ($SUBCMD -eq 'remove') {
         }
 
         $channel = $env:AID_INSTALL_CHANNEL
-        $aidHome = $script:_AidHome
+        $aidHome = $script:_AidCodeHome
 
         # Channel-aware description of what will be removed (NFR transparency).
         $what = switch ($channel) {
@@ -2081,7 +1973,7 @@ if ($SUBCMD -eq 'remove') {
                 }
             }
             default {
-                # curl / default channel -- the AID_HOME tree + User PATH wiring.
+                # curl / default channel -- the _AidCodeHome tree + User PATH wiring.
                 if ($rsDryRun) {
                     if (-not $rsNoPath) {
                         Write-Host "+ (unwire $aidHome\bin from your User PATH)"
@@ -2094,7 +1986,7 @@ if ($SUBCMD -eq 'remove') {
                         try { script:Remove-AidFromPath -BinDir $binDir } catch { $partial = $true }
                     }
 
-                    # Remove $AID_HOME directory.
+                    # Remove _AidCodeHome directory.
                     if (Test-Path $aidHome -PathType Container) {
                         try {
                             Remove-Item -LiteralPath $aidHome -Recurse -Force -ErrorAction Stop
@@ -2222,6 +2114,13 @@ if (-not (Test-Path $_AidTarget -PathType Container)) {
     script:Fail-Aid "target directory does not exist: $_AidTarget" 2
 }
 $_AidTarget = (Resolve-Path -LiteralPath $_AidTarget).Path
+
+# C6': format gate for the update repo path (only when .aid/ exists;
+# an add to a fresh repo with no .aid/ falls through normally).
+if ($SUBCMD -eq 'update' -and (Test-Path (Join-Path $_AidTarget '.aid') -PathType Container)) {
+    $gateRc = script:Invoke-AidFormatGate -Repo $_AidTarget
+    if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
+}
 
 # ---- Self-update-if-needed preamble (FF-3 / CLI-2 / task-079) --------------
 # For 'update [<tool>]' only (not 'add', not 'update self').  Ensures the CLI

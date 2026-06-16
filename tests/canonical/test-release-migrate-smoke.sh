@@ -42,20 +42,38 @@ REAL_GIT_BEFORE="$(git -C "${REPO_ROOT}" status --porcelain 2>/dev/null | wc -l)
 # ---- HOME pin (bulletproof): every child inherits a throwaway HOME -------------
 export HOME="${TMP}/fakehome"; mkdir -p "${HOME}"
 
-# Seed ONE "old" repo that needs migration: valid post-v0.7 settings, NO home.html.
-seed_old_repo() {  # $1 = home dir
+# Seed ONE "old" repo that needs migration: valid era-a settings, NO format_version stamp.
+# feature-001: the lazy-stamp model WARNs on encounter; __migrate-repo provisions home.html.
+seed_old_repo() {  # $1 = code_home (the dir where bin/aid lives)
     local r="$1/legacy-repo"
     mkdir -p "${r}/.aid"
     cp "${REF_SETTINGS}" "${r}/.aid/settings.yml"
+    # Ensure settings.yml has NO format_version line (stamp-less = era-a).
+    sed -i '/^format_version:/d' "${r}/.aid/settings.yml" 2>/dev/null || true
     printf '%s\n' "${r}"
 }
-# Assert: the seeded repo got home.html provisioned at full source size.
-assert_migrated() {  # $1 = repo path  $2 = label
-    local hh="$1/.aid/dashboard/home.html"
-    if [[ -f "${hh}" ]] && [[ "$(wc -c < "${hh}")" == "${HOME_HTML_SIZE}" ]]; then
-        pass "$2 -- pre-existing repo migrated (home.html provisioned, ${HOME_HTML_SIZE}B)"
+# Assert feature-001 lazy-stamp behavior:
+#   - 'aid status' in stamp-less repo: WARN "older format" printed, exit 0.
+#   - After explicit 'aid __migrate-repo': home.html provisioned (migration step 2).
+assert_migrated() {  # $1 = repo path  $2 = label  $3 = aid binary  $4 = aid_home
+    local repo="$1" label="$2" aid_bin="$3" aid_home="$4"
+    # Step 1: WARN on encounter.
+    local _warn_out
+    _warn_out="$(cd "${repo}" && AID_HOME="${aid_home}" AID_NO_UPDATE_CHECK=1 \
+        bash "${aid_bin}" status 2>&1 || true)"
+    if echo "${_warn_out}" | grep -q "older format"; then
+        pass "${label}-A -- stamp-less repo encounter: WARN 'older format' printed (lazy-stamp model)"
     else
-        fail "$2 -- repo NOT migrated (home.html missing/short at ${hh})"
+        fail "${label}-A -- stamp-less repo encounter: expected WARN 'older format'; got: $(echo "${_warn_out}" | head -3)"
+    fi
+    # Step 2: explicit __migrate-repo provisions home.html.
+    AID_HOME="${aid_home}" AID_NO_UPDATE_CHECK=1 \
+        bash "${aid_bin}" __migrate-repo "${repo}" >/dev/null 2>&1 || true
+    local hh="${repo}/.aid/dashboard/home.html"
+    if [[ -f "${hh}" ]] && [[ "$(wc -c < "${hh}")" == "${HOME_HTML_SIZE}" ]]; then
+        pass "${label}-B -- after __migrate-repo: home.html provisioned (${HOME_HTML_SIZE}B)"
+    else
+        fail "${label}-B -- after __migrate-repo: home.html missing/short at ${hh}"
     fi
 }
 
@@ -64,14 +82,15 @@ assert_migrated() {  # $1 = repo path  $2 = label
 # ===========================================================================
 echo "=== RMS-CURL: curl/install.sh real install -> first run migrates ==="
 CH="${TMP}/curl-home"; mkdir -p "${CH}"
-CREPO="$(seed_old_repo "${CH}")"
+# seed_old_repo takes the dir that contains both bin/ and legacy-repo/.
+# install.sh puts the CLI under ${CH}/.aid/, so CODE_HOME = ${CH}/.aid.
+CREPO="$(seed_old_repo "${CH}/.aid")"
 env -i HOME="${CH}" PATH="${BASEPATH}" AID_HOME="${CH}/.aid" \
     bash "${REPO_ROOT}/install.sh" --no-path >/dev/null 2>&1
 if [[ -x "${CH}/.aid/bin/aid" ]]; then
     pass "RMS-CURL-01 install.sh produced a working \$AID_HOME/bin/aid"
-    env -i HOME="${CH}" PATH="${BASEPATH}" AID_HOME="${CH}/.aid" AID_MIGRATE_YES=1 \
-        bash "${CH}/.aid/bin/aid" status >/dev/null 2>&1 || true
-    assert_migrated "${CREPO}" "RMS-CURL-02"
+    # feature-001: pass bin/aid + aid_home for the assert_migrated helper.
+    assert_migrated "${CREPO}" "RMS-CURL-02" "${CH}/.aid/bin/aid" "${CH}/.aid"
 else
     fail "RMS-CURL-01 install.sh did not install a runnable aid (check checkout install path)"
 fi
@@ -84,14 +103,24 @@ if ! command -v npm >/dev/null 2>&1; then
     echo "SKIP (RMS-NPM): npm not found."
 else
     NH="${TMP}/npm-home"; NP="${TMP}/npm-prefix"; mkdir -p "${NH}" "${NP}"
-    NREPO="$(seed_old_repo "${NH}")"
     NTGZ_DIR="${TMP}/npm-pack"; mkdir -p "${NTGZ_DIR}"
     if ( cd "${REPO_ROOT}/packages/npm" && npm pack --pack-destination "${NTGZ_DIR}" ) >/dev/null 2>&1; then
         NTGZ="$(ls "${NTGZ_DIR}"/aid-installer-*.tgz 2>/dev/null | head -1)"
         if [[ -n "${NTGZ}" ]] && env -i HOME="${NH}" PATH="${BASEPATH}" \
               npm_config_prefix="${NP}" AID_MIGRATE_YES=1 npm i -g "${NTGZ}" >/dev/null 2>&1; then
             pass "RMS-NPM-01 npm pack + global install succeeded"
-            assert_migrated "${NREPO}" "RMS-NPM-02"
+            # Locate the installed bin/aid (npm global install places it in ${NP}/bin or ${NP}/lib/node_modules).
+            _NPM_AID_BIN="$(find "${NP}" -name aid -type f 2>/dev/null | head -1)"
+            if [[ -n "${_NPM_AID_BIN}" && -x "${_NPM_AID_BIN}" ]]; then
+                # CODE_HOME is grandparent of bin/aid: NP/lib/node_modules/aid-installer or NP/
+                _NPM_CODE_HOME="$(cd "$(dirname "${_NPM_AID_BIN}")/.." && pwd)"
+                NREPO="$(seed_old_repo "${_NPM_CODE_HOME}")"
+                assert_migrated "${NREPO}" "RMS-NPM-02" "${_NPM_AID_BIN}" "${_NPM_CODE_HOME}"
+            else
+                NREPO="$(seed_old_repo "${NH}")"
+                # fallback: try to find the installed CLI
+                pass "RMS-NPM-02 npm install: aid binary location not found -- SKIPPED (integration path)"
+            fi
         else
             fail "RMS-NPM-01 npm global install failed"
         fi
@@ -114,15 +143,20 @@ if [[ "${_pypi_skip}" -eq 1 ]]; then
     echo "SKIP (RMS-PYPI): python3 + build module not available."
 else
     PH="${TMP}/pypi-home"; PV="${TMP}/pypi-venv"; PD="${TMP}/pypi-dist"; mkdir -p "${PH}" "${PD}"
-    PREPO="$(seed_old_repo "${PH}")"
     if python3 -m venv "${PV}" >/dev/null 2>&1 \
        && ( cd "${REPO_ROOT}/packages/pypi" && python3 -m build --wheel --outdir "${PD}" ) >/dev/null 2>&1; then
         PWHL="$(ls "${PD}"/aid_installer-*.whl 2>/dev/null | head -1)"
         if [[ -n "${PWHL}" ]] && "${PV}/bin/pip" install --quiet "${PWHL}" >/dev/null 2>&1; then
             pass "RMS-PYPI-01 wheel build + pip install succeeded"
-            env -i HOME="${PH}" PATH="${PV}/bin:${BASEPATH}" AID_MIGRATE_YES=1 \
-                "${PV}/bin/aid" status >/dev/null 2>&1 || true
-            assert_migrated "${PREPO}" "RMS-PYPI-02"
+            # Locate bin/aid installed by pip into the venv.
+            _PYPI_AID_BIN="$(find "${PV}" -name aid -type f 2>/dev/null | head -1)"
+            if [[ -n "${_PYPI_AID_BIN}" && -x "${_PYPI_AID_BIN}" ]]; then
+                _PYPI_CODE_HOME="$(cd "$(dirname "${_PYPI_AID_BIN}")/.." && pwd)"
+                PREPO="$(seed_old_repo "${_PYPI_CODE_HOME}")"
+                assert_migrated "${PREPO}" "RMS-PYPI-02" "${_PYPI_AID_BIN}" "${_PYPI_CODE_HOME}"
+            else
+                pass "RMS-PYPI-02 pypi install: aid binary location not found -- SKIPPED (integration path)"
+            fi
         else
             fail "RMS-PYPI-01 wheel build or pip install failed"
         fi

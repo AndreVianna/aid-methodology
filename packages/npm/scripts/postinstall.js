@@ -21,14 +21,46 @@
 
 'use strict';
 
-var spawnSync = require('child_process').spawnSync;
-var path      = require('path');
-var process   = require('process');
+var spawnSync  = require('child_process').spawnSync;
+var path       = require('path');
+var process    = require('process');
+var fs         = require('fs');
+var existsSync = fs.existsSync;
 
 // packages/npm/scripts/postinstall.js is two levels below the package root.
 var pkgRoot = path.join(__dirname, '..');
 
 try {
+    // ---------------------------------------------------------------------------
+    // Install-time PRIMARY provisioning of the global shared-state home.
+    // Only runs when the npm install is executed as root (getuid() === 0) AND the
+    // shared registry is not already present (no-clobber / idempotent).
+    // AID_SHARED_STATE_HOME overrides the default '/var/lib/aid' -- used by
+    // canonical tests to redirect provisioning to a writable sandbox so the live
+    // /var/lib/aid is never touched by the test suite.
+    var sharedHome = process.env.AID_SHARED_STATE_HOME || '/var/lib/aid';
+    if (process.getuid && process.getuid() === 0 &&
+            !existsSync(path.join(sharedHome, 'registry.yml'))) {
+        // Create the shared-state directory (no-op if already present).
+        if (!existsSync(sharedHome)) {
+            fs.mkdirSync(sharedHome, { mode: 0o755, recursive: true });
+        }
+        // Seed an empty registry.yml (no-clobber: checked above).
+        var seedText = [
+            "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).",
+            "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/",
+            "# description/version are read from each repo's own .aid/settings.yml at render time.",
+            "schema: 1",
+            "repos:",
+            ""
+        ].join("\n");
+        var regPath = path.join(sharedHome, 'registry.yml');
+        var tmpPath = regPath + '.aid-tmp.' + process.pid;
+        fs.writeFileSync(tmpPath, seedText, { mode: 0o644 });
+        fs.renameSync(tmpPath, regPath);
+    }
+
+    // ---------------------------------------------------------------------------
     // AID_SKIP_SELF_INSTALL=1: npm already (re)installed the CLI, so the spawned
     // `aid update self --yes` must NOT re-install -- it is used here only to
     // trigger the post-install migration scan. Without it, the now channel-aware

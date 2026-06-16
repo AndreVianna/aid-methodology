@@ -845,6 +845,11 @@ assert_output_not_contains "$OUT" "A newer aid CLI is available" "CLI028-E02 opt
 # ---------------------------------------------------------------------------
 # CLI028-F: Cache written + throttle: 2nd run within 24h does NOT re-fetch
 # (Point URL at a failing source; command still succeeds using cache)
+#
+# feature-001: _aid_check_update writes the .update-check cache to
+# ${HOME}/.aid/.update-check (always per-user, never AID_HOME).
+# Pin HOME to a throwaway dir so the assertion path is deterministic and
+# the real developer HOME is not written to.
 # ---------------------------------------------------------------------------
 CLI028F_HOME=$(newhome)
 setup_aid_home "${CLI028F_HOME}"
@@ -855,19 +860,27 @@ mkdir -p "${CLI028_JSON_DIR_F}"
 _json_f="$(make_release_json "${CLI028_JSON_DIR_F}" "9.9.9")"
 _check_url_f="file://${_json_f}"
 
+# Throwaway HOME for CLI028-F: cache lands in CLI028F_FAKE_HOME/.aid/.update-check.
+# Pre-create the .aid/ dir: _aid_check_update writes to ${HOME}/.aid/.update-check
+# but does NOT create the .aid/ directory (it uses 2>/dev/null || true and silently
+# drops the cache write when the dir is absent).
+CLI028F_FAKE_HOME="$(mktemp -d "${TMP}/fakehome028f.XXXXXX")"
+mkdir -p "${CLI028F_FAKE_HOME}/.aid"
+
 TF2=$(newtarget)
 # First run: populates cache.
-OUT=$(cd "${TF2}" && AID_HOME="${CLI028F_HOME}" AID_NO_UPDATE_CHECK=0 \
+OUT=$(cd "${TF2}" && HOME="${CLI028F_FAKE_HOME}" AID_HOME="${CLI028F_HOME}" AID_NO_UPDATE_CHECK=0 \
      AID_UPDATE_CHECK_URL="${_check_url_f}" \
      AID_LIB_PATH="${CLI028F_HOME}/lib/aid-install-core.sh" \
      bash "${CLI028F_HOME}/bin/aid" 2>&1)
 assert_output_contains "$OUT" "A newer aid CLI is available" "CLI028-F01 first run: notice shown (cache populated)"
-assert_file_exists "${CLI028F_HOME}/.update-check" "CLI028-F02 cache file written"
+# feature-001: cache file is at ${HOME}/.aid/.update-check (not AID_HOME).
+assert_file_exists "${CLI028F_FAKE_HOME}/.aid/.update-check" "CLI028-F02 cache file written (${HOME}/.aid/.update-check)"
 
 # Second run: point URL at non-existent file so fetch would fail.
 # Should still show notice from cache.
 _bad_url="file:///nonexistent/does-not-exist.json"
-OUT=$(cd "${TF2}" && AID_HOME="${CLI028F_HOME}" AID_NO_UPDATE_CHECK=0 \
+OUT=$(cd "${TF2}" && HOME="${CLI028F_FAKE_HOME}" AID_HOME="${CLI028F_HOME}" AID_NO_UPDATE_CHECK=0 \
      AID_UPDATE_CHECK_URL="${_bad_url}" \
      AID_LIB_PATH="${CLI028F_HOME}/lib/aid-install-core.sh" \
      bash "${CLI028F_HOME}/bin/aid" 2>&1); RC=$?

@@ -1,7 +1,7 @@
 # Work State — work-001-cli-install-scope
 
-> **Status:** Detailed — 16 tasks across 3 deliveries (all gates A+); ready for execution (gated on PR #78)
-> **Phase:** Detail
+> **Status:** delivery-001 COMPLETE — all 9 tasks Done, delivery gate A+, suite 51/51 green; PR open to master. delivery-002/003 remain.
+> **Phase:** Execute
 > **Minimum Grade:** A (resolved via read-setting)
 > **Started:** 2026-06-15
 > **User Approved:** yes
@@ -10,13 +10,13 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 ## Pipeline Status
 
-- **Lifecycle:** Blocked
-- **Phase:** Detail
-- **Active Skill:** none
-- **Updated:** 2026-06-15T18:30:00Z
-- **Pause Reason:** —
-- **Block Reason:** PR #78 merged to master (84ff42f0); PR #79 (this design+plan branch, rebased on master) awaiting review/merge. /aid-execute proceeds once #79 is on master.
-- **Block Artifact:** PR #79
+- **Lifecycle:** Paused-Awaiting-Input
+- **Phase:** Execute
+- **Active Skill:** aid-execute
+- **Updated:** 2026-06-16T02:00:00Z
+- **Pause Reason:** delivery-001 COMPLETE (9/9 Done, gate A+, suite 51/51). PR open to master for review/merge. Next: delivery-002 (feature-004 registry+dispatch) then delivery-003 (feature-005 bootstrap) — resume via /aid-execute after delivery-001 merges (delivery-002 builds on it).
+- **Block Reason:** —
+- **Block Artifact:** —
 
 ## Triage
 
@@ -68,7 +68,7 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| delivery-001 | Detailed | 9 (task-001..009) | Root-cause fix: feature-001 (scope + CODE/STATE split, marker/scan removal) + feature-002 (/var/lib/aid provisioning) + feature-003 (stamp gate = REPLACEMENT trigger). §10 P1 + 003 pulled in for the trigger coupling. Standalone MVP. |
+| delivery-001 | Done (gate A+) | 9/9 Done | Root-cause fix: feature-001 (scope + CODE/STATE split, marker/scan removal) + feature-002 (/var/lib/aid provisioning) + feature-003 (stamp gate). All 9 tasks Done; delivery gate A+; suite 51/51 green; PR to master open. |
 | delivery-002 | Detailed | 4 (task-010..013) | Coherent discovery: feature-004 (two-tier registry union + cwd A/B/C dispatch + update-self registry-migration, replacing the d001 no-op stub). §10 P2. Depends on d001. Standalone MVP. |
 | delivery-003 | Detailed | 3 (task-014..016) | Rollout: feature-005 (v1.0/v1.1 bootstrap stamp+register on visit, no scan; + canonical test-suite migration to CODE/STATE split). §10 P3. Depends on d001+d002. Standalone MVP. |
 
@@ -76,15 +76,15 @@ This is the single state file for **this work** — the full dev lifecycle from 
 
 | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
 |---|------|------|------|--------|--------|---------|-------|
-| task-001 | CODE/STATE home split + scope + marker/scan/sentinel removal (bash) | IMPLEMENT | d001 w1 | Pending | — | — | feature-001; foundation, no deps |
-| task-002 | CODE/STATE home split (ps1 parity) | IMPLEMENT | d001 w2 | Pending | — | — | feature-001; parity twin of task-001 |
-| task-003 | /var/lib/aid provisioning helper + install hooks + runtime fallback (bash) | IMPLEMENT | d001 w2 | Pending | — | — | feature-002; lib + npm + curl + register fallback |
-| task-004 | Global provisioning Windows parity (%ProgramData%\aid) (ps1) | IMPLEMENT | d001 w3 | Pending | — | — | feature-002; parity twin of task-003 |
-| task-005 | Per-repo format stamp + fail-safe gate (bash) | IMPLEMENT | d001 w2 | Pending | — | — | feature-003; constant/synth/repair/helpers/gate |
-| task-006 | Per-repo format stamp + fail-safe gate (ps1 parity) | IMPLEMENT | d001 w3 | Pending | — | — | feature-003; parity twin of task-005 |
-| task-007 | d001 test migration — fixture split + retired marker/scan/sentinel + home-split asserts | TEST | d001 w3 | Pending | — | — | feature-001 slice; C1/C2/C3/C5; green-per-delivery |
-| task-008 | d001 test migration — /var/lib/aid provisioning asserts (seam) | TEST | d001 w4 | Pending | — | — | feature-002 slice; green-per-delivery |
-| task-009 | d001 test migration — stamp + gate asserts (parity constant, refuse/offer/malformed) | TEST | d001 w4 | Pending | — | — | feature-003 slice; green-per-delivery |
+| task-001 | CODE/STATE home split + scope + marker/scan/sentinel removal (bash) | IMPLEMENT | d001 w1 | Done | A+ | — | feature-001; bin/aid 2485→2217; all ACs verified; suite red until sibling tasks land (by design, green@delivery) |
+| task-002 | CODE/STATE home split (ps1 parity) | IMPLEMENT | d001 w2 | Done | A+ | — | feature-001; ps1 parity twin; PARSE OK, grep-zero, ASCII; no ps1 priv-helper (writability probe) |
+| task-003 | /var/lib/aid provisioning helper + install hooks + runtime fallback (bash) | IMPLEMENT | d001 w2 | Done | A+ | — | feature-002; D+→A+ (fixed registry degrade: mktemp-in-nonwritable-dir dropped entry; now preserved in ~/.aid) |
+| task-004 | Global provisioning Windows parity (%ProgramData%\aid) (ps1) | IMPLEMENT | d001 w3 | Done | A | — | feature-002; reviewer A — task-003-class mktemp-before-degrade bug NOT present (entry preserved to %LOCALAPPDATA%, no temp leak, no UAC prompt); 1 MINOR cosmetic double-WARN in unregister Accepted (parity-shared with committed bash twin; fix would touch both sides — deferred polish) |
+| task-005 | Per-repo format stamp + fail-safe gate (bash) | IMPLEMENT | d001 w2 | Done | A+ | — | feature-003; D+→A+ (fixed bare-aid refuse exit-code: exit 0→exit $?); AID_SUPPORTED_FORMAT=1, _aid_repo_format, _aid_format_gate (refuse>1/warn<1/silent==1), era-a+era-b stamp v1; migrate G4A-02/PAR077-C02 red OOS (by-design, owned by TEST 007/009) |
+| task-006 | Per-repo format stamp + fail-safe gate (ps1 parity) | IMPLEMENT | d001 w3 | Done | A+ | — | feature-003; D+→A+ (added missing 4th gate site Invoke-DcStart — dashboard-start was launching on newer-format repos); $AidSupportedFormat, Get-AidRepoFormat, Invoke-AidFormatGate, era-a/era-b stamp; parity 235/0 |
+| task-007 | d001 test migration — fixture split + retired marker/scan/sentinel + home-split asserts | TEST | d001 w3 | Done | green | — | feature-001 slice; overshot to whole suite — ALL 50 canonical suites pass (238/0) HOME-pinned; fixed 1 non-hermetic test (TRG-T2-01 AID_HOME leak → seam pin); likely absorbed much of 008/009 |
+| task-008 | d001 test migration — /var/lib/aid provisioning asserts (seam) | TEST | d001 w4 | Done | A+ | — | feature-002 slice; NEW test-aid-provisioning.sh (42 asserts, seam-sandboxed, /var/lib never touched); B+→A+ (dropped misleading PRV-N03 + dead stub) |
+| task-009 | d001 test migration — stamp + gate asserts (parity constant, refuse/offer/malformed) | TEST | d001 w4 | Done | A+ | — | feature-003 slice; PAR009-V in test-aid-cli-parity.sh (constant-drift, refuse-on-newer byte/mtime identity, malformed→0, bash+ps1); 249/0 |
 | task-010 | Two-tier registry union read + write-tier selection (bash) | IMPLEMENT | d002 w1 | Pending | — | — | feature-004; mechanism 1+2 |
 | task-011 | cwd A/B/C dispatch matrix + update-self registry migration swap (bash) | IMPLEMENT | d002 w2 | Pending | — | — | feature-004; mechanism 3 + migration swap |
 | task-012 | Two-tier registry + dispatch + update-self migration (ps1 parity) | IMPLEMENT | d002 w3 | Pending | — | — | feature-004; parity twin of task-010+011 |
@@ -134,9 +134,25 @@ This is the single state file for **this work** — the full dev lifecycle from 
 - **Answer:** One near-top constant per language entrypoint (bin/aid + bin/aid.ps1) with a canonical-suite parity assertion.
 - **Applied to:** feature-003 SPEC (Q3 resolution); task-009 parity-constant assertion.
 
+### Q4
+
+- **Category:** Implementation
+- **Impact:** Medium
+- **Status:** Open
+- **Context:** task-005 REVIEW cycle-1 (feature-003). The format gate is wired into 4 entry points; 3 (`_dc_start`:1039, status:2023, update:2347) propagate the gate's non-zero return via `exit $?`. The bare-`aid` dashboard-landing path does NOT: `_cmd_dashboard` correctly does `_aid_format_gate "." || return $?` (bin/aid:1954), but the dispatch at bin/aid:1972-1973 runs `_cmd_dashboard` then unconditionally `exit 0`, so a refused newer-format repo prints the refuse message but exits 0 (AC3/AC4 require non-zero). The body still short-circuits so no `.aid/` write/operate occurs — fail-safe data protection holds; only the observable exit code is wrong.
+- **Suggested:** At bin/aid:1972-1973 propagate the return code, e.g. `_cmd_dashboard || exit $?` then `exit 0` (or `_cmd_dashboard; exit $?`), so bare `aid` exits non-zero on refuse like the other three sites. Verify with the cwd `format_version: 2` E2E (expect rc!=0).
+- **Answer:** _pending FIX_
+- **Applied to:** _pending_
+
 ## Delivery Gates
 
-> _none yet_
+### delivery-001
+
+- **Reviewer Tier:** Large
+- **Grade:** A+
+- **Issue List:** none (gate passed clean; 0 deferred [HIGH] from per-task quick checks)
+- **Timestamp:** 2026-06-16T02:00:00Z
+- **Notes:** Holistic cross-task pass — delivery ACs (AC1/2/3/4/6/7/8/10) verified end-to-end incl. the v1.0→v1.1 root-cause scenario (unprivileged global aid degrades to ~/.aid, no prompt, no re-prompt loop); bash↔ps1 parity (4↔4 gate sites, both stamp constants =1); full canonical suite 51/51 (238/0).
 
 ## Quick Check Findings
 
@@ -171,6 +187,9 @@ This is the single state file for **this work** — the full dev lifecycle from 
 | 2026-06-15 | Detail graded (cycle 1) | B+ | aid-reviewer: 1 LOW (task-007 missing 005 dep) + 2 MINOR; no blocking issues |
 | 2026-06-15 | Detail graded (cycle 2) | A+ | All 3 fixed; 16 tasks exact 6-section format, acyclic DAG, green-per-delivery; 0 Pending |
 | 2026-06-15 | DESIGN PIPELINE COMPLETE | A+ | interview→specify→plan→detail all A+. Ready for /aid-execute (gated on PR #78 merge) |
+| 2026-06-16 | delivery-001 executed | A+×8/A×1 | 9 tasks: 001/002/003/005/006/007/008/009 A+, 004 A. Gates caught 4 real bugs (registry-drop, swallowed exit-code, missing ps1 gate site, non-hermetic test) — all fixed |
+| 2026-06-16 | delivery-001 DELIVERY GATE | A+ | Large-tier holistic pass, 0 findings; v1.0→v1.1 root-cause scenario verified clean; suite 51/51 (238/0); PR to master opened |
+| 2026-06-16 | PR #80 CI fix | — | test-aid-migrate.sh ISO-CANARY-01 hardcoded empty REAL_HOME expectation → tripped on the repo's own .aid under CI's /home/runner checkout (local HOME-pin masked it; gate reviewer too). Fixed to before/after snapshot (matches sibling suites). PR #80 CI now GREEN (all 7 checks). |
 | 2026-06-15 | Plan created — 3 deliveries | — | aid-plan: 5 features → d001 (001+002+003, root-cause + stamp-gate replacement trigger), d002 (004), d003 (005). 001↔003 trigger coupling resolved by grouping 003 into d001. PR #78 hard prerequisite (gated to master first, not a deliverable). |
 | 2026-06-15 | Tasks detailed — 16 tasks across 3 deliveries | — | aid-detail: d001=9 (task-001..009: f001/f002/f003 bash+ps1 IMPLEMENT + 3 green-per-delivery TEST), d002=4 (task-010..013: f004 bash split + ps1 + TEST), d003=3 (task-014 bootstrap runbook DOCUMENT, task-015 bootstrap TEST, task-016 final reconciliation TEST). bash/ps1 split as parity twins; per-delivery TEST tasks keep run-all.sh green at each boundary. Per-delivery execution graph + wave-maps appended to PLAN.md. |
 
