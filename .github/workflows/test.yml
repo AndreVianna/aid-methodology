@@ -2,7 +2,7 @@ name: CI
 
 # AID is not a typical app: the shippable product is the rendered install trees
 # under profiles/{claude-code,codex,cursor}/, generated from canonical/ by
-# .claude/skills/aid-generate/scripts/run_generator.py. CI therefore protects, in priority order:
+# .claude/skills/generate-profile/scripts/run_generator.py. CI therefore protects, in priority order:
 #   1. that committed profiles/ stays in sync with canonical/  (the core invariant)
 #   2. the runtime helper scripts adopters depend on            (the bash + node suites)
 #   3. the generator/build system itself                        (self-tests)
@@ -32,12 +32,12 @@ jobs:
       - name: Ignore exec-bit changes (repo is maintained with core.fileMode=false)
         run: git config core.fileMode false
       - name: Regenerate install trees from canonical/
-        run: python .claude/skills/aid-generate/scripts/run_generator.py
+        run: python .claude/skills/generate-profile/scripts/run_generator.py
       - name: Assert profiles/ has no uncommitted render drift
         shell: bash
         run: |
           if ! git diff --exit-code -- profiles/; then
-            echo "::error::profiles/ is out of sync with canonical/. Run 'python .claude/skills/aid-generate/scripts/run_generator.py' and commit the result."
+            echo "::error::profiles/ is out of sync with canonical/. Run 'python .claude/skills/generate-profile/scripts/run_generator.py' and commit the result."
             exit 1
           fi
 
@@ -89,13 +89,13 @@ jobs:
           python-version: '3.11'
       - name: harness + manifest-safety + render + verify self-tests
         run: |
-          python .claude/skills/aid-generate/scripts/render_lib.py --self-test
-          python .claude/skills/aid-generate/scripts/test_manifest_safety.py --self-test
-          python .claude/skills/aid-generate/scripts/render_canonical_scripts.py --self-test --canonical-root .
-          python .claude/skills/aid-generate/scripts/verify_deterministic.py --self-test --canonical-root .
-          python .claude/skills/aid-generate/scripts/verify_advisory.py --self-test --canonical-root .
-          python .claude/skills/aid-generate/scripts/test_copilot_emitter.py --self-test --canonical-root .
-          python .claude/skills/aid-generate/scripts/test_antigravity_emitter.py --self-test --canonical-root .
+          python .claude/skills/generate-profile/scripts/render_lib.py --self-test
+          python .claude/skills/generate-profile/scripts/test_manifest_safety.py --self-test
+          python .claude/skills/generate-profile/scripts/render_canonical_scripts.py --self-test --canonical-root .
+          python .claude/skills/generate-profile/scripts/verify_deterministic.py --self-test --canonical-root .
+          python .claude/skills/generate-profile/scripts/verify_advisory.py --self-test --canonical-root .
+          python .claude/skills/generate-profile/scripts/test_copilot_emitter.py --self-test --canonical-root .
+          python .claude/skills/generate-profile/scripts/test_antigravity_emitter.py --self-test --canonical-root .
 
   kb-hygiene:
     name: KB + repo hygiene

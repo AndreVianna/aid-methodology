@@ -238,7 +238,7 @@ delivery gate per `canonical/scripts/grade.sh` header comment on Severity/Status
 | `context` | string | NO (claude-code-only) | Injected by renderer for Claude Code (per `profiles/claude-code.toml` `[skill.frontmatter]` `claude_code_optional`) |
 | `agent` | string | NO (claude-code-only) | Injected by renderer for Claude Code |
 
-**Renderer behavior** (per `.claude/skills/aid-generate/scripts/render_skills.py` `_rewrite_skill_frontmatter`):
+**Renderer behavior** (per `.claude/skills/generate-profile/scripts/render_skills.py` `_rewrite_skill_frontmatter`):
 
 - Tool name remapping applied to `allowed-tools:` line via the profile's `[tool_names]` table (identity map for Claude Code per `profiles/claude-code.toml` `[tool_names]`).
 - `claude_code_optional` fields are dropped from non-Claude-Code renders.
@@ -257,7 +257,7 @@ delivery gate per `canonical/scripts/grade.sh` header comment on Severity/Status
 | `description` | string OR folded YAML `>` | YES | One paragraph; for sub-agent-only utilities, must begin with `INTERNAL UTILITY (sub-agent only — do NOT invoke from a skill)` per `canonical/agents/aid-clerk/AGENT.md` `description:` line |
 | `tier` | enum | YES (canonical) | `large` / `medium` / `small` — maps to `model:` via the profile's `[model_tiers]` table |
 | `tools` | comma-separated string | YES | Subset of `Read, Glob, Grep, Bash, Write, Edit` |
-| `model` | string | YES (rendered output, NOT canonical input) | Derived by the renderer from `tier:` via `[model_tiers]` (per `.claude/skills/aid-generate/scripts/render_agents.py` `_resolve_model`) |
+| `model` | string | YES (rendered output, NOT canonical input) | Derived by the renderer from `tier:` via `[model_tiers]` (per `.claude/skills/generate-profile/scripts/render_agents.py` `_resolve_model`) |
 | `permissionMode` | enum | NO | `bypassPermissions` — set on `aid-researcher` when dispatched for parallel KB analysis (per the former discovery-* sub-agent pattern; confirm in `canonical/agents/aid-researcher/AGENT.md`) |
 | `background` | bool | NO | `true` — set on `aid-researcher` when dispatched for parallel KB analysis |
 
@@ -266,7 +266,7 @@ delivery gate per `canonical/scripts/grade.sh` header comment on Severity/Status
 - `medium` → `sonnet`
 - `small` → `haiku`
 
-Codex + Antigravity use a `[model_tiers.<tier>]` sub-table with `model` + `reasoning_effort` fields (per `.claude/skills/aid-generate/scripts/aid_profile.py` `class ModelTierDetailed`; `profiles/antigravity.toml` `[model_tiers.large]`); Claude Code, Cursor + Copilot CLI use the simple string form (`ModelTierSimple`; per `profiles/copilot-cli.toml` `[model_tiers]`).
+Codex + Antigravity use a `[model_tiers.<tier>]` sub-table with `model` + `reasoning_effort` fields (per `.claude/skills/generate-profile/scripts/aid_profile.py` `class ModelTierDetailed`; `profiles/antigravity.toml` `[model_tiers.large]`); Claude Code, Cursor + Copilot CLI use the simple string form (`ModelTierSimple`; per `profiles/copilot-cli.toml` `[model_tiers]`).
 
 ---
 
@@ -306,7 +306,7 @@ Codex + Antigravity use a `[model_tiers.<tier>]` sub-table with `model` + `reaso
 | `copilot-cli` | `profiles/copilot-cli/emission-manifest.jsonl` (single `.github/` root) |
 | `antigravity` | `profiles/antigravity/emission-manifest.jsonl` (single `.agent/` root) |
 
-⚠️ The location table in `canonical/EMISSION-MANIFEST.md` (`## Filename and Location`) still lists only the original 3 profiles; the 2 new manifests exist on disk and follow the same deepest-common-parent rule. The renderer derives the path from `LayoutConfig.common_parent()` (per `.claude/skills/aid-generate/scripts/aid_profile.py`), so the rule generalizes regardless of the doc's example set.
+⚠️ The location table in `canonical/EMISSION-MANIFEST.md` (`## Filename and Location`) still lists only the original 3 profiles; the 2 new manifests exist on disk and follow the same deepest-common-parent rule. The renderer derives the path from `LayoutConfig.common_parent()` (per `.claude/skills/generate-profile/scripts/aid_profile.py`), so the rule generalizes regardless of the doc's example set.
 
 **Safety-boundary algorithm** (per `EMISSION-MANIFEST.md` `## Safety-Boundary Semantics`):
 
@@ -389,7 +389,7 @@ string (`write_version_marker` in `lib/aid-install-core.sh`).
 
 **Source of truth:** `profiles/claude-code.toml`, `profiles/codex.toml`, `profiles/cursor.toml`, `profiles/copilot-cli.toml`, `profiles/antigravity.toml` (5 profiles).
 
-**Schema (TOML 1.0, parsed by `.claude/skills/aid-generate/scripts/aid_profile.py` `_parse_layout` etc.):**
+**Schema (TOML 1.0, parsed by `.claude/skills/generate-profile/scripts/aid_profile.py` `_parse_layout` etc.):**
 
 | Section | Keys | Purpose |
 |---------|------|---------|
@@ -404,7 +404,7 @@ string (`write_version_marker` in `lib/aid-install-core.sh`).
 | `[extras]` | `rules_frontmatter` (string\|None — e.g., `"trigger"` for Antigravity, controlling extras-rules frontmatter dialect; absent → verbatim source copy, e.g., Cursor) + `[[extras.rules]]` array of `{filename, always_apply, description, globs, output_filename?}` | Tool-specific extras (methodology rule files placed via `render_skills._render_cursor_extras`) |
 | `[capabilities]` | `hooks`, `skill_chaining`, `background_execution`, `stop_hook_autocontinue` (booleans) | Tool capabilities (verified against host docs) |
 
-The dataclasses mirror this schema 1:1 in `.claude/skills/aid-generate/scripts/aid_profile.py` (the `@dataclass` block from `class LayoutConfig` onward — `LayoutConfig`, `FrontmatterConfig`, `AgentConfig`, `SkillConfig`, `ModelTierSimple`, `ModelTierDetailed`, `RuleEntry`, `ExtrasConfig`, `CapabilitiesConfig`, `Profile`).
+The dataclasses mirror this schema 1:1 in `.claude/skills/generate-profile/scripts/aid_profile.py` (the `@dataclass` block from `class LayoutConfig` onward — `LayoutConfig`, `FrontmatterConfig`, `AgentConfig`, `SkillConfig`, `ModelTierSimple`, `ModelTierDetailed`, `RuleEntry`, `ExtrasConfig`, `CapabilitiesConfig`, `Profile`).
 
 **`[[extras.rules]]` → `RuleEntry`** (per `aid_profile.py` `class RuleEntry`):
 
@@ -586,7 +586,7 @@ erDiagram
 | **Migrations** | N/A — no DB. Document schema changes are tracked via the per-doc `changelog:` frontmatter field (per `frontmatter-schema.md` `### \`changelog:\``) + KB doc cycle history in `STATE.md ## Review History`. |
 | **Indexes** | N/A — no DB. The closest analog is `.aid/knowledge/INDEX.md` — an agent-facing RAG navigation index built by `canonical/scripts/kb/build-kb-index.sh` from each KB doc's `intent:` frontmatter. |
 | **Soft Deletes** | N/A — no DB. The emission-manifest's `removed_dst` set serves a related purpose: only paths previously emitted by the generator are eligible for deletion (per `EMISSION-MANIFEST.md` `## Safety-Boundary Semantics`); user-created files are NEVER touched. |
-| **Validation** | Three mechanisms: (1) `aid-reviewer` (in `/aid-discover REVIEW`) validates KB frontmatter + cited durable anchors + doc presence + generated-files freshness; (2) `.claude/skills/aid-generate/scripts/aid_profile.py` `validate()` validates profile TOML (incl. `[agent].format ∈ _KNOWN_AGENT_FORMATS`); (3) `parse-recipe.sh --validate` validates recipe front-matter + body. |
+| **Validation** | Three mechanisms: (1) `aid-reviewer` (in `/aid-discover REVIEW`) validates KB frontmatter + cited durable anchors + doc presence + generated-files freshness; (2) `.claude/skills/generate-profile/scripts/aid_profile.py` `validate()` validates profile TOML (incl. `[agent].format ∈ _KNOWN_AGENT_FORMATS`); (3) `parse-recipe.sh --validate` validates recipe front-matter + body. |
 
 ---
 

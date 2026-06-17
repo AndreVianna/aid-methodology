@@ -38,9 +38,9 @@ check-in pattern that emits mid-wait status when ETAs exceed 5 minutes.
 | `validate-html-output.sh` | ~30 s | 2026-05-21 | 1 | Runs html-validate + link-integrity checks (H1+A1-A5+S2 structural/a11y plus L1+L2 anchor/relative-md links) on the knowledge-summary HTML output. Merged from the former validate-html.sh + validate-links.sh in 2026-05-26 script consolidation. |
 | `validate-diagrams.mjs` | ~30 s | 2026-05-21 | 1 | Renders Mermaid diagrams via mmdc and checks output |
 | `contrast-check.mjs` | ~30 s | 2026-05-21 | 1 | Checks WCAG contrast ratios for all colour pairs |
-| `/aid-generate` (end-to-end) | ~30 s | 2026-05-23 | 4 (4 observed run_generator.py invocations during work-003) | Runs run_generator.py across all 3 profiles; includes VERIFY (deterministic) |
+| `/generate-profile` (end-to-end) | ~30 s | 2026-05-23 | 4 (4 observed run_generator.py invocations during work-003) | Runs run_generator.py across all 3 profiles; includes VERIFY (deterministic) |
 | `install.sh` (smoke install) | ~10 s | 2026-05-23 | 2 | `--tool <name>` or auto-detect; copies one profile tree to target dir |
-| `python .claude/skills/aid-generate/scripts/run_generator.py` | ~25 s | 2026-05-23 | 4 | Full canonical→profile render + VERIFY (deterministic) + VERIFY (advisory) |
+| `python .claude/skills/generate-profile/scripts/run_generator.py` | ~25 s | 2026-05-23 | 4 | Full canonical→profile render + VERIFY (deterministic) + VERIFY (advisory) |
 
 ## Notes
 

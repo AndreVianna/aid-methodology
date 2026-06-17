@@ -9,7 +9,7 @@ intent: |
   and the canonical→5-profile renderer contract. Read this to understand what each pipeline
   boundary expects and emits.
 contracts:
-  - "12 user-facing skill slash-command contracts documented (aid-config + 6 numbered phases aid-discover…aid-execute + optional aid-deploy/aid-monitor/aid-summarize + optional off-pipeline aid-housekeep/aid-ask) + maintainer-only aid-generate"
+  - "12 user-facing skill slash-command contracts documented (aid-config + 6 numbered phases aid-discover…aid-execute + optional aid-deploy/aid-monitor/aid-summarize + optional off-pipeline aid-housekeep/aid-ask) + maintainer-only generate-profile"
   - "discovery.doc_set in settings.yml: declared-set → dispatch mapping honors the set (no-hang on omission; dispatch on addition)"
 changelog:
   - 2026-06-09: aid-ask added (11->12 user-facing skill contracts) + /aid-execute argument order corrected to work-first (PR #70) via /aid-housekeep KB-DELTA.
@@ -42,7 +42,7 @@ These are the only "endpoints" the user invokes. Each is an AID skill installed 
 (Copilot CLI native Agent Skills), or `.agent/skills/<slug>/SKILL.md` (Antigravity).
 
 There are **12 user-facing skills** (`aid-config` … `aid-monitor`, `aid-summarize`, and the
-optional off-pipeline `aid-housekeep` and `aid-ask`) plus maintainer-only `aid-generate`. Of
+optional off-pipeline `aid-housekeep` and `aid-ask`) plus maintainer-only `generate-profile`. Of
 these, `aid-summarize` is **non-phase / optional**, and `aid-housekeep` and `aid-ask` are
 additionally **off the mandatory pipeline** (no phase gate references them; invoked
 on-demand). `aid-ask` is also **read-only** (writes no files). Source:
@@ -697,10 +697,10 @@ The next run of the owning phase detects the pending entry and resolves it in Q&
 
 ## Renderer Contract — Canonical → 5 Profile Trees
 
-The generator (`run_generator.py` → `.claude/skills/aid-generate/scripts/*.py`) implements
+The generator (`run_generator.py` → `.claude/skills/generate-profile/scripts/*.py`) implements
 a **pure-mirror** contract across **5 profiles** (claude-code, codex, cursor, copilot-cli,
 antigravity) and **4 agent formats** (`markdown | toml | copilot-agent | antigravity-rule`;
-`.claude/skills/aid-generate/scripts/aid_profile.py` `_KNOWN_AGENT_FORMATS`):
+`.claude/skills/generate-profile/scripts/aid_profile.py` `_KNOWN_AGENT_FORMATS`):
 
 | Canonical source | Renderer | Claude Code | Codex | Cursor | Copilot CLI | Antigravity |
 |------------------|----------|-------------|-------|--------|-------------|-------------|

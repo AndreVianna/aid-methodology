@@ -92,19 +92,19 @@ The canonical → 5-profiles render is the **only build artifact pipeline** in t
 
 | Component | Path | Lines | Purpose |
 |-----------|------|-------|---------|
-| Generator entrypoint | `.claude/skills/aid-generate/scripts/run_generator.py` | 87 | Loops `profiles/*.toml` (5 profiles: claude-code, codex, cursor, copilot-cli, antigravity), calls each renderer, runs VERIFY (deterministic) + VERIFY (advisory) |
-| Profile parser | `.claude/skills/aid-generate/scripts/aid_profile.py` | 550 | Parses TOML, validates schema |
-| Manifest harness | `.claude/skills/aid-generate/scripts/render_lib.py` | 756 | Emission-manifest implementation; pure-mirror deletion logic |
-| Agent renderer | `.claude/skills/aid-generate/scripts/render_agents.py` | 522 | Renders `canonical/agents/` per profile |
-| Skill renderer | `.claude/skills/aid-generate/scripts/render_skills.py` | 469 | Renders `canonical/skills/` per profile (Thin-Router + references/) |
-| Recipe renderer | `.claude/skills/aid-generate/scripts/render_recipes.py` | 261 | Renders `canonical/recipes/` (passthrough) |
-| Script renderer | `.claude/skills/aid-generate/scripts/render_canonical_scripts.py` | 224 | Renders `canonical/scripts/` per profile |
-| Template renderer | `.claude/skills/aid-generate/scripts/render_templates.py` | 252 | Renders `canonical/templates/` per profile |
-| Strict verifier | `.claude/skills/aid-generate/scripts/verify_deterministic.py` | 515 | VERIFY (deterministic) — re-run byte-identical guarantee |
-| Advisory verifier | `.claude/skills/aid-generate/scripts/verify_advisory.py` | 343 | VERIFY (advisory) — advisory checks |
-| Generator self-tests | `.claude/skills/aid-generate/scripts/test_manifest_safety.py` | 254 | Internal correctness tests (pure-mirror deletion safety) |
-| Copilot emitter self-test | `.claude/skills/aid-generate/scripts/test_copilot_emitter.py` | — | Copilot agent-format emitter — real-YAML round-trip (CI `generator-selftests`, `--self-test`) |
-| Antigravity emitter self-test | `.claude/skills/aid-generate/scripts/test_antigravity_emitter.py` | — | Antigravity rule-format reshape (CI `generator-selftests`, `--self-test`) |
+| Generator entrypoint | `.claude/skills/generate-profile/scripts/run_generator.py` | 87 | Loops `profiles/*.toml` (5 profiles: claude-code, codex, cursor, copilot-cli, antigravity), calls each renderer, runs VERIFY (deterministic) + VERIFY (advisory) |
+| Profile parser | `.claude/skills/generate-profile/scripts/aid_profile.py` | 550 | Parses TOML, validates schema |
+| Manifest harness | `.claude/skills/generate-profile/scripts/render_lib.py` | 756 | Emission-manifest implementation; pure-mirror deletion logic |
+| Agent renderer | `.claude/skills/generate-profile/scripts/render_agents.py` | 522 | Renders `canonical/agents/` per profile |
+| Skill renderer | `.claude/skills/generate-profile/scripts/render_skills.py` | 469 | Renders `canonical/skills/` per profile (Thin-Router + references/) |
+| Recipe renderer | `.claude/skills/generate-profile/scripts/render_recipes.py` | 261 | Renders `canonical/recipes/` (passthrough) |
+| Script renderer | `.claude/skills/generate-profile/scripts/render_canonical_scripts.py` | 224 | Renders `canonical/scripts/` per profile |
+| Template renderer | `.claude/skills/generate-profile/scripts/render_templates.py` | 252 | Renders `canonical/templates/` per profile |
+| Strict verifier | `.claude/skills/generate-profile/scripts/verify_deterministic.py` | 515 | VERIFY (deterministic) — re-run byte-identical guarantee |
+| Advisory verifier | `.claude/skills/generate-profile/scripts/verify_advisory.py` | 343 | VERIFY (advisory) — advisory checks |
+| Generator self-tests | `.claude/skills/generate-profile/scripts/test_manifest_safety.py` | 254 | Internal correctness tests (pure-mirror deletion safety) |
+| Copilot emitter self-test | `.claude/skills/generate-profile/scripts/test_copilot_emitter.py` | — | Copilot agent-format emitter — real-YAML round-trip (CI `generator-selftests`, `--self-test`) |
+| Antigravity emitter self-test | `.claude/skills/generate-profile/scripts/test_antigravity_emitter.py` | — | Antigravity rule-format reshape (CI `generator-selftests`, `--self-test`) |
 
 Pipeline flow (per `run_generator.py`, the `for profile_path in sorted(profiles_dir.glob('*.toml'))` loop):
 
@@ -208,7 +208,7 @@ The `gh` CLI is the maintainer's primary tool for PR creation, issue triage, and
 
 | Tool | Version | Used for | Evidence |
 |------|---------|----------|----------|
-| Python | 3.11+ (stdlib `tomllib`) | Generator pipeline | `.claude/skills/aid-generate/scripts/render_lib.py` `Requirements: Python 3.11+` |
+| Python | 3.11+ (stdlib `tomllib`) | Generator pipeline | `.claude/skills/generate-profile/scripts/render_lib.py` `Requirements: Python 3.11+` |
 | Python | 3.8+ (`requires-python`) | PyPI `aid-installer` package build (hatchling) + shim runtime | `packages/pypi/pyproject.toml` `requires-python = ">=3.8"`; `[build-system] requires = ["hatchling"]` |
 | Node | 18+ (`engines.node`) | npm `aid-installer` package + shim runtime | `packages/npm/package.json` `"engines": { "node": ">=18" }` |
 | Bash | POSIX-compatible | All `canonical/scripts/` + `tests/canonical/` + `bin/aid` + `install.sh` + `lib/aid-install-core.sh` | `#!/usr/bin/env bash` at top of every script |

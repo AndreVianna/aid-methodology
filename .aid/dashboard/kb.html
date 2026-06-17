@@ -725,7 +725,7 @@ details.accord > summary:focus-visible,
 			<div class="kicker">Skills</div>
 			<div class="stat">12</div>
 			<div class="stat-sub">user-facing slash commands</div>
-			<div class="meta">+ 1 maintainer-only aid-generate<br>(per module-map.md)</div>
+			<div class="meta">+ 1 maintainer-only generate-profile<br>(per module-map.md)</div>
 		</div>
 		<div class="card">
 			<div class="kicker">Agents</div>
@@ -1375,7 +1375,7 @@ flowchart TB
 
 	<div class="callout warn">
 		<h4>Never edit profile trees directly</h4>
-		<p>Files under <code>profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/</code> are generator output. Edits are silently overwritten on the next <code>python .claude/skills/aid-generate/scripts/run_generator.py</code> run. Always edit <code>canonical/</code> and re-run the generator. The emission manifest is the safety boundary — only previously-emitted files are eligible for deletion. (per coding-standards.md §7a)</p>
+		<p>Files under <code>profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/</code> are generator output. Edits are silently overwritten on the next <code>python .claude/skills/generate-profile/scripts/run_generator.py</code> run. Always edit <code>canonical/</code> and re-run the generator. The emission manifest is the safety boundary — only previously-emitted files are eligible for deletion. (per coding-standards.md §7a)</p>
 	</div>
 </section>
 
@@ -1671,7 +1671,7 @@ flowchart TB
 
 	<div class="callout warn" style="margin-top:1rem;">
 		<h4>Coverage gaps</h4>
-		<p>The <code>.mjs</code> validators, the PowerShell mirrors, and the installer/CLI/release surface are now covered (CI asserts <code>node</code> + <code>pwsh</code> present so those suites can never silently skip; the native-Windows path runs on the <code>installer-tests.yml</code> Windows runner). The two new agent-format emitters carry their own generator self-tests run by the CI <code>generator-selftests</code> job (<code>test_copilot_emitter.py</code> — Copilot real-YAML round-trip; <code>test_antigravity_emitter.py</code> — Antigravity rule reshape), alongside <code>test_manifest_safety.py</code> — these live under <code>.claude/skills/aid-generate/scripts/</code>, not <code>tests/canonical/</code>. The genuinely untested surface is the prompt-driven orchestration layer: the <code>/aid-*</code> skills (verified by dogfooding; the <code>aid-reviewer</code> sub-agent is the closest adversarial integration check), the renderer (covered by its own VERIFY (deterministic) byte-identity gate across the 5 profiles, not <code>tests/canonical/</code>), and the end-to-end pipeline. There is no statement/branch coverage measurement. (per test-landscape.md §Coverage gaps and roadmap)</p>
+		<p>The <code>.mjs</code> validators, the PowerShell mirrors, and the installer/CLI/release surface are now covered (CI asserts <code>node</code> + <code>pwsh</code> present so those suites can never silently skip; the native-Windows path runs on the <code>installer-tests.yml</code> Windows runner). The two new agent-format emitters carry their own generator self-tests run by the CI <code>generator-selftests</code> job (<code>test_copilot_emitter.py</code> — Copilot real-YAML round-trip; <code>test_antigravity_emitter.py</code> — Antigravity rule reshape), alongside <code>test_manifest_safety.py</code> — these live under <code>.claude/skills/generate-profile/scripts/</code>, not <code>tests/canonical/</code>. The genuinely untested surface is the prompt-driven orchestration layer: the <code>/aid-*</code> skills (verified by dogfooding; the <code>aid-reviewer</code> sub-agent is the closest adversarial integration check), the renderer (covered by its own VERIFY (deterministic) byte-identity gate across the 5 profiles, not <code>tests/canonical/</code>), and the end-to-end pipeline. There is no statement/branch coverage measurement. (per test-landscape.md §Coverage gaps and roadmap)</p>
 	</div>
 </section>
 

@@ -226,7 +226,7 @@
 {"dst": ".agents/templates/requirements/requirements-template.md", "profile": "codex", "sha256": "0c319fdc0e8cc4939eb8ce41ac24cdd0e13db8a15456c27d5ddbf225a470a745", "src": "canonical/templates/requirements/requirements-template.md"}
 {"dst": ".agents/templates/reviewer-dispatch.md", "profile": "codex", "sha256": "aa39b90c18f4192ac1dd61989258a834ac023d32a624419320e9afd3700b5b0b", "src": "canonical/templates/reviewer-dispatch.md"}
 {"dst": ".agents/templates/reviewer-ledger-schema.md", "profile": "codex", "sha256": "fc8471d3a0b95c3b9776c3b42b426523916d08bccad42d83dd1a55c94d8b05b6", "src": "canonical/templates/reviewer-ledger-schema.md"}
-{"dst": ".agents/templates/rough-time-hints.md", "profile": "codex", "sha256": "6ba7ac173ce7fd71695cea207cc6eceed8a9b730f2fbe8c24e757552714c46f9", "src": "canonical/templates/rough-time-hints.md"}
+{"dst": ".agents/templates/rough-time-hints.md", "profile": "codex", "sha256": "d829f450cee55d43c68f8e2d9d36a5ad7aeb231137e3a41c647b4ba49d9042cd", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".agents/templates/self-review-protocol.md", "profile": "codex", "sha256": "3ec7607729a0431ab17b23be0558962ecc52f76a8c9a448cb81be4a92877c0be", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".agents/templates/settings.yml", "profile": "codex", "sha256": "e1808f2bff5e7bcb521c7b9038de5291401e29f089b4e986bc86544fbc1c56fd", "src": "canonical/templates/settings.yml"}
 {"dst": ".agents/templates/specs/lite-spec-template.md", "profile": "codex", "sha256": "2af75b0c58885336290d5b4fabedcb3215bc330edcbeccf3eae43e3f365dd1a0", "src": "canonical/templates/specs/lite-spec-template.md"}

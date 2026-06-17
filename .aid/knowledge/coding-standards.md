@@ -38,7 +38,7 @@ changelog:
 
 | Language | Where | Style fingerprint |
 |----------|-------|-------------------|
-| Python 3.11+ | `.claude/skills/aid-generate/scripts/*.py` + `run_generator.py` | PEP 8 + `from __future__ import annotations`, type hints, `@dataclass`, `Path` over `os.path`, stdlib-only |
+| Python 3.11+ | `.claude/skills/generate-profile/scripts/*.py` + `run_generator.py` | PEP 8 + `from __future__ import annotations`, type hints, `@dataclass`, `Path` over `os.path`, stdlib-only |
 | Bash | `canonical/scripts/**/*.sh` + `bin/aid` + `install.sh` + `lib/aid-install-core.sh` + `release.sh` + `tests/**/*.sh` | `#!/usr/bin/env bash` + `set -euo pipefail` (rare `set -uo pipefail` with rationale), POSIX-portable, 4-space indent inside `case`, sentinel-file locks for parallel-write safety. **Shipped CLI/installer scripts (`bin/aid`, `install.sh`, `lib/aid-install-core.sh`) are ASCII-only** — CI-guarded by `tests/canonical/test-ascii-only.sh` (a no-BOM UTF-8 script is mis-parsed under the Windows ANSI codepage; ASCII decodes identically everywhere) |
 | JavaScript (ESM) | `canonical/scripts/summarize/{validate-diagrams,contrast-check}.mjs` + `canonical/templates/knowledge-summary/{lightbox,mermaid-init}.js` | `#!/usr/bin/env node` for CLI scripts, `import` syntax, top-level `await`, Node stdlib only |
 | PowerShell | `bin/aid.ps1` + `install.ps1` + `lib/AidInstallCore.psm1` + `canonical/scripts/summarize/assemble-3part.ps1` | `aid` CLI dispatcher + installer core/bootstrap + concatenation helper; `#Requires -Version 5.1`, explicit `param()` blocks; **ASCII-only** shipped scripts (CI-guarded by `tests/canonical/test-ascii-only.sh`; the native-Windows path is asserted LF-only no-BOM by `tests/windows/Test-AidInstaller.ps1`) |
@@ -63,7 +63,7 @@ changelog:
 
 ### 2b. Inside Python
 
-- `snake_case` for functions, methods, module-level variables (per `.claude/skills/aid-generate/scripts/render_lib.py` `sha256_hex`, `substitute_filenames`).
+- `snake_case` for functions, methods, module-level variables (per `.claude/skills/generate-profile/scripts/render_lib.py` `sha256_hex`, `substitute_filenames`).
 - `PascalCase` for dataclasses (per `aid_profile.py` `LayoutConfig`, `FrontmatterConfig`).
 - `_LEADING_UNDERSCORE` for module-private constants + helpers (per `render_lib.py` `_MANIFEST_VERSION`, `_PLACEHOLDER_RE`, `_CANONICAL_PATH_DIRS`).
 - `SCREAMING_SNAKE` reserved for top-level constants when not module-private — none observed; the renderer uses `_LEADING_UNDERSCORE` exclusively.
@@ -211,7 +211,7 @@ done
 
 ### 3e. Python script header
 
-Every Python file starts with a shebang + module docstring-style comment + `from __future__ import annotations` (per `.claude/skills/aid-generate/scripts/render_lib.py` header comment, `aid_profile.py` header comment, `render_agents.py` header comment, `render_skills.py` header comment):
+Every Python file starts with a shebang + module docstring-style comment + `from __future__ import annotations` (per `.claude/skills/generate-profile/scripts/render_lib.py` header comment, `aid_profile.py` header comment, `render_agents.py` header comment, `render_skills.py` header comment):
 
 ```python
 #!/usr/bin/env python3
@@ -248,7 +248,7 @@ Triple-quoted docstrings are reserved for function + class signatures (per
 
 ### 4b. Python
 
-- **Renderer raises `ValueError`** for misconfigured profiles (per `.claude/skills/aid-generate/scripts/aid_profile.py` `raise ValueError`). The validator helper `validate(profile)` returns a list of errors instead of raising — the caller decides whether to abort (per `run_generator.py` `errors = validate(profile)`).
+- **Renderer raises `ValueError`** for misconfigured profiles (per `.claude/skills/generate-profile/scripts/aid_profile.py` `raise ValueError`). The validator helper `validate(profile)` returns a list of errors instead of raising — the caller decides whether to abort (per `run_generator.py` `errors = validate(profile)`).
 - **No bare `except:` clauses observed** — all caught exceptions are scoped (e.g., `except OSError:` per `run_generator.py` `except OSError:` for `parent.rmdir()` during tree pruning).
 - **`sys.exit(1)` on render failure with stderr message** (per `run_generator.py` `errors = validate(profile)` and `VERIFY (deterministic) FAILED`). No traceback suppression.
 
@@ -339,7 +339,7 @@ There are no `.env` files, no credential templates, no secrets handling (CONFIRM
 
 ### 7a. Single-source canonical → multi-tree render
 
-**Never edit `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/` directly** (CONFIRMED per `canonical/EMISSION-MANIFEST.md` §Safety-Boundary Semantics). Edit `canonical/` and run `python .claude/skills/aid-generate/scripts/run_generator.py`. The render reads `canonical/` (the source) and emits byte-identical bodies into the **5 profile trees**:
+**Never edit `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/` directly** (CONFIRMED per `canonical/EMISSION-MANIFEST.md` §Safety-Boundary Semantics). Edit `canonical/` and run `python .claude/skills/generate-profile/scripts/run_generator.py`. The render reads `canonical/` (the source) and emits byte-identical bodies into the **5 profile trees**:
 
 - `profiles/claude-code/.claude/`
 - `profiles/codex/.codex/` + `profiles/codex/.agents/` (split layout)
@@ -376,7 +376,7 @@ Commit work-NNN to ONE persistent branch (off master); no per-task worktrees or 
 
 ### 8a. Python
 
-- **`pathlib.Path` over `os.path`** (per `.claude/skills/aid-generate/scripts/render_lib.py` `from pathlib import Path`, `aid_profile.py` `from pathlib import Path`, `render_agents.py` `from pathlib import Path`).
+- **`pathlib.Path` over `os.path`** (per `.claude/skills/generate-profile/scripts/render_lib.py` `from pathlib import Path`, `aid_profile.py` `from pathlib import Path`, `render_agents.py` `from pathlib import Path`).
 - **`@dataclass` for value objects** (per `aid_profile.py` `class LayoutConfig`, `class FrontmatterConfig`, `class AgentConfig`).
 - **`tomllib` stdlib for TOML parsing** (per `aid_profile.py` `import tomllib`) — no third-party `toml` package.
 - **`hashlib.sha256` for content fingerprints** (per `render_lib.py` `def sha256_hex`) — used for `EmissionManifest` sha256 field.

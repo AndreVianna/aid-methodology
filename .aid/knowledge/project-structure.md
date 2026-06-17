@@ -17,7 +17,7 @@ changelog:
   - 2026-06-05: work-002-auto-installer — added `bin/` (the `aid` CLI dispatcher: `aid` + `aid.ps1` + `aid.cmd`), `lib/` (install-core libs), `packages/npm/` + `packages/pypi/` (published installer shims), repo-root `install.sh` / `install.ps1` (bootstrap) + `release.sh` (release packager) + `VERSION`, and `.github/workflows/{installer-tests,release}.yml`; the methodology spec + its image moved from the former `methodology/` directory to `docs/` (now `docs/aid-methodology.md` + `docs/images/`), so `methodology/` no longer exists; `setup.sh`/`setup.ps1` removed.
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
   - 2026-06-01: Post-merge update for work-001-add-providers (PRs #42/#43/#44) — 3 install trees → 5 (added copilot-cli, antigravity); generator scripts 10→12 .py; reconciled canonical-test-suite count to 18; mirror multiplier 4→6 byte-identity trees (7 physical copies incl. dogfood `.claude/`).
-  - 2026-06-03: Targeted re-discovery for work-001-aid-housekeep (PR #49) — added optional `aid-housekeep` skill (canonical skill count 10→11), new `canonical/scripts/housekeep/` dir (branch-commit.sh, cleanup-classify.sh, housekeep-state.sh), and 5 new `tests/canonical/test-housekeep-*.sh` suites (canonical-suite count 18→24). aid-generate remains the maintainer-only `.claude/`-only skill (not counted in the canonical 11).
+  - 2026-06-03: Targeted re-discovery for work-001-aid-housekeep (PR #49) — added optional `aid-housekeep` skill (canonical skill count 10→11), new `canonical/scripts/housekeep/` dir (branch-commit.sh, cleanup-classify.sh, housekeep-state.sh), and 5 new `tests/canonical/test-housekeep-*.sh` suites (canonical-suite count 18→24). generate-profile remains the maintainer-only `.claude/`-only skill (not counted in the canonical 11).
   - 2026-06-03: §9a T3-count strip — removed all hardcoded file/line counts (global snapshot, language breakdown numbers, per-skill SKILL.md line counts, per-script/per-suite line counts, individual file line counts). Replaced global snapshot with pointer to `.aid/generated/project-index.md`. Replaced stale Windows repo-root path and hardcoded branch name with durable references.
   - 2026-06-03: methodology v3.2 — "In mandatory pipeline" table: aid-deploy/aid-monitor flipped Yes→No (optional); both are now optional, on-demand end-of-pipeline Deliver skills, not numbered phases.
 ---
@@ -59,7 +59,7 @@ aid-methodology/                       (repo root)
 │   ├── agents/                        ← 9 generated agent definitions
 │   ├── recipes/                       ← dogfood lite-path recipes + README (refreshed on re-install; see `## Recipes` for the canonical 51-recipe catalog)
 │   ├── scripts/                       ← generated helper scripts (config/, execute/, housekeep/, interview/, kb/, summarize/)
-│   ├── skills/                        ← 12 AID skills + maintainer-only aid-generate
+│   ├── skills/                        ← 12 AID skills + maintainer-only generate-profile
 │   ├── templates/                     ← generated templates (knowledge-base/, knowledge-summary/, kb-authoring/, ...)
 │   └── settings.json                  ← Claude Code permission config
 ├── canonical/                         ← SINGLE SOURCE OF TRUTH for all install-tree content
@@ -129,7 +129,7 @@ aid-methodology/                       (repo root)
 └── release.sh                         ← maintainer release packager (tarballs + SHA256SUMS + gh release create)
 
 (The generator entrypoint `run_generator.py` lives with its render engine at
-`.claude/skills/aid-generate/scripts/run_generator.py` — maintainer-only, not rendered.)
+`.claude/skills/generate-profile/scripts/run_generator.py` — maintainer-only, not rendered.)
 ```
 
 ## Detected Languages
@@ -143,7 +143,7 @@ Languages present (where, not counts):
 | Markdown | All docs, skills, agents, templates, recipes |
 | Shell | `canonical/scripts/` + 5 install-tree mirrors + `tests/canonical/` + `bin/aid` + `install.sh` + `lib/aid-install-core.sh` + `release.sh` |
 | JavaScript | `canonical/templates/knowledge-summary/lightbox.js`, `mermaid-init.js`, `canonical/scripts/summarize/{validate-diagrams,contrast-check}.mjs` + 5 install-tree mirrors |
-| Python | `.claude/skills/aid-generate/scripts/*.py` (13 files: the renderers/verifiers, the two generator self-tests `test_copilot_emitter.py` + `test_antigravity_emitter.py`, and the `run_generator.py` entrypoint) |
+| Python | `.claude/skills/generate-profile/scripts/*.py` (13 files: the renderers/verifiers, the two generator self-tests `test_copilot_emitter.py` + `test_antigravity_emitter.py`, and the `run_generator.py` entrypoint) |
 | CSS | `canonical/templates/knowledge-summary/component-css.css` + 6 mirrors (.claude + 5 profile trees) |
 | TOML | 5 profile `*.toml` files (`profiles/*.toml`) + 9 Codex agent `.toml` files (`profiles/codex/.codex/agents/*.toml`) |
 | HTML | `canonical/templates/knowledge-summary/html-skeleton.html` + 6 mirrors |
@@ -170,7 +170,7 @@ Languages present (where, not counts):
 | `CLAUDE.md` | Dogfood Claude Code project context — minimal pointer to KB | `CLAUDE.md` `# CLAUDE.md` |
 | `CONTRIBUTING.md` | Repo structure table, contribution rules, style guide | `CONTRIBUTING.md` `# Contributing to AID` |
 | `LICENSE` | MIT license | `LICENSE` |
-| `.claude/skills/aid-generate/scripts/run_generator.py` | Generator entrypoint (lives with its render engine) — loads every `profiles/*.toml` (5 profiles), calls renderers, runs VERIFY (deterministic, strict) + VERIFY (advisory) | `run_generator.py` `Running VERIFY (deterministic)...` |
+| `.claude/skills/generate-profile/scripts/run_generator.py` | Generator entrypoint (lives with its render engine) — loads every `profiles/*.toml` (5 profiles), calls renderers, runs VERIFY (deterministic, strict) + VERIFY (advisory) | `run_generator.py` `Running VERIFY (deterministic)...` |
 | `bin/aid` | The persistent global `aid` CLI dispatcher (Bash); parses subcommands (`add`/`status`/`update`/`remove`/`version`, bare dashboard) and dispatches into `lib/aid-install-core.sh` | `bin/aid` `_aid_usage` |
 | `bin/aid.ps1` / `bin/aid.cmd` | PowerShell dispatcher + cmd.exe shim (Windows) | `bin/aid.ps1`, `bin/aid.cmd` |
 | `install.sh` / `install.ps1` | Curl/irm-piped first-install bootstrap; fetches + SHA-verifies the `aid-cli-v<VERSION>.tar.gz` bundle, extracts to `$AID_HOME`, wires PATH | `install.sh`, `install.ps1` |
@@ -185,9 +185,9 @@ Languages present (where, not counts):
 | `docs/aid-methodology.md` | The methodology document (moved from `methodology/` by work-002). The load-bearing artifact — every skill/agent is derived from it. |
 | `docs/images/3-ironman.png` | Human-AI collaboration model (referenced inline in `docs/aid-methodology.md` `](images/3-ironman.png)`) |
 
-### Generator (maintainer-only, lives in `.claude/skills/aid-generate/scripts/`)
+### Generator (maintainer-only, lives in `.claude/skills/generate-profile/scripts/`)
 
-13 Python files under `.claude/skills/aid-generate/scripts/` (10 renderers/verifiers + 2 emitter self-tests added by work-001 + the `run_generator.py` entrypoint, moved here from repo root by work-001). The supported `[agent].format` values are now four — `markdown`, `toml`, `copilot-agent`, `antigravity-rule` (`aid_profile.py` `_KNOWN_AGENT_FORMATS`).
+13 Python files under `.claude/skills/generate-profile/scripts/` (10 renderers/verifiers + 2 emitter self-tests added by work-001 + the `run_generator.py` entrypoint, moved here from repo root by work-001). The supported `[agent].format` values are now four — `markdown`, `toml`, `copilot-agent`, `antigravity-rule` (`aid_profile.py` `_KNOWN_AGENT_FORMATS`).
 
 | File | Purpose |
 |------|---------|
@@ -315,8 +315,8 @@ The build commands:
 
 | Command | Purpose |
 |---------|---------|
-| `python .claude/skills/aid-generate/scripts/run_generator.py` | Re-generate all 5 install trees from `canonical/` (claude-code, codex, cursor, copilot-cli, antigravity; maintainer-only) |
-| `python .claude/skills/aid-generate/scripts/verify_deterministic.py` | Verify render is byte-correct + complete |
+| `python .claude/skills/generate-profile/scripts/run_generator.py` | Re-generate all 5 install trees from `canonical/` (claude-code, codex, cursor, copilot-cli, antigravity; maintainer-only) |
+| `python .claude/skills/generate-profile/scripts/verify_deterministic.py` | Verify render is byte-correct + complete |
 | `bash canonical/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md` | Rebuild file inventory |
 | `bash tests/run-all.sh` | Run all canonical helper test suites (currently 24 suites — aggregator globs `tests/canonical/test-*.sh`; see `tests/README.md`) |
 
@@ -344,9 +344,9 @@ Installed at `.claude/skills/`. Each has a `SKILL.md` Thin-Router (≤~360 lines
 | `aid-summarize` | No (optional) | Optional offline HTML KB viewer |
 | `aid-housekeep` | No (optional) | Optional work-folder cleanup + KB/summary reconciliation (per-state references) — added PR #49 |
 | `aid-ask` | No (optional) | Optional on-demand, read-only Q&A skill outside the numbered pipeline — answers free-form project questions from the KB + codebase + in-flight works with citations |
-| `aid-generate` (maintainer-only) | No (maintainer-only) | Render canonical → 5 profile trees (uses `scripts/*.py`, no `references/`) |
+| `generate-profile` (maintainer-only) | No (maintainer-only) | Render canonical → 5 profile trees (uses `scripts/*.py`, no `references/`) |
 
-Total: **12** shipped AID skills (`ls -d canonical/skills/*/` = 12) + the maintainer-only `aid-generate` (which lives only in `.claude/skills/`, not in `canonical/skills/`, and is excluded from the 12).
+Total: **12** shipped AID skills (`ls -d canonical/skills/*/` = 12) + the maintainer-only `generate-profile` (which lives only in `.claude/skills/`, not in `canonical/skills/`, and is excluded from the 12).
 
 ## Agents (9)
 
@@ -391,7 +391,7 @@ The 40 `add-`/`change-` recipes span 11 target-kind families. See `canonical/rec
 
 | Audience | Entry point | Where it goes |
 |----------|-------------|---------------|
-| Maintainer build | `python .claude/skills/aid-generate/scripts/run_generator.py` | Renders all 5 install trees + runs VERIFY (deterministic) / VERIFY (advisory) |
+| Maintainer build | `python .claude/skills/generate-profile/scripts/run_generator.py` | Renders all 5 install trees + runs VERIFY (deterministic) / VERIFY (advisory) |
 | First-time install (machine) | `curl -fsSL …/install.sh \| bash` / `irm …/install.ps1 \| iex` (or `npm i -g aid-installer` / `pipx install aid-installer`) | Bootstraps the global `aid` CLI onto PATH |
 | End-user install (per project) | `aid add <tool>` (Unix or Windows) | Installs selected profile(s) into the current project |
 | Methodology reader | `docs/aid-methodology.md` | The complete spec |
@@ -406,7 +406,7 @@ The 40 `add-`/`change-` recipes span 11 target-kind families. See `canonical/rec
 
 3. **Split Codex layout.** `profiles/codex/.codex/agents/` holds TOML agent definitions; `profiles/codex/.agents/{skills,scripts,recipes,templates}/` holds the markdown bodies. A single `profiles/codex/emission-manifest.jsonl` covers both roots (per `canonical/EMISSION-MANIFEST.md` `## Filename and Location`).
 
-4. **Generator lives in `.claude/skills/aid-generate/`, not in repo root.** It is a skill that ships with itself; the `run_generator.py` entrypoint sits in `.claude/skills/aid-generate/scripts/` alongside the renderers it imports (`run_generator.py` `sys.path.insert(0, str(Path(__file__).parent))`). Invoke it from the repo root: `python .claude/skills/aid-generate/scripts/run_generator.py`.
+4. **Generator lives in `.claude/skills/generate-profile/`, not in repo root.** It is a skill that ships with itself; the `run_generator.py` entrypoint sits in `.claude/skills/generate-profile/scripts/` alongside the renderers it imports (`run_generator.py` `sys.path.insert(0, str(Path(__file__).parent))`). Invoke it from the repo root: `python .claude/skills/generate-profile/scripts/run_generator.py`.
 
 5. **`canonical/scripts/` was newly reorganized.** Git status shows many recent renames from `canonical/templates/scripts/` and `canonical/skills/*/scripts/` into the consolidated `canonical/scripts/{config,execute,interview,kb,summarize}/` hierarchy; PR #49 added a sixth subdir, `canonical/scripts/housekeep/`.
 

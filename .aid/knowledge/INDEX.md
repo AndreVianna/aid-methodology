@@ -96,8 +96,8 @@ Inter-skill choreography is implemented via filesystem state hand-offs (not a me
 ### [module-map.md](../knowledge/module-map.md)
 
 Maps the major code/content modules in AID — the 12 user-facing aid-* skills,
-the 13th maintainer-only aid-generate skill, the 9 agents, the 13 renderer
-Python files (12 under .claude/skills/aid-generate/scripts/ + run_generator.py),
+the 13th maintainer-only generate-profile skill, the 9 agents, the 13 renderer
+Python files (12 under .claude/skills/generate-profile/scripts/ + run_generator.py),
 and the canonical helper scripts under canonical/scripts/{config,kb,execute,summarize,interview,housekeep}.
 Each entry lists purpose, directory path, dependencies, and associated tests.
 Read this when you need to know what a directory holds and who consumes it.

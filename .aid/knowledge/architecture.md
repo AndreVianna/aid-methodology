@@ -18,8 +18,8 @@ changelog:
   - 2026-06-09: aid-ask added (11->12 user-facing skills, 12->13 total, 4->5 optional) via /aid-housekeep KB-DELTA.
   - 2026-06-05: work-002-auto-installer — end-user installer rewritten: the former clone+`setup.sh`/`setup.ps1` menu installers were removed and replaced by a persistent global `aid` CLI (`bin/aid` + `bin/aid.ps1` + `bin/aid.cmd`, cores `lib/aid-install-core.sh` + `lib/AidInstallCore.psm1`, bootstrap `install.sh` / `install.ps1`) with four install channels (curl/irm bootstrap, npm, PyPI, offline `--from-bundle`). Module-boundaries End-user-installer row, install-time data-flow section, and Entry-Points install rows rewritten to the `aid add <tool>` flow (fetch+verify tarball → copy → FR11 protect-on-diff → `.aid/.aid-manifest.json`). Methodology-spec metrics de-cited (volatile line-count dropped per KB convention; `docs/aid-methodology.md` is the flagship after `methodology/` consolidated into `docs/`).
   - 2026-06-04: work-001-agents-review (task-013) — roster reduced 22→9 agents with aid-* prefix; §3 tier model updated to 4 large / 4 medium / 1 small; counts updated at lines 38, 64; agent canonical paths updated to aid-<name>/ dirs; boilerplate now shared-include via canonical/templates/agent-boilerplate.md.
-  - 2026-06-03: methodology v3.2 — aid-deploy and aid-monitor reclassified from mandatory numbered phases (7/8) to OPTIONAL end-of-pipeline Deliver skills; numbered development phases 8→6 (Discover→Execute); skill taxonomy now 7 core-pipeline (aid-config + 6 phases) + 4 optional (aid-summarize, aid-deploy, aid-monitor, aid-housekeep) + maintainer-only aid-generate
-  - 2026-06-03: post-merge update for work-001-aid-housekeep (PR #49) — added aid-housekeep (11th user-facing canonical skill, optional/on-demand, NOT in the mandatory pipeline flow); skill framing 10→11 user-facing / 11→12 total counting aid-generate; canonical SKILL.md body total 2,242→2,498 lines across 11 skills
+  - 2026-06-03: methodology v3.2 — aid-deploy and aid-monitor reclassified from mandatory numbered phases (7/8) to OPTIONAL end-of-pipeline Deliver skills; numbered development phases 8→6 (Discover→Execute); skill taxonomy now 7 core-pipeline (aid-config + 6 phases) + 4 optional (aid-summarize, aid-deploy, aid-monitor, aid-housekeep) + maintainer-only generate-profile
+  - 2026-06-03: post-merge update for work-001-aid-housekeep (PR #49) — added aid-housekeep (11th user-facing canonical skill, optional/on-demand, NOT in the mandatory pipeline flow); skill framing 10→11 user-facing / 11→12 total counting generate-profile; canonical SKILL.md body total 2,242→2,498 lines across 11 skills
   - 2026-06-01: post-merge update for work-001-add-providers (PRs #42/#43/#44) — 3→5 render profiles (added copilot-cli + antigravity), 2→4 agent formats (added copilot-agent + antigravity-rule), 10→12 generator Python files, setup menu now 5 tools + Done=6 with Option-A AGENTS.md collision handler
   - 2026-05-31: delivery-002 — added declared-doc-set mechanism: Step 0d propose→confirm, data-driven dispatch, de-hardcoded doc-set (varies by project)
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
@@ -93,7 +93,7 @@ aid-methodology/                    (repo root)
 │   ├── antigravity/.agent/         ← rendered tree: rules/ skills/ scripts/ templates/ recipes/
 │   └── antigravity/AGENTS.md       ← root project-context file (Antigravity)
 ├── .claude/                        ← DOGFOOD install tree (AID applied to itself)
-│   └── skills/aid-generate/        ← maintainer-only generator (NOT in canonical/)
+│   └── skills/generate-profile/        ← maintainer-only generator (NOT in canonical/)
 │       └── scripts/                ← 12 Python files (render_lib.py, aid_profile.py, render_*.py, test_*_emitter.py, …)
 ├── tests/
 │   ├── canonical/                  ← currently 35 helper-script + installer/CLI/release test suites (test-*.sh, bash)
@@ -139,11 +139,11 @@ Evidence:
   render loop (load profile → render → diff → delete → write manifest).
 - `canonical/EMISSION-MANIFEST.md` `## Safety-Boundary Semantics` — the four-step
   load/diff/delete/write sequence.
-- `.claude/skills/aid-generate/scripts/render_lib.py` `_MANIFEST_VERSION` +
+- `.claude/skills/generate-profile/scripts/render_lib.py` `_MANIFEST_VERSION` +
   `_FILENAME_PLACEHOLDERS` — manifest sentinel + placeholder regex; the manifest is JSONL
   with a `{"_manifest_version": 1}` first line, sorted by `dst` for byte-stable diffs.
 - `CONTRIBUTING.md` + `coding-standards.md §7a` — "Never edit `profiles/{claude-code,codex,
-  cursor,copilot-cli,antigravity}/` directly — edit canonical/ and run `python .claude/skills/aid-generate/scripts/run_generator.py`."
+  cursor,copilot-cli,antigravity}/` directly — edit canonical/ and run `python .claude/skills/generate-profile/scripts/run_generator.py`."
 
 ### 2. Thin-Router state machine (per skill)
 
@@ -191,8 +191,8 @@ across 12 canonical skills** (7 core-pipeline + 5 optional incl. `aid-housekeep`
 | `aid-housekeep` | **optional / on-demand** KB + summary + cleanup maintenance | **no — not in the pipeline flow; no phase gate references it** |
 | `aid-ask` | **optional / on-demand** read-only Q&A over KB + live codebase + in-flight works | **no — outside the numbered pipeline; single-shot, read-only** |
 
-`aid-generate` is a **13th skill but maintainer-only**: it lives only at
-`.claude/skills/aid-generate/`, is excluded from `canonical/`, and is not a user-facing
+`generate-profile` is a **13th skill but maintainer-only**: it lives only at
+`.claude/skills/generate-profile/`, is excluded from `canonical/`, and is not a user-facing
 skill (see "Documentation vs. Implementation Discrepancies" below). Hence: **12 user-facing
 skills + 1 maintainer-only = 13 total.**
 
@@ -244,7 +244,7 @@ Evidence:
 |--------|------|----------------|------------|
 | **Methodology spec** | `docs/aid-methodology.md` | Authoritative human-readable methodology document (`*Version 3.2*` header; line count is volatile and not pinned here) | — |
 | **Canonical source** | `canonical/` | Single source of truth for everything that ships into install trees | (manually edited by maintainer) |
-| **Generator harness** | `.claude/skills/aid-generate/scripts/render_lib.py` + `aid_profile.py` | Profile parsing, placeholder substitution, manifest read/write/diff, SHA-256 fingerprinting | Python stdlib only (`tomllib`, `hashlib`, `json`, `pathlib`) |
+| **Generator harness** | `.claude/skills/generate-profile/scripts/render_lib.py` + `aid_profile.py` | Profile parsing, placeholder substitution, manifest read/write/diff, SHA-256 fingerprinting | Python stdlib only (`tomllib`, `hashlib`, `json`, `pathlib`) |
 | **Asset renderers** | `render_agents.py`, `render_skills.py`, `render_templates.py`, `render_canonical_scripts.py`, `render_recipes.py` | One renderer per asset kind; each reads `canonical/<kind>/` and writes into the profile-specific install path. `render_agents.py` emits one of 4 agent formats per `[agent].format` (markdown / toml / copilot-agent / antigravity-rule); `render_skills.py` `_render_cursor_extras` handles per-rule `output_filename` + a gated trigger-frontmatter dialect | `render_lib`, `aid_profile` |
 | **VERIFY (deterministic)** | `verify_deterministic.py` | Byte-identical re-render audit + file-presence audit + frontmatter parse | All renderers (re-runs them into a scratch dir) |
 | **VERIFY (advisory)** | `verify_advisory.py` | Non-fatal advisory checks logged separately | `render_lib`, `aid_profile` |
@@ -269,7 +269,7 @@ bin/aid ─sources→ lib/aid-install-core.sh ─fetches+verifies→ release tar
 
 ## Data Flow
 
-### Build-time data flow (maintainer running `python .claude/skills/aid-generate/scripts/run_generator.py`)
+### Build-time data flow (maintainer running `python .claude/skills/generate-profile/scripts/run_generator.py`)
 
 ```
 canonical/agents/aid-architect/AGENT.md
@@ -413,10 +413,10 @@ Evidence:
 **No DI framework is used.** This is intentional and consistent with the project type:
 
 - The Python generator is a script-style harness — `run_generator.py` does
-  `sys.path.insert(0, '.claude/skills/aid-generate/scripts')` and imports the renderers
+  `sys.path.insert(0, '.claude/skills/generate-profile/scripts')` and imports the renderers
   by name. Renderers take their dependencies (`canonical_root: Path`, `profile: Profile`,
   `manifest: EmissionManifest`) as positional arguments.
-- The `Profile` dataclass (`.claude/skills/aid-generate/scripts/aid_profile.py` `class Profile`)
+- The `Profile` dataclass (`.claude/skills/generate-profile/scripts/aid_profile.py` `class Profile`)
   encapsulates per-tool configuration loaded from a `*.toml` file; that loaded object
   is passed explicitly to every renderer.
 - Bash helper scripts pass dependencies via CLI arguments or environment variables.
@@ -432,9 +432,9 @@ mechanism was found in any source file.
 
 | Audience | Entry point | What it does |
 |----------|-------------|--------------|
-| **Maintainer build** | `python .claude/skills/aid-generate/scripts/run_generator.py` | Renders all 5 install trees from `canonical/`, runs VERIFY (deterministic, hard) + VERIFY (advisory). Evidence: `run_generator.py` (`"""Live generator run` module docstring). |
-| **Maintainer one-tree render** | `python .claude/skills/aid-generate/scripts/render_skills.py --canonical-root . --profile profiles/claude-code.toml --output-root profiles/claude-code/.claude` | Renderers are each runnable standalone with `--canonical-root` / `--profile` / `--output-root`. Evidence: `.claude/skills/aid-generate/scripts/render_skills.py` (`# Usage:` header). |
-| **Maintainer verify-only** | `python .claude/skills/aid-generate/scripts/verify_deterministic.py` | VERIFY (deterministic) hard gate. Re-renders to scratch tmpdir, byte-compares against committed install trees, parses every frontmatter. Exit code 0 on full pass; 1 on any sub-check failure. Evidence: `verify_deterministic.py` `def run_verify`. |
+| **Maintainer build** | `python .claude/skills/generate-profile/scripts/run_generator.py` | Renders all 5 install trees from `canonical/`, runs VERIFY (deterministic, hard) + VERIFY (advisory). Evidence: `run_generator.py` (`"""Live generator run` module docstring). |
+| **Maintainer one-tree render** | `python .claude/skills/generate-profile/scripts/render_skills.py --canonical-root . --profile profiles/claude-code.toml --output-root profiles/claude-code/.claude` | Renderers are each runnable standalone with `--canonical-root` / `--profile` / `--output-root`. Evidence: `.claude/skills/generate-profile/scripts/render_skills.py` (`# Usage:` header). |
+| **Maintainer verify-only** | `python .claude/skills/generate-profile/scripts/verify_deterministic.py` | VERIFY (deterministic) hard gate. Re-renders to scratch tmpdir, byte-compares against committed install trees, parses every frontmatter. Exit code 0 on full pass; 1 on any sub-check failure. Evidence: `verify_deterministic.py` `def run_verify`. |
 | **Maintainer release** | `bash release.sh` (or tag-push → `.github/workflows/release.yml`) | Packages the five per-profile tarballs + `SHA256SUMS` for a GitHub Release. Evidence: `release.sh`; `test-release.sh` header. |
 | **End-user CLI bootstrap** | `curl -fsSL …/install.sh \| bash` / `irm …/install.ps1 \| iex` / `npm i -g aid-installer` / `pipx install aid-installer` | Installs the persistent global `aid` CLI once per machine (extracts `bin/` + `lib/` into `$AID_HOME`, wires PATH). Evidence: `install.sh` / `install.ps1`; `README.md` `## Install`. |
 | **End-user install (per project)** | `aid add <tool>[,...] [--version <v>] [--from-bundle <tar>] [--force]` | Fetches+verifies the profile tarball and installs the AID tree into the current project (FR11 protect-on-diff + `.aid/.aid-manifest.json`). `aid status` / `aid update` / `aid remove` manage it thereafter. Evidence: `bin/aid` `_aid_usage`; `lib/aid-install-core.sh` `install_tool`. |
@@ -446,14 +446,14 @@ mechanism was found in any source file.
 ## Documentation vs. Implementation Discrepancies
 
 The repository's documentation describes a "12 user-facing skills + 1 maintainer-only
-(`aid-generate`) = 13 total" architecture; observed implementation matches with a few
+(`generate-profile`) = 13 total" architecture; observed implementation matches with a few
 caveats worth flagging:
 
-1. **`aid-generate` is intentionally NOT in `canonical/`.** It lives only at
-   `.claude/skills/aid-generate/` and is excluded from the render. `canonical/skills/`
+1. **`generate-profile` is intentionally NOT in `canonical/`.** It lives only at
+   `.claude/skills/generate-profile/` and is excluded from the render. `canonical/skills/`
    contains 12 directories (7 core-pipeline skills + 5 optional skills incl. `aid-housekeep` and `aid-ask`),
-   not 13 — `aid-generate` is the 13th skill and is maintainer-only. Reason per
-   `.claude/skills/aid-generate/SKILL.md` (`Maintainer-only skill` blockquote): "Edits to
+   not 13 — `generate-profile` is the 13th skill and is maintainer-only. Reason per
+   `.claude/skills/generate-profile/SKILL.md` (`Maintainer-only skill` blockquote): "Edits to
    this skill are made directly to its files. Reason: it generates the install
    trees, so it cannot itself be generated from canonical without a chicken-and-egg
    deployment problem."
@@ -472,7 +472,7 @@ caveats worth flagging:
    is stale — it still reports 2,242 across 10 skills and predates `aid-housekeep`; re-run
    `build-metrics.sh` to refresh it. The rendered `.claude/skills/*/SKILL.md` set may also
    differ from canonical if `canonical/` was edited after the last
-   `python .claude/skills/aid-generate/scripts/run_generator.py` run; run VERIFY (deterministic) to detect drift.
+   `python .claude/skills/generate-profile/scripts/run_generator.py` run; run VERIFY (deterministic) to detect drift.
 
 4. **`.aid/work-NNN/` directories referenced by older docs but absent from the project
    index.**

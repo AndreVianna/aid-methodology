@@ -56,7 +56,7 @@ What is NOT tested here:
   `test_manifest_safety.py` (pure-mirror deletion safety),
   `test_copilot_emitter.py` (Copilot agent-format emitter — real-YAML round-trip),
   and `test_antigravity_emitter.py` (Antigravity rule-format reshape). All three under
-  `.claude/skills/aid-generate/scripts/`.
+  `.claude/skills/generate-profile/scripts/`.
 - **Sub-agent definitions** — no test harness; verified by dogfooding. See
   `canonical/agents/*/AGENT.md`.
 - **Cross-tool consistency** (Claude Code vs Codex vs Cursor vs Copilot CLI vs Antigravity) —
@@ -844,7 +844,7 @@ The genuinely untested surface is the prompt-driven / orchestration layer:
   the end of every render and exits 1 on failure; not part of `tests/canonical/`. Its
   format emitters carry their own generator self-tests run by the CI `generator-selftests`
   job: `test_manifest_safety.py`, `test_copilot_emitter.py`, `test_antigravity_emitter.py`
-  (all under `.claude/skills/aid-generate/scripts/`, invoked with `--self-test`).
+  (all under `.claude/skills/generate-profile/scripts/`, invoked with `--self-test`).
 - **Sub-agent definitions** — see `canonical/agents/*/AGENT.md`; verified by dogfooding.
 - **Cross-tool consistency** (Claude Code vs Codex vs Cursor vs Copilot CLI vs Antigravity) —
   covered by the renderer's byte-identity assertion across the 5 profiles, not by a suite here.

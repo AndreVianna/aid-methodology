@@ -21,20 +21,20 @@ Understanding the structure is key to contributing in the right place:
 | `docs/` | Humans | Markdown | User-facing documentation, including the core methodology document |
 
 **Important:** To update a skill, agent, or template, edit the canonical source under
-`canonical/` and run `/aid-generate`. The five install trees (`profiles/claude-code/.claude/`,
+`canonical/` and run `/generate-profile`. The five install trees (`profiles/claude-code/.claude/`,
 `profiles/codex/.codex/` + `profiles/codex/.agents/`, `profiles/cursor/.cursor/`,
 `profiles/copilot-cli/.github/`, `profiles/antigravity/.agent/`) are **generated artifacts** —
 do not hand-edit them directly. Your changes will be overwritten on the next generator run.
 See `canonical/EMISSION-MANIFEST.md` for the deletion safety boundary and
-`.claude/skills/aid-generate/SKILL.md` for the full generation pipeline.
+`.claude/skills/generate-profile/SKILL.md` for the full generation pipeline.
 
 **Exception:** The human-readable `skills/` and `agents/` directories at the repo root
 are **not** generated — they remain hand-maintained READMEs and must be updated
 separately when methodology content changes.
 
 **End-user installation** (not generator): users install AID into their own projects via
-`install.sh` (Bash) or `install.ps1` (PowerShell) — not `/aid-generate`.
-`/aid-generate` is maintainer-only tooling for regenerating the install trees in this repo.
+`install.sh` (Bash) or `install.ps1` (PowerShell) — not `/generate-profile`.
+`/generate-profile` is maintainer-only tooling for regenerating the install trees in this repo.
 
 ## What We Accept
 
@@ -43,12 +43,12 @@ separately when methodology content changes.
 - Specialized variants (e.g., aid-discover for monorepos or Python projects)
 - Skills for edge cases (multi-repo, microservices, data science)
 - **Remember:** Edit `canonical/skills/aid-{phase}/SKILL.md` (and `references/` files if any),
-  then run `/aid-generate`. Also update the human `skills/aid-{phase}/README.md` separately.
+  then run `/generate-profile`. Also update the human `skills/aid-{phase}/README.md` separately.
 
 ### Agent Improvements
 - Better system prompts, tool constraints, or role definitions
 - New agent roles for specialized workflows
-- **Remember:** Edit `canonical/agents/aid-{name}/AGENT.md`, then run `/aid-generate`.
+- **Remember:** Edit `canonical/agents/aid-{name}/AGENT.md`, then run `/generate-profile`.
   Also update the human `agents/aid-{name}/README.md` separately.
 
 ### Improved Templates
@@ -69,7 +69,7 @@ separately when methodology content changes.
 
 ### New Tool Formats
 - Agent/skill definitions for tools not yet supported (GitHub Copilot CLI, Google Antigravity, etc.)
-- Add a new `profiles/{tool-name}.toml` following the existing profile schema, then run `/aid-generate`.
+- Add a new `profiles/{tool-name}.toml` following the existing profile schema, then run `/generate-profile`.
   Claude Code, Codex CLI, and Cursor are already supported.
 
 ## What We Don't Accept
@@ -82,7 +82,7 @@ separately when methodology content changes.
 
 1. **Fork the repo** and create a branch: `git checkout -b your-contribution`
 
-2. **For skill/agent improvements:** Edit `canonical/` (the single source of truth), run `/aid-generate` to regenerate all install trees, then update the human README in `skills/` or `agents/`. The human version should be rich and explanatory. The generated LLM versions are concise and structured.
+2. **For skill/agent improvements:** Edit `canonical/` (the single source of truth), run `/generate-profile` to regenerate all install trees, then update the human README in `skills/` or `agents/`. The human version should be rich and explanatory. The generated LLM versions are concise and structured.
 
 3. **For new templates:** Add to the appropriate `templates/` subdirectory. Include guidance comments explaining *why* each section exists.
 
@@ -109,7 +109,7 @@ separately when methodology content changes.
 - Agent files: YAML frontmatter with `name`, `description`, `tools`, `tier` (abstract)
 - Under 500 lines per skill (AgentSkills best practice)
 - Strip verbose explanations — keep: purpose, inputs, process steps, outputs, checklist
-- Generated install trees (`profiles/claude-code/.claude/`, `profiles/codex/`, `profiles/cursor/.cursor/`, `profiles/copilot-cli/.github/`, `profiles/antigravity/.agent/`) are produced by `/aid-generate` — do not edit directly
+- Generated install trees (`profiles/claude-code/.claude/`, `profiles/codex/`, `profiles/cursor/.cursor/`, `profiles/copilot-cli/.github/`, `profiles/antigravity/.agent/`) are produced by `/generate-profile` — do not edit directly
 
 ### General
 - **Tone:** Professional and practical. Opinionated. Methodology from someone who ships.

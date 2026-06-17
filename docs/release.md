@@ -60,7 +60,7 @@ from the same tag in one workflow run.
 git status                                     # must be clean
 git tag -l "v$(cat VERSION)"                   # must print nothing
 gh run list --workflow test.yml --limit 5      # confirm CI is green on master
-python .claude/skills/aid-generate/scripts/run_generator.py && git diff --exit-code -- profiles/
+python .claude/skills/generate-profile/scripts/run_generator.py && git diff --exit-code -- profiles/
 ```
 
 ### Step 2 — Dry run (optional)
@@ -157,7 +157,7 @@ See [Manual path details](#manual-path-details) below for the full step-by-step.
 Before running either path:
 
 - **Clean git worktree.** `git status` must show no modified tracked files.
-- **Render-drift clean.** Run `python .claude/skills/aid-generate/scripts/run_generator.py` and commit if it produces a diff.
+- **Render-drift clean.** Run `python .claude/skills/generate-profile/scripts/run_generator.py` and commit if it produces a diff.
 - **`VERSION` file matches the intended release.** Update and commit `VERSION` before proceeding.
 - **`gh` CLI authenticated.** `gh auth status` must show write access to the repo.
 - **Tag does not already exist.** Both paths fail early on a collision.
@@ -167,7 +167,7 @@ Before running either path:
 git status
 git tag -l "v$(cat VERSION)"
 gh auth status
-python .claude/skills/aid-generate/scripts/run_generator.py && git diff --exit-code -- profiles/
+python .claude/skills/generate-profile/scripts/run_generator.py && git diff --exit-code -- profiles/
 ```
 
 ---
@@ -203,7 +203,7 @@ Common failures and fixes:
 | Failure | Message | Fix |
 |---------|---------|-----|
 | Dirty worktree | `working tree has uncommitted changes` | `git stash` or commit the changes |
-| Render drift | `profiles/ is out of sync with canonical/` | `python .claude/skills/aid-generate/scripts/run_generator.py && git add profiles/ && git commit -m "..."` |
+| Render drift | `profiles/ is out of sync with canonical/` | `python .claude/skills/generate-profile/scripts/run_generator.py && git add profiles/ && git commit -m "..."` |
 | Version mismatch | `--version X does not match VERSION file (Y)` | Drop `--version` or update `./VERSION` |
 | Tag already exists | `tag v1.0.0 already exists` | The release was already cut; see [Recovery](#recovery-and-idempotency) |
 

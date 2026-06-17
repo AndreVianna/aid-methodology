@@ -91,7 +91,7 @@ Before running either release path:
 git status
 git tag -l "v$(cat VERSION)"
 gh auth status
-python .claude/skills/aid-generate/scripts/run_generator.py && git diff --exit-code -- profiles/
+python .claude/skills/generate-profile/scripts/run_generator.py && git diff --exit-code -- profiles/
 ```
 
 ### Primary path (tag-triggered CI) and manual path (release.sh)
@@ -106,7 +106,7 @@ python .claude/skills/aid-generate/scripts/run_generator.py && git diff --exit-c
    git status                                     # must be clean
    git tag -l "v$(cat VERSION)"                   # must print nothing
    gh run list --workflow test.yml --limit 5      # confirm CI is green on master
-   python .claude/skills/aid-generate/scripts/run_generator.py && git diff --exit-code -- profiles/
+   python .claude/skills/generate-profile/scripts/run_generator.py && git diff --exit-code -- profiles/
    ```
 
 2. **Dry run (optional)**
@@ -387,7 +387,7 @@ files inside install trees are never touched.
 1. **Run the full generator**
 
    ```bash
-   python .claude/skills/aid-generate/scripts/run_generator.py
+   python .claude/skills/generate-profile/scripts/run_generator.py
    ```
 
    The script takes no command-line arguments. It always runs the full LOAD → VALIDATE
@@ -419,22 +419,22 @@ runs the deletion pass atomically.
 
 ### Regenerate one tree or dry-run
 
-The `/aid-generate` skill (invoked inside your AI tool) exposes two flags for targeted
+The `/generate-profile` skill (invoked inside your AI tool) exposes two flags for targeted
 and non-destructive runs. These flags are parsed by the **skill**, not by
 `run_generator.py` (which takes no arguments):
 
 **`--tool <name>`** — regenerate only one install tree. Valid values:
 `claude-code`, `codex`, `cursor`, `copilot-cli`, `antigravity`.
 
-Example: `/aid-generate --tool cursor` regenerates only the Cursor install tree.
+Example: `/generate-profile --tool cursor` regenerates only the Cursor install tree.
 
 **`--dry-run`** — render to a temporary scratch directory and print a diff report
 without writing to the install trees or updating the emission manifest. Safe to run
 at any time.
 
-Example: `/aid-generate --dry-run` lets you preview what would change before committing.
+Example: `/generate-profile --dry-run` lets you preview what would change before committing.
 
-Combining both: `/aid-generate --tool claude-code --dry-run` previews changes for a
+Combining both: `/generate-profile --tool claude-code --dry-run` previews changes for a
 single profile without touching the live install tree.
 
 ### Verify and report

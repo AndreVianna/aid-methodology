@@ -237,7 +237,7 @@
 {"dst": ".cursor/templates/requirements/requirements-template.md", "profile": "cursor", "sha256": "0c319fdc0e8cc4939eb8ce41ac24cdd0e13db8a15456c27d5ddbf225a470a745", "src": "canonical/templates/requirements/requirements-template.md"}
 {"dst": ".cursor/templates/reviewer-dispatch.md", "profile": "cursor", "sha256": "654dab2af9d5c3de0158c2c5a55e74a46b5cc994b79f6dc13a97f7a51fb8861d", "src": "canonical/templates/reviewer-dispatch.md"}
 {"dst": ".cursor/templates/reviewer-ledger-schema.md", "profile": "cursor", "sha256": "b86ee693c2593e512eac3686afa329e674f67d3935e723e28965976c27b8ea5d", "src": "canonical/templates/reviewer-ledger-schema.md"}
-{"dst": ".cursor/templates/rough-time-hints.md", "profile": "cursor", "sha256": "ae9ef603d00e76089f66abc2d6c0f61dc81e3a608f65a3d776d9a6fc061fc07d", "src": "canonical/templates/rough-time-hints.md"}
+{"dst": ".cursor/templates/rough-time-hints.md", "profile": "cursor", "sha256": "48396a5a9a67539a1451943fcb1eedd7825f46bf1b4b18385afe33822f5a1440", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".cursor/templates/self-review-protocol.md", "profile": "cursor", "sha256": "ff1144599de8feb03c49f7c664194e45e2ca1fa88451fc8449202cbe8d4f4b4a", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".cursor/templates/settings.yml", "profile": "cursor", "sha256": "e1808f2bff5e7bcb521c7b9038de5291401e29f089b4e986bc86544fbc1c56fd", "src": "canonical/templates/settings.yml"}
 {"dst": ".cursor/templates/specs/lite-spec-template.md", "profile": "cursor", "sha256": "2af75b0c58885336290d5b4fabedcb3215bc330edcbeccf3eae43e3f365dd1a0", "src": "canonical/templates/specs/lite-spec-template.md"}

@@ -235,7 +235,7 @@
 {"dst": ".github/templates/requirements/requirements-template.md", "profile": "copilot-cli", "sha256": "0c319fdc0e8cc4939eb8ce41ac24cdd0e13db8a15456c27d5ddbf225a470a745", "src": "canonical/templates/requirements/requirements-template.md"}
 {"dst": ".github/templates/reviewer-dispatch.md", "profile": "copilot-cli", "sha256": "6ffd8b1710f4905e9e4fbfeb08b39b08dbf6d8c5342fff981f4ed6a259c55692", "src": "canonical/templates/reviewer-dispatch.md"}
 {"dst": ".github/templates/reviewer-ledger-schema.md", "profile": "copilot-cli", "sha256": "f8a2a08fe5eeb81baede291f9ddd19a7ca0764b7a0018d0e5e3b0e79fee7cef5", "src": "canonical/templates/reviewer-ledger-schema.md"}
-{"dst": ".github/templates/rough-time-hints.md", "profile": "copilot-cli", "sha256": "bdb6cad8224d4b6597d2928fb4587724476294a86e564837d7bad0ea856000dc", "src": "canonical/templates/rough-time-hints.md"}
+{"dst": ".github/templates/rough-time-hints.md", "profile": "copilot-cli", "sha256": "bcec37562477b2ee79f4770a48cb817070518ff766c95c3ae75d68a83c2dbae6", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".github/templates/self-review-protocol.md", "profile": "copilot-cli", "sha256": "a2cb34b0aa8484cf6c2353fa16348566942b6ded422b5e24af75f686beab2d77", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".github/templates/settings.yml", "profile": "copilot-cli", "sha256": "e1808f2bff5e7bcb521c7b9038de5291401e29f089b4e986bc86544fbc1c56fd", "src": "canonical/templates/settings.yml"}
 {"dst": ".github/templates/specs/lite-spec-template.md", "profile": "copilot-cli", "sha256": "2af75b0c58885336290d5b4fabedcb3215bc330edcbeccf3eae43e3f365dd1a0", "src": "canonical/templates/specs/lite-spec-template.md"}
