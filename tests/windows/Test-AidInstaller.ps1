@@ -1511,13 +1511,18 @@ New-Item -ItemType Directory -Path $FakeAidT43 -Force | Out-Null
 # Populate state home: only registry.yml (what a state home holds).
 [System.IO.File]::WriteAllText((Join-Path $FakeAidT43 'registry.yml'), "schema: 1`nprojects:`n")
 
-# Run bare aid.ps1 from FakeHomeT43, with AID_STATE_HOME pointing to FakeAidT43.
-# This simulates a user running 'aid' from $HOME where $HOME/.aid is the state home.
+# Run bare aid.ps1 from FakeHomeT43 where FakeHomeT43/.aid IS the state home.
+# AID_HOME is the state-home override the CLI honors (-> _AidStateHome = FakeAidT43);
+# the code home is self-located from the aid.ps1 path (AidHomeT43), independent of
+# AID_HOME. This makes the state-home exclusion match via _AidStateHome on every
+# platform (PowerShell's automatic $HOME is %USERPROFILE% on Windows and would NOT
+# track $env:HOME, so the prior AID_HOME=code-home + $env:HOME setup only worked on
+# Linux).
 $savedHomeT43    = $env:HOME
 $savedAidHomeT43 = $env:AID_HOME
 $savedSHT43      = $env:AID_STATE_HOME
 $savedNoUpdT43   = $env:AID_NO_UPDATE_CHECK
-$env:AID_HOME            = $AidHomeT43
+$env:AID_HOME            = $FakeAidT43
 $env:AID_STATE_HOME      = $FakeAidT43
 $env:AID_NO_UPDATE_CHECK = '1'
 if ($env:HOME -ne $null) { $env:HOME = $FakeHomeT43 }
