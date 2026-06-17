@@ -67,7 +67,7 @@ This is the single state file for work-002 (the `aid projects` command). Full pi
 | task-001 | IMPLEMENT | 001 | — | Done | A+ (zero findings) — writers→projects: 6/1/2/1, strings swept, prompts untouched |
 | task-002 | TEST | 001 | task-001 | Pending | — |
 | task-003 | IMPLEMENT | 001 | — | Done | A+ (reviewer caught manifest-schema bug in tools extractor + semver validation; fixed, 21/21 sandbox) |
-| task-004 | IMPLEMENT | 001 | task-003 | Pending | — |
+| task-004 | IMPLEMENT | 001 | task-003 | Done | A+ (gate caught unknown-action-ran-list HIGH + 3 more; fixed) |
 | task-005 | IMPLEMENT | 001 | task-003 | Pending | — |
 | task-006 | TEST | 001 | task-004, task-005 | Pending | — |
 | task-007 | IMPLEMENT | 002 | delivery-001 | Pending | — |

@@ -15,6 +15,8 @@
 #   aid add <tool>[,...]             Add tool(s) to the current project
 #   aid update [<tool>... | self]    Update to latest; no arg = all tools; 'self' = the aid CLI
 #   aid remove [<tool>... | self]    Remove; no arg = ALL AID from project; 'self' = the aid CLI
+#   aid projects [list|add|remove|help] [path] [--local|--shared] [--verbose]
+#                                    List, register, or unregister AID projects
 #   aid <command> -h | --help        Per-command help
 #
 # Flags (shared across subcommands where applicable):
@@ -137,6 +139,22 @@ _aid_usage() {
             printf '  --port <n>     listen port on 127.0.0.1 (default 8787).\n'
             printf '  The dashboard binds to 127.0.0.1 only. '"'"'stop'"'"' is idempotent and also tears down --remote.\n'
             ;;
+        projects)
+            printf 'aid projects [list] [--local|--shared] [--verbose]\n'
+            printf 'aid projects add  [<path>] [--local|--shared]\n'
+            printf 'aid projects remove [<path>]\n'
+            printf '  List, register, or unregister AID projects in the registry.\n'
+            printf '  list (default): show all registered projects with state, tools, and tier.\n'
+            printf '    The current directory is marked with "*" in the leading marker column.\n'
+            printf '    Unregistered cwd with .aid/ present is shown as a footnote.\n'
+            printf '  add [path=cwd]: register a project (requires .aid/ to exist); tracking only,\n'
+            printf '    no tools are installed.  Idempotent.  Prints the tier written.\n'
+            printf '  remove [path=cwd]: unregister a project from the registry; no files removed.\n'
+            printf '    Works on stale/missing/no-aid entries.  Idempotent.\n'
+            printf '  --local   force user tier for add\n'
+            printf '  --shared  force shared tier for add\n'
+            printf '  --verbose print extra detail\n'
+            ;;
         *)
             printf 'aid - AID CLI\n'
             printf '\n'
@@ -149,6 +167,7 @@ _aid_usage() {
             printf '  aid update [<tool>... | self]    Update to latest; no arg = all tools\n'
             printf '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project\n'
             printf '  aid dashboard start|stop ...     Start/stop the local dashboard\n'
+            printf '  aid projects [list|add|remove]   List/register/unregister AID projects\n'
             printf '  aid <command> -h | --help        Per-command help\n'
             printf '\n'
             printf 'Flags: --from-bundle, --version, --force, --dry-run, --target, --verbose\n'
@@ -2338,6 +2357,220 @@ _aid_cwd_no_aid_offer() {
 }
 
 # ---------------------------------------------------------------------------
+# _cmd_projects -- list/add/remove/help for the project registry.
+# ---------------------------------------------------------------------------
+_cmd_projects() {
+    local _action="${1:-list}"
+    local _path_arg=""
+    local _verbose=0
+    shift || true
+
+    # Parse remaining args: sub-action already consumed above.
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help) _action="help"; shift ;;
+            --local)   _AID_TIER_OVERRIDE="--local"; shift ;;
+            --shared)  _AID_TIER_OVERRIDE="--shared"; shift ;;
+            --verbose) _verbose=1; shift ;;
+            -*)
+                echo "ERROR: aid projects: unknown flag: $1 (see 'aid projects -h')" >&2
+                exit 2
+                ;;
+            *)
+                if [[ -z "$_path_arg" ]]; then
+                    _path_arg="$1"
+                fi
+                shift ;;
+        esac
+    done
+
+    case "$_action" in
+        list)    _cmd_projects_list "$_verbose" ;;
+        add)     _cmd_projects_add  "$_path_arg" "$_verbose" ;;
+        remove)  _cmd_projects_remove "$_path_arg" "$_verbose" ;;
+        help)    _aid_usage projects; exit 0 ;;
+        *)
+            echo "ERROR: aid projects: unknown action: ${_action} (expected: list, add, remove, help)" >&2
+            exit 2
+            ;;
+    esac
+}
+
+# _cmd_projects_list [verbose]
+# Render the raw union as an aligned table: marker, path, state, tools, tier.
+# Marks cwd with "*"; footnotes unregistered AID cwd.
+# --verbose: also print the registry file each entry was read from.
+_cmd_projects_list() {
+    local _verbose="${1:-0}"
+
+    # Canonical cwd.
+    local _cwd
+    _cwd="$(cd . && pwd)"
+
+    # Collect raw union (includes no-aid / missing paths).
+    local -a _paths=()
+    while IFS= read -r _p; do
+        [[ -n "$_p" ]] && _paths+=("$_p")
+    done < <(_registry_read_raw_union)
+
+    # Column header.
+    printf '%-2s  %-45s  %-10s  %-20s  %s\n' " " "PATH" "STATE" "TOOLS" "TIER"
+    printf '%-2s  %-45s  %-10s  %-20s  %s\n' "--" "----" "-----" "-----" "----"
+
+    local _cwd_registered=0
+    local _entry
+    for _entry in "${_paths[@]+"${_paths[@]}"}"; do
+        local _state _tools _tier _marker
+        _state="$(_aid_project_state "$_entry")"
+        _tools="$(_aid_project_tools "$_entry")"
+        _tier="$(_which_tier_holds "$_entry")"
+        _marker="  "
+        if [[ "$_entry" == "$_cwd" ]]; then
+            _marker="* "
+            _cwd_registered=1
+        fi
+        # Truncate long tools string for display.
+        local _tools_display="${_tools:--}"
+        printf '%-2s  %-45s  %-10s  %-20s  %s\n' \
+            "$_marker" "$_entry" "$_state" "$_tools_display" "$_tier"
+        if [[ "$_verbose" -eq 1 ]]; then
+            local _reg_src
+            if [[ "$_tier" == "shared" && "$AID_STATE_HOME" != "${HOME}/.aid" ]]; then
+                _reg_src="${AID_STATE_HOME}/registry.yml"
+            else
+                _reg_src="${HOME}/.aid/registry.yml"
+            fi
+            printf '      registry: %s\n' "$_reg_src"
+        fi
+    done
+
+    if [[ "${#_paths[@]}" -eq 0 ]]; then
+        printf '(no projects registered)\n'
+    fi
+
+    # Footnote: unregistered AID cwd.
+    if [[ "$_cwd_registered" -eq 0 && -d "${_cwd}/.aid" ]]; then
+        printf '\n'
+        printf "(here) -- not registered; run 'aid projects add'\n"
+    fi
+
+    # Legend.
+    if [[ "${#_paths[@]}" -gt 0 ]]; then
+        printf '\n'
+        printf '* = current directory\n'
+    fi
+}
+
+# _which_tier_holds <canon-path>
+# Returns "user" or "shared" based on which registry file contains the path.
+# Falls back to _aid_resolve_tier if the path is not found in either.
+_which_tier_holds() {
+    local _p="$1"
+    local _primary_reg="${AID_STATE_HOME}/registry.yml"
+    local _user_reg="${HOME}/.aid/registry.yml"
+    # Check shared/primary first.
+    if [[ "$AID_STATE_HOME" != "${HOME}/.aid" ]]; then
+        if _registry_read_repos "$_primary_reg" 2>/dev/null | grep -qxF "$_p"; then
+            printf 'shared\n'
+            return 0
+        fi
+        if _registry_read_repos "$_user_reg" 2>/dev/null | grep -qxF "$_p"; then
+            printf 'user\n'
+            return 0
+        fi
+    else
+        # Per-user: single file.
+        if _registry_read_repos "$_primary_reg" 2>/dev/null | grep -qxF "$_p"; then
+            printf 'user\n'
+            return 0
+        fi
+    fi
+    # Fallback: derive from tier resolution.
+    _aid_resolve_tier "$_p"
+}
+
+# _cmd_projects_add [path] [verbose]
+# Register a project path (default: cwd) in the deterministic tier.
+_cmd_projects_add() {
+    local _raw_path="${1:-.}"
+    local _verbose="${2:-0}"
+
+    # Canonicalize.
+    local _canon
+    if ! _canon="$(cd "$_raw_path" 2>/dev/null && pwd)"; then
+        echo "ERROR: aid projects add: path does not exist: ${_raw_path}" >&2
+        exit 2
+    fi
+
+    # Require .aid/ directory.
+    if [[ ! -d "${_canon}/.aid" ]]; then
+        echo "ERROR: aid projects add: '${_canon}' is not an AID project (.aid/ not found); run 'aid add <tool>' first." >&2
+        exit 2
+    fi
+
+    # Resolve tier.
+    local _tier
+    _tier="$(_aid_resolve_tier "$_canon")"
+
+    # Register (idempotent).
+    # Suppress registry_register's own "Registered..." stdout line so we emit a
+    # single consolidated message instead of two lines.  stderr (WARN lines) is
+    # left to flow through unchanged.
+    registry_register "$_canon" "$_tier" >/dev/null
+    local _rc=$?
+    if [[ $_rc -eq 0 ]]; then
+        printf "aid projects: '%s' registered in %s tier.\n" "$_canon" "$_tier"
+        if [[ "$_verbose" -eq 1 ]]; then
+            local _reg_file
+            if [[ "$_tier" == "shared" && "$AID_STATE_HOME" != "${HOME}/.aid" ]]; then
+                _reg_file="${AID_STATE_HOME}/registry.yml"
+            else
+                _reg_file="${HOME}/.aid/registry.yml"
+            fi
+            printf "aid projects: registry file: %s\n" "$_reg_file"
+        fi
+    fi
+    return 0
+}
+
+# _cmd_projects_remove [path] [verbose]
+# Unregister a project path (default: cwd) from the registry; no .aid/ required.
+_cmd_projects_remove() {
+    local _raw_path="${1:-.}"
+    local _verbose="${2:-0}"
+
+    # Canonicalize without requiring the directory to exist.
+    local _canon
+    if _canon="$(cd "$_raw_path" 2>/dev/null && pwd)"; then
+        : # directory exists; use canonical path
+    else
+        # Directory absent (stale entry); use the raw path as-is after normalizing.
+        _canon="$_raw_path"
+    fi
+
+    # Unregister (idempotent; registry_unregister prints on real change).
+    # Check first so we can emit the idempotent no-op message ourselves.
+    local _primary_reg="${AID_STATE_HOME}/registry.yml"
+    local _user_reg="${HOME}/.aid/registry.yml"
+    local _found=0
+    if _registry_read_repos "$_primary_reg" 2>/dev/null | grep -qxF "$_canon"; then
+        _found=1
+    elif [[ "$AID_STATE_HOME" != "${HOME}/.aid" ]]; then
+        if _registry_read_repos "$_user_reg" 2>/dev/null | grep -qxF "$_canon"; then
+            _found=1
+        fi
+    fi
+
+    registry_unregister "$_canon"
+    if [[ "$_found" -eq 0 ]]; then
+        printf "aid projects: '%s' was not registered (nothing to remove).\n" "$_canon"
+    elif [[ "$_verbose" -eq 1 ]]; then
+        printf "aid projects: removed '%s' from registry.\n" "$_canon"
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # Parse subcommand and dispatch.
 # ---------------------------------------------------------------------------
 
@@ -2558,6 +2791,43 @@ fi
 # ---- dashboard --------------------------------------------------------------
 if [[ "$SUBCMD" == "dashboard" ]]; then
     _cmd_dashboard_ctl "$@"
+    exit $?
+fi
+
+# ---- projects ---------------------------------------------------------------
+if [[ "$SUBCMD" == "projects" ]]; then
+    # Check for -h/--help as first arg before dispatching.
+    if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+        _aid_usage projects
+        exit 0
+    fi
+    # Determine sub-action (first positional or default "list").
+    # Scan through leading flags to find the action word; unknown positionals are
+    # rejected here so errors surface before entering _cmd_projects.
+    _PROJ_ACTION="list"
+    _PROJ_ARGS=()
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            list|add|remove|help)
+                _PROJ_ACTION="$1"; shift
+                _PROJ_ARGS+=("$@")
+                set --
+                break
+                ;;
+            -h|--help) _aid_usage projects; exit 0 ;;
+            --local|--shared|--verbose)
+                _PROJ_ARGS+=("$1"); shift ;;
+            -*)
+                # Unknown flag: pass through to _cmd_projects for rejection.
+                _PROJ_ARGS+=("$1"); shift ;;
+            *)
+                echo "ERROR: aid projects: unknown action: ${1} (expected: list, add, remove, help)" >&2
+                exit 2
+                ;;
+        esac
+    done
+    _AID_TIER_OVERRIDE="${_AID_TIER_OVERRIDE:-}"
+    _cmd_projects "$_PROJ_ACTION" "${_PROJ_ARGS[@]+"${_PROJ_ARGS[@]}"}"
     exit $?
 fi
 
