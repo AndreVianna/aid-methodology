@@ -1226,18 +1226,30 @@ EOF
         else
             echo "Remote exposure is UP (tailnet-private), but the .ts.net URL could not be auto-detected -- run 'tailscale status' on this host to find it."
         fi
-        # DR-1 registry side-effect: auto-register the dashboard target repo (idempotent).
-        # Always routes to the user tier: dashboard auto-register is never-elevate.
-        registry_register "$target" "user"
+        # DR-1 registry side-effect: auto-register the dashboard target project (idempotent).
+        # FR7: resolve tier deterministically; but never-elevate: if shared would need
+        # elevation (shared dir not user-writable), degrade silently to user (no prompt).
+        local _dc_tier
+        _dc_tier="$(_aid_resolve_tier "$target")"
+        if [[ "$_dc_tier" == "shared" && ! -w "${AID_STATE_HOME}" ]]; then
+            _dc_tier="user"
+        fi
+        registry_register "$target" "$_dc_tier"
         exit 0
     fi
 
     # Step 11: print success (local-only).
     echo "Dashboard (${runtime}) running at http://127.0.0.1:${port} -- stop with: aid dashboard stop"
-    # DR-1 registry side-effect: auto-register the dashboard target repo (idempotent).
+    # DR-1 registry side-effect: auto-register the dashboard target project (idempotent).
     # _dc_target is already CAN-1 (cd && pwd, no -P, applied at the dashboard-ctl seam).
-    # Always routes to the user tier: dashboard auto-register is never-elevate.
-    registry_register "$target" "user"
+    # FR7: resolve tier deterministically; but never-elevate: if shared would need
+    # elevation (shared dir not user-writable), degrade silently to user (no prompt).
+    local _dc_tier2
+    _dc_tier2="$(_aid_resolve_tier "$target")"
+    if [[ "$_dc_tier2" == "shared" && ! -w "${AID_STATE_HOME}" ]]; then
+        _dc_tier2="user"
+    fi
+    registry_register "$target" "$_dc_tier2"
     exit 0
 }
 
@@ -1943,10 +1955,17 @@ _aid_migrate_repo() {
     # ------------------------------------------------------------------
     # STEP 4 -- REGISTER (DM-2 / FR28) -- existing idempotent writer.
     # Canonicalize path (same rule as bin/aid:1366).
+    # FR7: deterministic tier via _aid_resolve_tier; never-elevate: if shared would
+    # need elevation (shared dir not user-writable), degrade silently to user.
     # ------------------------------------------------------------------
     local _canon_repo
     _canon_repo="$(cd "${repo}" && pwd)" 2>/dev/null || _canon_repo="${repo}"
-    registry_register "${_canon_repo}" || true
+    local _migrate_tier
+    _migrate_tier="$(_aid_resolve_tier "${_canon_repo}")"
+    if [[ "$_migrate_tier" == "shared" && ! -w "${AID_STATE_HOME}" ]]; then
+        _migrate_tier="user"
+    fi
+    registry_register "${_canon_repo}" "$_migrate_tier" || true
 
     return 0
 }
@@ -2309,31 +2328,10 @@ _aid_cwd_classify() {
 
     if [[ "$_is_registered" -eq 0 ]]; then
         # Not registered -- pick tier and register (best-effort, never blocks).
-        local _in_home=0
-        # Check if target is under $HOME.
-        case "$_canon_target" in
-            "${HOME}/"*|"${HOME}") _in_home=1 ;;
-        esac
-
-        local _reg_tier="user"
-        if [[ "$_AID_SCOPE" == "global" && "$_in_home" -eq 0 ]]; then
-            # global && outside ~ : ask shared-vs-user (decision #4: always ask).
-            # No-TTY default: user tier silently (safe, always writable).
-            local _ctab_have_tty=0
-            { exec 3</dev/tty; } 2>/dev/null && { _ctab_have_tty=1; exec 3>&-; } || true
-            if [[ "$_ctab_have_tty" -eq 1 ]]; then
-                printf 'Register this repo in the shared machine registry? [y/N] '
-                local _ask_ans=""
-                read -r _ask_ans < /dev/tty
-                case "$_ask_ans" in
-                    [Yy]|yes|Yes|YES) _reg_tier="shared" ;;
-                    *) _reg_tier="user" ;;
-                esac
-            else
-                # Non-interactive: user tier silently.
-                _reg_tier="user"
-            fi
-        fi
+        # FR7: deterministic, non-interactive tier selection via _aid_resolve_tier.
+        # _AID_TIER_OVERRIDE is empty here (auto path; no CLI override in cwd-classify).
+        local _reg_tier
+        _reg_tier="$(_aid_resolve_tier "$_canon_target")"
         # register is best-effort: failure warns, returns 0, host command proceeds.
         registry_register "$_canon_target" "$_reg_tier" || true
     fi
@@ -3164,30 +3162,9 @@ case "$SUBCMD" in
         # B-table (for 'add'): tier-aware registration after successful install.
         # Decision #3 (unwritable) already handled above with error+abort.
         if [[ "$SUBCMD" == "add" ]]; then
-            _btab_in_home=0
-            case "$_AID_TARGET" in
-                "${HOME}/"*|"${HOME}") _btab_in_home=1 ;;
-            esac
-            _btab_tier="user"
-            if [[ "$_AID_SCOPE" == "global" && "$_btab_in_home" -eq 0 ]]; then
-                # B-table: global && outside ~ && writable (already proved writable above).
-                # Decision #4: always ask on a real decision.
-                _btab_have_tty=0
-                { exec 3</dev/tty; } 2>/dev/null && { _btab_have_tty=1; exec 3>&-; } || true
-                if [[ "$_btab_have_tty" -eq 1 ]]; then
-                    printf 'Add this repo to the shared machine registry? [y/N] '
-                    _btab_ans=""
-                    read -r _btab_ans < /dev/tty
-                    case "$_btab_ans" in
-                        [Yy]|yes|Yes|YES) _btab_tier="shared" ;;
-                        *) _btab_tier="user" ;;
-                    esac
-                else
-                    # Non-interactive: user tier silently (safe default).
-                    _btab_tier="user"
-                fi
-            fi
-            # All other rows: user tier silently (in-~ or per-user outside-~).
+            # FR7: deterministic, non-interactive tier selection via _aid_resolve_tier.
+            # Honors _AID_TIER_OVERRIDE (--local/--shared) if already set by caller.
+            _btab_tier="$(_aid_resolve_tier "$_AID_TARGET")"
             registry_register "$_AID_TARGET" "$_btab_tier"
         else
             # 'update [tool]': C-table register-on-encounter already ran above.
