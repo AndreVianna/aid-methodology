@@ -1656,6 +1656,75 @@ OUT=$(HOME="${_SH_HOME}" AID_HOME="${_SH_AID_HOME}" AID_STATE_HOME="${_SH_HOME}/
 assert_exit_eq "$_SH04R_RC" 0 "REG-SH04d 'projects add' on a real project -> exit 0 (accepted)"
 
 # ===========================================================================
+# REG-FG: format-gate manifest guard (BUG-3 regression).
+# "WARN: older format ... Run: aid update" must fire ONLY for tracked repos
+# (manifest present at <repo>/.aid/.aid-manifest.json).  Untracked repos
+# (.aid/ present but no manifest) must be silent; the "no AID tools installed
+# ... run aid add" path handles them.
+#
+# ISOLATION: HOME is pinned to throwaway; escape canary already in place.
+# ===========================================================================
+echo ""
+echo "=== REG-FG: format-gate manifest guard (BUG-3 regression) ==="
+
+_FG_AID_HOME=$(newhome)
+setup_aid_home "${_FG_AID_HOME}"
+_FG_STATE=$(mktemp -d "${TMP}/fg_state.XXXXXX")
+
+# REG-FG01: untracked repo -- .aid/ present, NO manifest.
+# bare 'aid' and 'aid status' must NOT print "older format" WARN.
+_FG_UNTRACKED=$(mktemp -d "${TMP}/fg_untracked.XXXXXX")
+mkdir -p "${_FG_UNTRACKED}/.aid"
+cat > "${_FG_UNTRACKED}/.aid/settings.yml" << 'FGUNTRACKEDEOF'
+project:
+  name: untracked-fg-test
+  description: era-a repo with no manifest (untracked)
+  type: brownfield
+tools:
+  installed: []
+FGUNTRACKEDEOF
+# No .aid/.aid-manifest.json -- this is the untracked case.
+
+_FG01_OUT=$(cd "${_FG_UNTRACKED}" && \
+    AID_HOME="${_FG_AID_HOME}" AID_STATE_HOME="${_FG_STATE}" AID_NO_UPDATE_CHECK=1 \
+    bash "${_FG_AID_HOME}/bin/aid" 2>&1 || true)
+assert_output_not_contains "$_FG01_OUT" "older format" \
+    "REG-FG01a bare aid in untracked repo: no older-format WARN"
+
+_FG02_OUT=$(cd "${_FG_UNTRACKED}" && \
+    AID_HOME="${_FG_AID_HOME}" AID_STATE_HOME="${_FG_STATE}" AID_NO_UPDATE_CHECK=1 \
+    bash "${_FG_AID_HOME}/bin/aid" status 2>&1 || true)
+assert_output_not_contains "$_FG02_OUT" "older format" \
+    "REG-FG02a aid status in untracked repo: no older-format WARN"
+
+# REG-FG03: tracked old-format repo -- manifest present, no format_version stamp.
+# bare 'aid' and 'aid status' MUST print "older format ... Run: aid update".
+_FG_TRACKED=$(mktemp -d "${TMP}/fg_tracked.XXXXXX")
+mkdir -p "${_FG_TRACKED}/.aid"
+cat > "${_FG_TRACKED}/.aid/settings.yml" << 'FGTRACKEDEOF'
+project:
+  name: tracked-fg-test
+  description: era-a repo with manifest (tracked) but no format_version stamp
+  type: brownfield
+tools:
+  installed: []
+FGTRACKEDEOF
+printf '%s\n' '{"manifest_version":1,"aid_version":"1.0.0","tools":{"claude-code":{"version":"1.0.0"}}}' \
+    > "${_FG_TRACKED}/.aid/.aid-manifest.json"
+
+_FG03_OUT=$(cd "${_FG_TRACKED}" && \
+    AID_HOME="${_FG_AID_HOME}" AID_STATE_HOME="${_FG_STATE}" AID_NO_UPDATE_CHECK=1 \
+    bash "${_FG_AID_HOME}/bin/aid" 2>&1 || true)
+assert_output_contains "$_FG03_OUT" "older format" \
+    "REG-FG03a bare aid in tracked old-format repo: WARN older format printed"
+
+_FG04_OUT=$(cd "${_FG_TRACKED}" && \
+    AID_HOME="${_FG_AID_HOME}" AID_STATE_HOME="${_FG_STATE}" AID_NO_UPDATE_CHECK=1 \
+    bash "${_FG_AID_HOME}/bin/aid" status 2>&1 || true)
+assert_output_contains "$_FG04_OUT" "older format" \
+    "REG-FG04a aid status in tracked old-format repo: WARN older format printed"
+
+# ===========================================================================
 # REG-DW: degrade WARN verbosity gate (BUG-2 regression).
 # The "could not write to state home ... using ..." WARN is silent by default
 # and shown only under --verbose.

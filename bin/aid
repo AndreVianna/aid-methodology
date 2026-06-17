@@ -1892,7 +1892,8 @@ _aid_format_gate() {
         return 1
     fi
     if [[ "${_repo_fmt}" -lt "${_sup}" ]]; then
-        if [[ "${AID_NO_MIGRATE:-0}" != "1" ]]; then
+        if [[ "${AID_NO_MIGRATE:-0}" != "1" ]] \
+          && [[ -f "${_repo}/.aid/.aid-manifest.json" ]]; then
             printf 'WARN: aid: this project uses an older format (v%s; current: v%s). Run: aid update\n' \
                 "${_repo_fmt}" "${_sup}"
         fi

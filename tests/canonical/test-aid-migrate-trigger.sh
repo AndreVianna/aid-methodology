@@ -166,6 +166,9 @@ execution:
 traceability:
   heartbeat_interval: 1
 SETTEOF
+    # Manifest required: the format gate only warns "Run: aid update" for tracked repos.
+    printf '%s\n' '{"manifest_version":1,"aid_version":"1.0.0","tools":{"claude-code":{"version":"1.0.0"}}}' \
+        > "${frepo}/.aid/.aid-manifest.json"
 
     _FIXTURE_CODE_HOME="${fcode}"
     _FIXTURE_STATE_HOME="${fstate}"

@@ -1971,6 +1971,10 @@ execution:
 traceability:
   heartbeat_interval: 1
 S080SETTEOF
+# Add a manifest so the format gate treats this as a tracked repo and still
+# prints "WARN: older format … Run: aid update" (suppressed only for untracked).
+printf '%s\n' '{"manifest_version":1,"aid_version":"1.0.0","tools":{"claude-code":{"version":"1.0.0"}}}' \
+    > "${_S_REPO_STAMPLESS}/.aid/.aid-manifest.json"
 
 _S_REPO_STAMPED="$(mktemp -d "${TMP}/s080repo_stamped.XXXXXX")"
 mkdir -p "${_S_REPO_STAMPED}/.aid"
@@ -2300,6 +2304,10 @@ execution:
 traceability:
   heartbeat_interval: 1
 V009MALFORMEDEOF
+# Manifest required so the format gate treats this as tracked and emits the WARN
+# (malformed collapses to 0 = older format; untracked repos stay silent).
+printf '%s\n' '{"manifest_version":1,"aid_version":"1.0.0","tools":{"claude-code":{"version":"1.0.0"}}}' \
+    > "${_V_REPO_MALFORMED}/.aid/.aid-manifest.json"
 
 _V07_TMP_OUT="$(mktemp "${TMP}/v07out.XXXXXX")"
 (cd "${_V_REPO_MALFORMED}" && \
@@ -2350,6 +2358,9 @@ execution:
 traceability:
   heartbeat_interval: 1
 V009MALFORMEDPEOF
+    # No manifest intentionally: V09 only asserts exit != 1 (gate did not refuse),
+    # not that WARN was printed. A no-manifest repo exits non-zero via the status
+    # path (e.g. 7 = no tools), which satisfies the "not 1 (refused)" check.
 
     _V09_TMP_OUT="$(mktemp "${TMP}/v09out.XXXXXX")"
     (cd "${_V_REPO_MALFORMED_PS}" && \

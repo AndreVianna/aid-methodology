@@ -1255,7 +1255,8 @@ function script:Invoke-AidFormatGate {
         return 1
     }
     if ($repoFmt -lt $sup) {
-        if ($env:AID_NO_MIGRATE -ne '1') {
+        $manifestPath = Join-Path $Repo (Join-Path '.aid' '.aid-manifest.json')
+        if ($env:AID_NO_MIGRATE -ne '1' -and (Test-Path $manifestPath -PathType Leaf)) {
             Write-Host "WARN: aid: this project uses an older format (v${repoFmt}; current: v${sup}). Run: aid update"
         }
         return 0
