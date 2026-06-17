@@ -293,10 +293,12 @@ echo "--- E2E07: online-shape verify (no network) ---"
 # which would inherit set -euo pipefail side-effects in this test's shell).
 CORE_SH="${REPO_ROOT}/lib/aid-install-core.sh"
 
+# The bases are env-overridable: AID_<X>="${AID_<X>:-<default>}". Extract the
+# DEFAULT (the text between ':-' and the closing '}"').
 DOWNLOAD_BASE=$(grep '^AID_DOWNLOAD_BASE=' "${CORE_SH}" | head -1 \
-    | sed 's/AID_DOWNLOAD_BASE="\([^"]*\)".*/\1/')
+    | sed 's/.*:-\(.*\)}".*/\1/')
 API_BASE=$(grep '^AID_API_BASE=' "${CORE_SH}" | head -1 \
-    | sed 's/AID_API_BASE="\([^"]*\)".*/\1/')
+    | sed 's/.*:-\(.*\)}".*/\1/')
 
 # Resolve the interpolated values (they embed ${AID_REPO_SLUG}).
 REPO_SLUG=$(grep '^AID_REPO_SLUG=' "${CORE_SH}" | head -1 \

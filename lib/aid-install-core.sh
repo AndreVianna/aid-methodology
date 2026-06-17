@@ -65,8 +65,11 @@ _AID_INSTALL_CORE_LOADED=1
 # ---------------------------------------------------------------------------
 
 AID_REPO_SLUG="AndreVianna/aid-methodology"
-AID_API_BASE="https://api.github.com/repos/${AID_REPO_SLUG}"
-AID_DOWNLOAD_BASE="https://github.com/${AID_REPO_SLUG}/releases/download"
+# Release source. Defaults to GitHub; both are env-overridable so an air-gapped /
+# enterprise mirror (or a local pre-release verification mirror) can serve the
+# release JSON and assets without changing the published defaults.
+AID_API_BASE="${AID_API_BASE:-https://api.github.com/repos/${AID_REPO_SLUG}}"
+AID_DOWNLOAD_BASE="${AID_DOWNLOAD_BASE:-https://github.com/${AID_REPO_SLUG}/releases/download}"
 
 # Canonical tool ids.
 AID_TOOLS=(claude-code codex cursor copilot-cli antigravity)
