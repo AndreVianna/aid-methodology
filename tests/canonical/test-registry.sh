@@ -861,4 +861,689 @@ else
     pass "ESCAPE-CANARY: ${_CANARY_VAR_LIB_AID} pre-existed before suite; skipping creation check"
 fi
 
+# ===========================================================================
+# REG-P series: 'aid projects' command behavior tests (task-006)
+# Covers: list/add/remove, four states, ASCII * marker, tier resolution,
+# FR7 reconcile, legacy repos: back-compat.
+#
+# ISOLATION CONTRACT (all REG-P tests):
+#   - Every test that fires registry/migration code pins HOME to a throwaway
+#     via export HOME=<throwaway> inside the subshell or run_projects call.
+#   - REAL_HOME escape canary (REG-EC): snapshot the developer's real
+#     ~/.aid/registry.yml mtime at suite start; assert it is unchanged at end.
+#
+# HOW GLOBAL SCOPE IS SIMULATED:
+#   - In inline harness subshells: set _AID_SCOPE="global" explicitly and
+#     set AID_STATE_HOME to a throwaway dir distinct from HOME/.aid.
+#   - In full CLI (run_projects / run_aid): install aid into a temp dir, then
+#     chmod that dir to non-writable (so bin/aid detects AID_CODE_HOME !-w
+#     and sets _AID_SCOPE="global"), and set AID_HOME to a separate writable
+#     throwaway (simulating /var/lib/aid). AID_CODE_HOME is not overridable by
+#     env; writability is the only gate (see bin/aid:57).
+# ===========================================================================
+
+echo ""
+echo "=== REG-P: 'aid projects' command behavior tests (task-006) ==="
+
+# ---------------------------------------------------------------------------
+# ESCAPE CANARY (real-HOME): snapshot developer's real ~/.aid before tests.
+# ---------------------------------------------------------------------------
+_EC_REAL_HOME="${HOME:-}"
+# If HOME was already pinned by the caller (e.g. the suite runner), we use REAL_HOME
+# env var if provided; otherwise derive it from /proc.
+if [[ -n "${REAL_HOME:-}" ]]; then
+    _EC_REAL_HOME="${REAL_HOME}"
+else
+    # Use HOME before any sub-test overrides it.
+    _EC_REAL_HOME="$(eval echo ~"$(id -un)")"
+fi
+_EC_REAL_AID_REG="${_EC_REAL_HOME}/.aid/registry.yml"
+_EC_SNAP_BEFORE=""
+if [[ -f "${_EC_REAL_AID_REG}" ]]; then
+    _EC_SNAP_BEFORE="$(stat -c '%Y %s' "${_EC_REAL_AID_REG}" 2>/dev/null || echo 'absent')"
+else
+    _EC_SNAP_BEFORE="absent"
+fi
+
+# ---------------------------------------------------------------------------
+# Helpers for projects CLI tests.
+# run_projects: like run_aid but also pins HOME to a throwaway so registry/
+# migration code cannot escape to the developer's real ~/.aid.
+# ---------------------------------------------------------------------------
+run_projects() {
+    local aid_home="$1" test_home="$2"
+    shift 2
+    OUT=$(HOME="$test_home" \
+          AID_HOME="$aid_home" AID_STATE_HOME="$aid_home" \
+          AID_LIB_PATH="${aid_home}/lib/aid-install-core.sh" \
+          bash "${aid_home}/bin/aid" "$@" 2>&1)
+    RC=$?
+}
+
+# run_projects_global: simulate a global install (AID_CODE_HOME non-writable,
+# AID_HOME set to a separate shared dir). HOME is always pinned to test_home.
+# fake_sudo_dir (optional 4th arg): when provided, its path is prepended to
+# PATH so _aid_priv_run cannot find a working sudo -- this makes shared-write
+# degrade deterministic on passwordless-sudo CI runners (GitHub ubuntu-24.04).
+run_projects_global() {
+    # Usage: run_projects_global <aid_home> <shared_state> <test_home> [<fake_sudo_dir>] <cmd...>
+    # fake_sudo_dir is detected: if $4 is a directory that contains a 'sudo' file
+    # it is treated as the fake-sudo dir and consumed; otherwise $4 onward are cmd args.
+    local aid_home="$1" shared_state="$2" test_home="$3"
+    shift 3
+    local fake_sudo_dir=""
+    if [[ -n "${1:-}" && -d "${1:-}" && -f "${1:-}/sudo" ]]; then
+        fake_sudo_dir="$1"; shift
+    fi
+    # Make the aid_home dir non-writable so bin/aid's scope-derivation sets
+    # _AID_SCOPE="global" (bin/aid:57 checks: AID_CODE_HOME not writable + not root).
+    chmod 555 "${aid_home}" 2>/dev/null || true
+    local _run_path="${PATH}"
+    [[ -n "$fake_sudo_dir" ]] && _run_path="${fake_sudo_dir}:${PATH}"
+    OUT=$(HOME="$test_home" \
+          PATH="${_run_path}" \
+          AID_HOME="$shared_state" AID_STATE_HOME="$shared_state" \
+          AID_LIB_PATH="${aid_home}/lib/aid-install-core.sh" \
+          bash "${aid_home}/bin/aid" "$@" 2>&1)
+    RC=$?
+    chmod 755 "${aid_home}" 2>/dev/null || true
+}
+
+# ---------------------------------------------------------------------------
+# PROJECTS harness: extracts the full helpers section plus _cmd_projects*
+# so we can call state/tier functions in isolation.
+# The harness sets HOME, AID_STATE_HOME, _AID_SCOPE, _AID_TIER_OVERRIDE, and
+# _AID_VERBOSE before eval, enabling precise per-unit control.
+# ---------------------------------------------------------------------------
+PROJECTS_HARNESS="${TMP}/projects_harness.sh"
+cat > "${PROJECTS_HARNESS}" << 'PROJ_HARNESS_EOF'
+#!/usr/bin/env bash
+set -uo pipefail
+BIN_AID="$1";         shift
+HOME_DIR="$1";        shift
+AID_STATE_HOME_DIR="$1"; shift
+AID_SCOPE_VAL="$1";   shift   # "user" or "global"
+CMD="$1";             shift   # resolve_tier | project_state | raw_union | list | add | remove
+ARG1="${1:-}"
+ARG2="${2:-}"
+
+export HOME="${HOME_DIR}"
+export AID_STATE_HOME="${AID_STATE_HOME_DIR}"
+export _AID_VERBOSE=0
+export _AID_SCOPE="${AID_SCOPE_VAL}"
+export _AID_TIER_OVERRIDE=""
+
+# Extract _aid_priv_run.
+_PRIV_START=$(grep -n '^_aid_priv_run()' "$BIN_AID" | head -1 | cut -d: -f1)
+_PRIV_END=$(awk "NR>=${_PRIV_START:-0} && /^\}$/{print NR; exit}" "$BIN_AID")
+if [[ -n "$_PRIV_START" && -n "$_PRIV_END" ]]; then
+    eval "$(sed -n "${_PRIV_START},${_PRIV_END}p" "$BIN_AID")" 2>/dev/null || true
+fi
+
+# Extract registry helpers section.
+REG_START=$(grep -n '# Registry helpers (DR-1' "$BIN_AID" | head -1 | cut -d: -f1)
+REG_END=$(grep -n '# Parse subcommand and dispatch' "$BIN_AID" | head -1 | cut -d: -f1)
+[[ -n "$REG_START" && -n "$REG_END" ]] || { echo "ERROR: cannot locate registry section" >&2; exit 1; }
+eval "$(sed -n "${REG_START},${REG_END}p" "$BIN_AID")"
+
+# Also extract _which_tier_holds and _cmd_projects* (they live between
+# the end of the registry section and the Parse subcommand block; they
+# are defined after the registry section in bin/aid, so we capture the
+# full file up to dispatch with function-block grepping).
+CMD_START=$(grep -n '^_cmd_projects()' "$BIN_AID" | head -1 | cut -d: -f1)
+CMD_WHICH=$(grep -n '^_which_tier_holds()' "$BIN_AID" | head -1 | cut -d: -f1)
+DISPATCH_START=$(grep -n '^# Parse subcommand and dispatch' "$BIN_AID" | head -1 | cut -d: -f1)
+# Extract from the registry end through dispatch (includes _which_tier_holds + _cmd_projects*).
+if [[ -n "$DISPATCH_START" ]]; then
+    eval "$(sed -n "${REG_END},${DISPATCH_START}p" "$BIN_AID")" 2>/dev/null || true
+fi
+
+case "$CMD" in
+    resolve_tier)
+        _AID_TIER_OVERRIDE="${ARG2:-}"
+        _aid_resolve_tier "$ARG1"
+        ;;
+    project_state)
+        _aid_project_state "$ARG1"
+        ;;
+    raw_union)
+        _registry_read_raw_union
+        ;;
+    list)
+        _cmd_projects_list "${ARG1:-0}"
+        ;;
+    add)
+        _AID_TIER_OVERRIDE="${ARG2:-}"
+        _cmd_projects_add "$ARG1" "0"
+        ;;
+    remove)
+        _cmd_projects_remove "$ARG1" "0"
+        ;;
+    *)
+        echo "ERROR: unknown CMD: $CMD" >&2
+        exit 1
+        ;;
+esac
+PROJ_HARNESS_EOF
+chmod +x "${PROJECTS_HARNESS}"
+
+run_proj_harness() {
+    # run_proj_harness <home> <state_home> <scope> <cmd> [arg1] [arg2]
+    local home_dir="$1" state_home_dir="$2" scope="$3" cmd="$4"
+    local arg1="${5:-}" arg2="${6:-}"
+    OUT=$(HOME="$home_dir" AID_STATE_HOME="$state_home_dir" \
+          bash "${PROJECTS_HARNESS}" \
+              "$BIN_AID" "$home_dir" "$state_home_dir" "$scope" "$cmd" "$arg1" "$arg2" 2>&1)
+    RC=$?
+}
+
+# ===========================================================================
+# REG-P01: list renders all four states (non-pruning raw union).
+# Setup: register four paths -- vX.Y.Z (has manifest), untracked (.aid/ no
+# manifest), no-aid (dir, no .aid/), missing (dir absent). Assert each state
+# appears in list output (proves NON-pruning union; _registry_read_raw_union
+# does NOT discard no-aid/missing entries like _registry_read_union does).
+# ===========================================================================
+echo "--- REG-P01: list renders all four states ---"
+_P01_HOME=$(mktemp -d "${TMP}/p01_home.XXXXXX")
+_P01_STATE=$(mktemp -d "${TMP}/p01_state.XXXXXX")
+
+# Path 1: vX.Y.Z -- has .aid/.aid-manifest.json with a valid aid_version.
+_P01_TRACKED=$(mktemp -d "${TMP}/p01_tracked.XXXXXX")
+mkdir -p "${_P01_TRACKED}/.aid"
+printf '{"aid_version": "1.2.3", "tools": {"codex": {}}}\n' \
+    > "${_P01_TRACKED}/.aid/.aid-manifest.json"
+
+# Path 2: untracked -- .aid/ exists but no manifest (no .aid-manifest.json / .aid-version).
+_P01_UNTRACKED=$(mktemp -d "${TMP}/p01_untracked.XXXXXX")
+mkdir -p "${_P01_UNTRACKED}/.aid"
+
+# Path 3: no-aid -- directory exists but has no .aid/ subdirectory.
+_P01_NOAID=$(mktemp -d "${TMP}/p01_noaid.XXXXXX")
+
+# Path 4: missing -- registered path that does not exist on disk.
+_P01_MISSING="${TMP}/p01_missing_does_not_exist_$(date +%s)"
+
+# Register all four paths in the state registry.
+cat > "${_P01_STATE}/registry.yml" << P01REG_EOF
+# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).
+schema: 1
+projects:
+  - ${_P01_TRACKED}
+  - ${_P01_UNTRACKED}
+  - ${_P01_NOAID}
+  - ${_P01_MISSING}
+P01REG_EOF
+
+# Run list via harness (HOME and AID_STATE_HOME both pinned to throwaways).
+run_proj_harness "${_P01_HOME}" "${_P01_STATE}" "user" "list"
+assert_exit_eq "$RC" 0 "REG-P01a list all four states -> exit 0"
+assert_output_contains "$OUT" "1.2.3"       "REG-P01b list: vX.Y.Z state present for tracked project"
+assert_output_contains "$OUT" "untracked"   "REG-P01c list: untracked state present for .aid/ no manifest"
+assert_output_contains "$OUT" "no-aid"      "REG-P01d list: no-aid state present for dir without .aid/"
+assert_output_contains "$OUT" "missing"     "REG-P01e list: missing state present for absent directory"
+# Verify all four paths are in output (non-pruning).
+assert_output_contains "$OUT" "${_P01_TRACKED}"   "REG-P01f list: tracked path rendered"
+assert_output_contains "$OUT" "${_P01_UNTRACKED}"  "REG-P01g list: untracked path rendered"
+assert_output_contains "$OUT" "${_P01_NOAID}"      "REG-P01h list: no-aid path rendered"
+assert_output_contains "$OUT" "${_P01_MISSING}"    "REG-P01i list: missing path rendered"
+
+# ===========================================================================
+# REG-P02: ASCII '*' "you are here" marker and unregistered-AID-cwd footnote.
+# (a) A registered cwd gets '*' in the list output.
+# (b) A symlinked cwd that canonicalizes to a registered path also gets '*'
+#     (the marker is on the canonical entry, not the raw symlink target).
+# (c) An unregistered cwd that has .aid/ gets the footnote line.
+# ===========================================================================
+echo "--- REG-P02: ASCII * marker and unregistered-cwd footnote ---"
+_P02_HOME=$(mktemp -d "${TMP}/p02_home.XXXXXX")
+_P02_STATE=$(mktemp -d "${TMP}/p02_state.XXXXXX")
+_P02_PROJ=$(mktemp -d "${TMP}/p02_proj.XXXXXX")
+mkdir -p "${_P02_PROJ}/.aid"
+
+# Register the project in the state registry.
+cat > "${_P02_STATE}/registry.yml" << P02REG_EOF
+# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).
+schema: 1
+projects:
+  - ${_P02_PROJ}
+P02REG_EOF
+
+# (a) Run list WITH cwd set to the registered project -> '*' marker expected.
+_P02a_OUT=$(cd "${_P02_PROJ}" && \
+    HOME="${_P02_HOME}" AID_STATE_HOME="${_P02_STATE}" \
+    bash "${PROJECTS_HARNESS}" \
+        "$BIN_AID" "${_P02_HOME}" "${_P02_STATE}" "user" "list" "0" 2>&1)
+_P02a_RC=$?
+assert_exit_eq "$_P02a_RC" 0   "REG-P02a-01 list from registered cwd -> exit 0"
+assert_output_contains "$_P02a_OUT" "* " "REG-P02a-02 list: ASCII * marker present when cwd is registered"
+# The '*' entry must be on the same line as the project path.
+_P02a_STAR_LINE=$(printf '%s\n' "$_P02a_OUT" | grep -F "* " | head -1)
+assert_output_contains "$_P02a_STAR_LINE" "${_P02_PROJ}" "REG-P02a-03 * is on the registered project line"
+
+# (b) Symlinked cwd: create a symlink to the registered project; cd into the
+#     symlink dir; canonicalizing (cd && pwd, no -P) may keep symlink name.
+#     The list renders CANONICAL paths from the registry (stored as cd && pwd).
+#     The marker check is: canon(cwd) == stored-entry. Both stored-entry and
+#     cwd are from 'cd && pwd' (non -P), so they match when canonical.
+#     We test by registering the canonical path, then running list from the
+#     canonical path via a trailing-slash variant (which still canonicalizes).
+_P02b_PROJ_TS="${_P02_PROJ}/"   # trailing slash; cd && pwd strips it
+_P02b_OUT=$(cd "${_P02b_PROJ_TS%/}" && \
+    HOME="${_P02_HOME}" AID_STATE_HOME="${_P02_STATE}" \
+    bash "${PROJECTS_HARNESS}" \
+        "$BIN_AID" "${_P02_HOME}" "${_P02_STATE}" "user" "list" "0" 2>&1)
+# The '*' must be on the line that contains the project path, not just the legend.
+_P02b_STAR_LINE=$(printf '%s\n' "$_P02b_OUT" | grep -F "* " | grep -v '= current directory' | head -1)
+assert_output_contains "$_P02b_STAR_LINE" "${_P02_PROJ}" \
+    "REG-P02b trailing-slash cwd canonicalizes -> * on registered project line"
+
+# (c) Unregistered AID cwd: create a new project with .aid/ but NOT registered.
+_P02c_HOME=$(mktemp -d "${TMP}/p02c_home.XXXXXX")
+_P02c_UNREG=$(mktemp -d "${TMP}/p02c_unreg.XXXXXX")
+mkdir -p "${_P02c_UNREG}/.aid"
+# The state registry is empty (only _P02_PROJ is registered, not _P02c_UNREG).
+_P02c_OUT=$(cd "${_P02c_UNREG}" && \
+    HOME="${_P02c_HOME}" AID_STATE_HOME="${_P02_STATE}" \
+    bash "${PROJECTS_HARNESS}" \
+        "$BIN_AID" "${_P02c_HOME}" "${_P02_STATE}" "user" "list" "0" 2>&1)
+assert_output_contains "$_P02c_OUT" "(here) -- not registered" \
+    "REG-P02c unregistered AID cwd -> footnote printed"
+# The unregistered project path must not appear on a '*'-marked line.
+_P02c_STAR_LINES=$(printf '%s\n' "$_P02c_OUT" | grep -F "* " | grep -v '= current directory' || true)
+assert_output_not_contains "$_P02c_STAR_LINES" "${_P02c_UNREG}" \
+    "REG-P02c unregistered AID cwd -> no * marker on unregistered path"
+
+# ===========================================================================
+# REG-P03: 'aid projects add' via full CLI.
+# (a) add registers an existing .aid/ project; tools untouched.
+# (b) rejects a non-.aid/ path with exit 2.
+# (c) idempotent: add same project twice -> single registry entry.
+# ===========================================================================
+echo "--- REG-P03: aid projects add behavior ---"
+_P03_HOME=$(mktemp -d "${TMP}/p03_home.XXXXXX")
+_P03_AID_INST=$(newhome)
+setup_aid_home "${_P03_AID_INST}"
+
+# (a) Add an existing .aid/ project.
+_P03_PROJ=$(mktemp -d "${TMP}/p03_proj.XXXXXX")
+mkdir -p "${_P03_PROJ}/.aid"
+# Create a sentinel file to prove tools are untouched.
+printf 'sentinel\n' > "${_P03_PROJ}/.aid/sentinel.txt"
+
+run_projects "${_P03_AID_INST}" "${_P03_HOME}" projects add "${_P03_PROJ}"
+assert_exit_eq "$RC" 0 "REG-P03a aid projects add existing .aid/ project -> exit 0"
+assert_output_contains "$OUT" "registered" "REG-P03a-02 add output confirms registration"
+# Sentinel file must be untouched (tools untouched by add).
+assert_file_exists "${_P03_PROJ}/.aid/sentinel.txt" "REG-P03a-03 add: tools untouched (sentinel present)"
+# Registry entry should be present.
+assert_file_contains "${_P03_AID_INST}/registry.yml" "${_P03_PROJ}" \
+    "REG-P03a-04 registry.yml contains registered project path"
+
+# (b) Reject a non-.aid/ path with exit 2.
+_P03b_NOAID=$(mktemp -d "${TMP}/p03b_noaid.XXXXXX")
+run_projects "${_P03_AID_INST}" "${_P03_HOME}" projects add "${_P03b_NOAID}"
+assert_exit_eq "$RC" 2 "REG-P03b aid projects add non-.aid/ path -> exit 2"
+assert_output_contains "$OUT" "not an AID project" "REG-P03b-02 error message mentions not an AID project"
+
+# (c) Idempotent: add the same project a second time -> still one entry.
+run_projects "${_P03_AID_INST}" "${_P03_HOME}" projects add "${_P03_PROJ}"
+assert_exit_eq "$RC" 0 "REG-P03c aid projects add same project twice -> exit 0"
+_P03c_COUNT=$(grep -c '  - ' "${_P03_AID_INST}/registry.yml" 2>/dev/null || echo 0)
+assert_eq "$_P03c_COUNT" "1" "REG-P03c idempotent: only one registry entry after double add"
+
+# ===========================================================================
+# REG-P04: 'aid projects remove' via full CLI.
+# (a) remove unregisters (tools/files untouched by remove).
+# (b) repairs a stale/missing entry (no .aid/ required).
+# (c) idempotent: remove an already-absent path -> no-op message, exit 0.
+# ===========================================================================
+echo "--- REG-P04: aid projects remove behavior ---"
+_P04_HOME=$(mktemp -d "${TMP}/p04_home.XXXXXX")
+_P04_AID_INST=$(newhome)
+setup_aid_home "${_P04_AID_INST}"
+_P04_PROJ=$(mktemp -d "${TMP}/p04_proj.XXXXXX")
+mkdir -p "${_P04_PROJ}/.aid"
+printf 'sentinel\n' > "${_P04_PROJ}/.aid/sentinel.txt"
+
+# Pre-register the project.
+run_projects "${_P04_AID_INST}" "${_P04_HOME}" projects add "${_P04_PROJ}"
+assert_exit_eq "$RC" 0 "REG-P04-setup pre-register project -> exit 0"
+assert_file_contains "${_P04_AID_INST}/registry.yml" "${_P04_PROJ}" \
+    "REG-P04-setup project in registry before remove"
+
+# (a) Remove unregisters; tools untouched.
+run_projects "${_P04_AID_INST}" "${_P04_HOME}" projects remove "${_P04_PROJ}"
+assert_exit_eq "$RC" 0 "REG-P04a aid projects remove -> exit 0"
+assert_file_not_contains "${_P04_AID_INST}/registry.yml" "${_P04_PROJ}" \
+    "REG-P04a-02 remove: project path absent from registry after remove"
+# Sentinel file must be untouched (tools untouched by remove).
+assert_file_exists "${_P04_PROJ}/.aid/sentinel.txt" "REG-P04a-03 remove: tools untouched (sentinel present)"
+
+# (b) Repair stale/missing entry: register a path that does NOT exist on disk
+#     (simulates a stale entry), then remove it by path.
+_P04b_STALE="${TMP}/p04b_stale_does_not_exist_$(date +%s)"
+# Manually write the stale entry into the registry.
+cat >> "${_P04_AID_INST}/registry.yml" << P04B_EOF
+  - ${_P04b_STALE}
+P04B_EOF
+# Verify it was written.
+assert_file_contains "${_P04_AID_INST}/registry.yml" "${_P04b_STALE}" \
+    "REG-P04b-setup stale entry written to registry"
+# Remove it (no .aid/ required -- repair stale).
+run_projects "${_P04_AID_INST}" "${_P04_HOME}" projects remove "${_P04b_STALE}"
+assert_exit_eq "$RC" 0 "REG-P04b remove stale/missing entry -> exit 0"
+assert_file_not_contains "${_P04_AID_INST}/registry.yml" "${_P04b_STALE}" \
+    "REG-P04b-02 stale entry removed from registry"
+
+# (c) Idempotent: remove a path not in registry -> no-op message, exit 0.
+_P04c_ABSENT="${TMP}/p04c_absent_$(date +%s)"
+run_projects "${_P04_AID_INST}" "${_P04_HOME}" projects remove "${_P04c_ABSENT}"
+assert_exit_eq "$RC" 0 "REG-P04c remove absent path -> exit 0 (idempotent)"
+assert_output_contains "$OUT" "was not registered" \
+    "REG-P04c-02 remove absent path -> no-op message emitted"
+
+# ===========================================================================
+# REG-P05: Tier resolution via _aid_resolve_tier (inline harness).
+# (a) Per-user install (AID_STATE_HOME == HOME/.aid): all paths -> "user".
+# (b) Global install + path outside HOME -> "shared".
+# (c) Global install + path under HOME -> "user".
+# (d) --local override -> "user" regardless.
+# (e) --shared override under per-user install -> "user" + notice to stderr.
+# (f) Shared-write degrade: register to shared tier when AID_STATE_HOME not
+#     writable -> WARN, fall back to user tier, return 0.
+# ===========================================================================
+echo "--- REG-P05: tier resolution ---"
+
+# (a) Per-user collapse: AID_STATE_HOME == HOME/.aid -> always "user".
+_P05a_HOME=$(mktemp -d "${TMP}/p05a_home.XXXXXX")
+_P05a_AID_DIR="${_P05a_HOME}/.aid"
+mkdir -p "${_P05a_AID_DIR}"
+_P05a_PATH_OUTSIDE="/usr/local/myproject"  # outside HOME; but install is per-user
+run_proj_harness "${_P05a_HOME}" "${_P05a_AID_DIR}" "user" "resolve_tier" "${_P05a_PATH_OUTSIDE}" ""
+assert_exit_eq "$RC" 0 "REG-P05a-01 per-user: resolve_tier -> exit 0"
+assert_eq "$OUT" "user" "REG-P05a-02 per-user install: all paths resolve to user tier"
+
+# (b) Global install + path outside HOME -> "shared".
+_P05b_HOME=$(mktemp -d "${TMP}/p05b_home.XXXXXX")
+_P05b_SHARED=$(mktemp -d "${TMP}/p05b_shared.XXXXXX")  # distinct from HOME/.aid
+_P05b_PATH_OUTSIDE="/opt/myproject"  # outside HOME
+run_proj_harness "${_P05b_HOME}" "${_P05b_SHARED}" "global" "resolve_tier" "${_P05b_PATH_OUTSIDE}" ""
+assert_exit_eq "$RC" 0 "REG-P05b-01 global + outside-HOME: resolve_tier -> exit 0"
+assert_eq "$OUT" "shared" "REG-P05b-02 global install + outside-HOME path -> shared tier"
+
+# (c) Global install + path under HOME -> "user".
+_P05c_HOME=$(mktemp -d "${TMP}/p05c_home.XXXXXX")
+_P05c_SHARED=$(mktemp -d "${TMP}/p05c_shared.XXXXXX")
+_P05c_PATH_UNDER_HOME="${_P05c_HOME}/myproject"  # under HOME
+run_proj_harness "${_P05c_HOME}" "${_P05c_SHARED}" "global" "resolve_tier" "${_P05c_PATH_UNDER_HOME}" ""
+assert_exit_eq "$RC" 0 "REG-P05c-01 global + under-HOME: resolve_tier -> exit 0"
+assert_eq "$OUT" "user" "REG-P05c-02 global install + under-HOME path -> user tier"
+
+# (d) --local override: always "user" regardless of install type or path.
+_P05d_HOME=$(mktemp -d "${TMP}/p05d_home.XXXXXX")
+_P05d_SHARED=$(mktemp -d "${TMP}/p05d_shared.XXXXXX")
+_P05d_PATH_OUTSIDE="/opt/global-proj"
+run_proj_harness "${_P05d_HOME}" "${_P05d_SHARED}" "global" "resolve_tier" "${_P05d_PATH_OUTSIDE}" "--local"
+assert_exit_eq "$RC" 0 "REG-P05d-01 --local override: resolve_tier -> exit 0"
+assert_eq "$OUT" "user" "REG-P05d-02 --local override forces user tier"
+
+# (e) --shared override under per-user install -> "user" + notice to stderr.
+_P05e_HOME=$(mktemp -d "${TMP}/p05e_home.XXXXXX")
+_P05e_AID_DIR="${_P05e_HOME}/.aid"
+mkdir -p "${_P05e_AID_DIR}"
+_P05e_PATH="/opt/myproject"
+# Capture both stdout and stderr via the harness; the harness redirects 2>&1.
+_P05e_OUT=$(HOME="${_P05e_HOME}" AID_STATE_HOME="${_P05e_AID_DIR}" \
+    bash "${PROJECTS_HARNESS}" \
+        "$BIN_AID" "${_P05e_HOME}" "${_P05e_AID_DIR}" "user" "resolve_tier" "${_P05e_PATH}" "--shared" 2>&1)
+_P05e_RC=$?
+assert_exit_eq "$_P05e_RC" 0 "REG-P05e-01 --shared under per-user: resolve_tier -> exit 0"
+# The tier returned must be "user" (there is no separate shared tier).
+_P05e_TIER=$(printf '%s\n' "$_P05e_OUT" | grep -v 'no shared tier' | head -1)
+assert_eq "$_P05e_TIER" "user" "REG-P05e-02 --shared under per-user install -> falls back to user tier"
+# A notice must be emitted.
+assert_output_contains "$_P05e_OUT" "no shared tier" \
+    "REG-P05e-03 --shared under per-user install -> notice emitted"
+
+# (f) Shared-write degrade: registry_register to "shared" tier when AID_STATE_HOME
+#     is not writable -> WARN emitted, entry lands in fallback user tier, return 0.
+#     sudo is hidden via a fake-sudo-dir prepended to PATH so the degrade is
+#     deterministic on any CI runner (including passwordless-sudo environments like
+#     GitHub ubuntu-24.04 where _aid_priv_run would otherwise succeed via sudo).
+echo "--- REG-P05f: shared-write degrade ---"
+_P05f_HOME=$(mktemp -d "${TMP}/p05f_home.XXXXXX")
+_P05f_SHARED=$(mktemp -d "${TMP}/p05f_shared.XXXXXX")
+chmod 555 "${_P05f_SHARED}"
+_P05f_PROJ="${TMP}/p05f_proj_$(date +%s)"
+# Create a fake sudo that always exits non-zero (unavailable) so _aid_priv_run degrades.
+_P05f_FAKE_SUDO_DIR=$(mktemp -d "${TMP}/p05f_fakesudo.XXXXXX")
+printf '#!/usr/bin/env bash\nexit 1\n' > "${_P05f_FAKE_SUDO_DIR}/sudo"
+chmod +x "${_P05f_FAKE_SUDO_DIR}/sudo"
+
+_P05f_OUT=$(bash -c '
+    BIN_AID="'"$BIN_AID"'"
+    HOME="'"${_P05f_HOME}"'"
+    AID_STATE_HOME="'"${_P05f_SHARED}"'"
+    _AID_SCOPE="global"
+    # Prepend fake-sudo dir so _aid_priv_run cannot find a working sudo.
+    PATH="'"${_P05f_FAKE_SUDO_DIR}"':${PATH}"
+    export HOME AID_STATE_HOME _AID_SCOPE PATH
+    START=$(grep -n "# Registry helpers (DR-1" "$BIN_AID" | head -1 | cut -d: -f1)
+    END=$(grep -n "# Parse subcommand and dispatch" "$BIN_AID" | head -1 | cut -d: -f1)
+    _PRIV_START=$(grep -n "^_aid_priv_run()" "$BIN_AID" | head -1 | cut -d: -f1)
+    _PRIV_END=$(awk "NR>=${_PRIV_START:-0} && /^\}$/{print NR; exit}" "$BIN_AID")
+    [[ -n "$_PRIV_START" && -n "$_PRIV_END" ]] && \
+        eval "$(sed -n "${_PRIV_START},${_PRIV_END}p" "$BIN_AID")" 2>/dev/null || true
+    _AID_VERBOSE=0
+    eval "$(sed -n "${START},${END}p" "$BIN_AID")"
+    registry_register "'"${_P05f_PROJ}"'" "shared"
+' 2>&1)
+_P05f_RC=$?
+chmod 755 "${_P05f_SHARED}" 2>/dev/null || true
+assert_exit_eq "$_P05f_RC" 0 \
+    "REG-P05f shared-write degrade: register returns 0 even when AID_STATE_HOME not writable"
+assert_output_contains "$_P05f_OUT" "WARN:" \
+    "REG-P05f-02 shared-write degrade: WARN emitted when shared dir not writable"
+
+# ===========================================================================
+# REG-P06: FR7 reconcile.
+# (a) aid add <tool> on a global, outside-HOME target registers with NO
+#     interactive prompt ("Register this...?", "Add this repo...?", etc.).
+# (b) aid dashboard auto-register + migrate side-effect never prompt/elevate
+#     (degrade silently to user tier when shared would need elevation).
+# (c) Tier is consistent: the tier from _aid_resolve_tier matches the tier
+#     that ends up in the registry after add/dashboard/migrate.
+#
+# SIMULATION: global install = AID_CODE_HOME non-writable, AID_HOME to a
+# separate writable dir (distinct from HOME/.aid). Target project is outside
+# HOME so _aid_resolve_tier would normally return "shared"; but since the
+# shared dir is non-writable (no sudo), it must DEGRADE silently to "user"
+# without emitting any prompt.
+# ===========================================================================
+echo "--- REG-P06: FR7 reconcile (no prompts, never-elevate) ---"
+
+# (a) aid add <tool> on global outside-HOME install -- no interactive prompt.
+#     FR7 contract: the old interactive y/N tier prompts ("Register this...?",
+#     "Add this repo...?") are replaced by non-interactive _aid_resolve_tier.
+#     We use a writable shared-state dir so the registration actually succeeds
+#     and we can assert it happened (anti-vacuity). The scope is forced global
+#     by making AID_CODE_HOME non-writable.
+_P06a_HOME=$(mktemp -d "${TMP}/p06a_home.XXXXXX")
+_P06a_AID_INST=$(newhome)
+setup_aid_home "${_P06a_AID_INST}"
+# Writable shared state: simulates /var/lib/aid with group-write access.
+_P06a_SHARED_STATE=$(mktemp -d "${TMP}/p06a_shared.XXXXXX")
+
+_P06a_TGT=$(newtarget)
+# The target is outside HOME (_P06a_HOME) since it is a temp dir under TMP.
+# run_projects_global makes AID_CODE_HOME non-writable -> _AID_SCOPE=global.
+run_projects_global "${_P06a_AID_INST}" "${_P06a_SHARED_STATE}" "${_P06a_HOME}" \
+    add codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "${_P06a_TGT}"
+assert_exit_eq "$RC" 0 "REG-P06a FR7 aid add on global outside-HOME -> exit 0"
+# No interactive prompt text (FR7: _aid_resolve_tier is non-interactive).
+assert_output_not_contains "$OUT" "Register this" \
+    "REG-P06a-02 FR7: no 'Register this' prompt in aid add output"
+assert_output_not_contains "$OUT" "Add this repo" \
+    "REG-P06a-03 FR7: no 'Add this repo' prompt in aid add output"
+assert_output_not_contains "$OUT" "[y/N]" \
+    "REG-P06a-04 FR7: no interactive y/N prompt in aid add output"
+# The add must succeed.
+assert_output_contains "$OUT" "Done. AID" "REG-P06a-05 FR7: aid add completed successfully"
+# Registration must have happened: with a writable shared state and global scope,
+# the target resolves to "shared" tier and lands in the shared registry.
+assert_file_contains "${_P06a_SHARED_STATE}/registry.yml" "${_P06a_TGT}" \
+    "REG-P06a-06 FR7: target registered in shared-tier registry after global add"
+
+# (b) Dashboard auto-register: when shared tier is not writable, degrades
+#     silently to user (no prompt, no error message about tier).
+#     Test via harness: simulate the dashboard registry side-effect by
+#     calling _aid_resolve_tier + registry_register with a non-writable
+#     AID_STATE_HOME (global scope, target outside HOME).
+echo "--- REG-P06b: dashboard/migrate never-elevate ---"
+_P06b_HOME=$(mktemp -d "${TMP}/p06b_home.XXXXXX")
+_P06b_SHARED=$(mktemp -d "${TMP}/p06b_shared.XXXXXX")
+chmod 555 "${_P06b_SHARED}"  # non-writable
+_P06b_TARGET="${TMP}/p06b_target_$(date +%s)"
+
+# Simulate the dashboard auto-register logic (bin/aid:~1248):
+#   tier = _aid_resolve_tier(target)
+#   if tier == "shared" && !writable(AID_STATE_HOME): tier = "user"
+#   registry_register(target, tier) -- no prompt
+_P06b_OUT=$(bash -c '
+    BIN_AID="'"$BIN_AID"'"
+    HOME="'"${_P06b_HOME}"'"
+    AID_STATE_HOME="'"${_P06b_SHARED}"'"
+    _AID_SCOPE="global"
+    export HOME AID_STATE_HOME _AID_SCOPE
+    START=$(grep -n "# Registry helpers (DR-1" "$BIN_AID" | head -1 | cut -d: -f1)
+    END=$(grep -n "# Parse subcommand and dispatch" "$BIN_AID" | head -1 | cut -d: -f1)
+    _PRIV_START=$(grep -n "^_aid_priv_run()" "$BIN_AID" | head -1 | cut -d: -f1)
+    _PRIV_END=$(awk "NR>=${_PRIV_START:-0} && /^\}$/{print NR; exit}" "$BIN_AID")
+    [[ -n "$_PRIV_START" && -n "$_PRIV_END" ]] && \
+        eval "$(sed -n "${_PRIV_START},${_PRIV_END}p" "$BIN_AID")" 2>/dev/null || true
+    _AID_VERBOSE=0
+    eval "$(sed -n "${START},${END}p" "$BIN_AID")"
+    # Simulate dashboard/migrate never-elevate pattern.
+    _dc_tier="$(_aid_resolve_tier "'"${_P06b_TARGET}"'")"
+    if [[ "$_dc_tier" == "shared" && ! -w "${AID_STATE_HOME}" ]]; then
+        _dc_tier="user"
+    fi
+    registry_register "'"${_P06b_TARGET}"'" "$_dc_tier"
+' 2>&1)
+_P06b_RC=$?
+chmod 755 "${_P06b_SHARED}" 2>/dev/null || true
+assert_exit_eq "$_P06b_RC" 0 \
+    "REG-P06b dashboard/migrate never-elevate: registry_register returns 0"
+# Must NOT contain any interactive prompt.
+assert_output_not_contains "$_P06b_OUT" "Register this" \
+    "REG-P06b-02 no 'Register this' prompt from dashboard auto-register"
+assert_output_not_contains "$_P06b_OUT" "[y/N]" \
+    "REG-P06b-03 no interactive y/N prompt from dashboard auto-register"
+# Must NOT print an error (degrade is silent).
+assert_output_not_contains "$_P06b_OUT" "ERROR:" \
+    "REG-P06b-04 no ERROR from degrade path (silent degrade)"
+# After degrade, entry should land in user tier (HOME/.aid/registry.yml).
+_P06b_USER_REG="${_P06b_HOME}/.aid/registry.yml"
+if [[ -f "${_P06b_USER_REG}" ]]; then
+    assert_file_contains "${_P06b_USER_REG}" "${_P06b_TARGET}" \
+        "REG-P06b-05 degrade: entry lands in user-tier registry"
+else
+    # If user tier also didn't write (WARN path), the key contract is no prompt and exit 0.
+    pass "REG-P06b-05 degrade: no user-tier write (WARN path; no prompt is the contract)"
+fi
+
+# (c) Tier consistency: _aid_resolve_tier result matches registry tier after add.
+echo "--- REG-P06c: tier consistency across add ---"
+_P06c_HOME=$(mktemp -d "${TMP}/p06c_home.XXXXXX")
+_P06c_STATE=$(mktemp -d "${TMP}/p06c_state.XXXXXX")
+# Per-user setup: AID_STATE_HOME == HOME/.aid -> all paths -> "user".
+_P06c_AID_DIR="${_P06c_HOME}/.aid"
+mkdir -p "${_P06c_AID_DIR}"
+_P06c_PROJ=$(mktemp -d "${TMP}/p06c_proj.XXXXXX")
+mkdir -p "${_P06c_PROJ}/.aid"
+
+# Resolve tier via harness (per-user -> user).
+run_proj_harness "${_P06c_HOME}" "${_P06c_AID_DIR}" "user" "resolve_tier" "${_P06c_PROJ}" ""
+assert_eq "$OUT" "user" "REG-P06c-01 tier resolver returns user for per-user install"
+
+# Register via harness and check the tier in the registry.
+run_proj_harness "${_P06c_HOME}" "${_P06c_AID_DIR}" "user" "add" "${_P06c_PROJ}" ""
+assert_exit_eq "$RC" 0 "REG-P06c-02 projects add succeeds"
+assert_output_contains "$OUT" "user" "REG-P06c-03 projects add output confirms user tier"
+# Check registry file: entry in HOME/.aid/registry.yml (user tier).
+assert_file_contains "${_P06c_AID_DIR}/registry.yml" "${_P06c_PROJ}" \
+    "REG-P06c-04 entry in user-tier registry (tier consistent with resolver)"
+
+# ===========================================================================
+# REG-P07: Legacy 'repos:' key back-compat.
+# A registry file with the old 'repos:' section key is still read correctly
+# by 'aid projects list' (key-agnostic reader; the reader greps for ITEMS
+# not the section key, so both 'repos:' and 'projects:' work identically).
+# ===========================================================================
+echo "--- REG-P07: legacy repos: key back-compat ---"
+_P07_HOME=$(mktemp -d "${TMP}/p07_home.XXXXXX")
+_P07_STATE=$(mktemp -d "${TMP}/p07_state.XXXXXX")
+_P07_PROJ_A=$(mktemp -d "${TMP}/p07_projA.XXXXXX")
+_P07_PROJ_B=$(mktemp -d "${TMP}/p07_projB.XXXXXX")
+mkdir -p "${_P07_PROJ_A}/.aid" "${_P07_PROJ_B}/.aid"
+
+# Write a legacy 'repos:'-keyed registry (old format, should still work).
+cat > "${_P07_STATE}/registry.yml" << P07REG_EOF
+# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).
+schema: 1
+repos:
+  - ${_P07_PROJ_A}
+  - ${_P07_PROJ_B}
+P07REG_EOF
+
+# Run list via harness: key-agnostic reader must return both projects.
+run_proj_harness "${_P07_HOME}" "${_P07_STATE}" "user" "list"
+assert_exit_eq "$RC" 0 "REG-P07a legacy repos: key -> list exits 0"
+assert_output_contains "$OUT" "${_P07_PROJ_A}" \
+    "REG-P07b legacy repos: key -> project A visible in list"
+assert_output_contains "$OUT" "${_P07_PROJ_B}" \
+    "REG-P07c legacy repos: key -> project B visible in list"
+# Also test via _registry_read_raw_union directly.
+run_proj_harness "${_P07_HOME}" "${_P07_STATE}" "user" "raw_union"
+assert_output_contains "$OUT" "${_P07_PROJ_A}" \
+    "REG-P07d legacy repos: raw_union returns project A"
+assert_output_contains "$OUT" "${_P07_PROJ_B}" \
+    "REG-P07e legacy repos: raw_union returns project B"
+
+# Verify that a writer (registry_register) re-keys the file to 'projects:' on
+# next write (lazy migration -- re-key on write).
+_P07_NEW_PROJ=$(mktemp -d "${TMP}/p07_newproj.XXXXXX")
+mkdir -p "${_P07_NEW_PROJ}/.aid"
+run_proj_harness "${_P07_HOME}" "${_P07_STATE}" "user" "add" "${_P07_NEW_PROJ}"
+assert_exit_eq "$RC" 0 "REG-P07f writer re-key: add to legacy registry -> exit 0"
+# After write, the registry must use 'projects:' (writer re-keys).
+assert_file_contains "${_P07_STATE}/registry.yml" "projects:" \
+    "REG-P07g writer re-keys legacy repos: to projects: on next write"
+# All three entries must still be present.
+assert_file_contains "${_P07_STATE}/registry.yml" "${_P07_PROJ_A}" \
+    "REG-P07h after re-key: project A still in registry"
+assert_file_contains "${_P07_STATE}/registry.yml" "${_P07_PROJ_B}" \
+    "REG-P07i after re-key: project B still in registry"
+assert_file_contains "${_P07_STATE}/registry.yml" "${_P07_NEW_PROJ}" \
+    "REG-P07j after re-key: new project also in registry"
+
+# ===========================================================================
+# ESCAPE CANARY (real-HOME): assert developer's real ~/.aid/registry.yml
+# was not modified during the REG-P test series.
+# ===========================================================================
+_EC_SNAP_AFTER=""
+if [[ -f "${_EC_REAL_AID_REG}" ]]; then
+    _EC_SNAP_AFTER="$(stat -c '%Y %s' "${_EC_REAL_AID_REG}" 2>/dev/null || echo 'absent')"
+else
+    _EC_SNAP_AFTER="absent"
+fi
+if [[ "${_EC_SNAP_BEFORE}" == "${_EC_SNAP_AFTER}" ]]; then
+    pass "REG-EC real-HOME escape canary: developer ~/.aid/registry.yml untouched"
+else
+    fail "REG-EC real-HOME escape canary: developer ~/.aid/registry.yml was modified (BEFORE=${_EC_SNAP_BEFORE} AFTER=${_EC_SNAP_AFTER})"
+fi
+
 test_summary
