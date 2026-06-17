@@ -186,6 +186,22 @@ function script:Show-AidUsage {
             Write-Host '  --port <n>     listen port on 127.0.0.1 (default 8787).'
             Write-Host "  The dashboard binds to 127.0.0.1 only. 'stop' is idempotent and also tears down --remote."
         }
+        'projects' {
+            Write-Host 'aid projects [list] [--local|--shared] [--verbose]'
+            Write-Host 'aid projects add  [<path>] [--local|--shared]'
+            Write-Host 'aid projects remove [<path>]'
+            Write-Host '  List, register, or unregister AID projects in the registry.'
+            Write-Host '  list (default): show all registered projects with state, tools, and tier.'
+            Write-Host '    The current directory is marked with "*" in the leading marker column.'
+            Write-Host '    Unregistered cwd with .aid/ present is shown as a footnote.'
+            Write-Host '  add [path=cwd]: register a project (requires .aid/ to exist); tracking only,'
+            Write-Host '    no tools are installed.  Idempotent.  Prints the tier written.'
+            Write-Host '  remove [path=cwd]: unregister a project from the registry; no files removed.'
+            Write-Host '    Works on stale/missing/no-aid entries.  Idempotent.'
+            Write-Host '  --local   force user tier for add'
+            Write-Host '  --shared  force shared tier for add'
+            Write-Host '  --verbose print extra detail'
+        }
         default {
             Write-Host 'aid - AID CLI'
             Write-Host ''
@@ -198,6 +214,7 @@ function script:Show-AidUsage {
             Write-Host '  aid update [<tool>... | self]    Update to latest; no arg = all tools'
             Write-Host '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project'
             Write-Host '  aid dashboard start|stop ...     Start/stop the local dashboard'
+            Write-Host '  aid projects [list|add|remove]   List/register/unregister AID projects'
             Write-Host "  aid <command> -h | --help        Per-command help"
             Write-Host ''
             Write-Host 'Flags: -FromBundle, -Version, -Force, -DryRun, -Target, -Verbose'
@@ -680,7 +697,7 @@ function script:Invoke-AidRemoteExpose {
     [Console]::Error.WriteLine('        non-authorized device should get connection-refused/forbidden.')
     [Console]::Error.WriteLine('(AID cannot edit your tailnet policy for you -- it is admin-plane, and the dashboard never')
     [Console]::Error.WriteLine("runs an agent/LLM at runtime. See 'aid dashboard' docs / feature-005 SEC-2.)")
-    [Console]::Error.WriteLine('Note (SEC-6): the exposed surface is the CLI home -- all registered repos (paths/names) are')
+    [Console]::Error.WriteLine('Note (SEC-6): the exposed surface is the CLI home -- all registered projects (paths/names) are')
     [Console]::Error.WriteLine('visible to the granted identities. This is the accepted trade-off (OQ5): grantees are trusted')
     [Console]::Error.WriteLine('operators of this host. Never-public and host/user-ACL scoping (C1/C3) are unchanged.')
     [Console]::Error.WriteLine('')
@@ -1205,12 +1222,12 @@ function script:Invoke-AidFormatGate {
     $repoFmt = script:Get-AidRepoFormat -Repo $Repo
     $sup = $script:AidSupportedFormat
     if ($repoFmt -gt $sup) {
-        [Console]::Error.WriteLine("ERROR: aid: repo format $repoFmt is newer than this CLI supports ($sup). Upgrade the aid CLI to operate on this repo.")
+        [Console]::Error.WriteLine("ERROR: aid: project format $repoFmt is newer than this CLI supports ($sup). Upgrade the aid CLI to operate on this project.")
         return 1
     }
     if ($repoFmt -lt $sup) {
         if ($env:AID_NO_MIGRATE -ne '1') {
-            Write-Host "WARN: aid: this repo uses an older format (v${repoFmt}; current: v${sup}). Run: aid update"
+            Write-Host "WARN: aid: this project uses an older format (v${repoFmt}; current: v${sup}). Run: aid update"
         }
         return 0
     }
@@ -1282,6 +1299,394 @@ function script:Get-RegistryUnion {
     return $result.ToArray()
 }
 
+# Get-RegistryRawUnion
+# Like Get-RegistryUnion but WITHOUT the .aid/ quiet-prune.
+# Returns EVERY registered path including paths whose .aid/ is absent or the
+# directory does not exist.  Used by 'aid projects list' to render no-aid/missing
+# states.  Never writes or mutates any registry file on read.
+#
+# Per-user collapse: when AID_STATE_HOME == $HOME/.aid, the single-tier read
+# preserves registry-file order (no sort), mirroring bash.  When paths differ
+# (global install), the deduped union of primary + fallback is sort-unique.
+# Mirror of bash _registry_read_raw_union.
+function script:Get-RegistryRawUnion {
+    $primaryReg  = Join-Path $script:_AidStateHome 'registry.yml'
+    $userDotAid  = Join-Path $HOME '.aid'
+    $fallbackReg = Join-Path $userDotAid 'registry.yml'
+
+    $primaryNorm  = [System.IO.Path]::GetFullPath($script:_AidStateHome)
+    $fallbackNorm = [System.IO.Path]::GetFullPath($userDotAid)
+    $perUser      = ($primaryNorm -eq $fallbackNorm)
+
+    $result = [System.Collections.Generic.List[string]]::new()
+
+    if ($perUser) {
+        # Per-user collapse: single-tier; preserve registry-file order (no sort).
+        foreach ($p in (script:Get-RegistryRepos -RegPath $primaryReg)) {
+            if ($p) { $result.Add($p) }
+        }
+    } else {
+        # Distinct paths: sort-unique union of primary and fallback.
+        # Use SortedSet with Ordinal comparer to match bash `sort -u` (bytewise, uppercase-first).
+        $raw = [System.Collections.Generic.SortedSet[string]]::new([System.StringComparer]::Ordinal)
+        foreach ($p in (script:Get-RegistryRepos -RegPath $primaryReg)) {
+            if ($p) { [void]$raw.Add($p) }
+        }
+        foreach ($p in (script:Get-RegistryRepos -RegPath $fallbackReg)) {
+            if ($p) { [void]$raw.Add($p) }
+        }
+        foreach ($p in $raw) {
+            $result.Add($p)
+        }
+    }
+
+    return $result.ToArray()
+}
+
+# Resolve-AidTier <CanonPath> [-TierOverride <string>]
+# Deterministic, non-interactive tier selection for 'aid projects add' (FR6/AC6).
+# Returns "user" or "shared".
+#
+# Auto rule:
+#   - Returns "user" if _AidScope != "global" (per-user install), OR if the
+#     path is under $HOME (any install type).
+#   - Otherwise (global install AND path outside $HOME): returns "shared".
+#
+# Override via -TierOverride:
+#   ""         no override, use auto rule (default)
+#   "--local"  force "user" regardless of install type/path
+#   "--shared" force "shared"; but on a per-user install (AID_STATE_HOME == ~/.aid)
+#              there is no separate shared tier -- returns "user" and prints a
+#              one-line notice to stderr.
+#
+# Never prompts; never blocks; always returns normally.
+# Mirror of bash _aid_resolve_tier.
+function script:Resolve-AidTier {
+    param(
+        [string]$CanonPath,
+        [string]$TierOverride = ''
+    )
+
+    # Detect per-user install (no separate shared tier).
+    $userDotAid  = Join-Path $HOME '.aid'
+    $primaryNorm = [System.IO.Path]::GetFullPath($script:_AidStateHome)
+    $userNorm    = [System.IO.Path]::GetFullPath($userDotAid)
+    $perUser     = ($primaryNorm -eq $userNorm)
+
+    # Handle explicit override flags.
+    switch ($TierOverride) {
+        '--local' { return 'user' }
+        '--shared' {
+            if ($perUser) {
+                [Console]::Error.WriteLine('no shared tier under a per-user install; using user tier')
+                return 'user'
+            }
+            return 'shared'
+        }
+    }
+
+    # Auto rule: user if per-user install OR path is under $HOME.
+    $inHome = $CanonPath.StartsWith($HOME + [System.IO.Path]::DirectorySeparatorChar) -or
+              $CanonPath -eq $HOME
+
+    if ($script:_AidScope -ne 'global' -or $inHome) {
+        return 'user'
+    }
+    return 'shared'
+}
+
+# Get-AidProjectState <Path>
+# Return the state of an AID project directory:
+#   "missing"   -- the directory does not exist
+#   "no-aid"    -- directory exists but has no .aid/ subdirectory
+#   "untracked" -- .aid/ exists but no .aid/.aid-manifest.json is present
+#   "vX.Y.Z"   -- tracked; semver version string from .aid/.aid-manifest.json
+#                  (key "aid_version"), falling back to .aid/.aid-version
+# Never errors; always returns normally.
+# Mirror of bash _aid_project_state.
+function script:Get-AidProjectState {
+    param([string]$Path)
+    if (-not (Test-Path $Path -PathType Container)) { return 'missing' }
+    $aidDir = Join-Path $Path '.aid'
+    if (-not (Test-Path $aidDir -PathType Container)) { return 'no-aid' }
+    $manifest = Join-Path $aidDir '.aid-manifest.json'
+    $verFile   = Join-Path $aidDir '.aid-version'
+    if (Test-Path $manifest -PathType Leaf) {
+        $content = Get-Content -LiteralPath $manifest -Raw -Encoding utf8 -ErrorAction SilentlyContinue
+        if ($content -and $content -match '"aid_version"\s*:\s*"([^"]*)"') {
+            $raw = $Matches[1]
+            if ($raw -match '([0-9]+\.[0-9]+\.[0-9]+[^\s]*)') {
+                return $Matches[1]
+            }
+        }
+    }
+    if (Test-Path $verFile -PathType Leaf) {
+        $vfContent = Get-Content -LiteralPath $verFile -Raw -Encoding utf8 -ErrorAction SilentlyContinue
+        if ($vfContent -and $vfContent -match '([0-9]+\.[0-9]+\.[0-9]+[^\s]*)') {
+            return $Matches[1]
+        }
+    }
+    return 'untracked'
+}
+
+# Get-AidProjectTools <Path>
+# Return a comma-separated list of tool names installed in an AID project, as
+# recorded in <path>/.aid/.aid-manifest.json under the "tools" object.
+# Returns empty string when the manifest is absent or has no tools.
+#
+# Mirrors the canonical bash awk extractor (lib/aid-install-core.sh:~1019):
+#   /"tools"/{found=1} found && /^    "[a-z]/{gsub(/[^a-zA-Z0-9_.-]/,"",$1); if ($1!="") print $1}
+# Scans the whole file once found=1 -- no break condition -- so ALL tool names
+# at exactly 4-space indent with a lowercase-initial key are collected.
+# Does NOT use a closing-brace break (the bash awk doesn't either), avoiding
+# the premature-exit bug that fires on each tool's own closing "    }".
+# Mirror of bash _aid_project_tools.
+function script:Get-AidProjectTools {
+    param([string]$Path)
+    $manifest = Join-Path $Path '.aid' '.aid-manifest.json'
+    if (-not (Test-Path $manifest -PathType Leaf)) { return '' }
+    $lines = Get-Content -LiteralPath $manifest -Encoding utf8 -ErrorAction SilentlyContinue
+    if (-not $lines) { return '' }
+    # Mirrors: /"tools"/{found=1} found && /^    "[a-z]/{...}
+    $found = $false
+    $tools = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($line in $lines) {
+        if ($line -match '"tools"') { $found = $true; continue }
+        if ($found -and $line -match '^    "[a-z]') {
+            # Strip everything except [a-zA-Z0-9_.-] from the key token (mirrors gsub).
+            # The key is the first "word" on the line: characters up to the first non-key char.
+            if ($line -match '^    "([^"]+)"') {
+                $raw = $Matches[1]
+                # gsub(/[^a-zA-Z0-9_.-]/,"",$1) -- keep only identifier chars
+                $toolName = [regex]::Replace($raw, '[^a-zA-Z0-9_.\-]', '')
+                if ($toolName -and -not $tools.Contains($toolName)) {
+                    [void]$tools.Add($toolName)
+                }
+            }
+        }
+    }
+    # sort -u (bytewise ordinal, matching bash): use SortedSet with Ordinal comparer.
+    $sortedTools = [System.Collections.Generic.SortedSet[string]]::new($tools, [System.StringComparer]::Ordinal)
+    return ($sortedTools -join ',')
+}
+
+# Get-WhichTierHolds <Path>
+# Returns "user" or "shared" based on which registry file contains the path.
+# Falls back to Resolve-AidTier if the path is not found in either.
+# Mirror of bash _which_tier_holds.
+function script:Get-WhichTierHolds {
+    param([string]$Path)
+    $primaryReg = Join-Path $script:_AidStateHome 'registry.yml'
+    $userReg    = Join-Path $HOME '.aid' 'registry.yml'
+
+    $primaryNorm = [System.IO.Path]::GetFullPath($script:_AidStateHome)
+    $userNorm    = [System.IO.Path]::GetFullPath((Join-Path $HOME '.aid'))
+
+    if ($primaryNorm -ne $userNorm) {
+        # Global install: check shared/primary first.
+        if ((script:Get-RegistryRepos -RegPath $primaryReg) -contains $Path) {
+            return 'shared'
+        }
+        if ((script:Get-RegistryRepos -RegPath $userReg) -contains $Path) {
+            return 'user'
+        }
+    } else {
+        # Per-user: single file.
+        if ((script:Get-RegistryRepos -RegPath $primaryReg) -contains $Path) {
+            return 'user'
+        }
+    }
+    # Fallback: derive from tier resolution.
+    return (script:Resolve-AidTier -CanonPath $Path)
+}
+
+# Invoke-AidProjectsList [Verbose]
+# Render the raw union as an aligned table: marker, path, state, tools, tier.
+# Marks cwd with "*"; footnotes unregistered AID cwd.
+# Mirror of bash _cmd_projects_list.
+function script:Invoke-AidProjectsList {
+    param([bool]$Verbose = $false)
+
+    # Canonical cwd.
+    $cwd = (Resolve-Path -LiteralPath '.' -ErrorAction SilentlyContinue).Path
+    if (-not $cwd) { $cwd = (Get-Location).Path }
+
+    $paths = @(script:Get-RegistryRawUnion)
+
+    # Column header.
+    Write-Host ('{0,-2}  {1,-45}  {2,-10}  {3,-20}  {4}' -f ' ', 'PATH', 'STATE', 'TOOLS', 'TIER')
+    Write-Host ('{0,-2}  {1,-45}  {2,-10}  {3,-20}  {4}' -f '--', '----', '-----', '-----', '----')
+
+    $cwdRegistered = $false
+    foreach ($entry in $paths) {
+        $state  = script:Get-AidProjectState  -Path $entry
+        $tools  = script:Get-AidProjectTools  -Path $entry
+        $tier   = script:Get-WhichTierHolds   -Path $entry
+        $marker = '  '
+        if ($entry -eq $cwd) {
+            $marker = '* '
+            $cwdRegistered = $true
+        }
+        $toolsDisplay = if ($tools) { $tools } else { '-' }
+        Write-Host ('{0,-2}  {1,-45}  {2,-10}  {3,-20}  {4}' -f $marker, $entry, $state, $toolsDisplay, $tier)
+        if ($Verbose) {
+            $regSrc = if ($tier -eq 'shared' -and
+                ([System.IO.Path]::GetFullPath($script:_AidStateHome) -ne [System.IO.Path]::GetFullPath((Join-Path $HOME '.aid')))) {
+                Join-Path $script:_AidStateHome 'registry.yml'
+            } else {
+                Join-Path $HOME '.aid' 'registry.yml'
+            }
+            Write-Host ('      registry: {0}' -f $regSrc)
+        }
+    }
+
+    if ($paths.Count -eq 0) {
+        Write-Host '(no projects registered)'
+    }
+
+    # Footnote: unregistered AID cwd.
+    if (-not $cwdRegistered -and (Test-Path (Join-Path $cwd '.aid') -PathType Container)) {
+        Write-Host ''
+        Write-Host "(here) -- not registered; run 'aid projects add'"
+    }
+
+    # Legend.
+    if ($paths.Count -gt 0) {
+        Write-Host ''
+        Write-Host '* = current directory'
+    }
+}
+
+# Invoke-AidProjectsAdd [RawPath] [TierOverride] [Verbose]
+# Register a project path (default: cwd) in the deterministic tier.
+# Mirror of bash _cmd_projects_add.
+function script:Invoke-AidProjectsAdd {
+    param(
+        [string]$RawPath    = '.',
+        [string]$TierOverride = '',
+        [bool]  $Verbose    = $false
+    )
+
+    # Canonicalize.
+    $resolvedAdd = Resolve-Path -LiteralPath $RawPath -ErrorAction SilentlyContinue
+    $canon = if ($resolvedAdd) { $resolvedAdd.Path } else { $null }
+    if (-not $canon) {
+        [Console]::Error.WriteLine("ERROR: aid projects add: path does not exist: $RawPath")
+        script:Exit-Aid 2
+    }
+
+    # Require .aid/ directory.
+    if (-not (Test-Path (Join-Path $canon '.aid') -PathType Container)) {
+        [Console]::Error.WriteLine("ERROR: aid projects add: '$canon' is not an AID project (.aid/ not found); run 'aid add <tool>' first.")
+        script:Exit-Aid 2
+    }
+
+    # Resolve tier.
+    $tier = script:Resolve-AidTier -CanonPath $canon -TierOverride $TierOverride
+
+    # Register (idempotent). Suppress Registry-Register's own Write-Host output so we
+    # emit a single consolidated message instead; stderr (WARN lines) flows through.
+    script:Registry-Register -Repo $canon -Tier $tier 6>$null
+    Write-Host ("aid projects: '$canon' registered in $tier tier.")
+    if ($Verbose) {
+        $primaryNorm = [System.IO.Path]::GetFullPath($script:_AidStateHome)
+        $userNorm    = [System.IO.Path]::GetFullPath((Join-Path $HOME '.aid'))
+        $regFile = if ($tier -eq 'shared' -and $primaryNorm -ne $userNorm) {
+            Join-Path $script:_AidStateHome 'registry.yml'
+        } else {
+            Join-Path $HOME '.aid' 'registry.yml'
+        }
+        Write-Host ("aid projects: registry file: $regFile")
+    }
+}
+
+# Invoke-AidProjectsRemove [RawPath] [Verbose]
+# Unregister a project path (default: cwd); no .aid/ required (repair stale).
+# Mirror of bash _cmd_projects_remove.
+function script:Invoke-AidProjectsRemove {
+    param(
+        [string]$RawPath = '.',
+        [bool]  $Verbose = $false
+    )
+
+    # Canonicalize without requiring the directory to exist.
+    $resolvedRem = Resolve-Path -LiteralPath $RawPath -ErrorAction SilentlyContinue
+    $canon = if ($resolvedRem) { $resolvedRem.Path } else { $null }
+    if (-not $canon) {
+        # Directory absent (stale entry); use raw path as-is.
+        $canon = $RawPath
+    }
+
+    # Check if registered before unregistering (for idempotency message).
+    $primaryReg = Join-Path $script:_AidStateHome 'registry.yml'
+    $userReg    = Join-Path $HOME '.aid' 'registry.yml'
+    $primaryNorm = [System.IO.Path]::GetFullPath($script:_AidStateHome)
+    $userNorm    = [System.IO.Path]::GetFullPath((Join-Path $HOME '.aid'))
+    $found = $false
+    if ((script:Get-RegistryRepos -RegPath $primaryReg) -contains $canon) {
+        $found = $true
+    } elseif ($primaryNorm -ne $userNorm) {
+        if ((script:Get-RegistryRepos -RegPath $userReg) -contains $canon) {
+            $found = $true
+        }
+    }
+
+    script:Registry-Unregister -Repo $canon
+    if (-not $found) {
+        Write-Host ("aid projects: '$canon' was not registered (nothing to remove).")
+    } elseif ($Verbose) {
+        Write-Host ("aid projects: removed '$canon' from registry.")
+    }
+}
+
+# Invoke-AidProjects [Action] [RemArgs]
+# Orchestrates list/add/remove/help for the project registry.
+# Mirror of bash _cmd_projects.
+function script:Invoke-AidProjects {
+    param(
+        [string]  $Action  = 'list',
+        [string[]]$RemArgs = @()
+    )
+
+    $pathArg      = ''
+    $tierOverride = ''
+    $verbose      = $false
+
+    # Parse remaining args.
+    $i = 0
+    while ($i -lt $RemArgs.Count) {
+        $a = $RemArgs[$i]
+        switch ($a) {
+            { $_ -in @('-h', '--help', '-Help') } { $Action = 'help'; break }
+            '--local'   { $tierOverride = '--local'; break }
+            '--shared'  { $tierOverride = '--shared'; break }
+            '--verbose' { $verbose = $true; break }
+            { $_ -match '^-' } {
+                [Console]::Error.WriteLine("ERROR: aid projects: unknown flag: $a (see 'aid projects -h')")
+                script:Exit-Aid 2
+                break
+            }
+            default {
+                if (-not $pathArg) { $pathArg = $a }
+            }
+        }
+        $i++
+    }
+
+    $resolvedPath = if ($pathArg) { $pathArg } else { '.' }
+
+    switch ($Action) {
+        'list'   { script:Invoke-AidProjectsList   -Verbose $verbose }
+        'add'    { script:Invoke-AidProjectsAdd    -RawPath $resolvedPath -TierOverride $tierOverride -Verbose $verbose }
+        'remove' { script:Invoke-AidProjectsRemove -RawPath $resolvedPath -Verbose $verbose }
+        'help'   { script:Show-AidUsage 'projects'; script:Exit-Aid 0 }
+        default  {
+            [Console]::Error.WriteLine("ERROR: aid projects: unknown action: $Action (expected: list, add, remove, help)")
+            script:Exit-Aid 2
+        }
+    }
+}
+
 # Invoke-AidCwdClassify <Target>
 # C-table: classify the cwd repo and perform register-on-encounter.
 # Called before repo commands (status, update [tool]) when .aid/ exists.
@@ -1301,27 +1706,8 @@ function script:Invoke-AidCwdClassify {
     }
 
     if (-not $isRegistered) {
-        # Not registered -- pick tier and register (best-effort, never blocks).
-        $inHome = $canonTarget.StartsWith($HOME + [System.IO.Path]::DirectorySeparatorChar) -or
-                  $canonTarget -eq $HOME
-
-        $regTier = 'user'
-        if ($script:_AidScope -eq 'global' -and -not $inHome) {
-            # global && outside $HOME: ask shared-vs-user (decision #4: always ask).
-            # No-TTY default: user tier silently (safe, always writable).
-            $isInteractive = [Environment]::UserInteractive
-            if ($isInteractive) {
-                try {
-                    Write-Host -NoNewline 'Register this repo in the shared machine registry? [y/N] '
-                    $askAns = Read-Host
-                    if ($askAns -in @('y', 'Y', 'yes', 'Yes', 'YES')) {
-                        $regTier = 'shared'
-                    }
-                } catch {
-                    $regTier = 'user'
-                }
-            }
-        }
+        # Not registered -- pick tier deterministically via Resolve-AidTier (FR7: no prompt).
+        $regTier = script:Resolve-AidTier -CanonPath $canonTarget
         try { script:Registry-Register -Repo $canonTarget -Tier $regTier } catch {}
     }
 }
@@ -1394,11 +1780,11 @@ function script:Registry-Register {
         $tmp = Join-Path $dir ("registry.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
         try {
             $lns = [System.Collections.Generic.List[string]]::new()
-            $lns.Add("# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).")
-            $lns.Add("# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/")
-            $lns.Add("# description/version are read from each repo's own .aid/settings.yml at render time.")
+            $lns.Add("# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).")
+            $lns.Add("# Holds ONLY the base folders of projects this CLI install manages. Per-project name and")
+            $lns.Add("# description come from .aid/settings.yml; version/tools from the manifest, at render time.")
             $lns.Add("schema: 1")
-            $lns.Add("repos:")
+            $lns.Add("projects:")
             foreach ($p in ($repos | Where-Object { $_ } | Sort-Object -Unique)) { $lns.Add("  - $p") }
             Set-Content -LiteralPath $tmp -Value $lns.ToArray() -Encoding utf8NoBOM -ErrorAction Stop
             Move-Item -LiteralPath $tmp -Destination $regPath -Force -ErrorAction Stop
@@ -1418,7 +1804,7 @@ function script:Registry-Register {
             try { New-Item -ItemType Directory -Path $sharedRegDir -Force | Out-Null } catch {}
         }
         if (-not (& $testWritable $sharedRegDir)) {
-            [Console]::Error.WriteLine("WARN: aid: shared registry write declined or unavailable; repo not registered in shared tier ($sharedRegDir\registry.yml)")
+            [Console]::Error.WriteLine("WARN: aid: shared registry write declined or unavailable; project not registered in shared tier ($sharedRegDir\registry.yml)")
             return
         }
         $sharedReg = Join-Path $sharedRegDir 'registry.yml'
@@ -1429,7 +1815,7 @@ function script:Registry-Register {
         }
         $ok = & $writeRegistry $sharedReg ($existing + @($Repo))
         if (-not $ok) {
-            [Console]::Error.WriteLine("WARN: aid: could not update the shared repo registry ($sharedReg): write failed")
+            [Console]::Error.WriteLine("WARN: aid: could not update the shared project registry ($sharedReg): write failed")
             return
         }
         Write-Host "Registered $Repo with the AID CLI (shared registry)."
@@ -1463,7 +1849,7 @@ function script:Registry-Register {
     }
     $ok = & $writeRegistry $writeReg ($existing + @($Repo))
     if (-not $ok) {
-        [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($writeReg): write failed")
+        [Console]::Error.WriteLine("WARN: aid: could not update the machine project registry ($writeReg): write failed")
         return
     }
     Write-Host "Registered $Repo with the AID CLI."
@@ -1504,11 +1890,11 @@ function script:Registry-Unregister {
         try {
             $remaining = $current | Where-Object { $_ -ne $Repo } | Sort-Object -Unique
             $lns = [System.Collections.Generic.List[string]]::new()
-            $lns.Add("# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).")
-            $lns.Add("# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/")
-            $lns.Add("# description/version are read from each repo's own .aid/settings.yml at render time.")
+            $lns.Add("# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).")
+            $lns.Add("# Holds ONLY the base folders of projects this CLI install manages. Per-project name and")
+            $lns.Add("# description come from .aid/settings.yml; version/tools from the manifest, at render time.")
             $lns.Add("schema: 1")
-            $lns.Add("repos:")
+            $lns.Add("projects:")
             if ($remaining) { foreach ($p in $remaining) { $lns.Add("  - $p") } }
             Set-Content -LiteralPath $tmp -Value $lns.ToArray() -Encoding utf8NoBOM -ErrorAction Stop
             Move-Item -LiteralPath $tmp -Destination $regPath -Force -ErrorAction Stop
@@ -1528,7 +1914,7 @@ function script:Registry-Unregister {
             $foundAny = $true
             $ok = & $rewriteReg $sharedReg $ex
             if (-not $ok) {
-                [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($sharedReg): write failed")
+                [Console]::Error.WriteLine("WARN: aid: could not update the machine project registry ($sharedReg): write failed")
                 return
             }
         }
@@ -1543,7 +1929,7 @@ function script:Registry-Unregister {
             [Console]::Error.WriteLine("WARN: aid: could not write to state home $($script:_AidStateHome); using $userReg")
             $ok = & $rewriteReg $userReg $ex
             if (-not $ok) {
-                [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($userReg): write failed")
+                [Console]::Error.WriteLine("WARN: aid: could not update the machine project registry ($userReg): write failed")
                 return
             }
         }
@@ -1562,7 +1948,7 @@ function script:Registry-Unregister {
             if (& $testW $userDotAid) {
                 $ok = & $rewriteReg $userReg $fbEx
                 if (-not $ok) {
-                    [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($userReg): write failed")
+                    [Console]::Error.WriteLine("WARN: aid: could not update the machine project registry ($userReg): write failed")
                 }
             } else {
                 [Console]::Error.WriteLine("WARN: aid: could not write to registry at $userReg (not writable); unregister skipped")
@@ -1609,7 +1995,7 @@ if ($script:_RawArgs.Count -eq 0) {
         $cliVersion = (Get-Content -LiteralPath $verFile -Raw).Trim()
     }
     Write-Host "AID v$cliVersion - Agentic Iterative Development"
-    Write-Host "Install, update, and manage AID across your repositories."
+    Write-Host "Install, update, and manage AID across your projects."
 
     # C6': format gate for cwd repo (.aid/ is guaranteed present here -- the
     # missing-.aid/ case is intercepted above via Invoke-AidCwdNoAidOffer;
@@ -1799,9 +2185,21 @@ function script:Invoke-AidMigrateRepo {
 
     # ------------------------------------------------------------------
     # STEP 4 -- REGISTER (DM-2 / FR28) -- existing idempotent writer.
+    # FR7 never-elevate: resolve tier deterministically; if shared but the shared
+    # dir is not writable, degrade silently to user (mirrors bash _aid_migrate_repo).
     # ------------------------------------------------------------------
     try {
-        script:Registry-Register -Repo $Repo -Tier 'user'
+        $_migTier = script:Resolve-AidTier -CanonPath $Repo
+        # Degrade: shared + non-writable shared dir -> user (never-elevate in migrate).
+        if ($_migTier -eq 'shared') {
+            $testW = { param([string]$d)
+                if (-not (Test-Path $d -PathType Container)) { return $false }
+                $probe = Join-Path $d ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
+                try { [System.IO.File]::WriteAllText($probe, ''); Remove-Item -LiteralPath $probe -Force -ErrorAction SilentlyContinue; return $true } catch { return $false }
+            }
+            if (-not (& $testW $script:_AidStateHome)) { $_migTier = 'user' }
+        }
+        script:Registry-Register -Repo $Repo -Tier $_migTier
     } catch {
         [Console]::Error.WriteLine("WARN: aid migrate: registry_register failed for ${Repo}: $_")
     }
@@ -2081,14 +2479,14 @@ if ($SUBCMD -eq 'update') {
             $usAutoYes = ($env:AID_MIGRATE_YES -eq '1')
             $usRepos = @(script:Get-RegistryUnion)
             if ($usRepos.Count -eq 0) {
-                Write-Host 'No registered repos to migrate.'
+                Write-Host 'No registered projects to migrate.'
             } else {
                 # Determine interactive mode: AID_MIGRATE_YES=1 is the explicit opt-in for
                 # auto-yes.  Non-interactive without opt-in -> no migration (per SPEC).
                 $usAutoYesFinal = $usAutoYes -or ($env:AID_MIGRATE_YES -eq '1')
                 $usIsInteractive = [Environment]::UserInteractive
                 if (-not $usAutoYesFinal -and -not $usIsInteractive) {
-                    Write-Host 'Skipping repo migration (non-interactive; set AID_MIGRATE_YES=1 to opt in).'
+                    Write-Host 'Skipping project migration (non-interactive; set AID_MIGRATE_YES=1 to opt in).'
                 } else {
                     $usMigrateAll    = $false
                     $usMigrateCancel = $false
@@ -2097,7 +2495,7 @@ if ($SUBCMD -eq 'update') {
                         if ($usMigrateAll -or $usAutoYesFinal) {
                             $usAnswer = 'y'
                         } else {
-                            Write-Host -NoNewline "Migrate repo $usRepo? [All/Yes/No/Cancel] "
+                            Write-Host -NoNewline "Migrate project $usRepo? [All/Yes/No/Cancel] "
                             try { $usAnswer = Read-Host } catch { $usAnswer = '' }
                         }
                         switch -Regex ($usAnswer) {
@@ -2282,6 +2680,59 @@ if ($SUBCMD -eq '__migrate-repo') {
     }
     $_MigTarget = (Resolve-Path -LiteralPath $_MigTarget).Path
     script:Invoke-AidMigrateRepo -Repo $_MigTarget
+    script:Exit-Aid 0
+}
+
+# ---------------------------------------------------------------------------
+# projects
+# ---------------------------------------------------------------------------
+if ($SUBCMD -eq 'projects') {
+    # Check for -h/--help as first arg before dispatching.
+    if ($script:_RemArgs.Count -gt 0 -and $script:_RemArgs[0] -in @('-h', '--help', '-Help')) {
+        script:Show-AidUsage 'projects'
+        script:Exit-Aid 0
+    }
+
+    # Determine sub-action (first positional or default "list").
+    # Scan through leading flags to find the action word; unknown positionals are
+    # rejected here so errors surface before entering Invoke-AidProjects.
+    $_ProjAction = 'list'
+    $_ProjArgs   = [System.Collections.Generic.List[string]]::new()
+    $remIdx = 0
+    while ($remIdx -lt $script:_RemArgs.Count) {
+        $a = $script:_RemArgs[$remIdx]
+        switch ($a) {
+            { $_ -in @('list', 'add', 'remove', 'help') } {
+                $_ProjAction = $a
+                $remIdx++
+                while ($remIdx -lt $script:_RemArgs.Count) {
+                    $_ProjArgs.Add($script:_RemArgs[$remIdx])
+                    $remIdx++
+                }
+                break
+            }
+            { $_ -in @('-h', '--help', '-Help') } {
+                script:Show-AidUsage 'projects'
+                script:Exit-Aid 0
+                break
+            }
+            { $_ -in @('--local', '--shared', '--verbose') } {
+                $_ProjArgs.Add($a)
+                break
+            }
+            { $_ -match '^-' } {
+                # Unknown flag: pass through to Invoke-AidProjects for rejection.
+                $_ProjArgs.Add($a)
+                break
+            }
+            default {
+                [Console]::Error.WriteLine("ERROR: aid projects: unknown action: $a (expected: list, add, remove, help)")
+                script:Exit-Aid 2
+            }
+        }
+        $remIdx++
+    }
+    script:Invoke-AidProjects -Action $_ProjAction -RemArgs $_ProjArgs.ToArray()
     script:Exit-Aid 0
 }
 
@@ -2597,23 +3048,8 @@ try {
             # B-table (for 'add'): tier-aware registration after successful install.
             # Decision #3 (unwritable) already handled above with error+abort.
             if ($SUBCMD -eq 'add') {
-                $_btabInHome = $_AidTarget.StartsWith($HOME + [System.IO.Path]::DirectorySeparatorChar) -or
-                               $_AidTarget -eq $HOME
-                $_btabTier = 'user'
-                if ($script:_AidScope -eq 'global' -and -not $_btabInHome) {
-                    # B-table: global && outside ~ && writable (already proved writable above).
-                    # Decision #4: always ask on a real decision.
-                    $isInteractive = [Environment]::UserInteractive
-                    if ($isInteractive) {
-                        try {
-                            Write-Host -NoNewline 'Add this repo to the shared machine registry? [y/N] '
-                            $_btabAns = Read-Host
-                            if ($_btabAns -in @('y', 'Y', 'yes', 'Yes', 'YES')) { $_btabTier = 'shared' }
-                        } catch { $_btabTier = 'user' }
-                    }
-                    # Non-interactive: user tier silently (safe default).
-                }
-                # All other rows: user tier silently (in-~ or per-user outside-~).
+                # FR7: deterministic, non-interactive tier selection via Resolve-AidTier.
+                $_btabTier = script:Resolve-AidTier -CanonPath $_AidTarget
                 script:Registry-Register -Repo $_AidTarget -Tier $_btabTier
             } else {
                 # 'update [tool]': C-table register-on-encounter already ran above.

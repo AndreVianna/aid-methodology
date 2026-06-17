@@ -899,8 +899,8 @@ function Test-ManifestExists {
 #
 # The exact seed text matches the DM-1 schema used by the registry functions:
 #   schema: 1
-#   repos:
-# (three comment lines + schema line + repos line with no items).
+#   projects:
+# (three comment lines + schema line + projects line with no items).
 function Invoke-AidProvisionSharedStateHome {
     param([string]$SharedHome)
 
@@ -924,11 +924,11 @@ function Invoke-AidProvisionSharedStateHome {
     $tmp = Join-Path $SharedHome (".registry.aid-tmp." + [System.IO.Path]::GetRandomFileName())
     try {
         $seedLines = @(
-            "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).",
-            "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/",
-            "# description/version are read from each repo's own .aid/settings.yml at render time.",
+            "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).",
+            "# Holds ONLY the base folders of projects this CLI install manages. Per-project name and",
+            "# description come from .aid/settings.yml; version/tools from the manifest, at render time.",
             "schema: 1",
-            "repos:"
+            "projects:"
         )
         Set-Content -LiteralPath $tmp -Value $seedLines -Encoding utf8NoBOM -ErrorAction Stop
         Move-Item -LiteralPath $tmp -Destination $reg -Force -ErrorAction Stop

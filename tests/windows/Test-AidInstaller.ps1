@@ -23,6 +23,12 @@
 #   T15  -Force overrides protect-on-diff
 #   T16  Uninstall removes install roots (dirs actually GONE)
 #   T17  Uninstall with no manifest → exit 6
+#   T37  aid projects help / -h → exit 0 + usage strings
+#   T38  aid projects list renders registered project + ASCII * cwd marker
+#   T39  aid projects add registers existing .aid/ project (tools untouched)
+#   T40  aid projects add non-.aid/ path → exit 2 + error message
+#   T41  aid projects add idempotent (double add → single registry entry)
+#   T42  aid projects remove unregisters / repairs stale entry / idempotent no-op
 #
 # Windows-only guards:
 #   Assertions involving $env:LOCALAPPDATA (AID_HOME default) are skipped when
@@ -1236,6 +1242,249 @@ Assert ($rc36c -ne 0) 'T36c truncated lib in AID_HOME → aid dispatcher exits n
     "expected non-zero exit from aid.ps1 with truncated lib, got $rc36c"
 Assert-Contains $out36c 'failed to load the CLI core' `
     'T36d truncated lib: aid.ps1 reports failed to load the CLI core'
+Write-Host ""
+
+# ===========================================================================
+# T37-T42: aid projects command (list / add / remove / help)
+# Mirrors the bash REG-P0x contract in the Windows-native PS suite.
+# All tests pin AID_HOME to isolated temp dirs so registry writes never touch
+# the developer's real $HOME/.aid.  The fallback tier ($HOME/.aid/registry.yml)
+# is read-only for these tests (not written to); assertions are path-specific,
+# so any pre-existing real entries are benign.
+# ===========================================================================
+Write-Host "=== T37-T42: aid projects (list / add / remove / help) ==="
+
+# Provision a shared AID_HOME for the projects tests (T37-T42).
+$AidHomeTP = Join-Path $TmpRoot 'aid-home-projects'
+$AidBinTP  = Join-Path $AidHomeTP 'bin'
+$AidLibTP  = Join-Path $AidHomeTP 'lib'
+New-Item -ItemType Directory -Path $AidBinTP -Force | Out-Null
+New-Item -ItemType Directory -Path $AidLibTP -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
+          -Destination (Join-Path $AidBinTP 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath `
+          -Destination (Join-Path $AidLibTP 'AidInstallCore.psm1') -Force
+[System.IO.File]::WriteAllBytes((Join-Path $AidHomeTP 'VERSION'),
+    [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
+
+# Helper: invoke aid.ps1 for projects tests with an isolated AID_HOME.
+# Captures stdout+stderr merged into $script:_LastOut and $script:_LastRC.
+function Run-AidProjects {
+    param([string]$AidHome, [string[]]$AidArgs, [string]$FromDir = '')
+    $savedHome = $env:AID_HOME
+    $savedLib  = $env:AID_LIB_PATH
+    $savedNoUpd = $env:AID_NO_UPDATE_CHECK
+    $env:AID_HOME            = $AidHome
+    $env:AID_LIB_PATH        = $LocalLibPath
+    $env:AID_NO_UPDATE_CHECK = '1'
+    $aidPs1Path = Join-Path $AidHome 'bin' 'aid.ps1'
+    if (-not (Test-Path $aidPs1Path -PathType Leaf)) {
+        $aidPs1Path = Join-Path $RepoRoot 'bin' 'aid.ps1'
+    }
+    if ($FromDir -and (Test-Path $FromDir -PathType Container)) {
+        Push-Location $FromDir
+        $outLines = & $PwshExe -NoProfile -File $aidPs1Path @AidArgs 2>&1
+        $script:_LastRC = $LASTEXITCODE
+        Pop-Location
+    } else {
+        $outLines = & $PwshExe -NoProfile -File $aidPs1Path @AidArgs 2>&1
+        $script:_LastRC = $LASTEXITCODE
+    }
+    $script:_LastOut = ($outLines | ForEach-Object { [string]$_ }) -join "`n"
+    $script:_LastOut = [System.Text.RegularExpressions.Regex]::Replace($script:_LastOut, $_AnsiPattern, '')
+    $env:AID_HOME            = $savedHome
+    $env:AID_LIB_PATH        = $savedLib
+    $env:AID_NO_UPDATE_CHECK = $savedNoUpd
+}
+
+# ---------------------------------------------------------------------------
+# T37: aid projects help / -h -> exit 0 + usage strings.
+# ---------------------------------------------------------------------------
+Write-Host "--- T37: aid projects help ---"
+
+Run-AidProjects -AidHome $AidHomeTP -AidArgs @('projects', 'help')
+Assert-Eq    "$($script:_LastRC)" '0' 'T37a aid projects help -> exit 0'
+Assert-Contains $script:_LastOut 'aid projects' 'T37b help output contains "aid projects"'
+Assert-Contains $script:_LastOut 'list'          'T37c help output mentions list'
+Assert-Contains $script:_LastOut 'add'           'T37d help output mentions add'
+Assert-Contains $script:_LastOut 'remove'        'T37e help output mentions remove'
+
+Run-AidProjects -AidHome $AidHomeTP -AidArgs @('projects', '-h')
+Assert-Eq    "$($script:_LastRC)" '0' 'T37f aid projects -h -> exit 0'
+Assert-Contains $script:_LastOut 'aid projects' 'T37g -h output contains "aid projects"'
+Write-Host ""
+
+# ---------------------------------------------------------------------------
+# T38: aid projects list renders registered projects with state and * marker.
+# Setup: register one .aid/ project, run list from that project dir -> * marker.
+# ---------------------------------------------------------------------------
+Write-Host "--- T38: aid projects list ---"
+
+$ProjT38 = Join-Path $TmpRoot 'project-t38'
+New-Item -ItemType Directory -Path $ProjT38 -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $ProjT38 '.aid') -Force | Out-Null
+# Give it a manifest so state resolves to a version.
+$manifestT38 = @{
+    aid_version    = $Ver
+    tools          = @{ codex = @{ version = $Ver } }
+    manifest_version = 1
+} | ConvertTo-Json -Depth 5
+$manifestBytesT38 = [System.Text.Encoding]::UTF8.GetBytes($manifestT38 + "`n")
+[System.IO.File]::WriteAllBytes((Join-Path $ProjT38 '.aid' '.aid-manifest.json'), $manifestBytesT38)
+
+# Register the project via aid projects add.
+Run-AidProjects -AidHome $AidHomeTP -AidArgs @('projects', 'add', $ProjT38)
+Assert-Eq "$($script:_LastRC)" '0' 'T38-pre add project -> exit 0'
+Assert-Contains $script:_LastOut 'registered' 'T38-pre add output confirms registration'
+
+# List from the registered project dir -> * marker expected.
+Run-AidProjects -AidHome $AidHomeTP -AidArgs @('projects', 'list') -FromDir $ProjT38
+Assert-Eq "$($script:_LastRC)" '0' 'T38a aid projects list from registered cwd -> exit 0'
+Assert-Contains $script:_LastOut $ProjT38   'T38b list output contains registered project path'
+Assert-Contains $script:_LastOut '* '       'T38c list: ASCII * marker present for cwd'
+
+# Verify the * is on the line that contains the project path (not just a legend line).
+$starLineT38 = ($script:_LastOut -split "`n") | Where-Object {
+    $_.IndexOf('* ', [System.StringComparison]::Ordinal) -ge 0 -and
+    $_.IndexOf($ProjT38, [System.StringComparison]::Ordinal) -ge 0
+} | Select-Object -First 1
+Assert ($null -ne $starLineT38 -and $starLineT38 -ne '') `
+    'T38d list: * and project path on the same line' `
+    'no line containing both * and the registered project path'
+
+# The state column must contain a recognizable value (version, untracked, or no-aid).
+# Since we installed a manifest with a version number, expect the version.
+Assert-Contains $script:_LastOut $Ver 'T38e list: version in state column for tracked project'
+Write-Host ""
+
+# ---------------------------------------------------------------------------
+# T39: aid projects add registers an existing .aid/ project.
+# ---------------------------------------------------------------------------
+Write-Host "--- T39: aid projects add (register) ---"
+
+# Provision a fresh AID_HOME so the registry is isolated from T38.
+$AidHomeT39 = Join-Path $TmpRoot 'aid-home-t39'
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT39 'bin') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT39 'lib') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
+          -Destination (Join-Path $AidHomeT39 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath `
+          -Destination (Join-Path $AidHomeT39 'lib' 'AidInstallCore.psm1') -Force
+[System.IO.File]::WriteAllBytes((Join-Path $AidHomeT39 'VERSION'),
+    [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
+
+$ProjT39 = Join-Path $TmpRoot 'project-t39'
+New-Item -ItemType Directory -Path $ProjT39 -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $ProjT39 '.aid') -Force | Out-Null
+# Sentinel file: tools must be untouched by projects add.
+$sentinelT39Bytes = [System.Text.Encoding]::UTF8.GetBytes("sentinel`n")
+[System.IO.File]::WriteAllBytes((Join-Path $ProjT39 '.aid' 'sentinel.txt'), $sentinelT39Bytes)
+
+Run-AidProjects -AidHome $AidHomeT39 -AidArgs @('projects', 'add', $ProjT39)
+Assert-Eq "$($script:_LastRC)" '0' 'T39a aid projects add existing .aid/ project -> exit 0'
+Assert-Contains $script:_LastOut 'registered' 'T39b add output confirms registration'
+
+# Registry file must contain the project path.
+$regT39 = Join-Path $AidHomeT39 'registry.yml'
+Assert-FileExists $regT39 'T39c registry.yml created after add'
+$regContT39 = Get-Content -LiteralPath $regT39 -Raw -ErrorAction SilentlyContinue
+Assert-Contains "$regContT39" $ProjT39 'T39d registry.yml contains the registered project path'
+
+# Sentinel file must be untouched (projects add does NOT modify tools).
+Assert-FileExists (Join-Path $ProjT39 '.aid' 'sentinel.txt') 'T39e tools untouched: sentinel.txt still present'
+Write-Host ""
+
+# ---------------------------------------------------------------------------
+# T40: aid projects add non-.aid/ path -> exit 2, error message.
+# ---------------------------------------------------------------------------
+Write-Host "--- T40: aid projects add non-.aid/ path ---"
+
+$ProjT40NoAid = Join-Path $TmpRoot 'project-t40-noaid'
+New-Item -ItemType Directory -Path $ProjT40NoAid -Force | Out-Null
+# No .aid/ directory created.
+
+Run-AidProjects -AidHome $AidHomeT39 -AidArgs @('projects', 'add', $ProjT40NoAid)
+Assert-Eq "$($script:_LastRC)" '2' 'T40a add non-.aid/ path -> exit 2'
+Assert-Contains $script:_LastOut 'not an AID project' 'T40b error message mentions "not an AID project"'
+Write-Host ""
+
+# ---------------------------------------------------------------------------
+# T41: aid projects add idempotent -> same project twice, single registry entry.
+# ---------------------------------------------------------------------------
+Write-Host "--- T41: aid projects add idempotent ---"
+
+# Add the T39 project a second time -> should succeed (exit 0) with no duplicate.
+Run-AidProjects -AidHome $AidHomeT39 -AidArgs @('projects', 'add', $ProjT39)
+Assert-Eq "$($script:_LastRC)" '0' 'T41a add same project twice -> exit 0 (idempotent)'
+
+# Count '  - ' lines in registry to confirm single entry.
+$regContT41 = Get-Content -LiteralPath $regT39 -Raw -ErrorAction SilentlyContinue
+$entryCountT41 = 0
+foreach ($ln in ($regContT41 -split "`n")) {
+    if ($ln -match '^\s+-\s+') { $entryCountT41++ }
+}
+Assert ($entryCountT41 -eq 1) 'T41b idempotent: exactly one registry entry after double add' `
+    "expected 1 entry, found $entryCountT41"
+Write-Host ""
+
+# ---------------------------------------------------------------------------
+# T42: aid projects remove unregisters / repairs stale / idempotent.
+# ---------------------------------------------------------------------------
+Write-Host "--- T42: aid projects remove ---"
+
+# Provision a fresh AID_HOME for T42 to avoid T39 state leaking.
+$AidHomeT42 = Join-Path $TmpRoot 'aid-home-t42'
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT42 'bin') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT42 'lib') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
+          -Destination (Join-Path $AidHomeT42 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath `
+          -Destination (Join-Path $AidHomeT42 'lib' 'AidInstallCore.psm1') -Force
+[System.IO.File]::WriteAllBytes((Join-Path $AidHomeT42 'VERSION'),
+    [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
+
+$ProjT42 = Join-Path $TmpRoot 'project-t42'
+New-Item -ItemType Directory -Path $ProjT42 -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $ProjT42 '.aid') -Force | Out-Null
+$sentinelT42Bytes = [System.Text.Encoding]::UTF8.GetBytes("sentinel`n")
+[System.IO.File]::WriteAllBytes((Join-Path $ProjT42 '.aid' 'sentinel.txt'), $sentinelT42Bytes)
+$regT42 = Join-Path $AidHomeT42 'registry.yml'
+
+# Pre-register.
+Run-AidProjects -AidHome $AidHomeT42 -AidArgs @('projects', 'add', $ProjT42)
+Assert-Eq "$($script:_LastRC)" '0' 'T42-setup pre-register project -> exit 0'
+
+# (a) Remove unregisters; tools/files untouched.
+Run-AidProjects -AidHome $AidHomeT42 -AidArgs @('projects', 'remove', $ProjT42)
+Assert-Eq "$($script:_LastRC)" '0' 'T42a aid projects remove -> exit 0'
+$regContT42a = Get-Content -LiteralPath $regT42 -Raw -ErrorAction SilentlyContinue
+Assert-NotContains "$regContT42a" $ProjT42 'T42b remove: project path absent from registry after remove'
+# Sentinel file must still exist (projects remove does NOT touch tools).
+Assert-FileExists (Join-Path $ProjT42 '.aid' 'sentinel.txt') 'T42c tools untouched: sentinel.txt still present after remove'
+
+# (b) Stale entry repair: manually write a non-existent path and remove it by path.
+$stalePathT42 = Join-Path $TmpRoot 'stale-t42-does-not-exist'
+# Append the stale entry to the registry.
+$existingRegT42 = if (Test-Path $regT42 -PathType Leaf) {
+    Get-Content -LiteralPath $regT42 -Raw
+} else {
+    "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).`n# Holds ONLY the base folders of projects this CLI install manages.`n# description come from .aid/settings.yml; version/tools from the manifest, at render time.`nschema: 1`nprojects:`n"
+}
+$staleLineBytes = [System.Text.Encoding]::UTF8.GetBytes($existingRegT42 + "  - $stalePathT42`n")
+[System.IO.File]::WriteAllBytes($regT42, $staleLineBytes)
+$regContT42b_pre = Get-Content -LiteralPath $regT42 -Raw -ErrorAction SilentlyContinue
+Assert-Contains "$regContT42b_pre" $stalePathT42 'T42d stale entry written to registry'
+
+Run-AidProjects -AidHome $AidHomeT42 -AidArgs @('projects', 'remove', $stalePathT42)
+Assert-Eq "$($script:_LastRC)" '0' 'T42e remove stale/missing entry -> exit 0 (repair stale)'
+$regContT42b_post = Get-Content -LiteralPath $regT42 -Raw -ErrorAction SilentlyContinue
+Assert-NotContains "$regContT42b_post" $stalePathT42 'T42f stale entry removed from registry'
+
+# (c) Idempotent: remove a path not in registry -> no-op message, exit 0.
+$absentPathT42 = Join-Path $TmpRoot 'absent-t42-not-registered'
+Run-AidProjects -AidHome $AidHomeT42 -AidArgs @('projects', 'remove', $absentPathT42)
+Assert-Eq "$($script:_LastRC)" '0' 'T42g remove absent path -> exit 0 (idempotent no-op)'
+Assert-Contains $script:_LastOut 'was not registered' 'T42h no-op: "was not registered" message emitted'
 Write-Host ""
 
 # ===========================================================================
