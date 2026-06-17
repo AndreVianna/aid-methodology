@@ -879,7 +879,7 @@ Step 4. Verify from your laptop: open ${url_placeholder} -- it should load for y
         non-authorized device should get connection-refused/forbidden.
 (AID cannot edit your tailnet policy for you -- it is admin-plane, and the dashboard never
 runs an agent/LLM at runtime. See 'aid dashboard' docs / feature-005 SEC-2.)
-Note (SEC-6): the exposed surface is the CLI home -- all registered repos (paths/names) are
+Note (SEC-6): the exposed surface is the CLI home -- all registered projects (paths/names) are
 visible to the granted identities. This is the accepted trade-off (OQ5): grantees are trusted
 operators of this host. Never-public and host/user-ACL scoping (C1/C3) are unchanged.
 
@@ -1372,28 +1372,28 @@ registry_register() {
                 return 0
             fi
             tmp="$(mktemp "/tmp/.aid-reg-tmp.XXXXXX" 2>/dev/null)" || {
-                echo "WARN: aid: could not update the shared repo registry (${_shared_reg}): mktemp failed" >&2
+                echo "WARN: aid: could not update the shared project registry (${_shared_reg}): mktemp failed" >&2
                 return 0
             }
             {
-                printf '%s\n' "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
-                printf '%s\n' "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/"
-                printf '%s\n' "# description/version are read from each repo's own .aid/settings.yml at render time."
+                printf '%s\n' "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
+                printf '%s\n' "# Holds ONLY the base folders of projects this CLI install manages. Per-project name and"
+                printf '%s\n' "# description come from .aid/settings.yml; version/tools from the manifest, at render time."
                 printf '%s\n' "schema: 1"
-                printf '%s\n' "repos:"
+                printf '%s\n' "projects:"
                 { printf '%s\n' "$existing"; printf '%s\n' "$repo"; } \
                     | sed '/^$/d' | sort -u \
                     | while IFS= read -r p; do printf '  - %s\n' "$p"; done
             } > "$tmp" || {
                 rm -f "$tmp"
-                echo "WARN: aid: could not update the shared repo registry (${_shared_reg}): write failed" >&2
+                echo "WARN: aid: could not update the shared project registry (${_shared_reg}): write failed" >&2
                 return 0
             }
             # Real probe: elevates only when the shared dir is not user-writable.
             # If elevation is declined / no-TTY / sudo unavailable: skip + warn.
             _aid_priv_run "$_shared_reg_dir" mv -f "$tmp" "$_shared_reg" || {
                 rm -f "$tmp" 2>/dev/null
-                echo "WARN: aid: shared registry write declined or unavailable; repo not registered in shared tier (${_shared_reg})" >&2
+                echo "WARN: aid: shared registry write declined or unavailable; project not registered in shared tier (${_shared_reg})" >&2
                 return 0
             }
         else
@@ -1404,26 +1404,26 @@ registry_register() {
                 return 0
             fi
             tmp="$(mktemp "${_shared_reg}.aid-tmp.XXXXXX" 2>/dev/null)" || {
-                echo "WARN: aid: could not update the shared repo registry (${_shared_reg}): mktemp failed" >&2
+                echo "WARN: aid: could not update the shared project registry (${_shared_reg}): mktemp failed" >&2
                 return 0
             }
             {
-                printf '%s\n' "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
-                printf '%s\n' "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/"
-                printf '%s\n' "# description/version are read from each repo's own .aid/settings.yml at render time."
+                printf '%s\n' "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
+                printf '%s\n' "# Holds ONLY the base folders of projects this CLI install manages. Per-project name and"
+                printf '%s\n' "# description come from .aid/settings.yml; version/tools from the manifest, at render time."
                 printf '%s\n' "schema: 1"
-                printf '%s\n' "repos:"
+                printf '%s\n' "projects:"
                 { printf '%s\n' "$existing"; printf '%s\n' "$repo"; } \
                     | sed '/^$/d' | sort -u \
                     | while IFS= read -r p; do printf '  - %s\n' "$p"; done
             } > "$tmp" || {
                 rm -f "$tmp"
-                echo "WARN: aid: could not update the shared repo registry (${_shared_reg}): write failed" >&2
+                echo "WARN: aid: could not update the shared project registry (${_shared_reg}): write failed" >&2
                 return 0
             }
             _aid_priv_run "" mv -f "$tmp" "$_shared_reg" || {
                 rm -f "$tmp" 2>/dev/null
-                echo "WARN: aid: could not update the shared repo registry (${_shared_reg}): mv failed" >&2
+                echo "WARN: aid: could not update the shared project registry (${_shared_reg}): mv failed" >&2
                 return 0
             }
         fi
@@ -1452,27 +1452,27 @@ registry_register() {
     fi
     # mktemp in the chosen (writable) target dir so mv is atomic same-filesystem.
     tmp="$(mktemp "${reg}.aid-tmp.XXXXXX" 2>/dev/null)" || {
-        echo "WARN: aid: could not update the machine repo registry (${reg}): mktemp failed" >&2
+        echo "WARN: aid: could not update the machine project registry (${reg}): mktemp failed" >&2
         return 0
     }
     {
-        printf '%s\n' "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
-        printf '%s\n' "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/"
-        printf '%s\n' "# description/version are read from each repo's own .aid/settings.yml at render time."
+        printf '%s\n' "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
+        printf '%s\n' "# Holds ONLY the base folders of projects this CLI install manages. Per-project name and"
+        printf '%s\n' "# description come from .aid/settings.yml; version/tools from the manifest, at render time."
         printf '%s\n' "schema: 1"
-        printf '%s\n' "repos:"
+        printf '%s\n' "projects:"
         { printf '%s\n' "$existing"; printf '%s\n' "$repo"; } \
             | sed '/^$/d' | sort -u \
             | while IFS= read -r p; do printf '  - %s\n' "$p"; done
     } > "$tmp" || {
         rm -f "$tmp"
-        echo "WARN: aid: could not update the machine repo registry (${reg}): write failed" >&2
+        echo "WARN: aid: could not update the machine project registry (${reg}): write failed" >&2
         return 0
     }
     # Never-elevate atomic commit: empty probe forces direct (no-sudo) mv.
     _aid_priv_run "" mv -f "$tmp" "$reg" || {
         rm -f "$tmp" 2>/dev/null
-        echo "WARN: aid: could not update the machine repo registry (${reg}): mv failed" >&2
+        echo "WARN: aid: could not update the machine project registry (${reg}): mv failed" >&2
         return 0
     }
     echo "Registered ${repo} with the AID CLI."
@@ -1510,25 +1510,25 @@ registry_unregister() {
         if printf '%s\n' "$existing" | grep -qxF "$repo"; then
             _found_any=1
             tmp="$(mktemp "${_shared_reg}.aid-tmp.XXXXXX" 2>/dev/null)" || {
-                echo "WARN: aid: could not update the machine repo registry (${_shared_reg}): mktemp failed" >&2
+                echo "WARN: aid: could not update the machine project registry (${_shared_reg}): mktemp failed" >&2
                 return 0
             }
             {
-                printf '%s\n' "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
-                printf '%s\n' "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/"
-                printf '%s\n' "# description/version are read from each repo's own .aid/settings.yml at render time."
+                printf '%s\n' "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
+                printf '%s\n' "# Holds ONLY the base folders of projects this CLI install manages. Per-project name and"
+                printf '%s\n' "# description come from .aid/settings.yml; version/tools from the manifest, at render time."
                 printf '%s\n' "schema: 1"
-                printf '%s\n' "repos:"
+                printf '%s\n' "projects:"
                 { printf '%s\n' "$existing" | grep -vxF "$repo" || true; } | sed '/^$/d' | sort -u \
                     | while IFS= read -r p; do printf '  - %s\n' "$p"; done
             } > "$tmp" || {
                 rm -f "$tmp"
-                echo "WARN: aid: could not update the machine repo registry (${_shared_reg}): write failed" >&2
+                echo "WARN: aid: could not update the machine project registry (${_shared_reg}): write failed" >&2
                 return 0
             }
             _aid_priv_run "" mv -f "$tmp" "$_shared_reg" || {
                 rm -f "$tmp" 2>/dev/null
-                echo "WARN: aid: could not update the machine repo registry (${_shared_reg}): mv failed" >&2
+                echo "WARN: aid: could not update the machine project registry (${_shared_reg}): mv failed" >&2
                 return 0
             }
         fi
@@ -1540,25 +1540,25 @@ registry_unregister() {
             _found_any=1
             echo "WARN: aid: could not write to state home ${AID_STATE_HOME}; using ${_user_reg}" >&2
             tmp="$(mktemp "${_user_reg}.aid-tmp.XXXXXX" 2>/dev/null)" || {
-                echo "WARN: aid: could not update the machine repo registry (${_user_reg}): mktemp failed" >&2
+                echo "WARN: aid: could not update the machine project registry (${_user_reg}): mktemp failed" >&2
                 return 0
             }
             {
-                printf '%s\n' "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
-                printf '%s\n' "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/"
-                printf '%s\n' "# description/version are read from each repo's own .aid/settings.yml at render time."
+                printf '%s\n' "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
+                printf '%s\n' "# Holds ONLY the base folders of projects this CLI install manages. Per-project name and"
+                printf '%s\n' "# description come from .aid/settings.yml; version/tools from the manifest, at render time."
                 printf '%s\n' "schema: 1"
-                printf '%s\n' "repos:"
+                printf '%s\n' "projects:"
                 { printf '%s\n' "$existing" | grep -vxF "$repo" || true; } | sed '/^$/d' | sort -u \
                     | while IFS= read -r p; do printf '  - %s\n' "$p"; done
             } > "$tmp" || {
                 rm -f "$tmp"
-                echo "WARN: aid: could not update the machine repo registry (${_user_reg}): write failed" >&2
+                echo "WARN: aid: could not update the machine project registry (${_user_reg}): write failed" >&2
                 return 0
             }
             _aid_priv_run "" mv -f "$tmp" "$_user_reg" || {
                 rm -f "$tmp" 2>/dev/null
-                echo "WARN: aid: could not update the machine repo registry (${_user_reg}): mv failed" >&2
+                echo "WARN: aid: could not update the machine project registry (${_user_reg}): mv failed" >&2
                 return 0
             }
         fi
@@ -1573,27 +1573,27 @@ registry_unregister() {
             _found_any=1
             mkdir -p "$_user_reg_dir" 2>/dev/null || true
             tmp="$(mktemp "${_user_reg}.aid-tmp.XXXXXX" 2>/dev/null)" || {
-                echo "WARN: aid: could not update the machine repo registry (${_user_reg}): mktemp failed" >&2
+                echo "WARN: aid: could not update the machine project registry (${_user_reg}): mktemp failed" >&2
             }
             if [[ -n "$tmp" ]]; then
                 {
-                    printf '%s\n' "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
-                    printf '%s\n' "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/"
-                    printf '%s\n' "# description/version are read from each repo's own .aid/settings.yml at render time."
+                    printf '%s\n' "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
+                    printf '%s\n' "# Holds ONLY the base folders of projects this CLI install manages. Per-project name and"
+                    printf '%s\n' "# description come from .aid/settings.yml; version/tools from the manifest, at render time."
                     printf '%s\n' "schema: 1"
-                    printf '%s\n' "repos:"
+                    printf '%s\n' "projects:"
                     { printf '%s\n' "$_fb_existing" | grep -vxF "$repo" || true; } | sed '/^$/d' | sort -u \
                         | while IFS= read -r p; do printf '  - %s\n' "$p"; done
                 } > "$tmp" || {
                     rm -f "$tmp"
-                    echo "WARN: aid: could not update the machine repo registry (${_user_reg}): write failed" >&2
+                    echo "WARN: aid: could not update the machine project registry (${_user_reg}): write failed" >&2
                     tmp=""
                 }
             fi
             if [[ -n "$tmp" ]]; then
                 _aid_priv_run "" mv -f "$tmp" "$_user_reg" || {
                     rm -f "$tmp" 2>/dev/null
-                    echo "WARN: aid: could not update the machine repo registry (${_user_reg}): mv failed" >&2
+                    echo "WARN: aid: could not update the machine project registry (${_user_reg}): mv failed" >&2
                 }
             fi
         fi
@@ -1668,13 +1668,13 @@ _aid_format_gate() {
     _repo_fmt="$(_aid_repo_format "${_repo}")"
     local _sup="${AID_SUPPORTED_FORMAT}"
     if [[ "${_repo_fmt}" -gt "${_sup}" ]]; then
-        printf 'ERROR: aid: repo format %s is newer than this CLI supports (%s). Upgrade the aid CLI to operate on this repo.\n' \
+        printf 'ERROR: aid: project format %s is newer than this CLI supports (%s). Upgrade the aid CLI to operate on this project.\n' \
             "${_repo_fmt}" "${_sup}" >&2
         return 1
     fi
     if [[ "${_repo_fmt}" -lt "${_sup}" ]]; then
         if [[ "${AID_NO_MIGRATE:-0}" != "1" ]]; then
-            printf 'WARN: aid: this repo uses an older format (v%s; current: v%s). Run: aid update\n' \
+            printf 'WARN: aid: this project uses an older format (v%s; current: v%s). Run: aid update\n' \
                 "${_repo_fmt}" "${_sup}"
         fi
         return 0
@@ -2207,7 +2207,7 @@ _cmd_dashboard() {
         cli_version="$(tr -d '[:space:]' < "$ver_file")"
     fi
     printf 'AID v%s - Agentic Iterative Development\n' "$cli_version"
-    printf 'Install, update, and manage AID across your repositories.\n'
+    printf 'Install, update, and manage AID across your projects.\n'
 
     # C6: format gate for cwd repo (.aid/ is guaranteed present here -- the
     # missing-.aid/ case is intercepted at the dispatch level above via
@@ -2339,7 +2339,7 @@ if [[ "$SUBCMD" == "update" ]]; then
                 [[ -n "$_us_r" ]] && _us_repos+=("$_us_r")
             done < <(_registry_read_union)
             if [[ "${#_us_repos[@]}" -eq 0 ]]; then
-                echo "No registered repos to migrate."
+                echo "No registered projects to migrate."
             else
                 # Determine interactive mode: AID_MIGRATE_YES=1 is the explicit opt-in for
                 # auto-yes.  Non-interactive without opt-in -> no migration (per SPEC: without
@@ -2350,7 +2350,7 @@ if [[ "$SUBCMD" == "update" ]]; then
                 { exec 3</dev/tty; } 2>/dev/null && { _us_have_tty=1; exec 3>&-; } || true
                 if [[ "$_us_auto_yes" -eq 0 && "$_us_have_tty" -eq 0 ]]; then
                     # Non-interactive, no opt-in: skip all (non-interactive default, SPEC edge-cases).
-                    echo "Skipping repo migration (non-interactive; set AID_MIGRATE_YES=1 to opt in)."
+                    echo "Skipping project migration (non-interactive; set AID_MIGRATE_YES=1 to opt in)."
                 else
                     for _us_repo in "${_us_repos[@]}"; do
                         if [[ "$_us_migrate_cancel" -eq 1 ]]; then
@@ -2359,7 +2359,7 @@ if [[ "$SUBCMD" == "update" ]]; then
                         if [[ "$_us_migrate_all" -eq 1 || "$_us_auto_yes" -eq 1 ]]; then
                             _us_answer="y"
                         else
-                            printf 'Migrate repo %s? [All/Yes/No/Cancel] ' "$_us_repo"
+                            printf 'Migrate project %s? [All/Yes/No/Cancel] ' "$_us_repo"
                             _us_answer=""
                             read -r _us_answer < /dev/tty
                         fi

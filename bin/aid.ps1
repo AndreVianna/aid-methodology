@@ -680,7 +680,7 @@ function script:Invoke-AidRemoteExpose {
     [Console]::Error.WriteLine('        non-authorized device should get connection-refused/forbidden.')
     [Console]::Error.WriteLine('(AID cannot edit your tailnet policy for you -- it is admin-plane, and the dashboard never')
     [Console]::Error.WriteLine("runs an agent/LLM at runtime. See 'aid dashboard' docs / feature-005 SEC-2.)")
-    [Console]::Error.WriteLine('Note (SEC-6): the exposed surface is the CLI home -- all registered repos (paths/names) are')
+    [Console]::Error.WriteLine('Note (SEC-6): the exposed surface is the CLI home -- all registered projects (paths/names) are')
     [Console]::Error.WriteLine('visible to the granted identities. This is the accepted trade-off (OQ5): grantees are trusted')
     [Console]::Error.WriteLine('operators of this host. Never-public and host/user-ACL scoping (C1/C3) are unchanged.')
     [Console]::Error.WriteLine('')
@@ -1205,12 +1205,12 @@ function script:Invoke-AidFormatGate {
     $repoFmt = script:Get-AidRepoFormat -Repo $Repo
     $sup = $script:AidSupportedFormat
     if ($repoFmt -gt $sup) {
-        [Console]::Error.WriteLine("ERROR: aid: repo format $repoFmt is newer than this CLI supports ($sup). Upgrade the aid CLI to operate on this repo.")
+        [Console]::Error.WriteLine("ERROR: aid: project format $repoFmt is newer than this CLI supports ($sup). Upgrade the aid CLI to operate on this project.")
         return 1
     }
     if ($repoFmt -lt $sup) {
         if ($env:AID_NO_MIGRATE -ne '1') {
-            Write-Host "WARN: aid: this repo uses an older format (v${repoFmt}; current: v${sup}). Run: aid update"
+            Write-Host "WARN: aid: this project uses an older format (v${repoFmt}; current: v${sup}). Run: aid update"
         }
         return 0
     }
@@ -1394,11 +1394,11 @@ function script:Registry-Register {
         $tmp = Join-Path $dir ("registry.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
         try {
             $lns = [System.Collections.Generic.List[string]]::new()
-            $lns.Add("# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).")
-            $lns.Add("# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/")
-            $lns.Add("# description/version are read from each repo's own .aid/settings.yml at render time.")
+            $lns.Add("# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).")
+            $lns.Add("# Holds ONLY the base folders of projects this CLI install manages. Per-project name and")
+            $lns.Add("# description come from .aid/settings.yml; version/tools from the manifest, at render time.")
             $lns.Add("schema: 1")
-            $lns.Add("repos:")
+            $lns.Add("projects:")
             foreach ($p in ($repos | Where-Object { $_ } | Sort-Object -Unique)) { $lns.Add("  - $p") }
             Set-Content -LiteralPath $tmp -Value $lns.ToArray() -Encoding utf8NoBOM -ErrorAction Stop
             Move-Item -LiteralPath $tmp -Destination $regPath -Force -ErrorAction Stop
@@ -1418,7 +1418,7 @@ function script:Registry-Register {
             try { New-Item -ItemType Directory -Path $sharedRegDir -Force | Out-Null } catch {}
         }
         if (-not (& $testWritable $sharedRegDir)) {
-            [Console]::Error.WriteLine("WARN: aid: shared registry write declined or unavailable; repo not registered in shared tier ($sharedRegDir\registry.yml)")
+            [Console]::Error.WriteLine("WARN: aid: shared registry write declined or unavailable; project not registered in shared tier ($sharedRegDir\registry.yml)")
             return
         }
         $sharedReg = Join-Path $sharedRegDir 'registry.yml'
@@ -1429,7 +1429,7 @@ function script:Registry-Register {
         }
         $ok = & $writeRegistry $sharedReg ($existing + @($Repo))
         if (-not $ok) {
-            [Console]::Error.WriteLine("WARN: aid: could not update the shared repo registry ($sharedReg): write failed")
+            [Console]::Error.WriteLine("WARN: aid: could not update the shared project registry ($sharedReg): write failed")
             return
         }
         Write-Host "Registered $Repo with the AID CLI (shared registry)."
@@ -1463,7 +1463,7 @@ function script:Registry-Register {
     }
     $ok = & $writeRegistry $writeReg ($existing + @($Repo))
     if (-not $ok) {
-        [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($writeReg): write failed")
+        [Console]::Error.WriteLine("WARN: aid: could not update the machine project registry ($writeReg): write failed")
         return
     }
     Write-Host "Registered $Repo with the AID CLI."
@@ -1504,11 +1504,11 @@ function script:Registry-Unregister {
         try {
             $remaining = $current | Where-Object { $_ -ne $Repo } | Sort-Object -Unique
             $lns = [System.Collections.Generic.List[string]]::new()
-            $lns.Add("# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).")
-            $lns.Add("# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/")
-            $lns.Add("# description/version are read from each repo's own .aid/settings.yml at render time.")
+            $lns.Add("# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).")
+            $lns.Add("# Holds ONLY the base folders of projects this CLI install manages. Per-project name and")
+            $lns.Add("# description come from .aid/settings.yml; version/tools from the manifest, at render time.")
             $lns.Add("schema: 1")
-            $lns.Add("repos:")
+            $lns.Add("projects:")
             if ($remaining) { foreach ($p in $remaining) { $lns.Add("  - $p") } }
             Set-Content -LiteralPath $tmp -Value $lns.ToArray() -Encoding utf8NoBOM -ErrorAction Stop
             Move-Item -LiteralPath $tmp -Destination $regPath -Force -ErrorAction Stop
@@ -1528,7 +1528,7 @@ function script:Registry-Unregister {
             $foundAny = $true
             $ok = & $rewriteReg $sharedReg $ex
             if (-not $ok) {
-                [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($sharedReg): write failed")
+                [Console]::Error.WriteLine("WARN: aid: could not update the machine project registry ($sharedReg): write failed")
                 return
             }
         }
@@ -1543,7 +1543,7 @@ function script:Registry-Unregister {
             [Console]::Error.WriteLine("WARN: aid: could not write to state home $($script:_AidStateHome); using $userReg")
             $ok = & $rewriteReg $userReg $ex
             if (-not $ok) {
-                [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($userReg): write failed")
+                [Console]::Error.WriteLine("WARN: aid: could not update the machine project registry ($userReg): write failed")
                 return
             }
         }
@@ -1562,7 +1562,7 @@ function script:Registry-Unregister {
             if (& $testW $userDotAid) {
                 $ok = & $rewriteReg $userReg $fbEx
                 if (-not $ok) {
-                    [Console]::Error.WriteLine("WARN: aid: could not update the machine repo registry ($userReg): write failed")
+                    [Console]::Error.WriteLine("WARN: aid: could not update the machine project registry ($userReg): write failed")
                 }
             } else {
                 [Console]::Error.WriteLine("WARN: aid: could not write to registry at $userReg (not writable); unregister skipped")
@@ -1609,7 +1609,7 @@ if ($script:_RawArgs.Count -eq 0) {
         $cliVersion = (Get-Content -LiteralPath $verFile -Raw).Trim()
     }
     Write-Host "AID v$cliVersion - Agentic Iterative Development"
-    Write-Host "Install, update, and manage AID across your repositories."
+    Write-Host "Install, update, and manage AID across your projects."
 
     # C6': format gate for cwd repo (.aid/ is guaranteed present here -- the
     # missing-.aid/ case is intercepted above via Invoke-AidCwdNoAidOffer;
@@ -2081,14 +2081,14 @@ if ($SUBCMD -eq 'update') {
             $usAutoYes = ($env:AID_MIGRATE_YES -eq '1')
             $usRepos = @(script:Get-RegistryUnion)
             if ($usRepos.Count -eq 0) {
-                Write-Host 'No registered repos to migrate.'
+                Write-Host 'No registered projects to migrate.'
             } else {
                 # Determine interactive mode: AID_MIGRATE_YES=1 is the explicit opt-in for
                 # auto-yes.  Non-interactive without opt-in -> no migration (per SPEC).
                 $usAutoYesFinal = $usAutoYes -or ($env:AID_MIGRATE_YES -eq '1')
                 $usIsInteractive = [Environment]::UserInteractive
                 if (-not $usAutoYesFinal -and -not $usIsInteractive) {
-                    Write-Host 'Skipping repo migration (non-interactive; set AID_MIGRATE_YES=1 to opt in).'
+                    Write-Host 'Skipping project migration (non-interactive; set AID_MIGRATE_YES=1 to opt in).'
                 } else {
                     $usMigrateAll    = $false
                     $usMigrateCancel = $false
@@ -2097,7 +2097,7 @@ if ($SUBCMD -eq 'update') {
                         if ($usMigrateAll -or $usAutoYesFinal) {
                             $usAnswer = 'y'
                         } else {
-                            Write-Host -NoNewline "Migrate repo $usRepo? [All/Yes/No/Cancel] "
+                            Write-Host -NoNewline "Migrate project $usRepo? [All/Yes/No/Cancel] "
                             try { $usAnswer = Read-Host } catch { $usAnswer = '' }
                         }
                         switch -Regex ($usAnswer) {
