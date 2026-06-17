@@ -70,7 +70,7 @@ This is the single state file for work-002 (the `aid projects` command). Full pi
 | task-004 | IMPLEMENT | 001 | task-003 | Done | A+ (gate caught unknown-action-ran-list HIGH + 3 more; fixed) |
 | task-005 | IMPLEMENT | 001 | task-003 | Done | A+ (zero findings) — both tier prompts removed; dashboard/migrate never-elevate |
 | task-006 | TEST | 001 | task-004, task-005 | Done | A+ (gate caught CI-flaky + non-vacuity gaps; fixed; +72 asserts, 176/0, escape canary) |
-| task-007 | IMPLEMENT | 002 | delivery-001 | Pending | — |
+| task-007 | IMPLEMENT | 002 | delivery-001 | Done | A+ (gate caught CRITICAL multi-tool truncation + culture-sort; fixed; 13 bash↔PS scenarios match; both PS prompts removed) |
 | task-008 | TEST | 002 | task-007 | Pending | — |
 | task-009 | TEST | 002 | task-007 | Pending | — |
 | task-010 | DOCUMENT | 002 | — | Pending | — |
