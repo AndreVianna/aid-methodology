@@ -65,7 +65,7 @@ This is the single state file for work-002 (the `aid projects` command). Full pi
 | Task | Type | Delivery | Depends on | Status | Review History |
 |------|------|----------|-----------|--------|----------------|
 | task-001 | IMPLEMENT | 001 | — | Done | A+ (zero findings) — writers→projects: 6/1/2/1, strings swept, prompts untouched |
-| task-002 | TEST | 001 | task-001 | Pending | — |
+| task-002 | TEST | 001 | task-001 | Done | A+ (gate proved PAR080-S05 a REGRESSION not pre-existing + 2 vacuous guards S01/S03; fixed all 3; 267/0 parity, 104/0 reg, 42/0 prov) |
 | task-003 | IMPLEMENT | 001 | — | Done | A+ (reviewer caught manifest-schema bug in tools extractor + semver validation; fixed, 21/21 sandbox) |
 | task-004 | IMPLEMENT | 001 | task-003 | Done | A+ (gate caught unknown-action-ran-list HIGH + 3 more; fixed) |
 | task-005 | IMPLEMENT | 001 | task-003 | Done | A+ (zero findings) — both tier prompts removed; dashboard/migrate never-elevate |

@@ -8,7 +8,7 @@
 #   - Idempotency: register twice = no duplicate; unregister twice = no error.
 #   - atomic write: temp file is named *.aid-tmp.* and is cleaned up.
 #   - Warn-and-continue: write failure does NOT abort the host-tool op.
-#   - File format: DM-1 header + schema: 1 + repos: block (ASCII-only scaffolding).
+#   - File format: DM-1 header + schema: 1 + projects: block (ASCII-only scaffolding).
 #
 # Usage:
 #   bash test-registry.sh [--verbose]
@@ -199,10 +199,10 @@ assert_file_exists "${REG_HOME_U01}/registry.yml" "REG-U01b registry.yml created
 assert_output_contains "$OUT" "Registered /tmp/repo-a" "REG-U01c prints Registered line"
 # Check DM-1 header bytes.
 assert_file_contains "${REG_HOME_U01}/registry.yml" \
-    "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
+    "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
     "REG-U01d managed-by comment present"
 assert_file_contains "${REG_HOME_U01}/registry.yml" "schema: 1" "REG-U01e schema: 1 present"
-assert_file_contains "${REG_HOME_U01}/registry.yml" "repos:" "REG-U01f repos: key present"
+assert_file_contains "${REG_HOME_U01}/registry.yml" "projects:" "REG-U01f projects: key present"
 assert_file_contains "${REG_HOME_U01}/registry.yml" "  - /tmp/repo-a" "REG-U01g path entry has two-space indent"
 
 # REG-U02: register same path again -> idempotent no-op (no duplicate).
@@ -242,11 +242,11 @@ assert_exit_eq "$RC" 0 "REG-U06a unregister absent path -> exit 0"
 assert_output_not_contains "$OUT" "Unregistered" "REG-U06b no Unregistered line on no-op"
 assert_output_not_contains "$OUT" "WARN" "REG-U06c no WARN on absent-path no-op"
 
-# REG-U07: unregister last path -> registry.yml still present (repos: with no items).
+# REG-U07: unregister last path -> registry.yml still present (projects: with no items).
 run_harness "$REG_HOME_U01" unregister "/tmp/repo-z"
 assert_exit_eq "$RC" 0 "REG-U07a unregister last path -> exit 0"
 assert_file_exists "${REG_HOME_U01}/registry.yml" "REG-U07b registry.yml kept after last unregister"
-assert_file_contains "${REG_HOME_U01}/registry.yml" "repos:" "REG-U07c repos: key present in empty registry"
+assert_file_contains "${REG_HOME_U01}/registry.yml" "projects:" "REG-U07c projects: key present in empty registry"
 assert_file_not_contains "${REG_HOME_U01}/registry.yml" "  - " "REG-U07d no path entries in empty registry"
 
 # REG-U08: read_repos on absent file -> empty output, exit 0.
@@ -416,7 +416,7 @@ run_aid "$REG_F01_HOME" add codex \
     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
     --target "$REG_F01_TGT"
 assert_exit_eq "$RC" 0 "REG-F01a add for format test -> exit 0"
-# Check the four header lines + schema + repos: are ASCII-only.
+# Check the header lines + schema + projects: are ASCII-only.
 _header_lines=$(head -6 "${REG_F01_HOME}/registry.yml")
 if printf '%s' "$_header_lines" | grep -qP '[^\x00-\x7F]'; then
     fail "REG-F01b registry.yml header lines contain non-ASCII bytes"

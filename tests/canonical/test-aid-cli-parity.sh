@@ -981,24 +981,24 @@ fi
 # PAR057-O06/O07: DM-1 registry file shape from Bash is valid (scaffolding present, path in CAN-1 form).
 assert_file_exists "${SH_HOME_O}/registry.yml" "PAR057-O06 Bash: registry.yml created after first add"
 assert_file_contains "${SH_HOME_O}/registry.yml" \
-    "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
+    "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
     "PAR057-O07 Bash registry.yml: DM-1 header line present"
 assert_file_contains "${SH_HOME_O}/registry.yml" "schema: 1" \
     "PAR057-O08 Bash registry.yml: schema: 1 present"
-assert_file_contains "${SH_HOME_O}/registry.yml" "repos:" \
-    "PAR057-O09 Bash registry.yml: repos: key present"
+assert_file_contains "${SH_HOME_O}/registry.yml" "projects:" \
+    "PAR057-O09 Bash registry.yml: projects: key present"
 assert_file_contains "${SH_HOME_O}/registry.yml" "  - ${T_SH_O}" \
     "PAR057-O10 Bash registry.yml: target path entry with two-space indent"
 
 if [[ -n "$PWSH" ]]; then
     assert_file_exists "${PS_HOME_O}/registry.yml" "PAR057-O11 PS1: registry.yml created after first add"
     assert_file_contains "${PS_HOME_O}/registry.yml" \
-        "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
+        "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
         "PAR057-O12 PS1 registry.yml: DM-1 header line present"
     assert_file_contains "${PS_HOME_O}/registry.yml" "schema: 1" \
         "PAR057-O13 PS1 registry.yml: schema: 1 present"
-    assert_file_contains "${PS_HOME_O}/registry.yml" "repos:" \
-        "PAR057-O14 PS1 registry.yml: repos: key present"
+    assert_file_contains "${PS_HOME_O}/registry.yml" "projects:" \
+        "PAR057-O14 PS1 registry.yml: projects: key present"
     assert_file_contains "${PS_HOME_O}/registry.yml" "  - ${T_PS1_O}" \
         "PAR057-O15 PS1 registry.yml: target path entry with two-space indent"
 
@@ -1007,12 +1007,12 @@ if [[ -n "$PWSH" ]]; then
     _sh_reg_norm=$(sed "s|${T_SH_O}|__REPO__|g" "${SH_HOME_O}/registry.yml" | tr -d '\r')
     _ps_reg_norm=$(sed "s|${T_PS1_O}|__REPO__|g" "${PS_HOME_O}/registry.yml" | tr -d '\r')
     assert_eq "$_sh_reg_norm" "$_ps_reg_norm" \
-        "PAR057-O16 Bash<->PS1 DM-1 registry file shape identical (header + schema + repos: structure)"
+        "PAR057-O16 Bash<->PS1 DM-1 registry file shape identical (header + schema + projects: structure)"
 else
     pass "PAR057-O11 PS1: registry.yml created after first add [SKIPPED: pwsh absent]"
     pass "PAR057-O12 PS1 registry.yml: DM-1 header line present [SKIPPED: pwsh absent]"
     pass "PAR057-O13 PS1 registry.yml: schema: 1 present [SKIPPED: pwsh absent]"
-    pass "PAR057-O14 PS1 registry.yml: repos: key present [SKIPPED: pwsh absent]"
+    pass "PAR057-O14 PS1 registry.yml: projects: key present [SKIPPED: pwsh absent]"
     pass "PAR057-O15 PS1 registry.yml: target path entry with two-space indent [SKIPPED: pwsh absent]"
     pass "PAR057-O16 Bash<->PS1 DM-1 registry file shape identical [SKIPPED: pwsh absent]"
 fi
@@ -1375,7 +1375,7 @@ fi
 #
 # Simulates N concurrent registry_register calls to the SAME registry file,
 # asserts:
-#   S01: the final registry.yml is syntactically valid (has DM-1 header + repos: key).
+#   S01: the final registry.yml is syntactically valid (has DM-1 header + projects: key).
 #   S02: no temp file (*.aid-tmp.*) is left behind after all writers complete.
 #   S03: every distinct path appears exactly once in the final file (no duplicates,
 #        no half-written lines).
@@ -1438,10 +1438,10 @@ done
 assert_file_exists "${REG_HOME_S}/registry.yml" \
     "PAR057-S01 concurrent-add: registry.yml exists after all writers"
 assert_file_contains "${REG_HOME_S}/registry.yml" \
-    "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
+    "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
     "PAR057-S02 concurrent-add: DM-1 header present (file not torn)"
-assert_file_contains "${REG_HOME_S}/registry.yml" "repos:" \
-    "PAR057-S03 concurrent-add: repos: key present (file not torn)"
+assert_file_contains "${REG_HOME_S}/registry.yml" "projects:" \
+    "PAR057-S03 concurrent-add: projects: key present (file not torn)"
 
 # S02: no temp file left behind.
 _tmp_count_s=$(find "$REG_HOME_S" -name '*.aid-tmp.*' 2>/dev/null | wc -l)
@@ -1515,11 +1515,11 @@ assert_eq "$_div_sh_has_ps" "0" \
 _div_right_schema="${TMP}/registry-right-schema.yml"
 _div_wrong_schema="${TMP}/registry-wrong-schema.yml"
 cat > "$_div_right_schema" << 'RIGHTSCHEMA_EOF'
-# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).
-# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/
-# description/version are read from each repo's own .aid/settings.yml at render time.
+# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).
+# Holds ONLY the base folders of projects this CLI install manages. Per-project name and
+# description come from .aid/settings.yml; version/tools from the manifest, at render time.
 schema: 1
-repos:
+projects:
   - /tmp/test-repo
 RIGHTSCHEMA_EOF
 # Identical to the above except schema: 99.
@@ -2000,7 +2000,7 @@ _S_PS_CODE_HOME=$(newhome); setup_ps1_home "${_S_PS_CODE_HOME}"
 _S01_OUT=$(cd "${_S_REPO_STAMPLESS}" && \
     AID_HOME="${_S_STATE_HOME}" AID_NO_MIGRATE=1 AID_NO_UPDATE_CHECK=1 \
     bash "${_S_CODE_HOME}/bin/aid" status 2>&1 || true)
-if echo "${_S01_OUT}" | grep -q "WARN: aid: this repo uses an older format"; then
+if echo "${_S01_OUT}" | grep -q "WARN: aid: this project uses an older format"; then
     fail "PAR080-S01 Bash AID_NO_MIGRATE=1: WARN must be suppressed in stamp-less repo"
 else
     pass "PAR080-S01 Bash AID_NO_MIGRATE=1: WARN suppressed (opt-out)"
@@ -2025,7 +2025,7 @@ fi
 _S03_OUT=$(cd "${_S_REPO_STAMPED}" && \
     AID_HOME="${_S_STATE_HOME}" AID_NO_UPDATE_CHECK=1 \
     bash "${_S_CODE_HOME}/bin/aid" status 2>&1 || true)
-if echo "${_S03_OUT}" | grep -q "WARN: aid: this repo uses an older format"; then
+if echo "${_S03_OUT}" | grep -q "WARN: aid: this project uses an older format"; then
     fail "PAR080-S03 Bash format-current repo: must NOT warn (format_version=1 == supported)"
 else
     pass "PAR080-S03 Bash format-current repo: no WARN (steady-state, SEC-6 no-loop)"
@@ -2050,7 +2050,7 @@ fi
 _S05_OUT=$(cd "${_S_REPO_STAMPLESS}" && \
     AID_HOME="${_S_STATE_HOME}" AID_NO_UPDATE_CHECK=1 \
     bash "${_S_CODE_HOME}/bin/aid" status 2>&1 || true)
-if echo "${_S05_OUT}" | grep -q "WARN: aid: this repo uses an older format"; then
+if echo "${_S05_OUT}" | grep -q "WARN: aid: this project uses an older format"; then
     pass "PAR080-S05 Bash stamp-less repo: WARN printed on encounter (lazy-stamp model)"
 else
     fail "PAR080-S05 Bash stamp-less repo: expected WARN 'older format'; got: '${_S05_OUT}'"

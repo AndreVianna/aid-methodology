@@ -124,11 +124,11 @@ assert_eq "$_P01_DIR_PERM" "755" "PRV-P01d shared dir mode 0755"
 _P01_FILE_PERM="$(stat -c '%a' "${_P01_SHARED}/registry.yml" 2>/dev/null || echo 'N/A')"
 assert_eq "$_P01_FILE_PERM" "644" "PRV-P01e registry.yml mode 0644"
 
-# PRV-P02: registry.yml content -- schema: 1 + repos: + comment.
+# PRV-P02: registry.yml content -- schema: 1 + projects: + comment.
 assert_file_contains "${_P01_SHARED}/registry.yml" "schema: 1" "PRV-P02a schema: 1 present"
-assert_file_contains "${_P01_SHARED}/registry.yml" "repos:" "PRV-P02b repos: key present"
+assert_file_contains "${_P01_SHARED}/registry.yml" "projects:" "PRV-P02b projects: key present"
 assert_file_contains "${_P01_SHARED}/registry.yml" \
-    "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
+    "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
     "PRV-P02c managed-by comment present"
 # Zero repo items (no '  - ' entries).
 _P02_ITEM_COUNT="$(grep -c '^  - ' "${_P01_SHARED}/registry.yml" 2>/dev/null | tr -d '[:space:]')"
