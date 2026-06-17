@@ -92,7 +92,7 @@ flowchart TB
 
 	<div class="callout warn">
 		<h4>Never edit profile trees directly</h4>
-		<p>Files under <code>profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/</code> are generator output. Edits are silently overwritten on the next <code>python .claude/skills/aid-generate/scripts/run_generator.py</code> run. Always edit <code>canonical/</code> and re-run the generator. The emission manifest is the safety boundary — only previously-emitted files are eligible for deletion. (per coding-standards.md §7a)</p>
+		<p>Files under <code>profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/</code> are generator output. Edits are silently overwritten on the next <code>python .claude/skills/generate-profile/scripts/run_generator.py</code> run. Always edit <code>canonical/</code> and re-run the generator. The emission manifest is the safety boundary — only previously-emitted files are eligible for deletion. (per coding-standards.md §7a)</p>
 	</div>
 </section>
 

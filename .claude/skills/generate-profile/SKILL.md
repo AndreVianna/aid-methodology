@@ -1,5 +1,5 @@
 ---
-name: aid-generate
+name: generate-profile
 description: >
   Regenerates the five install trees (claude-code, codex, cursor, copilot-cli, antigravity) from canonical/ + profiles/.
   Maintainer-only tooling; never shipped to end users.
@@ -10,7 +10,7 @@ argument-hint: "[--tool claude-code|codex|cursor|copilot-cli|antigravity] regene
 
 # AID Install-Tree Generator
 
-> **Maintainer-only skill — outside `canonical/`.** This is the lone exception to the canonical-source pattern. It lives at `.claude/skills/aid-generate/` only and is NOT in `canonical/skills/`. Edits to this skill are made directly to its files. Reason: it generates the install trees, so it cannot itself be generated from canonical without a chicken-and-egg deployment problem.
+> **Maintainer-only skill — outside `canonical/`.** This is the lone exception to the canonical-source pattern. It lives at `.claude/skills/generate-profile/` only and is NOT in `canonical/skills/`. Edits to this skill are made directly to its files. Reason: it generates the install trees, so it cannot itself be generated from canonical without a chicken-and-egg deployment problem.
 
 This skill regenerates the five install trees (`claude-code/`, `codex/`, `cursor/`, `copilot-cli/`, `antigravity/`) from
 the single canonical source (`canonical/`) and the per-tool profiles (`profiles/`).
@@ -73,7 +73,7 @@ Print: `[State: LOAD]`
 For each profile in `SELECTED_PROFILES`, load and validate the profile TOML:
 
 ```bash
-python .claude/skills/aid-generate/scripts/aid_profile.py --profile profiles/{tool}.toml
+python .claude/skills/generate-profile/scripts/aid_profile.py --profile profiles/{tool}.toml
 ```
 
 Expected output: `OK: profiles/{tool}.toml — profile '{tool}' is valid`
@@ -135,17 +135,17 @@ Print: `[{i}/{N}] Rendering {tool}...`
 2. **Run the renderers in order:**
 
    ```bash
-   python .claude/skills/aid-generate/scripts/render_agents.py \
+   python .claude/skills/generate-profile/scripts/render_agents.py \
      --canonical-root . \
      --profile profiles/{tool}.toml \
      --output-root {output_root}
 
-   python .claude/skills/aid-generate/scripts/render_skills.py \
+   python .claude/skills/generate-profile/scripts/render_skills.py \
      --canonical-root . \
      --profile profiles/{tool}.toml \
      --output-root {output_root}
 
-   python .claude/skills/aid-generate/scripts/render_templates.py \
+   python .claude/skills/generate-profile/scripts/render_templates.py \
      --canonical-root . \
      --profile profiles/{tool}.toml \
      --output-root {output_root}
@@ -182,7 +182,7 @@ Print: `[State: VERIFY]`
 Run the deterministic gate:
 
 ```bash
-python .claude/skills/aid-generate/scripts/verify_deterministic.py \
+python .claude/skills/generate-profile/scripts/verify_deterministic.py \
   --canonical-root . \
   --report-path .aid/work-001-agents-review/verify-deterministic-report.json
 ```
@@ -198,7 +198,7 @@ scratch directory instead of the live install trees.
 Run the advisory conformance check:
 
 ```bash
-python .claude/skills/aid-generate/scripts/verify_advisory.py \
+python .claude/skills/generate-profile/scripts/verify_advisory.py \
   --canonical-root . \
   --report-path .aid/work-001-agents-review/verify-advisory-report.json
 ```
@@ -214,7 +214,7 @@ Print: `[State: REPORT]`
 Print a concise summary of the run:
 
 ```
-=== aid-generate REPORT ===
+=== generate-profile REPORT ===
 Mode: [LIVE | DRY-RUN]
 Profiles rendered: {tool1}, {tool2}, ..., {toolN}
 

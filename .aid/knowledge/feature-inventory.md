@@ -8,7 +8,7 @@ changelog:
   - 2026-05-26: KB Authoring v2 template seed
   - 2026-05-27: Populated with 10 user-facing skills + 1 maintainer-only skill
   - 2026-06-03: Added /aid-housekeep (11th user-facing skill) via /aid-housekeep KB-delta refresh
-  - 2026-06-05: work-002-auto-installer — added the installer/CLI capability (the persistent global `aid` CLI + its four install channels) as an engineering feature; corrected the `/aid-generate` row (it is no longer shipped via `setup.sh` — that installer was replaced by the `aid` CLI).
+  - 2026-06-05: work-002-auto-installer — added the installer/CLI capability (the persistent global `aid` CLI + its four install channels) as an engineering feature; corrected the `/generate-profile` row (it is no longer shipped via `setup.sh` — that installer was replaced by the `aid` CLI).
   - 2026-06-03: methodology v3.2 — marked /aid-deploy and /aid-monitor as optional, on-demand end-of-pipeline Deliver skills (not numbered phases); independent of each other.
   - 2026-06-07: v1.0.0 first stable release — corrected stale VERSION note (0.7.5 → 1.0.0); added Agent model (9 agents), Knowledge Base doc-set (14), feedback loops (11), and host-tool profiles (5) as tracked feature areas.
   - 2026-06-09: aid-ask added (11->12 user-facing skills) via /aid-housekeep KB-DELTA.
@@ -43,7 +43,7 @@ changelog:
 
 | # | Skill | Status | Description | Source |
 |---|-------|--------|-------------|--------|
-| - | `/aid-generate` | Shipped | Regenerates the five install trees (claude-code, codex, cursor, copilot-cli, antigravity) from `canonical/` and `profiles/`. Not part of the end-user `aid` CLI; lives only at `.claude/skills/aid-generate/` to avoid a chicken-and-egg deployment problem. | `.claude/skills/aid-generate/SKILL.md` |
+| - | `/generate-profile` | Shipped | Regenerates the five install trees (claude-code, codex, cursor, copilot-cli, antigravity) from `canonical/` and `profiles/`. Not part of the end-user `aid` CLI; lives only at `.claude/skills/generate-profile/` to avoid a chicken-and-egg deployment problem. | `.claude/skills/generate-profile/SKILL.md` |
 
 ## Agent model (9 agents)
 

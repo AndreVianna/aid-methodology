@@ -84,7 +84,7 @@ off-pipeline skills `aid-housekeep` (an optional, on-demand maintenance skill) a
 the KB + live codebase + in-flight works with citations) — see
 `architecture.md` "Skill inventory" + `canonical/skills/aid-housekeep/SKILL.md`
 ("Absent from the mandatory pipeline flow.") + `canonical/skills/aid-ask/SKILL.md`. A 13th
-skill, `aid-generate`, is maintainer-only and never installed for end users (it lives only
+skill, `generate-profile`, is maintainer-only and never installed for end users (it lives only
 in `.claude/skills/`, not in `canonical/` — see `architecture.md`). So: **1 setup + 6
 numbered + 3 optional + 2 off-pipeline (`aid-housekeep`, `aid-ask`) = 12 user-facing
 installed skills; +1 maintainer-only = 13 total.**
@@ -343,7 +343,7 @@ After `aid add <tool>`, the target project gains (`docs/install.md` `## What get
   `.github/` for Copilot CLI, or `.agent/` for Antigravity)
   containing all 12 user-facing skills (the six numbered phases + `aid-config` + the three
   optional skills + the off-pipeline `aid-housekeep` and `aid-ask`), 9 agents, 51 recipes, templates, and
-  helper scripts. (The maintainer-only `aid-generate` skill is never installed — it lives only
+  helper scripts. (The maintainer-only `generate-profile` skill is never installed — it lives only
   in the source repo's `.claude/skills/`, not in `canonical/`; see `architecture.md`.)
 - A `CLAUDE.md` or `AGENTS.md` at the project root with placeholders that
   `/aid-config` and `/aid-discover` populate. The root `AGENTS.md` is byte-identical across

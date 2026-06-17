@@ -13,7 +13,7 @@ changelog:
   - 2026-06-05: work-002-auto-installer — added the distribution/registry integrations: npm registry (`aid-installer`), PyPI (`aid-installer`), and GitHub Releases (release-asset download for install/bootstrap + OIDC publishing from `release.yml`). Replaced the `setup.sh`/`setup.ps1` adopter-install-flow + Option-A collision sections with the `aid` CLI + four channels + per-channel `aid update self` behavior + FR12 invariant root AGENTS.md.
   - 2026-06-03: methodology v3.2 — Phase Sequence diagram + skill-set composition reconciled: numbered phases 8→6 (Discover→Execute); aid-deploy/aid-monitor recast from Phases 7/8 to optional, on-demand end-of-pipeline Deliver skills (not required, not sequential); loops L8–L10 now apply only when those skills are run. Production re-entry unified: L9 (bug) and L10 (change request) now route Monitor → Interview (bugs via the LITE-BUG-FIX triage; CRs as new/changed requirements), replacing the prior Monitor→Execute / Monitor→Discover targets.
   - 2026-06-03: housekeep run-state relocation (PR #51) — corrected the aid-housekeep State-File R/W row: run-state moved from the work-area STATE.md to the project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`; CLEANUP offers every work folder + stale artifact for user-confirmed deletion.
-  - 2026-06-03: aid-housekeep merge (PR #49) — skill enumeration 10→11 user-facing (added optional off-pipeline aid-housekeep) + maintainer-only aid-generate; documented aid-housekeep as a filesystem-state choreography participant (STATE.md Q&A handshake with /aid-discover, work-area ## Housekeep Status run-state block, /aid-summarize delegation)
+  - 2026-06-03: aid-housekeep merge (PR #49) — skill enumeration 10→11 user-facing (added optional off-pipeline aid-housekeep) + maintainer-only generate-profile; documented aid-housekeep as a filesystem-state choreography participant (STATE.md Q&A handshake with /aid-discover, work-area ## Housekeep Status run-state block, /aid-summarize delegation)
   - 2026-06-01: work-001-add-providers merge (PRs #42/#43/#44) — distribution now 5 profile trees (added copilot-cli → `.github/`, antigravity → `.agent/`); documented Copilot native Agent Skills + Antigravity rules mapping + Option-A AGENTS.md collision handler
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
 ---
@@ -185,13 +185,13 @@ five host-tool install trees** plus a dogfood `.claude/` tree the repo uses on i
 ```
 canonical/                          ← single source of truth (maintainer edits here)
   ├── agents/        (9 dirs)
-  ├── skills/        (12 user-facing dirs + maintainer-only aid-generate)
+  ├── skills/        (12 user-facing dirs + maintainer-only generate-profile)
   ├── templates/     (knowledge-base, knowledge-summary, kb-authoring, ...)
   ├── recipes/       (51 add-/change-/fix- recipe templates + README)
   ├── scripts/       (config/, execute/, housekeep/, interview/, kb/, summarize/, grade.sh)
   └── EMISSION-MANIFEST.md          ← safety-boundary spec
 
-.claude/skills/aid-generate/scripts/  ← the renderer (maintainer-only; not rendered into trees)
+.claude/skills/generate-profile/scripts/  ← the renderer (maintainer-only; not rendered into trees)
        ├── run_generator.py           ← entrypoint (87 lines; invoke from repo root)
        ├── render_lib.py              (756 lines — emission-manifest + pure-mirror deletion)
        ├── aid_profile.py             (550 lines — parses profiles/*.toml)
@@ -219,7 +219,7 @@ Source: `.aid/knowledge/project-structure.md` heading `### Generator (maintainer
 > `aid-execute`, plus the **optional** `aid-deploy`, `aid-monitor`, `aid-summarize`, the
 > **optional off-pipeline** `aid-housekeep`, and the **optional on-demand read-only Q&A**
 > `aid-ask` — answers free-form project questions from the KB + codebase + in-flight works
-> with citations, outside the numbered pipeline) **+ maintainer-only `aid-generate`**. The six
+> with citations, outside the numbered pipeline) **+ maintainer-only `generate-profile`**. The six
 > numbered phases are `aid-discover`…`aid-execute`; `aid-deploy`/`aid-monitor` are optional
 > end-of-pipeline Deliver skills, `aid-summarize` is optional, and `aid-housekeep` is
 > additionally off the mandatory pipeline (no phase gate references it) — all invoked
@@ -287,7 +287,7 @@ The renderer guarantees that:
 1. `canonical/skills/<skill>/SKILL.md` + `.claude/skills/<skill>/SKILL.md` (dogfood) +
    `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/.../<skill>/SKILL.md` are
    byte-identical in the body portion across all trees (CLAUDE.md `## Architecture` bullet 1)
-2. Re-running `python .claude/skills/aid-generate/scripts/run_generator.py` on unchanged inputs produces a byte-identical
+2. Re-running `python .claude/skills/generate-profile/scripts/run_generator.py` on unchanged inputs produces a byte-identical
    install tree AND a byte-identical manifest (the AC2 determinism guarantee)
 3. Only files in the previous manifest's `removed_dst` are deleted; files outside any
    manifest are NEVER touched (pure-mirror deletion safety)
@@ -383,7 +383,7 @@ aid-summarize       ← non-phase, optional, runs against approved KB
 aid-housekeep       ← optional, OFF the mandatory pipeline (no phase gate references it);
                        invoked on-demand. Delegates to /aid-discover (KB-DELTA) and
                        /aid-summarize (SUMMARY-DELTA); never auto-runs.
-aid-generate        ← maintainer-only (canonical → profile trees)
+generate-profile        ← maintainer-only (canonical → profile trees)
 ```
 
 Source: `docs/aid-methodology.md` `## 6. Feedback Loops` (the 11 feedback loops Mermaid graph),
@@ -435,7 +435,7 @@ memory:
 | `aid-monitor` | Telemetry sources, `packages/`, `known-issues.md`, feature SPECs | `MONITOR-STATE.md`; routes findings to `aid-interview` — bug path → LITE-BUG-FIX → `tasks/task-NNN.md`; CR path → new/changed requirements (`REQUIREMENTS.md`) |
 | `aid-summarize` | Approved `.aid/knowledge/` + `STATE.md ## Knowledge Summary Status` | `.aid/knowledge/knowledge-summary.html`; `STATE.md ## Knowledge Summary Status, ## Summarization History` |
 | `aid-housekeep` (optional, off-pipeline) | project-level run-state file `.aid/.temp/HOUSEKEEP_STATE_<ts>.md` (resume state, via `housekeep-state.sh`); `.aid/knowledge/STATE.md` (`**Last KB Review:**`, `**User Approved:**`, `## Summarization History`); `git` log/diff (hint only) | project-level run-state file `.aid/.temp/HOUSEKEEP_STATE_<ts>.md` (run-state fields, via `housekeep-state.sh`; gitignored, removed at DONE); `.aid/knowledge/STATE.md ## Q&A (Pending)` (synthesizes an `**Impact:** Required` entry to drive `/aid-discover`); one commit per stage on an `aid/housekeep-*` branch (via `branch-commit.sh`, never pushes). Delegates KB-DELTA → `/aid-discover`, SUMMARY-DELTA → `/aid-summarize`; CLEANUP offers every stale `.aid/` artifact + work folder for user-confirmed deletion via `cleanup-classify.sh` + `git rm`/`rm` |
-| `aid-generate` (maintainer) | `canonical/`, `profiles/*.toml` (5 profiles), previous `emission-manifest.jsonl` per profile | `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/...`, new `emission-manifest.jsonl` per profile, repo-root `CLAUDE.md` / `AGENTS.md` |
+| `generate-profile` (maintainer) | `canonical/`, `profiles/*.toml` (5 profiles), previous `emission-manifest.jsonl` per profile | `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/...`, new `emission-manifest.jsonl` per profile, repo-root `CLAUDE.md` / `AGENTS.md` |
 
 Sources cited inline above per skill SKILL.md (`aid-housekeep` row:
 `canonical/skills/aid-housekeep/SKILL.md`, `references/state-kb-delta.md`,

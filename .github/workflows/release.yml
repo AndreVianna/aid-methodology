@@ -120,9 +120,9 @@ jobs:
       - name: render-drift (profiles in sync with canonical)
         shell: bash
         run: |
-          python .claude/skills/aid-generate/scripts/run_generator.py
+          python .claude/skills/generate-profile/scripts/run_generator.py
           if ! git diff --exit-code -- profiles/; then
-            echo "::error::profiles/ is out of sync with canonical/. Run 'python .claude/skills/aid-generate/scripts/run_generator.py' and commit the result."
+            echo "::error::profiles/ is out of sync with canonical/. Run 'python .claude/skills/generate-profile/scripts/run_generator.py' and commit the result."
             exit 1
           fi
 
@@ -158,13 +158,13 @@ jobs:
       # generator self-tests — mirror test.yml's generator-selftests job.
       - name: generator unit self-tests
         run: |
-          python .claude/skills/aid-generate/scripts/render_lib.py --self-test
-          python .claude/skills/aid-generate/scripts/test_manifest_safety.py --self-test
-          python .claude/skills/aid-generate/scripts/render_canonical_scripts.py --self-test --canonical-root .
-          python .claude/skills/aid-generate/scripts/verify_deterministic.py --self-test --canonical-root .
-          python .claude/skills/aid-generate/scripts/verify_advisory.py --self-test --canonical-root .
-          python .claude/skills/aid-generate/scripts/test_copilot_emitter.py --self-test --canonical-root .
-          python .claude/skills/aid-generate/scripts/test_antigravity_emitter.py --self-test --canonical-root .
+          python .claude/skills/generate-profile/scripts/render_lib.py --self-test
+          python .claude/skills/generate-profile/scripts/test_manifest_safety.py --self-test
+          python .claude/skills/generate-profile/scripts/render_canonical_scripts.py --self-test --canonical-root .
+          python .claude/skills/generate-profile/scripts/verify_deterministic.py --self-test --canonical-root .
+          python .claude/skills/generate-profile/scripts/verify_advisory.py --self-test --canonical-root .
+          python .claude/skills/generate-profile/scripts/test_copilot_emitter.py --self-test --canonical-root .
+          python .claude/skills/generate-profile/scripts/test_antigravity_emitter.py --self-test --canonical-root .
 
   # --------------------------------------------------------------------------
   # github-release — build the 5 profile tarballs + CLI bundle + SHA256SUMS

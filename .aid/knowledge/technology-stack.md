@@ -34,7 +34,7 @@ changelog:
 |----------|---------|------------------------|
 | **Markdown** | CommonMark + GFM tables (assumed; no validator pinned) | All docs, skills, agents, templates, recipes. For counts see `.aid/generated/project-index.md` `## Language Breakdown`. |
 | **Bash (shell)** | bash 4+ (uses `declare -A` associative arrays, `[[ ]]`, `${var:-}`) | Example: `lib/aid-install-core.sh` (the install-core engine sourced by `bin/aid`); every `canonical/scripts/**/*.sh`. |
-| **Python** | 3.11+ (required for `tomllib` stdlib) | Includes `test_copilot_emitter.py` and `test_antigravity_emitter.py` (added by work-001). Pinned by `.claude/skills/aid-generate/scripts/render_lib.py` "Requirements: Python 3.11+ (tomllib is stdlib; no third-party deps)" and `aid_profile.py` "Requirements: Python 3.11+ (tomllib is stdlib from 3.11)". |
+| **Python** | 3.11+ (required for `tomllib` stdlib) | Includes `test_copilot_emitter.py` and `test_antigravity_emitter.py` (added by work-001). Pinned by `.claude/skills/generate-profile/scripts/render_lib.py` "Requirements: Python 3.11+ (tomllib is stdlib; no third-party deps)" and `aid_profile.py` "Requirements: Python 3.11+ (tomllib is stdlib from 3.11)". |
 | **JavaScript (ES modules + plain)** | ES2020+ (no explicit pin); `.mjs` for ESM scripts | `canonical/scripts/summarize/validate-diagrams.mjs`, `contrast-check.mjs`; `canonical/templates/knowledge-summary/lightbox.js`, `mermaid-init.js`. |
 | **PowerShell** | 5.1+ | `bin/aid.ps1`, `install.ps1`, `lib/AidInstallCore.psm1`, `canonical/scripts/summarize/assemble-3part.ps1`. PowerShell 5.1+ pin from `README.md` `### Bootstrap the `aid` CLI` (Windows). |
 | **CSS** | CSS3 (custom properties, `:focus-visible`, `@media (forced-colors)`, `@media (prefers-reduced-motion)`) | Single canonical source `canonical/templates/knowledge-summary/component-css.css` rendered into the render-target trees: canonical + `.claude` dogfood + 5 profile trees = **7 copies** on disk (a runtime `.aid/templates/` copy makes 8 total). |
@@ -86,18 +86,18 @@ for application code, and no `Cargo.toml`, `go.mod`, `requirements.txt`, or `pom
 
 | Runtime | Version | How detected |
 |---------|---------|--------------|
-| **Python** | 3.11+ | `.claude/skills/aid-generate/SKILL.md` "Python 3.11+ is available" Pre-flight check (`python --version`); `render_lib.py` "Requirements: Python 3.11+"; `aid_profile.py` "Requirements: Python 3.11+". Required for `tomllib` stdlib. |
+| **Python** | 3.11+ | `.claude/skills/generate-profile/SKILL.md` "Python 3.11+ is available" Pre-flight check (`python --version`); `render_lib.py` "Requirements: Python 3.11+"; `aid_profile.py` "Requirements: Python 3.11+". Required for `tomllib` stdlib. |
 | **Bash** | 4+ (associative arrays) | `bin/aid` shebang `#!/usr/bin/env bash`; `lib/aid-install-core.sh` engine; every `canonical/scripts/**/*.sh`. Per `README.md` Linux/macOS bootstrap: `curl … \| bash`. |
 | **PowerShell** | 5.1+ | `README.md` Windows bootstrap pin "Windows (PowerShell 5.1+)"; `bin/aid.ps1` + `install.ps1` + `lib/AidInstallCore.psm1`. |
 | **Node.js** | 18+ (optional — only for `/aid-summarize` diagram validators) | `README.md` `### Runtime requirements`: "Node 18+ is optional — only `/aid-summarize` uses it, for diagram validation." `.mjs` files imply ESM support (Node 14+ minimum). |
-| **Git** | unpinned (any modern version) | `README.md` `### Runtime requirements`: "Git" listed as a runtime requirement; `.claude/skills/aid-generate/SKILL.md` "git working tree" Pre-flight runs `git rev-parse --git-dir`. |
+| **Git** | unpinned (any modern version) | `README.md` `### Runtime requirements`: "Git" listed as a runtime requirement; `.claude/skills/generate-profile/SKILL.md` "git working tree" Pre-flight runs `git rev-parse --git-dir`. |
 | **One of: Claude Code / OpenAI Codex CLI / Cursor IDE / GitHub Copilot CLI / Antigravity** | unpinned (host-tool-specific) | `README.md` `### Runtime requirements`: "One or more host AI tools." End-user runtime; required to invoke the slash commands. The 5 install profiles map 1:1 to these host tools (`profiles/*.toml`). |
 
 ## Build System
 
 | Tool | Config file location | Purpose |
 |------|----------------------|---------|
-| **`run_generator.py`** | `.claude/skills/aid-generate/scripts/run_generator.py` | The build. Iterates `profiles/*.toml` (5 profiles), calls each renderer per profile, performs the pure-mirror deletion pass, writes one emission manifest per profile, then runs VERIFY (deterministic) (hard) and VERIFY (advisory) (advisory). |
+| **`run_generator.py`** | `.claude/skills/generate-profile/scripts/run_generator.py` | The build. Iterates `profiles/*.toml` (5 profiles), calls each renderer per profile, performs the pure-mirror deletion pass, writes one emission manifest per profile, then runs VERIFY (deterministic) (hard) and VERIFY (advisory) (advisory). |
 | **Per-tool profile TOMLs** | `profiles/claude-code.toml`, `profiles/codex.toml`, `profiles/cursor.toml`, `profiles/copilot-cli.toml`, `profiles/antigravity.toml` (5 profiles) | Per-host conventions: `[layout]`, `[agent.frontmatter]` (incl. `format` ∈ markdown/toml/copilot-agent/antigravity-rule), `[skill.frontmatter]`, `[model_tiers]`, `[tool_names]`, `[filename_map]`, `[extras]` (incl. `rules_frontmatter` + per-rule `output_filename`), `[capabilities]`. |
 | **Emission manifest spec** | `canonical/EMISSION-MANIFEST.md` | Authoritative spec for the manifest format (JSONL, LF-only, sentinel first line `{"_manifest_version": 1}`, sorted by `dst`). |
 | **End-user installer** | `bin/aid` (Bash) / `bin/aid.ps1` (PowerShell) | The persistent global `aid` CLI that copies a built profile tree into a target project (not a build per se — consumes the rendered `profiles/` trees). |
@@ -108,16 +108,16 @@ for application code, and no `Cargo.toml`, `go.mod`, `requirements.txt`, or `pom
 
 ```bash
 # Full build (renders canonical → all 5 install trees + runs VERIFY (deterministic)/(advisory))
-python .claude/skills/aid-generate/scripts/run_generator.py
+python .claude/skills/generate-profile/scripts/run_generator.py
 
 # Build one tree only (rare)
-python .claude/skills/aid-generate/scripts/render_skills.py \
+python .claude/skills/generate-profile/scripts/render_skills.py \
     --canonical-root . \
     --profile profiles/claude-code.toml \
     --output-root profiles/claude-code/.claude
 
 # Build verification (byte-identical re-render audit; hard gate)
-python .claude/skills/aid-generate/scripts/verify_deterministic.py
+python .claude/skills/generate-profile/scripts/verify_deterministic.py
 ```
 
 Source: `run_generator.py`.
@@ -195,7 +195,7 @@ see `.aid/generated/project-index.md` `## Language Breakdown`.
 |------|---------|---------|---------|
 | **Pure bash test suites** | bash 4+ | All tests are plain bash scripts (no pytest, no jest, no junit); aggregated by `tests/run-all.sh` + shared `tests/lib/assert.sh` | `tests/canonical/test-*.sh` (currently 35 suites — see `tests/README.md`) |
 | **Native Windows installer test** | PowerShell 5.1+ | Real-Windows installer/CLI coverage (run by `installer-tests.yml` on `windows-latest`) | `tests/windows/Test-AidInstaller.ps1` |
-| **Generator self-tests** | Python 3.11+ | Manifest-safety unit tests | `.claude/skills/aid-generate/scripts/test_manifest_safety.py` |
+| **Generator self-tests** | Python 3.11+ | Manifest-safety unit tests | `.claude/skills/generate-profile/scripts/test_manifest_safety.py` |
 | **CI** | **GitHub Actions (enforced)** | `.github/workflows/test.yml` runs render-drift + all canonical suites (via `tests/run-all.sh`) + generator self-tests + hygiene on PR/push (required status check on `master`). `installer-tests.yml` runs the cross-platform installer/CLI matrix (ubuntu + windows); `release.yml` is the tag-triggered gate+publish pipeline. | See `test-landscape.md`, `infrastructure.md` `## CI / CD Pipeline` |
 
 Source: `project-structure.md` `## Build & Test System`; `tests/README.md`.
