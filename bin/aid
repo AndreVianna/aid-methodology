@@ -1329,6 +1329,160 @@ _registry_read_union() {
     done <<< "$_raw"
 }
 
+# _registry_read_raw_union
+# Like _registry_read_union but WITHOUT the [[ -d "$p/.aid" ]] quiet-prune.
+# Returns EVERY registered path (deduped union of $AID_STATE_HOME/registry.yml
+# and the $HOME/.aid/registry.yml fallback, with per-user collapse), including
+# paths whose .aid/ is absent or the directory does not exist.
+# Used by 'aid projects list' to render no-aid/missing/untracked states.
+# Never writes or mutates any registry file on read.
+_registry_read_raw_union() {
+    local _primary_reg="${AID_STATE_HOME}/registry.yml"
+    local _raw
+    if [[ "$AID_STATE_HOME" == "${HOME}/.aid" ]]; then
+        # Per-user collapse: single-tier; primary == fallback, no double-read.
+        _raw="$(_registry_read_repos "$_primary_reg")"
+    else
+        # Distinct paths: union of primary ($AID_STATE_HOME) and fallback ($HOME/.aid).
+        local _fallback_reg="${HOME}/.aid/registry.yml"
+        _raw="$({ _registry_read_repos "$_primary_reg"; _registry_read_repos "$_fallback_reg"; } \
+            | sed '/^$/d' | sort -u)"
+    fi
+    # Emit every non-empty path (no prune -- no-aid/missing paths are included).
+    while IFS= read -r p; do
+        [[ -n "$p" ]] || continue
+        printf '%s\n' "$p"
+    done <<< "$_raw"
+}
+
+# _aid_resolve_tier <canon-path>
+# Deterministic, non-interactive tier selection for 'aid projects add' (FR6/AC6).
+# Returns "user" or "shared" on stdout.
+#
+# Auto rule:
+#   - Returns "user" if $_AID_SCOPE != "global" (per-user install), OR if the
+#     path is under $HOME (any install type).
+#   - Otherwise (global install AND path outside $HOME): returns "shared".
+#
+# Override convention (set before calling; cleared by caller):
+#   _AID_TIER_OVERRIDE=""         no override, use auto rule (default)
+#   _AID_TIER_OVERRIDE="--local"  force "user" regardless of install type/path
+#   _AID_TIER_OVERRIDE="--shared" force "shared"; but on a per-user install
+#                                 ($AID_STATE_HOME == $HOME/.aid) there is no
+#                                 separate shared tier -- returns "user" and
+#                                 prints a one-line notice to stderr.
+#
+# Never prompts; never blocks; always returns 0.
+_aid_resolve_tier() {
+    local _canon_path="$1"
+
+    # Detect per-user install (no separate shared tier).
+    local _per_user=0
+    [[ "$AID_STATE_HOME" == "${HOME}/.aid" ]] && _per_user=1
+
+    # Handle explicit override flags.
+    case "${_AID_TIER_OVERRIDE:-}" in
+        --local)
+            printf 'user\n'
+            return 0
+            ;;
+        --shared)
+            if [[ "$_per_user" -eq 1 ]]; then
+                printf 'no shared tier under a per-user install; using user tier\n' >&2
+                printf 'user\n'
+            else
+                printf 'shared\n'
+            fi
+            return 0
+            ;;
+    esac
+
+    # Auto rule: user if per-user install OR path is under $HOME.
+    local _in_home=0
+    case "$_canon_path" in
+        "${HOME}/"*|"${HOME}") _in_home=1 ;;
+    esac
+
+    if [[ "$_AID_SCOPE" != "global" || "$_in_home" -eq 1 ]]; then
+        printf 'user\n'
+    else
+        printf 'shared\n'
+    fi
+    return 0
+}
+
+# _aid_project_state <path>
+# Print the state of an AID project directory:
+#   "missing"     -- the directory does not exist
+#   "no-aid"      -- directory exists but has no .aid/ subdirectory
+#   "untracked"   -- .aid/ exists but no .aid/.aid-manifest.json is present
+#   "vX.Y.Z"      -- tracked; semver version string from .aid/.aid-manifest.json
+#                    (key "aid_version"), falling back to .aid/.aid-version
+# The version is extracted by the same semver regex on both paths -- a malformed
+# aid_version value in the manifest falls through to untracked (not returned raw).
+# Never errors; always returns 0.
+_aid_project_state() {
+    local _path="$1"
+    if [[ ! -d "$_path" ]]; then
+        printf 'missing\n'
+        return 0
+    fi
+    if [[ ! -d "${_path}/.aid" ]]; then
+        printf 'no-aid\n'
+        return 0
+    fi
+    local _manifest="${_path}/.aid/.aid-manifest.json"
+    local _ver_file="${_path}/.aid/.aid-version"
+    if [[ -f "$_manifest" ]]; then
+        local _ver
+        # Extract aid_version value; then validate as semver (same guard as .aid-version branch).
+        _ver="$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "$_manifest" 2>/dev/null \
+            | sed -E 's/.*"([^"]+)"[[:space:]]*$/\1/' \
+            | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*' \
+            | head -1)"
+        if [[ -n "$_ver" ]]; then
+            printf '%s\n' "$_ver"
+            return 0
+        fi
+    fi
+    # Fallback: .aid/.aid-version plain-text file.
+    if [[ -f "$_ver_file" ]]; then
+        local _vf_ver
+        _vf_ver="$(grep -Eo '[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*' "$_ver_file" 2>/dev/null | head -1)"
+        if [[ -n "$_vf_ver" ]]; then
+            printf '%s\n' "$_vf_ver"
+            return 0
+        fi
+    fi
+    printf 'untracked\n'
+    return 0
+}
+
+# _aid_project_tools <path>
+# Print a comma-separated list of tool names installed in an AID project, as
+# recorded in <path>/.aid/.aid-manifest.json under the "tools" object.
+# The manifest schema is: "tools": { "<tool-name>": { ... }, ... } (object keyed
+# by tool name, NO "name" field inside).  This is the schema written by every
+# canonical writer in lib/aid-install-core.sh (see the awk extractor at ~:1019).
+# Prints an empty string when the manifest is absent or has no tools.
+# Used by 'aid projects list' to populate the "tools" column (task-004).
+_aid_project_tools() {
+    local _path="$1"
+    local _manifest="${_path}/.aid/.aid-manifest.json"
+    [[ -f "$_manifest" ]] || { printf ''; return 0; }
+    # Extract tool names as object keys inside the "tools": { ... } block.
+    # Mirrors the canonical awk extractor in lib/aid-install-core.sh:~1019:
+    #   /"tools"/{found=1} found && /^    "[a-z]/{gsub(/[^a-zA-Z-]/,"",$1); print $1}
+    local _tools
+    _tools="$(awk '/"tools"/{found=1} found && /^    "[a-z]/{gsub(/[^a-zA-Z0-9_.-]/,"",$1); if ($1!="") print $1}' \
+        "$_manifest" 2>/dev/null \
+        | sort -u \
+        | tr '\n' ',' \
+        | sed -E 's/,+$//')"
+    printf '%s' "$_tools"
+    return 0
+}
+
 # registry_register <canon-path> [<tier>]
 # Set-insert <canon-path> into the target tier registry (idempotent; atomic write).
 # <tier> is "user" (default) or "shared".
