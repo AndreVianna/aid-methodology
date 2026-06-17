@@ -1396,8 +1396,8 @@ manifest_exists() {
 #
 # The exact seed text matches the schema used by bin/aid's registry functions:
 #   schema: 1
-#   repos:
-# (three comment lines + schema line + repos line with no items).
+#   projects:
+# (three comment lines + schema line + projects line with no items).
 _provision_shared_state_home() {
     local SH="$1"
     local _psh_rc=0
@@ -1428,11 +1428,11 @@ _provision_shared_state_home() {
         return 1
     }
     {
-        printf '%s\n' "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
-        printf '%s\n' "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/"
-        printf '%s\n' "# description/version are read from each repo's own .aid/settings.yml at render time."
+        printf '%s\n' "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
+        printf '%s\n' "# Holds ONLY the base folders of projects this CLI install manages. Per-project name and"
+        printf '%s\n' "# description come from .aid/settings.yml; version/tools from the manifest, at render time."
         printf '%s\n' "schema: 1"
-        printf '%s\n' "repos:"
+        printf '%s\n' "projects:"
     } > "$_tmp" || {
         rm -f "$_tmp" 2>/dev/null
         echo "WARN: aid: could not write registry seed to ${SH}" >&2

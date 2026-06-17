@@ -15,6 +15,8 @@
 #   aid add <tool>[,...]             Add tool(s) to the current project
 #   aid update [<tool>... | self]    Update to latest; no arg = all tools; 'self' = the aid CLI
 #   aid remove [<tool>... | self]    Remove; no arg = ALL AID from project; 'self' = the aid CLI
+#   aid projects [list|add|remove|help] [path] [--local|--shared] [--verbose]
+#                                    List, register, or unregister AID projects
 #   aid <command> -h | --help        Per-command help
 #
 # Flags (shared across subcommands where applicable):
@@ -137,6 +139,22 @@ _aid_usage() {
             printf '  --port <n>     listen port on 127.0.0.1 (default 8787).\n'
             printf '  The dashboard binds to 127.0.0.1 only. '"'"'stop'"'"' is idempotent and also tears down --remote.\n'
             ;;
+        projects)
+            printf 'aid projects [list] [--local|--shared] [--verbose]\n'
+            printf 'aid projects add  [<path>] [--local|--shared]\n'
+            printf 'aid projects remove [<path>]\n'
+            printf '  List, register, or unregister AID projects in the registry.\n'
+            printf '  list (default): show all registered projects with state, tools, and tier.\n'
+            printf '    The current directory is marked with "*" in the leading marker column.\n'
+            printf '    Unregistered cwd with .aid/ present is shown as a footnote.\n'
+            printf '  add [path=cwd]: register a project (requires .aid/ to exist); tracking only,\n'
+            printf '    no tools are installed.  Idempotent.  Prints the tier written.\n'
+            printf '  remove [path=cwd]: unregister a project from the registry; no files removed.\n'
+            printf '    Works on stale/missing/no-aid entries.  Idempotent.\n'
+            printf '  --local   force user tier for add\n'
+            printf '  --shared  force shared tier for add\n'
+            printf '  --verbose print extra detail\n'
+            ;;
         *)
             printf 'aid - AID CLI\n'
             printf '\n'
@@ -149,6 +167,7 @@ _aid_usage() {
             printf '  aid update [<tool>... | self]    Update to latest; no arg = all tools\n'
             printf '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project\n'
             printf '  aid dashboard start|stop ...     Start/stop the local dashboard\n'
+            printf '  aid projects [list|add|remove]   List/register/unregister AID projects\n'
             printf '  aid <command> -h | --help        Per-command help\n'
             printf '\n'
             printf 'Flags: --from-bundle, --version, --force, --dry-run, --target, --verbose\n'
@@ -879,7 +898,7 @@ Step 4. Verify from your laptop: open ${url_placeholder} -- it should load for y
         non-authorized device should get connection-refused/forbidden.
 (AID cannot edit your tailnet policy for you -- it is admin-plane, and the dashboard never
 runs an agent/LLM at runtime. See 'aid dashboard' docs / feature-005 SEC-2.)
-Note (SEC-6): the exposed surface is the CLI home -- all registered repos (paths/names) are
+Note (SEC-6): the exposed surface is the CLI home -- all registered projects (paths/names) are
 visible to the granted identities. This is the accepted trade-off (OQ5): grantees are trusted
 operators of this host. Never-public and host/user-ACL scoping (C1/C3) are unchanged.
 
@@ -1207,18 +1226,30 @@ EOF
         else
             echo "Remote exposure is UP (tailnet-private), but the .ts.net URL could not be auto-detected -- run 'tailscale status' on this host to find it."
         fi
-        # DR-1 registry side-effect: auto-register the dashboard target repo (idempotent).
-        # Always routes to the user tier: dashboard auto-register is never-elevate.
-        registry_register "$target" "user"
+        # DR-1 registry side-effect: auto-register the dashboard target project (idempotent).
+        # FR7: resolve tier deterministically; but never-elevate: if shared would need
+        # elevation (shared dir not user-writable), degrade silently to user (no prompt).
+        local _dc_tier
+        _dc_tier="$(_aid_resolve_tier "$target")"
+        if [[ "$_dc_tier" == "shared" && ! -w "${AID_STATE_HOME}" ]]; then
+            _dc_tier="user"
+        fi
+        registry_register "$target" "$_dc_tier"
         exit 0
     fi
 
     # Step 11: print success (local-only).
     echo "Dashboard (${runtime}) running at http://127.0.0.1:${port} -- stop with: aid dashboard stop"
-    # DR-1 registry side-effect: auto-register the dashboard target repo (idempotent).
+    # DR-1 registry side-effect: auto-register the dashboard target project (idempotent).
     # _dc_target is already CAN-1 (cd && pwd, no -P, applied at the dashboard-ctl seam).
-    # Always routes to the user tier: dashboard auto-register is never-elevate.
-    registry_register "$target" "user"
+    # FR7: resolve tier deterministically; but never-elevate: if shared would need
+    # elevation (shared dir not user-writable), degrade silently to user (no prompt).
+    local _dc_tier2
+    _dc_tier2="$(_aid_resolve_tier "$target")"
+    if [[ "$_dc_tier2" == "shared" && ! -w "${AID_STATE_HOME}" ]]; then
+        _dc_tier2="user"
+    fi
+    registry_register "$target" "$_dc_tier2"
     exit 0
 }
 
@@ -1329,6 +1360,160 @@ _registry_read_union() {
     done <<< "$_raw"
 }
 
+# _registry_read_raw_union
+# Like _registry_read_union but WITHOUT the [[ -d "$p/.aid" ]] quiet-prune.
+# Returns EVERY registered path (deduped union of $AID_STATE_HOME/registry.yml
+# and the $HOME/.aid/registry.yml fallback, with per-user collapse), including
+# paths whose .aid/ is absent or the directory does not exist.
+# Used by 'aid projects list' to render no-aid/missing/untracked states.
+# Never writes or mutates any registry file on read.
+_registry_read_raw_union() {
+    local _primary_reg="${AID_STATE_HOME}/registry.yml"
+    local _raw
+    if [[ "$AID_STATE_HOME" == "${HOME}/.aid" ]]; then
+        # Per-user collapse: single-tier; primary == fallback, no double-read.
+        _raw="$(_registry_read_repos "$_primary_reg")"
+    else
+        # Distinct paths: union of primary ($AID_STATE_HOME) and fallback ($HOME/.aid).
+        local _fallback_reg="${HOME}/.aid/registry.yml"
+        _raw="$({ _registry_read_repos "$_primary_reg"; _registry_read_repos "$_fallback_reg"; } \
+            | sed '/^$/d' | sort -u)"
+    fi
+    # Emit every non-empty path (no prune -- no-aid/missing paths are included).
+    while IFS= read -r p; do
+        [[ -n "$p" ]] || continue
+        printf '%s\n' "$p"
+    done <<< "$_raw"
+}
+
+# _aid_resolve_tier <canon-path>
+# Deterministic, non-interactive tier selection for 'aid projects add' (FR6/AC6).
+# Returns "user" or "shared" on stdout.
+#
+# Auto rule:
+#   - Returns "user" if $_AID_SCOPE != "global" (per-user install), OR if the
+#     path is under $HOME (any install type).
+#   - Otherwise (global install AND path outside $HOME): returns "shared".
+#
+# Override convention (set before calling; cleared by caller):
+#   _AID_TIER_OVERRIDE=""         no override, use auto rule (default)
+#   _AID_TIER_OVERRIDE="--local"  force "user" regardless of install type/path
+#   _AID_TIER_OVERRIDE="--shared" force "shared"; but on a per-user install
+#                                 ($AID_STATE_HOME == $HOME/.aid) there is no
+#                                 separate shared tier -- returns "user" and
+#                                 prints a one-line notice to stderr.
+#
+# Never prompts; never blocks; always returns 0.
+_aid_resolve_tier() {
+    local _canon_path="$1"
+
+    # Detect per-user install (no separate shared tier).
+    local _per_user=0
+    [[ "$AID_STATE_HOME" == "${HOME}/.aid" ]] && _per_user=1
+
+    # Handle explicit override flags.
+    case "${_AID_TIER_OVERRIDE:-}" in
+        --local)
+            printf 'user\n'
+            return 0
+            ;;
+        --shared)
+            if [[ "$_per_user" -eq 1 ]]; then
+                printf 'no shared tier under a per-user install; using user tier\n' >&2
+                printf 'user\n'
+            else
+                printf 'shared\n'
+            fi
+            return 0
+            ;;
+    esac
+
+    # Auto rule: user if per-user install OR path is under $HOME.
+    local _in_home=0
+    case "$_canon_path" in
+        "${HOME}/"*|"${HOME}") _in_home=1 ;;
+    esac
+
+    if [[ "$_AID_SCOPE" != "global" || "$_in_home" -eq 1 ]]; then
+        printf 'user\n'
+    else
+        printf 'shared\n'
+    fi
+    return 0
+}
+
+# _aid_project_state <path>
+# Print the state of an AID project directory:
+#   "missing"     -- the directory does not exist
+#   "no-aid"      -- directory exists but has no .aid/ subdirectory
+#   "untracked"   -- .aid/ exists but no .aid/.aid-manifest.json is present
+#   "vX.Y.Z"      -- tracked; semver version string from .aid/.aid-manifest.json
+#                    (key "aid_version"), falling back to .aid/.aid-version
+# The version is extracted by the same semver regex on both paths -- a malformed
+# aid_version value in the manifest falls through to untracked (not returned raw).
+# Never errors; always returns 0.
+_aid_project_state() {
+    local _path="$1"
+    if [[ ! -d "$_path" ]]; then
+        printf 'missing\n'
+        return 0
+    fi
+    if [[ ! -d "${_path}/.aid" ]]; then
+        printf 'no-aid\n'
+        return 0
+    fi
+    local _manifest="${_path}/.aid/.aid-manifest.json"
+    local _ver_file="${_path}/.aid/.aid-version"
+    if [[ -f "$_manifest" ]]; then
+        local _ver
+        # Extract aid_version value; then validate as semver (same guard as .aid-version branch).
+        _ver="$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "$_manifest" 2>/dev/null \
+            | sed -E 's/.*"([^"]+)"[[:space:]]*$/\1/' \
+            | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*' \
+            | head -1)"
+        if [[ -n "$_ver" ]]; then
+            printf '%s\n' "$_ver"
+            return 0
+        fi
+    fi
+    # Fallback: .aid/.aid-version plain-text file.
+    if [[ -f "$_ver_file" ]]; then
+        local _vf_ver
+        _vf_ver="$(grep -Eo '[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*' "$_ver_file" 2>/dev/null | head -1)"
+        if [[ -n "$_vf_ver" ]]; then
+            printf '%s\n' "$_vf_ver"
+            return 0
+        fi
+    fi
+    printf 'untracked\n'
+    return 0
+}
+
+# _aid_project_tools <path>
+# Print a comma-separated list of tool names installed in an AID project, as
+# recorded in <path>/.aid/.aid-manifest.json under the "tools" object.
+# The manifest schema is: "tools": { "<tool-name>": { ... }, ... } (object keyed
+# by tool name, NO "name" field inside).  This is the schema written by every
+# canonical writer in lib/aid-install-core.sh (see the awk extractor at ~:1019).
+# Prints an empty string when the manifest is absent or has no tools.
+# Used by 'aid projects list' to populate the "tools" column (task-004).
+_aid_project_tools() {
+    local _path="$1"
+    local _manifest="${_path}/.aid/.aid-manifest.json"
+    [[ -f "$_manifest" ]] || { printf ''; return 0; }
+    # Extract tool names as object keys inside the "tools": { ... } block.
+    # Mirrors the canonical awk extractor in lib/aid-install-core.sh:~1019:
+    #   /"tools"/{found=1} found && /^    "[a-z]/{gsub(/[^a-zA-Z-]/,"",$1); print $1}
+    local _tools
+    _tools="$(awk '/"tools"/{found=1} found && /^    "[a-z]/{gsub(/[^a-zA-Z0-9_.-]/,"",$1); if ($1!="") print $1}' \
+        "$_manifest" 2>/dev/null \
+        | sort -u \
+        | tr '\n' ',' \
+        | sed -E 's/,+$//')"
+    printf '%s' "$_tools"
+    return 0
+}
+
 # registry_register <canon-path> [<tier>]
 # Set-insert <canon-path> into the target tier registry (idempotent; atomic write).
 # <tier> is "user" (default) or "shared".
@@ -1372,28 +1557,28 @@ registry_register() {
                 return 0
             fi
             tmp="$(mktemp "/tmp/.aid-reg-tmp.XXXXXX" 2>/dev/null)" || {
-                echo "WARN: aid: could not update the shared repo registry (${_shared_reg}): mktemp failed" >&2
+                echo "WARN: aid: could not update the shared project registry (${_shared_reg}): mktemp failed" >&2
                 return 0
             }
             {
-                printf '%s\n' "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
-                printf '%s\n' "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/"
-                printf '%s\n' "# description/version are read from each repo's own .aid/settings.yml at render time."
+                printf '%s\n' "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
+                printf '%s\n' "# Holds ONLY the base folders of projects this CLI install manages. Per-project name and"
+                printf '%s\n' "# description come from .aid/settings.yml; version/tools from the manifest, at render time."
                 printf '%s\n' "schema: 1"
-                printf '%s\n' "repos:"
+                printf '%s\n' "projects:"
                 { printf '%s\n' "$existing"; printf '%s\n' "$repo"; } \
                     | sed '/^$/d' | sort -u \
                     | while IFS= read -r p; do printf '  - %s\n' "$p"; done
             } > "$tmp" || {
                 rm -f "$tmp"
-                echo "WARN: aid: could not update the shared repo registry (${_shared_reg}): write failed" >&2
+                echo "WARN: aid: could not update the shared project registry (${_shared_reg}): write failed" >&2
                 return 0
             }
             # Real probe: elevates only when the shared dir is not user-writable.
             # If elevation is declined / no-TTY / sudo unavailable: skip + warn.
             _aid_priv_run "$_shared_reg_dir" mv -f "$tmp" "$_shared_reg" || {
                 rm -f "$tmp" 2>/dev/null
-                echo "WARN: aid: shared registry write declined or unavailable; repo not registered in shared tier (${_shared_reg})" >&2
+                echo "WARN: aid: shared registry write declined or unavailable; project not registered in shared tier (${_shared_reg})" >&2
                 return 0
             }
         else
@@ -1404,26 +1589,26 @@ registry_register() {
                 return 0
             fi
             tmp="$(mktemp "${_shared_reg}.aid-tmp.XXXXXX" 2>/dev/null)" || {
-                echo "WARN: aid: could not update the shared repo registry (${_shared_reg}): mktemp failed" >&2
+                echo "WARN: aid: could not update the shared project registry (${_shared_reg}): mktemp failed" >&2
                 return 0
             }
             {
-                printf '%s\n' "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
-                printf '%s\n' "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/"
-                printf '%s\n' "# description/version are read from each repo's own .aid/settings.yml at render time."
+                printf '%s\n' "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
+                printf '%s\n' "# Holds ONLY the base folders of projects this CLI install manages. Per-project name and"
+                printf '%s\n' "# description come from .aid/settings.yml; version/tools from the manifest, at render time."
                 printf '%s\n' "schema: 1"
-                printf '%s\n' "repos:"
+                printf '%s\n' "projects:"
                 { printf '%s\n' "$existing"; printf '%s\n' "$repo"; } \
                     | sed '/^$/d' | sort -u \
                     | while IFS= read -r p; do printf '  - %s\n' "$p"; done
             } > "$tmp" || {
                 rm -f "$tmp"
-                echo "WARN: aid: could not update the shared repo registry (${_shared_reg}): write failed" >&2
+                echo "WARN: aid: could not update the shared project registry (${_shared_reg}): write failed" >&2
                 return 0
             }
             _aid_priv_run "" mv -f "$tmp" "$_shared_reg" || {
                 rm -f "$tmp" 2>/dev/null
-                echo "WARN: aid: could not update the shared repo registry (${_shared_reg}): mv failed" >&2
+                echo "WARN: aid: could not update the shared project registry (${_shared_reg}): mv failed" >&2
                 return 0
             }
         fi
@@ -1452,27 +1637,27 @@ registry_register() {
     fi
     # mktemp in the chosen (writable) target dir so mv is atomic same-filesystem.
     tmp="$(mktemp "${reg}.aid-tmp.XXXXXX" 2>/dev/null)" || {
-        echo "WARN: aid: could not update the machine repo registry (${reg}): mktemp failed" >&2
+        echo "WARN: aid: could not update the machine project registry (${reg}): mktemp failed" >&2
         return 0
     }
     {
-        printf '%s\n' "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
-        printf '%s\n' "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/"
-        printf '%s\n' "# description/version are read from each repo's own .aid/settings.yml at render time."
+        printf '%s\n' "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
+        printf '%s\n' "# Holds ONLY the base folders of projects this CLI install manages. Per-project name and"
+        printf '%s\n' "# description come from .aid/settings.yml; version/tools from the manifest, at render time."
         printf '%s\n' "schema: 1"
-        printf '%s\n' "repos:"
+        printf '%s\n' "projects:"
         { printf '%s\n' "$existing"; printf '%s\n' "$repo"; } \
             | sed '/^$/d' | sort -u \
             | while IFS= read -r p; do printf '  - %s\n' "$p"; done
     } > "$tmp" || {
         rm -f "$tmp"
-        echo "WARN: aid: could not update the machine repo registry (${reg}): write failed" >&2
+        echo "WARN: aid: could not update the machine project registry (${reg}): write failed" >&2
         return 0
     }
     # Never-elevate atomic commit: empty probe forces direct (no-sudo) mv.
     _aid_priv_run "" mv -f "$tmp" "$reg" || {
         rm -f "$tmp" 2>/dev/null
-        echo "WARN: aid: could not update the machine repo registry (${reg}): mv failed" >&2
+        echo "WARN: aid: could not update the machine project registry (${reg}): mv failed" >&2
         return 0
     }
     echo "Registered ${repo} with the AID CLI."
@@ -1510,25 +1695,25 @@ registry_unregister() {
         if printf '%s\n' "$existing" | grep -qxF "$repo"; then
             _found_any=1
             tmp="$(mktemp "${_shared_reg}.aid-tmp.XXXXXX" 2>/dev/null)" || {
-                echo "WARN: aid: could not update the machine repo registry (${_shared_reg}): mktemp failed" >&2
+                echo "WARN: aid: could not update the machine project registry (${_shared_reg}): mktemp failed" >&2
                 return 0
             }
             {
-                printf '%s\n' "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
-                printf '%s\n' "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/"
-                printf '%s\n' "# description/version are read from each repo's own .aid/settings.yml at render time."
+                printf '%s\n' "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
+                printf '%s\n' "# Holds ONLY the base folders of projects this CLI install manages. Per-project name and"
+                printf '%s\n' "# description come from .aid/settings.yml; version/tools from the manifest, at render time."
                 printf '%s\n' "schema: 1"
-                printf '%s\n' "repos:"
+                printf '%s\n' "projects:"
                 { printf '%s\n' "$existing" | grep -vxF "$repo" || true; } | sed '/^$/d' | sort -u \
                     | while IFS= read -r p; do printf '  - %s\n' "$p"; done
             } > "$tmp" || {
                 rm -f "$tmp"
-                echo "WARN: aid: could not update the machine repo registry (${_shared_reg}): write failed" >&2
+                echo "WARN: aid: could not update the machine project registry (${_shared_reg}): write failed" >&2
                 return 0
             }
             _aid_priv_run "" mv -f "$tmp" "$_shared_reg" || {
                 rm -f "$tmp" 2>/dev/null
-                echo "WARN: aid: could not update the machine repo registry (${_shared_reg}): mv failed" >&2
+                echo "WARN: aid: could not update the machine project registry (${_shared_reg}): mv failed" >&2
                 return 0
             }
         fi
@@ -1540,25 +1725,25 @@ registry_unregister() {
             _found_any=1
             echo "WARN: aid: could not write to state home ${AID_STATE_HOME}; using ${_user_reg}" >&2
             tmp="$(mktemp "${_user_reg}.aid-tmp.XXXXXX" 2>/dev/null)" || {
-                echo "WARN: aid: could not update the machine repo registry (${_user_reg}): mktemp failed" >&2
+                echo "WARN: aid: could not update the machine project registry (${_user_reg}): mktemp failed" >&2
                 return 0
             }
             {
-                printf '%s\n' "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
-                printf '%s\n' "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/"
-                printf '%s\n' "# description/version are read from each repo's own .aid/settings.yml at render time."
+                printf '%s\n' "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
+                printf '%s\n' "# Holds ONLY the base folders of projects this CLI install manages. Per-project name and"
+                printf '%s\n' "# description come from .aid/settings.yml; version/tools from the manifest, at render time."
                 printf '%s\n' "schema: 1"
-                printf '%s\n' "repos:"
+                printf '%s\n' "projects:"
                 { printf '%s\n' "$existing" | grep -vxF "$repo" || true; } | sed '/^$/d' | sort -u \
                     | while IFS= read -r p; do printf '  - %s\n' "$p"; done
             } > "$tmp" || {
                 rm -f "$tmp"
-                echo "WARN: aid: could not update the machine repo registry (${_user_reg}): write failed" >&2
+                echo "WARN: aid: could not update the machine project registry (${_user_reg}): write failed" >&2
                 return 0
             }
             _aid_priv_run "" mv -f "$tmp" "$_user_reg" || {
                 rm -f "$tmp" 2>/dev/null
-                echo "WARN: aid: could not update the machine repo registry (${_user_reg}): mv failed" >&2
+                echo "WARN: aid: could not update the machine project registry (${_user_reg}): mv failed" >&2
                 return 0
             }
         fi
@@ -1573,27 +1758,27 @@ registry_unregister() {
             _found_any=1
             mkdir -p "$_user_reg_dir" 2>/dev/null || true
             tmp="$(mktemp "${_user_reg}.aid-tmp.XXXXXX" 2>/dev/null)" || {
-                echo "WARN: aid: could not update the machine repo registry (${_user_reg}): mktemp failed" >&2
+                echo "WARN: aid: could not update the machine project registry (${_user_reg}): mktemp failed" >&2
             }
             if [[ -n "$tmp" ]]; then
                 {
-                    printf '%s\n' "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
-                    printf '%s\n' "# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/"
-                    printf '%s\n' "# description/version are read from each repo's own .aid/settings.yml at render time."
+                    printf '%s\n' "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)."
+                    printf '%s\n' "# Holds ONLY the base folders of projects this CLI install manages. Per-project name and"
+                    printf '%s\n' "# description come from .aid/settings.yml; version/tools from the manifest, at render time."
                     printf '%s\n' "schema: 1"
-                    printf '%s\n' "repos:"
+                    printf '%s\n' "projects:"
                     { printf '%s\n' "$_fb_existing" | grep -vxF "$repo" || true; } | sed '/^$/d' | sort -u \
                         | while IFS= read -r p; do printf '  - %s\n' "$p"; done
                 } > "$tmp" || {
                     rm -f "$tmp"
-                    echo "WARN: aid: could not update the machine repo registry (${_user_reg}): write failed" >&2
+                    echo "WARN: aid: could not update the machine project registry (${_user_reg}): write failed" >&2
                     tmp=""
                 }
             fi
             if [[ -n "$tmp" ]]; then
                 _aid_priv_run "" mv -f "$tmp" "$_user_reg" || {
                     rm -f "$tmp" 2>/dev/null
-                    echo "WARN: aid: could not update the machine repo registry (${_user_reg}): mv failed" >&2
+                    echo "WARN: aid: could not update the machine project registry (${_user_reg}): mv failed" >&2
                 }
             fi
         fi
@@ -1668,13 +1853,13 @@ _aid_format_gate() {
     _repo_fmt="$(_aid_repo_format "${_repo}")"
     local _sup="${AID_SUPPORTED_FORMAT}"
     if [[ "${_repo_fmt}" -gt "${_sup}" ]]; then
-        printf 'ERROR: aid: repo format %s is newer than this CLI supports (%s). Upgrade the aid CLI to operate on this repo.\n' \
+        printf 'ERROR: aid: project format %s is newer than this CLI supports (%s). Upgrade the aid CLI to operate on this project.\n' \
             "${_repo_fmt}" "${_sup}" >&2
         return 1
     fi
     if [[ "${_repo_fmt}" -lt "${_sup}" ]]; then
         if [[ "${AID_NO_MIGRATE:-0}" != "1" ]]; then
-            printf 'WARN: aid: this repo uses an older format (v%s; current: v%s). Run: aid update\n' \
+            printf 'WARN: aid: this project uses an older format (v%s; current: v%s). Run: aid update\n' \
                 "${_repo_fmt}" "${_sup}"
         fi
         return 0
@@ -1770,10 +1955,17 @@ _aid_migrate_repo() {
     # ------------------------------------------------------------------
     # STEP 4 -- REGISTER (DM-2 / FR28) -- existing idempotent writer.
     # Canonicalize path (same rule as bin/aid:1366).
+    # FR7: deterministic tier via _aid_resolve_tier; never-elevate: if shared would
+    # need elevation (shared dir not user-writable), degrade silently to user.
     # ------------------------------------------------------------------
     local _canon_repo
     _canon_repo="$(cd "${repo}" && pwd)" 2>/dev/null || _canon_repo="${repo}"
-    registry_register "${_canon_repo}" || true
+    local _migrate_tier
+    _migrate_tier="$(_aid_resolve_tier "${_canon_repo}")"
+    if [[ "$_migrate_tier" == "shared" && ! -w "${AID_STATE_HOME}" ]]; then
+        _migrate_tier="user"
+    fi
+    registry_register "${_canon_repo}" "$_migrate_tier" || true
 
     return 0
 }
@@ -2136,31 +2328,10 @@ _aid_cwd_classify() {
 
     if [[ "$_is_registered" -eq 0 ]]; then
         # Not registered -- pick tier and register (best-effort, never blocks).
-        local _in_home=0
-        # Check if target is under $HOME.
-        case "$_canon_target" in
-            "${HOME}/"*|"${HOME}") _in_home=1 ;;
-        esac
-
-        local _reg_tier="user"
-        if [[ "$_AID_SCOPE" == "global" && "$_in_home" -eq 0 ]]; then
-            # global && outside ~ : ask shared-vs-user (decision #4: always ask).
-            # No-TTY default: user tier silently (safe, always writable).
-            local _ctab_have_tty=0
-            { exec 3</dev/tty; } 2>/dev/null && { _ctab_have_tty=1; exec 3>&-; } || true
-            if [[ "$_ctab_have_tty" -eq 1 ]]; then
-                printf 'Register this repo in the shared machine registry? [y/N] '
-                local _ask_ans=""
-                read -r _ask_ans < /dev/tty
-                case "$_ask_ans" in
-                    [Yy]|yes|Yes|YES) _reg_tier="shared" ;;
-                    *) _reg_tier="user" ;;
-                esac
-            else
-                # Non-interactive: user tier silently.
-                _reg_tier="user"
-            fi
-        fi
+        # FR7: deterministic, non-interactive tier selection via _aid_resolve_tier.
+        # _AID_TIER_OVERRIDE is empty here (auto path; no CLI override in cwd-classify).
+        local _reg_tier
+        _reg_tier="$(_aid_resolve_tier "$_canon_target")"
         # register is best-effort: failure warns, returns 0, host command proceeds.
         registry_register "$_canon_target" "$_reg_tier" || true
     fi
@@ -2181,6 +2352,220 @@ _aid_cwd_no_aid_offer() {
         printf 'Note: %s is not a git repository -- .aid/ will not be version-controlled.\n' "$_canon"
     fi
     exit 0
+}
+
+# ---------------------------------------------------------------------------
+# _cmd_projects -- list/add/remove/help for the project registry.
+# ---------------------------------------------------------------------------
+_cmd_projects() {
+    local _action="${1:-list}"
+    local _path_arg=""
+    local _verbose=0
+    shift || true
+
+    # Parse remaining args: sub-action already consumed above.
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help) _action="help"; shift ;;
+            --local)   _AID_TIER_OVERRIDE="--local"; shift ;;
+            --shared)  _AID_TIER_OVERRIDE="--shared"; shift ;;
+            --verbose) _verbose=1; shift ;;
+            -*)
+                echo "ERROR: aid projects: unknown flag: $1 (see 'aid projects -h')" >&2
+                exit 2
+                ;;
+            *)
+                if [[ -z "$_path_arg" ]]; then
+                    _path_arg="$1"
+                fi
+                shift ;;
+        esac
+    done
+
+    case "$_action" in
+        list)    _cmd_projects_list "$_verbose" ;;
+        add)     _cmd_projects_add  "$_path_arg" "$_verbose" ;;
+        remove)  _cmd_projects_remove "$_path_arg" "$_verbose" ;;
+        help)    _aid_usage projects; exit 0 ;;
+        *)
+            echo "ERROR: aid projects: unknown action: ${_action} (expected: list, add, remove, help)" >&2
+            exit 2
+            ;;
+    esac
+}
+
+# _cmd_projects_list [verbose]
+# Render the raw union as an aligned table: marker, path, state, tools, tier.
+# Marks cwd with "*"; footnotes unregistered AID cwd.
+# --verbose: also print the registry file each entry was read from.
+_cmd_projects_list() {
+    local _verbose="${1:-0}"
+
+    # Canonical cwd.
+    local _cwd
+    _cwd="$(cd . && pwd)"
+
+    # Collect raw union (includes no-aid / missing paths).
+    local -a _paths=()
+    while IFS= read -r _p; do
+        [[ -n "$_p" ]] && _paths+=("$_p")
+    done < <(_registry_read_raw_union)
+
+    # Column header.
+    printf '%-2s  %-45s  %-10s  %-20s  %s\n' " " "PATH" "STATE" "TOOLS" "TIER"
+    printf '%-2s  %-45s  %-10s  %-20s  %s\n' "--" "----" "-----" "-----" "----"
+
+    local _cwd_registered=0
+    local _entry
+    for _entry in "${_paths[@]+"${_paths[@]}"}"; do
+        local _state _tools _tier _marker
+        _state="$(_aid_project_state "$_entry")"
+        _tools="$(_aid_project_tools "$_entry")"
+        _tier="$(_which_tier_holds "$_entry")"
+        _marker="  "
+        if [[ "$_entry" == "$_cwd" ]]; then
+            _marker="* "
+            _cwd_registered=1
+        fi
+        # Truncate long tools string for display.
+        local _tools_display="${_tools:--}"
+        printf '%-2s  %-45s  %-10s  %-20s  %s\n' \
+            "$_marker" "$_entry" "$_state" "$_tools_display" "$_tier"
+        if [[ "$_verbose" -eq 1 ]]; then
+            local _reg_src
+            if [[ "$_tier" == "shared" && "$AID_STATE_HOME" != "${HOME}/.aid" ]]; then
+                _reg_src="${AID_STATE_HOME}/registry.yml"
+            else
+                _reg_src="${HOME}/.aid/registry.yml"
+            fi
+            printf '      registry: %s\n' "$_reg_src"
+        fi
+    done
+
+    if [[ "${#_paths[@]}" -eq 0 ]]; then
+        printf '(no projects registered)\n'
+    fi
+
+    # Footnote: unregistered AID cwd.
+    if [[ "$_cwd_registered" -eq 0 && -d "${_cwd}/.aid" ]]; then
+        printf '\n'
+        printf "(here) -- not registered; run 'aid projects add'\n"
+    fi
+
+    # Legend.
+    if [[ "${#_paths[@]}" -gt 0 ]]; then
+        printf '\n'
+        printf '* = current directory\n'
+    fi
+}
+
+# _which_tier_holds <canon-path>
+# Returns "user" or "shared" based on which registry file contains the path.
+# Falls back to _aid_resolve_tier if the path is not found in either.
+_which_tier_holds() {
+    local _p="$1"
+    local _primary_reg="${AID_STATE_HOME}/registry.yml"
+    local _user_reg="${HOME}/.aid/registry.yml"
+    # Check shared/primary first.
+    if [[ "$AID_STATE_HOME" != "${HOME}/.aid" ]]; then
+        if _registry_read_repos "$_primary_reg" 2>/dev/null | grep -qxF "$_p"; then
+            printf 'shared\n'
+            return 0
+        fi
+        if _registry_read_repos "$_user_reg" 2>/dev/null | grep -qxF "$_p"; then
+            printf 'user\n'
+            return 0
+        fi
+    else
+        # Per-user: single file.
+        if _registry_read_repos "$_primary_reg" 2>/dev/null | grep -qxF "$_p"; then
+            printf 'user\n'
+            return 0
+        fi
+    fi
+    # Fallback: derive from tier resolution.
+    _aid_resolve_tier "$_p"
+}
+
+# _cmd_projects_add [path] [verbose]
+# Register a project path (default: cwd) in the deterministic tier.
+_cmd_projects_add() {
+    local _raw_path="${1:-.}"
+    local _verbose="${2:-0}"
+
+    # Canonicalize.
+    local _canon
+    if ! _canon="$(cd "$_raw_path" 2>/dev/null && pwd)"; then
+        echo "ERROR: aid projects add: path does not exist: ${_raw_path}" >&2
+        exit 2
+    fi
+
+    # Require .aid/ directory.
+    if [[ ! -d "${_canon}/.aid" ]]; then
+        echo "ERROR: aid projects add: '${_canon}' is not an AID project (.aid/ not found); run 'aid add <tool>' first." >&2
+        exit 2
+    fi
+
+    # Resolve tier.
+    local _tier
+    _tier="$(_aid_resolve_tier "$_canon")"
+
+    # Register (idempotent).
+    # Suppress registry_register's own "Registered..." stdout line so we emit a
+    # single consolidated message instead of two lines.  stderr (WARN lines) is
+    # left to flow through unchanged.
+    registry_register "$_canon" "$_tier" >/dev/null
+    local _rc=$?
+    if [[ $_rc -eq 0 ]]; then
+        printf "aid projects: '%s' registered in %s tier.\n" "$_canon" "$_tier"
+        if [[ "$_verbose" -eq 1 ]]; then
+            local _reg_file
+            if [[ "$_tier" == "shared" && "$AID_STATE_HOME" != "${HOME}/.aid" ]]; then
+                _reg_file="${AID_STATE_HOME}/registry.yml"
+            else
+                _reg_file="${HOME}/.aid/registry.yml"
+            fi
+            printf "aid projects: registry file: %s\n" "$_reg_file"
+        fi
+    fi
+    return 0
+}
+
+# _cmd_projects_remove [path] [verbose]
+# Unregister a project path (default: cwd) from the registry; no .aid/ required.
+_cmd_projects_remove() {
+    local _raw_path="${1:-.}"
+    local _verbose="${2:-0}"
+
+    # Canonicalize without requiring the directory to exist.
+    local _canon
+    if _canon="$(cd "$_raw_path" 2>/dev/null && pwd)"; then
+        : # directory exists; use canonical path
+    else
+        # Directory absent (stale entry); use the raw path as-is after normalizing.
+        _canon="$_raw_path"
+    fi
+
+    # Unregister (idempotent; registry_unregister prints on real change).
+    # Check first so we can emit the idempotent no-op message ourselves.
+    local _primary_reg="${AID_STATE_HOME}/registry.yml"
+    local _user_reg="${HOME}/.aid/registry.yml"
+    local _found=0
+    if _registry_read_repos "$_primary_reg" 2>/dev/null | grep -qxF "$_canon"; then
+        _found=1
+    elif [[ "$AID_STATE_HOME" != "${HOME}/.aid" ]]; then
+        if _registry_read_repos "$_user_reg" 2>/dev/null | grep -qxF "$_canon"; then
+            _found=1
+        fi
+    fi
+
+    registry_unregister "$_canon"
+    if [[ "$_found" -eq 0 ]]; then
+        printf "aid projects: '%s' was not registered (nothing to remove).\n" "$_canon"
+    elif [[ "$_verbose" -eq 1 ]]; then
+        printf "aid projects: removed '%s' from registry.\n" "$_canon"
+    fi
+    return 0
 }
 
 # ---------------------------------------------------------------------------
@@ -2207,7 +2592,7 @@ _cmd_dashboard() {
         cli_version="$(tr -d '[:space:]' < "$ver_file")"
     fi
     printf 'AID v%s - Agentic Iterative Development\n' "$cli_version"
-    printf 'Install, update, and manage AID across your repositories.\n'
+    printf 'Install, update, and manage AID across your projects.\n'
 
     # C6: format gate for cwd repo (.aid/ is guaranteed present here -- the
     # missing-.aid/ case is intercepted at the dispatch level above via
@@ -2339,7 +2724,7 @@ if [[ "$SUBCMD" == "update" ]]; then
                 [[ -n "$_us_r" ]] && _us_repos+=("$_us_r")
             done < <(_registry_read_union)
             if [[ "${#_us_repos[@]}" -eq 0 ]]; then
-                echo "No registered repos to migrate."
+                echo "No registered projects to migrate."
             else
                 # Determine interactive mode: AID_MIGRATE_YES=1 is the explicit opt-in for
                 # auto-yes.  Non-interactive without opt-in -> no migration (per SPEC: without
@@ -2350,7 +2735,7 @@ if [[ "$SUBCMD" == "update" ]]; then
                 { exec 3</dev/tty; } 2>/dev/null && { _us_have_tty=1; exec 3>&-; } || true
                 if [[ "$_us_auto_yes" -eq 0 && "$_us_have_tty" -eq 0 ]]; then
                     # Non-interactive, no opt-in: skip all (non-interactive default, SPEC edge-cases).
-                    echo "Skipping repo migration (non-interactive; set AID_MIGRATE_YES=1 to opt in)."
+                    echo "Skipping project migration (non-interactive; set AID_MIGRATE_YES=1 to opt in)."
                 else
                     for _us_repo in "${_us_repos[@]}"; do
                         if [[ "$_us_migrate_cancel" -eq 1 ]]; then
@@ -2359,7 +2744,7 @@ if [[ "$SUBCMD" == "update" ]]; then
                         if [[ "$_us_migrate_all" -eq 1 || "$_us_auto_yes" -eq 1 ]]; then
                             _us_answer="y"
                         else
-                            printf 'Migrate repo %s? [All/Yes/No/Cancel] ' "$_us_repo"
+                            printf 'Migrate project %s? [All/Yes/No/Cancel] ' "$_us_repo"
                             _us_answer=""
                             read -r _us_answer < /dev/tty
                         fi
@@ -2404,6 +2789,43 @@ fi
 # ---- dashboard --------------------------------------------------------------
 if [[ "$SUBCMD" == "dashboard" ]]; then
     _cmd_dashboard_ctl "$@"
+    exit $?
+fi
+
+# ---- projects ---------------------------------------------------------------
+if [[ "$SUBCMD" == "projects" ]]; then
+    # Check for -h/--help as first arg before dispatching.
+    if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+        _aid_usage projects
+        exit 0
+    fi
+    # Determine sub-action (first positional or default "list").
+    # Scan through leading flags to find the action word; unknown positionals are
+    # rejected here so errors surface before entering _cmd_projects.
+    _PROJ_ACTION="list"
+    _PROJ_ARGS=()
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            list|add|remove|help)
+                _PROJ_ACTION="$1"; shift
+                _PROJ_ARGS+=("$@")
+                set --
+                break
+                ;;
+            -h|--help) _aid_usage projects; exit 0 ;;
+            --local|--shared|--verbose)
+                _PROJ_ARGS+=("$1"); shift ;;
+            -*)
+                # Unknown flag: pass through to _cmd_projects for rejection.
+                _PROJ_ARGS+=("$1"); shift ;;
+            *)
+                echo "ERROR: aid projects: unknown action: ${1} (expected: list, add, remove, help)" >&2
+                exit 2
+                ;;
+        esac
+    done
+    _AID_TIER_OVERRIDE="${_AID_TIER_OVERRIDE:-}"
+    _cmd_projects "$_PROJ_ACTION" "${_PROJ_ARGS[@]+"${_PROJ_ARGS[@]}"}"
     exit $?
 fi
 
@@ -2740,30 +3162,9 @@ case "$SUBCMD" in
         # B-table (for 'add'): tier-aware registration after successful install.
         # Decision #3 (unwritable) already handled above with error+abort.
         if [[ "$SUBCMD" == "add" ]]; then
-            _btab_in_home=0
-            case "$_AID_TARGET" in
-                "${HOME}/"*|"${HOME}") _btab_in_home=1 ;;
-            esac
-            _btab_tier="user"
-            if [[ "$_AID_SCOPE" == "global" && "$_btab_in_home" -eq 0 ]]; then
-                # B-table: global && outside ~ && writable (already proved writable above).
-                # Decision #4: always ask on a real decision.
-                _btab_have_tty=0
-                { exec 3</dev/tty; } 2>/dev/null && { _btab_have_tty=1; exec 3>&-; } || true
-                if [[ "$_btab_have_tty" -eq 1 ]]; then
-                    printf 'Add this repo to the shared machine registry? [y/N] '
-                    _btab_ans=""
-                    read -r _btab_ans < /dev/tty
-                    case "$_btab_ans" in
-                        [Yy]|yes|Yes|YES) _btab_tier="shared" ;;
-                        *) _btab_tier="user" ;;
-                    esac
-                else
-                    # Non-interactive: user tier silently (safe default).
-                    _btab_tier="user"
-                fi
-            fi
-            # All other rows: user tier silently (in-~ or per-user outside-~).
+            # FR7: deterministic, non-interactive tier selection via _aid_resolve_tier.
+            # Honors _AID_TIER_OVERRIDE (--local/--shared) if already set by caller.
+            _btab_tier="$(_aid_resolve_tier "$_AID_TARGET")"
             registry_register "$_AID_TARGET" "$_btab_tier"
         else
             # 'update [tool]': C-table register-on-encounter already ran above.

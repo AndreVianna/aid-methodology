@@ -981,24 +981,24 @@ fi
 # PAR057-O06/O07: DM-1 registry file shape from Bash is valid (scaffolding present, path in CAN-1 form).
 assert_file_exists "${SH_HOME_O}/registry.yml" "PAR057-O06 Bash: registry.yml created after first add"
 assert_file_contains "${SH_HOME_O}/registry.yml" \
-    "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
+    "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
     "PAR057-O07 Bash registry.yml: DM-1 header line present"
 assert_file_contains "${SH_HOME_O}/registry.yml" "schema: 1" \
     "PAR057-O08 Bash registry.yml: schema: 1 present"
-assert_file_contains "${SH_HOME_O}/registry.yml" "repos:" \
-    "PAR057-O09 Bash registry.yml: repos: key present"
+assert_file_contains "${SH_HOME_O}/registry.yml" "projects:" \
+    "PAR057-O09 Bash registry.yml: projects: key present"
 assert_file_contains "${SH_HOME_O}/registry.yml" "  - ${T_SH_O}" \
     "PAR057-O10 Bash registry.yml: target path entry with two-space indent"
 
 if [[ -n "$PWSH" ]]; then
     assert_file_exists "${PS_HOME_O}/registry.yml" "PAR057-O11 PS1: registry.yml created after first add"
     assert_file_contains "${PS_HOME_O}/registry.yml" \
-        "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
+        "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
         "PAR057-O12 PS1 registry.yml: DM-1 header line present"
     assert_file_contains "${PS_HOME_O}/registry.yml" "schema: 1" \
         "PAR057-O13 PS1 registry.yml: schema: 1 present"
-    assert_file_contains "${PS_HOME_O}/registry.yml" "repos:" \
-        "PAR057-O14 PS1 registry.yml: repos: key present"
+    assert_file_contains "${PS_HOME_O}/registry.yml" "projects:" \
+        "PAR057-O14 PS1 registry.yml: projects: key present"
     assert_file_contains "${PS_HOME_O}/registry.yml" "  - ${T_PS1_O}" \
         "PAR057-O15 PS1 registry.yml: target path entry with two-space indent"
 
@@ -1007,12 +1007,12 @@ if [[ -n "$PWSH" ]]; then
     _sh_reg_norm=$(sed "s|${T_SH_O}|__REPO__|g" "${SH_HOME_O}/registry.yml" | tr -d '\r')
     _ps_reg_norm=$(sed "s|${T_PS1_O}|__REPO__|g" "${PS_HOME_O}/registry.yml" | tr -d '\r')
     assert_eq "$_sh_reg_norm" "$_ps_reg_norm" \
-        "PAR057-O16 Bash<->PS1 DM-1 registry file shape identical (header + schema + repos: structure)"
+        "PAR057-O16 Bash<->PS1 DM-1 registry file shape identical (header + schema + projects: structure)"
 else
     pass "PAR057-O11 PS1: registry.yml created after first add [SKIPPED: pwsh absent]"
     pass "PAR057-O12 PS1 registry.yml: DM-1 header line present [SKIPPED: pwsh absent]"
     pass "PAR057-O13 PS1 registry.yml: schema: 1 present [SKIPPED: pwsh absent]"
-    pass "PAR057-O14 PS1 registry.yml: repos: key present [SKIPPED: pwsh absent]"
+    pass "PAR057-O14 PS1 registry.yml: projects: key present [SKIPPED: pwsh absent]"
     pass "PAR057-O15 PS1 registry.yml: target path entry with two-space indent [SKIPPED: pwsh absent]"
     pass "PAR057-O16 Bash<->PS1 DM-1 registry file shape identical [SKIPPED: pwsh absent]"
 fi
@@ -1375,7 +1375,7 @@ fi
 #
 # Simulates N concurrent registry_register calls to the SAME registry file,
 # asserts:
-#   S01: the final registry.yml is syntactically valid (has DM-1 header + repos: key).
+#   S01: the final registry.yml is syntactically valid (has DM-1 header + projects: key).
 #   S02: no temp file (*.aid-tmp.*) is left behind after all writers complete.
 #   S03: every distinct path appears exactly once in the final file (no duplicates,
 #        no half-written lines).
@@ -1438,10 +1438,10 @@ done
 assert_file_exists "${REG_HOME_S}/registry.yml" \
     "PAR057-S01 concurrent-add: registry.yml exists after all writers"
 assert_file_contains "${REG_HOME_S}/registry.yml" \
-    "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
+    "# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit)." \
     "PAR057-S02 concurrent-add: DM-1 header present (file not torn)"
-assert_file_contains "${REG_HOME_S}/registry.yml" "repos:" \
-    "PAR057-S03 concurrent-add: repos: key present (file not torn)"
+assert_file_contains "${REG_HOME_S}/registry.yml" "projects:" \
+    "PAR057-S03 concurrent-add: projects: key present (file not torn)"
 
 # S02: no temp file left behind.
 _tmp_count_s=$(find "$REG_HOME_S" -name '*.aid-tmp.*' 2>/dev/null | wc -l)
@@ -1515,11 +1515,11 @@ assert_eq "$_div_sh_has_ps" "0" \
 _div_right_schema="${TMP}/registry-right-schema.yml"
 _div_wrong_schema="${TMP}/registry-wrong-schema.yml"
 cat > "$_div_right_schema" << 'RIGHTSCHEMA_EOF'
-# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).
-# Holds ONLY the base folders of repos this CLI install manages. Per-repo name/
-# description/version are read from each repo's own .aid/settings.yml at render time.
+# AID machine project registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).
+# Holds ONLY the base folders of projects this CLI install manages. Per-project name and
+# description come from .aid/settings.yml; version/tools from the manifest, at render time.
 schema: 1
-repos:
+projects:
   - /tmp/test-repo
 RIGHTSCHEMA_EOF
 # Identical to the above except schema: 99.
@@ -2000,7 +2000,7 @@ _S_PS_CODE_HOME=$(newhome); setup_ps1_home "${_S_PS_CODE_HOME}"
 _S01_OUT=$(cd "${_S_REPO_STAMPLESS}" && \
     AID_HOME="${_S_STATE_HOME}" AID_NO_MIGRATE=1 AID_NO_UPDATE_CHECK=1 \
     bash "${_S_CODE_HOME}/bin/aid" status 2>&1 || true)
-if echo "${_S01_OUT}" | grep -q "WARN: aid: this repo uses an older format"; then
+if echo "${_S01_OUT}" | grep -q "WARN: aid: this project uses an older format"; then
     fail "PAR080-S01 Bash AID_NO_MIGRATE=1: WARN must be suppressed in stamp-less repo"
 else
     pass "PAR080-S01 Bash AID_NO_MIGRATE=1: WARN suppressed (opt-out)"
@@ -2025,7 +2025,7 @@ fi
 _S03_OUT=$(cd "${_S_REPO_STAMPED}" && \
     AID_HOME="${_S_STATE_HOME}" AID_NO_UPDATE_CHECK=1 \
     bash "${_S_CODE_HOME}/bin/aid" status 2>&1 || true)
-if echo "${_S03_OUT}" | grep -q "WARN: aid: this repo uses an older format"; then
+if echo "${_S03_OUT}" | grep -q "WARN: aid: this project uses an older format"; then
     fail "PAR080-S03 Bash format-current repo: must NOT warn (format_version=1 == supported)"
 else
     pass "PAR080-S03 Bash format-current repo: no WARN (steady-state, SEC-6 no-loop)"
@@ -2050,7 +2050,7 @@ fi
 _S05_OUT=$(cd "${_S_REPO_STAMPLESS}" && \
     AID_HOME="${_S_STATE_HOME}" AID_NO_UPDATE_CHECK=1 \
     bash "${_S_CODE_HOME}/bin/aid" status 2>&1 || true)
-if echo "${_S05_OUT}" | grep -q "WARN: aid: this repo uses an older format"; then
+if echo "${_S05_OUT}" | grep -q "WARN: aid: this project uses an older format"; then
     pass "PAR080-S05 Bash stamp-less repo: WARN printed on encounter (lazy-stamp model)"
 else
     fail "PAR080-S05 Bash stamp-less repo: expected WARN 'older format'; got: '${_S05_OUT}'"
@@ -2488,6 +2488,533 @@ else
     pass "PAR029-W14 PS1 format-gate refuse message check [SKIPPED: pwsh absent]"
     pass "PAR029-W15 Bash↔PS1 format-gate refuse exit code parity [SKIPPED: pwsh absent]"
 fi
+
+# ===========================================================================
+# PAR002-X: aid projects bash<->PS1 parity (work-002 / task-009)
+#
+# Asserts that Bash (bin/aid) and PowerShell (bin/aid.ps1) produce equivalent
+# results for the 'aid projects' command:
+#   X00a..X00f: fixture setup assertions
+#   X01..X28  : 'list' output shape -- columns, state values, * marker, footnote,
+#               empty-registry message
+#   X29..X45  : 'add' exit codes + registry effect (incl. exit-2 on non-.aid/,
+#               idempotent re-add)
+#   X46a..X55 : 'remove' exit codes + registry effect (idempotent)
+#   X56..X61  : no-prompt assertion (user-scope -- confirms no regression)
+#   X62..X86  : global-scope tier resolution parity -- outside-$HOME path goes
+#               to shared tier; inside-$HOME goes to user tier; registry-effect
+#               confirmed; no prompt tokens; cross-runtime tier parity asserted
+#               (SKIPPED when running as uid 0 -- chmod -w is a no-op for root)
+#
+# PS half: skipped when pwsh absent (same posture as the rest of this suite).
+# HOME-pin is already in effect from the global pin at the top of the suite.
+# ===========================================================================
+
+echo ""
+echo "=== PAR002-X: aid projects bash<->PS1 parity ==="
+
+# ---------------------------------------------------------------------------
+# Helpers for global-scope simulation.
+#
+# Global scope is triggered when AID_CODE_HOME is not writable (bin/aid:57).
+# We create a separate read-only code home and a writable state home so the
+# scope probe fires without breaking registry writes.
+#
+# Cleanup: _restore_writable is folded into the EXIT trap so that rm -rf $TMP
+# succeeds even when a hard abort skips the straight-line restore calls.
+# ---------------------------------------------------------------------------
+_setup_global_sh_code() {
+    # $1 = code_home (will be made non-writable)
+    local code_dir="$1"
+    mkdir -p "${code_dir}/bin" "${code_dir}/lib"
+    cp "${BIN_AID_SH}" "${code_dir}/bin/aid"
+    chmod +x "${code_dir}/bin/aid"
+    cp "${LIB_SH}" "${code_dir}/lib/aid-install-core.sh"
+    printf '%s\n' "${VERSION}" > "${code_dir}/VERSION"
+    # Make the code root non-writable -> triggers _AID_SCOPE=global.
+    chmod -w "${code_dir}"
+}
+
+_setup_global_ps1_code() {
+    # $1 = code_home (will be made non-writable)
+    local code_dir="$1"
+    mkdir -p "${code_dir}/bin" "${code_dir}/lib"
+    cp "${BIN_AID_PS1}" "${code_dir}/bin/aid.ps1"
+    [[ -f "$BIN_AID_CMD" ]] && cp "${BIN_AID_CMD}" "${code_dir}/bin/aid.cmd" || true
+    cp "${LIB_PS1}" "${code_dir}/lib/AidInstallCore.psm1"
+    printf '%s\n' "${VERSION}" > "${code_dir}/VERSION"
+    chmod -w "${code_dir}"
+}
+
+# Directories to restore write-bits before rm -rf (populated in the global block).
+_X_GCODE_DIRS=()
+
+# Extend the EXIT trap to restore write-bits before rm -rf fires.
+# Use a wrapper that re-enables writes then chains to the original rm.
+trap 'for _d in "${_X_GCODE_DIRS[@]+"${_X_GCODE_DIRS[@]}"}"; do chmod +w "$_d" 2>/dev/null || true; done; rm -rf "$TMP"' EXIT
+
+# run with global scope: code_dir is non-writable; state_dir is AID_HOME.
+run_sh_global() {
+    local code_dir="$1" state_dir="$2"; shift 2
+    OUT_SH=$(AID_HOME="$state_dir" AID_LIB_PATH="${code_dir}/lib/aid-install-core.sh" \
+             bash "${code_dir}/bin/aid" "$@" 2>&1); RC_SH=$?
+}
+
+run_ps1_global() {
+    local code_dir="$1" state_dir="$2"; shift 2
+    OUT_PS1=$(AID_HOME="$state_dir" AID_LIB_PATH="${code_dir}/lib/AidInstallCore.psm1" \
+              "$PWSH" -NoProfile -File "${code_dir}/bin/aid.ps1" "$@" 2>&1 | \
+              sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$?
+}
+
+# ---------------------------------------------------------------------------
+# PAR002-X01..X28: 'list' output shape parity
+#
+# Set up two identical fixture registries (one for Bash, one for PS1),
+# each containing three projects with distinct states:
+#   - tracked (has .aid/.aid-manifest.json + .aid-version)
+#   - untracked (.aid/ exists, no manifest)
+#   - no-aid (registered while .aid/ existed; .aid/ removed afterwards so
+#             list renders the "no-aid" state for that entry)
+#
+# Assert the column headers, all four state values, * marker (when cwd
+# matches), "(no projects registered)" on empty registry, and the unregistered-
+# AID-cwd footnote are equivalent across runtimes.
+# ---------------------------------------------------------------------------
+SH_HOME_X=$(newhome); setup_sh_home "${SH_HOME_X}"
+PS_HOME_X=$(newhome); setup_ps1_home "${PS_HOME_X}"
+
+# Three fixture projects: tracked / untracked / no-aid.
+# no-aid: register a directory that has .aid/, then remove .aid/ so the
+#         list command shows the "no-aid" state (registered path, .aid/ gone).
+_X_TRACKED="$(mktemp -d "${TMP}/xtracked.XXXXXX")"
+_X_UNTRACKED="$(mktemp -d "${TMP}/xuntracked.XXXXXX")"
+_X_NOAID="$(mktemp -d "${TMP}/xnoaid.XXXXXX")"
+
+# tracked: .aid/ with manifest + version.
+mkdir -p "${_X_TRACKED}/.aid"
+cat > "${_X_TRACKED}/.aid/.aid-manifest.json" << XTRACKEOF
+{
+  "aid_version": "0.7.0",
+  "tools": {}
+}
+XTRACKEOF
+printf '0.7.0\n' > "${_X_TRACKED}/.aid/.aid-version"
+
+# untracked: .aid/ exists, no manifest.
+mkdir -p "${_X_UNTRACKED}/.aid"
+
+# no-aid: create .aid/ temporarily so add accepts it, then remove .aid/ so
+#         list renders it as "no-aid" state (registered path, .aid/ absent).
+mkdir -p "${_X_NOAID}/.aid"
+
+# Register all three in both registries (all have .aid/ at register time).
+run_sh "${SH_HOME_X}" projects add "${_X_TRACKED}"
+assert_exit_eq "$RC_SH" 0 "PAR002-X00a Bash projects add tracked fixture -> exit 0"
+run_sh "${SH_HOME_X}" projects add "${_X_UNTRACKED}"
+assert_exit_eq "$RC_SH" 0 "PAR002-X00b Bash projects add untracked fixture -> exit 0"
+run_sh "${SH_HOME_X}" projects add "${_X_NOAID}"
+assert_exit_eq "$RC_SH" 0 "PAR002-X00c Bash projects add no-aid fixture (with .aid/ present) -> exit 0"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_X}" projects add "${_X_TRACKED}"
+    assert_exit_eq "$RC_PS1" 0 "PAR002-X00d PS1 projects add tracked fixture -> exit 0"
+    run_ps1 "${PS_HOME_X}" projects add "${_X_UNTRACKED}"
+    assert_exit_eq "$RC_PS1" 0 "PAR002-X00e PS1 projects add untracked fixture -> exit 0"
+    run_ps1 "${PS_HOME_X}" projects add "${_X_NOAID}"
+    assert_exit_eq "$RC_PS1" 0 "PAR002-X00f PS1 projects add no-aid fixture (with .aid/ present) -> exit 0"
+fi
+
+# Now remove .aid/ from the no-aid fixture so 'list' renders it as "no-aid" state.
+rm -rf "${_X_NOAID}/.aid"
+
+# Now list and compare output shape.
+run_sh "${SH_HOME_X}" projects list
+SH_OUT_XL="$OUT_SH"; SH_RC_XL=$RC_SH
+assert_exit_eq "$SH_RC_XL" 0 "PAR002-X01 Bash projects list -> exit 0"
+
+# X02..X05: column headers present.
+assert_output_contains "$SH_OUT_XL" "PATH" \
+    "PAR002-X02 Bash list: PATH column header present"
+assert_output_contains "$SH_OUT_XL" "STATE" \
+    "PAR002-X03 Bash list: STATE column header present"
+assert_output_contains "$SH_OUT_XL" "TOOLS" \
+    "PAR002-X04 Bash list: TOOLS column header present"
+assert_output_contains "$SH_OUT_XL" "TIER" \
+    "PAR002-X05 Bash list: TIER column header present"
+
+# X06..X08: state values present.
+assert_output_contains "$SH_OUT_XL" "0.7.0" \
+    "PAR002-X06 Bash list: tracked state (version) present"
+assert_output_contains "$SH_OUT_XL" "untracked" \
+    "PAR002-X07 Bash list: untracked state present"
+assert_output_contains "$SH_OUT_XL" "no-aid" \
+    "PAR002-X08 Bash list: no-aid state present"
+
+# X09: legend present when entries exist.
+assert_output_contains "$SH_OUT_XL" "* = current directory" \
+    "PAR002-X09 Bash list: legend '* = current directory' present"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_X}" projects list
+    PS_OUT_XL="$OUT_PS1"; PS_RC_XL=$RC_PS1
+    assert_exit_eq "$PS_RC_XL" 0 "PAR002-X10 PS1 projects list -> exit 0"
+    assert_output_contains "$PS_OUT_XL" "PATH"  "PAR002-X11 PS1 list: PATH column header"
+    assert_output_contains "$PS_OUT_XL" "STATE" "PAR002-X12 PS1 list: STATE column header"
+    assert_output_contains "$PS_OUT_XL" "TOOLS" "PAR002-X13 PS1 list: TOOLS column header"
+    assert_output_contains "$PS_OUT_XL" "TIER"  "PAR002-X14 PS1 list: TIER column header"
+    assert_output_contains "$PS_OUT_XL" "0.7.0"     "PAR002-X15 PS1 list: tracked state (version)"
+    assert_output_contains "$PS_OUT_XL" "untracked" "PAR002-X16 PS1 list: untracked state"
+    assert_output_contains "$PS_OUT_XL" "no-aid"    "PAR002-X17 PS1 list: no-aid state"
+    assert_output_contains "$PS_OUT_XL" "* = current directory" \
+        "PAR002-X18 PS1 list: legend present"
+    # Exit code parity.
+    assert_eq "$SH_RC_XL" "$PS_RC_XL" "PAR002-X19 Bash<->PS1 exit code parity: projects list"
+else
+    for _n in 10 11 12 13 14 15 16 17 18 19; do
+        pass "PAR002-X${_n} [SKIPPED: pwsh absent]"
+    done
+fi
+
+# X20: * marker -- run list from within a registered project dir.
+_X_LIST_SH_MARKER="$(cd "${_X_TRACKED}" && \
+    AID_HOME="${SH_HOME_X}" AID_LIB_PATH="${SH_HOME_X}/lib/aid-install-core.sh" \
+    bash "${SH_HOME_X}/bin/aid" projects list 2>&1)"
+_X_SH_MARKER_LINE="$(printf '%s\n' "$_X_LIST_SH_MARKER" | grep "${_X_TRACKED}" || true)"
+if echo "$_X_SH_MARKER_LINE" | grep -qF '* '; then
+    pass "PAR002-X20 Bash list: '*' marker on cwd-matching entry"
+else
+    fail "PAR002-X20 Bash list: '*' marker missing on cwd-matching entry (line: '${_X_SH_MARKER_LINE}')"
+fi
+
+if [[ -n "$PWSH" ]]; then
+    _X_LIST_PS_MARKER="$(cd "${_X_TRACKED}" && \
+        AID_HOME="${PS_HOME_X}" AID_LIB_PATH="${PS_HOME_X}/lib/AidInstallCore.psm1" \
+        "$PWSH" -NoProfile -File "${PS_HOME_X}/bin/aid.ps1" \
+        projects list 2>&1 | sed 's/\x1b\[[0-9;]*m//g')"
+    _X_PS_MARKER_LINE="$(printf '%s\n' "$_X_LIST_PS_MARKER" | grep "${_X_TRACKED}" || true)"
+    if echo "$_X_PS_MARKER_LINE" | grep -qF '* '; then
+        pass "PAR002-X21 PS1 list: '*' marker on cwd-matching entry"
+    else
+        fail "PAR002-X21 PS1 list: '*' marker missing on cwd-matching entry (line: '${_X_PS_MARKER_LINE}')"
+    fi
+else
+    pass "PAR002-X21 PS1 list: '*' marker on cwd-matching entry [SKIPPED: pwsh absent]"
+fi
+
+# X22..X23: Footnote -- run list from an unregistered AID project dir.
+_X_UNREG="$(mktemp -d "${TMP}/xunreg.XXXXXX")"
+mkdir -p "${_X_UNREG}/.aid"
+_X_FOOTNOTE_SH="$(cd "${_X_UNREG}" && \
+    AID_HOME="${SH_HOME_X}" AID_LIB_PATH="${SH_HOME_X}/lib/aid-install-core.sh" \
+    bash "${SH_HOME_X}/bin/aid" projects list 2>&1)"
+assert_output_contains "$_X_FOOTNOTE_SH" \
+    "not registered; run 'aid projects add'" \
+    "PAR002-X22 Bash list: unregistered AID cwd footnote printed"
+
+if [[ -n "$PWSH" ]]; then
+    _X_FOOTNOTE_PS="$(cd "${_X_UNREG}" && \
+        AID_HOME="${PS_HOME_X}" AID_LIB_PATH="${PS_HOME_X}/lib/AidInstallCore.psm1" \
+        "$PWSH" -NoProfile -File "${PS_HOME_X}/bin/aid.ps1" \
+        projects list 2>&1 | sed 's/\x1b\[[0-9;]*m//g')"
+    assert_output_contains "$_X_FOOTNOTE_PS" \
+        "not registered; run 'aid projects add'" \
+        "PAR002-X23 PS1 list: unregistered AID cwd footnote printed"
+else
+    pass "PAR002-X23 PS1 list: unregistered AID cwd footnote [SKIPPED: pwsh absent]"
+fi
+
+# X24..X28: Empty registry -> "(no projects registered)" message.
+SH_HOME_XE=$(newhome); setup_sh_home "${SH_HOME_XE}"
+run_sh "${SH_HOME_XE}" projects list
+assert_exit_eq "$RC_SH" 0 "PAR002-X24 Bash empty list -> exit 0"
+assert_output_contains "$OUT_SH" "(no projects registered)" \
+    "PAR002-X25 Bash empty list: '(no projects registered)' message"
+
+if [[ -n "$PWSH" ]]; then
+    PS_HOME_XE=$(newhome); setup_ps1_home "${PS_HOME_XE}"
+    run_ps1 "${PS_HOME_XE}" projects list
+    assert_exit_eq "$RC_PS1" 0 "PAR002-X26 PS1 empty list -> exit 0"
+    assert_output_contains "$OUT_PS1" "(no projects registered)" \
+        "PAR002-X27 PS1 empty list: '(no projects registered)' message"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR002-X28 Bash<->PS1 exit code parity: empty list"
+else
+    pass "PAR002-X26 PS1 empty list -> exit 0 [SKIPPED: pwsh absent]"
+    pass "PAR002-X27 PS1 empty list: '(no projects registered)' message [SKIPPED: pwsh absent]"
+    pass "PAR002-X28 Bash<->PS1 exit code parity: empty list [SKIPPED: pwsh absent]"
+fi
+
+# ---------------------------------------------------------------------------
+# PAR002-X29..X45: 'add' exit codes + registry effect parity
+# ---------------------------------------------------------------------------
+SH_HOME_XA=$(newhome); setup_sh_home "${SH_HOME_XA}"
+PS_HOME_XA=$(newhome); setup_ps1_home "${PS_HOME_XA}"
+
+_X_ADD_PROJ="$(mktemp -d "${TMP}/xaddproj.XXXXXX")"
+mkdir -p "${_X_ADD_PROJ}/.aid"
+
+# X29..X31: Bash add valid project -> exit 0, message, registry.
+run_sh "${SH_HOME_XA}" projects add "${_X_ADD_PROJ}"
+assert_exit_eq "$RC_SH" 0 "PAR002-X29 Bash projects add valid path -> exit 0"
+assert_output_contains "$OUT_SH" "registered in" \
+    "PAR002-X30 Bash projects add: 'registered in' message printed"
+assert_file_contains "${SH_HOME_XA}/registry.yml" "${_X_ADD_PROJ}" \
+    "PAR002-X31 Bash projects add: path written to registry"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_XA}" projects add "${_X_ADD_PROJ}"
+    assert_exit_eq "$RC_PS1" 0 "PAR002-X32 PS1 projects add valid path -> exit 0"
+    assert_output_contains "$OUT_PS1" "registered in" \
+        "PAR002-X33 PS1 projects add: 'registered in' message printed"
+    assert_file_contains "${PS_HOME_XA}/registry.yml" "${_X_ADD_PROJ}" \
+        "PAR002-X34 PS1 projects add: path written to registry"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR002-X35 Bash<->PS1 exit code parity: projects add"
+else
+    pass "PAR002-X32 PS1 projects add valid path -> exit 0 [SKIPPED: pwsh absent]"
+    pass "PAR002-X33 PS1 projects add: 'registered in' message [SKIPPED: pwsh absent]"
+    pass "PAR002-X34 PS1 projects add: path in registry [SKIPPED: pwsh absent]"
+    pass "PAR002-X35 Bash<->PS1 exit code parity: projects add [SKIPPED: pwsh absent]"
+fi
+
+# X36..X40: add non-.aid/ path -> exit 2 (rejects path lacking .aid/).
+_X_NOAID_PATH="$(mktemp -d "${TMP}/xnoaidpath.XXXXXX")"
+run_sh "${SH_HOME_XA}" projects add "${_X_NOAID_PATH}"
+assert_exit_eq "$RC_SH" 2 "PAR002-X36 Bash projects add non-.aid/ path -> exit 2"
+assert_output_contains "$OUT_SH" "is not an AID project" \
+    "PAR002-X37 Bash projects add non-.aid/: error message printed"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_XA}" projects add "${_X_NOAID_PATH}"
+    assert_exit_eq "$RC_PS1" 2 "PAR002-X38 PS1 projects add non-.aid/ path -> exit 2"
+    assert_output_contains "$OUT_PS1" "is not an AID project" \
+        "PAR002-X39 PS1 projects add non-.aid/: error message printed"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR002-X40 Bash<->PS1 exit code parity: add non-.aid/"
+else
+    pass "PAR002-X38 PS1 projects add non-.aid/ -> exit 2 [SKIPPED: pwsh absent]"
+    pass "PAR002-X39 PS1 projects add non-.aid/: error message [SKIPPED: pwsh absent]"
+    pass "PAR002-X40 Bash<->PS1 exit code parity: add non-.aid/ [SKIPPED: pwsh absent]"
+fi
+
+# X41..X45: Idempotent re-add (same path twice) -> exit 0 both times, 1 entry.
+run_sh "${SH_HOME_XA}" projects add "${_X_ADD_PROJ}"
+SH_RC_XA2=$RC_SH
+assert_exit_eq "$SH_RC_XA2" 0 "PAR002-X41 Bash projects add idempotent (2nd add) -> exit 0"
+_xsh_count_a=$(grep -c "  - ${_X_ADD_PROJ}" "${SH_HOME_XA}/registry.yml" 2>/dev/null || echo 0)
+assert_eq "$_xsh_count_a" "1" "PAR002-X42 Bash projects add idempotent: path appears exactly once in registry"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_XA}" projects add "${_X_ADD_PROJ}"
+    PS_RC_XA2=$RC_PS1
+    assert_exit_eq "$PS_RC_XA2" 0 "PAR002-X43 PS1 projects add idempotent (2nd add) -> exit 0"
+    _xps_count_a=$(grep -c "  - ${_X_ADD_PROJ}" "${PS_HOME_XA}/registry.yml" 2>/dev/null || echo 0)
+    assert_eq "$_xps_count_a" "1" "PAR002-X44 PS1 projects add idempotent: path appears exactly once in registry"
+    assert_eq "$SH_RC_XA2" "$PS_RC_XA2" "PAR002-X45 Bash<->PS1 exit code parity: idempotent add"
+else
+    pass "PAR002-X43 PS1 projects add idempotent -> exit 0 [SKIPPED: pwsh absent]"
+    pass "PAR002-X44 PS1 projects add idempotent: path once in registry [SKIPPED: pwsh absent]"
+    pass "PAR002-X45 Bash<->PS1 exit code parity: idempotent add [SKIPPED: pwsh absent]"
+fi
+
+# ---------------------------------------------------------------------------
+# PAR002-X46a..X55: 'remove' exit codes + registry effect parity
+# ---------------------------------------------------------------------------
+SH_HOME_XR=$(newhome); setup_sh_home "${SH_HOME_XR}"
+PS_HOME_XR=$(newhome); setup_ps1_home "${PS_HOME_XR}"
+
+_X_REM_PROJ="$(mktemp -d "${TMP}/xremproj.XXXXXX")"
+mkdir -p "${_X_REM_PROJ}/.aid"
+
+# Register first.
+run_sh "${SH_HOME_XR}" projects add "${_X_REM_PROJ}"
+assert_exit_eq "$RC_SH" 0 "PAR002-X46a Bash add for remove test -> exit 0"
+
+# X46..X47: Bash remove registered path -> exit 0, path gone from registry.
+run_sh "${SH_HOME_XR}" projects remove "${_X_REM_PROJ}"
+assert_exit_eq "$RC_SH" 0 "PAR002-X46 Bash projects remove registered path -> exit 0"
+assert_file_not_contains "${SH_HOME_XR}/registry.yml" "${_X_REM_PROJ}" \
+    "PAR002-X47 Bash projects remove: path gone from registry"
+
+# X48..X49: Idempotent remove (2nd remove) -> exit 0 + "was not registered" message.
+run_sh "${SH_HOME_XR}" projects remove "${_X_REM_PROJ}"
+assert_exit_eq "$RC_SH" 0 "PAR002-X48 Bash projects remove idempotent (2nd remove) -> exit 0"
+assert_output_contains "$OUT_SH" "was not registered (nothing to remove)" \
+    "PAR002-X49 Bash projects remove idempotent: 'was not registered' message"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_XR}" projects add "${_X_REM_PROJ}"
+    assert_exit_eq "$RC_PS1" 0 "PAR002-X46b PS1 add for remove test -> exit 0"
+
+    run_ps1 "${PS_HOME_XR}" projects remove "${_X_REM_PROJ}"
+    assert_exit_eq "$RC_PS1" 0 "PAR002-X50 PS1 projects remove registered path -> exit 0"
+    assert_file_not_contains "${PS_HOME_XR}/registry.yml" "${_X_REM_PROJ}" \
+        "PAR002-X51 PS1 projects remove: path gone from registry"
+
+    run_ps1 "${PS_HOME_XR}" projects remove "${_X_REM_PROJ}"
+    assert_exit_eq "$RC_PS1" 0 "PAR002-X52 PS1 projects remove idempotent (2nd remove) -> exit 0"
+    assert_output_contains "$OUT_PS1" "was not registered (nothing to remove)" \
+        "PAR002-X53 PS1 projects remove idempotent: 'was not registered' message"
+
+    assert_eq "$RC_SH" "$RC_PS1" "PAR002-X54 Bash<->PS1 exit code parity: projects remove"
+    assert_eq "$(printf '%s\n' "$OUT_SH" | grep 'was not registered' | tr -d '\r')" \
+              "$(printf '%s\n' "$OUT_PS1" | grep 'was not registered' | tr -d '\r')" \
+        "PAR002-X55 Bash<->PS1 idempotent-remove message byte-identical (CRLF-normalized)"
+else
+    pass "PAR002-X50 PS1 projects remove registered path -> exit 0 [SKIPPED: pwsh absent]"
+    pass "PAR002-X51 PS1 projects remove: path gone from registry [SKIPPED: pwsh absent]"
+    pass "PAR002-X52 PS1 projects remove idempotent -> exit 0 [SKIPPED: pwsh absent]"
+    pass "PAR002-X53 PS1 projects remove idempotent: message [SKIPPED: pwsh absent]"
+    pass "PAR002-X54 Bash<->PS1 exit code parity: remove [SKIPPED: pwsh absent]"
+    pass "PAR002-X55 Bash<->PS1 idempotent-remove message parity [SKIPPED: pwsh absent]"
+fi
+
+# ---------------------------------------------------------------------------
+# PAR002-X56..X61: No-prompt assertion -- user scope (FR7/AC6 no-regression)
+#
+# Confirms that neither runtime emits interactive prompt tokens under user
+# scope (the non-historically-prompting path).  The global-scope no-prompt
+# check (the historically-prompting path per FR7) is in X74..X86 below.
+# ---------------------------------------------------------------------------
+SH_HOME_XP=$(newhome); setup_sh_home "${SH_HOME_XP}"
+PS_HOME_XP=$(newhome); setup_ps1_home "${PS_HOME_XP}"
+
+_X_PROMPT_PROJ="$(mktemp -d "${TMP}/xpromptproj.XXXXXX")"
+mkdir -p "${_X_PROMPT_PROJ}/.aid"
+
+run_sh "${SH_HOME_XP}" projects add "${_X_PROMPT_PROJ}"
+assert_output_not_contains "$OUT_SH" "[y/N]" \
+    "PAR002-X56 Bash projects add (user scope): no '[y/N]' prompt in output"
+assert_output_not_contains "$OUT_SH" "Register this" \
+    "PAR002-X57 Bash projects add (user scope): no 'Register this' prompt in output"
+assert_output_not_contains "$OUT_SH" "Add this" \
+    "PAR002-X58 Bash projects add (user scope): no 'Add this' prompt in output"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_XP}" projects add "${_X_PROMPT_PROJ}"
+    assert_output_not_contains "$OUT_PS1" "[y/N]" \
+        "PAR002-X59 PS1 projects add (user scope): no '[y/N]' prompt in output"
+    assert_output_not_contains "$OUT_PS1" "Register this" \
+        "PAR002-X60 PS1 projects add (user scope): no 'Register this' prompt in output"
+    assert_output_not_contains "$OUT_PS1" "Add this" \
+        "PAR002-X61 PS1 projects add (user scope): no 'Add this' prompt in output"
+else
+    pass "PAR002-X59 PS1 projects add (user scope): no '[y/N]' prompt [SKIPPED: pwsh absent]"
+    pass "PAR002-X60 PS1 projects add (user scope): no 'Register this' prompt [SKIPPED: pwsh absent]"
+    pass "PAR002-X61 PS1 projects add (user scope): no 'Add this' prompt [SKIPPED: pwsh absent]"
+fi
+
+# ---------------------------------------------------------------------------
+# PAR002-X62..X86: Global-scope tier resolution parity (FR7/AC6 reconcile)
+#
+# Simulate a global install by placing the code binaries in a non-writable
+# directory (triggers _AID_SCOPE=global in both runtimes, per bin/aid:57 /
+# bin/aid.ps1:83).  Verify:
+#   - Path INSIDE  $HOME -> user  tier: success message, path in registry, no prompt
+#   - Path OUTSIDE $HOME -> shared tier: success message, path in registry, no prompt
+#   - "Register this"/"Add this" also absent (full FR7 prompt token sweep on the
+#     historically-prompting global-scope path)
+#   - Cross-runtime tier parity: Bash and PS1 resolve the same tier for the
+#     same outside-$HOME path (real assert_eq, not a manual pass)
+#
+# SKIP when running as uid 0: chmod -w is a no-op for root, so the scope probe
+# cannot be triggered and the shared-tier assertions would hard-fail.
+# ---------------------------------------------------------------------------
+if [[ "$(id -u)" -eq 0 ]]; then
+    echo "  SKIP (PAR002-X62..X86): running as root -- chmod -w global-scope simulation is a no-op for uid 0."
+    for _n in 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86; do
+        pass "PAR002-X${_n} [SKIPPED: uid 0 -- chmod -w no-op, global scope cannot be simulated]"
+    done
+else
+
+_X_GCODE_SH="$(mktemp -d "${TMP}/xgcodesh.XXXXXX")"
+_X_GCODE_PS="$(mktemp -d "${TMP}/xgcodeps.XXXXXX")"
+_X_GSTATE="$(mktemp -d "${TMP}/xgstate.XXXXXX")"
+_X_GSTATE_PS="$(mktemp -d "${TMP}/xgstateps.XXXXXX")"
+
+# Register for trap-based cleanup (write-bits restored before rm -rf $TMP).
+_X_GCODE_DIRS+=("${_X_GCODE_SH}" "${_X_GCODE_PS}")
+
+_setup_global_sh_code "${_X_GCODE_SH}"
+_setup_global_ps1_code "${_X_GCODE_PS}"
+
+# inside-$HOME project (HOME is the throwaway fakehome from the global pin).
+_X_IN_HOME="$(mktemp -d "${HOME}/xinhome.XXXXXX")"
+mkdir -p "${_X_IN_HOME}/.aid"
+
+# outside-$HOME project (under TMP which is not under HOME).
+_X_OUT_HOME="$(mktemp -d "${TMP}/xouthome.XXXXXX")"
+mkdir -p "${_X_OUT_HOME}/.aid"
+
+# X62..X67: Bash global scope -- inside $HOME -> user tier.
+run_sh_global "${_X_GCODE_SH}" "${_X_GSTATE}" projects add "${_X_IN_HOME}"
+assert_exit_eq "$RC_SH" 0 "PAR002-X62 Bash global-scope: add inside-HOME path -> exit 0"
+assert_output_contains "$OUT_SH" "user" \
+    "PAR002-X63 Bash global-scope: inside-HOME path resolves to user tier"
+assert_file_contains "${_X_GSTATE}/registry.yml" "${_X_IN_HOME}" \
+    "PAR002-X64 Bash global-scope inside-HOME: path written to user registry"
+assert_output_not_contains "$OUT_SH" "[y/N]" \
+    "PAR002-X65 Bash global-scope inside-HOME: no '[y/N]' prompt"
+assert_output_not_contains "$OUT_SH" "Register this" \
+    "PAR002-X66 Bash global-scope inside-HOME: no 'Register this' prompt"
+assert_output_not_contains "$OUT_SH" "Add this" \
+    "PAR002-X67 Bash global-scope inside-HOME: no 'Add this' prompt"
+
+# X68..X73: Bash global scope -- outside $HOME -> shared tier.
+run_sh_global "${_X_GCODE_SH}" "${_X_GSTATE}" projects add "${_X_OUT_HOME}"
+assert_exit_eq "$RC_SH" 0 "PAR002-X68 Bash global-scope: add outside-HOME path -> exit 0"
+assert_output_contains "$OUT_SH" "shared" \
+    "PAR002-X69 Bash global-scope: outside-HOME path resolves to shared tier"
+assert_file_contains "${_X_GSTATE}/registry.yml" "${_X_OUT_HOME}" \
+    "PAR002-X70 Bash global-scope outside-HOME: path written to shared registry"
+assert_output_not_contains "$OUT_SH" "[y/N]" \
+    "PAR002-X71 Bash global-scope outside-HOME: no '[y/N]' prompt"
+assert_output_not_contains "$OUT_SH" "Register this" \
+    "PAR002-X72 Bash global-scope outside-HOME: no 'Register this' prompt"
+assert_output_not_contains "$OUT_SH" "Add this" \
+    "PAR002-X73 Bash global-scope outside-HOME: no 'Add this' prompt"
+
+if [[ -n "$PWSH" ]]; then
+    # X74..X79: PS1 global scope -- inside $HOME -> user tier.
+    run_ps1_global "${_X_GCODE_PS}" "${_X_GSTATE_PS}" projects add "${_X_IN_HOME}"
+    assert_exit_eq "$RC_PS1" 0 "PAR002-X74 PS1 global-scope: add inside-HOME path -> exit 0"
+    assert_output_contains "$OUT_PS1" "user" \
+        "PAR002-X75 PS1 global-scope: inside-HOME path resolves to user tier"
+    assert_file_contains "${_X_GSTATE_PS}/registry.yml" "${_X_IN_HOME}" \
+        "PAR002-X76 PS1 global-scope inside-HOME: path written to user registry"
+    assert_output_not_contains "$OUT_PS1" "[y/N]" \
+        "PAR002-X77 PS1 global-scope inside-HOME: no '[y/N]' prompt"
+    assert_output_not_contains "$OUT_PS1" "Register this" \
+        "PAR002-X78 PS1 global-scope inside-HOME: no 'Register this' prompt"
+    assert_output_not_contains "$OUT_PS1" "Add this" \
+        "PAR002-X79 PS1 global-scope inside-HOME: no 'Add this' prompt"
+
+    # X80..X85: PS1 global scope -- outside $HOME -> shared tier.
+    run_ps1_global "${_X_GCODE_PS}" "${_X_GSTATE_PS}" projects add "${_X_OUT_HOME}"
+    assert_exit_eq "$RC_PS1" 0 "PAR002-X80 PS1 global-scope: add outside-HOME path -> exit 0"
+    assert_output_contains "$OUT_PS1" "shared" \
+        "PAR002-X81 PS1 global-scope: outside-HOME path resolves to shared tier"
+    assert_file_contains "${_X_GSTATE_PS}/registry.yml" "${_X_OUT_HOME}" \
+        "PAR002-X82 PS1 global-scope outside-HOME: path written to shared registry"
+    assert_output_not_contains "$OUT_PS1" "[y/N]" \
+        "PAR002-X83 PS1 global-scope outside-HOME: no '[y/N]' prompt"
+    assert_output_not_contains "$OUT_PS1" "Register this" \
+        "PAR002-X84 PS1 global-scope outside-HOME: no 'Register this' prompt"
+    assert_output_not_contains "$OUT_PS1" "Add this" \
+        "PAR002-X85 PS1 global-scope outside-HOME: no 'Add this' prompt"
+
+    # X86: Cross-runtime parity -- both resolve outside-HOME to "shared" tier.
+    # Extract the tier word from the success line of each runtime's outside-HOME run.
+    # The outside-HOME run was the most recent call for both runtimes above.
+    _xsh_out_tier="$(printf '%s\n' "$OUT_SH"  | grep 'registered in' | grep -oE 'user|shared' | head -1 || true)"
+    _xps_out_tier="$(printf '%s\n' "$OUT_PS1" | grep 'registered in' | grep -oE 'user|shared' | head -1 || true)"
+    assert_eq "${_xsh_out_tier}" "${_xps_out_tier}" \
+        "PAR002-X86 Bash<->PS1 global-scope parity: outside-HOME tier identical (both=${_xsh_out_tier:-?})"
+else
+    for _n in 74 75 76 77 78 79 80 81 82 83 84 85 86; do
+        pass "PAR002-X${_n} [SKIPPED: pwsh absent]"
+    done
+fi
+
+fi  # end uid-0 skip guard
 
 # ===========================================================================
 # End-of-suite: REAL_HOME blast-surface canary
