@@ -73,7 +73,11 @@ This is the single state file for work-002 (the `aid projects` command). Full pi
 | task-007 | IMPLEMENT | 002 | delivery-001 | Done | A+ (gate caught CRITICAL multi-tool truncation + culture-sort; fixed; 13 bash↔PS scenarios match; both PS prompts removed) |
 | task-008 | TEST | 002 | task-007 | Pending | — |
 | task-009 | TEST | 002 | task-007 | Pending | — |
-| task-010 | DOCUMENT | 002 | — | Pending | — |
+| task-010 | DOCUMENT | 002 | — | Done | A+ (zero findings) — release-tracking [NEW] entry; count-drift deferred to housekeep |
+
+## Follow-ups
+
+- **Count-drift (commands enumeration):** The `aid projects` command addition leaves "N commands" counts stale in `feature-inventory.md`, `infrastructure.md`, and file-header comments (`bin/aid` ~L12–18, `bin/aid.ps1` usage header). These are NOT reconciled inline here — CI does not catch count drift. Reconcile via `/aid-housekeep` (precedent: skill-count drift, Q26/Q27).
 
 ## Cross-phase Q&A
 
