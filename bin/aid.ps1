@@ -97,6 +97,35 @@ if ($script:_AidCodeHomeWritable) {
 }
 
 # ---------------------------------------------------------------------------
+# Test-AidIsProjectDir <Dir>
+# Return $true iff <Dir> has a .aid/ subdirectory AND that subdirectory is NOT
+# the CLI state home.  Excludes the state home from "is project" classification
+# so running 'aid' from $HOME (or any dir whose .aid/ == _AidStateHome) does not
+# falsely auto-register or trigger the format gate.
+#
+# Guard: resolves <Dir>\.aid to a canonical path and compares against both
+# Resolve-Path($script:_AidStateHome) and Resolve-Path($HOME\.aid).
+# Mirror of bash _aid_is_project_dir.
+# ---------------------------------------------------------------------------
+function script:Test-AidIsProjectDir {
+    param([string]$Dir)
+    $aidSub = Join-Path $Dir '.aid'
+    if (-not (Test-Path $aidSub -PathType Container)) { return $false }
+    # Resolve .aid/ to canonical real path (tolerates non-existent intermediate).
+    $aidReal  = try { (Resolve-Path -LiteralPath $aidSub -ErrorAction Stop).Path } catch { $aidSub }
+    # Resolve both state-home candidates.
+    $shReal   = try { (Resolve-Path -LiteralPath $script:_AidStateHome -ErrorAction Stop).Path } catch { $script:_AidStateHome }
+    $hdAid    = Join-Path $HOME '.aid'
+    $hdReal   = try { (Resolve-Path -LiteralPath $hdAid -ErrorAction Stop).Path } catch { $hdAid }
+    # Compare using OrdinalIgnoreCase to handle Windows path normalization.
+    if ([string]::Equals($aidReal, $shReal, [System.StringComparison]::OrdinalIgnoreCase) -or
+        [string]::Equals($aidReal, $hdReal, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $false
+    }
+    return $true
+}
+
+# ---------------------------------------------------------------------------
 # C1': Per-repo format stamp constant.
 # The current .aid/ layout version. Bumped ONLY on a breaking layout change,
 # never on every CLI release. Defined exactly once; all comparisons read this.
@@ -880,8 +909,8 @@ function script:Invoke-DcStart {
         script:Exit-Aid 2
     }
 
-    # Step 3: check .aid/ exists.
-    if (-not (Test-Path (Join-Path $Target '.aid') -PathType Container)) {
+    # Step 3: check target is an AID project (excludes the CLI state home).
+    if (-not (script:Test-AidIsProjectDir -Dir $Target)) {
         [Console]::Error.WriteLine("ERROR: aid: dashboard: no AID install found at $Target (run 'aid add <tool>' first)")
         script:Exit-Aid 7
     }
@@ -1544,8 +1573,8 @@ function script:Invoke-AidProjectsList {
         Write-Host '(no projects registered)'
     }
 
-    # Footnote: unregistered AID cwd.
-    if (-not $cwdRegistered -and (Test-Path (Join-Path $cwd '.aid') -PathType Container)) {
+    # Footnote: unregistered AID cwd (only when cwd is a real project, not the state home).
+    if (-not $cwdRegistered -and (script:Test-AidIsProjectDir -Dir $cwd)) {
         Write-Host ''
         Write-Host "(here) -- not registered; run 'aid projects add'"
     }
@@ -1575,9 +1604,9 @@ function script:Invoke-AidProjectsAdd {
         script:Exit-Aid 2
     }
 
-    # Require .aid/ directory.
-    if (-not (Test-Path (Join-Path $canon '.aid') -PathType Container)) {
-        [Console]::Error.WriteLine("ERROR: aid projects add: '$canon' is not an AID project (.aid/ not found); run 'aid add <tool>' first.")
+    # Require a real AID project (.aid/ present AND not the CLI state home).
+    if (-not (script:Test-AidIsProjectDir -Dir $canon)) {
+        [Console]::Error.WriteLine("ERROR: aid projects add: '$canon' is not an AID project; run 'aid add <tool>' first.")
         script:Exit-Aid 2
     }
 
@@ -1660,7 +1689,7 @@ function script:Invoke-AidProjects {
             { $_ -in @('-h', '--help', '-Help') } { $Action = 'help'; break }
             '--local'   { $tierOverride = '--local'; break }
             '--shared'  { $tierOverride = '--shared'; break }
-            '--verbose' { $verbose = $true; break }
+            '--verbose' { $verbose = $true; $script:_AidVerbose = $true; break }
             { $_ -match '^-' } {
                 [Console]::Error.WriteLine("ERROR: aid projects: unknown flag: $a (see 'aid projects -h')")
                 script:Exit-Aid 2
@@ -1837,7 +1866,10 @@ function script:Registry-Register {
         if (-not (Test-Path $userDotAid -PathType Container)) {
             try { New-Item -ItemType Directory -Path $userDotAid -Force -ErrorAction SilentlyContinue | Out-Null } catch {}
         }
-        [Console]::Error.WriteLine("WARN: aid: could not write to state home $($script:_AidStateHome); using $userDotAid\registry.yml")
+        # Degrade is the designed global-install behavior -- silent by default; shown under verbose.
+        if ($script:_AidVerbose) {
+            [Console]::Error.WriteLine("WARN: aid: could not write to state home $($script:_AidStateHome); using $userDotAid\registry.yml")
+        }
         $writeDir = $userDotAid
     }
     $writeReg = Join-Path $writeDir 'registry.yml'
@@ -1926,7 +1958,10 @@ function script:Registry-Unregister {
         $ex = @(script:Get-RegistryRepos -RegPath $userReg)
         if ($ex -contains $Repo) {
             $foundAny = $true
-            [Console]::Error.WriteLine("WARN: aid: could not write to state home $($script:_AidStateHome); using $userReg")
+            # Degrade is the designed global-install behavior -- silent by default; shown under verbose.
+            if ($script:_AidVerbose) {
+                [Console]::Error.WriteLine("WARN: aid: could not write to state home $($script:_AidStateHome); using $userReg")
+            }
             $ok = & $rewriteReg $userReg $ex
             if (-not $ok) {
                 [Console]::Error.WriteLine("WARN: aid: could not update the machine project registry ($userReg): write failed")
@@ -1980,8 +2015,9 @@ $script:_AidVerbose = ($env:AID_VERBOSE -eq '1')
 
 # ---- Bare aid -> dashboard landing screen ----
 if ($script:_RawArgs.Count -eq 0) {
-    # C-table: if no .aid/ -> offer (no hard refuse, decision #5); exit 0.
-    if (-not (Test-Path (Join-Path '.' '.aid') -PathType Container)) {
+    # C-table: if cwd is not an AID project -> offer (no hard refuse, decision #5); exit 0.
+    # Test-AidIsProjectDir excludes the CLI state home from "is project" classification.
+    if (-not (script:Test-AidIsProjectDir -Dir '.')) {
         script:Invoke-AidCwdNoAidOffer -Target '.'
         # Invoke-AidCwdNoAidOffer always calls Exit-Aid 0.
     }
@@ -1998,10 +2034,13 @@ if ($script:_RawArgs.Count -eq 0) {
     Write-Host "Install, update, and manage AID across your projects."
 
     # C6': format gate for cwd repo (.aid/ is guaranteed present here -- the
-    # missing-.aid/ case is intercepted above via Invoke-AidCwdNoAidOffer;
+    # non-project case is intercepted above via Invoke-AidCwdNoAidOffer;
     # register-on-encounter already ran via Invoke-AidCwdClassify).
-    $gateRc = script:Invoke-AidFormatGate -Repo '.'
-    if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
+    # Test-AidIsProjectDir guards the state-home exclusion (double-check).
+    if (script:Test-AidIsProjectDir -Dir '.') {
+        $gateRc = script:Invoke-AidFormatGate -Repo '.'
+        if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
+    }
 
     # Block 3: Installed tools for cwd.
     Write-Host ""
@@ -2078,14 +2117,15 @@ if ($SUBCMD -eq 'status') {
     if (-not $statusTarget) { $statusTarget = '.' }
     if ($script:_AidVerbose) { $env:AID_VERBOSE = '1' }
 
-    # C-table: if no .aid/ -> offer (no hard refuse, decision #5); exit 0.
-    if (-not (Test-Path (Join-Path $statusTarget '.aid') -PathType Container)) {
+    # C-table: if target is not an AID project -> offer (no hard refuse, decision #5); exit 0.
+    # Test-AidIsProjectDir excludes the CLI state home from "is project" classification.
+    if (-not (script:Test-AidIsProjectDir -Dir $statusTarget)) {
         script:Invoke-AidCwdNoAidOffer -Target $statusTarget
         # Invoke-AidCwdNoAidOffer always calls Exit-Aid 0.
     }
     # C-table register-on-encounter (best-effort, never blocks status).
     script:Invoke-AidCwdClassify -Target $statusTarget
-    # C6': format gate for status target (only when .aid/ exists).
+    # C6': format gate for status target (only when target is a real project).
     $gateRc = script:Invoke-AidFormatGate -Repo $statusTarget
     if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
 
@@ -2812,19 +2852,20 @@ if (-not (Test-Path $_AidTarget -PathType Container)) {
 }
 $_AidTarget = (Resolve-Path -LiteralPath $_AidTarget).Path
 
-# ---- C-table pre-check for 'update [tool]': missing .aid/ -> offer + exit 0 ----
+# ---- C-table pre-check for 'update [tool]': non-project -> offer + exit 0 ----
 # Must run BEFORE resolve-tools so we never reach exit-6 when no .aid/ exists.
 # 'add' uses the B-table (checked inside the dispatch case); 'remove' is not in C-table.
+# Test-AidIsProjectDir excludes the CLI state home from "is project" classification.
 if ($SUBCMD -eq 'update') {
-    if (-not (Test-Path (Join-Path $_AidTarget '.aid') -PathType Container)) {
+    if (-not (script:Test-AidIsProjectDir -Dir $_AidTarget)) {
         script:Invoke-AidCwdNoAidOffer -Target $_AidTarget
         # Invoke-AidCwdNoAidOffer always calls Exit-Aid 0.
     }
 }
 
-# C6': format gate for the update repo path (only when .aid/ exists;
+# C6': format gate for the update repo path (only when target is a real project;
 # an add to a fresh repo with no .aid/ falls through normally).
-if ($SUBCMD -eq 'update' -and (Test-Path (Join-Path $_AidTarget '.aid') -PathType Container)) {
+if ($SUBCMD -eq 'update' -and (script:Test-AidIsProjectDir -Dir $_AidTarget)) {
     $gateRc = script:Invoke-AidFormatGate -Repo $_AidTarget
     if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
 }

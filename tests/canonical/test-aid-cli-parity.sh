@@ -3017,6 +3017,144 @@ fi
 fi  # end uid-0 skip guard
 
 # ===========================================================================
+# PAR-SH: state-home exclusion parity (BUG-1 regression).
+# Both Bash and PS1 must give the "aid add" offer when run from a dir whose
+# .aid/ IS the CLI state home, and must NOT register or print "older format".
+# ===========================================================================
+echo ""
+echo "=== PAR-SH: state-home exclusion Bash<->PS1 parity ==="
+
+_PAR_SH_HOME=$(mktemp -d "${TMP}/parsh_home.XXXXXX")
+_PAR_SH_AID_DIR="${_PAR_SH_HOME}/.aid"
+mkdir -p "${_PAR_SH_AID_DIR}"
+# Fake state-home .aid/ (registry file only; no settings.yml = not a project).
+printf 'schema: 1\nprojects:\n' > "${_PAR_SH_AID_DIR}/registry.yml"
+
+_PAR_SH_SH_HOME=$(newhome); setup_sh_home "${_PAR_SH_SH_HOME}"
+_PAR_SH_PS_HOME=$(newhome); setup_ps1_home "${_PAR_SH_PS_HOME}"
+
+# Bash: run bare aid from _PAR_SH_HOME with AID_STATE_HOME == _PAR_SH_HOME/.aid.
+OUT_SH=$(cd "${_PAR_SH_HOME}" && \
+         HOME="${_PAR_SH_HOME}" \
+         AID_HOME="${_PAR_SH_SH_HOME}" \
+         AID_STATE_HOME="${_PAR_SH_HOME}/.aid" \
+         AID_NO_UPDATE_CHECK=1 \
+         bash "${_PAR_SH_SH_HOME}/bin/aid" 2>&1)
+RC_SH=$?
+
+# PS1: same.
+OUT_PS1=""
+if [[ -n "$PWSH" ]]; then
+    OUT_PS1=$(cd "${_PAR_SH_HOME}" && \
+              HOME="${_PAR_SH_HOME}" \
+              AID_HOME="${_PAR_SH_PS_HOME}" \
+              AID_STATE_HOME="${_PAR_SH_HOME}/.aid" \
+              AID_NO_UPDATE_CHECK=1 \
+              "$PWSH" -NoProfile -File "${_PAR_SH_PS_HOME}/bin/aid.ps1" 2>&1 | \
+              sed 's/\x1b\[[0-9;]*m//g')
+    RC_PS1=$?
+fi
+
+assert_exit_eq "$RC_SH" 0 "PAR-SH01a Bash bare aid from state-home dir -> exit 0"
+assert_output_contains "$OUT_SH" "no AID project here" \
+    "PAR-SH01b Bash bare aid from state-home: aid add offer"
+assert_output_not_contains "$OUT_SH" "older format" \
+    "PAR-SH01c Bash bare aid from state-home: no older-format WARN"
+assert_output_not_contains "$OUT_SH" "Registered" \
+    "PAR-SH01d Bash bare aid from state-home: no registration"
+
+if [[ -n "$PWSH" ]]; then
+    assert_exit_eq "$RC_PS1" 0 "PAR-SH02a PS1 bare aid from state-home dir -> exit 0"
+    assert_output_contains "$OUT_PS1" "no AID project here" \
+        "PAR-SH02b PS1 bare aid from state-home: aid add offer"
+    assert_output_not_contains "$OUT_PS1" "older format" \
+        "PAR-SH02c PS1 bare aid from state-home: no older-format WARN"
+    assert_output_not_contains "$OUT_PS1" "Registered" \
+        "PAR-SH02d PS1 bare aid from state-home: no registration"
+else
+    for _n in a b c d; do
+        pass "PAR-SH02${_n} [SKIPPED: pwsh absent]"
+    done
+fi
+
+# ===========================================================================
+# PAR-DW: degrade WARN verbosity gate parity (BUG-2 regression).
+# Both runtimes must suppress the "could not write to state home" WARN by
+# default and show it only under --verbose / -Verbose.
+#
+# To trigger the degrade path we need a real global install: AID_CODE_HOME
+# must be non-writable so the scope derivation sets AID_STATE_HOME to the
+# shared dir (via AID_HOME); then the shared dir is made non-writable too.
+# We use the same global-install simulation as run_projects_global.
+# ===========================================================================
+echo ""
+echo "=== PAR-DW: degrade WARN verbose-gate Bash<->PS1 parity ==="
+
+_PAR_DW_HOME=$(mktemp -d "${TMP}/pardw_home.XXXXXX")
+_PAR_DW_SHARED=$(mktemp -d "${TMP}/pardw_shared.XXXXXX")
+
+_PAR_DW_PROJ=$(mktemp -d "${TMP}/pardw_proj.XXXXXX")
+mkdir -p "${_PAR_DW_PROJ}/.aid"
+printf 'project:\n  name: test\nformat_version: 1\n' > "${_PAR_DW_PROJ}/.aid/settings.yml"
+
+_PAR_DW_SH_HOME=$(newhome); setup_sh_home "${_PAR_DW_SH_HOME}"
+_PAR_DW_PS_HOME=$(newhome); setup_ps1_home "${_PAR_DW_PS_HOME}"
+
+# Simulate global install: make AID_CODE_HOME non-writable so the scope derivation
+# selects global scope, which sets AID_STATE_HOME=AID_HOME (=_PAR_DW_SHARED).
+# Then make _PAR_DW_SHARED non-writable to trigger the degrade fallback path.
+
+run_pardw_sh() {
+    # Use --local to force user tier; make shared state non-writable to trigger degrade.
+    # Make AID_CODE_HOME non-writable first so scope-derivation goes global, which
+    # sets AID_STATE_HOME=AID_HOME; then make AID_HOME non-writable to degrade.
+    local _extra="$1"; shift
+    chmod 555 "${_PAR_DW_SH_HOME}" 2>/dev/null
+    chmod 555 "${_PAR_DW_SHARED}" 2>/dev/null
+    OUT_SH=$(HOME="${_PAR_DW_HOME}" \
+             AID_HOME="${_PAR_DW_SHARED}" \
+             AID_NO_UPDATE_CHECK=1 \
+             bash "${_PAR_DW_SH_HOME}/bin/aid" projects add "${_PAR_DW_PROJ}" --local ${_extra} 2>&1)
+    RC_SH=$?
+    chmod 755 "${_PAR_DW_SH_HOME}" "${_PAR_DW_SHARED}" 2>/dev/null
+}
+
+run_pardw_sh ""
+assert_output_not_contains "$OUT_SH" "could not write to state home" \
+    "PAR-DW01a Bash degrade WARN silent by default"
+
+run_pardw_sh "--verbose"
+assert_output_contains "$OUT_SH" "could not write to state home" \
+    "PAR-DW01b Bash degrade WARN shown under --verbose"
+
+if [[ -n "$PWSH" ]]; then
+    chmod 555 "${_PAR_DW_PS_HOME}" 2>/dev/null
+    chmod 555 "${_PAR_DW_SHARED}" 2>/dev/null
+    _PAR_DW_PS_OUT_DEF=$(HOME="${_PAR_DW_HOME}" \
+        AID_HOME="${_PAR_DW_SHARED}" \
+        AID_NO_UPDATE_CHECK=1 \
+        "$PWSH" -NoProfile -File "${_PAR_DW_PS_HOME}/bin/aid.ps1" \
+            projects add "${_PAR_DW_PROJ}" --local 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+    chmod 755 "${_PAR_DW_PS_HOME}" "${_PAR_DW_SHARED}" 2>/dev/null
+    assert_output_not_contains "$_PAR_DW_PS_OUT_DEF" "could not write to state home" \
+        "PAR-DW02a PS1 degrade WARN silent by default"
+
+    chmod 555 "${_PAR_DW_PS_HOME}" 2>/dev/null
+    chmod 555 "${_PAR_DW_SHARED}" 2>/dev/null
+    _PAR_DW_PS_OUT_VRB=$(HOME="${_PAR_DW_HOME}" \
+        AID_HOME="${_PAR_DW_SHARED}" \
+        AID_NO_UPDATE_CHECK=1 \
+        "$PWSH" -NoProfile -File "${_PAR_DW_PS_HOME}/bin/aid.ps1" \
+            projects add "${_PAR_DW_PROJ}" --local --verbose 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+    chmod 755 "${_PAR_DW_PS_HOME}" "${_PAR_DW_SHARED}" 2>/dev/null
+    assert_output_contains "$_PAR_DW_PS_OUT_VRB" "could not write to state home" \
+        "PAR-DW02b PS1 degrade WARN shown under --verbose"
+else
+    pass "PAR-DW02a [SKIPPED: pwsh absent]"
+    pass "PAR-DW02b [SKIPPED: pwsh absent]"
+fi
+
+# ===========================================================================
 # End-of-suite: REAL_HOME blast-surface canary
 #
 # Compare the snapshot of .aid/dashboard/ dirs under REAL_HOME taken before

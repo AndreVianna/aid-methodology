@@ -63,6 +63,35 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# _aid_is_project_dir <dir>
+# Return 0 (true) iff <dir> has a .aid/ subdirectory AND that subdirectory is
+# NOT the CLI state home.  Treats the CLI state home as a non-project dir so
+# running 'aid' from $HOME (or any dir whose .aid/ == AID_STATE_HOME) does not
+# falsely auto-register or trigger the format gate.
+#
+# Guard: resolves <dir>/.aid to a real path (tolerates non-existent) and
+# compares against realpath($AID_STATE_HOME) and realpath($HOME/.aid).
+# ASCII-safe: uses bash built-ins only.
+# ---------------------------------------------------------------------------
+_aid_is_project_dir() {
+    local _dir="$1"
+    # Fast out: no .aid/ subdirectory at all.
+    [[ -d "${_dir}/.aid" ]] || return 1
+    # Resolve to canonical real path, tolerating paths that may not fully exist.
+    local _aid_real
+    _aid_real="$(cd "${_dir}/.aid" 2>/dev/null && pwd -P)" || _aid_real="${_dir}/.aid"
+    # Resolve the two state-home paths.
+    local _sh_real _hd_real
+    _sh_real="$(cd "${AID_STATE_HOME}" 2>/dev/null && pwd -P)" || _sh_real="${AID_STATE_HOME}"
+    _hd_real="$(cd "${HOME}/.aid" 2>/dev/null && pwd -P)" || _hd_real="${HOME}/.aid"
+    # If .aid/ resolves to either state-home, this is NOT a project dir.
+    if [[ "${_aid_real}" == "${_sh_real}" || "${_aid_real}" == "${_hd_real}" ]]; then
+        return 1
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # C1: Per-repo format stamp constant.
 # The current .aid/ layout version.  Bumped ONLY on a breaking layout change,
 # never on every CLI release.  Defined exactly once; all comparisons read this.
@@ -1063,8 +1092,8 @@ _dc_start() {
         exit 2
     fi
 
-    # Step 3: check .aid/ exists.
-    if [[ ! -d "${target}/.aid" ]]; then
+    # Step 3: check target is an AID project (excludes the CLI state home).
+    if ! _aid_is_project_dir "${target}"; then
         echo "ERROR: aid: dashboard: no AID install found at ${target} (run 'aid add <tool>' first)" >&2
         exit 7
     fi
@@ -1624,9 +1653,12 @@ registry_register() {
         reg="${AID_STATE_HOME}/registry.yml"
     else
         # AID_STATE_HOME not writable; degrade to $HOME/.aid (user fallback).
+        # This is the designed fallback for global installs -- silent by default,
+        # visible under --verbose.  Hard failures (mktemp/write/mv) stay unconditional.
         local _fb_dir="${HOME}/.aid"
         mkdir -p "$_fb_dir" 2>/dev/null || true
-        echo "WARN: aid: could not write to state home ${AID_STATE_HOME}; using ${_fb_dir}/registry.yml" >&2
+        [[ "${_AID_VERBOSE:-0}" == "1" ]] && \
+            echo "WARN: aid: could not write to state home ${AID_STATE_HOME}; using ${_fb_dir}/registry.yml" >&2
         reg="${_fb_dir}/registry.yml"
     fi
     existing="$(_registry_read_repos "$reg")"
@@ -1719,11 +1751,13 @@ registry_unregister() {
         fi
     else
         # AID_STATE_HOME not writable; check/operate in fallback $HOME/.aid tier.
+        # Degrade WARN is silent by default (designed global-install behavior); visible under --verbose.
         mkdir -p "$_user_reg_dir" 2>/dev/null || true
         existing="$(_registry_read_repos "$_user_reg")"
         if printf '%s\n' "$existing" | grep -qxF "$repo"; then
             _found_any=1
-            echo "WARN: aid: could not write to state home ${AID_STATE_HOME}; using ${_user_reg}" >&2
+            [[ "${_AID_VERBOSE:-0}" == "1" ]] && \
+                echo "WARN: aid: could not write to state home ${AID_STATE_HOME}; using ${_user_reg}" >&2
             tmp="$(mktemp "${_user_reg}.aid-tmp.XXXXXX" 2>/dev/null)" || {
                 echo "WARN: aid: could not update the machine project registry (${_user_reg}): mktemp failed" >&2
                 return 0
@@ -2369,7 +2403,7 @@ _cmd_projects() {
             -h|--help) _action="help"; shift ;;
             --local)   _AID_TIER_OVERRIDE="--local"; shift ;;
             --shared)  _AID_TIER_OVERRIDE="--shared"; shift ;;
-            --verbose) _verbose=1; shift ;;
+            --verbose) _verbose=1; _AID_VERBOSE=1; shift ;;
             -*)
                 echo "ERROR: aid projects: unknown flag: $1 (see 'aid projects -h')" >&2
                 exit 2
@@ -2446,8 +2480,8 @@ _cmd_projects_list() {
         printf '(no projects registered)\n'
     fi
 
-    # Footnote: unregistered AID cwd.
-    if [[ "$_cwd_registered" -eq 0 && -d "${_cwd}/.aid" ]]; then
+    # Footnote: unregistered AID cwd (only when cwd is a real project, not the state home).
+    if [[ "$_cwd_registered" -eq 0 ]] && _aid_is_project_dir "${_cwd}"; then
         printf '\n'
         printf "(here) -- not registered; run 'aid projects add'\n"
     fi
@@ -2500,9 +2534,9 @@ _cmd_projects_add() {
         exit 2
     fi
 
-    # Require .aid/ directory.
-    if [[ ! -d "${_canon}/.aid" ]]; then
-        echo "ERROR: aid projects add: '${_canon}' is not an AID project (.aid/ not found); run 'aid add <tool>' first." >&2
+    # Require a real AID project (.aid/ present AND not the CLI state home).
+    if ! _aid_is_project_dir "${_canon}"; then
+        echo "ERROR: aid projects add: '${_canon}' is not an AID project; run 'aid add <tool>' first." >&2
         exit 2
     fi
 
@@ -2595,9 +2629,10 @@ _cmd_dashboard() {
     printf 'Install, update, and manage AID across your projects.\n'
 
     # C6: format gate for cwd repo (.aid/ is guaranteed present here -- the
-    # missing-.aid/ case is intercepted at the dispatch level above via
+    # non-project case is intercepted at the dispatch level above via
     # _aid_cwd_no_aid_offer; register-on-encounter already ran via _aid_cwd_classify).
-    if [[ -d "./.aid" ]]; then
+    # _aid_is_project_dir guards the state-home exclusion (double-check).
+    if _aid_is_project_dir "."; then
         _aid_format_gate "." || return $?
     fi
 
@@ -2615,8 +2650,9 @@ _cmd_dashboard() {
 
 # Early help check.
 if [[ $# -eq 0 ]]; then
-    # C-table: if no .aid/ -> offer (no hard refuse, decision #5); exit 0.
-    if [[ ! -d "./.aid" ]]; then
+    # C-table: if cwd is not an AID project -> offer (no hard refuse, decision #5); exit 0.
+    # _aid_is_project_dir excludes the CLI state home from the "is project" classification.
+    if ! _aid_is_project_dir "."; then
         _aid_cwd_no_aid_offer "."
         # _aid_cwd_no_aid_offer always exits 0.
     fi
@@ -2672,14 +2708,15 @@ if [[ "$SUBCMD" == "status" ]]; then
     [[ -z "$_AID_TARGET" && -n "${AID_TARGET:-}" ]] && _AID_TARGET="$AID_TARGET"
     _AID_TARGET="${_AID_TARGET:-.}"
     export AID_VERBOSE="$_AID_VERBOSE"
-    # C-table: if no .aid/ -> offer (no hard refuse, decision #5); exit 0.
-    if [[ ! -d "${_AID_TARGET}/.aid" ]]; then
+    # C-table: if target is not an AID project -> offer (no hard refuse, decision #5); exit 0.
+    # _aid_is_project_dir excludes the CLI state home from the "is project" classification.
+    if ! _aid_is_project_dir "${_AID_TARGET}"; then
         _aid_cwd_no_aid_offer "${_AID_TARGET}"
         # _aid_cwd_no_aid_offer always exits 0.
     fi
     # C-table register-on-encounter (best-effort, never blocks status).
     _aid_cwd_classify "${_AID_TARGET}"
-    # C6: format gate for status target (only when .aid/ exists).
+    # C6: format gate for status target (only when target is a real project).
     _aid_format_gate "${_AID_TARGET}" || exit $?
     aid_status "$_AID_TARGET"
     _status_rc=$?
@@ -2914,8 +2951,9 @@ _AID_TARGET="$(cd "$_AID_TARGET" && pwd)"
 # ---- C-table pre-check for 'update [tool]': missing .aid/ -> offer + exit 0 ----
 # Must run BEFORE _resolve_tools_for_aid so we never reach exit-6 when no .aid/ exists.
 # 'add' uses the B-table (checked inside the dispatch case); 'remove' is not in C-table.
+# _aid_is_project_dir excludes the CLI state home from the "is project" classification.
 if [[ "$SUBCMD" == "update" ]]; then
-    if [[ ! -d "${_AID_TARGET}/.aid" ]]; then
+    if ! _aid_is_project_dir "${_AID_TARGET}"; then
         _aid_cwd_no_aid_offer "${_AID_TARGET}"
         # _aid_cwd_no_aid_offer always exits 0.
     fi

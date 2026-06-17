@@ -1487,6 +1487,59 @@ Assert-Eq "$($script:_LastRC)" '0' 'T42g remove absent path -> exit 0 (idempoten
 Assert-Contains $script:_LastOut 'was not registered' 'T42h no-op: "was not registered" message emitted'
 Write-Host ""
 
+# ---------------------------------------------------------------------------
+# T43: state-home exclusion -- running aid.ps1 from a dir whose .aid/ IS the
+# CLI state home must give the "aid add" offer, no registration, no "older format".
+# Mirror of bash REG-SH regression tests (BUG-1).
+# ---------------------------------------------------------------------------
+Write-Host "--- T43: state-home exclusion (BUG-1 regression) ---"
+
+$AidHomeT43 = Join-Path $TmpRoot 'aid-home-t43'
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT43 'bin') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT43 'lib') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
+          -Destination (Join-Path $AidHomeT43 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath `
+          -Destination (Join-Path $AidHomeT43 'lib' 'AidInstallCore.psm1') -Force
+[System.IO.File]::WriteAllBytes((Join-Path $AidHomeT43 'VERSION'),
+    [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
+
+# Create a fake HOME with .aid/ that acts as the state home (no settings.yml -- not a project).
+$FakeHomeT43  = Join-Path $TmpRoot 'fake-home-t43'
+$FakeAidT43   = Join-Path $FakeHomeT43 '.aid'
+New-Item -ItemType Directory -Path $FakeAidT43 -Force | Out-Null
+# Populate state home: only registry.yml (what a state home holds).
+[System.IO.File]::WriteAllText((Join-Path $FakeAidT43 'registry.yml'), "schema: 1`nprojects:`n")
+
+# Run bare aid.ps1 from FakeHomeT43, with AID_STATE_HOME pointing to FakeAidT43.
+# This simulates a user running 'aid' from $HOME where $HOME/.aid is the state home.
+$savedHomeT43    = $env:HOME
+$savedAidHomeT43 = $env:AID_HOME
+$savedSHT43      = $env:AID_STATE_HOME
+$savedNoUpdT43   = $env:AID_NO_UPDATE_CHECK
+$env:AID_HOME            = $AidHomeT43
+$env:AID_STATE_HOME      = $FakeAidT43
+$env:AID_NO_UPDATE_CHECK = '1'
+if ($env:HOME -ne $null) { $env:HOME = $FakeHomeT43 }
+Push-Location $FakeHomeT43
+$t43Lines = & $PwshExe -NoProfile -File (Join-Path $AidHomeT43 'bin' 'aid.ps1') 2>&1
+$t43RC    = $LASTEXITCODE
+Pop-Location
+$env:HOME            = $savedHomeT43
+$env:AID_HOME        = $savedAidHomeT43
+$env:AID_STATE_HOME  = $savedSHT43
+$env:AID_NO_UPDATE_CHECK = $savedNoUpdT43
+
+$t43Out = ($t43Lines | ForEach-Object { [string]$_ }) -join "`n"
+$t43Out = [System.Text.RegularExpressions.Regex]::Replace($t43Out, $_AnsiPattern, '')
+
+Assert-Eq    "$t43RC" '0'                   'T43a bare aid.ps1 from state-home dir -> exit 0'
+Assert-Contains    $t43Out 'no AID project here' 'T43b bare aid.ps1 from state-home: aid add offer shown'
+Assert-NotContains $t43Out 'older format'        'T43c bare aid.ps1 from state-home: no older-format WARN'
+Assert-NotContains $t43Out 'Registered'          'T43d bare aid.ps1 from state-home: no registration'
+
+Write-Host ""
+
 # ===========================================================================
 # Summary
 # ===========================================================================
