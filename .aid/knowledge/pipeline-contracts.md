@@ -706,9 +706,9 @@ antigravity) and **4 agent formats** (`markdown | toml | copilot-agent | antigra
 |------------------|----------|-------------|-------|--------|-------------|-------------|
 | `canonical/agents/` | `render_agents.py` | `.claude/agents/` (Markdown) | `.codex/agents/` (TOML) | `.cursor/agents/` (Markdown) | `.github/agents/*.agent.md` (`copilot-agent`) | `.agent/rules/*.md` (`antigravity-rule`) |
 | `canonical/skills/` | `render_skills.py` | `.claude/skills/` | `.agents/skills/` | `.cursor/skills/` | `.github/skills/<slug>/SKILL.md` (native Agent Skills) | `.agent/skills/<slug>/SKILL.md` (native Skills) |
-| `canonical/templates/` | `render_templates.py` | `.claude/templates/` | `.agents/templates/` | `.cursor/templates/` | `.github/templates/` | `.agent/templates/` |
-| `canonical/recipes/` | `render_recipes.py` | `.claude/recipes/` | `.agents/recipes/` | `.cursor/recipes/` | `.github/recipes/` | `.agent/recipes/` |
-| `canonical/scripts/` | `render_canonical_scripts.py` | `.claude/scripts/` | `.agents/scripts/` | `.cursor/scripts/` | `.github/scripts/` | `.agent/scripts/` |
+| `canonical/templates/` | `render_templates.py` | `.claude/aid/templates/` | `.agents/aid/templates/` | `.cursor/aid/templates/` | `.github/aid/templates/` | `.agent/aid/templates/` |
+| `canonical/recipes/` | `render_recipes.py` | `.claude/aid/recipes/` | `.agents/aid/recipes/` | `.cursor/aid/recipes/` | `.github/aid/recipes/` | `.agent/aid/recipes/` |
+| `canonical/scripts/` | `render_canonical_scripts.py` | `.claude/aid/scripts/` | `.agents/aid/scripts/` | `.cursor/aid/scripts/` | `.github/aid/scripts/` | `.agent/aid/scripts/` |
 
 **Source:** `canonical/EMISSION-MANIFEST.md` `## Asset Kinds`, `profiles/copilot-cli.toml`
 `[layout]`, `profiles/antigravity.toml` `[layout]`
@@ -718,7 +718,7 @@ antigravity) and **4 agent formats** (`markdown | toml | copilot-agent | antigra
 > `name/description/tools/model`, `Bash`→`shell` rename via `[tool_names]`); AID skills →
 > **native Copilot Agent Skills** at `.github/skills/<slug>/SKILL.md` (folder copy via the
 > existing `render_skills` pass — no `emit_as` knob); MCP → **omitted** (no `[mcp]` table;
-> repo ships zero MCP servers); methodology rules → `.github/recipes/`/`templates/` as
+> repo ships zero MCP servers); methodology rules → `.github/aid/recipes/`/`aid/templates/` as
 > verbatim `[data]`; context file → profile-local committed `AGENTS.md` (token only, NOT
 > emitted by the renderer). ⚠️ Model slug spelling (`claude-opus-4.8` etc.) docs-only-noted
 > as GitHub's lowercase-dotted model-id convention (`profiles/copilot-cli.toml` `[model_tiers]`).

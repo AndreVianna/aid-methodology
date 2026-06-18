@@ -50,7 +50,7 @@ The Reviewer ≥ Executor invariant is enforced: the agent that grades is never 
 
 10 pipeline skills (Phase 0 Init through Phase 9 Triage) plus an optional
 `aid-summarize` for generating a single-file visual HTML summary of the
-Knowledge Base after discovery. See [`.agents/skills/README.md`](.agents/skills/README.md)
+Knowledge Base after discovery. See [`.agents/skills/aid-README.md`](.agents/skills/aid-README.md)
 for the full list. Skills live in `.agents/skills/` — Codex reads skills from this directory.
 
 Notable mechanisms:

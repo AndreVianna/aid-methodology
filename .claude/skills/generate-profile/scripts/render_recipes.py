@@ -59,16 +59,18 @@ def _recipes_output_root(profile: Profile, output_base: Path) -> Path:
     """
     Return the root directory under which the recipes/ subtree is written.
 
-    - Claude Code / Cursor: {output_root}/recipes/
-    - Codex split:          {assets_root}/recipes/
+    recipes/ is an AID-own directory — it nests under aid/ in the install tree
+    to isolate AID content from user content (SD-1 convention: aid/ parent
+    encoded in the builder, *_dir key stays as bare leaf name).
 
-    Recipes are user-facing (non-agent) assets, so they follow the
-    assets_root on split layouts (same convention as templates and skills).
+    - Single-root (Claude Code, Cursor, etc.): {output_root}/aid/recipes/
+    - Codex split:                             {assets_root}/aid/recipes/
+                                               (NOT under agents_root — R6)
     """
     if profile.layout.output_root is not None:
-        return output_base / profile.layout.output_root / profile.layout.recipes_dir
+        return output_base / profile.layout.output_root / "aid" / profile.layout.recipes_dir
     else:
-        return output_base / profile.layout.assets_root / profile.layout.recipes_dir  # type: ignore[operator]
+        return output_base / profile.layout.assets_root / "aid" / profile.layout.recipes_dir  # type: ignore[operator]
 
 
 # ---------------------------------------------------------------------------

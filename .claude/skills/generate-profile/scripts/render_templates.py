@@ -63,13 +63,17 @@ def _templates_output_root(profile: Profile, output_base: Path) -> Path:
     """
     Return the root directory under which the templates/ subtree is written.
 
-    - Claude Code / Cursor: {output_root}/templates/
-    - Codex split:          {assets_root}/templates/
+    templates/ is an AID-own directory — it nests under aid/ in the install tree
+    to isolate AID content from user content (SD-1 convention: aid/ parent
+    encoded in the builder, *_dir key stays as bare leaf name).
+
+    - Single-root (Claude Code, Cursor, etc.): {output_root}/aid/templates/
+    - Codex split:                             {assets_root}/aid/templates/
     """
     if profile.layout.output_root is not None:
-        return output_base / profile.layout.output_root / profile.layout.templates_dir
+        return output_base / profile.layout.output_root / "aid" / profile.layout.templates_dir
     else:
-        return output_base / profile.layout.assets_root / profile.layout.templates_dir  # type: ignore[operator]
+        return output_base / profile.layout.assets_root / "aid" / profile.layout.templates_dir  # type: ignore[operator]
 
 
 # ---------------------------------------------------------------------------

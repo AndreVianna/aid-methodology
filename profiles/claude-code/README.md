@@ -37,7 +37,7 @@ This gives you:
 
 10 phase skills (one per AID phase) plus an optional `aid-summarize` for generating
 a single-file visual HTML summary of the Knowledge Base. See
-[`.claude/skills/README.md`](.claude/skills/README.md) for the full list.
+[`.claude/skills/aid-README.md`](.claude/skills/aid-README.md) for the full list.
 
 Notable mechanisms:
 - **aid-execute** uses an `agents:` selector that picks the executor by task type (RESEARCH→aid-researcher, IMPLEMENT→aid-developer, etc.) and aid-reviewer for grading. Grade is computed by `templates/scripts/grade.sh` from the Reviewer's structured issue list.

@@ -6,10 +6,10 @@
 output_root          = "profiles/copilot-cli/.github"   # install_root() basename = ".github"
 agents_dir           = "agents"                          # → .github/agents/*.agent.md (sub-agents, E1)
 skills_dir           = "skills"                          # → .github/skills/<slug>/SKILL.md (native Agent Skills; Q-A/Q-C) — drives existing render_skills folder pass
-templates_dir        = "templates"                       # bare name → .github/templates/ (matches rewrite-link; Q-C)
-scripts_dir          = "scripts"                         # bare name → .github/scripts/ (matches rewrite-link; Q-C)
+templates_dir        = "templates"                       # bare leaf → builder nests to .github/aid/templates/ (SD-1: aid/ in builder, not in key)
+scripts_dir          = "scripts"                         # bare leaf → builder nests to .github/aid/scripts/ (SD-1: aid/ in builder, not in key)
 # recipes_dir intentionally unset → defaults to "recipes" (aid_profile.py:40), so recipes emit at
-#   .github/recipes/ as [data] (Q-C/mapping row). render_recipes runs UNCONDITIONALLY for every
+#   .github/aid/recipes/ (SD-1 nest). render_recipes runs UNCONDITIONALLY for every
 #   profile (run_generator.py:45) — there is no per-profile pass-selection mechanism — so recipes
 #   emit exactly like the 3 existing profiles (cursor/.cursor/recipes, etc.), no engine change.
 project_context_file = "AGENTS.md"                      # token value; the AGENTS.md doc itself is profile-local committed data (Q-J), not emitted

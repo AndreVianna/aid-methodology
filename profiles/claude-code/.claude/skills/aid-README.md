@@ -27,4 +27,4 @@
 
 Skills are loaded automatically when matched by description. The `context: fork` field means each skill runs in an isolated subagent context.
 
-See the repo's [`skills/`](../../skills/README.md) directory for human-readable documentation with rationale and examples.
+See the repo's [`skills/`](../../skills/aid-README.md) directory for human-readable documentation with rationale and examples.
