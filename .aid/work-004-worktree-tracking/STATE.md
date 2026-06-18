@@ -1,6 +1,6 @@
 # Work State — work-004-worktree-tracking
 
-> **Status:** Ready for Execute (lite path) — A+-gated
+> **Status:** Executing — delivery-001 (worktree aid/work-004-delivery-001)
 > **Phase:** Execute
 > **Minimum Grade:** A+ (per user directive)
 > **Started:** 2026-06-18
@@ -10,11 +10,11 @@ Worktree-aware pipeline tracking + state-file partitioning (per work → deliver
 
 ## Pipeline Status
 
-- **Lifecycle:** Paused-Awaiting-Input
+- **Lifecycle:** Running
 - **Phase:** Execute
-- **Active Skill:** none
-- **Updated:** 2026-06-18T12:30:00Z
-- **Pause Reason:** A+-gated (clean, 2 cycles); awaiting user go to /aid-execute
+- **Active Skill:** aid-execute
+- **Updated:** 2026-06-18T16:00:00Z
+- **Pause Reason:** —
 - **Block Reason:** —
 - **Block Artifact:** —
 
@@ -38,7 +38,7 @@ Worktree-aware pipeline tracking + state-file partitioning (per work → deliver
 
 | # | Task | Type | Wave | State | Review | Elapsed | Notes |
 |---|------|------|------|-------|--------|---------|-------|
-| 1 | Per-level STATE/SPEC template set + naming contract | DESIGN | 1 | Pending | — | — | foundation |
+| 1 | Per-level STATE/SPEC template set + naming contract | DESIGN | 1 | In Progress | — | — | foundation |
 | 2 | KB: schemas.md + project-structure.md | DOCUMENT | 2 | Pending | — | — | deps 001 |
 | 3 | writeback-state.sh canonical: retarget to per-unit STATE | REFACTOR | 2 | Pending | — | — | deps 001; `--delivery-id` contract |
 | 4 | Propagate EXECUTE writeback to 5 profile copies + dogfood (summarize EXCLUDED) | REFACTOR | 3 | Pending | — | — | deps 003; render-drift |
@@ -66,3 +66,4 @@ Worktree-aware pipeline tracking + state-file partitioning (per work → deliver
 | 2026-06-18 | A+ gate #1: NOT clean (2 CRITICAL + 2 HIGH + minors); fix cycle dispatched. SD-5 hierarchy-justification confirmed. |
 | 2026-06-18 | Fix cycle applied: #1 summarize-EXCLUDED (execute-only propagation), #2 no-allow-list premise corrected (fixed-argv pattern + optional hardening), #3 Cross-phase Q&A partitioned to delivery STATE, #4 task-014 re-waved to W6, #5 task-013 delivery-derivation from Source line, #6 home.html added, #7 Pipeline tiebreak, #8 lock-scope note. Folded SD-8 (delivery lifecycle enum) + SD-9 (independent delivery lifecycle / SPIKE-defines-sibling scenario). |
 | 2026-06-18 | A+ gate #2: CLEAN — all 8 findings Fixed, refinement sound, disjoint-writes verified. Ready for /aid-execute. |
+| 2026-06-18 | #93 (work-003) merged → work-004 plan path-refreshed onto post-#93 nested layout (EXECUTE writeback copies now `.../aid/scripts/execute/`; task-004 + SPEC + ANALYSIS). /aid-execute started in worktree aid/work-004-delivery-001 (off updated master). Version stays 1.1.0 (no bump — user directive). Wave 1: task-001 dispatched. |
