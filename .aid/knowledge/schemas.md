@@ -23,6 +23,7 @@ contracts:
   - "State advancement ordering (SD-2, for reconcile): Done > Canceled > In Review > In Progress > Blocked > Failed > Pending"
   - "DERIVED-view rule: work ## Tasks State, ## Plan / Deliveries, ## Delivery Gates, ## Cross-phase Q&A assembled/unioned at read time; never written"
 changelog:
+  - 2026-06-18: work-004-worktree-tracking task-015 — corrected §15 Foreign-keys note (stale "feature-NNN → delivery-NNN" Source format replaced with accurate "work-NNN-{name} -> delivery-NNN" + delivery/task structural FK via folder nesting); restored ER-diagram derivation relationships (WORK_STATE DERIVES from DELIVERY_STATE; DELIVERY_STATE DERIVES from TASK_STATE — the read-time union relationships omitted in the task-002 rewrite); corrected ER labels to name AUTHORED vs DERIVED sections per-entity.
   - 2026-06-18: work-004-worktree-tracking task-002 — updated §4 (Work State) for the uniform unit hierarchy (work/delivery/task folder layout), per-level STATE/SPEC schemas, DERIVED-view rule (work Tasks State/Plan Deliveries/Delivery Gates/Cross-phase Q&A derived at read), delivery independent lifecycle enum (SD-8), per-delivery Cross-phase Q&A partition (SD-5), state-not-status naming, SD-2/SD-3/SD-8/SD-9/migration rules; updated §11 (Task File) for new path delivery-NNN/tasks/task-NNN/SPEC.md + sibling STATE.md; updated §12 (Delivery Issues Log) path reference.
   - 2026-06-10: work-001-aid-dashboard task-001 (KI-002) — corrected §13 IMPEDIMENT path from `.aid/{work}/task-NNN/IMPEDIMENT.md` (wrong subdirectory shape) to `.aid/{work}/IMPEDIMENT-task-NNN.md` (flat, hyphenated; matches producer `canonical/skills/aid-execute/references/state-execute.md:322,368` and `pipeline-contracts.md ### IMPEDIMENT-task-NNN.md Contract`). Doc-only fix; no producer behavior change.
   - 2026-06-05: work-002-auto-installer — added §8a install-manifest schema (`<project>/.aid/.aid-manifest.json`, written by the `aid` CLI per `lib/aid-install-core.sh` `manifest_write`); re-pointed the §2 `tools.installed` note off the deleted `setup.sh` menu to the `aid add <tool>` CLI and named the install manifest as the authoritative installed-state record.
@@ -840,18 +841,20 @@ erDiagram
     PROJECT ||--|| DISCOVERY_STATE : "tracks"
     DISCOVERY_STATE ||--o{ KB_DOC : "lists active primary docs"
     PROJECT ||--o{ WORK : "contains"
-    WORK ||--|| WORK_STATE : "tracks (AUTHORED header + DERIVED views)"
+    WORK ||--|| WORK_STATE : "AUTHORED header (Pipeline State, Triage, Lifecycle History)"
     WORK ||--o| WORK_SPEC : "defined by (lite path; OR REQUIREMENTS+PLAN)"
     WORK ||--o{ FEATURE : "decomposes into (spec axis)"
     FEATURE ||--|| FEATURE_SPEC : "specified by (no STATE.md)"
     WORK ||--o{ DELIVERY : "execution-decomposed into (SD-1)"
     DELIVERY ||--|| DELIVERY_SPEC : "defined by"
-    DELIVERY ||--|| DELIVERY_STATE : "tracked by (AUTHORED lifecycle + DERIVED task rollup)"
+    DELIVERY ||--|| DELIVERY_STATE : "AUTHORED: lifecycle + gate + Cross-phase Q&A (SD-5)"
     DELIVERY ||--o{ TASK : "decomposes into"
-    TASK ||--|| TASK_SPEC : "defined by"
-    TASK ||--|| TASK_STATE : "tracked by (all AUTHORED)"
-    TASK ||--o| IMPEDIMENT : "may raise"
-    DELIVERY ||--o| DELIVERY_ISSUES : "aggregates HIGH"
+    TASK ||--|| TASK_SPEC : "defined by (Source links work + delivery)"
+    TASK ||--|| TASK_STATE : "AUTHORED: State/Review/Elapsed/Notes + findings + dispatch"
+    TASK ||--o| IMPEDIMENT : "may raise (file at work level)"
+    DELIVERY ||--o| DELIVERY_ISSUES : "aggregates deferred-HIGH findings"
+    WORK_STATE }o--|| DELIVERY_STATE : "DERIVES ## Plan/Deliveries + ## Delivery Gates + ## Cross-phase Q&A (read-time union)"
+    DELIVERY_STATE }o--|| TASK_STATE : "DERIVES ## Tasks State rollup (read-time union)"
     PROJECT ||--o{ INSTALL_TREE : "renders to"
     INSTALL_TREE ||--|| EMISSION_MANIFEST : "tracks"
     EMISSION_MANIFEST ||--o{ EMITTED_FILE : "records"
@@ -865,7 +868,11 @@ erDiagram
 - `task-NNN` — zero-padded 3-digit (e.g., `task-019`)
 - `Q{N}` — Q&A entry (NOT zero-padded; per `discovery-state-template.md` `### Q{N}`)
 
-**Foreign keys** are textual: task → delivery via `task.Source = "feature-NNN → delivery-NNN"` (per `task-template.md` `**Source:**` line); feature → work via `feature.Source = "REQUIREMENTS.md §5.{n}"` (per `feature.md` `## Source`).
+**Foreign keys** are textual:
+- task → work + delivery via `task.Source = "work-NNN-{name} -> delivery-NNN"` (per `task-spec-template.md` `**Source:**` line; writeback-state.sh resolves the delivery path from this field when `--delivery-id` is omitted)
+- feature → work via `feature.Source = "REQUIREMENTS.md §5.{n}"` (per `feature.md` `## Source`)
+- delivery → work via folder nesting: `work-NNN-{name}/delivery-NNN/` (structural, no explicit FK field)
+- task → delivery via folder nesting: `delivery-NNN/tasks/task-NNN/` (structural)
 
 ---
 
