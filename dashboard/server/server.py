@@ -4,7 +4,7 @@
 # Stdlib-only. Binds 127.0.0.1 only -- never a wildcard or non-loopback address (SEC-1).
 #
 # Routes (NEW closed allowlist -- replaces feature-003 two-route server):
-#   GET /                       -> CLI-home index.html from $AID_HOME/dashboard/index.html
+#   GET /                       -> CLI-home index.html from $AID_CODE_HOME/dashboard/index.html
 #   GET /api/home               -> build DM-2 model -> 200 JSON
 #   GET /r/<id>/home.html       -> <repo(id)>/.aid/dashboard/home.html  (SEC-2 by construction)
 #   GET /r/<id>/kb.html         -> <repo(id)>/.aid/dashboard/kb.html    (SEC-2 by construction)
@@ -12,7 +12,9 @@
 #   *                           -> 404
 #   non-GET                     -> 405
 #
-# Registry: $AID_HOME/registry.yml line-scan; mtime+size-keyed id->path map cache (NFR4).
+# Registry: two-tier union of $AID_STATE_HOME/registry.yml (primary) and $HOME/.aid/registry.yml
+#   (user fallback) -- mirrors _registry_read_raw_union in bin/aid.  Per-user collapse when both
+#   resolve to the same path.  mtime+size+path-set-keyed id->path map cache (NFR4).
 # No write/append/remove primitive anywhere (SEC-3).
 # No agent/LLM import anywhere (SEC-4).
 # CAN-1 site 3: stored path used verbatim (no realpath/resolve -- SEC-2/DD-5).
@@ -20,9 +22,13 @@
 # Invocation:
 #   python3 server.py --host 127.0.0.1 --port <n>
 #
-# AID_HOME resolution (env-or-self-locate):
-#   1. AID_HOME environment variable if set and non-empty.
-#   2. Self-locate: server.py -> server/ -> dashboard/ -> $AID_HOME.
+# AID_HOME (state home) resolution for registry.yml:
+#   1. AID_HOME environment variable if set and non-empty (bin/aid always passes AID_HOME=$AID_STATE_HOME).
+#   2. Self-locate fallback (direct invocation without env): server.py -> server/ -> dashboard/ -> parent.
+#
+# Code/static asset resolution (index.html, VERSION, lib/tools-catalog.txt):
+#   Always self-located from _DASHBOARD_DIR / _DASHBOARD_DIR.parent ($AID_CODE_HOME),
+#   independent of AID_HOME. These are shipped install-tree assets, NOT per-machine state.
 #
 # Python 3.11+ required. Zero third-party deps.
 
@@ -137,38 +143,126 @@ def build_id_map(repos: list[str]) -> dict[str, str]:
 
 
 # ---------------------------------------------------------------------------
-# mtime+size-keyed registry cache (NFR4 / DD-1 SS 3.4)
+# Two-tier registry union (mirrors _registry_read_raw_union in bin/aid)
 # ---------------------------------------------------------------------------
 
-_cache_key: tuple | None = None          # (mtime_ns, size)
+def _reg_stat_key(path: Path) -> tuple | None:
+    """Return (mtime_ns, size) or None if file is absent."""
+    try:
+        st = path.stat()
+        return (st.st_mtime_ns, st.st_size)
+    except FileNotFoundError:
+        return None
+
+
+def _load_union_repos(aid_home: str) -> tuple[list[str], list[str], Path, Path | None]:
+    """Return (repos, warnings, primary_path, fallback_path_or_None).
+
+    Mirrors _registry_read_raw_union from bin/aid (non-pruning raw union):
+      primary  = aid_home/registry.yml  (= AID_STATE_HOME/registry.yml)
+      fallback = $HOME/.aid/registry.yml
+
+    Per-user collapse: when aid_home resolves to the same path as $HOME/.aid,
+    read primary only (single tier, no double-read / double-count).
+
+    Otherwise: union primary + fallback, deduped by path (preserving order of
+    first occurrence -- equivalent to sort -u on a combined stream since the
+    CLI does sort -u, but we use dict.fromkeys to maintain insertion order AND
+    avoid duplicates, which is a safe superset: distinct-path dedup).
+
+    The fallback file is gracefully absent (NFR10): missing = treat as empty.
+    """
+    primary_path = Path(aid_home) / "registry.yml"
+
+    # Determine the user-tier path.
+    user_home = os.environ.get("HOME", "")
+    user_aid_path = os.path.join(user_home, ".aid") if user_home else ""
+
+    # Per-user collapse: aid_home IS the user tier -- single-tier, no double-read.
+    # Compare resolved strings (aid_home is verbatim; user_aid_path is computed).
+    # Use os.path.normpath for the comparison ONLY (not stored -- CAN-1 / DD-5).
+    is_per_user = bool(
+        user_aid_path
+        and os.path.normpath(aid_home) == os.path.normpath(user_aid_path)
+    )
+
+    if is_per_user:
+        # Single tier: read primary only.
+        repos, warnings = load_registry(primary_path)
+        return repos, warnings, primary_path, None
+
+    # Global / shared install: union primary + $HOME/.aid fallback.
+    fallback_path: Path | None = Path(user_aid_path) / "registry.yml" if user_aid_path else None
+
+    primary_repos, primary_warnings = load_registry(primary_path)
+    fallback_repos, fallback_warnings = (
+        load_registry(fallback_path) if fallback_path is not None else ([], [])
+    )
+
+    # Dedup by path, preserving first-occurrence order (mirrors sort -u semantics
+    # for sets; sort -u is stable on sorted input so order matches sorted paths).
+    seen: dict[str, None] = dict.fromkeys(primary_repos)
+    for p in fallback_repos:
+        seen.setdefault(p, None)
+    repos = list(seen.keys())
+    warnings = primary_warnings + fallback_warnings
+
+    return repos, warnings, primary_path, fallback_path
+
+
+# ---------------------------------------------------------------------------
+# mtime+size-keyed registry cache (NFR4 / DD-1 SS 3.4)
+#
+# Cache key now covers BOTH tiers: (primary_key, fallback_key, frozenset_paths).
+# A change in either tier's mtime/size OR the path-set invalidates the cache.
+# ---------------------------------------------------------------------------
+
+_cache_key: tuple | None = None          # (primary_stat_key, fallback_stat_key, frozenset(paths))
 _cache_id_map: dict[str, str] = {}       # id -> canon_path
 _cache_warnings: list[str] = []
 _cache_lock = threading.Lock()
 
 
-def _get_id_map(reg_path: Path) -> tuple[dict[str, str], list[str]]:
-    """Return (id_map, warnings), rebuilding only when registry mtime+size changes."""
+def _get_id_map(aid_home: str) -> tuple[dict[str, str], list[str]]:
+    """Return (id_map, warnings), rebuilding only when either registry tier changes.
+
+    Uses the two-tier union (_load_union_repos) and keys the cache on:
+      (primary_mtime_ns+size, fallback_mtime_ns+size, frozenset(union_path_set))
+    so a change in either file OR the deduped path-set invalidates the cache.
+    """
     global _cache_key, _cache_id_map, _cache_warnings
 
-    # One stat per request (O(1)).
-    try:
-        st = reg_path.stat()
-        key = (st.st_mtime_ns, st.st_size)
-    except FileNotFoundError:
-        key = None   # absent == empty
+    # Stat both tiers (O(1) each, before taking the lock).
+    primary_path = Path(aid_home) / "registry.yml"
+    user_home = os.environ.get("HOME", "")
+    user_aid_path = os.path.join(user_home, ".aid") if user_home else ""
+    is_per_user = bool(
+        user_aid_path
+        and os.path.normpath(aid_home) == os.path.normpath(user_aid_path)
+    )
+
+    primary_stat = _reg_stat_key(primary_path)
+    if is_per_user or not user_aid_path:
+        fallback_stat = None
+    else:
+        fallback_stat = _reg_stat_key(Path(user_aid_path) / "registry.yml")
+
+    # Build a probe key using just the stat data; we'll extend it with the path-set
+    # after the rebuild below if we actually need to rebuild.
+    probe_key = (primary_stat, fallback_stat)
 
     with _cache_lock:
-        if key == _cache_key:
-            return _cache_id_map, _cache_warnings
+        # Fast path: if the stat portion of the key matches, return cached result.
+        if _cache_key is not None and _cache_key[:2] == probe_key:
+            return _cache_id_map, list(_cache_warnings)
+
         # Rebuild.
-        if key is None:
-            _cache_id_map = {}
-            _cache_warnings = []
-        else:
-            repos, warnings = load_registry(reg_path)
-            _cache_id_map = build_id_map(repos)
-            _cache_warnings = warnings
-        _cache_key = key
+        repos, warnings, _, _ = _load_union_repos(aid_home)
+        _cache_id_map = build_id_map(repos)
+        _cache_warnings = warnings
+        # Full cache key includes the frozen path-set so a reorder/dedup change
+        # also invalidates (defensive; in practice stat changes cover this).
+        _cache_key = (primary_stat, fallback_stat, frozenset(repos))
         return _cache_id_map, list(_cache_warnings)
 
 
@@ -232,21 +326,31 @@ def _read_manifest(repo_path: str) -> tuple[str | None, list[str]]:
         return None, []
 
 
-def _read_aid_version(aid_home: str) -> str | None:
-    """Read $AID_HOME/VERSION (trimmed). None if absent."""
+def _read_aid_version() -> str | None:
+    """Read VERSION from the code home ($AID_CODE_HOME/VERSION). None if absent.
+
+    The VERSION file is a code/static asset shipped with the install tree, NOT a
+    per-machine state artifact. It lives at $AID_CODE_HOME/VERSION, resolved via
+    self-location: _DASHBOARD_DIR.parent is $AID_CODE_HOME.
+    """
     try:
-        return (Path(aid_home) / "VERSION").read_text(encoding="utf-8").strip() or None
+        return (_DASHBOARD_DIR.parent / "VERSION").read_text(encoding="utf-8").strip() or None
     except Exception:
         return None
 
 
-def _tools_catalog(aid_home: str) -> list[str]:
-    """Read manageable-tool catalog from $AID_HOME (best-effort)."""
+def _tools_catalog() -> list[str]:
+    """Read manageable-tool catalog from the code home (best-effort).
+
+    The catalog file is a code/static asset shipped with the install tree, NOT a
+    per-machine state artifact. It lives at $AID_CODE_HOME/lib/tools-catalog.txt,
+    resolved via self-location: _DASHBOARD_DIR.parent is $AID_CODE_HOME.
+    """
     # Aid's manageable tools: the five host tools aid add knows how to install
     # (antigravity, claude-code, codex, copilot-cli, cursor). We read the catalog
     # from the install tree if a catalog file is present, else fall back to the
     # static known list.
-    catalog_path = Path(aid_home) / "lib" / "tools-catalog.txt"
+    catalog_path = _DASHBOARD_DIR.parent / "lib" / "tools-catalog.txt"
     if catalog_path.is_file():
         try:
             lines = catalog_path.read_text(encoding="utf-8").splitlines()
@@ -340,9 +444,9 @@ def build_home_model(
         "schema_version": 1,
         "generated_by":   runtime,
         "machine": {
-            "aid_version":    _read_aid_version(aid_home),
+            "aid_version":    _read_aid_version(),
             "aid_home":       aid_home,
-            "tools_catalog":  _tools_catalog(aid_home),
+            "tools_catalog":  _tools_catalog(),
             "registry_path":  str(reg_path),
             "cli_runtime":    runtime,
         },
@@ -706,12 +810,17 @@ class _DashboardHandler(BaseHTTPRequestHandler):
     # ---- route handlers ----------------------------------------------------
 
     def _serve_cli_home(self) -> None:
-        """GET / -> $AID_HOME/dashboard/index.html (task-053 lands the real file)."""
-        # server.aid_home is the resolved $AID_HOME set at startup.
-        index_html = Path(self.server.aid_home) / "dashboard" / "index.html"  # type: ignore[attr-defined]
+        """GET / -> $AID_CODE_HOME/dashboard/index.html (code asset, self-located).
+
+        index.html is a CODE asset shipped with the install tree -- it resolves from
+        the server's own location (_DASHBOARD_DIR), NOT from the per-machine state home.
+        _DASHBOARD_DIR = server.py/../ = $AID_CODE_HOME/dashboard/.
+        """
+        index_html = _DASHBOARD_DIR / "index.html"
         if not index_html.is_file():
-            # Graceful 503 -- task-053 lands index.html; do NOT crash.
-            body = b"503 CLI home not yet available (task-053 will provide index.html)"
+            # Graceful 503: the file is genuinely missing from the install tree.
+            # This should not happen in a healthy install; run 'aid update' to repair.
+            body = b"503 dashboard index.html missing from install tree; run 'aid update' to repair"
             self.send_response(503)
             self.send_header("Content-Type", "text/plain; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
@@ -733,10 +842,12 @@ class _DashboardHandler(BaseHTTPRequestHandler):
     def _serve_api_home(self) -> None:
         """GET /api/home -> DM-2 model."""
         try:
-            reg_path = Path(self.server.aid_home) / "registry.yml"  # type: ignore[attr-defined]
-            id_map, warnings = _get_id_map(reg_path)
+            aid_home: str = self.server.aid_home  # type: ignore[attr-defined]
+            id_map, warnings = _get_id_map(aid_home)
+            # registry_path in the machine block shows the primary (state-home) path.
+            reg_path = Path(aid_home) / "registry.yml"
             model = build_home_model(
-                aid_home=self.server.aid_home,  # type: ignore[attr-defined]
+                aid_home=aid_home,
                 reg_path=reg_path,
                 id_map=id_map,
                 warnings=warnings,
@@ -755,8 +866,8 @@ class _DashboardHandler(BaseHTTPRequestHandler):
 
     def _serve_repo_route(self, rid: str, leaf: str, query_string: str = "") -> None:
         """Handle /r/<id>/{home.html,kb.html,api/model}."""
-        reg_path = Path(self.server.aid_home) / "registry.yml"  # type: ignore[attr-defined]
-        id_map, _ = _get_id_map(reg_path)
+        aid_home: str = self.server.aid_home  # type: ignore[attr-defined]
+        id_map, _ = _get_id_map(aid_home)
 
         canon_path = id_map.get(rid)
         if canon_path is None:
@@ -857,12 +968,14 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> None:
     args = _parse_args(argv)
 
-    # Resolve aid_home WITHOUT following symlinks, to byte-match the Node server (DD-5/SEC-5):
-    #   (1) AID_HOME env var verbatim if set and non-empty (Node uses process.env.AID_HOME as-is);
-    #   (2) else self-locate LOGICALLY: server.py -> server/ -> dashboard/ -> $AID_HOME, via
-    #       os.path (NOT Path.resolve(), which realpath-follows symlinks and would diverge from
-    #       Node's join(__dirname, "..", "..") on a symlinked $AID_HOME -> machine.aid_home /
-    #       machine.registry_path parity break).
+    # Resolve the STATE home (aid_home) WITHOUT following symlinks, to byte-match the
+    # Node server (DD-5/SEC-5). aid_home is used ONLY for state: registry.yml + registry_path
+    # in the /api/home machine block. Code assets resolve from _DASHBOARD_DIR (self-located).
+    #   (1) AID_HOME env var verbatim if set and non-empty (Node uses process.env.AID_HOME as-is;
+    #       bin/aid always passes AID_HOME=$AID_STATE_HOME so (1) is the normal path).
+    #   (2) Fallback for direct invocation without env: self-locate via os.path
+    #       (NOT Path.resolve(), which realpath-follows symlinks and would diverge from
+    #       Node's join(__dirname, "..", "..") on a symlinked AID_HOME -> parity break).
     aid_home = os.environ.get("AID_HOME") or os.path.abspath(
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
     )

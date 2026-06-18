@@ -124,16 +124,18 @@ jobs:
           $repoRoot = (Get-Location).Path
           $aidPs1   = Join-Path $repoRoot 'bin' 'aid.ps1'
           $port     = 8799
-          $pidFile  = Join-Path $repoRoot '.aid' '.temp' 'dashboard.pid'
+          # Machine-level dashboard: pid/log live in the per-user state home ($HOME/.aid),
+          # not a project dir. The command works from any cwd (no --target).
+          $pidFile  = Join-Path $HOME '.aid' '.temp' 'dashboard.pid'
 
           # Robust cleanup helper: best-effort stop so no child/pid leaks even on failure.
           $cleanup = {
-              pwsh -NoProfile -File $aidPs1 dashboard stop --target $repoRoot 2>&1 | Out-Null
+              pwsh -NoProfile -File $aidPs1 dashboard stop 2>&1 | Out-Null
           }
 
           try {
               # 1. Start node server -- expect exit 0 and a URL line in output.
-              $out1 = pwsh -NoProfile -File $aidPs1 dashboard start node --port $port --target $repoRoot 2>&1
+              $out1 = pwsh -NoProfile -File $aidPs1 dashboard start node --port $port 2>&1
               if ($LASTEXITCODE -ne 0) {
                   Write-Error "dashboard start node: expected exit 0, got $LASTEXITCODE`nOutput: $out1"
                   exit 1
@@ -166,7 +168,7 @@ jobs:
               Write-Host "dashboard start node: pid record valid JSON, bind/remote/runtime correct (PASS)"
 
               # 3. Second start while running -> exit 8 (already running).
-              $out3 = pwsh -NoProfile -File $aidPs1 dashboard start node --port $port --target $repoRoot 2>&1
+              $out3 = pwsh -NoProfile -File $aidPs1 dashboard start node --port $port 2>&1
               if ($LASTEXITCODE -ne 8) {
                   Write-Error "dashboard start (already running): expected exit 8, got $LASTEXITCODE`nOutput: $out3"
                   exit 1
@@ -174,7 +176,7 @@ jobs:
               Write-Host "dashboard start (already running): exit 8 (PASS)"
 
               # 4. Stop -> exit 0; pid file removed.
-              $out4 = pwsh -NoProfile -File $aidPs1 dashboard stop --target $repoRoot 2>&1
+              $out4 = pwsh -NoProfile -File $aidPs1 dashboard stop 2>&1
               if ($LASTEXITCODE -ne 0) {
                   Write-Error "dashboard stop: expected exit 0, got $LASTEXITCODE`nOutput: $out4"
                   exit 1
@@ -186,7 +188,7 @@ jobs:
               Write-Host "dashboard stop: exit 0, pid file removed (PASS)"
 
               # 5. Second stop (nothing running) -> exit 0 (idempotent).
-              $out5 = pwsh -NoProfile -File $aidPs1 dashboard stop --target $repoRoot 2>&1
+              $out5 = pwsh -NoProfile -File $aidPs1 dashboard stop 2>&1
               if ($LASTEXITCODE -ne 0) {
                   Write-Error "dashboard stop (idempotent): expected exit 0, got $LASTEXITCODE`nOutput: $out5"
                   exit 1
@@ -194,7 +196,7 @@ jobs:
               Write-Host "dashboard stop (idempotent): exit 0 (PASS)"
 
               # 6. Start with --remote -> exit 10 (clear-fail stub).
-              $out6 = pwsh -NoProfile -File $aidPs1 dashboard start node --remote --port $port --target $repoRoot 2>&1
+              $out6 = pwsh -NoProfile -File $aidPs1 dashboard start node --remote --port $port 2>&1
               if ($LASTEXITCODE -ne 10) {
                   Write-Error "dashboard start --remote: expected exit 10, got $LASTEXITCODE`nOutput: $out6"
                   exit 1

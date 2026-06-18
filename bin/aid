@@ -159,14 +159,15 @@ _aid_usage() {
             printf '  Print the installed aid CLI version and exit 0.\n'
             ;;
         dashboard)
-            printf 'aid dashboard start <node|python> [--remote] [--port <n>] [--target <dir>]\n'
-            printf 'aid dashboard stop                [--target <dir>]\n'
-            printf '  Start or stop the local pipeline dashboard for the current project.\n'
+            printf 'aid dashboard start <node|python> [--remote] [--port <n>]\n'
+            printf 'aid dashboard stop\n'
+            printf '  Start or stop the machine-level pipeline dashboard (serves all registered projects).\n'
             printf '  <node|python>  select the server runtime to launch.\n'
             printf '  --remote       also expose it to authorized users over a private channel (never public);\n'
             printf '                 fails clearly if that mechanism is unavailable -- never binds publicly.\n'
             printf '  --port <n>     listen port on 127.0.0.1 (default 8787).\n'
             printf '  The dashboard binds to 127.0.0.1 only. '"'"'stop'"'"' is idempotent and also tears down --remote.\n'
+            printf '  Works from any directory (not tied to the current project).\n'
             ;;
         projects)
             printf 'aid projects [list] [--local|--shared] [--verbose]\n'
@@ -1008,7 +1009,6 @@ _cmd_dashboard_ctl() {
     fi
 
     # --- shared arg parsing ---
-    local _dc_target=""
     local _dc_verbose=0
     local _dc_port=8787
     local _dc_remote=0
@@ -1028,9 +1028,6 @@ _cmd_dashboard_ctl() {
                 _aid_usage dashboard
                 exit 0
                 ;;
-            --target)
-                [[ $# -lt 2 ]] && _aid_die "dashboard: --target requires a value" 2
-                _dc_target="$2"; shift 2 ;;
             --verbose) _dc_verbose=1; shift ;;
             --remote)
                 if [[ "$verb" == "stop" ]]; then
@@ -1060,18 +1057,10 @@ _cmd_dashboard_ctl() {
         esac
     done
 
-    # Apply env-var fallback for target.
-    [[ -z "$_dc_target" && -n "${AID_TARGET:-}" ]] && _dc_target="$AID_TARGET"
-    _dc_target="${_dc_target:-.}"
-    if [[ ! -d "$_dc_target" ]]; then
-        _aid_die "dashboard: target directory does not exist: ${_dc_target}" 2
-    fi
-    _dc_target="$(cd "$_dc_target" && pwd)"
-
     if [[ "$verb" == "start" ]]; then
-        _dc_start "$_dc_runtime" "$_dc_port" "$_dc_remote" "$_dc_target" "$_dc_verbose"
+        _dc_start "$_dc_runtime" "$_dc_port" "$_dc_remote" "$_dc_verbose"
     else
-        _dc_stop "$_dc_target" "$_dc_verbose"
+        _dc_stop "$_dc_verbose"
     fi
 }
 
@@ -1079,8 +1068,7 @@ _dc_start() {
     local runtime="$1"
     local port="$2"
     local remote="$3"
-    local target="$4"
-    local verbose="$5"
+    local verbose="$4"
 
     # Step 1: validate runtime.
     if [[ -z "$runtime" ]]; then
@@ -1092,17 +1080,10 @@ _dc_start() {
         exit 2
     fi
 
-    # Step 3: check target is an AID project (excludes the CLI state home).
-    if ! _aid_is_project_dir "${target}"; then
-        echo "ERROR: aid: dashboard: no AID install found at ${target} (run 'aid add <tool>' first)" >&2
-        exit 7
-    fi
-
-    # C6: format gate before operating (refuse on newer-format repo).
-    _aid_format_gate "${target}" || exit $?
-
-    local pid_file="${target}/.aid/.temp/dashboard.pid"
-    local log_file="${target}/.aid/.temp/dashboard.log"
+    # pid/log live in the per-user state home (.temp), always writable.
+    # FR10 precedent: always per-user $HOME/.aid, never AID_STATE_HOME on global installs.
+    local pid_file="${HOME}/.aid/.temp/dashboard.pid"
+    local log_file="${HOME}/.aid/.temp/dashboard.log"
 
     # Step 4: already-running guard (stale-record reclaim included).
     if [[ -f "$pid_file" ]]; then
@@ -1150,8 +1131,8 @@ _dc_start() {
         exit 7
     fi
 
-    # Ensure log dir exists.
-    mkdir -p "${target}/.aid/.temp"
+    # Ensure log dir exists (per-user state home, always writable).
+    mkdir -p "${HOME}/.aid/.temp"
 
     # Step 7: spawn the server child in a new session (clean process-group kill on stop).
     # SEC-1: literal 127.0.0.1 -- never read from input/config/env.
@@ -1211,7 +1192,6 @@ _dc_start() {
   "remote": false,
   "remote_handle": null,
   "started_at": "${started_at}",
-  "target": "${target}",
   "logfile": "${log_file}"
 }
 EOF
@@ -1244,7 +1224,6 @@ EOF
   "remote": true,
   "remote_handle": "${expose_handle}",
   "started_at": "${started_at}",
-  "target": "${target}",
   "logfile": "${log_file}"
 }
 EOF
@@ -1255,38 +1234,18 @@ EOF
         else
             echo "Remote exposure is UP (tailnet-private), but the .ts.net URL could not be auto-detected -- run 'tailscale status' on this host to find it."
         fi
-        # DR-1 registry side-effect: auto-register the dashboard target project (idempotent).
-        # FR7: resolve tier deterministically; but never-elevate: if shared would need
-        # elevation (shared dir not user-writable), degrade silently to user (no prompt).
-        local _dc_tier
-        _dc_tier="$(_aid_resolve_tier "$target")"
-        if [[ "$_dc_tier" == "shared" && ! -w "${AID_STATE_HOME}" ]]; then
-            _dc_tier="user"
-        fi
-        registry_register "$target" "$_dc_tier"
         exit 0
     fi
 
     # Step 11: print success (local-only).
     echo "Dashboard (${runtime}) running at http://127.0.0.1:${port} -- stop with: aid dashboard stop"
-    # DR-1 registry side-effect: auto-register the dashboard target project (idempotent).
-    # _dc_target is already CAN-1 (cd && pwd, no -P, applied at the dashboard-ctl seam).
-    # FR7: resolve tier deterministically; but never-elevate: if shared would need
-    # elevation (shared dir not user-writable), degrade silently to user (no prompt).
-    local _dc_tier2
-    _dc_tier2="$(_aid_resolve_tier "$target")"
-    if [[ "$_dc_tier2" == "shared" && ! -w "${AID_STATE_HOME}" ]]; then
-        _dc_tier2="user"
-    fi
-    registry_register "$target" "$_dc_tier2"
     exit 0
 }
 
 _dc_stop() {
-    local target="$1"
-    local verbose="$2"
+    local verbose="$1"
 
-    local pid_file="${target}/.aid/.temp/dashboard.pid"
+    local pid_file="${HOME}/.aid/.temp/dashboard.pid"
 
     # Step 3: read record; absent or stale -> idempotent exit 0.
     if [[ ! -f "$pid_file" ]]; then

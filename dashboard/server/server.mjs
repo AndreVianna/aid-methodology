@@ -6,12 +6,20 @@
  * Entry-point:
  *   node dashboard/server/server.mjs --host 127.0.0.1 --port <n>
  *
- * AID_HOME resolution (env-or-self-locate):
- *   1. AID_HOME environment variable if set and non-empty.
- *   2. Self-locate: server.mjs -> server/ -> dashboard/ -> $AID_HOME (join(__dirname, "..", "..")).
+ * AID_HOME (state home) resolution for registry.yml:
+ *   1. AID_HOME environment variable if set and non-empty (bin/aid always passes AID_HOME=$AID_STATE_HOME).
+ *   2. Self-locate fallback (direct invocation without env): join(__dirname, "..", "..").
+ *
+ * Registry: two-tier union of AID_HOME/registry.yml (primary) and $HOME/.aid/registry.yml
+ *   (user fallback) -- mirrors _registry_read_raw_union in bin/aid. Per-user collapse when
+ *   both paths normalize to the same location.
+ *
+ * Code/static asset resolution (index.html, VERSION, lib/tools-catalog.txt):
+ *   Always self-located from _DASHBOARD_DIR_MJS / _CODE_HOME (derived from __filename),
+ *   independent of AID_HOME. These are shipped install-tree assets, NOT per-machine state.
  *
  * Routes (NEW closed allowlist -- replaces feature-003 two-route server):
- *   GET /                    -> CLI-home index.html from $AID_HOME/dashboard/index.html
+ *   GET /                    -> CLI-home index.html from $AID_CODE_HOME/dashboard/index.html
  *   GET /api/home            -> build DM-2 model -> 200 JSON
  *   GET /r/<id>/home.html    -> <repo(id)>/.aid/dashboard/home.html (SEC-2 by construction)
  *   GET /r/<id>/kb.html      -> <repo(id)>/.aid/dashboard/kb.html  (SEC-2 by construction)
@@ -36,7 +44,7 @@
 
 import { createServer } from "http";
 import { readFileSync, statSync, existsSync } from "fs";
-import { join, dirname, basename } from "path";
+import { join, dirname, basename, normalize } from "path";
 import { fileURLToPath } from "url";
 import { createHash } from "crypto";
 
@@ -152,42 +160,98 @@ function buildIdMap(repos) {
 }
 
 // ---------------------------------------------------------------------------
-// mtime+size-keyed registry cache (NFR4 / DD-1 SS 3.4)
+// Two-tier registry union (mirrors _registry_read_raw_union in bin/aid)
 // ---------------------------------------------------------------------------
 
-let _cacheKey = null;         // "${mtimeMs}:${size}" or null (absent)
+function regStatKey(regPath) {
+  // Returns "${mtimeMs}:${size}" or null if absent.
+  try {
+    const st = statSync(regPath);
+    return st.mtimeMs + ":" + st.size;
+  } catch (e) {
+    if (e && e.code === "ENOENT") return null;
+    // Unreadable: treat as absent for cache purposes.
+    return null;
+  }
+}
+
+function loadUnionRepos(aidHome) {
+  // Returns { repos, warnings, primaryPath, fallbackPath }.
+  // Mirrors _registry_read_raw_union from bin/aid (non-pruning raw union):
+  //   primary  = aidHome/registry.yml  (= AID_STATE_HOME/registry.yml)
+  //   fallback = $HOME/.aid/registry.yml
+  //
+  // Per-user collapse: when aidHome resolves to $HOME/.aid, read primary only
+  // (single tier, no double-read / double-count).
+  //
+  // Otherwise: union primary + fallback, deduped by path (first-occurrence order).
+  // The fallback file is gracefully absent (NFR10).
+
+  const primaryPath = join(aidHome, "registry.yml");
+  const userHome = process.env.HOME || "";
+  const userAidPath = userHome ? join(userHome, ".aid") : "";
+
+  // Per-user collapse: compare normalized strings (for comparison only -- not stored, CAN-1/DD-5).
+  const isPerUser = !!(userAidPath && normalize(aidHome) === normalize(userAidPath));
+
+  if (isPerUser || !userAidPath) {
+    const { repos, warnings } = loadRegistry(primaryPath);
+    return { repos, warnings, primaryPath, fallbackPath: null };
+  }
+
+  // Global / shared install: union primary + $HOME/.aid fallback.
+  const fallbackPath = join(userAidPath, "registry.yml");
+  const { repos: primaryRepos, warnings: primaryWarnings } = loadRegistry(primaryPath);
+  const { repos: fallbackRepos, warnings: fallbackWarnings } = loadRegistry(fallbackPath);
+
+  // Dedup by path, preserving first-occurrence order.
+  const seen = new Map();
+  for (const p of primaryRepos) seen.set(p, true);
+  for (const p of fallbackRepos) { if (!seen.has(p)) seen.set(p, true); }
+  const repos = Array.from(seen.keys());
+  const warnings = primaryWarnings.concat(fallbackWarnings);
+
+  return { repos, warnings, primaryPath, fallbackPath };
+}
+
+// ---------------------------------------------------------------------------
+// mtime+size-keyed registry cache (NFR4 / DD-1 SS 3.4)
+//
+// Cache key now covers BOTH tiers: [primaryStat, fallbackStat, frozenPathsJSON].
+// A change in either tier's mtime/size OR the path-set invalidates the cache.
+// ---------------------------------------------------------------------------
+
+let _cacheKey = null;         // JSON string of [primaryStat, fallbackStat, sortedPaths]
 let _cacheIdMap = new Map();  // id -> canonPath
 let _cacheWarnings = [];
 
-function getIdMap(regPath) {
-  // One stat per request (O(1)).
-  let key = null;
-  try {
-    const st = statSync(regPath);
-    key = st.mtimeMs + ":" + st.size;
-  } catch (e) {
-    if (!e || e.code !== "ENOENT") {
-      // Unreadable: return empty (NFR10)
-      return { idMap: new Map(), warnings: ["registry unreadable (" + e + "); empty best-effort"] };
-    }
-    // ENOENT: absent == empty
-    key = null;
-  }
+function getIdMap(aidHome) {
+  // Stat both tiers (O(1) each).
+  const primaryPath = join(aidHome, "registry.yml");
+  const userHome = process.env.HOME || "";
+  const userAidPath = userHome ? join(userHome, ".aid") : "";
+  const isPerUser = !!(userAidPath && normalize(aidHome) === normalize(userAidPath));
 
-  if (key === _cacheKey) {
-    return { idMap: _cacheIdMap, warnings: _cacheWarnings };
+  const primaryStat = regStatKey(primaryPath);
+  const fallbackStat = (isPerUser || !userAidPath) ? null : regStatKey(join(userAidPath, "registry.yml"));
+
+  // Fast probe key (stat portion only).
+  const probeKey = JSON.stringify([primaryStat, fallbackStat]);
+
+  // Fast path: if the stat portion of the key matches, return cached result.
+  if (_cacheKey !== null) {
+    const cached = JSON.parse(_cacheKey);
+    if (cached[0] === primaryStat && cached[1] === fallbackStat) {
+      return { idMap: _cacheIdMap, warnings: _cacheWarnings };
+    }
   }
 
   // Rebuild.
-  if (key === null) {
-    _cacheIdMap = new Map();
-    _cacheWarnings = [];
-  } else {
-    const { repos, warnings } = loadRegistry(regPath);
-    _cacheIdMap = buildIdMap(repos);
-    _cacheWarnings = warnings;
-  }
-  _cacheKey = key;
+  const { repos, warnings } = loadUnionRepos(aidHome);
+  _cacheIdMap = buildIdMap(repos);
+  _cacheWarnings = warnings;
+  // Full cache key: stat pair + sorted path-set (defensive; covers dedup changes).
+  _cacheKey = JSON.stringify([primaryStat, fallbackStat, repos.slice().sort()]);
   return { idMap: _cacheIdMap, warnings: _cacheWarnings };
 }
 
@@ -298,16 +362,28 @@ function readManifest(repoPath) {
   }
 }
 
-function readAidVersion(aidHome) {
+// _CODE_HOME: $AID_CODE_HOME resolved via self-location.
+// server.mjs lives at $AID_CODE_HOME/dashboard/server/server.mjs, so:
+//   __dirname_srv             = $AID_CODE_HOME/dashboard/server/
+//   join(__dirname_srv, "..")  = $AID_CODE_HOME/dashboard/
+//   join(__dirname_srv, "..", "..") = $AID_CODE_HOME
+// Used for CODE assets (VERSION, lib/tools-catalog.txt, dashboard/index.html)
+// which are shipped with the install tree, NOT per-machine state artifacts.
+const _DASHBOARD_DIR_MJS = join(__dirname_srv, "..");
+const _CODE_HOME = join(__dirname_srv, "..", "..");
+
+function readAidVersion() {
+  // VERSION is a CODE asset at $AID_CODE_HOME/VERSION, NOT in the state home.
   try {
-    return readFileSync(join(aidHome, "VERSION"), "utf8").trim() || null;
+    return readFileSync(join(_CODE_HOME, "VERSION"), "utf8").trim() || null;
   } catch (_) {
     return null;
   }
 }
 
-function toolsCatalog(aidHome) {
-  const catalogPath = join(aidHome, "lib", "tools-catalog.txt");
+function toolsCatalog() {
+  // tools-catalog.txt is a CODE asset at $AID_CODE_HOME/lib/tools-catalog.txt, NOT in state home.
+  const catalogPath = join(_CODE_HOME, "lib", "tools-catalog.txt");
   try {
     const lines = readFileSync(catalogPath, "utf8").split(/\r?\n/);
     return lines.map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
@@ -393,9 +469,9 @@ function buildHomeModel(aidHome, regPath, idMap, warnings, runtime) {
     schema_version: 1,
     generated_by:   runtime,
     machine: {
-      aid_version:    readAidVersion(aidHome),
+      aid_version:    readAidVersion(),
       aid_home:       aidHome,
-      tools_catalog:  toolsCatalog(aidHome),
+      tools_catalog:  toolsCatalog(),
       registry_path:  regPath,
       cli_runtime:    runtime,
     },
@@ -549,10 +625,15 @@ function handler(req, res) {
 }
 
 function serveCliHome(res) {
-  // GET / -> $AID_HOME/dashboard/index.html (task-053 lands the real file).
-  const indexPath = join(AID_HOME, "dashboard", "index.html");
+  // GET / -> $AID_CODE_HOME/dashboard/index.html (code asset, self-located).
+  // index.html is a CODE asset shipped with the install tree -- it resolves from
+  // _DASHBOARD_DIR_MJS (= server.mjs/../../ = $AID_CODE_HOME/dashboard/), NOT from
+  // the per-machine AID_HOME (state home).
+  const indexPath = join(_DASHBOARD_DIR_MJS, "index.html");
   if (!existsSync(indexPath)) {
-    const body = Buffer.from("503 CLI home not yet available (task-053 will provide index.html)", "utf-8");
+    // Graceful 503: the file is genuinely missing from the install tree.
+    // This should not happen in a healthy install; run 'aid update' to repair.
+    const body = Buffer.from("503 dashboard index.html missing from install tree; run 'aid update' to repair", "utf-8");
     res.writeHead(503, {
       "Content-Type": "text/plain; charset=utf-8",
       "Content-Length": body.length,
@@ -579,8 +660,9 @@ function serveCliHome(res) {
 function serveApiHome(res) {
   let bodyBuf;
   try {
+    const { idMap, warnings } = getIdMap(AID_HOME);
+    // registry_path in the machine block shows the primary (state-home) path.
     const regPath = join(AID_HOME, "registry.yml");
-    const { idMap, warnings } = getIdMap(regPath);
     const model = buildHomeModel(AID_HOME, regPath, idMap, warnings, "node");
     bodyBuf = serializeHome(model);
   } catch (err) {
@@ -597,8 +679,7 @@ function serveApiHome(res) {
 }
 
 function serveRepoRoute(res, rid, leaf, queryString) {
-  const regPath = join(AID_HOME, "registry.yml");
-  const { idMap } = getIdMap(regPath);
+  const { idMap } = getIdMap(AID_HOME);
 
   const canonPath = idMap.get(rid);
   if (!canonPath) {
