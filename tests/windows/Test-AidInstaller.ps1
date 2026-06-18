@@ -19,10 +19,11 @@
 #   T11  aid remove codex removes it
 #   T12  aid remove (no arg, -Force) removes the project AID install
 #   T13  Manifest stays LF/no-BOM after all CLI operations
-#   T14  protect-on-diff: user-owned root-agent → .aid-new + exit 5
-#   T15  -Force overrides protect-on-diff
+#   T14  root-agent in-place update (branch C2: marker-less sha-mismatch -> excise + re-wrap)
+#   T15  root-agent in-place update (branch B: dst has AID:BEGIN/END -> replace region only)
 #   T16  Uninstall removes install roots (dirs actually GONE)
 #   T17  Uninstall with no manifest → exit 6
+#   T45  prune: stale aid-prefixed file removed on update; user file untouched
 #   T37  aid projects help / -h → exit 0 + usage strings
 #   T38  aid projects list renders registered project + ASCII * cwd marker
 #   T39  aid projects add registers existing .aid/ project (tools untouched)
@@ -421,43 +422,103 @@ Assert-FileLF (Join-Path $AidHomeT08 'VERSION')                'T13c AID_HOME/VE
 Write-Host ""
 
 # ===========================================================================
-# T14-T15: protect-on-diff
+# T14-T15: root-agent in-place region update (replaces old protect-on-diff)
 # ===========================================================================
-Write-Host "=== T14-T15: protect-on-diff ==="
+Write-Host "=== T14-T15: root-agent in-place region update ==="
 
-# T14: user-owned CLAUDE.md → .aid-new created, exit 5, original preserved.
+# T14: Branch C2 - marker-less sha-mismatch (user-edited CLAUDE.md, no AID:BEGIN/END).
+# New behavior: AID sections excised by stem match, re-wrapped in AID:BEGIN/END in-place.
+# Exit 0 always. No .aid-new written. Manifest status is 'owned'.
 $ProjT14 = Join-Path $TmpRoot 'project-t14'
 New-Item -ItemType Directory -Path $ProjT14 -Force | Out-Null
 
-$userClaudeBytes = [System.Text.Encoding]::UTF8.GetBytes("User-owned CLAUDE.md -- not from AID`n")
+# Write a user-owned CLAUDE.md that contains AID-managed sections inline (no markers) plus
+# user-specific content.  The installer must excise the AID sections, re-wrap them in
+# AID:BEGIN/END, and preserve the user content (## Project block).
+$userClaudeContent = "# CLAUDE.md`n`n## Project`nMy project description.`n`n## Tracking discipline`nOld tracking text.`n`n## Knowledge Base`nOld KB text.`n`n## Review output format`nOld review text.`n`n## Permissions`nOld perms text.`n"
+$userClaudeBytes = [System.Text.Encoding]::UTF8.GetBytes($userClaudeContent)
 [System.IO.File]::WriteAllBytes((Join-Path $ProjT14 'CLAUDE.md'), $userClaudeBytes)
 
 Run-Install @('-Tool', 'claude-code', '-FromBundle', $FixClaudeCode, '-TargetDirectory', $ProjT14)
-Assert-Eq "$($script:_LastRC)" '5' 'T14a protect-on-diff → exit 5'
-Assert-FileExists (Join-Path $ProjT14 'CLAUDE.md.aid-new') 'T14b CLAUDE.md.aid-new written'
+Assert-Eq "$($script:_LastRC)" '0' 'T14a root-agent in-place update (C2) -> exit 0'
 
-$origContent = Get-Content -LiteralPath (Join-Path $ProjT14 'CLAUDE.md') -Raw
-Assert-Contains $origContent 'User-owned' 'T14c original CLAUDE.md not overwritten'
+# No .aid-new must exist under any branch.
+Assert (-not (Test-Path (Join-Path $ProjT14 'CLAUDE.md.aid-new'))) `
+    'T14b no .aid-new written' '.aid-new must not exist (new behavior: in-place only)'
 
+$updatedContent14 = Get-Content -LiteralPath (Join-Path $ProjT14 'CLAUDE.md') -Raw
+# AID region must be wrapped in markers now.
+Assert-Contains $updatedContent14 '<!-- AID:BEGIN -->' 'T14c CLAUDE.md now has AID:BEGIN marker'
+Assert-Contains $updatedContent14 '<!-- AID:END -->'   'T14d CLAUDE.md now has AID:END marker'
+# User content (## Project section) must be preserved.
+Assert-Contains $updatedContent14 'My project description.' 'T14e user ## Project content preserved'
+
+# Manifest status must be 'owned' (pending-merge path eliminated).
 $m14 = Get-Content -LiteralPath (Join-Path $ProjT14 '.aid' '.aid-manifest.json') -Raw
-Assert-Contains $m14 'pending-merge' 'T14d manifest status is pending-merge'
+Assert-Contains $m14 '"owned"' 'T14f manifest status is owned (not pending-merge)'
 
-# .aid-new is a Copy-Item of the LF profile source — must be LF/no-BOM.
-Assert-FileLF (Join-Path $ProjT14 'CLAUDE.md.aid-new') 'T14e .aid-new is LF/no-BOM'
-
-# T15: -Force overrides protect-on-diff.
+# T15: Branch B - destination already has AID:BEGIN/END markers.
+# Install into a project where CLAUDE.md already has AID markers + user content outside them.
+# Installer must replace only the marked region, preserve everything outside, exit 0.
 $ProjT15 = Join-Path $TmpRoot 'project-t15'
 New-Item -ItemType Directory -Path $ProjT15 -Force | Out-Null
-[System.IO.File]::WriteAllBytes((Join-Path $ProjT15 'CLAUDE.md'), $userClaudeBytes)
 
-Run-Install @('-Tool', 'claude-code', '-Force', '-FromBundle', $FixClaudeCode, '-TargetDirectory', $ProjT15)
-Assert-Eq "$($script:_LastRC)" '0' 'T15a -Force protect-on-diff → exit 0'
+# Write a CLAUDE.md with AID:BEGIN/END markers and extra user content outside the region.
+$markedClaudeContent = "# CLAUDE.md`n`n## Project`nUser project section.`n`n<!-- AID:BEGIN -->`n## Tracking discipline`nOLD tracking content that will be replaced.`n<!-- AID:END -->`n`n## Extra User Section`nUser-added content after the AID region.`n"
+$markedClaudeBytes = [System.Text.Encoding]::UTF8.GetBytes($markedClaudeContent)
+[System.IO.File]::WriteAllBytes((Join-Path $ProjT15 'CLAUDE.md'), $markedClaudeBytes)
+
+Run-Install @('-Tool', 'claude-code', '-FromBundle', $FixClaudeCode, '-TargetDirectory', $ProjT15)
+Assert-Eq "$($script:_LastRC)" '0' 'T15a root-agent in-place update (B) -> exit 0'
+
+# No .aid-new must exist.
 Assert (-not (Test-Path (Join-Path $ProjT15 'CLAUDE.md.aid-new'))) `
-    'T15b no .aid-new with -Force' '.aid-new should not exist'
+    'T15b no .aid-new written (branch B)' '.aid-new must not exist'
 
-$forcedContent = Get-Content -LiteralPath (Join-Path $ProjT15 'CLAUDE.md') -Raw
-Assert (-not ($forcedContent -like '*User-owned*')) `
-    'T15c user content overwritten by -Force' 'user content still present after -Force'
+$updatedContent15 = Get-Content -LiteralPath (Join-Path $ProjT15 'CLAUDE.md') -Raw
+# Markers must be present.
+Assert-Contains $updatedContent15 '<!-- AID:BEGIN -->' 'T15c AID:BEGIN marker present after region update'
+Assert-Contains $updatedContent15 '<!-- AID:END -->'   'T15d AID:END marker present after region update'
+# Content outside the marked region must be preserved.
+Assert-Contains $updatedContent15 'User project section.'  'T15e user content before region preserved'
+Assert-Contains $updatedContent15 'User-added content after the AID region.' 'T15f user content after region preserved'
+# The OLD AID content inside the region must have been replaced by the new profile content.
+Assert (-not ($updatedContent15 -like '*OLD tracking content that will be replaced.*')) `
+    'T15g old AID region content replaced' 'old region content must be gone after update'
+Write-Host ""
+
+# ===========================================================================
+# T45: prune - stale aid-prefixed file removed on update; user file untouched
+# ===========================================================================
+Write-Host "=== T45: prune (stale aid-prefixed file removed, user file kept) ==="
+
+$ProjT45 = Join-Path $TmpRoot 'project-t45'
+New-Item -ItemType Directory -Path $ProjT45 -Force | Out-Null
+
+# First install to get a proper baseline manifest.
+Run-Install @('-Tool', 'claude-code', '-FromBundle', $FixClaudeCode, '-TargetDirectory', $ProjT45)
+Assert-Eq "$($script:_LastRC)" '0' 'T45-pre install claude-code -> exit 0'
+
+# Plant a stale aid-prefixed file in .claude/skills/ (simulating a file from an older profile
+# version that the new profile no longer ships).
+$stalePath45 = Join-Path $ProjT45 '.claude' 'skills' 'aid-stale-old-skill.md'
+$staleBytes45 = [System.Text.Encoding]::UTF8.GetBytes("# stale old skill`n")
+[System.IO.File]::WriteAllBytes($stalePath45, $staleBytes45)
+
+# Plant a user (non-aid-prefixed) file in .claude/skills/ - must NOT be pruned.
+$userPath45 = Join-Path $ProjT45 '.claude' 'skills' 'my-custom-skill.md'
+$userBytes45 = [System.Text.Encoding]::UTF8.GetBytes("# user custom skill`n")
+[System.IO.File]::WriteAllBytes($userPath45, $userBytes45)
+
+# Re-run install (update) - the new profile does not include aid-stale-old-skill.md,
+# so prune must remove it; my-custom-skill.md has no aid- prefix so it must survive.
+Run-Install @('-Tool', 'claude-code', '-FromBundle', $FixClaudeCode, '-TargetDirectory', $ProjT45)
+Assert-Eq "$($script:_LastRC)" '0' 'T45a update install -> exit 0'
+
+Assert (-not (Test-Path $stalePath45 -PathType Leaf)) `
+    'T45b stale aid-prefixed file pruned after update' 'stale aid-* file must be removed by prune'
+Assert (Test-Path $userPath45 -PathType Leaf) `
+    'T45c user (non-aid-prefixed) file untouched by prune' 'user file must survive prune'
 Write-Host ""
 
 # ===========================================================================

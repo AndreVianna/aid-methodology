@@ -8,14 +8,14 @@ This is the bulk of the work. Steps:
 
 ```
 if --grade present: MIN_GRADE = flag value (and update .aid/settings.yml summary.minimum_grade via /aid-config)
-else: MIN_GRADE = bash .agent/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A
+else: MIN_GRADE = bash .agent/aid/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A
 ```
 
 Persist `--grade` overrides to `.aid/settings.yml` (via `/aid-config` or direct YAML edit). Do NOT write minimum_grade to STATE.md — STATE.md is for run-state (Q&A, Review History, Summarization History), not config.
 
 ### 2. Fetch Mermaid (latest)
 
-Run `.agent/scripts/summarize/fetch-mermaid.sh`. It:
+Run `.agent/aid/scripts/summarize/fetch-mermaid.sh`. It:
 1. Calls `https://registry.npmjs.org/mermaid/latest` to discover current version.
 2. Compares to cached version at `.aid/knowledge/.cache/mermaid.min.js.meta`.
 3. If stale or missing, downloads `https://cdn.jsdelivr.net/npm/mermaid@{ver}/dist/mermaid.min.js`.
@@ -32,7 +32,7 @@ Records in `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 
 Read every `.aid/knowledge/*.md` listed in INDEX.md. For each, extract:
 - **Document purpose** — first read the YAML frontmatter `intent:` field (per
-  `.agent/templates/kb-authoring/frontmatter-schema.md`). The `intent:`
+  `.agent/aid/templates/kb-authoring/frontmatter-schema.md`). The `intent:`
   paragraph is the authoritative source for the doc's section description in
   the HTML summary. Fall back to "first paragraph after H1" only when frontmatter
   is missing or `intent:` is empty (legacy docs pre-Phase-A migration).
@@ -63,18 +63,18 @@ self-contained HTML file, but sources are split for maintainability:
 └── post-mermaid.html           # closing </script> for Mermaid + lightbox.js + mermaid-init.js + </body>
 ```
 
-Use `.agent/templates/knowledge-summary/html-skeleton.html` as the seed when scaffolding
+Use `.agent/aid/templates/knowledge-summary/html-skeleton.html` as the seed when scaffolding
 `skeleton-head.html` for the first time. Inject:
 - Hero with project name (read from `.aid/knowledge/STATE.md` or `pom.xml` / `package.json` etc.)
-- Inlined CSS from `.agent/templates/knowledge-summary/component-css.css` (in `skeleton-head.html`)
+- Inlined CSS from `.agent/aid/templates/knowledge-summary/component-css.css` (in `skeleton-head.html`)
 
 Author each section file under `sections/` from KB content:
-- Section structure follows `.agent/templates/knowledge-summary/section-templates/{profile}.md`
+- Section structure follows `.agent/aid/templates/knowledge-summary/section-templates/{profile}.md`
 - Per-section content drawn from KB (cite source via relative `./xxx.md` link)
-- 6–8 Mermaid diagrams using syntax patterns from `.agent/templates/knowledge-summary/mermaid-examples.md`
+- 6–8 Mermaid diagrams using syntax patterns from `.agent/aid/templates/knowledge-summary/mermaid-examples.md`
 
-`post-mermaid.html` inlines `.agent/templates/knowledge-summary/lightbox.js` and
-`.agent/templates/knowledge-summary/mermaid-init.js`. It is also the file that closes
+`post-mermaid.html` inlines `.agent/aid/templates/knowledge-summary/lightbox.js` and
+`.agent/aid/templates/knowledge-summary/mermaid-init.js`. It is also the file that closes
 the `<script>` that wraps the inlined Mermaid library (opened in `skeleton-foot.html`).
 
 **Parallel-safe authoring** — different agents/passes can edit different `sections/NN.html`
@@ -82,12 +82,12 @@ files concurrently without merge conflicts, since each section is its own file.
 
 ### 5. Assemble the single-file distribution
 
-Run `.agent/scripts/summarize/assemble.sh` to concatenate the multi-source layout into the
+Run `.agent/aid/scripts/summarize/assemble.sh` to concatenate the multi-source layout into the
 final single-file `kb.html`. Create `.aid/dashboard/` if absent before writing:
 
 ```bash
 mkdir -p .aid/dashboard
-bash .agent/scripts/summarize/assemble.sh --output .aid/dashboard/kb.html
+bash .agent/aid/scripts/summarize/assemble.sh --output .aid/dashboard/kb.html
 #   reads:  .aid/knowledge/summary-src/{skeleton-head.html, sections/*.html, skeleton-foot.html, post-mermaid.html}
 #   inlines: .aid/knowledge/.cache/mermaid.min.js (between skeleton-foot.html and post-mermaid.html)
 #   writes:  .aid/dashboard/kb.html
@@ -101,7 +101,7 @@ Flags:
 
 The script validates that all required source files exist and are non-empty before assembling.
 
-**Critical pitfalls — see `.agent/templates/knowledge-summary/mermaid-examples.md` for full list:**
+**Critical pitfalls — see `.agent/aid/templates/knowledge-summary/mermaid-examples.md` for full list:**
 - Never put `<word>` HTML-tag-like tokens in Mermaid labels (use `{word}` instead).
 - Use `-. text .->` (with spaces) for dotted-arrow labels, not `-.text.->`.
 - Lightbox SVG sizing: chrome on wrapper, SVG fills 100%/100%.

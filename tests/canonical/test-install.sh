@@ -338,8 +338,10 @@ run_install --uninstall --tool codex --target "$T"
 assert_exit_eq "$RC" 6 "IN13j second uninstall → exit 6 (no manifest)"
 
 # ---------------------------------------------------------------------------
-# IN14 – Protect-on-diff (FR11): pre-placed user AGENTS.md → not overwritten,
-#         .aid-new created, exit 5
+# IN14 – Root-agent in-place merge (Pillar 3): pre-placed user AGENTS.md with no
+#         AID markers and no manifest record (sha mismatch, Branch C2).
+#         NEW contract: exit 0; NO .aid-new; user content preserved in-place;
+#         manifest status is "owned" (never "pending-merge").
 # ---------------------------------------------------------------------------
 T=$(newtarget)
 printf 'This is the user AGENTS.md, not from AID\n' > "$T/AGENTS.md"
@@ -347,19 +349,21 @@ printf 'This is the user AGENTS.md, not from AID\n' > "$T/AGENTS.md"
 run_install --tool codex \
     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
     --target "$T"
-assert_exit_eq "$RC" 5 "IN14 protect-on-diff (user AGENTS.md) → exit 5"
-assert_file_exists "$T/AGENTS.md.aid-new" "IN14b AGENTS.md.aid-new created"
-# Original user file must NOT be overwritten.
-assert_file_contains "$T/AGENTS.md" "user AGENTS.md" "IN14c user AGENTS.md not overwritten"
-# Manifest records status pending-merge.
+assert_exit_eq "$RC" 0 "IN14 root-agent in-place merge (user AGENTS.md, sha-mismatch) → exit 0"
+# No .aid-new sidecar must ever be written.
+assert_eq "$([[ -f "$T/AGENTS.md.aid-new" ]] && echo exists || echo none)" "none" \
+    "IN14b no AGENTS.md.aid-new created (sidecar eliminated)"
+# Original user text must still appear (user content preserved).
+assert_file_contains "$T/AGENTS.md" "user AGENTS.md" "IN14c user content preserved in AGENTS.md"
+# Manifest status must be "owned" (pending-merge eliminated).
 MANIFEST="${T}/.aid/.aid-manifest.json"
-assert_file_contains "$MANIFEST" '"pending-merge"' "IN14d manifest status is pending-merge"
-# .aid-new content matches the incoming (profile) version.
-assert_eq "$(cmp -s "$T/AGENTS.md.aid-new" "${PROFILES_DIR}/codex/AGENTS.md" && echo same || echo diff)" \
-    "same" "IN14e AGENTS.md.aid-new byte-identical to codex source"
+assert_file_contains "$MANIFEST" '"status": "owned"' "IN14d manifest status is owned (not pending-merge)"
+assert_output_not_contains "$OUT" "pending-merge" "IN14e no pending-merge in output"
+assert_output_not_contains "$OUT" "Install complete with warnings" "IN14f no warning banner"
 
 # ---------------------------------------------------------------------------
-# IN15 – Protect-on-diff with --force: pre-placed user AGENTS.md → overwritten
+# IN15 – Root-agent in-place merge with --force: same in-place behavior as
+#         without --force (force does not bypass root-agent in-place logic).
 # ---------------------------------------------------------------------------
 T=$(newtarget)
 printf 'This is the user AGENTS.md\n' > "$T/AGENTS.md"
@@ -367,13 +371,14 @@ printf 'This is the user AGENTS.md\n' > "$T/AGENTS.md"
 run_install --tool codex --force \
     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
     --target "$T"
-assert_exit_eq "$RC" 0 "IN15 protect-on-diff with --force → exit 0"
-# AGENTS.md must now be the profile version.
-assert_eq "$(cmp -s "$T/AGENTS.md" "${PROFILES_DIR}/codex/AGENTS.md" && echo same || echo diff)" \
-    "same" "IN15b AGENTS.md overwritten with profile version when --force"
-# No .aid-new file.
+assert_exit_eq "$RC" 0 "IN15 root-agent in-place merge with --force → exit 0"
+# No .aid-new sidecar even with --force.
 assert_eq "$([[ -f "$T/AGENTS.md.aid-new" ]] && echo exists || echo none)" "none" \
-    "IN15c no AGENTS.md.aid-new when --force used"
+    "IN15b no AGENTS.md.aid-new when --force used"
+# User content preserved (force does NOT wholesale-overwrite root-agent file via C2).
+assert_file_contains "$T/AGENTS.md" "user AGENTS.md" "IN15c user content preserved even with --force"
+MANIFEST="${T}/.aid/.aid-manifest.json"
+assert_file_contains "$MANIFEST" '"status": "owned"' "IN15d manifest status owned with --force"
 
 # ---------------------------------------------------------------------------
 # IN16 – Uninstall safety (FR11): modified AID-owned AGENTS.md left in place
@@ -850,5 +855,197 @@ OUT=$(AID_TARGET="$T" bash "$SUT" \
      --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" 2>&1); RC=$?
 assert_exit_eq "$RC" 0 "IN35 AID_TARGET env sets target dir → exit 0"
 assert_dir_exists "$T/.codex" "IN35b .codex/ created in AID_TARGET dir"
+
+# ---------------------------------------------------------------------------
+# IN36 – Root-agent Branch B: dst already has AID:BEGIN/END markers.
+#         Re-install must replace ONLY the marked region; content outside
+#         (e.g. ## Project section) must be preserved byte-for-byte.
+# ---------------------------------------------------------------------------
+T=$(newtarget)
+# Pre-place an AGENTS.md that already has AID markers with stale content,
+# plus a user "## Project" section above the markers.
+cat > "$T/AGENTS.md" <<'HEREDOC'
+# AGENTS.md
+
+## Project
+My project description (user-written).
+
+<!-- AID:BEGIN -->
+## Stale tracking section
+This is old AID content that needs to be replaced.
+<!-- AID:END -->
+
+## Extra user section
+User content below the AID block.
+HEREDOC
+
+run_install --tool codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "$T"
+assert_exit_eq "$RC" 0 "IN36 Branch B (marker-present) → exit 0"
+# No .aid-new sidecar.
+assert_eq "$([[ -f "$T/AGENTS.md.aid-new" ]] && echo exists || echo none)" "none" \
+    "IN36b Branch B: no .aid-new sidecar"
+# The AID region must be updated (stale content replaced).
+assert_output_not_contains "$(cat "$T/AGENTS.md")" "Stale tracking section" \
+    "IN36c Branch B: stale AID content replaced"
+# Content outside markers must be preserved verbatim.
+assert_file_contains "$T/AGENTS.md" "My project description (user-written)." \
+    "IN36d Branch B: user Project section preserved"
+assert_file_contains "$T/AGENTS.md" "User content below the AID block." \
+    "IN36e Branch B: user content below markers preserved"
+# The new AID region content must be present.
+assert_file_contains "$T/AGENTS.md" "<!-- AID:BEGIN -->" \
+    "IN36f Branch B: AID:BEGIN marker present"
+assert_file_contains "$T/AGENTS.md" "<!-- AID:END -->" \
+    "IN36g Branch B: AID:END marker present"
+assert_file_contains "$T/AGENTS.md" "Tracking discipline" \
+    "IN36h Branch B: new AID region content installed"
+MANIFEST="${T}/.aid/.aid-manifest.json"
+assert_file_contains "$MANIFEST" '"status": "owned"' "IN36i Branch B: manifest status is owned"
+
+# ---------------------------------------------------------------------------
+# IN37 – Root-agent Branch C1: marker-less dst, sha matches recorded manifest.
+#         Must clean-rewrite to full marked source; exit 0; no .aid-new.
+# ---------------------------------------------------------------------------
+T=$(newtarget)
+# First install (fresh): installs AGENTS.md with markers (Branch A).
+run_install --tool codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "$T"
+assert_exit_eq "$RC" 0 "IN37 initial install for Branch C1 test → exit 0"
+
+# Strip the AID markers from the installed file to simulate a legacy file
+# (no markers, but sha still matches what the manifest recorded).
+# The manifest records the source sha (not the installed sha), so we need to
+# make the disk file match the recorded sha by replacing with profile content
+# minus the markers (which is actually different from the profile sha).
+# Instead, test C1 by: fresh install, then immediately re-install without
+# changes — disk sha matches src sha → "up to date" (identical path, not C1).
+# True C1 test: install, strip markers from disk, then set manifest sha to
+# the stripped file's sha, then re-install → clean rewrite.
+_c1_profile="${PROFILES_DIR}/codex/AGENTS.md"
+# Strip markers: write only non-marker lines to produce the "legacy" content.
+grep -v '<!-- AID:BEGIN -->\|<!-- AID:END -->' "$_c1_profile" > "$T/AGENTS.md"
+# Record the stripped sha in the manifest so Branch C1 is exercised.
+_c1_disk_sha="$(sha256sum "$T/AGENTS.md" | awk '{print $1}')"
+MANIFEST="${T}/.aid/.aid-manifest.json"
+python3 - "$MANIFEST" "$_c1_disk_sha" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+sha = sys.argv[2]
+for e in d.get('tools', {}).get('codex', {}).get('root_agent_files', []):
+    if e.get('path') == 'AGENTS.md':
+        e['sha256'] = sha
+open(sys.argv[1], 'w').write(json.dumps(d, indent=2) + '\n')
+PY
+
+run_install --tool codex \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
+    --target "$T"
+assert_exit_eq "$RC" 0 "IN37 Branch C1 (sha-match clean rewrite) → exit 0"
+# No .aid-new.
+assert_eq "$([[ -f "$T/AGENTS.md.aid-new" ]] && echo exists || echo none)" "none" \
+    "IN37b Branch C1: no .aid-new"
+# After clean rewrite, the installed file must be byte-identical to the profile source.
+assert_eq "$(cmp -s "$T/AGENTS.md" "$_c1_profile" && echo same || echo diff)" \
+    "same" "IN37c Branch C1: clean rewrite produces byte-identical profile source"
+
+# ---------------------------------------------------------------------------
+# IN38 – Prune regression (Pillar 2): stale aid- file in tool-native dir is
+#         removed after update; live aid- file in manifest is kept; user
+#         (non-aid-) file is never touched.
+# ---------------------------------------------------------------------------
+T=$(newtarget)
+# Fresh install of claude-code to set up the baseline.
+run_install --tool claude-code \
+    --from-bundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
+    --target "$T"
+assert_exit_eq "$RC" 0 "IN38 initial install for prune test → exit 0"
+
+# Plant a stale aid-prefixed file in .claude/agents/ (not in the manifest).
+printf 'stale agent content\n' > "$T/.claude/agents/aid-stale-orphan.md"
+# Plant a user (non-aid-) file in .claude/agents/ → must NOT be pruned.
+printf 'user agent\n' > "$T/.claude/agents/my-custom-agent.md"
+# One live aid-prefixed file already exists in the manifest (e.g. aid-architect.md).
+_live_agent=$(find "$T/.claude/agents" -name "aid-*.md" ! -name "aid-stale-orphan.md" | head -1)
+
+# Re-install (update) to trigger prune.
+run_install --tool claude-code \
+    --from-bundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
+    --target "$T"
+assert_exit_eq "$RC" 0 "IN38b re-install (prune trigger) → exit 0"
+
+# Stale aid- file must be removed.
+assert_eq "$([[ -f "$T/.claude/agents/aid-stale-orphan.md" ]] && echo exists || echo gone)" "gone" \
+    "IN38c stale aid-prefixed file pruned"
+# User (non-aid-) file must be preserved.
+assert_eq "$([[ -f "$T/.claude/agents/my-custom-agent.md" ]] && echo exists || echo gone)" "exists" \
+    "IN38d user (non-aid-) file not pruned"
+# Live aid- file must still exist.
+if [[ -n "$_live_agent" ]]; then
+    assert_eq "$([[ -f "$_live_agent" ]] && echo exists || echo gone)" "exists" \
+        "IN38e live aid-prefixed file in manifest kept"
+fi
+
+# ---------------------------------------------------------------------------
+# IN39 – Copilot-cli prune scoping (Pillar 2, R1): prune touches ONLY
+#         .github/{agents,skills,aid}, never .github root.
+# ---------------------------------------------------------------------------
+T=$(newtarget)
+run_install --tool copilot-cli \
+    --from-bundle "${FIXTURE_DIR}/aid-copilot-cli-v${VERSION}.tar.gz" \
+    --target "$T"
+assert_exit_eq "$RC" 0 "IN39 initial copilot-cli install for prune-scope test → exit 0"
+
+# Plant a stale aid-prefixed file in .github/agents/ (scoped dir → prunable).
+printf 'stale\n' > "$T/.github/agents/aid-stale-agent.agent.md"
+# Plant a user file directly in .github/ root → must NEVER be touched.
+printf 'user workflow\n' > "$T/.github/aid-workflow.yml"
+# Plant a stale file under .github/aid/ subtree.
+mkdir -p "$T/.github/aid/scripts"
+printf 'stale script\n' > "$T/.github/aid/scripts/aid-stale.sh"
+
+# Re-install to trigger prune.
+run_install --tool copilot-cli \
+    --from-bundle "${FIXTURE_DIR}/aid-copilot-cli-v${VERSION}.tar.gz" \
+    --target "$T"
+assert_exit_eq "$RC" 0 "IN39b copilot-cli re-install (prune trigger) → exit 0"
+
+# Stale file in .github/agents/ must be pruned.
+assert_eq "$([[ -f "$T/.github/agents/aid-stale-agent.agent.md" ]] && echo exists || echo gone)" "gone" \
+    "IN39c copilot-cli: stale aid-file in .github/agents/ pruned"
+# Stale file under .github/aid/ must be pruned.
+assert_eq "$([[ -f "$T/.github/aid/scripts/aid-stale.sh" ]] && echo exists || echo gone)" "gone" \
+    "IN39d copilot-cli: stale file under .github/aid/ subtree pruned"
+# User file directly in .github/ root must NOT be touched (R1 scope).
+assert_eq "$([[ -f "$T/.github/aid-workflow.yml" ]] && echo exists || echo gone)" "exists" \
+    "IN39e copilot-cli: user file in .github/ root NOT pruned (R1 scoping)"
+
+# ---------------------------------------------------------------------------
+# IN40 – Nested-path resolution: AID-own assets install under
+#         <tool-root>/aid/{scripts,templates,recipes}.
+# ---------------------------------------------------------------------------
+T=$(newtarget)
+run_install --tool claude-code \
+    --from-bundle "${FIXTURE_DIR}/aid-claude-code-v${VERSION}.tar.gz" \
+    --target "$T"
+assert_exit_eq "$RC" 0 "IN40 nested-path install (claude-code) → exit 0"
+# AID assets must be installed under .claude/aid/, not at the .claude/ root.
+assert_dir_exists "$T/.claude/aid" "IN40b .claude/aid/ subtree exists"
+# At least one of recipes/scripts/templates must be present under .claude/aid/.
+_aid_subtree_files=$(find "$T/.claude/aid" -type f 2>/dev/null | wc -l)
+if [[ "$_aid_subtree_files" -gt 0 ]]; then
+    pass "IN40c .claude/aid/ has at least one file installed"
+else
+    fail "IN40c .claude/aid/ has at least one file installed — found 0 files"
+fi
+# Confirm copilot-cli assets install under .github/aid/ (not .github/ root).
+T2=$(newtarget)
+run_install --tool copilot-cli \
+    --from-bundle "${FIXTURE_DIR}/aid-copilot-cli-v${VERSION}.tar.gz" \
+    --target "$T2"
+assert_exit_eq "$RC" 0 "IN40d nested-path install (copilot-cli) → exit 0"
+assert_dir_exists "$T2/.github/aid" "IN40e .github/aid/ subtree exists for copilot-cli"
 
 test_summary

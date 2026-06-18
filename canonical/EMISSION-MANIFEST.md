@@ -111,8 +111,9 @@ an install-tree sub-directory per the profile's layout configuration.
 |-----------------|-------------|---------------|--------|----------|
 | `canonical/agents/` | `.claude/agents/` | `.codex/agents/` | `.cursor/agents/` | `render_agents.py` |
 | `canonical/skills/` | `.claude/skills/` | `.agents/skills/` | `.cursor/skills/` | `render_skills.py` |
-| `canonical/templates/` | `.claude/templates/` | `.agents/templates/` | `.cursor/templates/` | `render_templates.py` |
-| `canonical/recipes/` | `.claude/recipes/` | `.agents/recipes/` | `.cursor/recipes/` | `render_recipes.py` |
+| `canonical/scripts/` | `.claude/aid/scripts/` | `.agents/aid/scripts/` | `.cursor/aid/scripts/` | `render_canonical_scripts.py` |
+| `canonical/templates/` | `.claude/aid/templates/` | `.agents/aid/templates/` | `.cursor/aid/templates/` | `render_templates.py` |
+| `canonical/recipes/` | `.claude/aid/recipes/` | `.agents/aid/recipes/` | `.cursor/aid/recipes/` | `render_recipes.py` |
 
 ### Recipes asset kind (FR8 — feature-011-recipes back-port, work-001)
 
@@ -121,8 +122,8 @@ placeholders. Recipes are plain Markdown files (passthrough renderer — no
 format conversion or frontmatter injection). They follow the same profile-
 emission contract as templates:
 
-- **Single-root profiles** (Claude Code, Cursor): emit under `{output_root}/recipes/`
-- **Split-root profile** (Codex): emit under `{assets_root}/recipes/`
+- **Single-root profiles** (Claude Code, Cursor): emit under `{output_root}/aid/recipes/`
+- **Split-root profile** (Codex): emit under `{assets_root}/aid/recipes/`
 - **Idempotent**: if `canonical/recipes/` is empty or absent, the generator
   emits nothing and records no manifest entries for this kind.
 - **Mirror-deletion**: removing a recipe and re-running the generator deletes
@@ -133,10 +134,11 @@ emission contract as templates:
 ```jsonl
 {"_manifest_version": 1}
 {"profile": "claude-code", "src": "canonical/agents/aid-architect/AGENT.md", "dst": ".claude/agents/aid-architect.md", "sha256": "a1b2c3d4e5f6..."}
-{"profile": "claude-code", "src": "canonical/recipes/new-feature.md", "dst": ".claude/recipes/new-feature.md", "sha256": "e5f6a1b2c3d4..."}
+{"profile": "claude-code", "src": "canonical/recipes/new-feature.md", "dst": ".claude/aid/recipes/new-feature.md", "sha256": "e5f6a1b2c3d4..."}
+{"profile": "claude-code", "src": "canonical/scripts/config/read-setting.sh", "dst": ".claude/aid/scripts/config/read-setting.sh", "sha256": "f6a1b2c3d4e5..."}
 {"profile": "claude-code", "src": "canonical/skills/aid-deploy/SKILL.md", "dst": ".claude/skills/aid-deploy/SKILL.md", "sha256": "b2c3d4e5f6a1..."}
 {"profile": "claude-code", "src": "canonical/skills/aid-discover/references/agent-prompts.md", "dst": ".claude/skills/aid-discover/references/agent-prompts.md", "sha256": "c3d4e5f6a1b2..."}
-{"profile": "claude-code", "src": "canonical/templates/grading-rubric.md", "dst": ".claude/templates/grading-rubric.md", "sha256": "d4e5f6a1b2c3..."}
+{"profile": "claude-code", "src": "canonical/templates/grading-rubric.md", "dst": ".claude/aid/templates/grading-rubric.md", "sha256": "d4e5f6a1b2c3..."}
 ```
 
 The five example records cover:
@@ -148,5 +150,7 @@ The five example records cover:
 
 For Codex (split layout), records under `.codex/` and `.agents/` both appear in
 `codex/emission-manifest.jsonl` with `dst` values like `.codex/agents/aid-architect.toml`,
-`.agents/recipes/new-feature.md`, and `.agents/skills/aid-deploy/SKILL.md` — all
-relative to `codex/`.
+`.agents/aid/recipes/new-feature.md`, `.agents/aid/scripts/config/read-setting.sh`,
+`.agents/aid/templates/grading-rubric.md`, and `.agents/skills/aid-deploy/SKILL.md` — all
+relative to `codex/`. AID-own dirs (scripts, templates, recipes) nest under `.agents/aid/`;
+tool-native dirs (agents, skills) keep their exact path.

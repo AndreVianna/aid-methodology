@@ -38,7 +38,7 @@ This gives you:
 
 ## Skills
 
-10 phase skills (one per AID phase) plus an optional `aid-summarize` for generating a single-file visual HTML summary of the Knowledge Base. See [`.cursor/skills/README.md`](.cursor/skills/README.md) for the full list.
+10 phase skills (one per AID phase) plus an optional `aid-summarize` for generating a single-file visual HTML summary of the Knowledge Base. See [`.cursor/skills/aid-README.md`](.cursor/skills/aid-README.md) for the full list.
 
 | Skill | Phase | Description |
 |-------|-------|-------------|

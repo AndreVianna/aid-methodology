@@ -2,7 +2,7 @@
 
 Loaded by `/aid-detail` REVIEW state (per-deliverable in Step 3 of The Loop;
 whole-task-list on re-run). Renders the brief passed to the `aid-reviewer`
-sub-agent. Follows `.claude/templates/reviewer-dispatch.md`.
+sub-agent. Follows `.claude/aid/templates/reviewer-dispatch.md`.
 
 `{{ARTIFACTS}}`, `{{CONTEXT}}`, `{{SCOPE}}` are filled at dispatch time.
 
@@ -22,7 +22,7 @@ SCOPE: {{SCOPE}}   # one of: per-deliverable | whole-list
   per-deliverable: Grade the task list for ONE delivery just written.
   whole-list:      Re-grade all task files against current PLAN.md + SPECs.
 
-RUBRIC: .claude/templates/grading-rubric.md (universal severity → grade table)
+RUBRIC: .claude/aid/templates/grading-rubric.md (universal severity → grade table)
   Grade tasks for:
     - Each task has exactly ONE Type (no mixing)
     - Task size fits one agent session
@@ -49,8 +49,8 @@ DELIVERABLES:
   - Findings format: severity-tagged + source-tagged (TASK | PLAN | SPEC | KB)
   - Output location: `.aid/.temp/review-pending/detail-{work}.md`
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
-  - Grade: per .claude/scripts/grade.sh; minimum resolved via
-    `bash .claude/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`
+  - Grade: per .claude/aid/scripts/grade.sh; minimum resolved via
+    `bash .claude/aid/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`
   - The aid-reviewer NEVER edits task files — only grades and lists issues
 ```
 

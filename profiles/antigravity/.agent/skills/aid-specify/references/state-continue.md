@@ -4,10 +4,10 @@ Work STATE.md `## Features Status` shows this feature `In Discussion`; find firs
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash .agent/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .agent/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
-bash .agent/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-specify
-bash .agent/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .agent/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .agent/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
+bash .agent/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-specify
+bash .agent/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 ---
@@ -80,7 +80,7 @@ Immediately after writing, verify what was written:
 
 **Grade the section** using the universal rubric (`../../../templates/grading-rubric.md`).
 Classify each issue by severity (Minor/Low/Medium/High/Critical). The grade is
-calculated — worst issue dominates. Compare to minimum grade from `bash .agent/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`.
+calculated — worst issue dominates. Compare to minimum grade from `bash .agent/aid/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|

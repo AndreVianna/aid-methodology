@@ -358,7 +358,12 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# PAR07 – Protect-on-diff: pre-placed user AGENTS.md → exit 5, .aid-new, pending-merge
+# PAR07 – Pre-placed user AGENTS.md → in-place region update, exit 0, no .aid-new
+#
+# NEW CONTRACT (work-003): _copy_root_agent_file / Copy-RootAgentFile perform
+# an in-place AID:BEGIN/END region update. User content outside markers is
+# preserved verbatim. No .aid-new sidecar file is written. No exit 5.
+# Both bash and PS1 produce byte-identical AGENTS.md output.
 # ---------------------------------------------------------------------------
 T_SH=$(newtarget_bash)
 T_PS1=$(newtarget_ps1)
@@ -369,35 +374,37 @@ printf 'User-owned AGENTS.md\n' > "$T_PS1/AGENTS.md"
 run_sh  --tool codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "$T_SH"
 run_ps1  -Tool codex  -FromBundle  "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz"  -TargetDirectory "$T_PS1"
 
-assert_exit_codes_match 5 "PAR07 protect-on-diff"
-assert_both_contain "Install complete with warnings" "PAR07b"
-assert_both_contain "aid-new" "PAR07c"
+# Both must exit 0 (no more protect-on-diff / exit 5).
+assert_exit_codes_match 0 "PAR07 pre-placed user AGENTS.md: in-place update → exit 0"
 
-# Both .aid-new files must exist.
-assert_file_exists "$T_SH/AGENTS.md.aid-new"  "PAR07d sh AGENTS.md.aid-new created"
-assert_file_exists "$T_PS1/AGENTS.md.aid-new" "PAR07e ps1 AGENTS.md.aid-new created"
+# Neither may write a .aid-new sidecar file.
+assert_eq "$([[ -e "$T_SH/AGENTS.md.aid-new"  ]] && echo exists || echo gone)" "gone" \
+    "PAR07d sh AGENTS.md.aid-new NOT created (new contract: no sidecar)"
+assert_eq "$([[ -e "$T_PS1/AGENTS.md.aid-new" ]] && echo exists || echo gone)" "gone" \
+    "PAR07e ps1 AGENTS.md.aid-new NOT created (new contract: no sidecar)"
 
-# Both .aid-new files must be byte-identical to each other (same incoming content).
-CMP_OUT=$(cmp -s "$T_SH/AGENTS.md.aid-new" "$T_PS1/AGENTS.md.aid-new" && echo same || echo diff)
-assert_eq "$CMP_OUT" "same" "PAR07f both .aid-new files byte-identical"
+# User content outside markers must be preserved in both.
+assert_file_contains "$T_SH/AGENTS.md"  "User-owned AGENTS.md" "PAR07g sh: user content preserved outside markers"
+assert_file_contains "$T_PS1/AGENTS.md" "User-owned AGENTS.md" "PAR07h ps1: user content preserved outside markers"
 
-# Original user file must not be overwritten in either case.
-assert_file_contains "$T_SH/AGENTS.md"  "User-owned AGENTS.md" "PAR07g sh user AGENTS.md not overwritten"
-assert_file_contains "$T_PS1/AGENTS.md" "User-owned AGENTS.md" "PAR07h ps1 user AGENTS.md not overwritten"
+# PARITY: bash and PS1 produce byte-identical AGENTS.md output.
+CMP_OUT=$(cmp -s "$T_SH/AGENTS.md" "$T_PS1/AGENTS.md" && echo same || echo diff)
+assert_eq "$CMP_OUT" "same" "PAR07f Bash↔PS1 AGENTS.md byte-identical (region-update parity)"
 
-# Manifests must record pending-merge in both cases.
-assert_file_contains "$T_SH/.aid/.aid-manifest.json"  '"pending-merge"' "PAR07i sh manifest pending-merge"
-assert_file_contains "$T_PS1/.aid/.aid-manifest.json" '"pending-merge"' "PAR07j ps1 manifest pending-merge"
+# Manifest must NOT contain pending-merge in either case.
+assert_file_not_contains "$T_SH/.aid/.aid-manifest.json"  '"pending-merge"' "PAR07i sh manifest: no pending-merge"
+assert_file_not_contains "$T_PS1/.aid/.aid-manifest.json" '"pending-merge"' "PAR07j ps1 manifest: no pending-merge"
 
 # Non-root-agent trees must be byte-identical (the .codex/.agents trees were copied).
 DIFF_OUT=$(diff -r \
            --exclude=".aid-manifest.json" --exclude=".aid-version" \
-           --exclude="AGENTS.md" --exclude="AGENTS.md.aid-new" \
+           --exclude="AGENTS.md" \
            "$T_SH" "$T_PS1" 2>&1)
 assert_eq "${DIFF_OUT}" "" "PAR07k non-root-agent installed trees byte-identical"
 
 # ---------------------------------------------------------------------------
-# PAR08 – --force / -Force: overwrites pre-placed user AGENTS.md → exit 0, "Updated:"
+# PAR08 – --force / -Force with pre-placed user AGENTS.md → exit 0, "Updated:",
+#          user content preserved outside markers (in-place region update, not full overwrite)
 # ---------------------------------------------------------------------------
 T_SH=$(newtarget_bash)
 T_PS1=$(newtarget_ps1)
@@ -411,20 +418,24 @@ run_ps1_verbose  -Tool codex  -Force  -FromBundle  "${FIXTURE_DIR}/aid-codex-v${
 assert_exit_codes_match 0 "PAR08 force install"
 assert_both_contain "Updated:" "PAR08b"
 
-DIFF_OUT=$(diff -r --exclude=".aid-manifest.json" --exclude=".aid-version" \
+# Non-root-agent trees (all except AGENTS.md + manifest + version) must be byte-identical.
+DIFF_OUT=$(diff -r \
+           --exclude=".aid-manifest.json" --exclude=".aid-version" \
+           --exclude="AGENTS.md" \
            "$T_SH" "$T_PS1" 2>&1)
-assert_eq "${DIFF_OUT}" "" "PAR08c force-installed trees byte-identical"
+assert_eq "${DIFF_OUT}" "" "PAR08c force-installed non-root-agent trees byte-identical"
 if manifests_equivalent "$T_SH/.aid/.aid-manifest.json" "$T_PS1/.aid/.aid-manifest.json"; then
     pass "PAR08d force manifests equivalent"
 else
     fail "PAR08d force manifests differ"
 fi
 
-# AGENTS.md must now match the profile source in both.
-CMP_SH=$(cmp -s "$T_SH/AGENTS.md"  "${PROFILES_DIR}/codex/AGENTS.md" && echo same || echo diff)
-CMP_PS1=$(cmp -s "$T_PS1/AGENTS.md" "${PROFILES_DIR}/codex/AGENTS.md" && echo same || echo diff)
-assert_eq "$CMP_SH"  "same" "PAR08e sh AGENTS.md overwritten with profile version"
-assert_eq "$CMP_PS1" "same" "PAR08f ps1 AGENTS.md overwritten with profile version"
+# PARITY: Bash and PS1 produce byte-identical AGENTS.md (in-place region update).
+# User content outside markers is preserved (not overwritten) in both.
+CMP_OUT=$(cmp -s "$T_SH/AGENTS.md" "$T_PS1/AGENTS.md" && echo same || echo diff)
+assert_eq "$CMP_OUT" "same" "PAR08e Bash↔PS1 AGENTS.md byte-identical after --force (region-update parity)"
+assert_file_contains "$T_SH/AGENTS.md"  "User-owned AGENTS.md" "PAR08f sh: user content preserved outside markers"
+assert_file_contains "$T_PS1/AGENTS.md" "User-owned AGENTS.md" "PAR08g ps1: user content preserved outside markers"
 
 # ---------------------------------------------------------------------------
 # PAR09 – Uninstall: exit 0, "Removed:", "Uninstall complete."

@@ -1,0 +1,39 @@
+# Generated Files Registry
+#
+# One line per generated file in .aid/generated/. Format:
+#   <output-path>|<build-command>
+#
+# - output-path: relative to the target project root (where .aid/ lives)
+# - build-command: shell command to regenerate, run from the target project root
+#
+# Consumed by:
+#   - /aid-discover FIX state (refresh-all at end of cycle per principles.md P3)
+#   - /aid-discover state-fix.md Step 4 (`test -f` loop confirms each file was regenerated)
+#
+# Comments (lines starting with #) and blank lines are ignored.
+# Order matters: scripts are executed top-to-bottom, so list dependencies first.
+#
+# PATH CONVENTION: build commands use repo-root paths under canonical/. The
+# renderer (run_generator.py + rewrite_install_paths in render_lib.py) rewrites
+# those repo-root references at render time to each profile's install-tree
+# root (.claude for Claude Code, .agents for Codex assets, .cursor for Cursor).
+# So this registry's source-form paths are correct in canonical/ AND the
+# renderer makes them correct in every profile install. No runtime resolver
+# is needed in consuming skills.
+#
+# (Note: this comment block is skipped by the rewriter — see render_lib.py
+# rewrite_install_paths docstring on the comment-skip rule — so the prose
+# above survives intact in profile renders.)
+
+# Project file inventory — read by discovery sub-agents as a pre-pass.
+# Depends on: the entire project file tree.
+.aid/generated/project-index.md|bash .agents/aid/scripts/kb/build-project-index.sh --root . --output .aid/generated/project-index.md
+
+# Numeric metrics (T3 facts) — line counts, file counts, term counts, severity tallies.
+# Depends on: KB doc disk state + frontmatter contracts.
+.aid/generated/metrics.md|bash .agents/aid/scripts/kb/build-metrics.sh --root . --output .aid/generated/metrics.md
+
+# KB index — agent-facing 2-3 line summary per KB doc, composed from frontmatter intent:.
+# Depends on: every KB doc's frontmatter (changes to intent: fields).
+# MUST run AFTER hand-edits to KB docs and BEFORE final commit.
+.aid/knowledge/INDEX.md|bash .agents/aid/scripts/kb/build-kb-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md

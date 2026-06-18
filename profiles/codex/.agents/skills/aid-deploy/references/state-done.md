@@ -7,9 +7,9 @@ Release complete. Emit the normalized Completed lifecycle state.
 Emit the normalized Completed lifecycle state (silent state-write only — no output, no gate):
 
 ```
-bash .agents/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed
-bash .agents/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value none
-bash .agents/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed
+bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value none
+bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 This is the **M6 normalized-Completed emit**: it writes the authoritative `Lifecycle: Completed`

@@ -16,7 +16,7 @@ previous run. Always read actual files on disk.
 Read `**KB Stage:**` from `## Housekeep Status` via `housekeep-state.sh`:
 
 ```bash
-KB_STAGE=$(bash .github/scripts/housekeep/housekeep-state.sh \
+KB_STAGE=$(bash .github/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --read --field "KB Stage")
 ```
 
@@ -47,11 +47,11 @@ Write the run-state fields and print the state-entry banner.
 Write through `housekeep-state.sh` (never hand-edit `## Housekeep Status`):
 
 ```bash
-bash .github/scripts/housekeep/housekeep-state.sh \
+bash .github/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "State" --value "SUMMARY-DELTA"
-bash .github/scripts/housekeep/housekeep-state.sh \
+bash .github/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "running"
-bash .github/scripts/housekeep/housekeep-state.sh \
+bash .github/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Last Run" \
     --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
@@ -114,7 +114,7 @@ no flags at all:
 Do NOT pass `--reset` (that would force a needless rebuild when the KB stage
 was a no-op, violating NFR2 idempotency). Do NOT pass `--profile` or any other
 flag. The minimum-grade resolver inside `/aid-summarize` reads from
-`.github/scripts/config/read-setting.sh --skill summary --key minimum_grade
+`.github/aid/scripts/config/read-setting.sh --skill summary --key minimum_grade
 --default A`; a `--grade X` override from the user passes through verbatim.
 
 Let `/aid-summarize` run its own state machine verbatim:
@@ -180,9 +180,9 @@ This covers two sub-paths:
 Write the gate field:
 
 ```bash
-bash .github/scripts/housekeep/housekeep-state.sh \
+bash .github/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Summary Stage" --value "passed"
-bash .github/scripts/housekeep/housekeep-state.sh \
+bash .github/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "passed"
 ```
 
@@ -190,7 +190,7 @@ Commit the regenerated HTML and the `STATE.md` history edit in a **single**
 `branch-commit.sh` call (one commit per stage — C3; never push):
 
 ```bash
-bash .github/scripts/housekeep/branch-commit.sh \
+bash .github/aid/scripts/housekeep/branch-commit.sh \
     --commit \
     --message "chore(housekeep): summary delta refresh [feature-003]" \
     --add .aid/dashboard/kb.html \
@@ -268,9 +268,9 @@ AND `## Knowledge Summary Status` shows `**User Approved:** yes` (which means
 Write the gate field:
 
 ```bash
-bash .github/scripts/housekeep/housekeep-state.sh \
+bash .github/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Summary Stage" --value "skipped"
-bash .github/scripts/housekeep/housekeep-state.sh \
+bash .github/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "skipped"
 ```
 
@@ -280,7 +280,7 @@ committed so the relocation is captured in VC even on the skip path:
 
 ```bash
 if [ "${MIGRATED_THIS_RUN:-0}" -eq 1 ]; then
-    bash .github/scripts/housekeep/branch-commit.sh \
+    bash .github/aid/scripts/housekeep/branch-commit.sh \
         --commit \
         --message "chore(housekeep): migrate kb.html path (FR31 relocation) [feature-007]" \
         --add .aid/dashboard/kb.html
@@ -321,11 +321,11 @@ printed state) and set a `<stall-reason>` string, for example:
 Write the stall fields:
 
 ```bash
-bash .github/scripts/housekeep/housekeep-state.sh \
+bash .github/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Summary Stage" --value "stalled"
-bash .github/scripts/housekeep/housekeep-state.sh \
+bash .github/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "stalled"
-bash .github/scripts/housekeep/housekeep-state.sh \
+bash .github/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stall Reason" --value "<stall-reason>"
 ```
 

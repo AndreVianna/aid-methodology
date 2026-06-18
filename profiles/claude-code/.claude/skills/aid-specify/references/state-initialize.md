@@ -85,10 +85,10 @@ In the work's `.aid/{work}/STATE.md`, update the `## Features Status` table:
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-specify
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-specify
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 ### Step 4: Present and Start

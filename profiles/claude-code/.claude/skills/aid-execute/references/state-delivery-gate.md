@@ -161,7 +161,7 @@ Include in the prompt:
   if it exists. For each existing row: verify on disk, update Status if needed
   (Pending→Fixed if resolved; Fixed→Recurred if regressed). Append new findings
   as rows with Status: Pending."
-- **Schema reference:** "Output per `.claude/templates/reviewer-ledger-schema.md`.
+- **Schema reference:** "Output per `.claude/aid/templates/reviewer-ledger-schema.md`.
   The ledger is the entire file — ONE markdown table, no headers, no narrative."
 
 Then append the gate-specific prompt below. The reviewer reads directly from source:
@@ -219,7 +219,7 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
 Run `grade.sh` on the ledger file:
 
 ```bash
-bash .claude/scripts/grade.sh --explain .aid/.temp/review-pending/execute-delivery-NNN.md
+bash .claude/aid/scripts/grade.sh --explain .aid/.temp/review-pending/execute-delivery-NNN.md
 ```
 
 The script parses the Severity and Status columns from the markdown table, counts
@@ -284,9 +284,9 @@ Gate grade below minimum. Next steps:
 can be — the problem is upstream. Present what needs to change and where.
 Emit pipeline pause signal (silent state-write — no output, no gate):
 ```bash
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Delivery gate blocked on non-CODE issues — upstream fix required (SPEC/TASK/KB)"
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Delivery gate blocked on non-CODE issues — upstream fix required (SPEC/TASK/KB)"
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Advance:** **CHAIN** → Step 5 (FIX) when grade < minimum; **CHAIN** → Step 6 (RECORD) when grade ≥ minimum.
@@ -331,10 +331,10 @@ Options:
 Write impediment to `.aid/{work}/IMPEDIMENT-delivery-NNN.md` if stopping. When the impediment
 is written, emit the pipeline block signal (silent state-write — no output, no gate):
 ```bash
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Delivery gate circuit breaker triggered — grade not improving after 3 cycles"
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-delivery-{NNN}.md"
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Delivery gate circuit breaker triggered — grade not improving after 3 cycles"
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-delivery-{NNN}.md"
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Advance:** **CHAIN** → back to Step 2 (REVIEW) — fresh reviewer, clean context.

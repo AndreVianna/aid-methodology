@@ -3,7 +3,7 @@
 WRITEBACK atomically records the approved summarization entry in STATE.md Summarization History; it is selected after the user approves in APPROVAL.
 
 ▶ writeback-state.sh starting (~5 s)
-Run `.github/scripts/summarize/writeback-state.sh`. It atomically:
+Run `.github/aid/scripts/summarize/writeback-state.sh`. It atomically:
 
 1. Acquires `.aid/knowledge/.state.lock` (file rename sentinel, 5s timeout).
 2. Reads `.aid/knowledge/STATE.md`.

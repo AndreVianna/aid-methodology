@@ -57,17 +57,18 @@ aid-methodology/                       (repo root)
 │   └── settings.yml                   ← runtime AID settings
 ├── .claude/                           ← dogfood Claude Code install tree (this repo uses AID on itself)
 │   ├── agents/                        ← 9 generated agent definitions
-│   ├── recipes/                       ← dogfood lite-path recipes + README (refreshed on re-install; see `## Recipes` for the canonical 51-recipe catalog)
-│   ├── scripts/                       ← generated helper scripts (config/, execute/, housekeep/, interview/, kb/, summarize/)
 │   ├── skills/                        ← 12 AID skills + maintainer-only generate-profile
-│   ├── templates/                     ← generated templates (knowledge-base/, knowledge-summary/, kb-authoring/, ...)
+│   ├── aid/                           ← AID-own subtree (nested per content-isolation.md Rule 1)
+│   │   ├── recipes/                   ← dogfood lite-path recipes + README (refreshed on re-install; see `## Recipes` for the canonical 51-recipe catalog)
+│   │   ├── scripts/                   ← generated helper scripts (config/, execute/, housekeep/, interview/, kb/, summarize/)
+│   │   └── templates/                 ← generated templates (knowledge-base/, knowledge-summary/, kb-authoring/, ...)
 │   └── settings.json                  ← Claude Code permission config
 ├── canonical/                         ← SINGLE SOURCE OF TRUTH for all install-tree content
 │   ├── EMISSION-MANIFEST.md           ← deletion-safety boundary spec
 │   ├── agents/                        ← 9 agent dirs (AGENT.md + README.md per agent)
 │   ├── recipes/                       ← 51 recipes + README + .gitkeep
 │   ├── rules/                         ← cursor .mdc rule files
-│   ├── scripts/                       ← helper scripts (mirror of .claude/scripts/): config/, execute/, housekeep/, interview/, kb/, summarize/
+│   ├── scripts/                       ← helper scripts (mirror of .claude/aid/scripts/): config/, execute/, housekeep/, interview/, kb/, summarize/
 │   │   └── housekeep/                 ← branch-commit.sh, cleanup-classify.sh, housekeep-state.sh (added work-001-aid-housekeep, PR #49)
 │   ├── skills/                        ← 12 skill dirs (SKILL.md + references/ + README.md)
 │   │   └── aid-housekeep/             ← optional skill: SKILL.md + references/ (5 state-*.md) (added PR #49)
@@ -206,7 +207,7 @@ Languages present (where, not counts):
 
 ### Helper scripts (canonical, with 6 additional mirror copies each — 7 on-disk total)
 
-Each canonical script has **7** byte-identical copies on disk: the canonical source, the dogfood `.claude/scripts/` copy, plus a copy in each of the **5** profile install trees (claude-code, codex, cursor, copilot-cli, antigravity). Verified: `find . -name writeback-state.sh -path '*/execute/*'` returns 7 paths (canonical + .claude + 5 profiles). The three `canonical/scripts/housekeep/*.sh` scripts (branch-commit.sh, cleanup-classify.sh, housekeep-state.sh) follow the same 7-copy mirror discipline (added PR #49).
+Each canonical script has **7** byte-identical copies on disk: the canonical source, the dogfood `.claude/aid/scripts/` copy, plus a copy in each of the **5** profile install trees (claude-code, codex, cursor, copilot-cli, antigravity). Verified: `find . -name writeback-state.sh -path '*/execute/*'` returns 7 paths (canonical + .claude + 5 profiles). The three `canonical/scripts/housekeep/*.sh` scripts (branch-commit.sh, cleanup-classify.sh, housekeep-state.sh) follow the same 7-copy mirror discipline (added PR #49).
 
 For per-file line counts see `.aid/generated/project-index.md` (T3 metrics, not maintained inline per `coding-standards.md §9a`).
 
@@ -362,7 +363,7 @@ Installed at `.claude/agents/` (Claude Code) / `.cursor/agents/` (Cursor) / `.co
 
 ## Recipes (51)
 
-Lite-path templates at `canonical/recipes/`, rendered into all 5 profile install trees (`profiles/claude-code/.claude/recipes/`, `profiles/codex/.agents/recipes/`, `profiles/cursor/.cursor/recipes/`, `profiles/copilot-cli/.github/recipes/`, `profiles/antigravity/.agent/recipes/`). The catalog ships **51** recipes named by the change they make, plus `README.md` documenting the catalog. (The repo-root `.claude/` dogfood install is rendered separately and is not one of the 5 profile trees — see line 54.):
+Lite-path templates at `canonical/recipes/`, rendered into all 5 profile install trees (`profiles/claude-code/.claude/aid/recipes/`, `profiles/codex/.agents/aid/recipes/`, `profiles/cursor/.cursor/aid/recipes/`, `profiles/copilot-cli/.github/aid/recipes/`, `profiles/antigravity/.agent/aid/recipes/`). The catalog ships **51** recipes named by the change they make, plus `README.md` documenting the catalog. (The repo-root `.claude/` dogfood install is rendered separately and is not one of the 5 profile trees — see line 54.):
 
 | Group | Naming | Count |
 |-------|--------|-------|
@@ -400,7 +401,7 @@ The 40 `add-`/`change-` recipes span 11 target-kind families. See `canonical/rec
 
 ## Unusual Structure Notes
 
-1. **Multi-tree mirror (now 7 copies).** The shell scripts include only ~20–23 unique canonical scripts (`ls canonical/scripts/*/*.sh canonical/scripts/*.sh`; now includes the 3 `canonical/scripts/housekeep/*.sh`) — each exists in **7** byte-identical copies (canonical + dogfood `.claude/` + the 5 profile trees: claude-code, codex, cursor, copilot-cli, antigravity). Before the work-001-add-providers merge this was a quadruple mirror (canonical + .claude + 3 profiles); the two new profiles raised the multiplier to 6 extra copies. Similarly for markdown skill/agent/template files. The renderers enforce byte-identical output. This is by design (per `coding-standards.md §7a`) but inflates file counts and makes the project look larger than it is.
+1. **Multi-tree mirror (now 7 copies).** The shell scripts include only ~20–23 unique canonical scripts (`ls canonical/scripts/*/*.sh canonical/scripts/*.sh`; now includes the 3 `canonical/scripts/housekeep/*.sh`) — each exists in **7** byte-identical copies (canonical + dogfood `.claude/aid/scripts/` + the 5 profile trees: claude-code, codex, cursor, copilot-cli, antigravity). Before the work-001-add-providers merge this was a quadruple mirror (canonical + .claude + 3 profiles); the two new profiles raised the multiplier to 6 extra copies. Similarly for markdown skill/agent/template files. The renderers enforce byte-identical output. This is by design (per `coding-standards.md §7a`) but inflates file counts and makes the project look larger than it is.
 
 2. **Dogfood `.claude/` tree.** Unique among AID-using projects: this repo applies AID to itself. The top-level `.claude/` is functionally identical to `profiles/claude-code/.claude/` (the install bundle) but is the one the dev environment actually uses.
 

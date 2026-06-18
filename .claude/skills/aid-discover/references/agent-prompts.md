@@ -10,7 +10,7 @@ and passes it as the prompt to each subagent.
 When an agent's target list (computed from the declared doc-set via the `owns-<agent>`
 accessor — see `references/doc-set-resolve.md`) contains a **custom doc** (a filename with
 no canonical template, i.e., not in the default seed synthesized from
-`.claude/templates/knowledge-base/*.md`), the orchestrator **extends that agent's base
+`.claude/aid/templates/knowledge-base/*.md`), the orchestrator **extends that agent's base
 prompt at runtime** by appending the following line after the base prompt text:
 
 > Also produce `.aid/knowledge/<filename>` per its expectations entry in

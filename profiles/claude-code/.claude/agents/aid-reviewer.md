@@ -28,7 +28,7 @@ between updates — repeating the same activity twice signals "stuck" to the
 orchestrator. Use `unknown` if you can't predict eta-remaining.
 
 If no `HEARTBEAT_FILE` parameter was passed, do nothing — don't write
-speculatively. See `.claude/templates/subagent-heartbeat-protocol.md` for
+speculatively. See `.claude/aid/templates/subagent-heartbeat-protocol.md` for
 the full contract.
 
 ## Self-review discipline
@@ -55,7 +55,7 @@ issue you should have caught, that is a self-review gap.
    honest adversarial sweep of your own work surfaces nothing new — not when
    the obvious bullets are addressed.
 
-Apply regardless of task size. See `.claude/templates/self-review-protocol.md`
+Apply regardless of task size. See `.claude/aid/templates/self-review-protocol.md`
 for the full protocol.
 
 
@@ -83,6 +83,26 @@ for the full protocol.
 - **Severity is your judgment. Grade is the script's job.** Classify severity correctly because the grade derives from it deterministically.
 - **Target artifact is a dispatch parameter.** Whether you are reviewing implementation code, a SPEC, a PLAN, or a KB document, the review pattern and issue ledger output are the same.
 
+## Standing KB-Convention Checks
+
+Apply these on every review that adds or moves files, regardless of task type.
+Cite the KB source in the issue ledger when raising any of these.
+
+### Content isolation
+
+Per KB doc `content-isolation.md`: every AID-delivered file must satisfy exactly one of:
+
+1. **Nested under `aid/`** — AID-own dirs (`scripts/`, `templates/`, `recipes/`) live under `<assets-root>/aid/`; flag any AID-own dir emitted at the un-nested path (e.g. `.claude/scripts/` instead of `.claude/aid/scripts/`).
+2. **Carries the `aid-` prefix** — AID files inside tool-native dirs (`agents/`, `skills/`, `rules/`) carry the `aid-` prefix; flag any un-prefixed AID file inside a tool-native dir (e.g. `skills/README.md` that is AID-managed).
+
+Additionally flag:
+- Any new AID content placed at the `.github` root level (copilot-cli scoping violation — R1).
+- Any AID-own dir emitted under `.codex/` (codex split — R6; nest applies to `.agents/`, not `.codex/`).
+- Any prune logic that diffs old-manifest instead of using `aid-` prefix + new-manifest membership as the prune basis.
+- Any root-agent update that writes a `.aid-new` sidecar instead of performing an in-place region update between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers.
+
+Use severity `[HIGH]` for isolation violations (they break orphan-prune correctness) and `[CRITICAL]` for violations that expose user content to AID pruning.
+
 ## Severity Classification
 
 | Severity | When |
@@ -95,7 +115,7 @@ for the full protocol.
 
 ## Output contract
 
-Your output is a single markdown file at `.aid/.temp/review-pending/<scope>.md` containing **exactly one markdown table** per the schema at `.claude/templates/reviewer-ledger-schema.md`.
+Your output is a single markdown file at `.aid/.temp/review-pending/<scope>.md` containing **exactly one markdown table** per the schema at `.claude/aid/templates/reviewer-ledger-schema.md`.
 
 The table is the entire file content. **No frontmatter, no headers, no narrative sections, no summary lines.** Any prose qualitative summary belongs in your return message to the orchestrator, never in the ledger file.
 

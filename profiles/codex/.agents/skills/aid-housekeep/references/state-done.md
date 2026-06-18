@@ -41,11 +41,11 @@ Print the closing summary in this format:
 Update `## Housekeep Status` via `housekeep-state.sh`:
 
 ```bash
-bash .agents/scripts/housekeep/housekeep-state.sh \
+bash .agents/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "State" --value "DONE"
-bash .agents/scripts/housekeep/housekeep-state.sh \
+bash .agents/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "passed"
-bash .agents/scripts/housekeep/housekeep-state.sh \
+bash .agents/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Last Run" \
     --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```

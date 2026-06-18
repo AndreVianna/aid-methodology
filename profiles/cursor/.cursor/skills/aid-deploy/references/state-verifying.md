@@ -18,7 +18,7 @@ All three must pass. Record results in the package file (Verification section).
 ### Log failures to schema ledger
 
 For each failing check, append a row to `.aid/.temp/review-pending/deploy.md` per
-`.cursor/templates/reviewer-ledger-schema.md`:
+`.cursor/aid/templates/reviewer-ledger-schema.md`:
 
 | Check type | Severity |
 |---|---|
@@ -34,7 +34,7 @@ One row per distinct failing check/test/warning. Example row:
 After logging failures, run grade.sh on the ledger:
 
 ```bash
-bash .cursor/scripts/grade.sh --explain .aid/.temp/review-pending/deploy.md
+bash .cursor/aid/scripts/grade.sh --explain .aid/.temp/review-pending/deploy.md
 ```
 
 If any failures logged (grade below A+):

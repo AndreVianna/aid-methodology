@@ -64,7 +64,7 @@ tolerated (everything after the 3rd `|` is treated as part of `presence`/`when`)
 ## `synth_default_seed` — Default seed when `discovery.doc_set` is unset
 
 When the `discovery.doc_set` section is absent/empty, synthesize the default seed
-deterministically from `.agents/templates/knowledge-base/*.md` paired to the ownership map
+deterministically from `.agents/aid/templates/knowledge-base/*.md` paired to the ownership map
 below. This satisfies FR-P0-4 (no hardcoded doc-count/doc-list literal) by making the default
 set self-describing from the templates that exist on disk.
 
@@ -98,7 +98,7 @@ and not synthesized from templates. (The `skill-self` owner value denotes the sk
 #
 # REPO must be set to the repository root before calling (or defaults to the CWD).
 synth_default_seed() {
-  local tmpl_dir="${REPO:-$(pwd)}/.agents/templates/knowledge-base"
+  local tmpl_dir="${REPO:-$(pwd)}/.agents/aid/templates/knowledge-base"
   # Ownership map: pairs of "filename owner" (no commas, no pipes — safe for IFS split)
   # This is the §2.2 single source; edit here to change the default ownership.
   local -a MAP=(
@@ -230,7 +230,7 @@ resolve_doc_set "$raw"
 
 ```bash
 # 1. Read the declared set (returns comma-joined items, or empty if section unset).
-raw="$(bash "$REPO/.agents/scripts/config/read-setting.sh" \
+raw="$(bash "$REPO/.agents/aid/scripts/config/read-setting.sh" \
         --path discovery.doc_set 2>/dev/null || true)"
 
 # 2. Resolve to TSV rows (default seed if unset).
@@ -247,4 +247,4 @@ analyst_files="$(echo "$tsv" | awk -F'\t' -v a="aid-researcher-analyst" '$2==a{p
 > `read-setting.sh`. No new script, no `yq`, no `python`. The `resolve_doc_set` and
 > `synth_default_seed` functions are inlined into the caller (state-generate.md, state-review.md,
 > or any state that needs them) rather than living in a standalone script under
-> `.agents/scripts/kb/`.
+> `.agents/aid/scripts/kb/`.

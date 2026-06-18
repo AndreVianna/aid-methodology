@@ -4,10 +4,10 @@ Work STATE.md `## Features Status` shows this feature `In Discussion`; find firs
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash .github/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .github/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
-bash .github/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-specify
-bash .github/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
+bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-specify
+bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 ---
@@ -80,7 +80,7 @@ Immediately after writing, verify what was written:
 
 **Grade the section** using the universal rubric (`../../../templates/grading-rubric.md`).
 Classify each issue by severity (Minor/Low/Medium/High/Critical). The grade is
-calculated — worst issue dominates. Compare to minimum grade from `bash .github/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`.
+calculated — worst issue dominates. Compare to minimum grade from `bash .github/aid/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|

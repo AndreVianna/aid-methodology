@@ -44,7 +44,7 @@ Include in the prompt:
 - **Ledger lifecycle:** "Read `.aid/.temp/review-pending/detail.md` if it exists.
   For each existing row: verify on disk, update Status (Pending→Fixed if resolved;
   Fixed→Recurred if regressed). Append new findings with Status: Pending.
-  Output per `.claude/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
+  Output per `.claude/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
 Dispatch the `aid-reviewer` subagent with the rendered brief.
 
@@ -53,10 +53,10 @@ Dispatch the `aid-reviewer` subagent with the rendered brief.
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash .claude/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
+bash .claude/aid/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
 ```
 
-Compare to minimum grade from `bash .claude/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`.
+Compare to minimum grade from `bash .claude/aid/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|

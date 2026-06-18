@@ -29,11 +29,11 @@ Detection` (`.aid/.temp/HOUSEKEEP_STATE_<ts>.md`; created on first write). Write
 through `housekeep-state.sh` (never hand-edit `## Housekeep Status`):
 
 ```bash
-bash .agent/scripts/housekeep/housekeep-state.sh \
+bash .agent/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "State" --value "KB-DELTA"
-bash .agent/scripts/housekeep/housekeep-state.sh \
+bash .agent/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "running"
-bash .agent/scripts/housekeep/housekeep-state.sh \
+bash .agent/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Last Run" \
     --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
@@ -42,10 +42,10 @@ KB-DELTA is the first stage to write, so ensure the `aid/housekeep-*` branch
 exists, then record it:
 
 ```bash
-bash .agent/scripts/housekeep/branch-commit.sh \
+bash .agent/aid/scripts/housekeep/branch-commit.sh \
     --ensure-branch --slug "$(date +%Y-%m-%d)"
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
-bash .agent/scripts/housekeep/housekeep-state.sh \
+bash .agent/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Branch" --value "$BRANCH"
 ```
 
@@ -160,7 +160,7 @@ operates **under `SKILL.md § Dispatch Protocol (L1+L2+L3)`** (heartbeat
 pre-create via `read-setting.sh --path traceability.heartbeat_interval
 --default 1`, three armed L2 timers as separate background dispatches,
 Calibration-Log writeback). Inherit that protocol — do not re-implement it. Take
-the ETA band from `.agent/templates/rough-time-hints.md` for the
+the ETA band from `.agent/aid/templates/rough-time-hints.md` for the
 discovery-subagent class.
 
 After invoking, the stage pauses for `/aid-discover` to settle; the re-entry
@@ -188,11 +188,11 @@ A fresh `**User Approved:** yes` was reached. Write the gate field and commit th
 refreshed KB:
 
 ```bash
-bash .agent/scripts/housekeep/housekeep-state.sh \
+bash .agent/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "KB Stage" --value "passed"
-bash .agent/scripts/housekeep/housekeep-state.sh \
+bash .agent/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "passed"
-bash .agent/scripts/housekeep/branch-commit.sh \
+bash .agent/aid/scripts/housekeep/branch-commit.sh \
     --commit --message "chore(housekeep): KB delta refresh [feature-002]" \
     --add .aid/knowledge/
 ```
@@ -214,9 +214,9 @@ Then write `**KB Stage:** skipped`, dispatch **no** sub-agents, make **no**
 commit (NFR2 idempotent), and CHAIN to SUMMARY-DELTA:
 
 ```bash
-bash .agent/scripts/housekeep/housekeep-state.sh \
+bash .agent/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "KB Stage" --value "skipped"
-bash .agent/scripts/housekeep/housekeep-state.sh \
+bash .agent/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "skipped"
 ```
 
@@ -228,11 +228,11 @@ Reached when Step 3 was cancelled (`[3]`) or Step 5 found no fresh approval
 (declined / still below grade with no resolution):
 
 ```bash
-bash .agent/scripts/housekeep/housekeep-state.sh \
+bash .agent/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "KB Stage" --value "stalled"
-bash .agent/scripts/housekeep/housekeep-state.sh \
+bash .agent/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "stalled"
-bash .agent/scripts/housekeep/housekeep-state.sh \
+bash .agent/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stall Reason" --value "<reason>"
 ```
 

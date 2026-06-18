@@ -4,10 +4,10 @@ Requirements are approved and no feature folders exist yet; decompose Functional
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash .github/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .github/scripts/execute/writeback-state.sh --pipeline --field Phase --value Interview
-bash .github/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-interview
-bash .github/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Interview
+bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-interview
+bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Agent:** This is design work, not interview work. Dispatch with `subagent_type: aid-architect` (overriding the default `aid-interviewer`). Print before dispatch: `[State 5] Dispatching aid-architect for Feature Decomposition.`

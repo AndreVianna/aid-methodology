@@ -41,7 +41,7 @@ Include in the prompt:
 - **Ledger lifecycle:** "Read `.aid/.temp/review-pending/plan.md` if it exists.
   For each existing row: verify on disk, update Status (Pending→Fixed if resolved;
   Fixed→Recurred if regressed). Append new findings with Status: Pending.
-  Output per `.cursor/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
+  Output per `.cursor/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
 Dispatch the `aid-reviewer` subagent with the rendered brief.
 
@@ -50,10 +50,10 @@ Dispatch the `aid-reviewer` subagent with the rendered brief.
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash .cursor/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
+bash .cursor/aid/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
 ```
 
-Compare to minimum grade from `bash .cursor/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`.
+Compare to minimum grade from `bash .cursor/aid/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|

@@ -156,8 +156,11 @@ assert_output_contains "${LISTING}" "./.claude/" \
     "RL02 claude-code tarball contains .claude/ dir"
 assert_output_contains "${LISTING}" "./CLAUDE.md" \
     "RL02 claude-code tarball contains root CLAUDE.md"
-assert_output_not_contains "${LISTING}" "README.md" \
-    "RL02 claude-code tarball has no README.md"
+if echo "${LISTING}" | grep -qE '(^|/)README\.md$'; then
+    fail "RL02 claude-code tarball has no bare README.md — unexpected path found"
+else
+    pass "RL02 claude-code tarball has no bare README.md"
+fi
 assert_output_not_contains "${LISTING}" "emission-manifest.jsonl" \
     "RL02 claude-code tarball has no emission-manifest.jsonl"
 assert_output_not_contains "${LISTING}" "aid-claude-code/" \
@@ -173,8 +176,11 @@ assert_output_contains "${LISTING}" "./.codex/" \
     "RL02 codex tarball contains .codex/ dir"
 assert_output_contains "${LISTING}" "./AGENTS.md" \
     "RL02 codex tarball contains root AGENTS.md"
-assert_output_not_contains "${LISTING}" "README.md" \
-    "RL02 codex tarball has no README.md"
+if echo "${LISTING}" | grep -qE '(^|/)README\.md$'; then
+    fail "RL02 codex tarball has no bare README.md — unexpected path found"
+else
+    pass "RL02 codex tarball has no bare README.md"
+fi
 assert_output_not_contains "${LISTING}" "emission-manifest.jsonl" \
     "RL02 codex tarball has no emission-manifest.jsonl"
 assert_output_not_contains "${LISTING}" "aid-codex/" \
@@ -188,8 +194,11 @@ assert_output_contains "${LISTING}" "./.cursor/" \
     "RL02 cursor tarball contains .cursor/ dir"
 assert_output_contains "${LISTING}" "./AGENTS.md" \
     "RL02 cursor tarball contains root AGENTS.md"
-assert_output_not_contains "${LISTING}" "README.md" \
-    "RL02 cursor tarball has no README.md"
+if echo "${LISTING}" | grep -qE '(^|/)README\.md$'; then
+    fail "RL02 cursor tarball has no bare README.md — unexpected path found"
+else
+    pass "RL02 cursor tarball has no bare README.md"
+fi
 assert_output_not_contains "${LISTING}" "emission-manifest.jsonl" \
     "RL02 cursor tarball has no emission-manifest.jsonl"
 assert_output_not_contains "${LISTING}" "aid-cursor/" \
@@ -203,8 +212,11 @@ assert_output_contains "${LISTING}" "./.github/" \
     "RL02 copilot-cli tarball contains .github/ dir"
 assert_output_contains "${LISTING}" "./AGENTS.md" \
     "RL02 copilot-cli tarball contains root AGENTS.md"
-assert_output_not_contains "${LISTING}" "README.md" \
-    "RL02 copilot-cli tarball has no README.md"
+if echo "${LISTING}" | grep -qE '(^|/)README\.md$'; then
+    fail "RL02 copilot-cli tarball has no bare README.md — unexpected path found"
+else
+    pass "RL02 copilot-cli tarball has no bare README.md"
+fi
 assert_output_not_contains "${LISTING}" "emission-manifest.jsonl" \
     "RL02 copilot-cli tarball has no emission-manifest.jsonl"
 assert_output_not_contains "${LISTING}" "aid-copilot-cli/" \
@@ -218,8 +230,11 @@ assert_output_contains "${LISTING}" "./.agent/" \
     "RL02 antigravity tarball contains .agent/ dir"
 assert_output_contains "${LISTING}" "./AGENTS.md" \
     "RL02 antigravity tarball contains root AGENTS.md"
-assert_output_not_contains "${LISTING}" "README.md" \
-    "RL02 antigravity tarball has no README.md"
+if echo "${LISTING}" | grep -qE '(^|/)README\.md$'; then
+    fail "RL02 antigravity tarball has no bare README.md — unexpected path found"
+else
+    pass "RL02 antigravity tarball has no bare README.md"
+fi
 assert_output_not_contains "${LISTING}" "emission-manifest.jsonl" \
     "RL02 antigravity tarball has no emission-manifest.jsonl"
 assert_output_not_contains "${LISTING}" "aid-antigravity/" \

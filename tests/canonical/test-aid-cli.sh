@@ -364,7 +364,8 @@ assert_eq "$([[ -f "${TK}/AGENTS.md" ]] && echo exists || echo gone)" "gone" \
 assert_output_contains "$OUT" "Uninstall complete." "CLI027-K05 remove reports 'Uninstall complete.'"
 
 # ===========================================================================
-# CLI027-L: protect-on-diff (FR11) honored on root agent file via `aid add`
+# CLI027-L: root-agent in-place merge honored on root agent file via `aid add`
+#           (NEW contract: exit 0, no .aid-new, user content preserved)
 # ===========================================================================
 CLI027L_HOME=$(newhome)
 setup_aid_home "${CLI027L_HOME}"
@@ -374,9 +375,12 @@ printf 'User AGENTS.md pre-placed\n' > "${TL}/AGENTS.md"
 run_aid "${CLI027L_HOME}" add codex \
     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
     --target "${TL}"
-assert_exit_eq "$RC" 5 "CLI027-L01 aid add with pre-placed AGENTS.md → exit 5 (protect-on-diff)"
-assert_file_exists "${TL}/AGENTS.md.aid-new" "CLI027-L02 AGENTS.md.aid-new created"
-assert_file_contains "${TL}/AGENTS.md" "User AGENTS.md" "CLI027-L03 original AGENTS.md not overwritten"
+assert_exit_eq "$RC" 0 "CLI027-L01 aid add with pre-placed AGENTS.md → exit 0 (in-place merge)"
+assert_eq "$([[ -f "${TL}/AGENTS.md.aid-new" ]] && echo exists || echo none)" "none" \
+    "CLI027-L02 no AGENTS.md.aid-new sidecar (sidecar eliminated)"
+assert_file_contains "${TL}/AGENTS.md" "User AGENTS.md" "CLI027-L03 user content preserved in AGENTS.md"
+assert_output_not_contains "$OUT" "Install complete with warnings" "CLI027-L04 no warning banner"
+assert_output_not_contains "$OUT" "pending-merge" "CLI027-L05 no pending-merge mention"
 
 # ===========================================================================
 # CLI027-M: aid version → exit 0, prints version

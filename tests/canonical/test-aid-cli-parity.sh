@@ -298,7 +298,12 @@ assert_eq "$_SH_OFFER_C" "$_PS_OFFER_C" \
     "PAR029-C06 Bash↔PS1 offer line byte-identical for empty-dir status"
 
 # ===========================================================================
-# PAR029-D: Exit code parity — protect-on-diff → exit 5
+# PAR029-D: Pre-placed user AGENTS.md → in-place region update, exit 0, no .aid-new
+#
+# NEW CONTRACT (work-003): _copy_root_agent_file / Copy-RootAgentFile perform
+# an in-place AID:BEGIN/END region update. No exit 5, no .aid-new sidecar.
+# Both bash and PS1 exit 0 and produce byte-identical AGENTS.md output.
+# User content outside markers is preserved identically in both runtimes.
 # ===========================================================================
 SH_HOME_D=$(newhome); setup_sh_home "${SH_HOME_D}"
 PS_HOME_D=$(newhome); setup_ps1_home "${PS_HOME_D}"
@@ -313,13 +318,24 @@ run_ps1 "${PS_HOME_D}" add codex \
     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
     -Target "${T_PS1_D}"
 
-assert_exit_eq "$RC_SH"  5 "PAR029-D01 Bash add protect-on-diff → exit 5"
-assert_exit_eq "$RC_PS1" 5 "PAR029-D02 PS1 add protect-on-diff → exit 5"
-assert_eq "$RC_SH" "$RC_PS1" "PAR029-D03 Bash↔PS1 exit code parity for protect-on-diff"
+# Both must exit 0 (new contract: no protect-on-diff / exit 5).
+assert_exit_eq "$RC_SH"  0 "PAR029-D01 Bash add with pre-placed user AGENTS.md → exit 0"
+assert_exit_eq "$RC_PS1" 0 "PAR029-D02 PS1 add with pre-placed user AGENTS.md → exit 0"
+assert_eq "$RC_SH" "$RC_PS1" "PAR029-D03 Bash↔PS1 exit code parity for user AGENTS.md"
 
-# Both must have created .aid-new.
-assert_file_exists "${T_SH_D}/AGENTS.md.aid-new"  "PAR029-D04 Bash: .aid-new created"
-assert_file_exists "${T_PS1_D}/AGENTS.md.aid-new" "PAR029-D05 PS1: .aid-new created"
+# Neither must write a .aid-new sidecar file.
+assert_eq "$([[ -e "${T_SH_D}/AGENTS.md.aid-new"  ]] && echo exists || echo gone)" "gone" \
+    "PAR029-D04 Bash: .aid-new NOT created (new contract: no sidecar)"
+assert_eq "$([[ -e "${T_PS1_D}/AGENTS.md.aid-new" ]] && echo exists || echo gone)" "gone" \
+    "PAR029-D05 PS1: .aid-new NOT created (new contract: no sidecar)"
+
+# PARITY: both produce byte-identical AGENTS.md output.
+_D_CMP=$(cmp -s "${T_SH_D}/AGENTS.md" "${T_PS1_D}/AGENTS.md" && echo same || echo diff)
+assert_eq "$_D_CMP" "same" "PAR029-D06 Bash↔PS1 AGENTS.md byte-identical (region-update parity)"
+
+# User content outside markers preserved in both.
+assert_file_contains "${T_SH_D}/AGENTS.md"  "User AGENTS.md" "PAR029-D07 Bash: user content preserved outside markers"
+assert_file_contains "${T_PS1_D}/AGENTS.md" "User AGENTS.md" "PAR029-D08 PS1: user content preserved outside markers"
 
 # ===========================================================================
 # PAR029-E: Exit code parity — remove (no manifest) → exit 6

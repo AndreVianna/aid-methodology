@@ -43,7 +43,6 @@
 #   2  usage error
 #   3  network / fetch failure
 #   4  checksum mismatch
-#   5  protect-on-diff blocked (without -Force)
 #   6  uninstall with no manifest
 
 Set-StrictMode -Version Latest
@@ -59,6 +58,9 @@ $script:_CopyCountCopied   = 0
 $script:_CopyCountUpToDate = 0
 $script:_CopyCountUpdated  = 0
 $script:_CopyCountSkipped  = 0
+
+# Module-level prune counter. Reset by Invoke-PruneToolDirs before each prune pass.
+$script:_PruneRemoved = 0
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -417,16 +419,73 @@ function Copy-AidDir {
 }
 
 # ---------------------------------------------------------------------------
-# Protect-on-diff (FR11) for root agent files
+# Root agent file region update (Pillar 3)
 # ---------------------------------------------------------------------------
 
+# script:Test-AidHeadingStem <line>
+# Returns $true when the line is an AID-managed section heading (by stem match).
+# Stems matched: Knowledge Base, Review output format, Permissions,
+#                Tracking discipline.
+# Tolerates a trailing parenthetical suffix e.g. " (global)" or " (IMPERATIVE)".
+# Identical logic to the bash is_aid_heading awk function.
+function script:Test-AidHeadingStem {
+    param([string]$Line)
+    if (-not $Line.StartsWith('## ')) { return $false }
+    $stem = $Line.Substring(3)  # strip "## "
+    # Strip trailing parenthetical: " (anything)"
+    $stem = $stem -replace ' \([^)]*\)$', ''
+    switch ($stem) {
+        'Knowledge Base'       { return $true }
+        'Review output format' { return $true }
+        'Permissions'          { return $true }
+        'Tracking discipline'  { return $true }
+        default                { return $false }
+    }
+}
+
+# script:Get-AidMarkedRegion <filePath>
+# Extracts the AID:BEGIN..AID:END region (inclusive of marker lines) from a file.
+# Returns a single string with LF line endings (matching bash awk extraction).
+function script:Get-AidMarkedRegion {
+    param([string]$FilePath)
+    $lines = [System.IO.File]::ReadAllLines($FilePath)
+    $found = $false
+    $region = [System.Text.StringBuilder]::new()
+    foreach ($line in $lines) {
+        if (-not $found -and $line -eq '<!-- AID:BEGIN -->') {
+            $found = $true
+        }
+        if ($found) {
+            [void]$region.Append($line)
+            [void]$region.Append("`n")
+            if ($line -eq '<!-- AID:END -->') { break }
+        }
+    }
+    return $region.ToString()
+}
+
 # script:Copy-RootAgentFile <src> <dst> <tool> <force> [manifest] [aidVerbose]
-# Implements the FR11 algorithm.
-# Returns:
-#   0 - success (copied/up-to-date/updated/forced)
-#   5 - protect-on-diff blocked (written .aid-new instead)
 #
-# Sets $script:_CORE_ROOT_AGENT_STATUS = 'owned' | 'pending-merge'.
+# Updates the root agent file (CLAUDE.md / AGENTS.md) using in-place region
+# semantics.  Never writes a backup/sidecar file under any branch.
+#
+# Algorithm:
+#   A. Dst absent              -> write full source (markers included).
+#   B. Dst has AID:BEGIN/END   -> replace only the marked region; preserve all
+#                                 content outside the markers verbatim.
+#   C. Dst has no markers      -> migrate:
+#      C1. Sha matches recorded manifest sha -> clean rewrite to full marked source.
+#      C2. Sha mismatch        -> excise known AID-managed sections by stem match
+#                                 (Knowledge Base, Review output format,
+#                                 Permissions, Tracking discipline -- tolerating
+#                                 trailing parenthetical suffix on the heading)
+#                                 and re-insert them wrapped in AID:BEGIN/END
+#                                 markers in place; preserve ## Project /
+#                                 ## Project Overview and all other user content.
+#                                 No backup file is ever written.
+#
+# Sets $script:_CORE_ROOT_AGENT_STATUS = 'owned' always (the .aid-new /
+# pending-merge path is eliminated; all divergence is resolved in-place).
 # Increments module-level counters $script:_CopyCount* just like Copy-AidFile.
 function script:Copy-RootAgentFile {
     param(
@@ -439,62 +498,162 @@ function script:Copy-RootAgentFile {
     )
 
     $script:_CORE_ROOT_AGENT_STATUS = 'owned'
-    $incSha = Get-Sha256File -FilePath $Src
+    $srcSha = Get-Sha256File -FilePath $Src
+    $dstDir = [System.IO.Path]::GetDirectoryName($Dst)
 
+    # ------------------------------------------------------------------
+    # Branch A: destination absent -> write full source.
+    # ------------------------------------------------------------------
     if (-not (Test-Path $Dst -PathType Leaf)) {
-        # Step 2: Destination absent -> copy.
-        $dstDir = [System.IO.Path]::GetDirectoryName($Dst)
         if ($dstDir -and -not (Test-Path $dstDir -PathType Container)) {
             New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
         }
         Copy-Item -LiteralPath $Src -Destination $Dst -Force
         $script:_CopyCountCopied++
         if ($AidVerbose) { Write-Host "Copied: $Dst" }
-        $script:_CORE_ROOT_AGENT_STATUS = 'owned'
         return 0
     }
 
     $diskSha = Get-Sha256File -FilePath $Dst
 
-    if ($diskSha -eq $incSha) {
-        # Step 3: Identical -> up to date.
+    # Identical on disk -> nothing to do.
+    if ($diskSha -eq $srcSha) {
         $script:_CopyCountUpToDate++
         if ($AidVerbose) { Write-Host "Up to date: $Dst" }
-        $script:_CORE_ROOT_AGENT_STATUS = 'owned'
         return 0
     }
 
-    # Check manifest for AID-owned sha.
+    # ------------------------------------------------------------------
+    # Branch B: destination already has AID:BEGIN/END markers.
+    # Replace only the marked region; preserve everything outside verbatim.
+    # ------------------------------------------------------------------
+    $dstLines = [System.IO.File]::ReadAllLines($Dst)
+    $hasMarkers = $false
+    foreach ($line in $dstLines) {
+        if ($line -eq '<!-- AID:BEGIN -->') { $hasMarkers = $true; break }
+    }
+
+    if ($hasMarkers) {
+        # Extract the marked region from source (inclusive of marker lines).
+        $srcRegion = script:Get-AidMarkedRegion -FilePath $Src
+
+        # Rebuild dst: lines before the marker, then new region, then lines after.
+        $tmpPath = Join-Path $dstDir (".aid-root-agent." + [System.IO.Path]::GetRandomFileName())
+        try {
+            $sb = [System.Text.StringBuilder]::new()
+            $inAid = $false
+            $printedRegion = $false
+            foreach ($line in $dstLines) {
+                if ($line -eq '<!-- AID:BEGIN -->') {
+                    if (-not $printedRegion) {
+                        [void]$sb.Append($srcRegion)
+                        $printedRegion = $true
+                    }
+                    $inAid = $true
+                    continue
+                }
+                if ($inAid -and $line -eq '<!-- AID:END -->') {
+                    $inAid = $false
+                    continue
+                }
+                if ($inAid) { continue }
+                [void]$sb.Append($line)
+                [void]$sb.Append("`n")
+            }
+            $bytes = [System.Text.Encoding]::UTF8.GetBytes($sb.ToString())
+            [System.IO.File]::WriteAllBytes($tmpPath, $bytes)
+            Move-Item -LiteralPath $tmpPath -Destination $Dst -Force
+        } catch {
+            if (Test-Path $tmpPath -PathType Leaf) {
+                Remove-Item -LiteralPath $tmpPath -Force -ErrorAction SilentlyContinue
+            }
+            throw
+        }
+
+        $script:_CopyCountUpdated++
+        if ($AidVerbose) { Write-Host "Updated: $Dst (region replaced)" }
+        return 0
+    }
+
+    # ------------------------------------------------------------------
+    # Branch C: destination has no markers -- migration path.
+    # ------------------------------------------------------------------
+
+    # Read recorded sha from manifest (the sha AID last wrote to this file).
     $recordedSha = ''
     if ($Manifest -and (Test-Path $Manifest -PathType Leaf)) {
         $fname = [System.IO.Path]::GetFileName($Dst)
         $recordedSha = Read-ManifestRootAgent -ManifestPath $Manifest -Tool $Tool -FileName $fname
     }
 
+    # C1: sha still matches the AID-recorded value -> clean rewrite.
     if ($recordedSha -and ($diskSha -eq $recordedSha)) {
-        # Step 4: AID owns it -> overwrite.
         Copy-Item -LiteralPath $Src -Destination $Dst -Force
         $script:_CopyCountUpdated++
-        if ($AidVerbose) { Write-Host "Updated: $Dst" }
-        $script:_CORE_ROOT_AGENT_STATUS = 'owned'
+        if ($AidVerbose) { Write-Host "Updated: $Dst (migrated: clean rewrite)" }
         return 0
     }
 
-    # Step 5: Someone else owns it.
-    if ($Force) {
-        Copy-Item -LiteralPath $Src -Destination $Dst -Force
-        $script:_CopyCountUpdated++
-        if ($AidVerbose) { Write-Host "Updated: $Dst (forced over existing)" }
-        $script:_CORE_ROOT_AGENT_STATUS = 'owned'
-        return 0
+    # C2: sha mismatch (user has edited the file) -> excise AID sections by
+    # stem match and re-insert as a marked region.
+    #
+    # AID section stems to excise (exact heading stem; tolerate trailing
+    # parenthetical like " (global)" or " (IMPERATIVE)"):
+    #   ## Knowledge Base
+    #   ## Review output format
+    #   ## Permissions
+    #   ## Tracking discipline
+    #
+    # A section runs from its "## Stem..." heading line until the next "## "
+    # heading (exclusive) or end-of-file.
+    #
+    # The new marked region (from the source) is inserted at the position of
+    # the first excised section.  All other content (## Project, user sections)
+    # is preserved verbatim.
+
+    # Extract the new marked region from source.
+    $newRegion = script:Get-AidMarkedRegion -FilePath $Src
+
+    $tmpPath = Join-Path $dstDir (".aid-root-agent." + [System.IO.Path]::GetRandomFileName())
+    try {
+        $sb = [System.Text.StringBuilder]::new()
+        $inAidSection = $false
+        $regionInserted = $false
+
+        foreach ($line in $dstLines) {
+            if ($line.StartsWith('## ')) {
+                if (script:Test-AidHeadingStem -Line $line) {
+                    # Start suppressing this AID section.
+                    $inAidSection = $true
+                    # Insert the new marked region at the first AID section position.
+                    if (-not $regionInserted) {
+                        [void]$sb.Append($newRegion)
+                        $regionInserted = $true
+                    }
+                    continue
+                } else {
+                    # A non-AID heading ends any current AID section suppression.
+                    $inAidSection = $false
+                }
+            }
+            if ($inAidSection) { continue }
+            [void]$sb.Append($line)
+            [void]$sb.Append("`n")
+        }
+
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($sb.ToString())
+        [System.IO.File]::WriteAllBytes($tmpPath, $bytes)
+        Move-Item -LiteralPath $tmpPath -Destination $Dst -Force
+    } catch {
+        if (Test-Path $tmpPath -PathType Leaf) {
+            Remove-Item -LiteralPath $tmpPath -Force -ErrorAction SilentlyContinue
+        }
+        throw
     }
 
-    # Without -Force: write .aid-new.
-    Copy-Item -LiteralPath $Src -Destination "$Dst.aid-new" -Force
-    # WARN always shows regardless of AidVerbose.
-    [Console]::Error.WriteLine("WARN: $Dst exists and was not written by AID; wrote incoming version to $Dst.aid-new - review and merge, or re-run with --force to overwrite")
-    $script:_CORE_ROOT_AGENT_STATUS = 'pending-merge'
-    return 5
+    $script:_CopyCountUpdated++
+    if ($AidVerbose) { Write-Host "Updated: $Dst (migrated: AID sections re-wrapped in markers)" }
+    return 0
 }
 
 # ---------------------------------------------------------------------------
@@ -941,6 +1100,164 @@ function Invoke-AidProvisionSharedStateHome {
 }
 
 # ---------------------------------------------------------------------------
+# Orphan prune (Pillar 2 - R7)
+# ---------------------------------------------------------------------------
+
+# Invoke-PruneToolDirs <target> <tool> <manifestPathSet>
+#
+# Removes stale AID-owned files from the tool's scoped directories AFTER a
+# fresh install/update.  Prune basis = aid- prefix + new-manifest membership.
+# Reads NO previous manifest; compares against the path set just written.
+#
+# Parameters:
+#   Target          - the repo root (absolute path)
+#   Tool            - canonical tool id
+#   ManifestPathSet - HashSet[string] of new-manifest paths (for O(1) lookup)
+#
+# Tool-native dirs (agents/, skills/, rules/):
+#   (a) aid-prefixed FILE not in the manifest set -> remove
+#   (b) aid-prefixed DIRECTORY with NO files in the manifest set -> remove dir
+#       (kept when ANY of its files appear in the set)
+#   Non-aid-prefixed entries are never touched (user content).
+#
+# AID-own subtree (aid/ inside the tool root):
+#   (c) any FILE under aid/ not in the manifest set -> remove
+#   (d) now-empty aid/ subdirs pruned after file removals
+#
+# Scoping (R1): copilot-cli walks only .github/{agents,skills,aid}, never .github root.
+# Never removes directories outside the tool's scoped AID directories.
+function Invoke-PruneToolDirs {
+    param(
+        [string]$Target,
+        [string]$Tool,
+        [System.Collections.Generic.HashSet[string]]$ManifestPathSet,
+        [bool]$AidVerbose = $false
+    )
+
+    $script:_PruneRemoved = 0
+
+    # -----------------------------------------------------------------------
+    # Helper: Invoke-PruneNativeDir <nativeDirAbs>
+    # Walk one tool-native directory; apply rules (a) and (b).
+    # <nativeDirAbs> is absolute (e.g. C:\repo\.claude\agents).
+    # -----------------------------------------------------------------------
+    $pruneNativeDir = {
+        param([string]$NDir)
+        if (-not (Test-Path $NDir -PathType Container)) { return }
+
+        # Enumerate immediate aid-prefixed children of the native dir.
+        $children = @(Get-ChildItem -LiteralPath $NDir -ErrorAction SilentlyContinue |
+                      Where-Object { $_.Name -like 'aid-*' })
+        foreach ($child in $children) {
+            $childRel = $child.FullName.Substring($Target.Length).TrimStart([char]'\', [char]'/') -replace '\\', '/'
+
+            if ($child -is [System.IO.FileInfo]) {
+                # Rule (a): aid-prefixed file not in manifest -> remove.
+                if (-not $ManifestPathSet.Contains($childRel)) {
+                    Remove-Item -LiteralPath $child.FullName -Force
+                    $script:_PruneRemoved++
+                    if ($AidVerbose) { Write-Host "Pruned: $($child.FullName)" }
+                }
+            } elseif ($child -is [System.IO.DirectoryInfo]) {
+                # Rule (b): aid-prefixed dir -> keep only if any file inside is in manifest.
+                $hasLive = $false
+                $members = @(Get-ChildItem -LiteralPath $child.FullName -Recurse -File -ErrorAction SilentlyContinue)
+                foreach ($m in $members) {
+                    $mRel = $m.FullName.Substring($Target.Length).TrimStart([char]'\', [char]'/') -replace '\\', '/'
+                    if ($ManifestPathSet.Contains($mRel)) {
+                        $hasLive = $true
+                        break
+                    }
+                }
+                if (-not $hasLive) {
+                    Remove-Item -LiteralPath $child.FullName -Recurse -Force
+                    $script:_PruneRemoved++
+                    if ($AidVerbose) { Write-Host "Pruned dir: $($child.FullName)" }
+                }
+            }
+        }
+    }
+
+    # -----------------------------------------------------------------------
+    # Helper: Invoke-PruneAidSubtree <aidRootAbs>
+    # Walk the aid/ subtree; apply rule (c) and prune empty subdirs (d).
+    # <aidRootAbs> is absolute (e.g. C:\repo\.claude\aid).
+    # -----------------------------------------------------------------------
+    $pruneAidSubtree = {
+        param([string]$ADir)
+        if (-not (Test-Path $ADir -PathType Container)) { return }
+
+        # Rule (c): remove files not in manifest.
+        $files = @(Get-ChildItem -LiteralPath $ADir -Recurse -File -ErrorAction SilentlyContinue)
+        foreach ($f in $files) {
+            $fRel = $f.FullName.Substring($Target.Length).TrimStart([char]'\', [char]'/') -replace '\\', '/'
+            if (-not $ManifestPathSet.Contains($fRel)) {
+                Remove-Item -LiteralPath $f.FullName -Force
+                $script:_PruneRemoved++
+                if ($AidVerbose) { Write-Host "Pruned: $($f.FullName)" }
+            }
+        }
+
+        # Rule (d): prune now-empty subdirs (deepest first, skip the root itself).
+        $subdirs = @(Get-ChildItem -LiteralPath $ADir -Recurse -Directory -ErrorAction SilentlyContinue)
+        # Sort deepest first (longest path first by ordinal).
+        $subdirPaths = [string[]]($subdirs | ForEach-Object { $_.FullName })
+        [System.Array]::Sort($subdirPaths, [System.StringComparer]::Ordinal)
+        [System.Array]::Reverse($subdirPaths)
+        foreach ($dp in $subdirPaths) {
+            if (Test-Path $dp -PathType Container) {
+                $rem = @(Get-ChildItem -LiteralPath $dp -ErrorAction SilentlyContinue) | Select-Object -First 1
+                if (-not $rem) {
+                    Remove-Item -LiteralPath $dp -Force
+                    if ($AidVerbose) { Write-Host "Pruned dir: $dp" }
+                }
+            }
+        }
+    }
+
+    # -----------------------------------------------------------------------
+    # Per-tool scoping: which native dirs + which aid/ root to walk.
+    # NOTE: Do NOT use the Uninstall-AidTool $aidDirs map (~line 1314) here --
+    #       that map points copilot-cli at the .github ROOT (forbidden by R1).
+    #       Scope is the R1-compliant set: .github/{agents,skills,aid} only.
+    # -----------------------------------------------------------------------
+    switch ($Tool) {
+        'claude-code' {
+            & $pruneNativeDir (Join-Path $Target '.claude\agents')
+            & $pruneNativeDir (Join-Path $Target '.claude\skills')
+            & $pruneAidSubtree (Join-Path $Target '.claude\aid')
+        }
+        'codex' {
+            # .codex ships only agents/; .agents ships skills/ + aid/ subtree.
+            & $pruneNativeDir (Join-Path $Target '.codex\agents')
+            & $pruneNativeDir (Join-Path $Target '.agents\skills')
+            & $pruneAidSubtree (Join-Path $Target '.agents\aid')
+        }
+        'cursor' {
+            & $pruneNativeDir (Join-Path $Target '.cursor\agents')
+            & $pruneNativeDir (Join-Path $Target '.cursor\skills')
+            & $pruneNativeDir (Join-Path $Target '.cursor\rules')
+            & $pruneAidSubtree (Join-Path $Target '.cursor\aid')
+        }
+        'copilot-cli' {
+            # R1: scope to .github/{agents,skills,aid} ONLY -- never .github root.
+            & $pruneNativeDir (Join-Path $Target '.github\agents')
+            & $pruneNativeDir (Join-Path $Target '.github\skills')
+            & $pruneAidSubtree (Join-Path $Target '.github\aid')
+        }
+        'antigravity' {
+            & $pruneNativeDir (Join-Path $Target '.agent\rules')
+            & $pruneNativeDir (Join-Path $Target '.agent\skills')
+            & $pruneAidSubtree (Join-Path $Target '.agent\aid')
+        }
+    }
+
+    if ($script:_PruneRemoved -gt 0) {
+        if (-not $AidVerbose) { Write-Host "  $($script:_PruneRemoved) stale AID file(s) pruned" }
+    }
+}
+
+# ---------------------------------------------------------------------------
 # Version marker
 # ---------------------------------------------------------------------------
 
@@ -964,7 +1281,6 @@ function Write-VersionMarker {
 # Install-AidTool <stagingDir> <tool> <target> <version> [force] [aidVerbose]
 # Returns:
 #   0 - success (all files installed or up-to-date)
-#   5 - at least one root agent file was protect-on-diff blocked
 #
 # Side effects: writes <target>/.aid/.aid-manifest.json and .aid/.aid-version.
 function Install-AidTool {
@@ -980,7 +1296,6 @@ function Install-AidTool {
     $manifest = Join-Path $Target (Join-Path '.aid' '.aid-manifest.json')
     $installPaths  = [System.Collections.Generic.List[string]]::new()
     $rootEntries   = [System.Collections.Generic.List[string]]::new()
-    $blocked       = $false
 
     # Reset per-tool copy counters.
     $script:_CopyCountCopied   = 0
@@ -1048,28 +1363,31 @@ function Install-AidTool {
         }
     }
 
-    # Handle root agent file via FR11.
+    # Handle root agent file via in-place region update (Pillar 3).
     $rootSrc = Join-Path $StagingDir $rootAgentFile
     $rootDst = Join-Path $Target $rootAgentFile
 
     if (Test-Path $rootSrc -PathType Leaf) {
         $script:_CORE_ROOT_AGENT_STATUS = 'owned'
-        $rafRc = script:Copy-RootAgentFile -Src $rootSrc -Dst $rootDst -Tool $Tool -Force $Force `
-                     -Manifest $manifest -AidVerbose $AidVerbose
-        if ($rafRc -eq 5) { $blocked = $true }
+        script:Copy-RootAgentFile -Src $rootSrc -Dst $rootDst -Tool $Tool -Force $Force `
+            -Manifest $manifest -AidVerbose $AidVerbose | Out-Null
 
         $incSha = Get-Sha256File -FilePath $rootSrc
         $rootEntries.Add("$rootAgentFile|$incSha|$($script:_CORE_ROOT_AGENT_STATUS)")
 
-        # Include root agent path in paths list only when owned (not pending-merge).
-        if ($script:_CORE_ROOT_AGENT_STATUS -eq 'owned') {
-            $installPaths.Add($rootAgentFile)
-        }
+        # Include root agent path in paths list (status is always 'owned' now).
+        $installPaths.Add($rootAgentFile)
     }
 
     # Write manifest (merge).
     Write-AidManifest -ManifestPath $manifest -Tool $Tool -Version $Version `
         -Paths @($installPaths) -RootEntries @($rootEntries)
+
+    # Prune stale AID-owned files (Pillar 2, R7).
+    # Build a HashSet from the new manifest path set for O(1) lookup.
+    $pruneSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($p in $installPaths) { $pruneSet.Add($p) | Out-Null }
+    Invoke-PruneToolDirs -Target $Target -Tool $Tool -ManifestPathSet $pruneSet -AidVerbose $AidVerbose
 
     # Write version marker.
     Write-VersionMarker -Target $Target -Version $Version
@@ -1090,7 +1408,6 @@ function Install-AidTool {
         }
     }
 
-    if ($blocked) { return 5 }
     return 0
 }
 
@@ -1482,5 +1799,6 @@ Export-ModuleMember -Function @(
     'Get-ManifestToolList',
     'Get-AidStatusBody',
     'Get-AidStatus',
-    'Invoke-AidProvisionSharedStateHome'
+    'Invoke-AidProvisionSharedStateHome',
+    'Invoke-PruneToolDirs'
 )

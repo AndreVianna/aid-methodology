@@ -3099,8 +3099,6 @@ _prepare_tool_staging_aid() {
 # ---------------------------------------------------------------------------
 # Dispatch to engine.
 # ---------------------------------------------------------------------------
-_AID_OVERALL_BLOCKED=0
-
 case "$SUBCMD" in
     add|update)
         # B-table (for 'add'): writability pre-check BEFORE any .aid/ is created.
@@ -3127,22 +3125,10 @@ case "$SUBCMD" in
             echo ""
             _prepare_tool_staging_aid "$_tool" "$_AID_VERSION_ARG" "$_AID_FROM_BUNDLE"
             echo "Installing ${_tool} v${_AID_RESOLVED_VERSION} -> ${_AID_TARGET}"
-            install_tool "$_AID_STAGING_DIR" "$_tool" "$_AID_TARGET" "$_AID_RESOLVED_VERSION" "$_AID_FORCE" || {
-                _RC=$?
-                if [[ "$_RC" -eq 5 ]]; then
-                    _AID_OVERALL_BLOCKED=1
-                else
-                    exit "$_RC"
-                fi
-            }
+            install_tool "$_AID_STAGING_DIR" "$_tool" "$_AID_TARGET" "$_AID_RESOLVED_VERSION" "$_AID_FORCE" || exit $?
         done
 
         echo ""
-        if [[ "$_AID_OVERALL_BLOCKED" -eq 1 ]]; then
-            echo "Install complete with warnings: one or more root agent files were not overwritten."
-            echo "Review the *.aid-new file(s) and merge, or re-run with --force to overwrite."
-            exit 5
-        fi
         echo "Done. AID ${_AID_RESOLVED_VERSION:-} installed into: ${_AID_TARGET}"
 
         # B-table (for 'add'): tier-aware registration after successful install.

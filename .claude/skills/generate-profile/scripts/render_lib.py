@@ -49,12 +49,21 @@ _PLACEHOLDER_RE = re.compile(
     r"\{(" + "|".join(re.escape(k) for k in sorted(_FILENAME_PLACEHOLDERS)) + r")\}"
 )
 
-# Regex matching canonical/* path references that must be rewritten to the
-# install-tree path during render. Uses a word boundary so substrings
-# like "foocanonical/..." don't match; constrains the second segment to the
-# known canonical subdirectories so unrelated paths (e.g., "canonical/work-NNN")
-# pass through untouched.
-_CANONICAL_PATH_DIRS = ("scripts", "templates", "skills", "agents", "rules", "recipes")
+# Canonical subdirectory sets for install-path rewriting.
+#
+# AID-own dirs: AID invented these generic names; the host tool does NOT require
+# the path. These nest under aid/ in the install tree so they are isolated from
+# user content: canonical/<x>/ -> <install_root>/aid/<x>/
+#
+# Tool-native dirs: the host tool requires the exact path. These keep their path
+# in the install tree: canonical/<x>/ -> <install_root>/<x>/  (unchanged behavior)
+_CANONICAL_PATH_DIRS_AID_OWN = ("scripts", "templates", "recipes")
+_CANONICAL_PATH_DIRS_TOOL_NATIVE = ("skills", "agents", "rules")
+_CANONICAL_PATH_DIRS = _CANONICAL_PATH_DIRS_AID_OWN + _CANONICAL_PATH_DIRS_TOOL_NATIVE
+
+# Single regex matching ALL known canonical subdirectories (word boundary so
+# substrings like "foocanonical/..." do not match). The replacement function
+# dispatches to the correct install path based on which group matched.
 _CANONICAL_PATH_RE = re.compile(
     r"\bcanonical/(" + "|".join(_CANONICAL_PATH_DIRS) + r")/"
 )
@@ -132,12 +141,26 @@ def rewrite_install_paths(body: str, install_root: str) -> str:
     in adopter projects. This rewriter runs during render so each profile's
     output contains install-rooted paths instead.
 
+    AID-own dirs (``scripts``, ``templates``, ``recipes``) are nested under
+    ``aid/`` in the install tree to isolate them from user content:
+
+        canonical/scripts/...   -> <install_root>/aid/scripts/...
+        canonical/templates/... -> <install_root>/aid/templates/...
+        canonical/recipes/...   -> <install_root>/aid/recipes/...
+
+    Tool-native dirs (``skills``, ``agents``, ``rules``) keep their path
+    (unchanged behavior):
+
+        canonical/skills/...    -> <install_root>/skills/...
+        canonical/agents/...    -> <install_root>/agents/...
+        canonical/rules/...     -> <install_root>/rules/...
+
     Comment lines (lines whose first non-whitespace character is ``#``) are
     SKIPPED. This protects prose-about-the-mechanism (e.g.,
     ``generated-files.txt`` PATH CONVENTION header) from circular rewrites:
     a comment that describes the renderer's behavior using literal
     ``canonical/scripts/...`` strings would otherwise become circular
-    nonsense in the profile (``.claude/scripts/... → .claude/scripts/...``).
+    nonsense in the profile (``.claude/aid/scripts/... -> .claude/aid/scripts/...``).
     Shell, YAML, and .txt files use ``#`` as their comment character;
     markdown headings start with ``#`` too but rarely contain literal
     canonical/ path references — so the same rule is safe across formats.
@@ -158,23 +181,33 @@ def rewrite_install_paths(body: str, install_root: str) -> str:
     -------
     str
         Body with every matched canonical/<dir>/ prefix rewritten to
-        <install_root>/<dir>/, EXCEPT on comment lines (`#` at first non-ws).
+        <install_root>/aid/<dir>/ (AID-own) or <install_root>/<dir>/ (tool-native),
+        EXCEPT on comment lines (``#`` at first non-ws).
 
     Notes
     -----
     - Uses a word boundary so substrings like ``foocanonical/...`` don't match.
     - Only rewrites the 6 known canonical subdirectories — paths like
       ``canonical/work-NNN/...`` or ``canonical/scratch/`` pass through.
-    - Idempotent: rewriting already-rewritten text is a no-op.
+    - Idempotent: rewriting already-rewritten text is a no-op (the regex matches
+      ``canonical/`` which does not appear in already-nested paths).
     - Comment skip is line-by-line; multi-line constructs not detected.
     """
+    _aid_own = set(_CANONICAL_PATH_DIRS_AID_OWN)
+
+    def _replace(match: re.Match) -> str:  # type: ignore[type-arg]
+        dir_name = match.group(1)
+        if dir_name in _aid_own:
+            return f"{install_root}/aid/{dir_name}/"
+        return f"{install_root}/{dir_name}/"
+
     out_lines = []
     for line in body.splitlines(keepends=True):
         stripped = line.lstrip()
         if stripped.startswith("#"):
             out_lines.append(line)  # comment line — preserve verbatim
         else:
-            out_lines.append(_CANONICAL_PATH_RE.sub(install_root + r"/\1/", line))
+            out_lines.append(_CANONICAL_PATH_RE.sub(_replace, line))
     return "".join(out_lines)
 
 
@@ -517,13 +550,58 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — basic rewrite on a non-comment line
+    # Test: rewrite_install_paths — AID-own dir (scripts) nests under aid/
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
         "bash canonical/scripts/grade.sh foo\n", ".claude"
     )
-    if out != "bash .claude/scripts/grade.sh foo\n":
-        failures.append(f"rewrite_install_paths: basic rewrite wrong, got {out!r}")
+    if out != "bash .claude/aid/scripts/grade.sh foo\n":
+        failures.append(f"rewrite_install_paths: AID-own scripts rewrite wrong, got {out!r}")
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — AID-own dir (templates) nests under aid/
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "see canonical/templates/settings.yml\n", ".claude"
+    )
+    if out != "see .claude/aid/templates/settings.yml\n":
+        failures.append(f"rewrite_install_paths: AID-own templates rewrite wrong, got {out!r}")
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — AID-own dir (recipes) nests under aid/
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "see canonical/recipes/add-api.md\n", ".claude"
+    )
+    if out != "see .claude/aid/recipes/add-api.md\n":
+        failures.append(f"rewrite_install_paths: AID-own recipes rewrite wrong, got {out!r}")
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — tool-native dir (skills) stays un-nested
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "see canonical/skills/aid-config/SKILL.md\n", ".claude"
+    )
+    if out != "see .claude/skills/aid-config/SKILL.md\n":
+        failures.append(f"rewrite_install_paths: tool-native skills should not nest, got {out!r}")
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — tool-native dir (agents) stays un-nested
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "see canonical/agents/aid-developer/AGENT.md\n", ".claude"
+    )
+    if out != "see .claude/agents/aid-developer/AGENT.md\n":
+        failures.append(f"rewrite_install_paths: tool-native agents should not nest, got {out!r}")
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — tool-native dir (rules) stays un-nested
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "see canonical/rules/aid-methodology.mdc\n", ".cursor"
+    )
+    if out != "see .cursor/rules/aid-methodology.mdc\n":
+        failures.append(f"rewrite_install_paths: tool-native rules should not nest, got {out!r}")
 
     # -----------------------------------------------------------------------
     # Test: rewrite_install_paths — comment line SKIPPED
@@ -558,7 +636,7 @@ def main() -> int:
     )
     expected = (
         "# canonical/scripts/X.sh (do not rewrite)\n"
-        "bash .claude/scripts/Y.sh real\n"
+        "bash .claude/aid/scripts/Y.sh real\n"
     )
     if out != expected:
         failures.append(
@@ -566,13 +644,25 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — idempotent (rewrite of rewritten is no-op)
+    # Test: rewrite_install_paths — idempotent on AID-own (already-nested has
+    # no canonical/ prefix so the regex does not match — re-run is a no-op)
     # -----------------------------------------------------------------------
     once = rewrite_install_paths("bash canonical/scripts/X.sh\n", ".claude")
     twice = rewrite_install_paths(once, ".claude")
     if once != twice:
         failures.append(
             f"rewrite_install_paths: not idempotent, once={once!r}, twice={twice!r}"
+        )
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — idempotent on tool-native
+    # -----------------------------------------------------------------------
+    once_tn = rewrite_install_paths("see canonical/skills/aid-x/SKILL.md\n", ".claude")
+    twice_tn = rewrite_install_paths(once_tn, ".claude")
+    if once_tn != twice_tn:
+        failures.append(
+            f"rewrite_install_paths: tool-native not idempotent, "
+            f"once={once_tn!r}, twice={twice_tn!r}"
         )
 
     # -----------------------------------------------------------------------
@@ -749,7 +839,7 @@ def main() -> int:
 
 def _count_tests() -> int:
     """Return the approximate number of checks performed in main()."""
-    return 22  # 16 prior + 6 rewrite_install_paths assertions (round-5 Item 6)
+    return 30  # 16 prior + 14 rewrite_install_paths assertions (AID-own nest + tool-native split)
 
 
 if __name__ == "__main__":

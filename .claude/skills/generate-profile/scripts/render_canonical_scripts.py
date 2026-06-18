@@ -54,12 +54,17 @@ def _scripts_output_root(profile: Profile, output_base: Path) -> Path:
     """
     Return the root directory under which the scripts/ subtree is written.
 
-    - Claude Code / Cursor: {output_root}/scripts/
-    - Codex split:          {assets_root}/scripts/  (NOT under agents_root)
+    scripts/ is an AID-own directory — it nests under aid/ in the install tree
+    to isolate AID content from user content (SD-1 convention: aid/ parent
+    encoded in the builder, *_dir key stays as bare leaf name).
+
+    - Single-root (Claude Code, Cursor, etc.): {output_root}/aid/scripts/
+    - Codex split:                             {assets_root}/aid/scripts/
+                                               (NOT under agents_root — R6)
     """
     if profile.layout.output_root is not None:
-        return output_base / profile.layout.output_root / profile.layout.scripts_dir
-    return output_base / profile.layout.assets_root / profile.layout.scripts_dir  # type: ignore[operator]
+        return output_base / profile.layout.output_root / "aid" / profile.layout.scripts_dir
+    return output_base / profile.layout.assets_root / "aid" / profile.layout.scripts_dir  # type: ignore[operator]
 
 
 def render_canonical_scripts(

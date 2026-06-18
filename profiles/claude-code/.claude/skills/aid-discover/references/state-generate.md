@@ -11,7 +11,7 @@ GENERATE generates KB documents that are missing or still at "Pending" status; i
 
 Resolve the declared doc-set (see `references/doc-set-resolve.md`):
 ```bash
-raw="$(bash .claude/scripts/config/read-setting.sh \
+raw="$(bash .claude/aid/scripts/config/read-setting.sh \
         --path discovery.doc_set 2>/dev/null || true)"
 # N = number of declared docs (default seed when section unset)
 declared_filenames="$(resolve_doc_set "$raw" | cut -f1)"
@@ -34,11 +34,11 @@ Store accessible paths for the scout prompt. Warn on inaccessible (but continue)
 
 Run the lightweight file-index pre-pass before dispatching sub-agents. This produces a structured inventory consumed by all 5 sub-agents, eliminating duplicated `find`/`wc` work across parallel agents.
 
-> **Working directory assumption:** All bash commands in this skill assume the current working directory is the project root (the directory containing `.aid/`). Scripts are written here as `.claude/scripts/...` paths; the renderer rewrites them to the profile's install-tree root at render time (`.claude/scripts/...` for Claude Code, `.agents/scripts/...` for Codex assets, `.cursor/scripts/...` for Cursor). No runtime resolution needed.
+> **Working directory assumption:** All bash commands in this skill assume the current working directory is the project root (the directory containing `.aid/`). Scripts are written in `canonical/scripts` form in the source; the renderer rewrites them to the profile's install-tree nested path at render time (`.claude/aid/scripts/...` for Claude Code, `.agents/aid/scripts/...` for Codex, `.cursor/aid/scripts/...` for Cursor). No runtime resolution needed.
 
 ▶ build-project-index starting (~30 s)
 ```bash
-bash .claude/scripts/kb/build-project-index.sh \
+bash .claude/aid/scripts/kb/build-project-index.sh \
   --root . \
   --output .aid/generated/project-index.md
 ```
@@ -53,14 +53,14 @@ If the index fails (e.g., empty repo, permission errors): log a warning and cont
 ### Step 0d: Propose & Confirm Doc-Set
 
 **PAUSE-FOR-USER-DECISION** (contracted checkpoint per SPEC feature-004 §3.1 and
-`.claude/templates/state-machine-chaining.md`).
+`.claude/aid/templates/state-machine-chaining.md`).
 
 #### Idempotent re-entry
 
 Check whether `.aid/settings.yml` already carries a `discovery.doc_set` section from a prior run:
 
 ```bash
-raw="$(bash .claude/scripts/config/read-setting.sh \
+raw="$(bash .claude/aid/scripts/config/read-setting.sh \
         --path discovery.doc_set 2>/dev/null || true)"
 ```
 
@@ -108,7 +108,7 @@ Then ask the user to confirm or edit:
 **This is a genuine PAUSE-FOR-USER-DECISION.** Stop here after presenting the proposal.
 
 **Advance:** Stop here (contracted checkpoint per SPEC feature-004 §3.1 and
-`.claude/templates/state-machine-chaining.md`). Re-run `/aid-discover` after confirming the
+`.claude/aid/templates/state-machine-chaining.md`). Re-run `/aid-discover` after confirming the
 proposed doc-set to continue to [State: GENERATE — Step 1].
 
 #### On confirm (resume path)
@@ -135,7 +135,7 @@ When the user re-runs `/aid-discover` and the session resumes after the pause:
 3. Re-resolve `raw` from the (now-updated) `.aid/settings.yml`:
 
    ```bash
-   raw="$(bash .claude/scripts/config/read-setting.sh \
+   raw="$(bash .claude/aid/scripts/config/read-setting.sh \
            --path discovery.doc_set 2>/dev/null || true)"
    declared_filenames="$(resolve_doc_set "$raw" | cut -f1)"
    N="$(echo "$declared_filenames" | grep -c .)"
@@ -196,7 +196,7 @@ done
 
 **Custom-doc prompt extension (§2.6):** After computing each agent's target list, identify any
 **custom docs** — filenames that are in the target list but do NOT appear in the default seed
-(i.e., not synthesized from `.claude/templates/knowledge-base/*.md` by `synth_default_seed`).
+(i.e., not synthesized from `.claude/aid/templates/knowledge-base/*.md` by `synth_default_seed`).
 For each such custom doc, **append** the following line to that agent's base prompt (from
 `references/agent-prompts.md`) before dispatching:
 
@@ -319,7 +319,7 @@ Populated during Q&A → FIX cycle, but must exist for state machine.
 3. Consolidate into `## Q&A (Pending)` section with sequential IDs (Q1, Q2, ...)
 4. Delete `.scout-questions.tmp`
 5. Set `**Grade:**` to `Pending` (was `Not Started`)
-6. **Preserve** `**Project Type:**`, `**User Approved:**`, `## External Documentation` (the `**Minimum Grade:**` field is now in `.aid/settings.yml` — read it via `bash .claude/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`)
+6. **Preserve** `**Project Type:**`, `**User Approved:**`, `## External Documentation` (the `**Minimum Grade:**` field is now in `.aid/settings.yml` — read it via `bash .claude/aid/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`)
 7. If `--grade` provided, update `.aid/settings.yml` via `/aid-config` (NOT STATE.md)
 
 **Q&A entry format:**

@@ -1,7 +1,7 @@
 # /aid-discover — Reviewer Dispatch Brief Template
 
 Loaded by `/aid-discover` REVIEW state. Renders the brief that gets passed to
-the `aid-reviewer` sub-agent. Follows `.github/templates/reviewer-dispatch.md`.
+the `aid-reviewer` sub-agent. Follows `.github/aid/templates/reviewer-dispatch.md`.
 
 `{{ARTIFACTS}}` and `{{CONTEXT}}` are filled at dispatch time. Other sections
 are static per skill.
@@ -38,11 +38,11 @@ OUT-OF-SCOPE FINDINGS POLICY:
   Do NOT count toward severity totals or the grade.
 
 DELIVERABLES:
-  - Findings format: per .github/templates/kb-authoring/principles.md P3 temp-ledger
+  - Findings format: per .github/aid/templates/kb-authoring/principles.md P3 temp-ledger
   - Ledger location: `.aid/.temp/review-pending/discovery.md`
   - Severity scale: per the routed rubric (CRITICAL / HIGH / MEDIUM / LOW / MINOR)
-  - Grade: computed per .github/scripts/grade.sh from the ledger; minimum is
-    resolved via `bash .github/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`
+  - Grade: computed per .github/aid/scripts/grade.sh from the ledger; minimum is
+    resolved via `bash .github/aid/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`
   - OOS observations excluded from grade per protocol
 ```
 

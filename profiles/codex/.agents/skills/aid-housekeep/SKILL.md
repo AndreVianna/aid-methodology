@@ -27,7 +27,7 @@ pipeline mapping and no phase gate references it.
 
 **State machine — each `/aid-housekeep` invocation drives the state machine until
 it hits a natural pause point per
-[`.agents/templates/state-machine-chaining.md`](../../templates/state-machine-chaining.md).
+[`.agents/aid/templates/state-machine-chaining.md`](../../templates/state-machine-chaining.md).
 Mechanical states auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the run.**
 
 > ```
@@ -43,7 +43,7 @@ Mechanical states auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the run.*
 |----------|--------|
 | *(none)* | Full gated sequence: `KB-DELTA → SUMMARY-DELTA → CLEANUP` (FR7 default). |
 | `--cleanup-only` | Jump straight to CLEANUP, skipping KB and summary (AC10). Sets `**Mode:** cleanup-only`. KB/Summary stage rows are left `—` (a deliberate cleanup-only run does not violate C1 — REQUIREMENTS.md FR7). `--grade X` is ignored under `--cleanup-only` (SUMMARY-DELTA is bypassed). |
-| `--grade X` | Pass-through to the SUMMARY-DELTA delegation to `/aid-summarize`. Format: `[A-F][-+]?` (e.g., `A`, `A-`, `B+`). Without this, resolved via `bash .agents/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A`. Ignored when `--cleanup-only` is also given. |
+| `--grade X` | Pass-through to the SUMMARY-DELTA delegation to `/aid-summarize`. Format: `[A-F][-+]?` (e.g., `A`, `A-`, `B+`). Without this, resolved via `bash .agents/aid/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A`. Ignored when `--cleanup-only` is also given. |
 
 > **`--fetch` / offline:** The online-first / permissioned-offline gate
 > (REQUIREMENTS.md C2, AC3) is feature-002's concern. The skeleton does not parse
@@ -60,10 +60,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **Before each dispatch:**
 
-1. **Look up ETA** in `.agents/templates/rough-time-hints.md` for the
+1. **Look up ETA** in `.agents/aid/templates/rough-time-hints.md` for the
    subagent's operation class. Capture LOW–HIGH band.
 2. **Read heartbeat config** via
-   `bash .agents/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
+   `bash .agents/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
    (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
 3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
@@ -95,9 +95,9 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **References:**
 
-- `.agents/templates/long-wait-protocol.md` — full L2 spec
-- `.agents/templates/subagent-heartbeat-protocol.md` — full L3 spec
-- `.agents/templates/rough-time-hints.md` — current measured ETAs
+- `.agents/aid/templates/long-wait-protocol.md` — full L2 spec
+- `.agents/aid/templates/subagent-heartbeat-protocol.md` — full L3 spec
+- `.agents/aid/templates/rough-time-hints.md` — current measured ETAs
 - `.agents/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
 
 ---
@@ -118,7 +118,7 @@ mkdir -p .aid/.temp
 # Reuse the most recent in-progress run-state file; otherwise start a fresh one.
 STATE_FILE=$(ls -1 .aid/.temp/HOUSEKEEP_STATE_*.md 2>/dev/null | sort | tail -1)
 if [ -n "$STATE_FILE" ] && \
-   [ "$(bash .agents/scripts/housekeep/housekeep-state.sh --state "$STATE_FILE" --read --field State)" = "DONE" ]; then
+   [ "$(bash .agents/aid/scripts/housekeep/housekeep-state.sh --state "$STATE_FILE" --read --field State)" = "DONE" ]; then
     STATE_FILE=""   # a leftover DONE file is stale (DONE-cleanup missed it) — start fresh
 fi
 [ -z "$STATE_FILE" ] && STATE_FILE=".aid/.temp/HOUSEKEEP_STATE_$(date +%Y%m%d%H%M).md"
@@ -127,7 +127,7 @@ fi
 Then resolve the resume target from the `## Housekeep Status` block:
 
 ```bash
-bash .agents/scripts/housekeep/housekeep-state.sh --state "$STATE_FILE" --resume
+bash .agents/aid/scripts/housekeep/housekeep-state.sh --state "$STATE_FILE" --resume
 ```
 
 (On a fresh run `$STATE_FILE` does not exist yet; `housekeep-state.sh` creates it on
@@ -136,7 +136,7 @@ the first `--write`, and `--resume`/`--read` treat an absent file as "no section
 **Argument pre-check (before resume detection):**
 
 1. If `--cleanup-only` was passed → set `**Mode:** cleanup-only` via
-   `bash .agents/scripts/housekeep/housekeep-state.sh --state <STATE_FILE> --write --field "Mode" --value "cleanup-only"`.
+   `bash .agents/aid/scripts/housekeep/housekeep-state.sh --state <STATE_FILE> --write --field "Mode" --value "cleanup-only"`.
    Route PREFLIGHT → CLEANUP directly (row 2 of the resume table). Any `--grade X` value is
    noted but ignored (SUMMARY-DELTA is bypassed in cleanup-only mode).
 2. If `--grade X` was passed (without `--cleanup-only`) → validate format `[A-F][-+]?`; if
@@ -236,5 +236,5 @@ When a state completes, route by its `**Advance:**` type (per [`state-machine-ch
 
 > **State-machine chaining:** Each `/aid-housekeep` invocation drives the state
 > machine until it hits a natural pause point per
-> `.agents/templates/state-machine-chaining.md`. Mechanical and inline-question
+> `.agents/aid/templates/state-machine-chaining.md`. Mechanical and inline-question
 > states auto-chain; only PAUSE-FOR-USER-ACTION / HALT stop the run.

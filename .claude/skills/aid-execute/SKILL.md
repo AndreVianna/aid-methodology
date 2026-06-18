@@ -6,7 +6,7 @@ description: >
   State machine: EXECUTE → REVIEW → FIX → back to REVIEW → DONE when grade ≥ minimum.
   Branch per delivery for isolation.
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
-argument-hint: "task-001 (required)  [work-001 if multiple works]"
+argument-hint: "work-001 (required if multiple works)  task-001 (required)"
 ---
 
 # Execute Task
@@ -17,9 +17,9 @@ Read the type. Do the work. Review it. Fix it. Ship it.
 
 ### Check 1: Locate Work and Task
 
-1. If work arg provided → use that work directory
-2. If single work exists → auto-select
-3. If multiple works → list them, ask user to choose
+1. Read first arg: if it starts with `work-` → use that work directory; if it starts with `task-` → treat as shorthand (single-work auto-select below)
+2. If work arg not provided (or shorthand): if single work exists → auto-select; if multiple works → list them, ask user to choose
+3. Read second arg (or first arg when shorthand): the `task-NNN` identifier
 4. Find `task-NNN.md` in `.aid/{work}/tasks/`
 5. Task not found → **STOP.** List available tasks.
 
@@ -41,7 +41,7 @@ If any dependency is not Done → **STOP.** List which dependencies are pending.
 
 ### Check 3: Read Minimum Grade
 
-Run `bash .claude/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A` to resolve the minimum grade for this skill (`.aid/settings.yml` is the source).
+Run `bash .claude/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A` to resolve the minimum grade for this skill (`.aid/settings.yml` is the source).
 This is the exit criterion for the review loop.
 
 ### Check 4: Verify Not in Plan Mode
@@ -153,7 +153,7 @@ When a state completes, route by its `**Advance:**` type (per [`state-machine-ch
 
 This skill follows the L1+L2+L3 subagent-visibility protocol (work-003 traceability —
 heartbeats, ETA timers, calibration). The full checklist lives in
-`.claude/templates/dispatch-protocol-checklist.md`; read it before any subagent
+`.claude/aid/templates/dispatch-protocol-checklist.md`; read it before any subagent
 dispatch in this skill.
 
 ## Workspace
@@ -180,12 +180,12 @@ Independent tasks (listed in the "Can Be Done In Parallel" table) can run concur
 
 ```
 create branch aid/{work}-delivery-001
-  → /aid-execute task-001 [RESEARCH]      ← investigate → review → ✅
-  → /aid-execute task-002 [DESIGN]        ← mockup → review → ✅
-  → /aid-execute task-003 [IMPLEMENT]  ┐
-  → /aid-execute task-004 [IMPLEMENT]  ┘  ← parallel (both depend on task-002)
-  → /aid-execute task-005 [TEST]          ← waits for task-003 + task-004
-  → /aid-execute task-006 [DOCUMENT]      ← ADR → review → ✅
+  → /aid-execute work-001 task-001 [RESEARCH]      ← investigate → review → ✅
+  → /aid-execute work-001 task-002 [DESIGN]        ← mockup → review → ✅
+  → /aid-execute work-001 task-003 [IMPLEMENT]  ┐
+  → /aid-execute work-001 task-004 [IMPLEMENT]  ┘  ← parallel (both depend on task-002)
+  → /aid-execute work-001 task-005 [TEST]          ← waits for task-003 + task-004
+  → /aid-execute work-001 task-006 [DOCUMENT]      ← ADR → review → ✅
   → merge to main
 ```
 
@@ -250,7 +250,7 @@ After resolving: delete IMPEDIMENT file, retry from Step 1.
 ## Output
 
 - Artifacts appropriate to the task type (code, tests, docs, configs, research, designs)
-- Grade ≥ minimum grade (from `bash .claude/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`)
+- Grade ≥ minimum grade (from `bash .claude/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`)
 - Commit messages reference task-NNN (for types that produce commits)
 - Work `STATE.md` `## Tasks Status` row updated with full review history
 - IMPEDIMENT-task-NNN.md if blocked

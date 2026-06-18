@@ -37,7 +37,7 @@ Include in the prompt:
 - **Ledger lifecycle:** "Read `.aid/.temp/review-pending/specify-<feature>.md` if it
   exists. For each existing row: verify on disk, update Status (Pending→Fixed if
   resolved; Fixed→Recurred if regressed). Append new findings with Status: Pending."
-- **Schema reference:** "Output per `.github/templates/reviewer-ledger-schema.md`.
+- **Schema reference:** "Output per `.github/aid/templates/reviewer-ledger-schema.md`.
   The ledger is the entire file — ONE markdown table, no headers, no narrative."
 
 Dispatch the `aid-reviewer` subagent with the rendered brief.
@@ -47,10 +47,10 @@ Dispatch the `aid-reviewer` subagent with the rendered brief.
 After the aid-reviewer returns, run grade.sh on the ledger:
 
 ```bash
-bash .github/scripts/grade.sh --explain .aid/.temp/review-pending/specify-<feature>.md
+bash .github/aid/scripts/grade.sh --explain .aid/.temp/review-pending/specify-<feature>.md
 ```
 
-Compare to minimum grade from `bash .github/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`.
+Compare to minimum grade from `bash .github/aid/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|

@@ -25,7 +25,7 @@ Print before dispatch: `[State: LITE-REVIEW] Dispatching aid-reviewer for lite-p
 ## Dispatch
 
 The aid-reviewer writes findings to `.aid/.temp/review-pending/interview-<work>-lite.md`
-per `.cursor/templates/reviewer-ledger-schema.md` (ONE markdown table, no narrative).
+per `.cursor/aid/templates/reviewer-ledger-schema.md` (ONE markdown table, no narrative).
 
 ```
 ▶ aid-reviewer starting
@@ -36,7 +36,7 @@ Read `references/state-lite-review.md` for the full review process.
 After aid-reviewer returns, run grade.sh on the ledger:
 
 ```bash
-bash .cursor/scripts/grade.sh --explain .aid/.temp/review-pending/interview-<work>-lite.md
+bash .cursor/aid/scripts/grade.sh --explain .aid/.temp/review-pending/interview-<work>-lite.md
 ```
 
 ---
@@ -68,7 +68,7 @@ For the lite path, the key checks are:
 | Scope fit | Task count is within the sub-path's expected range (1–2 for BUG-FIX, 1 for DOC, 1–3 for REFACTOR, 1–5 for FEATURE) |
 
 Write findings to `.aid/.temp/review-pending/interview-<work>-lite.md` per
-`.cursor/templates/reviewer-ledger-schema.md`. The table is the entire file content
+`.cursor/aid/templates/reviewer-ledger-schema.md`. The table is the entire file content
 — no headers, no narrative. Each issue is one row with Severity and Status: Pending.
 
 The grade is computed by the orchestrator via grade.sh (not assigned by the aid-reviewer
@@ -100,7 +100,7 @@ Recommended action: {loopback to L1 | loopback to L2}
 [4] Escalate to full path
 ```
 
-**Minimum grade:** read from `bash .cursor/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A` if it
+**Minimum grade:** read from `bash .cursor/aid/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A` if it
 exists, otherwise apply the rubric's default minimum.
 
 Wait for user response.

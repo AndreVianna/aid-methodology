@@ -39,7 +39,7 @@ Examples: `/aid-config project.name`, `/aid-config review.minimum_grade`,
 
 If `.aid/settings.yml` is missing:
 - Create `.aid/` directory if absent (do NOT touch `.aid/knowledge/` or other subdirs).
-- Copy `.claude/templates/settings.yml` → `.aid/settings.yml` verbatim.
+- Copy `.github/aid/templates/settings.yml` → `.aid/settings.yml` verbatim.
 - Print: `Created .aid/settings.yml from template.`
 
 ### Step 2: Render the table
@@ -92,7 +92,7 @@ Same as Mode 1 Step 1.
 
 Run:
 ```bash
-bash .claude/scripts/config/read-setting.sh --path <key> --default '(unset)'
+bash .github/aid/scripts/config/read-setting.sh --path <key> --default '(unset)'
 ```
 
 Print: `Current value of <key>: <value>`.
@@ -178,14 +178,14 @@ Consumer skills (`/aid-discover`, `/aid-execute`, etc.) resolve their settings u
 2. **Global category default** (e.g., `review.minimum_grade`) — use otherwise
 3. **Hardcoded skill default** — use only if `.aid/settings.yml` is missing entirely
 
-The canonical resolution helper is `.claude/scripts/config/read-setting.sh`. Consumer skills invoke:
+The canonical resolution helper is `.github/aid/scripts/config/read-setting.sh`. Consumer skills invoke:
 
 ```bash
-bash .claude/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A
+bash .github/aid/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A
 ```
 
 ---
 
 ## Schema reference
 
-Canonical schema: `.claude/templates/settings.yml`. Top-level sections + per-skill overrides as described in the tables above.
+Canonical schema: `.github/aid/templates/settings.yml`. Top-level sections + per-skill overrides as described in the tables above.
