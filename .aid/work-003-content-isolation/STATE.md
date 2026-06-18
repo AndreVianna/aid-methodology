@@ -1,7 +1,7 @@
 # Work State — work-003-content-isolation
 
-> **Status:** Executing — delivery-001 (worktree aid/work-003-delivery-001)
-> **Phase:** Execute
+> **Status:** Delivered — A+ gate clean; PR open for merge
+> **Phase:** Deploy
 > **Minimum Grade:** A+ (per user directive for this work)
 > **Started:** 2026-06-18
 > **User Approved:** pending (plan A+-gated; awaiting go to execute)
@@ -10,11 +10,11 @@ Single state file for work-003 (AID/user content isolation). Lite path (LITE-REF
 
 ## Pipeline Status
 
-- **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-06-18T13:00:00Z
-- **Pause Reason:** —
+- **Lifecycle:** Paused-Awaiting-Input
+- **Phase:** Deploy
+- **Active Skill:** none
+- **Updated:** 2026-06-18T15:30:00Z
+- **Pause Reason:** delivery A+ gate clean (0 blocking); PR open — awaiting user merge
 - **Block Reason:** —
 - **Block Artifact:** —
 
@@ -54,7 +54,7 @@ Single state file for work-003 (AID/user content isolation). Lite path (LITE-REF
 
 | Delivery | Status | Tasks | Notes |
 |----------|--------|-------|-------|
-| delivery-001 | Pending | task-001..011 | single delivery (lite path) |
+| delivery-001 | Done (A+) | task-001..011 all Done | gate clean (0 blocking, 1 MINOR cosmetic); PR open |
 
 ## Tasks Status
 
@@ -97,6 +97,7 @@ Single state file for work-003 (AID/user content isolation). Lite path (LITE-REF
 | 2026-06-18 | task-011 TRIAGE (run-all HOME-pinned): 10/51 suites fail. Cause map: 6 = old .aid-new/exit-5 contract (install/cli bash+ps1+parity) intentionally removed by 007/008; test-aid-migrate-trigger = cascade of aid-cli-parity gate; test-release RL02 = loose 'README.md' grep now matches aid-README.md; test-work-state-template WS07 = path-ref to .claude/templates (now .claude/aid/templates); T03 (test-expectations-single-source) = task-010 reviewer heading matches '### *.md' doc-ownership invariant. Split into 5 sub-agents; T03/reviewer-heading (re-renders) runs first/alone, then 4 test-fix agents in parallel. |
 | 2026-06-18 | task-011 fixes complete (6 sub-agents): T03 reviewer-heading reworded + re-rendered (T03 9/9, doc-ownership 13/13); bash install/cli (195/0, 194/0) + new regression IN36-IN40 (marker region-replace, sha-match rewrite, prune orphan, copilot R1 scope, nested-path); PS (138/0, 164/0); parity (84/0, 376/0) + migrate-trigger cascade cleared (59/0); release RL02 (70/0) + work-state WS07 (38/0); Windows T14/T15 rewritten + T45 prune (parse-ok, CI-deferred). Final full run-all + render-drift re-confirm running. |
 | 2026-06-18 | FINAL run-all (HOME-pinned): ALL 51 CANONICAL SUITES PASSED, exit 0. render-drift clean (diff = only the T03 reword delta, no spurious drift). All 11 tasks Done. Wave 5 committed. → delivery A+ gate. |
+| 2026-06-18 | DELIVERY A+ GATE: CLEAN — 0 CRITICAL/HIGH/MEDIUM/LOW, 1 MINOR (cosmetic comment-drift in dogfood-only generator source; non-shipped, outside §7a; left). Cornerstone verified clean across 5 profiles + dogfood (2 independent sweeps); tests confirmed retargeted not gutted. Delivery PR opened (aid/work-003-delivery-001 → master). |
 
 ## Cross-phase Q&A (Pending)
 
