@@ -907,30 +907,18 @@ _aid_remote_expose() {
             | tr 'A-Z' 'a-z')"
     fi
 
-    # Step 5: Print FR18 step-by-step ACL-grant guidance to STDERR (informational only).
-    local src_placeholder dst_placeholder url_placeholder
+    # Step 5: Print FR18 ACL-grant guidance to STDERR (informational only).
+    local src_placeholder dst_placeholder
     src_placeholder="<you@example.com>"
     dst_placeholder="${node_short:-<this-host>}"
-    url_placeholder="${private_url}"
 
     cat >&2 <<GUIDANCE_EOF
 
-Remote exposure is UP (tailnet-private). To restrict it to ONLY you (C3), add a
-deny-by-default tailnet ACL grant -- without it, any tailnet device can reach this host.
-Step 1. Open the tailnet policy file:
-          https://login.tailscale.com/admin/acls/file
-Step 2. Add this grant (replace the identity with yours or a group):
-          {"grants":[{"src":["${src_placeholder}"],"dst":["${dst_placeholder}"],"ip":["tcp:443"]}]}
-          (src = your identity/group; dst = THIS host only, never "*"; ip = the serve port.)
-Step 3. Save. Tailscale is deny-by-default once any grant exists, so every other device is
-        now denied.
-Step 4. Verify from your laptop: open ${url_placeholder} -- it should load for you, and a
-        non-authorized device should get connection-refused/forbidden.
-(AID cannot edit your tailnet policy for you -- it is admin-plane, and the dashboard never
-runs an agent/LLM at runtime. See 'aid dashboard' docs / feature-005 SEC-2.)
-Note (SEC-6): the exposed surface is the CLI home -- all registered projects (paths/names) are
-visible to the granted identities. This is the accepted trade-off (OQ5): grantees are trusted
-operators of this host. Never-public and host/user-ACL scoping (C1/C3) are unchanged.
+Remote exposure is UP (tailnet-private). Every device on your tailnet can now reach this host.
+To restrict access to only you, add a deny-by-default ACL grant in the tailnet policy file:
+  https://login.tailscale.com/admin/acls/file
+  {"grants":[{"src":["${src_placeholder}"],"dst":["${dst_placeholder}"],"ip":["tcp:443"]}]}
+Note: granted identities see all registered project paths/names. See 'aid dashboard --help'.
 
 GUIDANCE_EOF
 

@@ -297,9 +297,15 @@ assert_output_contains "$OUT_DC" "https://" \
 assert_output_contains "$OUT_DC" "https://srvtest01.tail99999.ts.net/" \
     "T-1: stdout URL is the tailnet MagicDNS FQDN (not the hostname/corporate domain)"
 
-# FR18: ACL-grant guidance on stderr.
+# FR18: condensed ACL-grant guidance on stderr (tailnet-exposure warning + policy link + grant).
+assert_output_contains "$ERR_DC" "tailnet" \
+    "T-1: FR18 -- tailnet-exposure warning on stderr"
 assert_output_contains "$ERR_DC" "tailnet policy file" \
-    "T-1: FR18 -- tailnet policy file guidance on stderr"
+    "T-1: FR18 -- tailnet policy file link on stderr"
+assert_output_contains "$ERR_DC" "https://login.tailscale.com/admin/acls/file" \
+    "T-1: FR18 -- admin/acls policy URL on stderr"
+assert_output_contains "$ERR_DC" "deny-by-default" \
+    "T-1: FR18 -- deny-by-default on stderr"
 # The same wrong-domain bug leaked into the ACL grant: src was derived from the FQDN
 # domain. src must be an identity placeholder; dst the host short-name; neither may be a
 # DNS domain.
@@ -309,10 +315,6 @@ assert_output_contains "$ERR_DC" '"dst":["srvtest01"]' \
     "T-1: ACL grant dst is THIS host's tailnet short-name"
 assert_output_not_contains "$ERR_DC" '"src":["tail99999.ts.net"]' \
     "T-1: ACL grant src does not leak the tailnet domain as a selector"
-assert_output_contains "$ERR_DC" "https://login.tailscale.com/admin/acls/file" \
-    "T-1: FR18 -- policy URL on stderr"
-assert_output_contains "$ERR_DC" "deny-by-default" \
-    "T-1: FR18 -- deny-by-default on stderr"
 
 # Stub argv recorded: 'serve --bg <port>'.
 _t1_calls="$(cat "${STUB1}/ts_calls.log" 2>/dev/null || echo "")"

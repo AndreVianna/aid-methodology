@@ -217,11 +217,13 @@ function loadUnionRepos(aidHome) {
 // ---------------------------------------------------------------------------
 // mtime+size-keyed registry cache (NFR4 / DD-1 SS 3.4)
 //
-// Cache key now covers BOTH tiers: [primaryStat, fallbackStat, frozenPathsJSON].
-// A change in either tier's mtime/size OR the path-set invalidates the cache.
+// Cache key: [primaryStat, fallbackStat].
+// A change in either tier's mtime/size invalidates the cache.  The path-set is
+// NOT stored or compared separately: any path-set change requires editing the
+// registry.yml which changes mtime or size, so stat-keying is sufficient.
 // ---------------------------------------------------------------------------
 
-let _cacheKey = null;         // JSON string of [primaryStat, fallbackStat, sortedPaths]
+let _cacheKey = null;         // JSON string of [primaryStat, fallbackStat]
 let _cacheIdMap = new Map();  // id -> canonPath
 let _cacheWarnings = [];
 
@@ -235,23 +237,19 @@ function getIdMap(aidHome) {
   const primaryStat = regStatKey(primaryPath);
   const fallbackStat = (isPerUser || !userAidPath) ? null : regStatKey(join(userAidPath, "registry.yml"));
 
-  // Fast probe key (stat portion only).
+  // Stat key (the complete cache key).
   const probeKey = JSON.stringify([primaryStat, fallbackStat]);
 
-  // Fast path: if the stat portion of the key matches, return cached result.
-  if (_cacheKey !== null) {
-    const cached = JSON.parse(_cacheKey);
-    if (cached[0] === primaryStat && cached[1] === fallbackStat) {
-      return { idMap: _cacheIdMap, warnings: _cacheWarnings };
-    }
+  // Fast path: stat key unchanged -> return cached result.
+  if (_cacheKey !== null && _cacheKey === probeKey) {
+    return { idMap: _cacheIdMap, warnings: _cacheWarnings };
   }
 
   // Rebuild.
   const { repos, warnings } = loadUnionRepos(aidHome);
   _cacheIdMap = buildIdMap(repos);
   _cacheWarnings = warnings;
-  // Full cache key: stat pair + sorted path-set (defensive; covers dedup changes).
-  _cacheKey = JSON.stringify([primaryStat, fallbackStat, repos.slice().sort()]);
+  _cacheKey = probeKey;
   return { idMap: _cacheIdMap, warnings: _cacheWarnings };
 }
 

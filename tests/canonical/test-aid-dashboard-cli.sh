@@ -59,10 +59,18 @@ TMP="$(mktemp -d)"
 PINNED_HOME="${TMP}/home"
 mkdir -p "${PINNED_HOME}/.aid/.temp"
 
-# Canary: remember whether the real $HOME/.aid/.temp existed before the suite.
-# We never touch REAL_HOME during the suite.
+# Canary: snapshot the real $HOME/.aid/.temp state before the suite so we can
+# assert it was not modified by any dashboard.pid write that escaped the pinned HOME.
 REAL_HOME="$HOME"
 REAL_AID_TEMP="${REAL_HOME}/.aid/.temp"
+REAL_AID_PID="${REAL_AID_TEMP}/dashboard.pid"
+# Snapshot: record whether dashboard.pid exists and its mtime+size if it does.
+_CANARY_SNAP_BEFORE=""
+if [[ -f "$REAL_AID_PID" ]]; then
+    _CANARY_SNAP_BEFORE="$(stat -c '%Y %s' "$REAL_AID_PID" 2>/dev/null || echo 'present')"
+else
+    _CANARY_SNAP_BEFORE="absent"
+fi
 
 # Track spawned child pids for safety cleanup.
 SPAWNED_PIDS=()
@@ -74,10 +82,17 @@ cleanup_all() {
         sleep 0.1
         kill -9 -"$_p" 2>/dev/null || kill -9 "$_p" 2>/dev/null || true
     done
-    # Escape canary: assert real HOME was never modified.
-    if [[ -d "$REAL_AID_TEMP" ]]; then
-        # Real .temp existed before suite -- check it was not touched (no new dashboard.pid).
-        :
+    # Escape canary: assert real HOME/.aid/.temp/dashboard.pid was never modified.
+    local _snap_after=""
+    if [[ -f "$REAL_AID_PID" ]]; then
+        _snap_after="$(stat -c '%Y %s' "$REAL_AID_PID" 2>/dev/null || echo 'present')"
+    else
+        _snap_after="absent"
+    fi
+    if [[ "$_CANARY_SNAP_BEFORE" == "$_snap_after" ]]; then
+        pass "escape canary: real HOME/.aid/.temp/dashboard.pid untouched by suite"
+    else
+        fail "escape canary: real HOME/.aid/.temp/dashboard.pid was modified (BEFORE=${_CANARY_SNAP_BEFORE} AFTER=${_snap_after})"
     fi
 }
 
@@ -1005,6 +1020,25 @@ else
             fail "T-16b: node GET / body contains stale 503 task-053 wording (old code path hit)"
         else
             pass "T-16b: node GET / body does not contain stale task-053 wording"
+        fi
+
+        # T-16c (node parity): /api/home machine.aid_version is non-null.
+        _T16B_HOME_BODY="$(http_get_body "http://127.0.0.1:${PORT16b}/api/home")"
+        _T16B_AID_VER="$(echo "$_T16B_HOME_BODY" | python3 -c \
+            'import json,sys; d=json.load(sys.stdin); print(d.get("machine",{}).get("aid_version","null") or "null")' 2>/dev/null)"
+        if [[ "$_T16B_AID_VER" != "null" && -n "$_T16B_AID_VER" ]]; then
+            pass "T-16c (node): /api/home machine.aid_version is non-null (VERSION from code home: ${_T16B_AID_VER})"
+        else
+            fail "T-16c (node): /api/home machine.aid_version is null (VERSION not found from code home)"
+        fi
+
+        # T-16d (node parity): /api/home machine.tools_catalog is non-empty.
+        _T16B_CAT_LEN="$(echo "$_T16B_HOME_BODY" | python3 -c \
+            'import json,sys; d=json.load(sys.stdin); print(len(d.get("machine",{}).get("tools_catalog",[])))' 2>/dev/null)"
+        if [[ "${_T16B_CAT_LEN:-0}" -gt 0 ]]; then
+            pass "T-16d (node): /api/home machine.tools_catalog is non-empty (${_T16B_CAT_LEN} entries)"
+        else
+            fail "T-16d (node): /api/home machine.tools_catalog is empty"
         fi
     else
         fail "T-16b: node server did not become ready on port ${PORT16b}"
