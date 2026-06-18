@@ -55,6 +55,6 @@ RESEARCH and DOCUMENT tasks that produce only `.aid/` artifacts may skip branchi
 ## Output
 
 - Artifacts appropriate to task type
-- Work `STATE.md` `## Tasks Status` row updated with review history
+- Work `STATE.md` `## Tasks State` row updated with review history
 - Grade ≥ minimum (from `bash canonical/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`)
 - IMPEDIMENT-task-NNN.md if blocked

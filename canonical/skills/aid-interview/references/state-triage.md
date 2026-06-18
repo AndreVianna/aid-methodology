@@ -293,10 +293,24 @@ After the user confirms emission (Step 5a-3a choice [1]):
    This section is written even for escalation (with only the slots filled so far).
    It preserves slot values for task-017 escalation handling.
 
-4. **Populate `STATE.md ## Tasks Status`** table from the emitted task files.
-   For each emitted `tasks/task-NNN.md`:
-   - Read the task `Type` field from the file.
-   - Add one row to the Tasks Status table: `| NNN | task-NNN | {Type} | 1 | Pending | — | — | Recipe-generated |`
+4. **Scaffold the delivery-001 hierarchy** from the emitted task files.
+
+   The recipe emit step writes the work-root `SPEC.md` and task files to a flat
+   `tasks/task-NNN.md` layout. After emission, promote the hierarchy to the
+   uniform pattern:
+
+   a. Create `delivery-001/SPEC.md` and `delivery-001/STATE.md` following the same
+      shape as TASK-BREAKDOWN Step 4a + 4b (delivery State = `Executing`).
+   b. For each emitted `tasks/task-NNN.md`: create `delivery-001/tasks/task-NNN/`
+      folder; move the emitted file to `delivery-001/tasks/task-NNN/SPEC.md`;
+      create the accompanying `delivery-001/tasks/task-NNN/STATE.md` seeded with
+      State=Pending (same shape as TASK-BREAKDOWN Step 4c).
+   c. Update the work-root SPEC.md `## Tasks` note to reference `delivery-001/tasks/`
+      (same as TASK-BREAKDOWN Step 5).
+   d. Delete the now-empty `tasks/` folder if it is empty after promotion.
+
+   The `## Tasks State` section of the work-level STATE.md is DERIVED at read time;
+   do NOT write task rows directly into the work STATE.md.
 
 5. **Record recipe name** — set internal `recipe = {recipe-name}`. This value is
    written to `STATE.md ## Triage` in Step 6 as the `Recipe:` field.

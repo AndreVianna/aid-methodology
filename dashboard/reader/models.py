@@ -263,6 +263,9 @@ class WorkModel:
     recipe: Optional[str] = None           # lite-path recipe from Triage, else None
     features: list[FeatureRef] = field(default_factory=list)      # from ## Features Status
     deliverables: list[DeliverableRef] = field(default_factory=list)  # from ## Plan / Deliveries
+    # work-004 Pillar 4: branch label from the worktree that owns this work folder.
+    # "main" for the main worktree; branch name for persistent worktrees; None if unknown.
+    branch_label: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------

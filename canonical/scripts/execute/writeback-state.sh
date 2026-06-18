@@ -2,7 +2,7 @@
 # writeback-state.sh -- row-level write coordination for FR6 parallel pool
 # x per-unit STATE writes in AID aid-execute.
 #
-# Provides 5 safe write modes targeting PER-UNIT STATE.md files (Pillar 2).
+# Provides 6 safe write modes targeting PER-UNIT STATE.md files (Pillar 2).
 # Uses a sentinel-file lock (set -o noclobber + atomic create + sleep-poll retry)
 # to prevent races when multiple parallel tasks dispatch reviewers concurrently.
 #
@@ -10,7 +10,7 @@
 #   work-NNN-{name}/
 #     STATE.md                                  -- work-level (--pipeline target)
 #     delivery-NNN/
-#       STATE.md                                -- delivery-level (--block target)
+#       STATE.md                                -- delivery-level (--block / --lifecycle target)
 #       tasks/
 #         task-NNN/
 #           STATE.md                            -- task-level (--field / --findings target)
@@ -32,6 +32,13 @@
 #   writeback-state.sh --delivery-id NNN --block MARKDOWN_BLOCK
 #       Write/replace the ## Delivery Gate block in delivery-NNN/STATE.md (SD-5).
 #       Override env: AID_DELIVERY_STATE_FILE (absolute path) skips path resolution.
+#
+#   writeback-state.sh --delivery-id NNN --lifecycle VALUE
+#       Update the State: line in the ## Delivery Lifecycle section of
+#       delivery-NNN/STATE.md (SD-8 authored delivery state).
+#       VALUE must be one of: Pending-Spec | Specified | Executing | Gated | Done | Blocked
+#       Override env: AID_DELIVERY_STATE_FILE (absolute path) skips path resolution.
+#       Emits no user-facing output (C4 behavior-preserving).
 #
 #   writeback-state.sh --delivery-id NNN --append-issue ROW
 #       Append a single issue row to the delivery's delivery-NNN-issues.md.
@@ -209,6 +216,7 @@ FIELD=""
 FIELD_VALUE=""
 FINDINGS_BLOCK=""
 DELIVERY_BLOCK=""
+LIFECYCLE_VALUE=""
 ISSUE_ROW=""
 PIPELINE_FLAG=0
 
@@ -245,6 +253,10 @@ while [[ $# -gt 0 ]]; do
             [[ $# -lt 2 ]] && die "--block requires a value" 5
             DELIVERY_BLOCK="$2"; shift 2
             ;;
+        --lifecycle)
+            [[ $# -lt 2 ]] && die "--lifecycle requires a value" 5
+            LIFECYCLE_VALUE="$2"; shift 2
+            ;;
         --append-issue)
             [[ $# -lt 2 ]] && die "--append-issue requires a value" 5
             ISSUE_ROW="$2"; shift 2
@@ -268,6 +280,8 @@ elif [[ -n "$TASK_ID" && -n "$FINDINGS_BLOCK" ]]; then
     MODE="findings"
 elif [[ -n "$DELIVERY_ID" && -n "$DELIVERY_BLOCK" ]]; then
     MODE="delivery-block"
+elif [[ -n "$DELIVERY_ID" && -n "$LIFECYCLE_VALUE" ]]; then
+    MODE="delivery-lifecycle"
 elif [[ -n "$DELIVERY_ID" && -n "$ISSUE_ROW" ]]; then
     MODE="append-issue"
 else
@@ -548,6 +562,92 @@ mode_findings() {
 
     mv "$tmp" "$TASK_STATE_FILE"
     echo "OK: $TASK_STATE_FILE updated -- ## Quick Check Findings block written for task-${padded_id}"
+}
+
+# ---------------------------------------------------------------------------
+# Mode: --delivery-id NNN --lifecycle VALUE
+# Update the State: line in the ## Delivery Lifecycle section of
+# delivery-NNN/STATE.md (SD-8 authored delivery state).
+# VALUE must be one of: Pending-Spec | Specified | Executing | Gated | Done | Blocked
+# Emits no user-facing output (C4 behavior-preserving).
+# ---------------------------------------------------------------------------
+mode_delivery_lifecycle() {
+    local padded_id
+    padded_id=$(printf '%03d' "$DELIVERY_ID")
+
+    # SD-8 enum validation (closed enum)
+    case "$LIFECYCLE_VALUE" in
+        Pending-Spec|Specified|Executing|Gated|Done|Blocked) ;;
+        *) die "invalid --lifecycle value '$LIFECYCLE_VALUE'; must be one of: Pending-Spec | Specified | Executing | Gated | Done | Blocked" 4 ;;
+    esac
+
+    resolve_delivery_state_file "$DELIVERY_ID"
+
+    if [[ ! -f "$DELIVERY_STATE_FILE" ]]; then
+        die "$DELIVERY_STATE_FILE does not exist" 1
+    fi
+
+    # Verify ## Delivery Lifecycle section exists
+    if ! grep -q '^## Delivery Lifecycle' "$DELIVERY_STATE_FILE"; then
+        die "malformed delivery STATE.md: ## Delivery Lifecycle section not found in $DELIVERY_STATE_FILE" 6
+    fi
+
+    init_lock_file "$DELIVERY_STATE_FILE"
+    acquire_lock
+
+    local tmp
+    tmp=$(mktemp)
+
+    # Rewrite only the FIRST - **State:** line within ## Delivery Lifecycle.
+    # The done flag prevents degenerate multi-line input from corrupting subsequent
+    # State lines (e.g. nested sub-sections that may carry their own State fields).
+    # The section uses "- **State:** VALUE" format (same as ## Task State).
+    awk -v new_val="$LIFECYCLE_VALUE" '
+        BEGIN { in_dl=0; updated=0; done=0 }
+
+        /^## Delivery Lifecycle/ { in_dl=1; print; next }
+
+        in_dl && /^## / { in_dl=0 }
+
+        in_dl {
+            if (!done && $0 ~ /^- \*\*State:\*\*/) {
+                print "- **State:** " new_val
+                updated=1
+                done=1
+                next
+            }
+            print
+            next
+        }
+
+        { print }
+
+        END {
+            if (!updated) {
+                print "ERROR: State field not found in ## Delivery Lifecycle" > "/dev/stderr"
+                exit 3
+            }
+        }
+    ' "$DELIVERY_STATE_FILE" > "$tmp"
+    local awk_exit=$?
+    if [[ "$awk_exit" -ne 0 ]]; then
+        rm -f "$tmp"
+        die "writeback awk failed (exit $awk_exit); $DELIVERY_STATE_FILE preserved" "$awk_exit"
+    fi
+
+    if [[ ! -s "$tmp" ]]; then
+        rm -f "$tmp"
+        die "writeback produced empty output; $DELIVERY_STATE_FILE preserved" 3
+    fi
+
+    # Sanity: ## Delivery Lifecycle section must still be present
+    if ! grep -q '^## Delivery Lifecycle' "$tmp"; then
+        rm -f "$tmp"
+        die "writeback sanity check failed: ## Delivery Lifecycle disappeared from output" 3
+    fi
+
+    mv "$tmp" "$DELIVERY_STATE_FILE"
+    # No user-facing output (C4)
 }
 
 # ---------------------------------------------------------------------------
@@ -885,10 +985,11 @@ mode_pipeline() {
 # Dispatch
 # ---------------------------------------------------------------------------
 case "$MODE" in
-    pipeline)         mode_pipeline ;;
-    field)            mode_field ;;
-    findings)         mode_findings ;;
-    delivery-block)   mode_delivery_block ;;
-    append-issue)     mode_append_issue ;;
+    pipeline)            mode_pipeline ;;
+    field)               mode_field ;;
+    findings)            mode_findings ;;
+    delivery-block)      mode_delivery_block ;;
+    delivery-lifecycle)  mode_delivery_lifecycle ;;
+    append-issue)        mode_append_issue ;;
     *) die "internal error: unknown mode '$MODE'" 1 ;;
 esac

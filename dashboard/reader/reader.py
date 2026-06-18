@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 from .derivation import derive_kb_status
-from .locator import locate_aid_root
+from .locator import enumerate_worktree_roots, locate_aid_root
 from .models import (
     DeferredIssue,
     DeliverableRef,
@@ -172,25 +172,63 @@ def _read_repo_full(
         kb_state=kb_state,
     )
 
-    # Step 4: ENUMERATE -- work folders already enumerated by LC-1 locator
+    # Step 4: ENUMERATE -- worktrees + work folders (work-004 Pillar 4 / SD-3)
+    # enumerate_worktree_roots returns [(branch_label, aid_dir), ...] with the main
+    # root always first.  Degrades to main-root-only on any git failure (never throws).
+    # For each (branch_label, aid_dir) root, locate_aid_root enumerates work-NNN-*/
+    # dirs under that aid_dir.  Each resulting WorkModel is tagged with branch_label.
+    # Cross-root merge of same work_id is task-011; duplicates are fine here.
+    worktree_roots = enumerate_worktree_roots(root)
+
     # Steps 5a-5g: PER WORK -- parse STATE.md; build WorkModel list
     works: list[WorkModel] = []
     fallback_works: list[str] = []
     # Build per-work STATE.md cache as a by-product of the always-on pass.
     # DR-1/DD-3/NFR4: read_repo_detail reuses these bytes; zero extra disk I/O.
+    # Cache key: "branch_label/work_id" to distinguish same-named works across roots.
     state_text_cache: dict[str, tuple[str, str]] = {}
 
-    for work_dir in loc.work_dirs:
-        work_id = work_dir.name
-        work_model, work_warnings, work_bytes, state_text, state_label = _read_work(
-            work_dir, work_id
-        )
-        works.append(work_model)
-        parse_warnings.extend(work_warnings)
-        bytes_read += work_bytes
-        state_text_cache[work_id] = (state_text, state_label)
-        if work_model.source_mode != SourceMode.Normalized:
-            fallback_works.append(work_id)
+    for branch_label, wt_aid_dir in worktree_roots:
+        # Resolve the worktree's repo root from the aid_dir (aid_dir is <root>/.aid)
+        wt_root = wt_aid_dir.parent
+        wt_loc = locate_aid_root(wt_root)
+
+        if not wt_loc.aid_exists:
+            # Worktree has no .aid/ -- skip (no work to enumerate there)
+            continue
+
+        for work_dir in wt_loc.work_dirs:
+            work_id = work_dir.name
+            work_model, work_warnings, work_bytes, state_text, state_label = _read_work(
+                work_dir, work_id
+            )
+            # Tag the work model with the branch that owns this worktree
+            work_model.branch_label = branch_label
+            works.append(work_model)
+            parse_warnings.extend(work_warnings)
+            bytes_read += work_bytes
+            # Cache key includes branch_label so same-named works across roots don't collide.
+            # read_repo_detail uses work_id key; retain bare work_id key for the main/primary
+            # root so the existing detail-drill path continues to work unchanged.
+            state_text_cache[work_id] = (state_text, state_label)
+            if work_model.source_mode != SourceMode.Normalized:
+                fallback_works.append(work_id)
+
+    # If worktree enumeration yielded NO results (all worktrees had no .aid/), fall
+    # back to the main root so a bare repo without worktrees still renders correctly.
+    if not works and loc.aid_exists:
+        for work_dir in loc.work_dirs:
+            work_id = work_dir.name
+            work_model, work_warnings, work_bytes, state_text, state_label = _read_work(
+                work_dir, work_id
+            )
+            work_model.branch_label = None  # indeterminate; worktree list gave no data
+            works.append(work_model)
+            parse_warnings.extend(work_warnings)
+            bytes_read += work_bytes
+            state_text_cache[work_id] = (state_text, state_label)
+            if work_model.source_mode != SourceMode.Normalized:
+                fallback_works.append(work_id)
 
     # Step 6: ASSEMBLE
     repo_model = RepoModel(

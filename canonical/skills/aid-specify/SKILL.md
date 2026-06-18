@@ -39,7 +39,7 @@ Every section follows the same cycle:
 .aid/
   knowledge/               ← shared KB
   work-NNN-{name}/
-    STATE.md               ← process (§ Features Status table, § Cross-phase Q&A)
+    STATE.md               ← process (§ Features State table, § Cross-phase Q&A)
     REQUIREMENTS.md
     features/
       feature-NNN-{name}/
@@ -64,7 +64,7 @@ Available features:
 ```
 
 Scan all `.aid/work-*/features/feature-*/` directories.
-For each, check the work STATE.md `## Features Status` row for this feature and show status. Exit.
+For each, check the work STATE.md `## Features State` row for this feature and show status. Exit.
 
 **Shortcut:** If only one work exists, accept bare `feature-001` and resolve automatically.
 
@@ -100,11 +100,11 @@ Resolve the feature path using **prefix matching** (glob):
 All paths relative to `.aid/{work}/features/{feature}/`.
 
 ```
-State 1: No Feature STATUS row in work STATE.md              → INITIALIZE
-State 2: Feature STATUS: In Discussion                        → CONTINUE
-State 3: Feature STATUS: Spike Needed                         → SPIKE
-State 4: Feature STATUS: Blocked (loopback pending)           → BLOCKED
-State 5: Feature STATUS: Ready                                → REVIEW (enter loop at step 4)
+State 1: No Feature State row in work STATE.md               → INITIALIZE
+State 2: Feature State: In Discussion                         → CONTINUE
+State 3: Feature State: Spike Needed                          → SPIKE
+State 4: Feature State: Blocked (loopback pending)            → BLOCKED
+State 5: Feature State: Ready                                 → REVIEW (enter loop at step 4)
 ```
 
 Print the state-entry line and "you are here" map. Examples for INITIALIZE:

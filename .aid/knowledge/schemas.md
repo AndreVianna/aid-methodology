@@ -239,10 +239,11 @@ lifecycle from requirement to spec to plan to implementation to deploy.
 
 **Two zones:**
 - **AUTHORED** (single-writer): `## Pipeline State`, `## Triage`, `## Escalation Carry`,
-  `## Interview State`, `## Lifecycle History`.
+  `## Interview State`, `## Lifecycle History`, `## Deploy State` (authored by `aid-deploy`;
+  single-writer, one row per delivery; per-delivery hierarchy migration is future work).
 - **DERIVED** (read-only, assembled at read time from per-delivery and per-task
   STATE.md files): `## Features State`, `## Plan / Deliveries`, `## Tasks State`,
-  `## Deploy State`, `## Delivery Gates`, `## Cross-phase Q&A`, `## Calibration Log`,
+  `## Delivery Gates`, `## Cross-phase Q&A`, `## Calibration Log`,
   `## Dispatches`.
 
 **AUTHORED section schema:**
@@ -255,6 +256,7 @@ lifecycle from requirement to spec to plan to implementation to deploy.
 | `## Escalation Carry` | Conditional — only when work was escalated from lite to full | 0 or 1 |
 | `## Interview State` | Table: 10 standard sections with State + Last Updated | Fixed 10 rows |
 | `## Lifecycle History` | Append-only table: `Date | Phase Transition / Gate | Grade | Notes` | 1..N |
+| `## Deploy State` | Table: `Delivery | State | PR | KB Updated | Tag | Notes` | Authored by `aid-deploy` (single-writer); per-delivery hierarchy migration is future work | 0..N |
 
 **DERIVED section schema:**
 
@@ -263,7 +265,6 @@ lifecycle from requirement to spec to plan to implementation to deploy.
 | `## Features State` | Table: `# | Feature | Spec State | Spec Grade | Q&A Count | Notes` | Per `features/{feature}/SPEC.md` progress |
 | `## Plan / Deliveries` | Table: `Delivery | State | Tasks | Notes` | Per `delivery-NNN/STATE.md` lifecycle fields |
 | `## Tasks State` | Table: `# | Task | Type | Wave | State | Review | Elapsed | Notes` | Per `delivery-NNN/tasks/task-NNN/STATE.md` mutable cells |
-| `## Deploy State` | Table: `Delivery | State | PR | KB Updated | Tag | Notes` | Per `delivery-NNN/STATE.md` deploy entries |
 | `## Delivery Gates` | Per-delivery gate blocks | Union of per `delivery-NNN/STATE.md ## Delivery Gate` |
 | `## Cross-phase Q&A` | Q-blocks (same shape as discovery-state Q&A) | Union of per-delivery Q&A + work-owner-authored entries (SD-5) |
 | `## Calibration Log` | Table: `Date | Agent | Task / Cycle | ETA Band | Actual | Notes` | Union of per-task `## Dispatch Log` sections |
