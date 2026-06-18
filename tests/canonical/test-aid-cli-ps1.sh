@@ -441,7 +441,8 @@ assert_eq "$([[ -d "${TK}/.codex" ]] && echo exists || echo gone)" "gone" \
 assert_output_contains "$OUT" "Uninstall complete." "PS028-K04 PS1 remove reports 'Uninstall complete.'"
 
 # ===========================================================================
-# PS028-L: protect-on-diff (FR11) honored via aid.ps1 add
+# PS028-L: pre-placed marker-less AGENTS.md → in-place update (C2 branch);
+#           user content preserved; exit 0; no .aid-new (no protect-on-diff).
 # ===========================================================================
 PS028L_HOME=$(newhome)
 setup_aid_home_ps1 "${PS028L_HOME}"
@@ -453,9 +454,11 @@ OUT=$(AID_HOME="${PS028L_HOME}" AID_LIB_PATH="${PS028L_HOME}/lib/AidInstallCore.
      add codex \
      -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
      -Target "${TL}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
-assert_exit_eq "$RC" 5 "PS028-L01 PS1 add with pre-placed AGENTS.md → exit 5 (protect-on-diff)"
-assert_file_exists "${TL}/AGENTS.md.aid-new" "PS028-L02 AGENTS.md.aid-new created"
-assert_file_contains "${TL}/AGENTS.md" "User AGENTS.md" "PS028-L03 original AGENTS.md not overwritten"
+assert_exit_eq "$RC" 0 "PS028-L01 PS1 add with pre-placed AGENTS.md → exit 0 (in-place update)"
+# No .aid-new sidecar — eliminated by new in-place region contract.
+assert_eq "$([[ -f "${TL}/AGENTS.md.aid-new" ]] && echo exists || echo none)" "none" \
+    "PS028-L02 no .aid-new created (in-place update, no protect-on-diff)"
+assert_file_contains "${TL}/AGENTS.md" "User AGENTS.md" "PS028-L03 original user content preserved in AGENTS.md"
 
 # ===========================================================================
 # PS028-M: aid.ps1 version → exit 0, prints version

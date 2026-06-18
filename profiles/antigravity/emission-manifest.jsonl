@@ -150,7 +150,7 @@
 {"dst": ".agent/rules/aid-orchestrator.md", "profile": "antigravity", "sha256": "ad7caba2f72859048ec5afe6af59cc68bb628555ef05ef699f64daeca10b289f", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".agent/rules/aid-researcher.md", "profile": "antigravity", "sha256": "a44f1ee5192c0802e238926358ff8a26dc36a7e0081b3859c7e545e2bc0358e8", "src": "canonical/agents/aid-researcher/AGENT.md"}
 {"dst": ".agent/rules/aid-review.md", "profile": "antigravity", "sha256": "d283a82c2897fd4c6b174292a28f64e65ac79aaed06040c0a9e7e8abae5b55a2", "src": "canonical/rules/aid-review.mdc"}
-{"dst": ".agent/rules/aid-reviewer.md", "profile": "antigravity", "sha256": "f712a9180f77cb9706dc8c0eccd0822708b54e31196f4d97a021948a4d29c52c", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".agent/rules/aid-reviewer.md", "profile": "antigravity", "sha256": "ee2582893d8f20a24f1ffbd79552bac05e8f39a4d5dace75ca09d0ddbaecfa9a", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".agent/rules/aid-tech-writer.md", "profile": "antigravity", "sha256": "033859fd68c83beaa90d9c057c766485a1fd31ba46d5e5a80e32ea5d0883d133", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".agent/skills/aid-ask/SKILL.md", "profile": "antigravity", "sha256": "cda9708b7454c36e10a94ea1d09063702e8d9c1eac88146c3fb1d4a51399930b", "src": "canonical/skills/aid-ask/SKILL.md"}
 {"dst": ".agent/skills/aid-config/SKILL.md", "profile": "antigravity", "sha256": "5a43922edf04d3ce4a2a36517bad99a37f885962128f09a7323bbe32f5081fef", "src": "canonical/skills/aid-config/SKILL.md"}

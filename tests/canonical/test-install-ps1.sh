@@ -358,8 +358,8 @@ run_install -Uninstall -Tool codex -TargetDirectory "$T"
 assert_exit_eq "$RC" 6 "IN13j second uninstall → exit 6 (no manifest)"
 
 # ---------------------------------------------------------------------------
-# IN14 – Protect-on-diff (FR11): pre-placed user AGENTS.md → not overwritten,
-#         .aid-new created, exit 5
+# IN14 – Pre-placed marker-less user AGENTS.md (no AID sections) → in-place
+#         update via C2 branch; user content preserved; exit 0; no .aid-new.
 # ---------------------------------------------------------------------------
 T=$(newtarget)
 printf 'This is the user AGENTS.md, not from AID\n' > "$T/AGENTS.md"
@@ -367,19 +367,21 @@ printf 'This is the user AGENTS.md, not from AID\n' > "$T/AGENTS.md"
 run_install -Tool codex \
     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
     -TargetDirectory "$T"
-assert_exit_eq "$RC" 5 "IN14 protect-on-diff (user AGENTS.md) → exit 5"
-assert_file_exists "$T/AGENTS.md.aid-new" "IN14b AGENTS.md.aid-new created"
-# Original user file must NOT be overwritten.
-assert_file_contains "$T/AGENTS.md" "user AGENTS.md" "IN14c user AGENTS.md not overwritten"
-# Manifest records status pending-merge.
+assert_exit_eq "$RC" 0 "IN14 pre-placed marker-less AGENTS.md -> in-place update, exit 0"
+# No .aid-new sidecar — NEVER written under any branch.
+assert_eq "$([[ -f "$T/AGENTS.md.aid-new" ]] && echo exists || echo none)" "none" \
+    "IN14b no .aid-new file created (in-place update replaces protect-on-diff)"
+# User content is preserved in-place (not overwritten to profile source).
+assert_file_contains "$T/AGENTS.md" "user AGENTS.md" "IN14c user content preserved in AGENTS.md"
+# Manifest status is owned (no pending-merge).
 MANIFEST="${T}/.aid/.aid-manifest.json"
-assert_file_contains "$MANIFEST" '"pending-merge"' "IN14d manifest status is pending-merge"
-# .aid-new content matches the incoming (profile) version.
-assert_eq "$(cmp -s "$T/AGENTS.md.aid-new" "${PROFILES_DIR}/codex/AGENTS.md" && echo same || echo diff)" \
-    "same" "IN14e AGENTS.md.aid-new byte-identical to codex source"
+assert_file_contains "$MANIFEST" '"status": "owned"' "IN14d manifest root_agent status is owned"
+# AGENTS.md itself still exists (file was not deleted).
+assert_file_exists "$T/AGENTS.md" "IN14e AGENTS.md exists after in-place update"
 
 # ---------------------------------------------------------------------------
-# IN15 – Protect-on-diff with -Force: pre-placed user AGENTS.md → overwritten
+# IN15 – Pre-placed marker-less user AGENTS.md with -Force: same C2 branch,
+#         user content preserved in-place; exit 0; no .aid-new.
 # ---------------------------------------------------------------------------
 T=$(newtarget)
 printf 'This is the user AGENTS.md\n' > "$T/AGENTS.md"
@@ -387,10 +389,9 @@ printf 'This is the user AGENTS.md\n' > "$T/AGENTS.md"
 run_install -Tool codex -Force \
     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
     -TargetDirectory "$T"
-assert_exit_eq "$RC" 0 "IN15 protect-on-diff with -Force → exit 0"
-# AGENTS.md must now be the profile version.
-assert_eq "$(cmp -s "$T/AGENTS.md" "${PROFILES_DIR}/codex/AGENTS.md" && echo same || echo diff)" \
-    "same" "IN15b AGENTS.md overwritten with profile version when -Force"
+assert_exit_eq "$RC" 0 "IN15 pre-placed AGENTS.md with -Force -> in-place update, exit 0"
+# User content is preserved (root agent goes through in-place C2, not a raw Force overwrite).
+assert_file_contains "$T/AGENTS.md" "user AGENTS.md" "IN15b user content preserved in AGENTS.md with -Force"
 # No .aid-new file.
 assert_eq "$([[ -f "$T/AGENTS.md.aid-new" ]] && echo exists || echo none)" "none" \
     "IN15c no AGENTS.md.aid-new when -Force used"

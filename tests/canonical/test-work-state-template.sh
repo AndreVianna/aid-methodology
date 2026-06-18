@@ -34,7 +34,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 CANONICAL_TEMPLATE="${REPO_ROOT}/canonical/templates/work-state-template.md"
-DOGFOOD_TEMPLATE="${REPO_ROOT}/.claude/templates/work-state-template.md"
+DOGFOOD_TEMPLATE="${REPO_ROOT}/.claude/aid/templates/work-state-template.md"
 FIRST_RUN="${REPO_ROOT}/canonical/skills/aid-interview/references/state-first-run.md"
 PROFILES_DIR="${REPO_ROOT}/profiles"
 

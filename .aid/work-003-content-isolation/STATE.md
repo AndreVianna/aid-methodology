@@ -70,7 +70,7 @@ Single state file for work-003 (AID/user content isolation). Lite path (LITE-REF
 | 8 | Root-agent in-place region update + migration (PowerShell) — parity | IMPLEMENT | 3 | Done | clean | — | depends 007; 4 branches byte-identical to bash |
 | 9 | Record cornerstone in project KB + update stale layout docs + regen INDEX | DOCUMENT | 1 | Done | clean | — | Pillar 4 + F4; content-isolation.md + INDEX |
 | 10 | Wire cornerstone into reviewer standing criteria (canonical aid-reviewer) | DOCUMENT | 2 | Done | clean | — | depends 009; rendered to 5 profiles |
-| 11 | Cross-cutting regressions + path-ref triage + run-all + render-drift + Windows/workflow smokes | TEST | 5 | Pending | — | — | depends 003,004,005,007,008,010 |
+| 11 | Cross-cutting regressions + path-ref triage + run-all + render-drift + Windows/workflow smokes | TEST | 5 | Done | clean | — | run-all 51/51 PASS; render-drift clean; Windows CI-deferred |
 
 ## Deploy Status
 
@@ -93,7 +93,10 @@ Single state file for work-003 (AID/user content isolation). Lite path (LITE-REF
 | 2026-06-18 | task-003a complete: 6 canonical files triaged (5 fixed → canonical/ form, 1 deliberate example left); functional refs resolve to nested path; render-drift + §7a clean. Wave 2 review: CLEAN (zero issues) across 003/003a/007/010 + orchestrator CLAUDE.md. Committed (2d1e51bf). |
 | 2026-06-18 | Wave 3 dispatched: task-004 (bash prune, new) ∥ task-008 (PS root-agent parity, mirrors committed task-007). |
 | 2026-06-18 | Wave 3 complete (004, 008) — both clean self-verified (004: 30/30 fixtures; 008: 4 branches + pwsh import + ASCII). Prune manifest-safety personally verified: install_paths is find-based over the staging tree, so aid-README.md (non-emission-manifest) IS kept. Wave 4: task-005 (PS prune parity) dispatched; combined review of 004+005+008 next. |
-| 2026-06-18 | Wave 4 complete (005). Waves 3+4 review CLEAN — reviewer byte-diffed bash↔PS prune survivor sets + root-agent 4-branch output (identical). 1 MINOR non-blocking (stale line-ref in task-005.md text). Committed. Wave 5: task-011 (cross-cutting tests + run-all + render-drift + Windows smokes) next. |
+| 2026-06-18 | Wave 4 complete (005). Waves 3+4 review CLEAN — reviewer byte-diffed bash↔PS prune survivor sets + root-agent 4-branch output (identical). 1 MINOR non-blocking (stale line-ref in task-005.md text). Committed (eae826e7). Wave 5: task-011 next. |
+| 2026-06-18 | task-011 TRIAGE (run-all HOME-pinned): 10/51 suites fail. Cause map: 6 = old .aid-new/exit-5 contract (install/cli bash+ps1+parity) intentionally removed by 007/008; test-aid-migrate-trigger = cascade of aid-cli-parity gate; test-release RL02 = loose 'README.md' grep now matches aid-README.md; test-work-state-template WS07 = path-ref to .claude/templates (now .claude/aid/templates); T03 (test-expectations-single-source) = task-010 reviewer heading matches '### *.md' doc-ownership invariant. Split into 5 sub-agents; T03/reviewer-heading (re-renders) runs first/alone, then 4 test-fix agents in parallel. |
+| 2026-06-18 | task-011 fixes complete (6 sub-agents): T03 reviewer-heading reworded + re-rendered (T03 9/9, doc-ownership 13/13); bash install/cli (195/0, 194/0) + new regression IN36-IN40 (marker region-replace, sha-match rewrite, prune orphan, copilot R1 scope, nested-path); PS (138/0, 164/0); parity (84/0, 376/0) + migrate-trigger cascade cleared (59/0); release RL02 (70/0) + work-state WS07 (38/0); Windows T14/T15 rewritten + T45 prune (parse-ok, CI-deferred). Final full run-all + render-drift re-confirm running. |
+| 2026-06-18 | FINAL run-all (HOME-pinned): ALL 51 CANONICAL SUITES PASSED, exit 0. render-drift clean (diff = only the T03 reword delta, no spurious drift). All 11 tasks Done. Wave 5 committed. → delivery A+ gate. |
 
 ## Cross-phase Q&A (Pending)
 
