@@ -56,7 +56,7 @@ no dedicated doc-only sub-path — doc work routes under `LITE-FEATURE` / `LITE-
 
 ### 2b: Find best-matching recipe
 
-Scan `.cursor/recipes/` relative to the AID installation root (the same directory that
+Scan `.cursor/aid/recipes/` relative to the AID installation root (the same directory that
 contains `.cursor/skills/`). For each `.md` file, read the `applies-to` and `summary:`
 fields from its YAML front-matter. **Skip any file whose front-matter cannot be parsed or
 is missing required fields** (e.g., `README.md` has no front-matter — `parse-recipe.sh
@@ -153,7 +153,7 @@ immediately after Step 4 routes lite-with-recipe, before STATE.md is written in 
 ### 5a-1: Discover matching recipes
 
 Scan the canonical recipes directory (the path is:
-`.cursor/recipes/` relative to the AID installation root, i.e. the same directory
+`.cursor/aid/recipes/` relative to the AID installation root, i.e. the same directory
 that contains `.cursor/skills/`). For each `.md` file, read the `applies-to` field
 from its YAML front-matter. **Skip any file whose front-matter cannot be parsed or is missing required fields** (e.g., `README.md` has no front-matter — `parse-recipe.sh --validate` exits non-zero on it). Parse failures are not errors; handle gracefully and continue.
 
@@ -171,7 +171,7 @@ If no recipes match — the catalog is empty or no applies-to matches `workType`
 When the user picks a recipe number:
 
 1. **Identify the recipe file:** resolve the chosen recipe's `.md` path in
-   `.cursor/recipes/`.
+   `.cursor/aid/recipes/`.
 
 2. **List slots:** call `parse-recipe.sh --list <recipe-file>` to get the ordered
    list of slot names (one per line, unique, order of first appearance).

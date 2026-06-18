@@ -7,7 +7,7 @@ to `.aid/dashboard/kb.html` before STALE-CHECK runs, so a just-migrated file is 
 at the new path and treated as `CURRENT_APPROVED` when the summary is still current -- no
 regeneration is needed.
 
-Run `.agents/scripts/summarize/stale-check.sh`. It outputs one of:
+Run `.agents/aid/scripts/summarize/stale-check.sh`. It outputs one of:
 
 - `STALE` — KB is newer than last summary (or first run). Continue to PROFILE/GENERATE.
 - `CURRENT_APPROVED` — HTML is up-to-date and approved. Print:

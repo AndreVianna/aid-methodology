@@ -23,7 +23,7 @@
 #   copy_dir <src_dir> <dst_dir> [force]
 #                               -> recursive copy via copy_file
 #   install_tool <staging> <tool> <target> <version> [force]
-#                               -> run the full install for one tool (copy + manifest + protect-on-diff)
+#                               -> run the full install for one tool (copy + manifest + root-agent region update)
 #   manifest_read_tool_paths <manifest> <tool>
 #                               -> newline-delimited paths from tools.<tool>.paths (stdout)
 #   manifest_read_tool_version <manifest> <tool>
@@ -45,7 +45,7 @@
 # Verbose mode:
 #   Set AID_VERBOSE=1 (or pass --verbose to install.sh) to print per-file
 #   Copied:/Up to date:/Updated:/Skipped:/Removed: lines.  Default (0) prints
-#   only the per-tool summary line.  Protect-on-diff WARNs and errors always show.
+#   only the per-tool summary line.
 #
 # Exit codes (from install.sh):
 #   0  success
@@ -53,7 +53,6 @@
 #   2  usage error
 #   3  network / fetch failure
 #   4  checksum mismatch
-#   5  protect-on-diff blocked (without --force)
 #   6  uninstall with no manifest
 
 # Guard against being sourced more than once.
@@ -303,7 +302,7 @@ extract_tarball() {
 # ---------------------------------------------------------------------------
 
 # copy_file <src> <dst> [force]
-# Returns 0 always (errors are logged; protect-on-diff is handled in install_tool).
+# Returns 0 always (errors are logged).
 # Prints per-file lines only when AID_VERBOSE=1.
 # Increments counters: _COPY_COUNT_COPIED, _COPY_COUNT_UPTODATE, _COPY_COUNT_UPDATED,
 #   _COPY_COUNT_SKIPPED (caller initialises before iterating; install_tool reads them).
@@ -359,76 +358,189 @@ copy_dir() {
 }
 
 # ---------------------------------------------------------------------------
-# Protect-on-diff (FR11) for root agent files
+# Root agent file region update (Pillar 3)
 # ---------------------------------------------------------------------------
 
 # _copy_root_agent_file <src> <dst> <tool> <force> <manifest>
-# Implements the FR11 algorithm.
-# Returns:
-#   0 - success (copied/up-to-date/updated/forced)
-#   5 - protect-on-diff blocked (written .aid-new instead)
 #
-# Callers accumulate path/sha256 data into arrays and pass them to manifest_write.
-# This function prints FR11 messages to stdout (progress) and stderr (warnings).
-# It writes the status into _CORE_ROOT_AGENT_STATUS (caller reads this var).
+# Updates the root agent file (CLAUDE.md / AGENTS.md) using in-place region
+# semantics.  Never writes a backup/sidecar file under any branch.
+#
+# Algorithm:
+#   A. Dst absent              -> write full source (markers included).
+#   B. Dst has AID:BEGIN/END   -> replace only the marked region; preserve all
+#                                 content outside the markers verbatim.
+#   C. Dst has no markers      -> migrate:
+#      C1. Sha matches recorded manifest sha -> clean rewrite to full marked source.
+#      C2. Sha mismatch        -> excise known AID-managed sections by stem match
+#                                 (## Knowledge Base, ## Review output format,
+#                                 ## Permissions -- tolerating trailing parenthetical
+#                                 suffix on the heading) and re-insert them wrapped
+#                                 in AID:BEGIN/END markers in place; preserve
+#                                 ## Project / ## Project Overview and all other
+#                                 user content.  No backup file is ever written.
+#
+# Returns:
+#   0 - success (copied/up-to-date/updated)
+#
+# Sets _CORE_ROOT_AGENT_STATUS="owned" always (the .aid-new / pending-merge path
+# is eliminated; all divergence is resolved in-place).
 _copy_root_agent_file() {
     local src="$1" dst="$2" tool="$3" force="${4:-0}" manifest="${5:-}"
 
     _CORE_ROOT_AGENT_STATUS="owned"
-    local inc_sha
-    inc_sha="$(sha256_file "$src")"
+    local src_sha
+    src_sha="$(sha256_file "$src")"
+    local dst_dir
+    dst_dir="$(dirname "$dst")"
 
+    # ------------------------------------------------------------------
+    # Branch A: destination absent -> write full source.
+    # ------------------------------------------------------------------
     if [[ ! -e "$dst" ]]; then
-        # Step 2: Destination absent -> copy.
-        mkdir -p "$(dirname "$dst")"
+        mkdir -p "$dst_dir"
         cp "$src" "$dst"
         _COPY_COUNT_COPIED=$((_COPY_COUNT_COPIED + 1))
         [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Copied: ${dst}"
-        _CORE_ROOT_AGENT_STATUS="owned"
         return 0
     fi
 
     local disk_sha
     disk_sha="$(sha256_file "$dst")"
 
-    if [[ "$disk_sha" == "$inc_sha" ]]; then
-        # Step 3: Identical -> up to date.
+    # Identical on disk -> nothing to do.
+    if [[ "$disk_sha" == "$src_sha" ]]; then
         _COPY_COUNT_UPTODATE=$((_COPY_COUNT_UPTODATE + 1))
         [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Up to date: ${dst}"
-        _CORE_ROOT_AGENT_STATUS="owned"
         return 0
     fi
 
-    # Check manifest for AID-owned sha.
+    # ------------------------------------------------------------------
+    # Branch B: destination already has AID:BEGIN/END markers.
+    # Replace only the marked region; preserve everything outside verbatim.
+    # ------------------------------------------------------------------
+    if grep -qF '<!-- AID:BEGIN -->' "$dst" 2>/dev/null; then
+        # Extract the marked region from the source (inclusive of marker lines).
+        local src_region
+        src_region="$(awk '/^<!-- AID:BEGIN -->/{found=1} found{print} /^<!-- AID:END -->/{if(found){exit}}' "$src")"
+
+        # Rebuild dst: output lines before the marker, then the new region,
+        # then lines after the closing marker.
+        local tmp
+        tmp="$(mktemp "${dst_dir}/.aid-root-agent.XXXXXX")"
+        awk -v region="$src_region" '
+        BEGIN { in_aid=0; printed_region=0 }
+        /^<!-- AID:BEGIN -->/ {
+            if (!printed_region) {
+                print region
+                printed_region=1
+            }
+            in_aid=1
+            next
+        }
+        in_aid && /^<!-- AID:END -->/ { in_aid=0; next }
+        in_aid { next }
+        { print }
+        ' "$dst" > "$tmp"
+        mv "$tmp" "$dst"
+
+        _COPY_COUNT_UPDATED=$((_COPY_COUNT_UPDATED + 1))
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: ${dst} (region replaced)"
+        return 0
+    fi
+
+    # ------------------------------------------------------------------
+    # Branch C: destination has no markers -- migration path.
+    # ------------------------------------------------------------------
+
+    # Read recorded sha from manifest (the sha AID last wrote to this file).
     local recorded_sha=""
     if [[ -n "$manifest" && -f "$manifest" ]]; then
         recorded_sha="$(manifest_read_root_agent "$manifest" "$tool" "$(basename "$dst")")"
     fi
 
+    # C1: sha still matches the AID-recorded value -> clean rewrite.
     if [[ -n "$recorded_sha" && "$disk_sha" == "$recorded_sha" ]]; then
-        # Step 4: AID owns it -> overwrite.
         cp "$src" "$dst"
         _COPY_COUNT_UPDATED=$((_COPY_COUNT_UPDATED + 1))
-        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: ${dst}"
-        _CORE_ROOT_AGENT_STATUS="owned"
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: ${dst} (migrated: clean rewrite)"
         return 0
     fi
 
-    # Step 5: Someone else owns it.
-    if [[ "$force" -eq 1 ]]; then
-        cp "$src" "$dst"
-        _COPY_COUNT_UPDATED=$((_COPY_COUNT_UPDATED + 1))
-        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: ${dst} (forced over existing)"
-        _CORE_ROOT_AGENT_STATUS="owned"
-        return 0
-    fi
+    # C2: sha mismatch (user has edited the file) -> excise AID sections by
+    # stem match and re-insert as a marked region.
+    #
+    # AID section stems to excise (exact heading stem; tolerate trailing
+    # parenthetical like " (global)" or " (IMPERATIVE)"):
+    #   ## Knowledge Base
+    #   ## Review output format
+    #   ## Permissions
+    #   ## Tracking discipline
+    #
+    # A section runs from its "## Stem..." heading line until the next "## "
+    # heading (exclusive) or end-of-file.
+    #
+    # The new marked region (from the source) is inserted at the position of
+    # the first excised section.  All other content (## Project, user sections)
+    # is preserved verbatim.
 
-    # Without --force: write .aid-new.
-    cp "$src" "${dst}.aid-new"
-    # WARN always shows regardless of AID_VERBOSE.
-    echo "WARN: ${dst} exists and was not written by AID; wrote incoming version to ${dst}.aid-new - review and merge, or re-run with --force to overwrite" >&2
-    _CORE_ROOT_AGENT_STATUS="pending-merge"
-    return 5
+    # Extract the new marked region from source.
+    local new_region
+    new_region="$(awk '/^<!-- AID:BEGIN -->/{found=1} found{print} /^<!-- AID:END -->/{if(found){exit}}' "$src")"
+
+    local tmp
+    tmp="$(mktemp "${dst_dir}/.aid-root-agent.XXXXXX")"
+
+    # Use awk to perform the excise-and-reinsert in one pass.
+    # The awk script:
+    #   - Identifies AID-managed section headings by stem prefix match.
+    #   - Suppresses those sections (and their body lines).
+    #   - At the position of the first suppressed section, emits the new region.
+    #   - All other lines are emitted verbatim.
+    awk -v new_region="$new_region" '
+    function is_aid_heading(line,    stem) {
+        # Match "## StemText" optionally followed by " (anything)".
+        # Stems: Knowledge Base, Review output format, Permissions,
+        #        Tracking discipline.
+        if (line !~ /^## /) return 0
+        stem = line
+        gsub(/^## /, "", stem)
+        # Strip trailing parenthetical suffix: " (..." -> ""
+        gsub(/ \([^)]*\)$/, "", stem)
+        if (stem == "Knowledge Base") return 1
+        if (stem == "Review output format") return 1
+        if (stem == "Permissions") return 1
+        if (stem == "Tracking discipline") return 1
+        return 0
+    }
+    BEGIN {
+        in_aid_section=0
+        region_inserted=0
+    }
+    /^## / {
+        if (is_aid_heading($0)) {
+            # Start suppressing this AID section.
+            in_aid_section=1
+            # Insert the new marked region at the first AID section position.
+            if (!region_inserted) {
+                print new_region
+                region_inserted=1
+            }
+            next
+        } else {
+            # A non-AID heading ends any current AID section suppression.
+            in_aid_section=0
+        }
+    }
+    in_aid_section { next }
+    { print }
+    ' "$dst" > "$tmp"
+
+    mv "$tmp" "$dst"
+
+    _COPY_COUNT_UPDATED=$((_COPY_COUNT_UPDATED + 1))
+    [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: ${dst} (migrated: AID sections re-wrapped in markers)"
+    return 0
 }
 
 # ---------------------------------------------------------------------------
@@ -1471,7 +1583,6 @@ write_version_marker() {
 # <staging_dir> - directory produced by extract_tarball (content of profiles/<tool>/)
 # Returns:
 #   0 - success (all files installed or up-to-date)
-#   5 - at least one root agent file was protect-on-diff blocked
 #
 # Side effects: writes <target>/.aid/.aid-manifest.json and .aid/.aid-version.
 install_tool() {
@@ -1480,7 +1591,6 @@ install_tool() {
 
     local -a install_paths=()
     local -a root_entries=()
-    local blocked=0
 
     # Per-tool file counters (incremented by copy_file and _copy_root_agent_file).
     _COPY_COUNT_COPIED=0
@@ -1553,16 +1663,13 @@ install_tool() {
             ;;
     esac
 
-    # Handle root agent file via FR11.
+    # Handle root agent file via in-place region update (Pillar 3).
     local root_src="${staging}/${root_agent}"
     local root_dst="${target}/${root_agent}"
 
     if [[ -f "$root_src" ]]; then
         _CORE_ROOT_AGENT_STATUS="owned"
-        _copy_root_agent_file "$root_src" "$root_dst" "$tool" "$force" "$manifest" || {
-            local rc=$?
-            [[ "$rc" -eq 5 ]] && blocked=1
-        }
+        _copy_root_agent_file "$root_src" "$root_dst" "$tool" "$force" "$manifest"
 
         local inc_sha
         inc_sha="$(sha256_file "$root_src")"
@@ -1602,9 +1709,6 @@ install_tool() {
         fi
     fi
 
-    if [[ "$blocked" -eq 1 ]]; then
-        return 5
-    fi
     return 0
 }
 

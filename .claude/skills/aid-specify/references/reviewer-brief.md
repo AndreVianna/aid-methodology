@@ -1,7 +1,7 @@
 # /aid-specify — Reviewer Dispatch Brief Template
 
 Loaded by `/aid-specify` REVIEW state. Renders the brief passed to the
-`aid-reviewer` sub-agent. Follows `.claude/templates/reviewer-dispatch.md`.
+`aid-reviewer` sub-agent. Follows `.claude/aid/templates/reviewer-dispatch.md`.
 
 `{{ARTIFACTS}}` and `{{CONTEXT}}` are filled at dispatch time.
 
@@ -16,7 +16,7 @@ CONTEXT:
   task breakdown, execution), flag it as an OOS observation and bound your
   review to the SPEC.md sections listed in ARTIFACTS.
 
-RUBRIC: .claude/templates/grading-rubric.md (universal severity → grade table)
+RUBRIC: .claude/aid/templates/grading-rubric.md (universal severity → grade table)
   Grade ONE feature's SPEC.md technical specification for:
     - Consistency with the KB (architecture, module-map, coding-standards, schemas)
     - Internal coherence (schemas ↔ feature flow ↔ layers ↔ acceptance criteria)
@@ -42,8 +42,8 @@ DELIVERABLES:
   - Findings format: severity-tagged + source-tagged (CODE | SPEC | KB | REQUIREMENTS)
   - Output location: `.aid/.temp/review-pending/specify-{feature}.md`
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
-  - Grade: per .claude/scripts/grade.sh; minimum resolved via
-    `bash .claude/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`
+  - Grade: per .claude/aid/scripts/grade.sh; minimum resolved via
+    `bash .claude/aid/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`
   - The aid-reviewer NEVER edits the SPEC — only grades and lists issues
 ```
 

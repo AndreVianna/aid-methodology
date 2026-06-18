@@ -12,10 +12,10 @@ Load `references/task-decomposition.md` for task type rules, file format, and qu
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field Phase --value Detail
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-detail
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Detail
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-detail
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 ### Step 1: Propose Tasks for First Deliverable
@@ -87,7 +87,7 @@ Once approved:
 Include in the prompt:
 - **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
   `.aid/.temp/review-pending/detail.md`. Read the existing file first if it exists.
-  Output per `.claude/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
+  Output per `.claude/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
 Print before dispatch: `[Review] Dispatching aid-reviewer for task list validation (per-deliverable scope).`
 
@@ -98,12 +98,12 @@ After writing, **review immediately:** Do the tasks hold up?
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash .claude/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
+bash .claude/aid/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
 ```
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum (from `bash .claude/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`) | Move to next deliverable. |
+| Grade ≥ minimum (from `bash .claude/aid/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`) | Move to next deliverable. |
 | Grade < minimum, fixable | Back to Propose with findings. |
 
 ```

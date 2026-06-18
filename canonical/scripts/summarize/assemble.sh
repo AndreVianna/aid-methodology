@@ -55,7 +55,7 @@ if [[ ${#SECTIONS[@]} -eq 0 ]] || [[ ! -f "${SECTIONS[0]}" ]]; then
 fi
 
 if [[ "$NO_MERMAID" -eq 0 ]]; then
-    [[ -f "$MERMAID_LIB" ]] || { echo "Mermaid library not found: $MERMAID_LIB" >&2; echo "   Run: bash .claude/scripts/summarize/fetch-mermaid.sh" >&2; exit 1; }
+    [[ -f "$MERMAID_LIB" ]] || { echo "Mermaid library not found: $MERMAID_LIB" >&2; echo "   Run: bash canonical/scripts/summarize/fetch-mermaid.sh" >&2; exit 1; }
     [[ -s "$MERMAID_LIB" ]] || { echo "Empty Mermaid library: $MERMAID_LIB" >&2; exit 1; }
 fi
 

@@ -10,7 +10,7 @@ Read `.aid/.temp/review-pending/summarize.md`. Filter rows where Status ∈ {`Pe
 
 For each Pending/Recurred row, apply the corresponding repair autonomously:
 
-- **D1 (diagram parse)** — locate the failing `<pre.mermaid>` block, identify the syntax error from the validator output, apply the fix per `.agent/templates/knowledge-summary/mermaid-examples.md` "Common failure patterns" table.
+- **D1 (diagram parse)** — locate the failing `<pre.mermaid>` block, identify the syntax error from the validator output, apply the fix per `.agent/aid/templates/knowledge-summary/mermaid-examples.md` "Common failure patterns" table.
 - **D2 (diagram render)** — the block parses but renders trivially / as an error SVG; inspect the jsdom render output, fix the structural issue (often an empty subgraph or an unreachable node).
 - **L1 (anchor links)** — fix the `href` or add the missing `id`.
 - **L2 (md links)** — correct the relative path.

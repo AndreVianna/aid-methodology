@@ -26,7 +26,7 @@ between updates — repeating the same activity twice signals "stuck" to the
 orchestrator. Use `unknown` if you can't predict eta-remaining.
 
 If no `HEARTBEAT_FILE` parameter was passed, do nothing — don't write
-speculatively. See `.agents/templates/subagent-heartbeat-protocol.md` for
+speculatively. See `.agents/aid/templates/subagent-heartbeat-protocol.md` for
 the full contract.
 
 ## Self-review discipline
@@ -53,7 +53,7 @@ issue you should have caught, that is a self-review gap.
    honest adversarial sweep of your own work surfaces nothing new — not when
    the obvious bullets are addressed.
 
-Apply regardless of task size. See `.agents/templates/self-review-protocol.md`
+Apply regardless of task size. See `.agents/aid/templates/self-review-protocol.md`
 for the full protocol.
 
 

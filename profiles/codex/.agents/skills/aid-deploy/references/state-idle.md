@@ -23,10 +23,10 @@ Update work `STATE.md` `## Deploy Status`: Status → Selecting.
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash .agents/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .agents/scripts/execute/writeback-state.sh --pipeline --field Phase --value Deploy
-bash .agents/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-deploy
-bash .agents/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Deploy
+bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-deploy
+bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Advance:** **CHAIN** → [State: SELECTING] (continue inline).

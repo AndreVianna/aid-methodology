@@ -46,7 +46,7 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
 ### PD-0: Read Configuration
 
 1. **Read `MaxConcurrent`** from `.aid/knowledge/STATE.md` top-of-file metadata:
-   `bash .claude/scripts/config/read-setting.sh --path execution.max_parallel_tasks --default 5` (default `5` if absent).
+   `bash .claude/aid/scripts/config/read-setting.sh --path execution.max_parallel_tasks --default 5` (default `5` if absent).
 
 2. **Detect host capability — `run_in_background` probe.**
 
@@ -258,17 +258,17 @@ Remove `task-{NNN}` from the in-flight set.
 
    Emit pipeline block signal (silent state-write — no output, no gate):
    ```bash
-   bash .claude/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
-   bash .claude/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Task failed with unresolved impediment — task-{NNN}"
-   bash .claude/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-task-{NNN}.md"
-   bash .claude/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+   bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
+   bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Task failed with unresolved impediment — task-{NNN}"
+   bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-task-{NNN}.md"
+   bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
    ```
 
 3. Emit `[pool] ✗ task-{NNN} FAILED — computing failure-block-radius`.
 
 4. **Compute the failure-block-radius (transitive-descendant BFS):**
 
-   Run `.claude/scripts/execute/compute-block-radius.sh` with the
+   Run `.claude/aid/scripts/execute/compute-block-radius.sh` with the
    failed task and the reverse dependency graph:
 
    ```bash
@@ -477,10 +477,10 @@ Update work `STATE.md` `## Tasks Status` table: set this task's row Status to `I
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field Phase --value Execute
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-execute
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Execute
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-execute
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Pick the executor by task Type from the Agent Selection table above** (RESEARCH → `aid-researcher`, DESIGN → `aid-architect`, IMPLEMENT/TEST/REFACTOR → `aid-developer`, DOCUMENT → `aid-tech-writer`, MIGRATE → `aid-developer`, CONFIGURE → `aid-developer`).

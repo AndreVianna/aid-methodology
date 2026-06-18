@@ -2,7 +2,7 @@
 
 Loaded by `/aid-plan` REVIEW state (per-deliverable in Step 4 of The Loop; whole-plan
 on re-run). Renders the brief passed to the `aid-reviewer` sub-agent. Follows
-`.github/templates/reviewer-dispatch.md`.
+`.github/aid/templates/reviewer-dispatch.md`.
 
 `{{ARTIFACTS}}`, `{{CONTEXT}}`, `{{SCOPE}}` are filled at dispatch time.
 
@@ -23,7 +23,7 @@ SCOPE: {{SCOPE}}   # one of: per-deliverable | whole-plan
                    deliveries only if this one introduces a sequencing conflict.
   whole-plan:      Re-grade all deliveries against current SPECs + REQUIREMENTS.
 
-RUBRIC: .github/templates/grading-rubric.md (universal severity → grade table)
+RUBRIC: .github/aid/templates/grading-rubric.md (universal severity → grade table)
   Grade PLAN.md deliverables for:
     - Each delivery is functional on its own (independently usable + testable)
     - Dependencies flow one direction (no cycles)
@@ -49,8 +49,8 @@ DELIVERABLES:
   - Findings format: severity-tagged + source-tagged (PLAN | SPEC | KB | REQUIREMENTS)
   - Output location: `.aid/.temp/review-pending/plan-{work}.md`
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
-  - Grade: per .github/scripts/grade.sh; minimum resolved via
-    `bash .github/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`
+  - Grade: per .github/aid/scripts/grade.sh; minimum resolved via
+    `bash .github/aid/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`
   - The aid-reviewer NEVER edits PLAN.md — only grades and lists issues
 ```
 

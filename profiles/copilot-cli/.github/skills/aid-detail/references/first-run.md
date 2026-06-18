@@ -12,10 +12,10 @@ Load `references/task-decomposition.md` for task type rules, file format, and qu
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash .github/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .github/scripts/execute/writeback-state.sh --pipeline --field Phase --value Detail
-bash .github/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-detail
-bash .github/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Detail
+bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-detail
+bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 ### Step 1: Propose Tasks for First Deliverable
@@ -87,7 +87,7 @@ Once approved:
 Include in the prompt:
 - **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
   `.aid/.temp/review-pending/detail.md`. Read the existing file first if it exists.
-  Output per `.github/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
+  Output per `.github/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
 Print before dispatch: `[Review] Dispatching aid-reviewer for task list validation (per-deliverable scope).`
 
@@ -98,12 +98,12 @@ After writing, **review immediately:** Do the tasks hold up?
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash .github/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
+bash .github/aid/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
 ```
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum (from `bash .github/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`) | Move to next deliverable. |
+| Grade ≥ minimum (from `bash .github/aid/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`) | Move to next deliverable. |
 | Grade < minimum, fixable | Back to Propose with findings. |
 
 ```

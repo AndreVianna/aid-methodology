@@ -11,9 +11,9 @@ Requirements are approved and features exist but cross-reference validation has 
 Include in the prompt:
 - **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
   `.aid/.temp/review-pending/interview-<work>-cross-ref.md`. Read the existing file
-  first if it exists. Output per `.github/templates/reviewer-ledger-schema.md` —
+  first if it exists. Output per `.github/aid/templates/reviewer-ledger-schema.md` —
   ONE table, no narrative. After writing the ledger, run:
-  `bash .github/scripts/grade.sh .aid/.temp/review-pending/interview-<work>-cross-ref.md`
+  `bash .github/aid/scripts/grade.sh .aid/.temp/review-pending/interview-<work>-cross-ref.md`
   and include the grade in your return message."
 
 Then append the cross-reference process body from `references/cross-reference.md`
@@ -29,7 +29,7 @@ Wait for completion.
 After aid-reviewer returns, run grade.sh on the ledger to confirm the grade:
 
 ```bash
-bash .github/scripts/grade.sh --explain .aid/.temp/review-pending/interview-<work>-cross-ref.md
+bash .github/aid/scripts/grade.sh --explain .aid/.temp/review-pending/interview-<work>-cross-ref.md
 ```
 
 **Advance:** **CHAIN** → [State: DONE] when cross-reference completes (continue inline).

@@ -11,9 +11,9 @@ On return: read spike results, record in SPEC.md, resume loop.
 
 Emit pipeline pause signal (silent state-write — no output, no gate):
 ```
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Spike needed — awaiting investigation results before /aid-specify can continue"
-bash .claude/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Spike needed — awaiting investigation results before /aid-specify can continue"
+bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Advance:** **PAUSE-FOR-USER-ACTION** → spike work happens outside /aid-specify (separate investigation task). Re-run `/aid-specify` after recording spike results in SPEC.md to continue to [State: CONTINUE].

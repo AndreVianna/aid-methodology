@@ -8,10 +8,10 @@ No PLAN.md found; begin dependency mapping and deliverable sequencing.
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash .agents/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .agents/scripts/execute/writeback-state.sh --pipeline --field Phase --value Plan
-bash .agents/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-plan
-bash .agents/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Plan
+bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-plan
+bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 ### Step 1: Map Dependencies
@@ -94,7 +94,7 @@ When the user agrees on a deliverable, **IMMEDIATELY write it to the file.**
 Include in the prompt:
 - **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
   `.aid/.temp/review-pending/plan.md`. Read the existing file first if it exists.
-  Output per `.agents/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
+  Output per `.agents/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
 Print before dispatch: `[Review] Dispatching aid-reviewer for PLAN validation (per-deliverable scope).`
 
@@ -108,12 +108,12 @@ After writing, **review immediately:** Does it hold up?
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash .agents/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
+bash .agents/aid/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
 ```
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum (from `bash .agents/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`) | Move to next deliverable. |
+| Grade ≥ minimum (from `bash .agents/aid/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`) | Move to next deliverable. |
 | Grade < minimum, fixable | Back to Propose with findings. |
 
 ```

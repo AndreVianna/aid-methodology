@@ -81,7 +81,7 @@ Done: {D}  In-flight: {I}  Queued: {Q}  Blocked: {B}  Failed: {F}
 | `agent` | Executor role dispatched for this task (from Agent Selection table) | e.g., `aid-developer`, `aid-researcher` |
 | `heartbeat` | Last state written to `.aid/.heartbeat/<executor>-<ts>.txt` | `EXECUTE` / `REVIEW` / `FIX` / `DONE` / `STALE` / `unknown` |
 | `elapsed` | Wall time since PD-2 dispatched this task | `Xm Ys` (minutes + seconds) |
-| `ETA` | Rough band from `.agent/templates/rough-time-hints.md` for the executor + task type | `~LOW–HIGH min` |
+| `ETA` | Rough band from `.agent/aid/templates/rough-time-hints.md` for the executor + task type | `~LOW–HIGH min` |
 
 **Heartbeat states:**
 - `EXECUTE` — sub-agent is currently running the executor

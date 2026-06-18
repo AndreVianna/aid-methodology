@@ -1,9 +1,14 @@
 # CLAUDE.md
 
 ## Project
-<!-- AID-DISCOVER — Replace with project name and one-line description -->
-(pending discovery)
 
+**AID (AI Integrated Development)** — a methodology and multi-tool distribution for
+structured AI-assisted software development: a phased skill + specialized-agent pipeline
+over a per-project Knowledge Base, rendered from a single `canonical/` source into five
+byte-identical host-tool install trees (Claude Code, Codex, Cursor, GitHub Copilot CLI,
+Antigravity) and installed via the persistent `aid` CLI.
+
+<!-- AID:BEGIN -->
 ## Tracking discipline (IMPERATIVE)
 
 Every project, task, and deliverable is tracked in a state file — the work's
@@ -27,7 +32,7 @@ cross-phase process state). Keeping it current is **not optional**:
 
 Any review output you produce — dispatched sub-agent, script validator, or
 ad-hoc user-prompted — uses the schema at
-`.claude/templates/reviewer-ledger-schema.md`. Write the ledger as a single
+`.claude/aid/templates/reviewer-ledger-schema.md`. Write the ledger as a single
 markdown table at `.aid/.temp/review-pending/<scope>.md`. Use the 7-column
 shape: `# | Severity | Status | Doc | Line | Description | Evidence`.
 Severity tags bracketed; Status enum: Pending/Fixed/Recurred/Accepted/OOS/Invalid.
@@ -39,4 +44,5 @@ No narrative or summary sections in the ledger.
 - Write only within the project directory
 - Run build and test commands
 - Do NOT modify files outside the project root
+<!-- AID:END -->
 

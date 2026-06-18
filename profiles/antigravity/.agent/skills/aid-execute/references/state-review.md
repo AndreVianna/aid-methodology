@@ -31,7 +31,7 @@ Dispatch the `aid-reviewer` agent with `subagent_type: aid-reviewer` at **Small 
 
 Then append the quick-check-specific prompt below.
 
-The brief carries the universal rubric pointer (`.agent/templates/grading-rubric.md`)
+The brief carries the universal rubric pointer (`.agent/aid/templates/grading-rubric.md`)
 and the OOS policy. Pass the rendered brief + the quick-check prompt as a single
 dispatch.
 
@@ -73,10 +73,10 @@ For each `[CRITICAL]` finding:
    Write the IMPEDIMENT to `.aid/{work}/IMPEDIMENT-task-{NNN}.md` and emit the pipeline block
    signal (silent state-write — no output, no gate):
    ```bash
-   bash .agent/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
-   bash .agent/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Critical finding persists after fix attempt — architecture-conflict impediment raised"
-   bash .agent/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-task-{NNN}.md"
-   bash .agent/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+   bash .agent/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
+   bash .agent/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Critical finding persists after fix attempt — architecture-conflict impediment raised"
+   bash .agent/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-task-{NNN}.md"
+   bash .agent/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
    ```
 4. Mark the finding as `Fixed-on-spot` in the quick-check findings block (see §
    Write Findings to STATE.md below).

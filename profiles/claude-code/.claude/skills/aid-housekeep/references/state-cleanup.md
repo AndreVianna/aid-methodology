@@ -22,11 +22,11 @@ Write through `housekeep-state.sh` (never hand-edit `## Housekeep Status`
 directly):
 
 ```bash
-bash .claude/scripts/housekeep/housekeep-state.sh \
+bash .claude/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "State" --value "CLEANUP"
-bash .claude/scripts/housekeep/housekeep-state.sh \
+bash .claude/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "running"
-bash .claude/scripts/housekeep/housekeep-state.sh \
+bash .claude/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Last Run" \
     --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
@@ -62,7 +62,7 @@ the last word — no folder is silently hidden):
 ```bash
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
-CANDIDATES=$(bash .claude/scripts/housekeep/cleanup-classify.sh \
+CANDIDATES=$(bash .claude/aid/scripts/housekeep/cleanup-classify.sh \
     --root "$REPO_ROOT")
 CLASSIFY_EXIT=$?
 ```
@@ -102,9 +102,9 @@ output records as defined above.
 If `$CANDIDATES` is empty (the scan found nothing stale):
 
 ```bash
-bash .claude/scripts/housekeep/housekeep-state.sh \
+bash .claude/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Cleanup Stage" --value "passed"
-bash .claude/scripts/housekeep/housekeep-state.sh \
+bash .claude/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "passed"
 ```
 
@@ -233,9 +233,9 @@ If `CONFIRMED_ALL` is empty (user unchecked everything, cancelled, or no items
 were confirmed in either pool):
 
 ```bash
-bash .claude/scripts/housekeep/housekeep-state.sh \
+bash .claude/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Cleanup Stage" --value "passed"
-bash .claude/scripts/housekeep/housekeep-state.sh \
+bash .claude/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "passed"
 ```
 
@@ -273,9 +273,9 @@ destructive step below:
 
 ```bash
 # Reuse the existing housekeep branch (full sequence) or create it (cleanup-only).
-SLUG=$(bash .claude/scripts/housekeep/housekeep-state.sh --state "$STATE_FILE" --read --field "Branch" | sed 's#^aid/housekeep-##')
+SLUG=$(bash .claude/aid/scripts/housekeep/housekeep-state.sh --state "$STATE_FILE" --read --field "Branch" | sed 's#^aid/housekeep-##')
 [ -z "$SLUG" ] && SLUG="$(date +%Y%m%d)"
-bash .claude/scripts/housekeep/branch-commit.sh --ensure-branch --slug "$SLUG"
+bash .claude/aid/scripts/housekeep/branch-commit.sh --ensure-branch --slug "$SLUG"
 ```
 
 Only after the branch is ensured, apply deletions:
@@ -308,7 +308,7 @@ Make exactly **one** commit via `branch-commit.sh` for the staged deletions.
 Never push. Never commit to `master`.
 
 ```bash
-bash .claude/scripts/housekeep/branch-commit.sh \
+bash .claude/aid/scripts/housekeep/branch-commit.sh \
     --commit \
     --message "chore(housekeep): cleanup stale .aid artifacts [feature-004]" \
     --add-all
@@ -322,9 +322,9 @@ branch and contains no `git push` (safety self-check in the script).
 Then write the gate field:
 
 ```bash
-bash .claude/scripts/housekeep/housekeep-state.sh \
+bash .claude/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Cleanup Stage" --value "passed"
-bash .claude/scripts/housekeep/housekeep-state.sh \
+bash .claude/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "passed"
 ```
 

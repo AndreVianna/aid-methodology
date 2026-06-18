@@ -1,7 +1,7 @@
 # /aid-execute — Reviewer Dispatch Brief Template
 
 Loaded by `/aid-execute` REVIEW + DELIVERY-GATE states. Renders the brief passed
-to the `aid-reviewer` sub-agent. Follows `.github/templates/reviewer-dispatch.md`.
+to the `aid-reviewer` sub-agent. Follows `.github/aid/templates/reviewer-dispatch.md`.
 
 Two dispatch points share this template (`{{MODE}}` distinguishes them):
 
@@ -29,8 +29,8 @@ MODE: {{MODE}}   # one of: per-task | per-delivery
   per-delivery:  Full quality gate. Aggregate across all tasks in the delivery.
                  The delivery as a whole must reach the minimum grade.
 
-RUBRIC: .github/templates/grading-rubric.md (universal severity → grade table)
-  - Grade is COMPUTED by .github/scripts/grade.sh, not judged
+RUBRIC: .github/aid/templates/grading-rubric.md (universal severity → grade table)
+  - Grade is COMPUTED by .github/aid/scripts/grade.sh, not judged
   - Worst issue dominates per the rubric
   - Task-Type-specific checks: see references/reviewer-guide.md for per-Type checklists
     (RESEARCH / DESIGN / IMPLEMENT / TEST / DOCUMENT / MIGRATE / REFACTOR / CONFIGURE)
@@ -54,8 +54,8 @@ DELIVERABLES:
       per-task:     `.aid/{work}/STATE.md ## Tasks Status` row for this task
       per-delivery: `.aid/.temp/review-pending/execute-delivery-{N}.md` then aggregated
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
-  - Grade: per .github/scripts/grade.sh; minimum resolved via
-    `bash .github/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`
+  - Grade: per .github/aid/scripts/grade.sh; minimum resolved via
+    `bash .github/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`
   - The reviewer NEVER fixes anything — only grades and lists issues
 ```
 

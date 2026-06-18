@@ -45,7 +45,7 @@ Optional flags:
   known-issues.md              ← known problems
 ```
 
-<!-- NOTE (FR2 area-STATE rule, work-003-traceability/feature-002 OQ-3 resolution): The Monitor area STATE is deferred until the area matures. When authored, MONITOR-STATE.md follows the area-STATE pattern documented at .agents/templates/work-state-template.md (per-work) and .aid/knowledge/schemas.md §1A. -->
+<!-- NOTE (FR2 area-STATE rule, work-003-traceability/feature-002 OQ-3 resolution): The Monitor area STATE is deferred until the area matures. When authored, MONITOR-STATE.md follows the area-STATE pattern documented at .agents/aid/templates/work-state-template.md (per-work) and .aid/knowledge/schemas.md §1A. -->
 
 ## ⚠️ Pre-flight Checks
 
@@ -136,10 +136,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **Before each dispatch:**
 
-1. **Look up ETA** in `.agents/templates/rough-time-hints.md` for the
+1. **Look up ETA** in `.agents/aid/templates/rough-time-hints.md` for the
    subagent's operation class. Capture LOW–HIGH band.
 2. **Read heartbeat config** via
-   `bash .agents/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
+   `bash .agents/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
    (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
 3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
@@ -170,9 +170,9 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **References:**
 
-- `.agents/templates/long-wait-protocol.md` — full L2 spec
-- `.agents/templates/subagent-heartbeat-protocol.md` — full L3 spec
-- `.agents/templates/rough-time-hints.md` — current measured ETAs
+- `.agents/aid/templates/long-wait-protocol.md` — full L2 spec
+- `.agents/aid/templates/subagent-heartbeat-protocol.md` — full L3 spec
+- `.agents/aid/templates/rough-time-hints.md` — current measured ETAs
 - `.agents/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
 
 The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair

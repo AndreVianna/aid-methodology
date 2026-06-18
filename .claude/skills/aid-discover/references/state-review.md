@@ -26,7 +26,7 @@ Print: `[Review 1/2] Reviewing Knowledge Base quality...`
      (Pending→Fixed if resolved; Fixed→Recurred if regressed). Append new findings
      as rows with Status: Pending. The ledger is the entire output file — no headers,
      no narrative."
-   - **Schema reference:** "Output per `.claude/templates/reviewer-ledger-schema.md`."
+   - **Schema reference:** "Output per `.claude/aid/templates/reviewer-ledger-schema.md`."
 4. Dispatch the **aid-reviewer** subagent with the combined prompt.
 
 **⚠️ CLEAN CONTEXT:** Do NOT include any info about generation process, which agents ran,
@@ -46,7 +46,7 @@ Wait for completion.
 After the aid-reviewer agent returns, run grade.sh on the ledger:
 
 ```bash
-bash .claude/scripts/grade.sh --explain .aid/.temp/review-pending/discovery.md
+bash .claude/aid/scripts/grade.sh --explain .aid/.temp/review-pending/discovery.md
 ```
 
 The grade is printed to stdout; the `--explain` breakdown goes to stderr.
@@ -62,7 +62,7 @@ Verify the aid-reviewer agent's return message (not the ledger file) contains:
 Update `.aid/knowledge/STATE.md` `## Review History` with the new entry.
 Record the grade computed by grade.sh, not any grade mentioned in the aid-reviewer agent's prose.
 
-If `--grade` provided, update `.aid/settings.yml` `discover.minimum_grade` (via `/aid-config` or direct YAML edit). Resolve current minimum via `bash .claude/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`.
+If `--grade` provided, update `.aid/settings.yml` `discover.minimum_grade` (via `/aid-config` or direct YAML edit). Resolve current minimum via `bash .claude/aid/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`.
 
 Print: `[Review 2/2] Review complete. Grade: {overall}. Minimum: {min}. Run /aid-discover again to {fix issues|proceed}.`
 
