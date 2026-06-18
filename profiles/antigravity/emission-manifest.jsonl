@@ -82,6 +82,8 @@
 {"dst": ".agent/aid/templates/agent-boilerplate.md", "profile": "antigravity", "sha256": "563f43a7616f75caa987b12fa0bf050c5f833d914f9c02e058eba9866c0e8744", "src": "canonical/templates/agent-boilerplate.md"}
 {"dst": ".agent/aid/templates/delivery-issues.md", "profile": "antigravity", "sha256": "00d03020625c61c3561b3d07d203d4dda3c1b4c8f1ba4a3606fe38df4d38d774", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".agent/aid/templates/delivery-plans/task-template.md", "profile": "antigravity", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
+{"dst": ".agent/aid/templates/delivery-spec-template.md", "profile": "antigravity", "sha256": "683d336850990396c39134a9f5a138e9d318ad9da3190dd6ba7537bb259d2739", "src": "canonical/templates/delivery-spec-template.md"}
+{"dst": ".agent/aid/templates/delivery-state-template.md", "profile": "antigravity", "sha256": "0ddabb8d6a976e8ce247e6853173099fbcfff74e1b4aa923b3f0f8e9e1959c96", "src": "canonical/templates/delivery-state-template.md"}
 {"dst": ".agent/aid/templates/discovery-state-template.md", "profile": "antigravity", "sha256": "893d69db4afafb067e1376b29cd9acb24d850975aa3b09f44e4f84e9dedb33af", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".agent/aid/templates/dispatch-protocol-checklist.md", "profile": "antigravity", "sha256": "4070e6cd1a9f970f798e51139503f45e1c8845efb2dcaab77eb44194e262abd0", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".agent/aid/templates/feature-inventory.md", "profile": "antigravity", "sha256": "1866cfe95be8ac1d1a5b1e6e5b003c95093e659fc3362fd0bf8943ed5c81956f", "src": "canonical/templates/feature-inventory.md"}
@@ -140,7 +142,9 @@
 {"dst": ".agent/aid/templates/specs/spec-template.md", "profile": "antigravity", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".agent/aid/templates/state-machine-chaining.md", "profile": "antigravity", "sha256": "f2514b7f8baa61274fde0ba2feebee048f0d60dedfc8e8992de22e1f8bc5a584", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".agent/aid/templates/subagent-heartbeat-protocol.md", "profile": "antigravity", "sha256": "9a4b7b433ad4bf0ec3c5f6e025439172e173992e29cd032f0c7986038edeeb2a", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
-{"dst": ".agent/aid/templates/work-state-template.md", "profile": "antigravity", "sha256": "eca58d4474764f60973eaec52849137436585dcd1553f091514f9352e583d03a", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".agent/aid/templates/task-spec-template.md", "profile": "antigravity", "sha256": "2f9353b8bdd507998e2a298cf16b6043a3a21b553b789c43d0f82ab403015b8a", "src": "canonical/templates/task-spec-template.md"}
+{"dst": ".agent/aid/templates/task-state-template.md", "profile": "antigravity", "sha256": "9dd76a887a0e59bda902123750789e8ffb30ebeac43a7bb61b4a001eb89c4519", "src": "canonical/templates/task-state-template.md"}
+{"dst": ".agent/aid/templates/work-state-template.md", "profile": "antigravity", "sha256": "e447f70348d64305db0e8c309c53369f8dc49d4b1060ab4af9818b8cccd9a895", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".agent/rules/aid-architect.md", "profile": "antigravity", "sha256": "60bf726d31e9336ea13e1fef16540ba29d75fe778f07ba8da95a1bf25f067417", "src": "canonical/agents/aid-architect/AGENT.md"}
 {"dst": ".agent/rules/aid-clerk.md", "profile": "antigravity", "sha256": "a3891635832dd7bacb6ffdba7bfa9f7f3191d3910ad5bd04fb26f97d8aa01119", "src": "canonical/agents/aid-clerk/AGENT.md"}
 {"dst": ".agent/rules/aid-developer.md", "profile": "antigravity", "sha256": "37ff441c01ccaf1e949645e968a168a97a9aee3504f8a902a8d4b7e20a15d0a3", "src": "canonical/agents/aid-developer/AGENT.md"}

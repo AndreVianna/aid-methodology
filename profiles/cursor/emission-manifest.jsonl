@@ -91,6 +91,8 @@
 {"dst": ".cursor/aid/templates/agent-boilerplate.md", "profile": "cursor", "sha256": "ce21236493480b23cddd2a319be7108b8c089ecd75b08e13a938fffe9fc3feb5", "src": "canonical/templates/agent-boilerplate.md"}
 {"dst": ".cursor/aid/templates/delivery-issues.md", "profile": "cursor", "sha256": "7a0a674a5ca4c05ebcc02a306a5ee747f71043e98d61096682d1e7b807d1680b", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".cursor/aid/templates/delivery-plans/task-template.md", "profile": "cursor", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
+{"dst": ".cursor/aid/templates/delivery-spec-template.md", "profile": "cursor", "sha256": "683d336850990396c39134a9f5a138e9d318ad9da3190dd6ba7537bb259d2739", "src": "canonical/templates/delivery-spec-template.md"}
+{"dst": ".cursor/aid/templates/delivery-state-template.md", "profile": "cursor", "sha256": "4596f9a9a8db1edbcd749b4ef18f8542bbcf30b95c7eff923e639c24de9fde7f", "src": "canonical/templates/delivery-state-template.md"}
 {"dst": ".cursor/aid/templates/discovery-state-template.md", "profile": "cursor", "sha256": "781f44ebd4d436413b14844f903a26e91f25c8f14457e8e174e6711dc3e8cbb0", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".cursor/aid/templates/dispatch-protocol-checklist.md", "profile": "cursor", "sha256": "901bee904b169329796a5ae3cf5fa5dc968f789a247c541b942287b2ccb41ceb", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".cursor/aid/templates/feature-inventory.md", "profile": "cursor", "sha256": "1866cfe95be8ac1d1a5b1e6e5b003c95093e659fc3362fd0bf8943ed5c81956f", "src": "canonical/templates/feature-inventory.md"}
@@ -149,7 +151,9 @@
 {"dst": ".cursor/aid/templates/specs/spec-template.md", "profile": "cursor", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".cursor/aid/templates/state-machine-chaining.md", "profile": "cursor", "sha256": "9ed0d6edab434ba413354369e706c3679fc1ba93b279423bc700868a90fccc10", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".cursor/aid/templates/subagent-heartbeat-protocol.md", "profile": "cursor", "sha256": "e2de186513909cfd6442c9e3c6e9663ddb5675d9dcbc7e6d29728e0f8d3e9c03", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
-{"dst": ".cursor/aid/templates/work-state-template.md", "profile": "cursor", "sha256": "b078c2b32e02f56991912bcaf2ba987f1f1f31e373b9a9063c9afbcb23915591", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".cursor/aid/templates/task-spec-template.md", "profile": "cursor", "sha256": "3bea215119f865cfaac390ba96eb8cd256c17c7e446f46199740d9730d9b97e5", "src": "canonical/templates/task-spec-template.md"}
+{"dst": ".cursor/aid/templates/task-state-template.md", "profile": "cursor", "sha256": "9c62665a7414a6aa054f27561856a4b34c93ba0cdadb58a00e25851ee08c9fde", "src": "canonical/templates/task-state-template.md"}
+{"dst": ".cursor/aid/templates/work-state-template.md", "profile": "cursor", "sha256": "5c14a92c9010b2ab893d7f036c15e0b4ae7adca6bc89f3b2770f560a44428c25", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".cursor/rules/aid-methodology.mdc", "profile": "cursor", "sha256": "6ea97db1c0f8a897fb9b1afa6a91b5bfbb5b7cdcd467849fbe2b7eb966e7918c", "src": "canonical/rules/aid-methodology.mdc"}
 {"dst": ".cursor/rules/aid-review.mdc", "profile": "cursor", "sha256": "dd8784fc66b2b2b3b5f9c488a9235777b47b9b667673b05686cead8ce31e2d9b", "src": "canonical/rules/aid-review.mdc"}
 {"dst": ".cursor/skills/aid-ask/SKILL.md", "profile": "cursor", "sha256": "781fcb0e607016f3f07af76ca68ce23a2d4cfb022bbeaa5da7c16b3629da7e2d", "src": "canonical/skills/aid-ask/SKILL.md"}

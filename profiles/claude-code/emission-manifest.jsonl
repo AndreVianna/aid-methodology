@@ -91,6 +91,8 @@
 {"dst": ".claude/aid/templates/agent-boilerplate.md", "profile": "claude-code", "sha256": "0075499d72c4710b375198b762ac2f0979f2ed935d289d62d91036db53d6c769", "src": "canonical/templates/agent-boilerplate.md"}
 {"dst": ".claude/aid/templates/delivery-issues.md", "profile": "claude-code", "sha256": "b07ffd28acfb8a9ff56afe973dcf5d27616023af457fdbd4b101c80e33ec0e9f", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".claude/aid/templates/delivery-plans/task-template.md", "profile": "claude-code", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
+{"dst": ".claude/aid/templates/delivery-spec-template.md", "profile": "claude-code", "sha256": "683d336850990396c39134a9f5a138e9d318ad9da3190dd6ba7537bb259d2739", "src": "canonical/templates/delivery-spec-template.md"}
+{"dst": ".claude/aid/templates/delivery-state-template.md", "profile": "claude-code", "sha256": "e482b1d5e7482d964e4d98c208374899c691575f93e5adf33733570a661f4d8a", "src": "canonical/templates/delivery-state-template.md"}
 {"dst": ".claude/aid/templates/discovery-state-template.md", "profile": "claude-code", "sha256": "e4b74cb85203b7708df6832184bf95d278b7cb954d7842b91b8741e488b81e6f", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".claude/aid/templates/dispatch-protocol-checklist.md", "profile": "claude-code", "sha256": "062a0bf7cdb8f420f4ce67641c23e9bc9efc17c88636c94f3b2ccfc21b96f74c", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".claude/aid/templates/feature-inventory.md", "profile": "claude-code", "sha256": "1866cfe95be8ac1d1a5b1e6e5b003c95093e659fc3362fd0bf8943ed5c81956f", "src": "canonical/templates/feature-inventory.md"}
@@ -149,7 +151,9 @@
 {"dst": ".claude/aid/templates/specs/spec-template.md", "profile": "claude-code", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".claude/aid/templates/state-machine-chaining.md", "profile": "claude-code", "sha256": "b0270e42924a980968237f0ce74f644c7729b09543c19554854e6d6e33f8d706", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".claude/aid/templates/subagent-heartbeat-protocol.md", "profile": "claude-code", "sha256": "ea25d930d8fe7ef2649c90196b771a5b6e1cfe84406d9322cb6f2c628cd8b7f8", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
-{"dst": ".claude/aid/templates/work-state-template.md", "profile": "claude-code", "sha256": "8d2660840591fdf07bcbb1564bf433b4f85e7b369bdb3c90fa192cf31ae78a18", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".claude/aid/templates/task-spec-template.md", "profile": "claude-code", "sha256": "50c5144547230a321f7658fe4fdc789510c80b8eb0320a20fddc89d8ea50bc68", "src": "canonical/templates/task-spec-template.md"}
+{"dst": ".claude/aid/templates/task-state-template.md", "profile": "claude-code", "sha256": "37734e4ed85d9a541fe7ca16eb50ca5955a422dc542372dc4b26a04ff9a2420f", "src": "canonical/templates/task-state-template.md"}
+{"dst": ".claude/aid/templates/work-state-template.md", "profile": "claude-code", "sha256": "b310368b6c4bd3fe7de60b594545095b596fc0cb1dd16933183c059c0a21dee1", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".claude/skills/aid-ask/SKILL.md", "profile": "claude-code", "sha256": "c71623eceb40b95613018a8b1fd43e6879b02b81ca11d8a82180d34141368aff", "src": "canonical/skills/aid-ask/SKILL.md"}
 {"dst": ".claude/skills/aid-config/SKILL.md", "profile": "claude-code", "sha256": "6fc4e8585e5aab0f82b9c0c66e4468dad1dcad9dc616a98c1161da70f8718055", "src": "canonical/skills/aid-config/SKILL.md"}
 {"dst": ".claude/skills/aid-deploy/SKILL.md", "profile": "claude-code", "sha256": "f19c542e864706d626436484ae530c4fb18b7426ae929dea74d029618f513dbf", "src": "canonical/skills/aid-deploy/SKILL.md"}

@@ -38,7 +38,7 @@ Worktree-aware pipeline tracking + state-file partitioning (per work → deliver
 
 | # | Task | Type | Wave | State | Review | Elapsed | Notes |
 |---|------|------|------|-------|--------|---------|-------|
-| 1 | Per-level STATE/SPEC template set + naming contract | DESIGN | 1 | In Progress | — | — | foundation |
+| 1 | Per-level STATE/SPEC template set + naming contract | DESIGN | 1 | Done | clean | — | foundation; 5 templates; 80/80 test; render-drift+§7a clean |
 | 2 | KB: schemas.md + project-structure.md | DOCUMENT | 2 | Pending | — | — | deps 001 |
 | 3 | writeback-state.sh canonical: retarget to per-unit STATE | REFACTOR | 2 | Pending | — | — | deps 001; `--delivery-id` contract |
 | 4 | Propagate EXECUTE writeback to 5 profile copies + dogfood (summarize EXCLUDED) | REFACTOR | 3 | Pending | — | — | deps 003; render-drift |
@@ -67,3 +67,4 @@ Worktree-aware pipeline tracking + state-file partitioning (per work → deliver
 | 2026-06-18 | Fix cycle applied: #1 summarize-EXCLUDED (execute-only propagation), #2 no-allow-list premise corrected (fixed-argv pattern + optional hardening), #3 Cross-phase Q&A partitioned to delivery STATE, #4 task-014 re-waved to W6, #5 task-013 delivery-derivation from Source line, #6 home.html added, #7 Pipeline tiebreak, #8 lock-scope note. Folded SD-8 (delivery lifecycle enum) + SD-9 (independent delivery lifecycle / SPIKE-defines-sibling scenario). |
 | 2026-06-18 | A+ gate #2: CLEAN — all 8 findings Fixed, refinement sound, disjoint-writes verified. Ready for /aid-execute. |
 | 2026-06-18 | #93 (work-003) merged → work-004 plan path-refreshed onto post-#93 nested layout (EXECUTE writeback copies now `.../aid/scripts/execute/`; task-004 + SPEC + ANALYSIS). /aid-execute started in worktree aid/work-004-delivery-001 (off updated master). Version stays 1.1.0 (no bump — user directive). Wave 1: task-001 dispatched. |
+| 2026-06-18 | Wave 1 complete (task-001): 5 per-level templates (work/delivery/task STATE + delivery/task SPEC), state-naming contract (no Status remains), SD-8 enum, SD-2 authoritative ordering; render-drift + §7a clean; template test 80/80. Committed. Wave 2: task-002 (KB) + task-003 (writeback retarget) dispatched. |
