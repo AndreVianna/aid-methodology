@@ -31,15 +31,16 @@ Each deliverable follows the same cycle:
   knowledge/                ← shared KB (read)
     STATE.md                ← minimum grade
   work-NNN-{name}/
-    STATE.md                ← § Tasks Status (written here)
-    PLAN.md                 ← roadmap with deliverables (read — must exist)
+    STATE.md                # work-level state; ## Tasks State is a DERIVED view (not written here)
+    PLAN.md                 # roadmap with deliverables (read -- must exist)
     features/
       feature-NNN-{name}/
-        SPEC.md             ← per-feature tech spec (read)
-    tasks/                  ← OUTPUT: sequential task files
-      task-001.md
-      task-002.md
-      ...
+        SPEC.md             # per-feature tech spec (read)
+    delivery-NNN/           # OUTPUT: per-delivery folder (one per deliverable in PLAN.md)
+      tasks/
+        task-NNN/           # OUTPUT: per-task folder
+          SPEC.md           # task definition (6-section schema; written by aid-detail)
+          STATE.md          # task state, seeded Pending (written by aid-detail; updated by aid-execute)
 ```
 
 ## Arguments
@@ -48,7 +49,7 @@ Each deliverable follows the same cycle:
 |----------|--------|
 | `work-NNN` | Detail a specific work. Required if multiple works exist. |
 | *(no arg)* | Auto-selects if only one work exists. |
-| `--reset` | Delete all files in `tasks/` and start fresh. |
+| `--reset` | Delete all task folders under `delivery-NNN/tasks/` and start fresh. |
 
 ## Inputs
 
@@ -113,24 +114,35 @@ Not rigid. Not all types appear in every delivery. The user adjusts during discu
 
 ## Task File Format
 
+Each task is a **folder** containing two files:
+
+- **`delivery-NNN/tasks/task-NNN/SPEC.md`** — the immutable task definition (6-section schema):
+
 ```markdown
 # task-NNN: {Title}
 
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 
-**Source:** feature-NNN-{name} → delivery-{x}
+**Source:** work-NNN-{name} -> delivery-NNN
 
-**Depends on:** task-NNN [, task-NNN] | — (none)
+**Depends on:** task-NNN [, task-NNN] | -- (none)
 
 **Scope:**
-- {what to produce or modify — depends on type}
+- {what to produce or modify -- depends on type}
 
 **Acceptance Criteria:**
-- [ ] Criterion 1 — concrete, testable
-- [ ] Criterion 2 — concrete, testable
+- [ ] Criterion 1 -- concrete, testable
+- [ ] Criterion 2 -- concrete, testable
 ```
 
 Six sections. Nothing else.
+
+- **`delivery-NNN/tasks/task-NNN/STATE.md`** — seeded from `.agents/aid/templates/task-state-template.md`
+  with `State: Pending`, empty Review/Elapsed/Notes, and the correct Task/Delivery/Work header fields.
+  Updated by `aid-execute`; never written by `aid-detail` after seeding.
+
+Do NOT write task rows into the work `STATE.md` `## Tasks State` section. That is a DERIVED
+read-only view assembled at read time from the per-task STATE.md files (parent derives, never writes).
 
 **Descriptive-title rule (PF-3):** The `{Title}` on line 1 MUST be a **descriptive short-name** — a
 noun phrase naming the deliverable of the task (e.g. `Python thin server + /api/model endpoint`).
@@ -173,7 +185,7 @@ all 5 auth edge cases per SPEC").
 - [ ] RESEARCH/DESIGN tasks come before their dependent IMPLEMENT tasks
 - [ ] TEST tasks come after their dependent IMPLEMENT tasks
 - [ ] Each deliverable's tasks were reviewed after writing (step 4)
-- [ ] All task files in `.aid/{work}/tasks/`
+- [ ] All task files in `.aid/{work}/delivery-NNN/tasks/task-NNN/SPEC.md` (nested hierarchy)
 
 ## Feedback Loops
 

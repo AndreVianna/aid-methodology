@@ -70,7 +70,14 @@ Respond to each concern, re-present affected tasks. Loop until approved.
 ### Step 3: Write and Review
 
 Once approved:
-1. Write task files to `.aid/{work}/tasks/`
+1. For each task in this delivery, create the nested task folder and seed both files:
+   - `.aid/{work}/delivery-NNN/tasks/task-NNN/SPEC.md` -- the 6-section task definition
+     (the former flat `tasks/task-NNN.md`; same schema, now lives in the task folder).
+   - `.aid/{work}/delivery-NNN/tasks/task-NNN/STATE.md` -- seeded from
+     `.github/aid/templates/task-state-template.md` with `State: Pending`, empty
+     Review/Elapsed/Notes, and the correct Task/Delivery/Work header fields.
+   Do NOT write task rows into the work `STATE.md` `## Tasks State` -- that is a
+   DERIVED read-only view assembled at read time from the per-task STATE.md files.
 2. **Review immediately:** Do the tasks hold up?
    - Does each task have what it needs from the previous?
    - Any gap where something is used before it's created?
@@ -81,7 +88,7 @@ Once approved:
 
 **Dispatch package:** render `references/reviewer-brief.md` with:
 - `{{SCOPE}}` = `per-deliverable`
-- `{{ARTIFACTS}}` = the task files just written for delivery-NNN + the Execution Graph section just appended to PLAN.md (if present)
+- `{{ARTIFACTS}}` = the task SPEC.md files just written for delivery-NNN (`.aid/{work}/delivery-NNN/tasks/task-NNN/SPEC.md`) + the Execution Graph section just appended to PLAN.md (if present)
 - `{{CONTEXT}}` = `Tasks for delivery-NNN of work-NNN; feature SPECs: feature-NNN-{name}, ...`
 
 Include in the prompt:

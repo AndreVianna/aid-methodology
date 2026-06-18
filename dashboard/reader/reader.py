@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import re as _re_mod
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Union
@@ -28,9 +29,11 @@ from .derivation import derive_kb_status
 from .locator import locate_aid_root
 from .models import (
     DeferredIssue,
+    DeliverableRef,
     Finding,
     Lifecycle,
     LogAvailability,
+    PendingInput,
     RawStateRef,
     ReadMeta,
     RepoInfo,
@@ -46,6 +49,7 @@ from .parsers import (
     ParsedWork,
     parse_deferred_issues,
     parse_delivery_gate,
+    parse_delivery_state_md,
     parse_execution_graph,
     parse_kb_baseline,
     parse_kb_state,
@@ -56,6 +60,7 @@ from .parsers import (
     parse_spec_md,
     parse_state_md,
     parse_task_short_name,
+    parse_task_state_md,
     parse_tool_info,
 )
 
@@ -349,11 +354,20 @@ def _read_work(
 
     Steps 5a-5g of the Feature Flow, per-work.
 
+    Pillar 6 (presence-based detection): if any delivery-NNN/tasks/task-NNN/STATE.md
+    exists, routes to _read_work_hierarchical. Otherwise falls back to the legacy
+    monolithic parse (reader.py:363-377 behavior preserved).
+
     Returns (WorkModel, parse_warnings, bytes_read, state_text, state_label).
-    state_text is the decoded STATE.md content (empty string on error/absent).
+    state_text is the decoded work-level STATE.md content (empty string on error/absent).
     state_label is the relative path label for raw_state (e.g. '.aid/work-001/STATE.md').
     Never raises: any exception yields a parse_warning + best-effort WorkModel.
     """
+    # Pillar 6: hierarchy detection (per-work, presence-based)
+    if _detect_hierarchy(work_dir):
+        return _read_work_hierarchical(work_dir, work_id)
+
+    # --- Legacy monolithic path (preserved behavior) ---
     state_path = work_dir / "STATE.md"
     state_label = f".aid/{work_id}/STATE.md"
     parse_warnings: list[str] = []
@@ -477,6 +491,369 @@ def _read_work(
     )
 
     return work_model, parse_warnings, bytes_read, text, state_label
+
+
+# ---------------------------------------------------------------------------
+# Hierarchy detection + hierarchical work model assembly (work-004 Pillar 6)
+# ---------------------------------------------------------------------------
+
+_RE_DELIVERY_DIR = _re_mod.compile(r"^delivery-(\d+)$", _re_mod.IGNORECASE)
+_RE_TASK_DIR     = _re_mod.compile(r"^(task-\d+)$",     _re_mod.IGNORECASE)
+
+
+def _detect_hierarchy(work_dir: Path) -> bool:
+    """Return True if this work has the new per-unit STATE.md hierarchy.
+
+    Detection rule (Pillar 6): if ANY delivery-NNN/tasks/task-NNN/STATE.md file exists
+    under work_dir, the work is hierarchical. Otherwise fall back to monolithic parse.
+
+    Presence-based, per-work: a repo with mixed-vintage works renders all of them.
+    Never throws.
+    """
+    try:
+        for entry in work_dir.iterdir():
+            if not (entry.is_dir() and _RE_DELIVERY_DIR.match(entry.name)):
+                continue
+            tasks_dir = entry / "tasks"
+            if not tasks_dir.is_dir():
+                continue
+            try:
+                for task_entry in tasks_dir.iterdir():
+                    if task_entry.is_dir() and _RE_TASK_DIR.match(task_entry.name):
+                        task_state = task_entry / "STATE.md"
+                        if task_state.is_file():
+                            return True
+            except OSError:
+                continue
+    except OSError:
+        pass
+    return False
+
+
+def _read_work_hierarchical(
+    work_dir: Path,
+    work_id: str,
+) -> "tuple[WorkModel, list[str], int, str, str]":
+    """Assemble a WorkModel from the per-unit STATE.md hierarchy.
+
+    Reads:
+      - work_dir/STATE.md                 -- work-level lifecycle/triage/history
+      - work_dir/delivery-NNN/STATE.md    -- delivery lifecycle (SD-8) + gate + Q&A
+      - work_dir/delivery-NNN/tasks/task-NNN/STATE.md -- per-task mutable cells
+      - work_dir/delivery-NNN/SPEC.md     -- task listing (for short_name / type)
+      - work_dir/delivery-NNN/tasks/task-NNN/SPEC.md -- task short name
+
+    Union views assembled:
+      - tasks[]: one TaskModel per task, state from per-task STATE.md
+      - deliverables[]: one DeliverableRef per delivery, delivery_state from delivery STATE.md
+      - pending_inputs: union of all delivery Cross-phase Q&A (Pending entries)
+
+    Work-level lifecycle (Pipeline State/Status block) is read from work STATE.md if present;
+    otherwise legacy fallback fires (same as monolithic path).
+
+    Returns (WorkModel, parse_warnings, bytes_read, state_text, state_label).
+    state_text is the work-level STATE.md text (for raw_state reuse by read_repo_detail).
+    Never raises.
+    """
+    state_path = work_dir / "STATE.md"
+    state_label = f".aid/{work_id}/STATE.md"
+    parse_warnings: list[str] = []
+    bytes_read = 0
+
+    # Read work-level STATE.md (for Pipeline State / Lifecycle History / Triage)
+    if not state_path.is_file():
+        parse_warnings.append(
+            f"{work_id}: STATE.md not found (hierarchical mode); "
+            f"work-level lifecycle will be Unknown."
+        )
+        work_text = ""
+    else:
+        try:
+            raw = state_path.read_bytes()
+            bytes_read += len(raw)
+            work_text = raw.decode("utf-8", errors="replace")
+        except OSError as exc:
+            parse_warnings.append(
+                f"{work_id}: STATE.md read error ({exc}); "
+                f"work-level lifecycle will be Unknown."
+            )
+            work_text = ""
+
+    # Parse work-level STATE.md for pipeline/lifecycle/triage fields
+    # (reuses the existing parse_state_md -- the tasks[] from this parse are IGNORED
+    # in hierarchical mode; the per-unit task STATE.md files are authoritative)
+    pw: ParsedWork = parse_state_md(work_text, work_id=work_id, work_dir=work_dir)
+    parse_warnings.extend(pw.parse_warnings)
+
+    # Extract display name and number from work_id
+    name = _slug_from_work_id(work_id)
+    work_number = _number_from_work_id(work_id)
+
+    # Parse REQUIREMENTS.md / SPEC.md for identity fields (same as monolithic path)
+    req_path = work_dir / "REQUIREMENTS.md"
+    req_title, req_description, req_objective, req_bytes = parse_requirements_md(req_path)
+    bytes_read += req_bytes
+
+    if req_title is None or req_description is None:
+        spec_path = work_dir / "SPEC.md"
+        spec_title, spec_description, spec_h1, spec_bytes = parse_spec_md(spec_path)
+        bytes_read += spec_bytes
+        if req_title is None:
+            if spec_title is not None:
+                req_title = spec_title
+            elif spec_h1 is not None:
+                req_title = spec_h1
+        if req_description is None and spec_description is not None:
+            req_description = spec_description
+
+    # Parse PLAN.md for lane assignments
+    plan_path = work_dir / "PLAN.md"
+    task_lane_map, plan_bytes = parse_execution_graph(plan_path)
+    bytes_read += plan_bytes
+
+    # -----------------------------------------------------------------------
+    # Enumerate deliveries and their tasks from the hierarchy
+    # -----------------------------------------------------------------------
+    all_tasks: list[TaskModel] = []
+    all_deliverables: list[DeliverableRef] = []
+    all_pending_inputs: list[PendingInput] = []
+
+    # Enumerate delivery-NNN/ subdirectories
+    try:
+        delivery_dirs = sorted(
+            [
+                d for d in work_dir.iterdir()
+                if d.is_dir() and _RE_DELIVERY_DIR.match(d.name)
+            ],
+            key=lambda d: d.name,
+        )
+    except OSError as exc:
+        parse_warnings.append(
+            f"{work_id}: could not enumerate delivery dirs ({exc}); "
+            f"tasks will be empty."
+        )
+        delivery_dirs = []
+
+    for delivery_dir in delivery_dirs:
+        delivery_id = delivery_dir.name
+        # Parse delivery number from "delivery-NNN"
+        dm = _RE_DELIVERY_DIR.match(delivery_id)
+        delivery_number = int(dm.group(1)) if dm else 0
+
+        # ---- Read delivery-level STATE.md ----
+        delivery_state_path = delivery_dir / "STATE.md"
+        delivery_state_text = ""
+        if delivery_state_path.is_file():
+            try:
+                raw = delivery_state_path.read_bytes()
+                bytes_read += len(raw)
+                delivery_state_text = raw.decode("utf-8", errors="replace")
+            except OSError as exc:
+                parse_warnings.append(
+                    f"{work_id}/{delivery_id}: STATE.md read error ({exc}); "
+                    f"delivery lifecycle will be unknown."
+                )
+
+        pds = parse_delivery_state_md(delivery_state_text, delivery_id=delivery_id)
+        parse_warnings.extend(pds.parse_warnings)
+
+        # Accumulate pending Q&A from this delivery's Cross-phase Q&A
+        all_pending_inputs.extend(pds.pending_inputs)
+
+        # ---- Enumerate tasks under this delivery ----
+        tasks_dir = delivery_dir / "tasks"
+        delivery_task_count = 0
+
+        try:
+            task_dirs = sorted(
+                [
+                    t for t in tasks_dir.iterdir()
+                    if t.is_dir() and _RE_TASK_DIR.match(t.name)
+                ]
+                if tasks_dir.is_dir() else [],
+                key=lambda t: t.name,
+            )
+        except OSError as exc:
+            parse_warnings.append(
+                f"{work_id}/{delivery_id}: could not enumerate task dirs ({exc})."
+            )
+            task_dirs = []
+
+        for task_dir in task_dirs:
+            task_id_str = task_dir.name
+            delivery_task_count += 1
+
+            # Read task-level STATE.md
+            task_state_path = task_dir / "STATE.md"
+            task_state_text = ""
+            if task_state_path.is_file():
+                try:
+                    raw = task_state_path.read_bytes()
+                    bytes_read += len(raw)
+                    task_state_text = raw.decode("utf-8", errors="replace")
+                except OSError as exc:
+                    parse_warnings.append(
+                        f"{work_id}/{delivery_id}/{task_id_str}: STATE.md read error "
+                        f"({exc}); task state will be Unknown."
+                    )
+
+            pts = parse_task_state_md(task_state_text, task_id=task_id_str)
+            parse_warnings.extend(pts.parse_warnings)
+
+            # Read task SPEC.md for short_name and type
+            task_spec_path = task_dir / "SPEC.md"
+            short_name: Optional[str] = None
+            task_type: str = ""
+            if task_spec_path.is_file():
+                try:
+                    raw = task_spec_path.read_bytes()
+                    bytes_read += len(raw)
+                    spec_text = raw.decode("utf-8", errors="replace")
+                    short_name = _parse_task_spec_short_name(spec_text)
+                    task_type = _parse_task_spec_type(spec_text)
+                except OSError:
+                    pass
+
+            # Lane from PLAN.md wave-map
+            lane: Optional[int] = task_lane_map.get(task_id_str.lower())
+
+            all_tasks.append(TaskModel(
+                task_id=task_id_str,
+                type=task_type,
+                wave=delivery_id,          # wave = delivery-NNN in hierarchical works
+                status=pts.state,
+                review_grade=pts.review,
+                elapsed=pts.elapsed,
+                notes=pts.notes,
+                short_name=short_name,
+                delivery=delivery_number,
+                lane=lane,
+            ))
+
+        # ---- Build DeliverableRef for this delivery ----
+        # Use the delivery SPEC.md title as the name, falling back to delivery_id
+        delivery_spec_path = delivery_dir / "SPEC.md"
+        delivery_name = delivery_id
+        if delivery_spec_path.is_file():
+            try:
+                raw = delivery_spec_path.read_bytes()
+                bytes_read += len(raw)
+                spec_text = raw.decode("utf-8", errors="replace")
+                spec_name = _parse_delivery_spec_title(spec_text)
+                if spec_name:
+                    delivery_name = spec_name
+            except OSError:
+                pass
+
+        all_deliverables.append(DeliverableRef(
+            number=delivery_number,
+            name=delivery_name,
+            task_count=delivery_task_count,
+            delivery_state=pds.delivery_state,
+        ))
+
+    # -----------------------------------------------------------------------
+    # Work-level pending_inputs: union of work-level Q&A + per-delivery Q&A
+    # (work-level Q&A is already in pw.pending_inputs from parse_state_md)
+    # -----------------------------------------------------------------------
+    union_pending_inputs = list(pw.pending_inputs) + all_pending_inputs
+
+    # Assemble WorkModel (hierarchical path)
+    work_model = WorkModel(
+        work_id=work_id,
+        name=name,
+        lifecycle=pw.lifecycle,
+        phase=pw.phase,
+        active_skill=pw.active_skill,
+        updated=pw.updated,
+        created=pw.created,
+        pause_reason=pw.pause_reason,
+        block_reason=pw.block_reason,
+        block_artifact=pw.block_artifact,
+        tasks=all_tasks,
+        pending_inputs=union_pending_inputs,
+        source_mode=pw.source_mode,
+        number=work_number,
+        title=req_title,
+        description=req_description,
+        objective=req_objective,
+        work_path=pw.work_path,
+        recipe=pw.recipe,
+        features=pw.features,
+        deliverables=all_deliverables,
+    )
+
+    return work_model, parse_warnings, bytes_read, work_text, state_label
+
+
+def _parse_task_spec_short_name(spec_text: str) -> Optional[str]:
+    """Extract the short name from a task-level SPEC.md.
+
+    Reads the H1 heading: '# task-NNN: {Title}'
+    Returns the title portion, or None if absent.
+    Never raises.
+    """
+    try:
+        import re
+        _re = re.compile(r"^#\s+task-\d+\s*:\s*(.+)$", re.IGNORECASE)
+        for line in spec_text.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            m = _re.match(stripped)
+            if m:
+                title = m.group(1).strip().rstrip(".")
+                return title if title else None
+            break  # first non-blank line didn't match
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+
+def _parse_task_spec_type(spec_text: str) -> str:
+    """Extract the task type from a task-level SPEC.md.
+
+    Reads '**Type:** VALUE' line.
+    Returns the type string (e.g. 'IMPLEMENT'), or '' if absent.
+    Never raises.
+    """
+    try:
+        import re
+        _re = re.compile(r"^\*\*Type:\*\*\s*(.+)", re.IGNORECASE)
+        for line in spec_text.splitlines():
+            m = _re.match(line.strip())
+            if m:
+                return m.group(1).strip().split()[0]  # first word only
+    except Exception:  # noqa: BLE001
+        pass
+    return ""
+
+
+def _parse_delivery_spec_title(spec_text: str) -> Optional[str]:
+    """Extract the delivery title from a delivery-level SPEC.md.
+
+    Reads the H1 heading: '# Delivery SPEC -- delivery-NNN: {Title}'
+    or a shorter form: '# delivery-NNN: {Title}'
+    Returns the title portion, or None if absent / no title after colon.
+    Never raises.
+    """
+    try:
+        import re
+        for line in spec_text.splitlines():
+            stripped = line.strip()
+            if not stripped.startswith("#"):
+                continue
+            # Match 'Delivery SPEC -- delivery-NNN: Title' or '# delivery-NNN: Title'
+            m = re.match(r"^#+\s+.*delivery-\d+\s*:\s*(.+)$", stripped, re.IGNORECASE)
+            if m:
+                title = m.group(1).strip()
+                # Reject template placeholders
+                if title and not title.startswith("{"):
+                    return title
+            break  # only check the first heading line
+    except Exception:  # noqa: BLE001
+        pass
+    return None
 
 
 def _minimal_work_model(work_id: str, _warnings: list[str]) -> WorkModel:

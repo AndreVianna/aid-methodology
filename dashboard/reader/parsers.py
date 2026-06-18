@@ -748,11 +748,13 @@ def parse_execution_graph(plan_path: Path) -> tuple[dict, int]:
 # ---------------------------------------------------------------------------
 
 # Section header patterns (anchored, case-insensitive for resilience)
-_RE_PIPELINE_STATUS    = re.compile(r"^##\s+Pipeline Status\s*$",    re.IGNORECASE)
-_RE_TASKS_STATUS       = re.compile(r"^##\s+Tasks Status\s*$",       re.IGNORECASE)
+# Accept BOTH the new "state" names (work-004 rename) and the legacy "status" names
+# (Pillar 3 / Pillar 6 coexistence: new works use "State"; old works keep "Status").
+_RE_PIPELINE_STATUS    = re.compile(r"^##\s+Pipeline (?:State|Status)\s*$",    re.IGNORECASE)
+_RE_TASKS_STATUS       = re.compile(r"^##\s+Tasks (?:State|Status)\s*$",       re.IGNORECASE)
 _RE_CROSSPHASE_QA      = re.compile(r"^##\s+Cross-phase Q&A",        re.IGNORECASE)
 _RE_TRIAGE             = re.compile(r"^##\s+Triage\s*$",             re.IGNORECASE)
-_RE_FEATURES_STATUS    = re.compile(r"^##\s+Features Status\s*$",    re.IGNORECASE)
+_RE_FEATURES_STATUS    = re.compile(r"^##\s+Features (?:State|Status)\s*$",    re.IGNORECASE)
 _RE_PLAN_DELIVERIES    = re.compile(r"^##\s+Plan\s*/\s*Deliveries\s*$", re.IGNORECASE)
 _RE_LIFECYCLE_HISTORY  = re.compile(r"^##\s+Lifecycle History\s*$",  re.IGNORECASE)
 _RE_SECTION            = re.compile(r"^##\s+\S")  # any ## section (to end a prior section)
@@ -927,7 +929,13 @@ def parse_state_md(
                 current_q = {}
                 continue
             if current_q_id:
+                # Accept both "Status:" (legacy) and "State:" (new, Pillar 3) for Q&A state
                 m2 = _RE_QN_STATUS.match(line)
+                if m2:
+                    current_q["status"] = m2.group(1).strip()
+                    continue
+                # New name "State:" -- map to same "status" key for unified flush logic
+                m2 = re.match(r"^\s*-\s*\*\*State:\*\*\s*(.+)", line, re.IGNORECASE)
                 if m2:
                     current_q["status"] = m2.group(1).strip()
                     continue
@@ -1010,11 +1018,396 @@ def parse_state_md(
     return pw
 
 
+# ---------------------------------------------------------------------------
+# Hierarchical per-unit STATE.md parsers (work-004 Pillar 1/2/6)
+#
+# These parsers read the TASK-LEVEL and DELIVERY-LEVEL STATE.md files
+# produced by the new uniform unit hierarchy:
+#   delivery-NNN/tasks/task-NNN/STATE.md  -- task mutable cells
+#   delivery-NNN/STATE.md                 -- delivery lifecycle + gate + Q&A
+#
+# They are ONLY called when hierarchy detection fires (_detect_hierarchy in reader.py).
+# Legacy (monolithic) works continue to use parse_state_md().
+# ---------------------------------------------------------------------------
+
+# Task-level STATE.md section patterns
+_RE_TASK_STATE_SECTION = re.compile(r"^##\s+Task State\s*$", re.IGNORECASE)
+
+# Task state field patterns (- **Field:** value)
+_RE_TS_STATE   = re.compile(r"^\s*-\s*\*\*State:\*\*\s*(.+)",   re.IGNORECASE)
+_RE_TS_REVIEW  = re.compile(r"^\s*-\s*\*\*Review:\*\*\s*(.+)",  re.IGNORECASE)
+_RE_TS_ELAPSED = re.compile(r"^\s*-\s*\*\*Elapsed:\*\*\s*(.+)", re.IGNORECASE)
+_RE_TS_NOTES   = re.compile(r"^\s*-\s*\*\*Notes:\*\*\s*(.+)",   re.IGNORECASE)
+
+# Delivery-level STATE.md section patterns
+_RE_DELIVERY_LIFECYCLE_SECTION = re.compile(r"^##\s+Delivery Lifecycle\s*$", re.IGNORECASE)
+_RE_DELIVERY_GATE_SECTION      = re.compile(r"^##\s+Delivery Gate\s*$",      re.IGNORECASE)
+_RE_DELIVERY_CROSSPHASE_QA     = re.compile(r"^##\s+Cross-phase Q&A",        re.IGNORECASE)
+_RE_DELIVERY_TASKS_STATE       = re.compile(r"^##\s+Tasks State\s*$",        re.IGNORECASE)
+
+# Delivery lifecycle field patterns
+_RE_DL_STATE        = re.compile(r"^\s*-\s*\*\*State:\*\*\s*(.+)",          re.IGNORECASE)
+_RE_DL_UPDATED      = re.compile(r"^\s*-\s*\*\*Updated:\*\*\s*(.+)",        re.IGNORECASE)
+_RE_DL_BLOCK_REASON = re.compile(r"^\s*-\s*\*\*Block Reason:\*\*\s*(.+)",   re.IGNORECASE)
+_RE_DL_BLOCK_ART    = re.compile(r"^\s*-\s*\*\*Block Artifact:\*\*\s*(.+)", re.IGNORECASE)
+
+# Delivery Gate field patterns
+_RE_DG_REVIEWER_TIER = re.compile(r"^\s*-\s*\*\*Reviewer Tier:\*\*\s*(.+)", re.IGNORECASE)
+_RE_DG_GRADE         = re.compile(r"^\s*-\s*\*\*Grade:\*\*\s*(.+)",         re.IGNORECASE)
+_RE_DG_ISSUE_LIST    = re.compile(r"^\s*-\s*\*\*Issue List:\*\*\s*(.+)",    re.IGNORECASE)
+_RE_DG_TIMESTAMP     = re.compile(r"^\s*-\s*\*\*Timestamp:\*\*\s*(.+)",     re.IGNORECASE)
+
+# Valid SD-8 delivery lifecycle enum values (Pillar 1 / SD-8)
+_DELIVERY_STATE_VALUES = frozenset({
+    "Pending-Spec", "Specified", "Executing", "Gated", "Done", "Blocked",
+})
+
+
+class ParsedTaskState:
+    """Parsed result for one task-level STATE.md (task-NNN/STATE.md).
+
+    Covers: State / Review / Elapsed / Notes from ## Task State section.
+    Used by the hierarchical reader path only.
+    """
+    __slots__ = ("state", "review", "elapsed", "notes", "parse_warnings")
+
+    def __init__(self) -> None:
+        self.state: TaskStatus = TaskStatus.Unknown
+        self.review: Optional[str] = None
+        self.elapsed: Optional[str] = None
+        self.notes: Optional[str] = None
+        self.parse_warnings: list[str] = []
+
+
+class ParsedDeliveryState:
+    """Parsed result for one delivery-level STATE.md (delivery-NNN/STATE.md).
+
+    Covers:
+      - delivery_state: SD-8 lifecycle enum (authored, not derived from tasks)
+      - updated, block_reason, block_artifact from ## Delivery Lifecycle
+      - grade, reviewer_tier, gate_timestamp from ## Delivery Gate
+      - pending_inputs from ## Cross-phase Q&A (Pending entries)
+      - tasks: list[TaskModel] from ## Tasks State derived table (if present inline)
+    Used by the hierarchical reader path only.
+    """
+    __slots__ = (
+        "delivery_state", "updated", "block_reason", "block_artifact",
+        "gate_grade", "gate_reviewer_tier", "gate_timestamp",
+        "pending_inputs", "tasks", "parse_warnings",
+    )
+
+    def __init__(self) -> None:
+        self.delivery_state: Optional[str] = None
+        self.updated: Optional[str] = None
+        self.block_reason: Optional[str] = None
+        self.block_artifact: Optional[str] = None
+        self.gate_grade: Optional[str] = None
+        self.gate_reviewer_tier: Optional[str] = None
+        self.gate_timestamp: Optional[str] = None
+        self.pending_inputs: list[PendingInput] = []
+        self.tasks: list[TaskModel] = []
+        self.parse_warnings: list[str] = []
+
+
+def parse_task_state_md(
+    text: str,
+    task_id: str = "",
+) -> ParsedTaskState:
+    """Parse a task-level STATE.md into a ParsedTaskState.
+
+    Reads the ## Task State section for the 4 mutable cells:
+      State / Review / Elapsed / Notes
+
+    The closed State enum values are the same as the work-level TaskStatus enum
+    (Pending | In Progress | In Review | Blocked | Done | Failed | Canceled).
+
+    Read-only; never throws (parse_warnings on error). Called only by the
+    hierarchical reader path when delivery-NNN/tasks/task-NNN/STATE.md exists.
+    """
+    pts = ParsedTaskState()
+
+    try:
+        in_task_state = False
+
+        for line in text.splitlines():
+            # Section boundary
+            if _RE_TASK_STATE_SECTION.match(line):
+                in_task_state = True
+                continue
+
+            if _RE_SECTION.match(line):
+                in_task_state = False
+                continue
+
+            if not in_task_state:
+                continue
+
+            m = _RE_TS_STATE.match(line)
+            if m:
+                raw = m.group(1).strip()
+                pts.state = _parse_task_status(raw)
+                continue
+
+            m = _RE_TS_REVIEW.match(line)
+            if m:
+                val = m.group(1).strip()
+                pts.review = None if _is_null(val) else val
+                continue
+
+            m = _RE_TS_ELAPSED.match(line)
+            if m:
+                val = m.group(1).strip()
+                pts.elapsed = None if _is_null(val) else val
+                continue
+
+            m = _RE_TS_NOTES.match(line)
+            if m:
+                val = m.group(1).strip()
+                pts.notes = None if _is_null(val) else val
+                continue
+
+    except Exception as exc:  # noqa: BLE001 -- never throws (NFR7)
+        pts.parse_warnings.append(
+            f"{task_id}: error parsing task STATE.md ({exc}); "
+            f"returning best-effort task state"
+        )
+
+    return pts
+
+
+def parse_delivery_state_md(
+    text: str,
+    delivery_id: str = "",
+) -> ParsedDeliveryState:
+    """Parse a delivery-level STATE.md into a ParsedDeliveryState.
+
+    Reads:
+      - ## Delivery Lifecycle: delivery_state (SD-8 enum), updated, block_reason,
+        block_artifact
+      - ## Delivery Gate: grade, reviewer_tier, gate_timestamp
+      - ## Cross-phase Q&A: pending Q&A entries (Status: Pending only)
+      - ## Tasks State: derived task rows (if present inline -- fallback table)
+
+    The delivery_state is the INDEPENDENTLY AUTHORED SD-8 enum
+    (Pending-Spec | Specified | Executing | Gated | Done | Blocked).
+    It is NOT derived from the task rollup (SD-9).
+
+    Read-only; never throws (parse_warnings on error). Called only by the
+    hierarchical reader path.
+    """
+    pds = ParsedDeliveryState()
+
+    try:
+        in_lifecycle = False
+        in_gate = False
+        in_crossphase = False
+        in_tasks = False
+        tasks_header_seen = False
+
+        # Reuse one accumulator for the delivery ## Tasks State table (avoids per-line alloc)
+        task_accumulator = _TaskAccumulator(pds)
+
+        # Q&A tracking
+        current_q_id: Optional[str] = None
+        current_q: dict = {}
+
+        def _flush_q() -> None:
+            nonlocal current_q, current_q_id
+            if current_q_id and current_q.get("state", "").lower() == "pending":
+                pds.pending_inputs.append(PendingInput(
+                    question_id=current_q_id,
+                    category=current_q.get("category"),
+                    impact=current_q.get("impact"),
+                    context=current_q.get("context"),
+                    suggested=current_q.get("suggested"),
+                ))
+            current_q_id = None
+            current_q = {}
+
+        for line in lines_iter(text):
+            # Section boundaries (## headers, including ###)
+            if _RE_DELIVERY_LIFECYCLE_SECTION.match(line):
+                _flush_q()
+                in_lifecycle = True
+                in_gate = False
+                in_crossphase = False
+                in_tasks = False
+                continue
+
+            if _RE_DELIVERY_GATE_SECTION.match(line):
+                _flush_q()
+                in_lifecycle = False
+                in_gate = True
+                in_crossphase = False
+                in_tasks = False
+                continue
+
+            if _RE_DELIVERY_CROSSPHASE_QA.match(line):
+                _flush_q()
+                in_lifecycle = False
+                in_gate = False
+                in_crossphase = True
+                in_tasks = False
+                continue
+
+            if _RE_DELIVERY_TASKS_STATE.match(line):
+                _flush_q()
+                in_lifecycle = False
+                in_gate = False
+                in_crossphase = False
+                in_tasks = True
+                tasks_header_seen = False
+                continue
+
+            # Any other ## section resets all active sections
+            if _RE_SECTION.match(line):
+                _flush_q()
+                in_lifecycle = False
+                in_gate = False
+                in_crossphase = False
+                in_tasks = False
+                continue
+
+            # --- Process active section ---
+
+            if in_lifecycle:
+                m = _RE_DL_STATE.match(line)
+                if m:
+                    raw = m.group(1).strip()
+                    # Accept valid SD-8 enum values; ignore placeholder text
+                    if raw in _DELIVERY_STATE_VALUES:
+                        pds.delivery_state = raw
+                    elif "|" not in raw and raw:
+                        # Unparseable -- warn but keep going
+                        pds.parse_warnings.append(
+                            f"{delivery_id}: unknown Delivery Lifecycle State '{raw}'; "
+                            f"expected one of {sorted(_DELIVERY_STATE_VALUES)}"
+                        )
+                    continue
+
+                m = _RE_DL_UPDATED.match(line)
+                if m:
+                    val = m.group(1).strip()
+                    pds.updated = None if _is_null(val) else val
+                    continue
+
+                m = _RE_DL_BLOCK_REASON.match(line)
+                if m:
+                    val = m.group(1).strip()
+                    pds.block_reason = None if _is_null(val) else val
+                    continue
+
+                m = _RE_DL_BLOCK_ART.match(line)
+                if m:
+                    val = m.group(1).strip()
+                    pds.block_artifact = None if _is_null(val) else val
+                    continue
+
+            elif in_gate:
+                m = _RE_DG_REVIEWER_TIER.match(line)
+                if m and pds.gate_reviewer_tier is None:
+                    val = m.group(1).strip()
+                    raw_split = val.split()[0] if val else None
+                    pds.gate_reviewer_tier = raw_split if raw_split and not _is_null(raw_split) else None
+                    continue
+
+                m = _RE_DG_GRADE.match(line)
+                if m and pds.gate_grade is None:
+                    val = m.group(1).strip()
+                    raw_split = val.split()[0] if val else None
+                    # Treat "Pending" placeholder as absent grade
+                    if raw_split and not _is_null(raw_split) and raw_split.lower() != "pending":
+                        pds.gate_grade = raw_split
+                    continue
+
+                m = _RE_DG_TIMESTAMP.match(line)
+                if m and pds.gate_timestamp is None:
+                    val = m.group(1).strip()
+                    pds.gate_timestamp = None if _is_null(val) else val
+                    continue
+
+            elif in_crossphase:
+                # ### Q{N} header
+                m = _RE_QN_HEADER.match(line)
+                if m:
+                    _flush_q()
+                    current_q_id = m.group(1)
+                    current_q = {}
+                    continue
+                if current_q_id:
+                    # Accept both "State:" (new) and "Status:" (legacy) for Q&A state
+                    m2 = re.match(r"^\s*-\s*\*\*(?:State|Status):\*\*\s*(.+)", line, re.IGNORECASE)
+                    if m2:
+                        current_q["state"] = m2.group(1).strip()
+                        continue
+                    m2 = _RE_QN_CAT.match(line)
+                    if m2:
+                        current_q["category"] = m2.group(1).strip()
+                        continue
+                    m2 = _RE_QN_IMPACT.match(line)
+                    if m2:
+                        current_q["impact"] = m2.group(1).strip()
+                        continue
+                    m2 = _RE_QN_CONTEXT.match(line)
+                    if m2:
+                        current_q["context"] = m2.group(1).strip()
+                        continue
+                    m2 = _RE_QN_SUGGEST.match(line)
+                    if m2:
+                        current_q["suggested"] = m2.group(1).strip()
+                        continue
+
+            elif in_tasks:
+                # Parse the derived task rollup table from delivery STATE.md
+                _parse_tasks_line(line, task_accumulator, tasks_header_seen)
+                stripped = line.strip()
+                if stripped.startswith("|") and not _RE_TABLE_SEP.match(stripped):
+                    tasks_header_seen = True
+
+        # Flush any trailing Q block
+        _flush_q()
+
+    except Exception as exc:  # noqa: BLE001 -- never throws (NFR7)
+        pds.parse_warnings.append(
+            f"{delivery_id}: error parsing delivery STATE.md ({exc}); "
+            f"returning best-effort delivery state"
+        )
+
+    return pds
+
+
+def lines_iter(text: str):
+    """Yield lines from text (helper to avoid repeated splitlines() calls)."""
+    return text.splitlines()
+
+
+class _TaskAccumulator:
+    """Minimal duck-type for ParsedWork accepted by _parse_tasks_line.
+
+    Wraps a ParsedDeliveryState so we can reuse _parse_tasks_line for the
+    delivery-level ## Tasks State derived table without duplicating the parser.
+    """
+    __slots__ = ("_pds",)
+
+    def __init__(self, pds: ParsedDeliveryState) -> None:
+        self._pds = pds
+
+    @property
+    def tasks(self) -> list[TaskModel]:
+        return self._pds.tasks
+
+    @property
+    def parse_warnings(self) -> list[str]:
+        return self._pds.parse_warnings
+
+
 def _parse_pipeline_status_line(line: str, pw: ParsedWork) -> None:
-    """Parse one line from the ## Pipeline Status section into pw fields.
+    """Parse one line from the ## Pipeline State / ## Pipeline Status section into pw fields.
 
     Each line has the shape: - **Field:** value
     Unknown field lines are silently ignored (forward-compatible).
+    Accepts both legacy "## Pipeline Status" and new "## Pipeline State" section names
+    (Pillar 3 / Pillar 6 coexistence).
     """
     m = _RE_PS_LIFECYCLE.match(line)
     if m:
@@ -1058,10 +1451,15 @@ def _parse_pipeline_status_line(line: str, pw: ParsedWork) -> None:
 
 
 def _parse_tasks_line(line: str, pw: ParsedWork, header_seen: bool) -> None:
-    """Parse one line from the ## Tasks Status table.
+    """Parse one line from the ## Tasks State / ## Tasks Status table.
 
-    Table columns (work-state-template.md):
+    Table columns (new work-state-template.md -- work-004 rename):
+        # | Task | Type | Wave | State | Review | Elapsed | Notes
+    Table columns (legacy work-state-template.md -- pre-work-004):
         # | Task | Type | Wave | Status | Review | Elapsed | Notes
+
+    Column index 4 is "State" (new) or "Status" (legacy); both parse identically
+    since the reader reads by column index, not header name.
 
     Header row (col index 0 = "#") and separator rows are skipped.
     The _none yet_ placeholder row is skipped (DM-5).

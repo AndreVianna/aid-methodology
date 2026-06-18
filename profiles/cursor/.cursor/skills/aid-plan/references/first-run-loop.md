@@ -68,21 +68,60 @@ When the user agrees on a deliverable, **IMMEDIATELY write it to the file.**
 
 **First deliverable:** Create `.aid/{work}/PLAN.md` with the header and first deliverable:
 ```markdown
-# Plan — {Work Name}
+# Plan -- {Work Name}
 
 ## Deliverables
 
 ### delivery-001: {Name}
 - **What it delivers:** {user-facing value}
 - **Features:** feature-001-{name}, feature-003-{name}
-- **Depends on:** —
+- **Depends on:** --
 - **Priority:** Must
 ```
 
 **Subsequent deliverables:** Append to the existing PLAN.md.
 
-⚠️ **DO NOT continue to the next deliverable without writing this one first.**
-⚠️ **DO NOT accumulate multiple deliverables "in your head" — write each one immediately.**
+WARNING: **DO NOT continue to the next deliverable without writing this one first.**
+WARNING: **DO NOT accumulate multiple deliverables "in your head" -- write each one immediately.**
+
+**Immediately after writing the PLAN.md stanza,** create the delivery folder:
+
+**4a. Create `delivery-NNN/SPEC.md`** (seed from `.cursor/aid/templates/delivery-spec-template.md`):
+
+Fill in from the approved PLAN.md stanza:
+- `Delivery:` = delivery-NNN
+- `Work:` = work-NNN-{name}
+- `Created:` = today's date (YYYY-MM-DD)
+- `## Objective` = the delivery's "What it delivers" value, expanded to one paragraph
+- `## Scope` = features assigned to this delivery; Out of scope = features explicitly deferred
+- `## Gate Criteria` = concrete acceptance criteria (derive from feature SPECs; always include
+  "All section-6 quality gates pass"); leave placeholders if criteria will be refined by aid-specify
+- `## Tasks` = empty table (`_none yet_`) -- aid-detail will fill this later
+- `## Dependencies` = Depends on / Blocks from the PLAN.md stanza
+
+A delivery with ZERO tasks (e.g. a SPIKE delivery that defines a sibling delivery) is valid.
+Write the SPEC with the zero-task table (`_none yet_`) -- do not skip SPEC creation.
+
+**4b. Create `delivery-NNN/STATE.md`** (seed from `.cursor/aid/templates/delivery-state-template.md`):
+
+Fill in:
+- `Delivery:` = delivery-NNN
+- `Work:` = work-NNN-{name}
+- `Branch:` = aid/work-NNN-delivery-NNN
+- `## Delivery Lifecycle` block:
+  - `State: Pending-Spec`     (SD-8: authored independent lifecycle, NOT derived from tasks)
+  - `Updated:` = current UTC timestamp ($(date -u +%Y-%m-%dT%H:%M:%SZ))
+  - `Block Reason:` = --
+  - `Block Artifact:` = --
+- `## Delivery Gate` section: leave all fields as template placeholders
+- `## Cross-phase Q&A` section: leave as template placeholder
+- `## Tasks State` table: `_none yet_` (correct and expected for a new delivery)
+
+> SD-9 NOTE: A delivery created with ZERO tasks renders correctly at `Pending-Spec` with
+> `_none yet_` in the Tasks State table. This is the canonical SPIKE-defines-sibling scenario.
+> The delivery lifecycle is authored independently -- it does NOT derive from the task rollup.
+> The `## Plan / Deliveries` view in the WORK STATE.md is DERIVED at read time from these
+> delivery-NNN/STATE.md files. `aid-plan` does NOT write any rows into the work STATE.md.
 
 **Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes.
 
@@ -137,19 +176,22 @@ After all deliverables are written, check for risks that span features:
 
 ### Step 7: Final Summary
 
-**Before printing the summary, verify PLAN.md is complete:**
+**Before printing the summary, verify PLAN.md and delivery folders are complete:**
 1. Read `.aid/{work}/PLAN.md` from disk
 2. Confirm every agreed deliverable is written
 3. If any deliverable is missing → write it NOW
 4. If Cross-Cutting Risks or Deferred sections apply → append them NOW
+5. For each delivery-NNN in PLAN.md, confirm both `delivery-NNN/SPEC.md` and
+   `delivery-NNN/STATE.md` exist under `.aid/{work}/`. If either is missing -> create it NOW
+   (seed from the templates; set `State: Pending-Spec`).
 
 Then print:
 ```
 Plan complete for {work}:
 
-delivery-001: {Name} → features 001, 003
-delivery-002: {Name} → features 002
-delivery-003: {Name} → features 004, 005
+delivery-001: {Name} -- features 001, 003
+delivery-002: {Name} -- features 002
+delivery-003: {Name} -- features 004, 005
 
 {If deferred:}
 Deferred: feature-006 (Could-have, revisit after delivery-003 feedback)
@@ -157,7 +199,12 @@ Deferred: feature-006 (Could-have, revisit after delivery-003 feedback)
 {If cross-cutting risks:}
 Cross-cutting risks: {count} identified (see PLAN.md)
 
-PLAN.md written to: .aid/{work}/PLAN.md ✅
+PLAN.md written to: .aid/{work}/PLAN.md
+Delivery folders created:
+  .aid/{work}/delivery-001/{SPEC.md, STATE.md} (State: Pending-Spec)
+  .aid/{work}/delivery-002/{SPEC.md, STATE.md} (State: Pending-Spec)
+  ...
 ```
 
-**Advance:** **CHAIN** → [State: REVIEW] when PLAN.md is written and the final summary is printed (continue inline).
+**Advance:** **CHAIN** -> [State: REVIEW] when PLAN.md is written, delivery folders are created,
+and the final summary is printed (continue inline).

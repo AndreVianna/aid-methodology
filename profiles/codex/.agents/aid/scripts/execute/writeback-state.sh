@@ -1,35 +1,45 @@
 #!/usr/bin/env bash
-# writeback-state.sh — row-level write coordination for FR6 parallel pool
-# × per-area STATE writes in AID aid-execute.
+# writeback-state.sh -- row-level write coordination for FR6 parallel pool
+# x per-unit STATE writes in AID aid-execute.
 #
-# Provides 5 safe write modes for the work STATE.md Tasks Status section and
-# per-task/per-delivery artifact files. Uses a sentinel-file lock (set -o
-# noclobber + atomic create + sleep-poll retry) to prevent races when multiple
-# parallel tasks dispatch reviewers concurrently.
+# Provides 5 safe write modes targeting PER-UNIT STATE.md files (Pillar 2).
+# Uses a sentinel-file lock (set -o noclobber + atomic create + sleep-poll retry)
+# to prevent races when multiple parallel tasks dispatch reviewers concurrently.
+#
+# Unit layout (work-004 hierarchy):
+#   work-NNN-{name}/
+#     STATE.md                                  -- work-level (--pipeline target)
+#     delivery-NNN/
+#       STATE.md                                -- delivery-level (--block target)
+#       tasks/
+#         task-NNN/
+#           STATE.md                            -- task-level (--field / --findings target)
 #
 # Usage:
-#   writeback-state.sh --task-id NNN --field FIELD --value VALUE
-#       Update a single named field in the task row inside ## Tasks Status.
-#       Fields: Status | Review | Elapsed | Notes | Wave | Type
+#   writeback-state.sh [--delivery-id NNN] --task-id NNN --field FIELD --value VALUE
+#       Update a single named field in the task's ## Task State section of
+#       delivery-NNN/tasks/task-NNN/STATE.md (one-writer-per-branch file).
+#       Fields: State | Review | Elapsed | Notes
+#       --delivery-id is optional; if omitted the delivery is resolved from the
+#       task's Source line (e.g. "**Source:** work-NNN -> delivery-NNN").
+#       Override env: AID_TASK_STATE_FILE (absolute path) skips all path resolution.
 #
-#   writeback-state.sh --task-id NNN --findings BLOCK
-#       Write/replace the ### task-NNN block under ## Quick Check Findings
-#       in the work STATE.md (per work-003 FR2 per-area STATE rule). BLOCK is
-#       the multi-line findings text. task-NNN.md is NOT modified.
+#   writeback-state.sh [--delivery-id NNN] --task-id NNN --findings BLOCK
+#       Write/replace the ## Quick Check Findings block in
+#       delivery-NNN/tasks/task-NNN/STATE.md.
+#       Same delivery resolution as --field mode.
 #
 #   writeback-state.sh --delivery-id NNN --block MARKDOWN_BLOCK
-#       Write/replace the ### delivery-NNN block under ## Delivery Gates in the
-#       work STATE.md (per feature-004 Alignment Update — see SPEC §Alignment Update; line cites in body are known-stale).
-#       MARKDOWN_BLOCK is the full block text. STATE.md is the canonical target;
-#       task files are NOT modified by this mode.
+#       Write/replace the ## Delivery Gate block in delivery-NNN/STATE.md (SD-5).
+#       Override env: AID_DELIVERY_STATE_FILE (absolute path) skips path resolution.
 #
 #   writeback-state.sh --delivery-id NNN --append-issue ROW
 #       Append a single issue row to the delivery's delivery-NNN-issues.md.
 #       ROW must be a valid markdown table row (pipe-delimited).
 #
 #   writeback-state.sh --pipeline --field FIELD --value VALUE
-#       Write/update a single field in the ## Pipeline Status block of STATE.md.
-#       FIELD must be one of: Lifecycle | Phase | Active Skill | Updated |
+#       Write/update a single field in the ## Pipeline State block of the work
+#       STATE.md. FIELD must be one of: Lifecycle | Phase | Active Skill | Updated |
 #         Pause Reason | Block Reason | Block Artifact
 #       Lifecycle, Phase, and Active Skill are closed-enum validated.
 #       Conditional fields: Pause Reason written only when Lifecycle is
@@ -47,25 +57,147 @@
 #   3  writeback produced empty / unverifiable output
 #   4  invalid argument value
 #   5  missing required argument
-#   6  malformed STATE.md (## Tasks Status section absent)
+#   6  malformed STATE.md (## Task State section absent in task file)
 
 set -u
 
 # ---------------------------------------------------------------------------
-# Defaults — caller can override via environment for testing
+# Defaults -- caller can override via environment for testing
 # ---------------------------------------------------------------------------
+# Work-level STATE.md (--pipeline target)
 STATE_FILE="${AID_STATE_FILE:-.aid/work/STATE.md}"
-TASKS_DIR="${AID_TASKS_DIR:-.aid/work/tasks}"
+
+# Work root (base for resolving delivery/task paths)
+# Derived from STATE_FILE parent when not overridden.
+WORK_DIR="${AID_WORK_DIR:-}"
+
+# Delivery directory base: <work-root>/delivery-NNN
+# Set AID_DELIVERY_DIR to override the per-delivery STATE path base.
+DELIVERY_DIR_BASE="${AID_DELIVERY_DIR:-}"
+
+# Task-level STATE.md override (skips all path resolution for --field/--findings)
+TASK_STATE_FILE="${AID_TASK_STATE_FILE:-}"
+
+# Delivery-level STATE.md override (skips path resolution for --block)
+DELIVERY_STATE_FILE="${AID_DELIVERY_STATE_FILE:-}"
+
+# Issues directory: directory containing delivery-NNN-issues.md files
+# Defaults to the work directory (same dir as work STATE.md).
 DELIVERY_ISSUES_DIR="${AID_DELIVERY_ISSUES_DIR:-.aid/work}"
-LOCK_DIR="${AID_LOCK_DIR:-.aid/work}"
-LOCK_TIMEOUT="${AID_LOCK_TIMEOUT:-10}"   # max retries (0.5s each → 5s default)
+
+# Lock directory -- defaults to derived per-call below (see acquire_lock)
+LOCK_DIR="${AID_LOCK_DIR:-}"
+
+LOCK_TIMEOUT="${AID_LOCK_TIMEOUT:-10}"   # max retries (0.5s each -> 5s default)
 
 # ---------------------------------------------------------------------------
 usage() {
-    sed -n '2,51p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,55p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 die() { echo "ERROR: writeback-state.sh: $*" >&2; exit "${2:-1}"; }
+
+# ---------------------------------------------------------------------------
+# Path resolution helpers
+# ---------------------------------------------------------------------------
+
+# resolve_work_dir: derive the work root from STATE_FILE when WORK_DIR unset.
+resolve_work_dir() {
+    if [[ -z "$WORK_DIR" ]]; then
+        WORK_DIR="$(dirname "$STATE_FILE")"
+    fi
+}
+
+# resolve_task_state_file DELIVERY_ID TASK_ID
+# Sets TASK_STATE_FILE to delivery-NNN/tasks/task-NNN/STATE.md under the work root.
+# If TASK_STATE_FILE is already set (env override), this is a no-op.
+resolve_task_state_file() {
+    local delivery_id="$1" task_id="$2"
+    if [[ -n "$TASK_STATE_FILE" ]]; then
+        return 0
+    fi
+    resolve_work_dir
+    local padded_d padded_t
+    padded_d=$(printf '%03d' "$delivery_id")
+    padded_t=$(printf '%03d' "$task_id")
+    if [[ -n "$DELIVERY_DIR_BASE" ]]; then
+        TASK_STATE_FILE="${DELIVERY_DIR_BASE}/tasks/task-${padded_t}/STATE.md"
+    else
+        TASK_STATE_FILE="${WORK_DIR}/delivery-${padded_d}/tasks/task-${padded_t}/STATE.md"
+    fi
+}
+
+# resolve_delivery_state_file DELIVERY_ID
+# Sets DELIVERY_STATE_FILE to delivery-NNN/STATE.md under the work root.
+# If DELIVERY_STATE_FILE is already set (env override), this is a no-op.
+resolve_delivery_state_file() {
+    local delivery_id="$1"
+    if [[ -n "$DELIVERY_STATE_FILE" ]]; then
+        return 0
+    fi
+    resolve_work_dir
+    local padded_d
+    padded_d=$(printf '%03d' "$delivery_id")
+    if [[ -n "$DELIVERY_DIR_BASE" ]]; then
+        DELIVERY_STATE_FILE="${DELIVERY_DIR_BASE}/STATE.md"
+    else
+        DELIVERY_STATE_FILE="${WORK_DIR}/delivery-${padded_d}/STATE.md"
+    fi
+}
+
+# resolve_delivery_from_task_spec TASK_ID -> sets DELIVERY_ID_RESOLVED
+# Reads the task SPEC.md (delivery-NNN/tasks/task-NNN/SPEC.md or legacy tasks/task-NNN.md)
+# and extracts the delivery number from "**Source:** ... -> delivery-NNN" or
+# "**Source:** ... delivery-NNN ...".
+# Returns "" when resolution fails (caller must require --delivery-id).
+DELIVERY_ID_RESOLVED=""
+resolve_delivery_from_task_spec() {
+    local task_id="$1"
+    DELIVERY_ID_RESOLVED=""
+    resolve_work_dir
+    local padded_t
+    padded_t=$(printf '%03d' "$task_id")
+
+    # Try legacy flat task spec first (tasks/task-NNN.md)
+    local spec_file="${WORK_DIR}/tasks/task-${padded_t}.md"
+    if [[ ! -f "$spec_file" ]]; then
+        # Try hierarchical path: scan all delivery-NNN/tasks/task-NNN/SPEC.md
+        local found
+        found=$(find "${WORK_DIR}" -path "*/tasks/task-${padded_t}/SPEC.md" 2>/dev/null | head -1)
+        if [[ -n "$found" ]]; then
+            spec_file="$found"
+        fi
+    fi
+
+    if [[ ! -f "$spec_file" ]]; then
+        return 0   # unresolvable; caller must supply --delivery-id
+    fi
+
+    # Extract delivery number from Source line:
+    # **Source:** work-NNN-{name} -> delivery-NNN
+    # **Source:** work-NNN-{name} delivery-NNN
+    local source_line
+    source_line=$(grep -m1 '^\*\*Source:\*\*' "$spec_file" 2>/dev/null || true)
+    if [[ -z "$source_line" ]]; then
+        return 0
+    fi
+
+    # Match delivery-NNN pattern (N=1-3 digits)
+    local delivery_raw
+    delivery_raw=$(echo "$source_line" | grep -oE 'delivery-[0-9]+' | head -1)
+    if [[ -z "$delivery_raw" ]]; then
+        return 0
+    fi
+
+    # Strip leading zeros via base-10 arithmetic (handles delivery-001, delivery-01, delivery-1)
+    local raw_num
+    raw_num="${delivery_raw#delivery-}"
+    DELIVERY_ID_RESOLVED=$(( 10#$raw_num ))
+    if [[ "$DELIVERY_ID_RESOLVED" -eq 0 ]]; then
+        # delivery-000 or parse failure
+        DELIVERY_ID_RESOLVED=""
+    fi
+}
 
 # ---------------------------------------------------------------------------
 # Argument parsing
@@ -151,10 +283,49 @@ if [[ -n "$DELIVERY_ID" ]] && ! [[ "$DELIVERY_ID" =~ ^[0-9]+$ ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Lock helpers
+# Delivery resolution for task modes (--field / --findings)
+# If --delivery-id was supplied, use it directly.
+# Otherwise attempt resolution from the task SPEC.md Source line.
 # ---------------------------------------------------------------------------
-LOCK_FILE="${LOCK_DIR}/.writeback-state.lock"
+resolve_delivery_for_task_mode() {
+    if [[ -n "$DELIVERY_ID" ]]; then
+        return 0   # explicit override
+    fi
+    resolve_delivery_from_task_spec "$TASK_ID"
+    if [[ -z "$DELIVERY_ID_RESOLVED" ]]; then
+        die "cannot resolve delivery for task $TASK_ID: --delivery-id not supplied and Source line not found in task spec. Supply --delivery-id NNN." 5
+    fi
+    DELIVERY_ID="$DELIVERY_ID_RESOLVED"
+}
+
+# ---------------------------------------------------------------------------
+# Lock helpers
+# The lock serializes concurrent writes to the same per-unit STATE.md.
+# LOCK_FILE is derived from the write-target directory for clarity
+# (scoped to the per-unit file's parent directory when possible).
+# ---------------------------------------------------------------------------
+LOCK_FILE=""
 LOCK_ACQUIRED=0
+
+# init_lock_file TARGET_FILE
+# Sets LOCK_FILE to a .writeback-state.lock sentinel in the same directory as
+# TARGET_FILE, falling back to LOCK_DIR when set, then to the work dir.
+init_lock_file() {
+    local target_file="$1"
+    local lock_parent
+
+    if [[ -n "$LOCK_DIR" ]]; then
+        lock_parent="$LOCK_DIR"
+    elif [[ -n "$target_file" && -f "$target_file" ]]; then
+        lock_parent="$(dirname "$target_file")"
+    elif [[ -n "$target_file" ]]; then
+        lock_parent="$(dirname "$target_file")"
+    else
+        resolve_work_dir
+        lock_parent="$WORK_DIR"
+    fi
+    LOCK_FILE="${lock_parent}/.writeback-state.lock"
+}
 
 acquire_lock() {
     # M2: Distinguish missing lock directory (ENOENT) from lock contention (EEXIST).
@@ -164,7 +335,7 @@ acquire_lock() {
 
     local attempts=0
     while true; do
-        # Atomic create — succeeds only if file does not exist
+        # Atomic create -- succeeds only if file does not exist
         if ( set -o noclobber; echo $$ > "$LOCK_FILE" ) 2>/dev/null; then
             LOCK_ACQUIRED=1
             return 0
@@ -188,11 +359,11 @@ release_lock() {
 trap 'release_lock' EXIT
 
 # ---------------------------------------------------------------------------
-# Mode: --task-id NNN --field FIELD --value VALUE
-# Update a single field in the task's ## Tasks Status row.
-# The Tasks Status table columns are:
-#   | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-# Field names (case-insensitive): Status, Review, Elapsed, Notes, Wave, Type, Task
+# Mode: [--delivery-id NNN] --task-id NNN --field FIELD --value VALUE
+# Update a single named field in the task's ## Task State section of
+# delivery-NNN/tasks/task-NNN/STATE.md.
+# Fields: State | Review | Elapsed | Notes
+# State is enum-validated (closed enum).
 # ---------------------------------------------------------------------------
 mode_field() {
     # H2: Reject --value containing literal '|' to prevent row corruption.
@@ -205,103 +376,61 @@ mode_field() {
         die "--value cannot contain newline characters (row separator); rephrase to single line" 4
     fi
 
-    if [[ ! -f "$STATE_FILE" ]]; then
-        die "$STATE_FILE does not exist" 1
-    fi
-
-    # Validate field name
+    # Validate field name (per-unit task STATE.md fields)
     local field_lower
     field_lower="${FIELD,,}"   # bash 4+ lowercase
     case "$field_lower" in
-        status|review|elapsed|notes|wave|type|task) ;;
-        *) die "unknown field '$FIELD'; allowed: Status Review Elapsed Notes Wave Type Task" 4 ;;
+        state|review|elapsed|notes) ;;
+        *) die "unknown field '$FIELD'; allowed: State Review Elapsed Notes" 4 ;;
     esac
 
-    # Enum validation for the Status field (closed enum; feature-001 M3).
-    # Accepted values: the 7 TaskStatus enum members + the _none yet_ placeholder row.
-    # Every other field passes through without additional constraint.
-    if [[ "$field_lower" == "status" ]]; then
+    # Enum validation for the State field (closed enum; SD-2).
+    if [[ "$field_lower" == "state" ]]; then
         case "$FIELD_VALUE" in
             Pending|"In Progress"|"In Review"|Blocked|Done|Failed|Canceled|"_none yet_") ;;
-            *) die "invalid Status value '$FIELD_VALUE'; must be one of: Pending | In Progress | In Review | Blocked | Done | Failed | Canceled (or the _none yet_ placeholder)" 4 ;;
+            *) die "invalid State value '$FIELD_VALUE'; must be one of: Pending | In Progress | In Review | Blocked | Done | Failed | Canceled (or the _none yet_ placeholder)" 4 ;;
         esac
     fi
 
-    # Verify ## Tasks Status section exists
-    if ! grep -q '^## Tasks Status' "$STATE_FILE"; then
-        die "malformed STATE.md: ## Tasks Status section not found in $STATE_FILE" 6
+    resolve_delivery_for_task_mode
+    resolve_task_state_file "$DELIVERY_ID" "$TASK_ID"
+
+    if [[ ! -f "$TASK_STATE_FILE" ]]; then
+        die "$TASK_STATE_FILE does not exist" 1
     fi
 
-    # Pad TASK_ID to 3 digits for pattern matching (task-019 style)
-    local padded_id
-    padded_id=$(printf '%03d' "$TASK_ID")
-
-    # Verify the task row exists
-    # Rows look like: | 019 | task-019-... | ... |  OR  | 19 | task-019-... | ... |
-    if ! awk '/^## Tasks Status/{s=1} s && /^## / && !/^## Tasks Status/{s=0} s' "$STATE_FILE" \
-            | grep -qE "^\| *0*${TASK_ID} *\|"; then
-        die "task row for task-id $TASK_ID not found in ## Tasks Status of $STATE_FILE" 1
+    # Verify ## Task State section exists
+    if ! grep -q '^## Task State' "$TASK_STATE_FILE"; then
+        die "malformed task STATE.md: ## Task State section not found in $TASK_STATE_FILE" 6
     fi
 
+    init_lock_file "$TASK_STATE_FILE"
     acquire_lock
 
     local tmp
     tmp=$(mktemp)
 
-    # Column index mapping (1-based pipe-delimited, field 1 = empty before first |)
-    # | # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-    #   1    2      3      4      5        6        7         8
-    local col_idx
-    case "$field_lower" in
-        "#")      col_idx=1 ;;
-        task)     col_idx=2 ;;
-        type)     col_idx=3 ;;
-        wave)     col_idx=4 ;;
-        status)   col_idx=5 ;;
-        review)   col_idx=6 ;;
-        elapsed)  col_idx=7 ;;
-        notes)    col_idx=8 ;;
-    esac
+    # Field lines in ## Task State section have the form:
+    # - **Field:** value
+    # We use awk to find the ## Task State section and rewrite the matching field line.
+    awk -v field_lower="$field_lower" -v new_val="$FIELD_VALUE" '
+        BEGIN { in_ts=0; updated=0 }
 
-    # Use awk to rewrite only the matching task row, within ## Tasks Status section
-    awk -v task_id="$padded_id" \
-        -v task_id_num="$TASK_ID" \
-        -v col="$col_idx" \
-        -v new_val=" $FIELD_VALUE " \
-        '
-        BEGIN { in_tasks=0; updated=0; schema_error=0 }
+        /^## Task State/ { in_ts=1; print; next }
 
-        /^## Tasks Status/ { in_tasks=1; print; next }
+        in_ts && /^## / { in_ts=0 }
 
-        in_tasks && /^## / { in_tasks=0 }
+        in_ts {
+            # Match lines like: - **Field:** value
+            if ($0 ~ /^- \*\*[^*]+:\*\*/) {
+                line = $0
+                sub(/^- \*\*/, "", line)
+                sub(/:\*\*.*$/, "", line)
+                cur_field = line
+                cur_lower = tolower(cur_field)
 
-        in_tasks {
-            # Check if this is the task row for our task
-            # Match: | NNN | or | 0NNN | where number equals task_id_num
-            if ($0 ~ /^\|/) {
-                # Split by pipe
-                n = split($0, fields, "|")
-                # fields[1] is empty (before first |), fields[2] is #, etc.
-                cell = fields[2]
-                gsub(/^[[:space:]]+|[[:space:]]+$/, "", cell)
-                # Match numeric value (strips leading zeros for comparison)
-                cell_num = cell + 0
-                # Also check padded form
-                if (cell == task_id || cell_num == task_id_num + 0) {
-                    # H1: Verify the row has the expected 8 columns (n == 10: 8 cols + 2 boundary empties)
-                    if (n != 10) {
-                        printf "ERROR: Tasks Status table row '\''%s'\'' has wrong column count (expected 8, got %d); refusing to update\n", task_id, n - 2 > "/dev/stderr"
-                        schema_error = 1
-                        exit 4
-                    }
-                    # Replace the target column
-                    fields[col + 1] = new_val
-                    # Reconstruct the row
-                    row = "|"
-                    for (i = 2; i <= n; i++) {
-                        row = row fields[i] (i < n ? "|" : "")
-                    }
-                    print row
+                if (cur_lower == field_lower) {
+                    print "- **" cur_field ":** " new_val
                     updated = 1
                     next
                 }
@@ -313,143 +442,94 @@ mode_field() {
         { print }
 
         END {
-            if (schema_error) { exit 4 }
             if (!updated) {
-                print "ERROR: task row not updated" > "/dev/stderr"
+                print "ERROR: field '" field_lower "' not updated in ## Task State" > "/dev/stderr"
                 exit 3
             }
         }
-        ' "$STATE_FILE" > "$tmp"
+    ' "$TASK_STATE_FILE" > "$tmp"
     local awk_exit=$?
-    if [[ "$awk_exit" -eq 4 ]]; then
-        rm -f "$tmp"
-        # Re-read the actual column count from the file for the die message
-        local bad_row actual_cols
-        bad_row=$(awk "/^## Tasks Status/{s=1} s && /^## / && !/^## Tasks Status/{s=0} s && /^\|/{n=split(\$0,f,\"|\"); cell=f[2]; gsub(/^[[:space:]]+|[[:space:]]+\$/,\"\",cell); if(cell==\"$padded_id\" || cell+0==$TASK_ID+0) print \$0}" "$STATE_FILE" | head -1)
-        actual_cols=$(echo "$bad_row" | awk '{n=split($0,f,"|"); print n-2}')
-        die "Tasks Status table row '${padded_id}' has wrong column count (expected 8, got ${actual_cols}); refusing to update" 4
-    fi
     if [[ "$awk_exit" -ne 0 ]]; then
         rm -f "$tmp"
-        die "writeback awk failed (exit $awk_exit); STATE.md preserved" 3
+        die "writeback awk failed (exit $awk_exit); $TASK_STATE_FILE preserved" "$awk_exit"
     fi
 
     # Verify output is non-empty
     if [[ ! -s "$tmp" ]]; then
         rm -f "$tmp"
-        die "writeback produced empty output; STATE.md preserved" 3
+        die "writeback produced empty output; $TASK_STATE_FILE preserved" 3
     fi
 
-    # Verify the state file still has the Tasks Status section
-    if ! grep -q '^## Tasks Status' "$tmp"; then
+    # Sanity: ## Task State section must still be present in output
+    if ! grep -q '^## Task State' "$tmp"; then
         rm -f "$tmp"
-        die "writeback sanity check failed: ## Tasks Status disappeared from output" 3
+        die "writeback sanity check failed: ## Task State disappeared from output" 3
     fi
 
-    mv "$tmp" "$STATE_FILE"
-    echo "OK: $STATE_FILE updated — task $TASK_ID field '$FIELD' set to '$FIELD_VALUE'"
+    mv "$tmp" "$TASK_STATE_FILE"
+    local padded_t
+    padded_t=$(printf '%03d' "$TASK_ID")
+    echo "OK: $TASK_STATE_FILE updated -- task $padded_t field '$FIELD' set to '$FIELD_VALUE'"
 }
 
 # ---------------------------------------------------------------------------
-# Mode: --task-id NNN --findings BLOCK
-# Write/replace the ### task-NNN block under ## Quick Check Findings in
-# STATE.md (per work-003 FR2 per-area STATE rule). task-NNN.md is NOT modified.
-# Creates the ## Quick Check Findings section if absent (appends to STATE.md).
-# Creates/replaces the ### task-NNN sub-block within that section.
+# Mode: [--delivery-id NNN] --task-id NNN --findings BLOCK
+# Write/replace the ## Quick Check Findings block in
+# delivery-NNN/tasks/task-NNN/STATE.md (per SD-5 / Pillar 2).
+# Creates the ## Quick Check Findings section if absent.
 # ---------------------------------------------------------------------------
 mode_findings() {
     local padded_id
     padded_id=$(printf '%03d' "$TASK_ID")
-    local task_heading="### task-${padded_id}"
 
-    if [[ ! -f "$STATE_FILE" ]]; then
-        die "$STATE_FILE does not exist" 1
+    resolve_delivery_for_task_mode
+    resolve_task_state_file "$DELIVERY_ID" "$TASK_ID"
+
+    if [[ ! -f "$TASK_STATE_FILE" ]]; then
+        die "$TASK_STATE_FILE does not exist" 1
     fi
 
+    init_lock_file "$TASK_STATE_FILE"
     acquire_lock
 
     local tmp
     tmp=$(mktemp)
 
-    if grep -q '^## Quick Check Findings' "$STATE_FILE"; then
-        # Section exists. Replace ### task-NNN block if present; otherwise insert
-        # before the next ## section (or at EOF of the Quick Check Findings section).
-        if grep -q "^${task_heading}$" "$STATE_FILE"; then
-            # Replace existing ### task-NNN block: skip old content from ### task-NNN
-            # up to (but not including) the next ## section OR the next peer ### task-
-            # heading. Sub-headings within the findings block (e.g. ### Findings) are
-            # NOT peer blocks — only ### task-NNN lines from the file are peers.
-            awk -v heading="$task_heading" -v new_block="$FINDINGS_BLOCK" '
-                BEGIN { in_task=0; inserted=0 }
-                $0 == heading {
-                    in_task=1
-                    print heading
+    if grep -q '^## Quick Check Findings' "$TASK_STATE_FILE"; then
+        # Section exists -- replace entire block content (the task owns this file
+        # exclusively, so there is no per-task sub-heading needed; replace the whole section).
+        awk -v new_block="$FINDINGS_BLOCK" '
+            BEGIN { in_qcf=0; inserted=0 }
+            /^## Quick Check Findings/ {
+                in_qcf=1
+                print
+                print ""
+                print new_block
+                inserted=1
+                next
+            }
+            in_qcf && /^## / {
+                in_qcf=0
+                print
+                next
+            }
+            in_qcf { next }
+            { print }
+            END {
+                if (!inserted) {
+                    print ""
+                    print "## Quick Check Findings"
                     print ""
                     print new_block
-                    inserted=1
-                    next
                 }
-                in_task && /^## / {
-                    in_task=0
-                    print ""
-                    print
-                    next
-                }
-                in_task && /^### task-/ && $0 != heading {
-                    in_task=0
-                    print ""
-                    print
-                    next
-                }
-                in_task { next }
-                { print }
-                END {
-                    if (!inserted) {
-                        print ""
-                        print heading
-                        print ""
-                        print new_block
-                    }
-                }
-            ' "$STATE_FILE" > "$tmp"
-        else
-            # Append ### task-NNN block within the ## Quick Check Findings section.
-            # Strategy: insert before the NEXT ## section after Quick Check Findings,
-            # or at EOF if no such section follows.
-            awk -v heading="$task_heading" -v new_block="$FINDINGS_BLOCK" '
-                BEGIN { in_qcf=0; inserted=0 }
-                /^## Quick Check Findings/ { in_qcf=1; print; next }
-                in_qcf && /^## / && !/^## Quick Check Findings/ {
-                    if (!inserted) {
-                        print ""
-                        print heading
-                        print ""
-                        print new_block
-                        inserted=1
-                    }
-                    in_qcf=0
-                    print
-                    next
-                }
-                { print }
-                END {
-                    if (!inserted) {
-                        print ""
-                        print heading
-                        print ""
-                        print new_block
-                    }
-                }
-            ' "$STATE_FILE" > "$tmp"
-        fi
+            }
+        ' "$TASK_STATE_FILE" > "$tmp"
     else
-        # ## Quick Check Findings section absent — append it (with the task block) at EOF.
+        # ## Quick Check Findings section absent -- append it at EOF.
         {
-            cat "$STATE_FILE"
+            cat "$TASK_STATE_FILE"
             echo ""
             echo "## Quick Check Findings"
-            echo ""
-            echo "$task_heading"
             echo ""
             printf '%s\n' "$FINDINGS_BLOCK"
         } > "$tmp"
@@ -457,7 +537,7 @@ mode_findings() {
 
     if [[ ! -s "$tmp" ]]; then
         rm -f "$tmp"
-        die "writeback produced empty output; $STATE_FILE preserved" 3
+        die "writeback produced empty output; $TASK_STATE_FILE preserved" 3
     fi
 
     # Sanity: ## Quick Check Findings section must be present in output
@@ -466,113 +546,67 @@ mode_findings() {
         die "## Quick Check Findings section was not written to output" 3
     fi
 
-    # Sanity: ### task-NNN heading must be present in output
-    if ! grep -q "^${task_heading}$" "$tmp"; then
-        rm -f "$tmp"
-        die "${task_heading} was not written to output" 3
-    fi
-
-    mv "$tmp" "$STATE_FILE"
-    echo "OK: $STATE_FILE updated — ## Quick Check Findings ### task-${padded_id} block written"
+    mv "$tmp" "$TASK_STATE_FILE"
+    echo "OK: $TASK_STATE_FILE updated -- ## Quick Check Findings block written for task-${padded_id}"
 }
 
 # ---------------------------------------------------------------------------
 # Mode: --delivery-id NNN --block MARKDOWN_BLOCK
-# Write/replace the ### delivery-NNN block under ## Delivery Gates in
-# STATE.md (per feature-004 Alignment Update — see SPEC §Alignment Update; line cites in body are known-stale). STATE.md is
-# the canonical write target. task files are NOT modified by this mode.
-# Creates the ## Delivery Gates section if absent (appends to STATE.md).
-# Creates/replaces the ### delivery-NNN sub-block within that section.
-# Mirrors the pattern of mode_findings (which writes ## Quick Check Findings).
+# Write/replace the ## Delivery Gate block in delivery-NNN/STATE.md (SD-5).
+# This is the per-delivery delivery gate block, targeting the delivery-level
+# STATE.md (one writer per delivery branch -- Pillar 2 disjoint writes).
+# Creates the ## Delivery Gate section if absent.
 # ---------------------------------------------------------------------------
 mode_delivery_block() {
     local padded_id
     padded_id=$(printf '%03d' "$DELIVERY_ID")
-    local delivery_heading="### delivery-${padded_id}"
 
-    if [[ ! -f "$STATE_FILE" ]]; then
-        die "$STATE_FILE does not exist" 1
+    resolve_delivery_state_file "$DELIVERY_ID"
+
+    if [[ ! -f "$DELIVERY_STATE_FILE" ]]; then
+        die "$DELIVERY_STATE_FILE does not exist" 1
     fi
 
+    init_lock_file "$DELIVERY_STATE_FILE"
     acquire_lock
 
     local tmp
     tmp=$(mktemp)
 
-    if grep -q '^## Delivery Gates' "$STATE_FILE"; then
-        # Section exists. Replace ### delivery-NNN block if present; otherwise insert
-        # before the next ## section (or at EOF of the Delivery Gates section).
-        if grep -q "^${delivery_heading}$" "$STATE_FILE"; then
-            # Replace existing ### delivery-NNN block.
-            awk -v heading="$delivery_heading" -v new_block="$DELIVERY_BLOCK" '
-                BEGIN { in_delivery=0; inserted=0 }
-                $0 == heading {
-                    in_delivery=1
-                    print heading
+    if grep -q '^## Delivery Gate$' "$DELIVERY_STATE_FILE"; then
+        # Section exists -- replace entire block content.
+        awk -v new_block="$DELIVERY_BLOCK" '
+            BEGIN { in_dg=0; inserted=0 }
+            /^## Delivery Gate$/ {
+                in_dg=1
+                print
+                print ""
+                print new_block
+                inserted=1
+                next
+            }
+            in_dg && /^## / {
+                in_dg=0
+                print
+                next
+            }
+            in_dg { next }
+            { print }
+            END {
+                if (!inserted) {
+                    print ""
+                    print "## Delivery Gate"
                     print ""
                     print new_block
-                    inserted=1
-                    next
                 }
-                in_delivery && /^## / {
-                    in_delivery=0
-                    print ""
-                    print
-                    next
-                }
-                in_delivery && /^### delivery-/ && $0 != heading {
-                    in_delivery=0
-                    print ""
-                    print
-                    next
-                }
-                in_delivery { next }
-                { print }
-                END {
-                    if (!inserted) {
-                        print ""
-                        print heading
-                        print ""
-                        print new_block
-                    }
-                }
-            ' "$STATE_FILE" > "$tmp"
-        else
-            # Append ### delivery-NNN block within ## Delivery Gates section.
-            awk -v heading="$delivery_heading" -v new_block="$DELIVERY_BLOCK" '
-                BEGIN { in_dg=0; inserted=0 }
-                /^## Delivery Gates/ { in_dg=1; print; next }
-                in_dg && /^## / && !/^## Delivery Gates/ {
-                    if (!inserted) {
-                        print ""
-                        print heading
-                        print ""
-                        print new_block
-                        inserted=1
-                    }
-                    in_dg=0
-                    print
-                    next
-                }
-                { print }
-                END {
-                    if (!inserted) {
-                        print ""
-                        print heading
-                        print ""
-                        print new_block
-                    }
-                }
-            ' "$STATE_FILE" > "$tmp"
-        fi
+            }
+        ' "$DELIVERY_STATE_FILE" > "$tmp"
     else
-        # ## Delivery Gates section absent — append it (with the delivery block) at EOF.
+        # ## Delivery Gate section absent -- append it at EOF.
         {
-            cat "$STATE_FILE"
+            cat "$DELIVERY_STATE_FILE"
             echo ""
-            echo "## Delivery Gates"
-            echo ""
-            echo "$delivery_heading"
+            echo "## Delivery Gate"
             echo ""
             printf '%s\n' "$DELIVERY_BLOCK"
         } > "$tmp"
@@ -580,23 +614,17 @@ mode_delivery_block() {
 
     if [[ ! -s "$tmp" ]]; then
         rm -f "$tmp"
-        die "writeback produced empty output; $STATE_FILE preserved" 3
+        die "writeback produced empty output; $DELIVERY_STATE_FILE preserved" 3
     fi
 
-    # Sanity: ## Delivery Gates section must be present in output
-    if ! grep -q '^## Delivery Gates' "$tmp"; then
+    # Sanity: ## Delivery Gate section must be present in output
+    if ! grep -q '^## Delivery Gate$' "$tmp"; then
         rm -f "$tmp"
-        die "## Delivery Gates section was not written to output" 3
+        die "## Delivery Gate section was not written to output" 3
     fi
 
-    # Sanity: ### delivery-NNN heading must be present in output
-    if ! grep -q "^${delivery_heading}$" "$tmp"; then
-        rm -f "$tmp"
-        die "${delivery_heading} was not written to output" 3
-    fi
-
-    mv "$tmp" "$STATE_FILE"
-    echo "OK: $STATE_FILE updated — ## Delivery Gates ### delivery-${padded_id} block written"
+    mv "$tmp" "$DELIVERY_STATE_FILE"
+    echo "OK: $DELIVERY_STATE_FILE updated -- ## Delivery Gate block written for delivery-${padded_id}"
 }
 
 # ---------------------------------------------------------------------------
@@ -604,21 +632,31 @@ mode_delivery_block() {
 # Append a single issue row to delivery-NNN-issues.md.
 # File is created with a header if it does not exist.
 # Idempotent: if an identical row already exists, no duplicate is written.
+# Unchanged from pre-retarget (already disjoint per Pillar 2).
 # ---------------------------------------------------------------------------
 mode_append_issue() {
     local padded_id
     padded_id=$(printf '%03d' "$DELIVERY_ID")
     local issues_file="${DELIVERY_ISSUES_DIR}/delivery-${padded_id}-issues.md"
 
+    # Use work-dir-based issues path when DELIVERY_ISSUES_DIR is default
+    # and WORK_DIR is resolvable, for consistency with path resolution.
+    if [[ "$DELIVERY_ISSUES_DIR" == ".aid/work" && -n "$AID_STATE_FILE" ]]; then
+        resolve_work_dir
+        issues_file="${WORK_DIR}/delivery-${padded_id}-issues.md"
+    fi
+
+    # Lock is scoped to the issues file's directory
+    init_lock_file "$issues_file"
     acquire_lock
 
     # Create file with header if it does not exist
     if [[ ! -f "$issues_file" ]]; then
         cat > "$issues_file" <<EOF
-# Delivery Issue Log — delivery-${padded_id}
+# Delivery Issue Log -- delivery-${padded_id}
 
 > Deferred findings from per-task quick checks. Consumed by the per-delivery
-> quality gate as prior context. Not graded — grade.sh runs only on the
+> quality gate as prior context. Not graded -- grade.sh runs only on the
 > gate reviewer's own issue list.
 
 | Source task | Severity | Description | Status |
@@ -629,7 +667,7 @@ EOF
 
     # Idempotency: skip if identical row already present
     if grep -qF "$ISSUE_ROW" "$issues_file" 2>/dev/null; then
-        echo "OK: $issues_file — row already present, no-op (idempotent)"
+        echo "OK: $issues_file -- row already present, no-op (idempotent)"
         return 0
     fi
 
@@ -640,14 +678,14 @@ EOF
 
     # Append the row
     printf '%s\n' "$ISSUE_ROW" >> "$issues_file"
-    echo "OK: $issues_file — issue row appended"
+    echo "OK: $issues_file -- issue row appended"
 }
 
 # ---------------------------------------------------------------------------
 # Mode: --pipeline --field FIELD --value VALUE
-# Write/update a single field in the ## Pipeline Status block of STATE.md.
+# Write/update a single field in the ## Pipeline State block of the work STATE.md.
 # The block shape (grep-recoverable **Field:** value lines) matches the
-# work-state-template.md ## Pipeline Status section (feature-001 M2).
+# work-state-template.md ## Pipeline State section.
 #
 # Fields (canonical casing): Lifecycle | Phase | Active Skill | Updated |
 #   Pause Reason | Block Reason | Block Artifact
@@ -662,7 +700,7 @@ EOF
 #   Block Reason   -> present only when Lifecycle = Blocked
 #   Block Artifact -> present only when Lifecycle = Blocked
 #
-# Creates the ## Pipeline Status section if absent. Emits no user-facing
+# Creates the ## Pipeline State section if absent. Emits no user-facing
 # output (C4 behavior-preserving). Acquires the existing sentinel lock.
 # ---------------------------------------------------------------------------
 mode_pipeline() {
@@ -707,13 +745,16 @@ mode_pipeline() {
             ;;
     esac
 
+    init_lock_file "$STATE_FILE"
     acquire_lock
 
     local tmp
     tmp=$(mktemp)
 
-    if grep -q '^## Pipeline Status' "$STATE_FILE"; then
-        # Section exists -- update/add the target field within it, and manage
+    # Accept both old "## Pipeline Status" and new "## Pipeline State" section headers.
+    # On create/update, always write "## Pipeline State" (the renamed header from task-001).
+    if grep -qE '^## Pipeline Stat(us|e)' "$STATE_FILE"; then
+        # Section exists (either name) -- update/add the target field within it, and manage
         # conditional fields when Lifecycle changes.
         awk \
             -v field="$canonical_field" \
@@ -722,14 +763,12 @@ mode_pipeline() {
             BEGIN {
                 in_ps = 0
                 field_written = 0
-                # Field order for canonical rendering
-                split("Lifecycle,Phase,Active Skill,Updated,Pause Reason,Block Reason,Block Artifact", order, ",")
-                # Track lines we have seen in the section (key=field, val=line text)
             }
 
-            /^## Pipeline Status/ {
+            /^## Pipeline Stat(us|e)/ {
                 in_ps = 1
-                print
+                # Normalize header to "## Pipeline State" on every rewrite
+                print "## Pipeline State"
                 next
             }
 
@@ -788,16 +827,14 @@ mode_pipeline() {
             }
             ' "$STATE_FILE" > "$tmp"
     else
-        # ## Pipeline Status section absent -- build a minimal block and append.
-        # Seed with a skeleton of all 7 fields (using placeholder dashes for
-        # fields not provided), then overwrite the target field.
+        # ## Pipeline State section absent -- build a minimal block and append.
         {
             cat "$STATE_FILE"
             printf '\n'
-            printf '## Pipeline Status\n'
+            printf '## Pipeline State\n'
             printf '\n'
-            printf '> Single-source derivation summary for read-only consumers (the dashboard reader, FR16).\n'
-            printf '> Written ONLY by the helper `writeback-state.sh --pipeline ...` (new mode) at every existing\n'
+            printf '> Single-source derivation summary for read-only consumers (the dashboard reader).\n'
+            printf '> Written ONLY by the helper `writeback-state.sh --pipeline ...` at every existing\n'
             printf '> phase/state transition the pipeline already performs. Never hand-edited. All values are\n'
             printf '> closed enums so a deterministic reader needs no inference.\n'
             printf '>\n'
@@ -834,10 +871,10 @@ mode_pipeline() {
         die "writeback produced empty output; $STATE_FILE preserved" 3
     fi
 
-    # Sanity: ## Pipeline Status section must be present in output
-    if ! grep -q '^## Pipeline Status' "$tmp"; then
+    # Sanity: ## Pipeline State section must be present in output (either name accepted)
+    if ! grep -qE '^## Pipeline Stat(us|e)' "$tmp"; then
         rm -f "$tmp"
-        die "## Pipeline Status section was not written to output" 3
+        die "## Pipeline State section was not written to output" 3
     fi
 
     mv "$tmp" "$STATE_FILE"

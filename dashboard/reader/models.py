@@ -221,10 +221,16 @@ class FeatureRef:
 
 @dataclass
 class DeliverableRef:
-    """A single row from ## Plan / Deliveries in STATE.md (prototype field)."""
+    """A single row from ## Plan / Deliveries in STATE.md (prototype field).
+
+    delivery_state: the SD-8 lifecycle enum from delivery-NNN/STATE.md ## Delivery Lifecycle
+    (Pending-Spec | Specified | Executing | Gated | Done | Blocked).
+    None when the delivery STATE.md is absent or the field is unparseable (legacy works).
+    """
     number: int
     name: str
     task_count: int
+    delivery_state: Optional[str] = None
 
 
 @dataclass

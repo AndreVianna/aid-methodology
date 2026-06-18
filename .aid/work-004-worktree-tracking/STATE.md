@@ -41,16 +41,16 @@ Worktree-aware pipeline tracking + state-file partitioning (per work → deliver
 | 1 | Per-level STATE/SPEC template set + naming contract | DESIGN | 1 | Done | clean | — | foundation; 5 templates; 80/80 test; render-drift+§7a clean |
 | 2 | KB: schemas.md + project-structure.md | DOCUMENT | 2 | Done | clean | — | deps 001; schemas §4 rebuilt; 2 doc nits (pre-gate sweep) |
 | 3 | writeback-state.sh canonical: retarget to per-unit STATE | REFACTOR | 2 | Done | clean | — | disjoint writes VERIFIED; 1 cosmetic nit |
-| 4 | Propagate EXECUTE writeback to 5 profile copies + dogfood (summarize EXCLUDED) | REFACTOR | 3 | Pending | — | — | deps 003; render-drift |
-| 5 | aid-detail: create task folders (SPEC+STATE) | REFACTOR | 3 | Pending | — | — | deps 001,002 |
-| 6 | aid-plan: create delivery folders (SPEC+STATE) | REFACTOR | 3 | Pending | — | — | deps 001,002 |
+| 4 | Propagate EXECUTE writeback to 5 profile copies + dogfood (summarize EXCLUDED) | REFACTOR | 3 | Done | clean | — | full regen; render-drift + §7a clean; summarize unchanged |
+| 5 | aid-detail: create task folders (SPEC+STATE) | REFACTOR | 3 | Done | clean | — | nested folders; derived view; globs retargeted |
+| 6 | aid-plan: create delivery folders (SPEC+STATE) | REFACTOR | 3 | Done | clean | — | Pending-Spec authored; zero-task ok; derived view |
 | 7 | aid-execute: new task SPEC path, write task STATE, routing | REFACTOR | 4 | Pending | — | — | deps 003,005,006 |
 | 8 | aid-interview lite path: scaffold work folder | REFACTOR | 4 | Pending | — | — | deps 005,006 |
-| 9 | Reader (Py): hierarchy derivation + legacy fallback | IMPLEMENT | 3 | Pending | — | — | deps 001,002 |
+| 9 | Reader (Py): hierarchy derivation + legacy fallback | IMPLEMENT | 3 | Done | clean | — | hierarchy+legacy; delivery enum surfaced; 410 tests; never-throws |
 | 10 | Reader (Py): worktree enumeration (fixed-argv) + degrade + optional verb-guard | IMPLEMENT | 4 | Pending | — | — | deps 009 |
 | 11 | Reader (Py): same-work reconcile | IMPLEMENT | 5 | Pending | — | — | deps 009,010 |
 | 12 | Reader (Node reader.mjs): mirror 009-011 (parity) | IMPLEMENT | 6 | Pending | — | — | deps 009,010,011 |
-| 13 | Idempotent migration helper (bash + PS) + fixture | MIGRATE | 3 | Pending | — | — | deps 001,002 |
+| 13 | Idempotent migration helper (bash + PS) + fixture | MIGRATE | 3 | Done | clean | — | bash+PS twins; round-trip verified; LOW: relocate fixture out of canonical (wave 4) |
 | 14 | Reader fixtures: hierarchy/legacy/multi-worktree/reconcile | TEST | 6 | Pending | — | — | deps 009-011,013 |
 | 15 | Cross-cutting: disjoint-merge proof, parity, render-drift, run-all | TEST | 7 | Pending | — | — | deps 004,007,008,012,013,014; MUST fix test-writeback-state.sh (91 fails from task-003 retarget: --field State, ## Pipeline State, per-unit targets) + any other suites broken by the schema change |
 
@@ -70,3 +70,6 @@ Worktree-aware pipeline tracking + state-file partitioning (per work → deliver
 | 2026-06-18 | Wave 1 complete (task-001): 5 per-level templates (work/delivery/task STATE + delivery/task SPEC), state-naming contract (no Status remains), SD-8 enum, SD-2 authoritative ordering; render-drift + §7a clean; template test 80/80. Committed (5052bdd4). Wave 2: task-002 (KB) + task-003 (writeback retarget) dispatched. |
 | 2026-06-18 | task-003 complete (writeback retarget): 5 modes → per-unit STATE (--field/--findings→task, --block→delivery SD-5, --pipeline→work ## Pipeline State); delivery auto-resolve from Source; guards/enum/exit-codes preserved; 10/10 ad-hoc fixtures; bash -n + ASCII clean. test-writeback-state.sh DEFERRED to task-015 (91 fails = clean retarget consequences, NOT gutted). Awaiting task-002. |
 | 2026-06-18 | task-002 complete (KB: schemas §4.0-4.7 rebuilt + project-structure hierarchy tree + SD-1/2/3/5/6/8/9 + INDEX regen; KB-hygiene green). Wave-1-2 review CLEAN — disjoint writes adversarially VERIFIED (each mode writes only its per-unit target). Wave 2 committed. KNOWN NITS for pre-gate sweep: schemas.md stale Foreign-keys note (LOW) + ER-diagram detail (MINOR); writeback missing-blank-line before a trailing heading (MINOR). Wave 3 (004,005,006,009,013) next; regen (004) serialized after the canonical edits (005,006,013). |
+| 2026-06-18 | Wave 3a dispatched (canonical/dashboard edits, NO generator run — 3 tasks call the full generator so regen is serialized to 3b): task-005 (aid-detail task folders), task-006 (aid-plan delivery folders), task-009 (reader Py hierarchy), task-013 (migration helper). task-004 (single full regen propagating all pending canonical changes + dogfood sync) runs alone as 3b after 3a. |
+| 2026-06-18 | Wave 3a complete (005 aid-detail, 006 aid-plan, 009 reader-Py, 013 migration) — all clean, scoped, no-generator. Cross-task heading coherence VERIFIED: `## Delivery Lifecycle`/`## Delivery Gate`/`## Cross-phase Q&A`/`## Tasks State`/`## Task State` identical across template(001) ↔ reader(009) ↔ aid-plan(006) ↔ migration(013); reader 410 tests pass. Wave 3b: task-004 (single full regen + dogfood sync) dispatched. |
+| 2026-06-18 | Wave 3 complete (004,005,006,009,013). Wave-3 review CLEAN — integration round-trip PASSED (migration→reader chain: cells, delivery SD-8 enums, Q&A partition, zero-task Pending-Spec sibling, idempotent, PS-twin equivalent); heading consistency end-to-end; 410 reader tests; §7a+render-drift clean. Committed. NITS (pre-gate sweep): LOW migration fixture/ ships to adopters → relocate out of canonical/scripts/migrate to tests/ during wave 4 edit phase (regen cleans profiles); MINOR partial-ASCII in a non-gated skill md. Wave 4 (007,008,010) next. |
